@@ -1,0 +1,147 @@
+# INSTRUCCIONES DE INSTALACIÓN
+## Stock Analyzer - Actualización v2.2 (Sistema Adaptativo Growth/Value)
+
+---
+
+## ¿QUÉ CAMBIÓ?
+
+Esta actualización incluye **mejoras significativas al modelo financiero**:
+
+### Modelo Financiero (NUEVO)
+1. **score_valoracion() mejorado** - Ajusta penalizaciones según calidad del crecimiento
+2. **Clasificación de empresas** - Identifica: value, growth, garp, dividend, blend
+3. **DCF Dinámico** - Usa WACC y growth específicos de cada empresa
+4. **Bonus GARP** - Empresas con growth + valuación razonable reciben bonus
+
+### Ingeniería
+1. **app.py** - Imports optimizados + DCF dinámico
+2. **tests/** - Carpeta nueva con tests de snapshot
+3. **Documentación** - GUIA_MEJORAS.md actualizada
+
+### Impacto en Scores
+- Empresas growth de alta calidad ganan 3-6 puntos
+- P/E alto ya no penaliza automáticamente si hay fundamentos
+- NVDA, AMZN, META deberían mostrar mejores scores
+
+---
+
+## CÓMO INSTALAR
+
+### Opción 1: Reemplazo completo (Recomendado)
+
+1. **Haz backup** de tu carpeta actual:
+   ```bash
+   cp -r stock_analyzer_dash stock_analyzer_dash_backup
+   ```
+
+2. **Reemplaza toda la carpeta** con el contenido de este zip
+
+3. **Instala pytest** (solo necesario para tests):
+   ```bash
+   pip install pytest
+   ```
+
+4. **Verifica que todo funciona**:
+   ```bash
+   python app.py
+   ```
+   Abre http://localhost:8050 y prueba:
+   - Una empresa value (JNJ, KO)
+   - Una empresa growth (NVDA, AMZN)
+   - Verifica que el DCF muestra WACC y Growth específicos
+
+---
+
+### Opción 2: Instalación manual
+
+1. **Reemplaza estos archivos:**
+   - `app.py`
+   - `financial_ratios.py`
+
+2. **Agrega la carpeta tests/**
+
+3. **Agrega documentación:**
+   - `GUIA_MEJORAS.md`
+   - `CHANGELOG.md` (actualizado)
+
+Tu estructura final:
+```
+stock_analyzer_dash/
+├── app.py                    ← Actualizado
+├── financial_ratios.py       ← Actualizado (modelo mejorado)
+├── data_fetcher.py
+├── sector_profiles.py
+├── stock_database.py
+├── requirements.txt
+├── Procfile
+├── README.md
+├── CHANGELOG.md              ← Actualizado
+├── GUIA_MEJORAS.md           ← Nuevo
+│
+├── tests/                    ← Nueva carpeta
+│   ├── __init__.py
+│   └── test_scoring_snapshot.py
+│
+└── assets/
+    └── custom.css
+```
+
+---
+
+## CÓMO VERIFICAR LOS CAMBIOS
+
+### 1. Probar empresa GROWTH (ej: NVDA):
+```bash
+python app.py
+# Buscar: NVDA
+```
+- El score de valoración no debería ser tan bajo
+- En "Evaluación" verás el tipo de empresa identificado
+
+### 2. Probar DCF Dinámico (tab "Intrínseco"):
+- Debería mostrar WACC específico (ej: 10.5%)
+- Debería mostrar Growth específico (ej: 15%)
+- Comparar con precio actual
+
+### 3. Comparar VALUE vs GROWTH:
+- JNJ (value): Score debería ser similar al anterior
+- NVDA (growth): Score debería ser mejor que antes
+
+### 4. Correr tests:
+```bash
+pytest tests/test_scoring_snapshot.py -v
+```
+
+---
+
+## RESUMEN DE ARCHIVOS
+
+| Archivo | Acción | Descripción |
+|---------|--------|-------------|
+| app.py | REEMPLAZAR | DCF dinámico, imports optimizados |
+| financial_ratios.py | REEMPLAZAR | Modelo adaptativo growth/value |
+| tests/__init__.py | NUEVO | Módulo de tests |
+| tests/test_scoring_snapshot.py | NUEVO | 40+ tests |
+| GUIA_MEJORAS.md | NUEVO | Documentación |
+| CHANGELOG.md | REEMPLAZAR | Historial actualizado |
+| sector_profiles.py | SIN CAMBIOS | Perfiles intactos |
+| data_fetcher.py | SIN CAMBIOS | Fetcher intacto |
+| stock_database.py | SIN CAMBIOS | Database intacta |
+
+---
+
+## ¿QUÉ HACER SI ALGO FALLA?
+
+### Restaurar backup:
+```bash
+rm -rf stock_analyzer_dash
+cp -r stock_analyzer_dash_backup stock_analyzer_dash
+```
+
+### Errores comunes:
+- "ModuleNotFoundError: reportlab" → `pip install reportlab`
+- "ModuleNotFoundError: pytest" → `pip install pytest`
+
+---
+
+¡Tu modelo ahora evalúa mejor tanto empresas value como growth!
