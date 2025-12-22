@@ -1389,32 +1389,96 @@ def generate_simple_pdf(symbol: str, company_name: str, ratios: dict, alerts: di
     ]))
     story.append(section_title3)
     
-    # Recopilar señales
-    danger_list = list(alerts.get("danger", []))
-    warning_list = list(alerts.get("warning", []))
-    success_list = list(alerts.get("success", []))
+    # Recopilar señales - MISMA LÓGICA QUE LA UI
+    danger_list = []
+    warning_list = []
+    success_list = []
     
-    for key, label in [("valuation", "Val"), ("leverage", "Deu"), ("profitability", "Ren"),
-                       ("liquidity", "Liq"), ("cash_flow", "FCF"), ("growth", "Cre")]:
-        cat = alerts.get(key, {})
-        if isinstance(cat, dict):
-            for r in cat.get("overvalued_reasons", []):
-                if (label, r) not in danger_list: danger_list.append((label, r))
-            for r in cat.get("warning_reasons", []):
-                if (label, r) not in warning_list: warning_list.append((label, r))
-            for r in cat.get("undervalued_reasons", []):
-                if (label, r) not in success_list: success_list.append((label, r))
-            for r in cat.get("positive_reasons", []):
-                if (label, r) not in success_list: success_list.append((label, r))
+    # Valoración
+    val = alerts.get("valuation", {})
+    for reason in val.get("overvalued_reasons", []):
+        danger_list.append(("Valoración", reason))
+    for reason in val.get("undervalued_reasons", []):
+        success_list.append(("Valoración", reason))
     
-    # Crear tabla de señales
+    # Deuda/Apalancamiento
+    lev = alerts.get("leverage", {})
+    for reason in lev.get("warning_reasons", []):
+        danger_list.append(("Deuda", reason))
+    for reason in lev.get("positive_reasons", []):
+        success_list.append(("Deuda", reason))
+    
+    # Rentabilidad
+    prof = alerts.get("profitability", {})
+    for reason in prof.get("warning_reasons", []):
+        warning_list.append(("Rentabilidad", reason))
+    for reason in prof.get("positive_reasons", []):
+        success_list.append(("Rentabilidad", reason))
+    
+    # Liquidez
+    liq = alerts.get("liquidity", {})
+    for reason in liq.get("warning_reasons", []):
+        warning_list.append(("Liquidez", reason))
+    for reason in liq.get("positive_reasons", []):
+        success_list.append(("Liquidez", reason))
+    
+    # Flujo de Caja
+    cf = alerts.get("cash_flow", {})
+    for reason in cf.get("warning_reasons", []):
+        danger_list.append(("Flujo de Caja", reason))
+    for reason in cf.get("positive_reasons", []):
+        success_list.append(("Flujo de Caja", reason))
+    
+    # Crecimiento
+    growth = alerts.get("growth", {})
+    for reason in growth.get("warning_reasons", []):
+        warning_list.append(("Crecimiento", reason))
+    for reason in growth.get("positive_reasons", []):
+        success_list.append(("Crecimiento", reason))
+    
+    # Volatilidad
+    vol = alerts.get("volatility", {})
+    for reason in vol.get("warning_reasons", []):
+        warning_list.append(("Volatilidad", reason))
+    for reason in vol.get("positive_reasons", []):
+        success_list.append(("Volatilidad", reason))
+    
+    # Extraer alertas de score_v2 categories (ajustes del modelo)
+    score_v2 = alerts.get("score_v2", {})
+    categories = score_v2.get("categories", [])
+    for cat in categories:
+        adjustments = cat.get("adjustments", [])
+        for adj in adjustments:
+            if adj.get("adjustment", 0) < -2:
+                danger_list.append((cat.get("category", ""), f"{adj.get('metric', '')}: {adj.get('reason', '')}"))
+            elif adj.get("adjustment", 0) < 0:
+                warning_list.append((cat.get("category", ""), f"{adj.get('metric', '')}: {adj.get('reason', '')}"))
+            elif adj.get("adjustment", 0) > 2:
+                success_list.append((cat.get("category", ""), f"{adj.get('metric', '')}: {adj.get('reason', '')}"))
+    
+    # Eliminar duplicados
+    def unique_alerts(alerts_list):
+        seen = set()
+        result = []
+        for cat, reason in alerts_list:
+            key = (cat, reason[:50])
+            if key not in seen:
+                seen.add(key)
+                result.append((cat, reason))
+        return result
+    
+    danger_list = unique_alerts(danger_list)
+    warning_list = unique_alerts(warning_list)
+    success_list = unique_alerts(success_list)
+    
+    # Crear tabla de señales - TODAS las señales
     signal_rows = []
-    for c, r in danger_list[:4]: 
-        signal_rows.append(["●", f"{r[:60]}", "Riesgo"])
-    for c, r in warning_list[:2]: 
-        signal_rows.append(["●", f"{r[:60]}", "Atención"])
-    for c, r in success_list[:3]: 
-        signal_rows.append(["●", f"{r[:60]}", "Fortaleza"])
+    for c, r in danger_list: 
+        signal_rows.append(["●", f"{r[:70]}", "Riesgo"])
+    for c, r in warning_list: 
+        signal_rows.append(["●", f"{r[:70]}", "Atención"])
+    for c, r in success_list: 
+        signal_rows.append(["●", f"{r[:70]}", "Fortaleza"])
     
     if not signal_rows:
         signal_rows.append(["●", "Sin señales significativas detectadas", "Info"])
@@ -1793,9 +1857,16 @@ def update_search_suggestions(search_value):
     suggestions = search_stocks(query, limit=6)
     
     if not suggestions:
-        return [html.P("No se encontraron resultados", style={
-            "color": "#71717a", "padding": "12px 16px", "margin": "0", "textAlign": "center", "fontSize": "0.9rem"
-        })], visible_style
+        return [
+            html.Div([
+                html.P(f"No hay sugerencias para '{query}'", style={
+                    "color": "#a1a1aa", "margin": "0 0 4px 0", "fontSize": "0.85rem"
+                }),
+                html.P("💡 Presiona Enter para buscar cualquier ticker", style={
+                    "color": "#10b981", "margin": "0", "fontSize": "0.8rem", "fontWeight": "500"
+                })
+            ], style={"padding": "12px 16px", "textAlign": "center"})
+        ], visible_style
     
     # Crear items de sugerencias clickeables
     suggestion_items = []
@@ -3035,7 +3106,7 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
                         html.Span(reason),
                         html.Div(get_alert_explanation(cat, reason), className="text-muted small mt-1")
                     ], className="alert-box alert-danger-custom mb-2")
-                    for cat, reason in danger_alerts[:5]
+                    for cat, reason in danger_alerts
                 ]) if danger_alerts else None,
                 
                 html.H6("🟠 Advertencias", className="text-warning mt-3") if warning_alerts else None,
@@ -3045,7 +3116,7 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
                         html.Span(reason),
                         html.Div(get_alert_explanation(cat, reason), className="text-muted small mt-1")
                     ], className="alert-box alert-warning-custom mb-2")
-                    for cat, reason in warning_alerts[:5]
+                    for cat, reason in warning_alerts
                 ]) if warning_alerts else None,
                 
                 html.H6("🟢 Fortalezas", className="text-success mt-3") if success_alerts else None,
@@ -3055,7 +3126,7 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
                         html.Span(reason),
                         html.Div(get_alert_explanation(cat, reason), className="text-muted small mt-1")
                     ], className="alert-box alert-success-custom mb-2")
-                    for cat, reason in success_alerts[:5]
+                    for cat, reason in success_alerts
                 ]) if success_alerts else None,
             ])
         ])
