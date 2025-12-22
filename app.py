@@ -1,11 +1,11 @@
 """
-Stock Analyzer - Dash Edition v2.2
+Finanzer - Dash Edition v2.7
 ==================================
 Aplicación web responsive para análisis fundamental de acciones.
 Mobile-first design con soporte para dark/light theme.
 
 Autor: Esteban
-Versión: 2.2 - Sistema Adaptativo Growth/Value + Dark/Light Mode
+Versión: 2.3 - DCF Multi-Stage (3 etapas) + Análisis de Sensibilidad
 """
 
 import os
@@ -44,6 +44,7 @@ from financial_ratios import (
     graham_number,
     dcf_fair_value,
     dcf_dynamic,
+    dcf_multi_stage_dynamic,  # v2.3: DCF Multi-Stage
 )
 from data_fetcher import FinancialDataService
 from sector_profiles import get_sector_profile
@@ -64,7 +65,7 @@ app = dash.Dash(
         {"name": "viewport", "content": "width=device-width, initial-scale=1, maximum-scale=1"},
         {"name": "theme-color", "content": "#09090b"}
     ],
-    title="Stock Analyzer"
+    title="Finanzer"
 )
 
 server = app.server
@@ -80,6 +81,327 @@ COMPANY_NAMES = {
     "amazon": "AMZN", "tesla": "TSLA", "nvidia": "NVDA", "meta": "META",
     "facebook": "META", "netflix": "NFLX", "disney": "DIS", "visa": "V",
     "mastercard": "MA", "jpmorgan": "JPM", "berkshire": "BRK-B", "taiwan semiconductor": "TSM",
+}
+
+# =============================================================================
+# TOOLTIPS - Explicaciones de todos los indicadores
+# =============================================================================
+
+METRIC_TOOLTIPS = {
+    # === VALORACIÓN ===
+    "pe": {
+        "nombre": "P/E (Precio/Beneficio)",
+        "que_es": "Cuántos dólares pagas por cada dólar de ganancia anual.",
+        "rangos": "• <15: Posiblemente barata\n• 15-25: Valoración típica\n• >25: Cara o alto crecimiento",
+        "contexto": "Compara siempre con empresas del mismo sector."
+    },
+    "forward_pe": {
+        "nombre": "Forward P/E (P/E Proyectado)",
+        "que_es": "P/E basado en las ganancias esperadas del próximo año fiscal.",
+        "rangos": "• <12: Muy barato\n• 12-20: Normal\n• >25: Expectativas altas",
+        "contexto": "Más útil que P/E trailing para empresas en crecimiento."
+    },
+    "pb": {
+        "nombre": "P/B (Precio/Valor en Libros)",
+        "que_es": "Cuánto pagas en relación al valor contable de los activos.",
+        "rangos": "• <1: Por debajo de valor contable\n• 1-3: Rango normal\n• >3: Prima alta sobre activos",
+        "contexto": "Más útil para bancos y empresas con activos tangibles."
+    },
+    "ps": {
+        "nombre": "P/S (Precio/Ventas)",
+        "que_es": "Cuánto pagas por cada dólar de ventas.",
+        "rangos": "• <1: Muy barato\n• 1-5: Normal\n• >10: Muy caro",
+        "contexto": "Útil para empresas sin ganancias pero con ingresos."
+    },
+    "p_fcf": {
+        "nombre": "P/FCF (Precio/Flujo de Caja)",
+        "que_es": "Cuánto pagas por cada dólar de efectivo real generado.",
+        "rangos": "• <15: Atractivo\n• 15-25: Normal\n• >25: Caro",
+        "contexto": "Más confiable que P/E porque el efectivo es difícil de manipular."
+    },
+    "ev_ebitda": {
+        "nombre": "EV/EBITDA",
+        "que_es": "Valor empresarial vs ganancias operativas.",
+        "rangos": "• <8: Barato\n• 8-12: Normal\n• >12: Caro",
+        "contexto": "Mejor para comparar empresas con diferente deuda."
+    },
+    "peg": {
+        "nombre": "PEG Ratio",
+        "que_es": "P/E ajustado por crecimiento esperado.",
+        "rangos": "• <1: Subvalorada para su growth ✓\n• =1: Valor justo\n• >1.5: Cara para su growth",
+        "contexto": "PEG de 1 significa P/E justificado por crecimiento."
+    },
+    "fcf_yield": {
+        "nombre": "FCF Yield",
+        "que_es": "Rendimiento del flujo de caja como % del precio.",
+        "rangos": "• >8%: Muy atractivo\n• 5-8%: Bueno\n• <3%: Bajo",
+        "contexto": "Como el dividendo potencial. Mayor = mejor."
+    },
+    
+    # === RENTABILIDAD ===
+    "roe": {
+        "nombre": "ROE (Retorno sobre Patrimonio)",
+        "que_es": "Ganancia generada por cada dólar de los accionistas.",
+        "rangos": "• >20%: Excelente ✓\n• 15-20%: Muy bueno\n• 10-15%: Aceptable\n• <10%: Bajo",
+        "contexto": "Buffett busca ROE consistente >15%."
+    },
+    "roa": {
+        "nombre": "ROA (Retorno sobre Activos)",
+        "que_es": "Eficiencia usando activos para generar ganancias.",
+        "rangos": "• >10%: Excelente\n• 5-10%: Bueno\n• <5%: Normal/Bajo",
+        "contexto": "Varía por sector. Bancos ~1%, Tech más alto."
+    },
+    "roic": {
+        "nombre": "ROIC (Retorno sobre Capital Invertido)",
+        "que_es": "Rendimiento del capital total invertido.",
+        "rangos": "• >15%: Excelente, crea valor ✓\n• 10-15%: Bueno\n• <WACC: Destruye valor ✗",
+        "contexto": "Si ROIC > WACC, la empresa crea valor."
+    },
+    "margen_bruto": {
+        "nombre": "Margen Bruto",
+        "que_es": "% de ingresos después de costos de producción.",
+        "rangos": "• >60%: Excelente (software)\n• 40-60%: Bueno\n• 20-40%: Normal\n• <20%: Bajo",
+        "contexto": "Márgenes altos = ventaja competitiva."
+    },
+    "margen_operativo": {
+        "nombre": "Margen Operativo",
+        "que_es": "% de ingresos después de gastos operativos.",
+        "rangos": "• >25%: Excelente\n• 15-25%: Muy bueno\n• 10-15%: Bueno\n• <10%: Bajo",
+        "contexto": "Muestra eficiencia operativa."
+    },
+    "margen_neto": {
+        "nombre": "Margen Neto",
+        "que_es": "% de ventas que se convierte en ganancia final.",
+        "rangos": "• >20%: Excelente\n• 10-20%: Muy bueno\n• 5-10%: Normal\n• <5%: Bajo",
+        "contexto": "La línea final después de todo."
+    },
+    "margen_ebitda": {
+        "nombre": "Margen EBITDA",
+        "que_es": "% de ingresos como EBITDA (ganancia operativa + depreciación).",
+        "rangos": "• >30%: Excelente\n• 20-30%: Bueno\n• 10-20%: Normal\n• <10%: Bajo",
+        "contexto": "Útil para comparar empresas con diferentes políticas de depreciación."
+    },
+    
+    # === SOLIDEZ FINANCIERA ===
+    "current_ratio": {
+        "nombre": "Current Ratio (Liquidez)",
+        "que_es": "Capacidad de pagar deudas corto plazo con activos corrientes.",
+        "rangos": "• >2: Muy sólido ✓\n• 1.5-2: Saludable\n• 1-1.5: Aceptable\n• <1: Riesgo ⚠️",
+        "contexto": "<1 significa que no puede cubrir deudas próximas."
+    },
+    "quick_ratio": {
+        "nombre": "Quick Ratio (Prueba Ácida)",
+        "que_es": "Liquidez sin contar inventario (más conservador).",
+        "rangos": "• >1.5: Excelente\n• 1-1.5: Bueno ✓\n• 0.5-1: Aceptable\n• <0.5: Riesgo ⚠️",
+        "contexto": "Más estricto que current ratio."
+    },
+    "cash_ratio": {
+        "nombre": "Cash Ratio",
+        "que_es": "Solo efectivo vs deudas de corto plazo (el más conservador).",
+        "rangos": "• >1: Puede pagar todo en efectivo\n• 0.5-1: Buena posición\n• 0.2-0.5: Normal\n• <0.2: Bajo",
+        "contexto": "Muy conservador. Pocas empresas tienen >1."
+    },
+    "working_capital": {
+        "nombre": "Working Capital (Capital de Trabajo)",
+        "que_es": "Activos corrientes menos pasivos corrientes.",
+        "rangos": "• Positivo: Puede operar día a día ✓\n• Negativo: Riesgo de liquidez ⚠️",
+        "contexto": "Dinero disponible para operaciones diarias."
+    },
+    "debt_to_equity": {
+        "nombre": "Deuda/Patrimonio (D/E)",
+        "que_es": "Cuánta deuda por cada dólar de patrimonio.",
+        "rangos": "• <0.5: Conservador ✓\n• 0.5-1: Normal\n• 1-2: Apalancado\n• >2: Muy apalancado ⚠️",
+        "contexto": "Varía por sector. Bancos tienen D/E alto."
+    },
+    "debt_to_assets": {
+        "nombre": "Deuda/Activos",
+        "que_es": "Porcentaje de activos financiados con deuda.",
+        "rangos": "• <30%: Conservador ✓\n• 30-50%: Normal\n• 50-70%: Alto\n• >70%: Muy alto ⚠️",
+        "contexto": "Menor es generalmente mejor."
+    },
+    "net_debt_ebitda": {
+        "nombre": "Deuda Neta/EBITDA",
+        "que_es": "Años para pagar toda la deuda con ganancias operativas.",
+        "rangos": "• <1: Casi sin deuda ✓\n• 1-2: Conservador\n• 2-3: Normal\n• >4: Alto riesgo ⚠️",
+        "contexto": "Negativo = más efectivo que deuda."
+    },
+    "interest_coverage": {
+        "nombre": "Cobertura de Intereses",
+        "que_es": "Veces que puede pagar intereses con beneficio operativo.",
+        "rangos": "• >10: Excelente ✓\n• 5-10: Bueno\n• 2-5: Aceptable\n• <2: Riesgo ⚠️",
+        "contexto": "<1.5 es señal de alerta seria."
+    },
+    "total_debt": {
+        "nombre": "Deuda Total",
+        "que_es": "Suma de toda la deuda de corto y largo plazo.",
+        "rangos": "Depende del tamaño de la empresa.",
+        "contexto": "Comparar con equity y EBITDA para contexto."
+    },
+    "fcf": {
+        "nombre": "Free Cash Flow (FCF)",
+        "que_es": "Efectivo disponible después de operaciones e inversiones.",
+        "rangos": "• Positivo: Genera efectivo ✓\n• Negativo: Quema efectivo",
+        "contexto": "El dinero real que queda. Clave para dividendos y recompras."
+    },
+    "fcf_to_debt": {
+        "nombre": "FCF/Deuda",
+        "que_es": "Qué proporción de la deuda podría pagar con FCF anual.",
+        "rangos": "• >25%: Excelente\n• 15-25%: Bueno\n• 5-15%: Normal\n• <5%: Bajo",
+        "contexto": "Mayor = más capacidad de pago."
+    },
+    "cash_equivalents": {
+        "nombre": "Cash & Equivalents",
+        "que_es": "Efectivo disponible inmediatamente.",
+        "rangos": "Depende del tamaño y sector.",
+        "contexto": "Colchón para emergencias y oportunidades."
+    },
+    
+    # === CRECIMIENTO ===
+    "revenue_growth": {
+        "nombre": "Crecimiento de Ingresos",
+        "que_es": "Tasa anual de crecimiento de ventas.",
+        "rangos": "• >20%: Alto crecimiento\n• 10-20%: Buen crecimiento\n• 5-10%: Moderado\n• <0%: Contracción ⚠️",
+        "contexto": "Motor del valor a largo plazo."
+    },
+    "eps_growth": {
+        "nombre": "Crecimiento de EPS",
+        "que_es": "Crecimiento de ganancias por acción.",
+        "rangos": "• >25%: Excelente\n• 15-25%: Muy bueno\n• 5-15%: Bueno\n• <0%: Decreciendo ⚠️",
+        "contexto": "Más importante que crecimiento de ingresos."
+    },
+    "fcf_growth": {
+        "nombre": "Crecimiento de FCF",
+        "que_es": "Crecimiento del flujo de caja libre.",
+        "rangos": "• >20%: Excelente\n• 10-20%: Bueno\n• 0-10%: Estable\n• <0%: Decreciendo",
+        "contexto": "Crecimiento de efectivo real."
+    },
+    
+    # === MODELOS DE VALORACIÓN ===
+    "graham": {
+        "nombre": "Número de Graham",
+        "que_es": "Valor intrínseco según Benjamin Graham.",
+        "rangos": "• Precio < Graham: Subvalorada ✓\n• Precio ≈ Graham: Justo\n• Precio > Graham: Sobrevalorada",
+        "contexto": "Fórmula conservadora. Mejor para empresas estables."
+    },
+    "dcf": {
+        "nombre": "DCF (Flujos Descontados)",
+        "que_es": "Valor presente de flujos futuros de efectivo.",
+        "rangos": "• Precio < DCF: Subvalorada ✓\n• Precio ≈ DCF: Justo\n• Precio > DCF: Sobrevalorada",
+        "contexto": "Modelo de Wall Street. Sensible a supuestos."
+    },
+    "wacc": {
+        "nombre": "WACC (Costo del Capital)",
+        "que_es": "Retorno mínimo requerido por inversores y acreedores.",
+        "rangos": "• 6-8%: Bajo riesgo\n• 8-10%: Riesgo medio\n• 10-12%: Moderado\n• >12%: Alto riesgo",
+        "contexto": "Se usa como tasa de descuento en DCF."
+    },
+    "margin_of_safety": {
+        "nombre": "Margen de Seguridad",
+        "que_es": "Descuento sobre valor intrínseco para protección.",
+        "rangos": "• >30%: Gran margen ✓\n• 15-30%: Buen margen\n• 0-15%: Pequeño\n• <0%: Sin margen",
+        "contexto": "Graham recomendaba >30%."
+    },
+    
+    # === SCORES ===
+    "altman_z": {
+        "nombre": "Altman Z-Score",
+        "que_es": "Predictor de probabilidad de bancarrota.",
+        "rangos": "• >2.99: Zona Segura ✓\n• 1.81-2.99: Zona Gris ⚠️\n• <1.81: Zona Peligro 🚨",
+        "contexto": "90%+ de precisión prediciendo quiebras."
+    },
+    "piotroski_f": {
+        "nombre": "Piotroski F-Score",
+        "que_es": "Score 0-9 de fortaleza financiera.",
+        "rangos": "• 8-9: Excelente ✓✓\n• 6-7: Bueno ✓\n• 4-5: Neutral\n• 0-3: Débil ⚠️",
+        "contexto": "F-Score alto = mejores retornos históricos."
+    },
+    
+    # === DIVIDENDOS ===
+    "dividend_yield": {
+        "nombre": "Dividend Yield",
+        "que_es": "% anual recibido en dividendos sobre el precio.",
+        "rangos": "• >5%: Alto (verificar sostenibilidad)\n• 3-5%: Bueno\n• 1-3%: Moderado\n• <1%: Bajo",
+        "contexto": "Yield muy alto puede indicar problemas."
+    },
+    "payout_ratio": {
+        "nombre": "Payout Ratio",
+        "que_es": "% de ganancias repartido como dividendo.",
+        "rangos": "• <40%: Conservador ✓\n• 40-60%: Equilibrado\n• 60-80%: Alto\n• >80%: Insostenible ⚠️",
+        "contexto": ">100% = paga más de lo que gana."
+    },
+    
+    # === OTROS ===
+    "beta": {
+        "nombre": "Beta",
+        "que_es": "Volatilidad vs el mercado (S&P 500).",
+        "rangos": "• <0.8: Defensivo\n• 0.8-1.2: Similar al mercado\n• 1.2-1.5: Más volátil\n• >1.5: Muy volátil ⚠️",
+        "contexto": "Beta 1.5 = si mercado sube 10%, acción sube ~15%."
+    },
+    "market_cap": {
+        "nombre": "Market Cap",
+        "que_es": "Valor total de la empresa según el mercado.",
+        "rangos": "• >$200B: Mega cap\n• $10-200B: Large cap\n• $2-10B: Mid cap\n• <$2B: Small cap",
+        "contexto": "Más grande = más estable, menos crecimiento."
+    },
+    "52w_high": {
+        "nombre": "52 Week High",
+        "que_es": "Precio más alto del último año.",
+        "rangos": "Referencia para evaluar posición actual.",
+        "contexto": "Cerca del high = momentum positivo o sobrevalorada."
+    },
+    "52w_low": {
+        "nombre": "52 Week Low", 
+        "que_es": "Precio más bajo del último año.",
+        "rangos": "Referencia para evaluar posición actual.",
+        "contexto": "Cerca del low = oportunidad o problemas."
+    },
+    "volume": {
+        "nombre": "Volumen Promedio",
+        "que_es": "Cantidad de acciones negociadas diariamente.",
+        "rangos": "Mayor volumen = mayor liquidez.",
+        "contexto": "Importante para entrar/salir de posiciones."
+    },
+    "ebitda": {
+        "nombre": "EBITDA",
+        "que_es": "Ganancias antes de intereses, impuestos, depreciación y amortización.",
+        "rangos": "Positivo = operativamente rentable.",
+        "contexto": "Proxy de flujo de caja operativo."
+    },
+    "eps": {
+        "nombre": "EPS (Ganancias por Acción)",
+        "que_es": "Beneficio neto dividido entre acciones.",
+        "rangos": "Positivo = rentable. Mayor = mejor.",
+        "contexto": "Base para calcular P/E."
+    },
+    "net_income": {
+        "nombre": "Net Income (Ingreso Neto)",
+        "que_es": "Ganancia final después de todos los gastos.",
+        "rangos": "Positivo = rentable.",
+        "contexto": "La línea final del estado de resultados."
+    },
+    
+    # === REITs ===
+    "ffo": {
+        "nombre": "FFO (Funds From Operations)",
+        "que_es": "Métrica principal para REITs. Ingreso neto + depreciación - ganancias por venta.",
+        "formula": "Net Income + Depreciation - Gains on Property Sale",
+        "rangos": "• Positivo: Operaciones saludables\n• Creciendo: REIT en expansión\n• Negativo: Problemas operativos",
+        "contexto": "Más relevante que Net Income para REITs porque la depreciación inmobiliaria no refleja pérdida real de valor."
+    },
+    "p_ffo": {
+        "nombre": "P/FFO (Precio/FFO)",
+        "que_es": "Equivalente al P/E pero para REITs. Cuánto pagas por cada dólar de FFO.",
+        "formula": "Precio ÷ FFO por Acción",
+        "rangos": "• <12: Potencialmente barato\n• 12-18: Rango normal\n• >18: Caro o alta calidad",
+        "contexto": "Para REITs, P/FFO es más relevante que P/E tradicional."
+    },
+    "ffo_payout": {
+        "nombre": "FFO Payout Ratio",
+        "que_es": "Porcentaje del FFO pagado como dividendo.",
+        "formula": "Dividendos ÷ FFO × 100",
+        "rangos": "• <80%: Sostenible con margen\n• 80-95%: Normal para REITs\n• >95%: Riesgo de recorte",
+        "contexto": "REITs deben distribuir 90%+ de ingresos por ley. Un payout muy alto sobre FFO es riesgoso."
+    },
 }
 
 # =============================================================================
@@ -124,27 +446,30 @@ def get_score_color(score: int) -> tuple:
 
 
 def create_score_donut(score: int) -> go.Figure:
-    """Crea gráfico donut moderno para el score."""
+    """Crea gráfico donut moderno y minimalista para el score."""
     color, label = get_score_color(score)
     
     fig = go.Figure()
     
-    # Donut de fondo
+    # Track de fondo (gris oscuro sutil)
     fig.add_trace(go.Pie(
         values=[100],
-        hole=0.75,
-        marker=dict(colors=['#27272a']),
+        hole=0.78,
+        marker=dict(colors=['#2d2d32']),
         showlegend=False,
         hoverinfo='none',
         textinfo='none'
     ))
     
-    # Donut del score
+    # Donut del score con gradiente visual
     remaining = 100 - score
     fig.add_trace(go.Pie(
         values=[score, remaining],
-        hole=0.75,
-        marker=dict(colors=[color, 'rgba(0,0,0,0)'], line=dict(width=0)),
+        hole=0.78,
+        marker=dict(
+            colors=[color, 'rgba(0,0,0,0)'], 
+            line=dict(width=0)
+        ),
         showlegend=False,
         hoverinfo='none',
         textinfo='none',
@@ -152,15 +477,28 @@ def create_score_donut(score: int) -> go.Figure:
         direction='clockwise'
     ))
     
-    fig.add_annotation(text=f"<b>{score}</b>", x=0.5, y=0.55,
-        font=dict(size=42, color=color, family='Inter'), showarrow=False)
-    fig.add_annotation(text=label, x=0.5, y=0.35,
-        font=dict(size=12, color='#71717a', family='Inter'), showarrow=False)
+    # Score número
+    fig.add_annotation(
+        text=f"<b>{score}</b>", 
+        x=0.5, y=0.52,
+        font=dict(size=38, color=color, family='Inter, system-ui'),
+        showarrow=False
+    )
+    
+    # Label descriptivo
+    fig.add_annotation(
+        text=label.upper(), 
+        x=0.5, y=0.30,
+        font=dict(size=10, color='#6b7280', family='Inter, system-ui', weight=500),
+        showarrow=False
+    )
     
     fig.update_layout(
-        height=180, margin=dict(l=10, r=10, t=10, b=10),
-        paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-        font={'family': 'Inter, sans-serif'}
+        height=160,
+        margin=dict(l=10, r=10, t=10, b=10),
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        font={'family': 'Inter, system-ui, sans-serif'}
     )
     return fig
 
@@ -336,10 +674,133 @@ def create_ytd_comparison_chart(stock_ytd: float, market_ytd: float, sector_ytd:
     return fig
 
 
-def create_metric_card(label: str, value: str, icon: str = "📊"):
-    """Crea una tarjeta de métrica centrada."""
+# Mapeo de labels a tooltip keys - COMPLETO
+LABEL_TO_TOOLTIP = {
+    # Valoración (todas las variantes)
+    "P/E": "pe", "P/E Ratio": "pe", "Forward P/E": "forward_pe", "Fwd P/E": "forward_pe",
+    "P/B": "pb", "P/B Ratio": "pb", "P/Book": "pb",
+    "P/S": "ps", "P/S Ratio": "ps",
+    "P/FCF": "p_fcf", "P/FCF Ratio": "p_fcf",
+    "EV/EBITDA": "ev_ebitda", 
+    "PEG": "peg", "PEG Ratio": "peg",
+    "FCF Yield": "fcf_yield", "Earnings Yield": "fcf_yield",
+    
+    # Rentabilidad
+    "ROE": "roe", "ROA": "roa", "ROIC": "roic", "ROE 5Y Avg": "roe",
+    "Margen Bruto": "margen_bruto", "Margen Operativo": "margen_operativo", 
+    "Margen Neto": "margen_neto", "Margen EBITDA": "margen_ebitda",
+    "EBITDA": "ebitda", "Ingreso Neto": "net_income", "EPS": "eps",
+    
+    # Liquidez
+    "Current Ratio": "current_ratio", "Quick Ratio": "quick_ratio", 
+    "Cash Ratio": "cash_ratio", "Working Capital": "working_capital",
+    
+    # Apalancamiento  
+    "D/E": "debt_to_equity", "Deuda/Equity": "debt_to_equity", "Debt/Equity": "debt_to_equity",
+    "Deuda/Activos": "debt_to_assets", "Debt/Assets": "debt_to_assets",
+    "Deuda Neta/EBITDA": "net_debt_ebitda", "Deuda Total": "total_debt",
+    "Net Debt/EBITDA": "net_debt_ebitda",
+    
+    # Cobertura
+    "Cobertura Int.": "interest_coverage", "Interest Coverage": "interest_coverage",
+    "FCF": "fcf", "FCF/Deuda": "fcf_to_debt", "Cash & Eq.": "cash_equivalents",
+    
+    # Crecimiento
+    "Crec. Ingresos": "revenue_growth", "Crec. EPS": "eps_growth", "Crec. FCF": "fcf_growth",
+    "Revenue Growth": "revenue_growth", "EPS Growth": "eps_growth", "FCF Growth": "fcf_growth",
+    "Crec. Ingresos 3Y": "revenue_growth", "Crec. EPS 3Y": "eps_growth",
+    
+    # Scores institucionales
+    "Altman Z-Score": "altman_z", "Z-Score": "altman_z",
+    "Piotroski F": "piotroski_f", "F-Score": "piotroski_f",
+    
+    # Dividendos
+    "Dividend Yield": "dividend_yield", "Payout Ratio": "payout_ratio",
+    "Div. Yield": "dividend_yield",
+    
+    # REITs
+    "FFO": "ffo", "P/FFO": "p_ffo", "FFO Payout": "ffo_payout",
+    "FFO/Share": "ffo", "AFFO": "ffo",
+    
+    # Otros
+    "Beta": "beta", "Market Cap": "market_cap", "Cap. Mercado": "market_cap",
+    "52W High": "52w_high", "52W Low": "52w_low", "Vol. Promedio": "volume",
+}
+
+# Contador global para IDs únicos
+_tooltip_counter = [0]
+
+def get_tooltip_text(metric_key: str) -> str:
+    """Genera el texto del tooltip con formato legible."""
+    if metric_key not in METRIC_TOOLTIPS:
+        return "Información no disponible"
+    
+    t = METRIC_TOOLTIPS[metric_key]
+    
+    # Formato con saltos de línea claros
+    text = f"""📌 {t['nombre']}
+
+{t['que_es']}
+
+📊 Rangos:
+{t['rangos']}
+
+💡 {t['contexto']}"""
+    
+    return text
+
+
+def create_info_icon(tooltip_id: str, tooltip_key: str):
+    """Crea un ícono de información con tooltip moderno."""
+    return html.Span([
+        html.Span("i", id=tooltip_id, className="info-icon"),
+        dbc.Tooltip(
+            get_tooltip_text(tooltip_key),
+            target=tooltip_id,
+            placement="top",
+        )
+    ])
+
+
+def create_metric_with_tooltip(label: str, value: str, tooltip_key: str, uid: int, value_class: str = "", sublabel: str = ""):
+    """Crea una métrica con tooltip informativo integrado."""
+    tooltip_id = f"tip-{tooltip_key}-{uid}"
+    
+    return dbc.Card([
+        dbc.CardBody([
+            html.Div([
+                html.Span(label, className="text-muted small"),
+                create_info_icon(tooltip_id, tooltip_key) if tooltip_key in METRIC_TOOLTIPS else None,
+            ], className="mb-1 text-center"),
+            html.H4(value, className=f"mb-1 text-center {value_class}"),
+            html.P(sublabel, className="text-muted small mb-0 text-center", 
+                  style={"fontSize": "0.7rem"}) if sublabel else None
+        ])
+    ], style={"backgroundColor": "#27272a", "border": "none"}, className="h-100")
+
+
+def create_metric_card(label: str, value: str, icon: str = "📊", tooltip_key: str = None):
+    """Crea una tarjeta de métrica centrada con tooltip opcional."""
+    # Auto-detectar tooltip key si no se proporciona
+    if tooltip_key is None:
+        tooltip_key = LABEL_TO_TOOLTIP.get(label)
+    
+    # Generar ID único
+    _tooltip_counter[0] += 1
+    tip_id = f"mc-tip-{_tooltip_counter[0]}"
+    
+    # Contenido del label con o sin tooltip
+    if tooltip_key and tooltip_key in METRIC_TOOLTIPS:
+        label_content = html.Div([
+            html.Span(f"{icon} {label}", className="metric-label"),
+            html.Span("i", id=tip_id, className="info-icon", style={"marginLeft": "6px"}),
+            dbc.Tooltip(get_tooltip_text(tooltip_key), target=tip_id, placement="top")
+        ], style={"display": "inline-flex", "alignItems": "center", "justifyContent": "center"})
+    else:
+        label_content = html.Div(f"{icon} {label}", className="metric-label")
+    
     return html.Div([
-        html.Div(f"{icon} {label}", className="metric-label"),
+        label_content,
         html.Div(value if value else "N/A", className="metric-value")
     ], className="metric-card", style={"textAlign": "center"})
 
@@ -424,7 +885,7 @@ def get_alert_explanation(category: str, reason: str) -> str:
 
 
 def create_comparison_metric_row(metric_name: str, company_val, sector_val, market_val, fmt: str = "multiple", lower_better: bool = True):
-    """Crea una fila de comparación de métricas con veredicto."""
+    """Crea una fila de comparación de métricas con veredicto - Rediseñada."""
     def format_val(v, fmt):
         if v is None:
             return "N/A"
@@ -438,9 +899,9 @@ def create_comparison_metric_row(metric_name: str, company_val, sector_val, mark
     def get_verdict(company_val, sector_val, market_val, lower_is_better):
         """Calcula veredicto basado en comparación con sector Y mercado."""
         if company_val is None:
-            return "⚪ Sin datos", "#71717a"
+            return "Sin datos", "#6b7280", "⚪"
         if lower_is_better is None:
-            return "⚪ N/A", "#71717a"
+            return "N/A", "#6b7280", "⚪"
         
         better_than_sector = False
         better_than_market = False
@@ -458,21 +919,54 @@ def create_comparison_metric_row(metric_name: str, company_val, sector_val, mark
                 better_than_market = company_val > market_val * 0.85
         
         if better_than_sector and better_than_market:
-            return "🟢 Excelente", "#22c55e"
+            return "Excelente", "#22c55e", "●"
         elif better_than_sector or better_than_market:
-            return "🟡 Aceptable", "#eab308"
+            return "Aceptable", "#eab308", "●"
         else:
-            return "🔴 Débil", "#ef4444"
+            return "Débil", "#ef4444", "●"
     
-    verdict_text, verdict_color = get_verdict(company_val, sector_val, market_val, lower_better)
+    verdict_text, verdict_color, verdict_icon = get_verdict(company_val, sector_val, market_val, lower_better)
+    
+    # Estilo base de celda
+    cell_style = {
+        "padding": "14px 16px",
+        "borderBottom": "1px solid rgba(55, 65, 81, 0.5)",
+        "fontSize": "0.9rem"
+    }
     
     return html.Tr([
-        html.Td(metric_name, className="comparison-td comparison-metric"),
-        html.Td(format_val(company_val, fmt), className="comparison-td comparison-company"),
-        html.Td(format_val(sector_val, fmt), className="comparison-td comparison-muted"),
-        html.Td(format_val(market_val, fmt), className="comparison-td comparison-muted"),
-        html.Td(verdict_text, className="comparison-td comparison-verdict", style={"color": verdict_color}),
-    ])
+        html.Td(metric_name, style={
+            **cell_style, 
+            "textAlign": "left", 
+            "fontWeight": "500", 
+            "color": "#e5e7eb"
+        }),
+        html.Td(format_val(company_val, fmt), style={
+            **cell_style, 
+            "textAlign": "center", 
+            "fontWeight": "700", 
+            "color": "#ffffff",
+            "fontSize": "0.95rem"
+        }),
+        html.Td(format_val(sector_val, fmt), style={
+            **cell_style, 
+            "textAlign": "center", 
+            "color": "#9ca3af"
+        }),
+        html.Td(format_val(market_val, fmt), style={
+            **cell_style, 
+            "textAlign": "center", 
+            "color": "#9ca3af"
+        }),
+        html.Td([
+            html.Span(verdict_icon, style={"color": verdict_color, "marginRight": "8px", "fontSize": "1rem"}),
+            html.Span(verdict_text, style={"fontWeight": "500"})
+        ], style={
+            **cell_style, 
+            "textAlign": "center", 
+            "color": verdict_color
+        }),
+    ], style={"transition": "background 0.2s"})
 
 
 def get_sector_metrics_config(sector: str) -> list:
@@ -586,209 +1080,322 @@ def get_sector_metrics_config(sector: str) -> list:
 
 
 def generate_simple_pdf(symbol: str, company_name: str, ratios: dict, alerts: dict, score: int) -> bytes:
-    """PDF completo en UNA pagina - formato compacto."""
-    # Imports de reportlab movidos al inicio del archivo para mejor performance
+    """PDF moderno estilo informe ejecutivo - diseño limpio y profesional."""
     
     buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=letter, topMargin=0.2*inch, bottomMargin=0.2*inch,
-                           leftMargin=0.3*inch, rightMargin=0.3*inch)
+    doc = SimpleDocTemplate(buffer, pagesize=letter, topMargin=0.4*inch, bottomMargin=0.4*inch,
+                           leftMargin=0.5*inch, rightMargin=0.5*inch)
     
     story = []
-    pw = 7.9*inch
+    pw = 7.5*inch
+    
+    # Colores
+    PRIMARY = '#059669'      # Verde esmeralda
+    DARK = '#1e293b'         # Slate oscuro
+    MUTED = '#64748b'        # Gris
+    LIGHT_BG = '#f8fafc'     # Fondo claro
+    SUCCESS = '#22c55e'
+    WARNING = '#f59e0b'  
+    DANGER = '#ef4444'
     
     def fmt(val, tipo="x"):
-        if val is None: return "N/A"
+        if val is None: return "—"
         try:
             v = float(val)
             if tipo == "%":
-                return f"{v*100:.1f}%" if abs(v) < 1 else f"{v:.1f}%"
+                return f"{v*100:.1f}%" if abs(v) < 2 else f"{v:.1f}%"
             elif tipo == "$":
-                if abs(v) >= 1e12: return f"${v/1e12:.1f}T"
+                if abs(v) >= 1e12: return f"${v/1e12:.2f}T"
                 elif abs(v) >= 1e9: return f"${v/1e9:.1f}B"
                 elif abs(v) >= 1e6: return f"${v/1e6:.0f}M"
-                elif abs(v) >= 1000: return f"${v/1000:.0f}K"
                 else: return f"${v:.2f}"
-            elif tipo == "vol":
-                if abs(v) >= 1e6: return f"{v/1e6:.1f}M"
-                elif abs(v) >= 1000: return f"{v/1000:.0f}K"
-                else: return f"{v:.0f}"
             else: return f"{v:.2f}"
-        except: return "N/A"
+        except: return "—"
     
-    def sec(text, bg):
-        t = Table([[text]], colWidths=[pw])
-        t.setStyle(TableStyle([
-            ('BACKGROUND', (0,0), (-1,-1), colors.HexColor(bg)),
-            ('TEXTCOLOR', (0,0), (-1,-1), colors.white),
-            ('FONTNAME', (0,0), (-1,-1), 'Helvetica-Bold'),
-            ('FONTSIZE', (0,0), (-1,-1), 7),
-            ('ALIGN', (0,0), (-1,-1), 'CENTER'),
-            ('TOPPADDING', (0,0), (-1,-1), 1),
-            ('BOTTOMPADDING', (0,0), (-1,-1), 1),
-        ]))
-        return t
-    
-    def tbl(headers, values, ncols):
-        w = pw / ncols
-        t = Table([headers, values], colWidths=[w]*ncols)
-        t.setStyle(TableStyle([
-            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0,0), (-1,0), 5),
-            ('FONTSIZE', (0,1), (-1,1), 7),
-            ('ALIGN', (0,0), (-1,-1), 'CENTER'),
-            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-            ('GRID', (0,0), (-1,-1), 0.3, colors.HexColor('#d1d5db')),
-            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#f3f4f6')),
-            ('TOPPADDING', (0,0), (-1,-1), 1),
-            ('BOTTOMPADDING', (0,0), (-1,-1), 1),
-        ]))
-        return t
-    
-    # HEADER
-    h = Table([[f"{symbol} - {company_name}"]], colWidths=[pw])
-    h.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#1e3a5f')),
-        ('TEXTCOLOR', (0,0), (-1,-1), colors.white),
-        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
-        ('FONTNAME', (0,0), (-1,-1), 'Helvetica-Bold'),
-        ('FONTSIZE', (0,0), (-1,-1), 11),
-        ('TOPPADDING', (0,0), (-1,-1), 4),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 4),
-    ]))
-    story.append(h)
-    
-    # SCORE + CATEGORIAS (combinados)
     sv2 = alerts.get("score_v2", {})
     ts = sv2.get("score", score)
     lv = sv2.get("level", "N/A")
-    rec_full = alerts.get("recommendation", "N/A")
-    # Acortar recomendación para que quepa
-    rec_map = {
-        "FAVORABLE - Considerar inversión": "FAVORABLE",
-        "NEUTRAL - Requiere análisis adicional": "NEUTRAL",
-        "PRECAUCIÓN - Riesgos identificados": "PRECAUCION",
-        "EVITAR - Múltiples señales de alerta": "EVITAR"
-    }
-    rec = rec_map.get(rec_full, rec_full[:10] if len(rec_full) > 10 else rec_full)
-    sig = alerts.get("signal", "N/A")
-    gr = "Si" if sv2.get("is_growth_company", False) else "No"
-    sbg = '#dcfce7' if ts >= 70 else '#fef9c3' if ts >= 50 else '#fee2e2'
     cs = sv2.get("category_scores", {})
     
-    sc = Table([
-        ["SCORE", "NIVEL", "RECOM", "SENAL", "GROWTH", "Valor", "Rent", "Solid", "Calid", "Crec"],
-        [f"{ts}/100", lv, rec, sig, gr, 
-         f"{cs.get('valoracion',0):.0f}/20", f"{cs.get('rentabilidad',0):.0f}/20",
-         f"{cs.get('solidez',0):.0f}/20", f"{cs.get('calidad',0):.0f}/20", f"{cs.get('crecimiento',0):.0f}/20"]
-    ], colWidths=[pw/10]*10)
-    sc.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (4,0), colors.HexColor('#374151')),
-        ('BACKGROUND', (5,0), (-1,0), colors.HexColor('#6366f1')),
-        ('TEXTCOLOR', (0,0), (-1,0), colors.white),
-        ('BACKGROUND', (0,1), (4,1), colors.HexColor(sbg)),
-        ('BACKGROUND', (5,1), (-1,1), colors.HexColor('#eef2ff')),
-        ('FONTNAME', (0,0), (-1,-1), 'Helvetica-Bold'),
-        ('FONTSIZE', (0,0), (-1,0), 5),
-        ('FONTSIZE', (0,1), (-1,1), 7),
-        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
-        ('GRID', (0,0), (-1,-1), 0.3, colors.HexColor('#9ca3af')),
-        ('TOPPADDING', (0,0), (-1,-1), 2),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 2),
+    # ══════════════════════════════════════════════════════════════
+    # HEADER PRINCIPAL
+    # ══════════════════════════════════════════════════════════════
+    header_left = f"{symbol}"
+    header_right = company_name[:35]
+    
+    header = Table([
+        [header_left, "", header_right]
+    ], colWidths=[1.5*inch, pw-4*inch, 2.5*inch])
+    header.setStyle(TableStyle([
+        ('FONTNAME', (0,0), (0,0), 'Helvetica-Bold'),
+        ('FONTNAME', (2,0), (2,0), 'Helvetica'),
+        ('FONTSIZE', (0,0), (0,0), 24),
+        ('FONTSIZE', (2,0), (2,0), 11),
+        ('TEXTCOLOR', (0,0), (0,0), colors.HexColor(PRIMARY)),
+        ('TEXTCOLOR', (2,0), (2,0), colors.HexColor(MUTED)),
+        ('ALIGN', (0,0), (0,0), 'LEFT'),
+        ('ALIGN', (2,0), (2,0), 'RIGHT'),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 12),
     ]))
-    story.append(sc)
-    story.append(Spacer(1, 2))
+    story.append(header)
     
-    # METRICAS CLAVE + VALORACION
-    story.append(sec("METRICAS CLAVE | VALORACION", "#1f2937"))
-    story.append(tbl(
-        ["MktCap", "Precio", "Beta", "EV/EBITDA", "P/E", "FwdPE", "P/B", "P/S", "P/FCF", "PEG"],
-        [fmt(ratios.get("market_cap"), "$"), fmt(ratios.get("price"), "$"), fmt(ratios.get("beta")),
-         fmt(ratios.get("ev_ebitda")), fmt(ratios.get("pe")), fmt(ratios.get("forward_pe")),
-         fmt(ratios.get("pb")), fmt(ratios.get("ps")), fmt(ratios.get("p_fcf")), fmt(ratios.get("peg"))], 10))
-    story.append(Spacer(1, 1))
+    # Línea separadora verde
+    line = Table([[""]], colWidths=[pw])
+    line.setStyle(TableStyle([
+        ('LINEABOVE', (0,0), (-1,0), 3, colors.HexColor(PRIMARY)),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 8),
+    ]))
+    story.append(line)
     
-    # RENTABILIDAD
-    story.append(sec("RENTABILIDAD", "#16a34a"))
-    story.append(tbl(
-        ["ROE", "ROA", "ROIC", "M.Bruto", "M.Oper", "M.Neto", "M.EBITDA", "EPS", "FCF Yld"],
-        [fmt(ratios.get("roe"), "%"), fmt(ratios.get("roa"), "%"), fmt(ratios.get("roic"), "%"),
-         fmt(ratios.get("gross_margin"), "%"), fmt(ratios.get("operating_margin"), "%"),
-         fmt(ratios.get("net_margin"), "%"), fmt(ratios.get("ebitda_margin"), "%"),
-         fmt(ratios.get("eps")), fmt(ratios.get("fcf_yield"), "%")], 9))
-    story.append(tbl(
-        ["Ingresos", "EBITDA", "Ing Neto", "FCF"],
-        [fmt(ratios.get("revenue"), "$"), fmt(ratios.get("ebitda"), "$"),
-         fmt(ratios.get("net_income"), "$"), fmt(ratios.get("fcf"), "$")], 4))
-    story.append(Spacer(1, 1))
+    # ══════════════════════════════════════════════════════════════
+    # RESUMEN EJECUTIVO - Score y Recomendación
+    # ══════════════════════════════════════════════════════════════
     
-    # SOLIDEZ
-    story.append(sec("SOLIDEZ FINANCIERA", "#7c3aed"))
-    story.append(tbl(
-        ["Current", "Quick", "CashR", "D/E", "D/Assets", "NetD/EBITDA", "CobInt", "FCF/D"],
-        [fmt(ratios.get("current_ratio")), fmt(ratios.get("quick_ratio")), fmt(ratios.get("cash_ratio")),
-         fmt(ratios.get("debt_to_equity")), fmt(ratios.get("debt_to_assets"), "%"),
-         fmt(ratios.get("net_debt_to_ebitda")), fmt(ratios.get("interest_coverage")),
-         fmt(ratios.get("fcf_to_debt"), "%")], 8))
-    story.append(tbl(
-        ["Work Cap", "Deuda Total", "Cash", "52W Hi", "52W Lo", "Vol Prom"],
-        [fmt(ratios.get("working_capital"), "$"), fmt(ratios.get("total_debt"), "$"),
-         fmt(ratios.get("cash_and_equivalents"), "$"), fmt(ratios.get("fifty_two_week_high"), "$"),
-         fmt(ratios.get("fifty_two_week_low"), "$"), fmt(ratios.get("average_volume"), "vol")], 6))
-    story.append(Spacer(1, 1))
+    # Determinar colores según score
+    if ts >= 70: score_color = SUCCESS; score_text = "FAVORABLE"
+    elif ts >= 50: score_color = WARNING; score_text = "NEUTRAL"
+    else: score_color = DANGER; score_text = "PRECAUCIÓN"
     
-    # VALOR INTRINSECO + INSTITUCIONALES
-    story.append(sec("VALOR INTRINSECO | METRICAS INSTITUCIONALES", "#0d9488"))
+    sig = alerts.get("signal", "—")
+    gr = "Growth" if sv2.get("is_growth_company", False) else "Value"
+    price = ratios.get("price")
+    
+    exec_data = [
+        ["SCORE", "EVALUACIÓN", "SEÑAL", "TIPO", "PRECIO"],
+        [f"{ts}/100", lv, sig, gr, fmt(price, "$")]
+    ]
+    exec_table = Table(exec_data, colWidths=[1.5*inch, 1.5*inch, 1.5*inch, 1.5*inch, 1.5*inch])
+    exec_table.setStyle(TableStyle([
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica'),
+        ('FONTNAME', (0,1), (-1,1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0,0), (-1,0), 8),
+        ('FONTSIZE', (0,1), (-1,1), 14),
+        ('TEXTCOLOR', (0,0), (-1,0), colors.HexColor(MUTED)),
+        ('TEXTCOLOR', (0,1), (0,1), colors.HexColor(score_color)),
+        ('TEXTCOLOR', (1,1), (-1,1), colors.HexColor(DARK)),
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor(LIGHT_BG)),
+        ('BOX', (0,0), (-1,-1), 1, colors.HexColor('#e2e8f0')),
+        ('TOPPADDING', (0,0), (-1,-1), 10),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 10),
+    ]))
+    story.append(exec_table)
+    story.append(Spacer(1, 12))
+    
+    # ══════════════════════════════════════════════════════════════
+    # DESGLOSE DEL SCORE POR CATEGORÍA
+    # ══════════════════════════════════════════════════════════════
+    
+    def score_bar_text(val, max_val=20):
+        pct = (val / max_val) * 100 if max_val > 0 else 0
+        return f"{val:.0f}/{max_val}"
+    
+    cat_data = [
+        ["Categoría", "Puntuación", ""],
+        ["Valoración", score_bar_text(cs.get('valoracion', 0)), "Métricas P/E, P/B, EV/EBITDA, etc."],
+        ["Rentabilidad", score_bar_text(cs.get('rentabilidad', 0)), "ROE, ROA, márgenes operativos"],
+        ["Solidez", score_bar_text(cs.get('solidez', 0)), "Liquidez, deuda, cobertura"],
+        ["Calidad", score_bar_text(cs.get('calidad', 0)), "Consistencia, flujos de caja"],
+        ["Crecimiento", score_bar_text(cs.get('crecimiento', 0)), "Tendencias de ingresos y EPS"],
+    ]
+    cat_table = Table(cat_data, colWidths=[1.8*inch, 1.2*inch, 4.5*inch])
+    cat_styles = [
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('FONTNAME', (0,1), (-1,-1), 'Helvetica'),
+        ('FONTSIZE', (0,0), (-1,0), 8),
+        ('FONTSIZE', (0,1), (0,-1), 10),
+        ('FONTSIZE', (1,1), (1,-1), 11),
+        ('FONTSIZE', (2,1), (2,-1), 8),
+        ('TEXTCOLOR', (0,0), (-1,0), colors.HexColor(MUTED)),
+        ('TEXTCOLOR', (0,1), (0,-1), colors.HexColor(DARK)),
+        ('TEXTCOLOR', (1,1), (1,-1), colors.HexColor(PRIMARY)),
+        ('TEXTCOLOR', (2,1), (2,-1), colors.HexColor(MUTED)),
+        ('ALIGN', (0,0), (0,-1), 'LEFT'),
+        ('ALIGN', (1,0), (1,-1), 'CENTER'),
+        ('ALIGN', (2,0), (2,-1), 'LEFT'),
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor(LIGHT_BG)),
+        ('LINEBELOW', (0,0), (-1,0), 1, colors.HexColor('#e2e8f0')),
+        ('TOPPADDING', (0,0), (-1,-1), 6),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+    ]
+    cat_table.setStyle(TableStyle(cat_styles))
+    story.append(cat_table)
+    story.append(Spacer(1, 15))
+    
+    # ══════════════════════════════════════════════════════════════
+    # MÉTRICAS CLAVE - 3 columnas
+    # ══════════════════════════════════════════════════════════════
+    
+    section_title = Table([["MÉTRICAS FINANCIERAS"]], colWidths=[pw])
+    section_title.setStyle(TableStyle([
+        ('FONTNAME', (0,0), (-1,-1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0,0), (-1,-1), 10),
+        ('TEXTCOLOR', (0,0), (-1,-1), colors.HexColor(PRIMARY)),
+        ('LINEBELOW', (0,0), (-1,0), 1, colors.HexColor(PRIMARY)),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 8),
+    ]))
+    story.append(section_title)
+    
+    # Tres columnas de métricas
+    col_width = pw / 3
+    
+    def metric_block(title, metrics):
+        """Crea un bloque de métricas"""
+        rows = [[title, ""]]
+        for name, value in metrics:
+            rows.append([name, value])
+        t = Table(rows, colWidths=[1.5*inch, 1*inch])
+        styles = [
+            ('FONTNAME', (0,0), (0,0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0,0), (0,0), 9),
+            ('TEXTCOLOR', (0,0), (0,0), colors.HexColor(DARK)),
+            ('FONTNAME', (0,1), (0,-1), 'Helvetica'),
+            ('FONTNAME', (1,1), (1,-1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0,1), (-1,-1), 8),
+            ('TEXTCOLOR', (0,1), (0,-1), colors.HexColor(MUTED)),
+            ('TEXTCOLOR', (1,1), (1,-1), colors.HexColor(DARK)),
+            ('ALIGN', (1,0), (1,-1), 'RIGHT'),
+            ('TOPPADDING', (0,0), (-1,-1), 3),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 3),
+        ]
+        t.setStyle(TableStyle(styles))
+        return t
+    
+    # Columna 1: Valoración
+    val_metrics = [
+        ("P/E", fmt(ratios.get("pe"))),
+        ("Forward P/E", fmt(ratios.get("forward_pe"))),
+        ("P/B", fmt(ratios.get("pb"))),
+        ("EV/EBITDA", fmt(ratios.get("ev_ebitda"))),
+        ("PEG", fmt(ratios.get("peg"))),
+        ("FCF Yield", fmt(ratios.get("fcf_yield"), "%")),
+    ]
+    
+    # Columna 2: Rentabilidad
+    rent_metrics = [
+        ("ROE", fmt(ratios.get("roe"), "%")),
+        ("ROA", fmt(ratios.get("roa"), "%")),
+        ("ROIC", fmt(ratios.get("roic"), "%")),
+        ("Margen Bruto", fmt(ratios.get("gross_margin"), "%")),
+        ("Margen Op.", fmt(ratios.get("operating_margin"), "%")),
+        ("Margen Neto", fmt(ratios.get("net_margin"), "%")),
+    ]
+    
+    # Columna 3: Solidez
+    sol_metrics = [
+        ("Current Ratio", fmt(ratios.get("current_ratio"))),
+        ("Quick Ratio", fmt(ratios.get("quick_ratio"))),
+        ("D/E", fmt(ratios.get("debt_to_equity"))),
+        ("Net D/EBITDA", fmt(ratios.get("net_debt_to_ebitda"))),
+        ("Int. Coverage", fmt(ratios.get("interest_coverage"))),
+        ("Beta", fmt(ratios.get("beta"))),
+    ]
+    
+    metrics_row = Table([
+        [metric_block("Valoración", val_metrics), 
+         metric_block("Rentabilidad", rent_metrics),
+         metric_block("Solidez", sol_metrics)]
+    ], colWidths=[col_width, col_width, col_width])
+    metrics_row.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('LEFTPADDING', (0,0), (-1,-1), 5),
+        ('RIGHTPADDING', (0,0), (-1,-1), 5),
+    ]))
+    story.append(metrics_row)
+    story.append(Spacer(1, 12))
+    
+    # ══════════════════════════════════════════════════════════════
+    # VALOR INTRÍNSECO
+    # ══════════════════════════════════════════════════════════════
+    
+    section_title2 = Table([["VALOR INTRÍNSECO"]], colWidths=[pw])
+    section_title2.setStyle(TableStyle([
+        ('FONTNAME', (0,0), (-1,-1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0,0), (-1,-1), 10),
+        ('TEXTCOLOR', (0,0), (-1,-1), colors.HexColor(PRIMARY)),
+        ('LINEBELOW', (0,0), (-1,0), 1, colors.HexColor(PRIMARY)),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 8),
+    ]))
+    story.append(section_title2)
+    
+    # Cálculos de valor intrínseco
     eps = ratios.get("eps")
     bvps = ratios.get("book_value_per_share")
     graham = (22.5 * eps * bvps) ** 0.5 if eps and bvps and eps > 0 and bvps > 0 else None
     fcf = ratios.get("fcf")
     shares = ratios.get("shares_outstanding")
     
-    # v2.2: DCF Dinámico - usar WACC y growth específicos si están disponibles
     dcf_value = None
-    wd = alerts.get('wacc')
-    wacc_val = wd.get('wacc') if isinstance(wd, dict) else wd if isinstance(wd, (int, float)) else 0.10
-    growth_val = ratios.get("revenue_cagr_3y", 0.05) or 0.05
-    growth_val = min(max(growth_val, 0.02), 0.20)  # Limitar entre 2% y 20%
-    if wacc_val and growth_val >= wacc_val:
-        growth_val = wacc_val - 0.02  # Asegurar growth < wacc
+    if fcf and shares and fcf > 0 and shares > 0:
+        try:
+            growth_val = ratios.get("revenue_cagr_3y", 0.05) or 0.05
+            growth_val = min(max(growth_val, 0.02), 0.35)
+            dcf_pdf = dcf_multi_stage_dynamic(fcf=fcf, shares_outstanding=shares, revenue_growth_3y=growth_val)
+            dcf_value = dcf_pdf.get("fair_value_per_share")
+        except: pass
     
-    if fcf and shares and fcf > 0 and shares > 0 and wacc_val:
-        dcf_sum = sum([fcf * ((1 + growth_val) ** i) / ((1 + wacc_val) ** i) for i in range(1, 11)])
-        terminal = (fcf * ((1 + growth_val) ** 10) * 1.025) / (wacc_val - 0.025)
-        dcf_value = (dcf_sum + terminal / ((1 + wacc_val) ** 10)) / shares
-    
-    price = ratios.get("price")
-    gd = f"({((graham-price)/price*100):+.0f}%)" if graham and price and price > 0 else ""
-    dd = f"({((dcf_value-price)/price*100):+.0f}%)" if dcf_value and price and price > 0 else ""
+    # Calcular upside/downside
+    def calc_diff(fair, current):
+        if fair and current and current > 0:
+            diff = ((fair - current) / current) * 100
+            return f"{diff:+.0f}%"
+        return "—"
     
     zs = alerts.get('altman_z_score', {})
     fs = alerts.get('piotroski_f_score', {})
-    jp = alerts.get('justified_pe')
     zv = zs.get('value') if isinstance(zs, dict) else None
     zl = zs.get('level', '') if isinstance(zs, dict) else ''
-    zt = "Segura" if zl == 'SAFE' else "Gris" if zl == 'GREY' else "Riesgo" if zl else "N/A"
     fv = fs.get('value') if isinstance(fs, dict) else None
-    wv = wd.get('wacc') if isinstance(wd, dict) else wd if isinstance(wd, (int, float)) else None
-    jv = jp.get('justified_pe') if isinstance(jp, dict) else jp if isinstance(jp, (int, float)) else None
     
-    story.append(tbl(
-        ["Precio", "Graham", "DCF", "Z-Score", "Zona", "F-Score", "WACC", "JustPE"],
-        [fmt(price, "$"), f"{fmt(graham,'$')}{gd}" if graham else "N/A",
-         f"{fmt(dcf_value,'$')}{dd}" if dcf_value else "N/A",
-         f"{zv:.2f}" if zv else "N/A", zt, f"{fv}/9" if fv is not None else "N/A",
-         f"{wv*100:.1f}%" if wv else "N/A", f"{jv:.1f}x" if jv else "N/A"], 8))
-    story.append(Spacer(1, 2))
+    intrinsic_data = [
+        ["Método", "Valor Justo", "vs Precio", "Interpretación"],
+        ["Graham Number", fmt(graham, "$"), calc_diff(graham, price), "Fórmula clásica de valor"],
+        ["DCF Multi-Stage", fmt(dcf_value, "$"), calc_diff(dcf_value, price), "Flujos descontados a 10 años"],
+        ["Altman Z-Score", f"{zv:.2f}" if zv else "—", "", "Segura" if zl == 'SAFE' else "Gris" if zl == 'GREY' else "Riesgo" if zl else "—"],
+        ["Piotroski F-Score", f"{fv}/9" if fv is not None else "—", "", "8-9: Fuerte | 0-3: Débil"],
+    ]
     
-    # SENALES
-    story.append(sec("SENALES DETECTADAS", "#475569"))
+    intrinsic_table = Table(intrinsic_data, colWidths=[1.8*inch, 1.5*inch, 1.2*inch, 3*inch])
+    intrinsic_table.setStyle(TableStyle([
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('FONTNAME', (0,1), (-1,-1), 'Helvetica'),
+        ('FONTSIZE', (0,0), (-1,-1), 8),
+        ('TEXTCOLOR', (0,0), (-1,0), colors.HexColor(MUTED)),
+        ('TEXTCOLOR', (0,1), (0,-1), colors.HexColor(DARK)),
+        ('TEXTCOLOR', (1,1), (1,-1), colors.HexColor(PRIMARY)),
+        ('TEXTCOLOR', (3,1), (3,-1), colors.HexColor(MUTED)),
+        ('ALIGN', (1,0), (2,-1), 'CENTER'),
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor(LIGHT_BG)),
+        ('LINEBELOW', (0,0), (-1,0), 1, colors.HexColor('#e2e8f0')),
+        ('TOPPADDING', (0,0), (-1,-1), 5),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 5),
+    ]))
+    story.append(intrinsic_table)
+    story.append(Spacer(1, 12))
     
+    # ══════════════════════════════════════════════════════════════
+    # SEÑALES DETECTADAS
+    # ══════════════════════════════════════════════════════════════
+    
+    section_title3 = Table([["SEÑALES Y ALERTAS"]], colWidths=[pw])
+    section_title3.setStyle(TableStyle([
+        ('FONTNAME', (0,0), (-1,-1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0,0), (-1,-1), 10),
+        ('TEXTCOLOR', (0,0), (-1,-1), colors.HexColor(PRIMARY)),
+        ('LINEBELOW', (0,0), (-1,0), 1, colors.HexColor(PRIMARY)),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 8),
+    ]))
+    story.append(section_title3)
+    
+    # Recopilar señales
     danger_list = list(alerts.get("danger", []))
     warning_list = list(alerts.get("warning", []))
     success_list = list(alerts.get("success", []))
+    
     for key, label in [("valuation", "Val"), ("leverage", "Deu"), ("profitability", "Ren"),
-                       ("liquidity", "Liq"), ("cash_flow", "FCF"), ("growth", "Cre"),
-                       ("volatility", "Vol"), ("structural_deterioration", "Det")]:
+                       ("liquidity", "Liq"), ("cash_flow", "FCF"), ("growth", "Cre")]:
         cat = alerts.get(key, {})
         if isinstance(cat, dict):
             for r in cat.get("overvalued_reasons", []):
@@ -800,36 +1407,70 @@ def generate_simple_pdf(symbol: str, company_name: str, ratios: dict, alerts: di
             for r in cat.get("positive_reasons", []):
                 if (label, r) not in success_list: success_list.append((label, r))
     
-    rows = []
-    for c, r in danger_list[:8]: rows.append(["RIESGO", f"{c}: {r}"])
-    for c, r in warning_list[:5]: rows.append(["ADVERT", f"{c}: {r}"])
-    for c, r in success_list[:5]: rows.append(["FORTALEZA", f"{c}: {r}"])
-    if not rows: rows.append(["INFO", "Sin senales significativas"])
+    # Crear tabla de señales
+    signal_rows = []
+    for c, r in danger_list[:4]: 
+        signal_rows.append(["●", f"{r[:60]}", "Riesgo"])
+    for c, r in warning_list[:2]: 
+        signal_rows.append(["●", f"{r[:60]}", "Atención"])
+    for c, r in success_list[:3]: 
+        signal_rows.append(["●", f"{r[:60]}", "Fortaleza"])
     
-    sig_t = Table(rows, colWidths=[0.7*inch, 7.2*inch])
-    ss = [('FONTNAME', (0,0), (0,-1), 'Helvetica-Bold'), ('FONTSIZE', (0,0), (-1,-1), 6),
-          ('ALIGN', (0,0), (0,-1), 'CENTER'), ('ALIGN', (1,0), (1,-1), 'LEFT'),
-          ('GRID', (0,0), (-1,-1), 0.3, colors.HexColor('#e5e7eb')),
-          ('TOPPADDING', (0,0), (-1,-1), 1), ('BOTTOMPADDING', (0,0), (-1,-1), 1),
-          ('LEFTPADDING', (1,0), (1,-1), 3)]
-    for i, row in enumerate(rows):
-        if row[0] == "RIESGO":
-            ss.extend([('BACKGROUND', (0,i), (0,i), colors.HexColor('#fee2e2')),
-                       ('TEXTCOLOR', (0,i), (0,i), colors.HexColor('#dc2626'))])
-        elif row[0] == "ADVERT":
-            ss.extend([('BACKGROUND', (0,i), (0,i), colors.HexColor('#fef3c7')),
-                       ('TEXTCOLOR', (0,i), (0,i), colors.HexColor('#d97706'))])
-        elif row[0] == "FORTALEZA":
-            ss.extend([('BACKGROUND', (0,i), (0,i), colors.HexColor('#dcfce7')),
-                       ('TEXTCOLOR', (0,i), (0,i), colors.HexColor('#16a34a'))])
-    sig_t.setStyle(TableStyle(ss))
-    story.append(sig_t)
-    story.append(Spacer(1, 3))
+    if not signal_rows:
+        signal_rows.append(["●", "Sin señales significativas detectadas", "Info"])
     
+    sig_table = Table(signal_rows, colWidths=[0.3*inch, 5.7*inch, 1.5*inch])
+    sig_styles = [
+        ('FONTNAME', (0,0), (-1,-1), 'Helvetica'),
+        ('FONTSIZE', (0,0), (-1,-1), 8),
+        ('ALIGN', (0,0), (0,-1), 'CENTER'),
+        ('ALIGN', (2,0), (2,-1), 'RIGHT'),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('TOPPADDING', (0,0), (-1,-1), 4),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 4),
+        ('LINEBELOW', (0,0), (-1,-2), 0.5, colors.HexColor('#f1f5f9')),
+    ]
+    
+    for i, row in enumerate(signal_rows):
+        if row[2] == "Riesgo":
+            sig_styles.append(('TEXTCOLOR', (0,i), (0,i), colors.HexColor(DANGER)))
+            sig_styles.append(('TEXTCOLOR', (2,i), (2,i), colors.HexColor(DANGER)))
+        elif row[2] == "Atención":
+            sig_styles.append(('TEXTCOLOR', (0,i), (0,i), colors.HexColor(WARNING)))
+            sig_styles.append(('TEXTCOLOR', (2,i), (2,i), colors.HexColor(WARNING)))
+        else:
+            sig_styles.append(('TEXTCOLOR', (0,i), (0,i), colors.HexColor(SUCCESS)))
+            sig_styles.append(('TEXTCOLOR', (2,i), (2,i), colors.HexColor(SUCCESS)))
+    
+    sig_table.setStyle(TableStyle(sig_styles))
+    story.append(sig_table)
+    story.append(Spacer(1, 20))
+    
+    # ══════════════════════════════════════════════════════════════
     # FOOTER
-    ft = Table([[f"Stock Analyzer | {datetime.now().strftime('%d/%m/%Y %H:%M')} | No es asesoria financiera"]], colWidths=[pw])
-    ft.setStyle(TableStyle([('ALIGN', (0,0), (-1,-1), 'CENTER'), ('FONTSIZE', (0,0), (-1,-1), 5), ('TEXTCOLOR', (0,0), (-1,-1), colors.gray)]))
-    story.append(ft)
+    # ══════════════════════════════════════════════════════════════
+    
+    footer_line = Table([[""]], colWidths=[pw])
+    footer_line.setStyle(TableStyle([
+        ('LINEABOVE', (0,0), (-1,0), 1, colors.HexColor('#e2e8f0')),
+        ('TOPPADDING', (0,0), (-1,-1), 8),
+    ]))
+    story.append(footer_line)
+    
+    footer = Table([
+        ["Finanzer", datetime.now().strftime('%d/%m/%Y %H:%M'), "Este documento no constituye asesoría financiera"]
+    ], colWidths=[1.5*inch, 2*inch, 4*inch])
+    footer.setStyle(TableStyle([
+        ('FONTNAME', (0,0), (0,0), 'Helvetica-Bold'),
+        ('FONTNAME', (1,0), (-1,0), 'Helvetica'),
+        ('FONTSIZE', (0,0), (-1,-1), 7),
+        ('TEXTCOLOR', (0,0), (0,0), colors.HexColor(PRIMARY)),
+        ('TEXTCOLOR', (1,0), (-1,0), colors.HexColor(MUTED)),
+        ('ALIGN', (0,0), (0,0), 'LEFT'),
+        ('ALIGN', (1,0), (1,0), 'CENTER'),
+        ('ALIGN', (2,0), (2,0), 'RIGHT'),
+    ]))
+    story.append(footer)
     
     doc.build(story)
     buffer.seek(0)
@@ -857,9 +1498,9 @@ app.layout = dbc.Container([
             dbc.Col([
                 html.Div([
                     html.Span("📊", style={"fontSize": "1.5rem", "marginRight": "10px"}),
-                    html.Span("Stock Analyzer", style={
+                    html.Span("Finanzer", style={
                         "fontSize": "1.3rem", "fontWeight": "700", "cursor": "pointer",
-                        "background": "linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%)",
+                        "background": "linear-gradient(135deg, #34d399 0%, #10b981 100%)",
                         "WebkitBackgroundClip": "text", "WebkitTextFillColor": "transparent"
                     })
                 ], id="logo-home", style={"display": "flex", "alignItems": "center", "cursor": "pointer"})
@@ -895,8 +1536,8 @@ app.layout = dbc.Container([
                             "width": "50px",
                             "borderRadius": "0 10px 10px 0", 
                             "padding": "10px 0",
-                            "backgroundColor": "#6366f1",
-                            "border": "1px solid #6366f1",
+                            "backgroundColor": "#10b981",
+                            "border": "1px solid #10b981",
                             "color": "#fff",
                             "cursor": "pointer",
                             "fontSize": "1rem",
@@ -937,17 +1578,17 @@ app.layout = dbc.Container([
                 html.Span("📊", style={"fontSize": "2.5rem"})
             ], style={
                 "width": "80px", "height": "80px",
-                "background": "linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)",
+                "background": "linear-gradient(135deg, #10b981 0%, #059669 100%)",
                 "borderRadius": "20px", "display": "flex",
                 "alignItems": "center", "justifyContent": "center",
                 "margin": "0 auto 25px auto",
-                "boxShadow": "0 15px 50px rgba(99, 102, 241, 0.4)"
+                "boxShadow": "0 15px 50px rgba(16, 185, 129, 0.4)"
             }),
             
             # Título
-            html.H1("Stock Analyzer", style={
+            html.H1("Finanzer", style={
                 "fontSize": "3rem", "fontWeight": "800",
-                "background": "linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%)",
+                "background": "linear-gradient(135deg, #34d399 0%, #10b981 100%)",
                 "WebkitBackgroundClip": "text", "WebkitTextFillColor": "transparent",
                 "backgroundClip": "text", "marginBottom": "12px", "letterSpacing": "-0.02em"
             }),
@@ -956,15 +1597,21 @@ app.layout = dbc.Container([
             html.P("Análisis fundamental de acciones para decisiones de inversión informadas",
                   className="home-subtitle"),
             
-            # Quick Pills
+            # Quick Pills - usando html.Button para evitar override de Bootstrap
             html.Div([
-                dbc.Button(ticker, id={"type": "quick-pick", "index": ticker},
+                html.Button(ticker, id={"type": "quick-pick", "index": ticker},
+                          n_clicks=0,
                           style={
-                              "background": "rgba(99, 102, 241, 0.15)",
-                              "border": "1px solid rgba(99, 102, 241, 0.4)",
-                              "color": "#a5b4fc", "borderRadius": "25px",
-                              "padding": "8px 20px", "margin": "5px",
-                              "fontWeight": "500", "fontSize": "0.9rem"
+                              "background": "rgba(16, 185, 129, 0.15)",
+                              "border": "1px solid rgba(16, 185, 129, 0.4)",
+                              "color": "#34d399", 
+                              "borderRadius": "25px",
+                              "padding": "10px 22px", 
+                              "margin": "5px",
+                              "fontWeight": "500", 
+                              "fontSize": "0.9rem",
+                              "cursor": "pointer",
+                              "transition": "all 0.2s ease"
                           })
                 for ticker in QUICK_PICKS
             ], style={"textAlign": "center", "marginBottom": "40px"}),
@@ -1125,7 +1772,7 @@ def update_search_suggestions(search_value):
         "right": "0",
         "marginTop": "4px",
         "background": "#1f1f23",
-        "border": "1px solid rgba(99, 102, 241, 0.5)",
+        "border": "1px solid rgba(16, 185, 129, 0.5)",
         "borderRadius": "10px",
         "boxShadow": "0 8px 32px rgba(0, 0, 0, 0.7)",
         "zIndex": "9999",
@@ -1157,7 +1804,7 @@ def update_search_suggestions(search_value):
         suggestion_items.append(
             html.Div([
                 html.Span(ticker, style={
-                    "color": "#60a5fa", "fontWeight": "700", "fontSize": "0.95rem",
+                    "color": "#10b981", "fontWeight": "700", "fontSize": "0.95rem",
                     "marginRight": "12px", "minWidth": "60px", "display": "inline-block"
                 }),
                 html.Span(name[:35] + ("..." if len(name) > 35 else ""), style={
@@ -1227,7 +1874,7 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
         "right": "0",
         "marginTop": "4px",
         "background": "#1a1a1f",
-        "border": "1px solid rgba(99, 102, 241, 0.4)",
+        "border": "1px solid rgba(16, 185, 129, 0.4)",
         "borderRadius": "10px",
         "boxShadow": "0 8px 32px rgba(0, 0, 0, 0.6)",
         "zIndex": "9999",
@@ -1360,21 +2007,57 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
             ])
         ], className="company-header-card")
         
-        # Score Card
+        # Score Card - Rediseñado con mejor centrado
         score_card = html.Div([
-            dcc.Graph(figure=create_score_donut(score), config={'displayModeBar': False}, style={"height": "180px"}),
+            # Contenedor del donut con padding
             html.Div([
-                html.Span("🚀 Growth", className="badge bg-primary me-2") if score_v2.get("is_growth_company") else None,
+                dcc.Graph(
+                    figure=create_score_donut(score), 
+                    config={'displayModeBar': False}, 
+                    style={"height": "160px", "marginTop": "5px"}
+                )
+            ], style={"display": "flex", "justifyContent": "center", "alignItems": "center"}),
+            
+            # Badges centrados con mejor espaciado
+            html.Div([
+                html.Span("🚀 Growth", className="badge me-2", style={
+                    "backgroundColor": "rgba(16, 185, 129, 0.15)",
+                    "color": "#34d399",
+                    "border": "1px solid rgba(16, 185, 129, 0.3)",
+                    "fontWeight": "500",
+                    "padding": "5px 12px",
+                    "fontSize": "0.75rem",
+                    "borderRadius": "20px"
+                }) if score_v2.get("is_growth_company") else None,
                 html.Span(score_v2.get("level", ""), className="badge score-level-badge",
-                    style={"backgroundColor": score_v2.get('level_color', '#71717a'),
-                           "color": "#ffffff",
-                           "border": "none",
-                           "fontWeight": "600",
-                           "padding": "8px 20px",
-                           "fontSize": "0.85rem"})
+                    style={
+                        "backgroundColor": score_v2.get('level_color', '#71717a'),
+                        "color": "#ffffff",
+                        "border": "none",
+                        "fontWeight": "600",
+                        "padding": "8px 20px",
+                        "fontSize": "0.85rem",
+                        "borderRadius": "25px",
+                        "boxShadow": f"0 4px 12px {score_v2.get('level_color', '#71717a')}40"
+                    })
                 if score_v2.get("level") else None
-            ], className="text-center mt-2")
-        ])
+            ], style={
+                "display": "flex", 
+                "justifyContent": "center", 
+                "alignItems": "center",
+                "gap": "8px",
+                "marginTop": "10px",
+                "marginBottom": "15px",
+                "paddingBottom": "5px"
+            })
+        ], style={
+            "display": "flex",
+            "flexDirection": "column",
+            "justifyContent": "center",
+            "alignItems": "center",
+            "minHeight": "220px",
+            "padding": "10px"
+        })
         
         # Key Metrics
         key_metrics = html.Div([
@@ -1408,10 +2091,10 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
             html.H5("Métricas de Valoración", className="mb-2"),
             html.P("¿Está cara o barata la acción? · Datos TTM", className="text-muted small mb-3"),
             dbc.Row([
-                dbc.Col([create_metric_card("P/E Ratio", format_ratio(ratios.get("pe"), "multiple"), "📊")], xs=6, md=3, className="mb-3"),
+                dbc.Col([create_metric_card("P/E", format_ratio(ratios.get("pe"), "multiple"), "📊")], xs=6, md=3, className="mb-3"),
                 dbc.Col([create_metric_card("Forward P/E", format_ratio(ratios.get("forward_pe"), "multiple"), "🔮")], xs=6, md=3, className="mb-3"),
-                dbc.Col([create_metric_card("P/B Ratio", format_ratio(ratios.get("pb"), "multiple"), "📚")], xs=6, md=3, className="mb-3"),
-                dbc.Col([create_metric_card("P/S Ratio", format_ratio(ratios.get("ps"), "multiple"), "💰")], xs=6, md=3, className="mb-3"),
+                dbc.Col([create_metric_card("P/B", format_ratio(ratios.get("pb"), "multiple"), "📚")], xs=6, md=3, className="mb-3"),
+                dbc.Col([create_metric_card("P/S", format_ratio(ratios.get("ps"), "multiple"), "💰")], xs=6, md=3, className="mb-3"),
             ]),
             dbc.Row([
                 dbc.Col([create_metric_card("EV/EBITDA", format_ratio(ratios.get("ev_ebitda"), "multiple"), "🏢")], xs=6, md=3, className="mb-3"),
@@ -1704,32 +2387,144 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
             
             html.Hr(),
             
-            # Tabla de métricas fundamentales con veredicto
-            html.H6("📋 Comparación de Métricas Fundamentales", className="mb-3"),
-            html.P("Comparación detallada con benchmarks del sector y mercado", className="text-muted small mb-3"),
-            
+            # Tabla de métricas fundamentales con veredicto - REDISEÑADA
             html.Div([
-                html.Table([
-                    html.Thead([
-                        html.Tr([
-                            html.Th("Métrica", className="comparison-th comparison-th-metric"),
-                            html.Th(symbol, className="comparison-th comparison-th-company"),
-                            html.Th("Sector", className="comparison-th comparison-th-muted"),
-                            html.Th("SPY", className="comparison-th comparison-th-muted"),
-                            html.Th("", className="comparison-th"),
-                        ])
-                    ]),
-                    html.Tbody(comparison_rows)
-                ], className="comparison-table")
-            ], className="table-responsive-wrapper"),
-            
-            html.Div([
-                html.P([
-                    html.Span("🟢 Excelente", style={"color": "#22c55e"}), " = Supera sector y mercado · ",
-                    html.Span("🟡 Aceptable", style={"color": "#eab308"}), " = Supera uno de los benchmarks · ",
-                    html.Span("🔴 Débil", style={"color": "#ef4444"}), " = Por debajo de ambos"
-                ], className="small text-muted text-center mt-3")
-            ])
+                # Header con mejor explicación
+                html.Div([
+                    html.H6("📋 Comparación de Métricas Fundamentales", style={
+                        "marginBottom": "8px", "fontWeight": "600", "fontSize": "1.1rem"
+                    }),
+                    html.P("¿Cómo se compara esta empresa vs su sector y el mercado general?", 
+                           style={"color": "#9ca3af", "fontSize": "0.9rem", "marginBottom": "0"})
+                ], style={"marginBottom": "20px"}),
+                
+                # Leyenda de columnas explicativa
+                html.Div([
+                    html.Div([
+                        html.Div([
+                            html.Span("📊", style={"fontSize": "1.2rem", "marginRight": "8px"}),
+                            html.Div([
+                                html.Strong(symbol, style={"color": "#10b981"}),
+                                html.Div("Valor de la empresa", style={"fontSize": "0.75rem", "color": "#6b7280"})
+                            ])
+                        ], style={"display": "flex", "alignItems": "center"}),
+                    ], style={"flex": "1", "padding": "10px"}),
+                    
+                    html.Div([
+                        html.Div([
+                            html.Span("🏢", style={"fontSize": "1.2rem", "marginRight": "8px"}),
+                            html.Div([
+                                html.Strong("Sector", style={"color": "#6b7280"}),
+                                html.Div("Promedio del sector", style={"fontSize": "0.75rem", "color": "#6b7280"})
+                            ])
+                        ], style={"display": "flex", "alignItems": "center"}),
+                    ], style={"flex": "1", "padding": "10px"}),
+                    
+                    html.Div([
+                        html.Div([
+                            html.Span("🌐", style={"fontSize": "1.2rem", "marginRight": "8px"}),
+                            html.Div([
+                                html.Strong("SPY", style={"color": "#6b7280"}),
+                                html.Div("S&P 500 (mercado)", style={"fontSize": "0.75rem", "color": "#6b7280"})
+                            ])
+                        ], style={"display": "flex", "alignItems": "center"}),
+                    ], style={"flex": "1", "padding": "10px"}),
+                    
+                    html.Div([
+                        html.Div([
+                            html.Span("✅", style={"fontSize": "1.2rem", "marginRight": "8px"}),
+                            html.Div([
+                                html.Strong("Veredicto", style={"color": "#6b7280"}),
+                                html.Div("Evaluación comparativa", style={"fontSize": "0.75rem", "color": "#6b7280"})
+                            ])
+                        ], style={"display": "flex", "alignItems": "center"}),
+                    ], style={"flex": "1", "padding": "10px"}),
+                ], style={
+                    "display": "flex", 
+                    "gap": "10px", 
+                    "background": "rgba(39, 39, 42, 0.5)", 
+                    "borderRadius": "12px", 
+                    "padding": "12px",
+                    "marginBottom": "15px",
+                    "flexWrap": "wrap"
+                }),
+                
+                # Tabla con mejor diseño
+                html.Div([
+                    html.Table([
+                        html.Thead([
+                            html.Tr([
+                                html.Th("Métrica", style={
+                                    "textAlign": "left", "padding": "14px 16px", 
+                                    "color": "#9ca3af", "fontWeight": "600", "fontSize": "0.85rem",
+                                    "borderBottom": "1px solid #374151", "width": "25%"
+                                }),
+                                html.Th(symbol, style={
+                                    "textAlign": "center", "padding": "14px 16px",
+                                    "color": "#10b981", "fontWeight": "700", "fontSize": "0.9rem",
+                                    "borderBottom": "1px solid #374151", "width": "18%"
+                                }),
+                                html.Th("Sector", style={
+                                    "textAlign": "center", "padding": "14px 16px",
+                                    "color": "#6b7280", "fontWeight": "500", "fontSize": "0.85rem",
+                                    "borderBottom": "1px solid #374151", "width": "18%"
+                                }),
+                                html.Th("SPY", style={
+                                    "textAlign": "center", "padding": "14px 16px",
+                                    "color": "#6b7280", "fontWeight": "500", "fontSize": "0.85rem",
+                                    "borderBottom": "1px solid #374151", "width": "18%"
+                                }),
+                                html.Th("Resultado", style={
+                                    "textAlign": "center", "padding": "14px 16px",
+                                    "color": "#9ca3af", "fontWeight": "600", "fontSize": "0.85rem",
+                                    "borderBottom": "1px solid #374151", "width": "21%"
+                                }),
+                            ])
+                        ]),
+                        html.Tbody(comparison_rows)
+                    ], style={
+                        "width": "100%", 
+                        "borderCollapse": "separate",
+                        "borderSpacing": "0"
+                    })
+                ], style={
+                    "background": "rgba(24, 24, 27, 0.5)",
+                    "borderRadius": "12px",
+                    "overflow": "hidden",
+                    "border": "1px solid #374151"
+                }),
+                
+                # Leyenda inferior
+                html.Div([
+                    html.Div([
+                        html.Span("●", style={"color": "#22c55e", "marginRight": "6px", "fontSize": "1.2rem"}),
+                        html.Span("Excelente", style={"fontWeight": "500", "marginRight": "6px"}),
+                        html.Span("= Supera ambos benchmarks", style={"color": "#6b7280"})
+                    ], style={"display": "flex", "alignItems": "center"}),
+                    
+                    html.Div([
+                        html.Span("●", style={"color": "#eab308", "marginRight": "6px", "fontSize": "1.2rem"}),
+                        html.Span("Aceptable", style={"fontWeight": "500", "marginRight": "6px"}),
+                        html.Span("= Supera al menos uno", style={"color": "#6b7280"})
+                    ], style={"display": "flex", "alignItems": "center"}),
+                    
+                    html.Div([
+                        html.Span("●", style={"color": "#ef4444", "marginRight": "6px", "fontSize": "1.2rem"}),
+                        html.Span("Débil", style={"fontWeight": "500", "marginRight": "6px"}),
+                        html.Span("= Por debajo de ambos", style={"color": "#6b7280"})
+                    ], style={"display": "flex", "alignItems": "center"}),
+                ], style={
+                    "display": "flex",
+                    "justifyContent": "center",
+                    "gap": "30px",
+                    "marginTop": "20px",
+                    "padding": "15px",
+                    "background": "rgba(39, 39, 42, 0.3)",
+                    "borderRadius": "10px",
+                    "fontSize": "0.85rem",
+                    "flexWrap": "wrap"
+                })
+            ], style={"marginTop": "25px"})
         ])
         
         # Tab Valor Intrínseco
@@ -1741,8 +2536,8 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
         
         fcf = ratios.get("fcf")
         
-        # v2.2: DCF Dinámico con WACC y growth específicos de la empresa
-        dcf_result = dcf_dynamic(
+        # v2.3: DCF Multi-Stage con 3 etapas
+        dcf_result = dcf_multi_stage_dynamic(
             fcf=fcf,
             shares_outstanding=shares,
             beta=financials.beta if financials else None,
@@ -1750,59 +2545,244 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
             interest_expense=financials.interest_expense if financials else None,
             total_debt=financials.total_debt if financials else None,
             revenue_growth_3y=contextual.get("revenue_cagr_3y") if contextual else None,
-            fcf_growth_3y=contextual.get("fcf_cagr_3y") if contextual else None
+            fcf_growth_3y=contextual.get("fcf_cagr_3y") if contextual else None,
+            eps_growth_3y=contextual.get("eps_cagr_3y") if contextual else None,
+            margin_of_safety_pct=0.15  # 15% margen de seguridad
         )
-        dcf_value = dcf_result.get("fair_value")
-        dcf_wacc = dcf_result.get("wacc_used")
-        dcf_growth = dcf_result.get("growth_used")
+        dcf_value = dcf_result.get("fair_value_per_share")
+        dcf_value_mos = dcf_result.get("fair_value_with_mos")
+        dcf_wacc = dcf_result.get("wacc_calculated")
+        dcf_growth = dcf_result.get("growth_estimated")
+        dcf_growth_source = dcf_result.get("growth_source", "")
+        dcf_is_valid = dcf_result.get("is_valid", False)
+        
+        # Obtener desglose del modelo multi-stage
+        model_result = dcf_result.get("model_result", {})
+        value_composition = model_result.get("value_composition", {}) if model_result else {}
+        stages = model_result.get("stages", {}) if model_result else {}
+        sensitivity = dcf_result.get("sensitivity_analysis", {})
         
         price = financials.price if financials else None
         
+        # Calcular si está cara o barata
+        dcf_vs_price = ((dcf_value - price) / price * 100) if dcf_value and price else None
+        graham_vs_price = ((graham - price) / price * 100) if graham and price else None
+        
+        # Determinar veredicto general
+        if dcf_value and graham and price:
+            avg_intrinsic = (dcf_value + graham) / 2
+            avg_vs_price = ((avg_intrinsic - price) / price * 100)
+            if avg_vs_price > 20:
+                verdict = ("🟢", "Potencialmente SUBVALORADA", "text-success", "Los modelos sugieren que cotiza por debajo de su valor estimado. Podría ser oportunidad de compra.")
+            elif avg_vs_price > 0:
+                verdict = ("🟡", "Precio RAZONABLE", "text-warning", "Cotiza cerca de su valor estimado. Ni cara ni barata según estos modelos.")
+            elif avg_vs_price > -20:
+                verdict = ("🟠", "Ligeramente SOBREVALORADA", "text-warning", "Cotiza algo por encima de su valor estimado. Considerar esperar mejor precio.")
+            else:
+                verdict = ("🔴", "Potencialmente SOBREVALORADA", "text-danger", "Los modelos sugieren que el precio actual está muy por encima del valor estimado.")
+        elif dcf_value and price:
+            dcf_diff = ((dcf_value - price) / price * 100)
+            if dcf_diff > 15:
+                verdict = ("🟢", "Potencialmente SUBVALORADA", "text-success", "El modelo DCF sugiere que cotiza por debajo de su valor.")
+            elif dcf_diff > -15:
+                verdict = ("🟡", "Precio RAZONABLE", "text-warning", "Cotiza cerca de su valor estimado por DCF.")
+            else:
+                verdict = ("🔴", "Potencialmente SOBREVALORADA", "text-danger", "El modelo DCF sugiere sobrevaloración.")
+        else:
+            verdict = ("⚪", "Datos insuficientes", "text-muted", "No hay suficiente información para calcular el valor intrínseco.")
+        
+        # IDs únicos para tooltips
+        import random
+        uid = random.randint(1000, 9999)
+        
         tab_intrinsic = html.Div([
-            html.H5("Valoración Intrínseca", className="mb-2"),
-            html.P("Estimación del valor real de la acción", className="text-muted small mb-3"),
-            html.Div([
-                html.P([html.Strong("⚠️ Nota: "), "Estos métodos son estimaciones basadas en supuestos. Úsalos como referencia."],
-                      className="alert-info-custom alert-box small")
-            ]),
-            dbc.Row([
-                dbc.Col([
-                    dbc.Card([
-                        dbc.CardHeader("📐 Método Graham"),
-                        dbc.CardBody([
-                            html.P("Valor intrínseco según Benjamin Graham", className="text-muted small"),
-                            html.H3(f"${graham:.2f}" if graham else "N/A",
-                                   className="text-success" if graham and price and graham > price else "text-danger" if graham else "text-muted"),
-                            html.P([f"{((graham - price) / price * 100):+.0f}% vs precio actual" if graham and price else "Datos insuficientes"],
-                                  className="small text-muted"),
+            html.H5("💰 ¿Cuánto vale realmente esta acción?", className="mb-1"),
+            html.P("Estimamos el valor real usando modelos financieros y lo comparamos con el precio de mercado", 
+                   className="text-muted small mb-3"),
+            
+            # Veredicto principal
+            dbc.Card([
+                dbc.CardBody([
+                    html.Div([
+                        html.Span(verdict[0], style={"fontSize": "2rem", "marginRight": "12px"}),
+                        html.Div([
+                            html.Span(verdict[1], className=f"h4 mb-0 {verdict[2]}"),
+                            html.P(verdict[3], className="text-muted small mb-0 mt-1")
                         ])
-                    ], className="h-100")
-                ], xs=12, md=6, className="mb-3"),
+                    ], className="d-flex align-items-start"),
+                ])
+            ], className="mb-4", style={"backgroundColor": "#1f1f23", "border": "1px solid #3f3f46"}),
+            
+            # Comparación de valores con tooltips
+            html.H6("📊 Comparación de Valores", className="mb-3"),
+            dbc.Row([
+                # Precio actual
                 dbc.Col([
                     dbc.Card([
-                        dbc.CardHeader("💵 Método DCF Dinámico"),
                         dbc.CardBody([
+                            html.Div([
+                                html.Span("Precio de Mercado", className="text-muted small"),
+                                html.Span("i", id=f"tip-precio-{uid}", className="info-icon"),
+                            ], className="mb-1 text-center d-flex align-items-center justify-content-center", style={"gap": "6px"}),
+                            html.H3(f"${price:.2f}" if price else "N/A", className="mb-1 text-center"),
+                            html.P("Lo que cuesta hoy", className="text-muted small mb-0 text-center",
+                                  style={"fontSize": "0.75rem"})
+                        ])
+                    ], style={"backgroundColor": "#27272a", "border": "none"}),
+                    dbc.Tooltip(
+                        "El precio actual de la acción en el mercado. Es lo que pagarías si compras ahora.",
+                        target=f"tip-precio-{uid}", placement="top"
+                    )
+                ], xs=12, md=4, className="mb-3"),
+                
+                # Graham
+                dbc.Col([
+                    dbc.Card([
+                        dbc.CardBody([
+                            html.Div([
+                                html.Span("Valor Graham", className="text-muted small"),
+                                html.Span("i", id=f"tip-graham-{uid}", className="info-icon"),
+                            ], className="mb-1 text-center d-flex align-items-center justify-content-center", style={"gap": "6px"}),
+                            html.H3(f"${graham:.2f}" if graham else "N/A", 
+                                   className=f"mb-1 text-center {'text-success' if graham and price and graham > price else 'text-danger' if graham else ''}"),
                             html.P([
-                                "Flujos descontados · ",
-                                html.Span(f"WACC {dcf_wacc:.1%}" if dcf_wacc else "", className="text-info"),
-                                " · ",
-                                html.Span(f"Growth {dcf_growth:.1%}" if dcf_growth else "", className="text-info")
-                            ], className="text-muted small"),
-                            html.H3(f"${dcf_value:.2f}" if dcf_value else "N/A",
-                                   className="text-success" if dcf_value and price and dcf_value > price else "text-danger" if dcf_value else "text-muted"),
-                            html.P([f"{((dcf_value - price) / price * 100):+.0f}% vs precio actual" if dcf_value and price else "Requiere FCF positivo"],
-                                  className="small text-muted"),
+                                f"{graham_vs_price:+.0f}% vs precio" if graham_vs_price else "Fórmula clásica"
+                            ], className="small mb-0 text-center text-muted", style={"fontSize": "0.75rem"})
                         ])
-                    ], className="h-100")
-                ], xs=12, md=6, className="mb-3"),
+                    ], style={"backgroundColor": "#27272a", "border": "none"}),
+                    dbc.Tooltip(
+                        get_tooltip_text("graham"),
+                        target=f"tip-graham-{uid}", placement="top"
+                    )
+                ], xs=12, md=4, className="mb-3"),
+                
+                # DCF
+                dbc.Col([
+                    dbc.Card([
+                        dbc.CardBody([
+                            html.Div([
+                                html.Span("Valor DCF", className="text-muted small"),
+                                html.Span("i", id=f"tip-dcf-{uid}", className="info-icon"),
+                            ], className="mb-1 text-center d-flex align-items-center justify-content-center", style={"gap": "6px"}),
+                            html.H3(f"${dcf_value:.2f}" if dcf_value else "N/A",
+                                   className=f"mb-1 text-center {'text-success' if dcf_value and price and dcf_value > price else 'text-danger' if dcf_value else ''}"),
+                            html.P([
+                                f"{dcf_vs_price:+.0f}% vs precio" if dcf_vs_price else "Flujos futuros"
+                            ], className="small mb-0 text-center text-muted", style={"fontSize": "0.75rem"})
+                        ])
+                    ], style={"backgroundColor": "#27272a", "border": "none"}),
+                    dbc.Tooltip(
+                        get_tooltip_text("dcf"),
+                        target=f"tip-dcf-{uid}", placement="top"
+                    )
+                ], xs=12, md=4, className="mb-3"),
             ]),
-            html.Hr(),
-            html.H6("📊 Resumen de Valoración"),
-            dbc.Row([
-                dbc.Col([create_metric_card("Precio Mercado", f"${price:.2f}" if price else "N/A", "💰")], xs=4),
-                dbc.Col([create_metric_card("Valor Graham", f"${graham:.2f}" if graham else "N/A", "📐")], xs=4),
-                dbc.Col([create_metric_card("Valor DCF", f"${dcf_value:.2f}" if dcf_value else "N/A", "💵")], xs=4),
-            ])
+            
+            # Sección expandible: Detalles del DCF
+            html.Div([
+                html.Hr(className="my-3"),
+                html.Details([
+                    html.Summary([
+                        html.Span("⚙️ ", style={"marginRight": "6px"}),
+                        html.Span("Parámetros del modelo DCF", className="text-info"),
+                    ], style={"cursor": "pointer", "marginBottom": "10px"}),
+                    html.Div([
+                        dbc.Row([
+                            dbc.Col([
+                                html.Div([
+                                    html.Span("WACC ", className="text-muted small"),
+                                    html.Span("i", id=f"tip-wacc-{uid}", className="info-icon", 
+                                             style={"width": "14px", "height": "14px", "fontSize": "9px"}),
+                                ], className="d-flex align-items-center justify-content-center", style={"gap": "4px"}),
+                                html.Span(f"{dcf_wacc:.1%}" if dcf_wacc else "N/A", className="text-info"),
+                                dbc.Tooltip(get_tooltip_text("wacc"), target=f"tip-wacc-{uid}", placement="top")
+                            ], xs=6, md=3, className="text-center mb-2"),
+                            dbc.Col([
+                                html.Div([
+                                    html.Span("Growth Inicial ", className="text-muted small"),
+                                ]),
+                                html.Span(f"{dcf_growth:.1%}" if dcf_growth else "N/A", className="text-success"),
+                            ], xs=6, md=3, className="text-center mb-2"),
+                            dbc.Col([
+                                html.Div([
+                                    html.Span("Margen Seguridad ", className="text-muted small"),
+                                    html.Span("i", id=f"tip-mos-{uid}", className="info-icon",
+                                             style={"width": "14px", "height": "14px", "fontSize": "9px"}),
+                                ], className="d-flex align-items-center justify-content-center", style={"gap": "4px"}),
+                                html.Span(f"${dcf_value_mos:.2f}" if dcf_value_mos else "N/A", className="text-warning"),
+                                dbc.Tooltip(get_tooltip_text("margin_of_safety"), target=f"tip-mos-{uid}", placement="top")
+                            ], xs=6, md=3, className="text-center mb-2"),
+                            dbc.Col([
+                                html.Div([
+                                    html.Span("Fuente Growth ", className="text-muted small"),
+                                ]),
+                                html.Span(dcf_growth_source.replace("_", " ").title() if dcf_growth_source else "N/A", 
+                                         className="text-muted", style={"fontSize": "0.85rem"}),
+                            ], xs=6, md=3, className="text-center mb-2"),
+                        ]),
+                        
+                        # Composición del valor por etapas
+                        html.Div([
+                            html.P("📈 Composición del valor por etapas:", className="text-muted small mt-3 mb-2"),
+                            dbc.Row([
+                                dbc.Col([
+                                    html.Div([
+                                        html.Span(f"{value_composition.get('stage1_pct', 0):.0f}%", 
+                                                 className="h5 text-primary mb-0"),
+                                        html.P("Años 1-5 (alto crecimiento)", className="small text-muted mb-0")
+                                    ], className="text-center")
+                                ], xs=4),
+                                dbc.Col([
+                                    html.Div([
+                                        html.Span(f"{value_composition.get('stage2_pct', 0):.0f}%", 
+                                                 className="h5 text-info mb-0"),
+                                        html.P("Años 6-10 (transición)", className="small text-muted mb-0")
+                                    ], className="text-center")
+                                ], xs=4),
+                                dbc.Col([
+                                    html.Div([
+                                        html.Span(f"{value_composition.get('terminal_pct', 0):.0f}%", 
+                                                 className="h5 text-warning mb-0"),
+                                        html.P("Perpetuidad (2.5%)", className="small text-muted mb-0")
+                                    ], className="text-center")
+                                ], xs=4),
+                            ])
+                        ]) if value_composition else None,
+                        
+                    ], className="p-3 mt-2", style={"backgroundColor": "#18181b", "borderRadius": "8px"})
+                ], open=False)
+            ]) if dcf_is_valid else None,
+            
+            # Sección expandible: Cómo interpretar
+            html.Div([
+                html.Details([
+                    html.Summary([
+                        html.Span("📚 ", style={"marginRight": "6px"}),
+                        html.Span("¿Cómo interpretar estos valores?", className="text-info"),
+                    ], style={"cursor": "pointer", "marginBottom": "10px"}),
+                    html.Div([
+                        html.Div([
+                            html.Strong("🎯 Valor Graham", className="text-primary"),
+                            html.P("Fórmula creada por Benjamin Graham, el padre del value investing. "
+                                   "Usa las ganancias actuales y el valor contable. Es conservadora y funciona "
+                                   "mejor para empresas estables con activos tangibles.", className="small mb-3"),
+                        ]),
+                        html.Div([
+                            html.Strong("🎯 Valor DCF (Flujos Descontados)", className="text-success"),
+                            html.P("Estima cuánto dinero generará la empresa en el futuro y lo trae a valor presente. "
+                                   "Usamos 3 etapas: crecimiento alto (5 años) → transición (5 años) → perpetuidad. "
+                                   "Es el método más usado en Wall Street.", className="small mb-3"),
+                        ]),
+                        html.Div([
+                            html.Strong("⚠️ Importante", className="text-warning"),
+                            html.P("Estos son MODELOS matemáticos, no predicciones exactas. Dependen de supuestos "
+                                   "sobre el futuro que pueden no cumplirse. Úsalos como UNA herramienta más, "
+                                   "nunca como única base para decidir.", className="small mb-0"),
+                        ]),
+                    ], className="p-3 mt-2", style={"backgroundColor": "#18181b", "borderRadius": "8px"})
+                ], open=False)
+            ], className="mt-3"),
+            
         ])
         
         # Tab Evaluación con RESUMEN DE PUNTUACIÓN
@@ -2326,7 +3306,7 @@ app.clientside_callback(
         document.documentElement.setAttribute('data-theme', newTheme);
         
         // Guardar en localStorage para persistencia
-        localStorage.setItem('stock-analyzer-theme', newTheme);
+        localStorage.setItem('finanzer-theme', newTheme);
         
         // Actualizar icono del botón y colores
         const btn = document.getElementById('theme-toggle');
@@ -2373,7 +3353,7 @@ app.clientside_callback(
     """
     function(theme) {
         // Verificar si hay tema guardado en localStorage
-        const savedTheme = localStorage.getItem('stock-analyzer-theme');
+        const savedTheme = localStorage.getItem('finanzer-theme');
         const themeToApply = savedTheme || theme || 'dark';
         
         // Aplicar tema al documento
@@ -2436,6 +3416,242 @@ app.index_string = '''
         <title>{%title%}</title>
         {%favicon%}
         {%css%}
+        <style>
+        /* ==============================================
+           OVERRIDE BOOTSTRAP THEME COLORS - VERDE
+           ============================================== */
+        
+        /* Botones de período - el activo es primary sin outline */
+        .period-btn.btn-primary:not(.btn-outline-primary) {
+            background-color: #10b981 !important;
+            border-color: #10b981 !important;
+            color: white !important;
+        }
+        
+        /* Botones de período NO seleccionados - outline visible */
+        .period-btn.btn-outline-secondary,
+        .period-btn.btn-secondary.btn-outline-secondary {
+            background-color: transparent !important;
+            border: 2px solid #10b981 !important;
+            color: #10b981 !important;
+        }
+        .period-btn.btn-outline-secondary:hover {
+            background-color: rgba(16, 185, 129, 0.15) !important;
+            border-color: #10b981 !important;
+            color: #10b981 !important;
+        }
+        
+        /* En modo claro, asegurar visibilidad */
+        [data-theme="light"] .period-btn.btn-outline-secondary {
+            border: 2px solid #059669 !important;
+            color: #059669 !important;
+        }
+        
+        /* Todos los botones primarios y secundarios -> verde */
+        .btn-primary:not(.period-btn), .btn-secondary:not(.period-btn), 
+        .btn-outline-primary:not(.period-btn), .btn-outline-secondary:not(.period-btn) {
+            background-color: transparent !important;
+            border-color: rgba(16, 185, 129, 0.4) !important;
+            color: #34d399 !important;
+        }
+        .btn-primary:not(.period-btn):hover, .btn-secondary:not(.period-btn):hover, 
+        .btn-outline-primary:not(.period-btn):hover, .btn-outline-secondary:not(.period-btn):hover {
+            background-color: rgba(16, 185, 129, 0.2) !important;
+            border-color: rgba(16, 185, 129, 0.6) !important;
+            color: #34d399 !important;
+        }
+        .btn-primary:focus, .btn-secondary:focus {
+            box-shadow: 0 0 0 0.2rem rgba(16, 185, 129, 0.25) !important;
+        }
+        
+        /* Links primarios */
+        a.text-primary, .text-primary {
+            color: #10b981 !important;
+        }
+        
+        /* Badge primario - Growth */
+        .badge.bg-primary {
+            background-color: rgba(16, 185, 129, 0.15) !important;
+            color: #34d399 !important;
+        }
+        
+        /* ==============================================
+           FIN OVERRIDE BOOTSTRAP
+           ============================================== */
+        
+        /* ==============================================
+           MODO CLARO - CSS Específico
+           ============================================== */
+        [data-theme="light"] .period-btn.btn-outline-secondary {
+            background-color: #e6f7f1 !important;
+            border: 2px solid #10b981 !important;
+            color: #047857 !important;
+            font-weight: 600 !important;
+        }
+        [data-theme="light"] .period-btn.btn-primary:not(.btn-outline-primary) {
+            background-color: #10b981 !important;
+            border-color: #10b981 !important;
+            color: white !important;
+        }
+        
+        /* Quick picks en modo claro - usando clase parent */
+        [data-theme="light"] button[id*="quick-pick"] {
+            background: #e6f7f1 !important;
+            border: 2px solid #10b981 !important;
+            color: #047857 !important;
+            font-weight: 600 !important;
+        }
+        
+        /* ==============================================
+           FIN MODO CLARO
+           ============================================== */
+        
+        /* Botón de descarga PDF */
+        .download-btn {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+            border: none !important;
+            color: white !important;
+            padding: 12px 28px !important;
+            border-radius: 12px !important;
+            font-weight: 600 !important;
+            font-size: 1rem !important;
+            cursor: pointer !important;
+            transition: all 0.3s ease !important;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3) !important;
+        }
+        .download-btn:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4) !important;
+        }
+        
+        /* Tooltips modernos y minimalistas */
+        .tooltip {
+            font-family: 'Inter', -apple-system, sans-serif !important;
+        }
+        .tooltip-inner {
+            background: linear-gradient(145deg, #1a1a22 0%, #252530 100%) !important;
+            border: 1px solid rgba(16, 185, 129, 0.25) !important;
+            border-radius: 14px !important;
+            padding: 18px 22px !important;
+            max-width: 380px !important;
+            text-align: left !important;
+            font-size: 13px !important;
+            line-height: 1.7 !important;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.03) !important;
+            white-space: pre-line !important;
+            color: #e4e4e7 !important;
+        }
+        .tooltip.show {
+            opacity: 1 !important;
+        }
+        .bs-tooltip-top .tooltip-arrow::before,
+        .bs-tooltip-auto[data-popper-placement^="top"] .tooltip-arrow::before {
+            border-top-color: #252530 !important;
+        }
+        .bs-tooltip-bottom .tooltip-arrow::before,
+        .bs-tooltip-auto[data-popper-placement^="bottom"] .tooltip-arrow::before {
+            border-bottom-color: #252530 !important;
+        }
+        
+        /* Info icon estilo */
+        .info-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: rgba(16, 185, 129, 0.12);
+            color: #34d399;
+            font-size: 10px;
+            font-weight: 600;
+            font-style: normal;
+            cursor: help;
+            margin-left: 6px;
+            transition: all 0.2s ease;
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            flex-shrink: 0;
+        }
+        .info-icon:hover {
+            background: rgba(16, 185, 129, 0.25);
+            transform: scale(1.1);
+            border-color: rgba(16, 185, 129, 0.4);
+        }
+        
+        /* Estilos específicos para modo claro */
+        @media (prefers-color-scheme: light) {
+            .metric-card {
+                background-color: #f8fafc !important;
+                border-color: #e2e8f0 !important;
+            }
+        }
+        
+        /* Logo Finanzer en verde */
+        #logo-home span:last-child {
+            background: linear-gradient(135deg, #34d399 0%, #10b981 100%) !important;
+            -webkit-background-clip: text !important;
+            -webkit-text-fill-color: transparent !important;
+            background-clip: text !important;
+        }
+        
+        /* Tabs activos con verde */
+        .nav-tabs .nav-link.active {
+            color: #059669 !important;
+            border-bottom: 2px solid #10b981 !important;
+        }
+        .nav-tabs .nav-link:hover:not(.active) {
+            color: #10b981 !important;
+        }
+        
+        /* Links en verde */
+        a {
+            color: #10b981;
+        }
+        a:hover {
+            color: #059669;
+        }
+        
+        /* Tabla de comparación - hover en filas */
+        table tr:hover td {
+            background-color: rgba(16, 185, 129, 0.05) !important;
+        }
+        
+        /* Score card styling */
+        .score-card {
+            background: linear-gradient(145deg, #1f1f23 0%, #18181b 100%);
+            border-radius: 16px;
+            border: 1px solid rgba(55, 65, 81, 0.5);
+            padding: 0;
+            overflow: hidden;
+        }
+        
+        /* Badge del score con animación sutil */
+        .score-level-badge {
+            animation: fadeIn 0.5s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Quick picks hover - botones verdes */
+        button[id*="quick-pick"]:hover {
+            background: rgba(16, 185, 129, 0.3) !important;
+            border-color: rgba(16, 185, 129, 0.6) !important;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+        }
+        
+        /* Botón de búsqueda verde */
+        #navbar-search-btn {
+            background-color: #10b981 !important;
+            border-color: #10b981 !important;
+        }
+        #navbar-search-btn:hover {
+            background-color: #059669 !important;
+            border-color: #059669 !important;
+        }
+        </style>
         <script>
         function applyThemeToInlineStyles(theme) {
             const isLight = theme === 'light';
@@ -2467,7 +3683,7 @@ app.index_string = '''
             // Lista de colores claros de texto (para dark mode) que deben cambiar en light mode
             const lightTextColors = ['#fff', '#ffffff', 'white', '#fafafa', '#d4d4d8', '#f4f4f5', 'rgb(255', 'rgb(250', 'rgb(212'];
             const mutedTextColors = ['#71717a', '#a1a1aa', '#52525b', 'rgb(113', 'rgb(161', 'rgb(82'];
-            const accentColors = ['#a5b4fc', '#60a5fa', 'rgb(165', 'rgb(96'];
+            const accentColors = ['#34d399', '#10b981', 'rgb(52, 211', 'rgb(16, 185'];
             
             // Cambiar colores de texto
             document.querySelectorAll('[style]').forEach(el => {
@@ -2496,9 +3712,9 @@ app.index_string = '''
                     el.style.color = c.textMuted;
                 }
                 
-                // Texto accent
+                // Texto accent (ahora verde)
                 if (accentColors.some(col => style.includes(col))) {
-                    el.style.color = isLight ? '#4f46e5' : '#a5b4fc';
+                    el.style.color = isLight ? '#059669' : '#34d399';
                 }
             });
             
@@ -2506,8 +3722,8 @@ app.index_string = '''
             document.querySelectorAll('[style*="background"]').forEach(el => {
                 const style = el.getAttribute('style') || '';
                 
-                // No cambiar botones con colores de acento
-                if (style.includes('#6366f1') || style.includes('#818cf8') || 
+                // No cambiar botones con colores de acento (ahora verde)
+                if (style.includes('#10b981') || style.includes('#34d399') || 
                     style.includes('#22c55e') || style.includes('#ef4444') ||
                     style.includes('#eab308') || style.includes('#3b82f6') ||
                     style.includes('linear-gradient')) {
@@ -2545,6 +3761,107 @@ app.index_string = '''
             document.querySelectorAll('table thead th').forEach(el => {
                 el.style.backgroundColor = c.bgTertiary;
             });
+            
+            // Metric cards en modo claro
+            if (isLight) {
+                document.querySelectorAll('.metric-card, [style*="rgba(39, 39, 42"]').forEach(el => {
+                    el.style.backgroundColor = '#f8fafc';
+                    el.style.borderColor = '#e2e8f0';
+                });
+                
+                // Score card
+                document.querySelectorAll('.score-card, [style*="#1f1f23"]').forEach(el => {
+                    el.style.backgroundColor = '#f1f5f9';
+                    el.style.borderColor = '#e2e8f0';
+                });
+                
+                // Tabs
+                document.querySelectorAll('.nav-tabs .nav-link').forEach(el => {
+                    if (!el.classList.contains('active')) {
+                        el.style.color = '#475569';
+                    }
+                });
+                document.querySelectorAll('.nav-tabs .nav-link.active').forEach(el => {
+                    el.style.color = '#059669';
+                    el.style.borderBottomColor = '#10b981';
+                });
+                
+                // Info icons en modo claro
+                document.querySelectorAll('.info-icon').forEach(el => {
+                    el.style.background = 'rgba(16, 185, 129, 0.1)';
+                    el.style.color = '#059669';
+                    el.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+                });
+                
+                // Quick picks en modo claro - buscar por estructura
+                document.querySelectorAll('button').forEach(el => {
+                    const id = el.getAttribute('id');
+                    // Los quick picks tienen IDs que contienen "quick-pick"
+                    if (id && id.includes('quick-pick')) {
+                        el.style.background = '#e6f7f1';
+                        el.style.border = '2px solid #10b981';
+                        el.style.color = '#047857';
+                        el.style.fontWeight = '600';
+                    }
+                });
+                
+                // Botones de período en modo claro
+                document.querySelectorAll('.period-btn').forEach(el => {
+                    if (el.classList.contains('btn-primary') && !el.classList.contains('btn-outline-primary')) {
+                        // Botón activo - verde sólido
+                        el.style.backgroundColor = '#10b981';
+                        el.style.borderColor = '#10b981';
+                        el.style.color = 'white';
+                    } else {
+                        // Botones inactivos - fondo claro con borde y texto verde oscuro
+                        el.style.backgroundColor = '#e6f7f1';
+                        el.style.border = '2px solid #10b981';
+                        el.style.color = '#047857';
+                        el.style.fontWeight = '600';
+                    }
+                });
+                
+                // Hero title y navbar title en modo claro
+                document.querySelectorAll('#logo-home span:last-child').forEach(el => {
+                    el.style.background = 'linear-gradient(135deg, #059669 0%, #047857 100%)';
+                    el.style.webkitBackgroundClip = 'text';
+                    el.style.webkitTextFillColor = 'transparent';
+                });
+            } else {
+                // ============ MODO OSCURO ============
+                
+                // Quick picks en modo oscuro - restaurar colores originales
+                document.querySelectorAll('button').forEach(el => {
+                    const id = el.getAttribute('id');
+                    if (id && id.includes('quick-pick')) {
+                        el.style.background = 'rgba(16, 185, 129, 0.15)';
+                        el.style.border = '1px solid rgba(16, 185, 129, 0.4)';
+                        el.style.color = '#34d399';
+                        el.style.fontWeight = '500';
+                    }
+                });
+                
+                // Botones de período en modo oscuro
+                document.querySelectorAll('.period-btn').forEach(el => {
+                    if (el.classList.contains('btn-primary') && !el.classList.contains('btn-outline-primary')) {
+                        el.style.backgroundColor = '#10b981';
+                        el.style.borderColor = '#10b981';
+                        el.style.color = 'white';
+                    } else {
+                        el.style.backgroundColor = 'transparent';
+                        el.style.border = '1px solid rgba(16, 185, 129, 0.4)';
+                        el.style.color = '#34d399';
+                        el.style.fontWeight = '500';
+                    }
+                });
+                
+                // Hero title en modo oscuro
+                document.querySelectorAll('#logo-home span:last-child').forEach(el => {
+                    el.style.background = 'linear-gradient(135deg, #34d399 0%, #10b981 100%)';
+                    el.style.webkitBackgroundClip = 'text';
+                    el.style.webkitTextFillColor = 'transparent';
+                });
+            }
         }
         </script>
     </head>
@@ -2565,5 +3882,5 @@ if __name__ == "__main__":
     debug_mode = os.getenv("DEBUG", "false").lower() == "true"
     port = int(os.getenv("PORT", 8050))
     
-    logger.info(f"Starting Stock Analyzer - Debug: {debug_mode}, Port: {port}")
+    logger.info(f"Starting Finanzer - Debug: {debug_mode}, Port: {port}")
     app.run(debug=debug_mode, host="0.0.0.0", port=port)

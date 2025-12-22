@@ -5,12 +5,39 @@ Módulo completo para cálculo de ratios financieros y sistema de alertas
 para análisis fundamental de acciones.
 
 Autor: Esteban
-Versión: 3.0 - Institutional Grade Update
+Versión: 3.1 - Configuración Centralizada
 """
 
 from typing import Optional, Dict, List, Tuple, Any
 from dataclasses import dataclass
 from enum import Enum
+
+# Importar configuración centralizada
+try:
+    from config import (
+        ALTMAN_Z_SAFE, ALTMAN_Z_GREY, ALTMAN_Z_LABELS,
+        PIOTROSKI_STRONG, PIOTROSKI_NEUTRAL, PIOTROSKI_WEAK,
+        DCF_RISK_FREE_RATE, DCF_MARKET_RISK_PREMIUM, DCF_TERMINAL_GROWTH,
+        DCF_WACC_MIN, DCF_WACC_MAX, DCF_WACC_DEFAULT,
+        DCF_GROWTH_MAX, DCF_GROWTH_DEFAULT,
+        DCF_HIGH_GROWTH_YEARS, DCF_TRANSITION_YEARS,
+        SCORE_BASE, SCORE_LEVELS,
+        CURRENT_RATIO_GOOD, DEBT_EQUITY_HIGH, ROE_EXCELLENT, ROE_GOOD,
+    )
+    CONFIG_AVAILABLE = True
+except ImportError:
+    # Fallback si config.py no está disponible
+    CONFIG_AVAILABLE = False
+    ALTMAN_Z_SAFE = 2.99
+    ALTMAN_Z_GREY = 1.81
+    DCF_RISK_FREE_RATE = 0.045
+    DCF_MARKET_RISK_PREMIUM = 0.055
+    DCF_TERMINAL_GROWTH = 0.025
+    DCF_WACC_DEFAULT = 0.10
+    DCF_GROWTH_MAX = 0.50
+    DCF_GROWTH_DEFAULT = 0.08
+    DCF_HIGH_GROWTH_YEARS = 5
+    DCF_TRANSITION_YEARS = 5
 
 
 # =========================
@@ -81,10 +108,10 @@ def altman_z_score(
         
         z = 1.2*X1 + 1.4*X2 + 3.3*X3 + 0.6*X4 + 1.0*X5
         
-        if z > 2.99:
+        if z > ALTMAN_Z_SAFE:
             risk_level = "SAFE"
             interpretation = "Zona segura - Bajo riesgo de bancarrota"
-        elif z > 1.81:
+        elif z > ALTMAN_Z_GREY:
             risk_level = "GREY"
             interpretation = "Zona gris - Riesgo moderado, monitorear"
         else:
@@ -93,8 +120,11 @@ def altman_z_score(
         
         return round(z, 2), risk_level, interpretation
         
-    except Exception:
-        return None, "N/A", "Error en cálculo"
+    except (ZeroDivisionError, TypeError, ValueError) as e:
+        return None, "N/A", f"Error en cálculo: {type(e).__name__}"
+    except Exception as e:
+        # Log para debug pero no exponer detalles internos
+        return None, "N/A", "Error inesperado en cálculo"
 
 
 def piotroski_f_score(
@@ -259,8 +289,8 @@ def piotroski_f_score(
 
 def calculate_wacc(
     beta: Optional[float],
-    risk_free_rate: float = 0.045,  # 4.5% (Treasury 10Y actual)
-    market_risk_premium: float = 0.055,  # 5.5% histórico
+    risk_free_rate: float = DCF_RISK_FREE_RATE,
+    market_risk_premium: float = DCF_MARKET_RISK_PREMIUM,
     cost_of_debt: Optional[float] = None,
     tax_rate: float = 0.25,
     debt_to_equity: Optional[float] = None,
@@ -383,6 +413,8 @@ def calculate_justified_pe(
         
         return round(justified_pe, 1)
         
+    except (ZeroDivisionError, TypeError, ValueError):
+        return None
     except Exception:
         return None
 
@@ -1092,6 +1124,103 @@ def dividend_payout_ratio(dividends: Optional[float], net_income: Optional[float
     return safe_div(dividends, net_income)
 
 
+# =========================
+# MÉTRICAS PARA REITs
+# =========================
+
+def funds_from_operations(
+    net_income: Optional[float],
+    depreciation: Optional[float],
+    gains_on_sale: Optional[float] = 0
+) -> Optional[float]:
+    """
+    FFO (Funds From Operations) - Métrica principal para REITs.
+    
+    FFO = Net Income + Depreciation & Amortization - Gains on Sale of Property
+    
+    Es más relevante que Net Income para REITs porque:
+    - La depreciación inmobiliaria no refleja la pérdida real de valor
+    - Los inmuebles tienden a apreciarse, no depreciarse
+    
+    Args:
+        net_income: Ingreso neto
+        depreciation: Depreciación y amortización
+        gains_on_sale: Ganancias por venta de propiedades (se resta)
+    
+    Returns:
+        FFO o None si datos insuficientes
+    """
+    if net_income is None or depreciation is None:
+        return None
+    
+    gains = gains_on_sale or 0
+    return net_income + depreciation - gains
+
+
+def adjusted_ffo(
+    ffo: Optional[float],
+    recurring_capex: Optional[float] = 0,
+    straight_line_rent: Optional[float] = 0
+) -> Optional[float]:
+    """
+    AFFO (Adjusted Funds From Operations) - Versión más conservadora.
+    
+    AFFO = FFO - Recurring CapEx - Straight-line Rent Adjustments
+    
+    Representa mejor el flujo de caja disponible para dividendos.
+    
+    Args:
+        ffo: Funds From Operations
+        recurring_capex: CapEx de mantenimiento recurrente
+        straight_line_rent: Ajustes de renta lineal
+    
+    Returns:
+        AFFO o None si FFO no disponible
+    """
+    if ffo is None:
+        return None
+    
+    capex = recurring_capex or 0
+    rent_adj = straight_line_rent or 0
+    return ffo - capex - rent_adj
+
+
+def ffo_payout_ratio(dividends: Optional[float], ffo: Optional[float]) -> Optional[float]:
+    """
+    FFO Payout Ratio - Porcentaje de FFO pagado como dividendo.
+    
+    Para REITs, debe ser < 100% para ser sostenible.
+    REITs deben distribuir 90%+ de ingresos por ley, pero basado en FFO es más relevante.
+    
+    Args:
+        dividends: Dividendos totales pagados
+        ffo: Funds From Operations
+    
+    Returns:
+        Ratio o None
+    """
+    return safe_div(dividends, ffo)
+
+
+def price_to_ffo(price: Optional[float], ffo_per_share: Optional[float]) -> Optional[float]:
+    """
+    P/FFO - Equivalente al P/E pero para REITs.
+    
+    Rangos típicos:
+    - < 12: Potencialmente barato
+    - 12-18: Rango normal
+    - > 18: Caro o alta calidad
+    
+    Args:
+        price: Precio por acción
+        ffo_per_share: FFO por acción
+    
+    Returns:
+        P/FFO ratio o None
+    """
+    return safe_div(price, ffo_per_share)
+
+
 def earnings_yield(eps: Optional[float], price_per_share: Optional[float]) -> Optional[float]:
     """Earnings Yield = EPS / Price per Share (inverso del P/E)."""
     return safe_div(eps, price_per_share)
@@ -1599,13 +1728,13 @@ def dcf_dynamic(
     revenue_growth_3y: Optional[float] = None,
     fcf_growth_3y: Optional[float] = None,
     # Parámetros opcionales
-    risk_free_rate: float = 0.045,
-    market_risk_premium: float = 0.055,
-    terminal_growth: float = 0.025,
-    years: int = 10,
+    risk_free_rate: float = DCF_RISK_FREE_RATE,
+    market_risk_premium: float = DCF_MARKET_RISK_PREMIUM,
+    terminal_growth: float = DCF_TERMINAL_GROWTH,
+    years: int = DCF_HIGH_GROWTH_YEARS + DCF_TRANSITION_YEARS,
     # Fallbacks si no hay datos
-    default_wacc: float = 0.10,
-    default_growth: float = 0.05
+    default_wacc: float = DCF_WACC_DEFAULT,
+    default_growth: float = DCF_GROWTH_DEFAULT
 ) -> Dict[str, Any]:
     """
     DCF Dinámico v2.2 - Usa WACC y growth específicos de la empresa.
@@ -1691,6 +1820,299 @@ def dcf_dynamic(
     result["wacc_used"] = wacc
     result["growth_used"] = growth_rate
     result["terminal_growth"] = effective_terminal
+    
+    return result
+
+
+def dcf_multi_stage(
+    fcf: Optional[float],
+    shares_outstanding: Optional[float],
+    high_growth_rate: float = 0.15,
+    high_growth_years: int = DCF_HIGH_GROWTH_YEARS,
+    transition_years: int = DCF_TRANSITION_YEARS,
+    terminal_growth: float = DCF_TERMINAL_GROWTH,
+    discount_rate: float = DCF_WACC_DEFAULT,
+    decay_type: str = "linear",
+    margin_of_safety_pct: float = 0.0,
+) -> Dict[str, Any]:
+    """
+    DCF Multi-Stage (3 etapas) - Modelo más realista.
+    
+    Etapas:
+    - Etapa 1 (High Growth): Años 1-5, crecimiento alto con decay gradual
+    - Etapa 2 (Transition): Años 6-10, convergencia hacia terminal growth
+    - Etapa 3 (Terminal): Año 10+, perpetuidad con Gordon Growth Model
+    """
+    result = {
+        "fair_value_per_share": None,
+        "fair_value_with_mos": None,
+        "enterprise_value": None,
+        "method": "multi_stage_dcf",
+        "stages": {
+            "high_growth": {"pv": None, "years": high_growth_years, "rates": []},
+            "transition": {"pv": None, "years": transition_years, "rates": []},
+            "terminal": {"pv": None, "terminal_value": None}
+        },
+        "inputs": {
+            "fcf": fcf,
+            "high_growth_rate": high_growth_rate,
+            "terminal_growth": terminal_growth,
+            "discount_rate": discount_rate,
+            "decay_type": decay_type,
+            "total_years": high_growth_years + transition_years
+        },
+        "warnings": [],
+        "is_valid": False
+    }
+    
+    # Validaciones
+    if fcf is None or shares_outstanding is None:
+        result["warnings"].append("FCF o shares no disponibles")
+        return result
+    
+    if shares_outstanding <= 0:
+        result["warnings"].append("Shares outstanding debe ser positivo")
+        return result
+    
+    if fcf <= 0:
+        result["warnings"].append("FCF negativo - considerar usar EV/EBITDA")
+        return result
+    
+    if discount_rate <= terminal_growth:
+        result["warnings"].append(f"Discount rate debe ser > terminal growth")
+        return result
+    
+    if high_growth_rate < terminal_growth:
+        high_growth_rate = terminal_growth
+    
+    MAX_GROWTH = 0.50
+    if high_growth_rate > MAX_GROWTH:
+        result["warnings"].append(f"Growth capped de {high_growth_rate:.1%} a {MAX_GROWTH:.1%}")
+        high_growth_rate = MAX_GROWTH
+    
+    # ETAPA 1: Alto Crecimiento
+    pv_stage1 = 0.0
+    projected_fcf = fcf
+    stage1_rates = []
+    
+    if decay_type == "linear" and high_growth_years > 1:
+        yearly_decay = (high_growth_rate - terminal_growth) / (high_growth_years + transition_years)
+    else:
+        yearly_decay = 0
+    
+    decay_factor = 0.85 if decay_type == "exponential" else 1.0
+    
+    for year in range(1, high_growth_years + 1):
+        if decay_type == "linear":
+            year_growth = high_growth_rate - (yearly_decay * (year - 1))
+        elif decay_type == "exponential":
+            year_growth = terminal_growth + (high_growth_rate - terminal_growth) * (decay_factor ** (year - 1))
+        else:
+            year_growth = high_growth_rate
+        
+        year_growth = max(year_growth, terminal_growth)
+        stage1_rates.append(year_growth)
+        projected_fcf *= (1 + year_growth)
+        pv_stage1 += projected_fcf / ((1 + discount_rate) ** year)
+    
+    result["stages"]["high_growth"]["pv"] = round(pv_stage1, 2)
+    result["stages"]["high_growth"]["rates"] = [round(r, 4) for r in stage1_rates]
+    
+    # ETAPA 2: Transición
+    pv_stage2 = 0.0
+    stage2_rates = []
+    end_stage1_growth = stage1_rates[-1] if stage1_rates else high_growth_rate
+    
+    if transition_years > 0:
+        transition_decay = (end_stage1_growth - terminal_growth) / transition_years
+    else:
+        transition_decay = 0
+    
+    for i, year in enumerate(range(high_growth_years + 1, high_growth_years + transition_years + 1)):
+        year_growth = end_stage1_growth - (transition_decay * (i + 1))
+        year_growth = max(year_growth, terminal_growth)
+        stage2_rates.append(year_growth)
+        projected_fcf *= (1 + year_growth)
+        pv_stage2 += projected_fcf / ((1 + discount_rate) ** year)
+    
+    result["stages"]["transition"]["pv"] = round(pv_stage2, 2)
+    result["stages"]["transition"]["rates"] = [round(r, 4) for r in stage2_rates]
+    
+    # ETAPA 3: Valor Terminal
+    total_projection_years = high_growth_years + transition_years
+    terminal_fcf = projected_fcf * (1 + terminal_growth)
+    terminal_value = terminal_fcf / (discount_rate - terminal_growth)
+    pv_terminal = terminal_value / ((1 + discount_rate) ** total_projection_years)
+    
+    result["stages"]["terminal"]["terminal_value"] = round(terminal_value, 2)
+    result["stages"]["terminal"]["pv"] = round(pv_terminal, 2)
+    
+    # CÁLCULO FINAL
+    enterprise_value = pv_stage1 + pv_stage2 + pv_terminal
+    fair_value_per_share = enterprise_value / shares_outstanding
+    
+    if margin_of_safety_pct > 0:
+        fair_value_with_mos = fair_value_per_share * (1 - margin_of_safety_pct)
+    else:
+        fair_value_with_mos = fair_value_per_share
+    
+    result["enterprise_value"] = round(enterprise_value, 2)
+    result["fair_value_per_share"] = round(fair_value_per_share, 2)
+    result["fair_value_with_mos"] = round(fair_value_with_mos, 2)
+    result["is_valid"] = True
+    
+    total_pv = pv_stage1 + pv_stage2 + pv_terminal
+    result["value_composition"] = {
+        "stage1_pct": round(pv_stage1 / total_pv * 100, 1),
+        "stage2_pct": round(pv_stage2 / total_pv * 100, 1),
+        "terminal_pct": round(pv_terminal / total_pv * 100, 1)
+    }
+    
+    if result["value_composition"]["terminal_pct"] > 75:
+        result["warnings"].append(
+            f"Terminal value representa {result['value_composition']['terminal_pct']:.0f}% del valor"
+        )
+    
+    return result
+
+
+def dcf_multi_stage_dynamic(
+    fcf: Optional[float],
+    shares_outstanding: Optional[float],
+    beta: Optional[float] = None,
+    debt_to_equity: Optional[float] = None,
+    interest_expense: Optional[float] = None,
+    total_debt: Optional[float] = None,
+    revenue_growth_3y: Optional[float] = None,
+    eps_growth_3y: Optional[float] = None,
+    fcf_growth_3y: Optional[float] = None,
+    risk_free_rate: float = DCF_RISK_FREE_RATE,
+    market_risk_premium: float = DCF_MARKET_RISK_PREMIUM,
+    terminal_growth: float = DCF_TERMINAL_GROWTH,
+    high_growth_years: int = DCF_HIGH_GROWTH_YEARS,
+    transition_years: int = DCF_TRANSITION_YEARS,
+    margin_of_safety_pct: float = 0.0,
+) -> Dict[str, Any]:
+    """
+    DCF Multi-Stage Dinámico - Combina modelo de 3 etapas con 
+    WACC y growth calculados dinámicamente.
+    """
+    result = {
+        "fair_value_per_share": None,
+        "fair_value_with_mos": None,
+        "wacc_calculated": None,
+        "growth_estimated": None,
+        "growth_source": None,
+        "method": "multi_stage_dcf_dynamic",
+        "model_result": None,
+        "warnings": [],
+        "is_valid": False,
+        "sensitivity_analysis": None
+    }
+    
+    if fcf is None or shares_outstanding is None or shares_outstanding <= 0:
+        result["warnings"].append("FCF o shares no disponibles")
+        return result
+    
+    if fcf <= 0:
+        result["warnings"].append("FCF negativo - DCF no aplicable")
+        return result
+    
+    # CALCULAR WACC
+    wacc = calculate_wacc(
+        beta=beta,
+        risk_free_rate=risk_free_rate,
+        market_risk_premium=market_risk_premium,
+        debt_to_equity=debt_to_equity,
+        interest_expense=interest_expense,
+        total_debt=total_debt
+    )
+    
+    if wacc is None:
+        wacc = 0.10
+        result["warnings"].append("WACC estimado en 10%")
+    
+    wacc = max(0.06, min(wacc, 0.20))
+    result["wacc_calculated"] = wacc
+    
+    # ESTIMAR GROWTH
+    growth_rate = None
+    growth_source = None
+    
+    growth_candidates = [
+        (fcf_growth_3y, "fcf_growth_3y", 0.35),
+        (eps_growth_3y, "eps_growth_3y", 0.40),
+        (revenue_growth_3y, "revenue_growth_3y", 0.30),
+    ]
+    
+    for growth_val, source, cap in growth_candidates:
+        if growth_val is not None and growth_val > -0.20:
+            growth_rate = min(growth_val, cap)
+            growth_rate = max(growth_rate, terminal_growth)
+            growth_source = source
+            break
+    
+    if growth_rate is None:
+        growth_rate = 0.08
+        growth_source = "default_estimate"
+        result["warnings"].append("Growth estimado en 8%")
+    
+    result["growth_estimated"] = growth_rate
+    result["growth_source"] = growth_source
+    
+    # EJECUTAR DCF MULTI-STAGE
+    if growth_rate > 0.25:
+        decay_type = "exponential"
+    elif growth_rate > 0.15:
+        decay_type = "linear"
+    else:
+        decay_type = "step"
+    
+    model_result = dcf_multi_stage(
+        fcf=fcf,
+        shares_outstanding=shares_outstanding,
+        high_growth_rate=growth_rate,
+        high_growth_years=high_growth_years,
+        transition_years=transition_years,
+        terminal_growth=terminal_growth,
+        discount_rate=wacc,
+        decay_type=decay_type,
+        margin_of_safety_pct=margin_of_safety_pct
+    )
+    
+    result["model_result"] = model_result
+    result["warnings"].extend(model_result.get("warnings", []))
+    
+    if model_result["is_valid"]:
+        result["fair_value_per_share"] = model_result["fair_value_per_share"]
+        result["fair_value_with_mos"] = model_result["fair_value_with_mos"]
+        result["is_valid"] = True
+        
+        # ANÁLISIS DE SENSIBILIDAD
+        sensitivity = {"wacc_sensitivity": {}, "growth_sensitivity": {}}
+        
+        for wacc_delta in [-0.02, -0.01, 0.01, 0.02]:
+            test_wacc = wacc + wacc_delta
+            if test_wacc > terminal_growth + 0.01:
+                test_result = dcf_multi_stage(
+                    fcf=fcf, shares_outstanding=shares_outstanding,
+                    high_growth_rate=growth_rate, discount_rate=test_wacc,
+                    terminal_growth=terminal_growth, decay_type=decay_type
+                )
+                if test_result["is_valid"]:
+                    sensitivity["wacc_sensitivity"][f"{wacc_delta:+.0%}"] = test_result["fair_value_per_share"]
+        
+        for growth_delta in [-0.05, -0.025, 0.025, 0.05]:
+            test_growth = max(growth_rate + growth_delta, terminal_growth)
+            test_result = dcf_multi_stage(
+                fcf=fcf, shares_outstanding=shares_outstanding,
+                high_growth_rate=test_growth, discount_rate=wacc,
+                terminal_growth=terminal_growth, decay_type=decay_type
+            )
+            if test_result["is_valid"]:
+                sensitivity["growth_sensitivity"][f"{growth_delta:+.1%}"] = test_result["fair_value_per_share"]
+        
+        result["sensitivity_analysis"] = sensitivity
     
     return result
 
@@ -2617,6 +3039,10 @@ def calculate_all_ratios(financial_data: Dict) -> Dict[str, Optional[float]]:
     if d.get("total_debt") is not None and d.get("total_equity") is not None and d.get("cash") is not None:
         invested_cap = d.get("total_debt") + d.get("total_equity") - d.get("cash")
     
+    # FFO para REITs
+    ffo_val = funds_from_operations(d.get("net_income"), d.get("depreciation"), d.get("gains_on_sale"))
+    ffo_ps = safe_div(ffo_val, d.get("shares_outstanding")) if ffo_val else None
+    
     return {
         # Rentabilidad
         "roe": roe(d.get("net_income"), d.get("total_equity")),
@@ -2666,6 +3092,12 @@ def calculate_all_ratios(financial_data: Dict) -> Dict[str, Optional[float]]:
         "fcf_to_net_income": safe_div(fcf_val, d.get("net_income")),
         "operating_cash_flow": d.get("operating_cash_flow"),
         "net_income": d.get("net_income"),
+        
+        # REITs (FFO)
+        "ffo": ffo_val,
+        "ffo_per_share": ffo_ps,
+        "p_ffo": price_to_ffo(d.get("price"), ffo_ps),
+        "ffo_payout": ffo_payout_ratio(d.get("dividends_paid"), ffo_val),
         
         # Valoración intrínseca
         "graham_number": graham_number(eps_val, bvps),
