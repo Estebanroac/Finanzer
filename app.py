@@ -3535,6 +3535,15 @@ app.index_string = '''
             box-shadow: 0 0 0 0.2rem rgba(16, 185, 129, 0.25) !important;
         }
         
+        /* Input de búsqueda - focus verde */
+        #navbar-search-input:focus,
+        #navbar-search-input:active,
+        input[type="text"]:focus {
+            border-color: #10b981 !important;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3) !important;
+            outline: none !important;
+        }
+        
         /* Links primarios */
         a.text-primary, .text-primary {
             color: #10b981 !important;
