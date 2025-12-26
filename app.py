@@ -125,8 +125,8 @@ app.layout = dbc.Container([
     html.Div(id="loading-overlay", children=[
         html.Div([
             html.Div(className="loading-spinner", style={
-                "width": "48px",
-                "height": "48px",
+                "width": "44px",
+                "height": "44px",
                 "border": "4px solid rgba(16, 185, 129, 0.2)",
                 "borderTopColor": "#10b981",
                 "borderRadius": "50%",
@@ -288,20 +288,29 @@ app.layout = dbc.Container([
                 for ticker in QUICK_PICKS
             ], style={"textAlign": "center", "marginBottom": "40px"}),
             
-            # Búsquedas recientes (se llena dinámicamente)
-            html.Div(id="recent-searches-container", children=[
-                # Se actualiza via callback cuando hay historial
-            ], style={"textAlign": "center", "marginBottom": "20px"}),
-            
-            # Mis Posiciones (acciones que tengo)
-            html.Div(id="posiciones-container", children=[
-                # Se actualiza via callback
-            ], style={"textAlign": "center", "marginBottom": "20px"}),
-            
-            # En Radar (acciones atractivas)
-            html.Div(id="radar-container", children=[
-                # Se actualiza via callback
-            ], style={"textAlign": "center", "marginBottom": "30px"}),
+            # Contenedor horizontal para las 3 listas
+            html.Div([
+                # Búsquedas recientes
+                html.Div(id="recent-searches-container", children=[
+                    # Se actualiza via callback cuando hay historial
+                ], style={"flex": "1", "minWidth": "0"}),
+                
+                # Mis Posiciones
+                html.Div(id="posiciones-container", children=[
+                    # Se actualiza via callback
+                ], style={"flex": "1", "minWidth": "0"}),
+                
+                # En Radar
+                html.Div(id="radar-container", children=[
+                    # Se actualiza via callback
+                ], style={"flex": "1", "minWidth": "0"}),
+            ], style={
+                "display": "flex", 
+                "flexWrap": "wrap",
+                "justifyContent": "center", 
+                "gap": "20px",
+                "marginBottom": "30px"
+            }),
             
         ], style={
             "textAlign": "center", "padding": "60px 20px",
@@ -473,27 +482,30 @@ app.layout = dbc.Container([
         # Botones de acciones
         html.Div([
             html.Button([
-                html.Span("📄", style={"marginRight": "8px"}),
-                html.Span("Descargar PDF", className="btn-text-white")
+                html.Span("📄", style={"marginRight": "6px"}),
+                html.Span("Descargar PDF", className="btn-text-desktop"),
+                html.Span("PDF", className="btn-text-mobile-only")
             ], id="download-pdf-btn", n_clicks=0, className="download-btn"),
             
             # Botón Posiciones (acciones que tengo)
             html.Button(
                 id="toggle-posiciones-btn", 
                 n_clicks=0,
-                children=[html.Span(id="posiciones-icon", children="💼", style={"fontSize": "1.2rem"})],
+                children=[html.Span(id="posiciones-icon", children="💼", style={"fontSize": "1.1rem"})],
                 style={
                     "background": "transparent",
                     "border": "2px solid rgba(34, 197, 94, 0.4)",
                     "borderRadius": "50%",
-                    "width": "48px",
-                    "height": "48px",
+                    "width": "44px",
+                    "height": "44px",
+                    "minWidth": "44px",
                     "display": "flex",
                     "alignItems": "center",
                     "justifyContent": "center",
                     "cursor": "pointer",
                     "transition": "all 0.2s ease",
-                    "color": "#22c55e"
+                    "color": "#22c55e",
+                    "padding": "0"
                 },
                 title="Agregar a Posiciones"
             ),
@@ -502,23 +514,32 @@ app.layout = dbc.Container([
             html.Button(
                 id="toggle-radar-btn", 
                 n_clicks=0,
-                children=[html.Span(id="radar-icon", children="👁️", style={"fontSize": "1.2rem"})],
+                children=[html.Span(id="radar-icon", children="👁️", style={"fontSize": "1.1rem"})],
                 style={
                     "background": "transparent",
                     "border": "2px solid rgba(96, 165, 250, 0.4)",
                     "borderRadius": "50%",
-                    "width": "48px",
-                    "height": "48px",
+                    "width": "44px",
+                    "height": "44px",
+                    "minWidth": "44px",
                     "display": "flex",
                     "alignItems": "center",
                     "justifyContent": "center",
                     "cursor": "pointer",
                     "transition": "all 0.2s ease",
-                    "color": "#60a5fa"
+                    "color": "#60a5fa",
+                    "padding": "0"
                 },
                 title="Agregar a En Radar"
             ),
-        ], className="text-center mb-4", style={"display": "flex", "justifyContent": "center", "alignItems": "center", "gap": "12px"}),
+        ], className="action-buttons-container", style={
+            "display": "flex", 
+            "justifyContent": "center", 
+            "alignItems": "center", 
+            "gap": "10px",
+            "flexWrap": "nowrap",
+            "marginBottom": "16px"
+        }),
         
         dbc.Row([
             dbc.Col([html.Div(id="score-card-container", className="score-card")], xs=12, md=4, lg=3, className="mb-3"),
@@ -814,8 +835,8 @@ def toggle_posiciones(n_clicks, analysis_data, current_posiciones):
         "background": "transparent",
         "border": "2px solid rgba(34, 197, 94, 0.4)",
         "borderRadius": "50%",
-        "width": "48px",
-        "height": "48px",
+        "width": "44px",
+        "height": "44px",
         "display": "flex",
         "alignItems": "center",
         "justifyContent": "center",
@@ -874,8 +895,8 @@ def toggle_radar(n_clicks, analysis_data, current_radar):
         "background": "transparent",
         "border": "2px solid rgba(96, 165, 250, 0.4)",
         "borderRadius": "50%",
-        "width": "48px",
-        "height": "48px",
+        "width": "44px",
+        "height": "44px",
         "display": "flex",
         "alignItems": "center",
         "justifyContent": "center",
@@ -927,8 +948,8 @@ def sync_list_buttons(analysis_data, current_posiciones, current_radar):
         "background": "transparent",
         "border": "2px solid rgba(34, 197, 94, 0.4)",
         "borderRadius": "50%",
-        "width": "48px",
-        "height": "48px",
+        "width": "44px",
+        "height": "44px",
         "display": "flex",
         "alignItems": "center",
         "justifyContent": "center",
@@ -943,8 +964,8 @@ def sync_list_buttons(analysis_data, current_posiciones, current_radar):
         "background": "transparent",
         "border": "2px solid rgba(96, 165, 250, 0.4)",
         "borderRadius": "50%",
-        "width": "48px",
-        "height": "48px",
+        "width": "44px",
+        "height": "44px",
         "display": "flex",
         "alignItems": "center",
         "justifyContent": "center",
@@ -3192,6 +3213,11 @@ app.index_string = '''
             color: #10b981 !important;
         }
         
+        /* Tabs wrapper base */
+        .tabs-wrapper {
+            position: relative;
+        }
+        
         /* Links en verde */
         a {
             color: #10b981;
@@ -3212,6 +3238,63 @@ app.index_string = '''
             border: 1px solid rgba(55, 65, 81, 0.5);
             padding: 0;
             overflow: hidden;
+        }
+        
+        /* Institutional cards (Altman Z-Score, Piotroski F-Score) */
+        .institutional-card {
+            background: linear-gradient(145deg, rgba(39, 39, 42, 0.8) 0%, rgba(24, 24, 27, 0.9) 100%);
+            border: 1px solid rgba(63, 63, 70, 0.5);
+            border-radius: 12px;
+            padding: 20px;
+            height: 100%;
+            transition: all 0.2s ease;
+        }
+        
+        .institutional-card:hover {
+            border-color: rgba(16, 185, 129, 0.3);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        
+        .institutional-title {
+            font-weight: 600;
+            font-size: 1rem;
+            color: #fafafa;
+        }
+        
+        .institutional-value {
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+        
+        .institutional-label {
+            font-size: 0.9rem;
+            color: #a1a1aa;
+        }
+        
+        .institutional-desc {
+            font-size: 0.85rem;
+            color: #71717a;
+            margin-top: 8px;
+            margin-bottom: 0;
+        }
+        
+        /* Light theme institutional cards */
+        [data-theme="light"] .institutional-card {
+            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+            border-color: #e2e8f0;
+        }
+        
+        [data-theme="light"] .institutional-title {
+            color: #1e293b;
+        }
+        
+        [data-theme="light"] .institutional-label {
+            color: #64748b;
+        }
+        
+        [data-theme="light"] .institutional-desc {
+            color: #94a3b8;
         }
         
         /* Badge del score con animación sutil */
@@ -3391,6 +3474,167 @@ app.index_string = '''
             border: 3px solid #10b981 !important;
             border-radius: 6px !important;
             font-weight: 700 !important;
+        }
+        
+        /* =============================================
+           RESPONSIVE MÓVIL
+           ============================================= */
+        
+        /* Por defecto ocultar versión móvil del texto */
+        .btn-text-mobile-only {
+            display: none !important;
+        }
+        
+        @media (max-width: 768px) {
+            /* === BOTONES DE ACCIÓN === */
+            .download-btn {
+                padding: 10px 14px !important;
+                font-size: 0.85rem !important;
+                border-radius: 10px !important;
+                min-width: auto !important;
+                flex: 0 0 auto !important;
+            }
+            
+            .btn-text-desktop {
+                display: none !important;
+            }
+            .btn-text-mobile-only {
+                display: inline !important;
+            }
+            
+            /* Contenedor de botones más compacto */
+            #analysis-view > div:nth-child(2) {
+                gap: 8px !important;
+                flex-wrap: nowrap !important;
+            }
+            
+            /* Botones circulares más pequeños */
+            #toggle-posiciones-btn,
+            #toggle-radar-btn {
+                width: 42px !important;
+                height: 42px !important;
+                min-width: 42px !important;
+                flex-shrink: 0 !important;
+            }
+            
+            #toggle-posiciones-btn span,
+            #toggle-radar-btn span {
+                font-size: 1rem !important;
+            }
+            
+            /* === TABS: SCROLL HORIZONTAL FORZADO === */
+            .tabs-wrapper {
+                overflow-x: auto !important;
+                overflow-y: hidden !important;
+                -webkit-overflow-scrolling: touch !important;
+                margin: 0 -12px !important;
+                padding: 0 12px 8px 12px !important;
+                scrollbar-width: none !important;
+            }
+            
+            .tabs-wrapper::-webkit-scrollbar {
+                display: none !important;
+            }
+            
+            /* CRÍTICO: Forzar nav-tabs en línea */
+            .tabs-scrollable .nav-tabs,
+            .tabs-scrollable > .nav,
+            .nav-tabs {
+                display: flex !important;
+                flex-direction: row !important;
+                flex-wrap: nowrap !important;
+                width: max-content !important;
+                min-width: 100% !important;
+                border-bottom: 1px solid #3f3f46 !important;
+                gap: 0 !important;
+            }
+            
+            .nav-tabs .nav-item {
+                flex: 0 0 auto !important;
+                white-space: nowrap !important;
+            }
+            
+            .nav-tabs .nav-link {
+                padding: 10px 14px !important;
+                font-size: 0.8rem !important;
+                white-space: nowrap !important;
+                border-radius: 8px 8px 0 0 !important;
+            }
+            
+            /* Indicador visual de scroll */
+            .tabs-wrapper::after {
+                content: '';
+                position: absolute;
+                right: 0;
+                top: 0;
+                bottom: 8px;
+                width: 30px;
+                background: linear-gradient(to right, transparent, rgba(24,24,27,0.9));
+                pointer-events: none;
+            }
+            
+            /* === CARDS Y CONTENIDO === */
+            .institutional-card {
+                padding: 16px !important;
+            }
+            
+            .institutional-value {
+                font-size: 1.5rem !important;
+            }
+            
+            .score-card {
+                margin-bottom: 16px !important;
+            }
+            
+            .tooltip-inner {
+                max-width: 280px !important;
+                padding: 12px 14px !important;
+                font-size: 12px !important;
+            }
+            
+            .tab-content-inner {
+                padding: 12px 0 !important;
+            }
+            
+            /* Métricas en grid 2 columnas en móvil */
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 8px !important;
+            }
+        }
+        
+        /* Pantallas muy pequeñas (iPhone SE, etc) */
+        @media (max-width: 480px) {
+            .download-btn {
+                padding: 8px 12px !important;
+                font-size: 0.8rem !important;
+            }
+            
+            #toggle-posiciones-btn,
+            #toggle-radar-btn {
+                width: 38px !important;
+                height: 38px !important;
+                min-width: 38px !important;
+            }
+            
+            #toggle-posiciones-btn span,
+            #toggle-radar-btn span {
+                font-size: 0.9rem !important;
+            }
+            
+            .nav-tabs .nav-link {
+                padding: 8px 12px !important;
+                font-size: 0.75rem !important;
+            }
+            
+            /* Header de empresa más compacto */
+            #company-header h2 {
+                font-size: 1.1rem !important;
+            }
+            
+            #company-header h3 {
+                font-size: 1.5rem !important;
+            }
         }
         </style>
         <script>

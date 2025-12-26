@@ -14,7 +14,7 @@
     --fn-primary-alpha-20: rgba(16, 185, 129, 0.2);
     --fn-primary-alpha-30: rgba(16, 185, 129, 0.3);
     
-    /* Fondos */
+    /* Fondos - Original */
     --fn-bg-dark: #18181b;
     --fn-bg-card: #1f1f23;
     --fn-bg-elevated: #27272a;
@@ -948,6 +948,51 @@ body,
    UTILIDADES
    ============================================== */
 
+/* Institutional cards (Altman Z-Score, Piotroski F-Score) */
+.institutional-card {
+    background: linear-gradient(145deg, rgba(39, 39, 42, 0.8) 0%, rgba(24, 24, 27, 0.9) 100%);
+    border: 1px solid rgba(63, 63, 70, 0.5);
+    border-radius: var(--fn-radius-md);
+    padding: 20px;
+    height: 100%;
+    transition: all var(--fn-transition-normal);
+}
+
+.institutional-card:hover {
+    border-color: rgba(16, 185, 129, 0.3);
+    box-shadow: var(--fn-shadow-md);
+}
+
+.institutional-title {
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--fn-text-primary);
+}
+
+.institutional-value {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.institutional-label {
+    font-size: 0.9rem;
+    color: var(--fn-text-secondary);
+}
+
+.institutional-desc {
+    font-size: 0.85rem;
+    color: var(--fn-text-muted);
+    margin-top: 8px;
+    margin-bottom: 0;
+}
+
+/* Light theme institutional cards */
+[data-theme="light"] .institutional-card {
+    background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+    border-color: #e2e8f0;
+}
+
 /* Fade in classes */
 .fade-in { animation: fadeIn 0.3s ease-out; }
 .fade-in-up { animation: fadeInUp 0.4s ease-out; }
@@ -977,4 +1022,55 @@ body,
 
 ::-webkit-scrollbar-thumb:hover {
     background: var(--fn-text-muted);
+}
+
+/* ==============================================
+   FEATURES CONTAINER - Home
+   ============================================== */
+.features-container {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: stretch;
+    background: linear-gradient(145deg, var(--fn-bg-card) 0%, var(--fn-bg-dark) 100%);
+    border-radius: var(--fn-radius-lg);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 20px 10px;
+    gap: 0;
+}
+
+.feature-divider {
+    width: 1px;
+    background: linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.1) 50%, transparent 100%);
+    margin: 10px 0;
+    align-self: stretch;
+}
+
+.feature-title {
+    color: var(--fn-text-primary);
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 6px;
+}
+
+.feature-desc {
+    color: var(--fn-text-muted);
+    font-size: 0.8rem;
+    margin: 0;
+    line-height: 1.4;
+}
+
+@media (max-width: 768px) {
+    .features-container {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .feature-divider {
+        width: 80%;
+        height: 1px;
+        margin: 5px auto;
+        background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.1) 50%, transparent 100%);
+    }
 }
