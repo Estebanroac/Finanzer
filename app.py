@@ -67,6 +67,7 @@ from finanzer.components.pdf_generator import generate_simple_pdf
 
 # Utilidades
 from finanzer.utils.search import resolve_symbol, COMPANY_NAMES
+from finanzer.utils.formatters import fmt, get_metric_color
 from finanzer.analysis.alerts import get_alert_explanation
 from finanzer.analysis.sectors import get_sector_metrics_config
 
@@ -346,84 +347,94 @@ app.layout = dbc.Container([
             
             html.Div([
                 # Value Investing
-                html.Div([
-                    html.Button([
-                        html.Div("💎", style={"fontSize": "1.5rem", "marginBottom": "8px"}),
-                        html.Div("Value", style={"fontWeight": "600", "marginBottom": "4px"}),
-                        html.Div("Bajo P/E", className="text-muted", style={"fontSize": "0.75rem"})
-                    ], id="strategy-value", n_clicks=0, style={
-                        "background": "rgba(59, 130, 246, 0.1)",
-                        "border": "1px solid rgba(59, 130, 246, 0.3)",
-                        "borderRadius": "12px",
-                        "padding": "16px 24px",
-                        "color": "#60a5fa",
-                        "cursor": "pointer",
-                        "transition": "all 0.2s ease",
-                        "minWidth": "100px"
-                    })
-                ], style={"flex": "1"}),
+                html.Button([
+                    html.Div("💎", style={"fontSize": "2rem", "marginBottom": "12px"}),
+                    html.Div("Value", style={"fontWeight": "600", "fontSize": "1rem", "marginBottom": "4px"}),
+                    html.Div("Bajo P/E", className="text-muted", style={"fontSize": "0.75rem"})
+                ], id="strategy-value", n_clicks=0, style={
+                    "background": "rgba(59, 130, 246, 0.1)",
+                    "border": "1px solid rgba(59, 130, 246, 0.3)",
+                    "borderRadius": "12px",
+                    "padding": "20px",
+                    "color": "#60a5fa",
+                    "cursor": "pointer",
+                    "transition": "all 0.2s ease",
+                    "width": "140px",
+                    "height": "140px",
+                    "display": "flex",
+                    "flexDirection": "column",
+                    "alignItems": "center",
+                    "justifyContent": "center"
+                }),
                 
                 # Growth
-                html.Div([
-                    html.Button([
-                        html.Div("🚀", style={"fontSize": "1.5rem", "marginBottom": "8px"}),
-                        html.Div("Growth", style={"fontWeight": "600", "marginBottom": "4px"}),
-                        html.Div("Alto crecimiento", className="text-muted", style={"fontSize": "0.75rem"})
-                    ], id="strategy-growth", n_clicks=0, style={
-                        "background": "rgba(16, 185, 129, 0.1)",
-                        "border": "1px solid rgba(16, 185, 129, 0.3)",
-                        "borderRadius": "12px",
-                        "padding": "16px 24px",
-                        "color": "#34d399",
-                        "cursor": "pointer",
-                        "transition": "all 0.2s ease",
-                        "minWidth": "100px"
-                    })
-                ], style={"flex": "1"}),
+                html.Button([
+                    html.Div("🚀", style={"fontSize": "2rem", "marginBottom": "12px"}),
+                    html.Div("Growth", style={"fontWeight": "600", "fontSize": "1rem", "marginBottom": "4px"}),
+                    html.Div("Alto crecimiento", className="text-muted", style={"fontSize": "0.75rem"})
+                ], id="strategy-growth", n_clicks=0, style={
+                    "background": "rgba(16, 185, 129, 0.1)",
+                    "border": "1px solid rgba(16, 185, 129, 0.3)",
+                    "borderRadius": "12px",
+                    "padding": "20px",
+                    "color": "#34d399",
+                    "cursor": "pointer",
+                    "transition": "all 0.2s ease",
+                    "width": "140px",
+                    "height": "140px",
+                    "display": "flex",
+                    "flexDirection": "column",
+                    "alignItems": "center",
+                    "justifyContent": "center"
+                }),
                 
                 # Dividends
-                html.Div([
-                    html.Button([
-                        html.Div("💰", style={"fontSize": "1.5rem", "marginBottom": "8px"}),
-                        html.Div("Dividendos", style={"fontWeight": "600", "marginBottom": "4px"}),
-                        html.Div("Income investing", className="text-muted", style={"fontSize": "0.75rem"})
-                    ], id="strategy-dividend", n_clicks=0, style={
-                        "background": "rgba(245, 158, 11, 0.1)",
-                        "border": "1px solid rgba(245, 158, 11, 0.3)",
-                        "borderRadius": "12px",
-                        "padding": "16px 24px",
-                        "color": "#F59E0B",
-                        "cursor": "pointer",
-                        "transition": "all 0.2s ease",
-                        "minWidth": "100px"
-                    })
-                ], style={"flex": "1"}),
+                html.Button([
+                    html.Div("💰", style={"fontSize": "2rem", "marginBottom": "12px"}),
+                    html.Div("Dividendos", style={"fontWeight": "600", "fontSize": "1rem", "marginBottom": "4px"}),
+                    html.Div("Income investing", className="text-muted", style={"fontSize": "0.75rem"})
+                ], id="strategy-dividend", n_clicks=0, style={
+                    "background": "rgba(245, 158, 11, 0.1)",
+                    "border": "1px solid rgba(245, 158, 11, 0.3)",
+                    "borderRadius": "12px",
+                    "padding": "20px",
+                    "color": "#F59E0B",
+                    "cursor": "pointer",
+                    "transition": "all 0.2s ease",
+                    "width": "140px",
+                    "height": "140px",
+                    "display": "flex",
+                    "flexDirection": "column",
+                    "alignItems": "center",
+                    "justifyContent": "center"
+                }),
                 
                 # Blue Chips
-                html.Div([
-                    html.Button([
-                        html.Div("🏛️", style={"fontSize": "1.5rem", "marginBottom": "8px"}),
-                        html.Div("Blue Chips", style={"fontWeight": "600", "marginBottom": "4px"}),
-                        html.Div("Mega caps", className="text-muted", style={"fontSize": "0.75rem"})
-                    ], id="strategy-bluechip", n_clicks=0, style={
-                        "background": "rgba(139, 92, 246, 0.1)",
-                        "border": "1px solid rgba(139, 92, 246, 0.3)",
-                        "borderRadius": "12px",
-                        "padding": "16px 24px",
-                        "color": "#A78BFA",
-                        "cursor": "pointer",
-                        "transition": "all 0.2s ease",
-                        "minWidth": "100px"
-                    })
-                ], style={"flex": "1"}),
+                html.Button([
+                    html.Div("🏛️", style={"fontSize": "2rem", "marginBottom": "12px"}),
+                    html.Div("Blue Chips", style={"fontWeight": "600", "fontSize": "1rem", "marginBottom": "4px"}),
+                    html.Div("Mega caps", className="text-muted", style={"fontSize": "0.75rem"})
+                ], id="strategy-bluechip", n_clicks=0, style={
+                    "background": "rgba(139, 92, 246, 0.1)",
+                    "border": "1px solid rgba(139, 92, 246, 0.3)",
+                    "borderRadius": "12px",
+                    "padding": "20px",
+                    "color": "#A78BFA",
+                    "cursor": "pointer",
+                    "transition": "all 0.2s ease",
+                    "width": "140px",
+                    "height": "140px",
+                    "display": "flex",
+                    "flexDirection": "column",
+                    "alignItems": "center",
+                    "justifyContent": "center"
+                }),
                 
             ], style={
                 "display": "flex", 
                 "justifyContent": "center", 
-                "gap": "16px", 
-                "flexWrap": "wrap",
-                "maxWidth": "600px",
-                "margin": "0 auto"
+                "gap": "20px", 
+                "flexWrap": "wrap"
             }),
             
             # Resultados del screener
@@ -3341,45 +3352,7 @@ def update_comparison_table(comparison_list):
             html.P("Usa el botón 'Comparar' en cada acción para agregarla.", className="text-muted small text-center")
         ])
     
-    # Crear tabla comparativa
-    def fmt(val, tipo="number"):
-        if val is None:
-            return "N/A"
-        try:
-            if tipo == "percent":
-                # Los valores vienen como decimales (0.15 = 15%)
-                return f"{val * 100:.1f}%" if abs(val) < 2 else f"{val:.1f}%"
-            if tipo == "multiple":
-                return f"{val:.1f}x"
-            return f"{val:.1f}"
-        except (TypeError, ValueError):
-            return "N/A"
-    
-    def get_color(val, metric):
-        """Retorna color basado en si el valor es bueno o malo."""
-        if val is None:
-            return ""
-        
-        try:
-            # Definir qué es bueno para cada métrica
-            # Nota: ROE, net_margin vienen como decimales (0.15 = 15%)
-            if metric == "pe":
-                return "text-success" if val < 20 else "text-warning" if val < 30 else "text-danger"
-            if metric == "roe":
-                return "text-success" if val > 0.15 else "text-warning" if val > 0.08 else "text-danger"
-            if metric == "debt_equity":
-                return "text-success" if val < 0.5 else "text-warning" if val < 1.5 else "text-danger"
-            if metric == "net_margin":
-                return "text-success" if val > 0.15 else "text-warning" if val > 0.05 else "text-danger"
-            if metric == "score":
-                return "text-success" if val >= 70 else "text-warning" if val >= 50 else "text-danger"
-            if metric == "fcf_yield":
-                return "text-success" if val > 0.05 else "text-warning" if val > 0.02 else "text-danger"
-            if metric == "dividend_yield":
-                return "text-success" if val > 0.03 else "text-warning" if val > 0.01 else ""
-        except (TypeError, ValueError):
-            pass
-        return ""
+    # Crear tabla comparativa (usa fmt y get_metric_color de finanzer.utils.formatters)
     
     # Headers
     headers = ["Métrica"] + [s["symbol"] for s in comparison_list]
@@ -3400,7 +3373,7 @@ def update_comparison_table(comparison_list):
         row = [html.Td(metric_name, style={"fontWeight": "600", "color": "#a1a1aa"})]
         for stock in comparison_list:
             val = stock.get(metric_key)
-            color_class = get_color(val, metric_key)
+            color_class = get_metric_color(val, metric_key)
             row.append(html.Td(fmt(val, fmt_type), className=color_class))
         rows.append(html.Tr(row))
     
