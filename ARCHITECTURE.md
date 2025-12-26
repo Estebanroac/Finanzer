@@ -1,258 +1,351 @@
-# 🏗️ Arquitectura - Finanzer
+# 🏗️ Arquitectura - Finanzer v3.0.0
 
 ## Visión General
 
-Finanzer sigue una arquitectura modular de 4 capas:
+Finanzer v3.0.0 introduce una arquitectura modular con separación clara de responsabilidades:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    CAPA DE PRESENTACIÓN                     │
 │                         (app.py)                            │
-│   Dash/Plotly · Bootstrap · Callbacks · Visualizaciones     │
+│   Dash/Plotly · Bootstrap · Layout · Orquestación           │
 └─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
+        │                    │                    │
+        ▼                    ▼                    ▼
+┌───────────────┐  ┌───────────────┐  ┌───────────────┐
+│  callbacks/   │  │  components/  │  │   analysis/   │
+│   search.py   │  │   charts.py   │  │   ratios.py   │
+│   chart.py    │  │   cards.py    │  │  scoring.py   │
+│ comparison.py │  │   tables.py   │  │   alerts.py   │
+└───────────────┘  │ sensitivity.py│  │  sectors.py   │
+        │          │   tooltips.py │  │   utils.py    │
+        │          │   pdf_gen.py  │  └───────────────┘
+        │          └───────────────┘          │
+        ▼                  │                  │
 ┌─────────────────────────────────────────────────────────────┐
-│                    CAPA DE LÓGICA                           │
-│                   (financial_ratios.py)                     │
-│   Ratios · Scores · DCF · Alertas · Clasificación           │
+│                       utils/                                 │
+│                      search.py                               │
+│           Resolución de símbolos · Mapeo nombres             │
 └─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
+                           │
+                           ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                    CAPA DE DATOS                            │
 │                    (data_fetcher.py)                        │
 │   Yahoo Finance API · Caché LRU · Paralelización            │
 └─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
+                           │
+                           ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                  CAPA DE CONFIGURACIÓN                      │
-│            (config.py · sector_profiles.py)                 │
+│                      (config.py)                            │
 │   Constantes · Thresholds · Ajustes por Sector              │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Componentes Principales
+## Estructura de Archivos
 
-### 1. app.py (~3,200 líneas)
-**Responsabilidad**: Interfaz de usuario y orquestación
+```
+finanzer/                         ~4,000 líneas (21 archivos)
+├── __init__.py                   # Package principal (v3.0.0)
+│
+├── analysis/                     # Lógica financiera (1,306 líneas)
+│   ├── __init__.py               # Exports centralizados (151)
+│   ├── utils.py                  # safe_div, format_large_number (115)
+│   ├── ratios.py                 # 40+ ratios financieros (338)
+│   ├── scoring.py                # Altman Z, Piotroski F, WACC (450)
+│   ├── alerts.py                 # Explicaciones educativas (82)
+│   └── sectors.py                # Benchmarks por sector (170)
+│
+├── components/                   # Componentes UI (1,693 líneas)
+│   ├── __init__.py               # Lazy loading (71)
+│   ├── tooltips.py               # METRIC_TOOLTIPS - 49 métricas (401)
+│   ├── cards.py                  # Metric cards con tooltips (88)
+│   ├── charts.py                 # Gráficos Plotly (249)
+│   ├── tables.py                 # Tablas comparativas (147)
+│   ├── sensitivity.py            # Matriz DCF sensibilidad (225)
+│   └── pdf_generator.py          # Generador de reportes PDF (512)
+│
+├── callbacks/                    # Callbacks Dash (423 líneas)
+│   ├── __init__.py               # (13)
+│   ├── search.py                 # Autocompletado de búsqueda (98)
+│   ├── chart.py                  # Cambio de período gráfico (128)
+│   └── comparison.py             # Comparador multi-acción (184)
+│
+├── utils/                        # Utilidades generales (162 líneas)
+│   ├── __init__.py               # (17)
+│   └── search.py                 # Resolución símbolos, COMPANY_NAMES (145)
+│
+└── assets/                       # Archivos estáticos
+    └── styles.css                # CSS customizado (395 líneas)
+```
 
+**Archivos raíz:**
+```
+app.py              # Aplicación principal Dash (~3,030 líneas) ← Reducido 35%
+financial_ratios.py # Funciones originales (~4,475 líneas)
+data_fetcher.py     # Cliente de datos (~1,400 líneas)
+config.py           # Configuración centralizada (~250 líneas)
+stock_database.py   # Base de datos de tickers (~700 líneas)
+sector_profiles.py  # Perfiles de sectores (~885 líneas)
+```
+
+---
+
+## Módulos Detallados
+
+### 1. finanzer/analysis/
+
+**utils.py** - Funciones helper seguras
 ```python
-# Estructura principal
-app = Dash(__name__)
-
-# Layout
-app.layout = html.Div([
-    # Navbar
-    # Search Input
-    # Tabs (6 pestañas de análisis)
-    # Modals
-])
-
-# Callbacks
-@app.callback(...)  # Análisis principal
-@app.callback(...)  # Generación PDF
-@app.callback(...)  # Actualización de tabs
+safe_div(a, b)           # División sin ZeroDivisionError
+safe_multiply(*args)     # Multiplicación con None handling
+format_large_number(val) # 1234567890 → "$1.23B"
+format_ratio(val, type)  # Formatea ratios para display
 ```
 
-**Componentes clave**:
-- `METRIC_TOOLTIPS` - Diccionario con ~35 tooltips explicativos
-- `create_metric_card()` - Genera tarjetas de métricas con tooltips
-- `create_score_donut()` - Gráfico circular del score
-- `generate_pdf_content()` - Exportación a PDF
-
-### 2. financial_ratios.py (~4,000 líneas)
-**Responsabilidad**: Motor de cálculos financieros
-
+**ratios.py** - 40+ ratios financieros
 ```python
-# Modelos institucionales
-altman_z_score()        # Predicción de bancarrota
-piotroski_f_score()     # Solidez financiera (9 criterios)
-dcf_multi_stage()       # Valoración DCF 3 etapas
-dcf_multi_stage_dynamic()  # DCF con WACC/growth automático
+# Rentabilidad
+roe(), roa(), roic()
+operating_margin(), gross_margin(), net_margin()
 
-# Ratios fundamentales
-roe(), roa(), roic()    # Rentabilidad
-current_ratio(), quick_ratio()  # Liquidez
-debt_to_equity(), interest_coverage()  # Solvencia
-pe(), pb(), ev_ebitda()  # Valoración
+# Valoración
+price_earnings(), price_book(), price_sales()
+ev_ebitda(), peg_ratio(), free_cash_flow_yield()
 
-# Sistema de scoring
-calculate_comprehensive_score()  # Score 0-100
-aggregate_alerts()      # Sistema de alertas
-classify_company_type() # Growth vs Value
+# Liquidez
+current_ratio(), quick_ratio(), cash_ratio()
+
+# Solvencia
+debt_to_equity(), interest_coverage(), net_debt_to_ebitda()
+
+# REITs
+funds_from_operations(), price_to_ffo(), ffo_payout_ratio()
 ```
 
-**Funciones principales**:
-
-| Función | Propósito | Inputs | Output |
-|---------|-----------|--------|--------|
-| `altman_z_score()` | Riesgo bancarrota | 7 métricas | (z, nivel, msg) |
-| `piotroski_f_score()` | Solidez | 12 métricas | (score, desglose) |
-| `dcf_multi_stage_dynamic()` | Valor intrínseco | FCF, shares, beta... | Dict completo |
-| `calculate_all_ratios()` | Todos los ratios | financial_data | Dict ~40 ratios |
-| `aggregate_alerts()` | Score + alertas | ratios, contextual | Dict con score |
-
-### 3. data_fetcher.py (~1,400 líneas)
-**Responsabilidad**: Obtención de datos financieros
-
+**scoring.py** - Modelos institucionales
 ```python
-class SimpleCache:
-    """Caché LRU con TTL"""
-    
-class YahooFinanceFetcher:
-    """Wrapper para yfinance"""
-    get_company_profile()
-    get_financial_data()
-    get_historical_metrics()
-    get_detailed_historical_data()
-    
-class FinancialDataService:
-    """Orquestador principal"""
-    get_complete_analysis_data()  # Paralelo con ThreadPoolExecutor
+altman_z_score()         # Predicción de bancarrota (Z > 2.99 = seguro)
+piotroski_f_score()      # Solidez financiera (0-9)
+calculate_wacc()         # Costo promedio ponderado del capital
+calculate_justified_pe() # P/E justificado por fundamentos
 ```
 
-**Flujo de datos paralelo**:
-```
-get_complete_analysis_data(symbol)
-    │
-    ├── ThreadPoolExecutor(max_workers=4)
-    │   ├── get_company_profile()     ─┐
-    │   ├── get_financial_data()      ─┼── En paralelo (~1.7s)
-    │   ├── get_historical_metrics()  ─┤
-    │   └── get_detailed_historical() ─┘
-    │
-    └── get_sector_averages()  # Secuencial (necesita profile)
-    
-    Total: ~2.4s (vs 5s secuencial)
-```
-
-### 4. config.py (~250 líneas)
-**Responsabilidad**: Configuración centralizada
-
+**alerts.py** - Sistema de explicaciones
 ```python
-# Thresholds de modelos
-ALTMAN_Z_SAFE = 2.99
-PIOTROSKI_STRONG = 7
-
-# Parámetros DCF
-DCF_RISK_FREE_RATE = 0.045
-DCF_TERMINAL_GROWTH = 0.025
-
-# Ajustes por sector
-SECTOR_ADJUSTMENTS = {
-    "financials": {...},
-    "real_estate": {...},
-    ...
+ALERT_EXPLANATIONS = {
+    ("valoración", "p/e"): "El ratio P/E compara...",
+    ("deuda", "interest"): "La cobertura de intereses mide...",
+    # 20+ explicaciones por categoría
 }
+
+get_alert_explanation(category, reason)  # Retorna explicación educativa
+```
+
+**sectors.py** - Configuración sectorial
+```python
+get_sector_metrics_config(sector)  # Retorna métricas clave por sector
+MARKET_BENCHMARKS = {              # Benchmarks S&P 500
+    "pe": 28.9, "roe": 0.15, "debt_to_equity": 0.80, ...
+}
+```
+
+### 2. finanzer/components/
+
+**tooltips.py** - Diccionario de explicaciones
+```python
+METRIC_TOOLTIPS = {
+    "pe": {
+        "nombre": "P/E (Precio/Beneficio)",
+        "que_es": "Cuántos dólares pagas por cada dólar de ganancia anual.",
+        "rangos": "• <15: Posiblemente barata\n• 15-25: Valoración típica...",
+        "contexto": "Compara siempre con empresas del mismo sector."
+    },
+    # ... 49 métricas más
+}
+
+LABEL_TO_TOOLTIP = {"P/E": "pe", "ROE": "roe", ...}  # Mapeo de labels
+```
+
+**cards.py** - Tarjetas de métricas
+```python
+create_metric_card(label, value, icon, tooltip_key)
+create_metric_with_tooltip(label, value, tooltip_key, uid)
+create_score_summary_card(label, score, max_score, icon)
+```
+
+**charts.py** - Visualizaciones Plotly
+```python
+get_score_color(score)              # Score → (color, label)
+create_score_donut(score)           # Gráfico circular del score
+create_price_chart(symbol, period)  # Gráfico de precio histórico
+create_ytd_comparison_chart(...)    # Comparativo YTD
+```
+
+**tables.py** - Tablas comparativas
+```python
+create_comparison_metric_row(metric_name, company_val, sector_val, market_val)
+create_comparison_table_header()    # Encabezado estilizado
+```
+
+**sensitivity.py** - Matriz DCF
+```python
+build_sensitivity_section(sensitivity_data, current_price)
+get_sensitivity_cell_class(fair_value, price)  # Coloración según valoración
+```
+
+**pdf_generator.py** - Exportación PDF
+```python
+generate_simple_pdf(symbol, company_name, ratios, alerts, score)
+# Retorna bytes del PDF listo para descargar
+```
+
+### 3. finanzer/utils/
+
+**search.py** - Resolución de símbolos
+```python
+COMPANY_NAMES = {
+    "apple": "AAPL", "google": "GOOGL", "microsoft": "MSFT", ...
+}
+
+resolve_symbol(query)     # "apple" → "AAPL"
+is_valid_ticker(symbol)   # Valida formato de ticker
+normalize_ticker(symbol)  # Normaliza a mayúsculas
+```
+
+---
+
+## Uso de Módulos
+
+### Importar componentes de análisis
+```python
+from finanzer.analysis import (
+    roe, roa, roic,
+    altman_z_score, piotroski_f_score,
+    calculate_wacc, safe_div,
+    get_alert_explanation,
+    get_sector_metrics_config
+)
+
+# Calcular ratios
+ratio = roe(net_income=100, average_equity=500)  # 0.2
+
+# Scoring institucional
+z, level, interp = altman_z_score(wc, ta, re, ebit, mve, tl, sales)
+
+# Explicaciones educativas
+explanation = get_alert_explanation("valoración", "P/E elevado")
+```
+
+### Importar componentes UI (requiere Dash)
+```python
+from finanzer.components import (
+    create_metric_card,
+    create_score_donut,
+    create_comparison_metric_row,
+    build_sensitivity_section,
+    METRIC_TOOLTIPS
+)
+
+# Crear tarjeta
+card = create_metric_card("P/E", "15.2x", "📊", "pe")
+
+# Matriz de sensibilidad
+section = build_sensitivity_section(sensitivity_data, current_price)
+```
+
+### Importar utilidades
+```python
+from finanzer.utils import resolve_symbol, COMPANY_NAMES
+
+symbol = resolve_symbol("microsoft")  # "MSFT"
 ```
 
 ---
 
 ## Flujo de Datos
 
-### Análisis de una acción
-
 ```
 Usuario ingresa "AAPL"
          │
          ▼
     ┌─────────────┐
-    │  app.py     │  Callback: analyze_stock()
-    │  (UI)       │
+    │  utils/     │  resolve_symbol("AAPL") → valida ticker
+    │  search.py  │
     └─────────────┘
          │
          ▼
     ┌─────────────┐
-    │ data_fetcher│  get_complete_analysis_data("AAPL")
-    │  (API)      │  → Llamadas paralelas a Yahoo Finance
+    │  callbacks/ │  update_search_suggestions() → dropdown
+    │  search.py  │
+    └─────────────┘
+         │ (selección)
+         ▼
+    ┌─────────────┐
+    │  app.py     │  handle_navigation() → análisis completo
+    │  (main)     │
     └─────────────┘
          │
          ▼
     ┌─────────────┐
-    │ financial_  │  calculate_all_ratios(data)
-    │ ratios.py   │  aggregate_alerts(ratios)
-    │  (Cálculos) │  dcf_multi_stage_dynamic(...)
+    │data_fetcher │  get_complete_analysis_data("AAPL")
+    │  (API)      │  → ThreadPoolExecutor (4 llamadas paralelas)
     └─────────────┘
          │
          ▼
     ┌─────────────┐
-    │  app.py     │  Renderiza:
-    │  (UI)       │  - Score card
-    └─────────────┘  - 6 tabs con métricas
-                     - Gráficos Plotly
-                     - Alertas/recomendaciones
+    │ analysis/   │  ratios.py: calculate_all_ratios()
+    │ scoring.py  │  scoring.py: altman_z, piotroski_f
+    │ sectors.py  │  sectors.py: get_sector_metrics_config()
+    └─────────────┘
+         │
+         ▼
+    ┌─────────────┐
+    │ components/ │  charts.py: create_score_donut()
+    │             │  cards.py: create_metric_card()
+    │             │  sensitivity.py: build_sensitivity_section()
+    │             │  tables.py: create_comparison_metric_row()
+    └─────────────┘
+         │
+         ▼
+    ┌─────────────┐
+    │  Render     │  7 tabs con métricas, gráficos, alertas
+    └─────────────┘
 ```
 
 ---
 
-## Sistema de Caché
+## Métricas de Código v3.0.0
 
-```python
-SimpleCache(default_ttl_minutes=10, max_entries=500)
+### Paquete finanzer/
 
-# Estrategia LRU (Least Recently Used)
-# - Evicta entradas expiradas automáticamente
-# - Evicta 10% más viejas al alcanzar límite
+| Módulo | Líneas | Descripción |
+|--------|--------|-------------|
+| analysis/utils.py | 115 | Funciones helper |
+| analysis/ratios.py | 338 | 40+ ratios |
+| analysis/scoring.py | 450 | Modelos institucionales |
+| analysis/alerts.py | 82 | Explicaciones alertas |
+| analysis/sectors.py | 170 | Config. sectores |
+| components/tooltips.py | 401 | 49 métricas explicadas |
+| components/cards.py | 88 | Tarjetas métricas |
+| components/charts.py | 249 | Gráficos Plotly |
+| components/tables.py | 147 | Tablas comparativas |
+| components/sensitivity.py | 225 | Matriz DCF |
+| components/pdf_generator.py | 512 | Generador PDF |
+| callbacks/*.py | 423 | Callbacks Dash |
+| utils/search.py | 145 | Resolución símbolos |
+| assets/styles.css | 395 | CSS customizado |
+| **Total finanzer/** | **~4,000** | 21 archivos |
 
-# TTLs por tipo de dato:
-# - Profile: 30 min (cambia poco)
-# - Financials: 10 min (default)
-# - Historical: 10 min
-```
+### Reducción de app.py
 
----
-
-## Sistema de Scoring
-
-```
-Score Base: 50 pts
-
-Ajustes positivos:
-├── Altman Z > 2.99      (+8 pts)
-├── Piotroski F >= 7     (+10 pts)
-├── ROE > 20%            (+8 pts)
-├── FCF positivo         (+5 pts)
-├── P/E < 15             (+5 pts)
-└── ...
-
-Ajustes negativos:
-├── Z-Score < 1.81       (-15 pts)
-├── F-Score <= 3         (-10 pts)
-├── D/E > 2.0            (-8 pts)
-├── FCF negativo         (-5 pts)
-└── ...
-
-Score Final = Base + Σ(Ajustes)
-Rango: 0-100
-```
-
----
-
-## Manejo de Errores
-
-```python
-# Nivel 1: Validación de inputs
-if value is None or value <= 0:
-    return None  # Graceful degradation
-
-# Nivel 2: Exception handling específico
-try:
-    result = calculation()
-except (ZeroDivisionError, TypeError, ValueError):
-    return None, "N/A", "Error específico"
-except Exception:
-    return None, "N/A", "Error inesperado"
-
-# Nivel 3: Fallbacks en UI
-if ratio is None:
-    display = "N/A"
-else:
-    display = f"{ratio:.2f}"
-```
+| Versión | Líneas | Cambio |
+|---------|--------|--------|
+| v2.9 (original) | 4,670 | — |
+| v3.0.0 (modular) | 3,030 | **-35%** |
 
 ---
 
@@ -260,24 +353,21 @@ else:
 
 ```
 tests/
-├── conftest.py          # Fixtures compartidos
+├── conftest.py
 ├── fixtures/
-│   ├── companies.py     # Datos de prueba por tipo
-│   └── expected.py      # Resultados esperados
-│
+│   ├── companies.py
+│   └── expected.py
 ├── unit/
 │   ├── test_altman_z.py
 │   ├── test_piotroski.py
 │   ├── test_dcf.py
 │   ├── test_ratios.py
 │   └── test_scoring.py
-│
 └── integration/
     ├── test_complete_flow.py
     └── test_data_fetcher.py
 
 # Cobertura: 84% (298 tests)
-# Tiempo: ~15 segundos
 ```
 
 ---
@@ -285,25 +375,34 @@ tests/
 ## Dependencias
 
 ```
-dash>=2.14.0           # Framework web
-dash-bootstrap-components  # UI components
-pandas>=2.0.0          # DataFrames
-yfinance>=0.2.31       # Yahoo Finance API
-plotly>=5.18.0         # Gráficos interactivos
-numpy                  # Cálculos numéricos
-fpdf2                  # Generación PDF
+dash>=2.14.0              # Framework web
+dash-bootstrap-components # UI components
+pandas>=2.0.0             # DataFrames
+yfinance>=0.2.31          # Yahoo Finance API
+plotly>=5.18.0            # Gráficos interactivos
+numpy                     # Cálculos numéricos
+reportlab                 # Generación PDF
 ```
 
 ---
 
-## Consideraciones de Performance
+## Performance
 
-1. **Paralelización**: 4 llamadas API en paralelo (ThreadPoolExecutor)
-2. **Caché LRU**: Evita llamadas repetidas a la API
-3. **Lazy loading**: Tabs se renderizan solo cuando se seleccionan
-4. **Gráficos optimizados**: Plotly con displayModeBar=False
+| Métrica | Valor |
+|---------|-------|
+| Tiempo análisis (cold) | ~2.4s |
+| Tiempo con caché | ~0.7s |
+| Llamadas API paralelas | 4 |
+| Caché TTL | 10 min |
+| Memoria típica | ~50MB |
 
-**Métricas**:
-- Tiempo de análisis: ~2.4s (cold cache)
-- Tiempo con caché: ~0.7s
-- Memoria: ~50MB típico
+---
+
+## Beneficios de la Arquitectura Modular
+
+1. **Mantenibilidad**: Cada módulo tiene una responsabilidad clara
+2. **Testabilidad**: Funciones aisladas, fáciles de probar
+3. **Reutilización**: Componentes importables independientemente
+4. **Escalabilidad**: Añadir funcionalidades sin tocar app.py
+5. **Lazy loading**: Solo carga lo que necesita (components/__init__.py)
+6. **Separación de concerns**: Lógica financiera separada de UI

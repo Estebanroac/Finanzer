@@ -4039,3 +4039,437 @@ def calculate_score_v2(
         "company_type": company_type,
         "growth_quality_score": growth_quality
     }
+
+
+# =============================================================================
+# DCF SENSITIVITY ANALYSIS - v2.9
+# =============================================================================
+
+def dcf_sensitivity_analysis(
+    fcf: Optional[float],
+    shares_outstanding: Optional[float],
+    current_price: Optional[float] = None,
+    base_growth_rate: float = 0.15,
+    base_discount_rate: float = 0.10,
+    growth_rate_range: tuple = (-0.05, 0.05, 0.025),  # (min_delta, max_delta, step)
+    discount_rate_range: tuple = (-0.02, 0.02, 0.01),  # (min_delta, max_delta, step)
+    terminal_growth: float = DCF_TERMINAL_GROWTH,
+) -> Dict[str, Any]:
+    """
+    Genera una matriz de sensibilidad para análisis DCF.
+    
+    Muestra cómo cambia el valor justo con diferentes combinaciones de:
+    - Growth Rate (tasa de crecimiento)
+    - Discount Rate (WACC)
+    
+    Args:
+        fcf: Free Cash Flow actual
+        shares_outstanding: Acciones en circulación
+        current_price: Precio actual (para comparación)
+        base_growth_rate: Tasa de crecimiento base
+        base_discount_rate: Tasa de descuento base (WACC)
+        growth_rate_range: (delta_min, delta_max, step) para growth rates
+        discount_rate_range: (delta_min, delta_max, step) para discount rates
+        terminal_growth: Tasa de crecimiento terminal
+    
+    Returns:
+        Dict con matriz de sensibilidad, estadísticas y metadata
+    """
+    import numpy as np
+    
+    result = {
+        "matrix": [],
+        "growth_rates": [],
+        "discount_rates": [],
+        "base_case": {
+            "growth_rate": base_growth_rate,
+            "discount_rate": base_discount_rate,
+            "fair_value": None
+        },
+        "statistics": {
+            "min_value": None,
+            "max_value": None,
+            "mean_value": None,
+            "median_value": None,
+            "current_price": current_price,
+            "upside_base_case": None
+        },
+        "interpretation": None,
+        "is_valid": False,
+        "warnings": []
+    }
+    
+    # Validaciones
+    if fcf is None or fcf <= 0:
+        result["warnings"].append("FCF no disponible o negativo")
+        return result
+    
+    if shares_outstanding is None or shares_outstanding <= 0:
+        result["warnings"].append("Shares outstanding no disponible")
+        return result
+    
+    # Generar rangos de tasas
+    gr_min, gr_max, gr_step = growth_rate_range
+    dr_min, dr_max, dr_step = discount_rate_range
+    
+    # Growth rates: de menor a mayor
+    growth_rates = []
+    gr = base_growth_rate + gr_min
+    while gr <= base_growth_rate + gr_max + 0.001:
+        growth_rates.append(round(gr, 4))
+        gr += gr_step
+    
+    # Discount rates: de menor a mayor
+    discount_rates = []
+    dr = base_discount_rate + dr_min
+    while dr <= base_discount_rate + dr_max + 0.001:
+        discount_rates.append(round(dr, 4))
+        dr += dr_step
+    
+    result["growth_rates"] = growth_rates
+    result["discount_rates"] = discount_rates
+    
+    # Generar matriz de valores
+    matrix = []
+    all_values = []
+    base_value = None
+    
+    for growth_rate in growth_rates:
+        row = []
+        for discount_rate in discount_rates:
+            # Validar que discount_rate > terminal_growth
+            if discount_rate <= terminal_growth:
+                row.append(None)
+                continue
+            
+            # Calcular DCF
+            dcf_result = dcf_multi_stage(
+                fcf=fcf,
+                shares_outstanding=shares_outstanding,
+                high_growth_rate=growth_rate,
+                terminal_growth=terminal_growth,
+                discount_rate=discount_rate
+            )
+            
+            fair_value = dcf_result.get("fair_value_per_share")
+            row.append(fair_value)
+            
+            if fair_value is not None:
+                all_values.append(fair_value)
+                
+                # Identificar caso base
+                if (abs(growth_rate - base_growth_rate) < 0.001 and 
+                    abs(discount_rate - base_discount_rate) < 0.001):
+                    base_value = fair_value
+                    result["base_case"]["fair_value"] = fair_value
+        
+        matrix.append(row)
+    
+    result["matrix"] = matrix
+    
+    # Calcular estadísticas
+    if all_values:
+        result["statistics"]["min_value"] = min(all_values)
+        result["statistics"]["max_value"] = max(all_values)
+        result["statistics"]["mean_value"] = sum(all_values) / len(all_values)
+        
+        sorted_values = sorted(all_values)
+        n = len(sorted_values)
+        result["statistics"]["median_value"] = (
+            sorted_values[n // 2] if n % 2 == 1 
+            else (sorted_values[n // 2 - 1] + sorted_values[n // 2]) / 2
+        )
+        
+        # Calcular upside si tenemos precio actual
+        if current_price and current_price > 0 and base_value:
+            upside = ((base_value / current_price) - 1) * 100
+            result["statistics"]["upside_base_case"] = upside
+        
+        result["is_valid"] = True
+        
+        # Interpretación
+        if current_price and current_price > 0:
+            undervalued_count = sum(1 for v in all_values if v > current_price)
+            total_scenarios = len(all_values)
+            undervalued_pct = (undervalued_count / total_scenarios) * 100
+            
+            if undervalued_pct >= 80:
+                result["interpretation"] = f"Muy probablemente subvalorada ({undervalued_pct:.0f}% de escenarios)"
+            elif undervalued_pct >= 60:
+                result["interpretation"] = f"Probablemente subvalorada ({undervalued_pct:.0f}% de escenarios)"
+            elif undervalued_pct >= 40:
+                result["interpretation"] = f"Valoración mixta ({undervalued_pct:.0f}% escenarios favorables)"
+            elif undervalued_pct >= 20:
+                result["interpretation"] = f"Probablemente sobrevalorada ({100-undervalued_pct:.0f}% de escenarios)"
+            else:
+                result["interpretation"] = f"Muy probablemente sobrevalorada ({100-undervalued_pct:.0f}% de escenarios)"
+    
+    return result
+
+
+def format_sensitivity_matrix_for_display(
+    sensitivity_result: Dict[str, Any],
+    current_price: Optional[float] = None
+) -> Dict[str, Any]:
+    """
+    Formatea la matriz de sensibilidad para visualización en UI.
+    
+    Retorna datos listos para crear una tabla con colores.
+    """
+    if not sensitivity_result.get("is_valid"):
+        return {"error": "Análisis no válido", "data": None}
+    
+    matrix = sensitivity_result["matrix"]
+    growth_rates = sensitivity_result["growth_rates"]
+    discount_rates = sensitivity_result["discount_rates"]
+    base_case = sensitivity_result["base_case"]
+    
+    # Crear estructura para tabla
+    table_data = {
+        "headers": ["Growth \\ WACC"] + [f"{dr:.1%}" for dr in discount_rates],
+        "rows": [],
+        "base_row_idx": None,
+        "base_col_idx": None,
+        "cell_colors": []
+    }
+    
+    for i, (growth_rate, row) in enumerate(zip(growth_rates, matrix)):
+        row_data = [f"{growth_rate:.1%}"]
+        row_colors = ["neutral"]
+        
+        for j, value in enumerate(row):
+            if value is None:
+                row_data.append("N/A")
+                row_colors.append("neutral")
+            else:
+                row_data.append(f"${value:.2f}")
+                
+                # Determinar color basado en comparación con precio actual
+                if current_price and current_price > 0:
+                    upside = ((value / current_price) - 1) * 100
+                    if upside > 30:
+                        row_colors.append("very_undervalued")  # Verde fuerte
+                    elif upside > 10:
+                        row_colors.append("undervalued")  # Verde
+                    elif upside > -10:
+                        row_colors.append("fair")  # Amarillo/neutral
+                    elif upside > -30:
+                        row_colors.append("overvalued")  # Rojo suave
+                    else:
+                        row_colors.append("very_overvalued")  # Rojo fuerte
+                else:
+                    row_colors.append("neutral")
+        
+        table_data["rows"].append(row_data)
+        table_data["cell_colors"].append(row_colors)
+        
+        # Marcar caso base
+        if abs(growth_rate - base_case["growth_rate"]) < 0.001:
+            table_data["base_row_idx"] = i
+    
+    # Encontrar columna base
+    for j, dr in enumerate(discount_rates):
+        if abs(dr - base_case["discount_rate"]) < 0.001:
+            table_data["base_col_idx"] = j + 1  # +1 por la columna de growth rates
+    
+    return {
+        "data": table_data,
+        "statistics": sensitivity_result["statistics"],
+        "interpretation": sensitivity_result["interpretation"]
+    }
+
+
+# =============================================================================
+# REITs FFO/AFFO METRICS - v2.9
+# =============================================================================
+
+def calculate_reit_metrics(
+    net_income: Optional[float],
+    depreciation: Optional[float],
+    gains_on_sale: Optional[float] = None,
+    capex: Optional[float] = None,
+    shares_outstanding: Optional[float] = None,
+    price: Optional[float] = None,
+    dividend_per_share: Optional[float] = None,
+) -> Dict[str, Any]:
+    """
+    Calcula métricas específicas para REITs (Real Estate Investment Trusts).
+    
+    FFO (Funds From Operations):
+        Net Income + Depreciation/Amortization - Gains on Sale of Property
+        
+    AFFO (Adjusted FFO):
+        FFO - Recurring CapEx (maintenance capex)
+        
+    Args:
+        net_income: Ingreso neto
+        depreciation: Depreciación y amortización
+        gains_on_sale: Ganancias por venta de propiedades (se resta)
+        capex: Capital expenditures (se usa ~15% como maintenance capex estimado)
+        shares_outstanding: Acciones en circulación
+        price: Precio actual de la acción
+        dividend_per_share: Dividendo por acción
+    
+    Returns:
+        Dict con FFO, AFFO, P/FFO, P/AFFO, payout ratios, etc.
+    """
+    result = {
+        # FFO metrics
+        "ffo": None,
+        "ffo_per_share": None,
+        "affo": None,
+        "affo_per_share": None,
+        
+        # Valuation
+        "p_ffo": None,
+        "p_affo": None,
+        
+        # Payout ratios
+        "ffo_payout_ratio": None,
+        "affo_payout_ratio": None,
+        
+        # Interpretations
+        "ffo_interpretation": None,
+        "p_ffo_interpretation": None,
+        "payout_interpretation": None,
+        
+        # Metadata
+        "is_valid": False,
+        "warnings": [],
+        "sector_note": "REITs deben distribuir ≥90% de ingresos gravables como dividendos."
+    }
+    
+    # Validaciones básicas
+    if net_income is None:
+        result["warnings"].append("Net Income no disponible")
+        return result
+    
+    if depreciation is None:
+        result["warnings"].append("Depreciación no disponible - FFO aproximado")
+        depreciation = 0
+    
+    # Calcular FFO
+    # FFO = Net Income + Depreciation - Gains on Sale
+    gains = gains_on_sale if gains_on_sale else 0
+    ffo = net_income + depreciation - gains
+    result["ffo"] = ffo
+    
+    # FFO per share
+    if shares_outstanding and shares_outstanding > 0:
+        ffo_per_share = ffo / shares_outstanding
+        result["ffo_per_share"] = ffo_per_share
+        
+        # P/FFO
+        if price and price > 0 and ffo_per_share > 0:
+            p_ffo = price / ffo_per_share
+            result["p_ffo"] = p_ffo
+            
+            # Interpretación P/FFO
+            if p_ffo < 10:
+                result["p_ffo_interpretation"] = ("Muy barato", "text-success", "Posible oportunidad de valor")
+            elif p_ffo < 15:
+                result["p_ffo_interpretation"] = ("Razonable", "text-success", "Valoración atractiva")
+            elif p_ffo < 20:
+                result["p_ffo_interpretation"] = ("Justo", "text-warning", "Valoración en línea con el mercado")
+            elif p_ffo < 25:
+                result["p_ffo_interpretation"] = ("Caro", "text-warning", "Premium sobre el sector")
+            else:
+                result["p_ffo_interpretation"] = ("Muy caro", "text-danger", "Valoración elevada")
+    
+    # Calcular AFFO
+    # AFFO = FFO - Maintenance CapEx
+    # Estimamos maintenance capex como ~15-20% del capex total si no tenemos el dato específico
+    if capex:
+        maintenance_capex = abs(capex) * 0.15  # Estimación conservadora
+        affo = ffo - maintenance_capex
+    else:
+        # Sin capex, AFFO ≈ FFO (con advertencia)
+        affo = ffo
+        result["warnings"].append("CapEx no disponible - AFFO aproximado")
+    
+    result["affo"] = affo
+    
+    # AFFO per share
+    if shares_outstanding and shares_outstanding > 0:
+        affo_per_share = affo / shares_outstanding
+        result["affo_per_share"] = affo_per_share
+        
+        # P/AFFO
+        if price and price > 0 and affo_per_share > 0:
+            result["p_affo"] = price / affo_per_share
+    
+    # Payout ratios
+    if dividend_per_share and dividend_per_share > 0:
+        if result["ffo_per_share"] and result["ffo_per_share"] > 0:
+            ffo_payout = (dividend_per_share / result["ffo_per_share"]) * 100
+            result["ffo_payout_ratio"] = ffo_payout
+            
+            # Interpretación payout
+            if ffo_payout < 70:
+                result["payout_interpretation"] = ("Muy seguro", "text-success", "Amplio margen para mantener dividendo")
+            elif ffo_payout < 85:
+                result["payout_interpretation"] = ("Saludable", "text-success", "Dividendo bien cubierto")
+            elif ffo_payout < 95:
+                result["payout_interpretation"] = ("Normal", "text-warning", "Típico para REITs")
+            elif ffo_payout < 110:
+                result["payout_interpretation"] = ("Ajustado", "text-warning", "Poco margen de seguridad")
+            else:
+                result["payout_interpretation"] = ("Riesgo", "text-danger", "Payout insostenible")
+        
+        if result["affo_per_share"] and result["affo_per_share"] > 0:
+            result["affo_payout_ratio"] = (dividend_per_share / result["affo_per_share"]) * 100
+    
+    # Interpretación FFO
+    if ffo > 0:
+        result["ffo_interpretation"] = ("Positivo", "text-success", "Operaciones generan efectivo")
+        result["is_valid"] = True
+    else:
+        result["ffo_interpretation"] = ("Negativo", "text-danger", "Operaciones no generan efectivo")
+        result["is_valid"] = True  # Aún válido, solo negativo
+    
+    return result
+
+
+def is_reit_sector(sector: str) -> bool:
+    """Determina si un sector corresponde a REITs."""
+    if not sector:
+        return False
+    sector_lower = sector.lower()
+    return "real estate" in sector_lower or "reit" in sector_lower
+
+
+def get_reit_valuation_guidance(p_ffo: Optional[float], p_affo: Optional[float]) -> Dict[str, Any]:
+    """
+    Proporciona guía de valoración específica para REITs.
+    
+    Returns:
+        Dict con rangos de referencia y comparación con el mercado
+    """
+    guidance = {
+        "p_ffo_ranges": {
+            "cheap": (0, 12),
+            "fair": (12, 18),
+            "expensive": (18, 25),
+            "very_expensive": (25, float('inf'))
+        },
+        "sector_average_p_ffo": 16.5,  # Promedio histórico del sector
+        "sector_average_p_affo": 18.0,
+        "current_assessment": None,
+        "recommendation": None
+    }
+    
+    if p_ffo:
+        if p_ffo < 12:
+            guidance["current_assessment"] = "Barato vs sector"
+            guidance["recommendation"] = "Verificar por qué está barato (¿problemas operativos?)"
+        elif p_ffo < 18:
+            guidance["current_assessment"] = "Valoración razonable"
+            guidance["recommendation"] = "En línea con promedios históricos"
+        elif p_ffo < 25:
+            guidance["current_assessment"] = "Premium vs sector"
+            guidance["recommendation"] = "Justificable si tiene activos de calidad superior"
+        else:
+            guidance["current_assessment"] = "Muy caro"
+            guidance["recommendation"] = "Evaluar si el premium está justificado"
+    
+    return guidance

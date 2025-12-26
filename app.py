@@ -1,11 +1,11 @@
 """
-Finanzer - Dash Edition v2.7
+Finanzer v3.1.1 - Clean Architecture
 ==================================
 Aplicación web responsive para análisis fundamental de acciones.
 Mobile-first design con soporte para dark/light theme.
 
 Autor: Esteban
-Versión: 2.3 - DCF Multi-Stage (3 etapas) + Análisis de Sensibilidad
+Versión: 3.1.1 - Bugfixes y limpieza de código
 """
 
 import os
@@ -24,17 +24,7 @@ from dash import dcc, html, callback, Input, Output, State, no_update, ctx, ALL,
 import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
 from datetime import datetime
-import base64
-import io
-import re
-import traceback
 import yfinance as yf
-
-# Imports de reportlab (movidos al inicio para mejor performance)
-from reportlab.lib.pagesizes import letter
-from reportlab.lib import colors
-from reportlab.lib.units import inch
-from reportlab.platypus import SimpleDocTemplate, Spacer, Table, TableStyle
 
 # Importar módulos del analizador
 from financial_ratios import (
@@ -42,13 +32,43 @@ from financial_ratios import (
     aggregate_alerts,
     format_ratio,
     graham_number,
-    dcf_fair_value,
-    dcf_dynamic,
-    dcf_multi_stage_dynamic,  # v2.3: DCF Multi-Stage
+    dcf_multi_stage_dynamic,
+    dcf_sensitivity_analysis,
+    calculate_reit_metrics,
+    is_reit_sector,
 )
-from data_fetcher import FinancialDataService
+from data_fetcher import (
+    FinancialDataService, 
+    InvalidSymbolError, 
+    APITimeoutError,
+    DataFetchError
+)
 from sector_profiles import get_sector_profile
 from stock_database import search_stocks, POPULAR_STOCKS
+
+# Componentes UI refactorizados
+from finanzer.components.tooltips import METRIC_TOOLTIPS, LABEL_TO_TOOLTIP, get_tooltip_text
+from finanzer.components.cards import (
+    create_metric_card, 
+    create_metric_with_tooltip, 
+    create_info_icon,
+    create_score_summary_card,
+    reset_tooltip_counter
+)
+from finanzer.components.tables import create_comparison_metric_row
+from finanzer.components.sensitivity import build_sensitivity_section
+from finanzer.components.charts import (
+    get_score_color, 
+    create_score_donut,
+    create_price_chart,
+    create_ytd_comparison_chart
+)
+from finanzer.components.pdf_generator import generate_simple_pdf
+
+# Utilidades
+from finanzer.utils.search import resolve_symbol, COMPANY_NAMES
+from finanzer.analysis.alerts import get_alert_explanation
+from finanzer.analysis.sectors import get_sector_metrics_config
 
 # =============================================================================
 # INICIALIZACIÓN DE LA APP
@@ -76,1470 +96,6 @@ server = app.server
 
 QUICK_PICKS = ["AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "TSLA", "META", "JPM", "V", "TSM"]
 
-COMPANY_NAMES = {
-    "apple": "AAPL", "microsoft": "MSFT", "google": "GOOGL", "alphabet": "GOOGL",
-    "amazon": "AMZN", "tesla": "TSLA", "nvidia": "NVDA", "meta": "META",
-    "facebook": "META", "netflix": "NFLX", "disney": "DIS", "visa": "V",
-    "mastercard": "MA", "jpmorgan": "JPM", "berkshire": "BRK-B", "taiwan semiconductor": "TSM",
-}
-
-# =============================================================================
-# TOOLTIPS - Explicaciones de todos los indicadores
-# =============================================================================
-
-METRIC_TOOLTIPS = {
-    # === VALORACIÓN ===
-    "pe": {
-        "nombre": "P/E (Precio/Beneficio)",
-        "que_es": "Cuántos dólares pagas por cada dólar de ganancia anual.",
-        "rangos": "• <15: Posiblemente barata\n• 15-25: Valoración típica\n• >25: Cara o alto crecimiento",
-        "contexto": "Compara siempre con empresas del mismo sector."
-    },
-    "forward_pe": {
-        "nombre": "Forward P/E (P/E Proyectado)",
-        "que_es": "P/E basado en las ganancias esperadas del próximo año fiscal.",
-        "rangos": "• <12: Muy barato\n• 12-20: Normal\n• >25: Expectativas altas",
-        "contexto": "Más útil que P/E trailing para empresas en crecimiento."
-    },
-    "pb": {
-        "nombre": "P/B (Precio/Valor en Libros)",
-        "que_es": "Cuánto pagas en relación al valor contable de los activos.",
-        "rangos": "• <1: Por debajo de valor contable\n• 1-3: Rango normal\n• >3: Prima alta sobre activos",
-        "contexto": "Más útil para bancos y empresas con activos tangibles."
-    },
-    "ps": {
-        "nombre": "P/S (Precio/Ventas)",
-        "que_es": "Cuánto pagas por cada dólar de ventas.",
-        "rangos": "• <1: Muy barato\n• 1-5: Normal\n• >10: Muy caro",
-        "contexto": "Útil para empresas sin ganancias pero con ingresos."
-    },
-    "p_fcf": {
-        "nombre": "P/FCF (Precio/Flujo de Caja)",
-        "que_es": "Cuánto pagas por cada dólar de efectivo real generado.",
-        "rangos": "• <15: Atractivo\n• 15-25: Normal\n• >25: Caro",
-        "contexto": "Más confiable que P/E porque el efectivo es difícil de manipular."
-    },
-    "ev_ebitda": {
-        "nombre": "EV/EBITDA",
-        "que_es": "Valor empresarial vs ganancias operativas.",
-        "rangos": "• <8: Barato\n• 8-12: Normal\n• >12: Caro",
-        "contexto": "Mejor para comparar empresas con diferente deuda."
-    },
-    "peg": {
-        "nombre": "PEG Ratio",
-        "que_es": "P/E ajustado por crecimiento esperado.",
-        "rangos": "• <1: Subvalorada para su growth ✓\n• =1: Valor justo\n• >1.5: Cara para su growth",
-        "contexto": "PEG de 1 significa P/E justificado por crecimiento."
-    },
-    "fcf_yield": {
-        "nombre": "FCF Yield",
-        "que_es": "Rendimiento del flujo de caja como % del precio.",
-        "rangos": "• >8%: Muy atractivo\n• 5-8%: Bueno\n• <3%: Bajo",
-        "contexto": "Como el dividendo potencial. Mayor = mejor."
-    },
-    
-    # === RENTABILIDAD ===
-    "roe": {
-        "nombre": "ROE (Retorno sobre Patrimonio)",
-        "que_es": "Ganancia generada por cada dólar de los accionistas.",
-        "rangos": "• >20%: Excelente ✓\n• 15-20%: Muy bueno\n• 10-15%: Aceptable\n• <10%: Bajo",
-        "contexto": "Buffett busca ROE consistente >15%."
-    },
-    "roa": {
-        "nombre": "ROA (Retorno sobre Activos)",
-        "que_es": "Eficiencia usando activos para generar ganancias.",
-        "rangos": "• >10%: Excelente\n• 5-10%: Bueno\n• <5%: Normal/Bajo",
-        "contexto": "Varía por sector. Bancos ~1%, Tech más alto."
-    },
-    "roic": {
-        "nombre": "ROIC (Retorno sobre Capital Invertido)",
-        "que_es": "Rendimiento del capital total invertido.",
-        "rangos": "• >15%: Excelente, crea valor ✓\n• 10-15%: Bueno\n• <WACC: Destruye valor ✗",
-        "contexto": "Si ROIC > WACC, la empresa crea valor."
-    },
-    "margen_bruto": {
-        "nombre": "Margen Bruto",
-        "que_es": "% de ingresos después de costos de producción.",
-        "rangos": "• >60%: Excelente (software)\n• 40-60%: Bueno\n• 20-40%: Normal\n• <20%: Bajo",
-        "contexto": "Márgenes altos = ventaja competitiva."
-    },
-    "margen_operativo": {
-        "nombre": "Margen Operativo",
-        "que_es": "% de ingresos después de gastos operativos.",
-        "rangos": "• >25%: Excelente\n• 15-25%: Muy bueno\n• 10-15%: Bueno\n• <10%: Bajo",
-        "contexto": "Muestra eficiencia operativa."
-    },
-    "margen_neto": {
-        "nombre": "Margen Neto",
-        "que_es": "% de ventas que se convierte en ganancia final.",
-        "rangos": "• >20%: Excelente\n• 10-20%: Muy bueno\n• 5-10%: Normal\n• <5%: Bajo",
-        "contexto": "La línea final después de todo."
-    },
-    "margen_ebitda": {
-        "nombre": "Margen EBITDA",
-        "que_es": "% de ingresos como EBITDA (ganancia operativa + depreciación).",
-        "rangos": "• >30%: Excelente\n• 20-30%: Bueno\n• 10-20%: Normal\n• <10%: Bajo",
-        "contexto": "Útil para comparar empresas con diferentes políticas de depreciación."
-    },
-    
-    # === SOLIDEZ FINANCIERA ===
-    "current_ratio": {
-        "nombre": "Current Ratio (Liquidez)",
-        "que_es": "Capacidad de pagar deudas corto plazo con activos corrientes.",
-        "rangos": "• >2: Muy sólido ✓\n• 1.5-2: Saludable\n• 1-1.5: Aceptable\n• <1: Riesgo ⚠️",
-        "contexto": "<1 significa que no puede cubrir deudas próximas."
-    },
-    "quick_ratio": {
-        "nombre": "Quick Ratio (Prueba Ácida)",
-        "que_es": "Liquidez sin contar inventario (más conservador).",
-        "rangos": "• >1.5: Excelente\n• 1-1.5: Bueno ✓\n• 0.5-1: Aceptable\n• <0.5: Riesgo ⚠️",
-        "contexto": "Más estricto que current ratio."
-    },
-    "cash_ratio": {
-        "nombre": "Cash Ratio",
-        "que_es": "Solo efectivo vs deudas de corto plazo (el más conservador).",
-        "rangos": "• >1: Puede pagar todo en efectivo\n• 0.5-1: Buena posición\n• 0.2-0.5: Normal\n• <0.2: Bajo",
-        "contexto": "Muy conservador. Pocas empresas tienen >1."
-    },
-    "working_capital": {
-        "nombre": "Working Capital (Capital de Trabajo)",
-        "que_es": "Activos corrientes menos pasivos corrientes.",
-        "rangos": "• Positivo: Puede operar día a día ✓\n• Negativo: Riesgo de liquidez ⚠️",
-        "contexto": "Dinero disponible para operaciones diarias."
-    },
-    "debt_to_equity": {
-        "nombre": "Deuda/Patrimonio (D/E)",
-        "que_es": "Cuánta deuda por cada dólar de patrimonio.",
-        "rangos": "• <0.5: Conservador ✓\n• 0.5-1: Normal\n• 1-2: Apalancado\n• >2: Muy apalancado ⚠️",
-        "contexto": "Varía por sector. Bancos tienen D/E alto."
-    },
-    "debt_to_assets": {
-        "nombre": "Deuda/Activos",
-        "que_es": "Porcentaje de activos financiados con deuda.",
-        "rangos": "• <30%: Conservador ✓\n• 30-50%: Normal\n• 50-70%: Alto\n• >70%: Muy alto ⚠️",
-        "contexto": "Menor es generalmente mejor."
-    },
-    "net_debt_ebitda": {
-        "nombre": "Deuda Neta/EBITDA",
-        "que_es": "Años para pagar toda la deuda con ganancias operativas.",
-        "rangos": "• <1: Casi sin deuda ✓\n• 1-2: Conservador\n• 2-3: Normal\n• >4: Alto riesgo ⚠️",
-        "contexto": "Negativo = más efectivo que deuda."
-    },
-    "interest_coverage": {
-        "nombre": "Cobertura de Intereses",
-        "que_es": "Veces que puede pagar intereses con beneficio operativo.",
-        "rangos": "• >10: Excelente ✓\n• 5-10: Bueno\n• 2-5: Aceptable\n• <2: Riesgo ⚠️",
-        "contexto": "<1.5 es señal de alerta seria."
-    },
-    "total_debt": {
-        "nombre": "Deuda Total",
-        "que_es": "Suma de toda la deuda de corto y largo plazo.",
-        "rangos": "Depende del tamaño de la empresa.",
-        "contexto": "Comparar con equity y EBITDA para contexto."
-    },
-    "fcf": {
-        "nombre": "Free Cash Flow (FCF)",
-        "que_es": "Efectivo disponible después de operaciones e inversiones.",
-        "rangos": "• Positivo: Genera efectivo ✓\n• Negativo: Quema efectivo",
-        "contexto": "El dinero real que queda. Clave para dividendos y recompras."
-    },
-    "fcf_to_debt": {
-        "nombre": "FCF/Deuda",
-        "que_es": "Qué proporción de la deuda podría pagar con FCF anual.",
-        "rangos": "• >25%: Excelente\n• 15-25%: Bueno\n• 5-15%: Normal\n• <5%: Bajo",
-        "contexto": "Mayor = más capacidad de pago."
-    },
-    "cash_equivalents": {
-        "nombre": "Cash & Equivalents",
-        "que_es": "Efectivo disponible inmediatamente.",
-        "rangos": "Depende del tamaño y sector.",
-        "contexto": "Colchón para emergencias y oportunidades."
-    },
-    
-    # === CRECIMIENTO ===
-    "revenue_growth": {
-        "nombre": "Crecimiento de Ingresos",
-        "que_es": "Tasa anual de crecimiento de ventas.",
-        "rangos": "• >20%: Alto crecimiento\n• 10-20%: Buen crecimiento\n• 5-10%: Moderado\n• <0%: Contracción ⚠️",
-        "contexto": "Motor del valor a largo plazo."
-    },
-    "eps_growth": {
-        "nombre": "Crecimiento de EPS",
-        "que_es": "Crecimiento de ganancias por acción.",
-        "rangos": "• >25%: Excelente\n• 15-25%: Muy bueno\n• 5-15%: Bueno\n• <0%: Decreciendo ⚠️",
-        "contexto": "Más importante que crecimiento de ingresos."
-    },
-    "fcf_growth": {
-        "nombre": "Crecimiento de FCF",
-        "que_es": "Crecimiento del flujo de caja libre.",
-        "rangos": "• >20%: Excelente\n• 10-20%: Bueno\n• 0-10%: Estable\n• <0%: Decreciendo",
-        "contexto": "Crecimiento de efectivo real."
-    },
-    
-    # === MODELOS DE VALORACIÓN ===
-    "graham": {
-        "nombre": "Número de Graham",
-        "que_es": "Valor intrínseco según Benjamin Graham.",
-        "rangos": "• Precio < Graham: Subvalorada ✓\n• Precio ≈ Graham: Justo\n• Precio > Graham: Sobrevalorada",
-        "contexto": "Fórmula conservadora. Mejor para empresas estables."
-    },
-    "dcf": {
-        "nombre": "DCF (Flujos Descontados)",
-        "que_es": "Valor presente de flujos futuros de efectivo.",
-        "rangos": "• Precio < DCF: Subvalorada ✓\n• Precio ≈ DCF: Justo\n• Precio > DCF: Sobrevalorada",
-        "contexto": "Modelo de Wall Street. Sensible a supuestos."
-    },
-    "wacc": {
-        "nombre": "WACC (Costo del Capital)",
-        "que_es": "Retorno mínimo requerido por inversores y acreedores.",
-        "rangos": "• 6-8%: Bajo riesgo\n• 8-10%: Riesgo medio\n• 10-12%: Moderado\n• >12%: Alto riesgo",
-        "contexto": "Se usa como tasa de descuento en DCF."
-    },
-    "margin_of_safety": {
-        "nombre": "Margen de Seguridad",
-        "que_es": "Descuento sobre valor intrínseco para protección.",
-        "rangos": "• >30%: Gran margen ✓\n• 15-30%: Buen margen\n• 0-15%: Pequeño\n• <0%: Sin margen",
-        "contexto": "Graham recomendaba >30%."
-    },
-    
-    # === SCORES ===
-    "altman_z": {
-        "nombre": "Altman Z-Score",
-        "que_es": "Predictor de probabilidad de bancarrota.",
-        "rangos": "• >2.99: Zona Segura ✓\n• 1.81-2.99: Zona Gris ⚠️\n• <1.81: Zona Peligro 🚨",
-        "contexto": "90%+ de precisión prediciendo quiebras."
-    },
-    "piotroski_f": {
-        "nombre": "Piotroski F-Score",
-        "que_es": "Score 0-9 de fortaleza financiera.",
-        "rangos": "• 8-9: Excelente ✓✓\n• 6-7: Bueno ✓\n• 4-5: Neutral\n• 0-3: Débil ⚠️",
-        "contexto": "F-Score alto = mejores retornos históricos."
-    },
-    
-    # === DIVIDENDOS ===
-    "dividend_yield": {
-        "nombre": "Dividend Yield",
-        "que_es": "% anual recibido en dividendos sobre el precio.",
-        "rangos": "• >5%: Alto (verificar sostenibilidad)\n• 3-5%: Bueno\n• 1-3%: Moderado\n• <1%: Bajo",
-        "contexto": "Yield muy alto puede indicar problemas."
-    },
-    "payout_ratio": {
-        "nombre": "Payout Ratio",
-        "que_es": "% de ganancias repartido como dividendo.",
-        "rangos": "• <40%: Conservador ✓\n• 40-60%: Equilibrado\n• 60-80%: Alto\n• >80%: Insostenible ⚠️",
-        "contexto": ">100% = paga más de lo que gana."
-    },
-    
-    # === OTROS ===
-    "beta": {
-        "nombre": "Beta",
-        "que_es": "Volatilidad vs el mercado (S&P 500).",
-        "rangos": "• <0.8: Defensivo\n• 0.8-1.2: Similar al mercado\n• 1.2-1.5: Más volátil\n• >1.5: Muy volátil ⚠️",
-        "contexto": "Beta 1.5 = si mercado sube 10%, acción sube ~15%."
-    },
-    "market_cap": {
-        "nombre": "Market Cap",
-        "que_es": "Valor total de la empresa según el mercado.",
-        "rangos": "• >$200B: Mega cap\n• $10-200B: Large cap\n• $2-10B: Mid cap\n• <$2B: Small cap",
-        "contexto": "Más grande = más estable, menos crecimiento."
-    },
-    "52w_high": {
-        "nombre": "52 Week High",
-        "que_es": "Precio más alto del último año.",
-        "rangos": "Referencia para evaluar posición actual.",
-        "contexto": "Cerca del high = momentum positivo o sobrevalorada."
-    },
-    "52w_low": {
-        "nombre": "52 Week Low", 
-        "que_es": "Precio más bajo del último año.",
-        "rangos": "Referencia para evaluar posición actual.",
-        "contexto": "Cerca del low = oportunidad o problemas."
-    },
-    "volume": {
-        "nombre": "Volumen Promedio",
-        "que_es": "Cantidad de acciones negociadas diariamente.",
-        "rangos": "Mayor volumen = mayor liquidez.",
-        "contexto": "Importante para entrar/salir de posiciones."
-    },
-    "ebitda": {
-        "nombre": "EBITDA",
-        "que_es": "Ganancias antes de intereses, impuestos, depreciación y amortización.",
-        "rangos": "Positivo = operativamente rentable.",
-        "contexto": "Proxy de flujo de caja operativo."
-    },
-    "eps": {
-        "nombre": "EPS (Ganancias por Acción)",
-        "que_es": "Beneficio neto dividido entre acciones.",
-        "rangos": "Positivo = rentable. Mayor = mejor.",
-        "contexto": "Base para calcular P/E."
-    },
-    "net_income": {
-        "nombre": "Net Income (Ingreso Neto)",
-        "que_es": "Ganancia final después de todos los gastos.",
-        "rangos": "Positivo = rentable.",
-        "contexto": "La línea final del estado de resultados."
-    },
-    
-    # === REITs ===
-    "ffo": {
-        "nombre": "FFO (Funds From Operations)",
-        "que_es": "Métrica principal para REITs. Ingreso neto + depreciación - ganancias por venta.",
-        "formula": "Net Income + Depreciation - Gains on Property Sale",
-        "rangos": "• Positivo: Operaciones saludables\n• Creciendo: REIT en expansión\n• Negativo: Problemas operativos",
-        "contexto": "Más relevante que Net Income para REITs porque la depreciación inmobiliaria no refleja pérdida real de valor."
-    },
-    "p_ffo": {
-        "nombre": "P/FFO (Precio/FFO)",
-        "que_es": "Equivalente al P/E pero para REITs. Cuánto pagas por cada dólar de FFO.",
-        "formula": "Precio ÷ FFO por Acción",
-        "rangos": "• <12: Potencialmente barato\n• 12-18: Rango normal\n• >18: Caro o alta calidad",
-        "contexto": "Para REITs, P/FFO es más relevante que P/E tradicional."
-    },
-    "ffo_payout": {
-        "nombre": "FFO Payout Ratio",
-        "que_es": "Porcentaje del FFO pagado como dividendo.",
-        "formula": "Dividendos ÷ FFO × 100",
-        "rangos": "• <80%: Sostenible con margen\n• 80-95%: Normal para REITs\n• >95%: Riesgo de recorte",
-        "contexto": "REITs deben distribuir 90%+ de ingresos por ley. Un payout muy alto sobre FFO es riesgoso."
-    },
-}
-
-# =============================================================================
-# FUNCIONES AUXILIARES
-# =============================================================================
-
-def resolve_symbol(query: str) -> str:
-    """
-    Resuelve y valida el símbolo de búsqueda.
-    Validación PERMISIVA: sanitiza pero no rechaza símbolos potencialmente válidos.
-    """
-    if not query:
-        return ""
-    
-    query_clean = query.strip()
-    
-    # Límite de longitud razonable (símbolos más largos son raros)
-    if len(query_clean) > 15:
-        query_clean = query_clean[:15]
-    
-    # Buscar en mapeo de nombres comunes
-    query_lower = query_clean.lower()
-    if query_lower in COMPANY_NAMES:
-        return COMPANY_NAMES[query_lower]
-    
-    # Sanitización: solo permitir caracteres válidos para tickers
-    # Incluye: letras, números, punto (BRK.A), guión (BRK-B), espacio (para búsqueda)
-    sanitized = re.sub(r'[^A-Za-z0-9\.\-\s]', '', query_clean)
-    
-    return sanitized.upper().strip()
-
-
-def get_score_color(score: int) -> tuple:
-    if score >= 70:
-        return "#22c55e", "FAVORABLE"
-    elif score >= 50:
-        return "#eab308", "NEUTRAL"
-    elif score >= 30:
-        return "#f97316", "PRECAUCIÓN"
-    else:
-        return "#ef4444", "EVITAR"
-
-
-def create_score_donut(score: int) -> go.Figure:
-    """Crea gráfico donut moderno y minimalista para el score."""
-    color, label = get_score_color(score)
-    
-    fig = go.Figure()
-    
-    # Track de fondo (gris oscuro sutil)
-    fig.add_trace(go.Pie(
-        values=[100],
-        hole=0.78,
-        marker=dict(colors=['#2d2d32']),
-        showlegend=False,
-        hoverinfo='none',
-        textinfo='none'
-    ))
-    
-    # Donut del score con gradiente visual
-    remaining = 100 - score
-    fig.add_trace(go.Pie(
-        values=[score, remaining],
-        hole=0.78,
-        marker=dict(
-            colors=[color, 'rgba(0,0,0,0)'], 
-            line=dict(width=0)
-        ),
-        showlegend=False,
-        hoverinfo='none',
-        textinfo='none',
-        rotation=90,
-        direction='clockwise'
-    ))
-    
-    # Score número
-    fig.add_annotation(
-        text=f"<b>{score}</b>", 
-        x=0.5, y=0.52,
-        font=dict(size=38, color=color, family='Inter, system-ui'),
-        showarrow=False
-    )
-    
-    # Label descriptivo
-    fig.add_annotation(
-        text=label.upper(), 
-        x=0.5, y=0.30,
-        font=dict(size=10, color='#6b7280', family='Inter, system-ui', weight=500),
-        showarrow=False
-    )
-    
-    fig.update_layout(
-        height=160,
-        margin=dict(l=10, r=10, t=10, b=10),
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)',
-        font={'family': 'Inter, system-ui, sans-serif'}
-    )
-    return fig
-
-
-def create_price_chart(symbol: str, period: str = "1y"):
-    """
-    Crea gráfico de precio histórico moderno y minimalista.
-    Retorna: (figura, pct_change, end_price) o (None, 0, 0) si hay error
-    """
-    try:
-        ticker = yf.Ticker(symbol)
-        hist = ticker.history(period=period)
-        
-        if hist.empty or len(hist) < 2:
-            return None, 0, 0
-        
-        start_price = float(hist['Close'].iloc[0])
-        end_price = float(hist['Close'].iloc[-1])
-        is_positive = end_price >= start_price
-        pct_change = ((end_price - start_price) / start_price) * 100
-        
-        # Colores modernos
-        if is_positive:
-            line_color = '#10b981'  # Emerald
-            fill_color = 'rgba(16, 185, 129, 0.12)'
-        else:
-            line_color = '#f43f5e'  # Rose
-            fill_color = 'rgba(244, 63, 94, 0.12)'
-        
-        fig = go.Figure()
-        
-        # Línea principal con área
-        fig.add_trace(go.Scatter(
-            x=hist.index, y=hist['Close'],
-            mode='lines',
-            line=dict(color=line_color, width=2.5, shape='spline'),
-            fill='tozeroy',
-            fillcolor=fill_color,
-            hovertemplate='%{x|%d %b %Y}<br><b>$%{y:.2f}</b><extra></extra>',
-            name=''
-        ))
-        
-        # Punto final destacado
-        fig.add_trace(go.Scatter(
-            x=[hist.index[-1]],
-            y=[end_price],
-            mode='markers',
-            marker=dict(color=line_color, size=10, line=dict(color='#18181b', width=3)),
-            hoverinfo='skip',
-            showlegend=False
-        ))
-        
-        # Formato de fecha según período
-        if period in ['5d', '1wk']:
-            date_format = '%d %b'
-            nticks = 5
-        elif period in ['1mo', '3mo']:
-            date_format = '%d %b'
-            nticks = 6
-        elif period == '6mo':
-            date_format = '%b'
-            nticks = 6
-        elif period == '1y':
-            date_format = '%b %Y'
-            nticks = 6
-        else:  # 5y
-            date_format = '%Y'
-            nticks = 5
-        
-        fig.update_layout(
-            height=280,
-            margin=dict(l=10, r=70, t=10, b=35),
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)',
-            xaxis=dict(
-                showgrid=False,
-                showticklabels=True,
-                tickfont=dict(color='#71717a', size=10),
-                zeroline=False,
-                showline=False,
-                tickformat=date_format,
-                nticks=nticks,
-                fixedrange=True
-            ),
-            yaxis=dict(
-                showgrid=True,
-                gridcolor='rgba(255, 255, 255, 0.04)',
-                showticklabels=True,
-                tickfont=dict(color='#71717a', size=10),
-                tickprefix='$',
-                zeroline=False,
-                showline=False,
-                side='right',
-                fixedrange=True
-            ),
-            # Hover con fondo del color de la línea y texto blanco
-            hovermode='x unified',
-            hoverlabel=dict(
-                bgcolor=line_color,
-                bordercolor=line_color,
-                font=dict(color='white', size=13)
-            ),
-            showlegend=False,
-        )
-        
-        return fig, pct_change, end_price
-    except Exception as e:
-        logger.warning(f"Error creating price chart for {symbol}: {e}")
-        return None, 0, 0
-
-
-def create_ytd_comparison_chart(stock_ytd: float, market_ytd: float, sector_ytd: float, symbol: str) -> go.Figure:
-    """Crea gráfico de barras comparativo YTD con porcentajes dentro de las barras."""
-    categories = [symbol, 'S&P 500', 'Sector ETF']
-    values = [stock_ytd, market_ytd, sector_ytd]
-    
-    # Colores según valor positivo/negativo
-    colors = []
-    for v in values:
-        if v > 0:
-            colors.append('#22c55e')
-        elif v < 0:
-            colors.append('#ef4444')
-        else:
-            colors.append('#71717a')
-    
-    fig = go.Figure()
-    
-    # Determinar posición del texto basado en magnitud de valores
-    text_positions = []
-    for v in values:
-        # Si el valor es muy pequeño, texto afuera; si no, adentro
-        if abs(v) < 5:
-            text_positions.append('outside')
-        else:
-            text_positions.append('inside')
-    
-    fig.add_trace(go.Bar(
-        x=categories, y=values,
-        marker=dict(
-            color=colors,
-            line=dict(width=0),
-            opacity=0.9
-        ),
-        text=[f"{v:+.1f}%" for v in values],
-        textposition=text_positions,
-        textfont=dict(color='#ffffff', size=16, family='Inter, sans-serif'),
-        insidetextanchor='middle',
-        hovertemplate='%{x}<br>Rendimiento YTD: %{y:.2f}%<extra></extra>',
-        width=0.55
-    ))
-    
-    fig.add_hline(y=0, line_dash="solid", line_color="#52525b", line_width=2)
-    
-    fig.update_layout(
-        height=320, margin=dict(l=20, r=20, t=40, b=30),
-        paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-        xaxis=dict(
-            showgrid=False, 
-            tickfont=dict(color='#d4d4d8', size=14, family='Inter, sans-serif'),
-            showline=False
-        ),
-        yaxis=dict(
-            showgrid=True, gridcolor='rgba(255,255,255,0.06)',
-            tickfont=dict(color='#71717a', size=11), 
-            ticksuffix='%', zeroline=False,
-            showline=False
-        ),
-        font={'family': 'Inter, sans-serif'}, 
-        showlegend=False,
-        bargap=0.35
-    )
-    return fig
-
-
-# Mapeo de labels a tooltip keys - COMPLETO
-LABEL_TO_TOOLTIP = {
-    # Valoración (todas las variantes)
-    "P/E": "pe", "P/E Ratio": "pe", "Forward P/E": "forward_pe", "Fwd P/E": "forward_pe",
-    "P/B": "pb", "P/B Ratio": "pb", "P/Book": "pb",
-    "P/S": "ps", "P/S Ratio": "ps",
-    "P/FCF": "p_fcf", "P/FCF Ratio": "p_fcf",
-    "EV/EBITDA": "ev_ebitda", 
-    "PEG": "peg", "PEG Ratio": "peg",
-    "FCF Yield": "fcf_yield", "Earnings Yield": "fcf_yield",
-    
-    # Rentabilidad
-    "ROE": "roe", "ROA": "roa", "ROIC": "roic", "ROE 5Y Avg": "roe",
-    "Margen Bruto": "margen_bruto", "Margen Operativo": "margen_operativo", 
-    "Margen Neto": "margen_neto", "Margen EBITDA": "margen_ebitda",
-    "EBITDA": "ebitda", "Ingreso Neto": "net_income", "EPS": "eps",
-    
-    # Liquidez
-    "Current Ratio": "current_ratio", "Quick Ratio": "quick_ratio", 
-    "Cash Ratio": "cash_ratio", "Working Capital": "working_capital",
-    
-    # Apalancamiento  
-    "D/E": "debt_to_equity", "Deuda/Equity": "debt_to_equity", "Debt/Equity": "debt_to_equity",
-    "Deuda/Activos": "debt_to_assets", "Debt/Assets": "debt_to_assets",
-    "Deuda Neta/EBITDA": "net_debt_ebitda", "Deuda Total": "total_debt",
-    "Net Debt/EBITDA": "net_debt_ebitda",
-    
-    # Cobertura
-    "Cobertura Int.": "interest_coverage", "Interest Coverage": "interest_coverage",
-    "FCF": "fcf", "FCF/Deuda": "fcf_to_debt", "Cash & Eq.": "cash_equivalents",
-    
-    # Crecimiento
-    "Crec. Ingresos": "revenue_growth", "Crec. EPS": "eps_growth", "Crec. FCF": "fcf_growth",
-    "Revenue Growth": "revenue_growth", "EPS Growth": "eps_growth", "FCF Growth": "fcf_growth",
-    "Crec. Ingresos 3Y": "revenue_growth", "Crec. EPS 3Y": "eps_growth",
-    
-    # Scores institucionales
-    "Altman Z-Score": "altman_z", "Z-Score": "altman_z",
-    "Piotroski F": "piotroski_f", "F-Score": "piotroski_f",
-    
-    # Dividendos
-    "Dividend Yield": "dividend_yield", "Payout Ratio": "payout_ratio",
-    "Div. Yield": "dividend_yield",
-    
-    # REITs
-    "FFO": "ffo", "P/FFO": "p_ffo", "FFO Payout": "ffo_payout",
-    "FFO/Share": "ffo", "AFFO": "ffo",
-    
-    # Otros
-    "Beta": "beta", "Market Cap": "market_cap", "Cap. Mercado": "market_cap",
-    "52W High": "52w_high", "52W Low": "52w_low", "Vol. Promedio": "volume",
-}
-
-# Contador global para IDs únicos
-_tooltip_counter = [0]
-
-def get_tooltip_text(metric_key: str) -> str:
-    """Genera el texto del tooltip con formato legible."""
-    if metric_key not in METRIC_TOOLTIPS:
-        return "Información no disponible"
-    
-    t = METRIC_TOOLTIPS[metric_key]
-    
-    # Formato con saltos de línea claros
-    text = f"""📌 {t['nombre']}
-
-{t['que_es']}
-
-📊 Rangos:
-{t['rangos']}
-
-💡 {t['contexto']}"""
-    
-    return text
-
-
-def create_info_icon(tooltip_id: str, tooltip_key: str):
-    """Crea un ícono de información con tooltip moderno."""
-    return html.Span([
-        html.Span("i", id=tooltip_id, className="info-icon"),
-        dbc.Tooltip(
-            get_tooltip_text(tooltip_key),
-            target=tooltip_id,
-            placement="top",
-        )
-    ])
-
-
-def create_metric_with_tooltip(label: str, value: str, tooltip_key: str, uid: int, value_class: str = "", sublabel: str = ""):
-    """Crea una métrica con tooltip informativo integrado."""
-    tooltip_id = f"tip-{tooltip_key}-{uid}"
-    
-    return dbc.Card([
-        dbc.CardBody([
-            html.Div([
-                html.Span(label, className="text-muted small"),
-                create_info_icon(tooltip_id, tooltip_key) if tooltip_key in METRIC_TOOLTIPS else None,
-            ], className="mb-1 text-center"),
-            html.H4(value, className=f"mb-1 text-center {value_class}"),
-            html.P(sublabel, className="text-muted small mb-0 text-center", 
-                  style={"fontSize": "0.7rem"}) if sublabel else None
-        ])
-    ], style={"backgroundColor": "#27272a", "border": "none"}, className="h-100")
-
-
-def create_metric_card(label: str, value: str, icon: str = "📊", tooltip_key: str = None):
-    """Crea una tarjeta de métrica centrada con tooltip opcional."""
-    # Auto-detectar tooltip key si no se proporciona
-    if tooltip_key is None:
-        tooltip_key = LABEL_TO_TOOLTIP.get(label)
-    
-    # Generar ID único
-    _tooltip_counter[0] += 1
-    tip_id = f"mc-tip-{_tooltip_counter[0]}"
-    
-    # Contenido del label con o sin tooltip
-    if tooltip_key and tooltip_key in METRIC_TOOLTIPS:
-        label_content = html.Div([
-            html.Span(f"{icon} {label}", className="metric-label"),
-            html.Span("i", id=tip_id, className="info-icon", style={"marginLeft": "6px"}),
-            dbc.Tooltip(get_tooltip_text(tooltip_key), target=tip_id, placement="top")
-        ], style={"display": "inline-flex", "alignItems": "center", "justifyContent": "center"})
-    else:
-        label_content = html.Div(f"{icon} {label}", className="metric-label")
-    
-    return html.Div([
-        label_content,
-        html.Div(value if value else "N/A", className="metric-value")
-    ], className="metric-card", style={"textAlign": "center"})
-
-
-def create_score_summary_card(label: str, score: int, max_score: int = 20, icon: str = "📊"):
-    """Crea tarjeta de resumen de score por categoría."""
-    if score >= 15:
-        color = "#22c55e"
-    elif score >= 10:
-        color = "#eab308"
-    else:
-        color = "#ef4444"
-    
-    return html.Div([
-        html.Div(f"{icon} {label}", className="score-summary-label"),
-        html.Div(f"{score}/{max_score}", style={"color": color, "fontSize": "1.5rem", "fontWeight": "700"})
-    ], className="score-summary-card")
-
-
-def get_alert_explanation(category: str, reason: str) -> str:
-    """Genera una explicación detallada para cada tipo de alerta."""
-    category_lower = category.lower()
-    reason_lower = reason.lower()
-    
-    # Explicaciones por categoría y tipo de alerta
-    explanations = {
-        # Valoración
-        ("valoración", "p/e"): "El ratio P/E (Precio/Beneficio) compara el precio de la acción con sus ganancias por acción. Un P/E alto puede indicar sobrevaloración o expectativas de crecimiento.",
-        ("valoración", "p/fcf"): "El ratio P/FCF (Precio/Flujo de Caja Libre) es más confiable que el P/E porque el flujo de caja es más difícil de manipular que las ganancias contables.",
-        ("valoración", "ev/ebitda"): "EV/EBITDA compara el valor empresarial con las ganancias antes de intereses, impuestos y amortización. Útil para comparar empresas con diferentes estructuras de capital.",
-        ("valoración", "peg"): "El PEG ajusta el P/E por el crecimiento esperado. Un PEG < 1 sugiere que la acción puede estar subvalorada para su tasa de crecimiento.",
-        
-        # Deuda
-        ("deuda", "debt"): "El apalancamiento excesivo aumenta el riesgo financiero, especialmente en entornos de tasas de interés altas o recesiones económicas.",
-        ("deuda", "interest"): "La cobertura de intereses mide la capacidad de la empresa para pagar sus gastos de interés. Un ratio bajo indica riesgo de incumplimiento.",
-        ("deuda", "conservative"): "Un bajo nivel de deuda proporciona flexibilidad financiera y reduce el riesgo en ciclos económicos adversos.",
-        
-        # Rentabilidad
-        ("rentabilidad", "roe"): "El ROE (Return on Equity) mide qué tan eficientemente la empresa genera beneficios con el capital de los accionistas. Un ROE consistentemente alto indica ventaja competitiva.",
-        ("rentabilidad", "roa"): "El ROA (Return on Assets) indica qué tan eficientemente la empresa utiliza sus activos para generar beneficios.",
-        ("rentabilidad", "margen"): "Los márgenes miden la rentabilidad en diferentes niveles del estado de resultados. Márgenes altos y estables indican poder de fijación de precios.",
-        
-        # Liquidez
-        ("liquidez", "current"): "El Current Ratio mide la capacidad de pagar obligaciones de corto plazo. Un ratio < 1 puede indicar problemas de liquidez.",
-        ("liquidez", "quick"): "El Quick Ratio excluye inventarios, dando una medida más estricta de liquidez inmediata.",
-        
-        # Flujo de Caja
-        ("flujo", "fcf"): "El Flujo de Caja Libre es el dinero que queda después de operaciones e inversiones de capital. Es crucial para dividendos, recompras y reducción de deuda.",
-        ("flujo", "negativo"): "Un FCF negativo persistente indica que la empresa está quemando efectivo y puede necesitar financiamiento externo.",
-        ("flujo", "calidad"): "La relación FCF/Net Income indica la calidad de las ganancias. Un ratio bajo sugiere que las ganancias contables no se traducen en efectivo real.",
-        
-        # Crecimiento
-        ("crecimiento", "revenue"): "El crecimiento de ingresos es fundamental para la creación de valor a largo plazo. Un crecimiento estancado puede indicar madurez del mercado o pérdida de competitividad.",
-        ("crecimiento", "eps"): "El crecimiento del EPS (Beneficio por Acción) refleja no solo el crecimiento del negocio sino también la gestión del capital.",
-        
-        # Volatilidad
-        ("volatilidad", "beta"): "Beta mide la volatilidad relativa al mercado. Beta > 1 significa más volátil que el mercado; Beta < 1 significa menos volátil.",
-        ("volatilidad", "drawdown"): "El Maximum Drawdown mide la mayor caída desde un pico. Drawdowns grandes pueden indicar riesgo elevado.",
-    }
-    
-    # Buscar explicación relevante
-    for (cat_key, reason_key), explanation in explanations.items():
-        if cat_key in category_lower and reason_key in reason_lower:
-            return explanation
-    
-    # Explicaciones genéricas por categoría
-    generic_explanations = {
-        "valoración": "Las métricas de valoración comparan el precio de mercado con métricas fundamentales para determinar si una acción está cara o barata relativa a sus fundamentos.",
-        "deuda": "Las métricas de deuda evalúan la estructura de capital y la capacidad de la empresa para cumplir con sus obligaciones financieras.",
-        "rentabilidad": "Las métricas de rentabilidad miden la eficiencia de la empresa para convertir ingresos en beneficios.",
-        "liquidez": "Las métricas de liquidez evalúan la capacidad de la empresa para cumplir con obligaciones de corto plazo.",
-        "flujo": "Las métricas de flujo de caja evalúan la generación real de efectivo del negocio.",
-        "crecimiento": "Las métricas de crecimiento evalúan la trayectoria de expansión del negocio.",
-        "volatilidad": "Las métricas de volatilidad miden el riesgo de fluctuaciones en el precio de la acción.",
-    }
-    
-    for cat_key, explanation in generic_explanations.items():
-        if cat_key in category_lower:
-            return explanation
-    
-    return "Esta métrica proporciona información relevante para evaluar la salud financiera y el potencial de inversión de la empresa."
-
-
-def create_comparison_metric_row(metric_name: str, company_val, sector_val, market_val, fmt: str = "multiple", lower_better: bool = True):
-    """Crea una fila de comparación de métricas con veredicto - Rediseñada."""
-    def format_val(v, fmt):
-        if v is None:
-            return "N/A"
-        if fmt == "percent":
-            return f"{v*100:.1f}%" if isinstance(v, float) and abs(v) < 2 else f"{v:.1f}%"
-        elif fmt == "multiple":
-            return f"{v:.2f}x"
-        else:
-            return f"{v:.2f}"
-    
-    def get_verdict(company_val, sector_val, market_val, lower_is_better):
-        """Calcula veredicto basado en comparación con sector Y mercado."""
-        if company_val is None:
-            return "Sin datos", "#6b7280", "⚪"
-        if lower_is_better is None:
-            return "N/A", "#6b7280", "⚪"
-        
-        better_than_sector = False
-        better_than_market = False
-        
-        if sector_val is not None:
-            if lower_is_better:
-                better_than_sector = company_val < sector_val * 1.15
-            else:
-                better_than_sector = company_val > sector_val * 0.85
-        
-        if market_val is not None:
-            if lower_is_better:
-                better_than_market = company_val < market_val * 1.15
-            else:
-                better_than_market = company_val > market_val * 0.85
-        
-        if better_than_sector and better_than_market:
-            return "Excelente", "#22c55e", "●"
-        elif better_than_sector or better_than_market:
-            return "Aceptable", "#eab308", "●"
-        else:
-            return "Débil", "#ef4444", "●"
-    
-    verdict_text, verdict_color, verdict_icon = get_verdict(company_val, sector_val, market_val, lower_better)
-    
-    # Estilo base de celda
-    cell_style = {
-        "padding": "14px 16px",
-        "borderBottom": "1px solid rgba(55, 65, 81, 0.5)",
-        "fontSize": "0.9rem"
-    }
-    
-    return html.Tr([
-        html.Td(metric_name, style={
-            **cell_style, 
-            "textAlign": "left", 
-            "fontWeight": "500", 
-            "color": "#e5e7eb"
-        }),
-        html.Td(format_val(company_val, fmt), style={
-            **cell_style, 
-            "textAlign": "center", 
-            "fontWeight": "700", 
-            "color": "#ffffff",
-            "fontSize": "0.95rem"
-        }),
-        html.Td(format_val(sector_val, fmt), style={
-            **cell_style, 
-            "textAlign": "center", 
-            "color": "#9ca3af"
-        }),
-        html.Td(format_val(market_val, fmt), style={
-            **cell_style, 
-            "textAlign": "center", 
-            "color": "#9ca3af"
-        }),
-        html.Td([
-            html.Span(verdict_icon, style={"color": verdict_color, "marginRight": "8px", "fontSize": "1rem"}),
-            html.Span(verdict_text, style={"fontWeight": "500"})
-        ], style={
-            **cell_style, 
-            "textAlign": "center", 
-            "color": verdict_color
-        }),
-    ], style={"transition": "background 0.2s"})
-
-
-def get_sector_metrics_config(sector: str) -> list:
-    """Retorna configuración de métricas según sector.
-    
-    IMPORTANTE: Los valores sector_val deben coincidir con los umbrales
-    en SECTOR_THRESHOLDS de financial_ratios.py para consistencia.
-    """
-    sector_lower = sector.lower() if sector else ""
-    
-    if any(x in sector_lower for x in ["financial", "bank", "insurance"]):
-        return [
-            {"key": "pb", "name": "P/Book ⭐", "lower_better": True, "sector_val": 1.3, "market_val": 4.0, "fmt": "multiple"},
-            {"key": "pe", "name": "P/E Ratio", "lower_better": True, "sector_val": 14.0, "market_val": 28.9, "fmt": "multiple"},
-            {"key": "roe", "name": "ROE ⭐", "lower_better": False, "sector_val": 0.12, "market_val": 0.15, "fmt": "percent"},
-            {"key": "net_margin", "name": "Margen Neto", "lower_better": False, "sector_val": 0.20, "market_val": 0.10, "fmt": "percent"},
-            {"key": "dividend_yield", "name": "Dividend Yield", "lower_better": False, "sector_val": 0.025, "market_val": 0.015, "fmt": "percent"},
-        ]
-    elif any(x in sector_lower for x in ["tech", "software", "semiconductor", "information"]):
-        return [
-            {"key": "pe", "name": "P/E Ratio", "lower_better": True, "sector_val": 28.0, "market_val": 28.9, "fmt": "multiple"},
-            {"key": "revenue_growth", "name": "Crec. Ingresos ⭐", "lower_better": False, "sector_val": 0.15, "market_val": 0.08, "fmt": "percent"},
-            {"key": "gross_margin", "name": "Margen Bruto ⭐", "lower_better": False, "sector_val": 0.50, "market_val": 0.35, "fmt": "percent"},
-            {"key": "operating_margin", "name": "Margen Operativo", "lower_better": False, "sector_val": 0.15, "market_val": 0.12, "fmt": "percent"},
-            {"key": "roe", "name": "ROE", "lower_better": False, "sector_val": 0.22, "market_val": 0.15, "fmt": "percent"},
-            {"key": "debt_to_equity", "name": "Deuda/Equity", "lower_better": True, "sector_val": 0.50, "market_val": 0.80, "fmt": "multiple"},
-        ]
-    elif any(x in sector_lower for x in ["health", "biotech", "pharma"]):
-        return [
-            {"key": "pe", "name": "P/E Ratio", "lower_better": True, "sector_val": 22.0, "market_val": 28.9, "fmt": "multiple"},
-            {"key": "gross_margin", "name": "Margen Bruto ⭐", "lower_better": False, "sector_val": 0.55, "market_val": 0.35, "fmt": "percent"},
-            {"key": "operating_margin", "name": "Margen Operativo", "lower_better": False, "sector_val": 0.12, "market_val": 0.12, "fmt": "percent"},
-            {"key": "roe", "name": "ROE", "lower_better": False, "sector_val": 0.18, "market_val": 0.15, "fmt": "percent"},
-            {"key": "debt_to_equity", "name": "Deuda/Equity", "lower_better": True, "sector_val": 0.60, "market_val": 0.80, "fmt": "multiple"},
-        ]
-    elif any(x in sector_lower for x in ["consumer cyclical", "consumer discretionary", "retail"]):
-        return [
-            {"key": "pe", "name": "P/E Ratio", "lower_better": True, "sector_val": 22.0, "market_val": 28.9, "fmt": "multiple"},
-            {"key": "revenue_growth", "name": "Crec. Ingresos ⭐", "lower_better": False, "sector_val": 0.10, "market_val": 0.08, "fmt": "percent"},
-            {"key": "operating_margin", "name": "Margen Operativo", "lower_better": False, "sector_val": 0.06, "market_val": 0.12, "fmt": "percent"},
-            {"key": "roe", "name": "ROE", "lower_better": False, "sector_val": 0.18, "market_val": 0.15, "fmt": "percent"},
-            {"key": "current_ratio", "name": "Current Ratio", "lower_better": False, "sector_val": 1.2, "market_val": 1.5, "fmt": "multiple"},
-        ]
-    elif any(x in sector_lower for x in ["energy", "oil", "gas"]):
-        # Energy: sector cíclico, capital intensivo - métricas específicas
-        return [
-            {"key": "ev_ebitda", "name": "EV/EBITDA ⭐", "lower_better": True, "sector_val": 6.0, "market_val": 12.0, "fmt": "multiple"},
-            {"key": "fcf_yield", "name": "FCF Yield ⭐", "lower_better": False, "sector_val": 0.08, "market_val": 0.04, "fmt": "percent"},
-            {"key": "roe", "name": "ROE", "lower_better": False, "sector_val": 0.12, "market_val": 0.15, "fmt": "percent"},
-            {"key": "operating_margin", "name": "Margen Operativo", "lower_better": False, "sector_val": 0.08, "market_val": 0.12, "fmt": "percent"},
-            {"key": "debt_to_equity", "name": "Deuda/Equity", "lower_better": True, "sector_val": 0.50, "market_val": 0.80, "fmt": "multiple"},
-            {"key": "dividend_yield", "name": "Dividend Yield", "lower_better": False, "sector_val": 0.04, "market_val": 0.015, "fmt": "percent"},
-        ]
-    elif any(x in sector_lower for x in ["utility", "utilities"]):
-        return [
-            {"key": "pe", "name": "P/E Ratio", "lower_better": True, "sector_val": 18.0, "market_val": 28.9, "fmt": "multiple"},
-            {"key": "dividend_yield", "name": "Dividend Yield ⭐", "lower_better": False, "sector_val": 0.035, "market_val": 0.015, "fmt": "percent"},
-            {"key": "roe", "name": "ROE", "lower_better": False, "sector_val": 0.10, "market_val": 0.15, "fmt": "percent"},
-            {"key": "operating_margin", "name": "Margen Operativo", "lower_better": False, "sector_val": 0.12, "market_val": 0.12, "fmt": "percent"},
-            {"key": "debt_to_equity", "name": "Deuda/Equity", "lower_better": True, "sector_val": 1.50, "market_val": 0.80, "fmt": "multiple"},
-        ]
-    elif any(x in sector_lower for x in ["consumer defensive", "consumer staples"]):
-        return [
-            {"key": "pe", "name": "P/E Ratio", "lower_better": True, "sector_val": 22.0, "market_val": 28.9, "fmt": "multiple"},
-            {"key": "dividend_yield", "name": "Dividend Yield ⭐", "lower_better": False, "sector_val": 0.025, "market_val": 0.015, "fmt": "percent"},
-            {"key": "roe", "name": "ROE", "lower_better": False, "sector_val": 0.20, "market_val": 0.15, "fmt": "percent"},
-            {"key": "operating_margin", "name": "Margen Operativo", "lower_better": False, "sector_val": 0.10, "market_val": 0.12, "fmt": "percent"},
-            {"key": "gross_margin", "name": "Margen Bruto", "lower_better": False, "sector_val": 0.35, "market_val": 0.35, "fmt": "percent"},
-        ]
-    elif any(x in sector_lower for x in ["industrial", "aerospace", "defense"]):
-        return [
-            {"key": "pe", "name": "P/E Ratio", "lower_better": True, "sector_val": 20.0, "market_val": 28.9, "fmt": "multiple"},
-            {"key": "roe", "name": "ROE", "lower_better": False, "sector_val": 0.15, "market_val": 0.15, "fmt": "percent"},
-            {"key": "operating_margin", "name": "Margen Operativo", "lower_better": False, "sector_val": 0.08, "market_val": 0.12, "fmt": "percent"},
-            {"key": "debt_to_equity", "name": "Deuda/Equity", "lower_better": True, "sector_val": 0.80, "market_val": 0.80, "fmt": "multiple"},
-            {"key": "current_ratio", "name": "Current Ratio", "lower_better": False, "sector_val": 1.3, "market_val": 1.5, "fmt": "multiple"},
-        ]
-    elif any(x in sector_lower for x in ["real estate", "reit"]):
-        return [
-            {"key": "dividend_yield", "name": "Dividend Yield ⭐", "lower_better": False, "sector_val": 0.04, "market_val": 0.015, "fmt": "percent"},
-            {"key": "pb", "name": "P/Book", "lower_better": True, "sector_val": 2.0, "market_val": 4.0, "fmt": "multiple"},
-            {"key": "roe", "name": "ROE", "lower_better": False, "sector_val": 0.08, "market_val": 0.15, "fmt": "percent"},
-            {"key": "operating_margin", "name": "Margen Operativo", "lower_better": False, "sector_val": 0.25, "market_val": 0.12, "fmt": "percent"},
-            {"key": "debt_to_equity", "name": "Deuda/Equity", "lower_better": True, "sector_val": 2.00, "market_val": 0.80, "fmt": "multiple"},
-        ]
-    elif any(x in sector_lower for x in ["communication", "media", "telecom"]):
-        return [
-            {"key": "pe", "name": "P/E Ratio", "lower_better": True, "sector_val": 18.0, "market_val": 28.9, "fmt": "multiple"},
-            {"key": "roe", "name": "ROE", "lower_better": False, "sector_val": 0.15, "market_val": 0.15, "fmt": "percent"},
-            {"key": "operating_margin", "name": "Margen Operativo", "lower_better": False, "sector_val": 0.15, "market_val": 0.12, "fmt": "percent"},
-            {"key": "debt_to_equity", "name": "Deuda/Equity", "lower_better": True, "sector_val": 1.00, "market_val": 0.80, "fmt": "multiple"},
-            {"key": "dividend_yield", "name": "Dividend Yield", "lower_better": False, "sector_val": 0.02, "market_val": 0.015, "fmt": "percent"},
-        ]
-    elif any(x in sector_lower for x in ["material", "mining", "chemical"]):
-        return [
-            {"key": "pe", "name": "P/E Ratio", "lower_better": True, "sector_val": 15.0, "market_val": 28.9, "fmt": "multiple"},
-            {"key": "ev_ebitda", "name": "EV/EBITDA ⭐", "lower_better": True, "sector_val": 8.0, "market_val": 12.0, "fmt": "multiple"},
-            {"key": "roe", "name": "ROE", "lower_better": False, "sector_val": 0.12, "market_val": 0.15, "fmt": "percent"},
-            {"key": "operating_margin", "name": "Margen Operativo", "lower_better": False, "sector_val": 0.10, "market_val": 0.12, "fmt": "percent"},
-            {"key": "debt_to_equity", "name": "Deuda/Equity", "lower_better": True, "sector_val": 0.60, "market_val": 0.80, "fmt": "multiple"},
-        ]
-    else:
-        return [
-            {"key": "pe", "name": "P/E Ratio", "lower_better": True, "sector_val": 20.0, "market_val": 28.9, "fmt": "multiple"},
-            {"key": "roe", "name": "ROE", "lower_better": False, "sector_val": 0.15, "market_val": 0.15, "fmt": "percent"},
-            {"key": "net_margin", "name": "Margen Neto", "lower_better": False, "sector_val": 0.10, "market_val": 0.10, "fmt": "percent"},
-            {"key": "operating_margin", "name": "Margen Operativo", "lower_better": False, "sector_val": 0.12, "market_val": 0.12, "fmt": "percent"},
-            {"key": "debt_to_equity", "name": "Deuda/Equity", "lower_better": True, "sector_val": 0.80, "market_val": 0.80, "fmt": "multiple"},
-            {"key": "current_ratio", "name": "Current Ratio", "lower_better": False, "sector_val": 1.5, "market_val": 1.5, "fmt": "multiple"},
-        ]
-
-
-def generate_simple_pdf(symbol: str, company_name: str, ratios: dict, alerts: dict, score: int) -> bytes:
-    """PDF moderno estilo informe ejecutivo - diseño limpio y profesional."""
-    
-    buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=letter, topMargin=0.4*inch, bottomMargin=0.4*inch,
-                           leftMargin=0.5*inch, rightMargin=0.5*inch)
-    
-    story = []
-    pw = 7.5*inch
-    
-    # Colores
-    PRIMARY = '#059669'      # Verde esmeralda
-    DARK = '#1e293b'         # Slate oscuro
-    MUTED = '#64748b'        # Gris
-    LIGHT_BG = '#f8fafc'     # Fondo claro
-    SUCCESS = '#22c55e'
-    WARNING = '#f59e0b'  
-    DANGER = '#ef4444'
-    
-    def fmt(val, tipo="x"):
-        if val is None: return "—"
-        try:
-            v = float(val)
-            if tipo == "%":
-                return f"{v*100:.1f}%" if abs(v) < 2 else f"{v:.1f}%"
-            elif tipo == "$":
-                if abs(v) >= 1e12: return f"${v/1e12:.2f}T"
-                elif abs(v) >= 1e9: return f"${v/1e9:.1f}B"
-                elif abs(v) >= 1e6: return f"${v/1e6:.0f}M"
-                else: return f"${v:.2f}"
-            else: return f"{v:.2f}"
-        except: return "—"
-    
-    sv2 = alerts.get("score_v2", {})
-    ts = sv2.get("score", score)
-    lv = sv2.get("level", "N/A")
-    cs = sv2.get("category_scores", {})
-    
-    # ══════════════════════════════════════════════════════════════
-    # HEADER PRINCIPAL
-    # ══════════════════════════════════════════════════════════════
-    header_left = f"{symbol}"
-    header_right = company_name[:35]
-    
-    header = Table([
-        [header_left, "", header_right]
-    ], colWidths=[1.5*inch, pw-4*inch, 2.5*inch])
-    header.setStyle(TableStyle([
-        ('FONTNAME', (0,0), (0,0), 'Helvetica-Bold'),
-        ('FONTNAME', (2,0), (2,0), 'Helvetica'),
-        ('FONTSIZE', (0,0), (0,0), 24),
-        ('FONTSIZE', (2,0), (2,0), 11),
-        ('TEXTCOLOR', (0,0), (0,0), colors.HexColor(PRIMARY)),
-        ('TEXTCOLOR', (2,0), (2,0), colors.HexColor(MUTED)),
-        ('ALIGN', (0,0), (0,0), 'LEFT'),
-        ('ALIGN', (2,0), (2,0), 'RIGHT'),
-        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 12),
-    ]))
-    story.append(header)
-    
-    # Línea separadora verde
-    line = Table([[""]], colWidths=[pw])
-    line.setStyle(TableStyle([
-        ('LINEABOVE', (0,0), (-1,0), 3, colors.HexColor(PRIMARY)),
-        ('TOPPADDING', (0,0), (-1,-1), 0),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 8),
-    ]))
-    story.append(line)
-    
-    # ══════════════════════════════════════════════════════════════
-    # RESUMEN EJECUTIVO - Score y Recomendación
-    # ══════════════════════════════════════════════════════════════
-    
-    # Determinar colores según score
-    if ts >= 70: score_color = SUCCESS; score_text = "FAVORABLE"
-    elif ts >= 50: score_color = WARNING; score_text = "NEUTRAL"
-    else: score_color = DANGER; score_text = "PRECAUCIÓN"
-    
-    sig = alerts.get("signal", "—")
-    gr = "Growth" if sv2.get("is_growth_company", False) else "Value"
-    price = ratios.get("price")
-    
-    exec_data = [
-        ["SCORE", "EVALUACIÓN", "SEÑAL", "TIPO", "PRECIO"],
-        [f"{ts}/100", lv, sig, gr, fmt(price, "$")]
-    ]
-    exec_table = Table(exec_data, colWidths=[1.5*inch, 1.5*inch, 1.5*inch, 1.5*inch, 1.5*inch])
-    exec_table.setStyle(TableStyle([
-        ('FONTNAME', (0,0), (-1,0), 'Helvetica'),
-        ('FONTNAME', (0,1), (-1,1), 'Helvetica-Bold'),
-        ('FONTSIZE', (0,0), (-1,0), 8),
-        ('FONTSIZE', (0,1), (-1,1), 14),
-        ('TEXTCOLOR', (0,0), (-1,0), colors.HexColor(MUTED)),
-        ('TEXTCOLOR', (0,1), (0,1), colors.HexColor(score_color)),
-        ('TEXTCOLOR', (1,1), (-1,1), colors.HexColor(DARK)),
-        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
-        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor(LIGHT_BG)),
-        ('BOX', (0,0), (-1,-1), 1, colors.HexColor('#e2e8f0')),
-        ('TOPPADDING', (0,0), (-1,-1), 10),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 10),
-    ]))
-    story.append(exec_table)
-    story.append(Spacer(1, 12))
-    
-    # ══════════════════════════════════════════════════════════════
-    # DESGLOSE DEL SCORE POR CATEGORÍA
-    # ══════════════════════════════════════════════════════════════
-    
-    def score_bar_text(val, max_val=20):
-        pct = (val / max_val) * 100 if max_val > 0 else 0
-        return f"{val:.0f}/{max_val}"
-    
-    cat_data = [
-        ["Categoría", "Puntuación", ""],
-        ["Valoración", score_bar_text(cs.get('valoracion', 0)), "Métricas P/E, P/B, EV/EBITDA, etc."],
-        ["Rentabilidad", score_bar_text(cs.get('rentabilidad', 0)), "ROE, ROA, márgenes operativos"],
-        ["Solidez", score_bar_text(cs.get('solidez', 0)), "Liquidez, deuda, cobertura"],
-        ["Calidad", score_bar_text(cs.get('calidad', 0)), "Consistencia, flujos de caja"],
-        ["Crecimiento", score_bar_text(cs.get('crecimiento', 0)), "Tendencias de ingresos y EPS"],
-    ]
-    cat_table = Table(cat_data, colWidths=[1.8*inch, 1.2*inch, 4.5*inch])
-    cat_styles = [
-        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
-        ('FONTNAME', (0,1), (-1,-1), 'Helvetica'),
-        ('FONTSIZE', (0,0), (-1,0), 8),
-        ('FONTSIZE', (0,1), (0,-1), 10),
-        ('FONTSIZE', (1,1), (1,-1), 11),
-        ('FONTSIZE', (2,1), (2,-1), 8),
-        ('TEXTCOLOR', (0,0), (-1,0), colors.HexColor(MUTED)),
-        ('TEXTCOLOR', (0,1), (0,-1), colors.HexColor(DARK)),
-        ('TEXTCOLOR', (1,1), (1,-1), colors.HexColor(PRIMARY)),
-        ('TEXTCOLOR', (2,1), (2,-1), colors.HexColor(MUTED)),
-        ('ALIGN', (0,0), (0,-1), 'LEFT'),
-        ('ALIGN', (1,0), (1,-1), 'CENTER'),
-        ('ALIGN', (2,0), (2,-1), 'LEFT'),
-        ('BACKGROUND', (0,0), (-1,0), colors.HexColor(LIGHT_BG)),
-        ('LINEBELOW', (0,0), (-1,0), 1, colors.HexColor('#e2e8f0')),
-        ('TOPPADDING', (0,0), (-1,-1), 6),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 6),
-    ]
-    cat_table.setStyle(TableStyle(cat_styles))
-    story.append(cat_table)
-    story.append(Spacer(1, 15))
-    
-    # ══════════════════════════════════════════════════════════════
-    # MÉTRICAS CLAVE - 3 columnas
-    # ══════════════════════════════════════════════════════════════
-    
-    section_title = Table([["MÉTRICAS FINANCIERAS"]], colWidths=[pw])
-    section_title.setStyle(TableStyle([
-        ('FONTNAME', (0,0), (-1,-1), 'Helvetica-Bold'),
-        ('FONTSIZE', (0,0), (-1,-1), 10),
-        ('TEXTCOLOR', (0,0), (-1,-1), colors.HexColor(PRIMARY)),
-        ('LINEBELOW', (0,0), (-1,0), 1, colors.HexColor(PRIMARY)),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 8),
-    ]))
-    story.append(section_title)
-    
-    # Tres columnas de métricas
-    col_width = pw / 3
-    
-    def metric_block(title, metrics):
-        """Crea un bloque de métricas"""
-        rows = [[title, ""]]
-        for name, value in metrics:
-            rows.append([name, value])
-        t = Table(rows, colWidths=[1.5*inch, 1*inch])
-        styles = [
-            ('FONTNAME', (0,0), (0,0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0,0), (0,0), 9),
-            ('TEXTCOLOR', (0,0), (0,0), colors.HexColor(DARK)),
-            ('FONTNAME', (0,1), (0,-1), 'Helvetica'),
-            ('FONTNAME', (1,1), (1,-1), 'Helvetica-Bold'),
-            ('FONTSIZE', (0,1), (-1,-1), 8),
-            ('TEXTCOLOR', (0,1), (0,-1), colors.HexColor(MUTED)),
-            ('TEXTCOLOR', (1,1), (1,-1), colors.HexColor(DARK)),
-            ('ALIGN', (1,0), (1,-1), 'RIGHT'),
-            ('TOPPADDING', (0,0), (-1,-1), 3),
-            ('BOTTOMPADDING', (0,0), (-1,-1), 3),
-        ]
-        t.setStyle(TableStyle(styles))
-        return t
-    
-    # Columna 1: Valoración
-    val_metrics = [
-        ("P/E", fmt(ratios.get("pe"))),
-        ("Forward P/E", fmt(ratios.get("forward_pe"))),
-        ("P/B", fmt(ratios.get("pb"))),
-        ("EV/EBITDA", fmt(ratios.get("ev_ebitda"))),
-        ("PEG", fmt(ratios.get("peg"))),
-        ("FCF Yield", fmt(ratios.get("fcf_yield"), "%")),
-    ]
-    
-    # Columna 2: Rentabilidad
-    rent_metrics = [
-        ("ROE", fmt(ratios.get("roe"), "%")),
-        ("ROA", fmt(ratios.get("roa"), "%")),
-        ("ROIC", fmt(ratios.get("roic"), "%")),
-        ("Margen Bruto", fmt(ratios.get("gross_margin"), "%")),
-        ("Margen Op.", fmt(ratios.get("operating_margin"), "%")),
-        ("Margen Neto", fmt(ratios.get("net_margin"), "%")),
-    ]
-    
-    # Columna 3: Solidez
-    sol_metrics = [
-        ("Current Ratio", fmt(ratios.get("current_ratio"))),
-        ("Quick Ratio", fmt(ratios.get("quick_ratio"))),
-        ("D/E", fmt(ratios.get("debt_to_equity"))),
-        ("Net D/EBITDA", fmt(ratios.get("net_debt_to_ebitda"))),
-        ("Int. Coverage", fmt(ratios.get("interest_coverage"))),
-        ("Beta", fmt(ratios.get("beta"))),
-    ]
-    
-    metrics_row = Table([
-        [metric_block("Valoración", val_metrics), 
-         metric_block("Rentabilidad", rent_metrics),
-         metric_block("Solidez", sol_metrics)]
-    ], colWidths=[col_width, col_width, col_width])
-    metrics_row.setStyle(TableStyle([
-        ('VALIGN', (0,0), (-1,-1), 'TOP'),
-        ('LEFTPADDING', (0,0), (-1,-1), 5),
-        ('RIGHTPADDING', (0,0), (-1,-1), 5),
-    ]))
-    story.append(metrics_row)
-    story.append(Spacer(1, 12))
-    
-    # ══════════════════════════════════════════════════════════════
-    # VALOR INTRÍNSECO
-    # ══════════════════════════════════════════════════════════════
-    
-    section_title2 = Table([["VALOR INTRÍNSECO"]], colWidths=[pw])
-    section_title2.setStyle(TableStyle([
-        ('FONTNAME', (0,0), (-1,-1), 'Helvetica-Bold'),
-        ('FONTSIZE', (0,0), (-1,-1), 10),
-        ('TEXTCOLOR', (0,0), (-1,-1), colors.HexColor(PRIMARY)),
-        ('LINEBELOW', (0,0), (-1,0), 1, colors.HexColor(PRIMARY)),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 8),
-    ]))
-    story.append(section_title2)
-    
-    # Cálculos de valor intrínseco
-    eps = ratios.get("eps")
-    bvps = ratios.get("book_value_per_share")
-    graham = (22.5 * eps * bvps) ** 0.5 if eps and bvps and eps > 0 and bvps > 0 else None
-    fcf = ratios.get("fcf")
-    shares = ratios.get("shares_outstanding")
-    
-    dcf_value = None
-    if fcf and shares and fcf > 0 and shares > 0:
-        try:
-            growth_val = ratios.get("revenue_cagr_3y", 0.05) or 0.05
-            growth_val = min(max(growth_val, 0.02), 0.35)
-            dcf_pdf = dcf_multi_stage_dynamic(fcf=fcf, shares_outstanding=shares, revenue_growth_3y=growth_val)
-            dcf_value = dcf_pdf.get("fair_value_per_share")
-        except: pass
-    
-    # Calcular upside/downside
-    def calc_diff(fair, current):
-        if fair and current and current > 0:
-            diff = ((fair - current) / current) * 100
-            return f"{diff:+.0f}%"
-        return "—"
-    
-    zs = alerts.get('altman_z_score', {})
-    fs = alerts.get('piotroski_f_score', {})
-    zv = zs.get('value') if isinstance(zs, dict) else None
-    zl = zs.get('level', '') if isinstance(zs, dict) else ''
-    fv = fs.get('value') if isinstance(fs, dict) else None
-    
-    intrinsic_data = [
-        ["Método", "Valor Justo", "vs Precio", "Interpretación"],
-        ["Graham Number", fmt(graham, "$"), calc_diff(graham, price), "Fórmula clásica de valor"],
-        ["DCF Multi-Stage", fmt(dcf_value, "$"), calc_diff(dcf_value, price), "Flujos descontados a 10 años"],
-        ["Altman Z-Score", f"{zv:.2f}" if zv else "—", "", "Segura" if zl == 'SAFE' else "Gris" if zl == 'GREY' else "Riesgo" if zl else "—"],
-        ["Piotroski F-Score", f"{fv}/9" if fv is not None else "—", "", "8-9: Fuerte | 0-3: Débil"],
-    ]
-    
-    intrinsic_table = Table(intrinsic_data, colWidths=[1.8*inch, 1.5*inch, 1.2*inch, 3*inch])
-    intrinsic_table.setStyle(TableStyle([
-        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
-        ('FONTNAME', (0,1), (-1,-1), 'Helvetica'),
-        ('FONTSIZE', (0,0), (-1,-1), 8),
-        ('TEXTCOLOR', (0,0), (-1,0), colors.HexColor(MUTED)),
-        ('TEXTCOLOR', (0,1), (0,-1), colors.HexColor(DARK)),
-        ('TEXTCOLOR', (1,1), (1,-1), colors.HexColor(PRIMARY)),
-        ('TEXTCOLOR', (3,1), (3,-1), colors.HexColor(MUTED)),
-        ('ALIGN', (1,0), (2,-1), 'CENTER'),
-        ('BACKGROUND', (0,0), (-1,0), colors.HexColor(LIGHT_BG)),
-        ('LINEBELOW', (0,0), (-1,0), 1, colors.HexColor('#e2e8f0')),
-        ('TOPPADDING', (0,0), (-1,-1), 5),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 5),
-    ]))
-    story.append(intrinsic_table)
-    story.append(Spacer(1, 12))
-    
-    # ══════════════════════════════════════════════════════════════
-    # SEÑALES DETECTADAS
-    # ══════════════════════════════════════════════════════════════
-    
-    section_title3 = Table([["SEÑALES Y ALERTAS"]], colWidths=[pw])
-    section_title3.setStyle(TableStyle([
-        ('FONTNAME', (0,0), (-1,-1), 'Helvetica-Bold'),
-        ('FONTSIZE', (0,0), (-1,-1), 10),
-        ('TEXTCOLOR', (0,0), (-1,-1), colors.HexColor(PRIMARY)),
-        ('LINEBELOW', (0,0), (-1,0), 1, colors.HexColor(PRIMARY)),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 8),
-    ]))
-    story.append(section_title3)
-    
-    # Recopilar señales - MISMA LÓGICA QUE LA UI
-    danger_list = []
-    warning_list = []
-    success_list = []
-    
-    # Valoración
-    val = alerts.get("valuation", {})
-    for reason in val.get("overvalued_reasons", []):
-        danger_list.append(("Valoración", reason))
-    for reason in val.get("undervalued_reasons", []):
-        success_list.append(("Valoración", reason))
-    
-    # Deuda/Apalancamiento
-    lev = alerts.get("leverage", {})
-    for reason in lev.get("warning_reasons", []):
-        danger_list.append(("Deuda", reason))
-    for reason in lev.get("positive_reasons", []):
-        success_list.append(("Deuda", reason))
-    
-    # Rentabilidad
-    prof = alerts.get("profitability", {})
-    for reason in prof.get("warning_reasons", []):
-        warning_list.append(("Rentabilidad", reason))
-    for reason in prof.get("positive_reasons", []):
-        success_list.append(("Rentabilidad", reason))
-    
-    # Liquidez
-    liq = alerts.get("liquidity", {})
-    for reason in liq.get("warning_reasons", []):
-        warning_list.append(("Liquidez", reason))
-    for reason in liq.get("positive_reasons", []):
-        success_list.append(("Liquidez", reason))
-    
-    # Flujo de Caja
-    cf = alerts.get("cash_flow", {})
-    for reason in cf.get("warning_reasons", []):
-        danger_list.append(("Flujo de Caja", reason))
-    for reason in cf.get("positive_reasons", []):
-        success_list.append(("Flujo de Caja", reason))
-    
-    # Crecimiento
-    growth = alerts.get("growth", {})
-    for reason in growth.get("warning_reasons", []):
-        warning_list.append(("Crecimiento", reason))
-    for reason in growth.get("positive_reasons", []):
-        success_list.append(("Crecimiento", reason))
-    
-    # Volatilidad
-    vol = alerts.get("volatility", {})
-    for reason in vol.get("warning_reasons", []):
-        warning_list.append(("Volatilidad", reason))
-    for reason in vol.get("positive_reasons", []):
-        success_list.append(("Volatilidad", reason))
-    
-    # Extraer alertas de score_v2 categories (ajustes del modelo)
-    score_v2 = alerts.get("score_v2", {})
-    categories = score_v2.get("categories", [])
-    for cat in categories:
-        adjustments = cat.get("adjustments", [])
-        for adj in adjustments:
-            if adj.get("adjustment", 0) < -2:
-                danger_list.append((cat.get("category", ""), f"{adj.get('metric', '')}: {adj.get('reason', '')}"))
-            elif adj.get("adjustment", 0) < 0:
-                warning_list.append((cat.get("category", ""), f"{adj.get('metric', '')}: {adj.get('reason', '')}"))
-            elif adj.get("adjustment", 0) > 2:
-                success_list.append((cat.get("category", ""), f"{adj.get('metric', '')}: {adj.get('reason', '')}"))
-    
-    # Eliminar duplicados
-    def unique_alerts(alerts_list):
-        seen = set()
-        result = []
-        for cat, reason in alerts_list:
-            key = (cat, reason[:50])
-            if key not in seen:
-                seen.add(key)
-                result.append((cat, reason))
-        return result
-    
-    danger_list = unique_alerts(danger_list)
-    warning_list = unique_alerts(warning_list)
-    success_list = unique_alerts(success_list)
-    
-    # Crear tabla de señales - TODAS las señales
-    signal_rows = []
-    for c, r in danger_list: 
-        signal_rows.append(["●", f"{r[:70]}", "Riesgo"])
-    for c, r in warning_list: 
-        signal_rows.append(["●", f"{r[:70]}", "Atención"])
-    for c, r in success_list: 
-        signal_rows.append(["●", f"{r[:70]}", "Fortaleza"])
-    
-    if not signal_rows:
-        signal_rows.append(["●", "Sin señales significativas detectadas", "Info"])
-    
-    sig_table = Table(signal_rows, colWidths=[0.3*inch, 5.7*inch, 1.5*inch])
-    sig_styles = [
-        ('FONTNAME', (0,0), (-1,-1), 'Helvetica'),
-        ('FONTSIZE', (0,0), (-1,-1), 8),
-        ('ALIGN', (0,0), (0,-1), 'CENTER'),
-        ('ALIGN', (2,0), (2,-1), 'RIGHT'),
-        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-        ('TOPPADDING', (0,0), (-1,-1), 4),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 4),
-        ('LINEBELOW', (0,0), (-1,-2), 0.5, colors.HexColor('#f1f5f9')),
-    ]
-    
-    for i, row in enumerate(signal_rows):
-        if row[2] == "Riesgo":
-            sig_styles.append(('TEXTCOLOR', (0,i), (0,i), colors.HexColor(DANGER)))
-            sig_styles.append(('TEXTCOLOR', (2,i), (2,i), colors.HexColor(DANGER)))
-        elif row[2] == "Atención":
-            sig_styles.append(('TEXTCOLOR', (0,i), (0,i), colors.HexColor(WARNING)))
-            sig_styles.append(('TEXTCOLOR', (2,i), (2,i), colors.HexColor(WARNING)))
-        else:
-            sig_styles.append(('TEXTCOLOR', (0,i), (0,i), colors.HexColor(SUCCESS)))
-            sig_styles.append(('TEXTCOLOR', (2,i), (2,i), colors.HexColor(SUCCESS)))
-    
-    sig_table.setStyle(TableStyle(sig_styles))
-    story.append(sig_table)
-    story.append(Spacer(1, 20))
-    
-    # ══════════════════════════════════════════════════════════════
-    # FOOTER
-    # ══════════════════════════════════════════════════════════════
-    
-    footer_line = Table([[""]], colWidths=[pw])
-    footer_line.setStyle(TableStyle([
-        ('LINEABOVE', (0,0), (-1,0), 1, colors.HexColor('#e2e8f0')),
-        ('TOPPADDING', (0,0), (-1,-1), 8),
-    ]))
-    story.append(footer_line)
-    
-    footer = Table([
-        ["Finanzer", datetime.now().strftime('%d/%m/%Y %H:%M'), "Este documento no constituye asesoría financiera"]
-    ], colWidths=[1.5*inch, 2*inch, 4*inch])
-    footer.setStyle(TableStyle([
-        ('FONTNAME', (0,0), (0,0), 'Helvetica-Bold'),
-        ('FONTNAME', (1,0), (-1,0), 'Helvetica'),
-        ('FONTSIZE', (0,0), (-1,-1), 7),
-        ('TEXTCOLOR', (0,0), (0,0), colors.HexColor(PRIMARY)),
-        ('TEXTCOLOR', (1,0), (-1,0), colors.HexColor(MUTED)),
-        ('ALIGN', (0,0), (0,0), 'LEFT'),
-        ('ALIGN', (1,0), (1,0), 'CENTER'),
-        ('ALIGN', (2,0), (2,0), 'RIGHT'),
-    ]))
-    story.append(footer)
-    
-    doc.build(story)
-    buffer.seek(0)
-    return buffer.getvalue()
-
 # =============================================================================
 # LAYOUT PRINCIPAL
 # =============================================================================
@@ -1547,11 +103,54 @@ def generate_simple_pdf(symbol: str, company_name: str, ratios: dict, alerts: di
 app.layout = dbc.Container([
     dcc.Store(id="analysis-data", storage_type="memory"),
     dcc.Store(id="current-symbol", data="", storage_type="memory"),
+    dcc.Store(id="comparison-stocks", data=[], storage_type="session"),  # v2.9: Lista de acciones para comparar
     dcc.Store(id="theme-store", data="dark", storage_type="local"),  # Persiste en localStorage
+    dcc.Store(id="search-history", data=[], storage_type="local"),  # v3.0: Historial de búsquedas
+    dcc.Store(id="watchlist", data=[], storage_type="local"),  # v3.0.1: Watchlist/Favoritos
     dcc.Download(id="download-pdf"),
     
     # Loading indicator (NO fullscreen para no bloquear sugerencias)
     html.Div(id="loading-trigger", style={"display": "none"}),
+    
+    # Loading overlay mejorado
+    html.Div(id="loading-overlay", children=[
+        html.Div([
+            html.Div(className="loading-spinner", style={
+                "width": "48px",
+                "height": "48px",
+                "border": "4px solid rgba(16, 185, 129, 0.2)",
+                "borderTopColor": "#10b981",
+                "borderRadius": "50%",
+                "animation": "spin 0.8s linear infinite",
+                "margin": "0 auto 16px auto"
+            }),
+            html.P("Analizando...", style={
+                "color": "#a1a1aa",
+                "fontSize": "1rem",
+                "marginBottom": "8px"
+            }),
+            html.P(id="loading-symbol", children="", style={
+                "color": "#10b981",
+                "fontSize": "1.2rem",
+                "fontWeight": "600"
+            })
+        ], style={
+            "textAlign": "center",
+            "padding": "40px"
+        })
+    ], style={
+        "display": "none",
+        "position": "fixed",
+        "top": "0",
+        "left": "0",
+        "right": "0",
+        "bottom": "0",
+        "backgroundColor": "rgba(24, 24, 27, 0.9)",
+        "backdropFilter": "blur(4px)",
+        "zIndex": "9999",
+        "justifyContent": "center",
+        "alignItems": "center"
+    }),
     
     # =========================================================================
     # NAVBAR PERSISTENTE CON BÚSQUEDA
@@ -1680,6 +279,16 @@ app.layout = dbc.Container([
                 for ticker in QUICK_PICKS
             ], style={"textAlign": "center", "marginBottom": "40px"}),
             
+            # Búsquedas recientes (se llena dinámicamente)
+            html.Div(id="recent-searches-container", children=[
+                # Se actualiza via callback cuando hay historial
+            ], style={"textAlign": "center", "marginBottom": "20px"}),
+            
+            # Watchlist/Favoritos (se llena dinámicamente)
+            html.Div(id="watchlist-container", children=[
+                # Se actualiza via callback cuando hay favoritos
+            ], style={"textAlign": "center", "marginBottom": "30px"}),
+            
         ], style={
             "textAlign": "center", "padding": "60px 20px",
             "maxWidth": "700px", "margin": "0 auto"
@@ -1730,6 +339,98 @@ app.layout = dbc.Container([
             ], className="features-container")
         ], style={"maxWidth": "900px", "margin": "0 auto 40px auto", "padding": "0 20px"}),
         
+        # Screener: Estrategias de Inversión
+        html.Div([
+            html.H5("🎯 Estrategias de Inversión", className="text-center mb-3", style={"color": "#a1a1aa"}),
+            html.P("Acciones seleccionadas por estrategia", className="text-muted small text-center mb-4"),
+            
+            html.Div([
+                # Value Investing
+                html.Div([
+                    html.Button([
+                        html.Div("💎", style={"fontSize": "1.5rem", "marginBottom": "8px"}),
+                        html.Div("Value", style={"fontWeight": "600", "marginBottom": "4px"}),
+                        html.Div("Bajo P/E", className="text-muted", style={"fontSize": "0.75rem"})
+                    ], id="strategy-value", n_clicks=0, style={
+                        "background": "rgba(59, 130, 246, 0.1)",
+                        "border": "1px solid rgba(59, 130, 246, 0.3)",
+                        "borderRadius": "12px",
+                        "padding": "16px 24px",
+                        "color": "#60a5fa",
+                        "cursor": "pointer",
+                        "transition": "all 0.2s ease",
+                        "minWidth": "100px"
+                    })
+                ], style={"flex": "1"}),
+                
+                # Growth
+                html.Div([
+                    html.Button([
+                        html.Div("🚀", style={"fontSize": "1.5rem", "marginBottom": "8px"}),
+                        html.Div("Growth", style={"fontWeight": "600", "marginBottom": "4px"}),
+                        html.Div("Alto crecimiento", className="text-muted", style={"fontSize": "0.75rem"})
+                    ], id="strategy-growth", n_clicks=0, style={
+                        "background": "rgba(16, 185, 129, 0.1)",
+                        "border": "1px solid rgba(16, 185, 129, 0.3)",
+                        "borderRadius": "12px",
+                        "padding": "16px 24px",
+                        "color": "#34d399",
+                        "cursor": "pointer",
+                        "transition": "all 0.2s ease",
+                        "minWidth": "100px"
+                    })
+                ], style={"flex": "1"}),
+                
+                # Dividends
+                html.Div([
+                    html.Button([
+                        html.Div("💰", style={"fontSize": "1.5rem", "marginBottom": "8px"}),
+                        html.Div("Dividendos", style={"fontWeight": "600", "marginBottom": "4px"}),
+                        html.Div("Income investing", className="text-muted", style={"fontSize": "0.75rem"})
+                    ], id="strategy-dividend", n_clicks=0, style={
+                        "background": "rgba(245, 158, 11, 0.1)",
+                        "border": "1px solid rgba(245, 158, 11, 0.3)",
+                        "borderRadius": "12px",
+                        "padding": "16px 24px",
+                        "color": "#F59E0B",
+                        "cursor": "pointer",
+                        "transition": "all 0.2s ease",
+                        "minWidth": "100px"
+                    })
+                ], style={"flex": "1"}),
+                
+                # Blue Chips
+                html.Div([
+                    html.Button([
+                        html.Div("🏛️", style={"fontSize": "1.5rem", "marginBottom": "8px"}),
+                        html.Div("Blue Chips", style={"fontWeight": "600", "marginBottom": "4px"}),
+                        html.Div("Mega caps", className="text-muted", style={"fontSize": "0.75rem"})
+                    ], id="strategy-bluechip", n_clicks=0, style={
+                        "background": "rgba(139, 92, 246, 0.1)",
+                        "border": "1px solid rgba(139, 92, 246, 0.3)",
+                        "borderRadius": "12px",
+                        "padding": "16px 24px",
+                        "color": "#A78BFA",
+                        "cursor": "pointer",
+                        "transition": "all 0.2s ease",
+                        "minWidth": "100px"
+                    })
+                ], style={"flex": "1"}),
+                
+            ], style={
+                "display": "flex", 
+                "justifyContent": "center", 
+                "gap": "16px", 
+                "flexWrap": "wrap",
+                "maxWidth": "600px",
+                "margin": "0 auto"
+            }),
+            
+            # Resultados del screener
+            html.Div(id="screener-results", className="mt-4"),
+            
+        ], style={"maxWidth": "800px", "margin": "0 auto 40px auto", "padding": "0 20px"}),
+        
         # Disclaimer
         html.Div([
             html.P([
@@ -1745,13 +446,34 @@ app.layout = dbc.Container([
     html.Div(id="analysis-view", style={"display": "none"}, children=[
         html.Div(id="company-header"),
         
-        # Botón de descarga PDF (fijo, no dinámico)
+        # Botones de descarga y favorito
         html.Div([
             html.Button([
                 html.Span("📄", style={"marginRight": "8px"}),
-                html.Span("Descargar Análisis PDF", className="btn-text-white")
-            ], id="download-pdf-btn", n_clicks=0, className="download-btn")
-        ], className="text-center mb-4"),
+                html.Span("Descargar PDF", className="btn-text-white")
+            ], id="download-pdf-btn", n_clicks=0, className="download-btn"),
+            
+            # Botón favorito minimalista (solo icono)
+            html.Button(
+                id="toggle-watchlist-btn", 
+                n_clicks=0,
+                children=[html.Span(id="watchlist-icon", children="☆", style={"fontSize": "1.3rem"})],
+                style={
+                    "background": "transparent",
+                    "border": "2px solid rgba(245, 158, 11, 0.4)",
+                    "borderRadius": "50%",
+                    "width": "48px",
+                    "height": "48px",
+                    "display": "flex",
+                    "alignItems": "center",
+                    "justifyContent": "center",
+                    "cursor": "pointer",
+                    "transition": "all 0.2s ease",
+                    "color": "#F59E0B"
+                },
+                title="Añadir a Watchlist"
+            ),
+        ], className="text-center mb-4", style={"display": "flex", "justifyContent": "center", "alignItems": "center", "gap": "16px"}),
         
         dbc.Row([
             dbc.Col([html.Div(id="score-card-container", className="score-card")], xs=12, md=4, lg=3, className="mb-3"),
@@ -1897,6 +619,249 @@ def update_search_suggestions(search_value):
     return suggestion_items, visible_style
 
 
+# Callback para mostrar búsquedas recientes en el home
+@callback(
+    Output("recent-searches-container", "children"),
+    Input("search-history", "data"),
+)
+def update_recent_searches(history):
+    """Muestra las últimas búsquedas del usuario."""
+    if not history or len(history) == 0:
+        return None
+    
+    # Mostrar máximo 5 búsquedas recientes
+    recent = history[:5]
+    
+    return html.Div([
+        html.P("🕐 Búsquedas recientes", className="text-muted small mb-2"),
+        html.Div([
+            html.Button(
+                f"{item['symbol']}",
+                id={"type": "recent-search", "index": item['symbol']},
+                n_clicks=0,
+                style={
+                    "background": "rgba(59, 130, 246, 0.1)",
+                    "border": "1px solid rgba(59, 130, 246, 0.3)",
+                    "color": "#60a5fa",
+                    "borderRadius": "20px",
+                    "padding": "6px 14px",
+                    "margin": "3px",
+                    "fontWeight": "500",
+                    "fontSize": "0.8rem",
+                    "cursor": "pointer",
+                    "transition": "all 0.2s ease"
+                }
+            )
+            for item in recent
+        ], style={"display": "flex", "flexWrap": "wrap", "justifyContent": "center", "gap": "4px"})
+    ])
+
+
+# Callback para mostrar watchlist en el home
+@callback(
+    Output("watchlist-container", "children"),
+    Input("watchlist", "data"),
+)
+def update_watchlist_display(watchlist):
+    """Muestra los favoritos del usuario."""
+    if not watchlist or len(watchlist) == 0:
+        return None
+    
+    return html.Div([
+        html.P("⭐ Mi Watchlist", className="text-muted small mb-2"),
+        html.Div([
+            html.Button(
+                [
+                    html.Span(f"{item['symbol']}", style={"marginRight": "6px"}),
+                    html.Span(
+                        f"({item.get('score', '?')}/100)" if item.get('score') else "",
+                        style={"fontSize": "0.7rem", "opacity": "0.8"}
+                    )
+                ],
+                id={"type": "watchlist-item", "index": item['symbol']},
+                n_clicks=0,
+                style={
+                    "background": "rgba(245, 158, 11, 0.15)",
+                    "border": "1px solid rgba(245, 158, 11, 0.4)",
+                    "color": "#F59E0B",
+                    "borderRadius": "20px",
+                    "padding": "6px 14px",
+                    "margin": "3px",
+                    "fontWeight": "500",
+                    "fontSize": "0.8rem",
+                    "cursor": "pointer",
+                    "transition": "all 0.2s ease",
+                    "display": "inline-flex",
+                    "alignItems": "center"
+                }
+            )
+            for item in watchlist[:10]  # Máximo 10 en watchlist
+        ], style={"display": "flex", "flexWrap": "wrap", "justifyContent": "center", "gap": "4px"})
+    ])
+
+
+# Callback para toggle de watchlist (añadir/quitar de favoritos)
+@callback(
+    Output("watchlist", "data", allow_duplicate=True),
+    Output("watchlist-icon", "children"),
+    Output("toggle-watchlist-btn", "title"),
+    Output("toggle-watchlist-btn", "style"),
+    Input("toggle-watchlist-btn", "n_clicks"),
+    State("analysis-data", "data"),
+    State("watchlist", "data"),
+    prevent_initial_call=True
+)
+def toggle_watchlist(n_clicks, analysis_data, current_watchlist):
+    """Añade o quita la acción actual de la watchlist."""
+    if not n_clicks or not analysis_data:
+        return no_update, no_update, no_update, no_update
+    
+    symbol = analysis_data.get("symbol")
+    if not symbol:
+        return no_update, no_update, no_update, no_update
+    
+    watchlist = current_watchlist if current_watchlist else []
+    
+    # Estilos base
+    style_inactive = {
+        "background": "transparent",
+        "border": "2px solid rgba(245, 158, 11, 0.4)",
+        "borderRadius": "50%",
+        "width": "48px",
+        "height": "48px",
+        "display": "flex",
+        "alignItems": "center",
+        "justifyContent": "center",
+        "cursor": "pointer",
+        "transition": "all 0.2s ease",
+        "color": "#F59E0B"
+    }
+    
+    style_active = {
+        **style_inactive,
+        "background": "rgba(245, 158, 11, 0.15)",
+        "border": "2px solid #F59E0B",
+    }
+    
+    # Verificar si ya está en watchlist
+    existing = next((item for item in watchlist if item.get("symbol") == symbol), None)
+    
+    if existing:
+        # Quitar de watchlist
+        watchlist = [item for item in watchlist if item.get("symbol") != symbol]
+        return watchlist, "☆", "Añadir a Watchlist", style_inactive
+    else:
+        # Añadir a watchlist
+        score = analysis_data.get("alerts", {}).get("score_v2", {}).get("score")
+        new_item = {
+            "symbol": symbol,
+            "name": analysis_data.get("company_name", symbol),
+            "score": score,
+            "added_at": datetime.now().isoformat()
+        }
+        watchlist.insert(0, new_item)
+        watchlist = watchlist[:20]  # Máximo 20 items
+        return watchlist, "★", "Quitar de Watchlist", style_active
+
+
+# Estrategias predefinidas para el screener
+INVESTMENT_STRATEGIES = {
+    "value": {
+        "name": "Value Investing",
+        "description": "Empresas con valoración atractiva (bajo P/E)",
+        "tickers": ["BRK-B", "JPM", "BAC", "WFC", "C", "CVX", "XOM", "VZ", "T", "IBM"],
+        "color": "#60a5fa"
+    },
+    "growth": {
+        "name": "Growth Stocks",
+        "description": "Empresas con alto potencial de crecimiento",
+        "tickers": ["NVDA", "TSLA", "AMD", "SHOP", "SQ", "SNOW", "PLTR", "NET", "DDOG", "CRWD"],
+        "color": "#34d399"
+    },
+    "dividend": {
+        "name": "Dividend Champions",
+        "description": "Empresas con dividendos consistentes",
+        "tickers": ["JNJ", "PG", "KO", "PEP", "MCD", "MMM", "O", "T", "VZ", "XOM"],
+        "color": "#F59E0B"
+    },
+    "bluechip": {
+        "name": "Blue Chips",
+        "description": "Las empresas más grandes y estables",
+        "tickers": ["AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "BRK-B", "JPM", "V", "UNH"],
+        "color": "#A78BFA"
+    }
+}
+
+
+# Callback para mostrar estrategias del screener
+@callback(
+    Output("screener-results", "children"),
+    Input("strategy-value", "n_clicks"),
+    Input("strategy-growth", "n_clicks"),
+    Input("strategy-dividend", "n_clicks"),
+    Input("strategy-bluechip", "n_clicks"),
+    prevent_initial_call=True
+)
+def show_strategy_stocks(value_clicks, growth_clicks, dividend_clicks, bluechip_clicks):
+    """Muestra las acciones de la estrategia seleccionada."""
+    triggered_id = ctx.triggered_id
+    
+    if not triggered_id:
+        return None
+    
+    # Mapear botón a estrategia
+    strategy_map = {
+        "strategy-value": "value",
+        "strategy-growth": "growth",
+        "strategy-dividend": "dividend",
+        "strategy-bluechip": "bluechip"
+    }
+    
+    strategy_key = strategy_map.get(triggered_id)
+    if not strategy_key:
+        return None
+    
+    strategy = INVESTMENT_STRATEGIES.get(strategy_key, {})
+    tickers = strategy.get("tickers", [])
+    color = strategy.get("color", "#10b981")
+    name = strategy.get("name", "Estrategia")
+    description = strategy.get("description", "")
+    
+    return html.Div([
+        html.Div([
+            html.H6(f"📋 {name}", style={"color": color, "marginBottom": "4px"}),
+            html.P(description, className="text-muted small mb-3"),
+        ], className="text-center"),
+        
+        html.Div([
+            html.Button(
+                ticker,
+                id={"type": "screener-pick", "index": ticker},
+                n_clicks=0,
+                style={
+                    "background": f"rgba({int(color[1:3], 16)}, {int(color[3:5], 16)}, {int(color[5:7], 16)}, 0.15)",
+                    "border": f"1px solid {color}40",
+                    "color": color,
+                    "borderRadius": "20px",
+                    "padding": "8px 16px",
+                    "margin": "4px",
+                    "fontWeight": "500",
+                    "cursor": "pointer",
+                    "transition": "all 0.2s ease"
+                }
+            )
+            for ticker in tickers
+        ], style={"display": "flex", "flexWrap": "wrap", "justifyContent": "center", "gap": "4px"}),
+        
+        html.P("Click en cualquier ticker para analizarlo", className="text-muted small text-center mt-3")
+    ], style={
+        "background": "rgba(39, 39, 42, 0.5)",
+        "borderRadius": "12px",
+        "padding": "20px",
+        "marginTop": "20px"
+    })
+
+
 # Callback principal de navegación (SOLO se activa con click o Enter)
 @callback(
     Output("home-view", "style"),
@@ -1920,22 +885,30 @@ def update_search_suggestions(search_value):
     Output("current-stock-badge", "children"),
     Output("navbar-search-input", "value"),
     Output("navbar-search-suggestions", "style", allow_duplicate=True),
+    Output("search-history", "data"),  # v3.0: Guardar al historial
     Input("navbar-search-btn", "n_clicks"),
     Input("navbar-search-input", "n_submit"),
     Input("logo-home", "n_clicks"),
     Input({"type": "quick-pick", "index": ALL}, "n_clicks"),
     Input({"type": "suggestion-item", "index": ALL}, "n_clicks"),
+    Input({"type": "recent-search", "index": ALL}, "n_clicks"),  # v3.0: Búsquedas recientes
+    Input({"type": "watchlist-item", "index": ALL}, "n_clicks"),  # v3.0.1: Click en watchlist
+    Input({"type": "screener-pick", "index": ALL}, "n_clicks"),  # v3.0.1: Click en screener
     State("navbar-search-input", "value"),
     State("analysis-data", "data"),
+    State("search-history", "data"),  # v3.0: Leer historial actual
     prevent_initial_call=True
 )
-def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, suggestion_clicks, search_value, stored_data):
+def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, suggestion_clicks, recent_clicks, watchlist_clicks, screener_clicks, search_value, stored_data, current_history):
     triggered_id = ctx.triggered_id
     triggered_prop = ctx.triggered[0]["prop_id"] if ctx.triggered else ""
     
     home_style = {"display": "block"}
     analysis_style = {"display": "none"}
     empty_outputs = [None] * 13
+    
+    # Historial actual (o lista vacía si es None)
+    history = current_history if current_history else []
     
     # Estilo para ocultar sugerencias
     hide_suggestions = {
@@ -1964,7 +937,7 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
     # Regresar al home
     if triggered_id == "logo-home":
         if logo_clicks and logo_clicks > 0:
-            return home_style, analysis_style, *empty_outputs, "", None, None, None, "", hide_suggestions
+            return home_style, analysis_style, *empty_outputs, "", None, None, None, "", hide_suggestions, no_update
         return no_update
     
     symbol = None
@@ -2002,6 +975,27 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
             # n_clicks = 0 significa que el elemento se acaba de crear, no un click real
             return no_update
     
+    # CASO 5: Click en búsqueda reciente
+    elif isinstance(triggered_id, dict) and triggered_id.get("type") == "recent-search":
+        if triggered_value and triggered_value > 0:
+            symbol = triggered_id.get("index")
+        else:
+            return no_update
+    
+    # CASO 6: Click en watchlist item
+    elif isinstance(triggered_id, dict) and triggered_id.get("type") == "watchlist-item":
+        if triggered_value and triggered_value > 0:
+            symbol = triggered_id.get("index")
+        else:
+            return no_update
+    
+    # CASO 7: Click en screener pick
+    elif isinstance(triggered_id, dict) and triggered_id.get("type") == "screener-pick":
+        if triggered_value and triggered_value > 0:
+            symbol = triggered_id.get("index")
+        else:
+            return no_update
+    
     # Si no hay símbolo válido, no hacer nada
     if not symbol:
         return no_update
@@ -2013,7 +1007,7 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
         if not data.get("financials"):
             error_msg = dbc.Alert(f"❌ No se encontraron datos para '{symbol}'. Verifica el símbolo.",
                                  color="danger", dismissable=True)
-            return home_style, analysis_style, *empty_outputs, "", error_msg, None, None, "", hide_suggestions
+            return home_style, analysis_style, *empty_outputs, "", error_msg, None, None, "", hide_suggestions, no_update
         
         profile = data.get("profile")
         financials = data.get("financials")
@@ -2040,6 +1034,24 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
         contextual["pe_5y_avg"] = ratios.get("pe")
         alerts = aggregate_alerts(ratios, contextual, sector_key)
         sector_profile = get_sector_profile(profile.sector if profile else None)
+        
+        # v2.9: Detectar si es REIT y calcular métricas específicas
+        is_reit = is_reit_sector(profile.sector if profile else "")
+        reit_metrics = None
+        if is_reit and financials:
+            try:
+                reit_metrics = calculate_reit_metrics(
+                    net_income=financials.net_income,
+                    depreciation=financials.depreciation,
+                    gains_on_sale=None,  # No disponible en yfinance
+                    capex=financials.capex,
+                    shares_outstanding=financials.shares_outstanding,
+                    price=financials.price,
+                    dividend_per_share=financials.dividend_per_share
+                )
+            except Exception as e:
+                logger.warning(f"Error calculando métricas REIT: {e}")
+                reit_metrics = None
         
         company_name = profile.name if profile else symbol
         company_sector = profile.sector if profile else "N/A"
@@ -2068,13 +1080,22 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
                         html.Span("🏭 ", className="text-muted"),
                         html.Span(company_industry, className="text-secondary"),
                     ], className="mb-0 small")
-                ], xs=12, md=8),
+                ], xs=12, md=6),
                 dbc.Col([
                     html.Div([
-                        html.H3(current_price, className="text-info mb-0", style={"fontWeight": "700"}),
-                        html.Small("Precio actual", className="text-muted")
+                        html.Div([
+                            html.H3(current_price, className="text-info mb-0", style={"fontWeight": "700"}),
+                            html.Small("Precio actual", className="text-muted")
+                        ]),
+                        # v2.9: Botón agregar a comparación
+                        html.Button([
+                            html.Span("➕ ", style={"marginRight": "4px"}),
+                            "Comparar"
+                        ], id="btn-add-comparison", n_clicks=0,
+                           className="btn btn-outline-success btn-sm mt-2",
+                           style={"fontSize": "0.75rem", "padding": "4px 10px"})
                     ], className="text-md-end")
-                ], xs=12, md=4, className="mt-2 mt-md-0")
+                ], xs=12, md=6, className="mt-2 mt-md-0")
             ])
         ], className="company-header-card")
         
@@ -2172,7 +1193,64 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
                 dbc.Col([create_metric_card("P/FCF", format_ratio(ratios.get("p_fcf"), "multiple"), "💵")], xs=6, md=3, className="mb-3"),
                 dbc.Col([create_metric_card("PEG Ratio", format_ratio(ratios.get("peg"), "decimal"), "📈")], xs=6, md=3, className="mb-3"),
                 dbc.Col([create_metric_card("FCF Yield", format_ratio(ratios.get("fcf_yield"), "percent"), "💸")], xs=6, md=3, className="mb-3"),
-            ])
+            ]),
+            
+            # v2.9: Sección especial para REITs
+            html.Div([
+                html.Hr(className="my-4"),
+                html.H6("🏠 Métricas REIT (FFO/AFFO)", className="mb-3"),
+                html.P("Métricas específicas para Real Estate Investment Trusts", className="text-muted small mb-3"),
+                dbc.Row([
+                    dbc.Col([
+                        dbc.Card([
+                            dbc.CardBody([
+                                html.P("FFO/Share", className="text-muted small mb-1 text-center"),
+                                html.H4(f"${reit_metrics['ffo_per_share']:.2f}" if reit_metrics.get('ffo_per_share') else "N/A", 
+                                       className="mb-1 text-center text-info"),
+                                html.P("Funds From Operations", className="small text-muted text-center", style={"fontSize": "0.7rem"})
+                            ])
+                        ], style={"backgroundColor": "#27272a", "border": "none"})
+                    ], xs=6, md=3, className="mb-3"),
+                    dbc.Col([
+                        dbc.Card([
+                            dbc.CardBody([
+                                html.P("P/FFO", className="text-muted small mb-1 text-center"),
+                                html.H4(f"{reit_metrics['p_ffo']:.1f}x" if reit_metrics.get('p_ffo') else "N/A",
+                                       className=f"mb-1 text-center {reit_metrics['p_ffo_interpretation'][1] if reit_metrics.get('p_ffo_interpretation') else ''}"),
+                                html.P(reit_metrics['p_ffo_interpretation'][0] if reit_metrics.get('p_ffo_interpretation') else "Precio/FFO", 
+                                      className="small text-muted text-center", style={"fontSize": "0.7rem"})
+                            ])
+                        ], style={"backgroundColor": "#27272a", "border": "none"})
+                    ], xs=6, md=3, className="mb-3"),
+                    dbc.Col([
+                        dbc.Card([
+                            dbc.CardBody([
+                                html.P("AFFO/Share", className="text-muted small mb-1 text-center"),
+                                html.H4(f"${reit_metrics['affo_per_share']:.2f}" if reit_metrics.get('affo_per_share') else "N/A",
+                                       className="mb-1 text-center text-info"),
+                                html.P("Adjusted FFO", className="small text-muted text-center", style={"fontSize": "0.7rem"})
+                            ])
+                        ], style={"backgroundColor": "#27272a", "border": "none"})
+                    ], xs=6, md=3, className="mb-3"),
+                    dbc.Col([
+                        dbc.Card([
+                            dbc.CardBody([
+                                html.P("FFO Payout", className="text-muted small mb-1 text-center"),
+                                html.H4(f"{reit_metrics['ffo_payout_ratio']:.0f}%" if reit_metrics.get('ffo_payout_ratio') else "N/A",
+                                       className=f"mb-1 text-center {reit_metrics['payout_interpretation'][1] if reit_metrics.get('payout_interpretation') else ''}"),
+                                html.P(reit_metrics['payout_interpretation'][0] if reit_metrics.get('payout_interpretation') else "Dividendo/FFO",
+                                      className="small text-muted text-center", style={"fontSize": "0.7rem"})
+                            ])
+                        ], style={"backgroundColor": "#27272a", "border": "none"})
+                    ], xs=6, md=3, className="mb-3"),
+                ]),
+                # Nota explicativa
+                dbc.Alert([
+                    html.Strong("💡 ¿Por qué FFO? "),
+                    "Para REITs, el FFO es más relevante que el Net Income porque la depreciación inmobiliaria ",
+                    "no refleja una pérdida real de valor. Un P/FFO < 15 generalmente indica buena valoración."
+                ], color="info", className="mb-0 small", style={"backgroundColor": "rgba(16, 185, 129, 0.1)", "border": "1px solid rgba(16, 185, 129, 0.3)"})
+            ]) if is_reit and reit_metrics and reit_metrics.get("is_valid") else None,
         ])
         
         # Tab Rentabilidad
@@ -2258,7 +1336,7 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
             week_high = ticker_info.get("fiftyTwoWeekHigh")
             week_low = ticker_info.get("fiftyTwoWeekLow")
             avg_volume = ticker_info.get("averageVolume")
-        except:
+        except (KeyError, TypeError, ValueError, ConnectionError):
             week_high, week_low, avg_volume = None, None, None
         
         # Colores del rendimiento
@@ -2595,7 +1673,19 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
                     "fontSize": "0.85rem",
                     "flexWrap": "wrap"
                 })
-            ], style={"marginTop": "25px"})
+            ], style={"marginTop": "25px"}),
+            
+            # v2.9: Sección de comparación multi-acción
+            html.Div([
+                html.Hr(className="my-4"),
+                html.H6("🔀 Comparador Multi-Acción", className="mb-3"),
+                html.P("Compara varias acciones lado a lado. Agrega acciones con el botón 'Comparar' en cada análisis.",
+                      className="text-muted small mb-3"),
+                html.Div(id="comparison-table-container", children=[
+                    html.P("No hay acciones en la lista de comparación.", className="text-muted text-center"),
+                    html.P("Usa el botón '➕ Comparar' en cada acción para agregarla.", className="text-muted small text-center")
+                ])
+            ], style={"backgroundColor": "rgba(24, 24, 27, 0.5)", "borderRadius": "12px", "padding": "20px", "marginTop": "20px"})
         ])
         
         # Tab Valor Intrínseco
@@ -2632,6 +1722,29 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
         value_composition = model_result.get("value_composition", {}) if model_result else {}
         stages = model_result.get("stages", {}) if model_result else {}
         sensitivity = dcf_result.get("sensitivity_analysis", {})
+        
+        # v2.9: DCF Sensitivity Analysis - Matriz de sensibilidad
+        sensitivity_matrix = None
+        try:
+            # Solo calcular si tenemos TODOS los datos necesarios
+            if (dcf_is_valid and 
+                fcf is not None and fcf > 0 and 
+                shares is not None and shares > 0 and 
+                dcf_wacc is not None and dcf_wacc > 0 and 
+                dcf_growth is not None):
+                
+                sensitivity_matrix = dcf_sensitivity_analysis(
+                    fcf=fcf,
+                    shares_outstanding=shares,
+                    current_price=financials.price if financials else None,
+                    base_growth_rate=max(0.01, min(dcf_growth, 0.30)),  # Limitar entre 1% y 30%
+                    base_discount_rate=max(0.05, min(dcf_wacc, 0.20)),  # Limitar entre 5% y 20%
+                    growth_rate_range=(-0.05, 0.05, 0.025),
+                    discount_rate_range=(-0.02, 0.02, 0.01),
+                )
+        except Exception as e:
+            logger.warning(f"Error calculando sensitivity matrix: {e}")
+            sensitivity_matrix = None
         
         price = financials.price if financials else None
         
@@ -2749,110 +1862,109 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
                 ], xs=12, md=4, className="mb-3"),
             ]),
             
-            # Sección expandible: Detalles del DCF
+            # Sección fija: Detalles del DCF
             html.Div([
                 html.Hr(className="my-3"),
-                html.Details([
-                    html.Summary([
-                        html.Span("⚙️ ", style={"marginRight": "6px"}),
-                        html.Span("Parámetros del modelo DCF", className="text-info"),
-                    ], style={"cursor": "pointer", "marginBottom": "10px"}),
+                html.Div([
+                    html.Span("⚙️ ", style={"marginRight": "6px"}),
+                    html.Span("Parámetros del modelo DCF", className="text-info fw-bold"),
+                ], className="mb-3"),
+                html.Div([
+                    dbc.Row([
+                        dbc.Col([
+                            html.Div([
+                                html.Span("WACC ", className="text-muted small"),
+                                html.Span("i", id=f"tip-wacc-{uid}", className="info-icon", 
+                                         style={"width": "14px", "height": "14px", "fontSize": "9px"}),
+                            ], className="d-flex align-items-center justify-content-center", style={"gap": "4px"}),
+                            html.Span(f"{dcf_wacc:.1%}" if dcf_wacc else "N/A", className="text-info"),
+                            dbc.Tooltip(get_tooltip_text("wacc"), target=f"tip-wacc-{uid}", placement="top")
+                        ], xs=6, md=3, className="text-center mb-2"),
+                        dbc.Col([
+                            html.Div([
+                                html.Span("Growth Inicial ", className="text-muted small"),
+                            ]),
+                            html.Span(f"{dcf_growth:.1%}" if dcf_growth else "N/A", className="text-success"),
+                        ], xs=6, md=3, className="text-center mb-2"),
+                        dbc.Col([
+                            html.Div([
+                                html.Span("Margen Seguridad ", className="text-muted small"),
+                                html.Span("i", id=f"tip-mos-{uid}", className="info-icon",
+                                         style={"width": "14px", "height": "14px", "fontSize": "9px"}),
+                            ], className="d-flex align-items-center justify-content-center", style={"gap": "4px"}),
+                            html.Span(f"${dcf_value_mos:.2f}" if dcf_value_mos else "N/A", className="text-warning"),
+                            dbc.Tooltip(get_tooltip_text("margin_of_safety"), target=f"tip-mos-{uid}", placement="top")
+                        ], xs=6, md=3, className="text-center mb-2"),
+                        dbc.Col([
+                            html.Div([
+                                html.Span("Fuente Growth ", className="text-muted small"),
+                            ]),
+                            html.Span(dcf_growth_source.replace("_", " ").title() if dcf_growth_source else "N/A", 
+                                     className="text-muted", style={"fontSize": "0.85rem"}),
+                        ], xs=6, md=3, className="text-center mb-2"),
+                    ]),
+                    
+                    # Composición del valor por etapas
                     html.Div([
+                        html.P("📈 Composición del valor por etapas:", className="text-muted small mt-3 mb-2"),
                         dbc.Row([
                             dbc.Col([
                                 html.Div([
-                                    html.Span("WACC ", className="text-muted small"),
-                                    html.Span("i", id=f"tip-wacc-{uid}", className="info-icon", 
-                                             style={"width": "14px", "height": "14px", "fontSize": "9px"}),
-                                ], className="d-flex align-items-center justify-content-center", style={"gap": "4px"}),
-                                html.Span(f"{dcf_wacc:.1%}" if dcf_wacc else "N/A", className="text-info"),
-                                dbc.Tooltip(get_tooltip_text("wacc"), target=f"tip-wacc-{uid}", placement="top")
-                            ], xs=6, md=3, className="text-center mb-2"),
+                                    html.Span(f"{value_composition.get('stage1_pct', 0):.0f}%", 
+                                             className="h5 text-primary mb-0"),
+                                    html.P("Años 1-5 (alto crecimiento)", className="small text-muted mb-0")
+                                ], className="text-center")
+                            ], xs=4),
                             dbc.Col([
                                 html.Div([
-                                    html.Span("Growth Inicial ", className="text-muted small"),
-                                ]),
-                                html.Span(f"{dcf_growth:.1%}" if dcf_growth else "N/A", className="text-success"),
-                            ], xs=6, md=3, className="text-center mb-2"),
+                                    html.Span(f"{value_composition.get('stage2_pct', 0):.0f}%", 
+                                             className="h5 text-info mb-0"),
+                                    html.P("Años 6-10 (transición)", className="small text-muted mb-0")
+                                ], className="text-center")
+                            ], xs=4),
                             dbc.Col([
                                 html.Div([
-                                    html.Span("Margen Seguridad ", className="text-muted small"),
-                                    html.Span("i", id=f"tip-mos-{uid}", className="info-icon",
-                                             style={"width": "14px", "height": "14px", "fontSize": "9px"}),
-                                ], className="d-flex align-items-center justify-content-center", style={"gap": "4px"}),
-                                html.Span(f"${dcf_value_mos:.2f}" if dcf_value_mos else "N/A", className="text-warning"),
-                                dbc.Tooltip(get_tooltip_text("margin_of_safety"), target=f"tip-mos-{uid}", placement="top")
-                            ], xs=6, md=3, className="text-center mb-2"),
-                            dbc.Col([
-                                html.Div([
-                                    html.Span("Fuente Growth ", className="text-muted small"),
-                                ]),
-                                html.Span(dcf_growth_source.replace("_", " ").title() if dcf_growth_source else "N/A", 
-                                         className="text-muted", style={"fontSize": "0.85rem"}),
-                            ], xs=6, md=3, className="text-center mb-2"),
-                        ]),
-                        
-                        # Composición del valor por etapas
-                        html.Div([
-                            html.P("📈 Composición del valor por etapas:", className="text-muted small mt-3 mb-2"),
-                            dbc.Row([
-                                dbc.Col([
-                                    html.Div([
-                                        html.Span(f"{value_composition.get('stage1_pct', 0):.0f}%", 
-                                                 className="h5 text-primary mb-0"),
-                                        html.P("Años 1-5 (alto crecimiento)", className="small text-muted mb-0")
-                                    ], className="text-center")
-                                ], xs=4),
-                                dbc.Col([
-                                    html.Div([
-                                        html.Span(f"{value_composition.get('stage2_pct', 0):.0f}%", 
-                                                 className="h5 text-info mb-0"),
-                                        html.P("Años 6-10 (transición)", className="small text-muted mb-0")
-                                    ], className="text-center")
-                                ], xs=4),
-                                dbc.Col([
-                                    html.Div([
-                                        html.Span(f"{value_composition.get('terminal_pct', 0):.0f}%", 
-                                                 className="h5 text-warning mb-0"),
-                                        html.P("Perpetuidad (2.5%)", className="small text-muted mb-0")
-                                    ], className="text-center")
-                                ], xs=4),
-                            ])
-                        ]) if value_composition else None,
-                        
-                    ], className="p-3 mt-2", style={"backgroundColor": "#18181b", "borderRadius": "8px"})
-                ], open=False)
+                                    html.Span(f"{value_composition.get('terminal_pct', 0):.0f}%", 
+                                             className="h5 text-warning mb-0"),
+                                    html.P("Perpetuidad (2.5%)", className="small text-muted mb-0")
+                                ], className="text-center")
+                            ], xs=4),
+                        ])
+                    ]) if value_composition else None,
+                    
+                ], className="p-3")
             ]) if dcf_is_valid else None,
             
-            # Sección expandible: Cómo interpretar
+            # Sección fija: Cómo interpretar
             html.Div([
-                html.Details([
-                    html.Summary([
-                        html.Span("📚 ", style={"marginRight": "6px"}),
-                        html.Span("¿Cómo interpretar estos valores?", className="text-info"),
-                    ], style={"cursor": "pointer", "marginBottom": "10px"}),
+                html.Div([
+                    html.Span("📚 ", style={"marginRight": "6px"}),
+                    html.Span("¿Cómo interpretar estos valores?", className="text-info fw-bold"),
+                ], className="mb-3 mt-4"),
+                html.Div([
                     html.Div([
-                        html.Div([
-                            html.Strong("🎯 Valor Graham", className="text-primary"),
-                            html.P("Fórmula creada por Benjamin Graham, el padre del value investing. "
-                                   "Usa las ganancias actuales y el valor contable. Es conservadora y funciona "
-                                   "mejor para empresas estables con activos tangibles.", className="small mb-3"),
-                        ]),
-                        html.Div([
-                            html.Strong("🎯 Valor DCF (Flujos Descontados)", className="text-success"),
-                            html.P("Estima cuánto dinero generará la empresa en el futuro y lo trae a valor presente. "
-                                   "Usamos 3 etapas: crecimiento alto (5 años) → transición (5 años) → perpetuidad. "
-                                   "Es el método más usado en Wall Street.", className="small mb-3"),
-                        ]),
-                        html.Div([
-                            html.Strong("⚠️ Importante", className="text-warning"),
-                            html.P("Estos son MODELOS matemáticos, no predicciones exactas. Dependen de supuestos "
-                                   "sobre el futuro que pueden no cumplirse. Úsalos como UNA herramienta más, "
-                                   "nunca como única base para decidir.", className="small mb-0"),
-                        ]),
-                    ], className="p-3 mt-2", style={"backgroundColor": "#18181b", "borderRadius": "8px"})
-                ], open=False)
-            ], className="mt-3"),
+                        html.Strong("🎯 Valor Graham", className="text-primary"),
+                        html.P("Fórmula creada por Benjamin Graham, el padre del value investing. "
+                               "Usa las ganancias actuales y el valor contable. Es conservadora y funciona "
+                               "mejor para empresas estables con activos tangibles.", className="small mb-3"),
+                    ]),
+                    html.Div([
+                        html.Strong("🎯 Valor DCF (Flujos Descontados)", className="text-success"),
+                        html.P("Estima cuánto dinero generará la empresa en el futuro y lo trae a valor presente. "
+                               "Usamos 3 etapas: crecimiento alto (5 años) → transición (5 años) → perpetuidad. "
+                               "Es el método más usado en Wall Street.", className="small mb-3"),
+                    ]),
+                    html.Div([
+                        html.Strong("⚠️ Importante", className="text-warning"),
+                        html.P("Estos son MODELOS matemáticos, no predicciones exactas. Dependen de supuestos "
+                               "sobre el futuro que pueden no cumplirse. Úsalos como UNA herramienta más, "
+                               "nunca como única base para decidir.", className="small mb-0"),
+                    ]),
+                ], className="p-3")
+            ]),
+            
+            # v2.9: Matriz de Sensibilidad DCF - REDISEÑADA
+            build_sensitivity_section(sensitivity_matrix, price) if sensitivity_matrix and sensitivity_matrix.get("is_valid") else None,
             
         ])
         
@@ -3171,17 +2283,49 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
         
         stored_data = {"symbol": symbol, "company_name": company_name, "ratios": ratios, "alerts": alerts}
         
+        # v3.0: Actualizar historial de búsquedas
+        new_history = [h for h in history if h.get("symbol") != symbol]  # Eliminar duplicados
+        new_history.insert(0, {"symbol": symbol, "name": company_name})  # Añadir al inicio
+        new_history = new_history[:10]  # Mantener máximo 10
+        
         return (
             {"display": "none"}, {"display": "block"},
             company_header, score_card, key_metrics, sector_notes,
             tab_valuation, tab_profitability, tab_health, tab_historical, tab_comparison, tab_intrinsic, tab_evaluation,
-            footer, stored_data, symbol, None, None, stock_badge, "", hide_suggestions
+            footer, stored_data, symbol, None, None, stock_badge, "", hide_suggestions, new_history
         )
-        
+    
+    except InvalidSymbolError as e:
+        logger.warning(f"Símbolo inválido: {symbol} - {e}")
+        error_msg = dbc.Alert(
+            f"⚠️ Símbolo inválido: '{symbol}'. Verifica que el ticker sea correcto.",
+            color="warning", dismissable=True
+        )
+        return home_style, analysis_style, *empty_outputs, "", error_msg, None, None, "", hide_suggestions, no_update
+    
+    except APITimeoutError as e:
+        logger.error(f"Timeout obteniendo datos de {symbol}: {e}")
+        error_msg = dbc.Alert(
+            f"⏱️ Timeout al obtener datos de '{symbol}'. Los servidores están lentos, intenta de nuevo.",
+            color="warning", dismissable=True
+        )
+        return home_style, analysis_style, *empty_outputs, "", error_msg, None, None, "", hide_suggestions, no_update
+    
+    except DataFetchError as e:
+        logger.error(f"Error de datos para {symbol}: {e}")
+        error_msg = dbc.Alert(
+            f"❌ Error obteniendo datos de '{symbol}': {str(e)}",
+            color="danger", dismissable=True
+        )
+        return home_style, analysis_style, *empty_outputs, "", error_msg, None, None, "", hide_suggestions, no_update
+    
     except Exception as e:
-        traceback.print_exc()
-        error_msg = dbc.Alert(f"❌ Error al analizar '{symbol}': {str(e)}", color="danger", dismissable=True)
-        return home_style, analysis_style, *empty_outputs, "", error_msg, None, None, "", hide_suggestions
+        logger.error(f"Error inesperado analizando {symbol}: {type(e).__name__}: {e}", exc_info=True)
+        error_msg = dbc.Alert(
+            f"❌ Error inesperado al analizar '{symbol}'. Por favor intenta de nuevo.",
+            color="danger", dismissable=True
+        )
+        return home_style, analysis_style, *empty_outputs, "", error_msg, None, None, "", hide_suggestions, no_update
 
 
 # Callback para cambiar periodo del gráfico histórico
@@ -3731,10 +2875,170 @@ app.index_string = '''
             background-color: #059669 !important;
             border-color: #059669 !important;
         }
+        
+        /* ==============================================
+           TABLA DE SENSIBILIDAD - COLORES FIJOS (ULTRA-ESPECÍFICO)
+           Estos estilos NUNCA deben cambiar con el tema
+           ============================================== */
+        
+        /* Contenedor principal - NUNCA cambia */
+        .sensitivity-container,
+        div.sensitivity-container,
+        [data-theme="light"] .sensitivity-container,
+        [data-theme="dark"] .sensitivity-container {
+            background-color: #18181b !important;
+        }
+        
+        .sensitivity-table,
+        .sensitivity-table tbody,
+        .sensitivity-table thead,
+        .sensitivity-table tr,
+        .sensitivity-table td,
+        .sensitivity-table th,
+        table.sensitivity-table td,
+        table.sensitivity-table th {
+            background-color: transparent !important;
+        }
+        
+        .sensitivity-table td,
+        .sensitivity-table th {
+            padding: 10px 6px !important;
+            text-align: center !important;
+            font-size: 0.9rem !important;
+        }
+        
+        /* Headers - SIEMPRE oscuros */
+        .sens-header,
+        td.sens-header,
+        th.sens-header,
+        .sensitivity-table .sens-header,
+        .sensitivity-table th.sens-header,
+        [data-theme="light"] .sens-header,
+        [data-theme="dark"] .sens-header {
+            background-color: #18181b !important;
+            color: #9ca3af !important;
+            font-weight: 600 !important;
+            border-bottom: 2px solid #3f3f46 !important;
+        }
+        
+        .sens-header-base,
+        td.sens-header-base,
+        th.sens-header-base,
+        .sensitivity-table .sens-header-base,
+        .sensitivity-table th.sens-header-base,
+        [data-theme="light"] .sens-header-base,
+        [data-theme="dark"] .sens-header-base {
+            background-color: #10b981 !important;
+            color: white !important;
+            font-weight: 700 !important;
+            border-bottom: 2px solid #3f3f46 !important;
+        }
+        
+        /* Row headers - SIEMPRE oscuros */
+        .sens-row-header,
+        td.sens-row-header,
+        .sensitivity-table .sens-row-header,
+        .sensitivity-table td.sens-row-header,
+        [data-theme="light"] .sens-row-header,
+        [data-theme="dark"] .sens-row-header {
+            background-color: #18181b !important;
+            color: #9ca3af !important;
+            font-weight: 500 !important;
+        }
+        
+        .sens-row-header-base,
+        td.sens-row-header-base,
+        .sensitivity-table .sens-row-header-base,
+        .sensitivity-table td.sens-row-header-base,
+        [data-theme="light"] .sens-row-header-base,
+        [data-theme="dark"] .sens-row-header-base {
+            background-color: #10b981 !important;
+            color: white !important;
+            font-weight: 700 !important;
+        }
+        
+        /* Celdas de valoración - NUNCA CAMBIAN */
+        .sens-very-undervalued,
+        td.sens-very-undervalued,
+        .sensitivity-table .sens-very-undervalued,
+        .sensitivity-table td.sens-very-undervalued,
+        [data-theme="light"] .sens-very-undervalued,
+        [data-theme="dark"] .sens-very-undervalued {
+            background-color: #166534 !important;
+            color: white !important;
+        }
+        
+        .sens-undervalued,
+        td.sens-undervalued,
+        .sensitivity-table .sens-undervalued,
+        .sensitivity-table td.sens-undervalued,
+        [data-theme="light"] .sens-undervalued,
+        [data-theme="dark"] .sens-undervalued {
+            background-color: #15803d !important;
+            color: white !important;
+        }
+        
+        .sens-fair,
+        td.sens-fair,
+        .sensitivity-table .sens-fair,
+        .sensitivity-table td.sens-fair,
+        [data-theme="light"] .sens-fair,
+        [data-theme="dark"] .sens-fair {
+            background-color: #854d0e !important;
+            color: white !important;
+        }
+        
+        .sens-overvalued,
+        td.sens-overvalued,
+        .sensitivity-table .sens-overvalued,
+        .sensitivity-table td.sens-overvalued,
+        [data-theme="light"] .sens-overvalued,
+        [data-theme="dark"] .sens-overvalued {
+            background-color: #b91c1c !important;
+            color: white !important;
+        }
+        
+        .sens-very-overvalued,
+        td.sens-very-overvalued,
+        .sensitivity-table .sens-very-overvalued,
+        .sensitivity-table td.sens-very-overvalued,
+        [data-theme="light"] .sens-very-overvalued,
+        [data-theme="dark"] .sens-very-overvalued {
+            background-color: #7f1d1d !important;
+            color: white !important;
+        }
+        
+        .sens-neutral,
+        td.sens-neutral,
+        .sensitivity-table .sens-neutral,
+        .sensitivity-table td.sens-neutral,
+        [data-theme="light"] .sens-neutral,
+        [data-theme="dark"] .sens-neutral {
+            background-color: #27272a !important;
+            color: white !important;
+        }
+        
+        /* Celda base */
+        .sens-base-cell,
+        td.sens-base-cell,
+        .sensitivity-table .sens-base-cell,
+        .sensitivity-table td.sens-base-cell {
+            border: 3px solid #10b981 !important;
+            border-radius: 6px !important;
+            font-weight: 700 !important;
+        }
         </style>
         <script>
         function applyThemeToInlineStyles(theme) {
             const isLight = theme === 'light';
+            
+            // PRIMERO: Limpiar TODOS los estilos inline de elementos de sensibilidad
+            // para que las clases CSS tomen control
+            document.querySelectorAll('.sensitivity-container, .sensitivity-table, .sensitivity-table td, .sensitivity-table th, [class*="sens-"]').forEach(el => {
+                el.style.backgroundColor = '';
+                el.style.color = '';
+                el.style.borderColor = '';
+            });
             
             // Colores para cada tema
             const colors = {
@@ -3767,6 +3071,11 @@ app.index_string = '''
             
             // Cambiar colores de texto
             document.querySelectorAll('[style]').forEach(el => {
+                // No modificar NADA dentro de la tabla o contenedor de sensibilidad
+                if (el.closest('.sensitivity-table')) return;
+                if (el.closest('.sensitivity-container')) return;
+                if (el.hasAttribute('data-preserve')) return;
+                
                 const style = el.getAttribute('style') || '';
                 if (!style.includes('color')) return;
                 
@@ -3800,6 +3109,13 @@ app.index_string = '''
             
             // Cambiar backgrounds
             document.querySelectorAll('[style*="background"]').forEach(el => {
+                // No modificar NADA relacionado con sensibilidad
+                if (el.closest('.sensitivity-table')) return;
+                if (el.closest('.sensitivity-container')) return;
+                if (el.className && typeof el.className === 'string' && el.className.includes('sensitivity')) return;
+                if (el.className && typeof el.className === 'string' && el.className.includes('sens-')) return;
+                if (el.hasAttribute('data-preserve')) return;
+                
                 const style = el.getAttribute('style') || '';
                 
                 // No cambiar botones con colores de acento (ahora verde)
@@ -3807,6 +3123,13 @@ app.index_string = '''
                     style.includes('#22c55e') || style.includes('#ef4444') ||
                     style.includes('#eab308') || style.includes('#3b82f6') ||
                     style.includes('linear-gradient')) {
+                    return;
+                }
+                
+                // No cambiar colores de valoración de sensibilidad
+                if (style.includes('#166534') || style.includes('#15803d') ||
+                    style.includes('#854d0e') || style.includes('#b91c1c') ||
+                    style.includes('#7f1d1d')) {
                     return;
                 }
                 
@@ -3824,22 +3147,15 @@ app.index_string = '''
             
             // Cambiar bordes
             document.querySelectorAll('[style*="border"]').forEach(el => {
+                // No modificar NADA dentro de la tabla o contenedor de sensibilidad
+                if (el.closest('.sensitivity-table')) return;
+                if (el.closest('.sensitivity-container')) return;
+                if (el.hasAttribute('data-preserve')) return;
+                
                 const style = el.getAttribute('style') || '';
                 if (style.includes('#3f3f46') || style.includes('rgb(63, 63, 70)')) {
                     el.style.borderColor = c.border;
                 }
-            });
-            
-            // Asegurar que las tablas sean legibles
-            document.querySelectorAll('table td, table th').forEach(el => {
-                el.style.color = c.textPrimary;
-                el.style.backgroundColor = c.bgSecondary;
-                el.style.borderColor = c.border;
-            });
-            
-            // Headers de tabla
-            document.querySelectorAll('table thead th').forEach(el => {
-                el.style.backgroundColor = c.bgTertiary;
             });
             
             // Metric cards en modo claro
@@ -3955,6 +3271,174 @@ app.index_string = '''
     </body>
 </html>
 '''
+
+
+# =============================================================================
+# v2.9: COMPARADOR MULTI-ACCIÓN
+# =============================================================================
+
+@callback(
+    Output("comparison-stocks", "data"),
+    Output("btn-add-comparison", "children"),
+    Input("btn-add-comparison", "n_clicks"),
+    State("analysis-data", "data"),
+    State("comparison-stocks", "data"),
+    prevent_initial_call=True
+)
+def add_to_comparison(n_clicks, analysis_data, comparison_list):
+    """Agrega la acción actual a la lista de comparación."""
+    if not n_clicks or not analysis_data:
+        return no_update, no_update
+    
+    if comparison_list is None:
+        comparison_list = []
+    
+    symbol = analysis_data.get("symbol", "")
+    company_name = analysis_data.get("company_name", symbol)
+    ratios = analysis_data.get("ratios", {})
+    alerts = analysis_data.get("alerts", {})
+    score_v2 = alerts.get("score_v2", {})
+    
+    # Verificar si ya está en la lista
+    existing_symbols = [s.get("symbol") for s in comparison_list]
+    if symbol in existing_symbols:
+        return comparison_list, [html.Span("✓ "), "Ya agregado"]
+    
+    # Limitar a 5 acciones máximo
+    if len(comparison_list) >= 5:
+        # Eliminar la más antigua
+        comparison_list = comparison_list[1:]
+    
+    # Agregar nueva acción con métricas clave
+    new_stock = {
+        "symbol": symbol,
+        "name": company_name,
+        "score": score_v2.get("total_score", 0),
+        "pe": ratios.get("pe"),
+        "roe": ratios.get("roe"),
+        "debt_equity": ratios.get("debt_to_equity"),
+        "net_margin": ratios.get("net_margin"),
+        "fcf_yield": ratios.get("fcf_yield"),
+        "dividend_yield": ratios.get("dividend_yield"),
+        "revenue_growth": ratios.get("revenue_growth"),
+    }
+    
+    comparison_list.append(new_stock)
+    
+    return comparison_list, [html.Span("✓ "), f"Agregado ({len(comparison_list)})"]
+
+
+@callback(
+    Output("comparison-table-container", "children"),
+    Input("comparison-stocks", "data"),
+    prevent_initial_call=True
+)
+def update_comparison_table(comparison_list):
+    """Actualiza la tabla de comparación."""
+    if not comparison_list or len(comparison_list) == 0:
+        return html.Div([
+            html.P("No hay acciones en la lista de comparación.", className="text-muted text-center"),
+            html.P("Usa el botón 'Comparar' en cada acción para agregarla.", className="text-muted small text-center")
+        ])
+    
+    # Crear tabla comparativa
+    def fmt(val, tipo="number"):
+        if val is None:
+            return "N/A"
+        try:
+            if tipo == "percent":
+                # Los valores vienen como decimales (0.15 = 15%)
+                return f"{val * 100:.1f}%" if abs(val) < 2 else f"{val:.1f}%"
+            if tipo == "multiple":
+                return f"{val:.1f}x"
+            return f"{val:.1f}"
+        except (TypeError, ValueError):
+            return "N/A"
+    
+    def get_color(val, metric):
+        """Retorna color basado en si el valor es bueno o malo."""
+        if val is None:
+            return ""
+        
+        try:
+            # Definir qué es bueno para cada métrica
+            # Nota: ROE, net_margin vienen como decimales (0.15 = 15%)
+            if metric == "pe":
+                return "text-success" if val < 20 else "text-warning" if val < 30 else "text-danger"
+            if metric == "roe":
+                return "text-success" if val > 0.15 else "text-warning" if val > 0.08 else "text-danger"
+            if metric == "debt_equity":
+                return "text-success" if val < 0.5 else "text-warning" if val < 1.5 else "text-danger"
+            if metric == "net_margin":
+                return "text-success" if val > 0.15 else "text-warning" if val > 0.05 else "text-danger"
+            if metric == "score":
+                return "text-success" if val >= 70 else "text-warning" if val >= 50 else "text-danger"
+            if metric == "fcf_yield":
+                return "text-success" if val > 0.05 else "text-warning" if val > 0.02 else "text-danger"
+            if metric == "dividend_yield":
+                return "text-success" if val > 0.03 else "text-warning" if val > 0.01 else ""
+        except (TypeError, ValueError):
+            pass
+        return ""
+    
+    # Headers
+    headers = ["Métrica"] + [s["symbol"] for s in comparison_list]
+    
+    # Filas de datos
+    metrics_config = [
+        ("Score", "score", "number"),
+        ("P/E", "pe", "multiple"),
+        ("ROE", "roe", "percent"),
+        ("Deuda/Equity", "debt_equity", "multiple"),
+        ("Margen Neto", "net_margin", "percent"),
+        ("FCF Yield", "fcf_yield", "percent"),
+        ("Div. Yield", "dividend_yield", "percent"),
+    ]
+    
+    rows = []
+    for metric_name, metric_key, fmt_type in metrics_config:
+        row = [html.Td(metric_name, style={"fontWeight": "600", "color": "#a1a1aa"})]
+        for stock in comparison_list:
+            val = stock.get(metric_key)
+            color_class = get_color(val, metric_key)
+            row.append(html.Td(fmt(val, fmt_type), className=color_class))
+        rows.append(html.Tr(row))
+    
+    table = html.Table([
+        html.Thead([
+            html.Tr([html.Th(h, style={"textAlign": "center", "padding": "10px", "borderBottom": "2px solid #3f3f46"}) for h in headers])
+        ]),
+        html.Tbody(rows, style={"textAlign": "center"})
+    ], className="table table-dark", style={"width": "100%"})
+    
+    return html.Div([
+        html.Div([
+            html.H6(f"📊 Comparando {len(comparison_list)} acciones", className="mb-2"),
+            html.Button("🗑️ Limpiar", id="btn-clear-comparison", n_clicks=0,
+                       className="btn btn-outline-danger btn-sm", style={"fontSize": "0.75rem"})
+        ], className="d-flex justify-content-between align-items-center mb-3"),
+        table,
+        html.P([
+            html.Span("💡 Tip: ", className="text-info"),
+            "Verde = bueno, Amarillo = regular, Rojo = atención. Máximo 5 acciones."
+        ], className="small text-muted mt-2")
+    ])
+
+
+@callback(
+    Output("comparison-stocks", "data", allow_duplicate=True),
+    Output("comparison-table-container", "children", allow_duplicate=True),
+    Input("btn-clear-comparison", "n_clicks"),
+    prevent_initial_call=True
+)
+def clear_comparison(n_clicks):
+    """Limpia la lista de comparación."""
+    if n_clicks:
+        return [], html.Div([
+            html.P("Lista de comparación limpiada.", className="text-muted text-center"),
+            html.P("Usa el botón 'Comparar' en cada acción para agregarla.", className="text-muted small text-center")
+        ])
+    return no_update, no_update
 
 
 if __name__ == "__main__":

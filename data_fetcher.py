@@ -5,17 +5,30 @@ Módulo para obtener datos financieros de empresas desde múltiples fuentes.
 Soporta Yahoo Finance (gratuito) y Financial Modeling Prep (freemium).
 
 Autor: Esteban
-Versión: 2.2 - Paralelización de llamadas API
+Versión: 2.9 - Robustez mejorada con timeouts y logging específico
 """
 
 import os
 import time
+import logging
 from typing import Optional, Dict, List, Any, Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError as FuturesTimeoutError
 import hashlib
 import json
+
+# Configurar logging específico para este módulo
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+# Handler para consola si no hay handlers configurados
+if not logger.handlers:
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    ))
+    logger.addHandler(handler)
 
 try:
     import pandas as pd
@@ -34,6 +47,44 @@ try:
     REQUESTS_AVAILABLE = True
 except ImportError:
     REQUESTS_AVAILABLE = False
+
+
+# =========================
+# CONSTANTES DE CONFIGURACIÓN
+# =========================
+
+# Timeouts para operaciones de red (en segundos)
+API_TIMEOUT_SECONDS = 15          # Timeout para llamadas API individuales
+PARALLEL_TASK_TIMEOUT = 20        # Timeout para tareas paralelas
+MAX_RETRIES = 2                   # Reintentos máximos por operación
+
+# Configuración del ThreadPoolExecutor
+THREAD_POOL_WORKERS = 4           # Número de workers paralelos
+
+
+# =========================
+# EXCEPCIONES PERSONALIZADAS
+# =========================
+
+class DataFetchError(Exception):
+    """Error base para problemas de obtención de datos."""
+    pass
+
+class APITimeoutError(DataFetchError):
+    """Timeout al llamar a una API externa."""
+    pass
+
+class InvalidSymbolError(DataFetchError):
+    """Símbolo de ticker inválido o no encontrado."""
+    pass
+
+class RateLimitError(DataFetchError):
+    """Se excedió el límite de llamadas a la API."""
+    pass
+
+class DataValidationError(DataFetchError):
+    """Los datos obtenidos no pasan validación."""
+    pass
 
 
 # =========================
@@ -254,6 +305,11 @@ class YahooFinanceFetcher:
             ticker = yf.Ticker(symbol)
             info = ticker.info
             
+            # Validar que obtuvimos datos válidos
+            if not info or info.get("regularMarketPrice") is None:
+                logger.warning(f"Símbolo '{symbol}' no encontrado o sin datos de mercado")
+                return None
+            
             profile = CompanyProfile(
                 symbol=symbol.upper(),
                 name=info.get("longName", info.get("shortName", symbol)),
@@ -268,10 +324,17 @@ class YahooFinanceFetcher:
             
             # Guardar en caché (30 min para perfiles, cambian poco)
             _data_cache.set(cache_key, profile, ttl_minutes=30)
+            logger.debug(f"Perfil de {symbol} obtenido correctamente")
             return profile
-            
+        
+        except KeyError as e:
+            logger.warning(f"Campo faltante en datos de {symbol}: {e}")
+            return None
+        except (ConnectionError, TimeoutError) as e:
+            logger.error(f"Error de conexión obteniendo perfil de {symbol}: {e}")
+            raise APITimeoutError(f"Timeout obteniendo perfil de {symbol}") from e
         except Exception as e:
-            print(f"Error obteniendo perfil de {symbol}: {e}")
+            logger.error(f"Error inesperado obteniendo perfil de {symbol}: {type(e).__name__}: {e}")
             return None
     
     def get_financial_data(self, symbol: str) -> Optional[FinancialStatements]:
@@ -298,7 +361,7 @@ class YahooFinanceFetcher:
                     if df is not None and not df.empty and key in df.index:
                         val = df.loc[key].iloc[0]
                         return float(val) if val is not None and str(val) != 'nan' else None
-                except:
+                except (KeyError, IndexError, TypeError, ValueError):
                     pass
                 return None
             
@@ -356,10 +419,10 @@ class YahooFinanceFetcher:
                         revenue_growth = None
                 else:
                     revenue_growth = None
-            except:
+            except (KeyError, IndexError, TypeError, ZeroDivisionError):
                 revenue_growth = None
             
-            return FinancialStatements(
+            result = FinancialStatements(
                 # Income Statement
                 revenue=revenue,
                 gross_profit=gross_profit,
@@ -409,12 +472,20 @@ class YahooFinanceFetcher:
             
             # Guardar en caché (10 min para datos financieros)
             _data_cache.set(cache_key, result, ttl_minutes=10)
+            logger.debug(f"Datos financieros de {symbol} cacheados correctamente")
             return result
-            
+        
+        except KeyError as e:
+            logger.warning(f"Campo faltante en datos financieros de {symbol}: {e}")
+            return None
+        except (ConnectionError, TimeoutError) as e:
+            logger.error(f"Error de conexión obteniendo datos financieros de {symbol}: {e}")
+            raise APITimeoutError(f"Timeout obteniendo datos financieros de {symbol}") from e
+        except ValueError as e:
+            logger.warning(f"Error de conversión en datos de {symbol}: {e}")
+            return None
         except Exception as e:
-            print(f"Error obteniendo datos financieros de {symbol}: {e}")
-            import traceback
-            traceback.print_exc()
+            logger.error(f"Error inesperado obteniendo datos financieros de {symbol}: {type(e).__name__}: {e}", exc_info=True)
             return None
     
     def get_historical_metrics(self, symbol: str, years: int = 5) -> Dict[str, List[float]]:
@@ -435,7 +506,7 @@ class YahooFinanceFetcher:
                     if df is not None and key in df.index:
                         series = df.loc[key].dropna().tolist()
                         return [float(x) for x in series[:years]]
-                except:
+                except (KeyError, IndexError, TypeError, ValueError):
                     pass
                 return []
             
@@ -450,10 +521,14 @@ class YahooFinanceFetcher:
             
             # Guardar en caché (30 min para históricos)
             _data_cache.set(cache_key, result, ttl_minutes=30)
+            logger.debug(f"Datos históricos de {symbol} obtenidos correctamente")
             return result
-            
+        
+        except (ConnectionError, TimeoutError) as e:
+            logger.error(f"Error de conexión obteniendo históricos de {symbol}: {e}")
+            return {}
         except Exception as e:
-            print(f"Error obteniendo históricos de {symbol}: {e}")
+            logger.warning(f"Error obteniendo históricos de {symbol}: {type(e).__name__}: {e}")
             return {}
     
     def get_detailed_historical_data(self, symbol: str, years: int = 5) -> Dict[str, Any]:
@@ -489,7 +564,7 @@ class YahooFinanceFetcher:
                         val = df.loc[key, col]
                         if pd.notna(val):
                             return float(val)
-                except:
+                except (KeyError, IndexError, TypeError, ValueError):
                     pass
                 return None
             
@@ -675,11 +750,15 @@ class YahooFinanceFetcher:
                 }
             
             return historical_data
-            
+        
+        except (ConnectionError, TimeoutError) as e:
+            logger.error(f"Error de conexión obteniendo históricos detallados de {symbol}: {e}")
+            return {"years": [], "data": {}, "error": f"Timeout: {e}"}
+        except ValueError as e:
+            logger.warning(f"Error de conversión en históricos de {symbol}: {e}")
+            return {"years": [], "data": {}, "error": f"Datos inválidos: {e}"}
         except Exception as e:
-            print(f"Error obteniendo históricos detallados de {symbol}: {e}")
-            import traceback
-            traceback.print_exc()
+            logger.error(f"Error obteniendo históricos detallados de {symbol}: {type(e).__name__}: {e}", exc_info=True)
             return {"years": [], "data": {}, "error": str(e)}
     
     def get_market_comparison_data(self, sector: str) -> Dict[str, Any]:
@@ -784,7 +863,8 @@ class YahooFinanceFetcher:
                 "sector_pe": info.get("trailingPE", 20.0),
                 "sector_ev_ebitda": 12.0,  # Difícil de obtener para ETFs
             }
-        except:
+        except (KeyError, TypeError, ValueError, ConnectionError) as e:
+            logger.debug(f"No se pudo obtener datos del ETF {etf_symbol}: {e}")
             return {"sector_pe": 20.0, "sector_ev_ebitda": 12.0}
     
     def _get_sector_etf_symbol(self, sector_name: str) -> str:
@@ -1188,19 +1268,47 @@ class FinancialDataService:
         """
         Obtiene todos los datos necesarios para el análisis completo.
         
-        VERSIÓN 2.2: Paralelizada para mejor performance (~2x más rápido)
+        VERSIÓN 2.9: Paralelizada con timeouts explícitos y logging mejorado
         
         Args:
-            symbol: Símbolo del ticker
+            symbol: Símbolo del ticker (ej: AAPL, MSFT)
             progress_callback: Función opcional para reportar progreso (mensaje, porcentaje 0-100)
         
         Returns:
             Dict con profile, financials, historical, sector_averages, contextual, errors
+        
+        Raises:
+            InvalidSymbolError: Si el símbolo es inválido
         """
         start_time = time.time()
         
+        # ========================================
+        # VALIDACIÓN DE ENTRADA
+        # ========================================
+        
+        # Validar que symbol no esté vacío
+        if not symbol or not isinstance(symbol, str):
+            logger.error("Símbolo vacío o inválido proporcionado")
+            raise InvalidSymbolError("El símbolo no puede estar vacío")
+        
+        # Limpiar y validar formato del símbolo
+        symbol = symbol.strip().upper()
+        
+        # Validar longitud razonable (tickers son típicamente 1-5 caracteres, máx ~10 para algunos mercados)
+        if len(symbol) > 15:
+            logger.warning(f"Símbolo sospechosamente largo: {symbol[:20]}...")
+            raise InvalidSymbolError(f"Símbolo demasiado largo: {len(symbol)} caracteres")
+        
+        # Validar caracteres permitidos (letras, números, puntos, guiones)
+        import re
+        if not re.match(r'^[A-Z0-9\.\-]+$', symbol):
+            logger.warning(f"Símbolo con caracteres inválidos: {symbol}")
+            raise InvalidSymbolError(f"Símbolo contiene caracteres inválidos: {symbol}")
+        
+        logger.info(f"Iniciando análisis completo para {symbol}")
+        
         result = {
-            "symbol": symbol.upper(),
+            "symbol": symbol,
             "profile": None,
             "financials": None,
             "historical": None,
@@ -1212,14 +1320,15 @@ class FinancialDataService:
         
         if not self.yahoo_available:
             result["errors"].append("Yahoo Finance no disponible")
+            logger.error("Yahoo Finance no está disponible")
             return result
         
         def report_progress(msg: str, pct: float):
             if progress_callback:
                 try:
                     progress_callback(msg, pct)
-                except:
-                    pass
+                except Exception:
+                    pass  # No interrumpir análisis por errores en callback
         
         report_progress("Iniciando análisis...", 5)
         
@@ -1243,7 +1352,9 @@ class FinancialDataService:
         results_parallel = {}
         
         # Ejecutar en paralelo con ThreadPoolExecutor
-        with ThreadPoolExecutor(max_workers=4) as executor:
+        logger.info(f"Iniciando fetch paralelo para {symbol} con {THREAD_POOL_WORKERS} workers")
+        
+        with ThreadPoolExecutor(max_workers=THREAD_POOL_WORKERS) as executor:
             future_to_task = {
                 executor.submit(task_fn): task_name 
                 for task_name, task_fn in tasks.items()
@@ -1252,19 +1363,44 @@ class FinancialDataService:
             completed = 0
             total = len(future_to_task)
             
-            for future in as_completed(future_to_task):
+            for future in as_completed(future_to_task, timeout=PARALLEL_TASK_TIMEOUT * total):
                 task_name = future_to_task[future]
                 completed += 1
                 progress_pct = 10 + (completed / total * 50)  # 10% a 60%
                 
                 try:
-                    results_parallel[task_name] = future.result()
+                    # Timeout explícito por tarea individual
+                    results_parallel[task_name] = future.result(timeout=PARALLEL_TASK_TIMEOUT)
                     report_progress(f"Obteniendo {task_name}...", progress_pct)
+                    logger.debug(f"✓ Tarea '{task_name}' completada para {symbol}")
+                    
+                except FuturesTimeoutError:
+                    results_parallel[task_name] = None
+                    error_msg = f"Timeout ({PARALLEL_TASK_TIMEOUT}s) en {task_name}"
+                    result["errors"].append(error_msg)
+                    logger.warning(f"⏱ {error_msg} para {symbol}")
+                    
+                except ConnectionError as e:
+                    results_parallel[task_name] = None
+                    error_msg = f"Error de conexión en {task_name}: {str(e)[:100]}"
+                    result["errors"].append(error_msg)
+                    logger.error(f"🔌 {error_msg} para {symbol}")
+                    
+                except ValueError as e:
+                    results_parallel[task_name] = None
+                    error_msg = f"Datos inválidos en {task_name}: {str(e)[:100]}"
+                    result["errors"].append(error_msg)
+                    logger.warning(f"⚠ {error_msg} para {symbol}")
+                    
                 except Exception as e:
                     results_parallel[task_name] = None
-                    result["errors"].append(f"Error en {task_name}: {str(e)}")
+                    error_msg = f"Error inesperado en {task_name}: {type(e).__name__}: {str(e)[:100]}"
+                    result["errors"].append(error_msg)
+                    logger.error(f"❌ {error_msg} para {symbol}", exc_info=True)
         
-        result["_timing"]["parallel_fetch"] = time.time() - start_time
+        parallel_time = time.time() - start_time
+        result["_timing"]["parallel_fetch"] = parallel_time
+        logger.info(f"Fetch paralelo completado para {symbol} en {parallel_time:.2f}s")
         
         # Extraer resultados
         profile = results_parallel.get("profile")
@@ -1331,7 +1467,7 @@ class FinancialDataService:
                         result["contextual"]["revenue_cagr_5y"] = cagr(
                             revenues[-1], revenues[0], min(5, len(revenues)-1)
                         )
-                except:
+                except (ImportError, TypeError, ValueError, ZeroDivisionError):
                     pass
             
             # FCF trend
