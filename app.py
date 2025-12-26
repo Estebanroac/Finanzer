@@ -1,14 +1,19 @@
 """
-Finanzer v3.1.1 - Clean Architecture
+Finanzer v3.1.2 - Clean Architecture
 ==================================
 Aplicación web responsive para análisis fundamental de acciones.
 Mobile-first design con soporte para dark/light theme.
 
 Autor: Esteban
-Versión: 3.1.1 - Bugfixes y limpieza de código
+Versión: 3.1.2 - Bugfixes, limpieza de código, formatters centralizados
 """
 
 import os
+import sys
+
+# Fix para deploys en Render/Heroku: asegurar que el directorio actual esté en PYTHONPATH
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 import logging
 
 # Configuración de logging (reemplaza prints de debug)
