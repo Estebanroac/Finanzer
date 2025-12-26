@@ -114,7 +114,8 @@ app.layout = dbc.Container([
     dcc.Store(id="comparison-stocks", data=[], storage_type="session"),  # v2.9: Lista de acciones para comparar
     dcc.Store(id="theme-store", data="dark", storage_type="local"),  # Persiste en localStorage
     dcc.Store(id="search-history", data=[], storage_type="local"),  # v3.0: Historial de búsquedas
-    dcc.Store(id="watchlist", data=[], storage_type="local"),  # v3.0.1: Watchlist/Favoritos
+    dcc.Store(id="posiciones", data=[], storage_type="local"),  # v3.1.3: Acciones que poseo
+    dcc.Store(id="radar", data=[], storage_type="local"),  # v3.1.3: Acciones en radar (atractivas)
     dcc.Download(id="download-pdf"),
     
     # Loading indicator (NO fullscreen para no bloquear sugerencias)
@@ -276,7 +277,7 @@ app.layout = dbc.Container([
                               "background": "rgba(16, 185, 129, 0.15)",
                               "border": "1px solid rgba(16, 185, 129, 0.4)",
                               "color": "#34d399", 
-                              "borderRadius": "25px",
+                              "borderRadius": "8px",
                               "padding": "10px 22px", 
                               "margin": "5px",
                               "fontWeight": "500", 
@@ -292,9 +293,14 @@ app.layout = dbc.Container([
                 # Se actualiza via callback cuando hay historial
             ], style={"textAlign": "center", "marginBottom": "20px"}),
             
-            # Watchlist/Favoritos (se llena dinámicamente)
-            html.Div(id="watchlist-container", children=[
-                # Se actualiza via callback cuando hay favoritos
+            # Mis Posiciones (acciones que tengo)
+            html.Div(id="posiciones-container", children=[
+                # Se actualiza via callback
+            ], style={"textAlign": "center", "marginBottom": "20px"}),
+            
+            # En Radar (acciones atractivas)
+            html.Div(id="radar-container", children=[
+                # Se actualiza via callback
             ], style={"textAlign": "center", "marginBottom": "30px"}),
             
         ], style={
@@ -464,21 +470,21 @@ app.layout = dbc.Container([
     html.Div(id="analysis-view", style={"display": "none"}, children=[
         html.Div(id="company-header"),
         
-        # Botones de descarga y favorito
+        # Botones de acciones
         html.Div([
             html.Button([
                 html.Span("📄", style={"marginRight": "8px"}),
                 html.Span("Descargar PDF", className="btn-text-white")
             ], id="download-pdf-btn", n_clicks=0, className="download-btn"),
             
-            # Botón favorito minimalista (solo icono)
+            # Botón Posiciones (acciones que tengo)
             html.Button(
-                id="toggle-watchlist-btn", 
+                id="toggle-posiciones-btn", 
                 n_clicks=0,
-                children=[html.Span(id="watchlist-icon", children="☆", style={"fontSize": "1.3rem"})],
+                children=[html.Span(id="posiciones-icon", children="💼", style={"fontSize": "1.2rem"})],
                 style={
                     "background": "transparent",
-                    "border": "2px solid rgba(245, 158, 11, 0.4)",
+                    "border": "2px solid rgba(34, 197, 94, 0.4)",
                     "borderRadius": "50%",
                     "width": "48px",
                     "height": "48px",
@@ -487,11 +493,32 @@ app.layout = dbc.Container([
                     "justifyContent": "center",
                     "cursor": "pointer",
                     "transition": "all 0.2s ease",
-                    "color": "#F59E0B"
+                    "color": "#22c55e"
                 },
-                title="Añadir a Watchlist"
+                title="Agregar a Posiciones"
             ),
-        ], className="text-center mb-4", style={"display": "flex", "justifyContent": "center", "alignItems": "center", "gap": "16px"}),
+            
+            # Botón En Radar (acciones atractivas)
+            html.Button(
+                id="toggle-radar-btn", 
+                n_clicks=0,
+                children=[html.Span(id="radar-icon", children="👁️", style={"fontSize": "1.2rem"})],
+                style={
+                    "background": "transparent",
+                    "border": "2px solid rgba(96, 165, 250, 0.4)",
+                    "borderRadius": "50%",
+                    "width": "48px",
+                    "height": "48px",
+                    "display": "flex",
+                    "alignItems": "center",
+                    "justifyContent": "center",
+                    "cursor": "pointer",
+                    "transition": "all 0.2s ease",
+                    "color": "#60a5fa"
+                },
+                title="Agregar a En Radar"
+            ),
+        ], className="text-center mb-4", style={"display": "flex", "justifyContent": "center", "alignItems": "center", "gap": "12px"}),
         
         dbc.Row([
             dbc.Col([html.Div(id="score-card-container", className="score-card")], xs=12, md=4, lg=3, className="mb-3"),
@@ -661,11 +688,11 @@ def update_recent_searches(history):
                     "background": "rgba(59, 130, 246, 0.1)",
                     "border": "1px solid rgba(59, 130, 246, 0.3)",
                     "color": "#60a5fa",
-                    "borderRadius": "20px",
-                    "padding": "6px 14px",
-                    "margin": "3px",
+                    "borderRadius": "8px",
+                    "padding": "8px 16px",
+                    "margin": "4px",
                     "fontWeight": "500",
-                    "fontSize": "0.8rem",
+                    "fontSize": "0.85rem",
                     "cursor": "pointer",
                     "transition": "all 0.2s ease"
                 }
@@ -675,18 +702,18 @@ def update_recent_searches(history):
     ])
 
 
-# Callback para mostrar watchlist en el home
+# Callback para mostrar Posiciones en el home
 @callback(
-    Output("watchlist-container", "children"),
-    Input("watchlist", "data"),
+    Output("posiciones-container", "children"),
+    Input("posiciones", "data"),
 )
-def update_watchlist_display(watchlist):
-    """Muestra los favoritos del usuario."""
-    if not watchlist or len(watchlist) == 0:
+def update_posiciones_display(posiciones):
+    """Muestra las acciones que el usuario posee."""
+    if not posiciones or len(posiciones) == 0:
         return None
     
     return html.Div([
-        html.P("⭐ Mi Watchlist", className="text-muted small mb-2"),
+        html.P("💼 Mis Posiciones", className="text-muted small mb-2"),
         html.Div([
             html.Button(
                 [
@@ -696,41 +723,84 @@ def update_watchlist_display(watchlist):
                         style={"fontSize": "0.7rem", "opacity": "0.8"}
                     )
                 ],
-                id={"type": "watchlist-item", "index": item['symbol']},
+                id={"type": "posiciones-item", "index": item['symbol']},
                 n_clicks=0,
                 style={
-                    "background": "rgba(245, 158, 11, 0.15)",
-                    "border": "1px solid rgba(245, 158, 11, 0.4)",
-                    "color": "#F59E0B",
-                    "borderRadius": "20px",
-                    "padding": "6px 14px",
-                    "margin": "3px",
+                    "background": "rgba(34, 197, 94, 0.15)",
+                    "border": "1px solid rgba(34, 197, 94, 0.4)",
+                    "color": "#22c55e",
+                    "borderRadius": "8px",
+                    "padding": "8px 16px",
+                    "margin": "4px",
                     "fontWeight": "500",
-                    "fontSize": "0.8rem",
+                    "fontSize": "0.85rem",
                     "cursor": "pointer",
                     "transition": "all 0.2s ease",
                     "display": "inline-flex",
                     "alignItems": "center"
                 }
             )
-            for item in watchlist[:10]  # Máximo 10 en watchlist
+            for item in posiciones[:10]
         ], style={"display": "flex", "flexWrap": "wrap", "justifyContent": "center", "gap": "4px"})
     ])
 
 
-# Callback para toggle de watchlist (añadir/quitar de favoritos)
+# Callback para mostrar En Radar en el home
 @callback(
-    Output("watchlist", "data", allow_duplicate=True),
-    Output("watchlist-icon", "children", allow_duplicate=True),
-    Output("toggle-watchlist-btn", "title", allow_duplicate=True),
-    Output("toggle-watchlist-btn", "style", allow_duplicate=True),
-    Input("toggle-watchlist-btn", "n_clicks"),
+    Output("radar-container", "children"),
+    Input("radar", "data"),
+)
+def update_radar_display(radar):
+    """Muestra las acciones en radar del usuario."""
+    if not radar or len(radar) == 0:
+        return None
+    
+    return html.Div([
+        html.P("👁️ En Radar", className="text-muted small mb-2"),
+        html.Div([
+            html.Button(
+                [
+                    html.Span(f"{item['symbol']}", style={"marginRight": "6px"}),
+                    html.Span(
+                        f"({item.get('score', '?')}/100)" if item.get('score') else "",
+                        style={"fontSize": "0.7rem", "opacity": "0.8"}
+                    )
+                ],
+                id={"type": "radar-item", "index": item['symbol']},
+                n_clicks=0,
+                style={
+                    "background": "rgba(96, 165, 250, 0.15)",
+                    "border": "1px solid rgba(96, 165, 250, 0.4)",
+                    "color": "#60a5fa",
+                    "borderRadius": "8px",
+                    "padding": "8px 16px",
+                    "margin": "4px",
+                    "fontWeight": "500",
+                    "fontSize": "0.85rem",
+                    "cursor": "pointer",
+                    "transition": "all 0.2s ease",
+                    "display": "inline-flex",
+                    "alignItems": "center"
+                }
+            )
+            for item in radar[:10]
+        ], style={"display": "flex", "flexWrap": "wrap", "justifyContent": "center", "gap": "4px"})
+    ])
+
+
+# Callback para toggle de Posiciones
+@callback(
+    Output("posiciones", "data", allow_duplicate=True),
+    Output("posiciones-icon", "children", allow_duplicate=True),
+    Output("toggle-posiciones-btn", "title", allow_duplicate=True),
+    Output("toggle-posiciones-btn", "style", allow_duplicate=True),
+    Input("toggle-posiciones-btn", "n_clicks"),
     State("analysis-data", "data"),
-    State("watchlist", "data"),
+    State("posiciones", "data"),
     prevent_initial_call=True
 )
-def toggle_watchlist(n_clicks, analysis_data, current_watchlist):
-    """Añade o quita la acción actual de la watchlist."""
+def toggle_posiciones(n_clicks, analysis_data, current_posiciones):
+    """Añade o quita la acción actual de Posiciones."""
     if not n_clicks or not analysis_data:
         return no_update, no_update, no_update, no_update
     
@@ -738,12 +808,11 @@ def toggle_watchlist(n_clicks, analysis_data, current_watchlist):
     if not symbol:
         return no_update, no_update, no_update, no_update
     
-    watchlist = current_watchlist if current_watchlist else []
+    posiciones = current_posiciones if current_posiciones else []
     
-    # Estilos base
     style_inactive = {
         "background": "transparent",
-        "border": "2px solid rgba(245, 158, 11, 0.4)",
+        "border": "2px solid rgba(34, 197, 94, 0.4)",
         "borderRadius": "50%",
         "width": "48px",
         "height": "48px",
@@ -752,24 +821,21 @@ def toggle_watchlist(n_clicks, analysis_data, current_watchlist):
         "justifyContent": "center",
         "cursor": "pointer",
         "transition": "all 0.2s ease",
-        "color": "#F59E0B"
+        "color": "#22c55e"
     }
     
     style_active = {
         **style_inactive,
-        "background": "rgba(245, 158, 11, 0.15)",
-        "border": "2px solid #F59E0B",
+        "background": "rgba(34, 197, 94, 0.15)",
+        "border": "2px solid #22c55e",
     }
     
-    # Verificar si ya está en watchlist
-    existing = next((item for item in watchlist if item.get("symbol") == symbol), None)
+    existing = next((item for item in posiciones if item.get("symbol") == symbol), None)
     
     if existing:
-        # Quitar de watchlist
-        watchlist = [item for item in watchlist if item.get("symbol") != symbol]
-        return watchlist, "☆", "Añadir a Watchlist", style_inactive
+        posiciones = [item for item in posiciones if item.get("symbol") != symbol]
+        return posiciones, "💼", "Agregar a Posiciones", style_inactive
     else:
-        # Añadir a watchlist
         score = analysis_data.get("alerts", {}).get("score_v2", {}).get("score")
         new_item = {
             "symbol": symbol,
@@ -777,25 +843,36 @@ def toggle_watchlist(n_clicks, analysis_data, current_watchlist):
             "score": score,
             "added_at": datetime.now().isoformat()
         }
-        watchlist.insert(0, new_item)
-        watchlist = watchlist[:20]  # Máximo 20 items
-        return watchlist, "★", "Quitar de Watchlist", style_active
+        posiciones.insert(0, new_item)
+        posiciones = posiciones[:20]
+        return posiciones, "✓", "Quitar de Posiciones", style_active
 
 
-# Callback para sincronizar estado del botón cuando cambia la acción analizada
+# Callback para toggle de En Radar
 @callback(
-    Output("watchlist-icon", "children"),
-    Output("toggle-watchlist-btn", "title"),
-    Output("toggle-watchlist-btn", "style"),
-    Input("analysis-data", "data"),
-    State("watchlist", "data"),
+    Output("radar", "data", allow_duplicate=True),
+    Output("radar-icon", "children", allow_duplicate=True),
+    Output("toggle-radar-btn", "title", allow_duplicate=True),
+    Output("toggle-radar-btn", "style", allow_duplicate=True),
+    Input("toggle-radar-btn", "n_clicks"),
+    State("analysis-data", "data"),
+    State("radar", "data"),
+    prevent_initial_call=True
 )
-def sync_watchlist_button(analysis_data, current_watchlist):
-    """Sincroniza el estado del botón de favorito cuando cambia la acción."""
-    # Estilos base
+def toggle_radar(n_clicks, analysis_data, current_radar):
+    """Añade o quita la acción actual de En Radar."""
+    if not n_clicks or not analysis_data:
+        return no_update, no_update, no_update, no_update
+    
+    symbol = analysis_data.get("symbol")
+    if not symbol:
+        return no_update, no_update, no_update, no_update
+    
+    radar = current_radar if current_radar else []
+    
     style_inactive = {
         "background": "transparent",
-        "border": "2px solid rgba(245, 158, 11, 0.4)",
+        "border": "2px solid rgba(96, 165, 250, 0.4)",
         "borderRadius": "50%",
         "width": "48px",
         "height": "48px",
@@ -804,31 +881,102 @@ def sync_watchlist_button(analysis_data, current_watchlist):
         "justifyContent": "center",
         "cursor": "pointer",
         "transition": "all 0.2s ease",
-        "color": "#F59E0B"
+        "color": "#60a5fa"
     }
     
     style_active = {
         **style_inactive,
-        "background": "rgba(245, 158, 11, 0.15)",
-        "border": "2px solid #F59E0B",
+        "background": "rgba(96, 165, 250, 0.15)",
+        "border": "2px solid #60a5fa",
     }
     
+    existing = next((item for item in radar if item.get("symbol") == symbol), None)
+    
+    if existing:
+        radar = [item for item in radar if item.get("symbol") != symbol]
+        return radar, "👁️", "Agregar a En Radar", style_inactive
+    else:
+        score = analysis_data.get("alerts", {}).get("score_v2", {}).get("score")
+        new_item = {
+            "symbol": symbol,
+            "name": analysis_data.get("company_name", symbol),
+            "score": score,
+            "added_at": datetime.now().isoformat()
+        }
+        radar.insert(0, new_item)
+        radar = radar[:20]
+        return radar, "🎯", "Quitar de En Radar", style_active
+
+
+# Callback para sincronizar estado de botones cuando cambia la acción
+@callback(
+    Output("posiciones-icon", "children"),
+    Output("toggle-posiciones-btn", "title"),
+    Output("toggle-posiciones-btn", "style"),
+    Output("radar-icon", "children"),
+    Output("toggle-radar-btn", "title"),
+    Output("toggle-radar-btn", "style"),
+    Input("analysis-data", "data"),
+    State("posiciones", "data"),
+    State("radar", "data"),
+)
+def sync_list_buttons(analysis_data, current_posiciones, current_radar):
+    """Sincroniza el estado de los botones cuando cambia la acción."""
+    # Estilos Posiciones
+    style_pos_inactive = {
+        "background": "transparent",
+        "border": "2px solid rgba(34, 197, 94, 0.4)",
+        "borderRadius": "50%",
+        "width": "48px",
+        "height": "48px",
+        "display": "flex",
+        "alignItems": "center",
+        "justifyContent": "center",
+        "cursor": "pointer",
+        "transition": "all 0.2s ease",
+        "color": "#22c55e"
+    }
+    style_pos_active = {**style_pos_inactive, "background": "rgba(34, 197, 94, 0.15)", "border": "2px solid #22c55e"}
+    
+    # Estilos Radar
+    style_radar_inactive = {
+        "background": "transparent",
+        "border": "2px solid rgba(96, 165, 250, 0.4)",
+        "borderRadius": "50%",
+        "width": "48px",
+        "height": "48px",
+        "display": "flex",
+        "alignItems": "center",
+        "justifyContent": "center",
+        "cursor": "pointer",
+        "transition": "all 0.2s ease",
+        "color": "#60a5fa"
+    }
+    style_radar_active = {**style_radar_inactive, "background": "rgba(96, 165, 250, 0.15)", "border": "2px solid #60a5fa"}
+    
+    # Defaults
+    pos_icon, pos_title, pos_style = "💼", "Agregar a Posiciones", style_pos_inactive
+    radar_icon, radar_title, radar_style = "👁️", "Agregar a En Radar", style_radar_inactive
+    
     if not analysis_data:
-        return "☆", "Añadir a Watchlist", style_inactive
+        return pos_icon, pos_title, pos_style, radar_icon, radar_title, radar_style
     
     symbol = analysis_data.get("symbol")
     if not symbol:
-        return "☆", "Añadir a Watchlist", style_inactive
+        return pos_icon, pos_title, pos_style, radar_icon, radar_title, radar_style
     
-    watchlist = current_watchlist if current_watchlist else []
+    posiciones = current_posiciones if current_posiciones else []
+    radar = current_radar if current_radar else []
     
-    # Verificar si la acción actual está en watchlist
-    is_in_watchlist = any(item.get("symbol") == symbol for item in watchlist)
+    # Check Posiciones
+    if any(item.get("symbol") == symbol for item in posiciones):
+        pos_icon, pos_title, pos_style = "✓", "Quitar de Posiciones", style_pos_active
     
-    if is_in_watchlist:
-        return "★", "Quitar de Watchlist", style_active
-    else:
-        return "☆", "Añadir a Watchlist", style_inactive
+    # Check Radar
+    if any(item.get("symbol") == symbol for item in radar):
+        radar_icon, radar_title, radar_style = "🎯", "Quitar de En Radar", style_radar_active
+    
+    return pos_icon, pos_title, pos_style, radar_icon, radar_title, radar_style
 
 
 # Estrategias predefinidas para el screener
@@ -909,7 +1057,7 @@ def show_strategy_stocks(value_clicks, growth_clicks, dividend_clicks, bluechip_
                     "background": f"rgba({int(color[1:3], 16)}, {int(color[3:5], 16)}, {int(color[5:7], 16)}, 0.15)",
                     "border": f"1px solid {color}40",
                     "color": color,
-                    "borderRadius": "20px",
+                    "borderRadius": "8px",
                     "padding": "8px 16px",
                     "margin": "4px",
                     "fontWeight": "500",
@@ -958,15 +1106,16 @@ def show_strategy_stocks(value_clicks, growth_clicks, dividend_clicks, bluechip_
     Input("logo-home", "n_clicks"),
     Input({"type": "quick-pick", "index": ALL}, "n_clicks"),
     Input({"type": "suggestion-item", "index": ALL}, "n_clicks"),
-    Input({"type": "recent-search", "index": ALL}, "n_clicks"),  # v3.0: Búsquedas recientes
-    Input({"type": "watchlist-item", "index": ALL}, "n_clicks"),  # v3.0.1: Click en watchlist
-    Input({"type": "screener-pick", "index": ALL}, "n_clicks"),  # v3.0.1: Click en screener
+    Input({"type": "recent-search", "index": ALL}, "n_clicks"),
+    Input({"type": "posiciones-item", "index": ALL}, "n_clicks"),  # v3.1.3: Click en posiciones
+    Input({"type": "radar-item", "index": ALL}, "n_clicks"),  # v3.1.3: Click en radar
+    Input({"type": "screener-pick", "index": ALL}, "n_clicks"),
     State("navbar-search-input", "value"),
     State("analysis-data", "data"),
-    State("search-history", "data"),  # v3.0: Leer historial actual
+    State("search-history", "data"),
     prevent_initial_call=True
 )
-def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, suggestion_clicks, recent_clicks, watchlist_clicks, screener_clicks, search_value, stored_data, current_history):
+def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, suggestion_clicks, recent_clicks, posiciones_clicks, radar_clicks, screener_clicks, search_value, stored_data, current_history):
     triggered_id = ctx.triggered_id
     triggered_prop = ctx.triggered[0]["prop_id"] if ctx.triggered else ""
     
@@ -1049,14 +1198,21 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
         else:
             return no_update
     
-    # CASO 6: Click en watchlist item
-    elif isinstance(triggered_id, dict) and triggered_id.get("type") == "watchlist-item":
+    # CASO 6: Click en posiciones item
+    elif isinstance(triggered_id, dict) and triggered_id.get("type") == "posiciones-item":
         if triggered_value and triggered_value > 0:
             symbol = triggered_id.get("index")
         else:
             return no_update
     
-    # CASO 7: Click en screener pick
+    # CASO 7: Click en radar item
+    elif isinstance(triggered_id, dict) and triggered_id.get("type") == "radar-item":
+        if triggered_value and triggered_value > 0:
+            symbol = triggered_id.get("index")
+        else:
+            return no_update
+    
+    # CASO 8: Click en screener pick
     elif isinstance(triggered_id, dict) and triggered_id.get("type") == "screener-pick":
         if triggered_value and triggered_value > 0:
             symbol = triggered_id.get("index")
