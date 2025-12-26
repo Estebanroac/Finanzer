@@ -12,7 +12,9 @@ import os
 import sys
 
 # Fix para deploys en Render/Heroku: asegurar que el directorio actual esté en PYTHONPATH
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
+if APP_DIR not in sys.path:
+    sys.path.insert(0, APP_DIR)
 
 import logging
 
@@ -719,9 +721,9 @@ def update_watchlist_display(watchlist):
 # Callback para toggle de watchlist (añadir/quitar de favoritos)
 @callback(
     Output("watchlist", "data", allow_duplicate=True),
-    Output("watchlist-icon", "children"),
-    Output("toggle-watchlist-btn", "title"),
-    Output("toggle-watchlist-btn", "style"),
+    Output("watchlist-icon", "children", allow_duplicate=True),
+    Output("toggle-watchlist-btn", "title", allow_duplicate=True),
+    Output("toggle-watchlist-btn", "style", allow_duplicate=True),
     Input("toggle-watchlist-btn", "n_clicks"),
     State("analysis-data", "data"),
     State("watchlist", "data"),
@@ -778,6 +780,55 @@ def toggle_watchlist(n_clicks, analysis_data, current_watchlist):
         watchlist.insert(0, new_item)
         watchlist = watchlist[:20]  # Máximo 20 items
         return watchlist, "★", "Quitar de Watchlist", style_active
+
+
+# Callback para sincronizar estado del botón cuando cambia la acción analizada
+@callback(
+    Output("watchlist-icon", "children"),
+    Output("toggle-watchlist-btn", "title"),
+    Output("toggle-watchlist-btn", "style"),
+    Input("analysis-data", "data"),
+    State("watchlist", "data"),
+)
+def sync_watchlist_button(analysis_data, current_watchlist):
+    """Sincroniza el estado del botón de favorito cuando cambia la acción."""
+    # Estilos base
+    style_inactive = {
+        "background": "transparent",
+        "border": "2px solid rgba(245, 158, 11, 0.4)",
+        "borderRadius": "50%",
+        "width": "48px",
+        "height": "48px",
+        "display": "flex",
+        "alignItems": "center",
+        "justifyContent": "center",
+        "cursor": "pointer",
+        "transition": "all 0.2s ease",
+        "color": "#F59E0B"
+    }
+    
+    style_active = {
+        **style_inactive,
+        "background": "rgba(245, 158, 11, 0.15)",
+        "border": "2px solid #F59E0B",
+    }
+    
+    if not analysis_data:
+        return "☆", "Añadir a Watchlist", style_inactive
+    
+    symbol = analysis_data.get("symbol")
+    if not symbol:
+        return "☆", "Añadir a Watchlist", style_inactive
+    
+    watchlist = current_watchlist if current_watchlist else []
+    
+    # Verificar si la acción actual está en watchlist
+    is_in_watchlist = any(item.get("symbol") == symbol for item in watchlist)
+    
+    if is_in_watchlist:
+        return "★", "Quitar de Watchlist", style_active
+    else:
+        return "☆", "Añadir a Watchlist", style_inactive
 
 
 # Estrategias predefinidas para el screener
