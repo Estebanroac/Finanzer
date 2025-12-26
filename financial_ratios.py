@@ -3227,13 +3227,13 @@ def score_solidez_financiera(
     if z_score is not None:
         if z_score_level == "SAFE":
             adj = 6
-            adjustments.append({"metric": "Altman Z-Score", "value": f"{z_score:.2f}", "adjustment": adj, "reason": "Zona segura", "severity": "excellent"})
+            adjustments.append({"metric": "Altman Z-Score", "value": f"{z_score:.2f}", "adjustment": adj, "reason": "Zona segura - Muy baja probabilidad de quiebra", "severity": "excellent"})
         elif z_score_level == "GREY":
             adj = -2
-            adjustments.append({"metric": "Altman Z-Score", "value": f"{z_score:.2f}", "adjustment": adj, "reason": "Zona gris - monitorear", "severity": "moderate"})
+            adjustments.append({"metric": "Altman Z-Score", "value": f"{z_score:.2f}", "adjustment": adj, "reason": "Zona gris - Requiere monitoreo cercano", "severity": "moderate"})
         elif z_score_level == "DISTRESS":
             adj = -6
-            adjustments.append({"metric": "Altman Z-Score", "value": f"{z_score:.2f}", "adjustment": adj, "reason": "Riesgo de bancarrota", "severity": "severe"})
+            adjustments.append({"metric": "Altman Z-Score", "value": f"{z_score:.2f}", "adjustment": adj, "reason": "Zona peligro - Riesgo significativo de problemas", "severity": "severe"})
         else:
             adj = 0
         base_score += adj
@@ -3243,23 +3243,23 @@ def score_solidez_financiera(
         if current_ratio >= 2.0:
             adj = 4
             sev = "excellent"
-            reason = "Liquidez excelente"
+            reason = f"Liquidez excelente - Cubre 2x sus deudas corto plazo"
         elif current_ratio >= 1.5:
             adj = 2
             sev = "good"
-            reason = "Liquidez sólida"
+            reason = f"Liquidez sólida - Buena capacidad de pago ({current_ratio:.2f}x)"
         elif current_ratio >= 1.0:
             adj = 0
             sev = "ok"
-            reason = "Liquidez aceptable"
+            reason = f"Liquidez justa - Cubre sus obligaciones ({current_ratio:.2f}x)"
         elif current_ratio >= 0.8:
             adj = -2
             sev = "moderate"
-            reason = "Liquidez ajustada"
+            reason = f"Liquidez ajustada - Poco margen de maniobra ({current_ratio:.2f}x)"
         else:
             adj = -4
             sev = "severe"
-            reason = "Riesgo de liquidez"
+            reason = f"Riesgo de liquidez - Podría tener problemas de pago ({current_ratio:.2f}x)"
         
         base_score += adj
         adjustments.append({"metric": "Current Ratio", "value": f"{current_ratio:.2f}x", "adjustment": adj, "reason": reason, "severity": sev})
@@ -3270,23 +3270,23 @@ def score_solidez_financiera(
         if debt_to_equity <= threshold * 0.5:
             adj = 5
             sev = "excellent"
-            reason = f"Muy bajo ({debt_to_equity:.2f}x vs {threshold:.1f}x sector)"
+            reason = f"Deuda muy baja - Estructura financiera conservadora"
         elif debt_to_equity <= threshold:
             adj = 2
             sev = "good"
-            reason = f"Bajo ({debt_to_equity:.2f}x)"
+            reason = f"Deuda controlada - Dentro del rango saludable ({debt_to_equity:.2f}x)"
         elif debt_to_equity <= threshold * 1.3:
             adj = 0
             sev = "ok"
-            reason = f"Aceptable ({debt_to_equity:.2f}x)"
+            reason = f"Deuda aceptable - Cerca del límite sectorial ({debt_to_equity:.2f}x)"
         elif debt_to_equity <= threshold * 1.6:
             adj = -2
             sev = "moderate"
-            reason = f"Elevado ({debt_to_equity:.2f}x vs {threshold:.1f}x)"
+            reason = f"Deuda elevada - Por encima del sector ({debt_to_equity:.2f}x vs {threshold:.1f}x)"
         else:
             adj = -5
             sev = "severe"
-            reason = f"Muy alto ({debt_to_equity:.2f}x vs {threshold:.1f}x)"
+            reason = f"Deuda muy alta - Riesgo financiero elevado ({debt_to_equity:.2f}x)"
         
         base_score += adj
         adjustments.append({"metric": "Deuda/Equity", "value": f"{debt_to_equity:.2f}x", "adjustment": adj, "reason": reason, "severity": sev})
@@ -3349,27 +3349,27 @@ def score_rentabilidad(
         if roe >= 0.25:
             adj = 6
             sev = "excellent"
-            reason = f"Excepcional ({roe:.1%})"
+            reason = f"Excepcional ({roe:.1%}) - Genera excelentes retornos sobre capital"
         elif roe >= 0.15:
             adj = 4
             sev = "good"
-            reason = f"Muy bueno ({roe:.1%})"
+            reason = f"Muy bueno ({roe:.1%}) - Rentabilidad superior al promedio"
         elif roe >= sector_roe_threshold:
             adj = 2
             sev = "ok"
-            reason = f"Bueno ({roe:.1%})"
+            reason = f"Bueno ({roe:.1%}) - Competitivo en su sector"
         elif roe >= 0.05:
             adj = -2
             sev = "moderate"
-            reason = f"Bajo ({roe:.1%} vs {sector_roe_threshold:.1%})"
+            reason = f"Bajo ({roe:.1%}) - Por debajo de lo esperado"
         elif roe >= 0:
             adj = -4
             sev = "moderate"
-            reason = f"Muy bajo ({roe:.1%})"
+            reason = f"Muy bajo ({roe:.1%}) - Poco eficiente con el capital"
         else:
             adj = -6
             sev = "severe"
-            reason = f"Negativo ({roe:.1%})"
+            reason = f"Negativo ({roe:.1%}) - Destruye valor para accionistas"
         
         base_score += adj
         adjustments.append({"metric": "ROE", "value": f"{roe:.1%}", "adjustment": adj, "reason": reason, "severity": sev})
@@ -3379,23 +3379,23 @@ def score_rentabilidad(
         if roa >= 0.15:
             adj = 4
             sev = "excellent"
-            reason = f"Excelente ({roa:.1%})"
+            reason = f"Excelente ({roa:.1%}) - Muy eficiente con sus activos"
         elif roa >= 0.08:
             adj = 2
             sev = "good"
-            reason = f"Bueno ({roa:.1%})"
+            reason = f"Bueno ({roa:.1%}) - Buen uso de activos"
         elif roa >= 0.03:
             adj = 0
             sev = "ok"
-            reason = f"Aceptable ({roa:.1%})"
+            reason = f"Aceptable ({roa:.1%}) - Eficiencia promedio"
         elif roa >= 0:
             adj = -2
             sev = "moderate"
-            reason = f"Bajo ({roa:.1%})"
+            reason = f"Bajo ({roa:.1%}) - Activos poco productivos"
         else:
             adj = -4
             sev = "severe"
-            reason = f"Negativo ({roa:.1%})"
+            reason = f"Negativo ({roa:.1%}) - Perdiendo dinero con sus activos"
         
         base_score += adj
         adjustments.append({"metric": "ROA", "value": f"{roa:.1%}", "adjustment": adj, "reason": reason, "severity": sev})
@@ -3405,27 +3405,27 @@ def score_rentabilidad(
         if operating_margin >= 0.30:
             adj = 5
             sev = "excellent"
-            reason = f"Excepcional ({operating_margin:.1%})"
+            reason = f"Excepcional ({operating_margin:.1%}) - Alto poder de fijación de precios"
         elif operating_margin >= 0.20:
             adj = 3
             sev = "good"
-            reason = f"Muy bueno ({operating_margin:.1%})"
+            reason = f"Muy bueno ({operating_margin:.1%}) - Operaciones eficientes"
         elif operating_margin >= 0.10:
             adj = 1
             sev = "ok"
-            reason = f"Bueno ({operating_margin:.1%})"
+            reason = f"Bueno ({operating_margin:.1%}) - Márgenes saludables"
         elif operating_margin >= 0.05:
             adj = -1
             sev = "moderate"
-            reason = f"Ajustado ({operating_margin:.1%})"
+            reason = f"Ajustado ({operating_margin:.1%}) - Márgenes bajo presión"
         elif operating_margin >= 0:
             adj = -3
             sev = "moderate"
-            reason = f"Bajo ({operating_margin:.1%})"
+            reason = f"Bajo ({operating_margin:.1%}) - Costos erosionan ganancias"
         else:
             adj = -5
             sev = "severe"
-            reason = f"Negativo ({operating_margin:.1%})"
+            reason = f"Negativo ({operating_margin:.1%}) - Operaciones no rentables"
         
         base_score += adj
         adjustments.append({"metric": "Margen Operativo", "value": f"{operating_margin:.1%}", "adjustment": adj, "reason": reason, "severity": sev})
@@ -3435,19 +3435,19 @@ def score_rentabilidad(
         if net_margin >= 0.20:
             adj = 3
             sev = "excellent"
-            reason = f"Excelente ({net_margin:.1%})"
+            reason = f"Excelente ({net_margin:.1%}) - Alta rentabilidad final"
         elif net_margin >= 0.10:
             adj = 2
             sev = "good"
-            reason = f"Bueno ({net_margin:.1%})"
+            reason = f"Bueno ({net_margin:.1%}) - Ganancias sólidas"
         elif net_margin >= 0.05:
             adj = 0
             sev = "ok"
-            reason = f"Aceptable ({net_margin:.1%})"
+            reason = f"Aceptable ({net_margin:.1%}) - Márgenes estándar"
         elif net_margin >= 0:
             adj = -2
             sev = "moderate"
-            reason = f"Bajo ({net_margin:.1%})"
+            reason = f"Bajo ({net_margin:.1%}) - Poca ganancia por venta"
         else:
             adj = -3
             sev = "severe"

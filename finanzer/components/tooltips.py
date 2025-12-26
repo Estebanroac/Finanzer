@@ -199,41 +199,41 @@ METRIC_TOOLTIPS = {
     # === MODELOS DE VALORACIÓN ===
     "graham": {
         "nombre": "Número de Graham",
-        "que_es": "Valor intrínseco según Benjamin Graham.",
-        "rangos": "• Precio < Graham: Subvalorada ✓\n• Precio ≈ Graham: Justo\n• Precio > Graham: Sobrevalorada",
-        "contexto": "Fórmula conservadora. Mejor para empresas estables."
+        "que_es": "Precio máximo que deberías pagar según Benjamin Graham, el padre del value investing. Usa una fórmula conservadora: √(22.5 × EPS × Book Value). Si el precio actual está por debajo de este número, la acción podría estar barata.",
+        "rangos": "• Precio < Graham: Potencialmente subvalorada ✓\n• Precio ≈ Graham: Precio justo\n• Precio > Graham: Potencialmente sobrevalorada",
+        "contexto": "Mejor para empresas estables con ganancias consistentes. No funciona bien con empresas tech de alto crecimiento o empresas con pérdidas."
     },
     "dcf": {
         "nombre": "DCF (Flujos Descontados)",
-        "que_es": "Valor presente de flujos futuros de efectivo.",
-        "rangos": "• Precio < DCF: Subvalorada ✓\n• Precio ≈ DCF: Justo\n• Precio > DCF: Sobrevalorada",
-        "contexto": "Modelo de Wall Street. Sensible a supuestos."
+        "que_es": "Calcula cuánto vale la empresa hoy basándose en todo el dinero que generará en el futuro. Es como preguntar: '¿Cuánto pagaría hoy por todos los flujos de efectivo que esta empresa producirá en los próximos 10+ años?'. Se descuentan al presente usando el WACC.",
+        "rangos": "• Precio < DCF: Oportunidad de compra ✓\n• Precio ≈ DCF (±15%): Valoración justa\n• Precio > DCF: Posiblemente cara",
+        "contexto": "Modelo usado por analistas de Wall Street. Muy sensible a los supuestos de crecimiento y tasa de descuento. Pequeños cambios pueden alterar mucho el resultado."
     },
     "wacc": {
-        "nombre": "WACC (Costo del Capital)",
-        "que_es": "Retorno mínimo requerido por inversores y acreedores.",
-        "rangos": "• 6-8%: Bajo riesgo\n• 8-10%: Riesgo medio\n• 10-12%: Moderado\n• >12%: Alto riesgo",
-        "contexto": "Se usa como tasa de descuento en DCF."
+        "nombre": "WACC (Costo Promedio del Capital)",
+        "que_es": "Es el retorno mínimo que la empresa necesita generar para satisfacer a sus inversores (accionistas) y acreedores (bancos). Combina el costo de la deuda y el costo del equity. Se usa como tasa de descuento en el modelo DCF.",
+        "rangos": "• 5-7%: Empresa muy estable, bajo riesgo\n• 7-9%: Riesgo moderado (típico)\n• 9-12%: Riesgo elevado\n• >12%: Alto riesgo o mercado emergente",
+        "contexto": "Un WACC alto significa que los flujos futuros valen menos hoy (mayor descuento). Empresas con mucha deuda o alta volatilidad tienen WACC más alto."
     },
     "margin_of_safety": {
         "nombre": "Margen de Seguridad",
-        "que_es": "Descuento sobre valor intrínseco para protección.",
-        "rangos": "• >30%: Gran margen ✓\n• 15-30%: Buen margen\n• 0-15%: Pequeño\n• <0%: Sin margen",
-        "contexto": "Graham recomendaba >30%."
+        "que_es": "Es el 'colchón' entre el precio actual y el valor intrínseco calculado. Si una acción vale $100 según el DCF y cotiza a $70, tienes 30% de margen de seguridad. Este margen te protege si tus cálculos están equivocados.",
+        "rangos": "• >30%: Excelente protección ✓\n• 15-30%: Buen margen\n• 0-15%: Margen pequeño\n• <0%: Sin margen (precio > valor)",
+        "contexto": "Benjamin Graham recomendaba mínimo 30%. Warren Buffett busca márgenes amplios. A mayor incertidumbre sobre la empresa, mayor margen deberías exigir."
     },
     
-    # === SCORES ===
+    # === SCORES INSTITUCIONALES ===
     "altman_z": {
         "nombre": "Altman Z-Score",
-        "que_es": "Predictor de probabilidad de bancarrota.",
-        "rangos": "• >2.99: Zona Segura ✓\n• 1.81-2.99: Zona Gris ⚠️\n• <1.81: Zona Peligro 🚨",
-        "contexto": "90%+ de precisión prediciendo quiebras."
+        "que_es": "Fórmula creada por el profesor Edward Altman en 1968 para predecir si una empresa quebrará en los próximos 2 años. Combina 5 ratios financieros: liquidez, rentabilidad acumulada, rentabilidad operativa, valor de mercado vs deuda, y rotación de activos.",
+        "rangos": "• >2.99: Zona Segura - Probabilidad de quiebra muy baja ✓\n• 1.81-2.99: Zona Gris - Precaución, monitorear ⚠️\n• <1.81: Zona de Peligro - Riesgo alto de problemas financieros 🚨",
+        "contexto": "Ha demostrado 80-90% de precisión prediciendo quiebras. Funciona mejor con empresas manufactureras. Para bancos y empresas de servicios hay versiones modificadas."
     },
     "piotroski_f": {
         "nombre": "Piotroski F-Score",
-        "que_es": "Score 0-9 de fortaleza financiera.",
-        "rangos": "• 8-9: Excelente ✓✓\n• 6-7: Bueno ✓\n• 4-5: Neutral\n• 0-3: Débil ⚠️",
-        "contexto": "F-Score alto = mejores retornos históricos."
+        "que_es": "Sistema de puntuación creado por el profesor Joseph Piotroski. Evalúa 9 criterios de salud financiera: rentabilidad (4 puntos), apalancamiento/liquidez (3 puntos), y eficiencia operativa (2 puntos). Cada criterio cumplido suma 1 punto.",
+        "rangos": "• 8-9: Fortaleza excepcional - Empresa muy sólida ✓✓\n• 6-7: Buena salud financiera ✓\n• 4-5: Salud neutral - Mixta\n• 0-3: Señales de debilidad ⚠️",
+        "contexto": "Estudios muestran que acciones con F-Score alto (8-9) superan al mercado. Es especialmente útil para filtrar empresas 'value' y evitar trampas de valor."
     },
     
     # === DIVIDENDOS ===

@@ -1936,70 +1936,146 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
                     html.Span("⚙️ ", style={"marginRight": "6px"}),
                     html.Span("Parámetros del modelo DCF", className="text-info fw-bold"),
                 ], className="mb-3"),
-                html.Div([
-                    dbc.Row([
-                        dbc.Col([
+                
+                # Grid 2x2 con parámetros principales
+                dbc.Row([
+                    dbc.Col([
+                        html.Div([
                             html.Div([
-                                html.Span("WACC ", className="text-muted small"),
-                                html.Span("i", id=f"tip-wacc-{uid}", className="info-icon", 
-                                         style={"width": "14px", "height": "14px", "fontSize": "9px"}),
-                            ], className="d-flex align-items-center justify-content-center", style={"gap": "4px"}),
-                            html.Span(f"{dcf_wacc:.1%}" if dcf_wacc else "N/A", className="text-info"),
+                                html.Span("WACC", className="small", style={"color": "#a1a1aa"}),
+                                html.Span(" ⓘ", id=f"tip-wacc-{uid}", style={
+                                    "cursor": "help", "color": "#60a5fa", "fontSize": "0.75rem"
+                                }),
+                            ]),
+                            html.Div(f"{dcf_wacc:.1%}" if dcf_wacc else "N/A", 
+                                    style={"fontSize": "1.5rem", "fontWeight": "600", "color": "#60a5fa"}),
+                            html.Div("Tasa de descuento", className="small", style={"color": "#71717a"}),
                             dbc.Tooltip(get_tooltip_text("wacc"), target=f"tip-wacc-{uid}", placement="top")
-                        ], xs=6, md=3, className="text-center mb-2"),
-                        dbc.Col([
-                            html.Div([
-                                html.Span("Growth Inicial ", className="text-muted small"),
-                            ]),
-                            html.Span(f"{dcf_growth:.1%}" if dcf_growth else "N/A", className="text-success"),
-                        ], xs=6, md=3, className="text-center mb-2"),
-                        dbc.Col([
-                            html.Div([
-                                html.Span("Margen Seguridad ", className="text-muted small"),
-                                html.Span("i", id=f"tip-mos-{uid}", className="info-icon",
-                                         style={"width": "14px", "height": "14px", "fontSize": "9px"}),
-                            ], className="d-flex align-items-center justify-content-center", style={"gap": "4px"}),
-                            html.Span(f"${dcf_value_mos:.2f}" if dcf_value_mos else "N/A", className="text-warning"),
-                            dbc.Tooltip(get_tooltip_text("margin_of_safety"), target=f"tip-mos-{uid}", placement="top")
-                        ], xs=6, md=3, className="text-center mb-2"),
-                        dbc.Col([
-                            html.Div([
-                                html.Span("Fuente Growth ", className="text-muted small"),
-                            ]),
-                            html.Span(dcf_growth_source.replace("_", " ").title() if dcf_growth_source else "N/A", 
-                                     className="text-muted", style={"fontSize": "0.85rem"}),
-                        ], xs=6, md=3, className="text-center mb-2"),
-                    ]),
+                        ], style={
+                            "background": "rgba(96, 165, 250, 0.1)",
+                            "border": "1px solid rgba(96, 165, 250, 0.2)",
+                            "borderRadius": "12px",
+                            "padding": "16px",
+                            "textAlign": "center"
+                        })
+                    ], xs=6, md=3, className="mb-3"),
                     
-                    # Composición del valor por etapas
+                    dbc.Col([
+                        html.Div([
+                            html.Div([
+                                html.Span("Growth Rate", className="small", style={"color": "#a1a1aa"}),
+                            ]),
+                            html.Div(f"{dcf_growth:.1%}" if dcf_growth else "N/A", 
+                                    style={"fontSize": "1.5rem", "fontWeight": "600", "color": "#22c55e"}),
+                            html.Div(dcf_growth_source.replace("_", " ").title() if dcf_growth_source else "—", 
+                                    className="small", style={"color": "#71717a"}),
+                        ], style={
+                            "background": "rgba(34, 197, 94, 0.1)",
+                            "border": "1px solid rgba(34, 197, 94, 0.2)",
+                            "borderRadius": "12px",
+                            "padding": "16px",
+                            "textAlign": "center"
+                        })
+                    ], xs=6, md=3, className="mb-3"),
+                    
+                    dbc.Col([
+                        html.Div([
+                            html.Div([
+                                html.Span("Terminal Growth", className="small", style={"color": "#a1a1aa"}),
+                            ]),
+                            html.Div("2.5%", 
+                                    style={"fontSize": "1.5rem", "fontWeight": "600", "color": "#a78bfa"}),
+                            html.Div("Crecimiento perpetuo", className="small", style={"color": "#71717a"}),
+                        ], style={
+                            "background": "rgba(167, 139, 250, 0.1)",
+                            "border": "1px solid rgba(167, 139, 250, 0.2)",
+                            "borderRadius": "12px",
+                            "padding": "16px",
+                            "textAlign": "center"
+                        })
+                    ], xs=6, md=3, className="mb-3"),
+                    
+                    dbc.Col([
+                        html.Div([
+                            html.Div([
+                                html.Span("Margen Seguridad", className="small", style={"color": "#a1a1aa"}),
+                                html.Span(" ⓘ", id=f"tip-mos-{uid}", style={
+                                    "cursor": "help", "color": "#60a5fa", "fontSize": "0.75rem"
+                                }),
+                            ]),
+                            html.Div(f"${dcf_value_mos:.2f}" if dcf_value_mos else "N/A", 
+                                    style={"fontSize": "1.5rem", "fontWeight": "600", "color": "#f59e0b"}),
+                            html.Div("Con 25% descuento", className="small", style={"color": "#71717a"}),
+                            dbc.Tooltip(get_tooltip_text("margin_of_safety"), target=f"tip-mos-{uid}", placement="top")
+                        ], style={
+                            "background": "rgba(245, 158, 11, 0.1)",
+                            "border": "1px solid rgba(245, 158, 11, 0.2)",
+                            "borderRadius": "12px",
+                            "padding": "16px",
+                            "textAlign": "center"
+                        })
+                    ], xs=6, md=3, className="mb-3"),
+                ]),
+                
+                # Composición del valor por etapas
+                html.Div([
+                    html.P("📊 Distribución del valor por etapas", className="small mb-3", style={"color": "#a1a1aa"}),
                     html.Div([
-                        html.P("📈 Composición del valor por etapas:", className="text-muted small mt-3 mb-2"),
+                        # Barra de progreso visual
+                        html.Div([
+                            html.Div(style={
+                                "width": f"{value_composition.get('stage1_pct', 0)}%",
+                                "height": "8px",
+                                "background": "linear-gradient(90deg, #3b82f6, #60a5fa)",
+                                "borderRadius": "4px 0 0 4px"
+                            }),
+                            html.Div(style={
+                                "width": f"{value_composition.get('stage2_pct', 0)}%",
+                                "height": "8px",
+                                "background": "linear-gradient(90deg, #06b6d4, #22d3ee)",
+                            }),
+                            html.Div(style={
+                                "width": f"{value_composition.get('terminal_pct', 0)}%",
+                                "height": "8px",
+                                "background": "linear-gradient(90deg, #f59e0b, #fbbf24)",
+                                "borderRadius": "0 4px 4px 0"
+                            }),
+                        ], style={"display": "flex", "borderRadius": "4px", "overflow": "hidden", "marginBottom": "12px"}),
+                        
                         dbc.Row([
                             dbc.Col([
                                 html.Div([
+                                    html.Span("●", style={"color": "#3b82f6", "marginRight": "6px"}),
                                     html.Span(f"{value_composition.get('stage1_pct', 0):.0f}%", 
-                                             className="h5 text-primary mb-0"),
-                                    html.P("Años 1-5 (alto crecimiento)", className="small text-muted mb-0")
-                                ], className="text-center")
-                            ], xs=4),
+                                             style={"fontWeight": "600", "color": "#3b82f6"}),
+                                    html.Span(" Años 1-5", className="small", style={"color": "#71717a", "marginLeft": "4px"})
+                                ])
+                            ], xs=4, className="text-center"),
                             dbc.Col([
                                 html.Div([
+                                    html.Span("●", style={"color": "#06b6d4", "marginRight": "6px"}),
                                     html.Span(f"{value_composition.get('stage2_pct', 0):.0f}%", 
-                                             className="h5 text-info mb-0"),
-                                    html.P("Años 6-10 (transición)", className="small text-muted mb-0")
-                                ], className="text-center")
-                            ], xs=4),
+                                             style={"fontWeight": "600", "color": "#06b6d4"}),
+                                    html.Span(" Años 6-10", className="small", style={"color": "#71717a", "marginLeft": "4px"})
+                                ])
+                            ], xs=4, className="text-center"),
                             dbc.Col([
                                 html.Div([
+                                    html.Span("●", style={"color": "#f59e0b", "marginRight": "6px"}),
                                     html.Span(f"{value_composition.get('terminal_pct', 0):.0f}%", 
-                                             className="h5 text-warning mb-0"),
-                                    html.P("Perpetuidad (2.5%)", className="small text-muted mb-0")
-                                ], className="text-center")
-                            ], xs=4),
+                                             style={"fontWeight": "600", "color": "#f59e0b"}),
+                                    html.Span(" Perpetuidad", className="small", style={"color": "#71717a", "marginLeft": "4px"})
+                                ])
+                            ], xs=4, className="text-center"),
                         ])
-                    ]) if value_composition else None,
-                    
-                ], className="p-3")
+                    ])
+                ], style={
+                    "background": "rgba(39, 39, 42, 0.5)",
+                    "borderRadius": "12px",
+                    "padding": "16px",
+                    "marginTop": "8px"
+                }) if value_composition else None,
+                
             ]) if dcf_is_valid else None,
             
             # Sección fija: Cómo interpretar
@@ -2009,24 +2085,51 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
                     html.Span("¿Cómo interpretar estos valores?", className="text-info fw-bold"),
                 ], className="mb-3 mt-4"),
                 html.Div([
+                    # Graham
                     html.Div([
-                        html.Strong("🎯 Valor Graham", className="text-primary"),
-                        html.P("Fórmula creada por Benjamin Graham, el padre del value investing. "
-                               "Usa las ganancias actuales y el valor contable. Es conservadora y funciona "
-                               "mejor para empresas estables con activos tangibles.", className="small mb-3"),
+                        html.Div([
+                            html.Strong("🎯 Valor Graham", style={"color": "#3b82f6"}),
+                        ], className="mb-2"),
+                        html.P([
+                            "Fórmula de Benjamin Graham: ", 
+                            html.Code("√(22.5 × EPS × Book Value)", style={"background": "rgba(59,130,246,0.2)", "padding": "2px 6px", "borderRadius": "4px"}),
+                            ". Representa el ", html.Strong("precio máximo"), " que pagaría un inversor conservador. "
+                            "Si el precio actual está ", html.Strong("por debajo"), " del valor Graham, la acción podría estar barata."
+                        ], className="small mb-2", style={"color": "#a1a1aa"}),
+                        html.P("✓ Mejor para: Empresas maduras, estables, con activos tangibles (bancos, industriales, utilities).", 
+                               className="small mb-3", style={"color": "#71717a"}),
                     ]),
+                    
+                    # DCF
                     html.Div([
-                        html.Strong("🎯 Valor DCF (Flujos Descontados)", className="text-success"),
-                        html.P("Estima cuánto dinero generará la empresa en el futuro y lo trae a valor presente. "
-                               "Usamos 3 etapas: crecimiento alto (5 años) → transición (5 años) → perpetuidad. "
-                               "Es el método más usado en Wall Street.", className="small mb-3"),
+                        html.Div([
+                            html.Strong("🎯 Valor DCF (Flujos Descontados)", style={"color": "#22c55e"}),
+                        ], className="mb-2"),
+                        html.P([
+                            "Calcula cuánto vale hoy ", html.Strong("todo el dinero futuro"), " que generará la empresa. "
+                            "Proyecta flujos de caja a 10 años y los descuenta al presente usando el WACC. "
+                            "Si el precio actual está ", html.Strong("por debajo"), " del DCF, podrías estar comprando con descuento."
+                        ], className="small mb-2", style={"color": "#a1a1aa"}),
+                        html.P("✓ Mejor para: Empresas con flujos predecibles. Es el método estándar en Wall Street.", 
+                               className="small mb-3", style={"color": "#71717a"}),
                     ]),
+                    
+                    # Advertencia
                     html.Div([
-                        html.Strong("⚠️ Importante", className="text-warning"),
-                        html.P("Estos son MODELOS matemáticos, no predicciones exactas. Dependen de supuestos "
-                               "sobre el futuro que pueden no cumplirse. Úsalos como UNA herramienta más, "
-                               "nunca como única base para decidir.", className="small mb-0"),
-                    ]),
+                        html.Div([
+                            html.Strong("⚠️ Importante", style={"color": "#f59e0b"}),
+                        ], className="mb-2"),
+                        html.P([
+                            "Estos son ", html.Strong("modelos matemáticos"), ", no bolas de cristal. El valor real depende de: "
+                            "ejecución del management, competencia, cambios regulatorios, y factores que ningún modelo puede predecir. "
+                            "Úsalos como ", html.Strong("una herramienta más"), " junto con análisis cualitativo, nunca como única guía."
+                        ], className="small mb-0", style={"color": "#a1a1aa"}),
+                    ], style={
+                        "background": "rgba(245, 158, 11, 0.1)",
+                        "border": "1px solid rgba(245, 158, 11, 0.2)",
+                        "borderRadius": "8px",
+                        "padding": "12px"
+                    }),
                 ], className="p-3")
             ]),
             
@@ -2133,7 +2236,26 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
                 # Altman Z-Score
                 dbc.Col([
                     html.Div([
-                        html.Div("📊 Altman Z-Score", className="institutional-title"),
+                        html.Div([
+                            html.Span("📊 Altman Z-Score ", className="institutional-title"),
+                            html.Span("ⓘ", id="tooltip-altman-inst", style={
+                                "cursor": "help", "color": "#60a5fa", "fontSize": "0.85rem"
+                            })
+                        ]),
+                        dbc.Tooltip(
+                            [
+                                html.Strong("¿Qué es?"), html.Br(),
+                                "Fórmula que predice probabilidad de quiebra en 2 años. Combina 5 ratios: liquidez, rentabilidad, apalancamiento, valor de mercado y eficiencia.",
+                                html.Br(), html.Br(),
+                                html.Strong("Interpretación:"), html.Br(),
+                                "• >2.99: Zona Segura ✓", html.Br(),
+                                "• 1.81-2.99: Zona Gris ⚠️", html.Br(),
+                                "• <1.81: Riesgo de quiebra 🚨"
+                            ],
+                            target="tooltip-altman-inst",
+                            placement="top",
+                            style={"maxWidth": "350px"}
+                        ),
                         html.Div([
                             html.Span(f"{alerts.get('altman_z_score', {}).get('value', 0):.2f}" if alerts.get('altman_z_score', {}).get('value') else "N/A", 
                                      className="institutional-value",
@@ -2155,7 +2277,27 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
                 # Piotroski F-Score
                 dbc.Col([
                     html.Div([
-                        html.Div("📈 Piotroski F-Score", className="institutional-title"),
+                        html.Div([
+                            html.Span("📈 Piotroski F-Score ", className="institutional-title"),
+                            html.Span("ⓘ", id="tooltip-piotroski-inst", style={
+                                "cursor": "help", "color": "#60a5fa", "fontSize": "0.85rem"
+                            })
+                        ]),
+                        dbc.Tooltip(
+                            [
+                                html.Strong("¿Qué es?"), html.Br(),
+                                "Puntuación 0-9 de salud financiera. Evalúa rentabilidad (4 pts), liquidez/deuda (3 pts) y eficiencia operativa (2 pts).",
+                                html.Br(), html.Br(),
+                                html.Strong("Interpretación:"), html.Br(),
+                                "• 8-9: Excelente ✓✓", html.Br(),
+                                "• 6-7: Buena salud ✓", html.Br(),
+                                "• 4-5: Neutral", html.Br(),
+                                "• 0-3: Débil ⚠️"
+                            ],
+                            target="tooltip-piotroski-inst",
+                            placement="top",
+                            style={"maxWidth": "350px"}
+                        ),
                         html.Div([
                             html.Span(f"{alerts.get('piotroski_f_score', {}).get('value', 0)}/9" if alerts.get('piotroski_f_score', {}).get('value') is not None else "N/A", 
                                      className="institutional-value",
