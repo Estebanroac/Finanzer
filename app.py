@@ -43,6 +43,7 @@ from financial_ratios import (
     dcf_sensitivity_analysis,
     calculate_reit_metrics,
     is_reit_sector,
+    is_financial_sector,  # v3.1: Modelo adaptativo
 )
 from data_fetcher import (
     FinancialDataService, 
@@ -1275,8 +1276,9 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
             "Communication Services": "communication_services",
         }
         sector_key = sector_map.get(profile.sector if profile else "", "default")
+        real_sector = profile.sector if profile else ""  # v3.1: Sector real de Yahoo Finance
         contextual["pe_5y_avg"] = ratios.get("pe")
-        alerts = aggregate_alerts(ratios, contextual, sector_key)
+        alerts = aggregate_alerts(ratios, contextual, sector_key, real_sector=real_sector)
         sector_profile = get_sector_profile(profile.sector if profile else None)
         
         # v2.9: Detectar si es REIT y calcular métricas específicas
@@ -1432,11 +1434,19 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
                 dbc.Col([create_metric_card("P/B", format_ratio(ratios.get("pb"), "multiple"), "📚")], xs=6, md=3, className="mb-3"),
                 dbc.Col([create_metric_card("P/S", format_ratio(ratios.get("ps"), "multiple"), "💰")], xs=6, md=3, className="mb-3"),
             ]),
+            # Segunda fila: Adaptativa según sector
             dbc.Row([
-                dbc.Col([create_metric_card("EV/EBITDA", format_ratio(ratios.get("ev_ebitda"), "multiple"), "🏢")], xs=6, md=3, className="mb-3"),
-                dbc.Col([create_metric_card("P/FCF", format_ratio(ratios.get("p_fcf"), "multiple"), "💵")], xs=6, md=3, className="mb-3"),
+                # Para NO financieras: EV/EBITDA, P/FCF, PEG, FCF Yield
+                dbc.Col([create_metric_card("EV/EBITDA", format_ratio(ratios.get("ev_ebitda"), "multiple"), "🏢")], xs=6, md=3, className="mb-3") if not is_financial_sector(real_sector) else
+                dbc.Col([create_metric_card("Dividend Yield", format_ratio(ratios.get("dividend_yield"), "percent"), "💵")], xs=6, md=3, className="mb-3"),
+                
+                dbc.Col([create_metric_card("P/FCF", format_ratio(ratios.get("p_fcf"), "multiple"), "💵")], xs=6, md=3, className="mb-3") if not is_financial_sector(real_sector) else
+                dbc.Col([create_metric_card("Earnings Yield", format_ratio(ratios.get("earnings_yield"), "percent"), "📈")], xs=6, md=3, className="mb-3"),
+                
                 dbc.Col([create_metric_card("PEG Ratio", format_ratio(ratios.get("peg"), "decimal"), "📈")], xs=6, md=3, className="mb-3"),
-                dbc.Col([create_metric_card("FCF Yield", format_ratio(ratios.get("fcf_yield"), "percent"), "💸")], xs=6, md=3, className="mb-3"),
+                
+                dbc.Col([create_metric_card("FCF Yield", format_ratio(ratios.get("fcf_yield"), "percent"), "💸")], xs=6, md=3, className="mb-3") if not is_financial_sector(real_sector) else
+                dbc.Col([create_metric_card("Payout Ratio", format_ratio(ratios.get("payout_ratio"), "percent"), "📤")], xs=6, md=3, className="mb-3"),
             ]),
             
             # v2.9: Sección especial para REITs
@@ -1497,78 +1507,183 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
             ]) if is_reit and reit_metrics and reit_metrics.get("is_valid") else None,
         ])
         
-        # Tab Rentabilidad
-        tab_profitability = html.Div([
-            html.H5("Métricas de Rentabilidad", className="mb-2"),
-            html.P("¿Qué tan eficiente es generando ganancias?", className="text-muted small mb-4"),
-            
-            # Fila 1: Retornos
-            html.H6("🎯 Retornos sobre Capital", className="mb-3"),
-            dbc.Row([
-                dbc.Col([create_metric_card("ROE", format_ratio(ratios.get("roe"), "percent"), "🎯")], xs=6, md=3, className="mb-3"),
-                dbc.Col([create_metric_card("ROA", format_ratio(ratios.get("roa"), "percent"), "🏭")], xs=6, md=3, className="mb-3"),
-                dbc.Col([create_metric_card("ROIC", format_ratio(ratios.get("roic"), "percent"), "💎")], xs=6, md=3, className="mb-3"),
-                dbc.Col([create_metric_card("ROE 5Y Avg", format_ratio(ratios.get("roe_5y_avg"), "percent"), "📊")], xs=6, md=3, className="mb-3"),
-            ], className="mb-3"),
-            
-            html.Hr(className="theme-hr"),
-            
-            # Fila 2: Márgenes
-            html.H6("📊 Márgenes de Ganancia", className="mb-3 mt-3"),
-            dbc.Row([
-                dbc.Col([create_metric_card("Margen Bruto", format_ratio(ratios.get("gross_margin"), "percent"), "📦")], xs=6, md=3, className="mb-3"),
-                dbc.Col([create_metric_card("Margen Operativo", format_ratio(ratios.get("operating_margin"), "percent"), "⚙️")], xs=6, md=3, className="mb-3"),
-                dbc.Col([create_metric_card("Margen Neto", format_ratio(ratios.get("net_margin"), "percent"), "💎")], xs=6, md=3, className="mb-3"),
-                dbc.Col([create_metric_card("Margen EBITDA", format_ratio(ratios.get("ebitda_margin"), "percent"), "📈")], xs=6, md=3, className="mb-3"),
-            ], className="mb-3"),
-            
-            html.Hr(className="theme-hr"),
-            
-            # Fila 3: Resultado
-            html.H6("💰 Resultados Absolutos", className="mb-3 mt-3"),
-            dbc.Row([
-                dbc.Col([create_metric_card("EBITDA", format_ratio(ratios.get("ebitda"), "currency"), "📊")], xs=6, md=4, className="mb-3"),
-                dbc.Col([create_metric_card("Ingreso Neto", format_ratio(ratios.get("net_income"), "currency"), "💵")], xs=6, md=4, className="mb-3"),
-                dbc.Col([create_metric_card("EPS", format_ratio(ratios.get("eps"), "decimal"), "📈")], xs=6, md=4, className="mb-3"),
+        # Tab Rentabilidad - ADAPTATIVO según sector
+        if is_financial_sector(real_sector):
+            # === VERSIÓN PARA SECTOR FINANCIERO ===
+            tab_profitability = html.Div([
+                html.H5("Métricas de Rentabilidad", className="mb-2"),
+                html.P("Rentabilidad adaptada para sector bancario/financiero", className="text-muted small mb-4"),
+                
+                # Fila 1: Retornos (más importante para bancos)
+                html.H6("🏦 Retornos Bancarios", className="mb-3"),
+                dbc.Row([
+                    dbc.Col([create_metric_card("ROE", format_ratio(ratios.get("roe"), "percent"), "🎯")], xs=6, md=3, className="mb-3"),
+                    dbc.Col([create_metric_card("ROA", format_ratio(ratios.get("roa"), "percent"), "🏭")], xs=6, md=3, className="mb-3"),
+                    dbc.Col([create_metric_card("Margen Neto", format_ratio(ratios.get("net_margin"), "percent"), "💎")], xs=6, md=3, className="mb-3"),
+                    dbc.Col([create_metric_card("Margen Operativo", format_ratio(ratios.get("operating_margin"), "percent"), "⚙️")], xs=6, md=3, className="mb-3"),
+                ], className="mb-3"),
+                
+                html.Hr(className="theme-hr"),
+                
+                # Fila 2: Métricas por acción
+                html.H6("📊 Métricas por Acción", className="mb-3 mt-3"),
+                dbc.Row([
+                    dbc.Col([create_metric_card("EPS", format_ratio(ratios.get("eps"), "decimal"), "📈")], xs=6, md=3, className="mb-3"),
+                    dbc.Col([create_metric_card("Book Value/Share", f"${financials.book_value_per_share:.2f}" if financials and financials.book_value_per_share else "N/A", "📖")], xs=6, md=3, className="mb-3"),
+                    dbc.Col([create_metric_card("Dividend/Share", f"${financials.dividend_per_share:.2f}" if financials and financials.dividend_per_share else "N/A", "💵")], xs=6, md=3, className="mb-3"),
+                    dbc.Col([create_metric_card("Payout Ratio", format_ratio(ratios.get("payout_ratio"), "percent"), "📤")], xs=6, md=3, className="mb-3"),
+                ], className="mb-3"),
+                
+                html.Hr(className="theme-hr"),
+                
+                # Fila 3: Resultados
+                html.H6("💰 Resultados Absolutos", className="mb-3 mt-3"),
+                dbc.Row([
+                    dbc.Col([create_metric_card("Ingreso Neto", format_ratio(ratios.get("net_income"), "currency"), "💵")], xs=6, md=4, className="mb-3"),
+                    dbc.Col([create_metric_card("Revenue", format_ratio(financials.revenue if financials else None, "currency"), "📊")], xs=6, md=4, className="mb-3"),
+                    dbc.Col([create_metric_card("Total Equity", format_ratio(financials.total_equity if financials else None, "currency"), "🏦")], xs=6, md=4, className="mb-3"),
+                ]),
+                
+                # Nota informativa
+                html.Div([
+                    html.P([
+                        html.Span("ℹ️ ", style={"color": "#60a5fa"}),
+                        "Para bancos, ROA >0.5% y ROE >8% son buenos. Margen Bruto y EBITDA no aplican al modelo bancario."
+                    ], className="text-muted small", style={"fontStyle": "italic"})
+                ], style={"marginTop": "15px", "padding": "10px", "background": "rgba(96, 165, 250, 0.1)", "borderRadius": "8px"})
             ])
-        ])
+        else:
+            # === VERSIÓN ESTÁNDAR PARA OTROS SECTORES ===
+            tab_profitability = html.Div([
+                html.H5("Métricas de Rentabilidad", className="mb-2"),
+                html.P("¿Qué tan eficiente es generando ganancias?", className="text-muted small mb-4"),
+                
+                # Fila 1: Retornos
+                html.H6("🎯 Retornos sobre Capital", className="mb-3"),
+                dbc.Row([
+                    dbc.Col([create_metric_card("ROE", format_ratio(ratios.get("roe"), "percent"), "🎯")], xs=6, md=3, className="mb-3"),
+                    dbc.Col([create_metric_card("ROA", format_ratio(ratios.get("roa"), "percent"), "🏭")], xs=6, md=3, className="mb-3"),
+                    dbc.Col([create_metric_card("ROIC", format_ratio(ratios.get("roic"), "percent"), "💎")], xs=6, md=3, className="mb-3"),
+                    dbc.Col([create_metric_card("ROE 5Y Avg", format_ratio(ratios.get("roe_5y_avg"), "percent"), "📊")], xs=6, md=3, className="mb-3"),
+                ], className="mb-3"),
+                
+                html.Hr(className="theme-hr"),
+                
+                # Fila 2: Márgenes
+                html.H6("📊 Márgenes de Ganancia", className="mb-3 mt-3"),
+                dbc.Row([
+                    dbc.Col([create_metric_card("Margen Bruto", format_ratio(ratios.get("gross_margin"), "percent"), "📦")], xs=6, md=3, className="mb-3"),
+                    dbc.Col([create_metric_card("Margen Operativo", format_ratio(ratios.get("operating_margin"), "percent"), "⚙️")], xs=6, md=3, className="mb-3"),
+                    dbc.Col([create_metric_card("Margen Neto", format_ratio(ratios.get("net_margin"), "percent"), "💎")], xs=6, md=3, className="mb-3"),
+                    dbc.Col([create_metric_card("Margen EBITDA", format_ratio(ratios.get("ebitda_margin"), "percent"), "📈")], xs=6, md=3, className="mb-3"),
+                ], className="mb-3"),
+                
+                html.Hr(className="theme-hr"),
+                
+                # Fila 3: Resultado
+                html.H6("💰 Resultados Absolutos", className="mb-3 mt-3"),
+                dbc.Row([
+                    dbc.Col([create_metric_card("EBITDA", format_ratio(ratios.get("ebitda"), "currency"), "📊")], xs=6, md=4, className="mb-3"),
+                    dbc.Col([create_metric_card("Ingreso Neto", format_ratio(ratios.get("net_income"), "currency"), "💵")], xs=6, md=4, className="mb-3"),
+                    dbc.Col([create_metric_card("EPS", format_ratio(ratios.get("eps"), "decimal"), "📈")], xs=6, md=4, className="mb-3"),
+                ])
+            ])
         
-        # Tab Solidez
-        tab_health = html.Div([
-            html.H5("Solidez Financiera", className="mb-2"),
-            html.P("¿Puede pagar sus deudas y mantener operaciones?", className="text-muted small mb-4"),
-            
-            # Fila 1: Liquidez
-            html.H6("💧 Liquidez (Corto Plazo)", className="mb-3"),
-            dbc.Row([
-                dbc.Col([create_metric_card("Current Ratio", format_ratio(ratios.get("current_ratio"), "multiple"), "💧")], xs=6, md=3, className="mb-3"),
-                dbc.Col([create_metric_card("Quick Ratio", format_ratio(ratios.get("quick_ratio"), "multiple"), "⚡")], xs=6, md=3, className="mb-3"),
-                dbc.Col([create_metric_card("Cash Ratio", format_ratio(ratios.get("cash_ratio"), "multiple"), "💵")], xs=6, md=3, className="mb-3"),
-                dbc.Col([create_metric_card("Working Capital", format_ratio(ratios.get("working_capital"), "currency"), "📊")], xs=6, md=3, className="mb-3"),
-            ], className="mb-3"),
-            
-            html.Hr(className="theme-hr"),
-            
-            # Fila 2: Apalancamiento
-            html.H6("⚖️ Apalancamiento (Largo Plazo)", className="mb-3 mt-3"),
-            dbc.Row([
-                dbc.Col([create_metric_card("Deuda/Equity", format_ratio(ratios.get("debt_to_equity"), "multiple"), "⚖️")], xs=6, md=3, className="mb-3"),
-                dbc.Col([create_metric_card("Deuda/Activos", format_ratio(ratios.get("debt_to_assets"), "percent"), "📉")], xs=6, md=3, className="mb-3"),
-                dbc.Col([create_metric_card("Deuda Neta/EBITDA", format_ratio(ratios.get("net_debt_to_ebitda"), "multiple"), "🔗")], xs=6, md=3, className="mb-3"),
-                dbc.Col([create_metric_card("Deuda Total", format_ratio(ratios.get("total_debt"), "currency"), "💳")], xs=6, md=3, className="mb-3"),
-            ], className="mb-3"),
-            
-            html.Hr(className="theme-hr"),
-            
-            # Fila 3: Cobertura y Flujo
-            html.H6("🛡️ Cobertura y Flujo de Caja", className="mb-3 mt-3"),
-            dbc.Row([
-                dbc.Col([create_metric_card("Cobertura Int.", format_ratio(ratios.get("interest_coverage"), "multiple"), "🛡️")], xs=6, md=3, className="mb-3"),
-                dbc.Col([create_metric_card("FCF", format_ratio(ratios.get("fcf"), "currency"), "💵")], xs=6, md=3, className="mb-3"),
-                dbc.Col([create_metric_card("FCF/Deuda", format_ratio(ratios.get("fcf_to_debt"), "percent"), "📈")], xs=6, md=3, className="mb-3"),
-                dbc.Col([create_metric_card("Cash & Eq.", format_ratio(ratios.get("cash_and_equivalents"), "currency"), "🏦")], xs=6, md=3, className="mb-3"),
+        # Tab Solidez - ADAPTATIVO según sector
+        is_financial = is_financial_sector(real_sector)
+        
+        if is_financial:
+            # === VERSIÓN PARA SECTOR FINANCIERO ===
+            tab_health = html.Div([
+                html.H5("Solidez Financiera", className="mb-2"),
+                html.P("Métricas adaptadas para sector bancario/financiero", className="text-muted small mb-4"),
+                
+                # Fila 1: Rentabilidad Bancaria
+                html.H6("🏦 Rentabilidad Bancaria", className="mb-3"),
+                dbc.Row([
+                    dbc.Col([create_metric_card("ROA", format_ratio(ratios.get("roa"), "percent"), "📊")], xs=6, md=3, className="mb-3"),
+                    dbc.Col([create_metric_card("ROE", format_ratio(ratios.get("roe"), "percent"), "📈")], xs=6, md=3, className="mb-3"),
+                    dbc.Col([create_metric_card("Margen Neto", format_ratio(ratios.get("net_margin"), "percent"), "💎")], xs=6, md=3, className="mb-3"),
+                    dbc.Col([create_metric_card("Margen Operativo", format_ratio(ratios.get("operating_margin"), "percent"), "⚙️")], xs=6, md=3, className="mb-3"),
+                ], className="mb-3"),
+                
+                html.Hr(className="theme-hr"),
+                
+                # Fila 2: Valoración Bancaria
+                html.H6("💰 Valoración Bancaria", className="mb-3 mt-3"),
+                dbc.Row([
+                    dbc.Col([create_metric_card("P/B", format_ratio(ratios.get("pb"), "multiple"), "📚")], xs=6, md=3, className="mb-3"),
+                    dbc.Col([create_metric_card("P/E", format_ratio(ratios.get("pe"), "multiple"), "📊")], xs=6, md=3, className="mb-3"),
+                    dbc.Col([create_metric_card("Dividend Yield", format_ratio(ratios.get("dividend_yield"), "percent"), "💵")], xs=6, md=3, className="mb-3"),
+                    dbc.Col([create_metric_card("Payout Ratio", format_ratio(ratios.get("payout_ratio"), "percent"), "📤")], xs=6, md=3, className="mb-3"),
+                ], className="mb-3"),
+                
+                html.Hr(className="theme-hr"),
+                
+                # Fila 3: Estructura de Capital
+                html.H6("🏛️ Estructura de Capital", className="mb-3 mt-3"),
+                dbc.Row([
+                    dbc.Col([create_metric_card("Deuda/Equity", format_ratio(ratios.get("debt_to_equity"), "multiple"), "⚖️")], xs=6, md=3, className="mb-3"),
+                    dbc.Col([create_metric_card("Deuda/Activos", format_ratio(ratios.get("debt_to_assets"), "percent"), "📉")], xs=6, md=3, className="mb-3"),
+                    dbc.Col([create_metric_card("Book Value/Share", f"${financials.book_value_per_share:.2f}" if financials and financials.book_value_per_share else "N/A", "📖")], xs=6, md=3, className="mb-3"),
+                    dbc.Col([create_metric_card("Market Cap", format_ratio(profile.market_cap if profile else None, "currency"), "🌐")], xs=6, md=3, className="mb-3"),
+                ]),
+                
+                # Nota informativa mejorada
+                html.Div([
+                    html.P([
+                        html.Strong("🏦 Modelo Adaptativo Bancario", style={"color": "#60a5fa"}),
+                    ], className="mb-2"),
+                    html.P([
+                        "Umbrales calibrados para sector financiero: ",
+                        html.Span("ROA >0.5% excelente", style={"color": "#22c55e"}), " (promedio bancos: 0.3-0.5%), ",
+                        html.Span("ROE >12% excelente", style={"color": "#22c55e"}), " (objetivo típico: 8-12%), ",
+                        html.Span("D/E <5x conservador", style={"color": "#22c55e"}), " (bancos operan normalmente con 8-15x)."
+                    ], className="text-muted small mb-2"),
+                    html.P([
+                        html.Span("⚠️ ", style={"color": "#eab308"}),
+                        "Métricas regulatorias (CET1, Tier 1, NPL, LCR) no disponibles en Yahoo Finance. ",
+                        "Para análisis completo, consultar reportes regulatorios (EBA, BoE, Fed)."
+                    ], className="text-muted small", style={"fontStyle": "italic"})
+                ], style={"marginTop": "20px", "padding": "15px", "background": "rgba(96, 165, 250, 0.1)", "borderRadius": "8px", "border": "1px solid rgba(96, 165, 250, 0.2)"})
             ])
-        ])
+        else:
+            # === VERSIÓN ESTÁNDAR PARA OTROS SECTORES ===
+            tab_health = html.Div([
+                html.H5("Solidez Financiera", className="mb-2"),
+                html.P("¿Puede pagar sus deudas y mantener operaciones?", className="text-muted small mb-4"),
+                
+                # Fila 1: Liquidez
+                html.H6("💧 Liquidez (Corto Plazo)", className="mb-3"),
+                dbc.Row([
+                    dbc.Col([create_metric_card("Current Ratio", format_ratio(ratios.get("current_ratio"), "multiple"), "💧")], xs=6, md=3, className="mb-3"),
+                    dbc.Col([create_metric_card("Quick Ratio", format_ratio(ratios.get("quick_ratio"), "multiple"), "⚡")], xs=6, md=3, className="mb-3"),
+                    dbc.Col([create_metric_card("Cash Ratio", format_ratio(ratios.get("cash_ratio"), "multiple"), "💵")], xs=6, md=3, className="mb-3"),
+                    dbc.Col([create_metric_card("Working Capital", format_ratio(ratios.get("working_capital"), "currency"), "📊")], xs=6, md=3, className="mb-3"),
+                ], className="mb-3"),
+                
+                html.Hr(className="theme-hr"),
+                
+                # Fila 2: Apalancamiento
+                html.H6("⚖️ Apalancamiento (Largo Plazo)", className="mb-3 mt-3"),
+                dbc.Row([
+                    dbc.Col([create_metric_card("Deuda/Equity", format_ratio(ratios.get("debt_to_equity"), "multiple"), "⚖️")], xs=6, md=3, className="mb-3"),
+                    dbc.Col([create_metric_card("Deuda/Activos", format_ratio(ratios.get("debt_to_assets"), "percent"), "📉")], xs=6, md=3, className="mb-3"),
+                    dbc.Col([create_metric_card("Deuda Neta/EBITDA", format_ratio(ratios.get("net_debt_to_ebitda"), "multiple"), "🔗")], xs=6, md=3, className="mb-3"),
+                    dbc.Col([create_metric_card("Deuda Total", format_ratio(ratios.get("total_debt"), "currency"), "💳")], xs=6, md=3, className="mb-3"),
+                ], className="mb-3"),
+                
+                html.Hr(className="theme-hr"),
+                
+                # Fila 3: Cobertura y Flujo
+                html.H6("🛡️ Cobertura y Flujo de Caja", className="mb-3 mt-3"),
+                dbc.Row([
+                    dbc.Col([create_metric_card("Cobertura Int.", format_ratio(ratios.get("interest_coverage"), "multiple"), "🛡️")], xs=6, md=3, className="mb-3"),
+                    dbc.Col([create_metric_card("FCF", format_ratio(ratios.get("fcf"), "currency"), "💵")], xs=6, md=3, className="mb-3"),
+                    dbc.Col([create_metric_card("FCF/Deuda", format_ratio(ratios.get("fcf_to_debt"), "percent"), "📈")], xs=6, md=3, className="mb-3"),
+                    dbc.Col([create_metric_card("Cash & Eq.", format_ratio(ratios.get("cash_and_equivalents"), "currency"), "🏦")], xs=6, md=3, className="mb-3"),
+                ])
+            ])
         
         # Tab Histórico - obtener gráfico y datos de rendimiento
         price_chart, ytd_pct, ytd_end = create_price_chart(symbol, "1y")
@@ -2288,7 +2403,9 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
                             "Si el precio actual está ", html.Strong("por debajo"), " del DCF, podrías estar comprando con descuento."
                         ], className="small mb-2", style={"color": "#a1a1aa"}),
                         html.P("✓ Mejor para: Empresas con flujos predecibles. Es el método estándar en Wall Street.", 
-                               className="small mb-3", style={"color": "#71717a"}),
+                               className="small mb-2", style={"color": "#71717a"}),
+                        html.P("⚠️ Para bancos/financieras: El DCF tradicional no aplica (no tienen FCF). Usar P/B y Dividend Discount Model.", 
+                               className="small mb-3", style={"color": "#f59e0b", "fontStyle": "italic"}) if is_financial_sector(real_sector) else None,
                     ]),
                     
                     # Advertencia
@@ -2407,11 +2524,57 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
             html.H5("Evaluación Completa", className="mb-2"),
             html.P("Desglose del score y análisis detallado", className="text-muted small mb-3"),
             
-            # MÉTRICAS INSTITUCIONALES
+            # MÉTRICAS INSTITUCIONALES - Adaptativo según sector
             html.H6("🏛️ Métricas Institucionales", className="mb-3"),
             dbc.Row([
-                # Altman Z-Score
+                # Primera métrica: Z-Score O Financial Health Score según sector
                 dbc.Col([
+                    # Si es sector financiero: Financial Health Score
+                    html.Div([
+                        html.Div([
+                            html.Span("🏦 Solidez Bancaria ", className="institutional-title"),
+                            html.Span("ⓘ", id="tooltip-financial-health-inst", style={
+                                "cursor": "help", "color": "#60a5fa", "fontSize": "0.85rem"
+                            })
+                        ]),
+                        dbc.Tooltip(
+                            [
+                                html.Strong("¿Qué es?"), html.Br(),
+                                "Puntuación 0-10 calibrada para bancos y financieras. Reemplaza al Z-Score que no aplica a este sector.",
+                                html.Br(), html.Br(),
+                                html.Strong("Componentes (umbrales bancarios):"), html.Br(),
+                                "• ROA (0-3 pts): >0.5% excelente, >0.3% bueno", html.Br(),
+                                "• ROE (0-3 pts): >12% excelente, >8% bueno", html.Br(),
+                                "• D/E Bancario (0-2 pts): <5x conservador", html.Br(),
+                                "• Book Value Growth (0-1 pts)", html.Br(),
+                                "• Dividendo sostenible (0-1 pts)", html.Br(), html.Br(),
+                                html.Span("Nota: Métricas regulatorias (CET1, Tier 1) no disponibles.", style={"fontStyle": "italic", "fontSize": "0.85em"})
+                            ],
+                            target="tooltip-financial-health-inst",
+                            placement="top",
+                            style={"maxWidth": "380px"}
+                        ),
+                        html.Div([
+                            html.Span(
+                                f"{(alerts.get('financial_health') or {}).get('score', 0)}/10" if alerts.get('financial_health') else "N/A", 
+                                className="institutional-value",
+                                style={
+                                    "color": "#22c55e" if (alerts.get('financial_health') or {}).get('level') == "STRONG" else 
+                                             "#84cc16" if (alerts.get('financial_health') or {}).get('level') == "GOOD" else
+                                             "#eab308" if (alerts.get('financial_health') or {}).get('level') == "NEUTRAL" else "#ef4444"
+                                }),
+                            html.Span(
+                                " · Excelente" if (alerts.get('financial_health') or {}).get('level') == "STRONG" else
+                                " · Buena" if (alerts.get('financial_health') or {}).get('level') == "GOOD" else
+                                " · Neutral" if (alerts.get('financial_health') or {}).get('level') == "NEUTRAL" else
+                                " · Débil",
+                                className="institutional-label"
+                            )
+                        ]),
+                        html.P((alerts.get('financial_health') or {}).get('interpretation', ''), className="institutional-desc")
+                    ], className="institutional-card", style={"display": "block" if alerts.get('is_financial_sector') else "none"}),
+                    
+                    # Si NO es sector financiero: Altman Z-Score
                     html.Div([
                         html.Div([
                             html.Span("📊 Altman Z-Score ", className="institutional-title"),
@@ -2448,10 +2611,10 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
                             )
                         ]),
                         html.P(alerts.get('altman_z_score', {}).get('interpretation', ''), className="institutional-desc")
-                    ], className="institutional-card")
+                    ], className="institutional-card", style={"display": "none" if alerts.get('is_financial_sector') else "block"})
                 ], xs=12, md=6, className="mb-3"),
                 
-                # Piotroski F-Score
+                # Piotroski F-Score (aplica a todos los sectores)
                 dbc.Col([
                     html.Div([
                         html.Div([
@@ -3522,24 +3685,37 @@ app.index_string = '''
                 font-size: 1rem !important;
             }
             
-            /* === TABS: SCROLL HORIZONTAL FORZADO === */
+            /* === TABS: SCROLL HORIZONTAL CONTENIDO === */
+            
+            /* Prevenir scroll horizontal en toda la página */
+            body, html, .container-fluid {
+                overflow-x: hidden !important;
+                max-width: 100vw !important;
+            }
+            
+            /* Contenedor de tabs con scroll independiente */
             .tabs-wrapper {
+                position: relative !important;
                 overflow-x: auto !important;
-                overflow-y: hidden !important;
+                overflow-y: visible !important;
                 -webkit-overflow-scrolling: touch !important;
-                margin: 0 -12px !important;
-                padding: 0 12px 8px 12px !important;
+                margin: 0 -16px !important;
+                padding: 0 16px 8px 16px !important;
                 scrollbar-width: none !important;
+                /* Aislar el scroll - NO afecta a la página */
+                overscroll-behavior-x: contain !important;
+                touch-action: pan-x !important;
+                width: calc(100% + 32px) !important;
             }
             
             .tabs-wrapper::-webkit-scrollbar {
                 display: none !important;
             }
             
-            /* CRÍTICO: Forzar nav-tabs en línea */
+            /* Barra de tabs en línea horizontal */
+            .tabs-wrapper .nav-tabs,
             .tabs-scrollable .nav-tabs,
-            .tabs-scrollable > .nav,
-            .nav-tabs {
+            .tabs-scrollable > .nav {
                 display: flex !important;
                 flex-direction: row !important;
                 flex-wrap: nowrap !important;
@@ -3547,6 +3723,7 @@ app.index_string = '''
                 min-width: 100% !important;
                 border-bottom: 1px solid #3f3f46 !important;
                 gap: 0 !important;
+                margin: 0 !important;
             }
             
             .nav-tabs .nav-item {
@@ -3561,16 +3738,11 @@ app.index_string = '''
                 border-radius: 8px 8px 0 0 !important;
             }
             
-            /* Indicador visual de scroll */
-            .tabs-wrapper::after {
-                content: '';
-                position: absolute;
-                right: 0;
-                top: 0;
-                bottom: 8px;
-                width: 30px;
-                background: linear-gradient(to right, transparent, rgba(24,24,27,0.9));
-                pointer-events: none;
+            /* Contenido de tabs NO debe causar overflow */
+            .tab-content,
+            .tab-content-inner {
+                overflow-x: hidden !important;
+                max-width: 100% !important;
             }
             
             /* === CARDS Y CONTENIDO === */

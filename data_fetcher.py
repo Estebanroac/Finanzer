@@ -1438,6 +1438,10 @@ class FinancialDataService:
             if financials.price and financials.shares_outstanding:
                 result["contextual"]["market_cap"] = financials.price * financials.shares_outstanding
             
+            # ===== DATOS PARA FINANCIAL HEALTH SCORE (Sector Financiero) =====
+            result["contextual"]["total_equity"] = financials.total_equity
+            result["contextual"]["book_value"] = financials.book_value_per_share
+            
             # ===== DATOS PARA PIOTROSKI F-SCORE =====
             result["contextual"]["net_income"] = financials.net_income
             result["contextual"]["operating_cash_flow"] = financials.operating_cash_flow
@@ -1586,6 +1590,7 @@ class FinancialDataService:
             "amortization": 0,  # Incluido en depreciation generalmente
             "forward_eps": financials.forward_eps,
             "dividend_per_share": financials.dividend_per_share,
+            "dividends_paid": financials.dividends_paid,  # Para payout_ratio
             "earnings_growth_rate": (financials.earnings_growth_rate or 0) * 100 if financials.earnings_growth_rate else None,
             "beta": financials.beta,
             "cogs": None,  # No siempre disponible en yfinance

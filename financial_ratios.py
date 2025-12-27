@@ -64,6 +64,78 @@ class SignalType(Enum):
 # NUEVAS MÉTRICAS INSTITUCIONALES
 # =============================================================================
 
+# Sectores considerados como "Financieros" (modelo adaptativo)
+FINANCIAL_SECTORS = {
+    "financials",           # Financial Services
+    "financial services",
+    "banks",
+    "insurance",
+    "asset management",
+    "capital markets",
+    "diversified financial",
+    "regional banks",
+    "investment banking",
+    "credit services",
+}
+
+# Benchmarks específicos para sector financiero
+# CALIBRADOS según estándares reales del sector bancario (Q1 2024)
+# Fuente: Promedios de grandes bancos, requisitos Basilea III/IV
+FINANCIAL_BENCHMARKS = {
+    # ROA Bancario (promedio sector: 0.3-0.5%)
+    "roa_excellent": 0.005,    # >0.5% es excelente para banco
+    "roa_good": 0.003,         # >0.3% es bueno
+    "roa_acceptable": 0.002,   # >0.2% es aceptable
+    
+    # ROE Bancario (objetivo típico: 8-12%)
+    "roe_excellent": 0.12,     # >12% es excelente
+    "roe_good": 0.08,          # >8% es bueno
+    "roe_acceptable": 0.06,    # >6% es aceptable
+    
+    # Price to Book (valoración bancaria)
+    "pb_cheap": 0.8,           # P/B < 0.8 es barato
+    "pb_fair": 1.2,            # P/B 0.8-1.2 es justo
+    "pb_expensive": 2.0,       # P/B > 2.0 es caro
+    
+    # Debt/Equity para BANCOS (muy diferente a industriales)
+    # Los bancos operan normalmente con D/E de 8-15x
+    "de_very_conservative": 5.0,   # <5x muy conservador (excelente)
+    "de_conservative": 10.0,       # 5-10x conservador (bueno)
+    "de_normal": 15.0,             # 10-15x normal/típico
+    # >15x = elevado
+    
+    # Capitalización
+    "equity_to_assets_solid": 0.06,  # >6% es sólido para banco
+    "equity_to_assets_good": 0.04,   # >4% es aceptable
+    
+    # Dividendos
+    "dividend_yield_good": 0.025,    # >2.5% es buen dividendo
+    "payout_sustainable": 0.60,      # <60% payout es sostenible
+}
+
+
+def is_financial_sector(sector: str) -> bool:
+    """
+    Detecta si un sector es financiero (bancos, seguros, asset management).
+    
+    Args:
+        sector: Nombre del sector (puede venir de Yahoo Finance o del mapeo interno)
+        
+    Returns:
+        True si es sector financiero
+    """
+    if not sector:
+        return False
+    sector_lower = sector.lower().strip()
+    
+    # Verificar coincidencia directa
+    if sector_lower in FINANCIAL_SECTORS:
+        return True
+    
+    # Verificar si contiene palabras clave
+    financial_keywords = ["bank", "financ", "insurance", "asset manage", "capital market"]
+    return any(kw in sector_lower for kw in financial_keywords)
+
 def altman_z_score(
     working_capital: Optional[float],
     total_assets: Optional[float],
@@ -125,6 +197,202 @@ def altman_z_score(
     except Exception as e:
         # Log para debug pero no exponer detalles internos
         return None, "N/A", "Error inesperado en cálculo"
+
+
+def financial_health_score(
+    roa: Optional[float],
+    roe: Optional[float],
+    total_equity: Optional[float],
+    total_assets: Optional[float],
+    book_value: Optional[float],
+    book_value_prior: Optional[float] = None,
+    dividend_yield: Optional[float] = None,
+    payout_ratio: Optional[float] = None,
+    debt_to_equity: Optional[float] = None  # Nuevo: D/E para bancos
+) -> Tuple[Optional[int], str, str, List[Dict[str, Any]]]:
+    """
+    Financial Health Score - Indicador de solidez para sector financiero (0-10).
+    
+    Reemplaza al Altman Z-Score para bancos, seguros y empresas financieras,
+    ya que el Z-Score no es aplicable a su modelo de negocio.
+    
+    CALIBRADO según estándares reales del sector bancario (2024):
+    - ROA promedio grandes bancos: 0.3-0.5%
+    - ROE objetivo típico: 8-12%
+    - D/E normal para bancos: 8-15x
+    
+    Componentes:
+        ROA (0-3 pts): >0.5% excelente, >0.3% bueno, >0.2% aceptable
+        ROE (0-3 pts): >12% excelente, >8% bueno, >6% aceptable
+        D/E Bancario (0-2 pts): <5x muy conservador, 5-10x conservador
+        Book Value Growth (0-1 pts): Creciendo YoY
+        Dividend (0-1 pts): Paga dividendo sostenible
+    
+    IMPORTANTE: Cuando faltan datos, se asigna puntuación NEUTRAL proporcional,
+    NO se penaliza. "No penalizar por examen no tomado."
+    
+    Returns:
+        Tuple[score, risk_level, interpretation, details]
+    """
+    score = 0
+    max_possible = 0  # Track máximo posible según datos disponibles
+    details = []
+    b = FINANCIAL_BENCHMARKS
+    
+    # 1. ROA (0-3 puntos) - Crítico para bancos
+    if roa is not None:
+        max_possible += 3
+        roa_pct = roa if roa < 1 else roa / 100  # Normalizar si viene como porcentaje
+        if roa_pct >= b["roa_excellent"]:
+            pts = 3
+            detail = f"ROA excelente ({roa_pct*100:.2f}% ≥ 0.5%)"
+            severity = "excellent"
+        elif roa_pct >= b["roa_good"]:
+            pts = 2
+            detail = f"ROA bueno ({roa_pct*100:.2f}% ≥ 0.3%)"
+            severity = "good"
+        elif roa_pct >= b["roa_acceptable"]:
+            pts = 1
+            detail = f"ROA aceptable ({roa_pct*100:.2f}% ≥ 0.2%)"
+            severity = "ok"
+        else:
+            pts = 0
+            detail = f"ROA bajo ({roa_pct*100:.2f}% < 0.2%)"
+            severity = "weak"
+        score += pts
+        details.append({"metric": "ROA Bancario", "points": pts, "max": 3, "detail": detail, "severity": severity})
+    
+    # 2. ROE (0-3 puntos)
+    if roe is not None:
+        max_possible += 3
+        roe_pct = roe if roe < 1 else roe / 100
+        if roe_pct >= b["roe_excellent"]:
+            pts = 3
+            detail = f"ROE excelente ({roe_pct*100:.1f}% ≥ 12%)"
+            severity = "excellent"
+        elif roe_pct >= b["roe_good"]:
+            pts = 2
+            detail = f"ROE bueno ({roe_pct*100:.1f}% ≥ 8%)"
+            severity = "good"
+        elif roe_pct >= b["roe_acceptable"]:
+            pts = 1
+            detail = f"ROE aceptable ({roe_pct*100:.1f}% ≥ 6%)"
+            severity = "ok"
+        else:
+            pts = 0
+            detail = f"ROE bajo ({roe_pct*100:.1f}% < 6%)"
+            severity = "weak"
+        score += pts
+        details.append({"metric": "ROE", "points": pts, "max": 3, "detail": detail, "severity": severity})
+    
+    # 3. D/E Bancario (0-2 puntos) - NUEVO: Interpretación correcta para bancos
+    # Los bancos operan normalmente con D/E de 8-15x, así que 2.6x es MUY conservador
+    if debt_to_equity is not None:
+        max_possible += 2
+        if debt_to_equity < b["de_very_conservative"]:
+            pts = 2
+            detail = f"D/E muy conservador ({debt_to_equity:.1f}x < 5x) - Excelente para banco"
+            severity = "excellent"
+        elif debt_to_equity < b["de_conservative"]:
+            pts = 2
+            detail = f"D/E conservador ({debt_to_equity:.1f}x < 10x) - Sólido"
+            severity = "good"
+        elif debt_to_equity < b["de_normal"]:
+            pts = 1
+            detail = f"D/E normal ({debt_to_equity:.1f}x) - Típico bancario"
+            severity = "ok"
+        else:
+            pts = 0
+            detail = f"D/E elevado ({debt_to_equity:.1f}x > 15x)"
+            severity = "moderate"
+        score += pts
+        details.append({"metric": "D/E Bancario", "points": pts, "max": 2, "detail": detail, "severity": severity})
+    elif total_equity is not None and total_assets is not None and total_assets > 0:
+        # Fallback: usar Equity/Assets si no hay D/E
+        max_possible += 2
+        equity_ratio = total_equity / total_assets
+        if equity_ratio >= b["equity_to_assets_solid"]:
+            pts = 2
+            detail = f"Capitalización sólida ({equity_ratio*100:.1f}% ≥ 6%)"
+            severity = "excellent"
+        elif equity_ratio >= b["equity_to_assets_good"]:
+            pts = 1
+            detail = f"Capitalización aceptable ({equity_ratio*100:.1f}%)"
+            severity = "ok"
+        else:
+            pts = 0
+            detail = f"Capitalización baja ({equity_ratio*100:.1f}%)"
+            severity = "weak"
+        score += pts
+        details.append({"metric": "Equity/Assets", "points": pts, "max": 2, "detail": detail, "severity": severity})
+    
+    # 4. Book Value Growth (0-1 punto)
+    if book_value is not None and book_value_prior is not None and book_value_prior > 0:
+        max_possible += 1
+        bv_growth = (book_value - book_value_prior) / book_value_prior
+        if bv_growth > 0:
+            pts = 1
+            detail = f"Book Value creciendo ({bv_growth*100:.1f}% YoY)"
+            severity = "excellent"
+        else:
+            pts = 0
+            detail = f"Book Value decreciendo ({bv_growth*100:.1f}% YoY)"
+            severity = "weak"
+        score += pts
+        details.append({"metric": "Book Value Growth", "points": pts, "max": 1, "detail": detail, "severity": severity})
+    
+    # 5. Dividend (0-1 punto) - Bancos suelen pagar dividendos
+    if dividend_yield is not None and dividend_yield > 0:
+        max_possible += 1
+        if payout_ratio is None or payout_ratio < b.get("payout_sustainable", 0.60):
+            pts = 1
+            detail = f"Dividendo sostenible ({dividend_yield*100:.2f}%)"
+            severity = "excellent"
+        else:
+            pts = 0
+            detail = f"Payout ratio alto ({payout_ratio*100:.0f}% > 60%)"
+            severity = "moderate"
+        score += pts
+        details.append({"metric": "Dividendo", "points": pts, "max": 1, "detail": detail, "severity": severity})
+    
+    # =====================================================
+    # MANEJO DE DATOS FALTANTES: Escalar a 10 puntos
+    # Si solo tenemos algunos datos, escalar proporcionalmente
+    # NO penalizar por datos que no tenemos
+    # =====================================================
+    if max_possible > 0:
+        # Escalar score a base 10
+        scaled_score = round((score / max_possible) * 10)
+    else:
+        # Sin datos: puntuación neutral (5/10)
+        scaled_score = 5
+        details.append({
+            "metric": "Datos Limitados", 
+            "points": 5, 
+            "max": 10, 
+            "detail": "Análisis limitado - métricas bancarias regulatorias no disponibles",
+            "severity": "neutral"
+        })
+    
+    # Determinar nivel de riesgo e interpretación
+    if scaled_score >= 8:
+        risk_level = "STRONG"
+        interpretation = "Excelente - Institución financiera muy sólida"
+    elif scaled_score >= 6:
+        risk_level = "GOOD"
+        interpretation = "Buena salud financiera"
+    elif scaled_score >= 4:
+        risk_level = "NEUTRAL"
+        interpretation = "Neutral - Dentro de parámetros normales"
+    else:
+        risk_level = "WEAK"
+        interpretation = "Por debajo del promedio sectorial"
+    
+    # Agregar nota si el análisis es limitado
+    if max_possible < 6:
+        interpretation += " (análisis limitado por datos disponibles)"
+    
+    return scaled_score, risk_level, interpretation, details
 
 
 def piotroski_f_score(
@@ -860,6 +1128,7 @@ SECTOR_THRESHOLDS = {
         pe_overvalued_mult=1.25,
         roe_high=0.12,  # Bancos: ROE más bajo es normal
         roe_low=0.06,
+        roa_low=0.003,  # Bancos: ROA 0.3% es bueno (promedio sector 0.3-0.5%)
         debt_equity_high=10.0,  # Los ratios de deuda no aplican igual
         operating_margin_low=0.20,
         net_margin_low=0.15,
@@ -2330,12 +2599,22 @@ def profitability_flags(
             warning_reasons.append(f"ROE ({roe_value:.1%}) por debajo del mínimo ({t.roe_low:.0%})")
         # Zona neutral: entre roe_low y roe_high - no genera ni positivo ni negativo
 
-    # ROA: umbral bajo absoluto (3% es crítico para cualquier sector)
+    # ROA: usa umbral sectorial (para financieras es ~0.3%, para industriales ~3%)
     if roa_value is not None:
         if roa_value < t.roa_low:
-            warning_reasons.append(f"ROA ({roa_value:.1%}) < {t.roa_low:.0%}")
-        elif roa_value > 0.08:  # 8% ROA es muy bueno en cualquier sector
-            positive_reasons.append(f"ROA sólido ({roa_value:.1%})")
+            # Formato adaptativo: si el umbral es muy bajo (bancos), mostrar decimales
+            if t.roa_low < 0.01:
+                warning_reasons.append(f"ROA ({roa_value:.2%}) < {t.roa_low:.1%}")
+            else:
+                warning_reasons.append(f"ROA ({roa_value:.1%}) < {t.roa_low:.0%}")
+        else:
+            # Umbral positivo también adaptativo
+            roa_good = t.roa_low * 2  # 2x el mínimo es bueno
+            if roa_value >= roa_good:
+                if t.roa_low < 0.01:
+                    positive_reasons.append(f"ROA sólido para el sector ({roa_value:.2%})")
+                else:
+                    positive_reasons.append(f"ROA sólido ({roa_value:.1%})")
 
     # Operating Margin: usa umbral sectorial (1.5x el mínimo = muy bueno)
     if operating_margin_value is not None:
@@ -2572,11 +2851,13 @@ def get_sector_specific_adjustments(sector: str) -> Dict[str, Any]:
 
 def aggregate_alerts(ratio_values: Dict[str, Optional[float]],
                      contextual_values: Dict[str, Optional[float]],
-                     sector: str = "default") -> Dict[str, Any]:
+                     sector: str = "default",
+                     real_sector: str = "") -> Dict[str, Any]:
     """Genera un reporte completo de alertas a partir de ratios calculados.
     
-    VERSIÓN 3.0 - INSTITUTIONAL GRADE con:
-    - Altman Z-Score para riesgo de bancarrota
+    VERSIÓN 3.1 - MODELO ADAPTATIVO con:
+    - Altman Z-Score para riesgo de bancarrota (empresas no financieras)
+    - Financial Health Score para sector financiero (bancos, seguros, etc.)
     - Piotroski F-Score para fortaleza financiera
     - PEG override para empresas growth
     - Scoring simétrico (+20/-20)
@@ -2585,7 +2866,8 @@ def aggregate_alerts(ratio_values: Dict[str, Optional[float]],
     Args:
         ratio_values: Dict con ratios calculados (pe, p_fcf, roe, etc.)
         contextual_values: Dict con valores de contexto (sector_pe, pe_5y_avg, etc.)
-        sector: Sector de la empresa para usar umbrales específicos
+        sector: Sector mapeado para umbrales (ej: "financials", "technology")
+        real_sector: Sector real de Yahoo Finance (ej: "Financial Services")
     
     Returns:
         Dict con alertas categorizadas, score general y recomendación
@@ -2594,20 +2876,27 @@ def aggregate_alerts(ratio_values: Dict[str, Optional[float]],
     sector_adjustments = get_sector_specific_adjustments(sector)
     is_growth_company = detect_growth_company(ratio_values, contextual_values)
     
+    # v3.1: Detectar si es sector financiero
+    is_financial = is_financial_sector(real_sector) or is_financial_sector(sector)
+    
     # =========================================
     # NUEVAS MÉTRICAS INSTITUCIONALES
     # =========================================
     
-    # Altman Z-Score (riesgo de bancarrota)
-    z_score_value, z_score_level, z_score_interpretation = altman_z_score(
-        working_capital=contextual_values.get("working_capital"),
-        total_assets=contextual_values.get("total_assets"),
-        retained_earnings=contextual_values.get("retained_earnings"),
-        ebit=contextual_values.get("ebit"),
-        market_value_equity=contextual_values.get("market_cap"),
-        total_liabilities=contextual_values.get("total_liabilities"),
-        sales=contextual_values.get("revenue")
-    )
+    # Altman Z-Score (riesgo de bancarrota) - Solo para NO financieras
+    if not is_financial:
+        z_score_value, z_score_level, z_score_interpretation = altman_z_score(
+            working_capital=contextual_values.get("working_capital"),
+            total_assets=contextual_values.get("total_assets"),
+            retained_earnings=contextual_values.get("retained_earnings"),
+            ebit=contextual_values.get("ebit"),
+            market_value_equity=contextual_values.get("market_cap"),
+            total_liabilities=contextual_values.get("total_liabilities"),
+            sales=contextual_values.get("revenue")
+        )
+    else:
+        # Para financieras, Z-Score no aplica
+        z_score_value, z_score_level, z_score_interpretation = None, "N/A", "No aplica a sector financiero"
     
     # Piotroski F-Score (fortaleza financiera)
     f_score_value, f_score_details, f_score_interpretation = piotroski_f_score(
@@ -2958,7 +3247,8 @@ def aggregate_alerts(ratio_values: Dict[str, Optional[float]],
         z_score_value=z_score_value,
         z_score_level=z_score_level,
         f_score_value=f_score_value,
-        sector_key=sector  # Usar el parámetro sector de la función
+        sector_key=sector,
+        real_sector=real_sector  # v3.1: Pasar sector real para modelo adaptativo
     )
 
     return {
@@ -2989,6 +3279,9 @@ def aggregate_alerts(ratio_values: Dict[str, Optional[float]],
         },
         "wacc": wacc,
         "justified_pe": justified_pe,
+        # v3.1: Información de modelo adaptativo
+        "is_financial_sector": is_financial,
+        "financial_health": score_v2_result.get("financial_health"),  # Solo para financieras
         # Flags tradicionales
         "valuation": val_flags,
         "leverage": lev_flags,
@@ -3069,6 +3362,7 @@ def calculate_all_ratios(financial_data: Dict) -> Dict[str, Optional[float]]:
         "peg": peg_ratio(price_earnings(d.get("price"), eps_val), d.get("earnings_growth_rate")),
         "fcf_yield": free_cash_flow_yield(fcf_val, mkt_cap),
         "dividend_yield": dividend_yield(d.get("dividend_per_share"), d.get("price")),
+        "payout_ratio": dividend_payout_ratio(d.get("dividends_paid"), d.get("net_income")),
         "earnings_yield": earnings_yield(eps_val, d.get("price")),
         
         # Liquidez
@@ -3327,6 +3621,164 @@ def score_solidez_financiera(
         "base": 10,
         "adjustments": adjustments,
         "total_adjustment": final_score - 10
+    }
+
+
+def score_solidez_financiera_financial(
+    financial_health: Optional[int],
+    financial_health_level: str,
+    financial_health_details: List[Dict[str, Any]],
+    roe: Optional[float],
+    roa: Optional[float],
+    price_to_book: Optional[float],
+    debt_to_equity: Optional[float] = None  # Nuevo: D/E para interpretar correctamente
+) -> Dict[str, Any]:
+    """
+    Categoría 1 ADAPTADA: Solidez Financiera para Sector Financiero (20 pts máximo)
+    
+    Reemplaza la evaluación tradicional (Z-Score, Current Ratio, D/E) por métricas
+    relevantes para bancos, seguros y empresas financieras.
+    
+    PRINCIPIO CLAVE: No penalizar agresivamente cuando faltan datos.
+    "No reprobar a un estudiante en un examen que nunca tomó."
+    
+    NOTA CONSERVADORA: Sin acceso a métricas regulatorias (CET1, Tier 1, NPL),
+    el máximo es 18/20, no 20/20. Los 2 puntos restantes requieren datos 
+    regulatorios que Yahoo Finance no proporciona.
+    
+    Componentes:
+        - Financial Health Score (0-10) → mapeo proporcional
+        - D/E Bancario contextualizado → bonus si es conservador
+        - P/B → ajuste por valoración
+    """
+    adjustments = []
+    b = FINANCIAL_BENCHMARKS
+    has_regulatory_data = False  # Yahoo Finance no tiene CET1, Tier 1, etc.
+    
+    # =====================================================
+    # ESTRATEGIA CONSERVADORA:
+    # Sin métricas regulatorias, máximo = 18/20
+    # Los 2 puntos restantes requieren CET1, Tier 1, NPL, etc.
+    # =====================================================
+    MAX_WITHOUT_REGULATORY = 18
+    
+    if financial_health is not None:
+        # Mapeo lineal: FHS 0-10 → Solidez 4-18 (conservador)
+        # Fórmula: solidez = 4 + (financial_health * 1.4)
+        base_score = 4 + (financial_health * 1.4)
+        
+        if financial_health_level == "STRONG":
+            sev = "excellent"
+            reason = f"Solidez bancaria excelente ({financial_health}/10)"
+        elif financial_health_level == "GOOD":
+            sev = "good"
+            reason = f"Buena salud financiera ({financial_health}/10)"
+        elif financial_health_level == "NEUTRAL":
+            sev = "ok"
+            reason = f"Salud financiera neutral ({financial_health}/10)"
+        else:  # WEAK
+            sev = "moderate"  # NO severe - no penalizar excesivamente
+            reason = f"Por debajo del promedio ({financial_health}/10)"
+        
+        adjustments.append({
+            "metric": "Solidez Bancaria", 
+            "value": f"{financial_health}/10", 
+            "adjustment": round(base_score - 10),  # Relativo a base 10
+            "reason": reason, 
+            "severity": sev,
+            "details": financial_health_details
+        })
+    else:
+        # Sin datos: puntuación NEUTRAL (10/20), no penalizar
+        base_score = 10
+        adjustments.append({
+            "metric": "Datos Limitados",
+            "value": "N/A",
+            "adjustment": 0,
+            "reason": "Métricas bancarias regulatorias no disponibles - score neutral asignado",
+            "severity": "neutral"
+        })
+    
+    # =====================================================
+    # BONUS: D/E Bancario muy conservador (hasta +3 pts)
+    # Los bancos operan normalmente con D/E 8-15x
+    # Un D/E de 2.6x es EXCEPCIONALMENTE conservador
+    # =====================================================
+    if debt_to_equity is not None:
+        if debt_to_equity < b["de_very_conservative"]:  # <5x
+            bonus = 3
+            sev = "excellent"
+            reason = f"D/E muy conservador ({debt_to_equity:.1f}x < 5x) - Excepcional para banco"
+        elif debt_to_equity < b["de_conservative"]:  # 5-10x
+            bonus = 2
+            sev = "good"
+            reason = f"D/E conservador ({debt_to_equity:.1f}x) - Sólido para banco"
+        elif debt_to_equity < b["de_normal"]:  # 10-15x
+            bonus = 0
+            sev = "ok"
+            reason = f"D/E normal ({debt_to_equity:.1f}x) - Típico bancario"
+        else:  # >15x
+            bonus = -2
+            sev = "moderate"
+            reason = f"D/E elevado ({debt_to_equity:.1f}x > 15x)"
+        
+        base_score += bonus
+        adjustments.append({
+            "metric": "D/E Bancario",
+            "value": f"{debt_to_equity:.1f}x",
+            "adjustment": bonus,
+            "reason": reason,
+            "severity": sev
+        })
+    
+    # =====================================================
+    # P/B: Ajuste por valoración (hasta ±2 pts)
+    # =====================================================
+    if price_to_book is not None:
+        if price_to_book < b["pb_cheap"]:  # <0.8x
+            adj = 2
+            sev = "excellent"
+            reason = f"P/B atractivo ({price_to_book:.2f}x) - Bajo valor en libros"
+        elif price_to_book <= b["pb_fair"]:  # 0.8-1.2x
+            adj = 1
+            sev = "good"
+            reason = f"P/B justo ({price_to_book:.2f}x)"
+        elif price_to_book <= b["pb_expensive"]:  # 1.2-2.0x
+            adj = 0
+            sev = "ok"
+            reason = f"P/B elevado ({price_to_book:.2f}x)"
+        else:  # >2.0x
+            adj = -1
+            sev = "moderate"
+            reason = f"P/B muy alto ({price_to_book:.2f}x > 2x)"
+        
+        base_score += adj
+        adjustments.append({
+            "metric": "Price/Book",
+            "value": f"{price_to_book:.2f}x",
+            "adjustment": adj,
+            "reason": reason,
+            "severity": sev
+        })
+    
+    # Aplicar cap conservador: sin métricas regulatorias, máximo 18/20
+    if not has_regulatory_data:
+        final_score = max(0, min(MAX_WITHOUT_REGULATORY, round(base_score)))
+        methodology_note = "Evaluación adaptada para sector bancario (máx 18/20 sin datos regulatorios CET1/Tier1)"
+    else:
+        final_score = max(0, min(20, round(base_score)))
+        methodology_note = "Evaluación completa con métricas regulatorias"
+    
+    return {
+        "category": "Solidez Financiera",
+        "emoji": "🏦",
+        "score": final_score,
+        "max_score": 20,
+        "base": 10,
+        "adjustments": adjustments,
+        "total_adjustment": final_score - 10,
+        "is_financial_sector": True,
+        "methodology_note": methodology_note
     }
 
 
@@ -3922,16 +4374,19 @@ def calculate_score_v2(
     z_score_value: Optional[float] = None,
     z_score_level: str = "N/A",
     f_score_value: Optional[int] = None,
-    sector_key: str = "default"
+    sector_key: str = "default",
+    real_sector: str = ""  # Sector real de Yahoo Finance
 ) -> Dict[str, Any]:
     """
-    Sistema de Scoring v2.2 - Adaptativo Growth/Value
+    Sistema de Scoring v2.3 - Adaptativo Growth/Value + Sector Financiero
     
     Calcula score total basado en 5 categorías × 20 pts = 100 máximo
     
-    v2.2: Ahora la valoración considera la calidad del crecimiento para
-    ajustar penalizaciones. Empresas growth de alta calidad reciben
-    evaluación más justa.
+    v2.3: MODELO ADAPTATIVO para sector financiero
+    - Detecta si es banco/seguro/asset management
+    - Usa Financial Health Score en lugar de Altman Z-Score
+    - Ajusta benchmarks de ROA/ROE para estándares bancarios
+    - Oculta ratios que no aplican (Current Ratio, D/E tradicional)
     
     Returns:
         Dict con score total, desglose por categoría, y explicaciones
@@ -3943,15 +4398,55 @@ def calculate_score_v2(
     revenue_growth = contextual_values.get("revenue_cagr_3y")
     is_growth = revenue_growth is not None and revenue_growth > 0.15
     
-    # Calcular cada categoría
-    solidez = score_solidez_financiera(
-        z_score=z_score_value,
-        z_score_level=z_score_level,
-        current_ratio=ratio_values.get("current_ratio"),
-        debt_to_equity=ratio_values.get("debt_to_equity"),
-        interest_coverage=ratio_values.get("interest_coverage"),
-        sector_de_threshold=thresholds.debt_equity_high
-    )
+    # =====================================================
+    # v2.3: DETECCIÓN DE SECTOR FINANCIERO
+    # =====================================================
+    is_financial = is_financial_sector(real_sector) or is_financial_sector(sector_key)
+    financial_health_data = None
+    
+    if is_financial:
+        # Calcular Financial Health Score (reemplaza Z-Score)
+        # v3.2: Ahora incluye D/E bancario para interpretación correcta
+        fh_score, fh_level, fh_interpretation, fh_details = financial_health_score(
+            roa=ratio_values.get("roa"),
+            roe=ratio_values.get("roe"),
+            total_equity=contextual_values.get("total_equity"),
+            total_assets=contextual_values.get("total_assets"),
+            book_value=contextual_values.get("book_value"),
+            book_value_prior=contextual_values.get("book_value_prior"),
+            dividend_yield=ratio_values.get("dividend_yield"),
+            payout_ratio=ratio_values.get("payout_ratio"),
+            debt_to_equity=ratio_values.get("debt_to_equity")  # v3.2: D/E bancario
+        )
+        
+        financial_health_data = {
+            "score": fh_score,
+            "level": fh_level,
+            "interpretation": fh_interpretation,
+            "details": fh_details
+        }
+        
+        # Usar versión adaptada de solidez para financieras
+        # v3.2: Pasar D/E para interpretación correcta (2.6x es conservador para banco)
+        solidez = score_solidez_financiera_financial(
+            financial_health=fh_score,
+            financial_health_level=fh_level,
+            financial_health_details=fh_details,
+            roe=ratio_values.get("roe"),
+            roa=ratio_values.get("roa"),
+            price_to_book=ratio_values.get("pb"),
+            debt_to_equity=ratio_values.get("debt_to_equity")  # v3.2: D/E bancario
+        )
+    else:
+        # Versión estándar para empresas no financieras
+        solidez = score_solidez_financiera(
+            z_score=z_score_value,
+            z_score_level=z_score_level,
+            current_ratio=ratio_values.get("current_ratio"),
+            debt_to_equity=ratio_values.get("debt_to_equity"),
+            interest_coverage=ratio_values.get("interest_coverage"),
+            sector_de_threshold=thresholds.debt_equity_high
+        )
     
     rentabilidad = score_rentabilidad(
         roe=ratio_values.get("roe"),
@@ -4021,7 +4516,7 @@ def calculate_score_v2(
     company_type = valoracion.get("company_type", "blend")
     growth_quality = valoracion.get("growth_quality_score", 50)
     
-    return {
+    result = {
         "score": total_score,
         "max_score": 100,
         "level": level,
@@ -4037,8 +4532,13 @@ def calculate_score_v2(
         "is_growth_company": is_growth,
         # Nuevos campos v2.2
         "company_type": company_type,
-        "growth_quality_score": growth_quality
+        "growth_quality_score": growth_quality,
+        # v2.3: Campos para sector financiero
+        "is_financial_sector": is_financial,
+        "financial_health": financial_health_data
     }
+    
+    return result
 
 
 # =============================================================================
