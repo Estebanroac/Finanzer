@@ -5,30 +5,21 @@ Módulo para obtener datos financieros de empresas desde múltiples fuentes.
 Soporta Yahoo Finance (gratuito) y Financial Modeling Prep (freemium).
 
 Autor: Esteban
-Versión: 2.9 - Robustez mejorada con timeouts y logging específico
+Versión: 2.2 - Rate limiting y retry con backoff exponencial
 """
 
 import os
 import time
+import random
 import logging
-from typing import Optional, Dict, List, Any, Callable
+from typing import Optional, Dict, List, Any
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError as FuturesTimeoutError
 import hashlib
 import json
 
-# Configurar logging específico para este módulo
+# Configurar logging
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
-# Handler para consola si no hay handlers configurados
-if not logger.handlers:
-    handler = logging.StreamHandler()
-    handler.setFormatter(logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    ))
-    logger.addHandler(handler)
 
 try:
     import pandas as pd
@@ -39,8 +30,17 @@ except ImportError:
 try:
     import yfinance as yf
     YFINANCE_AVAILABLE = True
+    # Intentar importar la excepción de rate limit
+    try:
+        from yfinance.exceptions import YFRateLimitError
+        YF_RATE_LIMIT_AVAILABLE = True
+    except ImportError:
+        YF_RATE_LIMIT_AVAILABLE = False
+        YFRateLimitError = Exception  # Fallback
 except ImportError:
     YFINANCE_AVAILABLE = False
+    YF_RATE_LIMIT_AVAILABLE = False
+    YFRateLimitError = Exception
 
 try:
     import requests
@@ -50,41 +50,49 @@ except ImportError:
 
 
 # =========================
-# CONSTANTES DE CONFIGURACIÓN
+# CONSTANTES DE RETRY
 # =========================
-
-# Timeouts para operaciones de red (en segundos)
-API_TIMEOUT_SECONDS = 15          # Timeout para llamadas API individuales
-PARALLEL_TASK_TIMEOUT = 20        # Timeout para tareas paralelas
-MAX_RETRIES = 2                   # Reintentos máximos por operación
-
-# Configuración del ThreadPoolExecutor
-THREAD_POOL_WORKERS = 4           # Número de workers paralelos
+MAX_RETRIES = 3
+BASE_DELAY = 2  # segundos
+MAX_DELAY = 30  # segundos máximo de espera
 
 
-# =========================
-# EXCEPCIONES PERSONALIZADAS
-# =========================
-
-class DataFetchError(Exception):
-    """Error base para problemas de obtención de datos."""
-    pass
-
-class APITimeoutError(DataFetchError):
-    """Timeout al llamar a una API externa."""
-    pass
-
-class InvalidSymbolError(DataFetchError):
-    """Símbolo de ticker inválido o no encontrado."""
-    pass
-
-class RateLimitError(DataFetchError):
-    """Se excedió el límite de llamadas a la API."""
-    pass
-
-class DataValidationError(DataFetchError):
-    """Los datos obtenidos no pasan validación."""
-    pass
+def retry_with_backoff(func):
+    """
+    Decorador que implementa retry con backoff exponencial.
+    Especialmente útil para manejar rate limiting de Yahoo Finance.
+    """
+    def wrapper(*args, **kwargs):
+        last_exception = None
+        for attempt in range(MAX_RETRIES):
+            try:
+                return func(*args, **kwargs)
+            except Exception as e:
+                last_exception = e
+                error_str = str(e).lower()
+                
+                # Detectar rate limiting (varias formas)
+                is_rate_limit = (
+                    'rate' in error_str and 'limit' in error_str or
+                    'too many requests' in error_str or
+                    '429' in error_str or
+                    (YF_RATE_LIMIT_AVAILABLE and isinstance(e, YFRateLimitError))
+                )
+                
+                if is_rate_limit and attempt < MAX_RETRIES - 1:
+                    # Backoff exponencial con jitter
+                    delay = min(BASE_DELAY * (2 ** attempt) + random.uniform(0, 1), MAX_DELAY)
+                    logger.warning(f"Rate limited. Reintentando en {delay:.1f}s (intento {attempt + 1}/{MAX_RETRIES})")
+                    time.sleep(delay)
+                elif attempt < MAX_RETRIES - 1:
+                    # Para otros errores, esperar menos
+                    time.sleep(1)
+                else:
+                    logger.error(f"Falló después de {MAX_RETRIES} intentos: {e}")
+                    raise
+        
+        raise last_exception
+    return wrapper
 
 
 # =========================
@@ -293,7 +301,7 @@ class YahooFinanceFetcher:
             return "stable"
     
     def get_company_profile(self, symbol: str) -> Optional[CompanyProfile]:
-        """Obtiene el perfil de la empresa (con caché)."""
+        """Obtiene el perfil de la empresa (con caché y retry)."""
         cache_key = _data_cache._make_key("profile", symbol.upper())
         
         # Verificar caché
@@ -301,44 +309,53 @@ class YahooFinanceFetcher:
         if cached:
             return cached
         
-        try:
-            ticker = yf.Ticker(symbol)
-            info = ticker.info
-            
-            # Validar que obtuvimos datos válidos
-            if not info or info.get("regularMarketPrice") is None:
-                logger.warning(f"Símbolo '{symbol}' no encontrado o sin datos de mercado")
-                return None
-            
-            profile = CompanyProfile(
-                symbol=symbol.upper(),
-                name=info.get("longName", info.get("shortName", symbol)),
-                sector=info.get("sector", "Unknown"),
-                industry=info.get("industry", "Unknown"),
-                country=info.get("country", "Unknown"),
-                currency=info.get("currency", "USD"),
-                exchange=info.get("exchange", "Unknown"),
-                market_cap=info.get("marketCap"),
-                description=info.get("longBusinessSummary", "")[:500],
-            )
-            
-            # Guardar en caché (30 min para perfiles, cambian poco)
-            _data_cache.set(cache_key, profile, ttl_minutes=30)
-            logger.debug(f"Perfil de {symbol} obtenido correctamente")
-            return profile
+        last_error = None
+        for attempt in range(MAX_RETRIES):
+            try:
+                ticker = yf.Ticker(symbol)
+                info = ticker.info
+                
+                profile = CompanyProfile(
+                    symbol=symbol.upper(),
+                    name=info.get("longName", info.get("shortName", symbol)),
+                    sector=info.get("sector", "Unknown"),
+                    industry=info.get("industry", "Unknown"),
+                    country=info.get("country", "Unknown"),
+                    currency=info.get("currency", "USD"),
+                    exchange=info.get("exchange", "Unknown"),
+                    market_cap=info.get("marketCap"),
+                    description=info.get("longBusinessSummary", "")[:500],
+                )
+                
+                # Guardar en caché (30 min para perfiles, cambian poco)
+                _data_cache.set(cache_key, profile, ttl_minutes=30)
+                return profile
+                
+            except Exception as e:
+                last_error = e
+                error_str = str(e).lower()
+                
+                # Detectar rate limiting
+                is_rate_limit = (
+                    'rate' in error_str and 'limit' in error_str or
+                    'too many requests' in error_str or
+                    '429' in error_str or
+                    (YF_RATE_LIMIT_AVAILABLE and isinstance(e, YFRateLimitError))
+                )
+                
+                if is_rate_limit and attempt < MAX_RETRIES - 1:
+                    delay = min(BASE_DELAY * (2 ** attempt) + random.uniform(0, 1), MAX_DELAY)
+                    logger.warning(f"Rate limited obteniendo perfil de {symbol}. Reintentando en {delay:.1f}s")
+                    time.sleep(delay)
+                else:
+                    logger.error(f"Error inesperado obteniendo perfil de {symbol}: {e}")
+                    if attempt == MAX_RETRIES - 1:
+                        return None
         
-        except KeyError as e:
-            logger.warning(f"Campo faltante en datos de {symbol}: {e}")
-            return None
-        except (ConnectionError, TimeoutError) as e:
-            logger.error(f"Error de conexión obteniendo perfil de {symbol}: {e}")
-            raise APITimeoutError(f"Timeout obteniendo perfil de {symbol}") from e
-        except Exception as e:
-            logger.error(f"Error inesperado obteniendo perfil de {symbol}: {type(e).__name__}: {e}")
-            return None
+        return None
     
     def get_financial_data(self, symbol: str) -> Optional[FinancialStatements]:
-        """Obtiene todos los datos financieros de una empresa (con caché)."""
+        """Obtiene todos los datos financieros de una empresa (con caché y retry)."""
         cache_key = _data_cache._make_key("financials", symbol.upper())
         
         # Verificar caché
@@ -346,190 +363,211 @@ class YahooFinanceFetcher:
         if cached:
             return cached
         
-        try:
-            ticker = yf.Ticker(symbol)
-            info = ticker.info
-            
-            # Obtener estados financieros
-            income_stmt = ticker.financials
-            balance_sheet = ticker.balance_sheet
-            cash_flow = ticker.cashflow
-            
-            # Extraer el año más reciente (primera columna)
-            def get_latest(df, key):
-                try:
-                    if df is not None and not df.empty and key in df.index:
-                        val = df.loc[key].iloc[0]
-                        return float(val) if val is not None and str(val) != 'nan' else None
-                except (KeyError, IndexError, TypeError, ValueError):
-                    pass
-                return None
-            
-            # Income Statement
-            revenue = get_latest(income_stmt, "Total Revenue")
-            gross_profit = get_latest(income_stmt, "Gross Profit")
-            operating_income = get_latest(income_stmt, "Operating Income")
-            net_income = get_latest(income_stmt, "Net Income")
-            ebitda_val = get_latest(income_stmt, "EBITDA")
-            interest_expense = get_latest(income_stmt, "Interest Expense")
-            
-            # Balance Sheet
-            total_assets = get_latest(balance_sheet, "Total Assets")
-            current_assets = get_latest(balance_sheet, "Current Assets")
-            cash = get_latest(balance_sheet, "Cash And Cash Equivalents")
-            if cash is None:
-                cash = get_latest(balance_sheet, "Cash Cash Equivalents And Short Term Investments")
-            inventories = get_latest(balance_sheet, "Inventory")
-            total_liabilities = get_latest(balance_sheet, "Total Liabilities Net Minority Interest")
-            current_liabilities = get_latest(balance_sheet, "Current Liabilities")
-            total_debt = get_latest(balance_sheet, "Total Debt")
-            long_term_debt = get_latest(balance_sheet, "Long Term Debt")
-            total_equity = get_latest(balance_sheet, "Stockholders Equity")
-            if total_equity is None:
-                total_equity = get_latest(balance_sheet, "Total Equity Gross Minority Interest")
-            retained_earnings = get_latest(balance_sheet, "Retained Earnings")
-            
-            # Cash Flow
-            operating_cf = get_latest(cash_flow, "Operating Cash Flow")
-            capex = get_latest(cash_flow, "Capital Expenditure")
-            if capex is not None:
-                capex = abs(capex)  # CapEx suele venir negativo
-            fcf = get_latest(cash_flow, "Free Cash Flow")
-            dividends = get_latest(cash_flow, "Cash Dividends Paid")
-            
-            # Depreciation
-            depreciation = get_latest(cash_flow, "Depreciation And Amortization")
-            
-            # Datos de info
-            shares = info.get("sharesOutstanding")
-            price = info.get("currentPrice") or info.get("regularMarketPrice")
-            
-            # Calcular FCF si no está disponible
-            if fcf is None and operating_cf is not None and capex is not None:
-                fcf = operating_cf - capex
-            
-            # Growth rates
+        # Helper function fuera del loop
+        def get_latest(df, key):
             try:
-                if income_stmt is not None and len(income_stmt.columns) >= 2:
-                    rev_current = income_stmt.loc["Total Revenue"].iloc[0]
-                    rev_previous = income_stmt.loc["Total Revenue"].iloc[1]
-                    if rev_previous and rev_previous != 0:
-                        revenue_growth = (rev_current - rev_previous) / abs(rev_previous)
-                    else:
-                        revenue_growth = None
-                else:
-                    revenue_growth = None
-            except (KeyError, IndexError, TypeError, ZeroDivisionError):
-                revenue_growth = None
-            
-            result = FinancialStatements(
+                if df is not None and not df.empty and key in df.index:
+                    val = df.loc[key].iloc[0]
+                    return float(val) if val is not None and str(val) != 'nan' else None
+            except:
+                pass
+            return None
+        
+        last_error = None
+        for attempt in range(MAX_RETRIES):
+            try:
+                ticker = yf.Ticker(symbol)
+                info = ticker.info
+                
+                # Obtener estados financieros
+                income_stmt = ticker.financials
+                balance_sheet = ticker.balance_sheet
+                cash_flow = ticker.cashflow
+                
                 # Income Statement
-                revenue=revenue,
-                gross_profit=gross_profit,
-                operating_income=operating_income,
-                net_income=net_income,
-                ebitda=ebitda_val,
-                interest_expense=abs(interest_expense) if interest_expense else None,
-                depreciation=depreciation,
+                revenue = get_latest(income_stmt, "Total Revenue")
+                gross_profit = get_latest(income_stmt, "Gross Profit")
+                operating_income = get_latest(income_stmt, "Operating Income")
+                net_income = get_latest(income_stmt, "Net Income")
+                ebitda_val = get_latest(income_stmt, "EBITDA")
+                interest_expense = get_latest(income_stmt, "Interest Expense")
                 
                 # Balance Sheet
-                total_assets=total_assets,
-                current_assets=current_assets,
-                cash=cash,
-                inventories=inventories,
-                total_liabilities=total_liabilities,
-                current_liabilities=current_liabilities,
-                total_debt=total_debt,
-                long_term_debt=long_term_debt,
-                total_equity=total_equity,
-                retained_earnings=retained_earnings,
+                total_assets = get_latest(balance_sheet, "Total Assets")
+                current_assets = get_latest(balance_sheet, "Current Assets")
+                cash = get_latest(balance_sheet, "Cash And Cash Equivalents")
+                if cash is None:
+                    cash = get_latest(balance_sheet, "Cash Cash Equivalents And Short Term Investments")
+                inventories = get_latest(balance_sheet, "Inventory")
+                total_liabilities = get_latest(balance_sheet, "Total Liabilities Net Minority Interest")
+                current_liabilities = get_latest(balance_sheet, "Current Liabilities")
+                total_debt = get_latest(balance_sheet, "Total Debt")
+                long_term_debt = get_latest(balance_sheet, "Long Term Debt")
+                total_equity = get_latest(balance_sheet, "Stockholders Equity")
+                if total_equity is None:
+                    total_equity = get_latest(balance_sheet, "Total Equity Gross Minority Interest")
+                retained_earnings = get_latest(balance_sheet, "Retained Earnings")
                 
                 # Cash Flow
-                operating_cash_flow=operating_cf,
-                capex=capex,
-                free_cash_flow=fcf,
-                dividends_paid=abs(dividends) if dividends else None,
+                operating_cf = get_latest(cash_flow, "Operating Cash Flow")
+                capex = get_latest(cash_flow, "Capital Expenditure")
+                if capex is not None:
+                    capex = abs(capex)  # CapEx suele venir negativo
+                fcf = get_latest(cash_flow, "Free Cash Flow")
+                dividends = get_latest(cash_flow, "Cash Dividends Paid")
                 
-                # Per Share & Market
-                shares_outstanding=shares,
-                eps=info.get("trailingEps"),
-                forward_eps=info.get("forwardEps"),
-                dividend_per_share=info.get("dividendRate"),
-                book_value_per_share=info.get("bookValue"),
-                price=price,
-                price_52w_high=info.get("fiftyTwoWeekHigh"),
-                price_52w_low=info.get("fiftyTwoWeekLow"),
-                beta=info.get("beta"),
+                # Depreciation
+                depreciation = get_latest(cash_flow, "Depreciation And Amortization")
                 
-                # Growth
-                revenue_growth_yoy=revenue_growth,
-                earnings_growth_rate=info.get("earningsGrowth"),
+                # Datos de info
+                shares = info.get("sharesOutstanding")
+                price = info.get("currentPrice") or info.get("regularMarketPrice")
                 
-                # Metadata
-                fiscal_year_end=info.get("lastFiscalYearEnd"),
-                last_updated=datetime.now().isoformat(),
-            )
-            
-            # Guardar en caché (10 min para datos financieros)
-            _data_cache.set(cache_key, result, ttl_minutes=10)
-            logger.debug(f"Datos financieros de {symbol} cacheados correctamente")
-            return result
+                # Calcular FCF si no está disponible
+                if fcf is None and operating_cf is not None and capex is not None:
+                    fcf = operating_cf - capex
+                
+                # Growth rates
+                try:
+                    if income_stmt is not None and len(income_stmt.columns) >= 2:
+                        rev_current = income_stmt.loc["Total Revenue"].iloc[0]
+                        rev_previous = income_stmt.loc["Total Revenue"].iloc[1]
+                        if rev_previous and rev_previous != 0:
+                            revenue_growth = (rev_current - rev_previous) / abs(rev_previous)
+                        else:
+                            revenue_growth = None
+                    else:
+                        revenue_growth = None
+                except:
+                    revenue_growth = None
+                
+                result = FinancialStatements(
+                    # Income Statement
+                    revenue=revenue,
+                    gross_profit=gross_profit,
+                    operating_income=operating_income,
+                    net_income=net_income,
+                    ebitda=ebitda_val,
+                    interest_expense=abs(interest_expense) if interest_expense else None,
+                    depreciation=depreciation,
+                    
+                    # Balance Sheet
+                    total_assets=total_assets,
+                    current_assets=current_assets,
+                    cash=cash,
+                    inventories=inventories,
+                    total_liabilities=total_liabilities,
+                    current_liabilities=current_liabilities,
+                    total_debt=total_debt,
+                    long_term_debt=long_term_debt,
+                    total_equity=total_equity,
+                    retained_earnings=retained_earnings,
+                    
+                    # Cash Flow
+                    operating_cash_flow=operating_cf,
+                    capex=capex,
+                    free_cash_flow=fcf,
+                    dividends_paid=abs(dividends) if dividends else None,
+                    
+                    # Per Share & Market
+                    shares_outstanding=shares,
+                    eps=info.get("trailingEps"),
+                    forward_eps=info.get("forwardEps"),
+                    dividend_per_share=info.get("dividendRate"),
+                    book_value_per_share=info.get("bookValue"),
+                    price=price,
+                    price_52w_high=info.get("fiftyTwoWeekHigh"),
+                    price_52w_low=info.get("fiftyTwoWeekLow"),
+                    beta=info.get("beta"),
+                    
+                    # Growth
+                    revenue_growth_yoy=revenue_growth,
+                    earnings_growth_rate=info.get("earningsGrowth"),
+                    
+                    # Metadata
+                    fiscal_year_end=info.get("lastFiscalYearEnd"),
+                    last_updated=datetime.now().isoformat(),
+                )
+                
+                # Guardar en caché (10 min para datos financieros)
+                _data_cache.set(cache_key, result, ttl_minutes=10)
+                return result
+                
+            except Exception as e:
+                last_error = e
+                error_str = str(e).lower()
+                
+                # Detectar rate limiting
+                is_rate_limit = (
+                    'rate' in error_str and 'limit' in error_str or
+                    'too many requests' in error_str or
+                    '429' in error_str or
+                    (YF_RATE_LIMIT_AVAILABLE and isinstance(e, YFRateLimitError))
+                )
+                
+                if is_rate_limit and attempt < MAX_RETRIES - 1:
+                    delay = min(BASE_DELAY * (2 ** attempt) + random.uniform(0, 1), MAX_DELAY)
+                    logger.warning(f"Rate limited obteniendo datos de {symbol}. Reintentando en {delay:.1f}s (intento {attempt + 1}/{MAX_RETRIES})")
+                    time.sleep(delay)
+                else:
+                    logger.error(f"Error obteniendo datos financieros de {symbol}: {e}")
+                    import traceback
+                    traceback.print_exc()
+                    if attempt == MAX_RETRIES - 1:
+                        return None
         
-        except KeyError as e:
-            logger.warning(f"Campo faltante en datos financieros de {symbol}: {e}")
-            return None
-        except (ConnectionError, TimeoutError) as e:
-            logger.error(f"Error de conexión obteniendo datos financieros de {symbol}: {e}")
-            raise APITimeoutError(f"Timeout obteniendo datos financieros de {symbol}") from e
-        except ValueError as e:
-            logger.warning(f"Error de conversión en datos de {symbol}: {e}")
-            return None
-        except Exception as e:
-            logger.error(f"Error inesperado obteniendo datos financieros de {symbol}: {type(e).__name__}: {e}", exc_info=True)
-            return None
+        return None
     
     def get_historical_metrics(self, symbol: str, years: int = 5) -> Dict[str, List[float]]:
-        """Obtiene métricas históricas para análisis de tendencias (con caché)."""
+        """Obtiene métricas históricas para análisis de tendencias (con caché y retry)."""
         cache_key = _data_cache._make_key("historical", symbol.upper(), years)
         
         cached = _data_cache.get(cache_key)
         if cached:
             return cached
-        try:
-            ticker = yf.Ticker(symbol)
-            income_stmt = ticker.financials
-            balance_sheet = ticker.balance_sheet
-            cash_flow = ticker.cashflow
-            
-            def extract_series(df, key):
-                try:
-                    if df is not None and key in df.index:
-                        series = df.loc[key].dropna().tolist()
-                        return [float(x) for x in series[:years]]
-                except (KeyError, IndexError, TypeError, ValueError):
-                    pass
-                return []
-            
-            result = {
-                "revenue": extract_series(income_stmt, "Total Revenue"),
-                "net_income": extract_series(income_stmt, "Net Income"),
-                "operating_income": extract_series(income_stmt, "Operating Income"),
-                "total_equity": extract_series(balance_sheet, "Stockholders Equity"),
-                "total_debt": extract_series(balance_sheet, "Total Debt"),
-                "fcf": extract_series(cash_flow, "Free Cash Flow"),
-            }
-            
-            # Guardar en caché (30 min para históricos)
-            _data_cache.set(cache_key, result, ttl_minutes=30)
-            logger.debug(f"Datos históricos de {symbol} obtenidos correctamente")
-            return result
         
-        except (ConnectionError, TimeoutError) as e:
-            logger.error(f"Error de conexión obteniendo históricos de {symbol}: {e}")
-            return {}
-        except Exception as e:
-            logger.warning(f"Error obteniendo históricos de {symbol}: {type(e).__name__}: {e}")
-            return {}
+        def extract_series(df, key):
+            try:
+                if df is not None and key in df.index:
+                    series = df.loc[key].dropna().tolist()
+                    return [float(x) for x in series[:years]]
+            except:
+                pass
+            return []
+        
+        for attempt in range(MAX_RETRIES):
+            try:
+                ticker = yf.Ticker(symbol)
+                income_stmt = ticker.financials
+                balance_sheet = ticker.balance_sheet
+                cash_flow = ticker.cashflow
+                
+                result = {
+                    "revenue": extract_series(income_stmt, "Total Revenue"),
+                    "net_income": extract_series(income_stmt, "Net Income"),
+                    "operating_income": extract_series(income_stmt, "Operating Income"),
+                    "total_equity": extract_series(balance_sheet, "Stockholders Equity"),
+                    "total_debt": extract_series(balance_sheet, "Total Debt"),
+                    "fcf": extract_series(cash_flow, "Free Cash Flow"),
+                }
+                
+                # Guardar en caché (30 min para históricos)
+                _data_cache.set(cache_key, result, ttl_minutes=30)
+                return result
+                
+            except Exception as e:
+                error_str = str(e).lower()
+                is_rate_limit = 'rate' in error_str and 'limit' in error_str or 'too many requests' in error_str
+                
+                if is_rate_limit and attempt < MAX_RETRIES - 1:
+                    delay = min(BASE_DELAY * (2 ** attempt) + random.uniform(0, 1), MAX_DELAY)
+                    logger.warning(f"Rate limited obteniendo históricos de {symbol}. Reintentando en {delay:.1f}s")
+                    time.sleep(delay)
+                else:
+                    logger.error(f"Error obteniendo históricos de {symbol}: {e}")
+                    return {}
+        
+        return {}
     
     def get_detailed_historical_data(self, symbol: str, years: int = 5) -> Dict[str, Any]:
         """
@@ -564,7 +602,7 @@ class YahooFinanceFetcher:
                         val = df.loc[key, col]
                         if pd.notna(val):
                             return float(val)
-                except (KeyError, IndexError, TypeError, ValueError):
+                except:
                     pass
                 return None
             
@@ -750,15 +788,11 @@ class YahooFinanceFetcher:
                 }
             
             return historical_data
-        
-        except (ConnectionError, TimeoutError) as e:
-            logger.error(f"Error de conexión obteniendo históricos detallados de {symbol}: {e}")
-            return {"years": [], "data": {}, "error": f"Timeout: {e}"}
-        except ValueError as e:
-            logger.warning(f"Error de conversión en históricos de {symbol}: {e}")
-            return {"years": [], "data": {}, "error": f"Datos inválidos: {e}"}
+            
         except Exception as e:
-            logger.error(f"Error obteniendo históricos detallados de {symbol}: {type(e).__name__}: {e}", exc_info=True)
+            print(f"Error obteniendo históricos detallados de {symbol}: {e}")
+            import traceback
+            traceback.print_exc()
             return {"years": [], "data": {}, "error": str(e)}
     
     def get_market_comparison_data(self, sector: str) -> Dict[str, Any]:
@@ -863,8 +897,7 @@ class YahooFinanceFetcher:
                 "sector_pe": info.get("trailingPE", 20.0),
                 "sector_ev_ebitda": 12.0,  # Difícil de obtener para ETFs
             }
-        except (KeyError, TypeError, ValueError, ConnectionError) as e:
-            logger.debug(f"No se pudo obtener datos del ETF {etf_symbol}: {e}")
+        except:
             return {"sector_pe": 20.0, "sector_ev_ebitda": 12.0}
     
     def _get_sector_etf_symbol(self, sector_name: str) -> str:
@@ -1264,167 +1297,36 @@ class FinancialDataService:
             self.yahoo = None
             self.yahoo_available = False
     
-    def get_complete_analysis_data(self, symbol: str, progress_callback: Optional[Callable[[str, float], None]] = None) -> Dict[str, Any]:
-        """
-        Obtiene todos los datos necesarios para el análisis completo.
-        
-        VERSIÓN 2.9: Paralelizada con timeouts explícitos y logging mejorado
-        
-        Args:
-            symbol: Símbolo del ticker (ej: AAPL, MSFT)
-            progress_callback: Función opcional para reportar progreso (mensaje, porcentaje 0-100)
-        
-        Returns:
-            Dict con profile, financials, historical, sector_averages, contextual, errors
-        
-        Raises:
-            InvalidSymbolError: Si el símbolo es inválido
-        """
-        start_time = time.time()
-        
-        # ========================================
-        # VALIDACIÓN DE ENTRADA
-        # ========================================
-        
-        # Validar que symbol no esté vacío
-        if not symbol or not isinstance(symbol, str):
-            logger.error("Símbolo vacío o inválido proporcionado")
-            raise InvalidSymbolError("El símbolo no puede estar vacío")
-        
-        # Limpiar y validar formato del símbolo
-        symbol = symbol.strip().upper()
-        
-        # Validar longitud razonable (tickers son típicamente 1-5 caracteres, máx ~10 para algunos mercados)
-        if len(symbol) > 15:
-            logger.warning(f"Símbolo sospechosamente largo: {symbol[:20]}...")
-            raise InvalidSymbolError(f"Símbolo demasiado largo: {len(symbol)} caracteres")
-        
-        # Validar caracteres permitidos (letras, números, puntos, guiones)
-        import re
-        if not re.match(r'^[A-Z0-9\.\-]+$', symbol):
-            logger.warning(f"Símbolo con caracteres inválidos: {symbol}")
-            raise InvalidSymbolError(f"Símbolo contiene caracteres inválidos: {symbol}")
-        
-        logger.info(f"Iniciando análisis completo para {symbol}")
-        
+    def get_complete_analysis_data(self, symbol: str) -> Dict[str, Any]:
+        """Obtiene todos los datos necesarios para el análisis completo."""
         result = {
-            "symbol": symbol,
+            "symbol": symbol.upper(),
             "profile": None,
             "financials": None,
             "historical": None,
             "sector_averages": None,
             "contextual": {},
             "errors": [],
-            "_timing": {}  # Para debug de performance
         }
         
         if not self.yahoo_available:
             result["errors"].append("Yahoo Finance no disponible")
-            logger.error("Yahoo Finance no está disponible")
             return result
         
-        def report_progress(msg: str, pct: float):
-            if progress_callback:
-                try:
-                    progress_callback(msg, pct)
-                except Exception:
-                    pass  # No interrumpir análisis por errores en callback
-        
-        report_progress("Iniciando análisis...", 5)
-        
-        # ========================================
-        # FASE 1: Llamadas paralelas principales
-        # ========================================
-        
-        profile = None
-        financials = None
-        historical = None
-        detailed_historical = None
-        
-        # Definir tareas a ejecutar en paralelo
-        tasks = {
-            "profile": lambda: self.yahoo.get_company_profile(symbol),
-            "financials": lambda: self.yahoo.get_financial_data(symbol),
-            "historical": lambda: self.yahoo.get_historical_metrics(symbol),
-            "detailed": lambda: self.yahoo.get_detailed_historical_data(symbol, years=4),
-        }
-        
-        results_parallel = {}
-        
-        # Ejecutar en paralelo con ThreadPoolExecutor
-        logger.info(f"Iniciando fetch paralelo para {symbol} con {THREAD_POOL_WORKERS} workers")
-        
-        with ThreadPoolExecutor(max_workers=THREAD_POOL_WORKERS) as executor:
-            future_to_task = {
-                executor.submit(task_fn): task_name 
-                for task_name, task_fn in tasks.items()
-            }
-            
-            completed = 0
-            total = len(future_to_task)
-            
-            for future in as_completed(future_to_task, timeout=PARALLEL_TASK_TIMEOUT * total):
-                task_name = future_to_task[future]
-                completed += 1
-                progress_pct = 10 + (completed / total * 50)  # 10% a 60%
-                
-                try:
-                    # Timeout explícito por tarea individual
-                    results_parallel[task_name] = future.result(timeout=PARALLEL_TASK_TIMEOUT)
-                    report_progress(f"Obteniendo {task_name}...", progress_pct)
-                    logger.debug(f"✓ Tarea '{task_name}' completada para {symbol}")
-                    
-                except FuturesTimeoutError:
-                    results_parallel[task_name] = None
-                    error_msg = f"Timeout ({PARALLEL_TASK_TIMEOUT}s) en {task_name}"
-                    result["errors"].append(error_msg)
-                    logger.warning(f"⏱ {error_msg} para {symbol}")
-                    
-                except ConnectionError as e:
-                    results_parallel[task_name] = None
-                    error_msg = f"Error de conexión en {task_name}: {str(e)[:100]}"
-                    result["errors"].append(error_msg)
-                    logger.error(f"🔌 {error_msg} para {symbol}")
-                    
-                except ValueError as e:
-                    results_parallel[task_name] = None
-                    error_msg = f"Datos inválidos en {task_name}: {str(e)[:100]}"
-                    result["errors"].append(error_msg)
-                    logger.warning(f"⚠ {error_msg} para {symbol}")
-                    
-                except Exception as e:
-                    results_parallel[task_name] = None
-                    error_msg = f"Error inesperado en {task_name}: {type(e).__name__}: {str(e)[:100]}"
-                    result["errors"].append(error_msg)
-                    logger.error(f"❌ {error_msg} para {symbol}", exc_info=True)
-        
-        parallel_time = time.time() - start_time
-        result["_timing"]["parallel_fetch"] = parallel_time
-        logger.info(f"Fetch paralelo completado para {symbol} en {parallel_time:.2f}s")
-        
-        # Extraer resultados
-        profile = results_parallel.get("profile")
-        financials = results_parallel.get("financials")
-        historical = results_parallel.get("historical")
-        detailed_historical = results_parallel.get("detailed")
-        
-        report_progress("Procesando datos...", 65)
-        
-        # ========================================
-        # FASE 2: Procesar resultados
-        # ========================================
-        
         # Perfil
+        profile = self.yahoo.get_company_profile(symbol)
         if profile:
             result["profile"] = profile
         else:
             result["errors"].append("No se pudo obtener el perfil")
         
         # Datos financieros
+        financials = self.yahoo.get_financial_data(symbol)
         if financials:
             result["financials"] = financials
             
             # ===== DATOS PARA ALTMAN Z-SCORE =====
+            # Working Capital = Current Assets - Current Liabilities
             if financials.current_assets is not None and financials.current_liabilities is not None:
                 result["contextual"]["working_capital"] = financials.current_assets - financials.current_liabilities
             
@@ -1438,10 +1340,6 @@ class FinancialDataService:
             if financials.price and financials.shares_outstanding:
                 result["contextual"]["market_cap"] = financials.price * financials.shares_outstanding
             
-            # ===== DATOS PARA FINANCIAL HEALTH SCORE (Sector Financiero) =====
-            result["contextual"]["total_equity"] = financials.total_equity
-            result["contextual"]["book_value"] = financials.book_value_per_share
-            
             # ===== DATOS PARA PIOTROSKI F-SCORE =====
             result["contextual"]["net_income"] = financials.net_income
             result["contextual"]["operating_cash_flow"] = financials.operating_cash_flow
@@ -1453,9 +1351,8 @@ class FinancialDataService:
         else:
             result["errors"].append("No se pudieron obtener datos financieros")
         
-        report_progress("Calculando históricos...", 75)
-        
-        # Históricos para CAGR y FCF trend
+        # Históricos para CAGR y FCF trend (formato de listas)
+        historical = self.yahoo.get_historical_metrics(symbol)
         if historical:
             result["historical"] = historical
             
@@ -1471,7 +1368,7 @@ class FinancialDataService:
                         result["contextual"]["revenue_cagr_5y"] = cagr(
                             revenues[-1], revenues[0], min(5, len(revenues)-1)
                         )
-                except (ImportError, TypeError, ValueError, ZeroDivisionError):
+                except:
                     pass
             
             # FCF trend
@@ -1480,29 +1377,32 @@ class FinancialDataService:
                 negative_years = sum(1 for x in fcf_list if x and x < 0)
                 result["contextual"]["fcf_trend_negative_years"] = negative_years
         
-        report_progress("Procesando F-Score...", 85)
-        
         # ===== DATOS HISTÓRICOS DETALLADOS PARA PIOTROSKI F-SCORE =====
+        # Usar get_detailed_historical_data que devuelve estructura {years: [], data: {}}
+        detailed_historical = self.yahoo.get_detailed_historical_data(symbol, years=4)
+        
         if detailed_historical and detailed_historical.get("years"):
             years_list = detailed_historical.get("years", [])
             hist_data = detailed_historical.get("data", {})
             
             if len(years_list) >= 2:
-                current_year = years_list[0]
-                prior_year = years_list[1]
+                current_year = years_list[0]  # Año más reciente
+                prior_year = years_list[1]    # Año anterior
                 
                 current_data = hist_data.get(current_year, {})
                 prior_data = hist_data.get(prior_year, {})
                 
-                # Debug
+                # Debug: guardar para verificar qué datos tenemos
                 result["contextual"]["_debug_years"] = years_list[:2]
                 result["contextual"]["_debug_current_keys"] = list(current_data.keys())[:10]
                 
-                # ROA del año anterior
+                # ROA del año anterior (viene como porcentaje 0-100)
                 if prior_data.get("roa") is not None:
                     roa_prior = prior_data.get("roa")
+                    # Convertir de porcentaje a decimal si es > 1
                     result["contextual"]["roa_prior"] = roa_prior / 100 if abs(roa_prior) > 1 else roa_prior
                 
+                # ROA actual también (para debug)
                 if current_data.get("roa") is not None:
                     roa_current = current_data.get("roa")
                     result["contextual"]["roa_current_hist"] = roa_current / 100 if abs(roa_current) > 1 else roa_current
@@ -1511,56 +1411,52 @@ class FinancialDataService:
                 if prior_data.get("current_ratio") is not None:
                     result["contextual"]["current_ratio_prior"] = prior_data.get("current_ratio")
                 
-                # Gross margin
+                # Gross margin del año anterior (viene como porcentaje 0-100)
                 if prior_data.get("gross_margin") is not None:
                     gm_prior = prior_data.get("gross_margin")
                     result["contextual"]["gross_margin_prior"] = gm_prior / 100 if abs(gm_prior) > 1 else gm_prior
                 
+                # Gross margin actual
                 if current_data.get("gross_margin") is not None:
                     gm_current = current_data.get("gross_margin")
                     result["contextual"]["gross_margin_current"] = gm_current / 100 if abs(gm_current) > 1 else gm_current
                 
-                # Asset turnover
+                # Asset turnover del año anterior
                 if prior_data.get("revenue") is not None and prior_data.get("total_assets") is not None:
                     if prior_data.get("total_assets") > 0:
                         result["contextual"]["asset_turnover_prior"] = prior_data.get("revenue") / prior_data.get("total_assets")
                 
+                # Asset turnover actual
                 if current_data.get("revenue") is not None and current_data.get("total_assets") is not None:
                     if current_data.get("total_assets") > 0:
                         result["contextual"]["asset_turnover_current"] = current_data.get("revenue") / current_data.get("total_assets")
                 
-                # Long term debt
+                # Long term debt del año anterior
                 if prior_data.get("long_term_debt") is not None:
                     result["contextual"]["long_term_debt_prior"] = prior_data.get("long_term_debt")
                 elif prior_data.get("total_debt") is not None:
+                    # Fallback a total_debt si no hay long_term_debt específico
                     result["contextual"]["long_term_debt_prior"] = prior_data.get("total_debt")
                 
+                # Long term debt actual
                 if current_data.get("long_term_debt") is not None:
                     result["contextual"]["long_term_debt"] = current_data.get("long_term_debt")
                 elif current_data.get("total_debt") is not None:
                     result["contextual"]["long_term_debt"] = current_data.get("total_debt")
                 
-                # Shares
+                # Shares del año anterior (para detectar dilución)
                 if prior_data.get("shares_outstanding") is not None:
                     result["contextual"]["shares_prior"] = prior_data.get("shares_outstanding")
                 
+                # Shares actuales
                 if current_data.get("shares_outstanding") is not None:
                     result["contextual"]["shares_outstanding"] = current_data.get("shares_outstanding")
         
-        report_progress("Obteniendo datos del sector...", 90)
-        
-        # ========================================
-        # FASE 3: Promedios del sector (depende del profile)
-        # ========================================
+        # Promedios del sector
         if profile:
             sector_avg = self.yahoo.get_sector_averages(profile.sector)
             result["sector_averages"] = sector_avg
             result["contextual"].update(sector_avg)
-        
-        # Timing final
-        result["_timing"]["total"] = time.time() - start_time
-        
-        report_progress("Análisis completado", 100)
         
         return result
     
@@ -1590,7 +1486,6 @@ class FinancialDataService:
             "amortization": 0,  # Incluido en depreciation generalmente
             "forward_eps": financials.forward_eps,
             "dividend_per_share": financials.dividend_per_share,
-            "dividends_paid": financials.dividends_paid,  # Para payout_ratio
             "earnings_growth_rate": (financials.earnings_growth_rate or 0) * 100 if financials.earnings_growth_rate else None,
             "beta": financials.beta,
             "cogs": None,  # No siempre disponible en yfinance
@@ -1600,97 +1495,46 @@ class FinancialDataService:
 def test_fetcher(symbol: str = "AAPL"):
     """Función de prueba para verificar que el fetcher funciona."""
     print(f"\n{'='*60}")
-    print(f"Testing Financial Data Fetcher v2.2 (Paralelo) for {symbol}")
+    print(f"Testing Financial Data Fetcher for {symbol}")
     print(f"{'='*60}\n")
     
     service = FinancialDataService()
     
-    # Test con timing
-    print("⏱️  Iniciando fetch con paralelización...")
-    start = time.time()
-    
-    def progress_cb(msg, pct):
-        print(f"   [{pct:5.1f}%] {msg}")
-    
-    data = service.get_complete_analysis_data(symbol, progress_callback=progress_cb)
-    
-    total_time = time.time() - start
-    
-    print(f"\n✅ Completado en {total_time:.2f} segundos")
-    
-    if "_timing" in data:
-        print(f"\n📊 Desglose de tiempos:")
-        for key, val in data["_timing"].items():
-            print(f"   {key}: {val:.2f}s")
-    
-    # Mostrar resultados
-    profile = data.get("profile")
-    financials = data.get("financials")
-    
+    # Test perfil
+    print("1. Obteniendo perfil...")
+    profile = service.yahoo.get_company_profile(symbol)
     if profile:
-        print(f"\n1. Perfil: ✓ {profile.name} ({profile.sector})")
+        print(f"   ✓ {profile.name} ({profile.sector})")
+        print(f"   Market Cap: ${profile.market_cap:,.0f}" if profile.market_cap else "   Market Cap: N/A")
     else:
-        print(f"\n1. Perfil: ✗ Error")
+        print("   ✗ Error obteniendo perfil")
     
+    # Test financials
+    print("\n2. Obteniendo datos financieros...")
+    financials = service.yahoo.get_financial_data(symbol)
     if financials:
-        print(f"2. Financials: ✓ Revenue ${financials.revenue/1e9:.1f}B" if financials.revenue else "2. Financials: ✓ (datos parciales)")
+        print(f"   ✓ Revenue: ${financials.revenue:,.0f}" if financials.revenue else "   Revenue: N/A")
+        print(f"   ✓ Net Income: ${financials.net_income:,.0f}" if financials.net_income else "   Net Income: N/A")
+        print(f"   ✓ Price: ${financials.price:.2f}" if financials.price else "   Price: N/A")
+        print(f"   ✓ EPS: ${financials.eps:.2f}" if financials.eps else "   EPS: N/A")
+        print(f"   ✓ Beta: {financials.beta:.2f}" if financials.beta else "   Beta: N/A")
     else:
-        print(f"2. Financials: ✗ Error")
+        print("   ✗ Error obteniendo financials")
     
-    if data.get("historical"):
-        print(f"3. Históricos: ✓ {len(data['historical'].get('revenue', []))} años de datos")
+    # Test históricos
+    print("\n3. Obteniendo históricos...")
+    historical = service.yahoo.get_historical_metrics(symbol)
+    if historical:
+        for key, values in historical.items():
+            if values:
+                print(f"   ✓ {key}: {len(values)} años de datos")
     else:
-        print(f"3. Históricos: ✗ Error")
-    
-    if data.get("errors"):
-        print(f"\n⚠️  Errores: {data['errors']}")
+        print("   ✗ Error obteniendo históricos")
     
     print(f"\n{'='*60}\n")
     
-    return data
-
-
-def benchmark_comparison(symbol: str = "AAPL"):
-    """
-    Compara el rendimiento de la versión paralela.
-    Ejecuta múltiples veces para obtener promedio.
-    """
-    print(f"\n{'='*60}")
-    print(f"BENCHMARK: Paralelización para {symbol}")
-    print(f"{'='*60}\n")
-    
-    service = FinancialDataService()
-    
-    # Limpiar caché para test justo
-    _data_cache.clear()
-    
-    times = []
-    for i in range(3):
-        _data_cache.clear()  # Limpiar entre runs
-        start = time.time()
-        data = service.get_complete_analysis_data(symbol)
-        elapsed = time.time() - start
-        times.append(elapsed)
-        print(f"   Run {i+1}: {elapsed:.2f}s")
-    
-    avg_time = sum(times) / len(times)
-    print(f"\n📊 Promedio: {avg_time:.2f}s")
-    print(f"   (Con caché frío - sin hits)")
-    
-    # Ahora con caché caliente
-    start = time.time()
-    data = service.get_complete_analysis_data(symbol)
-    cached_time = time.time() - start
-    print(f"\n⚡ Con caché caliente: {cached_time:.2f}s")
-    
-    return avg_time, cached_time
+    return service, profile, financials, historical
 
 
 if __name__ == "__main__":
-    import sys
-    symbol = sys.argv[1] if len(sys.argv) > 1 else "AAPL"
-    
-    if "--benchmark" in sys.argv:
-        benchmark_comparison(symbol)
-    else:
-        test_fetcher(symbol)
+    test_fetcher("AAPL")
