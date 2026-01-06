@@ -195,6 +195,25 @@ class SimpleCache:
 _data_cache = SimpleCache(default_ttl_minutes=10)
 
 
+# =========================
+# EXCEPCIONES PERSONALIZADAS
+# =========================
+
+class InvalidSymbolError(Exception):
+    """Excepción para símbolos inválidos o no encontrados."""
+    def __init__(self, symbol: str, message: str = None):
+        self.symbol = symbol
+        self.message = message or f"Símbolo '{symbol}' no encontrado o inválido"
+        super().__init__(self.message)
+
+
+class RateLimitError(Exception):
+    """Excepción para cuando se alcanza el límite de solicitudes."""
+    def __init__(self, message: str = "Rate limit alcanzado. Intente más tarde."):
+        self.message = message
+        super().__init__(self.message)
+
+
 @dataclass
 class CompanyProfile:
     """Perfil básico de una empresa."""
