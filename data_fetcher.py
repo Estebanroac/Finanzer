@@ -22,9 +22,9 @@ import json
 # =========================
 # CONSTANTES DE RETRY
 # =========================
-MAX_RETRIES = 3
-BASE_DELAY = 2  # segundos
-MAX_DELAY = 30  # segundos máximo de espera
+MAX_RETRIES = 4       # Reintentos para rate limiting
+BASE_DELAY = 3        # segundos base entre reintentos
+MAX_DELAY = 45        # segundos máximo de espera
 
 # Configurar logging específico para este módulo
 logger = logging.getLogger(__name__)
@@ -47,8 +47,17 @@ except ImportError:
 try:
     import yfinance as yf
     YFINANCE_AVAILABLE = True
+    # Importar excepción de rate limit
+    try:
+        from yfinance.exceptions import YFRateLimitError
+        YF_RATE_LIMIT_AVAILABLE = True
+    except ImportError:
+        YF_RATE_LIMIT_AVAILABLE = False
+        YFRateLimitError = Exception  # Fallback
 except ImportError:
     YFINANCE_AVAILABLE = False
+    YF_RATE_LIMIT_AVAILABLE = False
+    YFRateLimitError = Exception
 
 try:
     import requests
@@ -64,7 +73,6 @@ except ImportError:
 # Timeouts para operaciones de red (en segundos)
 API_TIMEOUT_SECONDS = 15          # Timeout para llamadas API individuales
 PARALLEL_TASK_TIMEOUT = 20        # Timeout para tareas paralelas
-MAX_RETRIES = 2                   # Reintentos máximos por operación
 
 # Configuración del ThreadPoolExecutor
 THREAD_POOL_WORKERS = 4           # Número de workers paralelos
@@ -192,7 +200,7 @@ class SimpleCache:
 
 
 # Instancia global del caché
-_data_cache = SimpleCache(default_ttl_minutes=10)
+_data_cache = SimpleCache(default_ttl_minutes=30)
 
 
 @dataclass
@@ -346,9 +354,12 @@ class YahooFinanceFetcher:
             except Exception as e:
                 last_error = e
                 error_str = str(e).lower()
+                error_type = type(e).__name__
                 
-                # Detectar rate limiting
+                # Detectar rate limiting (múltiples formas)
                 is_rate_limit = (
+                    'YFRateLimitError' in error_type or
+                    'ratelimit' in error_type.lower() or
                     'rate' in error_str and 'limit' in error_str or
                     'too many requests' in error_str or
                     '429' in error_str
@@ -356,10 +367,11 @@ class YahooFinanceFetcher:
                 
                 if is_rate_limit and attempt < MAX_RETRIES - 1:
                     delay = min(BASE_DELAY * (2 ** attempt) + random.uniform(0, 1), MAX_DELAY)
-                    logger.warning(f"Rate limited obteniendo perfil de {symbol}. Reintentando en {delay:.1f}s (intento {attempt + 1}/{MAX_RETRIES})")
+                    logger.warning(f"⏳ Rate limited ({error_type}). Reintentando perfil {symbol} en {delay:.1f}s (intento {attempt + 1}/{MAX_RETRIES})")
                     time.sleep(delay)
+                    continue  # Importante: continuar al siguiente intento
                 else:
-                    logger.error(f"Error inesperado obteniendo perfil de {symbol}: {type(e).__name__}: {e}")
+                    logger.error(f"Error obteniendo perfil de {symbol}: {error_type}: {e}")
                     if attempt == MAX_RETRIES - 1:
                         return None
         
@@ -500,8 +512,8 @@ class YahooFinanceFetcher:
                     last_updated=datetime.now().isoformat(),
                 )
                 
-                # Guardar en caché (10 min para datos financieros)
-                _data_cache.set(cache_key, result, ttl_minutes=10)
+                # Guardar en caché (60 min para datos financieros - reduce rate limiting)
+                _data_cache.set(cache_key, result, ttl_minutes=60)
                 logger.debug(f"Datos financieros de {symbol} cacheados correctamente")
                 return result
             
@@ -517,9 +529,12 @@ class YahooFinanceFetcher:
             except Exception as e:
                 last_error = e
                 error_str = str(e).lower()
+                error_type = type(e).__name__
                 
-                # Detectar rate limiting
+                # Detectar rate limiting (múltiples formas)
                 is_rate_limit = (
+                    'YFRateLimitError' in error_type or
+                    'ratelimit' in error_type.lower() or
                     'rate' in error_str and 'limit' in error_str or
                     'too many requests' in error_str or
                     '429' in error_str
@@ -527,10 +542,11 @@ class YahooFinanceFetcher:
                 
                 if is_rate_limit and attempt < MAX_RETRIES - 1:
                     delay = min(BASE_DELAY * (2 ** attempt) + random.uniform(0, 1), MAX_DELAY)
-                    logger.warning(f"Rate limited obteniendo datos de {symbol}. Reintentando en {delay:.1f}s (intento {attempt + 1}/{MAX_RETRIES})")
+                    logger.warning(f"⏳ Rate limited ({error_type}). Reintentando {symbol} en {delay:.1f}s (intento {attempt + 1}/{MAX_RETRIES})")
                     time.sleep(delay)
+                    continue  # Importante: continuar al siguiente intento
                 else:
-                    logger.error(f"Error inesperado obteniendo datos financieros de {symbol}: {type(e).__name__}: {e}", exc_info=True)
+                    logger.error(f"Error obteniendo datos financieros de {symbol}: {error_type}: {e}")
                     if attempt == MAX_RETRIES - 1:
                         return None
         
