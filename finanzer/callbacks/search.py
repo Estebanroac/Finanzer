@@ -25,10 +25,10 @@ DROPDOWN_BASE_STYLE = {
     "left": "0",
     "right": "0",
     "marginTop": "4px",
-    "background": "#1f1f23",
-    "border": "1px solid rgba(16, 185, 129, 0.5)",
-    "borderRadius": "10px",
-    "boxShadow": "0 8px 32px rgba(0, 0, 0, 0.7)",
+    "background": "#131316",
+    "border": "1px solid rgba(255, 255, 255, 0.08)",
+    "borderRadius": "12px",
+    "boxShadow": "0 12px 40px rgba(0, 0, 0, 0.6)",
     "zIndex": "9999",
     "maxHeight": "300px",
     "overflowY": "auto"
@@ -63,7 +63,7 @@ def update_search_suggestions(search_value):
                     "color": "#a1a1aa", "margin": "0 0 4px 0", "fontSize": "0.85rem"
                 }),
                 html.P("💡 Presiona Enter para buscar cualquier ticker", style={
-                    "color": "#10b981", "margin": "0", "fontSize": "0.8rem", "fontWeight": "500"
+                    "color": "#00d632", "margin": "0", "fontSize": "0.8rem", "fontWeight": "500"
                 })
             ], style={"padding": "12px 16px", "textAlign": "center"})
         ], visible_style
@@ -75,11 +75,11 @@ def update_search_suggestions(search_value):
         suggestion_items.append(
             html.Div([
                 html.Span(ticker, style={
-                    "color": "#10b981", 
-                    "fontWeight": "700", 
+                    "color": "#00d632",
+                    "fontWeight": "700",
                     "fontSize": "0.95rem",
-                    "marginRight": "12px", 
-                    "minWidth": "60px", 
+                    "marginRight": "12px",
+                    "minWidth": "60px",
                     "display": "inline-block"
                 }),
                 html.Span(

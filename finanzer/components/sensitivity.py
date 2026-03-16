@@ -160,7 +160,7 @@ def build_sensitivity_section(
                     html.Strong(price_str, style={"color": "#3b82f6", "fontSize": "1.1rem"}),
                     html.Span(" — ", style={"color": "#6b7280"}),
                     html.Span("Caso base: ", style={"color": "#9ca3af"}),
-                    html.Strong(base_str, style={"color": "#10b981", "fontSize": "1.1rem"}),
+                    html.Strong(base_str, style={"color": "#00d632", "fontSize": "1.1rem"}),
                     html.Span(f" (Growth {base_gr:.1%}, WACC {base_dr:.1%})", style={"color": "#6b7280", "fontSize": "0.85rem"}),
                 ], className="mb-3 p-2", style={
                     "backgroundColor": "rgba(59, 130, 246, 0.1)",
@@ -207,7 +207,7 @@ def build_sensitivity_section(
                 ], className="small text-muted mb-0 mt-1"),
                 
             ], style={
-                "backgroundColor": "rgba(39, 39, 42, 0.5)",
+                "backgroundColor": "rgba(255, 255, 255, 0.04)",
                 "padding": "12px 15px",
                 "borderRadius": "8px",
                 "marginTop": "10px"
