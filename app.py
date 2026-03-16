@@ -3035,6 +3035,12 @@ app.index_string = '''
            Paleta: Negro puro + Verde vibrante + Azul UI
            ============================================== */
 
+        /* === FORCE BLACK BACKGROUND (override Bootstrap DARKLY gray) === */
+        html, body, .container-fluid, .container,
+        #main-container, #react-entry-point, #_dash-app-content {
+            background-color: #000000 !important;
+        }
+
         /* === GLOBAL TRANSITIONS === */
         *, *::before, *::after {
             transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
