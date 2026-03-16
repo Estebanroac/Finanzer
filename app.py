@@ -3308,6 +3308,30 @@ app.index_string = '''
             box-shadow: 0 0 15px rgba(0, 214, 50, 0.3) !important;
         }
 
+        /* === METRIC CARDS === */
+        .metric-card {
+            background: transparent !important;
+            border: none !important;
+            padding: 16px 8px;
+        }
+        .metric-label {
+            color: #9ca3af;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+        .metric-value {
+            color: #ffffff;
+            font-size: 1.15rem;
+            font-weight: 700;
+        }
+
+        /* Override Bootstrap DARKLY card defaults */
+        .card {
+            background-color: transparent;
+            border: none;
+        }
+
         /* ==============================================
            SENSITIVITY TABLE - FIXED COLORS
            ============================================== */

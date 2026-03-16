@@ -45,7 +45,7 @@ def create_metric_with_tooltip(label: str, value: str, tooltip_key: str, uid: in
             html.P(sublabel, className="text-muted small mb-0 text-center", 
                   style={"fontSize": "0.7rem"}) if sublabel else None
         ])
-    ], style={"backgroundColor": "#27272a", "border": "none"}, className="h-100")
+    ], style={"backgroundColor": "transparent", "border": "none"}, className="h-100")
 
 
 def create_metric_card(label: str, value: str, icon: str = "📊", tooltip_key: str = None):
