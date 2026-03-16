@@ -3836,14 +3836,6 @@ app.index_string = '''
         function applyThemeToInlineStyles(theme) {
             const isLight = theme === 'light';
             
-            // PRIMERO: Limpiar TODOS los estilos inline de elementos de sensibilidad
-            // para que las clases CSS tomen control
-            document.querySelectorAll('.sensitivity-container, .sensitivity-table, .sensitivity-table td, .sensitivity-table th, [class*="sens-"]').forEach(el => {
-                el.style.backgroundColor = '';
-                el.style.color = '';
-                el.style.borderColor = '';
-            });
-            
             // Colores para cada tema
             const colors = {
                 light: {
