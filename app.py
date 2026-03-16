@@ -92,7 +92,7 @@ app = dash.Dash(
     suppress_callback_exceptions=True,
     meta_tags=[
         {"name": "viewport", "content": "width=device-width, initial-scale=1, maximum-scale=1"},
-        {"name": "theme-color", "content": "#000000"}
+        {"name": "theme-color", "content": "#09090b"}
     ],
     title="Finanzer"
 )
@@ -113,7 +113,7 @@ app.layout = dbc.Container([
     dcc.Store(id="analysis-data", storage_type="memory"),
     dcc.Store(id="current-symbol", data="", storage_type="memory"),
     dcc.Store(id="comparison-stocks", data=[], storage_type="session"),  # v2.9: Lista de acciones para comparar
-    # theme-store eliminado - dark-only mode
+    dcc.Store(id="theme-store", data="dark", storage_type="local"),  # Persiste en localStorage
     dcc.Store(id="search-history", data=[], storage_type="local"),  # v3.0: Historial de búsquedas
     dcc.Store(id="posiciones", data=[], storage_type="local"),  # v3.1.3: Acciones que poseo
     dcc.Store(id="radar", data=[], storage_type="local"),  # v3.1.3: Acciones en radar (atractivas)
@@ -128,8 +128,8 @@ app.layout = dbc.Container([
             html.Div(className="loading-spinner", style={
                 "width": "44px",
                 "height": "44px",
-                "border": "4px solid rgba(0, 214, 50, 0.1)",
-                "borderTopColor": "#00d632",
+                "border": "4px solid rgba(16, 185, 129, 0.2)",
+                "borderTopColor": "#10b981",
                 "borderRadius": "50%",
                 "animation": "spin 0.8s linear infinite",
                 "margin": "0 auto 16px auto"
@@ -140,7 +140,7 @@ app.layout = dbc.Container([
                 "marginBottom": "8px"
             }),
             html.P(id="loading-symbol", children="", style={
-                "color": "#00d632",
+                "color": "#10b981",
                 "fontSize": "1.2rem",
                 "fontWeight": "600"
             })
@@ -173,7 +173,7 @@ app.layout = dbc.Container([
                     html.Span("📊", style={"fontSize": "1.5rem", "marginRight": "10px"}),
                     html.Span("Finanzer", style={
                         "fontSize": "1.3rem", "fontWeight": "700", "cursor": "pointer",
-                        "background": "linear-gradient(135deg, #00d632 0%, #00b82a 100%)",
+                        "background": "linear-gradient(135deg, #34d399 0%, #10b981 100%)",
                         "WebkitBackgroundClip": "text", "WebkitTextFillColor": "transparent"
                     })
                 ], id="logo-home", style={"display": "flex", "alignItems": "center", "cursor": "pointer"})
@@ -193,9 +193,9 @@ app.layout = dbc.Container([
                             n_submit=0,
                             style={
                                 "width": "calc(100% - 50px)",
-                                "borderRadius": "10px 0 0 10px",
-                                "backgroundColor": "#131316",
-                                "border": "1px solid rgba(255, 255, 255, 0.08)",
+                                "borderRadius": "10px 0 0 10px", 
+                                "backgroundColor": "#18181b", 
+                                "border": "1px solid #3f3f46", 
                                 "borderRight": "none",
                                 "color": "#fff",
                                 "padding": "10px 14px",
@@ -207,11 +207,11 @@ app.layout = dbc.Container([
                         ),
                         html.Button("🔍", id="navbar-search-btn", n_clicks=0, style={
                             "width": "50px",
-                            "borderRadius": "0 10px 10px 0",
+                            "borderRadius": "0 10px 10px 0", 
                             "padding": "10px 0",
-                            "backgroundColor": "#00d632",
-                            "border": "1px solid #00d632",
-                            "color": "#000",
+                            "backgroundColor": "#10b981",
+                            "border": "1px solid #10b981",
+                            "color": "#fff",
                             "cursor": "pointer",
                             "fontSize": "1rem",
                             "display": "inline-block",
@@ -234,8 +234,8 @@ app.layout = dbc.Container([
         "padding": "15px 20px",
         "marginTop": "10px",
         "marginBottom": "10px",
-        "background": "#000000",
-        "borderBottom": "1px solid rgba(255, 255, 255, 0.06)",
+        "background": "rgba(9, 9, 11, 0.98)",
+        "borderBottom": "1px solid rgba(63, 63, 70, 0.5)",
         "position": "relative",
         "zIndex": "100"
     }),
@@ -251,17 +251,17 @@ app.layout = dbc.Container([
                 html.Span("📊", style={"fontSize": "2.5rem"})
             ], style={
                 "width": "80px", "height": "80px",
-                "background": "linear-gradient(135deg, #00d632 0%, #00b82a 100%)",
+                "background": "linear-gradient(135deg, #10b981 0%, #059669 100%)",
                 "borderRadius": "20px", "display": "flex",
                 "alignItems": "center", "justifyContent": "center",
                 "margin": "0 auto 25px auto",
-                "boxShadow": "0 15px 50px rgba(0, 214, 50, 0.3)"
+                "boxShadow": "0 15px 50px rgba(16, 185, 129, 0.4)"
             }),
             
             # Título
             html.H1("Finanzer", style={
                 "fontSize": "3rem", "fontWeight": "800",
-                "background": "linear-gradient(135deg, #00d632 0%, #00b82a 100%)",
+                "background": "linear-gradient(135deg, #34d399 0%, #10b981 100%)",
                 "WebkitBackgroundClip": "text", "WebkitTextFillColor": "transparent",
                 "backgroundClip": "text", "marginBottom": "12px", "letterSpacing": "-0.02em"
             }),
@@ -275,16 +275,16 @@ app.layout = dbc.Container([
                 html.Button(ticker, id={"type": "quick-pick", "index": ticker},
                           n_clicks=0,
                           style={
-                              "background": "rgba(0, 214, 50, 0.08)",
-                              "border": "1px solid rgba(0, 214, 50, 0.25)",
-                              "color": "#00d632",
+                              "background": "rgba(16, 185, 129, 0.15)",
+                              "border": "1px solid rgba(16, 185, 129, 0.4)",
+                              "color": "#34d399", 
                               "borderRadius": "8px",
-                              "padding": "10px 22px",
+                              "padding": "10px 22px", 
                               "margin": "5px",
-                              "fontWeight": "500",
+                              "fontWeight": "500", 
                               "fontSize": "0.9rem",
                               "cursor": "pointer",
-                              "transition": "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)"
+                              "transition": "all 0.2s ease"
                           })
                 for ticker in QUICK_PICKS
             ], style={"textAlign": "center", "marginBottom": "40px"}),
@@ -396,11 +396,11 @@ app.layout = dbc.Container([
                     html.Div("Growth", style={"fontWeight": "600", "fontSize": "1rem", "marginBottom": "4px"}),
                     html.Div("Alto crecimiento", className="text-muted", style={"fontSize": "0.75rem"})
                 ], id="strategy-growth", n_clicks=0, style={
-                    "background": "rgba(0, 214, 50, 0.08)",
-                    "border": "1px solid rgba(0, 214, 50, 0.2)",
+                    "background": "rgba(16, 185, 129, 0.1)",
+                    "border": "1px solid rgba(16, 185, 129, 0.3)",
                     "borderRadius": "12px",
                     "padding": "20px",
-                    "color": "#00d632",
+                    "color": "#34d399",
                     "cursor": "pointer",
                     "transition": "all 0.2s ease",
                     "width": "140px",
@@ -567,7 +567,38 @@ app.layout = dbc.Container([
         html.P(id="analysis-footer", className="text-center small text-muted")
     ]),
     
-    # Theme toggle eliminado - dark-only mode
+    # =========================================================================
+    # THEME TOGGLE BUTTON
+    # =========================================================================
+    html.Button(
+        id="theme-toggle",
+        className="theme-toggle",
+        children=[
+            html.Span("☀️", id="icon-sun", style={"fontSize": "1.2rem"}),
+            html.Span("🌙", id="icon-moon", style={"fontSize": "1.2rem", "display": "none"})
+        ],
+        title="Cambiar tema",
+        n_clicks=0,
+        style={
+            "position": "fixed",
+            "bottom": "20px",
+            "right": "20px",
+            "width": "50px",
+            "height": "50px",
+            "borderRadius": "50%",
+            "border": "2px solid #3f3f46",
+            "backgroundColor": "#18181b",
+            "color": "#ffffff",
+            "cursor": "pointer",
+            "display": "flex",
+            "alignItems": "center",
+            "justifyContent": "center",
+            "fontSize": "1.3rem",
+            "zIndex": "9999",
+            "boxShadow": "0 4px 12px rgba(0, 0, 0, 0.4)",
+            "transition": "all 0.2s ease"
+        }
+    ),
     
 ], fluid=True, className="fade-in", id="main-container")
 
@@ -593,10 +624,10 @@ def update_search_suggestions(search_value):
         "left": "0",
         "right": "0",
         "marginTop": "4px",
-        "background": "#131316",
-        "border": "1px solid rgba(255, 255, 255, 0.08)",
-        "borderRadius": "12px",
-        "boxShadow": "0 12px 40px rgba(0, 0, 0, 0.6)",
+        "background": "#1f1f23",
+        "border": "1px solid rgba(16, 185, 129, 0.5)",
+        "borderRadius": "10px",
+        "boxShadow": "0 8px 32px rgba(0, 0, 0, 0.7)",
         "zIndex": "9999",
         "maxHeight": "300px",
         "overflowY": "auto"
@@ -621,7 +652,7 @@ def update_search_suggestions(search_value):
                     "color": "#a1a1aa", "margin": "0 0 4px 0", "fontSize": "0.85rem"
                 }),
                 html.P("💡 Presiona Enter para buscar cualquier ticker", style={
-                    "color": "#00d632", "margin": "0", "fontSize": "0.8rem", "fontWeight": "500"
+                    "color": "#10b981", "margin": "0", "fontSize": "0.8rem", "fontWeight": "500"
                 })
             ], style={"padding": "12px 16px", "textAlign": "center"})
         ], visible_style
@@ -633,7 +664,7 @@ def update_search_suggestions(search_value):
         suggestion_items.append(
             html.Div([
                 html.Span(ticker, style={
-                    "color": "#00d632", "fontWeight": "700", "fontSize": "0.95rem",
+                    "color": "#10b981", "fontWeight": "700", "fontSize": "0.95rem",
                     "marginRight": "12px", "minWidth": "60px", "display": "inline-block"
                 }),
                 html.Span(name[:35] + ("..." if len(name) > 35 else ""), style={
@@ -645,7 +676,7 @@ def update_search_suggestions(search_value):
             style={
                 "padding": "12px 16px",
                 "cursor": "pointer",
-                "borderBottom": "none" if is_last else "1px solid rgba(255, 255, 255, 0.06)",
+                "borderBottom": "none" if is_last else "1px solid rgba(63, 63, 70, 0.5)",
                 "transition": "all 0.15s ease",
                 "backgroundColor": "transparent"
             }, 
@@ -982,7 +1013,7 @@ INVESTMENT_STRATEGIES = {
         "name": "Growth Stocks",
         "description": "Empresas con alto potencial de crecimiento",
         "tickers": ["NVDA", "TSLA", "AMD", "SHOP", "SQ", "SNOW", "PLTR", "NET", "DDOG", "CRWD"],
-        "color": "#00d632"
+        "color": "#34d399"
     },
     "dividend": {
         "name": "Dividend Champions",
@@ -1029,7 +1060,7 @@ def show_strategy_stocks(value_clicks, growth_clicks, dividend_clicks, bluechip_
     
     strategy = INVESTMENT_STRATEGIES.get(strategy_key, {})
     tickers = strategy.get("tickers", [])
-    color = strategy.get("color", "#00d632")
+    color = strategy.get("color", "#10b981")
     name = strategy.get("name", "Estrategia")
     description = strategy.get("description", "")
     
@@ -1125,7 +1156,7 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
         "right": "0",
         "marginTop": "4px",
         "background": "#1a1a1f",
-        "border": "1px solid rgba(0, 214, 50, 0.25)",
+        "border": "1px solid rgba(16, 185, 129, 0.4)",
         "borderRadius": "10px",
         "boxShadow": "0 8px 32px rgba(0, 0, 0, 0.6)",
         "zIndex": "9999",
@@ -1328,9 +1359,9 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
             # Badges centrados con mejor espaciado
             html.Div([
                 html.Span("🚀 Growth", className="badge me-2", style={
-                    "backgroundColor": "rgba(0, 214, 50, 0.08)",
-                    "color": "#00d632",
-                    "border": "1px solid rgba(0, 214, 50, 0.2)",
+                    "backgroundColor": "rgba(16, 185, 129, 0.15)",
+                    "color": "#34d399",
+                    "border": "1px solid rgba(16, 185, 129, 0.3)",
                     "fontWeight": "500",
                     "padding": "5px 12px",
                     "fontSize": "0.75rem",
@@ -1432,7 +1463,7 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
                                        className="mb-1 text-center text-info"),
                                 html.P("Funds From Operations", className="small text-muted text-center", style={"fontSize": "0.7rem"})
                             ])
-                        ], style={"backgroundColor": "#1c1c21", "border": "1px solid rgba(255,255,255,0.06)", "borderRadius": "12px"})
+                        ], style={"backgroundColor": "#27272a", "border": "none"})
                     ], xs=6, md=3, className="mb-3"),
                     dbc.Col([
                         dbc.Card([
@@ -1443,7 +1474,7 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
                                 html.P(reit_metrics.get('p_ffo_interpretation', ('Precio/FFO',))[0], 
                                       className="small text-muted text-center", style={"fontSize": "0.7rem"})
                             ])
-                        ], style={"backgroundColor": "#1c1c21", "border": "1px solid rgba(255,255,255,0.06)", "borderRadius": "12px"})
+                        ], style={"backgroundColor": "#27272a", "border": "none"})
                     ], xs=6, md=3, className="mb-3"),
                     dbc.Col([
                         dbc.Card([
@@ -1453,7 +1484,7 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
                                        className="mb-1 text-center text-info"),
                                 html.P("Adjusted FFO", className="small text-muted text-center", style={"fontSize": "0.7rem"})
                             ])
-                        ], style={"backgroundColor": "#1c1c21", "border": "1px solid rgba(255,255,255,0.06)", "borderRadius": "12px"})
+                        ], style={"backgroundColor": "#27272a", "border": "none"})
                     ], xs=6, md=3, className="mb-3"),
                     dbc.Col([
                         dbc.Card([
@@ -1464,7 +1495,7 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
                                 html.P(reit_metrics.get('payout_interpretation', ('Dividendo/FFO',))[0],
                                       className="small text-muted text-center", style={"fontSize": "0.7rem"})
                             ])
-                        ], style={"backgroundColor": "#1c1c21", "border": "1px solid rgba(255,255,255,0.06)", "borderRadius": "12px"})
+                        ], style={"backgroundColor": "#27272a", "border": "none"})
                     ], xs=6, md=3, className="mb-3"),
                 ]),
                 # Nota explicativa
@@ -1472,7 +1503,7 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
                     html.Strong("💡 ¿Por qué FFO? "),
                     "Para REITs, el FFO es más relevante que el Net Income porque la depreciación inmobiliaria ",
                     "no refleja una pérdida real de valor. Un P/FFO < 15 generalmente indica buena valoración."
-                ], color="info", className="mb-0 small", style={"backgroundColor": "rgba(0, 214, 50, 0.08)", "border": "1px solid rgba(0, 214, 50, 0.2)"})
+                ], color="info", className="mb-0 small", style={"backgroundColor": "rgba(16, 185, 129, 0.1)", "border": "1px solid rgba(16, 185, 129, 0.3)"})
             ]) if is_reit and reit_metrics and reit_metrics.get("is_valid") else None,
         ])
         
@@ -1668,7 +1699,7 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
             week_high, week_low, avg_volume = None, None, None
         
         # Colores del rendimiento
-        pct_color = '#00d632' if ytd_is_positive else '#f43f5e'
+        pct_color = '#10b981' if ytd_is_positive else '#f43f5e'
         
         tab_historical = html.Div([
             html.H5("Histórico de Precio", className="mb-2"),
@@ -1881,7 +1912,7 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
                         html.Div([
                             html.Span("📊", style={"fontSize": "1.2rem", "marginRight": "8px"}),
                             html.Div([
-                                html.Strong(symbol, style={"color": "#00d632"}),
+                                html.Strong(symbol, style={"color": "#10b981"}),
                                 html.Div("Valor de la empresa", style={"fontSize": "0.75rem", "color": "#6b7280"})
                             ])
                         ], style={"display": "flex", "alignItems": "center"}),
@@ -1938,7 +1969,7 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
                                 }),
                                 html.Th(symbol, style={
                                     "textAlign": "center", "padding": "14px 16px",
-                                    "color": "#00d632", "fontWeight": "700", "fontSize": "0.9rem",
+                                    "color": "#10b981", "fontWeight": "700", "fontSize": "0.9rem",
                                     "borderBottom": "1px solid #374151", "width": "18%"
                                 }),
                                 html.Th("Sector", style={
@@ -2122,7 +2153,7 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
                         ])
                     ], className="d-flex align-items-start"),
                 ])
-            ], className="mb-4", style={"backgroundColor": "#131316", "border": "1px solid rgba(255,255,255,0.08)"}),
+            ], className="mb-4", style={"backgroundColor": "#1f1f23", "border": "1px solid #3f3f46"}),
             
             # Comparación de valores con tooltips
             html.H6("📊 Comparación de Valores", className="mb-3"),
@@ -2139,7 +2170,7 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
                             html.P("Lo que cuesta hoy", className="text-muted small mb-0 text-center",
                                   style={"fontSize": "0.75rem"})
                         ])
-                    ], style={"backgroundColor": "#1c1c21", "border": "1px solid rgba(255,255,255,0.06)", "borderRadius": "12px"}),
+                    ], style={"backgroundColor": "#27272a", "border": "none"}),
                     dbc.Tooltip(
                         "El precio actual de la acción en el mercado. Es lo que pagarías si compras ahora.",
                         target=f"tip-precio-{uid}", placement="top"
@@ -2160,7 +2191,7 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
                                 f"{graham_vs_price:+.0f}% vs precio" if graham_vs_price else "Fórmula clásica"
                             ], className="small mb-0 text-center text-muted", style={"fontSize": "0.75rem"})
                         ])
-                    ], style={"backgroundColor": "#1c1c21", "border": "1px solid rgba(255,255,255,0.06)", "borderRadius": "12px"}),
+                    ], style={"backgroundColor": "#27272a", "border": "none"}),
                     dbc.Tooltip(
                         get_tooltip_text("graham"),
                         target=f"tip-graham-{uid}", placement="top"
@@ -2181,7 +2212,7 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
                                 f"{dcf_vs_price:+.0f}% vs precio" if dcf_vs_price else "Flujos futuros"
                             ], className="small mb-0 text-center text-muted", style={"fontSize": "0.75rem"})
                         ])
-                    ], style={"backgroundColor": "#1c1c21", "border": "1px solid rgba(255,255,255,0.06)", "borderRadius": "12px"}),
+                    ], style={"backgroundColor": "#27272a", "border": "none"}),
                     dbc.Tooltip(
                         get_tooltip_text("dcf"),
                         target=f"tip-dcf-{uid}", placement="top"
@@ -2899,7 +2930,7 @@ def update_price_chart_period(n1w, n1, n3, n6, n12, n60, symbol):
     # Crear gráfico y obtener datos de rendimiento en una sola llamada
     chart, pct_change, end_price = create_price_chart(symbol, period)
     is_positive = pct_change >= 0
-    pct_color = '#00d632' if is_positive else '#f43f5e'
+    pct_color = '#10b981' if is_positive else '#f43f5e'
     
     # Header de rendimiento actualizado
     performance_header = [
@@ -3017,8 +3048,126 @@ def download_pdf(n_clicks, analysis_data):
         return no_update
 
 
+# =============================================================================
+# THEME TOGGLE CALLBACKS
+# =============================================================================
 
-# Theme toggle callbacks eliminados - dark-only mode
+# Callback clientside para cambiar el tema (máxima performance)
+app.clientside_callback(
+    """
+    function(n_clicks, currentTheme) {
+        // Determinar nuevo tema
+        let newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        
+        // Si es el primer click y no hay tema guardado, empezar con dark
+        if (n_clicks === 0) {
+            newTheme = currentTheme || 'dark';
+        }
+        
+        // Aplicar tema al documento
+        document.documentElement.setAttribute('data-theme', newTheme);
+        
+        // Guardar en localStorage para persistencia
+        localStorage.setItem('finanzer-theme', newTheme);
+        
+        // Actualizar icono del botón y colores
+        const btn = document.getElementById('theme-toggle');
+        const sunIcon = document.getElementById('icon-sun');
+        const moonIcon = document.getElementById('icon-moon');
+        
+        if (sunIcon && moonIcon) {
+            if (newTheme === 'light') {
+                sunIcon.style.display = 'none';
+                moonIcon.style.display = 'block';
+            } else {
+                sunIcon.style.display = 'block';
+                moonIcon.style.display = 'none';
+            }
+        }
+        
+        // Cambiar colores del botón según el tema
+        if (btn) {
+            if (newTheme === 'light') {
+                btn.style.backgroundColor = '#ffffff';
+                btn.style.borderColor = '#d4d4d8';
+                btn.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+            } else {
+                btn.style.backgroundColor = '#18181b';
+                btn.style.borderColor = '#3f3f46';
+                btn.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.4)';
+            }
+        }
+        
+        // NUEVO: Cambiar estilos inline de elementos con colores hardcoded
+        applyThemeToInlineStyles(newTheme);
+        
+        return newTheme;
+    }
+    """,
+    Output("theme-store", "data"),
+    Input("theme-toggle", "n_clicks"),
+    State("theme-store", "data"),
+    prevent_initial_call=False
+)
+
+# Callback para inicializar tema al cargar la página
+app.clientside_callback(
+    """
+    function(theme) {
+        // Verificar si hay tema guardado en localStorage
+        const savedTheme = localStorage.getItem('finanzer-theme');
+        const themeToApply = savedTheme || theme || 'dark';
+        
+        // Aplicar tema al documento
+        document.documentElement.setAttribute('data-theme', themeToApply);
+        
+        // Actualizar icono del botón
+        const btn = document.getElementById('theme-toggle');
+        const sunIcon = document.getElementById('icon-sun');
+        const moonIcon = document.getElementById('icon-moon');
+        
+        if (sunIcon && moonIcon) {
+            if (themeToApply === 'light') {
+                sunIcon.style.display = 'none';
+                moonIcon.style.display = 'block';
+            } else {
+                sunIcon.style.display = 'block';
+                moonIcon.style.display = 'none';
+            }
+        }
+        
+        // Cambiar colores del botón según el tema
+        if (btn) {
+            if (themeToApply === 'light') {
+                btn.style.backgroundColor = '#ffffff';
+                btn.style.borderColor = '#d4d4d8';
+                btn.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+            } else {
+                btn.style.backgroundColor = '#18181b';
+                btn.style.borderColor = '#3f3f46';
+                btn.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.4)';
+            }
+        }
+        
+        // NUEVO: Aplicar tema a estilos inline después de un pequeño delay
+        setTimeout(() => applyThemeToInlineStyles(themeToApply), 100);
+        
+        // Observer para aplicar a nuevos elementos
+        if (!window.themeObserver) {
+            window.themeObserver = new MutationObserver(() => {
+                const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+                applyThemeToInlineStyles(currentTheme);
+            });
+            window.themeObserver.observe(document.body, { childList: true, subtree: true });
+        }
+        
+        return window.dash_clientside.no_update;
+    }
+    """,
+    Output("theme-toggle", "title"),  # Dummy output
+    Input("theme-store", "data"),
+    prevent_initial_call=False
+)
 
 # Definir la función JavaScript global para cambiar estilos inline
 app.index_string = '''
@@ -3031,117 +3180,135 @@ app.index_string = '''
         {%css%}
         <style>
         /* ==============================================
-           FINANZER - DARK-ONLY DESIGN (Robinhood Style)
-           Paleta: Negro puro + Verde vibrante + Azul UI
+           OVERRIDE BOOTSTRAP THEME COLORS - VERDE
            ============================================== */
-
-        /* === FORCE BLACK BACKGROUND (override Bootstrap DARKLY gray) === */
-        html, body, .container-fluid, .container,
-        #main-container, #react-entry-point, #_dash-app-content {
-            background-color: #000000 !important;
-        }
-
-        /* === GLOBAL TRANSITIONS === */
-        *, *::before, *::after {
-            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        /* === PERIOD BUTTONS === */
+        
+        /* Botones de período - el activo es primary sin outline */
         .period-btn.btn-primary:not(.btn-outline-primary) {
-            background-color: #00d632 !important;
-            border-color: #00d632 !important;
-            color: #000 !important;
-            font-weight: 600 !important;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            background-color: #10b981 !important;
+            border-color: #10b981 !important;
+            color: white !important;
         }
-        .period-btn.btn-primary:not(.btn-outline-primary):hover {
-            background-color: #00b82a !important;
-            border-color: #00b82a !important;
-            box-shadow: 0 0 20px rgba(0, 214, 50, 0.3) !important;
-        }
-
+        
+        /* Botones de período NO seleccionados - outline visible */
         .period-btn.btn-outline-secondary,
         .period-btn.btn-secondary.btn-outline-secondary {
             background-color: transparent !important;
-            border: 1px solid rgba(255, 255, 255, 0.12) !important;
-            color: #9ca3af !important;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            border: 2px solid #10b981 !important;
+            color: #10b981 !important;
         }
         .period-btn.btn-outline-secondary:hover {
-            background-color: rgba(255, 255, 255, 0.06) !important;
-            border-color: rgba(255, 255, 255, 0.2) !important;
-            color: #ffffff !important;
+            background-color: rgba(16, 185, 129, 0.15) !important;
+            border-color: #10b981 !important;
+            color: #10b981 !important;
         }
-
-        /* === GENERIC BUTTONS === */
-        .btn-primary:not(.period-btn), .btn-secondary:not(.period-btn),
+        
+        /* En modo claro, asegurar visibilidad */
+        [data-theme="light"] .period-btn.btn-outline-secondary {
+            border: 2px solid #059669 !important;
+            color: #059669 !important;
+        }
+        
+        /* Todos los botones primarios y secundarios -> verde */
+        .btn-primary:not(.period-btn), .btn-secondary:not(.period-btn), 
         .btn-outline-primary:not(.period-btn), .btn-outline-secondary:not(.period-btn) {
             background-color: transparent !important;
-            border-color: rgba(255, 255, 255, 0.1) !important;
-            color: #9ca3af !important;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            border-color: rgba(16, 185, 129, 0.4) !important;
+            color: #34d399 !important;
         }
-        .btn-primary:not(.period-btn):hover, .btn-secondary:not(.period-btn):hover,
+        .btn-primary:not(.period-btn):hover, .btn-secondary:not(.period-btn):hover, 
         .btn-outline-primary:not(.period-btn):hover, .btn-outline-secondary:not(.period-btn):hover {
-            background-color: rgba(255, 255, 255, 0.06) !important;
-            border-color: rgba(255, 255, 255, 0.2) !important;
-            color: #ffffff !important;
+            background-color: rgba(16, 185, 129, 0.2) !important;
+            border-color: rgba(16, 185, 129, 0.6) !important;
+            color: #34d399 !important;
         }
         .btn-primary:focus, .btn-secondary:focus {
-            box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25) !important;
+            box-shadow: 0 0 0 0.2rem rgba(16, 185, 129, 0.25) !important;
         }
-
-        /* === SEARCH INPUT === */
+        
+        /* Input de búsqueda - focus verde */
         #navbar-search-input:focus,
         #navbar-search-input:active,
         input[type="text"]:focus {
-            border-color: #3b82f6 !important;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important;
+            border-color: #10b981 !important;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3) !important;
             outline: none !important;
         }
-
-        /* === LINKS & TEXT === */
+        
+        /* Links primarios */
         a.text-primary, .text-primary {
-            color: #3b82f6 !important;
+            color: #10b981 !important;
         }
-
+        
+        /* Badge primario - Growth */
         .badge.bg-primary {
-            background-color: rgba(0, 214, 50, 0.12) !important;
-            color: #00d632 !important;
+            background-color: rgba(16, 185, 129, 0.15) !important;
+            color: #34d399 !important;
         }
-
-        /* === DOWNLOAD BUTTON === */
+        
+        /* ==============================================
+           FIN OVERRIDE BOOTSTRAP
+           ============================================== */
+        
+        /* ==============================================
+           MODO CLARO - CSS Específico
+           ============================================== */
+        [data-theme="light"] .period-btn.btn-outline-secondary {
+            background-color: #e6f7f1 !important;
+            border: 2px solid #10b981 !important;
+            color: #047857 !important;
+            font-weight: 600 !important;
+        }
+        [data-theme="light"] .period-btn.btn-primary:not(.btn-outline-primary) {
+            background-color: #10b981 !important;
+            border-color: #10b981 !important;
+            color: white !important;
+        }
+        
+        /* Quick picks en modo claro - usando clase parent */
+        [data-theme="light"] button[id*="quick-pick"] {
+            background: #e6f7f1 !important;
+            border: 2px solid #10b981 !important;
+            color: #047857 !important;
+            font-weight: 600 !important;
+        }
+        
+        /* ==============================================
+           FIN MODO CLARO
+           ============================================== */
+        
+        /* Botón de descarga PDF */
         .download-btn {
-            background: linear-gradient(135deg, #00d632 0%, #00b82a 100%) !important;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
             border: none !important;
-            color: #000 !important;
+            color: white !important;
             padding: 12px 28px !important;
             border-radius: 12px !important;
-            font-weight: 700 !important;
+            font-weight: 600 !important;
             font-size: 1rem !important;
             cursor: pointer !important;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-            box-shadow: 0 4px 20px rgba(0, 214, 50, 0.25) !important;
+            transition: all 0.3s ease !important;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3) !important;
         }
         .download-btn:hover {
             transform: translateY(-2px) !important;
-            box-shadow: 0 8px 30px rgba(0, 214, 50, 0.35) !important;
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4) !important;
         }
-
-        /* === TOOLTIPS === */
+        
+        /* Tooltips modernos y minimalistas */
         .tooltip {
             font-family: 'Inter', -apple-system, sans-serif !important;
         }
         .tooltip-inner {
-            background: #131316 !important;
-            border: 1px solid rgba(255, 255, 255, 0.08) !important;
-            border-radius: 12px !important;
-            padding: 16px 20px !important;
+            background: linear-gradient(145deg, #1a1a22 0%, #252530 100%) !important;
+            border: 1px solid rgba(16, 185, 129, 0.25) !important;
+            border-radius: 14px !important;
+            padding: 18px 22px !important;
             max-width: 380px !important;
             text-align: left !important;
             font-size: 13px !important;
             line-height: 1.7 !important;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6) !important;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.03) !important;
             white-space: pre-line !important;
             color: #e4e4e7 !important;
         }
@@ -3150,14 +3317,14 @@ app.index_string = '''
         }
         .bs-tooltip-top .tooltip-arrow::before,
         .bs-tooltip-auto[data-popper-placement^="top"] .tooltip-arrow::before {
-            border-top-color: #131316 !important;
+            border-top-color: #252530 !important;
         }
         .bs-tooltip-bottom .tooltip-arrow::before,
         .bs-tooltip-auto[data-popper-placement^="bottom"] .tooltip-arrow::before {
-            border-bottom-color: #131316 !important;
+            border-bottom-color: #252530 !important;
         }
-
-        /* === INFO ICON (Azul UI) === */
+        
+        /* Info icon estilo */
         .info-icon {
             display: inline-flex;
             align-items: center;
@@ -3165,264 +3332,307 @@ app.index_string = '''
             width: 16px;
             height: 16px;
             border-radius: 50%;
-            background: rgba(59, 130, 246, 0.1);
-            color: #3b82f6;
+            background: rgba(16, 185, 129, 0.12);
+            color: #34d399;
             font-size: 10px;
             font-weight: 600;
             font-style: normal;
             cursor: help;
             margin-left: 6px;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            border: 1px solid rgba(59, 130, 246, 0.2);
+            transition: all 0.2s ease;
+            border: 1px solid rgba(16, 185, 129, 0.25);
             flex-shrink: 0;
         }
         .info-icon:hover {
-            background: rgba(59, 130, 246, 0.2);
-            transform: scale(1.15);
-            border-color: rgba(59, 130, 246, 0.4);
+            background: rgba(16, 185, 129, 0.25);
+            transform: scale(1.1);
+            border-color: rgba(16, 185, 129, 0.4);
         }
-
-        /* === LOGO === */
+        
+        /* Estilos específicos para modo claro */
+        @media (prefers-color-scheme: light) {
+            .metric-card {
+                background-color: #f8fafc !important;
+                border-color: #e2e8f0 !important;
+            }
+        }
+        
+        /* Logo Finanzer en verde */
         #logo-home span:last-child {
-            background: linear-gradient(135deg, #00d632 0%, #00b82a 100%) !important;
+            background: linear-gradient(135deg, #34d399 0%, #10b981 100%) !important;
             -webkit-background-clip: text !important;
             -webkit-text-fill-color: transparent !important;
             background-clip: text !important;
         }
-
-        /* === TABS (Azul UI) === */
-        .nav-tabs .nav-link {
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            color: #6b7280;
-        }
+        
+        /* Tabs activos con verde */
         .nav-tabs .nav-link.active {
-            color: #3b82f6 !important;
-            border-bottom: 2px solid #3b82f6 !important;
+            color: #059669 !important;
+            border-bottom: 2px solid #10b981 !important;
         }
         .nav-tabs .nav-link:hover:not(.active) {
-            color: #9ca3af !important;
+            color: #10b981 !important;
         }
-
+        
+        /* Tabs wrapper base */
         .tabs-wrapper {
             position: relative;
         }
-
-        /* === LINKS === */
+        
+        /* Links en verde */
         a {
-            color: #3b82f6;
-            transition: color 0.2s ease;
+            color: #10b981;
         }
         a:hover {
-            color: #60a5fa;
+            color: #059669;
         }
-
-        /* === TABLE HOVER === */
-        table tr {
-            transition: background-color 0.2s ease;
-        }
+        
+        /* Tabla de comparación - hover en filas */
         table tr:hover td {
-            background-color: rgba(255, 255, 255, 0.03) !important;
+            background-color: rgba(16, 185, 129, 0.05) !important;
         }
-
-        /* === SCORE CARD === */
+        
+        /* Score card styling */
         .score-card {
-            background: #131316;
+            background: linear-gradient(145deg, #1f1f23 0%, #18181b 100%);
             border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(55, 65, 81, 0.5);
             padding: 0;
             overflow: hidden;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .score-card:hover {
-            border-color: rgba(0, 214, 50, 0.2);
-            box-shadow: 0 0 30px rgba(0, 214, 50, 0.08);
-        }
-
-        /* === INSTITUTIONAL CARDS === */
+        
+        /* Institutional cards (Altman Z-Score, Piotroski F-Score) */
         .institutional-card {
-            background: #131316;
-            border: 1px solid rgba(255, 255, 255, 0.06);
+            background: linear-gradient(145deg, rgba(39, 39, 42, 0.8) 0%, rgba(24, 24, 27, 0.9) 100%);
+            border: 1px solid rgba(63, 63, 70, 0.5);
             border-radius: 12px;
             padding: 20px;
             height: 100%;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.2s ease;
         }
+        
         .institutional-card:hover {
-            border-color: rgba(59, 130, 246, 0.25);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border-color: rgba(16, 185, 129, 0.3);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
-
+        
         .institutional-title {
             font-weight: 600;
             font-size: 1rem;
-            color: #ffffff;
+            color: #fafafa;
         }
+        
         .institutional-value {
             font-size: 2rem;
             font-weight: 700;
             line-height: 1.2;
         }
+        
         .institutional-label {
             font-size: 0.9rem;
-            color: #9ca3af;
+            color: #a1a1aa;
         }
+        
         .institutional-desc {
             font-size: 0.85rem;
-            color: #6b7280;
+            color: #71717a;
             margin-top: 8px;
             margin-bottom: 0;
         }
-
-        /* === ANIMATIONS === */
-        .score-level-badge {
-            animation: fadeInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        
+        /* Light theme institutional cards */
+        [data-theme="light"] .institutional-card {
+            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+            border-color: #e2e8f0;
         }
-        @keyframes fadeInUp {
+        
+        [data-theme="light"] .institutional-title {
+            color: #1e293b;
+        }
+        
+        [data-theme="light"] .institutional-label {
+            color: #64748b;
+        }
+        
+        [data-theme="light"] .institutional-desc {
+            color: #94a3b8;
+        }
+        
+        /* Badge del score con animación sutil */
+        .score-level-badge {
+            animation: fadeIn 0.5s ease-out;
+        }
+        @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .fade-in {
-            animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        /* === QUICK PICKS === */
-        button[id*="quick-pick"] {
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        }
+        
+        /* Quick picks hover - botones verdes */
         button[id*="quick-pick"]:hover {
-            background: rgba(0, 214, 50, 0.2) !important;
-            border-color: #00d632 !important;
-            color: #00d632 !important;
+            background: rgba(16, 185, 129, 0.3) !important;
+            border-color: rgba(16, 185, 129, 0.6) !important;
             transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(0, 214, 50, 0.15);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
         }
-
-        /* === SEARCH BUTTON === */
+        
+        /* Botón de búsqueda verde */
         #navbar-search-btn {
-            background-color: #00d632 !important;
-            border-color: #00d632 !important;
-            color: #000 !important;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            background-color: #10b981 !important;
+            border-color: #10b981 !important;
         }
         #navbar-search-btn:hover {
-            background-color: #00b82a !important;
-            border-color: #00b82a !important;
-            box-shadow: 0 0 15px rgba(0, 214, 50, 0.3) !important;
+            background-color: #059669 !important;
+            border-color: #059669 !important;
         }
-
-        /* === METRIC CARDS === */
-        .metric-card {
-            background: #1c1c21;
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 12px;
-            padding: 16px 12px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .metric-card:hover {
-            border-color: rgba(255, 255, 255, 0.12);
-        }
-        .metric-label {
-            color: #9ca3af;
-            font-size: 0.85rem;
-            font-weight: 500;
-            margin-bottom: 4px;
-        }
-        .metric-value {
-            color: #ffffff;
-            font-size: 1.15rem;
-            font-weight: 700;
-        }
-
-        /* === SCORE SUMMARY CARDS === */
-        .score-summary-card {
-            background: #1c1c21;
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 12px;
-            padding: 16px;
-            text-align: center;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .score-summary-card:hover {
-            border-color: rgba(255, 255, 255, 0.12);
-        }
-        .score-summary-label {
-            color: #9ca3af;
-            font-size: 0.85rem;
-            font-weight: 500;
-            margin-bottom: 6px;
-        }
-
-        /* Override Bootstrap DARKLY card defaults */
-        .card {
-            background-color: #131316;
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 12px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .card:hover {
-            border-color: rgba(255, 255, 255, 0.12);
-        }
-        .card .card-body {
-            padding: 16px;
-        }
-
+        
         /* ==============================================
-           SENSITIVITY TABLE - FIXED COLORS
+           TABLA DE SENSIBILIDAD - COLORES FIJOS (ULTRA-ESPECÍFICO)
+           Estos estilos NUNCA deben cambiar con el tema
            ============================================== */
-
-        .sensitivity-container {
-            background-color: #131316 !important;
-            border-radius: 12px;
+        
+        /* Contenedor principal - NUNCA cambia */
+        .sensitivity-container,
+        div.sensitivity-container,
+        [data-theme="light"] .sensitivity-container,
+        [data-theme="dark"] .sensitivity-container {
+            background-color: #18181b !important;
         }
-
+        
         .sensitivity-table,
-        .sensitivity-table tbody, .sensitivity-table thead,
-        .sensitivity-table tr, .sensitivity-table td, .sensitivity-table th {
+        .sensitivity-table tbody,
+        .sensitivity-table thead,
+        .sensitivity-table tr,
+        .sensitivity-table td,
+        .sensitivity-table th,
+        table.sensitivity-table td,
+        table.sensitivity-table th {
             background-color: transparent !important;
         }
+        
         .sensitivity-table td,
         .sensitivity-table th {
             padding: 10px 6px !important;
             text-align: center !important;
             font-size: 0.9rem !important;
         }
-
-        .sens-header {
-            background-color: #131316 !important;
+        
+        /* Headers - SIEMPRE oscuros */
+        .sens-header,
+        td.sens-header,
+        th.sens-header,
+        .sensitivity-table .sens-header,
+        .sensitivity-table th.sens-header,
+        [data-theme="light"] .sens-header,
+        [data-theme="dark"] .sens-header {
+            background-color: #18181b !important;
             color: #9ca3af !important;
             font-weight: 600 !important;
-            border-bottom: 2px solid rgba(255, 255, 255, 0.08) !important;
+            border-bottom: 2px solid #3f3f46 !important;
         }
-        .sens-header-base {
-            background-color: #00d632 !important;
-            color: #000 !important;
+        
+        .sens-header-base,
+        td.sens-header-base,
+        th.sens-header-base,
+        .sensitivity-table .sens-header-base,
+        .sensitivity-table th.sens-header-base,
+        [data-theme="light"] .sens-header-base,
+        [data-theme="dark"] .sens-header-base {
+            background-color: #10b981 !important;
+            color: white !important;
             font-weight: 700 !important;
-            border-bottom: 2px solid rgba(255, 255, 255, 0.08) !important;
+            border-bottom: 2px solid #3f3f46 !important;
         }
-        .sens-row-header {
-            background-color: #131316 !important;
+        
+        /* Row headers - SIEMPRE oscuros */
+        .sens-row-header,
+        td.sens-row-header,
+        .sensitivity-table .sens-row-header,
+        .sensitivity-table td.sens-row-header,
+        [data-theme="light"] .sens-row-header,
+        [data-theme="dark"] .sens-row-header {
+            background-color: #18181b !important;
             color: #9ca3af !important;
             font-weight: 500 !important;
         }
-        .sens-row-header-base {
-            background-color: #00d632 !important;
-            color: #000 !important;
+        
+        .sens-row-header-base,
+        td.sens-row-header-base,
+        .sensitivity-table .sens-row-header-base,
+        .sensitivity-table td.sens-row-header-base,
+        [data-theme="light"] .sens-row-header-base,
+        [data-theme="dark"] .sens-row-header-base {
+            background-color: #10b981 !important;
+            color: white !important;
             font-weight: 700 !important;
         }
-
-        .sens-very-undervalued { background-color: #166534 !important; color: white !important; }
-        .sens-undervalued { background-color: #15803d !important; color: white !important; }
-        .sens-fair { background-color: #854d0e !important; color: white !important; }
-        .sens-overvalued { background-color: #b91c1c !important; color: white !important; }
-        .sens-very-overvalued { background-color: #7f1d1d !important; color: white !important; }
-        .sens-neutral { background-color: #1c1c21 !important; color: white !important; }
-
-        .sens-base-cell {
-            border: 3px solid #00d632 !important;
+        
+        /* Celdas de valoración - NUNCA CAMBIAN */
+        .sens-very-undervalued,
+        td.sens-very-undervalued,
+        .sensitivity-table .sens-very-undervalued,
+        .sensitivity-table td.sens-very-undervalued,
+        [data-theme="light"] .sens-very-undervalued,
+        [data-theme="dark"] .sens-very-undervalued {
+            background-color: #166534 !important;
+            color: white !important;
+        }
+        
+        .sens-undervalued,
+        td.sens-undervalued,
+        .sensitivity-table .sens-undervalued,
+        .sensitivity-table td.sens-undervalued,
+        [data-theme="light"] .sens-undervalued,
+        [data-theme="dark"] .sens-undervalued {
+            background-color: #15803d !important;
+            color: white !important;
+        }
+        
+        .sens-fair,
+        td.sens-fair,
+        .sensitivity-table .sens-fair,
+        .sensitivity-table td.sens-fair,
+        [data-theme="light"] .sens-fair,
+        [data-theme="dark"] .sens-fair {
+            background-color: #854d0e !important;
+            color: white !important;
+        }
+        
+        .sens-overvalued,
+        td.sens-overvalued,
+        .sensitivity-table .sens-overvalued,
+        .sensitivity-table td.sens-overvalued,
+        [data-theme="light"] .sens-overvalued,
+        [data-theme="dark"] .sens-overvalued {
+            background-color: #b91c1c !important;
+            color: white !important;
+        }
+        
+        .sens-very-overvalued,
+        td.sens-very-overvalued,
+        .sensitivity-table .sens-very-overvalued,
+        .sensitivity-table td.sens-very-overvalued,
+        [data-theme="light"] .sens-very-overvalued,
+        [data-theme="dark"] .sens-very-overvalued {
+            background-color: #7f1d1d !important;
+            color: white !important;
+        }
+        
+        .sens-neutral,
+        td.sens-neutral,
+        .sensitivity-table .sens-neutral,
+        .sensitivity-table td.sens-neutral,
+        [data-theme="light"] .sens-neutral,
+        [data-theme="dark"] .sens-neutral {
+            background-color: #27272a !important;
+            color: white !important;
+        }
+        
+        /* Celda base */
+        .sens-base-cell,
+        td.sens-base-cell,
+        .sensitivity-table .sens-base-cell,
+        .sensitivity-table td.sens-base-cell {
+            border: 3px solid #10b981 !important;
             border-radius: 6px !important;
             font-weight: 700 !important;
         }
@@ -3509,7 +3719,7 @@ app.index_string = '''
                 flex-wrap: nowrap !important;
                 width: max-content !important;
                 min-width: 100% !important;
-                border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+                border-bottom: 1px solid #3f3f46 !important;
                 gap: 0 !important;
                 margin: 0 !important;
             }
@@ -3597,7 +3807,238 @@ app.index_string = '''
             }
         }
         </style>
-        <!-- No theme switching JS needed - dark-only mode -->
+        <script>
+        function applyThemeToInlineStyles(theme) {
+            const isLight = theme === 'light';
+            
+            // PRIMERO: Limpiar TODOS los estilos inline de elementos de sensibilidad
+            // para que las clases CSS tomen control
+            document.querySelectorAll('.sensitivity-container, .sensitivity-table, .sensitivity-table td, .sensitivity-table th, [class*="sens-"]').forEach(el => {
+                el.style.backgroundColor = '';
+                el.style.color = '';
+                el.style.borderColor = '';
+            });
+            
+            // Colores para cada tema
+            const colors = {
+                light: {
+                    textPrimary: '#1e293b',
+                    textSecondary: '#475569',
+                    textMuted: '#64748b',
+                    bgPrimary: '#ffffff',
+                    bgSecondary: '#f8fafc',
+                    bgTertiary: '#f1f5f9',
+                    border: '#e2e8f0'
+                },
+                dark: {
+                    textPrimary: '#fafafa',
+                    textSecondary: '#a1a1aa',
+                    textMuted: '#71717a',
+                    bgPrimary: '#09090b',
+                    bgSecondary: '#18181b',
+                    bgTertiary: '#27272a',
+                    border: '#3f3f46'
+                }
+            };
+            
+            const c = isLight ? colors.light : colors.dark;
+            
+            // Lista de colores claros de texto (para dark mode) que deben cambiar en light mode
+            const lightTextColors = ['#fff', '#ffffff', 'white', '#fafafa', '#d4d4d8', '#f4f4f5', 'rgb(255', 'rgb(250', 'rgb(212'];
+            const mutedTextColors = ['#71717a', '#a1a1aa', '#52525b', 'rgb(113', 'rgb(161', 'rgb(82'];
+            const accentColors = ['#34d399', '#10b981', 'rgb(52, 211', 'rgb(16, 185'];
+            
+            // Cambiar colores de texto
+            document.querySelectorAll('[style]').forEach(el => {
+                // No modificar NADA dentro de la tabla o contenedor de sensibilidad
+                if (el.closest('.sensitivity-table')) return;
+                if (el.closest('.sensitivity-container')) return;
+                if (el.hasAttribute('data-preserve')) return;
+                
+                const style = el.getAttribute('style') || '';
+                if (!style.includes('color')) return;
+                
+                // No modificar botones
+                if (el.closest('button') || el.closest('[class*="btn"]') || el.closest('.download-btn')) {
+                    return;
+                }
+                
+                // No modificar colores de estado (verde, rojo, amarillo)
+                if (style.includes('#22c55e') || style.includes('#ef4444') || style.includes('#eab308') || 
+                    style.includes('#10b981') || style.includes('#f43f5e') || style.includes('#3b82f6') ||
+                    style.includes('rgb(34, 197') || style.includes('rgb(239, 68') || style.includes('rgb(234, 179')) {
+                    return;
+                }
+                
+                // Texto claro -> oscuro
+                if (lightTextColors.some(c => style.includes(c))) {
+                    el.style.color = c.textPrimary;
+                }
+                
+                // Texto muted
+                if (mutedTextColors.some(col => style.includes(col))) {
+                    el.style.color = c.textMuted;
+                }
+                
+                // Texto accent (ahora verde)
+                if (accentColors.some(col => style.includes(col))) {
+                    el.style.color = isLight ? '#059669' : '#34d399';
+                }
+            });
+            
+            // Cambiar backgrounds
+            document.querySelectorAll('[style*="background"]').forEach(el => {
+                // No modificar NADA relacionado con sensibilidad
+                if (el.closest('.sensitivity-table')) return;
+                if (el.closest('.sensitivity-container')) return;
+                if (el.className && typeof el.className === 'string' && el.className.includes('sensitivity')) return;
+                if (el.className && typeof el.className === 'string' && el.className.includes('sens-')) return;
+                if (el.hasAttribute('data-preserve')) return;
+                
+                const style = el.getAttribute('style') || '';
+                
+                // No cambiar botones con colores de acento (ahora verde)
+                if (style.includes('#10b981') || style.includes('#34d399') || 
+                    style.includes('#22c55e') || style.includes('#ef4444') ||
+                    style.includes('#eab308') || style.includes('#3b82f6') ||
+                    style.includes('linear-gradient')) {
+                    return;
+                }
+                
+                // No cambiar colores de valoración de sensibilidad
+                if (style.includes('#166534') || style.includes('#15803d') ||
+                    style.includes('#854d0e') || style.includes('#b91c1c') ||
+                    style.includes('#7f1d1d')) {
+                    return;
+                }
+                
+                // Backgrounds oscuros
+                if (style.includes('#09090b') || style.includes('rgb(9, 9, 11)')) {
+                    el.style.backgroundColor = c.bgPrimary;
+                }
+                if (style.includes('#18181b') || style.includes('rgb(24, 24, 27)') || style.includes('#1f1f23')) {
+                    el.style.backgroundColor = c.bgSecondary;
+                }
+                if (style.includes('#27272a') || style.includes('rgb(39, 39, 42)')) {
+                    el.style.backgroundColor = c.bgTertiary;
+                }
+            });
+            
+            // Cambiar bordes
+            document.querySelectorAll('[style*="border"]').forEach(el => {
+                // No modificar NADA dentro de la tabla o contenedor de sensibilidad
+                if (el.closest('.sensitivity-table')) return;
+                if (el.closest('.sensitivity-container')) return;
+                if (el.hasAttribute('data-preserve')) return;
+                
+                const style = el.getAttribute('style') || '';
+                if (style.includes('#3f3f46') || style.includes('rgb(63, 63, 70)')) {
+                    el.style.borderColor = c.border;
+                }
+            });
+            
+            // Metric cards en modo claro
+            if (isLight) {
+                document.querySelectorAll('.metric-card, [style*="rgba(39, 39, 42"]').forEach(el => {
+                    el.style.backgroundColor = '#f8fafc';
+                    el.style.borderColor = '#e2e8f0';
+                });
+                
+                // Score card
+                document.querySelectorAll('.score-card, [style*="#1f1f23"]').forEach(el => {
+                    el.style.backgroundColor = '#f1f5f9';
+                    el.style.borderColor = '#e2e8f0';
+                });
+                
+                // Tabs
+                document.querySelectorAll('.nav-tabs .nav-link').forEach(el => {
+                    if (!el.classList.contains('active')) {
+                        el.style.color = '#475569';
+                    }
+                });
+                document.querySelectorAll('.nav-tabs .nav-link.active').forEach(el => {
+                    el.style.color = '#059669';
+                    el.style.borderBottomColor = '#10b981';
+                });
+                
+                // Info icons en modo claro
+                document.querySelectorAll('.info-icon').forEach(el => {
+                    el.style.background = 'rgba(16, 185, 129, 0.1)';
+                    el.style.color = '#059669';
+                    el.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+                });
+                
+                // Quick picks en modo claro - buscar por estructura
+                document.querySelectorAll('button').forEach(el => {
+                    const id = el.getAttribute('id');
+                    // Los quick picks tienen IDs que contienen "quick-pick"
+                    if (id && id.includes('quick-pick')) {
+                        el.style.background = '#e6f7f1';
+                        el.style.border = '2px solid #10b981';
+                        el.style.color = '#047857';
+                        el.style.fontWeight = '600';
+                    }
+                });
+                
+                // Botones de período en modo claro
+                document.querySelectorAll('.period-btn').forEach(el => {
+                    if (el.classList.contains('btn-primary') && !el.classList.contains('btn-outline-primary')) {
+                        // Botón activo - verde sólido
+                        el.style.backgroundColor = '#10b981';
+                        el.style.borderColor = '#10b981';
+                        el.style.color = 'white';
+                    } else {
+                        // Botones inactivos - fondo claro con borde y texto verde oscuro
+                        el.style.backgroundColor = '#e6f7f1';
+                        el.style.border = '2px solid #10b981';
+                        el.style.color = '#047857';
+                        el.style.fontWeight = '600';
+                    }
+                });
+                
+                // Hero title y navbar title en modo claro
+                document.querySelectorAll('#logo-home span:last-child').forEach(el => {
+                    el.style.background = 'linear-gradient(135deg, #059669 0%, #047857 100%)';
+                    el.style.webkitBackgroundClip = 'text';
+                    el.style.webkitTextFillColor = 'transparent';
+                });
+            } else {
+                // ============ MODO OSCURO ============
+                
+                // Quick picks en modo oscuro - restaurar colores originales
+                document.querySelectorAll('button').forEach(el => {
+                    const id = el.getAttribute('id');
+                    if (id && id.includes('quick-pick')) {
+                        el.style.background = 'rgba(16, 185, 129, 0.15)';
+                        el.style.border = '1px solid rgba(16, 185, 129, 0.4)';
+                        el.style.color = '#34d399';
+                        el.style.fontWeight = '500';
+                    }
+                });
+                
+                // Botones de período en modo oscuro
+                document.querySelectorAll('.period-btn').forEach(el => {
+                    if (el.classList.contains('btn-primary') && !el.classList.contains('btn-outline-primary')) {
+                        el.style.backgroundColor = '#10b981';
+                        el.style.borderColor = '#10b981';
+                        el.style.color = 'white';
+                    } else {
+                        el.style.backgroundColor = 'transparent';
+                        el.style.border = '1px solid rgba(16, 185, 129, 0.4)';
+                        el.style.color = '#34d399';
+                        el.style.fontWeight = '500';
+                    }
+                });
+                
+                // Hero title en modo oscuro
+                document.querySelectorAll('#logo-home span:last-child').forEach(el => {
+                    el.style.background = 'linear-gradient(135deg, #34d399 0%, #10b981 100%)';
+                    el.style.webkitBackgroundClip = 'text';
+                    el.style.webkitTextFillColor = 'transparent';
+                });
+            }
+        }
+        </script>
     </head>
     <body>
         {%app_entry%}
@@ -3706,7 +4147,7 @@ def update_comparison_table(comparison_list):
     
     table = html.Table([
         html.Thead([
-            html.Tr([html.Th(h, style={"textAlign": "center", "padding": "10px", "borderBottom": "2px solid rgba(255,255,255,0.08)"}) for h in headers])
+            html.Tr([html.Th(h, style={"textAlign": "center", "padding": "10px", "borderBottom": "2px solid #3f3f46"}) for h in headers])
         ]),
         html.Tbody(rows, style={"textAlign": "center"})
     ], className="table table-dark", style={"width": "100%"})

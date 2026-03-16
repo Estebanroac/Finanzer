@@ -33,7 +33,7 @@ def create_score_donut(score: int) -> go.Figure:
     fig.add_trace(go.Pie(
         values=[100],
         hole=0.78,
-        marker=dict(colors=['#1c1c21']),
+        marker=dict(colors=['#2d2d32']),
         showlegend=False,
         hoverinfo='none',
         textinfo='none'
@@ -73,12 +73,10 @@ def create_score_donut(score: int) -> go.Figure:
     
     fig.update_layout(
         height=160,
-        width=160,
         margin=dict(l=10, r=10, t=10, b=10),
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
-        font={'family': 'Inter, system-ui, sans-serif'},
-        autosize=False
+        font={'family': 'Inter, system-ui, sans-serif'}
     )
     return fig
 
