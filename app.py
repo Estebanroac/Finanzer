@@ -3496,6 +3496,32 @@ app.index_string = '''
         [data-theme="dark"] .sensitivity-container {
             background-color: #18181b !important;
         }
+
+        /* Modo claro: contenedor con fondo claro */
+        [data-theme="light"] .sensitivity-container {
+            background-color: #f1f5f9 !important;
+            border-radius: 12px;
+        }
+
+        /* Textos dentro del contenedor en modo claro (NO dentro de la tabla) */
+        [data-theme="light"] .sensitivity-container > div > p,
+        [data-theme="light"] .sensitivity-container > div > div > p,
+        [data-theme="light"] .sensitivity-container > div > div > span,
+        [data-theme="light"] .sensitivity-container > div > div > div > span,
+        [data-theme="light"] .sensitivity-container > p {
+            color: #374151 !important;
+        }
+
+        /* Leyenda box en modo claro */
+        [data-theme="light"] .sensitivity-container > div > div:last-of-type {
+            background-color: rgba(241, 245, 249, 0.8) !important;
+            border: 1px solid #e2e8f0 !important;
+        }
+
+        /* Nota explicativa en modo claro */
+        [data-theme="light"] .sensitivity-container > div > p.small {
+            color: #6b7280 !important;
+        }
         
         .sensitivity-table,
         .sensitivity-table tbody,
@@ -4002,23 +4028,6 @@ app.index_string = '''
                     el.style.webkitTextFillColor = 'transparent';
                 });
 
-                // Sensitivity container en modo claro - fondo claro para areas fuera de la tabla
-                document.querySelectorAll('.sensitivity-container').forEach(el => {
-                    el.style.backgroundColor = '#f1f5f9';
-                    el.style.borderRadius = '12px';
-                    // Textos dentro del contenedor
-                    el.querySelectorAll('p, span').forEach(txt => {
-                        const style = txt.getAttribute('style') || '';
-                        if (style.includes('#d1d5db')) txt.style.color = '#374151';
-                        if (style.includes('#9ca3af')) txt.style.color = '#6b7280';
-                        if (style.includes('#6b7280')) txt.style.color = '#4b5563';
-                    });
-                    // Leyenda box
-                    el.querySelectorAll('[style*="rgba(39, 39, 42"]').forEach(box => {
-                        box.style.backgroundColor = 'rgba(241, 245, 249, 0.8)';
-                        box.style.border = '1px solid #e2e8f0';
-                    });
-                });
             } else {
                 // ============ MODO OSCURO ============
                 
@@ -4054,19 +4063,6 @@ app.index_string = '''
                     el.style.webkitTextFillColor = 'transparent';
                 });
 
-                // Sensitivity container en modo oscuro - restaurar
-                document.querySelectorAll('.sensitivity-container').forEach(el => {
-                    el.style.backgroundColor = '#18181b';
-                    el.querySelectorAll('p, span').forEach(txt => {
-                        const style = txt.getAttribute('style') || '';
-                        if (style.includes('#374151')) txt.style.color = '#d1d5db';
-                        if (style.includes('#6b7280') || style.includes('#4b5563')) txt.style.color = '#9ca3af';
-                    });
-                    el.querySelectorAll('[style*="rgba(241, 245, 249"]').forEach(box => {
-                        box.style.backgroundColor = 'rgba(39, 39, 42, 0.5)';
-                        box.style.border = 'none';
-                    });
-                });
             }
         }
         </script>
