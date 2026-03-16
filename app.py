@@ -3490,10 +3490,9 @@ app.index_string = '''
            Estos estilos NUNCA deben cambiar con el tema
            ============================================== */
         
-        /* Contenedor principal - NUNCA cambia */
+        /* Contenedor principal - adapta al tema */
         .sensitivity-container,
         div.sensitivity-container,
-        [data-theme="light"] .sensitivity-container,
         [data-theme="dark"] .sensitivity-container {
             background-color: #18181b !important;
         }
@@ -4002,6 +4001,24 @@ app.index_string = '''
                     el.style.webkitBackgroundClip = 'text';
                     el.style.webkitTextFillColor = 'transparent';
                 });
+
+                // Sensitivity container en modo claro - fondo claro para areas fuera de la tabla
+                document.querySelectorAll('.sensitivity-container').forEach(el => {
+                    el.style.backgroundColor = '#f1f5f9';
+                    el.style.borderRadius = '12px';
+                    // Textos dentro del contenedor
+                    el.querySelectorAll('p, span').forEach(txt => {
+                        const style = txt.getAttribute('style') || '';
+                        if (style.includes('#d1d5db')) txt.style.color = '#374151';
+                        if (style.includes('#9ca3af')) txt.style.color = '#6b7280';
+                        if (style.includes('#6b7280')) txt.style.color = '#4b5563';
+                    });
+                    // Leyenda box
+                    el.querySelectorAll('[style*="rgba(39, 39, 42"]').forEach(box => {
+                        box.style.backgroundColor = 'rgba(241, 245, 249, 0.8)';
+                        box.style.border = '1px solid #e2e8f0';
+                    });
+                });
             } else {
                 // ============ MODO OSCURO ============
                 
@@ -4035,6 +4052,20 @@ app.index_string = '''
                     el.style.background = 'linear-gradient(135deg, #34d399 0%, #10b981 100%)';
                     el.style.webkitBackgroundClip = 'text';
                     el.style.webkitTextFillColor = 'transparent';
+                });
+
+                // Sensitivity container en modo oscuro - restaurar
+                document.querySelectorAll('.sensitivity-container').forEach(el => {
+                    el.style.backgroundColor = '#18181b';
+                    el.querySelectorAll('p, span').forEach(txt => {
+                        const style = txt.getAttribute('style') || '';
+                        if (style.includes('#374151')) txt.style.color = '#d1d5db';
+                        if (style.includes('#6b7280') || style.includes('#4b5563')) txt.style.color = '#9ca3af';
+                    });
+                    el.querySelectorAll('[style*="rgba(241, 245, 249"]').forEach(box => {
+                        box.style.backgroundColor = 'rgba(39, 39, 42, 0.5)';
+                        box.style.border = 'none';
+                    });
                 });
             }
         }
