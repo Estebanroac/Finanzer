@@ -1432,7 +1432,7 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
                                        className="mb-1 text-center text-info"),
                                 html.P("Funds From Operations", className="small text-muted text-center", style={"fontSize": "0.7rem"})
                             ])
-                        ], style={"backgroundColor": "#1c1c21", "border": "none"})
+                        ], style={"backgroundColor": "#1c1c21", "border": "1px solid rgba(255,255,255,0.06)", "borderRadius": "12px"})
                     ], xs=6, md=3, className="mb-3"),
                     dbc.Col([
                         dbc.Card([
@@ -1443,7 +1443,7 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
                                 html.P(reit_metrics.get('p_ffo_interpretation', ('Precio/FFO',))[0], 
                                       className="small text-muted text-center", style={"fontSize": "0.7rem"})
                             ])
-                        ], style={"backgroundColor": "#1c1c21", "border": "none"})
+                        ], style={"backgroundColor": "#1c1c21", "border": "1px solid rgba(255,255,255,0.06)", "borderRadius": "12px"})
                     ], xs=6, md=3, className="mb-3"),
                     dbc.Col([
                         dbc.Card([
@@ -1453,7 +1453,7 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
                                        className="mb-1 text-center text-info"),
                                 html.P("Adjusted FFO", className="small text-muted text-center", style={"fontSize": "0.7rem"})
                             ])
-                        ], style={"backgroundColor": "#1c1c21", "border": "none"})
+                        ], style={"backgroundColor": "#1c1c21", "border": "1px solid rgba(255,255,255,0.06)", "borderRadius": "12px"})
                     ], xs=6, md=3, className="mb-3"),
                     dbc.Col([
                         dbc.Card([
@@ -1464,7 +1464,7 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
                                 html.P(reit_metrics.get('payout_interpretation', ('Dividendo/FFO',))[0],
                                       className="small text-muted text-center", style={"fontSize": "0.7rem"})
                             ])
-                        ], style={"backgroundColor": "#1c1c21", "border": "none"})
+                        ], style={"backgroundColor": "#1c1c21", "border": "1px solid rgba(255,255,255,0.06)", "borderRadius": "12px"})
                     ], xs=6, md=3, className="mb-3"),
                 ]),
                 # Nota explicativa
@@ -2139,7 +2139,7 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
                             html.P("Lo que cuesta hoy", className="text-muted small mb-0 text-center",
                                   style={"fontSize": "0.75rem"})
                         ])
-                    ], style={"backgroundColor": "#1c1c21", "border": "none"}),
+                    ], style={"backgroundColor": "#1c1c21", "border": "1px solid rgba(255,255,255,0.06)", "borderRadius": "12px"}),
                     dbc.Tooltip(
                         "El precio actual de la acción en el mercado. Es lo que pagarías si compras ahora.",
                         target=f"tip-precio-{uid}", placement="top"
@@ -2160,7 +2160,7 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
                                 f"{graham_vs_price:+.0f}% vs precio" if graham_vs_price else "Fórmula clásica"
                             ], className="small mb-0 text-center text-muted", style={"fontSize": "0.75rem"})
                         ])
-                    ], style={"backgroundColor": "#1c1c21", "border": "none"}),
+                    ], style={"backgroundColor": "#1c1c21", "border": "1px solid rgba(255,255,255,0.06)", "borderRadius": "12px"}),
                     dbc.Tooltip(
                         get_tooltip_text("graham"),
                         target=f"tip-graham-{uid}", placement="top"
@@ -2181,7 +2181,7 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
                                 f"{dcf_vs_price:+.0f}% vs precio" if dcf_vs_price else "Flujos futuros"
                             ], className="small mb-0 text-center text-muted", style={"fontSize": "0.75rem"})
                         ])
-                    ], style={"backgroundColor": "#1c1c21", "border": "none"}),
+                    ], style={"backgroundColor": "#1c1c21", "border": "1px solid rgba(255,255,255,0.06)", "borderRadius": "12px"}),
                     dbc.Tooltip(
                         get_tooltip_text("dcf"),
                         target=f"tip-dcf-{uid}", placement="top"
@@ -3316,9 +3316,14 @@ app.index_string = '''
 
         /* === METRIC CARDS === */
         .metric-card {
-            background: transparent !important;
-            border: none !important;
-            padding: 16px 8px;
+            background: #1c1c21;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 16px 12px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .metric-card:hover {
+            border-color: rgba(255, 255, 255, 0.12);
         }
         .metric-label {
             color: #9ca3af;
@@ -3332,10 +3337,37 @@ app.index_string = '''
             font-weight: 700;
         }
 
+        /* === SCORE SUMMARY CARDS === */
+        .score-summary-card {
+            background: #1c1c21;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .score-summary-card:hover {
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+        .score-summary-label {
+            color: #9ca3af;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 6px;
+        }
+
         /* Override Bootstrap DARKLY card defaults */
         .card {
-            background-color: transparent;
-            border: none;
+            background-color: #131316;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .card:hover {
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+        .card .card-body {
+            padding: 16px;
         }
 
         /* ==============================================
