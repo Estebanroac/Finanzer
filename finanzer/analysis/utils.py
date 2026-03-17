@@ -106,8 +106,7 @@ def format_ratio(value: Optional[float], ratio_type: str = "multiple") -> str:
     
     try:
         if ratio_type == "percent":
-            # Valores con abs < 5 se tratan como decimales (0.15 → 15.0%, 1.5 → 150.0%)
-            return f"{value * 100:.1f}%" if abs(value) < 5 else f"{value:.1f}%"
+            return f"{value * 100:.1f}%" if abs(value) < 2 else f"{value:.1f}%"
         elif ratio_type == "multiple":
             return f"{value:.2f}x"
         else:

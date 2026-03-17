@@ -76,10 +76,9 @@ def create_metric_card(label: str, value: str, icon: str = "📊", tooltip_key: 
 
 def create_score_summary_card(label: str, score: int, max_score: int = 20, icon: str = "📊"):
     """Crea tarjeta de resumen de score por categoría."""
-    pct = score / max_score if max_score > 0 else 0
-    if pct >= 0.75:
+    if score >= 15:
         color = "#22c55e"
-    elif pct >= 0.50:
+    elif score >= 10:
         color = "#eab308"
     else:
         color = "#ef4444"

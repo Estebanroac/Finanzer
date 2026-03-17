@@ -64,12 +64,10 @@ def build_sensitivity_section(
     base_case = sensitivity_data.get("base_case", {})
     stats = sensitivity_data.get("statistics", {})
     
-    # Validar que tenemos datos mínimos y dimensiones coherentes
+    # Validar que tenemos datos mínimos
     if not matrix or not growth_rates or not discount_rates:
         return None
-    if len(matrix) != len(growth_rates):
-        return None
-    if any(len(row) != len(discount_rates) for row in matrix):
+    if len(matrix) == 0 or len(growth_rates) == 0 or len(discount_rates) == 0:
         return None
     
     base_gr = base_case.get("growth_rate", 0.10)

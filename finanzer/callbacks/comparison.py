@@ -46,7 +46,7 @@ def add_to_comparison(n_clicks, analysis_data, comparison_list):
     new_stock = {
         "symbol": symbol,
         "name": company_name,
-        "score": score_v2.get("score", 0),
+        "score": score_v2.get("total_score", 0),
         "pe": ratios.get("pe"),
         "roe": ratios.get("roe"),
         "debt_equity": ratios.get("debt_to_equity"),

@@ -3,11 +3,8 @@ Finanzer - Utilidades de búsqueda y resolución de símbolos.
 Valida y normaliza símbolos de acciones.
 """
 
-import logging
 import re
 from typing import Dict
-
-logger = logging.getLogger(__name__)
 
 
 # Mapeo de nombres comunes a símbolos
@@ -101,7 +98,6 @@ def resolve_symbol(query: str) -> str:
     
     # Límite de longitud razonable (símbolos más largos son raros)
     if len(query_clean) > 15:
-        logger.debug(f"Search query truncated from {len(query_clean)} to 15 chars: '{query_clean[:15]}...'")
         query_clean = query_clean[:15]
     
     # Buscar en mapeo de nombres comunes

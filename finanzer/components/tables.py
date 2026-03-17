@@ -12,7 +12,7 @@ def create_comparison_metric_row(
     company_val: Optional[float], 
     sector_val: Optional[float], 
     market_val: Optional[float], 
-    fmt: str = "multiple",
+    fmt: str = "multiple", 
     lower_better: bool = True
 ) -> html.Tr:
     """
@@ -33,7 +33,7 @@ def create_comparison_metric_row(
         if v is None:
             return "N/A"
         if fmt == "percent":
-            return f"{v*100:.1f}%" if isinstance(v, float) and abs(v) < 5 else f"{v:.1f}%"
+            return f"{v*100:.1f}%" if isinstance(v, float) and abs(v) < 2 else f"{v:.1f}%"
         elif fmt == "multiple":
             return f"{v:.2f}x"
         else:

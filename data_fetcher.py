@@ -5,16 +5,14 @@ Módulo para obtener datos financieros de empresas desde múltiples fuentes.
 Soporta Yahoo Finance (gratuito) y Financial Modeling Prep (freemium).
 
 Autor: Esteban
-Versión: 3.1.2 - Rate limiting con retry y backoff exponencial
+Versión: 2.10 - Rate limiting con retry y backoff exponencial
 """
 
 import os
 import time
 import random
 import logging
-import threading
 from typing import Optional, Dict, List, Any, Callable
-from collections import OrderedDict
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError as FuturesTimeoutError
@@ -24,8 +22,9 @@ import json
 # =========================
 # CONSTANTES DE RETRY
 # =========================
-BASE_DELAY = 2  # segundos
-MAX_DELAY = 30  # segundos máximo de espera
+MAX_RETRIES = 4       # Reintentos para rate limiting
+BASE_DELAY = 3        # segundos base entre reintentos
+MAX_DELAY = 45        # segundos máximo de espera
 
 # Configurar logging específico para este módulo
 logger = logging.getLogger(__name__)
@@ -48,8 +47,17 @@ except ImportError:
 try:
     import yfinance as yf
     YFINANCE_AVAILABLE = True
+    # Importar excepción de rate limit
+    try:
+        from yfinance.exceptions import YFRateLimitError
+        YF_RATE_LIMIT_AVAILABLE = True
+    except ImportError:
+        YF_RATE_LIMIT_AVAILABLE = False
+        YFRateLimitError = Exception  # Fallback
 except ImportError:
     YFINANCE_AVAILABLE = False
+    YF_RATE_LIMIT_AVAILABLE = False
+    YFRateLimitError = Exception
 
 try:
     import requests
@@ -65,7 +73,6 @@ except ImportError:
 # Timeouts para operaciones de red (en segundos)
 API_TIMEOUT_SECONDS = 15          # Timeout para llamadas API individuales
 PARALLEL_TASK_TIMEOUT = 20        # Timeout para tareas paralelas
-MAX_RETRIES = 2                   # Reintentos máximos por operación
 
 # Configuración del ThreadPoolExecutor
 THREAD_POOL_WORKERS = 4           # Número de workers paralelos
@@ -104,23 +111,21 @@ class SimpleCache:
     """
     Caché en memoria con TTL (Time To Live) y límite de entradas.
     Implementa LRU (Least Recently Used) eviction para prevenir memory leaks.
-    Thread-safe mediante RLock para uso con ThreadPoolExecutor.
-    Usa OrderedDict para O(1) en operaciones LRU (en lugar de list.remove O(n)).
     """
-
+    
     def __init__(self, default_ttl_minutes: int = 15, max_entries: int = 500):
-        self._cache: OrderedDict[str, Dict] = OrderedDict()
+        self._cache: Dict[str, Dict] = {}
         self._default_ttl = timedelta(minutes=default_ttl_minutes)
         self._max_entries = max_entries
-        self._lock = threading.RLock()
-
+        self._access_order: List[str] = []  # Para LRU tracking
+    
     def _make_key(self, prefix: str, *args) -> str:
         """Genera una clave única para el caché."""
         key_data = f"{prefix}:{':'.join(str(a) for a in args)}"
         return hashlib.md5(key_data.encode()).hexdigest()
-
+    
     def _evict_expired(self):
-        """Elimina entradas expiradas. Debe llamarse con el lock adquirido."""
+        """Elimina entradas expiradas."""
         now = datetime.now()
         expired_keys = [
             key for key, entry in self._cache.items()
@@ -128,67 +133,74 @@ class SimpleCache:
         ]
         for key in expired_keys:
             del self._cache[key]
-
+            if key in self._access_order:
+                self._access_order.remove(key)
+    
     def _evict_lru(self, count: int = 1):
-        """Elimina las entradas menos recientemente usadas (al inicio del OrderedDict). Debe llamarse con el lock adquirido."""
-        for _ in range(min(count, len(self._cache))):
-            if self._cache:
-                self._cache.popitem(last=False)  # O(1) - remueve el más antiguo
-
+        """Elimina las entradas menos recientemente usadas."""
+        for _ in range(min(count, len(self._access_order))):
+            if self._access_order:
+                oldest_key = self._access_order.pop(0)
+                if oldest_key in self._cache:
+                    del self._cache[oldest_key]
+    
     def get(self, key: str) -> Optional[Any]:
         """Obtiene un valor del caché si existe y no ha expirado."""
-        with self._lock:
-            if key not in self._cache:
-                return None
-
-            entry = self._cache[key]
-            if datetime.now() > entry["expires"]:
-                del self._cache[key]
-                return None
-
-            # Mover al final = más reciente (O(1) con OrderedDict)
-            self._cache.move_to_end(key)
-
-            return entry["value"]
-
+        if key not in self._cache:
+            return None
+        
+        entry = self._cache[key]
+        if datetime.now() > entry["expires"]:
+            del self._cache[key]
+            if key in self._access_order:
+                self._access_order.remove(key)
+            return None
+        
+        # Actualizar orden de acceso (mover al final = más reciente)
+        if key in self._access_order:
+            self._access_order.remove(key)
+        self._access_order.append(key)
+        
+        return entry["value"]
+    
     def set(self, key: str, value: Any, ttl_minutes: Optional[int] = None):
         """Guarda un valor en el caché."""
-        with self._lock:
-            # Limpiar expirados primero
-            self._evict_expired()
-
-            # Si alcanzamos el límite, eliminar los más viejos
-            while len(self._cache) >= self._max_entries:
-                self._evict_lru(count=max(1, self._max_entries // 10))  # Eliminar 10%
-
-            ttl = timedelta(minutes=ttl_minutes) if ttl_minutes else self._default_ttl
-            now = datetime.now()
-            self._cache[key] = {
-                "value": value,
-                "expires": now + ttl,
-                "created": now
-            }
-            # Asegurar que la nueva entrada esté al final (más reciente)
-            self._cache.move_to_end(key)
-
+        # Limpiar expirados primero
+        self._evict_expired()
+        
+        # Si alcanzamos el límite, eliminar los más viejos
+        while len(self._cache) >= self._max_entries:
+            self._evict_lru(count=max(1, self._max_entries // 10))  # Eliminar 10%
+        
+        ttl = timedelta(minutes=ttl_minutes) if ttl_minutes else self._default_ttl
+        self._cache[key] = {
+            "value": value,
+            "expires": datetime.now() + ttl,
+            "created": datetime.now()
+        }
+        
+        # Registrar en orden de acceso
+        if key in self._access_order:
+            self._access_order.remove(key)
+        self._access_order.append(key)
+    
     def clear(self):
         """Limpia todo el caché."""
-        with self._lock:
-            self._cache.clear()
+        self._cache.clear()
+        self._access_order.clear()
     
     def stats(self) -> Dict:
         """Retorna estadísticas del caché."""
-        with self._lock:
-            self._evict_expired()  # Limpiar antes de reportar
-            return {
-                "entries": len(self._cache),
-                "max_entries": self._max_entries,
-                "utilization": f"{len(self._cache) / self._max_entries * 100:.1f}%"
-            }
+        self._evict_expired()  # Limpiar antes de reportar
+        return {
+            "entries": len(self._cache),
+            "max_entries": self._max_entries,
+            "utilization": f"{len(self._cache) / self._max_entries * 100:.1f}%"
+        }
 
 
 # Instancia global del caché
-_data_cache = SimpleCache(default_ttl_minutes=10)
+_data_cache = SimpleCache(default_ttl_minutes=30)
 
 
 @dataclass
@@ -342,20 +354,24 @@ class YahooFinanceFetcher:
             except Exception as e:
                 last_error = e
                 error_str = str(e).lower()
+                error_type = type(e).__name__
                 
-                # Detectar rate limiting
+                # Detectar rate limiting (múltiples formas)
                 is_rate_limit = (
+                    'YFRateLimitError' in error_type or
+                    'ratelimit' in error_type.lower() or
                     'rate' in error_str and 'limit' in error_str or
                     'too many requests' in error_str or
                     '429' in error_str
                 )
                 
                 if is_rate_limit and attempt < MAX_RETRIES - 1:
-                    delay = min(BASE_DELAY * (2 ** attempt) + random.uniform(0, BASE_DELAY * (2 ** attempt)), MAX_DELAY)
-                    logger.warning(f"Rate limited obteniendo perfil de {symbol}. Reintentando en {delay:.1f}s (intento {attempt + 1}/{MAX_RETRIES})")
+                    delay = min(BASE_DELAY * (2 ** attempt) + random.uniform(0, 1), MAX_DELAY)
+                    logger.warning(f"⏳ Rate limited ({error_type}). Reintentando perfil {symbol} en {delay:.1f}s (intento {attempt + 1}/{MAX_RETRIES})")
                     time.sleep(delay)
+                    continue  # Importante: continuar al siguiente intento
                 else:
-                    logger.error(f"Error inesperado obteniendo perfil de {symbol}: {type(e).__name__}: {e}")
+                    logger.error(f"Error obteniendo perfil de {symbol}: {error_type}: {e}")
                     if attempt == MAX_RETRIES - 1:
                         return None
         
@@ -375,7 +391,7 @@ class YahooFinanceFetcher:
             try:
                 if df is not None and not df.empty and key in df.index:
                     val = df.loc[key].iloc[0]
-                    return float(val) if pd.notna(val) else None
+                    return float(val) if val is not None and str(val) != 'nan' else None
             except (KeyError, IndexError, TypeError, ValueError):
                 pass
             return None
@@ -439,7 +455,7 @@ class YahooFinanceFetcher:
                     if income_stmt is not None and len(income_stmt.columns) >= 2:
                         rev_current = income_stmt.loc["Total Revenue"].iloc[0]
                         rev_previous = income_stmt.loc["Total Revenue"].iloc[1]
-                        if rev_previous is not None and rev_previous != 0:
+                        if rev_previous and rev_previous != 0:
                             revenue_growth = (rev_current - rev_previous) / abs(rev_previous)
                         else:
                             revenue_growth = None
@@ -455,7 +471,7 @@ class YahooFinanceFetcher:
                     operating_income=operating_income,
                     net_income=net_income,
                     ebitda=ebitda_val,
-                    interest_expense=abs(interest_expense) if interest_expense is not None else None,
+                    interest_expense=abs(interest_expense) if interest_expense else None,
                     depreciation=depreciation,
                     
                     # Balance Sheet
@@ -474,7 +490,7 @@ class YahooFinanceFetcher:
                     operating_cash_flow=operating_cf,
                     capex=capex,
                     free_cash_flow=fcf,
-                    dividends_paid=abs(dividends) if dividends is not None else None,
+                    dividends_paid=abs(dividends) if dividends else None,
                     
                     # Per Share & Market
                     shares_outstanding=shares,
@@ -496,8 +512,8 @@ class YahooFinanceFetcher:
                     last_updated=datetime.now().isoformat(),
                 )
                 
-                # Guardar en caché (10 min para datos financieros)
-                _data_cache.set(cache_key, result, ttl_minutes=10)
+                # Guardar en caché (60 min para datos financieros - reduce rate limiting)
+                _data_cache.set(cache_key, result, ttl_minutes=60)
                 logger.debug(f"Datos financieros de {symbol} cacheados correctamente")
                 return result
             
@@ -513,20 +529,24 @@ class YahooFinanceFetcher:
             except Exception as e:
                 last_error = e
                 error_str = str(e).lower()
+                error_type = type(e).__name__
                 
-                # Detectar rate limiting
+                # Detectar rate limiting (múltiples formas)
                 is_rate_limit = (
+                    'YFRateLimitError' in error_type or
+                    'ratelimit' in error_type.lower() or
                     'rate' in error_str and 'limit' in error_str or
                     'too many requests' in error_str or
                     '429' in error_str
                 )
                 
                 if is_rate_limit and attempt < MAX_RETRIES - 1:
-                    delay = min(BASE_DELAY * (2 ** attempt) + random.uniform(0, BASE_DELAY * (2 ** attempt)), MAX_DELAY)
-                    logger.warning(f"Rate limited obteniendo datos de {symbol}. Reintentando en {delay:.1f}s (intento {attempt + 1}/{MAX_RETRIES})")
+                    delay = min(BASE_DELAY * (2 ** attempt) + random.uniform(0, 1), MAX_DELAY)
+                    logger.warning(f"⏳ Rate limited ({error_type}). Reintentando {symbol} en {delay:.1f}s (intento {attempt + 1}/{MAX_RETRIES})")
                     time.sleep(delay)
+                    continue  # Importante: continuar al siguiente intento
                 else:
-                    logger.error(f"Error inesperado obteniendo datos financieros de {symbol}: {type(e).__name__}: {e}", exc_info=True)
+                    logger.error(f"Error obteniendo datos financieros de {symbol}: {error_type}: {e}")
                     if attempt == MAX_RETRIES - 1:
                         return None
         
@@ -647,13 +667,9 @@ class YahooFinanceFetcher:
                 # Extraer métricas del Balance Sheet
                 total_assets = safe_get(balance_sheet, "Total Assets", date)
                 total_equity = safe_get(balance_sheet, "Stockholders Equity", date)
-                if total_equity is None:
-                    total_equity = safe_get(balance_sheet, "Total Equity Gross Minority Interest", date)
                 total_debt = safe_get(balance_sheet, "Total Debt", date)
                 long_term_debt = safe_get(balance_sheet, "Long Term Debt", date)
                 cash = safe_get(balance_sheet, "Cash And Cash Equivalents", date)
-                if cash is None:
-                    cash = safe_get(balance_sheet, "Cash Cash Equivalents And Short Term Investments", date)
                 current_assets = safe_get(balance_sheet, "Current Assets", date)
                 current_liabilities = safe_get(balance_sheet, "Current Liabilities", date)
                 
@@ -671,7 +687,7 @@ class YahooFinanceFetcher:
                 
                 # Si no hay FCF directo, calcularlo
                 if fcf is None and operating_cash_flow is not None and capex is not None:
-                    fcf = operating_cash_flow - abs(capex)  # capex puede venir negativo o positivo
+                    fcf = operating_cash_flow + capex  # capex es negativo
                 
                 # Calcular márgenes
                 gross_margin = calculate_margin(gross_profit, revenue)
@@ -680,8 +696,8 @@ class YahooFinanceFetcher:
                 ebitda_margin = calculate_margin(ebitda, revenue)
                 
                 # Calcular ratios
-                roe = calculate_margin(net_income, total_equity) if total_equity is not None and total_equity > 0 else None
-                roa = calculate_margin(net_income, total_assets) if total_assets is not None and total_assets > 0 else None
+                roe = calculate_margin(net_income, total_equity) if total_equity and total_equity > 0 else None
+                roa = calculate_margin(net_income, total_assets) if total_assets and total_assets > 0 else None
                 
                 debt_to_equity = None
                 if total_debt is not None and total_equity is not None and total_equity > 0:
@@ -710,15 +726,15 @@ class YahooFinanceFetcher:
                 historical_data["data"][year] = {
                     # Ingresos y utilidades (en millones)
                     "revenue": revenue,
-                    "revenue_mm": revenue / 1e6 if revenue is not None else None,
+                    "revenue_mm": revenue / 1e6 if revenue else None,
                     "gross_profit": gross_profit,
-                    "gross_profit_mm": gross_profit / 1e6 if gross_profit is not None else None,
+                    "gross_profit_mm": gross_profit / 1e6 if gross_profit else None,
                     "operating_income": operating_income,
-                    "operating_income_mm": operating_income / 1e6 if operating_income is not None else None,
+                    "operating_income_mm": operating_income / 1e6 if operating_income else None,
                     "net_income": net_income,
-                    "net_income_mm": net_income / 1e6 if net_income is not None else None,
+                    "net_income_mm": net_income / 1e6 if net_income else None,
                     "ebitda": ebitda,
-                    "ebitda_mm": ebitda / 1e6 if ebitda is not None else None,
+                    "ebitda_mm": ebitda / 1e6 if ebitda else None,
                     
                     # Márgenes (en porcentaje)
                     "gross_margin": gross_margin,
@@ -728,18 +744,18 @@ class YahooFinanceFetcher:
                     
                     # Balance
                     "total_assets": total_assets,
-                    "total_assets_mm": total_assets / 1e6 if total_assets is not None else None,
+                    "total_assets_mm": total_assets / 1e6 if total_assets else None,
                     "total_equity": total_equity,
-                    "total_equity_mm": total_equity / 1e6 if total_equity is not None else None,
+                    "total_equity_mm": total_equity / 1e6 if total_equity else None,
                     "total_debt": total_debt,
-                    "total_debt_mm": total_debt / 1e6 if total_debt is not None else None,
+                    "total_debt_mm": total_debt / 1e6 if total_debt else None,
                     "long_term_debt": long_term_debt,
-                    "long_term_debt_mm": long_term_debt / 1e6 if long_term_debt is not None else None,
+                    "long_term_debt_mm": long_term_debt / 1e6 if long_term_debt else None,
                     "shares_outstanding": shares_outstanding,
                     "cash": cash,
-                    "cash_mm": cash / 1e6 if cash is not None else None,
+                    "cash_mm": cash / 1e6 if cash else None,
                     "net_debt": net_debt,
-                    "net_debt_mm": net_debt / 1e6 if net_debt is not None else None,
+                    "net_debt_mm": net_debt / 1e6 if net_debt else None,
                     
                     # Ratios
                     "roe": roe,
@@ -750,11 +766,11 @@ class YahooFinanceFetcher:
                     
                     # Cash Flow
                     "operating_cash_flow": operating_cash_flow,
-                    "operating_cash_flow_mm": operating_cash_flow / 1e6 if operating_cash_flow is not None else None,
+                    "operating_cash_flow_mm": operating_cash_flow / 1e6 if operating_cash_flow else None,
                     "fcf": fcf,
-                    "fcf_mm": fcf / 1e6 if fcf is not None else None,
+                    "fcf_mm": fcf / 1e6 if fcf else None,
                     "capex": capex,
-                    "capex_mm": capex / 1e6 if capex is not None else None,
+                    "capex_mm": capex / 1e6 if capex else None,
                     
                     # Crecimiento
                     "revenue_growth": revenue_growth,
@@ -833,21 +849,21 @@ class YahooFinanceFetcher:
                 # YTD real (desde 1 de enero)
                 ytd_hist = ticker.history(start=ytd_start)
                 ytd_return = None
-                if not ytd_hist.empty and len(ytd_hist) > 1 and pd.notna(ytd_hist['Close'].iloc[0]) and ytd_hist['Close'].iloc[0] != 0:
+                if not ytd_hist.empty and len(ytd_hist) > 1:
                     ytd_return = ((ytd_hist['Close'].iloc[-1] / ytd_hist['Close'].iloc[0]) - 1) * 100
-
+                
                 # Retorno de 1 año
                 year_hist = ticker.history(period="1y")
                 year_return = None
-                if not year_hist.empty and len(year_hist) > 1 and pd.notna(year_hist['Close'].iloc[0]) and year_hist['Close'].iloc[0] != 0:
+                if not year_hist.empty and len(year_hist) > 1:
                     year_return = ((year_hist['Close'].iloc[-1] / year_hist['Close'].iloc[0]) - 1) * 100
-
+                
                 return {
-                    "ytd_return": round(ytd_return, 2) if ytd_return is not None else None,
-                    "year_return": round(year_return, 2) if year_return is not None else None,
+                    "ytd_return": round(ytd_return, 2) if ytd_return else None,
+                    "year_return": round(year_return, 2) if year_return else None,
                 }
             except Exception as e:
-                logger.error(f"Error calculando retornos para {ticker_symbol}: {e}")
+                print(f"Error calculando retornos para {ticker_symbol}: {e}")
                 return {"ytd_return": None, "year_return": None}
         
         try:
@@ -869,7 +885,7 @@ class YahooFinanceFetcher:
             }
             
         except Exception as e:
-            logger.error(f"Error obteniendo datos de SPY: {e}")
+            print(f"Error obteniendo datos de SPY: {e}")
             result["market"] = {"name": "S&P 500", "symbol": "SPY", "error": str(e)}
         
         try:
@@ -893,7 +909,7 @@ class YahooFinanceFetcher:
             }
             
         except Exception as e:
-            logger.error(f"Error obteniendo datos del sector {sector}: {e}")
+            print(f"Error obteniendo datos del sector {sector}: {e}")
             result["sector"] = {"name": sector, "symbol": self._get_sector_etf_symbol(sector), "error": str(e)}
         
         return result
@@ -1375,8 +1391,8 @@ class FinancialDataService:
             if progress_callback:
                 try:
                     progress_callback(msg, pct)
-                except Exception as e:
-                    logger.debug(f"Error en progress callback: {e}")
+                except Exception:
+                    pass  # No interrumpir análisis por errores en callback
         
         report_progress("Iniciando análisis...", 5)
         
@@ -1411,7 +1427,7 @@ class FinancialDataService:
             completed = 0
             total = len(future_to_task)
             
-            for future in as_completed(future_to_task, timeout=PARALLEL_TASK_TIMEOUT):
+            for future in as_completed(future_to_task, timeout=PARALLEL_TASK_TIMEOUT * total):
                 task_name = future_to_task[future]
                 completed += 1
                 progress_pct = 10 + (completed / total * 50)  # 10% a 60%

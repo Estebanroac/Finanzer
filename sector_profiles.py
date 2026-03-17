@@ -763,21 +763,6 @@ def get_default_profile() -> SectorProfile:
     )
 
 
-# Métricas que se almacenan como decimales y deben mostrarse como porcentaje
-_PERCENTAGE_METRICS = {
-    "gross_margin", "operating_margin", "net_margin",
-    "roe", "roa", "roic", "revenue_growth", "eps_growth",
-    "dividend_yield", "fcf_yield", "earnings_growth",
-}
-
-
-def _format_typical(metric_name: str, typical: float) -> str:
-    """Formatea el valor típico según el tipo de métrica."""
-    if metric_name in _PERCENTAGE_METRICS:
-        return f"{typical:.1%}"
-    return f"{typical:.1f}"
-
-
 def evaluate_metric_by_sector(
     metric_name: str,
     value: float,
@@ -802,50 +787,48 @@ def evaluate_metric_by_sector(
     typical = sector_profile.typical_values.get(metric_name)
     
     # Evaluar según si menor es mejor
-    typical_str = _format_typical(metric_name, typical) if typical else ""
-
     if threshold.lower_is_better:
         if value <= threshold.excellent:
             evaluation = "excelente"
             color = "#22c55e"  # Verde brillante
-            vs_typical = f"Muy por debajo del típico ({typical_str})" if typical else ""
+            vs_typical = f"Muy por debajo del típico ({typical:.1f})" if typical else ""
         elif value <= threshold.good:
             evaluation = "bueno"
             color = "#4ade80"  # Verde
-            vs_typical = f"Mejor que típico ({typical_str})" if typical else ""
+            vs_typical = f"Mejor que típico ({typical:.1f})" if typical else ""
         elif value <= threshold.acceptable:
             evaluation = "aceptable"
             color = "#eab308"  # Amarillo
-            vs_typical = f"Cerca del típico ({typical_str})" if typical else ""
+            vs_typical = f"Cerca del típico ({typical:.1f})" if typical else ""
         elif value <= threshold.concerning:
             evaluation = "preocupante"
             color = "#f97316"  # Naranja
-            vs_typical = f"Por encima del típico ({typical_str})" if typical else ""
+            vs_typical = f"Por encima del típico ({typical:.1f})" if typical else ""
         else:
             evaluation = "pobre"
             color = "#ef4444"  # Rojo
-            vs_typical = f"Muy por encima del típico ({typical_str})" if typical else ""
+            vs_typical = f"Muy por encima del típico ({typical:.1f})" if typical else ""
     else:
         if value >= threshold.excellent:
             evaluation = "excelente"
             color = "#22c55e"
-            vs_typical = f"Muy por encima del típico ({typical_str})" if typical else ""
+            vs_typical = f"Muy por encima del típico ({typical:.1%})" if typical else ""
         elif value >= threshold.good:
             evaluation = "bueno"
             color = "#4ade80"
-            vs_typical = f"Mejor que típico ({typical_str})" if typical else ""
+            vs_typical = f"Mejor que típico ({typical:.1%})" if typical else ""
         elif value >= threshold.acceptable:
             evaluation = "aceptable"
             color = "#eab308"
-            vs_typical = f"Cerca del típico ({typical_str})" if typical else ""
+            vs_typical = f"Cerca del típico ({typical:.1%})" if typical else ""
         elif value >= threshold.concerning:
             evaluation = "preocupante"
             color = "#f97316"
-            vs_typical = f"Por debajo del típico ({typical_str})" if typical else ""
+            vs_typical = f"Por debajo del típico ({typical:.1%})" if typical else ""
         else:
             evaluation = "pobre"
             color = "#ef4444"
-            vs_typical = f"Muy por debajo del típico ({typical_str})" if typical else ""
+            vs_typical = f"Muy por debajo del típico ({typical:.1%})" if typical else ""
     
     return (evaluation, color, vs_typical)
 

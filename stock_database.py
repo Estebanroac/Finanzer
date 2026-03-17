@@ -92,7 +92,7 @@ POPULAR_STOCKS = {
     "OKTA": "Okta Inc.",
     "TEAM": "Atlassian Corporation",
     "WDAY": "Workday Inc.",
-    # SPLK (Splunk) removido - adquirida por Cisco en 2024
+    "SPLK": "Splunk Inc.",
     "VEEV": "Veeva Systems Inc.",
     "ANSS": "ANSYS Inc.",
     "FTNT": "Fortinet Inc.",
@@ -378,7 +378,7 @@ POPULAR_STOCKS = {
     # === COMUNICACIONES ===
     "TMUS": "T-Mobile US Inc.",
     "CHTR": "Charter Communications",
-    # ATVI (Activision Blizzard) removido - adquirida por Microsoft en 2023
+    "ATVI": "Activision Blizzard",
     "EA": "Electronic Arts Inc.",
     "TTWO": "Take-Two Interactive",
     "RBLX": "Roblox Corporation",
@@ -393,7 +393,7 @@ POPULAR_STOCKS = {
     "MTCH": "Match Group Inc.",
     "PINS": "Pinterest Inc.",
     "SNAP": "Snap Inc.",
-    # TWTR (Twitter) removido - privatizada en 2022
+    "TWTR": "Twitter Inc.",
     
     # === ETFs POPULARES ===
     "SPY": "SPDR S&P 500 ETF Trust",
@@ -470,7 +470,7 @@ POPULAR_STOCKS = {
     "NVO": "Novo Nordisk A/S",
     "HSBC": "HSBC Holdings plc",
     "UBS": "UBS Group AG",
-    # CS (Credit Suisse) removido - adquirida por UBS en 2023
+    "CS": "Credit Suisse Group",
     "DB": "Deutsche Bank AG",
     "ING": "ING Groep N.V.",
     "BNPQY": "BNP Paribas (OTC)",
@@ -534,7 +534,7 @@ POPULAR_STOCKS = {
     "MNSO": "MINISO Group Holding",
     "ZTO": "ZTO Express Inc.",
     "BEKE": "KE Holdings Inc.",
-    # DIDI (DiDi Global) removido - delisted de US exchanges en 2022
+    "DIDI": "DiDi Global Inc.",
     "GRAB": "Grab Holdings Limited",
     "SE": "Sea Limited",
     "CPNG": "Coupang Inc.",

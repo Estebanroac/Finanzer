@@ -295,8 +295,8 @@ def generate_simple_pdf(
             growth_val = min(max(growth_val, 0.02), 0.35)
             dcf_pdf = dcf_calculator(fcf=fcf, shares_outstanding=shares, revenue_growth_3y=growth_val)
             dcf_value = dcf_pdf.get("fair_value_per_share")
-        except (TypeError, ValueError, ZeroDivisionError, KeyError) as e:
-            logging.getLogger(__name__).debug(f"DCF calculation failed in PDF: {e}")
+        except (TypeError, ValueError, ZeroDivisionError, KeyError): 
+            pass
     
     # Calcular upside/downside
     def calc_diff(fair, current):

@@ -11,8 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 def get_score_color(score: int) -> tuple:
-    """Retorna color y label según el score (0-100)."""
-    score = max(0, min(100, score))  # Clamp a rango válido
+    """Retorna color y label según el score."""
     if score >= 70:
         return "#22c55e", "FAVORABLE"
     elif score >= 50:
@@ -189,14 +188,9 @@ def create_price_chart(symbol: str, period: str = "1y"):
 
 def create_ytd_comparison_chart(stock_ytd: float, market_ytd: float, sector_ytd: float, symbol: str) -> go.Figure:
     """Crea gráfico de barras comparativo YTD con porcentajes dentro de las barras."""
-    # Validar inputs - reemplazar None/NaN con 0
-    stock_ytd = float(stock_ytd) if stock_ytd is not None else 0.0
-    market_ytd = float(market_ytd) if market_ytd is not None else 0.0
-    sector_ytd = float(sector_ytd) if sector_ytd is not None else 0.0
-
     categories = [symbol, 'S&P 500', 'Sector ETF']
     values = [stock_ytd, market_ytd, sector_ytd]
-
+    
     # Colores según valor positivo/negativo
     colors = []
     for v in values:

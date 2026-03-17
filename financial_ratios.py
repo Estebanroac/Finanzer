@@ -5,26 +5,39 @@ Módulo completo para cálculo de ratios financieros y sistema de alertas
 para análisis fundamental de acciones.
 
 Autor: Esteban
-Versión: 3.1.2 - Configuración Centralizada
+Versión: 3.1 - Configuración Centralizada
 """
 
 from typing import Optional, Dict, List, Tuple, Any
 from dataclasses import dataclass
 from enum import Enum
 
-# Importar configuración centralizada (config.py es requerido)
-from config import (
-    ALTMAN_Z_SAFE, ALTMAN_Z_GREY, ALTMAN_Z_LABELS,
-    PIOTROSKI_STRONG, PIOTROSKI_NEUTRAL, PIOTROSKI_WEAK, PIOTROSKI_GOOD,
-    DCF_RISK_FREE_RATE, DCF_MARKET_RISK_PREMIUM, DCF_TERMINAL_GROWTH,
-    DCF_WACC_MIN, DCF_WACC_MAX, DCF_WACC_DEFAULT,
-    DCF_GROWTH_MAX, DCF_GROWTH_DEFAULT,
-    DCF_GROWTH_WACC_MARGIN, DCF_DECAY_FACTOR,
-    DCF_HIGH_GROWTH_YEARS, DCF_TRANSITION_YEARS,
-    SCORE_BASE, SCORE_LEVELS,
-    CURRENT_RATIO_GOOD, DEBT_EQUITY_HIGH, ROE_EXCELLENT, ROE_GOOD,
-    PE_HIGH,
-)
+# Importar configuración centralizada
+try:
+    from config import (
+        ALTMAN_Z_SAFE, ALTMAN_Z_GREY, ALTMAN_Z_LABELS,
+        PIOTROSKI_STRONG, PIOTROSKI_NEUTRAL, PIOTROSKI_WEAK,
+        DCF_RISK_FREE_RATE, DCF_MARKET_RISK_PREMIUM, DCF_TERMINAL_GROWTH,
+        DCF_WACC_MIN, DCF_WACC_MAX, DCF_WACC_DEFAULT,
+        DCF_GROWTH_MAX, DCF_GROWTH_DEFAULT,
+        DCF_HIGH_GROWTH_YEARS, DCF_TRANSITION_YEARS,
+        SCORE_BASE, SCORE_LEVELS,
+        CURRENT_RATIO_GOOD, DEBT_EQUITY_HIGH, ROE_EXCELLENT, ROE_GOOD,
+    )
+    CONFIG_AVAILABLE = True
+except ImportError:
+    # Fallback si config.py no está disponible
+    CONFIG_AVAILABLE = False
+    ALTMAN_Z_SAFE = 2.99
+    ALTMAN_Z_GREY = 1.81
+    DCF_RISK_FREE_RATE = 0.045
+    DCF_MARKET_RISK_PREMIUM = 0.055
+    DCF_TERMINAL_GROWTH = 0.025
+    DCF_WACC_DEFAULT = 0.10
+    DCF_GROWTH_MAX = 0.50
+    DCF_GROWTH_DEFAULT = 0.08
+    DCF_HIGH_GROWTH_YEARS = 5
+    DCF_TRANSITION_YEARS = 5
 
 
 # =========================
@@ -331,14 +344,10 @@ def financial_health_score(
     # 5. Dividend (0-1 punto) - Bancos suelen pagar dividendos
     if dividend_yield is not None and dividend_yield > 0:
         max_possible += 1
-        if payout_ratio is not None and payout_ratio < b.get("payout_sustainable", 0.60):
+        if payout_ratio is None or payout_ratio < b.get("payout_sustainable", 0.60):
             pts = 1
-            detail = f"Dividendo sostenible ({dividend_yield*100:.2f}%, payout {payout_ratio*100:.0f}%)"
+            detail = f"Dividendo sostenible ({dividend_yield*100:.2f}%)"
             severity = "excellent"
-        elif payout_ratio is None:
-            pts = 0
-            detail = f"Dividendo presente ({dividend_yield*100:.2f}%) pero payout ratio no disponible"
-            severity = "neutral"
         else:
             pts = 0
             detail = f"Payout ratio alto ({payout_ratio*100:.0f}% > 60%)"
@@ -551,7 +560,7 @@ def calculate_wacc(
     risk_free_rate: float = DCF_RISK_FREE_RATE,
     market_risk_premium: float = DCF_MARKET_RISK_PREMIUM,
     cost_of_debt: Optional[float] = None,
-    tax_rate: float = 0.25,  # Se valida a rango 0-0.35
+    tax_rate: float = 0.25,
     debt_to_equity: Optional[float] = None,
     interest_expense: Optional[float] = None,
     total_debt: Optional[float] = None
@@ -582,10 +591,7 @@ def calculate_wacc(
         WACC como decimal (ej: 0.10 = 10%)
     """
     if beta is None:
-        beta = 1.0  # Asumir beta de mercado si no hay dato
-
-    # Validar tax_rate en rango razonable
-    tax_rate = max(0.0, min(tax_rate, 0.35))
+        beta = 1.0  # Asumir mercado si no hay beta
     
     # Cost of Equity usando CAPM
     cost_of_equity = risk_free_rate + beta * market_risk_premium
@@ -654,8 +660,8 @@ def calculate_justified_pe(
     g = max(g, -0.05)  # No menos de -5%
     
     if required_return <= g:
-        # Growth muy alto para Gordon Growth - usar múltiplo de PEG como fallback
-        return PE_HIGH * (1 + earnings_growth) if earnings_growth is not None else None
+        # Growth muy alto - usar múltiplo de PEG
+        return 25 * (1 + earnings_growth)  # Base P/E 25 ajustado por growth
     
     try:
         # Gordon Growth Model simplificado
@@ -908,7 +914,7 @@ def calculate_growth_quality_score(
             breakdown.append(("FCF Growth", "-10", "Negativo"))
     
     # 4. ROE/ROIC - Calidad del capital (hasta ±10 pts)
-    best_return = max(filter(lambda x: x is not None, [roe, roic]), default=None)
+    best_return = max(filter(None, [roe, roic]), default=None)
     if best_return is not None:
         if best_return >= 0.25:
             score += 10
@@ -1542,8 +1548,6 @@ def net_debt_to_ebitda(net_debt_value: Optional[float], ebitda_value: Optional[f
 
 def interest_coverage(ebit: Optional[float], interest_expense: Optional[float]) -> Optional[float]:
     """Interest Coverage = EBIT / Interest Expense."""
-    if interest_expense is not None and interest_expense <= 0:
-        return None  # Sin gasto de intereses o valor inválido
     return safe_div(ebit, interest_expense)
 
 
@@ -1594,7 +1598,7 @@ def cagr(begin_value: Optional[float], end_value: Optional[float], years: Option
     if begin_value is None or end_value is None or years is None:
         return None
     if begin_value <= 0 or end_value <= 0 or years <= 0:
-        return None  # CAGR requiere valores positivos para la raíz n-ésima
+        return None
     return (end_value / begin_value) ** (1.0 / years) - 1.0
 
 
@@ -1602,7 +1606,7 @@ def yoy_growth(current_value: Optional[float], previous_value: Optional[float]) 
     """Year-over-Year Growth = (Current - Previous) / Previous."""
     if current_value is None or previous_value is None or previous_value == 0:
         return None
-    return (current_value - previous_value) / previous_value
+    return (current_value - previous_value) / abs(previous_value)
 
 
 def volatility_coefficient(std_dev: Optional[float], mean: Optional[float]) -> Optional[float]:
@@ -2065,11 +2069,11 @@ def dcf_dynamic(
     
     # Ajustar growth para que sea menor que WACC
     if growth_rate >= wacc - 0.01:
-        growth_rate = wacc - DCF_GROWTH_WACC_MARGIN
+        growth_rate = wacc - 0.02
         result["warnings"].append("Growth ajustado (debe ser < WACC)")
     
-    # Terminal growth no puede exceder WACC (requisito del Gordon Growth Model)
-    effective_terminal = min(terminal_growth, wacc - 0.01)
+    # Terminal growth no puede exceder growth rate proyectado ni WACC
+    effective_terminal = min(terminal_growth, growth_rate, wacc - 0.01)
     
     # Calcular DCF
     fair_value = dcf_fair_value(
@@ -2165,7 +2169,7 @@ def dcf_multi_stage(
     else:
         yearly_decay = 0
     
-    decay_factor = DCF_DECAY_FACTOR if decay_type == "exponential" else 1.0
+    decay_factor = 0.85 if decay_type == "exponential" else 1.0
     
     for year in range(1, high_growth_years + 1):
         if decay_type == "linear":

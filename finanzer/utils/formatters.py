@@ -40,9 +40,8 @@ def fmt(val: Number, tipo: str = "number", na_text: str = "N/A") -> str:
         
         # Porcentaje
         if tipo in ("percent", "%"):
-            # Valores con abs < 5 se tratan como decimales (0.15 → 15.0%, 1.5 → 150.0%)
-            # Valores >= 5 ya son porcentaje pre-formateados (15 → 15.0%)
-            return f"{v * 100:.1f}%" if abs(v) < 5 else f"{v:.1f}%"
+            # Si el valor es > 2, probablemente ya viene como porcentaje
+            return f"{v * 100:.1f}%" if abs(v) < 2 else f"{v:.1f}%"
         
         # Múltiplo
         if tipo in ("multiple", "x"):

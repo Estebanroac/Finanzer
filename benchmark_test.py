@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Benchmark Test - Finanzer v3.1.2
+Benchmark Test - Stock Analyzer v2.4
 =====================================
 Script para medir la mejora de rendimiento con paralelización.
 
@@ -19,7 +19,7 @@ def run_benchmark():
     symbols = ["AAPL", "NVDA", "MSFT"] if "--multi" in sys.argv else [sys.argv[1] if len(sys.argv) > 1 and not sys.argv[1].startswith("-") else "AAPL"]
     
     print("\n" + "="*60)
-    print("🚀 BENCHMARK - Finanzer v3.1.2 (Paralelizado)")
+    print("🚀 BENCHMARK - Stock Analyzer v2.4 (Paralelizado)")
     print("="*60)
     
     service = FinancialDataService()

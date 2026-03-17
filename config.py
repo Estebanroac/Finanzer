@@ -4,7 +4,7 @@ Stock Analyzer - Configuración Centralizada
 Todas las constantes y parámetros configurables en un solo lugar.
 
 Autor: Esteban
-Versión: 3.1.2
+Versión: 2.5
 """
 
 from dataclasses import dataclass
@@ -33,8 +33,7 @@ ALTMAN_Z_LABELS = {
 # Financial Statement Information to Separate Winners from Losers"
 
 PIOTROSKI_STRONG = 7          # 7-9: Señal fuerte de compra
-PIOTROSKI_GOOD = 5            # 5-6: Buena salud financiera
-PIOTROSKI_NEUTRAL = 4         # 4: Neutral
+PIOTROSKI_NEUTRAL = 4         # 4-6: Neutral
 PIOTROSKI_WEAK = 3            # 0-3: Señal de venta
 
 PIOTROSKI_LABELS = {
@@ -61,10 +60,6 @@ DCF_WACC_DEFAULT = 0.10           # 10% default si no hay datos
 # Límites de Growth
 DCF_GROWTH_MAX = 0.50             # 50% cap máximo (ninguna empresa crece más indefinidamente)
 DCF_GROWTH_DEFAULT = 0.08         # 8% default si no hay datos históricos
-
-# Ajustes de growth vs WACC
-DCF_GROWTH_WACC_MARGIN = 0.02     # Growth debe ser al menos 2% menor que WACC
-DCF_DECAY_FACTOR = 0.85           # Factor de decaimiento exponencial por año
 
 # Años de proyección
 DCF_HIGH_GROWTH_YEARS = 5         # Años de alto crecimiento
@@ -254,8 +249,6 @@ def get_piotroski_level(f_score: int) -> str:
     """Retorna el nivel de Piotroski F-Score."""
     if f_score >= PIOTROSKI_STRONG:
         return "STRONG"
-    elif f_score >= PIOTROSKI_GOOD:
-        return "GOOD"
     elif f_score >= PIOTROSKI_NEUTRAL:
         return "NEUTRAL"
     return "WEAK"
@@ -265,6 +258,6 @@ def get_piotroski_level(f_score: int) -> str:
 # VERSION INFO
 # =============================================================================
 
-VERSION = "3.1.2"
+VERSION = "2.7"
 VERSION_NAME = "Finanzer"
-VERSION_DATE = "2026-03-16"
+VERSION_DATE = "2025-12-21"

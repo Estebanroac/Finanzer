@@ -1470,8 +1470,8 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
                             dbc.CardBody([
                                 html.P("P/FFO", className="text-muted small mb-1 text-center"),
                                 html.H4(f"{reit_metrics['p_ffo']:.1f}x" if reit_metrics.get('p_ffo') else "N/A",
-                                       className=f"mb-1 text-center {reit_metrics.get('p_ffo_interpretation', ('', ''))[1]}"),
-                                html.P(reit_metrics.get('p_ffo_interpretation', ('Precio/FFO',))[0], 
+                                       className=f"mb-1 text-center {reit_metrics['p_ffo_interpretation'][1] if reit_metrics.get('p_ffo_interpretation') else ''}"),
+                                html.P(reit_metrics['p_ffo_interpretation'][0] if reit_metrics.get('p_ffo_interpretation') else "Precio/FFO", 
                                       className="small text-muted text-center", style={"fontSize": "0.7rem"})
                             ])
                         ], style={"backgroundColor": "#27272a", "border": "none"})
@@ -1491,8 +1491,8 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
                             dbc.CardBody([
                                 html.P("FFO Payout", className="text-muted small mb-1 text-center"),
                                 html.H4(f"{reit_metrics['ffo_payout_ratio']:.0f}%" if reit_metrics.get('ffo_payout_ratio') else "N/A",
-                                       className=f"mb-1 text-center {reit_metrics.get('payout_interpretation', ('', ''))[1]}"),
-                                html.P(reit_metrics.get('payout_interpretation', ('Dividendo/FFO',))[0],
+                                       className=f"mb-1 text-center {reit_metrics['payout_interpretation'][1] if reit_metrics.get('payout_interpretation') else ''}"),
+                                html.P(reit_metrics['payout_interpretation'][0] if reit_metrics.get('payout_interpretation') else "Dividendo/FFO",
                                       className="small text-muted text-center", style={"fontSize": "0.7rem"})
                             ])
                         ], style={"backgroundColor": "#27272a", "border": "none"})
@@ -1780,7 +1780,7 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
                 html.P([
                     f"Precio actual ${financials.price:.2f}" if financials and financials.price else "N/A",
                     html.Span(" · ", className="text-muted"),
-                    f"{((financials.price - week_low) / (week_high - week_low) * 100):.0f}% del rango 52W" if week_high and week_low and financials and financials.price and (week_high - week_low) > 0 else ""
+                    f"{((financials.price - week_low) / (week_high - week_low) * 100):.0f}% del rango 52W" if week_high and week_low and financials and financials.price else ""
                 ], className="text-muted mb-2") if week_high and week_low else None,
                 dbc.Progress(
                     value=((financials.price - week_low) / (week_high - week_low) * 100) if week_high and week_low and financials and financials.price and (week_high - week_low) > 0 else 50,
@@ -1796,16 +1796,16 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
             
             # YTD de la empresa
             ticker_hist = yf.Ticker(symbol).history(start=ytd_start)
-            stock_ytd = ((ticker_hist['Close'].iloc[-1] / ticker_hist['Close'].iloc[0]) - 1) * 100 if not ticker_hist.empty and len(ticker_hist) > 1 and ticker_hist['Close'].iloc[0] != 0 else 0
-
+            stock_ytd = ((ticker_hist['Close'].iloc[-1] / ticker_hist['Close'].iloc[0]) - 1) * 100 if not ticker_hist.empty else 0
+            
             # YTD del mercado (SPY)
             spy_hist = yf.Ticker("SPY").history(start=ytd_start)
-            market_ytd = ((spy_hist['Close'].iloc[-1] / spy_hist['Close'].iloc[0]) - 1) * 100 if not spy_hist.empty and len(spy_hist) > 1 and spy_hist['Close'].iloc[0] != 0 else 0
-
+            market_ytd = ((spy_hist['Close'].iloc[-1] / spy_hist['Close'].iloc[0]) - 1) * 100 if not spy_hist.empty else 0
+            
             # YTD del sector
             sector_etf = sector_profile.sector_etf if sector_profile else "XLK"
             sector_hist = yf.Ticker(sector_etf).history(start=ytd_start)
-            sector_ytd = ((sector_hist['Close'].iloc[-1] / sector_hist['Close'].iloc[0]) - 1) * 100 if not sector_hist.empty and len(sector_hist) > 1 and sector_hist['Close'].iloc[0] != 0 else 0
+            sector_ytd = ((sector_hist['Close'].iloc[-1] / sector_hist['Close'].iloc[0]) - 1) * 100 if not sector_hist.empty else 0
             
         except Exception as e:
             logger.warning(f"Error calculando YTD: {e}")
@@ -2134,8 +2134,9 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
         else:
             verdict = ("⚪", "Datos insuficientes", "text-muted", "No hay suficiente información para calcular el valor intrínseco.")
         
-        # IDs únicos para tooltips (determinístico por símbolo)
-        uid = abs(hash(symbol)) % 10000
+        # IDs únicos para tooltips
+        import random
+        uid = random.randint(1000, 9999)
         
         tab_intrinsic = html.Div([
             html.H5("💰 ¿Cuánto vale realmente esta acción?", className="mb-1"),
@@ -2555,15 +2556,18 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
                         ),
                         html.Div([
                             html.Span(
-                                f"{(alerts.get('financial_health') or {}).get('score', 0)}/10" if alerts.get('financial_health') else "N/A",
+                                f"{(alerts.get('financial_health') or {}).get('score', 0)}/10" if alerts.get('financial_health') else "N/A", 
                                 className="institutional-value",
                                 style={
-                                    "color": {"STRONG": "#22c55e", "GOOD": "#84cc16", "NEUTRAL": "#eab308"}.get(
-                                        (alerts.get('financial_health') or {}).get('level', ''), "#ef4444")
+                                    "color": "#22c55e" if (alerts.get('financial_health') or {}).get('level') == "STRONG" else 
+                                             "#84cc16" if (alerts.get('financial_health') or {}).get('level') == "GOOD" else
+                                             "#eab308" if (alerts.get('financial_health') or {}).get('level') == "NEUTRAL" else "#ef4444"
                                 }),
                             html.Span(
-                                {"STRONG": " · Excelente", "GOOD": " · Buena", "NEUTRAL": " · Neutral"}.get(
-                                    (alerts.get('financial_health') or {}).get('level', ''), " · Débil"),
+                                " · Excelente" if (alerts.get('financial_health') or {}).get('level') == "STRONG" else
+                                " · Buena" if (alerts.get('financial_health') or {}).get('level') == "GOOD" else
+                                " · Neutral" if (alerts.get('financial_health') or {}).get('level') == "NEUTRAL" else
+                                " · Débil",
                                 className="institutional-label"
                             )
                         ]),
@@ -2638,13 +2642,11 @@ def handle_navigation(search_btn, search_submit, logo_clicks, quick_picks, sugge
                             html.Span(f"{alerts.get('piotroski_f_score', {}).get('value', 0)}/9" if alerts.get('piotroski_f_score', {}).get('value') is not None else "N/A", 
                                      className="institutional-value",
                                      style={
-                                         "color": "#22c55e" if (alerts.get('piotroski_f_score', {}).get('value') or 0) >= 7 else
-                                                  "#4ade80" if (alerts.get('piotroski_f_score', {}).get('value') or 0) >= 5 else
+                                         "color": "#22c55e" if (alerts.get('piotroski_f_score', {}).get('value') or 0) >= 7 else 
                                                   "#eab308" if (alerts.get('piotroski_f_score', {}).get('value') or 0) >= 4 else "#ef4444"
                                      }),
                             html.Span(
                                 " · Fuerte" if (alerts.get('piotroski_f_score', {}).get('value') or 0) >= 7 else
-                                " · Bueno" if (alerts.get('piotroski_f_score', {}).get('value') or 0) >= 5 else
                                 " · Neutral" if (alerts.get('piotroski_f_score', {}).get('value') or 0) >= 4 else
                                 " · Débil",
                                 className="institutional-label"

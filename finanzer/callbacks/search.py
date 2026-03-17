@@ -3,17 +3,13 @@ Finanzer - Callbacks de búsqueda de acciones.
 Maneja las sugerencias de autocompletado.
 """
 
-import logging
-
 from dash import callback, html, Input, Output
-
-logger = logging.getLogger(__name__)
 
 # Import de la base de datos de stocks
 try:
     from stock_database import search_stocks
 except ImportError:
-    logger.info("stock_database not available, search suggestions will be disabled")
+    # Fallback si no está disponible
     def search_stocks(query, limit=6):
         return []
 
