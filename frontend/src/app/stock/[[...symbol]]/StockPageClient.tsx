@@ -8,7 +8,11 @@ import MetricsGrid from "@/components/MetricsGrid";
 import TabsSection from "@/components/TabsSection";
 import { analyzeStock, formatPrice, formatNumber, formatPercent, getScoreColor, type StockAnalysis } from "@/lib/api";
 
-export default function StockPage() {
+// PDF download URL helper
+const getPdfUrl = (sym: string) =>
+  `${typeof window !== "undefined" && window.location.hostname !== "localhost" ? "" : "http://localhost:8000"}/api/pdf/${sym}`;
+
+export default function StockPageClient() {
   const params = useParams();
   const symbol = (params.symbol as string)?.toUpperCase();
   const [data, setData] = useState<StockAnalysis | null>(null);
@@ -73,7 +77,7 @@ export default function StockPage() {
                 </div>
               </div>
               <a
-                href={`http://localhost:8000/api/pdf/${symbol}`}
+                href={getPdfUrl(symbol)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-300 bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] transition-colors"

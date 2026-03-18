@@ -6,9 +6,10 @@ import os
 import io
 import logging
 from typing import Optional, Dict, Any, List
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, FileResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
 
 # Add lib to path so imports work
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "lib"))
@@ -1538,6 +1539,53 @@ async def download_pdf(symbol: str):
 @app.get("/api/health")
 async def health():
     return {"status": "ok"}
+
+
+# ── Serve frontend static files ──
+# The frontend is built as a static export in ../frontend/out
+_frontend_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "frontend", "out")
+_frontend_dir = os.path.abspath(_frontend_dir)
+
+if os.path.isdir(_frontend_dir):
+    # Serve _next static assets
+    _next_dir = os.path.join(_frontend_dir, "_next")
+    if os.path.isdir(_next_dir):
+        app.mount("/_next", StaticFiles(directory=_next_dir), name="next_static")
+
+    @app.get("/")
+    async def serve_index():
+        index_path = os.path.join(_frontend_dir, "index.html")
+        if os.path.isfile(index_path):
+            return FileResponse(index_path, media_type="text/html")
+        return HTMLResponse("<h1>Finanzer</h1><p>Frontend not built.</p>")
+
+    # Serve stock pages — SPA fallback using the stock page HTML
+    @app.get("/stock/{symbol:path}")
+    async def serve_stock_page(symbol: str):
+        # Try the exact path first
+        stock_index = os.path.join(_frontend_dir, "stock", "index.html")
+        if os.path.isfile(stock_index):
+            return FileResponse(stock_index, media_type="text/html")
+        # Fallback to root index
+        index_path = os.path.join(_frontend_dir, "index.html")
+        return FileResponse(index_path, media_type="text/html")
+
+    # Serve other static files (favicon, svgs, etc.)
+    @app.get("/{filepath:path}")
+    async def serve_static(filepath: str):
+        # Try exact file
+        full_path = os.path.join(_frontend_dir, filepath)
+        if os.path.isfile(full_path):
+            return FileResponse(full_path)
+        # Try with index.html (for directory paths)
+        index_path = os.path.join(full_path, "index.html")
+        if os.path.isfile(index_path):
+            return FileResponse(index_path, media_type="text/html")
+        # Fallback to root index (SPA)
+        root_index = os.path.join(_frontend_dir, "index.html")
+        if os.path.isfile(root_index):
+            return FileResponse(root_index, media_type="text/html")
+        raise HTTPException(status_code=404, detail="Not found")
 
 
 if __name__ == "__main__":
