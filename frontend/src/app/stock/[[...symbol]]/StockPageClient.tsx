@@ -14,7 +14,8 @@ const getPdfUrl = (sym: string) =>
 
 export default function StockPageClient() {
   const params = useParams();
-  const symbol = (params.symbol as string)?.toUpperCase();
+  const rawSymbol = params.symbol;
+  const symbol = (Array.isArray(rawSymbol) ? rawSymbol[0] : rawSymbol as string)?.toUpperCase();
   const [data, setData] = useState<StockAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
