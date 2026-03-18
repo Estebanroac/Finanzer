@@ -234,7 +234,8 @@ def _compute_analysis(symbol: str) -> dict:
                     "ev_revenue": yr.get("enterpriseToRevenue"),
                     "pb": yr.get("priceToBook"),
                     "enterprise_value": yr.get("enterpriseValue"),
-                    "forward_pe": yr.get("forwardPE"),  # v2.4
+                    "forward_pe": yr.get("forwardPE"),
+                    "dividend_yield": yr.get("dividendYield"),
                 }
 
                 for k, v in fallback_map.items():
@@ -298,11 +299,11 @@ def _compute_analysis(symbol: str) -> dict:
                 if pr_yahoo is not None:
                     payout = pr_yahoo
 
-            # Dividend yield from Yahoo
+            # Dividend yield from Yahoo — check _yahoo_ratios AND main info dict
             div_yield = r("dividend_yield")
-            if div_yield is None:
-                dy_yahoo = yr.get("dividendYield") if _has_yahoo else None
-                if dy_yahoo is not None:
+            if div_yield is None and _has_yahoo:
+                dy_yahoo = yr.get("dividendYield") or yinfo.get("dividendYield")
+                if dy_yahoo is not None and dy_yahoo != 0:
                     div_yield = dy_yahoo
 
             # Debt to Assets
@@ -323,6 +324,21 @@ def _compute_analysis(symbol: str) -> dict:
             if earnings_yield is None and eps_val and price_val and price_val > 0:
                 earnings_yield = eps_val / price_val
 
+            # EV/EBITDA — compute from components if ratio is missing
+            ev_ebitda = r("ev_ebitda")
+            if ev_ebitda is None and _has_yahoo:
+                ev = safe_float(yr.get("enterpriseValue")) or safe_float(ratios.get("enterprise_value"))
+                ebitda_v = safe_float(financials.ebitda) or safe_float(ratios.get("ebitda"))
+                if ev and ebitda_v and ebitda_v > 0:
+                    ev_ebitda = ev / ebitda_v
+
+            # Forward P/E — compute from forward EPS if ratio is missing
+            fwd_pe = r("forward_pe")
+            if fwd_pe is None and price_val and financials.forward_eps:
+                feps = safe_float(financials.forward_eps)
+                if feps and feps > 0:
+                    fwd_pe = price_val / feps
+
             result["key_metrics"] = {
                 "market_cap": mcap,
                 "pe": r("pe"),
@@ -330,9 +346,9 @@ def _compute_analysis(symbol: str) -> dict:
                 "de": r("debt_to_equity"),
                 "net_margin": r("net_margin"),
                 "fcf_yield": safe_float(fcf_yield),
-                "ev_ebitda": r("ev_ebitda"),
+                "ev_ebitda": safe_float(ev_ebitda),
                 "beta": safe_float(financials.beta),
-                "forward_pe": r("forward_pe"),
+                "forward_pe": safe_float(fwd_pe),
                 "pb": r("pb", "price_to_book"),
                 "ps": r("ps", "price_to_sales", "p_s"),
                 "peg": r("peg", "peg_ratio"),
@@ -557,7 +573,7 @@ def _compute_analysis(symbol: str) -> dict:
                 # DCF
                 fcf = financials.free_cash_flow
                 if fcf and fcf > 0 and price and financials.shares_outstanding:
-                    beta = financials.beta or 1.0
+                    beta = financials.beta if financials.beta is not None else 1.0
                     wacc = calculate_wacc(beta=beta)
                     growth = financials.revenue_growth_yoy or 0.10
 

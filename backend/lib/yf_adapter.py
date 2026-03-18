@@ -252,7 +252,7 @@ def _do_fetch(symbol: str) -> Dict[str, Any]:
     # Build info dict
     current_price = _raw(price_data.get("regularMarketPrice"))
     market_cap = _raw(price_data.get("marketCap")) or _raw(summary.get("marketCap"))
-    shares = _raw(kstat.get("sharesOutstanding")) or _raw(kstat.get("impliedSharesOutstanding"))
+    shares = _raw(kstat.get("impliedSharesOutstanding")) or _raw(kstat.get("sharesOutstanding"))
 
     # ── Income statement: financialData is primary, incomeStatementHistory is backup ──
     revenue = _raw(fd.get("totalRevenue")) or _raw(latest_inc.get("totalRevenue"))
@@ -280,7 +280,10 @@ def _do_fetch(symbol: str) -> Dict[str, Any]:
     long_term_debt = _raw(latest_bs.get("longTermDebt"))
     total_equity = _raw(latest_bs.get("totalStockholderEquity"))
     total_liab = _raw(latest_bs.get("totalLiab"))
-    cash = _raw(fd.get("totalCash")) or _raw(latest_bs.get("cash"))
+    cash = (_raw(fd.get("totalCash"))
+            or _raw(latest_bs.get("cashAndShortTermInvestments"))
+            or _raw(latest_bs.get("cashCashEquivalentsAndShortTermInvestments"))
+            or _raw(latest_bs.get("cash")))
     retained_earnings = _raw(latest_bs.get("retainedEarnings"))
     inventory = _raw(latest_bs.get("inventory"))
 
@@ -461,7 +464,7 @@ def _do_fetch(symbol: str) -> Dict[str, Any]:
         "dividendsPaid": dividends_paid,
 
         # Market data
-        "beta": _raw(kstat.get("beta")) or _raw(summary.get("beta")) or 1.0,
+        "beta": _raw(kstat.get("beta")) or _raw(summary.get("beta")),  # None if unavailable; fallback in main.py
         "trailingPE": _raw(summary.get("trailingPE")),
         "forwardPE": _raw(summary.get("forwardPE")) or _raw(kstat.get("forwardPE")),
         "priceToBook": _raw(kstat.get("priceToBook")),
@@ -515,6 +518,8 @@ def _do_fetch(symbol: str) -> Dict[str, Any]:
             "enterpriseToEbitda": _raw(kstat.get("enterpriseToEbitda")),
             "enterpriseToRevenue": _raw(kstat.get("enterpriseToRevenue")),
             "priceToBook": _raw(kstat.get("priceToBook")),
+            "forwardPE": _raw(summary.get("forwardPE")) or _raw(kstat.get("forwardPE")),
+            "dividendYield": _raw(summary.get("dividendYield")),
         },
     }
 
@@ -551,8 +556,16 @@ def _fallback_yfinance(symbol: str) -> Dict[str, Any]:
         "fiftyTwoWeekLow": fi.get("yearLow"),
         "shares": fi.get("shares"),
         "sharesOutstanding": fi.get("shares"),
-        "beta": 1.0,
+        "beta": None,  # Will be populated from ticker.info if available
     }
+
+    # Try to get beta from ticker.info (fast_info doesn't have it)
+    try:
+        _info = ticker.info
+        if _info.get("beta"):
+            info["beta"] = _info["beta"]
+    except Exception:
+        pass
 
     sd = KNOWN_SECTORS.get(symbol)
     info["sector"] = sd[0] if sd else "Unknown"
@@ -582,12 +595,18 @@ def _fallback_yfinance(symbol: str) -> Dict[str, Any]:
         bs = ticker.balance_sheet
         if bs is not None and not bs.empty:
             latest = bs.iloc[:, 0]
-            return {k: _sg(latest, k) for k in [
+            result = {k: _sg(latest, k) for k in [
                 "Total Assets", "Current Assets", "Current Liabilities",
                 "Total Debt", "Long Term Debt", "Stockholders Equity",
-                "Total Liabilities Net Minority Interest", "Cash And Cash Equivalents",
+                "Total Liabilities Net Minority Interest",
+                "Cash Cash Equivalents And Short Term Investments",
+                "Cash And Cash Equivalents",
                 "Retained Earnings", "Inventory"
             ]}
+            # Prefer broader cash field
+            if result.get("Cash Cash Equivalents And Short Term Investments"):
+                result["Cash And Cash Equivalents"] = result["Cash Cash Equivalents And Short Term Investments"]
+            return result
         return {}
 
     def _get_cf():
