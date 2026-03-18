@@ -485,15 +485,15 @@ export const HISTORICAL: Record<string, TooltipContent> = {
 // ─── EVALUACION (EvaluationTab) ─────────────────────────
 export const EVALUATION: Record<string, TooltipContent> = {
   altman_z: {
-    title: "Altman Z-Score",
-    description: "Modelo matematico creado por Edward Altman en 1968 que predice la probabilidad de quiebra de una empresa en los proximos 2 anos. Combina 5 ratios financieros en una formula ponderada.",
-    formula: "1.2×(WC/TA) + 1.4×(RE/TA) + 3.3×(EBIT/TA) + 0.6×(MktCap/TL) + 1.0×(Rev/TA)",
+    title: "Altman Z-Score (Adaptativo)",
+    description: "Modelo de Edward Altman que predice probabilidad de quiebra. Finanzer selecciona automaticamente la variante correcta segun el tipo de empresa: Z original (manufactura), Z'' (tech/servicios) o Z' (privadas).",
+    formula: "Manufactura: 1.2×X1+1.4×X2+3.3×X3+0.6×X4+1.0×X5 | No-Mfg: 6.56×X1+3.26×X2+6.72×X3+1.05×X4",
     thresholds: [
-      { label: "Zona segura — baja probabilidad de quiebra", value: ">2.99", color: "#00d632" },
-      { label: "Zona gris — monitorear de cerca", value: "1.81–2.99", color: "#fbbf24" },
-      { label: "Zona de riesgo — probabilidad alta de quiebra", value: "<1.81", color: "#ff4d4d" },
+      { label: "Zona segura (umbral segun modelo)", value: ">2.60–2.99", color: "#00d632" },
+      { label: "Zona gris — monitorear de cerca", value: "1.10–2.60", color: "#fbbf24" },
+      { label: "Zona de riesgo — probabilidad alta", value: "<1.10–1.81", color: "#ff4d4d" },
     ],
-    tip: "El Z-Score no tiene tope maximo. Empresas tech sin deuda pueden tener Z-Score >20, lo cual es muy positivo. Fue disenado para manufactura pero funciona como indicador general de solidez.",
+    tip: "Para tech/servicios se usa Z'' que elimina asset turnover (X5), evitando sesgo en empresas asset-light. Los umbrales se ajustan automaticamente al modelo seleccionado.",
   },
   piotroski: {
     title: "Piotroski F-Score",

@@ -478,12 +478,12 @@ def _compute_analysis(symbol: str) -> dict:
                 if z_tl is None and z_ta and te_val:
                     z_tl = z_ta - te_val
 
-                # Estimate retained_earnings if missing (conservative: use total_equity * 0.8)
-                if z_re is None and te_val:
-                    z_re = te_val * 0.8  # Most mature companies: RE ≈ 80% of equity
+                # Working capital — only compute if both components are available
+                ca_val = safe_float(financials.current_assets)
+                cl_val = safe_float(financials.current_liabilities)
+                wc = (ca_val - cl_val) if (ca_val is not None and cl_val is not None) else None
 
-                wc = (safe_float(financials.current_assets) or 0) - (safe_float(financials.current_liabilities) or 0)
-                z_val, z_zone, z_interp = altman_z_score(
+                z_val, z_zone, z_interp, z_details = altman_z_score(
                     working_capital=wc,
                     total_assets=z_ta,
                     retained_earnings=z_re,
@@ -491,11 +491,15 @@ def _compute_analysis(symbol: str) -> dict:
                     market_value_equity=z_mcap,
                     total_liabilities=z_tl,
                     sales=z_rev,
+                    sector=sector,
+                    book_value_equity=te_val,
                 )
                 result["altman_z"] = {
                     "z_score": z_val or 0,
                     "zone": z_zone.lower() if z_zone else "grey",
                     "interpretation": z_interp,
+                    "model": z_details.get("model", ""),
+                    "details": z_details,
                 }
 
                 # Piotroski F-Score — NOW with prior-year data!

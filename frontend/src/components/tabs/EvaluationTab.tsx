@@ -126,9 +126,14 @@ export default function EvaluationTab({ data }: { data: StockAnalysis }) {
   );
 }
 
-function ZScoreCard({ data }: { data: { z_score: number; zone: string; interpretation: string } }) {
+function ZScoreCard({ data }: { data: { z_score: number; zone: string; interpretation: string; model?: string; details?: Record<string, unknown> } }) {
   const color = data.zone === "safe" ? "#00d632" : data.zone === "grey" ? "#fbbf24" : "#ff4d4d";
   const zoneLabel = data.zone === "safe" ? "Zona Segura" : data.zone === "grey" ? "Zona Gris" : "Zona Riesgo";
+
+  const details = data.details || {};
+  const safeT = (details.safe_threshold as number) || 2.99;
+  const greyT = (details.grey_threshold as number) || 1.81;
+  const warnings = (details.warnings as string[]) || [];
 
   return (
     <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
@@ -147,12 +152,22 @@ function ZScoreCard({ data }: { data: { z_score: number; zone: string; interpret
       <div className="text-4xl font-black tabular-nums mb-2" style={{ color }}>
         {data.z_score.toFixed(2)}
       </div>
+      {data.model && (
+        <p className="text-[10px] text-zinc-500 font-medium mb-1">{data.model}</p>
+      )}
       <p className="text-xs text-zinc-500 leading-relaxed">{data.interpretation}</p>
       <p className="text-[10px] text-zinc-600 mt-2">
-        {data.zone === "safe" ? "Z > 2.99 = bajo riesgo de bancarrota" :
-         data.zone === "grey" ? "1.81 < Z < 2.99 = zona de incertidumbre" :
-         "Z < 1.81 = alto riesgo de bancarrota"}
+        {data.zone === "safe" ? `Z > ${safeT} = bajo riesgo de bancarrota` :
+         data.zone === "grey" ? `${greyT} < Z < ${safeT} = zona de incertidumbre` :
+         `Z < ${greyT} = alto riesgo de bancarrota`}
       </p>
+      {warnings.length > 0 && (
+        <div className="mt-2 space-y-0.5">
+          {warnings.map((w, i) => (
+            <p key={i} className="text-[10px] text-amber-500/70">⚠ {w}</p>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

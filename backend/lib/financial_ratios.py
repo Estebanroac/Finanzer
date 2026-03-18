@@ -143,60 +143,117 @@ def altman_z_score(
     ebit: Optional[float],
     market_value_equity: Optional[float],
     total_liabilities: Optional[float],
-    sales: Optional[float]
-) -> Tuple[Optional[float], str, str]:
+    sales: Optional[float],
+    sector: str = "",
+    book_value_equity: Optional[float] = None,
+) -> Tuple[Optional[float], str, str, dict]:
     """
-    Altman Z-Score - Predictor de bancarrota (Modelo original 1968).
-    
-    Fórmula: Z = 1.2*X1 + 1.4*X2 + 3.3*X3 + 0.6*X4 + 1.0*X5
-    
-    Donde:
-        X1 = Working Capital / Total Assets
-        X2 = Retained Earnings / Total Assets  
-        X3 = EBIT / Total Assets
-        X4 = Market Value Equity / Total Liabilities
-        X5 = Sales / Total Assets
-    
-    Interpretación:
-        Z > 2.99: Zona segura (bajo riesgo de bancarrota)
-        1.81 < Z < 2.99: Zona gris (riesgo moderado, monitorear)
-        Z < 1.81: Zona de peligro (alto riesgo de bancarrota)
-    
+    Altman Z-Score adaptativo — selecciona automáticamente el modelo correcto
+    según el tipo de empresa:
+
+    1) Z-Score ORIGINAL (1968) — empresas manufactureras públicas
+       Z = 1.2×X1 + 1.4×X2 + 3.3×X3 + 0.6×X4 + 1.0×X5
+       Safe > 2.99 | Grey 1.81–2.99 | Distress < 1.81
+
+    2) Z''-Score (1995) — servicios, tech, non-manufacturing
+       Elimina X5 (asset turnover) porque sesga a empresas asset-light.
+       Z'' = 6.56×X1 + 3.26×X2 + 6.72×X3 + 1.05×X4
+       Safe > 2.60 | Grey 1.10–2.60 | Distress < 1.10
+
+    3) Z'-Score (1983) — empresas privadas (usa book value en vez de market cap)
+       Z' = 0.717×X1 + 0.847×X2 + 3.107×X3 + 0.420×X4' + 0.998×X5
+       donde X4' = Book Value Equity / Total Liabilities
+       Safe > 2.90 | Grey 1.23–2.90 | Distress < 1.23
+
     Returns:
-        Tuple[z_score, risk_level, interpretation]
+        Tuple[z_score, risk_level, interpretation, details_dict]
     """
-    if (working_capital is None or total_assets is None or 
-        retained_earnings is None or ebit is None or
-        market_value_equity is None or total_liabilities is None or 
-        sales is None or total_assets == 0 or total_liabilities == 0):
-        return None, "N/A", "Datos insuficientes para calcular Z-Score"
-    
+    # ── Determine which model to use based on sector ──
+    _sector = (sector or "").lower().strip()
+    _NON_MFG_SECTORS = {
+        "technology", "tech", "communication services", "financial services",
+        "healthcare", "consumer cyclical", "consumer defensive",
+        "real estate", "utilities", "software", "internet",
+        "media", "telecom", "services", "retail", "fintech",
+    }
+    is_non_manufacturing = any(s in _sector for s in _NON_MFG_SECTORS) or _sector == ""
+    use_private = (market_value_equity is None or market_value_equity == 0) and book_value_equity is not None
+
+    # ── Validate minimum required inputs ──
+    if total_assets is None or total_assets == 0:
+        return None, "N/A", "Datos insuficientes para calcular Z-Score", {}
+    if ebit is None:
+        return None, "N/A", "Datos insuficientes: falta EBIT / Operating Income", {}
+    if total_liabilities is None or total_liabilities == 0:
+        return None, "N/A", "Datos insuficientes: faltan pasivos totales", {}
+
+    # WC and RE can legitimately be None — treat as 0 only with flag
+    wc = working_capital if working_capital is not None else 0
+    re = retained_earnings if retained_earnings is not None else 0
+
     try:
-        X1 = working_capital / total_assets
-        X2 = retained_earnings / total_assets
+        X1 = wc / total_assets
+        X2 = re / total_assets
         X3 = ebit / total_assets
-        X4 = market_value_equity / total_liabilities
-        X5 = sales / total_assets
-        
-        z = 1.2*X1 + 1.4*X2 + 3.3*X3 + 0.6*X4 + 1.0*X5
-        
-        if z > ALTMAN_Z_SAFE:
+
+        details = {"X1_wc_ta": round(X1, 4), "X2_re_ta": round(X2, 4), "X3_ebit_ta": round(X3, 4)}
+
+        if use_private:
+            # ── Z'-Score (private companies) ──
+            X4p = book_value_equity / total_liabilities
+            X5 = (sales / total_assets) if sales else 0
+            z = 0.717*X1 + 0.847*X2 + 3.107*X3 + 0.420*X4p + 0.998*X5
+            model_name = "Z'-Score (Empresas Privadas)"
+            safe_threshold, grey_threshold = 2.90, 1.23
+            details.update({"X4_bv_tl": round(X4p, 4), "X5_rev_ta": round(X5, 4)})
+
+        elif is_non_manufacturing:
+            # ── Z''-Score (services / tech / non-manufacturing) ──
+            X4 = market_value_equity / total_liabilities
+            z = 6.56*X1 + 3.26*X2 + 6.72*X3 + 1.05*X4
+            model_name = "Z''-Score (No Manufactura)"
+            safe_threshold, grey_threshold = 2.60, 1.10
+            details.update({"X4_mcap_tl": round(X4, 4)})
+
+        else:
+            # ── Z-Score Original (manufacturing) ──
+            X4 = market_value_equity / total_liabilities
+            X5 = (sales / total_assets) if sales else 0
+            z = 1.2*X1 + 1.4*X2 + 3.3*X3 + 0.6*X4 + 1.0*X5
+            model_name = "Z-Score Original (Manufactura)"
+            safe_threshold, grey_threshold = ALTMAN_Z_SAFE, ALTMAN_Z_GREY
+            details.update({"X4_mcap_tl": round(X4, 4), "X5_rev_ta": round(X5, 4)})
+
+        details["model"] = model_name
+        details["safe_threshold"] = safe_threshold
+        details["grey_threshold"] = grey_threshold
+
+        # ── Classify zone ──
+        if z > safe_threshold:
             risk_level = "SAFE"
-            interpretation = "Zona segura - Bajo riesgo de bancarrota"
-        elif z > ALTMAN_Z_GREY:
+            interpretation = f"{model_name}: Zona segura — bajo riesgo de bancarrota"
+        elif z > grey_threshold:
             risk_level = "GREY"
-            interpretation = "Zona gris - Riesgo moderado, monitorear"
+            interpretation = f"{model_name}: Zona gris — riesgo moderado, monitorear"
         else:
             risk_level = "DISTRESS"
-            interpretation = "Zona de peligro - Alto riesgo de bancarrota"
-        
-        return round(z, 2), risk_level, interpretation
-        
-    except (ZeroDivisionError, TypeError, ValueError) as e:
-        return None, "N/A", f"Error en cálculo: {type(e).__name__}"
-    except Exception as e:
-        # Log para debug pero no exponer detalles internos
-        return None, "N/A", "Error inesperado en cálculo"
+            interpretation = f"{model_name}: Zona de peligro — alto riesgo de bancarrota"
+
+        # Add data quality warnings
+        warnings = []
+        if working_capital is None:
+            warnings.append("Working Capital estimado (datos parciales)")
+        if retained_earnings is None:
+            warnings.append("Retained Earnings no disponible, asumido 0")
+        if warnings:
+            details["warnings"] = warnings
+
+        return round(z, 2), risk_level, interpretation, details
+
+    except (ZeroDivisionError, TypeError, ValueError):
+        return None, "N/A", "Error en cálculo del Z-Score", {}
+    except Exception:
+        return None, "N/A", "Error inesperado en cálculo", {}
 
 
 def financial_health_score(
