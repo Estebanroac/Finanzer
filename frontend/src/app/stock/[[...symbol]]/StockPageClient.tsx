@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import ScoreCard from "@/components/ScoreCard";
 import MetricsGrid from "@/components/MetricsGrid";
@@ -13,12 +12,19 @@ const getPdfUrl = (sym: string) =>
   `${typeof window !== "undefined" && window.location.hostname !== "localhost" ? "" : "http://localhost:8000"}/api/pdf/${sym}`;
 
 export default function StockPageClient() {
-  const params = useParams();
-  const rawSymbol = params.symbol;
-  const symbol = (Array.isArray(rawSymbol) ? rawSymbol[0] : rawSymbol as string)?.toUpperCase();
+  const [symbol, setSymbol] = useState<string>("");
   const [data, setData] = useState<StockAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Extract symbol from URL pathname (works reliably in static export)
+  useEffect(() => {
+    const path = window.location.pathname; // e.g. /stock/AAPL or /stock/AAPL/
+    const parts = path.split("/").filter(Boolean); // ["stock", "AAPL"]
+    if (parts.length >= 2 && parts[0] === "stock") {
+      setSymbol(parts[1].toUpperCase());
+    }
+  }, []);
 
   useEffect(() => {
     if (!symbol) return;
