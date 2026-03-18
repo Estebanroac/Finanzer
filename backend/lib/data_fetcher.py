@@ -44,19 +44,23 @@ try:
 except ImportError:
     PANDAS_AVAILABLE = False
 
+# yf_adapter (curl_cffi direct API) is the primary fetcher
 try:
-    import yfinance as yf
     from yf_adapter import get_ticker_info
     YFINANCE_AVAILABLE = True
-    # Importar excepción de rate limit
+except ImportError:
+    YFINANCE_AVAILABLE = False
+
+# yfinance package is optional (used as fallback in yf_adapter)
+try:
+    import yfinance as yf
     try:
         from yfinance.exceptions import YFRateLimitError
         YF_RATE_LIMIT_AVAILABLE = True
     except ImportError:
         YF_RATE_LIMIT_AVAILABLE = False
-        YFRateLimitError = Exception  # Fallback
+        YFRateLimitError = Exception
 except ImportError:
-    YFINANCE_AVAILABLE = False
     YF_RATE_LIMIT_AVAILABLE = False
     YFRateLimitError = Exception
 
