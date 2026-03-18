@@ -546,10 +546,21 @@ def _compute_analysis(symbol: str) -> dict:
                     clean_detail = detail_str[2:].strip() if len(detail_str) > 2 else detail_str
                     f_criteria[key] = {"passed": passed, "detail": clean_detail}
 
+                # Fiscal year label for Piotroski
+                fy_label = ""
+                if _has_yahoo:
+                    fy_current = yinfo.get("_fiscal_year_current", "")
+                    fy_prior = prior.get("_fiscal_year", "")
+                    if fy_current and fy_prior:
+                        fy_label = f"FY{fy_current} vs FY{fy_prior}"
+                    elif fy_current:
+                        fy_label = f"FY{fy_current}"
+
                 result["piotroski_f"] = {
                     "score": f_score, "max_score": 9, "level": f_level,
                     "interpretation": f_interp,
                     "details": f_criteria,
+                    "fiscal_year": fy_label,
                 }
 
                 # Financial health (for financial sector)

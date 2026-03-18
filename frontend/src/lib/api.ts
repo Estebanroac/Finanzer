@@ -46,7 +46,7 @@ export interface StockAnalysis {
   is_growth: boolean;
   sector_info: { sector: string; mapped_sector: string; sector_etf: string };
   altman_z: { z_score: number; zone: string; interpretation: string; model?: string; details?: Record<string, unknown> } | null;
-  piotroski_f: { score: number; max_score: number; level: string; interpretation: string; details?: Record<string, { passed: boolean; detail: string }> } | null;
+  piotroski_f: { score: number; max_score: number; level: string; interpretation: string; details?: Record<string, { passed: boolean; detail: string }>; fiscal_year?: string } | null;
   financial_health: { score: number; level: string } | null;
   graham_number: number | null;
   graham_margin: number | null;

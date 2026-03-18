@@ -523,11 +523,153 @@ def _do_fetch(symbol: str) -> Dict[str, Any]:
         },
     }
 
+    # ── Enrich prior-year data with yfinance (historical statements) ──
+    try:
+        info = _enrich_prior_year_data(symbol, info)
+    except Exception as e:
+        logger.warning(f"[ENRICH] Prior-year enrichment failed for {symbol}: {e}")
+
     elapsed = time.time() - t0
     logger.info(f"[FAST API] get_ticker_info({symbol}) in {elapsed:.2f}s")
 
     # Cache
     _cache[symbol] = (time.time(), info)
+    return info
+
+
+def _enrich_prior_year_data(symbol: str, info: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Enrich prior-year data using yfinance historical statements.
+
+    The Yahoo v10 API returns almost no historical balance sheet / cash flow data.
+    yfinance (via its own API) returns full multi-year statements, so we use it
+    specifically to fill in the _prior_year dict for Piotroski F-Score accuracy.
+    """
+    try:
+        import yfinance as yf
+    except ImportError:
+        logger.debug("[ENRICH] yfinance not installed, skipping enrichment")
+        return info
+
+    t0 = time.time()
+    ticker = yf.Ticker(symbol)
+
+    prior = info.get("_prior_year", {})
+    derived = info.get("_current_derived", {})
+
+    # Helper to safely extract float from pandas
+    def _sf(series, key):
+        try:
+            val = series.get(key)
+            if val is not None:
+                f = float(val)
+                if f == f and f != 0:  # not NaN and not zero-as-missing
+                    return f
+        except (TypeError, ValueError, KeyError):
+            pass
+        return None
+
+    # ── Fetch statements (yfinance caches internally) ──
+    try:
+        inc = ticker.income_stmt
+        bs = ticker.balance_sheet
+        cf = ticker.cashflow
+    except Exception as e:
+        logger.debug(f"[ENRICH] yfinance statement fetch failed: {e}")
+        return info
+
+    has_inc = inc is not None and not inc.empty and len(inc.columns) >= 2
+    has_bs = bs is not None and not bs.empty and len(bs.columns) >= 2
+    has_cf = cf is not None and not cf.empty and len(cf.columns) >= 2
+
+    if not (has_inc or has_bs or has_cf):
+        return info
+
+    # Columns: [0] = most recent (current), [1] = prior year
+    # ── Determine fiscal year labels ──
+    fy_current = str(inc.columns[0].year) if has_inc else ""
+    fy_prior = str(inc.columns[1].year) if has_inc else ""
+
+    # ── CURRENT YEAR — fix derived metrics with real data ──
+    if has_inc:
+        cur_inc = inc.iloc[:, 0]
+        gp = _sf(cur_inc, "Gross Profit")
+        rev = _sf(cur_inc, "Total Revenue")
+        if gp and rev and rev > 0:
+            derived["gross_margin"] = gp / rev
+
+    if has_bs:
+        cur_bs = bs.iloc[:, 0]
+        cur_ta = _sf(cur_bs, "Total Assets")
+        cur_rev = _sf(inc.iloc[:, 0], "Total Revenue") if has_inc else None
+        if cur_ta and cur_rev and cur_ta > 0:
+            derived["asset_turnover"] = cur_rev / cur_ta
+
+        # Also fix current longTermDebt if missing
+        if info.get("longTermDebt") is None:
+            info["longTermDebt"] = _sf(cur_bs, "Long Term Debt")
+
+    # ── PRIOR YEAR — replace estimated data with real data ──
+    if has_inc and len(inc.columns) >= 2:
+        prev_inc = inc.iloc[:, 1]
+        prev_rev = _sf(prev_inc, "Total Revenue")
+        prev_ni = _sf(prev_inc, "Net Income")
+        prev_gp = _sf(prev_inc, "Gross Profit")
+
+        if prev_rev is not None:
+            prior["revenue"] = prev_rev
+        if prev_ni is not None:
+            prior["net_income"] = prev_ni
+        if prev_gp and prev_rev and prev_rev > 0:
+            prior["gross_margin"] = prev_gp / prev_rev
+
+    if has_bs and len(bs.columns) >= 2:
+        prev_bs = bs.iloc[:, 1]
+        prev_ta = _sf(prev_bs, "Total Assets")
+        prev_ca = _sf(prev_bs, "Current Assets")
+        prev_cl = _sf(prev_bs, "Current Liabilities")
+        prev_ltd = _sf(prev_bs, "Long Term Debt")
+        prev_eq = _sf(prev_bs, "Stockholders Equity")
+
+        if prev_ta is not None:
+            prior["total_assets"] = prev_ta
+        if prev_ltd is not None:
+            prior["long_term_debt"] = prev_ltd
+        if prev_eq is not None:
+            prior["equity"] = prev_eq
+        if prev_ca and prev_cl and prev_cl > 0:
+            prior["current_ratio"] = prev_ca / prev_cl
+
+        # Prior-year asset turnover
+        prev_rev_for_at = prior.get("revenue")
+        if prev_ta and prev_rev_for_at and prev_ta > 0:
+            prior["asset_turnover"] = prev_rev_for_at / prev_ta
+
+        # Prior-year ROA
+        prev_ni_for_roa = prior.get("net_income")
+        if prev_ni_for_roa and prev_ta and prev_ta > 0:
+            prior["roa"] = prev_ni_for_roa / prev_ta
+
+        # Prior-year shares
+        prev_shares = _sf(prev_bs, "Share Issued") or _sf(prev_bs, "Ordinary Shares Number")
+        if prev_shares:
+            prior["shares"] = prev_shares
+
+    if has_cf and len(cf.columns) >= 2:
+        prev_cf = cf.iloc[:, 1]
+        prev_ocf = _sf(prev_cf, "Operating Cash Flow")
+        if prev_ocf is not None:
+            prior["operating_cash_flow"] = prev_ocf
+
+    # Store fiscal year info for display
+    prior["_fiscal_year"] = fy_prior
+    info["_fiscal_year_current"] = fy_current
+
+    info["_prior_year"] = prior
+    info["_current_derived"] = derived
+
+    elapsed = time.time() - t0
+    logger.info(f"[ENRICH] Prior-year data enriched for {symbol} (FY{fy_prior}) in {elapsed:.2f}s")
     return info
 
 

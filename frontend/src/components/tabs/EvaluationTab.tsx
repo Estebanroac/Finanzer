@@ -172,7 +172,7 @@ function ZScoreCard({ data }: { data: { z_score: number; zone: string; interpret
   );
 }
 
-function FScoreCard({ data }: { data: { score: number; max_score: number; level: string; interpretation: string; details?: Record<string, { passed: boolean; detail: string }> } }) {
+function FScoreCard({ data }: { data: { score: number; max_score: number; level: string; interpretation: string; details?: Record<string, { passed: boolean; detail: string }>; fiscal_year?: string } }) {
   const color = data.score >= 7 ? "#00d632" : data.score >= 4 ? "#fbbf24" : "#ff4d4d";
   const details = data.details;
 
@@ -183,12 +183,17 @@ function FScoreCard({ data }: { data: { score: number; max_score: number; level:
           <span className="text-sm text-zinc-400 font-medium">Piotroski F-Score</span>
           <InfoTooltip content={EVALUATION.piotroski} />
         </div>
-        <span
-          className="text-[10px] font-semibold px-2 py-0.5 rounded-md"
-          style={{ background: `${color}15`, color, border: `1px solid ${color}25` }}
-        >
-          {data.level}
-        </span>
+        <div className="flex items-center gap-2">
+          {data.fiscal_year && (
+            <span className="text-[9px] text-zinc-500 font-mono">{data.fiscal_year}</span>
+          )}
+          <span
+            className="text-[10px] font-semibold px-2 py-0.5 rounded-md"
+            style={{ background: `${color}15`, color, border: `1px solid ${color}25` }}
+          >
+            {data.level}
+          </span>
+        </div>
       </div>
       <div className="text-4xl font-black tabular-nums mb-2" style={{ color }}>
         {data.score}<span className="text-lg text-zinc-600 font-normal">/{data.max_score}</span>
