@@ -591,23 +591,55 @@ def _enrich_prior_year_data(symbol: str, info: Dict[str, Any]) -> Dict[str, Any]
     fy_prior = str(inc.columns[1].year) if has_inc else ""
 
     # ── CURRENT YEAR — fix derived metrics with real data ──
+    # Also build _piotroski_current with ONLY FY data (no TTM mixing)
+    piotroski_current = {}
+
     if has_inc:
         cur_inc = inc.iloc[:, 0]
         gp = _sf(cur_inc, "Gross Profit")
         rev = _sf(cur_inc, "Total Revenue")
+        cur_ni = _sf(cur_inc, "Net Income")
         if gp and rev and rev > 0:
             derived["gross_margin"] = gp / rev
+            piotroski_current["gross_margin"] = gp / rev
+        if cur_ni is not None:
+            piotroski_current["net_income"] = cur_ni
 
     if has_bs:
         cur_bs = bs.iloc[:, 0]
         cur_ta = _sf(cur_bs, "Total Assets")
         cur_rev = _sf(inc.iloc[:, 0], "Total Revenue") if has_inc else None
+        cur_ltd = _sf(cur_bs, "Long Term Debt")
+        cur_ca = _sf(cur_bs, "Current Assets")
+        cur_cl = _sf(cur_bs, "Current Liabilities")
+        cur_shares = _sf(cur_bs, "Share Issued") or _sf(cur_bs, "Ordinary Shares Number")
+
         if cur_ta and cur_rev and cur_ta > 0:
             derived["asset_turnover"] = cur_rev / cur_ta
+            piotroski_current["asset_turnover"] = cur_rev / cur_ta
+        if cur_ta is not None:
+            piotroski_current["total_assets"] = cur_ta
+        if cur_ltd is not None:
+            piotroski_current["long_term_debt"] = cur_ltd
+        if cur_ca and cur_cl and cur_cl > 0:
+            piotroski_current["current_ratio"] = cur_ca / cur_cl
+        if cur_shares:
+            piotroski_current["shares"] = cur_shares
+
+        # ROA from FY data
+        cur_ni_for_roa = piotroski_current.get("net_income")
+        if cur_ni_for_roa and cur_ta and cur_ta > 0:
+            piotroski_current["roa"] = cur_ni_for_roa / cur_ta
 
         # Also fix current longTermDebt if missing
         if info.get("longTermDebt") is None:
-            info["longTermDebt"] = _sf(cur_bs, "Long Term Debt")
+            info["longTermDebt"] = cur_ltd
+
+    if has_cf:
+        cur_cf = cf.iloc[:, 0]
+        cur_ocf = _sf(cur_cf, "Operating Cash Flow")
+        if cur_ocf is not None:
+            piotroski_current["operating_cash_flow"] = cur_ocf
 
     # ── PRIOR YEAR — replace estimated data with real data ──
     if has_inc and len(inc.columns) >= 2:
@@ -667,6 +699,7 @@ def _enrich_prior_year_data(symbol: str, info: Dict[str, Any]) -> Dict[str, Any]
 
     info["_prior_year"] = prior
     info["_current_derived"] = derived
+    info["_piotroski_current"] = piotroski_current
 
     elapsed = time.time() - t0
     logger.info(f"[ENRICH] Prior-year data enriched for {symbol} (FY{fy_prior}) in {elapsed:.2f}s")

@@ -463,6 +463,7 @@ def _compute_analysis(symbol: str) -> dict:
                 try:
                     prior = yinfo.get("_prior_year", {}) if _has_yahoo else {}
                     current_derived = yinfo.get("_current_derived", {}) if _has_yahoo else {}
+                    piotroski_fy = yinfo.get("_piotroski_current", {}) if _has_yahoo else {}
                 except Exception:
                     pass
 
@@ -502,33 +503,40 @@ def _compute_analysis(symbol: str) -> dict:
                     "details": z_details,
                 }
 
-                # Piotroski F-Score — NOW with prior-year data!
-                roa_current = safe_float(ratios.get("roa"))
-                if roa_current is None and safe_float(financials.net_income) and z_ta and z_ta > 0:
-                    roa_current = safe_float(financials.net_income) / z_ta
+                # Piotroski F-Score — uses PURE fiscal year data (no TTM mixing)
+                # piotroski_fy has FY current (e.g. FY2025), prior has FY prior (e.g. FY2024)
+                # Fallback to TTM data only if yfinance enrichment didn't run
+                pio_roa = safe_float(piotroski_fy.get("roa"))
+                if pio_roa is None:
+                    pio_roa = safe_float(ratios.get("roa"))
+                    if pio_roa is None and safe_float(financials.net_income) and z_ta and z_ta > 0:
+                        pio_roa = safe_float(financials.net_income) / z_ta
 
-                roa_prior = safe_float(prior.get("roa"))
-                gm_current = safe_float(current_derived.get("gross_margin")) or safe_float(ratios.get("gross_margin"))
-                gm_prior = safe_float(prior.get("gross_margin"))
-                at_current = safe_float(current_derived.get("asset_turnover")) or safe_float(ratios.get("asset_turnover"))
-                at_prior = safe_float(prior.get("asset_turnover"))
+                pio_ni = safe_float(piotroski_fy.get("net_income")) or safe_float(financials.net_income)
+                pio_ocf = safe_float(piotroski_fy.get("operating_cash_flow")) or safe_float(financials.operating_cash_flow)
+                pio_ltd = safe_float(piotroski_fy.get("long_term_debt")) or safe_float(financials.long_term_debt)
+                pio_cr = safe_float(piotroski_fy.get("current_ratio")) or safe_float(ratios.get("current_ratio"))
+                pio_shares = safe_float(piotroski_fy.get("shares")) or shares_val
+                pio_gm = safe_float(piotroski_fy.get("gross_margin")) or safe_float(current_derived.get("gross_margin")) or safe_float(ratios.get("gross_margin"))
+                pio_at = safe_float(piotroski_fy.get("asset_turnover")) or safe_float(current_derived.get("asset_turnover")) or safe_float(ratios.get("asset_turnover"))
+                pio_ta = safe_float(piotroski_fy.get("total_assets")) or z_ta
 
                 f_score, f_details, f_interp = piotroski_f_score(
-                    net_income=safe_float(financials.net_income),
-                    roa_current=roa_current,
-                    roa_prior=roa_prior,
-                    operating_cash_flow=safe_float(financials.operating_cash_flow),
-                    long_term_debt_current=safe_float(financials.long_term_debt),
+                    net_income=pio_ni,
+                    roa_current=pio_roa,
+                    roa_prior=safe_float(prior.get("roa")),
+                    operating_cash_flow=pio_ocf,
+                    long_term_debt_current=pio_ltd,
                     long_term_debt_prior=safe_float(prior.get("long_term_debt")),
-                    current_ratio_current=safe_float(ratios.get("current_ratio")),
+                    current_ratio_current=pio_cr,
                     current_ratio_prior=safe_float(prior.get("current_ratio")),
-                    shares_current=shares_val,
+                    shares_current=pio_shares,
                     shares_prior=safe_float(prior.get("shares")),
-                    gross_margin_current=gm_current,
-                    gross_margin_prior=gm_prior,
-                    asset_turnover_current=at_current,
-                    asset_turnover_prior=at_prior,
-                    total_assets=z_ta,
+                    gross_margin_current=pio_gm,
+                    gross_margin_prior=safe_float(prior.get("gross_margin")),
+                    asset_turnover_current=pio_at,
+                    asset_turnover_prior=safe_float(prior.get("asset_turnover")),
+                    total_assets=pio_ta,
                 )
                 f_level = "Fuerte" if f_score >= 7 else "Bueno" if f_score >= 5 else "Neutral" if f_score >= 4 else "Débil"
 
