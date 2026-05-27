@@ -496,7 +496,7 @@ def _compute_analysis(symbol: str) -> dict:
                     book_value_equity=te_val,
                 )
                 result["altman_z"] = {
-                    "z_score": z_val or 0,
+                    "z_score": z_val if z_val is not None else 0,
                     "zone": z_zone.lower() if z_zone else "grey",
                     "interpretation": z_interp,
                     "model": z_details.get("model", ""),

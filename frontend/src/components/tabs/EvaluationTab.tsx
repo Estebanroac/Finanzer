@@ -127,13 +127,44 @@ export default function EvaluationTab({ data }: { data: StockAnalysis }) {
 }
 
 function ZScoreCard({ data }: { data: { z_score: number; zone: string; interpretation: string; model?: string; details?: Record<string, unknown> } }) {
+  const details = data.details || {};
+  const isNotApplicable = (details.reason as string) === "financial_sector";
+  const warnings = (details.warnings as string[]) || [];
+
+  if (isNotApplicable) {
+    return (
+      <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-zinc-400 font-medium">Altman Z-Score</span>
+            <InfoTooltip content={EVALUATION.altman_z} />
+          </div>
+          <span
+            className="text-[10px] font-semibold px-2 py-0.5 rounded-md"
+            style={{ background: "#6b728015", color: "#a1a1aa", border: "1px solid #6b728025" }}
+          >
+            No Aplicable
+          </span>
+        </div>
+        <div className="text-4xl font-black tabular-nums mb-2 text-zinc-600">
+          N/A
+        </div>
+        <p className="text-xs text-zinc-500 leading-relaxed">{data.interpretation}</p>
+        {warnings.length > 0 && (
+          <div className="mt-3 space-y-1 bg-zinc-900/50 rounded-lg p-3">
+            {warnings.map((w, i) => (
+              <p key={i} className="text-[10px] text-zinc-400 leading-relaxed">• {w}</p>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   const color = data.zone === "safe" ? "#00d632" : data.zone === "grey" ? "#fbbf24" : "#ff4d4d";
   const zoneLabel = data.zone === "safe" ? "Zona Segura" : data.zone === "grey" ? "Zona Gris" : "Zona Riesgo";
-
-  const details = data.details || {};
   const safeT = (details.safe_threshold as number) || 2.99;
   const greyT = (details.grey_threshold as number) || 1.81;
-  const warnings = (details.warnings as string[]) || [];
 
   return (
     <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">

@@ -168,10 +168,34 @@ def altman_z_score(
     Returns:
         Tuple[z_score, risk_level, interpretation, details_dict]
     """
+    # ── Financial sector exclusion ──
+    # El Altman Z-Score no fue diseñado para instituciones financieras.
+    # Los bancos y aseguradoras tienen estructuras de deuda masivas por naturaleza
+    # (depósitos = pasivos), lo que genera Z-Scores artificialmente bajos.
+    if is_financial_sector(sector or ""):
+        return (
+            None,
+            "N/A",
+            "El modelo Altman Z-Score no es aplicable a instituciones financieras. "
+            "Los bancos, aseguradoras y empresas de servicios financieros tienen "
+            "estructuras de balance fundamentalmente diferentes (depósitos = pasivos), "
+            "lo que invalida las métricas del modelo.",
+            {
+                "model": "No Aplicable",
+                "reason": "financial_sector",
+                "sector": sector or "",
+                "warnings": [
+                    "El Altman Z-Score fue diseñado para empresas industriales y comerciales",
+                    "Para evaluar instituciones financieras, se recomienda usar métricas como "
+                    "CET1 Ratio, Tier 1 Capital, ROA bancario y Texas Ratio",
+                ],
+            },
+        )
+
     # ── Determine which model to use based on sector ──
     _sector = (sector or "").lower().strip()
     _NON_MFG_SECTORS = {
-        "technology", "tech", "communication services", "financial services",
+        "technology", "tech", "communication services",
         "healthcare", "consumer cyclical", "consumer defensive",
         "real estate", "utilities", "software", "internet",
         "media", "telecom", "services", "retail", "fintech",
