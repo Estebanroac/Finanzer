@@ -97,30 +97,28 @@ class _TickerStatementsCache:
 
     def get_statements(self, symbol):
         """Get or fetch (income_stmt, balance_sheet, cashflow) for symbol."""
-        import time as _time
         symbol = symbol.upper()
         with self._lock:
             if symbol in self._data:
                 ts, stmts = self._data[symbol]
-                if _time.time() - ts < self._ttl:
+                if time.time() - ts < self._ttl:
                     return stmts
 
         # Fetch in parallel
         ticker = yf.Ticker(symbol)
         stmts = {}
-        from concurrent.futures import ThreadPoolExecutor as _TPE, as_completed as _ac
         try:
             def _get_inc(): return ticker.income_stmt
             def _get_bs(): return ticker.balance_sheet
             def _get_cf(): return ticker.cashflow
 
-            with _TPE(max_workers=3) as ex:
+            with ThreadPoolExecutor(max_workers=3) as ex:
                 futs = {
                     ex.submit(_get_inc): "income",
                     ex.submit(_get_bs): "balance",
                     ex.submit(_get_cf): "cashflow",
                 }
-                for f in _ac(futs, timeout=30):
+                for f in as_completed(futs, timeout=30):
                     key = futs[f]
                     try:
                         stmts[key] = f.result()
@@ -129,9 +127,8 @@ class _TickerStatementsCache:
         except Exception as e:
             logger.warning(f"Statement cache fetch error for {symbol}: {e}")
 
-        import time as _time
         with self._lock:
-            self._data[symbol] = (_time.time(), stmts)
+            self._data[symbol] = (time.time(), stmts)
         return stmts
 
 _stmt_cache = _TickerStatementsCache()
