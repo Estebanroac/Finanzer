@@ -5,8 +5,8 @@ import sys
 import os
 import io
 import logging
-from typing import Optional, Dict, Any, List
-from fastapi import FastAPI, HTTPException, Query, Request
+from typing import Optional, Dict, Any
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -14,7 +14,7 @@ from fastapi.staticfiles import StaticFiles
 # Add lib to path so imports work
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "lib"))
 
-from data_fetcher import FinancialDataService, YahooFinanceFetcher
+from data_fetcher import FinancialDataService
 from financial_ratios import (
     calculate_all_ratios, calculate_score_v2, aggregate_alerts,
     altman_z_score, piotroski_f_score, financial_health_score,
@@ -833,7 +833,8 @@ async def download_pdf(symbol: str):
                     if abs(v) >= 1e6: return f"${v / 1e6:.2f}M"
                     return f"${v:,.0f}"
                 return f"{v:,.2f}"
-            except: return "N/A"
+            except (TypeError, ValueError):
+                return "N/A"
 
         def score_color(pct):
             if pct >= 75: return GREEN

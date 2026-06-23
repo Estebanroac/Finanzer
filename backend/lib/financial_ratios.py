@@ -2968,17 +2968,17 @@ def aggregate_alerts(ratio_values: Dict[str, Optional[float]],
     
     # Altman Z-Score (riesgo de bancarrota) - Solo para NO financieras
     if not is_financial:
-        z_score_value, z_score_level, z_score_interpretation = altman_z_score(
+        z_score_value, z_score_level, z_score_interpretation, _ = altman_z_score(
             working_capital=contextual_values.get("working_capital"),
             total_assets=contextual_values.get("total_assets"),
             retained_earnings=contextual_values.get("retained_earnings"),
             ebit=contextual_values.get("ebit"),
             market_value_equity=contextual_values.get("market_cap"),
             total_liabilities=contextual_values.get("total_liabilities"),
-            sales=contextual_values.get("revenue")
+            sales=contextual_values.get("revenue"),
+            sector=real_sector,
         )
     else:
-        # Para financieras, Z-Score no aplica
         z_score_value, z_score_level, z_score_interpretation = None, "N/A", "No aplica a sector financiero"
     
     # Piotroski F-Score (fortaleza financiera)

@@ -7,8 +7,6 @@ Autor: Esteban
 Versión: 2.5
 """
 
-from dataclasses import dataclass
-from typing import Dict
 
 # =============================================================================
 # ALTMAN Z-SCORE THRESHOLDS

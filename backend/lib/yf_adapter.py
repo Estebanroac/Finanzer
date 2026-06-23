@@ -6,7 +6,7 @@ Uses Yahoo v10/quoteSummary API directly via curl_cffi (ONE call for everything)
 import logging
 import time
 import threading
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 
 logger = logging.getLogger(__name__)
 
