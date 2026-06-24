@@ -44,14 +44,6 @@ except ImportError:
 # CONFIGURACIÓN Y TIPOS
 # =========================
 
-class RiskLevel(Enum):
-    """Niveles de riesgo para clasificación."""
-    LOW = "Bajo"
-    MODERATE = "Moderado"
-    HIGH = "Alto"
-    CRITICAL = "Crítico"
-
-
 class SignalType(Enum):
     """Tipos de señal para alertas."""
     POSITIVE = "Positivo"
@@ -1311,13 +1303,6 @@ def safe_subtract(a: Optional[float], b: Optional[float]) -> Optional[float]:
     return a - b
 
 
-def safe_add(*args: Optional[float]) -> Optional[float]:
-    """Suma valores, retornando None si alguno es None."""
-    if any(arg is None for arg in args):
-        return None
-    return sum(args)
-
-
 # =========================
 # RATIOS DE RENTABILIDAD
 # =========================
@@ -1607,11 +1592,6 @@ def interest_coverage(ebit: Optional[float], interest_expense: Optional[float]) 
     return safe_div(ebit, interest_expense)
 
 
-def equity_multiplier(total_assets: Optional[float], total_equity: Optional[float]) -> Optional[float]:
-    """Equity Multiplier = Total Assets / Total Equity."""
-    return safe_div(total_assets, total_equity)
-
-
 # =========================
 # RATIOS DE EFICIENCIA
 # =========================
@@ -1627,38 +1607,10 @@ def inventory_turnover(cost_of_goods_sold: Optional[float], average_inventory: O
 
 
 
-# =========================
-# CRECIMIENTO Y VOLATILIDAD
-# =========================
-
-
-
-# =========================
-# ANÁLISIS DUPONT
-# =========================
-
-def dupont_roe(net_margin_value: Optional[float], asset_turnover_value: Optional[float], 
-               equity_multiplier_value: Optional[float]) -> Optional[float]:
-    """DuPont ROE = Net Margin × Asset Turnover × Equity Multiplier.
-    Descompone el ROE en sus componentes: rentabilidad, eficiencia y apalancamiento.
-    """
-    return safe_multiply(net_margin_value, asset_turnover_value, equity_multiplier_value)
-
-
-
-# =========================
-# VALORACIÓN INTRÍNSECA
-# =========================
-
 
 # =========================
 # SISTEMA DE SEVERIDAD DE ALERTAS v1.0
 # =========================
-# Este sistema clasifica las alertas por severidad proporcional al impacto financiero
-# en lugar de usar penalizaciones uniformes.
-
-
-
 
 def classify_valuation_alert_severity(
     pe_ratio: Optional[float],
@@ -1896,45 +1848,6 @@ def graham_number(eps: Optional[float], book_value_ps: Optional[float]) -> Optio
     if eps <= 0 or book_value_ps <= 0:
         return None
     return (22.5 * eps * book_value_ps) ** 0.5
-
-
-def dcf_fair_value(fcf: Optional[float], growth_rate: float, discount_rate: float,
-                   terminal_growth: float, years: int = 10,
-                   shares_outstanding: Optional[float] = None) -> Optional[float]:
-    """Simplified DCF Fair Value per Share.
-    
-    Args:
-        fcf: Free Cash Flow actual
-        growth_rate: Tasa de crecimiento esperada (decimal)
-        discount_rate: Tasa de descuento / WACC (decimal)
-        terminal_growth: Tasa de crecimiento terminal (decimal)
-        years: Años de proyección
-        shares_outstanding: Número de acciones
-    
-    Returns:
-        Valor justo por acción o None si los inputs son inválidos
-    """
-    if fcf is None or shares_outstanding is None or shares_outstanding <= 0:
-        return None
-    if discount_rate <= terminal_growth:
-        return None  # El modelo no funciona si terminal growth >= discount rate
-    
-    # Calcular valor presente de flujos proyectados
-    pv_fcf = 0.0
-    projected_fcf = fcf
-    
-    for year in range(1, years + 1):
-        projected_fcf *= (1 + growth_rate)
-        pv_fcf += projected_fcf / ((1 + discount_rate) ** year)
-    
-    # Valor terminal (Gordon Growth Model)
-    terminal_value = projected_fcf * (1 + terminal_growth) / (discount_rate - terminal_growth)
-    pv_terminal = terminal_value / ((1 + discount_rate) ** years)
-    
-    # Enterprise Value implícito
-    enterprise_val = pv_fcf + pv_terminal
-    
-    return enterprise_val / shares_outstanding
 
 
 def dcf_multi_stage(
@@ -3243,107 +3156,6 @@ def calculate_all_ratios(financial_data: Dict) -> Dict[str, Optional[float]]:
         # Volatilidad
         "beta": d.get("beta"),
     }
-
-
-def format_ratio(value: Optional[float], format_type: str = "decimal", decimals: int = 2) -> str:
-    """Formatea un ratio para presentación.
-    
-    Args:
-        value: Valor del ratio
-        format_type: "decimal", "percent", "currency", "multiple"
-        decimals: Número de decimales
-    """
-    if value is None:
-        return "N/A"
-    
-    if format_type == "percent":
-        return f"{value * 100:.{decimals}f}%"
-    elif format_type == "currency":
-        if abs(value) >= 1e12:
-            return f"${value/1e12:.{decimals}f}T"
-        elif abs(value) >= 1e9:
-            return f"${value/1e9:.{decimals}f}B"
-        elif abs(value) >= 1e6:
-            return f"${value/1e6:.{decimals}f}M"
-        else:
-            return f"${value:,.{decimals}f}"
-    elif format_type == "multiple":
-        return f"{value:.{decimals}f}x"
-    else:
-        return f"{value:.{decimals}f}"
-
-
-# =============================================================================
-# SCORING SYSTEM v2.0 - TRANSPARENTE Y PROPORCIONAL
-# =============================================================================
-# 
-# Estructura: 5 categorías × 20 puntos = 100 máximo
-# Cada categoría empieza en 10/20 (neutral) y ajusta según métricas
-# Las penalizaciones son PROPORCIONALES a la desviación vs umbrales
-#
-# Categorías:
-#   1. Solidez Financiera (20 pts) - Z-Score, Current Ratio, D/E
-#   2. Rentabilidad (20 pts) - ROE, ROA, Márgenes
-#   3. Valoración (20 pts) - P/E, P/FCF, EV/EBITDA vs sector
-#   4. Calidad de Ganancias (20 pts) - F-Score, FCF, consistencia
-#   5. Crecimiento (20 pts) - Revenue growth, EPS growth, PEG
-# =============================================================================
-
-
-def calculate_proportional_adjustment(
-    value: float,
-    threshold: float,
-    max_bonus: int,
-    max_penalty: int,
-    higher_is_better: bool = True,
-    severe_threshold_mult: float = 0.4
-) -> Tuple[int, str, str]:
-    """
-    Calcula ajuste proporcional basado en desviación del umbral.
-    
-    Returns:
-        Tuple[int, str, str]: (ajuste_puntos, severidad, explicación)
-    """
-    if value is None or threshold is None or threshold == 0:
-        return 0, "neutral", "Sin datos"
-    
-    if higher_is_better:
-        if value >= threshold:
-            # Por encima del umbral = bueno
-            deviation = (value - threshold) / threshold
-            if deviation >= severe_threshold_mult:
-                return max_bonus, "excellent", f"Excelente ({value:.1%} vs {threshold:.1%})"
-            elif deviation >= 0.15:
-                return int(max_bonus * 0.6), "good", f"Bueno ({value:.1%})"
-            else:
-                return int(max_bonus * 0.3), "ok", f"Aceptable ({value:.1%})"
-        else:
-            # Por debajo del umbral = malo
-            deviation = (threshold - value) / threshold
-            if deviation >= severe_threshold_mult:
-                return -max_penalty, "severe", f"Crítico ({value:.1%} vs {threshold:.1%})"
-            elif deviation >= 0.15:
-                return -int(max_penalty * 0.6), "moderate", f"Bajo ({value:.1%})"
-            else:
-                return -int(max_penalty * 0.3), "minor", f"Ligeramente bajo ({value:.1%})"
-    else:
-        # Lower is better (ej: D/E, P/E)
-        if value <= threshold:
-            deviation = (threshold - value) / threshold
-            if deviation >= severe_threshold_mult:
-                return max_bonus, "excellent", f"Excelente ({value:.2f}x vs {threshold:.2f}x)"
-            elif deviation >= 0.15:
-                return int(max_bonus * 0.6), "good", f"Bueno ({value:.2f}x)"
-            else:
-                return int(max_bonus * 0.3), "ok", f"Aceptable ({value:.2f}x)"
-        else:
-            deviation = (value - threshold) / threshold
-            if deviation >= severe_threshold_mult:
-                return -max_penalty, "severe", f"Muy alto ({value:.2f}x vs {threshold:.2f}x)"
-            elif deviation >= 0.15:
-                return -int(max_penalty * 0.6), "moderate", f"Elevado ({value:.2f}x)"
-            else:
-                return -int(max_penalty * 0.3), "minor", f"Ligeramente alto ({value:.2f}x)"
 
 
 def score_solidez_financiera(
