@@ -944,19 +944,11 @@ class YahooFinanceFetcher:
         return result
     
     def get_sector_averages(self, sector: str) -> Dict[str, Optional[float]]:
-        """Obtiene promedios del sector (simplificado - usa ETFs sectoriales)."""
-        # Usar el mismo mapeo dinámico
-        etf_symbol = self._get_sector_etf_symbol(sector)
-        
-        try:
-            # ETF info is unreliable with yfinance 1.2, use defaults
-            return {
-                "sector_pe": 20.0,
-                "sector_ev_ebitda": 12.0,
-            }
-        except (KeyError, TypeError, ValueError, ConnectionError) as e:
-            logger.debug(f"No se pudo obtener datos del ETF {etf_symbol}: {e}")
-            return {"sector_pe": 20.0, "sector_ev_ebitda": 12.0}
+        """Obtiene promedios del sector (simplificado — defaults estáticos)."""
+        return {
+            "sector_pe": 20.0,
+            "sector_ev_ebitda": 12.0,
+        }
     
     def _get_sector_etf_symbol(self, sector_name: str) -> str:
         """Mapeo robusto de sector a ETF (reutilizable)."""
