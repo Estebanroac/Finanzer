@@ -9,6 +9,7 @@ Versión: 2.10 - Rate limiting con retry y backoff exponencial
 """
 
 import os
+import re
 import time
 import random
 import logging
@@ -860,8 +861,6 @@ class YahooFinanceFetcher:
         Obtiene datos del mercado (SPY) y del sector (ETF) para comparación.
         Calcula YTD real (desde 1 de enero) y retorno de 1 año.
         """
-        from datetime import datetime, timedelta
-        
         result = {
             "market": {},
             "sector": {},
@@ -893,7 +892,7 @@ class YahooFinanceFetcher:
                     "year_return": round(year_return, 2) if year_return else None,
                 }
             except Exception as e:
-                print(f"Error calculando retornos para {ticker_symbol}: {e}")
+                logger.warning(f"Error calculando retornos para {ticker_symbol}: {e}")
                 return {"ytd_return": None, "year_return": None}
         
         try:
@@ -915,7 +914,7 @@ class YahooFinanceFetcher:
             }
             
         except Exception as e:
-            print(f"Error obteniendo datos de SPY: {e}")
+            logger.warning(f"Error obteniendo datos de SPY: {e}")
             result["market"] = {"name": "S&P 500", "symbol": "SPY", "error": str(e)}
         
         try:
@@ -939,7 +938,7 @@ class YahooFinanceFetcher:
             }
             
         except Exception as e:
-            print(f"Error obteniendo datos del sector {sector}: {e}")
+            logger.warning(f"Error obteniendo datos del sector {sector}: {e}")
             result["sector"] = {"name": sector, "symbol": self._get_sector_etf_symbol(sector), "error": str(e)}
         
         return result
@@ -1323,8 +1322,9 @@ class YahooFinanceFetcher:
                 ytd_return = ((hist['Close'].iloc[-1] / hist['Close'].iloc[0]) - 1) * 100
                 benchmark["ytd_return"] = round(ytd_return, 2)
             
-            benchmark["etf_price"] = info.get("regularMarketPrice")
-            benchmark["etf_name"] = info.get("shortName", etf_symbol)
+            if not hist.empty:
+                benchmark["etf_price"] = float(hist['Close'].iloc[-1])
+            benchmark["etf_name"] = etf_symbol
             
         except Exception as e:
             benchmark["ytd_return"] = None
@@ -1387,7 +1387,6 @@ class FinancialDataService:
             raise InvalidSymbolError(f"Símbolo demasiado largo: {len(symbol)} caracteres")
         
         # Validar caracteres permitidos (letras, números, puntos, guiones)
-        import re
         if not re.match(r'^[A-Z0-9\.\-]+$', symbol):
             logger.warning(f"Símbolo con caracteres inválidos: {symbol}")
             raise InvalidSymbolError(f"Símbolo contiene caracteres inválidos: {symbol}")
@@ -1550,15 +1549,18 @@ class FinancialDataService:
             if historical.get("revenue") and len(historical["revenue"]) >= 3:
                 revenues = historical["revenue"]
                 try:
-                    from financial_ratios import cagr
-                    result["contextual"]["revenue_cagr_3y"] = cagr(
+                    def _cagr(end_val, start_val, periods):
+                        if end_val and start_val and start_val > 0 and periods > 0:
+                            return (end_val / start_val) ** (1 / periods) - 1
+                        return None
+                    result["contextual"]["revenue_cagr_3y"] = _cagr(
                         revenues[-1], revenues[0], min(3, len(revenues)-1)
                     )
                     if len(revenues) >= 5:
-                        result["contextual"]["revenue_cagr_5y"] = cagr(
+                        result["contextual"]["revenue_cagr_5y"] = _cagr(
                             revenues[-1], revenues[0], min(5, len(revenues)-1)
                         )
-                except (ImportError, TypeError, ValueError, ZeroDivisionError):
+                except (TypeError, ValueError, ZeroDivisionError):
                     pass
             
             # FCF trend

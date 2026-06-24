@@ -782,16 +782,6 @@ def search_stocks(query: str, limit: int = 10) -> list:
     return results[:limit]
 
 
-def get_stock_display(ticker: str) -> str:
-    """Retorna el nombre completo de un ticker."""
-    return POPULAR_STOCKS.get(ticker.upper(), ticker)
-
-
-def format_suggestion(ticker: str, name: str) -> str:
-    """Formatea una sugerencia para mostrar."""
-    return f"{ticker} - {name}"
-
-
 # Lista rápida de los tickers más populares para mostrar por defecto
 TOP_STOCKS = [
     "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA", "BRK-B",

@@ -1,6 +1,6 @@
 "use client";
 
-import { formatNumber, formatPercent, formatPrice, formatMultiple, getScoreColor, type StockAnalysis } from "@/lib/api";
+import { formatNumber, formatPercent, formatPrice, type StockAnalysis } from "@/lib/api";
 import InfoTooltip from "@/components/InfoTooltip";
 import { HISTORICAL } from "@/lib/tooltips";
 

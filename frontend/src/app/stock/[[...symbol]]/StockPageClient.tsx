@@ -5,7 +5,7 @@ import Navbar from "@/components/Navbar";
 import ScoreCard from "@/components/ScoreCard";
 import MetricsGrid from "@/components/MetricsGrid";
 import TabsSection from "@/components/TabsSection";
-import { analyzeStock, formatPrice, formatNumber, formatPercent, getScoreColor, type StockAnalysis } from "@/lib/api";
+import { analyzeStock, formatPrice, getScoreColor, type StockAnalysis } from "@/lib/api";
 
 // PDF download URL helper
 const getPdfUrl = (sym: string) =>
