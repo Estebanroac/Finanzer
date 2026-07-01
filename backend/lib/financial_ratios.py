@@ -2939,13 +2939,23 @@ def aggregate_alerts(ratio_values: Dict[str, Optional[float]],
     # --- DIVIDENDOS (Bonus para sectores relevantes) ---
     dividend_score = 0
     div_yield = ratio_values.get("dividend_yield")
+    payout = ratio_values.get("payout_ratio")
     if div_yield and div_yield > 0:
         div_weight = sector_adjustments.get("dividend_weight", 1.0)
         if div_yield > 0.04:
             dividend_score = int(5 * div_weight)
         elif div_yield > 0.025:
             dividend_score = int(3 * div_weight)
-    
+        # An unsustainable payout (>100% of earnings) makes the yield a red flag,
+        # not a strength — a dividend cut is likely. REITs are exempt: they
+        # distribute most of their FFO, so a net-income-based payout >100% is
+        # normal for them. For everyone else, cancel the bonus and penalize.
+        is_reit = ("real_estate" in (sector or "")
+                   or "real estate" in (real_sector or "").lower()
+                   or "reit" in (real_sector or "").lower())
+        if payout is not None and payout > 1.0 and not is_reit:
+            dividend_score = -3
+
     score += dividend_score
     score_breakdown["dividends"] = dividend_score
 
