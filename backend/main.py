@@ -49,7 +49,8 @@ def safe_float(val) -> Optional[float]:
         return None
     try:
         f = float(val)
-        if f != f:  # NaN check
+        if f != f or f in (float("inf"), float("-inf")):  # NaN or Infinity
+            # Non-finite values are invalid JSON and render as "$InfinityT" etc.
             return None
         return f
     except (TypeError, ValueError):

@@ -100,7 +100,7 @@ export async function getPopularStocks(): Promise<{ ticker: string; name: string
 // ── Formatting helpers ──
 
 export function formatNumber(val: number | null | undefined): string {
-  if (val == null) return "N/A";
+  if (val == null || !Number.isFinite(val)) return "N/A";
   const abs = Math.abs(val);
   const sign = val < 0 ? "-" : "";
   if (abs >= 1e12) return `${sign}$${(abs / 1e12).toFixed(2)}T`;
@@ -111,19 +111,19 @@ export function formatNumber(val: number | null | undefined): string {
 }
 
 export function formatPercent(val: number | null | undefined): string {
-  if (val == null) return "N/A";
+  if (val == null || !Number.isFinite(val)) return "N/A";
   // If value looks like a decimal (e.g. 0.25 = 25%), multiply by 100
   if (Math.abs(val) < 1 && Math.abs(val) > 0) return `${(val * 100).toFixed(2)}%`;
   return `${val.toFixed(2)}%`;
 }
 
 export function formatMultiple(val: number | null | undefined): string {
-  if (val == null) return "N/A";
+  if (val == null || !Number.isFinite(val)) return "N/A";
   return `${val.toFixed(2)}x`;
 }
 
 export function formatPrice(val: number | null | undefined): string {
-  if (val == null) return "N/A";
+  if (val == null || !Number.isFinite(val)) return "N/A";
   return `$${val.toFixed(2)}`;
 }
 
