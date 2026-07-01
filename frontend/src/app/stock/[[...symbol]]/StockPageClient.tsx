@@ -52,7 +52,12 @@ export default function StockPageClient() {
   }
 
   return (
-    <div className="min-h-screen bg-[#09090b]">
+    <div className="min-h-screen relative">
+      {/* Analysis background */}
+      <div
+        className="fixed inset-0 -z-10 bg-[#09090b] bg-cover bg-center"
+        style={{ backgroundImage: "url(/bg-analysis.webp)" }}
+      />
       <Navbar />
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 pt-8 pb-16">
@@ -287,7 +292,12 @@ function QuickSummary({ data }: { data: StockAnalysis }) {
 /* ── Loading skeleton ── */
 function LoadingSkeleton({ symbol }: { symbol: string }) {
   return (
-    <div className="min-h-screen bg-[#09090b]">
+    <div className="min-h-screen relative">
+      {/* Analysis background */}
+      <div
+        className="fixed inset-0 -z-10 bg-[#09090b] bg-cover bg-center"
+        style={{ backgroundImage: "url(/bg-analysis.webp)" }}
+      />
       <Navbar />
       <main className="max-w-6xl mx-auto px-4 sm:px-6 pt-8 pb-16">
         <div className="flex justify-between mb-8">
@@ -339,7 +349,12 @@ function LoadingSkeleton({ symbol }: { symbol: string }) {
 /* ── Error view ── */
 function ErrorView({ symbol, error }: { symbol: string; error: string }) {
   return (
-    <div className="min-h-screen bg-[#09090b]">
+    <div className="min-h-screen relative">
+      {/* Analysis background */}
+      <div
+        className="fixed inset-0 -z-10 bg-[#09090b] bg-cover bg-center"
+        style={{ backgroundImage: "url(/bg-analysis.webp)" }}
+      />
       <Navbar />
       <div className="max-w-lg mx-auto px-4 py-32 text-center">
         <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-6">

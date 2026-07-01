@@ -70,6 +70,7 @@ export default function Navbar() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-5">
         {/* Logo */}
         <a href="/" className="shrink-0 group flex items-center gap-2">
+          <img src="/logo.png" alt="Finanzer" className="h-7 w-auto" />
           <span className="text-[15px] font-bold text-white tracking-tight group-hover:text-[#00d632] transition-colors">
             Finanzer
           </span>
