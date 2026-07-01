@@ -3450,7 +3450,8 @@ def score_rentabilidad(
     roa: Optional[float],
     operating_margin: Optional[float],
     net_margin: Optional[float],
-    sector_roe_threshold: float = 0.12
+    sector_roe_threshold: float = 0.12,
+    sector_roa_threshold: float = 0.03
 ) -> Dict[str, Any]:
     """
     Categoría 2: Rentabilidad (20 pts máximo)
@@ -3499,10 +3500,10 @@ def score_rentabilidad(
             adj = 2
             sev = "good"
             reason = f"Bueno ({roa:.1%}) - Buen uso de activos"
-        elif roa >= 0.03:
+        elif roa >= sector_roa_threshold:
             adj = 0
             sev = "ok"
-            reason = f"Aceptable ({roa:.1%}) - Eficiencia promedio"
+            reason = f"Aceptable ({roa:.1%}) - Normal para su sector"
         elif roa >= 0:
             adj = -2
             sev = "moderate"
@@ -4221,7 +4222,8 @@ def calculate_score_v2(
         roa=ratio_values.get("roa"),
         operating_margin=ratio_values.get("operating_margin"),
         net_margin=ratio_values.get("net_margin"),
-        sector_roe_threshold=thresholds.roe_low
+        sector_roe_threshold=thresholds.roe_low,
+        sector_roa_threshold=thresholds.roa_low
     )
     
     # v2.4: Pasar datos de crecimiento + forward metrics a valoración
