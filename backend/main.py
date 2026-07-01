@@ -1351,8 +1351,14 @@ async def download_pdf(symbol: str):
             story.append(Paragraph(section_title, s_h3))
             comp_rows = [["Métrica", "Empresa", "Sector", "Relativo"]]
             for label, val, sect_avg, higher_better in metrics:
-                v_str = fv(val, "pct" if isinstance(sect_avg, float) and abs(sect_avg) < 1 else "mult")
-                s_str = fv(sect_avg, "pct" if isinstance(sect_avg, float) and abs(sect_avg) < 1 else "mult")
+                # D/E is a ratio conventionally shown as a multiple (0.80x); the
+                # magnitude heuristic below would mis-format a sub-1.0 D/E as "80%".
+                if label == "D/E":
+                    fmt = "mult"
+                else:
+                    fmt = "pct" if isinstance(sect_avg, float) and abs(sect_avg) < 1 else "mult"
+                v_str = fv(val, fmt)
+                s_str = fv(sect_avg, fmt)
                 rel = "—"
                 if val is not None and sect_avg is not None and sect_avg != 0:
                     diff = ((val - sect_avg) / abs(sect_avg)) * 100
