@@ -1,23 +1,23 @@
 #!/usr/bin/env bash
-# Build script for Render — builds frontend + installs backend deps
+# Build script for Render — installs backend deps only.
+#
+# The frontend is a pre-built static export committed to frontend/out/ and
+# served directly by FastAPI, so we do NOT rebuild it here. Running
+# `npm install && npm run build` (Next.js + Turbopack) on Render is slow and
+# was timing out the deploy. To ship frontend changes, rebuild locally
+# (`cd frontend && npm run build`) and commit frontend/out/.
 set -e
 
 echo "==> Installing backend dependencies..."
 pip install -r requirements.txt
 
-echo "==> Installing Node.js for frontend build..."
-# Render provides Node.js, but if not available, install it
-if ! command -v node &> /dev/null; then
-    curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-    apt-get install -y nodejs
+echo "==> Verifying pre-built frontend (frontend/out/)..."
+if [ -d frontend/out ] && [ -f frontend/out/index.html ]; then
+    echo "frontend/out/ present — serving the committed static build."
+else
+    echo "ERROR: frontend/out/ is missing. Rebuild it locally with" >&2
+    echo "       'cd frontend && npm run build' and commit it." >&2
+    exit 1
 fi
 
-echo "==> Building frontend..."
-cd frontend
-npm install
-npm run build
-cd ..
-
 echo "==> Build complete!"
-echo "Frontend built to frontend/out/"
-ls -la frontend/out/ 2>/dev/null || echo "Warning: frontend/out not found"
