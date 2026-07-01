@@ -399,6 +399,14 @@ def _compute_analysis(symbol: str) -> dict:
                 "sector_etf": sector_profile.sector_etf if sector_profile else "SPY",
             }
 
+            # Inject sector-median benchmarks so valuation scoring judges P/E and
+            # EV/EBITDA against the stock's SECTOR (e.g. ~30x for tech, ~12x for
+            # banks) instead of a fixed ~20x. Without this, high-P/E sectors look
+            # overvalued and low-P/E sectors look cheap regardless of fundamentals.
+            _sector_bench = _get_sector_benchmarks(mapped_sector)
+            fin_dict["sector_pe"] = _sector_bench.get("pe")
+            fin_dict["sector_ev_ebitda"] = _sector_bench.get("ev_ebitda")
+
             # v2.4: Inject derived metrics into ratios for scoring
             if earnings_yield is not None and ratios.get("earnings_yield") is None:
                 ratios["earnings_yield"] = earnings_yield
