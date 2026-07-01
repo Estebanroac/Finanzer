@@ -114,9 +114,12 @@ export function formatNumber(val: number | null | undefined): string {
 
 export function formatPercent(val: number | null | undefined): string {
   if (val == null || !Number.isFinite(val)) return "N/A";
-  // If value looks like a decimal (e.g. 0.25 = 25%), multiply by 100
-  if (Math.abs(val) < 1 && Math.abs(val) > 0) return `${(val * 100).toFixed(2)}%`;
-  return `${val.toFixed(2)}%`;
+  // All ratios reach here as decimals (0.15 = 15%, 1.3 = 130%), so always
+  // scale by 100. The old `< 1` heuristic left any value ≥ 100% unscaled — a
+  // 130% payout ratio rendered as "1.30%" and a 200% ROE as "2.00%", hiding
+  // exactly the extreme readings (unsustainable dividends, huge returns) a
+  // reader most needs to see.
+  return `${(val * 100).toFixed(2)}%`;
 }
 
 export function formatMultiple(val: number | null | undefined): string {
