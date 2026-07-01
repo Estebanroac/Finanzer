@@ -30,7 +30,7 @@ export default function ValuationTab({ data }: { data: StockAnalysis }) {
         <h4 className="text-xs text-zinc-500 uppercase tracking-widest mb-3 font-medium">
           Múltiplos de precio
         </h4>
-        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-5">
+        <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 px-5">
           <Row label="P/E (TTM)" value={formatMultiple(m.pe)} tooltip={VALUATION.pe_trailing} />
           <Row label="Forward P/E" value={formatMultiple(m.forward_pe)} tooltip={VALUATION.pe_forward} />
           <Row label="P/B" value={formatMultiple(m.pb)} tooltip={VALUATION.pb} />
@@ -44,7 +44,7 @@ export default function ValuationTab({ data }: { data: StockAnalysis }) {
         <h4 className="text-xs text-zinc-500 uppercase tracking-widest mb-3 font-medium">
           Múltiplos enterprise
         </h4>
-        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-5">
+        <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 px-5">
           <Row label="EV/EBITDA" value={formatMultiple(m.ev_ebitda)} tooltip={VALUATION.ev_ebitda} />
           <Row label="P/FCF" value={formatMultiple(m.pfcf)} tooltip={VALUATION.pfcf} />
           <Row label="FCF Yield" value={formatPercent(m.fcf_yield)} tooltip={VALUATION.fcf_yield_val} />

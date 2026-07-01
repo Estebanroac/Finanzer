@@ -24,7 +24,7 @@ function Stat({ label, value, accent, tooltip }: { label: string; value: string;
 
 export default function MetricsGrid({ metrics }: MetricsGridProps) {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-8 gap-y-5 py-5 px-6 rounded-2xl border border-white/[0.06] bg-white/[0.02]">
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-8 gap-y-5 py-5 px-6 rounded-2xl border border-white/[0.06] bg-[#0a0a0d]/85">
       <Stat label="Market Cap" value={formatNumber(metrics.market_cap)} accent tooltip={METRICS.market_cap} />
       <Stat label="P/E Ratio" value={formatMultiple(metrics.pe)} tooltip={METRICS.pe_ratio} />
       <Stat label="ROE" value={formatPercent(metrics.roe)} tooltip={METRICS.roe} />

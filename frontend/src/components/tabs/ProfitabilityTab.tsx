@@ -30,7 +30,7 @@ export default function ProfitabilityTab({ data }: { data: StockAnalysis }) {
         <h4 className="text-xs text-zinc-500 uppercase tracking-widest mb-3 font-medium">
           Retornos sobre capital
         </h4>
-        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-5">
+        <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 px-5">
           <Row label="ROE" value={formatPercent(m.roe)} tooltip={PROFITABILITY.roe} />
           <Row label="ROA" value={formatPercent(m.roa)} tooltip={PROFITABILITY.roa} />
           <Row label="ROIC" value={formatPercent(m.roic)} tooltip={PROFITABILITY.roic} />
@@ -43,7 +43,7 @@ export default function ProfitabilityTab({ data }: { data: StockAnalysis }) {
         <h4 className="text-xs text-zinc-500 uppercase tracking-widest mb-3 font-medium">
           Márgenes
         </h4>
-        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-5">
+        <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 px-5">
           <Row label="Margen Bruto" value={formatPercent(m.gross_margin)} tooltip={PROFITABILITY.gross_margin} />
           <Row label="Margen Operativo" value={formatPercent(m.operating_margin)} tooltip={PROFITABILITY.operating_margin} />
           <Row label="Margen Neto" value={formatPercent(m.net_margin)} tooltip={PROFITABILITY.net_margin} />
@@ -56,7 +56,7 @@ export default function ProfitabilityTab({ data }: { data: StockAnalysis }) {
         <h4 className="text-xs text-zinc-500 uppercase tracking-widest mb-3 font-medium">
           Resultados
         </h4>
-        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-5">
+        <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 px-5">
           <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-white/[0.04]">
             <div className="py-4 sm:pr-6">
               <div className="text-xs text-zinc-500 mb-1">Revenue</div>

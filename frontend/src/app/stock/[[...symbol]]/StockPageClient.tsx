@@ -105,7 +105,7 @@ export default function StockPageClient() {
 
         {/* ── 52-Week Range ── */}
         {hi52 && lo52 && (
-          <div className="fade-up delay-1 mb-8 rounded-xl border border-white/[0.06] bg-white/[0.02] px-5 py-4">
+          <div className="fade-up delay-1 mb-8 rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 px-5 py-4">
             <div className="flex items-center justify-between text-xs text-zinc-500 mb-2">
               <span>Rango 52 semanas</span>
               <span>
@@ -149,7 +149,7 @@ export default function StockPageClient() {
                 isGrowth={data.is_growth}
               />
             ) : (
-              <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] flex items-center justify-center h-36 text-zinc-600 text-sm">
+              <div className="rounded-2xl border border-white/[0.06] bg-[#0a0a0d]/85 flex items-center justify-center h-36 text-zinc-600 text-sm">
                 Score no disponible
               </div>
             )}
@@ -170,7 +170,7 @@ export default function StockPageClient() {
                 const pct = cat.max > 0 ? (cat.score / cat.max) * 100 : 0;
                 const color = getScoreColor(pct);
                 return (
-                  <div key={key} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                  <div key={key} className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 p-3">
                     <div className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1 truncate">
                       {key}
                     </div>
@@ -276,7 +276,7 @@ function QuickSummary({ data }: { data: StockAnalysis }) {
   if (insights.length === 0) return null;
 
   return (
-    <div className="mb-10 rounded-xl border border-white/[0.06] bg-white/[0.015] px-6 py-5 fade-up delay-3">
+    <div className="mb-10 rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 px-6 py-5 fade-up delay-3">
       <h3 className="text-xs text-zinc-500 uppercase tracking-widest mb-3 font-medium">
         Resumen del análisis
       </h3>

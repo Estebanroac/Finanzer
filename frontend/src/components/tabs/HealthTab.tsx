@@ -30,7 +30,7 @@ export default function HealthTab({ data }: { data: StockAnalysis }) {
         <h4 className="text-xs text-zinc-500 uppercase tracking-widest mb-3 font-medium">
           Liquidez
         </h4>
-        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-5">
+        <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 px-5">
           <Row label="Current Ratio" value={formatMultiple(m.current_ratio)} tooltip={HEALTH.current_ratio} />
           <Row label="Quick Ratio" value={formatMultiple(m.quick_ratio)} tooltip={HEALTH.quick_ratio} />
           <Row label="Efectivo" value={formatNumber(m.cash)} tooltip={HEALTH.cash} />
@@ -43,7 +43,7 @@ export default function HealthTab({ data }: { data: StockAnalysis }) {
         <h4 className="text-xs text-zinc-500 uppercase tracking-widest mb-3 font-medium">
           Apalancamiento
         </h4>
-        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-5">
+        <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 px-5">
           <Row label="Deuda / Equity" value={formatMultiple(m.de)} tooltip={HEALTH.de_ratio} />
           <Row label="Deuda / Activos" value={formatPercent(m.debt_to_assets)} tooltip={HEALTH.debt_to_assets} />
           <Row label="Deuda Total" value={formatNumber(m.total_debt)} />
@@ -56,7 +56,7 @@ export default function HealthTab({ data }: { data: StockAnalysis }) {
         <h4 className="text-xs text-zinc-500 uppercase tracking-widest mb-3 font-medium">
           Cobertura y distribución
         </h4>
-        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-5">
+        <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 px-5">
           <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-white/[0.04]">
             <div className="py-4 sm:pr-6">
               <div className="flex items-center gap-1.5 mb-1">

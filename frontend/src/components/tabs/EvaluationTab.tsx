@@ -35,7 +35,7 @@ export default function EvaluationTab({ data }: { data: StockAnalysis }) {
               const adjustments = cat.adjustments || [];
 
               return (
-                <div key={key} className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
+                <div key={key} className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 overflow-hidden">
                   {/* Category header */}
                   <div className="px-5 py-4 flex items-center justify-between">
                     <div>
@@ -133,7 +133,7 @@ function ZScoreCard({ data }: { data: { z_score: number; zone: string; interpret
 
   if (isNotApplicable) {
     return (
-      <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
+      <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 p-5">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <span className="text-sm text-zinc-400 font-medium">Altman Z-Score</span>
@@ -167,7 +167,7 @@ function ZScoreCard({ data }: { data: { z_score: number; zone: string; interpret
   const greyT = (details.grey_threshold as number) || 1.81;
 
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
+    <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 p-5">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <span className="text-sm text-zinc-400 font-medium">Altman Z-Score</span>
@@ -208,7 +208,7 @@ function FScoreCard({ data }: { data: { score: number; max_score: number; level:
   const details = data.details;
 
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
+    <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 p-5">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <span className="text-sm text-zinc-400 font-medium">Piotroski F-Score</span>

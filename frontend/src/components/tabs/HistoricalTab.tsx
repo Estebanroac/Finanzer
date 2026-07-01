@@ -89,7 +89,7 @@ export default function HistoricalTab({ data }: { data: StockAnalysis }) {
         <h4 className="text-xs text-zinc-500 uppercase tracking-widest mb-3 font-medium">
           Indicadores de crecimiento y eficiencia
         </h4>
-        <div className="rounded-xl border border-white/[0.06] overflow-hidden">
+        <div className="rounded-xl border border-white/[0.06] overflow-hidden bg-[#0a0a0d]/85">
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7">
             {metrics.map((item, i) => {
               const val = item.value;
@@ -113,7 +113,7 @@ export default function HistoricalTab({ data }: { data: StockAnalysis }) {
               return (
                 <div
                   key={i}
-                  className={`px-4 py-4 text-center ${i > 0 ? "border-l border-white/[0.04]" : ""} bg-white/[0.02]`}
+                  className={`px-4 py-4 text-center ${i > 0 ? "border-l border-white/[0.04]" : ""} bg-[#0a0a0d]/85`}
                 >
                   <div className="text-[10px] text-zinc-500 uppercase tracking-wider mb-2 truncate">
                     {item.label}
@@ -176,7 +176,7 @@ function PriceContext({ price, high, low, beta }: {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
+      <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 p-5">
         <div className="flex items-center gap-2 mb-3">
           <span className="text-xs text-zinc-500 uppercase tracking-wider">Posición en 52 semanas</span>
           <InfoTooltip content={HISTORICAL.price_range} />
@@ -204,7 +204,7 @@ function PriceContext({ price, high, low, beta }: {
         </div>
       </div>
 
-      <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
+      <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 p-5">
         <div className="flex items-center gap-2 mb-3">
           <span className="text-xs text-zinc-500 uppercase tracking-wider">Volatilidad</span>
           <InfoTooltip content={HISTORICAL.beta_hist} />
@@ -243,7 +243,7 @@ function WaterfallBlock({ label, value, color, pct }: {
   pct?: number | null;
 }) {
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 text-center">
+    <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 p-4 text-center">
       <div className="text-[10px] text-zinc-500 uppercase tracking-wider mb-2">{label}</div>
       <div className="text-lg font-bold tabular-nums" style={{ color }}>
         {formatNumber(value)}
@@ -270,7 +270,7 @@ function CashFlowCard({ title, value, format, description, isPositive }: {
     : formatNumber(value);
 
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
+    <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 p-5">
       <div className="text-xs text-zinc-500 mb-2">{title}</div>
       <div className="text-2xl font-bold tabular-nums mb-2" style={{ color }}>
         {displayVal}
@@ -302,7 +302,7 @@ function BalanceSheetSnapshot({ data }: { data: StockAnalysis }) {
       <h4 className="text-xs text-zinc-500 uppercase tracking-widest mb-3 font-medium">
         Estructura del balance
       </h4>
-      <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
+      <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 p-5">
         {/* Stacked bar */}
         {total > 0 && (
           <div className="flex h-3 rounded-full overflow-hidden mb-4">
@@ -359,7 +359,7 @@ function YearlyChart({ data: yearly }: { data: Array<{ year: number; revenue: nu
       <h4 className="text-xs text-zinc-500 uppercase tracking-widest mb-3 font-medium">
         Evolución anual — Revenue & Earnings
       </h4>
-      <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
+      <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 p-5">
         <div className="space-y-4">
           {sorted.map((y, i) => {
             const revPct = maxRev > 0 && y.revenue ? (y.revenue / maxRev) * 100 : 0;
@@ -421,7 +421,7 @@ function YearlyChart({ data: yearly }: { data: Array<{ year: number; revenue: nu
 function PerShareCard({ label, value }: { label: string; value: string }) {
   const isNA = value === "N/A";
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 text-center">
+    <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 p-4 text-center">
       <div className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">{label}</div>
       <div className={`text-lg font-bold tabular-nums ${isNA ? "text-zinc-600" : "text-white"}`}>{value}</div>
     </div>

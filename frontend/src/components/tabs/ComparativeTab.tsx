@@ -60,7 +60,7 @@ export default function ComparativeTab({ data }: { data: StockAnalysis }) {
   return (
     <div className="space-y-8">
       {/* Sector context */}
-      <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-6 py-4 flex items-center gap-3">
+      <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 px-6 py-4 flex items-center gap-3">
         <div className="w-2.5 h-2.5 rounded-full bg-[#3b82f6]" />
         <div className="flex-1">
           <span className="text-sm text-white font-medium">{data.profile.name}</span>
@@ -88,10 +88,10 @@ function ComparisonSection({ title, subtitle, metrics }: { title: string; subtit
         <h4 className="text-xs text-zinc-500 uppercase tracking-widest font-medium">{title}</h4>
         <p className="text-[10px] text-zinc-600 mt-0.5">{subtitle}</p>
       </div>
-      <div className="rounded-xl border border-white/[0.06] overflow-hidden">
+      <div className="rounded-xl border border-white/[0.06] overflow-hidden bg-[#0a0a0d]/85">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-white/[0.06] bg-white/[0.01]">
+            <tr className="border-b border-white/[0.06] bg-[#0a0a0d]/70">
               <th className="text-left px-3 py-3 sm:px-5 text-xs text-zinc-500 font-medium">Métrica</th>
               <th className="text-right px-3 py-3 sm:px-5 text-xs text-zinc-500 font-medium">Empresa</th>
               <th className="text-right px-3 py-3 sm:px-5 text-xs text-zinc-500 font-medium">Sector</th>
@@ -169,7 +169,7 @@ function ComparisonSummary({ valuationMetrics, profitMetrics, healthMetrics }: {
   const color = getScoreColor(pct);
 
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-white/[0.015] px-6 py-5">
+    <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 px-6 py-5">
       <h4 className="text-xs text-zinc-500 uppercase tracking-widest mb-3 font-medium">
         Resumen comparativo
       </h4>

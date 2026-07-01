@@ -70,7 +70,7 @@ export default function IntrinsicTab({ data }: { data: StockAnalysis }) {
           <h4 className="text-xs text-zinc-500 uppercase tracking-widest mb-3 font-medium">
             Parámetros DCF
           </h4>
-          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-5">
+          <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 px-5">
             <ParamRow label="WACC" value={dcf.wacc != null ? `${(dcf.wacc * 100).toFixed(1)}%` : "N/A"} hint="Tasa de descuento" />
             <ParamRow label="Growth Rate" value={dcf.growth_rate != null ? `${(dcf.growth_rate * 100).toFixed(1)}%` : "N/A"} hint="Crecimiento estimado" />
             <ParamRow label="Terminal Growth" value={dcf.terminal_growth != null ? `${(dcf.terminal_growth * 100).toFixed(1)}%` : "N/A"} hint="Crecimiento perpetuo" />
@@ -87,7 +87,7 @@ export default function IntrinsicTab({ data }: { data: StockAnalysis }) {
 
 function ValuationBlock({ title, value, sub, color, tooltip }: { title: string; value: string; sub: string; color: string; tooltip?: string }) {
   return (
-    <div className="bg-white/[0.02] p-5 text-center">
+    <div className="bg-[#0a0a0d]/85 p-5 text-center">
       <div className="flex items-center justify-center gap-1.5 mb-2">
         <span className="text-xs text-zinc-500">{title}</span>
         {tooltip === "graham" && <InfoTooltip content={INTRINSIC.graham} />}
