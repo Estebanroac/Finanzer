@@ -1441,40 +1441,54 @@ class FinancialDataService:
             completed = 0
             total = len(future_to_task)
             
-            for future in as_completed(future_to_task, timeout=PARALLEL_TASK_TIMEOUT * total):
-                task_name = future_to_task[future]
-                completed += 1
-                progress_pct = 10 + (completed / total * 50)  # 10% a 60%
-                
-                try:
-                    # Timeout explícito por tarea individual
-                    results_parallel[task_name] = future.result(timeout=PARALLEL_TASK_TIMEOUT)
-                    report_progress(f"Obteniendo {task_name}...", progress_pct)
-                    logger.debug(f"✓ Tarea '{task_name}' completada para {symbol}")
-                    
-                except FuturesTimeoutError:
-                    results_parallel[task_name] = None
-                    error_msg = f"Timeout ({PARALLEL_TASK_TIMEOUT}s) en {task_name}"
-                    result["errors"].append(error_msg)
-                    logger.warning(f"⏱ {error_msg} para {symbol}")
-                    
-                except ConnectionError as e:
-                    results_parallel[task_name] = None
-                    error_msg = f"Error de conexión en {task_name}: {str(e)[:100]}"
-                    result["errors"].append(error_msg)
-                    logger.error(f"🔌 {error_msg} para {symbol}")
-                    
-                except ValueError as e:
-                    results_parallel[task_name] = None
-                    error_msg = f"Datos inválidos en {task_name}: {str(e)[:100]}"
-                    result["errors"].append(error_msg)
-                    logger.warning(f"⚠ {error_msg} para {symbol}")
-                    
-                except Exception as e:
-                    results_parallel[task_name] = None
-                    error_msg = f"Error inesperado en {task_name}: {type(e).__name__}: {str(e)[:100]}"
-                    result["errors"].append(error_msg)
-                    logger.error(f"❌ {error_msg} para {symbol}", exc_info=True)
+            try:
+                for future in as_completed(future_to_task, timeout=PARALLEL_TASK_TIMEOUT * total):
+                    task_name = future_to_task[future]
+                    completed += 1
+                    progress_pct = 10 + (completed / total * 50)  # 10% a 60%
+
+                    try:
+                        # Timeout explícito por tarea individual
+                        results_parallel[task_name] = future.result(timeout=PARALLEL_TASK_TIMEOUT)
+                        report_progress(f"Obteniendo {task_name}...", progress_pct)
+                        logger.debug(f"✓ Tarea '{task_name}' completada para {symbol}")
+
+                    except FuturesTimeoutError:
+                        results_parallel[task_name] = None
+                        error_msg = f"Timeout ({PARALLEL_TASK_TIMEOUT}s) en {task_name}"
+                        result["errors"].append(error_msg)
+                        logger.warning(f"⏱ {error_msg} para {symbol}")
+
+                    except ConnectionError as e:
+                        results_parallel[task_name] = None
+                        error_msg = f"Error de conexión en {task_name}: {str(e)[:100]}"
+                        result["errors"].append(error_msg)
+                        logger.error(f"🔌 {error_msg} para {symbol}")
+
+                    except ValueError as e:
+                        results_parallel[task_name] = None
+                        error_msg = f"Datos inválidos en {task_name}: {str(e)[:100]}"
+                        result["errors"].append(error_msg)
+                        logger.warning(f"⚠ {error_msg} para {symbol}")
+
+                    except Exception as e:
+                        results_parallel[task_name] = None
+                        error_msg = f"Error inesperado en {task_name}: {type(e).__name__}: {str(e)[:100]}"
+                        result["errors"].append(error_msg)
+                        logger.error(f"❌ {error_msg} para {symbol}", exc_info=True)
+            except FuturesTimeoutError:
+                # The overall as_completed deadline elapsed while one or more
+                # fetches were still hanging (slow/unreachable provider). This
+                # raises from the iteration itself — outside the per-task handler
+                # above — so without this guard it propagated to the API layer as
+                # a 500. Mark any task that never completed as None and record the
+                # timeout, so the analysis degrades to a clean "no data" (404).
+                for pending_future, pending_name in future_to_task.items():
+                    if pending_name not in results_parallel:
+                        results_parallel[pending_name] = None
+                        result["errors"].append(f"Timeout global esperando {pending_name}")
+                        pending_future.cancel()
+                logger.warning(f"⏱ Timeout global de fetch para {symbol}")
         
         parallel_time = time.time() - start_time
         result["_timing"]["parallel_fetch"] = parallel_time
