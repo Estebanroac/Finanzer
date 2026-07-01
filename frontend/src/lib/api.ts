@@ -60,7 +60,9 @@ export interface StockAnalysis {
     value_composition: Record<string, number> | null;
   } | null;
   sensitivity: {
-    matrix: number[][];
+    // Cells are null where the DCF is undefined for that scenario
+    // (e.g. discount_rate <= terminal_growth). Consumers must guard for null.
+    matrix: (number | null)[][];
     growth_rates: number[];
     discount_rates: number[];
     base_growth_idx: number;

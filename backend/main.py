@@ -1168,7 +1168,11 @@ async def download_pdf(symbol: str):
             for gi, row in enumerate(matrix):
                 r = [f"{g_rates[gi] * 100:.1f}%"]
                 for di, val in enumerate(row):
-                    r.append(f"${val:.0f}")
+                    # The sensitivity matrix intentionally holds None cells
+                    # (e.g. discount_rate <= terminal_growth, or a failed DCF for
+                    # that scenario). Formatting None with :.0f raised a TypeError
+                    # that 500'd the whole PDF, so render those as an em dash.
+                    r.append(f"${val:.0f}" if val is not None else "—")
                 sens_rows.append(r)
 
             n_cols = len(sens_header)
@@ -1192,6 +1196,8 @@ async def download_pdf(symbol: str):
                 for gi in range(len(matrix)):
                     for di in range(len(matrix[gi])):
                         val = matrix[gi][di]
+                        if val is None:
+                            continue  # None cells stay un-colored (see above)
                         diff = ((val - price) / price) * 100
                         if diff > 30:
                             bg = colors.HexColor('#dcfce7')  # strong green

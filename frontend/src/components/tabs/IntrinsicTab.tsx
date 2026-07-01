@@ -118,8 +118,8 @@ function SensitivityTable({ sensitivity, price }: { sensitivity: NonNullable<Sto
   if (!sensitivity.matrix || !sensitivity.growth_rates || !sensitivity.discount_rates) return null;
   const { matrix, growth_rates, discount_rates, base_growth_idx, base_discount_idx } = sensitivity;
 
-  function cellClass(val: number): string {
-    if (!price) return "";
+  function cellClass(val: number | null): string {
+    if (val == null || !price) return "";
     const diff = ((val - price) / price) * 100;
     if (diff > 30) return "cell-strong-buy";
     if (diff > 10) return "cell-buy";
@@ -175,7 +175,7 @@ function SensitivityTable({ sensitivity, price }: { sensitivity: NonNullable<Sto
                       gi === base_growth_idx && di === base_discount_idx ? "ring-1 ring-[#00d632]/40 rounded" : ""
                     }`}
                   >
-                    ${val.toFixed(0)}
+                    {val == null ? "—" : `$${val.toFixed(0)}`}
                   </td>
                 ))}
               </tr>
