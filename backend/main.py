@@ -14,7 +14,7 @@ from fastapi.staticfiles import StaticFiles
 # Add lib to path so imports work
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "lib"))
 
-from data_fetcher import FinancialDataService
+from data_fetcher import FinancialDataService, InvalidSymbolError
 from financial_ratios import (
     calculate_all_ratios, calculate_score_v2, aggregate_alerts,
     altman_z_score, piotroski_f_score, financial_health_score,
@@ -799,6 +799,13 @@ def _compute_analysis(symbol: str) -> dict:
 
     except HTTPException:
         raise
+    except InvalidSymbolError:
+        # The data layer applies a stricter symbol regex than this endpoint's
+        # own validation (it rejects ^ and =, so indices/forex such as ^GSPC or
+        # EURUSD=X pass the API check but are rejected here). A rejected symbol
+        # is a client error — return a clean 400 instead of a 500 that leaks the
+        # internal error string.
+        raise HTTPException(status_code=400, detail="Invalid symbol")
     except Exception as e:
         logger.error(f"Analysis error for {symbol}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
