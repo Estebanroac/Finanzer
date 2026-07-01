@@ -3462,7 +3462,15 @@ def score_rentabilidad(
     
     # ROE (peso alto: hasta ±6 pts)
     if roe is not None:
-        if roe >= 0.25:
+        if roe < 0 and roa is not None and roa > 0.03:
+            # Negative book equity (e.g. from heavy buybacks: HD, MCD, SBUX,
+            # ABBV) makes ROE negative even for very profitable companies — a
+            # balance-sheet artifact, not value destruction. Don't apply the
+            # harsh penalty; ROA and margins carry the real profitability signal.
+            adj = 0
+            sev = "ok"
+            reason = f"ROE negativo por patrimonio negativo (recompras) — no penalizado; ROA {roa:.1%} sólido"
+        elif roe >= 0.25:
             adj = 6
             sev = "excellent"
             reason = f"Excepcional ({roe:.1%}) - Genera excelentes retornos sobre capital"
