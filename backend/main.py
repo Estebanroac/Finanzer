@@ -92,7 +92,7 @@ def _get_sector_benchmarks(sector: str) -> dict:
 
 
 @app.get("/api/search")
-async def search(q: str = Query("", min_length=1)):
+async def search(q: str = Query("", min_length=1, max_length=100)):
     """Search for stocks by ticker or company name.
     Uses local database first, then Yahoo Finance autocomplete for broader coverage."""
     # Local database search
