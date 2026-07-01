@@ -613,9 +613,13 @@ def _compute_analysis(symbol: str) -> dict:
                         margin_of_safety(price, graham)
                     )
 
-                # DCF
+                # DCF — skip for financials: FCF is ill-defined for banks/insurers
+                # (no traditional capex/working-capital cycle), so an FCF-DCF fair
+                # value is misleading. They are valued on book value / ROE instead —
+                # same rationale as the Altman Z-Score exclusion.
                 fcf = financials.free_cash_flow
-                if fcf and fcf > 0 and price and financials.shares_outstanding:
+                _is_financial = bool(mapped_sector and "financ" in mapped_sector.lower())
+                if fcf and fcf > 0 and price and financials.shares_outstanding and not _is_financial:
                     beta = financials.beta if financials.beta is not None else 1.0
                     wacc = calculate_wacc(beta=beta)
                     growth = financials.revenue_growth_yoy or 0.10
