@@ -571,11 +571,17 @@ def _compute_analysis(symbol: str) -> dict:
             # Computed here (after institutional metrics) so the Altman Z-Score
             # and Piotroski F-Score actually feed the solidez/calidad categories.
             try:
+                # If the F-Score is inconclusive (a low value driven by missing
+                # historical data, e.g. recent IPOs), don't let it penalize the
+                # calidad category — pass None so that component is treated as
+                # neutral. The displayed F-Score is unaffected.
+                _f_interp = result.get("piotroski_f", {}).get("interpretation", "")
+                _f_for_score = None if "no concluyente" in _f_interp else f_score
                 score_result = calculate_score_v2(
                     ratios, fin_dict,
                     z_score_value=z_val,
                     z_score_level=z_zone,
-                    f_score_value=f_score,
+                    f_score_value=_f_for_score,
                     sector_key=mapped_sector,
                     real_sector=sector
                 )
