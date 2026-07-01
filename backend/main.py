@@ -652,7 +652,11 @@ def _compute_analysis(symbol: str) -> dict:
                 # (no traditional capex/working-capital cycle), so an FCF-DCF fair
                 # value is misleading. They are valued on book value / ROE instead —
                 # same rationale as the Altman Z-Score exclusion.
-                fcf = financials.free_cash_flow
+                # Sanitize like the metrics path (see fcf_val above): a raw NaN
+                # is truthy and only skipped here by the `> 0` check, and a raw
+                # +Inf would pass it and land un-sanitized in the sensitivity
+                # matrix (stored raw below) → non-finite tokens → invalid JSON.
+                fcf = safe_float(financials.free_cash_flow)
                 _is_financial = bool(mapped_sector and "financ" in mapped_sector.lower())
                 if fcf and fcf > 0 and price and financials.shares_outstanding and not _is_financial:
                     beta = financials.beta if financials.beta is not None else 1.0
