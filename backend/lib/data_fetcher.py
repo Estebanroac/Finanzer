@@ -64,12 +64,6 @@ except ImportError:
     YF_RATE_LIMIT_AVAILABLE = False
     YFRateLimitError = Exception
 
-try:
-    import requests
-    REQUESTS_AVAILABLE = True
-except ImportError:
-    REQUESTS_AVAILABLE = False
-
 
 # =========================
 # CONSTANTES DE CONFIGURACIÓN

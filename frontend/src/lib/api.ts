@@ -93,12 +93,6 @@ export async function analyzeStock(symbol: string): Promise<StockAnalysis> {
   return res.json();
 }
 
-export async function getPopularStocks(): Promise<{ ticker: string; name: string }[]> {
-  const res = await fetch(`${API_BASE}/api/stocks/popular`);
-  if (!res.ok) return [];
-  return res.json();
-}
-
 // ── Formatting helpers ──
 
 export function formatNumber(val: number | null | undefined): string {

@@ -223,36 +223,6 @@ SECTOR_ADJUSTMENTS = {
 
 
 # =============================================================================
-# HELPER FUNCTIONS
-# =============================================================================
-
-def get_score_level(score: float) -> dict:
-    """Retorna el nivel correspondiente a un score."""
-    for level_name, config in SCORE_LEVELS.items():
-        if score >= config["min"]:
-            return {"name": level_name, **config}
-    return {"name": "POOR", **SCORE_LEVELS["POOR"]}
-
-
-def get_altman_zone(z_score: float) -> str:
-    """Retorna la zona de Altman Z-Score."""
-    if z_score > ALTMAN_Z_SAFE:
-        return "SAFE"
-    elif z_score > ALTMAN_Z_GREY:
-        return "GREY"
-    return "DISTRESS"
-
-
-def get_piotroski_level(f_score: int) -> str:
-    """Retorna el nivel de Piotroski F-Score."""
-    if f_score >= PIOTROSKI_STRONG:
-        return "STRONG"
-    elif f_score >= PIOTROSKI_NEUTRAL:
-        return "NEUTRAL"
-    return "WEAK"
-
-
-# =============================================================================
 # VERSION INFO
 # =============================================================================
 

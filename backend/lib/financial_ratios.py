@@ -15,14 +15,11 @@ from enum import Enum
 # Importar configuración centralizada
 try:
     from config import (
-        ALTMAN_Z_SAFE, ALTMAN_Z_GREY, ALTMAN_Z_LABELS,
-        PIOTROSKI_STRONG, PIOTROSKI_NEUTRAL, PIOTROSKI_WEAK,
+        ALTMAN_Z_SAFE, ALTMAN_Z_GREY,
         DCF_RISK_FREE_RATE, DCF_MARKET_RISK_PREMIUM, DCF_TERMINAL_GROWTH,
-        DCF_WACC_MIN, DCF_WACC_MAX, DCF_WACC_DEFAULT,
+        DCF_WACC_DEFAULT,
         DCF_GROWTH_MAX, DCF_GROWTH_DEFAULT,
         DCF_HIGH_GROWTH_YEARS, DCF_TRANSITION_YEARS,
-        SCORE_BASE, SCORE_LEVELS,
-        CURRENT_RATIO_GOOD, DEBT_EQUITY_HIGH, ROE_EXCELLENT, ROE_GOOD,
     )
     CONFIG_AVAILABLE = True
 except ImportError:
@@ -4380,8 +4377,6 @@ def dcf_sensitivity_analysis(
     Returns:
         Dict con matriz de sensibilidad, estadísticas y metadata
     """
-    import numpy as np
-
     # Keep the ENTIRE discount-rate grid inside the headline DCF's WACC band
     # [0.06, 0.20] (dcf_multi_stage_dynamic clamps WACC there). The grid spans
     # base + the discount_rate_range deltas, so bound the base so neither the

@@ -6,7 +6,6 @@ import { SCORE_TOOLTIP } from "@/lib/tooltips";
 interface ScoreCardProps {
   score: number;
   maxScore: number;
-  level: string;
   companyType: string;
   isGrowth: boolean;
 }
@@ -35,7 +34,7 @@ function getScoreBg(pct: number): string {
   return "rgba(255, 77, 77, 0.04)";
 }
 
-export default function ScoreCard({ score, maxScore, level, companyType, isGrowth }: ScoreCardProps) {
+export default function ScoreCard({ score, maxScore, companyType, isGrowth }: ScoreCardProps) {
   const pct = Math.round((score / maxScore) * 100);
   const color = getScoreColor(pct);
   const label = getScoreLabel(pct);

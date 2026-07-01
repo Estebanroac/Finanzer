@@ -144,7 +144,6 @@ export default function StockPageClient() {
               <ScoreCard
                 score={data.score.total_score}
                 maxScore={data.score.max_score}
-                level={data.score.level}
                 companyType={data.company_type}
                 isGrowth={data.is_growth}
               />
