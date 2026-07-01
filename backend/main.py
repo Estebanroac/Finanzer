@@ -58,10 +58,30 @@ def safe_float(val) -> Optional[float]:
 
 
 def financials_to_dict(fin) -> Dict[str, Any]:
-    """Convert FinancialStatements dataclass to dict for ratio calculations."""
+    """Convert FinancialStatements dataclass to dict for ratio calculations.
+
+    Numeric fields are sanitized through safe_float so only finite numbers
+    reach the ratio engine: NaN/Infinity (which pandas/yfinance emit for
+    missing cells) and any stray non-numeric value become None and are
+    dropped. This stops a NaN from silently poisoning downstream ratios and
+    scores, and a stray string from raising a TypeError inside
+    calculate_all_ratios (e.g. 'str' / 'str'). The two string metadata fields
+    are passed through unchanged.
+    """
     if fin is None:
         return {}
-    return {k: v for k, v in fin.__dict__.items() if v is not None}
+    _str_meta = {"fiscal_year_end", "last_updated"}
+    out: Dict[str, Any] = {}
+    for k, v in fin.__dict__.items():
+        if v is None:
+            continue
+        if k in _str_meta:
+            out[k] = v
+            continue
+        sv = safe_float(v)
+        if sv is not None:
+            out[k] = sv
+    return out
 
 
 def _get_sector_benchmarks(sector: str) -> dict:
