@@ -4381,7 +4381,19 @@ def dcf_sensitivity_analysis(
         Dict con matriz de sensibilidad, estadísticas y metadata
     """
     import numpy as np
-    
+
+    # Keep the ENTIRE discount-rate grid inside the headline DCF's WACC band
+    # [0.06, 0.20] (dcf_multi_stage_dynamic clamps WACC there). The grid spans
+    # base + the discount_rate_range deltas, so bound the base so neither the
+    # low nor the high column leaves the band. Without this, a low-beta stock's
+    # low WACC pushes the low columns toward the terminal growth rate, where the
+    # terminal value explodes into absurd fair values (e.g. a $1857 cell for a
+    # $50 stock) that paint the table "deeply undervalued".
+    _wacc_lo, _wacc_hi = 0.06, 0.20
+    if base_discount_rate is not None:
+        base_discount_rate = max(_wacc_lo - discount_rate_range[0],
+                                 min(base_discount_rate, _wacc_hi - discount_rate_range[1]))
+
     result = {
         "matrix": [],
         "growth_rates": [],
