@@ -2609,7 +2609,8 @@ def get_sector_specific_adjustments(sector: str) -> Dict[str, Any]:
 def aggregate_alerts(ratio_values: Dict[str, Optional[float]],
                      contextual_values: Dict[str, Optional[float]],
                      sector: str = "default",
-                     real_sector: str = "") -> Dict[str, Any]:
+                     real_sector: str = "",
+                     precomputed_f_score: Optional[int] = None) -> Dict[str, Any]:
     """Genera un reporte completo de alertas a partir de ratios calculados.
     
     VERSIÓN 3.1 - MODELO ADAPTATIVO con:
@@ -2673,7 +2674,13 @@ def aggregate_alerts(ratio_values: Dict[str, Optional[float]],
         asset_turnover_prior=contextual_values.get("asset_turnover_prior"),
         total_assets=contextual_values.get("total_assets")
     )
-    
+
+    # Preferir el F-Score autoritativo (calculado con datos de año fiscal puro,
+    # sin mezcla TTM). El cálculo interno de arriba carece de datos prior cuando
+    # se llama con fin_dict, lo que penalizaría el score de toda empresa.
+    if precomputed_f_score is not None:
+        f_score_value = precomputed_f_score
+
     # WACC dinámico
     wacc = calculate_wacc(
         beta=ratio_values.get("beta"),

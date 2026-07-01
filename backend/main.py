@@ -636,7 +636,8 @@ def _compute_analysis(symbol: str) -> dict:
                 raw_alerts = aggregate_alerts(
                     ratios, fin_dict,
                     sector=mapped_sector,
-                    real_sector=sector
+                    real_sector=sector,
+                    precomputed_f_score=result.get("piotroski_f", {}).get("score"),
                 )
 
                 # The brain returns alerts grouped by category (valuation, leverage, etc.)
