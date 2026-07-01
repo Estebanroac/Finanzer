@@ -24,7 +24,10 @@ echo "frontend/out/ present — serving the committed static build."
 # the site silently — fail the deploy loudly here instead.
 echo "==> Validating referenced static assets exist..."
 MISSING=0
-for html in frontend/out/index.html frontend/out/stock/index.html frontend/out/404.html; do
+# Check EVERY generated HTML page, not a hardcoded few — a new route (or a Next
+# version change) can emit a page whose unique chunk none of the others
+# reference, and a hardcoded list would silently skip it.
+for html in $(find frontend/out -name '*.html'); do
     [ -f "$html" ] || continue
     for asset in $(grep -oE '/_next/static/[^"]+\.(css|js)' "$html" | sort -u); do
         if [ ! -f "frontend/out${asset}" ]; then
