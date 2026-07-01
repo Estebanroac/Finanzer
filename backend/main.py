@@ -1641,7 +1641,16 @@ if os.path.isdir(_frontend_dir):
     # Serve stock pages — SPA fallback using the stock page HTML
     @app.get("/stock/{symbol:path}")
     async def serve_stock_page(symbol: str):
-        # Try the exact path first
+        # Serve real files under stock/ — e.g. the Next.js RSC .txt payloads used
+        # for client-side (soft) navigation. Without this they'd hit the SPA HTML
+        # fallback below and navigation would degrade to full page reloads.
+        # Guard against path traversal; real tickers (AAPL, BRK.B) aren't files
+        # and fall through to the SPA HTML.
+        if "/" not in symbol and ".." not in symbol:
+            candidate = os.path.join(_frontend_dir, "stock", symbol)
+            if os.path.isfile(candidate):
+                return FileResponse(candidate)
+        # Otherwise it's a ticker route → serve the stock page HTML (SPA)
         stock_index = os.path.join(_frontend_dir, "stock", "index.html")
         if os.path.isfile(stock_index):
             return FileResponse(stock_index, media_type="text/html")
