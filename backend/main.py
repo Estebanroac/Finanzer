@@ -174,7 +174,12 @@ def _compute_analysis(symbol: str) -> dict:
     Returns the full analysis dict or raises HTTPException.
     """
     symbol = symbol.upper().strip()
-    if not symbol or len(symbol) > 15:
+    # Validate ticker characters (letters/digits and . - ^ = as used by real
+    # tickers, e.g. BRK.B, BRK-B, ^GSPC, EURUSD=X). Reject anything else with a
+    # clean 400 instead of letting it crash deep in the data fetch (500).
+    if not symbol or len(symbol) > 15 or not all(
+        c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-^=" for c in symbol
+    ):
         raise HTTPException(status_code=400, detail="Invalid symbol")
 
     try:
