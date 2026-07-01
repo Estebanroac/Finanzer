@@ -411,39 +411,9 @@ def _compute_analysis(symbol: str) -> dict:
             if div_yield is not None and ratios.get("dividend_yield") is None:
                 ratios["dividend_yield"] = div_yield
 
-            # Score (0-100) — normalize to standard format
-            try:
-                score_result = calculate_score_v2(
-                    ratios, fin_dict,
-                    sector_key=mapped_sector,
-                    real_sector=sector
-                )
-                # Normalize: the brain returns different structures, unify them
-                raw_score = score_result.get("score", 0) if isinstance(score_result, dict) else 0
-                raw_max = score_result.get("max_score", 100) if isinstance(score_result, dict) else 100
-                raw_level = score_result.get("level", "N/A") if isinstance(score_result, dict) else "N/A"
-
-                # Build category breakdown from categories array or category_scores dict
-                breakdown = {}
-                categories_list = score_result.get("categories", []) if isinstance(score_result, dict) else []
-                for cat in categories_list:
-                    key = cat.get("category", "unknown")
-                    breakdown[key] = {
-                        "score": cat.get("score", 0),
-                        "max": cat.get("max_score", 20),
-                        "details": [a.get("reason", "") for a in cat.get("adjustments", [])],
-                        "adjustments": cat.get("adjustments", []),
-                    }
-
-                result["score"] = {
-                    "total_score": raw_score,
-                    "max_score": raw_max,
-                    "level": raw_level,
-                    "breakdown": breakdown,
-                }
-            except Exception as e:
-                logger.error(f"Score calculation error: {e}")
-                result["score"] = None
+            # NOTE: the 0-100 score is computed AFTER the institutional metrics
+            # block below, so it can feed the Altman Z-Score and Piotroski
+            # F-Score into the solidez/calidad categories (see "Score (0-100)").
 
             # Company type
             try:
@@ -456,6 +426,9 @@ def _compute_analysis(symbol: str) -> dict:
                 result["is_growth"] = False
 
             # Institutional metrics — use prior-year data from Yahoo API
+            # Defaults so the score block below can reference these even if the
+            # institutional try fails partway through.
+            z_val, z_zone, f_score = None, "N/A", None
             try:
                 # Get prior-year data from Yahoo cached info
                 prior = {}
@@ -577,6 +550,45 @@ def _compute_analysis(symbol: str) -> dict:
                     result["financial_health"] = fh_result
             except Exception as e:
                 logger.error(f"Institutional metrics error: {e}")
+
+            # Score (0-100) — normalize to standard format.
+            # Computed here (after institutional metrics) so the Altman Z-Score
+            # and Piotroski F-Score actually feed the solidez/calidad categories.
+            try:
+                score_result = calculate_score_v2(
+                    ratios, fin_dict,
+                    z_score_value=z_val,
+                    z_score_level=z_zone,
+                    f_score_value=f_score,
+                    sector_key=mapped_sector,
+                    real_sector=sector
+                )
+                # Normalize: the brain returns different structures, unify them
+                raw_score = score_result.get("score", 0) if isinstance(score_result, dict) else 0
+                raw_max = score_result.get("max_score", 100) if isinstance(score_result, dict) else 100
+                raw_level = score_result.get("level", "N/A") if isinstance(score_result, dict) else "N/A"
+
+                # Build category breakdown from categories array or category_scores dict
+                breakdown = {}
+                categories_list = score_result.get("categories", []) if isinstance(score_result, dict) else []
+                for cat in categories_list:
+                    key = cat.get("category", "unknown")
+                    breakdown[key] = {
+                        "score": cat.get("score", 0),
+                        "max": cat.get("max_score", 20),
+                        "details": [a.get("reason", "") for a in cat.get("adjustments", [])],
+                        "adjustments": cat.get("adjustments", []),
+                    }
+
+                result["score"] = {
+                    "total_score": raw_score,
+                    "max_score": raw_max,
+                    "level": raw_level,
+                    "breakdown": breakdown,
+                }
+            except Exception as e:
+                logger.error(f"Score calculation error: {e}")
+                result["score"] = None
 
             # Valuation (Graham + DCF)
             try:
