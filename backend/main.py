@@ -177,9 +177,12 @@ def _compute_analysis(symbol: str) -> dict:
     # Validate ticker characters (letters/digits and . - ^ = as used by real
     # tickers, e.g. BRK.B, BRK-B, ^GSPC, EURUSD=X). Reject anything else with a
     # clean 400 instead of letting it crash deep in the data fetch (500).
-    if not symbol or len(symbol) > 15 or not all(
-        c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-^=" for c in symbol
-    ):
+    if (not symbol or len(symbol) > 15
+            or not all(c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-^=" for c in symbol)
+            or not any(c.isalnum() for c in symbol)):
+        # Must be short, use only real-ticker characters, AND contain at least one
+        # letter/digit — punctuation-only garbage like "^^^^" or "=====" still
+        # reaches (and crashes) the data fetch otherwise.
         raise HTTPException(status_code=400, detail="Invalid symbol")
 
     try:
