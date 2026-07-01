@@ -202,7 +202,7 @@ export default function StockPageClient() {
         </div>
 
         {/* ── Errors from backend ── */}
-        {data.errors && data.errors.length > 0 && (
+        {Array.isArray(data.errors) && data.errors.length > 0 && (
           <div className="mt-8 rounded-xl border border-amber-500/20 bg-amber-500/5 px-5 py-4">
             <h4 className="text-xs text-amber-400 font-medium uppercase tracking-wider mb-2">
               Advertencias del análisis
