@@ -613,8 +613,15 @@ def piotroski_f_score(
     else:
         details.append("✗ Sin datos de asset turnover histórico")
     
+    # Signals that couldn't be evaluated because prior-year data is missing
+    # (e.g. recent IPOs). A low score caused by absent history is a data
+    # limitation, not financial weakness — don't call it "debilidad".
+    no_data = sum(1 for d in details if "Sin datos" in d)
+
     # Interpretación
-    if score >= 8:
+    if no_data >= 4:
+        interpretation = f"Datos históricos limitados ({no_data}/9 señales sin evaluar) - F-Score no concluyente"
+    elif score >= 8:
         interpretation = "Excelente - Fortaleza financiera excepcional"
     elif score >= 6:
         interpretation = "Bueno - Salud financiera sólida"
@@ -624,7 +631,7 @@ def piotroski_f_score(
         interpretation = "Débil - Señales de debilidad financiera"
     else:
         interpretation = "Crítico - Alto riesgo de problemas"
-    
+
     return score, details, interpretation
 
 
