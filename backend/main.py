@@ -895,7 +895,12 @@ async def download_pdf(symbol: str):
             try:
                 v = float(val)
                 if fmt == "pct":
-                    return f"{v * 100:.2f}%" if abs(v) < 5 else f"{v:.2f}%"
+                    # Ratios arrive as decimals (0.15 = 15%, 6.0 = 600%); always
+                    # scale by 100, matching the frontend's formatPercent. The old
+                    # abs(v) < 5 guard left values >= 500% unscaled (a 600% ROE or
+                    # payout rendered as "6.00%"). Every "pct" caller passes a
+                    # decimal km field; dcf upside is always None (shown as N/A).
+                    return f"{v * 100:.2f}%"
                 if fmt == "mult": return f"{v:.2f}x"
                 if fmt == "price": return f"${v:,.2f}"
                 if fmt == "money":
