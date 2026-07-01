@@ -1216,7 +1216,7 @@ SECTOR_THRESHOLDS = {
         operating_margin_low=0.12,
         net_margin_low=0.08,
     ),
-    "consumer_discretionary": ThresholdConfig(
+    "consumer_cyclical": ThresholdConfig(
         pe_overvalued_mult=1.3,
         current_ratio_low=1.2,
         roe_high=0.18,
@@ -1224,7 +1224,7 @@ SECTOR_THRESHOLDS = {
         operating_margin_low=0.06,
         net_margin_low=0.04,
     ),
-    "consumer_staples": ThresholdConfig(
+    "consumer_defensive": ThresholdConfig(
         pe_overvalued_mult=1.25,
         roe_high=0.20,
         roe_low=0.10,
@@ -1267,7 +1267,7 @@ SECTOR_THRESHOLDS = {
         operating_margin_low=0.10,
         net_margin_low=0.06,
     ),
-    "communication_services": ThresholdConfig(
+    "communication": ThresholdConfig(
         pe_overvalued_mult=1.35,
         roe_high=0.15,
         roe_low=0.08,
