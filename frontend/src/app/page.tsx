@@ -33,7 +33,7 @@ export default function Home() {
         style={{ backgroundImage: "url(/bg-home.webp)" }}
       />
       {/* Dark veil for text contrast */}
-      <div className="absolute inset-0 bg-[#09090b]/50 pointer-events-none" />
+      <div className="absolute inset-0 bg-[#09090b]/25 pointer-events-none" />
 
       <div className="relative z-10 w-full max-w-2xl text-center">
         {/* Logo */}
