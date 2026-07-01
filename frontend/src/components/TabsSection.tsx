@@ -30,12 +30,12 @@ export default function TabsSection({ data }: TabsSectionProps) {
   return (
     <div>
       {/* Tab bar — underline style */}
-      <div className="flex gap-1 border-b border-white/[0.06] mb-8 overflow-x-auto">
+      <div className="flex gap-1 border-b border-white/[0.06] mb-8 overflow-x-auto tab-scroll">
         {TABS.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`relative px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap ${
+            className={`relative flex-shrink-0 px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap ${
               activeTab === tab.id
                 ? "text-white"
                 : "text-zinc-500 hover:text-zinc-300"

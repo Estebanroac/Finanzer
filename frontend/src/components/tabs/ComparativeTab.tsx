@@ -92,10 +92,10 @@ function ComparisonSection({ title, subtitle, metrics }: { title: string; subtit
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-white/[0.06] bg-white/[0.01]">
-              <th className="text-left px-5 py-3 text-xs text-zinc-500 font-medium">Métrica</th>
-              <th className="text-right px-5 py-3 text-xs text-zinc-500 font-medium">Empresa</th>
-              <th className="text-right px-5 py-3 text-xs text-zinc-500 font-medium">Sector</th>
-              <th className="text-right px-5 py-3 text-xs text-zinc-500 font-medium w-28">Relativo</th>
+              <th className="text-left px-3 py-3 sm:px-5 text-xs text-zinc-500 font-medium">Métrica</th>
+              <th className="text-right px-3 py-3 sm:px-5 text-xs text-zinc-500 font-medium">Empresa</th>
+              <th className="text-right px-3 py-3 sm:px-5 text-xs text-zinc-500 font-medium">Sector</th>
+              <th className="text-right px-3 py-3 sm:px-5 text-xs text-zinc-500 font-medium w-16 sm:w-28">Relativo</th>
             </tr>
           </thead>
           <tbody>
@@ -115,21 +115,21 @@ function ComparisonSection({ title, subtitle, metrics }: { title: string; subtit
 
               return (
                 <tr key={i} className="border-b border-white/[0.04] last:border-0">
-                  <td className="px-5 py-3">
+                  <td className="px-3 py-3 sm:px-5">
                     <span className="text-sm text-zinc-300">{m.label}</span>
-                    {m.hint && <span className="text-[10px] text-zinc-600 ml-1.5">{m.hint}</span>}
+                    {m.hint && <span className="block sm:inline text-[10px] text-zinc-600 sm:ml-1.5">{m.hint}</span>}
                   </td>
-                  <td className="px-5 py-3 text-right">
+                  <td className="px-3 py-3 sm:px-5 text-right">
                     <span className={`text-sm font-semibold tabular-nums ${compVal == null ? "text-zinc-600" : "text-white"}`}>
                       {fmt(compVal, m.format)}
                     </span>
                   </td>
-                  <td className="px-5 py-3 text-right">
+                  <td className="px-3 py-3 sm:px-5 text-right">
                     <span className="text-sm text-zinc-500 tabular-nums">
                       {fmt(sectorVal, m.format)}
                     </span>
                   </td>
-                  <td className="px-5 py-3 text-right">
+                  <td className="px-3 py-3 sm:px-5 text-right">
                     <span className="text-xs font-semibold tabular-nums" style={{ color: relColor }}>
                       {relLabel}
                     </span>
