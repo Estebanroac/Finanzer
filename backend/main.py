@@ -1710,15 +1710,21 @@ if os.path.isdir(_frontend_dir):
     # Serve other static files (favicon, svgs, etc.)
     @app.get("/{filepath:path}")
     async def serve_static(filepath: str):
-        # Try exact file
-        full_path = os.path.join(_frontend_dir, filepath)
-        if os.path.isfile(full_path):
-            return FileResponse(full_path)
-        # Try with index.html (for directory paths)
-        index_path = os.path.join(full_path, "index.html")
-        if os.path.isfile(index_path):
-            return FileResponse(index_path, media_type="text/html")
-        # Fallback to root index (SPA)
+        # Confine to the frontend dir. A `:path` param accepts slashes and `..`,
+        # so without this an encoded request like /%2e%2e/%2e%2e/backend/main.py
+        # (uvicorn decodes %2e%2e%2f -> ../) would escape _frontend_dir and serve
+        # arbitrary files (source code, /etc/passwd). Resolve then verify the
+        # real path stays inside the served directory before touching disk.
+        full_path = os.path.abspath(os.path.join(_frontend_dir, filepath))
+        if full_path == _frontend_dir or full_path.startswith(_frontend_dir + os.sep):
+            # Try exact file
+            if os.path.isfile(full_path):
+                return FileResponse(full_path)
+            # Try with index.html (for directory paths)
+            index_path = os.path.join(full_path, "index.html")
+            if os.path.isfile(index_path):
+                return FileResponse(index_path, media_type="text/html")
+        # Fallback to root index (SPA) — also the response for traversal attempts
         root_index = os.path.join(_frontend_dir, "index.html")
         if os.path.isfile(root_index):
             return FileResponse(root_index, media_type="text/html")
