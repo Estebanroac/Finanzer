@@ -48,7 +48,7 @@ export default function Home() {
         </div>
 
         {/* Search */}
-        <div className="relative fade-up delay-1">
+        <div className="relative z-20 fade-up delay-1">
           <input
             type="text"
             value={query}
@@ -75,18 +75,21 @@ export default function Home() {
           )}
         </div>
 
-        {/* Trending */}
-        <div className="mt-10 fade-up delay-2">
-          <p className="text-zinc-600 text-xs uppercase tracking-widest mb-4">Trending</p>
-          <div className="flex flex-wrap justify-center gap-2">
-            {TRENDING.map(t => (
-              <button key={t} onClick={() => go(t)}
-                className="px-4 py-2 rounded-lg text-sm font-mono text-zinc-400 hover:text-white hover:bg-zinc-800/60 border border-transparent hover:border-zinc-700/50 transition-all duration-200">
-                {t}
-              </button>
-            ))}
+        {/* Trending — hidden while the search dropdown is open so the results
+            don't collide with the trending chips underneath. */}
+        {!open && (
+          <div className="mt-10 fade-up delay-2">
+            <p className="text-zinc-600 text-xs uppercase tracking-widest mb-4">Trending</p>
+            <div className="flex flex-wrap justify-center gap-2">
+              {TRENDING.map(t => (
+                <button key={t} onClick={() => go(t)}
+                  className="px-4 py-2 rounded-lg text-sm font-mono text-zinc-400 hover:text-white hover:bg-zinc-800/60 border border-transparent hover:border-zinc-700/50 transition-all duration-200">
+                  {t}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Footer */}
