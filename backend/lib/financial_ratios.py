@@ -3224,7 +3224,15 @@ def score_solidez_financiera(
     # Debt/Equity (hasta ±5 pts) - proporcional al sector
     if debt_to_equity is not None:
         threshold = sector_de_threshold
-        if debt_to_equity <= threshold * 0.5:
+        if debt_to_equity < 0:
+            # Negative book equity (buybacks) makes D/E negative and useless as a
+            # leverage gauge — a very negative value is NOT "low debt". Treat it
+            # neutral; interest coverage and the leverage flags (which use
+            # equity-independent ratios) assess the real leverage.
+            adj = 0
+            sev = "ok"
+            reason = f"D/E no informativo (patrimonio negativo, {debt_to_equity:.1f}x) — evaluar por cobertura de intereses"
+        elif debt_to_equity <= threshold * 0.5:
             adj = 5
             sev = "excellent"
             reason = f"Deuda muy baja - Estructura financiera conservadora"
