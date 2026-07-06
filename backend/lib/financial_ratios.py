@@ -414,10 +414,17 @@ def financial_health_score(
     # 5. Dividend (0-1 punto) - Bancos suelen pagar dividendos
     if dividend_yield is not None and dividend_yield > 0:
         max_possible += 1
-        if payout_ratio is None or payout_ratio < b.get("payout_sustainable", 0.60):
+        # Un payout negativo (dividendos pagados con ganancias negativas, año en
+        # pérdidas) NO es sostenible: antes `payout < 0.60` lo daba por sostenible.
+        _sustainable = 0 <= payout_ratio < b.get("payout_sustainable", 0.60) if payout_ratio is not None else True
+        if _sustainable:
             pts = 1
             detail = f"Dividendo sostenible ({dividend_yield*100:.2f}%)"
             severity = "excellent"
+        elif payout_ratio is not None and payout_ratio < 0:
+            pts = 0
+            detail = f"Dividendo insostenible (pagado con pérdidas)"
+            severity = "weak"
         else:
             pts = 0
             detail = f"Payout ratio alto ({payout_ratio*100:.0f}% > 60%)"
@@ -1864,6 +1871,7 @@ def dcf_multi_stage(
     discount_rate: float = DCF_WACC_DEFAULT,
     decay_type: str = "linear",
     margin_of_safety_pct: float = 0.0,
+    net_debt: Optional[float] = 0.0,
 ) -> Dict[str, Any]:
     """
     DCF Multi-Stage (3 etapas) - Modelo más realista.
@@ -1877,6 +1885,8 @@ def dcf_multi_stage(
         "fair_value_per_share": None,
         "fair_value_with_mos": None,
         "enterprise_value": None,
+        "equity_value": None,
+        "net_debt": net_debt,
         "method": "multi_stage_dcf",
         "stages": {
             "high_growth": {"pv": None, "years": high_growth_years, "rates": []},
@@ -1978,15 +1988,28 @@ def dcf_multi_stage(
     result["stages"]["terminal"]["pv"] = round(pv_terminal, 2)
     
     # CÁLCULO FINAL
+    # Puente Enterprise Value -> Equity Value: descontar el FCF de la firma (FCFF)
+    # al WACC produce el valor de la EMPRESA (enterprise value). El precio por
+    # acción corresponde al EQUITY, así que hay que restar la deuda neta
+    # (deuda total - caja) antes de dividir entre las acciones. Sin este puente
+    # las empresas apalancadas quedan sistemáticamente sobrevaloradas (y las de
+    # caja neta, subvaloradas).
     enterprise_value = pv_stage1 + pv_stage2 + pv_terminal
-    fair_value_per_share = enterprise_value / shares_outstanding
-    
+    equity_value = enterprise_value - (net_debt or 0.0)
+    if equity_value <= 0:
+        result["warnings"].append(
+            "Equity value <= 0 tras restar la deuda neta (empresa muy apalancada)"
+        )
+    fair_value_per_share = equity_value / shares_outstanding
+
     if margin_of_safety_pct > 0:
         fair_value_with_mos = fair_value_per_share * (1 - margin_of_safety_pct)
     else:
         fair_value_with_mos = fair_value_per_share
-    
+
     result["enterprise_value"] = round(enterprise_value, 2)
+    result["equity_value"] = round(equity_value, 2)
+    result["net_debt"] = round(net_debt or 0.0, 2)
     result["fair_value_per_share"] = round(fair_value_per_share, 2)
     result["fair_value_with_mos"] = round(fair_value_with_mos, 2)
     result["is_valid"] = True
@@ -2013,6 +2036,7 @@ def dcf_multi_stage_dynamic(
     debt_to_equity: Optional[float] = None,
     interest_expense: Optional[float] = None,
     total_debt: Optional[float] = None,
+    cash: Optional[float] = None,
     revenue_growth_3y: Optional[float] = None,
     eps_growth_3y: Optional[float] = None,
     fcf_growth_3y: Optional[float] = None,
@@ -2035,6 +2059,7 @@ def dcf_multi_stage_dynamic(
         "growth_source": None,
         "method": "multi_stage_dcf_dynamic",
         "model_result": None,
+        "net_debt": None,
         "warnings": [],
         "is_valid": False,
         "sensitivity_analysis": None
@@ -2064,7 +2089,15 @@ def dcf_multi_stage_dynamic(
     
     wacc = max(0.06, min(wacc, 0.20))
     result["wacc_calculated"] = wacc
-    
+
+    # Deuda neta para el puente Enterprise Value -> Equity Value en dcf_multi_stage.
+    # Solo se calcula si hay algún dato de deuda o caja; si no, queda None y el
+    # DCF se comporta como antes (sin puente) para no inventar una deuda de 0.
+    net_debt = None
+    if total_debt is not None or cash is not None:
+        net_debt = (total_debt or 0.0) - (cash or 0.0)
+    result["net_debt"] = net_debt
+
     # ESTIMAR GROWTH
     growth_rate = None
     growth_source = None
@@ -2107,7 +2140,8 @@ def dcf_multi_stage_dynamic(
         terminal_growth=terminal_growth,
         discount_rate=wacc,
         decay_type=decay_type,
-        margin_of_safety_pct=margin_of_safety_pct
+        margin_of_safety_pct=margin_of_safety_pct,
+        net_debt=net_debt
     )
     
     result["model_result"] = model_result
@@ -2127,7 +2161,8 @@ def dcf_multi_stage_dynamic(
                 test_result = dcf_multi_stage(
                     fcf=fcf, shares_outstanding=shares_outstanding,
                     high_growth_rate=growth_rate, discount_rate=test_wacc,
-                    terminal_growth=terminal_growth, decay_type=decay_type
+                    terminal_growth=terminal_growth, decay_type=decay_type,
+                    net_debt=net_debt
                 )
                 if test_result["is_valid"]:
                     sensitivity["wacc_sensitivity"][f"{wacc_delta:+.0%}"] = test_result["fair_value_per_share"]
@@ -2137,7 +2172,8 @@ def dcf_multi_stage_dynamic(
             test_result = dcf_multi_stage(
                 fcf=fcf, shares_outstanding=shares_outstanding,
                 high_growth_rate=test_growth, discount_rate=wacc,
-                terminal_growth=terminal_growth, decay_type=decay_type
+                terminal_growth=terminal_growth, decay_type=decay_type,
+                net_debt=net_debt
             )
             if test_result["is_valid"]:
                 sensitivity["growth_sensitivity"][f"{growth_delta:+.1%}"] = test_result["fair_value_per_share"]
@@ -2957,7 +2993,13 @@ def aggregate_alerts(ratio_values: Dict[str, Optional[float]],
         is_reit = ("real_estate" in (sector or "")
                    or "real estate" in (real_sector or "").lower()
                    or "reit" in (real_sector or "").lower())
-        if payout is not None and payout > 1.0 and not is_reit:
+        # payout > 1.0: paga más de lo que gana. payout < 0: paga dividendos con
+        # ganancias NEGATIVAS (año en pérdidas). Como dividends_paid es positivo y
+        # net_income negativo, ese payout sale NEGATIVO, no >100%, así que el
+        # guard `> 1.0` lo dejaba escapar Y aún recibía el bonus +5/+3. Ambos casos
+        # son insostenibles (recorte de dividendo probable) -> penalizar.
+        unsustainable = payout is not None and (payout > 1.0 or payout < 0)
+        if unsustainable and not is_reit:
             dividend_score = -3
 
     score += dividend_score
@@ -3094,6 +3136,12 @@ def calculate_all_ratios(financial_data: Dict) -> Dict[str, Optional[float]]:
     
     # Calcular valores intermedios
     ebitda_val = ebitda(d.get("operating_income"), d.get("depreciation"), d.get("amortization"))
+    if ebitda_val is None:
+        # Yahoo no siempre desglosa depreciación/amortización (entonces el EBITDA
+        # calculado sale None), pero sí suele proveer el EBITDA directo. Usarlo como
+        # fallback para que ev_ebitda, ebitda_margin y net_debt_to_ebitda no queden
+        # None cuando el dato existe.
+        ebitda_val = d.get("ebitda")
     fcf_val = free_cash_flow(d.get("operating_cash_flow"), d.get("capex"))
     mkt_cap = market_cap(d.get("price"), d.get("shares_outstanding"))
     ev_val = enterprise_value(mkt_cap, d.get("total_debt"), d.get("cash"))
@@ -3101,19 +3149,43 @@ def calculate_all_ratios(financial_data: Dict) -> Dict[str, Optional[float]]:
     eps_val = earnings_per_share(d.get("net_income"), d.get("shares_outstanding"))
     bvps = book_value_per_share(d.get("total_equity"), d.get("shares_outstanding"))
     fcf_ps = free_cash_flow_per_share(fcf_val, d.get("shares_outstanding"))
-    
+
+    # COGS para inventory_turnover: Yahoo no siempre expone "Cost Of Revenue" y el
+    # dataclass no lo trae, así que se deriva de datos que sí están
+    # (Revenue - Gross Profit). Sin esto inventory_turnover era SIEMPRE None y la
+    # eficiencia de inventario (peso alto en retail) nunca puntuaba.
+    cogs_val = d.get("cogs")
+    if cogs_val is None and d.get("revenue") is not None and d.get("gross_profit") is not None:
+        cogs_val = d.get("revenue") - d.get("gross_profit")
+
     # Calcular NOPAT e Invested Capital para ROIC
     tax_rate = d.get("tax_rate", 0.25)  # Default 25% si no se proporciona
     operating_inc = d.get("operating_income")
-    nopat_val = operating_inc * (1 - tax_rate) if operating_inc else None
+    # 'is not None' (no truthiness): un operating_income exactamente 0 (break-even
+    # operativo) es un dato válido -> NOPAT=0, no None.
+    nopat_val = operating_inc * (1 - tax_rate) if operating_inc is not None else None
     invested_cap = None
     if d.get("total_debt") is not None and d.get("total_equity") is not None and d.get("cash") is not None:
         invested_cap = d.get("total_debt") + d.get("total_equity") - d.get("cash")
-    
+        # Capital invertido <= 0 (empresa con caja neta o equity negativo por
+        # recompras) no tiene sentido económico como denominador y produciría un
+        # ROIC negativo espurio; se trata como no informativo (misma convención
+        # que el D/E negativo en el scoring).
+        if invested_cap <= 0:
+            invested_cap = None
+
     # FFO para REITs
     ffo_val = funds_from_operations(d.get("net_income"), d.get("depreciation"), d.get("gains_on_sale"))
     ffo_ps = safe_div(ffo_val, d.get("shares_outstanding")) if ffo_val else None
-    
+
+    # PEG: peg_ratio() espera el crecimiento de ganancias en PORCENTAJE (15 = 15%),
+    # pero earnings_growth_rate llega como decimal (0.15). Sin escalar *100 el PEG
+    # sale ~100x inflado (un PEG justo de 1.67 se mostraría como 167).
+    _earnings_growth_pct = (
+        d.get("earnings_growth_rate") * 100
+        if d.get("earnings_growth_rate") is not None else None
+    )
+
     return {
         # Rentabilidad
         "roe": roe(d.get("net_income"), d.get("total_equity")),
@@ -3137,7 +3209,7 @@ def calculate_all_ratios(financial_data: Dict) -> Dict[str, Optional[float]]:
         "ev_ebitda": ev_ebitda(ev_val, ebitda_val),
         "ev_revenue": ev_revenue(ev_val, d.get("revenue")),
         "ev_fcf": ev_fcf(ev_val, fcf_val),
-        "peg": peg_ratio(price_earnings(d.get("price"), eps_val), d.get("earnings_growth_rate")),
+        "peg": peg_ratio(price_earnings(d.get("price"), eps_val), _earnings_growth_pct),
         "fcf_yield": free_cash_flow_yield(fcf_val, mkt_cap),
         "dividend_yield": dividend_yield(d.get("dividend_per_share"), d.get("price")),
         "payout_ratio": dividend_payout_ratio(d.get("dividends_paid"), d.get("net_income")),
@@ -3157,7 +3229,7 @@ def calculate_all_ratios(financial_data: Dict) -> Dict[str, Optional[float]]:
         
         # Eficiencia
         "asset_turnover": asset_turnover(d.get("revenue"), d.get("total_assets")),
-        "inventory_turnover": inventory_turnover(d.get("cogs"), d.get("inventories")),
+        "inventory_turnover": inventory_turnover(cogs_val, d.get("inventories")),
         
         # Cash Flow
         "fcf": fcf_val,
@@ -3473,7 +3545,9 @@ def score_rentabilidad(
     operating_margin: Optional[float],
     net_margin: Optional[float],
     sector_roe_threshold: float = 0.12,
-    sector_roa_threshold: float = 0.03
+    sector_roa_threshold: float = 0.03,
+    roic: Optional[float] = None,
+    wacc: Optional[float] = None
 ) -> Dict[str, Any]:
     """
     Categoría 2: Rentabilidad (20 pts máximo)
@@ -3601,9 +3675,34 @@ def score_rentabilidad(
         
         base_score += adj
         adjustments.append({"metric": "Margen Neto", "value": f"{net_margin:.1%}", "adjustment": adj, "reason": reason, "severity": sev})
-    
+
+    # ROIC - WACC spread (hasta ±3): ¿la empresa genera retornos por encima de su
+    # costo de capital? Es el filtro de CREACIÓN DE VALOR económico que faltaba: el
+    # ROE/ROA se miden contra umbrales absolutos, así una empresa con ROE alto puede
+    # DESTRUIR valor si su WACC es mayor. Señal moderada para complementar (no
+    # duplicar) el ROE. No aplica a financieras (se pasa wacc=None para ellas).
+    if roic is not None and wacc is not None:
+        spread = roic - wacc
+        if spread >= 0.10:
+            adj = 3; sev = "excellent"
+            reason = f"Crea mucho valor (ROIC {roic:.1%} vs WACC {wacc:.1%}, spread +{spread:.1%})"
+        elif spread >= 0.03:
+            adj = 2; sev = "good"
+            reason = f"Crea valor (ROIC {roic:.1%} > WACC {wacc:.1%}, spread +{spread:.1%})"
+        elif spread >= 0:
+            adj = 1; sev = "ok"
+            reason = f"Retorno por encima del costo de capital (spread +{spread:.1%})"
+        elif spread >= -0.03:
+            adj = -1; sev = "moderate"
+            reason = f"Retorno apenas por debajo del costo de capital (spread {spread:.1%})"
+        else:
+            adj = -3; sev = "severe"
+            reason = f"Destruye valor (ROIC {roic:.1%} < WACC {wacc:.1%}, spread {spread:.1%})"
+        base_score += adj
+        adjustments.append({"metric": "ROIC vs WACC", "value": f"{spread:+.1%}", "adjustment": adj, "reason": reason, "severity": sev})
+
     final_score = max(0, min(20, base_score))
-    
+
     return {
         "category": "Rentabilidad",
         "emoji": "💰",
@@ -3872,36 +3971,14 @@ def score_valoracion(
         base_score += adj
         adjustments.append({"metric": "PEG Ratio", "value": f"{peg:.2f}", "adjustment": adj, "reason": reason, "severity": sev})
 
-    # ─── FCF Yield bonus (hasta +3 pts) ────────────────
-    if fcf_yield is not None and fcf_yield > 0:
-        if fcf_yield >= 0.08:
-            adj = 3; sev = "excellent"
-            reason = f"Excelente ({fcf_yield:.1%})"
-        elif fcf_yield >= 0.05:
-            adj = 2; sev = "good"  # v2.4: subió de +1 a +2
-            reason = f"Bueno ({fcf_yield:.1%})"
-        elif fcf_yield >= 0.03:
-            adj = 1; sev = "good"
-            reason = f"Aceptable ({fcf_yield:.1%})"
-        else:
-            adj = 0; sev = "ok"
-            reason = None
-        if adj > 0:
-            base_score += adj
-            adjustments.append({"metric": "FCF Yield", "value": f"{fcf_yield:.1%}", "adjustment": adj, "reason": reason, "severity": sev})
-
-    # ─── Earnings Yield bonus (NUEVO v2.4) ─────────────
-    if earnings_yield is not None and earnings_yield > 0:
-        if earnings_yield >= 0.06:  # >6% earnings yield
-            adj = 2; sev = "good"
-            reason = f"Rendimiento de ganancias atractivo ({earnings_yield:.1%})"
-            base_score += adj
-            adjustments.append({"metric": "Earnings Yield", "value": f"{earnings_yield:.1%}", "adjustment": adj, "reason": reason, "severity": sev})
-        elif earnings_yield >= 0.04:
-            adj = 1; sev = "good"
-            reason = f"Earnings yield razonable ({earnings_yield:.1%})"
-            base_score += adj
-            adjustments.append({"metric": "Earnings Yield", "value": f"{earnings_yield:.1%}", "adjustment": adj, "reason": reason, "severity": sev})
+    # ─── De-dup de valoración (Fase B) ─────────────────
+    # Se eliminaron los bonos separados de "FCF Yield" (+3) y "Earnings Yield"
+    # (+2): fcf_yield = 1/p_fcf y earnings_yield = 1/pe, así que premiaban el
+    # MISMO hecho ("barato por FCF" / "barato por ganancias") que las bandas de
+    # P/FCF (±4) y P/E ya puntúan arriba -> doble conteo que inflaba valoración
+    # a las value stocks. Las bandas de P/FCF y P/E quedan como señal primaria.
+    # (fcf_yield/earnings_yield siguen usándose para alertas y ajuste de growth,
+    # no para un bonus redundante de valoración.)
 
     # ─── GARP / Growth Quality Bonus ───────────────────
     if company_type == "garp" and growth_quality_score >= 70:
@@ -4064,7 +4141,6 @@ def score_crecimiento(
     revenue_growth_3y: Optional[float],
     eps_growth_3y: Optional[float],
     fcf_growth_3y: Optional[float],
-    peg: Optional[float],
     is_growth_company: bool = False
 ) -> Dict[str, Any]:
     """
@@ -4174,7 +4250,8 @@ def calculate_score_v2(
     z_score_level: str = "N/A",
     f_score_value: Optional[int] = None,
     sector_key: str = "default",
-    real_sector: str = ""  # Sector real de Yahoo Finance
+    real_sector: str = "",  # Sector real de Yahoo Finance
+    wacc: Optional[float] = None  # Para el spread ROIC-WACC en rentabilidad
 ) -> Dict[str, Any]:
     """
     Sistema de Scoring v2.3 - Adaptativo Growth/Value + Sector Financiero
@@ -4253,7 +4330,10 @@ def calculate_score_v2(
         operating_margin=ratio_values.get("operating_margin"),
         net_margin=ratio_values.get("net_margin"),
         sector_roe_threshold=thresholds.roe_low,
-        sector_roa_threshold=thresholds.roa_low
+        sector_roa_threshold=thresholds.roa_low,
+        roic=ratio_values.get("roic"),
+        # WACC no es interpretable para financieras -> sin señal de spread ahí.
+        wacc=(None if is_financial else wacc)
     )
     
     # v2.4: Pasar datos de crecimiento + forward metrics a valoración
@@ -4289,7 +4369,6 @@ def calculate_score_v2(
         revenue_growth_3y=contextual_values.get("revenue_cagr_3y"),
         eps_growth_3y=contextual_values.get("eps_cagr_3y"),
         fcf_growth_3y=contextual_values.get("fcf_cagr_3y"),
-        peg=ratio_values.get("peg"),
         is_growth_company=is_growth
     )
     
@@ -4356,6 +4435,7 @@ def dcf_sensitivity_analysis(
     growth_rate_range: tuple = (-0.05, 0.05, 0.025),  # (min_delta, max_delta, step)
     discount_rate_range: tuple = (-0.02, 0.02, 0.01),  # (min_delta, max_delta, step)
     terminal_growth: float = DCF_TERMINAL_GROWTH,
+    net_debt: Optional[float] = 0.0,
 ) -> Dict[str, Any]:
     """
     Genera una matriz de sensibilidad para análisis DCF.
@@ -4460,7 +4540,8 @@ def dcf_sensitivity_analysis(
                 shares_outstanding=shares_outstanding,
                 high_growth_rate=growth_rate,
                 terminal_growth=terminal_growth,
-                discount_rate=discount_rate
+                discount_rate=discount_rate,
+                net_debt=net_debt
             )
             
             fair_value = dcf_result.get("fair_value_per_share")

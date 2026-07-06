@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "lib"))
 from data_fetcher import FinancialDataService, InvalidSymbolError
 from financial_ratios import (
     calculate_all_ratios, calculate_score_v2, aggregate_alerts,
-    altman_z_score, piotroski_f_score, financial_health_score,
+    altman_z_score, piotroski_f_score,
     graham_number, margin_of_safety, dcf_multi_stage_dynamic,
     dcf_sensitivity_analysis, calculate_wacc, classify_company_type,
     detect_growth_company
@@ -391,6 +391,16 @@ def _compute_analysis(symbol: str) -> dict:
                 "quick_ratio": r("quick_ratio"),
                 "interest_coverage": safe_float(interest_cov),
                 "debt_to_assets": safe_float(debt_to_assets),
+                # Métricas que se calculaban en calculate_all_ratios pero nunca se
+                # exponían (el frontend solo lee key_metrics), así que se
+                # descartaban. net_debt_to_ebitda y cash_ratio son señales de
+                # solvencia/liquidez útiles; inventory_turnover ahora sí se calcula
+                # (COGS derivado). (Mostrarlas en la UI queda como follow-up de
+                # frontend; aquí quedan disponibles en el API.)
+                "net_debt_to_ebitda": r("net_debt_to_ebitda"),
+                "cash_ratio": r("cash_ratio"),
+                "net_debt": r("net_debt"),
+                "inventory_turnover": r("inventory_turnover"),
                 "dividend_yield": safe_float(div_yield),
                 "payout_ratio": safe_float(payout),
                 "eps": eps_val or r("eps"),
@@ -435,6 +445,55 @@ def _compute_analysis(symbol: str) -> dict:
             _sector_bench = _get_sector_benchmarks(mapped_sector)
             fin_dict["sector_pe"] = _sector_bench.get("pe")
             fin_dict["sector_ev_ebitda"] = _sector_bench.get("ev_ebitda")
+
+            # Señal de crecimiento para el scorer (categoría Crecimiento de 20 pts +
+            # is_growth + bonos GARP/growth-quality de valoración). El CAGR histórico
+            # a 3 años NO está en el critical path (el fetch de históricos se removió
+            # por latencia), así que revenue_cagr_3y/eps_cagr_3y llegaban SIEMPRE en
+            # None y toda la categoría corría inerte (is_growth siempre False). Usamos
+            # el crecimiento YoY de Yahoo (revenueGrowth/earningsGrowth, ya disponibles
+            # y en decimal) como proxy para activar el motor de crecimiento.
+            # TODO(fase C): CAGR 3Y real re-habilitando el fetch histórico.
+            if fin_dict.get("revenue_cagr_3y") is None:
+                _rev_g = safe_float(financials.revenue_growth_yoy)
+                if _rev_g is not None:
+                    fin_dict["revenue_cagr_3y"] = _rev_g
+            if fin_dict.get("eps_cagr_3y") is None:
+                _eps_g = safe_float(financials.earnings_growth_rate)
+                if _eps_g is not None:
+                    fin_dict["eps_cagr_3y"] = _eps_g
+
+            # ── Fase C: creación de valor (ROIC-WACC) y retorno al accionista ──
+            _is_financial = bool(mapped_sector and "financ" in mapped_sector.lower())
+            _beta_est = financials.beta if financials.beta is not None else 1.0
+            wacc_est = calculate_wacc(beta=_beta_est)
+            # Spread ROIC-WACC: mide si la empresa genera retornos por ENCIMA de su
+            # costo de capital (crea valor) o por debajo (lo destruye). No aplica a
+            # financieras (WACC no interpretable), igual que el DCF/Altman.
+            roic_wacc_spread = None
+            if roic is not None and wacc_est is not None and not _is_financial:
+                roic_wacc_spread = roic - wacc_est
+            # Buyback yield: reducción NETA de acciones vs el año previo (shares del
+            # _prior_year de Yahoo, ya usadas para Piotroski). Una emisión (dilución)
+            # da yield negativo, que es la señal correcta.
+            _prior_shares = safe_float((yinfo.get("_prior_year") or {}).get("shares")) if _has_yahoo else None
+            buyback_yield = None
+            if _prior_shares and shares_val and _prior_shares > 0:
+                buyback_yield = (_prior_shares - shares_val) / _prior_shares
+                # Guard de sanidad: un cambio anual de acciones fuera de ±25% casi
+                # siempre es un desajuste de fuente (las shares actuales y las del
+                # _prior_year de Yahoo pueden venir con definiciones distintas para
+                # algunos tickers, ej. JPM ~35%). Mejor None que un yield falso.
+                if abs(buyback_yield) > 0.25:
+                    buyback_yield = None
+            # Shareholder yield = dividendos + recompras netas.
+            shareholder_yield = None
+            if div_yield is not None or buyback_yield is not None:
+                shareholder_yield = (div_yield or 0.0) + (buyback_yield or 0.0)
+            result["key_metrics"]["wacc"] = safe_float(wacc_est)
+            result["key_metrics"]["roic_wacc_spread"] = safe_float(roic_wacc_spread)
+            result["key_metrics"]["buyback_yield"] = safe_float(buyback_yield)
+            result["key_metrics"]["shareholder_yield"] = safe_float(shareholder_yield)
 
             # v2.4: Inject derived metrics into ratios for scoring
             if earnings_yield is not None and ratios.get("earnings_yield") is None:
@@ -581,10 +640,14 @@ def _compute_analysis(symbol: str) -> dict:
                     "fiscal_year": fy_label,
                 }
 
-                # Financial health (for financial sector)
-                if mapped_sector and "financ" in mapped_sector.lower():
-                    fh_result = financial_health_score(fin_dict)
-                    result["financial_health"] = fh_result
+                # Financial health (sector financiero): NO se llama aquí.
+                # financial_health_score requiere 5+ argumentos (roa, roe,
+                # total_equity, total_assets, book_value, ...); pasarle un solo
+                # dict lanzaba TypeError (tragado por este except) y el campo
+                # quedaba null para todo banco/aseguradora. calculate_score_v2 ya
+                # lo calcula correctamente para financieras y lo expone como
+                # score_result["financial_health"], que se copia tras el bloque de
+                # score (más abajo).
             except Exception as e:
                 logger.error(f"Institutional metrics error: {e}")
 
@@ -604,7 +667,8 @@ def _compute_analysis(symbol: str) -> dict:
                     z_score_level=z_zone,
                     f_score_value=_f_for_score,
                     sector_key=mapped_sector,
-                    real_sector=sector
+                    real_sector=sector,
+                    wacc=wacc_est  # Fase C: spread ROIC-WACC en rentabilidad
                 )
                 # Normalize: the brain returns different structures, unify them
                 raw_score = score_result.get("score", 0) if isinstance(score_result, dict) else 0
@@ -629,6 +693,12 @@ def _compute_analysis(symbol: str) -> dict:
                     "level": raw_level,
                     "breakdown": breakdown,
                 }
+
+                # Financial health (sector financiero): calculate_score_v2 ya lo
+                # computó correctamente con los argumentos correctos; exponerlo
+                # como {score, level, interpretation, details} para el frontend.
+                if isinstance(score_result, dict) and score_result.get("financial_health"):
+                    result["financial_health"] = score_result["financial_health"]
             except Exception as e:
                 logger.error(f"Score calculation error: {e}")
                 result["score"] = None
@@ -644,8 +714,12 @@ def _compute_analysis(symbol: str) -> dict:
                 result["graham_number"] = safe_float(graham)
 
                 if graham and price:
+                    # margin_of_safety(intrinsic_value, current_price): el Graham
+                    # Number ES el valor intrínseco y price el precio de mercado.
+                    # Antes los argumentos estaban invertidos, dando el signo al
+                    # revés (una acción sobrevalorada mostraba margen positivo).
                     result["graham_margin"] = safe_float(
-                        margin_of_safety(price, graham)
+                        margin_of_safety(graham, price)
                     )
 
                 # DCF — skip for financials: FCF is ill-defined for banks/insurers
@@ -663,20 +737,39 @@ def _compute_analysis(symbol: str) -> dict:
                     wacc = calculate_wacc(beta=beta)
                     growth = financials.revenue_growth_yoy or 0.10
 
+                    # Deuda neta para el puente Enterprise Value -> Equity Value.
+                    # Sin esto, el DCF dividía el enterprise value entre acciones sin
+                    # descontar la deuda, sobrevalorando a las empresas apalancadas.
+                    _net_debt = None
+                    if td_val is not None or cash_val is not None:
+                        _net_debt = (td_val or 0.0) - (cash_val or 0.0)
+
                     dcf_result = dcf_multi_stage_dynamic(
                         fcf=fcf,
                         shares_outstanding=financials.shares_outstanding,
                         beta=beta,
+                        total_debt=td_val,
+                        cash=cash_val,
                         revenue_growth_3y=min(growth, 0.50),
                     )
+                    # upside y margin_of_safety se calculan aquí (price está en
+                    # scope). El dict del DCF nunca tuvo claves 'upside_pct' ni
+                    # 'margin_of_safety_value', así que antes ambos quedaban None.
+                    # value_composition vive dentro de model_result, no en el nivel
+                    # superior. Con el fair_value ya corregido (equity value), el
+                    # upside es real.
+                    _fv = safe_float(dcf_result.get("fair_value_per_share"))
+                    _dcf_upside = ((_fv - price) / price * 100.0) if (_fv is not None and price and price > 0) else None
+                    _dcf_mos = ((_fv - price) / _fv) if (_fv not in (None, 0)) else None
+                    _dcf_model = dcf_result.get("model_result") or {}
                     result["dcf"] = {
-                        "fair_value": safe_float(dcf_result.get("fair_value_per_share")),
+                        "fair_value": _fv,
                         "wacc": safe_float(wacc),
                         "growth_rate": safe_float(growth),
                         "terminal_growth": safe_float(getattr(config, "DCF_TERMINAL_GROWTH", 0.025)),
-                        "margin_of_safety": safe_float(dcf_result.get("margin_of_safety_value")),
-                        "upside": safe_float(dcf_result.get("upside_pct")),
-                        "value_composition": dcf_result.get("value_composition"),
+                        "margin_of_safety": safe_float(_dcf_mos),
+                        "upside": safe_float(_dcf_upside),
+                        "value_composition": _dcf_model.get("value_composition"),
                     }
 
                     # Sensitivity
@@ -687,6 +780,7 @@ def _compute_analysis(symbol: str) -> dict:
                             current_price=price,
                             base_growth_rate=min(growth, 0.50),
                             base_discount_rate=wacc or 0.10,
+                            net_debt=_net_debt or 0.0,
                         )
                         result["sensitivity"] = sens
                     except Exception as e:
