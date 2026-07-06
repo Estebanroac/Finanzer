@@ -4,17 +4,70 @@ import type { StockAnalysis } from "@/lib/api";
 import { getScoreColor } from "@/lib/api";
 import InfoTooltip from "@/components/InfoTooltip";
 import { EVALUATION } from "@/lib/tooltips";
+import { useGrow } from "@/lib/useGrow";
 
 export default function EvaluationTab({ data }: { data: StockAnalysis }) {
   const alerts = data.alerts;
   const score = data.score;
   const altmanZ = data.altman_z;
   const piotroskiF = data.piotroski_f;
+  const finHealth = data.financial_health;
+  const grown = useGrow();
 
   return (
-    <div className="space-y-8">
+    <div className={`space-y-8 ${grown ? "viz-in" : ""}`}>
+      {/* Radar del perfil + desglose compacto */}
+      {score?.breakdown && Object.keys(score.breakdown).length >= 3 && (
+        <div className="grid grid-cols-1 md:grid-cols-[minmax(0,300px)_1fr] gap-4 items-stretch">
+          <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 p-5 flex flex-col">
+            <div className="flex items-center justify-between mb-1">
+              <h4 className="text-xs text-zinc-500 uppercase tracking-widest font-medium">
+                Perfil del análisis
+              </h4>
+              <span className="pf-hint">forma de fortalezas</span>
+            </div>
+            <div className="flex-1 grid place-items-center py-2">
+              <CategoryRadar breakdown={score.breakdown} />
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 p-5">
+            <h4 className="text-xs text-zinc-500 uppercase tracking-widest mb-4 font-medium">
+              Desglose del score · {score.total_score} / {score.max_score}
+            </h4>
+            <div className="space-y-3.5">
+              {Object.entries(score.breakdown).map(([key, cat]) => {
+                const pct = cat.max > 0 ? (cat.score / cat.max) * 100 : 0;
+                const color = getScoreColor(pct);
+                return (
+                  <div key={key}>
+                    <div className="flex items-baseline justify-between mb-1.5">
+                      <span className="text-sm text-zinc-300">{key}</span>
+                      <span className="text-sm font-semibold tabular-nums" style={{ color }}>
+                        {cat.score} <span className="text-zinc-600 font-normal">/ {cat.max}</span>
+                      </span>
+                    </div>
+                    <div className="h-1.5 bg-white/[0.05] rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: grown ? `${pct}%` : 0,
+                          background: color,
+                          transition: "width 1s cubic-bezier(0.16,1,0.3,1)",
+                        }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Institutional metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {finHealth && <FinancialHealthCard data={finHealth} />}
         {altmanZ && <ZScoreCard data={altmanZ} />}
         {piotroskiF && <FScoreCard data={piotroskiF} />}
       </div>
@@ -122,6 +175,97 @@ export default function EvaluationTab({ data }: { data: StockAnalysis }) {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+/* ── Radar: los 5 ejes = categorías del score (0..20) ── */
+function CategoryRadar({ breakdown }: { breakdown: NonNullable<StockAnalysis["score"]>["breakdown"] }) {
+  const PREFERRED = ["Valoración", "Rentabilidad", "Solidez Financiera", "Calidad de Ganancias", "Crecimiento"];
+  const entries = Object.entries(breakdown);
+  const ordered = [
+    ...PREFERRED.map(name => entries.find(([k]) => k === name)).filter(Boolean) as typeof entries,
+    ...entries.filter(([k]) => !PREFERRED.includes(k)),
+  ].slice(0, 5);
+  if (ordered.length < 3) return null;
+
+  const CX = 110, CY = 104, R = 74;
+  const n = ordered.length;
+  const angle = (i: number) => (-90 + (i * 360) / n) * (Math.PI / 180);
+  const pt = (i: number, r: number) => [CX + r * Math.cos(angle(i)), CY + r * Math.sin(angle(i))] as const;
+  const poly = (r: number) => ordered.map((_, i) => pt(i, r).map(v => v.toFixed(1)).join(",")).join(" ");
+
+  const SHORT: Record<string, string> = {
+    "Valoración": "Valoración", "Rentabilidad": "Rentabilidad", "Solidez Financiera": "Solidez",
+    "Calidad de Ganancias": "Calidad", "Crecimiento": "Crecimiento",
+  };
+
+  const areaPoints = ordered
+    .map(([, cat], i) => {
+      const frac = cat.max > 0 ? Math.max(0.04, cat.score / cat.max) : 0.04;
+      return pt(i, R * frac).map(v => v.toFixed(1)).join(",");
+    })
+    .join(" ");
+
+  return (
+    <svg viewBox="0 0 220 208" className="radar-svg">
+      <g>
+        {[0.25, 0.5, 0.75, 1].map(k => (
+          <polygon key={k} className="rd-ring" points={poly(R * k)} />
+        ))}
+        {ordered.map((_, i) => {
+          const [x, y] = pt(i, R);
+          return <line key={i} className="rd-axis" x1={CX} y1={CY} x2={x} y2={y} />;
+        })}
+      </g>
+      <polygon className="rd-area" points={areaPoints} />
+      {ordered.map(([, cat], i) => {
+        const frac = cat.max > 0 ? Math.max(0.04, cat.score / cat.max) : 0.04;
+        const [x, y] = pt(i, R * frac);
+        return <circle key={i} className="rd-dot" cx={x} cy={y} r={3} />;
+      })}
+      <g>
+        {ordered.map(([key], i) => {
+          const [x, y] = pt(i, R + 22);
+          const cos = Math.cos(angle(i));
+          const anchor = Math.abs(cos) < 0.3 ? "middle" : cos > 0 ? "start" : "end";
+          return (
+            <text key={key} className="rd-lab" x={x.toFixed(1)} y={(y + 3).toFixed(1)} textAnchor={anchor}>
+              {SHORT[key] || key}
+            </text>
+          );
+        })}
+      </g>
+    </svg>
+  );
+}
+
+/* ── Salud financiera (sector financiero: reemplaza al Altman) ── */
+function FinancialHealthCard({ data }: { data: { score: number; level: string; interpretation?: string } }) {
+  const color = data.level === "STRONG" || data.level === "GOOD" ? "#0cc06c"
+    : data.level === "NEUTRAL" ? "#fbbf24" : "#ff4d4d";
+  const label = data.level === "STRONG" ? "Muy sólida" : data.level === "GOOD" ? "Buena"
+    : data.level === "NEUTRAL" ? "Neutral" : "Débil";
+  return (
+    <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 p-5">
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-sm text-zinc-400 font-medium">Salud Financiera · sector financiero</span>
+        <span
+          className="text-[10px] font-semibold px-2 py-0.5 rounded-md"
+          style={{ background: `${color}15`, color, border: `1px solid ${color}25` }}
+        >
+          {label}
+        </span>
+      </div>
+      <div className="text-4xl font-black tabular-nums mb-2" style={{ color }}>
+        {data.score}<span className="text-lg text-zinc-600 font-normal">/10</span>
+      </div>
+      {data.interpretation && (
+        <p className="text-xs text-zinc-500 leading-relaxed">{data.interpretation}</p>
+      )}
+      <p className="text-[10px] text-zinc-600 mt-2">
+        Evalúa ROA/ROE bancarios, apalancamiento, crecimiento del valor en libros y dividendo.
+      </p>
     </div>
   );
 }

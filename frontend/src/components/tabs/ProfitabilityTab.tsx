@@ -1,75 +1,189 @@
 "use client";
 
 import { formatPercent, formatNumber, type StockAnalysis } from "@/lib/api";
-import InfoTooltip, { type TooltipContent } from "@/components/InfoTooltip";
+import InfoTooltip from "@/components/InfoTooltip";
 import { PROFITABILITY } from "@/lib/tooltips";
+import { getSectorBenchmarks } from "@/lib/sectorBench";
+import { useGrow } from "@/lib/useGrow";
 
-function Row({ label, value, hint, tooltip }: { label: string; value: string; hint?: string; tooltip?: TooltipContent }) {
-  const isNA = value === "N/A";
+/** Retorno de la empresa vs el sector: barra de marca + fantasma del sector. */
+function RetRow({ label, value, bench, grown, tooltip }: {
+  label: string;
+  value: number | null;
+  bench: number | null;
+  grown: boolean;
+  tooltip?: (typeof PROFITABILITY)[keyof typeof PROFITABILITY];
+}) {
+  if (value == null) return null;
+  const negative = value < 0;
+  const hasBench = bench != null && bench > 0;
+  const scale = Math.max(Math.abs(value), hasBench ? bench : 0) * 1.05 || 1;
+  const fillPct = negative ? 0 : Math.min(100, (value / scale) * 100);
+  const secPct = hasBench ? Math.min(100, (bench / scale) * 100) : 0;
+  const mult = hasBench && !negative && bench > 0 ? value / bench : null;
+
   return (
-    <div className="flex items-center justify-between py-3 border-b border-white/[0.04] last:border-0">
-      <div className="flex items-center gap-1.5">
-        <span className="text-sm text-zinc-300">{label}</span>
-        {hint && <span className="text-xs text-zinc-600">{hint}</span>}
-        {tooltip && <InfoTooltip content={tooltip} />}
+    <div className="pf-ret">
+      <div className="pf-ret-top">
+        <span className="lab flex items-center gap-1.5">
+          {label}
+          {tooltip && <InfoTooltip content={tooltip} />}
+        </span>
+        <span className="cmp">
+          <b className={negative ? "neg" : ""}>{formatPercent(value)}</b>
+          {mult != null && <span className="mult">{mult.toFixed(1)}× sector</span>}
+          {negative && <span className="mult">equity negativo por recompras</span>}
+        </span>
       </div>
-      <span className={`text-sm font-semibold tabular-nums ${isNA ? "text-zinc-600" : "text-white"}`}>
-        {value}
-      </span>
+      <div className="pf-ret-track">
+        {hasBench && <div className="pf-ret-sector" style={{ width: grown ? `${secPct}%` : 0 }} />}
+        <div className="pf-ret-fill" style={{ width: grown ? `${fillPct}%` : 0 }} />
+        {hasBench && (
+          <span className="pf-ret-secmark" style={{ left: `${secPct}%` }}>
+            {(bench * 100).toFixed(0)}%
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Paso de la cascada: % del ingreso que sobrevive + monto $ + franja perdida. */
+function FallStep({ label, amount, pct, prevPct, grown, isBase, isNet }: {
+  label: string;
+  amount: number | null;
+  pct: number;          // 0..100
+  prevPct: number | null;
+  grown: boolean;
+  isBase?: boolean;
+  isNet?: boolean;
+}) {
+  const lost = prevPct != null && prevPct > pct ? prevPct - pct : 0;
+  return (
+    <div className={`pf-step ${isNet ? "pf-step--net" : ""}`}>
+      <div className="pf-step-top">
+        <span className="lab">{label}</span>
+        <span className="v" style={isNet ? { color: "var(--brand)" } : undefined}>
+          {amount != null && <span className="pf-amt">{formatNumber(amount)}</span>}
+          {pct.toFixed(1)}%
+        </span>
+      </div>
+      <div className="pf-step-track">
+        {lost > 0 && <div className="pf-lost" style={{ left: `${pct}%`, width: `${lost}%` }} />}
+        <div
+          className={`pf-step-fill ${isBase ? "pf-step-fill--base" : ""}`}
+          style={{
+            width: grown ? `${pct}%` : 0,
+            ...(isNet ? { background: "linear-gradient(90deg, var(--brand), #35d68f)" } : {}),
+          }}
+        />
+      </div>
     </div>
   );
 }
 
 export default function ProfitabilityTab({ data }: { data: StockAnalysis }) {
   const m = data.key_metrics;
+  const b = getSectorBenchmarks(data.sector_info?.mapped_sector || "default");
+  const grown = useGrow();
+
+  const rev = m.revenue;
+  // pasos de la cascada (solo los que tienen margen disponible), orden de erosión
+  const steps: Array<{ label: string; margin: number | null; amount: number | null }> = [
+    { label: "Margen Bruto", margin: m.gross_margin, amount: rev != null && m.gross_margin != null ? rev * m.gross_margin : null },
+    { label: "Margen EBITDA", margin: m.ebitda_margin, amount: m.ebitda ?? (rev != null && m.ebitda_margin != null ? rev * m.ebitda_margin : null) },
+    { label: "Margen Operativo", margin: m.operating_margin, amount: m.operating_income ?? (rev != null && m.operating_margin != null ? rev * m.operating_margin : null) },
+    { label: "Margen Neto", margin: m.net_margin, amount: m.net_income },
+  ].filter(s => s.margin != null);
+
+  const spread = m.roic_wacc_spread;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-      {/* Returns */}
-      <div>
-        <h4 className="text-xs text-zinc-500 uppercase tracking-widest mb-3 font-medium">
-          Retornos sobre capital
-        </h4>
-        <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 px-5">
-          <Row label="ROE" value={formatPercent(m.roe)} tooltip={PROFITABILITY.roe} />
-          <Row label="ROA" value={formatPercent(m.roa)} tooltip={PROFITABILITY.roa} />
-          <Row label="ROIC" value={formatPercent(m.roic)} tooltip={PROFITABILITY.roic} />
-          <Row label="EPS" value={m.eps != null ? `$${m.eps.toFixed(2)}` : "N/A"} tooltip={PROFITABILITY.eps} />
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+      {/* Retornos sobre el capital vs sector */}
+      <div className={`rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 px-5 py-4 ${grown ? "viz-in" : ""}`}>
+        <div className="flex items-center justify-between mb-2">
+          <h4 className="text-xs text-zinc-500 uppercase tracking-widest font-medium">
+            Retornos sobre el capital
+          </h4>
+          <span className="pf-legend">
+            <i className="pf-swatch pf-swatch--co" />{data.symbol || "Empresa"}
+            <i className="pf-swatch pf-swatch--sec" />Sector
+          </span>
+        </div>
+        <RetRow label="ROE" value={m.roe} bench={b.roe} grown={grown} tooltip={PROFITABILITY.roe} />
+        <RetRow label="ROIC" value={m.roic} bench={b.roic} grown={grown} tooltip={PROFITABILITY.roic} />
+        <RetRow label="ROA" value={m.roa} bench={b.roa} grown={grown} tooltip={PROFITABILITY.roa} />
+
+        {/* Creación de valor: ROIC vs costo de capital */}
+        {spread != null && m.wacc != null && (
+          <div
+            className="mt-3 flex items-center gap-2.5 rounded-lg px-3.5 py-2.5 text-xs"
+            style={{
+              background: spread >= 0 ? "rgba(12,192,108,0.07)" : "rgba(255,69,58,0.07)",
+              border: `1px solid ${spread >= 0 ? "rgba(12,192,108,0.2)" : "rgba(255,69,58,0.2)"}`,
+            }}
+          >
+            <span
+              className="w-1.5 h-1.5 rounded-full shrink-0"
+              style={{ background: spread >= 0 ? "var(--pos)" : "var(--neg)" }}
+            />
+            <span className="text-zinc-400">
+              ROIC − WACC:{" "}
+              <b style={{ color: spread >= 0 ? "var(--pos)" : "var(--neg)" }}>
+                {spread >= 0 ? "+" : ""}{(spread * 100).toFixed(1)} pp
+              </b>{" "}
+              {spread >= 0.03 ? "— crea valor sobre su costo de capital" :
+               spread >= 0 ? "— apenas cubre su costo de capital" :
+               "— no cubre su costo de capital"}
+              <span className="text-zinc-600"> (WACC {(m.wacc * 100).toFixed(1)}%)</span>
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Cascada de márgenes con montos $ */}
+      <div className={`rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 px-5 py-4 ${grown ? "viz-in" : ""}`}>
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-xs text-zinc-500 uppercase tracking-widest font-medium">Márgenes</h4>
+          <span className="pf-hint">de cada $1 de ingreso</span>
+        </div>
+        <div className="pf-fall">
+          <FallStep label="Ingreso" amount={rev} pct={100} prevPct={null} grown={grown} isBase />
+          {steps.map((s, i) => (
+            <FallStep
+              key={s.label}
+              label={s.label}
+              amount={s.amount}
+              pct={(s.margin as number) * 100}
+              prevPct={i === 0 ? 100 : (steps[i - 1].margin as number) * 100}
+              grown={grown}
+              isNet={i === steps.length - 1}
+            />
+          ))}
         </div>
       </div>
 
-      {/* Margins */}
-      <div>
-        <h4 className="text-xs text-zinc-500 uppercase tracking-widest mb-3 font-medium">
-          Márgenes
-        </h4>
-        <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 px-5">
-          <Row label="Margen Bruto" value={formatPercent(m.gross_margin)} tooltip={PROFITABILITY.gross_margin} />
-          <Row label="Margen Operativo" value={formatPercent(m.operating_margin)} tooltip={PROFITABILITY.operating_margin} />
-          <Row label="Margen Neto" value={formatPercent(m.net_margin)} tooltip={PROFITABILITY.net_margin} />
-          <Row label="Margen EBITDA" value={formatPercent(m.ebitda_margin)} tooltip={PROFITABILITY.ebitda_margin} />
-        </div>
-      </div>
-
-      {/* Absolutes — full width */}
-      <div className="md:col-span-2">
-        <h4 className="text-xs text-zinc-500 uppercase tracking-widest mb-3 font-medium">
-          Resultados
-        </h4>
-        <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 px-5">
-          <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-white/[0.04]">
-            <div className="py-4 sm:pr-6">
-              <div className="text-xs text-zinc-500 mb-1">Revenue</div>
-              <div className="text-xl font-bold text-white tabular-nums">{formatNumber(m.revenue)}</div>
+      {/* Resultados absolutos */}
+      <div className="md:col-span-2 rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 px-5">
+        <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-white/[0.04]">
+          <div className="py-4 sm:pr-6">
+            <div className="text-xs text-zinc-500 mb-1">Revenue</div>
+            <div className="text-lg font-bold text-white tabular-nums">{formatNumber(m.revenue)}</div>
+          </div>
+          <div className="py-4 sm:px-6">
+            <div className="text-xs text-zinc-500 mb-1">EBITDA</div>
+            <div className="text-lg font-bold text-white tabular-nums">{formatNumber(m.ebitda)}</div>
+          </div>
+          <div className="py-4 sm:px-6">
+            <div className="text-xs text-zinc-500 mb-1">Ingreso Neto</div>
+            <div className="text-lg font-bold text-white tabular-nums">{formatNumber(m.net_income)}</div>
+          </div>
+          <div className="py-4 sm:pl-6">
+            <div className="text-xs text-zinc-500 mb-1 flex items-center gap-1">
+              Free Cash Flow
             </div>
-            <div className="py-4 sm:px-6">
-              <div className="text-xs text-zinc-500 mb-1">EBITDA</div>
-              <div className="text-xl font-bold text-white tabular-nums">{formatNumber(m.ebitda)}</div>
-            </div>
-            <div className="py-4 sm:pl-6">
-              <div className="text-xs text-zinc-500 mb-1">Ingreso Neto</div>
-              <div className="text-xl font-bold text-white tabular-nums">{formatNumber(m.net_income)}</div>
-            </div>
+            <div className="text-lg font-bold text-white tabular-nums">{formatNumber(m.free_cash_flow)}</div>
           </div>
         </div>
       </div>
