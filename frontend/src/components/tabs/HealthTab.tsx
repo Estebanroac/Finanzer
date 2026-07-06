@@ -88,9 +88,9 @@ export default function HealthTab({ data }: { data: StockAnalysis }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
         {/* ── Liquidez: gauges vs umbral 1.0x ── */}
         <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 px-5 py-4">
-          <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center justify-between gap-3 mb-1">
             <h4 className="text-xs text-zinc-500 uppercase tracking-widest font-medium">Liquidez</h4>
-            <span className={`sol-tag ${liqTone}`}>{liqLabel}</span>
+            <span className={`sol-tag shrink-0 ${liqTone}`}>{liqLabel}</span>
           </div>
           <Gauge label="Current Ratio" value={m.current_ratio} tone={curTone ?? "warn"}
             scaleMax={2} mark={1} markLabel="1.0" grown={grown} tooltip={HEALTH.current_ratio} />
@@ -106,9 +106,9 @@ export default function HealthTab({ data }: { data: StockAnalysis }) {
 
         {/* ── Apalancamiento: donut + cobertura + deuda neta ── */}
         <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 px-5 py-4">
-          <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center justify-between gap-3 mb-1">
             <h4 className="text-xs text-zinc-500 uppercase tracking-widest font-medium">Apalancamiento</h4>
-            <span className={`sol-tag ${levTone}`}>{levLabel}</span>
+            <span className={`sol-tag shrink-0 ${levTone}`}>{levLabel}</span>
           </div>
 
           {daPct != null && (

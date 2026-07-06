@@ -256,7 +256,7 @@ function AnalysisContent({ data, symbol }: { data: StockAnalysis; symbol: string
   );
 }
 
-/* ── Quick Summary — narrative explanation ── */
+/* ── Resumen del análisis: bloques etiquetados adaptativos (como el PDF) ── */
 function QuickSummary({ data }: { data: StockAnalysis }) {
   const m = data.key_metrics || {};
   const price = data.price;
@@ -264,58 +264,85 @@ function QuickSummary({ data }: { data: StockAnalysis }) {
   const score = data.score;
   const alerts = data.alerts;
 
-  const insights: string[] = [];
+  const items: Array<{ label: string; text: React.ReactNode }> = [];
 
-  // Score insight
   if (score) {
     const pct = Math.round((score.total_score / score.max_score) * 100);
-    if (pct >= 75) insights.push(`Obtiene una puntuación de ${pct}/100, indicando fundamentos sólidos.`);
-    else if (pct >= 50) insights.push(`Puntuación de ${pct}/100 — fundamentos aceptables con áreas de mejora.`);
-    else insights.push(`Puntuación baja de ${pct}/100 — se identifican varios riesgos.`);
+    items.push({
+      label: "Puntuación",
+      text: <>Obtiene <b className="text-white">{pct}/100</b>{" "}
+        {pct >= 75 ? "— fundamentos sólidos en la mayoría de categorías."
+          : pct >= 50 ? "— fundamentos aceptables con áreas de mejora."
+          : "— se identifican varios frentes de riesgo."}</>,
+    });
   }
 
-  // Valuation
   if (m.pe && m.pe > 0) {
-    if (m.pe > 40) insights.push(`Cotiza a ${m.pe.toFixed(1)}x beneficios, lo que refleja altas expectativas de crecimiento.`);
-    else if (m.pe > 20) insights.push(`P/E de ${m.pe.toFixed(1)}x — valoración moderada.`);
-    else insights.push(`P/E de ${m.pe.toFixed(1)}x — valoración atractiva respecto al mercado.`);
+    items.push({
+      label: "Valoración",
+      text: <>El mercado paga <b className="text-white">{m.pe.toFixed(1)}x</b> beneficios
+        {m.pe > 40 ? " — expectativas de crecimiento muy exigentes."
+          : m.pe > 20 ? " — valoración moderada." : " — valoración atractiva."}</>,
+    });
   }
 
-  // Profitability
-  if (m.net_margin != null && m.net_margin > 0) {
-    const nm = m.net_margin * 100;
-    if (nm > 30) insights.push(`Margen neto excepcional del ${nm.toFixed(1)}%, superior al promedio del mercado.`);
-    else if (nm > 10) insights.push(`Margen neto sólido del ${nm.toFixed(1)}%.`);
+  if (m.roic_wacc_spread != null) {
+    const sp = m.roic_wacc_spread * 100;
+    items.push({
+      label: "Creación de valor",
+      text: <>ROIC − WACC de{" "}
+        <b style={{ color: sp >= 0 ? "#0cc06c" : "#ff453a" }}>{sp >= 0 ? "+" : ""}{sp.toFixed(1)} pp</b>
+        {sp >= 3 ? " — cada dólar reinvertido crea valor." : sp >= 0 ? " — apenas cubre su costo de capital." : " — no cubre su costo de capital."}</>,
+    });
+  } else if (m.net_margin != null && m.net_margin > 0.1) {
+    items.push({
+      label: "Rentabilidad",
+      text: <>Margen neto {m.net_margin > 0.3 ? "excepcional" : "sólido"} del{" "}
+        <b className="text-white">{(m.net_margin * 100).toFixed(1)}%</b>.</>,
+    });
   }
 
-  // DCF
   if (dcf?.fair_value && price) {
     const upside = ((dcf.fair_value - price) / price) * 100;
-    if (upside > 15) insights.push(`El modelo DCF sugiere un valor justo de ${formatPrice(dcf.fair_value)}, un ${upside.toFixed(0)}% por encima del precio actual.`);
-    else if (upside < -15) insights.push(`Según el DCF, el precio actual supera el valor justo estimado de ${formatPrice(dcf.fair_value)}.`);
+    items.push({
+      label: "Valor intrínseco",
+      text: upside > 15
+        ? <>El DCF estima <b className="text-white">{formatPrice(dcf.fair_value)}</b> — un potencial teórico de <b style={{ color: "#0cc06c" }}>+{upside.toFixed(0)}%</b>.</>
+        : upside < -15
+        ? <>El precio supera el valor justo estimado de <b className="text-white">{formatPrice(dcf.fair_value)}</b> — el DCF exige escenarios optimistas.</>
+        : <>Cotiza en torno a su valor justo estimado (<b className="text-white">{formatPrice(dcf.fair_value)}</b>).</>,
+    });
   }
 
-  // Risk count
-  if (alerts) {
-    const riskCount = (alerts.red_flags?.length || 0);
-    const strengthCount = (alerts.strengths?.length || 0);
-    if (riskCount > 0 && strengthCount > 0) {
-      insights.push(`Se identifican ${riskCount} riesgo${riskCount > 1 ? "s" : ""} y ${strengthCount} fortaleza${strengthCount > 1 ? "s" : ""}.`);
-    } else if (strengthCount > 3) {
-      insights.push(`Se destacan ${strengthCount} fortalezas sin señales de riesgo significativas.`);
-    }
+  const nRed = alerts?.red_flags?.length || 0;
+  const nWarn = alerts?.warnings?.length || 0;
+  const nStr = alerts?.strengths?.length || 0;
+  if (nRed + nWarn + nStr > 0) {
+    items.push({
+      label: "Balance de señales",
+      text: <>
+        <b style={{ color: "#0cc06c" }}>{nStr}</b> fortaleza{nStr !== 1 && "s"} ·{" "}
+        <b style={{ color: "#ffd60a" }}>{nWarn}</b> advertencia{nWarn !== 1 && "s"} ·{" "}
+        <b style={{ color: "#ff453a" }}>{nRed}</b> riesgo{nRed !== 1 && "s"}
+      </>,
+    });
   }
 
-  if (insights.length === 0) return null;
+  if (items.length === 0) return null;
 
   return (
     <div className="mb-10 rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 px-6 py-5 fade-up delay-3">
-      <h3 className="text-xs text-zinc-500 uppercase tracking-widest mb-3 font-medium">
+      <h3 className="text-xs text-zinc-500 uppercase tracking-widest mb-4 font-medium">
         Resumen del análisis
       </h3>
-      <div className="space-y-2">
-        {insights.map((text, i) => (
-          <p key={i} className="text-sm text-zinc-300 leading-relaxed">{text}</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-4">
+        {items.map(({ label, text }) => (
+          <div key={label}>
+            <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#0cc06c] mb-1">
+              {label}
+            </div>
+            <p className="text-sm text-zinc-300 leading-relaxed">{text}</p>
+          </div>
         ))}
       </div>
     </div>
