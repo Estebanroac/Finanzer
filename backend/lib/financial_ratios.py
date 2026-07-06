@@ -3545,7 +3545,9 @@ def score_rentabilidad(
     operating_margin: Optional[float],
     net_margin: Optional[float],
     sector_roe_threshold: float = 0.12,
-    sector_roa_threshold: float = 0.03
+    sector_roa_threshold: float = 0.03,
+    roic: Optional[float] = None,
+    wacc: Optional[float] = None
 ) -> Dict[str, Any]:
     """
     Categoría 2: Rentabilidad (20 pts máximo)
@@ -3673,9 +3675,34 @@ def score_rentabilidad(
         
         base_score += adj
         adjustments.append({"metric": "Margen Neto", "value": f"{net_margin:.1%}", "adjustment": adj, "reason": reason, "severity": sev})
-    
+
+    # ROIC - WACC spread (hasta ±3): ¿la empresa genera retornos por encima de su
+    # costo de capital? Es el filtro de CREACIÓN DE VALOR económico que faltaba: el
+    # ROE/ROA se miden contra umbrales absolutos, así una empresa con ROE alto puede
+    # DESTRUIR valor si su WACC es mayor. Señal moderada para complementar (no
+    # duplicar) el ROE. No aplica a financieras (se pasa wacc=None para ellas).
+    if roic is not None and wacc is not None:
+        spread = roic - wacc
+        if spread >= 0.10:
+            adj = 3; sev = "excellent"
+            reason = f"Crea mucho valor (ROIC {roic:.1%} vs WACC {wacc:.1%}, spread +{spread:.1%})"
+        elif spread >= 0.03:
+            adj = 2; sev = "good"
+            reason = f"Crea valor (ROIC {roic:.1%} > WACC {wacc:.1%}, spread +{spread:.1%})"
+        elif spread >= 0:
+            adj = 1; sev = "ok"
+            reason = f"Retorno por encima del costo de capital (spread +{spread:.1%})"
+        elif spread >= -0.03:
+            adj = -1; sev = "moderate"
+            reason = f"Retorno apenas por debajo del costo de capital (spread {spread:.1%})"
+        else:
+            adj = -3; sev = "severe"
+            reason = f"Destruye valor (ROIC {roic:.1%} < WACC {wacc:.1%}, spread {spread:.1%})"
+        base_score += adj
+        adjustments.append({"metric": "ROIC vs WACC", "value": f"{spread:+.1%}", "adjustment": adj, "reason": reason, "severity": sev})
+
     final_score = max(0, min(20, base_score))
-    
+
     return {
         "category": "Rentabilidad",
         "emoji": "💰",
@@ -4223,7 +4250,8 @@ def calculate_score_v2(
     z_score_level: str = "N/A",
     f_score_value: Optional[int] = None,
     sector_key: str = "default",
-    real_sector: str = ""  # Sector real de Yahoo Finance
+    real_sector: str = "",  # Sector real de Yahoo Finance
+    wacc: Optional[float] = None  # Para el spread ROIC-WACC en rentabilidad
 ) -> Dict[str, Any]:
     """
     Sistema de Scoring v2.3 - Adaptativo Growth/Value + Sector Financiero
@@ -4302,7 +4330,10 @@ def calculate_score_v2(
         operating_margin=ratio_values.get("operating_margin"),
         net_margin=ratio_values.get("net_margin"),
         sector_roe_threshold=thresholds.roe_low,
-        sector_roa_threshold=thresholds.roa_low
+        sector_roa_threshold=thresholds.roa_low,
+        roic=ratio_values.get("roic"),
+        # WACC no es interpretable para financieras -> sin señal de spread ahí.
+        wacc=(None if is_financial else wacc)
     )
     
     # v2.4: Pasar datos de crecimiento + forward metrics a valoración
