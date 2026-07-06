@@ -2593,47 +2593,44 @@ def detect_growth_company(ratio_values: Dict, contextual_values: Dict) -> bool:
 
 
 def get_sector_specific_adjustments(sector: str) -> Dict[str, Any]:
-    """Retorna ajustes específicos por sector para el scoring."""
-    
+    """Ajustes por sector para el motor de alertas (aggregate_alerts).
+
+    Solo contiene claves que el consumidor realmente lee (ignore_pe,
+    ignore_debt_equity, pe_weight, margin_weight, growth_weight,
+    dividend_weight, fcf_negative_tolerance, fcf_less_relevant,
+    growth_less_relevant). La auditoría sectorial 2026-07 eliminó 7 claves
+    inertes (pe_tolerance, pe_max, ev_ebitda_weight, debt_equity_max,
+    pb_relevant, typical_roe, cyclical_adjustment) que ningún código leía.
+    """
     adjustments = {
-        # Financieros: Deuda alta es normal, P/B es más relevante que P/E
+        # Financieros: Deuda alta es normal, P/E pesa menos
         "financials": {
             "ignore_debt_equity": True,  # No penalizar D/E alto
-            "debt_equity_max": 15.0,  # Umbral muy alto
             "pe_weight": 0.5,  # Reducir peso del P/E
-            "pb_relevant": True,  # P/B es importante
-            "typical_roe": 0.12,
         },
         # REITs: P/E no relevante, dividendos son clave
         "real_estate": {
             "ignore_pe": True,  # No usar P/E
             "dividend_weight": 2.0,  # Doble peso a dividendos
-            "debt_equity_max": 1.5,
             "fcf_less_relevant": True,  # FFO es mejor que FCF
         },
-        # Utilities: Deuda alta normal, dividendos importantes
+        # Utilities: dividendos importantes, crecimiento menos relevante
         "utilities": {
-            "debt_equity_max": 2.0,
             "dividend_weight": 1.5,
-            "pe_max": 25,  # P/E típicamente más alto
             "growth_less_relevant": True,
         },
-        # Tecnología: Crecimiento más importante, tolerar P/E alto
+        # Tecnología: Crecimiento más importante
         "technology": {
-            "pe_tolerance": 1.5,  # Tolerar P/E 50% más alto
             "growth_weight": 1.5,  # Más peso al crecimiento
             "fcf_negative_tolerance": True,  # Si crece, FCF neg es ok
         },
-        # Healthcare/Biotech: Alta variabilidad, márgenes importantes
+        # Healthcare/Biotech: márgenes importantes
         "healthcare": {
-            "pe_tolerance": 1.3,
             "margin_weight": 1.3,
         },
-        # Energía: Cíclico, EV/EBITDA más relevante
+        # Energía: cíclico, P/E pesa menos
         "energy": {
-            "ev_ebitda_weight": 1.5,
             "pe_weight": 0.7,
-            "cyclical_adjustment": True,
         },
         # Default
         "default": {}
@@ -3186,8 +3183,13 @@ def calculate_all_ratios(financial_data: Dict) -> Dict[str, Optional[float]]:
         if invested_cap <= 0:
             invested_cap = None
 
-    # FFO para REITs
-    ffo_val = funds_from_operations(d.get("net_income"), d.get("depreciation"), d.get("gains_on_sale"))
+    # FFO para REITs. Yahoo no suele desglosar la depreciación, lo que dejaba
+    # el FFO en None para casi todo REIT; se deriva D&A = EBITDA - EBIT cuando
+    # falta (ambos ya disponibles con el fallback de EBITDA).
+    _dep = d.get("depreciation")
+    if _dep is None and ebitda_val is not None and operating_inc is not None:
+        _dep = ebitda_val - operating_inc
+    ffo_val = funds_from_operations(d.get("net_income"), _dep, d.get("gains_on_sale"))
     ffo_ps = safe_div(ffo_val, d.get("shares_outstanding")) if ffo_val else None
 
     # PEG: peg_ratio() espera el crecimiento de ganancias en PORCENTAJE (15 = 15%),
@@ -3762,7 +3764,10 @@ def score_valoracion(
     dividend_yield: Optional[float] = None,
     # v2.4: Forward P/E para growth
     forward_pe: Optional[float] = None,
-    earnings_yield: Optional[float] = None
+    earnings_yield: Optional[float] = None,
+    # v3.3: REITs se valoran por P/FFO, no por P/E ni P/FCF
+    is_reit: bool = False,
+    p_ffo: Optional[float] = None
 ) -> Dict[str, Any]:
     """
     Categoría 3: Valoración (20 pts máximo)
@@ -3815,8 +3820,38 @@ def score_valoracion(
     # v2.4: Track negative adjustments to cap them for growth
     total_negative = 0
 
-    # ─── P/E vs Sector (hasta ±5 pts) ───────────────────
-    if pe is not None and pe > 0:
+    # ─── REIT: P/FFO en lugar de P/E y P/FCF (hasta ±4 pts) ────
+    # El beneficio neto de un REIT está deprimido por la depreciación de
+    # inmuebles (no-cash) y su FCF por el capex de cartera: P/E y P/FCF son
+    # métricas engañosas para el sector. El estándar es P/FFO.
+    if is_reit:
+        if p_ffo is not None and p_ffo > 0:
+            if p_ffo <= 12:
+                adj = 4; sev = "excellent"
+                reason = f"Barato por FFO ({p_ffo:.1f}x)"
+            elif p_ffo <= 16:
+                adj = 2; sev = "good"
+                reason = f"Atractivo por FFO ({p_ffo:.1f}x)"
+            elif p_ffo <= 20:
+                adj = 0; sev = "ok"
+                reason = f"En línea ({p_ffo:.1f}x FFO)"
+            elif p_ffo <= 25:
+                adj = -2; sev = "moderate"
+                reason = f"Caro por FFO ({p_ffo:.1f}x)"
+            else:
+                adj = -4; sev = "severe"
+                reason = f"Muy caro por FFO ({p_ffo:.1f}x)"
+            if adj < 0:
+                total_negative += adj
+            base_score += adj
+            adjustments.append({"metric": "P/FFO (REIT)", "value": f"{p_ffo:.1f}x", "adjustment": adj, "reason": reason, "severity": sev})
+        else:
+            adjustments.append({"metric": "P/FFO (REIT)", "value": "N/D", "adjustment": 0,
+                                "reason": "P/E y P/FCF omitidos (engañosos para REITs); FFO no disponible",
+                                "severity": "ok"})
+
+    # ─── P/E vs Sector (hasta ±5 pts) — omitido para REITs ─────
+    if not is_reit and pe is not None and pe > 0:
         pe_threshold = sector_pe if sector_pe and sector_pe > 0 else 20
 
         # v2.4: Bandas más amplias para growth
@@ -3899,8 +3934,8 @@ def score_valoracion(
             base_score += adj
             adjustments.append({"metric": "Forward P/E", "value": f"{forward_pe:.1f}x", "adjustment": adj, "reason": reason, "severity": sev})
 
-    # ─── P/FCF (hasta ±4 pts) ──────────────────────────
-    if p_fcf is not None and p_fcf > 0:
+    # ─── P/FCF (hasta ±4 pts) — omitido para REITs (capex de cartera) ──
+    if not is_reit and p_fcf is not None and p_fcf > 0:
         # v2.4: Bandas más amplias para growth
         if is_quality_growth:
             if p_fcf <= 15:
@@ -4390,7 +4425,10 @@ def calculate_score_v2(
         dividend_yield=ratio_values.get("dividend_yield"),
         # v2.4: Nuevos parámetros
         forward_pe=ratio_values.get("forward_pe"),
-        earnings_yield=ratio_values.get("earnings_yield")
+        earnings_yield=ratio_values.get("earnings_yield"),
+        # v3.3: REITs se valoran por P/FFO (P/E y P/FCF son engañosos ahí)
+        is_reit=(sector_key == "real_estate"),
+        p_ffo=ratio_values.get("p_ffo")
     )
     
     calidad = score_calidad_ganancias(

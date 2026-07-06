@@ -941,13 +941,11 @@ class YahooFinanceFetcher:
         
         return result
     
-    def get_sector_averages(self, sector: str) -> Dict[str, Optional[float]]:
-        """Obtiene promedios del sector (simplificado — defaults estáticos)."""
-        return {
-            "sector_pe": 20.0,
-            "sector_ev_ebitda": 12.0,
-        }
-    
+    # NOTA: get_sector_averages fue eliminado (auditoría sectorial 2026-07):
+    # devolvía valores ESTÁTICOS (pe=20, ev_ebitda=12 para todo sector) hacia
+    # result["contextual"], que main.py nunca lee. El sector_pe vivo llega por
+    # _get_sector_benchmarks (main.py), sectorial de verdad.
+
     def _get_sector_etf_symbol(self, sector_name: str) -> str:
         """Mapeo robusto de sector a ETF (reutilizable)."""
         if not sector_name:
@@ -1648,15 +1646,10 @@ class FinancialDataService:
                     result["contextual"]["shares_outstanding"] = current_data.get("shares_outstanding")
         
         report_progress("Obteniendo datos del sector...", 90)
-        
-        # ========================================
-        # FASE 3: Promedios del sector (depende del profile)
-        # ========================================
-        if profile:
-            sector_avg = self.yahoo.get_sector_averages(profile.sector)
-            result["sector_averages"] = sector_avg
-            result["contextual"].update(sector_avg)
-        
+
+        # (Los promedios sectoriales estáticos que se inyectaban aquí eran
+        # ficticios y nadie los consumía — ver nota en get_sector_averages.)
+
         # Timing final
         result["_timing"]["total"] = time.time() - start_time
         

@@ -400,6 +400,11 @@ def _compute_analysis(symbol: str) -> dict:
                 "cash_ratio": r("cash_ratio"),
                 "net_debt": r("net_debt"),
                 "inventory_turnover": r("inventory_turnover"),
+                # Métricas FFO (REITs): p_ffo alimenta la banda de valoración
+                # REIT del score; se exponen para la UI.
+                "p_ffo": r("p_ffo"),
+                "ffo": r("ffo"),
+                "ffo_payout": r("ffo_payout"),
                 "dividend_yield": safe_float(div_yield),
                 "payout_ratio": safe_float(payout),
                 "eps": eps_val or r("eps"),
