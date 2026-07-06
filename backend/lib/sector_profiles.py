@@ -685,7 +685,13 @@ def get_sector_profile(sector_name: str) -> SectorProfile:
         return get_default_profile()
     
     sector_lower = sector_name.lower().strip()
-    
+
+    # Clave canónica directa (main.py ya pasa el sector MAPEADO en snake_case;
+    # sin este chequeo, consumer_cyclical/consumer_defensive/real_estate caían
+    # al perfil default porque YAHOO_SECTOR_MAPPING usa claves con espacios).
+    if sector_lower in SECTOR_PROFILES:
+        return SECTOR_PROFILES[sector_lower]
+
     # Buscar en el mapeo
     mapped_sector = YAHOO_SECTOR_MAPPING.get(sector_lower)
     

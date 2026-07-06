@@ -19,8 +19,7 @@ from financial_ratios import (
     calculate_all_ratios, calculate_score_v2, aggregate_alerts,
     altman_z_score, piotroski_f_score,
     graham_number, margin_of_safety, dcf_multi_stage_dynamic,
-    dcf_sensitivity_analysis, calculate_wacc, classify_company_type,
-    detect_growth_company
+    dcf_sensitivity_analysis, calculate_wacc
 )
 from stock_database import search_stocks, POPULAR_STOCKS, TOP_STOCKS
 from sector_profiles import get_sector_profile, YAHOO_SECTOR_MAPPING
@@ -511,15 +510,14 @@ def _compute_analysis(symbol: str) -> dict:
             # block below, so it can feed the Altman Z-Score and Piotroski
             # F-Score into the solidez/calidad categories (see "Score (0-100)").
 
-            # Company type
-            try:
-                company_type = classify_company_type(ratios)
-                is_growth = detect_growth_company(ratios)
-                result["company_type"] = company_type
-                result["is_growth"] = is_growth
-            except Exception:
-                result["company_type"] = "balanced"
-                result["is_growth"] = False
+            # Company type: NO se calcula aquí. classify_company_type y
+            # detect_growth_company requieren múltiples argumentos posicionales;
+            # llamarlas con un solo dict lanzaba TypeError (tragado por el
+            # except), dejando company_type='balanced' e is_growth=False para
+            # TODA empresa. calculate_score_v2 ya computa ambos correctamente y
+            # se copian tras el bloque de score (ver "Score (0-100)").
+            result["company_type"] = "balanced"
+            result["is_growth"] = False
 
             # Institutional metrics — use prior-year data from Yahoo API
             # Defaults so the score block below can reference these even if the
@@ -699,6 +697,12 @@ def _compute_analysis(symbol: str) -> dict:
                 # como {score, level, interpretation, details} para el frontend.
                 if isinstance(score_result, dict) and score_result.get("financial_health"):
                     result["financial_health"] = score_result["financial_health"]
+
+                # Perfil de empresa: única fuente de verdad = el score v2 (los
+                # helpers directos lanzaban TypeError, ver "Company type" arriba).
+                if isinstance(score_result, dict):
+                    result["company_type"] = score_result.get("company_type", "balanced")
+                    result["is_growth"] = bool(score_result.get("is_growth_company", False))
             except Exception as e:
                 logger.error(f"Score calculation error: {e}")
                 result["score"] = None
@@ -841,6 +845,25 @@ def _compute_analysis(symbol: str) -> dict:
                             strengths.append(alert_obj)
                         elif severity:
                             warnings.append(alert_obj)
+
+                # Capas de flags con razones en STRING que el loop anterior
+                # descartaba (solo aceptaba dicts). Se conectan únicamente las
+                # capas SIN solapamiento con el desglose del score (que ya
+                # alimenta el bloque de abajo), para no duplicar alertas:
+                # deterioro estructural, volatilidad e infravaloración.
+                _det = raw_alerts.get("structural_deterioration") or {}
+                if _det.get("flag"):
+                    for _r in _det.get("reasons", []):
+                        red_flags.append({"category": "Deterioro Estructural",
+                                          "reason": _r, "detail": ""})
+                _vol = raw_alerts.get("volatility") or {}
+                for _r in _vol.get("warning_reasons", []):
+                    warnings.append({"category": "Volatilidad", "reason": _r, "detail": ""})
+                for _r in _vol.get("positive_reasons", []):
+                    strengths.append({"category": "Volatilidad", "reason": _r, "detail": ""})
+                _val = raw_alerts.get("valuation") or {}
+                for _r in _val.get("undervalued_reasons", []):
+                    strengths.append({"category": "Valoración", "reason": _r, "detail": ""})
 
                 # Also pull from score adjustments if we have them
                 if result.get("score") and result["score"].get("breakdown"):
