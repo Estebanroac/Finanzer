@@ -414,10 +414,17 @@ def financial_health_score(
     # 5. Dividend (0-1 punto) - Bancos suelen pagar dividendos
     if dividend_yield is not None and dividend_yield > 0:
         max_possible += 1
-        if payout_ratio is None or payout_ratio < b.get("payout_sustainable", 0.60):
+        # Un payout negativo (dividendos pagados con ganancias negativas, año en
+        # pérdidas) NO es sostenible: antes `payout < 0.60` lo daba por sostenible.
+        _sustainable = 0 <= payout_ratio < b.get("payout_sustainable", 0.60) if payout_ratio is not None else True
+        if _sustainable:
             pts = 1
             detail = f"Dividendo sostenible ({dividend_yield*100:.2f}%)"
             severity = "excellent"
+        elif payout_ratio is not None and payout_ratio < 0:
+            pts = 0
+            detail = f"Dividendo insostenible (pagado con pérdidas)"
+            severity = "weak"
         else:
             pts = 0
             detail = f"Payout ratio alto ({payout_ratio*100:.0f}% > 60%)"
@@ -2986,7 +2993,13 @@ def aggregate_alerts(ratio_values: Dict[str, Optional[float]],
         is_reit = ("real_estate" in (sector or "")
                    or "real estate" in (real_sector or "").lower()
                    or "reit" in (real_sector or "").lower())
-        if payout is not None and payout > 1.0 and not is_reit:
+        # payout > 1.0: paga más de lo que gana. payout < 0: paga dividendos con
+        # ganancias NEGATIVAS (año en pérdidas). Como dividends_paid es positivo y
+        # net_income negativo, ese payout sale NEGATIVO, no >100%, así que el
+        # guard `> 1.0` lo dejaba escapar Y aún recibía el bonus +5/+3. Ambos casos
+        # son insostenibles (recorte de dividendo probable) -> penalizar.
+        unsustainable = payout is not None and (payout > 1.0 or payout < 0)
+        if unsustainable and not is_reit:
             dividend_score = -3
 
     score += dividend_score
@@ -3123,6 +3136,12 @@ def calculate_all_ratios(financial_data: Dict) -> Dict[str, Optional[float]]:
     
     # Calcular valores intermedios
     ebitda_val = ebitda(d.get("operating_income"), d.get("depreciation"), d.get("amortization"))
+    if ebitda_val is None:
+        # Yahoo no siempre desglosa depreciación/amortización (entonces el EBITDA
+        # calculado sale None), pero sí suele proveer el EBITDA directo. Usarlo como
+        # fallback para que ev_ebitda, ebitda_margin y net_debt_to_ebitda no queden
+        # None cuando el dato existe.
+        ebitda_val = d.get("ebitda")
     fcf_val = free_cash_flow(d.get("operating_cash_flow"), d.get("capex"))
     mkt_cap = market_cap(d.get("price"), d.get("shares_outstanding"))
     ev_val = enterprise_value(mkt_cap, d.get("total_debt"), d.get("cash"))
@@ -3130,15 +3149,31 @@ def calculate_all_ratios(financial_data: Dict) -> Dict[str, Optional[float]]:
     eps_val = earnings_per_share(d.get("net_income"), d.get("shares_outstanding"))
     bvps = book_value_per_share(d.get("total_equity"), d.get("shares_outstanding"))
     fcf_ps = free_cash_flow_per_share(fcf_val, d.get("shares_outstanding"))
-    
+
+    # COGS para inventory_turnover: Yahoo no siempre expone "Cost Of Revenue" y el
+    # dataclass no lo trae, así que se deriva de datos que sí están
+    # (Revenue - Gross Profit). Sin esto inventory_turnover era SIEMPRE None y la
+    # eficiencia de inventario (peso alto en retail) nunca puntuaba.
+    cogs_val = d.get("cogs")
+    if cogs_val is None and d.get("revenue") is not None and d.get("gross_profit") is not None:
+        cogs_val = d.get("revenue") - d.get("gross_profit")
+
     # Calcular NOPAT e Invested Capital para ROIC
     tax_rate = d.get("tax_rate", 0.25)  # Default 25% si no se proporciona
     operating_inc = d.get("operating_income")
-    nopat_val = operating_inc * (1 - tax_rate) if operating_inc else None
+    # 'is not None' (no truthiness): un operating_income exactamente 0 (break-even
+    # operativo) es un dato válido -> NOPAT=0, no None.
+    nopat_val = operating_inc * (1 - tax_rate) if operating_inc is not None else None
     invested_cap = None
     if d.get("total_debt") is not None and d.get("total_equity") is not None and d.get("cash") is not None:
         invested_cap = d.get("total_debt") + d.get("total_equity") - d.get("cash")
-    
+        # Capital invertido <= 0 (empresa con caja neta o equity negativo por
+        # recompras) no tiene sentido económico como denominador y produciría un
+        # ROIC negativo espurio; se trata como no informativo (misma convención
+        # que el D/E negativo en el scoring).
+        if invested_cap <= 0:
+            invested_cap = None
+
     # FFO para REITs
     ffo_val = funds_from_operations(d.get("net_income"), d.get("depreciation"), d.get("gains_on_sale"))
     ffo_ps = safe_div(ffo_val, d.get("shares_outstanding")) if ffo_val else None
@@ -3194,7 +3229,7 @@ def calculate_all_ratios(financial_data: Dict) -> Dict[str, Optional[float]]:
         
         # Eficiencia
         "asset_turnover": asset_turnover(d.get("revenue"), d.get("total_assets")),
-        "inventory_turnover": inventory_turnover(d.get("cogs"), d.get("inventories")),
+        "inventory_turnover": inventory_turnover(cogs_val, d.get("inventories")),
         
         # Cash Flow
         "fcf": fcf_val,
@@ -3909,36 +3944,14 @@ def score_valoracion(
         base_score += adj
         adjustments.append({"metric": "PEG Ratio", "value": f"{peg:.2f}", "adjustment": adj, "reason": reason, "severity": sev})
 
-    # ─── FCF Yield bonus (hasta +3 pts) ────────────────
-    if fcf_yield is not None and fcf_yield > 0:
-        if fcf_yield >= 0.08:
-            adj = 3; sev = "excellent"
-            reason = f"Excelente ({fcf_yield:.1%})"
-        elif fcf_yield >= 0.05:
-            adj = 2; sev = "good"  # v2.4: subió de +1 a +2
-            reason = f"Bueno ({fcf_yield:.1%})"
-        elif fcf_yield >= 0.03:
-            adj = 1; sev = "good"
-            reason = f"Aceptable ({fcf_yield:.1%})"
-        else:
-            adj = 0; sev = "ok"
-            reason = None
-        if adj > 0:
-            base_score += adj
-            adjustments.append({"metric": "FCF Yield", "value": f"{fcf_yield:.1%}", "adjustment": adj, "reason": reason, "severity": sev})
-
-    # ─── Earnings Yield bonus (NUEVO v2.4) ─────────────
-    if earnings_yield is not None and earnings_yield > 0:
-        if earnings_yield >= 0.06:  # >6% earnings yield
-            adj = 2; sev = "good"
-            reason = f"Rendimiento de ganancias atractivo ({earnings_yield:.1%})"
-            base_score += adj
-            adjustments.append({"metric": "Earnings Yield", "value": f"{earnings_yield:.1%}", "adjustment": adj, "reason": reason, "severity": sev})
-        elif earnings_yield >= 0.04:
-            adj = 1; sev = "good"
-            reason = f"Earnings yield razonable ({earnings_yield:.1%})"
-            base_score += adj
-            adjustments.append({"metric": "Earnings Yield", "value": f"{earnings_yield:.1%}", "adjustment": adj, "reason": reason, "severity": sev})
+    # ─── De-dup de valoración (Fase B) ─────────────────
+    # Se eliminaron los bonos separados de "FCF Yield" (+3) y "Earnings Yield"
+    # (+2): fcf_yield = 1/p_fcf y earnings_yield = 1/pe, así que premiaban el
+    # MISMO hecho ("barato por FCF" / "barato por ganancias") que las bandas de
+    # P/FCF (±4) y P/E ya puntúan arriba -> doble conteo que inflaba valoración
+    # a las value stocks. Las bandas de P/FCF y P/E quedan como señal primaria.
+    # (fcf_yield/earnings_yield siguen usándose para alertas y ajuste de growth,
+    # no para un bonus redundante de valoración.)
 
     # ─── GARP / Growth Quality Bonus ───────────────────
     if company_type == "garp" and growth_quality_score >= 70:
@@ -4101,7 +4114,6 @@ def score_crecimiento(
     revenue_growth_3y: Optional[float],
     eps_growth_3y: Optional[float],
     fcf_growth_3y: Optional[float],
-    peg: Optional[float],
     is_growth_company: bool = False
 ) -> Dict[str, Any]:
     """
@@ -4326,7 +4338,6 @@ def calculate_score_v2(
         revenue_growth_3y=contextual_values.get("revenue_cagr_3y"),
         eps_growth_3y=contextual_values.get("eps_cagr_3y"),
         fcf_growth_3y=contextual_values.get("fcf_cagr_3y"),
-        peg=ratio_values.get("peg"),
         is_growth_company=is_growth
     )
     

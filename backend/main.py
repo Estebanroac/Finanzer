@@ -391,6 +391,16 @@ def _compute_analysis(symbol: str) -> dict:
                 "quick_ratio": r("quick_ratio"),
                 "interest_coverage": safe_float(interest_cov),
                 "debt_to_assets": safe_float(debt_to_assets),
+                # Métricas que se calculaban en calculate_all_ratios pero nunca se
+                # exponían (el frontend solo lee key_metrics), así que se
+                # descartaban. net_debt_to_ebitda y cash_ratio son señales de
+                # solvencia/liquidez útiles; inventory_turnover ahora sí se calcula
+                # (COGS derivado). (Mostrarlas en la UI queda como follow-up de
+                # frontend; aquí quedan disponibles en el API.)
+                "net_debt_to_ebitda": r("net_debt_to_ebitda"),
+                "cash_ratio": r("cash_ratio"),
+                "net_debt": r("net_debt"),
+                "inventory_turnover": r("inventory_turnover"),
                 "dividend_yield": safe_float(div_yield),
                 "payout_ratio": safe_float(payout),
                 "eps": eps_val or r("eps"),
