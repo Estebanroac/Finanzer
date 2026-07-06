@@ -4,6 +4,7 @@ import { formatMultiple, formatPercent, formatNumber, getScoreColor, type StockA
 import InfoTooltip from "@/components/InfoTooltip";
 import { COMPARATIVE } from "@/lib/tooltips";
 import { getSectorBenchmarks } from "@/lib/sectorBench";
+import { useGrow } from "@/lib/useGrow";
 
 interface CompMetric {
   label: string;
@@ -60,21 +61,28 @@ export default function ComparativeTab({ data }: { data: StockAnalysis }) {
 
   return (
     <div className="space-y-8">
-      {/* Sector context */}
-      <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 px-6 py-4 flex items-center gap-3">
-        <div className="w-2.5 h-2.5 rounded-full bg-[#3b82f6]" />
-        <div className="flex-1">
-          <span className="text-sm text-white font-medium">{data.profile.name}</span>
-          <span className="text-xs text-zinc-500 ml-2">vs Sector: {sector}</span>
+      {/* Contexto + leyenda del eje */}
+      <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 px-6 py-4">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-2.5 h-2.5 rounded-full bg-[#0cc06c]" />
+          <div className="flex-1">
+            <span className="text-sm text-white font-medium">{data.profile.name}</span>
+            <span className="text-xs text-zinc-500 ml-2">vs sector: {sector}</span>
+          </div>
+          <InfoTooltip content={COMPARATIVE.sector_comparison} size="md" />
         </div>
-        <InfoTooltip content={COMPARATIVE.sector_comparison} size="md" />
+        <div className="cmp-legend !mb-0">
+          <span className="cmp-lg cmp-lg-neg"><i />Peor</span>
+          <span className="cmp-axis-label">Sector · 0%</span>
+          <span className="cmp-lg cmp-lg-pos"><i />Mejor</span>
+        </div>
       </div>
 
-      {/* Comparison tables */}
-      <ComparisonSection title="Valoración" subtitle="Múltiplos de precio vs promedio del sector" metrics={valuationMetrics} />
-      <ComparisonSection title="Rentabilidad" subtitle="Retornos y márgenes vs promedio del sector" metrics={profitMetrics} />
-      <ComparisonSection title="Solidez Financiera" subtitle="Liquidez y apalancamiento vs promedio del sector" metrics={healthMetrics} />
-      <ComparisonSection title="Crecimiento" subtitle="Tasas de crecimiento vs promedio del sector" metrics={growthMetrics} />
+      {/* Barras divergentes por sección */}
+      <ComparisonSection title="Valoración" subtitle="Múltiplos de precio vs mediana del sector" metrics={valuationMetrics} />
+      <ComparisonSection title="Rentabilidad" subtitle="Retornos y márgenes vs mediana del sector" metrics={profitMetrics} />
+      <ComparisonSection title="Solidez Financiera" subtitle="Liquidez y apalancamiento vs mediana del sector" metrics={healthMetrics} />
+      <ComparisonSection title="Crecimiento" subtitle="Tasas de crecimiento vs mediana del sector" metrics={growthMetrics} />
 
       {/* Summary insight */}
       <ComparisonSummary valuationMetrics={valuationMetrics} profitMetrics={profitMetrics} healthMetrics={healthMetrics} />
@@ -82,64 +90,68 @@ export default function ComparativeTab({ data }: { data: StockAnalysis }) {
   );
 }
 
+/* Barras divergentes: el eje central = el sector; mejor crece a la derecha
+   (verde), peor a la izquierda (rojo). |desviación| 60% llena el semieje
+   (cap); piso de 6% para que toda desviación no nula sea visible. */
+const CAP = 60;
+const FLOOR = 6;
+
 function ComparisonSection({ title, subtitle, metrics }: { title: string; subtitle: string; metrics: CompMetric[] }) {
+  const grown = useGrow();
+  const rows = metrics.filter(m => m.value != null);
+  if (rows.length === 0) return null;
+
   return (
     <div>
       <div className="mb-3">
         <h4 className="text-xs text-zinc-500 uppercase tracking-widest font-medium">{title}</h4>
         <p className="text-[10px] text-zinc-600 mt-0.5">{subtitle}</p>
       </div>
-      <div className="rounded-xl border border-white/[0.06] overflow-hidden bg-[#0a0a0d]/85">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-white/[0.06] bg-[#0a0a0d]/70">
-              <th className="text-left px-3 py-3 sm:px-5 text-xs text-zinc-500 font-medium">Métrica</th>
-              <th className="text-right px-3 py-3 sm:px-5 text-xs text-zinc-500 font-medium">Empresa</th>
-              <th className="text-right px-3 py-3 sm:px-5 text-xs text-zinc-500 font-medium">Sector</th>
-              <th className="text-right px-3 py-3 sm:px-5 text-xs text-zinc-500 font-medium w-16 sm:w-28">Relativo</th>
-            </tr>
-          </thead>
-          <tbody>
-            {metrics.map((m, i) => {
-              const compVal = m.value;
-              const sectorVal = m.sectorAvg;
-              let relLabel = "—";
-              let relColor = "#9ca3af";
+      <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 px-5 py-2 divide-y divide-white/[0.04]">
+        {rows.map((m, i) => {
+          const hasBench = m.sectorAvg != null && m.sectorAvg !== 0;
+          if (!hasBench) {
+            return (
+              <div key={i} className="cmp-row">
+                <div className="cmp-head">
+                  <span className="cmp-k">{m.label}</span>
+                  <span className="cmp-val">{fmt(m.value, m.format)}</span>
+                </div>
+              </div>
+            );
+          }
+          const diff = ((m.value! - m.sectorAvg!) / Math.abs(m.sectorAvg!)) * 100;
+          const goodness = m.higherIsBetter ? diff : -diff;   // + = mejor que el sector
+          const dev = Math.abs(goodness);
+          let barPct = Math.min(100, (dev / CAP) * 100);
+          if (dev > 0.5) barPct = Math.max(FLOOR, barPct);
+          const note = m.higherIsBetter
+            ? (diff >= 0 ? "por encima del sector" : "por debajo del sector")
+            : (diff >= 0 ? "más caro que el sector" : "más barato que el sector");
 
-              if (compVal != null && sectorVal != null && sectorVal !== 0) {
-                const diff = ((compVal - sectorVal) / Math.abs(sectorVal)) * 100;
-                const isBetter = m.higherIsBetter ? diff > 5 : diff < -5;
-                const isWorse = m.higherIsBetter ? diff < -5 : diff > 5;
-                relLabel = `${diff > 0 ? "+" : ""}${diff.toFixed(0)}%`;
-                relColor = isBetter ? "#0cc06c" : isWorse ? "#ff4d4d" : "#fbbf24";
-              }
-
-              return (
-                <tr key={i} className="border-b border-white/[0.04] last:border-0">
-                  <td className="px-3 py-3 sm:px-5">
-                    <span className="text-sm text-zinc-300">{m.label}</span>
-                    {m.hint && <span className="block sm:inline text-[10px] text-zinc-600 sm:ml-1.5">{m.hint}</span>}
-                  </td>
-                  <td className="px-3 py-3 sm:px-5 text-right">
-                    <span className={`text-sm font-semibold tabular-nums ${compVal == null ? "text-zinc-600" : "text-white"}`}>
-                      {fmt(compVal, m.format)}
-                    </span>
-                  </td>
-                  <td className="px-3 py-3 sm:px-5 text-right">
-                    <span className="text-sm text-zinc-500 tabular-nums">
-                      {fmt(sectorVal, m.format)}
-                    </span>
-                  </td>
-                  <td className="px-3 py-3 sm:px-5 text-right">
-                    <span className="text-xs font-semibold tabular-nums" style={{ color: relColor }}>
-                      {relLabel}
-                    </span>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+          return (
+            <div key={i} className="cmp-row">
+              <div className="cmp-head">
+                <span className="cmp-k">{m.label}</span>
+                <span>
+                  <span className="cmp-val">{fmt(m.value, m.format)}</span>
+                  <span className="cmp-vs">vs {fmt(m.sectorAvg, m.format)}</span>
+                </span>
+              </div>
+              <div className="cmp-track">
+                <div
+                  className={`cmp-bar ${goodness >= 0 ? "cmp-pos" : "cmp-neg"}`}
+                  style={{ width: grown ? `${barPct / 2}%` : 0 }}
+                />
+                <div className="cmp-mid" />
+              </div>
+              <span className={`cmp-dev ${goodness >= 0 ? "pos" : "neg"}`}>
+                {diff >= 0 ? "+" : "−"}{Math.abs(diff).toFixed(0)}%{" "}
+                <span className="cmp-dev-note">{note}</span>
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

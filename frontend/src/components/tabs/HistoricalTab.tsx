@@ -48,9 +48,9 @@ export default function HistoricalTab({ data }: { data: StockAnalysis }) {
           Cómo el revenue se transforma en beneficio neto y flujo de caja libre.
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-          <WaterfallBlock label="Revenue" value={revenue} color="#3b82f6" />
-          <WaterfallBlock label="EBITDA" value={ebitda} color="#8b5cf6" pct={revenue && ebitda ? ebitda / revenue : null} />
-          <WaterfallBlock label="Op. Income" value={m.operating_income} color="#f59e0b" pct={revenue && m.operating_income ? m.operating_income / revenue : null} />
+          <WaterfallBlock label="Revenue" value={revenue} color="#a1a1a6" />
+          <WaterfallBlock label="EBITDA" value={ebitda} color="#6ee7b4" pct={revenue && ebitda ? ebitda / revenue : null} />
+          <WaterfallBlock label="Op. Income" value={m.operating_income} color="#0cc06c" pct={revenue && m.operating_income ? m.operating_income / revenue : null} />
           <WaterfallBlock label="Net Income" value={netIncome} color={netIncome && netIncome > 0 ? "#0cc06c" : "#ff4d4d"} pct={revenue && netIncome ? netIncome / revenue : null} />
           <WaterfallBlock label="Free Cash Flow" value={fcf} color={fcf && fcf > 0 ? "#0cc06c" : "#ff4d4d"} pct={revenue && fcf ? fcf / revenue : null} />
         </div>
@@ -293,7 +293,7 @@ function BalanceSheetSnapshot({ data }: { data: StockAnalysis }) {
   const items: { label: string; value: number; color: string }[] = [];
   if (totalEquity && totalEquity > 0) items.push({ label: "Equity", value: totalEquity, color: "#0cc06c" });
   if (totalDebt && totalDebt > 0) items.push({ label: "Deuda", value: totalDebt, color: "#ff4d4d" });
-  if (cash && cash > 0) items.push({ label: "Efectivo", value: cash, color: "#3b82f6" });
+  if (cash && cash > 0) items.push({ label: "Efectivo", value: cash, color: "#0cc06c" });
 
   const total = items.reduce((sum, i) => sum + i.value, 0);
 
@@ -320,7 +320,7 @@ function BalanceSheetSnapshot({ data }: { data: StockAnalysis }) {
           <BalanceItem label="Total Assets" value={totalAssets} color="#9ca3af" />
           <BalanceItem label="Equity" value={totalEquity} color="#0cc06c" />
           <BalanceItem label="Deuda Total" value={totalDebt} color="#ff4d4d" />
-          <BalanceItem label="Efectivo" value={cash} color="#3b82f6" />
+          <BalanceItem label="Efectivo" value={cash} color="#0cc06c" />
         </div>
 
         {/* Net debt */}
