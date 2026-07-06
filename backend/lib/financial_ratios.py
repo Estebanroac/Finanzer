@@ -1864,6 +1864,7 @@ def dcf_multi_stage(
     discount_rate: float = DCF_WACC_DEFAULT,
     decay_type: str = "linear",
     margin_of_safety_pct: float = 0.0,
+    net_debt: Optional[float] = 0.0,
 ) -> Dict[str, Any]:
     """
     DCF Multi-Stage (3 etapas) - Modelo más realista.
@@ -1877,6 +1878,8 @@ def dcf_multi_stage(
         "fair_value_per_share": None,
         "fair_value_with_mos": None,
         "enterprise_value": None,
+        "equity_value": None,
+        "net_debt": net_debt,
         "method": "multi_stage_dcf",
         "stages": {
             "high_growth": {"pv": None, "years": high_growth_years, "rates": []},
@@ -1978,15 +1981,28 @@ def dcf_multi_stage(
     result["stages"]["terminal"]["pv"] = round(pv_terminal, 2)
     
     # CÁLCULO FINAL
+    # Puente Enterprise Value -> Equity Value: descontar el FCF de la firma (FCFF)
+    # al WACC produce el valor de la EMPRESA (enterprise value). El precio por
+    # acción corresponde al EQUITY, así que hay que restar la deuda neta
+    # (deuda total - caja) antes de dividir entre las acciones. Sin este puente
+    # las empresas apalancadas quedan sistemáticamente sobrevaloradas (y las de
+    # caja neta, subvaloradas).
     enterprise_value = pv_stage1 + pv_stage2 + pv_terminal
-    fair_value_per_share = enterprise_value / shares_outstanding
-    
+    equity_value = enterprise_value - (net_debt or 0.0)
+    if equity_value <= 0:
+        result["warnings"].append(
+            "Equity value <= 0 tras restar la deuda neta (empresa muy apalancada)"
+        )
+    fair_value_per_share = equity_value / shares_outstanding
+
     if margin_of_safety_pct > 0:
         fair_value_with_mos = fair_value_per_share * (1 - margin_of_safety_pct)
     else:
         fair_value_with_mos = fair_value_per_share
-    
+
     result["enterprise_value"] = round(enterprise_value, 2)
+    result["equity_value"] = round(equity_value, 2)
+    result["net_debt"] = round(net_debt or 0.0, 2)
     result["fair_value_per_share"] = round(fair_value_per_share, 2)
     result["fair_value_with_mos"] = round(fair_value_with_mos, 2)
     result["is_valid"] = True
@@ -2013,6 +2029,7 @@ def dcf_multi_stage_dynamic(
     debt_to_equity: Optional[float] = None,
     interest_expense: Optional[float] = None,
     total_debt: Optional[float] = None,
+    cash: Optional[float] = None,
     revenue_growth_3y: Optional[float] = None,
     eps_growth_3y: Optional[float] = None,
     fcf_growth_3y: Optional[float] = None,
@@ -2035,6 +2052,7 @@ def dcf_multi_stage_dynamic(
         "growth_source": None,
         "method": "multi_stage_dcf_dynamic",
         "model_result": None,
+        "net_debt": None,
         "warnings": [],
         "is_valid": False,
         "sensitivity_analysis": None
@@ -2064,7 +2082,15 @@ def dcf_multi_stage_dynamic(
     
     wacc = max(0.06, min(wacc, 0.20))
     result["wacc_calculated"] = wacc
-    
+
+    # Deuda neta para el puente Enterprise Value -> Equity Value en dcf_multi_stage.
+    # Solo se calcula si hay algún dato de deuda o caja; si no, queda None y el
+    # DCF se comporta como antes (sin puente) para no inventar una deuda de 0.
+    net_debt = None
+    if total_debt is not None or cash is not None:
+        net_debt = (total_debt or 0.0) - (cash or 0.0)
+    result["net_debt"] = net_debt
+
     # ESTIMAR GROWTH
     growth_rate = None
     growth_source = None
@@ -2107,7 +2133,8 @@ def dcf_multi_stage_dynamic(
         terminal_growth=terminal_growth,
         discount_rate=wacc,
         decay_type=decay_type,
-        margin_of_safety_pct=margin_of_safety_pct
+        margin_of_safety_pct=margin_of_safety_pct,
+        net_debt=net_debt
     )
     
     result["model_result"] = model_result
@@ -2127,7 +2154,8 @@ def dcf_multi_stage_dynamic(
                 test_result = dcf_multi_stage(
                     fcf=fcf, shares_outstanding=shares_outstanding,
                     high_growth_rate=growth_rate, discount_rate=test_wacc,
-                    terminal_growth=terminal_growth, decay_type=decay_type
+                    terminal_growth=terminal_growth, decay_type=decay_type,
+                    net_debt=net_debt
                 )
                 if test_result["is_valid"]:
                     sensitivity["wacc_sensitivity"][f"{wacc_delta:+.0%}"] = test_result["fair_value_per_share"]
@@ -2137,7 +2165,8 @@ def dcf_multi_stage_dynamic(
             test_result = dcf_multi_stage(
                 fcf=fcf, shares_outstanding=shares_outstanding,
                 high_growth_rate=test_growth, discount_rate=wacc,
-                terminal_growth=terminal_growth, decay_type=decay_type
+                terminal_growth=terminal_growth, decay_type=decay_type,
+                net_debt=net_debt
             )
             if test_result["is_valid"]:
                 sensitivity["growth_sensitivity"][f"{growth_delta:+.1%}"] = test_result["fair_value_per_share"]
@@ -3113,7 +3142,15 @@ def calculate_all_ratios(financial_data: Dict) -> Dict[str, Optional[float]]:
     # FFO para REITs
     ffo_val = funds_from_operations(d.get("net_income"), d.get("depreciation"), d.get("gains_on_sale"))
     ffo_ps = safe_div(ffo_val, d.get("shares_outstanding")) if ffo_val else None
-    
+
+    # PEG: peg_ratio() espera el crecimiento de ganancias en PORCENTAJE (15 = 15%),
+    # pero earnings_growth_rate llega como decimal (0.15). Sin escalar *100 el PEG
+    # sale ~100x inflado (un PEG justo de 1.67 se mostraría como 167).
+    _earnings_growth_pct = (
+        d.get("earnings_growth_rate") * 100
+        if d.get("earnings_growth_rate") is not None else None
+    )
+
     return {
         # Rentabilidad
         "roe": roe(d.get("net_income"), d.get("total_equity")),
@@ -3137,7 +3174,7 @@ def calculate_all_ratios(financial_data: Dict) -> Dict[str, Optional[float]]:
         "ev_ebitda": ev_ebitda(ev_val, ebitda_val),
         "ev_revenue": ev_revenue(ev_val, d.get("revenue")),
         "ev_fcf": ev_fcf(ev_val, fcf_val),
-        "peg": peg_ratio(price_earnings(d.get("price"), eps_val), d.get("earnings_growth_rate")),
+        "peg": peg_ratio(price_earnings(d.get("price"), eps_val), _earnings_growth_pct),
         "fcf_yield": free_cash_flow_yield(fcf_val, mkt_cap),
         "dividend_yield": dividend_yield(d.get("dividend_per_share"), d.get("price")),
         "payout_ratio": dividend_payout_ratio(d.get("dividends_paid"), d.get("net_income")),
@@ -4356,6 +4393,7 @@ def dcf_sensitivity_analysis(
     growth_rate_range: tuple = (-0.05, 0.05, 0.025),  # (min_delta, max_delta, step)
     discount_rate_range: tuple = (-0.02, 0.02, 0.01),  # (min_delta, max_delta, step)
     terminal_growth: float = DCF_TERMINAL_GROWTH,
+    net_debt: Optional[float] = 0.0,
 ) -> Dict[str, Any]:
     """
     Genera una matriz de sensibilidad para análisis DCF.
@@ -4460,7 +4498,8 @@ def dcf_sensitivity_analysis(
                 shares_outstanding=shares_outstanding,
                 high_growth_rate=growth_rate,
                 terminal_growth=terminal_growth,
-                discount_rate=discount_rate
+                discount_rate=discount_rate,
+                net_debt=net_debt
             )
             
             fair_value = dcf_result.get("fair_value_per_share")

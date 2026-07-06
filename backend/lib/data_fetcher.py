@@ -812,7 +812,11 @@ class YahooFinanceFetcher:
                 last_data = historical_data["data"].get(last_year, {})
                 
                 def calc_cagr(end_val, start_val, periods):
-                    if end_val and start_val and start_val > 0 and periods > 0:
+                    # Exigir end_val > 0 además de start_val > 0: si el valor final
+                    # es negativo (p.ej. net_income que pasa a pérdidas), elevar una
+                    # base negativa a exponente fraccionario devuelve un número
+                    # COMPLEJO en Python, no None. Con el guardia devuelve None.
+                    if end_val and start_val and end_val > 0 and start_val > 0 and periods > 0:
                         return ((end_val / start_val) ** (1 / periods) - 1) * 100
                     return None
                 
@@ -1550,15 +1554,22 @@ class FinancialDataService:
                 revenues = historical["revenue"]
                 try:
                     def _cagr(end_val, start_val, periods):
-                        if end_val and start_val and start_val > 0 and periods > 0:
+                        # end_val = valor MÁS RECIENTE, start_val = MÁS ANTIGUO.
+                        # La serie de yfinance viene newest-first (revenues[0] es el
+                        # año reciente y revenues[-1] el más antiguo), así que el
+                        # CAGR correcto es (reciente/antiguo)^(1/n)-1 =>
+                        # _cagr(revenues[0], revenues[-1], ...). Antes estaba
+                        # invertido y una empresa en crecimiento salía en contracción.
+                        if (end_val and start_val and end_val > 0
+                                and start_val > 0 and periods > 0):
                             return (end_val / start_val) ** (1 / periods) - 1
                         return None
                     result["contextual"]["revenue_cagr_3y"] = _cagr(
-                        revenues[-1], revenues[0], min(3, len(revenues)-1)
+                        revenues[0], revenues[-1], min(3, len(revenues)-1)
                     )
                     if len(revenues) >= 5:
                         result["contextual"]["revenue_cagr_5y"] = _cagr(
-                            revenues[-1], revenues[0], min(5, len(revenues)-1)
+                            revenues[0], revenues[-1], min(5, len(revenues)-1)
                         )
                 except (TypeError, ValueError, ZeroDivisionError):
                     pass
