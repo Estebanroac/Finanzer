@@ -57,7 +57,7 @@ export default function EvaluationTab({ data }: { data: StockAnalysis }) {
                     <div className="border-t border-white/[0.04] px-5 py-3 space-y-2">
                       {adjustments.map((adj, i) => {
                         const sevColor = adj.severity === "excellent" || adj.severity === "good"
-                          ? "#00d632"
+                          ? "#0cc06c"
                           : adj.severity === "severe" || adj.severity === "critical"
                           ? "#ff4d4d"
                           : "#fbbf24";
@@ -99,7 +99,7 @@ export default function EvaluationTab({ data }: { data: StockAnalysis }) {
           <div className="flex items-center gap-3 mb-5">
             <Pill count={alerts.red_flags?.length || 0} label="Riesgos" color="#ff4d4d" />
             <Pill count={alerts.warnings?.length || 0} label="Advertencias" color="#fbbf24" />
-            <Pill count={alerts.strengths?.length || 0} label="Fortalezas" color="#00d632" />
+            <Pill count={alerts.strengths?.length || 0} label="Fortalezas" color="#0cc06c" />
             <InfoTooltip content={EVALUATION.alerts} />
           </div>
 
@@ -110,7 +110,7 @@ export default function EvaluationTab({ data }: { data: StockAnalysis }) {
             <AlertGroup title="Advertencias" color="#fbbf24" items={alerts.warnings} />
           )}
           {alerts.strengths && alerts.strengths.length > 0 && (
-            <AlertGroup title="Fortalezas" color="#00d632" items={alerts.strengths} />
+            <AlertGroup title="Fortalezas" color="#0cc06c" items={alerts.strengths} />
           )}
 
           {(alerts.red_flags?.length || 0) === 0 &&
@@ -161,7 +161,7 @@ function ZScoreCard({ data }: { data: { z_score: number; zone: string; interpret
     );
   }
 
-  const color = data.zone === "safe" ? "#00d632" : data.zone === "grey" ? "#fbbf24" : "#ff4d4d";
+  const color = data.zone === "safe" ? "#0cc06c" : data.zone === "grey" ? "#fbbf24" : "#ff4d4d";
   const zoneLabel = data.zone === "safe" ? "Zona Segura" : data.zone === "grey" ? "Zona Gris" : "Zona Riesgo";
   const safeT = (details.safe_threshold as number) || 2.99;
   const greyT = (details.grey_threshold as number) || 1.81;
@@ -204,7 +204,7 @@ function ZScoreCard({ data }: { data: { z_score: number; zone: string; interpret
 }
 
 function FScoreCard({ data }: { data: { score: number; max_score: number; level: string; interpretation: string; details?: Record<string, { passed: boolean; detail: string }>; fiscal_year?: string } }) {
-  const color = data.score >= 7 ? "#00d632" : data.score >= 4 ? "#fbbf24" : "#ff4d4d";
+  const color = data.score >= 7 ? "#0cc06c" : data.score >= 4 ? "#fbbf24" : "#ff4d4d";
   const details = data.details;
 
   return (

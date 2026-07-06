@@ -15,7 +15,7 @@ function Stat({ label, value, accent, tooltip }: { label: string; value: string;
         <span className="text-[11px] text-zinc-500 uppercase tracking-wider">{label}</span>
         {tooltip && <InfoTooltip content={tooltip} />}
       </div>
-      <span className={`text-lg font-semibold tabular-nums ${accent ? "text-[#00d632]" : "text-white"}`}>
+      <span className={`text-lg font-semibold tabular-nums ${accent ? "text-[#0cc06c]" : "text-white"}`}>
         {value}
       </span>
     </div>

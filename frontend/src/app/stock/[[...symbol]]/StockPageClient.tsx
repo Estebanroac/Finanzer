@@ -5,11 +5,13 @@ import Navbar from "@/components/Navbar";
 import ScoreCard from "@/components/ScoreCard";
 import MetricsGrid from "@/components/MetricsGrid";
 import TabsSection from "@/components/TabsSection";
+import AnalyzeOverlay from "@/components/AnalyzeOverlay";
 import { analyzeStock, formatPrice, getScoreColor, type StockAnalysis } from "@/lib/api";
 
-// PDF download URL helper
+// PDF download URL helper — misma regla que api.ts: solo el dev server de
+// Next (puerto 3000) apunta a localhost:8000; el resto es same-origin.
 const getPdfUrl = (sym: string) =>
-  `${typeof window !== "undefined" && window.location.hostname !== "localhost" ? "" : "http://localhost:8000"}/api/pdf/${sym}`;
+  `${typeof window !== "undefined" && window.location.port === "3000" ? "http://localhost:8000" : ""}/api/pdf/${sym}`;
 
 export default function StockPageClient() {
   const [symbol, setSymbol] = useState<string>("");
@@ -36,10 +38,40 @@ export default function StockPageClient() {
       .finally(() => setLoading(false));
   }, [symbol]);
 
-  if (loading) return <LoadingSkeleton symbol={symbol} />;
-  if (error) return <ErrorView symbol={symbol} error={error} />;
-  if (!data) return null;
+  // Overlay de análisis: aparece exactamente al entrar/buscar y se disuelve
+  // cuando los datos del backend están listos Y pintados debajo. key por
+  // símbolo para que una nueva búsqueda reinicie la secuencia; posición
+  // estable (primer hijo del fragment) para que la transición carga->contenido
+  // no lo re-monte a mitad de animación.
+  const [overlayGone, setOverlayGone] = useState(false);
+  useEffect(() => { setOverlayGone(false); }, [symbol]);
 
+  const overlay = !overlayGone && !error && (
+    <AnalyzeOverlay
+      key={symbol || "init"}
+      symbol={symbol}
+      companyName={data?.profile?.name ?? null}
+      done={!!data && !loading}
+      onFinished={() => setOverlayGone(true)}
+    />
+  );
+
+  return (
+    <>
+      {overlay}
+      {error ? (
+        <ErrorView symbol={symbol} error={error} />
+      ) : data ? (
+        <AnalysisContent data={data} symbol={symbol} />
+      ) : (
+        <div className="min-h-screen bg-[#050507]" />
+      )}
+    </>
+  );
+}
+
+/* ── Contenido del análisis (pinta bajo el overlay antes de la disolución) ── */
+function AnalysisContent({ data, symbol }: { data: StockAnalysis; symbol: string }) {
   const m = data.key_metrics || {};
   const hi52 = m.price_52w_high;
   const lo52 = m.price_52w_low;
@@ -58,7 +90,7 @@ export default function StockPageClient() {
         className="fixed inset-0 -z-10 bg-[#09090b] bg-cover bg-center"
         style={{ backgroundImage: "url(/bg-analysis.webp)" }}
       />
-      <Navbar />
+      <Navbar symbol={symbol} />
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 pt-8 pb-16">
         {/* ── Header ── */}
@@ -69,7 +101,7 @@ export default function StockPageClient() {
                 <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
                   {data.profile.name}
                 </h1>
-                <span className="px-2 py-0.5 rounded-md text-[11px] font-mono font-semibold text-[#00d632] bg-[#00d632]/10 border border-[#00d632]/20">
+                <span className="px-2 py-0.5 rounded-md text-[11px] font-mono font-semibold text-[#0cc06c] bg-[#0cc06c]/10 border border-[#0cc06c]/20">
                   {symbol}
                 </span>
               </div>
@@ -117,7 +149,7 @@ export default function StockPageClient() {
                 className="absolute top-0 left-0 h-full rounded-full"
                 style={{
                   width: `${range52pct}%`,
-                  background: range52pct > 70 ? "linear-gradient(90deg, #00d632, #4ade80)" :
+                  background: range52pct > 70 ? "#0cc06c" :
                              range52pct < 30 ? "linear-gradient(90deg, #ff4d4d, #f97316)" :
                              "linear-gradient(90deg, #fbbf24, #f59e0b)",
                 }}
@@ -284,63 +316,6 @@ function QuickSummary({ data }: { data: StockAnalysis }) {
           <p key={i} className="text-sm text-zinc-300 leading-relaxed">{text}</p>
         ))}
       </div>
-    </div>
-  );
-}
-
-/* ── Loading skeleton ── */
-function LoadingSkeleton({ symbol }: { symbol: string }) {
-  return (
-    <div className="min-h-screen relative">
-      {/* Analysis background */}
-      <div
-        className="fixed inset-0 -z-10 bg-[#09090b] bg-cover bg-center"
-        style={{ backgroundImage: "url(/bg-analysis.webp)" }}
-      />
-      <Navbar />
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 pt-8 pb-16">
-        <div className="flex justify-between mb-8">
-          <div>
-            <div className="skeleton h-8 w-56 mb-2" />
-            <div className="skeleton h-4 w-40" />
-          </div>
-          <div className="text-right">
-            <div className="skeleton h-8 w-28 mb-2 ml-auto" />
-            <div className="skeleton h-3 w-20 ml-auto" />
-          </div>
-        </div>
-
-        <div className="skeleton h-12 rounded-xl mb-8" />
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-10">
-          <div className="skeleton h-36 rounded-2xl" />
-          <div className="lg:col-span-2 skeleton h-36 rounded-2xl" />
-        </div>
-
-        <div className="grid grid-cols-5 gap-2 mb-10">
-          {[1,2,3,4,5].map(i => <div key={i} className="skeleton h-20 rounded-xl" />)}
-        </div>
-
-        <div className="flex gap-4 border-b border-white/[0.06] mb-8 pb-3">
-          {[80, 96, 72, 104, 88].map((w, i) => (
-            <div key={i} className="skeleton h-4 rounded" style={{ width: w }} />
-          ))}
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div className="skeleton h-48 rounded-xl" />
-          <div className="skeleton h-48 rounded-xl" />
-        </div>
-
-        <div className="text-center py-12">
-          <div className="inline-flex items-center gap-3 text-zinc-500">
-            <svg className="w-4 h-4 animate-spin text-[#00d632]" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-            </svg>
-            <span className="text-sm">Analizando {symbol}...</span>
-          </div>
-        </div>
-      </main>
     </div>
   );
 }

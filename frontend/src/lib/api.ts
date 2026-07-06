@@ -1,4 +1,8 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || (typeof window !== "undefined" && window.location.hostname !== "localhost" ? "" : "http://localhost:8000");
+// Solo el dev server de Next (puerto 3000) necesita apuntar al backend en
+// localhost:8000; en cualquier otro caso (producción en Render, uvicorn local
+// sirviendo el export estático, proxies) la API es same-origin.
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ||
+  (typeof window !== "undefined" && window.location.port === "3000" ? "http://localhost:8000" : "");
 
 export interface SearchResult {
   ticker: string;
@@ -127,8 +131,8 @@ export function formatPrice(val: number | null | undefined): string {
 }
 
 export function getScoreColor(pct: number): string {
-  if (pct >= 80) return "#00d632";
-  if (pct >= 65) return "#4ade80";
+  // Un solo verde de marca (el del logo) para todo lo favorable.
+  if (pct >= 65) return "#0cc06c";
   if (pct >= 50) return "#fbbf24";
   if (pct >= 35) return "#f97316";
   return "#ff4d4d";

@@ -43,7 +43,7 @@ export default function TabsSection({ data }: TabsSectionProps) {
           >
             {tab.label}
             {activeTab === tab.id && (
-              <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-[#00d632] rounded-full" />
+              <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-[#0cc06c] rounded-full" />
             )}
           </button>
         ))}

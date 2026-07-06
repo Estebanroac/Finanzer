@@ -14,7 +14,7 @@ export default function IntrinsicTab({ data }: { data: StockAnalysis }) {
   let verdictColor = "#fbbf24";
   if (dcf?.fair_value && price) {
     const upside = ((dcf.fair_value - price) / price) * 100;
-    if (upside > 15) { verdict = "Subvalorada"; verdictColor = "#00d632"; }
+    if (upside > 15) { verdict = "Subvalorada"; verdictColor = "#0cc06c"; }
     else if (upside < -15) { verdict = "Sobrevalorada"; verdictColor = "#ff4d4d"; }
   }
 
@@ -52,14 +52,14 @@ export default function IntrinsicTab({ data }: { data: StockAnalysis }) {
           title="Valor Graham"
           value={formatPrice(graham)}
           sub={graham && price ? `${((graham - price) / price * 100).toFixed(1)}% vs precio` : ""}
-          color={graham && price && graham > price ? "#00d632" : "#ff4d4d"}
+          color={graham && price && graham > price ? "#0cc06c" : "#ff4d4d"}
           tooltip="graham"
         />
         <ValuationBlock
           title="Valor DCF"
           value={formatPrice(dcf?.fair_value)}
           sub={dcf?.upside != null ? `${dcf.upside > 0 ? "+" : ""}${dcf.upside.toFixed(1)}% upside` : ""}
-          color={dcf?.fair_value && price && dcf.fair_value > price ? "#00d632" : "#ff4d4d"}
+          color={dcf?.fair_value && price && dcf.fair_value > price ? "#0cc06c" : "#ff4d4d"}
           tooltip="dcf"
         />
       </div>
@@ -150,7 +150,7 @@ function SensitivityTable({ sensitivity, price }: { sensitivity: NonNullable<Sto
                 <th
                   key={i}
                   className={`p-3 text-center font-medium text-xs ${
-                    i === base_discount_idx ? "text-[#00d632]" : "text-zinc-500"
+                    i === base_discount_idx ? "text-[#0cc06c]" : "text-zinc-500"
                   }`}
                 >
                   {(dr * 100).toFixed(1)}%
@@ -163,7 +163,7 @@ function SensitivityTable({ sensitivity, price }: { sensitivity: NonNullable<Sto
               <tr key={gi} className="border-b border-white/[0.04] last:border-0">
                 <td
                   className={`p-3 font-medium text-xs ${
-                    gi === base_growth_idx ? "text-[#00d632]" : "text-zinc-500"
+                    gi === base_growth_idx ? "text-[#0cc06c]" : "text-zinc-500"
                   }`}
                 >
                   {(growth_rates[gi] * 100).toFixed(1)}%
@@ -172,7 +172,7 @@ function SensitivityTable({ sensitivity, price }: { sensitivity: NonNullable<Sto
                   <td
                     key={di}
                     className={`p-3 text-center font-medium text-xs ${cellClass(val)} ${
-                      gi === base_growth_idx && di === base_discount_idx ? "ring-1 ring-[#00d632]/40 rounded" : ""
+                      gi === base_growth_idx && di === base_discount_idx ? "ring-1 ring-[#0cc06c]/40 rounded" : ""
                     }`}
                   >
                     {val == null ? "—" : `$${val.toFixed(0)}`}

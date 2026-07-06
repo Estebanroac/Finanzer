@@ -11,7 +11,7 @@ interface ScoreCardProps {
 }
 
 function getScoreColor(pct: number): string {
-  if (pct >= 80) return "#00d632";
+  if (pct >= 80) return "#0cc06c";
   if (pct >= 65) return "#4ade80";
   if (pct >= 50) return "#fbbf24";
   if (pct >= 35) return "#f97316";

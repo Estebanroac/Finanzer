@@ -19,8 +19,8 @@ export default function Error({
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-[#09090b] text-center">
-      <div className="w-14 h-14 rounded-full bg-[#00d632]/10 border border-[#00d632]/20 flex items-center justify-center mb-5">
-        <svg className="w-6 h-6 text-[#00d632]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="w-14 h-14 rounded-full bg-[#0cc06c]/10 border border-[#0cc06c]/20 flex items-center justify-center mb-5">
+        <svg className="w-6 h-6 text-[#0cc06c]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
         </svg>
       </div>
@@ -37,7 +37,7 @@ export default function Error({
         </button>
         <a
           href="/"
-          className="px-4 py-2 rounded-lg text-sm font-medium text-[#00d632] bg-[#00d632]/10 border border-[#00d632]/20 hover:bg-[#00d632]/15 transition-colors"
+          className="px-4 py-2 rounded-lg text-sm font-medium text-[#0cc06c] bg-[#0cc06c]/10 border border-[#0cc06c]/20 hover:bg-[#0cc06c]/15 transition-colors"
         >
           Volver al inicio
         </a>

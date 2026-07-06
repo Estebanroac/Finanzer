@@ -110,7 +110,7 @@ function ComparisonSection({ title, subtitle, metrics }: { title: string; subtit
                 const isBetter = m.higherIsBetter ? diff > 5 : diff < -5;
                 const isWorse = m.higherIsBetter ? diff < -5 : diff > 5;
                 relLabel = `${diff > 0 ? "+" : ""}${diff.toFixed(0)}%`;
-                relColor = isBetter ? "#00d632" : isWorse ? "#ff4d4d" : "#fbbf24";
+                relColor = isBetter ? "#0cc06c" : isWorse ? "#ff4d4d" : "#fbbf24";
               }
 
               return (
