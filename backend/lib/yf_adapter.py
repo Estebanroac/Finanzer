@@ -685,6 +685,9 @@ def _do_fetch(symbol: str) -> Dict[str, Any]:
             "priceToBook": _raw(kstat.get("priceToBook")),
             "forwardPE": _raw(summary.get("forwardPE")) or _raw(kstat.get("forwardPE")),
             "dividendYield": _raw(summary.get("dividendYield")),
+            # PEG de mercado de Yahoo (usa crecimiento FORWARD de consenso); se
+            # prefiere en main.py sobre el PEG trailing que calcula el motor.
+            "pegRatio": _raw(kstat.get("pegRatio")),
         },
     }
 

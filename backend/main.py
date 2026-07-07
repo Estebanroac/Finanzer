@@ -267,7 +267,6 @@ def _compute_analysis(symbol: str) -> dict:
                     # Aportados por la fuente secundaria (Finnhub) cuando Yahoo
                     # los bloquea; ya vienen en la unidad del motor (decimal).
                     "payout_ratio": yr.get("payoutRatio"),
-                    "peg": yr.get("pegRatio"),
                     "interest_coverage": yr.get("interestCoverage"),
                     "inventory_turnover": yr.get("inventoryTurnover"),
                 }
@@ -275,6 +274,16 @@ def _compute_analysis(symbol: str) -> dict:
                 for k, v in fallback_map.items():
                     if ratios.get(k) is None and v is not None:
                         ratios[k] = v
+
+                # PEG de MERCADO (Yahoo defaultKeyStatistics.pegRatio o forwardPEG
+                # de Finnhub): usa crecimiento FORWARD de consenso, la convención
+                # de stockanalysis/Yahoo. Se PREFIERE sobre el PEG trailing del
+                # motor (P/E ÷ crecimiento TTM), que con un crecimiento TTM
+                # inflado por one-time items subestima (AAPL 1.2 vs ~2.5 real).
+                # El PEG trailing queda solo si no hay PEG de mercado.
+                _mkt_peg = safe_float(yr.get("pegRatio"))
+                if _mkt_peg is not None and _mkt_peg > 0:
+                    ratios["peg"] = _mkt_peg
             except Exception as e:
                 logger.debug(f"Yahoo ratio fallback error: {e}")
 

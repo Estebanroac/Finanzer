@@ -201,7 +201,10 @@ def enrich_info(info: Dict[str, Any], symbol: str) -> Dict[str, Any]:
     set_yr("currentRatio", _num(m.get("currentRatioQuarterly")) or _num(m.get("currentRatioAnnual")))
     set_yr("quickRatio", _num(m.get("quickRatioQuarterly")) or _num(m.get("quickRatioAnnual")))
     set_yr("payoutRatio", _pct(m.get("payoutRatioTTM")))
-    set_yr("pegRatio", _num(m.get("pegTTM")))
+    # PEG de mercado: preferir el FORWARD (crecimiento de consenso) sobre el TTM;
+    # ambos ≈ al PEG que reportan stockanalysis/Yahoo, a diferencia del PEG
+    # trailing del motor (que con el crecimiento TTM inflado subestima).
+    set_yr("pegRatio", _num(m.get("forwardPEG")) or _num(m.get("pegTTM")))
     set_yr("interestCoverage", _num(m.get("netInterestCoverageTTM")) or _num(m.get("netInterestCoverageAnnual")))
     set_yr("inventoryTurnover", _num(m.get("inventoryTurnoverTTM")) or _num(m.get("inventoryTurnoverAnnual")))
 
