@@ -85,11 +85,13 @@ function AnalysisContent({ data, symbol }: { data: StockAnalysis; symbol: string
 
   return (
     <div className="min-h-screen relative">
-      {/* Analysis background */}
+      {/* Analysis background + velo: el arte del fondo (gráfico con glow) no
+          debe competir con los datos — se atenúa y se deja respirar en bordes */}
       <div
-        className="fixed inset-0 -z-10 bg-[#09090b] bg-cover bg-center"
+        className="fixed inset-0 -z-10 bg-[#050507] bg-cover bg-center"
         style={{ backgroundImage: "url(/bg-analysis.webp)" }}
       />
+      <div className="fixed inset-0 -z-10 bg-[#050507]/60 pointer-events-none" />
       <Navbar symbol={symbol} />
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 pt-8 pb-16">
