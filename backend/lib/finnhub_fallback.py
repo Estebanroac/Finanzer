@@ -174,16 +174,19 @@ def enrich_info(info: Dict[str, Any], symbol: str, degraded: bool = False) -> Di
     set_top("beta", _num(m.get("beta")))
     set_top("forwardPE", _num(m.get("forwardPE")))
     set_top("trailingPE", _num(m.get("peTTM")))
-    # trailingEps: en degradación se IMPONE el TTM diluido de Finnhub (el valor de
-    # Yahoo/LKG puede ser un EPS anual obsoleto que infla el P/E); fuera de
-    # degradación se respeta el de Yahoo (fill-if-None).
+    # trailingEps: cuando consultamos Finnhub (Yahoo vino incompleto), su epsTTM
+    # (TTM diluido) es la fuente fiable. Se IMPONE sobre el trailingEps existente
+    # si falta o difiere >2% — el de Yahoo/LKG puede ser un EPS ANUAL obsoleto
+    # que infla el P/E (AAPL 7.46 anual vs 8.27 TTM). Diferencias pequeñas se
+    # respetan (sin churn). No depende del flag 'degraded' estricto: el estado
+    # 'gappy pero no degradado' también trae EPS anual obsoleto.
     _eps_ttm = _num(m.get("epsTTM"))
-    if degraded and _eps_ttm is not None:
-        if info.get("trailingEps") != _eps_ttm:
-            info["trailingEps"] = _eps_ttm
-            filled.append("trailingEps*")
-    else:
-        set_top("trailingEps", _eps_ttm)
+    if _eps_ttm is not None and _eps_ttm != 0:
+        _cur_eps = _num(info.get("trailingEps"))
+        if _cur_eps is None or abs(_cur_eps - _eps_ttm) / abs(_eps_ttm) > 0.02:
+            if info.get("trailingEps") != _eps_ttm:
+                info["trailingEps"] = _eps_ttm
+                filled.append("trailingEps~")
     # OJO: NO mapear forwardEps desde epsTTM/epsExclExtraItemsTTM — esos son
     # TRAILING, no estimados forward. Usarlos haría forward_pe = price/eps_TTM
     # (≈ el trailing P/E otra vez), anulando la señal de compresión. Se deja
