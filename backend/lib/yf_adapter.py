@@ -16,10 +16,43 @@ _crumb = None
 _session_lock = threading.Lock()
 
 # ── In-memory cache ──
-_cache: Dict[str, tuple] = {}
+_cache: Dict[str, tuple] = {}   # symbol -> (ts, info, degraded)
 _locks: Dict[str, threading.Lock] = {}
 _global_lock = threading.Lock()
 CACHE_TTL = 300  # 5 minutes
+# Un snapshot DEGRADADO caduca rápido para auto-repararse en el siguiente fetch
+CACHE_TTL_DEGRADED = 60
+
+# ── Resiliencia ante respuestas degradadas de Yahoo ──
+# Desde IPs de datacenter (Render), Yahoo devuelve intermitentemente respuestas
+# con la mitad de los campos (rate limit suave). Tres defensas:
+#   1) detectar el snapshot degradado y REINTENTAR con sesión/crumb frescos y
+#      otro perfil de navegador;
+#   2) cachearlo poco tiempo (CACHE_TTL_DEGRADED);
+#   3) rellenar los huecos con el último snapshot BUENO conocido (los
+#      fundamentales cambian trimestralmente: un dato de hace una hora es
+#      infinitamente mejor que un null).
+_IMPERSONATE_PROFILES = ["chrome", "safari15_5", "edge101"]
+_profile_idx = 0
+_best_cache: Dict[str, tuple] = {}   # symbol -> (ts, info) último snapshot bueno
+_BEST_MAX_AGE = 24 * 3600
+_NESTED_KEYS = ("_yahoo_ratios", "_prior_year", "_current_derived", "_piotroski_current")
+
+# Campos que prácticamente toda empresa cotizada tiene; si faltan varios, la
+# respuesta vino degradada (no confundir con ausencias legítimas: dividendos,
+# forward P/E, etc. NO están en esta lista).
+_COMPLETENESS_FIELDS = ("beta", "sharesOutstanding", "marketCap",
+                        "totalRevenue", "operatingCashflow", "totalCash")
+
+
+def _completeness(info) -> int:
+    if not isinstance(info, dict) or not info:
+        return 0
+    return sum(1 for f in _COMPLETENESS_FIELDS if info.get(f) is not None)
+
+
+def _is_degraded(info) -> bool:
+    return _completeness(info) < 4
 
 # ── Known sectors ──
 KNOWN_SECTORS = {
@@ -111,7 +144,13 @@ def _ensure_session():
             return
 
         from curl_cffi import requests as cffi_requests
-        _session = cffi_requests.Session(impersonate="chrome")
+        profile = _IMPERSONATE_PROFILES[_profile_idx % len(_IMPERSONATE_PROFILES)]
+        try:
+            _session = cffi_requests.Session(impersonate=profile)
+        except Exception:
+            # perfil no soportado por esta versión de curl_cffi -> el estándar
+            _session = cffi_requests.Session(impersonate="chrome")
+            profile = "chrome"
 
         # Get cookies
         _session.get("https://finance.yahoo.com")
@@ -119,7 +158,22 @@ def _ensure_session():
         # Get crumb
         r = _session.get("https://query2.finance.yahoo.com/v1/test/getcrumb")
         _crumb = r.text
-        logger.info(f"[AUTH] Yahoo session initialized, crumb={_crumb[:8]}...")
+        logger.info(f"[AUTH] Yahoo session initialized ({profile}), crumb={_crumb[:8]}...")
+
+
+def _reset_session(rotate_profile: bool = False):
+    """Fuerza una sesión/crumb nuevos en el próximo _ensure_session.
+
+    rotate_profile: cambia el navegador imitado (chrome -> safari -> edge) —
+    ante un rate limit suave, un fingerprint distinto suele recibir la
+    respuesta completa.
+    """
+    global _session, _crumb, _profile_idx
+    with _session_lock:
+        _session = None
+        _crumb = None
+        if rotate_profile:
+            _profile_idx += 1
 
 
 def _raw(obj, default=None):
@@ -138,23 +192,99 @@ def get_ticker_info(symbol: str) -> Dict[str, Any]:
     """
     symbol = symbol.upper()
 
-    # Check cache
-    if symbol in _cache:
-        ts, cached_data = _cache[symbol]
-        if time.time() - ts < CACHE_TTL:
-            logger.info(f"[CACHE HIT] {symbol}")
+    def _cache_fresh():
+        entry = _cache.get(symbol)
+        if not entry:
+            return None
+        ts, cached_data, degraded = entry
+        ttl = CACHE_TTL_DEGRADED if degraded else CACHE_TTL
+        if time.time() - ts < ttl:
             return cached_data
+        return None
+
+    # Check cache
+    cached = _cache_fresh()
+    if cached is not None:
+        logger.info(f"[CACHE HIT] {symbol}")
+        return cached
 
     # Per-symbol lock
     lock = _get_symbol_lock(symbol)
     with lock:
         # Double-check
-        if symbol in _cache:
-            ts, cached_data = _cache[symbol]
-            if time.time() - ts < CACHE_TTL:
-                logger.info(f"[CACHE HIT after lock] {symbol}")
-                return cached_data
-        return _do_fetch(symbol)
+        cached = _cache_fresh()
+        if cached is not None:
+            logger.info(f"[CACHE HIT after lock] {symbol}")
+            return cached
+
+        info = _do_fetch(symbol)
+
+        # ── Defensa 1: reintento ante respuesta degradada ──
+        attempts = 0
+        while _is_degraded(info) and attempts < 2:
+            attempts += 1
+            logger.warning(
+                f"[DEGRADED] {symbol}: {_completeness(info)}/{len(_COMPLETENESS_FIELDS)} "
+                f"campos clave; reintento {attempts} con sesión fresca")
+            _reset_session(rotate_profile=True)
+            time.sleep(0.8 * attempts)
+            try:
+                retry_info = _do_fetch(symbol)
+            except Exception as e:
+                logger.warning(f"[DEGRADED] reintento falló para {symbol}: {e}")
+                break
+            if _completeness(retry_info) > _completeness(info):
+                info = retry_info
+
+        degraded = _is_degraded(info)
+
+        # ── Defensa 3: rellenar huecos con el último snapshot bueno ──
+        info = _merge_last_known_good(symbol, info, degraded)
+
+        # ── Defensa 2: los snapshots degradados caducan rápido ──
+        _cache[symbol] = (time.time(), info, degraded)
+        return info
+
+
+def _merge_last_known_good(symbol: str, fresh: Dict[str, Any], fresh_degraded: bool) -> Dict[str, Any]:
+    """Rellena los None del fetch fresco con el último snapshot bueno (<24h).
+
+    La edad del 'mejor conocido' solo se renueva cuando el fetch fue COMPLETO;
+    si solo llegan fetches degradados, el relleno caduca a las 24h en vez de
+    perpetuarse con datos viejos.
+    """
+    now = time.time()
+    ts_best, best = _best_cache.get(symbol, (0.0, None))
+    merged = dict(fresh)
+
+    if best and (now - ts_best) < _BEST_MAX_AGE:
+        filled = 0
+        for k, v in best.items():
+            if k in _NESTED_KEYS:
+                continue
+            if merged.get(k) is None and v is not None:
+                merged[k] = v
+                filled += 1
+        for nk in _NESTED_KEYS:
+            bsub = best.get(nk)
+            if not isinstance(bsub, dict):
+                continue
+            msub = dict(merged.get(nk) or {})
+            for k, v in bsub.items():
+                if msub.get(k) is None and v is not None:
+                    msub[k] = v
+                    filled += 1
+            merged[nk] = msub
+        if filled:
+            logger.info(f"[LKG] {symbol}: {filled} campos rellenados del último snapshot bueno")
+
+    if not fresh_degraded:
+        _best_cache[symbol] = (now, merged)
+    elif best is not None:
+        _best_cache[symbol] = (ts_best, merged)
+    else:
+        _best_cache[symbol] = (now, merged)
+    return merged
 
 
 def _refresh_crumb():
@@ -533,7 +663,7 @@ def _do_fetch(symbol: str) -> Dict[str, Any]:
     logger.info(f"[FAST API] get_ticker_info({symbol}) in {elapsed:.2f}s")
 
     # Cache
-    _cache[symbol] = (time.time(), info)
+    _cache[symbol] = (time.time(), info, _is_degraded(info))
     return info
 
 
@@ -846,7 +976,7 @@ def _fallback_yfinance(symbol: str) -> Dict[str, Any]:
 
     elapsed = time.time() - t0
     logger.info(f"[FALLBACK] get_ticker_info({symbol}) in {elapsed:.2f}s")
-    _cache[symbol] = (time.time(), info)
+    _cache[symbol] = (time.time(), info, _is_degraded(info))
     return info
 
 
