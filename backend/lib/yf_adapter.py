@@ -44,6 +44,14 @@ _NESTED_KEYS = ("_yahoo_ratios", "_prior_year", "_current_derived", "_piotroski_
 _COMPLETENESS_FIELDS = ("beta", "sharesOutstanding", "marketCap",
                         "totalRevenue", "operatingCashflow", "totalCash")
 
+# Firma del modo de degradación REAL observado en producción (Render): Yahoo
+# devuelve 200 con financialData intacto pero el cluster summaryDetail/
+# defaultKeyStatistics vacío → beta, forwardEps/PE, dividendRate y growth
+# llegan null A LA VEZ. Un ticker legítimo casi nunca tiene TODOS estos null
+# (beta existe para toda cotizada con >1 año de historia).
+_MODULE_B_FIELDS = ("beta", "forwardEps", "forwardPE", "dividendRate",
+                    "revenueGrowth", "earningsGrowth")
+
 
 def _completeness(info) -> int:
     if not isinstance(info, dict) or not info:
@@ -52,7 +60,23 @@ def _completeness(info) -> int:
 
 
 def _is_degraded(info) -> bool:
-    return _completeness(info) < 4
+    if not isinstance(info, dict) or not info:
+        return True
+    # modo 1: media respuesta perdida
+    if _completeness(info) < 4:
+        return True
+    # modo 2: cluster de módulos caído (todos los campos del cluster en null)
+    if all(info.get(f) is None for f in _MODULE_B_FIELDS):
+        return True
+    return False
+
+
+def _quality(info) -> int:
+    """Puntaje total para comparar snapshots en los reintentos (cubre ambos
+    modos de degradación: completitud base + presencia del cluster B)."""
+    if not isinstance(info, dict) or not info:
+        return 0
+    return _completeness(info) + sum(1 for f in _MODULE_B_FIELDS if info.get(f) is not None)
 
 # ── Known sectors ──
 KNOWN_SECTORS = {
@@ -233,7 +257,7 @@ def get_ticker_info(symbol: str) -> Dict[str, Any]:
             except Exception as e:
                 logger.warning(f"[DEGRADED] reintento falló para {symbol}: {e}")
                 break
-            if _completeness(retry_info) > _completeness(info):
+            if _quality(retry_info) > _quality(info):
                 info = retry_info
 
         degraded = _is_degraded(info)
