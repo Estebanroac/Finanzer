@@ -241,9 +241,13 @@ def _fill_piotroski(info: Dict[str, Any], series: dict, filled: list) -> None:
     setk(der, "gross_margin", gm0, "der.gm")
     setk(der, "asset_turnover", at0, "der.at")
 
-    # Deuda LP: solo si Yahoo no trajo el valor absoluto. Se pasa como ratio
-    # LTD/Activos en AMBOS años → la comparación de dirección sigue siendo válida
-    # sin mezclar unidades (el motor solo hace current <= prior).
-    if info.get("longTermDebt") is None:
+    # Deuda LP: se rellena como ratio LTD/Activos en AMBOS años solo cuando el
+    # dato del AÑO FISCAL (el que Piotroski compara) falta en los dos lados —
+    # que es el escenario de bloqueo de históricos. main.py prioriza
+    # _piotroski_current["long_term_debt"] sobre el absoluto de financials, así
+    # que el par de ratios se usa de forma consistente (current <= prior) sin
+    # mezclar unidades. Si el año fiscal actual ya trae un absoluto (enrich local
+    # parcial), no se toca, para no comparar ratio contra dólar.
+    if cur.get("long_term_debt") is None and prior.get("long_term_debt") is None:
         setk(cur, "long_term_debt", ltd0, "pio.ltd")
         setk(prior, "long_term_debt", ltd1, "prior.ltd")
