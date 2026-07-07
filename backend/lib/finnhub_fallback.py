@@ -117,6 +117,27 @@ def _pct(v) -> Optional[float]:
     return n / 100.0 if n is not None else None
 
 
+def _growth(ttm, cagr3, cagr5) -> Optional[float]:
+    """Crecimiento YoY en DECIMAL, con guard anti-artefacto.
+
+    Bancos y financieras reportan un "revenue" cuya definición cambia entre
+    períodos y produce un YoY absurdo (JPM: 108.98% con CAGR-5Y de 7.7%). Un
+    hipergrowth REAL muestra un CAGR multi-año comparablemente alto; un artefacto
+    no. Si el YoY es un pico implausible frente a la tendencia, se usa el CAGR-3Y
+    suavizado en su lugar (para JPM ~3.4%, razonable) en vez de un dato roto.
+    """
+    ttm = _num(ttm)
+    c3 = _num(cagr3)
+    c5 = _num(cagr5)
+    lt = c5 if c5 is not None else c3
+    if ttm is not None:
+        if abs(ttm) <= 60 or (lt is not None and abs(ttm) <= 3 * abs(lt)):
+            return ttm / 100.0
+    if c3 is not None:
+        return c3 / 100.0
+    return None
+
+
 def _series_val(series: dict, key: str, idx: int) -> Optional[float]:
     """Valor del punto `idx` (0 = año fiscal más reciente) de una serie anual."""
     arr = series.get(key) or []
@@ -148,7 +169,11 @@ def enrich_info(info: Dict[str, Any], symbol: str) -> Dict[str, Any]:
     set_top("forwardPE", _num(m.get("forwardPE")))
     set_top("trailingPE", _num(m.get("peTTM")))
     set_top("trailingEps", _num(m.get("epsTTM")))
-    set_top("forwardEps", _num(m.get("epsExclExtraItemsTTM")))
+    # OJO: NO mapear forwardEps desde epsTTM/epsExclExtraItemsTTM — esos son
+    # TRAILING, no estimados forward. Usarlos haría forward_pe = price/eps_TTM
+    # (≈ el trailing P/E otra vez), anulando la señal de compresión. Se deja
+    # forwardEps en None y el forward P/E cae a m["forwardPE"] de Finnhub (que
+    # sí usa estimados de consenso) vía el fallback_map de main.py.
 
     dy = _pct(m.get("dividendYieldIndicatedAnnual"))
     if dy is None:
@@ -157,8 +182,8 @@ def enrich_info(info: Dict[str, Any], symbol: str) -> Dict[str, Any]:
     set_top("dividendRate", _num(m.get("dividendIndicatedAnnual")))
     set_top("payoutRatio", _pct(m.get("payoutRatioTTM")))
 
-    set_top("revenueGrowth", _pct(m.get("revenueGrowthTTMYoy")))
-    set_top("earningsGrowth", _pct(m.get("epsGrowthTTMYoy")))
+    set_top("revenueGrowth", _growth(m.get("revenueGrowthTTMYoy"), m.get("revenueGrowth3Y"), m.get("revenueGrowth5Y")))
+    set_top("earningsGrowth", _growth(m.get("epsGrowthTTMYoy"), m.get("epsGrowth3Y"), m.get("epsGrowth5Y")))
 
     # ── _yahoo_ratios: fluyen a `ratios` vía el fallback_map de main.py ──
     yr = info.get("_yahoo_ratios")
