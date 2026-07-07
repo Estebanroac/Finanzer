@@ -1181,6 +1181,7 @@ class ThresholdConfig:
     # Rentabilidad
     roe_high: float = 0.20  # 20%
     roe_low: float = 0.08  # 8%
+    roa_high: float = 0.12  # 12% — banda superior sectorial (bancos ~1.2%, tech ~15%)
     roa_low: float = 0.03  # 3%
     operating_margin_low: float = 0.05  # 5%
     net_margin_low: float = 0.03  # 3%
@@ -1197,7 +1198,11 @@ SECTOR_THRESHOLDS = {
         p_fcf_high=35.0,
         roe_high=0.22,  # Tech tiene ROE alto típico
         roe_low=0.10,
-        debt_equity_high=0.50,
+        roa_high=0.15,
+        # 0.80 (antes 0.50): con 0.50 la banda severa (-5, penalización máxima)
+        # arrancaba en D/E>0.80x, castigando a mega-caps con patrimonio encogido
+        # por recompras (AAPL ~1.0x, cobertura 40x) igual que a un sobre-apalancado.
+        debt_equity_high=0.80,
         operating_margin_low=0.15,
         net_margin_low=0.10,
     ),
@@ -1207,6 +1212,8 @@ SECTOR_THRESHOLDS = {
         debt_equity_high=1.5,
         roe_high=0.10,  # Utilities tienen ROE bajo típico
         roe_low=0.05,
+        roa_high=0.035,  # capital intensivo: ROA 3.5%+ ya es excelente
+        roa_low=0.015,
         operating_margin_low=0.12,
         net_margin_low=0.08,
     ),
@@ -1214,7 +1221,8 @@ SECTOR_THRESHOLDS = {
         pe_overvalued_mult=1.25,
         roe_high=0.12,  # Bancos: ROE más bajo es normal
         roe_low=0.06,
-        roa_low=0.003,  # Bancos: ROA 0.3% es bueno (promedio sector 0.3-0.5%)
+        roa_high=0.012,  # ROA bancario excelente ≈ 1.2%+
+        roa_low=0.008,   # Promedio real de bancos US ≈ 1.0-1.3%; mínimo aceptable 0.8%
         debt_equity_high=10.0,  # Los ratios de deuda no aplican igual
         operating_margin_low=0.20,
         net_margin_low=0.15,
@@ -1248,6 +1256,7 @@ SECTOR_THRESHOLDS = {
         p_fcf_high=12.0,
         roe_high=0.12,  # Energy: ROE más bajo es normal (capital intensivo)
         roe_low=0.05,
+        roa_high=0.06,
         debt_equity_high=0.50,
         operating_margin_low=0.08,
         net_margin_low=0.05,
@@ -1259,6 +1268,8 @@ SECTOR_THRESHOLDS = {
         debt_equity_high=2.0,  # REITs usan más deuda
         roe_high=0.08,
         roe_low=0.03,
+        roa_high=0.03,
+        roa_low=0.01,
         operating_margin_low=0.25,
         net_margin_low=0.15,
     ),
@@ -1274,6 +1285,7 @@ SECTOR_THRESHOLDS = {
         pe_overvalued_mult=1.25,
         roe_high=0.12,
         roe_low=0.05,
+        roa_high=0.06,
         debt_equity_high=0.60,
         operating_margin_low=0.10,
         net_margin_low=0.06,
@@ -2581,47 +2593,44 @@ def detect_growth_company(ratio_values: Dict, contextual_values: Dict) -> bool:
 
 
 def get_sector_specific_adjustments(sector: str) -> Dict[str, Any]:
-    """Retorna ajustes específicos por sector para el scoring."""
-    
+    """Ajustes por sector para el motor de alertas (aggregate_alerts).
+
+    Solo contiene claves que el consumidor realmente lee (ignore_pe,
+    ignore_debt_equity, pe_weight, margin_weight, growth_weight,
+    dividend_weight, fcf_negative_tolerance, fcf_less_relevant,
+    growth_less_relevant). La auditoría sectorial 2026-07 eliminó 7 claves
+    inertes (pe_tolerance, pe_max, ev_ebitda_weight, debt_equity_max,
+    pb_relevant, typical_roe, cyclical_adjustment) que ningún código leía.
+    """
     adjustments = {
-        # Financieros: Deuda alta es normal, P/B es más relevante que P/E
+        # Financieros: Deuda alta es normal, P/E pesa menos
         "financials": {
             "ignore_debt_equity": True,  # No penalizar D/E alto
-            "debt_equity_max": 15.0,  # Umbral muy alto
             "pe_weight": 0.5,  # Reducir peso del P/E
-            "pb_relevant": True,  # P/B es importante
-            "typical_roe": 0.12,
         },
         # REITs: P/E no relevante, dividendos son clave
         "real_estate": {
             "ignore_pe": True,  # No usar P/E
             "dividend_weight": 2.0,  # Doble peso a dividendos
-            "debt_equity_max": 1.5,
             "fcf_less_relevant": True,  # FFO es mejor que FCF
         },
-        # Utilities: Deuda alta normal, dividendos importantes
+        # Utilities: dividendos importantes, crecimiento menos relevante
         "utilities": {
-            "debt_equity_max": 2.0,
             "dividend_weight": 1.5,
-            "pe_max": 25,  # P/E típicamente más alto
             "growth_less_relevant": True,
         },
-        # Tecnología: Crecimiento más importante, tolerar P/E alto
+        # Tecnología: Crecimiento más importante
         "technology": {
-            "pe_tolerance": 1.5,  # Tolerar P/E 50% más alto
             "growth_weight": 1.5,  # Más peso al crecimiento
             "fcf_negative_tolerance": True,  # Si crece, FCF neg es ok
         },
-        # Healthcare/Biotech: Alta variabilidad, márgenes importantes
+        # Healthcare/Biotech: márgenes importantes
         "healthcare": {
-            "pe_tolerance": 1.3,
             "margin_weight": 1.3,
         },
-        # Energía: Cíclico, EV/EBITDA más relevante
+        # Energía: cíclico, P/E pesa menos
         "energy": {
-            "ev_ebitda_weight": 1.5,
             "pe_weight": 0.7,
-            "cyclical_adjustment": True,
         },
         # Default
         "default": {}
@@ -3174,8 +3183,13 @@ def calculate_all_ratios(financial_data: Dict) -> Dict[str, Optional[float]]:
         if invested_cap <= 0:
             invested_cap = None
 
-    # FFO para REITs
-    ffo_val = funds_from_operations(d.get("net_income"), d.get("depreciation"), d.get("gains_on_sale"))
+    # FFO para REITs. Yahoo no suele desglosar la depreciación, lo que dejaba
+    # el FFO en None para casi todo REIT; se deriva D&A = EBITDA - EBIT cuando
+    # falta (ambos ya disponibles con el fallback de EBITDA).
+    _dep = d.get("depreciation")
+    if _dep is None and ebitda_val is not None and operating_inc is not None:
+        _dep = ebitda_val - operating_inc
+    ffo_val = funds_from_operations(d.get("net_income"), _dep, d.get("gains_on_sale"))
     ffo_ps = safe_div(ffo_val, d.get("shares_outstanding")) if ffo_val else None
 
     # PEG: peg_ratio() espera el crecimiento de ganancias en PORCENTAJE (15 = 15%),
@@ -3334,6 +3348,16 @@ def score_solidez_financiera(
             adj = -2
             sev = "moderate"
             reason = f"Deuda elevada - Por encima del sector ({debt_to_equity:.2f}x vs {threshold:.1f}x)"
+        elif interest_coverage is not None and interest_coverage >= 10:
+            # Mitigación: D/E alto pero el beneficio operativo cubre los
+            # intereses con mucha holgura — típico de mega-caps con patrimonio
+            # encogido por recompras, no de empresas sobre-apalancadas. Sin esta
+            # gradación, un D/E de 1.0x con cobertura 40x recibía la misma
+            # penalización máxima que uno de 8x al borde del impago.
+            adj = -2
+            sev = "moderate"
+            reason = (f"Deuda alta ({debt_to_equity:.2f}x) pero fácilmente servible "
+                      f"(cobertura {interest_coverage:.0f}x) — riesgo acotado")
         else:
             adj = -5
             sev = "severe"
@@ -3547,16 +3571,24 @@ def score_rentabilidad(
     sector_roe_threshold: float = 0.12,
     sector_roa_threshold: float = 0.03,
     roic: Optional[float] = None,
-    wacc: Optional[float] = None
+    wacc: Optional[float] = None,
+    sector_roe_high: float = 0.20,
+    sector_roa_high: float = 0.12
 ) -> Dict[str, Any]:
     """
     Categoría 2: Rentabilidad (20 pts máximo)
     Base: 10 pts
+
+    Las bandas SUPERIORES también son sectoriales (roe_high/roa_high de
+    ThresholdConfig): antes estaban hardcodeadas (ROE 25%/15%, ROA 15%/8%),
+    inalcanzables estructuralmente para bancos, utilities o REITs — un banco
+    excelente (ROE 16%, ROA 1.3%) quedaba capado a +2/0 por muy por encima
+    de su sector que estuviera.
     """
     base_score = 10
     adjustments = []
-    
-    # ROE (peso alto: hasta ±6 pts)
+
+    # ROE (peso alto: hasta ±6 pts) — bandas relativas al roe_high sectorial
     if roe is not None:
         if roe < 0 and roa is not None and roa > 0.03:
             # Negative book equity (e.g. from heavy buybacks: HD, MCD, SBUX,
@@ -3566,14 +3598,14 @@ def score_rentabilidad(
             adj = 0
             sev = "ok"
             reason = f"ROE negativo por patrimonio negativo (recompras) — no penalizado; ROA {roa:.1%} sólido"
-        elif roe >= 0.25:
+        elif roe >= sector_roe_high * 1.25:
             adj = 6
             sev = "excellent"
-            reason = f"Excepcional ({roe:.1%}) - Genera excelentes retornos sobre capital"
-        elif roe >= 0.15:
+            reason = f"Excepcional para su sector ({roe:.1%} vs {sector_roe_high:.0%} rango alto sectorial)"
+        elif roe >= sector_roe_high:
             adj = 4
             sev = "good"
-            reason = f"Muy bueno ({roe:.1%}) - Rentabilidad superior al promedio"
+            reason = f"Muy bueno ({roe:.1%}) - En el rango alto de su sector"
         elif roe >= sector_roe_threshold:
             adj = 2
             sev = "ok"
@@ -3594,16 +3626,16 @@ def score_rentabilidad(
         base_score += adj
         adjustments.append({"metric": "ROE", "value": f"{roe:.1%}", "adjustment": adj, "reason": reason, "severity": sev})
     
-    # ROA (hasta ±4 pts)
+    # ROA (hasta ±4 pts) — bandas relativas al roa_high sectorial
     if roa is not None:
-        if roa >= 0.15:
+        if roa >= sector_roa_high * 1.25:
             adj = 4
             sev = "excellent"
-            reason = f"Excelente ({roa:.1%}) - Muy eficiente con sus activos"
-        elif roa >= 0.08:
+            reason = f"Excelente para su sector ({roa:.1%})"
+        elif roa >= sector_roa_high:
             adj = 2
             sev = "good"
-            reason = f"Bueno ({roa:.1%}) - Buen uso de activos"
+            reason = f"Bueno ({roa:.1%}) - Rango alto de su sector"
         elif roa >= sector_roa_threshold:
             adj = 0
             sev = "ok"
@@ -3732,7 +3764,10 @@ def score_valoracion(
     dividend_yield: Optional[float] = None,
     # v2.4: Forward P/E para growth
     forward_pe: Optional[float] = None,
-    earnings_yield: Optional[float] = None
+    earnings_yield: Optional[float] = None,
+    # v3.3: REITs se valoran por P/FFO, no por P/E ni P/FCF
+    is_reit: bool = False,
+    p_ffo: Optional[float] = None
 ) -> Dict[str, Any]:
     """
     Categoría 3: Valoración (20 pts máximo)
@@ -3776,13 +3811,47 @@ def score_valoracion(
 
     growth_quality_score = growth_quality["score"]
     company_type = company_profile["type"]
-    is_quality_growth = (company_type in ["growth", "garp"] and growth_quality_score >= 60)
+    # Sin NINGÚN dato de crecimiento, growth_quality devuelve su base neutral
+    # (50) — no debe bastar para activar tolerancias/rescates de valoración:
+    # la ausencia de datos no es evidencia de calidad.
+    has_growth_data = any(x is not None for x in (revenue_growth_3y, eps_growth_3y, fcf_growth_3y))
+    is_quality_growth = (has_growth_data and company_type in ["growth", "garp"] and growth_quality_score >= 60)
 
     # v2.4: Track negative adjustments to cap them for growth
     total_negative = 0
 
-    # ─── P/E vs Sector (hasta ±5 pts) ───────────────────
-    if pe is not None and pe > 0:
+    # ─── REIT: P/FFO en lugar de P/E y P/FCF (hasta ±4 pts) ────
+    # El beneficio neto de un REIT está deprimido por la depreciación de
+    # inmuebles (no-cash) y su FCF por el capex de cartera: P/E y P/FCF son
+    # métricas engañosas para el sector. El estándar es P/FFO.
+    if is_reit:
+        if p_ffo is not None and p_ffo > 0:
+            if p_ffo <= 12:
+                adj = 4; sev = "excellent"
+                reason = f"Barato por FFO ({p_ffo:.1f}x)"
+            elif p_ffo <= 16:
+                adj = 2; sev = "good"
+                reason = f"Atractivo por FFO ({p_ffo:.1f}x)"
+            elif p_ffo <= 20:
+                adj = 0; sev = "ok"
+                reason = f"En línea ({p_ffo:.1f}x FFO)"
+            elif p_ffo <= 25:
+                adj = -2; sev = "moderate"
+                reason = f"Caro por FFO ({p_ffo:.1f}x)"
+            else:
+                adj = -4; sev = "severe"
+                reason = f"Muy caro por FFO ({p_ffo:.1f}x)"
+            if adj < 0:
+                total_negative += adj
+            base_score += adj
+            adjustments.append({"metric": "P/FFO (REIT)", "value": f"{p_ffo:.1f}x", "adjustment": adj, "reason": reason, "severity": sev})
+        else:
+            adjustments.append({"metric": "P/FFO (REIT)", "value": "N/D", "adjustment": 0,
+                                "reason": "P/E y P/FCF omitidos (engañosos para REITs); FFO no disponible",
+                                "severity": "ok"})
+
+    # ─── P/E vs Sector (hasta ±5 pts) — omitido para REITs ─────
+    if not is_reit and pe is not None and pe > 0:
         pe_threshold = sector_pe if sector_pe and sector_pe > 0 else 20
 
         # v2.4: Bandas más amplias para growth
@@ -3821,7 +3890,7 @@ def score_valoracion(
                 reason = f"Muy caro ({pe:.1f}x vs {pe_threshold:.1f}x)"
 
         # v2.4: Ajustar penalización con growth quality (ahora más agresivo)
-        if adj < 0 and growth_quality_score >= 50:
+        if adj < 0 and has_growth_data and growth_quality_score >= 50:
             original_adj = adj
             adjusted_adj, adj_reason, adj_sev = adjust_valuation_for_growth(
                 base_pe_adjustment=adj,
@@ -3865,8 +3934,8 @@ def score_valoracion(
             base_score += adj
             adjustments.append({"metric": "Forward P/E", "value": f"{forward_pe:.1f}x", "adjustment": adj, "reason": reason, "severity": sev})
 
-    # ─── P/FCF (hasta ±4 pts) ──────────────────────────
-    if p_fcf is not None and p_fcf > 0:
+    # ─── P/FCF (hasta ±4 pts) — omitido para REITs (capex de cartera) ──
+    if not is_reit and p_fcf is not None and p_fcf > 0:
         # v2.4: Bandas más amplias para growth
         if is_quality_growth:
             if p_fcf <= 15:
@@ -4333,7 +4402,9 @@ def calculate_score_v2(
         sector_roa_threshold=thresholds.roa_low,
         roic=ratio_values.get("roic"),
         # WACC no es interpretable para financieras -> sin señal de spread ahí.
-        wacc=(None if is_financial else wacc)
+        wacc=(None if is_financial else wacc),
+        sector_roe_high=thresholds.roe_high,
+        sector_roa_high=thresholds.roa_high
     )
     
     # v2.4: Pasar datos de crecimiento + forward metrics a valoración
@@ -4354,7 +4425,10 @@ def calculate_score_v2(
         dividend_yield=ratio_values.get("dividend_yield"),
         # v2.4: Nuevos parámetros
         forward_pe=ratio_values.get("forward_pe"),
-        earnings_yield=ratio_values.get("earnings_yield")
+        earnings_yield=ratio_values.get("earnings_yield"),
+        # v3.3: REITs se valoran por P/FFO (P/E y P/FCF son engañosos ahí)
+        is_reit=(sector_key == "real_estate"),
+        p_ffo=ratio_values.get("p_ffo")
     )
     
     calidad = score_calidad_ganancias(

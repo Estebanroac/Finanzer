@@ -4,11 +4,12 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { searchStocks, SearchResult } from "@/lib/api";
 
-export default function Navbar() {
+export default function Navbar({ symbol }: { symbol?: string }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedIdx, setSelectedIdx] = useState(-1);
+  const [scrolled, setScrolled] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -16,6 +17,14 @@ export default function Navbar() {
   const debounceRef = useRef<NodeJS.Timeout>(undefined);
 
   const isHome = pathname === "/";
+
+  // Elevación del nav al scroll (el fondo/borde se intensifican)
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 10);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   useEffect(() => {
     if (query.length < 1) { setResults([]); setShowDropdown(false); return; }
@@ -66,18 +75,36 @@ export default function Navbar() {
   if (isHome) return null;
 
   return (
-    <nav className="sticky top-0 z-50 backdrop-blur-2xl bg-[#09090b]/80 border-b border-white/[0.04]">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-5">
+    <nav className={`sticky top-0 z-50 backdrop-blur-2xl transition-all duration-400 border-b ${
+      scrolled
+        ? "bg-[#050507]/90 border-white/[0.1] shadow-[0_10px_34px_rgba(0,0,0,0.4)]"
+        : "bg-[#050507]/75 border-white/[0.04]"
+    }`}>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-4">
+        {/* Volver al inicio */}
+        <button
+          onClick={() => router.push("/")}
+          aria-label="Volver al inicio"
+          title="Volver al inicio"
+          className="press shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-[#a1a1a6]
+            border border-white/[0.08] bg-white/[0.04] hover:bg-white/[0.09] hover:text-white
+            hover:border-white/[0.15] transition-colors"
+        >
+          <svg className="w-[15px] h-[15px]" fill="none" stroke="currentColor" strokeWidth={2.4} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+
         {/* Logo */}
         <a href="/" className="shrink-0 group flex items-center gap-2">
           <img src="/logo.png" alt="Finanzer" className="h-7 w-auto" />
-          <span className="text-[15px] font-bold text-white tracking-tight group-hover:text-[#00d632] transition-colors">
+          <span className="text-[15px] font-bold text-white tracking-tight group-hover:text-[#0cc06c] transition-colors">
             Finanzer
           </span>
         </a>
 
         {/* Divider */}
-        <div className="w-px h-5 bg-white/[0.06]" />
+        <div className="w-px h-5 bg-white/[0.06] max-[560px]:hidden" />
 
         {/* Search */}
         <div ref={wrapperRef} className="relative flex-1 max-w-md">
@@ -99,22 +126,31 @@ export default function Navbar() {
 
           {/* Dropdown */}
           {showDropdown && results.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-1.5 bg-[#111113] border border-white/[0.08] rounded-xl overflow-hidden shadow-2xl shadow-black/50">
+            <div className="absolute top-full left-0 right-0 mt-1.5 bg-[rgba(16,16,19,0.92)] backdrop-blur-2xl border border-white/[0.08] rounded-xl overflow-hidden shadow-2xl shadow-black/50">
               {results.map((r, i) => (
                 <button
                   key={r.ticker}
                   onClick={() => navigate(r.ticker)}
                   className={`w-full px-3.5 py-2.5 flex items-center gap-3 text-left transition-colors ${
-                    i === selectedIdx ? "bg-white/[0.06]" : "hover:bg-white/[0.03]"
+                    i === selectedIdx ? "bg-[#0cc06c]/10" : "hover:bg-white/[0.03]"
                   }`}
                 >
-                  <span className="text-[#00d632] font-mono font-semibold text-xs w-12">{r.ticker}</span>
+                  <span className="text-[#0cc06c] font-mono font-semibold text-xs w-12">{r.ticker}</span>
                   <span className="text-zinc-400 text-sm truncate">{r.name}</span>
                 </button>
               ))}
             </div>
           )}
         </div>
+
+        {/* Ticker actual (orientación) — oculto en móvil para no apretar */}
+        {symbol && (
+          <div className="ml-auto shrink-0 hidden min-[561px]:flex items-center gap-2 px-3 py-1.5 rounded-full
+            border border-[#0cc06c]/25 bg-[#0cc06c]/[0.08]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#0cc06c] shadow-[0_0_8px_#0cc06c]" />
+            <span className="font-mono text-[12.5px] font-semibold tracking-[0.06em] text-[#0cc06c]">{symbol}</span>
+          </div>
+        )}
       </div>
     </nav>
   );

@@ -181,45 +181,10 @@ NUMBER_FORMAT = {
     "large_number_suffix": True   # 1.5B en lugar de 1,500,000,000
 }
 
-# =============================================================================
-# SECTOR-SPECIFIC ADJUSTMENTS
-# =============================================================================
-
-SECTOR_ADJUSTMENTS = {
-    "financials": {
-        "ignore_debt_equity": True,
-        "debt_equity_max": 15.0,
-        "pe_weight": 0.5,
-        "pb_relevant": True,
-        "typical_roe": 0.12
-    },
-    "real_estate": {
-        "ignore_pe": True,
-        "use_ffo": True,
-        "dividend_weight": 2.0,
-        "debt_equity_max": 1.5
-    },
-    "utilities": {
-        "debt_equity_max": 2.0,
-        "dividend_weight": 1.5,
-        "pe_max": 25,
-        "growth_less_relevant": True
-    },
-    "technology": {
-        "pe_tolerance": 1.5,
-        "growth_weight": 1.5,
-        "fcf_negative_tolerance": True
-    },
-    "healthcare": {
-        "pe_tolerance": 1.3,
-        "margin_weight": 1.3
-    },
-    "energy": {
-        "ev_ebitda_weight": 1.5,
-        "pe_weight": 0.7,
-        "cyclical_adjustment": True
-    }
-}
+# NOTA: el antiguo SECTOR_ADJUSTMENTS que vivía aquí era código muerto (ningún
+# módulo lo importaba) y había divergido de su gemelo vivo,
+# get_sector_specific_adjustments en financial_ratios.py. Eliminado en la
+# auditoría sectorial 2026-07 para no mantener dos fuentes contradictorias.
 
 
 # =============================================================================

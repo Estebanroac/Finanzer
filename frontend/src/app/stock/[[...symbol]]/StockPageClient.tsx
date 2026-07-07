@@ -5,11 +5,13 @@ import Navbar from "@/components/Navbar";
 import ScoreCard from "@/components/ScoreCard";
 import MetricsGrid from "@/components/MetricsGrid";
 import TabsSection from "@/components/TabsSection";
+import AnalyzeOverlay from "@/components/AnalyzeOverlay";
 import { analyzeStock, formatPrice, getScoreColor, type StockAnalysis } from "@/lib/api";
 
-// PDF download URL helper
+// PDF download URL helper — misma regla que api.ts: solo el dev server de
+// Next (puerto 3000) apunta a localhost:8000; el resto es same-origin.
 const getPdfUrl = (sym: string) =>
-  `${typeof window !== "undefined" && window.location.hostname !== "localhost" ? "" : "http://localhost:8000"}/api/pdf/${sym}`;
+  `${typeof window !== "undefined" && window.location.port === "3000" ? "http://localhost:8000" : ""}/api/pdf/${sym}`;
 
 export default function StockPageClient() {
   const [symbol, setSymbol] = useState<string>("");
@@ -36,10 +38,40 @@ export default function StockPageClient() {
       .finally(() => setLoading(false));
   }, [symbol]);
 
-  if (loading) return <LoadingSkeleton symbol={symbol} />;
-  if (error) return <ErrorView symbol={symbol} error={error} />;
-  if (!data) return null;
+  // Overlay de análisis: aparece exactamente al entrar/buscar y se disuelve
+  // cuando los datos del backend están listos Y pintados debajo. key por
+  // símbolo para que una nueva búsqueda reinicie la secuencia; posición
+  // estable (primer hijo del fragment) para que la transición carga->contenido
+  // no lo re-monte a mitad de animación.
+  const [overlayGone, setOverlayGone] = useState(false);
+  useEffect(() => { setOverlayGone(false); }, [symbol]);
 
+  const overlay = !overlayGone && !error && (
+    <AnalyzeOverlay
+      key={symbol || "init"}
+      symbol={symbol}
+      companyName={data?.profile?.name ?? null}
+      done={!!data && !loading}
+      onFinished={() => setOverlayGone(true)}
+    />
+  );
+
+  return (
+    <>
+      {overlay}
+      {error ? (
+        <ErrorView symbol={symbol} error={error} />
+      ) : data ? (
+        <AnalysisContent data={data} symbol={symbol} />
+      ) : (
+        <div className="min-h-screen bg-[#050507]" />
+      )}
+    </>
+  );
+}
+
+/* ── Contenido del análisis (pinta bajo el overlay antes de la disolución) ── */
+function AnalysisContent({ data, symbol }: { data: StockAnalysis; symbol: string }) {
   const m = data.key_metrics || {};
   const hi52 = m.price_52w_high;
   const lo52 = m.price_52w_low;
@@ -53,12 +85,14 @@ export default function StockPageClient() {
 
   return (
     <div className="min-h-screen relative">
-      {/* Analysis background */}
+      {/* Analysis background + velo: el arte del fondo (gráfico con glow) no
+          debe competir con los datos — se atenúa y se deja respirar en bordes */}
       <div
-        className="fixed inset-0 -z-10 bg-[#09090b] bg-cover bg-center"
+        className="fixed inset-0 -z-10 bg-[#050507] bg-cover bg-center"
         style={{ backgroundImage: "url(/bg-analysis.webp)" }}
       />
-      <Navbar />
+      <div className="fixed inset-0 -z-10 bg-[#050507]/60 pointer-events-none" />
+      <Navbar symbol={symbol} />
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 pt-8 pb-16">
         {/* ── Header ── */}
@@ -69,7 +103,7 @@ export default function StockPageClient() {
                 <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
                   {data.profile.name}
                 </h1>
-                <span className="px-2 py-0.5 rounded-md text-[11px] font-mono font-semibold text-[#00d632] bg-[#00d632]/10 border border-[#00d632]/20">
+                <span className="px-2 py-0.5 rounded-md text-[11px] font-mono font-semibold text-[#0cc06c] bg-[#0cc06c]/10 border border-[#0cc06c]/20">
                   {symbol}
                 </span>
               </div>
@@ -117,7 +151,7 @@ export default function StockPageClient() {
                 className="absolute top-0 left-0 h-full rounded-full"
                 style={{
                   width: `${range52pct}%`,
-                  background: range52pct > 70 ? "linear-gradient(90deg, #00d632, #4ade80)" :
+                  background: range52pct > 70 ? "#0cc06c" :
                              range52pct < 30 ? "linear-gradient(90deg, #ff4d4d, #f97316)" :
                              "linear-gradient(90deg, #fbbf24, #f59e0b)",
                 }}
@@ -154,7 +188,9 @@ export default function StockPageClient() {
             )}
           </div>
           <div className="lg:col-span-2">
-            {data.key_metrics && <MetricsGrid metrics={data.key_metrics} />}
+            {data.key_metrics && (
+              <MetricsGrid metrics={data.key_metrics} sector={data.sector_info?.mapped_sector} />
+            )}
           </div>
         </div>
 
@@ -222,7 +258,7 @@ export default function StockPageClient() {
   );
 }
 
-/* ── Quick Summary — narrative explanation ── */
+/* ── Resumen del análisis: bloques etiquetados adaptativos (como el PDF) ── */
 function QuickSummary({ data }: { data: StockAnalysis }) {
   const m = data.key_metrics || {};
   const price = data.price;
@@ -230,117 +266,87 @@ function QuickSummary({ data }: { data: StockAnalysis }) {
   const score = data.score;
   const alerts = data.alerts;
 
-  const insights: string[] = [];
+  const items: Array<{ label: string; text: React.ReactNode }> = [];
 
-  // Score insight
   if (score) {
     const pct = Math.round((score.total_score / score.max_score) * 100);
-    if (pct >= 75) insights.push(`Obtiene una puntuación de ${pct}/100, indicando fundamentos sólidos.`);
-    else if (pct >= 50) insights.push(`Puntuación de ${pct}/100 — fundamentos aceptables con áreas de mejora.`);
-    else insights.push(`Puntuación baja de ${pct}/100 — se identifican varios riesgos.`);
+    items.push({
+      label: "Puntuación",
+      text: <>Obtiene <b className="text-white">{pct}/100</b>{" "}
+        {pct >= 75 ? "— fundamentos sólidos en la mayoría de categorías."
+          : pct >= 50 ? "— fundamentos aceptables con áreas de mejora."
+          : "— se identifican varios frentes de riesgo."}</>,
+    });
   }
 
-  // Valuation
   if (m.pe && m.pe > 0) {
-    if (m.pe > 40) insights.push(`Cotiza a ${m.pe.toFixed(1)}x beneficios, lo que refleja altas expectativas de crecimiento.`);
-    else if (m.pe > 20) insights.push(`P/E de ${m.pe.toFixed(1)}x — valoración moderada.`);
-    else insights.push(`P/E de ${m.pe.toFixed(1)}x — valoración atractiva respecto al mercado.`);
+    items.push({
+      label: "Valoración",
+      text: <>El mercado paga <b className="text-white">{m.pe.toFixed(1)}x</b> beneficios
+        {m.pe > 40 ? " — expectativas de crecimiento muy exigentes."
+          : m.pe > 20 ? " — valoración moderada." : " — valoración atractiva."}</>,
+    });
   }
 
-  // Profitability
-  if (m.net_margin != null && m.net_margin > 0) {
-    const nm = m.net_margin * 100;
-    if (nm > 30) insights.push(`Margen neto excepcional del ${nm.toFixed(1)}%, superior al promedio del mercado.`);
-    else if (nm > 10) insights.push(`Margen neto sólido del ${nm.toFixed(1)}%.`);
+  if (m.roic_wacc_spread != null) {
+    const sp = m.roic_wacc_spread * 100;
+    items.push({
+      label: "Creación de valor",
+      text: <>ROIC − WACC de{" "}
+        <b style={{ color: sp >= 0 ? "#0cc06c" : "#ff453a" }}>{sp >= 0 ? "+" : ""}{sp.toFixed(1)} pp</b>
+        {sp >= 3 ? " — cada dólar reinvertido crea valor." : sp >= 0 ? " — apenas cubre su costo de capital." : " — no cubre su costo de capital."}</>,
+    });
+  } else if (m.net_margin != null && m.net_margin > 0.1) {
+    items.push({
+      label: "Rentabilidad",
+      text: <>Margen neto {m.net_margin > 0.3 ? "excepcional" : "sólido"} del{" "}
+        <b className="text-white">{(m.net_margin * 100).toFixed(1)}%</b>.</>,
+    });
   }
 
-  // DCF
   if (dcf?.fair_value && price) {
     const upside = ((dcf.fair_value - price) / price) * 100;
-    if (upside > 15) insights.push(`El modelo DCF sugiere un valor justo de ${formatPrice(dcf.fair_value)}, un ${upside.toFixed(0)}% por encima del precio actual.`);
-    else if (upside < -15) insights.push(`Según el DCF, el precio actual supera el valor justo estimado de ${formatPrice(dcf.fair_value)}.`);
+    items.push({
+      label: "Valor intrínseco",
+      text: upside > 15
+        ? <>El DCF estima <b className="text-white">{formatPrice(dcf.fair_value)}</b> — un potencial teórico de <b style={{ color: "#0cc06c" }}>+{upside.toFixed(0)}%</b>.</>
+        : upside < -15
+        ? <>El precio supera el valor justo estimado de <b className="text-white">{formatPrice(dcf.fair_value)}</b> — el DCF exige escenarios optimistas.</>
+        : <>Cotiza en torno a su valor justo estimado (<b className="text-white">{formatPrice(dcf.fair_value)}</b>).</>,
+    });
   }
 
-  // Risk count
-  if (alerts) {
-    const riskCount = (alerts.red_flags?.length || 0);
-    const strengthCount = (alerts.strengths?.length || 0);
-    if (riskCount > 0 && strengthCount > 0) {
-      insights.push(`Se identifican ${riskCount} riesgo${riskCount > 1 ? "s" : ""} y ${strengthCount} fortaleza${strengthCount > 1 ? "s" : ""}.`);
-    } else if (strengthCount > 3) {
-      insights.push(`Se destacan ${strengthCount} fortalezas sin señales de riesgo significativas.`);
-    }
+  const nRed = alerts?.red_flags?.length || 0;
+  const nWarn = alerts?.warnings?.length || 0;
+  const nStr = alerts?.strengths?.length || 0;
+  if (nRed + nWarn + nStr > 0) {
+    items.push({
+      label: "Balance de señales",
+      text: <>
+        <b style={{ color: "#0cc06c" }}>{nStr}</b> fortaleza{nStr !== 1 && "s"} ·{" "}
+        <b style={{ color: "#ffd60a" }}>{nWarn}</b> advertencia{nWarn !== 1 && "s"} ·{" "}
+        <b style={{ color: "#ff453a" }}>{nRed}</b> riesgo{nRed !== 1 && "s"}
+      </>,
+    });
   }
 
-  if (insights.length === 0) return null;
+  if (items.length === 0) return null;
 
   return (
     <div className="mb-10 rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 px-6 py-5 fade-up delay-3">
-      <h3 className="text-xs text-zinc-500 uppercase tracking-widest mb-3 font-medium">
+      <h3 className="text-xs text-zinc-500 uppercase tracking-widest mb-4 font-medium">
         Resumen del análisis
       </h3>
-      <div className="space-y-2">
-        {insights.map((text, i) => (
-          <p key={i} className="text-sm text-zinc-300 leading-relaxed">{text}</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-4">
+        {items.map(({ label, text }) => (
+          <div key={label}>
+            <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#0cc06c] mb-1">
+              {label}
+            </div>
+            <p className="text-sm text-zinc-300 leading-relaxed">{text}</p>
+          </div>
         ))}
       </div>
-    </div>
-  );
-}
-
-/* ── Loading skeleton ── */
-function LoadingSkeleton({ symbol }: { symbol: string }) {
-  return (
-    <div className="min-h-screen relative">
-      {/* Analysis background */}
-      <div
-        className="fixed inset-0 -z-10 bg-[#09090b] bg-cover bg-center"
-        style={{ backgroundImage: "url(/bg-analysis.webp)" }}
-      />
-      <Navbar />
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 pt-8 pb-16">
-        <div className="flex justify-between mb-8">
-          <div>
-            <div className="skeleton h-8 w-56 mb-2" />
-            <div className="skeleton h-4 w-40" />
-          </div>
-          <div className="text-right">
-            <div className="skeleton h-8 w-28 mb-2 ml-auto" />
-            <div className="skeleton h-3 w-20 ml-auto" />
-          </div>
-        </div>
-
-        <div className="skeleton h-12 rounded-xl mb-8" />
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-10">
-          <div className="skeleton h-36 rounded-2xl" />
-          <div className="lg:col-span-2 skeleton h-36 rounded-2xl" />
-        </div>
-
-        <div className="grid grid-cols-5 gap-2 mb-10">
-          {[1,2,3,4,5].map(i => <div key={i} className="skeleton h-20 rounded-xl" />)}
-        </div>
-
-        <div className="flex gap-4 border-b border-white/[0.06] mb-8 pb-3">
-          {[80, 96, 72, 104, 88].map((w, i) => (
-            <div key={i} className="skeleton h-4 rounded" style={{ width: w }} />
-          ))}
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div className="skeleton h-48 rounded-xl" />
-          <div className="skeleton h-48 rounded-xl" />
-        </div>
-
-        <div className="text-center py-12">
-          <div className="inline-flex items-center gap-3 text-zinc-500">
-            <svg className="w-4 h-4 animate-spin text-[#00d632]" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-            </svg>
-            <span className="text-sm">Analizando {symbol}...</span>
-          </div>
-        </div>
-      </main>
     </div>
   );
 }

@@ -6,7 +6,7 @@ export const SCORE_TOOLTIP: TooltipContent = {
   description:
     "Puntuacion compuesta de 0 a 100 que evalua la salud financiera global de la empresa. Combina metricas de valoracion, rentabilidad, solidez financiera, crecimiento y calidad de ganancias.",
   thresholds: [
-    { label: "Excelente — empresa muy solida", value: "80–100", color: "#00d632" },
+    { label: "Excelente — empresa muy solida", value: "80–100", color: "#0cc06c" },
     { label: "Favorable — buena inversion potencial", value: "60–79", color: "#22c55e" },
     { label: "Neutral — riesgo moderado", value: "40–59", color: "#fbbf24" },
     { label: "Precaucion — debilidades importantes", value: "20–39", color: "#f97316" },
@@ -34,7 +34,7 @@ export const METRICS: Record<string, TooltipContent> = {
     description: "Indica cuanto pagan los inversores por cada dolar de ganancia. Un P/E alto puede significar expectativas de crecimiento, o que la accion esta cara.",
     formula: "Precio / Ganancia por Accion (EPS)",
     thresholds: [
-      { label: "Posiblemente barata", value: "<15", color: "#00d632" },
+      { label: "Posiblemente barata", value: "<15", color: "#0cc06c" },
       { label: "Valoracion justa", value: "15–25", color: "#fbbf24" },
       { label: "Cara / alto crecimiento", value: ">25", color: "#f97316" },
     ],
@@ -47,7 +47,7 @@ export const METRICS: Record<string, TooltipContent> = {
     description: "Mide que tan eficientemente la empresa genera ganancias con el dinero de los accionistas. Es uno de los indicadores favoritos de Warren Buffett.",
     formula: "Ingreso Neto / Patrimonio de Accionistas",
     thresholds: [
-      { label: "Excelente", value: ">20%", color: "#00d632" },
+      { label: "Excelente", value: ">20%", color: "#0cc06c" },
       { label: "Bueno", value: "15–20%", color: "#22c55e" },
       { label: "Aceptable", value: "10–15%", color: "#fbbf24" },
       { label: "Bajo", value: "<10%", color: "#ff4d4d" },
@@ -61,7 +61,7 @@ export const METRICS: Record<string, TooltipContent> = {
     description: "Compara la deuda total con el patrimonio de los accionistas. Indica cuanto depende la empresa de dinero prestado vs dinero propio.",
     formula: "Deuda Total / Patrimonio",
     thresholds: [
-      { label: "Conservador", value: "<0.5", color: "#00d632" },
+      { label: "Conservador", value: "<0.5", color: "#0cc06c" },
       { label: "Moderado", value: "0.5–1.0", color: "#fbbf24" },
       { label: "Apalancado", value: "1.0–2.0", color: "#f97316" },
       { label: "Muy endeudado", value: ">2.0", color: "#ff4d4d" },
@@ -75,7 +75,7 @@ export const METRICS: Record<string, TooltipContent> = {
     description: "Porcentaje de cada dolar de ventas que se convierte en ganancia final despues de TODOS los gastos, impuestos e intereses.",
     formula: "Ingreso Neto / Ingresos Totales × 100",
     thresholds: [
-      { label: "Excelente", value: ">20%", color: "#00d632" },
+      { label: "Excelente", value: ">20%", color: "#0cc06c" },
       { label: "Bueno", value: "10–20%", color: "#22c55e" },
       { label: "Aceptable", value: "5–10%", color: "#fbbf24" },
       { label: "Bajo", value: "<5%", color: "#ff4d4d" },
@@ -88,7 +88,7 @@ export const METRICS: Record<string, TooltipContent> = {
     description: "Mide cuanto flujo de caja libre genera la empresa en relacion a su valor de mercado. Es como el 'rendimiento real' de la empresa.",
     formula: "Flujo de Caja Libre / Capitalizacion de Mercado × 100",
     thresholds: [
-      { label: "Muy atractivo", value: ">8%", color: "#00d632" },
+      { label: "Muy atractivo", value: ">8%", color: "#0cc06c" },
       { label: "Atractivo", value: "5–8%", color: "#22c55e" },
       { label: "Moderado", value: "3–5%", color: "#fbbf24" },
       { label: "Bajo", value: "<3%", color: "#f97316" },
@@ -102,7 +102,7 @@ export const METRICS: Record<string, TooltipContent> = {
     description: "Compara el valor total de la empresa (incluyendo deuda) con sus ganancias operativas antes de intereses, impuestos, depreciacion y amortizacion. Es mas completo que el P/E.",
     formula: "Enterprise Value / EBITDA",
     thresholds: [
-      { label: "Posiblemente barata", value: "<10", color: "#00d632" },
+      { label: "Posiblemente barata", value: "<10", color: "#0cc06c" },
       { label: "Valoracion justa", value: "10–15", color: "#fbbf24" },
       { label: "Cara", value: "15–20", color: "#f97316" },
       { label: "Muy cara", value: ">20", color: "#ff4d4d" },
@@ -134,7 +134,7 @@ export const VALUATION: Record<string, TooltipContent> = {
     description: "Precio actual dividido por las ganancias de los ultimos 12 meses. Refleja lo que ya paso.",
     formula: "Precio / EPS (ultimos 12 meses)",
     thresholds: [
-      { label: "Posible oportunidad", value: "<15", color: "#00d632" },
+      { label: "Posible oportunidad", value: "<15", color: "#0cc06c" },
       { label: "Valoracion justa", value: "15–25", color: "#fbbf24" },
       { label: "Premium", value: ">25", color: "#f97316" },
     ],
@@ -153,7 +153,7 @@ export const VALUATION: Record<string, TooltipContent> = {
     description: "Compara el precio de mercado con el valor contable de la empresa. Un P/B de 1 significa que pagas exactamente lo que vale en libros.",
     formula: "Precio / (Patrimonio / Acciones)",
     thresholds: [
-      { label: "Descuento vs libros", value: "<1", color: "#00d632" },
+      { label: "Descuento vs libros", value: "<1", color: "#0cc06c" },
       { label: "Cerca de valor en libros", value: "1–3", color: "#fbbf24" },
       { label: "Prima significativa", value: ">3", color: "#f97316" },
     ],
@@ -164,7 +164,7 @@ export const VALUATION: Record<string, TooltipContent> = {
     description: "Precio de mercado dividido por los ingresos por accion. Util para empresas sin ganancias que aun generan ventas.",
     formula: "Capitalizacion / Ingresos Totales",
     thresholds: [
-      { label: "Atractivo", value: "<2", color: "#00d632" },
+      { label: "Atractivo", value: "<2", color: "#0cc06c" },
       { label: "Razonable", value: "2–5", color: "#fbbf24" },
       { label: "Caro", value: ">5", color: "#f97316" },
     ],
@@ -175,7 +175,7 @@ export const VALUATION: Record<string, TooltipContent> = {
     description: "Ajusta el P/E por la tasa de crecimiento de ganancias. Un PEG de 1 significa que pagas un precio justo por el crecimiento.",
     formula: "P/E / Tasa de Crecimiento de Ganancias (%)",
     thresholds: [
-      { label: "Subvalorada para su crecimiento", value: "<1", color: "#00d632" },
+      { label: "Subvalorada para su crecimiento", value: "<1", color: "#0cc06c" },
       { label: "Valoracion justa", value: "1–1.5", color: "#fbbf24" },
       { label: "Cara para su crecimiento", value: ">1.5", color: "#f97316" },
     ],
@@ -188,7 +188,7 @@ export const VALUATION: Record<string, TooltipContent> = {
     description: "Enterprise Value dividido por EBITDA. Mide cuantos anos de ganancias operativas necesitas para pagar toda la empresa (incluyendo deuda).",
     formula: "Enterprise Value / EBITDA",
     thresholds: [
-      { label: "Posiblemente barata", value: "<10", color: "#00d632" },
+      { label: "Posiblemente barata", value: "<10", color: "#0cc06c" },
       { label: "Valoracion justa", value: "10–15", color: "#fbbf24" },
       { label: "Cara", value: ">15", color: "#f97316" },
     ],
@@ -199,7 +199,7 @@ export const VALUATION: Record<string, TooltipContent> = {
     description: "Precio dividido por el flujo de caja libre por accion. Mide cuanto pagas por cada dolar de efectivo real que genera la empresa.",
     formula: "Capitalizacion / Flujo de Caja Libre",
     thresholds: [
-      { label: "Atractivo", value: "<15", color: "#00d632" },
+      { label: "Atractivo", value: "<15", color: "#0cc06c" },
       { label: "Razonable", value: "15–25", color: "#fbbf24" },
       { label: "Caro", value: ">25", color: "#f97316" },
     ],
@@ -210,7 +210,7 @@ export const VALUATION: Record<string, TooltipContent> = {
     description: "Rendimiento del flujo de caja libre. Es el inverso del P/FCF expresado como porcentaje.",
     formula: "FCF / Capitalizacion × 100",
     thresholds: [
-      { label: "Muy atractivo", value: ">8%", color: "#00d632" },
+      { label: "Muy atractivo", value: ">8%", color: "#0cc06c" },
       { label: "Atractivo", value: "5–8%", color: "#22c55e" },
       { label: "Moderado", value: "3–5%", color: "#fbbf24" },
       { label: "Bajo", value: "<3%", color: "#f97316" },
@@ -222,7 +222,7 @@ export const VALUATION: Record<string, TooltipContent> = {
     description: "Porcentaje del precio que la empresa te devuelve anualmente en dividendos.",
     formula: "Dividendo Anual por Accion / Precio × 100",
     thresholds: [
-      { label: "Alto rendimiento", value: ">4%", color: "#00d632" },
+      { label: "Alto rendimiento", value: ">4%", color: "#0cc06c" },
       { label: "Moderado", value: "2–4%", color: "#22c55e" },
       { label: "Bajo", value: "1–2%", color: "#fbbf24" },
       { label: "Minimo o sin dividendo", value: "<1%", color: "#9ca3af" },
@@ -240,7 +240,7 @@ export const PROFITABILITY: Record<string, TooltipContent> = {
     description: "Retorno sobre el patrimonio. Mide cuantos centavos de ganancia genera la empresa por cada dolar que los accionistas han invertido.",
     formula: "Ingreso Neto / Patrimonio × 100",
     thresholds: [
-      { label: "Excelente", value: ">20%", color: "#00d632" },
+      { label: "Excelente", value: ">20%", color: "#0cc06c" },
       { label: "Bueno", value: "15–20%", color: "#22c55e" },
       { label: "Aceptable", value: "10–15%", color: "#fbbf24" },
       { label: "Bajo", value: "<10%", color: "#ff4d4d" },
@@ -252,7 +252,7 @@ export const PROFITABILITY: Record<string, TooltipContent> = {
     description: "Retorno sobre activos. Mide la eficiencia de la empresa para generar ganancias con todos sus recursos (propios y prestados).",
     formula: "Ingreso Neto / Activos Totales × 100",
     thresholds: [
-      { label: "Excelente", value: ">15%", color: "#00d632" },
+      { label: "Excelente", value: ">15%", color: "#0cc06c" },
       { label: "Bueno", value: "8–15%", color: "#22c55e" },
       { label: "Aceptable", value: "5–8%", color: "#fbbf24" },
       { label: "Bajo", value: "<5%", color: "#ff4d4d" },
@@ -264,7 +264,7 @@ export const PROFITABILITY: Record<string, TooltipContent> = {
     description: "Retorno sobre el capital invertido. Mide que tan bien la empresa usa TODO el capital (propio + deuda) para generar ganancias despues de impuestos.",
     formula: "NOPAT / (Patrimonio + Deuda a Largo Plazo)",
     thresholds: [
-      { label: "Crea valor (supera costo de capital)", value: ">12%", color: "#00d632" },
+      { label: "Crea valor (supera costo de capital)", value: ">12%", color: "#0cc06c" },
       { label: "Aceptable", value: "8–12%", color: "#fbbf24" },
       { label: "Destruye valor", value: "<8%", color: "#ff4d4d" },
     ],
@@ -285,7 +285,7 @@ export const PROFITABILITY: Record<string, TooltipContent> = {
     description: "Porcentaje de ventas que queda despues de pagar el costo directo de los productos/servicios. Mide el poder de precios basico.",
     formula: "(Ingresos - Costo de Ventas) / Ingresos × 100",
     thresholds: [
-      { label: "Excelente (software/tech)", value: ">70%", color: "#00d632" },
+      { label: "Excelente (software/tech)", value: ">70%", color: "#0cc06c" },
       { label: "Bueno", value: "40–70%", color: "#22c55e" },
       { label: "Moderado (manufactura)", value: "20–40%", color: "#fbbf24" },
       { label: "Bajo (retail/commodities)", value: "<20%", color: "#f97316" },
@@ -297,7 +297,7 @@ export const PROFITABILITY: Record<string, TooltipContent> = {
     description: "Porcentaje de ventas que queda despues de todos los gastos operativos (incluyendo salarios, investigacion, marketing, etc.).",
     formula: "Ingreso Operativo / Ingresos × 100",
     thresholds: [
-      { label: "Excelente", value: ">25%", color: "#00d632" },
+      { label: "Excelente", value: ">25%", color: "#0cc06c" },
       { label: "Bueno", value: "15–25%", color: "#22c55e" },
       { label: "Aceptable", value: "10–15%", color: "#fbbf24" },
       { label: "Bajo", value: "<10%", color: "#ff4d4d" },
@@ -309,7 +309,7 @@ export const PROFITABILITY: Record<string, TooltipContent> = {
     description: "Porcentaje final de cada dolar de ventas que se convierte en ganancia neta despues de TODOS los gastos.",
     formula: "Ingreso Neto / Ingresos × 100",
     thresholds: [
-      { label: "Excelente", value: ">20%", color: "#00d632" },
+      { label: "Excelente", value: ">20%", color: "#0cc06c" },
       { label: "Bueno", value: "10–20%", color: "#22c55e" },
       { label: "Aceptable", value: "5–10%", color: "#fbbf24" },
       { label: "Bajo", value: "<5%", color: "#ff4d4d" },
@@ -321,7 +321,7 @@ export const PROFITABILITY: Record<string, TooltipContent> = {
     description: "Rentabilidad operativa antes de intereses, impuestos, depreciacion y amortizacion. Elimina diferencias contables entre empresas.",
     formula: "EBITDA / Ingresos × 100",
     thresholds: [
-      { label: "Excelente", value: ">30%", color: "#00d632" },
+      { label: "Excelente", value: ">30%", color: "#0cc06c" },
       { label: "Bueno", value: "20–30%", color: "#22c55e" },
       { label: "Aceptable", value: "10–20%", color: "#fbbf24" },
       { label: "Bajo", value: "<10%", color: "#ff4d4d" },
@@ -337,7 +337,7 @@ export const HEALTH: Record<string, TooltipContent> = {
     description: "Mide la capacidad de la empresa para pagar sus deudas a corto plazo. Compara activos liquidos contra obligaciones inmediatas.",
     formula: "Activos Corrientes / Pasivos Corrientes",
     thresholds: [
-      { label: "Muy solida", value: ">2.0", color: "#00d632" },
+      { label: "Muy solida", value: ">2.0", color: "#0cc06c" },
       { label: "Saludable", value: "1.5–2.0", color: "#22c55e" },
       { label: "Aceptable", value: "1.0–1.5", color: "#fbbf24" },
       { label: "Riesgo de liquidez", value: "<1.0", color: "#ff4d4d" },
@@ -350,7 +350,7 @@ export const HEALTH: Record<string, TooltipContent> = {
     description: "Igual que el Current Ratio pero excluye inventarios, que pueden ser dificiles de vender rapidamente. Es una prueba mas estricta.",
     formula: "(Activos Corrientes - Inventarios) / Pasivos Corrientes",
     thresholds: [
-      { label: "Muy liquida", value: ">1.5", color: "#00d632" },
+      { label: "Muy liquida", value: ">1.5", color: "#0cc06c" },
       { label: "Saludable", value: "1.0–1.5", color: "#22c55e" },
       { label: "Ajustado", value: "0.5–1.0", color: "#fbbf24" },
       { label: "Problematico", value: "<0.5", color: "#ff4d4d" },
@@ -377,7 +377,7 @@ export const HEALTH: Record<string, TooltipContent> = {
     description: "Cuantos dolares de deuda tiene la empresa por cada dolar de patrimonio de accionistas.",
     formula: "Deuda Total / Patrimonio",
     thresholds: [
-      { label: "Conservador", value: "<0.5", color: "#00d632" },
+      { label: "Conservador", value: "<0.5", color: "#0cc06c" },
       { label: "Moderado", value: "0.5–1.0", color: "#fbbf24" },
       { label: "Apalancado", value: "1.0–2.0", color: "#f97316" },
       { label: "Alto riesgo", value: ">2.0", color: "#ff4d4d" },
@@ -389,7 +389,7 @@ export const HEALTH: Record<string, TooltipContent> = {
     description: "Que porcentaje de los activos totales esta financiado con deuda. Mide la dependencia de financiamiento externo.",
     formula: "Deuda Total / Activos Totales",
     thresholds: [
-      { label: "Conservador", value: "<30%", color: "#00d632" },
+      { label: "Conservador", value: "<30%", color: "#0cc06c" },
       { label: "Moderado", value: "30–50%", color: "#fbbf24" },
       { label: "Alto", value: ">50%", color: "#ff4d4d" },
     ],
@@ -399,7 +399,7 @@ export const HEALTH: Record<string, TooltipContent> = {
     description: "Cuantas veces las ganancias operativas cubren los pagos de intereses de deuda. Mide la capacidad de servir la deuda.",
     formula: "EBIT / Gastos por Intereses",
     thresholds: [
-      { label: "Muy seguro", value: ">10x", color: "#00d632" },
+      { label: "Muy seguro", value: ">10x", color: "#0cc06c" },
       { label: "Comodo", value: "5–10x", color: "#22c55e" },
       { label: "Ajustado", value: "2–5x", color: "#fbbf24" },
       { label: "Peligroso", value: "<2x", color: "#ff4d4d" },
@@ -448,7 +448,7 @@ export const HISTORICAL: Record<string, TooltipContent> = {
     title: "Crecimiento de Ingresos",
     description: "Cambio porcentual de los ingresos respecto al ano anterior.",
     thresholds: [
-      { label: "Alto crecimiento", value: ">20%", color: "#00d632" },
+      { label: "Alto crecimiento", value: ">20%", color: "#0cc06c" },
       { label: "Crecimiento sano", value: "5–20%", color: "#22c55e" },
       { label: "Estancado", value: "0–5%", color: "#fbbf24" },
       { label: "Cayendo", value: "<0%", color: "#ff4d4d" },
@@ -458,7 +458,7 @@ export const HISTORICAL: Record<string, TooltipContent> = {
     title: "Crecimiento de Ganancias",
     description: "Cambio porcentual de las ganancias netas respecto al ano anterior. Es mas importante que el crecimiento de ingresos.",
     thresholds: [
-      { label: "Excelente", value: ">25%", color: "#00d632" },
+      { label: "Excelente", value: ">25%", color: "#0cc06c" },
       { label: "Bueno", value: "10–25%", color: "#22c55e" },
       { label: "Moderado", value: "0–10%", color: "#fbbf24" },
       { label: "Negativo", value: "<0%", color: "#ff4d4d" },
@@ -489,7 +489,7 @@ export const EVALUATION: Record<string, TooltipContent> = {
     description: "Modelo de Edward Altman que predice probabilidad de quiebra. Finanzer selecciona automaticamente la variante correcta segun el tipo de empresa: Z original (manufactura), Z'' (tech/servicios) o Z' (privadas).",
     formula: "Manufactura: 1.2×X1+1.4×X2+3.3×X3+0.6×X4+1.0×X5 | No-Mfg: 6.56×X1+3.26×X2+6.72×X3+1.05×X4",
     thresholds: [
-      { label: "Zona segura (umbral segun modelo)", value: ">2.60–2.99", color: "#00d632" },
+      { label: "Zona segura (umbral segun modelo)", value: ">2.60–2.99", color: "#0cc06c" },
       { label: "Zona gris — monitorear de cerca", value: "1.10–2.60", color: "#fbbf24" },
       { label: "Zona de riesgo — probabilidad alta", value: "<1.10–1.81", color: "#ff4d4d" },
     ],
@@ -499,7 +499,7 @@ export const EVALUATION: Record<string, TooltipContent> = {
     title: "Piotroski F-Score",
     description: "Sistema de puntuacion de 0 a 9 creado por el profesor Joseph Piotroski de Stanford. Evalua 9 criterios binarios (pasa/no pasa) de rentabilidad, apalancamiento y eficiencia operativa.",
     thresholds: [
-      { label: "Excelente — empresa muy saludable", value: "8–9", color: "#00d632" },
+      { label: "Excelente — empresa muy saludable", value: "8–9", color: "#0cc06c" },
       { label: "Fuerte", value: "6–7", color: "#22c55e" },
       { label: "Neutral", value: "4–5", color: "#fbbf24" },
       { label: "Debil", value: "2–3", color: "#f97316" },
@@ -551,7 +551,7 @@ export const INTRINSIC: Record<string, TooltipContent> = {
     description: "Diferencia porcentual entre el valor intrinseco estimado y el precio de mercado. Concepto central de Benjamin Graham.",
     formula: "(Valor Intrinseco - Precio) / Valor Intrinseco × 100",
     thresholds: [
-      { label: "Gran margen — oportunidad potencial", value: ">30%", color: "#00d632" },
+      { label: "Gran margen — oportunidad potencial", value: ">30%", color: "#0cc06c" },
       { label: "Margen moderado", value: "10–30%", color: "#22c55e" },
       { label: "Precio justo", value: "0–10%", color: "#fbbf24" },
       { label: "Sobrevaluada", value: "<0%", color: "#ff4d4d" },
@@ -577,7 +577,7 @@ export const COMPARATIVE: Record<string, TooltipContent> = {
     title: "Resumen Comparativo",
     description: "Cuenta cuantos indicadores de la empresa superan al promedio de su sector. Mas indicadores verdes = empresa mas competitiva dentro de su industria.",
     thresholds: [
-      { label: "Superior al sector", value: ">70%", color: "#00d632" },
+      { label: "Superior al sector", value: ">70%", color: "#0cc06c" },
       { label: "En linea con el sector", value: "40–70%", color: "#fbbf24" },
       { label: "Por debajo del sector", value: "<40%", color: "#ff4d4d" },
     ],

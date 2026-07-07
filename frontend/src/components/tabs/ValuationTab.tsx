@@ -3,17 +3,87 @@
 import { formatMultiple, formatPercent, type StockAnalysis } from "@/lib/api";
 import InfoTooltip, { type TooltipContent } from "@/components/InfoTooltip";
 import { VALUATION } from "@/lib/tooltips";
+import { getSectorBenchmarks } from "@/lib/sectorBench";
+import { useGrow } from "@/lib/useGrow";
 
-function Row({ label, value, hint, tooltip }: { label: string; value: string; hint?: string; tooltip?: TooltipContent }) {
+type Tone = "pos" | "warn" | "neg" | "neu";
+
+/** Veredicto vs mediana sectorial para múltiplos (menor = mejor). */
+function multTone(diffPct: number): Tone {
+  if (diffPct <= -10) return "pos";
+  if (diffPct < 10) return "neu";
+  if (diffPct < 35) return "warn";
+  return "neg";
+}
+
+const FILL: Record<Tone, string> = {
+  pos: "var(--pos)",
+  neu: "rgba(255,255,255,0.4)",
+  warn: "var(--warn)",
+  neg: "var(--neg)",
+};
+
+/** Fila termómetro: pista barato→caro, tick = mediana del sector, fill = empresa. */
+function MultRow({ label, value, bench, grown, tooltip }: {
+  label: string;
+  value: number | null;
+  bench: number | null;
+  grown: boolean;
+  tooltip?: TooltipContent;
+}) {
+  const hasBar = value != null && value > 0 && bench != null && bench > 0;
+  const diff = hasBar ? ((value - bench) / bench) * 100 : 0;
+  const tone = hasBar ? multTone(diff) : "neu";
+  // escala 0→1.3×max para que tanto el fill como el tick queden dentro
+  const scale = hasBar ? Math.max(value, bench) * 1.3 : 1;
+  const fillPct = hasBar ? Math.min(100, (value / scale) * 100) : 0;
+  const tickPct = hasBar ? Math.min(100, (bench / scale) * 100) : 0;
+
+  return (
+    <div className="mval">
+      <div className="mval-top">
+        <span className="k flex items-center gap-1.5">
+          {label}
+          {tooltip && <InfoTooltip content={tooltip} />}
+        </span>
+        <span className="mval-r">
+          {hasBar && (
+            <span className={`pill ${tone}`}>
+              {diff > 0 ? "+" : ""}{diff.toFixed(0)}% vs sector
+            </span>
+          )}
+          <span className="v">{formatMultiple(value)}</span>
+        </span>
+      </div>
+      {hasBar && (
+        <div className="mval-track">
+          <i className="mval-tick" style={{ left: `${tickPct}%` }} />
+          <div
+            className="mval-fill"
+            style={{ width: grown ? `${fillPct}%` : 0, "--fill": FILL[tone] } as React.CSSProperties}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function YieldRow({ label, value, accent, tooltip }: {
+  label: string;
+  value: string;
+  accent?: boolean;
+  tooltip?: TooltipContent;
+}) {
   const isNA = value === "N/A";
   return (
     <div className="flex items-center justify-between py-3 border-b border-white/[0.04] last:border-0">
       <div className="flex items-center gap-1.5">
         <span className="text-sm text-zinc-300">{label}</span>
-        {hint && <span className="text-xs text-zinc-600">{hint}</span>}
         {tooltip && <InfoTooltip content={tooltip} />}
       </div>
-      <span className={`text-sm font-semibold tabular-nums ${isNA ? "text-zinc-600" : "text-white"}`}>
+      <span className={`text-sm font-semibold tabular-nums ${
+        isNA ? "text-zinc-600" : accent ? "text-[#0cc06c]" : "text-white"
+      }`}>
         {value}
       </span>
     </div>
@@ -22,34 +92,52 @@ function Row({ label, value, hint, tooltip }: { label: string; value: string; hi
 
 export default function ValuationTab({ data }: { data: StockAnalysis }) {
   const m = data.key_metrics;
+  const b = getSectorBenchmarks(data.sector_info?.mapped_sector || "default");
+  const grown = useGrow();
+
+  const buyback = m.buyback_yield;
+  const shareholder = m.shareholder_yield;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-      {/* Price multiples */}
-      <div>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+      {/* Múltiplos como termómetro barato→caro */}
+      <div className={`rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 px-5 py-4 ${grown ? "viz-in" : ""}`}>
         <h4 className="text-xs text-zinc-500 uppercase tracking-widest mb-3 font-medium">
-          Múltiplos de precio
+          Múltiplos de valoración
         </h4>
-        <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 px-5">
-          <Row label="P/E (TTM)" value={formatMultiple(m.pe)} tooltip={VALUATION.pe_trailing} />
-          <Row label="Forward P/E" value={formatMultiple(m.forward_pe)} tooltip={VALUATION.pe_forward} />
-          <Row label="P/B" value={formatMultiple(m.pb)} tooltip={VALUATION.pb} />
-          <Row label="P/S" value={formatMultiple(m.ps)} tooltip={VALUATION.ps} />
-          <Row label="PEG" value={m.peg != null ? m.peg.toFixed(2) : "N/A"} tooltip={VALUATION.peg} />
+        <div className="mval-legend">
+          <span className="mval-scale-lbl">Barato</span>
+          <span className="mval-ticknote"><i />Mediana sector</span>
+          <span className="mval-scale-lbl">Caro</span>
         </div>
+        <MultRow label="P/E (TTM)" value={m.pe} bench={b.pe} grown={grown} tooltip={VALUATION.pe_trailing} />
+        <MultRow label="Forward P/E" value={m.forward_pe} bench={b.forward_pe} grown={grown} tooltip={VALUATION.pe_forward} />
+        <MultRow label="PEG" value={m.peg} bench={b.peg} grown={grown} tooltip={VALUATION.peg} />
+        <MultRow label="P/B" value={m.pb} bench={b.pb} grown={grown} tooltip={VALUATION.pb} />
+        <MultRow label="EV/EBITDA" value={m.ev_ebitda} bench={b.ev_ebitda} grown={grown} tooltip={VALUATION.ev_ebitda} />
+        <MultRow label="P/FCF" value={m.pfcf} bench={b.pfcf} grown={grown} tooltip={VALUATION.pfcf} />
       </div>
 
-      {/* Enterprise multiples */}
-      <div>
-        <h4 className="text-xs text-zinc-500 uppercase tracking-widest mb-3 font-medium">
-          Múltiplos enterprise
+      {/* Rendimientos para el accionista */}
+      <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 px-5 py-4">
+        <h4 className="text-xs text-zinc-500 uppercase tracking-widest mb-1 font-medium">
+          Rendimientos
         </h4>
-        <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 px-5">
-          <Row label="EV/EBITDA" value={formatMultiple(m.ev_ebitda)} tooltip={VALUATION.ev_ebitda} />
-          <Row label="P/FCF" value={formatMultiple(m.pfcf)} tooltip={VALUATION.pfcf} />
-          <Row label="FCF Yield" value={formatPercent(m.fcf_yield)} tooltip={VALUATION.fcf_yield_val} />
-          <Row label="Dividend Yield" value={formatPercent(m.dividend_yield)} tooltip={VALUATION.dividend_yield} />
-        </div>
+        <YieldRow label="FCF Yield" value={formatPercent(m.fcf_yield)} accent tooltip={VALUATION.fcf_yield_val} />
+        <YieldRow label="Earnings Yield" value={formatPercent(m.earnings_yield)} />
+        <YieldRow label="Dividend Yield" value={formatPercent(m.dividend_yield)} tooltip={VALUATION.dividend_yield} />
+        <YieldRow label="Payout Ratio" value={formatPercent(m.payout_ratio)} />
+        <YieldRow
+          label="Buyback Yield"
+          value={buyback != null ? formatPercent(buyback) : "N/A"}
+          accent={buyback != null && buyback > 0}
+        />
+        <YieldRow
+          label="Shareholder Yield"
+          value={shareholder != null ? formatPercent(shareholder) : "N/A"}
+          accent={shareholder != null && shareholder > 0}
+        />
+        <YieldRow label="P/S" value={formatMultiple(m.ps)} tooltip={VALUATION.ps} />
       </div>
     </div>
   );

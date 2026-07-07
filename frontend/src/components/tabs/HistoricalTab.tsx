@@ -48,11 +48,11 @@ export default function HistoricalTab({ data }: { data: StockAnalysis }) {
           Cómo el revenue se transforma en beneficio neto y flujo de caja libre.
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-          <WaterfallBlock label="Revenue" value={revenue} color="#3b82f6" />
-          <WaterfallBlock label="EBITDA" value={ebitda} color="#8b5cf6" pct={revenue && ebitda ? ebitda / revenue : null} />
-          <WaterfallBlock label="Op. Income" value={m.operating_income} color="#f59e0b" pct={revenue && m.operating_income ? m.operating_income / revenue : null} />
-          <WaterfallBlock label="Net Income" value={netIncome} color={netIncome && netIncome > 0 ? "#00d632" : "#ff4d4d"} pct={revenue && netIncome ? netIncome / revenue : null} />
-          <WaterfallBlock label="Free Cash Flow" value={fcf} color={fcf && fcf > 0 ? "#00d632" : "#ff4d4d"} pct={revenue && fcf ? fcf / revenue : null} />
+          <WaterfallBlock label="Revenue" value={revenue} color="#a1a1a6" />
+          <WaterfallBlock label="EBITDA" value={ebitda} color="#6ee7b4" pct={revenue && ebitda ? ebitda / revenue : null} />
+          <WaterfallBlock label="Op. Income" value={m.operating_income} color="#0cc06c" pct={revenue && m.operating_income ? m.operating_income / revenue : null} />
+          <WaterfallBlock label="Net Income" value={netIncome} color={netIncome && netIncome > 0 ? "#0cc06c" : "#ff4d4d"} pct={revenue && netIncome ? netIncome / revenue : null} />
+          <WaterfallBlock label="Free Cash Flow" value={fcf} color={fcf && fcf > 0 ? "#0cc06c" : "#ff4d4d"} pct={revenue && fcf ? fcf / revenue : null} />
         </div>
       </div>
 
@@ -107,7 +107,7 @@ export default function HistoricalTab({ data }: { data: StockAnalysis }) {
                   ? Math.min(absVal * 100, 100) // already decimal
                   : Math.min(absVal, 100);
                 barPct = Math.max(5, Math.min(95, normalized));
-                barColor = val > 0 ? "#00d632" : "#ff4d4d";
+                barColor = val > 0 ? "#0cc06c" : "#ff4d4d";
               }
 
               return (
@@ -172,7 +172,7 @@ function PriceContext({ price, high, low, beta }: {
     pct = Math.max(0, Math.min(100, ((price - low) / (high - low)) * 100));
   }
   const position = pct > 70 ? "Cerca del máximo" : pct < 30 ? "Cerca del mínimo" : "Rango medio";
-  const posColor = pct > 70 ? "#00d632" : pct < 30 ? "#ff4d4d" : "#fbbf24";
+  const posColor = pct > 70 ? "#0cc06c" : pct < 30 ? "#ff4d4d" : "#fbbf24";
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -191,7 +191,7 @@ function PriceContext({ price, high, low, beta }: {
             className="absolute top-0 left-0 h-full rounded-full"
             style={{
               width: `${pct}%`,
-              background: `linear-gradient(90deg, ${pct < 30 ? "#ff4d4d" : pct > 70 ? "#00d632" : "#fbbf24"}, ${pct < 30 ? "#f97316" : pct > 70 ? "#4ade80" : "#f59e0b"})`,
+              background: `linear-gradient(90deg, ${pct < 30 ? "#ff4d4d" : pct > 70 ? "#0cc06c" : "#fbbf24"}, ${pct < 30 ? "#f97316" : pct > 70 ? "#4ade80" : "#f59e0b"})`,
             }}
           />
           <div
@@ -264,7 +264,7 @@ function CashFlowCard({ title, value, format, description, isPositive }: {
   description: string;
   isPositive: boolean;
 }) {
-  const color = value == null ? "#9ca3af" : isPositive ? "#00d632" : "#ff4d4d";
+  const color = value == null ? "#9ca3af" : isPositive ? "#0cc06c" : "#ff4d4d";
   const displayVal = value == null ? "N/A"
     : format === "percent" ? formatPercent(value)
     : formatNumber(value);
@@ -291,9 +291,9 @@ function BalanceSheetSnapshot({ data }: { data: StockAnalysis }) {
 
   // Calculate composition
   const items: { label: string; value: number; color: string }[] = [];
-  if (totalEquity && totalEquity > 0) items.push({ label: "Equity", value: totalEquity, color: "#00d632" });
+  if (totalEquity && totalEquity > 0) items.push({ label: "Equity", value: totalEquity, color: "#0cc06c" });
   if (totalDebt && totalDebt > 0) items.push({ label: "Deuda", value: totalDebt, color: "#ff4d4d" });
-  if (cash && cash > 0) items.push({ label: "Efectivo", value: cash, color: "#3b82f6" });
+  if (cash && cash > 0) items.push({ label: "Efectivo", value: cash, color: "#0cc06c" });
 
   const total = items.reduce((sum, i) => sum + i.value, 0);
 
@@ -318,9 +318,9 @@ function BalanceSheetSnapshot({ data }: { data: StockAnalysis }) {
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <BalanceItem label="Total Assets" value={totalAssets} color="#9ca3af" />
-          <BalanceItem label="Equity" value={totalEquity} color="#00d632" />
+          <BalanceItem label="Equity" value={totalEquity} color="#0cc06c" />
           <BalanceItem label="Deuda Total" value={totalDebt} color="#ff4d4d" />
-          <BalanceItem label="Efectivo" value={cash} color="#3b82f6" />
+          <BalanceItem label="Efectivo" value={cash} color="#0cc06c" />
         </div>
 
         {/* Net debt */}
@@ -400,7 +400,7 @@ function YearlyChart({ data: yearly }: { data: Array<{ year: number; revenue: nu
                       className="h-full rounded-full"
                       style={{
                         width: `${earnPct}%`,
-                        backgroundColor: y.earnings && y.earnings > 0 ? "#00d632" : "#ff4d4d"
+                        backgroundColor: y.earnings && y.earnings > 0 ? "#0cc06c" : "#ff4d4d"
                       }}
                     />
                   </div>

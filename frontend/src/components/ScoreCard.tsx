@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import InfoTooltip from "./InfoTooltip";
 import { SCORE_TOOLTIP } from "@/lib/tooltips";
+import { getScoreColor, getScoreLabel } from "@/lib/api";
 
 interface ScoreCardProps {
   score: number;
@@ -10,68 +12,86 @@ interface ScoreCardProps {
   isGrowth: boolean;
 }
 
-function getScoreColor(pct: number): string {
-  if (pct >= 80) return "#00d632";
-  if (pct >= 65) return "#4ade80";
-  if (pct >= 50) return "#fbbf24";
-  if (pct >= 35) return "#f97316";
-  return "#ff4d4d";
-}
-
-function getScoreLabel(pct: number): string {
-  if (pct >= 80) return "Excelente";
-  if (pct >= 65) return "Favorable";
-  if (pct >= 50) return "Neutral";
-  if (pct >= 35) return "Precaución";
-  return "Evitar";
-}
-
-function getScoreBg(pct: number): string {
-  if (pct >= 80) return "rgba(0, 214, 50, 0.04)";
-  if (pct >= 65) return "rgba(74, 222, 128, 0.04)";
-  if (pct >= 50) return "rgba(251, 191, 36, 0.04)";
-  if (pct >= 35) return "rgba(249, 115, 22, 0.04)";
-  return "rgba(255, 77, 77, 0.04)";
-}
-
 export default function ScoreCard({ score, maxScore, companyType, isGrowth }: ScoreCardProps) {
   const pct = Math.round((score / maxScore) * 100);
   const color = getScoreColor(pct);
   const label = getScoreLabel(pct);
 
+  // Gauge radial: el arco se dibuja (dashoffset 100 -> 100-pct) y el número
+  // cuenta hacia arriba. Fallbacks por si la pestaña está en segundo plano.
+  const [drawn, setDrawn] = useState(false);
+  const [num, setNum] = useState(0);
+
+  useEffect(() => {
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) {
+      setDrawn(true);
+      setNum(pct);
+      return;
+    }
+    const raf = requestAnimationFrame(() => setDrawn(true));
+    const t0 = performance.now();
+    const dur = 1200;
+    let rid = 0;
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - t0) / dur);
+      const e = 1 - Math.pow(1 - p, 3);
+      setNum(Math.round(pct * e));
+      if (p < 1) rid = requestAnimationFrame(tick);
+    };
+    rid = requestAnimationFrame(tick);
+    const safety = setTimeout(() => { setNum(pct); setDrawn(true); }, dur + 500);
+    return () => {
+      cancelAnimationFrame(raf);
+      cancelAnimationFrame(rid);
+      clearTimeout(safety);
+    };
+  }, [pct]);
+
   return (
-    <div
-      className="relative rounded-2xl border border-white/[0.06] p-6 overflow-hidden"
-      style={{ background: getScoreBg(pct) }}
-    >
-      {/* Glow */}
+    <div className="relative rounded-2xl border border-white/[0.06] bg-[#0a0a0d]/85 p-6 overflow-hidden h-full">
+      {/* Glow del color del score */}
       <div
-        className="absolute -top-20 -right-20 w-40 h-40 rounded-full blur-[60px] opacity-20 pointer-events-none"
+        className="absolute -top-[30%] -right-[20%] w-56 h-56 rounded-full blur-[70px] opacity-[0.13] pointer-events-none"
         style={{ background: color }}
       />
 
-      <div className="relative flex items-center gap-5">
-        {/* Score */}
-        <div className="shrink-0">
-          <div className="flex items-start gap-1.5">
-            <div className="text-5xl font-black tabular-nums" style={{ color }}>
-              {pct}
+      <div className="relative flex items-center gap-6">
+        {/* Gauge radial */}
+        <div className="relative w-[150px] h-[150px] shrink-0">
+          <svg width="150" height="150" viewBox="0 0 150 150" className="-rotate-90 overflow-visible">
+            <circle cx="75" cy="75" r="62" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="11" />
+            <circle
+              cx="75" cy="75" r="62" fill="none"
+              stroke={color} strokeWidth="11" strokeLinecap="round"
+              pathLength={100}
+              strokeDasharray={100}
+              strokeDashoffset={drawn ? 100 - pct : 100}
+              style={{
+                transition: "stroke-dashoffset 1.3s cubic-bezier(0.16,1,0.3,1)",
+                filter: `drop-shadow(0 0 8px ${color}66)`,
+              }}
+            />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <div className="text-[44px] font-bold leading-none tracking-[-0.04em] tabular-nums" style={{ color }}>
+              {num}
             </div>
-            <InfoTooltip content={SCORE_TOOLTIP} size="md" />
+            <div className="text-[11px] text-[#6e6e73] uppercase tracking-[0.1em] mt-1">/ 100</div>
           </div>
-          <div className="text-[11px] text-zinc-500 uppercase tracking-widest mt-0.5">/ 100</div>
         </div>
 
-        <div className="w-px h-14 bg-white/[0.06]" />
-
-        {/* Info */}
+        {/* Nivel + tipo */}
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-semibold" style={{ color }}>{label}</div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[17px] font-semibold" style={{ color }}>{label}</span>
+            <InfoTooltip content={SCORE_TOOLTIP} size="md" />
+          </div>
           <div className="text-xs text-zinc-500 mt-1">{score} de {maxScore} pts</div>
 
-          <div className="flex gap-1.5 mt-2.5 flex-wrap">
+          <div className="flex gap-1.5 mt-3 flex-wrap">
             {isGrowth && (
-              <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-[#0cc06c]/10 text-[#0cc06c] border border-[#0cc06c]/20">
                 Growth
               </span>
             )}
@@ -80,14 +100,6 @@ export default function ScoreCard({ score, maxScore, companyType, isGrowth }: Sc
             </span>
           </div>
         </div>
-      </div>
-
-      {/* Progress bar */}
-      <div className="mt-5 h-1.5 bg-white/[0.04] rounded-full overflow-hidden">
-        <div
-          className="h-full rounded-full transition-all duration-1000 ease-out"
-          style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${color}cc, ${color})` }}
-        />
       </div>
     </div>
   );
