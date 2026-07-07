@@ -264,6 +264,12 @@ def _compute_analysis(symbol: str) -> dict:
                     "enterprise_value": yr.get("enterpriseValue"),
                     "forward_pe": yr.get("forwardPE"),
                     "dividend_yield": yr.get("dividendYield"),
+                    # Aportados por la fuente secundaria (Finnhub) cuando Yahoo
+                    # los bloquea; ya vienen en la unidad del motor (decimal).
+                    "payout_ratio": yr.get("payoutRatio"),
+                    "peg": yr.get("pegRatio"),
+                    "interest_coverage": yr.get("interestCoverage"),
+                    "inventory_turnover": yr.get("inventoryTurnover"),
                 }
 
                 for k, v in fallback_map.items():

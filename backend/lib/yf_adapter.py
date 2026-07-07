@@ -265,6 +265,17 @@ def get_ticker_info(symbol: str) -> Dict[str, Any]:
         # ── Defensa 3: rellenar huecos con el último snapshot bueno ──
         info = _merge_last_known_good(symbol, info, degraded)
 
+        # ── Defensa 4: fuente secundaria (Finnhub) para lo que Yahoo bloquea
+        # persistentemente desde IPs de datacenter (beta/forward/dividendo/growth
+        # y los estados históricos para Piotroski). Inerte si no hay API key.
+        try:
+            from finnhub_fallback import enrich_info, is_enabled, should_fill
+            if is_enabled() and (degraded or should_fill(info)):
+                info = enrich_info(info, symbol)
+                degraded = _is_degraded(info)  # recomputar tras el relleno
+        except Exception as e:
+            logger.warning(f"[FINNHUB] enrich falló para {symbol}: {e}")
+
         # ── Defensa 2: los snapshots degradados caducan rápido ──
         _cache[symbol] = (time.time(), info, degraded)
         return info
