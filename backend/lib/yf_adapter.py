@@ -271,7 +271,7 @@ def get_ticker_info(symbol: str) -> Dict[str, Any]:
         try:
             from finnhub_fallback import enrich_info, is_enabled, should_fill
             if is_enabled() and (degraded or should_fill(info)):
-                info = enrich_info(info, symbol)
+                info = enrich_info(info, symbol, degraded=degraded)
                 degraded = _is_degraded(info)  # recomputar tras el relleno
         except Exception as e:
             logger.warning(f"[FINNHUB] enrich falló para {symbol}: {e}")

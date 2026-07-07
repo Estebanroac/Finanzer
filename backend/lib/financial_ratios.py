@@ -3155,7 +3155,15 @@ def calculate_all_ratios(financial_data: Dict) -> Dict[str, Optional[float]]:
     mkt_cap = market_cap(d.get("price"), d.get("shares_outstanding"))
     ev_val = enterprise_value(mkt_cap, d.get("total_debt"), d.get("cash"))
     net_debt_val = net_debt(d.get("total_debt"), d.get("cash"))
-    eps_val = earnings_per_share(d.get("net_income"), d.get("shares_outstanding"))
+    # EPS para P/E: preferir el EPS TTM diluido REPORTADO (el estándar de mercado;
+    # Yahoo lo da como trailingEps y Finnhub lo rellena/corrige en degradación).
+    # Calcular net_income/acciones solo como respaldo — en degradación ese
+    # net_income es el del año fiscal (no TTM) e infla el P/E ~8%.
+    _rep_eps = d.get("eps")
+    if isinstance(_rep_eps, (int, float)) and _rep_eps == _rep_eps and _rep_eps != 0:
+        eps_val = float(_rep_eps)
+    else:
+        eps_val = earnings_per_share(d.get("net_income"), d.get("shares_outstanding"))
     bvps = book_value_per_share(d.get("total_equity"), d.get("shares_outstanding"))
     fcf_ps = free_cash_flow_per_share(fcf_val, d.get("shares_outstanding"))
 

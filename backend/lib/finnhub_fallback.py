@@ -146,8 +146,14 @@ def _series_val(series: dict, key: str, idx: int) -> Optional[float]:
     return None
 
 
-def enrich_info(info: Dict[str, Any], symbol: str) -> Dict[str, Any]:
-    """Rellena los None de `info` con Finnhub. No-op si la key no está."""
+def enrich_info(info: Dict[str, Any], symbol: str, degraded: bool = False) -> Dict[str, Any]:
+    """Rellena los None de `info` con Finnhub. No-op si la key no está.
+
+    `degraded`: cuando la respuesta de Yahoo vino degradada, sus cifras POR ACCIÓN
+    (trailingEps) pueden ser un valor anual obsoleto arrastrado por el
+    'último bueno conocido'; en ese caso el epsTTM de Finnhub (TTM diluido) SÍ se
+    impone sobre lo existente. Fuera de degradación se respeta el dato de Yahoo.
+    """
     if not is_enabled() or not isinstance(info, dict):
         return info
 
@@ -168,7 +174,16 @@ def enrich_info(info: Dict[str, Any], symbol: str) -> Dict[str, Any]:
     set_top("beta", _num(m.get("beta")))
     set_top("forwardPE", _num(m.get("forwardPE")))
     set_top("trailingPE", _num(m.get("peTTM")))
-    set_top("trailingEps", _num(m.get("epsTTM")))
+    # trailingEps: en degradación se IMPONE el TTM diluido de Finnhub (el valor de
+    # Yahoo/LKG puede ser un EPS anual obsoleto que infla el P/E); fuera de
+    # degradación se respeta el de Yahoo (fill-if-None).
+    _eps_ttm = _num(m.get("epsTTM"))
+    if degraded and _eps_ttm is not None:
+        if info.get("trailingEps") != _eps_ttm:
+            info["trailingEps"] = _eps_ttm
+            filled.append("trailingEps*")
+    else:
+        set_top("trailingEps", _eps_ttm)
     # OJO: NO mapear forwardEps desde epsTTM/epsExclExtraItemsTTM — esos son
     # TRAILING, no estimados forward. Usarlos haría forward_pe = price/eps_TTM
     # (≈ el trailing P/E otra vez), anulando la señal de compresión. Se deja
