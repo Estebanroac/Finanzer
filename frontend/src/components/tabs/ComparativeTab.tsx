@@ -1,8 +1,8 @@
 "use client";
 
 import { formatMultiple, formatPercent, formatNumber, getScoreColor, type StockAnalysis } from "@/lib/api";
-import InfoTooltip from "@/components/InfoTooltip";
-import { COMPARATIVE } from "@/lib/tooltips";
+import InfoTooltip, { type TooltipContent } from "@/components/InfoTooltip";
+import { VALUATION, PROFITABILITY, HEALTH, HISTORICAL, COMPARATIVE } from "@/lib/tooltips";
 import { getSectorBenchmarks } from "@/lib/sectorBench";
 import { useGrow } from "@/lib/useGrow";
 
@@ -13,6 +13,7 @@ interface CompMetric {
   format: "multiple" | "percent" | "number";
   higherIsBetter: boolean;
   hint?: string;
+  tooltip?: TooltipContent;
 }
 
 function fmt(val: number | null, format: string): string {
@@ -30,33 +31,33 @@ export default function ComparativeTab({ data }: { data: StockAnalysis }) {
   const sectorBenchmarks = getSectorBenchmarks(data.sector_info?.mapped_sector || "default");
 
   const valuationMetrics: CompMetric[] = [
-    { label: "P/E (TTM)", value: m.pe, sectorAvg: sectorBenchmarks.pe, format: "multiple", higherIsBetter: false, hint: "Precio / Beneficio" },
-    { label: "Forward P/E", value: m.forward_pe, sectorAvg: sectorBenchmarks.forward_pe, format: "multiple", higherIsBetter: false, hint: "Estimado" },
-    { label: "P/B", value: m.pb, sectorAvg: sectorBenchmarks.pb, format: "multiple", higherIsBetter: false, hint: "Precio / Valor en Libros" },
-    { label: "EV/EBITDA", value: m.ev_ebitda, sectorAvg: sectorBenchmarks.ev_ebitda, format: "multiple", higherIsBetter: false },
-    { label: "P/FCF", value: m.pfcf, sectorAvg: sectorBenchmarks.pfcf, format: "multiple", higherIsBetter: false },
-    { label: "PEG", value: m.peg, sectorAvg: sectorBenchmarks.peg, format: "multiple", higherIsBetter: false },
+    { label: "P/E (TTM)", value: m.pe, sectorAvg: sectorBenchmarks.pe, format: "multiple", higherIsBetter: false, hint: "Precio / Beneficio", tooltip: VALUATION.pe_trailing },
+    { label: "Forward P/E", value: m.forward_pe, sectorAvg: sectorBenchmarks.forward_pe, format: "multiple", higherIsBetter: false, hint: "Estimado", tooltip: VALUATION.pe_forward },
+    { label: "P/B", value: m.pb, sectorAvg: sectorBenchmarks.pb, format: "multiple", higherIsBetter: false, hint: "Precio / Valor en Libros", tooltip: VALUATION.pb },
+    { label: "EV/EBITDA", value: m.ev_ebitda, sectorAvg: sectorBenchmarks.ev_ebitda, format: "multiple", higherIsBetter: false, tooltip: VALUATION.ev_ebitda },
+    { label: "P/FCF", value: m.pfcf, sectorAvg: sectorBenchmarks.pfcf, format: "multiple", higherIsBetter: false, tooltip: VALUATION.pfcf },
+    { label: "PEG", value: m.peg, sectorAvg: sectorBenchmarks.peg, format: "multiple", higherIsBetter: false, tooltip: VALUATION.peg },
   ];
 
   const profitMetrics: CompMetric[] = [
-    { label: "ROE", value: m.roe, sectorAvg: sectorBenchmarks.roe, format: "percent", higherIsBetter: true },
-    { label: "ROA", value: m.roa, sectorAvg: sectorBenchmarks.roa, format: "percent", higherIsBetter: true },
-    { label: "ROIC", value: m.roic, sectorAvg: sectorBenchmarks.roic, format: "percent", higherIsBetter: true },
-    { label: "Margen Neto", value: m.net_margin, sectorAvg: sectorBenchmarks.net_margin, format: "percent", higherIsBetter: true },
-    { label: "Margen Operativo", value: m.operating_margin, sectorAvg: sectorBenchmarks.operating_margin, format: "percent", higherIsBetter: true },
-    { label: "Margen Bruto", value: m.gross_margin, sectorAvg: sectorBenchmarks.gross_margin, format: "percent", higherIsBetter: true },
+    { label: "ROE", value: m.roe, sectorAvg: sectorBenchmarks.roe, format: "percent", higherIsBetter: true, tooltip: PROFITABILITY.roe },
+    { label: "ROA", value: m.roa, sectorAvg: sectorBenchmarks.roa, format: "percent", higherIsBetter: true, tooltip: PROFITABILITY.roa },
+    { label: "ROIC", value: m.roic, sectorAvg: sectorBenchmarks.roic, format: "percent", higherIsBetter: true, tooltip: PROFITABILITY.roic },
+    { label: "Margen Neto", value: m.net_margin, sectorAvg: sectorBenchmarks.net_margin, format: "percent", higherIsBetter: true, tooltip: PROFITABILITY.net_margin },
+    { label: "Margen Operativo", value: m.operating_margin, sectorAvg: sectorBenchmarks.operating_margin, format: "percent", higherIsBetter: true, tooltip: PROFITABILITY.operating_margin },
+    { label: "Margen Bruto", value: m.gross_margin, sectorAvg: sectorBenchmarks.gross_margin, format: "percent", higherIsBetter: true, tooltip: PROFITABILITY.gross_margin },
   ];
 
   const healthMetrics: CompMetric[] = [
-    { label: "Current Ratio", value: m.current_ratio, sectorAvg: sectorBenchmarks.current_ratio, format: "multiple", higherIsBetter: true },
-    { label: "D/E", value: m.de, sectorAvg: sectorBenchmarks.de, format: "multiple", higherIsBetter: false },
-    { label: "Cobertura Intereses", value: m.interest_coverage, sectorAvg: sectorBenchmarks.interest_coverage, format: "multiple", higherIsBetter: true },
-    { label: "FCF Yield", value: m.fcf_yield, sectorAvg: sectorBenchmarks.fcf_yield, format: "percent", higherIsBetter: true },
+    { label: "Current Ratio", value: m.current_ratio, sectorAvg: sectorBenchmarks.current_ratio, format: "multiple", higherIsBetter: true, tooltip: HEALTH.current_ratio },
+    { label: "D/E", value: m.de, sectorAvg: sectorBenchmarks.de, format: "multiple", higherIsBetter: false, tooltip: HEALTH.de_ratio },
+    { label: "Cobertura Intereses", value: m.interest_coverage, sectorAvg: sectorBenchmarks.interest_coverage, format: "multiple", higherIsBetter: true, tooltip: HEALTH.interest_coverage },
+    { label: "FCF Yield", value: m.fcf_yield, sectorAvg: sectorBenchmarks.fcf_yield, format: "percent", higherIsBetter: true, tooltip: VALUATION.fcf_yield_val },
   ];
 
   const growthMetrics: CompMetric[] = [
-    { label: "Crec. Revenue", value: m.revenue_growth, sectorAvg: sectorBenchmarks.revenue_growth, format: "percent", higherIsBetter: true },
-    { label: "Crec. Earnings", value: m.earnings_growth, sectorAvg: sectorBenchmarks.earnings_growth, format: "percent", higherIsBetter: true },
+    { label: "Crec. Revenue", value: m.revenue_growth, sectorAvg: sectorBenchmarks.revenue_growth, format: "percent", higherIsBetter: true, tooltip: HISTORICAL.revenue_growth },
+    { label: "Crec. Earnings", value: m.earnings_growth, sectorAvg: sectorBenchmarks.earnings_growth, format: "percent", higherIsBetter: true, tooltip: HISTORICAL.earnings_growth },
   ];
 
   return (
@@ -73,7 +74,10 @@ export default function ComparativeTab({ data }: { data: StockAnalysis }) {
         </div>
         <div className="cmp-legend !mb-0">
           <span className="cmp-lg cmp-lg-neg"><i />Peor</span>
-          <span className="cmp-axis-label">Sector · 0%</span>
+          <span className="cmp-axis-label inline-flex items-center gap-1.5">
+            Sector · 0%
+            <InfoTooltip content={COMPARATIVE.relative_indicator} />
+          </span>
           <span className="cmp-lg cmp-lg-pos"><i />Mejor</span>
         </div>
       </div>
@@ -114,7 +118,10 @@ function ComparisonSection({ title, subtitle, metrics }: { title: string; subtit
             return (
               <div key={i} className="cmp-row">
                 <div className="cmp-head">
-                  <span className="cmp-k">{m.label}</span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="cmp-k">{m.label}</span>
+                    {m.tooltip && <InfoTooltip content={m.tooltip} value={m.value} valueLabel={fmt(m.value, m.format)} />}
+                  </span>
                   <span className="cmp-val">{fmt(m.value, m.format)}</span>
                 </div>
               </div>
@@ -140,7 +147,10 @@ function ComparisonSection({ title, subtitle, metrics }: { title: string; subtit
           return (
             <div key={i} className="cmp-row">
               <div className="cmp-head">
-                <span className="cmp-k">{m.label}</span>
+                <span className="flex items-center gap-1.5">
+                  <span className="cmp-k">{m.label}</span>
+                  {m.tooltip && <InfoTooltip content={m.tooltip} value={m.value} valueLabel={fmt(m.value, m.format)} />}
+                </span>
                 <span>
                   <span className="cmp-val">{fmt(m.value, m.format)}</span>
                   <span className="cmp-vs">vs {fmt(m.sectorAvg, m.format)}</span>
@@ -194,9 +204,12 @@ function ComparisonSummary({ valuationMetrics, profitMetrics, healthMetrics }: {
 
   return (
     <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 px-6 py-5">
-      <h4 className="text-xs text-zinc-500 uppercase tracking-widest mb-3 font-medium">
-        Resumen comparativo
-      </h4>
+      <div className="flex items-center gap-1.5 mb-3">
+        <h4 className="text-xs text-zinc-500 uppercase tracking-widest font-medium">
+          Resumen comparativo
+        </h4>
+        <InfoTooltip content={COMPARATIVE.summary} value={better / total} valueLabel={`${pct}%`} />
+      </div>
       <div className="flex items-center gap-4 mb-3">
         <div className="text-3xl font-black tabular-nums" style={{ color }}>
           {better}/{total}

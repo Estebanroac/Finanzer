@@ -2,7 +2,7 @@
 
 import { formatMultiple, formatPercent, type StockAnalysis } from "@/lib/api";
 import InfoTooltip, { type TooltipContent } from "@/components/InfoTooltip";
-import { VALUATION } from "@/lib/tooltips";
+import { VALUATION, HEALTH } from "@/lib/tooltips";
 import { getSectorBenchmarks } from "@/lib/sectorBench";
 import { scaleColor } from "@/lib/metricScale";
 import { useGrow } from "@/lib/useGrow";
@@ -45,7 +45,7 @@ function MultRow({ label, value, bench, grown, tooltip }: {
       <div className="mval-top">
         <span className="k flex items-center gap-1.5">
           {label}
-          {tooltip && <InfoTooltip content={tooltip} />}
+          {tooltip && <InfoTooltip content={tooltip} value={value} valueLabel={formatMultiple(value)} />}
         </span>
         <span className="mval-r">
           {hasBar && (
@@ -84,7 +84,7 @@ function YieldRow({ label, value, metricKey, raw, tooltip }: {
     <div className="flex items-center justify-between py-3 border-b border-white/[0.04] last:border-0">
       <div className="flex items-center gap-1.5">
         <span className="text-sm text-zinc-300">{label}</span>
-        {tooltip && <InfoTooltip content={tooltip} />}
+        {tooltip && <InfoTooltip content={tooltip} value={raw} valueLabel={value} />}
       </div>
       <span
         className={`text-sm font-semibold tabular-nums ${isNA ? "text-zinc-600" : "text-white"}`}
@@ -130,20 +130,22 @@ export default function ValuationTab({ data }: { data: StockAnalysis }) {
           Rendimientos
         </h4>
         <YieldRow label="FCF Yield" value={formatPercent(m.fcf_yield)} metricKey="fcf_yield" raw={m.fcf_yield} tooltip={VALUATION.fcf_yield_val} />
-        <YieldRow label="Earnings Yield" value={formatPercent(m.earnings_yield)} metricKey="earnings_yield" raw={m.earnings_yield} />
+        <YieldRow label="Earnings Yield" value={formatPercent(m.earnings_yield)} metricKey="earnings_yield" raw={m.earnings_yield} tooltip={VALUATION.earnings_yield} />
         <YieldRow label="Dividend Yield" value={formatPercent(m.dividend_yield)} metricKey="dividend_yield" raw={m.dividend_yield} tooltip={VALUATION.dividend_yield} />
-        <YieldRow label="Payout Ratio" value={formatPercent(m.payout_ratio)} metricKey="payout_ratio" raw={m.payout_ratio} />
+        <YieldRow label="Payout Ratio" value={formatPercent(m.payout_ratio)} metricKey="payout_ratio" raw={m.payout_ratio} tooltip={HEALTH.payout_ratio} />
         <YieldRow
           label="Buyback Yield"
           value={buyback != null ? formatPercent(buyback) : "N/A"}
           metricKey="buyback_yield"
           raw={buyback}
+          tooltip={VALUATION.buyback_yield}
         />
         <YieldRow
           label="Shareholder Yield"
           value={shareholder != null ? formatPercent(shareholder) : "N/A"}
           metricKey="shareholder_yield"
           raw={shareholder}
+          tooltip={VALUATION.shareholder_yield}
         />
         <YieldRow label="P/S" value={formatMultiple(m.ps)} metricKey="ps" raw={m.ps} tooltip={VALUATION.ps} />
       </div>

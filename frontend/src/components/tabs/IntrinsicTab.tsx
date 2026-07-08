@@ -2,7 +2,7 @@
 
 import { formatPrice, type StockAnalysis } from "@/lib/api";
 import InfoTooltip from "@/components/InfoTooltip";
-import { INTRINSIC } from "@/lib/tooltips";
+import { INTRINSIC, PROFITABILITY } from "@/lib/tooltips";
 import { useGrow } from "@/lib/useGrow";
 
 export default function IntrinsicTab({ data }: { data: StockAnalysis }) {
@@ -31,13 +31,19 @@ export default function IntrinsicTab({ data }: { data: StockAnalysis }) {
             <h4 className="text-xs text-zinc-500 uppercase tracking-widest mb-1 font-medium">
               Parámetros DCF
             </h4>
-            <ParamRow label="WACC" value={dcf.wacc != null ? `${(dcf.wacc * 100).toFixed(1)}%` : "N/A"} hint="Tasa de descuento" />
+            <ParamRow
+              label="WACC"
+              value={dcf.wacc != null ? `${(dcf.wacc * 100).toFixed(1)}%` : "N/A"}
+              hint="Tasa de descuento"
+              tooltip={<InfoTooltip content={PROFITABILITY.wacc} value={dcf.wacc} valueLabel={dcf.wacc != null ? `${(dcf.wacc * 100).toFixed(1)}%` : "N/A"} />}
+            />
             <ParamRow label="Crecimiento" value={dcf.growth_rate != null ? `${(dcf.growth_rate * 100).toFixed(1)}%` : "N/A"} hint="Alto crecimiento" />
             <ParamRow label="Crecimiento terminal" value={dcf.terminal_growth != null ? `${(dcf.terminal_growth * 100).toFixed(1)}%` : "N/A"} hint="Perpetuo" />
             <ParamRow
               label="Margen de seguridad"
               value={dcf.margin_of_safety != null ? `${(dcf.margin_of_safety * 100).toFixed(1)}%` : "N/A"}
               hint="(FV − precio) / FV"
+              tooltip={<InfoTooltip content={INTRINSIC.margin_safety} value={dcf.margin_of_safety} valueLabel={dcf.margin_of_safety != null ? `${(dcf.margin_of_safety * 100).toFixed(1)}%` : "N/A"} />}
             />
           </div>
         )}
@@ -92,7 +98,7 @@ function ValuationGauge({ price, fv, dcf, graham, grahamMargin }: {
       <div className="vg-head">
         <h4 className="text-xs text-zinc-500 uppercase tracking-widest font-medium flex items-center gap-1.5">
           Valor intrínseco
-          <InfoTooltip content={INTRINSIC.dcf} />
+          <InfoTooltip content={INTRINSIC.dcf} value={fv} valueLabel={formatPrice(fv)} />
         </h4>
         <span className={`vg-verdict ${tone}`}>{verdict}</span>
       </div>
@@ -156,7 +162,7 @@ function ValuationGauge({ price, fv, dcf, graham, grahamMargin }: {
           <>
             <div className="vg-sep" />
             <div className="vg-stat">
-              <span className="vg-k flex items-center gap-1">Nº de Graham <InfoTooltip content={INTRINSIC.graham} /></span>
+              <span className="vg-k flex items-center gap-1">Nº de Graham <InfoTooltip content={INTRINSIC.graham} value={graham} valueLabel={formatPrice(graham)} /></span>
               <span className="vg-v">
                 {formatPrice(graham)}
                 {/* el % solo cuando es informativo; en growth de calidad el
@@ -196,7 +202,7 @@ function NoDcfView({ price, graham, grahamMargin, isFinancial }: {
           <span className="vg-v">{formatPrice(price)}</span>
         </div>
         <div className="vg-stat">
-          <span className="vg-k flex items-center gap-1">Nº de Graham <InfoTooltip content={INTRINSIC.graham} /></span>
+          <span className="vg-k flex items-center gap-1">Nº de Graham <InfoTooltip content={INTRINSIC.graham} value={graham} valueLabel={formatPrice(graham)} /></span>
           <span className="vg-v">
             {formatPrice(graham)}
             {grahamMargin != null && Math.abs(grahamMargin) <= 1 && (
@@ -259,12 +265,15 @@ function DcfComposition({ composition, grown }: {
   );
 }
 
-function ParamRow({ label, value, hint }: { label: string; value: string; hint: string }) {
+function ParamRow({ label, value, hint, tooltip }: { label: string; value: string; hint: string; tooltip?: React.ReactNode }) {
   const isNA = value === "N/A";
   return (
     <div className="flex items-center justify-between py-3 border-b border-white/[0.04] last:border-0">
       <div>
-        <span className="text-sm text-zinc-300">{label}</span>
+        <span className="text-sm text-zinc-300 inline-flex items-center gap-1.5">
+          {label}
+          {tooltip}
+        </span>
         <span className="text-xs text-zinc-600 ml-2">{hint}</span>
       </div>
       <span className={`text-sm font-semibold tabular-nums ${isNA ? "text-zinc-600" : "text-white"}`}>

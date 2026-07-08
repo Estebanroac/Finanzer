@@ -84,3 +84,33 @@ export function scaleColor(key: string, value: number | null | undefined): strin
   const s = metricScale(key, value);
   return s ? SCALE_COLOR[s] : null;
 }
+
+/**
+ * Índice de la banda de `thresholds` en la que cae `value` (para resaltar la
+ * fila activa en la tarjeta explicativa), o -1 si no aplica.
+ *
+ * Parsea los strings de umbral (">8%", "5–8%", "<3%", "10B–200B", ">2.0") y
+ * convierte `value` a la unidad del umbral: % → ×100 (value decimal), B/T →
+ * /1e9 (market cap en dólares), resto → tal cual. Separador-agnóstico.
+ */
+export function activeBandIndex(
+  thresholds: { value: string }[] | undefined,
+  value: number | null | undefined,
+): number {
+  if (value == null || !Number.isFinite(value) || !thresholds || thresholds.length === 0) return -1;
+  const first = thresholds[0].value;
+  const v = /%/.test(first) ? value * 100 : /[BT]/.test(first) ? value / 1e9 : value;
+  const bounds = (s: string): [number, number] => {
+    const nums = (s.replace(/,/g, "").match(/\d+\.?\d*/g) || []).map(Number);
+    if (nums.length === 0) return [NaN, NaN];
+    if (s.includes(">")) return [nums[0], Infinity];
+    if (s.includes("<")) return [-Infinity, nums[0]];
+    if (nums.length >= 2) return [nums[0], nums[1]]; // rango: "5–8", "10B–200B"
+    return [nums[0], nums[0]];
+  };
+  for (let i = 0; i < thresholds.length; i++) {
+    const [min, max] = bounds(thresholds[i].value);
+    if (v >= min && v < max) return i;
+  }
+  return -1;
+}

@@ -34,7 +34,7 @@ function toneFor(value: number, bench: number, higherIsBetter: boolean): Tone {
 
 function Stat({
   label, value, tooltip, accent, index,
-  raw, bench, higherIsBetter, benchFmt,
+  raw, bench, higherIsBetter, benchFmt, benchHelp,
 }: {
   label: string;
   value: string;
@@ -45,6 +45,7 @@ function Stat({
   bench?: number | null;
   higherIsBetter?: boolean;
   benchFmt?: (v: number) => string;
+  benchHelp?: TooltipContent;
 }) {
   const hasContext = raw != null && bench != null && bench !== 0 && higherIsBetter !== undefined;
   const tone = hasContext ? toneFor(raw, bench, higherIsBetter) : null;
@@ -55,7 +56,7 @@ function Stat({
       <div className="flex items-center gap-1.5">
         {tone && <span className={`w-[7px] h-[7px] rounded-full shrink-0 ${DOT[tone]}`} />}
         <span className="text-[11px] text-zinc-500 uppercase tracking-wider">{label}</span>
-        {tooltip && <InfoTooltip content={tooltip} />}
+        {tooltip && <InfoTooltip content={tooltip} value={raw} valueLabel={value} />}
       </div>
       <div className="flex items-baseline gap-2 flex-wrap">
         <span className={`text-xl font-semibold tabular-nums ${accent ? "text-[#0cc06c]" : "text-white"}`}>
@@ -66,6 +67,7 @@ function Stat({
             {above ? "▲" : "▼"} vs {benchFmt(bench)}
           </span>
         )}
+        {benchHelp && tone && <InfoTooltip content={benchHelp} />}
       </div>
     </div>
   );
@@ -78,9 +80,9 @@ export default function MetricsGrid({ metrics, sector }: MetricsGridProps) {
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-8 gap-y-5 py-5 px-6 rounded-2xl border border-white/[0.06] bg-[#0a0a0d]/85 h-full content-center">
-      <Stat index={0} label="Market Cap" value={formatNumber(metrics.market_cap)} accent tooltip={METRICS.market_cap} />
+      <Stat index={0} label="Market Cap" value={formatNumber(metrics.market_cap)} accent tooltip={METRICS.market_cap} raw={metrics.market_cap} />
       <Stat index={1} label="P/E Ratio" value={formatMultiple(metrics.pe)} tooltip={METRICS.pe_ratio}
-        raw={metrics.pe} bench={b.pe} higherIsBetter={false} benchFmt={multFmt} />
+        raw={metrics.pe} bench={b.pe} higherIsBetter={false} benchFmt={multFmt} benchHelp={METRICS.sector_benchmark} />
       <Stat index={2} label="ROE" value={formatPercent(metrics.roe)} tooltip={METRICS.roe}
         raw={metrics.roe} bench={b.roe} higherIsBetter={true} benchFmt={pctFmt} />
       <Stat index={3} label="D/E" value={formatMultiple(metrics.de)} tooltip={METRICS.de_ratio}
@@ -91,7 +93,7 @@ export default function MetricsGrid({ metrics, sector }: MetricsGridProps) {
         raw={metrics.fcf_yield} bench={b.fcf_yield} higherIsBetter={true} benchFmt={pctFmt} />
       <Stat index={6} label="EV/EBITDA" value={formatMultiple(metrics.ev_ebitda)} tooltip={METRICS.ev_ebitda}
         raw={metrics.ev_ebitda} bench={b.ev_ebitda} higherIsBetter={false} benchFmt={multFmt} />
-      <Stat index={7} label="Beta" value={metrics.beta != null ? metrics.beta.toFixed(2) : "N/A"} tooltip={METRICS.beta} />
+      <Stat index={7} label="Beta" value={metrics.beta != null ? metrics.beta.toFixed(2) : "N/A"} tooltip={METRICS.beta} raw={metrics.beta} />
     </div>
   );
 }

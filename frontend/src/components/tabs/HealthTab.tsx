@@ -35,7 +35,7 @@ function Gauge({ label, value, tone, scaleMax, mark, markLabel, grown, tooltip }
       <div className="gau-top">
         <span className="gau-lab flex items-center gap-1.5">
           {label}
-          {tooltip && <InfoTooltip content={tooltip} />}
+          {tooltip && <InfoTooltip content={tooltip} value={value} valueLabel={`${value.toFixed(2)}x`} />}
         </span>
         <span className={`gau-val ${tone}`}>
           {value.toFixed(2)}<span className="gau-x">x</span>
@@ -98,7 +98,7 @@ export default function HealthTab({ data }: { data: StockAnalysis }) {
           <Gauge label="Quick Ratio" value={m.quick_ratio} tone={quickTone ?? "warn"}
             scaleMax={2} mark={1} markLabel="1.0" grown={grown} tooltip={HEALTH.quick_ratio} />
           <Gauge label="Cash Ratio" value={m.cash_ratio} tone={cashTone ?? "warn"}
-            scaleMax={2} mark={1} markLabel="1.0" grown={grown} />
+            scaleMax={2} mark={1} markLabel="1.0" grown={grown} tooltip={HEALTH.cash_ratio} />
           <div className="gau-legend">
             <span className="gau-dotm" />
             Umbral de solvencia 1.0x — debajo, los pasivos corrientes superan al activo líquido disponible.
@@ -126,7 +126,10 @@ export default function HealthTab({ data }: { data: StockAnalysis }) {
                 </svg>
                 <div className="donut-center">
                   <span className="donut-num">{(daPct * 100).toFixed(0)}<span className="donut-u">%</span></span>
-                  <span className="donut-cap">Deuda / Activos</span>
+                  <span className="donut-cap flex items-center justify-center gap-1.5">
+                    Deuda / Activos
+                    <InfoTooltip content={HEALTH.debt_to_assets} value={daPct} valueLabel={`${(daPct * 100).toFixed(0)}%`} />
+                  </span>
                 </div>
               </div>
               <div className="lev-key">
@@ -137,12 +140,15 @@ export default function HealthTab({ data }: { data: StockAnalysis }) {
                 </div>
                 <div className="lev-key-row">
                   <span className="lev-sw" style={{ background: "var(--brand)" }} />
-                  <span className="lev-k">Patrimonio</span>
+                  <span className="lev-k flex items-center gap-1.5">
+                    Patrimonio
+                    <InfoTooltip content={HEALTH.equity_to_assets} value={equityPct} valueLabel={equityPct != null && equityPct >= 0 ? `${(equityPct * 100).toFixed(0)}%` : undefined} />
+                  </span>
                   <span className="lev-v">{equityPct != null && equityPct >= 0 ? `${(equityPct * 100).toFixed(0)}%` : "—"}</span>
                 </div>
                 <div className="lev-key-row">
                   <span className="lev-k flex items-center gap-1.5">
-                    Deuda / Patrimonio <InfoTooltip content={HEALTH.de_ratio} />
+                    Deuda / Patrimonio <InfoTooltip content={HEALTH.de_ratio} value={m.de} valueLabel={formatMultiple(m.de)} />
                   </span>
                   <span className="lev-v" style={{ color: scaleColor("de", m.de) ?? undefined }}>{formatMultiple(m.de)}</span>
                 </div>
@@ -155,7 +161,7 @@ export default function HealthTab({ data }: { data: StockAnalysis }) {
             <div className="sat">
               <div className="gau-top">
                 <span className="gau-lab flex items-center gap-1.5">
-                  Cobertura de Intereses <InfoTooltip content={HEALTH.interest_coverage} />
+                  Cobertura de Intereses <InfoTooltip content={HEALTH.interest_coverage} value={ic} valueLabel={`${ic.toFixed(1)}x`} />
                 </span>
                 <span className={`gau-val ${icTone ?? "warn"}`}>
                   {ic.toFixed(1)}<span className="gau-x">x</span>
@@ -181,7 +187,7 @@ export default function HealthTab({ data }: { data: StockAnalysis }) {
             <div style={{ marginTop: 10 }}>
               {nde >= 0 ? (
                 <Gauge label="Deuda Neta / EBITDA" value={nde} tone={ndeTone ?? "warn"}
-                  scaleMax={3} mark={2.5} markLabel="2.5x" grown={grown} />
+                  scaleMax={3} mark={2.5} markLabel="2.5x" grown={grown} tooltip={HEALTH.net_debt_to_ebitda} />
               ) : (
                 <div className="gau">
                   <div className="gau-top">
@@ -208,7 +214,10 @@ export default function HealthTab({ data }: { data: StockAnalysis }) {
             ["Patrimonio", m.total_equity],
           ] as Array<[string, number | null]>).map(([label, val], i) => (
             <div key={label} className={`py-4 ${i > 0 ? "sm:px-6" : "sm:pr-6"}`}>
-              <div className="text-xs text-zinc-500 mb-1">{label}</div>
+              <div className="text-xs text-zinc-500 mb-1 flex items-center gap-1.5">
+                {label}
+                {label === "Efectivo" && <InfoTooltip content={HEALTH.cash} />}
+              </div>
               <div className="text-lg font-bold text-white tabular-nums">{formatNumber(val)}</div>
             </div>
           ))}

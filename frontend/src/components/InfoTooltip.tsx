@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { activeBandIndex } from "@/lib/metricScale";
 
 export interface TooltipContent {
   title: string;
@@ -16,23 +17,26 @@ export interface TooltipContent {
 interface Props {
   content: TooltipContent;
   size?: "sm" | "md";
+  /** Valor numérico crudo del indicador (decimal para %, ratio crudo). */
+  value?: number | null;
+  /** Valor ya formateado para mostrar (ej. "2.16%", "37.58x"). */
+  valueLabel?: string;
 }
 
 /**
  * Botón "?" que abre una TARJETA explicativa (no una burbuja anclada).
  *
- * La tarjeta se monta vía portal en <body> para escapar los `transform` de los
- * paneles animados (que convertían un `fixed` en relativo y recortaban el
- * contenido contra el borde). Formato adaptativo: hoja inferior en móvil,
- * tarjeta centrada en escritorio. Nunca se desborda ni se corta.
+ * Vía portal a <body> para escapar los `transform` de los paneles animados.
+ * Adaptativo: hoja inferior en móvil, tarjeta centrada en escritorio.
+ * Si se pasa `value`/`valueLabel`, muestra "Tu valor" coloreado por su banda y
+ * resalta la fila correspondiente en la tabla de rangos.
  */
-export default function InfoTooltip({ content, size = "sm" }: Props) {
+export default function InfoTooltip({ content, size = "sm", value, valueLabel }: Props) {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
 
-  // Cerrar con Escape + bloquear el scroll del fondo mientras está abierta
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
@@ -47,6 +51,11 @@ export default function InfoTooltip({ content, size = "sm" }: Props) {
 
   const sz = size === "sm" ? "w-3.5 h-3.5 text-[9px]" : "w-4 h-4 text-[10px]";
   const titleId = `tt-${content.title.replace(/\s+/g, "-").toLowerCase()}`;
+
+  const thresholds = content.thresholds;
+  const activeIdx = thresholds ? activeBandIndex(thresholds, value) : -1;
+  const activeBand = activeIdx >= 0 && thresholds ? thresholds[activeIdx] : null;
+  const showValue = valueLabel != null && valueLabel !== "" && valueLabel !== "N/A";
 
   return (
     <>
@@ -66,10 +75,8 @@ export default function InfoTooltip({ content, size = "sm" }: Props) {
           aria-labelledby={titleId}
           onClick={(e) => { e.stopPropagation(); setOpen(false); }}
         >
-          {/* Fondo */}
           <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] animate-in fade-in duration-200" />
 
-          {/* Tarjeta */}
           <div
             onClick={(e) => e.stopPropagation()}
             className="relative w-full sm:w-[440px] sm:max-w-[92vw] max-h-[86vh] flex flex-col
@@ -78,7 +85,7 @@ export default function InfoTooltip({ content, size = "sm" }: Props) {
                        animate-in fade-in slide-in-from-bottom-4 sm:zoom-in-95 sm:slide-in-from-bottom-0 duration-300
                        motion-reduce:animate-none"
           >
-            {/* Asa (solo móvil, afordancia de hoja inferior) */}
+            {/* Asa (móvil) */}
             <div className="sm:hidden flex justify-center pt-2.5 pb-1 shrink-0">
               <span className="w-9 h-1 rounded-full bg-white/15" />
             </div>
@@ -99,6 +106,30 @@ export default function InfoTooltip({ content, size = "sm" }: Props) {
 
             {/* Cuerpo */}
             <div className="px-5 py-4 space-y-4 overflow-y-auto scrollbar-thin overscroll-contain">
+              {/* Tu valor actual (coloreado por su banda) */}
+              {showValue && (
+                <div
+                  className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl border"
+                  style={{
+                    borderColor: activeBand ? `${activeBand.color}55` : "rgba(255,255,255,0.08)",
+                    background: activeBand ? `${activeBand.color}14` : "rgba(255,255,255,0.03)",
+                  }}
+                >
+                  <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-semibold">Tu valor</span>
+                  <span className="flex items-baseline gap-2">
+                    <span
+                      className="text-lg font-semibold tabular-nums leading-none"
+                      style={{ color: activeBand ? activeBand.color : "#fafafa" }}
+                    >
+                      {valueLabel}
+                    </span>
+                    {activeBand && (
+                      <span className="text-xs text-zinc-400">· {activeBand.label}</span>
+                    )}
+                  </span>
+                </div>
+              )}
+
               {/* Qué es */}
               <p className="text-zinc-300 text-[13px] leading-relaxed">
                 {content.description}
@@ -114,18 +145,40 @@ export default function InfoTooltip({ content, size = "sm" }: Props) {
                 </section>
               )}
 
-              {/* Rangos de referencia */}
-              {content.thresholds && content.thresholds.length > 0 && (
+              {/* Rangos de referencia — tabla */}
+              {thresholds && thresholds.length > 0 && (
                 <section>
                   <SectionLabel>Rangos de referencia</SectionLabel>
-                  <div className="mt-2 space-y-1.5">
-                    {content.thresholds.map((t, i) => (
-                      <div key={i} className="flex items-center gap-2.5">
-                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: t.color }} />
-                        <span className="text-zinc-100 text-[13px] font-mono tabular-nums min-w-[64px]">{t.value}</span>
-                        <span className="text-zinc-400 text-[13px] leading-snug">{t.label}</span>
-                      </div>
-                    ))}
+                  <div className="mt-2 rounded-xl border border-white/[0.07] overflow-hidden">
+                    {thresholds.map((t, i) => {
+                      const active = i === activeIdx;
+                      return (
+                        <div
+                          key={i}
+                          className="flex items-center gap-3 px-3 py-2 border-b border-white/[0.05] last:border-b-0"
+                          style={active ? { background: `${t.color}14` } : undefined}
+                        >
+                          <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: t.color }} />
+                          <span
+                            className="text-[13px] font-mono tabular-nums min-w-[68px]"
+                            style={{ color: active ? t.color : "#e4e4e7", fontWeight: active ? 600 : 400 }}
+                          >
+                            {t.value}
+                          </span>
+                          <span className="text-[13px] leading-snug" style={{ color: active ? "#e4e4e7" : "#a1a1aa" }}>
+                            {t.label}
+                          </span>
+                          {active && (
+                            <span
+                              className="ml-auto shrink-0 text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded"
+                              style={{ color: t.color, backgroundColor: `${t.color}22` }}
+                            >
+                              Tu valor
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </section>
               )}

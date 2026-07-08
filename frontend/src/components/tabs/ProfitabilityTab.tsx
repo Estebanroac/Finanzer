@@ -2,7 +2,7 @@
 
 import { formatPercent, formatNumber, type StockAnalysis } from "@/lib/api";
 import InfoTooltip from "@/components/InfoTooltip";
-import { PROFITABILITY } from "@/lib/tooltips";
+import { PROFITABILITY, HEALTH } from "@/lib/tooltips";
 import { getSectorBenchmarks } from "@/lib/sectorBench";
 import { useGrow } from "@/lib/useGrow";
 import { scaleColor } from "@/lib/metricScale";
@@ -31,7 +31,7 @@ function RetRow({ label, value, bench, grown, tooltip, metricKey }: {
       <div className="pf-ret-top">
         <span className="lab flex items-center gap-1.5">
           {label}
-          {tooltip && <InfoTooltip content={tooltip} />}
+          {tooltip && <InfoTooltip content={tooltip} value={value} valueLabel={formatPercent(value)} />}
         </span>
         <span className="cmp">
           <b className={negative ? "neg" : ""} style={color ? { color } : undefined}>{formatPercent(value)}</b>
@@ -53,7 +53,7 @@ function RetRow({ label, value, bench, grown, tooltip, metricKey }: {
 }
 
 /** Paso de la cascada: % del ingreso que sobrevive + monto $ + franja perdida. */
-function FallStep({ label, amount, pct, prevPct, grown, isBase, isNet, fillColor }: {
+function FallStep({ label, amount, pct, prevPct, grown, isBase, isNet, fillColor, tooltip, tooltipValue }: {
   label: string;
   amount: number | null;
   pct: number;          // 0..100
@@ -62,12 +62,17 @@ function FallStep({ label, amount, pct, prevPct, grown, isBase, isNet, fillColor
   isBase?: boolean;
   isNet?: boolean;
   fillColor?: string | null;   // color por BANDA ABSOLUTA del margen (null = base/neutro)
+  tooltip?: (typeof PROFITABILITY)[keyof typeof PROFITABILITY];
+  tooltipValue?: number | null;
 }) {
   const lost = prevPct != null && prevPct > pct ? prevPct - pct : 0;
   return (
     <div className={`pf-step ${isNet ? "pf-step--net" : ""}`}>
       <div className="pf-step-top">
-        <span className="lab">{label}</span>
+        <span className="lab flex items-center gap-1.5">
+          {label}
+          {tooltip && <InfoTooltip content={tooltip} value={tooltipValue} valueLabel={`${pct.toFixed(1)}%`} />}
+        </span>
         <span className="v" style={isNet ? { color: fillColor ?? "var(--brand)" } : undefined}>
           {amount != null && <span className="pf-amt">{formatNumber(amount)}</span>}
           {pct.toFixed(1)}%
@@ -138,14 +143,29 @@ export default function ProfitabilityTab({ data }: { data: StockAnalysis }) {
               style={{ background: spread >= 0 ? "var(--pos)" : "var(--neg)" }}
             />
             <span className="text-zinc-400">
-              ROIC − WACC:{" "}
+              <span className="inline-flex items-center gap-1.5 align-middle">
+                ROIC − WACC:
+                <InfoTooltip
+                  content={PROFITABILITY.roic_wacc_spread}
+                  value={spread}
+                  valueLabel={`${spread >= 0 ? "+" : ""}${(spread * 100).toFixed(1)} pp`}
+                />
+              </span>{" "}
               <b style={{ color: spread >= 0 ? "var(--pos)" : "var(--neg)" }}>
                 {spread >= 0 ? "+" : ""}{(spread * 100).toFixed(1)} pp
               </b>{" "}
               {spread >= 0.03 ? "— crea valor sobre su costo de capital" :
                spread >= 0 ? "— apenas cubre su costo de capital" :
                "— no cubre su costo de capital"}
-              <span className="text-zinc-600"> (WACC {(m.wacc * 100).toFixed(1)}%)</span>
+              {" "}
+              <span className="text-zinc-600 inline-flex items-center gap-1.5 align-middle">
+                <span>(WACC {(m.wacc * 100).toFixed(1)}%)</span>
+                <InfoTooltip
+                  content={PROFITABILITY.wacc}
+                  value={m.wacc}
+                  valueLabel={`${(m.wacc * 100).toFixed(1)}%`}
+                />
+              </span>
             </span>
           </div>
         )}
@@ -169,6 +189,8 @@ export default function ProfitabilityTab({ data }: { data: StockAnalysis }) {
               grown={grown}
               isNet={i === steps.length - 1}
               fillColor={scaleColor(s.metricKey, s.margin)}
+              tooltip={PROFITABILITY[s.metricKey]}
+              tooltipValue={s.margin}
             />
           ))}
         </div>
@@ -192,6 +214,7 @@ export default function ProfitabilityTab({ data }: { data: StockAnalysis }) {
           <div className="py-4 sm:pl-6">
             <div className="text-xs text-zinc-500 mb-1 flex items-center gap-1">
               Free Cash Flow
+              <InfoTooltip content={HEALTH.fcf} value={m.free_cash_flow} valueLabel={formatNumber(m.free_cash_flow)} />
             </div>
             <div className="text-lg font-bold text-white tabular-nums">{formatNumber(m.free_cash_flow)}</div>
           </div>

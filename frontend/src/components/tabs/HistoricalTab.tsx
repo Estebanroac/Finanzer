@@ -1,8 +1,8 @@
 "use client";
 
 import { formatNumber, formatPercent, formatPrice, type StockAnalysis } from "@/lib/api";
-import InfoTooltip from "@/components/InfoTooltip";
-import { HISTORICAL } from "@/lib/tooltips";
+import InfoTooltip, { type TooltipContent } from "@/components/InfoTooltip";
+import { HISTORICAL, PROFITABILITY, VALUATION, HEALTH } from "@/lib/tooltips";
 import { scaleColor } from "@/lib/metricScale";
 
 export default function HistoricalTab({ data }: { data: StockAnalysis }) {
@@ -18,13 +18,13 @@ export default function HistoricalTab({ data }: { data: StockAnalysis }) {
 
   // Key ratios for radar-style display
   const metrics = [
-    { label: "Crec. Revenue", key: "revenue_growth", value: m.revenue_growth, format: "percent" as const },
-    { label: "Crec. Earnings", key: "earnings_growth", value: m.earnings_growth, format: "percent" as const },
-    { label: "Margen Neto", key: "net_margin", value: m.net_margin, format: "percent" as const },
-    { label: "Margen Operativo", key: "operating_margin", value: m.operating_margin, format: "percent" as const },
-    { label: "ROE", key: "roe", value: m.roe, format: "percent" as const },
-    { label: "ROA", key: "roa", value: m.roa, format: "percent" as const },
-    { label: "ROIC", key: "roic", value: m.roic, format: "percent" as const },
+    { label: "Crec. Revenue", key: "revenue_growth", value: m.revenue_growth, format: "percent" as const, tooltip: HISTORICAL.revenue_growth },
+    { label: "Crec. Earnings", key: "earnings_growth", value: m.earnings_growth, format: "percent" as const, tooltip: HISTORICAL.earnings_growth },
+    { label: "Margen Neto", key: "net_margin", value: m.net_margin, format: "percent" as const, tooltip: PROFITABILITY.net_margin },
+    { label: "Margen Operativo", key: "operating_margin", value: m.operating_margin, format: "percent" as const, tooltip: PROFITABILITY.operating_margin },
+    { label: "ROE", key: "roe", value: m.roe, format: "percent" as const, tooltip: PROFITABILITY.roe },
+    { label: "ROA", key: "roa", value: m.roa, format: "percent" as const, tooltip: PROFITABILITY.roa },
+    { label: "ROIC", key: "roic", value: m.roic, format: "percent" as const, tooltip: PROFITABILITY.roic },
   ];
 
   return (
@@ -74,6 +74,7 @@ export default function HistoricalTab({ data }: { data: StockAnalysis }) {
             value={fcf}
             description="Efectivo disponible después de inversiones (CAPEX)"
             isPositive={fcf != null && fcf > 0}
+            tooltip={HEALTH.fcf}
           />
           <CashFlowCard
             title="FCF Yield"
@@ -82,6 +83,7 @@ export default function HistoricalTab({ data }: { data: StockAnalysis }) {
             description="Rendimiento del FCF respecto al market cap"
             isPositive={m.fcf_yield != null && m.fcf_yield > 0.03}
             colorOverride={scaleColor("fcf_yield", m.fcf_yield)}
+            tooltip={VALUATION.fcf_yield_val}
           />
         </div>
       </div>
@@ -117,8 +119,11 @@ export default function HistoricalTab({ data }: { data: StockAnalysis }) {
                   key={i}
                   className={`px-4 py-4 text-center ${i > 0 ? "border-l border-white/[0.04]" : ""} bg-[#0a0a0d]/85`}
                 >
-                  <div className="text-[10px] text-zinc-500 uppercase tracking-wider mb-2 truncate">
-                    {item.label}
+                  <div className="flex items-center justify-center gap-1.5 mb-2">
+                    <span className="text-[10px] text-zinc-500 uppercase tracking-wider truncate">
+                      {item.label}
+                    </span>
+                    <InfoTooltip content={item.tooltip} value={val} valueLabel={displayVal} />
                   </div>
                   <div className={`text-base font-bold tabular-nums ${val == null ? "text-zinc-600" : "text-white"}`}>
                     {displayVal}
@@ -146,12 +151,15 @@ export default function HistoricalTab({ data }: { data: StockAnalysis }) {
 
       {/* Per-Share Data */}
       <div>
-        <h4 className="text-xs text-zinc-500 uppercase tracking-widest mb-3 font-medium">
-          Datos por acción
-        </h4>
+        <div className="flex items-center gap-2 mb-3">
+          <h4 className="text-xs text-zinc-500 uppercase tracking-widest font-medium">
+            Datos por acción
+          </h4>
+          <InfoTooltip content={HISTORICAL.per_share} />
+        </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <PerShareCard label="Precio" value={formatPrice(price)} />
-          <PerShareCard label="EPS (TTM)" value={m.eps != null ? `$${m.eps.toFixed(2)}` : "N/A"} />
+          <PerShareCard label="EPS (TTM)" value={m.eps != null ? `$${m.eps.toFixed(2)}` : "N/A"} tooltip={PROFITABILITY.eps} rawValue={m.eps} />
           <PerShareCard label="Book Value" value={m.book_value_per_share != null ? `$${m.book_value_per_share.toFixed(2)}` : "N/A"} />
           <PerShareCard
             label="FCF / Acción"
@@ -210,7 +218,7 @@ function PriceContext({ price, high, low, beta }: {
       <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 p-5">
         <div className="flex items-center gap-2 mb-3">
           <span className="text-xs text-zinc-500 uppercase tracking-wider">Volatilidad</span>
-          <InfoTooltip content={HISTORICAL.beta_hist} />
+          <InfoTooltip content={HISTORICAL.beta_hist} value={beta} valueLabel={beta != null ? beta.toFixed(2) : "N/A"} />
         </div>
         <div className="flex items-baseline gap-2 mb-2">
           <span className="text-3xl font-black text-white tabular-nums">
@@ -260,13 +268,14 @@ function WaterfallBlock({ label, value, color, pct }: {
   );
 }
 
-function CashFlowCard({ title, value, format, description, isPositive, colorOverride }: {
+function CashFlowCard({ title, value, format, description, isPositive, colorOverride, tooltip }: {
   title: string;
   value: number | null;
   format?: "percent";
   description: string;
   isPositive: boolean;
   colorOverride?: string | null;
+  tooltip?: TooltipContent;
 }) {
   const color = value == null ? "#9ca3af" : (colorOverride ?? (isPositive ? "#0cc06c" : "#ff4d4d"));
   const displayVal = value == null ? "N/A"
@@ -275,7 +284,10 @@ function CashFlowCard({ title, value, format, description, isPositive, colorOver
 
   return (
     <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 p-5">
-      <div className="text-xs text-zinc-500 mb-2">{title}</div>
+      <div className="flex items-center gap-1.5 mb-2">
+        <span className="text-xs text-zinc-500">{title}</span>
+        {tooltip && <InfoTooltip content={tooltip} value={value} valueLabel={displayVal} />}
+      </div>
       <div className="text-2xl font-bold tabular-nums mb-2" style={{ color }}>
         {displayVal}
       </div>
@@ -303,9 +315,12 @@ function BalanceSheetSnapshot({ data }: { data: StockAnalysis }) {
 
   return (
     <div>
-      <h4 className="text-xs text-zinc-500 uppercase tracking-widest mb-3 font-medium">
-        Estructura del balance
-      </h4>
+      <div className="flex items-center gap-2 mb-3">
+        <h4 className="text-xs text-zinc-500 uppercase tracking-widest font-medium">
+          Estructura del balance
+        </h4>
+        <InfoTooltip content={HISTORICAL.balance_sheet} />
+      </div>
       <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 p-5">
         {/* Stacked bar */}
         {total > 0 && (
@@ -324,7 +339,7 @@ function BalanceSheetSnapshot({ data }: { data: StockAnalysis }) {
           <BalanceItem label="Total Assets" value={totalAssets} color="#9ca3af" />
           <BalanceItem label="Equity" value={totalEquity} color="#0cc06c" />
           <BalanceItem label="Deuda Total" value={totalDebt} color="#ff4d4d" />
-          <BalanceItem label="Efectivo" value={cash} color="#0cc06c" />
+          <BalanceItem label="Efectivo" value={cash} color="#0cc06c" tooltip={HEALTH.cash} />
         </div>
 
         {/* Net debt */}
@@ -341,12 +356,13 @@ function BalanceSheetSnapshot({ data }: { data: StockAnalysis }) {
   );
 }
 
-function BalanceItem({ label, value, color }: { label: string; value: number | null; color: string }) {
+function BalanceItem({ label, value, color, tooltip }: { label: string; value: number | null; color: string; tooltip?: TooltipContent }) {
   return (
     <div>
       <div className="flex items-center gap-1.5 mb-1">
         <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
         <span className="text-[10px] text-zinc-500 uppercase tracking-wider">{label}</span>
+        {tooltip && <InfoTooltip content={tooltip} value={value} valueLabel={formatNumber(value)} />}
       </div>
       <div className="text-sm font-bold text-white tabular-nums">{formatNumber(value)}</div>
     </div>
@@ -360,9 +376,12 @@ function YearlyChart({ data: yearly }: { data: Array<{ year: number; revenue: nu
 
   return (
     <div>
-      <h4 className="text-xs text-zinc-500 uppercase tracking-widest mb-3 font-medium">
-        Evolución anual — Revenue & Earnings
-      </h4>
+      <div className="flex items-center gap-2 mb-3">
+        <h4 className="text-xs text-zinc-500 uppercase tracking-widest font-medium">
+          Evolución anual — Revenue & Earnings
+        </h4>
+        <InfoTooltip content={HISTORICAL.yearly_chart} />
+      </div>
       <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 p-5">
         <div className="space-y-4">
           {sorted.map((y, i) => {
@@ -434,11 +453,14 @@ function YearlyChart({ data: yearly }: { data: Array<{ year: number; revenue: nu
   );
 }
 
-function PerShareCard({ label, value }: { label: string; value: string }) {
+function PerShareCard({ label, value, tooltip, rawValue }: { label: string; value: string; tooltip?: TooltipContent; rawValue?: number | null }) {
   const isNA = value === "N/A";
   return (
     <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 p-4 text-center">
-      <div className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">{label}</div>
+      <div className="flex items-center justify-center gap-1.5 mb-1">
+        <span className="text-[10px] text-zinc-500 uppercase tracking-wider">{label}</span>
+        {tooltip && <InfoTooltip content={tooltip} value={rawValue} valueLabel={value} />}
+      </div>
       <div className={`text-lg font-bold tabular-nums ${isNA ? "text-zinc-600" : "text-white"}`}>{value}</div>
     </div>
   );

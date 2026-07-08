@@ -17,6 +17,11 @@ export const SCORE_TOOLTIP: TooltipContent = {
 
 // ─── METRICAS CLAVE (MetricsGrid) ───────────────────────
 export const METRICS: Record<string, TooltipContent> = {
+  sector_benchmark: {
+    title: "Comparación vs Sector",
+    description: "El punto de color y la flecha comparan el valor de la empresa con la MEDIANA de su sector. Verde = mejor que el sector; rojo = peor; ámbar = en línea (dentro de ±10%).",
+    tip: "Un P/E de 30 puede ser caro en un banco pero barato en tecnología — por eso cada métrica se compara contra su sector, no contra un número fijo.",
+  },
   market_cap: {
     title: "Capitalizacion de Mercado",
     description: "Valor total de la empresa en bolsa. Se calcula multiplicando el precio actual por el numero de acciones en circulacion.",
@@ -129,6 +134,44 @@ export const METRICS: Record<string, TooltipContent> = {
 
 // ─── VALORACION (ValuationTab) ──────────────────────────
 export const VALUATION: Record<string, TooltipContent> = {
+  earnings_yield: {
+    title: "Earnings Yield (Rendimiento de Ganancias)",
+    description: "Cuánto genera la empresa en beneficios por cada dólar invertido al precio actual. Es el inverso del P/E, expresado como porcentaje.",
+    formula: "Ganancia por Acción / Precio × 100  (= 1 / P/E)",
+    thresholds: [
+      { label: "Atractivo", value: ">6%", color: "#0cc06c" },
+      { label: "Razonable", value: "4–6%", color: "#22c55e" },
+      { label: "Moderado", value: "2–4%", color: "#fbbf24" },
+      { label: "Bajo", value: "<2%", color: "#f97316" },
+    ],
+    tip: "Compáralo con el rendimiento de un bono del tesoro: si el earnings yield es menor, el activo 'sin riesgo' paga más y la acción luce cara.",
+  },
+  buyback_yield: {
+    title: "Buyback Yield (Recompra de Acciones)",
+    description: "Porcentaje de acciones que la empresa recompró en el último año. Recomprar reduce el número de acciones y aumenta tu participación en las ganancias.",
+    formula: "(Acciones año previo − Acciones actuales) / Acciones año previo × 100",
+    thresholds: [
+      { label: "Recompra fuerte", value: ">3%", color: "#0cc06c" },
+      { label: "Recompra moderada", value: "0.5–3%", color: "#22c55e" },
+      { label: "Neutral", value: "0–0.5%", color: "#9ca3af" },
+      { label: "Dilución (emite acciones)", value: "<0%", color: "#ff4d4d" },
+    ],
+    good: "Recompras sostenidas con la acción barata crean valor para el accionista.",
+    bad: "Buyback negativo = la empresa emite más acciones y diluye tu participación.",
+    tip: "Cuidado con recompras a precios altos: destruyen valor aunque suban el EPS.",
+  },
+  shareholder_yield: {
+    title: "Shareholder Yield (Retorno Total al Accionista)",
+    description: "Todo el efectivo que la empresa te devuelve: dividendos más recompras netas de acciones. Es la visión completa del retorno de capital.",
+    formula: "Dividend Yield + Buyback Yield",
+    thresholds: [
+      { label: "Alto retorno", value: ">5%", color: "#0cc06c" },
+      { label: "Bueno", value: "2–5%", color: "#22c55e" },
+      { label: "Bajo", value: "0–2%", color: "#fbbf24" },
+      { label: "Dilución neta", value: "<0%", color: "#ff4d4d" },
+    ],
+    tip: "Combina lo mejor de dividendos y recompras: mide el retorno de capital total, no solo el dividendo.",
+  },
   pe_trailing: {
     title: "P/E Trailing (TTM)",
     description: "Precio actual dividido por las ganancias de los ultimos 12 meses. Refleja lo que ya paso.",
@@ -235,6 +278,26 @@ export const VALUATION: Record<string, TooltipContent> = {
 
 // ─── RENTABILIDAD (ProfitabilityTab) ────────────────────
 export const PROFITABILITY: Record<string, TooltipContent> = {
+  roic_wacc_spread: {
+    title: "ROIC − WACC (Creación de Valor)",
+    description: "La diferencia entre lo que la empresa GANA sobre su capital (ROIC) y lo que le CUESTA ese capital (WACC). Si es positivo, crea valor; si es negativo, lo destruye.",
+    formula: "ROIC − WACC  (en puntos porcentuales)",
+    thresholds: [
+      { label: "Crea mucho valor", value: ">5%", color: "#0cc06c" },
+      { label: "Crea valor", value: "0–5%", color: "#22c55e" },
+      { label: "Marginal", value: "−5–0%", color: "#fbbf24" },
+      { label: "Destruye valor", value: "<−5%", color: "#ff4d4d" },
+    ],
+    good: "Un spread positivo y creciente es la firma de un negocio con ventaja competitiva duradera.",
+    bad: "Spread negativo: la empresa ganaría más repartiendo el dinero que reinvirtiéndolo.",
+    tip: "Para muchos inversores es el indicador DEFINITIVO de calidad: ganar más que el costo de capital crea riqueza real.",
+  },
+  wacc: {
+    title: "WACC (Costo de Capital)",
+    description: "El costo promedio ponderado del capital: la rentabilidad mínima que la empresa debe generar para no destruir valor. Es la 'valla' que sus retornos deben superar.",
+    formula: "Costo de deuda × %deuda + Costo del patrimonio × %patrimonio",
+    tip: "Suele estar entre 7% y 11%. Sirve como tasa de descuento en el DCF y como referencia para el ROIC.",
+  },
   roe: {
     title: "ROE (Return on Equity)",
     description: "Retorno sobre el patrimonio. Mide cuantos centavos de ganancia genera la empresa por cada dolar que los accionistas han invertido.",
@@ -332,6 +395,44 @@ export const PROFITABILITY: Record<string, TooltipContent> = {
 
 // ─── SOLIDEZ FINANCIERA (HealthTab) ─────────────────────
 export const HEALTH: Record<string, TooltipContent> = {
+  cash_ratio: {
+    title: "Cash Ratio (Razón de Efectivo)",
+    description: "La prueba de liquidez más estricta: mide si la empresa puede pagar sus deudas de corto plazo solo con efectivo, sin vender inventario ni cobrar cuentas.",
+    formula: "Efectivo y Equivalentes / Pasivos Corrientes",
+    thresholds: [
+      { label: "Muy líquida", value: ">0.5", color: "#0cc06c" },
+      { label: "Saludable", value: "0.2–0.5", color: "#22c55e" },
+      { label: "Ajustado", value: "0.1–0.2", color: "#fbbf24" },
+      { label: "Justo", value: "<0.1", color: "#f97316" },
+    ],
+    tip: "Un cash ratio muy alto es súper seguro, pero puede indicar efectivo ocioso sin invertir en crecimiento.",
+  },
+  net_debt_to_ebitda: {
+    title: "Deuda Neta / EBITDA",
+    description: "Cuántos años de EBITDA necesitaría la empresa para pagar toda su deuda neta (deuda menos caja). Es la medida de apalancamiento favorita de los bancos.",
+    formula: "(Deuda Total − Efectivo) / EBITDA",
+    thresholds: [
+      { label: "Caja neta (más caja que deuda)", value: "<0", color: "#0cc06c" },
+      { label: "Conservador", value: "0–1.5x", color: "#22c55e" },
+      { label: "Moderado", value: "1.5–3x", color: "#fbbf24" },
+      { label: "Muy apalancado", value: ">3x", color: "#ff4d4d" },
+    ],
+    good: "Por debajo de 3x la deuda suele ser manejable incluso en una recesión.",
+    bad: "Por encima de 4x, una caída de ganancias puede complicar el pago de la deuda.",
+    tip: "Es más fiable que Deuda/Patrimonio porque resta la caja y se mide contra la generación real de efectivo.",
+  },
+  equity_to_assets: {
+    title: "Patrimonio / Activos",
+    description: "Qué porcentaje de los activos pertenece realmente a los accionistas y no está financiado con deuda. Es el complemento de Deuda/Activos.",
+    formula: "Patrimonio / Activos Totales × 100",
+    thresholds: [
+      { label: "Muy sólido", value: ">70%", color: "#0cc06c" },
+      { label: "Saludable", value: "50–70%", color: "#22c55e" },
+      { label: "Moderado", value: "30–50%", color: "#fbbf24" },
+      { label: "Muy apalancado", value: "<30%", color: "#ff4d4d" },
+    ],
+    tip: "Cuanto mayor el porcentaje, menos depende la empresa de dinero prestado.",
+  },
   current_ratio: {
     title: "Current Ratio (Razon Corriente)",
     description: "Mide la capacidad de la empresa para pagar sus deudas a corto plazo. Compara activos liquidos contra obligaciones inmediatas.",
@@ -484,6 +585,22 @@ export const HISTORICAL: Record<string, TooltipContent> = {
 
 // ─── EVALUACION (EvaluationTab) ─────────────────────────
 export const EVALUATION: Record<string, TooltipContent> = {
+  financial_health: {
+    title: "Salud Financiera",
+    description: "Score compuesto (0–10) de solidez financiera para bancos y aseguradoras, donde el Altman Z-Score no aplica. Combina capitalización, liquidez, calidad de activos y rentabilidad.",
+    thresholds: [
+      { label: "Excelente", value: ">8", color: "#0cc06c" },
+      { label: "Buena", value: "6–8", color: "#22c55e" },
+      { label: "Neutral", value: "4–6", color: "#fbbf24" },
+      { label: "Débil", value: "<4", color: "#ff4d4d" },
+    ],
+    tip: "Reemplaza al Altman Z-Score en el sector financiero, cuyo balance no encaja en el modelo tradicional.",
+  },
+  score_category: {
+    title: "Categorías del Score",
+    description: "El score de 0–100 se compone de 5 categorías, cada una sobre 20 puntos: Valoración, Rentabilidad, Solidez Financiera, Crecimiento y Calidad de Ganancias.",
+    tip: "Un score alto con una categoría muy baja merece revisión: abre el desglose para ver de dónde viene la puntuación.",
+  },
   altman_z: {
     title: "Altman Z-Score (Adaptativo)",
     description: "Modelo de Edward Altman que predice probabilidad de quiebra. Finanzer selecciona automaticamente la variante correcta segun el tipo de empresa: Z original (manufactura), Z'' (tech/servicios) o Z' (privadas).",

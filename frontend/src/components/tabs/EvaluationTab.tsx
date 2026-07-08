@@ -21,9 +21,12 @@ export default function EvaluationTab({ data }: { data: StockAnalysis }) {
         <div className="grid grid-cols-1 md:grid-cols-[minmax(0,300px)_1fr] gap-4 items-stretch">
           <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 p-5 flex flex-col">
             <div className="flex items-center justify-between mb-1">
-              <h4 className="text-xs text-zinc-500 uppercase tracking-widest font-medium">
-                Perfil del análisis
-              </h4>
+              <div className="flex items-center gap-1.5">
+                <h4 className="text-xs text-zinc-500 uppercase tracking-widest font-medium">
+                  Perfil del análisis
+                </h4>
+                <InfoTooltip content={EVALUATION.score_category} />
+              </div>
               <span className="pf-hint">forma de fortalezas</span>
             </div>
             <div className="flex-1 grid place-items-center py-2">
@@ -249,7 +252,10 @@ function FinancialHealthCard({ data }: { data: { score: number; level: string; i
   return (
     <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 p-5">
       <div className="flex items-center justify-between mb-3">
-        <span className="text-sm text-zinc-400 font-medium">Salud Financiera · sector financiero</span>
+        <div className="flex items-center gap-1.5">
+          <span className="text-sm text-zinc-400 font-medium">Salud Financiera · sector financiero</span>
+          <InfoTooltip content={EVALUATION.financial_health} value={data.score} valueLabel={`${data.score}/10`} />
+        </div>
         <span
           className="text-[10px] font-semibold px-2 py-0.5 rounded-md"
           style={{ background: `${color}15`, color, border: `1px solid ${color}25` }}
@@ -315,7 +321,7 @@ function ZScoreCard({ data }: { data: { z_score: number; zone: string; interpret
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <span className="text-sm text-zinc-400 font-medium">Altman Z-Score</span>
-          <InfoTooltip content={EVALUATION.altman_z} />
+          <InfoTooltip content={EVALUATION.altman_z} value={data.z_score} valueLabel={data.z_score.toFixed(2)} />
         </div>
         <span
           className="text-[10px] font-semibold px-2 py-0.5 rounded-md"
@@ -361,7 +367,7 @@ function FScoreCard({ data }: { data: { score: number; max_score: number; level:
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <span className="text-sm text-zinc-400 font-medium">Piotroski F-Score</span>
-          <InfoTooltip content={EVALUATION.piotroski} />
+          <InfoTooltip content={EVALUATION.piotroski} value={data.score} valueLabel={`${data.score}/${data.max_score}`} />
         </div>
         <div className="flex items-center gap-2">
           {data.fiscal_year && (
