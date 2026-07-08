@@ -803,6 +803,15 @@ def _enrich_prior_year_data(symbol: str, info: Dict[str, Any]) -> Dict[str, Any]
         if info.get("longTermDebt") is None:
             info["longTermDebt"] = cur_ltd
 
+        # Inventory para inventory_turnover: el v10 balanceSheetHistory casi
+        # nunca lo trae, pero yfinance sí. Retail/consumo lo necesitan (COGS ya
+        # se deriva de revenue-gross_profit). En producción (yfinance bloqueado)
+        # el hueco lo cubre el inventoryTurnover de Finnhub vía el fallback_map.
+        if info.get("inventory") is None:
+            _cur_inv = _sf(cur_bs, "Inventory")
+            if _cur_inv is not None:
+                info["inventory"] = _cur_inv
+
     if has_cf:
         cur_cf = cf.iloc[:, 0]
         cur_ocf = _sf(cur_cf, "Operating Cash Flow")
@@ -997,6 +1006,7 @@ def _fallback_yfinance(symbol: str) -> Dict[str, Any]:
     info["totalLiab"] = bs.get("Total Liabilities Net Minority Interest")
     info["cash"] = bs.get("Cash And Cash Equivalents")
     info["retainedEarnings"] = bs.get("Retained Earnings")
+    info["inventory"] = bs.get("Inventory")  # _get_bs ya lo recolecta (inventory_turnover)
 
     cf = results.get("cashflow", {})
     info["operatingCashflow"] = cf.get("Operating Cash Flow")
