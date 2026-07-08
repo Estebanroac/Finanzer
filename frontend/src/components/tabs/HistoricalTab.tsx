@@ -3,6 +3,7 @@
 import { formatNumber, formatPercent, formatPrice, type StockAnalysis } from "@/lib/api";
 import InfoTooltip from "@/components/InfoTooltip";
 import { HISTORICAL } from "@/lib/tooltips";
+import { scaleColor } from "@/lib/metricScale";
 
 export default function HistoricalTab({ data }: { data: StockAnalysis }) {
   const m = data.key_metrics;
@@ -17,13 +18,13 @@ export default function HistoricalTab({ data }: { data: StockAnalysis }) {
 
   // Key ratios for radar-style display
   const metrics = [
-    { label: "Crec. Revenue", value: m.revenue_growth, format: "percent" as const },
-    { label: "Crec. Earnings", value: m.earnings_growth, format: "percent" as const },
-    { label: "Margen Neto", value: m.net_margin, format: "percent" as const },
-    { label: "Margen Operativo", value: m.operating_margin, format: "percent" as const },
-    { label: "ROE", value: m.roe, format: "percent" as const },
-    { label: "ROA", value: m.roa, format: "percent" as const },
-    { label: "ROIC", value: m.roic, format: "percent" as const },
+    { label: "Crec. Revenue", key: "revenue_growth", value: m.revenue_growth, format: "percent" as const },
+    { label: "Crec. Earnings", key: "earnings_growth", value: m.earnings_growth, format: "percent" as const },
+    { label: "Margen Neto", key: "net_margin", value: m.net_margin, format: "percent" as const },
+    { label: "Margen Operativo", key: "operating_margin", value: m.operating_margin, format: "percent" as const },
+    { label: "ROE", key: "roe", value: m.roe, format: "percent" as const },
+    { label: "ROA", key: "roa", value: m.roa, format: "percent" as const },
+    { label: "ROIC", key: "roic", value: m.roic, format: "percent" as const },
   ];
 
   return (
@@ -49,8 +50,8 @@ export default function HistoricalTab({ data }: { data: StockAnalysis }) {
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
           <WaterfallBlock label="Revenue" value={revenue} color="#a1a1a6" />
-          <WaterfallBlock label="EBITDA" value={ebitda} color="#6ee7b4" pct={revenue && ebitda ? ebitda / revenue : null} />
-          <WaterfallBlock label="Op. Income" value={m.operating_income} color="#0cc06c" pct={revenue && m.operating_income ? m.operating_income / revenue : null} />
+          <WaterfallBlock label="EBITDA" value={ebitda} color={ebitda != null && ebitda <= 0 ? "#ff453a" : "#6ee7b4"} pct={revenue && ebitda ? ebitda / revenue : null} />
+          <WaterfallBlock label="Op. Income" value={m.operating_income} color={m.operating_income != null && m.operating_income <= 0 ? "#ff453a" : "#0cc06c"} pct={revenue && m.operating_income ? m.operating_income / revenue : null} />
           <WaterfallBlock label="Net Income" value={netIncome} color={netIncome && netIncome > 0 ? "#0cc06c" : "#ff4d4d"} pct={revenue && netIncome ? netIncome / revenue : null} />
           <WaterfallBlock label="Free Cash Flow" value={fcf} color={fcf && fcf > 0 ? "#0cc06c" : "#ff4d4d"} pct={revenue && fcf ? fcf / revenue : null} />
         </div>
@@ -80,6 +81,7 @@ export default function HistoricalTab({ data }: { data: StockAnalysis }) {
             format="percent"
             description="Rendimiento del FCF respecto al market cap"
             isPositive={m.fcf_yield != null && m.fcf_yield > 0.03}
+            colorOverride={scaleColor("fcf_yield", m.fcf_yield)}
           />
         </div>
       </div>
@@ -107,7 +109,7 @@ export default function HistoricalTab({ data }: { data: StockAnalysis }) {
                   ? Math.min(absVal * 100, 100) // already decimal
                   : Math.min(absVal, 100);
                 barPct = Math.max(5, Math.min(95, normalized));
-                barColor = val > 0 ? "#0cc06c" : "#ff4d4d";
+                barColor = scaleColor(item.key, val) ?? "#9ca3af";
               }
 
               return (
@@ -172,7 +174,8 @@ function PriceContext({ price, high, low, beta }: {
     pct = Math.max(0, Math.min(100, ((price - low) / (high - low)) * 100));
   }
   const position = pct > 70 ? "Cerca del máximo" : pct < 30 ? "Cerca del mínimo" : "Rango medio";
-  const posColor = pct > 70 ? "#0cc06c" : pct < 30 ? "#ff4d4d" : "#fbbf24";
+  // La posición en el rango NO es señal de calidad (cerca del mínimo no es "malo"): neutral.
+  const posColor = "#e4e4e7";
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -191,7 +194,7 @@ function PriceContext({ price, high, low, beta }: {
             className="absolute top-0 left-0 h-full rounded-full"
             style={{
               width: `${pct}%`,
-              background: `linear-gradient(90deg, ${pct < 30 ? "#ff4d4d" : pct > 70 ? "#0cc06c" : "#fbbf24"}, ${pct < 30 ? "#f97316" : pct > 70 ? "#4ade80" : "#f59e0b"})`,
+              background: "linear-gradient(90deg, #71717a, #a1a1aa)",
             }}
           />
           <div
@@ -257,14 +260,15 @@ function WaterfallBlock({ label, value, color, pct }: {
   );
 }
 
-function CashFlowCard({ title, value, format, description, isPositive }: {
+function CashFlowCard({ title, value, format, description, isPositive, colorOverride }: {
   title: string;
   value: number | null;
   format?: "percent";
   description: string;
   isPositive: boolean;
+  colorOverride?: string | null;
 }) {
-  const color = value == null ? "#9ca3af" : isPositive ? "#0cc06c" : "#ff4d4d";
+  const color = value == null ? "#9ca3af" : (colorOverride ?? (isPositive ? "#0cc06c" : "#ff4d4d"));
   const displayVal = value == null ? "N/A"
     : format === "percent" ? formatPercent(value)
     : formatNumber(value);
@@ -367,6 +371,18 @@ function YearlyChart({ data: yearly }: { data: Array<{ year: number; revenue: nu
             const revGrowth = i > 0 && sorted[i-1].revenue && y.revenue
               ? ((y.revenue - sorted[i-1].revenue!) / Math.abs(sorted[i-1].revenue!)) * 100
               : null;
+            const prevEarn = i > 0 ? sorted[i-1].earnings : null;
+            const earnGrowth = prevEarn != null && prevEarn > 0 && y.earnings != null
+              ? ((y.earnings - prevEarn) / prevEarn) * 100
+              : null;
+            // Crec. revenue YoY coloreado por su banda absoluta (revGrowth viene ×100 → a decimal).
+            const revColor = revGrowth != null
+              ? (scaleColor("revenue_growth", revGrowth / 100) ?? "#e4e4e7")
+              : "#e4e4e7";
+            // Earnings: la pérdida siempre es roja; el beneficio se colorea por su banda de crecimiento YoY.
+            const earnColor = y.earnings == null ? "#9ca3af"
+              : y.earnings <= 0 ? "#ff453a"
+              : (scaleColor("earnings_growth", earnGrowth != null ? earnGrowth / 100 : null) ?? "#0cc06c");
 
             return (
               <div key={y.year}>
@@ -377,12 +393,12 @@ function YearlyChart({ data: yearly }: { data: Array<{ year: number; revenue: nu
                       Rev: <span className="text-white font-semibold">{formatNumber(y.revenue)}</span>
                     </span>
                     <span className="text-xs text-zinc-400">
-                      Earn: <span className={`font-semibold ${y.earnings && y.earnings > 0 ? "text-green-400" : "text-red-400"}`}>
+                      Earn: <span className="font-semibold" style={{ color: earnColor }}>
                         {formatNumber(y.earnings)}
                       </span>
                     </span>
                     {revGrowth !== null && (
-                      <span className={`text-[10px] font-semibold tabular-nums ${revGrowth > 0 ? "text-green-400" : "text-red-400"}`}>
+                      <span className="text-[10px] font-semibold tabular-nums" style={{ color: revColor }}>
                         {revGrowth > 0 ? "+" : ""}{revGrowth.toFixed(0)}%
                       </span>
                     )}
@@ -400,7 +416,7 @@ function YearlyChart({ data: yearly }: { data: Array<{ year: number; revenue: nu
                       className="h-full rounded-full"
                       style={{
                         width: `${earnPct}%`,
-                        backgroundColor: y.earnings && y.earnings > 0 ? "#0cc06c" : "#ff4d4d"
+                        backgroundColor: earnColor
                       }}
                     />
                   </div>

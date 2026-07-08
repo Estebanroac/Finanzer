@@ -162,7 +162,10 @@ function ValuationGauge({ price, fv, dcf, graham, grahamMargin }: {
                 {/* el % solo cuando es informativo; en growth de calidad el
                     criterio de 1949 queda tan lejos que el número solo asusta */}
                 {grahamMargin != null && Math.abs(grahamMargin) <= 1 && (
-                  <span className="text-xs text-zinc-500 font-normal ml-1.5">
+                  <span
+                    className="text-xs font-normal ml-1.5"
+                    style={{ color: grahamMargin >= 0 ? "#0cc06c" : "#ff453a" }}
+                  >
                     ({grahamMargin >= 0 ? "+" : ""}{(grahamMargin * 100).toFixed(0)}% margen)
                   </span>
                 )}
@@ -197,7 +200,10 @@ function NoDcfView({ price, graham, grahamMargin, isFinancial }: {
           <span className="vg-v">
             {formatPrice(graham)}
             {grahamMargin != null && Math.abs(grahamMargin) <= 1 && (
-              <span className={`text-xs font-normal ml-1.5 ${grahamMargin >= 0 ? "text-[#0cc06c]" : "text-zinc-500"}`}>
+              <span
+                className="text-xs font-normal ml-1.5"
+                style={{ color: grahamMargin >= 0 ? "#0cc06c" : "#ff453a" }}
+              >
                 ({grahamMargin >= 0 ? "+" : ""}{(grahamMargin * 100).toFixed(0)}% margen)
               </span>
             )}

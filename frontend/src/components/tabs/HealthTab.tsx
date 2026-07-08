@@ -1,6 +1,7 @@
 "use client";
 
 import { formatNumber, formatMultiple, type StockAnalysis } from "@/lib/api";
+import { scaleColor } from "@/lib/metricScale";
 import InfoTooltip from "@/components/InfoTooltip";
 import { HEALTH } from "@/lib/tooltips";
 import { useGrow } from "@/lib/useGrow";
@@ -58,7 +59,7 @@ export default function HealthTab({ data }: { data: StockAnalysis }) {
   const curTone: Tone | null = m.current_ratio == null ? null
     : m.current_ratio >= 1.5 ? "pos" : m.current_ratio >= 1 ? "warn" : "neg";
   const quickTone: Tone | null = m.quick_ratio == null ? null
-    : m.quick_ratio >= 1 ? "pos" : m.quick_ratio >= 0.8 ? "warn" : "neg";
+    : m.quick_ratio >= 1 ? "pos" : m.quick_ratio >= 0.5 ? "warn" : "neg";
   const cashTone: Tone | null = m.cash_ratio == null ? null
     : m.cash_ratio >= 0.5 ? "pos" : m.cash_ratio >= 0.2 ? "warn" : "neg";
   const liqTone = worst(curTone, quickTone, cashTone);
@@ -120,6 +121,7 @@ export default function HealthTab({ data }: { data: StockAnalysis }) {
                     className="donut-val" cx="60" cy="60" r="52"
                     strokeDasharray={C}
                     strokeDashoffset={grown ? C * (1 - daPct) : C}
+                    style={{ stroke: scaleColor("debt_to_assets", da) ?? undefined }}
                   />
                 </svg>
                 <div className="donut-center">
@@ -142,7 +144,7 @@ export default function HealthTab({ data }: { data: StockAnalysis }) {
                   <span className="lev-k flex items-center gap-1.5">
                     Deuda / Patrimonio <InfoTooltip content={HEALTH.de_ratio} />
                   </span>
-                  <span className="lev-v">{formatMultiple(m.de)}</span>
+                  <span className="lev-v" style={{ color: scaleColor("de", m.de) ?? undefined }}>{formatMultiple(m.de)}</span>
                 </div>
               </div>
             </div>
@@ -160,7 +162,7 @@ export default function HealthTab({ data }: { data: StockAnalysis }) {
                 </span>
               </div>
               <div className="gau-track sat-track">
-                <div className="sat-fill" style={{ width: grown ? `${(cappedIC / 10) * 100}%` : 0 }} />
+                <div className="sat-fill" style={{ width: grown ? `${(cappedIC / 10) * 100}%` : 0, background: GV[icTone ?? "warn"] }} />
                 <div className="gau-mark sat-mark" style={{ left: "30%" }}>
                   <span className="gau-mark-lab">3x mín.</span>
                 </div>
@@ -179,7 +181,7 @@ export default function HealthTab({ data }: { data: StockAnalysis }) {
             <div style={{ marginTop: 10 }}>
               {nde >= 0 ? (
                 <Gauge label="Deuda Neta / EBITDA" value={nde} tone={ndeTone ?? "warn"}
-                  scaleMax={3} mark={3} markLabel="3x" grown={grown} />
+                  scaleMax={3} mark={2.5} markLabel="2.5x" grown={grown} />
               ) : (
                 <div className="gau">
                   <div className="gau-top">

@@ -5,14 +5,16 @@ import InfoTooltip from "@/components/InfoTooltip";
 import { PROFITABILITY } from "@/lib/tooltips";
 import { getSectorBenchmarks } from "@/lib/sectorBench";
 import { useGrow } from "@/lib/useGrow";
+import { scaleColor } from "@/lib/metricScale";
 
 /** Retorno de la empresa vs el sector: barra de marca + fantasma del sector. */
-function RetRow({ label, value, bench, grown, tooltip }: {
+function RetRow({ label, value, bench, grown, tooltip, metricKey }: {
   label: string;
   value: number | null;
   bench: number | null;
   grown: boolean;
   tooltip?: (typeof PROFITABILITY)[keyof typeof PROFITABILITY];
+  metricKey: string;
 }) {
   if (value == null) return null;
   const negative = value < 0;
@@ -21,6 +23,8 @@ function RetRow({ label, value, bench, grown, tooltip }: {
   const fillPct = negative ? 0 : Math.min(100, (value / scale) * 100);
   const secPct = hasBench ? Math.min(100, (bench / scale) * 100) : 0;
   const mult = hasBench && !negative && bench > 0 ? value / bench : null;
+  // Color por BANDA ABSOLUTA de la métrica (value en decimal, igual que el umbral).
+  const color = scaleColor(metricKey, value);
 
   return (
     <div className="pf-ret">
@@ -30,14 +34,14 @@ function RetRow({ label, value, bench, grown, tooltip }: {
           {tooltip && <InfoTooltip content={tooltip} />}
         </span>
         <span className="cmp">
-          <b className={negative ? "neg" : ""}>{formatPercent(value)}</b>
+          <b className={negative ? "neg" : ""} style={color ? { color } : undefined}>{formatPercent(value)}</b>
           {mult != null && <span className="mult">{mult.toFixed(1)}× sector</span>}
           {negative && <span className="mult">equity negativo por recompras</span>}
         </span>
       </div>
       <div className="pf-ret-track">
         {hasBench && <div className="pf-ret-sector" style={{ width: grown ? `${secPct}%` : 0 }} />}
-        <div className="pf-ret-fill" style={{ width: grown ? `${fillPct}%` : 0 }} />
+        <div className="pf-ret-fill" style={{ width: grown ? `${fillPct}%` : 0, ...(color ? { background: color } : {}) }} />
         {hasBench && (
           <span className="pf-ret-secmark" style={{ left: `${secPct}%` }}>
             {(bench * 100).toFixed(0)}%
@@ -49,7 +53,7 @@ function RetRow({ label, value, bench, grown, tooltip }: {
 }
 
 /** Paso de la cascada: % del ingreso que sobrevive + monto $ + franja perdida. */
-function FallStep({ label, amount, pct, prevPct, grown, isBase, isNet }: {
+function FallStep({ label, amount, pct, prevPct, grown, isBase, isNet, fillColor }: {
   label: string;
   amount: number | null;
   pct: number;          // 0..100
@@ -57,13 +61,14 @@ function FallStep({ label, amount, pct, prevPct, grown, isBase, isNet }: {
   grown: boolean;
   isBase?: boolean;
   isNet?: boolean;
+  fillColor?: string | null;   // color por BANDA ABSOLUTA del margen (null = base/neutro)
 }) {
   const lost = prevPct != null && prevPct > pct ? prevPct - pct : 0;
   return (
     <div className={`pf-step ${isNet ? "pf-step--net" : ""}`}>
       <div className="pf-step-top">
         <span className="lab">{label}</span>
-        <span className="v" style={isNet ? { color: "var(--brand)" } : undefined}>
+        <span className="v" style={isNet ? { color: fillColor ?? "var(--brand)" } : undefined}>
           {amount != null && <span className="pf-amt">{formatNumber(amount)}</span>}
           {pct.toFixed(1)}%
         </span>
@@ -74,7 +79,11 @@ function FallStep({ label, amount, pct, prevPct, grown, isBase, isNet }: {
           className={`pf-step-fill ${isBase ? "pf-step-fill--base" : ""}`}
           style={{
             width: grown ? `${pct}%` : 0,
-            ...(isNet ? { background: "linear-gradient(90deg, var(--brand), #35d68f)" } : {}),
+            ...(fillColor
+              ? { background: fillColor }
+              : isNet
+                ? { background: "linear-gradient(90deg, var(--brand), #35d68f)" }
+                : {}),
           }}
         />
       </div>
@@ -89,11 +98,11 @@ export default function ProfitabilityTab({ data }: { data: StockAnalysis }) {
 
   const rev = m.revenue;
   // pasos de la cascada (solo los que tienen margen disponible), orden de erosión
-  const steps: Array<{ label: string; margin: number | null; amount: number | null }> = [
-    { label: "Margen Bruto", margin: m.gross_margin, amount: rev != null && m.gross_margin != null ? rev * m.gross_margin : null },
-    { label: "Margen EBITDA", margin: m.ebitda_margin, amount: m.ebitda ?? (rev != null && m.ebitda_margin != null ? rev * m.ebitda_margin : null) },
-    { label: "Margen Operativo", margin: m.operating_margin, amount: m.operating_income ?? (rev != null && m.operating_margin != null ? rev * m.operating_margin : null) },
-    { label: "Margen Neto", margin: m.net_margin, amount: m.net_income },
+  const steps: Array<{ label: string; metricKey: string; margin: number | null; amount: number | null }> = [
+    { label: "Margen Bruto", metricKey: "gross_margin", margin: m.gross_margin, amount: rev != null && m.gross_margin != null ? rev * m.gross_margin : null },
+    { label: "Margen EBITDA", metricKey: "ebitda_margin", margin: m.ebitda_margin, amount: m.ebitda ?? (rev != null && m.ebitda_margin != null ? rev * m.ebitda_margin : null) },
+    { label: "Margen Operativo", metricKey: "operating_margin", margin: m.operating_margin, amount: m.operating_income ?? (rev != null && m.operating_margin != null ? rev * m.operating_margin : null) },
+    { label: "Margen Neto", metricKey: "net_margin", margin: m.net_margin, amount: m.net_income },
   ].filter(s => s.margin != null);
 
   const spread = m.roic_wacc_spread;
@@ -111,9 +120,9 @@ export default function ProfitabilityTab({ data }: { data: StockAnalysis }) {
             <i className="pf-swatch pf-swatch--sec" />Sector
           </span>
         </div>
-        <RetRow label="ROE" value={m.roe} bench={b.roe} grown={grown} tooltip={PROFITABILITY.roe} />
-        <RetRow label="ROIC" value={m.roic} bench={b.roic} grown={grown} tooltip={PROFITABILITY.roic} />
-        <RetRow label="ROA" value={m.roa} bench={b.roa} grown={grown} tooltip={PROFITABILITY.roa} />
+        <RetRow label="ROE" value={m.roe} bench={b.roe} grown={grown} tooltip={PROFITABILITY.roe} metricKey="roe" />
+        <RetRow label="ROIC" value={m.roic} bench={b.roic} grown={grown} tooltip={PROFITABILITY.roic} metricKey="roic" />
+        <RetRow label="ROA" value={m.roa} bench={b.roa} grown={grown} tooltip={PROFITABILITY.roa} metricKey="roa" />
 
         {/* Creación de valor: ROIC vs costo de capital */}
         {spread != null && m.wacc != null && (
@@ -159,6 +168,7 @@ export default function ProfitabilityTab({ data }: { data: StockAnalysis }) {
               prevPct={i === 0 ? 100 : (steps[i - 1].margin as number) * 100}
               grown={grown}
               isNet={i === steps.length - 1}
+              fillColor={scaleColor(s.metricKey, s.margin)}
             />
           ))}
         </div>

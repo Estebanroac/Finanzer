@@ -121,11 +121,19 @@ function ComparisonSection({ title, subtitle, metrics }: { title: string; subtit
             );
           }
           const diff = ((m.value! - m.sectorAvg!) / Math.abs(m.sectorAvg!)) * 100;
+          // En métricas donde MENOR es mejor (P/E, P/B, EV/EBITDA, P/FCF, PEG, D/E), un
+          // valor <= 0 (EPS/FCF/crecimiento/equity negativos) da un diff muy negativo que
+          // goodness=-diff pintaría VERDE ("más barato/mejor") — engañoso: un múltiplo
+          // negativo es MALO. Forzamos señal negativa (roja) antes del cálculo de goodness.
+          const negMultiple = !m.higherIsBetter && m.value! <= 0;
           const goodness = m.higherIsBetter ? diff : -diff;   // + = mejor que el sector
+          const isBetter = negMultiple ? false : goodness >= 0;
           const dev = Math.abs(goodness);
-          let barPct = Math.min(100, (dev / CAP) * 100);
-          if (dev > 0.5) barPct = Math.max(FLOOR, barPct);
-          const note = m.higherIsBetter
+          let barPct = negMultiple ? FLOOR : Math.min(100, (dev / CAP) * 100);
+          if (!negMultiple && dev > 0.5) barPct = Math.max(FLOOR, barPct);
+          const note = negMultiple
+            ? "múltiplo negativo"
+            : m.higherIsBetter
             ? (diff >= 0 ? "por encima del sector" : "por debajo del sector")
             : (diff >= 0 ? "más caro que el sector" : "más barato que el sector");
 
@@ -140,12 +148,12 @@ function ComparisonSection({ title, subtitle, metrics }: { title: string; subtit
               </div>
               <div className="cmp-track">
                 <div
-                  className={`cmp-bar ${goodness >= 0 ? "cmp-pos" : "cmp-neg"}`}
+                  className={`cmp-bar ${isBetter ? "cmp-pos" : "cmp-neg"}`}
                   style={{ width: grown ? `${barPct / 2}%` : 0 }}
                 />
                 <div className="cmp-mid" />
               </div>
-              <span className={`cmp-dev ${goodness >= 0 ? "pos" : "neg"}`}>
+              <span className={`cmp-dev ${isBetter ? "pos" : "neg"}`}>
                 {diff >= 0 ? "+" : "−"}{Math.abs(diff).toFixed(0)}%{" "}
                 <span className="cmp-dev-note">{note}</span>
               </span>
@@ -169,8 +177,11 @@ function ComparisonSummary({ valuationMetrics, profitMetrics, healthMetrics }: {
     if (m.value != null && m.sectorAvg != null && m.sectorAvg !== 0) {
       total++;
       const diff = ((m.value - m.sectorAvg) / Math.abs(m.sectorAvg)) * 100;
-      const isBetter = m.higherIsBetter ? diff > 5 : diff < -5;
-      const isWorse = m.higherIsBetter ? diff < -5 : diff > 5;
+      // Un múltiplo negativo (lower-is-better con value <= 0) NO supera al sector:
+      // el diff negativo lo contaría como "mejor". Se cuenta como peor.
+      const negMultiple = !m.higherIsBetter && m.value <= 0;
+      const isBetter = negMultiple ? false : (m.higherIsBetter ? diff > 5 : diff < -5);
+      const isWorse = negMultiple ? true : (m.higherIsBetter ? diff < -5 : diff > 5);
       if (isBetter) better++;
       if (isWorse) worse++;
     }

@@ -130,18 +130,21 @@ export function formatPrice(val: number | null | undefined): string {
   return `$${val.toFixed(2)}`;
 }
 
+// Bandas del score alineadas con SCORE_TOOLTIP en tooltips.ts (80/60/40/20)
+// para que color y etiqueta coincidan con los "rangos de referencia" que ve el
+// usuario y con el `level` que calcula el backend.
 export function getScoreColor(pct: number): string {
-  // Un solo verde de marca (el del logo) para todo lo favorable.
-  if (pct >= 65) return "#0cc06c";
-  if (pct >= 50) return "#fbbf24";
-  if (pct >= 35) return "#f97316";
-  return "#ff4d4d";
+  if (pct >= 80) return "#0cc06c"; // Excelente
+  if (pct >= 60) return "#22c55e"; // Favorable
+  if (pct >= 40) return "#fbbf24"; // Neutral
+  if (pct >= 20) return "#f97316"; // Precaución
+  return "#ff4d4d";                // Evitar
 }
 
 export function getScoreLabel(pct: number): string {
   if (pct >= 80) return "Excelente";
-  if (pct >= 65) return "Favorable";
-  if (pct >= 50) return "Neutral";
-  if (pct >= 35) return "Precaución";
+  if (pct >= 60) return "Favorable";
+  if (pct >= 40) return "Neutral";
+  if (pct >= 20) return "Precaución";
   return "Evitar";
 }

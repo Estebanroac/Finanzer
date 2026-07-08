@@ -348,7 +348,12 @@ function ZScoreCard({ data }: { data: { z_score: number; zone: string; interpret
 }
 
 function FScoreCard({ data }: { data: { score: number; max_score: number; level: string; interpretation: string; details?: Record<string, { passed: boolean; detail: string }>; fiscal_year?: string } }) {
-  const color = data.score >= 7 ? "#0cc06c" : data.score >= 4 ? "#fbbf24" : "#ff4d4d";
+  const color =
+    data.score >= 8 ? "#0cc06c" :
+    data.score >= 6 ? "#22c55e" :
+    data.score >= 4 ? "#fbbf24" :
+    data.score >= 2 ? "#f97316" :
+    "#ff453a";
   const details = data.details;
 
   return (
@@ -375,9 +380,11 @@ function FScoreCard({ data }: { data: { score: number; max_score: number; level:
       </div>
       <p className="text-xs text-zinc-500 leading-relaxed">{data.interpretation}</p>
       <p className="text-[10px] text-zinc-600 mt-2">
-        {data.score >= 7 ? "7-9 = fortaleza financiera" :
-         data.score >= 4 ? "4-6 = neutral" :
-         "0-3 = señales de debilidad"}
+        {data.score >= 8 ? "8-9 = fortaleza financiera excelente" :
+         data.score >= 6 ? "6-7 = empresa fuerte" :
+         data.score >= 4 ? "4-5 = neutral" :
+         data.score >= 2 ? "2-3 = señales de debilidad" :
+         "0-1 = deterioro severo"}
       </p>
 
       {/* Criteria breakdown */}

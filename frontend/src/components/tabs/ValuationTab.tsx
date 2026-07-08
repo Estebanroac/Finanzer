@@ -4,6 +4,7 @@ import { formatMultiple, formatPercent, type StockAnalysis } from "@/lib/api";
 import InfoTooltip, { type TooltipContent } from "@/components/InfoTooltip";
 import { VALUATION } from "@/lib/tooltips";
 import { getSectorBenchmarks } from "@/lib/sectorBench";
+import { scaleColor } from "@/lib/metricScale";
 import { useGrow } from "@/lib/useGrow";
 
 type Tone = "pos" | "warn" | "neg" | "neu";
@@ -68,22 +69,27 @@ function MultRow({ label, value, bench, grown, tooltip }: {
   );
 }
 
-function YieldRow({ label, value, accent, tooltip }: {
+function YieldRow({ label, value, metricKey, raw, tooltip }: {
   label: string;
   value: string;
-  accent?: boolean;
+  metricKey?: string;   // clave en metricScale para colorear por su banda
+  raw?: number | null;  // valor numérico crudo (decimal para %) para evaluar el umbral
   tooltip?: TooltipContent;
 }) {
   const isNA = value === "N/A";
+  // Color según la banda ABSOLUTA de la métrica (espeja el tooltip); si no hay
+  // escala definida o el dato falta, queda blanco/neutro.
+  const color = !isNA && metricKey ? scaleColor(metricKey, raw) : null;
   return (
     <div className="flex items-center justify-between py-3 border-b border-white/[0.04] last:border-0">
       <div className="flex items-center gap-1.5">
         <span className="text-sm text-zinc-300">{label}</span>
         {tooltip && <InfoTooltip content={tooltip} />}
       </div>
-      <span className={`text-sm font-semibold tabular-nums ${
-        isNA ? "text-zinc-600" : accent ? "text-[#0cc06c]" : "text-white"
-      }`}>
+      <span
+        className={`text-sm font-semibold tabular-nums ${isNA ? "text-zinc-600" : "text-white"}`}
+        style={color ? { color } : undefined}
+      >
         {value}
       </span>
     </div>
@@ -123,21 +129,23 @@ export default function ValuationTab({ data }: { data: StockAnalysis }) {
         <h4 className="text-xs text-zinc-500 uppercase tracking-widest mb-1 font-medium">
           Rendimientos
         </h4>
-        <YieldRow label="FCF Yield" value={formatPercent(m.fcf_yield)} accent tooltip={VALUATION.fcf_yield_val} />
-        <YieldRow label="Earnings Yield" value={formatPercent(m.earnings_yield)} />
-        <YieldRow label="Dividend Yield" value={formatPercent(m.dividend_yield)} tooltip={VALUATION.dividend_yield} />
-        <YieldRow label="Payout Ratio" value={formatPercent(m.payout_ratio)} />
+        <YieldRow label="FCF Yield" value={formatPercent(m.fcf_yield)} metricKey="fcf_yield" raw={m.fcf_yield} tooltip={VALUATION.fcf_yield_val} />
+        <YieldRow label="Earnings Yield" value={formatPercent(m.earnings_yield)} metricKey="earnings_yield" raw={m.earnings_yield} />
+        <YieldRow label="Dividend Yield" value={formatPercent(m.dividend_yield)} metricKey="dividend_yield" raw={m.dividend_yield} tooltip={VALUATION.dividend_yield} />
+        <YieldRow label="Payout Ratio" value={formatPercent(m.payout_ratio)} metricKey="payout_ratio" raw={m.payout_ratio} />
         <YieldRow
           label="Buyback Yield"
           value={buyback != null ? formatPercent(buyback) : "N/A"}
-          accent={buyback != null && buyback > 0}
+          metricKey="buyback_yield"
+          raw={buyback}
         />
         <YieldRow
           label="Shareholder Yield"
           value={shareholder != null ? formatPercent(shareholder) : "N/A"}
-          accent={shareholder != null && shareholder > 0}
+          metricKey="shareholder_yield"
+          raw={shareholder}
         />
-        <YieldRow label="P/S" value={formatMultiple(m.ps)} tooltip={VALUATION.ps} />
+        <YieldRow label="P/S" value={formatMultiple(m.ps)} metricKey="ps" raw={m.ps} tooltip={VALUATION.ps} />
       </div>
     </div>
   );
