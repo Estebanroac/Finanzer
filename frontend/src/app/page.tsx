@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { searchStocks, type SearchResult } from "@/lib/api";
+import { rememberName } from "@/lib/stockNames";
 
 const TRENDING = ["AAPL", "NVDA", "MSFT", "TSLA", "GOOGL", "AMZN", "META", "JPM"];
 
@@ -25,7 +26,10 @@ export default function Home() {
     }, 150);
   }, [query]);
 
-  const go = (s: string) => { setOpen(false); setQuery(""); router.push(`/stock/${s}`); };
+  const go = (s: string, name?: string) => {
+    rememberName(s, name); // el overlay mostrará el nombre al instante tras la nav
+    setOpen(false); setQuery(""); router.push(`/stock/${s}`);
+  };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 relative overflow-hidden bg-[#050507]">
@@ -70,7 +74,7 @@ export default function Home() {
               onKeyDown={e => {
                 if (e.key === "ArrowDown") { e.preventDefault(); setSelectedIdx(i => Math.min(i + 1, results.length - 1)); }
                 else if (e.key === "ArrowUp") { e.preventDefault(); setSelectedIdx(i => Math.max(i - 1, -1)); }
-                else if (e.key === "Enter" && selectedIdx >= 0 && results[selectedIdx]) go(results[selectedIdx].ticker);
+                else if (e.key === "Enter" && selectedIdx >= 0 && results[selectedIdx]) go(results[selectedIdx].ticker, results[selectedIdx].name);
                 else if (e.key === "Enter" && query.trim()) go(query.trim().toUpperCase());
                 else if (e.key === "Escape") setOpen(false);
               }}
@@ -89,7 +93,7 @@ export default function Home() {
               {results.map((r, i) => (
                 <button
                   key={r.ticker}
-                  onClick={() => go(r.ticker)}
+                  onClick={() => go(r.ticker, r.name)}
                   className={`press w-full px-5 py-3.5 flex items-center gap-4 text-left transition-colors ${
                     i === selectedIdx ? "bg-[#0cc06c]/10" : "hover:bg-white/[0.05]"
                   }`}

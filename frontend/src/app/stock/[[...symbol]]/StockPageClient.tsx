@@ -7,6 +7,7 @@ import MetricsGrid from "@/components/MetricsGrid";
 import TabsSection from "@/components/TabsSection";
 import AnalyzeOverlay from "@/components/AnalyzeOverlay";
 import { analyzeStock, formatPrice, getScoreColor, type StockAnalysis } from "@/lib/api";
+import { recallName } from "@/lib/stockNames";
 
 // PDF download URL helper — misma regla que api.ts: solo el dev server de
 // Next (puerto 3000) apunta a localhost:8000; el resto es same-origin.
@@ -18,6 +19,15 @@ export default function StockPageClient() {
   const [data, setData] = useState<StockAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Nombre conocido al instante (sessionStorage de la búsqueda o mapa local),
+  // para que el overlay muestre "Microsoft Corporation" desde el PRIMER FRAME
+  // en vez de esperar la respuesta del API. Inicializador lazy = síncrono en el
+  // mount, antes del primer paint.
+  const [knownName] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    const parts = window.location.pathname.split("/").filter(Boolean);
+    return parts.length >= 2 && parts[0] === "stock" ? recallName(parts[1].toUpperCase()) : null;
+  });
 
   // Extract symbol from URL pathname (works reliably in static export)
   useEffect(() => {
@@ -50,7 +60,7 @@ export default function StockPageClient() {
     <AnalyzeOverlay
       key={symbol || "init"}
       symbol={symbol}
-      companyName={data?.profile?.name ?? null}
+      companyName={data?.profile?.name ?? knownName}
       done={!!data && !loading}
       onFinished={() => setOverlayGone(true)}
     />
