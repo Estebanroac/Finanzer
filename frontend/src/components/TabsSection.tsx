@@ -30,11 +30,15 @@ export default function TabsSection({ data }: TabsSectionProps) {
   const btnRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [underline, setUnderline] = useState({ left: 0, width: 0 });
 
-  // Magic underline: se mide desde la tab activa y se desliza con transición.
+  // Magic underline: se ciñe al TEXTO de la tab activa (no a toda la columna,
+  // que ahora es más ancha por el reparto flex-1) y se desliza con transición.
+  // El ancho del texto sale del <span> interno del botón.
   useLayoutEffect(() => {
     const measure = () => {
       const btn = btnRefs.current[activeIdx];
-      if (btn) setUnderline({ left: btn.offsetLeft, width: btn.offsetWidth });
+      if (!btn) return;
+      const lbl = (btn.querySelector("span") as HTMLElement) || btn;
+      setUnderline({ left: btn.offsetLeft + lbl.offsetLeft, width: lbl.offsetWidth });
     };
     measure();
     // re-medir al cargar fuentes y al redimensionar (los anchos cambian)
@@ -63,11 +67,11 @@ export default function TabsSection({ data }: TabsSectionProps) {
               key={tab.id}
               ref={el => { btnRefs.current[i] = el; }}
               onClick={() => select(i)}
-              className={`press relative flex-shrink-0 px-4 py-3.5 text-sm font-medium transition-colors whitespace-nowrap ${
+              className={`press relative flex-1 text-center px-3 py-3.5 text-sm font-medium transition-colors whitespace-nowrap ${
                 i === activeIdx ? "text-white" : "text-zinc-500 hover:text-zinc-300"
               }`}
             >
-              {tab.label}
+              <span>{tab.label}</span>
             </button>
           ))}
           <span
