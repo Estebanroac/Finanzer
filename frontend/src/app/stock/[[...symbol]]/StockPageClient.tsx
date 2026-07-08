@@ -93,9 +93,23 @@ function AnalysisContent({ data, symbol }: { data: StockAnalysis; symbol: string
     range52pct = Math.max(0, Math.min(100, ((price - lo52) / (hi52 - lo52)) * 100));
   }
   const belowHigh = hi52 && price && hi52 > 0 ? ((hi52 - price) / hi52) * 100 : null;
-  const posLabel = range52pct > 70 ? "Cerca del máximo" : range52pct < 30 ? "Cerca del mínimo" : "Rango medio";
-  // Valoración posicional: cerca del mínimo = más barata (verde); cerca del máximo = más cara (rojo)
-  const posColor = range52pct > 70 ? "#ff453a" : range52pct < 30 ? "#0cc06c" : "#fbbf24";
+  // Curva en U de riesgo posicional: los DOS extremos son alerta (rojo), el
+  // medio es cómodo (verde). Zonas: rojo 0–10 · ámbar 10–25 · verde 25–70 ·
+  // ámbar 70–88 · rojo 88–100.
+  let posLabel = "Zona saludable";
+  let posColor = "#0cc06c";
+  if (range52pct < 10) { posLabel = "En mínimos · alerta"; posColor = "#ff453a"; }
+  else if (range52pct < 25) { posLabel = "Cerca del mínimo"; posColor = "#fbbf24"; }
+  else if (range52pct <= 70) { posLabel = "Zona saludable"; posColor = "#0cc06c"; }
+  else if (range52pct < 88) { posLabel = "Cerca del máximo"; posColor = "#fbbf24"; }
+  else { posLabel = "En máximos · cara"; posColor = "#ff453a"; }
+  const RANGE_ZONES =
+    "linear-gradient(90deg," +
+    "#ff453a 0%,#ff453a 10%," +
+    "#fbbf24 10%,#fbbf24 25%," +
+    "#0cc06c 25%,#0cc06c 70%," +
+    "#fbbf24 70%,#fbbf24 88%," +
+    "#ff453a 88%,#ff453a 100%)";
 
   return (
     <div className="min-h-screen relative">
@@ -164,16 +178,7 @@ function AnalysisContent({ data, symbol }: { data: StockAnalysis; symbol: string
                   <span className="text-[11px] text-zinc-500 uppercase tracking-wider font-semibold">Rango 52 semanas</span>
                   <span className="text-xs font-semibold" style={{ color: posColor }}>{posLabel}</span>
                 </div>
-                <div className="relative h-2 bg-white/[0.06] rounded-full">
-                  <div
-                    className="absolute top-0 left-0 h-full rounded-full"
-                    style={{
-                      width: `${range52pct}%`,
-                      background: range52pct > 70 ? "linear-gradient(90deg,#22c55e,#ff453a)" :
-                                 range52pct < 30 ? "linear-gradient(90deg,#0cc06c,#22c55e)" :
-                                 "linear-gradient(90deg,#0cc06c,#fbbf24)",
-                    }}
-                  />
+                <div className="relative h-2 rounded-full" style={{ background: RANGE_ZONES }}>
                   <div
                     className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-white border-2 border-zinc-900 shadow-lg"
                     style={{ left: `${range52pct}%`, marginLeft: "-7px" }}
