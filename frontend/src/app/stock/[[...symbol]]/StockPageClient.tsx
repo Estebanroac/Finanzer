@@ -106,29 +106,32 @@ function AnalysisContent({ data, symbol }: { data: StockAnalysis; symbol: string
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 pt-8 pb-16">
         {/* ── Header ── */}
-        <header className="mb-8 fade-up">
+        <header className="mb-6 sm:mb-8 fade-up">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-3 mb-1">
-                <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2.5 mb-1">
+                <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight truncate">
                   {data.profile.name}
                 </h1>
-                <span className="px-2 py-0.5 rounded-md text-[11px] font-mono font-semibold text-[#0cc06c] bg-[#0cc06c]/10 border border-[#0cc06c]/20">
+                <span className="shrink-0 px-2 py-0.5 rounded-md text-[11px] font-mono font-semibold text-[#0cc06c] bg-[#0cc06c]/10 border border-[#0cc06c]/20">
                   {symbol}
                 </span>
               </div>
-              <p className="text-sm text-zinc-500">
+              <p className="text-sm text-zinc-500 truncate">
                 {data.profile.sector} · {data.profile.industry}
                 {data.profile.country && data.profile.country !== "Unknown" && ` · ${data.profile.country}`}
               </p>
             </div>
 
-            <div className="sm:text-right flex flex-col items-end gap-2">
+            {/* Precio + PDF — en móvil fila a lo ancho (precio izq · PDF der) para
+                no dejar el hueco muerto; en desktop bloque apilado a la derecha */}
+            <div className="flex items-center justify-between gap-3 shrink-0
+                            sm:flex-col sm:items-end sm:justify-start sm:gap-2 sm:text-right">
               <div>
-                <div className="text-3xl font-bold text-white tabular-nums">
+                <div className="text-[28px] sm:text-3xl font-bold text-white tabular-nums leading-none">
                   {formatPrice(price)}
                 </div>
-                <div className="text-xs text-zinc-500 mt-0.5">
+                <div className="text-xs text-zinc-500 mt-1.5">
                   {data.profile.currency} · {data.profile.exchange}
                 </div>
               </div>
@@ -136,7 +139,7 @@ function AnalysisContent({ data, symbol }: { data: StockAnalysis; symbol: string
                 href={getPdfUrl(symbol)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-300 bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] transition-colors"
+                className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-lg text-xs font-medium text-zinc-300 bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] active:scale-95 transition-all"
               >
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
