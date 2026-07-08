@@ -39,6 +39,11 @@ BRAND_PALE = colors.HexColor('#eaf8f1')
 RED,  RED_PALE  = colors.HexColor('#c0453e'), colors.HexColor('#faeeec')
 AMBER, AMBER_PALE = colors.HexColor('#9c7c14'), colors.HexColor('#faf4e0')
 
+# Zonas del rango de 52 semanas (curva de riesgo en U: los dos extremos son
+# alerta, el centro es saludable). Tonos suaves para no competir con el verde
+# de marca ni verse como bloques sólidos.
+Z_RED, Z_AMBER, Z_GREEN = colors.HexColor('#dd7a70'), colors.HexColor('#e3bf55'), colors.HexColor('#34c281')
+
 TONE_COLOR = {'pos': BRAND_TXT, 'neg': RED, 'warn': AMBER, 'neu': MUTED}
 TONE_PALE  = {'pos': BRAND_PALE, 'neg': RED_PALE, 'warn': AMBER_PALE, 'neu': PANEL}
 
@@ -240,11 +245,26 @@ def read_beta(b):
 
 
 def read_pos52(p):
+    # Curva de riesgo en U: los DOS extremos son alerta. Cerca de mínimos puede
+    # ser oportunidad o problema; cerca de máximos, precio caro con poco recorrido.
+    # Es una señal de PRECIO (¿cara o barata?), no de calidad del negocio.
     if p is None: return None
-    if p >= 85:   return ("Cerca de máximos", 'neu', f"cotiza en el {p:.0f}% del rango de 52 semanas, cerca de máximos")
-    if p >= 55:   return ("Rango alto", 'neu', f"cotiza en la parte alta del rango anual ({p:.0f}%)")
-    if p >= 25:   return ("Rango medio", 'neu', f"cotiza en la zona media del rango anual ({p:.0f}%)")
-    return ("Cerca de mínimos", 'warn', f"cotiza en el {p:.0f}% del rango anual, cerca de mínimos")
+    if p < 10:   return ("En mínimos · alerta", 'neg', f"cotiza en el {p:.0f}% del rango de 52 semanas, en la zona de mínimos: puede ser una oportunidad o reflejar un problema que el mercado ya descuenta")
+    if p < 25:   return ("Cerca del mínimo", 'warn', f"cotiza en el {p:.0f}% del rango anual, en la parte baja: barata, pero conviene cautela")
+    if p <= 70:  return ("Zona saludable", 'pos', f"cotiza en el {p:.0f}% del rango anual, en una zona cómoda del rango de 52 semanas")
+    if p < 88:   return ("Cerca del máximo", 'warn', f"cotiza en el {p:.0f}% del rango anual, en la parte alta: cara, con recorrido más limitado")
+    return ("En máximos · cara", 'neg', f"cotiza en el {p:.0f}% del rango de 52 semanas, en máximos: el mercado ya paga optimismo y aumenta el riesgo de corrección")
+
+
+def score_band(pct):
+    """Nivel + tono del score alineados con la app (bandas 80/60/40/20).
+    Devuelve (etiqueta, tono) para que color y nivel coincidan con lo que ve
+    el usuario en pantalla."""
+    if pct >= 80: return "Excelente", 'pos'
+    if pct >= 60: return "Favorable", 'pos'
+    if pct >= 40: return "Neutral", 'warn'
+    if pct >= 20: return "Precaución", 'neg'
+    return "Evitar", 'neg'
 
 
 def read_buyback(by):
@@ -312,6 +332,37 @@ def hbar(pct, width, height=6, fg=BRAND, bg=HAIR2):
         cmds.append(('BACKGROUND', (i, 0), (i, 0), b))
     t.setStyle(TableStyle(cmds))
     return t
+
+
+def zone_bar_52(pos_pct, width, height=7):
+    """Barra del rango de 52 semanas con las 5 zonas de riesgo en U (rojo en los
+    dos extremos, verde en el centro) y un marcador triangular en la posición
+    del precio. Refleja que tanto mínimos como máximos son señales de alerta."""
+    p = max(0.0, min(100.0, pos_pct or 0.0)) / 100.0
+    seg  = [0.10, 0.15, 0.45, 0.18, 0.12]           # anchos de zona (curva U)
+    zcol = [Z_RED, Z_AMBER, Z_GREEN, Z_AMBER, Z_RED]
+    cols = [width * s for s in seg]
+    bar = Table([[''] * 5], colWidths=cols, rowHeights=[height])
+    bcmds = [('TOPPADDING', (0, 0), (-1, -1), 0), ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+             ('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+             ('ROUNDEDCORNERS', [3, 3, 3, 3])]
+    for i, c in enumerate(zcol):
+        bcmds.append(('BACKGROUND', (i, 0), (i, 0), c))
+    bar.setStyle(TableStyle(bcmds))
+    # marcador ▼ centrado sobre la posición del precio
+    mx = width * p
+    lw = max(0.0, mx - 4)
+    rw = max(0.0, width - lw - 8)
+    tri = Table([['', Paragraph("▼", ParagraphStyle('tri52', fontName='Helvetica-Bold',
+                fontSize=7, leading=8, textColor=INK, alignment=TA_CENTER)), '']],
+                colWidths=[lw, 8, rw], rowHeights=[9])
+    tri.setStyle(TableStyle([('TOPPADDING', (0, 0), (-1, -1), 0), ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+                             ('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+                             ('VALIGN', (0, 0), (-1, -1), 'BOTTOM')]))
+    wrap = Table([[tri], [bar]], colWidths=[width])
+    wrap.setStyle(TableStyle([('TOPPADDING', (0, 0), (-1, -1), 0), ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+                              ('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (0, 0), (-1, -1), 0)]))
+    return wrap
 
 
 def chip(text, tone='neu', size=8.5):
@@ -435,9 +486,10 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         pos52 = (price - l52) / (h52 - l52) * 100
 
     total = score.get("total_score") or 0
-    level = score.get("level") or "N/A"
     breakdown = score.get("breakdown") or {}
-    score_tone = 'pos' if total >= 65 else 'warn' if total >= 45 else 'neg'
+    # Nivel y tono alineados con la app (80/60/40/20) para que el color y la
+    # etiqueta del informe coincidan con lo que ve el usuario en pantalla.
+    level, score_tone = score_band(total)
 
     n_red = len(alerts.get("red_flags") or [])
     n_warn = len(alerts.get("warnings") or [])
@@ -531,11 +583,18 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
 
     # Puntuación Finanzer: número + nivel + barras por categoría
     story.extend(section_header("", "Puntuación Finanzer", S))
+    # Etiqueta de EJE: el score mide CALIDAD del negocio, no si la acción está
+    # cara o barata (eso se ve en Valoración y en el rango de 52 semanas).
+    story.append(Paragraph(
+        f"<font color='{BRAND_TXT.hexval()}'><b>CALIDAD FUNDAMENTAL</b></font>"
+        f"&nbsp;&nbsp;·&nbsp;&nbsp;¿Es buena la empresa? Mide la salud del negocio "
+        f"(rentabilidad, solidez, crecimiento) — no si la acción está cara o barata.",
+        ParagraphStyle('scaxis', parent=S['small'], spaceAfter=6)))
     cat_rows = []
     for cat_name, cat in breakdown.items():
         cs, cm = cat.get("score", 0), cat.get("max", 20) or 20
         pct = cs / cm * 100
-        tone = 'pos' if pct >= 65 else 'warn' if pct >= 45 else 'neg'
+        tone = 'pos' if pct >= 60 else 'warn' if pct >= 40 else 'neg'
         cat_rows.append([
             Paragraph(_esc(cat_name), S['cell']),
             hbar(pct, width=2.55 * inch, height=5.5,
@@ -668,6 +727,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         ("EV/EBITDA", km.get("ev_ebitda"), sector_bench.get("ev_ebitda"), False, "mult"),
         ("P/FCF", km.get("pfcf"), sector_bench.get("pfcf"), False, "mult"),
         ("FCF Yield", km.get("fcf_yield"), sector_bench.get("fcf_yield"), True, "pct"),
+        ("Earnings Yield (E/P)", km.get("earnings_yield"), None, True, "pct"),
         ("Dividend Yield", km.get("dividend_yield"), None, True, "pct"),
     ]
     rows, reads = [], []
@@ -888,13 +948,19 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
                                 [3.2 * inch, 1.6 * inch, CW - 4.8 * inch],
                                 aligns=['LEFT', 'RIGHT', 'RIGHT'], reads=reads))
 
-    # Rango 52 semanas con barra de posición
+    # Rango 52 semanas con barra de ZONAS en curva de riesgo (U)
     if pos52 is not None:
         story.append(Spacer(1, 10))
         story.append(Paragraph("Rango de precio · 52 semanas", S['h2']))
+        # Etiqueta de EJE: es una señal de PRECIO (¿cara o barata?), no de calidad.
+        story.append(Paragraph(
+            f"<font color='{BRAND_TXT.hexval()}'><b>PRECIO</b></font>"
+            f"&nbsp;&nbsp;·&nbsp;&nbsp;¿Cara o barata hoy? Muestra dónde cotiza el precio dentro de su "
+            f"rango anual — una señal de precio, no de la calidad del negocio.",
+            ParagraphStyle('praxis', parent=S['small'], spaceAfter=4)))
         if r_52:
             story.append(Paragraph(_join_sentences([r_52[2]]), S['body']))
-        bar = hbar(pos52, width=CW - 2.4 * inch, height=7)
+        bar = zone_bar_52(pos52, width=CW - 2.4 * inch, height=7)
         rng = Table([[
             Paragraph(f"<font size='8' color='#77777f'>{fv(l52, 'price')}</font>", S['cell']),
             bar,
@@ -906,9 +972,12 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
             ('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (0, 0), (-1, -1), 0),
         ]))
         story.append(rng)
+        _z52 = (f"<font color='#77777f'>Precio actual {fv(price, 'price')} — posición {pos52:.0f}% del rango.</font>"
+                + (f"&nbsp;&nbsp;<font color='{TONE_COLOR[r_52[1]].hexval()}'><b>{_esc(r_52[0])}</b></font>" if r_52 else ""))
+        story.append(Paragraph(_z52, ParagraphStyle('rngc', parent=S['small'], alignment=TA_CENTER, spaceBefore=4)))
         story.append(Paragraph(
-            _esc(f"Precio actual {fv(price, 'price')} — posición {pos52:.0f}% del rango"),
-            ParagraphStyle('rngc', parent=S['small'], alignment=TA_CENTER, spaceBefore=3)))
+            "Zonas: los dos extremos (mínimos y máximos) son señales de alerta; el centro es la zona saludable.",
+            ParagraphStyle('rngz', parent=S['small'], alignment=TA_CENTER, textColor=FAINT, fontSize=6.8, spaceBefore=1)))
 
     # Evolución histórica anual (si está disponible)
     yearly = analysis.get("yearly_financials") or []
@@ -1050,7 +1119,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         for cat_name, cat in breakdown.items():
             cs, cm = cat.get("score", 0), cat.get("max", 20) or 20
             pctc = cs / cm * 100
-            tone = 'pos' if pctc >= 65 else 'warn' if pctc >= 45 else 'neg'
+            tone = 'pos' if pctc >= 60 else 'warn' if pctc >= 40 else 'neg'
             bar_color = BRAND if tone == 'pos' else AMBER if tone == 'warn' else RED
             bd_rows.append([
                 Paragraph(_esc(cat_name), _cat_st),
