@@ -142,7 +142,15 @@ function AnalysisContent({ data, symbol }: { data: StockAnalysis; symbol: string
           <div className="rounded-2xl border border-white/[0.07] bg-[#0a0a0d]/85 px-5 sm:px-7 py-5 sm:py-6">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="min-w-0">
-                <div className="text-[11px] uppercase tracking-wider text-zinc-500 font-semibold mb-2">Precio</div>
+                {/* Etiqueta de EJE: deja explícito que esta tarjeta mide PRECIO
+                    (¿cara o barata?), distinto del score que mide CALIDAD. */}
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mb-2">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider text-zinc-300 bg-white/[0.05] border border-white/[0.1]">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    Precio
+                  </span>
+                  <span className="text-[11px] text-zinc-500">¿Cara o barata hoy?</span>
+                </div>
                 <div className="flex items-baseline gap-2.5 flex-wrap">
                   <span className="text-[40px] sm:text-6xl font-bold text-white tabular-nums leading-none tracking-tight">
                     {formatPrice(price)}

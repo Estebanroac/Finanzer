@@ -83,6 +83,15 @@ export default function ScoreCard({ score, maxScore, companyType, isGrowth }: Sc
 
         {/* Nivel + tipo */}
         <div className="flex-1 min-w-0">
+          {/* Etiqueta de EJE: deja explícito que este score mide CALIDAD
+              FUNDAMENTAL (¿buena empresa?), distinto del precio (¿cara o barata?). */}
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mb-2">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider text-zinc-300 bg-white/[0.05] border border-white/[0.1]">
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+              Calidad fundamental
+            </span>
+            <span className="text-[11px] text-zinc-500">¿Es buena la empresa?</span>
+          </div>
           <div className="flex items-center gap-1.5">
             <span className="text-[17px] font-semibold" style={{ color }}>{label}</span>
             <InfoTooltip content={SCORE_TOOLTIP} size="md" />
