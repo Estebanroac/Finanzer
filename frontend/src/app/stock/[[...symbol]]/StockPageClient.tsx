@@ -6,8 +6,10 @@ import ScoreCard from "@/components/ScoreCard";
 import MetricsGrid from "@/components/MetricsGrid";
 import TabsSection from "@/components/TabsSection";
 import AnalyzeOverlay from "@/components/AnalyzeOverlay";
+import InfoTooltip from "@/components/InfoTooltip";
 import { analyzeStock, formatPrice, getScoreColor, type StockAnalysis } from "@/lib/api";
 import { recallName } from "@/lib/stockNames";
+import { HISTORICAL } from "@/lib/tooltips";
 
 // PDF download URL helper — misma regla que api.ts: solo el dev server de
 // Next (puerto 3000) apunta a localhost:8000; el resto es same-origin.
@@ -103,13 +105,10 @@ function AnalysisContent({ data, symbol }: { data: StockAnalysis; symbol: string
   else if (range52pct <= 70) { posLabel = "Zona saludable"; posColor = "#0cc06c"; }
   else if (range52pct < 88) { posLabel = "Cerca del máximo"; posColor = "#fbbf24"; }
   else { posLabel = "En máximos · cara"; posColor = "#ff453a"; }
+  // Degradado SUAVE (se funde entre zonas) en curva de riesgo: rojo en los dos
+  // extremos, verde en el medio. Más sobrio que los bloques sólidos.
   const RANGE_ZONES =
-    "linear-gradient(90deg," +
-    "#ff453a 0%,#ff453a 10%," +
-    "#fbbf24 10%,#fbbf24 25%," +
-    "#0cc06c 25%,#0cc06c 70%," +
-    "#fbbf24 70%,#fbbf24 88%," +
-    "#ff453a 88%,#ff453a 100%)";
+    "linear-gradient(90deg,#ff453a 0%,#ffd60a 15%,#0cc06c 33%,#0cc06c 67%,#ffd60a 85%,#ff453a 100%)";
 
   return (
     <div className="min-h-screen relative">
@@ -175,7 +174,10 @@ function AnalysisContent({ data, symbol }: { data: StockAnalysis; symbol: string
             {hi52 && lo52 && (
               <div className="mt-6 pt-5 border-t border-white/[0.06]">
                 <div className="flex items-center justify-between mb-2.5">
-                  <span className="text-[11px] text-zinc-500 uppercase tracking-wider font-semibold">Rango 52 semanas</span>
+                  <span className="flex items-center gap-1.5 text-[11px] text-zinc-500 uppercase tracking-wider font-semibold">
+                    Rango 52 semanas
+                    <InfoTooltip content={HISTORICAL.price_range} value={range52pct / 100} valueLabel={`${Math.round(range52pct)}%`} />
+                  </span>
                   <span className="text-xs font-semibold" style={{ color: posColor }}>{posLabel}</span>
                 </div>
                 <div className="relative h-2 rounded-full" style={{ background: RANGE_ZONES }}>

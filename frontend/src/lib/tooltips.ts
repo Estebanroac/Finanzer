@@ -525,11 +525,17 @@ export const HEALTH: Record<string, TooltipContent> = {
 // ─── HISTORICO (HistoricalTab) ──────────────────────────
 export const HISTORICAL: Record<string, TooltipContent> = {
   price_range: {
-    title: "Rango 52 Semanas",
-    description: "Precio minimo y maximo de la accion durante el ultimo ano. Muestra donde esta el precio actual dentro de ese rango.",
-    good: "Cerca del minimo puede ser oportunidad (si los fundamentales son buenos).",
-    bad: "Cerca del maximo puede significar que ya 'subio mucho' (pero no siempre).",
-    tip: "No bases decisiones solo en el rango de precio — analiza siempre los fundamentales.",
+    title: "Posición en el rango de 52 semanas",
+    description: "Dónde está el precio hoy dentro de su rango del último año. Los DOS extremos son alerta: en mínimos puede ser una oportunidad o un negocio deteriorándose; en máximos, fortaleza o estar caro/sobreextendido. La zona media es la más cómoda.",
+    formula: "(Precio − Mínimo 52s) / (Máximo 52s − Mínimo 52s) × 100",
+    thresholds: [
+      { label: "En mínimos — alerta (¿oportunidad o problema?)", value: "0–10%", color: "#ff453a" },
+      { label: "Cerca del mínimo — barata, con cautela", value: "10–25%", color: "#fbbf24" },
+      { label: "Zona saludable — rango cómodo", value: "25–70%", color: "#0cc06c" },
+      { label: "Cerca del máximo — cara, con cautela", value: "70–88%", color: "#fbbf24" },
+      { label: "En máximos — cara / sobreextendida", value: "88–100%", color: "#ff453a" },
+    ],
+    tip: "Es una señal POSICIONAL (dónde está el precio), no de valoración fundamental — úsala junto al score. Una acción en mínimos puede seguir cara por su P/E.",
   },
   beta_hist: {
     title: "Beta",
