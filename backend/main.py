@@ -23,6 +23,7 @@ from financial_ratios import (
 )
 from stock_database import search_stocks, POPULAR_STOCKS, TOP_STOCKS
 from sector_profiles import get_sector_profile, YAHOO_SECTOR_MAPPING
+from alert_interpretations import build_signals
 import config
 
 logging.basicConfig(level=logging.INFO)
@@ -812,101 +813,21 @@ def _compute_analysis(symbol: str) -> dict:
             except Exception as e:
                 logger.error(f"Valuation error: {e}")
 
-            # Alerts — normalize into red_flags/warnings/strengths
+            # Alerts — motor de interpretación de señales (el "cerebro"): convierte
+            # los ratios crudos en fortalezas/advertencias/riesgos con una lectura
+            # ADAPTATIVA de 1-2 líneas por ítem (lib/alert_interpretations.py),
+            # graduada por magnitud y sector. Reemplaza el ensamblado disperso
+            # anterior (condiciones crudas con detail vacío).
             try:
-                raw_alerts = aggregate_alerts(
+                result["alerts"] = build_signals(
                     ratios, fin_dict,
-                    sector=mapped_sector,
-                    real_sector=sector,
-                    precomputed_f_score=result.get("piotroski_f", {}).get("score"),
+                    sector=mapped_sector, real_sector=sector,
+                    roic_wacc_spread=roic_wacc_spread,
+                    altman=result.get("altman_z"),
+                    piotroski=result.get("piotroski_f"),
+                    dcf=result.get("dcf"),
+                    is_growth=result.get("is_growth", False),
                 )
-
-                # The brain returns alerts grouped by category (valuation, leverage, etc.)
-                # Each category has items with severity levels
-                red_flags = []
-                warnings = []
-                strengths = []
-
-                alert_categories = [
-                    "valuation", "leverage", "liquidity", "profitability",
-                    "cash_flow", "growth", "structural_deterioration", "volatility"
-                ]
-
-                for cat_key in alert_categories:
-                    cat_alerts = raw_alerts.get(cat_key)
-                    if not cat_alerts:
-                        continue
-
-                    items = []
-                    if isinstance(cat_alerts, list):
-                        items = cat_alerts
-                    elif isinstance(cat_alerts, dict):
-                        # Some categories return dicts with nested lists
-                        for sub_key, sub_val in cat_alerts.items():
-                            if isinstance(sub_val, list):
-                                items.extend(sub_val)
-                            elif isinstance(sub_val, dict) and "reason" in sub_val:
-                                items.append(sub_val)
-
-                    for item in items:
-                        if not isinstance(item, dict):
-                            continue
-                        severity = item.get("severity", "").lower()
-                        alert_obj = {
-                            "category": cat_key.replace("_", " ").title(),
-                            "reason": item.get("metric", item.get("reason", "")),
-                            "detail": item.get("reason", item.get("detail", item.get("interpretation", ""))),
-                        }
-                        if severity in ("severe", "critical", "danger", "red"):
-                            red_flags.append(alert_obj)
-                        elif severity in ("moderate", "warning", "caution", "yellow"):
-                            warnings.append(alert_obj)
-                        elif severity in ("good", "excellent", "strong", "green", "positive"):
-                            strengths.append(alert_obj)
-                        elif severity:
-                            warnings.append(alert_obj)
-
-                # Capas de flags con razones en STRING que el loop anterior
-                # descartaba (solo aceptaba dicts). Se conectan únicamente las
-                # capas SIN solapamiento con el desglose del score (que ya
-                # alimenta el bloque de abajo), para no duplicar alertas:
-                # deterioro estructural, volatilidad e infravaloración.
-                _det = raw_alerts.get("structural_deterioration") or {}
-                if _det.get("flag"):
-                    for _r in _det.get("reasons", []):
-                        red_flags.append({"category": "Deterioro Estructural",
-                                          "reason": _r, "detail": ""})
-                _vol = raw_alerts.get("volatility") or {}
-                for _r in _vol.get("warning_reasons", []):
-                    warnings.append({"category": "Volatilidad", "reason": _r, "detail": ""})
-                for _r in _vol.get("positive_reasons", []):
-                    strengths.append({"category": "Volatilidad", "reason": _r, "detail": ""})
-                _val = raw_alerts.get("valuation") or {}
-                for _r in _val.get("undervalued_reasons", []):
-                    strengths.append({"category": "Valoración", "reason": _r, "detail": ""})
-
-                # Also pull from score adjustments if we have them
-                if result.get("score") and result["score"].get("breakdown"):
-                    for cat_name, cat_data in result["score"]["breakdown"].items():
-                        for adj in cat_data.get("adjustments", []):
-                            sev = adj.get("severity", "").lower()
-                            alert_obj = {
-                                "category": cat_name,
-                                "reason": adj.get("metric", ""),
-                                "detail": adj.get("reason", ""),
-                            }
-                            if sev in ("severe", "critical", "danger"):
-                                red_flags.append(alert_obj)
-                            elif sev in ("moderate", "warning"):
-                                warnings.append(alert_obj)
-                            elif sev in ("good", "excellent"):
-                                strengths.append(alert_obj)
-
-                result["alerts"] = {
-                    "red_flags": red_flags,
-                    "warnings": warnings,
-                    "strengths": strengths,
-                }
             except Exception as e:
                 logger.error(f"Alerts error: {e}")
                 result["alerts"] = {"red_flags": [], "warnings": [], "strengths": []}
