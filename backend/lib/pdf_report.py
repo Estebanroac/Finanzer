@@ -457,6 +457,137 @@ def _page_decor(symbol, name, logo_path):
     return draw
 
 
+# ══════════════════════════════ TARJETAS / RADAR ══════════════════════════════
+def status_pill(text, tone, size=6.6):
+    """Pill de estado (SALUDABLE/ATENCIÓN/RIESGO) con fondo pálido del tono."""
+    st = ParagraphStyle('spill', fontName='Helvetica-Bold', fontSize=size, leading=size + 2,
+                        textColor=TONE_COLOR[tone], alignment=TA_CENTER)
+    t = Table([[Paragraph(_esc(text.upper()), st)]])
+    t.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, -1), TONE_PALE[tone]),
+        ('TOPPADDING', (0, 0), (-1, -1), 2), ('BOTTOMPADDING', (0, 0), (-1, -1), 2.5),
+        ('LEFTPADDING', (0, 0), (-1, -1), 6), ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+        ('ROUNDEDCORNERS', [5, 5, 5, 5]),
+    ]))
+    return t
+
+
+def metric_card(label, value, unit, pill, tone, delta, subnote, width):
+    """Tarjeta de métrica estilo plantilla: barra de acento superior (color del
+    tono) + etiqueta + pill de estado + valor grande + delta vs sector."""
+    accent = TONE_COLOR[tone]
+    lab = Paragraph(f"<font name='Helvetica-Bold' size='6.8' color='#77777f'>{_esc(label.upper())}</font>",
+                    ParagraphStyle('mcl', leading=9))
+    pill_cell = status_pill(pill, tone) if pill else ''
+    head = Table([[lab, pill_cell]], colWidths=[width * 0.52, width * 0.48])
+    head.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'), ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ('TOPPADDING', (0, 0), (-1, -1), 0), ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+    ]))
+    val_p = Paragraph(
+        f"<font name='Helvetica-Bold' size='19' color='{INK.hexval()}'>{_esc(value)}</font>"
+        f"<font size='9' color='#a5a5ac'> {_esc(unit)}</font>",
+        ParagraphStyle('mcv', leading=23))
+    parts = []
+    if delta:
+        parts.append(f"<font size='7.4' color='{accent.hexval()}'><b>{_esc(delta)}</b></font>")
+    if subnote:
+        parts.append(f"<font size='7' color='#9a9aa0'>{_esc(subnote)}</font>")
+    delta_p = Paragraph("&nbsp;&nbsp;".join(parts) or "&nbsp;", ParagraphStyle('mcd', leading=9.5))
+    card = Table([[head], [val_p], [delta_p]], colWidths=[width])
+    card.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, -1), colors.white),
+        ('BOX', (0, 0), (-1, -1), 0.5, HAIR),
+        ('LINEABOVE', (0, 0), (-1, 0), 2.2, accent),
+        ('LEFTPADDING', (0, 0), (-1, -1), 10), ('RIGHTPADDING', (0, 0), (-1, -1), 10),
+        ('TOPPADDING', (0, 0), (0, 0), 11), ('BOTTOMPADDING', (0, 0), (0, 0), 4),
+        ('TOPPADDING', (0, 1), (0, 1), 0), ('BOTTOMPADDING', (0, 1), (0, 1), 5),
+        ('TOPPADDING', (0, 2), (0, 2), 0), ('BOTTOMPADDING', (0, 2), (0, 2), 12),
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+    ]))
+    return card
+
+
+def card_grid(cards, cols, width, gutter=8):
+    """Coloca tarjetas en una grilla de `cols` columnas con canaletas."""
+    cell_w = (width - gutter * (cols - 1)) / cols
+    rows = []
+    for i in range(0, len(cards), cols):
+        row = cards[i:i + cols]
+        while len(row) < cols:
+            row.append('')
+        rows.append(row)
+    # ancho de columna incluye media canaleta a cada lado vía padding
+    t = Table(rows, colWidths=[width / cols] * cols)
+    cmds = [('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+            ('TOPPADDING', (0, 0), (-1, -1), 0), ('BOTTOMPADDING', (0, 0), (-1, -1), gutter)]
+    t.setStyle(TableStyle(cmds))
+    return t, cell_w
+
+
+def radar_chart(labels, values, size=4.7 * inch, accent=None):
+    """Radar/araña dibujado A MANO para control total del encaje: rejilla
+    concéntrica (0–100), polígono de datos y ETIQUETAS colocadas fuera del plot,
+    con anclaje horizontal/vertical según su posición angular — así ninguna se
+    encima sobre el gráfico ni se recorta. `values` en 0-100."""
+    import math
+    from reportlab.graphics.shapes import Drawing, Polygon, Line, String, Circle
+    accent = accent or BRAND
+    n = len(values)
+    if n < 3:
+        return Drawing(size, size * 0.6)
+    W = size
+    H = size * 0.76
+    R = size * 0.235                 # radio del plot: deja margen amplio para etiquetas
+    fs = 8.8
+    d = Drawing(W, H)
+    cx, cy = W / 2.0, H / 2.0
+    # ejes: arranca arriba y va en sentido horario
+    angs = [math.pi / 2 - i * (2 * math.pi / n) for i in range(n)]
+    grid = colors.HexColor('#dfe0e2')
+
+    def pt(r, a):
+        return (cx + r * math.cos(a), cy + r * math.sin(a))
+
+    # anillos concéntricos 25/50/75/100
+    for ring in (0.25, 0.5, 0.75, 1.0):
+        pts = []
+        for a in angs:
+            x, y = pt(R * ring, a)
+            pts += [x, y]
+        d.add(Polygon(pts, strokeColor=grid, strokeWidth=0.5, fillColor=None))
+    # radios
+    for a in angs:
+        x, y = pt(R, a)
+        d.add(Line(cx, cy, x, y, strokeColor=grid, strokeWidth=0.5))
+    # polígono de datos
+    dp = []
+    for v, a in zip(values, angs):
+        x, y = pt(R * max(0.0, min(100.0, v)) / 100.0, a)
+        dp += [x, y]
+    d.add(Polygon(dp, strokeColor=accent, strokeWidth=1.8,
+                  fillColor=colors.Color(accent.red, accent.green, accent.blue, 0.15)))
+    for v, a in zip(values, angs):
+        x, y = pt(R * max(0.0, min(100.0, v)) / 100.0, a)
+        d.add(Circle(x, y, 2.6, strokeColor=None, fillColor=accent))
+    # etiquetas fuera del plot
+    for lab, a in zip(labels, angs):
+        ca, sa = math.cos(a), math.sin(a)
+        lx, ly = pt(R + 13, a)
+        anchor = 'middle' if abs(ca) < 0.32 else ('start' if ca > 0 else 'end')
+        if sa > 0.32:            # arriba → baseline algo por encima del vértice
+            by = ly + 3
+        elif sa < -0.32:         # abajo → baseline bajo el vértice (texto debajo)
+            by = ly - fs * 0.9
+        else:                    # lados → centrado vertical
+            by = ly - fs * 0.34
+        d.add(String(lx, by, lab, fontName='Helvetica', fontSize=fs,
+                     fillColor=INK, textAnchor=anchor))
+    return d
+
+
 # ══════════════════════════════ INFORME ══════════════════════════════
 def build_report(buf, analysis, sector_bench, logo_path=None):
     S = _styles()
@@ -524,8 +655,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
 
     story = []
 
-    # ════════════════ PÁGINA 1 — PORTADA + RESUMEN EJECUTIVO ════════════════
-    # Masthead: logo + wordmark | título del documento + fecha
+    # ════════════════ PÁGINA 1 — PORTADA ════════════════
     logo_cell = ''
     if logo_path and os.path.isfile(logo_path):
         try:
@@ -546,100 +676,227 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         ('TOPPADDING', (0, 0), (-1, -1), 0), ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
     ]))
     story.append(mast)
-    story.append(HRFlowable(width="100%", thickness=0.8, color=INK, spaceAfter=10))
+    story.append(HRFlowable(width="100%", thickness=0.8, color=INK, spaceAfter=6))
 
-    # Empresa
-    story.append(Paragraph(_esc(name), S['title']))
-    story.append(Spacer(1, 2))
-    story.append(Paragraph(
-        f"<b>{_esc(symbol)}</b>&nbsp;&nbsp;·&nbsp;&nbsp;{_esc(sector)}&nbsp;&nbsp;·&nbsp;&nbsp;"
-        f"{_esc(profile.get('industry') or 'N/A')}&nbsp;&nbsp;·&nbsp;&nbsp;{_esc(profile.get('country') or '')}"
-        f"&nbsp;&nbsp;·&nbsp;&nbsp;{_esc(profile.get('exchange') or '')}",
-        S['meta']))
-    story.append(Spacer(1, 10))
+    # Portada de ALTURA COMPLETA: 4 bandas repartidas (título · hero · KPIs ·
+    # "lo esencial") para llenar la página y evitar el espacio muerto inferior.
+    def _kpi_card(value, label, w):
+        c = Table([
+            [Paragraph(f"<font name='Helvetica-Bold' size='16' color='{INK.hexval()}'>{_esc(value)}</font>",
+                       ParagraphStyle('kcv', leading=19))],
+            [Paragraph(f"<font name='Helvetica-Bold' size='6.4' color='#77777f'>{_esc(label.upper())}</font>",
+                       ParagraphStyle('kcl', leading=8.5))],
+        ], colWidths=[w])
+        c.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.white), ('BOX', (0, 0), (-1, -1), 0.5, HAIR),
+            ('LEFTPADDING', (0, 0), (-1, -1), 10), ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+            ('TOPPADDING', (0, 0), (0, 0), 12), ('BOTTOMPADDING', (0, 0), (0, 0), 2),
+            ('TOPPADDING', (0, 1), (0, 1), 0), ('BOTTOMPADDING', (0, 1), (0, 1), 12),
+        ]))
+        return c
 
-    # Franja de indicadores clave: etiquetas y valores en filas separadas para
-    # que TODA la franja comparta la misma línea base, con separadores sutiles.
-    _lab_st = ParagraphStyle('kl', fontName='Helvetica-Bold', fontSize=6.8, leading=9, textColor=MUTED)
-    _val_st = ParagraphStyle('kv', fontName='Helvetica-Bold', fontSize=13, leading=16, textColor=INK)
-    _kpi_labels = ["PRECIO", "MARKET CAP", "P/E (TTM)", "ROE", "MARGEN NETO", "PERFIL"]
-    _kpi_values = [fv(price, "price"), fv(km.get("market_cap"), "money"), fv(km.get("pe"), "mult"),
-                   fv(km.get("roe"), "pct"), fv(km.get("net_margin"), "pct"), company_type.title()]
-    kt = Table([
-        [Paragraph(_esc(l), _lab_st) for l in _kpi_labels],
-        [Paragraph(_esc(v), _val_st) for v in _kpi_values],
-    ], colWidths=[CW / 6.0] * 6)
-    kt.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, -1), PANEL),
-        ('LINEABOVE', (0, 0), (-1, 0), 1.4, BRAND),
-        ('LINEBEFORE', (1, 0), (-1, -1), 0.5, colors.HexColor('#e2e3e5')),
-        ('VALIGN', (0, 0), (-1, -1), 'BOTTOM'),
-        ('TOPPADDING', (0, 0), (-1, 0), 9), ('BOTTOMPADDING', (0, 0), (-1, 0), 1),
-        ('TOPPADDING', (0, 1), (-1, 1), 0), ('BOTTOMPADDING', (0, 1), (-1, 1), 9),
-        ('LEFTPADDING', (0, 0), (-1, -1), 10), ('RIGHTPADDING', (0, 0), (-1, -1), 4),
-    ]))
-    story.append(kt)
-    story.append(Spacer(1, 14))
+    def _hl_card(kicker, text, tone, w):
+        c = Table([
+            [Paragraph(f"<font size='6.2' color='{TONE_COLOR[tone].hexval()}'><b>{_esc(kicker)}</b></font>",
+                       ParagraphStyle('hlk', leading=9))],
+            [Paragraph(f"<font size='9.5' color='{INK.hexval()}'>{_esc(text)}</font>",
+                       ParagraphStyle('hlt', leading=12))],
+        ], colWidths=[w])
+        c.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.white), ('BOX', (0, 0), (-1, -1), 0.5, HAIR),
+            ('LINEABOVE', (0, 0), (-1, 0), 2, TONE_COLOR[tone]),
+            ('LEFTPADDING', (0, 0), (-1, -1), 11), ('RIGHTPADDING', (0, 0), (-1, -1), 10),
+            ('TOPPADDING', (0, 0), (0, 0), 10), ('BOTTOMPADDING', (0, 0), (0, 0), 4),
+            ('TOPPADDING', (0, 1), (0, 1), 0), ('BOTTOMPADDING', (0, 1), (0, 1), 12),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ]))
+        return c
 
-    # Puntuación Finanzer: número + nivel + barras por categoría
-    story.extend(section_header("", "Puntuación Finanzer", S))
-    # Etiqueta de EJE: el score mide CALIDAD del negocio, no si la acción está
-    # cara o barata (eso se ve en Valoración y en el rango de 52 semanas).
-    story.append(Paragraph(
-        f"<font color='{BRAND_TXT.hexval()}'><b>CALIDAD FUNDAMENTAL</b></font>"
-        f"&nbsp;&nbsp;·&nbsp;&nbsp;¿Es buena la empresa? Mide la salud del negocio "
-        f"(rentabilidad, solidez, crecimiento) — no si la acción está cara o barata.",
-        ParagraphStyle('scaxis', parent=S['small'], spaceAfter=6)))
+    # Banda 1 — título
+    _title_flow = [
+        Paragraph("ANÁLISIS FUNDAMENTAL",
+                  ParagraphStyle('cve', fontName='Helvetica-Bold', fontSize=8.5, leading=12, textColor=BRAND_TXT)),
+        Spacer(1, 9),
+        Paragraph(_esc(name),
+                  ParagraphStyle('ctitle', fontName='Helvetica-Bold', fontSize=33, leading=36, textColor=INK)),
+        Spacer(1, 8),
+        Paragraph(
+            f"<b>{_esc(symbol)}</b>&nbsp;&nbsp;·&nbsp;&nbsp;{_esc(sector)}&nbsp;&nbsp;·&nbsp;&nbsp;"
+            f"{_esc(profile.get('industry') or 'N/A')}&nbsp;&nbsp;·&nbsp;&nbsp;{_esc(profile.get('exchange') or '')}"
+            f"&nbsp;&nbsp;·&nbsp;&nbsp;Corte al {_fecha_es()}",
+            ParagraphStyle('csub', fontName='Helvetica', fontSize=9.5, leading=13, textColor=MUTED)),
+    ]
+
+    # Banda 2 — score + DESGLOSE por categoría (número a la izquierda alineado
+    # con las 5 barras a la derecha; llena y organiza la portada).
+    _sl_w = 2.15 * inch
+    score_left = Table([
+        [Paragraph(f"<font size='60' color='{TONE_COLOR[score_tone].hexval()}'><b>{total}</b></font>"
+                   f"<font size='16' color='#a5a5ac'> /100</font>",
+                   ParagraphStyle('heronum', fontName='Helvetica-Bold', leading=60, alignment=TA_CENTER))],
+        [Spacer(1, 6)],
+        [chip(level, score_tone, size=9)],
+        [Spacer(1, 6)],
+        [Paragraph("<font size='6.6' color='#77777f'><b>CALIDAD FUNDAMENTAL</b></font><br/>"
+                   "<font size='6.6' color='#9a9aa0'>¿es buena la empresa?</font>",
+                   ParagraphStyle('slc', leading=8.6, alignment=TA_CENTER))],
+    ], colWidths=[_sl_w])
+    score_left.setStyle(TableStyle([('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                                    ('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+                                    ('TOPPADDING', (0, 0), (-1, -1), 0), ('BOTTOMPADDING', (0, 0), (-1, -1), 0)]))
+    _catw = CW - _sl_w - 42
+    _barw = _catw - 1.55 * inch - 0.5 * inch
     cat_rows = []
     for cat_name, cat in breakdown.items():
         cs, cm = cat.get("score", 0), cat.get("max", 20) or 20
-        pct = cs / cm * 100
-        tone = 'pos' if pct >= 60 else 'warn' if pct >= 40 else 'neg'
+        pctc = cs / cm * 100
+        _t = 'pos' if pctc >= 60 else 'warn' if pctc >= 40 else 'neg'
         cat_rows.append([
-            Paragraph(_esc(cat_name), S['cell']),
-            hbar(pct, width=2.55 * inch, height=5.5,
-                 fg=(BRAND if tone == 'pos' else AMBER if tone == 'warn' else RED)),
+            Paragraph(_esc(cat_name), ParagraphStyle('cn', fontName='Helvetica', fontSize=8.6, leading=11, textColor=BODY)),
+            hbar(pctc, width=_barw, height=6, fg=(BRAND if _t == 'pos' else AMBER if _t == 'warn' else RED)),
             Paragraph(f"<b>{cs}</b><font color='#a5a5ac'>/{cm}</font>",
-                      ParagraphStyle('sc', fontName='Helvetica', fontSize=8.6, alignment=TA_RIGHT)),
+                      ParagraphStyle('csc', fontName='Helvetica', fontSize=8.6, leading=11, alignment=TA_RIGHT)),
         ])
-    cat_tbl = Table(cat_rows, colWidths=[1.35 * inch, 2.65 * inch, 0.55 * inch])
+    cat_tbl = Table(cat_rows, colWidths=[1.55 * inch, _barw, 0.5 * inch])
     cat_tbl.setStyle(TableStyle([
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('TOPPADDING', (0, 0), (-1, -1), 3.2), ('BOTTOMPADDING', (0, 0), (-1, -1), 3.2),
-        ('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+        ('TOPPADDING', (0, 0), (-1, -1), 4.6), ('BOTTOMPADDING', (0, 0), (-1, -1), 4.6),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (1, 0), (1, -1), 8),
     ]))
-    score_left = Table([
-        [Paragraph(f"<font size='40' color='{TONE_COLOR[score_tone].hexval()}'><b>{total}</b></font>"
-                   f"<font size='13' color='#a5a5ac'> / 100</font>",
-                   ParagraphStyle('big', fontName='Helvetica-Bold', leading=42, alignment=TA_CENTER))],
-        [Spacer(1, 3)],
-        [chip(level, score_tone, size=9)],
-    ], colWidths=[2.0 * inch])
-    score_left.setStyle(TableStyle([
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+    hero = Table([[score_left, cat_tbl]], colWidths=[_sl_w, CW - _sl_w])
+    hero.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('BACKGROUND', (0, 0), (-1, -1), PANEL), ('ROUNDEDCORNERS', [8, 8, 8, 8]),
+        ('LINEABOVE', (0, 0), (-1, 0), 2.5, BRAND),
+        ('LINEAFTER', (0, 0), (0, 0), 0.5, colors.HexColor('#e2e3e5')),
+        ('TOPPADDING', (0, 0), (-1, -1), 18), ('BOTTOMPADDING', (0, 0), (-1, -1), 18),
+        ('LEFTPADDING', (0, 0), (0, 0), 6), ('RIGHTPADDING', (0, 0), (0, 0), 14),
+        ('LEFTPADDING', (1, 0), (1, 0), 22), ('RIGHTPADDING', (1, 0), (1, 0), 20),
+    ]))
+
+    # Banda 3 — KPIs (2 filas de 4 = 8 indicadores clave)
+    _kw = (CW - 3 * 9) / 4.0
+    _kpis = [
+        (fv(price, "price"), "Precio"), (fv(km.get("market_cap"), "money"), "Market cap"),
+        (fv(km.get("pe"), "mult"), "P/E (TTM)"), (fv(km.get("roe"), "pct"), "ROE"),
+        (fv(km.get("net_margin"), "pct"), "Margen neto"), (fv(km.get("fcf_yield"), "pct"), "FCF yield"),
+        (fv(km.get("net_debt_to_ebitda"), "mult"), "Deuda neta/EBITDA"), (fv(km.get("beta"), "num"), "Beta"),
+    ]
+
+    def _krow(items):
+        t = Table([[_kpi_card(v, l, _kw) for v, l in items]], colWidths=[CW / 4.0] * 4)
+        t.setStyle(TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('LEFTPADDING', (0, 0), (0, -1), 0), ('RIGHTPADDING', (-1, 0), (-1, -1), 0),
+            ('LEFTPADDING', (1, 0), (-1, -1), 9), ('RIGHTPADDING', (0, 0), (-2, -1), 0),
+            ('TOPPADDING', (0, 0), (-1, -1), 0), ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+        ]))
+        return t
+    krow = Table([[_krow(_kpis[0:4])], [_krow(_kpis[4:8])]], colWidths=[CW])
+    krow.setStyle(TableStyle([
+        ('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ('TOPPADDING', (0, 0), (0, 0), 0), ('BOTTOMPADDING', (0, 0), (0, 0), 9),
+        ('TOPPADDING', (0, 1), (0, 1), 0), ('BOTTOMPADDING', (0, 1), (0, 1), 0),
+    ]))
+
+    # Banda 4 — "lo esencial" (fortaleza clave · a vigilar · valoración), desde señales
+    _S = analysis.get("alerts", {}).get("strengths") or []
+    _R = analysis.get("alerts", {}).get("red_flags") or []
+    _W = analysis.get("alerts", {}).get("warnings") or []
+    _hl_pos = _S[0]["reason"] if _S else "Fundamentos sólidos en la mayoría de categorías"
+    _watch = _R[0] if _R else (_W[0] if _W else None)
+    _hl_watch = _watch["reason"] if _watch else "Sin alertas relevantes"
+    _hl_wtone = 'neg' if _R else ('warn' if _W else 'pos')
+    # Tercera card = PRECIO (dónde cotiza, cara/barata) — dimensión distinta al
+    # score (calidad) y sin solaparse con "A vigilar".
+    if r_52:
+        _hl_val, _hl_vtone = r_52[0], r_52[1]
+    elif r_up:
+        _hl_val, _hl_vtone = r_up[0], r_up[1]
+    else:
+        _hl_val, _hl_vtone = (r_pe[0], r_pe[1]) if r_pe else ("—", 'neu')
+    _hlw = (CW - 2 * 9) / 3.0
+    hl_row = Table([[
+        _hl_card("FORTALEZA CLAVE", _hl_pos, 'pos', _hlw),
+        _hl_card("A VIGILAR", _hl_watch, _hl_wtone, _hlw),
+        _hl_card("PRECIO · 52 SEM.", _hl_val, _hl_vtone, _hlw),
+    ]], colWidths=[CW / 3.0] * 3)
+    hl_row.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('LEFTPADDING', (0, 0), (0, -1), 0), ('RIGHTPADDING', (-1, 0), (-1, -1), 0),
+        ('LEFTPADDING', (1, 0), (-1, -1), 9), ('RIGHTPADDING', (0, 0), (-2, -1), 0),
+        ('TOPPADDING', (0, 0), (-1, -1), 0), ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+    ]))
+
+    # Ensamblado de altura completa: reparte las 4 bandas en el alto del frame
+    _rem = (PAGE_H - M_TOP - M_BOT) - 60  # 60 ≈ masthead + regla ya consumidos
+    cover_body = Table([[_title_flow], [hero], [krow], [hl_row]],
+                       colWidths=[CW], rowHeights=[_rem * 0.19, _rem * 0.32, _rem * 0.29, _rem * 0.20])
+    cover_body.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (0, 0), 'TOP'),
+        ('VALIGN', (0, 1), (0, 1), 'MIDDLE'),
+        ('VALIGN', (0, 2), (0, 2), 'MIDDLE'),
+        ('VALIGN', (0, 3), (0, 3), 'BOTTOM'),
         ('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (0, 0), (-1, -1), 0),
         ('TOPPADDING', (0, 0), (-1, -1), 0), ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
     ]))
-    sc_tbl = Table([[score_left, cat_tbl]], colWidths=[2.3 * inch, CW - 2.3 * inch])
-    sc_tbl.setStyle(TableStyle([
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('BACKGROUND', (0, 0), (0, 0), PANEL),
-        ('ROUNDEDCORNERS', [6, 6, 6, 6]),
-        ('TOPPADDING', (0, 0), (-1, -1), 10), ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
-        ('LEFTPADDING', (0, 0), (-1, -1), 8), ('RIGHTPADDING', (0, 0), (-1, -1), 4),
-    ]))
-    story.append(sc_tbl)
-    story.append(Spacer(1, 14))
+    story.append(cover_body)
+    story.append(PageBreak())
 
-    # Resumen ejecutivo adaptativo — bloques etiquetados en grilla de 2 columnas
-    # (no un párrafo corrido): cada tema con su micro-encabezado verde.
+    # ════════════════ PÁGINA 2 — RESUMEN EJECUTIVO ════════════════
     story.extend(section_header("", "Resumen ejecutivo", S))
+    story.append(Spacer(1, 3))
 
+    # ── Grilla de metric-cards (valor + pill de estado + delta vs sector) ──
+    _cellw = (CW - 8 * 2) / 3.0
+
+    def _mvu(raw, fmt):
+        if raw is None:
+            return ("N/A", "")
+        if fmt == 'pct':
+            return (f"{raw * 100:.1f}", "%")
+        if fmt == 'mult':
+            return (f"{raw:.1f}", "x")
+        return (fv(raw, 'money'), "")
+
+    def _benchtxt(bench, fmt):
+        if bench is None:
+            return ""
+        return f"vs sector {bench * 100:.1f}%" if fmt == 'pct' else f"vs sector {bench:.1f}x"
+
+    def _mkcard(label, raw, fmt, benchkey, higher):
+        bench = sector_bench.get(benchkey)
+        r = read_vs_sector(label, raw, bench, higher, 'pct' if fmt == 'pct' else 'mult') \
+            if (bench and raw is not None) else None
+        v, u = _mvu(raw, fmt)
+        if r:
+            pill, tone, _f, delta = r
+        else:
+            pill, tone, delta = ("—" if raw is None else "En rango"), 'neu', ""
+        return metric_card(label, v, u, pill, tone, delta, _benchtxt(bench, fmt), _cellw)
+
+    _cards = [
+        _mkcard("Crecimiento ingresos", km.get("revenue_growth"), 'pct', "revenue_growth", True),
+        _mkcard("Margen neto", km.get("net_margin"), 'pct', "net_margin", True),
+        _mkcard("ROE", km.get("roe"), 'pct', "roe", True),
+        _mkcard("P/E (TTM)", km.get("pe"), 'mult', "pe", False),
+        _mkcard("FCF yield", km.get("fcf_yield"), 'pct', "fcf_yield", True),
+        _mkcard("EV/EBITDA", km.get("ev_ebitda"), 'mult', "ev_ebitda", False),
+    ]
+    cg = Table([_cards[0:3], _cards[3:6]], colWidths=[CW / 3.0] * 3)
+    cg.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('LEFTPADDING', (0, 0), (0, -1), 0), ('RIGHTPADDING', (-1, 0), (-1, -1), 0),
+        ('LEFTPADDING', (1, 0), (-1, -1), 8), ('RIGHTPADDING', (0, 0), (-2, -1), 0),
+        ('TOPPADDING', (0, 0), (-1, -1), 0), ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+        ('BOTTOMPADDING', (0, 1), (-1, 1), 0),
+    ]))
+
+    # ── Radar por categoría + caja de "Lectura del análisis" ──
     def _cap(t):
         t = (t or "").strip().rstrip('.')
         return (t[0].upper() + t[1:] + ".") if t else ""
 
-    # solidez condensada para el resumen
     if fin_health and isinstance(fin_health, dict) and fin_health.get("score") is not None:
         sol_short = (f"salud financiera bancaria de {fin_health['score']}/10 "
                      f"({fin_health.get('level', '')})")
@@ -651,9 +908,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     else:
         sol_short = r_de[2] if r_de else None
 
-    exec_items = [("PERFIL Y PUNTUACIÓN",
-                   f"{_esc(name)} ({_esc(symbol)}) opera en el sector {_esc(sector.lower())} con un perfil "
-                   f"{_esc(company_type)}. Puntuación Finanzer: <b>{total}/100</b> ({_esc(level.lower())}).")]
+    exec_items = []
     _val = (_cap(r_pe[2]) + (" " + _cap(r_up[2]) if r_up else "")) if r_pe else (_cap(r_up[2]) if r_up else "")
     if _val.strip():
         exec_items.append(("VALORACIÓN", _esc(_val)))
@@ -670,11 +925,41 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     if _ctx.strip():
         exec_items.append(("CONTEXTO DE MERCADO", _esc(_ctx)))
 
-    _exc_st = ParagraphStyle('exc', fontName='Helvetica', fontSize=8.6, leading=12.2, textColor=BODY)
+    # ── Radar GRANDE y CENTRADO (perfil por categoría) ──
+    _short = {"Solidez Financiera": "Solidez", "Calidad de Ganancias": "Calidad",
+              "Valoración": "Valoración", "Rentabilidad": "Rentabilidad", "Crecimiento": "Crecimiento"}
+    _rl = [_short.get(k, k) for k in breakdown]
+    _rv = [(c.get("score", 0) / (c.get("max", 20) or 20)) * 100 for c in breakdown.values()]
+    radar_inner = radar_chart(_rl, _rv, size=4.8 * inch, accent=TONE_COLOR[score_tone]) \
+        if len(_rv) >= 3 else Spacer(1, 1)
+    _bal_line = (f"<font color='{BRAND_TXT.hexval()}'><b>{n_str}</b> fortaleza{'s' if n_str != 1 else ''}</font>"
+                 f"&nbsp;&nbsp;·&nbsp;&nbsp;<font color='{AMBER.hexval()}'><b>{n_warn}</b> advertencia{'s' if n_warn != 1 else ''}</font>"
+                 f"&nbsp;&nbsp;·&nbsp;&nbsp;<font color='{RED.hexval()}'><b>{n_red}</b> riesgo{'s' if n_red != 1 else ''}</font>")
+    radar_box = Table([
+        [Paragraph("<font size='7' color='#77777f'><b>PERFIL POR CATEGORÍA</b></font>",
+                   ParagraphStyle('rbt', leading=10, alignment=TA_CENTER))],
+        [radar_inner],
+        [Paragraph(f"<font size='8' color='#9a9aa0'>Cada eje 0–100 · Puntuación {total}/100</font><br/>"
+                   f"<font size='8.5'>{_bal_line}</font>",
+                   ParagraphStyle('rbc', leading=12, alignment=TA_CENTER))],
+    ], colWidths=[CW])
+    radar_box.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, -1), colors.white), ('BOX', (0, 0), (-1, -1), 0.5, HAIR),
+        ('ALIGN', (0, 0), (0, -1), 'CENTER'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 12), ('RIGHTPADDING', (0, 0), (-1, -1), 12),
+        ('TOPPADDING', (0, 0), (0, 0), 12), ('BOTTOMPADDING', (0, 0), (0, 0), 2),
+        ('TOPPADDING', (0, 1), (0, 1), 2), ('BOTTOMPADDING', (0, 1), (0, 1), 4),
+        ('TOPPADDING', (0, 2), (0, 2), 2), ('BOTTOMPADDING', (0, 2), (0, 2), 12),
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+    ]))
+
+    # ── Lectura del análisis — DEBAJO, ancho completo, 2 columnas ──
+    _exc_st = ParagraphStyle('exc', fontName='Helvetica', fontSize=8.6, leading=12.3,
+                             textColor=BODY, spaceAfter=8)
+
     def _exec_cell(label, text):
         return Paragraph(
-            f"<font size='6.8' color='{BRAND_TXT.hexval()}'><b>{_esc(label)}</b></font><br/>{text}", _exc_st)
-
+            f"<font size='6.6' color='{BRAND_TXT.hexval()}'><b>{_esc(label)}</b></font><br/>{text}", _exc_st)
     _pairs = [exec_items[i:i + 2] for i in range(0, len(exec_items), 2)]
     _grid = []
     for pr in _pairs:
@@ -682,28 +967,42 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         if len(cells) == 1:
             cells.append('')
         _grid.append(cells)
-    gt = Table(_grid, colWidths=[CW / 2.0] * 2)
-    _gcmds = [
+    _innerw = (CW - 28) / 2.0
+    inner_narr = Table(_grid, colWidths=[_innerw, _innerw])
+    _incmds = [
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ('TOPPADDING', (0, 0), (-1, -1), 5), ('BOTTOMPADDING', (0, 0), (-1, -1), 7),
-        ('LEFTPADDING', (0, 0), (0, -1), 0), ('RIGHTPADDING', (0, 0), (0, -1), 14),
-        ('LEFTPADDING', (1, 0), (1, -1), 10), ('RIGHTPADDING', (1, 0), (1, -1), 0),
+        ('TOPPADDING', (0, 0), (-1, -1), 4), ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('LEFTPADDING', (0, 0), (0, -1), 0), ('RIGHTPADDING', (0, 0), (0, -1), 16),
+        ('LEFTPADDING', (1, 0), (1, -1), 16), ('RIGHTPADDING', (1, 0), (1, -1), 0),
     ]
-    for i in range(len(_grid) - 1):
-        _gcmds.append(('LINEBELOW', (0, i), (-1, i), 0.4, HAIR))
-    gt.setStyle(TableStyle(_gcmds))
-    story.append(gt)
+    for _i in range(len(_grid) - 1):
+        _incmds.append(('LINEBELOW', (0, _i), (-1, _i), 0.4, HAIR))
+    inner_narr.setStyle(TableStyle(_incmds))
+    narr_box = Table([
+        [Paragraph("<font size='7' color='#77777f'><b>LECTURA DEL ANÁLISIS</b></font>",
+                   ParagraphStyle('nbt', leading=12, spaceAfter=6))],
+        [inner_narr],
+    ], colWidths=[CW])
+    narr_box.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, -1), colors.white), ('BOX', (0, 0), (-1, -1), 0.5, HAIR),
+        ('LEFTPADDING', (0, 0), (-1, -1), 14), ('RIGHTPADDING', (0, 0), (-1, -1), 14),
+        ('TOPPADDING', (0, 0), (0, 0), 11), ('BOTTOMPADDING', (0, 0), (0, 0), 2),
+        ('TOPPADDING', (0, 1), (0, 1), 0), ('BOTTOMPADDING', (0, 1), (0, 1), 10),
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+    ]))
 
-    # balance de señales al pie del resumen
-    story.append(Spacer(1, 4))
-    story.append(Paragraph(
-        f"<font size='6.8' color='#77777f'><b>BALANCE DE SEÑALES</b></font>&nbsp;&nbsp;&nbsp;"
-        f"<font color='{BRAND_TXT.hexval()}'><b>{n_str}</b> fortaleza{'s' if n_str != 1 else ''}</font>"
-        f"&nbsp;&nbsp;·&nbsp;&nbsp;"
-        f"<font color='{AMBER.hexval()}'><b>{n_warn}</b> advertencia{'s' if n_warn != 1 else ''}</font>"
-        f"&nbsp;&nbsp;·&nbsp;&nbsp;"
-        f"<font color='{RED.hexval()}'><b>{n_red}</b> riesgo{'s' if n_red != 1 else ''}</font>",
-        ParagraphStyle('bal', fontName='Helvetica', fontSize=9, leading=12)))
+    # Reparto de altura: cards · radar centrado · lectura, distribuido y simétrico
+    _rem2 = (PAGE_H - M_TOP - M_BOT) - 34
+    body2 = Table([[cg], [radar_box], [narr_box]], colWidths=[CW],
+                  rowHeights=[_rem2 * 0.27, _rem2 * 0.46, _rem2 * 0.27])
+    body2.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (0, 0), 'TOP'),
+        ('VALIGN', (0, 1), (0, 1), 'MIDDLE'),
+        ('VALIGN', (0, 2), (0, 2), 'BOTTOM'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ('TOPPADDING', (0, 0), (-1, -1), 0), ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+    ]))
+    story.append(body2)
 
     # ════════════════ PÁGINA 2 — VALORACIÓN ════════════════
     story.append(PageBreak())
