@@ -160,7 +160,7 @@ export default function InfoTooltip({ content, size = "sm", value, valueLabel }:
                         >
                           <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: t.color }} />
                           <span
-                            className="text-[13px] font-mono tabular-nums min-w-[68px]"
+                            className="text-[13px] tabular-nums min-w-[68px]"
                             style={{ color: active ? t.color : "#e4e4e7", fontWeight: active ? 600 : 400 }}
                           >
                             {t.value}

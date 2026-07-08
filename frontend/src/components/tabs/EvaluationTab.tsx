@@ -131,7 +131,7 @@ export default function EvaluationTab({ data }: { data: StockAnalysis }) {
                               <p className="text-zinc-500 mt-0.5">{adj.reason}</p>
                             </div>
                             <span
-                              className="shrink-0 font-mono font-semibold text-[11px]"
+                              className="shrink-0 tabular-nums font-semibold text-[11px]"
                               style={{ color: sevColor }}
                             >
                               {adj.adjustment > 0 ? `+${adj.adjustment}` : adj.adjustment}
@@ -371,7 +371,7 @@ function FScoreCard({ data }: { data: { score: number; max_score: number; level:
         </div>
         <div className="flex items-center gap-2">
           {data.fiscal_year && (
-            <span className="text-[9px] text-zinc-500 font-mono">{data.fiscal_year}</span>
+            <span className="text-[9px] text-zinc-500 tabular-nums">{data.fiscal_year}</span>
           )}
           <span
             className="text-[10px] font-semibold px-2 py-0.5 rounded-md"
