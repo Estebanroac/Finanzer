@@ -476,10 +476,13 @@ def metric_card(label, value, unit, pill, tone, delta, subnote, width):
     """Tarjeta de métrica estilo plantilla: barra de acento superior (color del
     tono) + etiqueta + pill de estado + valor grande + delta vs sector."""
     accent = TONE_COLOR[tone]
-    lab = Paragraph(f"<font name='Helvetica-Bold' size='6.8' color='#77777f'>{_esc(label.upper())}</font>",
+    # ancho de CONTENIDO de la card (padding 10+10): las tablas internas deben
+    # ceñirse a esto o la pill se sale del cuadro.
+    _iw = width - 20
+    lab = Paragraph(f"<font name='Helvetica-Bold' size='6.6' color='#77777f'>{_esc(label.upper())}</font>",
                     ParagraphStyle('mcl', leading=9))
-    pill_cell = status_pill(pill, tone) if pill else ''
-    head = Table([[lab, pill_cell]], colWidths=[width * 0.52, width * 0.48])
+    pill_cell = status_pill(pill, tone, 6.0) if pill else ''
+    head = Table([[lab, pill_cell]], colWidths=[_iw * 0.48, _iw * 0.52])
     head.setStyle(TableStyle([
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'), ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
         ('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (0, 0), (-1, -1), 0),
@@ -683,15 +686,16 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     def _kpi_card(value, label, w):
         c = Table([
             [Paragraph(f"<font name='Helvetica-Bold' size='16' color='{INK.hexval()}'>{_esc(value)}</font>",
-                       ParagraphStyle('kcv', leading=19))],
+                       ParagraphStyle('kcv', leading=19, alignment=TA_CENTER))],
             [Paragraph(f"<font name='Helvetica-Bold' size='6.4' color='#77777f'>{_esc(label.upper())}</font>",
-                       ParagraphStyle('kcl', leading=8.5))],
+                       ParagraphStyle('kcl', leading=8.5, alignment=TA_CENTER))],
         ], colWidths=[w])
         c.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, -1), colors.white), ('BOX', (0, 0), (-1, -1), 0.5, HAIR),
-            ('LEFTPADDING', (0, 0), (-1, -1), 10), ('RIGHTPADDING', (0, 0), (-1, -1), 6),
-            ('TOPPADDING', (0, 0), (0, 0), 12), ('BOTTOMPADDING', (0, 0), (0, 0), 2),
-            ('TOPPADDING', (0, 1), (0, 1), 0), ('BOTTOMPADDING', (0, 1), (0, 1), 12),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('LEFTPADDING', (0, 0), (-1, -1), 8), ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+            ('TOPPADDING', (0, 0), (0, 0), 13), ('BOTTOMPADDING', (0, 0), (0, 0), 2),
+            ('TOPPADDING', (0, 1), (0, 1), 0), ('BOTTOMPADDING', (0, 1), (0, 1), 13),
         ]))
         return c
 
@@ -871,6 +875,8 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         v, u = _mvu(raw, fmt)
         if r:
             pill, tone, _f, delta = r
+            # etiqueta más corta para la pill (que no envuelva en la card)
+            pill = {"Descuento profundo": "Gran descuento"}.get(pill, pill)
         else:
             pill, tone, delta = ("—" if raw is None else "En rango"), 'neu', ""
         return metric_card(label, v, u, pill, tone, delta, _benchtxt(bench, fmt), _cellw)
