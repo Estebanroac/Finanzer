@@ -22,6 +22,7 @@ from reportlab.platypus import (
 )
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
+from reportlab.lib.utils import ImageReader
 
 # ══════════════════════════════ IDENTIDAD ══════════════════════════════
 INK    = colors.HexColor('#141417')   # titulares
@@ -659,10 +660,17 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     story = []
 
     # ════════════════ PÁGINA 1 — PORTADA ════════════════
+    # Logo respetando su proporción real (el fuente es vertical 220x360; forzarlo
+    # a cuadrado lo aplastaba). Alto fijo, ancho proporcional.
     logo_cell = ''
+    _logo_col = 0.30 * inch
     if logo_path and os.path.isfile(logo_path):
         try:
-            logo_cell = Image(logo_path, width=0.34 * inch, height=0.34 * inch)
+            _iw, _ih = ImageReader(logo_path).getSize()
+            _lh = 0.40 * inch
+            _lw = _lh * (_iw / _ih)
+            logo_cell = Image(logo_path, width=_lw, height=_lh)
+            _logo_col = _lw + 0.11 * inch  # ancho de imagen + separación al wordmark
         except Exception:
             logo_cell = ''
     mast = Table([[
@@ -672,7 +680,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         Paragraph(f"INFORME DE ANÁLISIS FUNDAMENTAL<br/><font color='#77777f' size='7.6'>{_fecha_es()}</font>",
                   ParagraphStyle('doct', fontName='Helvetica-Bold', fontSize=8, leading=11,
                                  textColor=BRAND_TXT, alignment=TA_RIGHT)),
-    ]], colWidths=[0.44 * inch, 2.6 * inch, CW - 0.44 * inch - 2.6 * inch])
+    ]], colWidths=[_logo_col, 2.6 * inch, CW - _logo_col - 2.6 * inch])
     mast.setStyle(TableStyle([
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (0, 0), (-1, -1), 0),
@@ -832,19 +840,29 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         ('TOPPADDING', (0, 0), (-1, -1), 0), ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
     ]))
 
-    # Ensamblado de altura completa: reparte las 4 bandas en el alto del frame
-    _rem = (PAGE_H - M_TOP - M_BOT) - 60  # 60 ≈ masthead + regla ya consumidos
-    cover_body = Table([[_title_flow], [hero], [krow], [hl_row]],
-                       colWidths=[CW], rowHeights=[_rem * 0.19, _rem * 0.32, _rem * 0.29, _rem * 0.20])
-    cover_body.setStyle(TableStyle([
-        ('VALIGN', (0, 0), (0, 0), 'TOP'),
-        ('VALIGN', (0, 1), (0, 1), 'MIDDLE'),
-        ('VALIGN', (0, 2), (0, 2), 'MIDDLE'),
-        ('VALIGN', (0, 3), (0, 3), 'BOTTOM'),
+    # Ensamblado de portada: las 4 bandas (título · panel de score · KPIs · "lo
+    # esencial") separadas por GAPS VERTICALES IGUALES. El sobrante de altura se
+    # reparte a partes iguales entre las 3 separaciones → distribución simétrica
+    # y sin huecos desiguales, llenando la página. Las alturas naturales se miden
+    # con .wrap() para que el reparto sea exacto por acción.
+    _title_band = Table([[_title_flow]], colWidths=[CW])
+    _title_band.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
         ('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (0, 0), (-1, -1), 0),
         ('TOPPADDING', (0, 0), (-1, -1), 0), ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
     ]))
-    story.append(cover_body)
+    _bands = [_title_band, hero, krow, hl_row]
+    _frame_h = PAGE_H - M_TOP - M_BOT
+    _mast_h = mast.wrap(CW, _frame_h)[1] + 0.8 + 6  # regla (grosor) + spaceAfter
+    _top_pad = 26  # baja un poco el bloque de título para que no quede pegado al encabezado
+    _avail = _frame_h - _mast_h - 4 - _top_pad  # colchón anti-desborde a página 2
+    _content = sum(b.wrap(CW, _avail)[1] for b in _bands)
+    _gap = max(12.0, (_avail - _content) / 3.0)
+    story.append(Spacer(1, _top_pad))
+    for _i, _b in enumerate(_bands):
+        story.append(_b)
+        if _i < len(_bands) - 1:
+            story.append(Spacer(1, _gap))
     story.append(PageBreak())
 
     # ════════════════ PÁGINA 2 — RESUMEN EJECUTIVO ════════════════
