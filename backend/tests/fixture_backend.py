@@ -56,9 +56,36 @@ for _p in (BACKEND_DIR, LIB_DIR):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-FIXTURES_DIR = os.path.join(TESTS_DIR, "fixtures")
-GOLDEN_DIR = os.path.join(TESTS_DIR, "golden")
+FIXTURES_ROOT = os.path.join(TESTS_DIR, "fixtures")
+GOLDEN_ROOT = os.path.join(TESTS_DIR, "golden")
 TICKERS = ["NFLX", "JPM", "O", "FCX", "SNOW", "V"]
+# Juegos de datos: "local" (captura en desarrollo) y "prod" (inputs que recibió
+# el pipeline en Render). Cada uno tiene sus fixtures y sus golden.
+ENVS = ("local", "prod")
+DEFAULT_ENV = "local"
+
+
+def fixtures_dir(env=DEFAULT_ENV):
+    if env not in ENVS:
+        raise ValueError(f"entorno desconocido: {env!r} (válidos: {ENVS})")
+    return os.path.join(FIXTURES_ROOT, env)
+
+
+def golden_dir(env=DEFAULT_ENV):
+    if env not in ENVS:
+        raise ValueError(f"entorno desconocido: {env!r} (válidos: {ENVS})")
+    return os.path.join(GOLDEN_ROOT, env)
+
+
+def available_envs():
+    """Entornos con fixtures capturados para los 6 tickers."""
+    return [e for e in ENVS
+            if all(os.path.isfile(os.path.join(fixtures_dir(e), t, "metadata.json")) for t in TICKERS)]
+
+
+# Compatibilidad: rutas por defecto = entorno local.
+FIXTURES_DIR = fixtures_dir(DEFAULT_ENV)
+GOLDEN_DIR = golden_dir(DEFAULT_ENV)
 
 # URLs de arranque de sesión: no aportan datos al análisis, no se graban.
 _SESSION_URLS = ("https://finance.yahoo.com", "/v1/test/getcrumb")
@@ -590,10 +617,10 @@ def golden_paths(sym, base_dir=GOLDEN_DIR):
             os.path.join(base_dir, f"{sym.upper()}.pdf.txt"))
 
 
-def compute_outputs(symbols=None, fixtures_dir=FIXTURES_DIR):
-    """{sym: (analysis, pdf_bytes)} desde fixtures."""
+def compute_outputs(symbols=None, fixtures_path=FIXTURES_DIR):
+    """{sym: (analysis, pdf_bytes)} desde los fixtures de `fixtures_path`."""
     out = {}
-    with replay(fixtures_dir) as store:
+    with replay(fixtures_path) as store:
         for sym in symbols or TICKERS:
             a = run_analysis(sym, store)
             pdf = build_pdf_bytes(a, capture_date(store.meta[sym.upper()]))
@@ -626,9 +653,11 @@ def environment_info():
 
 if __name__ == "__main__":
     # Huella determinista de todas las salidas (la usa test_determinism en
-    # subprocesos con distintos PYTHONHASHSEED).
+    # subprocesos con distintos PYTHONHASHSEED). Uso: fixture_backend.py [env] [TICKERS...]
     import logging
     logging.disable(logging.CRITICAL)
-    res = compute_outputs(sys.argv[1:] or None)
+    args = sys.argv[1:]
+    env = args.pop(0) if args and args[0] in ENVS else DEFAULT_ENV
+    res = compute_outputs(args or None, fixtures_dir(env))
     print(json.dumps({s: [sha256(raw_json(a)), sha256(pdf)] for s, (a, pdf) in res.items()},
                      sort_keys=True))

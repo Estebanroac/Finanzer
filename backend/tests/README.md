@@ -5,6 +5,12 @@
 > Revisa el cambio con `diff_golden.py` y decide. Los bugs conocidos están en
 > `test_known_bugs.py` (ver abajo).
 
+## Juegos de datos (entornos)
+
+Hay dos juegos, cada uno con sus fixtures y sus golden: **`local`** (captura en desarrollo; es el que usan los
+tests de humo y de bugs conocidos) y **`prod`** (los inputs que recibió el pipeline en Render). La regresión y el
+determinismo corren contra **todos los juegos presentes**. `diff_golden.py` y `capture_fixtures.py` aceptan `--env`.
+
 ## Correr los tests
 
 ```bash
@@ -17,7 +23,7 @@ No se tocó `requirements.txt`, ni Render las instala.
 
 | Archivo | Qué cubre |
 |---|---|
-| `test_regression.py` | Para los 6 tickers, `_compute_analysis` desde los fixtures == `golden/<T>.json`, y el texto del PDF == `golden/<T>.pdf.txt`. Además: existen los puntos de enganche, los metadatos y ningún acceso queda sin fixture. |
+| `test_regression.py` | Para los 6 tickers, `_compute_analysis` desde los fixtures == `golden/<env>/<T>.json`, y el texto del PDF == `golden/<env>/<T>.pdf.txt`. Además: existen los puntos de enganche, los metadatos y ningún acceso queda sin fixture. |
 | `test_determinism.py` | Dos corridas en el mismo proceso, y dos procesos con `PYTHONHASHSEED` distinto, dan salidas idénticas **byte a byte** (análisis sin redondear y bytes del PDF). |
 | `test_smoke.py` | Piezas aisladas con valores calculados a mano: `piotroski_f_score`, `altman_z_score`, `calculate_wacc`, `dcf_multi_stage`, `dcf_sensitivity_analysis`, `calculate_score_v2`. |
 | `test_known_bugs.py` | Un test por bug verificado en `docs/RECON.md`, marcado `xfail(strict=True, raises=AssertionError)`. Afirma el comportamiento **correcto**, así que hoy falla. |
@@ -61,7 +67,7 @@ y commitea el golden en el mismo commit que el cambio que lo provocó.
 
 ## Fixtures: inputs crudos congelados
 
-`fixtures/<TICKER>/` congela lo que consume `_compute_analysis`. La línea base congela las **entradas**
+`fixtures/<env>/<TICKER>/` congela lo que consume `_compute_analysis`. La línea base congela las **entradas**
 y no solo las salidas: el veredicto depende del snapshot de datos (RECON C5).
 
 | Archivo | Contenido |
@@ -86,7 +92,7 @@ Tras grabar, el script reproduce el análisis desde los fixtures y exige que coi
 con la corrida en vivo. Si el pipeline consumió algo no grabado, falla y no sobrescribe nada.
 Para incluir Finnhub, exporta `FINNHUB_API_KEY` en tu terminal antes de capturar. La clave nunca se
 escribe: `token`, `crumb` y `apikey` se eliminan antes de guardar. Antes de commitear, verifícalo:
-`grep -rniE "ghp_|token=|apikey" tests/fixtures`.
+`grep -rniE "ghp_|token=|apikey" tests/fixtures tests/golden`.
 
 Recapturar cambia los inputs: después hay que regenerar los golden y revisar el diff.
 

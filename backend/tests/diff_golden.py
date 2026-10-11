@@ -2,7 +2,8 @@
 Diferencias entre el comportamiento ACTUAL (desde fixtures) y los golden.
 
     cd finanzer_next/backend
-    python3 tests/diff_golden.py                  # los 6 tickers
+    python3 tests/diff_golden.py                  # los 6 tickers, entorno local
+    python3 tests/diff_golden.py --env prod       # juego de producción
     python3 tests/diff_golden.py NFLX SNOW        # algunos
     python3 tests/diff_golden.py --full           # sin recortar listas/diff de PDF
     python3 tests/diff_golden.py --regenerate     # reescribe golden (pide confirmación)
@@ -139,31 +140,32 @@ def main(argv=None):
     ap.add_argument("--full", action="store_true", help="no recortar listados")
     ap.add_argument("--regenerate", action="store_true", help="reescribir los golden (explícito)")
     ap.add_argument("--yes", action="store_true", help="confirmar --regenerate sin preguntar")
-    ap.add_argument("--fixtures-dir", default=fb.FIXTURES_DIR)
-    ap.add_argument("--golden-dir", default=fb.GOLDEN_DIR)
+    ap.add_argument("--env", default=fb.DEFAULT_ENV, choices=fb.ENVS, help="juego de fixtures/golden")
     args = ap.parse_args(argv)
     logging.disable(logging.CRITICAL)
 
     syms = [t.upper() for t in args.tickers]
-    outputs = fb.compute_outputs(syms, args.fixtures_dir)
+    gdir = fb.golden_dir(args.env)
+    outputs = fb.compute_outputs(syms, fb.fixtures_dir(args.env))
+    print(f"entorno: {args.env}")
     any_diff = False
     current = {}
     for sym in syms:
         analysis, pdf = outputs[sym]
         text = fb.pdf_text(pdf)
         current[sym] = (analysis, text)
-        gj, gt = load_golden(sym, args.golden_dir)
+        gj, gt = load_golden(sym, gdir)
         any_diff |= report(sym, gj, gt, analysis, text, args.full)
 
     if args.regenerate:
         if not args.yes:
-            ans = input(f"\n¿Reescribir los golden de {', '.join(syms)} con el comportamiento actual? "
+            ans = input(f"\n¿Reescribir los golden [{args.env}] de {', '.join(syms)} con el comportamiento actual? "
                         "Escribe SI para confirmar: ")
             if ans.strip() != "SI":
                 print("Cancelado: no se escribió nada.")
                 return 2
         for sym in syms:
-            jpath, tpath = write_golden(sym, *current[sym], args.golden_dir)
+            jpath, tpath = write_golden(sym, *current[sym], gdir)
             print(f"golden escrito: {os.path.relpath(jpath)} , {os.path.relpath(tpath)}")
         return 0
 

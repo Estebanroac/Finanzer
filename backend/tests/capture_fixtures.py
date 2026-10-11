@@ -1,10 +1,14 @@
 """
 Captura (con red) los inputs crudos que consume _compute_analysis y los
-congela en tests/fixtures/<TICKER>/. Uso EXPLÍCITO, nunca automático:
+congela en tests/fixtures/<env>/<TICKER>/. Uso EXPLÍCITO, nunca automático:
 
     cd finanzer_next/backend
     python3 tests/capture_fixtures.py                 # los 6 tickers, si no existen
     python3 tests/capture_fixtures.py NFLX --force    # recapturar uno
+    python3 tests/capture_fixtures.py --env local     # juego de datos (local por defecto)
+
+El juego "prod" no se captura aquí: viene de /api/_capture en Render (ver
+import_prod_capture.py).
 
 Tras grabar, reproduce el análisis desde los fixtures y exige que sea
 idéntico (byte a byte) al de la corrida en vivo: si el pipeline consumió algo
@@ -24,7 +28,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import fixture_backend as fb  # noqa: E402
 
 
-def capture(sym, fixtures_dir, force):
+def capture(sym, fixtures_dir, force, env="local"):
     import yf_adapter
     d = os.path.join(fixtures_dir, sym)
     if os.path.isdir(d) and not force:
@@ -41,7 +45,7 @@ def capture(sym, fixtures_dir, force):
     yfd = store.yf.get(sym, {})
     meta = {
         "ticker": sym,
-        "environment": "local",
+        "environment": env,
         "captured_at_utc": now_local.astimezone(_dt.timezone.utc).isoformat(timespec="seconds"),
         "captured_at_local": now_local.replace(tzinfo=None).isoformat(timespec="seconds"),
         "timezone": str(now_local.tzinfo),
@@ -92,10 +96,12 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("tickers", nargs="*", default=fb.TICKERS)
     ap.add_argument("--force", action="store_true", help="sobrescribir fixtures existentes")
-    ap.add_argument("--fixtures-dir", default=fb.FIXTURES_DIR)
+    ap.add_argument("--env", default=fb.DEFAULT_ENV, choices=["local"],
+                    help="juego de datos a capturar (prod llega por /api/_capture)")
     args = ap.parse_args()
     logging.disable(logging.WARNING)
-    results = [capture(t.upper(), args.fixtures_dir, args.force) for t in args.tickers]
+    fdir = fb.fixtures_dir(args.env)
+    results = [capture(t.upper(), fdir, args.force, args.env) for t in args.tickers]
     sys.exit(0 if all(results) else 1)
 
 
