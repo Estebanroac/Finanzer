@@ -44,6 +44,41 @@ Es la señal de que quedó corregido: quita su `@pytest.mark.xfail`. El arreglo 
 así que revisa `diff_golden.py` y regenera los golden de forma explícita.
 `raises=AssertionError` garantiza que un test roto por otra causa (KeyError, etc.) **no** se cuente como bug conocido.
 
+## Juego `prod`: línea base de producción (etapa 2.1)
+
+**Por qué existe:** el veredicto cambia de signo según el entorno. En prod (Render), **Yahoo responde `401` a todas
+las llamadas a quoteSummary** (6 de 6 con reintentos), así que el pipeline siempre cae en `_fallback_yfinance` +
+Finnhub, con versiones distintas (Python 3.13.4, yfinance 1.7.0, pandas 3.0.6). Que los tests pasen con `local` no
+garantiza nada en prod.
+
+**Origen:** `GET /api/_capture/{symbol}` en `finanzer.app` (rama `capture-endpoint`, temporal). Devuelve los inputs
+crudos que recibe `get_ticker_info` en frío y responde 404 salvo que exista `CAPTURE_TOKEN` en el servidor y llegue
+en la cabecera `X-Capture-Token`. Captura actual: 11-oct-2026, ~23:50 UTC, commit `e0be7d4`, un solo proceso
+(mismo `hostname:pid` en captura y análisis), sin contaminación, Finnhub activo en los 6.
+
+**Importar** (desde la carpeta con `capture_<T>.json`, `analysis_<T>.json` y sus `.headers`):
+
+```bash
+python3 tests/import_prod_capture.py --src ~/Downloads/finanzer_prod_capture [--force]
+python3 tests/diff_golden.py --env prod --regenerate     # golden de prod (explícito)
+```
+
+El importador rechaza capturas con patrones de secreto. Además compara el replay con el `/api/analysis` que dio prod
+**solo si ambos los sirvió el mismo proceso** (la caché es por proceso) y guarda el resultado en
+`metadata.verification`. Verificado: **con el código de prod el replay coincide exactamente en los 6 tickers**. Con
+el de esta rama solo difieren los textos "anual" → "interanual" (commit `4bbfc18`, no desplegado).
+
+**Comparar entornos:**
+
+```bash
+python3 tests/diff_golden.py --local-vs-prod [TICKERS] [--full]
+```
+
+Por ticker muestra el camino de datos de cada entorno y las diferencias relevantes por bloque (más del 1% o cambio
+de valor). Para cada una indica el input crudo que la causa, con su procedencia en prod: `yfinance fallback`,
+`finnhub` (detectado repitiendo el replay con Finnhub desactivado) o `ausente en prod`. Los textos derivados y las
+celdas del grid se omiten salvo con `--full`.
+
 ## Revisar el efecto de un cambio: `diff_golden.py`
 
 ```bash

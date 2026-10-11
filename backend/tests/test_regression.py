@@ -71,3 +71,12 @@ def test_golden_is_valid_json(env_sym):
     env, sym = env_sym
     with open(fb.golden_paths(sym, fb.golden_dir(env))[0], encoding="utf-8") as fh:
         assert json.load(fh)["symbol"] == sym
+
+
+@pytest.mark.skipif(not {"local", "prod"} <= set(ENVS), reason="faltan los juegos local y prod")
+def test_local_vs_prod_compare_runs(capsys):
+    """El modo --local-vs-prod de diff_golden corre y atribuye causas."""
+    import diff_golden
+    assert diff_golden.compare_envs(["NFLX"], full=False) == 0
+    out = capsys.readouterr().out
+    assert "NFLX" in out and "← causa:" in out
