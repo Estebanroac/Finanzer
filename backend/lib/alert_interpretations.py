@@ -398,12 +398,12 @@ def _growth(ctx: Ctx):
     if g3 is None:
         return None
     if g3 < 0:
-        return _sig("warning", "Crecimiento", f"Ingresos en contracción — {_pct(g3)} anual",
-                    f"Las ventas caen a un ritmo del {_pct(abs(g3))} anual en los últimos 3 años: un negocio que se encoge "
+        return _sig("warning", "Crecimiento", f"Ingresos en contracción — {_pct(g3)} interanual",
+                    f"Las ventas caen un {_pct(abs(g3))} interanual: un negocio que se encoge "
                     "presiona márgenes y valoración salvo que sea un bache puntual con catalizador de recuperación.", 50)
     if g3 > 0.15:
-        return _sig("strength", "Crecimiento", f"Crecimiento fuerte — ingresos +{_pct(g3)} anual",
-                    f"Los ingresos crecen {_pct(g3)} anual compuesto en 3 años: ritmo de expansión elevado que, si mantiene "
+        return _sig("strength", "Crecimiento", f"Crecimiento fuerte — ingresos +{_pct(g3)} interanual",
+                    f"Los ingresos crecen {_pct(g3)} interanual: ritmo de expansión elevado que, si mantiene "
                     "márgenes, es el principal motor de creación de valor a largo plazo.", 42)
     return None
 
@@ -413,12 +413,12 @@ def _eps_growth(ctx: Ctx):
     if e3 is None:
         return None
     if e3 < -0.05:
-        return _sig("warning", "Crecimiento", f"Beneficio por acción en descenso — {_pct(e3)} anual",
-                    f"El BPA cae {_pct(abs(e3))} anual en 3 años: la rentabilidad por acción se erosiona, ya sea por menores "
+        return _sig("warning", "Crecimiento", f"Beneficio por acción en descenso — {_pct(e3)} interanual",
+                    f"El BPA cae {_pct(abs(e3))} interanual: la rentabilidad por acción se erosiona, ya sea por menores "
                     "beneficios o por dilución. Contrasta con la evolución de ingresos para ubicar la causa.", 40)
     if e3 > 0.15:
-        return _sig("strength", "Crecimiento", f"BPA en fuerte expansión — +{_pct(e3)} anual",
-                    f"El beneficio por acción crece {_pct(e3)} anual compuesto: la rentabilidad para el accionista se "
+        return _sig("strength", "Crecimiento", f"BPA en fuerte expansión — +{_pct(e3)} interanual",
+                    f"El beneficio por acción crece {_pct(e3)} interanual: la rentabilidad para el accionista se "
                     "acelera, a menudo apoyada en apalancamiento operativo o recompras.", 34)
     return None
 
