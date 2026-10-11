@@ -933,11 +933,6 @@ async def health():
     return {"status": "ok"}
 
 
-# Captura temporal de inputs crudos (etapa 2.1). 404 salvo CAPTURE_TOKEN + cabecera.
-from capture_endpoint import install as _install_capture  # noqa: E402
-_install_capture(app)
-
-
 # ── Serve frontend static files ──
 # The frontend is built as a static export in ../frontend/out
 _frontend_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "frontend", "out")
