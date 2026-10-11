@@ -26,6 +26,17 @@ Redacción: los parámetros token/crumb/apikey nunca se registran y, por
 defensa en profundidad, el JSON final se filtra con una regex `token=...` y
 se reemplazan los valores de FINNHUB_API_KEY y CAPTURE_TOKEN si aparecieran.
 
+Concurrencia: los envoltorios son globales al proceso mientras dura la
+captura. Se registra solo lo del símbolo pedido y se cuentan las llamadas
+ajenas que pasaron por ellos; si hubo alguna, metadata.contaminated = true.
+El último-bueno-conocido del ticker se guarda antes y se restaura al final.
+
+Multi-proceso: la caché es por proceso. metadata.process trae hostname y pid,
+y las peticiones autenticadas con X-Capture-Token (también /api/analysis)
+reciben la cabecera X-Capture-Served-By: hostname:pid para comprobar que
+captura y análisis los sirvió el mismo proceso. Las peticiones normales no se
+modifican.
+
 Retirada: borrar este archivo y las 2 líneas que lo registran en main.py, o
 simplemente quitar CAPTURE_TOKEN en Render (el endpoint vuelve a dar 404).
 """
@@ -36,6 +47,7 @@ import math
 import os
 import platform
 import re
+import socket
 import threading
 
 from fastapi import APIRouter, Header, HTTPException
@@ -87,6 +99,16 @@ def _clean(params):
     return {k: v for k, v in (params or {}).items() if str(k).lower() not in _SECRET_PARAMS}
 
 
+def _process():
+    return {"hostname": socket.gethostname(), "pid": os.getpid()}
+
+
+def _authorized(header_value):
+    expected = (os.environ.get("CAPTURE_TOKEN") or "").strip()
+    return bool(expected and header_value
+                and hmac.compare_digest(header_value.encode(), expected.encode()))
+
+
 def _redact(text):
     text = _SECRET_RE.sub(r"\1REDACTED", text)
     for var in ("FINNHUB_API_KEY", "CAPTURE_TOKEN"):
@@ -100,7 +122,13 @@ class _Recorder:
     def __init__(self, sym):
         self.sym = sym
         self.http, self.yf, self.finnhub, self.unrecorded = [], {}, [], []
+        self.foreign = {}  # llamadas de OTROS símbolos que pasaron por los envoltorios
         self._lock = threading.Lock()
+
+    def count_foreign(self, kind, symbol):
+        with self._lock:
+            key = f"{kind}:{symbol}"
+            self.foreign[key] = self.foreign.get(key, 0) + 1
 
 
 class _RecordingSession:
@@ -109,7 +137,12 @@ class _RecordingSession:
 
     def get(self, url, params=None, **kw):
         r = self._real.get(url, params=params, **kw)
-        if not any(u in url for u in _SESSION_URLS) and url.rstrip("/").rsplit("/", 1)[-1].upper() == self._rec.sym:
+        if any(u in url for u in _SESSION_URLS):
+            return r
+        url_sym = url.rstrip("/").rsplit("/", 1)[-1].upper()
+        if url_sym != self._rec.sym:
+            self._rec.count_foreign("yahoo_http", url_sym)
+        else:
             entry = {"url": url, "params": _clean(params), "status": r.status_code}
             try:
                 entry["body_json"] = json.loads(r.text)
@@ -152,6 +185,7 @@ class _RecordingTicker:
             raise AttributeError(name)
         val = getattr(self._real, name)
         if not self._mine:
+            self._rec.count_foreign(f"yfinance.{name}", str(getattr(self._real, "ticker", "?")).upper())
             return val
         with self._rec._lock:
             if name in _FRAMES:
@@ -179,7 +213,7 @@ def _capture(sym):
     # En frío SOLO para este ticker (incluye el último-bueno-conocido, para que
     # la captura sea reproducible desde cero).
     yf_adapter._cache.pop(sym, None)
-    yf_adapter._best_cache.pop(sym, None)
+    prev_best = yf_adapter._best_cache.pop(sym, None)  # se restaura en finally
     finnhub_fallback._cache.pop(sym, None)
     for prefix in ("profile", "financials"):
         data_fetcher._data_cache._cache.pop(data_fetcher._data_cache._make_key(prefix, sym), None)
@@ -195,15 +229,19 @@ def _capture(sym):
 
     def _rec_finnhub_get(path, params):
         resp = orig_get(path, params)
-        if str((params or {}).get("symbol", "")).upper() == sym:
+        fsym = str((params or {}).get("symbol", "")).upper()
+        if fsym == sym:
             with rec._lock:
                 rec.finnhub.append({"path": path, "params": _clean(params), "response": resp})
+        else:
+            rec.count_foreign("finnhub", fsym)
         return resp
 
     started = _dt.datetime.now(_dt.timezone.utc)
     yf_adapter._ensure_session = _rec_ensure_session
     yfinance.Ticker = lambda s, *a, **kw: _RecordingTicker(orig_ticker, rec, s, *a, **kw)
     finnhub_fallback._get = _rec_finnhub_get
+    degraded = None
     try:
         yf_adapter.get_ticker_info(sym)
         entry = yf_adapter._cache.get(sym)
@@ -214,6 +252,10 @@ def _capture(sym):
         finnhub_fallback._get = orig_get
         if isinstance(yf_adapter._session, _RecordingSession):
             yf_adapter._session = yf_adapter._session._real
+        # La captura corre sin LKG (reproducible desde cero), pero la defensa
+        # de los usuarios no se pierde: se repone el snapshot previo si existía.
+        if prev_best is not None:
+            yf_adapter._best_cache[sym] = prev_best
 
     return {
         "metadata": {
@@ -241,7 +283,12 @@ def _capture(sym):
                 "fallback_yfinance_used": "fast_info" in rec.yf,
                 "yfinance_attributes": sorted(rec.yf.keys()),
             },
+            "process": _process(),
             "cold_capture": True,
+            "lkg_restored": prev_best is not None,
+            "foreign_calls": sum(rec.foreign.values()),
+            "foreign_calls_detail": rec.foreign,
+            "contaminated": bool(rec.foreign),
             "unrecorded_yfinance_access": rec.unrecorded,
         },
         "yahoo_http": rec.http,
@@ -252,8 +299,7 @@ def _capture(sym):
 
 @router.get("/api/_capture/{symbol}", include_in_schema=False)
 def capture_inputs(symbol: str, x_capture_token: str = Header(default="")):
-    expected = (os.environ.get("CAPTURE_TOKEN") or "").strip()
-    if not expected or not x_capture_token or not hmac.compare_digest(x_capture_token.encode(), expected.encode()):
+    if not _authorized(x_capture_token):
         raise HTTPException(status_code=404, detail="Not Found")
     sym = symbol.upper().strip()
     if not _SYMBOL_RE.match(sym):
@@ -262,3 +308,36 @@ def capture_inputs(symbol: str, x_capture_token: str = Header(default="")):
         payload = _capture(sym)
     body = _redact(json.dumps(payload, ensure_ascii=False, default=str))
     return Response(body, media_type="application/json", headers={"Cache-Control": "no-store"})
+
+
+class _ServedByMiddleware:
+    """ASGI puro. SOLO para peticiones con X-Capture-Token válido añade la
+    cabecera X-Capture-Served-By: hostname:pid (sirve para comprobar que la
+    captura y el /api/analysis posterior salieron del mismo proceso). Las
+    demás peticiones pasan sin ninguna modificación."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope.get("type") != "http":
+            return await self.app(scope, receive, send)
+        token = dict(scope.get("headers") or []).get(b"x-capture-token", b"").decode("latin-1")
+        if not _authorized(token):
+            return await self.app(scope, receive, send)
+        p = _process()
+        served_by = f"{p['hostname']}:{p['pid']}".encode("latin-1", "replace")
+
+        async def _send(message):
+            if message.get("type") == "http.response.start":
+                message = dict(message)
+                message["headers"] = list(message.get("headers") or []) + [(b"x-capture-served-by", served_by)]
+            await send(message)
+
+        return await self.app(scope, receive, _send)
+
+
+def install(app):
+    """Registra el endpoint y el middleware de procedencia (inerte sin CAPTURE_TOKEN)."""
+    app.include_router(router)
+    app.add_middleware(_ServedByMiddleware)
