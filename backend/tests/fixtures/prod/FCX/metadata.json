@@ -1,0 +1,93 @@
+{
+ "captured_at_local": "2026-10-11T23:50:25",
+ "captured_at_utc": "2026-10-11T23:50:25+00:00",
+ "cold_capture": true,
+ "contaminated": false,
+ "environment": "prod",
+ "finnhub": {
+  "calls": 1,
+  "key_present": true,
+  "note": "",
+  "participated": true
+ },
+ "foreign_calls": 0,
+ "foreign_calls_detail": {},
+ "lkg_restored": false,
+ "process": {
+  "hostname": "srv-d4o6ua7diees738789cg-hibernate-7bb975785c-xdf6t",
+  "pid": 58
+ },
+ "served_by": {
+  "analysis": "srv-d4o6ua7diees738789cg-hibernate-7bb975785c-xdf6t:58",
+  "capture": "srv-d4o6ua7diees738789cg-hibernate-7bb975785c-xdf6t:58",
+  "same_process": true
+ },
+ "server": {
+  "git_commit": "e0be7d422d090c9d19bdb3a76e6984247b7d4917",
+  "render_service": "finanzer"
+ },
+ "source": "GET /api/_capture (finanzer.app, Render)",
+ "ticker": "FCX",
+ "timezone": "UTC",
+ "unrecorded_yfinance_access": [],
+ "verification": {
+  "checked_with_prod_code": {
+   "commit": "e0be7d4",
+   "matches_prod_analysis": true
+  },
+  "compared_with_prod_analysis": true,
+  "differences": {
+   "alertas": [
+    [
+     "alerts.strengths[3].detail",
+     "El beneficio por acción crece 53.1% anual compuesto: la rentabilidad para el accionista se acelera, a menudo apoyada en apalancamiento operativo o recompras.",
+     "El beneficio por acción crece 53.1% interanual: la rentabilidad para el accionista se acelera, a menudo apoyada en apalancamiento operativo o recompras."
+    ],
+    [
+     "alerts.strengths[3].reason",
+     "BPA en fuerte expansión — +53.1% anual",
+     "BPA en fuerte expansión — +53.1% interanual"
+    ],
+    [
+     "alerts.warnings[1].detail",
+     "Las ventas caen a un ritmo del 24.2% anual en los últimos 3 años: un negocio que se encoge presiona márgenes y valoración salvo que sea un bache puntual con catalizador de recuperación.",
+     "Las ventas caen un 24.2% interanual: un negocio que se encoge presiona márgenes y valoración salvo que sea un bache puntual con catalizador de recuperación."
+    ],
+    [
+     "alerts.warnings[1].reason",
+     "Ingresos en contracción — -24.2% anual",
+     "Ingresos en contracción — -24.2% interanual"
+    ]
+   ]
+  },
+  "explained_by": "Solo textos de alertas de crecimiento 'anual' -> 'interanual' (commit 4bbfc18 de redesign-motor, no desplegado en prod). Con el codigo de prod coincide exactamente.",
+  "matches_prod_analysis": false,
+  "replay_misses": []
+ },
+ "versions": {
+  "curl_cffi": "0.16.3",
+  "pandas": "3.0.6",
+  "python": "3.13.4",
+  "yfinance": "1.7.0"
+ },
+ "yahoo": {
+  "degraded": false,
+  "fallback_yfinance_used": true,
+  "http_calls": 6,
+  "http_statuses": [
+   401,
+   401,
+   401,
+   401,
+   401,
+   401
+  ],
+  "yfinance_attributes": [
+   "balance_sheet",
+   "cashflow",
+   "fast_info",
+   "income_stmt",
+   "info"
+  ]
+ }
+}

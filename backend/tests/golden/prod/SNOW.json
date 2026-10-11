@@ -1,0 +1,505 @@
+{
+  "alerts": {
+    "red_flags": [
+      {
+        "category": "Solidez financiera",
+        "detail": "El beneficio operativo apenas cubre -173.0 veces el gasto por intereses: un margen peligrosamente fino que deja a la empresa muy expuesta ante cualquier caída del resultado operativo.",
+        "reason": "Cobertura de intereses crítica — -173.0x"
+      },
+      {
+        "category": "Valoración",
+        "detail": "La empresa no tiene beneficios positivos en los últimos doce meses, así que el P/E no es interpretable; la valoración depende de que vuelva a generar utilidades.",
+        "reason": "P/E no significativo — pérdidas"
+      },
+      {
+        "category": "Valor intrínseco",
+        "detail": "El precio excede en 74% el valor justo estimado por el DCF ($97): sostenerlo exige asumir escenarios de crecimiento muy optimistas.",
+        "reason": "Sobrevalorada según DCF — -74%"
+      },
+      {
+        "category": "Rentabilidad",
+        "detail": "El retorno sobre el capital invertido no cubre su costo (ROIC -169.4% vs WACC 11.9%): crecer a estos retornos destruye valor para el accionista en lugar de crearlo.",
+        "reason": "Destruye valor — spread -181.2%"
+      },
+      {
+        "category": "Rentabilidad",
+        "detail": "La empresa destruye valor para el accionista: no genera retorno sobre su patrimonio. Conviene revisar si es puntual o refleja un deterioro sostenido del negocio.",
+        "reason": "ROE negativo — -69.2%"
+      },
+      {
+        "category": "Rentabilidad",
+        "detail": "La empresa pierde dinero a nivel neto: cada dólar vendido no cubre el total de costos, gastos, intereses e impuestos. Insostenible si se prolonga.",
+        "reason": "Margen neto negativo — -28.4%"
+      }
+    ],
+    "strengths": [
+      {
+        "category": "Crecimiento",
+        "detail": "Los ingresos crecen 32.0% interanual: ritmo de expansión elevado que, si mantiene márgenes, es el principal motor de creación de valor a largo plazo.",
+        "reason": "Crecimiento fuerte — ingresos +32.0% interanual"
+      },
+      {
+        "category": "Solidez financiera",
+        "detail": "El Altman Z de 15.46 (> 2.99) ubica a la empresa en zona segura: baja probabilidad estadística de problemas de solvencia según el modelo.",
+        "reason": "Solvencia sólida — Altman Z 15.46"
+      },
+      {
+        "category": "Solidez financiera",
+        "detail": "La deuda neta equivale a ~1 año de EBITDA, un nivel cómodo que deja holgura financiera y capacidad de maniobra ante imprevistos.",
+        "reason": "Deuda baja — 1.2x EBITDA"
+      }
+    ],
+    "warnings": [
+      {
+        "category": "Flujo de caja",
+        "detail": "El flujo de caja libre equivale a menos de la mitad del beneficio contable (FCF/BN -84%): parte de las utilidades no se está convirtiendo en caja real, señal a vigilar (devengos, capex o capital de trabajo).",
+        "reason": "Calidad del beneficio baja"
+      },
+      {
+        "category": "Valoración",
+        "detail": "Por cada dólar invertido en la acción, el negocio genera solo 0.9% de caja libre: se está pagando caro cada dólar de flujo, habitual en compañías de alto crecimiento o valoración exigente.",
+        "reason": "FCF yield bajo — 0.9%"
+      }
+    ]
+  },
+  "altman_z": {
+    "details": {
+      "X1_wc_ta": 0.1446,
+      "X2_re_ta": -1.0396,
+      "X3_ebit_ta": -0.1571,
+      "X4_mcap_tl": 18.0546,
+      "grey_threshold": 1.1,
+      "model": "Z''-Score (No Manufactura)",
+      "safe_threshold": 2.6
+    },
+    "interpretation": "Z''-Score (No Manufactura): Zona segura — bajo riesgo de bancarrota",
+    "model": "Z''-Score (No Manufactura)",
+    "z_score": 15.46,
+    "zone": "safe"
+  },
+  "company_type": "blend",
+  "dcf": {
+    "fair_value": 96.73,
+    "growth_rate": 0.3204,
+    "margin_of_safety": -2.813605031,
+    "terminal_growth": 0.025,
+    "upside": -73.7780920711,
+    "value_composition": {
+      "stage1_pct": 23.9,
+      "stage2_pct": 25.9,
+      "terminal_pct": 50.2
+    },
+    "wacc": 0.1186595915
+  },
+  "errors": [],
+  "graham_number": null,
+  "is_growth": true,
+  "key_metrics": {
+    "asset_turnover": 0.512887880037,
+    "beta": 1.3392653,
+    "book_value_per_share": 5.45380385488,
+    "buyback_yield": null,
+    "cash": 4029686000.0,
+    "cash_ratio": 0.911345003529,
+    "current_ratio": 1.29873661457,
+    "de": 1.42461990061,
+    "debt_to_assets": 0.300149521024,
+    "dividend_yield": null,
+    "earnings_growth": null,
+    "earnings_yield": -0.0086052749436,
+    "ebitda": -1083169000.0,
+    "ebitda_margin": -0.23125138505,
+    "enterprise_value": 128855825168.0,
+    "eps": -3.1744,
+    "ev_ebitda": -118.961884219,
+    "ev_revenue": 27.5101004939,
+    "fcf_yield": 0.00858441104121,
+    "ffo": -979620000.0,
+    "ffo_payout": null,
+    "forward_pe": 166.443923256,
+    "free_cash_flow": 1117213000.0,
+    "gross_margin": 0.671686010044,
+    "interest_coverage": -172.953121234,
+    "interest_expense": 8298000.0,
+    "inventory_turnover": null,
+    "market_cap": 130144397168.0,
+    "net_debt": -1288572000.0,
+    "net_debt_to_ebitda": 1.18963153488,
+    "net_income": -1331616000.0,
+    "net_margin": -0.284293627638,
+    "operating_cash_flow": 1221942000.0,
+    "operating_income": -1435165000.0,
+    "operating_margin": -0.306400842367,
+    "p_ffo": -132.851919283,
+    "payout_ratio": null,
+    "pb": 67.6390322176,
+    "pe": -116.207791913,
+    "peg": null,
+    "pfcf": 116.490228066,
+    "price_52w_high": 384.559997559,
+    "price_52w_low": 118.300003052,
+    "ps": 27.785204434,
+    "quick_ratio": 0.8828,
+    "revenue": 4683946000.0,
+    "revenue_growth": 0.3204,
+    "roa": -0.145810755987,
+    "roe": -0.692071418251,
+    "roic": -1.69366316303,
+    "roic_wacc_spread": -1.81232275453,
+    "shareholder_yield": null,
+    "shares_outstanding": 352800000.0,
+    "total_assets": 9132495000.0,
+    "total_debt": 2741114000.0,
+    "total_equity": 1924102000.0,
+    "wacc": 0.1186595915
+  },
+  "piotroski_f": {
+    "details": {
+      "asset_turnover_improved": {
+        "detail": "Eficiencia de activos mejoró",
+        "passed": true
+      },
+      "cfo_positive": {
+        "detail": "Cash Flow Operativo positivo",
+        "passed": true
+      },
+      "current_ratio_improved": {
+        "detail": "Liquidez no mejoró",
+        "passed": false
+      },
+      "debt_reduced": {
+        "detail": "Deuda LP estable o disminuyó",
+        "passed": true
+      },
+      "earnings_quality": {
+        "detail": "CFO > Net Income (earnings de calidad)",
+        "passed": true
+      },
+      "gross_margin_improved": {
+        "detail": "Margen bruto mejoró",
+        "passed": true
+      },
+      "no_dilution": {
+        "detail": "Sin datos de acciones históricas",
+        "passed": false
+      },
+      "roa_improved": {
+        "detail": "ROA no mejoró",
+        "passed": false
+      },
+      "roa_positive": {
+        "detail": "ROA negativo o N/A",
+        "passed": false
+      }
+    },
+    "fiscal_year": "",
+    "interpretation": "Neutral - Monitorear indicadores",
+    "level": "Bueno",
+    "max_score": 9,
+    "score": 5
+  },
+  "price": 368.890014648,
+  "price_history": {
+    "52w_high": 384.559997559,
+    "52w_low": 118.300003052,
+    "beta": 1.3392653
+  },
+  "profile": {
+    "country": "Unknown",
+    "currency": "USD",
+    "description": "",
+    "exchange": "NYQ",
+    "industry": "Software—Application",
+    "market_cap": 130144397168.0,
+    "name": "Snowflake Inc.",
+    "sector": "Technology"
+  },
+  "ratios": {
+    "asset_turnover": 0.512887880037,
+    "beta": 1.3392653,
+    "cash_ratio": 0.911345003529,
+    "current_ratio": 1.29873661457,
+    "debt_to_assets": 0.300149521024,
+    "debt_to_equity": 1.42461990061,
+    "dividend_yield": null,
+    "earnings_yield": -0.0086052749436,
+    "ebitda": -1083169000.0,
+    "ebitda_margin": -0.23125138505,
+    "enterprise_value": 128855825168.0,
+    "eps": -3.1744,
+    "ev_ebitda": -118.961884219,
+    "ev_fcf": 115.336847287,
+    "ev_revenue": 27.5101004939,
+    "fcf": 1117213000.0,
+    "fcf_to_net_income": -0.838990369596,
+    "fcf_yield": 0.00858441104121,
+    "ffo": -979620000.0,
+    "ffo_payout": null,
+    "ffo_per_share": -2.77670068027,
+    "forward_pe": 166.443923256,
+    "graham_number": null,
+    "gross_margin": 0.671686010044,
+    "interest_coverage": -172.953121234,
+    "inventory_turnover": null,
+    "market_cap": 130144397168.0,
+    "net_debt": -1288572000.0,
+    "net_debt_to_ebitda": 1.18963153488,
+    "net_income": -1331616000.0,
+    "net_margin": -0.284293627638,
+    "operating_cash_flow": 1221942000.0,
+    "operating_margin": -0.306400842367,
+    "p_fcf": 116.490228066,
+    "p_ffo": -132.851919283,
+    "payout_ratio": null,
+    "pb": 67.6390322176,
+    "pe": -116.207791913,
+    "peg": null,
+    "ps": 27.785204434,
+    "quick_ratio": 0.8828,
+    "roa": -0.145810755987,
+    "roe": -0.692071418251,
+    "roic": -1.69366316303
+  },
+  "score": {
+    "breakdown": {
+      "Calidad de Ganancias": {
+        "adjustments": [
+          {
+            "adjustment": 0,
+            "metric": "Piotroski F-Score",
+            "reason": "Neutral (5/9)",
+            "severity": "ok",
+            "value": "5/9"
+          },
+          {
+            "adjustment": 3,
+            "metric": "Cash Flow Operativo",
+            "reason": "Genera efectivo operativo",
+            "severity": "good",
+            "value": "Positivo"
+          },
+          {
+            "adjustment": 3,
+            "metric": "Free Cash Flow",
+            "reason": "FCF positivo",
+            "severity": "good",
+            "value": "Positivo"
+          }
+        ],
+        "details": [
+          "Neutral (5/9)",
+          "Genera efectivo operativo",
+          "FCF positivo"
+        ],
+        "max": 20,
+        "score": 16
+      },
+      "Crecimiento": {
+        "adjustments": [
+          {
+            "adjustment": 5,
+            "metric": "Crecimiento Ingresos 3Y",
+            "reason": "Crecimiento excepcional (32.0%)",
+            "severity": "excellent",
+            "value": "32.0%"
+          },
+          {
+            "adjustment": 2,
+            "metric": "Growth Company",
+            "reason": "Perfil de alto crecimiento",
+            "severity": "good",
+            "value": "Sí"
+          }
+        ],
+        "details": [
+          "Crecimiento excepcional (32.0%)",
+          "Perfil de alto crecimiento"
+        ],
+        "max": 20,
+        "score": 17
+      },
+      "Rentabilidad": {
+        "adjustments": [
+          {
+            "adjustment": -6,
+            "metric": "ROE",
+            "reason": "Negativo (-69.2%) - Destruye valor para accionistas",
+            "severity": "severe",
+            "value": "-69.2%"
+          },
+          {
+            "adjustment": -4,
+            "metric": "ROA",
+            "reason": "Negativo (-14.6%) - Perdiendo dinero con sus activos",
+            "severity": "severe",
+            "value": "-14.6%"
+          },
+          {
+            "adjustment": -5,
+            "metric": "Margen Operativo",
+            "reason": "Negativo (-30.6%) - Operaciones no rentables",
+            "severity": "severe",
+            "value": "-30.6%"
+          },
+          {
+            "adjustment": -3,
+            "metric": "Margen Neto",
+            "reason": "Negativo (-28.4%)",
+            "severity": "severe",
+            "value": "-28.4%"
+          },
+          {
+            "adjustment": -3,
+            "metric": "ROIC vs WACC",
+            "reason": "Destruye valor (ROIC -169.4% < WACC 11.9%, spread -181.2%)",
+            "severity": "severe",
+            "value": "-181.2%"
+          }
+        ],
+        "details": [
+          "Negativo (-69.2%) - Destruye valor para accionistas",
+          "Negativo (-14.6%) - Perdiendo dinero con sus activos",
+          "Negativo (-30.6%) - Operaciones no rentables",
+          "Negativo (-28.4%)",
+          "Destruye valor (ROIC -169.4% < WACC 11.9%, spread -181.2%)"
+        ],
+        "max": 20,
+        "score": 0
+      },
+      "Solidez Financiera": {
+        "adjustments": [
+          {
+            "adjustment": 6,
+            "metric": "Altman Z-Score",
+            "reason": "Zona segura - Muy baja probabilidad de quiebra",
+            "severity": "excellent",
+            "value": "15.46"
+          },
+          {
+            "adjustment": 0,
+            "metric": "Current Ratio",
+            "reason": "Liquidez justa - Cubre sus obligaciones (1.30x)",
+            "severity": "ok",
+            "value": "1.30x"
+          },
+          {
+            "adjustment": -5,
+            "metric": "Deuda/Equity",
+            "reason": "Deuda muy alta - Riesgo financiero elevado (1.42x)",
+            "severity": "severe",
+            "value": "1.42x"
+          },
+          {
+            "adjustment": -3,
+            "metric": "Cobertura Intereses",
+            "reason": "Riesgo de cobertura",
+            "severity": "severe",
+            "value": "-173.0x"
+          }
+        ],
+        "details": [
+          "Zona segura - Muy baja probabilidad de quiebra",
+          "Liquidez justa - Cubre sus obligaciones (1.30x)",
+          "Deuda muy alta - Riesgo financiero elevado (1.42x)",
+          "Riesgo de cobertura"
+        ],
+        "max": 20,
+        "score": 8
+      },
+      "Valoración": {
+        "adjustments": [
+          {
+            "adjustment": -4,
+            "metric": "P/FCF",
+            "reason": "Muy alto (116.5x)",
+            "severity": "severe",
+            "value": "116.5x"
+          }
+        ],
+        "details": [
+          "Muy alto (116.5x)"
+        ],
+        "max": 20,
+        "score": 6
+      }
+    },
+    "level": "Precaución",
+    "max_score": 100,
+    "total_score": 47
+  },
+  "sector_info": {
+    "mapped_sector": "technology",
+    "sector": "Technology",
+    "sector_etf": "XLK"
+  },
+  "sensitivity": {
+    "base_case": {
+      "discount_rate": 0.1186595915,
+      "fair_value": 112.98,
+      "growth_rate": 0.3204
+    },
+    "discount_rates": [
+      0.0987,
+      0.1087,
+      0.1187,
+      0.1287,
+      0.1387
+    ],
+    "growth_rates": [
+      0.2704,
+      0.2954,
+      0.3204,
+      0.3454,
+      0.3704
+    ],
+    "interpretation": "Muy probablemente sobrevalorada (100% de escenarios)",
+    "is_valid": true,
+    "matrix": [
+      [
+        123.08,
+        106.95,
+        94.35,
+        84.25,
+        75.99
+      ],
+      [
+        135.19,
+        117.27,
+        103.27,
+        92.06,
+        82.89
+      ],
+      [
+        148.39,
+        128.5,
+        112.98,
+        100.55,
+        90.39
+      ],
+      [
+        162.76,
+        140.73,
+        123.53,
+        109.78,
+        98.54
+      ],
+      [
+        178.41,
+        154.02,
+        135.0,
+        119.79,
+        107.37
+      ]
+    ],
+    "statistics": {
+      "current_price": 368.890014648,
+      "max_value": 178.41,
+      "mean_value": 117.0416,
+      "median_value": 112.98,
+      "min_value": 75.99,
+      "upside_base_case": -69.3729850325
+    },
+    "warnings": []
+  },
+  "symbol": "SNOW"
+}
