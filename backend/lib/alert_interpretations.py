@@ -23,6 +23,11 @@ except ImportError:  # ejecución como script suelto
     from financial_ratios import SECTOR_THRESHOLDS, ThresholdConfig, is_financial_sector
 
 
+from settings import cfg
+
+_A = cfg("thresholds.alerts")
+
+
 # ── formato ──────────────────────────────────────────────────────────────
 def _pct(v: Optional[float], dec: int = 1) -> str:
     return "N/A" if v is None else f"{v * 100:.{dec}f}%"
@@ -34,7 +39,7 @@ def _x(v: Optional[float], dec: int = 1) -> str:
 
 def _years_ebitda(nde: float) -> str:
     """Redacta la deuda neta/EBITDA como 'años de EBITDA'."""
-    return "menos de un año" if nde < 1 else f"~{nde:.0f} año{'s' if nde >= 1.5 else ''}"
+    return "menos de un año" if nde < 1 else f"~{nde:.0f} año{'s' if nde >= _A['years_ebitda_plural_from'] else ''}"
 
 
 # ── contexto ─────────────────────────────────────────────────────────────
@@ -78,40 +83,41 @@ def _sig(kind: str, category: str, headline: str, detail: str, weight: int) -> D
 # ── VALORACIÓN ────────────────────────────────────────────────────────────
 def _pe(ctx: Ctx):
     pe = ctx.g("pe")
+    T = _A["pe"]
     if pe is None:
         return None
     if pe < 0:
         return _sig("risk", "Valoración", "P/E no significativo — pérdidas",
                     "La empresa no tiene beneficios positivos en los últimos doce meses, así que el "
-                    "P/E no es interpretable; la valoración depende de que vuelva a generar utilidades.", 60)
+                    "P/E no es interpretable; la valoración depende de que vuelva a generar utilidades.", T["w_loss"])
     sector_pe = ctx.c.get("sector_pe")
     peg = ctx.g("peg")
     # brecha vs sector (si hay dato) o umbral absoluto
     ref = sector_pe if (sector_pe and sector_pe > 0) else None
     dev = (pe - ref) / ref if ref else None
-    if (dev is not None and dev > 0.30) or pe > 35:
+    if (dev is not None and dev > T["premium_dev"]) or pe > T["premium_abs"]:
         # ¿el crecimiento lo justifica? (PEG / spread)
-        justified = (peg is not None and 0 < peg < 1.5) or (ctx.spread is not None and ctx.spread > 0.05)
+        justified = (peg is not None and 0 < peg < T["justify_peg_max"]) or (ctx.spread is not None and ctx.spread > T["justify_spread_min"])
         base = (f"El mercado paga {pe:.1f}x beneficios"
                 + (f", un {dev*100:+.0f}% sobre la mediana del sector ({ref:.1f}x)" if ref else ", un múltiplo exigente"))
-        if pe > 50 or (dev is not None and dev > 0.6):
+        if pe > T["strong_abs"] or (dev is not None and dev > T["strong_dev"]):
             if justified:
                 return _sig("warning", "Valoración", f"Valoración exigente — P/E {pe:.1f}x",
                             base + ". Es un precio alto que el mercado sostiene por su crecimiento y retornos; "
-                            "deja poco margen de error: cualquier decepción en resultados puede corregir con fuerza.", 62)
+                            "deja poco margen de error: cualquier decepción en resultados puede corregir con fuerza.", T["w_demanding"])
             return _sig("risk", "Valoración", f"Sobrevaloración — P/E {pe:.1f}x",
                         base + ". A este nivel el precio ya descuenta un escenario muy optimista; el riesgo de "
-                        "corrección ante cualquier tropiezo en resultados es elevado.", 68)
+                        "corrección ante cualquier tropiezo en resultados es elevado.", T["w_overvalued"])
         # moderado: si el crecimiento lo justifica, no es alerta (evita chocar con
         # el DCF); si no, es una advertencia de prima.
         if justified:
             return None
         return _sig("warning", "Valoración", f"Prima sobre el sector — P/E {pe:.1f}x",
-                    base + ". Conviene verificar que el crecimiento y los márgenes justifiquen pagar por encima de sus pares.", 48)
-    if ref and dev is not None and dev < -0.20:
+                    base + ". Conviene verificar que el crecimiento y los márgenes justifiquen pagar por encima de sus pares.", T["w_premium"])
+    if ref and dev is not None and dev < T["discount_dev"]:
         return _sig("strength", "Valoración", f"Cotiza con descuento — P/E {pe:.1f}x",
                     f"Paga {pe:.1f}x beneficios frente a {ref:.1f}x del sector ({dev*100:.0f}%): un descuento que puede ser "
-                    "oportunidad si los fundamentos acompañan, o reflejar un riesgo que el mercado ya percibe.", 40)
+                    "oportunidad si los fundamentos acompañan, o reflejar un riesgo que el mercado ya percibe.", T["w_discount"])
     return None
 
 
@@ -121,18 +127,19 @@ def _ev_ebitda(ctx: Ctx):
     # EV/EBITDA no es una métrica significativa para bancos/aseguradoras.
     if ev is None or ev <= 0 or ctx.is_financial:
         return None
-    if ev > 25:
+    T = _A["ev_ebitda"]
+    if ev > T["high_abs"]:
         return _sig("warning", "Valoración", f"EV/EBITDA alto — {ev:.1f}x",
                     f"El valor de empresa equivale a {ev:.1f} veces su EBITDA anual, un múltiplo caro en términos absolutos "
-                    "que exige un crecimiento sostenido para no defraudar.", 44)
-    if sec and sec > 0 and ev > 1.3 * sec:
+                    "que exige un crecimiento sostenido para no defraudar.", T["w_high"])
+    if sec and sec > 0 and ev > T["premium_mult"] * sec:
         return _sig("warning", "Valoración", f"EV/EBITDA sobre el sector — {ev:.1f}x",
                     f"Se paga {ev:.1f}x EBITDA frente a {sec:.1f}x de sus pares ({(ev-sec)/sec*100:+.0f}%): el mercado le "
-                    "asigna una prima que conviene contrastar con su ventaja competitiva.", 38)
-    if sec and sec > 0 and ev < 0.7 * sec:
+                    "asigna una prima que conviene contrastar con su ventaja competitiva.", T["w_premium"])
+    if sec and sec > 0 and ev < T["discount_mult"] * sec:
         return _sig("strength", "Valoración", f"EV/EBITDA barato — {ev:.1f}x",
                     f"Cotiza a {ev:.1f}x EBITDA frente a {sec:.1f}x del sector: valoración atractiva sobre flujo operativo, "
-                    "a validar que no responda a un deterioro del negocio.", 34)
+                    "a validar que no responda a un deterioro del negocio.", T["w_discount"])
     return None
 
 
@@ -146,11 +153,11 @@ def _fcf_yield(ctx: Ctx):
     if fy < t.fcf_yield_low:
         return _sig("warning", "Valoración", f"FCF yield bajo — {_pct(fy)}",
                     f"Por cada dólar invertido en la acción, el negocio genera solo {_pct(fy)} de caja libre: se está "
-                    "pagando caro cada dólar de flujo, habitual en compañías de alto crecimiento o valoración exigente.", 42)
+                    "pagando caro cada dólar de flujo, habitual en compañías de alto crecimiento o valoración exigente.", _A["fcf_yield"]["w_low"])
     if fy >= t.fcf_yield_high:
         return _sig("strength", "Valoración", f"FCF yield atractivo — {_pct(fy)}",
                     f"El negocio genera {_pct(fy)} de caja libre sobre su capitalización: un rendimiento alto que da margen "
-                    "para dividendos, recompras o reducir deuda sin depender del mercado.", 46)
+                    "para dividendos, recompras o reducir deuda sin depender del mercado.", _A["fcf_yield"]["w_high"])
     return None
 
 
@@ -158,16 +165,17 @@ def _peg(ctx: Ctx):
     peg = ctx.g("peg")
     # PEG > 5 casi siempre es un artefacto (crecimiento cercano a cero infla el
     # denominador); en financieras el PEG es poco fiable. Se descartan.
-    if peg is None or peg <= 0 or peg > 5 or ctx.is_financial:
+    T = _A["peg"]
+    if peg is None or peg <= 0 or peg > T["artifact_above"] or ctx.is_financial:
         return None
-    if peg < 1.0:
+    if peg < T["attractive_below"]:
         return _sig("strength", "Valoración", f"PEG atractivo — {peg:.2f}",
                     f"Ajustado por su crecimiento esperado, el P/E resulta barato (PEG {peg:.2f} < 1): se paga menos de 1x "
-                    "por cada punto de crecimiento, señal clásica de crecimiento a precio razonable (GARP).", 36)
-    if peg > 2.0:
+                    "por cada punto de crecimiento, señal clásica de crecimiento a precio razonable (GARP).", T["w_attractive"])
+    if peg > T["high_above"]:
         return _sig("warning", "Valoración", f"PEG elevado — {peg:.2f}",
                     f"El precio va muy por delante del crecimiento previsto (PEG {peg:.2f} > 2): incluso creciendo, "
-                    "tardaría en 'justificar' su múltiplo actual.", 34)
+                    "tardaría en 'justificar' su múltiplo actual.", T["w_high"])
     return None
 
 
@@ -176,22 +184,23 @@ def _dcf(ctx: Ctx):
     fv = ctx.dcf.get("fair_value")
     if up is None or fv is None:
         return None
-    if up >= 30:
+    T = _A["dcf"]
+    if up >= T["upside_strong"]:
         return _sig("strength", "Valor intrínseco", f"Infravalorada según DCF — +{up:.0f}%",
                     f"El descuento de flujos estima un valor justo de ${fv:,.0f}, un {up:.0f}% por encima del precio: hay "
-                    "margen de seguridad si se cumplen los supuestos de crecimiento y rentabilidad del modelo.", 52)
-    if up >= 15:
+                    "margen de seguridad si se cumplen los supuestos de crecimiento y rentabilidad del modelo.", T["w_undervalued"])
+    if up >= T["upside_moderate"]:
         return _sig("strength", "Valor intrínseco", f"Cotiza bajo su valor justo — +{up:.0f}%",
                     f"El DCF sitúa el valor intrínseco en ${fv:,.0f} (+{up:.0f}% sobre el precio): potencial teórico "
-                    "moderado, condicionado a que el negocio ejecute según lo previsto.", 40)
-    if up <= -30:
+                    "moderado, condicionado a que el negocio ejecute según lo previsto.", T["w_below_fair"])
+    if up <= -T["upside_strong"]:
         return _sig("risk", "Valor intrínseco", f"Sobrevalorada según DCF — {up:.0f}%",
                     f"El precio excede en {abs(up):.0f}% el valor justo estimado por el DCF (${fv:,.0f}): sostenerlo exige "
-                    "asumir escenarios de crecimiento muy optimistas.", 58)
-    if up <= -15:
+                    "asumir escenarios de crecimiento muy optimistas.", T["w_overvalued"])
+    if up <= -T["upside_moderate"]:
         return _sig("warning", "Valor intrínseco", f"Prima sobre el valor justo — {up:.0f}%",
                     f"El precio está un {abs(up):.0f}% por encima del valor intrínseco estimado (${fv:,.0f}): el mercado ya "
-                    "paga buena parte del crecimiento futuro.", 40)
+                    "paga buena parte del crecimiento futuro.", T["w_premium"])
     return None
 
 
@@ -201,28 +210,29 @@ def _roe(ctx: Ctx):
     roa = ctx.g("roa")
     if roe is None:
         return None
-    if roe < 0 and roa is not None and roa > 0.03:
+    T = _A["roe"]
+    if roe < 0 and roa is not None and roa > T["negative_equity_min_roa"]:
         return _sig("strength", "Rentabilidad", "ROE negativo por recompras, no por pérdidas",
                     f"El ROE es negativo por un patrimonio contable erosionado por recompras agresivas, no por pérdidas: el "
-                    f"ROA de {_pct(roa)} confirma que los activos siguen siendo rentables.", 30)
+                    f"ROA de {_pct(roa)} confirma que los activos siguen siendo rentables.", T["w_buyback_negative"])
     if roe < 0:
         return _sig("risk", "Rentabilidad", f"ROE negativo — {_pct(roe)}",
                     f"La empresa destruye valor para el accionista: no genera retorno sobre su patrimonio. Conviene "
-                    "revisar si es puntual o refleja un deterioro sostenido del negocio.", 55)
+                    "revisar si es puntual o refleja un deterioro sostenido del negocio.", T["w_negative"])
     t = ctx.t
-    if roe >= 0.40:
+    if roe >= T["exceptional"]:
         return _sig("strength", "Rentabilidad", f"ROE excepcional — {_pct(roe)}",
                     f"Genera {_pct(roe)} de retorno sobre el patrimonio, muy por encima del umbral de excelencia del sector "
                     f"({_pct(t.roe_high, 0)}). Un nivel tan alto suele estar amplificado por una base de patrimonio reducida "
-                    "por recompras acumuladas, más que por rentabilidad operativa pura.", 44)
+                    "por recompras acumuladas, más que por rentabilidad operativa pura.", T["w_exceptional"])
     if roe >= t.roe_high:
         return _sig("strength", "Rentabilidad", f"ROE elevado — {_pct(roe)}",
                     f"Genera {_pct(roe)} de retorno sobre el patrimonio, por encima del umbral de excelencia del sector "
-                    f"({_pct(t.roe_high, 0)}): uso muy eficiente del capital de los accionistas.", 44)
+                    f"({_pct(t.roe_high, 0)}): uso muy eficiente del capital de los accionistas.", T["w_high"])
     if roe < t.roe_low:
         return _sig("warning", "Rentabilidad", f"ROE bajo — {_pct(roe)}",
                     f"El retorno sobre el patrimonio ({_pct(roe)}) queda por debajo del mínimo del sector "
-                    f"({_pct(t.roe_low, 0)}): el capital de los accionistas no se está remunerando con holgura.", 40)
+                    f"({_pct(t.roe_low, 0)}): el capital de los accionistas no se está remunerando con holgura.", T["w_low"])
     return None
 
 
@@ -237,17 +247,18 @@ def _spread(ctx: Ctx):
     tail = ""
     if roic is not None and wacc is not None:
         tail = f" (ROIC {_pct(roic)} vs WACC {_pct(wacc)})"
-    if sp >= 0.10:
+    T = _A["spread"]
+    if sp >= T["strong"]:
         return _sig("strength", "Rentabilidad", f"Crea mucho valor — spread +{_pct(sp)}",
                     f"El retorno sobre el capital invertido supera con holgura su costo{tail}: cada dólar reinvertido crea "
-                    "valor económico sustancial, el rasgo de un negocio con ventaja competitiva duradera.", 50)
-    if sp >= 0.03:
+                    "valor económico sustancial, el rasgo de un negocio con ventaja competitiva duradera.", T["w_strong"])
+    if sp >= T["positive"]:
         return _sig("strength", "Rentabilidad", f"Crea valor — spread +{_pct(sp)}",
-                    f"El ROIC supera al costo de capital{tail}: la reinversión genera valor, no solo crecimiento.", 42)
+                    f"El ROIC supera al costo de capital{tail}: la reinversión genera valor, no solo crecimiento.", T["w_positive"])
     if sp < 0:
         return _sig("risk", "Rentabilidad", f"Destruye valor — spread {_pct(sp)}",
                     f"El retorno sobre el capital invertido no cubre su costo{tail}: crecer a estos retornos destruye valor "
-                    "para el accionista en lugar de crearlo.", 56)
+                    "para el accionista en lugar de crearlo.", T["w_negative"])
     return None
 
 
@@ -256,24 +267,25 @@ def _margins(ctx: Ctx):
     t = ctx.t
     nm = ctx.g("net_margin")
     gm = ctx.g("gross_margin")
+    T = _A["margins"]
     out = []
     if nm is not None:
         if nm < 0:
             out.append(_sig("risk", "Rentabilidad", f"Margen neto negativo — {_pct(nm)}",
                             "La empresa pierde dinero a nivel neto: cada dólar vendido no cubre el total de costos, "
-                            "gastos, intereses e impuestos. Insostenible si se prolonga.", 54))
-        elif nm >= t.net_margin_low * 1.5:
+                            "gastos, intereses e impuestos. Insostenible si se prolonga.", T["w_net_negative"]))
+        elif nm >= t.net_margin_low * T["net_solid_mult"]:
             out.append(_sig("strength", "Rentabilidad", f"Margen neto sólido — {_pct(nm)}",
                             f"De cada dólar vendido quedan {nm*100:.0f} centavos de beneficio tras todos los costos: señala "
-                            "poder de fijación de precios y eficiencia por encima de la media de su sector.", 38))
+                            "poder de fijación de precios y eficiencia por encima de la media de su sector.", T["w_net_solid"]))
         elif nm < t.net_margin_low:
             out.append(_sig("warning", "Rentabilidad", f"Margen neto estrecho — {_pct(nm)}",
                             f"Solo {nm*100:.1f} centavos de cada dólar vendido llegan a beneficio: márgenes finos que dejan "
-                            "poco colchón ante subidas de costos o presión competitiva.", 36))
-    if gm is not None and gm > 0.60:
+                            "poco colchón ante subidas de costos o presión competitiva.", T["w_net_thin"]))
+    if gm is not None and gm > T["gross_high"]:
         out.append(_sig("strength", "Rentabilidad", f"Margen bruto muy alto — {_pct(gm)}",
                         f"Retiene {gm*100:.0f}% de cada venta tras el costo directo del producto: un margen bruto así suele "
-                        "reflejar marca fuerte, tecnología propia o poder de precios difícil de replicar.", 34))
+                        "reflejar marca fuerte, tecnología propia o poder de precios difícil de replicar.", T["w_gross_high"]))
     # devolver la de mayor peso (evita saturar con 3 de rentabilidad)
     return max(out, key=lambda s: s["weight"]) if out else None
 
@@ -283,14 +295,15 @@ def _leverage(ctx: Ctx):
     nde = ctx.g("net_debt_to_ebitda")
     if nde is None or ctx.is_financial:
         return None
+    T = _A["leverage"]
     if nde < 0:
         return _sig("strength", "Solidez financiera", "Caja neta — sin deuda financiera neta",
                     "La empresa tiene más efectivo que deuda: posición de caja neta que le da flexibilidad para invertir, "
-                    "resistir ciclos o retribuir al accionista sin depender de la financiación externa.", 40)
+                    "resistir ciclos o retribuir al accionista sin depender de la financiación externa.", T["w_net_cash"])
     t = ctx.t
     if nde > t.net_debt_ebitda_high:
-        sev = "risk" if nde > t.net_debt_ebitda_high * 1.5 else "warning"
-        w = 66 if sev == "risk" else 50
+        sev = "risk" if nde > t.net_debt_ebitda_high * T["risk_mult"] else "warning"
+        w = T["w_high_risk"] if sev == "risk" else T["w_high_warning"]
         return _sig(sev, "Solidez financiera", f"Apalancamiento elevado — {nde:.1f}x EBITDA",
                     f"Harían falta {_years_ebitda(nde)} de EBITDA íntegro para saldar la deuda neta. Por encima de "
                     f"{t.net_debt_ebitda_high:.0f}x el margen ante una caída de resultados o una subida de tipos se estrecha: "
@@ -298,7 +311,7 @@ def _leverage(ctx: Ctx):
     if nde < t.net_debt_ebitda_low:
         return _sig("strength", "Solidez financiera", f"Deuda baja — {nde:.1f}x EBITDA",
                     f"La deuda neta equivale a {_years_ebitda(nde)} de EBITDA, un nivel cómodo que deja holgura financiera y "
-                    "capacidad de maniobra ante imprevistos.", 30)
+                    "capacidad de maniobra ante imprevistos.", T["w_low"])
     return None
 
 
@@ -306,19 +319,20 @@ def _coverage(ctx: Ctx):
     ic = ctx.g("interest_coverage")
     if ic is None or ctx.is_financial:
         return None
-    if ic < 1.5:
+    T = _A["coverage"]
+    if ic < T["critical_below"]:
         return _sig("risk", "Solidez financiera", f"Cobertura de intereses crítica — {ic:.1f}x",
                     f"El beneficio operativo apenas cubre {ic:.1f} veces el gasto por intereses: un margen peligrosamente "
-                    "fino que deja a la empresa muy expuesta ante cualquier caída del resultado operativo.", 64)
+                    "fino que deja a la empresa muy expuesta ante cualquier caída del resultado operativo.", T["w_critical"])
     t = ctx.t
     if ic < t.interest_coverage_low:
         return _sig("warning", "Solidez financiera", f"Cobertura de intereses justa — {ic:.1f}x",
                     f"El resultado operativo cubre {ic:.1f}x el gasto por intereses, por debajo del mínimo cómodo "
-                    f"({t.interest_coverage_low:.0f}x): deja poco margen si los beneficios se resienten.", 46)
-    if ic > 12:
+                    f"({t.interest_coverage_low:.0f}x): deja poco margen si los beneficios se resienten.", T["w_tight"])
+    if ic > T["comfortable_above"]:
         return _sig("strength", "Solidez financiera", f"Deuda fácilmente servible — cobertura {ic:.0f}x",
                     f"El beneficio operativo cubre {ic:.0f} veces el gasto por intereses: la carga financiera es holgada y "
-                    "no compromete la operación.", 28)
+                    "no compromete la operación.", T["w_comfortable"])
     return None
 
 
@@ -331,11 +345,11 @@ def _liquidity(ctx: Ctx):
         return _sig("warning", "Solidez financiera", f"Liquidez ajustada — current ratio {cr:.2f}x",
                     f"Los activos corrientes cubren solo {cr:.2f}x los pasivos de corto plazo: la empresa podría tensionarse "
                     "para atender sus obligaciones inmediatas si el flujo de caja se resiente. Habitual y manejable en "
-                    "negocios con caja muy predecible.", 44)
-    if cr > 3:
+                    "negocios con caja muy predecible.", _A["liquidity"]["w_tight"])
+    if cr > _A["liquidity"]["ample_above"]:
         return _sig("strength", "Solidez financiera", f"Liquidez muy holgada — current ratio {cr:.2f}x",
                     f"Los activos corrientes multiplican por {cr:.1f} los pasivos de corto plazo: cero tensión de caja, "
-                    "aunque un exceso tan amplio podría señalar capital ocioso que no se está reinvirtiendo.", 26)
+                    "aunque un exceso tan amplio podría señalar capital ocioso que no se está reinvirtiendo.", _A["liquidity"]["w_ample"])
     return None
 
 
@@ -348,11 +362,11 @@ def _altman(ctx: Ctx):
         return _sig("risk", "Solidez financiera", f"Riesgo de insolvencia — Altman Z {z:.2f}",
                     f"El modelo de Altman sitúa a la empresa en zona de riesgo (Z {z:.2f} < 1.81), donde históricamente se "
                     "concentran las compañías con problemas de solvencia a 2 años. Señal de alerta que exige revisar deuda y "
-                    "generación de caja.", 90)
+                    "generación de caja.", _A["altman"]["w_distress"])
     if zone == "safe":
         return _sig("strength", "Solidez financiera", f"Solvencia sólida — Altman Z {z:.2f}",
                     f"El Altman Z de {z:.2f} (> 2.99) ubica a la empresa en zona segura: baja probabilidad estadística de "
-                    "problemas de solvencia según el modelo.", 32)
+                    "problemas de solvencia según el modelo.", _A["altman"]["w_safe"])
     return None
 
 
@@ -360,19 +374,20 @@ def _altman(ctx: Ctx):
 def _fcf(ctx: Ctx):
     fcf = ctx.g("fcf") if ctx.g("fcf") is not None else ctx.g("free_cash_flow")
     neg_years = ctx.c.get("fcf_trend_negative_years")
-    if neg_years is not None and neg_years >= 2:
+    T = _A["fcf"]
+    if neg_years is not None and neg_years >= T["recurrent_negative_years"]:
         note = "" if ctx.is_growth else " Si no es una fase de inversión deliberada, compromete la autofinanciación."
         return _sig("risk", "Flujo de caja", f"Quema de caja recurrente — {neg_years} años",
                     f"La empresa lleva {neg_years} años consecutivos con flujo de caja libre negativo: consume más efectivo "
-                    f"del que genera.{note}", 70)
+                    f"del que genera.{note}", T["w_recurrent"])
     if fcf is not None and fcf < 0:
         if ctx.is_growth:
             return _sig("warning", "Flujo de caja", "Flujo de caja libre negativo",
                         "La empresa quema caja, algo esperable en una fase de fuerte inversión para crecer; la clave es que "
-                        "esa inversión se traduzca en ingresos y márgenes futuros.", 40)
+                        "esa inversión se traduzca en ingresos y márgenes futuros.", T["w_negative_growth"])
         return _sig("risk", "Flujo de caja", "Flujo de caja libre negativo",
                     "El negocio consume más efectivo del que genera tras invertir: depende de caja acumulada, deuda o "
-                    "ampliaciones para sostenerse. Sostenible solo de forma transitoria.", 58)
+                    "ampliaciones para sostenerse. Sostenible solo de forma transitoria.", T["w_negative"])
     return None
 
 
@@ -380,15 +395,16 @@ def _earnings_quality(ctx: Ctx):
     q = ctx.g("fcf_to_net_income")
     if q is None:
         return None
-    if q < 0.5:
+    T = _A["earnings_quality"]
+    if q < T["low_below"]:
         return _sig("warning", "Flujo de caja", "Calidad del beneficio baja",
                     f"El flujo de caja libre equivale a menos de la mitad del beneficio contable (FCF/BN {q:.0%}): parte de "
                     "las utilidades no se está convirtiendo en caja real, señal a vigilar (devengos, capex o capital de "
-                    "trabajo).", 44)
-    if q > 1.0:
+                    "trabajo).", T["w_low"])
+    if q > T["high_above"]:
         return _sig("strength", "Flujo de caja", "Beneficio de alta calidad",
                     f"El flujo de caja libre supera al beneficio contable (FCF/BN {q:.0%}): las utilidades se convierten "
-                    "íntegramente en efectivo, señal de contabilidad conservadora y negocio que 'respira' caja.", 32)
+                    "íntegramente en efectivo, señal de contabilidad conservadora y negocio que 'respira' caja.", T["w_high"])
     return None
 
 
@@ -400,11 +416,11 @@ def _growth(ctx: Ctx):
     if g3 < 0:
         return _sig("warning", "Crecimiento", f"Ingresos en contracción — {_pct(g3)} interanual",
                     f"Las ventas caen un {_pct(abs(g3))} interanual: un negocio que se encoge "
-                    "presiona márgenes y valoración salvo que sea un bache puntual con catalizador de recuperación.", 50)
-    if g3 > 0.15:
+                    "presiona márgenes y valoración salvo que sea un bache puntual con catalizador de recuperación.", _A["growth"]["w_contraction"])
+    if g3 > _A["growth"]["strong_above"]:
         return _sig("strength", "Crecimiento", f"Crecimiento fuerte — ingresos +{_pct(g3)} interanual",
                     f"Los ingresos crecen {_pct(g3)} interanual: ritmo de expansión elevado que, si mantiene "
-                    "márgenes, es el principal motor de creación de valor a largo plazo.", 42)
+                    "márgenes, es el principal motor de creación de valor a largo plazo.", _A["growth"]["w_strong"])
     return None
 
 
@@ -412,14 +428,15 @@ def _eps_growth(ctx: Ctx):
     e3 = ctx.c.get("eps_cagr_3y")
     if e3 is None:
         return None
-    if e3 < -0.05:
+    T = _A["eps_growth"]
+    if e3 < T["decline_below"]:
         return _sig("warning", "Crecimiento", f"Beneficio por acción en descenso — {_pct(e3)} interanual",
                     f"El BPA cae {_pct(abs(e3))} interanual: la rentabilidad por acción se erosiona, ya sea por menores "
-                    "beneficios o por dilución. Contrasta con la evolución de ingresos para ubicar la causa.", 40)
-    if e3 > 0.15:
+                    "beneficios o por dilución. Contrasta con la evolución de ingresos para ubicar la causa.", T["w_decline"])
+    if e3 > T["strong_above"]:
         return _sig("strength", "Crecimiento", f"BPA en fuerte expansión — +{_pct(e3)} interanual",
                     f"El beneficio por acción crece {_pct(e3)} interanual: la rentabilidad para el accionista se "
-                    "acelera, a menudo apoyada en apalancamiento operativo o recompras.", 34)
+                    "acelera, a menudo apoyada en apalancamiento operativo o recompras.", T["w_strong"])
     return None
 
 
@@ -429,14 +446,15 @@ def _piotroski(ctx: Ctx):
         return None
     fy = ctx.piotroski.get("fiscal_year")
     yr = f" ({fy})" if fy else ""
-    if f >= 8:
+    T = _A["piotroski"]
+    if f >= T["strong_min"]:
         return _sig("strength", "Crecimiento", f"Fortaleza financiera excepcional — Piotroski {f}/9",
                     f"Cumple {f} de las 9 señales de Piotroski{yr} sobre mejora en rentabilidad, estructura de capital y "
-                    "eficiencia: un perfil de salud financiera en clara mejora año contra año.", 40)
-    if f <= 2:
+                    "eficiencia: un perfil de salud financiera en clara mejora año contra año.", T["w_strong"])
+    if f <= T["weak_max"]:
         return _sig("risk", "Crecimiento", f"Debilidad financiera — Piotroski {f}/9",
                     f"Solo cumple {f} de las 9 señales de Piotroski{yr}: múltiples indicadores contables de rentabilidad, "
-                    "deuda o eficiencia se están deteriorando en el último ejercicio.", 60)
+                    "deuda o eficiencia se están deteriorando en el último ejercicio.", T["w_weak"])
     return None
 
 
@@ -447,14 +465,15 @@ def _deterioration(ctx: Ctx):
     ny = ctx.c.get("fcf_trend_negative_years")
     if r5 is not None and r5 < 0:
         reasons.append(f"ingresos decrecientes a 5 años ({_pct(r5)})")
-    if om3 is not None and om3 < -0.03:
+    T = _A["deterioration"]
+    if om3 is not None and om3 < T["margin_drop_below"]:
         reasons.append(f"márgenes operativos en caída ({_pct(om3)} en 3 años)")
-    if ny is not None and ny >= 2:
+    if ny is not None and ny >= T["negative_fcf_years"]:
         reasons.append(f"FCF negativo {ny} años")
-    if len(reasons) >= 2:
+    if len(reasons) >= T["min_signals"]:
         return _sig("risk", "Deterioro estructural", "Deterioro estructural del negocio",
                     "Coinciden varias señales de fondo: " + "; ".join(reasons) + ". Cuando se dan juntas, suelen apuntar a "
-                    "un debilitamiento sostenido del negocio, no a un mal trimestre puntual.", 80)
+                    "un debilitamiento sostenido del negocio, no a un mal trimestre puntual.", T["w"])
     return None
 
 
@@ -467,21 +486,21 @@ def _beta(ctx: Ctx):
     if b > t.beta_high:
         return _sig("warning", "Riesgo de mercado", f"Volatilidad elevada — Beta {b:.2f}",
                     f"La acción amplifica ~{(b-1)*100:.0f}% los movimientos del mercado: cae más en las correcciones y sube "
-                    "más en los rallies. Razonable con horizonte largo y tolerancia al riesgo; resta si buscas estabilidad.", 38)
+                    "más en los rallies. Razonable con horizonte largo y tolerancia al riesgo; resta si buscas estabilidad.", _A["beta"]["w_high"])
     if b < t.beta_low:
         return _sig("strength", "Riesgo de mercado", f"Perfil defensivo — Beta {b:.2f}",
                     f"Con beta {b:.2f}, la acción se mueve menos que el mercado y tiende a amortiguar las caídas: un perfil "
-                    "más estable, útil para reducir la volatilidad de una cartera.", 28)
+                    "más estable, útil para reducir la volatilidad de una cartera.", _A["beta"]["w_low"])
     return None
 
 
 def _drawdown(ctx: Ctx):
     dd = ctx.c.get("max_drawdown_1y")
-    if dd is None or dd >= -0.30:
+    if dd is None or dd >= _A["drawdown"]["deep_below"]:
         return None
     return _sig("warning", "Riesgo de mercado", f"Caída pronunciada en el año — {_pct(dd)}",
                 f"La acción ha llegado a caer {_pct(abs(dd))} desde máximos en el último año: una corrección profunda que "
-                "puede ser oportunidad si el negocio sigue intacto, o el mercado anticipando un deterioro.", 34)
+                "puede ser oportunidad si el negocio sigue intacto, o el mercado anticipando un deterioro.", _A["drawdown"]["w"])
 
 
 INTERPRETERS = [
@@ -520,7 +539,7 @@ def build_signals(ratios: Dict[str, Any], contextual: Dict[str, Any], *,
         if s and s["kind"] in buckets:
             buckets[s["kind"]].append(s)
 
-    def _clean(items, cap=6):
+    def _clean(items, cap=_A["max_per_group"]):
         # ordena por materialidad (peso) y limita para mantener la lista de alto
         # valor, sin saturar con señales menores.
         items.sort(key=lambda s: s["weight"], reverse=True)
