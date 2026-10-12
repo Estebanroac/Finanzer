@@ -416,7 +416,9 @@ def test_negative_coverage_end_to_end(outputs_by_env):
     a, pdf = outputs_by_env("local")["SNOW"]
     txt = fixture_backend.pdf_text(pdf) if isinstance(pdf, bytes) else pdf
     assert a["key_metrics"]["interest_coverage_state"] == "negativa"
-    assert a["score"]["breakdown"]["Solidez Financiera"]["score"] == 0
+    _ic = next(x for x in a["score"]["breakdown"]["Solidez Financiera"]["adjustments"]
+               if x["metric"] == "Cobertura Intereses")
+    assert _ic["adjustment"] == cfg("thresholds.score.solidez.coverage_points")[-1]   # la penalización se mantiene
     assert "Cobertura de intereses\nNegativa (EBIT < 0)" in txt
     assert "-8.4x" not in txt
 

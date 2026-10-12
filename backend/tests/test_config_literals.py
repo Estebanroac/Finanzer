@@ -61,6 +61,8 @@ EXCEPTIONS = {
         "CAGR con el máximo de intervalos disponibles en _statements_fy (5 ejercicios)",
     ("lib/alert_interpretations.py", "_piotroski", 9):
         "número de señales del Piotroski F-Score (por definición)",
+    ("main.py", "_compute_analysis", 3):
+        "ventana de los CAGR a 3 años (definición; etapa 7: FCF y crecimiento por acción)",
     ("main.py", "_compute_analysis", 15):
         "longitud máxima de un ticker en la validación de entrada de la API",
     ("main.py", "_compute_analysis", 400): "código HTTP",

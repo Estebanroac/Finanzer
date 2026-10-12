@@ -56,16 +56,10 @@ def fcf_cagr(values_newest_first: List[Optional[float]], years: int = 3) -> Tupl
 
     Devuelve (cagr, None) o (None, motivo). El CAGR no está definido —y se
     devuelve "sin dato", nunca un número— si faltan ejercicios, si el FCF
-    inicial es <= 0 o si el FCF cambia de signo dentro del periodo."""
-    vals = list(values_newest_first or [])[:years + 1]
-    if len(vals) < years + 1 or any(v is None for v in vals):
-        return None, f"menos de {years + 1} ejercicios anuales de FCF"
-    start, end = vals[years], vals[0]
-    if start <= 0:
-        return None, "FCF inicial <= 0: CAGR no definido"
-    if any(v <= 0 for v in vals):
-        return None, "el FCF cambia de signo en el periodo: CAGR no definido"
-    return cagr(end, start, years), None
+    inicial es <= 0 o si el FCF cambia de signo dentro del periodo. Con año
+    base anómalo (etapa 7) usa la regresión log-lineal (growth_rate)."""
+    r = growth_rate(values_newest_first, years, what="FCF")
+    return r["value"], r["reason"]
 
 
 # ═══════════════════════════ etapa 6: series anuales ═══════════════════════════
@@ -74,13 +68,95 @@ def fcf_cagr(values_newest_first: List[Optional[float]], years: int = 3) -> Tupl
 
 def strict_cagr(values_newest_first: List[Optional[float]], years: int = 3) -> Tuple[Optional[float], Optional[str]]:
     """CAGR real sobre exactamente `years` intervalos (years + 1 ejercicios).
-    (cagr, None) o (None, motivo); no usa menos periodos ni el proxy interanual."""
+    (cagr, None) o (None, motivo); no usa menos periodos ni el proxy interanual.
+    Con año base anómalo (etapa 7) usa la regresión log-lineal (growth_rate)."""
+    r = growth_rate(values_newest_first, years, strict_ends_only=True)
+    return r["value"], r["reason"]
+
+
+def loglinear_growth(values_newest_first: List[Optional[float]]) -> Tuple[Optional[float], Optional[str], int]:
+    """Crecimiento anual por regresión log-lineal (MCO de ln(valor) sobre el año)
+    con todos los ejercicios disponibles. Solo series positivas: con algún valor
+    <= 0, sin dato con motivo. (crecimiento, motivo, ejercicios usados)."""
+    pts = [(i, v) for i, v in enumerate(reversed(list(values_newest_first or []))) if v is not None]
+    if len(pts) < 3:
+        return None, "menos de 3 ejercicios para la regresión log-lineal", len(pts)
+    if any(v <= 0 for _, v in pts):
+        return None, "serie con valores <= 0: la regresión log-lineal no está definida", len(pts)
+    import math
+    xs, ys = [p[0] for p in pts], [math.log(p[1]) for p in pts]
+    mx, my = sum(xs) / len(xs), sum(ys) / len(ys)
+    slope = sum((x - mx) * (y - my) for x, y in zip(xs, ys)) / sum((x - mx) ** 2 for x in xs)
+    return math.exp(slope) - 1, None, len(pts)
+
+
+def growth_rate(values_newest_first: List[Optional[float]], years: int = 3, *, what: str = "valor",
+                strict_ends_only: bool = False) -> Dict[str, Any]:
+    """Crecimiento anual de una serie (etapa 7): CAGR de punta a punta, salvo con
+    AÑO BASE ANÓMALO —el valor inicial es menor que anomalous_base_ratio × la
+    mediana de los demás años de la ventana—, en cuyo caso usa la regresión
+    log-lineal sobre todos los años disponibles y se marca "base anómala".
+
+    {value, reason, method: "cagr"|"log_lineal", anomalous_base, years_used}.
+    strict_ends_only: solo exige positivos el inicio y el final (CAGR de ingresos
+    y similares); si no, cualquier valor <= 0 en la ventana deja el CAGR sin dato
+    (FCF: cambio de signo)."""
+    from settings import cfg
     vals = list(values_newest_first or [])[:years + 1]
-    if len(vals) < years + 1 or vals[0] is None or vals[years] is None:
-        return None, f"menos de {years + 1} ejercicios anuales"
-    if vals[years] <= 0 or vals[0] <= 0:
-        return None, "valor inicial o final <= 0: CAGR no definido"
-    return cagr(vals[0], vals[years], years), None
+    out = {"value": None, "reason": None, "method": "cagr", "anomalous_base": False, "years_used": years + 1}
+    if len(vals) < years + 1 or vals[0] is None or vals[years] is None or \
+            (not strict_ends_only and any(v is None for v in vals)):
+        out["reason"] = (f"menos de {years + 1} ejercicios anuales" + (f" de {what}" if what != "valor" else ""))
+        return out
+    start, end = vals[years], vals[0]
+    if start <= 0:
+        out["reason"] = (f"{what} inicial <= 0: CAGR no definido" if not strict_ends_only
+                         else "valor inicial o final <= 0: CAGR no definido")
+        return out
+    if strict_ends_only and end <= 0:
+        out["reason"] = "valor inicial o final <= 0: CAGR no definido"
+        return out
+    if not strict_ends_only and any(v <= 0 for v in vals):
+        out["reason"] = f"el {what} cambia de signo en el periodo: CAGR no definido"
+        return out
+    others = sorted(v for v in vals[:years] if v is not None)
+    med = others[len(others) // 2] if len(others) % 2 else (others[len(others) // 2 - 1] + others[len(others) // 2]) / 2
+    ratio = cfg("thresholds.growth.anomalous_base_ratio")
+    if start < ratio * med:
+        g, why, n = loglinear_growth(values_newest_first)
+        out.update(method="log_lineal", anomalous_base=True, years_used=n, value=g,
+                   reason=(f"base anómala ({start / med:.0%} de la mediana del resto); " + why) if why else None)
+        out["note"] = (f"base anómala: el año inicial es el {start / med:.0%} de la mediana de los demás "
+                       f"(< {ratio:.0%}); crecimiento por regresión log-lineal sobre {n} ejercicios")
+        return out
+    out["value"] = cagr(end, start, years)
+    return out
+
+
+def per_share(values: List[Optional[float]], shares: List[Optional[float]]) -> List[Optional[float]]:
+    """valor / acciones del mismo ejercicio; None si falta alguno o acciones <= 0."""
+    return [(v / s) if (v is not None and s is not None and s > 0) else None
+            for v, s in zip(values or [], shares or [])]
+
+
+def per_share_basis(shares_newest_first: List[Optional[float]], years: int = 3) -> Dict[str, Any]:
+    """¿El crecimiento debe evaluarse por acción? (etapa 7). Sí si las acciones en
+    circulación (balance anual, base ajustada por splits) crecen más que
+    per_share_min_shares_cagr anual compuesto en la ventana."""
+    from settings import cfg
+    thr = cfg("thresholds.growth.per_share_min_shares_cagr")
+    vals = list(shares_newest_first or [])[:years + 1]
+    s_cagr = cagr(vals[0], vals[years], years) if (len(vals) == years + 1 and None not in (vals[0], vals[years])) \
+        else None
+    if s_cagr is None:
+        return {"basis": "agregado", "shares_cagr_3y": None, "threshold": thr,
+                "reason": f"sin {years + 1} ejercicios de acciones en circulación: se mide el agregado"}
+    if s_cagr > thr:
+        return {"basis": "por_accion", "shares_cagr_3y": s_cagr, "threshold": thr,
+                "reason": f"las acciones crecen {s_cagr:+.1%} anual en la ventana (> {thr:.0%}): la emisión "
+                          "inflaría el crecimiento agregado"}
+    return {"basis": "agregado", "shares_cagr_3y": s_cagr, "threshold": thr,
+            "reason": f"las acciones varían {s_cagr:+.1%} anual (<= {thr:.0%}): el agregado no está inflado por emisión"}
 
 
 def paired(a: List[Optional[float]], b: List[Optional[float]]) -> List[Tuple[float, float]]:

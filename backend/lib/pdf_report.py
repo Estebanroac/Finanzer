@@ -1197,7 +1197,14 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     _mult_na = {"P/E (TTM)": "pe", "Forward P/E": "forward_pe", "PEG": "peg", "EV/EBITDA": "ev_ebitda",
                 "P/FCF": "p_fcf", "FCF Yield": "p_fcf"}
     rows, reads = [], []
+    norm = analysis.get("earnings_normalization") or {}
     for i, (lab, val, bench, hb, fm) in enumerate(mult_defs):
+        if lab == "P/E (TTM)" and norm.get("pe_unreliable") and _mult_na.get(lab) not in _na_keys:
+            # Etapa 7: con no recurrentes > umbral el P/E reportado no es fiable.
+            rows.append([lab, fv(val, fm), fv(bench, fm) if bench else "—", "—",
+                         f"No fiable ({norm['one_off_pct'] * 100:.0f}% no recurrente)"])
+            reads.append((i, 'warn'))
+            continue
         if _mult_na.get(lab) in _na_keys:
             rows.append([lab, fv(val, fm), fv(bench, fm) if bench else "—", "—", f"No aplica a {archetype}"])
             reads.append((i, 'neu'))
@@ -1214,10 +1221,27 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
             lab_r, tone_r = _sev_read.get(adj.get("severity"), ("—", 'neu'))
             rows.append([adj["metric"].replace(" vs Sector", ""), str(adj.get("value", "")), "—", "—", lab_r])
             reads.append((len(rows) - 1, tone_r))
+    if norm.get("pe_unreliable") and norm.get("pe_normalized") is not None and "pe" not in _na_keys:
+        rows.append(["P/E normalizado", fv(norm["pe_normalized"], "mult"), "—", "—", "Sin no recurrentes"])
     story.append(data_table(
         ["MÚLTIPLO", "EMPRESA", "SECTOR", "BRECHA", "LECTURA"], rows,
         [1.9 * inch, 1.15 * inch, 1.15 * inch, 1.0 * inch, CW - 5.2 * inch],
         aligns=['LEFT', 'RIGHT', 'RIGHT', 'RIGHT', 'RIGHT'], reads=reads))
+    # Etapa 7: beneficio normalizado (una línea cuando hay partidas no recurrentes aplicadas).
+    if norm.get("applied") and norm.get("normalized_net_income") is not None:
+        _its = "; ".join(
+            (f"{it['type']} ({it['confidence']}): {fv(it['net'], 'money')} netos"
+             + ("" if it.get("applied") else ", bajo el umbral, no aplicada"))
+            for it in norm.get("items") or [])
+        _line = (f"Beneficio {norm.get('basis')}: reportado {fv(norm.get('reported_net_income'), 'money')}, "
+                 f"normalizado {fv(norm.get('normalized_net_income'), 'money')} "
+                 f"(no recurrentes {norm['one_off_pct'] * 100:.1f}% del beneficio; {_its}). "
+                 + ("El score usa el beneficio normalizado." if norm.get("used_in_score") else ""))
+        if norm.get("pe_unreliable") and norm.get("pe_normalized") is not None and "pe" not in _na_keys:
+            _line += (f" P/E reportado {fv(norm.get('pe_reported'), 'mult')} no fiable; "
+                      f"P/E normalizado {fv(norm['pe_normalized'], 'mult')}.")
+        story.append(Spacer(1, 4))
+        story.append(Paragraph(_esc(_line), S['small']))
     story.append(Spacer(1, 12))
 
     # Valor intrínseco

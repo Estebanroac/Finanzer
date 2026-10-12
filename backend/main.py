@@ -25,8 +25,10 @@ from stock_database import search_stocks, POPULAR_STOCKS, TOP_STOCKS
 from sector_profiles import get_sector_profile, YAHOO_SECTOR_MAPPING
 from alert_interpretations import build_signals
 from settings import cfg
-from historical_metrics import fcf_cagr
+from historical_metrics import fcf_cagr, growth_rate, per_share, per_share_basis
 from classify import CYCLICAL, FINANCIAL, GROWTH_PRE_PROFIT, REIT, classify, not_applicable
+from normalize import normalize as normalize_earnings
+from yf_adapter import _UNUSUAL_ROWS
 import archetype_metrics
 
 logging.basicConfig(level=logging.INFO)
@@ -212,6 +214,9 @@ def _build_provenance(yinfo: dict, out_flags: list, block_errors: list) -> dict:
         "path": yinfo.get("_data_path") or ("sin_dato" if not yinfo else "desconocido"),
         "fields": dict(sorted(fields.items())),
         "errors": block_errors,
+        # Etapa 7: qué campos son TTM (4 trimestres), del último trimestre o del
+        # anual (sin 4 trimestres consecutivos), con el motivo.
+        "ttm": yinfo.get("_ttm"),
     }
 
 
@@ -561,9 +566,10 @@ def _compute_analysis(symbol: str) -> dict:
             if fin_dict.get("fcf_cagr_3y") is None:
                 _fcf_series = ((yinfo.get("_statements_fy") or {}).get("free_cash_flow")
                                if _has_yahoo else None)
-                _fcf_g, _fcf_why = fcf_cagr(_fcf_series)
-                fin_dict["fcf_cagr_3y"] = _fcf_g
-                fin_dict["fcf_cagr_3y_reason"] = _fcf_why
+                _fcf_r = growth_rate(_fcf_series, 3, what="FCF")   # con la regla de base anómala (etapa 7)
+                fin_dict["fcf_cagr_3y"] = _fcf_r["value"]
+                fin_dict["fcf_cagr_3y_reason"] = _fcf_r["reason"]
+                fin_dict["fcf_cagr_3y_method"] = {k: _fcf_r.get(k) for k in ("method", "anomalous_base", "note")}
 
             # Crecimiento por rama (etapa 6).
             if archetype == CYCLICAL:
@@ -594,6 +600,39 @@ def _compute_analysis(symbol: str) -> dict:
                     + (f", acciones {_sh:+.1%} anual" if _sh is not None else ""))
                 fin_dict["fcf_cagr_3y"] = archetype_values.get("fcf_per_share_cagr_3y")
                 fin_dict["fcf_cagr_3y_reason"] = archetype_values.get("fcf_per_share_cagr_3y_reason")
+
+            # ── Etapa 7: crecimiento por acción en todos los arquetipos ──
+            # Si las acciones en circulación (balance anual, base ajustada por
+            # splits) crecen más del umbral, ingresos y FCF se evalúan por acción.
+            # El BPA ya es por acción. El REIT lo hace siempre (FFO y FCF por acción).
+            _gb = per_share_basis(_stmts.get("ordinary_shares") or [])
+            growth_basis = dict(_gb, applied_to=[], eps="el BPA ya es por acción",
+                                fcf_cagr=fin_dict.get("fcf_cagr_3y_method"))
+            if archetype == REIT:
+                _fps = growth_rate(per_share(_stmts.get("free_cash_flow") or [],
+                                             _stmts.get("ordinary_shares") or []), 3, what="FCF por acción")
+                growth_basis["fcf_cagr"] = {k: _fps.get(k) for k in ("method", "anomalous_base", "note")}
+                growth_basis.update(basis="por_accion", applied_to=["FFO", "FCF"],
+                                    reason="REIT: crecimiento por acción siempre (FFO y FCF por acción); "
+                                           + _gb["reason"])
+            elif _gb["basis"] == "por_accion":
+                _s = _gb["shares_cagr_3y"]
+                _g = fin_dict.get("revenue_cagr_3y")
+                if _g is not None:
+                    fin_dict["revenue_cagr_3y"] = (1 + _g) / (1 + _s) - 1
+                    fin_dict["revenue_growth_note"] = "; ".join(filter(None, [
+                        fin_dict.get("revenue_growth_note"),
+                        f"por acción: {_g:+.1%} agregado ajustado por las acciones ({_s:+.1%} anual)"]))
+                    growth_basis["applied_to"].append("ingresos")
+                if fin_dict.get("fcf_cagr_3y") is not None or fin_dict.get("fcf_cagr_3y_reason"):
+                    _fps = growth_rate(per_share(_stmts.get("free_cash_flow") or [],
+                                                 _stmts.get("ordinary_shares") or []), 3, what="FCF por acción")
+                    fin_dict["fcf_cagr_3y"] = _fps["value"]
+                    fin_dict["fcf_cagr_3y_reason"] = _fps["reason"]
+                    growth_basis["fcf_cagr"] = {k: _fps.get(k) for k in ("method", "anomalous_base", "note")}
+                    growth_basis["applied_to"].append("FCF")
+            result["growth_basis"] = {k: (safe_float(v) if isinstance(v, float) else v)
+                                      for k, v in growth_basis.items()}
 
             # ── Fase C: creación de valor (ROIC-WACC) y retorno al accionista ──
             _beta_est = financials.beta if financials.beta is not None else cfg("valuation.capm.default_beta")
@@ -678,21 +717,26 @@ def _compute_analysis(symbol: str) -> dict:
                 except Exception as e:
                     _sin_dato("prior_year", e)
 
-                # Altman Z-Score — use best available data
-                z_ta = ta_val  # total_assets already computed above
-                z_re = safe_float(financials.retained_earnings)
-                z_ebit = oi_val  # operating_income
+                # Altman Z-Score — se define sobre EJERCICIOS (etapa 7): estados del
+                # último FY; los datos TTM/último trimestre solo si falta la fila anual.
+                def _fy(key, fallback):
+                    v = safe_float(((_stmts.get(key) or [None]) or [None])[0])
+                    return v if v is not None else fallback
+                z_ta = _fy("total_assets", ta_val)
+                z_re = _fy("retained_earnings", safe_float(financials.retained_earnings))
+                z_ebit = _fy("operating_income", oi_val)  # resultado operativo como EBIT
                 z_mcap = mcap
-                z_tl = safe_float(financials.total_liabilities)
-                z_rev = rev_val
+                z_tl = _fy("total_liabilities", safe_float(financials.total_liabilities))
+                z_rev = _fy("revenue", rev_val)
+                z_te = _fy("stockholders_equity", te_val)
 
                 # Estimate total_liabilities if missing
-                if z_tl is None and z_ta and te_val:
-                    z_tl = z_ta - te_val
+                if z_tl is None and z_ta and z_te:
+                    z_tl = z_ta - z_te
 
                 # Working capital — only compute if both components are available
-                ca_val = safe_float(financials.current_assets)
-                cl_val = safe_float(financials.current_liabilities)
+                ca_val = _fy("current_assets", safe_float(financials.current_assets))
+                cl_val = _fy("current_liabilities", safe_float(financials.current_liabilities))
                 wc = (ca_val - cl_val) if (ca_val is not None and cl_val is not None) else None
 
                 z_val, z_zone, z_interp, z_details = altman_z_score(
@@ -704,7 +748,7 @@ def _compute_analysis(symbol: str) -> dict:
                     total_liabilities=z_tl,
                     sales=z_rev,
                     sector=sector,
-                    book_value_equity=te_val,
+                    book_value_equity=z_te,
                     not_applicable_reason=not_applicable(archetype, "altman"),
                 )
                 result["altman_z"] = {
@@ -803,6 +847,57 @@ def _compute_analysis(symbol: str) -> dict:
                 logger.error(f"Institutional metrics error: {e}")
                 _sin_dato("altman_z/piotroski_f", e)
 
+            # ── Etapa 7: normalización de ganancias (lib/normalize.py) ──
+            # Ítems del MISMO periodo que el beneficio: TTM (suma de 4 trimestres)
+            # si el beneficio es TTM; si no, el último FY. Con ítems explícitos (o
+            # inferidos sobre el umbral) el score y las alertas usan el beneficio
+            # normalizado; el informe muestra reportado y normalizado.
+            ratios_score = ratios
+            try:
+                _tinfo = (yinfo.get("_ttm") or {}) if _has_yahoo else {}
+                _q = (yinfo.get("_quarterly") or {}) if _has_yahoo else {}
+                _ni = safe_float(financials.net_income)
+                if "netIncome" in (_tinfo.get("ttm_fields") or []):
+                    _rows = {}
+                    for _r in _UNUSUAL_ROWS:
+                        _v = [x for x in (_q.get(_r) or [])[:4] if x is not None]
+                        if _v:
+                            _rows[_r] = sum(_v)
+                    _basis = "TTM (4 trimestres)"
+                    _qn = _q
+                else:
+                    _rows = dict(_stmts.get("unusual_fy0") or {})
+                    _basis = f"FY{(_stmts.get('inc_years') or ['?'])[0]} (sin TTM)"
+                    _qn = None
+                _pt, _tx = (_stmts.get("pretax_income") or [None])[0], (_stmts.get("tax_provision") or [None])[0]
+                _t_fy = (_tx / _pt) if (_pt and _tx is not None and _pt > 0) else None
+                _norm = normalize_earnings(net_income=_ni, explicit_rows=_rows, quarterly=_qn, basis=_basis,
+                                           tax_rate_fallback=_t_fy)
+                _pe_rep = r("pe") if (r("pe") or 0) > 0 else None   # P/E <= 0 no es un múltiplo
+                _nin = _norm["normalized_net_income"]
+                _scale = (_ni / _nin) if (_norm["applied"] and _ni and _nin and _nin > 0 and _ni > 0) else None
+                _norm["pe_reported"] = safe_float(_pe_rep)
+                _norm["pe_normalized"] = safe_float(_pe_rep * _scale) if (_pe_rep and _scale) else None
+                _norm["used_in_score"] = bool(_norm["applied"] and _nin is not None)
+                result["earnings_normalization"] = {k: (safe_float(v) if isinstance(v, float) else v)
+                                                    for k, v in _norm.items()}
+                result["key_metrics"]["pe_normalized"] = _norm["pe_normalized"]
+                result["key_metrics"]["net_income_normalized"] = safe_float(_nin)
+                if _norm["used_in_score"] and _ni:
+                    _k = _nin / _ni
+                    ratios_score = dict(ratios)
+                    if _scale:
+                        ratios_score["pe"] = _norm["pe_normalized"]
+                        ratios_score["earnings_yield"] = (1 / _norm["pe_normalized"]) if _norm["pe_normalized"] else None
+                    for _key in ("net_margin", "roe", "roa"):
+                        if ratios.get(_key) is not None:
+                            ratios_score[_key] = ratios[_key] * _k
+                    ratios_score["net_income"] = _nin
+                    if ratios.get("fcf") is not None and _nin:
+                        ratios_score["fcf_to_net_income"] = ratios["fcf"] / _nin
+            except Exception as e:
+                _sin_dato("normalizacion_ganancias", e)
+
             # Score (0-100) — normalize to standard format.
             # Computed here (after institutional metrics) so the Altman Z-Score
             # and Piotroski F-Score actually feed the solidez/calidad categories.
@@ -815,7 +910,7 @@ def _compute_analysis(symbol: str) -> dict:
                 # no aporta a Calidad, que se reescala sobre el resto (etapa 5).
                 _f_for_score = f_score
                 score_result = calculate_score_v2(
-                    ratios, fin_dict,
+                    ratios_score, fin_dict,
                     z_score_value=z_val,
                     z_score_level=z_zone,
                     f_score_value=_f_for_score,
@@ -1008,7 +1103,7 @@ def _compute_analysis(symbol: str) -> dict:
             # anterior (condiciones crudas con detail vacío).
             try:
                 result["alerts"] = build_signals(
-                    ratios, fin_dict,
+                    ratios_score, fin_dict,
                     sector=mapped_sector, real_sector=sector,
                     roic_wacc_spread=roic_wacc_spread,
                     altman=result.get("altman_z"),

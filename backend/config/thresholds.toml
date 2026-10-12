@@ -400,3 +400,18 @@ beta = [0.8, 1.2, 1.5]              # <0.8 neutral / ≤1.2 verde / ≤1.5 ámba
 [roce]
 divergence_pp = 0.10                # |ROCE − ROIC| > 10 pp -> se marca con sus causas probables
 excess_cash_share = 0.15            # caja / activos totales ≥ 15% -> "caja excedente" como causa probable
+
+# ── Normalización de ganancias (etapa 7, lib/normalize.py) ──
+[normalization]
+one_off_pct = 0.10                  # |no recurrentes netos| / beneficio neto > 10% -> P/E reportado no fiable
+robust_z = 3.5                      # pico no operativo: |z robusto (mediana, MAD)| > 3.5 (Iglewicz-Hoaglin)
+min_quarters = 4                    # trimestres con resultado no operativo necesarios para inferir picos
+min_share_of_pretax = 0.03          # y el exceso debe ser >= 3% del beneficio antes de impuestos TTM
+mad_floor_share_of_pretax = 0.01    # suelo de la escala (MAD): 1% del beneficio antes de impuestos trimestral medio
+tax_rate_bounds = [0.0, 0.35]       # tipo efectivo TTM acotado
+default_tax_rate = 0.21             # sin tipo efectivo calculable
+
+# ── Crecimiento (etapa 7) ──
+[growth]
+per_share_min_shares_cagr = 0.02   # acciones +2% anual compuesto en la ventana -> crecimiento por acción
+anomalous_base_ratio = 0.5          # año inicial < 0.5 × mediana de los demás -> regresión log-lineal

@@ -59,6 +59,6 @@ def test_fixtures(outputs_by_env):
         for sym in ("JPM", "O"):
             km = out[sym][0]["key_metrics"]
             assert km["roce"] is None and km["roce_state"] == "no_aplica"
-    if "local" in conftest.ENVS:                                     # ROIC local 24.8% vs ROCE 12.9%
-        div = outputs_by_env("local")["FCX"][0]["key_metrics"]["roce_roic_divergence"]
-        assert div["diverges"] is True and div["causes"]
+        # la comparación con el ROIC siempre se informa (con TTM, FCX ya no diverge > 10 pp)
+        div = out["FCX"][0]["key_metrics"]["roce_roic_divergence"]
+        assert set(div) == {"diverges", "gap", "causes"}

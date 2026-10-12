@@ -352,10 +352,12 @@ def test_prod_provenance_marks_finnhub_and_statements(outputs_by_env):
 
 
 def test_validation_flags_reach_the_analysis(analysis):
-    flags = analysis("NFLX")["data_validation"]
-    assert any(x["field"] == "freeCashflow" and x["action"] == "recalculado" for x in flags)
-    assert analysis("NFLX")["data_provenance"]["fields"]["freeCashflow"]["source"] == \
-        "recalculado_por_validacion"
+    """Desde la etapa 7 el FCF local de NFLX es el TTM de los estados trimestrales:
+    el FCF apalancado de quoteSummary (25.4B > OCF) ya no llega a la regla d, que
+    sigue cubierta con datos sintéticos (test_fcf_* de este archivo)."""
+    nflx = analysis("NFLX")
+    assert nflx["data_provenance"]["fields"]["freeCashflow"]["detail"].startswith("TTM: suma de los 4 trimestres")
+    assert nflx["key_metrics"]["free_cash_flow"] <= nflx["key_metrics"]["operating_cash_flow"]
     snow = analysis("SNOW")
     assert snow["key_metrics"]["pe"] is None
     assert snow["data_provenance"]["fields"]["key_metrics.pe"]["rule"] == "multiplo_no_significativo"
