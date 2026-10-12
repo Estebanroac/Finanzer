@@ -565,6 +565,13 @@ def _compute_analysis(symbol: str) -> dict:
                 ratios["roic"] = roic
             if div_yield is not None and ratios.get("dividend_yield") is None:
                 ratios["dividend_yield"] = div_yield
+            # FCF para Calidad (etapa 5): el FCF que ya existe (financials, validado
+            # en la etapa 3 con FCF <= OCF) en lugar de OCF − capex con una capex que
+            # a menudo no llega. "Sin dato" solo si no hay ninguno de los dos.
+            if fcf_val is not None:
+                ratios["fcf"] = fcf_val
+                _ni = safe_float(financials.net_income)
+                ratios["fcf_to_net_income"] = (fcf_val / _ni) if _ni else None
 
             # NOTE: the 0-100 score is computed AFTER the institutional metrics
             # block below, so it can feed the Altman Z-Score and Piotroski
