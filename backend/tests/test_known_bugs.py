@@ -11,7 +11,6 @@ import pytest
 
 import fixture_backend as fb
 
-RF, MRP = 0.045, 0.055  # valuation.capm: Rf de fallback (en replay ^TNX no está) y MRP
 
 
 def _frame(store, sym, attr):
@@ -46,8 +45,11 @@ def test_bug_shares_issued_vs_ordinary_nflx(fixture_store):
 def test_bug_wacc_is_only_cost_of_equity_nflx(analysis):
     km = analysis("NFLX")["key_metrics"]
     assert km["total_debt"] and km["total_debt"] > 0  # empresa apalancada
+    from settings import cfg
+    C = cfg("valuation.capm")
     ke = analysis("NFLX")["wacc"]["ke"]
-    assert ke == pytest.approx(RF + km["beta"] * MRP)
+    beta_adj = C["blume_weight"] * km["beta"] + C["blume_prior"]
+    assert ke == pytest.approx(C["risk_free_rate"] + beta_adj * C["market_risk_premium"])
     assert abs(km["wacc"] - ke) > 1e-4
 
 

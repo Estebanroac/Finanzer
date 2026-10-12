@@ -24,7 +24,7 @@ from typing import Any, Dict, List, Optional
 
 from classify import CYCLICAL, FINANCIAL, GROWTH_PRE_PROFIT, REIT, not_applicable
 from historical_metrics import fcf_cagr, mean, ratio_series, stdev, strict_cagr, yoy_growths
-from cost_of_capital import cost_of_equity as _ke
+from cost_of_capital import adjusted_beta as _blume, cost_of_equity as _ke
 from settings import cfg
 
 _V = cfg("valuation.archetypes")
@@ -59,7 +59,7 @@ def _financial(st: Dict[str, Any], km: Dict[str, Any], beta: Optional[float],
     roe_series = ratio_series(ni, eq)
     roe_fy = _first(roe_series)
     rote = (ni0 / tbv0) if (ni0 is not None and _pos(tbv0)) else None
-    ke, g = cost_of_equity(beta, rf), cfg("valuation.dcf.terminal_growth")
+    ke, g = cost_of_equity(beta, rf), cfg("valuation.dcf.terminal_growth")   # β ajustada de Blume
     pb = (mcap / eq0) if (_pos(mcap) and _pos(eq0)) else None
     ptbv = (mcap / tbv0) if (_pos(mcap) and _pos(tbv0)) else None
     j_pb, j_ptbv = justified_multiple(roe_fy, ke, g), justified_multiple(rote, ke, g)
@@ -81,6 +81,8 @@ def _financial(st: Dict[str, Any], km: Dict[str, Any], beta: Optional[float],
     rev_yoy = _first(yoy_growths(rev))
     return {
         "cost_of_equity": ke, "terminal_growth": g,
+        "beta_raw": beta if beta is not None else cfg("valuation.capm.default_beta"),
+        "beta_adjusted": _blume(beta),
         "roe_fy": roe_fy, "rote": rote, "pb": pb, "ptbv": ptbv,
         "pb_justified": j_pb, "ptbv_justified": j_ptbv,
         "pb_ratio": (pb / j_pb) if (pb is not None and j_pb) else None,

@@ -2729,7 +2729,8 @@ def score_valoracion(
             else:
                 adj, sev, tag = p[4], "severe", "Caro"
             reason = (f"{tag}: {mult:.2f}x frente a {just:.2f}x justificado por su {ret_lbl} "
-                      f"(Ke {xv.get('cost_of_equity', 0):.1%}, g {xv.get('terminal_growth', 0):.1%})")
+                      f"(Ke {xv.get('cost_of_equity', 0):.1%} con β ajustada {xv.get('beta_adjusted', 0):.2f}, "
+                      f"g {xv.get('terminal_growth', 0):.1%})")
             if adj < 0:
                 total_negative += adj
             base_score += adj

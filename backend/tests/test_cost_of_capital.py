@@ -10,6 +10,12 @@ from valuation_confidence import (convergence, dcf_reliability, stability_dimens
 
 RF = {"value": 0.045, "source": "config", "fallback": True, "reason": "test", "as_of": None}
 TAX = {"rate": 0.20, "source": "efectiva", "reason": None}
+C = cfg("valuation.capm")
+MRP = C["market_risk_premium"]
+
+
+def _ke(raw_beta):
+    return 0.045 + (C["blume_weight"] * raw_beta + C["blume_prior"]) * MRP
 
 
 def _envs():
@@ -21,14 +27,14 @@ def _envs():
 def test_wacc_without_debt_is_ke():
     w = cc.wacc(beta=1.2, rf=RF, market_cap=100.0, total_debt=0.0, interest_coverage=None,
                 coverage_state=None, tax=TAX)
-    assert w["value"] == pytest.approx(0.045 + 1.2 * 0.055) and w["kd"] is None
+    assert w["value"] == pytest.approx(_ke(1.2)) and w["kd"] is None
     assert w["weights"] == {"equity": 1.0, "debt": 0.0}
 
 
 def test_wacc_with_debt_weights_kd_after_tax():
     w = cc.wacc(beta=1.2, rf=RF, market_cap=6e9, total_debt=3e9, interest_coverage=5.0,
                 coverage_state=None, tax=TAX)
-    ke, kd = 0.045 + 1.2 * 0.055, 0.045 + 0.0108          # grande, cobertura 5.0 -> A
+    ke, kd = _ke(1.2), 0.045 + 0.0078                     # grande, cobertura 5.0 -> A (spread ene-2026)
     assert w["rating"]["rating"] == "A" and w["kd"] == pytest.approx(kd)
     assert w["value"] == pytest.approx(2 / 3 * ke + 1 / 3 * kd * 0.8)
     assert w["value"] < ke                                 # ya no es solo el coste del equity (C4)
@@ -36,15 +42,33 @@ def test_wacc_with_debt_weights_kd_after_tax():
 
 def test_wacc_single_clamp_range_and_default_beta():
     W = cfg("valuation.wacc")
-    w = cc.wacc(beta=4.0, rf=RF, market_cap=1.0, total_debt=0.0, interest_coverage=None,
-                coverage_state=None, tax=TAX)
+    w = cc.wacc(beta=6.0, rf=RF, market_cap=1.0, total_debt=0.0, interest_coverage=None,
+                coverage_state=None, tax=TAX)                      # β ajustada 4.35 -> Ke > 20%
     assert w["clamped"] and w["value"] == W["clamp_max"] and w["raw"] > W["clamp_max"]
     assert w["bounds"] == [W["clamp_min"], W["clamp_max"]]
     w = cc.wacc(beta=None, rf=RF, market_cap=1.0, total_debt=0.0, interest_coverage=None,
                 coverage_state=None, tax=TAX)
-    assert w["beta_default"] and w["ke"] == pytest.approx(0.045 + 0.055)
+    assert w["beta_default"] and w["ke"] == pytest.approx(0.045 + MRP)    # Blume(1.0) = 1.0
     assert cc.wacc(beta=1.0, rf=RF, market_cap=None, total_debt=1.0, interest_coverage=None,
                    coverage_state=None, tax=TAX)["value"] is None
+
+
+def test_blume_adjusted_beta_and_implied_erp():
+    assert (C["blume_weight"], C["blume_prior"]) == (0.67, 0.33)
+    assert cc.adjusted_beta(1.61) == pytest.approx(0.67 * 1.61 + 0.33)
+    assert cc.adjusted_beta(None) == pytest.approx(1.0)
+    w = cc.wacc(beta=1.61, rf=RF, market_cap=1.0, total_debt=0.0, interest_coverage=None,
+                coverage_state=None, tax=TAX)
+    assert w["beta_raw"] == 1.61 and w["beta"] == pytest.approx(1.4087) and w["beta_method"] == "Blume"
+    assert MRP == 0.042            # Damodaran, ERP implícita a 1-oct-2026 (config: fuente y fecha)
+
+
+def test_synthetic_rating_spreads_damodaran_jan_2026():
+    R = cfg("valuation.synthetic_rating")
+    sp = dict(zip(R["ratings"], R["spreads"]))
+    assert (sp["AAA"], sp["A"], sp["BBB"], sp["B-"], sp["D"]) == (0.0040, 0.0078, 0.0111, 0.0509, 0.19)
+    assert list(R["large_coverage_bounds"])[:3] == [8.5, 6.5, 5.5]
+    assert list(R["small_coverage_bounds"])[:3] == [12.5, 9.5, 7.5]
 
 
 def test_synthetic_rating_tables_and_rule_m():
@@ -115,6 +139,17 @@ def test_roic_uses_the_wacc_tax_rate(outputs_by_env):
     t = a["tax_rate"]
     assert t["source"] == "efectiva" and a["wacc"]["tax_rate"] == t["rate"]
     assert t["rate"] == pytest.approx(1.741 / 12.723, rel=1e-3)           # provisión / BAI FY2025
+
+
+def test_beta_raw_and_adjusted_exposed_and_used_by_financial(outputs_by_env):
+    for env in _envs():
+        a = outputs_by_env(env)["NFLX"][0]
+        assert a["beta"]["raw"] == a["wacc"]["beta_raw"] and a["beta"]["adjusted"] == pytest.approx(a["wacc"]["beta"])
+        jpm, pdf = outputs_by_env(env)["JPM"]
+        xm = jpm["archetype_metrics"]
+        assert xm["beta_adjusted"] == pytest.approx(cc.adjusted_beta(jpm["beta"]["raw"]))
+        assert xm["cost_of_equity"] == pytest.approx(cfg("valuation.capm.risk_free_rate") + xm["beta_adjusted"] * MRP)
+        assert "β ajustada" in fb.pdf_text(pdf)
 
 
 def test_rf_fallback_marked_in_replay(outputs_by_env):
@@ -222,15 +257,18 @@ def test_dcf_component_bounded_by_reliability():
     assert "DCF" in v["coverage"]["missing"]
 
 
-def test_dcf_not_rescued_by_growth_cap(outputs_by_env):
-    """El rescate de growth limita múltiplos, no el DCF: NFLX local resta 2 con fiabilidad alta."""
-    a = outputs_by_env("local")["NFLX"][0]
-    row = _dcf_row({"adjustments": a["score"]["breakdown"]["Valoración"]["adjustments"]})
-    assert a["dcf"]["reliability"]["level"] == "alta" and row["adjustment"] == -2
+def test_dcf_subtracts_in_valuation(outputs_by_env):
+    """Fallo 1 del spec: el DCF resta. NFLX prod (−26%, fiabilidad media) -> −1, y Valoración
+    es la suma de sus ajustes (el rescate de growth no lo compensa)."""
+    a = outputs_by_env("prod")["NFLX"][0]
+    val = a["score"]["breakdown"]["Valoración"]
+    row = _dcf_row(val)
+    assert a["dcf"]["reliability"]["level"] == "media" and row["adjustment"] == -1
+    assert val["score"] == min(20, 10 + sum(x["adjustment"] for x in val["adjustments"]))
 
 
 def test_low_reliability_dcf_explicit_in_report(outputs_by_env):
-    a, pdf = outputs_by_env("prod")["NFLX"]
+    a, pdf = outputs_by_env("prod")["SNOW"]
     assert a["dcf"]["reliability"]["level"] == "baja" and a["dcf"]["reliability"]["grid_contains_price"] is False
     text = fb.pdf_text(pdf).replace("\n", " ")
     assert "El DCF no concilia con el precio bajo ningún supuesto razonable; no se usa en el score" in text

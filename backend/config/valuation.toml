@@ -9,12 +9,21 @@ risk_free_ticker = "^TNX"           # rendimiento del Tesoro de EE. UU. a 10 añ
 risk_free_cache_hours = 24          # una lectura correcta vale 24 h
 risk_free_bounds = [0.0, 0.15]      # una lectura fuera del rango se descarta
 risk_free_rate = 0.045              # FALLBACK si ^TNX no está disponible (se marca en el JSON y el PDF)
-# Prima de riesgo de mercado (EE. UU.). 5.5%: valor heredado de la v1, sin cambiar
-# en la etapa 8. Referencias para revisarla cada enero: Damodaran, ERP implícita
-# del S&P 500 (≈4.3% a 1-ene-2025, pages.stern.nyu.edu/~adamodar); Kroll, ERP
-# recomendada para EE. UU. (5.0% desde jun-2024). Revisado: 2026-10-12.
-market_risk_premium = 0.055
-default_beta = 1.0                  # beta ausente
+# Prima de riesgo de mercado (EE. UU.): la IMPLÍCITA de Damodaran vigente. El DCF
+# compara valor intrínseco con precio de mercado: una prima histórica mayor que la
+# implícita hace que todo salga sobrevalorado por construcción.
+#   Fuente: Damodaran Online, "Implied ERP on October 1, 2026 = 4.20% (Trailing 12
+#   month, with adjusted payout)", pages.stern.nyu.edu/~adamodar (home.htm), con el
+#   Tesoro a 10 años en 5.29% como Rf. Consultado: 2026-10-12. Damodaran la publica
+#   cada mes: revisarla al menos cada trimestre.
+#   Referencia: Kroll, ERP recomendada para EE. UU. 5.0% (desde jun-2024).
+#   Antes (hasta la etapa 8): 5.5%, prima heredada de la v1 sin fuente.
+market_risk_premium = 0.042
+default_beta = 1.0                  # beta ausente (la ajustada de 1.0 es 1.0)
+# Beta ajustada de Blume (1971): β = 0.67 × β bruta + 0.33 (reversión hacia 1). Se usa
+# en el Ke del WACC y en el Ke de FINANCIAL; la beta bruta se sigue mostrando.
+blume_weight = 0.67
+blume_prior = 0.33
 
 [tax]                               # tasa efectiva: escudo fiscal del WACC y NOPAT del ROIC (la misma t)
 statutory_rate = 0.21               # fallback: tipo legal federal de EE. UU. (TCJA, desde 2018)
@@ -27,14 +36,16 @@ clamp_min = 0.06                    # ÚNICO rango del WACC (etapa 8): el usado 
 clamp_max = 0.20                    # ROIC−WACC es el que se muestra; las columnas del grid se recortan en él
 
 [synthetic_rating]                  # Kd = Rf + spread del rating sintético por cobertura de intereses
-# Estructura de Damodaran (ratings.xls): cobertura EBIT / intereses -> rating -> spread
-# sobre el Tesoro, con tablas distintas para empresas grandes y pequeñas. Spreads
-# APROXIMADOS a la actualización de enero de 2025; verificar en ratings.xls cada enero.
+# Damodaran, ratings.xls (pages.stern.nyu.edu/~adamodar/pc/ratings.xls), versión de
+# enero de 2026 (guardada el 2026-01-26; consultada el 2026-10-12): cobertura EBIT /
+# intereses -> rating -> spread sobre el Tesoro. Tramos de cobertura distintos para
+# empresas grandes (no financieras, >= 5.000 M$) y pequeñas o más arriesgadas; los
+# spreads son los mismos en ambas tablas. Damodaran los actualiza cada enero.
 large_cap_min = 5000000000.0        # capitalización >= 5.000 M$: tabla de empresas grandes
 large_coverage_bounds = [8.5, 6.5, 5.5, 4.25, 3.0, 2.5, 2.25, 2.0, 1.75, 1.5, 1.25, 0.8, 0.65, 0.2]
 small_coverage_bounds = [12.5, 9.5, 7.5, 6.0, 4.5, 4.0, 3.5, 3.0, 2.5, 2.0, 1.5, 1.25, 0.8, 0.5]
 ratings = ["AAA", "AA", "A+", "A", "A-", "BBB", "BB+", "BB", "B+", "B", "B-", "CCC", "CC", "C", "D"]
-spreads = [0.0059, 0.0078, 0.0098, 0.0108, 0.0122, 0.0156, 0.0200, 0.0240, 0.0298, 0.0361, 0.0451, 0.0715, 0.0900, 0.1200, 0.1600]
+spreads = [0.0040, 0.0055, 0.0070, 0.0078, 0.0089, 0.0111, 0.0138, 0.0184, 0.0275, 0.0321, 0.0509, 0.0885, 0.1261, 0.1600, 0.1900]
 # Regla M (cobertura no significativa): EBIT < 0 con caja neta -> la deuda está
 # respaldada por la caja, pero el negocio no genera resultado: grado de inversión
 # más bajo. EBIT < 0 con deuda neta -> peor tramo. Deuda sin gasto por intereses

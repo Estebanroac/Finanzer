@@ -30,7 +30,7 @@ from classify import CYCLICAL, FINANCIAL, GROWTH_PRE_PROFIT, REIT, classify, not
 from normalize import normalize as normalize_earnings
 from yf_adapter import _UNUSUAL_ROWS
 from ttm import TTM_QUARTERS
-from cost_of_capital import effective_tax_rate, risk_free, wacc as compute_wacc
+from cost_of_capital import adjusted_beta, effective_tax_rate, risk_free, wacc as compute_wacc
 from valuation_confidence import (convergence, coverage_dimension, dcf_reliability, signal_from_upside,
                                   source_dimension, stability_dimension, verdict_confidence)
 import archetype_metrics
@@ -681,6 +681,11 @@ def _compute_analysis(symbol: str) -> dict:
                     tax=tax_info)
                 wacc_info["applicable"] = True
             wacc_est = wacc_info["value"]
+            # Beta bruta (la de la fuente) y ajustada de Blume (la del Ke, también en FINANCIAL).
+            _braw = safe_float(financials.beta)
+            result["beta"] = {"raw": _braw, "adjusted": safe_float(adjusted_beta(_braw)), "method": "Blume",
+                              "default": _braw is None,
+                              "coefficients": [cfg("valuation.capm.blume_weight"), cfg("valuation.capm.blume_prior")]}
             result["wacc"] = {k: (safe_float(v) if isinstance(v, float) else v) for k, v in wacc_info.items()}
             result["tax_rate"] = {k: (safe_float(v) if isinstance(v, float) else v) for k, v in tax_info.items()}
             result["risk_free"] = dict(rf_info)

@@ -1363,6 +1363,14 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     elif dcf.get("reason"):
         story.append(Spacer(1, 6))
         story.append(Paragraph(_esc(f"DCF sin dato: {dcf['reason']}."), S['small']))
+    # FINANCIAL (etapa 8): sin WACC; el P/B justificado usa Ke con la beta ajustada.
+    if is_financial and xm.get("cost_of_equity") is not None:
+        story.append(Spacer(1, 3))
+        story.append(Paragraph(_esc(
+            f"Ke {fv(xm['cost_of_equity'], 'pct')} = Rf {fv((analysis.get('risk_free') or {}).get('value'), 'pct')} + "
+            f"β ajustada {xm.get('beta_adjusted', 0):.2f} (bruta {xm.get('beta_raw', 0):.2f}, Blume) × prima implícita "
+            f"{fv(cfg('valuation.capm.market_risk_premium'), 'pct')}. FINANCIAL no usa WACC: se valora por P/B "
+            "justificado con Ke."), S['small']))
     # WACC usado (etapa 8): el mismo en DCF, grid y spread ROIC−WACC.
     if _wacc.get("value") is not None:
         _w = _wacc
@@ -1370,7 +1378,8 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
                + (f" (acotado desde {fv(_w.get('raw'), 'pct')} al rango "
                   f"{fv(_w['bounds'][0], 'pct')}–{fv(_w['bounds'][1], 'pct')})" if _w.get("clamped") else "")
                + f" = {fv((_w.get('weights') or {}).get('equity'), 'pct')} × Ke {fv(_w.get('ke'), 'pct')} "
-               f"(Rf {fv(_w.get('rf'), 'pct')} + β {_w.get('beta', 0):.2f} × prima {fv(_w.get('mrp'), 'pct')})")
+               f"(Rf {fv(_w.get('rf'), 'pct')} + β ajustada {_w.get('beta', 0):.2f} [bruta {_w.get('beta_raw', 0):.2f}, "
+               f"Blume] × prima implícita {fv(_w.get('mrp'), 'pct')})")
         _rt = _w.get("rating") or {}
         if _w.get("kd") is not None:
             _wl += (f" + {fv((_w.get('weights') or {}).get('debt'), 'pct')} × Kd {fv(_w['kd'], 'pct')} × "

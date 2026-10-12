@@ -11,7 +11,8 @@ el que se muestra.
       obligaciones por arrendamiento financiero cuando la empresa las informa:
       FCX 8.91 + 0.47 + 1.11 = 10.49B). Los arrendamientos operativos no
       aparecen en esa fila (NFLX, V) y no se añaden.
-  Ke  CAPM: Rf + β·MRP.
+  Ke  CAPM: Rf + β ajustada (Blume: 0.67·β bruta + 0.33) × prima implícita de
+      Damodaran (config, con fuente y fecha).
   Kd  Rf + spread del rating sintético por cobertura de intereses (tabla de
       Damodaran, grandes y pequeñas por capitalización). Regla M: cobertura no
       significativa (EBIT < 0 con caja neta) -> tramo de caja neta; EBIT < 0 con
@@ -115,9 +116,16 @@ def synthetic_rating(coverage: Optional[float], market_cap: Optional[float],
             "table": "grandes" if large else "pequeñas", "coverage": coverage, "flag": flag}
 
 
-def cost_of_equity(beta: Optional[float], rf: float) -> float:
+def adjusted_beta(beta: Optional[float]) -> float:
+    """Beta ajustada de Blume: blume_weight × β bruta + blume_prior (sin beta: la de mercado)."""
     C = cfg("valuation.capm")
-    return rf + (beta if beta is not None else C["default_beta"]) * C["market_risk_premium"]
+    raw = beta if beta is not None else C["default_beta"]
+    return C["blume_weight"] * raw + C["blume_prior"]
+
+
+def cost_of_equity(beta: Optional[float], rf: float) -> float:
+    """Ke = Rf + β ajustada (Blume) × prima implícita. `beta` es la beta BRUTA."""
+    return rf + adjusted_beta(beta) * cfg("valuation.capm.market_risk_premium")
 
 
 def wacc(*, beta: Optional[float], rf: Dict[str, Any], market_cap: Optional[float],
@@ -129,7 +137,8 @@ def wacc(*, beta: Optional[float], rf: Dict[str, Any], market_cap: Optional[floa
     ke = cost_of_equity(b, rf["value"])
     out: Dict[str, Any] = {
         "value": None, "raw": None, "clamped": False, "bounds": [W["clamp_min"], W["clamp_max"]],
-        "ke": ke, "beta": b, "beta_default": beta is None, "rf": rf["value"], "rf_source": rf["source"],
+        "ke": ke, "beta": adjusted_beta(b), "beta_raw": b, "beta_method": "Blume",
+        "beta_default": beta is None, "rf": rf["value"], "rf_source": rf["source"],
         "rf_fallback": rf["fallback"], "rf_reason": rf.get("reason"), "rf_as_of": rf.get("as_of"),
         "mrp": C["market_risk_premium"], "kd": None, "kd_after_tax": None, "rating": None,
         "tax_rate": tax["rate"], "tax_source": tax["source"], "tax_reason": tax.get("reason"),
