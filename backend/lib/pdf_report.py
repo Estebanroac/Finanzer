@@ -1406,9 +1406,10 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         z, zone = altman.get("z_score", 0), altman.get("zone", "grey")
         z_tone = 'pos' if zone == 'safe' else 'warn' if zone == 'grey' else 'neg'
         z_lab = "Zona segura" if zone == 'safe' else "Zona gris" if zone == 'grey' else "Zona de riesgo"
+        _zd = altman.get("details") or {}  # umbrales del modelo usado (Z, Z' o Z'')
         z_body = (f"{altman.get('interpretation', '')}. El modelo Altman Z pondera capital de trabajo, beneficios retenidos, "
-                  f"EBIT, valor de mercado y ventas para estimar el riesgo de insolvencia a 2 años: por encima de 2.99 el "
-                  f"riesgo es bajo; por debajo de 1.81, elevado.")
+                  f"EBIT, valor de mercado y ventas para estimar el riesgo de insolvencia a 2 años: por encima de "
+                  f"{_zd.get('safe_threshold', 0):.2f} el riesgo es bajo; por debajo de {_zd.get('grey_threshold', 0):.2f}, elevado.")
         _emit_card(model_card(f"{z:.2f}", z_tone, "Altman Z-Score", z_lab, _esc(z_body)))
         story.append(Spacer(1, 8))
 

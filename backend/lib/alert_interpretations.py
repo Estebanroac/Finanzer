@@ -358,14 +358,17 @@ def _altman(ctx: Ctx):
     zone = ctx.altman.get("zone")
     if z is None or ctx.is_financial:
         return None
+    # Umbrales del modelo realmente usado (Z, Z' o Z''), no los del Z original.
+    det = ctx.altman.get("details") or {}
+    safe_t, grey_t = det.get("safe_threshold"), det.get("grey_threshold")
     if zone == "distress":
         return _sig("risk", "Solidez financiera", f"Riesgo de insolvencia — Altman Z {z:.2f}",
-                    f"El modelo de Altman sitúa a la empresa en zona de riesgo (Z {z:.2f} < 1.81), donde históricamente se "
+                    f"El modelo de Altman sitúa a la empresa en zona de riesgo (Z {z:.2f} < {grey_t:.2f}), donde históricamente se "
                     "concentran las compañías con problemas de solvencia a 2 años. Señal de alerta que exige revisar deuda y "
                     "generación de caja.", _A["altman"]["w_distress"])
     if zone == "safe":
         return _sig("strength", "Solidez financiera", f"Solvencia sólida — Altman Z {z:.2f}",
-                    f"El Altman Z de {z:.2f} (> 2.99) ubica a la empresa en zona segura: baja probabilidad estadística de "
+                    f"El Altman Z de {z:.2f} (> {safe_t:.2f}) ubica a la empresa en zona segura: baja probabilidad estadística de "
                     "problemas de solvencia según el modelo.", _A["altman"]["w_safe"])
     return None
 
