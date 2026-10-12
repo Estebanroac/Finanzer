@@ -373,3 +373,16 @@ def test_rescaling_bound_holds_for_random_components():
 
         mx, mn = comps[miss][1]
         assert run(mn) <= run(None) <= run(mx), comps
+
+
+def test_fcf_cagr_reaches_the_scorer_with_reason(outputs_by_env):
+    """fcf_cagr_3y sale de los 4 ejercicios anuales; indefinido -> sin dato con motivo."""
+    import conftest
+    if "prod" not in conftest.ENVS:
+        pytest.skip("falta el juego prod")
+    out = outputs_by_env("prod")
+    jpm = out["JPM"][0]["score_coverage"]["crecimiento"]          # FCF 107 -> 13 -> -42 -> -148
+    assert "Crecimiento del FCF" in jpm["missing"]
+    assert "signo" in jpm["missing_reasons"]["Crecimiento del FCF"]
+    nflx = out["NFLX"][0]["score_coverage"]["crecimiento"]
+    assert "Crecimiento del FCF" not in nflx["missing"]

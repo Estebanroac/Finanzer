@@ -30,12 +30,16 @@ def test_contextual_keys_and_thresholds():
     assert hm.contextual_from_history(None) == {}
 
 
-def test_not_called_yet():
-    """Aislado a propósito hasta la etapa 6: ningún módulo del motor lo importa."""
-    import pathlib
-    lib = pathlib.Path(hm.__file__).parent
-    users = [p.name for p in list(lib.glob("*.py")) + [lib.parent / "main.py"]
-             if p.name != "historical_metrics.py"
-             and ("import historical_metrics" in p.read_text(encoding="utf-8")
-                  or "from historical_metrics" in p.read_text(encoding="utf-8"))]
-    assert users == []
+def test_fcf_cagr_defined_only_for_positive_series():
+    assert hm.fcf_cagr([133.1, 121.0, 110.0, 100.0])[0] == pytest.approx(0.10)
+    assert hm.fcf_cagr([133.1, 121.0, 110.0, 100.0, 5.0])[0] == pytest.approx(0.10)  # usa 4 ejercicios
+    v, why = hm.fcf_cagr([10.0, 5.0, 3.0, -1.0])
+    assert v is None and "inicial" in why
+    v, why = hm.fcf_cagr([-10.0, 5.0, 3.0, 2.0])
+    assert v is None and "signo" in why
+    v, why = hm.fcf_cagr([10.0, -5.0, 3.0, 2.0])
+    assert v is None and "signo" in why
+    v, why = hm.fcf_cagr([10.0, 5.0, 3.0])
+    assert v is None and "4 ejercicios" in why
+    v, why = hm.fcf_cagr([10.0, None, 3.0, 2.0])
+    assert v is None and why

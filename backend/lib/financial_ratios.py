@@ -1909,10 +1909,13 @@ class CategoryCoverage:
 
     def __init__(self):
         self.items = []
+        self.reasons: Dict[str, str] = {}
 
-    def comp(self, name: str, points, adj) -> None:
+    def comp(self, name: str, points, adj, reason: Optional[str] = None) -> None:
         pts = [p for p in points]
         self.items.append((name, max(pts), min(pts), adj))
+        if adj is None and reason:
+            self.reasons[name] = reason
 
     @property
     def missing(self) -> List[str]:
@@ -1923,6 +1926,7 @@ class CategoryCoverage:
         ev = n - len(self.missing)
         cov = (ev / n) if n else None
         return {"components": n, "evaluated": ev, "coverage": cov, "missing": self.missing,
+                "missing_reasons": dict(self.reasons),
                 "low_confidence": (cov is not None and cov < _CAT_COVERAGE["low_confidence_below"])}
 
     def apply(self, base_score, adjustments: List[Dict[str, Any]]):
@@ -2991,7 +2995,8 @@ def score_crecimiento(
     revenue_growth_3y: Optional[float],
     eps_growth_3y: Optional[float],
     fcf_growth_3y: Optional[float],
-    is_growth_company: bool = False
+    is_growth_company: bool = False,
+    fcf_growth_reason: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Categoría 5: Crecimiento (20 pts máximo)
@@ -3091,7 +3096,7 @@ def score_crecimiento(
     cov = CategoryCoverage()
     cov.comp("Crecimiento de ingresos", T["revenue_points"], _a.get("rev"))
     cov.comp("Crecimiento del BPA", T["eps_points"], _a.get("eps"))
-    cov.comp("Crecimiento del FCF", T["fcf_points"], _a.get("fcf"))
+    cov.comp("Crecimiento del FCF", T["fcf_points"], _a.get("fcf"), fcf_growth_reason)
     base_score = cov.apply(base_score, adjustments)
     final_score = max(_CAT["min"], min(_CAT["max"], base_score))
     
@@ -3238,7 +3243,8 @@ def calculate_score_v2(
         revenue_growth_3y=contextual_values.get("revenue_cagr_3y"),
         eps_growth_3y=contextual_values.get("eps_cagr_3y"),
         fcf_growth_3y=contextual_values.get("fcf_cagr_3y"),
-        is_growth_company=is_growth
+        is_growth_company=is_growth,
+        fcf_growth_reason=contextual_values.get("fcf_cagr_3y_reason"),
     )
     
     # Calcular totales

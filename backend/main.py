@@ -25,6 +25,7 @@ from stock_database import search_stocks, POPULAR_STOCKS, TOP_STOCKS
 from sector_profiles import get_sector_profile, YAHOO_SECTOR_MAPPING
 from alert_interpretations import build_signals
 from settings import cfg
+from historical_metrics import fcf_cagr
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -516,6 +517,14 @@ def _compute_analysis(symbol: str) -> dict:
                 _eps_g = safe_float(financials.earnings_growth_rate)
                 if _eps_g is not None:
                     fin_dict["eps_cagr_3y"] = _eps_g
+            # CAGR del FCF a 3 años con los 4 ejercicios anuales de los estados
+            # (etapa 5). Indefinido -> sin dato con motivo, nunca un número.
+            if fin_dict.get("fcf_cagr_3y") is None:
+                _fcf_series = ((yinfo.get("_statements_fy") or {}).get("free_cash_flow")
+                               if _has_yahoo else None)
+                _fcf_g, _fcf_why = fcf_cagr(_fcf_series)
+                fin_dict["fcf_cagr_3y"] = _fcf_g
+                fin_dict["fcf_cagr_3y_reason"] = _fcf_why
 
             # ── Fase C: creación de valor (ROIC-WACC) y retorno al accionista ──
             _is_financial = bool(mapped_sector and "financ" in mapped_sector.lower())

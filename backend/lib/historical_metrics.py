@@ -5,14 +5,15 @@ FCF negativo).
 Extraído en la etapa 4 de data_fetcher.get_complete_analysis_data, donde nunca
 se ejecutaba: la tarea "historical" que lo alimentaba se había quitado del
 camino crítico, así que `historical` era siempre None. Se conserva aislado
-porque la etapa 6 lo necesitará; TODAVÍA NO TIENE LLAMADAS.
+porque la etapa 6 lo necesitará. Desde la etapa 5, fcf_cagr alimenta el
+componente "Crecimiento del FCF" del score (main.py).
 
 Corrección respecto al original: el CAGR a 3 años tomaba como inicio el valor
 MÁS ANTIGUO de la serie (revenues[-1]) aunque hubiera más de 4 ejercicios, lo
 que con 5 años calculaba (r0/r4)^(1/3). Aquí el inicio es revenues[periods].
 Como el original nunca corría, el cambio no afecta a ninguna salida.
 """
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 
 def cagr(end_val: Optional[float], start_val: Optional[float], periods: int) -> Optional[float]:
@@ -48,3 +49,20 @@ def contextual_from_history(historical: Dict[str, Any]) -> Dict[str, Any]:
     if fcf_list:
         out["fcf_trend_negative_years"] = sum(1 for x in fcf_list if x and x < 0)
     return out
+
+
+def fcf_cagr(values_newest_first: List[Optional[float]], years: int = 3) -> Tuple[Optional[float], Optional[str]]:
+    """CAGR del FCF sobre `years` intervalos (years + 1 ejercicios anuales).
+
+    Devuelve (cagr, None) o (None, motivo). El CAGR no está definido —y se
+    devuelve "sin dato", nunca un número— si faltan ejercicios, si el FCF
+    inicial es <= 0 o si el FCF cambia de signo dentro del periodo."""
+    vals = list(values_newest_first or [])[:years + 1]
+    if len(vals) < years + 1 or any(v is None for v in vals):
+        return None, f"menos de {years + 1} ejercicios anuales de FCF"
+    start, end = vals[years], vals[0]
+    if start <= 0:
+        return None, "FCF inicial <= 0: CAGR no definido"
+    if any(v <= 0 for v in vals):
+        return None, "el FCF cambia de signo en el periodo: CAGR no definido"
+    return cagr(end, start, years), None
