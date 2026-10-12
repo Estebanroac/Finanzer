@@ -11,9 +11,12 @@ FIABILIDAD DEL DCF (alta / media / baja, con motivos):
   alta   el resto.
 
 CONFIANZA DEL VEREDICTO = f(convergencia, cobertura, calidad de fuente, estabilidad)
-  · convergencia: dirección y magnitud de DCF, múltiplos frente al sector (las
-    lecturas de Valoración, normalizadas a [−1, 1]) y Graham si aplica. Señales
-    opuestas (una dice barata y otra cara) -> baja.
+  · convergencia: dirección y distancia entre los métodos evaluables: DCF (si su
+    fiabilidad no es baja) y múltiplos frente al sector (las lecturas de
+    Valoración, normalizadas a [−1, 1]); en FINANCIAL, P/B justificado (Gordon,
+    intrínseco) y P/B frente al sector (relativo). Graham no vota: es una
+    referencia del inversor defensivo. Señales opuestas -> baja; con un solo
+    método evaluable, "no evaluable" y techo en media.
   · cobertura: componentes evaluados / aplicables del score (etapa 5).
   · calidad de fuente: flags de validación de entrada, ítems inferidos en la
     normalización, TTM con fallback al anual, campos de Finnhub en lugar de los
@@ -107,34 +110,45 @@ def multiples_signal(items: List[Any]) -> Optional[Dict[str, Any]]:
 
 
 def convergence(methods: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Convergencia por DIRECCIÓN entre los métodos EVALUABLES (con señal; un DCF de
+    fiabilidad baja no es evaluable: no concilia con el precio).
+      alta    todos coinciden en dirección y la distancia entre señales < umbral;
+      media   coinciden en dirección pero superan el umbral, o uno está en precio y
+              otro tiene dirección (no coinciden, pero tampoco se oponen);
+      baja    apuntan en direcciones opuestas (uno barata y otro cara);
+      no_evaluable  menos de dos métodos evaluables: no hay contraste (la confianza
+              tiene entonces techo, no_evaluable_cap)."""
     C = cfg("thresholds.confidence")
-    ms = [m for m in methods if m.get("signal") is not None]
-    for m in ms:
-        m["direction"] = _direction(m["signal"])
+    for m in methods:
+        m["evaluable"] = m.get("signal") is not None and m.get("reliability") != "baja"
+        if m.get("signal") is not None:
+            m["direction"] = _direction(m["signal"])
+    ms = [m for m in methods if m["evaluable"]]
+    excluded = [f"{m['method']} (fiabilidad baja)" for m in methods
+                if m.get("signal") is not None and not m["evaluable"]]
+    note = ([f"no evaluable: {', '.join(excluded)}"] if excluded else [])
     if len(ms) < 2:
-        return {"level": "media", "methods": ms,
-                "reasons": ["un solo método de valoración disponible: no hay contraste"] if ms
-                else ["sin métodos de valoración con dato"]}
+        return {"level": "no_evaluable", "methods": methods,
+                "reasons": [("un solo método evaluable (" + ms[0]["method"] + ")" if ms
+                             else "ningún método evaluable") + ": no hay contraste"] + note}
     cheap = [m["method"] for m in ms if m["direction"] == "barata"]
     dear = [m["method"] for m in ms if m["direction"] == "cara"]
     if cheap and dear:
-        return {"level": "baja", "methods": ms,
+        return {"level": "baja", "methods": methods,
                 "reasons": [f"direcciones opuestas: {', '.join(cheap)} {'dice' if len(cheap) == 1 else 'dicen'} "
-                            f"barata y {', '.join(dear)} {'dice' if len(dear) == 1 else 'dicen'} cara"]}
-    spread = max(m["signal"] for m in ms) - min(m["signal"] for m in ms)
-    if spread > C["convergence_spread_max"]:
-        return {"level": "media", "methods": ms,
-                "reasons": [f"misma dirección o neutras, pero magnitudes muy distintas (dispersión {spread:.2f})"]}
+                            f"barata y {', '.join(dear)} {'dice' if len(dear) == 1 else 'dicen'} cara"] + note}
     dirs = {m["direction"] for m in ms}
     if len(dirs) > 1:
-        return {"level": "media", "methods": ms,
-                "reasons": ["unos métodos apuntan en una dirección y otros la ven en precio"]}
-    weak = [m["method"] for m in ms if m.get("reliability") == "baja"]
-    if weak:   # un método no fiable no puede confirmar el veredicto de los demás
-        return {"level": "media", "methods": ms,
-                "reasons": [f"los métodos coinciden ({next(iter(dirs))}), pero {', '.join(weak)} tiene fiabilidad "
-                            "baja y no confirma el veredicto"]}
-    return {"level": "alta", "methods": ms, "reasons": [f"los métodos coinciden: {next(iter(dirs))}"]}
+        return {"level": "media", "methods": methods,
+                "reasons": ["uno lo ve en precio y otro con dirección: no coinciden, sin oponerse"] + note}
+    spread = max(m["signal"] for m in ms) - min(m["signal"] for m in ms)
+    if spread >= C["convergence_spread_max"]:
+        return {"level": "media", "methods": methods,
+                "reasons": [f"coinciden ({next(iter(dirs))}) pero la distancia entre señales es {spread:.2f} "
+                            f"(>= {C['convergence_spread_max']})"] + note}
+    return {"level": "alta", "methods": methods,
+            "reasons": [f"coinciden ({next(iter(dirs))}) con distancia {spread:.2f} "
+                        f"(< {C['convergence_spread_max']})"] + note}
 
 
 def coverage_dimension(score_coverage: Optional[Dict[str, Any]], excluded: List[str]) -> Dict[str, Any]:
@@ -191,12 +205,19 @@ def verdict_confidence(dimensions: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
     C = cfg("thresholds.confidence")
     val = dict(zip(LEVELS, C["level_values"]))
     W = C["weights"]
-    score = sum(W[k] * val[d["level"]] for k, d in dimensions.items()) / sum(W[k] for k in dimensions)
+    rated = {k: d for k, d in dimensions.items() if d["level"] in val}   # "no_evaluable" no pondera
+    score = sum(W[k] * val[d["level"]] for k, d in rated.items()) / sum(W[k] for k in rated)
     hi, mid = C["overall_bounds"]
     level = "alta" if score >= hi else ("media" if score >= mid else "baja")
     labels = {"convergence": "convergencia", "coverage": "cobertura", "source": "calidad de fuente",
               "stability": "estabilidad"}
-    reasons = [f"{labels[k]} {d['level']}: " + "; ".join(d["reasons"])
+    reasons = [f"{labels[k]} {d['level'].replace('_', ' ')}: " + "; ".join(d["reasons"])
                for k, d in dimensions.items() if d["level"] != "alta" and d.get("reasons")]
+    capped = None
+    if any(d["level"] == "no_evaluable" for d in dimensions.values()):
+        cap = C["no_evaluable_cap"]
+        if LEVELS.index(level) < LEVELS.index(cap):
+            capped, level = level, cap
+            reasons.append(f"techo en {cap}: sin contraste entre métodos de valoración")
     return {"level": level, "score": score, "dimensions": dimensions, "reasons": reasons,
-            "limits_score": False}
+            "capped_from": capped, "limits_score": False}

@@ -1325,6 +1325,10 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     story.append(data_table(["CONCEPTO", "VALOR", "LECTURA"], iv_rows,
                             [3.4 * inch, 1.6 * inch, CW - 5.0 * inch],
                             aligns=['LEFT', 'RIGHT', 'RIGHT'], reads=iv_reads))
+    if graham is not None:
+        story.append(Paragraph(_esc(
+            "Número de Graham: referencia del inversor defensivo (P/E 15 × P/B 1.5). Se muestra como referencia "
+            "y no vota en la convergencia entre métodos."), S['small']))
 
     if dcf.get("fair_value") is not None:
         story.append(Spacer(1, 6))
@@ -1464,13 +1468,17 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
             if _k == "convergence" and _dd.get("methods"):
                 _txt = " · ".join(
                     f"{m['method']} {('%+.0f%%' % (m['upside'] * 100)) if m.get('upside') is not None else ('%+.2f' % m['signal'])}"
-                    f" ({m.get('direction')})" for m in _dd["methods"]) + ". " + _txt
-            _crows.append([_labels.get(_k, _k), _dd["level"].capitalize(), Paragraph(_esc(_txt), S['small'])])
+                    f" ({m.get('direction')}{'' if m.get('evaluable', True) else ', no evaluable'})"
+                    for m in _dd["methods"] if m.get("signal") is not None) + ". " + _txt
+            _crows.append([_labels.get(_k, _k), _dd["level"].replace("_", " ").capitalize(),
+                           Paragraph(_esc(_txt), S['small'])])
         story.append(data_table(["DIMENSIÓN", "NIVEL", "MOTIVO"], _crows,
                                 [1.9 * inch, 0.8 * inch, CW - 2.7 * inch], aligns=['LEFT', 'CENTER', 'LEFT']))
         story.append(Paragraph(_esc(
-            f"Confianza del veredicto: {_conf['level']}. En esta versión se informa y no limita la puntuación."),
-            S['small']))
+            f"Confianza del veredicto: {_conf['level']}"
+            + (f" (techo en {_conf['level']} sin contraste entre métodos; sin techo sería {_conf['capped_from']})"
+               if _conf.get("capped_from") else "")
+            + ". En esta versión se informa y no limita la puntuación."), S['small']))
 
     # ════════════════ PÁGINA 3 — RENTABILIDAD + SOLIDEZ ════════════════
     story.append(PageBreak())

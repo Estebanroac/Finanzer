@@ -1241,18 +1241,29 @@ def _compute_analysis(symbol: str) -> dict:
             try:
                 _price = safe_float(financials.price)
                 _d = result.get("dcf") or {}
-                _methods = []
-                if _d.get("upside") is not None:
-                    _methods.append({"method": "DCF", "upside": _d["upside"] / 100.0,
-                                     "reliability": (_d.get("reliability") or {}).get("level")})
-                if _multiples_signal:
-                    _methods.append({"method": "múltiplos frente al sector", "signal": _multiples_signal["value"],
-                                     "components": _multiples_signal["components"]})
-                # Graham = sqrt(22.5 · BPA · VCPA): usa el mismo BPA que el P/E, así que solo
-                # informa donde el P/E aplica (no en REIT, CYCLICAL ni GROWTH_PRE_PROFIT).
                 _arch = (result.get("classification") or {}).get("archetype")
-                if result.get("graham_number") and _price and not not_applicable(_arch, "pe"):
-                    _methods.append({"method": "Graham", "upside": result["graham_number"] / _price - 1})
+                _methods = []
+                if _arch == FINANCIAL:
+                    # FINANCIAL: dos métodos sobre el P/B. Intrínseco: P/B justificado por
+                    # Gordon ((ROE − g)/(Ke − g)); relativo: P/B frente a la mediana del sector.
+                    _xm = result.get("archetype_metrics") or {}
+                    _pb = _xm.get("pb")
+                    if _pb and _xm.get("pb_justified"):
+                        _methods.append({"method": "P/B justificado (Gordon)", "kind": "intrínseco",
+                                         "upside": _xm["pb_justified"] / _pb - 1})
+                    _spb = _get_sector_benchmarks(mapped_sector).get("pb")
+                    if _pb and _spb:
+                        _methods.append({"method": "P/B frente al sector", "kind": "relativo",
+                                         "upside": _spb / _pb - 1, "benchmark": _spb})
+                else:
+                    if _d.get("upside") is not None:
+                        _methods.append({"method": "DCF", "kind": "intrínseco", "upside": _d["upside"] / 100.0,
+                                         "reliability": (_d.get("reliability") or {}).get("level")})
+                    if _multiples_signal:
+                        _methods.append({"method": "múltiplos frente al sector", "kind": "relativo",
+                                         "signal": _multiples_signal["value"],
+                                         "components": _multiples_signal["components"]})
+                # Graham no vota: es la referencia del inversor defensivo (P/E 15 × P/B 1.5).
                 for _m in _methods:
                     if "upside" in _m:
                         _m["signal"] = signal_from_upside(_m["upside"])

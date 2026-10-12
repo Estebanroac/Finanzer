@@ -258,12 +258,12 @@ def test_dcf_component_bounded_by_reliability():
 
 
 def test_dcf_subtracts_in_valuation(outputs_by_env):
-    """Fallo 1 del spec: el DCF resta. NFLX prod (−26%, fiabilidad media) -> −1, y Valoración
+    """Fallo 1 del spec: el DCF resta. NFLX prod (−33%, fiabilidad media) -> −2, y Valoración
     es la suma de sus ajustes (el rescate de growth no lo compensa)."""
     a = outputs_by_env("prod")["NFLX"][0]
     val = a["score"]["breakdown"]["Valoración"]
     row = _dcf_row(val)
-    assert a["dcf"]["reliability"]["level"] == "media" and row["adjustment"] == -1
+    assert a["dcf"]["reliability"]["level"] == "media" and row["adjustment"] == -2
     assert val["score"] == min(20, 10 + sum(x["adjustment"] for x in val["adjustments"]))
 
 
@@ -279,12 +279,39 @@ def _m(name, s, rel=None):
     return {"method": name, "signal": s, "reliability": rel}
 
 
-def test_convergence_cases():
+def test_convergence_by_direction():
+    assert cfg("thresholds.confidence.convergence_spread_max") == 0.6
     assert convergence([_m("DCF", -0.9), _m("múltiplos", 0.4)])["level"] == "baja"           # opuestas
-    assert convergence([_m("DCF", -0.5), _m("múltiplos", -0.4)])["level"] == "alta"
-    assert convergence([_m("DCF", -0.5, "baja"), _m("múltiplos", -0.4)])["level"] == "media"  # DCF no fiable
-    assert convergence([_m("DCF", -0.1), _m("múltiplos", -0.9)])["level"] == "media"          # magnitudes
-    assert convergence([_m("múltiplos", 0.3)])["level"] == "media"                            # un solo método
+    assert convergence([_m("DCF", -0.5), _m("múltiplos", -0.4)])["level"] == "alta"          # misma, cerca
+    assert convergence([_m("DCF", -0.3), _m("múltiplos", -0.95)])["level"] == "media"        # misma, lejos
+    assert convergence([_m("DCF", -0.1), _m("múltiplos", -0.9)])["level"] == "media"         # en precio / cara
+    assert convergence([_m("DCF", 0.05), _m("múltiplos", -0.1)])["level"] == "alta"          # ambas en precio
+
+
+def test_single_evaluable_method_is_not_evaluable_and_caps_confidence():
+    c = convergence([_m("múltiplos", 0.3)])
+    assert c["level"] == "no_evaluable" and "un solo método evaluable" in c["reasons"][0]
+    c = convergence([_m("DCF", -0.5, "baja"), _m("múltiplos", -0.4)])     # el DCF no fiable no vota
+    assert c["level"] == "no_evaluable" and "DCF (fiabilidad baja)" in c["reasons"][1]
+
+    def d(level):
+        return {"level": level, "reasons": [level]}
+    r = verdict_confidence({"convergence": c, "coverage": d("alta"), "source": d("alta"), "stability": d("alta")})
+    assert r["score"] == 1.0 and r["level"] == "media" and r["capped_from"] == "alta"
+
+
+def test_graham_does_not_vote_and_financial_has_two_methods(outputs_by_env):
+    for env in _envs():
+        out = outputs_by_env(env)
+        for sym in ("NFLX", "V"):
+            names = [m["method"] for m in out[sym][0]["confidence"]["dimensions"]["convergence"]["methods"]]
+            assert "Graham" not in names and "DCF" in names
+            assert "referencia del inversor defensivo (P/E 15 × P/B 1.5)" in fb.pdf_text(out[sym][1])
+        conv = out["JPM"][0]["confidence"]["dimensions"]["convergence"]
+        assert [m["method"] for m in conv["methods"]] == ["P/B justificado (Gordon)", "P/B frente al sector"]
+        assert conv["level"] in ("alta", "media", "baja")
+        o = out["O"][0]["confidence"]                     # REIT: un solo método (múltiplos) -> techo
+        assert o["dimensions"]["convergence"]["level"] == "no_evaluable" and o["level"] == "media"
 
 
 def test_verdict_confidence_weights():

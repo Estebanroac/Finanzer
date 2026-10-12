@@ -431,9 +431,14 @@ inferred_sources = ["finnhub", "derivado"]      # FCF que no viene de los estado
 [confidence]                        # confianza del veredicto (spec Sección 3; etapa 8: se muestra, no limita)
 level_values = [1.0, 0.5, 0.0]      # alta / media / baja
 overall_bounds = [0.75, 0.45]       # media ponderada >= 0.75 alta; >= 0.45 media; resto baja
-upside_scale = 0.5                  # un upside de ±50% equivale a la señal ±1 (DCF y Graham)
-neutral_band = 0.15                 # |señal| <= 0.15: "en precio" (sin dirección)
-convergence_spread_max = 0.6        # misma dirección pero señales separadas más de esto -> media
+upside_scale = 0.5                  # un upside de ±50% equivale a la señal ±1
+neutral_band = 0.2                  # |señal| <= 0.2 (±10% de upside): "en precio", la misma banda que el DCF en Valoración
+# Distancia máxima entre señales para "alta": 0.6 = 30 pp de upside, la distancia entre "en precio"
+# y "claramente barata/cara" de las bandas del DCF. Si dos métodos difieren más que eso, coinciden
+# en dirección pero no en magnitud (media). Los múltiplos dan una señal de bandas, no un upside:
+# la escala es común solo de forma aproximada.
+convergence_spread_max = 0.6
+no_evaluable_cap = "media"          # con un solo método evaluable no hay contraste: techo de la confianza
 coverage_bounds = [0.9, 0.7]        # componentes evaluados / aplicables: >= 0.9 alta; >= 0.7 media
 source_issue_bounds = [0, 2]        # incidencias de fuente: 0 alta; <= 2 media; más, baja
 excluded_multiple_components = ["DCF", "Regla de 40"]   # no son múltiplos frente al sector

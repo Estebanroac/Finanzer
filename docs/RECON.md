@@ -641,13 +641,12 @@ correctos según los datos, pero aplican reglas genéricas a arquetipos que nece
 - **Un solo WACC y un solo rango** ([6%, 20%]): el mismo en DCF, grid, spread ROIC−WACC y lo mostrado. El grid ya no
   desplaza su base a [8%, 18%]: recorta columnas y filas fuera de rango y lo indica (SNOW: sin 32.5% ni 35%).
   FINANCIAL no tiene WACC; REIT tiene WACC (spread) pero no DCF.
-- **Rf:** ^TNX con caché de 24 h; si no hay lectura válida, el 4.5% de config, marcado. En replay (tests y golden) es
-  siempre el de config: los golden no dependen del día de captura.
+- **Rf:** ^TNX con caché de 24 h; si no hay lectura válida, el de config, marcado: 5.29%, el Tesoro a 10 años con
+  el que Damodaran calcula la prima implícita (1-oct-2026). En replay (tests y golden) es siempre el de config: los
+  golden no dependen del día de captura. **Prima y Rf de config forman un par** y se actualizan juntos.
 - **Prima de riesgo = implícita de Damodaran:** 4.20% a 1-oct-2026 (TTM con payout ajustado; antes 5.5% heredada sin
   fuente). Kroll (5.0%) queda como referencia en el comentario de config. Una prima histórica mayor que la implícita
-  hace que todo salga sobrevalorado por construcción. **Pendiente de decisión:** Damodaran la calcula con el Tesoro
-  en 5.29%; el Rf de fallback (4.5%) es más bajo, así que en replay (y en prod si ^TNX falla) el Ke queda 0.79 pp
-  por debajo del par coherente (5.29% + β × 4.20%).
+  hace que todo salga sobrevalorado por construcción.
 - **Beta ajustada de Blume:** β = 0.67 × β bruta + 0.33 (config) en el Ke del WACC y en el de FINANCIAL; la bruta se
   sigue mostrando (`beta.raw` / `beta.adjusted`, y en el PDF). NFLX 1.61 -> 1.41.
 - **Inputs del DCF:** CYCLICAL usa el FCF de mantenimiento (OCF − D&A/DD&A, promedio de los ejercicios): FCX 3.65B
@@ -655,18 +654,35 @@ correctos según los datos, pero aplican reglas genéricas a arquetipos que nece
   1.6% antiguo: 25.03 -> 23.65 $/acción, converge al 2.5% en la etapa 2). g >= WACC: sin dato con motivo.
 - **Fiabilidad del DCF y aporte al score:** baja si el grid no contiene el precio, el valor terminal pesa > 85% o el
   FCF está marcado o inferido; media fuera del caso base ±1, en CYCLICAL o con posible cíclica. Aporte a Valoración:
-  ±4 (alta), ±2 (media), 0 (baja, con el texto explícito). El rescate de growth no lo compensa. Con los fixtures y
-  la prima implícita + Blume: solo SNOW queda en baja (el grid no contiene el precio); NFLX prod −26% media (−1),
-  FCX −47% media (−2), V local +34% media (+2), NFLX local +21% alta (+2).
-- **Confianza del veredicto** (`lib/valuation_confidence.py`): convergencia (DCF, múltiplos frente al sector y Graham
-  donde aplica el P/E), cobertura, calidad de fuente y estabilidad; media ponderada en config. Un DCF de fiabilidad
-  baja no puede confirmar a los demás métodos (convergencia como mucho media). NFLX prod: convergencia baja
-  (múltiplos barata, DCF y Graham cara) -> confianza media. **No limita el score** (techo: etapa 9).
+  ±4 (alta), ±2 (media), 0 (baja, con el texto explícito). El rescate de growth no lo compensa. Con los fixtures, la
+  prima implícita, el par Rf 5.29% y Blume: SNOW y FCX en baja (el grid no contiene el precio); NFLX prod −33% media
+  (−2, score 99 -> 97); V local +15% alta (+2, 96 -> 98); NFLX local +8% alta (0, en precio).
+- **Confianza del veredicto** (`lib/valuation_confidence.py`): convergencia, cobertura, calidad de fuente y
+  estabilidad; media ponderada en config. **No limita el score** (techo: etapa 9). Regla de convergencia final:
+  · métodos evaluables: DCF (si su fiabilidad no es baja) y múltiplos frente al sector; en FINANCIAL, P/B
+    justificado por Gordon (intrínseco) y P/B frente a la mediana del sector (relativo; mediana provisional).
+    Graham no vota: se muestra como "referencia del inversor defensivo (P/E 15 × P/B 1.5)";
+  · por dirección (en precio = ±10% de upside, la banda del DCF en Valoración): alta si coinciden y la distancia
+    entre señales es < 0.6 (30 pp de upside, de "en precio" a "claramente barata/cara"); media si coinciden pero
+    la superan, o si uno está en precio y otro tiene dirección; baja si son opuestas;
+  · un solo método evaluable: "no evaluable", no pondera y la confianza tiene techo en media.
+  Por qué O local salía "alta" antes de este cambio: con un solo método la convergencia valía "media" (0.5 × 0.4 =
+  0.2) y las otras tres dimensiones eran "alta" (0.6): 0.80 >= 0.75. Un veredicto sin ningún contraste llegaba a
+  "alta" porque la falta de contraste solo restaba 0.2 puntos.
+  Distribución con los fixtures: 4 alta (V prod, JPM ×2, V local), 7 media, 1 baja (FCX prod).
+- **Etapa 11 — artefacto de los fixtures:** en prod la calidad de fuente nunca llega a "alta" porque los fixtures de
+  prod no tienen estados trimestrales (TTM con fallback al anual: una incidencia fija). No se ajusta la regla para
+  compensarlo; se verifica con la recaptura de la etapa 11.
+- **Mantenimiento mensual — par prima/Rf:** Damodaran publica la prima implícita cada mes (home.htm, "Implied ERP on
+  <fecha>", con el Tesoro usado). El par `valuation.capm.market_risk_premium` / `risk_free_rate` debe revisarse cada
+  mes y actualizarse junto, con fecha. **Propuesta para la etapa 11:** un test o un aviso en el arranque que compare
+  la fecha registrada en config con la de hoy (más de 35 días -> aviso en el log y en `data_provenance`), y un
+  script de mantenimiento que lea home.htm, extraiga prima y Tesoro y proponga el cambio de config (sin aplicarlo
+  solo: lo revisa una persona).
 - **Etapa 9 — pendientes que deja la 8:** (a) techo del score condicionado por la confianza (NFLX prod sigue en 99
   con convergencia baja y un DCF que no concilia); (b) el número de Graham se sigue calculando en REIT con un BPA
   deprimido por la depreciación (no entra en la convergencia, pero se muestra): decidir si pasa a "no aplica";
-  (c) la convergencia no llega a "alta" en ninguno de los 12 casos (Graham estructuralmente "cara" en empresas de
-  calidad y crecimiento, un solo método en FINANCIAL y REIT) y en prod la calidad de fuente queda en "media" por el
-  TTM ausente de los fixtures: con esos pesos, 10 de 12 veredictos salen "media". Revisar la regla antes del techo.
+  (c) con convergencia "media" y las otras tres en "alta", la confianza llega a "alta" (V local: DCF barata +15%,
+  múltiplos en precio -> 0.80): revisar si el techo de la etapa 9 debe exigir convergencia alta.
 - **Diferencia de entorno:** SNOW local tiene deuda neta en el último trimestre (Kd tramo D por la regla M) y prod caja
   neta en el FY (BBB); con un peso de la deuda del 2% el WACC apenas cambia (12.0% frente a 11.7%).

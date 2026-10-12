@@ -8,7 +8,11 @@
 risk_free_ticker = "^TNX"           # rendimiento del Tesoro de EE. UU. a 10 años (Yahoo, cotiza en %)
 risk_free_cache_hours = 24          # una lectura correcta vale 24 h
 risk_free_bounds = [0.0, 0.15]      # una lectura fuera del rango se descarta
-risk_free_rate = 0.045              # FALLBACK si ^TNX no está disponible (se marca en el JSON y el PDF)
+# FALLBACK si ^TNX no está disponible (se marca en el JSON y el PDF): el Tesoro a 10 años
+# que usa Damodaran para la prima implícita de abajo (5.29% a 1-oct-2026, misma fuente).
+# PAR: risk_free_rate y market_risk_premium forman un par (la prima implícita se calcula
+# con ese Rf) y DEBEN ACTUALIZARSE JUNTOS, con la misma fecha (revisión mensual, RECON 7.13).
+risk_free_rate = 0.0529
 # Prima de riesgo de mercado (EE. UU.): la IMPLÍCITA de Damodaran vigente. El DCF
 # compara valor intrínseco con precio de mercado: una prima histórica mayor que la
 # implícita hace que todo salga sobrevalorado por construcción.
@@ -18,6 +22,7 @@ risk_free_rate = 0.045              # FALLBACK si ^TNX no está disponible (se m
 #   cada mes: revisarla al menos cada trimestre.
 #   Referencia: Kroll, ERP recomendada para EE. UU. 5.0% (desde jun-2024).
 #   Antes (hasta la etapa 8): 5.5%, prima heredada de la v1 sin fuente.
+#   Par con risk_free_rate (arriba): actualizar los dos a la vez.
 market_risk_premium = 0.042
 default_beta = 1.0                  # beta ausente (la ajustada de 1.0 es 1.0)
 # Beta ajustada de Blume (1971): β = 0.67 × β bruta + 0.33 (reversión hacia 1). Se usa
