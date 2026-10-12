@@ -600,4 +600,28 @@ correctos según los datos, pero aplican reglas genéricas a arquetipos que nece
   **recaptura de la etapa 11**. Los fixtures locales se complementaron solo con los tres estados trimestrales
   (`tests/supplement_local_quarterly.py`, marcado en metadata.supplements), sin recapturar el resto.
 - **Altman pasa al último FY** (se define sobre ejercicios): en local deja de faltar el dato de utilidades retenidas
-  (NFLX, SNOW, FCX, O tenían Altman "sin dato" por el balance incompleto de quoteSummary).
+  (NFLX, SNOW, FCX tenían Altman "sin dato" por el balance incompleto de quoteSummary; O no aplica por arquetipo).
+  Con ello local y prod usan el mismo modelo e inputs (SNOW: Z'' en ambos, z 15.46; prod ya lo tenía).
+- **Modelo de Altman solo por arquetipo y sector/industria:** `altman_model` con coincidencia exacta contra
+  `valuation.models.altman.manufacturing_sectors` (basic materials, industrials, energy → Z original; el resto →
+  Z''). Se elimina el cambio automático a Z' (empresas privadas) cuando falta la capitalización: ahora es "sin
+  dato". Antes el modelo dependía del dato disponible y de subcadenas ("financial services" entraba por "services").
+- **Hallazgo pendiente de decisión — X4 del Z'':** el código usa X4 = capitalización / pasivos totales en el Z''.
+  Altman (1995) define el Z'' con X4 = patrimonio CONTABLE / pasivos. Con la capitalización, X4 domina en empresas
+  de múltiplo alto: SNOW da zona segura (z 15.46, X4 18.05) con utilidades retenidas negativas (X2 −1.04); con el
+  patrimonio contable (1.92B / 7.21B, X4 0.27) daría ≈ −3.2, zona de peligro. NFLX ≈ 5.3 y V ≈ 3.1 seguirían en
+  zona segura. Corregirlo cambia Solidez de SNOW (y los golden); no se ha tocado.
+- **Recurrencia de partidas no recurrentes:** una partida del mismo tipo y signo en 3 o más de los últimos 4
+  ejercicios (`thresholds.normalization.recurrence_*`) solo normaliza el exceso sobre su promedio. Resultan
+  recurrentes: cargos especiales de O (deterioros, 4 de 4), de V (litigios, 4 de 4) y de SNOW; ganancias por venta de
+  valores de O y V (SNOW solo en prod), y el total de partidas de JPM (3 de 4). Las pérdidas en valores de JPM (4 de 4) no entran
+  en el total de Yahoo, así que no son un tipo propio (los componentes solo valen como tipos si cuadran con el total
+  en cada ejercicio). El pico inferido de NFLX (1T-26, único) se sigue normalizando completo.
+- **Etapa 9 — el score debe poder expresar la contradicción:** NFLX local llega a 100/100 con el P/E reportado no
+  fiable (16.6% no recurrente) y un DCF negativo (−19.7%). Un techo del score condicionado por la confianza
+  (P/E no fiable, DCF por debajo del precio, coberturas bajas) evitaría el "100" en una lectura con señales en
+  contra.
+- **Pendiente (lectura REIT) — payout sobre el beneficio:** O muestra un payout de 236–276% "insostenible"
+  calculado sobre el beneficio neto. En REIT el dividendo se cubre con FFO/AFFO; el payout debería leerse sobre el
+  FFO (o no aplicar sobre el beneficio). No se ha tocado.
+

@@ -77,6 +77,20 @@ def test_reit_branch(outputs_by_env):
         assert "piotroski" in a["not_applicable"] and "Piotroski F" in a["score_coverage"]["calidad"]["not_applicable"]
 
 
+def test_reit_current_ratio_not_applicable(outputs_by_env):
+    """Etapa 7 (omisión de la 6): el current ratio no aplica a REIT, como en FINANCIAL:
+    no puntúa, no cuenta en la cobertura y el PDF lo muestra como "No aplica"."""
+    for env in _envs():
+        a, pdf = outputs_by_env(env)["O"]
+        sol = a["score_coverage"]["solidez"]
+        assert "Current ratio" in sol["not_applicable"] and "Current ratio" not in sol.get("missing", [])
+        assert "Current Ratio" not in _metrics(a, "Solidez Financiera")
+        na = next(x for x in a["score"]["breakdown"]["Solidez Financiera"]["adjustments"] if x["metric"] == "No aplica")
+        assert "Current ratio: No aplica a REIT: activos inmobiliarios" in na["reason"]
+        text = fb.pdf_text(pdf)
+        assert "Current ratio\n—\nNo aplica" in text and "El current ratio de" not in text
+
+
 # ─────────────────────────── GROWTH_PRE_PROFIT ───────────────────────────
 def test_growth_pre_profit_valuation_is_conclusive(outputs_by_env):
     """SNOW: Valoración deja de ser no concluyente por falta de P/E (RECON §7.10)."""

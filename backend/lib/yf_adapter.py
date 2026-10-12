@@ -924,6 +924,7 @@ def _enrich_prior_year_data(symbol: str, info: Dict[str, Any]) -> Dict[str, Any]
         "pretax_income": _row(inc, "Pretax Income"),
         "tax_provision": _row(inc, "Tax Provision"),
         "unusual_fy0": {r: (_row(inc, r) or [None])[0] for r in _UNUSUAL_ROWS if _row(inc, r)},
+        "unusual_fy": {r: _row(inc, r) for r in _UNUSUAL_ROWS if _row(inc, r)},   # recurrencia (etapa 7)
     }
 
     # Columns: [0] = most recent (current), [1] = prior year

@@ -57,10 +57,10 @@ original_grey = 1.81
 non_manufacturing_coef = [6.56, 3.26, 6.72, 1.05]   # Z'' (sin X5)
 non_manufacturing_safe = 2.60
 non_manufacturing_grey = 1.10
-private_coef = [0.717, 0.847, 3.107, 0.420, 0.998]  # Z' (X4 = valor contable / pasivos)
-private_safe = 2.90
-private_grey = 1.23
-non_manufacturing_sectors = ["technology", "tech", "communication services", "healthcare", "consumer cyclical", "consumer defensive", "real estate", "utilities", "software", "internet", "media", "telecom", "services", "retail", "fintech"]
+# Modelo por sector/industria de la clasificación (coincidencia exacta, minúsculas):
+# estos -> Z original; el resto -> Z''. FINANCIAL y REIT: no aplica (arquetipo).
+manufacturing_sectors = ["basic materials", "industrials", "energy"]
+manufacturing_industries = []       # industrias manufactureras fuera de esos sectores (vacío por ahora)
 
 [models.piotroski]
 bands = [8, 6, 4, 2]                    # ÚNICA escala: interpretación, insignia (Fuerte/Bueno/Neutral/Débil/Crítico),

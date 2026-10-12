@@ -49,6 +49,12 @@ WHY_NOT_APPLICABLE = {
     MATURE: "",
 }
 
+# Motivo propio de un componente cuando el del arquetipo no lo explica.
+WHY_NOT_APPLICABLE_KEY = {
+    (REIT, "current_ratio"): "activos inmobiliarios de largo plazo financiados con deuda a largo plazo; "
+                             "el circulante no mide su liquidez",
+}
+
 # Nombre legible de cada componente (claves de sectors.archetypes.not_applicable).
 COMPONENT_LABELS = {
     "piotroski": "Piotroski F", "altman": "Altman Z", "ocf": "Flujo operativo", "fcf": "FCF",
@@ -77,7 +83,7 @@ def not_applicable(archetype: Optional[str], key: str) -> Optional[str]:
     """Motivo "No aplica a ARQUETIPO: …" si el componente `key` no aplica; None si aplica."""
     if not archetype or key not in cfg(f"sectors.archetypes.not_applicable.{archetype}"):
         return None
-    why = WHY_NOT_APPLICABLE.get(archetype) or ""
+    why = WHY_NOT_APPLICABLE_KEY.get((archetype, key)) or WHY_NOT_APPLICABLE.get(archetype) or ""
     return f"No aplica a {archetype}" + (f": {why}" if why else "")
 
 

@@ -410,6 +410,12 @@ min_share_of_pretax = 0.03          # y el exceso debe ser >= 3% del beneficio a
 mad_floor_share_of_pretax = 0.01    # suelo de la escala (MAD): 1% del beneficio antes de impuestos trimestral medio
 tax_rate_bounds = [0.0, 0.35]       # tipo efectivo TTM acotado
 default_tax_rate = 0.21             # sin tipo efectivo calculable
+# Recurrencia: mismo tipo y signo en >= 3 de los últimos 4 ejercicios -> solo el exceso sobre su promedio.
+recurrence_min_years = 3
+recurrence_window = 4
+# Los componentes (cargos especiales + ganancias por venta) se usan como tipos si cuadran con el total.
+components_tolerance = 0.05         # relativo al total
+components_tolerance_abs = 1000000.0
 
 # ── Crecimiento (etapa 7) ──
 [growth]

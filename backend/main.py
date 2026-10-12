@@ -747,7 +747,7 @@ def _compute_analysis(symbol: str) -> dict:
                     market_value_equity=z_mcap,
                     total_liabilities=z_tl,
                     sales=z_rev,
-                    sector=sector,
+                    sector=sector, industry=profile.industry or "",
                     book_value_equity=z_te,
                     not_applicable_reason=not_applicable(archetype, "altman"),
                 )
@@ -872,7 +872,7 @@ def _compute_analysis(symbol: str) -> dict:
                 _pt, _tx = (_stmts.get("pretax_income") or [None])[0], (_stmts.get("tax_provision") or [None])[0]
                 _t_fy = (_tx / _pt) if (_pt and _tx is not None and _pt > 0) else None
                 _norm = normalize_earnings(net_income=_ni, explicit_rows=_rows, quarterly=_qn, basis=_basis,
-                                           tax_rate_fallback=_t_fy)
+                                           tax_rate_fallback=_t_fy, annual_rows=_stmts.get("unusual_fy") or {})
                 _pe_rep = r("pe") if (r("pe") or 0) > 0 else None   # P/E <= 0 no es un múltiplo
                 _nin = _norm["normalized_net_income"]
                 _scale = (_ni / _nin) if (_norm["applied"] and _ni and _nin and _nin > 0 and _ni > 0) else None

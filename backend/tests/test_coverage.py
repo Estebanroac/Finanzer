@@ -96,7 +96,7 @@ def test_main_reads_structured_state_not_symbol(outputs_by_env):
 
 
 # ─────────────────────────── Altman: todos los componentes o sin dato ───────────────────────────
-from financial_ratios import altman_z_score  # noqa: E402
+from financial_ratios import altman_model, altman_z_score  # noqa: E402
 
 _ALT = dict(working_capital=20, total_assets=100, retained_earnings=30, ebit=15,
             market_value_equity=120, total_liabilities=50, sales=150)
@@ -115,6 +115,27 @@ def test_altman_original_needs_sales_but_z_double_prime_does_not():
     assert z is None and "ventas" in det["missing"]
     z2, zone2, _, det2 = altman_z_score(**dict(_ALT, sales=None), sector="Technology")
     assert z2 is not None and zone2 == "SAFE" and "Z''" in det2["model"]
+
+
+def test_altman_model_depends_only_on_sector_and_industry():
+    """Etapa 7: el modelo sale del sector/industria de la clasificación (coincidencia
+    exacta), no de los datos disponibles ni de subcadenas."""
+    assert altman_model("Industrials") == altman_model("Basic Materials") == altman_model("Energy") == "original"
+    assert altman_model("Financial Services") == "z_double_prime"      # antes entraba por "services"
+    assert altman_model("Technology", "Software - Application") == altman_model("") == "z_double_prime"
+    # sin valor de mercado: "sin dato", ya no cambia en silencio al Z' de empresas privadas
+    z, zone, _, det = altman_z_score(**dict(_ALT, market_value_equity=None), sector="Technology",
+                                     book_value_equity=40)
+    assert z is None and det["reason"] == "sin_dato" and "valor de mercado del patrimonio" in det["missing"]
+
+
+def test_altman_same_model_in_both_envs(outputs_by_env):
+    import conftest
+    if len(conftest.ENVS) < 2:
+        pytest.skip("faltan los dos juegos")
+    for sym in fixture_backend.TICKERS:
+        models = {env: outputs_by_env(env)[sym][0]["altman_z"]["model"] for env in conftest.ENVS}
+        assert len(set(models.values())) == 1, (sym, models)
 
 
 def test_altman_complete_unchanged():
@@ -247,7 +268,7 @@ def test_full_data_gives_exactly_the_previous_score(case):
                    "valoracion": {"P/E", "P/FCF", "EV/EBITDA", "PEG"},
                    "calidad": {"Piotroski F", "Flujo operativo", "FCF", "FCF / beneficio neto"},
                    "crecimiento": {"Crecimiento del FCF"}}),
-    ("reit_full", {"solidez": {"Altman Z"}, "rentabilidad": set(),
+    ("reit_full", {"solidez": {"Altman Z", "Current ratio"}, "rentabilidad": set(),
                    "valoracion": {"P/E", "P/FCF", "PEG"},
                    "calidad": {"Piotroski F", "FCF / beneficio neto"}, "crecimiento": {"Crecimiento del BPA"}}),
 ])

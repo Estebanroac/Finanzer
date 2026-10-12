@@ -699,7 +699,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     r_spread = read_spread(km.get("roic_wacc_spread"), km.get("roic"), km.get("wacc"))
     r_up = read_upside(dcf.get("upside"))
     r_graham = read_graham(graham_margin)
-    r_cr = read_current(km.get("current_ratio"))
+    r_cr = None if "current_ratio" in _na_keys else read_current(km.get("current_ratio"))
     # D/E contable sin lectura en financieras (los depósitos son pasivo): decisión
     # de la etapa 4. La celda muestra "—" y DE_NOT_APPLICABLE.
     r_de = None if is_financial else read_de(km.get("de"))
@@ -1229,10 +1229,18 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         aligns=['LEFT', 'RIGHT', 'RIGHT', 'RIGHT', 'RIGHT'], reads=reads))
     # Etapa 7: beneficio normalizado (una línea cuando hay partidas no recurrentes aplicadas).
     if norm.get("applied") and norm.get("normalized_net_income") is not None:
-        _its = "; ".join(
-            (f"{it['type']} ({it['confidence']}): {fv(it['net'], 'money')} netos"
-             + ("" if it.get("applied") else ", bajo el umbral, no aplicada"))
-            for it in norm.get("items") or [])
+        def _it_txt(it):
+            lab = f"{it.get('label') or it['type']} ({it['type']}, confianza {it['confidence']})"
+            if it.get("recurrent"):
+                per = (f"{it.get('recurrent_years')} trimestres" if it["type"] == "inferida" else
+                       f"{it.get('recurrent_years')} de los últimos {it.get('recurrence_window')} ejercicios")
+                lab += (f", recurrente ({per}): "
+                        + (f"solo el exceso sobre su promedio, {fv(it['net'], 'money')} netos" if it.get("net")
+                           else "sin exceso sobre su promedio, no se ajusta"))
+            else:
+                lab += f": {fv(it['net'], 'money')} netos"
+            return lab + ("" if it.get("applied") else ", bajo el umbral, no aplicada")
+        _its = "; ".join(_it_txt(it) for it in norm.get("items") or [])
         _line = (f"Beneficio {norm.get('basis')}: reportado {fv(norm.get('reported_net_income'), 'money')}, "
                  f"normalizado {fv(norm.get('normalized_net_income'), 'money')} "
                  f"(no recurrentes {norm['one_off_pct'] * 100:.1f}% del beneficio; {_its}). "
@@ -1439,6 +1447,9 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
                 (lab == "Deuda neta / EBITDA" and nde_state == "no_significativo"):
             rows.append([lab, "—", rd[0]])
             reads.append((len(rows) - 1, rd[1]))
+            continue
+        if lab == "Current ratio" and "current_ratio" in _na_keys:
+            rows.append([lab, "—", "No aplica"])     # REIT (etapa 7); FINANCIAL tiene su propia sección
             continue
         if val is None:
             continue

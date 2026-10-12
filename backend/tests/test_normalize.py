@@ -4,7 +4,7 @@ import pytest
 
 import fixture_backend as fb
 from historical_metrics import growth_rate, per_share, per_share_basis
-from normalize import explicit_items, infer_peaks, normalize
+from normalize import infer_peaks, normalize, recurrence, typed_items
 from settings import cfg
 from ttm import build_ttm, consecutive
 
@@ -70,21 +70,76 @@ def test_explicit_total_unusual_items_with_tax_effect():
 
 
 def test_no_double_counting_total_and_components():
+    """Sin Special Income Charges que cuadre, el total es UN tipo; los sueltos no se suman."""
     rows = {"Total Unusual Items": -0.34 * B, "Write Off": 0.47 * B, "Gain On Sale Of Security": 0.16 * B,
             "Restructuring And Mergern Acquisition": 0.05 * B}
-    ex = explicit_items(rows)
+    ex = typed_items(rows)
     assert ex["level"] == "total_unusual_items" and ex["gross"] == pytest.approx(-0.34 * B)
+    assert [t["row"] for t in ex["types"]] == ["Total Unusual Items"]
 
 
 def test_sign_convention_income_effect():
     """Filas "de gasto" (cargo en positivo) cambian de signo; las "de resultado" no."""
-    ex = explicit_items({"Restructuring And Mergern Acquisition": 0.63 * B, "Write Off": 0.2 * B,
-                         "Gain On Sale Of Ppe": 0.1 * B})
+    ex = typed_items({"Restructuring And Mergern Acquisition": 0.63 * B, "Write Off": 0.2 * B,
+                      "Gain On Sale Of Ppe": 0.1 * B})
     assert ex["level"] == "componentes" and ex["gross"] == pytest.approx(-0.73 * B)
     # Special Income Charges ya es efecto sobre el beneficio; Other Special Charges no se suma aparte
-    ex = explicit_items({"Special Income Charges": 1.03 * B, "Other Special Charges": -0.4 * B,
-                         "Gain On Sale Of Security": -0.03 * B})
+    ex = typed_items({"Special Income Charges": 1.03 * B, "Other Special Charges": -0.4 * B,
+                      "Gain On Sale Of Security": -0.03 * B})
     assert ex["level"] == "special_income_charges" and ex["gross"] == pytest.approx(1.0 * B)
+
+
+def test_components_are_types_only_if_they_match_the_total_every_year():
+    """O: cargos especiales + ganancias por venta = total en cada ejercicio -> dos tipos.
+    JPM: las pérdidas en valores no entran en el total de Yahoo -> el total es un tipo."""
+    o = {"Total Unusual Items": -0.34 * B, "Special Income Charges": -0.496 * B,
+         "Gain On Sale Of Security": 0.156 * B}
+    o_fy = {"Total Unusual Items": [-0.34 * B, -0.394 * B], "Special Income Charges": [-0.496 * B, -0.522 * B],
+            "Gain On Sale Of Security": [0.156 * B, 0.128 * B]}
+    ex = typed_items(o, o_fy)
+    assert ex["level"] == "componentes_del_total"
+    assert [t["row"] for t in ex["types"]] == ["Special Income Charges", "Gain On Sale Of Security"]
+    jpm = {"Total Unusual Items": 1.03 * B, "Special Income Charges": 1.03 * B, "Gain On Sale Of Security": -0.029 * B}
+    jpm_fy = {"Total Unusual Items": [1.03 * B, 5.851 * B], "Special Income Charges": [1.03 * B, 5.851 * B],
+              "Gain On Sale Of Security": [-0.029 * B, -1.045 * B]}
+    assert typed_items(jpm)["level"] == "componentes_del_total"          # el periodo solo cuadra por tolerancia
+    ex = typed_items(jpm, jpm_fy)                                         # pero el año anterior no
+    assert ex["level"] == "total_unusual_items" and [t["row"] for t in ex["types"]] == ["Total Unusual Items"]
+
+
+# ─────────────────────────── recurrencia ───────────────────────────
+def test_recurrence_rule():
+    C = cfg("thresholds.normalization")
+    assert (C["recurrence_min_years"], C["recurrence_window"]) == (3, 4)
+    r = recurrence(-0.496, [-0.496, -0.522, -0.102, -0.039])              # O: deterioros 4 de 4
+    assert r["recurrent"] and r["years"] == 4
+    assert r["excess"] == pytest.approx(-(0.496 - 0.28975))              # solo el exceso sobre el promedio
+    r = recurrence(0.789, [0.789, 0.962, 0.681, -0.139])                  # V: valores 3 de 4, bajo el promedio
+    assert r["recurrent"] and r["excess"] == 0
+    r = recurrence(2.6, [2.6, None, -0.1, 0.0])                           # una vez: se normaliza completa
+    assert not r["recurrent"] and r["excess"] == 2.6
+    r = recurrence(0.5, [0.5, -0.4, 0.3, -0.2])                           # signo cambiante: 2 de 4
+    assert not r["recurrent"] and r["excess"] == 0.5
+
+
+def test_recurrent_explicit_item_normalizes_only_the_excess():
+    fy = {"Special Income Charges": [-0.496 * B, -0.522 * B, -0.102 * B, -0.039 * B]}
+    n = normalize(net_income=1.06 * B, explicit_rows={"Special Income Charges": -0.496 * B}, quarterly=None,
+                  basis="FY", tax_rate_fallback=0.0, annual_rows=fy)
+    it = n["items"][0]
+    assert it["recurrent"] and it["period_gross"] == pytest.approx(-0.496 * B)
+    assert it["gross"] == pytest.approx(-(0.496 - 0.28975) * B)
+    assert n["normalized_net_income"] == pytest.approx((1.06 + 0.496 - 0.28975) * B)
+
+
+def test_implied_tax_rate_outside_bounds_uses_effective_rate():
+    """Tipos de signo contrario que se compensan (bruto ~0): el tipo implícito de Yahoo
+    no es un tipo y no puede repartirse; se usa el efectivo."""
+    rows = {"Special Income Charges": -0.024 * B, "Gain On Sale Of Security": 0.025 * B,
+            "Tax Effect Of Unusual Items": 0.004 * B}
+    n = normalize(net_income=-1.09 * B, explicit_rows=rows, quarterly=None, basis="TTM", tax_rate_fallback=0.2)
+    assert all("tipo efectivo 20.0%" == i["tax_source"] for i in n["items"])
+    assert n["one_off_pct"] < 0.05
 
 
 def test_explicit_without_tax_effect_uses_effective_rate():
@@ -120,6 +175,16 @@ def test_quarter_with_explicit_items_is_not_inferred_again():
     assert infer_peaks(q)["peaks"] == []
 
 
+def test_repeated_inferred_peak_is_recurrent():
+    """El mismo pico (mismo signo) en >= 3 trimestres: solo cuenta el exceso sobre su promedio."""
+    q = _quarters([-0.12, 2.0, -0.15, 1.0, -0.13, 1.2, -0.14, -0.12])
+    peaks = infer_peaks(q)["peaks"]
+    assert [p["quarter"] for p in peaks] == ["2026-03-31", "2025-09-30"]
+    assert all(p["recurrent"] and p["repeats"] == 3 for p in peaks)
+    assert 0 < peaks[0]["gross"] < peaks[0]["peak_gross"]                  # 2.0 sobre un promedio de ~1.4
+    assert peaks[1]["gross"] == 0                                         # 1.0, por debajo del promedio
+
+
 def test_inferred_needs_history():
     r = infer_peaks(_quarters([-0.1, 2.0, -0.1]))
     assert r["available"] is False and "trimestres" in r["reason"]
@@ -144,6 +209,21 @@ def test_nflx_breakup_fee_detected_and_pe_normalized(outputs_by_env):
     assert n["pe_unreliable"] and n["pe_normalized"] > n["pe_reported"]
     assert n["reported_net_income"] == pytest.approx(13.65 * B, rel=1e-3)
     assert n["normalized_net_income"] == pytest.approx(11.39 * B, rel=5e-3)
+
+
+def test_recurrent_items_by_ticker(outputs_by_env):
+    """Deterioros de O y litigios de V (cargos especiales) y el total de JPM son recurrentes;
+    la comisión de NFLX (pico inferido único) se normaliza completa."""
+    import conftest
+    for env in conftest.ENVS:
+        out = outputs_by_env(env)
+        def item(sym, row):
+            return next(i for i in out[sym][0]["earnings_normalization"]["items"] if i.get("item_type") == row)
+        assert item("O", "Special Income Charges")["recurrent"]
+        assert item("V", "Special Income Charges")["recurrent"]
+        assert item("JPM", "Total Unusual Items")["recurrent"]
+    nflx = outputs_by_env("local")["NFLX"][0]["earnings_normalization"]["items"][0]
+    assert nflx["type"] == "inferida" and not nflx["recurrent"] and nflx["gross"] == nflx["period_gross"]
 
 
 def test_reit_ffo_uses_reported_income_not_normalized(outputs_by_env):

@@ -14,7 +14,7 @@ from enum import Enum
 
 # Configuración única (backend/config/*.toml, validada al importar settings).
 from settings import cfg
-from classify import FINANCIAL, REIT, GROWTH_PRE_PROFIT, CYCLICAL, MATURE, not_applicable
+from classify import FINANCIAL, REIT, GROWTH_PRE_PROFIT, CYCLICAL, MATURE, not_applicable, norm_industry
 
 _CAPM = cfg("valuation.capm")
 _WACC = cfg("valuation.wacc")
@@ -83,6 +83,17 @@ def is_financial_sector(sector: str) -> bool:
     financial_keywords = cfg("sectors.financials.keywords")
     return any(kw in sector_lower for kw in financial_keywords)
 
+def altman_model(sector: Optional[str], industry: Optional[str] = None) -> str:
+    """Modelo de Altman por sector/industria (etapa 7): "original" (Z, 1968) para
+    los sectores e industrias manufactureros de la config; "z_double_prime" (Z'')
+    para el resto. Coincidencia EXACTA (antes por subcadena: "financial services"
+    entraba por "services"). Sin sector: Z'' (no exige ventas)."""
+    if norm_industry(industry) in _ALTMAN["manufacturing_industries"] or \
+            (sector or "").strip().lower() in _ALTMAN["manufacturing_sectors"]:
+        return "original"
+    return "z_double_prime"
+
+
 def altman_z_score(
     working_capital: Optional[float],
     total_assets: Optional[float],
@@ -94,10 +105,12 @@ def altman_z_score(
     sector: str = "",
     book_value_equity: Optional[float] = None,
     not_applicable_reason: Optional[str] = None,
+    industry: str = "",
 ) -> Tuple[Optional[float], str, str, dict]:
     """
-    Altman Z-Score adaptativo — selecciona automáticamente el modelo correcto
-    según el tipo de empresa:
+    Altman Z-Score. El MODELO depende solo del arquetipo (FINANCIAL y REIT: no
+    aplica) y del sector/industria de la clasificación (altman_model), nunca de
+    qué datos hay: el mismo ticker usa el mismo modelo en cualquier entorno.
 
     1) Z-Score ORIGINAL (1968) — empresas manufactureras públicas
        Z = 1.2×X1 + 1.4×X2 + 3.3×X3 + 0.6×X4 + 1.0×X5
@@ -108,10 +121,8 @@ def altman_z_score(
        Z'' = 6.56×X1 + 3.26×X2 + 6.72×X3 + 1.05×X4
        Safe > 2.60 | Grey 1.10–2.60 | Distress < 1.10
 
-    3) Z'-Score (1983) — empresas privadas (usa book value en vez de market cap)
-       Z' = 0.717×X1 + 0.847×X2 + 3.107×X3 + 0.420×X4' + 0.998×X5
-       donde X4' = Book Value Equity / Total Liabilities
-       Safe > 2.90 | Grey 1.23–2.90 | Distress < 1.23
+    Sin valor de mercado del patrimonio el Z es "sin dato" (antes cambiaba en
+    silencio al Z' de empresas privadas: el modelo dependía del dato disponible).
 
     Returns:
         Tuple[z_score, risk_level, interpretation, details_dict]
@@ -128,11 +139,7 @@ def altman_z_score(
             {"model": "No Aplicable", "reason": "no_aplica", "sector": sector or ""},
         )
 
-    # ── Determine which model to use based on sector ──
-    _sector = (sector or "").lower().strip()
-    _NON_MFG_SECTORS = _ALTMAN["non_manufacturing_sectors"]
-    is_non_manufacturing = any(s in _sector for s in _NON_MFG_SECTORS) or _sector == ""
-    use_private = (market_value_equity is None or market_value_equity == 0) and book_value_equity is not None
+    is_non_manufacturing = altman_model(sector, industry) == "z_double_prime"
 
     # ── Validate minimum required inputs ──
     if total_assets is None or total_assets == 0:
@@ -150,10 +157,7 @@ def altman_z_score(
         missing.append("capital de trabajo")
     if retained_earnings is None:
         missing.append("utilidades retenidas")
-    if use_private:
-        if sales is None:
-            missing.append("ventas")
-    elif market_value_equity is None or market_value_equity == 0:
+    if market_value_equity is None or market_value_equity == 0:
         missing.append("valor de mercado del patrimonio")
     elif not is_non_manufacturing and sales is None:
         missing.append("ventas")
@@ -169,17 +173,7 @@ def altman_z_score(
 
         details = {"X1_wc_ta": round(X1, 4), "X2_re_ta": round(X2, 4), "X3_ebit_ta": round(X3, 4)}
 
-        if use_private:
-            # ── Z'-Score (private companies) ──
-            X4p = book_value_equity / total_liabilities
-            X5 = (sales / total_assets) if sales else 0
-            c = _ALTMAN["private_coef"]
-            z = c[0]*X1 + c[1]*X2 + c[2]*X3 + c[3]*X4p + c[4]*X5
-            model_name = "Z'-Score (Empresas Privadas)"
-            safe_threshold, grey_threshold = _ALTMAN["private_safe"], _ALTMAN["private_grey"]
-            details.update({"X4_bv_tl": round(X4p, 4), "X5_rev_ta": round(X5, 4)})
-
-        elif is_non_manufacturing:
+        if is_non_manufacturing:
             # ── Z''-Score (services / tech / non-manufacturing) ──
             X4 = market_value_equity / total_liabilities
             c = _ALTMAN["non_manufacturing_coef"]
@@ -1990,6 +1984,9 @@ class CategoryCoverage:
         """Devuelve base_score con el reescalado aplicado (sin cambio si cobertura completa)."""
         if self.not_applicable:
             whys = sorted(set(self.not_applicable.values()))
+            if len(whys) > 1:   # motivos distintos: cada uno con sus componentes
+                whys = [", ".join(n for n, w in self.not_applicable.items() if w == why) + f": {why}"
+                        for why in whys]
             adjustments.append({
                 "metric": "No aplica", "value": ", ".join(self.not_applicable), "adjustment": 0,
                 "reason": "; ".join(whys) + " (no cuenta en la cobertura)", "severity": "neutral",
