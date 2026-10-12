@@ -168,6 +168,36 @@ def test_decimal_units_untouched():
     assert not _flags(info, "unidades")
 
 
+# ─────────────────────────── bug c: base de splits ───────────────────────────
+def test_unadjusted_prior_shares_rescaled_by_split_factor():
+    info = _info(lastSplitFactor="10:1")
+    info["_prior_year"]["shares"] = 4.3e8              # pre-split
+    info["_piotroski_current"]["shares"] = 4.22e9
+    _run(info)
+    assert info["_prior_year"]["shares"] == pytest.approx(4.3e9)
+    assert _flags(info, "base_de_split")[0]["action"] == "recalculado"
+
+
+def test_reverse_split_factor_parsed():
+    info = _info(lastSplitFactor="1:10")
+    info["_prior_year"]["shares"] = 1e10
+    _run(info)
+    assert info["_prior_year"]["shares"] == pytest.approx(1e9)
+
+
+def test_share_jump_without_matching_split_sin_dato():
+    info = _info(lastSplitFactor="2:1")
+    info["_prior_year"]["shares"] = 1e8                 # ×10, no lo explica un 2:1
+    _run(info)
+    assert info["_prior_year"]["shares"] is None
+    assert _flags(info, "base_de_split")[0]["action"] == "sin_dato"
+
+
+def test_same_basis_shares_untouched_even_with_recent_split():
+    info = _run(_info(lastSplitFactor="10:1"))         # 1.01e9 -> 1e9, ya ajustado
+    assert info["_prior_year"]["shares"] == 1.01e9 and not _flags(info, "base_de_split")
+
+
 # ─────────────────────────── saltos interanuales ───────────────────────────
 def test_revenue_jump_voids_prior_revenue_and_derived():
     info = _info()

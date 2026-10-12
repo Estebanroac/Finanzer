@@ -35,6 +35,10 @@ THRESHOLDS: Dict[str, float] = {
     "revenue_jump_ratio_min": 0.2,
     "net_income_jump_ratio_max": 20.0,    # mismo signo, |actual/previo|
     "net_income_jump_ratio_min": 0.05,
+    # Acciones: fuera de [0.5x, 2x] entre ejercicios -> sospecha de base de split.
+    "shares_ratio_min": 0.5,
+    "shares_ratio_max": 2.0,
+    "split_match_tolerance": 0.15,        # |ratio / factor − 1|
     # Unidades: |crecimiento| > 1000% o yield > 50% delatan escala porcentual.
     "growth_units_abs_max": 10.0,
     "dividend_yield_max": 0.5,
@@ -210,6 +214,36 @@ def _rule_units(c: _Ctx):
             c.flag(path, "unidades", "sin_dato", v, None, f"crecimiento {v} (> 1000%): escala porcentual")
 
 
+def _split_factor(raw) -> Optional[float]:
+    """'10:1' -> 10.0 ; '1:10' -> 0.1 ; None si no se puede interpretar."""
+    if not raw or not isinstance(raw, str) or ":" not in raw:
+        return None
+    a, b = raw.split(":", 1)
+    a, b = _num(a), _num(b)
+    return (a / b) if (a and b) else None
+
+
+def _rule_split_basis(c: _Ctx):
+    """Acciones del FY actual y del previo en la MISMA base antes de comparar."""
+    t = THRESHOLDS
+    cur, prev = _num(c.get("_piotroski_current.shares")), _num(c.get("_prior_year.shares"))
+    if cur is None or prev is None or prev <= 0:
+        return
+    r = cur / prev
+    if t["shares_ratio_min"] <= r <= t["shares_ratio_max"]:
+        return
+    f = _split_factor(c.info.get("lastSplitFactor"))
+    if f and abs(r / f - 1.0) <= t["split_match_tolerance"]:
+        c.set("_prior_year.shares", prev * f)
+        c.flag("_prior_year.shares", "base_de_split", "recalculado", prev, prev * f,
+               f"acciones ×{r:.2f} entre ejercicios ≈ split {c.info.get('lastSplitFactor')}: "
+               f"año previo llevado a la base actual")
+    else:
+        c.set("_prior_year.shares", None)
+        c.flag("_prior_year.shares", "base_de_split", "sin_dato", prev, None,
+               f"acciones ×{r:.2f} entre ejercicios sin un factor de split que lo explique")
+
+
 def _rule_jumps(c: _Ctx):
     """Saltos interanuales anómalos en ingresos y beneficio (estados FY)."""
     t, s = THRESHOLDS, c.stm
@@ -236,7 +270,8 @@ def _rule_jumps(c: _Ctx):
                        f"derivado de _prior_year.{key}, anulado por salto interanual")
 
 
-_INPUT_RULES = (_rule_fcf, _rule_impossible, _rule_margins, _rule_units, _rule_jumps)
+_INPUT_RULES = (_rule_fcf, _rule_impossible, _rule_margins, _rule_units,
+                _rule_split_basis, _rule_jumps)
 
 
 def validate_info(info: Dict[str, Any], symbol: str = "") -> Dict[str, Any]:
