@@ -10,6 +10,8 @@
  * Unidades canónicas del frontend: los PORCENTAJES llegan como DECIMAL
  * (0.15 = 15%); los RATIOS como número crudo (pe = 25, de = 0.98).
  */
+import { METRIC_SCALE_HIGHER, METRIC_SCALE_LOWER, METRIC_SCALE_SPECIAL } from "./generated/backendConfig";
+
 export type Scale = "good" | "ok" | "bad" | "neutral";
 
 export const SCALE_COLOR: Record<Scale, string> = {
@@ -26,50 +28,23 @@ const higher = (good: number, ok: number): Rule => (v) => (v >= good ? "good" : 
 // menor es mejor: <=good → good, <=ok → ok, resto → bad
 const lower = (good: number, ok: number): Rule => (v) => (v <= good ? "good" : v <= ok ? "ok" : "bad");
 
+// Umbrales GENERADOS desde backend/config/thresholds.toml [ui.metric_scale]
+// (backend/tools/gen_frontend_config.py). La lógica de cada regla sigue aquí.
+const SP = METRIC_SCALE_SPECIAL;
 const RULES: Record<string, Rule> = {
-  // ── % (decimal), mayor es mejor ──
-  roe: higher(0.15, 0.1),
-  roa: higher(0.08, 0.05),
-  roic: higher(0.12, 0.08),
-  gross_margin: higher(0.4, 0.2),
-  operating_margin: higher(0.15, 0.1),
-  net_margin: higher(0.1, 0.05),
-  ebitda_margin: higher(0.15, 0.1),
-  fcf_yield: higher(0.05, 0.03),
-  earnings_yield: higher(0.06, 0.03),
-  // crecimiento YoY: fuerte >=8%, débil/estancado 2-8% (ámbar), contracción <2% (rojo)
-  revenue_growth: higher(0.08, 0.02),
-  earnings_growth: higher(0.08, 0.02),
-  // sin dividendo NO es "malo" (muchas tech no reparten) → neutral
-  dividend_yield: (v) => (v >= 0.02 ? "good" : v >= 0.01 ? "ok" : "neutral"),
-
-  // ── ratios crudos, menor es mejor ──
-  pe: lower(15, 25),
-  forward_pe: lower(15, 25),
-  pb: lower(1, 3),
-  ps: lower(2, 5),
-  pfcf: lower(15, 25),
-  p_fcf: lower(15, 25),
-  ev_ebitda: lower(10, 15),
-  peg: lower(1, 1.5),
-  de: lower(0.5, 1.0),
-  debt_to_assets: lower(0.3, 0.5),
-  net_debt_to_ebitda: lower(1.5, 3.0),
-
-  // ── ratios crudos, mayor es mejor ──
-  current_ratio: higher(1.5, 1.0),
-  quick_ratio: higher(1.0, 0.5),
-  cash_ratio: higher(0.5, 0.2),
-  interest_coverage: higher(5, 2),
+  ...Object.fromEntries(Object.entries(METRIC_SCALE_HIGHER).map(([k, [g, o]]) => [k, higher(g, o)])),
+  ...Object.fromEntries(Object.entries(METRIC_SCALE_LOWER).map(([k, [g, o]]) => [k, lower(g, o)])),
 
   // ── especiales ──
+  // sin dividendo NO es "malo" (muchas tech no reparten) → neutral
+  dividend_yield: (v) => (v >= SP.dividend_yield[0] ? "good" : v >= SP.dividend_yield[1] ? "ok" : "neutral"),
   // payout: reinvertir mucho (neutral), equilibrado (bueno), alto (ok), insostenible (malo)
-  payout_ratio: (v) => (v < 0.3 ? "neutral" : v <= 0.6 ? "good" : v <= 0.8 ? "ok" : "bad"),
+  payout_ratio: (v) => (v < SP.payout_ratio[0] ? "neutral" : v <= SP.payout_ratio[1] ? "good" : v <= SP.payout_ratio[2] ? "ok" : "bad"),
   // retorno al accionista: positivo bueno, dilución mala, ~cero neutral
-  buyback_yield: (v) => (v > 0.005 ? "good" : v < -0.005 ? "bad" : "neutral"),
-  shareholder_yield: (v) => (v > 0.01 ? "good" : v < 0 ? "bad" : "neutral"),
+  buyback_yield: (v) => (v > SP.buyback_yield[0] ? "good" : v < SP.buyback_yield[1] ? "bad" : "neutral"),
+  shareholder_yield: (v) => (v > SP.shareholder_yield[0] ? "good" : v < SP.shareholder_yield[1] ? "bad" : "neutral"),
   // beta: rango normal de mercado ~verde; extremos amarillo/rojo; defensiva neutral
-  beta: (v) => (v < 0.8 ? "neutral" : v <= 1.2 ? "good" : v <= 1.5 ? "ok" : "bad"),
+  beta: (v) => (v < SP.beta[0] ? "neutral" : v <= SP.beta[1] ? "good" : v <= SP.beta[2] ? "ok" : "bad"),
 };
 
 /** Escala de calidad de `value` para la métrica `key`, o null si no aplica. */
