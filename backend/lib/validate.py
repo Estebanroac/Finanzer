@@ -19,38 +19,15 @@ Además, validate_outputs() aplica las reglas que solo tienen sentido sobre
 valores YA calculados (múltiplos negativos → "no significativo"). Se aplica al
 resultado final para presentación, sin alterar las entradas del score.
 
-Los umbrales viven en THRESHOLDS (en la etapa 4 pasarán a YAML).
+Los umbrales viven en backend/config/validation.toml (etapa 4) y se exponen
+aquí como THRESHOLDS.
 """
 from typing import Any, Dict, List, Optional
 
+from settings import cfg
+
 # ═══════════════════════════ umbrales (único lugar) ═══════════════════════════
-THRESHOLDS: Dict[str, float] = {
-    # FCF <= OCF (mismo periodo). Tolerancia absoluta por redondeos de la fuente.
-    "fcf_over_ocf_tolerance_abs": 1e6,
-    # Márgenes válidos: [-1000%, 100%] (en decimal).
-    "margin_min": -10.0,
-    "margin_max": 1.0,
-    # Saltos interanuales (FY actual / FY previo) considerados anómalos.
-    "revenue_jump_ratio_max": 5.0,
-    "revenue_jump_ratio_min": 0.2,
-    "net_income_jump_ratio_max": 20.0,    # mismo signo, |actual/previo|
-    "net_income_jump_ratio_min": 0.05,
-    # Acciones: fuera de [0.5x, 2x] entre ejercicios -> sospecha de base de split.
-    "shares_ratio_min": 0.5,
-    "shares_ratio_max": 2.0,
-    "split_match_tolerance": 0.15,        # |ratio / factor − 1|
-    # Guarda anti-artefacto del crecimiento: MISMA regla que
-    # finnhub_fallback._growth (que ahora delega aquí): el YoY se acepta si
-    # |YoY| <= 60% o |YoY| <= 3 × |CAGR largo|; si no, se usa el CAGR-3Y.
-    "growth_artifact_abs_pct": 60.0,
-    "growth_artifact_lt_multiple": 3.0,
-    # Coherencia del crecimiento contra los estados (FY YoY), en decimal.
-    "growth_vs_statements_pp": 0.15,
-    # Unidades: |crecimiento| > 1000% o yield > 50% delatan escala porcentual.
-    "growth_units_abs_max": 10.0,
-    "dividend_yield_max": 0.5,
-    "payout_ratio_max": 10.0,
-}
+THRESHOLDS: Dict[str, float] = dict(cfg("validation.thresholds"))
 
 # Campos que, si se anulan o recalculan, invalidan derivados que se recalculan
 # o anulan con ellos (procedencia coherente).

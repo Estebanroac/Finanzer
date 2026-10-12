@@ -35,20 +35,24 @@ from urllib.request import urlopen, Request
 from urllib.parse import urlencode
 from typing import Dict, Any, Optional
 
+from settings import cfg
+
 logger = logging.getLogger(__name__)
 
+_EPS_OVERRIDE_REL_DIFF = cfg("data.finnhub.eps_override_rel_diff")
+
 _BASE = "https://finnhub.io/api/v1"
-_TIMEOUT = 8
+_TIMEOUT = cfg("data.finnhub.timeout_s")
 
 # Cache interno (symbol -> (ts, payload)) para no repetir la llamada dentro del
 # TTL del adaptador de Yahoo y respetar el rate limit del free tier (60/min).
 _cache: Dict[str, tuple] = {}
-_CACHE_TTL = 300
+_CACHE_TTL = cfg("data.finnhub.cache_ttl_s")
 _lock = threading.Lock()
 
 # Campos cuyo None dispara la consulta a Finnhub (casi siempre presentes en una
 # respuesta sana de Yahoo; su ausencia es la firma de la degradación de Render).
-_GAP_FIELDS = ("beta", "forwardPE", "revenueGrowth")
+_GAP_FIELDS = cfg("data.finnhub.gap_fields")
 
 
 def _api_key() -> str:
@@ -178,7 +182,7 @@ def enrich_info(info: Dict[str, Any], symbol: str, degraded: bool = False) -> Di
     _eps_ttm = _num(m.get("epsTTM"))
     if _eps_ttm is not None and _eps_ttm != 0:
         _cur_eps = _num(info.get("trailingEps"))
-        if _cur_eps is None or abs(_cur_eps - _eps_ttm) / abs(_eps_ttm) > 0.02:
+        if _cur_eps is None or abs(_cur_eps - _eps_ttm) / abs(_eps_ttm) > _EPS_OVERRIDE_REL_DIFF:
             if info.get("trailingEps") != _eps_ttm:
                 info["trailingEps"] = _eps_ttm
                 filled.append("trailingEps~")

@@ -1,0 +1,53 @@
+# Esquema de la configuración (lo valida lib/settings.py al arrancar).
+# Mismo árbol que los TOML; la hoja es el tipo. "*" = claves libres.
+
+[thresholds]
+[sectors]
+[valuation]
+
+[validation.thresholds]
+fcf_over_ocf_tolerance_abs = "float"
+margin_min = "float"
+margin_max = "float"
+revenue_jump_ratio_max = "float"
+revenue_jump_ratio_min = "float"
+net_income_jump_ratio_max = "float"
+net_income_jump_ratio_min = "float"
+shares_ratio_min = "float"
+shares_ratio_max = "float"
+split_match_tolerance = "float"
+growth_artifact_abs_pct = "float"
+growth_artifact_lt_multiple = "float"
+growth_vs_statements_pp = "float"
+growth_units_abs_max = "float"
+dividend_yield_max = "float"
+payout_ratio_max = "float"
+
+[data.fetcher]
+max_retries = "int"
+base_delay_s = "int"
+max_delay_s = "int"
+parallel_task_timeout_s = "int"
+thread_pool_workers = "int"
+cache_default_ttl_min = "int"
+cache_class_default_ttl_min = "int"
+cache_max_entries = "int"
+profile_ttl_min = "int"
+financials_ttl_min = "int"
+
+[data.yahoo]
+cache_ttl_s = "int"
+cache_ttl_degraded_s = "int"
+last_known_good_max_age_s = "int"
+degraded_retry_sleep_step_s = "float"
+http_timeout_s = "int"
+statements_timeout_s = "int"
+search_timeout_s = "int"
+impersonate_profiles = "list[str]"
+completeness_fields = "list[str]"
+
+[data.finnhub]
+timeout_s = "int"
+cache_ttl_s = "int"
+gap_fields = "list[str]"
+eps_override_rel_diff = "float"

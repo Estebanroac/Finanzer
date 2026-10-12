@@ -1,0 +1,30 @@
+# Infraestructura de datos: cachés, timeouts y reintentos.
+
+[fetcher]                       # lib/data_fetcher.py
+max_retries = 4                 # reintentos ante rate limit
+base_delay_s = 3                # backoff: base × 2^intento + U(0,1)
+max_delay_s = 45
+parallel_task_timeout_s = 30
+thread_pool_workers = 4
+cache_default_ttl_min = 30      # SimpleCache compartido
+cache_class_default_ttl_min = 15  # default del constructor de SimpleCache
+cache_max_entries = 500
+profile_ttl_min = 30
+financials_ttl_min = 60
+
+[yahoo]                         # lib/yf_adapter.py
+cache_ttl_s = 300
+cache_ttl_degraded_s = 60
+last_known_good_max_age_s = 86400
+degraded_retry_sleep_step_s = 0.8
+http_timeout_s = 15
+statements_timeout_s = 30
+search_timeout_s = 8
+impersonate_profiles = ["chrome", "safari15_5", "edge101"]
+completeness_fields = ["beta", "sharesOutstanding", "marketCap", "totalRevenue", "operatingCashflow", "totalCash"]
+
+[finnhub]                       # lib/finnhub_fallback.py
+timeout_s = 8
+cache_ttl_s = 300
+gap_fields = ["beta", "forwardPE", "revenueGrowth"]
+eps_override_rel_diff = 0.02    # el epsTTM se impone si difiere > 2%

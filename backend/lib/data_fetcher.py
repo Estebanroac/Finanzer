@@ -22,9 +22,12 @@ import hashlib
 # =========================
 # CONSTANTES DE RETRY
 # =========================
-MAX_RETRIES = 4       # Reintentos para rate limiting
-BASE_DELAY = 3        # segundos base entre reintentos
-MAX_DELAY = 45        # segundos máximo de espera
+from settings import cfg
+
+_F = cfg("data.fetcher")
+MAX_RETRIES = _F["max_retries"]       # Reintentos para rate limiting
+BASE_DELAY = _F["base_delay_s"]       # segundos base entre reintentos
+MAX_DELAY = _F["max_delay_s"]         # segundos máximo de espera
 
 # Configurar logging específico para este módulo
 logger = logging.getLogger(__name__)
@@ -69,12 +72,10 @@ except ImportError:
 # CONSTANTES DE CONFIGURACIÓN
 # =========================
 
-# Timeouts para operaciones de red (en segundos)
-API_TIMEOUT_SECONDS = 15          # Timeout para llamadas API individuales
-PARALLEL_TASK_TIMEOUT = 30        # Timeout para tareas paralelas
-
-# Configuración del ThreadPoolExecutor
-THREAD_POOL_WORKERS = 4           # Número de workers paralelos
+# Timeout de las tareas paralelas (s) y workers del ThreadPoolExecutor.
+# (API_TIMEOUT_SECONDS se borró en la etapa 4: no se usaba.)
+PARALLEL_TASK_TIMEOUT = _F["parallel_task_timeout_s"]
+THREAD_POOL_WORKERS = _F["thread_pool_workers"]
 
 
 # =========================
@@ -112,7 +113,8 @@ class SimpleCache:
     Implementa LRU (Least Recently Used) eviction para prevenir memory leaks.
     """
     
-    def __init__(self, default_ttl_minutes: int = 15, max_entries: int = 500):
+    def __init__(self, default_ttl_minutes: int = _F["cache_class_default_ttl_min"],
+                 max_entries: int = _F["cache_max_entries"]):
         self._cache: Dict[str, Dict] = {}
         self._default_ttl = timedelta(minutes=default_ttl_minutes)
         self._max_entries = max_entries
@@ -199,7 +201,7 @@ class SimpleCache:
 
 
 # Instancia global del caché
-_data_cache = SimpleCache(default_ttl_minutes=30)
+_data_cache = SimpleCache(default_ttl_minutes=_F["cache_default_ttl_min"])
 
 
 @dataclass
@@ -307,7 +309,7 @@ class YahooFinanceFetcher:
                 )
                 
                 # Guardar en caché (30 min para perfiles, cambian poco)
-                _data_cache.set(cache_key, profile, ttl_minutes=30)
+                _data_cache.set(cache_key, profile, ttl_minutes=_F["profile_ttl_min"])
                 logger.debug(f"Perfil de {symbol} obtenido correctamente")
                 return profile
             
@@ -454,7 +456,7 @@ class YahooFinanceFetcher:
                 )
                 
                 # Guardar en caché (60 min para datos financieros - reduce rate limiting)
-                _data_cache.set(cache_key, result, ttl_minutes=60)
+                _data_cache.set(cache_key, result, ttl_minutes=_F["financials_ttl_min"])
                 logger.debug(f"Datos financieros de {symbol} cacheados correctamente")
                 return result
             

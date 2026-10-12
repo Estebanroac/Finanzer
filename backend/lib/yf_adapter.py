@@ -8,6 +8,10 @@ import time
 import threading
 from typing import Dict, Any
 
+from settings import cfg
+
+_D = cfg("data.yahoo")
+
 logger = logging.getLogger(__name__)
 
 # ── Session management (crumb auth, reusable) ──
@@ -19,9 +23,9 @@ _session_lock = threading.Lock()
 _cache: Dict[str, tuple] = {}   # symbol -> (ts, info, degraded)
 _locks: Dict[str, threading.Lock] = {}
 _global_lock = threading.Lock()
-CACHE_TTL = 300  # 5 minutes
+CACHE_TTL = _D["cache_ttl_s"]  # 5 minutos
 # Un snapshot DEGRADADO caduca rápido para auto-repararse en el siguiente fetch
-CACHE_TTL_DEGRADED = 60
+CACHE_TTL_DEGRADED = _D["cache_ttl_degraded_s"]
 
 # ── Resiliencia ante respuestas degradadas de Yahoo ──
 # Desde IPs de datacenter (Render), Yahoo devuelve intermitentemente respuestas
@@ -32,10 +36,10 @@ CACHE_TTL_DEGRADED = 60
 #   3) rellenar los huecos con el último snapshot BUENO conocido (los
 #      fundamentales cambian trimestralmente: un dato de hace una hora es
 #      infinitamente mejor que un null).
-_IMPERSONATE_PROFILES = ["chrome", "safari15_5", "edge101"]
+_IMPERSONATE_PROFILES = _D["impersonate_profiles"]
 _profile_idx = 0
 _best_cache: Dict[str, tuple] = {}   # symbol -> (ts, info) último snapshot bueno
-_BEST_MAX_AGE = 24 * 3600
+_BEST_MAX_AGE = _D["last_known_good_max_age_s"]
 _NESTED_KEYS = ("_yahoo_ratios", "_prior_year", "_current_derived", "_piotroski_current")
 
 
@@ -64,8 +68,7 @@ def _tag_provenance(info: Dict[str, Any], source: str, detail: str,
 # Campos que prácticamente toda empresa cotizada tiene; si faltan varios, la
 # respuesta vino degradada (no confundir con ausencias legítimas: dividendos,
 # forward P/E, etc. NO están en esta lista).
-_COMPLETENESS_FIELDS = ("beta", "sharesOutstanding", "marketCap",
-                        "totalRevenue", "operatingCashflow", "totalCash")
+_COMPLETENESS_FIELDS = _D["completeness_fields"]
 
 # Firma del modo de degradación REAL observado en producción (Render): Yahoo
 # devuelve 200 con financialData intacto pero el cluster summaryDetail/
@@ -274,7 +277,7 @@ def get_ticker_info(symbol: str) -> Dict[str, Any]:
                 f"[DEGRADED] {symbol}: {_completeness(info)}/{len(_COMPLETENESS_FIELDS)} "
                 f"campos clave; reintento {attempts} con sesión fresca")
             _reset_session(rotate_profile=True)
-            time.sleep(0.8 * attempts)
+            time.sleep(_D["degraded_retry_sleep_step_s"] * attempts)
             try:
                 retry_info = _do_fetch(symbol)
             except Exception as e:
@@ -391,7 +394,7 @@ def _do_fetch(symbol: str) -> Dict[str, Any]:
     params = {"modules": ",".join(modules), "crumb": _crumb}
 
     try:
-        r = _session.get(url, params=params, timeout=15)
+        r = _session.get(url, params=params, timeout=_D["http_timeout_s"])
     except Exception as e:
         logger.error(f"Yahoo API request failed for {symbol}: {e}")
         return _fallback_yfinance(symbol)
@@ -401,7 +404,7 @@ def _do_fetch(symbol: str) -> Dict[str, Any]:
         _refresh_crumb()
         params["crumb"] = _crumb
         try:
-            r = _session.get(url, params=params, timeout=15)
+            r = _session.get(url, params=params, timeout=_D["http_timeout_s"])
         except Exception:
             pass
 
@@ -1089,7 +1092,7 @@ def _fallback_yfinance(symbol: str) -> Dict[str, Any]:
             ex.submit(_get_bs): "balance",
             ex.submit(_get_cf): "cashflow",
         }
-        for f in as_completed(futs, timeout=30):
+        for f in as_completed(futs, timeout=_D["statements_timeout_s"]):
             key = futs[f]
             try:
                 results[key] = f.result()
@@ -1174,7 +1177,7 @@ def _search_profile(symbol: str):
     try:
         _ensure_session()
         r = _session.get(_SEARCH_URL, params={"q": symbol, "quotesCount": 5, "newsCount": 0,
-                                              "listsCount": 0}, timeout=8)
+                                              "listsCount": 0}, timeout=_D["search_timeout_s"])
         if r.status_code != 200:
             return None
         for q in (r.json() or {}).get("quotes", []):
