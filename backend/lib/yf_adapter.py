@@ -741,6 +741,7 @@ def _do_fetch(symbol: str) -> Dict[str, Any]:
     # ── Enrich prior-year data with yfinance (historical statements) ──
     try:
         info = _enrich_prior_year_data(symbol, info)
+        info = _apply_ttm(symbol, info, plan_b=False)
     except Exception as e:
         logger.warning(f"[ENRICH] Prior-year enrichment failed for {symbol}: {e}")
         _tag_provenance(info, "sin_dato", f"estados anuales de yfinance: {e}",
@@ -754,6 +755,72 @@ def _do_fetch(symbol: str) -> Dict[str, Any]:
     # Sin escribir _cache aquí: solo get_ticker_info cachea, DESPUÉS de LKG,
     # Finnhub y la validación de entrada. Una escritura aquí exponía el dict sin
     # validar al hilo paralelo de perfil (lee la caché fuera del lock).
+    return info
+
+
+# Filas de partidas no recurrentes de Yahoo (lib/normalize.py).
+_UNUSUAL_ROWS = (
+    "Total Unusual Items", "Total Unusual Items Excluding Goodwill", "Special Income Charges",
+    "Other Special Charges", "Restructuring And Mergern Acquisition", "Gain On Sale Of Security",
+    "Gain On Sale Of Ppe", "Gain On Sale Of Business", "Write Off", "Asset Impairment Charge",
+    "Impairment Of Capital Assets", "Tax Effect Of Unusual Items",
+)
+
+
+def _apply_ttm(symbol: str, info: Dict[str, Any], plan_b: bool) -> Dict[str, Any]:
+    """Etapa 7: TTM desde los estados TRIMESTRALES de yfinance (lib/ttm.py).
+
+    Flujos = suma de 4 trimestres consecutivos; balance = último trimestre. Lo
+    que no tenga 4 trimestres consecutivos conserva el valor de la fuente (anual
+    en el plan B) y queda registrado en info["_ttm"] (-> data_provenance.ttm).
+    En el plan B el BPA anual pasa a BPA TTM = beneficio TTM / acciones diluidas
+    medias del último trimestre (en la ruta quoteSummary el BPA ya es TTM)."""
+    from ttm import build_ttm, FLOW_KEYS
+    frames, errors = {}, []
+    try:
+        import yfinance as yf
+        ticker = yf.Ticker(symbol)
+        for attr in ("quarterly_income_stmt", "quarterly_cashflow", "quarterly_balance_sheet"):
+            try:
+                frames[attr] = getattr(ticker, attr)
+            except Exception as e:
+                frames[attr] = None
+                errors.append(f"{attr}: {type(e).__name__}")
+    except Exception as e:
+        errors.append(f"yfinance: {type(e).__name__}")
+    t = build_ttm(frames.get("quarterly_income_stmt"), frames.get("quarterly_cashflow"),
+                  frames.get("quarterly_balance_sheet"))
+    flows = [k for k in t["values"] if k in FLOW_KEYS]
+    balance = [k for k in t["values"] if k not in FLOW_KEYS]
+    for k, v in t["values"].items():
+        info[k] = v
+    if flows:
+        _tag_provenance(info, "yfinance_statements",
+                        f"TTM: suma de los 4 trimestres {', '.join(t['quarters'].get('inc') or t['quarters'].get('cf') or [])}",
+                        paths=flows, overwrite=True)
+    if balance:
+        _tag_provenance(info, "yfinance_statements", f"balance del último trimestre ({t['balance_date']})",
+                        paths=balance, overwrite=True)
+    eps_basis = "fuente"
+    q = t["quarterly"]
+    sh = (q.get("Diluted Average Shares") or [None])[0]
+    if plan_b and "netIncome" in t["values"] and sh:
+        info["trailingEps"] = t["values"]["netIncome"] / sh
+        eps_basis = "ttm"
+        _tag_provenance(info, "derivado", "BPA TTM = beneficio neto TTM / acciones diluidas medias del último "
+                                          "trimestre", paths=["trailingEps"], overwrite=True)
+    shares = info.get("sharesOutstanding")
+    if plan_b and "totalStockholderEquity" in t["values"] and shares:
+        info["bookValue"] = t["values"]["totalStockholderEquity"] / shares
+    info["_quarterly"] = q
+    info["_ttm"] = {
+        "basis": "ttm" if flows else ("anual" if plan_b else "fuente"),
+        "quarters": t["quarters"], "balance_date": t["balance_date"],
+        "ttm_fields": sorted(flows), "last_quarter_fields": sorted(balance),
+        "annual_fields": ({k: v for k, v in t["missing"].items()} if plan_b else {}),
+        "source_fields": ({} if plan_b else {k: v for k, v in t["missing"].items()}),
+        "eps": eps_basis, "errors": errors,
+    }
     return info
 
 
@@ -849,6 +916,14 @@ def _enrich_prior_year_data(symbol: str, info: Dict[str, Any]) -> Dict[str, Any]
         "occupancy": _row(inc, "Occupancy And Equipment"),
         "professional_services": _row(inc, "Professional Expense And Contract Services Expense"),
         "other_non_interest_expense": _row(inc, "Other Non Interest Expense"),
+        # Etapa 7: Altman con el último FY (se define sobre ejercicios, no TTM) y
+        # partidas no recurrentes del FY para normalizar sin trimestrales.
+        "current_assets": _row(bs, "Current Assets"),
+        "total_liabilities": _row(bs, "Total Liabilities Net Minority Interest"),
+        "retained_earnings": _row(bs, "Retained Earnings"),
+        "pretax_income": _row(inc, "Pretax Income"),
+        "tax_provision": _row(inc, "Tax Provision"),
+        "unusual_fy0": {r: (_row(inc, r) or [None])[0] for r in _UNUSUAL_ROWS if _row(inc, r)},
     }
 
     # Columns: [0] = most recent (current), [1] = prior year
@@ -1158,6 +1233,7 @@ def _fallback_yfinance(symbol: str) -> Dict[str, Any]:
     # acciones. Los estados anuales de yfinance (sin crumb) sí están disponibles.
     try:
         info = _enrich_prior_year_data(symbol, info)
+        info = _apply_ttm(symbol, info, plan_b=True)
     except Exception as e:
         logger.warning(f"[ENRICH] Prior-year enrichment (fallback) failed for {symbol}: {e}")
         _tag_provenance(info, "sin_dato", f"estados anuales de yfinance: {e}",
