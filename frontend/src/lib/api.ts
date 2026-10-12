@@ -152,3 +152,11 @@ export function getScoreLabel(pct: number): string {
   if (pct >= L_PRE) return "Precaución";
   return "Evitar";
 }
+
+// D/E contable sin lectura en entidades financieras (los depósitos son pasivo).
+// Mismo criterio que el PDF (mapped_sector contiene "financ"): etapa 4.
+export const DE_NOT_APPLICABLE = "No aplica a entidades financieras";
+
+export function isFinancialSector(mappedSector?: string | null): boolean {
+  return (mappedSector || "").toLowerCase().includes("financ");
+}

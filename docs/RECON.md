@@ -536,3 +536,7 @@ Pendientes registrados:
   empresa** (provisión de impuestos / BAI, acotada a un rango razonable).
 - **Etapa 6 — crecimiento muy negativo:** sustituir un crecimiento <= −20% por un valor por defecto positivo (8%)
   es incorrecto (FCX prod: −24.2% pasa a +8%). En cíclicas debe usarse un **crecimiento normalizado de ciclo medio**.
+- **Etapa 9 — UI:** el D/E de financieras ya muestra "—" con "No aplica a entidades financieras" en el código del
+  frontend (MetricsGrid, HealthTab, ComparativeTab), igual que el PDF; falta **reconstruir frontend/out**. La misma
+  reconstrucción publicará la leyenda de Piotroski corregida. Nota: V (Visa) cae en financieras por la palabra
+  clave "credit services"; revisar en la etapa 5 (clasificación).

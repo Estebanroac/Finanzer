@@ -1,6 +1,6 @@
 "use client";
 
-import { formatMultiple, formatPercent, formatNumber, getScoreColor, type StockAnalysis } from "@/lib/api";
+import { formatMultiple, formatPercent, formatNumber, getScoreColor, isFinancialSector, DE_NOT_APPLICABLE, type StockAnalysis } from "@/lib/api";
 import InfoTooltip, { type TooltipContent } from "@/components/InfoTooltip";
 import { VALUATION, PROFITABILITY, HEALTH, HISTORICAL, COMPARATIVE } from "@/lib/tooltips";
 import { getSectorBenchmarks } from "@/lib/sectorBench";
@@ -50,7 +50,9 @@ export default function ComparativeTab({ data }: { data: StockAnalysis }) {
 
   const healthMetrics: CompMetric[] = [
     { label: "Current Ratio", value: m.current_ratio, sectorAvg: sectorBenchmarks.current_ratio, format: "multiple", higherIsBetter: true, tooltip: HEALTH.current_ratio },
-    { label: "D/E", value: m.de, sectorAvg: sectorBenchmarks.de, format: "multiple", higherIsBetter: false, tooltip: HEALTH.de_ratio },
+    isFinancialSector(data.sector_info?.mapped_sector)
+      ? { label: "D/E", value: null, sectorAvg: null, format: "multiple", higherIsBetter: false, hint: DE_NOT_APPLICABLE, tooltip: HEALTH.de_ratio }
+      : { label: "D/E", value: m.de, sectorAvg: sectorBenchmarks.de, format: "multiple", higherIsBetter: false, tooltip: HEALTH.de_ratio },
     { label: "Cobertura Intereses", value: m.interest_coverage, sectorAvg: sectorBenchmarks.interest_coverage, format: "multiple", higherIsBetter: true, tooltip: HEALTH.interest_coverage },
     { label: "FCF Yield", value: m.fcf_yield, sectorAvg: sectorBenchmarks.fcf_yield, format: "percent", higherIsBetter: true, tooltip: VALUATION.fcf_yield_val },
   ];

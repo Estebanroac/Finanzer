@@ -1,6 +1,6 @@
 "use client";
 
-import { formatNumber, formatMultiple, type StockAnalysis } from "@/lib/api";
+import { formatNumber, formatMultiple, isFinancialSector, DE_NOT_APPLICABLE, type StockAnalysis } from "@/lib/api";
 import { scaleColor } from "@/lib/metricScale";
 import InfoTooltip from "@/components/InfoTooltip";
 import { HEALTH } from "@/lib/tooltips";
@@ -150,7 +150,11 @@ export default function HealthTab({ data }: { data: StockAnalysis }) {
                   <span className="lev-k flex items-center gap-1.5">
                     Deuda / Patrimonio <InfoTooltip content={HEALTH.de_ratio} value={m.de} valueLabel={formatMultiple(m.de)} />
                   </span>
-                  <span className="lev-v" style={{ color: scaleColor("de", m.de) ?? undefined }}>{formatMultiple(m.de)}</span>
+                  {isFinancialSector(data.sector_info?.mapped_sector) ? (
+                    <span className="lev-v" title={DE_NOT_APPLICABLE}>— <span className="text-[10px] text-zinc-500">{DE_NOT_APPLICABLE}</span></span>
+                  ) : (
+                    <span className="lev-v" style={{ color: scaleColor("de", m.de) ?? undefined }}>{formatMultiple(m.de)}</span>
+                  )}
                 </div>
               </div>
             </div>

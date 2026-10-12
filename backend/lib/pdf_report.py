@@ -27,6 +27,7 @@ from reportlab.lib.utils import ImageReader
 from settings import cfg
 
 _PDF_BANDS = cfg("thresholds.pdf")  # bandas de las lecturas del informe
+DE_NOT_APPLICABLE = "No aplica a entidades financieras"
 
 # ══════════════════════════════ IDENTIDAD ══════════════════════════════
 INK    = colors.HexColor('#141417')   # titulares
@@ -664,7 +665,9 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     r_up = read_upside(dcf.get("upside"))
     r_graham = read_graham(graham_margin)
     r_cr = read_current(km.get("current_ratio"))
-    r_de = read_de(km.get("de"))
+    # D/E contable sin lectura en financieras (los depósitos son pasivo): decisión
+    # de la etapa 4. La celda muestra "—" y DE_NOT_APPLICABLE.
+    r_de = None if is_financial else read_de(km.get("de"))
     r_ic = read_coverage(km.get("interest_coverage"))
     r_nde = read_nde(km.get("net_debt_to_ebitda"))
     r_pay = read_payout(km.get("payout_ratio"))
@@ -1255,6 +1258,9 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         if val is None:
             continue
         i = len(rows)
+        if is_financial and lab == "Deuda / Equity":
+            rows.append([lab, "—", DE_NOT_APPLICABLE])
+            continue
         rows.append([lab, fv(val, fm), rd[0] if rd else "—"])
         if rd:
             reads.append((i, rd[1]))

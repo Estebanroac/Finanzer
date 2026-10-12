@@ -1,6 +1,6 @@
 "use client";
 
-import { formatNumber, formatPercent, formatMultiple } from "@/lib/api";
+import { formatNumber, formatPercent, formatMultiple, isFinancialSector, DE_NOT_APPLICABLE } from "@/lib/api";
 import InfoTooltip, { type TooltipContent } from "@/components/InfoTooltip";
 import { METRICS } from "@/lib/tooltips";
 import { getSectorBenchmarks } from "@/lib/sectorBench";
@@ -34,7 +34,7 @@ function toneFor(value: number, bench: number, higherIsBetter: boolean): Tone {
 
 function Stat({
   label, value, tooltip, accent, index,
-  raw, bench, higherIsBetter, benchFmt, benchHelp,
+  raw, bench, higherIsBetter, benchFmt, benchHelp, note,
 }: {
   label: string;
   value: string;
@@ -46,6 +46,7 @@ function Stat({
   higherIsBetter?: boolean;
   benchFmt?: (v: number) => string;
   benchHelp?: TooltipContent;
+  note?: string;
 }) {
   const hasContext = raw != null && bench != null && bench !== 0 && higherIsBetter !== undefined;
   const tone = hasContext ? toneFor(raw, bench, higherIsBetter) : null;
@@ -69,6 +70,7 @@ function Stat({
         )}
         {benchHelp && tone && <InfoTooltip content={benchHelp} />}
       </div>
+      {note && <span className="text-[10px] text-zinc-500">{note}</span>}
     </div>
   );
 }
@@ -85,8 +87,12 @@ export default function MetricsGrid({ metrics, sector }: MetricsGridProps) {
         raw={metrics.pe} bench={b.pe} higherIsBetter={false} benchFmt={multFmt} benchHelp={METRICS.sector_benchmark} />
       <Stat index={2} label="ROE" value={formatPercent(metrics.roe)} tooltip={METRICS.roe}
         raw={metrics.roe} bench={b.roe} higherIsBetter={true} benchFmt={pctFmt} />
-      <Stat index={3} label="D/E" value={formatMultiple(metrics.de)} tooltip={METRICS.de_ratio}
-        raw={metrics.de} bench={b.de} higherIsBetter={false} benchFmt={multFmt} />
+      {isFinancialSector(sector) ? (
+        <Stat index={3} label="D/E" value="—" tooltip={METRICS.de_ratio} note={DE_NOT_APPLICABLE} />
+      ) : (
+        <Stat index={3} label="D/E" value={formatMultiple(metrics.de)} tooltip={METRICS.de_ratio}
+          raw={metrics.de} bench={b.de} higherIsBetter={false} benchFmt={multFmt} />
+      )}
       <Stat index={4} label="Margen Neto" value={formatPercent(metrics.net_margin)} tooltip={METRICS.net_margin}
         raw={metrics.net_margin} bench={b.net_margin} higherIsBetter={true} benchFmt={pctFmt} />
       <Stat index={5} label="FCF Yield" value={formatPercent(metrics.fcf_yield)} tooltip={METRICS.fcf_yield}
