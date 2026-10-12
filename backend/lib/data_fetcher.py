@@ -1543,41 +1543,11 @@ class FinancialDataService:
         
         report_progress("Calculando históricos...", 75)
         
-        # Históricos para CAGR y FCF trend
+        # Históricos para CAGR y FCF trend: movido a historical_metrics.py
+        # (etapa 4). Nunca corría: la tarea "historical" ya no se lanza.
         if historical:
             result["historical"] = historical
-            
-            # Calcular métricas contextuales desde históricos
-            if historical.get("revenue") and len(historical["revenue"]) >= 3:
-                revenues = historical["revenue"]
-                try:
-                    def _cagr(end_val, start_val, periods):
-                        # end_val = valor MÁS RECIENTE, start_val = MÁS ANTIGUO.
-                        # La serie de yfinance viene newest-first (revenues[0] es el
-                        # año reciente y revenues[-1] el más antiguo), así que el
-                        # CAGR correcto es (reciente/antiguo)^(1/n)-1 =>
-                        # _cagr(revenues[0], revenues[-1], ...). Antes estaba
-                        # invertido y una empresa en crecimiento salía en contracción.
-                        if (end_val and start_val and end_val > 0
-                                and start_val > 0 and periods > 0):
-                            return (end_val / start_val) ** (1 / periods) - 1
-                        return None
-                    result["contextual"]["revenue_cagr_3y"] = _cagr(
-                        revenues[0], revenues[-1], min(3, len(revenues)-1)
-                    )
-                    if len(revenues) >= 5:
-                        result["contextual"]["revenue_cagr_5y"] = _cagr(
-                            revenues[0], revenues[-1], min(5, len(revenues)-1)
-                        )
-                except (TypeError, ValueError, ZeroDivisionError):
-                    pass
-            
-            # FCF trend
-            if historical.get("fcf"):
-                fcf_list = historical["fcf"]
-                negative_years = sum(1 for x in fcf_list if x and x < 0)
-                result["contextual"]["fcf_trend_negative_years"] = negative_years
-        
+
         report_progress("Procesando F-Score...", 85)
         
         # ===== DATOS HISTÓRICOS DETALLADOS PARA PIOTROSKI F-SCORE =====
