@@ -6,10 +6,16 @@ NOTA (auditoría sectorial 2026-07): este módulo contenía ~530 líneas de
 metric_weights, primary/secondary_metrics, thresholds y typical_values por
 sector que NINGÚN código consumía — un sistema de ponderación paralelo que
 nunca se conectó al scorer y daba la ilusión de una adaptación inexistente.
-La adaptación sectorial REAL vive en:
+La adaptación sectorial que SÍ se ejecuta vive en:
   - SECTOR_THRESHOLDS (financial_ratios.py): umbrales del score por sector
-  - get_sector_specific_adjustments (financial_ratios.py): ajustes de alertas
+  - calculate_score_v2 (financial_ratios.py): rama financiera de solidez
+    (financial_health_score) y P/FFO para REIT en valoración
+  - altman_z_score (financial_ratios.py): modelo Z / Z' / Z'' según sector
+  - build_signals (alert_interpretations.py): umbrales de alertas por sector
   - _get_sector_benchmarks (main.py): medianas para valoración relativa
+(get_sector_specific_adjustments, que antes figuraba aquí, alimentaba solo al
+motor de alertas legacy aggregate_alerts, que nunca se ejecutaba; ambos se
+borraron en la etapa 4.)
 Aquí queda solo lo que sí se usa: el mapeo de nombres de Yahoo a claves
 canónicas (eslabón central de toda la cadena sectorial) y el ETF de
 referencia por sector.
