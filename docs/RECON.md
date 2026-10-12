@@ -628,3 +628,36 @@ correctos según los datos, pero aplican reglas genéricas a arquetipos que nece
   fiable (16.6% no recurrente) y un DCF negativo (−19.7%). Un techo del score condicionado por la confianza
   (P/E no fiable, DCF por debajo del precio, coberturas bajas) evitaría el "100" en una lectura con señales en
   contra.
+
+### 7.13 Etapa 8: WACC real, DCF coherente y regla de confianza
+
+- **WACC ponderado (C4 corregido):** E/(D+E)·Ke + D/(D+E)·Kd·(1−t) en `lib/cost_of_capital.py`. E = capitalización;
+  D = "Total Debt" de Yahoo, que ya incluye los arrendamientos financieros cuando la empresa los informa (FCX, SNOW,
+  O); los operativos no aparecen en esa fila (NFLX, V) y no se añaden. Kd = Rf + spread del rating sintético por
+  cobertura (estructura de Damodaran, tablas de grandes y pequeñas a 5.000 M$; spreads aproximados a ene-2025, a
+  verificar cada enero). Regla M: EBIT < 0 con caja neta -> BBB; con deuda neta -> D (marcado). t = provisión / BAI
+  del mismo periodo que el beneficio, acotada a [10%, 35%], con el 21% legal como fallback; la misma t en el ROIC.
+- **Un solo WACC y un solo rango** ([6%, 20%]): el mismo en DCF, grid, spread ROIC−WACC y lo mostrado. El grid ya no
+  desplaza su base a [8%, 18%]: recorta columnas y filas fuera de rango y lo indica (SNOW: sin 32.5% ni 35%).
+  FINANCIAL no tiene WACC; REIT tiene WACC (spread) pero no DCF.
+- **Rf:** ^TNX con caché de 24 h; si no hay lectura válida, el 4.5% de config, marcado. En replay (tests y golden) es
+  siempre el de config: los golden no dependen del día de captura. La MRP sigue en 5.5% (heredada); el comentario de
+  config cita Damodaran (≈4.3% implícita a ene-2025) y Kroll (5.0%): **pendiente de decisión** si se actualiza.
+- **Inputs del DCF:** CYCLICAL usa el FCF de mantenimiento (OCF − D&A/DD&A, promedio de los ejercicios): FCX 3.65B
+  frente al normalizado 1.48B; DCF −90% -> −61%. El crecimiento de corto plazo ya no se eleva al terminal (FCX con su
+  1.6% antiguo: 25.03 -> 23.65 $/acción, converge al 2.5% en la etapa 2). g >= WACC: sin dato con motivo.
+- **Fiabilidad del DCF y aporte al score:** baja si el grid no contiene el precio, el valor terminal pesa > 85% o el
+  FCF está marcado o inferido; media fuera del caso base ±1, en CYCLICAL o con posible cíclica. Aporte a Valoración:
+  ±4 (alta), ±2 (media), 0 (baja, con el texto explícito). El rescate de growth no lo compensa. Con los fixtures:
+  NFLX prod, FCX y SNOW en baja (el grid no contiene el precio); NFLX local −2 (100 -> 98), V local +2 (96 -> 98).
+- **Confianza del veredicto** (`lib/valuation_confidence.py`): convergencia (DCF, múltiplos frente al sector y Graham
+  donde aplica el P/E), cobertura, calidad de fuente y estabilidad; media ponderada en config. Un DCF de fiabilidad
+  baja no puede confirmar a los demás métodos (convergencia como mucho media). NFLX prod: convergencia baja
+  (múltiplos barata, DCF y Graham cara) -> confianza media. **No limita el score** (techo: etapa 9).
+- **Etapa 9 — pendientes que deja la 8:** (a) techo del score condicionado por la confianza (NFLX prod sigue en 99
+  con convergencia baja y un DCF que no concilia); (b) el número de Graham se sigue calculando en REIT con un BPA
+  deprimido por la depreciación (no entra en la convergencia, pero se muestra): decidir si pasa a "no aplica";
+  (c) la beta de NFLX (1.61) mantiene el Ke en 13.3% y el grid lejos del precio: el problema de inputs del fallo 5
+  ya no es el WACC = Ke sino la beta y el crecimiento; evaluar beta ajustada (Blume) o sectorial.
+- **Diferencia de entorno:** SNOW local tiene deuda neta en el último trimestre (Kd tramo D por la regla M) y prod caja
+  neta en el FY (BBB); con un peso de la deuda del 2% el WACC apenas cambia (12.0% frente a 11.7%).
