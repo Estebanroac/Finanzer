@@ -2,11 +2,6 @@
   "alerts": {
     "red_flags": [
       {
-        "category": "Valor intrínseco",
-        "detail": "El precio excede en 45% el valor justo estimado por el DCF ($30): sostenerlo exige asumir escenarios de crecimiento muy optimistas.",
-        "reason": "Sobrevalorada según DCF — -45%"
-      },
-      {
         "category": "Rentabilidad",
         "detail": "El retorno sobre el capital invertido no cubre su costo (ROIC 3.0% vs WACC 8.3%): crecer a estos retornos destruye valor para el accionista en lugar de crearlo.",
         "reason": "Destruye valor — spread -5.3%"
@@ -14,24 +9,9 @@
     ],
     "strengths": [
       {
-        "category": "Crecimiento",
-        "detail": "Los ingresos crecen 20.3% interanual: ritmo de expansión elevado que, si mantiene márgenes, es el principal motor de creación de valor a largo plazo.",
-        "reason": "Crecimiento fuerte — ingresos +20.3% interanual"
-      },
-      {
         "category": "Rentabilidad",
         "detail": "Retiene 93% de cada venta tras el costo directo del producto: un margen bruto así suele reflejar marca fuerte, tecnología propia o poder de precios difícil de replicar.",
         "reason": "Margen bruto muy alto — 92.7%"
-      },
-      {
-        "category": "Crecimiento",
-        "detail": "El beneficio por acción crece 49.5% interanual: la rentabilidad para el accionista se acelera, a menudo apoyada en apalancamiento operativo o recompras.",
-        "reason": "BPA en fuerte expansión — +49.5% interanual"
-      },
-      {
-        "category": "Flujo de caja",
-        "detail": "El flujo de caja libre supera al beneficio contable (FCF/BN 125%): las utilidades se convierten íntegramente en efectivo, señal de contabilidad conservadora y negocio que 'respira' caja.",
-        "reason": "Beneficio de alta calidad"
       },
       {
         "category": "Riesgo de mercado",
@@ -46,34 +26,65 @@
         "reason": "Apalancamiento elevado — 5.7x EBITDA"
       },
       {
-        "category": "Valoración",
-        "detail": "El mercado paga 39.3x beneficios, un +12% sobre la mediana del sector (35.0x). Conviene verificar que el crecimiento y los márgenes justifiquen pagar por encima de sus pares.",
-        "reason": "Prima sobre el sector — P/E 39.3x"
-      },
-      {
         "category": "Solidez financiera",
         "detail": "El resultado operativo cubre 2.3x el gasto por intereses, por debajo del mínimo cómodo (3x): deja poco margen si los beneficios se resienten.",
         "reason": "Cobertura de intereses justa — 2.3x"
-      },
-      {
-        "category": "Valoración",
-        "detail": "El precio va muy por delante del crecimiento previsto (PEG 2.73 > 2): incluso creciendo, tardaría en 'justificar' su múltiplo actual.",
-        "reason": "PEG elevado — 2.73"
       }
     ]
   },
   "altman_z": {
+    "applicable": false,
     "available": false,
     "details": {
-      "missing": [
-        "utilidades retenidas"
-      ],
-      "reason": "sin_dato"
+      "model": "No Aplicable",
+      "reason": "no_aplica",
+      "sector": "Real Estate"
     },
-    "interpretation": "Datos insuficientes para el Z-Score: falta utilidades retenidas",
-    "model": "",
+    "interpretation": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria. El Altman Z-Score fue diseñado para empresas industriales y comerciales.",
+    "model": "No Aplicable",
     "z_score": 0,
     "zone": "n/a"
+  },
+  "archetype_metrics": {
+    "fcf_per_share_cagr_3y": 0.032763454919,
+    "fcf_per_share_cagr_3y_reason": null,
+    "ffo_cagr_3y": 0.121521101218,
+    "ffo_per_share_cagr_3y": -0.000898738835226,
+    "ffo_per_share_cagr_3y_reason": null,
+    "ffo_per_share_series": [
+      3.83606627586,
+      3.6526930122,
+      3.67791776307,
+      3.84642776003,
+      null
+    ],
+    "ffo_series": [
+      3582790000.0,
+      3256416000.0,
+      2767486000.0,
+      2539797000.0,
+      null
+    ],
+    "shares_cagr_3y": 0.122529962489
+  },
+  "classification": {
+    "alerts": [],
+    "ambiguous": false,
+    "archetype": "REIT",
+    "confidence": "normal",
+    "industry": "REIT - Retail",
+    "inputs": {
+      "assets_to_revenue": 12.6614782784,
+      "eps_ttm": 1.38,
+      "net_margin_ttm": 0.208981140482,
+      "op_margin_detrended_std": 0.00714900592318,
+      "revenue_cagr_3y": 0.198023443531,
+      "revenue_cagr_3y_reason": null,
+      "revenue_growth_std": 0.102095899096
+    },
+    "reason": "Clasificada como REIT por industria REIT - Retail",
+    "rule": "industria_reit",
+    "sector": "Real Estate"
   },
   "company_type": "garp",
   "data_provenance": {
@@ -443,23 +454,10 @@
     "path": "yahoo_quotesummary"
   },
   "data_validation": [],
-  "dcf": {
-    "fair_value": 29.93,
-    "growth_rate": 0.202579681618,
-    "margin_of_safety": -0.810223855663,
-    "terminal_growth": 0.025,
-    "upside": -44.7582133629,
-    "value_composition": {
-      "stage1_pct": 17.3,
-      "stage2_pct": 19.3,
-      "terminal_pct": 63.3
-    },
-    "wacc": 0.08328
-  },
   "errors": [],
   "graham_margin": -0.503939782838,
   "graham_number": 36.0253785546,
-  "is_growth": true,
+  "is_growth": false,
   "key_metrics": {
     "asset_turnover": 0.112880999432,
     "beta": 0.696,
@@ -511,6 +509,10 @@
     "revenue": 6065508864.0,
     "revenue_growth": 0.202579681618,
     "roa": 0.02359,
+    "roce": null,
+    "roce_reason": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria",
+    "roce_roic_divergence": null,
+    "roce_state": "no_aplica",
     "roe": 0.03225,
     "roic": 0.0304922103995,
     "roic_wacc_spread": -0.0527877896005,
@@ -521,7 +523,14 @@
     "total_equity": 39304711938.0,
     "wacc": 0.08328
   },
+  "not_applicable": {
+    "altman": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria",
+    "dcf": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria",
+    "piotroski": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria",
+    "roce": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria"
+  },
   "piotroski_f": {
+    "applicable": false,
     "conclusive": true,
     "details": {
       "asset_turnover_improved": {
@@ -572,8 +581,8 @@
     },
     "evaluated": 9,
     "fiscal_year": "FY2025 vs FY2024",
-    "interpretation": "Neutral - Monitorear indicadores",
-    "level": "Neutral",
+    "interpretation": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria",
+    "level": "No aplica",
     "max_score": 9,
     "scaled_score": 5.0,
     "score": 5
@@ -646,13 +655,6 @@
       "Calidad de Ganancias": {
         "adjustments": [
           {
-            "adjustment": 0,
-            "metric": "Piotroski F-Score",
-            "reason": "Neutral (5/9)",
-            "severity": "ok",
-            "value": "5/9"
-          },
-          {
             "adjustment": 3,
             "metric": "Cash Flow Operativo",
             "reason": "Genera efectivo operativo",
@@ -667,20 +669,28 @@
             "value": "Positivo"
           },
           {
+            "adjustment": 0,
+            "metric": "No aplica",
+            "reason": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria (no cuenta en la cobertura)",
+            "severity": "neutral",
+            "value": "Piotroski F, FCF / beneficio neto"
+          },
+          {
             "adjustment": 3,
-            "metric": "FCF / Net Income",
-            "reason": "FCF > Net Income (124.8%)",
-            "severity": "excellent",
-            "value": "125%"
+            "metric": "Cobertura",
+            "reason": "Reescalado sobre los componentes con dato (sin dato: Payout sobre FFO)",
+            "severity": "neutral",
+            "value": "2/3 componentes"
           }
         ],
+        "applicable": true,
         "conclusive": true,
-        "coverage": 1.0,
+        "coverage": 0.666666666667,
         "details": [
-          "Neutral (5/9)",
           "Genera efectivo operativo",
           "FCF positivo",
-          "FCF > Net Income (124.8%)"
+          "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria (no cuenta en la cobertura)",
+          "Reescalado sobre los componentes con dato (sin dato: Payout sobre FFO)"
         ],
         "max": 20,
         "score": 19
@@ -688,44 +698,37 @@
       "Crecimiento": {
         "adjustments": [
           {
-            "adjustment": 5,
-            "metric": "Crecimiento Ingresos 3Y",
-            "reason": "Crecimiento excepcional (20.3%)",
-            "severity": "excellent",
-            "value": "20.3%"
+            "adjustment": -1,
+            "metric": "Crecimiento FFO por acción 3Y",
+            "reason": "Crecimiento plano (-0.1%) — FFO por acción (FFO = beneficio neto + D&A; acciones en circulación de cada ejercicio); FFO agregado +12.2%, acciones +12.3% anual",
+            "severity": "moderate",
+            "value": "-0.1%"
           },
           {
-            "adjustment": 5,
-            "metric": "Crecimiento EPS 3Y",
-            "reason": "EPS excepcional (49.5%)",
-            "severity": "excellent",
-            "value": "49.5%"
+            "adjustment": 0,
+            "metric": "Crecimiento FCF por acción 3Y",
+            "reason": "FCF estable (3.3%)",
+            "severity": "ok",
+            "value": "3.3%"
           },
           {
-            "adjustment": 4,
-            "metric": "Crecimiento FCF 3Y",
-            "reason": "FCF creciente (15.9%)",
-            "severity": "excellent",
-            "value": "15.9%"
-          },
-          {
-            "adjustment": 2,
-            "metric": "Growth Company",
-            "reason": "Perfil de alto crecimiento",
-            "severity": "good",
-            "value": "Sí"
+            "adjustment": 0,
+            "metric": "No aplica",
+            "reason": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria (no cuenta en la cobertura)",
+            "severity": "neutral",
+            "value": "Crecimiento del BPA"
           }
         ],
+        "applicable": true,
         "conclusive": true,
         "coverage": 1.0,
         "details": [
-          "Crecimiento excepcional (20.3%)",
-          "EPS excepcional (49.5%)",
-          "FCF creciente (15.9%)",
-          "Perfil de alto crecimiento"
+          "Crecimiento plano (-0.1%) — FFO por acción (FFO = beneficio neto + D&A; acciones en circulación de cada ejercicio); FFO agregado +12.2%, acciones +12.3% anual",
+          "FCF estable (3.3%)",
+          "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria (no cuenta en la cobertura)"
         ],
         "max": 20,
-        "score": 20
+        "score": 9
       },
       "Rentabilidad": {
         "adjustments": [
@@ -765,6 +768,7 @@
             "value": "-5.3%"
           }
         ],
+        "applicable": true,
         "conclusive": true,
         "coverage": 1.0,
         "details": [
@@ -801,23 +805,24 @@
             "value": "2.3x"
           },
           {
-            "adjustment": 3,
-            "metric": "Cobertura",
-            "reason": "Reescalado sobre los componentes con dato (sin dato: Altman Z)",
+            "adjustment": 0,
+            "metric": "No aplica",
+            "reason": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria (no cuenta en la cobertura)",
             "severity": "neutral",
-            "value": "3/4 componentes"
+            "value": "Altman Z"
           }
         ],
+        "applicable": true,
         "conclusive": true,
-        "coverage": 0.75,
+        "coverage": 1.0,
         "details": [
           "Liquidez sólida - Buena capacidad de pago (1.53x)",
           "Deuda muy baja - Estructura financiera conservadora",
           "Cobertura ajustada",
-          "Reescalado sobre los componentes con dato (sin dato: Altman Z)"
+          "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria (no cuenta en la cobertura)"
         ],
         "max": 20,
-        "score": 18
+        "score": 15
       },
       "Valoración": {
         "adjustments": [
@@ -829,177 +834,123 @@
             "value": "13.6x"
           },
           {
-            "adjustment": 1,
-            "metric": "Forward P/E",
-            "reason": "P/E estable a mejor (39x → 35x)",
-            "severity": "good",
-            "value": "34.9x"
+            "adjustment": 3,
+            "metric": "Rentabilidad por dividendo (REIT)",
+            "reason": "Rentabilidad por dividendo alta (6.0%)",
+            "severity": "excellent",
+            "value": "6.0%"
           },
           {
             "adjustment": 2,
             "metric": "EV/EBITDA vs Sector",
-            "reason": "Atractivo para growth (15.3x)",
+            "reason": "Atractivo (15.3x)",
             "severity": "good",
             "value": "15.3x"
           },
           {
-            "adjustment": -3,
-            "metric": "PEG Ratio",
-            "reason": "Muy caro (2.73)",
-            "severity": "severe",
-            "value": "2.73"
-          },
-          {
-            "adjustment": 3,
-            "metric": "Perfil GARP",
-            "reason": "GARP: Growth + Fundamentos sólidos (Quality: 75)",
-            "severity": "excellent",
-            "value": "Score 75"
+            "adjustment": 0,
+            "metric": "No aplica",
+            "reason": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria (no cuenta en la cobertura)",
+            "severity": "neutral",
+            "value": "P/E, P/FCF, PEG"
           }
         ],
+        "applicable": true,
         "conclusive": true,
         "coverage": 1.0,
         "details": [
           "Atractivo por FFO (13.6x)",
-          "P/E estable a mejor (39x → 35x)",
-          "Atractivo para growth (15.3x)",
-          "Muy caro (2.73)",
-          "GARP: Growth + Fundamentos sólidos (Quality: 75)"
+          "Rentabilidad por dividendo alta (6.0%)",
+          "Atractivo (15.3x)",
+          "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria (no cuenta en la cobertura)"
         ],
         "max": 20,
-        "score": 15
+        "score": 17
       }
     },
     "categories_included": 5,
     "categories_total": 5,
     "excluded_categories": [],
-    "level": "Excelente",
+    "level": "Favorable",
     "max_score": 100,
+    "not_applicable_categories": [],
     "partial": false,
-    "total_score": 89
+    "total_score": 77
   },
   "score_coverage": {
     "calidad": {
-      "components": 4,
-      "conclusive": true,
-      "coverage": 1.0,
-      "evaluated": 4,
-      "low_confidence": false,
-      "missing": [],
-      "missing_reasons": {}
-    },
-    "crecimiento": {
+      "applicable": true,
       "components": 3,
       "conclusive": true,
+      "coverage": 0.666666666667,
+      "evaluated": 2,
+      "low_confidence": false,
+      "missing": [
+        "Payout sobre FFO"
+      ],
+      "missing_reasons": {},
+      "not_applicable": {
+        "FCF / beneficio neto": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria",
+        "Piotroski F": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria"
+      }
+    },
+    "crecimiento": {
+      "applicable": true,
+      "components": 2,
+      "conclusive": true,
       "coverage": 1.0,
-      "evaluated": 3,
+      "evaluated": 2,
       "low_confidence": false,
       "missing": [],
-      "missing_reasons": {}
+      "missing_reasons": {},
+      "not_applicable": {
+        "Crecimiento del BPA": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria"
+      }
     },
     "rentabilidad": {
+      "applicable": true,
       "components": 5,
       "conclusive": true,
       "coverage": 1.0,
       "evaluated": 5,
       "low_confidence": false,
       "missing": [],
-      "missing_reasons": {}
+      "missing_reasons": {},
+      "not_applicable": {}
     },
     "solidez": {
-      "components": 4,
-      "conclusive": true,
-      "coverage": 0.75,
-      "evaluated": 3,
-      "low_confidence": false,
-      "missing": [
-        "Altman Z"
-      ],
-      "missing_reasons": {}
-    },
-    "valoracion": {
+      "applicable": true,
       "components": 3,
       "conclusive": true,
       "coverage": 1.0,
       "evaluated": 3,
       "low_confidence": false,
       "missing": [],
-      "missing_reasons": {}
+      "missing_reasons": {},
+      "not_applicable": {
+        "Altman Z": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria"
+      }
+    },
+    "valoracion": {
+      "applicable": true,
+      "components": 3,
+      "conclusive": true,
+      "coverage": 1.0,
+      "evaluated": 3,
+      "low_confidence": false,
+      "missing": [],
+      "missing_reasons": {},
+      "not_applicable": {
+        "P/E": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria",
+        "P/FCF": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria",
+        "PEG": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria"
+      }
     }
   },
   "sector_info": {
     "mapped_sector": "real_estate",
     "sector": "Real Estate",
     "sector_etf": "VNQ"
-  },
-  "sensitivity": {
-    "base_case": {
-      "discount_rate": 0.08328,
-      "fair_value": 29.91,
-      "growth_rate": 0.202579681618
-    },
-    "discount_rates": [
-      0.0633,
-      0.0733,
-      0.0833,
-      0.0933,
-      0.1033
-    ],
-    "growth_rates": [
-      0.1526,
-      0.1776,
-      0.2026,
-      0.2276,
-      0.2526
-    ],
-    "interpretation": "Probablemente sobrevalorada (80% de escenarios)",
-    "is_valid": true,
-    "matrix": [
-      [
-        46.6,
-        29.48,
-        18.27,
-        10.36,
-        4.49
-      ],
-      [
-        55.59,
-        36.39,
-        23.82,
-        14.96,
-        8.39
-      ],
-      [
-        65.47,
-        43.98,
-        29.91,
-        20.01,
-        12.66
-      ],
-      [
-        76.33,
-        52.31,
-        36.59,
-        25.53,
-        17.33
-      ],
-      [
-        88.24,
-        61.43,
-        43.9,
-        31.57,
-        22.43
-      ]
-    ],
-    "statistics": {
-      "current_price": 54.18,
-      "max_value": 88.24,
-      "mean_value": 35.0416,
-      "median_value": 29.91,
-      "min_value": 4.49,
-      "upside_base_case": -44.7951273533
-    },
-    "warnings": []
   },
   "symbol": "O",
   "yearly_financials": [

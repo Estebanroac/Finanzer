@@ -1,13 +1,12 @@
 {
   "alerts": {
-    "red_flags": [
-      {
-        "category": "Valoración",
-        "detail": "El mercado paga 32.8x beneficios, un +152% sobre la mediana del sector (13.0x). A este nivel el precio ya descuenta un escenario muy optimista; el riesgo de corrección ante cualquier tropiezo en resultados es elevado.",
-        "reason": "Sobrevaloración — P/E 32.8x"
-      }
-    ],
+    "red_flags": [],
     "strengths": [
+      {
+        "category": "Rentabilidad",
+        "detail": "El retorno sobre el capital invertido supera con holgura su costo (ROIC 45.2% vs WACC 9.0%): cada dólar reinvertido crea valor económico sustancial, el rasgo de un negocio con ventaja competitiva duradera.",
+        "reason": "Crea mucho valor — spread +36.1%"
+      },
       {
         "category": "Rentabilidad",
         "detail": "Genera 52.9% de retorno sobre el patrimonio, muy por encima del umbral de excelencia del sector (12%). Un nivel tan alto suele estar amplificado por una base de patrimonio reducida por recompras acumuladas, más que por rentabilidad operativa pura.",
@@ -19,12 +18,32 @@
         "reason": "Margen neto sólido — 50.1%"
       },
       {
+        "category": "Solidez financiera",
+        "detail": "El Altman Z de 14.78 (> 2.60) ubica a la empresa en zona segura: baja probabilidad estadística de problemas de solvencia según el modelo.",
+        "reason": "Solvencia sólida — Altman Z 14.78"
+      },
+      {
         "category": "Flujo de caja",
         "detail": "El flujo de caja libre supera al beneficio contable (FCF/BN 108%): las utilidades se convierten íntegramente en efectivo, señal de contabilidad conservadora y negocio que 'respira' caja.",
         "reason": "Beneficio de alta calidad"
+      },
+      {
+        "category": "Solidez financiera",
+        "detail": "La deuda neta equivale a menos de un año de EBITDA, un nivel cómodo que deja holgura financiera y capacidad de maniobra ante imprevistos.",
+        "reason": "Deuda baja — 0.2x EBITDA"
       }
     ],
     "warnings": [
+      {
+        "category": "Valoración",
+        "detail": "El mercado paga 32.8x beneficios, un +152% sobre la mediana del sector (13.0x). Es un precio alto que el mercado sostiene por su crecimiento y retornos; deja poco margen de error: cualquier decepción en resultados puede corregir con fuerza.",
+        "reason": "Valoración exigente — P/E 32.8x"
+      },
+      {
+        "category": "Valoración",
+        "detail": "El valor de empresa equivale a 28.1 veces su EBITDA anual, un múltiplo caro en términos absolutos que exige un crecimiento sostenido para no defraudar.",
+        "reason": "EV/EBITDA alto — 28.1x"
+      },
       {
         "category": "Valoración",
         "detail": "Por cada dólar invertido en la acción, el negocio genera solo 3.0% de caja libre: se está pagando caro cada dólar de flujo, habitual en compañías de alto crecimiento o valoración exigente.",
@@ -33,20 +52,41 @@
     ]
   },
   "altman_z": {
-    "available": false,
+    "applicable": true,
+    "available": true,
     "details": {
-      "model": "No Aplicable",
-      "reason": "financial_sector",
-      "sector": "Financial Services",
-      "warnings": [
-        "El Altman Z-Score fue diseñado para empresas industriales y comerciales",
-        "Para evaluar instituciones financieras, se recomienda usar métricas como CET1 Ratio, Tier 1 Capital, ROA bancario y Texas Ratio"
-      ]
+      "X1_wc_ta": 0.0273,
+      "X2_re_ta": 0.1516,
+      "X3_ebit_ta": 0.2666,
+      "X4_mcap_tl": 11.7247,
+      "grey_threshold": 1.1,
+      "model": "Z''-Score (No Manufactura)",
+      "safe_threshold": 2.6
     },
-    "interpretation": "El modelo Altman Z-Score no es aplicable a instituciones financieras. Los bancos, aseguradoras y empresas de servicios financieros tienen estructuras de balance fundamentalmente diferentes (depósitos = pasivos), lo que invalida las métricas del modelo.",
-    "model": "No Aplicable",
-    "z_score": 0,
-    "zone": "n/a"
+    "interpretation": "Z''-Score (No Manufactura): Zona segura — bajo riesgo de bancarrota",
+    "model": "Z''-Score (No Manufactura)",
+    "z_score": 14.78,
+    "zone": "safe"
+  },
+  "archetype_metrics": {},
+  "classification": {
+    "alerts": [],
+    "ambiguous": false,
+    "archetype": "MATURE",
+    "confidence": "normal",
+    "industry": "Credit Services",
+    "inputs": {
+      "assets_to_revenue": 2.490675,
+      "eps_ttm": 11.7526,
+      "net_margin_ttm": 0.50145,
+      "op_margin_detrended_std": 0.0020604034688,
+      "revenue_cagr_3y": 0.109212421303,
+      "revenue_cagr_3y_reason": null,
+      "revenue_growth_std": 0.00779675457921
+    },
+    "reason": "Clasificada como MATURE por industria Credit Services de tipo red de pagos (activos/ingresos 2.5x <= 3.0x): excepción dentro de Financial Services",
+    "rule": "red_de_pagos",
+    "sector": "Financial Services"
   },
   "company_type": "garp",
   "data_provenance": {
@@ -348,42 +388,20 @@
     "path": "plan_b_yfinance"
   },
   "data_validation": [],
-  "errors": [],
-  "financial_health": {
-    "details": [
-      {
-        "detail": "ROA excelente (20.13% ≥ 0.5%)",
-        "max": 3,
-        "metric": "ROA Bancario",
-        "points": 3,
-        "severity": "excellent"
-      },
-      {
-        "detail": "ROE excelente (52.9% ≥ 12%)",
-        "max": 3,
-        "metric": "ROE",
-        "points": 3,
-        "severity": "excellent"
-      },
-      {
-        "detail": "D/E muy conservador (0.7x < 5x) - Excelente para banco",
-        "max": 2,
-        "metric": "D/E Bancario",
-        "points": 2,
-        "severity": "excellent"
-      },
-      {
-        "detail": "Dividendo sostenible (0.70%)",
-        "max": 1,
-        "metric": "Dividendo",
-        "points": 1,
-        "severity": "excellent"
-      }
-    ],
-    "interpretation": "Excelente - Institución financiera muy sólida",
-    "level": "STRONG",
-    "score": 10
+  "dcf": {
+    "fair_value": 346.0,
+    "growth_rate": 0.1439,
+    "margin_of_safety": -0.114017376321,
+    "terminal_growth": 0.025,
+    "upside": -10.2347933474,
+    "value_composition": {
+      "stage1_pct": 19.0,
+      "stage2_pct": 20.8,
+      "terminal_pct": 60.2
+    },
+    "wacc": 0.0904093145
   },
+  "errors": [],
   "graham_margin": -4.27487162617,
   "graham_number": 73.0728706827,
   "is_growth": false,
@@ -438,9 +456,17 @@
     "revenue": 40000000000.0,
     "revenue_growth": 0.1439,
     "roa": 0.201330964498,
+    "roce": 0.411217268772,
+    "roce_reason": null,
+    "roce_roic_divergence": {
+      "causes": [],
+      "diverges": false,
+      "gap": -0.0405895501836
+    },
+    "roce_state": "ok",
     "roe": 0.529109182516,
     "roic": 0.451806818955,
-    "roic_wacc_spread": null,
+    "roic_wacc_spread": 0.361397504455,
     "shareholder_yield": 0.0309094739055,
     "shares_outstanding": 1877355259.0,
     "total_assets": 99627000000.0,
@@ -448,7 +474,9 @@
     "total_equity": 37909000000.0,
     "wacc": 0.0904093145
   },
+  "not_applicable": {},
   "piotroski_f": {
+    "applicable": true,
     "conclusive": true,
     "details": {
       "asset_turnover_improved": {
@@ -601,6 +629,7 @@
             "value": "108%"
           }
         ],
+        "applicable": true,
         "conclusive": true,
         "coverage": 1.0,
         "details": [
@@ -636,6 +665,7 @@
             "value": "6.5%"
           }
         ],
+        "applicable": true,
         "conclusive": true,
         "coverage": 1.0,
         "details": [
@@ -675,15 +705,24 @@
             "reason": "Excelente (50.1%) - Alta rentabilidad final",
             "severity": "excellent",
             "value": "50.1%"
+          },
+          {
+            "adjustment": 3,
+            "metric": "ROIC vs WACC",
+            "reason": "Crea mucho valor (ROIC 45.2% vs WACC 9.0%, spread +36.1%)",
+            "severity": "excellent",
+            "value": "+36.1%"
           }
         ],
+        "applicable": true,
         "conclusive": true,
         "coverage": 1.0,
         "details": [
           "Excepcional para su sector (52.9% vs 12% rango alto sectorial)",
           "Excelente para su sector (20.1%)",
           "Excepcional (66.4%) - Alto poder de fijación de precios",
-          "Excelente (50.1%) - Alta rentabilidad final"
+          "Excelente (50.1%) - Alta rentabilidad final",
+          "Crea mucho valor (ROIC 45.2% vs WACC 9.0%, spread +36.1%)"
         ],
         "max": 20,
         "score": 20
@@ -691,66 +730,45 @@
       "Solidez Financiera": {
         "adjustments": [
           {
-            "adjustment": 8,
-            "details": [
-              {
-                "detail": "ROA excelente (20.13% ≥ 0.5%)",
-                "max": 3,
-                "metric": "ROA Bancario",
-                "points": 3,
-                "severity": "excellent"
-              },
-              {
-                "detail": "ROE excelente (52.9% ≥ 12%)",
-                "max": 3,
-                "metric": "ROE",
-                "points": 3,
-                "severity": "excellent"
-              },
-              {
-                "detail": "D/E muy conservador (0.7x < 5x) - Excelente para banco",
-                "max": 2,
-                "metric": "D/E Bancario",
-                "points": 2,
-                "severity": "excellent"
-              },
-              {
-                "detail": "Dividendo sostenible (0.70%)",
-                "max": 1,
-                "metric": "Dividendo",
-                "points": 1,
-                "severity": "excellent"
-              }
-            ],
-            "metric": "Solidez Bancaria",
-            "reason": "Solidez bancaria excelente (10/10)",
+            "adjustment": 6,
+            "metric": "Altman Z-Score",
+            "reason": "Zona segura - Muy baja probabilidad de quiebra",
             "severity": "excellent",
-            "value": "10/10"
+            "value": "14.78"
+          },
+          {
+            "adjustment": 0,
+            "metric": "Current Ratio",
+            "reason": "Liquidez justa - Cubre sus obligaciones (1.08x)",
+            "severity": "ok",
+            "value": "1.08x"
+          },
+          {
+            "adjustment": 5,
+            "metric": "Deuda/Equity",
+            "reason": "Deuda muy baja - Estructura financiera conservadora",
+            "severity": "excellent",
+            "value": "0.66x"
           },
           {
             "adjustment": 3,
-            "metric": "D/E Bancario",
-            "reason": "D/E muy conservador (0.7x < 5x) - Excepcional para banco",
+            "metric": "Cobertura Intereses",
+            "reason": "Cobertura excelente",
             "severity": "excellent",
-            "value": "0.7x"
-          },
-          {
-            "adjustment": -1,
-            "metric": "Price/Book",
-            "reason": "P/B muy alto (19.09x > 2x)",
-            "severity": "moderate",
-            "value": "19.09x"
+            "value": "45.1x"
           }
         ],
+        "applicable": true,
         "conclusive": true,
         "coverage": 1.0,
         "details": [
-          "Solidez bancaria excelente (10/10)",
-          "D/E muy conservador (0.7x < 5x) - Excepcional para banco",
-          "P/B muy alto (19.09x > 2x)"
+          "Zona segura - Muy baja probabilidad de quiebra",
+          "Liquidez justa - Cubre sus obligaciones (1.08x)",
+          "Deuda muy baja - Estructura financiera conservadora",
+          "Cobertura excelente"
         ],
         "max": 20,
-        "score": 18
+        "score": 20
       },
       "Valoración": {
         "adjustments": [
@@ -797,6 +815,7 @@
             "value": "Score 80"
           }
         ],
+        "applicable": true,
         "conclusive": true,
         "coverage": 1.0,
         "details": [
@@ -816,60 +835,140 @@
     "excluded_categories": [],
     "level": "Excelente",
     "max_score": 100,
+    "not_applicable_categories": [],
     "partial": false,
-    "total_score": 91
+    "total_score": 93
   },
   "score_coverage": {
     "calidad": {
+      "applicable": true,
       "components": 4,
       "conclusive": true,
       "coverage": 1.0,
       "evaluated": 4,
       "low_confidence": false,
       "missing": [],
-      "missing_reasons": {}
+      "missing_reasons": {},
+      "not_applicable": {}
     },
     "crecimiento": {
+      "applicable": true,
       "components": 3,
       "conclusive": true,
       "coverage": 1.0,
       "evaluated": 3,
       "low_confidence": false,
       "missing": [],
-      "missing_reasons": {}
+      "missing_reasons": {},
+      "not_applicable": {}
     },
     "rentabilidad": {
-      "components": 4,
+      "applicable": true,
+      "components": 5,
       "conclusive": true,
       "coverage": 1.0,
-      "evaluated": 4,
+      "evaluated": 5,
       "low_confidence": false,
       "missing": [],
-      "missing_reasons": {}
+      "missing_reasons": {},
+      "not_applicable": {}
     },
     "solidez": {
-      "components": 3,
-      "conclusive": true,
-      "coverage": 1.0,
-      "evaluated": 3,
-      "low_confidence": false,
-      "missing": [],
-      "missing_reasons": {}
-    },
-    "valoracion": {
+      "applicable": true,
       "components": 4,
       "conclusive": true,
       "coverage": 1.0,
       "evaluated": 4,
       "low_confidence": false,
       "missing": [],
-      "missing_reasons": {}
+      "missing_reasons": {},
+      "not_applicable": {}
+    },
+    "valoracion": {
+      "applicable": true,
+      "components": 4,
+      "conclusive": true,
+      "coverage": 1.0,
+      "evaluated": 4,
+      "low_confidence": false,
+      "missing": [],
+      "missing_reasons": {},
+      "not_applicable": {}
     }
   },
   "sector_info": {
     "mapped_sector": "financials",
     "sector": "Financial Services",
     "sector_etf": "XLF"
+  },
+  "sensitivity": {
+    "base_case": {
+      "discount_rate": 0.0904093145,
+      "fair_value": 346.05,
+      "growth_rate": 0.1439
+    },
+    "discount_rates": [
+      0.0704,
+      0.0804,
+      0.0904,
+      0.1004,
+      0.1104
+    ],
+    "growth_rates": [
+      0.0939,
+      0.1189,
+      0.1439,
+      0.1689,
+      0.1939
+    ],
+    "interpretation": "Valoración mixta (44% escenarios favorables)",
+    "is_valid": true,
+    "matrix": [
+      [
+        386.31,
+        312.86,
+        262.0,
+        224.75,
+        196.31
+      ],
+      [
+        446.79,
+        360.81,
+        301.34,
+        257.81,
+        224.62
+      ],
+      [
+        515.74,
+        415.41,
+        346.05,
+        295.34,
+        256.7
+      ],
+      [
+        594.19,
+        477.43,
+        396.79,
+        337.86,
+        293.0
+      ],
+      [
+        683.25,
+        547.76,
+        454.24,
+        385.95,
+        334.0
+      ]
+    ],
+    "statistics": {
+      "current_price": 385.450012207,
+      "max_value": 683.25,
+      "mean_value": 372.2924,
+      "median_value": 346.05,
+      "min_value": 196.31,
+      "upside_base_case": -10.2218214968
+    },
+    "warnings": []
   },
   "symbol": "V"
 }

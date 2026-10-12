@@ -3,8 +3,8 @@
     "red_flags": [
       {
         "category": "Valor intrínseco",
-        "detail": "El precio excede en 91% el valor justo estimado por el DCF ($6): sostenerlo exige asumir escenarios de crecimiento muy optimistas.",
-        "reason": "Sobrevalorada según DCF — -91%"
+        "detail": "El precio excede en 90% el valor justo estimado por el DCF ($8): sostenerlo exige asumir escenarios de crecimiento muy optimistas.",
+        "reason": "Sobrevalorada según DCF — -90%"
       }
     ],
     "strengths": [
@@ -12,11 +12,6 @@
         "category": "Rentabilidad",
         "detail": "El ROIC supera al costo de capital (ROIC 19.1% vs WACC 12.0%): la reinversión genera valor, no solo crecimiento.",
         "reason": "Crea valor — spread +7.0%"
-      },
-      {
-        "category": "Valoración",
-        "detail": "Ajustado por su crecimiento esperado, el P/E resulta barato (PEG 0.63 < 1): se paga menos de 1x por cada punto de crecimiento, señal clásica de crecimiento a precio razonable (GARP).",
-        "reason": "PEG atractivo — 0.63"
       },
       {
         "category": "Crecimiento",
@@ -42,27 +37,18 @@
     "warnings": [
       {
         "category": "Valoración",
-        "detail": "El mercado paga 36.1x beneficios, un +158% sobre la mediana del sector (14.0x). Es un precio alto que el mercado sostiene por su crecimiento y retornos; deja poco margen de error: cualquier decepción en resultados puede corregir con fuerza.",
-        "reason": "Valoración exigente — P/E 36.1x"
-      },
-      {
-        "category": "Crecimiento",
-        "detail": "Las ventas caen un 24.2% interanual: un negocio que se encoge presiona márgenes y valoración salvo que sea un bache puntual con catalizador de recuperación.",
-        "reason": "Ingresos en contracción — -24.2% interanual"
-      },
-      {
-        "category": "Valoración",
         "detail": "Por cada dólar invertido en la acción, el negocio genera solo 1.1% de caja libre: se está pagando caro cada dólar de flujo, habitual en compañías de alto crecimiento o valoración exigente.",
         "reason": "FCF yield bajo — 1.1%"
       },
       {
         "category": "Valoración",
-        "detail": "Se paga 12.5x EBITDA frente a 8.0x de sus pares (+56%): el mercado le asigna una prima que conviene contrastar con su ventaja competitiva.",
-        "reason": "EV/EBITDA sobre el sector — 12.5x"
+        "detail": "Se paga 12.4x EBITDA frente a 8.0x de sus pares (+55%): el mercado le asigna una prima que conviene contrastar con su ventaja competitiva.",
+        "reason": "EV/EBITDA normalizado sobre el sector — 12.4x"
       }
     ]
   },
   "altman_z": {
+    "applicable": true,
     "available": true,
     "details": {
       "X1_wc_ta": 0.1336,
@@ -78,6 +64,34 @@
     "model": "Z-Score Original (Manufactura)",
     "z_score": 3.33,
     "zone": "safe"
+  },
+  "archetype_metrics": {
+    "cycle_incomplete": true,
+    "cycle_years": 4,
+    "ebitda_avg": 9083750000.0,
+    "ev_ebitda_normalized": 12.3834467897,
+    "fcf_margin_avg": 0.0571700625066,
+    "fcf_normalized": 1481562169.86,
+    "p_fcf_normalized": 71.424700852,
+    "revenue_growth_normalized": 0.0450413775521,
+    "revenue_growth_normalized_raw": 0.0450413775521
+  },
+  "classification": {
+    "alerts": [],
+    "ambiguous": false,
+    "archetype": "CYCLICAL",
+    "confidence": "normal",
+    "industry": "Copper",
+    "inputs": {
+      "assets_to_revenue": 2.24453019487,
+      "eps_ttm": 2.0405,
+      "net_margin_ttm": 0.0850472699209,
+      "revenue_cagr_3y": 0.0439166661101,
+      "revenue_cagr_3y_reason": null
+    },
+    "reason": "Clasificada como CYCLICAL por industria Copper",
+    "rule": "industria_ciclica",
+    "sector": "Basic Materials"
   },
   "company_type": "growth",
   "data_provenance": {
@@ -401,15 +415,21 @@
     }
   ],
   "dcf": {
-    "fair_value": 6.5,
-    "growth_rate": 0.08,
-    "margin_of_safety": -10.3369234525,
+    "fair_value": 7.67,
+    "growth_rate": 0.0450413775521,
+    "margin_of_safety": -8.6075622479,
+    "normalized": {
+      "cycle_incomplete": true,
+      "fcf": 1481562169.86,
+      "fcf_margin_avg": 0.0571700625066,
+      "years": 4
+    },
     "terminal_growth": 0.025,
-    "upside": -91.1792647786,
+    "upside": -89.5915324387,
     "value_composition": {
-      "stage1_pct": 31.3,
-      "stage2_pct": 24.3,
-      "terminal_pct": 44.4
+      "stage1_pct": 34.2,
+      "stage2_pct": 23.5,
+      "terminal_pct": 42.3
     },
     "wacc": 0.1204289085
   },
@@ -468,6 +488,17 @@
     "revenue": 25915000000.0,
     "revenue_growth": -0.2423,
     "roa": 0.0378909003387,
+    "roce": 0.129266702462,
+    "roce_avg": 0.144481065669,
+    "roce_cycle_incomplete": true,
+    "roce_reason": null,
+    "roce_roic_divergence": {
+      "causes": [],
+      "diverges": false,
+      "gap": -0.0614674470274
+    },
+    "roce_state": "ok",
+    "roce_years": 4,
     "roe": 0.11661992698,
     "roic": 0.19073414949,
     "roic_wacc_spread": 0.0703052409896,
@@ -478,7 +509,9 @@
     "total_equity": 18899000000.0,
     "wacc": 0.1204289085
   },
+  "not_applicable": {},
   "piotroski_f": {
+    "applicable": true,
     "conclusive": true,
     "details": {
       "asset_turnover_improved": {
@@ -631,6 +664,7 @@
             "value": "51%"
           }
         ],
+        "applicable": true,
         "conclusive": true,
         "coverage": 1.0,
         "details": [
@@ -645,11 +679,11 @@
       "Crecimiento": {
         "adjustments": [
           {
-            "adjustment": -4,
+            "adjustment": 1,
             "metric": "Crecimiento Ingresos 3Y",
-            "reason": "Contracción (-24.2%)",
-            "severity": "severe",
-            "value": "-24.2%"
+            "reason": "Crecimiento moderado (4.5%) — normalizado de ciclo medio: promedio interanual de 4 ejercicios, acotado a [-5%, 10%]; ciclo incompleto",
+            "severity": "ok",
+            "value": "4.5%"
           },
           {
             "adjustment": 5,
@@ -659,22 +693,23 @@
             "value": "53.1%"
           },
           {
-            "adjustment": -3,
-            "metric": "Crecimiento FCF 3Y",
-            "reason": "FCF decreciente (-12.6%)",
-            "severity": "moderate",
-            "value": "-12.6%"
+            "adjustment": 0,
+            "metric": "No aplica",
+            "reason": "No aplica a CYCLICAL: el resultado de un solo ejercicio depende de la fase del ciclo (no cuenta en la cobertura)",
+            "severity": "neutral",
+            "value": "Crecimiento del FCF"
           }
         ],
+        "applicable": true,
         "conclusive": true,
         "coverage": 1.0,
         "details": [
-          "Contracción (-24.2%)",
+          "Crecimiento moderado (4.5%) — normalizado de ciclo medio: promedio interanual de 4 ejercicios, acotado a [-5%, 10%]; ciclo incompleto",
           "EPS excepcional (53.1%)",
-          "FCF decreciente (-12.6%)"
+          "No aplica a CYCLICAL: el resultado de un solo ejercicio depende de la fase del ciclo (no cuenta en la cobertura)"
         ],
         "max": 20,
-        "score": 8
+        "score": 16
       },
       "Rentabilidad": {
         "adjustments": [
@@ -714,6 +749,7 @@
             "value": "+7.0%"
           }
         ],
+        "applicable": true,
         "conclusive": true,
         "coverage": 1.0,
         "details": [
@@ -757,6 +793,7 @@
             "value": "17.6x"
           }
         ],
+        "applicable": true,
         "conclusive": true,
         "coverage": 1.0,
         "details": [
@@ -772,59 +809,36 @@
         "adjustments": [
           {
             "adjustment": -2,
-            "metric": "P/E vs Sector",
-            "reason": "Premium ajustado (36.1x) - Calidad Moderada",
-            "severity": "severe",
-            "value": "36.1x"
+            "metric": "P/FCF normalizado",
+            "reason": "Muy alto (71.4x) (ciclo incompleto: 4 ejercicios)",
+            "severity": "moderate",
+            "value": "71.4x"
           },
           {
-            "adjustment": 3,
-            "metric": "Forward P/E",
-            "reason": "Fuerte compresión P/E (36x → 19x forward)",
-            "severity": "excellent",
-            "value": "19.3x"
+            "adjustment": 0,
+            "metric": "EV/EBITDA normalizado vs Sector",
+            "reason": "Razonable para growth (12.4x) (ciclo incompleto: 4 ejercicios)",
+            "severity": "ok",
+            "value": "12.4x"
           },
           {
-            "adjustment": -4,
-            "metric": "P/FCF",
-            "reason": "Muy alto (94.8x)",
-            "severity": "severe",
-            "value": "94.8x"
-          },
-          {
-            "adjustment": -4,
-            "metric": "EV/EBITDA vs Sector",
-            "reason": "Muy caro (12.5x vs 8.0x)",
-            "severity": "severe",
-            "value": "12.5x"
-          },
-          {
-            "adjustment": 4,
-            "metric": "PEG Ratio",
-            "reason": "Muy atractivo (0.63)",
-            "severity": "excellent",
-            "value": "0.63"
-          },
-          {
-            "adjustment": 3,
-            "metric": "Ajuste Crecimiento",
-            "reason": "Límite de penalización por calidad moderada",
-            "severity": "good",
-            "value": "Quality 50"
+            "adjustment": 0,
+            "metric": "No aplica",
+            "reason": "No aplica a CYCLICAL: el resultado de un solo ejercicio depende de la fase del ciclo (no cuenta en la cobertura)",
+            "severity": "neutral",
+            "value": "P/E, PEG"
           }
         ],
+        "applicable": true,
         "conclusive": true,
         "coverage": 1.0,
         "details": [
-          "Premium ajustado (36.1x) - Calidad Moderada",
-          "Fuerte compresión P/E (36x → 19x forward)",
-          "Muy alto (94.8x)",
-          "Muy caro (12.5x vs 8.0x)",
-          "Muy atractivo (0.63)",
-          "Límite de penalización por calidad moderada"
+          "Muy alto (71.4x) (ciclo incompleto: 4 ejercicios)",
+          "Razonable para growth (12.4x) (ciclo incompleto: 4 ejercicios)",
+          "No aplica a CYCLICAL: el resultado de un solo ejercicio depende de la fase del ciclo (no cuenta en la cobertura)"
         ],
         "max": 20,
-        "score": 10
+        "score": 8
       }
     },
     "categories_included": 5,
@@ -832,54 +846,70 @@
     "excluded_categories": [],
     "level": "Favorable",
     "max_score": 100,
+    "not_applicable_categories": [],
     "partial": false,
-    "total_score": 71
+    "total_score": 77
   },
   "score_coverage": {
     "calidad": {
+      "applicable": true,
       "components": 4,
       "conclusive": true,
       "coverage": 1.0,
       "evaluated": 4,
       "low_confidence": false,
       "missing": [],
-      "missing_reasons": {}
+      "missing_reasons": {},
+      "not_applicable": {}
     },
     "crecimiento": {
-      "components": 3,
+      "applicable": true,
+      "components": 2,
       "conclusive": true,
       "coverage": 1.0,
-      "evaluated": 3,
+      "evaluated": 2,
       "low_confidence": false,
       "missing": [],
-      "missing_reasons": {}
+      "missing_reasons": {},
+      "not_applicable": {
+        "Crecimiento del FCF": "No aplica a CYCLICAL: el resultado de un solo ejercicio depende de la fase del ciclo"
+      }
     },
     "rentabilidad": {
+      "applicable": true,
       "components": 5,
       "conclusive": true,
       "coverage": 1.0,
       "evaluated": 5,
       "low_confidence": false,
       "missing": [],
-      "missing_reasons": {}
+      "missing_reasons": {},
+      "not_applicable": {}
     },
     "solidez": {
+      "applicable": true,
       "components": 4,
       "conclusive": true,
       "coverage": 1.0,
       "evaluated": 4,
       "low_confidence": false,
       "missing": [],
-      "missing_reasons": {}
+      "missing_reasons": {},
+      "not_applicable": {}
     },
     "valoracion": {
-      "components": 4,
+      "applicable": true,
+      "components": 2,
       "conclusive": true,
       "coverage": 1.0,
-      "evaluated": 4,
+      "evaluated": 2,
       "low_confidence": false,
       "missing": [],
-      "missing_reasons": {}
+      "missing_reasons": {},
+      "not_applicable": {
+        "P/E": "No aplica a CYCLICAL: el resultado de un solo ejercicio depende de la fase del ciclo",
+        "PEG": "No aplica a CYCLICAL: el resultado de un solo ejercicio depende de la fase del ciclo"
+      }
     }
   },
   "sector_info": {
@@ -890,8 +920,8 @@
   "sensitivity": {
     "base_case": {
       "discount_rate": 0.1204289085,
-      "fair_value": 6.5,
-      "growth_rate": 0.08
+      "fair_value": 7.67,
+      "growth_rate": 0.0450413775521
     },
     "discount_rates": [
       0.1004,
@@ -901,58 +931,58 @@
       0.1404
     ],
     "growth_rates": [
-      0.03,
-      0.055,
-      0.08,
-      0.105,
-      0.13
+      -0.005,
+      0.02,
+      0.045,
+      0.07,
+      0.095
     ],
     "interpretation": "Muy probablemente sobrevalorada (100% de escenarios)",
     "is_valid": true,
     "matrix": [
       [
-        6.22,
-        4.94,
-        3.93,
-        3.11,
-        2.43
+        9.38,
+        7.74,
+        6.44,
+        5.39,
+        4.52
       ],
       [
-        7.82,
-        6.32,
-        5.13,
-        4.17,
-        3.38
+        9.38,
+        7.74,
+        6.44,
+        5.39,
+        4.52
       ],
       [
-        9.65,
-        7.89,
-        6.5,
-        5.38,
-        4.45
+        11.02,
+        9.15,
+        7.67,
+        6.48,
+        5.49
       ],
       [
-        11.73,
-        9.67,
-        8.05,
-        6.74,
-        5.66
+        13.32,
+        11.13,
+        9.4,
+        8.0,
+        6.84
       ],
       [
-        14.1,
-        11.7,
-        9.81,
-        8.29,
-        7.03
+        15.95,
+        13.38,
+        11.35,
+        9.72,
+        8.37
       ]
     ],
     "statistics": {
       "current_price": 73.6900024414,
-      "max_value": 14.1,
-      "mean_value": 6.964,
-      "median_value": 6.5,
-      "min_value": 2.43,
-      "upside_base_case": -91.1792647786
+      "max_value": 15.95,
+      "mean_value": 8.5684,
+      "median_value": 8.0,
+      "min_value": 4.52,
+      "upside_base_case": -89.5915324387
     },
     "warnings": []
   },

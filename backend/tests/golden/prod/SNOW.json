@@ -2,11 +2,6 @@
   "alerts": {
     "red_flags": [
       {
-        "category": "Valoración",
-        "detail": "La empresa no tiene beneficios positivos en los últimos doce meses, así que el P/E no es interpretable; la valoración depende de que vuelva a generar utilidades.",
-        "reason": "P/E no significativo — pérdidas"
-      },
-      {
         "category": "Valor intrínseco",
         "detail": "El precio excede en 74% el valor justo estimado por el DCF ($97): sostenerlo exige asumir escenarios de crecimiento muy optimistas.",
         "reason": "Sobrevalorada según DCF — -74%"
@@ -58,6 +53,7 @@
     ]
   },
   "altman_z": {
+    "applicable": true,
     "available": true,
     "details": {
       "X1_wc_ta": 0.1446,
@@ -72,6 +68,32 @@
     "model": "Z''-Score (No Manufactura)",
     "z_score": 15.46,
     "zone": "safe"
+  },
+  "archetype_metrics": {
+    "ebitda": -1083169000.0,
+    "ev_sales": 27.5101004939,
+    "fcf_margin": 0.238519615726,
+    "revenue_cagr_3y": 0.313765188615,
+    "rule_of_40": 0.552284804341
+  },
+  "classification": {
+    "alerts": [],
+    "ambiguous": false,
+    "archetype": "GROWTH_PRE_PROFIT",
+    "confidence": "normal",
+    "industry": "Software - Application",
+    "inputs": {
+      "assets_to_revenue": 1.94974386981,
+      "eps_ttm": -3.1744,
+      "net_margin_ttm": -0.284293627638,
+      "op_margin_detrended_std": 0.0347751900977,
+      "revenue_cagr_3y": 0.313765188615,
+      "revenue_cagr_3y_reason": null,
+      "revenue_growth_std": 0.0385417505442
+    },
+    "reason": "Clasificada como GROWTH_PRE_PROFIT: BPA TTM -3.17 <= 0 y CAGR de ingresos a 3 años 31.4% > 15%",
+    "rule": "pre_beneficio_con_crecimiento",
+    "sector": "Technology"
   },
   "company_type": "blend",
   "data_provenance": {
@@ -547,6 +569,17 @@
     "revenue": 4683946000.0,
     "revenue_growth": 0.3204,
     "roa": -0.145810755987,
+    "roce": -0.276728133881,
+    "roce_reason": null,
+    "roce_roic_divergence": {
+      "causes": [
+        "base fiscal distinta: el ROCE es antes de impuestos y el ROIC después",
+        "capital distinto: el ROIC usa patrimonio + deuda − caja; el ROCE, activos − pasivo corriente (incluye pasivos a largo plazo no financieros e intereses minoritarios)"
+      ],
+      "diverges": true,
+      "gap": 1.41693502915
+    },
+    "roce_state": "ok",
     "roe": -0.692071418251,
     "roic": -1.69366316303,
     "roic_wacc_spread": -1.81232275453,
@@ -557,7 +590,11 @@
     "total_equity": 1924102000.0,
     "wacc": 0.1186595915
   },
+  "not_applicable": {
+    "graham": "No aplica a GROWTH_PRE_PROFIT: aún no tiene beneficios que capitalizar"
+  },
   "piotroski_f": {
+    "applicable": true,
     "conclusive": true,
     "details": {
       "asset_turnover_improved": {
@@ -677,7 +714,7 @@
     "roic": -1.69366316303
   },
   "score": {
-    "basis": "calculado sobre 4 de 5 categorías",
+    "basis": null,
     "breakdown": {
       "Calidad de Ganancias": {
         "adjustments": [
@@ -703,6 +740,7 @@
             "value": "Positivo"
           }
         ],
+        "applicable": true,
         "conclusive": true,
         "coverage": 1.0,
         "details": [
@@ -737,20 +775,21 @@
             "value": "Sí"
           },
           {
-            "adjustment": 5,
-            "metric": "Cobertura",
-            "reason": "Reescalado sobre los componentes con dato (sin dato: Crecimiento del BPA)",
+            "adjustment": 0,
+            "metric": "No aplica",
+            "reason": "No aplica a GROWTH_PRE_PROFIT: aún no tiene beneficios que capitalizar (no cuenta en la cobertura)",
             "severity": "neutral",
-            "value": "2/3 componentes"
+            "value": "Crecimiento del BPA"
           }
         ],
+        "applicable": true,
         "conclusive": true,
-        "coverage": 0.666666666667,
+        "coverage": 1.0,
         "details": [
           "Crecimiento excepcional (32.0%)",
           "FCF creciente (31.1%)",
           "Perfil de alto crecimiento",
-          "Reescalado sobre los componentes con dato (sin dato: Crecimiento del BPA)"
+          "No aplica a GROWTH_PRE_PROFIT: aún no tiene beneficios que capitalizar (no cuenta en la cobertura)"
         ],
         "max": 20,
         "score": 20
@@ -793,6 +832,7 @@
             "value": "-181.2%"
           }
         ],
+        "applicable": true,
         "conclusive": true,
         "coverage": 1.0,
         "details": [
@@ -843,6 +883,7 @@
             "value": "3/4 componentes"
           }
         ],
+        "applicable": true,
         "conclusive": true,
         "coverage": 0.75,
         "details": [
@@ -859,70 +900,101 @@
         "adjustments": [
           {
             "adjustment": -4,
+            "metric": "EV/Ventas",
+            "reason": "Muy caro por ventas (27.5x)",
+            "severity": "severe",
+            "value": "27.5x"
+          },
+          {
+            "adjustment": 2,
+            "metric": "Regla de 40",
+            "reason": "Crecimiento 31.4% (CAGR 3 años) + margen FCF 23.9% = 55",
+            "severity": "good",
+            "value": "55"
+          },
+          {
+            "adjustment": -4,
             "metric": "P/FCF",
             "reason": "Muy alto (116.5x)",
             "severity": "severe",
             "value": "116.5x"
           },
           {
+            "adjustment": 2,
+            "metric": "Ajuste Crecimiento",
+            "reason": "Límite de penalización por calidad moderada",
+            "severity": "good",
+            "value": "Quality 60"
+          },
+          {
             "adjustment": 0,
-            "metric": "Cobertura",
-            "reason": "Categoría no concluyente: menos del 50% de sus componentes con dato; se excluye del total (sin dato: P/E, EV/EBITDA, PEG)",
+            "metric": "No aplica",
+            "reason": "No aplica a GROWTH_PRE_PROFIT: EBITDA <= 0, sin resultado operativo que capitalizar; No aplica a GROWTH_PRE_PROFIT: aún no tiene beneficios que capitalizar (no cuenta en la cobertura)",
             "severity": "neutral",
-            "value": "1/4 componentes"
+            "value": "P/E, EV/EBITDA, PEG"
           }
         ],
-        "conclusive": false,
-        "coverage": 0.25,
+        "applicable": true,
+        "conclusive": true,
+        "coverage": 1.0,
         "details": [
+          "Muy caro por ventas (27.5x)",
+          "Crecimiento 31.4% (CAGR 3 años) + margen FCF 23.9% = 55",
           "Muy alto (116.5x)",
-          "Categoría no concluyente: menos del 50% de sus componentes con dato; se excluye del total (sin dato: P/E, EV/EBITDA, PEG)"
+          "Límite de penalización por calidad moderada",
+          "No aplica a GROWTH_PRE_PROFIT: EBITDA <= 0, sin resultado operativo que capitalizar; No aplica a GROWTH_PRE_PROFIT: aún no tiene beneficios que capitalizar (no cuenta en la cobertura)"
         ],
         "max": 20,
         "score": 6
       }
     },
-    "categories_included": 4,
+    "categories_included": 5,
     "categories_total": 5,
-    "excluded_categories": [
-      "Valoración"
-    ],
+    "excluded_categories": [],
     "level": "Neutral",
     "max_score": 100,
-    "partial": true,
-    "total_score": 59
+    "not_applicable_categories": [],
+    "partial": false,
+    "total_score": 53
   },
   "score_coverage": {
     "calidad": {
+      "applicable": true,
       "components": 3,
       "conclusive": true,
       "coverage": 1.0,
       "evaluated": 3,
       "low_confidence": false,
       "missing": [],
-      "missing_reasons": {}
+      "missing_reasons": {},
+      "not_applicable": {}
     },
     "crecimiento": {
-      "components": 3,
+      "applicable": true,
+      "components": 2,
       "conclusive": true,
-      "coverage": 0.666666666667,
+      "coverage": 1.0,
       "evaluated": 2,
       "low_confidence": false,
-      "missing": [
-        "Crecimiento del BPA"
-      ],
-      "missing_reasons": {}
+      "missing": [],
+      "missing_reasons": {},
+      "not_applicable": {
+        "Crecimiento del BPA": "No aplica a GROWTH_PRE_PROFIT: aún no tiene beneficios que capitalizar"
+      }
     },
     "rentabilidad": {
+      "applicable": true,
       "components": 5,
       "conclusive": true,
       "coverage": 1.0,
       "evaluated": 5,
       "low_confidence": false,
       "missing": [],
-      "missing_reasons": {}
+      "missing_reasons": {},
+      "not_applicable": {}
     },
     "solidez": {
+      "applicable": true,
       "components": 4,
       "conclusive": true,
       "coverage": 0.75,
@@ -933,20 +1005,23 @@
       ],
       "missing_reasons": {
         "Cobertura de intereses": "No significativo: EBIT < 0 con caja neta (caja > deuda total); los intereses se pagan con caja"
-      }
+      },
+      "not_applicable": {}
     },
     "valoracion": {
-      "components": 4,
-      "conclusive": false,
-      "coverage": 0.25,
-      "evaluated": 1,
-      "low_confidence": true,
-      "missing": [
-        "P/E",
-        "EV/EBITDA",
-        "PEG"
-      ],
-      "missing_reasons": {}
+      "applicable": true,
+      "components": 3,
+      "conclusive": true,
+      "coverage": 1.0,
+      "evaluated": 3,
+      "low_confidence": false,
+      "missing": [],
+      "missing_reasons": {},
+      "not_applicable": {
+        "EV/EBITDA": "No aplica a GROWTH_PRE_PROFIT: EBITDA <= 0, sin resultado operativo que capitalizar",
+        "P/E": "No aplica a GROWTH_PRE_PROFIT: aún no tiene beneficios que capitalizar",
+        "PEG": "No aplica a GROWTH_PRE_PROFIT: aún no tiene beneficios que capitalizar"
+      }
     }
   },
   "sector_info": {

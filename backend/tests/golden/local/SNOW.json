@@ -7,11 +7,6 @@
         "reason": "Cobertura de intereses negativa (EBIT < 0)"
       },
       {
-        "category": "Valoración",
-        "detail": "La empresa no tiene beneficios positivos en los últimos doce meses, así que el P/E no es interpretable; la valoración depende de que vuelva a generar utilidades.",
-        "reason": "P/E no significativo — pérdidas"
-      },
-      {
         "category": "Valor intrínseco",
         "detail": "El precio excede en 75% el valor justo estimado por el DCF ($91): sostenerlo exige asumir escenarios de crecimiento muy optimistas.",
         "reason": "Sobrevalorada según DCF — -75%"
@@ -58,6 +53,7 @@
     ]
   },
   "altman_z": {
+    "applicable": true,
     "available": false,
     "details": {
       "missing": [
@@ -69,6 +65,32 @@
     "model": "",
     "z_score": 0,
     "zone": "n/a"
+  },
+  "archetype_metrics": {
+    "ebitda": -1036284992.0,
+    "ev_sales": 24.0242854616,
+    "fcf_margin": 0.205572319928,
+    "revenue_cagr_3y": 0.313765188615,
+    "rule_of_40": 0.519337508543
+  },
+  "classification": {
+    "alerts": [],
+    "ambiguous": false,
+    "archetype": "GROWTH_PRE_PROFIT",
+    "confidence": "normal",
+    "industry": "Software - Application",
+    "inputs": {
+      "assets_to_revenue": 1.94974386981,
+      "eps_ttm": -3.18,
+      "net_margin_ttm": -0.200711829852,
+      "op_margin_detrended_std": 0.0347751900977,
+      "revenue_cagr_3y": 0.313765188615,
+      "revenue_cagr_3y_reason": null,
+      "revenue_growth_std": 0.0385417505442
+    },
+    "reason": "Clasificada como GROWTH_PRE_PROFIT: BPA TTM -3.18 <= 0 y CAGR de ingresos a 3 años 31.4% > 15%",
+    "rule": "pre_beneficio_con_crecimiento",
+    "sector": "Technology"
   },
   "company_type": "blend",
   "data_provenance": {
@@ -611,6 +633,14 @@
     "revenue": 5434647040.0,
     "revenue_growth": 0.498635846719,
     "roa": -0.090220004,
+    "roce": -0.276728133881,
+    "roce_reason": null,
+    "roce_roic_divergence": {
+      "causes": [],
+      "diverges": false,
+      "gap": -0.0189922281295
+    },
+    "roce_state": "ok",
     "roe": -0.48063,
     "roic": -0.257735905752,
     "roic_wacc_spread": -0.377040905752,
@@ -621,7 +651,11 @@
     "total_equity": 2269516992.28,
     "wacc": 0.119305
   },
+  "not_applicable": {
+    "graham": "No aplica a GROWTH_PRE_PROFIT: aún no tiene beneficios que capitalizar"
+  },
   "piotroski_f": {
+    "applicable": true,
     "conclusive": true,
     "details": {
       "asset_turnover_improved": {
@@ -767,6 +801,7 @@
             "value": "Positivo"
           }
         ],
+        "applicable": true,
         "conclusive": true,
         "coverage": 1.0,
         "details": [
@@ -801,20 +836,21 @@
             "value": "Sí"
           },
           {
-            "adjustment": 5,
-            "metric": "Cobertura",
-            "reason": "Reescalado sobre los componentes con dato (sin dato: Crecimiento del BPA)",
+            "adjustment": 0,
+            "metric": "No aplica",
+            "reason": "No aplica a GROWTH_PRE_PROFIT: aún no tiene beneficios que capitalizar (no cuenta en la cobertura)",
             "severity": "neutral",
-            "value": "2/3 componentes"
+            "value": "Crecimiento del BPA"
           }
         ],
+        "applicable": true,
         "conclusive": true,
-        "coverage": 0.666666666667,
+        "coverage": 1.0,
         "details": [
           "Crecimiento excepcional (49.9%)",
           "FCF creciente (31.1%)",
           "Perfil de alto crecimiento",
-          "Reescalado sobre los componentes con dato (sin dato: Crecimiento del BPA)"
+          "No aplica a GROWTH_PRE_PROFIT: aún no tiene beneficios que capitalizar (no cuenta en la cobertura)"
         ],
         "max": 20,
         "score": 20
@@ -857,6 +893,7 @@
             "value": "-37.7%"
           }
         ],
+        "applicable": true,
         "conclusive": true,
         "coverage": 1.0,
         "details": [
@@ -900,6 +937,7 @@
             "value": "3/4 componentes"
           }
         ],
+        "applicable": true,
         "conclusive": true,
         "coverage": 0.75,
         "details": [
@@ -914,6 +952,20 @@
       "Valoración": {
         "adjustments": [
           {
+            "adjustment": -2,
+            "metric": "EV/Ventas",
+            "reason": "Exigente por ventas (24.0x)",
+            "severity": "moderate",
+            "value": "24.0x"
+          },
+          {
+            "adjustment": 2,
+            "metric": "Regla de 40",
+            "reason": "Crecimiento 31.4% (CAGR 3 años) + margen FCF 20.6% = 52",
+            "severity": "good",
+            "value": "52"
+          },
+          {
             "adjustment": -4,
             "metric": "P/FCF",
             "reason": "Muy alto (116.5x)",
@@ -921,78 +973,73 @@
             "value": "116.5x"
           },
           {
-            "adjustment": -3,
-            "metric": "PEG Ratio",
-            "reason": "Muy caro (6.61)",
-            "severity": "severe",
-            "value": "6.61"
-          },
-          {
-            "adjustment": 1,
-            "metric": "Ajuste Crecimiento",
-            "reason": "Límite de penalización por calidad moderada",
-            "severity": "good",
-            "value": "Quality 60"
-          },
-          {
-            "adjustment": -8,
-            "metric": "Cobertura",
-            "reason": "Reescalado sobre los componentes con dato (sin dato: P/E, EV/EBITDA)",
+            "adjustment": 0,
+            "metric": "No aplica",
+            "reason": "No aplica a GROWTH_PRE_PROFIT: EBITDA <= 0, sin resultado operativo que capitalizar; No aplica a GROWTH_PRE_PROFIT: aún no tiene beneficios que capitalizar (no cuenta en la cobertura)",
             "severity": "neutral",
-            "value": "2/4 componentes"
+            "value": "P/E, EV/EBITDA, PEG"
           }
         ],
+        "applicable": true,
         "conclusive": true,
-        "coverage": 0.5,
+        "coverage": 1.0,
         "details": [
+          "Exigente por ventas (24.0x)",
+          "Crecimiento 31.4% (CAGR 3 años) + margen FCF 20.6% = 52",
           "Muy alto (116.5x)",
-          "Muy caro (6.61)",
-          "Límite de penalización por calidad moderada",
-          "Reescalado sobre los componentes con dato (sin dato: P/E, EV/EBITDA)"
+          "No aplica a GROWTH_PRE_PROFIT: EBITDA <= 0, sin resultado operativo que capitalizar; No aplica a GROWTH_PRE_PROFIT: aún no tiene beneficios que capitalizar (no cuenta en la cobertura)"
         ],
         "max": 20,
-        "score": 0
+        "score": 6
       }
     },
     "categories_included": 5,
     "categories_total": 5,
     "excluded_categories": [],
-    "level": "Precaución",
+    "level": "Neutral",
     "max_score": 100,
+    "not_applicable_categories": [],
     "partial": false,
-    "total_score": 36
+    "total_score": 42
   },
   "score_coverage": {
     "calidad": {
+      "applicable": true,
       "components": 3,
       "conclusive": true,
       "coverage": 1.0,
       "evaluated": 3,
       "low_confidence": false,
       "missing": [],
-      "missing_reasons": {}
+      "missing_reasons": {},
+      "not_applicable": {}
     },
     "crecimiento": {
-      "components": 3,
+      "applicable": true,
+      "components": 2,
       "conclusive": true,
-      "coverage": 0.666666666667,
+      "coverage": 1.0,
       "evaluated": 2,
       "low_confidence": false,
-      "missing": [
-        "Crecimiento del BPA"
-      ],
-      "missing_reasons": {}
+      "missing": [],
+      "missing_reasons": {},
+      "not_applicable": {
+        "Crecimiento del BPA": "No aplica a GROWTH_PRE_PROFIT: aún no tiene beneficios que capitalizar"
+      }
     },
     "rentabilidad": {
+      "applicable": true,
       "components": 5,
       "conclusive": true,
       "coverage": 1.0,
       "evaluated": 5,
       "low_confidence": false,
       "missing": [],
-      "missing_reasons": {}
+      "missing_reasons": {},
+      "not_applicable": {}
     },
     "solidez": {
+      "applicable": true,
       "components": 4,
       "conclusive": true,
       "coverage": 0.75,
@@ -1001,19 +1048,23 @@
       "missing": [
         "Altman Z"
       ],
-      "missing_reasons": {}
+      "missing_reasons": {},
+      "not_applicable": {}
     },
     "valoracion": {
-      "components": 4,
+      "applicable": true,
+      "components": 3,
       "conclusive": true,
-      "coverage": 0.5,
-      "evaluated": 2,
-      "low_confidence": true,
-      "missing": [
-        "P/E",
-        "EV/EBITDA"
-      ],
-      "missing_reasons": {}
+      "coverage": 1.0,
+      "evaluated": 3,
+      "low_confidence": false,
+      "missing": [],
+      "missing_reasons": {},
+      "not_applicable": {
+        "EV/EBITDA": "No aplica a GROWTH_PRE_PROFIT: EBITDA <= 0, sin resultado operativo que capitalizar",
+        "P/E": "No aplica a GROWTH_PRE_PROFIT: aún no tiene beneficios que capitalizar",
+        "PEG": "No aplica a GROWTH_PRE_PROFIT: aún no tiene beneficios que capitalizar"
+      }
     }
   },
   "sector_info": {

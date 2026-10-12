@@ -3,8 +3,8 @@
     "red_flags": [
       {
         "category": "Valor intrínseco",
-        "detail": "El precio excede en 84% el valor justo estimado por el DCF ($12): sostenerlo exige asumir escenarios de crecimiento muy optimistas.",
-        "reason": "Sobrevalorada según DCF — -84%"
+        "detail": "El precio excede en 89% el valor justo estimado por el DCF ($8): sostenerlo exige asumir escenarios de crecimiento muy optimistas.",
+        "reason": "Sobrevalorada según DCF — -89%"
       }
     ],
     "strengths": [
@@ -42,27 +42,18 @@
     "warnings": [
       {
         "category": "Valoración",
-        "detail": "El mercado paga 36.3x beneficios, un +159% sobre la mediana del sector (14.0x). Es un precio alto que el mercado sostiene por su crecimiento y retornos; deja poco margen de error: cualquier decepción en resultados puede corregir con fuerza.",
-        "reason": "Valoración exigente — P/E 36.3x"
-      },
-      {
-        "category": "Valoración",
         "detail": "Por cada dólar invertido en la acción, el negocio genera solo 2.0% de caja libre: se está pagando caro cada dólar de flujo, habitual en compañías de alto crecimiento o valoración exigente.",
         "reason": "FCF yield bajo — 2.0%"
       },
       {
         "category": "Valoración",
-        "detail": "Se paga 11.7x EBITDA frente a 8.0x de sus pares (+47%): el mercado le asigna una prima que conviene contrastar con su ventaja competitiva.",
-        "reason": "EV/EBITDA sobre el sector — 11.7x"
-      },
-      {
-        "category": "Valoración",
-        "detail": "El precio va muy por delante del crecimiento previsto (PEG 4.61 > 2): incluso creciendo, tardaría en 'justificar' su múltiplo actual.",
-        "reason": "PEG elevado — 4.61"
+        "detail": "Se paga 12.3x EBITDA frente a 8.0x de sus pares (+54%): el mercado le asigna una prima que conviene contrastar con su ventaja competitiva.",
+        "reason": "EV/EBITDA normalizado sobre el sector — 12.3x"
       }
     ]
   },
   "altman_z": {
+    "applicable": true,
     "available": false,
     "details": {
       "missing": [
@@ -74,6 +65,34 @@
     "model": "",
     "z_score": 0,
     "zone": "n/a"
+  },
+  "archetype_metrics": {
+    "cycle_incomplete": true,
+    "cycle_years": 4,
+    "ebitda_avg": 9083750000.0,
+    "ev_ebitda_normalized": 12.3406226871,
+    "fcf_margin_avg": 0.0571700625066,
+    "fcf_normalized": 1478875133.01,
+    "p_fcf_normalized": 71.5544761431,
+    "revenue_growth_normalized": 0.0450413775521,
+    "revenue_growth_normalized_raw": 0.0450413775521
+  },
+  "classification": {
+    "alerts": [],
+    "ambiguous": false,
+    "archetype": "CYCLICAL",
+    "confidence": "normal",
+    "industry": "Copper",
+    "inputs": {
+      "assets_to_revenue": 2.24453019487,
+      "eps_ttm": 2.03,
+      "net_margin_ttm": 0.113499307529,
+      "revenue_cagr_3y": 0.0439166661101,
+      "revenue_cagr_3y_reason": null
+    },
+    "reason": "Clasificada como CYCLICAL por industria Copper",
+    "rule": "industria_ciclica",
+    "sector": "Basic Materials"
   },
   "company_type": "growth",
   "data_provenance": {
@@ -448,15 +467,21 @@
   },
   "data_validation": [],
   "dcf": {
-    "fair_value": 11.62,
-    "growth_rate": 0.025,
-    "margin_of_safety": -5.34165232358,
+    "fair_value": 7.79,
+    "growth_rate": 0.0450413775521,
+    "margin_of_safety": -8.459563543,
+    "normalized": {
+      "cycle_incomplete": true,
+      "fcf": 1478875133.01,
+      "fcf_margin_avg": 0.0571700625066,
+      "years": 4
+    },
     "terminal_growth": 0.025,
-    "upside": -84.2312389741,
+    "upside": -89.428687746,
     "value_composition": {
-      "stage1_pct": 36.2,
-      "stage2_pct": 23.1,
-      "terminal_pct": 40.7
+      "stage1_pct": 34.4,
+      "stage2_pct": 23.6,
+      "terminal_pct": 42.0
     },
     "wacc": 0.121395
   },
@@ -515,6 +540,19 @@
     "revenue": 25867999232.0,
     "revenue_growth": 0.0162246801021,
     "roa": 0.07585,
+    "roce": 0.129266702462,
+    "roce_avg": 0.144481065669,
+    "roce_cycle_incomplete": true,
+    "roce_reason": null,
+    "roce_roic_divergence": {
+      "causes": [
+        "capital distinto: el ROIC usa patrimonio + deuda − caja; el ROCE, activos − pasivo corriente (incluye pasivos a largo plazo no financieros e intereses minoritarios)"
+      ],
+      "diverges": true,
+      "gap": -0.118302758154
+    },
+    "roce_state": "ok",
+    "roce_years": 4,
     "roe": 0.14755,
     "roic": 0.247569460616,
     "roic_wacc_spread": 0.126174460616,
@@ -525,7 +563,9 @@
     "total_equity": 19898339545.9,
     "wacc": 0.121395
   },
+  "not_applicable": {},
   "piotroski_f": {
+    "applicable": true,
     "conclusive": true,
     "details": {
       "asset_turnover_improved": {
@@ -678,6 +718,7 @@
             "value": "74%"
           }
         ],
+        "applicable": true,
         "conclusive": true,
         "coverage": 1.0,
         "details": [
@@ -692,11 +733,11 @@
       "Crecimiento": {
         "adjustments": [
           {
-            "adjustment": -1,
+            "adjustment": 1,
             "metric": "Crecimiento Ingresos 3Y",
-            "reason": "Crecimiento plano (1.6%)",
-            "severity": "moderate",
-            "value": "1.6%"
+            "reason": "Crecimiento moderado (4.5%) — normalizado de ciclo medio: promedio interanual de 4 ejercicios, acotado a [-5%, 10%]; ciclo incompleto",
+            "severity": "ok",
+            "value": "4.5%"
           },
           {
             "adjustment": 5,
@@ -706,22 +747,23 @@
             "value": "55.4%"
           },
           {
-            "adjustment": -3,
-            "metric": "Crecimiento FCF 3Y",
-            "reason": "FCF decreciente (-12.6%)",
-            "severity": "moderate",
-            "value": "-12.6%"
+            "adjustment": 0,
+            "metric": "No aplica",
+            "reason": "No aplica a CYCLICAL: el resultado de un solo ejercicio depende de la fase del ciclo (no cuenta en la cobertura)",
+            "severity": "neutral",
+            "value": "Crecimiento del FCF"
           }
         ],
+        "applicable": true,
         "conclusive": true,
         "coverage": 1.0,
         "details": [
-          "Crecimiento plano (1.6%)",
+          "Crecimiento moderado (4.5%) — normalizado de ciclo medio: promedio interanual de 4 ejercicios, acotado a [-5%, 10%]; ciclo incompleto",
           "EPS excepcional (55.4%)",
-          "FCF decreciente (-12.6%)"
+          "No aplica a CYCLICAL: el resultado de un solo ejercicio depende de la fase del ciclo (no cuenta en la cobertura)"
         ],
         "max": 20,
-        "score": 11
+        "score": 16
       },
       "Rentabilidad": {
         "adjustments": [
@@ -761,6 +803,7 @@
             "value": "+12.6%"
           }
         ],
+        "applicable": true,
         "conclusive": true,
         "coverage": 1.0,
         "details": [
@@ -804,6 +847,7 @@
             "value": "3/4 componentes"
           }
         ],
+        "applicable": true,
         "conclusive": true,
         "coverage": 0.75,
         "details": [
@@ -818,91 +862,86 @@
       "Valoración": {
         "adjustments": [
           {
-            "adjustment": 0,
-            "metric": "P/E vs Sector",
-            "reason": "Premium justificado (36.3x) - Calidad Moderada",
-            "severity": "ok",
-            "value": "36.3x"
-          },
-          {
-            "adjustment": 3,
-            "metric": "Forward P/E",
-            "reason": "Fuerte compresión P/E (36x → 17x forward)",
-            "severity": "excellent",
-            "value": "17.1x"
-          },
-          {
-            "adjustment": -1,
-            "metric": "P/FCF",
-            "reason": "Elevado (49.0x) - growth premium",
+            "adjustment": -2,
+            "metric": "P/FCF normalizado",
+            "reason": "Muy alto (71.6x) (ciclo incompleto: 4 ejercicios)",
             "severity": "moderate",
-            "value": "49.0x"
+            "value": "71.6x"
           },
           {
             "adjustment": 0,
-            "metric": "EV/EBITDA vs Sector",
-            "reason": "Razonable para growth (11.7x)",
+            "metric": "EV/EBITDA normalizado vs Sector",
+            "reason": "Razonable para growth (12.3x) (ciclo incompleto: 4 ejercicios)",
             "severity": "ok",
-            "value": "11.7x"
+            "value": "12.3x"
           },
           {
-            "adjustment": -3,
-            "metric": "PEG Ratio",
-            "reason": "Muy caro (4.61)",
-            "severity": "severe",
-            "value": "4.61"
+            "adjustment": 0,
+            "metric": "No aplica",
+            "reason": "No aplica a CYCLICAL: el resultado de un solo ejercicio depende de la fase del ciclo (no cuenta en la cobertura)",
+            "severity": "neutral",
+            "value": "P/E, PEG"
           }
         ],
+        "applicable": true,
         "conclusive": true,
         "coverage": 1.0,
         "details": [
-          "Premium justificado (36.3x) - Calidad Moderada",
-          "Fuerte compresión P/E (36x → 17x forward)",
-          "Elevado (49.0x) - growth premium",
-          "Razonable para growth (11.7x)",
-          "Muy caro (4.61)"
+          "Muy alto (71.6x) (ciclo incompleto: 4 ejercicios)",
+          "Razonable para growth (12.3x) (ciclo incompleto: 4 ejercicios)",
+          "No aplica a CYCLICAL: el resultado de un solo ejercicio depende de la fase del ciclo (no cuenta en la cobertura)"
         ],
         "max": 20,
-        "score": 9
+        "score": 8
       }
     },
     "categories_included": 5,
     "categories_total": 5,
     "excluded_categories": [],
-    "level": "Favorable",
+    "level": "Excelente",
     "max_score": 100,
+    "not_applicable_categories": [],
     "partial": false,
-    "total_score": 77
+    "total_score": 81
   },
   "score_coverage": {
     "calidad": {
+      "applicable": true,
       "components": 4,
       "conclusive": true,
       "coverage": 1.0,
       "evaluated": 4,
       "low_confidence": false,
       "missing": [],
-      "missing_reasons": {}
+      "missing_reasons": {},
+      "not_applicable": {}
     },
     "crecimiento": {
-      "components": 3,
+      "applicable": true,
+      "components": 2,
       "conclusive": true,
       "coverage": 1.0,
-      "evaluated": 3,
+      "evaluated": 2,
       "low_confidence": false,
       "missing": [],
-      "missing_reasons": {}
+      "missing_reasons": {},
+      "not_applicable": {
+        "Crecimiento del FCF": "No aplica a CYCLICAL: el resultado de un solo ejercicio depende de la fase del ciclo"
+      }
     },
     "rentabilidad": {
+      "applicable": true,
       "components": 5,
       "conclusive": true,
       "coverage": 1.0,
       "evaluated": 5,
       "low_confidence": false,
       "missing": [],
-      "missing_reasons": {}
+      "missing_reasons": {},
+      "not_applicable": {}
     },
     "solidez": {
+      "applicable": true,
       "components": 4,
       "conclusive": true,
       "coverage": 0.75,
@@ -911,16 +950,22 @@
       "missing": [
         "Altman Z"
       ],
-      "missing_reasons": {}
+      "missing_reasons": {},
+      "not_applicable": {}
     },
     "valoracion": {
-      "components": 4,
+      "applicable": true,
+      "components": 2,
       "conclusive": true,
       "coverage": 1.0,
-      "evaluated": 4,
+      "evaluated": 2,
       "low_confidence": false,
       "missing": [],
-      "missing_reasons": {}
+      "missing_reasons": {},
+      "not_applicable": {
+        "P/E": "No aplica a CYCLICAL: el resultado de un solo ejercicio depende de la fase del ciclo",
+        "PEG": "No aplica a CYCLICAL: el resultado de un solo ejercicio depende de la fase del ciclo"
+      }
     }
   },
   "sector_info": {
@@ -931,8 +976,8 @@
   "sensitivity": {
     "base_case": {
       "discount_rate": 0.121395,
-      "fair_value": 11.62,
-      "growth_rate": 0.025
+      "fair_value": 7.79,
+      "growth_rate": 0.0450413775521
     },
     "discount_rates": [
       0.1014,
@@ -942,58 +987,58 @@
       0.1414
     ],
     "growth_rates": [
-      -0.025,
-      0.0,
-      0.025,
-      0.05,
-      0.075
+      -0.005,
+      0.02,
+      0.045,
+      0.07,
+      0.095
     ],
     "interpretation": "Muy probablemente sobrevalorada (100% de escenarios)",
     "is_valid": true,
     "matrix": [
       [
-        15.8,
-        13.47,
-        11.62,
-        10.11,
-        8.87
+        9.44,
+        7.84,
+        6.58,
+        5.55,
+        4.7
       ],
       [
-        15.8,
-        13.47,
-        11.62,
-        10.11,
-        8.87
+        9.44,
+        7.84,
+        6.58,
+        5.55,
+        4.7
       ],
       [
-        15.8,
-        13.47,
-        11.62,
-        10.11,
-        8.87
+        11.05,
+        9.23,
+        7.79,
+        6.62,
+        5.65
       ],
       [
-        18.78,
-        16.03,
-        13.86,
-        12.09,
-        10.63
+        13.32,
+        11.18,
+        9.49,
+        8.12,
+        6.99
       ],
       [
-        22.17,
-        18.95,
-        16.4,
-        14.34,
-        12.63
+        15.9,
+        13.39,
+        11.42,
+        9.82,
+        8.5
       ]
     ],
     "statistics": {
       "current_price": 73.69,
-      "max_value": 22.17,
-      "mean_value": 13.4196,
-      "median_value": 13.47,
-      "min_value": 8.87,
-      "upside_base_case": -84.2312389741
+      "max_value": 15.9,
+      "mean_value": 8.6676,
+      "median_value": 8.12,
+      "min_value": 4.7,
+      "upside_base_case": -89.428687746
     },
     "warnings": []
   },

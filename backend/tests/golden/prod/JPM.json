@@ -1,12 +1,6 @@
 {
   "alerts": {
-    "red_flags": [
-      {
-        "category": "Flujo de caja",
-        "detail": "El negocio consume más efectivo del que genera tras invertir: depende de caja acumulada, deuda o ampliaciones para sostenerse. Sostenible solo de forma transitoria.",
-        "reason": "Flujo de caja libre negativo"
-      }
-    ],
+    "red_flags": [],
     "strengths": [
       {
         "category": "Rentabilidad",
@@ -24,29 +18,59 @@
         "reason": "BPA en fuerte expansión — +19.5% interanual"
       }
     ],
-    "warnings": [
-      {
-        "category": "Flujo de caja",
-        "detail": "El flujo de caja libre equivale a menos de la mitad del beneficio contable (FCF/BN -259%): parte de las utilidades no se está convirtiendo en caja real, señal a vigilar (devengos, capex o capital de trabajo).",
-        "reason": "Calidad del beneficio baja"
-      }
-    ]
+    "warnings": []
   },
   "altman_z": {
+    "applicable": false,
     "available": false,
     "details": {
       "model": "No Aplicable",
-      "reason": "financial_sector",
-      "sector": "Financial Services",
-      "warnings": [
-        "El Altman Z-Score fue diseñado para empresas industriales y comerciales",
-        "Para evaluar instituciones financieras, se recomienda usar métricas como CET1 Ratio, Tier 1 Capital, ROA bancario y Texas Ratio"
-      ]
+      "reason": "no_aplica",
+      "sector": "Financial Services"
     },
-    "interpretation": "El modelo Altman Z-Score no es aplicable a instituciones financieras. Los bancos, aseguradoras y empresas de servicios financieros tienen estructuras de balance fundamentalmente diferentes (depósitos = pasivos), lo que invalida las métricas del modelo.",
+    "interpretation": "No aplica a FINANCIAL: el balance es el producto (depósitos y préstamos). El Altman Z-Score fue diseñado para empresas industriales y comerciales.",
     "model": "No Aplicable",
     "z_score": 0,
     "zone": "n/a"
+  },
+  "archetype_metrics": {
+    "book_value_basis": "tangible",
+    "book_value_cagr_3y": 0.108465212575,
+    "book_value_cagr_3y_reason": null,
+    "cost_of_equity": 0.1019917315,
+    "efficiency_ratio": 0.528147288655,
+    "efficiency_reason": null,
+    "pb": 2.44220913677,
+    "pb_justified": 1.7196744569,
+    "pb_ratio": 1.42015782521,
+    "ptbv": 3.18473526225,
+    "ptbv_justified": 2.34124653698,
+    "ptbv_ratio": 1.36027334668,
+    "revenue_growth_statements": 0.0732298939441,
+    "roe_fy": 0.157400714053,
+    "roe_std": 0.0170679052925,
+    "roe_years": 4,
+    "rote": 0.20525662475,
+    "terminal_growth": 0.025
+  },
+  "classification": {
+    "alerts": [],
+    "ambiguous": false,
+    "archetype": "FINANCIAL",
+    "confidence": "normal",
+    "industry": "Banks - Diversified",
+    "inputs": {
+      "assets_to_revenue": 24.3330932047,
+      "eps_ttm": 23.8691,
+      "net_margin_ttm": 0.313714276287,
+      "op_margin_detrended_std": null,
+      "revenue_cagr_3y": 0.124970522941,
+      "revenue_cagr_3y_reason": null,
+      "revenue_growth_std": 0.07561513641
+    },
+    "reason": "Clasificada como FINANCIAL por industria Banks - Diversified (banco)",
+    "rule": "industria_banco",
+    "sector": "Financial Services"
   },
   "company_type": "garp",
   "data_provenance": {
@@ -245,8 +269,9 @@
         "source": "yfinance_statements"
       },
       "revenueGrowth": {
-        "detail": "/stock/metric",
-        "source": "finnhub"
+        "detail": "arquetipo FINANCIAL: 'revenue' de la fuente con definición inestable (RECON C6, §7.8); se usa siempre el YoY de los estados FY2025 (7.3%) en lugar de 3.4%",
+        "rule": "crecimiento_financiera_estados",
+        "source": "recalculado_por_validacion"
       },
       "sector": {
         "detail": "búsqueda de Yahoo /v1/finance/search (sin crumb; no es quoteSummary)",
@@ -303,7 +328,16 @@
     },
     "path": "plan_b_yfinance"
   },
-  "data_validation": [],
+  "data_validation": [
+    {
+      "action": "recalculado",
+      "field": "revenueGrowth",
+      "new": 0.0732298939441,
+      "old": 0.0336295,
+      "reason": "arquetipo FINANCIAL: 'revenue' de la fuente con definición inestable (RECON C6, §7.8); se usa siempre el YoY de los estados FY2025 (7.3%) en lugar de 3.4%",
+      "rule": "crecimiento_financiera_estados"
+    }
+  ],
   "errors": [],
   "financial_health": {
     "details": [
@@ -322,9 +356,9 @@
         "severity": "excellent"
       },
       {
-        "detail": "D/E muy conservador (1.4x < 5x) - Excelente para banco",
+        "detail": "Capitalización sólida (8.2% ≥ 6%)",
         "max": 2,
-        "metric": "D/E Bancario",
+        "metric": "Equity/Assets",
         "points": 2,
         "severity": "excellent"
       },
@@ -340,8 +374,7 @@
     "level": "STRONG",
     "score": 10
   },
-  "graham_margin": -0.230545663147,
-  "graham_number": 270.603521842,
+  "graham_number": null,
   "is_growth": false,
   "key_metrics": {
     "asset_turnover": 0.0410962959615,
@@ -392,8 +425,12 @@
     "ps": 4.86755016643,
     "quick_ratio": null,
     "revenue": 181847000000.0,
-    "revenue_growth": 0.0336295,
+    "revenue_growth": 0.0732298939441,
     "roa": 0.0128924947456,
+    "roce": null,
+    "roce_reason": "No aplica a FINANCIAL: el balance es el producto (depósitos y préstamos)",
+    "roce_roic_divergence": null,
+    "roce_state": "no_aplica",
     "roe": 0.157400714053,
     "roic": null,
     "roic_wacc_spread": null,
@@ -404,7 +441,15 @@
     "total_equity": 362438000000.0,
     "wacc": 0.1019917315
   },
+  "not_applicable": {
+    "altman": "No aplica a FINANCIAL: el balance es el producto (depósitos y préstamos)",
+    "dcf": "No aplica a FINANCIAL: el balance es el producto (depósitos y préstamos)",
+    "graham": "No aplica a FINANCIAL: el balance es el producto (depósitos y préstamos)",
+    "piotroski": "No aplica a FINANCIAL: el balance es el producto (depósitos y préstamos)",
+    "roce": "No aplica a FINANCIAL: el balance es el producto (depósitos y préstamos)"
+  },
   "piotroski_f": {
+    "applicable": false,
     "conclusive": true,
     "details": {
       "asset_turnover_improved": {
@@ -455,8 +500,8 @@
     },
     "evaluated": 7,
     "fiscal_year": "FY2025 vs FY2024",
-    "interpretation": "Débil - Señales de debilidad financiera",
-    "level": "Débil",
+    "interpretation": "No aplica a FINANCIAL: el balance es el producto (depósitos y préstamos)",
+    "level": "No aplica",
     "max_score": 9,
     "scaled_score": 2.57142857143,
     "score": 2
@@ -529,53 +574,54 @@
       "Calidad de Ganancias": {
         "adjustments": [
           {
-            "adjustment": -4,
-            "metric": "Piotroski F-Score",
-            "reason": "Debilidad (2.6/9)",
-            "severity": "moderate",
-            "value": "2.6/9"
+            "adjustment": 3,
+            "metric": "Estabilidad del ROE",
+            "reason": "ROE muy estable (4 ejercicios)",
+            "severity": "excellent",
+            "value": "σ 1.7 pp"
           },
           {
-            "adjustment": -4,
-            "metric": "Cash Flow Operativo",
-            "reason": "Quema efectivo operativo",
-            "severity": "severe",
-            "value": "Negativo"
+            "adjustment": 3,
+            "metric": "Eficiencia (aprox.)",
+            "reason": "Muy eficiente (gastos no financieros / ingresos)",
+            "severity": "excellent",
+            "value": "52.8%"
           },
           {
-            "adjustment": -4,
-            "metric": "Free Cash Flow",
-            "reason": "FCF negativo",
-            "severity": "severe",
-            "value": "Negativo"
+            "adjustment": 3,
+            "metric": "Crecimiento del valor en libros",
+            "reason": "Valor en libros tangible creciendo con fuerza (CAGR 3 años)",
+            "severity": "excellent",
+            "value": "10.8%"
           },
           {
-            "adjustment": -2,
-            "metric": "FCF / Net Income",
-            "reason": "Ganancias sin respaldo de cash (-259.0%)",
-            "severity": "moderate",
-            "value": "-259%"
+            "adjustment": 0,
+            "metric": "No aplica",
+            "reason": "No aplica a FINANCIAL: el balance es el producto (depósitos y préstamos) (no cuenta en la cobertura)",
+            "severity": "neutral",
+            "value": "Piotroski F, Flujo operativo, FCF, FCF / beneficio neto"
           }
         ],
+        "applicable": true,
         "conclusive": true,
         "coverage": 1.0,
         "details": [
-          "Debilidad (2.6/9)",
-          "Quema efectivo operativo",
-          "FCF negativo",
-          "Ganancias sin respaldo de cash (-259.0%)"
+          "ROE muy estable (4 ejercicios)",
+          "Muy eficiente (gastos no financieros / ingresos)",
+          "Valor en libros tangible creciendo con fuerza (CAGR 3 años)",
+          "No aplica a FINANCIAL: el balance es el producto (depósitos y préstamos) (no cuenta en la cobertura)"
         ],
         "max": 20,
-        "score": 0
+        "score": 19
       },
       "Crecimiento": {
         "adjustments": [
           {
             "adjustment": 1,
             "metric": "Crecimiento Ingresos 3Y",
-            "reason": "Crecimiento moderado (3.4%)",
+            "reason": "Crecimiento moderado (7.3%) — YoY de los estados anuales (arquetipo FINANCIAL)",
             "severity": "ok",
-            "value": "3.4%"
+            "value": "7.3%"
           },
           {
             "adjustment": 3,
@@ -585,22 +631,23 @@
             "value": "19.5%"
           },
           {
-            "adjustment": 2,
-            "metric": "Cobertura",
-            "reason": "Reescalado sobre los componentes con dato (sin dato: Crecimiento del FCF)",
+            "adjustment": 0,
+            "metric": "No aplica",
+            "reason": "No aplica a FINANCIAL: el balance es el producto (depósitos y préstamos) (no cuenta en la cobertura)",
             "severity": "neutral",
-            "value": "2/3 componentes"
+            "value": "Crecimiento del FCF"
           }
         ],
+        "applicable": true,
         "conclusive": true,
-        "coverage": 0.666666666667,
+        "coverage": 1.0,
         "details": [
-          "Crecimiento moderado (3.4%)",
+          "Crecimiento moderado (7.3%) — YoY de los estados anuales (arquetipo FINANCIAL)",
           "EPS sólido (19.5%)",
-          "Reescalado sobre los componentes con dato (sin dato: Crecimiento del FCF)"
+          "No aplica a FINANCIAL: el balance es el producto (depósitos y préstamos) (no cuenta en la cobertura)"
         ],
         "max": 20,
-        "score": 16
+        "score": 14
       },
       "Rentabilidad": {
         "adjustments": [
@@ -626,20 +673,21 @@
             "value": "31.4%"
           },
           {
-            "adjustment": 4,
-            "metric": "Cobertura",
-            "reason": "Reescalado sobre los componentes con dato (sin dato: Margen operativo)",
+            "adjustment": 0,
+            "metric": "No aplica",
+            "reason": "No aplica a FINANCIAL: el balance es el producto (depósitos y préstamos) (no cuenta en la cobertura)",
             "severity": "neutral",
-            "value": "3/4 componentes"
+            "value": "Margen operativo, ROIC−WACC"
           }
         ],
+        "applicable": true,
         "conclusive": true,
-        "coverage": 0.75,
+        "coverage": 1.0,
         "details": [
           "Excepcional para su sector (15.7% vs 12% rango alto sectorial)",
           "Bueno (1.3%) - Rango alto de su sector",
           "Excelente (31.4%) - Alta rentabilidad final",
-          "Reescalado sobre los componentes con dato (sin dato: Margen operativo)"
+          "No aplica a FINANCIAL: el balance es el producto (depósitos y préstamos) (no cuenta en la cobertura)"
         ],
         "max": 20,
         "score": 20
@@ -664,9 +712,9 @@
                 "severity": "excellent"
               },
               {
-                "detail": "D/E muy conservador (1.4x < 5x) - Excelente para banco",
+                "detail": "Capitalización sólida (8.2% ≥ 6%)",
                 "max": 2,
-                "metric": "D/E Bancario",
+                "metric": "Equity/Assets",
                 "points": 2,
                 "severity": "excellent"
               },
@@ -684,26 +732,19 @@
             "value": "10/10"
           },
           {
-            "adjustment": 3,
-            "metric": "D/E Bancario",
-            "reason": "D/E muy conservador (1.4x < 5x) - Excepcional para banco",
-            "severity": "excellent",
-            "value": "1.4x"
-          },
-          {
-            "adjustment": -1,
-            "metric": "Price/Book",
-            "reason": "P/B muy alto (2.44x > 2x)",
-            "severity": "moderate",
-            "value": "2.44x"
+            "adjustment": 0,
+            "metric": "No aplica",
+            "reason": "No aplica a FINANCIAL: el balance es el producto (depósitos y préstamos) (no cuenta en la cobertura)",
+            "severity": "neutral",
+            "value": "D/E bancario"
           }
         ],
+        "applicable": true,
         "conclusive": true,
         "coverage": 1.0,
         "details": [
           "Solidez bancaria excelente (10/10)",
-          "D/E muy conservador (1.4x < 5x) - Excepcional para banco",
-          "P/B muy alto (2.44x > 2x)"
+          "No aplica a FINANCIAL: el balance es el producto (depósitos y préstamos) (no cuenta en la cobertura)"
         ],
         "max": 20,
         "score": 18
@@ -711,36 +752,37 @@
       "Valoración": {
         "adjustments": [
           {
-            "adjustment": 0,
-            "metric": "P/E vs Sector",
-            "reason": "Razonable para growth (14.0x vs 13.0x)",
-            "severity": "ok",
-            "value": "14.0x"
+            "adjustment": -4,
+            "metric": "P/B frente a ROE",
+            "reason": "Caro: 2.44x frente a 1.72x justificado por su ROE (Ke 10.2%, g 2.5%)",
+            "severity": "severe",
+            "value": "1.42× justificado"
+          },
+          {
+            "adjustment": -2,
+            "metric": "P/TBV frente a ROTE",
+            "reason": "Prima: 3.18x frente a 2.34x justificado por su ROTE (Ke 10.2%, g 2.5%)",
+            "severity": "moderate",
+            "value": "1.36× justificado"
           },
           {
             "adjustment": 0,
-            "metric": "PEG Ratio",
-            "reason": "Razonable (1.35)",
-            "severity": "ok",
-            "value": "1.35"
-          },
-          {
-            "adjustment": 0,
-            "metric": "Cobertura",
-            "reason": "Reescalado sobre los componentes con dato (sin dato: P/FCF, EV/EBITDA)",
+            "metric": "No aplica",
+            "reason": "No aplica a FINANCIAL: el balance es el producto (depósitos y préstamos) (no cuenta en la cobertura)",
             "severity": "neutral",
-            "value": "2/4 componentes"
+            "value": "P/E, P/FCF, EV/EBITDA, PEG"
           }
         ],
+        "applicable": true,
         "conclusive": true,
-        "coverage": 0.5,
+        "coverage": 1.0,
         "details": [
-          "Razonable para growth (14.0x vs 13.0x)",
-          "Razonable (1.35)",
-          "Reescalado sobre los componentes con dato (sin dato: P/FCF, EV/EBITDA)"
+          "Caro: 2.44x frente a 1.72x justificado por su ROE (Ke 10.2%, g 2.5%)",
+          "Prima: 3.18x frente a 2.34x justificado por su ROTE (Ke 10.2%, g 2.5%)",
+          "No aplica a FINANCIAL: el balance es el producto (depósitos y préstamos) (no cuenta en la cobertura)"
         ],
         "max": 20,
-        "score": 10
+        "score": 4
       }
     },
     "categories_included": 5,
@@ -748,63 +790,82 @@
     "excluded_categories": [],
     "level": "Favorable",
     "max_score": 100,
+    "not_applicable_categories": [],
     "partial": false,
-    "total_score": 64
+    "total_score": 75
   },
   "score_coverage": {
     "calidad": {
-      "components": 4,
-      "conclusive": true,
-      "coverage": 1.0,
-      "evaluated": 4,
-      "low_confidence": false,
-      "missing": [],
-      "missing_reasons": {}
-    },
-    "crecimiento": {
+      "applicable": true,
       "components": 3,
       "conclusive": true,
-      "coverage": 0.666666666667,
+      "coverage": 1.0,
+      "evaluated": 3,
+      "low_confidence": false,
+      "missing": [],
+      "missing_reasons": {},
+      "not_applicable": {
+        "FCF": "No aplica a FINANCIAL: el balance es el producto (depósitos y préstamos)",
+        "FCF / beneficio neto": "No aplica a FINANCIAL: el balance es el producto (depósitos y préstamos)",
+        "Flujo operativo": "No aplica a FINANCIAL: el balance es el producto (depósitos y préstamos)",
+        "Piotroski F": "No aplica a FINANCIAL: el balance es el producto (depósitos y préstamos)"
+      }
+    },
+    "crecimiento": {
+      "applicable": true,
+      "components": 2,
+      "conclusive": true,
+      "coverage": 1.0,
       "evaluated": 2,
       "low_confidence": false,
-      "missing": [
-        "Crecimiento del FCF"
-      ],
-      "missing_reasons": {
-        "Crecimiento del FCF": "el FCF cambia de signo en el periodo: CAGR no definido"
+      "missing": [],
+      "missing_reasons": {},
+      "not_applicable": {
+        "Crecimiento del FCF": "No aplica a FINANCIAL: el balance es el producto (depósitos y préstamos)"
       }
     },
     "rentabilidad": {
-      "components": 4,
-      "conclusive": true,
-      "coverage": 0.75,
-      "evaluated": 3,
-      "low_confidence": false,
-      "missing": [
-        "Margen operativo"
-      ],
-      "missing_reasons": {}
-    },
-    "solidez": {
+      "applicable": true,
       "components": 3,
       "conclusive": true,
       "coverage": 1.0,
       "evaluated": 3,
       "low_confidence": false,
       "missing": [],
-      "missing_reasons": {}
+      "missing_reasons": {},
+      "not_applicable": {
+        "Margen operativo": "No aplica a FINANCIAL: el balance es el producto (depósitos y préstamos)",
+        "ROIC−WACC": "No aplica a FINANCIAL: el balance es el producto (depósitos y préstamos)"
+      }
+    },
+    "solidez": {
+      "applicable": true,
+      "components": 1,
+      "conclusive": true,
+      "coverage": 1.0,
+      "evaluated": 1,
+      "low_confidence": false,
+      "missing": [],
+      "missing_reasons": {},
+      "not_applicable": {
+        "D/E bancario": "No aplica a FINANCIAL: el balance es el producto (depósitos y préstamos)"
+      }
     },
     "valoracion": {
-      "components": 4,
+      "applicable": true,
+      "components": 2,
       "conclusive": true,
-      "coverage": 0.5,
+      "coverage": 1.0,
       "evaluated": 2,
-      "low_confidence": true,
-      "missing": [
-        "P/FCF",
-        "EV/EBITDA"
-      ],
-      "missing_reasons": {}
+      "low_confidence": false,
+      "missing": [],
+      "missing_reasons": {},
+      "not_applicable": {
+        "EV/EBITDA": "No aplica a FINANCIAL: el balance es el producto (depósitos y préstamos)",
+        "P/E": "No aplica a FINANCIAL: el balance es el producto (depósitos y préstamos)",
+        "P/FCF": "No aplica a FINANCIAL: el balance es el producto (depósitos y préstamos)",
+        "PEG": "No aplica a FINANCIAL: el balance es el producto (depósitos y préstamos)"
+      }
     }
   },
   "sector_info": {
