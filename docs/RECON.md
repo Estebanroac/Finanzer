@@ -556,3 +556,21 @@ Pendientes registrados:
   ±5 pp y lo superan (SNOW llega al 35%). Evaluar recortar las celdas en el tope o mantener la exploración simétrica.
 - **Etapa 8 — suelo en el crecimiento terminal:** el DCF eleva el crecimiento de corto plazo hasta el terminal cuando
   es menor (FCX local: 1.6% → 2.5%), y el grid lo hereda. Es una elección de modelo a revisar.
+
+### 7.10 Regresiones conocidas tras la etapa 5
+
+La etapa 5 deja de inventar datos (Piotroski y Altman sin dato, reescalado por cobertura, categorías no
+concluyentes) y conecta el FCF real y su CAGR a 3 años. Varios movimientos de score que resultan son
+correctos según los datos, pero aplican reglas genéricas a arquetipos que necesitan otras. No se compensan aquí:
+
+- **O +11 (Realty Income):** FCF/beneficio > 1 es estructural en un REIT (la depreciación hunde el beneficio
+  contable), y el bono GARP no aplica a REITs. → **Etapa 6, rama REIT.**
+- **SNOW:** la exclusión de Valoración (1/4 componentes: sin P/E, EV/EBITDA ni PEG significativos) sesga el total al
+  alza en empresas sin beneficios, porque se quita justo la categoría que más las penalizaría. → **Etapa 6,
+  arquetipo GROWTH_PRE_PROFIT con EV/Ventas.**
+- **JPM Calidad 0:** Piotroski, OCF y FCF no aplican a bancos (el flujo operativo de un banco refleja la variación
+  de depósitos y préstamos, no la calidad del beneficio). → **Etapa 6, rama FINANCIAL.**
+- **FCX:** la tendencia negativa del FCF de una cíclica (CAGR −12.6%) la penaliza como si fuera estructural, en
+  Crecimiento y, vía la calidad del crecimiento, en Valoración. → **Etapa 6, crecimiento normalizado de ciclo
+  medio.**
+- **NFLX:** CAGR del FCF +80% medido desde un año base deprimido (2022). → **Etapa 7, efecto base en los CAGR.**
