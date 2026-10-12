@@ -69,3 +69,26 @@ def test_prod_plan_b_sector_comes_from_source(sym, sector, outputs_by_env):
     a = outputs_by_env("prod")[sym][0]
     assert a["profile"]["sector"] == sector
     assert a["sector_info"]["mapped_sector"] != "Unknown"
+
+
+# ─────────────── bug (b): año previo en el plan B (Piotroski) ───────────────
+@pytest.mark.parametrize("sym", fb.TICKERS)
+def test_prod_plan_b_has_prior_year_for_piotroski(sym, outputs_by_env):
+    """El plan B ejecuta el enriquecimiento con los estados del ejercicio anterior."""
+    pf = outputs_by_env("prod")[sym][0]["piotroski_f"]
+    assert pf["fiscal_year"].startswith("FY") and " vs FY" in pf["fiscal_year"]
+    assert "Sin datos de acciones históricas" not in pf["details"]["no_dilution"]["detail"]
+    assert "Sin datos" not in pf["details"]["roa_improved"]["detail"]
+
+
+def test_prod_plan_b_prior_year_values_come_from_statements(fixture_store):
+    """_prior_year de NFLX en prod = columna FY2024 de los estados de yfinance."""
+    import yf_adapter
+    st = fb.FixtureStore(fb.fixtures_dir("prod"))
+    st.load("NFLX")
+    inc = fb.obj_to_df(st.yf["NFLX"]["income_stmt"])
+    with fb.replay(fb.fixtures_dir("prod")) as store:
+        fb.run_analysis("NFLX", store)
+        prior = dict(yf_adapter._cache["NFLX"][1]["_prior_year"])
+    assert prior["_fiscal_year"] == "2024"
+    assert prior["revenue"] == pytest.approx(float(inc.loc["Total Revenue"].iloc[1]))

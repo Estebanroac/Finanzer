@@ -1033,6 +1033,14 @@ def _fallback_yfinance(symbol: str) -> Dict[str, Any]:
     if shares and equity and shares > 0:
         info["bookValue"] = equity / shares
 
+    # Año previo para Piotroski/buyback: en el plan B (camino permanente de prod)
+    # no se ejecutaba y _prior_year solo tenía lo que aportaba Finnhub, sin
+    # acciones. Los estados anuales de yfinance (sin crumb) sí están disponibles.
+    try:
+        info = _enrich_prior_year_data(symbol, info)
+    except Exception as e:
+        logger.warning(f"[ENRICH] Prior-year enrichment (fallback) failed for {symbol}: {e}")
+
     elapsed = time.time() - t0
     logger.info(f"[FALLBACK] get_ticker_info({symbol}) in {elapsed:.2f}s")
     _cache[symbol] = (time.time(), info, _is_degraded(info))
