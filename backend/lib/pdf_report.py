@@ -793,6 +793,16 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         cs, cm = cat.get("score", 0), cat.get("max", 20) or 20
         pctc = cs / cm * 100
         _t = 'pos' if pctc >= 60 else 'warn' if pctc >= 40 else 'neg'
+        if cat.get("conclusive") is False:
+            # Etapa 5: categoría no concluyente (cobertura < 50%), fuera del total.
+            cat_rows.append([
+                Paragraph(_esc(cat_name), ParagraphStyle('cn', fontName='Helvetica', fontSize=8.6, leading=11, textColor=BODY)),
+                Paragraph(f"No concluyente · cobertura {(cat.get('coverage') or 0):.0%}",
+                          ParagraphStyle('cnc', fontName='Helvetica', fontSize=7.6, leading=10, textColor=MUTED)),
+                Paragraph("<b>n/c</b>", ParagraphStyle('csc', fontName='Helvetica', fontSize=8.6, leading=11,
+                                                       alignment=TA_RIGHT, textColor=MUTED)),
+            ])
+            continue
         cat_rows.append([
             Paragraph(_esc(cat_name), ParagraphStyle('cn', fontName='Helvetica', fontSize=8.6, leading=11, textColor=BODY)),
             hbar(pctc, width=_barw, height=6, fg=(BRAND if _t == 'pos' else AMBER if _t == 'warn' else RED)),
@@ -982,8 +992,10 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     # ── Radar GRANDE y CENTRADO (perfil por categoría) ──
     _short = {"Solidez Financiera": "Solidez", "Calidad de Ganancias": "Calidad",
               "Valoración": "Valoración", "Rentabilidad": "Rentabilidad", "Crecimiento": "Crecimiento"}
-    _rl = [_short.get(k, k) for k in breakdown]
-    _rv = [(c.get("score", 0) / (c.get("max", 20) or 20)) * 100 for c in breakdown.values()]
+    # Categoría no concluyente: eje en la base neutral (50%) y marcada "(n/c)".
+    _rl = [_short.get(k, k) + (" (n/c)" if c.get("conclusive") is False else "") for k, c in breakdown.items()]
+    _rv = [50.0 if c.get("conclusive") is False else (c.get("score", 0) / (c.get("max", 20) or 20)) * 100
+           for c in breakdown.values()]
     radar_inner = radar_chart(_rl, _rv, size=4.8 * inch, accent=TONE_COLOR[score_tone]) \
         if len(_rv) >= 3 else Spacer(1, 1)
     _bal_line = (f"<font color='{BRAND_TXT.hexval()}'><b>{n_str}</b> fortaleza{'s' if n_str != 1 else ''}</font>"
@@ -1496,13 +1508,22 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
             pctc = cs / cm * 100
             tone = 'pos' if pctc >= 60 else 'warn' if pctc >= 40 else 'neg'
             bar_color = BRAND if tone == 'pos' else AMBER if tone == 'warn' else RED
-            bd_rows.append([
-                Paragraph(_esc(cat_name), _cat_st),
-                Paragraph(f"<b>{cs}/{cm}</b>",
-                          ParagraphStyle('bdcs', fontName='Helvetica-Bold', fontSize=8.8, leading=11,
-                                         textColor=TONE_COLOR[tone], alignment=TA_CENTER)),
-                hbar(pctc, width=CW - 2.75 * inch - 0.35 * inch, height=5, fg=bar_color),
-            ])
+            if cat.get("conclusive") is False:
+                bd_rows.append([
+                    Paragraph(_esc(cat_name), _cat_st),
+                    Paragraph("<b>n/c</b>", ParagraphStyle('bdcs', fontName='Helvetica-Bold', fontSize=8.8,
+                                                           leading=11, textColor=MUTED, alignment=TA_CENTER)),
+                    Paragraph(_esc(f"No concluyente (cobertura {(cat.get('coverage') or 0):.0%}): "
+                                   "excluida del total, que se reescala sobre las demás categorías"), _rea_st),
+                ])
+            else:
+                bd_rows.append([
+                    Paragraph(_esc(cat_name), _cat_st),
+                    Paragraph(f"<b>{cs}/{cm}</b>",
+                              ParagraphStyle('bdcs', fontName='Helvetica-Bold', fontSize=8.8, leading=11,
+                                             textColor=TONE_COLOR[tone], alignment=TA_CENTER)),
+                    hbar(pctc, width=CW - 2.75 * inch - 0.35 * inch, height=5, fg=bar_color),
+                ])
             bd_cmds.append(('BACKGROUND', (0, r), (-1, r), PANEL))
             bd_cmds.append(('TOPPADDING', (0, r), (-1, r), 5.5))
             bd_cmds.append(('BOTTOMPADDING', (0, r), (-1, r), 5.5))

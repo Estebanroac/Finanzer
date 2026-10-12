@@ -386,3 +386,31 @@ def test_fcf_cagr_reaches_the_scorer_with_reason(outputs_by_env):
     assert "signo" in jpm["missing_reasons"]["Crecimiento del FCF"]
     nflx = out["NFLX"][0]["score_coverage"]["crecimiento"]
     assert "Crecimiento del FCF" not in nflx["missing"]
+
+
+# ─────────────────────────── Cobertura mínima (50%) ───────────────────────────
+def test_category_below_min_coverage_is_excluded_and_total_rescaled():
+    assert cfg("thresholds.score.coverage.min_conclusive") == 0.5
+    r, c, kw = CASES["mid_full"]
+    res = calculate_score_v2(r, dict(c, eps_cagr_3y=None, fcf_cagr_3y=None), **kw)   # Crecimiento 1/3
+    cre = next(x for x in res["categories"] if x["category"] == "Crecimiento")
+    assert cre["conclusive"] is False and cre["coverage"]["conclusive"] is False
+    assert res["excluded_categories"] == ["Crecimiento"]
+    others = [x["score"] for x in res["categories"] if x["category"] != "Crecimiento"]
+    assert res["score"] == round(sum(others) * 100 / (20 * 4))
+    # sin reescalado: el único componente con dato conserva su ajuste
+    assert cre["adjustments"][-1]["metric"] == "Cobertura" and cre["adjustments"][-1]["adjustment"] == 0
+
+
+def test_category_at_50_percent_is_rescaled_and_low_confidence():
+    r, c, kw = CASES["mid_full"]
+    res = calculate_score_v2(dict(r, p_fcf=None, ev_ebitda=None), c, **kw)   # Valoración 2/4 = 50%
+    val = res["coverage"]["valoracion"]
+    assert val["coverage"] == 0.5 and val["conclusive"] is True and val["low_confidence"] is True
+    assert res["excluded_categories"] == []
+
+
+def test_all_categories_inconclusive_is_neutral():
+    res = calculate_score_v2({}, {}, sector_key="default")
+    assert res["score"] == 50 and res["score_conclusive"] is False
+    assert len(res["excluded_categories"]) == 5

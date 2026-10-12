@@ -1927,11 +1927,29 @@ class CategoryCoverage:
         cov = (ev / n) if n else None
         return {"components": n, "evaluated": ev, "coverage": cov, "missing": self.missing,
                 "missing_reasons": dict(self.reasons),
+                "conclusive": self.conclusive,
                 "low_confidence": (cov is not None and cov < _CAT_COVERAGE["low_confidence_below"])}
+
+    @property
+    def conclusive(self) -> bool:
+        """Con menos de min_conclusive (50%) de componentes con dato la categoría
+        no se reescala: se excluye del total y se declara no concluyente."""
+        n = len(self.items)
+        return n > 0 and (n - len(self.missing)) / n >= _CAT_COVERAGE["min_conclusive"]
 
     def apply(self, base_score, adjustments: List[Dict[str, Any]]):
         """Devuelve base_score con el reescalado aplicado (sin cambio si cobertura completa)."""
         if not self.missing:
+            return base_score
+        if not self.conclusive:
+            n, ev = len(self.items), len(self.items) - len(self.missing)
+            adjustments.append({
+                "metric": "Cobertura", "value": f"{ev}/{n} componentes", "adjustment": 0,
+                "reason": ("Categoría no concluyente: menos del "
+                           f"{_CAT_COVERAGE['min_conclusive']:.0%} de sus componentes con dato; "
+                           "se excluye del total (sin dato: " + ", ".join(self.missing) + ")"),
+                "severity": "neutral",
+            })
             return base_score
         av = [(mx, mn, a) for _, mx, mn, a in self.items if a is not None]
         r_pos = sum(mx for _, mx, _, _ in self.items)
@@ -3247,9 +3265,19 @@ def calculate_score_v2(
         fcf_growth_reason=contextual_values.get("fcf_cagr_3y_reason"),
     )
     
-    # Calcular totales
+    # Calcular totales. Las categorías no concluyentes (cobertura < 50%) se
+    # excluyen y el total se reescala a 100 sobre las restantes (etapa 5).
     categories = [solidez, rentabilidad, valoracion, calidad, crecimiento]
-    total_score = sum(cat["score"] for cat in categories)
+    for cat in categories:
+        cat["conclusive"] = (cat.get("coverage") or {}).get("conclusive", True)
+    included = [cat for cat in categories if cat["conclusive"]]
+    if len(included) == len(categories):
+        total_score = sum(cat["score"] for cat in categories)
+    elif included:
+        total_score = round(sum(cat["score"] for cat in included) * _SC["total"]["max"]
+                            / (_CAT["max"] * len(included)))
+    else:
+        total_score = _CAT["base"] * len(categories)  # sin ninguna categoría concluyente: neutral
     
     # Determinar nivel general
     lv = _SC["total"]["level_bands"]
@@ -3287,6 +3315,8 @@ def calculate_score_v2(
             "crecimiento": crecimiento["score"]
         },
         "is_growth_company": is_growth,
+        "excluded_categories": [cat["category"] for cat in categories if not cat["conclusive"]],
+        "score_conclusive": bool(included),
         # Nuevos campos v2.2
         "company_type": company_type,
         "growth_quality_score": growth_quality,

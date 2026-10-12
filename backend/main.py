@@ -758,6 +758,9 @@ def _compute_analysis(symbol: str) -> dict:
                 for cat in categories_list:
                     key = cat.get("category", "unknown")
                     breakdown[key] = {
+                        # Etapa 5: categoría no concluyente (excluida del total) y su cobertura.
+                        "conclusive": cat.get("conclusive", True),
+                        "coverage": (cat.get("coverage") or {}).get("coverage"),
                         "score": cat.get("score", 0),
                         "max": cat.get("max_score", cfg("thresholds.score.category.max")),
                         "details": [a.get("reason", "") for a in cat.get("adjustments", [])],
@@ -769,6 +772,9 @@ def _compute_analysis(symbol: str) -> dict:
                     "max_score": raw_max,
                     "level": raw_level,
                     "breakdown": breakdown,
+                    # Etapa 5: categorías excluidas del total por cobertura < 50%.
+                    "excluded_categories": (score_result.get("excluded_categories", [])
+                                            if isinstance(score_result, dict) else []),
                 }
 
                 # Financial health (sector financiero): calculate_score_v2 ya lo
