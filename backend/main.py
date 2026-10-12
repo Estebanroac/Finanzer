@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "lib"))
 from data_fetcher import FinancialDataService, InvalidSymbolError
 from financial_ratios import (
     calculate_all_ratios, calculate_score_v2,
-    altman_z_score, piotroski_evaluate, piotroski_level,
+    altman_z_score, piotroski_evaluate, piotroski_level, interest_coverage_state,
     graham_number, margin_of_safety, dcf_multi_stage_dynamic,
     dcf_sensitivity_analysis, calculate_wacc
 )
@@ -440,6 +440,9 @@ def _compute_analysis(symbol: str) -> dict:
                 "current_ratio": r("current_ratio"),
                 "quick_ratio": r("quick_ratio"),
                 "interest_coverage": safe_float(interest_cov),
+                # Etapa 5: "no_significativo" (EBIT < 0 con caja neta), "negativa"
+                # (EBIT < 0 con deuda neta) u "ok".
+                "interest_coverage_state": interest_coverage_state(safe_float(interest_cov), r("net_debt")),
                 "debt_to_assets": safe_float(debt_to_assets),
                 # Métricas que se calculaban en calculate_all_ratios pero nunca se
                 # exponían (el frontend solo lee key_metrics), así que se

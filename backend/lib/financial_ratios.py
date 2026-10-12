@@ -1414,6 +1414,26 @@ def interest_coverage(ebit: Optional[float], interest_expense: Optional[float]) 
     return safe_div(ebit, interest_expense)
 
 
+def interest_coverage_state(ic: Optional[float], net_debt: Optional[float]) -> Optional[str]:
+    """Estado de la cobertura de intereses (etapa 5).
+
+    · "no_significativo": EBIT < 0 (cobertura negativa) con caja neta (caja >
+      deuda total). No hay riesgo de impago: los intereses se pagan con caja;
+      la ratio no tiene sentido y no puntúa (misma regla M de la etapa 3).
+    · "negativa": EBIT < 0 con deuda neta. Señal real de riesgo: se penaliza,
+      pero la cifra negativa no se presenta como una cobertura.
+    · "ok": cobertura >= 0. None si no hay cobertura."""
+    if ic is None:
+        return None
+    if ic < 0:
+        return "no_significativo" if (net_debt is not None and net_debt < 0) else "negativa"
+    return "ok"
+
+
+IC_NOT_SIGNIFICANT = "No significativo: EBIT < 0 con caja neta (caja > deuda total); los intereses se pagan con caja"
+IC_NEGATIVE = "Negativa (EBIT < 0)"
+
+
 # =========================
 # RATIOS DE EFICIENCIA
 # =========================
@@ -1975,7 +1995,8 @@ def score_solidez_financiera(
     current_ratio: Optional[float],
     debt_to_equity: Optional[float],
     interest_coverage: Optional[float],
-    sector_de_threshold: float = _TD["debt_equity_high"]
+    sector_de_threshold: float = _TD["debt_equity_high"],
+    net_debt: Optional[float] = None,
 ) -> Dict[str, Any]:
     """
     Categoría 1: Solidez Financiera (20 pts máximo)
@@ -2077,8 +2098,15 @@ def score_solidez_financiera(
         _a["de"] = adj if debt_to_equity >= 0 else None  # D/E < 0: no significativo
         adjustments.append({"metric": "Deuda/Equity", "value": f"{debt_to_equity:.2f}x", "adjustment": adj, "reason": reason, "severity": sev})
     
-    # Interest Coverage (hasta ±3 pts)
-    if interest_coverage is not None:
+    # Interest Coverage (hasta ±3 pts). EBIT < 0 con caja neta: no significativo,
+    # no puntúa (sin dato). EBIT < 0 con deuda neta: se penaliza (riesgo real).
+    _ic_state = interest_coverage_state(interest_coverage, net_debt)
+    _ic_reason = None
+    if _ic_state == "no_significativo":
+        _ic_reason = IC_NOT_SIGNIFICANT
+        adjustments.append({"metric": "Cobertura Intereses", "value": "No significativo", "adjustment": 0,
+                            "reason": _ic_reason, "severity": "neutral"})
+    elif interest_coverage is not None:
         b, p = T["coverage_bounds"], T["coverage_points"]
         if interest_coverage >= b[0]:
             adj = p[0]
@@ -2103,13 +2131,17 @@ def score_solidez_financiera(
         
         base_score += adj
         _a["coverage"] = adj
-        adjustments.append({"metric": "Cobertura Intereses", "value": f"{interest_coverage:.1f}x", "adjustment": adj, "reason": reason, "severity": sev})
+        if _ic_state == "negativa":
+            reason = f"{reason} - EBIT negativo con deuda neta"
+        adjustments.append({"metric": "Cobertura Intereses",
+                            "value": "EBIT < 0" if _ic_state == "negativa" else f"{interest_coverage:.1f}x",
+                            "adjustment": adj, "reason": reason, "severity": sev})
     
     cov = CategoryCoverage()
     cov.comp("Altman Z", T["altman_points"], _a.get("altman"))
     cov.comp("Current ratio", T["current_points"], _a.get("current"))
     cov.comp("D/E", [*T["de_points"], T["de_mitigated_points"], T["de_severe_points"]], _a.get("de"))
-    cov.comp("Cobertura de intereses", T["coverage_points"], _a.get("coverage"))
+    cov.comp("Cobertura de intereses", T["coverage_points"], _a.get("coverage"), _ic_reason)
     base_score = cov.apply(base_score, adjustments)
     final_score = max(_CAT["min"], min(_CAT["max"], base_score))
     
@@ -3208,7 +3240,8 @@ def calculate_score_v2(
             current_ratio=ratio_values.get("current_ratio"),
             debt_to_equity=ratio_values.get("debt_to_equity"),
             interest_coverage=ratio_values.get("interest_coverage"),
-            sector_de_threshold=thresholds.debt_equity_high
+            sector_de_threshold=thresholds.debt_equity_high,
+            net_debt=ratio_values.get("net_debt"),
         )
     
     rentabilidad = score_rentabilidad(

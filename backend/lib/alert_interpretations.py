@@ -18,9 +18,11 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 try:
-    from .financial_ratios import SECTOR_THRESHOLDS, ThresholdConfig, is_financial_sector
+    from .financial_ratios import (SECTOR_THRESHOLDS, ThresholdConfig, interest_coverage_state,
+                                   is_financial_sector)
 except ImportError:  # ejecución como script suelto
-    from financial_ratios import SECTOR_THRESHOLDS, ThresholdConfig, is_financial_sector
+    from financial_ratios import (SECTOR_THRESHOLDS, ThresholdConfig, interest_coverage_state,
+                                  is_financial_sector)
 
 
 from settings import cfg
@@ -320,6 +322,13 @@ def _coverage(ctx: Ctx):
     if ic is None or ctx.is_financial:
         return None
     T = _A["coverage"]
+    state = interest_coverage_state(ic, ctx.g("net_debt"))
+    if state == "no_significativo":
+        return None  # EBIT < 0 con caja neta: los intereses se pagan con caja
+    if state == "negativa":
+        return _sig("risk", "Solidez financiera", "Cobertura de intereses negativa (EBIT < 0)",
+                    "El resultado operativo es negativo y la empresa tiene deuda neta: los intereses no se pagan con el "
+                    "negocio, sino con caja o nueva financiación.", T["w_critical"])
     if ic < T["critical_below"]:
         return _sig("risk", "Solidez financiera", f"Cobertura de intereses crítica — {ic:.1f}x",
                     f"El beneficio operativo apenas cubre {ic:.1f} veces el gasto por intereses: un margen peligrosamente "

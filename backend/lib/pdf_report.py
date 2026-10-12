@@ -25,6 +25,7 @@ from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
 from reportlab.lib.utils import ImageReader
 
 from settings import cfg
+from financial_ratios import IC_NEGATIVE
 
 _PDF_BANDS = cfg("thresholds.pdf")  # bandas de las lecturas del informe
 DE_NOT_APPLICABLE = "No aplica a entidades financieras"
@@ -193,8 +194,16 @@ def read_de(de):
     return ("Alto", 'neg', f"el apalancamiento es alto (D/E {de:.2f}x) para un negocio no financiero")
 
 
-def read_coverage(ic):
+def read_coverage(ic, state=None):
+    # Etapa 5: EBIT < 0 con caja neta -> no significativa; con deuda neta ->
+    # riesgo, sin presentar la cifra negativa como si fuera una cobertura.
+    if state == "no_significativo":
+        return ("No significativa", 'neu', "con EBIT negativo y caja neta, la cobertura de intereses no es "
+                "significativa: los intereses se pagan con caja")
     if ic is None: return None
+    if state == "negativa":
+        return ("Riesgo", 'neg', "el resultado operativo es negativo (EBIT < 0) y la empresa tiene deuda neta: "
+                "los intereses no se cubren con el negocio")
     b = _PDF_BANDS["coverage_bounds"]
     if ic < b[0]:   return ("Crítica", 'neg', f"la cobertura de intereses ({ic:.1f}x) es críticamente baja")
     if ic < b[1]:   return ("Justa", 'warn', f"la cobertura de intereses ({ic:.1f}x) deja poco margen ante caídas del beneficio operativo")
@@ -673,7 +682,8 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     # D/E contable sin lectura en financieras (los depósitos son pasivo): decisión
     # de la etapa 4. La celda muestra "—" y DE_NOT_APPLICABLE.
     r_de = None if is_financial else read_de(km.get("de"))
-    r_ic = read_coverage(km.get("interest_coverage"))
+    ic_state = km.get("interest_coverage_state")
+    r_ic = read_coverage(km.get("interest_coverage"), ic_state)
     r_nde = read_nde(km.get("net_debt_to_ebitda"))
     r_pay = read_payout(km.get("payout_ratio"))
     r_grev = read_growth(km.get("revenue_growth"), "los ingresos")
@@ -1275,11 +1285,19 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     ]
     rows, reads = [], []
     for lab, val, fm, rd in sol_defs:
+        if lab == "Cobertura de intereses" and ic_state == "no_significativo":
+            rows.append([lab, "—", rd[0]])
+            reads.append((len(rows) - 1, rd[1]))
+            continue
         if val is None:
             continue
         i = len(rows)
         if is_financial and lab == "Deuda / Equity":
             rows.append([lab, "—", DE_NOT_APPLICABLE])
+            continue
+        if lab == "Cobertura de intereses" and ic_state == "negativa":
+            rows.append([lab, IC_NEGATIVE, rd[0]])
+            reads.append((i, rd[1]))
             continue
         rows.append([lab, fv(val, fm), rd[0] if rd else "—"])
         if rd:

@@ -359,4 +359,17 @@ def validate_outputs(result: Dict[str, Any]) -> List[Dict[str, Any]]:
                 flags.append({"field": f"{block}.{k}", "rule": "multiplo_no_significativo",
                               "action": "sin_dato", "old": v, "new": None,
                               "reason": f"{k.upper()} = {v:.1f}: {denom} <= 0, el múltiplo no es significativo"})
+    # Regla M aplicada a la cobertura de intereses (etapa 5): EBIT < 0 con caja
+    # neta -> la ratio no es significativa (los intereses se pagan con caja).
+    km = result.get("key_metrics") or {}
+    if km.get("interest_coverage_state") == "no_significativo":
+        for block in ("key_metrics", "ratios"):
+            d = result.get(block) or {}
+            v = _num(d.get("interest_coverage"))
+            if v is not None:
+                d["interest_coverage"] = None
+                flags.append({"field": f"{block}.interest_coverage", "rule": "ratio_no_significativa",
+                              "action": "sin_dato", "old": v, "new": None,
+                              "reason": f"Cobertura de intereses = {v:.1f}x: EBIT < 0 con caja neta, "
+                                        "la ratio no es significativa"})
     return flags

@@ -287,6 +287,65 @@ def test_altman_sin_dato_rescales_solidez():
     assert sol["missing"] == ["Altman Z"] and sol["evaluated"] == 3
 
 
+# ─────────────────────────── Cobertura de intereses con EBIT < 0 ───────────────────────────
+from financial_ratios import interest_coverage_state  # noqa: E402
+
+
+def test_interest_coverage_state():
+    assert interest_coverage_state(None, -1e9) is None
+    assert interest_coverage_state(4.0, -1e9) == "ok"
+    assert interest_coverage_state(-8.4, -1e9) == "no_significativo"   # EBIT < 0, caja > deuda
+    assert interest_coverage_state(-8.4, 4e8) == "negativa"            # EBIT < 0, deuda neta
+    assert interest_coverage_state(-8.4, None) == "negativa"           # sin dato de caja: se penaliza
+
+
+def _sol(res):
+    return next(x for x in res["categories"] if x["category"] == "Solidez Financiera")
+
+
+def test_negative_coverage_with_net_cash_is_not_significant():
+    r, c, kw = CASES["mid_full"]
+    res = calculate_score_v2(dict(r, interest_coverage=-8.4, net_debt=-1e9), c, **kw)
+    sol, cov = _sol(res), res["coverage"]["solidez"]
+    assert cov["missing"] == ["Cobertura de intereses"]
+    assert "caja neta" in cov["missing_reasons"]["Cobertura de intereses"]
+    row = next(a for a in sol["adjustments"] if a["metric"] == "Cobertura Intereses")
+    assert row["adjustment"] == 0 and row["value"] == "No significativo"
+    # igual que si la ratio no existiera
+    none = calculate_score_v2(dict(r, interest_coverage=None, net_debt=-1e9), c, **kw)
+    assert _sol(none)["score"] == sol["score"]
+
+
+def test_negative_coverage_with_net_debt_keeps_the_penalty():
+    r, c, kw = CASES["mid_full"]
+    res = calculate_score_v2(dict(r, interest_coverage=-8.4, net_debt=4e8), c, **kw)
+    sol = _sol(res)
+    assert "Cobertura de intereses" not in res["coverage"]["solidez"]["missing"]
+    row = next(a for a in sol["adjustments"] if a["metric"] == "Cobertura Intereses")
+    worst = cfg("thresholds.score.solidez.coverage_points")[-1]
+    assert row["adjustment"] == worst and row["value"] == "EBIT < 0" and "deuda neta" in row["reason"]
+
+
+def test_negative_coverage_end_to_end(outputs_by_env):
+    """SNOW prod (caja neta): no significativa, fuera del JSON y sin −3.
+    SNOW local (deuda neta): penaliza y el PDF no imprime −8.4x como cobertura."""
+    import conftest
+    if not {"prod", "local"} <= set(conftest.ENVS):
+        pytest.skip("faltan juegos de fixtures")
+    a, pdf = outputs_by_env("prod")["SNOW"]
+    assert a["key_metrics"]["interest_coverage_state"] == "no_significativo"
+    assert a["key_metrics"]["interest_coverage"] is None and a["ratios"]["interest_coverage"] is None
+    assert any(f["rule"] == "ratio_no_significativa" for f in a["data_validation"])
+    assert "Cobertura de intereses" in a["score_coverage"]["solidez"]["missing"]
+    assert not any("Cobertura de intereses" in s.get("reason", "") for k in ("red_flags", "warnings") for s in a["alerts"][k])
+    a, pdf = outputs_by_env("local")["SNOW"]
+    txt = fixture_backend.pdf_text(pdf) if isinstance(pdf, bytes) else pdf
+    assert a["key_metrics"]["interest_coverage_state"] == "negativa"
+    assert a["score"]["breakdown"]["Solidez Financiera"]["score"] == 0
+    assert "Cobertura de intereses\nNegativa (EBIT < 0)" in txt
+    assert "-8.4x" not in txt
+
+
 # Para cada componente: (dónde vive, clave, valor favorable, valor desfavorable, categoría)
 _BOUNDS = [
     ("kw", "z", ("SAFE", 6.0), ("DISTRESS", 0.5), "Solidez Financiera"),
