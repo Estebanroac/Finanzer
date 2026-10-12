@@ -211,9 +211,24 @@ def test_real_hypergrowth_with_matching_cagr_kept():
 
 
 def test_financial_growth_incoherent_with_statements_uses_statement_yoy():
-    info = _run(_info(sector="Financial Services", revenueGrowth=0.304))
+    info = _run(_info(sector="Financial Services", industry="Banks - Diversified", revenueGrowth=0.304))
     assert info["revenueGrowth"] == pytest.approx(5e10 / 4.55e10 - 1)
-    assert _flags(info, "crecimiento_incoherente_financiera")[0]["action"] == "recalculado"
+    assert _flags(info, "crecimiento_financiera_estados")[0]["action"] == "recalculado"
+
+
+def test_financial_growth_always_from_statements_even_if_close():
+    """Etapa 6 (RECON §7.8): en FINANCIAL siempre el YoY de los estados, no solo con > 15 pp."""
+    info = _run(_info(sector="Financial Services", industry="Banks - Diversified", revenueGrowth=0.12))
+    assert info["revenueGrowth"] == pytest.approx(5e10 / 4.55e10 - 1)
+    assert _flags(info, "crecimiento_financiera_estados")
+
+
+def test_payment_network_is_not_financial_for_growth():
+    """Una red de pagos (MATURE) dentro de Financial Services conserva el crecimiento de la fuente."""
+    info = _info(sector="Financial Services", industry="Credit Services", revenueGrowth=0.12)
+    info["_statements_fy"]["total_assets"] = [1e11]       # activos/ingresos 2x: red de pagos
+    _run(info)
+    assert info["revenueGrowth"] == 0.12 and not _flags(info)
 
 
 def test_non_financial_growth_incoherent_only_warns():
@@ -223,7 +238,7 @@ def test_non_financial_growth_incoherent_only_warns():
 
 
 def test_growth_coherent_with_statements_untouched():
-    info = _run(_info(sector="Financial Services", revenueGrowth=0.12))
+    info = _run(_info(sector="Technology", revenueGrowth=0.12))
     assert info["revenueGrowth"] == 0.12 and not _flags(info)
 
 

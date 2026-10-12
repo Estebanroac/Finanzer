@@ -140,16 +140,22 @@ WEAK_R = dict(TECH_R, roe=0.04, roa=0.01, operating_margin=0.03, net_margin=0.01
 WEAK_C = dict(TECH_C, revenue_cagr_3y=-0.05, eps_cagr_3y=-0.10, fcf_cagr_3y=-0.20)
 BANK_R = dict(TECH_R, debt_to_equity=8.0, roa=0.012, roe=0.15, pb=1.4)
 BANK_C = dict(TECH_C, book_value=50.0, book_value_prior=46.0)
-REIT_R = dict(TECH_R, p_ffo=14.0, roe=0.07, roa=0.03, debt_to_equity=1.2)
+# Etapa 6: métricas de la rama FINANCIAL (lib/archetype_metrics.py), completas.
+BANK_XV = dict(pb=1.4, ptbv=1.8, pb_justified=1.5, ptbv_justified=1.9, pb_ratio=1.4 / 1.5, ptbv_ratio=1.8 / 1.9,
+               cost_of_equity=0.10, terminal_growth=0.025, roe_std=0.015, roe_years=4,
+               efficiency_ratio=0.56, book_value_cagr_3y=0.07, book_value_basis="tangible")
+REIT_R = dict(TECH_R, p_ffo=14.0, roe=0.07, roa=0.03, debt_to_equity=1.2, ffo_payout=0.8, dividend_yield=0.05)
 REIT_C = dict(TECH_C, sector_pe=35.0, sector_ev_ebitda=20.0)
 CASES = {
     "tech_full": (TECH_R, TECH_C, dict(z_score_value=4.0, z_score_level="SAFE", f_score_value=7,
                                        sector_key="technology", real_sector="Technology", wacc=0.10)),
     "weak_full": (WEAK_R, WEAK_C, dict(z_score_value=1.2, z_score_level="DISTRESS", f_score_value=2,
                                        sector_key="industrials", real_sector="Industrials", wacc=0.11)),
-    "bank_full": (BANK_R, BANK_C, dict(f_score_value=6, sector_key="financials", real_sector="Financial Services")),
+    "bank_full": (BANK_R, BANK_C, dict(f_score_value=6, sector_key="financials", real_sector="Financial Services",
+                                       archetype="FINANCIAL", archetype_values=BANK_XV)),
     "reit_full": (REIT_R, REIT_C, dict(z_score_value=1.5, z_score_level="GREY", f_score_value=5,
-                                       sector_key="real_estate", real_sector="Real Estate", wacc=0.08)),
+                                       sector_key="real_estate", real_sector="Real Estate", wacc=0.08,
+                                       archetype="REIT")),
 }
 MID_R = dict(TECH_R, roe=0.10, roa=0.04, operating_margin=0.12, net_margin=0.06, roic=0.09,
              current_ratio=1.2, debt_to_equity=0.9, interest_coverage=4.0, pe=19.0, forward_pe=18.5,
@@ -222,13 +228,37 @@ def _cats(res):
     return {c["category"]: c["score"] for c in res["categories"]}
 
 
-@pytest.mark.parametrize("case", sorted(CASES))
+@pytest.mark.parametrize("case", ["tech_full", "weak_full", "mid_full"])
 def test_full_data_gives_exactly_the_previous_score(case):
+    """MATURE con todos los datos: idéntico a antes de la etapa 5 (y de la 6).
+    bank_full y reit_full cambian a propósito en la etapa 6 (ramas FINANCIAL y REIT)."""
     r, c, kw = CASES[case]
     res = calculate_score_v2(r, c, **kw)
+    assert res["archetype"] == "MATURE"
     assert res["score"] == EXPECTED_FULL[case]["score"]
     assert _cats(res) == EXPECTED_FULL[case]["cats"]
-    assert all(v["coverage"] == 1.0 and not v["missing"] for v in res["coverage"].values())
+    assert all(v["coverage"] == 1.0 and not v["missing"] and not v["not_applicable"]
+               for v in res["coverage"].values())
+
+
+@pytest.mark.parametrize("case,na", [
+    ("bank_full", {"solidez": {"D/E bancario"},
+                   "rentabilidad": {"Margen operativo", "ROIC−WACC"},
+                   "valoracion": {"P/E", "P/FCF", "EV/EBITDA", "PEG"},
+                   "calidad": {"Piotroski F", "Flujo operativo", "FCF", "FCF / beneficio neto"},
+                   "crecimiento": {"Crecimiento del FCF"}}),
+    ("reit_full", {"solidez": {"Altman Z"}, "rentabilidad": set(),
+                   "valoracion": {"P/E", "P/FCF", "PEG"},
+                   "calidad": {"Piotroski F", "FCF / beneficio neto"}, "crecimiento": set()}),
+])
+def test_archetype_branch_with_full_data_has_full_coverage(case, na):
+    """Con todos los datos de su rama, FINANCIAL y REIT tienen cobertura completa:
+    lo que no aplica no cuenta como dato ausente."""
+    r, c, kw = CASES[case]
+    res = calculate_score_v2(r, c, **kw)
+    for key, cov in res["coverage"].items():
+        assert cov["coverage"] == 1.0 and not cov["missing"], (key, cov)
+        assert set(cov["not_applicable"]) == na[key], key
 
 
 def test_coverage_helper_rescales_positive_and_negative_parts():
@@ -485,11 +515,17 @@ def test_fcf_cagr_reaches_the_scorer_with_reason(outputs_by_env):
     if "prod" not in conftest.ENVS:
         pytest.skip("falta el juego prod")
     out = outputs_by_env("prod")
-    jpm = out["JPM"][0]["score_coverage"]["crecimiento"]          # FCF 107 -> 13 -> -42 -> -148
-    assert "Crecimiento del FCF" in jpm["missing"]
-    assert "signo" in jpm["missing_reasons"]["Crecimiento del FCF"]
     nflx = out["NFLX"][0]["score_coverage"]["crecimiento"]
-    assert "Crecimiento del FCF" not in nflx["missing"]
+    assert "Crecimiento del FCF" not in nflx["missing"] and not nflx["not_applicable"]
+    # Etapa 6: en JPM (FINANCIAL, FCF 107 -> 13 -> -42 -> -148) y FCX (CYCLICAL) no aplica;
+    # el motivo de un CAGR indefinido sigue llegando al scorer en una MATURE.
+    for sym in ("JPM", "FCX"):
+        cre = out[sym][0]["score_coverage"]["crecimiento"]
+        assert "Crecimiento del FCF" in cre["not_applicable"] and "Crecimiento del FCF" not in cre["missing"]
+    r, c, kw = CASES["mid_full"]
+    res = calculate_score_v2(r, dict(c, fcf_cagr_3y=None,
+                                     fcf_cagr_3y_reason="el FCF cambia de signo en el periodo: CAGR no definido"), **kw)
+    assert "signo" in res["coverage"]["crecimiento"]["missing_reasons"]["Crecimiento del FCF"]
 
 
 # ─────────────────────────── Cobertura mínima (50%) ───────────────────────────
@@ -530,11 +566,21 @@ def test_partial_total_declares_its_basis():
 
 
 def test_partial_total_is_shown_in_json_and_pdf(outputs_by_env):
-    """SNOW prod: Valoración 1/4 -> total sobre 4 de 5 categorías, en el JSON y en el PDF."""
+    """Total sobre 4 de 5 categorías, en el JSON y en el PDF. Desde la etapa 6 SNOW
+    (GROWTH_PRE_PROFIT) ya no tiene Valoración no concluyente, así que se fuerza el
+    caso sobre su análisis: Valoración no concluyente y total parcial."""
+    import copy
     import conftest
     if "prod" not in conftest.ENVS:
         pytest.skip("falta el juego prod")
-    a, pdf = outputs_by_env("prod")["SNOW"]
+    a0, _ = outputs_by_env("prod")["SNOW"]
+    a = copy.deepcopy(a0)
+    a["score"]["breakdown"]["Valoración"].update(conclusive=False, coverage=0.25)
+    a["score"].update(partial=True, basis="calculado sobre 4 de 5 categorías", categories_included=4,
+                      categories_total=5, excluded_categories=["Valoración"])
+    with fixture_backend.replay(fixture_backend.fixtures_dir("prod")) as store:
+        store.load("SNOW")
+        pdf = fixture_backend.build_pdf_bytes(a, fixture_backend.capture_date(store.meta["SNOW"]))
     sc = a["score"]
     assert sc["partial"] is True and sc["basis"] == "calculado sobre 4 de 5 categorías"
     assert (sc["categories_included"], sc["categories_total"]) == (4, 5)
@@ -544,6 +590,7 @@ def test_partial_total_is_shown_in_json_and_pdf(outputs_by_env):
     assert "Valoración no concluyente" in txt and "No concluyente · cobertura 25%" in txt
     nflx = outputs_by_env("prod")["NFLX"][0]["score"]
     assert nflx["partial"] is False and nflx["basis"] is None
+    assert a0["score"]["partial"] is False          # SNOW real (etapa 6): 5 de 5
 
 
 # ─────────────────────────── etapa 6: "no aplica" frente a "sin dato" ───────────────────────────

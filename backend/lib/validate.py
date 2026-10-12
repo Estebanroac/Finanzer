@@ -250,15 +250,22 @@ def _rule_growth(c: _Ctx):
     if r0 is None or r1 is None or r1 <= 0:
         return
     stmt_yoy = r0 / r1 - 1.0
+    year = (c.stm.get("inc_years") or ["?"])[0]
+    # Arquetipo FINANCIAL (clasificador único, etapa 6): el crecimiento sale
+    # SIEMPRE de los estados, no de la fuente (RECON §7.8: el 'revenue' bancario
+    # de Finnhub/quoteSummary tiene otra definición), aunque difieran poco.
+    from classify import FINANCIAL, classify
+    arch = classify(sector=c.info.get("sector"), industry=c.info.get("industry"), eps_ttm=None,
+                    net_margin_ttm=None, statements_fy=c.stm)["archetype"]
+    if arch == FINANCIAL:
+        if abs(g - stmt_yoy) > 1e-12:
+            c.set("revenueGrowth", stmt_yoy)
+            c.flag("revenueGrowth", "crecimiento_financiera_estados", "recalculado", g, stmt_yoy,
+                   f"arquetipo FINANCIAL: 'revenue' de la fuente con definición inestable (RECON C6, §7.8); "
+                   f"se usa siempre el YoY de los estados FY{year} ({stmt_yoy:.1%}) en lugar de {g:.1%}")
+        return
     if abs(g - stmt_yoy) <= THRESHOLDS["growth_vs_statements_pp"]:
         return
-    from financial_ratios import is_financial_sector
-    year = (c.stm.get("inc_years") or ["?"])[0]
-    if is_financial_sector(c.info.get("sector") or ""):
-        c.set("revenueGrowth", stmt_yoy)
-        c.flag("revenueGrowth", "crecimiento_incoherente_financiera", "recalculado", g, stmt_yoy,
-               f"sector financiero: 'revenue' de la fuente con definición inestable (RECON C6); "
-               f"{g:.1%} difiere más de 15 pp del YoY de los estados FY{year} ({stmt_yoy:.1%}): se usa este")
     else:
         c.flag("revenueGrowth", "crecimiento_incoherente", "aviso", g, g,
                f"{g:.1%} difiere más de 15 pp del YoY de los estados FY{year} ({stmt_yoy:.1%}); "

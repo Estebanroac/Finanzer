@@ -14,6 +14,7 @@ from enum import Enum
 
 # Configuración única (backend/config/*.toml, validada al importar settings).
 from settings import cfg
+from classify import FINANCIAL, REIT, GROWTH_PRE_PROFIT, CYCLICAL, MATURE, not_applicable
 
 _CAPM = cfg("valuation.capm")
 _WACC = cfg("valuation.wacc")
@@ -92,6 +93,7 @@ def altman_z_score(
     sales: Optional[float],
     sector: str = "",
     book_value_equity: Optional[float] = None,
+    not_applicable_reason: Optional[str] = None,
 ) -> Tuple[Optional[float], str, str, dict]:
     """
     Altman Z-Score adaptativo — selecciona automáticamente el modelo correcto
@@ -114,28 +116,16 @@ def altman_z_score(
     Returns:
         Tuple[z_score, risk_level, interpretation, details_dict]
     """
-    # ── Financial sector exclusion ──
-    # El Altman Z-Score no fue diseñado para instituciones financieras.
-    # Los bancos y aseguradoras tienen estructuras de deuda masivas por naturaleza
-    # (depósitos = pasivos), lo que genera Z-Scores artificialmente bajos.
-    if is_financial_sector(sector or ""):
+    # ── No aplica al arquetipo (etapa 6) ──
+    # Lo decide el clasificador (FINANCIAL: depósitos = pasivos; REIT:
+    # apalancamiento estructural y sin ciclo de circulante), no el sector:
+    # antes se excluía todo "Financial Services", incluidas redes de pago (V).
+    if not_applicable_reason:
         return (
             None,
             "N/A",
-            "El modelo Altman Z-Score no es aplicable a instituciones financieras. "
-            "Los bancos, aseguradoras y empresas de servicios financieros tienen "
-            "estructuras de balance fundamentalmente diferentes (depósitos = pasivos), "
-            "lo que invalida las métricas del modelo.",
-            {
-                "model": "No Aplicable",
-                "reason": "financial_sector",
-                "sector": sector or "",
-                "warnings": [
-                    "El Altman Z-Score fue diseñado para empresas industriales y comerciales",
-                    "Para evaluar instituciones financieras, se recomienda usar métricas como "
-                    "CET1 Ratio, Tier 1 Capital, ROA bancario y Texas Ratio",
-                ],
-            },
+            f"{not_applicable_reason}. El Altman Z-Score fue diseñado para empresas industriales y comerciales.",
+            {"model": "No Aplicable", "reason": "no_aplica", "sector": sector or ""},
         )
 
     # ── Determine which model to use based on sector ──
@@ -2034,6 +2024,7 @@ def score_solidez_financiera(
     interest_coverage: Optional[float],
     sector_de_threshold: float = _TD["debt_equity_high"],
     net_debt: Optional[float] = None,
+    archetype: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Categoría 1: Solidez Financiera (20 pts máximo)
@@ -2043,6 +2034,16 @@ def score_solidez_financiera(
     base_score = _CAT["base"]
     _a = {}  # ajuste de cada componente con dato (etapa 5: cobertura)
     adjustments = []
+    # Etapa 6: componentes que no aplican al arquetipo (REIT: Altman).
+    _na = {k: not_applicable(archetype, k) for k in ("altman", "current_ratio", "de", "interest_coverage")}
+    if _na["altman"]:
+        z_score = None
+    if _na["current_ratio"]:
+        current_ratio = None
+    if _na["de"]:
+        debt_to_equity = None
+    if _na["interest_coverage"]:
+        interest_coverage = None
     
     # Z-Score (peso alto: hasta ±6 pts)
     if z_score is not None:
@@ -2175,10 +2176,12 @@ def score_solidez_financiera(
                             "adjustment": adj, "reason": reason, "severity": sev})
     
     cov = CategoryCoverage()
-    cov.comp("Altman Z", T["altman_points"], _a.get("altman"))
-    cov.comp("Current ratio", T["current_points"], _a.get("current"))
-    cov.comp("D/E", [*T["de_points"], T["de_mitigated_points"], T["de_severe_points"]], _a.get("de"))
-    cov.comp("Cobertura de intereses", T["coverage_points"], _a.get("coverage"), _ic_reason)
+    cov.comp("Altman Z", T["altman_points"], _a.get("altman"), na=_na["altman"])
+    cov.comp("Current ratio", T["current_points"], _a.get("current"), na=_na["current_ratio"])
+    cov.comp("D/E", [*T["de_points"], T["de_mitigated_points"], T["de_severe_points"]], _a.get("de"),
+             na=_na["de"])
+    cov.comp("Cobertura de intereses", T["coverage_points"], _a.get("coverage"), _ic_reason,
+             na=_na["interest_coverage"])
     base_score = cov.apply(base_score, adjustments)
     final_score = max(_CAT["min"], min(_CAT["max"], base_score))
     
@@ -2201,7 +2204,8 @@ def score_solidez_financiera_financial(
     roe: Optional[float],
     roa: Optional[float],
     price_to_book: Optional[float],
-    debt_to_equity: Optional[float] = None  # Nuevo: D/E para interpretar correctamente
+    debt_to_equity: Optional[float] = None,  # Nuevo: D/E para interpretar correctamente
+    archetype: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Categoría 1 ADAPTADA: Solidez Financiera para Sector Financiero (20 pts máximo)
@@ -2232,6 +2236,13 @@ def score_solidez_financiera_financial(
     # Los 2 puntos restantes requieren CET1, Tier 1, NPL, etc.
     # =====================================================
     MAX_WITHOUT_REGULATORY = T["max_without_regulatory"]
+    # Etapa 6 (arquetipo FINANCIAL): el D/E contable no aplica (los depósitos son
+    # pasivo) y el P/B pasa a Valoración, frente al justificado por el ROE.
+    _na_de = not_applicable(archetype, "de")
+    if _na_de:
+        debt_to_equity = None
+    if archetype == FINANCIAL:
+        price_to_book = None
     
     if financial_health is not None:
         # Mapeo lineal: FHS 0-10 → Solidez 4-18 (conservador)
@@ -2340,8 +2351,9 @@ def score_solidez_financiera_financial(
     _h_lo = T["health_offset"] - _CAT["base"]
     _h_hi = T["health_offset"] + _FHEALTH["scale"] * T["health_multiplier"] - _CAT["base"]
     cov.comp("Salud bancaria", (_h_lo, _h_hi), _a.get("health"))
-    cov.comp("D/E bancario", T["de_points"], _a.get("de"))
-    cov.comp("P/B", T["pb_points"], _a.get("pb"))
+    cov.comp("D/E bancario", T["de_points"], _a.get("de"), na=_na_de)
+    if archetype != FINANCIAL:
+        cov.comp("P/B", T["pb_points"], _a.get("pb"))
     base_score = cov.apply(base_score, adjustments)
 
     # Aplicar cap conservador: sin métricas regulatorias, máximo 18/20
@@ -2378,6 +2390,7 @@ def score_rentabilidad(
     sector_roa_high: float,
     roic: Optional[float] = None,
     wacc: Optional[float] = None,
+    archetype: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Categoría 2: Rentabilidad (20 pts máximo)
@@ -2393,6 +2406,13 @@ def score_rentabilidad(
     base_score = _CAT["base"]
     _a = {}  # etapa 5: cobertura
     adjustments = []
+    # Etapa 6 (FINANCIAL): sin margen operativo (no hay EBIT bancario) ni spread
+    # ROIC−WACC (el WACC no es interpretable en un balance bancario).
+    _na_opm, _na_spread = not_applicable(archetype, "operating_margin"), not_applicable(archetype, "roic_wacc")
+    if _na_opm:
+        operating_margin = None
+    if _na_spread:
+        wacc = None
 
     # ROE (peso alto: hasta ±6 pts) — bandas relativas al roe_high sectorial
     if roe is not None:
@@ -2553,9 +2573,11 @@ def score_rentabilidad(
     cov = CategoryCoverage()
     cov.comp("ROE", T["roe_points"], _a.get("roe"))
     cov.comp("ROA", T["roa_points"], _a.get("roa"))
-    cov.comp("Margen operativo", T["operating_margin_points"], _a.get("opm"))
+    cov.comp("Margen operativo", T["operating_margin_points"], _a.get("opm"), na=_na_opm)
     cov.comp("Margen neto", T["net_margin_points"], _a.get("nm"))
-    if wacc is not None:  # el spread no aplica a financieras (wacc=None)
+    if _na_spread:
+        cov.comp("ROIC−WACC", T["spread_points"], None, na=_na_spread)
+    elif wacc is not None:  # sin WACC estimado no hay spread que evaluar
         cov.comp("ROIC−WACC", T["spread_points"], _a.get("spread"))
     base_score = cov.apply(base_score, adjustments)
     final_score = max(_CAT["min"], min(_CAT["max"], base_score))
@@ -2593,7 +2615,10 @@ def score_valoracion(
     earnings_yield: Optional[float] = None,
     # v3.3: REITs se valoran por P/FFO, no por P/E ni P/FCF
     is_reit: bool = False,
-    p_ffo: Optional[float] = None
+    p_ffo: Optional[float] = None,
+    # Etapa 6: rama por arquetipo y sus métricas (lib/archetype_metrics.py)
+    archetype: Optional[str] = None,
+    xv: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """
     Categoría 3: Valoración (20 pts máximo)
@@ -2615,6 +2640,19 @@ def score_valoracion(
     base_score = _CAT["base"]
     adjustments = []
     _a = {}  # etapa 5: cobertura (componentes nucleares; bonos y rescates aparte)
+    # Etapa 6: el arquetipo decide qué múltiplos aplican y cuáles se normalizan.
+    xv = xv or {}
+    if archetype is not None:
+        is_reit = archetype == REIT
+    _na = {k: not_applicable(archetype, k) for k in ("pe", "peg", "forward_pe", "p_fcf", "ev_ebitda", "garp")}
+    _cyc = archetype == CYCLICAL
+    _cyc_note = (f" (ciclo incompleto: {xv.get('cycle_years')} ejercicios)" if _cyc and xv.get("cycle_incomplete")
+                 else "")
+    if _cyc:
+        # CYCLICAL: EV/EBITDA y P/FCF sobre EBITDA y FCF normalizados (promedio de
+        # los ejercicios disponibles), no sobre un solo año de la fase del ciclo.
+        ev_ebitda = xv.get("ev_ebitda_normalized")
+        p_fcf = xv.get("p_fcf_normalized")
 
     # Calcular calidad del crecimiento y tipo de empresa
     growth_quality = calculate_growth_quality_score(
@@ -2675,13 +2713,82 @@ def score_valoracion(
             base_score += adj
             _a["pffo"] = adj
             adjustments.append({"metric": "P/FFO (REIT)", "value": f"{p_ffo:.1f}x", "adjustment": adj, "reason": reason, "severity": sev})
-        else:
-            adjustments.append({"metric": "P/FFO (REIT)", "value": "N/D", "adjustment": 0,
-                                "reason": "P/E y P/FCF omitidos (engañosos para REITs); FFO no disponible",
-                                "severity": "ok"})
+        # Rentabilidad por dividendo (etapa 6): el REIT reparte casi todo su FFO.
+        if dividend_yield is not None and dividend_yield > 0:
+            b, p = T["reit_dividend_yield_bounds"], T["reit_dividend_yield_points"]
+            if dividend_yield >= b[0]:
+                adj, sev, reason = p[0], "excellent", f"Rentabilidad por dividendo alta ({dividend_yield:.1%})"
+            elif dividend_yield >= b[1]:
+                adj, sev, reason = p[1], "good", f"Rentabilidad por dividendo atractiva ({dividend_yield:.1%})"
+            elif dividend_yield >= b[2]:
+                adj, sev, reason = p[2], "moderate", f"Rentabilidad por dividendo modesta ({dividend_yield:.1%})"
+            else:
+                adj, sev, reason = p[3], "severe", f"Rentabilidad por dividendo baja para un REIT ({dividend_yield:.1%})"
+            if adj < 0:
+                total_negative += adj
+            base_score += adj
+            _a["dy"] = adj
+            adjustments.append({"metric": "Rentabilidad por dividendo (REIT)", "value": f"{dividend_yield:.1%}",
+                                "adjustment": adj, "reason": reason, "severity": sev})
 
-    # ─── P/E vs Sector (hasta ±5 pts) — omitido para REITs ─────
-    if not is_reit and pe is not None and pe > 0:
+    # ─── FINANCIAL: P/B y P/TBV frente a los justificados por su retorno ────
+    if archetype == FINANCIAL:
+        b, p = T["financial_pb_ratio_bounds"], T["financial_pb_points"]
+        for key, label, ret_lbl, mult, just, ratio in (
+                ("pb", "P/B frente a ROE", "ROE", xv.get("pb"), xv.get("pb_justified"), xv.get("pb_ratio")),
+                ("ptbv", "P/TBV frente a ROTE", "ROTE", xv.get("ptbv"), xv.get("ptbv_justified"), xv.get("ptbv_ratio"))):
+            if ratio is None:
+                continue
+            if ratio <= b[0]:
+                adj, sev, tag = p[0], "excellent", "Barato"
+            elif ratio <= b[1]:
+                adj, sev, tag = p[1], "good", "Atractivo"
+            elif ratio <= b[2]:
+                adj, sev, tag = p[2], "ok", "En línea"
+            elif ratio <= b[3]:
+                adj, sev, tag = p[3], "moderate", "Prima"
+            else:
+                adj, sev, tag = p[4], "severe", "Caro"
+            reason = (f"{tag}: {mult:.2f}x frente a {just:.2f}x justificado por su {ret_lbl} "
+                      f"(Ke {xv.get('cost_of_equity', 0):.1%}, g {xv.get('terminal_growth', 0):.1%})")
+            if adj < 0:
+                total_negative += adj
+            base_score += adj
+            _a[key] = adj
+            adjustments.append({"metric": label, "value": f"{ratio:.2f}× justificado", "adjustment": adj,
+                                "reason": reason, "severity": sev})
+
+    # ─── GROWTH_PRE_PROFIT: EV/Ventas y regla de 40 ────
+    if archetype == GROWTH_PRE_PROFIT:
+        evs, r40 = xv.get("ev_sales"), xv.get("rule_of_40")
+        if evs is not None:
+            b, p = T["ev_sales_bounds"], T["ev_sales_points"]
+            i = next((k for k, x in enumerate(b) if evs <= x), len(b))
+            adj = p[i]
+            sev = ("excellent", "good", "ok", "moderate", "severe")[i]
+            reason = ("Barato", "Atractivo", "En línea", "Exigente", "Muy caro")[i] + f" por ventas ({evs:.1f}x)"
+            if adj < 0:
+                total_negative += adj
+            base_score += adj
+            _a["evs"] = adj
+            adjustments.append({"metric": "EV/Ventas", "value": f"{evs:.1f}x", "adjustment": adj,
+                                "reason": reason, "severity": sev})
+        if r40 is not None:
+            b, p = T["rule_of_40_bounds"], T["rule_of_40_points"]
+            i = next((k for k, x in enumerate(b) if r40 >= x), len(b))
+            adj = p[i]
+            sev = ("excellent", "good", "ok", "moderate", "severe")[i]
+            reason = (f"Crecimiento {xv.get('revenue_cagr_3y', 0):.1%} (CAGR 3 años) + margen FCF "
+                      f"{xv.get('fcf_margin', 0):.1%} = {r40 * 100:.0f}")
+            if adj < 0:
+                total_negative += adj
+            base_score += adj
+            _a["r40"] = adj
+            adjustments.append({"metric": "Regla de 40", "value": f"{r40 * 100:.0f}", "adjustment": adj,
+                                "reason": reason, "severity": sev})
+
+    # ─── P/E vs Sector (hasta ±5 pts) — si aplica al arquetipo ─────
+    if not _na["pe"] and not is_reit and pe is not None and pe > 0:
         pe_threshold = sector_pe if sector_pe and sector_pe > 0 else _BENCH_FALLBACK["pe"]
 
         # v2.4: Bandas más amplias para growth
@@ -2749,7 +2856,7 @@ def score_valoracion(
         adjustments.append({"metric": "P/E vs Sector", "value": f"{pe:.1f}x", "adjustment": adj, "reason": reason, "severity": sev})
 
     # ─── Forward P/E Bonus (NUEVO v2.4) ────────────────
-    if forward_pe is not None and forward_pe > 0 and pe is not None and pe > 0:
+    if not _na["forward_pe"] and forward_pe is not None and forward_pe > 0 and pe is not None and pe > 0:
         pe_compression = (pe - forward_pe) / pe  # % de "mejora" esperada
         b, p = T["forward_compression_bounds"], T["forward_compression_points"]
         if pe_compression >= b[0]:  # Forward P/E 25%+ menor que trailing
@@ -2769,7 +2876,7 @@ def score_valoracion(
             adjustments.append({"metric": "Forward P/E", "value": f"{forward_pe:.1f}x", "adjustment": adj, "reason": reason, "severity": sev})
 
     # ─── P/FCF (hasta ±4 pts) — omitido para REITs (capex de cartera) ──
-    if not is_reit and p_fcf is not None and p_fcf > 0:
+    if not _na["p_fcf"] and not is_reit and p_fcf is not None and p_fcf > 0:
         # v2.4: Bandas más amplias para growth
         if is_quality_growth:
             b, p = T["pfcf_growth_bounds"], T["pfcf_growth_points"]
@@ -2810,10 +2917,11 @@ def score_valoracion(
             total_negative += adj
         base_score += adj
         _a["pfcf"] = adj
-        adjustments.append({"metric": "P/FCF", "value": f"{p_fcf:.1f}x", "adjustment": adj, "reason": reason, "severity": sev})
+        adjustments.append({"metric": "P/FCF normalizado" if _cyc else "P/FCF", "value": f"{p_fcf:.1f}x",
+                            "adjustment": adj, "reason": reason + _cyc_note, "severity": sev})
 
     # ─── EV/EBITDA vs Sector (hasta ±4 pts) ────────────
-    if ev_ebitda is not None and ev_ebitda > 0:
+    if not _na["ev_ebitda"] and ev_ebitda is not None and ev_ebitda > 0:
         ev_threshold = sector_ev_ebitda if sector_ev_ebitda and sector_ev_ebitda > 0 else _BENCH_FALLBACK["ev_ebitda"]
 
         if is_quality_growth:
@@ -2855,10 +2963,12 @@ def score_valoracion(
             total_negative += adj
         base_score += adj
         _a["ev"] = adj
-        adjustments.append({"metric": "EV/EBITDA vs Sector", "value": f"{ev_ebitda:.1f}x", "adjustment": adj, "reason": reason, "severity": sev})
+        adjustments.append({"metric": "EV/EBITDA normalizado vs Sector" if _cyc else "EV/EBITDA vs Sector",
+                            "value": f"{ev_ebitda:.1f}x", "adjustment": adj, "reason": reason + _cyc_note,
+                            "severity": sev})
 
     # ─── PEG Ratio (hasta ±4 pts) ─────────────────────
-    if peg is not None and peg > 0:
+    if not _na["peg"] and peg is not None and peg > 0:
         b, p = T["peg_bounds"], T["peg_points"]
         if peg <= b[0]:
             adj = p[0]; sev = "excellent"
@@ -2891,8 +3001,10 @@ def score_valoracion(
     # (fcf_yield/earnings_yield siguen usándose para alertas y ajuste de growth,
     # no para un bonus redundante de valoración.)
 
-    # ─── GARP / Growth Quality Bonus ───────────────────
-    if company_type == "garp" and growth_quality_score >= T["garp_min_quality"]:
+    # ─── GARP / Growth Quality Bonus (no aplica a FINANCIAL ni REIT) ──────
+    if _na["garp"]:
+        pass
+    elif company_type == "garp" and growth_quality_score >= T["garp_min_quality"]:
         adj = T["garp_points"]; sev = "excellent"  # v2.4: subió de +2 a +3
         reason = f"GARP: Growth + Fundamentos sólidos (Quality: {growth_quality_score})"
         base_score += adj
@@ -2907,7 +3019,9 @@ def score_valoracion(
     # Para growth stocks de calidad, no permitir que las penalizaciones
     # destruyan completamente la categoría.
     # Max penalización neta: -4 para quality growth, -6 para moderate growth
-    if is_quality_growth and total_negative < -T["rescue_quality_net_cap"]:
+    if _na["garp"]:
+        pass
+    elif is_quality_growth and total_negative < -T["rescue_quality_net_cap"]:
         rescue_pts = min(-total_negative - T["rescue_quality_net_cap"], T["rescue_quality_max"])  # Max rescue: 4 pts
         base_score += rescue_pts
         adjustments.append({
@@ -2930,13 +3044,24 @@ def score_valoracion(
 
     # Componentes aplicables: múltiplos <= 0 cuentan como sin dato (no significativos).
     cov = CategoryCoverage()
+    if archetype == FINANCIAL:
+        cov.comp("P/B frente a ROE", T["financial_pb_points"], _a.get("pb"))
+        cov.comp("P/TBV frente a ROTE", T["financial_pb_points"], _a.get("ptbv"))
     if is_reit:
         cov.comp("P/FFO", T["reit_pffo_points"], _a.get("pffo"))
+        if archetype == REIT:
+            cov.comp("Rentabilidad por dividendo", T["reit_dividend_yield_points"], _a.get("dy"))
+    if archetype == GROWTH_PRE_PROFIT:
+        cov.comp("EV/Ventas", T["ev_sales_points"], _a.get("evs"))
+        cov.comp("Regla de 40", T["rule_of_40_points"], _a.get("r40"))
+    if is_reit and archetype is None:
+        pass  # llamada antigua sin arquetipo: P/E y P/FCF omitidos para REIT
     else:
-        cov.comp("P/E", [*T["pe_growth_points"], *T["pe_value_points"]], _a.get("pe"))
-        cov.comp("P/FCF", [*T["pfcf_growth_points"], *T["pfcf_value_points"]], _a.get("pfcf"))
-    cov.comp("EV/EBITDA", [*T["ev_ebitda_growth_points"], *T["ev_ebitda_value_points"]], _a.get("ev"))
-    cov.comp("PEG", T["peg_points"], _a.get("peg"))
+        cov.comp("P/E", [*T["pe_growth_points"], *T["pe_value_points"]], _a.get("pe"), na=_na["pe"])
+        cov.comp("P/FCF", [*T["pfcf_growth_points"], *T["pfcf_value_points"]], _a.get("pfcf"), na=_na["p_fcf"])
+    cov.comp("EV/EBITDA", [*T["ev_ebitda_growth_points"], *T["ev_ebitda_value_points"]], _a.get("ev"),
+             na=_na["ev_ebitda"])
+    cov.comp("PEG", T["peg_points"], _a.get("peg"), na=_na["peg"])
     base_score = cov.apply(base_score, adjustments)
     final_score = max(_CAT["min"], min(_CAT["max"], base_score))
 
@@ -2961,16 +3086,67 @@ def score_calidad_ganancias(
     ocf: Optional[float],
     net_income: Optional[float],
     fcf_to_net_income: Optional[float],
-    earnings_consistency: Optional[float] = None
+    earnings_consistency: Optional[float] = None,
+    archetype: Optional[str] = None,
+    xv: Optional[Dict[str, Any]] = None,
+    ffo_payout: Optional[float] = None,
 ) -> Dict[str, Any]:
     """
     Categoría 4: Calidad de Ganancias (20 pts máximo)
     Base: 10 pts
+
+    Etapa 6: FINANCIAL sustituye Piotroski, OCF, FCF y FCF/BN (no aplican) por
+    estabilidad del ROE, eficiencia aproximada y crecimiento del valor en libros;
+    REIT sustituye Piotroski y FCF/BN por el payout sobre FFO.
     """
     T = _SC["calidad"]
     base_score = _CAT["base"]
     _a = {}  # etapa 5: cobertura
     adjustments = []
+    xv = xv or {}
+    _na = {k: not_applicable(archetype, k) for k in ("piotroski", "ocf", "fcf", "fcf_to_ni")}
+    if _na["piotroski"]:
+        f_score = None
+    if _na["ocf"]:
+        ocf = None
+    if _na["fcf"]:
+        fcf = None
+    if _na["fcf_to_ni"]:
+        fcf_to_net_income = None
+
+    def _band(key, label, value, value_txt, bounds, points, higher_better, texts):
+        nonlocal base_score
+        if value is None:
+            return
+        i = next((k for k, x in enumerate(bounds) if (value >= x if higher_better else value <= x)), len(bounds))
+        adj = points[i]
+        base_score += adj
+        _a[key] = adj
+        adjustments.append({"metric": label, "value": value_txt, "adjustment": adj, "reason": texts[i],
+                            "severity": ("excellent", "good", "moderate", "severe")[i]})
+
+    if archetype == FINANCIAL:
+        sd = xv.get("roe_std")
+        _band("roe_std", "Estabilidad del ROE", sd, None if sd is None else f"σ {sd * 100:.1f} pp",
+              T["financial_roe_std_bounds"], T["financial_roe_std_points"], False,
+              [f"ROE muy estable ({xv.get('roe_years')} ejercicios)", "ROE estable", "ROE algo volátil",
+               "ROE volátil: beneficio poco recurrente"])
+        ef = xv.get("efficiency_ratio")
+        _band("efficiency", "Eficiencia (aprox.)", ef, None if ef is None else f"{ef:.1%}",
+              T["financial_efficiency_bounds"], T["financial_efficiency_points"], False,
+              ["Muy eficiente (gastos no financieros / ingresos)", "Eficiente", "Eficiencia mejorable",
+               "Ineficiente: gastos altos sobre ingresos"])
+        bv = xv.get("book_value_cagr_3y")
+        _bv_lbl = "tangible" if xv.get("book_value_basis") == "tangible" else "contable"
+        _band("bv_growth", "Crecimiento del valor en libros", bv, None if bv is None else f"{bv:.1%}",
+              T["financial_bv_growth_bounds"], T["financial_bv_growth_points"], True,
+              [f"Valor en libros {_bv_lbl} creciendo con fuerza (CAGR 3 años)", f"Valor en libros {_bv_lbl} creciendo",
+               f"Valor en libros {_bv_lbl} casi plano", f"Valor en libros {_bv_lbl} decreciente"])
+    if archetype == REIT:
+        _band("ffo_payout", "Payout sobre FFO", ffo_payout, None if ffo_payout is None else f"{ffo_payout:.0%}",
+              T["reit_ffo_payout_bounds"], T["reit_ffo_payout_points"], False,
+              ["Dividendo holgadamente cubierto por el FFO", "Dividendo cubierto por el FFO",
+               "Dividendo justo frente al FFO", "Dividendo por encima de lo que genera el FFO"])
     
     # Piotroski F-Score (peso alto: hasta ±7 pts)
     if f_score is not None:
@@ -3057,11 +3233,21 @@ def score_calidad_ganancias(
         adjustments.append({"metric": "FCF / Net Income", "value": f"{fcf_to_net_income:.0%}", "adjustment": adj, "reason": reason, "severity": sev})
     
     cov = CategoryCoverage()
+    if archetype == FINANCIAL:
+        cov.comp("Estabilidad del ROE", T["financial_roe_std_points"], _a.get("roe_std"))
+        cov.comp("Eficiencia (aprox.)", T["financial_efficiency_points"], _a.get("efficiency"),
+                 xv.get("efficiency_reason"))
+        cov.comp("Crecimiento del valor en libros", T["financial_bv_growth_points"], _a.get("bv_growth"),
+                 xv.get("book_value_cagr_3y_reason"))
+    if archetype == REIT:
+        cov.comp("Payout sobre FFO", T["reit_ffo_payout_points"], _a.get("ffo_payout"))
     # Piotroski None = no concluyente (o sin dato): no aporta y Calidad se reescala.
-    cov.comp("Piotroski F", T["fscore_points"], _a.get("fscore"))
-    cov.comp("Flujo operativo", T["ocf_points"], _a.get("ocf"))
-    cov.comp("FCF", T["fcf_points"], _a.get("fcf"))
-    if not (net_income is not None and net_income <= 0):  # FCF/BN no aplica con BN <= 0
+    cov.comp("Piotroski F", T["fscore_points"], _a.get("fscore"), na=_na["piotroski"])
+    cov.comp("Flujo operativo", T["ocf_points"], _a.get("ocf"), na=_na["ocf"])
+    cov.comp("FCF", T["fcf_points"], _a.get("fcf"), na=_na["fcf"])
+    if _na["fcf_to_ni"]:
+        cov.comp("FCF / beneficio neto", T["fcf_to_ni_points"], None, na=_na["fcf_to_ni"])
+    elif not (net_income is not None and net_income <= 0):  # FCF/BN no aplica con BN <= 0
         cov.comp("FCF / beneficio neto", T["fcf_to_ni_points"], _a.get("fcf_ni"))
     base_score = cov.apply(base_score, adjustments)
     final_score = max(_CAT["min"], min(_CAT["max"], base_score))
@@ -3084,15 +3270,26 @@ def score_crecimiento(
     fcf_growth_3y: Optional[float],
     is_growth_company: bool = False,
     fcf_growth_reason: Optional[str] = None,
+    archetype: Optional[str] = None,
+    revenue_note: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Categoría 5: Crecimiento (20 pts máximo)
     Base: 10 pts
+
+    Etapa 6: el crecimiento de ingresos que llega ya es el de la rama (FINANCIAL:
+    YoY de los estados; CYCLICAL: promedio de ciclo acotado) y `revenue_note`
+    lo explica. BPA (GROWTH_PRE_PROFIT) y FCF (FINANCIAL, CYCLICAL) pueden no aplicar.
     """
     T = _SC["crecimiento"]
     base_score = _CAT["base"]
     _a = {}  # etapa 5: cobertura (el bono growth company queda fuera)
     adjustments = []
+    _na_eps, _na_fcf = not_applicable(archetype, "eps_growth"), not_applicable(archetype, "fcf_growth")
+    if _na_eps:
+        eps_growth_3y = None
+    if _na_fcf:
+        fcf_growth_3y = None
     
     # Revenue Growth 3Y (hasta ±5 pts)
     if revenue_growth_3y is not None:
@@ -3120,7 +3317,8 @@ def score_crecimiento(
         
         base_score += adj
         _a["rev"] = adj
-        adjustments.append({"metric": "Crecimiento Ingresos 3Y", "value": f"{revenue_growth_3y:.1%}", "adjustment": adj, "reason": reason, "severity": sev})
+        adjustments.append({"metric": "Crecimiento Ingresos 3Y", "value": f"{revenue_growth_3y:.1%}", "adjustment": adj,
+                            "reason": reason + (f" — {revenue_note}" if revenue_note else ""), "severity": sev})
     
     # EPS Growth 3Y (hasta ±5 pts)
     if eps_growth_3y is not None:
@@ -3182,8 +3380,8 @@ def score_crecimiento(
     
     cov = CategoryCoverage()
     cov.comp("Crecimiento de ingresos", T["revenue_points"], _a.get("rev"))
-    cov.comp("Crecimiento del BPA", T["eps_points"], _a.get("eps"))
-    cov.comp("Crecimiento del FCF", T["fcf_points"], _a.get("fcf"), fcf_growth_reason)
+    cov.comp("Crecimiento del BPA", T["eps_points"], _a.get("eps"), na=_na_eps)
+    cov.comp("Crecimiento del FCF", T["fcf_points"], _a.get("fcf"), fcf_growth_reason, na=_na_fcf)
     base_score = cov.apply(base_score, adjustments)
     final_score = max(_CAT["min"], min(_CAT["max"], base_score))
     
@@ -3207,7 +3405,9 @@ def calculate_score_v2(
     f_score_value: Optional[int] = None,
     sector_key: str = "default",
     real_sector: str = "",  # Sector real de Yahoo Finance
-    wacc: Optional[float] = None  # Para el spread ROIC-WACC en rentabilidad
+    wacc: Optional[float] = None,  # Para el spread ROIC-WACC en rentabilidad
+    archetype: str = MATURE,       # etapa 6: salida de classify.classify
+    archetype_values: Optional[Dict[str, Any]] = None,  # lib/archetype_metrics.compute
 ) -> Dict[str, Any]:
     """
     Sistema de Scoring v2.3 - Adaptativo Growth/Value + Sector Financiero
@@ -3231,9 +3431,11 @@ def calculate_score_v2(
     is_growth = revenue_growth is not None and revenue_growth > _SC["total"]["growth_company_min_revenue_cagr"]
     
     # =====================================================
-    # v2.3: DETECCIÓN DE SECTOR FINANCIERO
+    # Etapa 6: el arquetipo (clasificador único) decide la rama; ya no se
+    # detecta aquí "es financiera" por el nombre del sector.
     # =====================================================
-    is_financial = is_financial_sector(real_sector) or is_financial_sector(sector_key)
+    xv = archetype_values or {}
+    is_financial = archetype == FINANCIAL
     financial_health_data = None
     
     if is_financial:
@@ -3248,7 +3450,8 @@ def calculate_score_v2(
             book_value_prior=contextual_values.get("book_value_prior"),
             dividend_yield=ratio_values.get("dividend_yield"),
             payout_ratio=ratio_values.get("payout_ratio"),
-            debt_to_equity=ratio_values.get("debt_to_equity")  # v3.2: D/E bancario
+            # Etapa 6: el D/E contable no aplica a FINANCIAL (depósitos = pasivo).
+            debt_to_equity=None if not_applicable(archetype, "de") else ratio_values.get("debt_to_equity"),
         )
         
         financial_health_data = {
@@ -3267,7 +3470,8 @@ def calculate_score_v2(
             roe=ratio_values.get("roe"),
             roa=ratio_values.get("roa"),
             price_to_book=ratio_values.get("pb"),
-            debt_to_equity=ratio_values.get("debt_to_equity")  # v3.2: D/E bancario
+            debt_to_equity=ratio_values.get("debt_to_equity"),  # v3.2: D/E bancario
+            archetype=archetype,
         )
     else:
         # Versión estándar para empresas no financieras
@@ -3279,6 +3483,7 @@ def calculate_score_v2(
             interest_coverage=ratio_values.get("interest_coverage"),
             sector_de_threshold=thresholds.debt_equity_high,
             net_debt=ratio_values.get("net_debt"),
+            archetype=archetype,
         )
     
     rentabilidad = score_rentabilidad(
@@ -3292,7 +3497,8 @@ def calculate_score_v2(
         # WACC no es interpretable para financieras -> sin señal de spread ahí.
         wacc=(None if is_financial else wacc),
         sector_roe_high=thresholds.roe_high,
-        sector_roa_high=thresholds.roa_high
+        sector_roa_high=thresholds.roa_high,
+        archetype=archetype,
     )
     
     # v2.4: Pasar datos de crecimiento + forward metrics a valoración
@@ -3315,8 +3521,10 @@ def calculate_score_v2(
         forward_pe=ratio_values.get("forward_pe"),
         earnings_yield=ratio_values.get("earnings_yield"),
         # v3.3: REITs se valoran por P/FFO (P/E y P/FCF son engañosos ahí)
-        is_reit=(sector_key == "real_estate"),
-        p_ffo=ratio_values.get("p_ffo")
+        is_reit=(archetype == REIT),
+        p_ffo=ratio_values.get("p_ffo"),
+        archetype=archetype,
+        xv=xv,
     )
     
     calidad = score_calidad_ganancias(
@@ -3324,7 +3532,10 @@ def calculate_score_v2(
         fcf=ratio_values.get("fcf"),
         ocf=ratio_values.get("operating_cash_flow"),
         net_income=ratio_values.get("net_income"),
-        fcf_to_net_income=ratio_values.get("fcf_to_net_income")
+        fcf_to_net_income=ratio_values.get("fcf_to_net_income"),
+        archetype=archetype,
+        xv=xv,
+        ffo_payout=ratio_values.get("ffo_payout"),
     )
     
     crecimiento = score_crecimiento(
@@ -3333,6 +3544,8 @@ def calculate_score_v2(
         fcf_growth_3y=contextual_values.get("fcf_cagr_3y"),
         is_growth_company=is_growth,
         fcf_growth_reason=contextual_values.get("fcf_cagr_3y_reason"),
+        archetype=archetype,
+        revenue_note=contextual_values.get("revenue_growth_note"),
     )
     
     # Calcular totales. Las categorías no concluyentes (cobertura < 50%) se
@@ -3398,6 +3611,7 @@ def calculate_score_v2(
         "growth_quality_score": growth_quality,
         # v2.3: Campos para sector financiero
         "is_financial_sector": is_financial,
+        "archetype": archetype,
         "financial_health": financial_health_data,
         # Etapa 5: cobertura por categoría (componentes con dato / aplicables).
         "coverage": {

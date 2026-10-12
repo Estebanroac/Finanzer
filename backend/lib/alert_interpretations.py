@@ -19,10 +19,12 @@ from typing import Any, Dict, List, Optional
 
 try:
     from .financial_ratios import (SECTOR_THRESHOLDS, ThresholdConfig, interest_coverage_state,
-                                   is_financial_sector, net_debt_ebitda_state)
+                                   net_debt_ebitda_state)
+    from .classify import CYCLICAL, FINANCIAL, MATURE, not_applicable
 except ImportError:  # ejecución como script suelto
     from financial_ratios import (SECTOR_THRESHOLDS, ThresholdConfig, interest_coverage_state,
-                                  is_financial_sector, net_debt_ebitda_state)
+                                  net_debt_ebitda_state)
+    from classify import CYCLICAL, FINANCIAL, MATURE, not_applicable
 
 
 from settings import cfg
@@ -50,18 +52,25 @@ class Ctx:
 
     def __init__(self, ratios, contextual, *, sector, real_sector,
                  roic_wacc_spread=None, altman=None, piotroski=None, dcf=None,
-                 is_growth=False):
+                 is_growth=False, archetype=MATURE, archetype_values=None):
         self.r = ratios or {}
         self.c = contextual or {}
         self.sector = sector or "default"
         self.real_sector = real_sector or ""
         self.t: ThresholdConfig = SECTOR_THRESHOLDS.get(sector, SECTOR_THRESHOLDS["default"])
-        self.is_financial = is_financial_sector(real_sector) or is_financial_sector(sector)
+        # Etapa 6: el arquetipo del clasificador único, no el nombre del sector.
+        self.archetype = archetype or MATURE
+        self.xv = archetype_values or {}
+        self.is_financial = self.archetype == FINANCIAL
         self.is_growth = bool(is_growth)
         self.spread = roic_wacc_spread
         self.altman = altman or {}
         self.piotroski = piotroski or {}
         self.dcf = dcf or {}
+
+    def na(self, key) -> bool:
+        """¿El componente no aplica al arquetipo? (entonces no se emite señal)."""
+        return bool(not_applicable(self.archetype, key))
 
     def g(self, key, default=None):
         """Lee de ratios y cae a contextual."""
@@ -86,7 +95,7 @@ def _sig(kind: str, category: str, headline: str, detail: str, weight: int) -> D
 def _pe(ctx: Ctx):
     pe = ctx.g("pe")
     T = _A["pe"]
-    if pe is None:
+    if pe is None or ctx.na("pe"):   # P/E no es métrica primaria (FINANCIAL, REIT, pre-beneficio, cíclica)
         return None
     if pe < 0:
         return _sig("risk", "Valoración", "P/E no significativo — pérdidas",
@@ -126,20 +135,23 @@ def _pe(ctx: Ctx):
 def _ev_ebitda(ctx: Ctx):
     ev = ctx.g("ev_ebitda")
     sec = ctx.c.get("sector_ev_ebitda")
+    norm = ""
+    if ctx.archetype == CYCLICAL:   # sobre EBITDA normalizado de ciclo medio
+        ev, norm = ctx.xv.get("ev_ebitda_normalized"), " normalizado"
     # EV/EBITDA no es una métrica significativa para bancos/aseguradoras.
-    if ev is None or ev <= 0 or ctx.is_financial:
+    if ev is None or ev <= 0 or ctx.na("ev_ebitda"):
         return None
     T = _A["ev_ebitda"]
     if ev > T["high_abs"]:
-        return _sig("warning", "Valoración", f"EV/EBITDA alto — {ev:.1f}x",
+        return _sig("warning", "Valoración", f"EV/EBITDA{norm} alto — {ev:.1f}x",
                     f"El valor de empresa equivale a {ev:.1f} veces su EBITDA anual, un múltiplo caro en términos absolutos "
                     "que exige un crecimiento sostenido para no defraudar.", T["w_high"])
     if sec and sec > 0 and ev > T["premium_mult"] * sec:
-        return _sig("warning", "Valoración", f"EV/EBITDA sobre el sector — {ev:.1f}x",
+        return _sig("warning", "Valoración", f"EV/EBITDA{norm} sobre el sector — {ev:.1f}x",
                     f"Se paga {ev:.1f}x EBITDA frente a {sec:.1f}x de sus pares ({(ev-sec)/sec*100:+.0f}%): el mercado le "
                     "asigna una prima que conviene contrastar con su ventaja competitiva.", T["w_premium"])
     if sec and sec > 0 and ev < T["discount_mult"] * sec:
-        return _sig("strength", "Valoración", f"EV/EBITDA barato — {ev:.1f}x",
+        return _sig("strength", "Valoración", f"EV/EBITDA{norm} barato — {ev:.1f}x",
                     f"Cotiza a {ev:.1f}x EBITDA frente a {sec:.1f}x del sector: valoración atractiva sobre flujo operativo, "
                     "a validar que no responda a un deterioro del negocio.", T["w_discount"])
     return None
@@ -147,7 +159,7 @@ def _ev_ebitda(ctx: Ctx):
 
 def _fcf_yield(ctx: Ctx):
     fy = ctx.g("fcf_yield")
-    if fy is None:
+    if fy is None or ctx.na("p_fcf"):   # sin lectura de FCF en FINANCIAL ni REIT
         return None
     if fy < 0:
         return None  # se cubre en flujo de caja (quema de caja)
@@ -168,7 +180,7 @@ def _peg(ctx: Ctx):
     # PEG > 5 casi siempre es un artefacto (crecimiento cercano a cero infla el
     # denominador); en financieras el PEG es poco fiable. Se descartan.
     T = _A["peg"]
-    if peg is None or peg <= 0 or peg > T["artifact_above"] or ctx.is_financial:
+    if peg is None or peg <= 0 or peg > T["artifact_above"] or ctx.na("peg"):
         return None
     if peg < T["attractive_below"]:
         return _sig("strength", "Valoración", f"PEG atractivo — {peg:.2f}",
@@ -240,7 +252,7 @@ def _roe(ctx: Ctx):
 
 def _spread(ctx: Ctx):
     sp = ctx.spread
-    if sp is None or ctx.is_financial:
+    if sp is None or ctx.na("roic_wacc"):
         return None
     roic = ctx.g("roic")
     wacc = ctx.g("wacc")
@@ -295,7 +307,7 @@ def _margins(ctx: Ctx):
 # ── SOLIDEZ FINANCIERA ────────────────────────────────────────────────────
 def _leverage(ctx: Ctx):
     nde = ctx.g("net_debt_to_ebitda")
-    if nde is None or ctx.is_financial:
+    if nde is None or ctx.na("net_debt_ebitda"):
         return None
     T = _A["leverage"]
     state = net_debt_ebitda_state(ctx.g("ebitda"), ctx.g("net_debt"))
@@ -329,7 +341,7 @@ def _leverage(ctx: Ctx):
 
 def _coverage(ctx: Ctx):
     ic = ctx.g("interest_coverage")
-    if ic is None or ctx.is_financial:
+    if ic is None or ctx.na("interest_coverage"):
         return None
     T = _A["coverage"]
     state = interest_coverage_state(ic, ctx.g("net_debt"))
@@ -357,7 +369,7 @@ def _coverage(ctx: Ctx):
 
 def _liquidity(ctx: Ctx):
     cr = ctx.g("current_ratio")
-    if cr is None or ctx.is_financial:
+    if cr is None or ctx.na("current_ratio"):
         return None
     t = ctx.t
     if cr < t.current_ratio_low:
@@ -375,7 +387,7 @@ def _liquidity(ctx: Ctx):
 def _altman(ctx: Ctx):
     z = ctx.altman.get("z_score")
     zone = ctx.altman.get("zone")
-    if z is None or ctx.is_financial:
+    if z is None or ctx.na("altman") or ctx.altman.get("available") is False:
         return None
     # Umbrales del modelo realmente usado (Z, Z' o Z''), no los del Z original.
     det = ctx.altman.get("details") or {}
@@ -394,6 +406,8 @@ def _altman(ctx: Ctx):
 
 # ── FLUJO DE CAJA ─────────────────────────────────────────────────────────
 def _fcf(ctx: Ctx):
+    if ctx.na("fcf"):   # FINANCIAL: el flujo de caja de un banco no mide calidad ni solvencia
+        return None
     fcf = ctx.g("fcf") if ctx.g("fcf") is not None else ctx.g("free_cash_flow")
     neg_years = ctx.c.get("fcf_trend_negative_years")
     T = _A["fcf"]
@@ -415,7 +429,7 @@ def _fcf(ctx: Ctx):
 
 def _earnings_quality(ctx: Ctx):
     q = ctx.g("fcf_to_net_income")
-    if q is None:
+    if q is None or ctx.na("fcf_to_ni"):
         return None
     T = _A["earnings_quality"]
     if q < T["low_below"]:
@@ -435,6 +449,8 @@ def _growth(ctx: Ctx):
     g3 = ctx.c.get("revenue_cagr_3y")
     if g3 is None:
         return None
+    if ctx.archetype == CYCLICAL and ctx.xv.get("revenue_growth_normalized") is not None:
+        return None   # cíclica: el crecimiento es de ciclo medio, no una señal interanual
     if g3 < 0:
         return _sig("warning", "Crecimiento", f"Ingresos en contracción — {_pct(g3)} interanual",
                     f"Las ventas caen un {_pct(abs(g3))} interanual: un negocio que se encoge "
@@ -448,7 +464,7 @@ def _growth(ctx: Ctx):
 
 def _eps_growth(ctx: Ctx):
     e3 = ctx.c.get("eps_cagr_3y")
-    if e3 is None:
+    if e3 is None or ctx.na("eps_growth"):
         return None
     T = _A["eps_growth"]
     if e3 < T["decline_below"]:
@@ -463,8 +479,9 @@ def _eps_growth(ctx: Ctx):
 
 
 def _piotroski(ctx: Ctx):
-    # Escala única sobre el valor ESCALADO a base 9; sin señal si no concluyente.
-    if ctx.piotroski.get("conclusive") is False:
+    # Escala única sobre el valor ESCALADO a base 9; sin señal si no concluyente
+    # o si no aplica al arquetipo (FINANCIAL, REIT).
+    if ctx.piotroski.get("conclusive") is False or ctx.na("piotroski"):
         return None
     f_raw = ctx.piotroski.get("score")
     f = ctx.piotroski.get("scaled_score", f_raw)
@@ -549,7 +566,8 @@ def build_signals(ratios: Dict[str, Any], contextual: Dict[str, Any], *,
                   sector: str = "default", real_sector: str = "",
                   roic_wacc_spread: Optional[float] = None,
                   altman: Optional[dict] = None, piotroski: Optional[dict] = None,
-                  dcf: Optional[dict] = None, is_growth: bool = False) -> Dict[str, List[dict]]:
+                  dcf: Optional[dict] = None, is_growth: bool = False,
+                  archetype: str = MATURE, archetype_values: Optional[dict] = None) -> Dict[str, List[dict]]:
     """Ejecuta todos los interpretadores y agrupa por tipo, ordenando por peso.
 
     Devuelve {"red_flags", "warnings", "strengths"} con ítems
@@ -557,7 +575,8 @@ def build_signals(ratios: Dict[str, Any], contextual: Dict[str, Any], *,
     """
     ctx = Ctx(ratios, contextual, sector=sector, real_sector=real_sector,
               roic_wacc_spread=roic_wacc_spread, altman=altman,
-              piotroski=piotroski, dcf=dcf, is_growth=is_growth)
+              piotroski=piotroski, dcf=dcf, is_growth=is_growth,
+              archetype=archetype, archetype_values=archetype_values)
 
     buckets = {"risk": [], "warning": [], "strength": []}
     for interp in INTERPRETERS:

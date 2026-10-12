@@ -64,9 +64,15 @@ def test_altman_z_double_prime_non_manufacturing():
     assert zone == "SAFE" and "Z''" in det["model"]
 
 
-def test_altman_not_applicable_to_financials():
+def test_altman_not_applicable_by_archetype():
+    """Etapa 6: lo decide el arquetipo (FINANCIAL, REIT), no el nombre del sector."""
+    z, zone, interp, det = altman_z_score(**_ALT, sector="Financial Services",
+                                          not_applicable_reason="No aplica a FINANCIAL: prueba")
+    assert z is None and zone == "N/A" and det["reason"] == "no_aplica"
+    assert interp.startswith("No aplica a FINANCIAL")
+    # una red de pagos (MATURE) dentro de Financial Services sí se evalúa
     z, zone, _, det = altman_z_score(**_ALT, sector="Financial Services")
-    assert z is None and zone == "N/A" and det["reason"] == "financial_sector"
+    assert z is not None and "Z''" in det["model"]
 
 
 def test_altman_missing_total_assets():
@@ -171,7 +177,7 @@ def test_score_v2_total_is_sum_of_categories():
 
 def test_score_v2_financial_path():
     r = calculate_score_v2(dict(_RATIOS, debt_to_equity=8.0, roa=0.012, roe=0.15, pb=1.4), _CTX,
-                           sector_key="financials", real_sector="Financial Services")
+                           sector_key="financials", real_sector="Financial Services", archetype="FINANCIAL")
     assert r["is_financial_sector"] is True and r["financial_health"] is not None
     assert r["category_scores"]["solidez"] <= 18  # tope sin datos regulatorios
 
