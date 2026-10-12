@@ -591,3 +591,13 @@ correctos según los datos, pero aplican reglas genéricas a arquetipos que nece
   dividendo puntúa aparte, en Valoración. Evaluar si en ese arquetipo (y en MATURE de alto dividendo) Crecimiento
   debe ponderarse junto con la rentabilidad por dividendo, para no castigar como "sin crecimiento" un retorno que
   llega casi todo vía dividendo.
+
+### 7.12 Etapa 7: TTM, normalización y crecimiento por acción
+
+- **TTM en prod sin verificar:** los fixtures de prod son anteriores a la lectura de estados trimestrales, así que
+  en replay prod cae al anual con el flag (`data_provenance.ttm.basis = "anual"`, `errors` = trimestrales ausentes).
+  La verificación del TTM en prod (y la detección del pico no operativo de NFLX en prod) queda para la
+  **recaptura de la etapa 11**. Los fixtures locales se complementaron solo con los tres estados trimestrales
+  (`tests/supplement_local_quarterly.py`, marcado en metadata.supplements), sin recapturar el resto.
+- **Altman pasa al último FY** (se define sobre ejercicios): en local deja de faltar el dato de utilidades retenidas
+  (NFLX, SNOW, FCX, O tenían Altman "sin dato" por el balance incompleto de quoteSummary).
