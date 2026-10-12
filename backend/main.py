@@ -513,6 +513,20 @@ def _compute_analysis(symbol: str) -> dict:
                 revenue_cagr_3y=classification["inputs"].get("revenue_cagr_3y"))
             result["archetype_metrics"] = {k: (safe_float(v) if isinstance(v, float) else v)
                                            for k, v in archetype_values.items()}
+            # ROCE (etapa 6): contraste con el ROIC en MATURE y CYCLICAL; "no aplica"
+            # en FINANCIAL y REIT; sin dato (nunca 0%) con capital empleado <= 0.
+            _roce = archetype_metrics.roce(archetype, _stmts, result["key_metrics"])
+            _km = result["key_metrics"]
+            _km["roce"] = safe_float(_roce.get("roce"))
+            _km["roce_state"] = _roce["state"]
+            _km["roce_reason"] = _roce.get("reason")
+            if "roce_avg" in _roce:
+                _km["roce_avg"] = safe_float(_roce["roce_avg"])
+                _km["roce_years"] = _roce["years"]
+                _km["roce_cycle_incomplete"] = _roce["cycle_incomplete"]
+            _km["roce_roic_divergence"] = ({"diverges": _roce["diverges"], "gap": safe_float(_roce["gap"]),
+                                            "causes": _roce.get("causes", [])}
+                                           if "diverges" in _roce else None)
             # Qué no aplica al arquetipo fuera de las categorías del score.
             result["not_applicable"] = {k: not_applicable(archetype, k)
                                         for k in ("dcf", "graham", "altman", "piotroski", "roce")
