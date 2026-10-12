@@ -360,7 +360,7 @@ def _compute_analysis(symbol: str) -> dict:
             # ROIC = NOPAT / Invested Capital
             roic = r("roic")
             if roic is None and oi_val and te_val:
-                nopat = oi_val * cfg("valuation.roic.fallback_nopat_factor")  # impuesto ~21%
+                nopat = oi_val * (1 - cfg("valuation.roic.tax_rate"))  # mismo impuesto que calculate_all_ratios
                 invested_capital = te_val + (td_val or 0) - (cash_val or 0)
                 if invested_capital > 0:
                     roic = nopat / invested_capital

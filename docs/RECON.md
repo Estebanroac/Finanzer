@@ -523,3 +523,14 @@ etapas posteriores. Se aceptan a sabiendas al regenerar los golden.
   - Pendiente para la rama FINANCIAL: en financieras, preferir siempre el YoY de los estados al de Finnhub, no
     solo cuando difieren más de 15 pp. A medio plazo, medir el crecimiento bancario con el margen de intereses
     neto o los ingresos netos, no con "Total Revenue".
+
+### 7.9 Decisiones de la etapa 4 y pendientes que generan
+
+Unificaciones aplicadas (un commit por concepto): niveles del score 80/60/40/20 en motor, PDF y UI; Piotroski
+8/6/4/2 en interpretación, insignia, Calidad y UI; impuesto del ROIC 25% en los dos cálculos; crecimiento por
+defecto del DCF 8%; D/E sin lectura en financieras; DCF y grid con el mismo crecimiento (tope 30%), el mismo
+decaimiento y el crecimiento usado impreso en el PDF; texto de Altman con el umbral del modelo usado.
+
+Pendientes registrados:
+- **Etapa 8 — impuesto:** sustituir el 25% fijo (ROIC) y el escudo fiscal del WACC por la **tasa efectiva por
+  empresa** (provisión de impuestos / BAI, acotada a un rango razonable).

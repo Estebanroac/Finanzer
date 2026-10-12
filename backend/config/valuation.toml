@@ -44,8 +44,8 @@ interpretation_pct = [80, 60, 40, 20]   # % de escenarios por encima del precio
 multiplier = 22.5                   # sqrt(22.5 × EPS × BVPS)
 
 [roic]
-tax_rate_ratios = 0.25              # calculate_all_ratios (NOPAT)
-fallback_nopat_factor = 0.79        # main.py: NOPAT = EBIT × 0.79 (impuesto 21%)
+tax_rate = 0.25                     # NOPAT = EBIT × (1 − 25%): calculate_all_ratios y respaldo de main.py
+                                    # (etapa 8: tasa efectiva por empresa, ver RECON 7.9)
 
 [shareholder]
 buyback_yield_guard = 0.25          # |buyback| > 25% se descarta (main.py)

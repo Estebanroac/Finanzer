@@ -1806,7 +1806,7 @@ def calculate_all_ratios(financial_data: Dict) -> Dict[str, Optional[float]]:
         cogs_val = d.get("revenue") - d.get("gross_profit")
 
     # Calcular NOPAT e Invested Capital para ROIC
-    tax_rate = d.get("tax_rate", cfg("valuation.roic.tax_rate_ratios"))  # 25% si no se proporciona
+    tax_rate = d.get("tax_rate", cfg("valuation.roic.tax_rate"))  # 25% si no se proporciona
     operating_inc = d.get("operating_income")
     # 'is not None' (no truthiness): un operating_income exactamente 0 (break-even
     # operativo) es un dato válido -> NOPAT=0, no None.
