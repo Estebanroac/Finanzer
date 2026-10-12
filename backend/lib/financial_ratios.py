@@ -151,9 +151,25 @@ def altman_z_score(
     if total_liabilities is None or total_liabilities == 0:
         return None, "N/A", "Datos insuficientes: faltan pasivos totales", {}
 
-    # WC and RE can legitimately be None — treat as 0 only with flag
-    wc = working_capital if working_capital is not None else 0
-    re = retained_earnings if retained_earnings is not None else 0
+    # Altman exige TODOS sus componentes (etapa 5): un dato ausente ya no se toma
+    # como 0. Sin cualquiera de ellos el Z no se calcula ("sin dato" con motivo)
+    # y Solidez se reescala sobre sus componentes disponibles.
+    missing = []
+    if working_capital is None:
+        missing.append("capital de trabajo")
+    if retained_earnings is None:
+        missing.append("utilidades retenidas")
+    if use_private:
+        if sales is None:
+            missing.append("ventas")
+    elif market_value_equity is None or market_value_equity == 0:
+        missing.append("valor de mercado del patrimonio")
+    elif not is_non_manufacturing and sales is None:
+        missing.append("ventas")
+    if missing:
+        return (None, "N/A", "Datos insuficientes para el Z-Score: falta " + ", ".join(missing),
+                {"reason": "sin_dato", "missing": missing})
+    wc, re = working_capital, retained_earnings
 
     try:
         X1 = wc / total_assets
@@ -205,15 +221,6 @@ def altman_z_score(
         else:
             risk_level = "DISTRESS"
             interpretation = f"{model_name}: Zona de peligro — alto riesgo de bancarrota"
-
-        # Add data quality warnings
-        warnings = []
-        if working_capital is None:
-            warnings.append("Working Capital estimado (datos parciales)")
-        if retained_earnings is None:
-            warnings.append("Retained Earnings no disponible, asumido 0")
-        if warnings:
-            details["warnings"] = warnings
 
         return round(z, 2), risk_level, interpretation, details
 

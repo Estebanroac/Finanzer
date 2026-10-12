@@ -93,3 +93,30 @@ def test_main_reads_structured_state_not_symbol(outputs_by_env):
             n_eval = sum(1 for c in pf["details"].values() if c["state"] != "sin_dato")
             assert pf["evaluated"] == n_eval
             assert pf["score"] == sum(1 for c in pf["details"].values() if c["state"] == "cumple")
+
+
+# ─────────────────────────── Altman: todos los componentes o sin dato ───────────────────────────
+from financial_ratios import altman_z_score  # noqa: E402
+
+_ALT = dict(working_capital=20, total_assets=100, retained_earnings=30, ebit=15,
+            market_value_equity=120, total_liabilities=50, sales=150)
+
+
+@pytest.mark.parametrize("field,label", [("working_capital", "capital de trabajo"),
+                                         ("retained_earnings", "utilidades retenidas")])
+def test_altman_missing_component_is_sin_dato_not_zero(field, label):
+    z, zone, interp, det = altman_z_score(**dict(_ALT, **{field: None}), sector="Industrials")
+    assert z is None and zone == "N/A"
+    assert det["reason"] == "sin_dato" and label in det["missing"] and label in interp
+
+
+def test_altman_original_needs_sales_but_z_double_prime_does_not():
+    z, _, _, det = altman_z_score(**dict(_ALT, sales=None), sector="Industrials")
+    assert z is None and "ventas" in det["missing"]
+    z2, zone2, _, det2 = altman_z_score(**dict(_ALT, sales=None), sector="Technology")
+    assert z2 is not None and zone2 == "SAFE" and "Z''" in det2["model"]
+
+
+def test_altman_complete_unchanged():
+    z, zone, _, det = altman_z_score(**_ALT, sector="Industrials")
+    assert z == pytest.approx(4.095, abs=0.006) and "warnings" not in det

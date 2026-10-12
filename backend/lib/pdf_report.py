@@ -954,7 +954,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     if fin_health and isinstance(fin_health, dict) and fin_health.get("score") is not None:
         sol_short = (f"salud financiera bancaria de {fin_health['score']}/10 "
                      f"({fin_health.get('level', '')})")
-    elif altman.get("z_score") is not None:
+    elif altman.get("z_score") is not None and altman.get("available", True):
         _zmap = {'safe': 'zona segura', 'grey': 'zona gris', 'distress': 'zona de riesgo'}
         sol_short = f"Altman Z de {altman['z_score']:.2f} ({_zmap.get(altman.get('zone'), '')})"
         if r_ic:
@@ -1402,7 +1402,13 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
                               str(fin_health.get("level", "")),
                               _esc((fin_health.get("interpretation", "") + ". " + det_txt).strip())))
         story.append(Spacer(1, 8))
-    if altman and altman.get("z_score") is not None and not is_financial:
+    if altman and altman.get("available") is False and not is_financial \
+            and (altman.get("details") or {}).get("reason") == "sin_dato":
+        _emit_card(model_card("—", 'neu', "Altman Z-Score", "Sin dato",
+                              _esc(f"{altman.get('interpretation', '')}. Altman exige todos sus componentes; "
+                                   f"no se estima con ceros.")))
+        story.append(Spacer(1, 8))
+    elif altman and altman.get("z_score") is not None and not is_financial:
         z, zone = altman.get("z_score", 0), altman.get("zone", "grey")
         z_tone = 'pos' if zone == 'safe' else 'warn' if zone == 'grey' else 'neg'
         z_lab = "Zona segura" if zone == 'safe' else "Zona gris" if zone == 'grey' else "Zona de riesgo"

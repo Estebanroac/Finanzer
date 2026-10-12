@@ -628,6 +628,9 @@ def _compute_analysis(symbol: str) -> dict:
                     "interpretation": z_interp,
                     "model": z_details.get("model", ""),
                     "details": z_details,
+                    # Etapa 5: z_score 0 se conserva por contrato, pero NO es un dato:
+                    # available=False indica "sin dato" (motivo en details.missing).
+                    "available": z_val is not None,
                 }
 
                 # Piotroski F-Score — uses PURE fiscal year data (no TTM mixing)
