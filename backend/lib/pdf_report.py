@@ -25,7 +25,7 @@ from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
 from reportlab.lib.utils import ImageReader
 
 from settings import cfg
-from financial_ratios import IC_NEGATIVE
+from financial_ratios import IC_NEGATIVE, NET_CASH_TEXT
 
 _PDF_BANDS = cfg("thresholds.pdf")  # bandas de las lecturas del informe
 DE_NOT_APPLICABLE = "No aplica a entidades financieras"
@@ -211,9 +211,16 @@ def read_coverage(ic, state=None):
     return ("Muy holgada", 'pos', f"la deuda es fácilmente servible: cobertura de intereses de {ic:.1f}x")
 
 
-def read_nde(nde):
+def read_nde(nde, state=None, net_debt=None):
+    # Etapa 5 (regla M): con EBITDA <= 0 la ratio no se lee; "caja neta" solo
+    # cuando la caja supera a la deuda total.
+    if state == "no_significativo":
+        txt = "con EBITDA negativo, la deuda neta/EBITDA no es significativa"
+        if net_debt is not None and net_debt < 0:
+            txt += f"; {NET_CASH_TEXT}"
+        return ("No significativa", 'neu', txt)
     if nde is None: return None
-    if nde < 0:    return ("Caja neta", 'pos', "la posición de caja supera a la deuda total (caja neta)")
+    if nde < 0:    return ("Caja neta", 'pos', NET_CASH_TEXT)
     b = _PDF_BANDS["nde_bounds"]
     if nde < b[0]:    return ("Baja", 'pos', f"la deuda neta equivale a {nde:.1f}x EBITDA, un nivel bajo")
     if nde < b[1]:  return ("Moderada", 'neu', f"la deuda neta ({nde:.1f}x EBITDA) es manejable")
@@ -684,7 +691,8 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     r_de = None if is_financial else read_de(km.get("de"))
     ic_state = km.get("interest_coverage_state")
     r_ic = read_coverage(km.get("interest_coverage"), ic_state)
-    r_nde = read_nde(km.get("net_debt_to_ebitda"))
+    nde_state = km.get("net_debt_to_ebitda_state")
+    r_nde = read_nde(km.get("net_debt_to_ebitda"), nde_state, km.get("net_debt"))
     r_pay = read_payout(km.get("payout_ratio"))
     r_grev = read_growth(km.get("revenue_growth"), "los ingresos")
     r_gearn = read_growth(km.get("earnings_growth"), "los beneficios")
@@ -1285,7 +1293,8 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     ]
     rows, reads = [], []
     for lab, val, fm, rd in sol_defs:
-        if lab == "Cobertura de intereses" and ic_state == "no_significativo":
+        if (lab == "Cobertura de intereses" and ic_state == "no_significativo") or \
+                (lab == "Deuda neta / EBITDA" and nde_state == "no_significativo"):
             rows.append([lab, "—", rd[0]])
             reads.append((len(rows) - 1, rd[1]))
             continue

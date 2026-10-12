@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "lib"))
 from data_fetcher import FinancialDataService, InvalidSymbolError
 from financial_ratios import (
     calculate_all_ratios, calculate_score_v2,
-    altman_z_score, piotroski_evaluate, piotroski_level, interest_coverage_state,
+    altman_z_score, piotroski_evaluate, piotroski_level, interest_coverage_state, net_debt_ebitda_state,
     graham_number, margin_of_safety, dcf_multi_stage_dynamic,
     dcf_sensitivity_analysis, calculate_wacc
 )
@@ -451,6 +451,8 @@ def _compute_analysis(symbol: str) -> dict:
                 # (COGS derivado). (Mostrarlas en la UI queda como follow-up de
                 # frontend; aquí quedan disponibles en el API.)
                 "net_debt_to_ebitda": r("net_debt_to_ebitda"),
+                # Etapa 5: "no_significativo" (EBITDA <= 0), "caja_neta" u "ok".
+                "net_debt_to_ebitda_state": net_debt_ebitda_state(r("ebitda"), r("net_debt")),
                 "cash_ratio": r("cash_ratio"),
                 "net_debt": r("net_debt"),
                 "inventory_turnover": r("inventory_turnover"),

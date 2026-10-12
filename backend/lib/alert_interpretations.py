@@ -19,10 +19,10 @@ from typing import Any, Dict, List, Optional
 
 try:
     from .financial_ratios import (SECTOR_THRESHOLDS, ThresholdConfig, interest_coverage_state,
-                                   is_financial_sector)
+                                   is_financial_sector, net_debt_ebitda_state)
 except ImportError:  # ejecución como script suelto
     from financial_ratios import (SECTOR_THRESHOLDS, ThresholdConfig, interest_coverage_state,
-                                  is_financial_sector)
+                                  is_financial_sector, net_debt_ebitda_state)
 
 
 from settings import cfg
@@ -298,6 +298,16 @@ def _leverage(ctx: Ctx):
     if nde is None or ctx.is_financial:
         return None
     T = _A["leverage"]
+    state = net_debt_ebitda_state(ctx.g("ebitda"), ctx.g("net_debt"))
+    if state == "no_significativo":
+        # EBITDA <= 0: la ratio no se lee; la caja neta solo si caja > deuda total.
+        nd = ctx.g("net_debt")
+        if nd is not None and nd < 0:
+            return _sig("strength", "Solidez financiera", "Caja neta — sin deuda financiera neta",
+                        "La empresa tiene más efectivo que deuda: posición de caja neta que le da flexibilidad para "
+                        "invertir, resistir ciclos o retribuir al accionista sin depender de la financiación externa.",
+                        T["w_net_cash"])
+        return None
     if nde < 0:
         return _sig("strength", "Solidez financiera", "Caja neta — sin deuda financiera neta",
                     "La empresa tiene más efectivo que deuda: posición de caja neta que le da flexibilidad para invertir, "

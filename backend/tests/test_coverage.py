@@ -299,6 +299,51 @@ def test_interest_coverage_state():
     assert interest_coverage_state(-8.4, None) == "negativa"           # sin dato de caja: se penaliza
 
 
+# ─────────────────────────── Deuda neta/EBITDA con EBITDA <= 0 ───────────────────────────
+from financial_ratios import net_debt_ebitda_state  # noqa: E402
+from pdf_report import read_nde  # noqa: E402
+
+
+def test_net_debt_ebitda_state():
+    assert net_debt_ebitda_state(-5e8, 4e8) == "no_significativo"     # deuda neta, EBITDA < 0
+    assert net_debt_ebitda_state(-5e8, -1e9) == "no_significativo"    # caja neta, EBITDA < 0
+    assert net_debt_ebitda_state(0.0, 4e8) == "no_significativo"
+    assert net_debt_ebitda_state(5e8, -1e9) == "caja_neta"
+    assert net_debt_ebitda_state(5e8, 4e8) == "ok"
+    assert net_debt_ebitda_state(None, 4e8) is None
+
+
+def test_read_nde_net_cash_only_when_cash_exceeds_debt():
+    # EBITDA < 0 con deuda neta: ND/EBITDA = -0.4x no se lee como caja neta
+    lab, tone, txt = read_nde(-0.4, "no_significativo", 4e8)
+    assert lab == "No significativa" and "caja neta" not in txt
+    # EBITDA < 0 con caja neta: no significativa, pero la caja neta es real
+    lab, tone, txt = read_nde(1.2, "no_significativo", -1e9)
+    assert lab == "No significativa" and "caja neta" in txt and "manejable" not in txt
+    # EBITDA > 0 con caja neta: lectura de siempre
+    assert read_nde(-0.3, "caja_neta", -1e9)[0] == "Caja neta"
+
+
+def test_net_debt_ebitda_end_to_end(outputs_by_env):
+    """SNOW local (EBITDA < 0, deuda neta) y prod (EBITDA < 0, caja neta): ratio fuera del JSON;
+    la frase de caja neta solo en prod. El score no usa la ratio."""
+    import conftest
+    if not {"prod", "local"} <= set(conftest.ENVS):
+        pytest.skip("faltan juegos de fixtures")
+    for env, net_cash in (("local", False), ("prod", True)):
+        a, pdf = outputs_by_env(env)["SNOW"]
+        txt = fixture_backend.pdf_text(pdf) if isinstance(pdf, bytes) else pdf
+        km = a["key_metrics"]
+        assert km["net_debt_to_ebitda_state"] == "no_significativo"
+        assert km["net_debt_to_ebitda"] is None and a["ratios"]["net_debt_to_ebitda"] is None
+        assert any(f["field"] == "key_metrics.net_debt_to_ebitda" for f in a["data_validation"])
+        assert (km["net_debt"] < 0) is net_cash
+        assert ("(caja neta)" in txt) is net_cash
+        assert "x EBITDA) es manejable" not in txt and "Deuda neta / EBITDA\n—\nNo significativa" in txt
+    # con EBITDA > 0 no cambia nada
+    assert outputs_by_env("prod")["NFLX"][0]["key_metrics"]["net_debt_to_ebitda_state"] in ("ok", "caja_neta")
+
+
 def _sol(res):
     return next(x for x in res["categories"] if x["category"] == "Solidez Financiera")
 

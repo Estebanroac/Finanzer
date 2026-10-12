@@ -372,4 +372,14 @@ def validate_outputs(result: Dict[str, Any]) -> List[Dict[str, Any]]:
                               "action": "sin_dato", "old": v, "new": None,
                               "reason": f"Cobertura de intereses = {v:.1f}x: EBIT < 0 con caja neta, "
                                         "la ratio no es significativa"})
+    # Regla M aplicada a deuda neta/EBITDA: con EBITDA <= 0 no es significativa.
+    if km.get("net_debt_to_ebitda_state") == "no_significativo":
+        for block in ("key_metrics", "ratios"):
+            d = result.get(block) or {}
+            v = _num(d.get("net_debt_to_ebitda"))
+            if v is not None:
+                d["net_debt_to_ebitda"] = None
+                flags.append({"field": f"{block}.net_debt_to_ebitda", "rule": "ratio_no_significativa",
+                              "action": "sin_dato", "old": v, "new": None,
+                              "reason": f"Deuda neta/EBITDA = {v:.1f}x: EBITDA <= 0, la ratio no es significativa"})
     return flags

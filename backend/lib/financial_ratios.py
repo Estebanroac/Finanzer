@@ -1430,6 +1430,21 @@ def interest_coverage_state(ic: Optional[float], net_debt: Optional[float]) -> O
     return "ok"
 
 
+def net_debt_ebitda_state(ebitda: Optional[float], net_debt: Optional[float]) -> Optional[str]:
+    """Estado de deuda neta/EBITDA (regla M, etapa 5).
+
+    · "no_significativo": EBITDA <= 0. La ratio no tiene sentido (su signo lo
+      decide el EBITDA, no la caja): no se lee ni como caja neta ni como deuda.
+    · "caja_neta": caja > deuda total (deuda neta < 0) con EBITDA > 0.
+    · "ok": deuda neta >= 0 con EBITDA > 0. None si falta algún dato."""
+    if ebitda is not None and ebitda <= 0:
+        return "no_significativo"
+    if ebitda is None or net_debt is None:
+        return None
+    return "caja_neta" if net_debt < 0 else "ok"
+
+
+NET_CASH_TEXT = "la posición de caja supera a la deuda total (caja neta)"
 IC_NOT_SIGNIFICANT = "No significativo: EBIT < 0 con caja neta (caja > deuda total); los intereses se pagan con caja"
 IC_NEGATIVE = "Negativa (EBIT < 0)"
 
