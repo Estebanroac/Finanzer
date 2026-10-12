@@ -24,6 +24,10 @@ from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
 from reportlab.lib.utils import ImageReader
 
+from settings import cfg
+
+_PDF_BANDS = cfg("thresholds.pdf")  # bandas de las lecturas del informe
+
 # ══════════════════════════════ IDENTIDAD ══════════════════════════════
 INK    = colors.HexColor('#141417')   # titulares
 BODY   = colors.HexColor('#3a3a40')   # texto
@@ -92,17 +96,18 @@ def read_vs_sector(name, val, bench, higher_better, fmt="mult"):
         return None
     diff = (val - bench) / abs(bench) * 100
     d = f"{'+' if diff > 0 else ''}{diff:.0f}%"
+    b = _PDF_BANDS["vs_sector_bounds"]
     if higher_better:
-        if diff >= 35:   lab, tone = "Muy superior", 'pos'
-        elif diff >= 10: lab, tone = "Superior", 'pos'
-        elif diff > -10: lab, tone = "En línea", 'neu'
-        elif diff > -35: lab, tone = "Inferior", 'warn'
+        if diff >= b[0]:   lab, tone = "Muy superior", 'pos'
+        elif diff >= b[1]: lab, tone = "Superior", 'pos'
+        elif diff > -b[1]: lab, tone = "En línea", 'neu'
+        elif diff > -b[0]: lab, tone = "Inferior", 'warn'
         else:            lab, tone = "Muy inferior", 'neg'
     else:
-        if diff <= -35:  lab, tone = "Descuento profundo", 'pos'
-        elif diff <= -10: lab, tone = "Descuento", 'pos'
-        elif diff < 10:  lab, tone = "En línea", 'neu'
-        elif diff < 35:  lab, tone = "Prima moderada", 'warn'
+        if diff <= -b[0]:  lab, tone = "Descuento profundo", 'pos'
+        elif diff <= -b[1]: lab, tone = "Descuento", 'pos'
+        elif diff < b[1]:  lab, tone = "En línea", 'neu'
+        elif diff < b[0]:  lab, tone = "Prima moderada", 'warn'
         else:            lab, tone = "Prima elevada", 'neg'
     vv = _pct(val) if fmt == "pct" else f"{val:.1f}x"
     bb = _pct(bench) if fmt == "pct" else f"{bench:.1f}x"
@@ -122,7 +127,7 @@ def read_pe(pe, sector_pe, spread):
     lab, tone, _, d = r
     base = (f"el mercado paga {pe:.1f}x beneficios, un {d} frente a la mediana del sector "
             f"({sector_pe:.1f}x)")
-    if tone in ('warn', 'neg') and spread is not None and spread > 0.05:
+    if tone in ('warn', 'neg') and spread is not None and spread > _PDF_BANDS["pe_spread_support"]:
         base += (f"; una prima que encuentra respaldo parcial en la creación de valor de la compañía "
                  f"(ROIC−WACC de +{_pct(spread)})")
     elif tone == 'pos':
@@ -133,15 +138,16 @@ def read_pe(pe, sector_pe, spread):
 def read_roe(roe, roa):
     if roe is None:
         return None
-    if roe < 0 and roa is not None and roa > 0.03:
+    b = _PDF_BANDS["roe_bounds"]
+    if roe < 0 and roa is not None and roa > _PDF_BANDS["roe_negative_equity_min_roa"]:
         return ("Distorsionado", 'neu',
                 f"el ROE negativo responde a un patrimonio contable negativo por recompras agresivas, "
                 f"no a pérdidas: el ROA de {_pct(roa)} confirma la rentabilidad real de los activos")
     if roe < 0:      return ("Negativo", 'neg', f"el ROE de {_pct(roe)} refleja destrucción de valor para el accionista")
-    if roe < 0.05:   return ("Débil", 'neg', f"el ROE de {_pct(roe)} es bajo para prácticamente cualquier estándar sectorial")
-    if roe < 0.12:   return ("Moderado", 'warn', f"el ROE de {_pct(roe)} se sitúa por debajo del umbral de excelencia (12–15%)")
-    if roe < 0.20:   return ("Sólido", 'pos', f"el ROE de {_pct(roe)} evidencia un uso eficiente del capital de los accionistas")
-    if roe < 0.40:   return ("Excelente", 'pos', f"el ROE de {_pct(roe)} sitúa a la compañía en el rango alto de generación de retornos")
+    if roe < b[0]:   return ("Débil", 'neg', f"el ROE de {_pct(roe)} es bajo para prácticamente cualquier estándar sectorial")
+    if roe < b[1]:   return ("Moderado", 'warn', f"el ROE de {_pct(roe)} se sitúa por debajo del umbral de excelencia (12–15%)")
+    if roe < b[2]:   return ("Sólido", 'pos', f"el ROE de {_pct(roe)} evidencia un uso eficiente del capital de los accionistas")
+    if roe < b[3]:   return ("Excelente", 'pos', f"el ROE de {_pct(roe)} sitúa a la compañía en el rango alto de generación de retornos")
     return ("Excepcional", 'pos',
             f"el ROE de {_pct(roe)} es excepcional, en parte amplificado por una base de patrimonio reducida por recompras")
 
@@ -149,17 +155,18 @@ def read_roe(roe, roa):
 def read_spread(spread, roic, wacc):
     if spread is None:
         return None
-    if spread >= 0.10:
+    b = _PDF_BANDS["spread_bounds"]
+    if spread >= b[0]:
         return ("Crea mucho valor", 'pos',
                 f"con un ROIC de {_pct(roic)} frente a un costo de capital (WACC) de {_pct(wacc)}, la compañía genera "
                 f"un spread de +{_pct(spread)}: cada dólar reinvertido crea valor económico sustancial")
-    if spread >= 0.03:
+    if spread >= b[1]:
         return ("Crea valor", 'pos',
                 f"el ROIC ({_pct(roic)}) supera al WACC ({_pct(wacc)}) en {_pct(spread)}, señal de creación de valor")
-    if spread >= 0:
+    if spread >= b[2]:
         return ("Marginal", 'neu',
                 f"el ROIC ({_pct(roic)}) apenas cubre el costo de capital ({_pct(wacc)}): la creación de valor es marginal")
-    if spread >= -0.03:
+    if spread >= b[3]:
         return ("Al límite", 'warn',
                 f"el ROIC ({_pct(roic)}) queda ligeramente por debajo del costo de capital ({_pct(wacc)})")
     return ("Destruye valor", 'neg',
@@ -168,69 +175,76 @@ def read_spread(spread, roic, wacc):
 
 def read_current(cr):
     if cr is None: return None
-    if cr < 1:    return ("Tensión", 'neg', f"el current ratio de {cr:.2f}x indica que los pasivos corrientes superan a los activos corrientes")
-    if cr < 1.5:  return ("Ajustada", 'warn', f"la liquidez es ajustada (current ratio {cr:.2f}x), habitual en negocios con caja predecible")
-    if cr < 3:    return ("Cómoda", 'pos', f"la posición de liquidez es cómoda (current ratio {cr:.2f}x)")
+    b = _PDF_BANDS["current_bounds"]
+    if cr < b[0]:    return ("Tensión", 'neg', f"el current ratio de {cr:.2f}x indica que los pasivos corrientes superan a los activos corrientes")
+    if cr < b[1]:  return ("Ajustada", 'warn', f"la liquidez es ajustada (current ratio {cr:.2f}x), habitual en negocios con caja predecible")
+    if cr < b[2]:    return ("Cómoda", 'pos', f"la posición de liquidez es cómoda (current ratio {cr:.2f}x)")
     return ("Holgada", 'neu', f"el current ratio de {cr:.2f}x es muy holgado, con posible caja ociosa")
 
 
 def read_de(de):
     if de is None: return None
     if de < 0:    return ("Equity negativo", 'warn', "el patrimonio contable es negativo por recompras acumuladas, lo que invalida la lectura tradicional del D/E")
-    if de < 0.5:  return ("Conservador", 'pos', f"el apalancamiento es conservador (D/E {de:.2f}x)")
-    if de < 1:    return ("Moderado", 'neu', f"el apalancamiento es moderado (D/E {de:.2f}x)")
-    if de < 2:    return ("Elevado", 'warn', f"el apalancamiento es elevado (D/E {de:.2f}x) y merece seguimiento")
+    b = _PDF_BANDS["de_bounds"]
+    if de < b[0]:  return ("Conservador", 'pos', f"el apalancamiento es conservador (D/E {de:.2f}x)")
+    if de < b[1]:    return ("Moderado", 'neu', f"el apalancamiento es moderado (D/E {de:.2f}x)")
+    if de < b[2]:    return ("Elevado", 'warn', f"el apalancamiento es elevado (D/E {de:.2f}x) y merece seguimiento")
     return ("Alto", 'neg', f"el apalancamiento es alto (D/E {de:.2f}x) para un negocio no financiero")
 
 
 def read_coverage(ic):
     if ic is None: return None
-    if ic < 2:   return ("Crítica", 'neg', f"la cobertura de intereses ({ic:.1f}x) es críticamente baja")
-    if ic < 5:   return ("Justa", 'warn', f"la cobertura de intereses ({ic:.1f}x) deja poco margen ante caídas del beneficio operativo")
-    if ic < 10:  return ("Buena", 'pos', f"el beneficio operativo cubre {ic:.1f} veces el gasto por intereses")
+    b = _PDF_BANDS["coverage_bounds"]
+    if ic < b[0]:   return ("Crítica", 'neg', f"la cobertura de intereses ({ic:.1f}x) es críticamente baja")
+    if ic < b[1]:   return ("Justa", 'warn', f"la cobertura de intereses ({ic:.1f}x) deja poco margen ante caídas del beneficio operativo")
+    if ic < b[2]:  return ("Buena", 'pos', f"el beneficio operativo cubre {ic:.1f} veces el gasto por intereses")
     return ("Muy holgada", 'pos', f"la deuda es fácilmente servible: cobertura de intereses de {ic:.1f}x")
 
 
 def read_nde(nde):
     if nde is None: return None
     if nde < 0:    return ("Caja neta", 'pos', "la posición de caja supera a la deuda total (caja neta)")
-    if nde < 1:    return ("Baja", 'pos', f"la deuda neta equivale a {nde:.1f}x EBITDA, un nivel bajo")
-    if nde < 2.5:  return ("Moderada", 'neu', f"la deuda neta ({nde:.1f}x EBITDA) es manejable")
-    if nde < 4:    return ("Elevada", 'warn', f"la deuda neta ({nde:.1f}x EBITDA) es elevada")
+    b = _PDF_BANDS["nde_bounds"]
+    if nde < b[0]:    return ("Baja", 'pos', f"la deuda neta equivale a {nde:.1f}x EBITDA, un nivel bajo")
+    if nde < b[1]:  return ("Moderada", 'neu', f"la deuda neta ({nde:.1f}x EBITDA) es manejable")
+    if nde < b[2]:    return ("Elevada", 'warn', f"la deuda neta ({nde:.1f}x EBITDA) es elevada")
     return ("Alta", 'neg', f"la deuda neta ({nde:.1f}x EBITDA) es alta y condiciona la flexibilidad financiera")
 
 
 def read_payout(p):
     if p is None: return None
     if p < 0:     return ("Con pérdidas", 'neg', "el dividendo se paga en un ejercicio con pérdidas, algo insostenible en el tiempo")
-    if p < 0.40:  return ("Conservador", 'pos', f"el payout de {_pct(p, 0)} deja amplio margen para sostener y aumentar el dividendo")
-    if p < 0.60:  return ("Sostenible", 'pos', f"el payout de {_pct(p, 0)} es sostenible")
-    if p < 0.80:  return ("Exigente", 'warn', f"el payout de {_pct(p, 0)} es exigente y depende de la estabilidad del beneficio")
-    if p <= 1:    return ("Muy exigente", 'warn', f"el payout de {_pct(p, 0)} consume casi todo el beneficio")
+    b = _PDF_BANDS["payout_bounds"]
+    if p < b[0]:  return ("Conservador", 'pos', f"el payout de {_pct(p, 0)} deja amplio margen para sostener y aumentar el dividendo")
+    if p < b[1]:  return ("Sostenible", 'pos', f"el payout de {_pct(p, 0)} es sostenible")
+    if p < b[2]:  return ("Exigente", 'warn', f"el payout de {_pct(p, 0)} es exigente y depende de la estabilidad del beneficio")
+    if p <= b[3]:    return ("Muy exigente", 'warn', f"el payout de {_pct(p, 0)} consume casi todo el beneficio")
     return ("Insostenible", 'neg', f"el payout de {_pct(p, 0)} supera el beneficio: el dividendo actual no es sostenible")
 
 
 def read_growth(g, what="los ingresos"):
     if g is None: return None
     if g < 0:     return ("Contracción", 'neg', f"{what} se contraen un {_pct(abs(g))} interanual")
-    if g < 0.03:  return ("Plano", 'warn', f"{what} crecen apenas {_pct(g)}, prácticamente planos")
-    if g < 0.10:  return ("Moderado", 'neu', f"{what} crecen {_pct(g)}, un ritmo moderado")
-    if g < 0.20:  return ("Sólido", 'pos', f"{what} crecen {_pct(g)}, un ritmo sólido")
+    b = _PDF_BANDS["growth_bounds"]
+    if g < b[0]:  return ("Plano", 'warn', f"{what} crecen apenas {_pct(g)}, prácticamente planos")
+    if g < b[1]:  return ("Moderado", 'neu', f"{what} crecen {_pct(g)}, un ritmo moderado")
+    if g < b[2]:  return ("Sólido", 'pos', f"{what} crecen {_pct(g)}, un ritmo sólido")
     return ("Acelerado", 'pos', f"{what} crecen {_pct(g)}, un ritmo acelerado propio de compañías growth")
 
 
 def read_upside(up):
     if up is None: return None
-    if up >= 30:   return ("Muy infravalorada", 'pos', f"el modelo DCF sugiere un descuento sustancial: potencial teórico de +{up:.0f}% hasta el valor justo estimado")
-    if up >= 15:   return ("Infravalorada", 'pos', f"el precio cotiza por debajo del valor intrínseco estimado (potencial teórico de +{up:.0f}%)")
-    if up > -15:   return ("Precio justo", 'neu', f"el precio cotiza en torno al valor justo estimado por el DCF ({'+' if up > 0 else ''}{up:.0f}%)")
-    if up > -30:   return ("Prima", 'warn', f"el precio incorpora una prima de {abs(up):.0f}% sobre el valor intrínseco estimado")
+    b = _PDF_BANDS["upside_bounds"]
+    if up >= b[0]:   return ("Muy infravalorada", 'pos', f"el modelo DCF sugiere un descuento sustancial: potencial teórico de +{up:.0f}% hasta el valor justo estimado")
+    if up >= b[1]:   return ("Infravalorada", 'pos', f"el precio cotiza por debajo del valor intrínseco estimado (potencial teórico de +{up:.0f}%)")
+    if up > -b[1]:   return ("Precio justo", 'neu', f"el precio cotiza en torno al valor justo estimado por el DCF ({'+' if up > 0 else ''}{up:.0f}%)")
+    if up > -b[0]:   return ("Prima", 'warn', f"el precio incorpora una prima de {abs(up):.0f}% sobre el valor intrínseco estimado")
     return ("Sobrevalorada", 'neg', f"el precio excede en {abs(up):.0f}% el valor intrínseco estimado: el DCF exige asumir escenarios muy optimistas")
 
 
 def read_graham(m):
     if m is None: return None
-    if m >= 0.20:  return ("Descuento Graham", 'pos', f"cotiza {_pct(m, 0)} por debajo del número de Graham, criterio clásico de valor")
+    if m >= _PDF_BANDS["graham_discount"]:  return ("Descuento Graham", 'pos', f"cotiza {_pct(m, 0)} por debajo del número de Graham, criterio clásico de valor")
     if m >= 0:     return ("Cerca de Graham", 'neu', f"cotiza cerca del número de Graham (margen de {_pct(m, 0)})")
     return ("Sobre Graham", 'warn',
             f"cotiza {_pct(abs(m), 0)} por encima del número de Graham — habitual en compañías de calidad/crecimiento, "
@@ -239,9 +253,10 @@ def read_graham(m):
 
 def read_beta(b):
     if b is None: return None
-    if b < 0.8:   return ("Defensiva", 'pos', f"con beta {b:.2f}, la acción amortigua los movimientos del mercado")
-    if b < 1.2:   return ("De mercado", 'neu', f"con beta {b:.2f}, la acción se mueve en línea con el mercado")
-    if b < 1.6:   return ("Volátil", 'warn', f"con beta {b:.2f}, la acción amplifica los movimientos del mercado")
+    bb = _PDF_BANDS["beta_bounds"]
+    if b < bb[0]:   return ("Defensiva", 'pos', f"con beta {b:.2f}, la acción amortigua los movimientos del mercado")
+    if b < bb[1]:   return ("De mercado", 'neu', f"con beta {b:.2f}, la acción se mueve en línea con el mercado")
+    if b < bb[2]:   return ("Volátil", 'warn', f"con beta {b:.2f}, la acción amplifica los movimientos del mercado")
     return ("Muy volátil", 'neg', f"con beta {b:.2f}, la acción es notablemente más volátil que el mercado")
 
 
@@ -250,10 +265,11 @@ def read_pos52(p):
     # ser oportunidad o problema; cerca de máximos, precio caro con poco recorrido.
     # Es una señal de PRECIO (¿cara o barata?), no de calidad del negocio.
     if p is None: return None
-    if p < 10:   return ("En mínimos · alerta", 'neg', f"cotiza en el {p:.0f}% del rango de 52 semanas, en la zona de mínimos: puede ser una oportunidad o reflejar un problema que el mercado ya descuenta")
-    if p < 25:   return ("Cerca del mínimo", 'warn', f"cotiza en el {p:.0f}% del rango anual, en la parte baja: barata, pero conviene cautela")
-    if p <= 70:  return ("Zona saludable", 'pos', f"cotiza en el {p:.0f}% del rango anual, en una zona cómoda del rango de 52 semanas")
-    if p < 88:   return ("Cerca del máximo", 'warn', f"cotiza en el {p:.0f}% del rango anual, en la parte alta: cara, con recorrido más limitado")
+    b = _PDF_BANDS["pos52_bounds"]
+    if p < b[0]:   return ("En mínimos · alerta", 'neg', f"cotiza en el {p:.0f}% del rango de 52 semanas, en la zona de mínimos: puede ser una oportunidad o reflejar un problema que el mercado ya descuenta")
+    if p < b[1]:   return ("Cerca del mínimo", 'warn', f"cotiza en el {p:.0f}% del rango anual, en la parte baja: barata, pero conviene cautela")
+    if p <= b[2]:  return ("Zona saludable", 'pos', f"cotiza en el {p:.0f}% del rango anual, en una zona cómoda del rango de 52 semanas")
+    if p < b[3]:   return ("Cerca del máximo", 'warn', f"cotiza en el {p:.0f}% del rango anual, en la parte alta: cara, con recorrido más limitado")
     return ("En máximos · cara", 'neg', f"cotiza en el {p:.0f}% del rango de 52 semanas, en máximos: el mercado ya paga optimismo y aumenta el riesgo de corrección")
 
 
@@ -261,27 +277,30 @@ def score_band(pct):
     """Nivel + tono del score alineados con la app (bandas 80/60/40/20).
     Devuelve (etiqueta, tono) para que color y nivel coincidan con lo que ve
     el usuario en pantalla."""
-    if pct >= 80: return "Excelente", 'pos'
-    if pct >= 60: return "Favorable", 'pos'
-    if pct >= 40: return "Neutral", 'warn'
-    if pct >= 20: return "Precaución", 'neg'
+    b = _PDF_BANDS["score_level_bands"]
+    if pct >= b[0]: return "Excelente", 'pos'
+    if pct >= b[1]: return "Favorable", 'pos'
+    if pct >= b[2]: return "Neutral", 'warn'
+    if pct >= b[3]: return "Precaución", 'neg'
     return "Evitar", 'neg'
 
 
 def read_buyback(by):
     if by is None: return None
-    if by >= 0.03:   return ("Recompra intensiva", 'pos', f"el programa de recompras retiró un {_pct(by)} de las acciones en el último año")
-    if by >= 0.005:  return ("Recompra neta", 'pos', f"la compañía recompró un {_pct(by)} neto de sus acciones")
-    if by > -0.005:  return ("Neutra", 'neu', "el número de acciones se mantuvo estable")
+    b = _PDF_BANDS["buyback_bounds"]
+    if by >= b[0]:   return ("Recompra intensiva", 'pos', f"el programa de recompras retiró un {_pct(by)} de las acciones en el último año")
+    if by >= b[1]:  return ("Recompra neta", 'pos', f"la compañía recompró un {_pct(by)} neto de sus acciones")
+    if by > -b[1]:  return ("Neutra", 'neu', "el número de acciones se mantuvo estable")
     return ("Dilución", 'neg', f"la emisión de acciones diluyó a los accionistas un {_pct(abs(by))} en el año")
 
 
 def read_fcf_yield(fy):
     if fy is None: return None
     if fy < 0:     return ("Negativo", 'neg', "la compañía quema caja libre a nivel operativo")
-    if fy < 0.03:  return ("Bajo", 'warn', f"el FCF yield de {_pct(fy)} es bajo: se paga caro cada dólar de caja libre")
-    if fy < 0.05:  return ("Razonable", 'neu', f"el FCF yield de {_pct(fy)} es razonable")
-    if fy < 0.08:  return ("Atractivo", 'pos', f"el FCF yield de {_pct(fy)} es atractivo")
+    b = _PDF_BANDS["fcf_yield_bounds"]
+    if fy < b[0]:  return ("Bajo", 'warn', f"el FCF yield de {_pct(fy)} es bajo: se paga caro cada dólar de caja libre")
+    if fy < b[1]:  return ("Razonable", 'neu', f"el FCF yield de {_pct(fy)} es razonable")
+    if fy < b[2]:  return ("Atractivo", 'pos', f"el FCF yield de {_pct(fy)} es atractivo")
     return ("Alto", 'pos', f"el FCF yield de {_pct(fy)} es alto para los estándares actuales del mercado")
 
 
@@ -340,7 +359,9 @@ def zone_bar_52(pos_pct, width, height=7):
     dos extremos, verde en el centro) y un marcador triangular en la posición
     del precio. Refleja que tanto mínimos como máximos son señales de alerta."""
     p = max(0.0, min(100.0, pos_pct or 0.0)) / 100.0
-    seg  = [0.10, 0.15, 0.45, 0.18, 0.12]           # anchos de zona (curva U)
+    # anchos de zona (curva U) derivados de las bandas de read_pos52
+    _edges = [0, *_PDF_BANDS["pos52_bounds"], 100]
+    seg  = [(_edges[i + 1] - _edges[i]) / 100 for i in range(5)]
     zcol = [Z_RED, Z_AMBER, Z_GREEN, Z_AMBER, Z_RED]
     cols = [width * s for s in seg]
     bar = Table([[''] * 5], colWidths=cols, rowHeights=[height])
@@ -1145,10 +1166,11 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
                     if v is None:
                         continue
                     diff = (v - price) / price * 100
-                    if diff > 30:    bg = colors.HexColor('#d9f3e6')
-                    elif diff > 10:  bg = colors.HexColor('#ecf9f2')
-                    elif diff > -10: bg = colors.HexColor('#f6f6f4')
-                    elif diff > -30: bg = colors.HexColor('#f9edea')
+                    gb = _PDF_BANDS["grid_color_bounds"]
+                    if diff > gb[0]:    bg = colors.HexColor('#d9f3e6')
+                    elif diff > gb[1]:  bg = colors.HexColor('#ecf9f2')
+                    elif diff > -gb[1]: bg = colors.HexColor('#f6f6f4')
+                    elif diff > -gb[0]: bg = colors.HexColor('#f9edea')
                     else:            bg = colors.HexColor('#f4dfdb')
                     cmds.append(('BACKGROUND', (di + 1, gi + 1), (di + 1, gi + 1), bg))
         if base_gi is not None and base_di is not None:
