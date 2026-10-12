@@ -199,6 +199,13 @@ def _dcf(ctx: Ctx):
     if up is None or fv is None:
         return None
     T = _A["dcf"]
+    rel = ctx.dcf.get("reliability") or {}
+    if rel.get("level") == "baja" and (up >= T["upside_moderate"] or up <= -T["upside_moderate"]):
+        # Etapa 8: un DCF de fiabilidad baja no es una señal de valor: se avisa de que
+        # no concilia, sin presentarlo como infra- o sobrevaloración.
+        return _sig("warning", "Valor intrínseco", f"DCF no concluyente — {up:+.0f}% (fiabilidad baja)",
+                    f"El DCF estima ${fv:,.0f} ({up:+.0f}% frente al precio), pero " + "; ".join(rel.get("reasons") or [])
+                    + ". No se usa en el score.", T["w_premium"])
     if up >= T["upside_strong"]:
         return _sig("strength", "Valor intrínseco", f"Infravalorada según DCF — +{up:.0f}%",
                     f"El descuento de flujos estima un valor justo de ${fv:,.0f}, un {up:.0f}% por encima del precio: hay "

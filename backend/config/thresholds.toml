@@ -59,6 +59,13 @@ spread_bounds = [0.10, 0.03, 0.0, -0.03]             # ROIC − WACC
 spread_points = [3, 2, 1, -1, -3]
 
 [score.valoracion]                  # score_valoracion
+# DCF como componente de Valoración (etapa 8): upside del DCF frente al precio,
+# con el aporte acotado por su fiabilidad: ±4 de 20 (alta), ±2 (media), 0 (baja).
+# Bandas: >= +30% claramente barata; +10..+30 barata; ±10% en precio (el error
+# de un DCF es al menos de ese orden); −10..−30 cara; < −30% claramente cara.
+dcf_upside_bounds = [0.30, 0.10, -0.10, -0.30]
+dcf_points_high = [4, 2, 0, -2, -4]
+dcf_points_medium = [2, 1, 0, -1, -2]
 quality_growth_min_quality = 60     # growth/garp con calidad ≥ 60 usa las bandas "growth"
 growth_adjust_min_quality = 50      # penalización de P/E atenuable si calidad ≥ 50
 reit_pffo_bounds = [12, 16, 20, 25] # REIT: P/FFO ≤ (en lugar de P/E y P/FCF)
@@ -415,6 +422,28 @@ divergence_pp = 0.10                # |ROCE − ROIC| > 10 pp -> se marca con su
 excess_cash_share = 0.15            # caja / activos totales ≥ 15% -> "caja excedente" como causa probable
 
 # ── Normalización de ganancias (etapa 7, lib/normalize.py) ──
+[dcf_reliability]                   # fiabilidad del DCF (lib/valuation_confidence.py, etapa 8)
+terminal_max_pct = 85               # valor terminal > 85% del valor -> baja (el aviso sigue en 75%)
+central_block = 1                   # "celda central ±1": bloque 3×3 alrededor del caso base
+fcf_fields = ["freeCashflow", "free_cash_flow", "key_metrics.free_cash_flow"]
+inferred_sources = ["finnhub", "derivado"]      # FCF que no viene de los estados -> inferido
+
+[confidence]                        # confianza del veredicto (spec Sección 3; etapa 8: se muestra, no limita)
+level_values = [1.0, 0.5, 0.0]      # alta / media / baja
+overall_bounds = [0.75, 0.45]       # media ponderada >= 0.75 alta; >= 0.45 media; resto baja
+upside_scale = 0.5                  # un upside de ±50% equivale a la señal ±1 (DCF y Graham)
+neutral_band = 0.15                 # |señal| <= 0.15: "en precio" (sin dirección)
+convergence_spread_max = 0.6        # misma dirección pero señales separadas más de esto -> media
+coverage_bounds = [0.9, 0.7]        # componentes evaluados / aplicables: >= 0.9 alta; >= 0.7 media
+source_issue_bounds = [0, 2]        # incidencias de fuente: 0 alta; <= 2 media; más, baja
+excluded_multiple_components = ["DCF", "Regla de 40"]   # no son múltiplos frente al sector
+
+[confidence.weights]
+convergence = 0.4
+coverage = 0.2
+source = 0.2
+stability = 0.2
+
 [normalization]
 one_off_pct = 0.10                  # |no recurrentes netos| / beneficio neto > 10% -> P/E reportado no fiable
 robust_z = 3.5                      # pico no operativo: |z robusto (mediana, MAD)| > 3.5 (Iglewicz-Hoaglin)

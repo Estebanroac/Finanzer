@@ -47,6 +47,9 @@ spread_bounds = "list[float]"
 spread_points = "list[int]"
 
 [thresholds.score.valoracion]
+dcf_upside_bounds = "list[float]"
+dcf_points_high = "list[int]"
+dcf_points_medium = "list[int]"
 quality_growth_min_quality = "int"
 growth_adjust_min_quality = "int"
 reit_pffo_bounds = "list[int]"
@@ -450,13 +453,26 @@ equity_to_assets_good = "float"
 dividend_yield_good = "float"
 payout_sustainable = "float"
 [valuation.capm]
+risk_free_ticker = "str"
+risk_free_cache_hours = "int"
+risk_free_bounds = "list[float]"
 risk_free_rate = "float"
 market_risk_premium = "float"
 default_beta = "float"
-wacc_tax_rate = "float"
-min_de_for_debt = "float"
-debt_spread_de_bounds = "list[float]"
-debt_spreads = "list[float]"
+
+[valuation.tax]
+statutory_rate = "float"
+effective_bounds = "list[float]"
+
+[valuation.synthetic_rating]
+large_cap_min = "float"
+large_coverage_bounds = "list[number]"
+small_coverage_bounds = "list[number]"
+ratings = "list[str]"
+spreads = "list[float]"
+net_cash_rating = "str"
+negative_rating = "str"
+no_coverage_rating = "str"
 
 [valuation.wacc]
 default = "float"
@@ -486,9 +502,6 @@ interpretation_pct = "list[int]"
 
 [valuation.graham]
 multiplier = "float"
-
-[valuation.roic]
-tax_rate = "float"
 
 [valuation.shareholder]
 buyback_yield_guard = "float"
@@ -618,3 +631,25 @@ components_tolerance_abs = "float"
 [thresholds.growth]
 per_share_min_shares_cagr = "float"
 anomalous_base_ratio = "float"
+
+[thresholds.dcf_reliability]
+terminal_max_pct = "int"
+central_block = "int"
+fcf_fields = "list[str]"
+inferred_sources = "list[str]"
+
+[thresholds.confidence]
+level_values = "list[float]"
+overall_bounds = "list[float]"
+upside_scale = "float"
+neutral_band = "float"
+convergence_spread_max = "float"
+coverage_bounds = "list[float]"
+source_issue_bounds = "list[int]"
+excluded_multiple_components = "list[str]"
+
+[thresholds.confidence.weights]
+convergence = "float"
+coverage = "float"
+source = "float"
+stability = "float"

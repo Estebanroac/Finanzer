@@ -467,9 +467,11 @@ def check_seams():
 
 def reset_state():
     """Vacía cachés en memoria del pipeline: cada corrida empieza en frío."""
+    import cost_of_capital
     import data_fetcher
     import finnhub_fallback
     import yf_adapter
+    cost_of_capital.reset_cache()
     yf_adapter._cache.clear()
     yf_adapter._best_cache.clear()
     yf_adapter._session = None
@@ -505,6 +507,10 @@ def replay(base_dir=FIXTURES_DIR):
     p.set(yf_adapter, "_ensure_session", _fake_ensure_session)
     p.set(yfinance, "Ticker", lambda symbol, *a, **kw: _FixtureTicker(store, symbol, *a, **kw))
     p.set(finnhub_fallback, "_get", _fake_finnhub_get)
+    # Etapa 8: los fixtures no tienen ^TNX; en replay el Rf es siempre el de config
+    # (marcado como fallback), así los golden no dependen del día de la captura.
+    import cost_of_capital
+    p.set(cost_of_capital, "_fetch_risk_free", lambda: None)
     p.set(time, "sleep", lambda *_a, **_kw: None)
     p.set(socket.socket, "connect", _block_network)
     p.set(socket.socket, "connect_ex", _block_network)

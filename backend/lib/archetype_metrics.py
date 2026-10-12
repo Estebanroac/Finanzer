@@ -24,6 +24,7 @@ from typing import Any, Dict, List, Optional
 
 from classify import CYCLICAL, FINANCIAL, GROWTH_PRE_PROFIT, REIT, not_applicable
 from historical_metrics import fcf_cagr, mean, ratio_series, stdev, strict_cagr, yoy_growths
+from cost_of_capital import cost_of_equity as _ke
 from settings import cfg
 
 _V = cfg("valuation.archetypes")
@@ -37,11 +38,9 @@ def _pos(v: Optional[float]) -> bool:
     return v is not None and v > 0
 
 
-def cost_of_equity(beta: Optional[float]) -> float:
-    """Ke por CAPM (Rf + β·MRP) con los parámetros de la config."""
-    c = cfg("valuation.capm")
-    b = beta if beta is not None else c["default_beta"]
-    return c["risk_free_rate"] + b * c["market_risk_premium"]
+def cost_of_equity(beta: Optional[float], rf: Optional[float] = None) -> float:
+    """Ke por CAPM (Rf + β·MRP): el mismo Rf que el WACC (etapa 8, cost_of_capital)."""
+    return _ke(beta, cfg("valuation.capm.risk_free_rate") if rf is None else rf)
 
 
 def justified_multiple(ret: Optional[float], ke: float, g: float) -> Optional[float]:
@@ -51,7 +50,8 @@ def justified_multiple(ret: Optional[float], ke: float, g: float) -> Optional[fl
     return (ret - g) / (ke - g)
 
 
-def _financial(st: Dict[str, Any], km: Dict[str, Any], beta: Optional[float]) -> Dict[str, Any]:
+def _financial(st: Dict[str, Any], km: Dict[str, Any], beta: Optional[float],
+               rf: Optional[float] = None) -> Dict[str, Any]:
     ni, eq, tbv = st.get("net_income") or [], st.get("stockholders_equity") or [], st.get("tangible_book_value") or []
     rev = st.get("revenue") or []
     mcap = km.get("market_cap")
@@ -59,7 +59,7 @@ def _financial(st: Dict[str, Any], km: Dict[str, Any], beta: Optional[float]) ->
     roe_series = ratio_series(ni, eq)
     roe_fy = _first(roe_series)
     rote = (ni0 / tbv0) if (ni0 is not None and _pos(tbv0)) else None
-    ke, g = cost_of_equity(beta), cfg("valuation.dcf.terminal_growth")
+    ke, g = cost_of_equity(beta, rf), cfg("valuation.dcf.terminal_growth")
     pb = (mcap / eq0) if (_pos(mcap) and _pos(eq0)) else None
     ptbv = (mcap / tbv0) if (_pos(mcap) and _pos(tbv0)) else None
     j_pb, j_ptbv = justified_multiple(roe_fy, ke, g), justified_multiple(rote, ke, g)
@@ -140,6 +140,25 @@ def _growth_pre_profit(km: Dict[str, Any], revenue_cagr_3y: Optional[float]) -> 
             "runway": runway(fcf, km.get("cash"))}
 
 
+def maintenance_fcf(st: Dict[str, Any]) -> Dict[str, Any]:
+    """FCF de mantenimiento (etapa 8, CYCLICAL): OCF − capex de mantenimiento por
+    ejercicio, con el capex de mantenimiento aproximado por la D&A (DD&A en
+    extractivas) y sin superar el capex real del año; promedio de los ejercicios
+    disponibles. Excluye el capex de expansión, que el FCF normalizado incluye."""
+    ocf, capex = st.get("operating_cash_flow") or [], st.get("capital_expenditure") or []
+    da = st.get("depreciation_amortization") or []
+    series = []
+    for o, c, d in zip(ocf, capex, da):
+        if o is None or d is None:
+            series.append(None)
+            continue
+        m = min(abs(d), abs(c)) if c is not None else abs(d)
+        series.append(o - m)
+    vals = [x for x in series if x is not None]
+    return {"value": mean(vals) if vals else None, "years": len(vals), "series": series,
+            "reason": None if vals else "sin flujo operativo y D&A del mismo ejercicio"}
+
+
 def _cyclical(st: Dict[str, Any], km: Dict[str, Any]) -> Dict[str, Any]:
     rev = st.get("revenue") or []
     ebitda_avg = mean(st.get("ebitda") or [])
@@ -150,7 +169,10 @@ def _cyclical(st: Dict[str, Any], km: Dict[str, Any]) -> Dict[str, Any]:
     g_raw = mean(yoy_growths(rev))
     lo, hi = _V["cyclical_growth_bounds"]
     g = None if g_raw is None else min(hi, max(lo, g_raw))
+    maint = maintenance_fcf(st)
     return {
+        "fcf_maintenance": maint["value"], "fcf_maintenance_years": maint["years"],
+        "fcf_maintenance_series": maint["series"], "fcf_maintenance_reason": maint["reason"],
         "cycle_years": years, "cycle_incomplete": years < _V["cycle_full_years"],
         "ebitda_avg": ebitda_avg,
         "ev_ebitda_normalized": (ev / ebitda_avg) if (_pos(ev) and _pos(ebitda_avg)) else None,
@@ -161,11 +183,12 @@ def _cyclical(st: Dict[str, Any], km: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def compute(archetype: str, statements_fy: Optional[Dict[str, Any]], key_metrics: Dict[str, Any], *,
-            beta: Optional[float] = None, revenue_cagr_3y: Optional[float] = None) -> Dict[str, Any]:
+            beta: Optional[float] = None, revenue_cagr_3y: Optional[float] = None,
+            rf: Optional[float] = None) -> Dict[str, Any]:
     """Métricas de la rama del arquetipo ({} si la rama no necesita ninguna)."""
     st = statements_fy or {}
     if archetype == FINANCIAL:
-        return _financial(st, key_metrics, beta)
+        return _financial(st, key_metrics, beta, rf)
     if archetype == GROWTH_PRE_PROFIT:
         return _growth_pre_profit(key_metrics, revenue_cagr_3y)
     if archetype == REIT:

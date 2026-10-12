@@ -11,7 +11,7 @@ import pytest
 
 import fixture_backend as fb
 
-RF, MRP = 0.045, 0.055  # config.DCF_RISK_FREE_RATE / DCF_MARKET_RISK_PREMIUM
+RF, MRP = 0.045, 0.055  # valuation.capm: Rf de fallback (en replay ^TNX no está) y MRP
 
 
 def _frame(store, sym, attr):
@@ -42,18 +42,18 @@ def test_bug_shares_issued_vs_ordinary_nflx(fixture_store):
     assert info["_prior_year"]["shares"] == pytest.approx(float(ordinary.iloc[1]))
 
 
-@pytest.mark.xfail(raises=AssertionError, reason="RECON C4: calculate_wacc se llama solo con beta y devuelve el coste "
-                          "del equity (Rf + β·MRP), sin ponderar la deuda (main.py:489, 762)")
+# CORREGIDO en la etapa 8 (C4): WACC = E/(D+E)·Ke + D/(D+E)·Kd·(1−t) (lib/cost_of_capital.py).
 def test_bug_wacc_is_only_cost_of_equity_nflx(analysis):
     km = analysis("NFLX")["key_metrics"]
     assert km["total_debt"] and km["total_debt"] > 0  # empresa apalancada
-    ke = RF + km["beta"] * MRP
+    ke = analysis("NFLX")["wacc"]["ke"]
+    assert ke == pytest.approx(RF + km["beta"] * MRP)
     assert abs(km["wacc"] - ke) > 1e-4
 
 
 # CORREGIDO en la etapa 4 (decisión 6): el grid parte del crecimiento usado por el DCF
-# (tope 30%, mismo suelo) con su mismo decaimiento. Queda <0.1% por el WACC redondeado
-# a 4 decimales en el grid.
+# (tope 30%, mismo suelo) con su mismo decaimiento. Etapa 8: la celda base usa el WACC
+# exacto (sin redondear), así que coincide con el DCF.
 def test_bug_dcf_vs_grid_growth_snow(analysis):
     a = analysis("SNOW")
     fair = a["dcf"]["fair_value"]
@@ -61,8 +61,7 @@ def test_bug_dcf_vs_grid_growth_snow(analysis):
     assert base == pytest.approx(fair, rel=0.01)
 
 
-@pytest.mark.xfail(raises=AssertionError, reason="RECON §1.4: el PDF exige sensitivity['base_growth_idx'/'base_discount_idx'] "
-                          "que dcf_sensitivity_analysis nunca devuelve: el recuadro base no se dibuja")
+# CORREGIDO en la etapa 8 (§1.4): el grid devuelve base_growth_idx / base_discount_idx.
 def test_bug_base_case_box_never_drawn_nflx(analysis, fixture_store):
     import pdf_report
     from reportlab.platypus import TableStyle

@@ -5,11 +5,10 @@ import pytest
 
 import fixture_backend  # noqa: F401  (añade backend/ y lib/ al path)
 from financial_ratios import (
-    altman_z_score, calculate_score_v2, calculate_wacc, dcf_multi_stage,
+    altman_z_score, calculate_score_v2, dcf_multi_stage,
     dcf_sensitivity_analysis, piotroski_f_score,
 )
 
-RF, MRP = 0.045, 0.055  # config.DCF_RISK_FREE_RATE / DCF_MARKET_RISK_PREMIUM
 
 
 # ─────────────────────────── Piotroski ───────────────────────────
@@ -81,19 +80,7 @@ def test_altman_missing_total_assets():
     assert z is None and zone == "N/A"
 
 
-# ─────────────────────────── WACC ───────────────────────────
-def test_wacc_unlevered_is_capm_cost_of_equity():
-    assert calculate_wacc(beta=1.2) == pytest.approx(RF + 1.2 * MRP)
-
-
-def test_wacc_levered_weights_debt():
-    # Ke = 0.111; Kd = 4/100; pesos 2/3 equity, 1/3 deuda; impuesto 25%
-    w = calculate_wacc(beta=1.2, debt_to_equity=0.5, interest_expense=4, total_debt=100)
-    assert w == pytest.approx((2 / 3) * 0.111 + (1 / 3) * 0.04 * 0.75, abs=1e-4)
-
-
-def test_wacc_default_beta_is_market():
-    assert calculate_wacc(beta=None) == pytest.approx(RF + MRP)
+# WACC: tests/test_cost_of_capital.py (etapa 8, WACC ponderado real).
 
 
 # ─────────────────────────── DCF multietapa ───────────────────────────

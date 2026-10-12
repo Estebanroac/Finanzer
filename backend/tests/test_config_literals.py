@@ -24,7 +24,7 @@ MIGRATED = {
     "lib/financial_ratios.py": [
         "is_financial_sector", "altman_z_score", "financial_health_score", "piotroski_evaluate",
         "piotroski_level", "piotroski_f_score",
-        "calculate_wacc", "classify_company_type", "calculate_growth_quality_score",
+        "classify_company_type", "calculate_growth_quality_score",
         "adjust_valuation_for_growth", "graham_number", "dcf_multi_stage", "dcf_multi_stage_dynamic",
         "calculate_all_ratios", "score_solidez_financiera", "score_solidez_financiera_financial",
         "score_rentabilidad", "score_valoracion", "score_calidad_ganancias", "score_crecimiento",
@@ -45,6 +45,13 @@ MIGRATED = {
         "_rule_growth", "_rule_split_basis", "_rule_jumps", "validate_outputs",
     ],
     "main.py": ["_get_sector_benchmarks", "_compute_analysis"],
+    # Etapa 8: coste de capital, fiabilidad del DCF y confianza del veredicto.
+    "lib/cost_of_capital.py": ["risk_free", "effective_tax_rate", "synthetic_rating", "cost_of_equity", "wacc"],
+    "lib/valuation_confidence.py": [
+        "dcf_reliability", "signal_from_upside", "multiples_signal", "convergence", "coverage_dimension",
+        "source_dimension", "stability_dimension", "verdict_confidence",
+    ],
+    "lib/archetype_metrics.py": ["maintenance_fcf"],
 }
 
 # (archivo, función, valor) -> justificación
@@ -65,6 +72,9 @@ EXCEPTIONS = {
         "ventana de los CAGR a 3 años (definición; etapa 7: FCF y crecimiento por acción)",
     ("main.py", "_compute_analysis", 15):
         "longitud máxima de un ticker en la validación de entrada de la API",
+    ("lib/cost_of_capital.py", "risk_free", 3600): "segundos por hora (caché de 24 h en config)",
+    ("lib/valuation_confidence.py", "convergence", 2):
+        "convergencia: hacen falta al menos dos métodos para contrastar (definición)",
     ("main.py", "_compute_analysis", 400): "código HTTP",
     ("main.py", "_compute_analysis", 404): "código HTTP",
     ("main.py", "_compute_analysis", 500): "código HTTP",

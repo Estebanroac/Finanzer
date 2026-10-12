@@ -59,6 +59,7 @@ QUARTERLY_ROWS = (
 )
 
 MIN_GAP_DAYS, MAX_GAP_DAYS = 80, 100     # un trimestre entre fechas consecutivas
+TTM_QUARTERS = 4                          # doce meses = cuatro trimestres (definición)
 
 
 def _num(v) -> Optional[float]:

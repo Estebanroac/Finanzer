@@ -901,6 +901,9 @@ def _enrich_prior_year_data(symbol: str, info: Dict[str, Any]) -> Dict[str, Any]
         "total_assets": _row(bs, "Total Assets"),
         "operating_cash_flow": _row(cf, "Operating Cash Flow"),
         "capital_expenditure": _row(cf, "Capital Expenditure"),
+        # Etapa 8: D&A (o DD&A en extractivas) para el capex de mantenimiento de CYCLICAL.
+        "depreciation_amortization": next((x for x in (_row(cf, r) for r in (
+            "Depreciation And Amortization", "Depreciation Amortization Depletion", "Depreciation")) if x), []),
         "free_cash_flow": _row(cf, "Free Cash Flow"),
         # Etapa 6 (clasificador, ramas por arquetipo y ROCE): series anuales
         # adicionales; una fila ausente queda como lista vacía (sin dato).

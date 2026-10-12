@@ -43,7 +43,8 @@ No se tocó `requirements.txt`, ni Render las instala.
 |---|---|
 | `test_regression.py` | Para los 6 tickers, `_compute_analysis` desde los fixtures == `golden/<env>/<T>.json`, y el texto del PDF == `golden/<env>/<T>.pdf.txt`. Además: existen los puntos de enganche, los metadatos y ningún acceso queda sin fixture. |
 | `test_determinism.py` | Dos corridas en el mismo proceso, y dos procesos con `PYTHONHASHSEED` distinto, dan salidas idénticas **byte a byte** (análisis sin redondear y bytes del PDF). |
-| `test_smoke.py` | Piezas aisladas con valores calculados a mano: `piotroski_f_score`, `altman_z_score`, `calculate_wacc`, `dcf_multi_stage`, `dcf_sensitivity_analysis`, `calculate_score_v2`. |
+| `test_smoke.py` | Piezas aisladas con valores calculados a mano: `piotroski_f_score`, `altman_z_score`, `dcf_multi_stage`, `dcf_sensitivity_analysis`, `calculate_score_v2`. |
+| `test_cost_of_capital.py` | Etapa 8: WACC real (rating sintético, tasa efectiva, Rf con fallback), recorte del grid, g >= WACC, crecimiento bajo el terminal, fiabilidad del DCF, DCF en Valoración y confianza del veredicto. |
 | `test_known_bugs.py` | Un test por bug verificado en `docs/RECON.md`, marcado `xfail(strict=True, raises=AssertionError)`. Afirma el comportamiento **correcto**, así que hoy falla. |
 
 ### Tests de bug conocido (xfail)

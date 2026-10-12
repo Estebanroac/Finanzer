@@ -19,7 +19,7 @@ from financial_ratios import (
     calculate_all_ratios, calculate_score_v2,
     altman_z_score, piotroski_evaluate, piotroski_level, interest_coverage_state, net_debt_ebitda_state,
     graham_number, margin_of_safety, dcf_multi_stage_dynamic,
-    dcf_sensitivity_analysis, calculate_wacc
+    dcf_sensitivity_analysis
 )
 from stock_database import search_stocks, POPULAR_STOCKS, TOP_STOCKS
 from sector_profiles import get_sector_profile, YAHOO_SECTOR_MAPPING
@@ -29,6 +29,10 @@ from historical_metrics import fcf_cagr, growth_rate, per_share, per_share_basis
 from classify import CYCLICAL, FINANCIAL, GROWTH_PRE_PROFIT, REIT, classify, not_applicable
 from normalize import normalize as normalize_earnings
 from yf_adapter import _UNUSUAL_ROWS
+from ttm import TTM_QUARTERS
+from cost_of_capital import effective_tax_rate, risk_free, wacc as compute_wacc
+from valuation_confidence import (convergence, coverage_dimension, dcf_reliability, signal_from_upside,
+                                  source_dimension, stability_dimension, verdict_confidence)
 import archetype_metrics
 
 logging.basicConfig(level=logging.INFO)
@@ -330,6 +334,23 @@ def _compute_analysis(symbol: str) -> dict:
                 logger.debug(f"Yahoo ratio fallback error: {e}")
                 _sin_dato("ratios_fallback_yahoo", e)
 
+            # ── Etapa 8: tasa efectiva por empresa (la misma t en el WACC y el ROIC) ──
+            # Mismo periodo que el beneficio: TTM (4 trimestres) si el beneficio es
+            # TTM; si no, el último FY. BAI <= 0 o sin dato: tipo legal (marcado).
+            _st8 = (yinfo.get("_statements_fy") or {}) if _has_yahoo else {}
+            _q8 = (yinfo.get("_quarterly") or {}) if _has_yahoo else {}
+            _pt_q = (_q8.get("Pretax Income") or [])[:4]
+            _tx_q = (_q8.get("Tax Provision") or [])[:4]
+            if ("netIncome" in (((yinfo.get("_ttm") or {}) if _has_yahoo else {}).get("ttm_fields") or [])
+                    and len(_pt_q) == len(_tx_q) == TTM_QUARTERS and None not in _pt_q + _tx_q):
+                tax_info = effective_tax_rate(sum(_pt_q), sum(_tx_q), "TTM")
+            else:
+                tax_info = effective_tax_rate((_st8.get("pretax_income") or [None])[0],
+                                              (_st8.get("tax_provision") or [None])[0],
+                                              f"FY{(_st8.get('inc_years') or ['?'])[0]}")
+            fin_dict["tax_rate"] = tax_info["rate"]
+            ratios["roic"] = calculate_all_ratios(fin_dict).get("roic")
+
             result["ratios"] = {k: safe_float(v) for k, v in ratios.items()}
 
             # Key metrics — try ratios first, fallback to alternate keys
@@ -368,7 +389,7 @@ def _compute_analysis(symbol: str) -> dict:
             # ROIC = NOPAT / Invested Capital
             roic = r("roic")
             if roic is None and oi_val and te_val:
-                nopat = oi_val * (1 - cfg("valuation.roic.tax_rate"))  # mismo impuesto que calculate_all_ratios
+                nopat = oi_val * (1 - tax_info["rate"])  # misma t que calculate_all_ratios y el WACC
                 invested_capital = te_val + (td_val or 0) - (cash_val or 0)
                 if invested_capital > 0:
                     roic = nopat / invested_capital
@@ -512,10 +533,13 @@ def _compute_analysis(symbol: str) -> dict:
                                       net_margin_ttm=r("net_margin"), statements_fy=_stmts)
             archetype = classification["archetype"]
             result["classification"] = classification
+            # Rf (etapa 8): ^TNX con caché de 24 h o el de config, marcado. Uno por
+            # análisis: el mismo en Ke (P/B justificado de FINANCIAL), Kd y WACC.
+            rf_info = risk_free()
             # Métricas de la rama (P/B justificado, EV/Ventas, normalizados de ciclo…)
             archetype_values = archetype_metrics.compute(
                 archetype, _stmts, result["key_metrics"], beta=safe_float(financials.beta),
-                revenue_cagr_3y=classification["inputs"].get("revenue_cagr_3y"))
+                revenue_cagr_3y=classification["inputs"].get("revenue_cagr_3y"), rf=rf_info["value"])
             result["archetype_metrics"] = {k: (safe_float(v) if isinstance(v, float) else v)
                                            for k, v in archetype_values.items()}
             # ROCE (etapa 6): contraste con el ROIC en MATURE y CYCLICAL; "no aplica"
@@ -644,8 +668,22 @@ def _compute_analysis(symbol: str) -> dict:
                                       for k, v in growth_basis.items()}
 
             # ── Fase C: creación de valor (ROIC-WACC) y retorno al accionista ──
-            _beta_est = financials.beta if financials.beta is not None else cfg("valuation.capm.default_beta")
-            wacc_est = calculate_wacc(beta=_beta_est)
+            # ── Etapa 8: un solo WACC (DCF, grid, spread y lo que se muestra) ──
+            # E/(D+E)·Ke + D/(D+E)·Kd·(1−t); FINANCIAL no usa WACC (P/B justificado con Ke).
+            if archetype == FINANCIAL:
+                wacc_info = {"value": None, "applicable": False,
+                             "reason": not_applicable(archetype, "roic_wacc") or "No aplica a FINANCIAL"}
+            else:
+                wacc_info = compute_wacc(
+                    beta=safe_float(financials.beta), rf=rf_info, market_cap=mcap, total_debt=td_val,
+                    interest_coverage=safe_float(interest_cov),
+                    coverage_state=interest_coverage_state(safe_float(interest_cov), r("net_debt")),
+                    tax=tax_info)
+                wacc_info["applicable"] = True
+            wacc_est = wacc_info["value"]
+            result["wacc"] = {k: (safe_float(v) if isinstance(v, float) else v) for k, v in wacc_info.items()}
+            result["tax_rate"] = {k: (safe_float(v) if isinstance(v, float) else v) for k, v in tax_info.items()}
+            result["risk_free"] = dict(rf_info)
             # Spread ROIC-WACC: mide si la empresa genera retornos por ENCIMA de su
             # costo de capital (crea valor) o por debajo (lo destruye). No aplica a
             # financieras (WACC no interpretable), igual que el DCF/Altman.
@@ -907,6 +945,143 @@ def _compute_analysis(symbol: str) -> dict:
             except Exception as e:
                 _sin_dato("normalizacion_ganancias", e)
 
+            # Valuation (Graham + DCF) — etapa 8: ANTES del score, porque el DCF es un
+            # componente de Valoración con aporte acotado por su fiabilidad.
+            dcf_for_score = None
+            _multiples_signal = None
+            try:
+                price = financials.price
+                eps = financials.eps
+                bvps = financials.book_value_per_share
+
+                # Graham number (no aplica a FINANCIAL ni a GROWTH_PRE_PROFIT)
+                graham = None if not_applicable(archetype, "graham") else graham_number(eps, bvps)
+                result["graham_number"] = safe_float(graham)
+
+                if graham and price:
+                    # margin_of_safety(intrinsic_value, current_price): el Graham
+                    # Number ES el valor intrínseco y price el precio de mercado.
+                    result["graham_margin"] = safe_float(
+                        margin_of_safety(graham, price)
+                    )
+
+                # DCF-FCFF: el arquetipo decide si aplica (no en FINANCIAL ni REIT; en
+                # GROWTH_PRE_PROFIT solo con FCF positivo) y con qué inputs. Sanitizado
+                # (safe_float): un NaN o +Inf crudo no puede llegar al grid.
+                fcf = safe_float(financials.free_cash_flow)
+                growth = financials.revenue_growth_yoy or cfg("valuation.dcf.default_growth")
+                _dcf_na = not_applicable(archetype, "dcf")
+                if not _dcf_na and archetype == GROWTH_PRE_PROFIT and not (fcf and fcf > 0):
+                    _dcf_na = "No aplica a GROWTH_PRE_PROFIT con FCF negativo: no hay flujo que descontar"
+                if _dcf_na:
+                    result["not_applicable"]["dcf"] = _dcf_na
+                _fcf_source = ((yinfo.get("_provenance") or {}).get("freeCashflow") or {}).get("source") \
+                    if _has_yahoo else None
+                _fcf_fields = cfg("thresholds.dcf_reliability.fcf_fields")
+                _fcf_flags = [f"{f.get('field')}: {f.get('rule')}" for f in (yinfo.get("_validation") or [])
+                              if f.get("field") in _fcf_fields] if _has_yahoo else []
+                if archetype == CYCLICAL:
+                    # Etapa 8: FCF de MANTENIMIENTO (OCF − D&A como capex de mantenimiento,
+                    # promedio de los ejercicios): el normalizado (margen FCF medio ×
+                    # ingresos) incluye el capex de expansión. Se muestran los dos.
+                    fcf = safe_float(archetype_values.get("fcf_maintenance"))
+                    if archetype_values.get("revenue_growth_normalized") is not None:
+                        growth = archetype_values["revenue_growth_normalized"]
+                _dcf_missing = None
+                if _dcf_na:
+                    pass
+                elif not (fcf and fcf > 0):
+                    _dcf_missing = "FCF de entrada <= 0 o sin dato: no hay flujo que descontar"
+                elif wacc_est is None:
+                    _dcf_missing = wacc_info.get("reason") or "sin WACC"
+                if not _dcf_na and not _dcf_missing and price and financials.shares_outstanding:
+                    # Deuda neta para el puente Enterprise Value -> Equity Value.
+                    _net_debt = None
+                    if td_val is not None or cash_val is not None:
+                        _net_debt = (td_val or 0.0) - (cash_val or 0.0)
+
+                    dcf_result = dcf_multi_stage_dynamic(
+                        fcf=fcf,
+                        shares_outstanding=financials.shares_outstanding,
+                        wacc=wacc_est,   # el WACC único (cost_of_capital), ya acotado
+                        total_debt=td_val,
+                        cash=cash_val,
+                        revenue_growth_3y=growth,  # el DCF aplica el tope (30%); sin suelo en el terminal
+                    )
+                    # DCF y grid comparten supuestos: el crecimiento USADO, su decaimiento y el WACC.
+                    _g_used = dcf_result.get("growth_estimated")
+                    if _g_used is None:
+                        _g_used = growth
+                    _decay = dcf_result.get("decay_type") or "linear"
+                    _fv = safe_float(dcf_result.get("fair_value_per_share"))
+                    _dcf_upside = ((_fv - price) / price * 100.0) if (_fv is not None and price and price > 0) else None
+                    _dcf_mos = ((_fv - price) / _fv) if (_fv not in (None, 0)) else None
+                    _dcf_model = dcf_result.get("model_result") or {}
+                    result["dcf"] = {
+                        "fair_value": _fv,
+                        "wacc": safe_float(wacc_est),   # el mismo que key_metrics.wacc y el grid
+                        "growth_rate": safe_float(_g_used),  # el usado, no el bruto
+                        "growth_source": dcf_result.get("growth_source"),
+                        "terminal_growth": safe_float(cfg("valuation.dcf.terminal_growth")),
+                        "margin_of_safety": safe_float(_dcf_mos),
+                        "upside": safe_float(_dcf_upside),
+                        "value_composition": _dcf_model.get("value_composition"),
+                        "fcf_input": safe_float(fcf),
+                        "available": _fv is not None,
+                        "reason": dcf_result.get("invalid_reason"),
+                        "warnings": dcf_result.get("warnings") or [],
+                    }
+                    if archetype == CYCLICAL:
+                        result["dcf"]["normalized"] = {
+                            "fcf": safe_float(archetype_values.get("fcf_normalized")),
+                            "fcf_margin_avg": safe_float(archetype_values.get("fcf_margin_avg")),
+                            "fcf_maintenance": safe_float(archetype_values.get("fcf_maintenance")),
+                            "fcf_maintenance_years": archetype_values.get("fcf_maintenance_years"),
+                            "fcf_used": "mantenimiento",
+                            "years": archetype_values.get("cycle_years"),
+                            "cycle_incomplete": archetype_values.get("cycle_incomplete"),
+                        }
+
+                    # Sensitivity: centrado en el WACC y el crecimiento usados.
+                    sens = None
+                    if _fv is not None:
+                        try:
+                            sens = dcf_sensitivity_analysis(
+                                fcf=fcf,
+                                shares_outstanding=financials.shares_outstanding,
+                                current_price=price,
+                                base_growth_rate=_g_used,
+                                base_discount_rate=wacc_est,
+                                net_debt=_net_debt or 0.0,
+                                decay_type=_decay,
+                            )
+                            result["sensitivity"] = sens
+                        except Exception as e:
+                            logger.error(f"Sensitivity error: {e}")
+                            _sin_dato("sensitivity", e)
+                    _rel = dcf_reliability(
+                        dcf=result["dcf"], sensitivity=sens, price=price, archetype=archetype,
+                        possible_cyclical=any(a.get("code") == "posible_ciclica"
+                                              for a in classification.get("alerts") or []),
+                        fcf_flags=_fcf_flags, fcf_source=_fcf_source)
+                    result["dcf"]["reliability"] = _rel
+                    if _rel:
+                        dcf_for_score = {"upside": _dcf_upside / 100.0 if _dcf_upside is not None else None,
+                                         "reliability": _rel["level"], "reasons": _rel["reasons"],
+                                         "grid_contains_price": _rel["grid_contains_price"]}
+                    else:
+                        _dcf_missing = result["dcf"]["reason"] or "DCF sin valor"
+                if _dcf_na:
+                    dcf_for_score = {"na": _dcf_na}
+                elif dcf_for_score is None:
+                    dcf_for_score = {"missing_reason": _dcf_missing or "sin precio o acciones en circulación"}
+                result["dcf_status"] = {"state": "no_aplica" if _dcf_na else ("ok" if dcf_for_score.get("reliability")
+                                                                            else "sin_dato"),
+                                        "reason": _dcf_na or dcf_for_score.get("missing_reason")}
+            except Exception as e:
+                logger.error(f"Valuation error: {e}")
+                _sin_dato("graham/dcf", e)
+
             # Score (0-100) — normalize to standard format.
             # Computed here (after institutional metrics) so the Altman Z-Score
             # and Piotroski F-Score actually feed the solidez/calidad categories.
@@ -928,6 +1103,7 @@ def _compute_analysis(symbol: str) -> dict:
                     wacc=wacc_est,  # Fase C: spread ROIC-WACC en rentabilidad
                     archetype=archetype,
                     archetype_values=archetype_values,
+                    dcf=dcf_for_score,
                 )
                 # Normalize: the brain returns different structures, unify them
                 raw_score = score_result.get("score", 0) if isinstance(score_result, dict) else 0
@@ -937,6 +1113,8 @@ def _compute_analysis(symbol: str) -> dict:
                 # Build category breakdown from categories array or category_scores dict
                 breakdown = {}
                 categories_list = score_result.get("categories", []) if isinstance(score_result, dict) else []
+                _multiples_signal = next((c.get("multiples_signal") for c in categories_list
+                                          if c.get("category") == "Valoración"), None)
                 for cat in categories_list:
                     key = cat.get("category", "unknown")
                     breakdown[key] = {
@@ -992,118 +1170,6 @@ def _compute_analysis(symbol: str) -> dict:
                 logger.error(f"Score calculation error: {e}")
                 result["score"] = None
                 _sin_dato("score", e)
-
-            # Valuation (Graham + DCF)
-            try:
-                price = financials.price
-                eps = financials.eps
-                bvps = financials.book_value_per_share
-
-                # Graham number (no aplica a FINANCIAL ni a GROWTH_PRE_PROFIT)
-                graham = None if not_applicable(archetype, "graham") else graham_number(eps, bvps)
-                result["graham_number"] = safe_float(graham)
-
-                if graham and price:
-                    # margin_of_safety(intrinsic_value, current_price): el Graham
-                    # Number ES el valor intrínseco y price el precio de mercado.
-                    # Antes los argumentos estaban invertidos, dando el signo al
-                    # revés (una acción sobrevalorada mostraba margen positivo).
-                    result["graham_margin"] = safe_float(
-                        margin_of_safety(graham, price)
-                    )
-
-                # DCF — skip for financials: FCF is ill-defined for banks/insurers
-                # (no traditional capex/working-capital cycle), so an FCF-DCF fair
-                # value is misleading. They are valued on book value / ROE instead —
-                # same rationale as the Altman Z-Score exclusion.
-                # Sanitize like the metrics path (see fcf_val above): a raw NaN
-                # is truthy and only skipped here by the `> 0` check, and a raw
-                # +Inf would pass it and land un-sanitized in the sensitivity
-                # matrix (stored raw below) → non-finite tokens → invalid JSON.
-                fcf = safe_float(financials.free_cash_flow)
-                growth = financials.revenue_growth_yoy or cfg("valuation.dcf.default_growth")
-                # Etapa 6: el arquetipo decide si hay DCF-FCFF (no en FINANCIAL ni
-                # REIT; en GROWTH_PRE_PROFIT solo con FCF positivo) y con qué inputs
-                # (CYCLICAL: FCF normalizado = margen FCF promedio × ingresos
-                # actuales, y crecimiento normalizado de ciclo medio).
-                _dcf_na = not_applicable(archetype, "dcf")
-                if not _dcf_na and archetype == GROWTH_PRE_PROFIT and not (fcf and fcf > 0):
-                    _dcf_na = "No aplica a GROWTH_PRE_PROFIT con FCF negativo: no hay flujo que descontar"
-                if _dcf_na:
-                    result["not_applicable"]["dcf"] = _dcf_na
-                if archetype == CYCLICAL:
-                    fcf = safe_float(archetype_values.get("fcf_normalized"))
-                    if archetype_values.get("revenue_growth_normalized") is not None:
-                        growth = archetype_values["revenue_growth_normalized"]
-                if fcf and fcf > 0 and price and financials.shares_outstanding and not _dcf_na:
-                    beta = financials.beta if financials.beta is not None else cfg("valuation.capm.default_beta")
-                    wacc = calculate_wacc(beta=beta)
-
-                    # Deuda neta para el puente Enterprise Value -> Equity Value.
-                    # Sin esto, el DCF dividía el enterprise value entre acciones sin
-                    # descontar la deuda, sobrevalorando a las empresas apalancadas.
-                    _net_debt = None
-                    if td_val is not None or cash_val is not None:
-                        _net_debt = (td_val or 0.0) - (cash_val or 0.0)
-
-                    dcf_result = dcf_multi_stage_dynamic(
-                        fcf=fcf,
-                        shares_outstanding=financials.shares_outstanding,
-                        beta=beta,
-                        total_debt=td_val,
-                        cash=cash_val,
-                        revenue_growth_3y=growth,  # el DCF aplica el tope (30%) y el suelo (<= -20% -> 8%)
-                    )
-                    # DCF y grid comparten supuestos (etapa 4): el crecimiento USADO por el
-                    # DCF (tras tope y suelo) y su mismo tipo de decaimiento.
-                    _g_used = dcf_result.get("growth_estimated")
-                    if _g_used is None:
-                        _g_used = growth
-                    _decay = dcf_result.get("decay_type") or "linear"
-                    # upside y margin_of_safety se calculan aquí (price está en
-                    # scope). El dict del DCF nunca tuvo claves 'upside_pct' ni
-                    # 'margin_of_safety_value', así que antes ambos quedaban None.
-                    # value_composition vive dentro de model_result, no en el nivel
-                    # superior. Con el fair_value ya corregido (equity value), el
-                    # upside es real.
-                    _fv = safe_float(dcf_result.get("fair_value_per_share"))
-                    _dcf_upside = ((_fv - price) / price * 100.0) if (_fv is not None and price and price > 0) else None
-                    _dcf_mos = ((_fv - price) / _fv) if (_fv not in (None, 0)) else None
-                    _dcf_model = dcf_result.get("model_result") or {}
-                    result["dcf"] = {
-                        "fair_value": _fv,
-                        "wacc": safe_float(wacc),
-                        "growth_rate": safe_float(_g_used),  # el usado, no el bruto
-                        "terminal_growth": safe_float(cfg("valuation.dcf.terminal_growth")),
-                        "margin_of_safety": safe_float(_dcf_mos),
-                        "upside": safe_float(_dcf_upside),
-                        "value_composition": _dcf_model.get("value_composition"),
-                    }
-                    if archetype == CYCLICAL:
-                        result["dcf"]["normalized"] = {
-                            "fcf": safe_float(fcf), "fcf_margin_avg": safe_float(archetype_values.get("fcf_margin_avg")),
-                            "years": archetype_values.get("cycle_years"),
-                            "cycle_incomplete": archetype_values.get("cycle_incomplete"),
-                        }
-
-                    # Sensitivity
-                    try:
-                        sens = dcf_sensitivity_analysis(
-                            fcf=fcf,
-                            shares_outstanding=financials.shares_outstanding,
-                            current_price=price,
-                            base_growth_rate=_g_used,
-                            base_discount_rate=wacc or cfg("valuation.wacc.default"),
-                            net_debt=_net_debt or 0.0,
-                            decay_type=_decay,
-                        )
-                        result["sensitivity"] = sens
-                    except Exception as e:
-                        logger.error(f"Sensitivity error: {e}")
-                        _sin_dato("sensitivity", e)
-            except Exception as e:
-                logger.error(f"Valuation error: {e}")
-                _sin_dato("graham/dcf", e)
 
             # Alerts — motor de interpretación de señales (el "cerebro"): convierte
             # los ratios crudos en fortalezas/advertencias/riesgos con una lectura
@@ -1162,6 +1228,42 @@ def _compute_analysis(symbol: str) -> dict:
             _sin_dato("validacion_salida", e)
         result["data_validation"] = list(yinfo.get("_validation") or []) + _out_flags
         result["data_provenance"] = _build_provenance(yinfo, _out_flags, _block_errors)
+
+        # ── Etapa 8: confianza del veredicto (spec Sección 3) ──
+        # Se calcula y se muestra (JSON, PDF); NO limita el score: el techo
+        # condicionado por la confianza es de la etapa 9.
+        if financials and result.get("score"):
+            try:
+                _price = safe_float(financials.price)
+                _d = result.get("dcf") or {}
+                _methods = []
+                if _d.get("upside") is not None:
+                    _methods.append({"method": "DCF", "upside": _d["upside"] / 100.0,
+                                     "reliability": (_d.get("reliability") or {}).get("level")})
+                if _multiples_signal:
+                    _methods.append({"method": "múltiplos frente al sector", "signal": _multiples_signal["value"],
+                                     "components": _multiples_signal["components"]})
+                # Graham = sqrt(22.5 · BPA · VCPA): usa el mismo BPA que el P/E, así que solo
+                # informa donde el P/E aplica (no en REIT, CYCLICAL ni GROWTH_PRE_PROFIT).
+                _arch = (result.get("classification") or {}).get("archetype")
+                if result.get("graham_number") and _price and not not_applicable(_arch, "pe"):
+                    _methods.append({"method": "Graham", "upside": result["graham_number"] / _price - 1})
+                for _m in _methods:
+                    if "upside" in _m:
+                        _m["signal"] = signal_from_upside(_m["upside"])
+                _cls = result.get("classification") or {}
+                result["confidence"] = verdict_confidence({
+                    "convergence": convergence(_methods),
+                    "coverage": coverage_dimension(result.get("score_coverage"),
+                                                   (result["score"] or {}).get("excluded_categories") or []),
+                    "source": source_dimension(
+                        input_flags=list(yinfo.get("_validation") or []),
+                        normalization=result.get("earnings_normalization"),
+                        ttm=yinfo.get("_ttm"), provenance_fields=(yinfo.get("_provenance") or {})),
+                    "stability": stability_dimension(_cls.get("archetype"), _cls),
+                })
+            except Exception as e:
+                _sin_dato("confianza", e)
 
         return result
 

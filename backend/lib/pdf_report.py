@@ -719,6 +719,17 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     r_roe = read_roe(km.get("roe"), km.get("roa"))
     r_spread = read_spread(km.get("roic_wacc_spread"), km.get("roic"), km.get("wacc"))
     r_up = read_upside(dcf.get("upside"))
+    # Etapa 8: fiabilidad del DCF. Con fiabilidad baja la lectura lo dice y el DCF
+    # no puntúa; el texto del aviso es el mismo que el de Valoración.
+    _rel = dcf.get("reliability") or {}
+    DCF_NO_RECONCILE = ("El DCF no concilia con el precio bajo ningún supuesto razonable; "
+                        "no se usa en el score")
+    if r_up and _rel.get("level") == "baja":
+        r_up = (r_up[0] + " (fiabilidad baja)", 'neu',
+                r_up[2] + ". " + (DCF_NO_RECONCILE if _rel.get("grid_contains_price") is False
+                                  else "DCF de fiabilidad baja: no se usa en el score"))
+    _conf = analysis.get("confidence") or {}
+    _wacc = analysis.get("wacc") or {}
     r_graham = read_graham(graham_margin)
     r_cr = None if "current_ratio" in _na_keys else read_current(km.get("current_ratio"))
     _rw = xm.get("runway") if archetype == "GROWTH_PRE_PROFIT" else None
@@ -1109,6 +1120,11 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     _ctx = " ".join(filter(None, [_cap(r_52[2]) if r_52 else None, _cap(r_beta[2]) if r_beta else None]))
     if _ctx.strip():
         exec_items.append(("CONTEXTO DE MERCADO", _esc(_ctx)))
+    if _conf.get("level"):
+        exec_items.append(("CONFIANZA DEL VEREDICTO", _esc(
+            f"{_conf['level'].capitalize()}"
+            + (f": {_conf['reasons'][0]}" if _conf.get("reasons") else ": los métodos y los datos coinciden")
+            + ". Se informa; en esta versión no limita la puntuación.")))
 
     # ── Radar GRANDE y CENTRADO (perfil por categoría) ──
     _short = {"Solidez Financiera": "Solidez", "Calidad de Ganancias": "Calidad",
@@ -1319,12 +1335,60 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         if vc.get("terminal_pct") is not None:
             params += f" · el valor terminal aporta el {vc['terminal_pct']:.0f}% del valor total"
         _nz = dcf.get("normalized") or {}
-        if _nz.get("fcf") is not None:
-            params += (f" · FCF normalizado {fv(_nz['fcf'], 'money')} (margen FCF promedio "
-                       f"{fv(_nz.get('fcf_margin_avg'), 'pct')} × ingresos actuales"
+        if _nz.get("fcf_maintenance") is not None:
+            params += (f" · FCF de mantenimiento {fv(_nz['fcf_maintenance'], 'money')} (flujo operativo − D&A como "
+                       f"capex de mantenimiento, promedio de {_nz.get('fcf_maintenance_years')} ejercicios), frente al "
+                       f"FCF normalizado {fv(_nz.get('fcf'), 'money')} (margen FCF promedio "
+                       f"{fv(_nz.get('fcf_margin_avg'), 'pct')} × ingresos actuales, que incluye el capex de expansión"
                        + (f"; ciclo incompleto: {_nz.get('years')} ejercicios" if _nz.get("cycle_incomplete") else "")
-                       + ") y crecimiento normalizado de ciclo medio")
+                       + "): el DCF usa el de mantenimiento, con crecimiento normalizado de ciclo medio")
         story.append(Paragraph(_esc(params), S['small']))
+        # Fiabilidad del DCF y su aporte a Valoración (etapa 8)
+        _dcf_adj = next((a for a in (breakdown.get("Valoración") or {}).get("adjustments") or []
+                         if a.get("metric") == "DCF (upside)"), None)
+        if _rel.get("level"):
+            _rl = f"Fiabilidad del DCF: {_rel['level']}"
+            if _rel.get("reasons"):
+                _rl += " (" + "; ".join(_rel["reasons"]) + ")"
+            if _rel["level"] == "baja":
+                _rl += ". " + (DCF_NO_RECONCILE if _rel.get("grid_contains_price") is False
+                               else "DCF de fiabilidad baja: no se usa en el score") + "."
+            elif _dcf_adj is not None:
+                _cap_pts = (cfg("thresholds.score.valoracion.dcf_points_high") if _rel["level"] == "alta"
+                            else cfg("thresholds.score.valoracion.dcf_points_medium"))[0]
+                _rl += (f". Aporta {_dcf_adj['adjustment']:+d} puntos a Valoración "
+                        f"(máximo ±{_cap_pts} con fiabilidad {_rel['level']}).")
+            story.append(Spacer(1, 3))
+            story.append(Paragraph(_esc(_rl), S['small']))
+    elif dcf.get("reason"):
+        story.append(Spacer(1, 6))
+        story.append(Paragraph(_esc(f"DCF sin dato: {dcf['reason']}."), S['small']))
+    # WACC usado (etapa 8): el mismo en DCF, grid y spread ROIC−WACC.
+    if _wacc.get("value") is not None:
+        _w = _wacc
+        _wl = (f"WACC {fv(_w['value'], 'pct')}"
+               + (f" (acotado desde {fv(_w.get('raw'), 'pct')} al rango "
+                  f"{fv(_w['bounds'][0], 'pct')}–{fv(_w['bounds'][1], 'pct')})" if _w.get("clamped") else "")
+               + f" = {fv((_w.get('weights') or {}).get('equity'), 'pct')} × Ke {fv(_w.get('ke'), 'pct')} "
+               f"(Rf {fv(_w.get('rf'), 'pct')} + β {_w.get('beta', 0):.2f} × prima {fv(_w.get('mrp'), 'pct')})")
+        _rt = _w.get("rating") or {}
+        if _w.get("kd") is not None:
+            _wl += (f" + {fv((_w.get('weights') or {}).get('debt'), 'pct')} × Kd {fv(_w['kd'], 'pct')} × "
+                    f"(1 − t {fv(_w.get('tax_rate'), 'pct')}). Kd = Rf + spread del rating sintético "
+                    f"{_rt.get('rating')} (tabla de empresas {_rt.get('table')}"
+                    + (f", cobertura {_rt['coverage']:.1f}x" if _rt.get("coverage") is not None and not _rt.get("flag") else "")
+                    + ")" + (f"; {_rt['flag']}" if _rt.get("flag") else ""))
+        else:
+            _wl += " (sin deuda financiera: WACC = Ke)"
+        _tx = analysis.get("tax_rate") or {}
+        _wl += (f". t: {'tasa efectiva ' + str(_tx.get('period') or '') if _tx.get('source') == 'efectiva' else 'tipo legal'}"
+                + (f" ({_tx['reason']})" if _tx.get("reason") else ""))
+        if _w.get("rf_fallback"):
+            _wl += f". Rf: {_w.get('rf_reason')}"
+        elif _w.get("rf_source"):
+            _wl += f". Rf: {_w['rf_source']} a {_w.get('rf_as_of')}"
+        story.append(Spacer(1, 3))
+        story.append(Paragraph(_esc(_wl + "."), S['small']))
 
     # Sensibilidad DCF
     matrix = sensitivity.get("matrix") or []
@@ -1373,9 +1437,31 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         st.setStyle(TableStyle(cmds))
         story.append(st)
         if price:
+            _trim = (sensitivity.get("trimmed") or {}).get("note")
             story.append(Paragraph(
-                _esc(f"Precio actual: ${price:,.2f}. El recuadro verde marca el escenario base del modelo."),
+                _esc(f"Precio actual: ${price:,.2f}. El recuadro verde marca el escenario base del modelo."
+                     + (f" Grid asimétrico: {_trim}." if _trim else "")),
                 S['small']))
+
+    # Confianza del veredicto (etapa 8): se calcula y se muestra; no limita el score.
+    if _conf.get("level"):
+        story.append(Spacer(1, 8))
+        story.append(Paragraph("Confianza del veredicto", S['h2']))
+        _labels = {"convergence": "Convergencia entre métodos", "coverage": "Cobertura de datos",
+                   "source": "Calidad de fuente", "stability": "Estabilidad del arquetipo"}
+        _crows = []
+        for _k, _dd in (_conf.get("dimensions") or {}).items():
+            _txt = "; ".join(_dd.get("reasons") or []) or "sin incidencias"
+            if _k == "convergence" and _dd.get("methods"):
+                _txt = " · ".join(
+                    f"{m['method']} {('%+.0f%%' % (m['upside'] * 100)) if m.get('upside') is not None else ('%+.2f' % m['signal'])}"
+                    f" ({m.get('direction')})" for m in _dd["methods"]) + ". " + _txt
+            _crows.append([_labels.get(_k, _k), _dd["level"].capitalize(), Paragraph(_esc(_txt), S['small'])])
+        story.append(data_table(["DIMENSIÓN", "NIVEL", "MOTIVO"], _crows,
+                                [1.9 * inch, 0.8 * inch, CW - 2.7 * inch], aligns=['LEFT', 'CENTER', 'LEFT']))
+        story.append(Paragraph(_esc(
+            f"Confianza del veredicto: {_conf['level']}. En esta versión se informa y no limita la puntuación."),
+            S['small']))
 
     # ════════════════ PÁGINA 3 — RENTABILIDAD + SOLIDEZ ════════════════
     story.append(PageBreak())

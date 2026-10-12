@@ -16,7 +16,6 @@ from enum import Enum
 from settings import cfg
 from classify import FINANCIAL, REIT, GROWTH_PRE_PROFIT, CYCLICAL, MATURE, not_applicable, norm_industry
 
-_CAPM = cfg("valuation.capm")
 _WACC = cfg("valuation.wacc")
 _DCF = cfg("valuation.dcf")
 _GRID = cfg("valuation.grid")
@@ -28,8 +27,6 @@ _SC = cfg("thresholds.score")
 _CAT = cfg("thresholds.score.category")
 _CAT_COVERAGE = cfg("thresholds.score.coverage")
 
-DCF_RISK_FREE_RATE = _CAPM["risk_free_rate"]
-DCF_MARKET_RISK_PREMIUM = _CAPM["market_risk_premium"]
 DCF_TERMINAL_GROWTH = _DCF["terminal_growth"]
 DCF_WACC_DEFAULT = _WACC["default"]
 DCF_HIGH_GROWTH_YEARS = _DCF["high_growth_years"]
@@ -576,78 +573,6 @@ def piotroski_f_score(*args, **kwargs) -> Tuple[int, List[str], str]:
     r = piotroski_evaluate(*args, **kwargs)
     details = [f"{_PIO_SYMBOL[c['state']]} {c['detail']}" for c in r["criteria"]]
     return r["score"], details, r["interpretation"]
-
-
-def calculate_wacc(
-    beta: Optional[float],
-    risk_free_rate: float = DCF_RISK_FREE_RATE,
-    market_risk_premium: float = DCF_MARKET_RISK_PREMIUM,
-    cost_of_debt: Optional[float] = None,
-    tax_rate: float = _CAPM["wacc_tax_rate"],
-    debt_to_equity: Optional[float] = None,
-    interest_expense: Optional[float] = None,
-    total_debt: Optional[float] = None
-) -> Optional[float]:
-    """
-    Calcula el WACC (Weighted Average Cost of Capital) específico de la empresa.
-    
-    WACC = E/(E+D) * Re + D/(E+D) * Rd * (1-T)
-    
-    Donde:
-        Re = Cost of Equity = Rf + β * (Rm - Rf)  [CAPM]
-        Rd = Cost of Debt
-        T = Tax Rate
-        E/(E+D) = Weight of Equity
-        D/(E+D) = Weight of Debt
-    
-    Args:
-        beta: Beta de la acción
-        risk_free_rate: Tasa libre de riesgo (Treasury 10Y)
-        market_risk_premium: Prima de riesgo del mercado
-        cost_of_debt: Costo de deuda (si no se provee, se estima)
-        tax_rate: Tasa impositiva
-        debt_to_equity: Ratio deuda/equity
-        interest_expense: Gasto por intereses (para estimar costo de deuda)
-        total_debt: Deuda total (para estimar costo de deuda)
-    
-    Returns:
-        WACC como decimal (ej: 0.10 = 10%)
-    """
-    if beta is None:
-        beta = _CAPM["default_beta"]  # Asumir mercado si no hay beta
-    
-    # Cost of Equity usando CAPM
-    cost_of_equity = risk_free_rate + beta * market_risk_premium
-    
-    # Si no hay deuda significativa, WACC ≈ Cost of Equity
-    if debt_to_equity is None or debt_to_equity < _CAPM["min_de_for_debt"]:
-        return cost_of_equity
-    
-    # Estimar Cost of Debt si no se provee
-    if cost_of_debt is None:
-        if interest_expense is not None and total_debt is not None and total_debt > 0:
-            cost_of_debt = interest_expense / total_debt
-        else:
-            # Estimación basada en rating implícito
-            bounds, spreads = _CAPM["debt_spread_de_bounds"], _CAPM["debt_spreads"]
-            if debt_to_equity < bounds[0]:
-                cost_of_debt = risk_free_rate + spreads[0]  # Investment grade
-            elif debt_to_equity < bounds[1]:
-                cost_of_debt = risk_free_rate + spreads[1]  # BBB
-            elif debt_to_equity < bounds[2]:
-                cost_of_debt = risk_free_rate + spreads[2]  # BB
-            else:
-                cost_of_debt = risk_free_rate + spreads[3]  # High yield
-    
-    # Calcular pesos
-    equity_weight = 1 / (1 + debt_to_equity)
-    debt_weight = debt_to_equity / (1 + debt_to_equity)
-    
-    # WACC
-    wacc = (equity_weight * cost_of_equity + 
-            debt_weight * cost_of_debt * (1 - tax_rate))
-    
-    return round(wacc, 4)
 
 
 def growth_for_bands(g: Optional[float]) -> Optional[float]:
@@ -1535,11 +1460,16 @@ def dcf_multi_stage(
         return result
     
     if discount_rate <= terminal_growth:
-        result["warnings"].append(f"Discount rate debe ser > terminal growth")
+        # Salvaguarda (etapa 8): con g >= WACC el valor terminal de Gordon no está
+        # definido (divide por <= 0). Sin dato con motivo, nunca un valor.
+        result["warnings"].append("g >= WACC: el valor terminal no está definido")
+        result["invalid_reason"] = (f"crecimiento terminal {terminal_growth:.1%} >= WACC {discount_rate:.1%}: "
+                                    "el valor terminal no está definido")
         return result
-    
-    if high_growth_rate < terminal_growth:
-        high_growth_rate = terminal_growth
+
+    # Etapa 8: un crecimiento de corto plazo por debajo del terminal ya NO se eleva
+    # al terminal (FCX local 1.6% -> 2.5%): se respeta y converge hacia el terminal
+    # en la etapa 2, igual que uno por encima converge hacia abajo.
     
     MAX_GROWTH = _DCF["growth_cap"]
     if high_growth_rate > MAX_GROWTH:
@@ -1566,7 +1496,9 @@ def dcf_multi_stage(
         else:
             year_growth = high_growth_rate
         
-        year_growth = max(year_growth, terminal_growth)
+        # no cruza el terminal: converge hacia él desde arriba o desde abajo
+        year_growth = max(year_growth, terminal_growth) if high_growth_rate >= terminal_growth \
+            else min(year_growth, terminal_growth)
         stage1_rates.append(year_growth)
         projected_fcf *= (1 + year_growth)
         pv_stage1 += projected_fcf / ((1 + discount_rate) ** year)
@@ -1585,8 +1517,7 @@ def dcf_multi_stage(
         transition_decay = 0
     
     for i, year in enumerate(range(high_growth_years + 1, high_growth_years + transition_years + 1)):
-        year_growth = end_stage1_growth - (transition_decay * (i + 1))
-        year_growth = max(year_growth, terminal_growth)
+        year_growth = end_stage1_growth - (transition_decay * (i + 1))   # lineal hasta el terminal
         stage2_rates.append(year_growth)
         projected_fcf *= (1 + year_growth)
         pv_stage2 += projected_fcf / ((1 + discount_rate) ** year)
@@ -1648,16 +1579,12 @@ def dcf_multi_stage(
 def dcf_multi_stage_dynamic(
     fcf: Optional[float],
     shares_outstanding: Optional[float],
-    beta: Optional[float] = None,
-    debt_to_equity: Optional[float] = None,
-    interest_expense: Optional[float] = None,
+    wacc: Optional[float] = None,
     total_debt: Optional[float] = None,
     cash: Optional[float] = None,
     revenue_growth_3y: Optional[float] = None,
     eps_growth_3y: Optional[float] = None,
     fcf_growth_3y: Optional[float] = None,
-    risk_free_rate: float = DCF_RISK_FREE_RATE,
-    market_risk_premium: float = DCF_MARKET_RISK_PREMIUM,
     terminal_growth: float = DCF_TERMINAL_GROWTH,
     high_growth_years: int = DCF_HIGH_GROWTH_YEARS,
     transition_years: int = DCF_TRANSITION_YEARS,
@@ -1666,6 +1593,9 @@ def dcf_multi_stage_dynamic(
     """
     DCF Multi-Stage Dinámico - Combina modelo de 3 etapas con 
     WACC y growth calculados dinámicamente.
+
+    Etapa 8: el WACC llega ya calculado y acotado (cost_of_capital.wacc): el
+    mismo que el grid y el spread ROIC−WACC. Sin WACC no hay DCF.
     """
     result = {
         "fair_value_per_share": None,
@@ -1688,21 +1618,10 @@ def dcf_multi_stage_dynamic(
         result["warnings"].append("FCF negativo - DCF no aplicable")
         return result
     
-    # CALCULAR WACC
-    wacc = calculate_wacc(
-        beta=beta,
-        risk_free_rate=risk_free_rate,
-        market_risk_premium=market_risk_premium,
-        debt_to_equity=debt_to_equity,
-        interest_expense=interest_expense,
-        total_debt=total_debt
-    )
-    
     if wacc is None:
-        wacc = _WACC["default"]
-        result["warnings"].append("WACC estimado en 10%")
-    
-    wacc = max(_WACC["clamp_min"], min(wacc, _WACC["clamp_max"]))
+        result["warnings"].append("sin WACC (sin capitalización para los pesos)")
+        result["invalid_reason"] = "sin WACC: no hay capitalización bursátil para ponderar"
+        return result
     result["wacc_calculated"] = wacc
 
     # Deuda neta para el puente Enterprise Value -> Equity Value en dcf_multi_stage.
@@ -1725,8 +1644,7 @@ def dcf_multi_stage_dynamic(
     
     for growth_val, source, cap in growth_candidates:
         if growth_val is not None and growth_val > _DCF["min_source_growth"]:
-            growth_rate = min(growth_val, cap)
-            growth_rate = max(growth_rate, terminal_growth)
+            growth_rate = min(growth_val, cap)   # etapa 8: sin suelo en el terminal
             growth_source = source
             break
     
@@ -1763,6 +1681,8 @@ def dcf_multi_stage_dynamic(
     result["model_result"] = model_result
     result["warnings"].extend(model_result.get("warnings", []))
     
+    if model_result.get("invalid_reason"):
+        result["invalid_reason"] = model_result["invalid_reason"]
     if model_result["is_valid"]:
         result["fair_value_per_share"] = model_result["fair_value_per_share"]
         result["fair_value_with_mos"] = model_result["fair_value_with_mos"]
@@ -1833,7 +1753,9 @@ def calculate_all_ratios(financial_data: Dict) -> Dict[str, Optional[float]]:
         cogs_val = d.get("revenue") - d.get("gross_profit")
 
     # Calcular NOPAT e Invested Capital para ROIC
-    tax_rate = d.get("tax_rate", cfg("valuation.roic.tax_rate"))  # 25% si no se proporciona
+    # Etapa 8: la tasa efectiva de la empresa (main.py, cost_of_capital.effective_tax_rate),
+    # la misma del escudo fiscal del WACC; sin ella, el tipo legal.
+    tax_rate = d.get("tax_rate", cfg("valuation.tax.statutory_rate"))
     operating_inc = d.get("operating_income")
     # 'is not None' (no truthiness): un operating_income exactamente 0 (break-even
     # operativo) es un dato válido -> NOPAT=0, no None.
@@ -2666,9 +2588,16 @@ def score_valoracion(
     # Etapa 6: rama por arquetipo y sus métricas (lib/archetype_metrics.py)
     archetype: Optional[str] = None,
     xv: Optional[Dict[str, Any]] = None,
+    # Etapa 8: el DCF como componente acotado por su fiabilidad
+    dcf: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """
     Categoría 3: Valoración (20 pts máximo)
+
+    Etapa 8: el DCF es un componente con aporte acotado por su fiabilidad (±4
+    alta, ±2 media, 0 baja), fuera del rescate de growth: el rescate limita las
+    penalizaciones de los múltiplos, no la del DCF (fallo 1 del spec: el DCF no
+    restaba nada al score).
     Base: 10 pts
 
     v2.4: MODELO ADAPTATIVO MEJORADO
@@ -3092,6 +3021,31 @@ def score_valoracion(
             "severity": "good"
         })
 
+    # ─── DCF (etapa 8): ±4 alta, ±2 media, 0 baja ─────
+    _dcf = dcf or {}
+    _dcf_adj, _dcf_reason = None, None
+    if not _dcf.get("na") and _dcf.get("upside") is not None and _dcf.get("reliability"):
+        up, rel = _dcf["upside"], _dcf["reliability"]
+        b = T["dcf_upside_bounds"]
+        i = next((k for k, x in enumerate(b) if up >= x), len(b))
+        tag = ("Claramente barata", "Barata", "En precio", "Cara", "Claramente cara")[i]
+        if rel == "baja":
+            adj, sev = 0, "neutral"
+            reason = ("El DCF no concilia con el precio bajo ningún supuesto razonable; no se usa en el score"
+                      if _dcf.get("grid_contains_price") is False else
+                      "DCF de fiabilidad baja: no se usa en el score")
+        else:
+            adj = (T["dcf_points_high"] if rel == "alta" else T["dcf_points_medium"])[i]
+            sev = ("excellent", "good", "ok", "moderate", "severe")[i]
+            reason = f"{tag} por DCF (fiabilidad {rel})"
+        base_score += adj
+        _dcf_adj = adj
+        adjustments.append({"metric": "DCF (upside)", "value": f"{up:+.0%}", "adjustment": adj,
+                            "reason": reason + (": " + "; ".join(_dcf.get("reasons") or []) if _dcf.get("reasons") else ""),
+                            "severity": sev, "reliability": rel})
+    elif not _dcf.get("na"):
+        _dcf_reason = _dcf.get("missing_reason") or "sin DCF"
+
     # Componentes aplicables: múltiplos <= 0 cuentan como sin dato (no significativos).
     cov = CategoryCoverage()
     if archetype == FINANCIAL:
@@ -3112,6 +3066,10 @@ def score_valoracion(
     cov.comp("EV/EBITDA", [*T["ev_ebitda_growth_points"], *T["ev_ebitda_value_points"]], _a.get("ev"),
              na=_na["ev_ebitda"])
     cov.comp("PEG", T["peg_points"], _a.get("peg"), na=_na["peg"])
+    if dcf is not None:
+        cov.comp("DCF", T["dcf_points_high"], _dcf_adj, _dcf_reason, na=_dcf.get("na"))
+    from valuation_confidence import multiples_signal
+    _mult_signal = multiples_signal(cov.items)
     base_score = cov.apply(base_score, adjustments)
     final_score = max(_CAT["min"], min(_CAT["max"], base_score))
 
@@ -3126,7 +3084,8 @@ def score_valoracion(
         "coverage": cov.report(),
         "company_type": company_type,
         "growth_quality_score": growth_quality_score,
-        "growth_quality_label": growth_quality["label"]
+        "growth_quality_label": growth_quality["label"],
+        "multiples_signal": _mult_signal,
     }
 
 
@@ -3466,6 +3425,7 @@ def calculate_score_v2(
     wacc: Optional[float] = None,  # Para el spread ROIC-WACC en rentabilidad
     archetype: str = MATURE,       # etapa 6: salida de classify.classify
     archetype_values: Optional[Dict[str, Any]] = None,  # lib/archetype_metrics.compute
+    dcf: Optional[Dict[str, Any]] = None,  # etapa 8: {upside, reliability, na, missing_reason}
 ) -> Dict[str, Any]:
     """
     Sistema de Scoring v2.3 - Adaptativo Growth/Value + Sector Financiero
@@ -3584,6 +3544,7 @@ def calculate_score_v2(
         p_ffo=ratio_values.get("p_ffo"),
         archetype=archetype,
         xv=xv,
+        dcf=dcf,
     )
     
     calidad = score_calidad_ganancias(
@@ -3723,17 +3684,14 @@ def dcf_sensitivity_analysis(
     Returns:
         Dict con matriz de sensibilidad, estadísticas y metadata
     """
-    # Keep the ENTIRE discount-rate grid inside the headline DCF's WACC band
-    # [0.06, 0.20] (dcf_multi_stage_dynamic clamps WACC there). The grid spans
-    # base + the discount_rate_range deltas, so bound the base so neither the
-    # low nor the high column leaves the band. Without this, a low-beta stock's
-    # low WACC pushes the low columns toward the terminal growth rate, where the
-    # terminal value explodes into absurd fair values (e.g. a $1857 cell for a
-    # $50 stock) that paint the table "deeply undervalued".
+    # Etapa 8: el grid se centra en el WACC USADO (el mismo del DCF y del spread,
+    # ya acotado al único rango de config) y en el crecimiento usado. Las filas y
+    # columnas que salen del rango (crecimiento fuera de [suelo, tope]; WACC fuera
+    # de [clamp_min, clamp_max]) se RECORTAN: el grid puede quedar asimétrico y lo
+    # dice (trimmed). Antes la base se desplazaba a [8%, 18%] para que las
+    # columnas cupieran, y el caso base del grid dejaba de ser el del DCF.
     _wacc_lo, _wacc_hi = _WACC["clamp_min"], _WACC["clamp_max"]
-    if base_discount_rate is not None:
-        base_discount_rate = max(_wacc_lo - discount_rate_range[0],
-                                 min(base_discount_rate, _wacc_hi - discount_rate_range[1]))
+    _g_lo, _g_hi = _DCF["min_source_growth"], _DCF["source_cap_revenue"]
 
     result = {
         "matrix": [],
@@ -3766,24 +3724,31 @@ def dcf_sensitivity_analysis(
         result["warnings"].append("Shares outstanding no disponible")
         return result
     
-    # Generar rangos de tasas
-    gr_min, gr_max, gr_step = growth_rate_range
-    dr_min, dr_max, dr_step = discount_rate_range
-    
-    # Growth rates: de menor a mayor
-    growth_rates = []
-    gr = base_growth_rate + gr_min
-    while gr <= base_growth_rate + gr_max + 0.001:
-        growth_rates.append(round(gr, 4))
-        gr += gr_step
-    
-    # Discount rates: de menor a mayor
-    discount_rates = []
-    dr = base_discount_rate + dr_min
-    while dr <= base_discount_rate + dr_max + 0.001:
-        discount_rates.append(round(dr, 4))
-        dr += dr_step
-    
+    # Generar rangos de tasas (valores exactos: la celda base reproduce el DCF)
+    def _axis(base, rng, lo, hi):
+        d_min, d_max, step = rng
+        n = int(round((d_max - d_min) / step))
+        vals = [base + d_min + k * step for k in range(n + 1)]
+        kept = [v for v in vals if lo - 0.001 <= v <= hi + 0.001]
+        cut = [round(v, 4) for v in vals if v not in kept]
+        return kept, cut
+
+    growth_exact, g_cut = _axis(base_growth_rate, growth_rate_range, _g_lo, _g_hi)
+    discount_exact, d_cut = _axis(base_discount_rate, discount_rate_range, _wacc_lo, _wacc_hi)
+    growth_rates = [round(g, 4) for g in growth_exact]
+    discount_rates = [round(d, 4) for d in discount_exact]
+    notes = []
+    if g_cut:
+        notes.append(f"crecimiento recortado en [{_g_lo:.0%}, {_g_hi:.0%}]: se omiten "
+                     + ", ".join(f"{g:.1%}" for g in g_cut))
+    if d_cut:
+        notes.append(f"WACC recortado en [{_wacc_lo:.0%}, {_wacc_hi:.0%}]: se omiten "
+                     + ", ".join(f"{d:.1%}" for d in d_cut))
+    result["trimmed"] = {"growth": g_cut, "discount": d_cut, "note": "; ".join(notes) or None}
+    result["base_growth_idx"] = min(range(len(growth_exact)), key=lambda i: abs(growth_exact[i] - base_growth_rate))
+    result["base_discount_idx"] = min(range(len(discount_exact)),
+                                      key=lambda i: abs(discount_exact[i] - base_discount_rate))
+
     result["growth_rates"] = growth_rates
     result["discount_rates"] = discount_rates
     
@@ -3792,9 +3757,9 @@ def dcf_sensitivity_analysis(
     all_values = []
     base_value = None
     
-    for growth_rate in growth_rates:
+    for gi, growth_rate in enumerate(growth_exact):
         row = []
-        for discount_rate in discount_rates:
+        for di, discount_rate in enumerate(discount_exact):
             # Validar que discount_rate > terminal_growth
             if discount_rate <= terminal_growth:
                 row.append(None)
@@ -3818,8 +3783,7 @@ def dcf_sensitivity_analysis(
                 all_values.append(fair_value)
                 
                 # Identificar caso base
-                if (abs(growth_rate - base_growth_rate) < 0.001 and 
-                    abs(discount_rate - base_discount_rate) < 0.001):
+                if gi == result["base_growth_idx"] and di == result["base_discount_idx"]:
                     base_value = fair_value
                     result["base_case"]["fair_value"] = fair_value
         
