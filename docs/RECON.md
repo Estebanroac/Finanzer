@@ -552,3 +552,7 @@ Pendientes registrados:
 - **Etapa 8 — WACC mostrado frente a usado:** `dcf.wacc` muestra el coste del equity sin acotar; el DCF lo acota a
   [6%, 20%] y el grid a [8%, 18%] (y lo redondea a 4 decimales). Hoy coinciden en los 6 tickers; debe haber un único
   WACC (junto con el WACC real ponderado por deuda, C4).
+- **Etapa 8 — celdas del grid sobre el tope:** el caso base respeta el tope común del 30%, pero las celdas exploran
+  ±5 pp y lo superan (SNOW llega al 35%). Evaluar recortar las celdas en el tope o mantener la exploración simétrica.
+- **Etapa 8 — suelo en el crecimiento terminal:** el DCF eleva el crecimiento de corto plazo hasta el terminal cuando
+  es menor (FCX local: 1.6% → 2.5%), y el grid lo hereda. Es una elección de modelo a revisar.
