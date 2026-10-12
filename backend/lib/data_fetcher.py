@@ -2,7 +2,7 @@
 Financial Data Fetcher Module
 =============================
 Módulo para obtener datos financieros de empresas desde múltiples fuentes.
-Soporta Yahoo Finance (gratuito) y Financial Modeling Prep (freemium).
+Fuente: Yahoo Finance vía yf_adapter (con Finnhub como fuente secundaria).
 
 Autor: Esteban
 Versión: 2.10 - Rate limiting con retry y backoff exponencial
@@ -497,13 +497,7 @@ class YahooFinanceFetcher:
 class FinancialDataService:
     """Servicio unificado para obtener datos financieros."""
     
-    def __init__(self, fmp_api_key: Optional[str] = None):
-        """
-        Args:
-            fmp_api_key: API key de Financial Modeling Prep (opcional)
-        """
-        self.fmp_api_key = fmp_api_key or os.environ.get("FMP_API_KEY")
-        
+    def __init__(self):
         # Intentar inicializar Yahoo Finance
         try:
             self.yahoo = YahooFinanceFetcher()
