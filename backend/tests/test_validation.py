@@ -70,6 +70,29 @@ def test_validation_is_rerun_safe():
     assert info["_validation"] == []
 
 
+# ─────────────────────────── bug d: FCF <= OCF ───────────────────────────
+def test_fcf_above_ocf_is_recalculated_from_cash_flow_statement():
+    info = _run(_info(freeCashflow=2.5e10))
+    assert info["freeCashflow"] == pytest.approx(1e10 - 2e9)
+    (f,) = _flags(info, "fcf_le_ocf")
+    assert f["action"] == "recalculado" and f["old"] == 2.5e10
+    assert info["_provenance"]["freeCashflow"]["source"] == "recalculado_por_validacion"
+
+
+def test_fcf_above_ocf_without_statements_becomes_sin_dato():
+    info = _info(freeCashflow=2.5e10)
+    info["_statements_fy"] = {}
+    _run(info)
+    assert info["freeCashflow"] is None
+    assert _flags(info, "fcf_le_ocf")[0]["action"] == "sin_dato"
+    assert info["_provenance"]["freeCashflow"]["source"] == "sin_dato"
+
+
+def test_fcf_below_ocf_untouched():
+    info = _run(_info(freeCashflow=9.9e9))
+    assert info["freeCashflow"] == 9.9e9 and not _flags(info, "fcf_le_ocf")
+
+
 # ─────────────────────────── valores imposibles ───────────────────────────
 def test_non_positive_assets_recalculated_from_balance_sheet():
     info = _run(_info(totalAssets=-5.0))
@@ -225,6 +248,10 @@ def test_prod_provenance_marks_finnhub_and_statements(outputs_by_env):
 
 
 def test_validation_flags_reach_the_analysis(analysis):
+    flags = analysis("NFLX")["data_validation"]
+    assert any(x["field"] == "freeCashflow" and x["action"] == "recalculado" for x in flags)
+    assert analysis("NFLX")["data_provenance"]["fields"]["freeCashflow"]["source"] == \
+        "recalculado_por_validacion"
     snow = analysis("SNOW")
     assert snow["key_metrics"]["pe"] is None
     assert snow["data_provenance"]["fields"]["key_metrics.pe"]["rule"] == "multiplo_no_significativo"

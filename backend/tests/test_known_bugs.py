@@ -26,8 +26,8 @@ def _ticker_info(sym):
         return copy.deepcopy(yf_adapter._cache[sym.upper()][1])
 
 
-@pytest.mark.xfail(raises=AssertionError, reason="RECON C5: FCF = financialData.freeCashflow (FCF apalancado de Yahoo) "
-                          "y no OCF−capex; NFLX 25.4B > OCF 12.0B (data_fetcher.py:478)")
+# CORREGIDO en la etapa 3 (bug d): validate._rule_fcf recalcula FCF = OCF − capex
+# del estado de flujos cuando FCF > OCF (NFLX 25.4B > OCF 12.0B -> 9.46B FY2025).
 def test_bug_fcf_exceeds_ocf_nflx(analysis):
     km = analysis("NFLX")["key_metrics"]
     assert km["free_cash_flow"] <= km["operating_cash_flow"]

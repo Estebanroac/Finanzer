@@ -25,6 +25,8 @@ from typing import Any, Dict, List, Optional
 
 # ═══════════════════════════ umbrales (único lugar) ═══════════════════════════
 THRESHOLDS: Dict[str, float] = {
+    # FCF <= OCF (mismo periodo). Tolerancia absoluta por redondeos de la fuente.
+    "fcf_over_ocf_tolerance_abs": 1e6,
     # Márgenes válidos: [-1000%, 100%] (en decimal).
     "margin_min": -10.0,
     "margin_max": 1.0,
@@ -107,6 +109,26 @@ class _Ctx:
 
 
 # ═══════════════════════════ reglas de entrada ═══════════════════════════
+def _rule_fcf(c: _Ctx):
+    """FCF <= OCF. Si se viola: FCF = OCF − |capex| del estado de flujos (mismo FY)."""
+    fcf, ocf = _num(c.get("freeCashflow")), _num(c.get("operatingCashflow"))
+    if fcf is None or ocf is None or fcf <= ocf + THRESHOLDS["fcf_over_ocf_tolerance_abs"]:
+        return
+    s = c.stm
+    s_ocf, s_capex = _first(s.get("operating_cash_flow")), _first(s.get("capital_expenditure"))
+    year = (s.get("cf_years") or ["?"])[0]
+    if s_ocf is not None and s_capex is not None:
+        new = s_ocf - abs(s_capex)
+        c.set("freeCashflow", new)
+        c.flag("freeCashflow", "fcf_le_ocf", "recalculado", fcf, new,
+               f"FCF ({fcf:,.0f}) > OCF ({ocf:,.0f}): imposible por definición. Recalculado como "
+               f"OCF − capex del estado de flujos FY{year}")
+    else:
+        c.set("freeCashflow", None)
+        c.flag("freeCashflow", "fcf_le_ocf", "sin_dato", fcf, None,
+               f"FCF ({fcf:,.0f}) > OCF ({ocf:,.0f}) y sin estado de flujos para recalcularlo")
+
+
 def _rule_impossible(c: _Ctx):
     """Valores imposibles: activos, acciones, capitalización y precio <= 0."""
     s = c.stm
@@ -214,7 +236,7 @@ def _rule_jumps(c: _Ctx):
                        f"derivado de _prior_year.{key}, anulado por salto interanual")
 
 
-_INPUT_RULES = (_rule_impossible, _rule_margins, _rule_units, _rule_jumps)
+_INPUT_RULES = (_rule_fcf, _rule_impossible, _rule_margins, _rule_units, _rule_jumps)
 
 
 def validate_info(info: Dict[str, Any], symbol: str = "") -> Dict[str, Any]:
