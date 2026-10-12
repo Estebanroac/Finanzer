@@ -369,10 +369,12 @@ verificado, no inferido. Comparación detallada: `python3 backend/tests/diff_gol
     camino v10, `yf_adapter.py:695`). En `_prior_year` solo queda lo que aporta Finnhub (ROA, current ratio, margen
     bruto, rotación, LTD/activos), **sin acciones**. Por eso Piotroski marca *"Sin datos de acciones históricas" → ✗*
     en los **6** tickers (el Fallo 2 del spec) y `buyback_yield`/`shareholder_yield` salen **null** siempre.
-  - **El sector sale de `KNOWN_SECTORS`** (lista fija de unos 68 tickers, `yf_adapter.py:82-150, 922-924`) y no de
-    `info["sector"]`, aunque ese dato sí llega en la respuesta. **O y FCX quedan como sector "Unknown"**: O no se
-    valora como REIT (no hay P/FFO) y ambos usan umbrales y medianas por defecto. JPM y SNOW toman la industria con
-    guion largo (`Banks—Diversified`) porque viene de la lista.
+  - **El sector sale de `KNOWN_SECTORS`** (lista fija de unos 68 tickers, `yf_adapter.py:82-150, 922-924`). **O y
+    FCX quedan como sector "Unknown"**: O no se valora como REIT (no hay P/FFO) y ambos usan umbrales y medianas por
+    defecto. JPM y SNOW toman la industria con guion largo (`Banks—Diversified`) porque viene de la lista.
+    *(Corrección, etapa 3: una versión anterior decía que `info["sector"]` llegaba y se ignoraba. **Es falso**: en
+    prod `ticker.info` devuelve solo `{'trailingPegRatio': …}` porque el quoteSummary interno de yfinance también
+    recibe 401. Ver 7.5.)*
   - **FCF = "Free Cash Flow" del estado de flujos anual** (no el FCF apalancado de `financialData`). EPS = Diluted EPS
     anual, corregido por el `epsTTM` de Finnhub si difiere más de un 2%. **`yearly_financials` sale vacío** (sin
     módulo `earnings`): la gráfica histórica no tiene datos en prod.
@@ -429,3 +431,41 @@ También: V pasa de 91 a 87 (crecimiento 23.8% → 14.4%, Finnhub). NFLX de 97 a
 **Implicación para el plan:** que un bug sea "solo local" no lo hace inofensivo. Si mañana Yahoo vuelve a responder
 en Render, prod pasaría al camino v10 y heredaría los bugs de la columna "solo local" (FCF apalancado, Share Issued,
 crecimiento bancario). Los arreglos deben validarse contra **los dos** juegos de golden.
+
+### 7.5 Diagnóstico del 401 de Yahoo en prod (etapa 3; solo diagnóstico)
+
+**Evidencia** (fixtures `backend/tests/fixtures/prod/*`, capturados en Render):
+
+1. Las 6 × 6 respuestas a `query2.finance.yahoo.com/v10/finance/quoteSummary` tienen el **mismo cuerpo**:
+   `{"finance":{"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}`. No hay 403, 429 ni páginas de
+   desafío: Yahoo emite cookie y crumb, pero **rechaza el crumb** al usarlo.
+2. **El cliente de yfinance, independiente del nuestro, falla igual.** En prod, `ticker.info` (que usa quoteSummary
+   con la gestión de cookies y crumb propia de yfinance, con varias estrategias) devuelve solo `trailingPegRatio`,
+   que sale de otro endpoint. Que dos implementaciones distintas fallen igual descarta un bug de nuestro
+   `_ensure_session` como causa principal.
+3. **Desde el mismo servidor, los endpoints sin crumb funcionan:** `fast_info` (cotización y gráfico), los estados
+   anuales (`fundamentals-timeseries`), la búsqueda (`/v1/finance/search`: `/api/search` de prod devuelve resultados
+   de Yahoo) y Finnhub.
+4. Desde una IP residencial (local), el mismo código y el mismo flujo de crumb obtienen 200.
+
+**Causa probable:** Yahoo invalida (o no vincula a una sesión válida) el crumb para tráfico desde **IPs de datacenter**
+(el rango de Render/Cloudflare, 216.24.57.x). Es un bloqueo por reputación de IP limitado a los endpoints protegidos
+con crumb, no un error de cookies de nuestro código. Confianza: alta en "es por IP y solo afecta a endpoints con
+crumb"; no verificable sin acceso a la lógica de Yahoo.
+
+**Decisión de diseño (etapa 3):** no se implementa ninguna técnica de elusión (proxies, rotación de IPs ni de
+huellas). **El plan B (yfinance sin crumb + Finnhub) es el camino permanente de prod**, y el camino quoteSummary
+queda como "mejor caso" (local).
+
+**Qué se pierde frente al camino local** (solo lo protegido por crumb):
+| Dato (quoteSummary) | Sustituto en el plan B |
+|---|---|
+| `assetProfile.sector/industry` | **Búsqueda de Yahoo** (sin crumb) → etapa 3, bug (a) |
+| `financialData` TTM: OCF, FCF, márgenes, `revenueGrowth`/`earningsGrowth` trimestral YoY | Estados **anuales** (FY, no TTM) + `/stock/metric` de Finnhub (crecimiento TTM con guarda) |
+| `defaultKeyStatistics`: beta, forward EPS/PE, PEG, `lastSplitFactor` | Finnhub (beta, forwardPE, PEG); **forward EPS y factor de split: sin fuente** |
+| `summaryDetail`: dividendo, forward P/E | Finnhub (dividendo, payout) |
+| `earnings`: serie anual ingresos/beneficio (gráfica histórica) | Derivable de los estados anuales (no se hace en la etapa 3: es presentación) |
+| `calendarEvents` / `earningsTimestamp*` (no se pedía ni local) | Nada nuevo (fecha de resultados → etapa 10) |
+
+Consecuencia: en prod todo lo de flujo y márgenes es **anual (FY)**, no TTM, y el crecimiento viene de Finnhub. La
+capa de validación de la etapa 3 marca esas procedencias en `data_provenance`.

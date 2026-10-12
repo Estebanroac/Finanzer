@@ -95,14 +95,11 @@ def test_bug_jpm_revenue_growth_artifact(analysis, fixture_store):
 
 
 @pytest.mark.xfail(raises=AssertionError, reason="RECON §7: en prod (Yahoo 401 -> _fallback_yfinance) el "
-                                                 "sector sale de KNOWN_SECTORS (~68 tickers) e ignora el de "
-                                                 "ticker.info: O queda 'Unknown' y no se valora como REIT")
+                                                 "sector sale de KNOWN_SECTORS (~68 tickers): O queda 'Unknown' "
+                                                 "y no se valora como REIT")
 def test_bug_prod_sector_unknown_outside_known_list_o(outputs_by_env):
     import conftest
     if "prod" not in conftest.ENVS:
         pytest.skip("falta el juego prod")
-    store = fb.FixtureStore(fb.fixtures_dir("prod"))
-    store.load("O")
-    assert store.yf["O"]["info"].get("sector") == "Real Estate"  # el dato SÍ llega del input
     profile = outputs_by_env("prod")["O"][0]["profile"]
     assert profile["sector"] == "Real Estate"
