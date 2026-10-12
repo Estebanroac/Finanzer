@@ -326,7 +326,47 @@
         "source": "finnhub"
       }
     },
-    "path": "plan_b_yfinance"
+    "path": "plan_b_yfinance",
+    "ttm": {
+      "annual_fields": {
+        "capitalExpenditures": "sin estados trimestrales",
+        "cash": "sin balance trimestral",
+        "depreciation": "sin estados trimestrales",
+        "dividendsPaid": "sin estados trimestrales",
+        "ebitda": "sin estados trimestrales",
+        "freeCashflow": "sin estados trimestrales",
+        "grossProfits": "sin estados trimestrales",
+        "interestExpense": "sin estados trimestrales",
+        "inventory": "sin balance trimestral",
+        "longTermDebt": "sin balance trimestral",
+        "netIncome": "sin estados trimestrales",
+        "operatingCashflow": "sin estados trimestrales",
+        "operatingIncome": "sin estados trimestrales",
+        "retainedEarnings": "sin balance trimestral",
+        "totalAssets": "sin balance trimestral",
+        "totalCurrentAssets": "sin balance trimestral",
+        "totalCurrentLiabilities": "sin balance trimestral",
+        "totalDebt": "sin balance trimestral",
+        "totalLiab": "sin balance trimestral",
+        "totalRevenue": "sin estados trimestrales",
+        "totalStockholderEquity": "sin balance trimestral"
+      },
+      "balance_date": null,
+      "basis": "anual",
+      "eps": "fuente",
+      "errors": [
+        "quarterly_income_stmt: FixtureAbsent",
+        "quarterly_cashflow: FixtureAbsent",
+        "quarterly_balance_sheet: FixtureAbsent"
+      ],
+      "last_quarter_fields": [],
+      "quarters": {
+        "cf": [],
+        "inc": []
+      },
+      "source_fields": {},
+      "ttm_fields": []
+    }
   },
   "data_validation": [
     {
@@ -338,6 +378,41 @@
       "rule": "crecimiento_financiera_estados"
     }
   ],
+  "earnings_normalization": {
+    "applied": true,
+    "basis": "FY2025 (sin TTM)",
+    "confidence": "alta",
+    "inference": {
+      "available": false,
+      "reason": "sin estados trimestrales"
+    },
+    "items": [
+      {
+        "applied": true,
+        "confidence": "alta",
+        "gross": 0.0,
+        "item_type": "Total Unusual Items",
+        "label": "partidas no recurrentes (total de Yahoo)",
+        "net": 0.0,
+        "origin": "Yahoo: Total Unusual Items (FY2025 (sin TTM); nivel total_unusual_items)",
+        "period_gross": 1030000000.0,
+        "recurrence_window": 4,
+        "recurrent": true,
+        "recurrent_average": 2509666666.67,
+        "recurrent_years": 3,
+        "tax_source": "Tax Effect Of Unusual Items (tipo implícito 21.4%)",
+        "type": "explicita"
+      }
+    ],
+    "normalized_net_income": 57048000000.0,
+    "one_off_net": 0.0,
+    "one_off_pct": 0.0,
+    "pe_normalized": 13.9506722178,
+    "pe_reported": 13.9506722178,
+    "pe_unreliable": false,
+    "reported_net_income": 57048000000.0,
+    "used_in_score": true
+  },
   "errors": [],
   "financial_health": {
     "details": [
@@ -375,6 +450,19 @@
     "score": 10
   },
   "graham_number": null,
+  "growth_basis": {
+    "applied_to": [],
+    "basis": "agregado",
+    "eps": "el BPA ya es por acción",
+    "fcf_cagr": {
+      "anomalous_base": false,
+      "method": "cagr",
+      "note": null
+    },
+    "reason": "las acciones varían -2.8% anual (<= 2%): el agregado no está inflado por emisión",
+    "shares_cagr_3y": -0.027800987653,
+    "threshold": 0.02
+  },
   "is_growth": false,
   "key_metrics": {
     "asset_turnover": 0.0410962959615,
@@ -410,14 +498,17 @@
     "net_debt_to_ebitda": null,
     "net_debt_to_ebitda_state": null,
     "net_income": 57048000000.0,
+    "net_income_normalized": 57048000000.0,
     "net_margin": 0.313714276287,
     "operating_cash_flow": -147782000000.0,
     "operating_income": null,
     "operating_margin": null,
     "p_ffo": null,
+    "payout_basis": "beneficio_neto",
     "payout_ratio": 0.2661,
     "pb": 2.44220913677,
     "pe": 13.9506722178,
+    "pe_normalized": 13.9506722178,
     "peg": 1.34707,
     "pfcf": null,
     "price_52w_high": 366.5,

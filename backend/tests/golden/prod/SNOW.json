@@ -14,19 +14,19 @@
       {
         "category": "Rentabilidad",
         "detail": "La empresa destruye valor para el accionista: no genera retorno sobre su patrimonio. Conviene revisar si es puntual o refleja un deterioro sostenido del negocio.",
-        "reason": "ROE negativo — -69.2%"
+        "reason": "ROE negativo — -68.1%"
       },
       {
         "category": "Rentabilidad",
         "detail": "La empresa pierde dinero a nivel neto: cada dólar vendido no cubre el total de costos, gastos, intereses e impuestos. Insostenible si se prolonga.",
-        "reason": "Margen neto negativo — -28.4%"
+        "reason": "Margen neto negativo — -28.0%"
       }
     ],
     "strengths": [
       {
         "category": "Crecimiento",
-        "detail": "Los ingresos crecen 32.0% interanual: ritmo de expansión elevado que, si mantiene márgenes, es el principal motor de creación de valor a largo plazo.",
-        "reason": "Crecimiento fuerte — ingresos +32.0% interanual"
+        "detail": "Los ingresos crecen 29.3% interanual: ritmo de expansión elevado que, si mantiene márgenes, es el principal motor de creación de valor a largo plazo.",
+        "reason": "Crecimiento fuerte — ingresos +29.3% interanual"
       },
       {
         "category": "Solidez financiera",
@@ -35,14 +35,14 @@
       },
       {
         "category": "Solidez financiera",
-        "detail": "El Altman Z de 15.46 (> 2.60) ubica a la empresa en zona segura: baja probabilidad estadística de problemas de solvencia según el modelo.",
-        "reason": "Solvencia sólida — Altman Z 15.46"
+        "detail": "El flujo de caja libre de los últimos doce meses es positivo: la empresa financia su crecimiento sin consumir caja ni depender de nuevas rondas de capital o deuda.",
+        "reason": "Autofinanciada — FCF TTM positivo"
       }
     ],
     "warnings": [
       {
         "category": "Flujo de caja",
-        "detail": "El flujo de caja libre equivale a menos de la mitad del beneficio contable (FCF/BN -84%): parte de las utilidades no se está convirtiendo en caja real, señal a vigilar (devengos, capex o capital de trabajo).",
+        "detail": "El flujo de caja libre equivale a menos de la mitad del beneficio contable (FCF/BN -85%): parte de las utilidades no se está convirtiendo en caja real, señal a vigilar (devengos, capex o capital de trabajo).",
         "reason": "Calidad del beneficio baja"
       },
       {
@@ -53,28 +53,31 @@
     ]
   },
   "altman_z": {
-    "applicable": true,
-    "available": true,
+    "applicable": false,
+    "available": false,
     "details": {
-      "X1_wc_ta": 0.1446,
-      "X2_re_ta": -1.0396,
-      "X3_ebit_ta": -0.1571,
-      "X4_mcap_tl": 18.0546,
-      "grey_threshold": 1.1,
-      "model": "Z''-Score (No Manufactura)",
-      "safe_threshold": 2.6
+      "model": "No Aplicable",
+      "reason": "no_aplica",
+      "sector": "Technology"
     },
-    "interpretation": "Z''-Score (No Manufactura): Zona segura — bajo riesgo de bancarrota",
-    "model": "Z''-Score (No Manufactura)",
-    "z_score": 15.46,
-    "zone": "safe"
+    "interpretation": "No aplica a GROWTH_PRE_PROFIT: el Altman se calibró con quiebras de empresas maduras endeudadas; su solidez se mide por el runway (caja frente a la quema de FCF). El Altman Z-Score fue diseñado para empresas industriales y comerciales.",
+    "model": "No Aplicable",
+    "z_score": 0,
+    "zone": "n/a"
   },
   "archetype_metrics": {
     "ebitda": -1083169000.0,
     "ev_sales": 27.5101004939,
     "fcf_margin": 0.238519615726,
     "revenue_cagr_3y": 0.313765188615,
-    "rule_of_40": 0.552284804341
+    "rule_of_40": 0.552284804341,
+    "runway": {
+      "fcf": 1117213000.0,
+      "liquidity": 4029686000.0,
+      "reason": null,
+      "state": "autofinanciada",
+      "years": null
+    }
   },
   "classification": {
     "alerts": [],
@@ -418,7 +421,47 @@
         "source": "finnhub"
       }
     },
-    "path": "plan_b_yfinance"
+    "path": "plan_b_yfinance",
+    "ttm": {
+      "annual_fields": {
+        "capitalExpenditures": "sin estados trimestrales",
+        "cash": "sin balance trimestral",
+        "depreciation": "sin estados trimestrales",
+        "dividendsPaid": "sin estados trimestrales",
+        "ebitda": "sin estados trimestrales",
+        "freeCashflow": "sin estados trimestrales",
+        "grossProfits": "sin estados trimestrales",
+        "interestExpense": "sin estados trimestrales",
+        "inventory": "sin balance trimestral",
+        "longTermDebt": "sin balance trimestral",
+        "netIncome": "sin estados trimestrales",
+        "operatingCashflow": "sin estados trimestrales",
+        "operatingIncome": "sin estados trimestrales",
+        "retainedEarnings": "sin balance trimestral",
+        "totalAssets": "sin balance trimestral",
+        "totalCurrentAssets": "sin balance trimestral",
+        "totalCurrentLiabilities": "sin balance trimestral",
+        "totalDebt": "sin balance trimestral",
+        "totalLiab": "sin balance trimestral",
+        "totalRevenue": "sin estados trimestrales",
+        "totalStockholderEquity": "sin balance trimestral"
+      },
+      "balance_date": null,
+      "basis": "anual",
+      "eps": "fuente",
+      "errors": [
+        "quarterly_income_stmt: FixtureAbsent",
+        "quarterly_cashflow: FixtureAbsent",
+        "quarterly_balance_sheet: FixtureAbsent"
+      ],
+      "last_quarter_fields": [],
+      "quarters": {
+        "cf": [],
+        "inc": []
+      },
+      "source_fields": {},
+      "ttm_fields": []
+    }
   },
   "data_validation": [
     {
@@ -515,8 +558,75 @@
     },
     "wacc": 0.1186595915
   },
+  "earnings_normalization": {
+    "applied": true,
+    "basis": "FY2026 (sin TTM)",
+    "confidence": "alta",
+    "inference": {
+      "available": false,
+      "reason": "sin estados trimestrales"
+    },
+    "items": [
+      {
+        "applied": true,
+        "confidence": "alta",
+        "gross": -27210250.0,
+        "item_type": "Special Income Charges",
+        "label": "cargos especiales (deterioros, litigios, reestructuración)",
+        "net": -21496097.5,
+        "origin": "Yahoo: Special Income Charges (FY2026 (sin TTM); nivel componentes_del_total)",
+        "period_gross": -53852000.0,
+        "recurrence_window": 4,
+        "recurrent": true,
+        "recurrent_average": -26641750.0,
+        "recurrent_years": 4,
+        "tax_source": "tipo efectivo 21.0%",
+        "type": "explicita"
+      },
+      {
+        "applied": true,
+        "confidence": "alta",
+        "gross": 0.0,
+        "item_type": "Gain On Sale Of Security",
+        "label": "ganancias por venta de valores",
+        "net": 0.0,
+        "origin": "Yahoo: Gain On Sale Of Security (FY2026 (sin TTM); nivel componentes_del_total)",
+        "period_gross": -6043000.0,
+        "recurrence_window": 4,
+        "recurrent": true,
+        "recurrent_average": -11428000.0,
+        "recurrent_years": 3,
+        "tax_source": "tipo efectivo 21.0%",
+        "type": "explicita"
+      }
+    ],
+    "normalized_net_income": -1310119902.5,
+    "one_off_net": -21496097.5,
+    "one_off_pct": 0.0161428651353,
+    "pe_normalized": null,
+    "pe_reported": null,
+    "pe_unreliable": false,
+    "reported_net_income": -1331616000.0,
+    "used_in_score": true
+  },
   "errors": [],
   "graham_number": null,
+  "growth_basis": {
+    "applied_to": [
+      "ingresos",
+      "FCF"
+    ],
+    "basis": "por_accion",
+    "eps": "el BPA ya es por acción",
+    "fcf_cagr": {
+      "anomalous_base": false,
+      "method": "cagr",
+      "note": null
+    },
+    "reason": "las acciones crecen +2.1% anual en la ventana (> 2%): la emisión inflaría el crecimiento agregado",
+    "shares_cagr_3y": 0.0208160627262,
+    "threshold": 0.02
+  },
   "is_growth": true,
   "key_metrics": {
     "asset_turnover": 0.512887880037,
@@ -552,14 +662,17 @@
     "net_debt_to_ebitda": null,
     "net_debt_to_ebitda_state": "no_significativo",
     "net_income": -1331616000.0,
+    "net_income_normalized": -1310119902.5,
     "net_margin": -0.284293627638,
     "operating_cash_flow": 1221942000.0,
     "operating_income": -1435165000.0,
     "operating_margin": -0.306400842367,
     "p_ffo": null,
+    "payout_basis": "beneficio_neto",
     "payout_ratio": null,
     "pb": 67.6390322176,
     "pe": null,
+    "pe_normalized": null,
     "peg": null,
     "pfcf": 116.490228066,
     "price_52w_high": 384.559997559,
@@ -591,6 +704,7 @@
     "wacc": 0.1186595915
   },
   "not_applicable": {
+    "altman": "No aplica a GROWTH_PRE_PROFIT: el Altman se calibró con quiebras de empresas maduras endeudadas; su solidez se mide por el runway (caja frente a la quema de FCF)",
     "graham": "No aplica a GROWTH_PRE_PROFIT: aún no tiene beneficios que capitalizar"
   },
   "piotroski_f": {
@@ -756,16 +870,16 @@
           {
             "adjustment": 5,
             "metric": "Crecimiento Ingresos 3Y",
-            "reason": "Crecimiento excepcional (32.0%)",
+            "reason": "Crecimiento excepcional (29.3%) — por acción: +32.0% agregado ajustado por las acciones (+2.1% anual)",
             "severity": "excellent",
-            "value": "32.0%"
+            "value": "29.3%"
           },
           {
             "adjustment": 4,
             "metric": "Crecimiento FCF 3Y",
-            "reason": "FCF creciente (31.1%)",
+            "reason": "FCF creciente (28.4%)",
             "severity": "excellent",
-            "value": "31.1%"
+            "value": "28.4%"
           },
           {
             "adjustment": 2,
@@ -786,8 +900,8 @@
         "conclusive": true,
         "coverage": 1.0,
         "details": [
-          "Crecimiento excepcional (32.0%)",
-          "FCF creciente (31.1%)",
+          "Crecimiento excepcional (29.3%) — por acción: +32.0% agregado ajustado por las acciones (+2.1% anual)",
+          "FCF creciente (28.4%)",
           "Perfil de alto crecimiento",
           "No aplica a GROWTH_PRE_PROFIT: aún no tiene beneficios que capitalizar (no cuenta en la cobertura)"
         ],
@@ -799,16 +913,16 @@
           {
             "adjustment": -6,
             "metric": "ROE",
-            "reason": "Negativo (-69.2%) - Destruye valor para accionistas",
+            "reason": "Negativo (-68.1%) - Destruye valor para accionistas",
             "severity": "severe",
-            "value": "-69.2%"
+            "value": "-68.1%"
           },
           {
             "adjustment": -4,
             "metric": "ROA",
-            "reason": "Negativo (-14.6%) - Perdiendo dinero con sus activos",
+            "reason": "Negativo (-14.3%) - Perdiendo dinero con sus activos",
             "severity": "severe",
-            "value": "-14.6%"
+            "value": "-14.3%"
           },
           {
             "adjustment": -5,
@@ -820,9 +934,9 @@
           {
             "adjustment": -3,
             "metric": "Margen Neto",
-            "reason": "Negativo (-28.4%)",
+            "reason": "Negativo (-28.0%)",
             "severity": "severe",
-            "value": "-28.4%"
+            "value": "-28.0%"
           },
           {
             "adjustment": -3,
@@ -836,10 +950,10 @@
         "conclusive": true,
         "coverage": 1.0,
         "details": [
-          "Negativo (-69.2%) - Destruye valor para accionistas",
-          "Negativo (-14.6%) - Perdiendo dinero con sus activos",
+          "Negativo (-68.1%) - Destruye valor para accionistas",
+          "Negativo (-14.3%) - Perdiendo dinero con sus activos",
           "Negativo (-30.6%) - Operaciones no rentables",
-          "Negativo (-28.4%)",
+          "Negativo (-28.0%)",
           "Destruye valor (ROIC -169.4% < WACC 11.9%, spread -181.2%)"
         ],
         "max": 20,
@@ -847,13 +961,6 @@
       },
       "Solidez Financiera": {
         "adjustments": [
-          {
-            "adjustment": 6,
-            "metric": "Altman Z-Score",
-            "reason": "Zona segura - Muy baja probabilidad de quiebra",
-            "severity": "excellent",
-            "value": "15.46"
-          },
           {
             "adjustment": 0,
             "metric": "Current Ratio",
@@ -876,6 +983,20 @@
             "value": "No significativo"
           },
           {
+            "adjustment": 6,
+            "metric": "Runway",
+            "reason": "FCF TTM positivo: no consume caja",
+            "severity": "excellent",
+            "value": "Autofinanciada"
+          },
+          {
+            "adjustment": 0,
+            "metric": "No aplica",
+            "reason": "No aplica a GROWTH_PRE_PROFIT: el Altman se calibró con quiebras de empresas maduras endeudadas; su solidez se mide por el runway (caja frente a la quema de FCF) (no cuenta en la cobertura)",
+            "severity": "neutral",
+            "value": "Altman Z"
+          },
+          {
             "adjustment": 0,
             "metric": "Cobertura",
             "reason": "Reescalado sobre los componentes con dato (sin dato: Cobertura de intereses)",
@@ -887,10 +1008,11 @@
         "conclusive": true,
         "coverage": 0.75,
         "details": [
-          "Zona segura - Muy baja probabilidad de quiebra",
           "Liquidez justa - Cubre sus obligaciones (1.30x)",
           "Deuda muy alta - Riesgo financiero elevado (1.42x)",
           "No significativo: EBIT < 0 con caja neta (caja > deuda total); los intereses se pagan con caja",
+          "FCF TTM positivo: no consume caja",
+          "No aplica a GROWTH_PRE_PROFIT: el Altman se calibró con quiebras de empresas maduras endeudadas; su solidez se mide por el runway (caja frente a la quema de FCF) (no cuenta en la cobertura)",
           "Reescalado sobre los componentes con dato (sin dato: Cobertura de intereses)"
         ],
         "max": 20,
@@ -929,7 +1051,7 @@
           {
             "adjustment": 0,
             "metric": "No aplica",
-            "reason": "No aplica a GROWTH_PRE_PROFIT: EBITDA <= 0, sin resultado operativo que capitalizar; No aplica a GROWTH_PRE_PROFIT: aún no tiene beneficios que capitalizar (no cuenta en la cobertura)",
+            "reason": "EV/EBITDA: No aplica a GROWTH_PRE_PROFIT: EBITDA <= 0, sin resultado operativo que capitalizar; P/E, PEG: No aplica a GROWTH_PRE_PROFIT: aún no tiene beneficios que capitalizar (no cuenta en la cobertura)",
             "severity": "neutral",
             "value": "P/E, EV/EBITDA, PEG"
           }
@@ -942,7 +1064,7 @@
           "Crecimiento 31.4% (CAGR 3 años) + margen FCF 23.9% = 55",
           "Muy alto (116.5x)",
           "Límite de penalización por calidad moderada",
-          "No aplica a GROWTH_PRE_PROFIT: EBITDA <= 0, sin resultado operativo que capitalizar; No aplica a GROWTH_PRE_PROFIT: aún no tiene beneficios que capitalizar (no cuenta en la cobertura)"
+          "EV/EBITDA: No aplica a GROWTH_PRE_PROFIT: EBITDA <= 0, sin resultado operativo que capitalizar; P/E, PEG: No aplica a GROWTH_PRE_PROFIT: aún no tiene beneficios que capitalizar (no cuenta en la cobertura)"
         ],
         "max": 20,
         "score": 6
@@ -1006,7 +1128,9 @@
       "missing_reasons": {
         "Cobertura de intereses": "No significativo: EBIT < 0 con caja neta (caja > deuda total); los intereses se pagan con caja"
       },
-      "not_applicable": {}
+      "not_applicable": {
+        "Altman Z": "No aplica a GROWTH_PRE_PROFIT: el Altman se calibró con quiebras de empresas maduras endeudadas; su solidez se mide por el runway (caja frente a la quema de FCF)"
+      }
     },
     "valoracion": {
       "applicable": true,

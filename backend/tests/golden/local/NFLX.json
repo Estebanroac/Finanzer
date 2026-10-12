@@ -1,22 +1,16 @@
 {
   "alerts": {
-    "red_flags": [
-      {
-        "category": "Valor intrínseco",
-        "detail": "El precio excede en 33% el valor justo estimado por el DCF ($47): sostenerlo exige asumir escenarios de crecimiento muy optimistas.",
-        "reason": "Sobrevalorada según DCF — -33%"
-      }
-    ],
+    "red_flags": [],
     "strengths": [
       {
         "category": "Rentabilidad",
-        "detail": "El retorno sobre el capital invertido supera con holgura su costo (ROIC 34.5% vs WACC 13.4%): cada dólar reinvertido crea valor económico sustancial, el rasgo de un negocio con ventaja competitiva duradera.",
-        "reason": "Crea mucho valor — spread +21.2%"
+        "detail": "El retorno sobre el capital invertido supera con holgura su costo (ROIC 30.5% vs WACC 13.4%): cada dólar reinvertido crea valor económico sustancial, el rasgo de un negocio con ventaja competitiva duradera.",
+        "reason": "Crea mucho valor — spread +17.1%"
       },
       {
         "category": "Rentabilidad",
-        "detail": "Genera 49.5% de retorno sobre el patrimonio, muy por encima del umbral de excelencia del sector (15%). Un nivel tan alto suele estar amplificado por una base de patrimonio reducida por recompras acumuladas, más que por rentabilidad operativa pura.",
-        "reason": "ROE excepcional — 49.5%"
+        "detail": "Genera 37.8% de retorno sobre el patrimonio, por encima del umbral de excelencia del sector (15%): uso muy eficiente del capital de los accionistas.",
+        "reason": "ROE elevado — 37.8%"
       },
       {
         "category": "Crecimiento",
@@ -25,8 +19,8 @@
       },
       {
         "category": "Rentabilidad",
-        "detail": "De cada dólar vendido quedan 28 centavos de beneficio tras todos los costos: señala poder de fijación de precios y eficiencia por encima de la media de su sector.",
-        "reason": "Margen neto sólido — 28.2%"
+        "detail": "De cada dólar vendido quedan 24 centavos de beneficio tras todos los costos: señala poder de fijación de precios y eficiencia por encima de la media de su sector.",
+        "reason": "Margen neto sólido — 23.5%"
       },
       {
         "category": "Crecimiento",
@@ -35,15 +29,15 @@
       },
       {
         "category": "Solidez financiera",
-        "detail": "La deuda neta equivale a menos de un año de EBITDA, un nivel cómodo que deja holgura financiera y capacidad de maniobra ante imprevistos.",
-        "reason": "Deuda baja — 0.5x EBITDA"
+        "detail": "El Altman Z de 5.29 (> 2.60) ubica a la empresa en zona segura: baja probabilidad estadística de problemas de solvencia según el modelo.",
+        "reason": "Solvencia sólida — Altman Z 5.29"
       }
     ],
     "warnings": [
       {
-        "category": "Valoración",
-        "detail": "Se paga 20.4x EBITDA frente a 10.0x de sus pares (+104%): el mercado le asigna una prima que conviene contrastar con su ventaja competitiva.",
-        "reason": "EV/EBITDA sobre el sector — 20.4x"
+        "category": "Valor intrínseco",
+        "detail": "El precio está un 20% por encima del valor intrínseco estimado ($56): el mercado ya paga buena parte del crecimiento futuro.",
+        "reason": "Prima sobre el valor justo — -20%"
       },
       {
         "category": "Riesgo de mercado",
@@ -54,17 +48,20 @@
   },
   "altman_z": {
     "applicable": true,
-    "available": false,
+    "available": true,
     "details": {
-      "missing": [
-        "utilidades retenidas"
-      ],
-      "reason": "sin_dato"
+      "X1_wc_ta": 0.0367,
+      "X2_re_ta": 0.7605,
+      "X3_ebit_ta": 0.2397,
+      "X4_book_tl": 0.9184,
+      "grey_threshold": 1.1,
+      "model": "Z''-Score (No Manufactura)",
+      "safe_threshold": 2.6
     },
-    "interpretation": "Datos insuficientes para el Z-Score: falta utilidades retenidas",
-    "model": "",
-    "z_score": 0,
-    "zone": "n/a"
+    "interpretation": "Z''-Score (No Manufactura): Zona segura — bajo riesgo de bancarrota",
+    "model": "Z''-Score (No Manufactura)",
+    "z_score": 5.29,
+    "zone": "safe"
   },
   "archetype_metrics": {},
   "classification": {
@@ -76,7 +73,7 @@
     "inputs": {
       "assets_to_revenue": 1.23048378157,
       "eps_ttm": 3.18,
-      "net_margin_ttm": 0.282187851763,
+      "net_margin_ttm": 0.28218785215,
       "op_margin_detrended_std": 0.0104249309892,
       "revenue_cagr_3y": 0.126397183714,
       "revenue_cagr_3y_reason": null,
@@ -254,9 +251,13 @@
         "detail": "quoteSummary v10 (con crumb)",
         "source": "yahoo_quotesummary"
       },
+      "capitalExpenditures": {
+        "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
+        "source": "yfinance_statements"
+      },
       "cash": {
-        "detail": "quoteSummary v10 (con crumb)",
-        "source": "yahoo_quotesummary"
+        "detail": "balance del último trimestre (2026-06-30)",
+        "source": "yfinance_statements"
       },
       "country": {
         "detail": "quoteSummary v10 (con crumb)",
@@ -270,6 +271,10 @@
         "detail": "quoteSummary v10 (con crumb)",
         "source": "yahoo_quotesummary"
       },
+      "depreciation": {
+        "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
+        "source": "yfinance_statements"
+      },
       "dividendYield": {
         "detail": "quoteSummary v10 (con crumb)",
         "source": "yahoo_quotesummary"
@@ -279,8 +284,8 @@
         "source": "yahoo_quotesummary"
       },
       "ebitda": {
-        "detail": "quoteSummary v10 (con crumb)",
-        "source": "yahoo_quotesummary"
+        "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
+        "source": "yfinance_statements"
       },
       "exchange": {
         "detail": "quoteSummary v10 (con crumb)",
@@ -307,21 +312,20 @@
         "source": "yahoo_quotesummary"
       },
       "freeCashflow": {
-        "detail": "FCF (25,387,552,768) > OCF (11,970,833,408): imposible por definición. Recalculado como OCF − capex del estado de flujos FY2025",
-        "rule": "fcf_le_ocf",
-        "source": "recalculado_por_validacion"
+        "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
+        "source": "yfinance_statements"
       },
       "grossProfits": {
-        "detail": "quoteSummary v10 (con crumb)",
-        "source": "yahoo_quotesummary"
+        "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
+        "source": "yfinance_statements"
       },
       "industry": {
         "detail": "quoteSummary v10 (con crumb)",
         "source": "yahoo_quotesummary"
       },
       "interestExpense": {
-        "detail": "quoteSummary v10 (con crumb)",
-        "source": "yahoo_quotesummary"
+        "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
+        "source": "yfinance_statements"
       },
       "lastSplitDate": {
         "detail": "quoteSummary v10 (con crumb)",
@@ -340,24 +344,24 @@
         "source": "yahoo_quotesummary"
       },
       "longTermDebt": {
-        "detail": "quoteSummary v10 (con crumb)",
-        "source": "yahoo_quotesummary"
+        "detail": "balance del último trimestre (2026-06-30)",
+        "source": "yfinance_statements"
       },
       "marketCap": {
         "detail": "quoteSummary v10 (con crumb)",
         "source": "yahoo_quotesummary"
       },
       "netIncome": {
-        "detail": "quoteSummary v10 (con crumb)",
-        "source": "yahoo_quotesummary"
+        "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
+        "source": "yfinance_statements"
       },
       "operatingCashflow": {
-        "detail": "quoteSummary v10 (con crumb)",
-        "source": "yahoo_quotesummary"
+        "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
+        "source": "yfinance_statements"
       },
       "operatingIncome": {
-        "detail": "quoteSummary v10 (con crumb)",
-        "source": "yahoo_quotesummary"
+        "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
+        "source": "yfinance_statements"
       },
       "payoutRatio": {
         "detail": "quoteSummary v10 (con crumb)",
@@ -374,6 +378,10 @@
       "regularMarketPrice": {
         "detail": "quoteSummary v10 (con crumb)",
         "source": "yahoo_quotesummary"
+      },
+      "retainedEarnings": {
+        "detail": "balance del último trimestre (2026-06-30)",
+        "source": "yfinance_statements"
       },
       "revenueGrowth": {
         "detail": "quoteSummary v10 (con crumb)",
@@ -400,36 +408,36 @@
         "source": "yahoo_quotesummary"
       },
       "totalAssets": {
-        "detail": "quoteSummary v10 (con crumb)",
-        "source": "yahoo_quotesummary"
+        "detail": "balance del último trimestre (2026-06-30)",
+        "source": "yfinance_statements"
       },
       "totalCash": {
         "detail": "la fuente no lo devolvió",
         "source": "sin_dato"
       },
       "totalCurrentAssets": {
-        "detail": "quoteSummary v10 (con crumb)",
-        "source": "yahoo_quotesummary"
+        "detail": "balance del último trimestre (2026-06-30)",
+        "source": "yfinance_statements"
       },
       "totalCurrentLiabilities": {
-        "detail": "quoteSummary v10 (con crumb)",
-        "source": "yahoo_quotesummary"
+        "detail": "balance del último trimestre (2026-06-30)",
+        "source": "yfinance_statements"
       },
       "totalDebt": {
-        "detail": "quoteSummary v10 (con crumb)",
-        "source": "yahoo_quotesummary"
+        "detail": "balance del último trimestre (2026-06-30)",
+        "source": "yfinance_statements"
       },
       "totalLiab": {
-        "detail": "quoteSummary v10 (con crumb)",
-        "source": "yahoo_quotesummary"
+        "detail": "balance del último trimestre (2026-06-30)",
+        "source": "yfinance_statements"
       },
       "totalRevenue": {
-        "detail": "quoteSummary v10 (con crumb)",
-        "source": "yahoo_quotesummary"
+        "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
+        "source": "yfinance_statements"
       },
       "totalStockholderEquity": {
-        "detail": "quoteSummary v10 (con crumb)",
-        "source": "yahoo_quotesummary"
+        "detail": "balance del último trimestre (2026-06-30)",
+        "source": "yfinance_statements"
       },
       "trailingEps": {
         "detail": "quoteSummary v10 (con crumb)",
@@ -448,24 +456,63 @@
         "source": "yahoo_quotesummary"
       }
     },
-    "path": "yahoo_quotesummary"
-  },
-  "data_validation": [
-    {
-      "action": "recalculado",
-      "field": "freeCashflow",
-      "new": 9461053000.0,
-      "old": 25387552768.0,
-      "reason": "FCF (25,387,552,768) > OCF (11,970,833,408): imposible por definición. Recalculado como OCF − capex del estado de flujos FY2025",
-      "rule": "fcf_le_ocf"
+    "path": "yahoo_quotesummary",
+    "ttm": {
+      "annual_fields": {},
+      "balance_date": "2026-06-30",
+      "basis": "ttm",
+      "eps": "fuente",
+      "errors": [],
+      "last_quarter_fields": [
+        "cash",
+        "longTermDebt",
+        "retainedEarnings",
+        "totalAssets",
+        "totalCurrentAssets",
+        "totalCurrentLiabilities",
+        "totalDebt",
+        "totalLiab",
+        "totalStockholderEquity"
+      ],
+      "quarters": {
+        "cf": [
+          "2026-06-30",
+          "2026-03-31",
+          "2025-12-31",
+          "2025-09-30"
+        ],
+        "inc": [
+          "2026-06-30",
+          "2026-03-31",
+          "2025-12-31",
+          "2025-09-30"
+        ]
+      },
+      "source_fields": {
+        "dividendsPaid": "'Common Stock Dividend Paid' sin dato en alguno de los 4 últimos trimestres",
+        "inventory": "'Inventory' sin dato en el último trimestre"
+      },
+      "ttm_fields": [
+        "capitalExpenditures",
+        "depreciation",
+        "ebitda",
+        "freeCashflow",
+        "grossProfits",
+        "interestExpense",
+        "netIncome",
+        "operatingCashflow",
+        "operatingIncome",
+        "totalRevenue"
+      ]
     }
-  ],
+  },
+  "data_validation": [],
   "dcf": {
-    "fair_value": 47.13,
+    "fair_value": 56.43,
     "growth_rate": 0.240245326847,
-    "margin_of_safety": -0.491618926374,
+    "margin_of_safety": -0.245791245791,
     "terminal_growth": 0.025,
-    "upside": -32.9587482219,
+    "upside": -19.7297297297,
     "value_composition": {
       "stage1_pct": 28.4,
       "stage2_pct": 27.4,
@@ -473,77 +520,126 @@
     },
     "wacc": 0.133715
   },
+  "earnings_normalization": {
+    "applied": true,
+    "basis": "TTM (4 trimestres)",
+    "confidence": "media",
+    "inference": {
+      "available": true,
+      "reason": null
+    },
+    "items": [
+      {
+        "applied": true,
+        "confidence": "media",
+        "gross": 2731017000.0,
+        "item_type": "pico_no_operativo",
+        "label": "pico de resultado no operativo",
+        "net": 2260219754.13,
+        "origin": "pico de resultado no operativo en el trimestre 2026-03-31 (z robusto 66.2; habitual -0.14B frente a +2.59B)",
+        "period_gross": 2731017000.0,
+        "recurrent": false,
+        "recurrent_years": 1,
+        "tax_source": "tipo efectivo TTM 17.2%",
+        "type": "inferida"
+      }
+    ],
+    "normalized_net_income": 11389422245.9,
+    "one_off_net": 2260219754.13,
+    "one_off_pct": 0.165588207671,
+    "pe_normalized": 26.4940146367,
+    "pe_reported": 22.106918239,
+    "pe_unreliable": true,
+    "reported_net_income": 13649642000.0,
+    "used_in_score": true
+  },
   "errors": [],
   "graham_margin": -2.0885257905,
   "graham_number": 22.7616684362,
+  "growth_basis": {
+    "applied_to": [],
+    "basis": "agregado",
+    "eps": "el BPA ya es por acción",
+    "fcf_cagr": {
+      "anomalous_base": true,
+      "method": "log_lineal",
+      "note": "base anómala: el año inicial es el 23% de la mediana de los demás (< 50%); crecimiento por regresión log-lineal sobre 4 ejercicios"
+    },
+    "reason": "las acciones varían -1.8% anual (<= 2%): el agregado no está inflado por emisión",
+    "shares_cagr_3y": -0.0176214636299,
+    "threshold": 0.02
+  },
   "is_growth": true,
   "key_metrics": {
-    "asset_turnover": 0.570010328209,
+    "asset_turnover": 0.827551737377,
     "beta": 1.613,
     "book_value_per_share": 7.241,
     "buyback_yield": 0.0129533443162,
-    "cash": 9127910400.0,
-    "cash_ratio": 1.142,
-    "current_ratio": 1.142,
-    "de": 0.604476301429,
-    "debt_to_assets": 0.196261696454,
+    "cash": 9127910000.0,
+    "cash_ratio": 0.752203273567,
+    "current_ratio": 1.14160852444,
+    "de": 0.474571548232,
+    "debt_to_assets": 0.244810915969,
     "dividend_yield": 0.0,
     "earnings_growth": 0.566829735557,
     "earnings_yield": 0.0452347083926,
-    "ebitda": 14726931456.0,
-    "ebitda_margin": 0.304459340371,
-    "enterprise_value": 300251709431.0,
+    "ebitda": 35008877000.0,
+    "ebitda_margin": 0.662034612478,
+    "enterprise_value": 297906355223.0,
     "eps": 3.18,
-    "ev_ebitda": 20.3879341958,
-    "ev_revenue": 6.20729699677,
-    "fcf_yield": 0.0323206221507,
-    "ffo": 12229928612.3,
+    "ev_ebitda": 9.30285228993,
+    "ev_revenue": 6.1588102107,
+    "fcf_yield": 0.0380972125835,
+    "ffo": 31318245000.0,
     "ffo_payout": null,
     "forward_pe": 18.4678271012,
-    "free_cash_flow": 9461053000.0,
-    "gross_margin": 0.49117870886,
-    "interest_coverage": 24.2374277683,
+    "free_cash_flow": 11152005000.0,
+    "gross_margin": 0.491178721097,
+    "interest_coverage": 16.9384625188,
     "interest_coverage_state": "ok",
-    "interest_expense": 666186424.32,
+    "interest_expense": 847451000.0,
     "inventory_turnover": null,
     "market_cap": 292724965376.0,
-    "net_debt": 7526750208.0,
-    "net_debt_to_ebitda": 0.511087474705,
+    "net_debt": 5181396000.0,
+    "net_debt_to_ebitda": 0.161801723255,
     "net_debt_to_ebitda_state": "ok",
-    "net_income": 13649642496.0,
-    "net_margin": 0.282187851763,
-    "operating_cash_flow": 11970833408.0,
-    "operating_income": 16146645339.7,
-    "operating_margin": 0.33381,
-    "p_ffo": 23.9351322892,
+    "net_income": 13649642000.0,
+    "net_income_normalized": 11389422245.9,
+    "net_margin": 0.28218785215,
+    "operating_cash_flow": 11970833000.0,
+    "operating_income": 14354517000.0,
+    "operating_margin": 0.296760187621,
+    "p_ffo": 9.34678680823,
+    "payout_basis": "beneficio_neto",
     "payout_ratio": null,
-    "pb": 10.6243714508,
+    "pb": 9.70829312787,
     "pe": 22.106918239,
+    "pe_normalized": 26.4940146367,
     "peg": 1.2,
-    "pfcf": 30.9399984733,
+    "pfcf": 26.2486395247,
     "price_52w_high": 124.86,
     "price_52w_low": 65.08,
-    "ps": 6.05169164135,
+    "ps": 6.05169186955,
     "quick_ratio": 0.917,
-    "revenue": 48370765824.0,
+    "revenue": 48370764000.0,
     "revenue_growth": 0.240245326847,
-    "roa": 0.16084999,
+    "roa": 0.233525047313,
     "roce": 0.302560582273,
     "roce_reason": null,
     "roce_roic_divergence": {
       "causes": [],
       "diverges": false,
-      "gap": -0.0426600982095
+      "gap": -0.00213336522986
     },
     "roce_state": "ok",
-    "roe": 0.49541,
-    "roic": 0.345220680482,
-    "roic_wacc_spread": 0.211505680482,
+    "roe": 0.452693634251,
+    "roic": 0.304693947503,
+    "roic_wacc_spread": 0.170978947503,
     "shareholder_yield": 0.0129533443162,
     "shares_outstanding": 4163939676.0,
-    "total_assets": 84859455048.8,
-    "total_debt": 16654660608.0,
-    "total_equity": 27552214319.5,
+    "total_assets": 58450441000.0,
+    "total_debt": 14309306000.0,
+    "total_equity": 30152052000.0,
     "wacc": 0.133715
   },
   "not_applicable": {},
@@ -622,50 +718,50 @@
     "sector": "Communication Services"
   },
   "ratios": {
-    "asset_turnover": 0.570010328209,
+    "asset_turnover": 0.827551737377,
     "beta": 1.613,
-    "cash_ratio": 1.142,
-    "current_ratio": 1.142,
-    "debt_to_assets": 0.196261696454,
-    "debt_to_equity": 0.604476301429,
+    "cash_ratio": 0.752203273567,
+    "current_ratio": 1.14160852444,
+    "debt_to_assets": 0.244810915969,
+    "debt_to_equity": 0.474571548232,
     "dividend_yield": 0.0,
     "earnings_yield": 0.0452347083926,
-    "ebitda": 14726931456.0,
-    "ebitda_margin": 0.304459340371,
-    "enterprise_value": 300251709431.0,
+    "ebitda": 32023120000.0,
+    "ebitda_margin": 0.662034612478,
+    "enterprise_value": 297906355223.0,
     "eps": 3.18,
-    "ev_ebitda": 20.3879341958,
-    "ev_fcf": null,
-    "ev_revenue": 6.20729699677,
-    "fcf": null,
-    "fcf_to_net_income": null,
-    "fcf_yield": null,
-    "ffo": 12229928612.3,
+    "ev_ebitda": 9.30285228993,
+    "ev_fcf": 26.7132551701,
+    "ev_revenue": 6.1588102107,
+    "fcf": 11152005000.0,
+    "fcf_to_net_income": 0.817018131318,
+    "fcf_yield": 0.0380972125835,
+    "ffo": 31318245000.0,
     "ffo_payout": null,
-    "ffo_per_share": 2.93710513694,
+    "ffo_per_share": 7.52130132444,
     "forward_pe": 18.4678271012,
-    "graham_number": 21.7585954956,
-    "gross_margin": 0.49117870886,
-    "interest_coverage": 24.2374277683,
+    "graham_number": 22.7620326092,
+    "gross_margin": 0.491178721097,
+    "interest_coverage": 16.9384625188,
     "inventory_turnover": null,
     "market_cap": 292724959223.0,
-    "net_debt": 7526750208.0,
-    "net_debt_to_ebitda": 0.511087474705,
-    "net_income": 13649642496.0,
-    "net_margin": 0.282187851763,
-    "operating_cash_flow": 11970833408.0,
-    "operating_margin": 0.33381,
-    "p_fcf": null,
-    "p_ffo": 23.9351322892,
+    "net_debt": 5181396000.0,
+    "net_debt_to_ebitda": 0.161801723255,
+    "net_income": 13649642000.0,
+    "net_margin": 0.28218785215,
+    "operating_cash_flow": 11970833000.0,
+    "operating_margin": 0.296760187621,
+    "p_fcf": 26.2486395247,
+    "p_ffo": 9.34678680823,
     "payout_ratio": null,
-    "pb": 10.6243714508,
+    "pb": 9.70829312787,
     "pe": 22.106918239,
     "peg": 1.2,
-    "ps": 6.05169164135,
+    "ps": 6.05169186955,
     "quick_ratio": 0.917,
-    "roa": 0.16084999,
-    "roe": 0.49541,
-    "roic": 0.345220680482
+    "roa": 0.233525047313,
+    "roe": 0.452693634251,
+    "roic": 0.304693947503
   },
   "score": {
     "basis": null,
@@ -694,11 +790,11 @@
             "value": "Positivo"
           },
           {
-            "adjustment": 0,
+            "adjustment": 1,
             "metric": "FCF / Net Income",
-            "reason": "FCF aceptable (69.3%)",
-            "severity": "ok",
-            "value": "69%"
+            "reason": "FCF sólido vs ganancias (97.9%)",
+            "severity": "good",
+            "value": "98%"
           }
         ],
         "applicable": true,
@@ -708,7 +804,7 @@
           "Buena salud (7/9)",
           "Genera efectivo operativo",
           "FCF positivo",
-          "FCF aceptable (69.3%)"
+          "FCF sólido vs ganancias (97.9%)"
         ],
         "max": 20,
         "score": 20
@@ -732,9 +828,9 @@
           {
             "adjustment": 4,
             "metric": "Crecimiento FCF 3Y",
-            "reason": "FCF creciente (80.1%)",
+            "reason": "FCF creciente (69.8%)",
             "severity": "excellent",
-            "value": "80.1%"
+            "value": "69.8%"
           },
           {
             "adjustment": 2,
@@ -750,7 +846,7 @@
         "details": [
           "Crecimiento excepcional (24.0%)",
           "EPS excepcional (56.7%)",
-          "FCF creciente (80.1%)",
+          "FCF creciente (69.8%)",
           "Perfil de alto crecimiento"
         ],
         "max": 20,
@@ -761,54 +857,61 @@
           {
             "adjustment": 6,
             "metric": "ROE",
-            "reason": "Excepcional para su sector (49.5% vs 15% rango alto sectorial)",
+            "reason": "Excepcional para su sector (37.8% vs 15% rango alto sectorial)",
             "severity": "excellent",
-            "value": "49.5%"
+            "value": "37.8%"
           },
           {
             "adjustment": 4,
             "metric": "ROA",
-            "reason": "Excelente para su sector (16.1%)",
+            "reason": "Excelente para su sector (19.5%)",
             "severity": "excellent",
-            "value": "16.1%"
+            "value": "19.5%"
           },
           {
-            "adjustment": 5,
+            "adjustment": 3,
             "metric": "Margen Operativo",
-            "reason": "Excepcional (33.4%) - Alto poder de fijación de precios",
-            "severity": "excellent",
-            "value": "33.4%"
+            "reason": "Muy bueno (29.7%) - Operaciones eficientes",
+            "severity": "good",
+            "value": "29.7%"
           },
           {
             "adjustment": 3,
             "metric": "Margen Neto",
-            "reason": "Excelente (28.2%) - Alta rentabilidad final",
+            "reason": "Excelente (23.5%) - Alta rentabilidad final",
             "severity": "excellent",
-            "value": "28.2%"
+            "value": "23.5%"
           },
           {
             "adjustment": 3,
             "metric": "ROIC vs WACC",
-            "reason": "Crea mucho valor (ROIC 34.5% vs WACC 13.4%, spread +21.2%)",
+            "reason": "Crea mucho valor (ROIC 30.5% vs WACC 13.4%, spread +17.1%)",
             "severity": "excellent",
-            "value": "+21.2%"
+            "value": "+17.1%"
           }
         ],
         "applicable": true,
         "conclusive": true,
         "coverage": 1.0,
         "details": [
-          "Excepcional para su sector (49.5% vs 15% rango alto sectorial)",
-          "Excelente para su sector (16.1%)",
-          "Excepcional (33.4%) - Alto poder de fijación de precios",
-          "Excelente (28.2%) - Alta rentabilidad final",
-          "Crea mucho valor (ROIC 34.5% vs WACC 13.4%, spread +21.2%)"
+          "Excepcional para su sector (37.8% vs 15% rango alto sectorial)",
+          "Excelente para su sector (19.5%)",
+          "Muy bueno (29.7%) - Operaciones eficientes",
+          "Excelente (23.5%) - Alta rentabilidad final",
+          "Crea mucho valor (ROIC 30.5% vs WACC 13.4%, spread +17.1%)"
         ],
         "max": 20,
         "score": 20
       },
       "Solidez Financiera": {
         "adjustments": [
+          {
+            "adjustment": 6,
+            "metric": "Altman Z-Score",
+            "reason": "Zona segura - Muy baja probabilidad de quiebra",
+            "severity": "excellent",
+            "value": "5.29"
+          },
           {
             "adjustment": 0,
             "metric": "Current Ratio",
@@ -817,68 +920,61 @@
             "value": "1.14x"
           },
           {
-            "adjustment": 2,
+            "adjustment": 5,
             "metric": "Deuda/Equity",
-            "reason": "Deuda controlada - Dentro del rango saludable (0.60x)",
-            "severity": "good",
-            "value": "0.60x"
+            "reason": "Deuda muy baja - Estructura financiera conservadora",
+            "severity": "excellent",
+            "value": "0.47x"
           },
           {
             "adjustment": 3,
             "metric": "Cobertura Intereses",
             "reason": "Cobertura excelente",
             "severity": "excellent",
-            "value": "24.2x"
-          },
-          {
-            "adjustment": 3,
-            "metric": "Cobertura",
-            "reason": "Reescalado sobre los componentes con dato (sin dato: Altman Z)",
-            "severity": "neutral",
-            "value": "3/4 componentes"
+            "value": "16.9x"
           }
         ],
         "applicable": true,
         "conclusive": true,
-        "coverage": 0.75,
+        "coverage": 1.0,
         "details": [
+          "Zona segura - Muy baja probabilidad de quiebra",
           "Liquidez justa - Cubre sus obligaciones (1.14x)",
-          "Deuda controlada - Dentro del rango saludable (0.60x)",
-          "Cobertura excelente",
-          "Reescalado sobre los componentes con dato (sin dato: Altman Z)"
+          "Deuda muy baja - Estructura financiera conservadora",
+          "Cobertura excelente"
         ],
         "max": 20,
-        "score": 18
+        "score": 20
       },
       "Valoración": {
         "adjustments": [
           {
             "adjustment": 0,
             "metric": "P/E vs Sector",
-            "reason": "Razonable para growth (22.1x vs 18.0x)",
+            "reason": "Razonable para growth (26.5x vs 18.0x)",
             "severity": "ok",
-            "value": "22.1x"
+            "value": "26.5x"
           },
           {
-            "adjustment": 2,
+            "adjustment": 3,
             "metric": "Forward P/E",
-            "reason": "P/E mejorando (22x → 18x forward)",
-            "severity": "good",
+            "reason": "Fuerte compresión P/E (26x → 18x forward)",
+            "severity": "excellent",
             "value": "18.5x"
           },
           {
             "adjustment": 0,
             "metric": "P/FCF",
-            "reason": "Aceptable para growth (30.9x)",
+            "reason": "Aceptable para growth (26.2x)",
             "severity": "ok",
-            "value": "30.9x"
+            "value": "26.2x"
           },
           {
-            "adjustment": -1,
+            "adjustment": 2,
             "metric": "EV/EBITDA vs Sector",
-            "reason": "Premium (20.4x vs 10.0x)",
-            "severity": "moderate",
-            "value": "20.4x"
+            "reason": "Atractivo para growth (9.3x)",
+            "severity": "good",
+            "value": "9.3x"
           },
           {
             "adjustment": 2,
@@ -899,15 +995,15 @@
         "conclusive": true,
         "coverage": 1.0,
         "details": [
-          "Razonable para growth (22.1x vs 18.0x)",
-          "P/E mejorando (22x → 18x forward)",
-          "Aceptable para growth (30.9x)",
-          "Premium (20.4x vs 10.0x)",
+          "Razonable para growth (26.5x vs 18.0x)",
+          "Fuerte compresión P/E (26x → 18x forward)",
+          "Aceptable para growth (26.2x)",
+          "Atractivo para growth (9.3x)",
           "Bueno (1.20)",
           "GARP: Growth + Fundamentos sólidos (Quality: 95)"
         ],
         "max": 20,
-        "score": 16
+        "score": 20
       }
     },
     "categories_included": 5,
@@ -917,7 +1013,7 @@
     "max_score": 100,
     "not_applicable_categories": [],
     "partial": false,
-    "total_score": 94
+    "total_score": 100
   },
   "score_coverage": {
     "calidad": {
@@ -957,12 +1053,10 @@
       "applicable": true,
       "components": 4,
       "conclusive": true,
-      "coverage": 0.75,
-      "evaluated": 3,
+      "coverage": 1.0,
+      "evaluated": 4,
       "low_confidence": false,
-      "missing": [
-        "Altman Z"
-      ],
+      "missing": [],
       "missing_reasons": {},
       "not_applicable": {}
     },
@@ -986,7 +1080,7 @@
   "sensitivity": {
     "base_case": {
       "discount_rate": 0.133715,
-      "fair_value": 47.13,
+      "fair_value": 56.43,
       "growth_rate": 0.240245326847
     },
     "discount_rates": [
@@ -1003,52 +1097,52 @@
       0.2652,
       0.2902
     ],
-    "interpretation": "Muy probablemente sobrevalorada (96% de escenarios)",
+    "interpretation": "Muy probablemente sobrevalorada (84% de escenarios)",
     "is_valid": true,
     "matrix": [
       [
-        49.11,
-        43.4,
-        38.76,
-        34.93,
-        31.7
+        58.77,
+        52.04,
+        46.57,
+        42.05,
+        38.26
       ],
       [
-        54.31,
-        47.93,
-        42.76,
-        38.49,
-        34.9
+        64.9,
+        57.39,
+        51.29,
+        46.26,
+        42.03
       ],
       [
-        59.98,
-        52.88,
-        47.13,
-        42.37,
-        38.38
+        71.59,
+        63.22,
+        56.43,
+        50.83,
+        46.13
       ],
       [
-        66.17,
-        58.28,
-        51.88,
-        46.6,
-        42.17
+        78.88,
+        69.58,
+        62.03,
+        55.81,
+        50.59
       ],
       [
-        72.92,
-        64.15,
-        57.05,
-        51.19,
-        46.28
+        86.84,
+        76.5,
+        68.13,
+        61.22,
+        55.44
       ]
     ],
     "statistics": {
       "current_price": 70.3,
-      "max_value": 72.92,
-      "mean_value": 48.5488,
-      "median_value": 47.13,
-      "min_value": 31.7,
-      "upside_base_case": -32.9587482219
+      "max_value": 86.84,
+      "mean_value": 58.1112,
+      "median_value": 56.43,
+      "min_value": 38.26,
+      "upside_base_case": -19.7297297297
     },
     "warnings": []
   },

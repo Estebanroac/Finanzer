@@ -29,11 +29,6 @@
         "category": "Solidez financiera",
         "detail": "El resultado operativo cubre 2.3x el gasto por intereses, por debajo del mínimo cómodo (3x): deja poco margen si los beneficios se resienten.",
         "reason": "Cobertura de intereses justa — 2.3x"
-      },
-      {
-        "category": "Rentabilidad",
-        "detail": "El retorno sobre el patrimonio (2.7%) queda por debajo del mínimo del sector (3%): el capital de los accionistas no se está remunerando con holgura.",
-        "reason": "ROE bajo — 2.7%"
       }
     ]
   },
@@ -392,12 +387,119 @@
         "source": "finnhub"
       }
     },
-    "path": "plan_b_yfinance"
+    "path": "plan_b_yfinance",
+    "ttm": {
+      "annual_fields": {
+        "capitalExpenditures": "sin estados trimestrales",
+        "cash": "sin balance trimestral",
+        "depreciation": "sin estados trimestrales",
+        "dividendsPaid": "sin estados trimestrales",
+        "ebitda": "sin estados trimestrales",
+        "freeCashflow": "sin estados trimestrales",
+        "grossProfits": "sin estados trimestrales",
+        "interestExpense": "sin estados trimestrales",
+        "inventory": "sin balance trimestral",
+        "longTermDebt": "sin balance trimestral",
+        "netIncome": "sin estados trimestrales",
+        "operatingCashflow": "sin estados trimestrales",
+        "operatingIncome": "sin estados trimestrales",
+        "retainedEarnings": "sin balance trimestral",
+        "totalAssets": "sin balance trimestral",
+        "totalCurrentAssets": "sin balance trimestral",
+        "totalCurrentLiabilities": "sin balance trimestral",
+        "totalDebt": "sin balance trimestral",
+        "totalLiab": "sin balance trimestral",
+        "totalRevenue": "sin estados trimestrales",
+        "totalStockholderEquity": "sin balance trimestral"
+      },
+      "balance_date": null,
+      "basis": "anual",
+      "eps": "fuente",
+      "errors": [
+        "quarterly_income_stmt: FixtureAbsent",
+        "quarterly_cashflow: FixtureAbsent",
+        "quarterly_balance_sheet: FixtureAbsent"
+      ],
+      "last_quarter_fields": [],
+      "quarters": {
+        "cf": [],
+        "inc": []
+      },
+      "source_fields": {},
+      "ttm_fields": []
+    }
   },
   "data_validation": [],
+  "earnings_normalization": {
+    "applied": true,
+    "basis": "FY2025 (sin TTM)",
+    "confidence": "alta",
+    "inference": {
+      "available": false,
+      "reason": "sin estados trimestrales"
+    },
+    "items": [
+      {
+        "applied": true,
+        "confidence": "alta",
+        "gross": -205896500.0,
+        "item_type": "Special Income Charges",
+        "label": "cargos especiales (deterioros, litigios, reestructuración)",
+        "net": -190660159.0,
+        "origin": "Yahoo: Special Income Charges (FY2025 (sin TTM); nivel componentes_del_total)",
+        "period_gross": -495549000.0,
+        "recurrence_window": 4,
+        "recurrent": true,
+        "recurrent_average": -289652500.0,
+        "recurrent_years": 4,
+        "tax_source": "Tax Effect Of Unusual Items (tipo implícito 7.4%)",
+        "type": "explicita"
+      },
+      {
+        "applied": true,
+        "confidence": "alta",
+        "gross": 59788250.0,
+        "item_type": "Gain On Sale Of Security",
+        "label": "ganancias por venta de valores",
+        "net": 55363919.5,
+        "origin": "Yahoo: Gain On Sale Of Security (FY2025 (sin TTM); nivel componentes_del_total)",
+        "period_gross": 156309000.0,
+        "recurrence_window": 4,
+        "recurrent": true,
+        "recurrent_average": 96520750.0,
+        "recurrent_years": 4,
+        "tax_source": "Tax Effect Of Unusual Items (tipo implícito 7.4%)",
+        "type": "explicita"
+      }
+    ],
+    "normalized_net_income": 1193886239.5,
+    "one_off_net": -135296239.5,
+    "one_off_pct": 0.127807970508,
+    "pe_normalized": 35.137575671,
+    "pe_reported": 39.6284379061,
+    "pe_unreliable": true,
+    "reported_net_income": 1058590000.0,
+    "used_in_score": true
+  },
   "errors": [],
   "graham_margin": -0.513094530924,
   "graham_number": 35.8074126883,
+  "growth_basis": {
+    "applied_to": [
+      "FFO",
+      "FCF"
+    ],
+    "basis": "por_accion",
+    "eps": "el BPA ya es por acción",
+    "fcf_cagr": {
+      "anomalous_base": false,
+      "method": "cagr",
+      "note": null
+    },
+    "reason": "REIT: crecimiento por acción siempre (FFO y FCF por acción); las acciones crecen +12.3% anual en la ventana (> 2%): la emisión inflaría el crecimiento agregado",
+    "shares_cagr_3y": 0.122529962489,
+    "threshold": 0.02
+  },
   "is_growth": false,
   "key_metrics": {
     "asset_turnover": 0.0789797192721,
@@ -433,14 +535,18 @@
     "net_debt_to_ebitda": 6.04096429749,
     "net_debt_to_ebitda_state": "ok",
     "net_income": 1058590000.0,
+    "net_income_normalized": 1193886239.5,
     "net_margin": 0.184122557975,
     "operating_cash_flow": 3994754000.0,
     "operating_income": 2593823000.0,
     "operating_margin": 0.451148533137,
     "p_ffo": 15.7713049024,
-    "payout_ratio": 2.75923161942,
+    "payout_basis": "ffo",
+    "payout_ratio": 0.898572968071,
+    "payout_ratio_net_income": 2.75923161942,
     "pb": 1.2998932474,
     "pe": 39.6284379061,
+    "pe_normalized": 35.137575671,
     "peg": 1.85835,
     "pfcf": 12.8333542733,
     "price_52w_high": 67.9400024414,
@@ -674,18 +780,18 @@
       "Rentabilidad": {
         "adjustments": [
           {
-            "adjustment": -4,
+            "adjustment": 2,
             "metric": "ROE",
-            "reason": "Muy bajo (2.7%) - Poco eficiente con el capital",
-            "severity": "moderate",
-            "value": "2.7%"
+            "reason": "Bueno (3.0%) - Competitivo en su sector",
+            "severity": "ok",
+            "value": "3.0%"
           },
           {
             "adjustment": 0,
             "metric": "ROA",
-            "reason": "Aceptable (1.5%) - Normal para su sector",
+            "reason": "Aceptable (1.6%) - Normal para su sector",
             "severity": "ok",
-            "value": "1.5%"
+            "value": "1.6%"
           },
           {
             "adjustment": 5,
@@ -695,11 +801,11 @@
             "value": "45.1%"
           },
           {
-            "adjustment": 2,
+            "adjustment": 3,
             "metric": "Margen Neto",
-            "reason": "Bueno (18.4%) - Ganancias sólidas",
-            "severity": "good",
-            "value": "18.4%"
+            "reason": "Excelente (20.8%) - Alta rentabilidad final",
+            "severity": "excellent",
+            "value": "20.8%"
           },
           {
             "adjustment": -3,
@@ -713,24 +819,17 @@
         "conclusive": true,
         "coverage": 1.0,
         "details": [
-          "Muy bajo (2.7%) - Poco eficiente con el capital",
-          "Aceptable (1.5%) - Normal para su sector",
+          "Bueno (3.0%) - Competitivo en su sector",
+          "Aceptable (1.6%) - Normal para su sector",
           "Excepcional (45.1%) - Alto poder de fijación de precios",
-          "Bueno (18.4%) - Ganancias sólidas",
+          "Excelente (20.8%) - Alta rentabilidad final",
           "Destruye valor (ROIC 2.8% < WACC 8.1%, spread -5.3%)"
         ],
         "max": 20,
-        "score": 10
+        "score": 17
       },
       "Solidez Financiera": {
         "adjustments": [
-          {
-            "adjustment": 0,
-            "metric": "Current Ratio",
-            "reason": "Liquidez justa - Cubre sus obligaciones (1.42x)",
-            "severity": "ok",
-            "value": "1.42x"
-          },
           {
             "adjustment": 5,
             "metric": "Deuda/Equity",
@@ -748,19 +847,18 @@
           {
             "adjustment": 0,
             "metric": "No aplica",
-            "reason": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria (no cuenta en la cobertura)",
+            "reason": "Current ratio: No aplica a REIT: activos inmobiliarios de largo plazo financiados con deuda a largo plazo; el circulante no mide su liquidez; Altman Z: No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria (no cuenta en la cobertura)",
             "severity": "neutral",
-            "value": "Altman Z"
+            "value": "Altman Z, Current ratio"
           }
         ],
         "applicable": true,
         "conclusive": true,
         "coverage": 1.0,
         "details": [
-          "Liquidez justa - Cubre sus obligaciones (1.42x)",
           "Deuda muy baja - Estructura financiera conservadora",
           "Cobertura ajustada",
-          "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria (no cuenta en la cobertura)"
+          "Current ratio: No aplica a REIT: activos inmobiliarios de largo plazo financiados con deuda a largo plazo; el circulante no mide su liquidez; Altman Z: No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria (no cuenta en la cobertura)"
         ],
         "max": 20,
         "score": 13
@@ -816,7 +914,7 @@
     "max_score": 100,
     "not_applicable_categories": [],
     "partial": false,
-    "total_score": 62
+    "total_score": 69
   },
   "score_coverage": {
     "calidad": {
@@ -859,15 +957,16 @@
     },
     "solidez": {
       "applicable": true,
-      "components": 3,
+      "components": 2,
       "conclusive": true,
       "coverage": 1.0,
-      "evaluated": 3,
+      "evaluated": 2,
       "low_confidence": false,
       "missing": [],
       "missing_reasons": {},
       "not_applicable": {
-        "Altman Z": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria"
+        "Altman Z": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria",
+        "Current ratio": "No aplica a REIT: activos inmobiliarios de largo plazo financiados con deuda a largo plazo; el circulante no mide su liquidez"
       }
     },
     "valoracion": {

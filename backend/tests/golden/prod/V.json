@@ -9,22 +9,22 @@
       },
       {
         "category": "Rentabilidad",
-        "detail": "Genera 52.9% de retorno sobre el patrimonio, muy por encima del umbral de excelencia del sector (12%). Un nivel tan alto suele estar amplificado por una base de patrimonio reducida por recompras acumuladas, más que por rentabilidad operativa pura.",
-        "reason": "ROE excepcional — 52.9%"
+        "detail": "Genera 55.9% de retorno sobre el patrimonio, muy por encima del umbral de excelencia del sector (12%). Un nivel tan alto suele estar amplificado por una base de patrimonio reducida por recompras acumuladas, más que por rentabilidad operativa pura.",
+        "reason": "ROE excepcional — 55.9%"
       },
       {
         "category": "Rentabilidad",
-        "detail": "De cada dólar vendido quedan 50 centavos de beneficio tras todos los costos: señala poder de fijación de precios y eficiencia por encima de la media de su sector.",
-        "reason": "Margen neto sólido — 50.1%"
+        "detail": "De cada dólar vendido quedan 53 centavos de beneficio tras todos los costos: señala poder de fijación de precios y eficiencia por encima de la media de su sector.",
+        "reason": "Margen neto sólido — 53.0%"
       },
       {
         "category": "Solidez financiera",
-        "detail": "El Altman Z de 14.78 (> 2.60) ubica a la empresa en zona segura: baja probabilidad estadística de problemas de solvencia según el modelo.",
-        "reason": "Solvencia sólida — Altman Z 14.78"
+        "detail": "El Altman Z de 3.11 (> 2.60) ubica a la empresa en zona segura: baja probabilidad estadística de problemas de solvencia según el modelo.",
+        "reason": "Solvencia sólida — Altman Z 3.11"
       },
       {
         "category": "Flujo de caja",
-        "detail": "El flujo de caja libre supera al beneficio contable (FCF/BN 108%): las utilidades se convierten íntegramente en efectivo, señal de contabilidad conservadora y negocio que 'respira' caja.",
+        "detail": "El flujo de caja libre supera al beneficio contable (FCF/BN 102%): las utilidades se convierten íntegramente en efectivo, señal de contabilidad conservadora y negocio que 'respira' caja.",
         "reason": "Beneficio de alta calidad"
       },
       {
@@ -36,8 +36,8 @@
     "warnings": [
       {
         "category": "Valoración",
-        "detail": "El mercado paga 32.8x beneficios, un +152% sobre la mediana del sector (13.0x). Es un precio alto que el mercado sostiene por su crecimiento y retornos; deja poco margen de error: cualquier decepción en resultados puede corregir con fuerza.",
-        "reason": "Valoración exigente — P/E 32.8x"
+        "detail": "El mercado paga 31.1x beneficios, un +139% sobre la mediana del sector (13.0x). Es un precio alto que el mercado sostiene por su crecimiento y retornos; deja poco margen de error: cualquier decepción en resultados puede corregir con fuerza.",
+        "reason": "Valoración exigente — P/E 31.1x"
       },
       {
         "category": "Valoración",
@@ -58,14 +58,14 @@
       "X1_wc_ta": 0.0273,
       "X2_re_ta": 0.1516,
       "X3_ebit_ta": 0.2666,
-      "X4_mcap_tl": 11.7247,
+      "X4_book_tl": 0.6142,
       "grey_threshold": 1.1,
       "model": "Z''-Score (No Manufactura)",
       "safe_threshold": 2.6
     },
     "interpretation": "Z''-Score (No Manufactura): Zona segura — bajo riesgo de bancarrota",
     "model": "Z''-Score (No Manufactura)",
-    "z_score": 14.78,
+    "z_score": 3.11,
     "zone": "safe"
   },
   "archetype_metrics": {},
@@ -385,7 +385,47 @@
         "source": "finnhub"
       }
     },
-    "path": "plan_b_yfinance"
+    "path": "plan_b_yfinance",
+    "ttm": {
+      "annual_fields": {
+        "capitalExpenditures": "sin estados trimestrales",
+        "cash": "sin balance trimestral",
+        "depreciation": "sin estados trimestrales",
+        "dividendsPaid": "sin estados trimestrales",
+        "ebitda": "sin estados trimestrales",
+        "freeCashflow": "sin estados trimestrales",
+        "grossProfits": "sin estados trimestrales",
+        "interestExpense": "sin estados trimestrales",
+        "inventory": "sin balance trimestral",
+        "longTermDebt": "sin balance trimestral",
+        "netIncome": "sin estados trimestrales",
+        "operatingCashflow": "sin estados trimestrales",
+        "operatingIncome": "sin estados trimestrales",
+        "retainedEarnings": "sin balance trimestral",
+        "totalAssets": "sin balance trimestral",
+        "totalCurrentAssets": "sin balance trimestral",
+        "totalCurrentLiabilities": "sin balance trimestral",
+        "totalDebt": "sin balance trimestral",
+        "totalLiab": "sin balance trimestral",
+        "totalRevenue": "sin estados trimestrales",
+        "totalStockholderEquity": "sin balance trimestral"
+      },
+      "balance_date": null,
+      "basis": "anual",
+      "eps": "fuente",
+      "errors": [
+        "quarterly_income_stmt: FixtureAbsent",
+        "quarterly_cashflow: FixtureAbsent",
+        "quarterly_balance_sheet: FixtureAbsent"
+      ],
+      "last_quarter_fields": [],
+      "quarters": {
+        "cf": [],
+        "inc": []
+      },
+      "source_fields": {},
+      "ttm_fields": []
+    }
   },
   "data_validation": [],
   "dcf": {
@@ -401,9 +441,73 @@
     },
     "wacc": 0.0904093145
   },
+  "earnings_normalization": {
+    "applied": true,
+    "basis": "FY2025 (sin TTM)",
+    "confidence": "alta",
+    "inference": {
+      "available": false,
+      "reason": "sin estados trimestrales"
+    },
+    "items": [
+      {
+        "applied": true,
+        "confidence": "alta",
+        "gross": -1357250000.0,
+        "item_type": "Special Income Charges",
+        "label": "cargos especiales (deterioros, litigios, reestructuración)",
+        "net": -1125226109.78,
+        "origin": "Yahoo: Special Income Charges (FY2025 (sin TTM); nivel componentes_del_total)",
+        "period_gross": -2562000000.0,
+        "recurrence_window": 4,
+        "recurrent": true,
+        "recurrent_average": -1204750000.0,
+        "recurrent_years": 4,
+        "tax_source": "Tax Effect Of Unusual Items (tipo implícito 17.1%)",
+        "type": "explicita"
+      },
+      {
+        "applied": true,
+        "confidence": "alta",
+        "gross": 0.0,
+        "item_type": "Gain On Sale Of Security",
+        "label": "ganancias por venta de valores",
+        "net": 0.0,
+        "origin": "Yahoo: Gain On Sale Of Security (FY2025 (sin TTM); nivel componentes_del_total)",
+        "period_gross": 789000000.0,
+        "recurrence_window": 4,
+        "recurrent": true,
+        "recurrent_average": 810666666.667,
+        "recurrent_years": 3,
+        "tax_source": "Tax Effect Of Unusual Items (tipo implícito 17.1%)",
+        "type": "explicita"
+      }
+    ],
+    "normalized_net_income": 21183226109.8,
+    "one_off_net": -1125226109.78,
+    "one_off_pct": 0.0560986194924,
+    "pe_normalized": 31.0548641428,
+    "pe_reported": 32.7969991497,
+    "pe_unreliable": false,
+    "reported_net_income": 20058000000.0,
+    "used_in_score": true
+  },
   "errors": [],
   "graham_margin": -4.27487162617,
   "graham_number": 73.0728706827,
+  "growth_basis": {
+    "applied_to": [],
+    "basis": "agregado",
+    "eps": "el BPA ya es por acción",
+    "fcf_cagr": {
+      "anomalous_base": false,
+      "method": "cagr",
+      "note": null
+    },
+    "reason": "las acciones varían -2.5% anual (<= 2%): el agregado no está inflado por emisión",
+    "shares_cagr_3y": -0.0253264913245,
+    "threshold": 0.02
+  },
   "is_growth": false,
   "key_metrics": {
     "asset_turnover": 0.401497585996,
@@ -439,14 +543,17 @@
     "net_debt_to_ebitda": 0.237434142214,
     "net_debt_to_ebitda_state": "ok",
     "net_income": 20058000000.0,
+    "net_income_normalized": 21183226109.8,
     "net_margin": 0.50145,
     "operating_cash_flow": 23059000000.0,
     "operating_income": 26556000000.0,
     "operating_margin": 0.6639,
     "p_ffo": 37.0995440912,
+    "payout_basis": "beneficio_neto",
     "payout_ratio": 0.2212,
     "pb": 19.0885174365,
     "pe": 32.7969991497,
+    "pe_normalized": 31.0548641428,
     "peg": 1.89768,
     "pfcf": 33.5369424618,
     "price_52w_high": 386.839996338,
@@ -624,9 +731,9 @@
           {
             "adjustment": 3,
             "metric": "FCF / Net Income",
-            "reason": "FCF > Net Income (107.6%)",
+            "reason": "FCF > Net Income (101.9%)",
             "severity": "excellent",
-            "value": "108%"
+            "value": "102%"
           }
         ],
         "applicable": true,
@@ -636,7 +743,7 @@
           "Buena salud (6/9)",
           "Genera efectivo operativo",
           "FCF positivo",
-          "FCF > Net Income (107.6%)"
+          "FCF > Net Income (101.9%)"
         ],
         "max": 20,
         "score": 20
@@ -681,16 +788,16 @@
           {
             "adjustment": 6,
             "metric": "ROE",
-            "reason": "Excepcional para su sector (52.9% vs 12% rango alto sectorial)",
+            "reason": "Excepcional para su sector (55.9% vs 12% rango alto sectorial)",
             "severity": "excellent",
-            "value": "52.9%"
+            "value": "55.9%"
           },
           {
             "adjustment": 4,
             "metric": "ROA",
-            "reason": "Excelente para su sector (20.1%)",
+            "reason": "Excelente para su sector (21.3%)",
             "severity": "excellent",
-            "value": "20.1%"
+            "value": "21.3%"
           },
           {
             "adjustment": 5,
@@ -702,9 +809,9 @@
           {
             "adjustment": 3,
             "metric": "Margen Neto",
-            "reason": "Excelente (50.1%) - Alta rentabilidad final",
+            "reason": "Excelente (53.0%) - Alta rentabilidad final",
             "severity": "excellent",
-            "value": "50.1%"
+            "value": "53.0%"
           },
           {
             "adjustment": 3,
@@ -718,10 +825,10 @@
         "conclusive": true,
         "coverage": 1.0,
         "details": [
-          "Excepcional para su sector (52.9% vs 12% rango alto sectorial)",
-          "Excelente para su sector (20.1%)",
+          "Excepcional para su sector (55.9% vs 12% rango alto sectorial)",
+          "Excelente para su sector (21.3%)",
           "Excepcional (66.4%) - Alto poder de fijación de precios",
-          "Excelente (50.1%) - Alta rentabilidad final",
+          "Excelente (53.0%) - Alta rentabilidad final",
           "Crea mucho valor (ROIC 45.2% vs WACC 9.0%, spread +36.1%)"
         ],
         "max": 20,
@@ -734,7 +841,7 @@
             "metric": "Altman Z-Score",
             "reason": "Zona segura - Muy baja probabilidad de quiebra",
             "severity": "excellent",
-            "value": "14.78"
+            "value": "3.11"
           },
           {
             "adjustment": 0,
@@ -775,15 +882,15 @@
           {
             "adjustment": 2,
             "metric": "P/E vs Sector",
-            "reason": "Premium justificado (32.8x) - Crecimiento Excepcional",
+            "reason": "Premium justificado (31.1x) - Crecimiento Excepcional",
             "severity": "ok",
-            "value": "32.8x"
+            "value": "31.1x"
           },
           {
-            "adjustment": 3,
+            "adjustment": 2,
             "metric": "Forward P/E",
-            "reason": "Fuerte compresión P/E (33x → 24x forward)",
-            "severity": "excellent",
+            "reason": "P/E mejorando (31x → 24x forward)",
+            "severity": "good",
             "value": "24.2x"
           },
           {
@@ -819,15 +926,15 @@
         "conclusive": true,
         "coverage": 1.0,
         "details": [
-          "Premium justificado (32.8x) - Crecimiento Excepcional",
-          "Fuerte compresión P/E (33x → 24x forward)",
+          "Premium justificado (31.1x) - Crecimiento Excepcional",
+          "P/E mejorando (31x → 24x forward)",
           "Aceptable para growth (33.5x)",
           "Premium (28.1x vs 14.0x)",
           "Caro para su crecimiento (1.90)",
           "GARP: Growth + Fundamentos sólidos (Quality: 80)"
         ],
         "max": 20,
-        "score": 15
+        "score": 14
       }
     },
     "categories_included": 5,
@@ -837,7 +944,7 @@
     "max_score": 100,
     "not_applicable_categories": [],
     "partial": false,
-    "total_score": 93
+    "total_score": 92
   },
   "score_coverage": {
     "calidad": {
