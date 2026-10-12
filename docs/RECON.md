@@ -497,3 +497,29 @@ umbrales de `validate.THRESHOLDS`:
   (no se corrige). Fuente posible sin crumb: `ticker.splits` (chart), por evaluar.
 - WACC = Ke (C4), DCF frente a grid (§6.5), recuadro del caso base (§1.4), `yearly_financials` vacío en prod,
   forward EPS sin fuente en prod, normalización de partidas no recurrentes (C1): sin cambios en la etapa 3.
+
+### 7.8 Regresiones conocidas hasta la etapa 6
+
+Cambios de la etapa 3 que mejoran el dato de entrada pero hacen visible un problema de reglas que se resuelve en
+etapas posteriores. Se aceptan a sabiendas al regenerar los golden.
+
+- **JPM: Piotroski 2/9 ahora cuenta en Calidad.** Con el año previo disponible en prod (bugs b y c), el F-Score deja
+  de ser "no concluyente" y entra en el score: Calidad pasa de 6 a 2 y el score de 68 a 64. Pero Piotroski **no
+  aplica a bancos**: el CFO, el current ratio, el margen bruto y la rotación de activos no tienen sentido en un
+  balance bancario. Se resuelve con la **rama FINANCIAL**.
+- **O: Altman y Piotroski aplicados a un REIT.** Con el sector correcto (bug a), Altman pasa al modelo Z'' (1.55,
+  zona gris) y Piotroski marca ✗ en current ratio. Ninguno de los dos es adecuado para un REIT (apalancamiento
+  estructural, sin ciclo de circulante). Se resuelve con la **rama REIT**.
+- **JPM: crecimiento de ingresos 7.3% en local frente a 3.4% en prod.**
+  - Local (7.3%): YoY de los estados anuales de yfinance, FY2025 frente a FY2024 (181.8 frente a 169.4 B). La regla
+    G2 sustituye el 30.4% de quoteSummary.
+  - Prod (3.4%): Finnhub da un TTM YoY de 109.0%, que la guarda G1 descarta, y se usa su CAGR-3Y (3.36%). G2 no
+    actúa porque 3.4% difiere menos de 15 pp del 7.3% de los estados.
+  - **El dato más fiable es el 7.3%.** Compara dos ejercicios consecutivos con la misma definición de ingresos y la
+    misma fuente que el resto del análisis en prod. El 3.4% no es un crecimiento interanual: es una media de 3 años
+    sobre la serie de Finnhub, cuya definición de "revenue" bancario no coincide con la de los estados (el
+    CAGR-3Y de los estados es del 12.5% frente al 3.36% de Finnhub, y el TTM YoY del 109% delata el mismo
+    artefacto).
+  - Pendiente para la rama FINANCIAL: en financieras, preferir siempre el YoY de los estados al de Finnhub, no
+    solo cuando difieren más de 15 pp. A medio plazo, medir el crecimiento bancario con el margen de intereses
+    neto o los ingresos netos, no con "Total Revenue".
