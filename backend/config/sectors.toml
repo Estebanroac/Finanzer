@@ -1,1 +1,307 @@
-# (se completa en los siguientes commits de la etapa 4)
+# Configuración sectorial.
+#
+# ⚠ PROVISIONAL: las medianas y los umbrales por sector de este archivo NO
+# vienen de comparables reales ni de una fuente citada; son valores fijados a
+# mano en versiones anteriores (RECON §2.1, "Fallo 3"). Se extraen tal cual en
+# la etapa 4 para no cambiar el comportamiento; deben sustituirse por medianas
+# de comparables reales.
+
+# ── Medianas sectoriales para la "brecha vs sector" (main._get_sector_benchmarks)
+# Alimentan sector_pe / sector_ev_ebitda del score de valoración y las tablas
+# comparativas del PDF. Copia en frontend/src/lib/sectorBench.ts (generada).
+[benchmarks.default]               # PROVISIONAL
+pe = 22
+forward_pe = 18
+pb = 3.5
+ev_ebitda = 14
+pfcf = 25
+peg = 1.5
+roe = 0.15
+roa = 0.06
+roic = 0.10
+net_margin = 0.10
+operating_margin = 0.15
+gross_margin = 0.40
+current_ratio = 1.5
+de = 0.8
+interest_coverage = 8
+fcf_yield = 0.04
+revenue_growth = 0.08
+earnings_growth = 0.10
+
+[benchmarks.sectors.technology]    # PROVISIONAL
+pe = 30
+forward_pe = 25
+pb = 8
+ev_ebitda = 20
+roe = 0.25
+roa = 0.10
+roic = 0.18
+net_margin = 0.20
+operating_margin = 0.25
+gross_margin = 0.60
+revenue_growth = 0.15
+earnings_growth = 0.18
+
+[benchmarks.sectors.healthcare]    # PROVISIONAL
+pe = 25
+forward_pe = 20
+pb = 4
+ev_ebitda = 16
+roe = 0.18
+net_margin = 0.15
+gross_margin = 0.55
+revenue_growth = 0.10
+
+[benchmarks.sectors.financials]    # PROVISIONAL
+pe = 13
+forward_pe = 11
+pb = 1.5
+roe = 0.12
+roa = 0.01
+de = 2.5
+net_margin = 0.25
+current_ratio = 0
+interest_coverage = 0
+
+[benchmarks.sectors.consumer_cyclical]   # PROVISIONAL
+pe = 20
+forward_pe = 17
+pb = 5
+ev_ebitda = 13
+roe = 0.20
+net_margin = 0.08
+gross_margin = 0.35
+revenue_growth = 0.08
+
+[benchmarks.sectors.consumer_defensive]  # PROVISIONAL
+pe = 23
+forward_pe = 20
+pb = 6
+ev_ebitda = 16
+roe = 0.25
+net_margin = 0.08
+gross_margin = 0.35
+de = 1.2
+revenue_growth = 0.05
+earnings_growth = 0.06
+
+[benchmarks.sectors.communication] # PROVISIONAL
+pe = 18
+forward_pe = 16
+pb = 3
+ev_ebitda = 10
+roe = 0.12
+net_margin = 0.12
+gross_margin = 0.55
+
+[benchmarks.sectors.energy]        # PROVISIONAL
+pe = 10
+forward_pe = 9
+pb = 1.8
+ev_ebitda = 6
+roe = 0.15
+net_margin = 0.08
+de = 0.5
+revenue_growth = 0.03
+
+[benchmarks.sectors.industrials]   # PROVISIONAL
+pe = 20
+forward_pe = 18
+pb = 4
+ev_ebitda = 13
+roe = 0.18
+net_margin = 0.08
+gross_margin = 0.30
+revenue_growth = 0.06
+
+[benchmarks.sectors.utilities]     # PROVISIONAL
+pe = 18
+forward_pe = 16
+pb = 1.8
+ev_ebitda = 12
+roe = 0.10
+de = 1.5
+net_margin = 0.12
+revenue_growth = 0.03
+
+[benchmarks.sectors.real_estate]   # PROVISIONAL
+pe = 35
+forward_pe = 30
+pb = 2.0
+ev_ebitda = 20
+roe = 0.06
+de = 1.0
+net_margin = 0.20
+
+[benchmarks.sectors.materials]     # PROVISIONAL
+pe = 14
+forward_pe = 12
+pb = 2
+ev_ebitda = 8
+roe = 0.12
+net_margin = 0.08
+de = 0.6
+
+# Medianas de respaldo dentro del motor cuando no llega la del sector.
+[benchmarks.engine_fallback]       # PROVISIONAL
+pe = 20                            # classify_company_type, adjust_valuation_for_growth, score_valoracion
+ev_ebitda = 12                     # score_valoracion
+
+# ── Umbrales del score por sector (financial_ratios.ThresholdConfig) ──
+[score_thresholds.default]         # PROVISIONAL
+pe_overvalued_mult = 1.3
+pe_undervalued_mult = 0.7
+pe_historical_overvalued_mult = 1.4
+pe_historical_undervalued_mult = 0.6
+p_fcf_high = 25.0
+p_fcf_low = 10.0
+ev_ebitda_overvalued_mult = 1.3
+ev_ebitda_undervalued_mult = 0.7
+fcf_yield_low = 0.03
+fcf_yield_high = 0.08
+peg_overvalued = 2.0
+peg_undervalued = 1.0
+net_debt_ebitda_high = 4.0
+net_debt_ebitda_low = 2.0
+debt_equity_high = 1.0
+interest_coverage_low = 3.0
+current_ratio_low = 1.0
+current_ratio_high = 2.0
+quick_ratio_low = 0.7
+roe_high = 0.20
+roe_low = 0.08
+roa_high = 0.12                    # banda superior sectorial (bancos ~1.2%, tech ~15%)
+roa_low = 0.03
+operating_margin_low = 0.05
+net_margin_low = 0.03
+beta_high = 1.5
+beta_low = 0.8
+
+# Overrides por sector (solo las claves que cambian respecto al default).
+[score_thresholds.overrides.technology]   # PROVISIONAL
+pe_overvalued_mult = 1.4
+p_fcf_high = 35.0
+roe_high = 0.22
+roe_low = 0.10
+roa_high = 0.15
+debt_equity_high = 0.80            # 0.50 castigaba a mega-caps con patrimonio encogido por recompras
+operating_margin_low = 0.15
+net_margin_low = 0.10
+
+[score_thresholds.overrides.utilities]    # PROVISIONAL
+pe_overvalued_mult = 1.2
+p_fcf_high = 18.0
+debt_equity_high = 1.5
+roe_high = 0.10
+roe_low = 0.05
+roa_high = 0.035
+roa_low = 0.015
+operating_margin_low = 0.12
+net_margin_low = 0.08
+
+[score_thresholds.overrides.financials]   # PROVISIONAL
+pe_overvalued_mult = 1.25
+roe_high = 0.12
+roe_low = 0.06
+roa_high = 0.012
+roa_low = 0.008
+debt_equity_high = 10.0
+operating_margin_low = 0.20
+net_margin_low = 0.15
+
+[score_thresholds.overrides.healthcare]   # PROVISIONAL
+pe_overvalued_mult = 1.35
+p_fcf_high = 30.0
+roe_high = 0.18
+roe_low = 0.08
+operating_margin_low = 0.12
+net_margin_low = 0.08
+
+[score_thresholds.overrides.consumer_cyclical]   # PROVISIONAL
+pe_overvalued_mult = 1.3
+current_ratio_low = 1.2
+roe_high = 0.18
+roe_low = 0.08
+operating_margin_low = 0.06
+net_margin_low = 0.04
+
+[score_thresholds.overrides.consumer_defensive]  # PROVISIONAL
+pe_overvalued_mult = 1.25
+roe_high = 0.20
+roe_low = 0.10
+debt_equity_high = 1.2
+operating_margin_low = 0.10
+net_margin_low = 0.06
+
+[score_thresholds.overrides.energy]       # PROVISIONAL
+pe_overvalued_mult = 1.2
+p_fcf_high = 12.0
+roe_high = 0.12
+roe_low = 0.05
+roa_high = 0.06
+debt_equity_high = 0.50
+operating_margin_low = 0.08
+net_margin_low = 0.05
+fcf_yield_high = 0.10
+fcf_yield_low = 0.05
+
+[score_thresholds.overrides.real_estate]  # PROVISIONAL
+pe_overvalued_mult = 1.3
+debt_equity_high = 2.0
+roe_high = 0.08
+roe_low = 0.03
+roa_high = 0.03
+roa_low = 0.01
+operating_margin_low = 0.25
+net_margin_low = 0.15
+
+[score_thresholds.overrides.industrials]  # PROVISIONAL
+pe_overvalued_mult = 1.3
+roe_high = 0.15
+roe_low = 0.08
+debt_equity_high = 0.80
+operating_margin_low = 0.08
+net_margin_low = 0.05
+
+[score_thresholds.overrides.materials]    # PROVISIONAL
+pe_overvalued_mult = 1.25
+roe_high = 0.12
+roe_low = 0.05
+roa_high = 0.06
+debt_equity_high = 0.60
+operating_margin_low = 0.10
+net_margin_low = 0.06
+
+[score_thresholds.overrides.communication] # PROVISIONAL
+pe_overvalued_mult = 1.35
+roe_high = 0.15
+roe_low = 0.08
+debt_equity_high = 1.0
+operating_margin_low = 0.15
+net_margin_low = 0.10
+
+# ── Sector financiero ──
+[financials]
+# Nombres de sector que se tratan como financieros (coincidencia exacta)...
+sector_names = ["financials", "financial services", "banks", "insurance", "asset management", "capital markets", "diversified financial", "regional banks", "investment banking", "credit services"]
+# ...o que contienen alguna de estas palabras.
+keywords = ["bank", "financ", "insurance", "asset manage", "capital market"]
+
+[financials.benchmarks]            # financial_health_score; PROVISIONAL ("promedios de grandes bancos, Basilea III/IV")
+roa_excellent = 0.005
+roa_good = 0.003
+roa_acceptable = 0.002
+roe_excellent = 0.12
+roe_good = 0.08
+roe_acceptable = 0.06
+pb_cheap = 0.8
+pb_fair = 1.2
+pb_expensive = 2.0
+de_very_conservative = 5.0
+de_conservative = 10.0
+de_normal = 15.0
+equity_to_assets_solid = 0.06
+equity_to_assets_good = 0.04
+dividend_yield_good = 0.025
+payout_sustainable = 0.60

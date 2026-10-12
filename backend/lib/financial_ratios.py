@@ -22,6 +22,7 @@ _GRID = cfg("valuation.grid")
 _ALTMAN = cfg("valuation.models.altman")
 _PIOTROSKI = cfg("valuation.models.piotroski")
 _FHEALTH = cfg("valuation.models.financial_health")
+_BENCH_FALLBACK = cfg("sectors.benchmarks.engine_fallback")  # PROVISIONAL
 
 DCF_RISK_FREE_RATE = _CAPM["risk_free_rate"]
 DCF_MARKET_RISK_PREMIUM = _CAPM["market_risk_premium"]
@@ -48,53 +49,12 @@ class SignalType(Enum):
 # =============================================================================
 
 # Sectores considerados como "Financieros" (modelo adaptativo)
-FINANCIAL_SECTORS = {
-    "financials",           # Financial Services
-    "financial services",
-    "banks",
-    "insurance",
-    "asset management",
-    "capital markets",
-    "diversified financial",
-    "regional banks",
-    "investment banking",
-    "credit services",
-}
+FINANCIAL_SECTORS = cfg("sectors.financials.sector_names")
 
 # Benchmarks específicos para sector financiero
 # CALIBRADOS según estándares reales del sector bancario (Q1 2024)
 # Fuente: Promedios de grandes bancos, requisitos Basilea III/IV
-FINANCIAL_BENCHMARKS = {
-    # ROA Bancario (promedio sector: 0.3-0.5%)
-    "roa_excellent": 0.005,    # >0.5% es excelente para banco
-    "roa_good": 0.003,         # >0.3% es bueno
-    "roa_acceptable": 0.002,   # >0.2% es aceptable
-    
-    # ROE Bancario (objetivo típico: 8-12%)
-    "roe_excellent": 0.12,     # >12% es excelente
-    "roe_good": 0.08,          # >8% es bueno
-    "roe_acceptable": 0.06,    # >6% es aceptable
-    
-    # Price to Book (valoración bancaria)
-    "pb_cheap": 0.8,           # P/B < 0.8 es barato
-    "pb_fair": 1.2,            # P/B 0.8-1.2 es justo
-    "pb_expensive": 2.0,       # P/B > 2.0 es caro
-    
-    # Debt/Equity para BANCOS (muy diferente a industriales)
-    # Los bancos operan normalmente con D/E de 8-15x
-    "de_very_conservative": 5.0,   # <5x muy conservador (excelente)
-    "de_conservative": 10.0,       # 5-10x conservador (bueno)
-    "de_normal": 15.0,             # 10-15x normal/típico
-    # >15x = elevado
-    
-    # Capitalización
-    "equity_to_assets_solid": 0.06,  # >6% es sólido para banco
-    "equity_to_assets_good": 0.04,   # >4% es aceptable
-    
-    # Dividendos
-    "dividend_yield_good": 0.025,    # >2.5% es buen dividendo
-    "payout_sustainable": 0.60,      # <60% payout es sostenible
-}
+FINANCIAL_BENCHMARKS = cfg("sectors.financials.benchmarks")  # PROVISIONAL (ver sectors.toml)
 
 
 def is_financial_sector(sector: str) -> bool:
@@ -116,7 +76,7 @@ def is_financial_sector(sector: str) -> bool:
         return True
     
     # Verificar si contiene palabras clave
-    financial_keywords = ["bank", "financ", "insurance", "asset manage", "capital market"]
+    financial_keywords = cfg("sectors.financials.keywords")
     return any(kw in sector_lower for kw in financial_keywords)
 
 def altman_z_score(
@@ -770,7 +730,7 @@ def classify_company_type(
     
     # Evaluar valoración
     if pe is not None and pe > 0:
-        pe_threshold = sector_pe if sector_pe and sector_pe > 0 else 20
+        pe_threshold = sector_pe if sector_pe and sector_pe > 0 else _BENCH_FALLBACK["pe"]
         pe_ratio_to_sector = pe / pe_threshold
         
         if pe_ratio_to_sector <= 0.6:
@@ -1007,7 +967,7 @@ def adjust_valuation_for_growth(
     if base_pe_adjustment >= 0:
         return base_pe_adjustment, None, None
 
-    pe_premium = pe / sector_pe if sector_pe > 0 else pe / 20
+    pe_premium = pe / sector_pe if sector_pe > 0 else pe / _BENCH_FALLBACK["pe"]
 
     # Calcular ajuste basado en calidad
     adjustment_modifier = 0
@@ -1080,156 +1040,64 @@ def adjust_valuation_for_growth(
 # CONFIGURACIÓN ORIGINAL (preservada)
 # =============================================================================
 
+_TD = cfg("sectors.score_thresholds.default")
+
+
 @dataclass
 class ThresholdConfig:
-    """Configuración de umbrales ajustables por sector."""
+    """Umbrales del score ajustables por sector (defaults en sectors.toml)."""
     # Valoración
-    pe_overvalued_mult: float = 1.3
-    pe_undervalued_mult: float = 0.7
-    pe_historical_overvalued_mult: float = 1.4
-    pe_historical_undervalued_mult: float = 0.6
-    p_fcf_high: float = 25.0
-    p_fcf_low: float = 10.0
-    ev_ebitda_overvalued_mult: float = 1.3
-    ev_ebitda_undervalued_mult: float = 0.7
-    fcf_yield_low: float = 0.03  # 3%
-    fcf_yield_high: float = 0.08  # 8%
-    peg_overvalued: float = 2.0
-    peg_undervalued: float = 1.0
-    
+    pe_overvalued_mult: float = _TD["pe_overvalued_mult"]
+    pe_undervalued_mult: float = _TD["pe_undervalued_mult"]
+    pe_historical_overvalued_mult: float = _TD["pe_historical_overvalued_mult"]
+    pe_historical_undervalued_mult: float = _TD["pe_historical_undervalued_mult"]
+    p_fcf_high: float = _TD["p_fcf_high"]
+    p_fcf_low: float = _TD["p_fcf_low"]
+    ev_ebitda_overvalued_mult: float = _TD["ev_ebitda_overvalued_mult"]
+    ev_ebitda_undervalued_mult: float = _TD["ev_ebitda_undervalued_mult"]
+    fcf_yield_low: float = _TD["fcf_yield_low"]
+    fcf_yield_high: float = _TD["fcf_yield_high"]
+    peg_overvalued: float = _TD["peg_overvalued"]
+    peg_undervalued: float = _TD["peg_undervalued"]
+
     # Apalancamiento
-    net_debt_ebitda_high: float = 4.0
-    net_debt_ebitda_low: float = 2.0
-    debt_equity_high: float = 1.0
-    interest_coverage_low: float = 3.0
-    
+    net_debt_ebitda_high: float = _TD["net_debt_ebitda_high"]
+    net_debt_ebitda_low: float = _TD["net_debt_ebitda_low"]
+    debt_equity_high: float = _TD["debt_equity_high"]
+    interest_coverage_low: float = _TD["interest_coverage_low"]
+
     # Liquidez
-    current_ratio_low: float = 1.0
-    current_ratio_high: float = 2.0
-    quick_ratio_low: float = 0.7
-    
+    current_ratio_low: float = _TD["current_ratio_low"]
+    current_ratio_high: float = _TD["current_ratio_high"]
+    quick_ratio_low: float = _TD["quick_ratio_low"]
+
     # Rentabilidad
-    roe_high: float = 0.20  # 20%
-    roe_low: float = 0.08  # 8%
-    roa_high: float = 0.12  # 12% — banda superior sectorial (bancos ~1.2%, tech ~15%)
-    roa_low: float = 0.03  # 3%
-    operating_margin_low: float = 0.05  # 5%
-    net_margin_low: float = 0.03  # 3%
-    
+    roe_high: float = _TD["roe_high"]
+    roe_low: float = _TD["roe_low"]
+    roa_high: float = _TD["roa_high"]
+    roa_low: float = _TD["roa_low"]
+    operating_margin_low: float = _TD["operating_margin_low"]
+    net_margin_low: float = _TD["net_margin_low"]
+
     # Volatilidad
-    beta_high: float = 1.5
-    beta_low: float = 0.8
+    beta_high: float = _TD["beta_high"]
+    beta_low: float = _TD["beta_low"]
 
 
-# Configuraciones predefinidas por sector
-SECTOR_THRESHOLDS = {
-    "technology": ThresholdConfig(
-        pe_overvalued_mult=1.4,
-        p_fcf_high=35.0,
-        roe_high=0.22,  # Tech tiene ROE alto típico
-        roe_low=0.10,
-        roa_high=0.15,
-        # 0.80 (antes 0.50): con 0.50 la banda severa (-5, penalización máxima)
-        # arrancaba en D/E>0.80x, castigando a mega-caps con patrimonio encogido
-        # por recompras (AAPL ~1.0x, cobertura 40x) igual que a un sobre-apalancado.
-        debt_equity_high=0.80,
-        operating_margin_low=0.15,
-        net_margin_low=0.10,
-    ),
-    "utilities": ThresholdConfig(
-        pe_overvalued_mult=1.2,
-        p_fcf_high=18.0,
-        debt_equity_high=1.5,
-        roe_high=0.10,  # Utilities tienen ROE bajo típico
-        roe_low=0.05,
-        roa_high=0.035,  # capital intensivo: ROA 3.5%+ ya es excelente
-        roa_low=0.015,
-        operating_margin_low=0.12,
-        net_margin_low=0.08,
-    ),
-    "financials": ThresholdConfig(
-        pe_overvalued_mult=1.25,
-        roe_high=0.12,  # Bancos: ROE más bajo es normal
-        roe_low=0.06,
-        roa_high=0.012,  # ROA bancario excelente ≈ 1.2%+
-        roa_low=0.008,   # Promedio real de bancos US ≈ 1.0-1.3%; mínimo aceptable 0.8%
-        debt_equity_high=10.0,  # Los ratios de deuda no aplican igual
-        operating_margin_low=0.20,
-        net_margin_low=0.15,
-    ),
-    "healthcare": ThresholdConfig(
-        pe_overvalued_mult=1.35,
-        p_fcf_high=30.0,
-        roe_high=0.18,
-        roe_low=0.08,
-        operating_margin_low=0.12,
-        net_margin_low=0.08,
-    ),
-    "consumer_cyclical": ThresholdConfig(
-        pe_overvalued_mult=1.3,
-        current_ratio_low=1.2,
-        roe_high=0.18,
-        roe_low=0.08,
-        operating_margin_low=0.06,
-        net_margin_low=0.04,
-    ),
-    "consumer_defensive": ThresholdConfig(
-        pe_overvalued_mult=1.25,
-        roe_high=0.20,
-        roe_low=0.10,
-        debt_equity_high=1.2,
-        operating_margin_low=0.10,
-        net_margin_low=0.06,
-    ),
-    "energy": ThresholdConfig(
-        pe_overvalued_mult=1.2,
-        p_fcf_high=12.0,
-        roe_high=0.12,  # Energy: ROE más bajo es normal (capital intensivo)
-        roe_low=0.05,
-        roa_high=0.06,
-        debt_equity_high=0.50,
-        operating_margin_low=0.08,
-        net_margin_low=0.05,
-        fcf_yield_high=0.10,
-        fcf_yield_low=0.05,
-    ),
-    "real_estate": ThresholdConfig(
-        pe_overvalued_mult=1.3,
-        debt_equity_high=2.0,  # REITs usan más deuda
-        roe_high=0.08,
-        roe_low=0.03,
-        roa_high=0.03,
-        roa_low=0.01,
-        operating_margin_low=0.25,
-        net_margin_low=0.15,
-    ),
-    "industrials": ThresholdConfig(
-        pe_overvalued_mult=1.3,
-        roe_high=0.15,
-        roe_low=0.08,
-        debt_equity_high=0.80,
-        operating_margin_low=0.08,
-        net_margin_low=0.05,
-    ),
-    "materials": ThresholdConfig(
-        pe_overvalued_mult=1.25,
-        roe_high=0.12,
-        roe_low=0.05,
-        roa_high=0.06,
-        debt_equity_high=0.60,
-        operating_margin_low=0.10,
-        net_margin_low=0.06,
-    ),
-    "communication": ThresholdConfig(
-        pe_overvalued_mult=1.35,
-        roe_high=0.15,
-        roe_low=0.08,
-        debt_equity_high=1.0,
-        operating_margin_low=0.15,
-        net_margin_low=0.10,
-    ),
-    "default": ThresholdConfig(),
-}
+def _sector_thresholds():
+    out = {}
+    for sector, overrides in cfg("sectors.score_thresholds.overrides").items():
+        try:
+            out[sector] = ThresholdConfig(**overrides)
+        except TypeError as e:
+            from settings import SettingsError
+            raise SettingsError(f"sectors.score_thresholds.overrides.{sector}: {e}") from None
+    out["default"] = ThresholdConfig()
+    return out
+
+
+# Configuraciones por sector (PROVISIONALES: ver sectors.toml)
+SECTOR_THRESHOLDS = _sector_thresholds()
 
 
 def safe_div(numerator: Optional[float], denominator: Optional[float]) -> Optional[float]:
@@ -2609,7 +2477,7 @@ def score_valoracion(
 
     # ─── P/E vs Sector (hasta ±5 pts) — omitido para REITs ─────
     if not is_reit and pe is not None and pe > 0:
-        pe_threshold = sector_pe if sector_pe and sector_pe > 0 else 20
+        pe_threshold = sector_pe if sector_pe and sector_pe > 0 else _BENCH_FALLBACK["pe"]
 
         # v2.4: Bandas más amplias para growth
         if is_quality_growth:
@@ -2734,7 +2602,7 @@ def score_valoracion(
 
     # ─── EV/EBITDA vs Sector (hasta ±4 pts) ────────────
     if ev_ebitda is not None and ev_ebitda > 0:
-        ev_threshold = sector_ev_ebitda if sector_ev_ebitda and sector_ev_ebitda > 0 else 12
+        ev_threshold = sector_ev_ebitda if sector_ev_ebitda and sector_ev_ebitda > 0 else _BENCH_FALLBACK["ev_ebitda"]
 
         if is_quality_growth:
             if ev_ebitda <= ev_threshold * 0.7:

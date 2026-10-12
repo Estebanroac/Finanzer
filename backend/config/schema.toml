@@ -2,7 +2,86 @@
 # Mismo árbol que los TOML; la hoja es el tipo. "*" = claves libres.
 
 [thresholds]
-[sectors]
+[sectors.benchmarks.default]
+pe = "number"
+forward_pe = "number"
+pb = "number"
+ev_ebitda = "number"
+pfcf = "number"
+peg = "number"
+roe = "number"
+roa = "number"
+roic = "number"
+net_margin = "number"
+operating_margin = "number"
+gross_margin = "number"
+current_ratio = "number"
+de = "number"
+interest_coverage = "number"
+fcf_yield = "number"
+revenue_growth = "number"
+earnings_growth = "number"
+
+[sectors.benchmarks.sectors."*"]
+"*" = "number"     # claves: subconjunto de benchmarks.default (lo comprueba main.py)
+
+[sectors.benchmarks.engine_fallback]
+pe = "int"
+ev_ebitda = "int"
+
+[sectors.score_thresholds.default]
+pe_overvalued_mult = "float"
+pe_undervalued_mult = "float"
+pe_historical_overvalued_mult = "float"
+pe_historical_undervalued_mult = "float"
+p_fcf_high = "float"
+p_fcf_low = "float"
+ev_ebitda_overvalued_mult = "float"
+ev_ebitda_undervalued_mult = "float"
+fcf_yield_low = "float"
+fcf_yield_high = "float"
+peg_overvalued = "float"
+peg_undervalued = "float"
+net_debt_ebitda_high = "float"
+net_debt_ebitda_low = "float"
+debt_equity_high = "float"
+interest_coverage_low = "float"
+current_ratio_low = "float"
+current_ratio_high = "float"
+quick_ratio_low = "float"
+roe_high = "float"
+roe_low = "float"
+roa_high = "float"
+roa_low = "float"
+operating_margin_low = "float"
+net_margin_low = "float"
+beta_high = "float"
+beta_low = "float"
+
+[sectors.score_thresholds.overrides."*"]
+"*" = "float"     # claves: subconjunto del default (ThresholdConfig lo comprueba)
+
+[sectors.financials]
+sector_names = "list[str]"
+keywords = "list[str]"
+
+[sectors.financials.benchmarks]
+roa_excellent = "float"
+roa_good = "float"
+roa_acceptable = "float"
+roe_excellent = "float"
+roe_good = "float"
+roe_acceptable = "float"
+pb_cheap = "float"
+pb_fair = "float"
+pb_expensive = "float"
+de_very_conservative = "float"
+de_conservative = "float"
+de_normal = "float"
+equity_to_assets_solid = "float"
+equity_to_assets_good = "float"
+dividend_yield_good = "float"
+payout_sustainable = "float"
 [valuation.capm]
 risk_free_rate = "float"
 market_risk_premium = "float"
