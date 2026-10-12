@@ -125,17 +125,12 @@ def _growth(ttm, cagr3, cagr5) -> Optional[float]:
     hipergrowth REAL muestra un CAGR multi-año comparablemente alto; un artefacto
     no. Si el YoY es un pico implausible frente a la tendencia, se usa el CAGR-3Y
     suavizado en su lugar (para JPM ~3.4%, razonable) en vez de un dato roto.
+
+    Desde la etapa 3 la regla vive en validate.growth_guard (umbrales en
+    validate.THRESHOLDS) y se aplica también a las rutas Yahoo y plan B.
     """
-    ttm = _num(ttm)
-    c3 = _num(cagr3)
-    c5 = _num(cagr5)
-    lt = c5 if c5 is not None else c3
-    if ttm is not None:
-        if abs(ttm) <= 60 or (lt is not None and abs(ttm) <= 3 * abs(lt)):
-            return ttm / 100.0
-    if c3 is not None:
-        return c3 / 100.0
-    return None
+    from validate import growth_guard
+    return growth_guard(ttm, cagr3, cagr5)
 
 
 def _series_val(series: dict, key: str, idx: int) -> Optional[float]:

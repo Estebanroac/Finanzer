@@ -62,6 +62,15 @@ Es la señal de que quedó corregido: quita su `@pytest.mark.xfail`. El arreglo 
 así que revisa `diff_golden.py` y regenera los golden de forma explícita.
 `raises=AssertionError` garantiza que un test roto por otra causa (KeyError, etc.) **no** se cuente como bug conocido.
 
+## Validación de entrada y trazabilidad (etapa 3)
+
+`lib/validate.py` corre en `yf_adapter.get_ticker_info` después de la ingesta (Yahoo o plan B, último-bueno-conocido
+y Finnhub) y antes del motor. Umbrales en `validate.THRESHOLDS`. Cada intervención queda en
+`analysis["data_validation"]` (`field`, `rule`, `action` = recalculado | sin_dato | aviso, `old`, `new`, `reason`) y la
+procedencia de cada campo en `analysis["data_provenance"]` (`path`, `fields`, `errors`). Los tests de cada regla, con
+casos positivos y negativos sintéticos, están en `test_validation.py`. La regla del crecimiento está documentada en
+RECON §7.6.
+
 ## Juego `prod`: línea base de producción (etapa 2.1)
 
 **Por qué existe:** el veredicto cambia de signo según el entorno. En prod (Render), **Yahoo responde `401` a todas

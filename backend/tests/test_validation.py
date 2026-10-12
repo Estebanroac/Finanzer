@@ -168,6 +168,65 @@ def test_decimal_units_untouched():
     assert not _flags(info, "unidades")
 
 
+# ─────────────────────────── bug e: crecimiento ───────────────────────────
+def _old_finnhub_growth(ttm, cagr3, cagr5):
+    """Copia literal de finnhub_fallback._growth antes de la etapa 3."""
+    def n(v):
+        try:
+            return None if v is None else float(v)
+        except (TypeError, ValueError):
+            return None
+    ttm, c3, c5 = n(ttm), n(cagr3), n(cagr5)
+    lt = c5 if c5 is not None else c3
+    if ttm is not None:
+        if abs(ttm) <= 60 or (lt is not None and abs(ttm) <= 3 * abs(lt)):
+            return ttm / 100.0
+    if c3 is not None:
+        return c3 / 100.0
+    return None
+
+
+@pytest.mark.parametrize("args", [
+    (108.98, 3.4, 7.7), (24.0, 20.0, 25.0), (-70.0, -5.0, None), (150.0, 60.0, 55.0),
+    (61.0, None, None), (None, 4.0, 5.0), (None, None, None), (60.0, 1.0, 1.0), ("x", "2", None),
+])
+def test_growth_guard_equivalent_to_previous_finnhub_rule(args):
+    import finnhub_fallback
+    assert V.growth_guard(*args) == _old_finnhub_growth(*args)
+    assert finnhub_fallback._growth(*args) == _old_finnhub_growth(*args)
+
+
+def test_growth_artifact_replaced_by_statement_cagr():
+    info = _run(_info(revenueGrowth=1.09))             # 109% con CAGR ~10%
+    cagr3 = (5e10 / 3.7e10) ** (1 / 3) - 1
+    assert info["revenueGrowth"] == pytest.approx(cagr3)
+    assert _flags(info, "crecimiento_artefacto")[0]["action"] == "recalculado"
+
+
+def test_real_hypergrowth_with_matching_cagr_kept():
+    info = _info(revenueGrowth=0.9)
+    info["_statements_fy"]["revenue"] = [1.9e10, 1e10, 5.2e9, 2.8e9]
+    _run(info)
+    assert info["revenueGrowth"] == 0.9 and not _flags(info, "crecimiento_artefacto")
+
+
+def test_financial_growth_incoherent_with_statements_uses_statement_yoy():
+    info = _run(_info(sector="Financial Services", revenueGrowth=0.304))
+    assert info["revenueGrowth"] == pytest.approx(5e10 / 4.55e10 - 1)
+    assert _flags(info, "crecimiento_incoherente_financiera")[0]["action"] == "recalculado"
+
+
+def test_non_financial_growth_incoherent_only_warns():
+    info = _run(_info(revenueGrowth=0.499))
+    assert info["revenueGrowth"] == 0.499
+    assert _flags(info, "crecimiento_incoherente")[0]["action"] == "aviso"
+
+
+def test_growth_coherent_with_statements_untouched():
+    info = _run(_info(sector="Financial Services", revenueGrowth=0.12))
+    assert info["revenueGrowth"] == 0.12 and not _flags(info)
+
+
 # ─────────────────────────── bug c: base de splits ───────────────────────────
 def test_unadjusted_prior_shares_rescaled_by_split_factor():
     info = _info(lastSplitFactor="10:1")

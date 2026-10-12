@@ -469,3 +469,31 @@ queda como "mejor caso" (local).
 
 Consecuencia: en prod todo lo de flujo y márgenes es **anual (FY)**, no TTM, y el crecimiento viene de Finnhub. La
 capa de validación de la etapa 3 marca esas procedencias en `data_provenance`.
+
+### 7.6 Regla del crecimiento de ingresos (etapa 3, bug e)
+
+`revenueGrowth` pasa por `validate._rule_growth` en **todas** las rutas (quoteSummary, plan B y Finnhub), con los
+umbrales de `validate.THRESHOLDS`:
+
+1. **Guarda anti-artefacto (G1)**: la de `finnhub_fallback._growth`, que ahora delega en `validate.growth_guard`
+   (test de equivalencia en `test_validation.py`). El YoY se acepta si |YoY| ≤ 60 % o |YoY| ≤ 3 × |CAGR largo|;
+   si no, se usa el CAGR-3Y. Fuera de Finnhub, los CAGR se calculan con los ingresos anuales de los estados
+   (`_statements_fy`: CAGR-3Y y CAGR de 4 intervalos como "largo"). Flag `crecimiento_artefacto`.
+2. **Coherencia con los estados (G2, solo financieras)**: si el crecimiento difiere más de 15 pp del YoY de los
+   estados anuales, se sustituye por este, con flag `crecimiento_incoherente_financiera` (RECON C6: el "revenue"
+   bancario tiene definición inestable).
+3. **No financieras (G3)**: la misma diferencia solo deja un **aviso** (`crecimiento_incoherente`); puede ser
+   aceleración real del último trimestre (SNOW local 49.9 % frente al 29.2 % FY; FCX prod −24.2 % frente al +1.8 %).
+
+**Advertencia:** G1 por sí sola **no** corrige JPM (30.4 % < 60 %). Lo que lo corrige es G2 (30.4 % → 7.3 %).
+
+### 7.7 Pendiente para etapas posteriores (detectado en la etapa 3)
+
+- **Fecha de resultados (bug f)**: no se lee en ninguna ruta (`earningsTimestamp*`, `calendarEvents`,
+  `isEarningsDateEstimate`). No se añade: etapa 10.
+- **FCX −24.2 % (Finnhub)**: G3 solo avisa. Decidir en la etapa de crecimiento/DCF si se usa el YoY de los estados
+  para no financieras cuando la diferencia es extrema.
+- **Plan B sin `lastSplitFactor`**: si un estado viniera sin ajustar por split, la comparación de acciones se anula
+  (no se corrige). Fuente posible sin crumb: `ticker.splits` (chart), por evaluar.
+- WACC = Ke (C4), DCF frente a grid (§6.5), recuadro del caso base (§1.4), `yearly_financials` vacío en prod,
+  forward EPS sin fuente en prod, normalización de partidas no recurrentes (C1): sin cambios en la etapa 3.

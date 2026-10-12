@@ -83,8 +83,8 @@ def test_bug_base_case_box_never_drawn_nflx(analysis, fixture_store):
     assert boxes, "el recuadro verde del escenario base no se dibujó"
 
 
-@pytest.mark.xfail(raises=AssertionError, reason="RECON C6: revenueGrowth de Yahoo para JPM (30.4%) es un artefacto de la "
-                          "definición de 'revenue' bancario; los estados dan ~7% interanual")
+# CORREGIDO en la etapa 3 (bug e): en financieras, un crecimiento que difiere >15 pp
+# del YoY de los estados se sustituye por este (JPM 30.4% -> 7.3%, con flag).
 def test_bug_jpm_revenue_growth_artifact(analysis, fixture_store):
     inc = _frame(fixture_store, "JPM", "income_stmt")
     rev = inc.loc["Total Revenue"]

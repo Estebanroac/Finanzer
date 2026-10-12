@@ -39,6 +39,13 @@ THRESHOLDS: Dict[str, float] = {
     "shares_ratio_min": 0.5,
     "shares_ratio_max": 2.0,
     "split_match_tolerance": 0.15,        # |ratio / factor − 1|
+    # Guarda anti-artefacto del crecimiento: MISMA regla que
+    # finnhub_fallback._growth (que ahora delega aquí): el YoY se acepta si
+    # |YoY| <= 60% o |YoY| <= 3 × |CAGR largo|; si no, se usa el CAGR-3Y.
+    "growth_artifact_abs_pct": 60.0,
+    "growth_artifact_lt_multiple": 3.0,
+    # Coherencia del crecimiento contra los estados (FY YoY), en decimal.
+    "growth_vs_statements_pp": 0.15,
     # Unidades: |crecimiento| > 1000% o yield > 50% delatan escala porcentual.
     "growth_units_abs_max": 10.0,
     "dividend_yield_max": 0.5,
@@ -110,6 +117,34 @@ class _Ctx:
     @property
     def stm(self) -> Dict[str, Any]:
         return self.info.get("_statements_fy") or {}
+
+
+# ═══════════════════════════ guarda de crecimiento (compartida) ═══════════════════════════
+def growth_guard(ttm_pct, cagr3_pct, cagr5_pct) -> Optional[float]:
+    """YoY en DECIMAL con guarda anti-artefacto. Entradas en PORCENTAJE.
+
+    Regla (originalmente en finnhub_fallback._growth, ahora compartida): un
+    hipercrecimiento real muestra un CAGR multi-año comparable; un artefacto
+    (p. ej. 'revenue' bancario con definición cambiante) no. Se acepta el YoY
+    si |YoY| <= 60% o |YoY| <= 3 × |CAGR-5Y (o 3Y)|; si no, se usa el CAGR-3Y.
+    """
+    t = THRESHOLDS
+    ttm, c3, c5 = _num(ttm_pct), _num(cagr3_pct), _num(cagr5_pct)
+    lt = c5 if c5 is not None else c3
+    if ttm is not None:
+        if abs(ttm) <= t["growth_artifact_abs_pct"] or (
+                lt is not None and abs(ttm) <= t["growth_artifact_lt_multiple"] * abs(lt)):
+            return ttm / 100.0
+    if c3 is not None:
+        return c3 / 100.0
+    return None
+
+
+def _cagr(series, years) -> Optional[float]:
+    a, b = _at(series, 0), _at(series, years)
+    if a is None or b is None or a <= 0 or b <= 0:
+        return None
+    return (a / b) ** (1.0 / years) - 1.0
 
 
 # ═══════════════════════════ reglas de entrada ═══════════════════════════
@@ -214,6 +249,45 @@ def _rule_units(c: _Ctx):
             c.flag(path, "unidades", "sin_dato", v, None, f"crecimiento {v} (> 1000%): escala porcentual")
 
 
+def _rule_growth(c: _Ctx):
+    """Crecimiento de ingresos: guarda anti-artefacto (la de finnhub_fallback)
+    en TODAS las rutas, con el CAGR de los estados anuales; y coherencia con el
+    YoY de los estados (sustitución solo en financieras, RECON C6)."""
+    g = _num(c.get("revenueGrowth"))
+    if g is None:
+        return
+    rev = c.stm.get("revenue") or []
+    c3, c5 = _cagr(rev, 3), _cagr(rev, 4)  # 4 intervalos = máximo disponible (~5 ejercicios)
+    guarded = growth_guard(g * 100.0, None if c3 is None else c3 * 100.0, None if c5 is None else c5 * 100.0)
+    if guarded is None:
+        c.set("revenueGrowth", None)
+        c.flag("revenueGrowth", "crecimiento_artefacto", "sin_dato", g, None,
+               "YoY implausible y sin CAGR de los estados para sustituirlo")
+        return
+    if abs(guarded - g) > 1e-12:
+        c.set("revenueGrowth", guarded)
+        c.flag("revenueGrowth", "crecimiento_artefacto", "recalculado", g, guarded,
+               f"YoY {g:.1%} implausible frente al CAGR de los estados: se usa CAGR-3Y {guarded:.1%}")
+        g = guarded
+    r0, r1 = _at(rev, 0), _at(rev, 1)
+    if r0 is None or r1 is None or r1 <= 0:
+        return
+    stmt_yoy = r0 / r1 - 1.0
+    if abs(g - stmt_yoy) <= THRESHOLDS["growth_vs_statements_pp"]:
+        return
+    from financial_ratios import is_financial_sector
+    year = (c.stm.get("inc_years") or ["?"])[0]
+    if is_financial_sector(c.info.get("sector") or ""):
+        c.set("revenueGrowth", stmt_yoy)
+        c.flag("revenueGrowth", "crecimiento_incoherente_financiera", "recalculado", g, stmt_yoy,
+               f"sector financiero: 'revenue' de la fuente con definición inestable (RECON C6); "
+               f"{g:.1%} difiere más de 15 pp del YoY de los estados FY{year} ({stmt_yoy:.1%}): se usa este")
+    else:
+        c.flag("revenueGrowth", "crecimiento_incoherente", "aviso", g, g,
+               f"{g:.1%} difiere más de 15 pp del YoY de los estados FY{year} ({stmt_yoy:.1%}); "
+               f"puede ser aceleración real del último trimestre: se mantiene")
+
+
 def _split_factor(raw) -> Optional[float]:
     """'10:1' -> 10.0 ; '1:10' -> 0.1 ; None si no se puede interpretar."""
     if not raw or not isinstance(raw, str) or ":" not in raw:
@@ -271,7 +345,7 @@ def _rule_jumps(c: _Ctx):
 
 
 _INPUT_RULES = (_rule_fcf, _rule_impossible, _rule_margins, _rule_units,
-                _rule_split_basis, _rule_jumps)
+                _rule_growth, _rule_split_basis, _rule_jumps)
 
 
 def validate_info(info: Dict[str, Any], symbol: str = "") -> Dict[str, Any]:
