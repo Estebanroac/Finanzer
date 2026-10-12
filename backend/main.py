@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "lib"))
 
 from data_fetcher import FinancialDataService, InvalidSymbolError
 from financial_ratios import (
-    calculate_all_ratios, calculate_score_v2, aggregate_alerts,
+    calculate_all_ratios, calculate_score_v2,
     altman_z_score, piotroski_f_score,
     graham_number, margin_of_safety, dcf_multi_stage_dynamic,
     dcf_sensitivity_analysis, calculate_wacc
