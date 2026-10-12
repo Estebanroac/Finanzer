@@ -1,1 +1,161 @@
-# (se completa en los siguientes commits de la etapa 4)
+# Bandas del score, de las alertas y de las lecturas del PDF.
+# Convención: `*_bounds` son los umbrales en el orden en que se evalúan en el
+# código (if/elif) y `*_points` los puntos de cada tramo; el último punto es
+# el del `else`. El operador de comparación (>=, >, <=) sigue en el código.
+
+[score.category]                    # las 5 categorías: base 10, rango [0, 20]
+base = 10
+min = 0
+max = 20
+
+[score.solidez]                     # score_solidez_financiera
+altman_points = [6, -2, -6]         # SAFE / GREY / DISTRESS
+current_bounds = [2.0, 1.5, 1.0, 0.8]
+current_points = [4, 2, 0, -2, -4]
+de_mults = [0.5, 1.3, 1.6]          # × umbral D/E del sector (tramos: ≤0.5×, ≤1×, ≤1.3×, ≤1.6×)
+de_points = [5, 2, 0, -2]
+de_mitigation_coverage = 10         # D/E alto pero cobertura ≥ 10x -> penalización mitigada
+de_mitigated_points = -2
+de_severe_points = -5
+coverage_bounds = [10, 5, 3, 1.5]
+coverage_points = [3, 1, 0, -2, -3]
+
+[score.solidez_financial]           # score_solidez_financiera_financial (bancos)
+max_without_regulatory = 18         # sin CET1/Tier 1 el máximo es 18/20
+health_offset = 4                   # solidez = 4 + salud × 1.4
+health_multiplier = 1.4
+de_points = [3, 2, 0, -2]           # tramos de sectors.financials.benchmarks.de_*
+pb_points = [2, 1, 0, -1]           # tramos de pb_cheap / pb_fair / pb_expensive
+
+[score.rentabilidad]                # score_rentabilidad
+negative_equity_min_roa = 0.03      # ROE < 0 con ROA > 3%: patrimonio negativo por recompras, no se penaliza
+roe_high_mult = 1.25                # tramos: ≥1.25×roe_high / ≥roe_high / ≥roe_low / ≥5% / ≥0 / <0
+roe_floor = 0.05
+roe_points = [6, 4, 2, -2, -4, -6]
+roa_high_mult = 1.25                # tramos: ≥1.25×roa_high / ≥roa_high / ≥roa_low / ≥0 / <0
+roa_points = [4, 2, 0, -2, -4]
+operating_margin_bounds = [0.30, 0.20, 0.10, 0.05]   # y luego ≥0 / <0 (no sectorial)
+operating_margin_points = [5, 3, 1, -1, -3, -5]
+net_margin_bounds = [0.20, 0.10, 0.05]               # y luego ≥0 / <0
+net_margin_points = [3, 2, 0, -2, -3]
+spread_bounds = [0.10, 0.03, 0.0, -0.03]             # ROIC − WACC
+spread_points = [3, 2, 1, -1, -3]
+# Defaults de firma de score_rentabilidad (calculate_score_v2 siempre pasa los
+# umbrales sectoriales, así que hoy no se usan; difieren de ThresholdConfig).
+signature_default_roe_low = 0.12
+signature_default_roa_low = 0.03
+signature_default_roe_high = 0.20
+signature_default_roa_high = 0.12
+
+[score.valoracion]                  # score_valoracion
+quality_growth_min_quality = 60     # growth/garp con calidad ≥ 60 usa las bandas "growth"
+growth_adjust_min_quality = 50      # penalización de P/E atenuable si calidad ≥ 50
+reit_pffo_bounds = [12, 16, 20, 25] # REIT: P/FFO ≤ (en lugar de P/E y P/FCF)
+reit_pffo_points = [4, 2, 0, -2, -4]
+pe_growth_mults = [0.7, 1.0, 1.5, 2.0]   # × P/E del sector
+pe_growth_points = [5, 3, 0, -2, -3]
+pe_value_mults = [0.7, 0.9, 1.1, 1.3]
+pe_value_points = [5, 3, 0, -2, -4]
+forward_compression_bounds = [0.25, 0.12, 0.05]   # (P/E − forward P/E) / P/E ≥
+forward_compression_points = [3, 2, 1]
+pfcf_growth_bounds = [15, 25, 40, 60]
+pfcf_growth_points = [4, 2, 0, -1, -2]
+pfcf_value_bounds = [12, 18, 25, 35]
+pfcf_value_points = [4, 2, 0, -2, -4]
+ev_ebitda_growth_mults = [0.7, 1.2, 1.8, 2.5]     # × EV/EBITDA del sector
+ev_ebitda_growth_points = [4, 2, 0, -1, -2]
+ev_ebitda_value_mults = [0.7, 1.2, 1.5]           # tramos: ≤0.7× / ≤1× / ≤1.2× / ≤1.5× / resto
+ev_ebitda_value_points = [4, 2, 0, -2, -4]
+peg_bounds = [0.8, 1.2, 1.8, 2.5]
+peg_points = [4, 2, 0, -2, -3]
+garp_min_quality = 70
+garp_points = 3
+growth_bonus_min_quality = 75
+growth_bonus_points = 2
+rescue_quality_net_cap = 4          # growth de calidad: penalización neta máx. −4 ...
+rescue_quality_max = 4              # ... con rescate máx. de 4 pts
+rescue_moderate_min_quality = 50
+rescue_moderate_net_cap = 6         # calidad moderada: penalización neta máx. −6 ...
+rescue_moderate_max = 3             # ... con rescate máx. de 3 pts
+
+[score.calidad]                     # score_calidad_ganancias
+fscore_bounds = [8, 6, 4, 2]        # Piotroski F ≥
+fscore_points = [7, 4, 0, -4, -7]
+ocf_points = [3, -4]                # OCF > 0 / ≤ 0
+fcf_points = [3, -4]                # FCF > 0 / ≤ 0
+fcf_to_ni_bounds = [1.0, 0.7, 0.3]  # FCF / beneficio neto ≥
+fcf_to_ni_points = [3, 1, 0, -2]
+
+[score.crecimiento]                 # score_crecimiento
+revenue_bounds = [0.20, 0.10, 0.03] # y luego ≥0 / <0
+revenue_points = [5, 3, 1, -1, -4]
+eps_bounds = [0.25, 0.12, 0.05]     # y luego ≥0 / <0
+eps_points = [5, 3, 1, -1, -4]
+fcf_bounds = [0.15, 0.05, -0.05]
+fcf_points = [4, 2, 0, -3]
+growth_company_points = 2
+
+[score.total]                       # calculate_score_v2
+max = 100
+level_bands = [80, 65, 50, 35]      # Excelente / Favorable / Neutral / Precaución / Alto Riesgo (motor, API)
+growth_company_min_revenue_cagr = 0.15
+growth_quality_default = 50
+
+[score.company_type]                # classify_company_type: votos por tipo de empresa
+revenue_bounds = [0.25, 0.15, 0.05] # y < 0
+revenue_votes_0 = { growth = 3, garp = 2 }
+revenue_votes_1 = { growth = 2, garp = 2 }
+revenue_votes_2 = { garp = 1, value = 1 }
+revenue_votes_negative = { value = 1, deep_value = 1 }
+eps_bounds = [0.20, 0.10]
+eps_votes_0 = { growth = 2, garp = 2 }
+eps_votes_1 = { garp = 1 }
+pe_to_sector_bounds = [0.6, 0.85, 1.15, 1.5]   # P/E / P/E del sector ≤
+pe_votes_0 = { deep_value = 3 }
+pe_votes_1 = { value = 2, deep_value = 1 }
+pe_votes_2 = { garp = 2, value = 1 }
+pe_votes_3 = { growth = 1, garp = 1 }
+pe_votes_4 = { growth = 2, speculative_growth = 1 }
+roe_bounds = [0.25, 0.15, 0.08]     # ≥ / ≥ / < (bajo)
+roe_votes_0 = { growth = 1, garp = 2 }
+roe_votes_1 = { garp = 1, value = 1 }
+roe_votes_low = { speculative_growth = 2, growth = -1 }
+dividend_yield_bounds = [0.04, 0.02]
+dividend_votes_0 = { dividend = 3, value = 1 }
+dividend_votes_1 = { dividend = 1, value = 1 }
+fcf_yield_bounds = [0.08, 0.05]
+fcf_yield_votes_0 = { deep_value = 2, value = 1 }
+fcf_yield_votes_1 = { value = 1, garp = 1 }
+garp_tiebreak_margin = 1            # crecimiento fuerte + calidad: GARP si votos garp ≥ growth − 1
+speculative_reduction = 2
+blend_max_confidence = 0.25         # confianza < 0.25 o < 3 votos -> "blend"
+blend_min_votes = 3
+blend_confidence = 0.5
+
+[score.growth_quality]              # calculate_growth_quality_score (0-100)
+base = 50
+min = 0
+max = 100
+revenue_bounds = [0.25, 0.15, 0.08] # y luego ≥0 / <0
+revenue_points = [15, 10, 5, 0, -10]
+eps_vs_revenue_mults = [1.2, 0.5]   # EPS > 1.2×ingresos / ≥ ingresos / ≥ 0.5× / resto
+eps_vs_revenue_points = [10, 5, -5, -10]
+fcf_bounds = [0.15, 0.05]           # y luego ≥0 / <0
+fcf_points = [10, 5, 0, -10]
+return_bounds = [0.25, 0.15, 0.08]  # máx(ROE, ROIC)
+return_points = [10, 5, 0, -10]
+operating_margin_bounds = [0.25, 0.15, 0.05]   # ≥ / ≥ / < (bajo)
+operating_margin_points = [5, 3, -5]
+level_bands = [80, 65, 50, 35]
+
+[score.growth_adjustment]           # adjust_valuation_for_growth (atenúa penalización de P/E)
+quality_bounds = [85, 75, 65, 50]
+quality_modifiers = [5, 4, 3, 2]
+legit_growth_min_quality = 60
+legit_growth_modifier = 2
+speculative_modifier = -1
+roe_bounds = [0.30, 0.20]
+roe_modifiers = [2, 1]
+cap_bounds = [80, 65]               # calidad ≥ 80 (growth/garp) / ≥ 65 / resto
+caps = [2, 1, 0]                    # ajuste máximo resultante
+moderate_severity_floor = -1

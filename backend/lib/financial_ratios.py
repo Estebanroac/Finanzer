@@ -23,6 +23,8 @@ _ALTMAN = cfg("valuation.models.altman")
 _PIOTROSKI = cfg("valuation.models.piotroski")
 _FHEALTH = cfg("valuation.models.financial_health")
 _BENCH_FALLBACK = cfg("sectors.benchmarks.engine_fallback")  # PROVISIONAL
+_SC = cfg("thresholds.score")
+_CAT = cfg("thresholds.score.category")
 
 DCF_RISK_FREE_RATE = _CAPM["risk_free_rate"]
 DCF_MARKET_RISK_PREMIUM = _CAPM["market_risk_premium"]
@@ -665,6 +667,11 @@ def calculate_wacc(
     return round(wacc, 4)
 
 
+def _pts_str(v: int) -> str:
+    """Puntos como texto de desglose: "+15", "-10", "0"."""
+    return "0" if v == 0 else f"{v:+d}"
+
+
 def classify_company_type(
     revenue_growth_3y: Optional[float],
     eps_growth_3y: Optional[float],
@@ -699,89 +706,84 @@ def classify_company_type(
     }
     reasons = []
     
+    T = _SC["company_type"]
+
+    def vote(table):
+        for k, v in table.items():
+            scores[k] += v
+
     # Evaluar métricas de crecimiento
     has_strong_growth = False
     has_quality_growth = False
     
     if revenue_growth_3y is not None:
-        if revenue_growth_3y >= 0.25:
-            scores["growth"] += 3
-            scores["garp"] += 2
+        b = T["revenue_bounds"]
+        if revenue_growth_3y >= b[0]:
+            vote(T["revenue_votes_0"])
             has_strong_growth = True
             reasons.append(f"Revenue growth {revenue_growth_3y:.0%}")
-        elif revenue_growth_3y >= 0.15:
-            scores["growth"] += 2
-            scores["garp"] += 2
+        elif revenue_growth_3y >= b[1]:
+            vote(T["revenue_votes_1"])
             has_strong_growth = True
-        elif revenue_growth_3y >= 0.05:
-            scores["garp"] += 1
-            scores["value"] += 1
+        elif revenue_growth_3y >= b[2]:
+            vote(T["revenue_votes_2"])
         elif revenue_growth_3y < 0:
-            scores["value"] += 1
-            scores["deep_value"] += 1
+            vote(T["revenue_votes_negative"])
     
     if eps_growth_3y is not None:
-        if eps_growth_3y >= 0.20:
-            scores["growth"] += 2
-            scores["garp"] += 2
+        b = T["eps_bounds"]
+        if eps_growth_3y >= b[0]:
+            vote(T["eps_votes_0"])
             has_quality_growth = True
-        elif eps_growth_3y >= 0.10:
-            scores["garp"] += 1
+        elif eps_growth_3y >= b[1]:
+            vote(T["eps_votes_1"])
     
     # Evaluar valoración
     if pe is not None and pe > 0:
         pe_threshold = sector_pe if sector_pe and sector_pe > 0 else _BENCH_FALLBACK["pe"]
         pe_ratio_to_sector = pe / pe_threshold
-        
-        if pe_ratio_to_sector <= 0.6:
-            scores["deep_value"] += 3
+        b = T["pe_to_sector_bounds"]
+        if pe_ratio_to_sector <= b[0]:
+            vote(T["pe_votes_0"])
             reasons.append(f"P/E muy bajo vs sector")
-        elif pe_ratio_to_sector <= 0.85:
-            scores["value"] += 2
-            scores["deep_value"] += 1
-        elif pe_ratio_to_sector <= 1.15:
-            scores["garp"] += 2
-            scores["value"] += 1
-        elif pe_ratio_to_sector <= 1.5:
-            scores["growth"] += 1
-            scores["garp"] += 1
+        elif pe_ratio_to_sector <= b[1]:
+            vote(T["pe_votes_1"])
+        elif pe_ratio_to_sector <= b[2]:
+            vote(T["pe_votes_2"])
+        elif pe_ratio_to_sector <= b[3]:
+            vote(T["pe_votes_3"])
         else:
-            scores["growth"] += 2
-            scores["speculative_growth"] += 1
+            vote(T["pe_votes_4"])
             reasons.append(f"P/E elevado ({pe:.0f}x)")
     
     # Evaluar calidad (ROE)
     if roe is not None:
-        if roe >= 0.25:
-            scores["growth"] += 1
-            scores["garp"] += 2
+        b = T["roe_bounds"]
+        if roe >= b[0]:
+            vote(T["roe_votes_0"])
             has_quality_growth = True
             reasons.append(f"ROE excepcional {roe:.0%}")
-        elif roe >= 0.15:
-            scores["garp"] += 1
-            scores["value"] += 1
-        elif roe < 0.08:
-            scores["speculative_growth"] += 2
-            scores["growth"] -= 1
+        elif roe >= b[1]:
+            vote(T["roe_votes_1"])
+        elif roe < b[2]:
+            vote(T["roe_votes_low"])
     
     # Evaluar dividendos
     if dividend_yield is not None:
-        if dividend_yield >= 0.04:
-            scores["dividend"] += 3
-            scores["value"] += 1
+        b = T["dividend_yield_bounds"]
+        if dividend_yield >= b[0]:
+            vote(T["dividend_votes_0"])
             reasons.append(f"Alto dividendo {dividend_yield:.1%}")
-        elif dividend_yield >= 0.02:
-            scores["dividend"] += 1
-            scores["value"] += 1
+        elif dividend_yield >= b[1]:
+            vote(T["dividend_votes_1"])
     
     # FCF Yield (indicador de value)
     if fcf_yield is not None:
-        if fcf_yield >= 0.08:
-            scores["deep_value"] += 2
-            scores["value"] += 1
-        elif fcf_yield >= 0.05:
-            scores["value"] += 1
-            scores["garp"] += 1
+        b = T["fcf_yield_bounds"]
+        if fcf_yield >= b[0]:
+            vote(T["fcf_yield_votes_0"])
+        elif fcf_yield >= b[1]:
+            vote(T["fcf_yield_votes_1"])
     
     # Determinar tipo ganador
     best_type = max(scores, key=scores.get)
@@ -789,21 +791,21 @@ def classify_company_type(
     
     # Si hay crecimiento fuerte + calidad, es GARP o Growth legítimo
     if has_strong_growth and has_quality_growth:
-        if scores["garp"] >= scores["growth"] - 1:
+        if scores["garp"] >= scores["growth"] - T["garp_tiebreak_margin"]:
             best_type = "garp"
         else:
             best_type = "growth"
         # Reducir speculative si hay calidad
-        scores["speculative_growth"] = max(0, scores["speculative_growth"] - 2)
+        scores["speculative_growth"] = max(0, scores["speculative_growth"] - T["speculative_reduction"])
     
     # Calcular confianza
     total_score = sum(scores.values())
     confidence = best_score / max(total_score, 1)
     
     # Si la confianza es baja, es blend
-    if confidence < 0.25 or best_score < 3:
+    if confidence < T["blend_max_confidence"] or best_score < T["blend_min_votes"]:
         best_type = "blend"
-        confidence = 0.5
+        confidence = T["blend_confidence"]
     
     return {
         "type": best_type,
@@ -836,99 +838,106 @@ def calculate_growth_quality_score(
     Returns:
         Dict con score, nivel, y breakdown
     """
-    score = 50  # Base neutral
+    T = _SC["growth_quality"]
+    score = T["base"]  # Base neutral
     breakdown = []
     
     # 1. Crecimiento de Revenue (hasta ±15 pts)
     if revenue_growth_3y is not None:
-        if revenue_growth_3y >= 0.25:
-            score += 15
-            breakdown.append(("Revenue Growth", "+15", "Excepcional"))
-        elif revenue_growth_3y >= 0.15:
-            score += 10
-            breakdown.append(("Revenue Growth", "+10", "Fuerte"))
-        elif revenue_growth_3y >= 0.08:
-            score += 5
-            breakdown.append(("Revenue Growth", "+5", "Sólido"))
+        b, p = T["revenue_bounds"], T["revenue_points"]
+        if revenue_growth_3y >= b[0]:
+            score += p[0]
+            breakdown.append(("Revenue Growth", _pts_str(p[0]), "Excepcional"))
+        elif revenue_growth_3y >= b[1]:
+            score += p[1]
+            breakdown.append(("Revenue Growth", _pts_str(p[1]), "Fuerte"))
+        elif revenue_growth_3y >= b[2]:
+            score += p[2]
+            breakdown.append(("Revenue Growth", _pts_str(p[2]), "Sólido"))
         elif revenue_growth_3y >= 0:
-            score += 0
-            breakdown.append(("Revenue Growth", "0", "Estable"))
+            score += p[3]
+            breakdown.append(("Revenue Growth", _pts_str(p[3]), "Estable"))
         else:
-            score -= 10
-            breakdown.append(("Revenue Growth", "-10", "Contracción"))
+            score += p[4]
+            breakdown.append(("Revenue Growth", _pts_str(p[4]), "Contracción"))
     
     # 2. EPS vs Revenue growth (hasta ±10 pts)
     if eps_growth_3y is not None and revenue_growth_3y is not None:
-        if eps_growth_3y > revenue_growth_3y * 1.2:
-            score += 10
-            breakdown.append(("EPS vs Revenue", "+10", "Expansión de márgenes"))
+        m, p = T["eps_vs_revenue_mults"], T["eps_vs_revenue_points"]
+        if eps_growth_3y > revenue_growth_3y * m[0]:
+            score += p[0]
+            breakdown.append(("EPS vs Revenue", _pts_str(p[0]), "Expansión de márgenes"))
         elif eps_growth_3y >= revenue_growth_3y:
-            score += 5
-            breakdown.append(("EPS vs Revenue", "+5", "Márgenes estables"))
-        elif eps_growth_3y >= revenue_growth_3y * 0.5:
-            score -= 5
-            breakdown.append(("EPS vs Revenue", "-5", "Compresión leve"))
+            score += p[1]
+            breakdown.append(("EPS vs Revenue", _pts_str(p[1]), "Márgenes estables"))
+        elif eps_growth_3y >= revenue_growth_3y * m[1]:
+            score += p[2]
+            breakdown.append(("EPS vs Revenue", _pts_str(p[2]), "Compresión leve"))
         else:
-            score -= 10
-            breakdown.append(("EPS vs Revenue", "-10", "Compresión severa"))
+            score += p[3]
+            breakdown.append(("EPS vs Revenue", _pts_str(p[3]), "Compresión severa"))
     
     # 3. FCF Growth (hasta ±10 pts)
     if fcf_growth_3y is not None:
-        if fcf_growth_3y >= 0.15:
-            score += 10
-            breakdown.append(("FCF Growth", "+10", "Excelente"))
-        elif fcf_growth_3y >= 0.05:
-            score += 5
-            breakdown.append(("FCF Growth", "+5", "Positivo"))
+        b, p = T["fcf_bounds"], T["fcf_points"]
+        if fcf_growth_3y >= b[0]:
+            score += p[0]
+            breakdown.append(("FCF Growth", _pts_str(p[0]), "Excelente"))
+        elif fcf_growth_3y >= b[1]:
+            score += p[1]
+            breakdown.append(("FCF Growth", _pts_str(p[1]), "Positivo"))
         elif fcf_growth_3y >= 0:
-            score += 0
-            breakdown.append(("FCF Growth", "0", "Estable"))
+            score += p[2]
+            breakdown.append(("FCF Growth", _pts_str(p[2]), "Estable"))
         else:
-            score -= 10
-            breakdown.append(("FCF Growth", "-10", "Negativo"))
+            score += p[3]
+            breakdown.append(("FCF Growth", _pts_str(p[3]), "Negativo"))
     
     # 4. ROE/ROIC - Calidad del capital (hasta ±10 pts)
     best_return = max(filter(None, [roe, roic]), default=None)
     if best_return is not None:
-        if best_return >= 0.25:
-            score += 10
-            breakdown.append(("Return on Capital", "+10", "Excepcional"))
-        elif best_return >= 0.15:
-            score += 5
-            breakdown.append(("Return on Capital", "+5", "Bueno"))
-        elif best_return >= 0.08:
-            score += 0
-            breakdown.append(("Return on Capital", "0", "Aceptable"))
+        b, p = T["return_bounds"], T["return_points"]
+        if best_return >= b[0]:
+            score += p[0]
+            breakdown.append(("Return on Capital", _pts_str(p[0]), "Excepcional"))
+        elif best_return >= b[1]:
+            score += p[1]
+            breakdown.append(("Return on Capital", _pts_str(p[1]), "Bueno"))
+        elif best_return >= b[2]:
+            score += p[2]
+            breakdown.append(("Return on Capital", _pts_str(p[2]), "Aceptable"))
         else:
-            score -= 10
-            breakdown.append(("Return on Capital", "-10", "Bajo"))
+            score += p[3]
+            breakdown.append(("Return on Capital", _pts_str(p[3]), "Bajo"))
     
     # 5. Margen operativo (hasta ±5 pts)
     if operating_margin is not None:
-        if operating_margin >= 0.25:
-            score += 5
-            breakdown.append(("Op. Margin", "+5", "Muy alto"))
-        elif operating_margin >= 0.15:
-            score += 3
-            breakdown.append(("Op. Margin", "+3", "Saludable"))
-        elif operating_margin < 0.05:
-            score -= 5
-            breakdown.append(("Op. Margin", "-5", "Bajo"))
+        b, p = T["operating_margin_bounds"], T["operating_margin_points"]
+        if operating_margin >= b[0]:
+            score += p[0]
+            breakdown.append(("Op. Margin", _pts_str(p[0]), "Muy alto"))
+        elif operating_margin >= b[1]:
+            score += p[1]
+            breakdown.append(("Op. Margin", _pts_str(p[1]), "Saludable"))
+        elif operating_margin < b[2]:
+            score += p[2]
+            breakdown.append(("Op. Margin", _pts_str(p[2]), "Bajo"))
     
     # Normalizar a 0-100
-    score = max(0, min(100, score))
+    score = max(T["min"], min(T["max"], score))
     
     # Determinar nivel
-    if score >= 80:
+    lv = T["level_bands"]
+    if score >= lv[0]:
         level = "exceptional"
         label = "Crecimiento Excepcional"
-    elif score >= 65:
+    elif score >= lv[1]:
         level = "high_quality"
         label = "Alta Calidad"
-    elif score >= 50:
+    elif score >= lv[2]:
         level = "moderate"
         label = "Calidad Moderada"
-    elif score >= 35:
+    elif score >= lv[3]:
         level = "low_quality"
         label = "Baja Calidad"
     else:
@@ -973,51 +982,55 @@ def adjust_valuation_for_growth(
     adjustment_modifier = 0
     reason_parts = []
 
+    T = _SC["growth_adjustment"]
+    qb, qm = T["quality_bounds"], T["quality_modifiers"]
     # v2.4: Growth quality alta JUSTIFICA premium de forma más agresiva
-    if growth_quality_score >= 85:
-        adjustment_modifier += 5  # Antes: 3 → ahora puede neutralizar -5
+    if growth_quality_score >= qb[0]:
+        adjustment_modifier += qm[0]  # Antes: 3 → ahora puede neutralizar -5
         reason_parts.append("calidad excepcional")
-    elif growth_quality_score >= 75:
-        adjustment_modifier += 4
+    elif growth_quality_score >= qb[1]:
+        adjustment_modifier += qm[1]
         reason_parts.append("calidad muy alta")
-    elif growth_quality_score >= 65:
-        adjustment_modifier += 3
+    elif growth_quality_score >= qb[2]:
+        adjustment_modifier += qm[2]
         reason_parts.append("alta calidad")
-    elif growth_quality_score >= 50:
-        adjustment_modifier += 2
+    elif growth_quality_score >= qb[3]:
+        adjustment_modifier += qm[3]
         reason_parts.append("calidad moderada")
 
     # Tipo de empresa — growth legítimo merece más alivio
-    if company_type in ["garp", "growth"] and growth_quality_score >= 60:
-        adjustment_modifier += 2
+    if company_type in ["garp", "growth"] and growth_quality_score >= T["legit_growth_min_quality"]:
+        adjustment_modifier += T["legit_growth_modifier"]
         reason_parts.append("growth legítimo" if company_type == "growth" else "GARP")
     elif company_type == "speculative_growth":
-        adjustment_modifier -= 1
+        adjustment_modifier += T["speculative_modifier"]
         reason_parts.append("especulativo")
 
     # ROE excepcional justifica premium (ventaja competitiva duradera)
-    if roe is not None and roe >= 0.30:
-        adjustment_modifier += 2
+    rb, rm = T["roe_bounds"], T["roe_modifiers"]
+    if roe is not None and roe >= rb[0]:
+        adjustment_modifier += rm[0]
         reason_parts.append(f"ROE {roe:.0%}")
-    elif roe is not None and roe >= 0.20:
-        adjustment_modifier += 1
+    elif roe is not None and roe >= rb[1]:
+        adjustment_modifier += rm[1]
         reason_parts.append(f"ROE {roe:.0%}")
 
     # Aplicar modificador
     new_adjustment = base_pe_adjustment + adjustment_modifier
 
     # v2.4: Permitir que growth de calidad excepcional llegue a bonus moderado (+2 max)
-    if growth_quality_score >= 80 and company_type in ["growth", "garp"]:
-        new_adjustment = min(new_adjustment, 2)  # Puede convertir en bonus leve
-    elif growth_quality_score >= 65:
-        new_adjustment = min(new_adjustment, 1)  # Puede llegar a +1
+    cb, caps = T["cap_bounds"], T["caps"]
+    if growth_quality_score >= cb[0] and company_type in ["growth", "garp"]:
+        new_adjustment = min(new_adjustment, caps[0])  # Puede convertir en bonus leve
+    elif growth_quality_score >= cb[1]:
+        new_adjustment = min(new_adjustment, caps[1])  # Puede llegar a +1
     else:
-        new_adjustment = min(new_adjustment, 0)  # No convertir en bonus
+        new_adjustment = min(new_adjustment, caps[2])  # No convertir en bonus
 
     # Determinar severidad
     if new_adjustment >= 0:
         severity = "ok"
-    elif new_adjustment >= -1:
+    elif new_adjustment >= T["moderate_severity_floor"]:
         severity = "moderate"
     else:
         severity = "severe"
@@ -1896,25 +1909,26 @@ def score_solidez_financiera(
     current_ratio: Optional[float],
     debt_to_equity: Optional[float],
     interest_coverage: Optional[float],
-    sector_de_threshold: float = 1.0
+    sector_de_threshold: float = _TD["debt_equity_high"]
 ) -> Dict[str, Any]:
     """
     Categoría 1: Solidez Financiera (20 pts máximo)
     Base: 10 pts, ajusta según métricas
     """
-    base_score = 10
+    T = _SC["solidez"]
+    base_score = _CAT["base"]
     adjustments = []
     
     # Z-Score (peso alto: hasta ±6 pts)
     if z_score is not None:
         if z_score_level == "SAFE":
-            adj = 6
+            adj = T["altman_points"][0]
             adjustments.append({"metric": "Altman Z-Score", "value": f"{z_score:.2f}", "adjustment": adj, "reason": "Zona segura - Muy baja probabilidad de quiebra", "severity": "excellent"})
         elif z_score_level == "GREY":
-            adj = -2
+            adj = T["altman_points"][1]
             adjustments.append({"metric": "Altman Z-Score", "value": f"{z_score:.2f}", "adjustment": adj, "reason": "Zona gris - Requiere monitoreo cercano", "severity": "moderate"})
         elif z_score_level == "DISTRESS":
-            adj = -6
+            adj = T["altman_points"][2]
             adjustments.append({"metric": "Altman Z-Score", "value": f"{z_score:.2f}", "adjustment": adj, "reason": "Zona peligro - Riesgo significativo de problemas", "severity": "severe"})
         else:
             adj = 0
@@ -1922,24 +1936,25 @@ def score_solidez_financiera(
     
     # Current Ratio (hasta ±4 pts)
     if current_ratio is not None:
-        if current_ratio >= 2.0:
-            adj = 4
+        b, p = T["current_bounds"], T["current_points"]
+        if current_ratio >= b[0]:
+            adj = p[0]
             sev = "excellent"
             reason = f"Liquidez excelente - Cubre 2x sus deudas corto plazo"
-        elif current_ratio >= 1.5:
-            adj = 2
+        elif current_ratio >= b[1]:
+            adj = p[1]
             sev = "good"
             reason = f"Liquidez sólida - Buena capacidad de pago ({current_ratio:.2f}x)"
-        elif current_ratio >= 1.0:
-            adj = 0
+        elif current_ratio >= b[2]:
+            adj = p[2]
             sev = "ok"
             reason = f"Liquidez justa - Cubre sus obligaciones ({current_ratio:.2f}x)"
-        elif current_ratio >= 0.8:
-            adj = -2
+        elif current_ratio >= b[3]:
+            adj = p[3]
             sev = "moderate"
             reason = f"Liquidez ajustada - Poco margen de maniobra ({current_ratio:.2f}x)"
         else:
-            adj = -4
+            adj = p[4]
             sev = "severe"
             reason = f"Riesgo de liquidez - Podría tener problemas de pago ({current_ratio:.2f}x)"
         
@@ -1949,6 +1964,7 @@ def score_solidez_financiera(
     # Debt/Equity (hasta ±5 pts) - proporcional al sector
     if debt_to_equity is not None:
         threshold = sector_de_threshold
+        m, p = T["de_mults"], T["de_points"]
         if debt_to_equity < 0:
             # Negative book equity (buybacks) makes D/E negative and useless as a
             # leverage gauge — a very negative value is NOT "low debt". Treat it
@@ -1957,34 +1973,34 @@ def score_solidez_financiera(
             adj = 0
             sev = "ok"
             reason = f"D/E no informativo (patrimonio negativo, {debt_to_equity:.1f}x) — evaluar por cobertura de intereses"
-        elif debt_to_equity <= threshold * 0.5:
-            adj = 5
+        elif debt_to_equity <= threshold * m[0]:
+            adj = p[0]
             sev = "excellent"
             reason = f"Deuda muy baja - Estructura financiera conservadora"
         elif debt_to_equity <= threshold:
-            adj = 2
+            adj = p[1]
             sev = "good"
             reason = f"Deuda controlada - Dentro del rango saludable ({debt_to_equity:.2f}x)"
-        elif debt_to_equity <= threshold * 1.3:
-            adj = 0
+        elif debt_to_equity <= threshold * m[1]:
+            adj = p[2]
             sev = "ok"
             reason = f"Deuda aceptable - Cerca del límite sectorial ({debt_to_equity:.2f}x)"
-        elif debt_to_equity <= threshold * 1.6:
-            adj = -2
+        elif debt_to_equity <= threshold * m[2]:
+            adj = p[3]
             sev = "moderate"
             reason = f"Deuda elevada - Por encima del sector ({debt_to_equity:.2f}x vs {threshold:.1f}x)"
-        elif interest_coverage is not None and interest_coverage >= 10:
+        elif interest_coverage is not None and interest_coverage >= T["de_mitigation_coverage"]:
             # Mitigación: D/E alto pero el beneficio operativo cubre los
             # intereses con mucha holgura — típico de mega-caps con patrimonio
             # encogido por recompras, no de empresas sobre-apalancadas. Sin esta
             # gradación, un D/E de 1.0x con cobertura 40x recibía la misma
             # penalización máxima que uno de 8x al borde del impago.
-            adj = -2
+            adj = T["de_mitigated_points"]
             sev = "moderate"
             reason = (f"Deuda alta ({debt_to_equity:.2f}x) pero fácilmente servible "
                       f"(cobertura {interest_coverage:.0f}x) — riesgo acotado")
         else:
-            adj = -5
+            adj = T["de_severe_points"]
             sev = "severe"
             reason = f"Deuda muy alta - Riesgo financiero elevado ({debt_to_equity:.2f}x)"
         
@@ -1993,40 +2009,41 @@ def score_solidez_financiera(
     
     # Interest Coverage (hasta ±3 pts)
     if interest_coverage is not None:
-        if interest_coverage >= 10:
-            adj = 3
+        b, p = T["coverage_bounds"], T["coverage_points"]
+        if interest_coverage >= b[0]:
+            adj = p[0]
             sev = "excellent"
             reason = "Cobertura excelente"
-        elif interest_coverage >= 5:
-            adj = 1
+        elif interest_coverage >= b[1]:
+            adj = p[1]
             sev = "good"
             reason = "Cobertura sólida"
-        elif interest_coverage >= 3:
-            adj = 0
+        elif interest_coverage >= b[2]:
+            adj = p[2]
             sev = "ok"
             reason = "Cobertura aceptable"
-        elif interest_coverage >= 1.5:
-            adj = -2
+        elif interest_coverage >= b[3]:
+            adj = p[3]
             sev = "moderate"
             reason = "Cobertura ajustada"
         else:
-            adj = -3
+            adj = p[4]
             sev = "severe"
             reason = "Riesgo de cobertura"
         
         base_score += adj
         adjustments.append({"metric": "Cobertura Intereses", "value": f"{interest_coverage:.1f}x", "adjustment": adj, "reason": reason, "severity": sev})
     
-    final_score = max(0, min(20, base_score))
+    final_score = max(_CAT["min"], min(_CAT["max"], base_score))
     
     return {
         "category": "Solidez Financiera",
         "emoji": "🏛️",
         "score": final_score,
-        "max_score": 20,
-        "base": 10,
+        "max_score": _CAT["max"],
+        "base": _CAT["base"],
         "adjustments": adjustments,
-        "total_adjustment": final_score - 10
+        "total_adjustment": final_score - _CAT["base"]
     }
 
 
@@ -2059,6 +2076,7 @@ def score_solidez_financiera_financial(
     """
     adjustments = []
     b = FINANCIAL_BENCHMARKS
+    T = _SC["solidez_financial"]
     has_regulatory_data = False  # Yahoo Finance no tiene CET1, Tier 1, etc.
     
     # =====================================================
@@ -2066,12 +2084,12 @@ def score_solidez_financiera_financial(
     # Sin métricas regulatorias, máximo = 18/20
     # Los 2 puntos restantes requieren CET1, Tier 1, NPL, etc.
     # =====================================================
-    MAX_WITHOUT_REGULATORY = 18
+    MAX_WITHOUT_REGULATORY = T["max_without_regulatory"]
     
     if financial_health is not None:
         # Mapeo lineal: FHS 0-10 → Solidez 4-18 (conservador)
         # Fórmula: solidez = 4 + (financial_health * 1.4)
-        base_score = 4 + (financial_health * 1.4)
+        base_score = T["health_offset"] + (financial_health * T["health_multiplier"])
         
         if financial_health_level == "STRONG":
             sev = "excellent"
@@ -2089,14 +2107,14 @@ def score_solidez_financiera_financial(
         adjustments.append({
             "metric": "Solidez Bancaria", 
             "value": f"{financial_health}/10", 
-            "adjustment": round(base_score - 10),  # Relativo a base 10
+            "adjustment": round(base_score - _CAT["base"]),  # Relativo a base 10
             "reason": reason, 
             "severity": sev,
             "details": financial_health_details
         })
     else:
         # Sin datos: puntuación NEUTRAL (10/20), no penalizar
-        base_score = 10
+        base_score = _CAT["base"]
         adjustments.append({
             "metric": "Datos Limitados",
             "value": "N/A",
@@ -2112,19 +2130,19 @@ def score_solidez_financiera_financial(
     # =====================================================
     if debt_to_equity is not None:
         if debt_to_equity < b["de_very_conservative"]:  # <5x
-            bonus = 3
+            bonus = T["de_points"][0]
             sev = "excellent"
             reason = f"D/E muy conservador ({debt_to_equity:.1f}x < 5x) - Excepcional para banco"
         elif debt_to_equity < b["de_conservative"]:  # 5-10x
-            bonus = 2
+            bonus = T["de_points"][1]
             sev = "good"
             reason = f"D/E conservador ({debt_to_equity:.1f}x) - Sólido para banco"
         elif debt_to_equity < b["de_normal"]:  # 10-15x
-            bonus = 0
+            bonus = T["de_points"][2]
             sev = "ok"
             reason = f"D/E normal ({debt_to_equity:.1f}x) - Típico bancario"
         else:  # >15x
-            bonus = -2
+            bonus = T["de_points"][3]
             sev = "moderate"
             reason = f"D/E elevado ({debt_to_equity:.1f}x > 15x)"
         
@@ -2142,19 +2160,19 @@ def score_solidez_financiera_financial(
     # =====================================================
     if price_to_book is not None:
         if price_to_book < b["pb_cheap"]:  # <0.8x
-            adj = 2
+            adj = T["pb_points"][0]
             sev = "excellent"
             reason = f"P/B atractivo ({price_to_book:.2f}x) - Bajo valor en libros"
         elif price_to_book <= b["pb_fair"]:  # 0.8-1.2x
-            adj = 1
+            adj = T["pb_points"][1]
             sev = "good"
             reason = f"P/B justo ({price_to_book:.2f}x)"
         elif price_to_book <= b["pb_expensive"]:  # 1.2-2.0x
-            adj = 0
+            adj = T["pb_points"][2]
             sev = "ok"
             reason = f"P/B elevado ({price_to_book:.2f}x)"
         else:  # >2.0x
-            adj = -1
+            adj = T["pb_points"][3]
             sev = "moderate"
             reason = f"P/B muy alto ({price_to_book:.2f}x > 2x)"
         
@@ -2169,20 +2187,20 @@ def score_solidez_financiera_financial(
     
     # Aplicar cap conservador: sin métricas regulatorias, máximo 18/20
     if not has_regulatory_data:
-        final_score = max(0, min(MAX_WITHOUT_REGULATORY, round(base_score)))
+        final_score = max(_CAT["min"], min(MAX_WITHOUT_REGULATORY, round(base_score)))
         methodology_note = "Evaluación adaptada para sector bancario (máx 18/20 sin datos regulatorios CET1/Tier1)"
     else:
-        final_score = max(0, min(20, round(base_score)))
+        final_score = max(_CAT["min"], min(_CAT["max"], round(base_score)))
         methodology_note = "Evaluación completa con métricas regulatorias"
     
     return {
         "category": "Solidez Financiera",
         "emoji": "🏦",
         "score": final_score,
-        "max_score": 20,
-        "base": 10,
+        "max_score": _CAT["max"],
+        "base": _CAT["base"],
         "adjustments": adjustments,
-        "total_adjustment": final_score - 10,
+        "total_adjustment": final_score - _CAT["base"],
         "is_financial_sector": True,
         "methodology_note": methodology_note
     }
@@ -2193,12 +2211,12 @@ def score_rentabilidad(
     roa: Optional[float],
     operating_margin: Optional[float],
     net_margin: Optional[float],
-    sector_roe_threshold: float = 0.12,
-    sector_roa_threshold: float = 0.03,
+    sector_roe_threshold: float = _SC["rentabilidad"]["signature_default_roe_low"],
+    sector_roa_threshold: float = _SC["rentabilidad"]["signature_default_roa_low"],
     roic: Optional[float] = None,
     wacc: Optional[float] = None,
-    sector_roe_high: float = 0.20,
-    sector_roa_high: float = 0.12
+    sector_roe_high: float = _SC["rentabilidad"]["signature_default_roe_high"],
+    sector_roa_high: float = _SC["rentabilidad"]["signature_default_roa_high"]
 ) -> Dict[str, Any]:
     """
     Categoría 2: Rentabilidad (20 pts máximo)
@@ -2210,12 +2228,14 @@ def score_rentabilidad(
     excelente (ROE 16%, ROA 1.3%) quedaba capado a +2/0 por muy por encima
     de su sector que estuviera.
     """
-    base_score = 10
+    T = _SC["rentabilidad"]
+    base_score = _CAT["base"]
     adjustments = []
 
     # ROE (peso alto: hasta ±6 pts) — bandas relativas al roe_high sectorial
     if roe is not None:
-        if roe < 0 and roa is not None and roa > 0.03:
+        p = T["roe_points"]
+        if roe < 0 and roa is not None and roa > T["negative_equity_min_roa"]:
             # Negative book equity (e.g. from heavy buybacks: HD, MCD, SBUX,
             # ABBV) makes ROE negative even for very profitable companies — a
             # balance-sheet artifact, not value destruction. Don't apply the
@@ -2223,28 +2243,28 @@ def score_rentabilidad(
             adj = 0
             sev = "ok"
             reason = f"ROE negativo por patrimonio negativo (recompras) — no penalizado; ROA {roa:.1%} sólido"
-        elif roe >= sector_roe_high * 1.25:
-            adj = 6
+        elif roe >= sector_roe_high * T["roe_high_mult"]:
+            adj = p[0]
             sev = "excellent"
             reason = f"Excepcional para su sector ({roe:.1%} vs {sector_roe_high:.0%} rango alto sectorial)"
         elif roe >= sector_roe_high:
-            adj = 4
+            adj = p[1]
             sev = "good"
             reason = f"Muy bueno ({roe:.1%}) - En el rango alto de su sector"
         elif roe >= sector_roe_threshold:
-            adj = 2
+            adj = p[2]
             sev = "ok"
             reason = f"Bueno ({roe:.1%}) - Competitivo en su sector"
-        elif roe >= 0.05:
-            adj = -2
+        elif roe >= T["roe_floor"]:
+            adj = p[3]
             sev = "moderate"
             reason = f"Bajo ({roe:.1%}) - Por debajo de lo esperado"
         elif roe >= 0:
-            adj = -4
+            adj = p[4]
             sev = "moderate"
             reason = f"Muy bajo ({roe:.1%}) - Poco eficiente con el capital"
         else:
-            adj = -6
+            adj = p[5]
             sev = "severe"
             reason = f"Negativo ({roe:.1%}) - Destruye valor para accionistas"
         
@@ -2253,24 +2273,25 @@ def score_rentabilidad(
     
     # ROA (hasta ±4 pts) — bandas relativas al roa_high sectorial
     if roa is not None:
-        if roa >= sector_roa_high * 1.25:
-            adj = 4
+        p = T["roa_points"]
+        if roa >= sector_roa_high * T["roa_high_mult"]:
+            adj = p[0]
             sev = "excellent"
             reason = f"Excelente para su sector ({roa:.1%})"
         elif roa >= sector_roa_high:
-            adj = 2
+            adj = p[1]
             sev = "good"
             reason = f"Bueno ({roa:.1%}) - Rango alto de su sector"
         elif roa >= sector_roa_threshold:
-            adj = 0
+            adj = p[2]
             sev = "ok"
             reason = f"Aceptable ({roa:.1%}) - Normal para su sector"
         elif roa >= 0:
-            adj = -2
+            adj = p[3]
             sev = "moderate"
             reason = f"Bajo ({roa:.1%}) - Activos poco productivos"
         else:
-            adj = -4
+            adj = p[4]
             sev = "severe"
             reason = f"Negativo ({roa:.1%}) - Perdiendo dinero con sus activos"
         
@@ -2279,28 +2300,29 @@ def score_rentabilidad(
     
     # Operating Margin (hasta ±5 pts)
     if operating_margin is not None:
-        if operating_margin >= 0.30:
-            adj = 5
+        b, p = T["operating_margin_bounds"], T["operating_margin_points"]
+        if operating_margin >= b[0]:
+            adj = p[0]
             sev = "excellent"
             reason = f"Excepcional ({operating_margin:.1%}) - Alto poder de fijación de precios"
-        elif operating_margin >= 0.20:
-            adj = 3
+        elif operating_margin >= b[1]:
+            adj = p[1]
             sev = "good"
             reason = f"Muy bueno ({operating_margin:.1%}) - Operaciones eficientes"
-        elif operating_margin >= 0.10:
-            adj = 1
+        elif operating_margin >= b[2]:
+            adj = p[2]
             sev = "ok"
             reason = f"Bueno ({operating_margin:.1%}) - Márgenes saludables"
-        elif operating_margin >= 0.05:
-            adj = -1
+        elif operating_margin >= b[3]:
+            adj = p[3]
             sev = "moderate"
             reason = f"Ajustado ({operating_margin:.1%}) - Márgenes bajo presión"
         elif operating_margin >= 0:
-            adj = -3
+            adj = p[4]
             sev = "moderate"
             reason = f"Bajo ({operating_margin:.1%}) - Costos erosionan ganancias"
         else:
-            adj = -5
+            adj = p[5]
             sev = "severe"
             reason = f"Negativo ({operating_margin:.1%}) - Operaciones no rentables"
         
@@ -2309,24 +2331,25 @@ def score_rentabilidad(
     
     # Net Margin (hasta ±3 pts)
     if net_margin is not None:
-        if net_margin >= 0.20:
-            adj = 3
+        b, p = T["net_margin_bounds"], T["net_margin_points"]
+        if net_margin >= b[0]:
+            adj = p[0]
             sev = "excellent"
             reason = f"Excelente ({net_margin:.1%}) - Alta rentabilidad final"
-        elif net_margin >= 0.10:
-            adj = 2
+        elif net_margin >= b[1]:
+            adj = p[1]
             sev = "good"
             reason = f"Bueno ({net_margin:.1%}) - Ganancias sólidas"
-        elif net_margin >= 0.05:
-            adj = 0
+        elif net_margin >= b[2]:
+            adj = p[2]
             sev = "ok"
             reason = f"Aceptable ({net_margin:.1%}) - Márgenes estándar"
         elif net_margin >= 0:
-            adj = -2
+            adj = p[3]
             sev = "moderate"
             reason = f"Bajo ({net_margin:.1%}) - Poca ganancia por venta"
         else:
-            adj = -3
+            adj = p[4]
             sev = "severe"
             reason = f"Negativo ({net_margin:.1%})"
         
@@ -2340,34 +2363,35 @@ def score_rentabilidad(
     # duplicar) el ROE. No aplica a financieras (se pasa wacc=None para ellas).
     if roic is not None and wacc is not None:
         spread = roic - wacc
-        if spread >= 0.10:
-            adj = 3; sev = "excellent"
+        b, p = T["spread_bounds"], T["spread_points"]
+        if spread >= b[0]:
+            adj = p[0]; sev = "excellent"
             reason = f"Crea mucho valor (ROIC {roic:.1%} vs WACC {wacc:.1%}, spread +{spread:.1%})"
-        elif spread >= 0.03:
-            adj = 2; sev = "good"
+        elif spread >= b[1]:
+            adj = p[1]; sev = "good"
             reason = f"Crea valor (ROIC {roic:.1%} > WACC {wacc:.1%}, spread +{spread:.1%})"
-        elif spread >= 0:
-            adj = 1; sev = "ok"
+        elif spread >= b[2]:
+            adj = p[2]; sev = "ok"
             reason = f"Retorno por encima del costo de capital (spread +{spread:.1%})"
-        elif spread >= -0.03:
-            adj = -1; sev = "moderate"
+        elif spread >= b[3]:
+            adj = p[3]; sev = "moderate"
             reason = f"Retorno apenas por debajo del costo de capital (spread {spread:.1%})"
         else:
-            adj = -3; sev = "severe"
+            adj = p[4]; sev = "severe"
             reason = f"Destruye valor (ROIC {roic:.1%} < WACC {wacc:.1%}, spread {spread:.1%})"
         base_score += adj
         adjustments.append({"metric": "ROIC vs WACC", "value": f"{spread:+.1%}", "adjustment": adj, "reason": reason, "severity": sev})
 
-    final_score = max(0, min(20, base_score))
+    final_score = max(_CAT["min"], min(_CAT["max"], base_score))
 
     return {
         "category": "Rentabilidad",
         "emoji": "💰",
         "score": final_score,
-        "max_score": 20,
-        "base": 10,
+        "max_score": _CAT["max"],
+        "base": _CAT["base"],
         "adjustments": adjustments,
-        "total_adjustment": final_score - 10
+        "total_adjustment": final_score - _CAT["base"]
     }
 
 
@@ -2410,7 +2434,8 @@ def score_valoracion(
     Filosofía: Una empresa cara que crece rápido con buenos fundamentos
     NO es lo mismo que una empresa cara que no crece.
     """
-    base_score = 10
+    T = _SC["valoracion"]
+    base_score = _CAT["base"]
     adjustments = []
 
     # Calcular calidad del crecimiento y tipo de empresa
@@ -2440,7 +2465,7 @@ def score_valoracion(
     # (50) — no debe bastar para activar tolerancias/rescates de valoración:
     # la ausencia de datos no es evidencia de calidad.
     has_growth_data = any(x is not None for x in (revenue_growth_3y, eps_growth_3y, fcf_growth_3y))
-    is_quality_growth = (has_growth_data and company_type in ["growth", "garp"] and growth_quality_score >= 60)
+    is_quality_growth = (has_growth_data and company_type in ["growth", "garp"] and growth_quality_score >= T["quality_growth_min_quality"])
 
     # v2.4: Track negative adjustments to cap them for growth
     total_negative = 0
@@ -2451,20 +2476,21 @@ def score_valoracion(
     # métricas engañosas para el sector. El estándar es P/FFO.
     if is_reit:
         if p_ffo is not None and p_ffo > 0:
-            if p_ffo <= 12:
-                adj = 4; sev = "excellent"
+            b, p = T["reit_pffo_bounds"], T["reit_pffo_points"]
+            if p_ffo <= b[0]:
+                adj = p[0]; sev = "excellent"
                 reason = f"Barato por FFO ({p_ffo:.1f}x)"
-            elif p_ffo <= 16:
-                adj = 2; sev = "good"
+            elif p_ffo <= b[1]:
+                adj = p[1]; sev = "good"
                 reason = f"Atractivo por FFO ({p_ffo:.1f}x)"
-            elif p_ffo <= 20:
-                adj = 0; sev = "ok"
+            elif p_ffo <= b[2]:
+                adj = p[2]; sev = "ok"
                 reason = f"En línea ({p_ffo:.1f}x FFO)"
-            elif p_ffo <= 25:
-                adj = -2; sev = "moderate"
+            elif p_ffo <= b[3]:
+                adj = p[3]; sev = "moderate"
                 reason = f"Caro por FFO ({p_ffo:.1f}x)"
             else:
-                adj = -4; sev = "severe"
+                adj = p[4]; sev = "severe"
                 reason = f"Muy caro por FFO ({p_ffo:.1f}x)"
             if adj < 0:
                 total_negative += adj
@@ -2482,40 +2508,42 @@ def score_valoracion(
         # v2.4: Bandas más amplias para growth
         if is_quality_growth:
             # Growth stocks: tolerar hasta 1.5x sector como "en línea"
-            if pe <= pe_threshold * 0.7:
-                adj = 5; sev = "excellent"
+            m, p = T["pe_growth_mults"], T["pe_growth_points"]
+            if pe <= pe_threshold * m[0]:
+                adj = p[0]; sev = "excellent"
                 reason = f"Barato ({pe:.1f}x vs {pe_threshold:.1f}x sector)"
-            elif pe <= pe_threshold * 1.0:
-                adj = 3; sev = "good"
+            elif pe <= pe_threshold * m[1]:
+                adj = p[1]; sev = "good"
                 reason = f"Atractivo para growth ({pe:.1f}x)"
-            elif pe <= pe_threshold * 1.5:
-                adj = 0; sev = "ok"
+            elif pe <= pe_threshold * m[2]:
+                adj = p[2]; sev = "ok"
                 reason = f"Razonable para growth ({pe:.1f}x vs {pe_threshold:.1f}x)"
-            elif pe <= pe_threshold * 2.0:
-                adj = -2; sev = "moderate"
+            elif pe <= pe_threshold * m[3]:
+                adj = p[3]; sev = "moderate"
                 reason = f"Premium elevado ({pe:.1f}x vs {pe_threshold:.1f}x)"
             else:
-                adj = -3; sev = "severe"  # v2.4: max -3 en vez de -5
+                adj = p[4]; sev = "severe"  # v2.4: max -3 en vez de -5
                 reason = f"Muy caro ({pe:.1f}x vs {pe_threshold:.1f}x)"
         else:
-            if pe <= pe_threshold * 0.7:
-                adj = 5; sev = "excellent"
+            m, p = T["pe_value_mults"], T["pe_value_points"]
+            if pe <= pe_threshold * m[0]:
+                adj = p[0]; sev = "excellent"
                 reason = f"Muy barato ({pe:.1f}x vs {pe_threshold:.1f}x sector)"
-            elif pe <= pe_threshold * 0.9:
-                adj = 3; sev = "good"
+            elif pe <= pe_threshold * m[1]:
+                adj = p[1]; sev = "good"
                 reason = f"Atractivo ({pe:.1f}x)"
-            elif pe <= pe_threshold * 1.1:
-                adj = 0; sev = "ok"
+            elif pe <= pe_threshold * m[2]:
+                adj = p[2]; sev = "ok"
                 reason = f"En línea ({pe:.1f}x vs {pe_threshold:.1f}x)"
-            elif pe <= pe_threshold * 1.3:
-                adj = -2; sev = "moderate"
+            elif pe <= pe_threshold * m[3]:
+                adj = p[3]; sev = "moderate"
                 reason = f"Premium ({pe:.1f}x vs {pe_threshold:.1f}x)"
             else:
-                adj = -4; sev = "severe"
+                adj = p[4]; sev = "severe"
                 reason = f"Muy caro ({pe:.1f}x vs {pe_threshold:.1f}x)"
 
         # v2.4: Ajustar penalización con growth quality (ahora más agresivo)
-        if adj < 0 and has_growth_data and growth_quality_score >= 50:
+        if adj < 0 and has_growth_data and growth_quality_score >= T["growth_adjust_min_quality"]:
             original_adj = adj
             adjusted_adj, adj_reason, adj_sev = adjust_valuation_for_growth(
                 base_pe_adjustment=adj,
@@ -2543,18 +2571,19 @@ def score_valoracion(
     # ─── Forward P/E Bonus (NUEVO v2.4) ────────────────
     if forward_pe is not None and forward_pe > 0 and pe is not None and pe > 0:
         pe_compression = (pe - forward_pe) / pe  # % de "mejora" esperada
-        if pe_compression >= 0.25:  # Forward P/E 25%+ menor que trailing
-            adj = 3; sev = "excellent"
+        b, p = T["forward_compression_bounds"], T["forward_compression_points"]
+        if pe_compression >= b[0]:  # Forward P/E 25%+ menor que trailing
+            adj = p[0]; sev = "excellent"
             reason = f"Fuerte compresión P/E ({pe:.0f}x → {forward_pe:.0f}x forward)"
             base_score += adj
             adjustments.append({"metric": "Forward P/E", "value": f"{forward_pe:.1f}x", "adjustment": adj, "reason": reason, "severity": sev})
-        elif pe_compression >= 0.12:
-            adj = 2; sev = "good"
+        elif pe_compression >= b[1]:
+            adj = p[1]; sev = "good"
             reason = f"P/E mejorando ({pe:.0f}x → {forward_pe:.0f}x forward)"
             base_score += adj
             adjustments.append({"metric": "Forward P/E", "value": f"{forward_pe:.1f}x", "adjustment": adj, "reason": reason, "severity": sev})
-        elif pe_compression >= 0.05:
-            adj = 1; sev = "good"
+        elif pe_compression >= b[2]:
+            adj = p[2]; sev = "good"
             reason = f"P/E estable a mejor ({pe:.0f}x → {forward_pe:.0f}x)"
             base_score += adj
             adjustments.append({"metric": "Forward P/E", "value": f"{forward_pe:.1f}x", "adjustment": adj, "reason": reason, "severity": sev})
@@ -2563,36 +2592,38 @@ def score_valoracion(
     if not is_reit and p_fcf is not None and p_fcf > 0:
         # v2.4: Bandas más amplias para growth
         if is_quality_growth:
-            if p_fcf <= 15:
-                adj = 4; sev = "excellent"
+            b, p = T["pfcf_growth_bounds"], T["pfcf_growth_points"]
+            if p_fcf <= b[0]:
+                adj = p[0]; sev = "excellent"
                 reason = f"Excelente para growth ({p_fcf:.1f}x)"
-            elif p_fcf <= 25:
-                adj = 2; sev = "good"
+            elif p_fcf <= b[1]:
+                adj = p[1]; sev = "good"
                 reason = f"Bueno para growth ({p_fcf:.1f}x)"
-            elif p_fcf <= 40:
-                adj = 0; sev = "ok"
+            elif p_fcf <= b[2]:
+                adj = p[2]; sev = "ok"
                 reason = f"Aceptable para growth ({p_fcf:.1f}x)"
-            elif p_fcf <= 60:
-                adj = -1; sev = "moderate"
+            elif p_fcf <= b[3]:
+                adj = p[3]; sev = "moderate"
                 reason = f"Elevado ({p_fcf:.1f}x) - growth premium"
             else:
-                adj = -2; sev = "moderate"
+                adj = p[4]; sev = "moderate"
                 reason = f"Muy alto ({p_fcf:.1f}x)"
         else:
-            if p_fcf <= 12:
-                adj = 4; sev = "excellent"
+            b, p = T["pfcf_value_bounds"], T["pfcf_value_points"]
+            if p_fcf <= b[0]:
+                adj = p[0]; sev = "excellent"
                 reason = f"Muy atractivo ({p_fcf:.1f}x)"
-            elif p_fcf <= 18:
-                adj = 2; sev = "good"
+            elif p_fcf <= b[1]:
+                adj = p[1]; sev = "good"
                 reason = f"Bueno ({p_fcf:.1f}x)"
-            elif p_fcf <= 25:
-                adj = 0; sev = "ok"
+            elif p_fcf <= b[2]:
+                adj = p[2]; sev = "ok"
                 reason = f"Aceptable ({p_fcf:.1f}x)"
-            elif p_fcf <= 35:
-                adj = -2; sev = "moderate"
+            elif p_fcf <= b[3]:
+                adj = p[3]; sev = "moderate"
                 reason = f"Elevado ({p_fcf:.1f}x)"
             else:
-                adj = -4; sev = "severe"
+                adj = p[4]; sev = "severe"
                 reason = f"Muy alto ({p_fcf:.1f}x)"
 
         if adj < 0:
@@ -2605,36 +2636,38 @@ def score_valoracion(
         ev_threshold = sector_ev_ebitda if sector_ev_ebitda and sector_ev_ebitda > 0 else _BENCH_FALLBACK["ev_ebitda"]
 
         if is_quality_growth:
-            if ev_ebitda <= ev_threshold * 0.7:
-                adj = 4; sev = "excellent"
+            m, p = T["ev_ebitda_growth_mults"], T["ev_ebitda_growth_points"]
+            if ev_ebitda <= ev_threshold * m[0]:
+                adj = p[0]; sev = "excellent"
                 reason = f"Muy barato ({ev_ebitda:.1f}x vs {ev_threshold:.1f}x)"
-            elif ev_ebitda <= ev_threshold * 1.2:
-                adj = 2; sev = "good"
+            elif ev_ebitda <= ev_threshold * m[1]:
+                adj = p[1]; sev = "good"
                 reason = f"Atractivo para growth ({ev_ebitda:.1f}x)"
-            elif ev_ebitda <= ev_threshold * 1.8:
-                adj = 0; sev = "ok"
+            elif ev_ebitda <= ev_threshold * m[2]:
+                adj = p[2]; sev = "ok"
                 reason = f"Razonable para growth ({ev_ebitda:.1f}x)"
-            elif ev_ebitda <= ev_threshold * 2.5:
-                adj = -1; sev = "moderate"
+            elif ev_ebitda <= ev_threshold * m[3]:
+                adj = p[3]; sev = "moderate"
                 reason = f"Premium ({ev_ebitda:.1f}x vs {ev_threshold:.1f}x)"
             else:
-                adj = -2; sev = "severe"
+                adj = p[4]; sev = "severe"
                 reason = f"Muy caro ({ev_ebitda:.1f}x vs {ev_threshold:.1f}x)"
         else:
-            if ev_ebitda <= ev_threshold * 0.7:
-                adj = 4; sev = "excellent"
+            m, p = T["ev_ebitda_value_mults"], T["ev_ebitda_value_points"]
+            if ev_ebitda <= ev_threshold * m[0]:
+                adj = p[0]; sev = "excellent"
                 reason = f"Muy barato ({ev_ebitda:.1f}x vs {ev_threshold:.1f}x)"
             elif ev_ebitda <= ev_threshold:
-                adj = 2; sev = "good"
+                adj = p[1]; sev = "good"
                 reason = f"Atractivo ({ev_ebitda:.1f}x)"
-            elif ev_ebitda <= ev_threshold * 1.2:
-                adj = 0; sev = "ok"
+            elif ev_ebitda <= ev_threshold * m[1]:
+                adj = p[2]; sev = "ok"
                 reason = f"En línea ({ev_ebitda:.1f}x)"
-            elif ev_ebitda <= ev_threshold * 1.5:
-                adj = -2; sev = "moderate"
+            elif ev_ebitda <= ev_threshold * m[2]:
+                adj = p[3]; sev = "moderate"
                 reason = f"Premium ({ev_ebitda:.1f}x vs {ev_threshold:.1f}x)"
             else:
-                adj = -4; sev = "severe"
+                adj = p[4]; sev = "severe"
                 reason = f"Muy caro ({ev_ebitda:.1f}x vs {ev_threshold:.1f}x)"
 
         if adj < 0:
@@ -2644,20 +2677,21 @@ def score_valoracion(
 
     # ─── PEG Ratio (hasta ±4 pts) ─────────────────────
     if peg is not None and peg > 0:
-        if peg <= 0.8:
-            adj = 4; sev = "excellent"
+        b, p = T["peg_bounds"], T["peg_points"]
+        if peg <= b[0]:
+            adj = p[0]; sev = "excellent"
             reason = f"Muy atractivo ({peg:.2f})"
-        elif peg <= 1.2:
-            adj = 2; sev = "good"
+        elif peg <= b[1]:
+            adj = p[1]; sev = "good"
             reason = f"Bueno ({peg:.2f})"
-        elif peg <= 1.8:
-            adj = 0; sev = "ok"
+        elif peg <= b[2]:
+            adj = p[2]; sev = "ok"
             reason = f"Razonable ({peg:.2f})"
-        elif peg <= 2.5:
-            adj = -2; sev = "moderate"
+        elif peg <= b[3]:
+            adj = p[3]; sev = "moderate"
             reason = f"Caro para su crecimiento ({peg:.2f})"
         else:
-            adj = -3; sev = "severe"  # v2.4: max -3 en vez de -4
+            adj = p[4]; sev = "severe"  # v2.4: max -3 en vez de -4
             reason = f"Muy caro ({peg:.2f})"
 
         if adj < 0:
@@ -2675,13 +2709,13 @@ def score_valoracion(
     # no para un bonus redundante de valoración.)
 
     # ─── GARP / Growth Quality Bonus ───────────────────
-    if company_type == "garp" and growth_quality_score >= 70:
-        adj = 3; sev = "excellent"  # v2.4: subió de +2 a +3
+    if company_type == "garp" and growth_quality_score >= T["garp_min_quality"]:
+        adj = T["garp_points"]; sev = "excellent"  # v2.4: subió de +2 a +3
         reason = f"GARP: Growth + Fundamentos sólidos (Quality: {growth_quality_score})"
         base_score += adj
         adjustments.append({"metric": "Perfil GARP", "value": f"Score {growth_quality_score}", "adjustment": adj, "reason": reason, "severity": sev})
-    elif company_type == "growth" and growth_quality_score >= 75:
-        adj = 2; sev = "excellent"
+    elif company_type == "growth" and growth_quality_score >= T["growth_bonus_min_quality"]:
+        adj = T["growth_bonus_points"]; sev = "excellent"
         reason = f"Growth de alta calidad (Quality: {growth_quality_score})"
         base_score += adj
         adjustments.append({"metric": "Growth Quality", "value": f"Score {growth_quality_score}", "adjustment": adj, "reason": reason, "severity": sev})
@@ -2690,8 +2724,8 @@ def score_valoracion(
     # Para growth stocks de calidad, no permitir que las penalizaciones
     # destruyan completamente la categoría.
     # Max penalización neta: -4 para quality growth, -6 para moderate growth
-    if is_quality_growth and total_negative < -4:
-        rescue_pts = min(-total_negative - 4, 4)  # Max rescue: 4 pts
+    if is_quality_growth and total_negative < -T["rescue_quality_net_cap"]:
+        rescue_pts = min(-total_negative - T["rescue_quality_net_cap"], T["rescue_quality_max"])  # Max rescue: 4 pts
         base_score += rescue_pts
         adjustments.append({
             "metric": "Ajuste Growth",
@@ -2700,8 +2734,8 @@ def score_valoracion(
             "reason": f"Límite de penalización para growth de calidad ({company_type})",
             "severity": "good"
         })
-    elif growth_quality_score >= 50 and company_type not in ["speculative_growth"] and total_negative < -6:
-        rescue_pts = min(-total_negative - 6, 3)
+    elif growth_quality_score >= T["rescue_moderate_min_quality"] and company_type not in ["speculative_growth"] and total_negative < -T["rescue_moderate_net_cap"]:
+        rescue_pts = min(-total_negative - T["rescue_moderate_net_cap"], T["rescue_moderate_max"])
         base_score += rescue_pts
         adjustments.append({
             "metric": "Ajuste Crecimiento",
@@ -2711,16 +2745,16 @@ def score_valoracion(
             "severity": "good"
         })
 
-    final_score = max(0, min(20, base_score))
+    final_score = max(_CAT["min"], min(_CAT["max"], base_score))
 
     return {
         "category": "Valoración",
         "emoji": "💵",
         "score": final_score,
-        "max_score": 20,
-        "base": 10,
+        "max_score": _CAT["max"],
+        "base": _CAT["base"],
         "adjustments": adjustments,
-        "total_adjustment": final_score - 10,
+        "total_adjustment": final_score - _CAT["base"],
         "company_type": company_type,
         "growth_quality_score": growth_quality_score,
         "growth_quality_label": growth_quality["label"]
@@ -2739,29 +2773,31 @@ def score_calidad_ganancias(
     Categoría 4: Calidad de Ganancias (20 pts máximo)
     Base: 10 pts
     """
-    base_score = 10
+    T = _SC["calidad"]
+    base_score = _CAT["base"]
     adjustments = []
     
     # Piotroski F-Score (peso alto: hasta ±7 pts)
     if f_score is not None:
-        if f_score >= 8:
-            adj = 7
+        b, p = T["fscore_bounds"], T["fscore_points"]
+        if f_score >= b[0]:
+            adj = p[0]
             sev = "excellent"
             reason = f"Fortaleza excepcional ({f_score}/9)"
-        elif f_score >= 6:
-            adj = 4
+        elif f_score >= b[1]:
+            adj = p[1]
             sev = "good"
             reason = f"Buena salud ({f_score}/9)"
-        elif f_score >= 4:
-            adj = 0
+        elif f_score >= b[2]:
+            adj = p[2]
             sev = "ok"
             reason = f"Neutral ({f_score}/9)"
-        elif f_score >= 2:
-            adj = -4
+        elif f_score >= b[3]:
+            adj = p[3]
             sev = "moderate"
             reason = f"Debilidad ({f_score}/9)"
         else:
-            adj = -7
+            adj = p[4]
             sev = "severe"
             reason = f"Señales de deterioro ({f_score}/9)"
         
@@ -2771,11 +2807,11 @@ def score_calidad_ganancias(
     # Operating Cash Flow (hasta ±4 pts)
     if ocf is not None:
         if ocf > 0:
-            adj = 3
+            adj = T["ocf_points"][0]
             sev = "good"
             reason = "Genera efectivo operativo"
         else:
-            adj = -4
+            adj = T["ocf_points"][1]
             sev = "severe"
             reason = "Quema efectivo operativo"
         
@@ -2785,11 +2821,11 @@ def score_calidad_ganancias(
     # FCF (hasta ±4 pts)
     if fcf is not None:
         if fcf > 0:
-            adj = 3
+            adj = T["fcf_points"][0]
             sev = "good"
             reason = "FCF positivo"
         else:
-            adj = -4
+            adj = T["fcf_points"][1]
             sev = "severe"
             reason = "FCF negativo"
         
@@ -2798,36 +2834,37 @@ def score_calidad_ganancias(
     
     # Calidad FCF vs Net Income (hasta ±3 pts)
     if fcf_to_net_income is not None and net_income is not None and net_income > 0:
-        if fcf_to_net_income >= 1.0:
-            adj = 3
+        b, p = T["fcf_to_ni_bounds"], T["fcf_to_ni_points"]
+        if fcf_to_net_income >= b[0]:
+            adj = p[0]
             sev = "excellent"
             reason = f"FCF > Net Income ({fcf_to_net_income:.1%})"
-        elif fcf_to_net_income >= 0.7:
-            adj = 1
+        elif fcf_to_net_income >= b[1]:
+            adj = p[1]
             sev = "good"
             reason = f"FCF sólido vs ganancias ({fcf_to_net_income:.1%})"
-        elif fcf_to_net_income >= 0.3:
-            adj = 0
+        elif fcf_to_net_income >= b[2]:
+            adj = p[2]
             sev = "ok"
             reason = f"FCF aceptable ({fcf_to_net_income:.1%})"
         else:
-            adj = -2
+            adj = p[3]
             sev = "moderate"
             reason = f"Ganancias sin respaldo de cash ({fcf_to_net_income:.1%})"
         
         base_score += adj
         adjustments.append({"metric": "FCF / Net Income", "value": f"{fcf_to_net_income:.0%}", "adjustment": adj, "reason": reason, "severity": sev})
     
-    final_score = max(0, min(20, base_score))
+    final_score = max(_CAT["min"], min(_CAT["max"], base_score))
     
     return {
         "category": "Calidad de Ganancias",
         "emoji": "✅",
         "score": final_score,
-        "max_score": 20,
-        "base": 10,
+        "max_score": _CAT["max"],
+        "base": _CAT["base"],
         "adjustments": adjustments,
-        "total_adjustment": final_score - 10
+        "total_adjustment": final_score - _CAT["base"]
     }
 
 
@@ -2841,29 +2878,31 @@ def score_crecimiento(
     Categoría 5: Crecimiento (20 pts máximo)
     Base: 10 pts
     """
-    base_score = 10
+    T = _SC["crecimiento"]
+    base_score = _CAT["base"]
     adjustments = []
     
     # Revenue Growth 3Y (hasta ±5 pts)
     if revenue_growth_3y is not None:
-        if revenue_growth_3y >= 0.20:
-            adj = 5
+        b, p = T["revenue_bounds"], T["revenue_points"]
+        if revenue_growth_3y >= b[0]:
+            adj = p[0]
             sev = "excellent"
             reason = f"Crecimiento excepcional ({revenue_growth_3y:.1%})"
-        elif revenue_growth_3y >= 0.10:
-            adj = 3
+        elif revenue_growth_3y >= b[1]:
+            adj = p[1]
             sev = "good"
             reason = f"Crecimiento sólido ({revenue_growth_3y:.1%})"
-        elif revenue_growth_3y >= 0.03:
-            adj = 1
+        elif revenue_growth_3y >= b[2]:
+            adj = p[2]
             sev = "ok"
             reason = f"Crecimiento moderado ({revenue_growth_3y:.1%})"
         elif revenue_growth_3y >= 0:
-            adj = -1
+            adj = p[3]
             sev = "moderate"
             reason = f"Crecimiento plano ({revenue_growth_3y:.1%})"
         else:
-            adj = -4
+            adj = p[4]
             sev = "severe"
             reason = f"Contracción ({revenue_growth_3y:.1%})"
         
@@ -2872,24 +2911,25 @@ def score_crecimiento(
     
     # EPS Growth 3Y (hasta ±5 pts)
     if eps_growth_3y is not None:
-        if eps_growth_3y >= 0.25:
-            adj = 5
+        b, p = T["eps_bounds"], T["eps_points"]
+        if eps_growth_3y >= b[0]:
+            adj = p[0]
             sev = "excellent"
             reason = f"EPS excepcional ({eps_growth_3y:.1%})"
-        elif eps_growth_3y >= 0.12:
-            adj = 3
+        elif eps_growth_3y >= b[1]:
+            adj = p[1]
             sev = "good"
             reason = f"EPS sólido ({eps_growth_3y:.1%})"
-        elif eps_growth_3y >= 0.05:
-            adj = 1
+        elif eps_growth_3y >= b[2]:
+            adj = p[2]
             sev = "ok"
             reason = f"EPS moderado ({eps_growth_3y:.1%})"
         elif eps_growth_3y >= 0:
-            adj = -1
+            adj = p[3]
             sev = "moderate"
             reason = f"EPS plano ({eps_growth_3y:.1%})"
         else:
-            adj = -4
+            adj = p[4]
             sev = "severe"
             reason = f"EPS en declive ({eps_growth_3y:.1%})"
         
@@ -2898,20 +2938,21 @@ def score_crecimiento(
     
     # FCF Growth (hasta ±4 pts)
     if fcf_growth_3y is not None:
-        if fcf_growth_3y >= 0.15:
-            adj = 4
+        b, p = T["fcf_bounds"], T["fcf_points"]
+        if fcf_growth_3y >= b[0]:
+            adj = p[0]
             sev = "excellent"
             reason = f"FCF creciente ({fcf_growth_3y:.1%})"
-        elif fcf_growth_3y >= 0.05:
-            adj = 2
+        elif fcf_growth_3y >= b[1]:
+            adj = p[1]
             sev = "good"
             reason = f"FCF estable/creciente ({fcf_growth_3y:.1%})"
-        elif fcf_growth_3y >= -0.05:
-            adj = 0
+        elif fcf_growth_3y >= b[2]:
+            adj = p[2]
             sev = "ok"
             reason = f"FCF estable ({fcf_growth_3y:.1%})"
         else:
-            adj = -3
+            adj = p[3]
             sev = "moderate"
             reason = f"FCF decreciente ({fcf_growth_3y:.1%})"
         
@@ -2920,20 +2961,20 @@ def score_crecimiento(
     
     # Growth Company Bonus
     if is_growth_company:
-        adj = 2
+        adj = T["growth_company_points"]
         base_score += adj
         adjustments.append({"metric": "Growth Company", "value": "Sí", "adjustment": adj, "reason": "Perfil de alto crecimiento", "severity": "good"})
     
-    final_score = max(0, min(20, base_score))
+    final_score = max(_CAT["min"], min(_CAT["max"], base_score))
     
     return {
         "category": "Crecimiento",
         "emoji": "📈",
         "score": final_score,
-        "max_score": 20,
-        "base": 10,
+        "max_score": _CAT["max"],
+        "base": _CAT["base"],
         "adjustments": adjustments,
-        "total_adjustment": final_score - 10
+        "total_adjustment": final_score - _CAT["base"]
     }
 
 
@@ -2966,7 +3007,7 @@ def calculate_score_v2(
     
     # Determinar si es growth company
     revenue_growth = contextual_values.get("revenue_cagr_3y")
-    is_growth = revenue_growth is not None and revenue_growth > 0.15
+    is_growth = revenue_growth is not None and revenue_growth > _SC["total"]["growth_company_min_revenue_cagr"]
     
     # =====================================================
     # v2.3: DETECCIÓN DE SECTOR FINANCIERO
@@ -3076,16 +3117,17 @@ def calculate_score_v2(
     total_score = sum(cat["score"] for cat in categories)
     
     # Determinar nivel general
-    if total_score >= 80:
+    lv = _SC["total"]["level_bands"]
+    if total_score >= lv[0]:
         level = "Excelente"
         level_color = "#22c55e"
-    elif total_score >= 65:
+    elif total_score >= lv[1]:
         level = "Favorable"
         level_color = "#84cc16"
-    elif total_score >= 50:
+    elif total_score >= lv[2]:
         level = "Neutral"
         level_color = "#eab308"
-    elif total_score >= 35:
+    elif total_score >= lv[3]:
         level = "Precaución"
         level_color = "#f97316"
     else:
@@ -3094,11 +3136,11 @@ def calculate_score_v2(
     
     # v2.2: Extraer información del perfil de la empresa
     company_type = valoracion.get("company_type", "blend")
-    growth_quality = valoracion.get("growth_quality_score", 50)
+    growth_quality = valoracion.get("growth_quality_score", _SC["total"]["growth_quality_default"])
     
     result = {
         "score": total_score,
-        "max_score": 100,
+        "max_score": _SC["total"]["max"],
         "level": level,
         "level_color": level_color,
         "categories": categories,

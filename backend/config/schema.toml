@@ -1,7 +1,181 @@
 # Esquema de la configuración (lo valida lib/settings.py al arrancar).
 # Mismo árbol que los TOML; la hoja es el tipo. "*" = claves libres.
 
-[thresholds]
+# @@THRESHOLDS-BEGIN@@
+[thresholds.score.category]
+base = "int"
+min = "int"
+max = "int"
+
+[thresholds.score.solidez]
+altman_points = "list[int]"
+current_bounds = "list[float]"
+current_points = "list[int]"
+de_mults = "list[float]"
+de_points = "list[int]"
+de_mitigation_coverage = "int"
+de_mitigated_points = "int"
+de_severe_points = "int"
+coverage_bounds = "list[number]"
+coverage_points = "list[int]"
+
+[thresholds.score.solidez_financial]
+max_without_regulatory = "int"
+health_offset = "int"
+health_multiplier = "float"
+de_points = "list[int]"
+pb_points = "list[int]"
+
+[thresholds.score.rentabilidad]
+negative_equity_min_roa = "float"
+roe_high_mult = "float"
+roe_floor = "float"
+roe_points = "list[int]"
+roa_high_mult = "float"
+roa_points = "list[int]"
+operating_margin_bounds = "list[float]"
+operating_margin_points = "list[int]"
+net_margin_bounds = "list[float]"
+net_margin_points = "list[int]"
+spread_bounds = "list[float]"
+spread_points = "list[int]"
+signature_default_roe_low = "float"
+signature_default_roa_low = "float"
+signature_default_roe_high = "float"
+signature_default_roa_high = "float"
+
+[thresholds.score.valoracion]
+quality_growth_min_quality = "int"
+growth_adjust_min_quality = "int"
+reit_pffo_bounds = "list[int]"
+reit_pffo_points = "list[int]"
+pe_growth_mults = "list[float]"
+pe_growth_points = "list[int]"
+pe_value_mults = "list[float]"
+pe_value_points = "list[int]"
+forward_compression_bounds = "list[float]"
+forward_compression_points = "list[int]"
+pfcf_growth_bounds = "list[int]"
+pfcf_growth_points = "list[int]"
+pfcf_value_bounds = "list[int]"
+pfcf_value_points = "list[int]"
+ev_ebitda_growth_mults = "list[float]"
+ev_ebitda_growth_points = "list[int]"
+ev_ebitda_value_mults = "list[float]"
+ev_ebitda_value_points = "list[int]"
+peg_bounds = "list[float]"
+peg_points = "list[int]"
+garp_min_quality = "int"
+garp_points = "int"
+growth_bonus_min_quality = "int"
+growth_bonus_points = "int"
+rescue_quality_net_cap = "int"
+rescue_quality_max = "int"
+rescue_moderate_min_quality = "int"
+rescue_moderate_net_cap = "int"
+rescue_moderate_max = "int"
+
+[thresholds.score.calidad]
+fscore_bounds = "list[int]"
+fscore_points = "list[int]"
+ocf_points = "list[int]"
+fcf_points = "list[int]"
+fcf_to_ni_bounds = "list[float]"
+fcf_to_ni_points = "list[int]"
+
+[thresholds.score.crecimiento]
+revenue_bounds = "list[float]"
+revenue_points = "list[int]"
+eps_bounds = "list[float]"
+eps_points = "list[int]"
+fcf_bounds = "list[float]"
+fcf_points = "list[int]"
+growth_company_points = "int"
+
+[thresholds.score.total]
+max = "int"
+level_bands = "list[int]"
+growth_company_min_revenue_cagr = "float"
+growth_quality_default = "int"
+
+[thresholds.score.company_type]
+revenue_bounds = "list[float]"
+eps_bounds = "list[float]"
+pe_to_sector_bounds = "list[float]"
+roe_bounds = "list[float]"
+dividend_yield_bounds = "list[float]"
+fcf_yield_bounds = "list[float]"
+garp_tiebreak_margin = "int"
+speculative_reduction = "int"
+blend_max_confidence = "float"
+blend_min_votes = "int"
+blend_confidence = "float"
+[thresholds.score.company_type.revenue_votes_0]
+"*" = "int"
+[thresholds.score.company_type.revenue_votes_1]
+"*" = "int"
+[thresholds.score.company_type.revenue_votes_2]
+"*" = "int"
+[thresholds.score.company_type.revenue_votes_negative]
+"*" = "int"
+[thresholds.score.company_type.eps_votes_0]
+"*" = "int"
+[thresholds.score.company_type.eps_votes_1]
+"*" = "int"
+[thresholds.score.company_type.pe_votes_0]
+"*" = "int"
+[thresholds.score.company_type.pe_votes_1]
+"*" = "int"
+[thresholds.score.company_type.pe_votes_2]
+"*" = "int"
+[thresholds.score.company_type.pe_votes_3]
+"*" = "int"
+[thresholds.score.company_type.pe_votes_4]
+"*" = "int"
+[thresholds.score.company_type.roe_votes_0]
+"*" = "int"
+[thresholds.score.company_type.roe_votes_1]
+"*" = "int"
+[thresholds.score.company_type.roe_votes_low]
+"*" = "int"
+[thresholds.score.company_type.dividend_votes_0]
+"*" = "int"
+[thresholds.score.company_type.dividend_votes_1]
+"*" = "int"
+[thresholds.score.company_type.fcf_yield_votes_0]
+"*" = "int"
+[thresholds.score.company_type.fcf_yield_votes_1]
+"*" = "int"
+
+[thresholds.score.growth_quality]
+base = "int"
+min = "int"
+max = "int"
+revenue_bounds = "list[float]"
+revenue_points = "list[int]"
+eps_vs_revenue_mults = "list[float]"
+eps_vs_revenue_points = "list[int]"
+fcf_bounds = "list[float]"
+fcf_points = "list[int]"
+return_bounds = "list[float]"
+return_points = "list[int]"
+operating_margin_bounds = "list[float]"
+operating_margin_points = "list[int]"
+level_bands = "list[int]"
+
+[thresholds.score.growth_adjustment]
+quality_bounds = "list[int]"
+quality_modifiers = "list[int]"
+legit_growth_min_quality = "int"
+legit_growth_modifier = "int"
+speculative_modifier = "int"
+roe_bounds = "list[float]"
+roe_modifiers = "list[int]"
+cap_bounds = "list[int]"
+caps = "list[int]"
+moderate_severity_floor = "int"
+
+# @@THRESHOLDS-END@@
 [sectors.benchmarks.default]
 pe = "number"
 forward_pe = "number"
