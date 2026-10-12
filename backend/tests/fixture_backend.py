@@ -90,8 +90,18 @@ GOLDEN_DIR = golden_dir(DEFAULT_ENV)
 # URLs de arranque de sesión: no aportan datos al análisis, no se graban.
 _SESSION_URLS = ("https://finance.yahoo.com", "/v1/test/getcrumb")
 _FAKE_CRUMB = "FIXTURECRUMB"
-_YF_FRAMES = ("income_stmt", "balance_sheet", "cashflow")
+_YF_FRAMES = ("income_stmt", "balance_sheet", "cashflow",
+              "quarterly_income_stmt", "quarterly_balance_sheet", "quarterly_cashflow")
+# Estados trimestrales (etapa 7): los fixtures anteriores (prod, extra locales) no
+# los tienen. En replay, su ausencia se emula como "la fuente no los devolvió"
+# (excepción que el pipeline captura y cae al anual con el flag), no como un
+# acceso no grabado.
+_OPTIONAL_YF = ("quarterly_income_stmt", "quarterly_balance_sheet", "quarterly_cashflow")
 _SECRET_PARAMS = ("token", "crumb", "apikey", "api_key")
+
+
+class FixtureAbsent(RuntimeError):
+    """Atributo opcional que el fixture no tiene: la fuente no lo devolvió."""
 
 
 class FixtureMiss(RuntimeError):
@@ -295,6 +305,8 @@ class FixtureStore:
     def replay_yf(self, sym, attr):
         self.load(sym)
         data = self.yf.get(sym, {})
+        if attr not in data and attr in _OPTIONAL_YF:
+            raise FixtureAbsent(f"yfinance {sym}.{attr} no está en el fixture (anterior a la etapa 7)")
         if attr not in data:
             self.misses.append(f"yfinance {sym}.{attr}")
             raise FixtureMiss(f"yfinance {sym}.{attr} no grabado")
