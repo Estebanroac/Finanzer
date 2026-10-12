@@ -574,3 +574,15 @@ correctos según los datos, pero aplican reglas genéricas a arquetipos que nece
   Crecimiento y, vía la calidad del crecimiento, en Valoración. → **Etapa 6, crecimiento normalizado de ciclo
   medio.**
 - **NFLX:** CAGR del FCF +80% medido desde un año base deprimido (2022). → **Etapa 7, efecto base en los CAGR.**
+
+### 7.11 Pendientes registrados en la etapa 6
+
+- **Etapa 7 — crecimiento por acción en cualquier arquetipo:** en la etapa 6 solo el REIT mide su crecimiento
+  por acción (CAGR del FFO y del FCF por acción; O: FFO agregado +12.2% anual frente a −0.1% por acción, con las
+  acciones +12.3% anual). La regla debe generalizarse: en cualquier arquetipo, si las acciones en circulación
+  crecen más de un umbral (en config), el crecimiento (ingresos, BPA, FCF) se evalúa por acción, en base ajustada
+  por splits. La dilución estructural no puede leerse como crecimiento.
+- **Etapa 8 — DCF de FCX −90% con FCF normalizado:** el FCF normalizado (margen FCF promedio × ingresos actuales,
+  1.48 B) incluye el capex de expansión. Para cíclicas, evaluar el **FCF de mantenimiento** (OCF − capex de
+  mantenimiento, aproximando el capex de mantenimiento con la D&A). Además, la **regla de confianza** debe marcar
+  como de baja fiabilidad un DCF cuya conclusión supere un umbral de distancia al precio (en config).
