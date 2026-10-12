@@ -1,21 +1,17 @@
 {
   "alerts": {
-    "red_flags": [],
-    "strengths": [
+    "red_flags": [
       {
         "category": "Valor intrínseco",
-        "detail": "El descuento de flujos estima un valor justo de $130, un 84% por encima del precio: hay margen de seguridad si se cumplen los supuestos de crecimiento y rentabilidad del modelo.",
-        "reason": "Infravalorada según DCF — +84%"
-      },
+        "detail": "El precio excede en 33% el valor justo estimado por el DCF ($47): sostenerlo exige asumir escenarios de crecimiento muy optimistas.",
+        "reason": "Sobrevalorada según DCF — -33%"
+      }
+    ],
+    "strengths": [
       {
         "category": "Rentabilidad",
         "detail": "El retorno sobre el capital invertido supera con holgura su costo (ROIC 34.5% vs WACC 13.4%): cada dólar reinvertido crea valor económico sustancial, el rasgo de un negocio con ventaja competitiva duradera.",
         "reason": "Crea mucho valor — spread +21.2%"
-      },
-      {
-        "category": "Valoración",
-        "detail": "El negocio genera 8.7% de caja libre sobre su capitalización: un rendimiento alto que da margen para dividendos, recompras o reducir deuda sin depender del mercado.",
-        "reason": "FCF yield atractivo — 8.7%"
       },
       {
         "category": "Rentabilidad",
@@ -31,6 +27,16 @@
         "category": "Rentabilidad",
         "detail": "De cada dólar vendido quedan 28 centavos de beneficio tras todos los costos: señala poder de fijación de precios y eficiencia por encima de la media de su sector.",
         "reason": "Margen neto sólido — 28.2%"
+      },
+      {
+        "category": "Crecimiento",
+        "detail": "El beneficio por acción crece 56.7% interanual: la rentabilidad para el accionista se acelera, a menudo apoyada en apalancamiento operativo o recompras.",
+        "reason": "BPA en fuerte expansión — +56.7% interanual"
+      },
+      {
+        "category": "Solidez financiera",
+        "detail": "El Altman Z de 6.73 (> 2.99) ubica a la empresa en zona segura: baja probabilidad estadística de problemas de solvencia según el modelo.",
+        "reason": "Solvencia sólida — Altman Z 6.73"
       }
     ],
     "warnings": [
@@ -65,12 +71,385 @@
     "zone": "safe"
   },
   "company_type": "garp",
+  "data_provenance": {
+    "errors": [],
+    "fields": {
+      "_current_derived.asset_turnover": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_current_derived.gross_margin": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_piotroski_current.asset_turnover": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_piotroski_current.current_ratio": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_piotroski_current.gross_margin": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_piotroski_current.long_term_debt": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_piotroski_current.net_income": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_piotroski_current.operating_cash_flow": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_piotroski_current.roa": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_piotroski_current.shares": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_piotroski_current.total_assets": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_prior_year.asset_turnover": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_prior_year.current_ratio": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_prior_year.equity": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_prior_year.gross_margin": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_prior_year.long_term_debt": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_prior_year.net_income": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_prior_year.operating_cash_flow": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_prior_year.revenue": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_prior_year.roa": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_prior_year.shares": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_prior_year.total_assets": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_yahoo_ratios.currentRatio": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "_yahoo_ratios.debtToEquity": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "_yahoo_ratios.dividendYield": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "_yahoo_ratios.ebitdaMargins": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "_yahoo_ratios.enterpriseToEbitda": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "_yahoo_ratios.enterpriseToRevenue": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "_yahoo_ratios.enterpriseValue": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "_yahoo_ratios.forwardPE": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "_yahoo_ratios.grossMargins": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "_yahoo_ratios.operatingMargins": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "_yahoo_ratios.pegRatio": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "_yahoo_ratios.priceToBook": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "_yahoo_ratios.profitMargins": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "_yahoo_ratios.quickRatio": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "_yahoo_ratios.returnOnAssets": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "_yahoo_ratios.returnOnEquity": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "averageVolume": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "beta": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "bookValue": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "cash": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "country": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "currency": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "currentPrice": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "dividendYield": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "earningsGrowth": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "ebitda": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "exchange": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "fiftyDayAverage": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "fiftyTwoWeekHigh": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "fiftyTwoWeekLow": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "forwardEps": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "forwardPE": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "freeCashflow": {
+        "detail": "FCF (25,387,552,768) > OCF (11,970,833,408): imposible por definición. Recalculado como OCF − capex del estado de flujos FY2025",
+        "rule": "fcf_le_ocf",
+        "source": "recalculado_por_validacion"
+      },
+      "grossProfits": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "industry": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "interestExpense": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "lastSplitDate": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "lastSplitFactor": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "longBusinessSummary": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "longName": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "longTermDebt": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "marketCap": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "netIncome": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "operatingCashflow": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "operatingIncome": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "payoutRatio": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "previousClose": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "priceToBook": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "regularMarketPrice": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "revenueGrowth": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "sector": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "shares": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "sharesOutstanding": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "shortName": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "symbol": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "totalAssets": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "totalCash": {
+        "detail": "la fuente no lo devolvió",
+        "source": "sin_dato"
+      },
+      "totalCurrentAssets": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "totalCurrentLiabilities": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "totalDebt": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "totalLiab": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "totalRevenue": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "totalStockholderEquity": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "trailingEps": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "trailingPE": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "twoHundredDayAverage": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "volume": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      }
+    },
+    "path": "yahoo_quotesummary"
+  },
+  "data_validation": [
+    {
+      "action": "recalculado",
+      "field": "freeCashflow",
+      "new": 9461053000.0,
+      "old": 25387552768.0,
+      "reason": "FCF (25,387,552,768) > OCF (11,970,833,408): imposible por definición. Recalculado como OCF − capex del estado de flujos FY2025",
+      "rule": "fcf_le_ocf"
+    }
+  ],
   "dcf": {
-    "fair_value": 129.5,
+    "fair_value": 47.13,
     "growth_rate": 0.240245326847,
-    "margin_of_safety": 0.457142857143,
+    "margin_of_safety": -0.491618926374,
     "terminal_growth": 0.025,
-    "upside": 84.2105263158,
+    "upside": -32.9587482219,
     "value_composition": {
       "stage1_pct": 28.4,
       "stage2_pct": 27.4,
@@ -86,7 +465,7 @@
     "asset_turnover": 0.570010328209,
     "beta": 1.613,
     "book_value_per_share": 7.241,
-    "buyback_yield": 0.0798764269398,
+    "buyback_yield": 0.0129533443162,
     "cash": 9127910400.0,
     "cash_ratio": 1.142,
     "current_ratio": 1.142,
@@ -101,11 +480,11 @@
     "eps": 3.18,
     "ev_ebitda": 20.3879341958,
     "ev_revenue": 6.20729699677,
-    "fcf_yield": 0.0867283483504,
+    "fcf_yield": 0.0323206221507,
     "ffo": 12229928612.3,
     "ffo_payout": null,
     "forward_pe": 18.4678271012,
-    "free_cash_flow": 25387552768.0,
+    "free_cash_flow": 9461053000.0,
     "gross_margin": 0.49117870886,
     "interest_coverage": 24.2374277683,
     "interest_expense": 666186424.32,
@@ -123,7 +502,7 @@
     "pb": 10.6243714508,
     "pe": 22.106918239,
     "peg": 1.2,
-    "pfcf": 11.5302553204,
+    "pfcf": 30.9399984733,
     "price_52w_high": 124.86,
     "price_52w_low": 65.08,
     "ps": 6.05169164135,
@@ -134,7 +513,7 @@
     "roe": 0.49541,
     "roic": 0.345220680482,
     "roic_wacc_spread": 0.211505680482,
-    "shareholder_yield": 0.0798764269398,
+    "shareholder_yield": 0.0129533443162,
     "shares_outstanding": 4163939676.0,
     "total_assets": 84859455048.8,
     "total_debt": 16654660608.0,
@@ -168,8 +547,8 @@
         "passed": true
       },
       "no_dilution": {
-        "detail": "Emisión de nuevas acciones (dilución)",
-        "passed": false
+        "detail": "Sin dilución de acciones",
+        "passed": true
       },
       "roa_improved": {
         "detail": "ROA mejoró vs año anterior",
@@ -182,9 +561,9 @@
     },
     "fiscal_year": "FY2025 vs FY2024",
     "interpretation": "Bueno - Salud financiera sólida",
-    "level": "Bueno",
+    "level": "Fuerte",
     "max_score": 9,
-    "score": 6
+    "score": 7
   },
   "price": 70.3,
   "price_history": {
@@ -255,9 +634,9 @@
           {
             "adjustment": 4,
             "metric": "Piotroski F-Score",
-            "reason": "Buena salud (6/9)",
+            "reason": "Buena salud (7/9)",
             "severity": "good",
-            "value": "6/9"
+            "value": "7/9"
           },
           {
             "adjustment": 3,
@@ -268,7 +647,7 @@
           }
         ],
         "details": [
-          "Buena salud (6/9)",
+          "Buena salud (7/9)",
           "Genera efectivo operativo"
         ],
         "max": 20,
@@ -411,11 +790,11 @@
             "value": "18.5x"
           },
           {
-            "adjustment": 4,
+            "adjustment": 0,
             "metric": "P/FCF",
-            "reason": "Excelente para growth (11.5x)",
-            "severity": "excellent",
-            "value": "11.5x"
+            "reason": "Aceptable para growth (30.9x)",
+            "severity": "ok",
+            "value": "30.9x"
           },
           {
             "adjustment": -1,
@@ -442,18 +821,18 @@
         "details": [
           "Razonable para growth (22.1x vs 18.0x)",
           "P/E mejorando (22x → 18x forward)",
-          "Excelente para growth (11.5x)",
+          "Aceptable para growth (30.9x)",
           "Premium (20.4x vs 10.0x)",
           "Bueno (1.20)",
           "GARP: Growth + Fundamentos sólidos (Quality: 85)"
         ],
         "max": 20,
-        "score": 20
+        "score": 16
       }
     },
     "level": "Excelente",
     "max_score": 100,
-    "total_score": 97
+    "total_score": 93
   },
   "sector_info": {
     "mapped_sector": "communication",
@@ -463,7 +842,7 @@
   "sensitivity": {
     "base_case": {
       "discount_rate": 0.133715,
-      "fair_value": 129.5,
+      "fair_value": 47.13,
       "growth_rate": 0.240245326847
     },
     "discount_rates": [
@@ -480,52 +859,52 @@
       0.2652,
       0.2902
     ],
-    "interpretation": "Muy probablemente subvalorada (100% de escenarios)",
+    "interpretation": "Muy probablemente sobrevalorada (96% de escenarios)",
     "is_valid": true,
     "matrix": [
       [
-        134.83,
-        119.5,
-        107.05,
-        96.76,
-        88.12
+        49.11,
+        43.4,
+        38.76,
+        34.93,
+        31.7
       ],
       [
-        148.77,
-        131.67,
-        117.79,
-        106.32,
-        96.7
+        54.31,
+        47.93,
+        42.76,
+        38.49,
+        34.9
       ],
       [
-        163.99,
-        144.94,
-        129.5,
-        116.74,
-        106.04
+        59.98,
+        52.88,
+        47.13,
+        42.37,
+        38.38
       ],
       [
-        180.61,
-        159.42,
-        142.25,
-        128.08,
-        116.19
+        66.17,
+        58.28,
+        51.88,
+        46.6,
+        42.17
       ],
       [
-        198.72,
-        175.18,
-        156.12,
-        140.4,
-        127.22
+        72.92,
+        64.15,
+        57.05,
+        51.19,
+        46.28
       ]
     ],
     "statistics": {
       "current_price": 70.3,
-      "max_value": 198.72,
-      "mean_value": 133.3164,
-      "median_value": 129.5,
-      "min_value": 88.12,
-      "upside_base_case": 84.2105263158
+      "max_value": 72.92,
+      "mean_value": 48.5488,
+      "median_value": 47.13,
+      "min_value": 31.7,
+      "upside_base_case": -32.9587482219
     },
     "warnings": []
   },

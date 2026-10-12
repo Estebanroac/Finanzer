@@ -3,16 +3,6 @@
     "red_flags": [
       {
         "category": "Solidez financiera",
-        "detail": "El modelo de Altman sitúa a la empresa en zona de riesgo (Z 0.96 < 1.81), donde históricamente se concentran las compañías con problemas de solvencia a 2 años. Señal de alerta que exige revisar deuda y generación de caja.",
-        "reason": "Riesgo de insolvencia — Altman Z 0.96"
-      },
-      {
-        "category": "Valoración",
-        "detail": "El mercado paga 39.6x beneficios, un +80% sobre la mediana del sector (22.0x). A este nivel el precio ya descuenta un escenario muy optimista; el riesgo de corrección ante cualquier tropiezo en resultados es elevado.",
-        "reason": "Sobrevaloración — P/E 39.6x"
-      },
-      {
-        "category": "Solidez financiera",
         "detail": "Harían falta ~6 años de EBITDA íntegro para saldar la deuda neta. Por encima de 4x el margen ante una caída de resultados o una subida de tipos se estrecha: conviene vigilar la cobertura de intereses y el calendario de vencimientos.",
         "reason": "Apalancamiento elevado — 6.0x EBITDA"
       },
@@ -30,8 +20,8 @@
       },
       {
         "category": "Rentabilidad",
-        "detail": "De cada dólar vendido quedan 18 centavos de beneficio tras todos los costos: señala poder de fijación de precios y eficiencia por encima de la media de su sector.",
-        "reason": "Margen neto sólido — 18.4%"
+        "detail": "Retiene 93% de cada venta tras el costo directo del producto: un margen bruto así suele reflejar marca fuerte, tecnología propia o poder de precios difícil de replicar.",
+        "reason": "Margen bruto muy alto — 92.5%"
       },
       {
         "category": "Crecimiento",
@@ -46,13 +36,18 @@
     ],
     "warnings": [
       {
+        "category": "Valoración",
+        "detail": "El mercado paga 39.6x beneficios, un +13% sobre la mediana del sector (35.0x). Conviene verificar que el crecimiento y los márgenes justifiquen pagar por encima de sus pares.",
+        "reason": "Prima sobre el sector — P/E 39.6x"
+      },
+      {
         "category": "Solidez financiera",
         "detail": "El resultado operativo cubre 2.3x el gasto por intereses, por debajo del mínimo cómodo (3x): deja poco margen si los beneficios se resienten.",
         "reason": "Cobertura de intereses justa — 2.3x"
       },
       {
         "category": "Rentabilidad",
-        "detail": "El retorno sobre el patrimonio (2.7%) queda por debajo del mínimo del sector (8%): el capital de los accionistas no se está remunerando con holgura.",
+        "detail": "El retorno sobre el patrimonio (2.7%) queda por debajo del mínimo del sector (3%): el capital de los accionistas no se está remunerando con holgura.",
         "reason": "ROE bajo — 2.7%"
       }
     ]
@@ -63,17 +58,319 @@
       "X2_re_ta": -0.1446,
       "X3_ebit_ta": 0.0356,
       "X4_mcap_tl": 1.5691,
-      "X5_rev_ta": 0.079,
-      "grey_threshold": 1.81,
-      "model": "Z-Score Original (Manufactura)",
-      "safe_threshold": 2.99
+      "grey_threshold": 1.1,
+      "model": "Z''-Score (No Manufactura)",
+      "safe_threshold": 2.6
     },
-    "interpretation": "Z-Score Original (Manufactura): Zona de peligro — alto riesgo de bancarrota",
-    "model": "Z-Score Original (Manufactura)",
-    "z_score": 0.96,
-    "zone": "distress"
+    "interpretation": "Z''-Score (No Manufactura): Zona gris — riesgo moderado, monitorear",
+    "model": "Z''-Score (No Manufactura)",
+    "z_score": 1.55,
+    "zone": "grey"
   },
   "company_type": "garp",
+  "data_provenance": {
+    "errors": [],
+    "fields": {
+      "_current_derived.asset_turnover": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_current_derived.gross_margin": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_piotroski_current.asset_turnover": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_piotroski_current.current_ratio": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_piotroski_current.gross_margin": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_piotroski_current.long_term_debt": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_piotroski_current.net_income": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_piotroski_current.operating_cash_flow": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_piotroski_current.roa": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_piotroski_current.shares": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_piotroski_current.total_assets": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_prior_year.asset_turnover": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_prior_year.current_ratio": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_prior_year.equity": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_prior_year.gross_margin": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_prior_year.long_term_debt": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_prior_year.net_income": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_prior_year.operating_cash_flow": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_prior_year.revenue": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_prior_year.roa": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_prior_year.shares": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_prior_year.total_assets": {
+        "detail": "estados anuales de yfinance (FY2025 / FY2024)",
+        "source": "yfinance_statements"
+      },
+      "_yahoo_ratios.currentRatio": {
+        "detail": "/stock/metric",
+        "source": "finnhub"
+      },
+      "_yahoo_ratios.dividendYield": {
+        "detail": "/stock/metric",
+        "source": "finnhub"
+      },
+      "_yahoo_ratios.forwardPE": {
+        "detail": "/stock/metric",
+        "source": "finnhub"
+      },
+      "_yahoo_ratios.interestCoverage": {
+        "detail": "/stock/metric",
+        "source": "finnhub"
+      },
+      "_yahoo_ratios.inventoryTurnover": {
+        "detail": "/stock/metric",
+        "source": "finnhub"
+      },
+      "_yahoo_ratios.payoutRatio": {
+        "detail": "/stock/metric",
+        "source": "finnhub"
+      },
+      "_yahoo_ratios.pegRatio": {
+        "detail": "/stock/metric",
+        "source": "finnhub"
+      },
+      "_yahoo_ratios.quickRatio": {
+        "detail": "/stock/metric",
+        "source": "finnhub"
+      },
+      "beta": {
+        "detail": "/stock/metric",
+        "source": "finnhub"
+      },
+      "bookValue": {
+        "detail": "patrimonio (FY) / acciones de fast_info",
+        "source": "derivado"
+      },
+      "cash": {
+        "detail": "plan B: estados anuales de yfinance (último FY)",
+        "source": "yfinance_statements"
+      },
+      "currency": {
+        "detail": "plan B: yfinance fast_info (sin crumb)",
+        "source": "yfinance_statements"
+      },
+      "currentPrice": {
+        "detail": "plan B: yfinance fast_info (sin crumb)",
+        "source": "yfinance_statements"
+      },
+      "dividendRate": {
+        "detail": "/stock/metric",
+        "source": "finnhub"
+      },
+      "dividendYield": {
+        "detail": "/stock/metric",
+        "source": "finnhub"
+      },
+      "dividendsPaid": {
+        "detail": "plan B: estados anuales de yfinance (último FY)",
+        "source": "yfinance_statements"
+      },
+      "earningsGrowth": {
+        "detail": "/stock/metric",
+        "source": "finnhub"
+      },
+      "ebitda": {
+        "detail": "plan B: estados anuales de yfinance (último FY)",
+        "source": "yfinance_statements"
+      },
+      "exchange": {
+        "detail": "plan B: yfinance fast_info (sin crumb)",
+        "source": "yfinance_statements"
+      },
+      "fiftyTwoWeekHigh": {
+        "detail": "plan B: yfinance fast_info (sin crumb)",
+        "source": "yfinance_statements"
+      },
+      "fiftyTwoWeekLow": {
+        "detail": "plan B: yfinance fast_info (sin crumb)",
+        "source": "yfinance_statements"
+      },
+      "forwardEps": {
+        "detail": "la fuente no lo devolvió",
+        "source": "sin_dato"
+      },
+      "forwardPE": {
+        "detail": "/stock/metric",
+        "source": "finnhub"
+      },
+      "freeCashflow": {
+        "detail": "plan B: estados anuales de yfinance (último FY)",
+        "source": "yfinance_statements"
+      },
+      "grossProfits": {
+        "detail": "plan B: estados anuales de yfinance (último FY)",
+        "source": "yfinance_statements"
+      },
+      "industry": {
+        "detail": "búsqueda de Yahoo /v1/finance/search (sin crumb; no es quoteSummary)",
+        "source": "yahoo_quotesummary"
+      },
+      "interestExpense": {
+        "detail": "plan B: estados anuales de yfinance (último FY)",
+        "source": "yfinance_statements"
+      },
+      "longName": {
+        "detail": "símbolo pedido; nombre de stock_database o de la búsqueda",
+        "source": "derivado"
+      },
+      "longTermDebt": {
+        "detail": "plan B: estados anuales de yfinance (último FY)",
+        "source": "yfinance_statements"
+      },
+      "marketCap": {
+        "detail": "plan B: yfinance fast_info (sin crumb)",
+        "source": "yfinance_statements"
+      },
+      "netIncome": {
+        "detail": "plan B: estados anuales de yfinance (último FY)",
+        "source": "yfinance_statements"
+      },
+      "operatingCashflow": {
+        "detail": "plan B: estados anuales de yfinance (último FY)",
+        "source": "yfinance_statements"
+      },
+      "operatingIncome": {
+        "detail": "plan B: estados anuales de yfinance (último FY)",
+        "source": "yfinance_statements"
+      },
+      "payoutRatio": {
+        "detail": "/stock/metric",
+        "source": "finnhub"
+      },
+      "regularMarketPrice": {
+        "detail": "plan B: yfinance fast_info (sin crumb)",
+        "source": "yfinance_statements"
+      },
+      "retainedEarnings": {
+        "detail": "plan B: estados anuales de yfinance (último FY)",
+        "source": "yfinance_statements"
+      },
+      "revenueGrowth": {
+        "detail": "/stock/metric",
+        "source": "finnhub"
+      },
+      "sector": {
+        "detail": "búsqueda de Yahoo /v1/finance/search (sin crumb; no es quoteSummary)",
+        "source": "yahoo_quotesummary"
+      },
+      "shares": {
+        "detail": "plan B: yfinance fast_info (sin crumb)",
+        "source": "yfinance_statements"
+      },
+      "sharesOutstanding": {
+        "detail": "plan B: yfinance fast_info (sin crumb)",
+        "source": "yfinance_statements"
+      },
+      "shortName": {
+        "detail": "símbolo pedido; nombre de stock_database o de la búsqueda",
+        "source": "derivado"
+      },
+      "symbol": {
+        "detail": "símbolo pedido; nombre de stock_database o de la búsqueda",
+        "source": "derivado"
+      },
+      "totalAssets": {
+        "detail": "plan B: estados anuales de yfinance (último FY)",
+        "source": "yfinance_statements"
+      },
+      "totalCash": {
+        "detail": "la fuente no lo devolvió",
+        "source": "sin_dato"
+      },
+      "totalCurrentAssets": {
+        "detail": "plan B: estados anuales de yfinance (último FY)",
+        "source": "yfinance_statements"
+      },
+      "totalCurrentLiabilities": {
+        "detail": "plan B: estados anuales de yfinance (último FY)",
+        "source": "yfinance_statements"
+      },
+      "totalDebt": {
+        "detail": "plan B: estados anuales de yfinance (último FY)",
+        "source": "yfinance_statements"
+      },
+      "totalLiab": {
+        "detail": "plan B: estados anuales de yfinance (último FY)",
+        "source": "yfinance_statements"
+      },
+      "totalRevenue": {
+        "detail": "plan B: estados anuales de yfinance (último FY)",
+        "source": "yfinance_statements"
+      },
+      "totalStockholderEquity": {
+        "detail": "plan B: estados anuales de yfinance (último FY)",
+        "source": "yfinance_statements"
+      },
+      "trailingEps": {
+        "detail": "/stock/metric (impuesto: difería >2% del existente)",
+        "source": "finnhub"
+      },
+      "trailingPE": {
+        "detail": "/stock/metric",
+        "source": "finnhub"
+      }
+    },
+    "path": "plan_b_yfinance"
+  },
+  "data_validation": [],
   "dcf": {
     "fair_value": 93.11,
     "growth_rate": 0.1085,
@@ -95,7 +392,7 @@
     "asset_turnover": 0.0789797192721,
     "beta": 0.66253495,
     "book_value_per_share": 41.6803459927,
-    "buyback_yield": null,
+    "buyback_yield": -0.0476314930494,
     "cash": 434842000.0,
     "cash_ratio": 0.120963261932,
     "current_ratio": 1.4209782557,
@@ -143,7 +440,7 @@
     "roe": 0.0268414053761,
     "roic": 0.0284619724514,
     "roic_wacc_spread": -0.0529774497986,
-    "shareholder_yield": 0.0598929490905,
+    "shareholder_yield": 0.012261456041,
     "shares_outstanding": 946218033.0,
     "total_assets": 72795612000.0,
     "total_debt": 29345846000.0,
@@ -161,8 +458,8 @@
         "passed": true
       },
       "current_ratio_improved": {
-        "detail": "Liquidez (Current Ratio) mejoró",
-        "passed": true
+        "detail": "Liquidez no mejoró",
+        "passed": false
       },
       "debt_reduced": {
         "detail": "Deuda LP aumentó",
@@ -177,7 +474,7 @@
         "passed": false
       },
       "no_dilution": {
-        "detail": "Sin datos de acciones históricas",
+        "detail": "Emisión de nuevas acciones (dilución)",
         "passed": false
       },
       "roa_improved": {
@@ -189,11 +486,11 @@
         "passed": true
       }
     },
-    "fiscal_year": "",
-    "interpretation": "Bueno - Salud financiera sólida",
+    "fiscal_year": "FY2025 vs FY2024",
+    "interpretation": "Neutral - Monitorear indicadores",
     "level": "Bueno",
     "max_score": 9,
-    "score": 6
+    "score": 5
   },
   "price": 54.1800003052,
   "price_history": {
@@ -206,10 +503,10 @@
     "currency": "USD",
     "description": "",
     "exchange": "NYQ",
-    "industry": "Unknown",
+    "industry": "REIT—Retail",
     "market_cap": 51266093316.7,
     "name": "Realty Income Corporation",
-    "sector": "Unknown"
+    "sector": "Real Estate"
   },
   "ratios": {
     "asset_turnover": 0.0789797192721,
@@ -262,11 +559,11 @@
       "Calidad de Ganancias": {
         "adjustments": [
           {
-            "adjustment": 4,
+            "adjustment": 0,
             "metric": "Piotroski F-Score",
-            "reason": "Buena salud (6/9)",
-            "severity": "good",
-            "value": "6/9"
+            "reason": "Neutral (5/9)",
+            "severity": "ok",
+            "value": "5/9"
           },
           {
             "adjustment": 3,
@@ -277,11 +574,11 @@
           }
         ],
         "details": [
-          "Buena salud (6/9)",
+          "Neutral (5/9)",
           "Genera efectivo operativo"
         ],
         "max": 20,
-        "score": 17
+        "score": 13
       },
       "Crecimiento": {
         "adjustments": [
@@ -317,10 +614,10 @@
             "value": "2.7%"
           },
           {
-            "adjustment": -2,
+            "adjustment": 0,
             "metric": "ROA",
-            "reason": "Bajo (1.5%) - Activos poco productivos",
-            "severity": "moderate",
+            "reason": "Aceptable (1.5%) - Normal para su sector",
+            "severity": "ok",
             "value": "1.5%"
           },
           {
@@ -347,22 +644,22 @@
         ],
         "details": [
           "Muy bajo (2.7%) - Poco eficiente con el capital",
-          "Bajo (1.5%) - Activos poco productivos",
+          "Aceptable (1.5%) - Normal para su sector",
           "Excepcional (45.1%) - Alto poder de fijación de precios",
           "Bueno (18.4%) - Ganancias sólidas",
           "Destruye valor (ROIC 2.8% < WACC 8.1%, spread -5.3%)"
         ],
         "max": 20,
-        "score": 8
+        "score": 10
       },
       "Solidez Financiera": {
         "adjustments": [
           {
-            "adjustment": -6,
+            "adjustment": -2,
             "metric": "Altman Z-Score",
-            "reason": "Zona peligro - Riesgo significativo de problemas",
-            "severity": "severe",
-            "value": "0.96"
+            "reason": "Zona gris - Requiere monitoreo cercano",
+            "severity": "moderate",
+            "value": "1.55"
           },
           {
             "adjustment": 0,
@@ -372,10 +669,10 @@
             "value": "1.42x"
           },
           {
-            "adjustment": 2,
+            "adjustment": 5,
             "metric": "Deuda/Equity",
-            "reason": "Deuda controlada - Dentro del rango saludable (0.74x)",
-            "severity": "good",
+            "reason": "Deuda muy baja - Estructura financiera conservadora",
+            "severity": "excellent",
             "value": "0.74x"
           },
           {
@@ -387,22 +684,22 @@
           }
         ],
         "details": [
-          "Zona peligro - Riesgo significativo de problemas",
+          "Zona gris - Requiere monitoreo cercano",
           "Liquidez justa - Cubre sus obligaciones (1.42x)",
-          "Deuda controlada - Dentro del rango saludable (0.74x)",
+          "Deuda muy baja - Estructura financiera conservadora",
           "Cobertura ajustada"
         ],
         "max": 20,
-        "score": 4
+        "score": 11
       },
       "Valoración": {
         "adjustments": [
           {
-            "adjustment": 0,
-            "metric": "P/E vs Sector",
-            "reason": "Premium justificado (39.6x) - Calidad Moderada",
-            "severity": "ok",
-            "value": "39.6x"
+            "adjustment": 2,
+            "metric": "P/FFO (REIT)",
+            "reason": "Atractivo por FFO (15.8x)",
+            "severity": "good",
+            "value": "15.8x"
           },
           {
             "adjustment": 2,
@@ -410,13 +707,6 @@
             "reason": "P/E mejorando (40x → 33x forward)",
             "severity": "good",
             "value": "32.8x"
-          },
-          {
-            "adjustment": 4,
-            "metric": "P/FCF",
-            "reason": "Excelente para growth (12.8x)",
-            "severity": "excellent",
-            "value": "12.8x"
           },
           {
             "adjustment": 2,
@@ -434,24 +724,23 @@
           }
         ],
         "details": [
-          "Premium justificado (39.6x) - Calidad Moderada",
+          "Atractivo por FFO (15.8x)",
           "P/E mejorando (40x → 33x forward)",
-          "Excelente para growth (12.8x)",
           "Atractivo para growth (16.8x)",
           "Caro para su crecimiento (1.86)"
         ],
         "max": 20,
-        "score": 16
+        "score": 14
       }
     },
-    "level": "Neutral",
+    "level": "Favorable",
     "max_score": 100,
-    "total_score": 63
+    "total_score": 66
   },
   "sector_info": {
-    "mapped_sector": "Unknown",
-    "sector": "Unknown",
-    "sector_etf": "SPY"
+    "mapped_sector": "real_estate",
+    "sector": "Real Estate",
+    "sector_etf": "VNQ"
   },
   "sensitivity": {
     "base_case": {
