@@ -544,3 +544,11 @@ Pendientes registrados:
   de la decisión 4) con el mismo decaimiento, y el PDF imprime ese crecimiento. Las celdas del grid siguen
   explorando ±5 pp alrededor del caso base (pueden superar el 30%). El caso base difiere <0.1% del DCF porque el
   grid redondea el WACC a 4 decimales.
+- **Etapa 9 — bandas paralelas (principio ya decidido, no aplicado aún):** ROE, current ratio, cobertura, FCF yield,
+  beta, DN/EBITDA, PEG, payout y el resumen 75/50 de la UI tienen hoy 3-4 juegos de bandas (score, alertas, lecturas
+  del PDF en `thresholds.pdf`, colores de la UI en `thresholds.ui.metric_scale`). Principio: **una sola fuente de
+  bandas por métrica**, **lectura del PDF = color de la UI**, y **bandas sectoriales donde el clasificador lo
+  permita** (las de `sectors.score_thresholds`).
+- **Etapa 8 — WACC mostrado frente a usado:** `dcf.wacc` muestra el coste del equity sin acotar; el DCF lo acota a
+  [6%, 20%] y el grid a [8%, 18%] (y lo redondea a 4 decimales). Hoy coinciden en los 6 tickers; debe haber un único
+  WACC (junto con el WACC real ponderado por deuda, C4).
