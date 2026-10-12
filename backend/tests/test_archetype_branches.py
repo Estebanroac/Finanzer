@@ -125,3 +125,42 @@ def test_payment_network_is_valued_as_mature(outputs_by_env):
         assert a["classification"]["archetype"] == "MATURE"
         assert a["altman_z"]["applicable"] is True and a["dcf"] is not None
         assert a["score"]["breakdown"]["Solidez Financiera"].get("adjustments")[0]["metric"] != "Solidez Bancaria"
+
+
+# ─────────────────────────── PDF ───────────────────────────
+def _pdf_text(pdf):
+    return fb.pdf_text(pdf) if isinstance(pdf, bytes) else pdf
+
+
+def test_pdf_shows_archetype_and_reason(outputs_by_env):
+    for env in _envs():
+        txt = _pdf_text(outputs_by_env(env)["O"][1])
+        assert "REIT  ·  Clasificada como REIT por industria REIT - Retail" in txt
+
+
+def test_bank_pdf_never_reads_pe_or_fcf_as_primary(outputs_by_env):
+    """En el PDF de un banco P/E, P/FCF y FCF yield solo aparecen como "No aplica"."""
+    with fb.replay(fb.fixtures_dir("local")) as store:
+        trv = fb.run_analysis("TRV", store)
+        trv_pdf = fb.build_pdf_bytes(trv, fb.capture_date(store.meta["TRV"]))
+    pdfs = [(env, outputs_by_env(env)["JPM"][1]) for env in _envs()] + [("local", trv_pdf)]
+    for env, pdf in pdfs:
+        lines = _pdf_text(pdf).splitlines()
+        for i, ln in enumerate(lines):
+            if ln.strip() in ("P/E (TTM)", "Forward P/E", "P/FCF", "FCF Yield", "PEG", "EV/EBITDA"):
+                assert any(x.startswith("No aplica a FINANCIAL") for x in lines[i + 1:i + 5]), (env, ln, lines[i:i + 5])
+        txt = "\n".join(lines)
+        assert "VALORACIÓN\nP/B frente a ROE" in txt, env
+        cover = txt.split("===== página 2")[0]
+        assert "FCF YIELD" not in cover and "P/E (TTM)" not in cover and "P/B" in cover, env
+
+
+def test_pdf_roce_rows(outputs_by_env):
+    for env in _envs():
+        out = outputs_by_env(env)
+        assert "ROCE (EBIT / capital empleado)" in _pdf_text(out["NFLX"][1])
+        fcx = _pdf_text(out["FCX"][1])
+        assert "ROCE promedio (4 ejercicios, ciclo incompleto)" in fcx
+        jpm = _pdf_text(out["JPM"][1]).splitlines()
+        i = jpm.index("ROCE")
+        assert "No aplica a FINANCIAL" in jpm[i + 1:i + 6]

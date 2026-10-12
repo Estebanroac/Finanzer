@@ -277,9 +277,10 @@ function FinancialHealthCard({ data }: { data: { score: number; level: string; i
   );
 }
 
-function ZScoreCard({ data }: { data: { z_score: number; zone: string; interpretation: string; model?: string; details?: Record<string, unknown> } }) {
+function ZScoreCard({ data }: { data: { z_score: number; zone: string; interpretation: string; model?: string; details?: Record<string, unknown>; applicable?: boolean } }) {
   const details = data.details || {};
-  const isNotApplicable = (details.reason as string) === "financial_sector";
+  // Etapa 6: lo decide el arquetipo del backend (FINANCIAL, REIT), no el sector.
+  const isNotApplicable = data.applicable === false || (details.reason as string) === "no_aplica";
   const warnings = (details.warnings as string[]) || [];
 
   if (isNotApplicable) {
@@ -354,7 +355,26 @@ function ZScoreCard({ data }: { data: { z_score: number; zone: string; interpret
   );
 }
 
-function FScoreCard({ data }: { data: { score: number; max_score: number; level: string; interpretation: string; details?: Record<string, { passed: boolean; detail: string }>; fiscal_year?: string } }) {
+function FScoreCard({ data }: { data: { score: number; max_score: number; level: string; interpretation: string; details?: Record<string, { passed: boolean; detail: string }>; fiscal_year?: string; applicable?: boolean } }) {
+  if (data.applicable === false) {
+    // Etapa 6: no aplica al arquetipo (FINANCIAL, REIT): no cuenta en Calidad.
+    return (
+      <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 p-5">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-zinc-400 font-medium">Piotroski F-Score</span>
+            <InfoTooltip content={EVALUATION.piotroski} />
+          </div>
+          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md"
+            style={{ background: "#6b728015", color: "#a1a1aa", border: "1px solid #6b728025" }}>
+            No Aplicable
+          </span>
+        </div>
+        <div className="text-4xl font-black tabular-nums mb-2 text-zinc-600">N/A</div>
+        <p className="text-xs text-zinc-500 leading-relaxed">{data.interpretation}</p>
+      </div>
+    );
+  }
   // Escala única de Piotroski (generada desde backend/config): la misma que la
   // insignia `level` y la interpretación que envía el backend.
   const [P_STRONG, P_GOOD, P_NEUTRAL, P_WEAK] = PIOTROSKI_BANDS;

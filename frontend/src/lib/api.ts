@@ -1,4 +1,6 @@
-import { SCORE_LEVEL_BANDS } from "./generated/backendConfig";
+import { SCORE_LEVEL_BANDS, ARCHETYPE_NOT_APPLICABLE, type Archetype } from "./generated/backendConfig";
+
+export type { Archetype };
 
 // Solo el dev server de Next (puerto 3000) necesita apuntar al backend en
 // localhost:8000; en cualquier otro caso (producción en Render, uvicorn local
@@ -27,6 +29,18 @@ export interface ScoreBreakdownCategory {
   adjustments?: ScoreAdjustment[];
 }
 
+/** Salida del clasificador único del backend (etapa 6, lib/classify.py). */
+export interface Classification {
+  archetype: Archetype;
+  reason: string;
+  rule: string;
+  sector: string | null;
+  industry: string | null;
+  ambiguous: boolean;
+  confidence: "normal" | "baja";
+  alerts: Array<{ code: string; detail: string }>;
+}
+
 export interface StockAnalysis {
   symbol: string;
   profile: {
@@ -51,8 +65,12 @@ export interface StockAnalysis {
   company_type: string;
   is_growth: boolean;
   sector_info: { sector: string; mapped_sector: string; sector_etf: string };
-  altman_z: { z_score: number; zone: string; interpretation: string; model?: string; details?: Record<string, unknown> } | null;
-  piotroski_f: { score: number; max_score: number; level: string; interpretation: string; details?: Record<string, { passed: boolean; detail: string }>; fiscal_year?: string } | null;
+  // Etapa 6: arquetipo, qué no aplica (motivo) y métricas de la rama.
+  classification?: Classification;
+  not_applicable?: Record<string, string>;
+  archetype_metrics?: Record<string, number | boolean | string | null>;
+  altman_z: { z_score: number; zone: string; interpretation: string; model?: string; details?: Record<string, unknown>; available?: boolean; applicable?: boolean } | null;
+  piotroski_f: { score: number; max_score: number; level: string; interpretation: string; details?: Record<string, { passed: boolean; detail: string }>; fiscal_year?: string; applicable?: boolean } | null;
   financial_health: { score: number; level: string; interpretation?: string } | null;
   graham_number: number | null;
   graham_margin: number | null;
@@ -154,9 +172,18 @@ export function getScoreLabel(pct: number): string {
 }
 
 // D/E contable sin lectura en entidades financieras (los depósitos son pasivo).
-// Mismo criterio que el PDF (mapped_sector contiene "financ"): etapa 4.
+// Etapa 6: lo decide el arquetipo del clasificador único del backend, igual que el PDF.
 export const DE_NOT_APPLICABLE = "No aplica a entidades financieras";
 
-export function isFinancialSector(mappedSector?: string | null): boolean {
-  return (mappedSector || "").toLowerCase().includes("financ");
+export function isFinancialArchetype(archetype?: Archetype | null): boolean {
+  return archetype === "FINANCIAL";
+}
+
+/** ¿El componente (clave de sectors.archetypes.not_applicable) no aplica al arquetipo? */
+export function isNotApplicable(archetype: Archetype | null | undefined, key: string): boolean {
+  return !!archetype && (ARCHETYPE_NOT_APPLICABLE[archetype] || []).includes(key);
+}
+
+export function notApplicableLabel(archetype?: Archetype | null): string {
+  return `No aplica a ${archetype ?? "este arquetipo"}`;
 }

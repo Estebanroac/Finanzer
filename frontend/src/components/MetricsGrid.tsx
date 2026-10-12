@@ -1,6 +1,7 @@
 "use client";
 
-import { formatNumber, formatPercent, formatMultiple, isFinancialSector, DE_NOT_APPLICABLE } from "@/lib/api";
+import { formatNumber, formatPercent, formatMultiple, isFinancialArchetype, isNotApplicable, notApplicableLabel,
+  DE_NOT_APPLICABLE, type Archetype } from "@/lib/api";
 import InfoTooltip, { type TooltipContent } from "@/components/InfoTooltip";
 import { METRICS } from "@/lib/tooltips";
 import { getSectorBenchmarks } from "@/lib/sectorBench";
@@ -8,6 +9,7 @@ import { getSectorBenchmarks } from "@/lib/sectorBench";
 interface MetricsGridProps {
   metrics: Record<string, number | null>;
   sector?: string;
+  archetype?: Archetype;
 }
 
 type Tone = "pos" | "warn" | "neg";
@@ -75,7 +77,10 @@ function Stat({
   );
 }
 
-export default function MetricsGrid({ metrics, sector }: MetricsGridProps) {
+export default function MetricsGrid({ metrics, sector, archetype }: MetricsGridProps) {
+  // Etapa 6: lo que no aplica al arquetipo se muestra como "—" con su nota, sin lectura.
+  const na = (key: string) => isNotApplicable(archetype, key);
+  const naNote = notApplicableLabel(archetype);
   const b = getSectorBenchmarks(sector || "default");
   const pctFmt = (v: number) => `${(v * 100).toFixed(0)}%`;
   const multFmt = (v: number) => `${v.toFixed(0)}x`;
@@ -83,11 +88,15 @@ export default function MetricsGrid({ metrics, sector }: MetricsGridProps) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-8 gap-y-5 py-5 px-6 rounded-2xl border border-white/[0.06] bg-[#0a0a0d]/85 h-full content-center">
       <Stat index={0} label="Market Cap" value={formatNumber(metrics.market_cap)} accent tooltip={METRICS.market_cap} raw={metrics.market_cap} />
-      <Stat index={1} label="P/E Ratio" value={formatMultiple(metrics.pe)} tooltip={METRICS.pe_ratio}
-        raw={metrics.pe} bench={b.pe} higherIsBetter={false} benchFmt={multFmt} benchHelp={METRICS.sector_benchmark} />
+      {na("pe") ? (
+        <Stat index={1} label="P/E Ratio" value="—" tooltip={METRICS.pe_ratio} note={naNote} />
+      ) : (
+        <Stat index={1} label="P/E Ratio" value={formatMultiple(metrics.pe)} tooltip={METRICS.pe_ratio}
+          raw={metrics.pe} bench={b.pe} higherIsBetter={false} benchFmt={multFmt} benchHelp={METRICS.sector_benchmark} />
+      )}
       <Stat index={2} label="ROE" value={formatPercent(metrics.roe)} tooltip={METRICS.roe}
         raw={metrics.roe} bench={b.roe} higherIsBetter={true} benchFmt={pctFmt} />
-      {isFinancialSector(sector) ? (
+      {isFinancialArchetype(archetype) ? (
         <Stat index={3} label="D/E" value="—" tooltip={METRICS.de_ratio} note={DE_NOT_APPLICABLE} />
       ) : (
         <Stat index={3} label="D/E" value={formatMultiple(metrics.de)} tooltip={METRICS.de_ratio}
@@ -95,10 +104,18 @@ export default function MetricsGrid({ metrics, sector }: MetricsGridProps) {
       )}
       <Stat index={4} label="Margen Neto" value={formatPercent(metrics.net_margin)} tooltip={METRICS.net_margin}
         raw={metrics.net_margin} bench={b.net_margin} higherIsBetter={true} benchFmt={pctFmt} />
-      <Stat index={5} label="FCF Yield" value={formatPercent(metrics.fcf_yield)} tooltip={METRICS.fcf_yield}
-        raw={metrics.fcf_yield} bench={b.fcf_yield} higherIsBetter={true} benchFmt={pctFmt} />
-      <Stat index={6} label="EV/EBITDA" value={formatMultiple(metrics.ev_ebitda)} tooltip={METRICS.ev_ebitda}
-        raw={metrics.ev_ebitda} bench={b.ev_ebitda} higherIsBetter={false} benchFmt={multFmt} />
+      {na("p_fcf") ? (
+        <Stat index={5} label="FCF Yield" value="—" tooltip={METRICS.fcf_yield} note={naNote} />
+      ) : (
+        <Stat index={5} label="FCF Yield" value={formatPercent(metrics.fcf_yield)} tooltip={METRICS.fcf_yield}
+          raw={metrics.fcf_yield} bench={b.fcf_yield} higherIsBetter={true} benchFmt={pctFmt} />
+      )}
+      {na("ev_ebitda") ? (
+        <Stat index={6} label="EV/EBITDA" value="—" tooltip={METRICS.ev_ebitda} note={naNote} />
+      ) : (
+        <Stat index={6} label="EV/EBITDA" value={formatMultiple(metrics.ev_ebitda)} tooltip={METRICS.ev_ebitda}
+          raw={metrics.ev_ebitda} bench={b.ev_ebitda} higherIsBetter={false} benchFmt={multFmt} />
+      )}
       <Stat index={7} label="Beta" value={metrics.beta != null ? metrics.beta.toFixed(2) : "N/A"} tooltip={METRICS.beta} raw={metrics.beta} />
     </div>
   );

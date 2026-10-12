@@ -221,7 +221,8 @@ function AnalysisContent({ data, symbol }: { data: StockAnalysis; symbol: string
           </div>
           <div className="lg:col-span-2">
             {data.key_metrics && (
-              <MetricsGrid metrics={data.key_metrics} sector={data.sector_info?.mapped_sector} />
+              <MetricsGrid metrics={data.key_metrics} sector={data.sector_info?.mapped_sector}
+                archetype={data.classification?.archetype} />
             )}
           </div>
         </div>

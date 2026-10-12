@@ -21,7 +21,7 @@ export default function IntrinsicTab({ data }: { data: StockAnalysis }) {
         <ValuationGauge price={price} fv={fv} dcf={dcf!} graham={graham} grahamMargin={grahamMargin} />
       ) : (
         <NoDcfView price={price} graham={graham} grahamMargin={grahamMargin}
-          isFinancial={(data.sector_info?.mapped_sector || "").toLowerCase().includes("financ")} />
+          dcfNotApplicable={data.not_applicable?.dcf} grahamNotApplicable={data.not_applicable?.graham} />
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
@@ -184,12 +184,13 @@ function ValuationGauge({ price, fv, dcf, graham, grahamMargin }: {
   );
 }
 
-/* ── Sin DCF (p. ej. financieras): precio + Graham ── */
-function NoDcfView({ price, graham, grahamMargin, isFinancial }: {
+/* ── Sin DCF (no aplica al arquetipo o sin FCF positivo): precio + Graham ── */
+function NoDcfView({ price, graham, grahamMargin, dcfNotApplicable, grahamNotApplicable }: {
   price: number | null;
   graham: number | null;
   grahamMargin: number | null;
-  isFinancial: boolean;
+  dcfNotApplicable?: string;    // motivo del backend (etapa 6): "No aplica a FINANCIAL: …"
+  grahamNotApplicable?: string;
 }) {
   return (
     <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 px-6 py-5">
@@ -204,7 +205,8 @@ function NoDcfView({ price, graham, grahamMargin, isFinancial }: {
         <div className="vg-stat">
           <span className="vg-k flex items-center gap-1">Nº de Graham <InfoTooltip content={INTRINSIC.graham} value={graham} valueLabel={formatPrice(graham)} /></span>
           <span className="vg-v">
-            {formatPrice(graham)}
+            {grahamNotApplicable ? "—" : formatPrice(graham)}
+            {grahamNotApplicable && <span className="text-[10px] text-zinc-500 ml-1.5">{grahamNotApplicable}</span>}
             {grahamMargin != null && Math.abs(grahamMargin) <= 1 && (
               <span
                 className="text-xs font-normal ml-1.5"
@@ -217,8 +219,8 @@ function NoDcfView({ price, graham, grahamMargin, isFinancial }: {
         </div>
       </div>
       <p className="text-xs text-zinc-500 mt-4 leading-relaxed">
-        {isFinancial
-          ? "El modelo DCF no aplica a instituciones financieras (el flujo de caja libre no es interpretable en banca); se valoran sobre libros y retornos."
+        {dcfNotApplicable
+          ? `DCF (FCFF): ${dcfNotApplicable}.`
           : "El modelo DCF no está disponible con los datos actuales (requiere flujo de caja libre positivo)."}
       </p>
     </div>

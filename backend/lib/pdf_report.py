@@ -650,7 +650,17 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     symbol = analysis.get("symbol", "")
     name = profile.get("name") or symbol
     sector = profile.get("sector") or "N/A"
-    is_financial = "financ" in (analysis.get("sector_info", {}).get("mapped_sector", "") or "").lower()
+    # Etapa 6: el arquetipo del clasificador único decide qué se lee y qué no aplica.
+    classification = analysis.get("classification") or {}
+    archetype = classification.get("archetype") or "MATURE"
+    not_app = analysis.get("not_applicable") or {}
+    is_financial = archetype == "FINANCIAL"
+    xm = analysis.get("archetype_metrics") or {}
+    _na_keys = set((cfg(f"sectors.archetypes.not_applicable.{archetype}")
+                    if archetype in ("FINANCIAL", "REIT", "GROWTH_PRE_PROFIT", "CYCLICAL", "MATURE") else ()))
+    # Múltiplos propios de cada rama (filas del score de Valoración).
+    _branch_metrics = ("P/B frente a ROE", "P/TBV frente a ROTE", "P/FFO (REIT)", "Rentabilidad por dividendo (REIT)",
+                       "EV/Ventas", "Regla de 40", "EV/EBITDA normalizado vs Sector", "P/FCF normalizado")
 
     # posición en rango 52 semanas
     h52, l52 = km.get("price_52w_high"), km.get("price_52w_low")
@@ -791,6 +801,15 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
             f"&nbsp;&nbsp;·&nbsp;&nbsp;Corte al {_fecha_es()}",
             ParagraphStyle('csub', fontName='Helvetica', fontSize=9.5, leading=13, textColor=MUTED)),
     ]
+    if classification.get("reason"):
+        _cls_note = [classification["reason"]]
+        if classification.get("ambiguous"):
+            _cls_note.append("clasificación ambigua: confianza baja")
+        _cls_note += [a.get("detail") for a in classification.get("alerts") or [] if a.get("detail")]
+        _title_flow += [Spacer(1, 5), Paragraph(
+            f"<font color='{BRAND_TXT.hexval()}'><b>{_esc(archetype)}</b></font>&nbsp;&nbsp;·&nbsp;&nbsp;"
+            + _esc(" · ".join(_cls_note)),
+            ParagraphStyle('ccls', fontName='Helvetica', fontSize=8.4, leading=11.5, textColor=BODY))]
 
     # Banda 2 — score + DESGLOSE por categoría (número a la izquierda alineado
     # con las 5 barras a la derecha; llena y organiza la portada).
@@ -854,12 +873,33 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
 
     # Banda 3 — KPIs (2 filas de 4 = 8 indicadores clave)
     _kw = (CW - 3 * 9) / 4.0
-    _kpis = [
-        (fv(price, "price"), "Precio"), (fv(km.get("market_cap"), "money"), "Market cap"),
-        (fv(km.get("pe"), "mult"), "P/E (TTM)"), (fv(km.get("roe"), "pct"), "ROE"),
-        (fv(km.get("net_margin"), "pct"), "Margen neto"), (fv(km.get("fcf_yield"), "pct"), "FCF yield"),
-        (fv(km.get("net_debt_to_ebitda"), "mult"), "Deuda neta/EBITDA"), (fv(km.get("beta"), "num"), "Beta"),
-    ]
+    # Etapa 6: los indicadores destacados son los primarios del arquetipo (un
+    # banco nunca recibe P/E ni FCF como métrica primaria; un REIT, P/FFO…).
+    _k_common = [(fv(price, "price"), "Precio"), (fv(km.get("market_cap"), "money"), "Market cap")]
+    if archetype == "FINANCIAL":
+        _k_arch = [(fv(xm.get("pb"), "mult"), "P/B"), (fv(km.get("roe"), "pct"), "ROE"),
+                   (fv(km.get("net_margin"), "pct"), "Margen neto"), (fv(xm.get("ptbv"), "mult"), "P/TBV"),
+                   (fv(km.get("dividend_yield"), "pct"), "Dividend yield"), (fv(km.get("beta"), "num"), "Beta")]
+    elif archetype == "REIT":
+        _k_arch = [(fv(km.get("p_ffo"), "mult"), "P/FFO"), (fv(km.get("dividend_yield"), "pct"), "Dividend yield"),
+                   (fv(km.get("ffo_payout"), "pct"), "Payout sobre FFO"), (fv(km.get("de"), "mult"), "Deuda/Equity"),
+                   (fv(km.get("net_debt_to_ebitda"), "mult"), "Deuda neta/EBITDA"), (fv(km.get("beta"), "num"), "Beta")]
+    elif archetype == "GROWTH_PRE_PROFIT":
+        _r40 = xm.get("rule_of_40")
+        _k_arch = [(fv(xm.get("ev_sales"), "mult"), "EV/Ventas"),
+                   (f"{_r40 * 100:.0f}" if _r40 is not None else "N/A", "Regla de 40"),
+                   (fv(km.get("net_margin"), "pct"), "Margen neto"), (fv(km.get("fcf_yield"), "pct"), "FCF yield"),
+                   (fv(km.get("net_debt_to_ebitda"), "mult"), "Deuda neta/EBITDA"), (fv(km.get("beta"), "num"), "Beta")]
+    elif archetype == "CYCLICAL":
+        _k_arch = [(fv(xm.get("ev_ebitda_normalized"), "mult"), "EV/EBITDA normalizado"),
+                   (fv(km.get("roe"), "pct"), "ROE"),
+                   (fv(km.get("net_margin"), "pct"), "Margen neto"), (fv(km.get("fcf_yield"), "pct"), "FCF yield"),
+                   (fv(km.get("net_debt_to_ebitda"), "mult"), "Deuda neta/EBITDA"), (fv(km.get("beta"), "num"), "Beta")]
+    else:
+        _k_arch = [(fv(km.get("pe"), "mult"), "P/E (TTM)"), (fv(km.get("roe"), "pct"), "ROE"),
+                   (fv(km.get("net_margin"), "pct"), "Margen neto"), (fv(km.get("fcf_yield"), "pct"), "FCF yield"),
+                   (fv(km.get("net_debt_to_ebitda"), "mult"), "Deuda neta/EBITDA"), (fv(km.get("beta"), "num"), "Beta")]
+    _kpis = _k_common + _k_arch
 
     def _krow(items):
         t = Table([[_kpi_card(v, l, _kw) for v, l in items]], colWidths=[CW / 4.0] * 4)
@@ -953,7 +993,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         return f"vs sector {bench * 100:.1f}%" if fmt == 'pct' else f"vs sector {bench:.1f}x"
 
     def _mkcard(label, raw, fmt, benchkey, higher):
-        bench = sector_bench.get(benchkey)
+        bench = sector_bench.get(benchkey) if benchkey else None
         r = read_vs_sector(label, raw, bench, higher, 'pct' if fmt == 'pct' else 'mult') \
             if (bench and raw is not None) else None
         v, u = _mvu(raw, fmt)
@@ -965,13 +1005,32 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
             pill, tone, delta = ("—" if raw is None else "En rango"), 'neu', ""
         return metric_card(label, v, u, pill, tone, delta, _benchtxt(bench, fmt), _cellw)
 
+    # Etapa 6: la segunda fila son los múltiplos primarios del arquetipo.
+    if archetype == "FINANCIAL":
+        _val_cards = [_mkcard("P/B", xm.get("pb"), 'mult', "pb", False),
+                      _mkcard("P/TBV", xm.get("ptbv"), 'mult', None, False),
+                      _mkcard("Dividend yield", km.get("dividend_yield"), 'pct', None, True)]
+    elif archetype == "REIT":
+        _val_cards = [_mkcard("P/FFO", km.get("p_ffo"), 'mult', None, False),
+                      _mkcard("Dividend yield", km.get("dividend_yield"), 'pct', None, True),
+                      _mkcard("EV/EBITDA", km.get("ev_ebitda"), 'mult', "ev_ebitda", False)]
+    elif archetype == "GROWTH_PRE_PROFIT":
+        _val_cards = [_mkcard("EV/Ventas", xm.get("ev_sales"), 'mult', None, False),
+                      _mkcard("FCF yield", km.get("fcf_yield"), 'pct', "fcf_yield", True),
+                      _mkcard("Regla de 40", xm.get("rule_of_40"), 'pct', None, True)]
+    elif archetype == "CYCLICAL":
+        _val_cards = [_mkcard("EV/EBITDA normalizado", xm.get("ev_ebitda_normalized"), 'mult', "ev_ebitda", False),
+                      _mkcard("FCF yield", km.get("fcf_yield"), 'pct', "fcf_yield", True),
+                      _mkcard("P/FCF normalizado", xm.get("p_fcf_normalized"), 'mult', "pfcf", False)]
+    else:
+        _val_cards = [_mkcard("P/E (TTM)", km.get("pe"), 'mult', "pe", False),
+                      _mkcard("FCF yield", km.get("fcf_yield"), 'pct', "fcf_yield", True),
+                      _mkcard("EV/EBITDA", km.get("ev_ebitda"), 'mult', "ev_ebitda", False)]
     _cards = [
         _mkcard("Crecimiento ingresos", km.get("revenue_growth"), 'pct', "revenue_growth", True),
         _mkcard("Margen neto", km.get("net_margin"), 'pct', "net_margin", True),
         _mkcard("ROE", km.get("roe"), 'pct', "roe", True),
-        _mkcard("P/E (TTM)", km.get("pe"), 'mult', "pe", False),
-        _mkcard("FCF yield", km.get("fcf_yield"), 'pct', "fcf_yield", True),
-        _mkcard("EV/EBITDA", km.get("ev_ebitda"), 'mult', "ev_ebitda", False),
+        *_val_cards,
     ]
     cg = Table([_cards[0:3], _cards[3:6]], colWidths=[CW / 3.0] * 3)
     cg.setStyle(TableStyle([
@@ -999,7 +1058,14 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         sol_short = r_de[2] if r_de else None
 
     exec_items = []
-    _val = (_cap(r_pe[2]) + (" " + _cap(r_up[2]) if r_up else "")) if r_pe else (_cap(r_up[2]) if r_up else "")
+    # Etapa 6: la lectura de valoración es la del múltiplo primario del arquetipo
+    # (P/E solo donde aplica; en las demás ramas, su primer componente puntuado).
+    _r_val = r_pe if "pe" not in _na_keys else None
+    _branch_val = next((a for a in (breakdown.get("Valoración") or {}).get("adjustments") or []
+                        if a.get("metric") in _branch_metrics), None)
+    if _r_val is None and _branch_val:
+        _r_val = (None, None, f"{_branch_val['metric'].replace(' vs Sector', '')}: {_branch_val['reason']}")
+    _val = (_cap(_r_val[2]) + (" " + _cap(r_up[2]) if r_up else "")) if _r_val else (_cap(r_up[2]) if r_up else "")
     if _val.strip():
         exec_items.append(("VALORACIÓN", _esc(_val)))
     if not is_financial and r_spread:
@@ -1019,7 +1085,8 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     _short = {"Solidez Financiera": "Solidez", "Calidad de Ganancias": "Calidad",
               "Valoración": "Valoración", "Rentabilidad": "Rentabilidad", "Crecimiento": "Crecimiento"}
     # Categoría no concluyente: eje en la base neutral (50%) y marcada "(n/c)".
-    _rl = [_short.get(k, k) + (" (n/c)" if c.get("conclusive") is False else "") for k, c in breakdown.items()]
+    _rl = [_short.get(k, k) + (" (n/a)" if c.get("applicable") is False else
+                               " (n/c)" if c.get("conclusive") is False else "") for k, c in breakdown.items()]
     _rv = [50.0 if c.get("conclusive") is False else (c.get("score", 0) / (c.get("max", 20) or 20)) * 100
            for c in breakdown.values()]
     radar_inner = radar_chart(_rl, _rv, size=4.8 * inch, accent=TONE_COLOR[score_tone]) \
@@ -1121,13 +1188,28 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         ("Earnings Yield (E/P)", km.get("earnings_yield"), None, True, "pct"),
         ("Dividend Yield", km.get("dividend_yield"), None, True, "pct"),
     ]
+    # Etapa 6: lo que no aplica al arquetipo no se lee ("No aplica"), y la rama
+    # añade sus múltiplos (P/B justificado, P/FFO, EV/Ventas, normalizados…).
+    _mult_na = {"P/E (TTM)": "pe", "Forward P/E": "forward_pe", "PEG": "peg", "EV/EBITDA": "ev_ebitda",
+                "P/FCF": "p_fcf", "FCF Yield": "p_fcf"}
     rows, reads = [], []
     for i, (lab, val, bench, hb, fm) in enumerate(mult_defs):
+        if _mult_na.get(lab) in _na_keys:
+            rows.append([lab, fv(val, fm), fv(bench, fm) if bench else "—", "—", f"No aplica a {archetype}"])
+            reads.append((i, 'neu'))
+            continue
         r = read_vs_sector(lab, val, bench, hb, fm) if bench else None
         rows.append([lab, fv(val, fm), fv(bench, fm) if bench else "—",
                      r[3] if r else "—", r[0] if r else "—"])
         if r:
             reads.append((i, r[1]))
+    _sev_read = {"excellent": ("Favorable", 'pos'), "good": ("Favorable", 'pos'), "ok": ("En línea", 'neu'),
+                 "moderate": ("Exigente", 'warn'), "severe": ("Desfavorable", 'neg')}
+    for adj in (breakdown.get("Valoración") or {}).get("adjustments") or []:
+        if adj.get("metric") in _branch_metrics:
+            lab_r, tone_r = _sev_read.get(adj.get("severity"), ("—", 'neu'))
+            rows.append([adj["metric"].replace(" vs Sector", ""), str(adj.get("value", "")), "—", "—", lab_r])
+            reads.append((len(rows) - 1, tone_r))
     story.append(data_table(
         ["MÚLTIPLO", "EMPRESA", "SECTOR", "BRECHA", "LECTURA"], rows,
         [1.9 * inch, 1.15 * inch, 1.15 * inch, 1.0 * inch, CW - 5.2 * inch],
@@ -1137,11 +1219,16 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     # Valor intrínseco
     story.append(Paragraph("Valor intrínseco", S['h2']))
     iv_txt = _join_sentences([r_up[2] if r_up else None,
-                              None if r_up else "el modelo DCF no es aplicable con los datos disponibles" +
-                              (" (sector financiero: se valora sobre libros y retornos)" if is_financial else "")])
+                              (f"DCF (FCFF): {not_app['dcf'][0].lower()}{not_app['dcf'][1:]}" if not_app.get("dcf")
+                               else None if r_up else "el modelo DCF no es aplicable con los datos disponibles"),
+                              ("se valora sobre libros y retornos" if is_financial else None)])
     if iv_txt:
         story.append(Paragraph(iv_txt, S['body']))
     iv_rows = [["Precio de mercado", fv(price, "price"), ""]]
+    if not_app.get("graham"):
+        iv_rows.append(["Número de Graham", "—", f"No aplica a {archetype}"])
+    if not_app.get("dcf"):
+        iv_rows.append(["Valor justo DCF", "—", f"No aplica a {archetype}"])
     if graham is not None:
         iv_rows.append(["Número de Graham", fv(graham, "price"),
                         (r_graham[0] if r_graham else "")])
@@ -1170,6 +1257,12 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         vc = dcf.get("value_composition") or {}
         if vc.get("terminal_pct") is not None:
             params += f" · el valor terminal aporta el {vc['terminal_pct']:.0f}% del valor total"
+        _nz = dcf.get("normalized") or {}
+        if _nz.get("fcf") is not None:
+            params += (f" · FCF normalizado {fv(_nz['fcf'], 'money')} (margen FCF promedio "
+                       f"{fv(_nz.get('fcf_margin_avg'), 'pct')} × ingresos actuales"
+                       + (f"; ciclo incompleto: {_nz.get('years')} ejercicios" if _nz.get("cycle_incomplete") else "")
+                       + ") y crecimiento normalizado de ciclo medio")
         story.append(Paragraph(_esc(params), S['small']))
 
     # Sensibilidad DCF
@@ -1252,10 +1345,31 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     if not is_financial and km.get("roic_wacc_spread") is not None and r_spread:
         rows.append(["Spread ROIC − WACC", f"{km['roic_wacc_spread'] * 100:+.1f} pp", "> 0", "—", r_spread[0]])
         reads.append((len(rows) - 1, r_spread[1]))
+    # ROCE (etapa 6): solo MATURE y CYCLICAL; "No aplica" o "Sin dato", nunca 0%.
+    _roce_state = km.get("roce_state")
+    if _roce_state == "no_aplica":
+        rows.append(["ROCE", "—", "—", "—", f"No aplica a {archetype}"])
+        reads.append((len(rows) - 1, 'neu'))
+    elif _roce_state == "sin_dato":
+        rows.append(["ROCE", "—", "—", "—", "Sin dato"])
+        reads.append((len(rows) - 1, 'neu'))
+    elif _roce_state == "ok":
+        rows.append(["ROCE (EBIT / capital empleado)", fv(km.get("roce"), "pct"), "—", "—", "Antes de impuestos"])
+        if km.get("roce_avg") is not None:
+            rows.append([f"ROCE promedio ({km.get('roce_years')} ejercicios"
+                         + (", ciclo incompleto)" if km.get("roce_cycle_incomplete") else ")"),
+                         fv(km.get("roce_avg"), "pct"), "—", "—", "Ciclo medio"])
     story.append(data_table(
         ["MÉTRICA", "EMPRESA", "SECTOR", "BRECHA", "LECTURA"], rows,
         [1.9 * inch, 1.15 * inch, 1.15 * inch, 1.0 * inch, CW - 5.2 * inch],
         aligns=['LEFT', 'RIGHT', 'RIGHT', 'RIGHT', 'RIGHT'], reads=reads))
+    _div = km.get("roce_roic_divergence") or {}
+    if _div.get("diverges"):
+        story.append(Spacer(1, 4))
+        story.append(Paragraph(_esc(
+            f"Divergencia ROCE–ROIC: ROCE {fv(km.get('roce'), 'pct')} frente a ROIC {fv(km.get('roic'), 'pct')} "
+            f"({_div['gap'] * 100:+.1f} pp, más de {cfg('thresholds.roce.divergence_pp') * 100:.0f} pp). "
+            "Causas probables: " + "; ".join(_div.get("causes") or []) + "."), S['small']))
 
     story.append(Spacer(1, 8))
     story.append(Paragraph("Cifras del ejercicio", S['h2']))
@@ -1449,7 +1563,10 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
                               str(fin_health.get("level", "")),
                               _esc((fin_health.get("interpretation", "") + ". " + det_txt).strip())))
         story.append(Spacer(1, 8))
-    if altman and altman.get("available") is False and not is_financial \
+    if altman and altman.get("applicable") is False:
+        _emit_card(model_card("n/a", 'neu', "Altman Z-Score", "No aplica", _esc(altman.get("interpretation", ""))))
+        story.append(Spacer(1, 8))
+    elif altman and altman.get("available") is False and not is_financial \
             and (altman.get("details") or {}).get("reason") == "sin_dato":
         _emit_card(model_card("—", 'neu', "Altman Z-Score", "Sin dato",
                               _esc(f"{altman.get('interpretation', '')}. Altman exige todos sus componentes; "
@@ -1466,7 +1583,12 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         _emit_card(model_card(f"{z:.2f}", z_tone, "Altman Z-Score", z_lab, _esc(z_body)))
         story.append(Spacer(1, 8))
 
-    if piotroski and piotroski.get("score") is not None:
+    if piotroski and piotroski.get("applicable") is False:
+        _emit_card(model_card("n/a", 'neu', "Piotroski F-Score", "No aplica",
+                              _esc(f"{piotroski.get('interpretation', '')}. El F-Score verifica mejoras contables "
+                                   "(flujo operativo, liquidez, margen bruto, rotación) que no tienen sentido en "
+                                   "este balance; no cuenta en Calidad.")))
+    elif piotroski and piotroski.get("score") is not None:
         f_sc, f_max = piotroski.get("score", 0), piotroski.get("max_score", 9)
         f_n = piotroski.get("evaluated", f_max)
         f_scaled = piotroski.get("scaled_score")
@@ -1579,6 +1701,8 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
                 else:
                     tone_a = 'neu'
                 sign = f"+{a}" if a > 0 else str(a)
+                if adj.get("metric") == "No aplica":
+                    sign, tone_a = "n/a", 'neu'
                 val = adj.get("value", "")
                 bd_rows.append([
                     Paragraph(f"{_esc(adj.get('metric', ''))}"

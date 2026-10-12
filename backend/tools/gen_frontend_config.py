@@ -43,6 +43,7 @@ def render() -> str:
     lv = cfg("thresholds.score.total.level_bands")
     pio = cfg("valuation.models.piotroski.bands")
     ms = cfg("thresholds.ui.metric_scale")
+    na = cfg("sectors.archetypes.not_applicable")
     sectors = "{\n" + "\n".join(
         f"  {name}: {{ " + ", ".join(f"{k}: {_num(v)}" for k, v in vals.items()) + " },"
         for name, vals in bench["sectors"].items()) + "\n}"
@@ -68,6 +69,13 @@ export const PIOTROSKI_BANDS = [{', '.join(_num(x) for x in pio)}] as const;
 export const METRIC_SCALE_HIGHER: Record<string, [number, number]> = {_pairs(ms["higher"])};
 
 export const METRIC_SCALE_LOWER: Record<string, [number, number]> = {_pairs(ms["lower"])};
+
+/** Arquetipos (etapa 6, sectors.toml [archetypes.not_applicable]): componentes que no aplican. */
+export type Archetype = {" | ".join(repr(a).replace("'", '"') for a in na)};
+
+export const ARCHETYPE_NOT_APPLICABLE: Record<Archetype, readonly string[]> = {{
+{chr(10).join(f'  {a}: [{", ".join(repr(k).replace(chr(39), chr(34)) for k in keys)}],' for a, keys in na.items())}
+}};
 
 export const METRIC_SCALE_SPECIAL = {{
   dividend_yield: [{', '.join(_num(x) for x in ms["special"]["dividend_yield"])}] as const,
