@@ -3,15 +3,15 @@
     "red_flags": [
       {
         "category": "Valor intrínseco",
-        "detail": "El precio excede en 50% el valor justo estimado por el DCF ($35): sostenerlo exige asumir escenarios de crecimiento muy optimistas.",
-        "reason": "Sobrevalorada según DCF — -50%"
+        "detail": "El precio excede en 33% el valor justo estimado por el DCF ($47): sostenerlo exige asumir escenarios de crecimiento muy optimistas.",
+        "reason": "Sobrevalorada según DCF — -33%"
       }
     ],
     "strengths": [
       {
         "category": "Rentabilidad",
-        "detail": "El retorno sobre el capital invertido supera con holgura su costo (ROIC 31.2% vs WACC 13.3%): cada dólar reinvertido crea valor económico sustancial, el rasgo de un negocio con ventaja competitiva duradera.",
-        "reason": "Crea mucho valor — spread +17.9%"
+        "detail": "El retorno sobre el capital invertido supera con holgura su costo (ROIC 35.9% vs WACC 10.9%): cada dólar reinvertido crea valor económico sustancial, el rasgo de un negocio con ventaja competitiva duradera.",
+        "reason": "Crea mucho valor — spread +25.0%"
       },
       {
         "category": "Rentabilidad",
@@ -65,6 +65,16 @@
     "zone": "safe"
   },
   "archetype_metrics": {},
+  "beta": {
+    "adjusted": 1.405640914,
+    "coefficients": [
+      0.67,
+      0.33
+    ],
+    "default": false,
+    "method": "Blume",
+    "raw": 1.6054342
+  },
   "classification": {
     "alerts": [],
     "ambiguous": false,
@@ -85,6 +95,74 @@
     "sector": "Communication Services"
   },
   "company_type": "garp",
+  "confidence": {
+    "capped_from": null,
+    "dimensions": {
+      "convergence": {
+        "level": "baja",
+        "methods": [
+          {
+            "direction": "cara",
+            "evaluable": true,
+            "kind": "intrínseco",
+            "method": "DCF",
+            "reliability": "media",
+            "signal": -0.669985832986,
+            "upside": -0.334992916493
+          },
+          {
+            "components": 4,
+            "direction": "barata",
+            "evaluable": true,
+            "kind": "relativo",
+            "method": "múltiplos frente al sector",
+            "signal": 0.25
+          }
+        ],
+        "reasons": [
+          "direcciones opuestas: múltiplos frente al sector dice barata y DCF dice cara"
+        ]
+      },
+      "coverage": {
+        "coverage": 1.0,
+        "level": "alta",
+        "reasons": []
+      },
+      "source": {
+        "finnhub_fields": [
+          "_yahoo_ratios.currentRatio",
+          "_yahoo_ratios.forwardPE",
+          "_yahoo_ratios.interestCoverage",
+          "_yahoo_ratios.pegRatio",
+          "_yahoo_ratios.quickRatio",
+          "beta",
+          "dividendRate",
+          "earningsGrowth",
+          "forwardPE",
+          "revenueGrowth",
+          "trailingEps",
+          "trailingPE"
+        ],
+        "issues": 2,
+        "level": "media",
+        "reasons": [
+          "sin TTM: estados anuales (hasta 12 meses de retraso)",
+          "12 campos de Finnhub en lugar de los estados"
+        ]
+      },
+      "stability": {
+        "level": "alta",
+        "reasons": []
+      }
+    },
+    "level": "media",
+    "limits_score": false,
+    "reasons": [
+      "convergencia baja: direcciones opuestas: múltiplos frente al sector dice barata y DCF dice cara",
+      "calidad de fuente media: sin TTM: estados anuales (hasta 12 meses de retraso); 12 campos de Finnhub en lugar de los estados"
+    ],
+    "score": 0.5
+  },
   "data_provenance": {
     "errors": [],
     "fields": {
@@ -417,17 +495,34 @@
   },
   "data_validation": [],
   "dcf": {
-    "fair_value": 35.06,
+    "available": true,
+    "fair_value": 46.75,
+    "fcf_input": 9461053000.0,
     "growth_rate": 0.1602,
-    "margin_of_safety": -1.00513414295,
-    "terminal_growth": 0.025,
-    "upside": -50.1280249246,
-    "value_composition": {
-      "stage1_pct": 32.0,
-      "stage2_pct": 26.3,
-      "terminal_pct": 41.7
+    "growth_source": "revenue_growth_3y",
+    "margin_of_safety": -0.503743380786,
+    "reason": null,
+    "reliability": {
+      "central_contains_price": false,
+      "grid_contains_price": true,
+      "level": "media",
+      "reasons": [
+        "el precio está en el grid pero fuera del caso base ±1 (37.23–59.68)"
+      ]
     },
-    "wacc": 0.133298881
+    "terminal_growth": 0.025,
+    "upside": -33.4992916493,
+    "value_composition": {
+      "stage1_pct": 25.8,
+      "stage2_pct": 23.6,
+      "terminal_pct": 50.6
+    },
+    "wacc": 0.108979033813,
+    "warnings": []
+  },
+  "dcf_status": {
+    "reason": null,
+    "state": "ok"
   },
   "earnings_normalization": {
     "applied": false,
@@ -523,18 +618,18 @@
     "roce_roic_divergence": {
       "causes": [],
       "diverges": false,
-      "gap": -0.00962592374068
+      "gap": -0.0567156354778
     },
     "roce_state": "ok",
     "roe": 0.412586874229,
-    "roic": 0.312186506013,
-    "roic_wacc_spread": 0.178887625013,
+    "roic": 0.359276217751,
+    "roic_wacc_spread": 0.250297183937,
     "shareholder_yield": 0.0129533443162,
     "shares_outstanding": 4163939676.0,
     "total_assets": 55596993000.0,
     "total_debt": 14462836000.0,
     "total_equity": 26615488000.0,
-    "wacc": 0.133298881
+    "wacc": 0.108979033813
   },
   "not_applicable": {},
   "piotroski_f": {
@@ -655,7 +750,14 @@
     "quick_ratio": 1.0934,
     "roa": 0.197514297221,
     "roe": 0.412586874229,
-    "roic": 0.312186506013
+    "roic": 0.359276217751
+  },
+  "risk_free": {
+    "as_of": null,
+    "fallback": true,
+    "reason": "^TNX no disponible (sin cotización): valor de config",
+    "source": "config",
+    "value": 0.0529
   },
   "score": {
     "basis": null,
@@ -779,9 +881,9 @@
           {
             "adjustment": 3,
             "metric": "ROIC vs WACC",
-            "reason": "Crea mucho valor (ROIC 31.2% vs WACC 13.3%, spread +17.9%)",
+            "reason": "Crea mucho valor (ROIC 35.9% vs WACC 10.9%, spread +25.0%)",
             "severity": "excellent",
-            "value": "+17.9%"
+            "value": "+25.0%"
           }
         ],
         "applicable": true,
@@ -792,7 +894,7 @@
           "Excelente para su sector (19.8%)",
           "Muy bueno (29.5%) - Operaciones eficientes",
           "Excelente (24.3%) - Alta rentabilidad final",
-          "Crea mucho valor (ROIC 31.2% vs WACC 13.3%, spread +17.9%)"
+          "Crea mucho valor (ROIC 35.9% vs WACC 10.9%, spread +25.0%)"
         ],
         "max": 20,
         "score": 20
@@ -883,6 +985,14 @@
             "reason": "GARP: Growth + Fundamentos sólidos (Quality: 95)",
             "severity": "excellent",
             "value": "Score 95"
+          },
+          {
+            "adjustment": -2,
+            "metric": "DCF (upside)",
+            "reason": "Claramente cara por DCF (fiabilidad media): el precio está en el grid pero fuera del caso base ±1 (37.23–59.68)",
+            "reliability": "media",
+            "severity": "severe",
+            "value": "-33%"
           }
         ],
         "applicable": true,
@@ -894,10 +1004,11 @@
           "Aceptable para growth (30.9x)",
           "Atractivo para growth (9.9x)",
           "Bueno (0.93)",
-          "GARP: Growth + Fundamentos sólidos (Quality: 95)"
+          "GARP: Growth + Fundamentos sólidos (Quality: 95)",
+          "Claramente cara por DCF (fiabilidad media): el precio está en el grid pero fuera del caso base ±1 (37.23–59.68)"
         ],
         "max": 20,
-        "score": 19
+        "score": 17
       }
     },
     "categories_included": 5,
@@ -907,7 +1018,7 @@
     "max_score": 100,
     "not_applicable_categories": [],
     "partial": false,
-    "total_score": 99
+    "total_score": 97
   },
   "score_coverage": {
     "calidad": {
@@ -956,10 +1067,10 @@
     },
     "valoracion": {
       "applicable": true,
-      "components": 4,
+      "components": 5,
       "conclusive": true,
       "coverage": 1.0,
-      "evaluated": 4,
+      "evaluated": 5,
       "low_confidence": false,
       "missing": [],
       "missing_reasons": {},
@@ -973,16 +1084,18 @@
   },
   "sensitivity": {
     "base_case": {
-      "discount_rate": 0.133298881,
-      "fair_value": 35.05,
+      "discount_rate": 0.108979033813,
+      "fair_value": 46.75,
       "growth_rate": 0.1602
     },
+    "base_discount_idx": 2,
+    "base_growth_idx": 2,
     "discount_rates": [
-      0.1133,
-      0.1233,
-      0.1333,
-      0.1433,
-      0.1533
+      0.089,
+      0.099,
+      0.109,
+      0.119,
+      0.129
     ],
     "growth_rates": [
       0.1102,
@@ -991,54 +1104,107 @@
       0.1852,
       0.2102
     ],
-    "interpretation": "Muy probablemente sobrevalorada (100% de escenarios)",
+    "interpretation": "Muy probablemente sobrevalorada (96% de escenarios)",
     "is_valid": true,
     "matrix": [
       [
-        35.99,
-        31.97,
-        28.7,
-        26.0,
-        23.72
+        51.07,
+        43.66,
+        38.02,
+        33.6,
+        30.04
       ],
       [
-        39.9,
-        35.4,
-        31.74,
-        28.71,
-        26.16
+        56.84,
+        48.51,
+        42.19,
+        37.23,
+        33.23
       ],
       [
-        44.19,
-        39.15,
-        35.05,
-        31.67,
-        28.82
+        63.18,
+        53.84,
+        46.75,
+        41.19,
+        36.72
       ],
       [
-        48.89,
-        43.25,
-        38.68,
-        34.9,
-        31.72
+        70.13,
+        59.68,
+        51.75,
+        45.54,
+        40.54
       ],
       [
-        54.02,
-        47.73,
-        42.63,
-        38.42,
-        34.88
+        77.76,
+        66.07,
+        57.21,
+        50.28,
+        44.71
       ]
     ],
     "statistics": {
       "current_price": 70.3000030518,
-      "max_value": 54.02,
-      "mean_value": 36.0916,
-      "median_value": 35.05,
-      "min_value": 23.72,
-      "upside_base_case": -50.142249675
+      "max_value": 77.76,
+      "mean_value": 48.7896,
+      "median_value": 46.75,
+      "min_value": 30.04,
+      "upside_base_case": -33.4992916493
+    },
+    "trimmed": {
+      "discount": [],
+      "growth": [],
+      "note": null
     },
     "warnings": []
   },
-  "symbol": "NFLX"
+  "symbol": "NFLX",
+  "tax_rate": {
+    "bounded": false,
+    "period": "FY2025",
+    "rate": 0.136871203199,
+    "raw": 0.136871203199,
+    "reason": null,
+    "source": "efectiva"
+  },
+  "wacc": {
+    "applicable": true,
+    "beta": 1.405640914,
+    "beta_default": false,
+    "beta_method": "Blume",
+    "beta_raw": 1.6054342,
+    "bounds": [
+      0.06,
+      0.2
+    ],
+    "clamped": false,
+    "debt": 14462836000.0,
+    "equity": 292724971930.0,
+    "kd": 0.0569,
+    "kd_after_tax": 0.049112028538,
+    "ke": 0.111936918388,
+    "mrp": 0.042,
+    "rating": {
+      "coverage": 17.1621782076,
+      "flag": null,
+      "rating": "AAA",
+      "spread": 0.004,
+      "table": "grandes"
+    },
+    "raw": 0.108979033813,
+    "reason": null,
+    "rf": 0.0529,
+    "rf_as_of": null,
+    "rf_fallback": true,
+    "rf_reason": "^TNX no disponible (sin cotización): valor de config",
+    "rf_source": "config",
+    "tax_rate": 0.136871203199,
+    "tax_reason": null,
+    "tax_source": "efectiva",
+    "value": 0.108979033813,
+    "weights": {
+      "debt": 0.0470814128251,
+      "equity": 0.952918587175
+    }
+  }
 }

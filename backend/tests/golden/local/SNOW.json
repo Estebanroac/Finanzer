@@ -7,14 +7,9 @@
         "reason": "Cobertura de intereses negativa (EBIT < 0)"
       },
       {
-        "category": "Valor intrínseco",
-        "detail": "El precio excede en 74% el valor justo estimado por el DCF ($97): sostenerlo exige asumir escenarios de crecimiento muy optimistas.",
-        "reason": "Sobrevalorada según DCF — -74%"
-      },
-      {
         "category": "Rentabilidad",
-        "detail": "El retorno sobre el capital invertido no cubre su costo (ROIC -36.1% vs WACC 11.9%): crecer a estos retornos destruye valor para el accionista en lugar de crearlo.",
-        "reason": "Destruye valor — spread -48.0%"
+        "detail": "El retorno sobre el capital invertido no cubre su costo (ROIC -38.0% vs WACC 10.7%): crecer a estos retornos destruye valor para el accionista en lugar de crearlo.",
+        "reason": "Destruye valor — spread -48.7%"
       },
       {
         "category": "Rentabilidad",
@@ -54,6 +49,11 @@
         "category": "Valoración",
         "detail": "Por cada dólar invertido en la acción, el negocio genera solo 0.9% de caja libre: se está pagando caro cada dólar de flujo, habitual en compañías de alto crecimiento o valoración exigente.",
         "reason": "FCF yield bajo — 0.9%"
+      },
+      {
+        "category": "Valor intrínseco",
+        "detail": "El DCF estima $115 (-69% frente al precio), pero el grid completo (75.06–158.84) no contiene el precio (368.89): ninguna combinación razonable de crecimiento y WACC lo reconcilia. No se usa en el score.",
+        "reason": "DCF no concluyente — -69% (fiabilidad baja)"
       }
     ]
   },
@@ -84,6 +84,16 @@
       "years": null
     }
   },
+  "beta": {
+    "adjusted": 1.23517,
+    "coefficients": [
+      0.67,
+      0.33
+    ],
+    "default": false,
+    "method": "Blume",
+    "raw": 1.351
+  },
   "classification": {
     "alerts": [],
     "ambiguous": false,
@@ -104,6 +114,62 @@
     "sector": "Technology"
   },
   "company_type": "blend",
+  "confidence": {
+    "capped_from": "alta",
+    "dimensions": {
+      "convergence": {
+        "level": "no_evaluable",
+        "methods": [
+          {
+            "direction": "cara",
+            "evaluable": false,
+            "kind": "intrínseco",
+            "method": "DCF",
+            "reliability": "baja",
+            "signal": -1.0,
+            "upside": -0.687359375424
+          },
+          {
+            "components": 2,
+            "direction": "cara",
+            "evaluable": true,
+            "kind": "relativo",
+            "method": "múltiplos frente al sector",
+            "signal": -0.75
+          }
+        ],
+        "reasons": [
+          "un solo método evaluable (múltiplos frente al sector): no hay contraste",
+          "no evaluable: DCF (fiabilidad baja)"
+        ]
+      },
+      "coverage": {
+        "coverage": 1.0,
+        "level": "alta",
+        "reasons": []
+      },
+      "source": {
+        "finnhub_fields": [],
+        "issues": 1,
+        "level": "media",
+        "reasons": [
+          "validación: revenueGrowth (crecimiento_incoherente)"
+        ]
+      },
+      "stability": {
+        "level": "alta",
+        "reasons": []
+      }
+    },
+    "level": "media",
+    "limits_score": false,
+    "reasons": [
+      "convergencia no evaluable: un solo método evaluable (múltiplos frente al sector): no hay contraste; no evaluable: DCF (fiabilidad baja)",
+      "calidad de fuente media: validación: revenueGrowth (crecimiento_incoherente)",
+      "techo en media: sin contraste entre métodos de valoración"
+    ],
+    "score": 0.833333333333
+  },
   "data_provenance": {
     "errors": [],
     "fields": {
@@ -629,17 +695,34 @@
     }
   ],
   "dcf": {
-    "fair_value": 97.45,
+    "available": true,
+    "fair_value": 115.33,
+    "fcf_input": 1193484000.0,
     "growth_rate": 0.3,
-    "margin_of_safety": -2.78542842483,
-    "terminal_growth": 0.025,
-    "upside": -73.5829108948,
-    "value_composition": {
-      "stage1_pct": 24.0,
-      "stage2_pct": 26.0,
-      "terminal_pct": 50.0
+    "growth_source": "revenue_growth_3y",
+    "margin_of_safety": -2.19856065204,
+    "reason": null,
+    "reliability": {
+      "central_contains_price": false,
+      "grid_contains_price": false,
+      "level": "baja",
+      "reasons": [
+        "el grid completo (75.06–158.84) no contiene el precio (368.89): ninguna combinación razonable de crecimiento y WACC lo reconcilia"
+      ]
     },
-    "wacc": 0.119305
+    "terminal_growth": 0.025,
+    "upside": -68.7359375424,
+    "value_composition": {
+      "stage1_pct": 21.1,
+      "stage2_pct": 24.1,
+      "terminal_pct": 54.8
+    },
+    "wacc": 0.106588665356,
+    "warnings": []
+  },
+  "dcf_status": {
+    "reason": null,
+    "state": "ok"
   },
   "earnings_normalization": {
     "applied": true,
@@ -768,20 +851,23 @@
     "roce": -0.276728133881,
     "roce_reason": null,
     "roce_roic_divergence": {
-      "causes": [],
-      "diverges": false,
-      "gap": 0.0843628531384
+      "causes": [
+        "base fiscal distinta: el ROCE es antes de impuestos y el ROIC después",
+        "capital distinto: el ROIC usa patrimonio + deuda − caja; el ROCE, activos − pasivo corriente (incluye pasivos a largo plazo no financieros e intereses minoritarios)"
+      ],
+      "diverges": true,
+      "gap": 0.103621039113
     },
     "roce_state": "ok",
     "roe": -0.507427207229,
-    "roic": -0.36109098702,
-    "roic_wacc_spread": -0.48039598702,
+    "roic": -0.380349172994,
+    "roic_wacc_spread": -0.48693783835,
     "shareholder_yield": -0.0301109729981,
     "shares_outstanding": 352800000.0,
     "total_assets": 8690459000.0,
     "total_debt": 2763815000.0,
     "total_equity": 2149664000.0,
-    "wacc": 0.119305
+    "wacc": 0.106588665356
   },
   "not_applicable": {
     "altman": "No aplica a GROWTH_PRE_PROFIT: el Altman se calibró con quiebras de empresas maduras endeudadas; su solidez se mide por el runway (caja frente a la quema de FCF)",
@@ -905,7 +991,14 @@
     "quick_ratio": 0.83,
     "roa": -0.125516730474,
     "roe": -0.507427207229,
-    "roic": -0.36109098702
+    "roic": -0.380349172994
+  },
+  "risk_free": {
+    "as_of": null,
+    "fallback": true,
+    "reason": "^TNX no disponible (sin cotización): valor de config",
+    "source": "config",
+    "value": 0.0529
   },
   "score": {
     "basis": null,
@@ -1021,9 +1114,9 @@
           {
             "adjustment": -3,
             "metric": "ROIC vs WACC",
-            "reason": "Destruye valor (ROIC -36.1% < WACC 11.9%, spread -48.0%)",
+            "reason": "Destruye valor (ROIC -38.0% < WACC 10.7%, spread -48.7%)",
             "severity": "severe",
-            "value": "-48.0%"
+            "value": "-48.7%"
           }
         ],
         "applicable": true,
@@ -1034,7 +1127,7 @@
           "Negativo (-12.8%) - Perdiendo dinero con sus activos",
           "Negativo (-22.8%) - Operaciones no rentables",
           "Negativo (-20.4%)",
-          "Destruye valor (ROIC -36.1% < WACC 11.9%, spread -48.0%)"
+          "Destruye valor (ROIC -38.0% < WACC 10.7%, spread -48.7%)"
         ],
         "max": 20,
         "score": 0
@@ -1115,6 +1208,14 @@
           },
           {
             "adjustment": 0,
+            "metric": "DCF (upside)",
+            "reason": "El DCF no concilia con el precio bajo ningún supuesto razonable; no se usa en el score: el grid completo (75.06–158.84) no contiene el precio (368.89): ninguna combinación razonable de crecimiento y WACC lo reconcilia",
+            "reliability": "baja",
+            "severity": "neutral",
+            "value": "-69%"
+          },
+          {
+            "adjustment": 0,
             "metric": "No aplica",
             "reason": "EV/EBITDA: No aplica a GROWTH_PRE_PROFIT: EBITDA <= 0, sin resultado operativo que capitalizar; P/E, PEG: No aplica a GROWTH_PRE_PROFIT: aún no tiene beneficios que capitalizar (no cuenta en la cobertura)",
             "severity": "neutral",
@@ -1128,6 +1229,7 @@
           "Exigente por ventas (24.0x)",
           "Crecimiento 31.4% (CAGR 3 años) + margen FCF 22.0% = 53",
           "Muy alto (109.0x)",
+          "El DCF no concilia con el precio bajo ningún supuesto razonable; no se usa en el score: el grid completo (75.06–158.84) no contiene el precio (368.89): ninguna combinación razonable de crecimiento y WACC lo reconcilia",
           "EV/EBITDA: No aplica a GROWTH_PRE_PROFIT: EBITDA <= 0, sin resultado operativo que capitalizar; P/E, PEG: No aplica a GROWTH_PRE_PROFIT: aún no tiene beneficios que capitalizar (no cuenta en la cobertura)"
         ],
         "max": 20,
@@ -1194,10 +1296,10 @@
     },
     "valoracion": {
       "applicable": true,
-      "components": 3,
+      "components": 4,
       "conclusive": true,
       "coverage": 1.0,
-      "evaluated": 3,
+      "evaluated": 4,
       "low_confidence": false,
       "missing": [],
       "missing_reasons": {},
@@ -1215,74 +1317,116 @@
   },
   "sensitivity": {
     "base_case": {
-      "discount_rate": 0.119305,
-      "fair_value": 97.46,
+      "discount_rate": 0.106588665356,
+      "fair_value": 115.33,
       "growth_rate": 0.3
     },
+    "base_discount_idx": 2,
+    "base_growth_idx": 2,
     "discount_rates": [
-      0.0993,
-      0.1093,
-      0.1193,
-      0.1293,
-      0.1393
+      0.0866,
+      0.0966,
+      0.1066,
+      0.1166,
+      0.1266
     ],
     "growth_rates": [
       0.25,
       0.275,
-      0.3,
-      0.325,
-      0.35
+      0.3
     ],
     "interpretation": "Muy probablemente sobrevalorada (100% de escenarios)",
     "is_valid": true,
     "matrix": [
       [
-        107.28,
-        92.99,
-        81.8,
-        72.8,
-        65.43
+        132.28,
+        111.85,
+        96.51,
+        84.58,
+        75.06
       ],
       [
-        117.42,
-        101.67,
-        89.32,
-        79.41,
-        71.29
+        145.02,
+        122.47,
+        105.55,
+        92.4,
+        81.9
       ],
       [
-        128.42,
-        111.05,
-        97.46,
-        86.55,
-        77.61
-      ],
-      [
-        140.31,
-        121.2,
-        106.25,
-        94.25,
-        84.43
-      ],
-      [
-        153.17,
-        132.16,
-        115.74,
-        102.56,
-        91.78
+        158.84,
+        133.98,
+        115.33,
+        100.84,
+        89.29
       ]
     ],
     "statistics": {
       "current_price": 368.89,
-      "max_value": 153.17,
-      "mean_value": 100.894,
-      "median_value": 97.46,
-      "min_value": 65.43,
-      "upside_base_case": -73.5802000596
+      "max_value": 158.84,
+      "mean_value": 109.726666667,
+      "median_value": 105.55,
+      "min_value": 75.06,
+      "upside_base_case": -68.7359375424
+    },
+    "trimmed": {
+      "discount": [],
+      "growth": [
+        0.325,
+        0.35
+      ],
+      "note": "crecimiento recortado en [-20%, 30%]: se omiten 32.5%, 35.0%"
     },
     "warnings": []
   },
   "symbol": "SNOW",
+  "tax_rate": {
+    "bounded": false,
+    "period": "TTM",
+    "rate": 0.21,
+    "raw": null,
+    "reason": "beneficio antes de impuestos <= 0: tipo legal 21%",
+    "source": "legal"
+  },
+  "wacc": {
+    "applicable": true,
+    "beta": 1.23517,
+    "beta_default": false,
+    "beta_method": "Blume",
+    "beta_raw": 1.351,
+    "bounds": [
+      0.06,
+      0.2
+    ],
+    "clamped": false,
+    "debt": 2763815000.0,
+    "equity": 130144395264.0,
+    "kd": 0.2429,
+    "kd_after_tax": 0.191891,
+    "ke": 0.10477714,
+    "mrp": 0.042,
+    "rating": {
+      "coverage": -148.755472697,
+      "flag": "regla M: EBIT < 0 con deuda neta -> peor tramo",
+      "rating": "D",
+      "spread": 0.19,
+      "table": "grandes"
+    },
+    "raw": 0.106588665356,
+    "reason": null,
+    "rf": 0.0529,
+    "rf_as_of": null,
+    "rf_fallback": true,
+    "rf_reason": "^TNX no disponible (sin cotización): valor de config",
+    "rf_source": "config",
+    "tax_rate": 0.21,
+    "tax_reason": "beneficio antes de impuestos <= 0: tipo legal 21%",
+    "tax_source": "legal",
+    "value": 0.106588665356,
+    "weights": {
+      "debt": 0.0207949154872,
+      "equity": 0.979205084513
+    }
+  },
   "yearly_financials": [
     {
       "earnings": -1331616000.0,

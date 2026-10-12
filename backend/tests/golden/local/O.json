@@ -3,8 +3,8 @@
     "red_flags": [
       {
         "category": "Rentabilidad",
-        "detail": "El retorno sobre el capital invertido no cubre su costo (ROIC 2.9% vs WACC 8.3%): crecer a estos retornos destruye valor para el accionista en lugar de crearlo.",
-        "reason": "Destruye valor — spread -5.4%"
+        "detail": "El retorno sobre el capital invertido no cubre su costo (ROIC 3.5% vs WACC 7.6%): crecer a estos retornos destruye valor para el accionista en lugar de crearlo.",
+        "reason": "Destruye valor — spread -4.1%"
       }
     ],
     "strengths": [
@@ -67,6 +67,16 @@
     ],
     "shares_cagr_3y": 0.122529962489
   },
+  "beta": {
+    "adjusted": 0.79632,
+    "coefficients": [
+      0.67,
+      0.33
+    ],
+    "default": false,
+    "method": "Blume",
+    "raw": 0.696
+  },
   "classification": {
     "alerts": [],
     "ambiguous": false,
@@ -87,6 +97,49 @@
     "sector": "Real Estate"
   },
   "company_type": "garp",
+  "confidence": {
+    "capped_from": "alta",
+    "dimensions": {
+      "convergence": {
+        "level": "no_evaluable",
+        "methods": [
+          {
+            "components": 3,
+            "direction": "barata",
+            "evaluable": true,
+            "kind": "relativo",
+            "method": "múltiplos frente al sector",
+            "signal": 0.666666666667
+          }
+        ],
+        "reasons": [
+          "un solo método evaluable (múltiplos frente al sector): no hay contraste"
+        ]
+      },
+      "coverage": {
+        "coverage": 1.0,
+        "level": "alta",
+        "reasons": []
+      },
+      "source": {
+        "finnhub_fields": [],
+        "issues": 0,
+        "level": "alta",
+        "reasons": []
+      },
+      "stability": {
+        "level": "alta",
+        "reasons": []
+      }
+    },
+    "level": "media",
+    "limits_score": false,
+    "reasons": [
+      "convergencia no evaluable: un solo método evaluable (múltiplos frente al sector): no hay contraste",
+      "techo en media: sin contraste entre métodos de valoración"
+    ],
+    "score": 1.0
+  },
   "data_provenance": {
     "errors": [],
     "fields": {
@@ -514,6 +567,10 @@
     }
   },
   "data_validation": [],
+  "dcf_status": {
+    "reason": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria",
+    "state": "no_aplica"
+  },
   "earnings_normalization": {
     "applied": true,
     "basis": "TTM (4 trimestres)",
@@ -645,14 +702,14 @@
     "roce_roic_divergence": null,
     "roce_state": "no_aplica",
     "roe": 0.0320503463541,
-    "roic": 0.029197826345,
-    "roic_wacc_spread": -0.054082173655,
+    "roic": 0.035037391614,
+    "roic_wacc_spread": -0.0413558663261,
     "shareholder_yield": 0.0125383113064,
     "shares_outstanding": 946218033.0,
     "total_assets": 76441475000.0,
     "total_debt": 31180190000.0,
     "total_equity": 39549557000.0,
-    "wacc": 0.08328
+    "wacc": 0.0763932579401
   },
   "not_applicable": {
     "altman": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria",
@@ -778,7 +835,14 @@
     "quick_ratio": 0.741,
     "roa": 0.0165823200036,
     "roe": 0.0320503463541,
-    "roic": 0.029197826345
+    "roic": 0.035037391614
+  },
+  "risk_free": {
+    "as_of": null,
+    "fallback": true,
+    "reason": "^TNX no disponible (sin cotización): valor de config",
+    "source": "config",
+    "value": 0.0529
   },
   "score": {
     "basis": null,
@@ -894,9 +958,9 @@
           {
             "adjustment": -3,
             "metric": "ROIC vs WACC",
-            "reason": "Destruye valor (ROIC 2.9% < WACC 8.3%, spread -5.4%)",
+            "reason": "Destruye valor (ROIC 3.5% < WACC 7.6%, spread -4.1%)",
             "severity": "severe",
-            "value": "-5.4%"
+            "value": "-4.1%"
           }
         ],
         "applicable": true,
@@ -907,7 +971,7 @@
           "Aceptable (1.7%) - Normal para su sector",
           "Excepcional (45.8%) - Alto poder de fijación de precios",
           "Excelente (22.3%) - Alta rentabilidad final",
-          "Destruye valor (ROIC 2.9% < WACC 8.3%, spread -5.4%)"
+          "Destruye valor (ROIC 3.5% < WACC 7.6%, spread -4.1%)"
         ],
         "max": 20,
         "score": 17
@@ -975,7 +1039,7 @@
             "metric": "No aplica",
             "reason": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria (no cuenta en la cobertura)",
             "severity": "neutral",
-            "value": "P/E, P/FCF, PEG"
+            "value": "P/E, P/FCF, PEG, DCF"
           }
         ],
         "applicable": true,
@@ -1063,6 +1127,7 @@
       "missing": [],
       "missing_reasons": {},
       "not_applicable": {
+        "DCF": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria",
         "P/E": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria",
         "P/FCF": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria",
         "PEG": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria"
@@ -1075,6 +1140,54 @@
     "sector_etf": "VNQ"
   },
   "symbol": "O",
+  "tax_rate": {
+    "bounded": true,
+    "period": "TTM",
+    "rate": 0.1,
+    "raw": 0.0693184037035,
+    "reason": "tasa efectiva 6.9% acotada a [10%, 35%]",
+    "source": "efectiva"
+  },
+  "wacc": {
+    "applicable": true,
+    "beta": 0.79632,
+    "beta_default": false,
+    "beta_method": "Blume",
+    "beta_raw": 0.696,
+    "bounds": [
+      0.06,
+      0.2
+    ],
+    "clamped": false,
+    "debt": 31180190000.0,
+    "equity": 51266093056.0,
+    "kd": 0.0667,
+    "kd_after_tax": 0.06003,
+    "ke": 0.08634544,
+    "mrp": 0.042,
+    "rating": {
+      "coverage": 2.36959538575,
+      "flag": null,
+      "rating": "BB+",
+      "spread": 0.0138,
+      "table": "grandes"
+    },
+    "raw": 0.0763932579401,
+    "reason": null,
+    "rf": 0.0529,
+    "rf_as_of": null,
+    "rf_fallback": true,
+    "rf_reason": "^TNX no disponible (sin cotización): valor de config",
+    "rf_source": "config",
+    "tax_rate": 0.1,
+    "tax_reason": "tasa efectiva 6.9% acotada a [10%, 35%]",
+    "tax_source": "efectiva",
+    "value": 0.0763932579401,
+    "weights": {
+      "debt": 0.378187940611,
+      "equity": 0.621812059389
+    }
+  },
   "yearly_financials": [
     {
       "earnings": 1058590000.0,

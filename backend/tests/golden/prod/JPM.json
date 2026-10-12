@@ -34,24 +34,36 @@
     "zone": "n/a"
   },
   "archetype_metrics": {
+    "beta_adjusted": 1.024262911,
+    "beta_raw": 1.0362133,
     "book_value_basis": "tangible",
     "book_value_cagr_3y": 0.108465212575,
     "book_value_cagr_3y_reason": null,
-    "cost_of_equity": 0.1019917315,
+    "cost_of_equity": 0.095919042262,
     "efficiency_ratio": 0.528147288655,
     "efficiency_reason": null,
     "pb": 2.44220913677,
-    "pb_justified": 1.7196744569,
-    "pb_ratio": 1.42015782521,
+    "pb_justified": 1.86692755331,
+    "pb_ratio": 1.30814349622,
     "ptbv": 3.18473526225,
-    "ptbv_justified": 2.34124653698,
-    "ptbv_ratio": 1.36027334668,
+    "ptbv_justified": 2.54172390096,
+    "ptbv_ratio": 1.25298237981,
     "revenue_growth_statements": 0.0732298939441,
     "roe_fy": 0.157400714053,
     "roe_std": 0.0170679052925,
     "roe_years": 4,
     "rote": 0.20525662475,
     "terminal_growth": 0.025
+  },
+  "beta": {
+    "adjusted": 1.024262911,
+    "coefficients": [
+      0.67,
+      0.33
+    ],
+    "default": false,
+    "method": "Blume",
+    "raw": 1.0362133
   },
   "classification": {
     "alerts": [],
@@ -73,6 +85,74 @@
     "sector": "Financial Services"
   },
   "company_type": "garp",
+  "confidence": {
+    "capped_from": null,
+    "dimensions": {
+      "convergence": {
+        "level": "alta",
+        "methods": [
+          {
+            "direction": "cara",
+            "evaluable": true,
+            "kind": "intrínseco",
+            "method": "P/B justificado (Gordon)",
+            "signal": -0.471115740911,
+            "upside": -0.235557870456
+          },
+          {
+            "benchmark": 1.5,
+            "direction": "cara",
+            "evaluable": true,
+            "kind": "relativo",
+            "method": "P/B frente al sector",
+            "signal": -0.771603973293,
+            "upside": -0.385801986647
+          }
+        ],
+        "reasons": [
+          "coinciden (cara) con distancia 0.30 (< 0.6)"
+        ]
+      },
+      "coverage": {
+        "coverage": 1.0,
+        "level": "alta",
+        "reasons": []
+      },
+      "source": {
+        "finnhub_fields": [
+          "_yahoo_ratios.dividendYield",
+          "_yahoo_ratios.forwardPE",
+          "_yahoo_ratios.payoutRatio",
+          "_yahoo_ratios.pegRatio",
+          "beta",
+          "dividendRate",
+          "dividendYield",
+          "earningsGrowth",
+          "forwardPE",
+          "payoutRatio",
+          "trailingEps",
+          "trailingPE"
+        ],
+        "issues": 3,
+        "level": "baja",
+        "reasons": [
+          "validación: revenueGrowth (crecimiento_financiera_estados)",
+          "sin TTM: estados anuales (hasta 12 meses de retraso)",
+          "12 campos de Finnhub en lugar de los estados"
+        ]
+      },
+      "stability": {
+        "level": "alta",
+        "reasons": []
+      }
+    },
+    "level": "alta",
+    "limits_score": false,
+    "reasons": [
+      "calidad de fuente baja: validación: revenueGrowth (crecimiento_financiera_estados); sin TTM: estados anuales (hasta 12 meses de retraso); 12 campos de Finnhub en lugar de los estados"
+    ],
+    "score": 0.8
+  },
   "data_provenance": {
     "errors": [],
     "fields": {
@@ -378,6 +458,10 @@
       "rule": "crecimiento_financiera_estados"
     }
   ],
+  "dcf_status": {
+    "reason": "No aplica a FINANCIAL: el balance es el producto (depósitos y préstamos)",
+    "state": "no_aplica"
+  },
   "earnings_normalization": {
     "applied": true,
     "basis": "FY2025 (sin TTM)",
@@ -530,7 +614,7 @@
     "total_assets": 4424900000000.0,
     "total_debt": 499982000000.0,
     "total_equity": 362438000000.0,
-    "wacc": 0.1019917315
+    "wacc": null
   },
   "not_applicable": {
     "altman": "No aplica a FINANCIAL: el balance es el producto (depósitos y préstamos)",
@@ -658,6 +742,13 @@
     "roa": 0.0128924947456,
     "roe": 0.157400714053,
     "roic": null
+  },
+  "risk_free": {
+    "as_of": null,
+    "fallback": true,
+    "reason": "^TNX no disponible (sin cotización): valor de config",
+    "source": "config",
+    "value": 0.0529
   },
   "score": {
     "basis": null,
@@ -843,37 +934,37 @@
       "Valoración": {
         "adjustments": [
           {
-            "adjustment": -4,
+            "adjustment": -2,
             "metric": "P/B frente a ROE",
-            "reason": "Caro: 2.44x frente a 1.72x justificado por su ROE (Ke 10.2%, g 2.5%)",
-            "severity": "severe",
-            "value": "1.42× justificado"
+            "reason": "Prima: 2.44x frente a 1.87x justificado por su ROE (Ke 9.6% con β ajustada 1.02, g 2.5%)",
+            "severity": "moderate",
+            "value": "1.31× justificado"
           },
           {
             "adjustment": -2,
             "metric": "P/TBV frente a ROTE",
-            "reason": "Prima: 3.18x frente a 2.34x justificado por su ROTE (Ke 10.2%, g 2.5%)",
+            "reason": "Prima: 3.18x frente a 2.54x justificado por su ROTE (Ke 9.6% con β ajustada 1.02, g 2.5%)",
             "severity": "moderate",
-            "value": "1.36× justificado"
+            "value": "1.25× justificado"
           },
           {
             "adjustment": 0,
             "metric": "No aplica",
             "reason": "No aplica a FINANCIAL: el balance es el producto (depósitos y préstamos) (no cuenta en la cobertura)",
             "severity": "neutral",
-            "value": "P/E, P/FCF, EV/EBITDA, PEG"
+            "value": "P/E, P/FCF, EV/EBITDA, PEG, DCF"
           }
         ],
         "applicable": true,
         "conclusive": true,
         "coverage": 1.0,
         "details": [
-          "Caro: 2.44x frente a 1.72x justificado por su ROE (Ke 10.2%, g 2.5%)",
-          "Prima: 3.18x frente a 2.34x justificado por su ROTE (Ke 10.2%, g 2.5%)",
+          "Prima: 2.44x frente a 1.87x justificado por su ROE (Ke 9.6% con β ajustada 1.02, g 2.5%)",
+          "Prima: 3.18x frente a 2.54x justificado por su ROTE (Ke 9.6% con β ajustada 1.02, g 2.5%)",
           "No aplica a FINANCIAL: el balance es el producto (depósitos y préstamos) (no cuenta en la cobertura)"
         ],
         "max": 20,
-        "score": 4
+        "score": 6
       }
     },
     "categories_included": 5,
@@ -883,7 +974,7 @@
     "max_score": 100,
     "not_applicable_categories": [],
     "partial": false,
-    "total_score": 75
+    "total_score": 77
   },
   "score_coverage": {
     "calidad": {
@@ -952,6 +1043,7 @@
       "missing": [],
       "missing_reasons": {},
       "not_applicable": {
+        "DCF": "No aplica a FINANCIAL: el balance es el producto (depósitos y préstamos)",
         "EV/EBITDA": "No aplica a FINANCIAL: el balance es el producto (depósitos y préstamos)",
         "P/E": "No aplica a FINANCIAL: el balance es el producto (depósitos y préstamos)",
         "P/FCF": "No aplica a FINANCIAL: el balance es el producto (depósitos y préstamos)",
@@ -964,5 +1056,18 @@
     "sector": "Financial Services",
     "sector_etf": "XLF"
   },
-  "symbol": "JPM"
+  "symbol": "JPM",
+  "tax_rate": {
+    "bounded": false,
+    "period": "FY2025",
+    "rate": 0.214160754873,
+    "raw": 0.214160754873,
+    "reason": null,
+    "source": "efectiva"
+  },
+  "wacc": {
+    "applicable": false,
+    "reason": "No aplica a FINANCIAL: el balance es el producto (depósitos y préstamos)",
+    "value": null
+  }
 }
