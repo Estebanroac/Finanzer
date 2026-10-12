@@ -3131,7 +3131,7 @@ def calculate_score_v2(
         level = "Precaución"
         level_color = "#f97316"
     else:
-        level = "Alto Riesgo"
+        level = "Evitar"
         level_color = "#ef4444"
     
     # v2.2: Extraer información del perfil de la empresa

@@ -274,10 +274,10 @@ def read_pos52(p):
 
 
 def score_band(pct):
-    """Nivel + tono del score alineados con la app (bandas 80/60/40/20).
+    """Nivel + tono del score (bandas de thresholds.score.total, las del motor).
     Devuelve (etiqueta, tono) para que color y nivel coincidan con lo que ve
     el usuario en pantalla."""
-    b = _PDF_BANDS["score_level_bands"]
+    b = cfg("thresholds.score.total.level_bands")  # misma escala que el motor y la UI
     if pct >= b[0]: return "Excelente", 'pos'
     if pct >= b[1]: return "Favorable", 'pos'
     if pct >= b[2]: return "Neutral", 'warn'

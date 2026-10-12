@@ -1,3 +1,5 @@
+import { SCORE_LEVEL_BANDS } from "./generated/backendConfig";
+
 // Solo el dev server de Next (puerto 3000) necesita apuntar al backend en
 // localhost:8000; en cualquier otro caso (producción en Render, uvicorn local
 // sirviendo el export estático, proxies) la API es same-origin.
@@ -130,21 +132,23 @@ export function formatPrice(val: number | null | undefined): string {
   return `$${val.toFixed(2)}`;
 }
 
-// Bandas del score alineadas con SCORE_TOOLTIP en tooltips.ts (80/60/40/20)
-// para que color y etiqueta coincidan con los "rangos de referencia" que ve el
-// usuario y con el `level` que calcula el backend.
+// Bandas del score GENERADAS desde backend/config (thresholds.toml
+// [score.total].level_bands): la misma escala que el `level` del motor y el
+// PDF. Deben coincidir con los rangos de SCORE_TOOLTIP en tooltips.ts.
+const [L_EXC, L_FAV, L_NEU, L_PRE] = SCORE_LEVEL_BANDS;
+
 export function getScoreColor(pct: number): string {
-  if (pct >= 80) return "#0cc06c"; // Excelente
-  if (pct >= 60) return "#22c55e"; // Favorable
-  if (pct >= 40) return "#fbbf24"; // Neutral
-  if (pct >= 20) return "#f97316"; // Precaución
-  return "#ff4d4d";                // Evitar
+  if (pct >= L_EXC) return "#0cc06c"; // Excelente
+  if (pct >= L_FAV) return "#22c55e"; // Favorable
+  if (pct >= L_NEU) return "#fbbf24"; // Neutral
+  if (pct >= L_PRE) return "#f97316"; // Precaución
+  return "#ff4d4d";                   // Evitar
 }
 
 export function getScoreLabel(pct: number): string {
-  if (pct >= 80) return "Excelente";
-  if (pct >= 60) return "Favorable";
-  if (pct >= 40) return "Neutral";
-  if (pct >= 20) return "Precaución";
+  if (pct >= L_EXC) return "Excelente";
+  if (pct >= L_FAV) return "Favorable";
+  if (pct >= L_NEU) return "Neutral";
+  if (pct >= L_PRE) return "Precaución";
   return "Evitar";
 }

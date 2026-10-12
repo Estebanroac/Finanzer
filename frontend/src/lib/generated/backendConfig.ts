@@ -40,6 +40,9 @@ export const SECTOR_MAP: Record<string, Partial<SectorBenchmarks>> = {
   materials: { pe: 14, forward_pe: 12, pb: 2, ev_ebitda: 8, roe: 0.12, net_margin: 0.08, de: 0.6 },
 };
 
+/** Niveles del score: Excelente / Favorable / Neutral / Precaución / Evitar (thresholds.toml [score.total]). */
+export const SCORE_LEVEL_BANDS = [80, 60, 40, 20] as const;
+
 /** Bandas de color de la UI (thresholds.toml [ui.metric_scale]). */
 export const METRIC_SCALE_HIGHER: Record<string, [number, number]> = {
   roe: [0.15, 0.1],

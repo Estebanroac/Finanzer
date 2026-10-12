@@ -40,6 +40,7 @@ def _pairs(d):
 
 def render() -> str:
     bench = cfg("sectors.benchmarks")
+    lv = cfg("thresholds.score.total.level_bands")
     ms = cfg("thresholds.ui.metric_scale")
     sectors = "{\n" + "\n".join(
         f"  {name}: {{ " + ", ".join(f"{k}: {_num(v)}" for k, v in vals.items()) + " },"
@@ -55,6 +56,9 @@ export interface SectorBenchmarks {{ {keys} }}
 export const SECTOR_DEFAULTS: SectorBenchmarks = {_obj(bench["default"])};
 
 export const SECTOR_MAP: Record<string, Partial<SectorBenchmarks>> = {sectors};
+
+/** Niveles del score: Excelente / Favorable / Neutral / Precaución / Evitar (thresholds.toml [score.total]). */
+export const SCORE_LEVEL_BANDS = [{', '.join(_num(x) for x in lv)}] as const;
 
 /** Bandas de color de la UI (thresholds.toml [ui.metric_scale]). */
 export const METRIC_SCALE_HIGHER: Record<string, [number, number]> = {_pairs(ms["higher"])};
