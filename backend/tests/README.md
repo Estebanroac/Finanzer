@@ -11,12 +11,30 @@ Hay dos juegos, cada uno con sus fixtures y sus golden: **`local`** (captura en 
 tests de humo y de bugs conocidos) y **`prod`** (los inputs que recibió el pipeline en Render). La regresión y el
 determinismo corren contra **todos los juegos presentes**. `diff_golden.py` y `capture_fixtures.py` aceptan `--env`.
 
-## Correr los tests
+## Correr los tests (en el entorno espejo de prod, `.venv313`)
+
+La suite se corre en **`finanzer_next/.venv313`**: Python 3.13.4 con las mismas versiones que prod. Ahí ya se verificó
+que todos los golden (local y prod) se mantienen.
 
 ```bash
 cd finanzer_next/backend
-python3 -m pytest tests          # ~5 s, sin red
+../.venv313/bin/python -m pytest tests      # ~20 s, sin red
 ```
+
+Crear el venv (una vez; uv y Python 3.13.4 se instalan en tu usuario, sin admin):
+
+```bash
+python3 -m pip install --user uv
+~/Library/Python/3.9/bin/uv python install 3.13.4
+cd finanzer_next && ~/Library/Python/3.9/bin/uv venv --python 3.13.4 .venv313
+~/Library/Python/3.9/bin/uv pip install --python .venv313/bin/python -r backend/tests/requirements-venv313.lock
+```
+
+`requirements-venv313.lock` congela **todas** las versiones con las que pasó la suite. Python, yfinance, pandas y
+curl_cffi están confirmadas por la captura de prod; numpy, pydantic, reportlab y requests son **provisionales**
+(última versión al 11-oct-2026) hasta contrastarlas con el log de build de Render. Ojo: reportlab resolvió a
+**5.0.1**, versión mayor nueva. La suite también pasa con el Python 3.9 del sistema
+(`python3 -m pytest tests`), pero el entorno de referencia es `.venv313`.
 
 Dependencias de test: `tests/requirements-test.txt` (pytest, pypdf, además de las de producción).
 No se tocó `requirements.txt`, ni Render las instala.
