@@ -8,7 +8,13 @@ de key_metrics; un dato ausente queda en None con su motivo, nunca en 0.
                      estabilidad del ROE, eficiencia aproximada, CAGR del
                      valor en libros tangible y crecimiento de ingresos de
                      los estados (no de Finnhub: RECON §7.8).
-  GROWTH_PRE_PROFIT  EV/Ventas y regla de 40 (CAGR real de ingresos + margen FCF).
+  REIT               crecimiento POR ACCIÓN: CAGR del FFO por acción (FFO =
+                     beneficio neto + D&A, la misma definición del P/FFO; acciones
+                     en circulación de cada ejercicio, base del balance anual,
+                     ajustada por splits) y del FCF por acción. El crecimiento
+                     agregado de un REIT lo infla la emisión estructural.
+  GROWTH_PRE_PROFIT  EV/Ventas y regla de 40 (CAGR real de ingresos + margen FCF);
+                     EBITDA del último ejercicio para declarar EV/EBITDA "no aplica".
   CYCLICAL           EV/EBITDA, FCF y crecimiento normalizados con los
                      ejercicios disponibles ("ciclo incompleto" si < 5).
   ROCE               EBIT / (activos − pasivo corriente) en MATURE y CYCLICAL,
@@ -16,8 +22,8 @@ de key_metrics; un dato ausente queda en None con su motivo, nunca en 0.
 """
 from typing import Any, Dict, List, Optional
 
-from classify import CYCLICAL, FINANCIAL, GROWTH_PRE_PROFIT, not_applicable
-from historical_metrics import mean, ratio_series, stdev, strict_cagr, yoy_growths
+from classify import CYCLICAL, FINANCIAL, GROWTH_PRE_PROFIT, REIT, not_applicable
+from historical_metrics import fcf_cagr, mean, ratio_series, stdev, strict_cagr, yoy_growths
 from settings import cfg
 
 _V = cfg("valuation.archetypes")
@@ -88,13 +94,34 @@ def _financial(st: Dict[str, Any], km: Dict[str, Any], beta: Optional[float]) ->
     }
 
 
+def _per_share(values: List[Optional[float]], shares: List[Optional[float]]) -> List[Optional[float]]:
+    return [(v / s) if (v is not None and _pos(s)) else None for v, s in zip(values or [], shares or [])]
+
+
+def _reit(st: Dict[str, Any]) -> Dict[str, Any]:
+    ni, ebitda, ebit = st.get("net_income") or [], st.get("ebitda") or [], st.get("ebit") or []
+    ffo = [(n + (a - b)) if (n is not None and a is not None and b is not None) else None
+           for n, a, b in zip(ni, ebitda, ebit)]
+    shares = st.get("ordinary_shares") or []
+    ffo_ps = _per_share(ffo, shares)
+    ffo_ps_cagr, ffo_ps_why = strict_cagr(ffo_ps, 3)
+    fcf_ps_cagr, fcf_ps_why = fcf_cagr(_per_share(st.get("free_cash_flow") or [], shares))
+    return {
+        "ffo_series": ffo, "ffo_per_share_series": ffo_ps,
+        "ffo_cagr_3y": strict_cagr(ffo, 3)[0],
+        "ffo_per_share_cagr_3y": ffo_ps_cagr, "ffo_per_share_cagr_3y_reason": ffo_ps_why,
+        "shares_cagr_3y": strict_cagr(shares, 3)[0],
+        "fcf_per_share_cagr_3y": fcf_ps_cagr, "fcf_per_share_cagr_3y_reason": fcf_ps_why,
+    }
+
+
 def _growth_pre_profit(km: Dict[str, Any], revenue_cagr_3y: Optional[float]) -> Dict[str, Any]:
     fcf, rev = km.get("free_cash_flow"), km.get("revenue")
     fcf_margin = (fcf / rev) if (fcf is not None and _pos(rev)) else None
     r40 = (revenue_cagr_3y + fcf_margin) if (revenue_cagr_3y is not None and fcf_margin is not None) else None
     ev_sales = km.get("ev_revenue")
     return {"ev_sales": ev_sales if _pos(ev_sales) else None, "fcf_margin": fcf_margin,
-            "revenue_cagr_3y": revenue_cagr_3y, "rule_of_40": r40}
+            "revenue_cagr_3y": revenue_cagr_3y, "rule_of_40": r40, "ebitda": km.get("ebitda")}
 
 
 def _cyclical(st: Dict[str, Any], km: Dict[str, Any]) -> Dict[str, Any]:
@@ -125,6 +152,8 @@ def compute(archetype: str, statements_fy: Optional[Dict[str, Any]], key_metrics
         return _financial(st, key_metrics, beta)
     if archetype == GROWTH_PRE_PROFIT:
         return _growth_pre_profit(key_metrics, revenue_cagr_3y)
+    if archetype == REIT:
+        return _reit(st)
     if archetype == CYCLICAL:
         return _cyclical(st, key_metrics)
     return {}

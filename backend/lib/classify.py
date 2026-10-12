@@ -15,7 +15,9 @@ Arquetipos, en orden de prioridad (listas y umbrales en config/sectors.toml):
   REIT               industria "REIT - …" (promotoras y servicios inmobiliarios no).
   GROWTH_PRE_PROFIT  BPA TTM <= 0 o margen neto < 0, y CAGR real de ingresos a
                      3 años > 15% (con los 4 ejercicios anuales).
-  CYCLICAL           industria de la lista de cíclicas de Yahoo.
+  CYCLICAL           industria de la lista de cíclicas de Yahoo; las
+                     "condicionales" (Semiconductors, Specialty Chemicals)
+                     solo si además la regla de volatilidad se activa.
   MATURE             por defecto.
 
 Además, una regla cuantitativa SOLO de alerta: una empresa no cíclica con el
@@ -178,10 +180,20 @@ def classify(*, sector: Optional[str], industry: Optional[str], eps_ttm: Optiona
         return out(GROWTH_PRE_PROFIT, f"Clasificada como GROWTH_PRE_PROFIT: {what} y CAGR de ingresos a 3 años "
                                       f"{rev_cagr * 100:.1f}% > {g_min * 100:.0f}%", "pre_beneficio_con_crecimiento")
 
-    # 5. CYCLICAL: industria cíclica.
+    # 5. CYCLICAL: industria cíclica siempre, o condicional con volatilidad alta.
     if ind in _C["cyclical_industries"]:
         extra = " (inmobiliaria no REIT)" if sec == "real estate" else ""
         return out(CYCLICAL, f"Clasificada como CYCLICAL {by_ind}{extra}", "industria_ciclica")
+    if ind in _C["cyclical_conditional_industries"]:
+        pc = _possible_cyclical(st)
+        inputs["op_margin_detrended_std"] = pc["op_margin_detrended_std"]
+        inputs["revenue_growth_std"] = pc["revenue_growth_std"]
+        if pc["flag"]:
+            why = pc["detail"].removeprefix("Posible cíclica: ").split(". No cambia")[0]
+            return out(CYCLICAL, f"Clasificada como CYCLICAL {by_ind} (cíclica condicional) con volatilidad alta: "
+                                 f"{why}", "industria_ciclica_condicional")
+        return out(MATURE, f"Clasificada como MATURE: industria {ind_txt} (cíclica condicional) sin volatilidad alta "
+                           "en los ejercicios disponibles", "ciclica_condicional_estable")
 
     # 6. MATURE por defecto.
     extra = f" (industria {ind_txt}" + ("; inmobiliaria no REIT)" if sec == "real estate" else ")") if ind_txt \

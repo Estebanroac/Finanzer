@@ -164,3 +164,28 @@ def test_pdf_roce_rows(outputs_by_env):
         jpm = _pdf_text(out["JPM"][1]).splitlines()
         i = jpm.index("ROCE")
         assert "No aplica a FINANCIAL" in jpm[i + 1:i + 6]
+
+
+# ─────────────────────────── correcciones de la etapa 6 ───────────────────────────
+def test_reit_growth_is_per_share(outputs_by_env):
+    """O: FFO agregado +12.2% anual, pero por acción −0.1% (acciones +12.3% anual)."""
+    for env in _envs():
+        a = outputs_by_env(env)["O"][0]
+        xm = a["archetype_metrics"]
+        assert xm["ffo_cagr_3y"] == pytest.approx(0.1215, abs=1e-3)
+        assert xm["shares_cagr_3y"] == pytest.approx(0.1225, abs=1e-3)
+        assert xm["ffo_per_share_cagr_3y"] == pytest.approx(-0.0009, abs=1e-3)
+        m = _metrics(a, "Crecimiento")
+        assert "Crecimiento FFO por acción 3Y" in m and "Crecimiento Ingresos 3Y" not in m
+        assert "Crecimiento FCF por acción 3Y" in m
+        assert "Crecimiento del BPA" in a["score_coverage"]["crecimiento"]["not_applicable"]
+
+
+def test_growth_pre_profit_ev_ebitda_not_applicable_without_ebitda(outputs_by_env):
+    """SNOW: EBITDA <= 0 -> EV/EBITDA "no aplica" (no "sin dato"): no reescala Valoración."""
+    for env in _envs():
+        a = outputs_by_env(env)["SNOW"][0]
+        val = a["score_coverage"]["valoracion"]
+        assert "EV/EBITDA" in val["not_applicable"] and "EV/EBITDA" not in val["missing"]
+        assert val["coverage"] == 1.0
+        assert "Cobertura" not in _metrics(a, "Valoración")

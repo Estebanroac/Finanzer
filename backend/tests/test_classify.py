@@ -117,8 +117,31 @@ def test_negative_margin_alone_is_enough_for_no_profit():
 def test_cyclical_with_peak_profit_stays_cyclical():
     """Una cíclica en pico de beneficio sigue siendo cíclica: decide la industria."""
     peak = _st([200.0, 120.0, 90.0, 80.0], [80.0, 30.0, 9.0, 4.0])
-    c = C("Technology", "Semiconductors", eps=12.0, nm=0.35, st=peak)
+    c = C("Technology", "Semiconductor Equipment & Materials", eps=12.0, nm=0.35, st=peak)
     assert c["archetype"] == CYCLICAL and c["alerts"] == []
+
+
+BOOM_BUST = _st([37.4, 25.1, 15.5, 30.8], [9.8, 1.3, -5.4, 9.7])          # memoria: MU
+STABLE = _st([34.0, 33.0, 32.9, 33.4], [9.25, 8.6, 8.1, 6.5])             # gases industriales: LIN
+
+
+@pytest.mark.parametrize("industry", ["Semiconductors", "Specialty Chemicals"])
+def test_conditional_cyclical_needs_volatility(industry):
+    c = C("Technology", industry, eps=5.0, nm=0.2, st=BOOM_BUST)
+    assert c["archetype"] == CYCLICAL and c["rule"] == "industria_ciclica_condicional"
+    assert "volatilidad alta" in c["reason"]
+    c = C("Basic Materials", industry, eps=5.0, nm=0.2, st=STABLE)
+    assert c["archetype"] == MATURE and c["rule"] == "ciclica_condicional_estable"
+
+
+def test_conditional_cyclical_without_history_stays_mature():
+    c = C("Technology", "Semiconductors", eps=5.0, nm=0.2, st=_st([30.0, 25.0]))
+    assert c["archetype"] == MATURE
+
+
+def test_financial_mature_exceptions_confirmed():
+    exc = cfg("sectors.archetypes.financial_mature_industries")
+    assert "financial data & stock exchanges" in exc and "asset management" in exc
 
 
 def test_mature_default():
@@ -148,9 +171,11 @@ def test_steady_trend_is_not_possible_cyclical():
 def test_cyclical_list_includes_the_requested_families():
     cyc = cfg("sectors.archetypes.cyclical_industries")
     for ind in ("copper", "steel", "aluminum", "other industrial metals & mining", "oil & gas e&p",
-                "oil & gas refining & marketing", "chemicals", "semiconductors", "airlines",
+                "oil & gas refining & marketing", "chemicals", "airlines",
                 "auto manufacturers", "auto parts", "building materials"):
         assert ind in cyc
+    cond = cfg("sectors.archetypes.cyclical_conditional_industries")
+    assert set(cond) == {"semiconductors", "specialty chemicals"} and not set(cond) & set(cyc)
 
 
 def test_industry_normalization():
@@ -181,9 +206,12 @@ def test_six_tickers_both_envs(outputs_by_env):
         "Clasificada como REIT por industria REIT - Retail"
 
 
-@pytest.mark.parametrize("sym,arch", [("TRV", FINANCIAL), ("FOR", CYCLICAL)])
+@pytest.mark.parametrize("sym,arch", [("TRV", FINANCIAL), ("FOR", CYCLICAL),
+                                      ("NVDA", CYCLICAL), ("MU", CYCLICAL), ("LIN", MATURE), ("AMAT", CYCLICAL)])
 def test_extra_local_fixtures(sym, arch):
-    """TRV (aseguradora) y FOR (promotora inmobiliaria): solo para el clasificador."""
+    """Fixtures locales solo para el clasificador: TRV (aseguradora), FOR (promotora),
+    NVDA y MU (Semiconductors, condicional, con volatilidad), LIN (Specialty Chemicals,
+    condicional, estable) y AMAT (Semiconductor Equipment & Materials, cíclica siempre)."""
     with fb.replay(fb.fixtures_dir("local")) as store:
         a = fb.run_analysis(sym, store)
     assert a["classification"]["archetype"] == arch, a["classification"]["reason"]

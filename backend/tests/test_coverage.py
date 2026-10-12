@@ -249,7 +249,7 @@ def test_full_data_gives_exactly_the_previous_score(case):
                    "crecimiento": {"Crecimiento del FCF"}}),
     ("reit_full", {"solidez": {"Altman Z"}, "rentabilidad": set(),
                    "valoracion": {"P/E", "P/FCF", "PEG"},
-                   "calidad": {"Piotroski F", "FCF / beneficio neto"}, "crecimiento": set()}),
+                   "calidad": {"Piotroski F", "FCF / beneficio neto"}, "crecimiento": {"Crecimiento del BPA"}}),
 ])
 def test_archetype_branch_with_full_data_has_full_coverage(case, na):
     """Con todos los datos de su rama, FINANCIAL y REIT tienen cobertura completa:

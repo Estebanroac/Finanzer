@@ -2645,6 +2645,9 @@ def score_valoracion(
     if archetype is not None:
         is_reit = archetype == REIT
     _na = {k: not_applicable(archetype, k) for k in ("pe", "peg", "forward_pe", "p_fcf", "ev_ebitda", "garp")}
+    if archetype == GROWTH_PRE_PROFIT and xv.get("ebitda") is not None and xv["ebitda"] <= 0:
+        # Sin EBITDA positivo el múltiplo no existe: no aplica (no es un dato ausente).
+        _na["ev_ebitda"] = "No aplica a GROWTH_PRE_PROFIT: EBITDA <= 0, sin resultado operativo que capitalizar"
     _cyc = archetype == CYCLICAL
     _cyc_note = (f" (ciclo incompleto: {xv.get('cycle_years')} ejercicios)" if _cyc and xv.get("cycle_incomplete")
                  else "")
@@ -3272,6 +3275,7 @@ def score_crecimiento(
     fcf_growth_reason: Optional[str] = None,
     archetype: Optional[str] = None,
     revenue_note: Optional[str] = None,
+    revenue_reason: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Categoría 5: Crecimiento (20 pts máximo)
@@ -3291,9 +3295,12 @@ def score_crecimiento(
     if _na_fcf:
         fcf_growth_3y = None
     
-    # Revenue Growth 3Y (hasta ±5 pts)
+    # Revenue Growth 3Y (hasta ±5 pts). REIT (etapa 6): el crecimiento se mide
+    # por acción — llega el CAGR del FFO por acción, con sus propias bandas.
+    _reit = archetype == REIT
+    _rev_metric = "Crecimiento FFO por acción 3Y" if _reit else "Crecimiento Ingresos 3Y"
     if revenue_growth_3y is not None:
-        b, p = T["revenue_bounds"], T["revenue_points"]
+        b, p = (T["reit_ffo_ps_bounds"], T["reit_ffo_ps_points"]) if _reit else (T["revenue_bounds"], T["revenue_points"])
         if revenue_growth_3y >= b[0]:
             adj = p[0]
             sev = "excellent"
@@ -3317,7 +3324,7 @@ def score_crecimiento(
         
         base_score += adj
         _a["rev"] = adj
-        adjustments.append({"metric": "Crecimiento Ingresos 3Y", "value": f"{revenue_growth_3y:.1%}", "adjustment": adj,
+        adjustments.append({"metric": _rev_metric, "value": f"{revenue_growth_3y:.1%}", "adjustment": adj,
                             "reason": reason + (f" — {revenue_note}" if revenue_note else ""), "severity": sev})
     
     # EPS Growth 3Y (hasta ±5 pts)
@@ -3370,7 +3377,8 @@ def score_crecimiento(
         
         base_score += adj
         _a["fcf"] = adj
-        adjustments.append({"metric": "Crecimiento FCF 3Y", "value": f"{fcf_growth_3y:.1%}", "adjustment": adj, "reason": reason, "severity": sev})
+        adjustments.append({"metric": "Crecimiento FCF por acción 3Y" if _reit else "Crecimiento FCF 3Y",
+                            "value": f"{fcf_growth_3y:.1%}", "adjustment": adj, "reason": reason, "severity": sev})
     
     # Growth Company Bonus
     if is_growth_company:
@@ -3379,7 +3387,10 @@ def score_crecimiento(
         adjustments.append({"metric": "Growth Company", "value": "Sí", "adjustment": adj, "reason": "Perfil de alto crecimiento", "severity": "good"})
     
     cov = CategoryCoverage()
-    cov.comp("Crecimiento de ingresos", T["revenue_points"], _a.get("rev"))
+    if _reit:
+        cov.comp("Crecimiento del FFO por acción", T["reit_ffo_ps_points"], _a.get("rev"), revenue_reason)
+    else:
+        cov.comp("Crecimiento de ingresos", T["revenue_points"], _a.get("rev"), revenue_reason)
     cov.comp("Crecimiento del BPA", T["eps_points"], _a.get("eps"), na=_na_eps)
     cov.comp("Crecimiento del FCF", T["fcf_points"], _a.get("fcf"), fcf_growth_reason, na=_na_fcf)
     base_score = cov.apply(base_score, adjustments)
@@ -3546,6 +3557,7 @@ def calculate_score_v2(
         fcf_growth_reason=contextual_values.get("fcf_cagr_3y_reason"),
         archetype=archetype,
         revenue_note=contextual_values.get("revenue_growth_note"),
+        revenue_reason=contextual_values.get("revenue_growth_reason"),
     )
     
     # Calcular totales. Las categorías no concluyentes (cobertura < 50%) se

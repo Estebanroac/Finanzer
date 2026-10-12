@@ -658,6 +658,8 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     xm = analysis.get("archetype_metrics") or {}
     _na_keys = set((cfg(f"sectors.archetypes.not_applicable.{archetype}")
                     if archetype in ("FINANCIAL", "REIT", "GROWTH_PRE_PROFIT", "CYCLICAL", "MATURE") else ()))
+    if archetype == "GROWTH_PRE_PROFIT" and xm.get("ebitda") is not None and xm["ebitda"] <= 0:
+        _na_keys.add("ev_ebitda")   # EBITDA <= 0: EV/EBITDA no aplica (etapa 6)
     # Múltiplos propios de cada rama (filas del score de Valoración).
     _branch_metrics = ("P/B frente a ROE", "P/TBV frente a ROTE", "P/FFO (REIT)", "Rentabilidad por dividendo (REIT)",
                        "EV/Ventas", "Regla de 40", "EV/EBITDA normalizado vs Sector", "P/FCF normalizado")

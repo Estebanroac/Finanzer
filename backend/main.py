@@ -26,7 +26,7 @@ from sector_profiles import get_sector_profile, YAHOO_SECTOR_MAPPING
 from alert_interpretations import build_signals
 from settings import cfg
 from historical_metrics import fcf_cagr
-from classify import CYCLICAL, FINANCIAL, GROWTH_PRE_PROFIT, classify, not_applicable
+from classify import CYCLICAL, FINANCIAL, GROWTH_PRE_PROFIT, REIT, classify, not_applicable
 import archetype_metrics
 
 logging.basicConfig(level=logging.INFO)
@@ -581,6 +581,19 @@ def _compute_analysis(symbol: str) -> dict:
                 fin_dict["fcf_cagr_3y"] = None
             elif archetype == FINANCIAL:
                 fin_dict["revenue_growth_note"] = "YoY de los estados anuales (arquetipo FINANCIAL)"
+            elif archetype == REIT:
+                # REIT: crecimiento POR ACCIÓN (FFO y FCF por acción); el agregado lo
+                # infla la emisión estructural de acciones.
+                fin_dict["revenue_cagr_3y"] = archetype_values.get("ffo_per_share_cagr_3y")
+                fin_dict["revenue_growth_reason"] = archetype_values.get("ffo_per_share_cagr_3y_reason")
+                _sh = archetype_values.get("shares_cagr_3y")
+                _ffo = archetype_values.get("ffo_cagr_3y")
+                fin_dict["revenue_growth_note"] = (
+                    "FFO por acción (FFO = beneficio neto + D&A; acciones en circulación de cada ejercicio)"
+                    + (f"; FFO agregado {_ffo:+.1%}" if _ffo is not None else "")
+                    + (f", acciones {_sh:+.1%} anual" if _sh is not None else ""))
+                fin_dict["fcf_cagr_3y"] = archetype_values.get("fcf_per_share_cagr_3y")
+                fin_dict["fcf_cagr_3y_reason"] = archetype_values.get("fcf_per_share_cagr_3y_reason")
 
             # ── Fase C: creación de valor (ROIC-WACC) y retorno al accionista ──
             _beta_est = financials.beta if financials.beta is not None else cfg("valuation.capm.default_beta")
