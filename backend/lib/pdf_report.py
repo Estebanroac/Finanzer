@@ -644,6 +644,11 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
 
     total = score.get("total_score") or 0
     breakdown = score.get("breakdown") or {}
+    # Etapa 5: total parcial (categorías excluidas por cobertura < 50%).
+    _excl = score.get("excluded_categories") or []
+    basis = score.get("basis") if score.get("partial") else None
+    basis_full = (f"{_esc(basis)}<br/>{_esc(', '.join(_excl))} no concluyente" if basis and _excl
+                  else _esc(basis) if basis else None)
     # Nivel y tono alineados con la app (80/60/40/20) para que el color y la
     # etiqueta del informe coincidan con lo que ve el usuario en pantalla.
     level, score_tone = score_band(total)
@@ -778,6 +783,9 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
                    ParagraphStyle('heronum', fontName='Helvetica-Bold', leading=60, alignment=TA_CENTER))],
         [Spacer(1, 6)],
         [chip(level, score_tone, size=9)],
+        [Paragraph(f"<font size='6.8' color='{AMBER.hexval()}'><b>{basis_full}</b></font>",
+                   ParagraphStyle('slb', leading=8.6, alignment=TA_CENTER, spaceBefore=4))
+         if basis_full else Spacer(1, 1)],
         [Spacer(1, 6)],
         [Paragraph("<font size='6.6' color='#77777f'><b>CALIDAD FUNDAMENTAL</b></font><br/>"
                    "<font size='6.6' color='#9a9aa0'>¿es buena la empresa?</font>",
@@ -1005,7 +1013,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         [Paragraph("<font size='7' color='#77777f'><b>PERFIL POR CATEGORÍA</b></font>",
                    ParagraphStyle('rbt', leading=10, alignment=TA_CENTER))],
         [radar_inner],
-        [Paragraph(f"<font size='8' color='#9a9aa0'>Cada eje 0–100 · Puntuación {total}/100</font><br/>"
+        [Paragraph(f"<font size='8' color='#9a9aa0'>Cada eje 0–100 · Puntuación {total}/100{f' ({_esc(basis)})' if basis else ''}</font><br/>"
                    f"<font size='8.5'>{_bal_line}</font>",
                    ParagraphStyle('rbc', leading=12, alignment=TA_CENTER))],
     ], colWidths=[CW])
@@ -1487,7 +1495,9 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         story.append(Paragraph("Desglose de la puntuación", S['h2']))
         story.append(Paragraph(
             "Cada categoría parte de una base neutral de 10/20. La columna Ajuste muestra cuánto suma o "
-            "resta cada indicador según la banda en la que cae.", S['small']))
+            "resta cada indicador según la banda en la que cae."
+            + (f" Total {total}/100 {_esc(basis)}: las categorías no concluyentes se excluyen y el "
+               f"total se reescala a 100 sobre las demás." if basis else ""), S['small']))
         story.append(Spacer(1, 4))
 
         _hdr_st = ParagraphStyle('bdh', fontName='Helvetica-Bold', fontSize=7.4, leading=9, textColor=MUTED)

@@ -776,6 +776,16 @@ def _compute_analysis(symbol: str) -> dict:
                     "excluded_categories": (score_result.get("excluded_categories", [])
                                             if isinstance(score_result, dict) else []),
                 }
+                # Un total parcial no puede leerse igual que uno completo: se
+                # declara sobre cuántas categorías se calculó.
+                _n_inc = score_result.get("categories_included") if isinstance(score_result, dict) else None
+                _n_tot = score_result.get("categories_total") if isinstance(score_result, dict) else None
+                if _n_inc is not None and _n_tot:
+                    result["score"]["categories_included"] = _n_inc
+                    result["score"]["categories_total"] = _n_tot
+                    result["score"]["partial"] = _n_inc < _n_tot
+                    result["score"]["basis"] = (f"calculado sobre {_n_inc} de {_n_tot} categorías"
+                                                if _n_inc < _n_tot else None)
 
                 # Financial health (sector financiero): calculate_score_v2 ya lo
                 # computó correctamente con los argumentos correctos; exponerlo

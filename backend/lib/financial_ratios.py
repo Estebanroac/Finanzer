@@ -3317,6 +3317,8 @@ def calculate_score_v2(
         "is_growth_company": is_growth,
         "excluded_categories": [cat["category"] for cat in categories if not cat["conclusive"]],
         "score_conclusive": bool(included),
+        "categories_included": len(included),
+        "categories_total": len(categories),
         # Nuevos campos v2.2
         "company_type": company_type,
         "growth_quality_score": growth_quality,

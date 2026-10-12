@@ -414,3 +414,29 @@ def test_all_categories_inconclusive_is_neutral():
     res = calculate_score_v2({}, {}, sector_key="default")
     assert res["score"] == 50 and res["score_conclusive"] is False
     assert len(res["excluded_categories"]) == 5
+
+
+# ─────────────────────────── Total parcial declarado ───────────────────────────
+def test_partial_total_declares_its_basis():
+    r, c, kw = CASES["mid_full"]
+    full = calculate_score_v2(r, c, **kw)
+    assert (full["categories_included"], full["categories_total"]) == (5, 5)
+    part = calculate_score_v2(r, dict(c, eps_cagr_3y=None, fcf_cagr_3y=None), **kw)
+    assert (part["categories_included"], part["categories_total"]) == (4, 5)
+
+
+def test_partial_total_is_shown_in_json_and_pdf(outputs_by_env):
+    """SNOW prod: Valoración 1/4 -> total sobre 4 de 5 categorías, en el JSON y en el PDF."""
+    import conftest
+    if "prod" not in conftest.ENVS:
+        pytest.skip("falta el juego prod")
+    a, pdf = outputs_by_env("prod")["SNOW"]
+    sc = a["score"]
+    assert sc["partial"] is True and sc["basis"] == "calculado sobre 4 de 5 categorías"
+    assert (sc["categories_included"], sc["categories_total"]) == (4, 5)
+    assert sc["breakdown"]["Valoración"]["conclusive"] is False
+    txt = fixture_backend.pdf_text(pdf) if isinstance(pdf, bytes) else pdf
+    assert f"Puntuación {sc['total_score']}/100 (calculado sobre 4 de 5 categorías)" in txt
+    assert "Valoración no concluyente" in txt and "No concluyente · cobertura 25%" in txt
+    nflx = outputs_by_env("prod")["NFLX"][0]["score"]
+    assert nflx["partial"] is False and nflx["basis"] is None
