@@ -35,13 +35,13 @@
       },
       {
         "category": "Solidez financiera",
-        "detail": "El Altman Z de 15.46 (> 2.60) ubica a la empresa en zona segura: baja probabilidad estadística de problemas de solvencia según el modelo.",
-        "reason": "Solvencia sólida — Altman Z 15.46"
+        "detail": "La empresa tiene más efectivo que deuda: posición de caja neta que le da flexibilidad para invertir, resistir ciclos o retribuir al accionista sin depender de la financiación externa.",
+        "reason": "Caja neta — sin deuda financiera neta"
       },
       {
         "category": "Solidez financiera",
-        "detail": "La deuda neta equivale a ~1 año de EBITDA, un nivel cómodo que deja holgura financiera y capacidad de maniobra ante imprevistos.",
-        "reason": "Deuda baja — 1.2x EBITDA"
+        "detail": "El Altman Z de 15.46 (> 2.60) ubica a la empresa en zona segura: baja probabilidad estadística de problemas de solvencia según el modelo.",
+        "reason": "Solvencia sólida — Altman Z 15.46"
       }
     ],
     "warnings": [
@@ -259,6 +259,11 @@
         "rule": "ratio_no_significativa",
         "source": "sin_dato"
       },
+      "key_metrics.net_debt_to_ebitda": {
+        "detail": "Deuda neta/EBITDA = 1.2x: EBITDA <= 0, la ratio no es significativa",
+        "rule": "ratio_no_significativa",
+        "source": "sin_dato"
+      },
       "key_metrics.p_ffo": {
         "detail": "P_FFO = -132.9: FFO <= 0, el múltiplo no es significativo",
         "rule": "multiplo_no_significativo",
@@ -304,6 +309,11 @@
       },
       "ratios.interest_coverage": {
         "detail": "Cobertura de intereses = -173.0x: EBIT < 0 con caja neta, la ratio no es significativa",
+        "rule": "ratio_no_significativa",
+        "source": "sin_dato"
+      },
+      "ratios.net_debt_to_ebitda": {
+        "detail": "Deuda neta/EBITDA = 1.2x: EBITDA <= 0, la ratio no es significativa",
         "rule": "ratio_no_significativa",
         "source": "sin_dato"
       },
@@ -452,6 +462,22 @@
       "old": -172.953121234,
       "reason": "Cobertura de intereses = -173.0x: EBIT < 0 con caja neta, la ratio no es significativa",
       "rule": "ratio_no_significativa"
+    },
+    {
+      "action": "sin_dato",
+      "field": "key_metrics.net_debt_to_ebitda",
+      "new": null,
+      "old": 1.18963153488,
+      "reason": "Deuda neta/EBITDA = 1.2x: EBITDA <= 0, la ratio no es significativa",
+      "rule": "ratio_no_significativa"
+    },
+    {
+      "action": "sin_dato",
+      "field": "ratios.net_debt_to_ebitda",
+      "new": null,
+      "old": 1.18963153488,
+      "reason": "Deuda neta/EBITDA = 1.2x: EBITDA <= 0, la ratio no es significativa",
+      "rule": "ratio_no_significativa"
     }
   ],
   "dcf": {
@@ -501,7 +527,8 @@
     "inventory_turnover": null,
     "market_cap": 130144397168.0,
     "net_debt": -1288572000.0,
-    "net_debt_to_ebitda": 1.18963153488,
+    "net_debt_to_ebitda": null,
+    "net_debt_to_ebitda_state": "no_significativo",
     "net_income": -1331616000.0,
     "net_margin": -0.284293627638,
     "operating_cash_flow": 1221942000.0,
@@ -632,7 +659,7 @@
     "inventory_turnover": null,
     "market_cap": 130144397168.0,
     "net_debt": -1288572000.0,
-    "net_debt_to_ebitda": 1.18963153488,
+    "net_debt_to_ebitda": null,
     "net_income": -1331616000.0,
     "net_margin": -0.284293627638,
     "operating_cash_flow": 1221942000.0,

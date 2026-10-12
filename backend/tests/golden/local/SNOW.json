@@ -37,11 +37,6 @@
         "category": "Crecimiento",
         "detail": "Los ingresos crecen 49.9% interanual: ritmo de expansión elevado que, si mantiene márgenes, es el principal motor de creación de valor a largo plazo.",
         "reason": "Crecimiento fuerte — ingresos +49.9% interanual"
-      },
-      {
-        "category": "Solidez financiera",
-        "detail": "La empresa tiene más efectivo que deuda: posición de caja neta que le da flexibilidad para invertir, resistir ciclos o retribuir al accionista sin depender de la financiación externa.",
-        "reason": "Caja neta — sin deuda financiera neta"
       }
     ],
     "warnings": [
@@ -317,6 +312,11 @@
         "rule": "multiplo_no_significativo",
         "source": "sin_dato"
       },
+      "key_metrics.net_debt_to_ebitda": {
+        "detail": "Deuda neta/EBITDA = -0.4x: EBITDA <= 0, la ratio no es significativa",
+        "rule": "ratio_no_significativa",
+        "source": "sin_dato"
+      },
       "key_metrics.p_ffo": {
         "detail": "P_FFO = -108.2: FFO <= 0, el múltiplo no es significativo",
         "rule": "multiplo_no_significativo",
@@ -370,6 +370,11 @@
       "ratios.ev_ebitda": {
         "detail": "EV_EBITDA = -126.0: EBITDA <= 0, el múltiplo no es significativo",
         "rule": "multiplo_no_significativo",
+        "source": "sin_dato"
+      },
+      "ratios.net_debt_to_ebitda": {
+        "detail": "Deuda neta/EBITDA = -0.4x: EBITDA <= 0, la ratio no es significativa",
+        "rule": "ratio_no_significativa",
         "source": "sin_dato"
       },
       "ratios.p_ffo": {
@@ -521,6 +526,22 @@
       "old": -108.170739365,
       "reason": "P_FFO = -108.2: FFO <= 0, el múltiplo no es significativo",
       "rule": "multiplo_no_significativo"
+    },
+    {
+      "action": "sin_dato",
+      "field": "key_metrics.net_debt_to_ebitda",
+      "new": null,
+      "old": -0.404444602822,
+      "reason": "Deuda neta/EBITDA = -0.4x: EBITDA <= 0, la ratio no es significativa",
+      "rule": "ratio_no_significativa"
+    },
+    {
+      "action": "sin_dato",
+      "field": "ratios.net_debt_to_ebitda",
+      "new": null,
+      "old": -0.404444602822,
+      "reason": "Deuda neta/EBITDA = -0.4x: EBITDA <= 0, la ratio no es significativa",
+      "rule": "ratio_no_significativa"
     }
   ],
   "dcf": {
@@ -570,7 +591,8 @@
     "inventory_turnover": null,
     "market_cap": 130144395264.0,
     "net_debt": 419119872.0,
-    "net_debt_to_ebitda": -0.404444602822,
+    "net_debt_to_ebitda": null,
+    "net_debt_to_ebitda_state": "no_significativo",
     "net_income": -1090797952.0,
     "net_margin": -0.200711829852,
     "operating_cash_flow": 1253252992.0,
@@ -701,7 +723,7 @@
     "inventory_turnover": null,
     "market_cap": 130144392000.0,
     "net_debt": 419119872.0,
-    "net_debt_to_ebitda": -0.404444602822,
+    "net_debt_to_ebitda": null,
     "net_income": -1090797952.0,
     "net_margin": -0.200711829852,
     "operating_cash_flow": 1253252992.0,
