@@ -62,6 +62,21 @@ Es la señal de que quedó corregido: quita su `@pytest.mark.xfail`. El arreglo 
 así que revisa `diff_golden.py` y regenera los golden de forma explícita.
 `raises=AssertionError` garantiza que un test roto por otra causa (KeyError, etc.) **no** se cuente como bug conocido.
 
+## Configuración única (etapa 4)
+
+Todos los umbrales del motor, las alertas y el PDF viven en `backend/config/`:
+`thresholds.toml` (bandas del score, alertas y lecturas del PDF), `sectors.toml` (medianas y umbrales por sector,
+**provisionales**), `valuation.toml` (CAPM, WACC, DCF, grid, Graham, Altman, Piotroski), `validation.toml` (capa de
+validación) y `data.toml` (cachés, timeouts, reintentos). `lib/settings.py` los carga con `tomllib` y los valida
+contra `config/schema.toml` al importar: una clave que falta o sobra, o un tipo distinto (`int` frente a `float`),
+lanza `SettingsError` con todos los problemas.
+
+- `test_settings.py`: el cargador falla con config inválida.
+- `test_config_literals.py`: las funciones migradas no contienen literales numéricos fuera de la lista de
+  excepciones justificadas (`EXCEPTIONS`). Si añades un umbral nuevo, va al TOML y a `schema.toml`.
+- Donde hoy conviven dos valores para un mismo concepto (p. ej. niveles del score 80/65/50/35 en el motor y
+  80/60/40/20 en el PDF) hay dos claves: la unificación se decide aparte.
+
 ## Validación de entrada y trazabilidad (etapa 3)
 
 `lib/validate.py` corre en `yf_adapter.get_ticker_info` después de la ingesta (Yahoo o plan B, último-bueno-conocido

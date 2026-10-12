@@ -742,7 +742,7 @@ def _compute_analysis(symbol: str) -> dict:
                     key = cat.get("category", "unknown")
                     breakdown[key] = {
                         "score": cat.get("score", 0),
-                        "max": cat.get("max_score", 20),
+                        "max": cat.get("max_score", cfg("thresholds.score.category.max")),
                         "details": [a.get("reason", "") for a in cat.get("adjustments", [])],
                         "adjustments": cat.get("adjustments", []),
                     }
