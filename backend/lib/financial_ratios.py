@@ -1776,7 +1776,6 @@ def dcf_multi_stage_dynamic(
         "net_debt": None,
         "warnings": [],
         "is_valid": False,
-        "sensitivity_analysis": None
     }
     
     if fcf is None or shares_outstanding is None or shares_outstanding <= 0:
@@ -1865,35 +1864,7 @@ def dcf_multi_stage_dynamic(
         result["fair_value_per_share"] = model_result["fair_value_per_share"]
         result["fair_value_with_mos"] = model_result["fair_value_with_mos"]
         result["is_valid"] = True
-        
-        # ANÁLISIS DE SENSIBILIDAD
-        sensitivity = {"wacc_sensitivity": {}, "growth_sensitivity": {}}
-        
-        for wacc_delta in [-0.02, -0.01, 0.01, 0.02]:
-            test_wacc = wacc + wacc_delta
-            if test_wacc > terminal_growth + 0.01:
-                test_result = dcf_multi_stage(
-                    fcf=fcf, shares_outstanding=shares_outstanding,
-                    high_growth_rate=growth_rate, discount_rate=test_wacc,
-                    terminal_growth=terminal_growth, decay_type=decay_type,
-                    net_debt=net_debt
-                )
-                if test_result["is_valid"]:
-                    sensitivity["wacc_sensitivity"][f"{wacc_delta:+.0%}"] = test_result["fair_value_per_share"]
-        
-        for growth_delta in [-0.05, -0.025, 0.025, 0.05]:
-            test_growth = max(growth_rate + growth_delta, terminal_growth)
-            test_result = dcf_multi_stage(
-                fcf=fcf, shares_outstanding=shares_outstanding,
-                high_growth_rate=test_growth, discount_rate=wacc,
-                terminal_growth=terminal_growth, decay_type=decay_type,
-                net_debt=net_debt
-            )
-            if test_result["is_valid"]:
-                sensitivity["growth_sensitivity"][f"{growth_delta:+.1%}"] = test_result["fair_value_per_share"]
-        
-        result["sensitivity_analysis"] = sensitivity
-    
+
     return result
 
 
