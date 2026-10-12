@@ -758,6 +758,11 @@ def _compute_analysis(symbol: str) -> dict:
                 # Financial health (sector financiero): calculate_score_v2 ya lo
                 # computó correctamente con los argumentos correctos; exponerlo
                 # como {score, level, interpretation, details} para el frontend.
+                # Cobertura por categoría (bloque nuevo del contrato, etapa 5). La
+                # baja confianza no cambia el score: la usará la etapa 8.
+                if isinstance(score_result, dict) and score_result.get("coverage"):
+                    result["score_coverage"] = score_result["coverage"]
+
                 if isinstance(score_result, dict) and score_result.get("financial_health"):
                     result["financial_health"] = score_result["financial_health"]
 

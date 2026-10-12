@@ -25,6 +25,7 @@ _FHEALTH = cfg("valuation.models.financial_health")
 _BENCH_FALLBACK = cfg("sectors.benchmarks.engine_fallback")  # PROVISIONAL
 _SC = cfg("thresholds.score")
 _CAT = cfg("thresholds.score.category")
+_CAT_COVERAGE = cfg("thresholds.score.coverage")
 
 DCF_RISK_FREE_RATE = _CAPM["risk_free_rate"]
 DCF_MARKET_RISK_PREMIUM = _CAPM["market_risk_premium"]
@@ -1891,6 +1892,61 @@ def calculate_all_ratios(financial_data: Dict) -> Dict[str, Optional[float]]:
     }
 
 
+class CategoryCoverage:
+    """Cobertura de una categoría del score (etapa 5).
+
+    Cada componente APLICABLE se registra con sus puntos posibles (de la config)
+    y su ajuste, o None si no tiene dato. La categoría puntúa sobre los
+    componentes con dato y se reescala a su rango completo, como
+    financial_health_score: la parte positiva de los ajustes sobre la suma de
+    máximos disponibles y la negativa sobre la de mínimos. Así:
+      · con todos los datos el factor es 1 y el score no cambia;
+      · con un dato ausente el resultado queda entre el que tendría con ese dato
+        en su peor y en su mejor valor (no penaliza como incumplimiento ni
+        premia por ocultarlo).
+    Los bonos (forward P/E, GARP, growth, rescates) quedan fuera del reescalado.
+    """
+
+    def __init__(self):
+        self.items = []
+
+    def comp(self, name: str, points, adj) -> None:
+        pts = [p for p in points]
+        self.items.append((name, max(pts), min(pts), adj))
+
+    @property
+    def missing(self) -> List[str]:
+        return [n for n, _, _, a in self.items if a is None]
+
+    def report(self) -> Dict[str, Any]:
+        n = len(self.items)
+        ev = n - len(self.missing)
+        cov = (ev / n) if n else None
+        return {"components": n, "evaluated": ev, "coverage": cov, "missing": self.missing,
+                "low_confidence": (cov is not None and cov < _CAT_COVERAGE["low_confidence_below"])}
+
+    def apply(self, base_score, adjustments: List[Dict[str, Any]]):
+        """Devuelve base_score con el reescalado aplicado (sin cambio si cobertura completa)."""
+        if not self.missing:
+            return base_score
+        av = [(mx, mn, a) for _, mx, mn, a in self.items if a is not None]
+        r_pos = sum(mx for _, mx, _, _ in self.items)
+        r_neg = sum(-mn for _, _, mn, _ in self.items)
+        ra_pos = sum(mx for mx, _, _ in av)
+        ra_neg = sum(-mn for _, mn, _ in av)
+        s_pos = sum(a for _, _, a in av if a > 0)
+        s_neg = sum(a for _, _, a in av if a < 0)
+        scaled = ((s_pos * r_pos / ra_pos) if ra_pos else 0) + ((s_neg * r_neg / ra_neg) if ra_neg else 0)
+        delta = round(scaled) - (s_pos + s_neg)
+        n, ev = len(self.items), len(av)
+        adjustments.append({
+            "metric": "Cobertura", "value": f"{ev}/{n} componentes", "adjustment": delta,
+            "reason": ("Reescalado sobre los componentes con dato (sin dato: " + ", ".join(self.missing) + ")"),
+            "severity": "neutral",
+        })
+        return base_score + delta
+
+
 def score_solidez_financiera(
     z_score: Optional[float],
     z_score_level: str,
@@ -1905,6 +1961,7 @@ def score_solidez_financiera(
     """
     T = _SC["solidez"]
     base_score = _CAT["base"]
+    _a = {}  # ajuste de cada componente con dato (etapa 5: cobertura)
     adjustments = []
     
     # Z-Score (peso alto: hasta ±6 pts)
@@ -1921,6 +1978,7 @@ def score_solidez_financiera(
         else:
             adj = 0
         base_score += adj
+        _a["altman"] = adj if z_score_level in ("SAFE", "GREY", "DISTRESS") else None
     
     # Current Ratio (hasta ±4 pts)
     if current_ratio is not None:
@@ -1947,6 +2005,7 @@ def score_solidez_financiera(
             reason = f"Riesgo de liquidez - Podría tener problemas de pago ({current_ratio:.2f}x)"
         
         base_score += adj
+        _a["current"] = adj
         adjustments.append({"metric": "Current Ratio", "value": f"{current_ratio:.2f}x", "adjustment": adj, "reason": reason, "severity": sev})
     
     # Debt/Equity (hasta ±5 pts) - proporcional al sector
@@ -1993,6 +2052,7 @@ def score_solidez_financiera(
             reason = f"Deuda muy alta - Riesgo financiero elevado ({debt_to_equity:.2f}x)"
         
         base_score += adj
+        _a["de"] = adj if debt_to_equity >= 0 else None  # D/E < 0: no significativo
         adjustments.append({"metric": "Deuda/Equity", "value": f"{debt_to_equity:.2f}x", "adjustment": adj, "reason": reason, "severity": sev})
     
     # Interest Coverage (hasta ±3 pts)
@@ -2020,8 +2080,15 @@ def score_solidez_financiera(
             reason = "Riesgo de cobertura"
         
         base_score += adj
+        _a["coverage"] = adj
         adjustments.append({"metric": "Cobertura Intereses", "value": f"{interest_coverage:.1f}x", "adjustment": adj, "reason": reason, "severity": sev})
     
+    cov = CategoryCoverage()
+    cov.comp("Altman Z", T["altman_points"], _a.get("altman"))
+    cov.comp("Current ratio", T["current_points"], _a.get("current"))
+    cov.comp("D/E", [*T["de_points"], T["de_mitigated_points"], T["de_severe_points"]], _a.get("de"))
+    cov.comp("Cobertura de intereses", T["coverage_points"], _a.get("coverage"))
+    base_score = cov.apply(base_score, adjustments)
     final_score = max(_CAT["min"], min(_CAT["max"], base_score))
     
     return {
@@ -2031,7 +2098,8 @@ def score_solidez_financiera(
         "max_score": _CAT["max"],
         "base": _CAT["base"],
         "adjustments": adjustments,
-        "total_adjustment": final_score - _CAT["base"]
+        "total_adjustment": final_score - _CAT["base"],
+        "coverage": cov.report(),
     }
 
 
@@ -2078,6 +2146,7 @@ def score_solidez_financiera_financial(
         # Mapeo lineal: FHS 0-10 → Solidez 4-18 (conservador)
         # Fórmula: solidez = 4 + (financial_health * 1.4)
         base_score = T["health_offset"] + (financial_health * T["health_multiplier"])
+        _a = {"health": base_score - _CAT["base"]}  # etapa 5: cobertura
         
         if financial_health_level == "STRONG":
             sev = "excellent"
@@ -2103,6 +2172,7 @@ def score_solidez_financiera_financial(
     else:
         # Sin datos: puntuación NEUTRAL (10/20), no penalizar
         base_score = _CAT["base"]
+        _a = {}
         adjustments.append({
             "metric": "Datos Limitados",
             "value": "N/A",
@@ -2135,6 +2205,7 @@ def score_solidez_financiera_financial(
             reason = f"D/E elevado ({debt_to_equity:.1f}x > 15x)"
         
         base_score += bonus
+        _a["de"] = bonus
         adjustments.append({
             "metric": "D/E Bancario",
             "value": f"{debt_to_equity:.1f}x",
@@ -2165,6 +2236,7 @@ def score_solidez_financiera_financial(
             reason = f"P/B muy alto ({price_to_book:.2f}x > 2x)"
         
         base_score += adj
+        _a["pb"] = adj
         adjustments.append({
             "metric": "Price/Book",
             "value": f"{price_to_book:.2f}x",
@@ -2173,6 +2245,14 @@ def score_solidez_financiera_financial(
             "severity": sev
         })
     
+    cov = CategoryCoverage()
+    _h_lo = T["health_offset"] - _CAT["base"]
+    _h_hi = T["health_offset"] + _FHEALTH["scale"] * T["health_multiplier"] - _CAT["base"]
+    cov.comp("Salud bancaria", (_h_lo, _h_hi), _a.get("health"))
+    cov.comp("D/E bancario", T["de_points"], _a.get("de"))
+    cov.comp("P/B", T["pb_points"], _a.get("pb"))
+    base_score = cov.apply(base_score, adjustments)
+
     # Aplicar cap conservador: sin métricas regulatorias, máximo 18/20
     if not has_regulatory_data:
         final_score = max(_CAT["min"], min(MAX_WITHOUT_REGULATORY, round(base_score)))
@@ -2190,6 +2270,7 @@ def score_solidez_financiera_financial(
         "adjustments": adjustments,
         "total_adjustment": final_score - _CAT["base"],
         "is_financial_sector": True,
+        "coverage": cov.report(),
         "methodology_note": methodology_note
     }
 
@@ -2219,6 +2300,7 @@ def score_rentabilidad(
     """
     T = _SC["rentabilidad"]
     base_score = _CAT["base"]
+    _a = {}  # etapa 5: cobertura
     adjustments = []
 
     # ROE (peso alto: hasta ±6 pts) — bandas relativas al roe_high sectorial
@@ -2258,6 +2340,8 @@ def score_rentabilidad(
             reason = f"Negativo ({roe:.1%}) - Destruye valor para accionistas"
         
         base_score += adj
+        # ROE < 0 por patrimonio negativo (recompras): no significativo
+        _a["roe"] = None if (roe < 0 and roa is not None and roa > T["negative_equity_min_roa"]) else adj
         adjustments.append({"metric": "ROE", "value": f"{roe:.1%}", "adjustment": adj, "reason": reason, "severity": sev})
     
     # ROA (hasta ±4 pts) — bandas relativas al roa_high sectorial
@@ -2285,6 +2369,7 @@ def score_rentabilidad(
             reason = f"Negativo ({roa:.1%}) - Perdiendo dinero con sus activos"
         
         base_score += adj
+        _a["roa"] = adj
         adjustments.append({"metric": "ROA", "value": f"{roa:.1%}", "adjustment": adj, "reason": reason, "severity": sev})
     
     # Operating Margin (hasta ±5 pts)
@@ -2316,6 +2401,7 @@ def score_rentabilidad(
             reason = f"Negativo ({operating_margin:.1%}) - Operaciones no rentables"
         
         base_score += adj
+        _a["opm"] = adj
         adjustments.append({"metric": "Margen Operativo", "value": f"{operating_margin:.1%}", "adjustment": adj, "reason": reason, "severity": sev})
     
     # Net Margin (hasta ±3 pts)
@@ -2343,6 +2429,7 @@ def score_rentabilidad(
             reason = f"Negativo ({net_margin:.1%})"
         
         base_score += adj
+        _a["nm"] = adj
         adjustments.append({"metric": "Margen Neto", "value": f"{net_margin:.1%}", "adjustment": adj, "reason": reason, "severity": sev})
 
     # ROIC - WACC spread (hasta ±3): ¿la empresa genera retornos por encima de su
@@ -2369,8 +2456,17 @@ def score_rentabilidad(
             adj = p[4]; sev = "severe"
             reason = f"Destruye valor (ROIC {roic:.1%} < WACC {wacc:.1%}, spread {spread:.1%})"
         base_score += adj
+        _a["spread"] = adj
         adjustments.append({"metric": "ROIC vs WACC", "value": f"{spread:+.1%}", "adjustment": adj, "reason": reason, "severity": sev})
 
+    cov = CategoryCoverage()
+    cov.comp("ROE", T["roe_points"], _a.get("roe"))
+    cov.comp("ROA", T["roa_points"], _a.get("roa"))
+    cov.comp("Margen operativo", T["operating_margin_points"], _a.get("opm"))
+    cov.comp("Margen neto", T["net_margin_points"], _a.get("nm"))
+    if wacc is not None:  # el spread no aplica a financieras (wacc=None)
+        cov.comp("ROIC−WACC", T["spread_points"], _a.get("spread"))
+    base_score = cov.apply(base_score, adjustments)
     final_score = max(_CAT["min"], min(_CAT["max"], base_score))
 
     return {
@@ -2380,7 +2476,8 @@ def score_rentabilidad(
         "max_score": _CAT["max"],
         "base": _CAT["base"],
         "adjustments": adjustments,
-        "total_adjustment": final_score - _CAT["base"]
+        "total_adjustment": final_score - _CAT["base"],
+        "coverage": cov.report(),
     }
 
 
@@ -2426,6 +2523,7 @@ def score_valoracion(
     T = _SC["valoracion"]
     base_score = _CAT["base"]
     adjustments = []
+    _a = {}  # etapa 5: cobertura (componentes nucleares; bonos y rescates aparte)
 
     # Calcular calidad del crecimiento y tipo de empresa
     growth_quality = calculate_growth_quality_score(
@@ -2484,6 +2582,7 @@ def score_valoracion(
             if adj < 0:
                 total_negative += adj
             base_score += adj
+            _a["pffo"] = adj
             adjustments.append({"metric": "P/FFO (REIT)", "value": f"{p_ffo:.1f}x", "adjustment": adj, "reason": reason, "severity": sev})
         else:
             adjustments.append({"metric": "P/FFO (REIT)", "value": "N/D", "adjustment": 0,
@@ -2555,6 +2654,7 @@ def score_valoracion(
         if adj < 0:
             total_negative += adj
         base_score += adj
+        _a["pe"] = adj
         adjustments.append({"metric": "P/E vs Sector", "value": f"{pe:.1f}x", "adjustment": adj, "reason": reason, "severity": sev})
 
     # ─── Forward P/E Bonus (NUEVO v2.4) ────────────────
@@ -2618,6 +2718,7 @@ def score_valoracion(
         if adj < 0:
             total_negative += adj
         base_score += adj
+        _a["pfcf"] = adj
         adjustments.append({"metric": "P/FCF", "value": f"{p_fcf:.1f}x", "adjustment": adj, "reason": reason, "severity": sev})
 
     # ─── EV/EBITDA vs Sector (hasta ±4 pts) ────────────
@@ -2662,6 +2763,7 @@ def score_valoracion(
         if adj < 0:
             total_negative += adj
         base_score += adj
+        _a["ev"] = adj
         adjustments.append({"metric": "EV/EBITDA vs Sector", "value": f"{ev_ebitda:.1f}x", "adjustment": adj, "reason": reason, "severity": sev})
 
     # ─── PEG Ratio (hasta ±4 pts) ─────────────────────
@@ -2686,6 +2788,7 @@ def score_valoracion(
         if adj < 0:
             total_negative += adj
         base_score += adj
+        _a["peg"] = adj
         adjustments.append({"metric": "PEG Ratio", "value": f"{peg:.2f}", "adjustment": adj, "reason": reason, "severity": sev})
 
     # ─── De-dup de valoración (Fase B) ─────────────────
@@ -2734,6 +2837,16 @@ def score_valoracion(
             "severity": "good"
         })
 
+    # Componentes aplicables: múltiplos <= 0 cuentan como sin dato (no significativos).
+    cov = CategoryCoverage()
+    if is_reit:
+        cov.comp("P/FFO", T["reit_pffo_points"], _a.get("pffo"))
+    else:
+        cov.comp("P/E", [*T["pe_growth_points"], *T["pe_value_points"]], _a.get("pe"))
+        cov.comp("P/FCF", [*T["pfcf_growth_points"], *T["pfcf_value_points"]], _a.get("pfcf"))
+    cov.comp("EV/EBITDA", [*T["ev_ebitda_growth_points"], *T["ev_ebitda_value_points"]], _a.get("ev"))
+    cov.comp("PEG", T["peg_points"], _a.get("peg"))
+    base_score = cov.apply(base_score, adjustments)
     final_score = max(_CAT["min"], min(_CAT["max"], base_score))
 
     return {
@@ -2744,6 +2857,7 @@ def score_valoracion(
         "base": _CAT["base"],
         "adjustments": adjustments,
         "total_adjustment": final_score - _CAT["base"],
+        "coverage": cov.report(),
         "company_type": company_type,
         "growth_quality_score": growth_quality_score,
         "growth_quality_label": growth_quality["label"]
@@ -2764,6 +2878,7 @@ def score_calidad_ganancias(
     """
     T = _SC["calidad"]
     base_score = _CAT["base"]
+    _a = {}  # etapa 5: cobertura
     adjustments = []
     
     # Piotroski F-Score (peso alto: hasta ±7 pts)
@@ -2793,6 +2908,7 @@ def score_calidad_ganancias(
             reason = f"Señales de deterioro ({_fs}/9)"
         
         base_score += adj
+        _a["fscore"] = adj
         adjustments.append({"metric": "Piotroski F-Score", "value": f"{_fs}/9", "adjustment": adj, "reason": reason, "severity": sev})
     
     # Operating Cash Flow (hasta ±4 pts)
@@ -2807,6 +2923,7 @@ def score_calidad_ganancias(
             reason = "Quema efectivo operativo"
         
         base_score += adj
+        _a["ocf"] = adj
         adjustments.append({"metric": "Cash Flow Operativo", "value": "Positivo" if ocf > 0 else "Negativo", "adjustment": adj, "reason": reason, "severity": sev})
     
     # FCF (hasta ±4 pts)
@@ -2821,6 +2938,7 @@ def score_calidad_ganancias(
             reason = "FCF negativo"
         
         base_score += adj
+        _a["fcf"] = adj
         adjustments.append({"metric": "Free Cash Flow", "value": "Positivo" if fcf > 0 else "Negativo", "adjustment": adj, "reason": reason, "severity": sev})
     
     # Calidad FCF vs Net Income (hasta ±3 pts)
@@ -2844,8 +2962,17 @@ def score_calidad_ganancias(
             reason = f"Ganancias sin respaldo de cash ({fcf_to_net_income:.1%})"
         
         base_score += adj
+        _a["fcf_ni"] = adj
         adjustments.append({"metric": "FCF / Net Income", "value": f"{fcf_to_net_income:.0%}", "adjustment": adj, "reason": reason, "severity": sev})
     
+    cov = CategoryCoverage()
+    # Piotroski None = no concluyente (o sin dato): no aporta y Calidad se reescala.
+    cov.comp("Piotroski F", T["fscore_points"], _a.get("fscore"))
+    cov.comp("Flujo operativo", T["ocf_points"], _a.get("ocf"))
+    cov.comp("FCF", T["fcf_points"], _a.get("fcf"))
+    if not (net_income is not None and net_income <= 0):  # FCF/BN no aplica con BN <= 0
+        cov.comp("FCF / beneficio neto", T["fcf_to_ni_points"], _a.get("fcf_ni"))
+    base_score = cov.apply(base_score, adjustments)
     final_score = max(_CAT["min"], min(_CAT["max"], base_score))
     
     return {
@@ -2855,7 +2982,8 @@ def score_calidad_ganancias(
         "max_score": _CAT["max"],
         "base": _CAT["base"],
         "adjustments": adjustments,
-        "total_adjustment": final_score - _CAT["base"]
+        "total_adjustment": final_score - _CAT["base"],
+        "coverage": cov.report(),
     }
 
 
@@ -2871,6 +2999,7 @@ def score_crecimiento(
     """
     T = _SC["crecimiento"]
     base_score = _CAT["base"]
+    _a = {}  # etapa 5: cobertura (el bono growth company queda fuera)
     adjustments = []
     
     # Revenue Growth 3Y (hasta ±5 pts)
@@ -2898,6 +3027,7 @@ def score_crecimiento(
             reason = f"Contracción ({revenue_growth_3y:.1%})"
         
         base_score += adj
+        _a["rev"] = adj
         adjustments.append({"metric": "Crecimiento Ingresos 3Y", "value": f"{revenue_growth_3y:.1%}", "adjustment": adj, "reason": reason, "severity": sev})
     
     # EPS Growth 3Y (hasta ±5 pts)
@@ -2925,6 +3055,7 @@ def score_crecimiento(
             reason = f"EPS en declive ({eps_growth_3y:.1%})"
         
         base_score += adj
+        _a["eps"] = adj
         adjustments.append({"metric": "Crecimiento EPS 3Y", "value": f"{eps_growth_3y:.1%}", "adjustment": adj, "reason": reason, "severity": sev})
     
     # FCF Growth (hasta ±4 pts)
@@ -2948,6 +3079,7 @@ def score_crecimiento(
             reason = f"FCF decreciente ({fcf_growth_3y:.1%})"
         
         base_score += adj
+        _a["fcf"] = adj
         adjustments.append({"metric": "Crecimiento FCF 3Y", "value": f"{fcf_growth_3y:.1%}", "adjustment": adj, "reason": reason, "severity": sev})
     
     # Growth Company Bonus
@@ -2956,6 +3088,11 @@ def score_crecimiento(
         base_score += adj
         adjustments.append({"metric": "Growth Company", "value": "Sí", "adjustment": adj, "reason": "Perfil de alto crecimiento", "severity": "good"})
     
+    cov = CategoryCoverage()
+    cov.comp("Crecimiento de ingresos", T["revenue_points"], _a.get("rev"))
+    cov.comp("Crecimiento del BPA", T["eps_points"], _a.get("eps"))
+    cov.comp("Crecimiento del FCF", T["fcf_points"], _a.get("fcf"))
+    base_score = cov.apply(base_score, adjustments)
     final_score = max(_CAT["min"], min(_CAT["max"], base_score))
     
     return {
@@ -2965,7 +3102,8 @@ def score_crecimiento(
         "max_score": _CAT["max"],
         "base": _CAT["base"],
         "adjustments": adjustments,
-        "total_adjustment": final_score - _CAT["base"]
+        "total_adjustment": final_score - _CAT["base"],
+        "coverage": cov.report(),
     }
 
 
@@ -3148,7 +3286,15 @@ def calculate_score_v2(
         "growth_quality_score": growth_quality,
         # v2.3: Campos para sector financiero
         "is_financial_sector": is_financial,
-        "financial_health": financial_health_data
+        "financial_health": financial_health_data,
+        # Etapa 5: cobertura por categoría (componentes con dato / aplicables).
+        "coverage": {
+            "solidez": solidez.get("coverage"),
+            "rentabilidad": rentabilidad.get("coverage"),
+            "valoracion": valoracion.get("coverage"),
+            "calidad": calidad.get("coverage"),
+            "crecimiento": crecimiento.get("coverage"),
+        },
     }
     
     return result

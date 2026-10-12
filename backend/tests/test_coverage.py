@@ -120,3 +120,256 @@ def test_altman_original_needs_sales_but_z_double_prime_does_not():
 def test_altman_complete_unchanged():
     z, zone, _, det = altman_z_score(**_ALT, sector="Industrials")
     assert z == pytest.approx(4.095, abs=0.006) and "warnings" not in det
+
+
+# ─────────────────────────── Reescalado por categoría ───────────────────────────
+from financial_ratios import CategoryCoverage, calculate_score_v2  # noqa: E402
+
+# Perfiles sintéticos con TODOS los componentes del score con dato.
+TECH_R = dict(roe=0.22, roa=0.10, operating_margin=0.25, net_margin=0.18, roic=0.20,
+              current_ratio=1.8, debt_to_equity=0.4, interest_coverage=15.0,
+              pe=25.0, forward_pe=21.0, p_fcf=22.0, ev_ebitda=16.0, peg=1.5,
+              fcf_yield=0.045, dividend_yield=0.01, fcf=1e9, operating_cash_flow=1.3e9,
+              net_income=9e8, fcf_to_net_income=1.1, pb=6.0, payout_ratio=0.2)
+TECH_C = dict(sector_pe=25.0, sector_ev_ebitda=16.0, revenue_cagr_3y=0.12, eps_cagr_3y=0.14,
+              fcf_cagr_3y=0.08, total_equity=5e9, total_assets=1e10)
+WEAK_R = dict(TECH_R, roe=0.04, roa=0.01, operating_margin=0.03, net_margin=0.01, roic=0.02,
+              current_ratio=0.7, debt_to_equity=2.5, interest_coverage=1.2, pe=60.0, forward_pe=70.0,
+              p_fcf=80.0, ev_ebitda=40.0, peg=3.0, fcf=-1e8, operating_cash_flow=-5e7,
+              net_income=1e8, fcf_to_net_income=0.2)
+WEAK_C = dict(TECH_C, revenue_cagr_3y=-0.05, eps_cagr_3y=-0.10, fcf_cagr_3y=-0.20)
+BANK_R = dict(TECH_R, debt_to_equity=8.0, roa=0.012, roe=0.15, pb=1.4)
+BANK_C = dict(TECH_C, book_value=50.0, book_value_prior=46.0)
+REIT_R = dict(TECH_R, p_ffo=14.0, roe=0.07, roa=0.03, debt_to_equity=1.2)
+REIT_C = dict(TECH_C, sector_pe=35.0, sector_ev_ebitda=20.0)
+CASES = {
+    "tech_full": (TECH_R, TECH_C, dict(z_score_value=4.0, z_score_level="SAFE", f_score_value=7,
+                                       sector_key="technology", real_sector="Technology", wacc=0.10)),
+    "weak_full": (WEAK_R, WEAK_C, dict(z_score_value=1.2, z_score_level="DISTRESS", f_score_value=2,
+                                       sector_key="industrials", real_sector="Industrials", wacc=0.11)),
+    "bank_full": (BANK_R, BANK_C, dict(f_score_value=6, sector_key="financials", real_sector="Financial Services")),
+    "reit_full": (REIT_R, REIT_C, dict(z_score_value=1.5, z_score_level="GREY", f_score_value=5,
+                                       sector_key="real_estate", real_sector="Real Estate", wacc=0.08)),
+}
+MID_R = dict(TECH_R, roe=0.10, roa=0.04, operating_margin=0.12, net_margin=0.06, roic=0.09,
+             current_ratio=1.2, debt_to_equity=0.9, interest_coverage=4.0, pe=19.0, forward_pe=18.5,
+             p_fcf=24.0, ev_ebitda=13.0, peg=2.0, fcf=4e8, operating_cash_flow=6e8,
+             net_income=5e8, fcf_to_net_income=0.8)
+MID_C = dict(TECH_C, sector_pe=20.0, sector_ev_ebitda=13.0, revenue_cagr_3y=0.04, eps_cagr_3y=0.06,
+             fcf_cagr_3y=0.02)
+CASES["mid_full"] = (MID_R, MID_C, dict(z_score_value=2.4, z_score_level="GREY", f_score_value=5,
+                                        sector_key="industrials", real_sector="Industrials", wacc=0.09))
+
+# Salida de calculate_score_v2 ANTES de la etapa 5 (capturada con el código de 16b4c0f).
+EXPECTED_FULL = {
+ "tech_full": {
+  "score": 98,
+  "cats": {
+   "Solidez Financiera": 20,
+   "Rentabilidad": 20,
+   "Valoración": 20,
+   "Calidad de Ganancias": 20,
+   "Crecimiento": 18
+  }
+ },
+ "weak_full": {
+  "score": 0,
+  "cats": {
+   "Solidez Financiera": 0,
+   "Rentabilidad": 0,
+   "Valoración": 0,
+   "Calidad de Ganancias": 0,
+   "Crecimiento": 0
+  }
+ },
+ "bank_full": {
+  "score": 96,
+  "cats": {
+   "Solidez Financiera": 18,
+   "Rentabilidad": 20,
+   "Valoración": 20,
+   "Calidad de Ganancias": 20,
+   "Crecimiento": 18
+  }
+ },
+ "reit_full": {
+  "score": 88,
+  "cats": {
+   "Solidez Financiera": 15,
+   "Rentabilidad": 20,
+   "Valoración": 16,
+   "Calidad de Ganancias": 19,
+   "Crecimiento": 18
+  }
+ },
+ "mid_full": {
+  "score": 61,
+  "cats": {
+   "Solidez Financiera": 8,
+   "Rentabilidad": 14,
+   "Valoración": 10,
+   "Calidad de Ganancias": 17,
+   "Crecimiento": 12
+  }
+ }
+}
+
+_CAT_KEY = {"Solidez Financiera": "solidez", "Rentabilidad": "rentabilidad", "Valoración": "valoracion",
+            "Calidad de Ganancias": "calidad", "Crecimiento": "crecimiento"}
+
+
+def _cats(res):
+    return {c["category"]: c["score"] for c in res["categories"]}
+
+
+@pytest.mark.parametrize("case", sorted(CASES))
+def test_full_data_gives_exactly_the_previous_score(case):
+    r, c, kw = CASES[case]
+    res = calculate_score_v2(r, c, **kw)
+    assert res["score"] == EXPECTED_FULL[case]["score"]
+    assert _cats(res) == EXPECTED_FULL[case]["cats"]
+    assert all(v["coverage"] == 1.0 and not v["missing"] for v in res["coverage"].values())
+
+
+def test_coverage_helper_rescales_positive_and_negative_parts():
+    cov = CategoryCoverage()
+    cov.comp("a", (6, -6), 6)
+    cov.comp("b", (4, -4), -2)
+    cov.comp("c", (5, -5), None)
+    adj = []
+    # positiva 6 × 15/10 = 9 ; negativa −2 × 15/10 = −3  -> 6 (antes 4) -> delta +2
+    assert cov.apply(10, adj) == 12
+    assert adj[-1]["metric"] == "Cobertura" and adj[-1]["adjustment"] == 2 and adj[-1]["value"] == "2/3 componentes"
+    rep = cov.report()
+    assert rep["evaluated"] == 2 and rep["components"] == 3 and rep["missing"] == ["c"]
+
+
+def test_coverage_helper_full_is_identity_and_empty_is_neutral():
+    cov = CategoryCoverage()
+    cov.comp("a", (6, -6), 3)
+    adj = []
+    assert cov.apply(13, adj) == 13 and adj == []
+    empty = CategoryCoverage()
+    empty.comp("a", (6, -6), None)
+    assert empty.apply(10, []) == 10 and empty.report()["coverage"] == 0.0
+
+
+def test_low_confidence_threshold():
+    thr = cfg("thresholds.score.coverage.low_confidence_below")
+    assert thr == 0.6
+    r, c, kw = CASES["mid_full"]
+    res = calculate_score_v2(r, dict(c, eps_cagr_3y=None, fcf_cagr_3y=None), **kw)
+    cr = res["coverage"]["crecimiento"]
+    assert cr["evaluated"] == 1 and cr["low_confidence"] is True       # 1/3 < 60%
+    res2 = calculate_score_v2(r, dict(c, fcf_cagr_3y=None), **kw)
+    assert res2["coverage"]["crecimiento"]["low_confidence"] is False  # 2/3 >= 60%
+
+
+def test_low_confidence_does_not_change_the_score():
+    r, c, kw = CASES["mid_full"]
+    base = calculate_score_v2(r, dict(c, fcf_cagr_3y=None), **kw)
+    # mismo cálculo; el flag es solo informativo
+    assert base["category_scores"]["crecimiento"] == next(
+        x["score"] for x in base["categories"] if x["category"] == "Crecimiento")
+
+
+def test_piotroski_inconclusive_is_excluded_from_calidad():
+    r, c, kw = CASES["mid_full"]
+    res = calculate_score_v2(r, c, **dict(kw, f_score_value=None))
+    cal = res["coverage"]["calidad"]
+    assert "Piotroski F" in cal["missing"] and cal["evaluated"] == 3
+
+
+def test_altman_sin_dato_rescales_solidez():
+    r, c, kw = CASES["mid_full"]
+    res = calculate_score_v2(r, c, **dict(kw, z_score_value=None, z_score_level="N/A"))
+    sol = res["coverage"]["solidez"]
+    assert sol["missing"] == ["Altman Z"] and sol["evaluated"] == 3
+
+
+# Para cada componente: (dónde vive, clave, valor favorable, valor desfavorable, categoría)
+_BOUNDS = [
+    ("kw", "z", ("SAFE", 6.0), ("DISTRESS", 0.5), "Solidez Financiera"),
+    ("r", "current_ratio", 3.0, 0.5, "Solidez Financiera"),
+    ("r", "debt_to_equity", 0.05, 9.0, "Solidez Financiera"),
+    ("r", "interest_coverage", 50.0, 0.5, "Solidez Financiera"),
+    ("r", "roe", 0.9, -0.5, "Rentabilidad"),
+    ("r", "roa", 0.5, -0.2, "Rentabilidad"),
+    ("r", "operating_margin", 0.5, -0.3, "Rentabilidad"),
+    ("r", "net_margin", 0.5, -0.3, "Rentabilidad"),
+    ("r", "roic", 0.9, -0.9, "Rentabilidad"),
+    ("r", "p_fcf", 1.0, 900.0, "Valoración"),
+    ("r", "ev_ebitda", 1.0, 900.0, "Valoración"),
+    ("r", "peg", 0.1, 9.0, "Valoración"),
+    ("kw", "f", 9, 0, "Calidad de Ganancias"),
+    ("r", "operating_cash_flow", 1e9, -1e9, "Calidad de Ganancias"),
+    ("r", "fcf", 1e9, -1e9, "Calidad de Ganancias"),
+    ("r", "fcf_to_net_income", 3.0, 0.0, "Calidad de Ganancias"),
+    ("c", "eps_cagr_3y", 0.6, -0.6, "Crecimiento"),
+    ("c", "fcf_cagr_3y", 0.6, -0.6, "Crecimiento"),
+]
+
+
+def _score_with(case, where, key, value):
+    r, c, kw = CASES[case]
+    r, c, kw = dict(r), dict(c), dict(kw)
+    if where == "kw" and key == "z":
+        if value is None:
+            kw.update(z_score_value=None, z_score_level="N/A")
+        else:
+            kw.update(z_score_level=value[0], z_score_value=value[1])
+    elif where == "kw" and key == "f":
+        kw["f_score_value"] = value
+    else:
+        {"r": r, "c": c}[where][key] = value
+    return _cats(calculate_score_v2(r, c, **kw))
+
+
+@pytest.mark.parametrize("case", ["mid_full", "tech_full", "weak_full", "reit_full"])
+@pytest.mark.parametrize("where,key,fav,unfav,cat", _BOUNDS, ids=[b[1] for b in _BOUNDS])
+def test_missing_never_below_unfavorable_nor_above_favorable(case, where, key, fav, unfav, cat):
+    """Un dato ausente no penaliza como un incumplimiento (>= dato desfavorable)
+    ni premia por ocultarlo (<= dato favorable)."""
+    if case == "reit_full" and key == "p_fcf":
+        pytest.skip("P/FCF no aplica a REITs")
+    missing = _score_with(case, where, key, None)[cat]
+    best = _score_with(case, where, key, fav)[cat]
+    worst = _score_with(case, where, key, unfav)[cat]
+    assert worst <= missing <= best, (case, key, worst, missing, best)
+
+
+def test_pe_is_not_monotone_even_with_full_data():
+    """Por qué P/E no está en _BOUNDS: el P/E alimenta el clasificador de tipo de
+    empresa, el bono de forward P/E y el ajuste growth, así que Valoración no es
+    monótona en el P/E ni con todos los datos (no es un efecto del reescalado)."""
+    fav = _score_with("tech_full", "r", "pe", 1.0)["Valoración"]
+    unfav = _score_with("tech_full", "r", "pe", 900.0)["Valoración"]
+    assert fav < unfav
+
+
+def test_rescaling_bound_holds_for_random_components():
+    """Cota del reescalado en sí: para cualquier combinación de componentes, el
+    resultado con uno ausente queda entre el de ese componente en su mínimo y
+    en su máximo."""
+    import random
+    rnd = random.Random(20261012)
+    for _ in range(3000):
+        n = rnd.randint(2, 5)
+        comps = []
+        for i in range(n):
+            mx = rnd.randint(1, 7)
+            mn = -rnd.randint(1, 7)
+            comps.append((f"c{i}", (mx, mn), rnd.randint(mn, mx)))
+        miss = rnd.randrange(n)
+
+        def run(value):
+            cov = CategoryCoverage()
+            s = 0
+            for j, (name, pts, adj) in enumerate(comps):
+                a = value if j == miss else adj
+                cov.comp(name, pts, a)
+                s += a or 0
+            return cov.apply(10 + s, [])
+
+        mx, mn = comps[miss][1]
+        assert run(mn) <= run(None) <= run(mx), comps
