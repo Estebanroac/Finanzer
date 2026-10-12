@@ -24,7 +24,7 @@ from financial_ratios import (
 from stock_database import search_stocks, POPULAR_STOCKS, TOP_STOCKS
 from sector_profiles import get_sector_profile, YAHOO_SECTOR_MAPPING
 from alert_interpretations import build_signals
-import config
+from settings import cfg
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -363,7 +363,7 @@ def _compute_analysis(symbol: str) -> dict:
             # ROIC = NOPAT / Invested Capital
             roic = r("roic")
             if roic is None and oi_val and te_val:
-                nopat = oi_val * 0.79  # Approx 21% tax rate
+                nopat = oi_val * cfg("valuation.roic.fallback_nopat_factor")  # impuesto ~21%
                 invested_capital = te_val + (td_val or 0) - (cash_val or 0)
                 if invested_capital > 0:
                     roic = nopat / invested_capital
@@ -522,7 +522,7 @@ def _compute_analysis(symbol: str) -> dict:
 
             # ── Fase C: creación de valor (ROIC-WACC) y retorno al accionista ──
             _is_financial = bool(mapped_sector and "financ" in mapped_sector.lower())
-            _beta_est = financials.beta if financials.beta is not None else 1.0
+            _beta_est = financials.beta if financials.beta is not None else cfg("valuation.capm.default_beta")
             wacc_est = calculate_wacc(beta=_beta_est)
             # Spread ROIC-WACC: mide si la empresa genera retornos por ENCIMA de su
             # costo de capital (crea valor) o por debajo (lo destruye). No aplica a
@@ -546,7 +546,7 @@ def _compute_analysis(symbol: str) -> dict:
                 # siempre es un desajuste de fuente (las shares actuales y las del
                 # _prior_year de Yahoo pueden venir con definiciones distintas para
                 # algunos tickers, ej. JPM ~35%). Mejor None que un yield falso.
-                if abs(buyback_yield) > 0.25:
+                if abs(buyback_yield) > cfg("valuation.shareholder.buyback_yield_guard"):
                     buyback_yield = None
             # Shareholder yield = dividendos + recompras netas.
             shareholder_yield = None
@@ -668,7 +668,8 @@ def _compute_analysis(symbol: str) -> dict:
                     asset_turnover_prior=safe_float(prior.get("asset_turnover")),
                     total_assets=pio_ta,
                 )
-                f_level = "Fuerte" if f_score >= 7 else "Bueno" if f_score >= 5 else "Neutral" if f_score >= 4 else "Débil"
+                _lb = cfg("valuation.models.piotroski.level_bands_main")
+                f_level = "Fuerte" if f_score >= _lb[0] else "Bueno" if f_score >= _lb[1] else "Neutral" if f_score >= _lb[2] else "Débil"
 
                 # Convert detail strings to structured criteria for frontend
                 criteria_labels = [
@@ -802,9 +803,9 @@ def _compute_analysis(symbol: str) -> dict:
                 fcf = safe_float(financials.free_cash_flow)
                 _is_financial = bool(mapped_sector and "financ" in mapped_sector.lower())
                 if fcf and fcf > 0 and price and financials.shares_outstanding and not _is_financial:
-                    beta = financials.beta if financials.beta is not None else 1.0
+                    beta = financials.beta if financials.beta is not None else cfg("valuation.capm.default_beta")
                     wacc = calculate_wacc(beta=beta)
-                    growth = financials.revenue_growth_yoy or 0.10
+                    growth = financials.revenue_growth_yoy or cfg("valuation.dcf.default_growth_main")
 
                     # Deuda neta para el puente Enterprise Value -> Equity Value.
                     # Sin esto, el DCF dividía el enterprise value entre acciones sin
@@ -819,7 +820,7 @@ def _compute_analysis(symbol: str) -> dict:
                         beta=beta,
                         total_debt=td_val,
                         cash=cash_val,
-                        revenue_growth_3y=min(growth, 0.50),
+                        revenue_growth_3y=min(growth, cfg("valuation.dcf.growth_cap")),
                     )
                     # upside y margin_of_safety se calculan aquí (price está en
                     # scope). El dict del DCF nunca tuvo claves 'upside_pct' ni
@@ -835,7 +836,7 @@ def _compute_analysis(symbol: str) -> dict:
                         "fair_value": _fv,
                         "wacc": safe_float(wacc),
                         "growth_rate": safe_float(growth),
-                        "terminal_growth": safe_float(getattr(config, "DCF_TERMINAL_GROWTH", 0.025)),
+                        "terminal_growth": safe_float(cfg("valuation.dcf.terminal_growth")),
                         "margin_of_safety": safe_float(_dcf_mos),
                         "upside": safe_float(_dcf_upside),
                         "value_composition": _dcf_model.get("value_composition"),
@@ -847,8 +848,8 @@ def _compute_analysis(symbol: str) -> dict:
                             fcf=fcf,
                             shares_outstanding=financials.shares_outstanding,
                             current_price=price,
-                            base_growth_rate=min(growth, 0.50),
-                            base_discount_rate=wacc or 0.10,
+                            base_growth_rate=min(growth, cfg("valuation.dcf.growth_cap")),
+                            base_discount_rate=wacc or cfg("valuation.wacc.default"),
                             net_debt=_net_debt or 0.0,
                         )
                         result["sensitivity"] = sens

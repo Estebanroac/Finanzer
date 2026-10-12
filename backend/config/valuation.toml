@@ -1,1 +1,80 @@
-# (se completa en los siguientes commits de la etapa 4)
+# Valoración y modelos institucionales: CAPM, WACC, DCF, grid de
+# sensibilidad, Graham, ROIC, Altman, Piotroski y salud financiera bancaria.
+# Valores idénticos a los literales que había en el código (etapa 4). Donde
+# hoy conviven dos valores para un mismo concepto hay dos claves (no se
+# unifica hasta que se decida: ver el informe de conflictos de la etapa 4).
+
+[capm]                              # financial_ratios.calculate_wacc
+risk_free_rate = 0.045              # US Treasury 10Y
+market_risk_premium = 0.055
+default_beta = 1.0                  # calculate_wacc y main.py (beta ausente)
+wacc_tax_rate = 0.25                # escudo fiscal de la deuda en el WACC
+min_de_for_debt = 0.01              # D/E por debajo: WACC = coste del equity
+debt_spread_de_bounds = [0.3, 0.6, 1.0]        # D/E < 0.3 / < 0.6 / < 1.0 / resto
+debt_spreads = [0.01, 0.02, 0.03, 0.05]        # IG / BBB / BB / high yield
+
+[wacc]
+default = 0.10                      # sin WACC: dcf_multi_stage, dinámico, main.py y grid
+clamp_min = 0.06                    # banda del DCF y del grid
+clamp_max = 0.20
+
+[dcf]                               # dcf_multi_stage / dcf_multi_stage_dynamic / main.py
+high_growth_years = 5
+transition_years = 5
+terminal_growth = 0.025
+growth_cap = 0.50                   # tope del modelo y min(growth, 0.50) de main.py
+signature_default_growth = 0.15     # default de firma de dcf_multi_stage y del grid
+source_cap_fcf = 0.35               # topes por fuente del crecimiento (dinámico)
+source_cap_eps = 0.40
+source_cap_revenue = 0.30
+min_source_growth = -0.20           # una fuente se descarta si crece <= -20%
+default_growth_engine = 0.08        # dcf_multi_stage_dynamic sin fuentes
+default_growth_main = 0.10          # main.py: revenue_growth_yoy ausente
+decay_exponential_above = 0.25
+decay_linear_above = 0.15
+exponential_decay_factor = 0.85
+terminal_value_warning_pct = 75     # aviso si el valor terminal pesa > 75%
+
+[grid]                              # dcf_sensitivity_analysis
+growth_range = [-0.05, 0.05, 0.025]     # (delta mín, delta máx, paso)
+discount_range = [-0.02, 0.02, 0.01]
+interpretation_pct = [80, 60, 40, 20]   # % de escenarios por encima del precio
+
+[graham]
+multiplier = 22.5                   # sqrt(22.5 × EPS × BVPS)
+
+[roic]
+tax_rate_ratios = 0.25              # calculate_all_ratios (NOPAT)
+fallback_nopat_factor = 0.79        # main.py: NOPAT = EBIT × 0.79 (impuesto 21%)
+
+[shareholder]
+buyback_yield_guard = 0.25          # |buyback| > 25% se descarta (main.py)
+
+[models.altman]                     # altman_z_score
+original_coef = [1.2, 1.4, 3.3, 0.6, 1.0]           # X1..X5
+original_safe = 2.99
+original_grey = 1.81
+non_manufacturing_coef = [6.56, 3.26, 6.72, 1.05]   # Z'' (sin X5)
+non_manufacturing_safe = 2.60
+non_manufacturing_grey = 1.10
+private_coef = [0.717, 0.847, 3.107, 0.420, 0.998]  # Z' (X4 = valor contable / pasivos)
+private_safe = 2.90
+private_grey = 1.23
+non_manufacturing_sectors = ["technology", "tech", "communication services", "healthcare", "consumer cyclical", "consumer defensive", "real estate", "utilities", "software", "internet", "media", "telecom", "services", "retail", "fintech"]
+
+[models.piotroski]
+interpretation_bands = [8, 6, 4, 2]     # piotroski_f_score: excelente/bueno/neutral/débil
+inconclusive_missing = 4                # >= 4 señales sin dato -> "no concluyente"
+level_bands_main = [7, 5, 4]            # main.py: Fuerte/Bueno/Neutral (si no, Débil)
+
+[models.financial_health]               # financial_health_score (bancos); umbrales en sectors.toml
+roa_points = [3, 2, 1]
+roe_points = [3, 2, 1]
+de_points = [2, 2, 1]
+equity_to_assets_points = [2, 1]
+book_value_growth_points = 1
+dividend_points = 1
+scale = 10                              # la puntuación se reescala a 0-10
+neutral_without_data = 5
+level_bands = [8, 6, 4]                 # STRONG / GOOD / NEUTRAL (si no, WEAK)
+limited_analysis_below = 6              # máx. posible < 6 -> "(análisis limitado)"

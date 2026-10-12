@@ -12,26 +12,23 @@ from typing import Optional, Dict, List, Tuple, Any
 from dataclasses import dataclass
 from enum import Enum
 
-# Importar configuración centralizada
-try:
-    from config import (
-        ALTMAN_Z_SAFE, ALTMAN_Z_GREY,
-        DCF_RISK_FREE_RATE, DCF_MARKET_RISK_PREMIUM, DCF_TERMINAL_GROWTH,
-        DCF_WACC_DEFAULT,
-        DCF_HIGH_GROWTH_YEARS, DCF_TRANSITION_YEARS,
-    )
-    CONFIG_AVAILABLE = True
-except ImportError:
-    # Fallback si config.py no está disponible
-    CONFIG_AVAILABLE = False
-    ALTMAN_Z_SAFE = 2.99
-    ALTMAN_Z_GREY = 1.81
-    DCF_RISK_FREE_RATE = 0.045
-    DCF_MARKET_RISK_PREMIUM = 0.055
-    DCF_TERMINAL_GROWTH = 0.025
-    DCF_WACC_DEFAULT = 0.10
-    DCF_HIGH_GROWTH_YEARS = 5
-    DCF_TRANSITION_YEARS = 5
+# Configuración única (backend/config/*.toml, validada al importar settings).
+from settings import cfg
+
+_CAPM = cfg("valuation.capm")
+_WACC = cfg("valuation.wacc")
+_DCF = cfg("valuation.dcf")
+_GRID = cfg("valuation.grid")
+_ALTMAN = cfg("valuation.models.altman")
+_PIOTROSKI = cfg("valuation.models.piotroski")
+_FHEALTH = cfg("valuation.models.financial_health")
+
+DCF_RISK_FREE_RATE = _CAPM["risk_free_rate"]
+DCF_MARKET_RISK_PREMIUM = _CAPM["market_risk_premium"]
+DCF_TERMINAL_GROWTH = _DCF["terminal_growth"]
+DCF_WACC_DEFAULT = _WACC["default"]
+DCF_HIGH_GROWTH_YEARS = _DCF["high_growth_years"]
+DCF_TRANSITION_YEARS = _DCF["transition_years"]
 
 
 # =========================
@@ -180,12 +177,7 @@ def altman_z_score(
 
     # ── Determine which model to use based on sector ──
     _sector = (sector or "").lower().strip()
-    _NON_MFG_SECTORS = {
-        "technology", "tech", "communication services",
-        "healthcare", "consumer cyclical", "consumer defensive",
-        "real estate", "utilities", "software", "internet",
-        "media", "telecom", "services", "retail", "fintech",
-    }
+    _NON_MFG_SECTORS = _ALTMAN["non_manufacturing_sectors"]
     is_non_manufacturing = any(s in _sector for s in _NON_MFG_SECTORS) or _sector == ""
     use_private = (market_value_equity is None or market_value_equity == 0) and book_value_equity is not None
 
@@ -212,26 +204,29 @@ def altman_z_score(
             # ── Z'-Score (private companies) ──
             X4p = book_value_equity / total_liabilities
             X5 = (sales / total_assets) if sales else 0
-            z = 0.717*X1 + 0.847*X2 + 3.107*X3 + 0.420*X4p + 0.998*X5
+            c = _ALTMAN["private_coef"]
+            z = c[0]*X1 + c[1]*X2 + c[2]*X3 + c[3]*X4p + c[4]*X5
             model_name = "Z'-Score (Empresas Privadas)"
-            safe_threshold, grey_threshold = 2.90, 1.23
+            safe_threshold, grey_threshold = _ALTMAN["private_safe"], _ALTMAN["private_grey"]
             details.update({"X4_bv_tl": round(X4p, 4), "X5_rev_ta": round(X5, 4)})
 
         elif is_non_manufacturing:
             # ── Z''-Score (services / tech / non-manufacturing) ──
             X4 = market_value_equity / total_liabilities
-            z = 6.56*X1 + 3.26*X2 + 6.72*X3 + 1.05*X4
+            c = _ALTMAN["non_manufacturing_coef"]
+            z = c[0]*X1 + c[1]*X2 + c[2]*X3 + c[3]*X4
             model_name = "Z''-Score (No Manufactura)"
-            safe_threshold, grey_threshold = 2.60, 1.10
+            safe_threshold, grey_threshold = _ALTMAN["non_manufacturing_safe"], _ALTMAN["non_manufacturing_grey"]
             details.update({"X4_mcap_tl": round(X4, 4)})
 
         else:
             # ── Z-Score Original (manufacturing) ──
             X4 = market_value_equity / total_liabilities
             X5 = (sales / total_assets) if sales else 0
-            z = 1.2*X1 + 1.4*X2 + 3.3*X3 + 0.6*X4 + 1.0*X5
+            c = _ALTMAN["original_coef"]
+            z = c[0]*X1 + c[1]*X2 + c[2]*X3 + c[3]*X4 + c[4]*X5
             model_name = "Z-Score Original (Manufactura)"
-            safe_threshold, grey_threshold = ALTMAN_Z_SAFE, ALTMAN_Z_GREY
+            safe_threshold, grey_threshold = _ALTMAN["original_safe"], _ALTMAN["original_grey"]
             details.update({"X4_mcap_tl": round(X4, 4), "X5_rev_ta": round(X5, 4)})
 
         details["model"] = model_name
@@ -305,21 +300,22 @@ def financial_health_score(
     max_possible = 0  # Track máximo posible según datos disponibles
     details = []
     b = FINANCIAL_BENCHMARKS
+    H = _FHEALTH
     
     # 1. ROA (0-3 puntos) - Crítico para bancos
     if roa is not None:
-        max_possible += 3
+        max_possible += H["roa_points"][0]
         roa_pct = roa if roa < 1 else roa / 100  # Normalizar si viene como porcentaje
         if roa_pct >= b["roa_excellent"]:
-            pts = 3
+            pts = H["roa_points"][0]
             detail = f"ROA excelente ({roa_pct*100:.2f}% ≥ 0.5%)"
             severity = "excellent"
         elif roa_pct >= b["roa_good"]:
-            pts = 2
+            pts = H["roa_points"][1]
             detail = f"ROA bueno ({roa_pct*100:.2f}% ≥ 0.3%)"
             severity = "good"
         elif roa_pct >= b["roa_acceptable"]:
-            pts = 1
+            pts = H["roa_points"][2]
             detail = f"ROA aceptable ({roa_pct*100:.2f}% ≥ 0.2%)"
             severity = "ok"
         else:
@@ -327,22 +323,22 @@ def financial_health_score(
             detail = f"ROA bajo ({roa_pct*100:.2f}% < 0.2%)"
             severity = "weak"
         score += pts
-        details.append({"metric": "ROA Bancario", "points": pts, "max": 3, "detail": detail, "severity": severity})
+        details.append({"metric": "ROA Bancario", "points": pts, "max": H["roa_points"][0], "detail": detail, "severity": severity})
     
     # 2. ROE (0-3 puntos)
     if roe is not None:
-        max_possible += 3
+        max_possible += H["roe_points"][0]
         roe_pct = roe if roe < 1 else roe / 100
         if roe_pct >= b["roe_excellent"]:
-            pts = 3
+            pts = H["roe_points"][0]
             detail = f"ROE excelente ({roe_pct*100:.1f}% ≥ 12%)"
             severity = "excellent"
         elif roe_pct >= b["roe_good"]:
-            pts = 2
+            pts = H["roe_points"][1]
             detail = f"ROE bueno ({roe_pct*100:.1f}% ≥ 8%)"
             severity = "good"
         elif roe_pct >= b["roe_acceptable"]:
-            pts = 1
+            pts = H["roe_points"][2]
             detail = f"ROE aceptable ({roe_pct*100:.1f}% ≥ 6%)"
             severity = "ok"
         else:
@@ -350,22 +346,22 @@ def financial_health_score(
             detail = f"ROE bajo ({roe_pct*100:.1f}% < 6%)"
             severity = "weak"
         score += pts
-        details.append({"metric": "ROE", "points": pts, "max": 3, "detail": detail, "severity": severity})
+        details.append({"metric": "ROE", "points": pts, "max": H["roe_points"][0], "detail": detail, "severity": severity})
     
     # 3. D/E Bancario (0-2 puntos) - NUEVO: Interpretación correcta para bancos
     # Los bancos operan normalmente con D/E de 8-15x, así que 2.6x es MUY conservador
     if debt_to_equity is not None:
-        max_possible += 2
+        max_possible += H["de_points"][0]
         if debt_to_equity < b["de_very_conservative"]:
-            pts = 2
+            pts = H["de_points"][0]
             detail = f"D/E muy conservador ({debt_to_equity:.1f}x < 5x) - Excelente para banco"
             severity = "excellent"
         elif debt_to_equity < b["de_conservative"]:
-            pts = 2
+            pts = H["de_points"][1]
             detail = f"D/E conservador ({debt_to_equity:.1f}x < 10x) - Sólido"
             severity = "good"
         elif debt_to_equity < b["de_normal"]:
-            pts = 1
+            pts = H["de_points"][2]
             detail = f"D/E normal ({debt_to_equity:.1f}x) - Típico bancario"
             severity = "ok"
         else:
@@ -373,17 +369,17 @@ def financial_health_score(
             detail = f"D/E elevado ({debt_to_equity:.1f}x > 15x)"
             severity = "moderate"
         score += pts
-        details.append({"metric": "D/E Bancario", "points": pts, "max": 2, "detail": detail, "severity": severity})
+        details.append({"metric": "D/E Bancario", "points": pts, "max": H["de_points"][0], "detail": detail, "severity": severity})
     elif total_equity is not None and total_assets is not None and total_assets > 0:
         # Fallback: usar Equity/Assets si no hay D/E
-        max_possible += 2
+        max_possible += H["equity_to_assets_points"][0]
         equity_ratio = total_equity / total_assets
         if equity_ratio >= b["equity_to_assets_solid"]:
-            pts = 2
+            pts = H["equity_to_assets_points"][0]
             detail = f"Capitalización sólida ({equity_ratio*100:.1f}% ≥ 6%)"
             severity = "excellent"
         elif equity_ratio >= b["equity_to_assets_good"]:
-            pts = 1
+            pts = H["equity_to_assets_points"][1]
             detail = f"Capitalización aceptable ({equity_ratio*100:.1f}%)"
             severity = "ok"
         else:
@@ -391,14 +387,14 @@ def financial_health_score(
             detail = f"Capitalización baja ({equity_ratio*100:.1f}%)"
             severity = "weak"
         score += pts
-        details.append({"metric": "Equity/Assets", "points": pts, "max": 2, "detail": detail, "severity": severity})
+        details.append({"metric": "Equity/Assets", "points": pts, "max": H["equity_to_assets_points"][0], "detail": detail, "severity": severity})
     
     # 4. Book Value Growth (0-1 punto)
     if book_value is not None and book_value_prior is not None and book_value_prior > 0:
-        max_possible += 1
+        max_possible += H["book_value_growth_points"]
         bv_growth = (book_value - book_value_prior) / book_value_prior
         if bv_growth > 0:
-            pts = 1
+            pts = H["book_value_growth_points"]
             detail = f"Book Value creciendo ({bv_growth*100:.1f}% YoY)"
             severity = "excellent"
         else:
@@ -406,16 +402,16 @@ def financial_health_score(
             detail = f"Book Value decreciendo ({bv_growth*100:.1f}% YoY)"
             severity = "weak"
         score += pts
-        details.append({"metric": "Book Value Growth", "points": pts, "max": 1, "detail": detail, "severity": severity})
+        details.append({"metric": "Book Value Growth", "points": pts, "max": H["book_value_growth_points"], "detail": detail, "severity": severity})
     
     # 5. Dividend (0-1 punto) - Bancos suelen pagar dividendos
     if dividend_yield is not None and dividend_yield > 0:
-        max_possible += 1
+        max_possible += H["dividend_points"]
         # Un payout negativo (dividendos pagados con ganancias negativas, año en
         # pérdidas) NO es sostenible: antes `payout < 0.60` lo daba por sostenible.
-        _sustainable = 0 <= payout_ratio < b.get("payout_sustainable", 0.60) if payout_ratio is not None else True
+        _sustainable = 0 <= payout_ratio < b["payout_sustainable"] if payout_ratio is not None else True
         if _sustainable:
-            pts = 1
+            pts = H["dividend_points"]
             detail = f"Dividendo sostenible ({dividend_yield*100:.2f}%)"
             severity = "excellent"
         elif payout_ratio is not None and payout_ratio < 0:
@@ -427,7 +423,7 @@ def financial_health_score(
             detail = f"Payout ratio alto ({payout_ratio*100:.0f}% > 60%)"
             severity = "moderate"
         score += pts
-        details.append({"metric": "Dividendo", "points": pts, "max": 1, "detail": detail, "severity": severity})
+        details.append({"metric": "Dividendo", "points": pts, "max": H["dividend_points"], "detail": detail, "severity": severity})
     
     # =====================================================
     # MANEJO DE DATOS FALTANTES: Escalar a 10 puntos
@@ -436,26 +432,26 @@ def financial_health_score(
     # =====================================================
     if max_possible > 0:
         # Escalar score a base 10
-        scaled_score = round((score / max_possible) * 10)
+        scaled_score = round((score / max_possible) * H["scale"])
     else:
         # Sin datos: puntuación neutral (5/10)
-        scaled_score = 5
+        scaled_score = H["neutral_without_data"]
         details.append({
             "metric": "Datos Limitados", 
-            "points": 5, 
-            "max": 10, 
+            "points": H["neutral_without_data"], 
+            "max": H["scale"], 
             "detail": "Análisis limitado - métricas bancarias regulatorias no disponibles",
             "severity": "neutral"
         })
     
     # Determinar nivel de riesgo e interpretación
-    if scaled_score >= 8:
+    if scaled_score >= H["level_bands"][0]:
         risk_level = "STRONG"
         interpretation = "Excelente - Institución financiera muy sólida"
-    elif scaled_score >= 6:
+    elif scaled_score >= H["level_bands"][1]:
         risk_level = "GOOD"
         interpretation = "Buena salud financiera"
-    elif scaled_score >= 4:
+    elif scaled_score >= H["level_bands"][2]:
         risk_level = "NEUTRAL"
         interpretation = "Neutral - Dentro de parámetros normales"
     else:
@@ -463,7 +459,7 @@ def financial_health_score(
         interpretation = "Por debajo del promedio sectorial"
     
     # Agregar nota si el análisis es limitado
-    if max_possible < 6:
+    if max_possible < H["limited_analysis_below"]:
         interpretation += " (análisis limitado por datos disponibles)"
     
     return scaled_score, risk_level, interpretation, details
@@ -620,15 +616,16 @@ def piotroski_f_score(
     no_data = sum(1 for d in details if "Sin datos" in d)
 
     # Interpretación
-    if no_data >= 4:
+    pb = _PIOTROSKI["interpretation_bands"]
+    if no_data >= _PIOTROSKI["inconclusive_missing"]:
         interpretation = f"Datos históricos limitados ({no_data}/9 señales sin evaluar) - F-Score no concluyente"
-    elif score >= 8:
+    elif score >= pb[0]:
         interpretation = "Excelente - Fortaleza financiera excepcional"
-    elif score >= 6:
+    elif score >= pb[1]:
         interpretation = "Bueno - Salud financiera sólida"
-    elif score >= 4:
+    elif score >= pb[2]:
         interpretation = "Neutral - Monitorear indicadores"
-    elif score >= 2:
+    elif score >= pb[3]:
         interpretation = "Débil - Señales de debilidad financiera"
     else:
         interpretation = "Crítico - Alto riesgo de problemas"
@@ -641,7 +638,7 @@ def calculate_wacc(
     risk_free_rate: float = DCF_RISK_FREE_RATE,
     market_risk_premium: float = DCF_MARKET_RISK_PREMIUM,
     cost_of_debt: Optional[float] = None,
-    tax_rate: float = 0.25,
+    tax_rate: float = _CAPM["wacc_tax_rate"],
     debt_to_equity: Optional[float] = None,
     interest_expense: Optional[float] = None,
     total_debt: Optional[float] = None
@@ -672,13 +669,13 @@ def calculate_wacc(
         WACC como decimal (ej: 0.10 = 10%)
     """
     if beta is None:
-        beta = 1.0  # Asumir mercado si no hay beta
+        beta = _CAPM["default_beta"]  # Asumir mercado si no hay beta
     
     # Cost of Equity usando CAPM
     cost_of_equity = risk_free_rate + beta * market_risk_premium
     
     # Si no hay deuda significativa, WACC ≈ Cost of Equity
-    if debt_to_equity is None or debt_to_equity < 0.01:
+    if debt_to_equity is None or debt_to_equity < _CAPM["min_de_for_debt"]:
         return cost_of_equity
     
     # Estimar Cost of Debt si no se provee
@@ -687,14 +684,15 @@ def calculate_wacc(
             cost_of_debt = interest_expense / total_debt
         else:
             # Estimación basada en rating implícito
-            if debt_to_equity < 0.3:
-                cost_of_debt = risk_free_rate + 0.01  # Investment grade
-            elif debt_to_equity < 0.6:
-                cost_of_debt = risk_free_rate + 0.02  # BBB
-            elif debt_to_equity < 1.0:
-                cost_of_debt = risk_free_rate + 0.03  # BB
+            bounds, spreads = _CAPM["debt_spread_de_bounds"], _CAPM["debt_spreads"]
+            if debt_to_equity < bounds[0]:
+                cost_of_debt = risk_free_rate + spreads[0]  # Investment grade
+            elif debt_to_equity < bounds[1]:
+                cost_of_debt = risk_free_rate + spreads[1]  # BBB
+            elif debt_to_equity < bounds[2]:
+                cost_of_debt = risk_free_rate + spreads[2]  # BB
             else:
-                cost_of_debt = risk_free_rate + 0.05  # High yield
+                cost_of_debt = risk_free_rate + spreads[3]  # High yield
     
     # Calcular pesos
     equity_weight = 1 / (1 + debt_to_equity)
@@ -1569,13 +1567,13 @@ def graham_number(eps: Optional[float], book_value_ps: Optional[float]) -> Optio
         return None
     if eps <= 0 or book_value_ps <= 0:
         return None
-    return (22.5 * eps * book_value_ps) ** 0.5
+    return (cfg("valuation.graham.multiplier") * eps * book_value_ps) ** 0.5
 
 
 def dcf_multi_stage(
     fcf: Optional[float],
     shares_outstanding: Optional[float],
-    high_growth_rate: float = 0.15,
+    high_growth_rate: float = _DCF["signature_default_growth"],
     high_growth_years: int = DCF_HIGH_GROWTH_YEARS,
     transition_years: int = DCF_TRANSITION_YEARS,
     terminal_growth: float = DCF_TERMINAL_GROWTH,
@@ -1636,7 +1634,7 @@ def dcf_multi_stage(
     if high_growth_rate < terminal_growth:
         high_growth_rate = terminal_growth
     
-    MAX_GROWTH = 0.50
+    MAX_GROWTH = _DCF["growth_cap"]
     if high_growth_rate > MAX_GROWTH:
         result["warnings"].append(f"Growth capped de {high_growth_rate:.1%} a {MAX_GROWTH:.1%}")
         high_growth_rate = MAX_GROWTH
@@ -1651,7 +1649,7 @@ def dcf_multi_stage(
     else:
         yearly_decay = 0
     
-    decay_factor = 0.85 if decay_type == "exponential" else 1.0
+    decay_factor = _DCF["exponential_decay_factor"] if decay_type == "exponential" else 1.0
     
     for year in range(1, high_growth_years + 1):
         if decay_type == "linear":
@@ -1732,7 +1730,7 @@ def dcf_multi_stage(
         "terminal_pct": round(pv_terminal / total_pv * 100, 1)
     }
     
-    if result["value_composition"]["terminal_pct"] > 75:
+    if result["value_composition"]["terminal_pct"] > _DCF["terminal_value_warning_pct"]:
         result["warnings"].append(
             f"Terminal value representa {result['value_composition']['terminal_pct']:.0f}% del valor"
         )
@@ -1794,10 +1792,10 @@ def dcf_multi_stage_dynamic(
     )
     
     if wacc is None:
-        wacc = 0.10
+        wacc = _WACC["default"]
         result["warnings"].append("WACC estimado en 10%")
     
-    wacc = max(0.06, min(wacc, 0.20))
+    wacc = max(_WACC["clamp_min"], min(wacc, _WACC["clamp_max"]))
     result["wacc_calculated"] = wacc
 
     # Deuda neta para el puente Enterprise Value -> Equity Value en dcf_multi_stage.
@@ -1813,20 +1811,20 @@ def dcf_multi_stage_dynamic(
     growth_source = None
     
     growth_candidates = [
-        (fcf_growth_3y, "fcf_growth_3y", 0.35),
-        (eps_growth_3y, "eps_growth_3y", 0.40),
-        (revenue_growth_3y, "revenue_growth_3y", 0.30),
+        (fcf_growth_3y, "fcf_growth_3y", _DCF["source_cap_fcf"]),
+        (eps_growth_3y, "eps_growth_3y", _DCF["source_cap_eps"]),
+        (revenue_growth_3y, "revenue_growth_3y", _DCF["source_cap_revenue"]),
     ]
     
     for growth_val, source, cap in growth_candidates:
-        if growth_val is not None and growth_val > -0.20:
+        if growth_val is not None and growth_val > _DCF["min_source_growth"]:
             growth_rate = min(growth_val, cap)
             growth_rate = max(growth_rate, terminal_growth)
             growth_source = source
             break
     
     if growth_rate is None:
-        growth_rate = 0.08
+        growth_rate = _DCF["default_growth_engine"]
         growth_source = "default_estimate"
         result["warnings"].append("Growth estimado en 8%")
     
@@ -1834,9 +1832,9 @@ def dcf_multi_stage_dynamic(
     result["growth_source"] = growth_source
     
     # EJECUTAR DCF MULTI-STAGE
-    if growth_rate > 0.25:
+    if growth_rate > _DCF["decay_exponential_above"]:
         decay_type = "exponential"
-    elif growth_rate > 0.15:
+    elif growth_rate > _DCF["decay_linear_above"]:
         decay_type = "linear"
     else:
         decay_type = "step"
@@ -1927,7 +1925,7 @@ def calculate_all_ratios(financial_data: Dict) -> Dict[str, Optional[float]]:
         cogs_val = d.get("revenue") - d.get("gross_profit")
 
     # Calcular NOPAT e Invested Capital para ROIC
-    tax_rate = d.get("tax_rate", 0.25)  # Default 25% si no se proporciona
+    tax_rate = d.get("tax_rate", cfg("valuation.roic.tax_rate_ratios"))  # 25% si no se proporciona
     operating_inc = d.get("operating_income")
     # 'is not None' (no truthiness): un operating_income exactamente 0 (break-even
     # operativo) es un dato válido -> NOPAT=0, no None.
@@ -3263,10 +3261,10 @@ def dcf_sensitivity_analysis(
     fcf: Optional[float],
     shares_outstanding: Optional[float],
     current_price: Optional[float] = None,
-    base_growth_rate: float = 0.15,
-    base_discount_rate: float = 0.10,
-    growth_rate_range: tuple = (-0.05, 0.05, 0.025),  # (min_delta, max_delta, step)
-    discount_rate_range: tuple = (-0.02, 0.02, 0.01),  # (min_delta, max_delta, step)
+    base_growth_rate: float = _DCF["signature_default_growth"],
+    base_discount_rate: float = _WACC["default"],
+    growth_rate_range: tuple = _GRID["growth_range"],  # (min_delta, max_delta, step)
+    discount_rate_range: tuple = _GRID["discount_range"],  # (min_delta, max_delta, step)
     terminal_growth: float = DCF_TERMINAL_GROWTH,
     net_debt: Optional[float] = 0.0,
 ) -> Dict[str, Any]:
@@ -3297,7 +3295,7 @@ def dcf_sensitivity_analysis(
     # low WACC pushes the low columns toward the terminal growth rate, where the
     # terminal value explodes into absurd fair values (e.g. a $1857 cell for a
     # $50 stock) that paint the table "deeply undervalued".
-    _wacc_lo, _wacc_hi = 0.06, 0.20
+    _wacc_lo, _wacc_hi = _WACC["clamp_min"], _WACC["clamp_max"]
     if base_discount_rate is not None:
         base_discount_rate = max(_wacc_lo - discount_rate_range[0],
                                  min(base_discount_rate, _wacc_hi - discount_rate_range[1]))
@@ -3419,13 +3417,14 @@ def dcf_sensitivity_analysis(
             total_scenarios = len(all_values)
             undervalued_pct = (undervalued_count / total_scenarios) * 100
             
-            if undervalued_pct >= 80:
+            ip = _GRID["interpretation_pct"]
+            if undervalued_pct >= ip[0]:
                 result["interpretation"] = f"Muy probablemente subvalorada ({undervalued_pct:.0f}% de escenarios)"
-            elif undervalued_pct >= 60:
+            elif undervalued_pct >= ip[1]:
                 result["interpretation"] = f"Probablemente subvalorada ({undervalued_pct:.0f}% de escenarios)"
-            elif undervalued_pct >= 40:
+            elif undervalued_pct >= ip[2]:
                 result["interpretation"] = f"Valoración mixta ({undervalued_pct:.0f}% escenarios favorables)"
-            elif undervalued_pct >= 20:
+            elif undervalued_pct >= ip[3]:
                 result["interpretation"] = f"Probablemente sobrevalorada ({100-undervalued_pct:.0f}% de escenarios)"
             else:
                 result["interpretation"] = f"Muy probablemente sobrevalorada ({100-undervalued_pct:.0f}% de escenarios)"

@@ -3,7 +3,80 @@
 
 [thresholds]
 [sectors]
-[valuation]
+[valuation.capm]
+risk_free_rate = "float"
+market_risk_premium = "float"
+default_beta = "float"
+wacc_tax_rate = "float"
+min_de_for_debt = "float"
+debt_spread_de_bounds = "list[float]"
+debt_spreads = "list[float]"
+
+[valuation.wacc]
+default = "float"
+clamp_min = "float"
+clamp_max = "float"
+
+[valuation.dcf]
+high_growth_years = "int"
+transition_years = "int"
+terminal_growth = "float"
+growth_cap = "float"
+signature_default_growth = "float"
+source_cap_fcf = "float"
+source_cap_eps = "float"
+source_cap_revenue = "float"
+min_source_growth = "float"
+default_growth_engine = "float"
+default_growth_main = "float"
+decay_exponential_above = "float"
+decay_linear_above = "float"
+exponential_decay_factor = "float"
+terminal_value_warning_pct = "int"
+
+[valuation.grid]
+growth_range = "list[float]"
+discount_range = "list[float]"
+interpretation_pct = "list[int]"
+
+[valuation.graham]
+multiplier = "float"
+
+[valuation.roic]
+tax_rate_ratios = "float"
+fallback_nopat_factor = "float"
+
+[valuation.shareholder]
+buyback_yield_guard = "float"
+
+[valuation.models.altman]
+original_coef = "list[float]"
+original_safe = "float"
+original_grey = "float"
+non_manufacturing_coef = "list[float]"
+non_manufacturing_safe = "float"
+non_manufacturing_grey = "float"
+private_coef = "list[float]"
+private_safe = "float"
+private_grey = "float"
+non_manufacturing_sectors = "list[str]"
+
+[valuation.models.piotroski]
+interpretation_bands = "list[int]"
+inconclusive_missing = "int"
+level_bands_main = "list[int]"
+
+[valuation.models.financial_health]
+roa_points = "list[int]"
+roe_points = "list[int]"
+de_points = "list[int]"
+equity_to_assets_points = "list[int]"
+book_value_growth_points = "int"
+dividend_points = "int"
+scale = "int"
+neutral_without_data = "int"
+level_bands = "list[int]"
+limited_analysis_below = "int"
 
 [validation.thresholds]
 fcf_over_ocf_tolerance_abs = "float"
