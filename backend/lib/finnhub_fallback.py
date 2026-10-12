@@ -232,6 +232,18 @@ def enrich_info(info: Dict[str, Any], symbol: str, degraded: bool = False) -> Di
     except Exception as e:
         logger.warning(f"[FINNHUB] piotroski fill for {symbol}: {e}")
 
+    # Procedencia: cada campo rellenado (o impuesto) desde Finnhub.
+    _tag_map = {"pio.roa": "_piotroski_current.roa", "prior.roa": "_prior_year.roa",
+                "pio.cr": "_piotroski_current.current_ratio", "prior.cr": "_prior_year.current_ratio",
+                "pio.gm": "_piotroski_current.gross_margin", "prior.gm": "_prior_year.gross_margin",
+                "pio.at": "_piotroski_current.asset_turnover", "prior.at": "_prior_year.asset_turnover",
+                "der.gm": "_current_derived.gross_margin", "der.at": "_current_derived.asset_turnover"}
+    prov = info.setdefault("_provenance", {})
+    for tag in filled:
+        path = _tag_map.get(tag) or (("_yahoo_ratios." + tag[3:]) if tag.startswith("yr.") else tag.rstrip("~"))
+        prov[path] = {"source": "finnhub",
+                      "detail": "/stock/metric" + (" (impuesto: difería >2% del existente)" if tag.endswith("~") else "")}
+
     if filled:
         head = ", ".join(filled[:12])
         tail = "..." if len(filled) > 12 else ""

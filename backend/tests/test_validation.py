@@ -1,0 +1,260 @@
+"""Capa de validación de entrada (lib/validate.py) y trazabilidad de fuente.
+
+Cada regla tiene un caso positivo (se dispara y deja flag) y uno negativo (no
+toca un dato válido), con datos sintéticos. Al final, comprobaciones sobre los
+juegos de fixtures (data_provenance / data_validation en la salida).
+"""
+import copy
+
+import pytest
+
+import validate as V
+
+
+def _info(**kw):
+    base = {
+        "symbol": "TEST", "sector": "Technology",
+        "currentPrice": 100.0, "marketCap": 1e11, "sharesOutstanding": 1e9,
+        "totalRevenue": 5e10, "netIncome": 5e9, "totalAssets": 8e10,
+        "operatingCashflow": 1e10, "freeCashflow": 8e9,
+        "revenueGrowth": 0.10,
+        "_statements_fy": {
+            "inc_years": ["2025", "2024", "2023", "2022"],
+            "bs_years": ["2025", "2024", "2023", "2022"],
+            "cf_years": ["2025", "2024", "2023", "2022"],
+            "revenue": [5e10, 4.55e10, 4.1e10, 3.7e10],
+            "net_income": [5e9, 4.5e9, 4e9, 3.5e9],
+            "ordinary_shares": [1e9, 1.01e9],
+            "total_assets": [8e10, 7.5e10],
+            "operating_cash_flow": [1e10, 9e9],
+            "capital_expenditure": [-2e9, -1.8e9],
+            "free_cash_flow": [8e9, 7.2e9],
+        },
+        "_piotroski_current": {"shares": 1e9},
+        "_prior_year": {"shares": 1.01e9, "revenue": 4.55e10, "net_income": 4.5e9,
+                        "asset_turnover": 0.6, "roa": 0.06, "gross_margin": 0.5},
+        "_yahoo_ratios": {"grossMargins": 0.5, "profitMargins": 0.1},
+    }
+    for k, v in kw.items():
+        base[k] = v
+    return base
+
+
+def _run(info):
+    return V.validate_info(info, "TEST")
+
+
+def _flags(info, rule=None):
+    return [f for f in info["_validation"] if rule is None or f["rule"] == rule]
+
+
+# ─────────────────────────── política general ───────────────────────────
+def test_clean_input_produces_no_flags_and_no_changes():
+    info = _info()
+    before = copy.deepcopy(info)
+    _run(info)
+    assert info["_validation"] == []
+    for k in before:
+        assert info[k] == before[k], k
+
+
+def test_thresholds_live_in_a_single_dict():
+    assert isinstance(V.THRESHOLDS, dict) and len(V.THRESHOLDS) >= 5
+    assert V.THRESHOLDS["margin_min"] == -10.0 and V.THRESHOLDS["margin_max"] == 1.0
+
+
+def test_validation_is_rerun_safe():
+    info = _info(freeCashflow=2e10)
+    _run(info)
+    _run(info)  # segunda pasada: ya corregido, sin flags nuevos acumulados
+    assert info["_validation"] == []
+
+
+# ─────────────────────────── valores imposibles ───────────────────────────
+def test_non_positive_assets_recalculated_from_balance_sheet():
+    info = _run(_info(totalAssets=-5.0))
+    assert info["totalAssets"] == 8e10
+    assert _flags(info, "valor_imposible")[0]["action"] == "recalculado"
+
+
+def test_non_positive_assets_without_balance_sheet_sin_dato():
+    info = _info(totalAssets=0.0)
+    info["_statements_fy"]["total_assets"] = []
+    _run(info)
+    assert info["totalAssets"] is None and _flags(info, "valor_imposible")[0]["action"] == "sin_dato"
+
+
+def test_non_positive_shares_recalculated_as_mcap_over_price():
+    info = _run(_info(sharesOutstanding=0))
+    assert info["sharesOutstanding"] == pytest.approx(1e9)
+    assert _flags(info, "valor_imposible")[0]["action"] == "recalculado"
+
+
+def test_non_positive_price_sin_dato():
+    info = _run(_info(currentPrice=-1.0))
+    assert info["currentPrice"] is None
+    assert any(f["field"] == "currentPrice" and f["action"] == "sin_dato" for f in _flags(info))
+
+
+def test_positive_values_not_flagged_as_impossible():
+    assert not _flags(_run(_info()), "valor_imposible")
+
+
+# ─────────────────────────── márgenes ───────────────────────────
+def test_precomputed_margin_out_of_range_sin_dato():
+    info = _info()
+    info["_yahoo_ratios"]["profitMargins"] = 1.7     # 170%
+    _run(info)
+    assert info["_yahoo_ratios"]["profitMargins"] is None
+    assert _flags(info, "margen_fuera_de_rango")[0]["field"] == "_yahoo_ratios.profitMargins"
+
+
+def test_component_implying_impossible_margin_sin_dato():
+    info = _run(_info(netIncome=-6e11))               # margen neto −1200%
+    assert info["netIncome"] is None
+    assert _flags(info, "margen_fuera_de_rango")[0]["field"] == "netIncome"
+
+
+def test_margins_at_range_edges_are_valid():
+    info = _info(netIncome=-5e11)                      # −1000% exacto
+    info["_yahoo_ratios"]["grossMargins"] = 1.0        # 100% exacto
+    _run(info)
+    assert info["netIncome"] == -5e11 and info["_yahoo_ratios"]["grossMargins"] == 1.0
+    assert not _flags(info, "margen_fuera_de_rango")
+
+
+# ─────────────────────────── unidades ───────────────────────────
+def test_dividend_yield_in_percent_recalculated_from_rate():
+    info = _run(_info(dividendYield=2.5, dividendRate=2.5))
+    assert info["dividendYield"] == pytest.approx(0.025)
+    assert _flags(info, "unidades")[0]["action"] == "recalculado"
+
+
+def test_dividend_yield_in_percent_without_rate_sin_dato():
+    info = _run(_info(dividendYield=3.0))
+    assert info["dividendYield"] is None and _flags(info, "unidades")[0]["action"] == "sin_dato"
+
+
+def test_growth_in_percent_scale_sin_dato():
+    info = _run(_info(earningsGrowth=45.0))
+    assert info["earningsGrowth"] is None and _flags(info, "unidades")
+
+
+def test_decimal_units_untouched():
+    info = _run(_info(dividendYield=0.03, payoutRatio=0.6, earningsGrowth=0.2))
+    assert not _flags(info, "unidades")
+
+
+# ─────────────────────────── saltos interanuales ───────────────────────────
+def test_revenue_jump_voids_prior_revenue_and_derived():
+    info = _info()
+    info["_statements_fy"]["revenue"] = [5e10, 5e9]    # ×10
+    _run(info)
+    assert info["_prior_year"]["revenue"] is None
+    assert info["_prior_year"]["asset_turnover"] is None
+    assert {f["field"] for f in _flags(info, "salto_interanual")} >= {
+        "_prior_year.revenue", "_prior_year.asset_turnover"}
+
+
+def test_net_income_jump_voids_prior_roa():
+    info = _info()
+    info["_statements_fy"]["net_income"] = [5e9, 1e8]  # ×50
+    _run(info)
+    assert info["_prior_year"]["net_income"] is None and info["_prior_year"]["roa"] is None
+
+
+def test_net_income_sign_change_is_not_a_jump():
+    info = _info()
+    info["_statements_fy"]["net_income"] = [5e9, -1e8]
+    _run(info)
+    assert info["_prior_year"]["net_income"] == 4.5e9 and not _flags(info, "salto_interanual")
+
+
+def test_normal_growth_is_not_a_jump():
+    assert not _flags(_run(_info()), "salto_interanual")
+
+
+# ─────────────────────────── múltiplos de salida ───────────────────────────
+def test_negative_multiples_become_non_significant():
+    res = {"key_metrics": {"pe": -12.0, "ev_ebitda": -3.0, "p_ffo": 0.0, "roe": -0.2},
+           "ratios": {"pe": -12.0, "ev_ebitda": 8.0}}
+    flags = V.validate_outputs(res)
+    assert res["key_metrics"]["pe"] is None and res["key_metrics"]["ev_ebitda"] is None
+    assert res["key_metrics"]["p_ffo"] is None
+    assert res["key_metrics"]["roe"] == -0.2           # no es un múltiplo
+    assert res["ratios"]["ev_ebitda"] == 8.0
+    assert {f["field"] for f in flags} == {"key_metrics.pe", "key_metrics.ev_ebitda",
+                                           "key_metrics.p_ffo", "ratios.pe"}
+    assert all(f["rule"] == "multiplo_no_significativo" for f in flags)
+
+
+def test_positive_multiples_untouched():
+    res = {"key_metrics": {"pe": 20.0, "ev_ebitda": 12.0, "p_ffo": None}}
+    assert V.validate_outputs(res) == [] and res["key_metrics"]["pe"] == 20.0
+
+
+# ─────────────────────────── integración con los fixtures ───────────────────────────
+VOCAB = {"yahoo_quotesummary", "yfinance_statements", "finnhub", "derivado",
+         "recalculado_por_validacion", "sin_dato"}
+
+
+@pytest.mark.parametrize("env", ["local", "prod"])
+def test_provenance_block_present_and_in_vocabulary(env, outputs_by_env):
+    import conftest
+    if env not in conftest.ENVS:
+        pytest.skip(f"falta el juego {env}")
+    for sym, (a, _) in outputs_by_env(env).items():
+        dp = a["data_provenance"]
+        assert dp["path"] == ("yahoo_quotesummary" if env == "local" else "plan_b_yfinance"), sym
+        assert dp["fields"], sym
+        assert {v["source"] for v in dp["fields"].values()} <= VOCAB, sym
+        assert isinstance(a["data_validation"], list)
+        for f in a["data_validation"]:
+            assert f["action"] in {"recalculado", "sin_dato", "aviso"} and f["reason"], (sym, f)
+
+
+def test_prod_provenance_marks_finnhub_and_statements(outputs_by_env):
+    import conftest
+    if "prod" not in conftest.ENVS:
+        pytest.skip("falta el juego prod")
+    f = outputs_by_env("prod")["NFLX"][0]["data_provenance"]["fields"]
+    assert f["beta"]["source"] == "finnhub"
+    assert f["_prior_year.shares"]["source"] == "yfinance_statements"
+    assert f["sector"]["detail"].startswith("búsqueda de Yahoo")
+    assert f["forwardEps"]["source"] == "sin_dato"
+
+
+def test_validation_flags_reach_the_analysis(analysis):
+    snow = analysis("SNOW")
+    assert snow["key_metrics"]["pe"] is None
+    assert snow["data_provenance"]["fields"]["key_metrics.pe"]["rule"] == "multiplo_no_significativo"
+
+
+def test_last_known_good_fill_is_marked_derivado():
+    import yf_adapter
+    yf_adapter._best_cache["ZZZ"] = (yf_adapter.time.time(), {"beta": 1.2, "_prior_year": {"roa": 0.1}})
+    try:
+        merged = yf_adapter._merge_last_known_good("ZZZ", {"beta": None, "_prior_year": {}}, True)
+    finally:
+        yf_adapter._best_cache.pop("ZZZ", None)
+    assert merged["beta"] == 1.2
+    assert merged["_provenance"]["beta"]["source"] == "derivado"
+    assert merged["_provenance"]["_prior_year.roa"]["source"] == "derivado"
+
+
+def test_broad_except_logs_and_marks_block_sin_dato(monkeypatch):
+    import fixture_backend as fb
+    import main
+
+    def boom(*a, **kw):
+        raise RuntimeError("fallo sintético")
+
+    logged = []
+    monkeypatch.setattr(main, "build_signals", boom)
+    monkeypatch.setattr(main.logger, "error", lambda msg, *a, **kw: logged.append(str(msg)))
+    with fb.replay(fb.fixtures_dir("local")) as store:
+        a = fb.run_analysis("V", store)
+    assert a["alerts"] == {"red_flags": [], "warnings": [], "strengths": []}  # flujo intacto
+    errs = a["data_provenance"]["errors"]
+    assert errs == [{"block": "alerts", "source": "sin_dato", "reason": "RuntimeError: fallo sintético"}]
+    assert any("bloque 'alerts' sin calcular" in m for m in logged)

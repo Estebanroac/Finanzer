@@ -38,6 +38,29 @@ _best_cache: Dict[str, tuple] = {}   # symbol -> (ts, info) último snapshot bue
 _BEST_MAX_AGE = 24 * 3600
 _NESTED_KEYS = ("_yahoo_ratios", "_prior_year", "_current_derived", "_piotroski_current")
 
+
+# ── Trazabilidad de fuente (etapa 3) ──
+# info["_provenance"] = {"campo" | "bloque.campo": {"source": ..., "detail": ...}}
+# Vocabulario de source: yahoo_quotesummary | yfinance_statements | finnhub |
+# derivado | recalculado_por_validacion | sin_dato.
+def _tag_provenance(info: Dict[str, Any], source: str, detail: str,
+                    paths=None, overwrite: bool = False) -> None:
+    """Marca la procedencia de `paths` (o de todos los campos con valor que aún
+    no tengan procedencia). Los campos internos (prefijo "_") no anidados se
+    ignoran; los bloques de _NESTED_KEYS se recorren campo a campo."""
+    prov = info.setdefault("_provenance", {})
+    if paths is None:
+        paths = []
+        for k, v in info.items():
+            if k in _NESTED_KEYS and isinstance(v, dict):
+                paths += [f"{k}.{sk}" for sk, sv in v.items()
+                          if sv is not None and not str(sk).startswith("_")]
+            elif not str(k).startswith("_") and v is not None:
+                paths.append(k)
+    for p in paths:
+        if overwrite or p not in prov:
+            prov[p] = {"source": source, "detail": detail}
+
 # Campos que prácticamente toda empresa cotizada tiene; si faltan varios, la
 # respuesta vino degradada (no confundir con ausencias legítimas: dividendos,
 # forward P/E, etc. NO están en esta lista).
@@ -276,6 +299,18 @@ def get_ticker_info(symbol: str) -> Dict[str, Any]:
         except Exception as e:
             logger.warning(f"[FINNHUB] enrich falló para {symbol}: {e}")
 
+        # ── Validación de entrada (lib/validate.py): después de toda la ingesta
+        # y antes de cualquier cálculo del motor. Nunca corrige en silencio:
+        # deja info["_validation"] y actualiza info["_provenance"].
+        try:
+            from validate import validate_info
+            info = validate_info(info, symbol)
+        except Exception as e:
+            logger.error(f"[VALIDATE] validación de entrada falló para {symbol}: {e}")
+            info["_validation"] = [{"field": "*", "rule": "validacion", "action": "aviso",
+                                    "old": None, "new": None,
+                                    "reason": f"la validación de entrada no se ejecutó: {e}"}]
+
         # ── Defensa 2: los snapshots degradados caducan rápido ──
         _cache[symbol] = (time.time(), info, degraded)
         return info
@@ -293,13 +328,13 @@ def _merge_last_known_good(symbol: str, fresh: Dict[str, Any], fresh_degraded: b
     merged = dict(fresh)
 
     if best and (now - ts_best) < _BEST_MAX_AGE:
-        filled = 0
+        filled = []
         for k, v in best.items():
             if k in _NESTED_KEYS:
                 continue
             if merged.get(k) is None and v is not None:
                 merged[k] = v
-                filled += 1
+                filled.append(k)
         for nk in _NESTED_KEYS:
             bsub = best.get(nk)
             if not isinstance(bsub, dict):
@@ -308,10 +343,15 @@ def _merge_last_known_good(symbol: str, fresh: Dict[str, Any], fresh_degraded: b
             for k, v in bsub.items():
                 if msub.get(k) is None and v is not None:
                     msub[k] = v
-                    filled += 1
+                    filled.append(f"{nk}.{k}")
             merged[nk] = msub
         if filled:
-            logger.info(f"[LKG] {symbol}: {filled} campos rellenados del último snapshot bueno")
+            merged["_provenance"] = dict(merged.get("_provenance") or {})
+            _tag_provenance(merged, "derivado",
+                            f"último snapshot bueno conocido (hace {int(now - ts_best)} s)",
+                            paths=[p for p in filled if not p.startswith("_") or "." in p],
+                            overwrite=True)
+            logger.info(f"[LKG] {symbol}: {len(filled)} campos rellenados del último snapshot bueno")
 
     if not fresh_degraded:
         _best_cache[symbol] = (now, merged)
@@ -644,6 +684,10 @@ def _do_fetch(symbol: str) -> Dict[str, Any]:
         # Book value
         "bookValue": _raw(kstat.get("bookValue")),
 
+        # Último split (para la regla de base de splits de lib/validate.py)
+        "lastSplitFactor": _raw(kstat.get("lastSplitFactor")),
+        "lastSplitDate": _raw(kstat.get("lastSplitDate")),
+
         # ── Prior-year data (for Piotroski F-Score, comparisons) ──
         "_prior_year": {
             "roa": prev_roa,
@@ -696,12 +740,17 @@ def _do_fetch(symbol: str) -> Dict[str, Any]:
         info = _enrich_prior_year_data(symbol, info)
     except Exception as e:
         logger.warning(f"[ENRICH] Prior-year enrichment failed for {symbol}: {e}")
+        _tag_provenance(info, "sin_dato", f"estados anuales de yfinance: {e}",
+                        paths=["_prior_year", "_piotroski_current"], overwrite=True)
+    info["_data_path"] = "yahoo_quotesummary"
+    _tag_provenance(info, "yahoo_quotesummary", "quoteSummary v10 (con crumb)")
 
     elapsed = time.time() - t0
     logger.info(f"[FAST API] get_ticker_info({symbol}) in {elapsed:.2f}s")
 
-    # Cache
-    _cache[symbol] = (time.time(), info, _is_degraded(info))
+    # Sin escribir _cache aquí: solo get_ticker_info cachea, DESPUÉS de LKG,
+    # Finnhub y la validación de entrada. Una escritura aquí exponía el dict sin
+    # validar al hilo paralelo de perfil (lee la caché fuera del lock).
     return info
 
 
@@ -752,6 +801,38 @@ def _enrich_prior_year_data(symbol: str, info: Dict[str, Any]) -> Dict[str, Any]
 
     if not (has_inc or has_bs or has_cf):
         return info
+
+    # Series anuales (más reciente primero) para la capa de validación
+    # (lib/validate.py): recalcular "por definición desde los estados" (FCF =
+    # OCF − capex), comprobar saltos interanuales, base de splits y CAGR.
+    def _row(df, key, n=5):
+        if df is None or df.empty or key not in df.index:
+            return []
+        out = []
+        for v in df.loc[key].tolist()[:n]:
+            try:
+                f = float(v)
+                out.append(f if f == f else None)
+            except (TypeError, ValueError):
+                out.append(None)
+        return out
+
+    def _years(df):
+        try:
+            return [str(c.year) for c in df.columns][:5] if df is not None and not df.empty else []
+        except Exception:
+            return []
+
+    info["_statements_fy"] = {
+        "inc_years": _years(inc), "bs_years": _years(bs), "cf_years": _years(cf),
+        "revenue": _row(inc, "Total Revenue"),
+        "net_income": _row(inc, "Net Income"),
+        "ordinary_shares": _row(bs, "Ordinary Shares Number"),
+        "total_assets": _row(bs, "Total Assets"),
+        "operating_cash_flow": _row(cf, "Operating Cash Flow"),
+        "capital_expenditure": _row(cf, "Capital Expenditure"),
+        "free_cash_flow": _row(cf, "Free Cash Flow"),
+    }
 
     # Columns: [0] = most recent (current), [1] = prior year
     # ── Determine fiscal year labels ──
@@ -880,6 +961,13 @@ def _enrich_prior_year_data(symbol: str, info: Dict[str, Any]) -> Dict[str, Any]
     info["_prior_year"] = prior
     info["_current_derived"] = derived
     info["_piotroski_current"] = piotroski_current
+    _tag_provenance(info, "yfinance_statements",
+                    f"estados anuales de yfinance (FY{fy_current} / FY{fy_prior})",
+                    paths=[f"{blk}.{k}" for blk, d in (("_prior_year", prior),
+                                                       ("_current_derived", derived),
+                                                       ("_piotroski_current", piotroski_current))
+                           for k, v in d.items() if v is not None and not str(k).startswith("_")],
+                    overwrite=True)
 
     elapsed = time.time() - t0
     logger.info(f"[ENRICH] Prior-year data enriched for {symbol} (FY{fy_prior}) in {elapsed:.2f}s")
@@ -930,11 +1018,20 @@ def _fallback_yfinance(symbol: str) -> Dict[str, Any]:
         info["sector"] = prof["sector"]
         info["industry"] = prof.get("industry") or "Unknown"
         info["_profile_source"] = "yahoo_search"
+        _tag_provenance(info, "yahoo_quotesummary",
+                        "búsqueda de Yahoo /v1/finance/search (sin crumb; no es quoteSummary)",
+                        paths=["sector", "industry"])
     else:
         sd = KNOWN_SECTORS.get(symbol)
         info["sector"] = sd[0] if sd else "Unknown"
         info["industry"] = sd[1] if sd else "Unknown"
         info["_profile_source"] = "known_sectors" if sd else "sin_dato"
+        if sd:
+            _tag_provenance(info, "derivado", "lista fija KNOWN_SECTORS (búsqueda no disponible)",
+                            paths=["sector", "industry"])
+        else:
+            _tag_provenance(info, "sin_dato", "búsqueda no disponible y ticker fuera de KNOWN_SECTORS",
+                            paths=["sector", "industry"])
 
     try:
         from stock_database import POPULAR_STOCKS
@@ -1030,11 +1127,14 @@ def _fallback_yfinance(symbol: str) -> Dict[str, Any]:
 
     if not info.get("freeCashflow") and info.get("operatingCashflow") and info.get("capitalExpenditures"):
         info["freeCashflow"] = info["operatingCashflow"] + info["capitalExpenditures"]
+        _tag_provenance(info, "derivado", "OCF + capex (FY) por falta de 'Free Cash Flow'",
+                        paths=["freeCashflow"])
 
     shares = info.get("sharesOutstanding")
     equity = info.get("totalStockholderEquity")
     if shares and equity and shares > 0:
         info["bookValue"] = equity / shares
+        _tag_provenance(info, "derivado", "patrimonio (FY) / acciones de fast_info", paths=["bookValue"])
 
     # Año previo para Piotroski/buyback: en el plan B (camino permanente de prod)
     # no se ejecutaba y _prior_year solo tenía lo que aportaba Finnhub, sin
@@ -1043,10 +1143,20 @@ def _fallback_yfinance(symbol: str) -> Dict[str, Any]:
         info = _enrich_prior_year_data(symbol, info)
     except Exception as e:
         logger.warning(f"[ENRICH] Prior-year enrichment (fallback) failed for {symbol}: {e}")
+        _tag_provenance(info, "sin_dato", f"estados anuales de yfinance: {e}",
+                        paths=["_prior_year", "_piotroski_current"], overwrite=True)
+    info["_data_path"] = "plan_b_yfinance"
+    _tag_provenance(info, "yfinance_statements", "plan B: yfinance fast_info (sin crumb)",
+                    paths=[k for k in ("regularMarketPrice", "currentPrice", "marketCap", "currency",
+                                       "exchange", "fiftyTwoWeekHigh", "fiftyTwoWeekLow", "shares",
+                                       "sharesOutstanding") if info.get(k) is not None])
+    _tag_provenance(info, "derivado", "símbolo pedido; nombre de stock_database o de la búsqueda",
+                    paths=["symbol", "longName", "shortName"])
+    _tag_provenance(info, "yfinance_statements", "plan B: estados anuales de yfinance (último FY)")
 
     elapsed = time.time() - t0
     logger.info(f"[FALLBACK] get_ticker_info({symbol}) in {elapsed:.2f}s")
-    _cache[symbol] = (time.time(), info, _is_degraded(info))
+    # Sin escribir _cache aquí (ver _do_fetch): solo get_ticker_info cachea.
     return info
 
 

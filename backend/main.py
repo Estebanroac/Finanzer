@@ -189,6 +189,32 @@ async def popular_stocks():
     ]
 
 
+# Campos de ingesta que el motor consume; si quedan None sin procedencia se
+# exponen como "sin_dato" (la fuente no los devolvió).
+_PROVENANCE_KEY_FIELDS = (
+    "currentPrice", "marketCap", "sharesOutstanding", "beta", "sector", "industry",
+    "totalRevenue", "grossProfits", "operatingIncome", "netIncome", "ebitda",
+    "trailingEps", "forwardEps", "totalAssets", "totalDebt", "totalCash",
+    "totalStockholderEquity", "operatingCashflow", "freeCashflow",
+    "revenueGrowth", "earningsGrowth", "dividendYield", "payoutRatio",
+)
+
+
+def _build_provenance(yinfo: dict, out_flags: list, block_errors: list) -> dict:
+    """Bloque data_provenance (campo nuevo del contrato; no toca los existentes)."""
+    fields = {k: dict(v) for k, v in (yinfo.get("_provenance") or {}).items()}
+    for k in _PROVENANCE_KEY_FIELDS:
+        if k not in fields and yinfo.get(k) is None:
+            fields[k] = {"source": "sin_dato", "detail": "la fuente no lo devolvió"}
+    for f in out_flags:
+        fields[f["field"]] = {"source": "sin_dato", "rule": f["rule"], "detail": f["reason"]}
+    return {
+        "path": yinfo.get("_data_path") or ("sin_dato" if not yinfo else "desconocido"),
+        "fields": dict(sorted(fields.items())),
+        "errors": block_errors,
+    }
+
+
 def _compute_analysis(symbol: str) -> dict:
     """
     Shared analysis computation used by both API endpoint and PDF generator.
@@ -233,6 +259,16 @@ def _compute_analysis(symbol: str) -> dict:
             "price": safe_float(financials.price) if financials else None,
             "errors": data.get("errors", []),
         }
+        # Trazabilidad (etapa 3): bloques que un except amplio dejó sin calcular.
+        # No cambia el flujo de control: solo registra y marca "sin_dato".
+        _block_errors = []
+
+        def _sin_dato(block, exc):
+            logger.error(f"[{symbol}] bloque '{block}' sin calcular: {type(exc).__name__}: {exc}")
+            _block_errors.append({"block": block, "source": "sin_dato",
+                                  "reason": f"{type(exc).__name__}: {exc}"})
+
+        yinfo = {}
 
         # Calculate ratios
         if financials:
@@ -287,6 +323,7 @@ def _compute_analysis(symbol: str) -> dict:
                     ratios["peg"] = _mkt_peg
             except Exception as e:
                 logger.debug(f"Yahoo ratio fallback error: {e}")
+                _sin_dato("ratios_fallback_yahoo", e)
 
             result["ratios"] = {k: safe_float(v) for k, v in ratios.items()}
 
@@ -557,8 +594,8 @@ def _compute_analysis(symbol: str) -> dict:
                     prior = yinfo.get("_prior_year", {}) if _has_yahoo else {}
                     current_derived = yinfo.get("_current_derived", {}) if _has_yahoo else {}
                     piotroski_fy = yinfo.get("_piotroski_current", {}) if _has_yahoo else {}
-                except Exception:
-                    pass
+                except Exception as e:
+                    _sin_dato("prior_year", e)
 
                 # Altman Z-Score — use best available data
                 z_ta = ta_val  # total_assets already computed above
@@ -674,6 +711,7 @@ def _compute_analysis(symbol: str) -> dict:
                 # score (más abajo).
             except Exception as e:
                 logger.error(f"Institutional metrics error: {e}")
+                _sin_dato("altman_z/piotroski_f", e)
 
             # Score (0-100) — normalize to standard format.
             # Computed here (after institutional metrics) so the Altman Z-Score
@@ -732,6 +770,7 @@ def _compute_analysis(symbol: str) -> dict:
             except Exception as e:
                 logger.error(f"Score calculation error: {e}")
                 result["score"] = None
+                _sin_dato("score", e)
 
             # Valuation (Graham + DCF)
             try:
@@ -815,8 +854,10 @@ def _compute_analysis(symbol: str) -> dict:
                         result["sensitivity"] = sens
                     except Exception as e:
                         logger.error(f"Sensitivity error: {e}")
+                        _sin_dato("sensitivity", e)
             except Exception as e:
                 logger.error(f"Valuation error: {e}")
+                _sin_dato("graham/dcf", e)
 
             # Alerts — motor de interpretación de señales (el "cerebro"): convierte
             # los ratios crudos en fortalezas/advertencias/riesgos con una lectura
@@ -836,6 +877,7 @@ def _compute_analysis(symbol: str) -> dict:
             except Exception as e:
                 logger.error(f"Alerts error: {e}")
                 result["alerts"] = {"red_flags": [], "warnings": [], "strengths": []}
+                _sin_dato("alerts", e)
 
             # Historical price data for chart
             try:
@@ -844,8 +886,8 @@ def _compute_analysis(symbol: str) -> dict:
                     "52w_low": safe_float(financials.price_52w_low),
                     "beta": safe_float(financials.beta),
                 }
-            except Exception:
-                pass
+            except Exception as e:
+                _sin_dato("price_history", e)
 
             # Yearly financials (for historical trends chart)
             try:
@@ -859,8 +901,19 @@ def _compute_analysis(symbol: str) -> dict:
                         }
                         for y in yearly if y.get("year")
                     ]
-            except Exception:
-                pass
+            except Exception as e:
+                _sin_dato("yearly_financials", e)
+
+        # Validación de salida: múltiplos <= 0 -> "no significativo". Va al
+        # final para no alterar las entradas del score ni de las alertas.
+        _out_flags = []
+        try:
+            from validate import validate_outputs
+            _out_flags = validate_outputs(result)
+        except Exception as e:
+            _sin_dato("validacion_salida", e)
+        result["data_validation"] = list(yinfo.get("_validation") or []) + _out_flags
+        result["data_provenance"] = _build_provenance(yinfo, _out_flags, _block_errors)
 
         return result
 
