@@ -444,19 +444,26 @@ def _eps_growth(ctx: Ctx):
 
 
 def _piotroski(ctx: Ctx):
-    f = ctx.piotroski.get("score")
+    # Escala única sobre el valor ESCALADO a base 9; sin señal si no concluyente.
+    if ctx.piotroski.get("conclusive") is False:
+        return None
+    f_raw = ctx.piotroski.get("score")
+    f = ctx.piotroski.get("scaled_score", f_raw)
     if f is None:
         return None
+    n = ctx.piotroski.get("evaluated", 9)
+    f_txt = f"{f_raw}/9" if n == 9 else f"{f_raw}/{n} evaluados"
+    de_txt = "de las 9 señales" if n == 9 else f"de las {n} señales evaluadas"
     fy = ctx.piotroski.get("fiscal_year")
     yr = f" ({fy})" if fy else ""
     T = _A["piotroski"]
     if f >= T["strong_min"]:
-        return _sig("strength", "Crecimiento", f"Fortaleza financiera excepcional — Piotroski {f}/9",
-                    f"Cumple {f} de las 9 señales de Piotroski{yr} sobre mejora en rentabilidad, estructura de capital y "
+        return _sig("strength", "Crecimiento", f"Fortaleza financiera excepcional — Piotroski {f_txt}",
+                    f"Cumple {f_raw} {de_txt} de Piotroski{yr} sobre mejora en rentabilidad, estructura de capital y "
                     "eficiencia: un perfil de salud financiera en clara mejora año contra año.", T["w_strong"])
     if f <= T["weak_max"]:
-        return _sig("risk", "Crecimiento", f"Debilidad financiera — Piotroski {f}/9",
-                    f"Solo cumple {f} de las 9 señales de Piotroski{yr}: múltiples indicadores contables de rentabilidad, "
+        return _sig("risk", "Crecimiento", f"Debilidad financiera — Piotroski {f_txt}",
+                    f"Solo cumple {f_raw} {de_txt} de Piotroski{yr}: múltiples indicadores contables de rentabilidad, "
                     "deuda o eficiencia se están deteriorando en el último ejercicio.", T["w_weak"])
     return None
 

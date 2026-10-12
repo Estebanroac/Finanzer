@@ -427,7 +427,16 @@ def financial_health_score(
     return scaled_score, risk_level, interpretation, details
 
 
-def piotroski_f_score(
+PIOTROSKI_CRITERIA = (
+    "roa_positive", "cfo_positive", "roa_improved", "earnings_quality",
+    "debt_reduced", "current_ratio_improved", "no_dilution",
+    "gross_margin_improved", "asset_turnover_improved",
+)
+PIOTROSKI_STATES = ("cumple", "no_cumple", "sin_dato")
+_PIO_SYMBOL = {"cumple": "✓", "no_cumple": "✗", "sin_dato": "✗"}
+
+
+def piotroski_evaluate(
     # Rentabilidad (4 puntos)
     net_income: Optional[float],
     roa_current: Optional[float],
@@ -446,153 +455,124 @@ def piotroski_f_score(
     asset_turnover_current: Optional[float],
     asset_turnover_prior: Optional[float],
     total_assets: Optional[float] = None
-) -> Tuple[int, List[str], str]:
+) -> Dict[str, Any]:
     """
-    Piotroski F-Score - Indicador de fortaleza financiera (0-9).
-    
-    Desarrollado por Joseph Piotroski (Stanford, 2000).
-    
-    Mide 9 señales binarias en 3 categorías:
-    
-    RENTABILIDAD (4 puntos):
-        1. ROA > 0
-        2. CFO > 0  
-        3. ROA mejoró vs año anterior
-        4. CFO > Net Income (calidad de earnings)
-    
-    APALANCAMIENTO/LIQUIDEZ (3 puntos):
-        5. Deuda LP disminuyó o igual
-        6. Current Ratio mejoró
-        7. No emitió nuevas acciones
-    
-    EFICIENCIA OPERATIVA (2 puntos):
-        8. Margen bruto mejoró
-        9. Asset Turnover mejoró
-    
-    Interpretación:
-        8-9: Fortaleza financiera excepcional
-        6-7: Buena salud financiera
-        4-5: Neutral
-        2-3: Debilidad financiera
-        0-1: Alto riesgo de problemas financieros
-    
-    Returns:
-        Tuple[score, details, interpretation]
-    """
-    score = 0
-    details = []
-    
-    # === RENTABILIDAD (4 puntos) ===
-    
-    # 1. ROA positivo
-    if roa_current is not None and roa_current > 0:
-        score += 1
-        details.append("✓ ROA positivo")
-    else:
-        details.append("✗ ROA negativo o N/A")
-    
-    # 2. CFO positivo
-    if operating_cash_flow is not None and operating_cash_flow > 0:
-        score += 1
-        details.append("✓ Cash Flow Operativo positivo")
-    else:
-        details.append("✗ CFO negativo o N/A")
-    
-    # 3. ROA mejoró
-    if roa_current is not None and roa_prior is not None:
-        if roa_current > roa_prior:
-            score += 1
-            details.append("✓ ROA mejoró vs año anterior")
-        else:
-            details.append("✗ ROA no mejoró")
-    else:
-        details.append("✗ Sin datos ROA histórico")
-    
-    # 4. Calidad de earnings (CFO > Net Income)
-    if operating_cash_flow is not None and net_income is not None:
-        if operating_cash_flow > net_income:
-            score += 1
-            details.append("✓ CFO > Net Income (earnings de calidad)")
-        else:
-            details.append("✗ CFO < Net Income (alerta calidad)")
-    else:
-        details.append("✗ Sin datos para calidad de earnings")
-    
-    # === APALANCAMIENTO/LIQUIDEZ (3 puntos) ===
-    
-    # 5. Deuda LP disminuyó
-    if long_term_debt_current is not None and long_term_debt_prior is not None:
-        if long_term_debt_current <= long_term_debt_prior:
-            score += 1
-            details.append("✓ Deuda LP estable o disminuyó")
-        else:
-            details.append("✗ Deuda LP aumentó")
-    else:
-        details.append("✗ Sin datos de deuda LP histórica")
-    
-    # 6. Current Ratio mejoró
-    if current_ratio_current is not None and current_ratio_prior is not None:
-        if current_ratio_current > current_ratio_prior:
-            score += 1
-            details.append("✓ Liquidez (Current Ratio) mejoró")
-        else:
-            details.append("✗ Liquidez no mejoró")
-    else:
-        details.append("✗ Sin datos de liquidez histórica")
-    
-    # 7. No emitió nuevas acciones (dilución)
-    if shares_current is not None and shares_prior is not None:
-        if shares_current <= shares_prior:
-            score += 1
-            details.append("✓ Sin dilución de acciones")
-        else:
-            details.append("✗ Emisión de nuevas acciones (dilución)")
-    else:
-        details.append("✗ Sin datos de acciones históricas")
-    
-    # === EFICIENCIA OPERATIVA (2 puntos) ===
-    
-    # 8. Margen bruto mejoró
-    if gross_margin_current is not None and gross_margin_prior is not None:
-        if gross_margin_current > gross_margin_prior:
-            score += 1
-            details.append("✓ Margen bruto mejoró")
-        else:
-            details.append("✗ Margen bruto no mejoró")
-    else:
-        details.append("✗ Sin datos de margen bruto histórico")
-    
-    # 9. Asset Turnover mejoró
-    if asset_turnover_current is not None and asset_turnover_prior is not None:
-        if asset_turnover_current > asset_turnover_prior:
-            score += 1
-            details.append("✓ Eficiencia de activos mejoró")
-        else:
-            details.append("✗ Eficiencia de activos no mejoró")
-    else:
-        details.append("✗ Sin datos de asset turnover histórico")
-    
-    # Signals that couldn't be evaluated because prior-year data is missing
-    # (e.g. recent IPOs). A low score caused by absent history is a data
-    # limitation, not financial weakness — don't call it "debilidad".
-    no_data = sum(1 for d in details if "Sin datos" in d)
+    Piotroski F-Score (Piotroski, 2000) con TRES estados por criterio.
 
-    # Interpretación
+    Cada una de las 9 señales es "cumple", "no_cumple" o "sin_dato". Un dato
+    ausente NO cuenta como incumplimiento (etapa 5): se excluye y se reporta la
+    cobertura "X/N evaluados".
+
+      · N >= min_evaluated (7, config): resultado escalado a base 9 (X·9/N)
+        para las bandas 8/6/4/2 y para los puntos de Calidad.
+      · N <  min_evaluated: "no concluyente"; no aporta a Calidad.
+
+    RENTABILIDAD: ROA > 0 · CFO > 0 · ROA mejoró · CFO > beneficio neto
+    APALANCAMIENTO/LIQUIDEZ: deuda LP ≤ año previo · current ratio mejoró · sin dilución
+    EFICIENCIA: margen bruto mejoró · rotación de activos mejoró
+    """
+    crit = []
+
+    def add(key, state, detail):
+        crit.append({"key": key, "state": state, "detail": detail})
+
+    def cmp(key, cur, prev, ok, ok_txt, ko_txt, nodata_txt):
+        if cur is None or prev is None:
+            add(key, "sin_dato", nodata_txt)
+        elif ok(cur, prev):
+            add(key, "cumple", ok_txt)
+        else:
+            add(key, "no_cumple", ko_txt)
+
+    # 1. ROA positivo
+    if roa_current is None:
+        add("roa_positive", "sin_dato", "Sin datos de ROA")
+    elif roa_current > 0:
+        add("roa_positive", "cumple", "ROA positivo")
+    else:
+        add("roa_positive", "no_cumple", "ROA negativo")
+    # 2. CFO positivo
+    if operating_cash_flow is None:
+        add("cfo_positive", "sin_dato", "Sin datos de Cash Flow Operativo")
+    elif operating_cash_flow > 0:
+        add("cfo_positive", "cumple", "Cash Flow Operativo positivo")
+    else:
+        add("cfo_positive", "no_cumple", "CFO negativo")
+    # 3. ROA mejoró
+    cmp("roa_improved", roa_current, roa_prior, lambda c, p: c > p,
+        "ROA mejoró vs año anterior", "ROA no mejoró", "Sin datos ROA histórico")
+    # 4. Calidad de earnings (CFO > Net Income)
+    cmp("earnings_quality", operating_cash_flow, net_income, lambda c, p: c > p,
+        "CFO > Net Income (earnings de calidad)", "CFO < Net Income (alerta calidad)",
+        "Sin datos para calidad de earnings")
+    # 5. Deuda LP disminuyó o igual
+    cmp("debt_reduced", long_term_debt_current, long_term_debt_prior, lambda c, p: c <= p,
+        "Deuda LP estable o disminuyó", "Deuda LP aumentó", "Sin datos de deuda LP histórica")
+    # 6. Current Ratio mejoró
+    cmp("current_ratio_improved", current_ratio_current, current_ratio_prior, lambda c, p: c > p,
+        "Liquidez (Current Ratio) mejoró", "Liquidez no mejoró", "Sin datos de liquidez histórica")
+    # 7. Sin dilución
+    cmp("no_dilution", shares_current, shares_prior, lambda c, p: c <= p,
+        "Sin dilución de acciones", "Emisión de nuevas acciones (dilución)", "Sin datos de acciones históricas")
+    # 8. Margen bruto mejoró
+    cmp("gross_margin_improved", gross_margin_current, gross_margin_prior, lambda c, p: c > p,
+        "Margen bruto mejoró", "Margen bruto no mejoró", "Sin datos de margen bruto histórico")
+    # 9. Rotación de activos mejoró
+    cmp("asset_turnover_improved", asset_turnover_current, asset_turnover_prior, lambda c, p: c > p,
+        "Eficiencia de activos mejoró", "Eficiencia de activos no mejoró", "Sin datos de asset turnover histórico")
+
+    total = len(PIOTROSKI_CRITERIA)
+    passed = sum(1 for c in crit if c["state"] == "cumple")
+    evaluated = sum(1 for c in crit if c["state"] != "sin_dato")
+    conclusive = evaluated >= _PIOTROSKI["min_evaluated"]
+    scaled = None
+    if conclusive:
+        # Con los 9 evaluados el escalado es la identidad (y se conserva el int).
+        scaled = passed if evaluated == total else passed * total / evaluated
+
     pb = _PIOTROSKI["bands"]
-    if no_data >= _PIOTROSKI["inconclusive_missing"]:
-        interpretation = f"Datos históricos limitados ({no_data}/9 señales sin evaluar) - F-Score no concluyente"
-    elif score >= pb[0]:
+    if not conclusive:
+        interpretation = (f"Datos históricos limitados ({total - evaluated}/{total} señales sin evaluar) "
+                          f"- F-Score no concluyente")
+    elif scaled >= pb[0]:
         interpretation = "Excelente - Fortaleza financiera excepcional"
-    elif score >= pb[1]:
+    elif scaled >= pb[1]:
         interpretation = "Bueno - Salud financiera sólida"
-    elif score >= pb[2]:
+    elif scaled >= pb[2]:
         interpretation = "Neutral - Monitorear indicadores"
-    elif score >= pb[3]:
+    elif scaled >= pb[3]:
         interpretation = "Débil - Señales de debilidad financiera"
     else:
         interpretation = "Crítico - Alto riesgo de problemas"
 
-    return score, details, interpretation
+    return {
+        "score": passed,
+        "evaluated": evaluated,
+        "max_score": total,
+        "scaled_score": scaled,
+        "conclusive": conclusive,
+        "criteria": crit,
+        "interpretation": interpretation,
+    }
+
+
+def piotroski_level(scaled: Optional[float], conclusive: bool) -> str:
+    """Insignia de la escala única (Fuerte/Bueno/Neutral/Débil/Crítico)."""
+    if not conclusive or scaled is None:
+        return "No concluyente"
+    b = _PIOTROSKI["bands"]
+    return ("Fuerte" if scaled >= b[0] else "Bueno" if scaled >= b[1]
+            else "Neutral" if scaled >= b[2] else "Débil" if scaled >= b[3] else "Crítico")
+
+
+def piotroski_f_score(*args, **kwargs) -> Tuple[int, List[str], str]:
+    """Compatibilidad: (aprobados, detalles con ✓/✗, interpretación).
+
+    Un criterio sin dato aparece como "✗ Sin datos..." en el texto, pero NO
+    cuenta como incumplimiento: usa piotroski_evaluate para el estado."""
+    r = piotroski_evaluate(*args, **kwargs)
+    details = [f"{_PIO_SYMBOL[c['state']]} {c['detail']}" for c in r["criteria"]]
+    return r["score"], details, r["interpretation"]
 
 
 def calculate_wacc(
@@ -2781,30 +2761,32 @@ def score_calidad_ganancias(
     
     # Piotroski F-Score (peso alto: hasta ±7 pts)
     if f_score is not None:
+        # Piotroski escalado a base 9 cuando se evaluaron 7-8 criterios (etapa 5).
+        _fs = f_score if isinstance(f_score, int) else f"{f_score:.1f}"
         b, p = _PIOTROSKI["bands"], T["fscore_points"]
         if f_score >= b[0]:
             adj = p[0]
             sev = "excellent"
-            reason = f"Fortaleza excepcional ({f_score}/9)"
+            reason = f"Fortaleza excepcional ({_fs}/9)"
         elif f_score >= b[1]:
             adj = p[1]
             sev = "good"
-            reason = f"Buena salud ({f_score}/9)"
+            reason = f"Buena salud ({_fs}/9)"
         elif f_score >= b[2]:
             adj = p[2]
             sev = "ok"
-            reason = f"Neutral ({f_score}/9)"
+            reason = f"Neutral ({_fs}/9)"
         elif f_score >= b[3]:
             adj = p[3]
             sev = "moderate"
-            reason = f"Debilidad ({f_score}/9)"
+            reason = f"Debilidad ({_fs}/9)"
         else:
             adj = p[4]
             sev = "severe"
-            reason = f"Señales de deterioro ({f_score}/9)"
+            reason = f"Señales de deterioro ({_fs}/9)"
         
         base_score += adj
-        adjustments.append({"metric": "Piotroski F-Score", "value": f"{f_score}/9", "adjustment": adj, "reason": reason, "severity": sev})
+        adjustments.append({"metric": "Piotroski F-Score", "value": f"{_fs}/9", "adjustment": adj, "reason": reason, "severity": sev})
     
     # Operating Cash Flow (hasta ±4 pts)
     if ocf is not None:

@@ -1415,11 +1415,21 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
 
     if piotroski and piotroski.get("score") is not None:
         f_sc, f_max = piotroski.get("score", 0), piotroski.get("max_score", 9)
-        f_tone = 'pos' if f_sc >= 7 else 'warn' if f_sc >= 4 else 'neg'
+        f_n = piotroski.get("evaluated", f_max)
+        f_scaled = piotroski.get("scaled_score")
+        f_conclusive = piotroski.get("conclusive", True)
+        f_for_tone = f_scaled if f_scaled is not None else f_sc
+        f_tone = ('neu' if not f_conclusive else
+                  'pos' if f_for_tone >= 7 else 'warn' if f_for_tone >= 4 else 'neg')
         f_body = (f"{piotroski.get('interpretation', '')}. El F-Score de Piotroski verifica 9 señales contables de mejora "
                   f"en rentabilidad, estructura de capital y eficiencia operativa"
                   + (f" ({piotroski.get('fiscal_year')})" if piotroski.get("fiscal_year") else "") + ".")
-        _emit_card(model_card(f"{f_sc}/{f_max}", f_tone, "Piotroski F-Score",
+        if f_n < f_max:
+            # Cobertura (etapa 5): los criterios sin dato no cuentan como incumplidos.
+            f_body += (f" Evaluados {f_n} de {f_max} criterios (el resto, sin dato)"
+                       + (f"; resultado escalado a base {f_max}: {f_scaled:.1f}/{f_max}." if f_scaled is not None
+                          else "; cobertura insuficiente para un resultado concluyente."))
+        _emit_card(model_card(f"{f_sc}/{f_n}" if f_n < f_max else f"{f_sc}/{f_max}", f_tone, "Piotroski F-Score",
                               str(piotroski.get("level", "")), _esc(f_body)))
 
         detail_labels = {
@@ -1434,11 +1444,12 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
             story.append(Spacer(1, 6))
             rows, reads = [], []
             for k, crit in f_details.items():
-                ok = bool(crit.get("passed"))
+                state = crit.get("state") or ("cumple" if crit.get("passed") else "no_cumple")
                 i = len(rows)
                 rows.append([detail_labels.get(k, k.replace("_", " ").title()),
-                             (crit.get("detail") or "")[:72], "Cumple" if ok else "No cumple"])
-                reads.append((i, 'pos' if ok else 'neg'))
+                             (crit.get("detail") or "")[:72],
+                             {"cumple": "Cumple", "no_cumple": "No cumple", "sin_dato": "Sin dato"}[state]])
+                reads.append((i, {"cumple": 'pos', "no_cumple": 'neg', "sin_dato": 'neu'}[state]))
             story.append(data_table(["CRITERIO", "DETALLE", "ESTADO"], rows,
                                     [2.1 * inch, CW - 3.3 * inch, 1.2 * inch],
                                     aligns=['LEFT', 'LEFT', 'RIGHT'], reads=reads, bold_col=None))

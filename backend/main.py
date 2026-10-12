@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "lib"))
 from data_fetcher import FinancialDataService, InvalidSymbolError
 from financial_ratios import (
     calculate_all_ratios, calculate_score_v2,
-    altman_z_score, piotroski_f_score,
+    altman_z_score, piotroski_evaluate, piotroski_level,
     graham_number, margin_of_safety, dcf_multi_stage_dynamic,
     dcf_sensitivity_analysis, calculate_wacc
 )
@@ -648,7 +648,7 @@ def _compute_analysis(symbol: str) -> dict:
                 pio_at = safe_float(piotroski_fy.get("asset_turnover")) or safe_float(current_derived.get("asset_turnover")) or safe_float(ratios.get("asset_turnover"))
                 pio_ta = safe_float(piotroski_fy.get("total_assets")) or z_ta
 
-                f_score, f_details, f_interp = piotroski_f_score(
+                _pio = piotroski_evaluate(
                     net_income=pio_ni,
                     roa_current=pio_roa,
                     roa_prior=safe_float(prior.get("roa")),
@@ -665,23 +665,15 @@ def _compute_analysis(symbol: str) -> dict:
                     asset_turnover_prior=safe_float(prior.get("asset_turnover")),
                     total_assets=pio_ta,
                 )
-                _lb = cfg("valuation.models.piotroski.bands")  # misma escala que la interpretación
-                f_level = ("Fuerte" if f_score >= _lb[0] else "Bueno" if f_score >= _lb[1]
-                           else "Neutral" if f_score >= _lb[2] else "Débil" if f_score >= _lb[3] else "Crítico")
-
-                # Convert detail strings to structured criteria for frontend
-                criteria_labels = [
-                    "roa_positive", "cfo_positive", "roa_improved", "earnings_quality",
-                    "debt_reduced", "current_ratio_improved", "no_dilution",
-                    "gross_margin_improved", "asset_turnover_improved"
-                ]
-                f_criteria = {}
-                for i, detail_str in enumerate(f_details):
-                    key = criteria_labels[i] if i < len(criteria_labels) else f"criterion_{i}"
-                    passed = detail_str.startswith("✓")
-                    # Remove ✓/✗ prefix
-                    clean_detail = detail_str[2:].strip() if len(detail_str) > 2 else detail_str
-                    f_criteria[key] = {"passed": passed, "detail": clean_detail}
+                # Estado ESTRUCTURADO de cada criterio (cumple/no_cumple/sin_dato):
+                # ya no se adivina por el símbolo ✓/✗ del texto (etapa 5).
+                f_criteria = {c["key"]: {"passed": c["state"] == "cumple", "state": c["state"],
+                                         "detail": c["detail"]}
+                              for c in _pio["criteria"]}
+                f_interp = _pio["interpretation"]
+                f_level = piotroski_level(_pio["scaled_score"], _pio["conclusive"])
+                # Lo que entra a Calidad: el escalado a base 9, o nada si no concluyente.
+                f_score = _pio["scaled_score"] if _pio["conclusive"] else None
 
                 # Fiscal year label for Piotroski
                 fy_label = ""
@@ -694,10 +686,14 @@ def _compute_analysis(symbol: str) -> dict:
                         fy_label = f"FY{fy_current}"
 
                 result["piotroski_f"] = {
-                    "score": f_score, "max_score": 9, "level": f_level,
+                    "score": _pio["score"], "max_score": _pio["max_score"], "level": f_level,
                     "interpretation": f_interp,
                     "details": f_criteria,
                     "fiscal_year": fy_label,
+                    # Cobertura (etapa 5): "X/N evaluados" y el escalado a base 9.
+                    "evaluated": _pio["evaluated"],
+                    "scaled_score": safe_float(_pio["scaled_score"]),
+                    "conclusive": _pio["conclusive"],
                 }
 
                 # Financial health (sector financiero): NO se llama aquí.
@@ -720,8 +716,9 @@ def _compute_analysis(symbol: str) -> dict:
                 # historical data, e.g. recent IPOs), don't let it penalize the
                 # calidad category — pass None so that component is treated as
                 # neutral. The displayed F-Score is unaffected.
-                _f_interp = result.get("piotroski_f", {}).get("interpretation", "")
-                _f_for_score = None if "no concluyente" in _f_interp else f_score
+                # Piotroski no concluyente (cobertura < min_evaluated) -> None:
+                # no aporta a Calidad, que se reescala sobre el resto (etapa 5).
+                _f_for_score = f_score
                 score_result = calculate_score_v2(
                     ratios, fin_dict,
                     z_score_value=z_val,

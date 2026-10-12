@@ -22,7 +22,8 @@ GENERIC_OK = {0, 1, 100}
 
 MIGRATED = {
     "lib/financial_ratios.py": [
-        "is_financial_sector", "altman_z_score", "financial_health_score", "piotroski_f_score",
+        "is_financial_sector", "altman_z_score", "financial_health_score", "piotroski_evaluate",
+        "piotroski_level", "piotroski_f_score",
         "calculate_wacc", "classify_company_type", "calculate_growth_quality_score",
         "adjust_valuation_for_growth", "graham_number", "dcf_multi_stage", "dcf_multi_stage_dynamic",
         "calculate_all_ratios", "score_solidez_financiera", "score_solidez_financiera_financial",
@@ -58,14 +59,13 @@ EXCEPTIONS = {
         "definición de CAGR-3Y (3 intervalos)",
     ("lib/validate.py", "_rule_growth", 4):
         "CAGR con el máximo de intervalos disponibles en _statements_fy (5 ejercicios)",
+    ("lib/alert_interpretations.py", "_piotroski", 9):
+        "número de señales del Piotroski F-Score (por definición)",
     ("main.py", "_compute_analysis", 15):
         "longitud máxima de un ticker en la validación de entrada de la API",
     ("main.py", "_compute_analysis", 400): "código HTTP",
     ("main.py", "_compute_analysis", 404): "código HTTP",
     ("main.py", "_compute_analysis", 500): "código HTTP",
-    ("main.py", "_compute_analysis", 2):
-        "quitar el prefijo '✓ '/'✗ ' del detalle de Piotroski (presentación)",
-    ("main.py", "_compute_analysis", 9): "máximo del Piotroski F-Score (9 señales, por definición)",
 }
 
 

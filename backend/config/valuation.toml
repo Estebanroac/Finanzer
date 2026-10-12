@@ -65,7 +65,8 @@ non_manufacturing_sectors = ["technology", "tech", "communication services", "he
 [models.piotroski]
 bands = [8, 6, 4, 2]                    # ÚNICA escala: interpretación, insignia (Fuerte/Bueno/Neutral/Débil/Crítico),
                                         # puntos de Calidad del score y tarjeta/leyenda de la UI (generada)
-inconclusive_missing = 4                # >= 4 señales sin dato -> "no concluyente"
+min_evaluated = 7                       # etapa 5: con >= 7 criterios evaluados se escala a base 9 (X·9/N);
+                                        # con menos, "no concluyente" y no aporta a Calidad
 
 [models.financial_health]               # financial_health_score (bancos); umbrales en sectors.toml
 roa_points = [3, 2, 1]
