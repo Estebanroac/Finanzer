@@ -586,3 +586,8 @@ correctos según los datos, pero aplican reglas genéricas a arquetipos que nece
   1.48 B) incluye el capex de expansión. Para cíclicas, evaluar el **FCF de mantenimiento** (OCF − capex de
   mantenimiento, aproximando el capex de mantenimiento con la D&A). Además, la **regla de confianza** debe marcar
   como de baja fiabilidad un DCF cuya conclusión supere un umbral de distancia al precio (en config).
+- **Etapa 9 — retorno total en REIT y empresas de alto dividendo:** para el accionista, el retorno es dividendo +
+  crecimiento. En la etapa 6 el REIT mide Crecimiento por acción (O: FFO por acción plano) y la rentabilidad por
+  dividendo puntúa aparte, en Valoración. Evaluar si en ese arquetipo (y en MATURE de alto dividendo) Crecimiento
+  debe ponderarse junto con la rentabilidad por dividendo, para no castigar como "sin crecimiento" un retorno que
+  llega casi todo vía dividendo.
