@@ -1437,8 +1437,11 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         f_scaled = piotroski.get("scaled_score")
         f_conclusive = piotroski.get("conclusive", True)
         f_for_tone = f_scaled if f_scaled is not None else f_sc
+        # Escala única 8/6/4/2 (decisión 2 de la etapa 4): Fuerte/Bueno -> pos,
+        # Neutral -> warn, Débil/Crítico -> neg.
+        _pb = cfg("valuation.models.piotroski.bands")
         f_tone = ('neu' if not f_conclusive else
-                  'pos' if f_for_tone >= 7 else 'warn' if f_for_tone >= 4 else 'neg')
+                  'pos' if f_for_tone >= _pb[1] else 'warn' if f_for_tone >= _pb[2] else 'neg')
         f_body = (f"{piotroski.get('interpretation', '')}. El F-Score de Piotroski verifica 9 señales contables de mejora "
                   f"en rentabilidad, estructura de capital y eficiencia operativa"
                   + (f" ({piotroski.get('fiscal_year')})" if piotroski.get("fiscal_year") else "") + ".")
