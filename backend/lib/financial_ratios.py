@@ -2212,12 +2212,13 @@ def score_rentabilidad(
     roa: Optional[float],
     operating_margin: Optional[float],
     net_margin: Optional[float],
-    sector_roe_threshold: float = _SC["rentabilidad"]["signature_default_roe_low"],
-    sector_roa_threshold: float = _SC["rentabilidad"]["signature_default_roa_low"],
+    *,
+    sector_roe_threshold: float,
+    sector_roa_threshold: float,
+    sector_roe_high: float,
+    sector_roa_high: float,
     roic: Optional[float] = None,
     wacc: Optional[float] = None,
-    sector_roe_high: float = _SC["rentabilidad"]["signature_default_roe_high"],
-    sector_roa_high: float = _SC["rentabilidad"]["signature_default_roa_high"]
 ) -> Dict[str, Any]:
     """
     Categoría 2: Rentabilidad (20 pts máximo)
