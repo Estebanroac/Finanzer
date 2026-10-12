@@ -283,7 +283,7 @@ class FixtureStore:
         return entries[min(i, len(entries) - 1)]
 
     def replay_http(self, url, params):
-        sym = _symbol_from_url(url)
+        sym = _symbol_from_url(url, params)
         self.load(sym)
         e = self._next(self.http, sym, _key(url, params), lambda x: _key(x["url"], x["params"]))
         if e is None:
@@ -314,8 +314,10 @@ class FixtureStore:
         return copy.deepcopy(e["response"])
 
 
-def _symbol_from_url(url):
-    # .../v10/finance/quoteSummary/{SYMBOL}
+def _symbol_from_url(url, params=None):
+    # .../v10/finance/quoteSummary/{SYMBOL}  |  .../v1/finance/search?q={SYMBOL}
+    if "/finance/search" in url:
+        return str((params or {}).get("q", "")).upper()
     return url.rstrip("/").rsplit("/", 1)[-1].upper()
 
 
@@ -346,7 +348,7 @@ class _RecordingSession:
     def get(self, url, params=None, **kw):
         r = self._real.get(url, params=params, **kw)
         if not any(u in url for u in _SESSION_URLS):
-            self._store.record_http(_symbol_from_url(url), url, params, r.status_code, r.text)
+            self._store.record_http(_symbol_from_url(url, params), url, params, r.status_code, r.text)
         return r
 
     def __getattr__(self, name):

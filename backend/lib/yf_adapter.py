@@ -919,13 +919,24 @@ def _fallback_yfinance(symbol: str) -> Dict[str, Any]:
     except Exception:
         pass
 
-    sd = KNOWN_SECTORS.get(symbol)
-    info["sector"] = sd[0] if sd else "Unknown"
-    info["industry"] = sd[1] if sd else "Unknown"
+    # Sector/industria DE LA FUENTE: en prod quoteSummary (assetProfile) da 401,
+    # pero la búsqueda de Yahoo no exige crumb y sí trae sector e industria.
+    # KNOWN_SECTORS queda solo como respaldo marcado si la búsqueda falla.
+    prof = _search_profile(symbol)
+    if prof and prof.get("sector"):
+        info["sector"] = prof["sector"]
+        info["industry"] = prof.get("industry") or "Unknown"
+        info["_profile_source"] = "yahoo_search"
+    else:
+        sd = KNOWN_SECTORS.get(symbol)
+        info["sector"] = sd[0] if sd else "Unknown"
+        info["industry"] = sd[1] if sd else "Unknown"
+        info["_profile_source"] = "known_sectors" if sd else "sin_dato"
 
     try:
         from stock_database import POPULAR_STOCKS
-        info["longName"] = POPULAR_STOCKS.get(symbol, symbol)
+        info["longName"] = (POPULAR_STOCKS.get(symbol)
+                            or (prof or {}).get("name") or symbol)
         info["shortName"] = info["longName"]
     except Exception:
         info["longName"] = symbol
@@ -1026,6 +1037,33 @@ def _fallback_yfinance(symbol: str) -> Dict[str, Any]:
     logger.info(f"[FALLBACK] get_ticker_info({symbol}) in {elapsed:.2f}s")
     _cache[symbol] = (time.time(), info, _is_degraded(info))
     return info
+
+
+_SEARCH_URL = "https://query2.finance.yahoo.com/v1/finance/search"
+
+
+def _search_profile(symbol: str):
+    """Sector, industria y nombre desde la búsqueda de Yahoo (endpoint SIN crumb).
+
+    Se usa en el plan B: desde IPs de datacenter quoteSummary responde 401
+    ('Invalid Crumb') pero la búsqueda funciona (RECON §7.5). Solo acepta la
+    cotización cuyo símbolo coincide exactamente. Devuelve None si no hay
+    coincidencia o falla la llamada.
+    """
+    try:
+        _ensure_session()
+        r = _session.get(_SEARCH_URL, params={"q": symbol, "quotesCount": 5, "newsCount": 0,
+                                              "listsCount": 0}, timeout=8)
+        if r.status_code != 200:
+            return None
+        for q in (r.json() or {}).get("quotes", []):
+            if str(q.get("symbol", "")).upper() == symbol.upper():
+                return {"sector": q.get("sector") or q.get("sectorDisp"),
+                        "industry": q.get("industry") or q.get("industryDisp"),
+                        "name": q.get("longname") or q.get("shortname")}
+    except Exception as e:
+        logger.warning(f"[SEARCH] perfil de {symbol} no disponible: {e}")
+    return None
 
 
 def _sg(series, key):

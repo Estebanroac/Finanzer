@@ -94,9 +94,7 @@ def test_bug_jpm_revenue_growth_artifact(analysis, fixture_store):
     assert abs(km["revenue_growth"] - statement_yoy) < 0.05
 
 
-@pytest.mark.xfail(raises=AssertionError, reason="RECON §7: en prod (Yahoo 401 -> _fallback_yfinance) el "
-                                                 "sector sale de KNOWN_SECTORS (~68 tickers): O queda 'Unknown' "
-                                                 "y no se valora como REIT")
+# CORREGIDO en la etapa 3 (bug a): el plan B toma sector/industria de la búsqueda de Yahoo.
 def test_bug_prod_sector_unknown_outside_known_list_o(outputs_by_env):
     import conftest
     if "prod" not in conftest.ENVS:
