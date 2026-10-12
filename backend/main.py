@@ -497,9 +497,14 @@ def _compute_analysis(symbol: str) -> dict:
             # _prior_year de Yahoo, ya usadas para Piotroski). Una emisión (dilución)
             # da yield negativo, que es la señal correcta.
             _prior_shares = safe_float((yinfo.get("_prior_year") or {}).get("shares")) if _has_yahoo else None
+            # Misma base que el año previo: acciones en circulación del ÚLTIMO
+            # ejercicio fiscal (estados), no las acciones "en vivo" de la
+            # cotización, que mezclan definición y periodo (no anualizado).
+            _fy_shares = safe_float((yinfo.get("_piotroski_current") or {}).get("shares")) if _has_yahoo else None
+            _cur_shares_bb = _fy_shares or shares_val
             buyback_yield = None
-            if _prior_shares and shares_val and _prior_shares > 0:
-                buyback_yield = (_prior_shares - shares_val) / _prior_shares
+            if _prior_shares and _cur_shares_bb and _prior_shares > 0:
+                buyback_yield = (_prior_shares - _cur_shares_bb) / _prior_shares
                 # Guard de sanidad: un cambio anual de acciones fuera de ±25% casi
                 # siempre es un desajuste de fuente (las shares actuales y las del
                 # _prior_year de Yahoo pueden venir con definiciones distintas para

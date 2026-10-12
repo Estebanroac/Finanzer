@@ -780,7 +780,10 @@ def _enrich_prior_year_data(symbol: str, info: Dict[str, Any]) -> Dict[str, Any]
         cur_ltd = _sf(cur_bs, "Long Term Debt")
         cur_ca = _sf(cur_bs, "Current Assets")
         cur_cl = _sf(cur_bs, "Current Liabilities")
-        cur_shares = _sf(cur_bs, "Share Issued") or _sf(cur_bs, "Ordinary Shares Number")
+        # Acciones EN CIRCULACIÓN (Ordinary Shares Number) antes que emitidas
+        # (Share Issued incluye autocartera: NFLX 4.53->4.57B emitidas mientras
+        # las en circulación bajaban 4.28->4.22B por recompras).
+        cur_shares = _sf(cur_bs, "Ordinary Shares Number") or _sf(cur_bs, "Share Issued")
 
         if cur_ta and cur_rev and cur_ta > 0:
             derived["asset_turnover"] = cur_rev / cur_ta
@@ -860,7 +863,7 @@ def _enrich_prior_year_data(symbol: str, info: Dict[str, Any]) -> Dict[str, Any]
             prior["roa"] = prev_ni_for_roa / prev_ta
 
         # Prior-year shares
-        prev_shares = _sf(prev_bs, "Share Issued") or _sf(prev_bs, "Ordinary Shares Number")
+        prev_shares = _sf(prev_bs, "Ordinary Shares Number") or _sf(prev_bs, "Share Issued")
         if prev_shares:
             prior["shares"] = prev_shares
 

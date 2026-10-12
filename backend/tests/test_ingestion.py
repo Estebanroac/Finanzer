@@ -92,3 +92,21 @@ def test_prod_plan_b_prior_year_values_come_from_statements(fixture_store):
         prior = dict(yf_adapter._cache["NFLX"][1]["_prior_year"])
     assert prior["_fiscal_year"] == "2024"
     assert prior["revenue"] == pytest.approx(float(inc.loc["Total Revenue"].iloc[1]))
+
+
+# ─────────────── bug (c): acciones en circulación y misma base en buyback ───────────────
+@pytest.mark.parametrize("env", ["local", "prod"])
+def test_nflx_no_dilution_uses_ordinary_shares(env, outputs_by_env):
+    """NFLX recompró (4.28 -> 4.22B en circulación): no hay dilución."""
+    a = outputs_by_env(env)["NFLX"][0]
+    assert a["piotroski_f"]["details"]["no_dilution"]["passed"] is True
+
+
+@pytest.mark.parametrize("env", ["local", "prod"])
+def test_buyback_yield_same_fiscal_basis(env, outputs_by_env, fixture_store):
+    """buyback = (FY previo − FY actual) / FY previo, ambos Ordinary Shares Number."""
+    bs = fb.obj_to_df(fixture_store.yf["NFLX"]["balance_sheet"])
+    cur, prev = (float(bs.loc["Ordinary Shares Number"].iloc[i]) for i in (0, 1))
+    km = outputs_by_env(env)["NFLX"][0]["key_metrics"]
+    assert km["buyback_yield"] == pytest.approx((prev - cur) / prev, rel=1e-9)
+    assert 0 < km["buyback_yield"] < 0.03

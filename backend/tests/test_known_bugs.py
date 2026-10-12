@@ -33,8 +33,7 @@ def test_bug_fcf_exceeds_ocf_nflx(analysis):
     assert km["free_cash_flow"] <= km["operating_cash_flow"]
 
 
-@pytest.mark.xfail(raises=AssertionError, reason="RECON C3: Piotroski/buyback usan 'Share Issued' (incluye autocartera) "
-                          "en vez de 'Ordinary Shares Number' (yf_adapter.py:783, 863)")
+# CORREGIDO en la etapa 3 (bug c): Ordinary Shares Number antes que Share Issued.
 def test_bug_shares_issued_vs_ordinary_nflx(fixture_store):
     bs = _frame(fixture_store, "NFLX", "balance_sheet")
     ordinary = bs.loc["Ordinary Shares Number"]
