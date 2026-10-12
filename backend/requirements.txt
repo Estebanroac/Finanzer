@@ -1,11 +1,18 @@
+# Versiones EXACTAS de producción (Render, Python 3.13.4), tomadas del log de build
+# del deploy e0be7d4 (11-oct-2026) y verificadas contra la línea base de prod
+# (backend/tests/fixtures/prod en la rama redesign-motor). No usar >=: cada deploy
+# instalaría lo último disponible y la línea base dejaría de describir producción.
+# Para actualizar una versión: cámbiala aquí y en constraints.txt, y vuelve a
+# correr la suite de regresión (golden local y prod) antes de desplegar.
+-c ../constraints.txt
+
 fastapi==0.115.0
 uvicorn==0.30.0
-pydantic>=2.0
-curl_cffi>=0.7.0
-reportlab>=4.0
-yfinance>=0.2.36
-pandas>=2.0
-# Directly imported (numpy in financial_ratios, requests in data_fetcher);
-# were only available transitively via pandas/yfinance — pin explicitly.
-numpy>=1.24
-requests>=2.31
+pydantic==2.14.1
+curl_cffi==0.16.3
+reportlab==5.0.1
+yfinance==1.7.0
+pandas==3.0.6
+# Importados directamente (numpy en financial_ratios, requests en data_fetcher).
+numpy==2.5.4
+requests==2.34.2
