@@ -51,8 +51,9 @@ def test_bug_wacc_is_only_cost_of_equity_nflx(analysis):
     assert abs(km["wacc"] - ke) > 1e-4
 
 
-@pytest.mark.xfail(raises=AssertionError, reason="RECON §6.5: el DCF topa el crecimiento en 30% y el grid en 50% (y con "
-                          "decay distinto): SNOW DCF $142.6 vs caso base del grid $318.9")
+# CORREGIDO en la etapa 4 (decisión 6): el grid parte del crecimiento usado por el DCF
+# (tope 30%, mismo suelo) con su mismo decaimiento. Queda <0.1% por el WACC redondeado
+# a 4 decimales en el grid.
 def test_bug_dcf_vs_grid_growth_snow(analysis):
     a = analysis("SNOW")
     fair = a["dcf"]["fair_value"]

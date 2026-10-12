@@ -818,8 +818,14 @@ def _compute_analysis(symbol: str) -> dict:
                         beta=beta,
                         total_debt=td_val,
                         cash=cash_val,
-                        revenue_growth_3y=min(growth, cfg("valuation.dcf.growth_cap")),
+                        revenue_growth_3y=growth,  # el DCF aplica el tope (30%) y el suelo (<= -20% -> 8%)
                     )
+                    # DCF y grid comparten supuestos (etapa 4): el crecimiento USADO por el
+                    # DCF (tras tope y suelo) y su mismo tipo de decaimiento.
+                    _g_used = dcf_result.get("growth_estimated")
+                    if _g_used is None:
+                        _g_used = growth
+                    _decay = dcf_result.get("decay_type") or "linear"
                     # upside y margin_of_safety se calculan aquí (price está en
                     # scope). El dict del DCF nunca tuvo claves 'upside_pct' ni
                     # 'margin_of_safety_value', así que antes ambos quedaban None.
@@ -833,7 +839,7 @@ def _compute_analysis(symbol: str) -> dict:
                     result["dcf"] = {
                         "fair_value": _fv,
                         "wacc": safe_float(wacc),
-                        "growth_rate": safe_float(growth),
+                        "growth_rate": safe_float(_g_used),  # el usado, no el bruto
                         "terminal_growth": safe_float(cfg("valuation.dcf.terminal_growth")),
                         "margin_of_safety": safe_float(_dcf_mos),
                         "upside": safe_float(_dcf_upside),
@@ -846,9 +852,10 @@ def _compute_analysis(symbol: str) -> dict:
                             fcf=fcf,
                             shares_outstanding=financials.shares_outstanding,
                             current_price=price,
-                            base_growth_rate=min(growth, cfg("valuation.dcf.growth_cap")),
+                            base_growth_rate=_g_used,
                             base_discount_rate=wacc or cfg("valuation.wacc.default"),
                             net_debt=_net_debt or 0.0,
+                            decay_type=_decay,
                         )
                         result["sensitivity"] = sens
                     except Exception as e:

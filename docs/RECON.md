@@ -540,3 +540,7 @@ Pendientes registrados:
   frontend (MetricsGrid, HealthTab, ComparativeTab), igual que el PDF; falta **reconstruir frontend/out**. La misma
   reconstrucción publicará la leyenda de Piotroski corregida. Nota: V (Visa) cae en financieras por la palabra
   clave "credit services"; revisar en la etapa 5 (clasificación).
+- **DCF y grid (hecho en la etapa 4):** el grid parte del crecimiento USADO por el DCF (tope 30% y el mismo suelo
+  de la decisión 4) con el mismo decaimiento, y el PDF imprime ese crecimiento. Las celdas del grid siguen
+  explorando ±5 pp alrededor del caso base (pueden superar el 30%). El caso base difiere <0.1% del DCF porque el
+  grid redondea el WACC a 4 decimales.

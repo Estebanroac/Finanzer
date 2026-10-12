@@ -22,11 +22,11 @@ clamp_max = 0.20
 high_growth_years = 5
 transition_years = 5
 terminal_growth = 0.025
-growth_cap = 0.50                   # tope del modelo y min(growth, 0.50) de main.py
+growth_cap = 0.50                   # tope duro interno de dcf_multi_stage (las celdas del grid quedan por debajo)
 signature_default_growth = 0.15     # default de firma de dcf_multi_stage y del grid
 source_cap_fcf = 0.35               # topes por fuente del crecimiento (dinámico)
 source_cap_eps = 0.40
-source_cap_revenue = 0.30
+source_cap_revenue = 0.30           # tope COMÚN de DCF y grid (el grid parte del crecimiento usado por el DCF)
 min_source_growth = -0.20           # una fuente se descarta si crece <= -20%
 default_growth = 0.08               # sin crecimiento (main.py) o con crecimiento <= −20% (dinámico)
                                     # (etapa 6: esa sustitución es incorrecta, ver RECON 7.9)

@@ -1719,6 +1719,7 @@ def dcf_multi_stage_dynamic(
         decay_type = "linear"
     else:
         decay_type = "step"
+    result["decay_type"] = decay_type  # el grid de sensibilidad usa el mismo
     
     model_result = dcf_multi_stage(
         fcf=fcf,
@@ -3177,6 +3178,7 @@ def dcf_sensitivity_analysis(
     discount_rate_range: tuple = _GRID["discount_range"],  # (min_delta, max_delta, step)
     terminal_growth: float = DCF_TERMINAL_GROWTH,
     net_debt: Optional[float] = 0.0,
+    decay_type: str = "linear",
 ) -> Dict[str, Any]:
     """
     Genera una matriz de sensibilidad para análisis DCF.
@@ -3194,6 +3196,7 @@ def dcf_sensitivity_analysis(
         growth_rate_range: (delta_min, delta_max, step) para growth rates
         discount_rate_range: (delta_min, delta_max, step) para discount rates
         terminal_growth: Tasa de crecimiento terminal
+        decay_type: decaimiento del crecimiento; main.py pasa el del DCF (etapa 4)
     
     Returns:
         Dict con matriz de sensibilidad, estadísticas y metadata
@@ -3282,7 +3285,8 @@ def dcf_sensitivity_analysis(
                 high_growth_rate=growth_rate,
                 terminal_growth=terminal_growth,
                 discount_rate=discount_rate,
-                net_debt=net_debt
+                net_debt=net_debt,
+                decay_type=decay_type,
             )
             
             fair_value = dcf_result.get("fair_value_per_share")
