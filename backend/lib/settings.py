@@ -20,7 +20,7 @@ cambia ni en la serialización (4 frente a 4.0).
 Uso:
     from settings import cfg
     T = cfg("valuation.dcf")          # dict
-    g = cfg("valuation.dcf.default_growth_engine")
+    g = cfg("valuation.dcf.default_growth")
 """
 import os
 import tomllib

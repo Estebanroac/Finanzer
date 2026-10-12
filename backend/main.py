@@ -803,7 +803,7 @@ def _compute_analysis(symbol: str) -> dict:
                 if fcf and fcf > 0 and price and financials.shares_outstanding and not _is_financial:
                     beta = financials.beta if financials.beta is not None else cfg("valuation.capm.default_beta")
                     wacc = calculate_wacc(beta=beta)
-                    growth = financials.revenue_growth_yoy or cfg("valuation.dcf.default_growth_main")
+                    growth = financials.revenue_growth_yoy or cfg("valuation.dcf.default_growth")
 
                     # Deuda neta para el puente Enterprise Value -> Equity Value.
                     # Sin esto, el DCF dividía el enterprise value entre acciones sin

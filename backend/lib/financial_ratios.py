@@ -1705,7 +1705,7 @@ def dcf_multi_stage_dynamic(
             break
     
     if growth_rate is None:
-        growth_rate = _DCF["default_growth_engine"]
+        growth_rate = _DCF["default_growth"]
         growth_source = "default_estimate"
         result["warnings"].append("Growth estimado en 8%")
     
