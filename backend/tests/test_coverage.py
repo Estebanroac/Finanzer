@@ -634,3 +634,23 @@ def test_not_applicable_and_missing_are_reported_apart():
 def test_category_with_nothing_applicable_is_not_applicable():
     cov = _cov(("A", None, NA))
     assert cov.report()["applicable"] is False and cov.report()["components"] == 0
+
+
+# ─────────────────────────── estancamiento (etapa 6) ───────────────────────────
+from financial_ratios import growth_for_bands, score_crecimiento  # noqa: E402
+
+
+def test_stagnation_tolerance_from_config():
+    tol = cfg("thresholds.score.crecimiento.flat_tolerance")
+    assert tol == 0.02
+    assert growth_for_bands(-0.019) == 0.0 and growth_for_bands(-0.021) == -0.021
+    assert growth_for_bands(0.01) == 0.01 and growth_for_bands(None) is None
+
+
+@pytest.mark.parametrize("arch,key", [(None, "Crecimiento Ingresos 3Y"), ("REIT", "Crecimiento FFO por acción 3Y")])
+def test_stagnation_scores_like_the_flat_band(arch, key):
+    def adj(g):
+        res = score_crecimiento(g, None, None, archetype=arch)
+        return next(a["adjustment"] for a in res["adjustments"] if a["metric"] == key)
+    assert adj(-0.001) == adj(0.01) == adj(-0.019)          # plano
+    assert adj(-0.03) < adj(-0.019)                           # contracción real

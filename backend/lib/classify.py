@@ -17,7 +17,8 @@ Arquetipos, en orden de prioridad (listas y umbrales en config/sectors.toml):
                      3 años > 15% (con los 4 ejercicios anuales).
   CYCLICAL           industria de la lista de cíclicas de Yahoo; las
                      "condicionales" (Semiconductors, Specialty Chemicals)
-                     solo si además la regla de volatilidad se activa.
+                     solo si hay reversión en la ventana: caída pico-valle del
+                     margen operativo o caída anual de ingresos.
   MATURE             por defecto.
 
 Además, una regla cuantitativa SOLO de alerta: una empresa no cíclica con el
@@ -107,6 +108,29 @@ def _possible_cyclical(st: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     return out
 
 
+def _reversion(st: Dict[str, Any]) -> Dict[str, Any]:
+    """Reversión dentro de la ventana de ejercicios (orden cronológico): mayor caída
+    del margen operativo desde un pico anterior y peor variación anual de ingresos."""
+    R = _C["reversion"]
+    rev = list(st.get("revenue") or [])
+    margins = [m for m in reversed(ratio_series(st.get("operating_income") or [], rev)) if m is not None]
+    drop, peak = 0.0, None
+    for m in margins:
+        peak = m if peak is None else max(peak, m)
+        drop = max(drop, peak - m)
+    growth = [g for g in yoy_growths(rev) if g is not None]
+    worst = min(growth) if growth else None
+    reasons = []
+    if len(margins) >= 2 and drop > R["op_margin_peak_to_trough"]:
+        reasons.append(f"el margen operativo cayó {drop * 100:.1f} pp desde un pico (> "
+                       f"{R['op_margin_peak_to_trough'] * 100:.0f} pp)")
+    if worst is not None and worst < -R["revenue_annual_decline"]:
+        reasons.append(f"los ingresos cayeron {abs(worst) * 100:.1f}% en un ejercicio (> "
+                       f"{R['revenue_annual_decline'] * 100:.0f}%)")
+    return {"op_margin_peak_to_trough": drop if len(margins) >= 2 else None, "worst_revenue_growth": worst,
+            "flag": bool(reasons), "detail": "; ".join(reasons)}
+
+
 def classify(*, sector: Optional[str], industry: Optional[str], eps_ttm: Optional[float],
              net_margin_ttm: Optional[float], statements_fy: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """Arquetipo y motivo de la clasificación.
@@ -185,15 +209,15 @@ def classify(*, sector: Optional[str], industry: Optional[str], eps_ttm: Optiona
         extra = " (inmobiliaria no REIT)" if sec == "real estate" else ""
         return out(CYCLICAL, f"Clasificada como CYCLICAL {by_ind}{extra}", "industria_ciclica")
     if ind in _C["cyclical_conditional_industries"]:
-        pc = _possible_cyclical(st)
-        inputs["op_margin_detrended_std"] = pc["op_margin_detrended_std"]
-        inputs["revenue_growth_std"] = pc["revenue_growth_std"]
-        if pc["flag"]:
-            why = pc["detail"].removeprefix("Posible cíclica: ").split(". No cambia")[0]
-            return out(CYCLICAL, f"Clasificada como CYCLICAL {by_ind} (cíclica condicional) con volatilidad alta: "
-                                 f"{why}", "industria_ciclica_condicional")
-        return out(MATURE, f"Clasificada como MATURE: industria {ind_txt} (cíclica condicional) sin volatilidad alta "
-                           "en los ejercicios disponibles", "ciclica_condicional_estable")
+        rv = _reversion(st)
+        inputs["op_margin_peak_to_trough"] = rv["op_margin_peak_to_trough"]
+        inputs["worst_revenue_growth"] = rv["worst_revenue_growth"]
+        if rv["flag"]:
+            return out(CYCLICAL, f"Clasificada como CYCLICAL {by_ind} (cíclica condicional) con reversión en la "
+                                 f"ventana: {rv['detail']}", "industria_ciclica_condicional")
+        return out(MATURE, f"Clasificada como MATURE: industria {ind_txt} (cíclica condicional) sin reversión en los "
+                           "ejercicios disponibles (ni caída pico-valle del margen ni caída anual de ingresos)",
+                   "ciclica_condicional_estable")
 
     # 6. MATURE por defecto.
     extra = f" (industria {ind_txt}" + ("; inmobiliaria no REIT)" if sec == "real estate" else ")") if ind_txt \

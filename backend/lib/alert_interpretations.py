@@ -18,13 +18,13 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 try:
-    from .financial_ratios import (SECTOR_THRESHOLDS, ThresholdConfig, interest_coverage_state,
-                                   net_debt_ebitda_state)
-    from .classify import CYCLICAL, FINANCIAL, MATURE, not_applicable
+    from .financial_ratios import (SECTOR_THRESHOLDS, ThresholdConfig, growth_for_bands,
+                                   interest_coverage_state, net_debt_ebitda_state)
+    from .classify import CYCLICAL, FINANCIAL, MATURE, REIT, not_applicable
 except ImportError:  # ejecución como script suelto
-    from financial_ratios import (SECTOR_THRESHOLDS, ThresholdConfig, interest_coverage_state,
-                                  net_debt_ebitda_state)
-    from classify import CYCLICAL, FINANCIAL, MATURE, not_applicable
+    from financial_ratios import (SECTOR_THRESHOLDS, ThresholdConfig, growth_for_bands,
+                                  interest_coverage_state, net_debt_ebitda_state)
+    from classify import CYCLICAL, FINANCIAL, MATURE, REIT, not_applicable
 
 
 from settings import cfg
@@ -451,7 +451,17 @@ def _growth(ctx: Ctx):
         return None
     if ctx.archetype == CYCLICAL and ctx.xv.get("revenue_growth_normalized") is not None:
         return None   # cíclica: el crecimiento es de ciclo medio, no una señal interanual
-    if g3 < 0:
+    if ctx.archetype == REIT:   # el dato es el CAGR 3 años del FFO por acción, no ingresos interanuales
+        if growth_for_bands(g3) < 0:
+            return _sig("warning", "Crecimiento", f"FFO por acción en descenso — {_pct(g3)} anual (3 años)",
+                        f"El FFO por acción cae un {_pct(abs(g3))} anual en tres años: la emisión de acciones crece más "
+                        "deprisa que los fondos de operación, y diluye al accionista.", _A["growth"]["w_contraction"])
+        if g3 > _A["growth"]["strong_above"]:
+            return _sig("strength", "Crecimiento", f"FFO por acción en fuerte alza — +{_pct(g3)} anual (3 años)",
+                        f"El FFO por acción crece {_pct(g3)} anual en tres años, por encima de la emisión de acciones.",
+                        _A["growth"]["w_strong"])
+        return None
+    if growth_for_bands(g3) < 0:   # entre −2% y 0: plano, no contracción
         return _sig("warning", "Crecimiento", f"Ingresos en contracción — {_pct(g3)} interanual",
                     f"Las ventas caen un {_pct(abs(g3))} interanual: un negocio que se encoge "
                     "presiona márgenes y valoración salvo que sea un bache puntual con catalizador de recuperación.", _A["growth"]["w_contraction"])

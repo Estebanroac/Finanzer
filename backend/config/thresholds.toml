@@ -118,6 +118,11 @@ eps_points = [5, 3, 1, -1, -4]
 fcf_bounds = [0.15, 0.05, -0.05]
 fcf_points = [4, 2, 0, -3]
 growth_company_points = 2
+# Estancamiento: entre −2% y 0 un crecimiento se puntúa como plano (banda 0–x%), no
+# como contracción, en TODAS las bandas de crecimiento con corte en 0 (ingresos, BPA,
+# FFO/acción, calidad del crecimiento, tipo de empresa, valor en libros, alerta y PDF).
+# Error de medición de agregados aproximados (FFO) de ese orden.
+flat_tolerance = 0.02
 # Etapa 6 — REIT: CAGR 3 años del FFO POR ACCIÓN (la emisión estructural infla
 # el agregado); un REIT sano crece su FFO/acción en dígito simple medio.
 reit_ffo_ps_bounds = [0.08, 0.05, 0.02]   # y luego ≥0 / <0

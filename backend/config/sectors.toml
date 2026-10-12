@@ -339,12 +339,19 @@ cyclical_industries = [
 ]
 # Industrias cíclicas CONDICIONALES: mezclan negocios de ciclo (memoria, commodities
 # químicos) con otros estructurales (diseño de chips, gases industriales). Solo son
-# CYCLICAL si además se activa la regla cuantitativa de volatilidad
-# ([archetypes.possible_cyclical]); si no, MATURE.
+# CYCLICAL si en la ventana de ejercicios hay REVERSIÓN ([archetypes.reversion]);
+# si no, MATURE (con la alerta "posible cíclica" si la volatilidad es alta).
 cyclical_conditional_industries = ["semiconductors", "specialty chemicals"]
 
-# Regla cuantitativa SOLO como alerta ("posible cíclica"): no cambia el arquetipo,
-# baja la confianza. Con los ejercicios anuales disponibles (Yahoo: 4).
+# Regla de reversión (cíclicas condicionales): una caída pico-valle del margen
+# operativo, o una caída anual de ingresos, dentro de la ventana disponible. Un
+# crecimiento explosivo sin caídas (NVDA) no es un ciclo; una caída sí lo es (MU).
+[archetypes.reversion]
+op_margin_peak_to_trough = 0.10     # el margen cae > 10 pp desde un pico anterior
+revenue_annual_decline = 0.10       # algún ejercicio con ingresos −10% o peor
+
+# Regla de desviación SOLO como alerta ("posible cíclica"): no cambia el arquetipo
+# (tampoco en las condicionales), baja la confianza. Con los ejercicios anuales (Yahoo: 4).
 [archetypes.possible_cyclical]
 min_years = 4                       # ejercicios con dato necesarios para evaluarla
 op_margin_detrended_std = 0.05      # desviación del margen operativo alrededor de su tendencia lineal (5 pp)

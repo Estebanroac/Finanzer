@@ -125,13 +125,37 @@ BOOM_BUST = _st([37.4, 25.1, 15.5, 30.8], [9.8, 1.3, -5.4, 9.7])          # memo
 STABLE = _st([34.0, 33.0, 32.9, 33.4], [9.25, 8.6, 8.1, 6.5])             # gases industriales: LIN
 
 
+HYPERGROWTH = _st([215.9, 130.5, 60.9, 27.0], [130.4, 81.4, 32.9, 5.6])  # NVDA: sin caídas
+
+
 @pytest.mark.parametrize("industry", ["Semiconductors", "Specialty Chemicals"])
-def test_conditional_cyclical_needs_volatility(industry):
+def test_conditional_cyclical_needs_reversion(industry):
     c = C("Technology", industry, eps=5.0, nm=0.2, st=BOOM_BUST)
     assert c["archetype"] == CYCLICAL and c["rule"] == "industria_ciclica_condicional"
-    assert "volatilidad alta" in c["reason"]
+    assert "reversión" in c["reason"]
     c = C("Basic Materials", industry, eps=5.0, nm=0.2, st=STABLE)
     assert c["archetype"] == MATURE and c["rule"] == "ciclica_condicional_estable"
+
+
+def test_hypergrowth_without_reversion_is_mature_with_alert():
+    """Volátil pero sin caídas (NVDA): la desviación solo alerta; no hay reversión."""
+    c = C("Technology", "Semiconductors", eps=5.0, nm=0.5, st=HYPERGROWTH)
+    assert c["archetype"] == MATURE and c["confidence"] == "baja"
+    assert [a["code"] for a in c["alerts"]] == ["posible_ciclica"]
+
+
+@pytest.mark.parametrize("margins,revenue,cyc", [
+    ([20.0, 31.0, 22.0, 25.0], [100.0, 105.0, 110.0, 115.0], False),    # cae 9 pp: no
+    ([20.0, 31.5, 21.0, 25.0], [100.0, 105.0, 110.0, 115.0], True),     # cae 10.5 pp: sí
+    ([20.0, 20.0, 20.0, 20.0], [100.0, 92.0, 95.0, 99.0], False),       # ingresos −8%: no
+    ([20.0, 20.0, 20.0, 20.0], [100.0, 89.0, 95.0, 99.0], True),        # ingresos −11%: sí
+])
+def test_reversion_thresholds(margins, revenue, cyc):
+    """Ventana cronológica (más antiguo primero en los parámetros)."""
+    rev = list(reversed(revenue))
+    oi = [m / 100 * r for m, r in zip(reversed(margins), rev)]
+    c = C("Technology", "Semiconductors", st=_st(rev, oi))
+    assert (c["archetype"] == CYCLICAL) is cyc
 
 
 def test_conditional_cyclical_without_history_stays_mature():
@@ -207,11 +231,19 @@ def test_six_tickers_both_envs(outputs_by_env):
 
 
 @pytest.mark.parametrize("sym,arch", [("TRV", FINANCIAL), ("FOR", CYCLICAL),
-                                      ("NVDA", CYCLICAL), ("MU", CYCLICAL), ("LIN", MATURE), ("AMAT", CYCLICAL)])
+                                      ("NVDA", MATURE), ("MU", CYCLICAL), ("LIN", MATURE), ("AMAT", CYCLICAL)])
 def test_extra_local_fixtures(sym, arch):
     """Fixtures locales solo para el clasificador: TRV (aseguradora), FOR (promotora),
-    NVDA y MU (Semiconductors, condicional, con volatilidad), LIN (Specialty Chemicals,
-    condicional, estable) y AMAT (Semiconductor Equipment & Materials, cíclica siempre)."""
+    MU (Semiconductors, condicional, con reversión), NVDA (Semiconductors, sin reversión:
+    MATURE con la alerta "posible cíclica"), LIN (Specialty Chemicals, estable) y AMAT
+    (Semiconductor Equipment & Materials, cíclica siempre)."""
     with fb.replay(fb.fixtures_dir("local")) as store:
         a = fb.run_analysis(sym, store)
     assert a["classification"]["archetype"] == arch, a["classification"]["reason"]
+
+
+def test_nvda_keeps_the_possible_cyclical_alert():
+    with fb.replay(fb.fixtures_dir("local")) as store:
+        c = fb.run_analysis("NVDA", store)["classification"]
+    assert c["archetype"] == MATURE and c["confidence"] == "baja"
+    assert [a["code"] for a in c["alerts"]] == ["posible_ciclica"]

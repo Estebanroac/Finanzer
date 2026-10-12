@@ -25,7 +25,7 @@ from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
 from reportlab.lib.utils import ImageReader
 
 from settings import cfg
-from financial_ratios import IC_NEGATIVE, NET_CASH_TEXT
+from financial_ratios import IC_NEGATIVE, NET_CASH_TEXT, growth_for_bands
 
 _PDF_BANDS = cfg("thresholds.pdf")  # bandas de las lecturas del informe
 DE_NOT_APPLICABLE = "No aplica a entidades financieras"
@@ -241,8 +241,10 @@ def read_payout(p):
 
 def read_growth(g, what="los ingresos"):
     if g is None: return None
-    if g < 0:     return ("Contracción", 'neg', f"{what} se contraen un {_pct(abs(g))} interanual")
+    if growth_for_bands(g) < 0:   # entre −2% y 0: plano (estancamiento), no contracción
+        return ("Contracción", 'neg', f"{what} se contraen un {_pct(abs(g))} interanual")
     b = _PDF_BANDS["growth_bounds"]
+    if g < 0:     return ("Plano", 'warn', f"{what} están prácticamente planos ({_pct(g)})")
     if g < b[0]:  return ("Plano", 'warn', f"{what} crecen apenas {_pct(g)}, prácticamente planos")
     if g < b[1]:  return ("Moderado", 'neu', f"{what} crecen {_pct(g)}, un ritmo moderado")
     if g < b[2]:  return ("Sólido", 'pos', f"{what} crecen {_pct(g)}, un ritmo sólido")

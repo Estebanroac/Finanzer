@@ -645,6 +645,14 @@ def calculate_wacc(
     return round(wacc, 4)
 
 
+def growth_for_bands(g: Optional[float]) -> Optional[float]:
+    """Estancamiento (etapa 6): un crecimiento entre −tolerancia y 0 se puntúa como
+    plano (la banda 0–x%), no como contracción. Agregados aproximados como el FFO
+    tienen un error de medición de ese orden. El valor mostrado no cambia."""
+    tol = _SC["crecimiento"]["flat_tolerance"]
+    return 0.0 if (g is not None and -tol <= g < 0) else g
+
+
 def _pts_str(v: int) -> str:
     """Puntos como texto de desglose: "+15", "-10", "0"."""
     return "0" if v == 0 else f"{v:+d}"
@@ -705,7 +713,7 @@ def classify_company_type(
             has_strong_growth = True
         elif revenue_growth_3y >= b[2]:
             vote(T["revenue_votes_2"])
-        elif revenue_growth_3y < 0:
+        elif growth_for_bands(revenue_growth_3y) < 0:
             vote(T["revenue_votes_negative"])
     
     if eps_growth_3y is not None:
@@ -832,7 +840,7 @@ def calculate_growth_quality_score(
         elif revenue_growth_3y >= b[2]:
             score += p[2]
             breakdown.append(("Revenue Growth", _pts_str(p[2]), "Sólido"))
-        elif revenue_growth_3y >= 0:
+        elif growth_for_bands(revenue_growth_3y) >= 0:
             score += p[3]
             breakdown.append(("Revenue Growth", _pts_str(p[3]), "Estable"))
         else:
@@ -864,7 +872,7 @@ def calculate_growth_quality_score(
         elif fcf_growth_3y >= b[1]:
             score += p[1]
             breakdown.append(("FCF Growth", _pts_str(p[1]), "Positivo"))
-        elif fcf_growth_3y >= 0:
+        elif growth_for_bands(fcf_growth_3y) >= 0:
             score += p[2]
             breakdown.append(("FCF Growth", _pts_str(p[2]), "Estable"))
         else:
@@ -3141,7 +3149,7 @@ def score_calidad_ganancias(
                "Ineficiente: gastos altos sobre ingresos"])
         bv = xv.get("book_value_cagr_3y")
         _bv_lbl = "tangible" if xv.get("book_value_basis") == "tangible" else "contable"
-        _band("bv_growth", "Crecimiento del valor en libros", bv, None if bv is None else f"{bv:.1%}",
+        _band("bv_growth", "Crecimiento del valor en libros", growth_for_bands(bv), None if bv is None else f"{bv:.1%}",
               T["financial_bv_growth_bounds"], T["financial_bv_growth_points"], True,
               [f"Valor en libros {_bv_lbl} creciendo con fuerza (CAGR 3 años)", f"Valor en libros {_bv_lbl} creciendo",
                f"Valor en libros {_bv_lbl} casi plano", f"Valor en libros {_bv_lbl} decreciente"])
@@ -3313,7 +3321,7 @@ def score_crecimiento(
             adj = p[2]
             sev = "ok"
             reason = f"Crecimiento moderado ({revenue_growth_3y:.1%})"
-        elif revenue_growth_3y >= 0:
+        elif growth_for_bands(revenue_growth_3y) >= 0:
             adj = p[3]
             sev = "moderate"
             reason = f"Crecimiento plano ({revenue_growth_3y:.1%})"
@@ -3342,7 +3350,7 @@ def score_crecimiento(
             adj = p[2]
             sev = "ok"
             reason = f"EPS moderado ({eps_growth_3y:.1%})"
-        elif eps_growth_3y >= 0:
+        elif growth_for_bands(eps_growth_3y) >= 0:
             adj = p[3]
             sev = "moderate"
             reason = f"EPS plano ({eps_growth_3y:.1%})"
