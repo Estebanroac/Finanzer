@@ -29,9 +29,9 @@
         "reason": "BPA en fuerte expansión — +49.5% interanual"
       },
       {
-        "category": "Solidez financiera",
-        "detail": "El Altman Z de 4.11 (> 2.60) ubica a la empresa en zona segura: baja probabilidad estadística de problemas de solvencia según el modelo.",
-        "reason": "Solvencia sólida — Altman Z 4.11"
+        "category": "Flujo de caja",
+        "detail": "El flujo de caja libre supera al beneficio contable (FCF/BN 125%): las utilidades se convierten íntegramente en efectivo, señal de contabilidad conservadora y negocio que 'respira' caja.",
+        "reason": "Beneficio de alta calidad"
       },
       {
         "category": "Riesgo de mercado",
@@ -63,22 +63,17 @@
     ]
   },
   "altman_z": {
+    "available": false,
     "details": {
-      "X1_wc_ta": 0.0037,
-      "X2_re_ta": 0.0,
-      "X3_ebit_ta": 0.053,
-      "X4_mcap_tl": 3.553,
-      "grey_threshold": 1.1,
-      "model": "Z''-Score (No Manufactura)",
-      "safe_threshold": 2.6,
-      "warnings": [
-        "Retained Earnings no disponible, asumido 0"
-      ]
+      "missing": [
+        "utilidades retenidas"
+      ],
+      "reason": "sin_dato"
     },
-    "interpretation": "Z''-Score (No Manufactura): Zona segura — bajo riesgo de bancarrota",
-    "model": "Z''-Score (No Manufactura)",
-    "z_score": 4.11,
-    "zone": "safe"
+    "interpretation": "Datos insuficientes para el Z-Score: falta utilidades retenidas",
+    "model": "",
+    "z_score": 0,
+    "zone": "n/a"
   },
   "company_type": "garp",
   "data_provenance": {
@@ -491,6 +486,7 @@
     "free_cash_flow": 1582081920.0,
     "gross_margin": 0.926802719779,
     "interest_coverage": 2.27288719254,
+    "interest_coverage_state": "ok",
     "interest_expense": 1253351587.84,
     "inventory_turnover": null,
     "market_cap": 51266093056.0,
@@ -525,48 +521,60 @@
     "wacc": 0.08328
   },
   "piotroski_f": {
+    "conclusive": true,
     "details": {
       "asset_turnover_improved": {
         "detail": "Eficiencia de activos mejoró",
-        "passed": true
+        "passed": true,
+        "state": "cumple"
       },
       "cfo_positive": {
         "detail": "Cash Flow Operativo positivo",
-        "passed": true
+        "passed": true,
+        "state": "cumple"
       },
       "current_ratio_improved": {
         "detail": "Liquidez no mejoró",
-        "passed": false
+        "passed": false,
+        "state": "no_cumple"
       },
       "debt_reduced": {
         "detail": "Deuda LP aumentó",
-        "passed": false
+        "passed": false,
+        "state": "no_cumple"
       },
       "earnings_quality": {
         "detail": "CFO > Net Income (earnings de calidad)",
-        "passed": true
+        "passed": true,
+        "state": "cumple"
       },
       "gross_margin_improved": {
         "detail": "Margen bruto no mejoró",
-        "passed": false
+        "passed": false,
+        "state": "no_cumple"
       },
       "no_dilution": {
         "detail": "Emisión de nuevas acciones (dilución)",
-        "passed": false
+        "passed": false,
+        "state": "no_cumple"
       },
       "roa_improved": {
         "detail": "ROA mejoró vs año anterior",
-        "passed": true
+        "passed": true,
+        "state": "cumple"
       },
       "roa_positive": {
         "detail": "ROA positivo",
-        "passed": true
+        "passed": true,
+        "state": "cumple"
       }
     },
+    "evaluated": 9,
     "fiscal_year": "FY2025 vs FY2024",
     "interpretation": "Neutral - Monitorear indicadores",
     "level": "Neutral",
     "max_score": 9,
+    "scaled_score": 5.0,
     "score": 5
   },
   "price": 54.18,
@@ -632,6 +640,7 @@
     "roic": 0.0304922103995
   },
   "score": {
+    "basis": null,
     "breakdown": {
       "Calidad de Ganancias": {
         "adjustments": [
@@ -648,14 +657,32 @@
             "reason": "Genera efectivo operativo",
             "severity": "good",
             "value": "Positivo"
+          },
+          {
+            "adjustment": 3,
+            "metric": "Free Cash Flow",
+            "reason": "FCF positivo",
+            "severity": "good",
+            "value": "Positivo"
+          },
+          {
+            "adjustment": 3,
+            "metric": "FCF / Net Income",
+            "reason": "FCF > Net Income (124.8%)",
+            "severity": "excellent",
+            "value": "125%"
           }
         ],
+        "conclusive": true,
+        "coverage": 1.0,
         "details": [
           "Neutral (5/9)",
-          "Genera efectivo operativo"
+          "Genera efectivo operativo",
+          "FCF positivo",
+          "FCF > Net Income (124.8%)"
         ],
         "max": 20,
-        "score": 13
+        "score": 19
       },
       "Crecimiento": {
         "adjustments": [
@@ -674,6 +701,13 @@
             "value": "49.5%"
           },
           {
+            "adjustment": 4,
+            "metric": "Crecimiento FCF 3Y",
+            "reason": "FCF creciente (15.9%)",
+            "severity": "excellent",
+            "value": "15.9%"
+          },
+          {
             "adjustment": 2,
             "metric": "Growth Company",
             "reason": "Perfil de alto crecimiento",
@@ -681,9 +715,12 @@
             "value": "Sí"
           }
         ],
+        "conclusive": true,
+        "coverage": 1.0,
         "details": [
           "Crecimiento excepcional (20.3%)",
           "EPS excepcional (49.5%)",
+          "FCF creciente (15.9%)",
           "Perfil de alto crecimiento"
         ],
         "max": 20,
@@ -727,6 +764,8 @@
             "value": "-5.3%"
           }
         ],
+        "conclusive": true,
+        "coverage": 1.0,
         "details": [
           "Bueno (3.2%) - Competitivo en su sector",
           "Aceptable (2.4%) - Normal para su sector",
@@ -739,13 +778,6 @@
       },
       "Solidez Financiera": {
         "adjustments": [
-          {
-            "adjustment": 6,
-            "metric": "Altman Z-Score",
-            "reason": "Zona segura - Muy baja probabilidad de quiebra",
-            "severity": "excellent",
-            "value": "4.11"
-          },
           {
             "adjustment": 2,
             "metric": "Current Ratio",
@@ -766,16 +798,25 @@
             "reason": "Cobertura ajustada",
             "severity": "moderate",
             "value": "2.3x"
+          },
+          {
+            "adjustment": 3,
+            "metric": "Cobertura",
+            "reason": "Reescalado sobre los componentes con dato (sin dato: Altman Z)",
+            "severity": "neutral",
+            "value": "3/4 componentes"
           }
         ],
+        "conclusive": true,
+        "coverage": 0.75,
         "details": [
-          "Zona segura - Muy baja probabilidad de quiebra",
           "Liquidez sólida - Buena capacidad de pago (1.53x)",
           "Deuda muy baja - Estructura financiera conservadora",
-          "Cobertura ajustada"
+          "Cobertura ajustada",
+          "Reescalado sobre los componentes con dato (sin dato: Altman Z)"
         ],
         "max": 20,
-        "score": 20
+        "score": 18
       },
       "Valoración": {
         "adjustments": [
@@ -806,21 +847,84 @@
             "reason": "Muy caro (2.73)",
             "severity": "severe",
             "value": "2.73"
+          },
+          {
+            "adjustment": 3,
+            "metric": "Perfil GARP",
+            "reason": "GARP: Growth + Fundamentos sólidos (Quality: 75)",
+            "severity": "excellent",
+            "value": "Score 75"
           }
         ],
+        "conclusive": true,
+        "coverage": 1.0,
         "details": [
           "Atractivo por FFO (13.6x)",
           "P/E estable a mejor (39x → 35x)",
           "Atractivo para growth (15.3x)",
-          "Muy caro (2.73)"
+          "Muy caro (2.73)",
+          "GARP: Growth + Fundamentos sólidos (Quality: 75)"
         ],
         "max": 20,
-        "score": 12
+        "score": 15
       }
     },
+    "categories_included": 5,
+    "categories_total": 5,
+    "excluded_categories": [],
     "level": "Excelente",
     "max_score": 100,
-    "total_score": 82
+    "partial": false,
+    "total_score": 89
+  },
+  "score_coverage": {
+    "calidad": {
+      "components": 4,
+      "conclusive": true,
+      "coverage": 1.0,
+      "evaluated": 4,
+      "low_confidence": false,
+      "missing": [],
+      "missing_reasons": {}
+    },
+    "crecimiento": {
+      "components": 3,
+      "conclusive": true,
+      "coverage": 1.0,
+      "evaluated": 3,
+      "low_confidence": false,
+      "missing": [],
+      "missing_reasons": {}
+    },
+    "rentabilidad": {
+      "components": 5,
+      "conclusive": true,
+      "coverage": 1.0,
+      "evaluated": 5,
+      "low_confidence": false,
+      "missing": [],
+      "missing_reasons": {}
+    },
+    "solidez": {
+      "components": 4,
+      "conclusive": true,
+      "coverage": 0.75,
+      "evaluated": 3,
+      "low_confidence": false,
+      "missing": [
+        "Altman Z"
+      ],
+      "missing_reasons": {}
+    },
+    "valoracion": {
+      "components": 3,
+      "conclusive": true,
+      "coverage": 1.0,
+      "evaluated": 3,
+      "low_confidence": false,
+      "missing": [],
+      "missing_reasons": {}
+    }
   },
   "sector_info": {
     "mapped_sector": "real_estate",

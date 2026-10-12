@@ -48,6 +48,7 @@
     ]
   },
   "altman_z": {
+    "available": true,
     "details": {
       "X1_wc_ta": 0.0367,
       "X2_re_ta": 0.7605,
@@ -397,6 +398,7 @@
     "free_cash_flow": 9461053000.0,
     "gross_margin": 0.484865758025,
     "interest_coverage": 17.1621782076,
+    "interest_coverage_state": "ok",
     "interest_expense": 776510000.0,
     "inventory_turnover": null,
     "market_cap": 292724971930.0,
@@ -431,48 +433,60 @@
     "wacc": 0.133298881
   },
   "piotroski_f": {
+    "conclusive": true,
     "details": {
       "asset_turnover_improved": {
         "detail": "Eficiencia de activos mejoró",
-        "passed": true
+        "passed": true,
+        "state": "cumple"
       },
       "cfo_positive": {
         "detail": "Cash Flow Operativo positivo",
-        "passed": true
+        "passed": true,
+        "state": "cumple"
       },
       "current_ratio_improved": {
         "detail": "Liquidez no mejoró",
-        "passed": false
+        "passed": false,
+        "state": "no_cumple"
       },
       "debt_reduced": {
         "detail": "Deuda LP estable o disminuyó",
-        "passed": true
+        "passed": true,
+        "state": "cumple"
       },
       "earnings_quality": {
         "detail": "CFO < Net Income (alerta calidad)",
-        "passed": false
+        "passed": false,
+        "state": "no_cumple"
       },
       "gross_margin_improved": {
         "detail": "Margen bruto mejoró",
-        "passed": true
+        "passed": true,
+        "state": "cumple"
       },
       "no_dilution": {
         "detail": "Sin dilución de acciones",
-        "passed": true
+        "passed": true,
+        "state": "cumple"
       },
       "roa_improved": {
         "detail": "ROA mejoró vs año anterior",
-        "passed": true
+        "passed": true,
+        "state": "cumple"
       },
       "roa_positive": {
         "detail": "ROA positivo",
-        "passed": true
+        "passed": true,
+        "state": "cumple"
       }
     },
+    "evaluated": 9,
     "fiscal_year": "FY2025 vs FY2024",
     "interpretation": "Bueno - Salud financiera sólida",
     "level": "Bueno",
     "max_score": 9,
+    "scaled_score": 7.0,
     "score": 7
   },
   "price": 70.3000030518,
@@ -538,6 +552,7 @@
     "roic": 0.312186506013
   },
   "score": {
+    "basis": null,
     "breakdown": {
       "Calidad de Ganancias": {
         "adjustments": [
@@ -570,6 +585,8 @@
             "value": "86%"
           }
         ],
+        "conclusive": true,
+        "coverage": 1.0,
         "details": [
           "Buena salud (7/9)",
           "Genera efectivo operativo",
@@ -596,6 +613,13 @@
             "value": "35.3%"
           },
           {
+            "adjustment": 4,
+            "metric": "Crecimiento FCF 3Y",
+            "reason": "FCF creciente (80.1%)",
+            "severity": "excellent",
+            "value": "80.1%"
+          },
+          {
             "adjustment": 2,
             "metric": "Growth Company",
             "reason": "Perfil de alto crecimiento",
@@ -603,9 +627,12 @@
             "value": "Sí"
           }
         ],
+        "conclusive": true,
+        "coverage": 1.0,
         "details": [
           "Crecimiento sólido (16.0%)",
           "EPS excepcional (35.3%)",
+          "FCF creciente (80.1%)",
           "Perfil de alto crecimiento"
         ],
         "max": 20,
@@ -649,6 +676,8 @@
             "value": "+17.9%"
           }
         ],
+        "conclusive": true,
+        "coverage": 1.0,
         "details": [
           "Excepcional para su sector (41.3% vs 15% rango alto sectorial)",
           "Excelente para su sector (19.8%)",
@@ -690,6 +719,8 @@
             "value": "17.2x"
           }
         ],
+        "conclusive": true,
+        "coverage": 1.0,
         "details": [
           "Zona segura - Muy baja probabilidad de quiebra",
           "Liquidez justa - Cubre sus obligaciones (1.19x)",
@@ -739,26 +770,79 @@
           {
             "adjustment": 3,
             "metric": "Perfil GARP",
-            "reason": "GARP: Growth + Fundamentos sólidos (Quality: 85)",
+            "reason": "GARP: Growth + Fundamentos sólidos (Quality: 95)",
             "severity": "excellent",
-            "value": "Score 85"
+            "value": "Score 95"
           }
         ],
+        "conclusive": true,
+        "coverage": 1.0,
         "details": [
           "Razonable para growth (22.1x vs 18.0x)",
           "P/E mejorando (22x → 19x forward)",
           "Aceptable para growth (30.9x)",
           "Atractivo para growth (9.9x)",
           "Bueno (0.93)",
-          "GARP: Growth + Fundamentos sólidos (Quality: 85)"
+          "GARP: Growth + Fundamentos sólidos (Quality: 95)"
         ],
         "max": 20,
         "score": 19
       }
     },
+    "categories_included": 5,
+    "categories_total": 5,
+    "excluded_categories": [],
     "level": "Excelente",
     "max_score": 100,
+    "partial": false,
     "total_score": 99
+  },
+  "score_coverage": {
+    "calidad": {
+      "components": 4,
+      "conclusive": true,
+      "coverage": 1.0,
+      "evaluated": 4,
+      "low_confidence": false,
+      "missing": [],
+      "missing_reasons": {}
+    },
+    "crecimiento": {
+      "components": 3,
+      "conclusive": true,
+      "coverage": 1.0,
+      "evaluated": 3,
+      "low_confidence": false,
+      "missing": [],
+      "missing_reasons": {}
+    },
+    "rentabilidad": {
+      "components": 5,
+      "conclusive": true,
+      "coverage": 1.0,
+      "evaluated": 5,
+      "low_confidence": false,
+      "missing": [],
+      "missing_reasons": {}
+    },
+    "solidez": {
+      "components": 4,
+      "conclusive": true,
+      "coverage": 1.0,
+      "evaluated": 4,
+      "low_confidence": false,
+      "missing": [],
+      "missing_reasons": {}
+    },
+    "valoracion": {
+      "components": 4,
+      "conclusive": true,
+      "coverage": 1.0,
+      "evaluated": 4,
+      "low_confidence": false,
+      "missing": [],
+      "missing_reasons": {}
+    }
   },
   "sector_info": {
     "mapped_sector": "communication",

@@ -63,6 +63,7 @@
     ]
   },
   "altman_z": {
+    "available": true,
     "details": {
       "X1_wc_ta": 0.1336,
       "X2_re_ta": 0.0238,
@@ -442,6 +443,7 @@
     "free_cash_flow": 1116000000.0,
     "gross_margin": 0.281574377773,
     "interest_coverage": 17.620596206,
+    "interest_coverage_state": "ok",
     "interest_expense": 369000000.0,
     "inventory_turnover": 2.48471907113,
     "market_cap": 105820134776.0,
@@ -476,48 +478,60 @@
     "wacc": 0.1204289085
   },
   "piotroski_f": {
+    "conclusive": true,
     "details": {
       "asset_turnover_improved": {
         "detail": "Eficiencia de activos no mejoró",
-        "passed": false
+        "passed": false,
+        "state": "no_cumple"
       },
       "cfo_positive": {
         "detail": "Cash Flow Operativo positivo",
-        "passed": true
+        "passed": true,
+        "state": "cumple"
       },
       "current_ratio_improved": {
         "detail": "Liquidez no mejoró",
-        "passed": false
+        "passed": false,
+        "state": "no_cumple"
       },
       "debt_reduced": {
         "detail": "Deuda LP aumentó",
-        "passed": false
+        "passed": false,
+        "state": "no_cumple"
       },
       "earnings_quality": {
         "detail": "CFO > Net Income (earnings de calidad)",
-        "passed": true
+        "passed": true,
+        "state": "cumple"
       },
       "gross_margin_improved": {
         "detail": "Margen bruto no mejoró",
-        "passed": false
+        "passed": false,
+        "state": "no_cumple"
       },
       "no_dilution": {
         "detail": "Sin dilución de acciones",
-        "passed": true
+        "passed": true,
+        "state": "cumple"
       },
       "roa_improved": {
         "detail": "ROA mejoró vs año anterior",
-        "passed": true
+        "passed": true,
+        "state": "cumple"
       },
       "roa_positive": {
         "detail": "ROA positivo",
-        "passed": true
+        "passed": true,
+        "state": "cumple"
       }
     },
+    "evaluated": 9,
     "fiscal_year": "FY2025 vs FY2024",
     "interpretation": "Neutral - Monitorear indicadores",
     "level": "Neutral",
     "max_score": 9,
+    "scaled_score": 5.0,
     "score": 5
   },
   "price": 73.6900024414,
@@ -583,6 +597,7 @@
     "roic": 0.19073414949
   },
   "score": {
+    "basis": null,
     "breakdown": {
       "Calidad de Ganancias": {
         "adjustments": [
@@ -615,6 +630,8 @@
             "value": "51%"
           }
         ],
+        "conclusive": true,
+        "coverage": 1.0,
         "details": [
           "Neutral (5/9)",
           "Genera efectivo operativo",
@@ -639,14 +656,24 @@
             "reason": "EPS excepcional (53.1%)",
             "severity": "excellent",
             "value": "53.1%"
+          },
+          {
+            "adjustment": -3,
+            "metric": "Crecimiento FCF 3Y",
+            "reason": "FCF decreciente (-12.6%)",
+            "severity": "moderate",
+            "value": "-12.6%"
           }
         ],
+        "conclusive": true,
+        "coverage": 1.0,
         "details": [
           "Contracción (-24.2%)",
-          "EPS excepcional (53.1%)"
+          "EPS excepcional (53.1%)",
+          "FCF decreciente (-12.6%)"
         ],
         "max": 20,
-        "score": 11
+        "score": 8
       },
       "Rentabilidad": {
         "adjustments": [
@@ -686,6 +713,8 @@
             "value": "+7.0%"
           }
         ],
+        "conclusive": true,
+        "coverage": 1.0,
         "details": [
           "Bueno (11.7%) - Competitivo en su sector",
           "Aceptable (3.8%) - Normal para su sector",
@@ -727,6 +756,8 @@
             "value": "17.6x"
           }
         ],
+        "conclusive": true,
+        "coverage": 1.0,
         "details": [
           "Zona segura - Muy baja probabilidad de quiebra",
           "Liquidez excelente - Cubre 2x sus deudas corto plazo",
@@ -739,10 +770,10 @@
       "Valoración": {
         "adjustments": [
           {
-            "adjustment": 0,
+            "adjustment": -2,
             "metric": "P/E vs Sector",
-            "reason": "Premium justificado (36.1x) - Calidad Moderada",
-            "severity": "ok",
+            "reason": "Premium ajustado (36.1x) - Calidad Moderada",
+            "severity": "severe",
             "value": "36.1x"
           },
           {
@@ -753,17 +784,17 @@
             "value": "19.3x"
           },
           {
-            "adjustment": -2,
+            "adjustment": -4,
             "metric": "P/FCF",
             "reason": "Muy alto (94.8x)",
-            "severity": "moderate",
+            "severity": "severe",
             "value": "94.8x"
           },
           {
-            "adjustment": 0,
+            "adjustment": -4,
             "metric": "EV/EBITDA vs Sector",
-            "reason": "Razonable para growth (12.5x)",
-            "severity": "ok",
+            "reason": "Muy caro (12.5x vs 8.0x)",
+            "severity": "severe",
             "value": "12.5x"
           },
           {
@@ -772,22 +803,83 @@
             "reason": "Muy atractivo (0.63)",
             "severity": "excellent",
             "value": "0.63"
+          },
+          {
+            "adjustment": 3,
+            "metric": "Ajuste Crecimiento",
+            "reason": "Límite de penalización por calidad moderada",
+            "severity": "good",
+            "value": "Quality 50"
           }
         ],
+        "conclusive": true,
+        "coverage": 1.0,
         "details": [
-          "Premium justificado (36.1x) - Calidad Moderada",
+          "Premium ajustado (36.1x) - Calidad Moderada",
           "Fuerte compresión P/E (36x → 19x forward)",
           "Muy alto (94.8x)",
-          "Razonable para growth (12.5x)",
-          "Muy atractivo (0.63)"
+          "Muy caro (12.5x vs 8.0x)",
+          "Muy atractivo (0.63)",
+          "Límite de penalización por calidad moderada"
         ],
         "max": 20,
-        "score": 15
+        "score": 10
       }
     },
+    "categories_included": 5,
+    "categories_total": 5,
+    "excluded_categories": [],
     "level": "Favorable",
     "max_score": 100,
-    "total_score": 79
+    "partial": false,
+    "total_score": 71
+  },
+  "score_coverage": {
+    "calidad": {
+      "components": 4,
+      "conclusive": true,
+      "coverage": 1.0,
+      "evaluated": 4,
+      "low_confidence": false,
+      "missing": [],
+      "missing_reasons": {}
+    },
+    "crecimiento": {
+      "components": 3,
+      "conclusive": true,
+      "coverage": 1.0,
+      "evaluated": 3,
+      "low_confidence": false,
+      "missing": [],
+      "missing_reasons": {}
+    },
+    "rentabilidad": {
+      "components": 5,
+      "conclusive": true,
+      "coverage": 1.0,
+      "evaluated": 5,
+      "low_confidence": false,
+      "missing": [],
+      "missing_reasons": {}
+    },
+    "solidez": {
+      "components": 4,
+      "conclusive": true,
+      "coverage": 1.0,
+      "evaluated": 4,
+      "low_confidence": false,
+      "missing": [],
+      "missing_reasons": {}
+    },
+    "valoracion": {
+      "components": 4,
+      "conclusive": true,
+      "coverage": 1.0,
+      "evaluated": 4,
+      "low_confidence": false,
+      "missing": [],
+      "missing_reasons": {}
+    }
   },
   "sector_info": {
     "mapped_sector": "materials",

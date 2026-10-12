@@ -2,11 +2,6 @@
   "alerts": {
     "red_flags": [
       {
-        "category": "Solidez financiera",
-        "detail": "El beneficio operativo apenas cubre -173.0 veces el gasto por intereses: un margen peligrosamente fino que deja a la empresa muy expuesta ante cualquier caída del resultado operativo.",
-        "reason": "Cobertura de intereses crítica — -173.0x"
-      },
-      {
         "category": "Valoración",
         "detail": "La empresa no tiene beneficios positivos en los últimos doce meses, así que el P/E no es interpretable; la valoración depende de que vuelva a generar utilidades.",
         "reason": "P/E no significativo — pérdidas"
@@ -63,6 +58,7 @@
     ]
   },
   "altman_z": {
+    "available": true,
     "details": {
       "X1_wc_ta": 0.1446,
       "X2_re_ta": -1.0396,
@@ -258,6 +254,11 @@
         "rule": "multiplo_no_significativo",
         "source": "sin_dato"
       },
+      "key_metrics.interest_coverage": {
+        "detail": "Cobertura de intereses = -173.0x: EBIT < 0 con caja neta, la ratio no es significativa",
+        "rule": "ratio_no_significativa",
+        "source": "sin_dato"
+      },
       "key_metrics.p_ffo": {
         "detail": "P_FFO = -132.9: FFO <= 0, el múltiplo no es significativo",
         "rule": "multiplo_no_significativo",
@@ -299,6 +300,11 @@
       "ratios.ev_ebitda": {
         "detail": "EV_EBITDA = -119.0: EBITDA <= 0, el múltiplo no es significativo",
         "rule": "multiplo_no_significativo",
+        "source": "sin_dato"
+      },
+      "ratios.interest_coverage": {
+        "detail": "Cobertura de intereses = -173.0x: EBIT < 0 con caja neta, la ratio no es significativa",
+        "rule": "ratio_no_significativa",
         "source": "sin_dato"
       },
       "ratios.p_ffo": {
@@ -430,6 +436,22 @@
       "old": -132.851919283,
       "reason": "P_FFO = -132.9: FFO <= 0, el múltiplo no es significativo",
       "rule": "multiplo_no_significativo"
+    },
+    {
+      "action": "sin_dato",
+      "field": "key_metrics.interest_coverage",
+      "new": null,
+      "old": -172.953121234,
+      "reason": "Cobertura de intereses = -173.0x: EBIT < 0 con caja neta, la ratio no es significativa",
+      "rule": "ratio_no_significativa"
+    },
+    {
+      "action": "sin_dato",
+      "field": "ratios.interest_coverage",
+      "new": null,
+      "old": -172.953121234,
+      "reason": "Cobertura de intereses = -173.0x: EBIT < 0 con caja neta, la ratio no es significativa",
+      "rule": "ratio_no_significativa"
     }
   ],
   "dcf": {
@@ -473,7 +495,8 @@
     "forward_pe": 166.443923256,
     "free_cash_flow": 1117213000.0,
     "gross_margin": 0.671686010044,
-    "interest_coverage": -172.953121234,
+    "interest_coverage": null,
+    "interest_coverage_state": "no_significativo",
     "interest_expense": 8298000.0,
     "inventory_turnover": null,
     "market_cap": 130144397168.0,
@@ -508,48 +531,60 @@
     "wacc": 0.1186595915
   },
   "piotroski_f": {
+    "conclusive": true,
     "details": {
       "asset_turnover_improved": {
         "detail": "Eficiencia de activos mejoró",
-        "passed": true
+        "passed": true,
+        "state": "cumple"
       },
       "cfo_positive": {
         "detail": "Cash Flow Operativo positivo",
-        "passed": true
+        "passed": true,
+        "state": "cumple"
       },
       "current_ratio_improved": {
         "detail": "Liquidez no mejoró",
-        "passed": false
+        "passed": false,
+        "state": "no_cumple"
       },
       "debt_reduced": {
         "detail": "Deuda LP aumentó",
-        "passed": false
+        "passed": false,
+        "state": "no_cumple"
       },
       "earnings_quality": {
         "detail": "CFO > Net Income (earnings de calidad)",
-        "passed": true
+        "passed": true,
+        "state": "cumple"
       },
       "gross_margin_improved": {
         "detail": "Margen bruto mejoró",
-        "passed": true
+        "passed": true,
+        "state": "cumple"
       },
       "no_dilution": {
         "detail": "Emisión de nuevas acciones (dilución)",
-        "passed": false
+        "passed": false,
+        "state": "no_cumple"
       },
       "roa_improved": {
         "detail": "ROA no mejoró",
-        "passed": false
+        "passed": false,
+        "state": "no_cumple"
       },
       "roa_positive": {
-        "detail": "ROA negativo o N/A",
-        "passed": false
+        "detail": "ROA negativo",
+        "passed": false,
+        "state": "no_cumple"
       }
     },
+    "evaluated": 9,
     "fiscal_year": "FY2026 vs FY2025",
     "interpretation": "Neutral - Monitorear indicadores",
     "level": "Neutral",
     "max_score": 9,
+    "scaled_score": 4.0,
     "score": 4
   },
   "price": 368.890014648,
@@ -593,7 +628,7 @@
     "forward_pe": 166.443923256,
     "graham_number": null,
     "gross_margin": 0.671686010044,
-    "interest_coverage": -172.953121234,
+    "interest_coverage": null,
     "inventory_turnover": null,
     "market_cap": 130144397168.0,
     "net_debt": -1288572000.0,
@@ -615,6 +650,7 @@
     "roic": -1.69366316303
   },
   "score": {
+    "basis": "calculado sobre 4 de 5 categorías",
     "breakdown": {
       "Calidad de Ganancias": {
         "adjustments": [
@@ -640,6 +676,8 @@
             "value": "Positivo"
           }
         ],
+        "conclusive": true,
+        "coverage": 1.0,
         "details": [
           "Neutral (4/9)",
           "Genera efectivo operativo",
@@ -658,19 +696,37 @@
             "value": "32.0%"
           },
           {
+            "adjustment": 4,
+            "metric": "Crecimiento FCF 3Y",
+            "reason": "FCF creciente (31.1%)",
+            "severity": "excellent",
+            "value": "31.1%"
+          },
+          {
             "adjustment": 2,
             "metric": "Growth Company",
             "reason": "Perfil de alto crecimiento",
             "severity": "good",
             "value": "Sí"
+          },
+          {
+            "adjustment": 5,
+            "metric": "Cobertura",
+            "reason": "Reescalado sobre los componentes con dato (sin dato: Crecimiento del BPA)",
+            "severity": "neutral",
+            "value": "2/3 componentes"
           }
         ],
+        "conclusive": true,
+        "coverage": 0.666666666667,
         "details": [
           "Crecimiento excepcional (32.0%)",
-          "Perfil de alto crecimiento"
+          "FCF creciente (31.1%)",
+          "Perfil de alto crecimiento",
+          "Reescalado sobre los componentes con dato (sin dato: Crecimiento del BPA)"
         ],
         "max": 20,
-        "score": 17
+        "score": 20
       },
       "Rentabilidad": {
         "adjustments": [
@@ -710,6 +766,8 @@
             "value": "-181.2%"
           }
         ],
+        "conclusive": true,
+        "coverage": 1.0,
         "details": [
           "Negativo (-69.2%) - Destruye valor para accionistas",
           "Negativo (-14.6%) - Perdiendo dinero con sus activos",
@@ -744,21 +802,31 @@
             "value": "1.42x"
           },
           {
-            "adjustment": -3,
+            "adjustment": 0,
             "metric": "Cobertura Intereses",
-            "reason": "Riesgo de cobertura",
-            "severity": "severe",
-            "value": "-173.0x"
+            "reason": "No significativo: EBIT < 0 con caja neta (caja > deuda total); los intereses se pagan con caja",
+            "severity": "neutral",
+            "value": "No significativo"
+          },
+          {
+            "adjustment": 0,
+            "metric": "Cobertura",
+            "reason": "Reescalado sobre los componentes con dato (sin dato: Cobertura de intereses)",
+            "severity": "neutral",
+            "value": "3/4 componentes"
           }
         ],
+        "conclusive": true,
+        "coverage": 0.75,
         "details": [
           "Zona segura - Muy baja probabilidad de quiebra",
           "Liquidez justa - Cubre sus obligaciones (1.30x)",
           "Deuda muy alta - Riesgo financiero elevado (1.42x)",
-          "Riesgo de cobertura"
+          "No significativo: EBIT < 0 con caja neta (caja > deuda total); los intereses se pagan con caja",
+          "Reescalado sobre los componentes con dato (sin dato: Cobertura de intereses)"
         ],
         "max": 20,
-        "score": 8
+        "score": 11
       },
       "Valoración": {
         "adjustments": [
@@ -768,18 +836,91 @@
             "reason": "Muy alto (116.5x)",
             "severity": "severe",
             "value": "116.5x"
+          },
+          {
+            "adjustment": 0,
+            "metric": "Cobertura",
+            "reason": "Categoría no concluyente: menos del 50% de sus componentes con dato; se excluye del total (sin dato: P/E, EV/EBITDA, PEG)",
+            "severity": "neutral",
+            "value": "1/4 componentes"
           }
         ],
+        "conclusive": false,
+        "coverage": 0.25,
         "details": [
-          "Muy alto (116.5x)"
+          "Muy alto (116.5x)",
+          "Categoría no concluyente: menos del 50% de sus componentes con dato; se excluye del total (sin dato: P/E, EV/EBITDA, PEG)"
         ],
         "max": 20,
         "score": 6
       }
     },
+    "categories_included": 4,
+    "categories_total": 5,
+    "excluded_categories": [
+      "Valoración"
+    ],
     "level": "Neutral",
     "max_score": 100,
-    "total_score": 47
+    "partial": true,
+    "total_score": 59
+  },
+  "score_coverage": {
+    "calidad": {
+      "components": 3,
+      "conclusive": true,
+      "coverage": 1.0,
+      "evaluated": 3,
+      "low_confidence": false,
+      "missing": [],
+      "missing_reasons": {}
+    },
+    "crecimiento": {
+      "components": 3,
+      "conclusive": true,
+      "coverage": 0.666666666667,
+      "evaluated": 2,
+      "low_confidence": false,
+      "missing": [
+        "Crecimiento del BPA"
+      ],
+      "missing_reasons": {}
+    },
+    "rentabilidad": {
+      "components": 5,
+      "conclusive": true,
+      "coverage": 1.0,
+      "evaluated": 5,
+      "low_confidence": false,
+      "missing": [],
+      "missing_reasons": {}
+    },
+    "solidez": {
+      "components": 4,
+      "conclusive": true,
+      "coverage": 0.75,
+      "evaluated": 3,
+      "low_confidence": false,
+      "missing": [
+        "Cobertura de intereses"
+      ],
+      "missing_reasons": {
+        "Cobertura de intereses": "No significativo: EBIT < 0 con caja neta (caja > deuda total); los intereses se pagan con caja"
+      }
+    },
+    "valoracion": {
+      "components": 4,
+      "conclusive": false,
+      "coverage": 0.25,
+      "evaluated": 1,
+      "low_confidence": true,
+      "missing": [
+        "P/E",
+        "EV/EBITDA",
+        "PEG"
+      ],
+      "missing_reasons": {}
+    }
   },
   "sector_info": {
     "mapped_sector": "technology",

@@ -33,6 +33,7 @@
     ]
   },
   "altman_z": {
+    "available": false,
     "details": {
       "model": "No Aplicable",
       "reason": "financial_sector",
@@ -412,6 +413,7 @@
     "free_cash_flow": 21577000000.0,
     "gross_margin": 0.803625,
     "interest_coverage": 45.0865874363,
+    "interest_coverage_state": "ok",
     "interest_expense": 589000000.0,
     "inventory_turnover": null,
     "market_cap": 723626607498.0,
@@ -446,48 +448,60 @@
     "wacc": 0.0904093145
   },
   "piotroski_f": {
+    "conclusive": true,
     "details": {
       "asset_turnover_improved": {
         "detail": "Eficiencia de activos mejoró",
-        "passed": true
+        "passed": true,
+        "state": "cumple"
       },
       "cfo_positive": {
         "detail": "Cash Flow Operativo positivo",
-        "passed": true
+        "passed": true,
+        "state": "cumple"
       },
       "current_ratio_improved": {
         "detail": "Liquidez no mejoró",
-        "passed": false
+        "passed": false,
+        "state": "no_cumple"
       },
       "debt_reduced": {
         "detail": "Deuda LP estable o disminuyó",
-        "passed": true
+        "passed": true,
+        "state": "cumple"
       },
       "earnings_quality": {
         "detail": "CFO > Net Income (earnings de calidad)",
-        "passed": true
+        "passed": true,
+        "state": "cumple"
       },
       "gross_margin_improved": {
         "detail": "Margen bruto no mejoró",
-        "passed": false
+        "passed": false,
+        "state": "no_cumple"
       },
       "no_dilution": {
         "detail": "Sin dilución de acciones",
-        "passed": true
+        "passed": true,
+        "state": "cumple"
       },
       "roa_improved": {
         "detail": "ROA no mejoró",
-        "passed": false
+        "passed": false,
+        "state": "no_cumple"
       },
       "roa_positive": {
         "detail": "ROA positivo",
-        "passed": true
+        "passed": true,
+        "state": "cumple"
       }
     },
+    "evaluated": 9,
     "fiscal_year": "FY2025 vs FY2024",
     "interpretation": "Bueno - Salud financiera sólida",
     "level": "Bueno",
     "max_score": 9,
+    "scaled_score": 6.0,
     "score": 6
   },
   "price": 385.450012207,
@@ -553,6 +567,7 @@
     "roic": 0.451806818955
   },
   "score": {
+    "basis": null,
     "breakdown": {
       "Calidad de Ganancias": {
         "adjustments": [
@@ -585,6 +600,8 @@
             "value": "108%"
           }
         ],
+        "conclusive": true,
+        "coverage": 1.0,
         "details": [
           "Buena salud (6/9)",
           "Genera efectivo operativo",
@@ -609,14 +626,24 @@
             "reason": "EPS sólido (14.7%)",
             "severity": "good",
             "value": "14.7%"
+          },
+          {
+            "adjustment": 2,
+            "metric": "Crecimiento FCF 3Y",
+            "reason": "FCF estable/creciente (6.5%)",
+            "severity": "good",
+            "value": "6.5%"
           }
         ],
+        "conclusive": true,
+        "coverage": 1.0,
         "details": [
           "Crecimiento sólido (14.4%)",
-          "EPS sólido (14.7%)"
+          "EPS sólido (14.7%)",
+          "FCF estable/creciente (6.5%)"
         ],
         "max": 20,
-        "score": 16
+        "score": 18
       },
       "Rentabilidad": {
         "adjustments": [
@@ -649,6 +676,8 @@
             "value": "50.1%"
           }
         ],
+        "conclusive": true,
+        "coverage": 1.0,
         "details": [
           "Excepcional para su sector (52.9% vs 12% rango alto sectorial)",
           "Excelente para su sector (20.1%)",
@@ -712,6 +741,8 @@
             "value": "19.09x"
           }
         ],
+        "conclusive": true,
+        "coverage": 1.0,
         "details": [
           "Solidez bancaria excelente (10/10)",
           "D/E muy conservador (0.7x < 5x) - Excepcional para banco",
@@ -723,9 +754,9 @@
       "Valoración": {
         "adjustments": [
           {
-            "adjustment": 1,
+            "adjustment": 2,
             "metric": "P/E vs Sector",
-            "reason": "Premium justificado (32.8x) - Alta Calidad",
+            "reason": "Premium justificado (32.8x) - Crecimiento Excepcional",
             "severity": "ok",
             "value": "32.8x"
           },
@@ -760,26 +791,79 @@
           {
             "adjustment": 3,
             "metric": "Perfil GARP",
-            "reason": "GARP: Growth + Fundamentos sólidos (Quality: 75)",
+            "reason": "GARP: Growth + Fundamentos sólidos (Quality: 80)",
             "severity": "excellent",
-            "value": "Score 75"
+            "value": "Score 80"
           }
         ],
+        "conclusive": true,
+        "coverage": 1.0,
         "details": [
-          "Premium justificado (32.8x) - Alta Calidad",
+          "Premium justificado (32.8x) - Crecimiento Excepcional",
           "Fuerte compresión P/E (33x → 24x forward)",
           "Aceptable para growth (33.5x)",
           "Premium (28.1x vs 14.0x)",
           "Caro para su crecimiento (1.90)",
-          "GARP: Growth + Fundamentos sólidos (Quality: 75)"
+          "GARP: Growth + Fundamentos sólidos (Quality: 80)"
         ],
         "max": 20,
-        "score": 14
+        "score": 15
       }
     },
+    "categories_included": 5,
+    "categories_total": 5,
+    "excluded_categories": [],
     "level": "Excelente",
     "max_score": 100,
-    "total_score": 88
+    "partial": false,
+    "total_score": 91
+  },
+  "score_coverage": {
+    "calidad": {
+      "components": 4,
+      "conclusive": true,
+      "coverage": 1.0,
+      "evaluated": 4,
+      "low_confidence": false,
+      "missing": [],
+      "missing_reasons": {}
+    },
+    "crecimiento": {
+      "components": 3,
+      "conclusive": true,
+      "coverage": 1.0,
+      "evaluated": 3,
+      "low_confidence": false,
+      "missing": [],
+      "missing_reasons": {}
+    },
+    "rentabilidad": {
+      "components": 4,
+      "conclusive": true,
+      "coverage": 1.0,
+      "evaluated": 4,
+      "low_confidence": false,
+      "missing": [],
+      "missing_reasons": {}
+    },
+    "solidez": {
+      "components": 3,
+      "conclusive": true,
+      "coverage": 1.0,
+      "evaluated": 3,
+      "low_confidence": false,
+      "missing": [],
+      "missing_reasons": {}
+    },
+    "valoracion": {
+      "components": 4,
+      "conclusive": true,
+      "coverage": 1.0,
+      "evaluated": 4,
+      "low_confidence": false,
+      "missing": [],
+      "missing_reasons": {}
+    }
   },
   "sector_info": {
     "mapped_sector": "financials",

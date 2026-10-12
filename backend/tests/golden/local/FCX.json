@@ -30,13 +30,13 @@
       },
       {
         "category": "Solidez financiera",
-        "detail": "El Altman Z de 4.85 (> 2.99) ubica a la empresa en zona segura: baja probabilidad estadística de problemas de solvencia según el modelo.",
-        "reason": "Solvencia sólida — Altman Z 4.85"
+        "detail": "La deuda neta equivale a menos de un año de EBITDA, un nivel cómodo que deja holgura financiera y capacidad de maniobra ante imprevistos.",
+        "reason": "Deuda baja — 0.7x EBITDA"
       },
       {
         "category": "Solidez financiera",
-        "detail": "La deuda neta equivale a menos de un año de EBITDA, un nivel cómodo que deja holgura financiera y capacidad de maniobra ante imprevistos.",
-        "reason": "Deuda baja — 0.7x EBITDA"
+        "detail": "El beneficio operativo cubre 21 veces el gasto por intereses: la carga financiera es holgada y no compromete la operación.",
+        "reason": "Deuda fácilmente servible — cobertura 21x"
       }
     ],
     "warnings": [
@@ -63,23 +63,17 @@
     ]
   },
   "altman_z": {
+    "available": false,
     "details": {
-      "X1_wc_ta": 0.0544,
-      "X2_re_ta": 0.0,
-      "X3_ebit_ta": 0.2232,
-      "X4_mcap_tl": 5.6258,
-      "X5_rev_ta": 0.6683,
-      "grey_threshold": 1.81,
-      "model": "Z-Score Original (Manufactura)",
-      "safe_threshold": 2.99,
-      "warnings": [
-        "Retained Earnings no disponible, asumido 0"
-      ]
+      "missing": [
+        "utilidades retenidas"
+      ],
+      "reason": "sin_dato"
     },
-    "interpretation": "Z-Score Original (Manufactura): Zona segura — bajo riesgo de bancarrota",
-    "model": "Z-Score Original (Manufactura)",
-    "z_score": 4.85,
-    "zone": "safe"
+    "interpretation": "Datos insuficientes para el Z-Score: falta utilidades retenidas",
+    "model": "",
+    "z_score": 0,
+    "zone": "n/a"
   },
   "company_type": "growth",
   "data_provenance": {
@@ -496,6 +490,7 @@
     "free_cash_flow": 2159249920.0,
     "gross_margin": 0.382750888122,
     "interest_coverage": 20.8537175646,
+    "interest_coverage_state": "ok",
     "interest_expense": 414360002.56,
     "inventory_turnover": 2.13092213426,
     "market_cap": 105820135424.0,
@@ -530,48 +525,60 @@
     "wacc": 0.121395
   },
   "piotroski_f": {
+    "conclusive": true,
     "details": {
       "asset_turnover_improved": {
         "detail": "Eficiencia de activos no mejoró",
-        "passed": false
+        "passed": false,
+        "state": "no_cumple"
       },
       "cfo_positive": {
         "detail": "Cash Flow Operativo positivo",
-        "passed": true
+        "passed": true,
+        "state": "cumple"
       },
       "current_ratio_improved": {
         "detail": "Liquidez no mejoró",
-        "passed": false
+        "passed": false,
+        "state": "no_cumple"
       },
       "debt_reduced": {
         "detail": "Deuda LP aumentó",
-        "passed": false
+        "passed": false,
+        "state": "no_cumple"
       },
       "earnings_quality": {
         "detail": "CFO > Net Income (earnings de calidad)",
-        "passed": true
+        "passed": true,
+        "state": "cumple"
       },
       "gross_margin_improved": {
         "detail": "Margen bruto no mejoró",
-        "passed": false
+        "passed": false,
+        "state": "no_cumple"
       },
       "no_dilution": {
         "detail": "Sin dilución de acciones",
-        "passed": true
+        "passed": true,
+        "state": "cumple"
       },
       "roa_improved": {
         "detail": "ROA mejoró vs año anterior",
-        "passed": true
+        "passed": true,
+        "state": "cumple"
       },
       "roa_positive": {
         "detail": "ROA positivo",
-        "passed": true
+        "passed": true,
+        "state": "cumple"
       }
     },
+    "evaluated": 9,
     "fiscal_year": "FY2025 vs FY2024",
     "interpretation": "Neutral - Monitorear indicadores",
     "level": "Neutral",
     "max_score": 9,
+    "scaled_score": 5.0,
     "score": 5
   },
   "price": 73.69,
@@ -637,6 +644,7 @@
     "roic": 0.247569460616
   },
   "score": {
+    "basis": null,
     "breakdown": {
       "Calidad de Ganancias": {
         "adjustments": [
@@ -653,14 +661,32 @@
             "reason": "Genera efectivo operativo",
             "severity": "good",
             "value": "Positivo"
+          },
+          {
+            "adjustment": 3,
+            "metric": "Free Cash Flow",
+            "reason": "FCF positivo",
+            "severity": "good",
+            "value": "Positivo"
+          },
+          {
+            "adjustment": 1,
+            "metric": "FCF / Net Income",
+            "reason": "FCF sólido vs ganancias (73.5%)",
+            "severity": "good",
+            "value": "74%"
           }
         ],
+        "conclusive": true,
+        "coverage": 1.0,
         "details": [
           "Neutral (5/9)",
-          "Genera efectivo operativo"
+          "Genera efectivo operativo",
+          "FCF positivo",
+          "FCF sólido vs ganancias (73.5%)"
         ],
         "max": 20,
-        "score": 13
+        "score": 17
       },
       "Crecimiento": {
         "adjustments": [
@@ -677,14 +703,24 @@
             "reason": "EPS excepcional (55.4%)",
             "severity": "excellent",
             "value": "55.4%"
+          },
+          {
+            "adjustment": -3,
+            "metric": "Crecimiento FCF 3Y",
+            "reason": "FCF decreciente (-12.6%)",
+            "severity": "moderate",
+            "value": "-12.6%"
           }
         ],
+        "conclusive": true,
+        "coverage": 1.0,
         "details": [
           "Crecimiento plano (1.6%)",
-          "EPS excepcional (55.4%)"
+          "EPS excepcional (55.4%)",
+          "FCF decreciente (-12.6%)"
         ],
         "max": 20,
-        "score": 14
+        "score": 11
       },
       "Rentabilidad": {
         "adjustments": [
@@ -724,6 +760,8 @@
             "value": "+12.6%"
           }
         ],
+        "conclusive": true,
+        "coverage": 1.0,
         "details": [
           "Muy bueno (14.8%) - En el rango alto de su sector",
           "Excelente para su sector (7.6%)",
@@ -736,13 +774,6 @@
       },
       "Solidez Financiera": {
         "adjustments": [
-          {
-            "adjustment": 6,
-            "metric": "Altman Z-Score",
-            "reason": "Zona segura - Muy baja probabilidad de quiebra",
-            "severity": "excellent",
-            "value": "4.85"
-          },
           {
             "adjustment": 4,
             "metric": "Current Ratio",
@@ -763,13 +794,22 @@
             "reason": "Cobertura excelente",
             "severity": "excellent",
             "value": "20.9x"
+          },
+          {
+            "adjustment": 5,
+            "metric": "Cobertura",
+            "reason": "Reescalado sobre los componentes con dato (sin dato: Altman Z)",
+            "severity": "neutral",
+            "value": "3/4 componentes"
           }
         ],
+        "conclusive": true,
+        "coverage": 0.75,
         "details": [
-          "Zona segura - Muy baja probabilidad de quiebra",
           "Liquidez excelente - Cubre 2x sus deudas corto plazo",
           "Deuda controlada - Dentro del rango saludable (0.52x)",
-          "Cobertura excelente"
+          "Cobertura excelente",
+          "Reescalado sobre los componentes con dato (sin dato: Altman Z)"
         ],
         "max": 20,
         "score": 20
@@ -777,9 +817,9 @@
       "Valoración": {
         "adjustments": [
           {
-            "adjustment": 1,
+            "adjustment": 0,
             "metric": "P/E vs Sector",
-            "reason": "Premium justificado (36.3x) - Alta Calidad",
+            "reason": "Premium justificado (36.3x) - Calidad Moderada",
             "severity": "ok",
             "value": "36.3x"
           },
@@ -812,20 +852,75 @@
             "value": "4.61"
           }
         ],
+        "conclusive": true,
+        "coverage": 1.0,
         "details": [
-          "Premium justificado (36.3x) - Alta Calidad",
+          "Premium justificado (36.3x) - Calidad Moderada",
           "Fuerte compresión P/E (36x → 17x forward)",
           "Elevado (49.0x) - growth premium",
           "Razonable para growth (11.7x)",
           "Muy caro (4.61)"
         ],
         "max": 20,
-        "score": 10
+        "score": 9
       }
     },
+    "categories_included": 5,
+    "categories_total": 5,
+    "excluded_categories": [],
     "level": "Favorable",
     "max_score": 100,
+    "partial": false,
     "total_score": 77
+  },
+  "score_coverage": {
+    "calidad": {
+      "components": 4,
+      "conclusive": true,
+      "coverage": 1.0,
+      "evaluated": 4,
+      "low_confidence": false,
+      "missing": [],
+      "missing_reasons": {}
+    },
+    "crecimiento": {
+      "components": 3,
+      "conclusive": true,
+      "coverage": 1.0,
+      "evaluated": 3,
+      "low_confidence": false,
+      "missing": [],
+      "missing_reasons": {}
+    },
+    "rentabilidad": {
+      "components": 5,
+      "conclusive": true,
+      "coverage": 1.0,
+      "evaluated": 5,
+      "low_confidence": false,
+      "missing": [],
+      "missing_reasons": {}
+    },
+    "solidez": {
+      "components": 4,
+      "conclusive": true,
+      "coverage": 0.75,
+      "evaluated": 3,
+      "low_confidence": false,
+      "missing": [
+        "Altman Z"
+      ],
+      "missing_reasons": {}
+    },
+    "valoracion": {
+      "components": 4,
+      "conclusive": true,
+      "coverage": 1.0,
+      "evaluated": 4,
+      "low_confidence": false,
+      "missing": [],
+      "missing_reasons": {}
+    }
   },
   "sector_info": {
     "mapped_sector": "materials",

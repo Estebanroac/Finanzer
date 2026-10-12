@@ -2,11 +2,6 @@
   "alerts": {
     "red_flags": [
       {
-        "category": "Crecimiento",
-        "detail": "Solo cumple 2 de las 9 señales de Piotroski (FY2025 vs FY2024): múltiples indicadores contables de rentabilidad, deuda o eficiencia se están deteriorando en el último ejercicio.",
-        "reason": "Debilidad financiera — Piotroski 2/9"
-      },
-      {
         "category": "Flujo de caja",
         "detail": "El negocio consume más efectivo del que genera tras invertir: depende de caja acumulada, deuda o ampliaciones para sostenerse. Sostenible solo de forma transitoria.",
         "reason": "Flujo de caja libre negativo"
@@ -29,9 +24,16 @@
         "reason": "BPA en fuerte expansión — +19.5% interanual"
       }
     ],
-    "warnings": []
+    "warnings": [
+      {
+        "category": "Flujo de caja",
+        "detail": "El flujo de caja libre equivale a menos de la mitad del beneficio contable (FCF/BN -259%): parte de las utilidades no se está convirtiendo en caja real, señal a vigilar (devengos, capex o capital de trabajo).",
+        "reason": "Calidad del beneficio baja"
+      }
+    ]
   },
   "altman_z": {
+    "available": false,
     "details": {
       "model": "No Aplicable",
       "reason": "financial_sector",
@@ -367,6 +369,7 @@
     "free_cash_flow": -147782000000.0,
     "gross_margin": null,
     "interest_coverage": null,
+    "interest_coverage_state": null,
     "interest_expense": 97898000000.0,
     "inventory_turnover": null,
     "market_cap": 885149395114.0,
@@ -401,48 +404,60 @@
     "wacc": 0.1019917315
   },
   "piotroski_f": {
+    "conclusive": true,
     "details": {
       "asset_turnover_improved": {
         "detail": "Eficiencia de activos no mejoró",
-        "passed": false
+        "passed": false,
+        "state": "no_cumple"
       },
       "cfo_positive": {
-        "detail": "CFO negativo o N/A",
-        "passed": false
+        "detail": "CFO negativo",
+        "passed": false,
+        "state": "no_cumple"
       },
       "current_ratio_improved": {
         "detail": "Sin datos de liquidez histórica",
-        "passed": false
+        "passed": false,
+        "state": "sin_dato"
       },
       "debt_reduced": {
         "detail": "Deuda LP aumentó",
-        "passed": false
+        "passed": false,
+        "state": "no_cumple"
       },
       "earnings_quality": {
         "detail": "CFO < Net Income (alerta calidad)",
-        "passed": false
+        "passed": false,
+        "state": "no_cumple"
       },
       "gross_margin_improved": {
         "detail": "Sin datos de margen bruto histórico",
-        "passed": false
+        "passed": false,
+        "state": "sin_dato"
       },
       "no_dilution": {
         "detail": "Sin dilución de acciones",
-        "passed": true
+        "passed": true,
+        "state": "cumple"
       },
       "roa_improved": {
         "detail": "ROA no mejoró",
-        "passed": false
+        "passed": false,
+        "state": "no_cumple"
       },
       "roa_positive": {
         "detail": "ROA positivo",
-        "passed": true
+        "passed": true,
+        "state": "cumple"
       }
     },
+    "evaluated": 7,
     "fiscal_year": "FY2025 vs FY2024",
     "interpretation": "Débil - Señales de debilidad financiera",
     "level": "Débil",
     "max_score": 9,
+    "scaled_score": 2.57142857143,
     "score": 2
   },
   "price": 332.989990234,
@@ -508,15 +523,16 @@
     "roic": null
   },
   "score": {
+    "basis": null,
     "breakdown": {
       "Calidad de Ganancias": {
         "adjustments": [
           {
             "adjustment": -4,
             "metric": "Piotroski F-Score",
-            "reason": "Debilidad (2/9)",
+            "reason": "Debilidad (2.6/9)",
             "severity": "moderate",
-            "value": "2/9"
+            "value": "2.6/9"
           },
           {
             "adjustment": -4,
@@ -524,14 +540,32 @@
             "reason": "Quema efectivo operativo",
             "severity": "severe",
             "value": "Negativo"
+          },
+          {
+            "adjustment": -4,
+            "metric": "Free Cash Flow",
+            "reason": "FCF negativo",
+            "severity": "severe",
+            "value": "Negativo"
+          },
+          {
+            "adjustment": -2,
+            "metric": "FCF / Net Income",
+            "reason": "Ganancias sin respaldo de cash (-259.0%)",
+            "severity": "moderate",
+            "value": "-259%"
           }
         ],
+        "conclusive": true,
+        "coverage": 1.0,
         "details": [
-          "Debilidad (2/9)",
-          "Quema efectivo operativo"
+          "Debilidad (2.6/9)",
+          "Quema efectivo operativo",
+          "FCF negativo",
+          "Ganancias sin respaldo de cash (-259.0%)"
         ],
         "max": 20,
-        "score": 2
+        "score": 0
       },
       "Crecimiento": {
         "adjustments": [
@@ -548,14 +582,24 @@
             "reason": "EPS sólido (19.5%)",
             "severity": "good",
             "value": "19.5%"
+          },
+          {
+            "adjustment": 2,
+            "metric": "Cobertura",
+            "reason": "Reescalado sobre los componentes con dato (sin dato: Crecimiento del FCF)",
+            "severity": "neutral",
+            "value": "2/3 componentes"
           }
         ],
+        "conclusive": true,
+        "coverage": 0.666666666667,
         "details": [
           "Crecimiento moderado (3.4%)",
-          "EPS sólido (19.5%)"
+          "EPS sólido (19.5%)",
+          "Reescalado sobre los componentes con dato (sin dato: Crecimiento del FCF)"
         ],
         "max": 20,
-        "score": 14
+        "score": 16
       },
       "Rentabilidad": {
         "adjustments": [
@@ -579,12 +623,22 @@
             "reason": "Excelente (31.4%) - Alta rentabilidad final",
             "severity": "excellent",
             "value": "31.4%"
+          },
+          {
+            "adjustment": 4,
+            "metric": "Cobertura",
+            "reason": "Reescalado sobre los componentes con dato (sin dato: Margen operativo)",
+            "severity": "neutral",
+            "value": "3/4 componentes"
           }
         ],
+        "conclusive": true,
+        "coverage": 0.75,
         "details": [
           "Excepcional para su sector (15.7% vs 12% rango alto sectorial)",
           "Bueno (1.3%) - Rango alto de su sector",
-          "Excelente (31.4%) - Alta rentabilidad final"
+          "Excelente (31.4%) - Alta rentabilidad final",
+          "Reescalado sobre los componentes con dato (sin dato: Margen operativo)"
         ],
         "max": 20,
         "score": 20
@@ -643,6 +697,8 @@
             "value": "2.44x"
           }
         ],
+        "conclusive": true,
+        "coverage": 1.0,
         "details": [
           "Solidez bancaria excelente (10/10)",
           "D/E muy conservador (1.4x < 5x) - Excepcional para banco",
@@ -666,19 +722,89 @@
             "reason": "Razonable (1.35)",
             "severity": "ok",
             "value": "1.35"
+          },
+          {
+            "adjustment": 0,
+            "metric": "Cobertura",
+            "reason": "Reescalado sobre los componentes con dato (sin dato: P/FCF, EV/EBITDA)",
+            "severity": "neutral",
+            "value": "2/4 componentes"
           }
         ],
+        "conclusive": true,
+        "coverage": 0.5,
         "details": [
           "Razonable para growth (14.0x vs 13.0x)",
-          "Razonable (1.35)"
+          "Razonable (1.35)",
+          "Reescalado sobre los componentes con dato (sin dato: P/FCF, EV/EBITDA)"
         ],
         "max": 20,
         "score": 10
       }
     },
+    "categories_included": 5,
+    "categories_total": 5,
+    "excluded_categories": [],
     "level": "Favorable",
     "max_score": 100,
+    "partial": false,
     "total_score": 64
+  },
+  "score_coverage": {
+    "calidad": {
+      "components": 4,
+      "conclusive": true,
+      "coverage": 1.0,
+      "evaluated": 4,
+      "low_confidence": false,
+      "missing": [],
+      "missing_reasons": {}
+    },
+    "crecimiento": {
+      "components": 3,
+      "conclusive": true,
+      "coverage": 0.666666666667,
+      "evaluated": 2,
+      "low_confidence": false,
+      "missing": [
+        "Crecimiento del FCF"
+      ],
+      "missing_reasons": {
+        "Crecimiento del FCF": "el FCF cambia de signo en el periodo: CAGR no definido"
+      }
+    },
+    "rentabilidad": {
+      "components": 4,
+      "conclusive": true,
+      "coverage": 0.75,
+      "evaluated": 3,
+      "low_confidence": false,
+      "missing": [
+        "Margen operativo"
+      ],
+      "missing_reasons": {}
+    },
+    "solidez": {
+      "components": 3,
+      "conclusive": true,
+      "coverage": 1.0,
+      "evaluated": 3,
+      "low_confidence": false,
+      "missing": [],
+      "missing_reasons": {}
+    },
+    "valoracion": {
+      "components": 4,
+      "conclusive": true,
+      "coverage": 0.5,
+      "evaluated": 2,
+      "low_confidence": true,
+      "missing": [
+        "P/FCF",
+        "EV/EBITDA"
+      ],
+      "missing_reasons": {}
+    }
   },
   "sector_info": {
     "mapped_sector": "financials",
