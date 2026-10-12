@@ -343,3 +343,89 @@ Notas: localmente el score de NFLX es 97, frente al 99 del spec, y la valoració
 ---
 
 *Fin de la etapa 1. No se inició ninguna otra etapa.*
+
+---
+
+## 7. Hallazgos de producción
+
+*Añadido en la etapa 2.1 (11-oct-2026). Fuente: `GET /api/_capture/{symbol}` en `finanzer.app` (Render, commit
+`e0be7d4`), ~23:50 UTC. Las 6 capturas las sirvió un mismo proceso (`hostname:pid` idéntico en captura y
+`/api/analysis`) y ninguna quedó contaminada. **Con el código de prod, el replay desde `backend/tests/fixtures/prod/`
+reproduce exactamente el `/api/analysis` de producción en los 6 tickers**, así que todo lo de esta sección está
+verificado, no inferido. Comparación detallada: `python3 backend/tests/diff_golden.py --local-vs-prod`.*
+
+> **Corrección a §0–§6.** Todo RECON se hizo desde local, donde Yahoo responde completo. **En producción el pipeline
+> recorre otro camino de datos** (7.1), así que varias conclusiones de §4 y §6 solo valen para local. La clasificación
+> por entorno está en 7.4.
+
+### 7.1 Yahoo responde 401 → el plan B es permanente en prod
+
+- `v10/finance/quoteSummary` devuelve **HTTP 401 a todas las llamadas** desde Render: 6 de 6 por ticker (llamada,
+  reintento tras refrescar el crumb y 2 reintentos más con sesión y perfil nuevos, `yf_adapter.py:246-261, 359-370`).
+  Con eso `_do_fetch` cae **siempre** en `_fallback_yfinance` (`yf_adapter.py:886`).
+- El plan B arma el dict con `fast_info`, `info` (solo para la beta) y los estados **anuales** de yfinance. Después
+  **Finnhub** rellena los huecos: 18–29 campos por ticker. Consecuencias verificadas:
+  - **El enriquecimiento con los estados del año previo no se ejecuta** (`_enrich_prior_year_data` solo corre en el
+    camino v10, `yf_adapter.py:695`). En `_prior_year` solo queda lo que aporta Finnhub (ROA, current ratio, margen
+    bruto, rotación, LTD/activos), **sin acciones**. Por eso Piotroski marca *"Sin datos de acciones históricas" → ✗*
+    en los **6** tickers (el Fallo 2 del spec) y `buyback_yield`/`shareholder_yield` salen **null** siempre.
+  - **El sector sale de `KNOWN_SECTORS`** (lista fija de unos 68 tickers, `yf_adapter.py:82-150, 922-924`) y no de
+    `info["sector"]`, aunque ese dato sí llega en la respuesta. **O y FCX quedan como sector "Unknown"**: O no se
+    valora como REIT (no hay P/FFO) y ambos usan umbrales y medianas por defecto. JPM y SNOW toman la industria con
+    guion largo (`Banks—Diversified`) porque viene de la lista.
+  - **FCF = "Free Cash Flow" del estado de flujos anual** (no el FCF apalancado de `financialData`). EPS = Diluted EPS
+    anual, corregido por el `epsTTM` de Finnhub si difiere más de un 2%. **`yearly_financials` sale vacío** (sin
+    módulo `earnings`): la gráfica histórica no tiene datos en prod.
+  - El snapshot final **no se marca como degradado** (`degraded: false`) porque Finnhub completa los campos de
+    completitud. El 401 queda oculto para cualquier monitorización basada en ese flag.
+
+### 7.2 Versiones en producción
+
+| | Prod (Render) | Local (este Mac) |
+|---|---|---|
+| Python | **3.13.4** (el valor por defecto del servicio cuando se creó; hoy Render usa 3.14.3 para servicios nuevos) | 3.9.6 |
+| yfinance | **1.7.0** | 1.2.0 |
+| pandas | **3.0.6** | 2.3.3 |
+| curl_cffi | **0.16.3** | 0.13.0 |
+| Resto (numpy, pydantic, reportlab, requests…) | [DESCONOCIDO: no los registró la captura; están en el log de build de Render] | — |
+
+`requirements.txt` usa `>=` (salvo fastapi y uvicorn), así que **cada deploy instala la última versión disponible**: la
+línea base de prod solo es estable si se fijan versiones. A pesar de las diferencias de versión, el replay local
+(Python 3.9 / pandas 2) reproduce prod exactamente: el motor es aritmética pura sobre los inputs congelados.
+
+### 7.3 Las 5 diferencias más grandes local → prod y su causa
+
+| # | Ticker | Diferencia | Causa (input crudo · procedencia en prod) |
+|---|---|---|---|
+| 1 | **O** | DCF **−45% → +72%**; score **82 → 63**; Altman 4.11 → 0.96; Solidez 20 → 4 | Sector **"Unknown"** en prod (KNOWN_SECTORS) → umbrales y medianas por defecto, sin rama REIT; FCF 1.58B → 3.99B (FCF apalancado de Yahoo v10 vs estado de flujos · fallback); crecimiento 20.3% → 10.9% (Finnhub); `totalAssets` 53.7B → 72.8B y `retainedEarnings` null → −10.5B (en local el v10 trae un balance incompleto y Altman toma RE = 0) |
+| 2 | **NFLX** | DCF **+84% → −50%** (prod = informe del spec); grid 88–199 → 24–54, ninguno contiene $70; Altman 6.7 → 14.9 | FCF **25.39B → 9.46B** (FCF apalancado v10 > OCF, bug C5 · estado de flujos en el fallback); crecimiento 24.0% → 16.0% (Finnhub); `retainedEarnings` null → 42.3B |
+| 3 | **JPM** | Crecimiento de ingresos **30.4% → 3.4%** → deja de ser "growth"; Crecimiento 20 → 14; score 74 → 68 | `revenueGrowth` de Yahoo (artefacto bancario, C6) → Finnhub con guarda anti-artefacto (CAGR-3Y); FCF null → −147.8B (estado de flujos) |
+| 4 | **FCX** | Crecimiento de ingresos **+1.6% → −24.2%**; grid $9–20 → $2–6 frente a $74; Altman 4.85 → 3.33 | `revenueGrowth` de Finnhub (TTM YoY). **A verificar**: los estados anuales dan +1.8%, así que puede ser un artefacto de Finnhub. Sector "Unknown"; balance del fallback frente al v10 |
+| 5 | **SNOW** | El grid **deja de contener el precio** ($210–431 ∋ $369 → $76–178 ∌ $369); upside −61% → −74% | Crecimiento 49.9% → 32.0% (Finnhub); FCF 1.74B → 1.12B (apalancado v10 > OCF → estado de flujos) |
+
+También: V pasa de 91 a 87 (crecimiento 23.8% → 14.4%, Finnhub). NFLX de 97 a 99, la cifra del spec.
+
+### 7.4 Reclasificación de los bugs por entorno
+
+| Bug / fallo | Solo local | Solo prod | Ambos | Evidencia (golden local/prod) |
+|---|---|---|---|---|
+| FCF de `financialData.freeCashflow` (apalancado) > OCF (C5) | ✔ | | | NFLX 25.39B > 11.97B; SNOW 1.74B > 1.25B. En prod FCF ≤ OCF en los 6 |
+| Acciones `Share Issued` en vez de `Ordinary Shares Number` (C3) | ✔ | | | Solo existe en `_enrich_prior_year_data`, que no corre en prod |
+| `revenueGrowth` bancario artefacto 30.4% (C6) | ✔ | | | En prod lo reemplaza Finnhub (3.4%) |
+| Altman con `retainedEarnings` ausente = 0 (§6.2) | ✔ | | | Aviso en NFLX/O/FCX/SNOW locales; en prod RE viene del estado |
+| Piotroski "sin dato" = ✗ (Fallo 2) | | | ✔ | Local: JPM 2 criterios; prod: **"acciones" en los 6** (más 3 extra en JPM) |
+| Sector "Unknown" fuera de `KNOWN_SECTORS` | | ✔ | | O y FCX en prod (xfail `test_bug_prod_sector_unknown_outside_known_list_o`) |
+| Sin acciones previas → `buyback_yield` null; `yearly_financials` vacío | | ✔ | | Los 6 en prod |
+| 401 de Yahoo oculto (`degraded: false`) | | ✔ | | Los 6 en prod |
+| Crecimiento de ingresos de Finnhub sospechoso (FCX −24.2% vs +1.8% anual) | | ✔ (a verificar) | | FCX prod |
+| WACC = solo coste del equity (C4) | | | ✔ | `wacc == Rf + β·MRP` en todos los no financieros de ambos juegos |
+| Crecimiento distinto DCF vs grid / decay distinto (§6.5) | | | ✔ | Local: SNOW 124%; prod: O 14%, FCX 43%, SNOW 17% |
+| Recuadro del caso base nunca dibujado (§1.4) | | | ✔ | Código del PDF, independiente del entorno |
+| Normalización: no detecta la comisión de NFLX (C1) | | | ✔ | Ningún camino extrae partidas no recurrentes |
+| Bancos con lectura de FCF/OCF y P/E (cambio 1) | | | ✔ | JPM Calidad 2/20 (local) y 6/20 (prod) por OCF negativo |
+| Bandas del score 80/65/50/35 (motor) vs 80/60/40/20 (PDF) | | | ✔ | Código |
+| Medianas sectoriales hardcodeadas (Fallo 3) | | | ✔ (en prod peor: "Unknown" → medianas por defecto) | Código |
+
+**Implicación para el plan:** que un bug sea "solo local" no lo hace inofensivo. Si mañana Yahoo vuelve a responder
+en Render, prod pasaría al camino v10 y heredaría los bugs de la columna "solo local" (FCF apalancado, Share Issued,
+crecimiento bancario). Los arreglos deben validarse contra **los dos** juegos de golden.

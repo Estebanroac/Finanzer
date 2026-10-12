@@ -68,6 +68,14 @@ El importador rechaza capturas con patrones de secreto. Además compara el repla
 `metadata.verification`. Verificado: **con el código de prod el replay coincide exactamente en los 6 tickers**. Con
 el de esta rama solo difieren los textos "anual" → "interanual" (commit `4bbfc18`, no desplegado).
 
+**Finnhub en el juego local (punto 2 de la etapa 2.1): cubierto por el juego `prod`.** En local, Yahoo trae completos
+`beta`, `forwardPE`, `revenueGrowth` y el ROA del año previo para los 6 tickers, y Finnhub solo se consulta si falta
+alguno o la respuesta viene degradada (`finnhub_fallback.should_fill`). Con la clave presente el resultado sería
+`participated: false` y los mismos golden. El efecto real de Finnhub está medido en `prod`, donde rellenó entre 18 y
+29 campos por ticker. Si recapturas en local con Finnhub, exporta `FINNHUB_API_KEY` **en la misma pestaña** del panel
+de terminal donde corras `capture_fixtures.py`. No uses `!` en el chat: cada `!` es un shell nuevo y la salida
+queda en la conversación.
+
 **Comparar entornos:**
 
 ```bash
