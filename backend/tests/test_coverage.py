@@ -544,3 +544,46 @@ def test_partial_total_is_shown_in_json_and_pdf(outputs_by_env):
     assert "Valoración no concluyente" in txt and "No concluyente · cobertura 25%" in txt
     nflx = outputs_by_env("prod")["NFLX"][0]["score"]
     assert nflx["partial"] is False and nflx["basis"] is None
+
+
+# ─────────────────────────── etapa 6: "no aplica" frente a "sin dato" ───────────────────────────
+def _cov(*specs):
+    cov = CategoryCoverage()
+    for name, adj, na in specs:
+        cov.comp(name, [3, -3], adj, na=na)
+    return cov
+
+
+NA = "No aplica a REIT: prueba"
+
+
+def test_not_applicable_does_not_count_in_coverage():
+    cov = _cov(("A", 2, None), ("B", None, NA))
+    rep = cov.report()
+    assert (rep["components"], rep["evaluated"], rep["coverage"]) == (1, 1, 1.0)
+    assert rep["missing"] == [] and rep["not_applicable"] == {"B": NA}
+    adj = []
+    assert cov.apply(12, adj) == 12                       # sin reescalado
+    assert adj[0]["metric"] == "No aplica" and adj[0]["value"] == "B" and adj[0]["adjustment"] == 0
+
+
+def test_not_applicable_cannot_make_a_category_inconclusive():
+    with_na = _cov(("A", 2, None), ("B", None, None), ("C", None, NA), ("D", None, NA))
+    with_missing = _cov(("A", 2, None), ("B", None, None), ("C", None, None), ("D", None, None))
+    assert with_na.report()["coverage"] == 0.5 and with_na.conclusive
+    assert with_missing.report()["coverage"] == 0.25 and not with_missing.conclusive
+
+
+def test_not_applicable_and_missing_are_reported_apart():
+    cov = _cov(("A", 2, None), ("B", None, None), ("C", None, NA))
+    adj = []
+    cov.apply(12, adj)
+    metrics = [a["metric"] for a in adj]
+    assert metrics == ["No aplica", "Cobertura"]
+    assert "C" not in adj[1]["reason"] and "B" in adj[1]["reason"]      # "sin dato: B"
+    assert NA in adj[0]["reason"]
+
+
+def test_category_with_nothing_applicable_is_not_applicable():
+    cov = _cov(("A", None, NA))
+    assert cov.report()["applicable"] is False and cov.report()["components"] == 0

@@ -1940,13 +1940,22 @@ class CategoryCoverage:
         en su peor y en su mejor valor (no penaliza como incumplimiento ni
         premia por ocultarlo).
     Los bonos (forward P/E, GARP, growth, rescates) quedan fuera del reescalado.
+
+    Etapa 6: un componente puede además NO APLICAR al arquetipo (`na` con el
+    motivo). No es un dato ausente: no cuenta en la cobertura (ni en el
+    numerador ni en el denominador), no puede volver la categoría no
+    concluyente y el informe lo muestra como "No aplica a …", aparte de "sin dato".
     """
 
     def __init__(self):
         self.items = []
         self.reasons: Dict[str, str] = {}
+        self.not_applicable: Dict[str, str] = {}
 
-    def comp(self, name: str, points, adj, reason: Optional[str] = None) -> None:
+    def comp(self, name: str, points, adj, reason: Optional[str] = None, na: Optional[str] = None) -> None:
+        if na:
+            self.not_applicable[name] = na
+            return
         pts = [p for p in points]
         self.items.append((name, max(pts), min(pts), adj))
         if adj is None and reason:
@@ -1962,8 +1971,15 @@ class CategoryCoverage:
         cov = (ev / n) if n else None
         return {"components": n, "evaluated": ev, "coverage": cov, "missing": self.missing,
                 "missing_reasons": dict(self.reasons),
+                "not_applicable": dict(self.not_applicable),
+                "applicable": self.applicable,
                 "conclusive": self.conclusive,
                 "low_confidence": (cov is not None and cov < _CAT_COVERAGE["low_confidence_below"])}
+
+    @property
+    def applicable(self) -> bool:
+        """False solo si NINGÚN componente aplica al arquetipo (categoría "no aplica")."""
+        return len(self.items) > 0
 
     @property
     def conclusive(self) -> bool:
@@ -1974,6 +1990,12 @@ class CategoryCoverage:
 
     def apply(self, base_score, adjustments: List[Dict[str, Any]]):
         """Devuelve base_score con el reescalado aplicado (sin cambio si cobertura completa)."""
+        if self.not_applicable:
+            whys = sorted(set(self.not_applicable.values()))
+            adjustments.append({
+                "metric": "No aplica", "value": ", ".join(self.not_applicable), "adjustment": 0,
+                "reason": "; ".join(whys) + " (no cuenta en la cobertura)", "severity": "neutral",
+            })
         if not self.missing:
             return base_score
         if not self.conclusive:
@@ -3318,7 +3340,10 @@ def calculate_score_v2(
     categories = [solidez, rentabilidad, valoracion, calidad, crecimiento]
     for cat in categories:
         cat["conclusive"] = (cat.get("coverage") or {}).get("conclusive", True)
-    included = [cat for cat in categories if cat["conclusive"]]
+        # Etapa 6: una categoría sin ningún componente aplicable al arquetipo
+        # tampoco puntúa, pero es "no aplica", no "no concluyente".
+        cat["applicable"] = (cat.get("coverage") or {}).get("applicable", True)
+    included = [cat for cat in categories if cat["conclusive"] and cat["applicable"]]
     if len(included) == len(categories):
         total_score = sum(cat["score"] for cat in categories)
     elif included:
@@ -3363,7 +3388,8 @@ def calculate_score_v2(
             "crecimiento": crecimiento["score"]
         },
         "is_growth_company": is_growth,
-        "excluded_categories": [cat["category"] for cat in categories if not cat["conclusive"]],
+        "excluded_categories": [cat["category"] for cat in categories if cat["applicable"] and not cat["conclusive"]],
+        "not_applicable_categories": [cat["category"] for cat in categories if not cat["applicable"]],
         "score_conclusive": bool(included),
         "categories_included": len(included),
         "categories_total": len(categories),
