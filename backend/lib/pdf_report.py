@@ -228,8 +228,29 @@ def read_nde(nde, state=None, net_debt=None):
     return ("Alta", 'neg', f"la deuda neta ({nde:.1f}x EBITDA) es alta y condiciona la flexibilidad financiera")
 
 
-def read_payout(p):
+def read_runway(rw):
+    """Runway de GROWTH_PRE_PROFIT (etapa 7): (etiqueta, tono, frase) o None sin dato."""
+    if not rw or rw.get("state") not in ("autofinanciada", "runway"):
+        return None
+    if rw["state"] == "autofinanciada":
+        return ("Autofinanciada", 'pos', "el FCF de los últimos doce meses es positivo: la empresa no consume caja")
+    b, y = cfg("thresholds.score.solidez.runway_bounds"), rw["years"]
+    if y >= b[0]: return ("Holgado", 'pos', f"la caja cubre {y:.1f} años de quema de FCF")
+    if y >= b[1]: return ("Cómodo", 'pos', f"la caja cubre {y:.1f} años de quema de FCF")
+    if y >= b[2]: return ("Ajustado", 'warn', f"la caja cubre {y:.1f} años de quema de FCF: tendrá que financiarse")
+    return ("Crítico", 'neg', f"la caja cubre {y:.1f} años de quema de FCF: necesita financiación urgente")
+
+
+def read_payout(p, basis=None):
     if p is None: return None
+    if basis == "ffo":    # REIT (etapa 7): mismos tramos que el score (thresholds.score.calidad)
+        b = cfg("thresholds.score.calidad.reit_ffo_payout_bounds")
+        if p < 0:     return ("FFO negativo", 'neg', "el dividendo se paga con un FFO negativo, algo insostenible en el tiempo")
+        if p <= b[0]: return ("Holgado", 'pos', f"el payout sobre FFO de {_pct(p, 0)} deja margen para sostener el dividendo")
+        if p <= b[1]: return ("Cubierto", 'pos', f"el payout sobre FFO de {_pct(p, 0)} está cubierto por el FFO")
+        if p <= b[2]: return ("Justo", 'warn', f"el payout sobre FFO de {_pct(p, 0)} deja poco margen sobre el FFO")
+        return ("Insostenible", 'neg', f"el payout sobre FFO de {_pct(p, 0)} supera lo que genera el FFO: "
+                                       "el dividendo actual no es sostenible")
     if p < 0:     return ("Con pérdidas", 'neg', "el dividendo se paga en un ejercicio con pérdidas, algo insostenible en el tiempo")
     b = _PDF_BANDS["payout_bounds"]
     if p < b[0]:  return ("Conservador", 'pos', f"el payout de {_pct(p, 0)} deja amplio margen para sostener y aumentar el dividendo")
@@ -700,6 +721,8 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     r_up = read_upside(dcf.get("upside"))
     r_graham = read_graham(graham_margin)
     r_cr = None if "current_ratio" in _na_keys else read_current(km.get("current_ratio"))
+    _rw = xm.get("runway") if archetype == "GROWTH_PRE_PROFIT" else None
+    r_rw = read_runway(_rw)
     # D/E contable sin lectura en financieras (los depósitos son pasivo): decisión
     # de la etapa 4. La celda muestra "—" y DE_NOT_APPLICABLE.
     r_de = None if is_financial else read_de(km.get("de"))
@@ -707,7 +730,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     r_ic = read_coverage(km.get("interest_coverage"), ic_state)
     nde_state = km.get("net_debt_to_ebitda_state")
     r_nde = read_nde(km.get("net_debt_to_ebitda"), nde_state, km.get("net_debt"))
-    r_pay = read_payout(km.get("payout_ratio"))
+    r_pay = read_payout(km.get("payout_ratio"), km.get("payout_basis"))
     r_grev = read_growth(km.get("revenue_growth"), "los ingresos")
     r_gearn = read_growth(km.get("earnings_growth"), "los beneficios")
     r_beta = read_beta(km.get("beta"))
@@ -1053,6 +1076,8 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     if fin_health and isinstance(fin_health, dict) and fin_health.get("score") is not None:
         sol_short = (f"salud financiera bancaria de {fin_health['score']}/10 "
                      f"({fin_health.get('level', '')})")
+    elif r_rw:
+        sol_short = f"runway {r_rw[0].lower()}: {r_rw[2]}"
     elif altman.get("z_score") is not None and altman.get("available", True):
         _zmap = {'safe': 'zona segura', 'grey': 'zona gris', 'distress': 'zona de riesgo'}
         sol_short = f"Altman Z de {altman['z_score']:.2f} ({_zmap.get(altman.get('zone'), '')})"
@@ -1421,6 +1446,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     story.append(Spacer(1, 12))
     story.extend(section_header("03", "Solidez financiera", S))
     sol_txt = _join_sentences([
+        r_rw[2] if r_rw else None,
         r_cr[2] if r_cr else None,
         r_de[2] if r_de else None,
         r_nde[2] if r_nde else None,
@@ -1432,6 +1458,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     story.append(Spacer(1, 4))
 
     sol_defs = [
+        *([("Runway", None, "runway", r_rw)] if archetype == "GROWTH_PRE_PROFIT" else []),
         ("Current ratio", km.get("current_ratio"), "mult", r_cr),
         ("Quick ratio", km.get("quick_ratio"), "mult", None),
         ("Cash ratio", km.get("cash_ratio"), "mult", None),
@@ -1439,7 +1466,8 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         ("Deuda / Activos", km.get("debt_to_assets"), "pct", None),
         ("Deuda neta / EBITDA", km.get("net_debt_to_ebitda"), "mult", r_nde),
         ("Cobertura de intereses", km.get("interest_coverage"), "mult", r_ic),
-        ("Payout del dividendo", km.get("payout_ratio"), "pct", r_pay),
+        ("Payout sobre FFO" if km.get("payout_basis") == "ffo" else "Payout del dividendo",
+         km.get("payout_ratio"), "pct", r_pay),
     ]
     rows, reads = [], []
     for lab, val, fm, rd in sol_defs:
@@ -1447,6 +1475,14 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
                 (lab == "Deuda neta / EBITDA" and nde_state == "no_significativo"):
             rows.append([lab, "—", rd[0]])
             reads.append((len(rows) - 1, rd[1]))
+            continue
+        if fm == "runway":
+            if r_rw:
+                rows.append([lab, "Autofinanciada" if _rw["state"] == "autofinanciada" else f"{_rw['years']:.1f} años",
+                             r_rw[0]])
+                reads.append((len(rows) - 1, r_rw[1]))
+            else:
+                rows.append([lab, "—", "Sin dato"])
             continue
         if lab == "Current ratio" and "current_ratio" in _na_keys:
             rows.append([lab, "—", "No aplica"])     # REIT (etapa 7); FINANCIAL tiene su propia sección
@@ -1605,6 +1641,12 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     if altman and altman.get("applicable") is False:
         _emit_card(model_card("n/a", 'neu', "Altman Z-Score", "No aplica", _esc(altman.get("interpretation", ""))))
         story.append(Spacer(1, 8))
+        if r_rw:    # GROWTH_PRE_PROFIT: el runway sustituye al Altman en Solidez
+            _rw_val = "FCF+" if _rw["state"] == "autofinanciada" else f"{_rw['years']:.1f}"   # años en el texto
+            _emit_card(model_card(_rw_val, r_rw[1], "Runway", r_rw[0], _esc(
+                f"{_cap(r_rw[2])} Runway = (caja + inversiones a corto plazo) / quema anual de FCF; "
+                "sustituye al Altman en Solidez.")))
+            story.append(Spacer(1, 8))
     elif altman and altman.get("available") is False and not is_financial \
             and (altman.get("details") or {}).get("reason") == "sin_dato":
         _emit_card(model_card("—", 'neu', "Altman Z-Score", "Sin dato",
@@ -1616,8 +1658,10 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         z_tone = 'pos' if zone == 'safe' else 'warn' if zone == 'grey' else 'neg'
         z_lab = "Zona segura" if zone == 'safe' else "Zona gris" if zone == 'grey' else "Zona de riesgo"
         _zd = altman.get("details") or {}  # umbrales del modelo usado (Z, Z' o Z'')
+        _vars = ("EBIT y patrimonio contable frente al pasivo" if "Z''" in (altman.get("model") or "")
+                 else "EBIT, valor de mercado y ventas")
         z_body = (f"{altman.get('interpretation', '')}. El modelo Altman Z pondera capital de trabajo, beneficios retenidos, "
-                  f"EBIT, valor de mercado y ventas para estimar el riesgo de insolvencia a 2 años: por encima de "
+                  f"{_vars} para estimar el riesgo de insolvencia a 2 años: por encima de "
                   f"{_zd.get('safe_threshold', 0):.2f} el riesgo es bajo; por debajo de {_zd.get('grey_threshold', 0):.2f}, elevado.")
         _emit_card(model_card(f"{z:.2f}", z_tone, "Altman Z-Score", z_lab, _esc(z_body)))
         story.append(Spacer(1, 8))

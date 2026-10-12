@@ -99,7 +99,7 @@ def test_main_reads_structured_state_not_symbol(outputs_by_env):
 from financial_ratios import altman_model, altman_z_score  # noqa: E402
 
 _ALT = dict(working_capital=20, total_assets=100, retained_earnings=30, ebit=15,
-            market_value_equity=120, total_liabilities=50, sales=150)
+            market_value_equity=120, total_liabilities=50, sales=150, book_value_equity=40)
 
 
 @pytest.mark.parametrize("field,label", [("working_capital", "capital de trabajo"),
@@ -123,10 +123,34 @@ def test_altman_model_depends_only_on_sector_and_industry():
     assert altman_model("Industrials") == altman_model("Basic Materials") == altman_model("Energy") == "original"
     assert altman_model("Financial Services") == "z_double_prime"      # antes entraba por "services"
     assert altman_model("Technology", "Software - Application") == altman_model("") == "z_double_prime"
-    # sin valor de mercado: "sin dato", ya no cambia en silencio al Z' de empresas privadas
-    z, zone, _, det = altman_z_score(**dict(_ALT, market_value_equity=None), sector="Technology",
-                                     book_value_equity=40)
+    # sin la X4 de la variante: "sin dato", ya no cambia en silencio al Z' de empresas privadas
+    z, zone, _, det = altman_z_score(**dict(_ALT, market_value_equity=None), sector="Industrials")
     assert z is None and det["reason"] == "sin_dato" and "valor de mercado del patrimonio" in det["missing"]
+    z, zone, _, det = altman_z_score(**dict(_ALT, book_value_equity=None), sector="Technology")
+    assert z is None and det["reason"] == "sin_dato" and "patrimonio contable" in det["missing"]
+
+
+def test_altman_x4_follows_each_variant():
+    """Z original: capitalización / pasivo. Z'': patrimonio contable / pasivo (Altman 1995);
+    los coeficientes y cortes solo valen con sus variables."""
+    _, _, _, det = altman_z_score(**_ALT, sector="Industrials")
+    assert det["X4_mcap_tl"] == 2.4 and "X4_book_tl" not in det
+    _, _, _, det = altman_z_score(**_ALT, sector="Technology")
+    assert det["X4_book_tl"] == 0.8 and "X4_mcap_tl" not in det
+    # la capitalización ya no mueve el Z''
+    assert altman_z_score(**dict(_ALT, market_value_equity=1e6), sector="Technology")[0] == \
+        altman_z_score(**_ALT, sector="Technology")[0]
+
+
+def test_altman_z_double_prime_with_book_equity_in_fixtures(outputs_by_env):
+    """NFLX y V siguen en zona segura con el patrimonio contable; SNOW ya no usa Altman."""
+    import conftest
+    for env in conftest.ENVS:
+        out = outputs_by_env(env)
+        for sym in ("NFLX", "V"):
+            z = out[sym][0]["altman_z"]
+            assert "Z''" in z["model"] and z["zone"] == "safe" and "X4_book_tl" in z["details"], (env, sym)
+        assert out["SNOW"][0]["altman_z"]["applicable"] is False
 
 
 def test_altman_same_model_in_both_envs(outputs_by_env):

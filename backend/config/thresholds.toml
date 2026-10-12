@@ -28,6 +28,14 @@ de_mitigated_points = -2
 de_severe_points = -5
 coverage_bounds = [10, 5, 3, 1.5]
 coverage_points = [3, 1, 0, -2, -3]
+# Runway (GROWTH_PRE_PROFIT, sustituye a Altman con su mismo peso): años de
+# (caja + inversiones a corto plazo) / quema anual de FCF. FCF TTM >= 0 =
+# autofinanciada = mejor tramo. >= 3 años aguanta un cierre de mercado de
+# capitales de unos 2 años (2022-23) con margen; 2-3, cómodo; 1-2, tendrá que
+# financiarse dentro del horizonte del plan; < 1, financiación urgente y
+# probablemente dilutiva antes del próximo ejercicio.
+runway_bounds = [3.0, 2.0, 1.0]     # años: ≥3 / ≥2 / ≥1 / <1
+runway_points = [6, 2, -2, -6]
 
 [score.solidez_financial]           # score_solidez_financiera_financial (bancos)
 max_without_regulatory = 18         # sin CET1/Tier 1 el máximo es 18/20
@@ -287,6 +295,11 @@ w_ample = 26
 [alerts.altman]
 w_distress = 90
 w_safe = 32
+
+[alerts.runway]                     # GROWTH_PRE_PROFIT: sustituye a la señal de Altman (etapa 7)
+w_short = 90                        # < 1 año de caja (tramo de runway_bounds)
+w_tight = 44                        # 1-2 años
+w_self_funded = 32                  # autofinanciada o >= 3 años
 
 [alerts.fcf]
 recurrent_negative_years = 2

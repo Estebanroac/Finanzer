@@ -601,16 +601,23 @@ correctos según los datos, pero aplican reglas genéricas a arquetipos que nece
   (`tests/supplement_local_quarterly.py`, marcado en metadata.supplements), sin recapturar el resto.
 - **Altman pasa al último FY** (se define sobre ejercicios): en local deja de faltar el dato de utilidades retenidas
   (NFLX, SNOW, FCX tenían Altman "sin dato" por el balance incompleto de quoteSummary; O no aplica por arquetipo).
-  Con ello local y prod usan el mismo modelo e inputs (SNOW: Z'' en ambos, z 15.46; prod ya lo tenía).
+  Con ello local y prod usan el mismo modelo e inputs (SNOW tenía z 15.46 en ambos antes de pasar a "no aplica").
 - **Modelo de Altman solo por arquetipo y sector/industria:** `altman_model` con coincidencia exacta contra
   `valuation.models.altman.manufacturing_sectors` (basic materials, industrials, energy → Z original; el resto →
   Z''). Se elimina el cambio automático a Z' (empresas privadas) cuando falta la capitalización: ahora es "sin
   dato". Antes el modelo dependía del dato disponible y de subcadenas ("financial services" entraba por "services").
-- **Hallazgo pendiente de decisión — X4 del Z'':** el código usa X4 = capitalización / pasivos totales en el Z''.
-  Altman (1995) define el Z'' con X4 = patrimonio CONTABLE / pasivos. Con la capitalización, X4 domina en empresas
-  de múltiplo alto: SNOW da zona segura (z 15.46, X4 18.05) con utilidades retenidas negativas (X2 −1.04); con el
-  patrimonio contable (1.92B / 7.21B, X4 0.27) daría ≈ −3.2, zona de peligro. NFLX ≈ 5.3 y V ≈ 3.1 seguirían en
-  zona segura. Corregirlo cambia Solidez de SNOW (y los golden); no se ha tocado.
+- **X4 de Altman según cada variante (corregido):** Z original (1968) = capitalización / pasivo total; Z'' (1995) =
+  patrimonio CONTABLE / pasivo total (antes el Z'' usaba la capitalización, que no es su variable: los coeficientes y
+  cortes solo valen con las originales). NFLX pasa de 14.94 a 5.29 y V de 14.78 a 3.11, ambos en zona segura (> 2.60).
+  Con la capitalización, SNOW daba zona segura (X4 18.05) con utilidades retenidas negativas.
+- **GROWTH_PRE_PROFIT — runway en lugar de Altman:** el Altman se calibró con quiebras de empresas maduras endeudadas y
+  no aplica. En Solidez lo sustituye el runway, con su mismo peso: FCF TTM >= 0 = autofinanciada (mejor tramo); si es
+  negativo, (caja + inversiones a corto plazo) / quema anual de FCF en años, con tramos >= 3 / 2-3 / 1-2 / < 1
+  (`thresholds.score.solidez.runway_*`). SNOW queda autofinanciada en ambos entornos (FCF TTM +1.19B local, +1.12B
+  prod) y su Solidez no cambia (+6 del runway frente al +6 del Altman en zona segura).
+- **REIT — payout sobre FFO:** `key_metrics.payout_ratio` = dividendos / FFO (`payout_basis = "ffo"`); el de beneficio
+  neto queda como `payout_ratio_net_income`, solo de referencia. La lectura usa los tramos del score
+  (`reit_ffo_payout_bounds`): O 79% "Cubierto" (local) y 90% "Justo" (prod), en lugar de 236-276% "Insostenible".
 - **Recurrencia de partidas no recurrentes:** una partida del mismo tipo y signo en 3 o más de los últimos 4
   ejercicios (`thresholds.normalization.recurrence_*`) solo normaliza el exceso sobre su promedio. Resultan
   recurrentes: cargos especiales de O (deterioros, 4 de 4), de V (litigios, 4 de 4) y de SNOW; ganancias por venta de
@@ -621,7 +628,3 @@ correctos según los datos, pero aplican reglas genéricas a arquetipos que nece
   fiable (16.6% no recurrente) y un DCF negativo (−19.7%). Un techo del score condicionado por la confianza
   (P/E no fiable, DCF por debajo del precio, coberturas bajas) evitaría el "100" en una lectura con señales en
   contra.
-- **Pendiente (lectura REIT) — payout sobre el beneficio:** O muestra un payout de 236–276% "insostenible"
-  calculado sobre el beneficio neto. En REIT el dividendo se cubre con FFO/AFFO; el payout debería leerse sobre el
-  FFO (o no aplicar sobre el beneficio). No se ha tocado.
-

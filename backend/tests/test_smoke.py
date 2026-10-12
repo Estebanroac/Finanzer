@@ -47,7 +47,7 @@ def test_piotroski_no_history_is_inconclusive():
 
 # ─────────────────────────── Altman Z ───────────────────────────
 _ALT = dict(working_capital=20, total_assets=100, retained_earnings=30, ebit=15,
-            market_value_equity=120, total_liabilities=50, sales=150)
+            market_value_equity=120, total_liabilities=50, sales=150, book_value_equity=40)
 
 
 def test_altman_original_manufacturing():
@@ -59,9 +59,10 @@ def test_altman_original_manufacturing():
 
 def test_altman_z_double_prime_non_manufacturing():
     z, zone, _, det = altman_z_score(**_ALT, sector="Technology")
-    # 6.56·0.2 + 3.26·0.3 + 6.72·0.15 + 1.05·2.4 = 5.818
-    assert z == pytest.approx(5.818, abs=0.006)
-    assert zone == "SAFE" and "Z''" in det["model"]
+    # X4 = patrimonio CONTABLE / pasivo (40/50), no la capitalización (120/50):
+    # 6.56·0.2 + 3.26·0.3 + 6.72·0.15 + 1.05·0.8 = 4.138
+    assert z == pytest.approx(4.138, abs=0.006)
+    assert zone == "SAFE" and "Z''" in det["model"] and det["X4_book_tl"] == 0.8
 
 
 def test_altman_not_applicable_by_archetype():

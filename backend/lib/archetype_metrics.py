@@ -115,13 +115,29 @@ def _reit(st: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
+def runway(fcf: Optional[float], liquidity: Optional[float]) -> Dict[str, Any]:
+    """Runway de una GROWTH_PRE_PROFIT (etapa 7): FCF TTM >= 0 -> autofinanciada;
+    FCF < 0 -> (caja + inversiones a corto plazo) / quema anual de FCF, en años."""
+    if fcf is None:
+        return {"state": "sin_dato", "years": None, "reason": "sin FCF TTM", "liquidity": liquidity, "fcf": None}
+    if fcf >= 0:
+        return {"state": "autofinanciada", "years": None, "reason": None, "liquidity": liquidity, "fcf": fcf}
+    if liquidity is None:
+        return {"state": "sin_dato", "years": None, "reason": "sin caja ni inversiones a corto plazo",
+                "liquidity": None, "fcf": fcf}
+    return {"state": "runway", "years": max(0.0, liquidity) / -fcf, "reason": None, "liquidity": liquidity, "fcf": fcf}
+
+
 def _growth_pre_profit(km: Dict[str, Any], revenue_cagr_3y: Optional[float]) -> Dict[str, Any]:
     fcf, rev = km.get("free_cash_flow"), km.get("revenue")
     fcf_margin = (fcf / rev) if (fcf is not None and _pos(rev)) else None
     r40 = (revenue_cagr_3y + fcf_margin) if (revenue_cagr_3y is not None and fcf_margin is not None) else None
     ev_sales = km.get("ev_revenue")
+    # key_metrics.cash = fila "Cash Cash Equivalents And Short Term Investments"
+    # (caja + inversiones a corto plazo) del último balance.
     return {"ev_sales": ev_sales if _pos(ev_sales) else None, "fcf_margin": fcf_margin,
-            "revenue_cagr_3y": revenue_cagr_3y, "rule_of_40": r40, "ebitda": km.get("ebitda")}
+            "revenue_cagr_3y": revenue_cagr_3y, "rule_of_40": r40, "ebitda": km.get("ebitda"),
+            "runway": runway(fcf, km.get("cash"))}
 
 
 def _cyclical(st: Dict[str, Any], km: Dict[str, Any]) -> Dict[str, Any]:

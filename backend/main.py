@@ -532,6 +532,15 @@ def _compute_analysis(symbol: str) -> dict:
             _km["roce_roic_divergence"] = ({"diverges": _roce["diverges"], "gap": safe_float(_roce["gap"]),
                                             "causes": _roce.get("causes", [])}
                                            if "diverges" in _roce else None)
+            # Payout (etapa 7): en REIT el dividendo se cubre con el FFO, no con el beneficio
+            # neto (deprimido por la depreciación inmobiliaria): payout_ratio = dividendos / FFO.
+            # El de beneficio neto se conserva aparte, solo como referencia.
+            if archetype == REIT:
+                _km["payout_ratio_net_income"] = _km.get("payout_ratio")
+                _km["payout_ratio"] = _km.get("ffo_payout")
+                _km["payout_basis"] = "ffo"
+            else:
+                _km["payout_basis"] = "beneficio_neto"
             # Qué no aplica al arquetipo fuera de las categorías del score.
             result["not_applicable"] = {k: not_applicable(archetype, k)
                                         for k in ("dcf", "graham", "altman", "piotroski", "roce")

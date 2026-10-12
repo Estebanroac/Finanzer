@@ -20,11 +20,11 @@ from typing import Any, Dict, List, Optional
 try:
     from .financial_ratios import (SECTOR_THRESHOLDS, ThresholdConfig, growth_for_bands,
                                    interest_coverage_state, net_debt_ebitda_state)
-    from .classify import CYCLICAL, FINANCIAL, MATURE, REIT, not_applicable
+    from .classify import CYCLICAL, FINANCIAL, GROWTH_PRE_PROFIT, MATURE, REIT, not_applicable
 except ImportError:  # ejecución como script suelto
     from financial_ratios import (SECTOR_THRESHOLDS, ThresholdConfig, growth_for_bands,
                                   interest_coverage_state, net_debt_ebitda_state)
-    from classify import CYCLICAL, FINANCIAL, MATURE, REIT, not_applicable
+    from classify import CYCLICAL, FINANCIAL, GROWTH_PRE_PROFIT, MATURE, REIT, not_applicable
 
 
 from settings import cfg
@@ -404,6 +404,31 @@ def _altman(ctx: Ctx):
     return None
 
 
+def _runway(ctx: Ctx):
+    """GROWTH_PRE_PROFIT: el runway sustituye al Altman (que no aplica)."""
+    rw = ctx.xv.get("runway") if ctx.archetype == GROWTH_PRE_PROFIT else None
+    if not rw or rw.get("state") not in ("autofinanciada", "runway"):
+        return None
+    W, b = _A["runway"], cfg("thresholds.score.solidez.runway_bounds")
+    if rw["state"] == "autofinanciada":
+        return _sig("strength", "Solidez financiera", "Autofinanciada — FCF TTM positivo",
+                    "El flujo de caja libre de los últimos doce meses es positivo: la empresa financia su crecimiento "
+                    "sin consumir caja ni depender de nuevas rondas de capital o deuda.", W["w_self_funded"])
+    y = rw["years"]
+    if y >= b[0]:
+        return _sig("strength", "Solidez financiera", f"Runway holgado — {y:.1f} años",
+                    f"La caja y las inversiones a corto plazo cubren {y:.1f} años de quema de FCF.", W["w_self_funded"])
+    if y >= b[2] and y < b[1]:
+        return _sig("warning", "Solidez financiera", f"Runway ajustado — {y:.1f} años",
+                    f"La caja y las inversiones a corto plazo cubren {y:.1f} años de quema de FCF: tendrá que "
+                    "financiarse (deuda o ampliación de capital) dentro del horizonte del plan.", W["w_tight"])
+    if y < b[2]:
+        return _sig("risk", "Solidez financiera", f"Runway crítico — {y:.1f} años",
+                    f"La caja y las inversiones a corto plazo cubren menos de un año de quema de FCF ({y:.1f}): "
+                    "necesita financiación urgente, probablemente dilutiva.", W["w_short"])
+    return None
+
+
 # ── FLUJO DE CAJA ─────────────────────────────────────────────────────────
 def _fcf(ctx: Ctx):
     if ctx.na("fcf"):   # FINANCIAL: el flujo de caja de un banco no mide calidad ni solvencia
@@ -562,7 +587,7 @@ def _drawdown(ctx: Ctx):
 INTERPRETERS = [
     _pe, _ev_ebitda, _fcf_yield, _peg, _dcf,
     _roe, _spread, _margins,
-    _leverage, _coverage, _liquidity, _altman,
+    _leverage, _coverage, _liquidity, _altman, _runway,
     _fcf, _earnings_quality,
     _growth, _eps_growth, _piotroski, _deterioration,
     _beta, _drawdown,

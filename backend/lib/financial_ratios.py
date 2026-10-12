@@ -112,17 +112,24 @@ def altman_z_score(
     aplica) y del sector/industria de la clasificación (altman_model), nunca de
     qué datos hay: el mismo ticker usa el mismo modelo en cualquier entorno.
 
+    Cada variante con SUS variables (los coeficientes y cortes solo valen con ellas):
+
     1) Z-Score ORIGINAL (1968) — empresas manufactureras públicas
        Z = 1.2×X1 + 1.4×X2 + 3.3×X3 + 0.6×X4 + 1.0×X5
+       X4 = capitalización bursátil / pasivo total
        Safe > 2.99 | Grey 1.81–2.99 | Distress < 1.81
 
     2) Z''-Score (1995) — servicios, tech, non-manufacturing
        Elimina X5 (asset turnover) porque sesga a empresas asset-light.
        Z'' = 6.56×X1 + 3.26×X2 + 6.72×X3 + 1.05×X4
+       X4 = patrimonio CONTABLE / pasivo total (etapa 7; antes la capitalización,
+       que no es la variable del modelo y daba zona segura a SNOW con utilidades
+       retenidas negativas: X4 18.05 frente a 0.27)
        Safe > 2.60 | Grey 1.10–2.60 | Distress < 1.10
 
-    Sin valor de mercado del patrimonio el Z es "sin dato" (antes cambiaba en
-    silencio al Z' de empresas privadas: el modelo dependía del dato disponible).
+    Sin la variable X4 de la variante (capitalización en Z, patrimonio contable en
+    Z'') el Z es "sin dato" (antes cambiaba en silencio al Z' de empresas privadas:
+    el modelo dependía del dato disponible).
 
     Returns:
         Tuple[z_score, risk_level, interpretation, details_dict]
@@ -157,10 +164,14 @@ def altman_z_score(
         missing.append("capital de trabajo")
     if retained_earnings is None:
         missing.append("utilidades retenidas")
-    if market_value_equity is None or market_value_equity == 0:
-        missing.append("valor de mercado del patrimonio")
-    elif not is_non_manufacturing and sales is None:
-        missing.append("ventas")
+    if is_non_manufacturing:
+        if book_value_equity is None:
+            missing.append("patrimonio contable")
+    else:
+        if market_value_equity is None or market_value_equity == 0:
+            missing.append("valor de mercado del patrimonio")
+        if sales is None:
+            missing.append("ventas")
     if missing:
         return (None, "N/A", "Datos insuficientes para el Z-Score: falta " + ", ".join(missing),
                 {"reason": "sin_dato", "missing": missing})
@@ -175,12 +186,12 @@ def altman_z_score(
 
         if is_non_manufacturing:
             # ── Z''-Score (services / tech / non-manufacturing) ──
-            X4 = market_value_equity / total_liabilities
+            X4 = book_value_equity / total_liabilities
             c = _ALTMAN["non_manufacturing_coef"]
             z = c[0]*X1 + c[1]*X2 + c[2]*X3 + c[3]*X4
             model_name = "Z''-Score (No Manufactura)"
             safe_threshold, grey_threshold = _ALTMAN["non_manufacturing_safe"], _ALTMAN["non_manufacturing_grey"]
-            details.update({"X4_mcap_tl": round(X4, 4)})
+            details.update({"X4_book_tl": round(X4, 4)})
 
         else:
             # ── Z-Score Original (manufacturing) ──
@@ -2030,9 +2041,11 @@ def score_solidez_financiera(
     sector_de_threshold: float = _TD["debt_equity_high"],
     net_debt: Optional[float] = None,
     archetype: Optional[str] = None,
+    runway: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """
     Categoría 1: Solidez Financiera (20 pts máximo)
+    GROWTH_PRE_PROFIT: el runway sustituye al Altman (que no aplica), con su peso.
     Base: 10 pts, ajusta según métricas
     """
     T = _SC["solidez"]
@@ -2180,8 +2193,37 @@ def score_solidez_financiera(
                             "value": "EBIT < 0" if _ic_state == "negativa" else f"{interest_coverage:.1f}x",
                             "adjustment": adj, "reason": reason, "severity": sev})
     
+    # Runway (GROWTH_PRE_PROFIT, hasta ±6 pts como el Altman al que sustituye)
+    _rw_reason = None
+    if archetype == GROWTH_PRE_PROFIT:
+        rw = runway or {"state": "sin_dato", "reason": "sin FCF TTM"}
+        b, p = T["runway_bounds"], T["runway_points"]
+        if rw["state"] == "autofinanciada":
+            adj, sev, val = p[0], "excellent", "Autofinanciada"
+            reason = "FCF TTM positivo: no consume caja"
+        elif rw["state"] == "runway":
+            y = rw["years"]
+            val = f"{y:.1f} años"
+            if y >= b[0]:
+                adj, sev, reason = p[0], "excellent", f"Caja para más de {b[0]:.0f} años de quema de FCF"
+            elif y >= b[1]:
+                adj, sev, reason = p[1], "good", "Caja holgada frente a la quema de FCF"
+            elif y >= b[2]:
+                adj, sev, reason = p[2], "moderate", "Tendrá que financiarse en el horizonte del plan"
+            else:
+                adj, sev, reason = p[3], "severe", "Menos de un año de caja: financiación urgente, probablemente dilutiva"
+        else:
+            adj, _rw_reason = None, rw.get("reason") or "sin dato"
+        if adj is not None:
+            base_score += adj
+            _a["runway"] = adj
+            adjustments.append({"metric": "Runway", "value": val, "adjustment": adj, "reason": reason,
+                                "severity": sev})
+
     cov = CategoryCoverage()
     cov.comp("Altman Z", T["altman_points"], _a.get("altman"), na=_na["altman"])
+    if archetype == GROWTH_PRE_PROFIT:
+        cov.comp("Runway", T["runway_points"], _a.get("runway"), _rw_reason)
     cov.comp("Current ratio", T["current_points"], _a.get("current"), na=_na["current_ratio"])
     cov.comp("D/E", [*T["de_points"], T["de_mitigated_points"], T["de_severe_points"]], _a.get("de"),
              na=_na["de"])
@@ -3500,6 +3542,7 @@ def calculate_score_v2(
             sector_de_threshold=thresholds.debt_equity_high,
             net_debt=ratio_values.get("net_debt"),
             archetype=archetype,
+            runway=xv.get("runway"),
         )
     
     rentabilidad = score_rentabilidad(

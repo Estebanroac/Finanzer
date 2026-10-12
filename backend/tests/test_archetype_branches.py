@@ -203,3 +203,53 @@ def test_growth_pre_profit_ev_ebitda_not_applicable_without_ebitda(outputs_by_en
         assert "EV/EBITDA" in val["not_applicable"] and "EV/EBITDA" not in val["missing"]
         assert val["coverage"] == 1.0
         assert "Cobertura" not in _metrics(a, "Valoración")
+
+
+# ─────────────────────────── etapa 7: runway y payout REIT ───────────────────────────
+def test_runway_states_and_bands():
+    from archetype_metrics import runway
+    from financial_ratios import score_solidez_financiera
+    assert tuple(cfg("thresholds.score.solidez.runway_bounds")) == (3.0, 2.0, 1.0)
+    assert runway(1.2e9, 2.3e9)["state"] == "autofinanciada"
+    assert runway(0.0, None)["state"] == "autofinanciada"                 # FCF >= 0: autofinanciada
+    assert runway(-1e9, 2.5e9)["years"] == pytest.approx(2.5)
+    assert runway(-1e9, -5.0)["years"] == 0.0
+    assert runway(-1e9, None)["state"] == "sin_dato" and runway(None, 1e9)["state"] == "sin_dato"
+    pts = cfg("thresholds.score.solidez.runway_points")
+
+    def adj(rw):
+        s = score_solidez_financiera(None, "N/A", None, None, None, archetype="GROWTH_PRE_PROFIT", runway=rw)
+        return next((a["adjustment"] for a in s["adjustments"] if a["metric"] == "Runway"), None), s
+    assert adj(runway(1e9, 1e9))[0] == pts[0]                              # autofinanciada = mejor tramo
+    assert [adj(runway(-1e9, y * 1e9))[0] for y in (3.5, 2.5, 1.5, 0.5)] == list(pts)
+    a, s = adj(runway(None, None))
+    assert a is None and "Runway" in s["coverage"]["missing"]
+    # fuera de GROWTH_PRE_PROFIT no existe el componente
+    s = score_solidez_financiera(5.0, "SAFE", 2.0, 0.3, 20.0, archetype="MATURE", runway=runway(-1e9, 1e8))
+    assert all(a["metric"] != "Runway" for a in s["adjustments"])
+
+
+def test_growth_pre_profit_solidez_uses_runway_not_altman(outputs_by_env):
+    for env in _envs():
+        a, pdf = outputs_by_env(env)["SNOW"]
+        assert a["classification"]["archetype"] == "GROWTH_PRE_PROFIT"
+        assert a["altman_z"]["applicable"] is False and "Altman Z" in a["score_coverage"]["solidez"]["not_applicable"]
+        rw = a["archetype_metrics"]["runway"]
+        assert rw["state"] == "autofinanciada" and rw["fcf"] > 0
+        row = next(x for x in a["score"]["breakdown"]["Solidez Financiera"]["adjustments"] if x["metric"] == "Runway")
+        assert row["value"] == "Autofinanciada" and row["adjustment"] == cfg("thresholds.score.solidez.runway_points")[0]
+        assert "Autofinanciada — FCF TTM positivo" in _alert_reasons(a)
+        text = fb.pdf_text(pdf)
+        assert "Runway\nAutofinanciada\nAutofinanciada" in text and "Altman Z de" not in text
+
+
+def test_reit_payout_on_ffo(outputs_by_env):
+    """Etapa 7 (omisión de la 6): en REIT el payout es dividendos / FFO; la lectura usa sus tramos."""
+    for env in _envs():
+        a, pdf = outputs_by_env(env)["O"]
+        km = a["key_metrics"]
+        assert km["payout_basis"] == "ffo" and km["payout_ratio"] == km["ffo_payout"] < 1
+        assert km["payout_ratio_net_income"] > 2                            # 236-276% sobre el beneficio neto
+        text = fb.pdf_text(pdf)
+        assert "Payout sobre FFO\n" in text and "Insostenible" not in text and "supera el beneficio" not in text
+    assert outputs_by_env("local")["NFLX"][0]["key_metrics"]["payout_basis"] == "beneficio_neto"

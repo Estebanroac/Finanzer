@@ -53,6 +53,8 @@ WHY_NOT_APPLICABLE = {
 WHY_NOT_APPLICABLE_KEY = {
     (REIT, "current_ratio"): "activos inmobiliarios de largo plazo financiados con deuda a largo plazo; "
                              "el circulante no mide su liquidez",
+    (GROWTH_PRE_PROFIT, "altman"): "el Altman se calibró con quiebras de empresas maduras endeudadas; "
+                                   "su solidez se mide por el runway (caja frente a la quema de FCF)",
 }
 
 # Nombre legible de cada componente (claves de sectors.archetypes.not_applicable).
