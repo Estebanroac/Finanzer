@@ -374,3 +374,11 @@ def test_broad_except_logs_and_marks_block_sin_dato(monkeypatch):
     errs = a["data_provenance"]["errors"]
     assert errs == [{"block": "alerts", "source": "sin_dato", "reason": "RuntimeError: fallo sintético"}]
     assert any("bloque 'alerts' sin calcular" in m for m in logged)
+
+
+def test_pdf_keeps_no_earnings_reading_for_non_significant_pe(analysis, fixture_store):
+    import fixture_backend as fb
+    a = analysis("SNOW")
+    assert a["key_metrics"]["pe"] is None
+    text = fb.pdf_text(fb.build_pdf_bytes(a, fb.capture_date(fixture_store.meta["SNOW"])))
+    assert "no es significativo al no haber beneficios positivos" in text

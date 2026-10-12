@@ -631,7 +631,13 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     n_str = len(alerts.get("strengths") or [])
 
     # ── lecturas adaptativas (se usan en resumen, secciones y tablas) ──
-    r_pe = read_pe(km.get("pe"), sector_bench.get("pe"), km.get("roic_wacc_spread"))
+    # P/E <= 0 llega como None marcado "no significativo" (validate_outputs):
+    # la lectura "Sin beneficios" se conserva a partir del flag de validación.
+    _pe_flag = next((f for f in (analysis.get("data_validation") or [])
+                     if f.get("field") == "key_metrics.pe"
+                     and f.get("rule") == "multiplo_no_significativo"), None)
+    _pe_in = km.get("pe") if km.get("pe") is not None or not _pe_flag else _pe_flag.get("old")
+    r_pe = read_pe(_pe_in, sector_bench.get("pe"), km.get("roic_wacc_spread"))
     r_roe = read_roe(km.get("roe"), km.get("roa"))
     r_spread = read_spread(km.get("roic_wacc_spread"), km.get("roic"), km.get("wacc"))
     r_up = read_upside(dcf.get("upside"))
