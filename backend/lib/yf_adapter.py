@@ -835,6 +835,20 @@ def _enrich_prior_year_data(symbol: str, info: Dict[str, Any]) -> Dict[str, Any]
         "operating_cash_flow": _row(cf, "Operating Cash Flow"),
         "capital_expenditure": _row(cf, "Capital Expenditure"),
         "free_cash_flow": _row(cf, "Free Cash Flow"),
+        # Etapa 6 (clasificador, ramas por arquetipo y ROCE): series anuales
+        # adicionales; una fila ausente queda como lista vacía (sin dato).
+        "operating_income": _row(inc, "Operating Income"),
+        "ebit": _row(inc, "EBIT"),
+        "ebitda": _row(inc, "EBITDA"),
+        "current_liabilities": _row(bs, "Current Liabilities"),
+        "stockholders_equity": _row(bs, "Stockholders Equity"),
+        "tangible_book_value": _row(bs, "Tangible Book Value"),
+        # gastos no financieros de un banco (ratio de eficiencia aproximado)
+        "non_interest_expense": _row(inc, "Non Interest Expense"),
+        "sga": _row(inc, "Selling General And Administration"),
+        "occupancy": _row(inc, "Occupancy And Equipment"),
+        "professional_services": _row(inc, "Professional Expense And Contract Services Expense"),
+        "other_non_interest_expense": _row(inc, "Other Non Interest Expense"),
     }
 
     # Columns: [0] = most recent (current), [1] = prior year

@@ -26,6 +26,7 @@ from sector_profiles import get_sector_profile, YAHOO_SECTOR_MAPPING
 from alert_interpretations import build_signals
 from settings import cfg
 from historical_metrics import fcf_cagr
+from classify import classify
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -497,6 +498,14 @@ def _compute_analysis(symbol: str) -> dict:
                 "mapped_sector": mapped_sector,
                 "sector_etf": sector_profile.sector_etf if sector_profile else "SPY",
             }
+
+            # Arquetipo (etapa 6): una sola decisión, antes de puntuar, que leen
+            # el score, la valoración, las alertas, el PDF y el frontend.
+            _stmts = (yinfo.get("_statements_fy") or {}) if _has_yahoo else {}
+            classification = classify(sector=sector, industry=profile.industry, eps_ttm=eps_val,
+                                      net_margin_ttm=r("net_margin"), statements_fy=_stmts)
+            archetype = classification["archetype"]
+            result["classification"] = classification
 
             # Inject sector-median benchmarks so valuation scoring judges P/E and
             # EV/EBITDA against the stock's SECTOR (e.g. ~30x for tech, ~12x for

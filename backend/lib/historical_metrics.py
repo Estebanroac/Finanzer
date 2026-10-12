@@ -66,3 +66,75 @@ def fcf_cagr(values_newest_first: List[Optional[float]], years: int = 3) -> Tupl
     if any(v <= 0 for v in vals):
         return None, "el FCF cambia de signo en el periodo: CAGR no definido"
     return cagr(end, start, years), None
+
+
+# ═══════════════════════════ etapa 6: series anuales ═══════════════════════════
+# Todas reciben series de la más reciente a la más antigua (como _statements_fy)
+# y tratan None como "sin dato": nunca lo convierten en cero.
+
+def strict_cagr(values_newest_first: List[Optional[float]], years: int = 3) -> Tuple[Optional[float], Optional[str]]:
+    """CAGR real sobre exactamente `years` intervalos (years + 1 ejercicios).
+    (cagr, None) o (None, motivo); no usa menos periodos ni el proxy interanual."""
+    vals = list(values_newest_first or [])[:years + 1]
+    if len(vals) < years + 1 or vals[0] is None or vals[years] is None:
+        return None, f"menos de {years + 1} ejercicios anuales"
+    if vals[years] <= 0 or vals[0] <= 0:
+        return None, "valor inicial o final <= 0: CAGR no definido"
+    return cagr(vals[0], vals[years], years), None
+
+
+def paired(a: List[Optional[float]], b: List[Optional[float]]) -> List[Tuple[float, float]]:
+    """Pares (a_i, b_i) del mismo ejercicio con ambos datos presentes."""
+    return [(x, y) for x, y in zip(a or [], b or []) if x is not None and y is not None]
+
+
+def ratio_series(num: List[Optional[float]], den: List[Optional[float]]) -> List[Optional[float]]:
+    """num/den por ejercicio; None si falta alguno o den <= 0."""
+    out = []
+    for x, y in zip(num or [], den or []):
+        out.append(x / y if (x is not None and y is not None and y > 0) else None)
+    return out
+
+
+def yoy_growths(values_newest_first: List[Optional[float]]) -> List[Optional[float]]:
+    """Crecimientos interanuales (más reciente primero); None si falta o base <= 0."""
+    v = list(values_newest_first or [])
+    out = []
+    for i in range(len(v) - 1):
+        a, b = v[i], v[i + 1]
+        out.append((a / b - 1) if (a is not None and b is not None and b > 0) else None)
+    return out
+
+
+def present(values: List[Optional[float]]) -> List[float]:
+    return [x for x in (values or []) if x is not None]
+
+
+def mean(values: List[Optional[float]]) -> Optional[float]:
+    v = present(values)
+    return sum(v) / len(v) if v else None
+
+
+def stdev(values: List[Optional[float]]) -> Optional[float]:
+    """Desviación típica muestral; None con menos de 2 datos."""
+    v = present(values)
+    if len(v) < 2:
+        return None
+    m = sum(v) / len(v)
+    return (sum((x - m) ** 2 for x in v) / (len(v) - 1)) ** 0.5
+
+
+def detrended_std(values: List[Optional[float]]) -> Optional[float]:
+    """Desviación de la serie alrededor de su tendencia lineal (MCO sobre el
+    índice temporal). Separa la oscilación (ciclo) de una mejora o un deterioro
+    sostenidos. None con menos de 3 datos consecutivos."""
+    v = list(values or [])
+    if len(v) < 3 or any(x is None for x in v):
+        return None
+    n = len(v)
+    xs = list(range(n))
+    mx, my = sum(xs) / n, sum(v) / n
+    sxx = sum((x - mx) ** 2 for x in xs)
+    slope = sum((x - mx) * (y - my) for x, y in zip(xs, v)) / sxx
+    resid = [y - (my + slope * (x - mx)) for x, y in zip(xs, v)]
+    return (sum(r * r for r in resid) / (n - 2)) ** 0.5

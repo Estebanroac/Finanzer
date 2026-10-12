@@ -74,6 +74,14 @@ rescue_quality_max = "int"
 rescue_moderate_min_quality = "int"
 rescue_moderate_net_cap = "int"
 rescue_moderate_max = "int"
+financial_pb_ratio_bounds = "list[float]"
+financial_pb_points = "list[int]"
+reit_dividend_yield_bounds = "list[float]"
+reit_dividend_yield_points = "list[int]"
+ev_sales_bounds = "list[float]"
+ev_sales_points = "list[int]"
+rule_of_40_bounds = "list[float]"
+rule_of_40_points = "list[int]"
 
 [thresholds.score.calidad]
 fscore_points = "list[int]"
@@ -81,6 +89,14 @@ ocf_points = "list[int]"
 fcf_points = "list[int]"
 fcf_to_ni_bounds = "list[float]"
 fcf_to_ni_points = "list[int]"
+financial_roe_std_bounds = "list[float]"
+financial_roe_std_points = "list[int]"
+financial_efficiency_bounds = "list[float]"
+financial_efficiency_points = "list[int]"
+financial_bv_growth_bounds = "list[float]"
+financial_bv_growth_points = "list[int]"
+reit_ffo_payout_bounds = "list[float]"
+reit_ffo_payout_points = "list[int]"
 
 [thresholds.score.crecimiento]
 revenue_bounds = "list[float]"
@@ -541,3 +557,34 @@ timeout_s = "int"
 cache_ttl_s = "int"
 gap_fields = "list[str]"
 eps_override_rel_diff = "float"
+
+[thresholds.roce]
+divergence_pp = "float"
+excess_cash_share = "float"
+
+[sectors.archetypes]
+financial_sectors = "list[str]"
+bank_prefixes = "list[str]"
+insurance_prefixes = "list[str]"
+financial_mature_industries = "list[str]"
+payment_network_industries = "list[str]"
+payment_network_max_assets_to_revenue = "float"
+reit_prefixes = "list[str]"
+growth_pre_profit_min_revenue_cagr = "float"
+cyclical_industries = "list[str]"
+
+[sectors.archetypes.possible_cyclical]
+min_years = "int"
+op_margin_detrended_std = "float"
+revenue_growth_std = "float"
+
+[sectors.archetypes.not_applicable]
+FINANCIAL = "list[str]"
+REIT = "list[str]"
+GROWTH_PRE_PROFIT = "list[str]"
+CYCLICAL = "list[str]"
+MATURE = "list[str]"
+
+[valuation.archetypes]
+cycle_full_years = "int"
+cyclical_growth_bounds = "list[float]"

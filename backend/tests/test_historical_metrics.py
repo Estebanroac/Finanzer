@@ -43,3 +43,26 @@ def test_fcf_cagr_defined_only_for_positive_series():
     assert v is None and "4 ejercicios" in why
     v, why = hm.fcf_cagr([10.0, None, 3.0, 2.0])
     assert v is None and why
+
+
+# ─────────────────────────── etapa 6: series anuales ───────────────────────────
+from historical_metrics import detrended_std, mean, ratio_series, stdev, strict_cagr, yoy_growths  # noqa: E402
+
+
+def test_strict_cagr_uses_exactly_three_intervals():
+    assert strict_cagr([133.1, 121.0, 110.0, 100.0, 50.0], 3)[0] == pytest.approx(0.10)
+    assert strict_cagr([121.0, 110.0, 100.0], 3) == (None, "menos de 4 ejercicios anuales")
+    assert strict_cagr([121.0, 110.0, 100.0, -5.0], 3)[0] is None
+
+
+def test_series_helpers_never_turn_missing_into_zero():
+    assert ratio_series([10.0, None, 5.0], [100.0, 50.0, 0.0]) == [0.1, None, None]
+    assert yoy_growths([110.0, 100.0, None]) == [pytest.approx(0.1), None]
+    assert mean([None, 2.0, 4.0]) == 3.0 and mean([None]) is None
+    assert stdev([1.0]) is None
+
+
+def test_detrended_std_separates_trend_from_oscillation():
+    assert detrended_std([1.0, 2.0, 3.0, 4.0]) == pytest.approx(0.0)
+    assert detrended_std([1.0, 3.0, 1.0, 3.0]) > 0.5
+    assert detrended_std([1.0, None, 3.0]) is None

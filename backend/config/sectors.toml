@@ -305,3 +305,56 @@ equity_to_assets_solid = 0.06
 equity_to_assets_good = 0.04
 dividend_yield_good = 0.025
 payout_sustainable = 0.60
+
+# ── Arquetipos (etapa 6, lib/classify.py) ──
+# Una sola función decide el arquetipo; motor, alertas, PDF y frontend leen su
+# salida. Prioridad: FINANCIAL > MATURE (excepción financiera) > REIT >
+# GROWTH_PRE_PROFIT > CYCLICAL > MATURE (por defecto).
+# Las industrias se comparan normalizadas: minúsculas y "—", "–" o "-" entre
+# palabras unificados como " - " (prod trae "Banks—Diversified"; local, "Banks - Diversified").
+[archetypes]
+financial_sectors = ["financial services", "financials"]
+bank_prefixes = ["banks"]                        # FINANCIAL: bancos
+insurance_prefixes = ["insurance - "]            # FINANCIAL: aseguradoras ("Insurance - Life", ...)
+# MATURE dentro de Financial Services: sin balance de préstamos que sea el producto.
+financial_mature_industries = ["asset management", "financial data & stock exchanges", "insurance brokers"]
+# Credit Services mezcla redes de pago (V, MA) con prestamistas (COF, SYF, AXP):
+# es MATURE solo si es de tipo red de pagos, medido por la intensidad de balance
+# (activos totales / ingresos). Un prestamista lleva su cartera en el activo.
+payment_network_industries = ["credit services"]
+payment_network_max_assets_to_revenue = 3.0      # V 2.5x; AXP ~4x, SYF ~5.5x, COF ~12x
+reit_prefixes = ["reit"]                         # "REIT - Retail", ...; promotoras y servicios NO
+growth_pre_profit_min_revenue_cagr = 0.15        # CAGR real de ingresos a 3 años (4 ejercicios)
+# Industrias cíclicas (nombres exactos de Yahoo, normalizados).
+cyclical_industries = [
+    "copper", "steel", "aluminum", "other industrial metals & mining",
+    "gold", "silver", "other precious metals & mining", "coking coal", "thermal coal", "uranium",
+    "oil & gas e&p", "oil & gas refining & marketing", "oil & gas integrated",
+    "oil & gas drilling", "oil & gas equipment & services",
+    "chemicals", "specialty chemicals", "agricultural inputs",
+    "semiconductors", "semiconductor equipment & materials",
+    "airlines", "auto manufacturers", "auto parts",
+    "building materials", "residential construction", "real estate - development",
+    "lumber & wood production", "paper & paper products", "marine shipping",
+]
+
+# Regla cuantitativa SOLO como alerta ("posible cíclica"): no cambia el arquetipo,
+# baja la confianza. Con los ejercicios anuales disponibles (Yahoo: 4).
+[archetypes.possible_cyclical]
+min_years = 4                       # ejercicios con dato necesarios para evaluarla
+op_margin_detrended_std = 0.05      # desviación del margen operativo alrededor de su tendencia lineal (5 pp)
+revenue_growth_std = 0.15           # desviación del crecimiento interanual de ingresos (15 pp)
+
+# Componentes que NO APLICAN por arquetipo (no cuentan en la cobertura). Claves:
+# piotroski, altman, ocf, fcf, fcf_to_ni, de, ev_ebitda, pe, peg, forward_pe, p_fcf,
+# garp (bonos y rescates de crecimiento sobre múltiplos), current_ratio,
+# interest_coverage, net_debt_ebitda, roic_wacc, operating_margin, fcf_growth,
+# eps_growth, dcf, graham, roce.
+[archetypes.not_applicable]
+FINANCIAL = ["piotroski", "altman", "ocf", "fcf", "fcf_to_ni", "de", "ev_ebitda", "dcf", "graham",
+             "pe", "peg", "forward_pe", "p_fcf", "garp", "current_ratio", "interest_coverage",
+             "net_debt_ebitda", "roic_wacc", "operating_margin", "fcf_growth", "roce"]
+REIT = ["altman", "piotroski", "fcf_to_ni", "garp", "pe", "peg", "forward_pe", "p_fcf", "dcf", "roce"]
+GROWTH_PRE_PROFIT = ["pe", "peg", "forward_pe", "graham", "eps_growth"]   # DCF solo con FCF < 0 (en código)
+CYCLICAL = ["pe", "peg", "forward_pe", "fcf_growth"]
+MATURE = []
