@@ -41,6 +41,7 @@ def _pairs(d):
 def render() -> str:
     bench = cfg("sectors.benchmarks")
     lv = cfg("thresholds.score.total.level_bands")
+    pio = cfg("valuation.models.piotroski.bands")
     ms = cfg("thresholds.ui.metric_scale")
     sectors = "{\n" + "\n".join(
         f"  {name}: {{ " + ", ".join(f"{k}: {_num(v)}" for k, v in vals.items()) + " },"
@@ -59,6 +60,9 @@ export const SECTOR_MAP: Record<string, Partial<SectorBenchmarks>> = {sectors};
 
 /** Niveles del score: Excelente / Favorable / Neutral / Precaución / Evitar (thresholds.toml [score.total]). */
 export const SCORE_LEVEL_BANDS = [{', '.join(_num(x) for x in lv)}] as const;
+
+/** Piotroski F-Score: Fuerte / Bueno / Neutral / Débil / Crítico (valuation.toml [models.piotroski]). */
+export const PIOTROSKI_BANDS = [{', '.join(_num(x) for x in pio)}] as const;
 
 /** Bandas de color de la UI (thresholds.toml [ui.metric_scale]). */
 export const METRIC_SCALE_HIGHER: Record<string, [number, number]> = {_pairs(ms["higher"])};

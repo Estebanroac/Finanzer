@@ -4,6 +4,7 @@ import type { StockAnalysis } from "@/lib/api";
 import { getScoreColor } from "@/lib/api";
 import InfoTooltip from "@/components/InfoTooltip";
 import { EVALUATION } from "@/lib/tooltips";
+import { PIOTROSKI_BANDS } from "@/lib/generated/backendConfig";
 import { useGrow } from "@/lib/useGrow";
 
 export default function EvaluationTab({ data }: { data: StockAnalysis }) {
@@ -354,11 +355,14 @@ function ZScoreCard({ data }: { data: { z_score: number; zone: string; interpret
 }
 
 function FScoreCard({ data }: { data: { score: number; max_score: number; level: string; interpretation: string; details?: Record<string, { passed: boolean; detail: string }>; fiscal_year?: string } }) {
+  // Escala única de Piotroski (generada desde backend/config): la misma que la
+  // insignia `level` y la interpretación que envía el backend.
+  const [P_STRONG, P_GOOD, P_NEUTRAL, P_WEAK] = PIOTROSKI_BANDS;
   const color =
-    data.score >= 8 ? "#0cc06c" :
-    data.score >= 6 ? "#22c55e" :
-    data.score >= 4 ? "#fbbf24" :
-    data.score >= 2 ? "#f97316" :
+    data.score >= P_STRONG ? "#0cc06c" :
+    data.score >= P_GOOD ? "#22c55e" :
+    data.score >= P_NEUTRAL ? "#fbbf24" :
+    data.score >= P_WEAK ? "#f97316" :
     "#ff453a";
   const details = data.details;
 
@@ -386,11 +390,11 @@ function FScoreCard({ data }: { data: { score: number; max_score: number; level:
       </div>
       <p className="text-xs text-zinc-500 leading-relaxed">{data.interpretation}</p>
       <p className="text-[10px] text-zinc-600 mt-2">
-        {data.score >= 8 ? "8-9 = fortaleza financiera excelente" :
-         data.score >= 6 ? "6-7 = empresa fuerte" :
-         data.score >= 4 ? "4-5 = neutral" :
-         data.score >= 2 ? "2-3 = señales de debilidad" :
-         "0-1 = deterioro severo"}
+        {data.score >= P_STRONG ? `${P_STRONG}-9 = fortaleza financiera excelente` :
+         data.score >= P_GOOD ? `${P_GOOD}-${P_STRONG - 1} = buena salud financiera` :
+         data.score >= P_NEUTRAL ? `${P_NEUTRAL}-${P_GOOD - 1} = neutral` :
+         data.score >= P_WEAK ? `${P_WEAK}-${P_NEUTRAL - 1} = señales de debilidad` :
+         `0-${P_WEAK - 1} = deterioro severo`}
       </p>
 
       {/* Criteria breakdown */}

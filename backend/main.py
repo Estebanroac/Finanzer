@@ -665,8 +665,9 @@ def _compute_analysis(symbol: str) -> dict:
                     asset_turnover_prior=safe_float(prior.get("asset_turnover")),
                     total_assets=pio_ta,
                 )
-                _lb = cfg("valuation.models.piotroski.level_bands_main")
-                f_level = "Fuerte" if f_score >= _lb[0] else "Bueno" if f_score >= _lb[1] else "Neutral" if f_score >= _lb[2] else "Débil"
+                _lb = cfg("valuation.models.piotroski.bands")  # misma escala que la interpretación
+                f_level = ("Fuerte" if f_score >= _lb[0] else "Bueno" if f_score >= _lb[1]
+                           else "Neutral" if f_score >= _lb[2] else "Débil" if f_score >= _lb[3] else "Crítico")
 
                 # Convert detail strings to structured criteria for frontend
                 criteria_labels = [

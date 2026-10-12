@@ -578,7 +578,7 @@ def piotroski_f_score(
     no_data = sum(1 for d in details if "Sin datos" in d)
 
     # Interpretación
-    pb = _PIOTROSKI["interpretation_bands"]
+    pb = _PIOTROSKI["bands"]
     if no_data >= _PIOTROSKI["inconclusive_missing"]:
         interpretation = f"Datos históricos limitados ({no_data}/9 señales sin evaluar) - F-Score no concluyente"
     elif score >= pb[0]:
@@ -2779,7 +2779,7 @@ def score_calidad_ganancias(
     
     # Piotroski F-Score (peso alto: hasta ±7 pts)
     if f_score is not None:
-        b, p = T["fscore_bounds"], T["fscore_points"]
+        b, p = _PIOTROSKI["bands"], T["fscore_points"]
         if f_score >= b[0]:
             adj = p[0]
             sev = "excellent"
