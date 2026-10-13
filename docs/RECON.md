@@ -879,3 +879,29 @@ correctos según los datos, pero aplican reglas genéricas a arquetipos que nece
   muestra amplia si los componentes correlacionados de Rentabilidad (ROE, ROA y el ROIC del spread) deben
   agruparse en un bloque como los múltiplos, y revisar con esa muestra los tramos superiores de las categorías.
 - **Etapa 11 —** el PDF de revisión se genera desde los fixtures de prod (Rf de config, sin TTM).
+
+### 7.15 Etapa 9b: el frontend consume el contrato nuevo
+
+- **Capa de presentación compartida (`lib/display.py`, `result["display"]`):** estado de cada fila (con dato /
+  sin dato / no aplica / no significativo), lectura, tono y frase; KPIs de portada por arquetipo; fortaleza / a
+  vigilar / contexto; filas de cada sección; tarjetas institucionales; desglose; tooltips. El PDF solo maqueta el
+  bloque (los lectores se movieron de `pdf_report` a `display`) y la web solo lo pinta.
+- **Decisiones A–D:** Altman `z_score` y Piotroski `score`/`scaled_score` null cuando no aplican; fuera
+  `is_growth` y `company_type` (el arquetipo los reemplaza; ningún cálculo los usaba); tooltips con solo las
+  bandas aplicadas a la empresa (arquetipo y benchmark), generadas desde la config del score, y test de
+  coherencia banda a banda con cada lector; pestaña Histórico desde los estados anuales de los CAGR
+  (`archetype_metrics.yearly_financials`; FCF − SBC en GROWTH_PRE_PROFIT), dato bruto, fuera del PDF.
+- **Motivos en lenguaje llano (`lib/plain_language.py`):** una tabla para PDF y web. Portada y resumen muestran el
+  texto llano (uno por dimensión primero, máximo 3); el técnico queda en el "Detalle técnico" de la web y en la
+  sección de confianza del PDF. "^TNX no disponible" y el techo de confianza no se muestran (redundantes).
+  Desviación del ejemplo propuesto: `crecimiento_incoherente` es un aviso (el valor se mantiene), así que el
+  texto dice "se mantiene, pero conviene tomarlo con cautela", no "se recalculó".
+- **Cambios del PDF por el refactor (justificados):** motivos en lenguaje llano; en el resumen ejecutivo, las
+  tarjetas de ROE y margen neto de REIT y pre-beneficio dicen "No aplica" (antes se leían frente al sector, contra
+  la regla de la 9a); sin la sección "Evolución histórica anual" (solo aparecía en local).
+- **Config:** fuera `[ui.metric_scale]` (tercer juego de bandas); `category_tone_bounds` y `exec_category_bounds`
+  pasan a config (eran literales del PDF). `backendConfig.ts` solo exporta arquetipos y rótulos de estado.
+- **Guardianes:** `frontend/scripts/check-analysis-literals.mjs` (prebuild; sin umbrales literales en los
+  componentes de análisis), `check-contract.mjs` + `tests/test_frontend_contract.py` (la web no lee campos que el
+  backend no expone) y sello del contrato en `frontend/out/build-stamp.json`, validado por `build.sh`.
+- **Pendiente:** los golden (A, B, D y `display`) se regeneran con la aprobación del diff.
