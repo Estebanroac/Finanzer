@@ -934,3 +934,33 @@ correctos según los datos, pero aplican reglas genéricas a arquetipos que nece
   dividendo ni crecimientos y `_is_degraded` lo daba por degradado: dos reintentos completos más 2.4 s de espera
   (10–12 s por análisis en frío). Corregido: sin reintentos en el plan B, bloqueo de quoteSummary recordado 10 min
   y estados anuales descargados una sola vez (3.2–4.4 s simulando Render).
+
+- **Forward P/E del perfil market:** heredaba el 18x de `default` (sin fuente). Ahora tiene una referencia
+  explícita: **18.9x**, el P/E forward del índice S&P 500 al 30-sep-2026 (consenso de 12 meses de Bloomberg, First
+  Trust, "Market Minute" de octubre de 2026). Es **provisional**, y es un agregado del índice, no una mediana de
+  constituyentes (no hay mediana forward pública). Efecto en V (prod): la compresión del Forward P/E (24.2x) vuelve a
+  sumar porque 24.2x < 18.9 × 1.3 = 24.6x. El bloque pasa de −4 a −3, Valoración de 4/20 a 5/20 y el precio de 20 a
+  25 (sigue en "muy exigente").
+
+### 7.17 Precio con un solo método evaluable: casi no llega a "muy exigente" (decisión pendiente)
+
+Registrado en la revisión de la 11b; **decisión de diseño para otra ronda, sin cambio de código**.
+
+- **Caso: PLTR** (muestra amplia). P/E 179.9x frente a 30x del sector, P/FCF 149x, EV/EBITDA 185x, PEG 1.81, y
+  el precio sigue en **"exigente" (35)**, no en "muy exigente".
+- **Por qué.** El DCF tiene fiabilidad baja (el grid no contiene el precio) y no puntúa, así que el bloque de
+  múltiplos es el único método evaluable. El bloque promedia los ajustes reescalados a ±1 de sus miembros y se acota
+  a ±6 con 3+ miembros. En PLTR la media es −0.70: P/E −1, P/FCF −1, EV/EBITDA −1, PEG −0.5 y el **Forward P/E 0**
+  (la compresión no suma en la peor banda, pero el miembro tampoco resta: es una regla de compresión, no de
+  nivel). El bloque queda en **−4**, Valoración 6/20, precio sin ajustar 30 y, con la confianza media (factor 0.75),
+  50 + (30 − 50) × 0.75 = **35**.
+- **El techo es estructural.** Con un solo método, el mínimo es el bloque en −6, es decir Valoración 4/20 y precio
+  sin ajustar 20. Para llegar a "muy exigente" (< 30) con confianza media hace falta una media del bloque ≤ −0.92
+  (prácticamente todos los miembros en la peor banda, y el Forward P/E nunca aporta −1). Con confianza baja
+  (factor 0.5) el suelo es 35 y nunca se llega. Además, un solo método evaluable empuja la confianza hacia media
+  o baja, y eso vuelve a contraer el precio hacia 50.
+- **Opciones para la próxima ronda** (sin decidir):
+  1. que el Forward P/E en la peor banda reste como nivel, no solo como compresión;
+  2. que el tope del bloque crezca cuando es el único método evaluable;
+  3. que la contracción por confianza no se aplique, o se aplique menos, cuando la confianza baja solo porque falta
+     el segundo método y no porque los métodos discrepen.
