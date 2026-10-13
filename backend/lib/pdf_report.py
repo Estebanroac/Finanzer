@@ -727,6 +727,12 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     # D/E contable sin lectura en financieras (los depósitos son pasivo): decisión
     # de la etapa 4. La celda muestra "—" y DE_NOT_APPLICABLE.
     r_de = None if is_financial else read_de(km.get("de"), _th.debt_equity_high, km.get("interest_coverage"), market=_mkt)
+    # Etapa 9a: el D/E no puntúa en REIT (informativo) ni con caja neta (regla M); la lectura lo dice.
+    if r_de and archetype == "REIT":
+        r_de = ("Informativo", 'neu', f"el D/E de {km['de']:.2f}x es informativo: en un REIT el apalancamiento se "
+                                      "mide por la deuda neta/EBITDA")
+    elif r_de and (km.get("net_debt") or 0) < 0:
+        r_de = ("No significativo", 'neu', f"con caja neta, el D/E ({km['de']:.2f}x) no mide apalancamiento")
     ic_state = km.get("interest_coverage_state")
     r_ic = read_coverage(km.get("interest_coverage"), ic_state)
     nde_state = km.get("net_debt_to_ebitda_state")
@@ -1637,7 +1643,8 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     if not rent_txt and archetype in ("REIT", "GROWTH_PRE_PROFIT"):
         _rb = [a for a in (breakdown.get("Rentabilidad") or {}).get("adjustments") or []
                if a.get("metric") not in ("No aplica", "Cobertura")]
-        rent_txt = _join_sentences([f"{a['metric']} de {a['value']}: {a['reason'].split(' - ')[0].lower()}"
+        rent_txt = _join_sentences([f"{a['metric']} de {a['value']}: {a['reason'].split(' (')[0].lower()}"
+                                    + (f", {a['reason'].split(' - ', 1)[1]}" if ' - ' in a['reason'] else "")
                                     for a in _rb])
     if rent_txt:
         story.append(Paragraph(rent_txt, S['body']))
@@ -1718,11 +1725,12 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
 
     story.append(Spacer(1, 12))
     story.extend(section_header("03", "Solidez financiera", S))
+    # En REIT manda la deuda neta/EBITDA; el D/E (informativo) va detrás.
+    _lev = [r_nde, r_de] if archetype == "REIT" else [r_de, r_nde]
     sol_txt = _join_sentences([
         r_rw[2] if r_rw else None,
         r_cr[2] if r_cr else None,
-        r_de[2] if r_de else None,
-        r_nde[2] if r_nde else None,
+        *[r[2] for r in _lev if r],
         r_ic[2] if r_ic else None,
         r_pay[2] if r_pay else None,
     ])
