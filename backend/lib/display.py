@@ -18,6 +18,7 @@ from typing import Any, Dict, Optional
 from settings import cfg
 from financial_ratios import IC_NEGATIVE, NET_CASH_TEXT, SECTOR_THRESHOLDS, ThresholdConfig, growth_for_bands
 from classify import archetype_label, not_applicable_text
+import numfmt
 from numfmt import money as _money, price as _price
 from plain_language import confidence_reasons, plain_reasons
 
@@ -29,7 +30,7 @@ DCF_NO_RECONCILE = ("El DCF no concilia con el precio bajo ningún supuesto razo
 STATES = ("con_dato", "sin_dato", "no_aplica", "no_significativo")
 STATE_LABELS = {"con_dato": "Con dato", "sin_dato": "Sin dato", "no_aplica": "No aplica",
                 "no_significativo": "No significativo"}
-ARCHETYPES = ("FINANCIAL", "REIT", "GROWTH_PRE_PROFIT", "CYCLICAL", "MATURE")
+ARCHETYPES = ("FINANCIAL", "REIT", "UTILITY", "GROWTH_PRE_PROFIT", "CYCLICAL", "MATURE")
 
 # ══════════════════════ NARRATIVA ADAPTATIVA (bandas) ══════════════════════
 # Cada lector devuelve (etiqueta_corta, tono, frase) o None si no hay dato.
@@ -177,7 +178,40 @@ def read_coverage(ic, state=None):
     return ("Crítica", 'neg', f"la cobertura de intereses ({ic:.1f}x) es críticamente baja")
 
 
-def read_nde(nde, state=None, net_debt=None, reit=False):
+def _fx_txt(rate: float, fin: str, px: str) -> str:
+    """Tipo de cambio legible: "1 USD = 31.87 TWD" o "1 EUR = 1.1665 USD"."""
+    return f"1 {px} = {1 / rate:,.2f} {fin}" if rate < 1 else f"1 {fin} = {rate:,.4f} {px}"
+
+
+def currency_note(cur) -> Optional[str]:
+    """Etapa 11b: qué se reexpresó para poner los estados en la unidad del precio."""
+    if not cur:
+        return None
+    parts = []
+    fin, px = cur.get("statements"), cur.get("price")
+    if cur.get("converted") and fin and px:
+        rates = []
+        if cur.get("ttm_rate"):
+            rates.append(f"TTM: {_fx_txt(cur['ttm_rate'], fin, px)}")
+        br = cur.get("balance_rate") or {}
+        if br.get("rate"):
+            rates.append(f"balance al {br['date']}: {_fx_txt(br['rate'], fin, px)}")
+        parts.append(f"Estados financieros en {fin} convertidos a {px}, la moneda de la cotización, con el tipo de "
+                     f"cambio de Yahoo ({', '.join(cur.get('fx_symbols') or [])}): el balance al cierre de cada período "
+                     "y los resultados y flujos al promedio del período"
+                     + (f" ({'; '.join(rates)})" if rates else "") + ".")
+    sc = cur.get("share_class") or {}
+    f = sc.get("factor")
+    if sc.get("applied") and f:
+        parts.append("Cifras por acción en la clase que cotiza: "
+                     + (f"cada título cotizado equivale a {f:,.2f} acciones de los estados (ADR u otra clase)."
+                        if f > 1 else
+                        f"los estados cuentan otra clase de acciones, y cada una equivale a {1 / f:,.0f} títulos "
+                        "cotizados."))
+    return " ".join(parts) or None
+
+
+def read_nde(nde, state=None, net_debt=None, reit=False, utility=False):
     # Etapa 5 (regla M): con EBITDA <= 0 la ratio no se lee; "caja neta" solo
     # cuando la caja supera a la deuda total. Etapa 9a: en REIT, las bandas de REIT
     # del score (thresholds.score.solidez.reit_nde_*), una sola fuente.
@@ -196,6 +230,16 @@ def read_nde(nde, state=None, net_debt=None, reit=False):
         if nde <= b[2]: return ("En línea", 'neu', f"la deuda neta ({nde:.1f}x EBITDA) está en línea con los REIT")
         if nde <= b[3]: return ("Elevada", 'warn', f"la deuda neta ({nde:.1f}x EBITDA) es elevada para un REIT")
         return ("Alta", 'neg', f"la deuda neta ({nde:.1f}x EBITDA) es alta para un REIT")
+    if utility:   # etapa 11b: bandas de utility regulada del score (utility_nde_*)
+        b = cfg("thresholds.score.solidez.utility_nde_bounds")
+        if nde <= b[0]: return ("Conservadora", 'pos', f"la deuda neta ({nde:.1f}x EBITDA) es conservadora para una "
+                                                       "utility regulada")
+        if nde <= b[1]: return ("Adecuada", 'pos', f"la deuda neta ({nde:.1f}x EBITDA) está en el rango habitual de "
+                                                   f"una utility con grado de inversión (hasta {b[1]:.1f}x)")
+        if nde <= b[2]: return ("En línea", 'neu', f"la deuda neta ({nde:.1f}x EBITDA) está en línea con las utilities "
+                                                   "reguladas")
+        if nde <= b[3]: return ("Elevada", 'warn', f"la deuda neta ({nde:.1f}x EBITDA) es elevada para una utility")
+        return ("Alta", 'neg', f"la deuda neta ({nde:.1f}x EBITDA) es alta incluso para una utility regulada")
     b = _PDF_BANDS["nde_bounds"]
     if nde < b[0]:    return ("Baja", 'pos', f"la deuda neta equivale a {nde:.1f}x EBITDA, un nivel bajo")
     if nde < b[1]:  return ("Moderada", 'neu', f"la deuda neta ({nde:.1f}x EBITDA) es manejable")
@@ -399,6 +443,7 @@ def _slug(s):
 
 # Múltiplos propios de cada rama (filas del score de Valoración).
 BRANCH_METRICS = ("P/B frente a ROE", "P/TBV frente a ROTE", "P/FFO (REIT)", "Rentabilidad por dividendo (REIT)",
+                  "Rentabilidad por dividendo (utility)",
                   "EV/Ventas", "Regla de 40", "EV/EBITDA normalizado vs Sector",
                   "EV/EBITDA normalizado vs mercado", "P/FCF normalizado")
 _SEV_READ = {"excellent": ("Favorable", 'pos'), "good": ("Favorable", 'pos'), "ok": ("En línea", 'neu'),
@@ -523,13 +568,17 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         de_mode = "informativo"
         r_de = ("Informativo", 'neu', f"el D/E de {km['de']:.2f}x es informativo: en un REIT el apalancamiento se "
                                       "mide por la deuda neta/EBITDA")
+    elif "de" in _na_keys and not is_financial:
+        # Etapa 11b (UTILITY): el D/E genérico no aplica; el apalancamiento va por deuda neta/EBITDA.
+        de_mode, r_de = "no_aplica", None
     elif r_de and (km.get("net_debt") or 0) < 0:
         de_mode = "no_significativo"
         r_de = ("No significativo", 'neu', f"con caja neta, el D/E ({km['de']:.2f}x) no mide apalancamiento")
     ic_state = km.get("interest_coverage_state")
     r_ic = read_coverage(km.get("interest_coverage"), ic_state)
     nde_state = km.get("net_debt_to_ebitda_state")
-    r_nde = read_nde(km.get("net_debt_to_ebitda"), nde_state, km.get("net_debt"), reit=archetype == "REIT")
+    r_nde = read_nde(km.get("net_debt_to_ebitda"), nde_state, km.get("net_debt"), reit=archetype == "REIT",
+                     utility=archetype == "UTILITY")
     r_pay = read_payout(km.get("payout_ratio"), km.get("payout_basis"))
     _cyc = archetype == "CYCLICAL"
     # Etapa 9b: los textos citan la cifra que PUNTÚA Crecimiento (su ajuste del desglose
@@ -651,6 +700,11 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                    _k(km.get("dividend_yield"), "pct", "Dividend yield", "dividend_yield"),
                    _k(km.get("ffo_payout"), "pct", "Payout sobre FFO", "payout_ratio"),
                    _k(km.get("de"), "mult", "Deuda/Equity", "de"), _nde, _beta]
+    elif archetype == "UTILITY":
+        _k_arch = [_k(km.get("pe"), "mult", "P/E", "pe"),
+                   _k(km.get("dividend_yield"), "pct", "Dividend yield", "dividend_yield"),
+                   _k(km.get("payout_ratio"), "pct", "Payout del dividendo", "payout_ratio"),
+                   _nde, _k(km.get("roe"), "pct", "ROE", "roe"), _beta]
     elif archetype == "GROWTH_PRE_PROFIT":
         _r40 = xm.get("rule_of_40")
         _k_arch = [_k(xm.get("ev_sales"), "mult", "EV/Ventas", "ev_sales"),
@@ -694,6 +748,8 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     ]
 
     cover = {
+        # Etapa 11b: conversión de moneda y clase de acciones aplicada a los estados (o None).
+        "currency_note": currency_note((a.get("data_provenance") or {}).get("currency")),
         "archetype": archetype,
         "archetype_label": archetype_label(archetype),
         "classification_notes": cls_notes,
@@ -758,6 +814,10 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         _val_cards = [_mkcard("p_ffo", "P/FFO", km.get("p_ffo"), 'mult', None, False),
                       _mkcard("dividend_yield", "Dividend yield", km.get("dividend_yield"), 'pct', None, True),
                       _mkcard("ev_ebitda", "EV/EBITDA", km.get("ev_ebitda"), 'mult', "ev_ebitda", False)]
+    elif archetype == "UTILITY":
+        _val_cards = [_mkcard("pe", "P/E (TTM)", km.get("pe"), 'mult', "pe", False),
+                      _mkcard("dividend_yield", "Dividend yield", km.get("dividend_yield"), 'pct', None, True),
+                      _mkcard("forward_pe", "Forward P/E", km.get("forward_pe"), 'mult', "forward_pe", False)]
     elif archetype == "GROWTH_PRE_PROFIT":
         _val_cards = [_mkcard("ev_sales", "EV/Ventas", xm.get("ev_sales"), 'mult', None, False),
                       _mkcard("fcf_yield", "FCF yield", km.get("fcf_yield"), 'pct', "fcf_yield", True),
@@ -794,7 +854,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         sol_short = f"Altman Z de {altman['z_score']:.2f} ({_zmap.get(altman.get('zone'), '')})"
         if r_ic:
             sol_short += f"; {r_ic[2]}"
-    elif archetype == "REIT" and r_nde:
+    elif archetype in ("REIT", "UTILITY") and r_nde:
         sol_short = r_nde[2] + (f"; {r_ic[2]}" if r_ic else "")
     else:
         sol_short = r_de[2] if r_de else None
@@ -970,14 +1030,21 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                           f"P/E normalizado {fv(norm['pe_normalized'], 'mult')}.")
 
     # Valor intrínseco
+    _dcf_st = a.get("dcf_status") or {}
+    _dcf_ns = _dcf_st.get("reason") if _dcf_st.get("state") == "no_significativo" else None
     iv_txt = join_sentences([r_up[2] if r_up else None,
                              (f"DCF (FCFF): {not_app['dcf'][0].lower()}{not_app['dcf'][1:]}" if not_app.get("dcf")
+                              else f"DCF (FCFF) no significativo: {_dcf_ns}" if _dcf_ns
                               else None if r_up else "el modelo DCF no es aplicable con los datos disponibles"),
                              ("se valora sobre libros y retornos" if is_financial else None)])
     iv_rows = [_row("price", "Precio de mercado", fv(price, "price"), "")]
     if not_app.get("dcf"):
         iv_rows.append(_row("dcf_fair_value", "Valor justo DCF", "—", not_applicable_text(archetype), None, "no_aplica",
                             text=not_app.get("dcf")))
+    elif _dcf_ns:
+        # Etapa 11b: FCF base <= 0 o capital <= 0: sin valor razonable (nunca uno negativo).
+        iv_rows.append(_row("dcf_fair_value", "Valor justo DCF", "—", "No significativo", None, "no_significativo",
+                            text=_dcf_ns))
     if graham_shown:
         iv_rows.append(_row("graham", "Número de Graham", fv(graham, "price"), r_graham[0] if r_graham else "",
                             r_graham[1] if r_graham else None, text=r_graham[2] if r_graham else None))
@@ -1027,6 +1094,8 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                 _rl += (f". Aporta {_dcf_adj['adjustment']:+d} puntos a Valoración "
                         f"(máximo ±{_cap_pts} con fiabilidad {_rel['level']}).")
             dcf_reliability_line = _rl
+    elif _dcf_ns:
+        dcf_missing = f"DCF no significativo: {_dcf_ns}."
     elif dcf.get("reason"):
         dcf_missing = f"DCF sin dato: {dcf['reason']}."
     # FINANCIAL (etapa 8): sin WACC; el P/B justificado usa Ke con la beta ajustada.
@@ -1105,7 +1174,8 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
             "corner": "CREC. \\ WACC",
             "columns": [f"{dr * 100:.1f}%" for dr in d_rates],
             "rows": [{"label": f"{g_rates[gi] * 100:.1f}%",
-                      "cells": [{"value": (f"${v:,.0f}" if v is not None else "—"), "band": _band(v),
+                      # Etapa 11b: signo antes del símbolo ("−$8", no "$-8"), como en el resto del informe.
+                      "cells": [{"value": numfmt.whole(v), "band": _band(v),
                                  "base": gi == sensitivity.get("base_growth_idx")
                                  and di == sensitivity.get("base_discount_idx")}
                                 for di, v in enumerate(row)]}
@@ -1235,7 +1305,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
 
     # ════════════════ 03 SOLIDEZ ════════════════
     # En REIT manda la deuda neta/EBITDA; el D/E (informativo) va detrás.
-    _lev = [r_nde, r_de] if archetype == "REIT" else [r_de, r_nde]
+    _lev = [r_nde, r_de] if archetype in ("REIT", "UTILITY") else [r_de, r_nde]
     sol_txt = join_sentences([r_rw[2] if r_rw else None, r_cr[2] if r_cr else None, *[r[2] for r in _lev if r],
                               r_ic[2] if r_ic else None, r_pay[2] if r_pay else None])
     sol_defs = [
@@ -1271,6 +1341,9 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
             continue
         if is_financial and key == "de":
             srows.append(_row(key, lab, "—", DE_NOT_APPLICABLE, None, "no_aplica"))
+            continue
+        if key == "de" and de_mode == "no_aplica":   # etapa 11b: UTILITY
+            srows.append(_row(key, lab, "—", "No aplica", None, "no_aplica", text=not_app.get("de") or None))
             continue
         if key == "interest_coverage" and ic_state == "negativa":
             srows.append(_row(key, lab, IC_NEGATIVE, rd[0], rd[1], text=rd[2]))
@@ -1477,6 +1550,8 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         _models.append("P/B y P/TBV justificados por el retorno (Gordon)")
     elif archetype == "REIT":
         _models.append("P/FFO y rentabilidad sobre el FFO")
+    elif archetype == "UTILITY":
+        _models.append("P/E frente al sector y rentabilidad por dividendo")
     models_txt = ("los modelos de " + ", ".join(_models)) if _models else "los modelos de su arquetipo"
 
     return {
@@ -1568,7 +1643,8 @@ def vs_bench_bands(bench, higher, fmt="mult"):
             {"range": f"≥ {f(at(b0))}", "label": "Prima elevada", "tone": 'neg'}]
 
 
-def score_bands(key, *, th=None, reit=False, ffo=False, cycle=False, kind="revenue", de_threshold=None):
+def score_bands(key, *, th=None, reit=False, utility=False, ffo=False, cycle=False, kind="revenue",
+                de_threshold=None):
     """Bandas de la lectura de `key` (las del score donde la métrica puntúa)."""
     if key == "roe":
         T = cfg("thresholds.score.rentabilidad")
@@ -1598,8 +1674,8 @@ def score_bands(key, *, th=None, reit=False, ffo=False, cycle=False, kind="reven
                      ['pos', 'pos', 'neu', 'warn', 'neg'], _f_mult)
     if key == "net_debt_to_ebitda":
         cash = [{"range": "< 0x", "label": "Caja neta", "tone": 'pos'}]
-        if reit:
-            return cash + _asc(cfg("thresholds.score.solidez.reit_nde_bounds"),
+        if reit or utility:
+            return cash + _asc(cfg(f"thresholds.score.solidez.{'reit' if reit else 'utility'}_nde_bounds"),
                                ["Conservadora", "Adecuada", "En línea", "Elevada", "Alta"],
                                ['pos', 'pos', 'neu', 'warn', 'neg'], _f_mult)
         return cash + _asc(_PDF_BANDS["nde_bounds"], ["Baja", "Moderada", "Elevada", "Alta"],
@@ -1671,6 +1747,7 @@ def band_tooltips(a, sector_bench, th, mkt, ref, na, de_mode, cyc):
     km = a.get("key_metrics") or {}
     archetype = (a.get("classification") or {}).get("archetype") or "MATURE"
     reit = archetype == "REIT"
+    utility = archetype == "UTILITY"
     who = "del mercado (S&P 500)" if mkt else "del sector"
     out: Dict[str, Any] = {}
 
@@ -1715,11 +1792,13 @@ def band_tooltips(a, sector_bench, th, mkt, ref, na, de_mode, cyc):
         add("de", "", [], "Informativo: en un REIT el apalancamiento se mide por la deuda neta/EBITDA.")
     elif de_mode == "no_significativo":
         add("de", "", [], "No significativo: con caja neta, el D/E no mide apalancamiento.")
+    elif de_mode == "no_aplica":
+        add("de", "", [], f"{not_applicable_text(archetype)}: el apalancamiento se mide por la deuda neta/EBITDA.")
     else:
         add("de", "", [], DE_NOT_APPLICABLE + ".")
     add("interest_coverage", "Bandas del score", score_bands("interest_coverage"))
-    add("net_debt_to_ebitda", "Bandas de REIT" if reit else "Bandas del informe",
-        score_bands("net_debt_to_ebitda", reit=reit))
+    add("net_debt_to_ebitda", "Bandas de REIT" if reit else "Bandas de utility regulada" if utility
+        else "Bandas del informe", score_bands("net_debt_to_ebitda", reit=reit, utility=utility))
     if archetype == "GROWTH_PRE_PROFIT":
         add("runway", "Años de caja frente a la quema de FCF", score_bands("runway"))
     ffo = km.get("payout_basis") == "ffo"

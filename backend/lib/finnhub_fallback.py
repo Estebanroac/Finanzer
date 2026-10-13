@@ -169,22 +169,30 @@ def enrich_info(info: Dict[str, Any], symbol: str, degraded: bool = False) -> Di
             info[key] = val
             filled.append(key)
 
+    # Etapa 11b: si los estados se reexpresaron a la moneda o la clase de la cotización
+    # (ADR, BRK-B), las cifras por acción de Finnhub pueden venir en la otra unidad (BRK-B:
+    # BPA de la clase A): no se imponen ni se usan para rellenar.
+    _cur = info.get("_currency") or {}
+    _restated = bool(_cur.get("converted") or (_cur.get("share_class") or {}).get("applied"))
+
     # ── Tier 1: métricas de mercado (nivel superior de info) ──
     set_top("beta", _num(m.get("beta")))
     set_top("forwardPE", _num(m.get("forwardPE")))
-    set_top("trailingPE", _num(m.get("peTTM")))
+    if not _restated:
+        set_top("trailingPE", _num(m.get("peTTM")))
     # trailingEps: cuando consultamos Finnhub (Yahoo vino incompleto), su epsTTM
     # (TTM diluido) es la fuente fiable. Se IMPONE sobre el trailingEps existente
     # si falta o difiere >2% — el de Yahoo/LKG puede ser un EPS ANUAL obsoleto
     # que infla el P/E (AAPL 7.46 anual vs 8.27 TTM). Diferencias pequeñas se
     # respetan (sin churn). No depende del flag 'degraded' estricto: el estado
     # 'gappy pero no degradado' también trae EPS anual obsoleto.
-    _eps_ttm = _num(m.get("epsTTM"))
+    _eps_ttm = None if _restated else _num(m.get("epsTTM"))
     if _eps_ttm is not None and _eps_ttm != 0:
         _cur_eps = _num(info.get("trailingEps"))
         if _cur_eps is None or abs(_cur_eps - _eps_ttm) / abs(_eps_ttm) > _EPS_OVERRIDE_REL_DIFF:
             if info.get("trailingEps") != _eps_ttm:
                 info["trailingEps"] = _eps_ttm
+                info["_eps_net_income"] = None   # etapa 11b: ventana de Finnhub desconocida
                 filled.append("trailingEps~")
     # OJO: NO mapear forwardEps desde epsTTM/epsExclExtraItemsTTM — esos son
     # TRAILING, no estimados forward. Usarlos haría forward_pe = price/eps_TTM

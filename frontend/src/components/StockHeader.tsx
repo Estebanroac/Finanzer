@@ -49,6 +49,7 @@ export default function StockHeader({ data }: { data: StockAnalysis }) {
             {C.classification_notes.join(" ")}
           </p>
         )}
+        {C.currency_note && <p className="mt-1.5 text-[12px] leading-relaxed text-zinc-500">{C.currency_note}</p>}
       </div>
 
       {/* Puntuaciones · veredicto · componentes */}

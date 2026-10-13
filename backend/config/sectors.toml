@@ -350,6 +350,12 @@ financial_mature_industries = ["asset management", "financial data & stock excha
 payment_network_industries = ["credit services"]
 payment_network_max_assets_to_revenue = 3.0      # V 2.5x; AXP ~4x, SYF ~5.5x, COF ~12x
 reit_prefixes = ["reit"]                         # "REIT - Retail", ...; promotoras y servicios NO
+# Etapa 11b: UTILITY regulada (tarifa fijada por el regulador sobre una base de activos).
+# Fuera: "utilities - independent power producers" (generación mercantil, precio de
+# mercado: cíclica o madura según sus reglas) y "utilities - renewable" (mezcla
+# promotores en crecimiento y yieldcos; sin regulación tarifaria común).
+utility_industries = ["utilities - regulated electric", "utilities - regulated gas",
+                      "utilities - regulated water", "utilities - diversified"]
 growth_pre_profit_min_revenue_cagr = 0.15        # CAGR real de ingresos a 3 años (4 ejercicios)
 # Industrias cíclicas SIEMPRE (nombres exactos de Yahoo, normalizados).
 cyclical_industries = [
@@ -403,4 +409,10 @@ GROWTH_PRE_PROFIT = ["pe", "peg", "forward_pe", "graham", "eps_growth", "altman"
                      # bruto, margen operativo (bandas propias) y su mejora, y margen FCF − SBC.
                      "roe", "roa", "net_margin", "roic_wacc"]
 CYCLICAL = ["pe", "peg", "forward_pe", "fcf_growth"]
+# Etapa 11b: UTILITY regulada. Se valora por P/E y rentabilidad por dividendo; la solidez,
+# por deuda neta/EBITDA con bandas propias. El FCF es negativo por diseño (la inversión en
+# la base regulada supera al flujo operativo), así que FCF, P/FCF, DCF y su crecimiento no
+# aplican; tampoco el Altman ni el D/E genérico (deuda alta y circulante negativo por diseño).
+UTILITY = ["altman", "de", "current_ratio", "fcf", "fcf_to_ni", "p_fcf", "fcf_growth", "dcf",
+           "ev_ebitda", "peg", "garp"]
 MATURE = []

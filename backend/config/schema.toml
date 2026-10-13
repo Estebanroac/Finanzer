@@ -26,6 +26,8 @@ runway_bounds = "list[float]"
 runway_points = "list[int]"
 reit_nde_bounds = "list[float]"
 reit_nde_points = "list[int]"
+utility_nde_bounds = "list[float]"
+utility_nde_points = "list[int]"
 
 [thresholds.score.solidez_financial]
 max_without_regulatory = "int"
@@ -67,6 +69,8 @@ dcf_points_high = "list[int]"
 dcf_points_medium = "list[int]"
 reit_pffo_bounds = "list[int]"
 reit_pffo_points = "list[int]"
+utility_yield_bounds = "list[float]"
+utility_yield_points = "list[int]"
 pe_value_mults = "list[float]"
 pe_value_points = "list[int]"
 multiples_block = "list[str]"
@@ -478,6 +482,17 @@ growth_units_abs_max = "float"
 dividend_yield_max = "float"
 payout_ratio_max = "float"
 
+[validation.currency]
+fx_history_period = "str"
+min_fx_days = "int"
+share_class_tolerance = "float"
+
+[validation.plausibility]
+pe_min = "float"
+pe_max = "float"
+pb_min = "float"
+eps_vs_net_income_max_dev = "float"
+
 [data.fetcher]
 max_retries = "int"
 base_delay_s = "int"
@@ -519,6 +534,7 @@ financial_mature_industries = "list[str]"
 payment_network_industries = "list[str]"
 payment_network_max_assets_to_revenue = "float"
 reit_prefixes = "list[str]"
+utility_industries = "list[str]"
 growth_pre_profit_min_revenue_cagr = "float"
 cyclical_industries = "list[str]"
 cyclical_conditional_industries = "list[str]"
@@ -537,6 +553,7 @@ FINANCIAL = "list[str]"
 REIT = "list[str]"
 GROWTH_PRE_PROFIT = "list[str]"
 CYCLICAL = "list[str]"
+UTILITY = "list[str]"
 MATURE = "list[str]"
 
 [valuation.archetypes]

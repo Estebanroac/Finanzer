@@ -60,7 +60,7 @@ TABLE = [
     (r"^(\d+) de (\d+) componentes del score con dato",
      "Faltan datos en parte del análisis ({0} de {1} indicadores con dato)."),
     # ── estabilidad ──
-    (r"^arquetipo CYCLICAL", "Empresa cíclica: sus resultados dependen de la fase del ciclo."),
+    (r"^(arquetipo CYCLICAL|empresa cíclica)", "Empresa cíclica: sus resultados dependen de la fase del ciclo."),
     (r"^alerta de posible cíclica",
      "La empresa podría ser cíclica: sus resultados actuales pueden no ser representativos."),
     (r"^clasificación ambigua", "El tipo de empresa no está claro, lo que hace menos fiable la comparación."),

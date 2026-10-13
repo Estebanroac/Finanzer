@@ -35,6 +35,14 @@ def price(v: Optional[float]) -> str:
     return f"{_sign(v)}${abs(v):,.2f}"
 
 
+def whole(v: Optional[float]) -> str:
+    """Importe por acción redondeado al dólar (celdas del grid de sensibilidad): $142, −$8, "—" sin dato."""
+    if v is None:
+        return "—"
+    r = round(v)
+    return f"{_sign(r)}${abs(r):,.0f}"
+
+
 def amount(v: Optional[float]) -> str:
     """Importe de una serie de los estados: total con unidad o, si es pequeño, por acción."""
     if v is None:

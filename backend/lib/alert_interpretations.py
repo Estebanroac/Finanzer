@@ -20,11 +20,11 @@ from typing import Any, Dict, List, Optional
 try:
     from .financial_ratios import (SECTOR_THRESHOLDS, ThresholdConfig, growth_for_bands,
                                    interest_coverage_state, net_debt_ebitda_state)
-    from .classify import CYCLICAL, FINANCIAL, GROWTH_PRE_PROFIT, MATURE, REIT, not_applicable
+    from .classify import CYCLICAL, FINANCIAL, GROWTH_PRE_PROFIT, MATURE, REIT, UTILITY, not_applicable
 except ImportError:  # ejecución como script suelto
     from financial_ratios import (SECTOR_THRESHOLDS, ThresholdConfig, growth_for_bands,
                                   interest_coverage_state, net_debt_ebitda_state)
-    from classify import CYCLICAL, FINANCIAL, GROWTH_PRE_PROFIT, MATURE, REIT, not_applicable
+    from classify import CYCLICAL, FINANCIAL, GROWTH_PRE_PROFIT, MATURE, REIT, UTILITY, not_applicable
 
 
 import re
@@ -366,6 +366,22 @@ def _leverage(ctx: Ctx):
             return _sig("strength", "Solidez financiera", f"Apalancamiento conservador para un REIT — {nde:.1f}x EBITDA",
                         f"La deuda neta equivale a {_years_ebitda(nde)} de EBITDA, por debajo del rango habitual de un "
                         "REIT: holgura para financiar adquisiciones sin tensionar el balance.", T["w_low"])
+        return None
+    if ctx.archetype == UTILITY:
+        # Etapa 11b: bandas de utility regulada (las mismas que Solidez): opera en 5.5–6.5x.
+        b = _SC_SOLIDEZ["utility_nde_bounds"]
+        if nde > b[2]:
+            sev = "risk" if nde > b[3] else "warning"
+            return _sig(sev, "Solidez financiera", f"Apalancamiento elevado para una utility — {nde:.1f}x EBITDA",
+                        f"Harían falta {_years_ebitda(nde)} de EBITDA íntegro para saldar la deuda neta, por encima del "
+                        f"rango habitual de una utility regulada con grado de inversión (hasta {b[1]:.1f}x): conviene "
+                        "vigilar la cobertura de intereses y las revisiones tarifarias.",
+                        T["w_high_risk"] if sev == "risk" else T["w_high_warning"])
+        if nde <= b[0]:
+            return _sig("strength", "Solidez financiera",
+                        f"Apalancamiento conservador para una utility — {nde:.1f}x EBITDA",
+                        f"La deuda neta equivale a {_years_ebitda(nde)} de EBITDA, por debajo del rango habitual de una "
+                        "utility regulada: holgura para financiar su plan de inversión.", T["w_low"])
         return None
     if nde > t.net_debt_ebitda_high:
         sev = "risk" if nde > t.net_debt_ebitda_high * T["risk_mult"] else "warning"

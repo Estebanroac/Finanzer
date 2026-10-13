@@ -27,3 +27,17 @@ growth_vs_statements_pp = 0.15
 growth_units_abs_max = 10.0
 dividend_yield_max = 0.5
 payout_ratio_max = 10.0
+
+# Etapa 11b: moneda y clase de los estados frente a la cotización (lib/currency.py).
+[currency]
+fx_history_period = "7y"           # cierres diarios de Yahoo "XXX=X" (cubren los 4-5 ejercicios)
+min_fx_days = 10                   # cierres mínimos en un período para promediarlo
+share_class_tolerance = 1.5        # acciones de los estados / de la cotización fuera de [1/1.5, 1.5] -> otra clase
+
+# Etapa 11b: plausibilidad de los múltiplos por acción. Fuera de rango -> inválido,
+# no puntúa (flag con motivo, nunca en silencio).
+[plausibility]
+pe_min = 1.0
+pe_max = 1000.0
+pb_min = 0.05
+eps_vs_net_income_max_dev = 0.20   # |BPA × acciones − beneficio neto| / |beneficio neto|

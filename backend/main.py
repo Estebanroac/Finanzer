@@ -36,6 +36,8 @@ from cost_of_capital import adjusted_beta, effective_tax_rate, risk_free, wacc a
 from valuation_confidence import (convergence, coverage_dimension, dcf_reliability, signal_from_upside,
                                   source_dimension, stability_dimension, verdict_confidence)
 import archetype_metrics
+import numfmt
+from currency import CurrencyConversionError
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -259,7 +261,21 @@ def _build_provenance(yinfo: dict, out_flags: list, block_errors: list) -> dict:
         # Etapa 7: qué campos son TTM (4 trimestres), del último trimestre o del
         # anual (sin 4 trimestres consecutivos), con el motivo.
         "ttm": yinfo.get("_ttm"),
+        # Etapa 11b: moneda y clase de los estados frente a la cotización, y la conversión aplicada.
+        "currency": yinfo.get("_currency"),
     }
+
+
+# Etapa 11b: tipo de instrumento de Yahoo (quoteType) -> cómo se nombra en el mensaje.
+_INSTRUMENT_NAMES = {"ETF": "un ETF", "MUTUALFUND": "un fondo de inversión", "INDEX": "un índice",
+                     "CRYPTOCURRENCY": "una criptomoneda", "CURRENCY": "una divisa", "FUTURE": "un futuro",
+                     "OPTION": "una opción", "MONEYMARKET": "un fondo monetario"}
+
+
+def not_a_stock_message(symbol: str, quote_type: str) -> str:
+    what = _INSTRUMENT_NAMES.get(str(quote_type).upper(), "un instrumento que no es una acción")
+    return (f"Finanzer analiza acciones individuales: {symbol} es {what}, así que no se analiza "
+            "(sus estados, ratios y valoración no tienen sentido como los de una empresa).")
 
 
 def _compute_analysis(symbol: str) -> dict:
@@ -280,6 +296,22 @@ def _compute_analysis(symbol: str) -> dict:
         raise HTTPException(status_code=400, detail="Invalid symbol")
 
     try:
+        # Etapa 11b: Finanzer analiza acciones individuales. Un ETF, un fondo o un índice
+        # se rechaza con un mensaje claro y sin análisis (antes salía como empresa "Madura"
+        # con todo sin dato). get_ticker_info es la primera descarga del pipeline (cacheada).
+        from yf_adapter import get_ticker_info as _gti
+        try:
+            _qt = (_gti(symbol) or {}).get("quoteType")
+        except CurrencyConversionError:
+            raise
+        except Exception as e:
+            # Símbolo inexistente u otro fallo de la fuente: lo trata el camino normal (404),
+            # como antes de esta comprobación.
+            logger.info(f"[{symbol}] sin tipo de instrumento: {type(e).__name__}: {e}")
+            _qt = None
+        if _qt and str(_qt).upper() != "EQUITY":
+            raise HTTPException(status_code=422, detail=not_a_stock_message(symbol, _qt))
+
         # Fetch all data using the financial brain
         data = data_service.get_complete_analysis_data(symbol)
 
@@ -1102,13 +1134,19 @@ def _compute_analysis(symbol: str) -> dict:
                     # ingresos) incluye el capex de expansión. Se muestran los dos.
                     fcf = safe_float(archetype_values.get("fcf_maintenance"))
                 _dcf_missing = None
+                # Etapa 11b: FCF base <= 0 (ya normalizado por el arquetipo: el de mantenimiento en
+                # CYCLICAL) no es un dato ausente: el DCF "no es significativo" y no da valor razonable.
+                _dcf_not_sig = None
                 if _dcf_na:
                     pass
-                elif not (fcf and fcf > 0):
-                    _dcf_missing = "FCF de entrada <= 0 o sin dato: no hay flujo que descontar"
+                elif fcf is None:
+                    _dcf_missing = "sin FCF de entrada: no hay flujo que descontar"
+                elif fcf <= 0:
+                    _dcf_not_sig = (f"FCF base {numfmt.money(fcf)} (≤ 0): no hay flujo positivo que descontar, "
+                                    "así que el DCF no es significativo")
                 elif wacc_est is None:
                     _dcf_missing = wacc_info.get("reason") or "sin WACC"
-                if not _dcf_na and not _dcf_missing and price and financials.shares_outstanding:
+                if not _dcf_na and not _dcf_missing and not _dcf_not_sig and price and financials.shares_outstanding:
                     # Deuda neta para el puente Enterprise Value -> Equity Value.
                     _net_debt = None
                     if td_val is not None or cash_val is not None:
@@ -1128,6 +1166,12 @@ def _compute_analysis(symbol: str) -> dict:
                         _g_used = growth
                     _decay = dcf_result.get("decay_type") or "linear"
                     _fv = safe_float(dcf_result.get("fair_value_per_share"))
+                    if _fv is not None and _fv <= 0:
+                        # Etapa 11b: nunca un valor razonable negativo. Si la deuda neta se come todo el
+                        # valor de la empresa, el DCF tampoco es significativo.
+                        _dcf_not_sig = (f"el valor de la empresa por DCF no cubre la deuda neta (valor del "
+                                        f"capital {numfmt.price(_fv)} por acción, ≤ 0): el DCF no es significativo")
+                        _fv = None
                     _dcf_upside = ((_fv - price) / price * 100.0) if (_fv is not None and price and price > 0) else None
                     _dcf_mos = ((_fv - price) / _fv) if (_fv not in (None, 0)) else None
                     _dcf_model = dcf_result.get("model_result") or {}
@@ -1162,7 +1206,7 @@ def _compute_analysis(symbol: str) -> dict:
 
                     # Sensitivity: centrado en el WACC y el crecimiento usados.
                     sens = None
-                    if _fv is not None:
+                    if _fv is not None and not _dcf_not_sig:
                         try:
                             sens = dcf_sensitivity_analysis(
                                 fcf=fcf,
@@ -1177,13 +1221,18 @@ def _compute_analysis(symbol: str) -> dict:
                         except Exception as e:
                             logger.error(f"Sensitivity error: {e}")
                             _sin_dato("sensitivity", e)
-                    _rel = dcf_reliability(
+                    if _dcf_not_sig:
+                        result["dcf"].update({"available": False, "reason": _dcf_not_sig, "not_significant": True,
+                                              "margin_of_safety": None, "upside": None})
+                    _rel = None if _dcf_not_sig else dcf_reliability(
                         dcf=result["dcf"], sensitivity=sens, price=price, archetype=archetype,
                         possible_cyclical=any(a.get("code") == "posible_ciclica"
                                               for a in classification.get("alerts") or []),
                         fcf_flags=_fcf_flags, fcf_source=_fcf_source)
                     result["dcf"]["reliability"] = _rel
-                    if _rel:
+                    if _dcf_not_sig:
+                        pass
+                    elif _rel:
                         dcf_for_score = {"upside": _dcf_upside / 100.0 if _dcf_upside is not None else None,
                                          "reliability": _rel["level"], "reasons": _rel["reasons"],
                                          "grid_contains_price": _rel["grid_contains_price"]}
@@ -1191,11 +1240,13 @@ def _compute_analysis(symbol: str) -> dict:
                         _dcf_missing = result["dcf"]["reason"] or "DCF sin valor"
                 if _dcf_na:
                     dcf_for_score = {"na": _dcf_na}
+                elif _dcf_not_sig:
+                    dcf_for_score = {"not_significant": _dcf_not_sig}
                 elif dcf_for_score is None:
                     dcf_for_score = {"missing_reason": _dcf_missing or "sin precio o acciones en circulación"}
-                result["dcf_status"] = {"state": "no_aplica" if _dcf_na else ("ok" if dcf_for_score.get("reliability")
-                                                                            else "sin_dato"),
-                                        "reason": _dcf_na or dcf_for_score.get("missing_reason")}
+                result["dcf_status"] = {"state": "no_aplica" if _dcf_na else "no_significativo" if _dcf_not_sig
+                                        else ("ok" if dcf_for_score.get("reliability") else "sin_dato"),
+                                        "reason": _dcf_na or _dcf_not_sig or dcf_for_score.get("missing_reason")}
             except Exception as e:
                 logger.error(f"Valuation error: {e}")
                 _sin_dato("graham/dcf", e)
@@ -1389,6 +1440,11 @@ def _compute_analysis(symbol: str) -> dict:
 
     except HTTPException:
         raise
+    except CurrencyConversionError as e:
+        # Etapa 11b: estados en otra moneda sin tipo de cambio: no se analiza (nunca se mezclan monedas).
+        raise HTTPException(status_code=422, detail=(
+            f"No se puede analizar {symbol}: sus estados financieros están en otra moneda que su cotización y "
+            f"no hay tipo de cambio para convertirlos ({e}). Finanzer no mezcla monedas."))
     except InvalidSymbolError:
         # The data layer applies a stricter symbol regex than this endpoint's
         # own validation (it rejects ^ and =, so indices/forex such as ^GSPC or
