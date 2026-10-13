@@ -118,6 +118,33 @@ def _get_sector_benchmarks(sector: str) -> dict:
     return {**defaults, **overrides}
 
 
+def _select_benchmark(mapped_sector: str, archetype: Optional[str]) -> dict:
+    """Benchmark de valoración relativa: medianas del sector o, si el arquetipo
+    contradice al sector de Yahoo, las del mercado amplio (perfil market).
+
+    Devuelve {profile, sector, values, reason, sources}: `values` alimenta el score
+    (P/E y EV/EBITDA frente a la mediana) y las tablas comparativas del PDF."""
+    import re
+    key = re.sub(r'[\s-]+', '_', (mapped_sector or "default").lower())
+    expected = cfg("sectors.benchmarks.sector_archetype").get(key)
+    if expected and archetype and archetype != expected:
+        market = dict(cfg("sectors.benchmarks.market"))
+        return {"profile": "market", "sector": key,
+                "values": {**dict(cfg("sectors.benchmarks.default")), **market},
+                "reason": (f"arquetipo {archetype} dentro del sector {key}, cuyas medianas suponen {expected}: "
+                           "se usan las medianas del mercado amplio (S&P 500)"),
+                "sources": {k: v for k, v in cfg("sectors.benchmarks.market_source").items() if k in market},
+                "provisional": True}
+    return {"profile": "sector", "sector": key, "values": _get_sector_benchmarks(mapped_sector),
+            "reason": None, "sources": None, "provisional": True}
+
+
+def _pdf_benchmark(analysis: dict) -> dict:
+    """Benchmark del PDF: el mismo que usó el score (sector o market)."""
+    sel = (analysis.get("valuation_benchmark") or {}).get("values")
+    return sel or _get_sector_benchmarks((analysis.get("sector_info") or {}).get("mapped_sector", "default"))
+
+
 @app.get("/api/search")
 async def search(q: str = Query("", min_length=1, max_length=100)):
     """Search for stocks by ticker or company name.
@@ -575,9 +602,12 @@ def _compute_analysis(symbol: str) -> dict:
             # EV/EBITDA against the stock's SECTOR (e.g. ~30x for tech, ~12x for
             # banks) instead of a fixed ~20x. Without this, high-P/E sectors look
             # overvalued and low-P/E sectors look cheap regardless of fundamentals.
-            _sector_bench = _get_sector_benchmarks(mapped_sector)
+            _bench_sel = _select_benchmark(mapped_sector, archetype)
+            result["valuation_benchmark"] = _bench_sel
+            _sector_bench = _bench_sel["values"]
             fin_dict["sector_pe"] = _sector_bench.get("pe")
             fin_dict["sector_ev_ebitda"] = _sector_bench.get("ev_ebitda")
+            fin_dict["benchmark_profile"] = _bench_sel["profile"]
 
             # Señal de crecimiento para el scorer (categoría Crecimiento de 20 pts +
             # is_growth + bonos GARP/growth-quality de valoración). El CAGR histórico
@@ -1144,6 +1174,7 @@ def _compute_analysis(symbol: str) -> dict:
                 }
                 _quality_part = score_result.get("quality")
                 _price_part = score_result.get("price_raw")
+                result["eps_vs_revenue_growth"] = score_result.get("eps_vs_revenue_growth")
 
                 # Financial health (sector financiero): calculate_score_v2 ya lo
                 # computó correctamente con los argumentos correctos; exponerlo
@@ -1330,11 +1361,10 @@ async def download_pdf(symbol: str):
                 logo_path = os.path.abspath(_cand)
                 break
 
-        _mapped = (analysis.get("sector_info") or {}).get("mapped_sector", "default")
         buf = io.BytesIO()
         build_report(
             buf, analysis,
-            sector_bench=_get_sector_benchmarks(_mapped),
+            sector_bench=_pdf_benchmark(analysis),
             logo_path=logo_path,
         )
         buf.seek(0)

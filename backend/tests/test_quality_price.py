@@ -185,3 +185,60 @@ def test_pdf_readings_use_score_bands():
     for k in ("roe_bounds", "current_bounds", "de_bounds", "coverage_bounds", "growth_bounds", "upside_bounds",
               "spread_bounds"):
         assert k not in cfg("thresholds.pdf"), k
+
+
+# ─────────────────────────── benchmark: sector o mercado ───────────────────────────
+@pytest.mark.parametrize("sector,arch,profile", [
+    ("financials", "MATURE", "market"), ("financials", "FINANCIAL", "sector"),
+    ("real_estate", "CYCLICAL", "market"), ("real_estate", "REIT", "sector"),
+    ("technology", "GROWTH_PRE_PROFIT", "sector"), ("communication", "MATURE", "sector")])
+def test_benchmark_switches_to_market_when_archetype_contradicts_sector(sector, arch, profile):
+    import main
+    b = main._select_benchmark(sector, arch)
+    assert b["profile"] == profile
+    if profile == "market":
+        M = cfg("sectors.benchmarks.market")
+        assert all(b["values"][k] == v for k, v in M.items()) and set(b["sources"]) == set(M)
+        assert "mercado amplio" in b["reason"] and arch in b["reason"]
+    else:
+        assert b["values"] == main._get_sector_benchmarks(sector) and b["reason"] is None
+
+
+def test_market_profile_has_source_and_date_for_every_median():
+    M, src = cfg("sectors.benchmarks.market"), cfg("sectors.benchmarks.market_source")
+    assert set(M) == set(src) and set(M) <= set(cfg("sectors.benchmarks.default"))
+    for k in M:
+        assert "S&P 500" in src[k] and any(y in src[k] for y in ("2025", "2026")), k
+
+
+def test_v_uses_market_benchmark_and_records_it(outputs_by_env):
+    for env in _envs():
+        res = outputs_by_env(env)
+        a, pdf = res["V"]
+        b = a["valuation_benchmark"]
+        assert b["profile"] == "market" and b["sector"] == "financials"
+        pe = next(x for x in a["score"]["breakdown"]["Valoración"]["adjustments"] if x["metric"] == "P/E vs Sector")
+        assert f"vs {cfg('sectors.benchmarks.market.pe'):.1f}x mercado" in pe["reason"]
+        text = fb.pdf_text(pdf).replace("\n", " ")
+        assert "MERCADO" in text and "Referencia de los múltiplos: medianas del mercado amplio (S&P 500)" in text
+        for sym in ("NFLX", "JPM", "O", "FCX", "SNOW"):
+            assert res[sym][0]["valuation_benchmark"]["profile"] == "sector", (env, sym)
+
+
+# ─────────────────────────── BPA frente a ingresos: informativo ───────────────────────────
+def test_eps_vs_revenue_growth_is_informative_only(outputs_by_env):
+    from financial_ratios import eps_vs_revenue_growth
+    tol = cfg("thresholds.pdf.eps_revenue_gap")
+    assert eps_vs_revenue_growth(0.10, 0.10 + tol + 0.01)["state"] == "expansion"
+    assert eps_vs_revenue_growth(0.10, 0.10 - tol - 0.01)["state"] == "compresion"
+    assert eps_vs_revenue_growth(0.10, 0.10)["state"] == "en_linea"
+    assert eps_vs_revenue_growth(None, 0.1) is None and eps_vs_revenue_growth(0.1, 0.2, "REIT") is None
+    for env in _envs():
+        for sym, (a, pdf) in outputs_by_env(env).items():
+            e = a.get("eps_vs_revenue_growth")
+            metrics = {x["metric"] for c in a["score"]["breakdown"].values() for x in c["adjustments"]}
+            assert not any("frente a ingresos" in m for m in metrics), (env, sym)   # no puntúa
+            if e:
+                assert e["scored"] is False and "Dato informativo, no puntúa" in fb.pdf_text(pdf).replace("\n", " ")
+    nflx = outputs_by_env("prod")["NFLX"][0]["eps_vs_revenue_growth"]
+    assert nflx["state"] == "expansion" and nflx["gap"] == pytest.approx(nflx["eps_growth"] - nflx["revenue_growth"])

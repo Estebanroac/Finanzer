@@ -737,13 +737,24 @@ correctos según los datos, pero aplican reglas genéricas a arquetipos que nece
   P/FCF 0->-2, sin GARP; confianza alta -> media); FCX 40->45 razonable => 10->30 exigente (P/FCF normalizado
   -2->-4, EV/EBITDA normalizado 0->-4); SNOW 30->35 exigente => 20->28 muy exigente (sin "Ajuste Crecimiento" +2);
   JPM y O sin cambios.
-- **Hueco en Calidad del negocio (pendiente de decisión, no movido):** de los componentes de `growth_quality`, el
-  crecimiento de ingresos, el del FCF, el ROE/ROIC y el margen operativo ya puntúan en Calidad (Crecimiento y
-  Rentabilidad). **No está reflejado** el crecimiento del BPA frente al de los ingresos (expansión de márgenes /
-  apalancamiento operativo): Crecimiento puntúa ingresos y BPA por separado, Rentabilidad solo niveles de margen y
-  Piotroski solo el cambio de margen bruto a un año. `fcf_to_net_income` se pasaba como None (sin efecto).
-- **Hallazgo — benchmark de V (pendiente de decisión, no corregido):** V se mapea a "financials" y se compara con
-  las medianas del sector (P/E 13, EV/EBITDA por defecto): P/E -4 y EV/EBITDA -4. Es un problema de benchmark (una
-  red de pagos valorada como un banco) que las bandas growth enmascaraban. Propuesta: benchmark por industria
-  (servicios de pago / tecnología financiera) o de mercado.
+- **BPA frente a ingresos (cerrado: informativo, no puntúa):** la diferencia entre el crecimiento del BPA y el de
+  los ingresos (expansión de márgenes / apalancamiento operativo, o recompras) no puntúa: Crecimiento ya puntúa el
+  BPA y los ingresos por separado y puntuar la diferencia contaría el BPA dos veces. Se publica como
+  `eps_vs_revenue_growth` (`scored: false`, banda "en línea" ±2 pp en `thresholds.pdf.eps_revenue_gap`) con los
+  mismos crecimientos que usa Crecimiento, y el PDF lo muestra en la página de crecimiento como dato informativo.
+  No aplica donde no aplica el BPA (REIT, pre-beneficio).
+- **Benchmark de múltiplos: perfil "market" cuando el arquetipo contradice al sector:** las medianas de un sector
+  suponen un arquetipo (`sectors.benchmarks.sector_archetype`: financials -> FINANCIAL, real_estate -> REIT). Si el
+  arquetipo de la empresa es otro (V: red de pagos MATURE dentro de Financial Services; una inmobiliaria no REIT),
+  P/E y EV/EBITDA se comparan con las medianas del mercado amplio (`[benchmarks.market]`, PROVISIONALES): P/E 23.0x
+  (mediana de los miembros del S&P 500, chartrow.com, 12-oct-2026; método no documentado) y EV/EBITDA 13.2x (mediana
+  del S&P 500 a 1T-2025, Ivaluate; no hay mediana pública de constituyentes de 2026; el agregado de Damodaran
+  ene-2026 sin financieras es 16.95x y no es una mediana). El resto de referencias del perfil hereda de
+  `benchmarks.default` (fijadas a mano, sin fuente). Se registra en `valuation_benchmark` (perfil, motivo,
+  fuentes) y en el PDF (columna MERCADO, nota con fuente y motivo, lecturas "frente a la mediana del mercado").
+  **Resultado en V:** sin cambio de puntuación. Frente al mercado sigue "muy caro": P/E 31.1x / 23.0x = 1.35x
+  (> 1.3x, -4) y EV/EBITDA 28.1x / 13.2x = 2.1x (-4); prod 0 -> 12 y local 20 -> 28, "muy exigente". El
+  "muy exigente" de V no era un artefacto del benchmark de bancos. Cambian solo textos: lecturas y alertas
+  (prod y local pierden la alerta de P/E: +35% y +37% sobre la mediana ya no son prima fuerte). **Pendiente (9b):** el frontend
+  sigue comparando V con el sector (`sectorBench.ts` no exporta el perfil market).
 - **Etapa 11 —** el PDF de revisión se genera desde los fixtures de prod (Rf de config, sin TTM).

@@ -614,8 +614,7 @@ def build_pdf_bytes(analysis, frozen_now, table_style_cls=None):
         p.set(pdf_report, "TableStyle", table_style_cls)
     try:
         buf = io.BytesIO()
-        mapped = (analysis.get("sector_info") or {}).get("mapped_sector", "default")
-        pdf_report.build_report(buf, analysis, sector_bench=main._get_sector_benchmarks(mapped),
+        pdf_report.build_report(buf, analysis, sector_bench=main._pdf_benchmark(analysis),
                                 logo_path=_logo_path())
         return buf.getvalue()
     finally:

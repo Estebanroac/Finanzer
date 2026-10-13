@@ -102,6 +102,7 @@ def _pe(ctx: Ctx):
                     "La empresa no tiene beneficios positivos en los últimos doce meses, así que el "
                     "P/E no es interpretable; la valoración depende de que vuelva a generar utilidades.", T["w_loss"])
     sector_pe = ctx.c.get("sector_pe")
+    _ref_txt = "del mercado (S&P 500)" if ctx.c.get("benchmark_profile") == "market" else "del sector"
     peg = ctx.g("peg")
     # brecha vs sector (si hay dato) o umbral absoluto
     ref = sector_pe if (sector_pe and sector_pe > 0) else None
@@ -110,7 +111,7 @@ def _pe(ctx: Ctx):
         # ¿el crecimiento lo justifica? (PEG / spread)
         justified = (peg is not None and 0 < peg < T["justify_peg_max"]) or (ctx.spread is not None and ctx.spread > T["justify_spread_min"])
         base = (f"El mercado paga {pe:.1f}x beneficios"
-                + (f", un {dev*100:+.0f}% sobre la mediana del sector ({ref:.1f}x)" if ref else ", un múltiplo exigente"))
+                + (f", un {dev*100:+.0f}% sobre la mediana {_ref_txt} ({ref:.1f}x)" if ref else ", un múltiplo exigente"))
         if pe > T["strong_abs"] or (dev is not None and dev > T["strong_dev"]):
             if justified:
                 return _sig("warning", "Valoración", f"Valoración exigente — P/E {pe:.1f}x",
@@ -135,6 +136,7 @@ def _pe(ctx: Ctx):
 def _ev_ebitda(ctx: Ctx):
     ev = ctx.g("ev_ebitda")
     sec = ctx.c.get("sector_ev_ebitda")
+    _mkt = ctx.c.get("benchmark_profile") == "market"
     norm = ""
     if ctx.archetype == CYCLICAL:   # sobre EBITDA normalizado de ciclo medio
         ev, norm = ctx.xv.get("ev_ebitda_normalized"), " normalizado"
@@ -147,12 +149,12 @@ def _ev_ebitda(ctx: Ctx):
                     f"El valor de empresa equivale a {ev:.1f} veces su EBITDA anual, un múltiplo caro en términos absolutos "
                     "que exige un crecimiento sostenido para no defraudar.", T["w_high"])
     if sec and sec > 0 and ev > T["premium_mult"] * sec:
-        return _sig("warning", "Valoración", f"EV/EBITDA{norm} sobre el sector — {ev:.1f}x",
-                    f"Se paga {ev:.1f}x EBITDA frente a {sec:.1f}x de sus pares ({(ev-sec)/sec*100:+.0f}%): el mercado le "
+        return _sig("warning", "Valoración", f"EV/EBITDA{norm} sobre el {'mercado' if _mkt else 'sector'} — {ev:.1f}x",
+                    f"Se paga {ev:.1f}x EBITDA frente a {sec:.1f}x {'de la mediana del mercado' if _mkt else 'de sus pares'} ({(ev-sec)/sec*100:+.0f}%): el mercado le "
                     "asigna una prima que conviene contrastar con su ventaja competitiva.", T["w_premium"])
     if sec and sec > 0 and ev < T["discount_mult"] * sec:
         return _sig("strength", "Valoración", f"EV/EBITDA{norm} barato — {ev:.1f}x",
-                    f"Cotiza a {ev:.1f}x EBITDA frente a {sec:.1f}x del sector: valoración atractiva sobre flujo operativo, "
+                    f"Cotiza a {ev:.1f}x EBITDA frente a {sec:.1f}x {'del mercado' if _mkt else 'del sector'}: valoración atractiva sobre flujo operativo, "
                     "a validar que no responda a un deterioro del negocio.", T["w_discount"])
     return None
 

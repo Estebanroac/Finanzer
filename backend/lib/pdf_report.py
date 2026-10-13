@@ -92,8 +92,8 @@ def _pct(v, dec=1):
     return f"{v * 100:.{dec}f}%"
 
 
-def read_vs_sector(name, val, bench, higher_better, fmt="mult"):
-    """Lectura genérica de una métrica vs la mediana sectorial."""
+def read_vs_sector(name, val, bench, higher_better, fmt="mult", ref="del sector"):
+    """Lectura genérica de una métrica vs la mediana sectorial (o la del mercado: `ref`)."""
     if val is None or bench in (None, 0):
         return None
     diff = (val - bench) / abs(bench) * 100
@@ -113,21 +113,21 @@ def read_vs_sector(name, val, bench, higher_better, fmt="mult"):
         else:            lab, tone = "Prima elevada", 'neg'
     vv = _pct(val) if fmt == "pct" else f"{val:.1f}x"
     bb = _pct(bench) if fmt == "pct" else f"{bench:.1f}x"
-    frase = f"{name} de {vv} frente a {bb} del sector ({d}): {lab.lower()}"
+    frase = f"{name} de {vv} frente a {bb} {ref} ({d}): {lab.lower()}"
     return lab, tone, frase, d
 
 
-def read_pe(pe, sector_pe, spread):
+def read_pe(pe, sector_pe, spread, ref="del sector"):
     if pe is None:
         return None
     if pe <= 0:
         return ("Sin beneficios", 'neg',
                 "el P/E no es significativo al no haber beneficios positivos en los últimos doce meses")
-    r = read_vs_sector("P/E", pe, sector_pe, False)
+    r = read_vs_sector("P/E", pe, sector_pe, False, ref=ref)
     if r is None:
         return ("—", 'neu', f"el P/E se sitúa en {pe:.1f}x")
     lab, tone, _, d = r
-    base = (f"el mercado paga {pe:.1f}x beneficios, un {d} frente a la mediana del sector "
+    base = (f"el mercado paga {pe:.1f}x beneficios, un {d} frente a la mediana {ref} "
             f"({sector_pe:.1f}x)")
     if tone in ('warn', 'neg') and spread is not None and spread > _PDF_BANDS["pe_spread_support"]:
         base += (f"; una prima que encuentra respaldo parcial en la creación de valor de la compañía "
@@ -614,6 +614,15 @@ def card_grid(cards, cols, width, gutter=8):
 def build_report(buf, analysis, sector_bench, logo_path=None):
     S = _styles()
 
+    # Benchmark de los múltiplos (main._select_benchmark): sector o mercado amplio.
+    _vb = analysis.get("valuation_benchmark") or {}
+    _mkt = _vb.get("profile") == "market"
+    _ref = "del mercado (S&P 500)" if _mkt else "del sector"
+    _bcol = "MERCADO" if _mkt else "SECTOR"
+
+    def _rvs(*a, **k):
+        return read_vs_sector(*a, ref=_ref, **k)
+
     profile = analysis.get("profile", {}) or {}
     km = analysis.get("key_metrics", {}) or {}
     price = analysis.get("price")
@@ -681,7 +690,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
                      if f.get("field") == "key_metrics.pe"
                      and f.get("rule") == "multiplo_no_significativo"), None)
     _pe_in = km.get("pe") if km.get("pe") is not None or not _pe_flag else _pe_flag.get("old")
-    r_pe = read_pe(_pe_in, sector_bench.get("pe"), km.get("roic_wacc_spread"))
+    r_pe = read_pe(_pe_in, sector_bench.get("pe"), km.get("roic_wacc_spread"), ref=_ref)
     _th = SECTOR_THRESHOLDS.get((analysis.get("sector_info") or {}).get("mapped_sector") or "default",
                                 ThresholdConfig())   # bandas sectoriales del score (ROE, D/E)
     r_roe = read_roe(km.get("roe"), km.get("roa"), _th)
@@ -1046,11 +1055,12 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     def _benchtxt(bench, fmt):
         if bench is None:
             return ""
-        return f"vs sector {bench * 100:.1f}%" if fmt == 'pct' else f"vs sector {bench:.1f}x"
+        _vs = "vs mercado" if _mkt else "vs sector"
+        return f"{_vs} {bench * 100:.1f}%" if fmt == 'pct' else f"{_vs} {bench:.1f}x"
 
     def _mkcard(label, raw, fmt, benchkey, higher):
         bench = sector_bench.get(benchkey) if benchkey else None
-        r = read_vs_sector(label, raw, bench, higher, 'pct' if fmt == 'pct' else 'mult') \
+        r = _rvs(label, raw, bench, higher, 'pct' if fmt == 'pct' else 'mult') \
             if (bench and raw is not None) else None
         v, u = _mvu(raw, fmt)
         if r:
@@ -1329,7 +1339,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
             rows.append([lab, fv(val, fm), fv(bench, fm) if bench else "—", "—", f"No aplica a {archetype}"])
             reads.append((i, 'neu'))
             continue
-        r = read_vs_sector(lab, val, bench, hb, fm) if bench else None
+        r = _rvs(lab, val, bench, hb, fm) if bench else None
         rows.append([lab, fv(val, fm), fv(bench, fm) if bench else "—",
                      r[3] if r else "—", r[0] if r else "—"])
         if r:
@@ -1344,9 +1354,16 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     if norm.get("pe_unreliable") and norm.get("pe_normalized") is not None and "pe" not in _na_keys:
         rows.append(["P/E normalizado", fv(norm["pe_normalized"], "mult"), "—", "—", "Sin no recurrentes"])
     story.append(data_table(
-        ["MÚLTIPLO", "EMPRESA", "SECTOR", "BRECHA", "LECTURA"], rows,
+        ["MÚLTIPLO", "EMPRESA", _bcol, "BRECHA", "LECTURA"], rows,
         [1.9 * inch, 1.15 * inch, 1.15 * inch, 1.0 * inch, CW - 5.2 * inch],
         aligns=['LEFT', 'RIGHT', 'RIGHT', 'RIGHT', 'RIGHT'], reads=reads))
+    if _mkt:
+        _src = "; ".join(f"{k.replace('_', '/').upper()}: {v}" for k, v in (_vb.get("sources") or {}).items())
+        story.append(Paragraph(_esc(
+            f"Referencia de los múltiplos: medianas del mercado amplio (S&P 500), no las del sector "
+            f"({_vb.get('reason')}). PROVISIONALES. Fuentes: {_src}. El resto de referencias de la columna "
+            "MERCADO (Forward P/E, P/B, PEG, P/FCF, FCF yield, rentabilidad y márgenes) son la referencia general "
+            "PROVISIONAL, fijada a mano y sin fuente, no medianas del S&P 500."), S['small']))
     # Etapa 7: beneficio normalizado (una línea cuando hay partidas no recurrentes aplicadas).
     if norm.get("applied") and norm.get("normalized_net_income") is not None:
         def _it_txt(it):
@@ -1582,7 +1599,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     ]
     rows, reads = [], []
     for i, (lab, val, bench, hb, fm) in enumerate(ret_defs):
-        r = read_vs_sector(lab, val, bench, hb, fm) if bench else None
+        r = _rvs(lab, val, bench, hb, fm) if bench else None
         rows.append([lab, fv(val, fm), fv(bench, fm) if bench else "—",
                      r[3] if r else "—", r[0] if r else "—"])
         if r:
@@ -1605,7 +1622,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
                          + (", ciclo incompleto)" if km.get("roce_cycle_incomplete") else ")"),
                          fv(km.get("roce_avg"), "pct"), "—", "—", "Ciclo medio"])
     story.append(data_table(
-        ["MÉTRICA", "EMPRESA", "SECTOR", "BRECHA", "LECTURA"], rows,
+        ["MÉTRICA", "EMPRESA", _bcol, "BRECHA", "LECTURA"], rows,
         [1.9 * inch, 1.15 * inch, 1.15 * inch, 1.0 * inch, CW - 5.2 * inch],
         aligns=['LEFT', 'RIGHT', 'RIGHT', 'RIGHT', 'RIGHT'], reads=reads))
     _div = km.get("roce_roic_divergence") or {}
@@ -1720,10 +1737,20 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         rows.append([lab, fv(val, fm), rd[0] if rd else "—"])
         if rd:
             reads.append((i, rd[1]))
+    # Etapa 9a: BPA frente a ingresos, informativo (no puntúa: Crecimiento ya puntúa ambos).
+    _evr = analysis.get("eps_vs_revenue_growth")
+    if _evr:
+        reads.append((len(rows), {"expansion": 'pos', "compresion": 'warn'}.get(_evr["state"], 'neu')))
+        rows.append(["BPA frente a ingresos (informativo)", f"{_evr['gap'] * 100:+.1f} pp", _evr["label"]])
     if rows:
         story.append(data_table(["MÉTRICA", "VALOR", "LECTURA"], rows,
                                 [3.2 * inch, 1.6 * inch, CW - 4.8 * inch],
                                 aligns=['LEFT', 'RIGHT', 'RIGHT'], reads=reads))
+    if _evr:
+        story.append(Paragraph(_esc(
+            f"BPA frente a ingresos: BPA {_evr['eps_growth'] * 100:+.1f}% frente a ingresos "
+            f"{_evr['revenue_growth'] * 100:+.1f}% (los crecimientos que puntúa Crecimiento): {_evr['reading']}. "
+            "Dato informativo, no puntúa: Crecimiento ya puntúa el BPA y los ingresos por separado."), S['small']))
 
     # Rango 52 semanas con barra de ZONAS en curva de riesgo (U)
     if pos52 is not None:

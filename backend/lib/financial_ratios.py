@@ -575,6 +575,32 @@ def piotroski_f_score(*args, **kwargs) -> Tuple[int, List[str], str]:
     return r["score"], details, r["interpretation"]
 
 
+def eps_vs_revenue_growth(revenue_growth: Optional[float], eps_growth: Optional[float],
+                          archetype: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    """BPA frente a ingresos: DATO INFORMATIVO, no puntúa (etapa 9a).
+
+    Crecimiento ya puntúa el BPA y los ingresos por separado; puntuar además su
+    diferencia contaría el BPA dos veces. Mismos crecimientos que usa Crecimiento.
+    Sin dato si falta alguno o el BPA no aplica al arquetipo."""
+    if not_applicable(archetype, "eps_growth") or revenue_growth is None or eps_growth is None:
+        return None
+    gap = eps_growth - revenue_growth
+    tol = cfg("thresholds.pdf.eps_revenue_gap")
+    if gap > tol:
+        state, label = "expansion", "BPA por delante"
+        reading = ("el BPA crece más rápido que los ingresos: márgenes en expansión, apalancamiento "
+                   "operativo o recompras")
+    elif gap < -tol:
+        state, label = "compresion", "BPA por detrás"
+        reading = "el BPA crece más despacio que los ingresos: márgenes en compresión o dilución"
+    else:
+        state, label = "en_linea", "En línea"
+        reading = "el BPA crece en línea con los ingresos"
+    return {"revenue_growth": revenue_growth, "eps_growth": eps_growth, "gap": gap, "state": state,
+            "label": label, "reading": reading, "scored": False,
+            "note": "dato informativo: no puntúa (Crecimiento ya puntúa BPA e ingresos por separado)"}
+
+
 def growth_for_bands(g: Optional[float]) -> Optional[float]:
     """Estancamiento (etapa 6): un crecimiento entre −tolerancia y 0 se puntúa como
     plano (la banda 0–x%), no como contracción. Agregados aproximados como el FFO
@@ -2470,6 +2496,7 @@ def score_valoracion(
     sector_pe: Optional[float] = None,
     sector_ev_ebitda: Optional[float] = None,
     fcf_yield: Optional[float] = None,
+    benchmark_profile: Optional[str] = None,
     # Parámetros v2.2+ para ajuste growth/value
     revenue_growth_3y: Optional[float] = None,
     eps_growth_3y: Optional[float] = None,
@@ -2641,6 +2668,8 @@ def score_valoracion(
     # ─── P/E vs Sector (hasta ±5 pts) — si aplica al arquetipo ─────
     if not _na["pe"] and not is_reit and pe is not None and pe > 0:
         pe_threshold = sector_pe if sector_pe and sector_pe > 0 else _BENCH_FALLBACK["pe"]
+        # Benchmark del mercado amplio cuando el arquetipo contradice al sector (main._select_benchmark).
+        _vs = " mercado" if benchmark_profile == "market" else ""
 
         # Etapa 9a: una sola banda por arquetipo. Sin bandas "growth" más tolerantes ni
         # atenuación por calidad del crecimiento: el crecimiento entra al precio una sola
@@ -2648,19 +2677,19 @@ def score_valoracion(
         m, p = T["pe_value_mults"], T["pe_value_points"]
         if pe <= pe_threshold * m[0]:
             adj = p[0]; sev = "excellent"
-            reason = f"Muy barato ({pe:.1f}x vs {pe_threshold:.1f}x sector)"
+            reason = f"Muy barato ({pe:.1f}x vs {pe_threshold:.1f}x{_vs or ' sector'})"
         elif pe <= pe_threshold * m[1]:
             adj = p[1]; sev = "good"
             reason = f"Atractivo ({pe:.1f}x)"
         elif pe <= pe_threshold * m[2]:
             adj = p[2]; sev = "ok"
-            reason = f"En línea ({pe:.1f}x vs {pe_threshold:.1f}x)"
+            reason = f"En línea ({pe:.1f}x vs {pe_threshold:.1f}x{_vs})"
         elif pe <= pe_threshold * m[3]:
             adj = p[3]; sev = "moderate"
-            reason = f"Premium ({pe:.1f}x vs {pe_threshold:.1f}x)"
+            reason = f"Premium ({pe:.1f}x vs {pe_threshold:.1f}x{_vs})"
         else:
             adj = p[4]; sev = "severe"
-            reason = f"Muy caro ({pe:.1f}x vs {pe_threshold:.1f}x)"
+            reason = f"Muy caro ({pe:.1f}x vs {pe_threshold:.1f}x{_vs})"
 
         base_score += adj
         _a["pe"] = adj
@@ -2714,12 +2743,13 @@ def score_valoracion(
     # ─── EV/EBITDA vs Sector (hasta ±4 pts) ────────────
     if not _na["ev_ebitda"] and ev_ebitda is not None and ev_ebitda > 0:
         ev_threshold = sector_ev_ebitda if sector_ev_ebitda and sector_ev_ebitda > 0 else _BENCH_FALLBACK["ev_ebitda"]
+        _vs = " mercado" if benchmark_profile == "market" else ""
 
         # Etapa 9a: bandas de valor únicamente (ver P/E).
         m, p = T["ev_ebitda_value_mults"], T["ev_ebitda_value_points"]
         if ev_ebitda <= ev_threshold * m[0]:
             adj = p[0]; sev = "excellent"
-            reason = f"Muy barato ({ev_ebitda:.1f}x vs {ev_threshold:.1f}x)"
+            reason = f"Muy barato ({ev_ebitda:.1f}x vs {ev_threshold:.1f}x{_vs})"
         elif ev_ebitda <= ev_threshold:
             adj = p[1]; sev = "good"
             reason = f"Atractivo ({ev_ebitda:.1f}x)"
@@ -2728,10 +2758,10 @@ def score_valoracion(
             reason = f"En línea ({ev_ebitda:.1f}x)"
         elif ev_ebitda <= ev_threshold * m[2]:
             adj = p[3]; sev = "moderate"
-            reason = f"Premium ({ev_ebitda:.1f}x vs {ev_threshold:.1f}x)"
+            reason = f"Premium ({ev_ebitda:.1f}x vs {ev_threshold:.1f}x{_vs})"
         else:
             adj = p[4]; sev = "severe"
-            reason = f"Muy caro ({ev_ebitda:.1f}x vs {ev_threshold:.1f}x)"
+            reason = f"Muy caro ({ev_ebitda:.1f}x vs {ev_threshold:.1f}x{_vs})"
 
         base_score += adj
         _a["ev"] = adj
@@ -3296,6 +3326,7 @@ def calculate_score_v2(
         peg=ratio_values.get("peg"),
         sector_pe=contextual_values.get("sector_pe"),
         sector_ev_ebitda=contextual_values.get("sector_ev_ebitda"),
+        benchmark_profile=contextual_values.get("benchmark_profile"),
         fcf_yield=ratio_values.get("fcf_yield"),
         revenue_growth_3y=contextual_values.get("revenue_cagr_3y"),
         eps_growth_3y=contextual_values.get("eps_cagr_3y"),
@@ -3363,6 +3394,8 @@ def calculate_score_v2(
     result = {
         "quality": quality_part,
         "price_raw": price_part,
+        "eps_vs_revenue_growth": eps_vs_revenue_growth(contextual_values.get("revenue_cagr_3y"),
+                                                       contextual_values.get("eps_cagr_3y"), archetype),
         "categories": categories,
         "category_scores": {
             "solidez": solidez["score"],

@@ -143,6 +143,25 @@ roe = 0.12
 net_margin = 0.08
 de = 0.6
 
+# ── Perfil "market": medianas del mercado amplio (S&P 500) — PROVISIONAL ──
+# Se usa EN LUGAR de las medianas del sector cuando el arquetipo contradice al
+# sector de Yahoo (p. ej. una red de pagos de Financial Services clasificada
+# MATURE): las medianas del sector describen a empresas de otro arquetipo
+# (bancos con P/E ~13). Las métricas que no figuran aquí heredan de default.
+[benchmarks.market]                # PROVISIONAL
+pe = 23.0
+ev_ebitda = 13.2
+
+[benchmarks.market_source]         # fuente y fecha de cada mediana del perfil market
+pe = "mediana de los miembros del S&P 500 (P/E TTM), chartrow.com/sp500/pe-ratio, cierre del 12-oct-2026; método de la mediana no documentado por la fuente"
+ev_ebitda = "mediana EV/EBITDA del S&P 500 a 1T-2025 (Ivaluate, 'EV/EBITDA multiples by sector 2025-2026', jul-2026); no hay mediana pública de constituyentes de 2026 (Damodaran ene-2026, agregado de todo EE. UU. sin financieras: 16.95x, no es una mediana)"
+
+# Arquetipo que suponen las medianas de cada sector. Si el arquetipo de la
+# empresa es otro, el benchmark es el perfil market (y se registra por qué).
+[benchmarks.sector_archetype]
+financials = "FINANCIAL"
+real_estate = "REIT"
+
 # Medianas de respaldo dentro del motor cuando no llega la del sector.
 [benchmarks.engine_fallback]       # PROVISIONAL
 pe = 20                            # classify_company_type, adjust_valuation_for_growth, score_valoracion
