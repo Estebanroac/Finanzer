@@ -296,7 +296,8 @@ def test_multiples_block_averages_members_and_caps_at_max(outputs_by_env):
             assert val["score"] == max(0, min(20, 10 + counted)), (env, sym)
     v = outputs_by_env("prod")["V"][0]["score"]["breakdown"]["Valoración"]["adjustments"]
     blk = next(x for x in v if x["metric"] == "Bloque de múltiplos")
-    assert blk["block_members"] == ["P/E", "Forward P/E", "P/FCF", "EV/EBITDA", "PEG"] and blk["adjustment"] == -3
+    # Etapa 11b: −4 (antes −3): la compresión del Forward P/E (24.2x, peor banda frente a 18x × 1.3) ya no suma.
+    assert blk["block_members"] == ["P/E", "Forward P/E", "P/FCF", "EV/EBITDA", "PEG"] and blk["adjustment"] == -4
 
 
 def test_block_pdf_shows_each_multiple_and_the_block_line(outputs_by_env):

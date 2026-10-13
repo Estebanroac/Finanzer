@@ -38,6 +38,42 @@ STATEMENT_ATTRS = {
 }
 
 
+# Etapa 11b: nombres alternativos de filas (emisores IFRS y variantes de Yahoo). Si falta la
+# fila canónica, se crea desde la primera alternativa con dato. El resto del motor solo
+# conoce el nombre canónico.
+ROW_ALIASES = {
+    "Operating Cash Flow": ("Cash Flow From Continuing Operating Activities",),
+    "Capital Expenditure": ("Purchase Of PPE",),
+    "Depreciation And Amortization": ("Depreciation Amortization Depletion", "Depreciation"),
+    "Common Stock Dividend Paid": ("Cash Dividends Paid",),
+}
+
+
+def add_row_aliases(df):
+    """(df con las filas canónicas que faltaban, [(canónica, alternativa usada)])."""
+    used = []
+    if df is None or getattr(df, "empty", True):
+        return df, used
+    out = None
+    for canon, alts in ROW_ALIASES.items():
+        if canon in df.index and df.loc[canon].notna().any():
+            continue
+        alt = next((a for a in alts if a in df.index and df.loc[a].notna().any()), None)
+        if alt is None:
+            continue
+        out = df.copy() if out is None else out
+        out.loc[canon] = df.loc[alt]
+        used.append((canon, alt))
+    # FCF por definición si la fuente no lo da (OCF + capex, capex en negativo).
+    cur = out if out is not None else df
+    if ("Free Cash Flow" not in cur.index or not cur.loc["Free Cash Flow"].notna().any()) and \
+            "Operating Cash Flow" in cur.index and "Capital Expenditure" in cur.index:
+        out = cur.copy() if out is None else out
+        out.loc["Free Cash Flow"] = cur.loc["Operating Cash Flow"] + cur.loc["Capital Expenditure"]
+        used.append(("Free Cash Flow", "Operating Cash Flow + Capital Expenditure"))
+    return (out if out is not None else df), used
+
+
 class CurrencyConversionError(RuntimeError):
     """Estados en otra moneda y sin tipo de cambio: el análisis no se hace."""
 
@@ -155,6 +191,7 @@ class StatementContext:
         self._lock = threading.Lock()
         self._class_done = False
         self._cache: Dict[str, Any] = {}
+        self.row_aliases: Dict[str, list] = {}   # estado -> [(fila canónica, alternativa)]
 
     # ── preparación (una vez por fetch) ──
     def prepare_fx(self) -> None:
@@ -283,6 +320,8 @@ class StatementContext:
         out = {"statements": self.statement_currency, "price": self.price_currency_raw,
                "source": self.currency_source, "converted": bool(self.convert_currency),
                "share_class": self.class_detail}
+        if self.row_aliases:
+            out["row_aliases"] = {k: [f"{c} ← {a}" for c, a in v] for k, v in sorted(self.row_aliases.items())}
         if self.convert_currency:
             syms = [fx_symbol(c) for c in (self.statement_currency, self.price_currency) if c and c != "USD"]
             out.update({"fx_symbols": syms,

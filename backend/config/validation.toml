@@ -41,3 +41,15 @@ pe_min = 1.0
 pe_max = 1000.0
 pb_min = 0.05
 eps_vs_net_income_max_dev = 0.20   # |BPA × acciones − beneficio neto| / |beneficio neto|
+
+# Etapa 11b: filas de los estados anuales que cada arquetipo necesita. Si falta alguna, la
+# validación deja un aviso (no corrige nada): el componente que la usa queda sin dato.
+# Claves de _statements_fy (yf_adapter); "common" aplica a todos.
+[required_rows]
+common = ["revenue", "net_income", "total_assets", "stockholders_equity"]
+FINANCIAL = []
+REIT = ["operating_cash_flow", "depreciation_amortization"]
+UTILITY = ["operating_cash_flow", "ebitda"]
+GROWTH_PRE_PROFIT = ["operating_cash_flow", "capital_expenditure", "stock_based_compensation"]
+CYCLICAL = ["operating_cash_flow", "capital_expenditure", "depreciation_amortization"]
+MATURE = ["operating_cash_flow", "capital_expenditure"]

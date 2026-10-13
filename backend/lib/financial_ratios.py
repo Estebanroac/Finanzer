@@ -1830,7 +1830,13 @@ def score_solidez_financiera(
             adj = p[4]
             sev = "severe"
             reason = "Riesgo de cobertura"
-        
+        if archetype == UTILITY:
+            # Etapa 11b: bandas de utility regulada (opera con 2.5–3.5x por su deuda estructural).
+            b, p = T["utility_coverage_bounds"], T["utility_coverage_points"]
+            adj, sev, lab = _banded(interest_coverage, b, p, ("Fuerte", "Adecuada", "En línea", "Ajustada", "Riesgo"))
+            reason = (f"Cobertura {lab.lower()} para una utility (bandas ≥{b[0]:g}x / ≥{b[1]:g}x / ≥{b[2]:g}x / "
+                      f"≥{b[3]:g}x)")
+
         base_score += adj
         _a["coverage"] = adj
         if _ic_state == "negativa":
@@ -2369,6 +2375,7 @@ def score_valoracion(
     sector_ev_ebitda: Optional[float] = None,
     fcf_yield: Optional[float] = None,
     benchmark_profile: Optional[str] = None,
+    sector_forward_pe: Optional[float] = None,
     # Parámetros v2.2+ para ajuste growth/value
     revenue_growth_3y: Optional[float] = None,
     eps_growth_3y: Optional[float] = None,
@@ -2587,6 +2594,15 @@ def score_valoracion(
             # Etapa 9a: con dato y sin compresión cuenta como 0 en el promedio del bloque.
             adj, sev = 0, "ok"
             reason = f"Sin compresión del P/E ({pe:.0f}x → {forward_pe:.0f}x forward)"
+        # Etapa 11b: la compresión no suma si el Forward P/E sigue en la peor banda frente a su
+        # referencia (PLTR: 177x -> 89x es "fuerte compresión", pero 89x sigue muy caro).
+        _fref = sector_forward_pe if sector_forward_pe and sector_forward_pe > 0 else (
+            sector_pe if sector_pe and sector_pe > 0 else _BENCH_FALLBACK["pe"])
+        _worst = _fref * T["pe_value_mults"][-1]
+        if adj > 0 and forward_pe > _worst:
+            reason = (f"{reason}, sin efecto: el Forward P/E ({forward_pe:.1f}x) sigue en la peor banda "
+                      f"(> {_worst:.1f}x = {_fref:.1f}x de referencia × {T['pe_value_mults'][-1]:g})")
+            adj, sev = 0, "ok"
         _blk["Forward P/E"] = (adj, [*p, 0])
         adjustments.append({"metric": "Forward P/E", "value": f"{forward_pe:.1f}x", "adjustment": adj,
                             "reason": reason, "severity": sev, "in_block": True})
@@ -3379,6 +3395,7 @@ def calculate_score_v2(
         ev_ebitda=ratio_values.get("ev_ebitda"),
         peg=ratio_values.get("peg"),
         sector_pe=contextual_values.get("sector_pe"),
+        sector_forward_pe=contextual_values.get("sector_forward_pe"),
         sector_ev_ebitda=contextual_values.get("sector_ev_ebitda"),
         benchmark_profile=contextual_values.get("benchmark_profile"),
         fcf_yield=ratio_values.get("fcf_yield"),

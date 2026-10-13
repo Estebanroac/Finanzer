@@ -160,7 +160,7 @@ def read_de(de, threshold=None, coverage=None, market=False):
     return ("Alto", 'neg', f"el apalancamiento es alto (D/E {de:.2f}x)" + ref)
 
 
-def read_coverage(ic, state=None):
+def read_coverage(ic, state=None, utility=False):
     # Etapa 5: EBIT < 0 con caja neta -> no significativa; con deuda neta ->
     # riesgo, sin presentar la cifra negativa como si fuera una cobertura.
     if state == "no_significativo":
@@ -170,6 +170,17 @@ def read_coverage(ic, state=None):
     if state == "negativa":
         return ("Riesgo", 'neg', "el resultado operativo es negativo (EBIT < 0) y la empresa tiene deuda neta: "
                 "los intereses no se cubren con el negocio")
+    if utility:   # etapa 11b: bandas de utility regulada del score (utility_coverage_*)
+        b = cfg("thresholds.score.solidez.utility_coverage_bounds")
+        if ic >= b[0]: return ("Fuerte", 'pos', f"la cobertura de intereses ({ic:.1f}x) es fuerte para una utility "
+                                               "regulada")
+        if ic >= b[1]: return ("Adecuada", 'pos', f"la cobertura de intereses ({ic:.1f}x) es adecuada para una utility "
+                                                  "regulada")
+        if ic >= b[2]: return ("En línea", 'neu', f"la cobertura de intereses ({ic:.1f}x) está en línea con las "
+                                                  "utilities reguladas")
+        if ic >= b[3]: return ("Ajustada", 'warn', f"la cobertura de intereses ({ic:.1f}x) es ajustada incluso para "
+                                                   "una utility")
+        return ("Riesgo", 'neg', f"la cobertura de intereses ({ic:.1f}x) es baja incluso para una utility regulada")
     b = cfg("thresholds.score.solidez.coverage_bounds")   # las del score
     if ic >= b[0]:  return ("Muy holgada", 'pos', f"la deuda es fácilmente servible: cobertura de intereses de {ic:.1f}x")
     if ic >= b[1]:  return ("Sólida", 'pos', f"el beneficio operativo cubre {ic:.1f} veces el gasto por intereses")
@@ -575,7 +586,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         de_mode = "no_significativo"
         r_de = ("No significativo", 'neu', f"con caja neta, el D/E ({km['de']:.2f}x) no mide apalancamiento")
     ic_state = km.get("interest_coverage_state")
-    r_ic = read_coverage(km.get("interest_coverage"), ic_state)
+    r_ic = read_coverage(km.get("interest_coverage"), ic_state, utility=archetype == "UTILITY")
     nde_state = km.get("net_debt_to_ebitda_state")
     r_nde = read_nde(km.get("net_debt_to_ebitda"), nde_state, km.get("net_debt"), reit=archetype == "REIT",
                      utility=archetype == "UTILITY")
@@ -1668,6 +1679,10 @@ def score_bands(key, *, th=None, reit=False, utility=False, ffo=False, cycle=Fal
                    ['pos', 'pos', 'neu', 'warn', 'neg'], _f_mult)
         out[-1]["label"] += f" (Alto, servible con cobertura ≥ {T['de_mitigation_coverage']:.0f}x)"
         return [{"range": "< 0", "label": "Equity negativo", "tone": 'warn'}] + out
+    if key == "interest_coverage" and utility:
+        return _desc(cfg("thresholds.score.solidez.utility_coverage_bounds"),
+                     ["Fuerte", "Adecuada", "En línea", "Ajustada", "Riesgo"],
+                     ['pos', 'pos', 'neu', 'warn', 'neg'], _f_mult)
     if key == "interest_coverage":
         return _desc(cfg("thresholds.score.solidez.coverage_bounds"),
                      ["Muy holgada", "Sólida", "Aceptable", "Justa", "Crítica"],
@@ -1796,7 +1811,8 @@ def band_tooltips(a, sector_bench, th, mkt, ref, na, de_mode, cyc):
         add("de", "", [], f"{not_applicable_text(archetype)}: el apalancamiento se mide por la deuda neta/EBITDA.")
     else:
         add("de", "", [], DE_NOT_APPLICABLE + ".")
-    add("interest_coverage", "Bandas del score", score_bands("interest_coverage"))
+    add("interest_coverage", "Bandas de utility regulada" if utility else "Bandas del score",
+        score_bands("interest_coverage", utility=utility))
     add("net_debt_to_ebitda", "Bandas de REIT" if reit else "Bandas de utility regulada" if utility
         else "Bandas del informe", score_bands("net_debt_to_ebitda", reit=reit, utility=utility))
     if archetype == "GROWTH_PRE_PROFIT":

@@ -384,6 +384,29 @@ def _rule_per_share_plausibility(c: _Ctx):
                    f"P/B de la fuente de {pb:.4g}x < {_P['pb_min']:g}x: mezcla clases o monedas; no puntúa")
 
 
+# Etapa 11b: nombre de Yahoo de cada fila requerida (texto del aviso).
+_ROW_NAMES = {"revenue": "Total Revenue", "net_income": "Net Income", "total_assets": "Total Assets",
+              "stockholders_equity": "Stockholders Equity", "operating_cash_flow": "Operating Cash Flow",
+              "capital_expenditure": "Capital Expenditure", "depreciation_amortization": "Depreciation And Amortization",
+              "stock_based_compensation": "Stock Based Compensation", "ebitda": "EBITDA"}
+
+
+def missing_key_rows(statements_fy: Optional[Dict[str, Any]], archetype: Optional[str]) -> List[Dict[str, Any]]:
+    """Avisos por filas de los estados anuales que el arquetipo necesita y no llegaron (ni con su
+    nombre alternativo IFRS). Se calcula tras clasificar: depende del arquetipo."""
+    st = statements_fy or {}
+    req = cfg("validation.required_rows")
+    keys = list(req["common"]) + [k for k in (req.get(archetype or "") or []) if k not in req["common"]]
+    flags = []
+    for k in keys:
+        if not any(v is not None for v in (st.get(k) or [])):
+            flags.append({"field": f"_statements_fy.{k}", "rule": "fila_clave_ausente", "action": "aviso",
+                          "old": None, "new": None,
+                          "reason": f"falta la fila '{_ROW_NAMES.get(k, k)}' en los estados anuales (ni con su nombre "
+                                    "alternativo IFRS): los componentes que la usan quedan sin dato"})
+    return flags
+
+
 _INPUT_RULES = (_rule_fcf, _rule_impossible, _rule_margins, _rule_units,
                 _rule_growth, _rule_split_basis, _rule_jumps, _rule_per_share_plausibility)
 

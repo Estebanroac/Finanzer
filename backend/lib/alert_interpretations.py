@@ -414,6 +414,22 @@ def _coverage(ctx: Ctx):
                     f"El beneficio operativo apenas cubre {ic:.1f} veces el gasto por intereses: un margen peligrosamente "
                     "fino que deja a la empresa muy expuesta ante cualquier caída del resultado operativo.", T["w_critical"])
     t = ctx.t
+    if ctx.archetype == UTILITY:
+        # Etapa 11b: bandas de utility regulada (las mismas que Solidez).
+        b = _SC_SOLIDEZ["utility_coverage_bounds"]
+        if ic < b[3]:
+            return _sig("risk", "Solidez financiera", f"Cobertura de intereses baja para una utility — {ic:.1f}x",
+                        f"El beneficio operativo cubre {ic:.1f} veces el gasto por intereses, por debajo de lo habitual "
+                        f"en una utility regulada ({b[3]:g}x): poco margen si sube el coste de la deuda.", T["w_critical"])
+        if ic < b[2]:
+            return _sig("warning", "Solidez financiera", f"Cobertura de intereses ajustada — {ic:.1f}x",
+                        f"Cubre {ic:.1f} veces sus intereses, en el tramo bajo de una utility regulada (en línea desde "
+                        f"{b[2]:g}x): conviene vigilar las revisiones tarifarias y el coste de la deuda.", T["w_tight"])
+        if ic >= b[0]:
+            return _sig("strength", "Solidez financiera", f"Cobertura de intereses fuerte para una utility — {ic:.1f}x",
+                        f"Cubre {ic:.1f} veces sus intereses, por encima de lo habitual en una utility regulada.",
+                        T["w_comfortable"])
+        return None
     if ic < t.interest_coverage_low:
         return _sig("warning", "Solidez financiera", f"Cobertura de intereses justa — {ic:.1f}x",
                     f"El resultado operativo cubre {ic:.1f}x el gasto por intereses, por debajo del mínimo cómodo "

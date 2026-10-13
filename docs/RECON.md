@@ -913,3 +913,24 @@ correctos según los datos, pero aplican reglas genéricas a arquetipos que nece
   alta -> media), V local (23.8% -> 10.9%: precio 50 -> 30 "exigente", confianza media -> alta) y V prod (14.4% ->
   10.9%: precio 39 -> 25 "muy exigente", confianza media -> alta); NFLX prod y SNOW cambian el valor del DCF sin
   cambiar su aporte; FCX, JPM y O no cambian. La calidad no cambia en ningún caso.
+
+### 7.16 Etapa 11b: muestra amplia en producción (pendientes registrados)
+
+- **BRK-B marcada "posible cíclica" (sin corregir).** Su industria de Yahoo es `Insurance - Diversified`, así que
+  el clasificador la trata como aseguradora (FINANCIAL, regla `industria_aseguradora`). La confianza de la
+  clasificación sale **baja** por la alerta de posible cíclica: la desviación del crecimiento interanual de
+  ingresos es de **52.5 pp** (umbral 15 pp). Causa probable: los "ingresos" de Berkshire incluyen las ganancias y
+  pérdidas de su cartera de inversiones (valor razonable de acciones cotizadas), que saltan de un año a otro sin
+  que el negocio asegurador ni las filiales operativas sean cíclicos. Pendiente decidir: excluir las ganancias de
+  inversión de la serie de ingresos para la regla de volatilidad, o tratar los conglomerados aparte.
+- **Clase de acciones en BRK-B:** los estados de yfinance dan el BPA por acción B y las acciones en equivalentes A
+  (1.44 M); Finnhub da el BPA de la clase A (59 668). Corregido en la 11b (factor de clase por fila; Finnhub no
+  impone BPA cuando los estados se reexpresaron; regla de plausibilidad de P/E y P/B).
+- **IFRS:** ASML no tiene la fila `Operating Cash Flow` (usa `Cash Flow From Continuing Operating Activities`);
+  NVO y JPM dan `Cash Dividends Paid`; FCX da `Depreciation Amortization Depletion`. Corregido con alias de
+  filas (`currency.ROW_ALIASES`) y aviso `fila_clave_ausente` por arquetipo. `Cash Dividends Paid` incluye los
+  dividendos preferentes: el payout de JPM sube de 26.6% (Finnhub, TTM) a 29.1% (estados, FY).
+- **Plan B siempre "degradado":** en Render `info` y quoteSummary dan 401, el plan B nunca trae beta, forward,
+  dividendo ni crecimientos y `_is_degraded` lo daba por degradado: dos reintentos completos más 2.4 s de espera
+  (10–12 s por análisis en frío). Corregido: sin reintentos en el plan B, bloqueo de quoteSummary recordado 10 min
+  y estados anuales descargados una sola vez (3.2–4.4 s simulando Render).

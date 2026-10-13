@@ -516,6 +516,7 @@ def reset_state():
     yf_adapter._session = None
     yf_adapter._crumb = None
     yf_adapter._profile_idx = 0
+    yf_adapter._qs_blocked_until = 0.0   # etapa 11b: bloqueo recordado de quoteSummary
     data_fetcher._data_cache.clear()
     finnhub_fallback._cache.clear()
 

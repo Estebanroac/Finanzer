@@ -47,6 +47,10 @@ _NESTED_KEYS = ("_yahoo_ratios", "_prior_year", "_current_derived", "_piotroski_
 # leen a través de _stmt_ticker(), que los devuelve en la moneda y la clase de la
 # cotización. Se crea en _do_fetch / _fallback_yfinance y se retira en get_ticker_info.
 _STMT_CTX: Dict[str, Any] = {}
+# Etapa 11b (velocidad): hasta cuándo se da por bloqueado quoteSummary (401) y se va directo
+# al plan B. 0 = no bloqueado. Lo vacía el reset de los tests.
+_qs_blocked_until = 0.0
+_QS_BLOCK_TTL = _D["quotesummary_block_ttl_s"]
 _TIMESERIES_URL = "https://query2.finance.yahoo.com/ws/fundamentals-timeseries/v1/finance/timeseries/{sym}"
 _TIMESERIES_PERIOD1 = "473385600"   # 1985: todos los ejercicios disponibles (Yahoo da ~4)
 
@@ -59,10 +63,14 @@ class _StatementsTicker:
         self._ctx = ctx
 
     def __getattr__(self, name):
-        from currency import STATEMENT_ATTRS
+        from currency import STATEMENT_ATTRS, add_row_aliases
         val = getattr(self._t, name)
         if name in STATEMENT_ATTRS:
             ctx = self._ctx
+            # Etapa 11b: filas con nombre IFRS -> nombre canónico (antes de convertir).
+            val, used = add_row_aliases(val)
+            if used:
+                ctx.row_aliases[name] = used
             if not ctx._class_done:
                 try:
                     raw_bs = val if name == "balance_sheet" else self._t.balance_sheet
@@ -350,8 +358,12 @@ def get_ticker_info(symbol: str) -> Dict[str, Any]:
             _STMT_CTX.pop(symbol, None)
 
         # ── Defensa 1: reintento ante respuesta degradada ──
+        # Etapa 11b: no en el plan B. Ahí faltan por construcción beta, forward, dividendo y
+        # crecimientos (fast_info no los trae y info está bloqueado): siempre parecía
+        # "degradado" y se repetía todo dos veces más (+2.4 s de espera). Esos huecos los cubre
+        # Finnhub (defensa 4).
         attempts = 0
-        while _is_degraded(info) and attempts < 2:
+        while _is_degraded(info) and attempts < 2 and info.get("_data_path") != "plan_b_yfinance":
             attempts += 1
             logger.warning(
                 f"[DEGRADED] {symbol}: {_completeness(info)}/{len(_COMPLETENESS_FIELDS)} "
@@ -467,6 +479,11 @@ def _do_fetch(symbol: str) -> Dict[str, Any]:
 
     _ensure_session()
 
+    global _qs_blocked_until
+    if time.time() < _qs_blocked_until:
+        logger.info(f"[PLAN B] quoteSummary bloqueado (401 reciente): {symbol} va directo al plan B")
+        return _fallback_yfinance(symbol)
+
     modules = [
         "financialData", "defaultKeyStatistics", "assetProfile",
         "price", "summaryDetail",
@@ -495,6 +512,8 @@ def _do_fetch(symbol: str) -> Dict[str, Any]:
 
         if r.status_code != 200:
             logger.error(f"Yahoo API failed for {symbol}: {r.status_code}")
+            if r.status_code == 401:   # crumb rechazado aun refrescado: bloqueo de la IP, no del símbolo
+                _qs_blocked_until = time.time() + _QS_BLOCK_TTL
             return _fallback_yfinance(symbol)
 
     try:
@@ -988,7 +1007,7 @@ def _apply_ttm(symbol: str, info: Dict[str, Any], plan_b: bool) -> Dict[str, Any
     return info
 
 
-def _enrich_prior_year_data(symbol: str, info: Dict[str, Any]) -> Dict[str, Any]:
+def _enrich_prior_year_data(symbol: str, info: Dict[str, Any], ticker=None) -> Dict[str, Any]:
     """
     Enrich prior-year data using yfinance historical statements.
 
@@ -1003,7 +1022,9 @@ def _enrich_prior_year_data(symbol: str, info: Dict[str, Any]) -> Dict[str, Any]
         return info
 
     t0 = time.time()
-    ticker = _stmt_ticker(symbol)   # etapa 11b: estados en la moneda y la clase de la cotización
+    # Etapa 11b: estados en la moneda y la clase de la cotización. El plan B pasa su propio
+    # Ticker (ya descargó los anuales): con uno nuevo se volvían a bajar los tres.
+    ticker = ticker if ticker is not None else _stmt_ticker(symbol)
 
     prior = info.get("_prior_year", {})
     derived = info.get("_current_derived", {})
@@ -1426,7 +1447,7 @@ def _fallback_yfinance(symbol: str) -> Dict[str, Any]:
     # no se ejecutaba y _prior_year solo tenía lo que aportaba Finnhub, sin
     # acciones. Los estados anuales de yfinance (sin crumb) sí están disponibles.
     try:
-        info = _enrich_prior_year_data(symbol, info)
+        info = _enrich_prior_year_data(symbol, info, ticker=ticker)
         info = _apply_ttm(symbol, info, plan_b=True)
     except CurrencyConversionError:
         raise

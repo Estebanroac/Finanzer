@@ -245,3 +245,72 @@ def test_source_failure_in_instrument_check_is_not_a_500(monkeypatch):
     with pytest.raises(HTTPException) as ei:
         main._compute_analysis("ZZZQX")
     assert ei.value.status_code == 404
+
+
+# ── 11b (2): UTILITY con bandas propias de cobertura de intereses ──
+@pytest.mark.parametrize("sym", ["NEE", "DUK"])
+def test_utility_interest_coverage_bands(sample, sym):
+    sol = {x["metric"]: x for x in sample[sym]["score"]["breakdown"]["Solidez Financiera"]["adjustments"]}
+    ic = sol["Cobertura Intereses"]
+    assert "para una utility" in ic["reason"] and ic["adjustment"] == 0   # 2.3x: en línea (≥ 2.0x)
+
+
+# ── 11b (3): filas IFRS ──
+def test_ifrs_operating_cash_flow_alias_asml(sample):
+    a = sample["ASML"]
+    aliases = a["data_provenance"]["currency"]["row_aliases"]["cashflow"]
+    assert "Operating Cash Flow ← Cash Flow From Continuing Operating Activities" in aliases
+    assert a["archetype_metrics"]["fcf_maintenance"] and a["dcf_status"]["state"] == "ok"
+    assert a["price_attractiveness"]["score"] is not None          # antes: precio "sin dato"
+    assert not [f for f in a["data_validation"] if f["rule"] == "fila_clave_ausente"]
+
+
+def test_missing_key_row_warns_by_archetype():
+    import validate
+    st = {"revenue": [1.0], "net_income": [1.0], "total_assets": [1.0], "stockholders_equity": [1.0],
+          "operating_cash_flow": [1.0], "capital_expenditure": [-1.0], "depreciation_amortization": []}
+    assert validate.missing_key_rows(st, "MATURE") == []
+    flags = validate.missing_key_rows(st, "CYCLICAL")
+    assert [f["field"] for f in flags] == ["_statements_fy.depreciation_amortization"]
+    assert flags[0]["action"] == "aviso" and "Depreciation And Amortization" in flags[0]["reason"]
+
+
+# ── 11b (4): la compresión del Forward P/E no suma en la peor banda ──
+def test_forward_compression_does_not_add_in_worst_band(sample):
+    adj = {x["metric"]: x for x in sample["PLTR"]["score"]["breakdown"]["Valoración"]["adjustments"]}
+    f = adj["Forward P/E"]
+    assert f["adjustment"] == 0 and "sigue en la peor banda" in f["reason"]
+    assert "Forward P/E +0.00" in adj["Bloque de múltiplos"]["reason"]
+
+
+# ── 11b (2): velocidad del plan B ──
+def test_plan_b_is_not_retried_and_quote_summary_block_is_remembered(monkeypatch):
+    import yf_adapter
+    calls = {"qs": 0, "b": 0}
+
+    class _R401:
+        status_code = 401
+        text = ""
+
+        def json(self):
+            return {}
+
+    class _Sess:
+        def get(self, url, **_k):
+            calls["qs"] += "quoteSummary" in url
+            return _R401()
+
+    def _planb(sym):
+        calls["b"] += 1
+        return {"symbol": sym, "_data_path": "plan_b_yfinance"}   # "degradado": sin beta, forward…
+    monkeypatch.setattr(yf_adapter, "_ensure_session", lambda: None)
+    monkeypatch.setattr(yf_adapter, "_session", _Sess())
+    monkeypatch.setattr(yf_adapter, "_refresh_crumb", lambda: None)
+    monkeypatch.setattr(yf_adapter, "_fallback_yfinance", _planb)
+    monkeypatch.setattr(yf_adapter, "_qs_blocked_until", 0.0)
+    yf_adapter._cache.clear()
+    yf_adapter.get_ticker_info("AAA")
+    assert calls == {"qs": 2, "b": 1}          # dos 401 (con refresco de crumb) y un solo plan B
+    yf_adapter.get_ticker_info("BBB")
+    assert calls == {"qs": 2, "b": 2}          # bloqueo recordado: directo al plan B
+    yf_adapter._cache.clear()

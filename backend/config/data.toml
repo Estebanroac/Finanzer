@@ -15,6 +15,9 @@ financials_ttl_min = 60
 [yahoo]                         # lib/yf_adapter.py
 cache_ttl_s = 300
 cache_ttl_degraded_s = 60
+# Etapa 11b: tras un 401 de quoteSummary (crumb inválido desde IPs de datacenter, Render) se
+# va directo al plan B durante este tiempo, sin repetir sesión, crumb y dos 401 por análisis.
+quotesummary_block_ttl_s = 600
 last_known_good_max_age_s = 86400
 degraded_retry_sleep_step_s = 0.8
 http_timeout_s = 15

@@ -348,6 +348,7 @@ def _compute_analysis(symbol: str) -> dict:
                                   "reason": f"{type(exc).__name__}: {exc}"})
 
         yinfo = {}
+        _row_flags = []
 
         # Calculate ratios
         if financials:
@@ -613,6 +614,9 @@ def _compute_analysis(symbol: str) -> dict:
             classification = classify(sector=sector, industry=profile.industry, eps_ttm=eps_val,
                                       net_margin_ttm=r("net_margin"), statements_fy=_stmts)
             archetype = classification["archetype"]
+            # Etapa 11b: aviso por filas clave del arquetipo ausentes en los estados.
+            from validate import missing_key_rows
+            _row_flags = missing_key_rows(_stmts, archetype) if _has_yahoo else []
             result["classification"] = classification
             # Rf (etapa 8): ^TNX con caché de 24 h o el de config, marcado. Uno por
             # análisis: el mismo en Ke (P/B justificado de FINANCIAL), Kd y WACC.
@@ -674,6 +678,8 @@ def _compute_analysis(symbol: str) -> dict:
             score_sector = _bench_sel["thresholds_key"]
             _sector_bench = _bench_sel["values"]
             fin_dict["sector_pe"] = _sector_bench.get("pe")
+            # Etapa 11b: referencia del Forward P/E (la del sector; si no hay, la del P/E).
+            fin_dict["sector_forward_pe"] = _sector_bench.get("forward_pe") or _sector_bench.get("pe")
             fin_dict["sector_ev_ebitda"] = _sector_bench.get("ev_ebitda")
             fin_dict["benchmark_profile"] = _bench_sel["profile"]
 
@@ -1366,7 +1372,7 @@ def _compute_analysis(symbol: str) -> dict:
             _out_flags = validate_outputs(result)
         except Exception as e:
             _sin_dato("validacion_salida", e)
-        result["data_validation"] = list(yinfo.get("_validation") or []) + _out_flags
+        result["data_validation"] = list(yinfo.get("_validation") or []) + _row_flags + _out_flags
         result["data_provenance"] = _build_provenance(yinfo, _out_flags, _block_errors)
 
         # ── Etapa 8: confianza del veredicto (spec Sección 3) ──
@@ -1408,7 +1414,7 @@ def _compute_analysis(symbol: str) -> dict:
                     "coverage": coverage_dimension(result.get("score_coverage"),
                                                    (result["score"] or {}).get("excluded_categories") or []),
                     "source": source_dimension(
-                        input_flags=list(yinfo.get("_validation") or []),
+                        input_flags=list(yinfo.get("_validation") or []) + _row_flags,
                         normalization=result.get("earnings_normalization"),
                         ttm=yinfo.get("_ttm"), provenance_fields=(yinfo.get("_provenance") or {})),
                     "stability": stability_dimension(_cls.get("archetype"), _cls),
