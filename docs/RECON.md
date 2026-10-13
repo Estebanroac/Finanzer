@@ -686,3 +686,44 @@ correctos según los datos, pero aplican reglas genéricas a arquetipos que nece
   múltiplos en precio -> 0.80): revisar si el techo de la etapa 9 debe exigir convergencia alta.
 - **Diferencia de entorno:** SNOW local tiene deuda neta en el último trimestre (Kd tramo D por la regla M) y prod caja
   neta en el FY (BBB); con un peso de la deuda del 2% el WACC apenas cambia (12.0% frente a 11.7%).
+
+### 7.14 Etapa 9a: calidad y precio separados (motor, API y PDF)
+
+- **Contrato:** sin score total único. `score` conserva `breakdown`, `excluded_categories` y
+  `not_applicable_categories`; desaparecen `total_score`, `max_score`, `level`, `categories_included/total`,
+  `partial` y `basis`. Nuevos: `quality` (Solidez + Rentabilidad + Calidad de ganancias + Crecimiento, reescalada a
+  100 con cobertura y "no aplica"), `price_attractiveness` (Valoración: `score_raw`, `factor`, `score` contraído hacia
+  50 según la confianza, `level`) y `verdict` (`text`, `confidence_text`, `full`). `price` sigue siendo el precio de la
+  acción, por eso la puntuación no se llama así.
+- **Consumidores del total revisados:** `main.py` (contrato), `financial_ratios.calculate_score_v2` (total y nivel),
+  `pdf_report` (portada, radar, resumen, desglose, metodología), tests (`test_coverage`, `test_smoke`,
+  `test_archetype_branches`), frontend (`StockPageClient` ScoreCard y resumen rápido, `EvaluationTab` cabeceras,
+  `api.ts` tipos y `getScoreColor/Label`, `tooltips.SCORE_TOOLTIP`) y el generador de config (SCORE_LEVEL_BANDS ->
+  QUALITY_/PRICE_BANDS). Las alertas no usaban el total.
+- **Frontend (mínimo, sin rediseño):** la tarjeta muestra la calidad (0-100) y el veredicto; las cabeceras del desglose
+  muestran calidad y precio. `tsc --noEmit` pasa. **`frontend/out` NO se ha reconstruido:** el export estático en
+  producción sigue leyendo `score.total_score`. Antes de desplegar el backend de esta rama hay que reconstruir
+  `frontend/out` (etapa 9b), o el frontend publicado mostrará la puntuación vacía.
+- **Bandas del veredicto (config):** calidad excelente >= 80 / sólida >= 65 / media >= 45 / débil; precio (sobre el
+  contraído) atractivo >= 65 / razonable >= 45 / exigente >= 30 / muy exigente. 50 es el neutro de las dos escalas
+  (base 10/20 de cada categoría). Factores de contracción 1.0 / 0.75 / 0.5.
+- **Confianza "alta" exige convergencia alta:** con convergencia media o no evaluable, techo en "media" (V local deja
+  de ser "alta").
+- **REIT — retorno total:** Crecimiento puntúa rentabilidad por dividendo + CAGR del FFO por acción (bandas 10% / 7% /
+  4% / 0 frente al Ke de un REIT); la rentabilidad por dividendo sale de Valoración. O: 6.0% + 0% (FFO/acción plano)
+  -> Crecimiento 9 -> 11; Valoración 15 -> 14 (prod) y 17 -> 14 (local).
+- **MATURE con dividendo alto (evaluado, no aplicado):** propuesta de umbral rentabilidad por dividendo >= 4% (unas 3
+  veces la del S&P 500; utilities, telecos, tabaco), con el mismo retorno total sobre el crecimiento por acción. No
+  afecta a ningún ticker del juego (NFLX 0%, V 0.7%) y no hay fixture para verificarlo: propuesta para la etapa 11
+  con un fixture de dividendo alto.
+- **Bandas, una sola fuente (parcial):** las lecturas del PDF de las métricas que puntúan usan las bandas del score:
+  ROE y D/E con las bandas sectoriales (`sectors.score_thresholds`), spread ROIC−WACC, current ratio, cobertura,
+  crecimiento (ingresos y BPA) y upside del DCF; sus copias en `thresholds.pdf` se eliminaron. `thresholds.pdf`
+  conserva solo métricas que el score no puntúa (DN/EBITDA, payout fuera de REIT, beta, rango 52s, recompras, FCF
+  yield, Graham, brecha frente al sector). **Pendiente (9b):** alinear las bandas de las alertas (cobertura, DCF,
+  beta, DN/EBITDA) y generar las de la UI desde la misma config.
+- **Pendiente de decisión — bonos de crecimiento dentro del precio:** Valoración incluye bonos que no son múltiplos
+  (Perfil GARP +3, Growth Quality, rescate de penalizaciones para growth de calidad), construidos con ROE, ROIC,
+  márgenes y crecimiento: cuentan calidad dentro del precio. NFLX y V salen con precio "atractivo" en parte por ellos
+  (+5/+6 con el Forward P/E). Propuesta: sacarlos del atractivo del precio (el Forward P/E sí es un múltiplo).
+- **Etapa 11 —** el PDF de revisión se genera desde los fixtures de prod (Rf de config, sin TTM).
