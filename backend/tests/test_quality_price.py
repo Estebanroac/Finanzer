@@ -122,9 +122,15 @@ def test_high_confidence_requires_high_convergence():
                                "stability": d("alta")})["level"] == "alta"
 
 
-def test_v_local_no_longer_high_confidence(outputs_by_env):
-    c = outputs_by_env("local")["V"][0]["confidence"]
-    assert c["dimensions"]["convergence"]["level"] != "alta" and c["level"] != "alta"
+def test_v_local_confidence_follows_the_statements_dcf(outputs_by_env):
+    """RECON 7.13 / etapa 9b: la confianza alta de V local era falsa porque el DCF usaba el
+    interanual de la fuente (23.8%: "barata") frente a múltiplos "cara". Con el CAGR de los
+    estados (10.9%) ambos dicen "cara": la convergencia es alta y la confianza también."""
+    a = outputs_by_env("local")["V"][0]
+    conv = a["confidence"]["dimensions"]["convergence"]
+    assert a["dcf"]["growth_rate"] == pytest.approx(0.109, abs=1e-3)
+    assert {m["direction"] for m in conv["methods"] if m.get("evaluable")} == {"cara"}
+    assert conv["level"] == "alta" and a["confidence"]["level"] == "alta"
 
 
 # ─────────────────────────── REIT: retorno total ───────────────────────────

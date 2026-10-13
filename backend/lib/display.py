@@ -995,7 +995,8 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     dcf_params = dcf_reliability_line = dcf_missing = None
     if dcf.get("fair_value") is not None:
         dcf_params = (f"Parámetros del modelo — WACC {fv(dcf.get('wacc'), 'pct')} · "
-                      f"crecimiento {fv(dcf.get('growth_rate'), 'pct')} · "
+                      f"crecimiento {fv(dcf.get('growth_rate'), 'pct')}"
+                      + (f" ({dcf['growth_basis']})" if dcf.get("growth_basis") else "") + " · "
                       f"terminal {fv(dcf.get('terminal_growth'), 'pct')}")
         vc = dcf.get("value_composition") or {}
         if vc.get("terminal_pct") is not None:

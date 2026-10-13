@@ -337,12 +337,15 @@ def test_verdict_confidence_weights():
 
 
 def test_valuation_contradiction_lowers_confidence(outputs_by_env):
-    """Fallo 1 del spec: si los métodos se oponen, la convergencia es baja. Etapa 9a:
-    sin las bandas growth, los múltiplos de NFLX prod ya no dicen "barata" (en precio
-    frente al DCF cara: media); V local mantiene la oposición (DCF barata, múltiplos cara)."""
-    v = outputs_by_env("local")["V"][0]["confidence"]
-    conv = v["dimensions"]["convergence"]
+    """Fallo 1 del spec: si los métodos se oponen, la convergencia es baja. Etapa 9b: el
+    único caso real (V local) se debía a un DCF alimentado por el interanual inflado de la
+    fuente (23.8%); con el CAGR de los estados ya no hay oposición, así que la regla se fija
+    con un caso sintético. NFLX prod: DCF cara frente a múltiplos en precio -> media."""
+    from valuation_confidence import convergence, verdict_confidence
+    conv = convergence([{"method": "DCF", "signal": 0.8}, {"method": "múltiplos frente al sector", "signal": -0.8}])
     assert conv["level"] == "baja" and "direcciones opuestas" in conv["reasons"][0]
+    alta = {"level": "alta", "reasons": []}
+    v = verdict_confidence({"convergence": conv, "coverage": alta, "source": alta, "stability": alta})
     assert v["level"] != "alta" and v["limits_score"] is False
     n = outputs_by_env("prod")["NFLX"][0]["confidence"]
     assert n["dimensions"]["convergence"]["level"] == "media" and n["level"] == "media"

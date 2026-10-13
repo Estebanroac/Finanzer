@@ -905,3 +905,11 @@ correctos según los datos, pero aplican reglas genéricas a arquetipos que nece
   componentes de análisis), `check-contract.mjs` + `tests/test_frontend_contract.py` (la web no lee campos que el
   backend no expone) y sello del contrato en `frontend/out/build-stamp.json`, validado por `build.sh`.
 - **Pendiente:** los golden (A, B, D y `display`) se regeneran con la aprobación del diff.
+- **DCF con el crecimiento de los estados (opción b, decidido):** el crecimiento de entrada del DCF es siempre
+  el mismo que puntúa Crecimiento (`fin_dict["revenue_cagr_3y"]`: CAGR de ingresos a 3 años con la regla de base
+  anómala, por acción si aplica la regla de dilución, ciclo medio en CYCLICAL). El `revenueGrowth` de la fuente
+  queda solo como dato informativo "(interanual)"; un valor marcado `crecimiento_incoherente` ya no entra en el
+  score (test de `test_known_bugs`, antes xfail). Efecto: NFLX local (24.0% -> 12.6%: precio 55 -> 46, confianza
+  alta -> media), V local (23.8% -> 10.9%: precio 50 -> 30 "exigente", confianza media -> alta) y V prod (14.4% ->
+  10.9%: precio 39 -> 25 "muy exigente", confianza media -> alta); NFLX prod y SNOW cambian el valor del DCF sin
+  cambiar su aporte; FCX, JPM y O no cambian. La calidad no cambia en ningún caso.

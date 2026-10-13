@@ -1074,7 +1074,17 @@ def _compute_analysis(symbol: str) -> dict:
                 # GROWTH_PRE_PROFIT solo con FCF positivo) y con qué inputs. Sanitizado
                 # (safe_float): un NaN o +Inf crudo no puede llegar al grid.
                 fcf = safe_float(financials.free_cash_flow)
-                growth = financials.revenue_growth_yoy or cfg("valuation.dcf.default_growth")
+                # Etapa 9b (opción b): el crecimiento de entrada del DCF es SIEMPRE el de los estados,
+                # el mismo que puntúa Crecimiento (fin_dict["revenue_cagr_3y"]): CAGR de ingresos a 3
+                # años con la regla de base anómala, por acción si aplica la regla de dilución, ciclo
+                # medio en CYCLICAL. El revenueGrowth de la fuente (interanual) ya no entra en el DCF.
+                growth = safe_float(fin_dict.get("revenue_cagr_3y"))
+                _growth_basis = ("ciclo medio de los ingresos" if archetype == CYCLICAL
+                                 else "CAGR de ingresos por acción a 3 años"
+                                 if "ingresos" in (growth_basis.get("applied_to") or [])
+                                 else "CAGR de ingresos a 3 años")
+                if growth is None:
+                    growth, _growth_basis = cfg("valuation.dcf.default_growth"), "valor por defecto (sin CAGR de los estados)"
                 _dcf_na = not_applicable(archetype, "dcf")
                 if not _dcf_na and archetype == GROWTH_PRE_PROFIT and not (fcf and fcf > 0):
                     _dcf_na = (f"{not_applicable_text(GROWTH_PRE_PROFIT)} con FCF negativo: no hay flujo que "
@@ -1091,8 +1101,6 @@ def _compute_analysis(symbol: str) -> dict:
                     # promedio de los ejercicios): el normalizado (margen FCF medio ×
                     # ingresos) incluye el capex de expansión. Se muestran los dos.
                     fcf = safe_float(archetype_values.get("fcf_maintenance"))
-                    if archetype_values.get("revenue_growth_normalized") is not None:
-                        growth = archetype_values["revenue_growth_normalized"]
                 _dcf_missing = None
                 if _dcf_na:
                     pass
@@ -1128,6 +1136,10 @@ def _compute_analysis(symbol: str) -> dict:
                         "wacc": safe_float(wacc_est),   # el mismo que key_metrics.wacc y el grid
                         "growth_rate": safe_float(_g_used),  # el usado, no el bruto
                         "growth_source": dcf_result.get("growth_source"),
+                        # Etapa 9b: de dónde sale el crecimiento usado (los estados, como Crecimiento).
+                        "growth_basis": (_growth_basis if dcf_result.get("growth_source") == "revenue_growth_3y"
+                                         else "valor por defecto (crecimiento de los estados no positivo o "
+                                              "sin dato)"),
                         "terminal_growth": safe_float(cfg("valuation.dcf.terminal_growth")),
                         "margin_of_safety": safe_float(_dcf_mos),
                         "upside": safe_float(_dcf_upside),

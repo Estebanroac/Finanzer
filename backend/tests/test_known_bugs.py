@@ -104,7 +104,8 @@ def test_bug_prod_sector_unknown_outside_known_list_o(outputs_by_env):
     assert profile["sector"] == "Real Estate"
 
 
-# ABIERTO (etapa 9b, verificación previa a regenerar los golden): un revenueGrowth
+# CORREGIDO en la etapa 9b (opción b): el DCF usa siempre el crecimiento de los estados
+# (el mismo que puntúa Crecimiento). Historia del bug: un revenueGrowth
 # marcado "crecimiento_incoherente" (acción "aviso": el valor se conserva) debería ser
 # solo informativo, pero entra en el score: es el crecimiento de entrada del DCF
 # (main: growth = financials.revenue_growth_yoy, con tope del 30%) y el DCF puntúa en
@@ -128,7 +129,6 @@ def _run_with_revenue_growth(sym, env, delta):
         validate.validate_info = orig
 
 
-@pytest.mark.xfail(reason="crecimiento_incoherente entra en el score a través del crecimiento del DCF")
 def test_bug_incoherent_revenue_growth_is_informative_only():
     import conftest
     if "prod" not in conftest.ENVS:
