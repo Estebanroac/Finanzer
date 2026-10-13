@@ -1,3 +1,7 @@
+import type { Archetype } from "./generated/backendConfig";
+
+export type { Archetype };
+
 // Solo el dev server de Next (puerto 3000) necesita apuntar al backend en
 // localhost:8000; en cualquier otro caso (producción en Render, uvicorn local
 // sirviendo el export estático, proxies) la API es same-origin.
@@ -10,19 +14,300 @@ export interface SearchResult {
   score: number;
 }
 
-export interface ScoreAdjustment {
-  metric: string;
-  value: string;
-  adjustment: number;
-  reason: string;
-  severity: string;
+/* ══════════════════════════════════════════════════════════════════════════
+   Contrato con el backend (etapa 9b)
+   La web NO decide nada de análisis: pinta el bloque `display` que calcula
+   backend/lib/display.py, el mismo que maqueta el PDF. Estos tipos son el
+   contrato: scripts/check-contract.mjs falla si declaran un campo que el
+   backend no expone, y tsc impide leer un campo que no esté aquí.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+export type Tone = "pos" | "neg" | "warn" | "neu";
+export type RowState = "con_dato" | "sin_dato" | "no_aplica" | "no_significativo";
+
+export interface Reading {
+  label: string;
+  tone: Tone;
+  text: string;
 }
 
-export interface ScoreBreakdownCategory {
+/** Fila de una tabla de sección (múltiplos, rentabilidad, solidez, crecimiento…). */
+export interface Row {
+  key: string;
+  label: string;
+  value: string;
+  bench: string | null;
+  gap: string | null;
+  reading: string;
+  tone: Tone | null;
+  state: RowState;
+  text: string | null;
+}
+
+export interface ScoreBlock {
+  title: string;
+  question: string;
+  score: number | null;
+  level: string | null;
+  tone: Tone;
+  note: string | null;
+}
+
+export interface PriceBlock extends ScoreBlock {
+  raw: number | null;
+  contracted: boolean;
+}
+
+export interface CategoryItem {
+  name: string;
   score: number;
   max: number;
-  details: string[];
-  adjustments?: ScoreAdjustment[];
+  pct: number;
+  tone: Tone;
+  conclusive: boolean;
+  coverage: number | null;
+  applicable: boolean;
+  text: string | null;
+}
+
+export interface Kpi {
+  key: string;
+  label: string;
+  value: string;
+  state: RowState;
+}
+
+export interface Highlight {
+  kind: string;
+  kicker: string;
+  text: string;
+  tone: Tone;
+}
+
+export interface Cover {
+  archetype: string;
+  archetype_label: string;
+  classification_notes: string[];
+  /** Código del arquetipo y motivo técnico: solo en el "Detalle técnico". */
+  classification_detail: string[];
+  quality: ScoreBlock;
+  price: PriceBlock;
+  categories: Array<{ title: string; items: CategoryItem[] }>;
+  verdict: { text: string; full: string | null; confidence_text: string | null; confidence_tone: Tone };
+  confidence_reasons: string[];
+  coverage_notes: string[];
+  kpis: Kpi[];
+  highlights: Highlight[];
+}
+
+export interface MetricCard {
+  key: string;
+  label: string;
+  value: string;
+  unit: string;
+  pill: string;
+  tone: Tone;
+  delta: string;
+  bench: string;
+  state: RowState;
+}
+
+/** Fila de la composición: barra de categoría, categoría no concluyente o ajuste ± de Valoración. */
+export type CompositionRow =
+  | { label: string; kind: "bar"; value: number; max: number; pct: number; tone: Tone }
+  | { label: string; kind: "nc" }
+  | { label: string; kind: "signed"; value: number; tone: Tone };
+
+export interface CompositionBlock {
+  title: string;
+  score: number | null;
+  level: string | null;
+  tone: Tone;
+  note: string | null;
+}
+
+export interface Summary {
+  cards: MetricCard[];
+  exec_items: Array<{ label: string; text: string }>;
+  composition: {
+    quality: CompositionBlock & { rows: Array<Extract<CompositionRow, { kind: "bar" | "nc" }>> };
+    price: CompositionBlock & { rows: Array<Extract<CompositionRow, { kind: "signed" }>>; signed_max: number };
+    caption: string;
+  };
+  alert_counts: { red_flags: number; warnings: number; strengths: number };
+}
+
+export interface ConfidenceReason {
+  dimension: string;
+  level: string;
+  text: string | null;
+  detail: string;
+}
+
+export interface Confidence {
+  level: string;
+  tone: Tone;
+  verdict_text: string | null;
+  plain: string[];
+  reasons: ConfidenceReason[];
+  dimensions: Array<{ key: string; label: string; level: string; text: string }>;
+  summary: string;
+}
+
+export interface SensitivityCell {
+  value: string;
+  band: number | null;
+  base: boolean;
+}
+
+export interface Sensitivity {
+  intro: string;
+  corner: string;
+  columns: string[];
+  rows: Array<{ label: string; cells: SensitivityCell[] }>;
+  base_growth_idx: number | null;
+  base_discount_idx: number | null;
+  band_labels: string[];
+  note: string | null;
+}
+
+export interface Range52 {
+  pos: number;
+  low: string;
+  high: string;
+  price: string;
+  zones: Array<{ from: number; to: number }>;
+  axis: string;
+  reading: Reading | null;
+  caption: string;
+  zones_note: string;
+}
+
+export interface InstitutionalCard {
+  key: string;
+  value: string;
+  tone: Tone;
+  title: string;
+  subtitle: string;
+  state: RowState;
+  body: string;
+}
+
+export interface BreakdownItem {
+  metric: string;
+  value: string;
+  sign: string;
+  tone: Tone;
+  reason: string;
+  in_block: boolean;
+  state: RowState;
+}
+
+export interface BreakdownCategory {
+  name: string;
+  score: number;
+  max: number;
+  pct: number;
+  tone: Tone;
+  conclusive: boolean;
+  group: "quality" | "price" | null;
+  text: string | null;
+  items: BreakdownItem[];
+}
+
+export interface AlertItem {
+  category: string;
+  reason: string;
+  detail: string;
+}
+
+export interface Sections {
+  valuation: {
+    intro: string | null;
+    columns: string[];
+    rows: Row[];
+    market_note: string | null;
+    provisional_note: string | null;
+    normalization_note: string | null;
+    intrinsic: { intro: string | null; rows: Row[]; graham_note: string | null };
+    dcf_params: string | null;
+    dcf_reliability: string | null;
+    dcf_reliability_level: string | null;
+    dcf_reliability_tone: Tone | null;
+    dcf_missing: string | null;
+    ke_note: string | null;
+    wacc_note: string | null;
+    wacc_breakdown: Array<{ label: string; value: string }> | null;
+    sensitivity: Sensitivity | null;
+  };
+  profitability: {
+    intro: string | null;
+    columns: string[];
+    rows: Row[];
+    divergence_note: string | null;
+    figures: string[][];
+  };
+  solvency: { intro: string | null; columns: string[]; rows: Row[]; balance: string };
+  growth: {
+    intro: string | null;
+    columns: string[];
+    rows: Row[];
+    eps_vs_revenue_note: string | null;
+    score_components: Array<{ metric: string; value: string; reason: string }>;
+    range52: Range52 | null;
+  };
+  institutional: {
+    cards: InstitutionalCard[];
+    piotroski_criteria: Array<{ key: string; label: string; detail: string; status: string; tone: Tone }>;
+    breakdown: { intro: string; coverage_notes: string[]; categories: BreakdownCategory[] } | null;
+  };
+  /** Histórico (dato bruto): columnas que no aplican al arquetipo y su texto. */
+  historical: { not_applicable: Record<string, string> };
+  alerts: {
+    counts: { red_flags: number; warnings: number; strengths: number };
+    groups: Array<{ key: string; title: string; tone: Tone; items: AlertItem[] }>;
+  };
+}
+
+export interface BandTable {
+  title: string;
+  bands: Array<{ range: string; label: string; tone: Tone }>;
+}
+
+/** Bandas aplicadas a esta empresa (arquetipo y benchmark), desde la config del score. */
+export interface MetricBands {
+  tables: BandTable[];
+  note: string | null;
+}
+
+export interface Display {
+  version: number;
+  archetype: string;
+  archetype_label: string;
+  na_keys: string[];
+  benchmark: { profile: "market" | "sector"; ref: string; column: string; vs: string; thresholds_key: string };
+  readings: Record<string, Reading | null>;
+  cover: Cover;
+  summary: Summary;
+  confidence: Confidence | null;
+  sections: Sections;
+  methodology: { models: string[]; models_text: string };
+  tooltips: Record<string, MetricBands>;
+}
+
+/** Fila del histórico anual: dato bruto de los estados (sin lecturas ni colores). */
+export interface YearRow {
+  year: number;
+  revenue: number | null;
+  net_income: number | null;
+  free_cash_flow: number | null;
+  gross_margin: number | null;
+  operating_margin: number | null;
+  net_margin: number | null;
+  fcf_margin: number | null;
+  sbc?: number | null;
+  fcf_minus_sbc?: number | null;
+  fcf_minus_sbc_margin?: number | null;
 }
 
 export interface StockAnalysis {
@@ -34,52 +319,11 @@ export interface StockAnalysis {
     country: string;
     currency: string;
     exchange: string;
-    market_cap: number | null;
-    description: string;
   };
   price: number | null;
-  key_metrics: Record<string, number | null>;
-  ratios: Record<string, number | null>;
-  score: {
-    total_score: number;
-    max_score: number;
-    level: string;
-    breakdown: Record<string, ScoreBreakdownCategory>;
-  } | null;
-  company_type: string;
-  is_growth: boolean;
-  sector_info: { sector: string; mapped_sector: string; sector_etf: string };
-  altman_z: { z_score: number; zone: string; interpretation: string; model?: string; details?: Record<string, unknown> } | null;
-  piotroski_f: { score: number; max_score: number; level: string; interpretation: string; details?: Record<string, { passed: boolean; detail: string }>; fiscal_year?: string } | null;
-  financial_health: { score: number; level: string; interpretation?: string } | null;
-  graham_number: number | null;
-  graham_margin: number | null;
-  dcf: {
-    fair_value: number | null;
-    wacc: number | null;
-    growth_rate: number | null;
-    terminal_growth: number | null;
-    margin_of_safety: number | null;
-    upside: number | null;
-    value_composition: Record<string, number> | null;
-  } | null;
-  sensitivity: {
-    // Cells are null where the DCF is undefined for that scenario
-    // (e.g. discount_rate <= terminal_growth). Consumers must guard for null.
-    matrix: (number | null)[][];
-    growth_rates: number[];
-    discount_rates: number[];
-    base_growth_idx: number;
-    base_discount_idx: number;
-    statistics: { min: number; max: number; median: number };
-  } | null;
-  alerts: {
-    red_flags: Array<{ category: string; reason: string; detail: string }>;
-    warnings: Array<{ category: string; reason: string; detail: string }>;
-    strengths: Array<{ category: string; reason: string; detail: string }>;
-  } | null;
-  price_history: { "52w_high": number | null; "52w_low": number | null; beta: number | null } | null;
-  yearly_financials?: Array<{ year: number; revenue: number | null; earnings: number | null }>;
+  classification: { archetype: Archetype; reason: string };
+  display: Display;
+  yearly_financials: YearRow[];
   errors: string[];
 }
 
@@ -97,54 +341,30 @@ export async function analyzeStock(symbol: string): Promise<StockAnalysis> {
   return res.json();
 }
 
-// ── Formatting helpers ──
+/** URL del PDF: misma regla que API_BASE. */
+export function pdfUrl(symbol: string): string {
+  return `${API_BASE}/api/pdf/${encodeURIComponent(symbol)}`;
+}
 
-export function formatNumber(val: number | null | undefined): string {
+// ── Formato de dato bruto (histórico): sin juicio, solo unidades ──
+const UNITS: Array<[number, string]> = [[1e12, "T"], [1e9, "B"], [1e6, "M"], [1e3, "K"]];
+
+export function formatMoney(val: number | null | undefined): string {
   if (val == null || !Number.isFinite(val)) return "N/A";
   const abs = Math.abs(val);
-  const sign = val < 0 ? "-" : "";
-  if (abs >= 1e12) return `${sign}$${(abs / 1e12).toFixed(2)}T`;
-  if (abs >= 1e9) return `${sign}$${(abs / 1e9).toFixed(2)}B`;
-  if (abs >= 1e6) return `${sign}$${(abs / 1e6).toFixed(2)}M`;
-  if (abs >= 1e3) return `${sign}$${(abs / 1e3).toFixed(1)}K`;
+  const sign = val < 0 ? "−" : "";
+  for (const [div, suffix] of UNITS) {
+    if (abs >= div) return `${sign}$${(abs / div).toFixed(2)}${suffix}`;
+  }
   return `${sign}$${abs.toFixed(2)}`;
 }
 
-export function formatPercent(val: number | null | undefined): string {
+export function formatPct(val: number | null | undefined): string {
   if (val == null || !Number.isFinite(val)) return "N/A";
-  // All ratios reach here as decimals (0.15 = 15%, 1.3 = 130%), so always
-  // scale by 100. The old `< 1` heuristic left any value ≥ 100% unscaled — a
-  // 130% payout ratio rendered as "1.30%" and a 200% ROE as "2.00%", hiding
-  // exactly the extreme readings (unsustainable dividends, huge returns) a
-  // reader most needs to see.
-  return `${(val * 100).toFixed(2)}%`;
-}
-
-export function formatMultiple(val: number | null | undefined): string {
-  if (val == null || !Number.isFinite(val)) return "N/A";
-  return `${val.toFixed(2)}x`;
+  return `${(val * 100).toFixed(1)}%`;
 }
 
 export function formatPrice(val: number | null | undefined): string {
   if (val == null || !Number.isFinite(val)) return "N/A";
   return `$${val.toFixed(2)}`;
-}
-
-// Bandas del score alineadas con SCORE_TOOLTIP en tooltips.ts (80/60/40/20)
-// para que color y etiqueta coincidan con los "rangos de referencia" que ve el
-// usuario y con el `level` que calcula el backend.
-export function getScoreColor(pct: number): string {
-  if (pct >= 80) return "#0cc06c"; // Excelente
-  if (pct >= 60) return "#22c55e"; // Favorable
-  if (pct >= 40) return "#fbbf24"; // Neutral
-  if (pct >= 20) return "#f97316"; // Precaución
-  return "#ff4d4d";                // Evitar
-}
-
-export function getScoreLabel(pct: number): string {
-  if (pct >= 80) return "Excelente";
-  if (pct >= 60) return "Favorable";
-  if (pct >= 40) return "Neutral";
-  if (pct >= 20) return "Precaución";
-  return "Evitar";
 }

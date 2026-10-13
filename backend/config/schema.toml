@@ -1,0 +1,585 @@
+# Esquema de la configuración (lo valida lib/settings.py al arrancar).
+# Mismo árbol que los TOML; la hoja es el tipo. "*" = claves libres.
+
+# @@THRESHOLDS-BEGIN@@
+[thresholds.score.category]
+base = "int"
+min = "int"
+max = "int"
+
+[thresholds.score.coverage]
+low_confidence_below = "float"
+min_conclusive = "float"
+
+[thresholds.score.solidez]
+altman_points = "list[int]"
+current_bounds = "list[float]"
+current_points = "list[int]"
+de_mults = "list[float]"
+de_points = "list[int]"
+de_mitigation_coverage = "int"
+de_mitigated_points = "int"
+de_severe_points = "int"
+coverage_bounds = "list[number]"
+coverage_points = "list[int]"
+runway_bounds = "list[float]"
+runway_points = "list[int]"
+reit_nde_bounds = "list[float]"
+reit_nde_points = "list[int]"
+
+[thresholds.score.solidez_financial]
+max_without_regulatory = "int"
+health_offset = "int"
+health_multiplier = "float"
+de_points = "list[int]"
+pb_points = "list[int]"
+
+[thresholds.score.rentabilidad]
+negative_equity_min_roa = "float"
+roe_high_mult = "float"
+roe_floor = "float"
+roe_points = "list[int]"
+roa_high_mult = "float"
+roa_points = "list[int]"
+operating_margin_bounds = "list[float]"
+operating_margin_points = "list[int]"
+net_margin_bounds = "list[float]"
+net_margin_points = "list[int]"
+spread_bounds = "list[float]"
+spread_points = "list[int]"
+roic_min_invested_capital_share = "float"
+reit_ffo_equity_bounds = "list[float]"
+reit_ffo_equity_points = "list[int]"
+reit_ffo_margin_bounds = "list[float]"
+reit_ffo_margin_points = "list[int]"
+gpp_gross_margin_bounds = "list[float]"
+gpp_gross_margin_points = "list[int]"
+gpp_operating_margin_bounds = "list[float]"
+gpp_operating_margin_points = "list[int]"
+gpp_opm_change_bounds = "list[float]"
+gpp_opm_change_points = "list[int]"
+gpp_fcf_margin_bounds = "list[float]"
+gpp_fcf_margin_points = "list[int]"
+
+[thresholds.score.valoracion]
+dcf_upside_bounds = "list[float]"
+dcf_points_high = "list[int]"
+dcf_points_medium = "list[int]"
+reit_pffo_bounds = "list[int]"
+reit_pffo_points = "list[int]"
+pe_value_mults = "list[float]"
+pe_value_points = "list[int]"
+multiples_block = "list[str]"
+multiples_block_max_by_members = "list[int]"
+multiples_block_strong = "float"
+forward_compression_bounds = "list[float]"
+forward_compression_points = "list[int]"
+pfcf_value_bounds = "list[int]"
+pfcf_value_points = "list[int]"
+ev_ebitda_value_mults = "list[float]"
+ev_ebitda_value_points = "list[int]"
+peg_bounds = "list[float]"
+peg_points = "list[int]"
+financial_pb_ratio_bounds = "list[float]"
+financial_pb_points = "list[int]"
+ev_sales_bounds = "list[float]"
+ev_sales_points = "list[int]"
+rule_of_40_bounds = "list[float]"
+rule_of_40_points = "list[int]"
+
+[thresholds.score.calidad]
+fscore_points = "list[int]"
+ocf_points = "list[int]"
+fcf_points = "list[int]"
+fcf_to_ni_bounds = "list[float]"
+fcf_to_ni_points = "list[int]"
+financial_roe_std_bounds = "list[float]"
+financial_roe_std_points = "list[int]"
+financial_efficiency_bounds = "list[float]"
+financial_efficiency_points = "list[int]"
+financial_bv_growth_bounds = "list[float]"
+financial_bv_growth_points = "list[int]"
+reit_ffo_payout_bounds = "list[float]"
+reit_ffo_payout_points = "list[int]"
+
+[thresholds.score.crecimiento]
+revenue_bounds = "list[float]"
+revenue_points = "list[int]"
+eps_bounds = "list[float]"
+eps_points = "list[int]"
+fcf_bounds = "list[float]"
+fcf_points = "list[int]"
+flat_tolerance = "float"
+reit_total_return_bounds = "list[float]"
+reit_total_return_points = "list[int]"
+
+[thresholds.score.total]
+max = "int"
+
+[thresholds.score.quality]
+categories = "list[str]"
+bands = "list[int]"
+labels = "list[str]"
+
+[thresholds.score.price]
+categories = "list[str]"
+bands = "list[int]"
+labels = "list[str]"
+neutral = "int"
+
+[thresholds.score.price.confidence_factor]
+alta = "float"
+media = "float"
+baja = "float"
+
+[thresholds.alerts]
+max_per_group = "int"
+years_ebitda_plural_from = "float"
+
+[thresholds.alerts.pe]
+premium_dev = "float"
+premium_abs = "int"
+justify_peg_max = "float"
+justify_spread_min = "float"
+strong_abs = "int"
+strong_dev = "float"
+discount_dev = "float"
+w_loss = "int"
+w_demanding = "int"
+w_overvalued = "int"
+w_premium = "int"
+w_discount = "int"
+
+[thresholds.alerts.ev_ebitda]
+high_abs = "int"
+premium_mult = "float"
+discount_mult = "float"
+w_high = "int"
+w_premium = "int"
+w_discount = "int"
+
+[thresholds.alerts.fcf_yield]
+w_low = "int"
+w_high = "int"
+
+[thresholds.alerts.peg]
+artifact_above = "int"
+attractive_below = "float"
+high_above = "float"
+w_attractive = "int"
+w_high = "int"
+
+[thresholds.alerts.dcf]
+upside_strong = "int"
+upside_moderate = "int"
+w_undervalued = "int"
+w_below_fair = "int"
+w_overvalued = "int"
+w_premium = "int"
+
+[thresholds.alerts.roe]
+negative_equity_min_roa = "float"
+exceptional = "float"
+w_buyback_negative = "int"
+w_negative = "int"
+w_exceptional = "int"
+w_high = "int"
+w_low = "int"
+
+[thresholds.alerts.spread]
+strong = "float"
+positive = "float"
+w_strong = "int"
+w_positive = "int"
+w_negative = "int"
+
+[thresholds.alerts.margins]
+net_solid_mult = "float"
+gross_high = "float"
+w_net_negative = "int"
+w_net_solid = "int"
+w_net_thin = "int"
+w_gross_high = "int"
+
+[thresholds.alerts.leverage]
+risk_mult = "float"
+w_net_cash = "int"
+w_high_risk = "int"
+w_high_warning = "int"
+w_low = "int"
+
+[thresholds.alerts.coverage]
+critical_below = "float"
+comfortable_above = "int"
+w_critical = "int"
+w_tight = "int"
+w_comfortable = "int"
+
+[thresholds.alerts.liquidity]
+ample_above = "int"
+w_tight = "int"
+w_ample = "int"
+
+[thresholds.alerts.altman]
+w_distress = "int"
+w_safe = "int"
+
+[thresholds.alerts.runway]
+w_short = "int"
+w_tight = "int"
+w_self_funded = "int"
+
+[thresholds.alerts.fcf]
+recurrent_negative_years = "int"
+w_recurrent = "int"
+w_negative_growth = "int"
+w_negative = "int"
+
+[thresholds.alerts.earnings_quality]
+low_below = "float"
+high_above = "float"
+w_low = "int"
+w_high = "int"
+
+[thresholds.alerts.growth]
+strong_above = "float"
+w_contraction = "int"
+w_strong = "int"
+
+[thresholds.alerts.eps_growth]
+decline_below = "float"
+strong_above = "float"
+w_decline = "int"
+w_strong = "int"
+
+[thresholds.alerts.piotroski]
+strong_min = "int"
+weak_max = "int"
+w_strong = "int"
+w_weak = "int"
+
+[thresholds.alerts.deterioration]
+margin_drop_below = "float"
+negative_fcf_years = "int"
+min_signals = "int"
+w = "int"
+
+[thresholds.alerts.beta]
+w_high = "int"
+w_low = "int"
+
+[thresholds.alerts.drawdown]
+deep_below = "float"
+w = "int"
+
+[thresholds.pdf]
+vs_sector_bounds = "list[int]"
+pe_spread_support = "float"
+nde_bounds = "list[number]"
+payout_bounds = "list[number]"
+graham_discount = "float"
+beta_bounds = "list[float]"
+pos52_bounds = "list[int]"
+buyback_bounds = "list[float]"
+fcf_yield_bounds = "list[float]"
+grid_color_bounds = "list[int]"
+eps_revenue_gap = "float"
+category_tone_bounds = "list[int]"
+exec_category_bounds = "list[int]"
+
+[sectors.benchmarks.default]
+pe = "number"
+forward_pe = "number"
+pb = "number"
+ev_ebitda = "number"
+pfcf = "number"
+peg = "number"
+roe = "number"
+roa = "number"
+roic = "number"
+net_margin = "number"
+operating_margin = "number"
+gross_margin = "number"
+current_ratio = "number"
+de = "number"
+interest_coverage = "number"
+fcf_yield = "number"
+revenue_growth = "number"
+earnings_growth = "number"
+
+[sectors.benchmarks.sectors."*"]
+"*" = "number"     # claves: subconjunto de benchmarks.default (lo comprueba main.py)
+
+[sectors.benchmarks.market]
+pe = "number"
+ev_ebitda = "number"
+
+[sectors.benchmarks.market_source]
+pe = "str"
+ev_ebitda = "str"
+
+[sectors.benchmarks.sector_archetype]
+"*" = "str"
+
+[sectors.benchmarks.engine_fallback]
+pe = "int"
+ev_ebitda = "int"
+
+[sectors.score_thresholds.default]
+pe_overvalued_mult = "float"
+pe_undervalued_mult = "float"
+pe_historical_overvalued_mult = "float"
+pe_historical_undervalued_mult = "float"
+p_fcf_high = "float"
+p_fcf_low = "float"
+ev_ebitda_overvalued_mult = "float"
+ev_ebitda_undervalued_mult = "float"
+fcf_yield_low = "float"
+fcf_yield_high = "float"
+peg_overvalued = "float"
+peg_undervalued = "float"
+net_debt_ebitda_high = "float"
+net_debt_ebitda_low = "float"
+debt_equity_high = "float"
+interest_coverage_low = "float"
+current_ratio_low = "float"
+current_ratio_high = "float"
+quick_ratio_low = "float"
+roe_high = "float"
+roe_low = "float"
+roa_high = "float"
+roa_low = "float"
+operating_margin_low = "float"
+net_margin_low = "float"
+beta_high = "float"
+beta_low = "float"
+
+[sectors.score_thresholds.overrides."*"]
+"*" = "float"     # claves: subconjunto del default (ThresholdConfig lo comprueba)
+
+[sectors.financials]
+sector_names = "list[str]"
+keywords = "list[str]"
+
+[sectors.financials.benchmarks]
+roa_excellent = "float"
+roa_good = "float"
+roa_acceptable = "float"
+roe_excellent = "float"
+roe_good = "float"
+roe_acceptable = "float"
+pb_cheap = "float"
+pb_fair = "float"
+pb_expensive = "float"
+de_very_conservative = "float"
+de_conservative = "float"
+de_normal = "float"
+equity_to_assets_solid = "float"
+equity_to_assets_good = "float"
+dividend_yield_good = "float"
+payout_sustainable = "float"
+[valuation.capm]
+risk_free_ticker = "str"
+risk_free_cache_hours = "int"
+risk_free_bounds = "list[float]"
+risk_free_rate = "float"
+market_risk_premium = "float"
+default_beta = "float"
+blume_weight = "float"
+blume_prior = "float"
+
+[valuation.tax]
+statutory_rate = "float"
+effective_bounds = "list[float]"
+
+[valuation.synthetic_rating]
+large_cap_min = "float"
+large_coverage_bounds = "list[number]"
+small_coverage_bounds = "list[number]"
+ratings = "list[str]"
+spreads = "list[float]"
+net_cash_rating = "str"
+negative_rating = "str"
+no_coverage_rating = "str"
+
+[valuation.wacc]
+default = "float"
+clamp_min = "float"
+clamp_max = "float"
+
+[valuation.dcf]
+high_growth_years = "int"
+transition_years = "int"
+terminal_growth = "float"
+growth_cap = "float"
+signature_default_growth = "float"
+source_cap_fcf = "float"
+source_cap_eps = "float"
+source_cap_revenue = "float"
+min_source_growth = "float"
+default_growth = "float"
+decay_exponential_above = "float"
+decay_linear_above = "float"
+exponential_decay_factor = "float"
+terminal_value_warning_pct = "int"
+
+[valuation.grid]
+growth_range = "list[float]"
+discount_range = "list[float]"
+interpretation_pct = "list[int]"
+
+[valuation.graham]
+multiplier = "float"
+
+[valuation.shareholder]
+buyback_yield_guard = "float"
+
+[valuation.models.altman]
+original_coef = "list[float]"
+original_safe = "float"
+original_grey = "float"
+non_manufacturing_coef = "list[float]"
+non_manufacturing_safe = "float"
+non_manufacturing_grey = "float"
+manufacturing_sectors = "list[str]"
+manufacturing_industries = "list[str]"
+
+[valuation.models.piotroski]
+bands = "list[int]"
+min_evaluated = "int"
+
+[valuation.models.financial_health]
+roa_points = "list[int]"
+roe_points = "list[int]"
+de_points = "list[int]"
+equity_to_assets_points = "list[int]"
+book_value_growth_points = "int"
+dividend_points = "int"
+scale = "int"
+neutral_without_data = "int"
+level_bands = "list[int]"
+limited_analysis_below = "int"
+
+[validation.thresholds]
+fcf_over_ocf_tolerance_abs = "float"
+margin_min = "float"
+margin_max = "float"
+revenue_jump_ratio_max = "float"
+revenue_jump_ratio_min = "float"
+net_income_jump_ratio_max = "float"
+net_income_jump_ratio_min = "float"
+shares_ratio_min = "float"
+shares_ratio_max = "float"
+split_match_tolerance = "float"
+growth_artifact_abs_pct = "float"
+growth_artifact_lt_multiple = "float"
+growth_vs_statements_pp = "float"
+growth_units_abs_max = "float"
+dividend_yield_max = "float"
+payout_ratio_max = "float"
+
+[data.fetcher]
+max_retries = "int"
+base_delay_s = "int"
+max_delay_s = "int"
+parallel_task_timeout_s = "int"
+thread_pool_workers = "int"
+cache_default_ttl_min = "int"
+cache_class_default_ttl_min = "int"
+cache_max_entries = "int"
+profile_ttl_min = "int"
+financials_ttl_min = "int"
+
+[data.yahoo]
+cache_ttl_s = "int"
+cache_ttl_degraded_s = "int"
+last_known_good_max_age_s = "int"
+degraded_retry_sleep_step_s = "float"
+http_timeout_s = "int"
+statements_timeout_s = "int"
+search_timeout_s = "int"
+impersonate_profiles = "list[str]"
+completeness_fields = "list[str]"
+
+[data.finnhub]
+timeout_s = "int"
+cache_ttl_s = "int"
+gap_fields = "list[str]"
+eps_override_rel_diff = "float"
+
+[thresholds.roce]
+divergence_pp = "float"
+excess_cash_share = "float"
+
+[sectors.archetypes]
+financial_sectors = "list[str]"
+bank_prefixes = "list[str]"
+insurance_prefixes = "list[str]"
+financial_mature_industries = "list[str]"
+payment_network_industries = "list[str]"
+payment_network_max_assets_to_revenue = "float"
+reit_prefixes = "list[str]"
+growth_pre_profit_min_revenue_cagr = "float"
+cyclical_industries = "list[str]"
+cyclical_conditional_industries = "list[str]"
+
+[sectors.archetypes.reversion]
+op_margin_peak_to_trough = "float"
+revenue_annual_decline = "float"
+
+[sectors.archetypes.possible_cyclical]
+min_years = "int"
+op_margin_detrended_std = "float"
+revenue_growth_std = "float"
+
+[sectors.archetypes.not_applicable]
+FINANCIAL = "list[str]"
+REIT = "list[str]"
+GROWTH_PRE_PROFIT = "list[str]"
+CYCLICAL = "list[str]"
+MATURE = "list[str]"
+
+[valuation.archetypes]
+cycle_full_years = "int"
+cyclical_growth_bounds = "list[float]"
+
+[thresholds.normalization]
+one_off_pct = "float"
+robust_z = "float"
+min_quarters = "int"
+min_share_of_pretax = "float"
+mad_floor_share_of_pretax = "float"
+tax_rate_bounds = "list[float]"
+default_tax_rate = "float"
+recurrence_min_years = "int"
+recurrence_window = "int"
+components_tolerance = "float"
+components_tolerance_abs = "float"
+label_min_diff = "float"
+
+[thresholds.growth]
+per_share_min_shares_cagr = "float"
+anomalous_base_ratio = "float"
+
+[thresholds.dcf_reliability]
+terminal_max_pct = "int"
+central_block = "int"
+fcf_fields = "list[str]"
+inferred_sources = "list[str]"
+
+[thresholds.confidence]
+level_values = "list[float]"
+overall_bounds = "list[float]"
+upside_scale = "float"
+neutral_band = "float"
+convergence_spread_max = "float"
+no_evaluable_cap = "str"
+coverage_bounds = "list[float]"
+source_issue_bounds = "list[int]"
+excluded_multiple_components = "list[str]"
+
+[thresholds.confidence.weights]
+convergence = "float"
+coverage = "float"
+source = "float"
+stability = "float"

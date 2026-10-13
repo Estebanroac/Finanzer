@@ -16,7 +16,7 @@ export default function Home() {
   const timer = useRef<NodeJS.Timeout>(undefined);
 
   useEffect(() => {
-    if (query.length < 1) { setResults([]); setOpen(false); return; }
+    if (query.length < 1) return;   // el vaciado lo hace onChange (sin setState síncrono en el efecto)
     clearTimeout(timer.current);
     timer.current = setTimeout(async () => {
       const r = await searchStocks(query);
@@ -69,7 +69,7 @@ export default function Home() {
             <input
               type="text"
               value={query}
-              onChange={e => setQuery(e.target.value)}
+              onChange={e => { const v = e.target.value; setQuery(v); if (!v) { setResults([]); setOpen(false); } }}
               onFocus={() => results.length > 0 && setOpen(true)}
               onKeyDown={e => {
                 if (e.key === "ArrowDown") { e.preventDefault(); setSelectedIdx(i => Math.min(i + 1, results.length - 1)); }

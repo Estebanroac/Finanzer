@@ -1,0 +1,124 @@
+# Valoración y modelos institucionales: CAPM, WACC, DCF, grid de
+# sensibilidad, Graham, ROIC, Altman, Piotroski y salud financiera bancaria.
+# Valores idénticos a los literales que había en el código (etapa 4). Donde
+# hoy conviven dos valores para un mismo concepto hay dos claves (no se
+# unifica hasta que se decida: ver el informe de conflictos de la etapa 4).
+
+[capm]                              # Ke = Rf + β·MRP (lib/cost_of_capital.py, etapa 8)
+risk_free_ticker = "^TNX"           # rendimiento del Tesoro de EE. UU. a 10 años (Yahoo, cotiza en %)
+risk_free_cache_hours = 24          # una lectura correcta vale 24 h
+risk_free_bounds = [0.0, 0.15]      # una lectura fuera del rango se descarta
+# FALLBACK si ^TNX no está disponible (se marca en el JSON y el PDF): el Tesoro a 10 años
+# que usa Damodaran para la prima implícita de abajo (5.29% a 1-oct-2026, misma fuente).
+# PAR: risk_free_rate y market_risk_premium forman un par (la prima implícita se calcula
+# con ese Rf) y DEBEN ACTUALIZARSE JUNTOS, con la misma fecha (revisión mensual, RECON 7.13).
+risk_free_rate = 0.0529
+# Prima de riesgo de mercado (EE. UU.): la IMPLÍCITA de Damodaran vigente. El DCF
+# compara valor intrínseco con precio de mercado: una prima histórica mayor que la
+# implícita hace que todo salga sobrevalorado por construcción.
+#   Fuente: Damodaran Online, "Implied ERP on October 1, 2026 = 4.20% (Trailing 12
+#   month, with adjusted payout)", pages.stern.nyu.edu/~adamodar (home.htm), con el
+#   Tesoro a 10 años en 5.29% como Rf. Consultado: 2026-10-12. Damodaran la publica
+#   cada mes: revisarla al menos cada trimestre.
+#   Referencia: Kroll, ERP recomendada para EE. UU. 5.0% (desde jun-2024).
+#   Antes (hasta la etapa 8): 5.5%, prima heredada de la v1 sin fuente.
+#   Par con risk_free_rate (arriba): actualizar los dos a la vez.
+market_risk_premium = 0.042
+default_beta = 1.0                  # beta ausente (la ajustada de 1.0 es 1.0)
+# Beta ajustada de Blume (1971): β = 0.67 × β bruta + 0.33 (reversión hacia 1). Se usa
+# en el Ke del WACC y en el Ke de FINANCIAL; la beta bruta se sigue mostrando.
+blume_weight = 0.67
+blume_prior = 0.33
+
+[tax]                               # tasa efectiva: escudo fiscal del WACC y NOPAT del ROIC (la misma t)
+statutory_rate = 0.21               # fallback: tipo legal federal de EE. UU. (TCJA, desde 2018)
+effective_bounds = [0.10, 0.35]     # provisión / BAI acotada: < 10% suele ser transitorio (créditos,
+                                    # pérdidas compensables); > 35% supera cualquier tipo legal + estatal
+
+[wacc]
+default = 0.10                      # sin capitalización para los pesos: no hay WACC (el DCF queda sin dato)
+clamp_min = 0.06                    # ÚNICO rango del WACC (etapa 8): el usado en DCF, grid y spread
+clamp_max = 0.20                    # ROIC−WACC es el que se muestra; las columnas del grid se recortan en él
+
+[synthetic_rating]                  # Kd = Rf + spread del rating sintético por cobertura de intereses
+# Damodaran, ratings.xls (pages.stern.nyu.edu/~adamodar/pc/ratings.xls), versión de
+# enero de 2026 (guardada el 2026-01-26; consultada el 2026-10-12): cobertura EBIT /
+# intereses -> rating -> spread sobre el Tesoro. Tramos de cobertura distintos para
+# empresas grandes (no financieras, >= 5.000 M$) y pequeñas o más arriesgadas; los
+# spreads son los mismos en ambas tablas. Damodaran los actualiza cada enero.
+large_cap_min = 5000000000.0        # capitalización >= 5.000 M$: tabla de empresas grandes
+large_coverage_bounds = [8.5, 6.5, 5.5, 4.25, 3.0, 2.5, 2.25, 2.0, 1.75, 1.5, 1.25, 0.8, 0.65, 0.2]
+small_coverage_bounds = [12.5, 9.5, 7.5, 6.0, 4.5, 4.0, 3.5, 3.0, 2.5, 2.0, 1.5, 1.25, 0.8, 0.5]
+ratings = ["AAA", "AA", "A+", "A", "A-", "BBB", "BB+", "BB", "B+", "B", "B-", "CCC", "CC", "C", "D"]
+spreads = [0.0040, 0.0055, 0.0070, 0.0078, 0.0089, 0.0111, 0.0138, 0.0184, 0.0275, 0.0321, 0.0509, 0.0885, 0.1261, 0.1600, 0.1900]
+# Regla M (cobertura no significativa): EBIT < 0 con caja neta -> la deuda está
+# respaldada por la caja, pero el negocio no genera resultado: grado de inversión
+# más bajo. EBIT < 0 con deuda neta -> peor tramo. Deuda sin gasto por intereses
+# informado -> tramo por defecto. Los tres casos se marcan.
+net_cash_rating = "BBB"
+negative_rating = "D"
+no_coverage_rating = "BBB"
+
+[dcf]                               # dcf_multi_stage / dcf_multi_stage_dynamic / main.py
+high_growth_years = 5
+transition_years = 5
+terminal_growth = 0.025
+growth_cap = 0.50                   # tope duro interno de dcf_multi_stage (las celdas del grid quedan por debajo)
+signature_default_growth = 0.15     # default de firma de dcf_multi_stage y del grid
+source_cap_fcf = 0.35               # topes por fuente del crecimiento (dinámico)
+source_cap_eps = 0.40
+source_cap_revenue = 0.30           # tope COMÚN de DCF y grid (el grid parte del crecimiento usado por el DCF)
+min_source_growth = -0.20           # una fuente se descarta si crece <= -20%
+default_growth = 0.08               # sin crecimiento (main.py) o con crecimiento <= −20% (dinámico)
+                                    # (etapa 6: esa sustitución es incorrecta, ver RECON 7.9)
+decay_exponential_above = 0.25
+decay_linear_above = 0.15
+exponential_decay_factor = 0.85
+terminal_value_warning_pct = 75     # aviso si el valor terminal pesa > 75%
+
+[grid]                              # dcf_sensitivity_analysis
+growth_range = [-0.05, 0.05, 0.025]     # (delta mín, delta máx, paso)
+discount_range = [-0.02, 0.02, 0.01]
+interpretation_pct = [80, 60, 40, 20]   # % de escenarios por encima del precio
+
+[graham]
+multiplier = 22.5                   # sqrt(22.5 × EPS × BVPS)
+
+
+[shareholder]
+buyback_yield_guard = 0.25          # |buyback| > 25% se descarta (main.py)
+
+[models.altman]                     # altman_z_score
+original_coef = [1.2, 1.4, 3.3, 0.6, 1.0]           # X1..X5
+original_safe = 2.99
+original_grey = 1.81
+non_manufacturing_coef = [6.56, 3.26, 6.72, 1.05]   # Z'' (sin X5)
+non_manufacturing_safe = 2.60
+non_manufacturing_grey = 1.10
+# Modelo por sector/industria de la clasificación (coincidencia exacta, minúsculas):
+# estos -> Z original; el resto -> Z''. FINANCIAL y REIT: no aplica (arquetipo).
+manufacturing_sectors = ["basic materials", "industrials", "energy"]
+manufacturing_industries = []       # industrias manufactureras fuera de esos sectores (vacío por ahora)
+
+[models.piotroski]
+bands = [8, 6, 4, 2]                    # ÚNICA escala: interpretación, insignia (Fuerte/Bueno/Neutral/Débil/Crítico),
+                                        # puntos de Calidad del score y tarjeta/leyenda de la UI (generada)
+min_evaluated = 7                       # etapa 5: con >= 7 criterios evaluados se escala a base 9 (X·9/N);
+                                        # con menos, "no concluyente" y no aporta a Calidad
+
+[models.financial_health]               # financial_health_score (bancos); umbrales en sectors.toml
+roa_points = [3, 2, 1]
+roe_points = [3, 2, 1]
+de_points = [2, 2, 1]
+equity_to_assets_points = [2, 1]
+book_value_growth_points = 1
+dividend_points = 1
+scale = 10                              # la puntuación se reescala a 0-10
+neutral_without_data = 5
+level_bands = [8, 6, 4]                 # STRONG / GOOD / NEUTRAL (si no, WEAK)
+limited_analysis_below = 6              # máx. posible < 6 -> "(análisis limitado)"
+
+# ── Etapa 6: ramas por arquetipo ──
+[archetypes]
+cycle_full_years = 5                # menos ejercicios -> "ciclo incompleto" (EV/EBITDA, ROCE, FCF y crecimiento normalizados)
+cyclical_growth_bounds = [-0.05, 0.10]  # crecimiento normalizado de ciclo medio, acotado

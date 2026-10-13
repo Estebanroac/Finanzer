@@ -1,0 +1,406 @@
+# Configuración sectorial.
+#
+# ⚠ PROVISIONAL: las medianas y los umbrales por sector de este archivo NO
+# vienen de comparables reales ni de una fuente citada; son valores fijados a
+# mano en versiones anteriores (RECON §2.1, "Fallo 3"). Se extraen tal cual en
+# la etapa 4 para no cambiar el comportamiento; deben sustituirse por medianas
+# de comparables reales.
+
+# ── Medianas sectoriales para la "brecha vs sector" (main._get_sector_benchmarks)
+# Alimentan sector_pe / sector_ev_ebitda del score de valoración y las tablas
+# comparativas del PDF. Copia en frontend/src/lib/sectorBench.ts (generada).
+[benchmarks.default]               # PROVISIONAL
+pe = 22
+forward_pe = 18
+pb = 3.5
+ev_ebitda = 14
+pfcf = 25
+peg = 1.5
+roe = 0.15
+roa = 0.06
+roic = 0.10
+net_margin = 0.10
+operating_margin = 0.15
+gross_margin = 0.40
+current_ratio = 1.5
+de = 0.8
+interest_coverage = 8
+fcf_yield = 0.04
+revenue_growth = 0.08
+earnings_growth = 0.10
+
+[benchmarks.sectors.technology]    # PROVISIONAL
+pe = 30
+forward_pe = 25
+pb = 8
+ev_ebitda = 20
+roe = 0.25
+roa = 0.10
+roic = 0.18
+net_margin = 0.20
+operating_margin = 0.25
+gross_margin = 0.60
+revenue_growth = 0.15
+earnings_growth = 0.18
+
+[benchmarks.sectors.healthcare]    # PROVISIONAL
+pe = 25
+forward_pe = 20
+pb = 4
+ev_ebitda = 16
+roe = 0.18
+net_margin = 0.15
+gross_margin = 0.55
+revenue_growth = 0.10
+
+[benchmarks.sectors.financials]    # PROVISIONAL
+pe = 13
+forward_pe = 11
+pb = 1.5
+roe = 0.12
+roa = 0.01
+de = 2.5
+net_margin = 0.25
+current_ratio = 0
+interest_coverage = 0
+
+[benchmarks.sectors.consumer_cyclical]   # PROVISIONAL
+pe = 20
+forward_pe = 17
+pb = 5
+ev_ebitda = 13
+roe = 0.20
+net_margin = 0.08
+gross_margin = 0.35
+revenue_growth = 0.08
+
+[benchmarks.sectors.consumer_defensive]  # PROVISIONAL
+pe = 23
+forward_pe = 20
+pb = 6
+ev_ebitda = 16
+roe = 0.25
+net_margin = 0.08
+gross_margin = 0.35
+de = 1.2
+revenue_growth = 0.05
+earnings_growth = 0.06
+
+[benchmarks.sectors.communication] # PROVISIONAL
+pe = 18
+forward_pe = 16
+pb = 3
+ev_ebitda = 10
+roe = 0.12
+net_margin = 0.12
+gross_margin = 0.55
+
+[benchmarks.sectors.energy]        # PROVISIONAL
+pe = 10
+forward_pe = 9
+pb = 1.8
+ev_ebitda = 6
+roe = 0.15
+net_margin = 0.08
+de = 0.5
+revenue_growth = 0.03
+
+[benchmarks.sectors.industrials]   # PROVISIONAL
+pe = 20
+forward_pe = 18
+pb = 4
+ev_ebitda = 13
+roe = 0.18
+net_margin = 0.08
+gross_margin = 0.30
+revenue_growth = 0.06
+
+[benchmarks.sectors.utilities]     # PROVISIONAL
+pe = 18
+forward_pe = 16
+pb = 1.8
+ev_ebitda = 12
+roe = 0.10
+de = 1.5
+net_margin = 0.12
+revenue_growth = 0.03
+
+[benchmarks.sectors.real_estate]   # PROVISIONAL
+pe = 35
+forward_pe = 30
+pb = 2.0
+ev_ebitda = 20
+roe = 0.06
+de = 1.0
+net_margin = 0.20
+
+[benchmarks.sectors.materials]     # PROVISIONAL
+pe = 14
+forward_pe = 12
+pb = 2
+ev_ebitda = 8
+roe = 0.12
+net_margin = 0.08
+de = 0.6
+
+# ── Perfil "market": medianas del mercado amplio (S&P 500) — PROVISIONAL ──
+# Se usa EN LUGAR de las medianas del sector cuando el arquetipo contradice al
+# sector de Yahoo (p. ej. una red de pagos de Financial Services clasificada
+# MATURE): las medianas del sector describen a empresas de otro arquetipo
+# (bancos con P/E ~13). Las métricas que no figuran aquí heredan de default.
+[benchmarks.market]                # PROVISIONAL
+pe = 23.0
+ev_ebitda = 13.2
+
+[benchmarks.market_source]         # fuente y fecha de cada mediana del perfil market
+pe = "mediana de los miembros del S&P 500 (P/E TTM), chartrow.com/sp500/pe-ratio, cierre del 12-oct-2026; método de la mediana no documentado por la fuente"
+ev_ebitda = "mediana EV/EBITDA del S&P 500 a 1T-2025 (Ivaluate, 'EV/EBITDA multiples by sector 2025-2026', jul-2026); no hay mediana pública de constituyentes de 2026 (Damodaran ene-2026, agregado de todo EE. UU. sin financieras: 16.95x, no es una mediana)"
+
+# Arquetipo que suponen las medianas de cada sector. Si el arquetipo de la
+# empresa es otro, el benchmark es el perfil market (y se registra por qué).
+[benchmarks.sector_archetype]
+financials = "FINANCIAL"
+real_estate = "REIT"
+
+# Medianas de respaldo dentro del motor cuando no llega la del sector.
+[benchmarks.engine_fallback]       # PROVISIONAL
+pe = 20                            # score_valoracion
+ev_ebitda = 12                     # score_valoracion
+
+# ── Umbrales del score por sector (financial_ratios.ThresholdConfig) ──
+[score_thresholds.default]         # PROVISIONAL
+pe_overvalued_mult = 1.3
+pe_undervalued_mult = 0.7
+pe_historical_overvalued_mult = 1.4
+pe_historical_undervalued_mult = 0.6
+p_fcf_high = 25.0
+p_fcf_low = 10.0
+ev_ebitda_overvalued_mult = 1.3
+ev_ebitda_undervalued_mult = 0.7
+fcf_yield_low = 0.03
+fcf_yield_high = 0.08
+peg_overvalued = 2.0
+peg_undervalued = 1.0
+net_debt_ebitda_high = 4.0
+net_debt_ebitda_low = 2.0
+debt_equity_high = 1.0
+interest_coverage_low = 3.0
+current_ratio_low = 1.0
+current_ratio_high = 2.0
+quick_ratio_low = 0.7
+roe_high = 0.20
+roe_low = 0.08
+roa_high = 0.12                    # banda superior sectorial (bancos ~1.2%, tech ~15%)
+roa_low = 0.03
+operating_margin_low = 0.05
+net_margin_low = 0.03
+beta_high = 1.5
+beta_low = 0.8
+
+# Overrides por sector (solo las claves que cambian respecto al default).
+[score_thresholds.overrides.technology]   # PROVISIONAL
+pe_overvalued_mult = 1.4
+p_fcf_high = 35.0
+roe_high = 0.22
+roe_low = 0.10
+roa_high = 0.15
+debt_equity_high = 0.80            # 0.50 castigaba a mega-caps con patrimonio encogido por recompras
+operating_margin_low = 0.15
+net_margin_low = 0.10
+
+[score_thresholds.overrides.utilities]    # PROVISIONAL
+pe_overvalued_mult = 1.2
+p_fcf_high = 18.0
+debt_equity_high = 1.5
+roe_high = 0.10
+roe_low = 0.05
+roa_high = 0.035
+roa_low = 0.015
+operating_margin_low = 0.12
+net_margin_low = 0.08
+
+[score_thresholds.overrides.financials]   # PROVISIONAL
+pe_overvalued_mult = 1.25
+roe_high = 0.12
+roe_low = 0.06
+roa_high = 0.012
+roa_low = 0.008
+debt_equity_high = 10.0
+operating_margin_low = 0.20
+net_margin_low = 0.15
+
+[score_thresholds.overrides.healthcare]   # PROVISIONAL
+pe_overvalued_mult = 1.35
+p_fcf_high = 30.0
+roe_high = 0.18
+roe_low = 0.08
+operating_margin_low = 0.12
+net_margin_low = 0.08
+
+[score_thresholds.overrides.consumer_cyclical]   # PROVISIONAL
+pe_overvalued_mult = 1.3
+current_ratio_low = 1.2
+roe_high = 0.18
+roe_low = 0.08
+operating_margin_low = 0.06
+net_margin_low = 0.04
+
+[score_thresholds.overrides.consumer_defensive]  # PROVISIONAL
+pe_overvalued_mult = 1.25
+roe_high = 0.20
+roe_low = 0.10
+debt_equity_high = 1.2
+operating_margin_low = 0.10
+net_margin_low = 0.06
+
+[score_thresholds.overrides.energy]       # PROVISIONAL
+pe_overvalued_mult = 1.2
+p_fcf_high = 12.0
+roe_high = 0.12
+roe_low = 0.05
+roa_high = 0.06
+debt_equity_high = 0.50
+operating_margin_low = 0.08
+net_margin_low = 0.05
+fcf_yield_high = 0.10
+fcf_yield_low = 0.05
+
+[score_thresholds.overrides.real_estate]  # PROVISIONAL
+pe_overvalued_mult = 1.3
+debt_equity_high = 2.0
+roe_high = 0.08
+roe_low = 0.03
+roa_high = 0.03
+roa_low = 0.01
+operating_margin_low = 0.25
+net_margin_low = 0.15
+
+[score_thresholds.overrides.industrials]  # PROVISIONAL
+pe_overvalued_mult = 1.3
+roe_high = 0.15
+roe_low = 0.08
+debt_equity_high = 0.80
+operating_margin_low = 0.08
+net_margin_low = 0.05
+
+[score_thresholds.overrides.materials]    # PROVISIONAL
+pe_overvalued_mult = 1.25
+roe_high = 0.12
+roe_low = 0.05
+roa_high = 0.06
+debt_equity_high = 0.60
+operating_margin_low = 0.10
+net_margin_low = 0.06
+
+[score_thresholds.overrides.communication] # PROVISIONAL
+pe_overvalued_mult = 1.35
+roe_high = 0.15
+roe_low = 0.08
+debt_equity_high = 1.0
+operating_margin_low = 0.15
+net_margin_low = 0.10
+
+# Perfil "market" (empresa cuyo arquetipo contradice al sector de Yahoo, ver
+# benchmarks.sector_archetype): umbrales del mercado amplio. PROVISIONAL: sin
+# overrides, son los umbrales generales de default (ROE 20%/8%, ROA 12%/3%,
+# D/E 1.0x, márgenes operativo 5% y neto 3%), fijados a mano y sin fuente; no
+# son medianas del S&P 500.
+[score_thresholds.overrides.market]  # PROVISIONAL
+
+# ── Sector financiero ──
+[financials]
+# Nombres de sector que se tratan como financieros (coincidencia exacta)...
+sector_names = ["financials", "financial services", "banks", "insurance", "asset management", "capital markets", "diversified financial", "regional banks", "investment banking", "credit services"]
+# ...o que contienen alguna de estas palabras.
+keywords = ["bank", "financ", "insurance", "asset manage", "capital market"]
+
+[financials.benchmarks]            # financial_health_score; PROVISIONAL ("promedios de grandes bancos, Basilea III/IV")
+roa_excellent = 0.005
+roa_good = 0.003
+roa_acceptable = 0.002
+roe_excellent = 0.12
+roe_good = 0.08
+roe_acceptable = 0.06
+pb_cheap = 0.8
+pb_fair = 1.2
+pb_expensive = 2.0
+de_very_conservative = 5.0
+de_conservative = 10.0
+de_normal = 15.0
+equity_to_assets_solid = 0.06
+equity_to_assets_good = 0.04
+dividend_yield_good = 0.025
+payout_sustainable = 0.60
+
+# ── Arquetipos (etapa 6, lib/classify.py) ──
+# Una sola función decide el arquetipo; motor, alertas, PDF y frontend leen su
+# salida. Prioridad: FINANCIAL > MATURE (excepción financiera) > REIT >
+# GROWTH_PRE_PROFIT > CYCLICAL > MATURE (por defecto).
+# Las industrias se comparan normalizadas: minúsculas y "—", "–" o "-" entre
+# palabras unificados como " - " (prod trae "Banks—Diversified"; local, "Banks - Diversified").
+[archetypes]
+financial_sectors = ["financial services", "financials"]
+bank_prefixes = ["banks"]                        # FINANCIAL: bancos
+insurance_prefixes = ["insurance - "]            # FINANCIAL: aseguradoras ("Insurance - Life", ...)
+# MATURE dentro de Financial Services: sin balance de préstamos que sea el producto.
+financial_mature_industries = ["asset management", "financial data & stock exchanges", "insurance brokers"]
+# Credit Services mezcla redes de pago (V, MA) con prestamistas (COF, SYF, AXP):
+# es MATURE solo si es de tipo red de pagos, medido por la intensidad de balance
+# (activos totales / ingresos). Un prestamista lleva su cartera en el activo.
+payment_network_industries = ["credit services"]
+payment_network_max_assets_to_revenue = 3.0      # V 2.5x; AXP ~4x, SYF ~5.5x, COF ~12x
+reit_prefixes = ["reit"]                         # "REIT - Retail", ...; promotoras y servicios NO
+growth_pre_profit_min_revenue_cagr = 0.15        # CAGR real de ingresos a 3 años (4 ejercicios)
+# Industrias cíclicas SIEMPRE (nombres exactos de Yahoo, normalizados).
+cyclical_industries = [
+    "copper", "steel", "aluminum", "other industrial metals & mining",
+    "gold", "silver", "other precious metals & mining", "coking coal", "thermal coal", "uranium",
+    "oil & gas e&p", "oil & gas refining & marketing", "oil & gas integrated",
+    "oil & gas drilling", "oil & gas equipment & services",
+    "chemicals", "agricultural inputs",
+    "semiconductor equipment & materials",
+    "airlines", "auto manufacturers", "auto parts",
+    "building materials", "residential construction", "real estate - development",
+    "lumber & wood production", "paper & paper products", "marine shipping",
+]
+# Industrias cíclicas CONDICIONALES: mezclan negocios de ciclo (memoria, commodities
+# químicos) con otros estructurales (diseño de chips, gases industriales). Solo son
+# CYCLICAL si en la ventana de ejercicios hay REVERSIÓN ([archetypes.reversion]);
+# si no, MATURE (con la alerta "posible cíclica" si la volatilidad es alta).
+cyclical_conditional_industries = ["semiconductors", "specialty chemicals"]
+
+# Regla de reversión (cíclicas condicionales): una caída pico-valle del margen
+# operativo, o una caída anual de ingresos, dentro de la ventana disponible. Un
+# crecimiento explosivo sin caídas (NVDA) no es un ciclo; una caída sí lo es (MU).
+[archetypes.reversion]
+op_margin_peak_to_trough = 0.10     # el margen cae > 10 pp desde un pico anterior
+revenue_annual_decline = 0.10       # algún ejercicio con ingresos −10% o peor
+
+# Regla de desviación SOLO como alerta ("posible cíclica"): no cambia el arquetipo
+# (tampoco en las condicionales), baja la confianza. Con los ejercicios anuales (Yahoo: 4).
+[archetypes.possible_cyclical]
+min_years = 4                       # ejercicios con dato necesarios para evaluarla
+op_margin_detrended_std = 0.05      # desviación del margen operativo alrededor de su tendencia lineal (5 pp)
+revenue_growth_std = 0.15           # desviación del crecimiento interanual de ingresos (15 pp)
+
+# Componentes que NO APLICAN por arquetipo (no cuentan en la cobertura). Claves:
+# piotroski, altman, ocf, fcf, fcf_to_ni, de, ev_ebitda, pe, peg, forward_pe, p_fcf,
+# garp (bonos y rescates de crecimiento sobre múltiplos), current_ratio,
+# interest_coverage, net_debt_ebitda, roic_wacc, operating_margin, fcf_growth,
+# eps_growth, dcf, graham, roce.
+[archetypes.not_applicable]
+FINANCIAL = ["piotroski", "altman", "ocf", "fcf", "fcf_to_ni", "de", "ev_ebitda", "dcf", "graham",
+             "pe", "peg", "forward_pe", "p_fcf", "garp", "current_ratio", "interest_coverage",
+             "net_debt_ebitda", "roic_wacc", "operating_margin", "fcf_growth", "roce",
+             "gross_margin"]   # etapa 9b: sin coste de ventas; margen bruto "No aplica", no "Sin dato"
+REIT = ["altman", "piotroski", "fcf_to_ni", "garp", "pe", "peg", "forward_pe", "p_fcf", "dcf", "roce", "eps_growth",
+        "current_ratio", "graham",
+        # Etapa 9a: rentabilidad sobre FFO; los ratios sobre el beneficio neto no aplican (mismo
+        # motivo que el P/E) y los márgenes bruto/operativo tampoco (arrendamiento neto).
+        "roe", "roa", "net_margin", "roic_wacc", "gross_margin", "operating_margin"]
+GROWTH_PRE_PROFIT = ["pe", "peg", "forward_pe", "graham", "eps_growth", "altman",   # DCF solo con FCF < 0 (en código);
+                     # Altman -> runway en Solidez (etapa 7). Etapa 9a: rentabilidad con margen
+                     # bruto, margen operativo (bandas propias) y su mejora, y margen FCF − SBC.
+                     "roe", "roa", "net_margin", "roic_wacc"]
+CYCLICAL = ["pe", "peg", "forward_pe", "fcf_growth"]
+MATURE = []

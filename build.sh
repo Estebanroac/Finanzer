@@ -44,4 +44,23 @@ if [ "$MISSING" -gt 0 ]; then
 fi
 echo "All referenced static assets present."
 
+# Contract guard (etapa 9b): frontend/out must be built from the CURRENT contract
+# (frontend/src/lib/api.ts). The build stamps its SHA-256 into out/build-stamp.json;
+# a contract change without a rebuild would serve a frontend that reads fields the
+# backend no longer exposes.
+echo "==> Validating frontend/out was built from the current contract..."
+if [ ! -f frontend/out/build-stamp.json ]; then
+    echo "ERROR: frontend/out/build-stamp.json missing — rebuild with 'cd frontend && npm run build'." >&2
+    exit 1
+fi
+python3 - <<'PY'
+import hashlib, json, sys
+want = hashlib.sha256(open("frontend/src/lib/api.ts", "rb").read()).hexdigest()
+got = json.load(open("frontend/out/build-stamp.json"))["contract_sha256"]
+if got != want:
+    sys.exit("ERROR: frontend/out was built from another contract (src/lib/api.ts changed): "
+             "rebuild with 'cd frontend && npm run build' and commit frontend/out/.")
+print("frontend/out matches the current contract.")
+PY
+
 echo "==> Build complete!"

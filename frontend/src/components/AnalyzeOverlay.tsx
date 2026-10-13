@@ -55,8 +55,6 @@ export default function AnalyzeOverlay({
   useEffect(() => {
     if (!done || !minElapsed || finishedRef.current) return;
     finishedRef.current = true;
-    setCompleted(STEPS.length);
-    setBarTarget(100);
     const t1 = setTimeout(() => setExiting(true), EXIT_HOLD);
     const t2 = setTimeout(() => onFinished(), EXIT_HOLD + EXIT_ANIM);
     return () => {
@@ -64,6 +62,12 @@ export default function AnalyzeOverlay({
       clearTimeout(t2);
     };
   }, [done, minElapsed, onFinished]);
+
+  // Al terminar (datos + tiempo mínimo) todos los pasos y la barra se completan:
+  // valores derivados, sin setState síncrono dentro del efecto.
+  const finishing = done && minElapsed;
+  const shownCompleted = finishing ? STEPS.length : completed;
+  const shownBar = finishing ? 100 : barTarget;
 
   return (
     <div className={`ao-overlay${exiting ? " ao-out" : ""}`} aria-hidden="true">
@@ -91,7 +95,7 @@ export default function AnalyzeOverlay({
           {STEPS.map((label, i) => (
             <li
               key={label}
-              className={i < completed ? "done" : i === completed ? "active" : ""}
+              className={i < shownCompleted ? "done" : i === shownCompleted ? "active" : ""}
             >
               <span className="ao-dot" />
               {label}
@@ -102,9 +106,9 @@ export default function AnalyzeOverlay({
           <div
             className="ao-bar-fill"
             style={{
-              width: `${barTarget}%`,
+              width: `${shownBar}%`,
               transition:
-                barTarget >= 100
+                shownBar >= 100
                   ? "width 0.35s cubic-bezier(0.45,0,0.15,1)"
                   : "width 5.5s cubic-bezier(0.3,0.6,0.35,1)",
             }}

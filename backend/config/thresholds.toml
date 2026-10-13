@@ -1,0 +1,401 @@
+# Bandas del score, de las alertas y de las lecturas del PDF.
+# Convención: `*_bounds` son los umbrales en el orden en que se evalúan en el
+# código (if/elif) y `*_points` los puntos de cada tramo; el último punto es
+# el del `else`. El operador de comparación (>=, >, <=) sigue en el código.
+
+[score.category]                    # las 5 categorías: base 10, rango [0, 20]
+base = 10
+min = 0
+max = 20
+
+[score.coverage]                    # etapa 5: cobertura por categoría
+# Una categoría con menos del 60% de sus componentes con dato se marca de baja
+# confianza (no cambia el score; lo usará la etapa 8). Criterio: con 3-5
+# componentes por categoría, 60% exige la mayoría (3/5, 2/3); 2/4 ya queda bajo.
+low_confidence_below = 0.6
+# Por debajo del 50% la categoría no se reescala: queda excluida del total (que
+# se reescala a 100 sobre las demás) y se informa como no concluyente.
+min_conclusive = 0.5
+
+[score.solidez]                     # score_solidez_financiera
+altman_points = [6, -2, -6]         # SAFE / GREY / DISTRESS
+current_bounds = [2.0, 1.5, 1.0, 0.8]
+current_points = [4, 2, 0, -2, -4]
+de_mults = [0.5, 1.3, 1.6]          # × umbral D/E del sector (tramos: ≤0.5×, ≤1×, ≤1.3×, ≤1.6×)
+de_points = [5, 2, 0, -2]
+de_mitigation_coverage = 10         # D/E alto pero cobertura ≥ 10x -> penalización mitigada
+de_mitigated_points = -2
+de_severe_points = -5
+coverage_bounds = [10, 5, 3, 1.5]
+coverage_points = [3, 1, 0, -2, -3]
+# Runway (GROWTH_PRE_PROFIT, sustituye a Altman con su mismo peso): años de
+# (caja + inversiones a corto plazo) / quema anual de FCF. FCF TTM >= 0 =
+# autofinanciada = mejor tramo. >= 3 años aguanta un cierre de mercado de
+# capitales de unos 2 años (2022-23) con margen; 2-3, cómodo; 1-2, tendrá que
+# financiarse dentro del horizonte del plan; < 1, financiación urgente y
+# probablemente dilutiva antes del próximo ejercicio.
+runway_bounds = [3.0, 2.0, 1.0]     # años: ≥3 / ≥2 / ≥1 / <1
+runway_points = [6, 2, -2, -6]
+# REIT (etapa 9a): la métrica de apalancamiento es deuda neta/EBITDA con bandas de
+# REIT (el D/E queda informativo). Un REIT con grado de inversión suele operar en
+# 5–6.5x; > 7.5x es elevado y > 9x alto. Propuesta PROVISIONAL, sin muestra.
+reit_nde_bounds = [5.0, 6.5, 7.5, 9.0]   # ≤5 conservador / ≤6.5 adecuado / ≤7.5 en línea / ≤9 elevado / alto
+reit_nde_points = [4, 2, 0, -2, -4]
+
+[score.solidez_financial]           # score_solidez_financiera_financial (bancos)
+max_without_regulatory = 18         # sin CET1/Tier 1 el máximo es 18/20
+health_offset = 4                   # solidez = 4 + salud × 1.4
+health_multiplier = 1.4
+de_points = [3, 2, 0, -2]           # tramos de sectors.financials.benchmarks.de_*
+pb_points = [2, 1, 0, -1]           # tramos de pb_cheap / pb_fair / pb_expensive
+
+[score.rentabilidad]                # score_rentabilidad
+negative_equity_min_roa = 0.03      # ROE < 0 con ROA > 3%: patrimonio negativo por recompras, no se penaliza
+roe_high_mult = 1.25                # tramos: ≥1.25×roe_high / ≥roe_high / ≥roe_low / ≥5% / ≥0 / <0
+roe_floor = 0.05
+roe_points = [6, 4, 2, -2, -4, -6]
+roa_high_mult = 1.25                # tramos: ≥1.25×roa_high / ≥roa_high / ≥roa_low / ≥0 / <0
+roa_points = [4, 2, 0, -2, -4]
+operating_margin_bounds = [0.30, 0.20, 0.10, 0.05]   # y luego ≥0 / <0 (no sectorial)
+operating_margin_points = [5, 3, 1, -1, -3, -5]
+net_margin_bounds = [0.20, 0.10, 0.05]               # y luego ≥0 / <0
+net_margin_points = [3, 2, 0, -2, -3]
+spread_bounds = [0.10, 0.03, 0.0, -0.03]             # ROIC − WACC
+spread_points = [3, 2, 1, -1, -3]
+# Regla M (etapa 9a): ROIC no significativo si el capital invertido (patrimonio +
+# deuda − caja) es menor que esta fracción de los activos (la caja lo encoge).
+roic_min_invested_capital_share = 0.10
+# REIT (etapa 9a): rentabilidad sobre el FFO (beneficio neto + D&A). PROVISIONAL.
+reit_ffo_equity_bounds = [0.10, 0.08, 0.06, 0.04]    # FFO / patrimonio contable
+reit_ffo_equity_points = [6, 3, 0, -3, -6]
+reit_ffo_margin_bounds = [0.60, 0.50, 0.40, 0.25]    # FFO / ingresos
+reit_ffo_margin_points = [5, 3, 0, -3, -5]
+# GROWTH_PRE_PROFIT (etapa 9a): márgenes de su fase. PROVISIONAL.
+gpp_gross_margin_bounds = [0.75, 0.65, 0.50, 0.35]
+gpp_gross_margin_points = [5, 3, 0, -3, -5]
+# Margen operativo (nivel) de una pre-beneficio: ≥0 equilibrio / ≥−10% cerca / ≥−20% moderada / ≥−30% alta / peor.
+gpp_operating_margin_bounds = [0.0, -0.10, -0.20, -0.30]
+gpp_operating_margin_points = [5, 3, 0, -3, -5]
+gpp_opm_change_bounds = [0.05, 0.02, 0.0, -0.03]     # mejora interanual del margen operativo (pp)
+gpp_opm_change_points = [4, 2, 0, -2, -4]
+gpp_fcf_margin_bounds = [0.20, 0.10, 0.0, -0.10]     # (FCF − SBC) / ingresos
+gpp_fcf_margin_points = [5, 3, 0, -3, -5]
+
+[score.valoracion]                  # score_valoracion
+# DCF como componente de Valoración (etapa 8): upside del DCF frente al precio,
+# con el aporte acotado por su fiabilidad: ±4 de 20 (alta), ±2 (media), 0 (baja).
+# Bandas: >= +30% claramente barata; +10..+30 barata; ±10% en precio (el error
+# de un DCF es al menos de ese orden); −10..−30 cara; < −30% claramente cara.
+dcf_upside_bounds = [0.30, 0.10, -0.10, -0.30]
+dcf_points_high = [4, 2, 0, -2, -4]
+dcf_points_medium = [2, 1, 0, -1, -2]
+reit_pffo_bounds = [12, 16, 20, 25] # REIT: P/FFO ≤ (en lugar de P/E y P/FCF)
+reit_pffo_points = [4, 2, 0, -2, -4]
+pe_value_mults = [0.7, 0.9, 1.1, 1.3]
+pe_value_points = [5, 3, 0, -2, -4]
+# Etapa 9a: bloques de múltiplos correlacionados (P/E, Forward P/E, P/FCF,
+# EV/EBITDA, PEG; y en FINANCIAL, P/B y P/TBV frente a sus justificados). Su ajuste
+# es el promedio de los ajustes normalizados de los miembros con dato y aplicables,
+# escalado a un máximo que crece con el número de miembros: ±2 con 1, ±4 con 2,
+# ±6 con 3 o más (un solo múltiplo no pesa como tres).
+multiples_block = ["P/E", "Forward P/E", "P/FCF", "EV/EBITDA", "PEG"]
+multiples_block_max_by_members = [2, 4, 6]
+multiples_block_strong = 0.5        # |promedio normalizado| >= 0.5: severidad excellent / severe
+forward_compression_bounds = [0.25, 0.12, 0.05]   # (P/E − forward P/E) / P/E ≥
+forward_compression_points = [3, 2, 1]
+pfcf_value_bounds = [12, 18, 25, 35]
+pfcf_value_points = [4, 2, 0, -2, -4]
+ev_ebitda_value_mults = [0.7, 1.2, 1.5]           # tramos: ≤0.7× / ≤1× / ≤1.2× / ≤1.5× / resto
+ev_ebitda_value_points = [4, 2, 0, -2, -4]
+peg_bounds = [0.8, 1.2, 1.8, 2.5]
+peg_points = [4, 2, 0, -2, -3]
+# Etapa 6 — FINANCIAL: P/B y P/TBV frente al justificado por su retorno,
+# (ROE − g) / (Ke − g) con Ke por CAPM y g = crecimiento terminal del DCF.
+financial_pb_ratio_bounds = [0.7, 0.9, 1.1, 1.4]   # P/B ÷ P/B justificado ≤
+financial_pb_points = [4, 2, 0, -2, -4]
+# GROWTH_PRE_PROFIT: EV/Ventas y regla de 40 (crecimiento + margen FCF).
+ev_sales_bounds = [5.0, 10.0, 15.0, 25.0]          # ≤
+ev_sales_points = [4, 2, 0, -2, -4]
+rule_of_40_bounds = [0.60, 0.40, 0.25, 0.10]       # ≥
+rule_of_40_points = [4, 2, 0, -2, -4]
+
+[score.calidad]                     # score_calidad_ganancias
+fscore_points = [7, 4, 0, -4, -7]   # tramos de valuation.models.piotroski.bands
+ocf_points = [3, -4]                # OCF > 0 / ≤ 0
+fcf_points = [3, -4]                # FCF > 0 / ≤ 0
+fcf_to_ni_bounds = [1.0, 0.7, 0.3]  # FCF / beneficio neto ≥
+fcf_to_ni_points = [3, 1, 0, -2]
+# Etapa 6 — FINANCIAL (Piotroski, OCF, FCF y FCF/BN no aplican):
+financial_roe_std_bounds = [0.02, 0.04, 0.06]      # desviación del ROE anual ≤ (estabilidad)
+financial_roe_std_points = [3, 1, -1, -3]
+financial_efficiency_bounds = [0.55, 0.60, 0.65]   # gastos no financieros / ingresos ≤ (aprox.)
+financial_efficiency_points = [3, 1, -1, -3]
+financial_bv_growth_bounds = [0.08, 0.05, 0.0]     # CAGR 3 años del valor en libros tangible ≥
+financial_bv_growth_points = [3, 1, -1, -3]
+# REIT: dividendo cubierto por FFO (Piotroski y FCF/BN no aplican).
+reit_ffo_payout_bounds = [0.75, 0.85, 0.95]        # dividendos / FFO ≤
+reit_ffo_payout_points = [3, 1, -1, -3]
+
+[score.crecimiento]                 # score_crecimiento
+revenue_bounds = [0.20, 0.10, 0.03] # y luego ≥0 / <0
+revenue_points = [5, 3, 1, -1, -4]
+eps_bounds = [0.25, 0.12, 0.05]     # y luego ≥0 / <0
+eps_points = [5, 3, 1, -1, -4]
+fcf_bounds = [0.15, 0.05, -0.05]
+fcf_points = [4, 2, 0, -3]
+# Estancamiento: entre −2% y 0 un crecimiento se puntúa como plano (banda 0–x%), no
+# como contracción, en TODAS las bandas de crecimiento con corte en 0 (ingresos, BPA,
+# FFO/acción, calidad del crecimiento, tipo de empresa, valor en libros, alerta y PDF).
+# Error de medición de agregados aproximados (FFO) de ese orden.
+flat_tolerance = 0.02
+# Etapa 6 — REIT: el crecimiento se mide POR ACCIÓN (FFO por acción; la emisión
+# estructural infla el agregado). Etapa 9a: entra en el retorno total (abajo).
+# Etapa 9a — REIT: Crecimiento mide el RETORNO TOTAL para el accionista =
+# rentabilidad por dividendo + CAGR 3 años del FFO por acción (el REIT reparte
+# casi todo su FFO: el retorno llega sobre todo por el dividendo). Bandas frente
+# al coste del equity de un REIT (Ke ≈ 8–9% con la prima implícita): >= 10% lo
+# supera con holgura; 7–10% lo iguala; 4–7% queda por debajo pero en positivo
+# real; 0–4% débil; < 0 destruye valor. La rentabilidad por dividendo deja de
+# puntuar en Valoración (no se cuenta dos veces).
+reit_total_return_bounds = [0.10, 0.07, 0.04]   # y luego ≥0 / <0
+reit_total_return_points = [5, 3, 1, -1, -4]
+
+[score.total]                       # calculate_score_v2 (etapa 9a: ya no hay un score total único)
+max = 100                           # escala de cada una de las dos puntuaciones
+
+# Etapa 9a — dos puntuaciones 0–100 (spec fallo 6, cambio 4). Cada categoría parte
+# de 10/20 (= 50: sin señales), así que 50 es el punto neutro de las dos escalas.
+[score.quality]                     # Calidad del negocio
+categories = ["Solidez Financiera", "Rentabilidad", "Calidad de Ganancias", "Crecimiento"]
+# Bandas (≥): excelente >= 80 (16/20 de media: casi todo en los tramos altos);
+# sólida 65–80 (claramente por encima del neutro); media 45–65 (alrededor del
+# neutro, con fortalezas y debilidades); débil < 45 (por debajo del neutro).
+bands = [80, 65, 45]
+labels = ["excelente", "sólida", "media", "débil"]
+
+[score.price]                       # Atractivo del precio (Valoración: múltiplos + DCF)
+categories = ["Valoración"]
+# Bandas (≥) sobre el valor CONTRAÍDO por la confianza: atractivo >= 65 (+3 netos
+# sobre 20 o más: múltiplos por debajo del sector y/o DCF con margen); razonable
+# 45–65 (en línea con el sector, ±); exigente 30–45; muy exigente < 30 (Valoración
+# <= 6/20: casi todos los múltiplos en prima). Con confianza baja (factor 0.5) el
+# precio no puede salir de [25, 75]: no llega a "muy exigente" ni a lo más alto.
+bands = [65, 45, 30]
+labels = ["atractivo", "razonable", "exigente", "muy exigente"]
+neutral = 50
+# Contracción hacia el neutro según la confianza del veredicto de valoración:
+# precio_mostrado = 50 + (precio − 50) × factor.
+confidence_factor = { alta = 1.0, media = 0.75, baja = 0.5 }
+
+[alerts]
+max_per_group = 6
+years_ebitda_plural_from = 1.5      # "~2 años" vs "~1 año"
+
+[alerts.pe]
+premium_dev = 0.30                  # P/E > sector +30% ...
+premium_abs = 35                    # ... o P/E > 35x
+justify_peg_max = 1.5               # prima justificada si PEG < 1.5 o spread > 5%
+justify_spread_min = 0.05
+strong_abs = 50                     # sobrevaloración fuerte: P/E > 50x o > sector +60%
+strong_dev = 0.6
+discount_dev = -0.20
+w_loss = 60
+w_demanding = 62
+w_overvalued = 68
+w_premium = 48
+w_discount = 40
+
+[alerts.ev_ebitda]
+high_abs = 25
+premium_mult = 1.3                  # × EV/EBITDA del sector
+discount_mult = 0.7
+w_high = 44
+w_premium = 38
+w_discount = 34
+
+[alerts.fcf_yield]                  # umbrales: ThresholdConfig.fcf_yield_low/high
+w_low = 42
+w_high = 46
+
+[alerts.peg]
+artifact_above = 5                  # PEG > 5: artefacto, se descarta
+attractive_below = 1.0
+high_above = 2.0
+w_attractive = 36
+w_high = 34
+
+[alerts.dcf]
+upside_strong = 30                  # ±30% de upside
+upside_moderate = 15                # ±15%
+w_undervalued = 52
+w_below_fair = 40
+w_overvalued = 58
+w_premium = 40
+
+[alerts.roe]
+negative_equity_min_roa = 0.03
+exceptional = 0.40
+w_buyback_negative = 30
+w_negative = 55
+w_exceptional = 44
+w_high = 44
+w_low = 40
+
+[alerts.spread]
+strong = 0.10
+positive = 0.03
+w_strong = 50
+w_positive = 42
+w_negative = 56
+
+[alerts.margins]
+net_solid_mult = 1.5                # margen neto ≥ 1.5 × net_margin_low del sector
+gross_high = 0.60
+w_net_negative = 54
+w_net_solid = 38
+w_net_thin = 36
+w_gross_high = 34
+
+[alerts.leverage]
+risk_mult = 1.5                     # DN/EBITDA > 1.5 × net_debt_ebitda_high -> riesgo
+w_net_cash = 40
+w_high_risk = 66
+w_high_warning = 50
+w_low = 30
+
+[alerts.coverage]
+critical_below = 1.5
+comfortable_above = 12
+w_critical = 64
+w_tight = 46
+w_comfortable = 28
+
+[alerts.liquidity]
+ample_above = 3
+w_tight = 44
+w_ample = 26
+
+[alerts.altman]
+w_distress = 90
+w_safe = 32
+
+[alerts.runway]                     # GROWTH_PRE_PROFIT: sustituye a la señal de Altman (etapa 7)
+w_short = 90                        # < 1 año de caja (tramo de runway_bounds)
+w_tight = 44                        # 1-2 años
+w_self_funded = 32                  # autofinanciada o >= 3 años
+
+[alerts.fcf]
+recurrent_negative_years = 2
+w_recurrent = 70
+w_negative_growth = 40
+w_negative = 58
+
+[alerts.earnings_quality]
+low_below = 0.5                     # FCF / beneficio neto
+high_above = 1.0
+w_low = 44
+w_high = 32
+
+[alerts.growth]
+strong_above = 0.15
+w_contraction = 50
+w_strong = 42
+
+[alerts.eps_growth]
+decline_below = -0.05
+strong_above = 0.15
+w_decline = 40
+w_strong = 34
+
+[alerts.piotroski]
+strong_min = 8
+weak_max = 2
+w_strong = 40
+w_weak = 60
+
+[alerts.deterioration]
+margin_drop_below = -0.03
+negative_fcf_years = 2
+min_signals = 2
+w = 80
+
+[alerts.beta]                       # umbrales: ThresholdConfig.beta_high/low
+w_high = 38
+w_low = 28
+
+[alerts.drawdown]
+deep_below = -0.30
+w = 34
+
+# ── Lecturas del PDF (pdf_report.read_*, score_band, grid) ──
+# Bandas propias del informe, distintas de las del motor (ver el informe de
+# conflictos de la etapa 4). Las etiquetas siguen en el código.
+[pdf]                               # solo métricas que el score NO puntúa (etapa 9a: las demás
+                                    # lecturas usan las bandas del score, una sola fuente por métrica)
+vs_sector_bounds = [35, 10]         # % de brecha vs mediana: ±35 / ±10
+pe_spread_support = 0.05            # prima de P/E "respaldada" si spread > 5%
+nde_bounds = [1, 2.5, 4]
+payout_bounds = [0.40, 0.60, 0.80, 1]
+graham_discount = 0.20
+beta_bounds = [0.8, 1.2, 1.6]
+pos52_bounds = [10, 25, 70, 88]     # % del rango de 52 semanas (curva en U); también define la barra
+buyback_bounds = [0.03, 0.005]      # ≥3% / ≥0.5% / > −0.5% / dilución
+fcf_yield_bounds = [0.03, 0.05, 0.08]
+grid_color_bounds = [30, 10]        # color de celda del grid: ±30 / ±10 % vs precio
+eps_revenue_gap = 0.02              # BPA vs ingresos (informativo): "en línea" dentro de ±2 pp
+category_tone_bounds = [60, 40]     # tono de una categoría (puntos/máximo, %): ≥60 pos / ≥40 warn / neg
+exec_category_bounds = [13, 10]     # resumen ejecutivo: "destaca" si ≥13/20; "punto débil" si <10/20
+
+# ── ROCE (etapa 6): contraste con el ROIC en MATURE y CYCLICAL ──
+[roce]
+divergence_pp = 0.10                # |ROCE − ROIC| > 10 pp -> se marca con sus causas probables
+excess_cash_share = 0.15            # caja / activos totales ≥ 15% -> "caja excedente" como causa probable
+
+# ── Normalización de ganancias (etapa 7, lib/normalize.py) ──
+[dcf_reliability]                   # fiabilidad del DCF (lib/valuation_confidence.py, etapa 8)
+terminal_max_pct = 85               # valor terminal > 85% del valor -> baja (el aviso sigue en 75%)
+central_block = 1                   # "celda central ±1": bloque 3×3 alrededor del caso base
+fcf_fields = ["freeCashflow", "free_cash_flow", "key_metrics.free_cash_flow"]
+inferred_sources = ["finnhub", "derivado"]      # FCF que no viene de los estados -> inferido
+
+[confidence]                        # confianza del veredicto (spec Sección 3; etapa 8: se muestra, no limita)
+level_values = [1.0, 0.5, 0.0]      # alta / media / baja
+overall_bounds = [0.75, 0.45]       # media ponderada >= 0.75 alta; >= 0.45 media; resto baja
+upside_scale = 0.5                  # un upside de ±50% equivale a la señal ±1
+neutral_band = 0.2                  # |señal| <= 0.2 (±10% de upside): "en precio", la misma banda que el DCF en Valoración
+# Distancia máxima entre señales para "alta": 0.6 = 30 pp de upside, la distancia entre "en precio"
+# y "claramente barata/cara" de las bandas del DCF. Si dos métodos difieren más que eso, coinciden
+# en dirección pero no en magnitud (media). Los múltiplos dan una señal de bandas, no un upside:
+# la escala es común solo de forma aproximada.
+convergence_spread_max = 0.6
+no_evaluable_cap = "media"          # techo de la confianza si la convergencia no es alta (no evaluable o media)
+coverage_bounds = [0.9, 0.7]        # componentes evaluados / aplicables: >= 0.9 alta; >= 0.7 media
+source_issue_bounds = [0, 2]        # incidencias de fuente: 0 alta; <= 2 media; más, baja
+excluded_multiple_components = ["DCF", "Regla de 40"]   # no son múltiplos frente al sector
+
+[confidence.weights]
+convergence = 0.4
+coverage = 0.2
+source = 0.2
+stability = 0.2
+
+[normalization]
+one_off_pct = 0.10                  # |no recurrentes netos| / beneficio neto > 10% -> P/E reportado no fiable
+label_min_diff = 0.001              # etapa 9a: etiqueta "normalizado" solo si difiere del reportado > 0.1%
+robust_z = 3.5                      # pico no operativo: |z robusto (mediana, MAD)| > 3.5 (Iglewicz-Hoaglin)
+min_quarters = 4                    # trimestres con resultado no operativo necesarios para inferir picos
+min_share_of_pretax = 0.03          # y el exceso debe ser >= 3% del beneficio antes de impuestos TTM
+mad_floor_share_of_pretax = 0.01    # suelo de la escala (MAD): 1% del beneficio antes de impuestos trimestral medio
+tax_rate_bounds = [0.0, 0.35]       # tipo efectivo TTM acotado
+default_tax_rate = 0.21             # sin tipo efectivo calculable
+# Recurrencia: mismo tipo y signo en >= 3 de los últimos 4 ejercicios -> solo el exceso sobre su promedio.
+recurrence_min_years = 3
+recurrence_window = 4
+# Los componentes (cargos especiales + ganancias por venta) se usan como tipos si cuadran con el total.
+components_tolerance = 0.05         # relativo al total
+components_tolerance_abs = 1000000.0
+
+# ── Crecimiento (etapa 7) ──
+[growth]
+per_share_min_shares_cagr = 0.02   # acciones +2% anual compuesto en la ventana -> crecimiento por acción
+anomalous_base_ratio = 0.5          # año inicial < 0.5 × mediana de los demás -> regresión log-lineal

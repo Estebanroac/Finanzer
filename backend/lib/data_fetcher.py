@@ -2,7 +2,7 @@
 Financial Data Fetcher Module
 =============================
 Módulo para obtener datos financieros de empresas desde múltiples fuentes.
-Soporta Yahoo Finance (gratuito) y Financial Modeling Prep (freemium).
+Fuente: Yahoo Finance vía yf_adapter (con Finnhub como fuente secundaria).
 
 Autor: Esteban
 Versión: 2.10 - Rate limiting con retry y backoff exponencial
@@ -22,9 +22,12 @@ import hashlib
 # =========================
 # CONSTANTES DE RETRY
 # =========================
-MAX_RETRIES = 4       # Reintentos para rate limiting
-BASE_DELAY = 3        # segundos base entre reintentos
-MAX_DELAY = 45        # segundos máximo de espera
+from settings import cfg
+
+_F = cfg("data.fetcher")
+MAX_RETRIES = _F["max_retries"]       # Reintentos para rate limiting
+BASE_DELAY = _F["base_delay_s"]       # segundos base entre reintentos
+MAX_DELAY = _F["max_delay_s"]         # segundos máximo de espera
 
 # Configurar logging específico para este módulo
 logger = logging.getLogger(__name__)
@@ -69,64 +72,10 @@ except ImportError:
 # CONSTANTES DE CONFIGURACIÓN
 # =========================
 
-# Timeouts para operaciones de red (en segundos)
-API_TIMEOUT_SECONDS = 15          # Timeout para llamadas API individuales
-PARALLEL_TASK_TIMEOUT = 30        # Timeout para tareas paralelas
-
-# Configuración del ThreadPoolExecutor
-THREAD_POOL_WORKERS = 4           # Número de workers paralelos
-
-
-# =========================
-# SHARED TICKER STATEMENTS CACHE
-# =========================
-# Prevents multiple methods from re-fetching the same statements
-import threading as _threading
-
-class _TickerStatementsCache:
-    """Cache raw DataFrames per symbol to avoid duplicate yfinance calls."""
-    def __init__(self, ttl=300):
-        self._data = {}
-        self._lock = _threading.Lock()
-        self._ttl = ttl
-
-    def get_statements(self, symbol):
-        """Get or fetch (income_stmt, balance_sheet, cashflow) for symbol."""
-        symbol = symbol.upper()
-        with self._lock:
-            if symbol in self._data:
-                ts, stmts = self._data[symbol]
-                if time.time() - ts < self._ttl:
-                    return stmts
-
-        # Fetch in parallel
-        ticker = yf.Ticker(symbol)
-        stmts = {}
-        try:
-            def _get_inc(): return ticker.income_stmt
-            def _get_bs(): return ticker.balance_sheet
-            def _get_cf(): return ticker.cashflow
-
-            with ThreadPoolExecutor(max_workers=3) as ex:
-                futs = {
-                    ex.submit(_get_inc): "income",
-                    ex.submit(_get_bs): "balance",
-                    ex.submit(_get_cf): "cashflow",
-                }
-                for f in as_completed(futs, timeout=30):
-                    key = futs[f]
-                    try:
-                        stmts[key] = f.result()
-                    except Exception:
-                        stmts[key] = None
-        except Exception as e:
-            logger.warning(f"Statement cache fetch error for {symbol}: {e}")
-
-        with self._lock:
-            self._data[symbol] = (time.time(), stmts)
-        return stmts
-
-_stmt_cache = _TickerStatementsCache()
+# Timeout de las tareas paralelas (s) y workers del ThreadPoolExecutor.
+# (API_TIMEOUT_SECONDS se borró en la etapa 4: no se usaba.)
+PARALLEL_TASK_TIMEOUT = _F["parallel_task_timeout_s"]
+THREAD_POOL_WORKERS = _F["thread_pool_workers"]
 
 
 # =========================
@@ -164,7 +113,8 @@ class SimpleCache:
     Implementa LRU (Least Recently Used) eviction para prevenir memory leaks.
     """
     
-    def __init__(self, default_ttl_minutes: int = 15, max_entries: int = 500):
+    def __init__(self, default_ttl_minutes: int = _F["cache_class_default_ttl_min"],
+                 max_entries: int = _F["cache_max_entries"]):
         self._cache: Dict[str, Dict] = {}
         self._default_ttl = timedelta(minutes=default_ttl_minutes)
         self._max_entries = max_entries
@@ -251,7 +201,7 @@ class SimpleCache:
 
 
 # Instancia global del caché
-_data_cache = SimpleCache(default_ttl_minutes=30)
+_data_cache = SimpleCache(default_ttl_minutes=_F["cache_default_ttl_min"])
 
 
 @dataclass
@@ -327,38 +277,6 @@ class YahooFinanceFetcher:
         if not YFINANCE_AVAILABLE:
             raise ImportError("yfinance no está instalado. Ejecuta: pip install yfinance")
     
-    def _calculate_debt_trend(self, recent_de: Optional[float], old_de: Optional[float]) -> str:
-        """
-        Calcula la tendencia de deuda comparando D/E reciente vs antiguo.
-        
-        CORREGIDO según feedback profesional:
-        - Amazon mostró D/E: 0.96 → 0.67 → 0.46 (bajando) pero modelo decía "Aumentando"
-        - La lógica anterior tenía defaults incorrectos que invertían el resultado
-        
-        Returns:
-            "improving" si la deuda bajó (D/E reciente < D/E antiguo)
-            "increasing" si la deuda subió
-            "stable" si no hay cambio significativo o faltan datos
-        """
-        # Si no tenemos ambos datos, no podemos determinar tendencia
-        if recent_de is None or old_de is None:
-            return "unknown"
-        
-        # Calcular cambio porcentual
-        if old_de == 0:
-            # Si antes era 0 y ahora hay deuda, está aumentando
-            return "increasing" if recent_de > 0.05 else "stable"
-        
-        change_pct = (recent_de - old_de) / old_de
-        
-        # Umbral de 10% para considerar cambio significativo
-        if change_pct < -0.10:  # Bajó más del 10%
-            return "improving"
-        elif change_pct > 0.10:  # Subió más del 10%
-            return "increasing"
-        else:
-            return "stable"
-    
     def get_company_profile(self, symbol: str) -> Optional[CompanyProfile]:
         """Obtiene el perfil de la empresa (con caché y retry para rate limiting)."""
         cache_key = _data_cache._make_key("profile", symbol.upper())
@@ -391,7 +309,7 @@ class YahooFinanceFetcher:
                 )
                 
                 # Guardar en caché (30 min para perfiles, cambian poco)
-                _data_cache.set(cache_key, profile, ttl_minutes=30)
+                _data_cache.set(cache_key, profile, ttl_minutes=_F["profile_ttl_min"])
                 logger.debug(f"Perfil de {symbol} obtenido correctamente")
                 return profile
             
@@ -538,7 +456,7 @@ class YahooFinanceFetcher:
                 )
                 
                 # Guardar en caché (60 min para datos financieros - reduce rate limiting)
-                _data_cache.set(cache_key, result, ttl_minutes=60)
+                _data_cache.set(cache_key, result, ttl_minutes=_F["financials_ttl_min"])
                 logger.debug(f"Datos financieros de {symbol} cacheados correctamente")
                 return result
             
@@ -576,761 +494,12 @@ class YahooFinanceFetcher:
                         return None
         
         return None
-    
-    def get_historical_metrics(self, symbol: str, years: int = 5) -> Dict[str, List[float]]:
-        """Obtiene métricas históricas para análisis de tendencias (con caché)."""
-        cache_key = _data_cache._make_key("historical", symbol.upper(), years)
-        
-        cached = _data_cache.get(cache_key)
-        if cached:
-            return cached
-        try:
-            # Use shared cache to avoid re-fetching statements
-            stmts = _stmt_cache.get_statements(symbol)
-            income_stmt = stmts.get("income")
-            balance_sheet = stmts.get("balance")
-            cash_flow = stmts.get("cashflow")
-
-            def extract_series(df, key):
-                try:
-                    if df is not None and not df.empty and key in df.index:
-                        series = df.loc[key].dropna().tolist()
-                        return [float(x) for x in series[:years]]
-                except (KeyError, IndexError, TypeError, ValueError):
-                    pass
-                return []
-
-            result = {
-                "revenue": extract_series(income_stmt, "Total Revenue"),
-                "net_income": extract_series(income_stmt, "Net Income"),
-                "operating_income": extract_series(income_stmt, "Operating Income"),
-                "total_equity": extract_series(balance_sheet, "Stockholders Equity"),
-                "total_debt": extract_series(balance_sheet, "Total Debt"),
-                "fcf": extract_series(cash_flow, "Free Cash Flow"),
-            }
-            
-            # Guardar en caché (30 min para históricos)
-            _data_cache.set(cache_key, result, ttl_minutes=30)
-            logger.debug(f"Datos históricos de {symbol} obtenidos correctamente")
-            return result
-        
-        except (ConnectionError, TimeoutError) as e:
-            logger.error(f"Error de conexión obteniendo históricos de {symbol}: {e}")
-            return {}
-        except Exception as e:
-            logger.warning(f"Error obteniendo históricos de {symbol}: {type(e).__name__}: {e}")
-            return {}
-    
-    def get_detailed_historical_data(self, symbol: str, years: int = 5) -> Dict[str, Any]:
-        """
-        Obtiene datos históricos detallados año por año.
-        Retorna un diccionario con años como keys y métricas como valores.
-        """
-        try:
-            # Use shared cache to avoid re-fetching statements
-            stmts = _stmt_cache.get_statements(symbol)
-            income_stmt = stmts.get("income")
-            balance_sheet = stmts.get("balance")
-            cash_flow = stmts.get("cashflow")
-
-            # Obtener las fechas (columnas) disponibles
-            if income_stmt is None or income_stmt.empty:
-                return {"years": [], "data": {}, "error": "No hay datos históricos disponibles"}
-            
-            # Las columnas son las fechas de los reportes
-            dates = income_stmt.columns[:years]
-            
-            historical_data = {
-                "years": [],
-                "data": {},
-                "summary": {}
-            }
-            
-            def safe_get(df, key, col):
-                """Obtiene un valor de forma segura del DataFrame."""
-                try:
-                    if df is not None and key in df.index and col in df.columns:
-                        val = df.loc[key, col]
-                        if pd.notna(val):
-                            return float(val)
-                except (KeyError, IndexError, TypeError, ValueError):
-                    pass
-                return None
-            
-            def calculate_margin(numerator, denominator):
-                """Calcula un margen de forma segura."""
-                if numerator is not None and denominator is not None and denominator != 0:
-                    return (numerator / denominator) * 100
-                return None
-            
-            def calculate_growth(current, previous):
-                """Calcula crecimiento YoY."""
-                if current is not None and previous is not None and previous != 0:
-                    return ((current - previous) / abs(previous)) * 100
-                return None
-            
-            prev_revenue = None
-            prev_net_income = None
-            
-            for i, date in enumerate(dates):
-                year = date.year if hasattr(date, 'year') else str(date)[:4]
-                historical_data["years"].append(year)
-                
-                # Extraer métricas del Income Statement
-                revenue = safe_get(income_stmt, "Total Revenue", date)
-                gross_profit = safe_get(income_stmt, "Gross Profit", date)
-                operating_income = safe_get(income_stmt, "Operating Income", date)
-                net_income = safe_get(income_stmt, "Net Income", date)
-                ebitda = safe_get(income_stmt, "EBITDA", date)
-                
-                # Si no hay EBITDA directo, intentar calcularlo
-                if ebitda is None:
-                    depreciation = safe_get(cash_flow, "Depreciation And Amortization", date)
-                    if operating_income is not None and depreciation is not None:
-                        ebitda = operating_income + depreciation
-                
-                # Extraer métricas del Balance Sheet
-                total_assets = safe_get(balance_sheet, "Total Assets", date)
-                total_equity = safe_get(balance_sheet, "Stockholders Equity", date)
-                total_debt = safe_get(balance_sheet, "Total Debt", date)
-                long_term_debt = safe_get(balance_sheet, "Long Term Debt", date)
-                cash = safe_get(balance_sheet, "Cash And Cash Equivalents", date)
-                current_assets = safe_get(balance_sheet, "Current Assets", date)
-                current_liabilities = safe_get(balance_sheet, "Current Liabilities", date)
-                
-                # Shares Outstanding (para F-Score criterio de dilución)
-                shares_outstanding = safe_get(balance_sheet, "Ordinary Shares Number", date)
-                if shares_outstanding is None:
-                    shares_outstanding = safe_get(balance_sheet, "Share Issued", date)
-                if shares_outstanding is None:
-                    shares_outstanding = safe_get(balance_sheet, "Common Stock Shares Outstanding", date)
-                
-                # Extraer métricas del Cash Flow
-                operating_cash_flow = safe_get(cash_flow, "Operating Cash Flow", date)
-                capex = safe_get(cash_flow, "Capital Expenditure", date)
-                fcf = safe_get(cash_flow, "Free Cash Flow", date)
-                
-                # Si no hay FCF directo, calcularlo
-                if fcf is None and operating_cash_flow is not None and capex is not None:
-                    fcf = operating_cash_flow + capex  # capex es negativo
-                
-                # Calcular márgenes
-                gross_margin = calculate_margin(gross_profit, revenue)
-                operating_margin = calculate_margin(operating_income, revenue)
-                net_margin = calculate_margin(net_income, revenue)
-                ebitda_margin = calculate_margin(ebitda, revenue)
-                
-                # Calcular ratios
-                roe = calculate_margin(net_income, total_equity) if total_equity and total_equity > 0 else None
-                roa = calculate_margin(net_income, total_assets) if total_assets and total_assets > 0 else None
-                
-                debt_to_equity = None
-                if total_debt is not None and total_equity is not None and total_equity > 0:
-                    debt_to_equity = total_debt / total_equity
-                
-                current_ratio = None
-                if current_assets is not None and current_liabilities is not None and current_liabilities > 0:
-                    current_ratio = current_assets / current_liabilities
-                
-                net_debt = None
-                if total_debt is not None and cash is not None:
-                    net_debt = total_debt - cash
-                
-                net_debt_to_ebitda = None
-                if net_debt is not None and ebitda is not None and ebitda > 0:
-                    net_debt_to_ebitda = net_debt / ebitda
-                
-                # Calcular crecimiento
-                revenue_growth = calculate_growth(revenue, prev_revenue)
-                net_income_growth = calculate_growth(net_income, prev_net_income)
-                
-                prev_revenue = revenue
-                prev_net_income = net_income
-                
-                # Guardar datos del año
-                historical_data["data"][year] = {
-                    # Ingresos y utilidades (en millones)
-                    "revenue": revenue,
-                    "revenue_mm": revenue / 1e6 if revenue else None,
-                    "gross_profit": gross_profit,
-                    "gross_profit_mm": gross_profit / 1e6 if gross_profit else None,
-                    "operating_income": operating_income,
-                    "operating_income_mm": operating_income / 1e6 if operating_income else None,
-                    "net_income": net_income,
-                    "net_income_mm": net_income / 1e6 if net_income else None,
-                    "ebitda": ebitda,
-                    "ebitda_mm": ebitda / 1e6 if ebitda else None,
-                    
-                    # Márgenes (en porcentaje)
-                    "gross_margin": gross_margin,
-                    "operating_margin": operating_margin,
-                    "net_margin": net_margin,
-                    "ebitda_margin": ebitda_margin,
-                    
-                    # Balance
-                    "total_assets": total_assets,
-                    "total_assets_mm": total_assets / 1e6 if total_assets else None,
-                    "total_equity": total_equity,
-                    "total_equity_mm": total_equity / 1e6 if total_equity else None,
-                    "total_debt": total_debt,
-                    "total_debt_mm": total_debt / 1e6 if total_debt else None,
-                    "long_term_debt": long_term_debt,
-                    "long_term_debt_mm": long_term_debt / 1e6 if long_term_debt else None,
-                    "shares_outstanding": shares_outstanding,
-                    "cash": cash,
-                    "cash_mm": cash / 1e6 if cash else None,
-                    "net_debt": net_debt,
-                    "net_debt_mm": net_debt / 1e6 if net_debt else None,
-                    
-                    # Ratios
-                    "roe": roe,
-                    "roa": roa,
-                    "debt_to_equity": debt_to_equity,
-                    "current_ratio": current_ratio,
-                    "net_debt_to_ebitda": net_debt_to_ebitda,
-                    
-                    # Cash Flow
-                    "operating_cash_flow": operating_cash_flow,
-                    "operating_cash_flow_mm": operating_cash_flow / 1e6 if operating_cash_flow else None,
-                    "fcf": fcf,
-                    "fcf_mm": fcf / 1e6 if fcf else None,
-                    "capex": capex,
-                    "capex_mm": capex / 1e6 if capex else None,
-                    
-                    # Crecimiento
-                    "revenue_growth": revenue_growth,
-                    "net_income_growth": net_income_growth,
-                }
-            
-            # Calcular resumen de tendencias
-            if len(historical_data["years"]) >= 2:
-                years_list = historical_data["years"]
-                first_year = years_list[-1]  # Año más antiguo
-                last_year = years_list[0]    # Año más reciente
-                
-                first_data = historical_data["data"].get(first_year, {})
-                last_data = historical_data["data"].get(last_year, {})
-                
-                def calc_cagr(end_val, start_val, periods):
-                    # Exigir end_val > 0 además de start_val > 0: si el valor final
-                    # es negativo (p.ej. net_income que pasa a pérdidas), elevar una
-                    # base negativa a exponente fraccionario devuelve un número
-                    # COMPLEJO en Python, no None. Con el guardia devuelve None.
-                    if end_val and start_val and end_val > 0 and start_val > 0 and periods > 0:
-                        return ((end_val / start_val) ** (1 / periods) - 1) * 100
-                    return None
-                
-                num_years = len(years_list) - 1
-                
-                historical_data["summary"] = {
-                    "revenue_cagr": calc_cagr(
-                        last_data.get("revenue"), 
-                        first_data.get("revenue"), 
-                        num_years
-                    ),
-                    "net_income_cagr": calc_cagr(
-                        last_data.get("net_income"), 
-                        first_data.get("net_income"), 
-                        num_years
-                    ),
-                    "margin_trend": "improving" if (last_data.get("net_margin") or 0) > (first_data.get("net_margin") or 0) else "declining",
-                    # CORREGIDO: Manejar None apropiadamente y comparar D/E correctamente
-                    # Si D/E reciente < D/E antiguo → mejorando (empresa se desapalancó)
-                    "debt_trend": self._calculate_debt_trend(
-                        last_data.get("debt_to_equity"),
-                        first_data.get("debt_to_equity")
-                    ),
-                }
-            
-            return historical_data
-        
-        except (ConnectionError, TimeoutError) as e:
-            logger.error(f"Error de conexión obteniendo históricos detallados de {symbol}: {e}")
-            return {"years": [], "data": {}, "error": f"Timeout: {e}"}
-        except ValueError as e:
-            logger.warning(f"Error de conversión en históricos de {symbol}: {e}")
-            return {"years": [], "data": {}, "error": f"Datos inválidos: {e}"}
-        except Exception as e:
-            logger.error(f"Error obteniendo históricos detallados de {symbol}: {type(e).__name__}: {e}", exc_info=True)
-            return {"years": [], "data": {}, "error": str(e)}
-    
-    def get_market_comparison_data(self, sector: str) -> Dict[str, Any]:
-        """
-        Obtiene datos del mercado (SPY) y del sector (ETF) para comparación.
-        Calcula YTD real (desde 1 de enero) y retorno de 1 año.
-        """
-        result = {
-            "market": {},
-            "sector": {},
-        }
-        
-        # Fecha de inicio del año para YTD real
-        current_year = datetime.now().year
-        ytd_start = f"{current_year}-01-01"
-        
-        def calculate_returns(ticker_symbol: str) -> Dict[str, float]:
-            """Calcula YTD real y retorno de 1 año."""
-            try:
-                ticker = yf.Ticker(ticker_symbol)
-                
-                # YTD real (desde 1 de enero)
-                ytd_hist = ticker.history(start=ytd_start)
-                ytd_return = None
-                if not ytd_hist.empty and len(ytd_hist) > 1:
-                    ytd_return = ((ytd_hist['Close'].iloc[-1] / ytd_hist['Close'].iloc[0]) - 1) * 100
-                
-                # Retorno de 1 año
-                year_hist = ticker.history(period="1y")
-                year_return = None
-                if not year_hist.empty and len(year_hist) > 1:
-                    year_return = ((year_hist['Close'].iloc[-1] / year_hist['Close'].iloc[0]) - 1) * 100
-                
-                return {
-                    "ytd_return": round(ytd_return, 2) if ytd_return else None,
-                    "year_return": round(year_return, 2) if year_return else None,
-                }
-            except Exception as e:
-                logger.warning(f"Error calculando retornos para {ticker_symbol}: {e}")
-                return {"ytd_return": None, "year_return": None}
-        
-        try:
-            # Datos del mercado (SPY)
-            spy = yf.Ticker("SPY")
-            spy_info = spy.info
-            spy_returns = calculate_returns("SPY")
-            
-            result["market"] = {
-                "name": "S&P 500",
-                "symbol": "SPY",
-                "pe": spy_info.get("trailingPE"),
-                "price": spy_info.get("regularMarketPrice"),
-                "ytd_return": spy_returns["ytd_return"],
-                "year_return": spy_returns["year_return"],
-                "dividend_yield": spy_info.get("trailingAnnualDividendYield", 0) * 100 if spy_info.get("trailingAnnualDividendYield") else None,
-                "52w_high": spy_info.get("fiftyTwoWeekHigh"),
-                "52w_low": spy_info.get("fiftyTwoWeekLow"),
-            }
-            
-        except Exception as e:
-            logger.warning(f"Error obteniendo datos de SPY: {e}")
-            result["market"] = {"name": "S&P 500", "symbol": "SPY", "error": str(e)}
-        
-        try:
-            # Datos del sector (ETF) - usando mapeo dinámico
-            etf_symbol = self._get_sector_etf_symbol(sector)
-            etf = yf.Ticker(etf_symbol)
-            etf_info = etf.info
-            etf_returns = calculate_returns(etf_symbol)
-            
-            result["sector"] = {
-                "name": etf_info.get("shortName", sector),
-                "symbol": etf_symbol,
-                "pe": etf_info.get("trailingPE"),
-                "price": etf_info.get("regularMarketPrice"),
-                "ytd_return": etf_returns["ytd_return"],
-                "year_return": etf_returns["year_return"],
-                "dividend_yield": etf_info.get("trailingAnnualDividendYield", 0) * 100 if etf_info.get("trailingAnnualDividendYield") else None,
-                "52w_high": etf_info.get("fiftyTwoWeekHigh"),
-                "52w_low": etf_info.get("fiftyTwoWeekLow"),
-                "beta": etf_info.get("beta3Year"),
-            }
-            
-        except Exception as e:
-            logger.warning(f"Error obteniendo datos del sector {sector}: {e}")
-            result["sector"] = {"name": sector, "symbol": self._get_sector_etf_symbol(sector), "error": str(e)}
-        
-        return result
-    
-    # NOTA: get_sector_averages fue eliminado (auditoría sectorial 2026-07):
-    # devolvía valores ESTÁTICOS (pe=20, ev_ebitda=12 para todo sector) hacia
-    # result["contextual"], que main.py nunca lee. El sector_pe vivo llega por
-    # _get_sector_benchmarks (main.py), sectorial de verdad.
-
-    def _get_sector_etf_symbol(self, sector_name: str) -> str:
-        """Mapeo robusto de sector a ETF (reutilizable)."""
-        if not sector_name:
-            return "SPY"
-        
-        sector_etf_mapping = {
-            # Tecnología
-            "technology": "XLK",
-            "tech": "XLK",
-            "information technology": "XLK",
-            "software": "XLK",
-            "semiconductors": "XLK",
-            # Financiero
-            "financial services": "XLF",
-            "financial": "XLF",
-            "financials": "XLF",
-            "banks": "XLF",
-            "banking": "XLF",
-            "insurance": "XLF",
-            "capital markets": "XLF",
-            "credit services": "XLF",
-            # Healthcare
-            "healthcare": "XLV",
-            "health care": "XLV",
-            "biotechnology": "XLV",
-            "pharmaceuticals": "XLV",
-            "medical devices": "XLV",
-            # Consumo Cíclico
-            "consumer cyclical": "XLY",
-            "consumer discretionary": "XLY",
-            "retail": "XLY",
-            "automobiles": "XLY",
-            "auto manufacturers": "XLY",
-            "restaurants": "XLY",
-            "travel & leisure": "XLY",
-            "apparel": "XLY",
-            # Consumo Defensivo
-            "consumer defensive": "XLP",
-            "consumer staples": "XLP",
-            "food & beverage": "XLP",
-            "household products": "XLP",
-            "tobacco": "XLP",
-            # Industriales
-            "industrials": "XLI",
-            "industrial": "XLI",
-            "aerospace & defense": "XLI",
-            "machinery": "XLI",
-            "construction": "XLI",
-            "transportation": "XLI",
-            "airlines": "XLI",
-            # Energía
-            "energy": "XLE",
-            "oil & gas": "XLE",
-            "oil": "XLE",
-            "gas": "XLE",
-            "petroleum": "XLE",
-            # Utilities
-            "utilities": "XLU",
-            "utility": "XLU",
-            "electric utilities": "XLU",
-            "gas utilities": "XLU",
-            "water utilities": "XLU",
-            # Real Estate
-            "real estate": "XLRE",
-            "reits": "XLRE",
-            "reit": "XLRE",
-            "real estate services": "XLRE",
-            # Materiales
-            "materials": "XLB",
-            "basic materials": "XLB",
-            "chemicals": "XLB",
-            "metals & mining": "XLB",
-            "steel": "XLB",
-            "gold": "XLB",
-            # Comunicaciones
-            "communication services": "XLC",
-            "communications": "XLC",
-            "telecommunication": "XLC",
-            "telecom": "XLC",
-            "media": "XLC",
-            "entertainment": "XLC",
-            "interactive media": "XLC",
-        }
-        
-        sector_lower = sector_name.lower().strip()
-        
-        # Búsqueda exacta
-        if sector_lower in sector_etf_mapping:
-            return sector_etf_mapping[sector_lower]
-        
-        # Búsqueda parcial
-        for key, etf in sector_etf_mapping.items():
-            if key in sector_lower or sector_lower in key:
-                return etf
-        
-        return "SPY"
-    
-    def get_sector_comparison_data(self, sector: str) -> Dict[str, Any]:
-        """
-        Obtiene datos completos del sector para comparación.
-        Incluye promedios típicos por sector y datos del ETF sectorial.
-        """
-        # Datos típicos por sector (basados en promedios históricos)
-        sector_benchmarks = {
-            "Technology": {
-                "name": "Tecnología",
-                "etf": "XLK",
-                "typical_pe": 28.0,
-                "typical_ps": 6.5,
-                "typical_pb": 8.0,
-                "typical_ev_ebitda": 18.0,
-                "typical_roe": 0.22,
-                "typical_roa": 0.12,
-                "typical_gross_margin": 0.50,
-                "typical_operating_margin": 0.22,
-                "typical_net_margin": 0.18,
-                "typical_debt_equity": 0.45,
-                "typical_current_ratio": 2.0,
-                "growth_outlook": "Alto",
-                "volatility": "Alta",
-                "dividend_typical": "Bajo",
-            },
-            "Healthcare": {
-                "name": "Salud",
-                "etf": "XLV",
-                "typical_pe": 22.0,
-                "typical_ps": 2.5,
-                "typical_pb": 4.5,
-                "typical_ev_ebitda": 14.0,
-                "typical_roe": 0.18,
-                "typical_roa": 0.08,
-                "typical_gross_margin": 0.55,
-                "typical_operating_margin": 0.18,
-                "typical_net_margin": 0.12,
-                "typical_debt_equity": 0.60,
-                "typical_current_ratio": 1.8,
-                "growth_outlook": "Moderado-Alto",
-                "volatility": "Media",
-                "dividend_typical": "Moderado",
-            },
-            "Financial Services": {
-                "name": "Servicios Financieros",
-                "etf": "XLF",
-                "typical_pe": 14.0,
-                "typical_ps": 3.0,
-                "typical_pb": 1.3,
-                "typical_ev_ebitda": 10.0,
-                "typical_roe": 0.12,
-                "typical_roa": 0.01,
-                "typical_gross_margin": 0.60,
-                "typical_operating_margin": 0.30,
-                "typical_net_margin": 0.22,
-                "typical_debt_equity": 1.50,
-                "typical_current_ratio": 1.2,
-                "growth_outlook": "Moderado",
-                "volatility": "Media-Alta",
-                "dividend_typical": "Alto",
-            },
-            "Consumer Cyclical": {
-                "name": "Consumo Discrecional",
-                "etf": "XLY",
-                "typical_pe": 22.0,
-                "typical_ps": 1.8,
-                "typical_pb": 6.0,
-                "typical_ev_ebitda": 14.0,
-                "typical_roe": 0.25,
-                "typical_roa": 0.08,
-                "typical_gross_margin": 0.35,
-                "typical_operating_margin": 0.10,
-                "typical_net_margin": 0.06,
-                "typical_debt_equity": 1.00,
-                "typical_current_ratio": 1.3,
-                "growth_outlook": "Cíclico",
-                "volatility": "Alta",
-                "dividend_typical": "Bajo",
-            },
-            "Consumer Defensive": {
-                "name": "Consumo Básico",
-                "etf": "XLP",
-                "typical_pe": 20.0,
-                "typical_ps": 1.5,
-                "typical_pb": 5.0,
-                "typical_ev_ebitda": 14.0,
-                "typical_roe": 0.22,
-                "typical_roa": 0.08,
-                "typical_gross_margin": 0.35,
-                "typical_operating_margin": 0.12,
-                "typical_net_margin": 0.08,
-                "typical_debt_equity": 1.20,
-                "typical_current_ratio": 1.0,
-                "growth_outlook": "Estable",
-                "volatility": "Baja",
-                "dividend_typical": "Alto",
-            },
-            "Industrials": {
-                "name": "Industriales",
-                "etf": "XLI",
-                "typical_pe": 20.0,
-                "typical_ps": 2.0,
-                "typical_pb": 4.5,
-                "typical_ev_ebitda": 12.0,
-                "typical_roe": 0.18,
-                "typical_roa": 0.06,
-                "typical_gross_margin": 0.28,
-                "typical_operating_margin": 0.12,
-                "typical_net_margin": 0.08,
-                "typical_debt_equity": 0.90,
-                "typical_current_ratio": 1.4,
-                "growth_outlook": "Cíclico",
-                "volatility": "Media",
-                "dividend_typical": "Moderado",
-            },
-            "Energy": {
-                "name": "Energía",
-                "etf": "XLE",
-                "typical_pe": 12.0,
-                "typical_ps": 1.2,
-                "typical_pb": 2.0,
-                "typical_ev_ebitda": 6.0,
-                "typical_roe": 0.15,
-                "typical_roa": 0.07,
-                "typical_gross_margin": 0.45,
-                "typical_operating_margin": 0.15,
-                "typical_net_margin": 0.10,
-                "typical_debt_equity": 0.40,
-                "typical_current_ratio": 1.2,
-                "growth_outlook": "Volátil",
-                "volatility": "Muy Alta",
-                "dividend_typical": "Alto",
-            },
-            "Utilities": {
-                "name": "Servicios Públicos",
-                "etf": "XLU",
-                "typical_pe": 18.0,
-                "typical_ps": 2.5,
-                "typical_pb": 2.0,
-                "typical_ev_ebitda": 12.0,
-                "typical_roe": 0.10,
-                "typical_roa": 0.03,
-                "typical_gross_margin": 0.40,
-                "typical_operating_margin": 0.22,
-                "typical_net_margin": 0.12,
-                "typical_debt_equity": 1.40,
-                "typical_current_ratio": 0.8,
-                "growth_outlook": "Estable",
-                "volatility": "Baja",
-                "dividend_typical": "Muy Alto",
-            },
-            "Real Estate": {
-                "name": "Bienes Raíces",
-                "etf": "XLRE",
-                "typical_pe": 35.0,
-                "typical_ps": 6.0,
-                "typical_pb": 2.5,
-                "typical_ev_ebitda": 18.0,
-                "typical_roe": 0.08,
-                "typical_roa": 0.04,
-                "typical_gross_margin": 0.55,
-                "typical_operating_margin": 0.30,
-                "typical_net_margin": 0.20,
-                "typical_debt_equity": 0.90,
-                "typical_current_ratio": 1.0,
-                "growth_outlook": "Moderado",
-                "volatility": "Media",
-                "dividend_typical": "Muy Alto",
-            },
-            "Materials": {
-                "name": "Materiales",
-                "etf": "XLB",
-                "typical_pe": 16.0,
-                "typical_ps": 1.8,
-                "typical_pb": 3.0,
-                "typical_ev_ebitda": 9.0,
-                "typical_roe": 0.15,
-                "typical_roa": 0.06,
-                "typical_gross_margin": 0.30,
-                "typical_operating_margin": 0.14,
-                "typical_net_margin": 0.08,
-                "typical_debt_equity": 0.60,
-                "typical_current_ratio": 1.8,
-                "growth_outlook": "Cíclico",
-                "volatility": "Alta",
-                "dividend_typical": "Moderado",
-            },
-            "Communication Services": {
-                "name": "Comunicaciones",
-                "etf": "XLC",
-                "typical_pe": 18.0,
-                "typical_ps": 2.5,
-                "typical_pb": 3.5,
-                "typical_ev_ebitda": 10.0,
-                "typical_roe": 0.12,
-                "typical_roa": 0.05,
-                "typical_gross_margin": 0.55,
-                "typical_operating_margin": 0.18,
-                "typical_net_margin": 0.12,
-                "typical_debt_equity": 0.80,
-                "typical_current_ratio": 1.3,
-                "growth_outlook": "Moderado",
-                "volatility": "Media-Alta",
-                "dividend_typical": "Bajo-Moderado",
-            },
-        }
-        
-        # Default si no encontramos el sector
-        default_data = {
-            "name": sector or "General",
-            "etf": "SPY",
-            "typical_pe": 20.0,
-            "typical_ps": 2.5,
-            "typical_pb": 4.0,
-            "typical_ev_ebitda": 12.0,
-            "typical_roe": 0.15,
-            "typical_roa": 0.06,
-            "typical_gross_margin": 0.40,
-            "typical_operating_margin": 0.15,
-            "typical_net_margin": 0.10,
-            "typical_debt_equity": 0.80,
-            "typical_current_ratio": 1.5,
-            "growth_outlook": "Moderado",
-            "volatility": "Media",
-            "dividend_typical": "Moderado",
-        }
-        
-        # Búsqueda flexible del sector
-        benchmark = None
-        if sector:
-            sector_lower = sector.lower().strip()
-            
-            # Primero búsqueda exacta
-            benchmark = sector_benchmarks.get(sector)
-            
-            # Si no, búsqueda case-insensitive
-            if not benchmark:
-                for key, data in sector_benchmarks.items():
-                    if key.lower() == sector_lower:
-                        benchmark = data
-                        break
-            
-            # Si no, búsqueda parcial
-            if not benchmark:
-                for key, data in sector_benchmarks.items():
-                    if sector_lower in key.lower() or key.lower() in sector_lower:
-                        benchmark = data
-                        break
-        
-        # Usar default si no encontramos
-        if not benchmark:
-            benchmark = default_data
-            # Pero usar el ETF correcto basado en el mapeo
-            etf_from_mapping = self._get_sector_etf_symbol(sector)
-            benchmark["etf"] = etf_from_mapping
-        
-        # Intentar obtener datos en tiempo real del ETF
-        try:
-            etf_symbol = benchmark.get("etf", "SPY")
-            ticker = yf.Ticker(etf_symbol)
-            hist = ticker.history(period="1y")
-
-            # Calcular rendimiento del sector (YTD aproximado)
-            if not hist.empty:
-                ytd_return = ((hist['Close'].iloc[-1] / hist['Close'].iloc[0]) - 1) * 100
-                benchmark["ytd_return"] = round(ytd_return, 2)
-            
-            if not hist.empty:
-                benchmark["etf_price"] = float(hist['Close'].iloc[-1])
-            benchmark["etf_name"] = etf_symbol
-            
-        except Exception as e:
-            benchmark["ytd_return"] = None
-            benchmark["current_sector_pe"] = benchmark["typical_pe"]
-        
-        return benchmark
 
 
 class FinancialDataService:
     """Servicio unificado para obtener datos financieros."""
     
-    def __init__(self, fmp_api_key: Optional[str] = None):
-        """
-        Args:
-            fmp_api_key: API key de Financial Modeling Prep (opcional)
-        """
-        self.fmp_api_key = fmp_api_key or os.environ.get("FMP_API_KEY")
-        
+    def __init__(self):
         # Intentar inicializar Yahoo Finance
         try:
             self.yahoo = YahooFinanceFetcher()
@@ -1413,7 +582,6 @@ class FinancialDataService:
         profile = None
         financials = None
         historical = None
-        detailed_historical = None
         
         # Definir tareas a ejecutar en paralelo
         # NOTE: historical and detailed removed from critical path
@@ -1494,7 +662,6 @@ class FinancialDataService:
         profile = results_parallel.get("profile")
         financials = results_parallel.get("financials")
         historical = results_parallel.get("historical")
-        detailed_historical = results_parallel.get("detailed")
         
         report_progress("Procesando datos...", 65)
         
@@ -1543,107 +710,12 @@ class FinancialDataService:
         
         report_progress("Calculando históricos...", 75)
         
-        # Históricos para CAGR y FCF trend
+        # Históricos para CAGR y FCF trend: movido a historical_metrics.py
+        # (etapa 4). Nunca corría: la tarea "historical" ya no se lanza.
         if historical:
             result["historical"] = historical
-            
-            # Calcular métricas contextuales desde históricos
-            if historical.get("revenue") and len(historical["revenue"]) >= 3:
-                revenues = historical["revenue"]
-                try:
-                    def _cagr(end_val, start_val, periods):
-                        # end_val = valor MÁS RECIENTE, start_val = MÁS ANTIGUO.
-                        # La serie de yfinance viene newest-first (revenues[0] es el
-                        # año reciente y revenues[-1] el más antiguo), así que el
-                        # CAGR correcto es (reciente/antiguo)^(1/n)-1 =>
-                        # _cagr(revenues[0], revenues[-1], ...). Antes estaba
-                        # invertido y una empresa en crecimiento salía en contracción.
-                        if (end_val and start_val and end_val > 0
-                                and start_val > 0 and periods > 0):
-                            return (end_val / start_val) ** (1 / periods) - 1
-                        return None
-                    result["contextual"]["revenue_cagr_3y"] = _cagr(
-                        revenues[0], revenues[-1], min(3, len(revenues)-1)
-                    )
-                    if len(revenues) >= 5:
-                        result["contextual"]["revenue_cagr_5y"] = _cagr(
-                            revenues[0], revenues[-1], min(5, len(revenues)-1)
-                        )
-                except (TypeError, ValueError, ZeroDivisionError):
-                    pass
-            
-            # FCF trend
-            if historical.get("fcf"):
-                fcf_list = historical["fcf"]
-                negative_years = sum(1 for x in fcf_list if x and x < 0)
-                result["contextual"]["fcf_trend_negative_years"] = negative_years
-        
+
         report_progress("Procesando F-Score...", 85)
-        
-        # ===== DATOS HISTÓRICOS DETALLADOS PARA PIOTROSKI F-SCORE =====
-        if detailed_historical and detailed_historical.get("years"):
-            years_list = detailed_historical.get("years", [])
-            hist_data = detailed_historical.get("data", {})
-            
-            if len(years_list) >= 2:
-                current_year = years_list[0]
-                prior_year = years_list[1]
-                
-                current_data = hist_data.get(current_year, {})
-                prior_data = hist_data.get(prior_year, {})
-                
-                # Debug
-                result["contextual"]["_debug_years"] = years_list[:2]
-                result["contextual"]["_debug_current_keys"] = list(current_data.keys())[:10]
-                
-                # ROA del año anterior
-                if prior_data.get("roa") is not None:
-                    roa_prior = prior_data.get("roa")
-                    result["contextual"]["roa_prior"] = roa_prior / 100 if abs(roa_prior) > 1 else roa_prior
-                
-                if current_data.get("roa") is not None:
-                    roa_current = current_data.get("roa")
-                    result["contextual"]["roa_current_hist"] = roa_current / 100 if abs(roa_current) > 1 else roa_current
-                
-                # Current ratio del año anterior
-                if prior_data.get("current_ratio") is not None:
-                    result["contextual"]["current_ratio_prior"] = prior_data.get("current_ratio")
-                
-                # Gross margin
-                if prior_data.get("gross_margin") is not None:
-                    gm_prior = prior_data.get("gross_margin")
-                    result["contextual"]["gross_margin_prior"] = gm_prior / 100 if abs(gm_prior) > 1 else gm_prior
-                
-                if current_data.get("gross_margin") is not None:
-                    gm_current = current_data.get("gross_margin")
-                    result["contextual"]["gross_margin_current"] = gm_current / 100 if abs(gm_current) > 1 else gm_current
-                
-                # Asset turnover
-                if prior_data.get("revenue") is not None and prior_data.get("total_assets") is not None:
-                    if prior_data.get("total_assets") > 0:
-                        result["contextual"]["asset_turnover_prior"] = prior_data.get("revenue") / prior_data.get("total_assets")
-                
-                if current_data.get("revenue") is not None and current_data.get("total_assets") is not None:
-                    if current_data.get("total_assets") > 0:
-                        result["contextual"]["asset_turnover_current"] = current_data.get("revenue") / current_data.get("total_assets")
-                
-                # Long term debt
-                if prior_data.get("long_term_debt") is not None:
-                    result["contextual"]["long_term_debt_prior"] = prior_data.get("long_term_debt")
-                elif prior_data.get("total_debt") is not None:
-                    result["contextual"]["long_term_debt_prior"] = prior_data.get("total_debt")
-                
-                if current_data.get("long_term_debt") is not None:
-                    result["contextual"]["long_term_debt"] = current_data.get("long_term_debt")
-                elif current_data.get("total_debt") is not None:
-                    result["contextual"]["long_term_debt"] = current_data.get("total_debt")
-                
-                # Shares
-                if prior_data.get("shares_outstanding") is not None:
-                    result["contextual"]["shares_prior"] = prior_data.get("shares_outstanding")
-                
-                if current_data.get("shares_outstanding") is not None:
-                    result["contextual"]["shares_outstanding"] = current_data.get("shares_outstanding")
         
         report_progress("Obteniendo datos del sector...", 90)
 

@@ -8,6 +8,10 @@ import time
 import threading
 from typing import Dict, Any
 
+from settings import cfg
+
+_D = cfg("data.yahoo")
+
 logger = logging.getLogger(__name__)
 
 # ── Session management (crumb auth, reusable) ──
@@ -19,9 +23,9 @@ _session_lock = threading.Lock()
 _cache: Dict[str, tuple] = {}   # symbol -> (ts, info, degraded)
 _locks: Dict[str, threading.Lock] = {}
 _global_lock = threading.Lock()
-CACHE_TTL = 300  # 5 minutes
+CACHE_TTL = _D["cache_ttl_s"]  # 5 minutos
 # Un snapshot DEGRADADO caduca rápido para auto-repararse en el siguiente fetch
-CACHE_TTL_DEGRADED = 60
+CACHE_TTL_DEGRADED = _D["cache_ttl_degraded_s"]
 
 # ── Resiliencia ante respuestas degradadas de Yahoo ──
 # Desde IPs de datacenter (Render), Yahoo devuelve intermitentemente respuestas
@@ -32,17 +36,39 @@ CACHE_TTL_DEGRADED = 60
 #   3) rellenar los huecos con el último snapshot BUENO conocido (los
 #      fundamentales cambian trimestralmente: un dato de hace una hora es
 #      infinitamente mejor que un null).
-_IMPERSONATE_PROFILES = ["chrome", "safari15_5", "edge101"]
+_IMPERSONATE_PROFILES = _D["impersonate_profiles"]
 _profile_idx = 0
 _best_cache: Dict[str, tuple] = {}   # symbol -> (ts, info) último snapshot bueno
-_BEST_MAX_AGE = 24 * 3600
+_BEST_MAX_AGE = _D["last_known_good_max_age_s"]
 _NESTED_KEYS = ("_yahoo_ratios", "_prior_year", "_current_derived", "_piotroski_current")
+
+
+# ── Trazabilidad de fuente (etapa 3) ──
+# info["_provenance"] = {"campo" | "bloque.campo": {"source": ..., "detail": ...}}
+# Vocabulario de source: yahoo_quotesummary | yfinance_statements | finnhub |
+# derivado | recalculado_por_validacion | sin_dato.
+def _tag_provenance(info: Dict[str, Any], source: str, detail: str,
+                    paths=None, overwrite: bool = False) -> None:
+    """Marca la procedencia de `paths` (o de todos los campos con valor que aún
+    no tengan procedencia). Los campos internos (prefijo "_") no anidados se
+    ignoran; los bloques de _NESTED_KEYS se recorren campo a campo."""
+    prov = info.setdefault("_provenance", {})
+    if paths is None:
+        paths = []
+        for k, v in info.items():
+            if k in _NESTED_KEYS and isinstance(v, dict):
+                paths += [f"{k}.{sk}" for sk, sv in v.items()
+                          if sv is not None and not str(sk).startswith("_")]
+            elif not str(k).startswith("_") and v is not None:
+                paths.append(k)
+    for p in paths:
+        if overwrite or p not in prov:
+            prov[p] = {"source": source, "detail": detail}
 
 # Campos que prácticamente toda empresa cotizada tiene; si faltan varios, la
 # respuesta vino degradada (no confundir con ausencias legítimas: dividendos,
 # forward P/E, etc. NO están en esta lista).
-_COMPLETENESS_FIELDS = ("beta", "sharesOutstanding", "marketCap",
-                        "totalRevenue", "operatingCashflow", "totalCash")
+_COMPLETENESS_FIELDS = _D["completeness_fields"]
 
 # Firma del modo de degradación REAL observado en producción (Render): Yahoo
 # devuelve 200 con financialData intacto pero el cluster summaryDetail/
@@ -251,7 +277,7 @@ def get_ticker_info(symbol: str) -> Dict[str, Any]:
                 f"[DEGRADED] {symbol}: {_completeness(info)}/{len(_COMPLETENESS_FIELDS)} "
                 f"campos clave; reintento {attempts} con sesión fresca")
             _reset_session(rotate_profile=True)
-            time.sleep(0.8 * attempts)
+            time.sleep(_D["degraded_retry_sleep_step_s"] * attempts)
             try:
                 retry_info = _do_fetch(symbol)
             except Exception as e:
@@ -276,6 +302,18 @@ def get_ticker_info(symbol: str) -> Dict[str, Any]:
         except Exception as e:
             logger.warning(f"[FINNHUB] enrich falló para {symbol}: {e}")
 
+        # ── Validación de entrada (lib/validate.py): después de toda la ingesta
+        # y antes de cualquier cálculo del motor. Nunca corrige en silencio:
+        # deja info["_validation"] y actualiza info["_provenance"].
+        try:
+            from validate import validate_info
+            info = validate_info(info, symbol)
+        except Exception as e:
+            logger.error(f"[VALIDATE] validación de entrada falló para {symbol}: {e}")
+            info["_validation"] = [{"field": "*", "rule": "validacion", "action": "aviso",
+                                    "old": None, "new": None,
+                                    "reason": f"la validación de entrada no se ejecutó: {e}"}]
+
         # ── Defensa 2: los snapshots degradados caducan rápido ──
         _cache[symbol] = (time.time(), info, degraded)
         return info
@@ -293,13 +331,13 @@ def _merge_last_known_good(symbol: str, fresh: Dict[str, Any], fresh_degraded: b
     merged = dict(fresh)
 
     if best and (now - ts_best) < _BEST_MAX_AGE:
-        filled = 0
+        filled = []
         for k, v in best.items():
             if k in _NESTED_KEYS:
                 continue
             if merged.get(k) is None and v is not None:
                 merged[k] = v
-                filled += 1
+                filled.append(k)
         for nk in _NESTED_KEYS:
             bsub = best.get(nk)
             if not isinstance(bsub, dict):
@@ -308,10 +346,15 @@ def _merge_last_known_good(symbol: str, fresh: Dict[str, Any], fresh_degraded: b
             for k, v in bsub.items():
                 if msub.get(k) is None and v is not None:
                     msub[k] = v
-                    filled += 1
+                    filled.append(f"{nk}.{k}")
             merged[nk] = msub
         if filled:
-            logger.info(f"[LKG] {symbol}: {filled} campos rellenados del último snapshot bueno")
+            merged["_provenance"] = dict(merged.get("_provenance") or {})
+            _tag_provenance(merged, "derivado",
+                            f"último snapshot bueno conocido (hace {int(now - ts_best)} s)",
+                            paths=[p for p in filled if not p.startswith("_") or "." in p],
+                            overwrite=True)
+            logger.info(f"[LKG] {symbol}: {len(filled)} campos rellenados del último snapshot bueno")
 
     if not fresh_degraded:
         _best_cache[symbol] = (now, merged)
@@ -351,7 +394,7 @@ def _do_fetch(symbol: str) -> Dict[str, Any]:
     params = {"modules": ",".join(modules), "crumb": _crumb}
 
     try:
-        r = _session.get(url, params=params, timeout=15)
+        r = _session.get(url, params=params, timeout=_D["http_timeout_s"])
     except Exception as e:
         logger.error(f"Yahoo API request failed for {symbol}: {e}")
         return _fallback_yfinance(symbol)
@@ -361,7 +404,7 @@ def _do_fetch(symbol: str) -> Dict[str, Any]:
         _refresh_crumb()
         params["crumb"] = _crumb
         try:
-            r = _session.get(url, params=params, timeout=15)
+            r = _session.get(url, params=params, timeout=_D["http_timeout_s"])
         except Exception:
             pass
 
@@ -644,6 +687,10 @@ def _do_fetch(symbol: str) -> Dict[str, Any]:
         # Book value
         "bookValue": _raw(kstat.get("bookValue")),
 
+        # Último split (para la regla de base de splits de lib/validate.py)
+        "lastSplitFactor": _raw(kstat.get("lastSplitFactor")),
+        "lastSplitDate": _raw(kstat.get("lastSplitDate")),
+
         # ── Prior-year data (for Piotroski F-Score, comparisons) ──
         "_prior_year": {
             "roa": prev_roa,
@@ -694,14 +741,86 @@ def _do_fetch(symbol: str) -> Dict[str, Any]:
     # ── Enrich prior-year data with yfinance (historical statements) ──
     try:
         info = _enrich_prior_year_data(symbol, info)
+        info = _apply_ttm(symbol, info, plan_b=False)
     except Exception as e:
         logger.warning(f"[ENRICH] Prior-year enrichment failed for {symbol}: {e}")
+        _tag_provenance(info, "sin_dato", f"estados anuales de yfinance: {e}",
+                        paths=["_prior_year", "_piotroski_current"], overwrite=True)
+    info["_data_path"] = "yahoo_quotesummary"
+    _tag_provenance(info, "yahoo_quotesummary", "quoteSummary v10 (con crumb)")
 
     elapsed = time.time() - t0
     logger.info(f"[FAST API] get_ticker_info({symbol}) in {elapsed:.2f}s")
 
-    # Cache
-    _cache[symbol] = (time.time(), info, _is_degraded(info))
+    # Sin escribir _cache aquí: solo get_ticker_info cachea, DESPUÉS de LKG,
+    # Finnhub y la validación de entrada. Una escritura aquí exponía el dict sin
+    # validar al hilo paralelo de perfil (lee la caché fuera del lock).
+    return info
+
+
+# Filas de partidas no recurrentes de Yahoo (lib/normalize.py).
+_UNUSUAL_ROWS = (
+    "Total Unusual Items", "Total Unusual Items Excluding Goodwill", "Special Income Charges",
+    "Other Special Charges", "Restructuring And Mergern Acquisition", "Gain On Sale Of Security",
+    "Gain On Sale Of Ppe", "Gain On Sale Of Business", "Write Off", "Asset Impairment Charge",
+    "Impairment Of Capital Assets", "Tax Effect Of Unusual Items",
+)
+
+
+def _apply_ttm(symbol: str, info: Dict[str, Any], plan_b: bool) -> Dict[str, Any]:
+    """Etapa 7: TTM desde los estados TRIMESTRALES de yfinance (lib/ttm.py).
+
+    Flujos = suma de 4 trimestres consecutivos; balance = último trimestre. Lo
+    que no tenga 4 trimestres consecutivos conserva el valor de la fuente (anual
+    en el plan B) y queda registrado en info["_ttm"] (-> data_provenance.ttm).
+    En el plan B el BPA anual pasa a BPA TTM = beneficio TTM / acciones diluidas
+    medias del último trimestre (en la ruta quoteSummary el BPA ya es TTM)."""
+    from ttm import build_ttm, FLOW_KEYS
+    frames, errors = {}, []
+    try:
+        import yfinance as yf
+        ticker = yf.Ticker(symbol)
+        for attr in ("quarterly_income_stmt", "quarterly_cashflow", "quarterly_balance_sheet"):
+            try:
+                frames[attr] = getattr(ticker, attr)
+            except Exception as e:
+                frames[attr] = None
+                errors.append(f"{attr}: {type(e).__name__}")
+    except Exception as e:
+        errors.append(f"yfinance: {type(e).__name__}")
+    t = build_ttm(frames.get("quarterly_income_stmt"), frames.get("quarterly_cashflow"),
+                  frames.get("quarterly_balance_sheet"))
+    flows = [k for k in t["values"] if k in FLOW_KEYS]
+    balance = [k for k in t["values"] if k not in FLOW_KEYS]
+    for k, v in t["values"].items():
+        info[k] = v
+    if flows:
+        _tag_provenance(info, "yfinance_statements",
+                        f"TTM: suma de los 4 trimestres {', '.join(t['quarters'].get('inc') or t['quarters'].get('cf') or [])}",
+                        paths=flows, overwrite=True)
+    if balance:
+        _tag_provenance(info, "yfinance_statements", f"balance del último trimestre ({t['balance_date']})",
+                        paths=balance, overwrite=True)
+    eps_basis = "fuente"
+    q = t["quarterly"]
+    sh = (q.get("Diluted Average Shares") or [None])[0]
+    if plan_b and "netIncome" in t["values"] and sh:
+        info["trailingEps"] = t["values"]["netIncome"] / sh
+        eps_basis = "ttm"
+        _tag_provenance(info, "derivado", "BPA TTM = beneficio neto TTM / acciones diluidas medias del último "
+                                          "trimestre", paths=["trailingEps"], overwrite=True)
+    shares = info.get("sharesOutstanding")
+    if plan_b and "totalStockholderEquity" in t["values"] and shares:
+        info["bookValue"] = t["values"]["totalStockholderEquity"] / shares
+    info["_quarterly"] = q
+    info["_ttm"] = {
+        "basis": "ttm" if flows else ("anual" if plan_b else "fuente"),
+        "quarters": t["quarters"], "balance_date": t["balance_date"],
+        "ttm_fields": sorted(flows), "last_quarter_fields": sorted(balance),
+        "annual_fields": ({k: v for k, v in t["missing"].items()} if plan_b else {}),
+        "source_fields": ({} if plan_b else {k: v for k, v in t["missing"].items()}),
+        "eps": eps_basis, "errors": errors,
+    }
     return info
 
 
@@ -753,6 +872,67 @@ def _enrich_prior_year_data(symbol: str, info: Dict[str, Any]) -> Dict[str, Any]
     if not (has_inc or has_bs or has_cf):
         return info
 
+    # Series anuales (más reciente primero) para la capa de validación
+    # (lib/validate.py): recalcular "por definición desde los estados" (FCF =
+    # OCF − capex), comprobar saltos interanuales, base de splits y CAGR.
+    def _row(df, key, n=5):
+        if df is None or df.empty or key not in df.index:
+            return []
+        out = []
+        for v in df.loc[key].tolist()[:n]:
+            try:
+                f = float(v)
+                out.append(f if f == f else None)
+            except (TypeError, ValueError):
+                out.append(None)
+        return out
+
+    def _years(df):
+        try:
+            return [str(c.year) for c in df.columns][:5] if df is not None and not df.empty else []
+        except Exception:
+            return []
+
+    info["_statements_fy"] = {
+        "inc_years": _years(inc), "bs_years": _years(bs), "cf_years": _years(cf),
+        "revenue": _row(inc, "Total Revenue"),
+        "gross_profit": _row(inc, "Gross Profit"),   # etapa 9b: margen bruto en el histórico
+        "net_income": _row(inc, "Net Income"),
+        "diluted_eps": _row(inc, "Diluted EPS"),   # etapa 9a: CAGR 3 años del BPA
+        "ordinary_shares": _row(bs, "Ordinary Shares Number"),
+        "total_assets": _row(bs, "Total Assets"),
+        "operating_cash_flow": _row(cf, "Operating Cash Flow"),
+        "capital_expenditure": _row(cf, "Capital Expenditure"),
+        # Etapa 8: D&A (o DD&A en extractivas) para el capex de mantenimiento de CYCLICAL.
+        "depreciation_amortization": next((x for x in (_row(cf, r) for r in (
+            "Depreciation And Amortization", "Depreciation Amortization Depletion", "Depreciation")) if x), []),
+        "free_cash_flow": _row(cf, "Free Cash Flow"),
+        "stock_based_compensation": _row(cf, "Stock Based Compensation"),   # etapa 9a: FCF − SBC
+        # Etapa 6 (clasificador, ramas por arquetipo y ROCE): series anuales
+        # adicionales; una fila ausente queda como lista vacía (sin dato).
+        "operating_income": _row(inc, "Operating Income"),
+        "ebit": _row(inc, "EBIT"),
+        "ebitda": _row(inc, "EBITDA"),
+        "current_liabilities": _row(bs, "Current Liabilities"),
+        "stockholders_equity": _row(bs, "Stockholders Equity"),
+        "tangible_book_value": _row(bs, "Tangible Book Value"),
+        # gastos no financieros de un banco (ratio de eficiencia aproximado)
+        "non_interest_expense": _row(inc, "Non Interest Expense"),
+        "sga": _row(inc, "Selling General And Administration"),
+        "occupancy": _row(inc, "Occupancy And Equipment"),
+        "professional_services": _row(inc, "Professional Expense And Contract Services Expense"),
+        "other_non_interest_expense": _row(inc, "Other Non Interest Expense"),
+        # Etapa 7: Altman con el último FY (se define sobre ejercicios, no TTM) y
+        # partidas no recurrentes del FY para normalizar sin trimestrales.
+        "current_assets": _row(bs, "Current Assets"),
+        "total_liabilities": _row(bs, "Total Liabilities Net Minority Interest"),
+        "retained_earnings": _row(bs, "Retained Earnings"),
+        "pretax_income": _row(inc, "Pretax Income"),
+        "tax_provision": _row(inc, "Tax Provision"),
+        "unusual_fy0": {r: (_row(inc, r) or [None])[0] for r in _UNUSUAL_ROWS if _row(inc, r)},
+        "unusual_fy": {r: _row(inc, r) for r in _UNUSUAL_ROWS if _row(inc, r)},   # recurrencia (etapa 7)
+    }
+
     # Columns: [0] = most recent (current), [1] = prior year
     # ── Determine fiscal year labels ──
     fy_current = str(inc.columns[0].year) if has_inc else ""
@@ -780,7 +960,10 @@ def _enrich_prior_year_data(symbol: str, info: Dict[str, Any]) -> Dict[str, Any]
         cur_ltd = _sf(cur_bs, "Long Term Debt")
         cur_ca = _sf(cur_bs, "Current Assets")
         cur_cl = _sf(cur_bs, "Current Liabilities")
-        cur_shares = _sf(cur_bs, "Share Issued") or _sf(cur_bs, "Ordinary Shares Number")
+        # Acciones EN CIRCULACIÓN (Ordinary Shares Number) antes que emitidas
+        # (Share Issued incluye autocartera: NFLX 4.53->4.57B emitidas mientras
+        # las en circulación bajaban 4.28->4.22B por recompras).
+        cur_shares = _sf(cur_bs, "Ordinary Shares Number") or _sf(cur_bs, "Share Issued")
 
         if cur_ta and cur_rev and cur_ta > 0:
             derived["asset_turnover"] = cur_rev / cur_ta
@@ -860,7 +1043,7 @@ def _enrich_prior_year_data(symbol: str, info: Dict[str, Any]) -> Dict[str, Any]
             prior["roa"] = prev_ni_for_roa / prev_ta
 
         # Prior-year shares
-        prev_shares = _sf(prev_bs, "Share Issued") or _sf(prev_bs, "Ordinary Shares Number")
+        prev_shares = _sf(prev_bs, "Ordinary Shares Number") or _sf(prev_bs, "Share Issued")
         if prev_shares:
             prior["shares"] = prev_shares
 
@@ -877,6 +1060,13 @@ def _enrich_prior_year_data(symbol: str, info: Dict[str, Any]) -> Dict[str, Any]
     info["_prior_year"] = prior
     info["_current_derived"] = derived
     info["_piotroski_current"] = piotroski_current
+    _tag_provenance(info, "yfinance_statements",
+                    f"estados anuales de yfinance (FY{fy_current} / FY{fy_prior})",
+                    paths=[f"{blk}.{k}" for blk, d in (("_prior_year", prior),
+                                                       ("_current_derived", derived),
+                                                       ("_piotroski_current", piotroski_current))
+                           for k, v in d.items() if v is not None and not str(k).startswith("_")],
+                    overwrite=True)
 
     elapsed = time.time() - t0
     logger.info(f"[ENRICH] Prior-year data enriched for {symbol} (FY{fy_prior}) in {elapsed:.2f}s")
@@ -919,13 +1109,33 @@ def _fallback_yfinance(symbol: str) -> Dict[str, Any]:
     except Exception:
         pass
 
-    sd = KNOWN_SECTORS.get(symbol)
-    info["sector"] = sd[0] if sd else "Unknown"
-    info["industry"] = sd[1] if sd else "Unknown"
+    # Sector/industria DE LA FUENTE: en prod quoteSummary (assetProfile) da 401,
+    # pero la búsqueda de Yahoo no exige crumb y sí trae sector e industria.
+    # KNOWN_SECTORS queda solo como respaldo marcado si la búsqueda falla.
+    prof = _search_profile(symbol)
+    if prof and prof.get("sector"):
+        info["sector"] = prof["sector"]
+        info["industry"] = prof.get("industry") or "Unknown"
+        info["_profile_source"] = "yahoo_search"
+        _tag_provenance(info, "yahoo_quotesummary",
+                        "búsqueda de Yahoo /v1/finance/search (sin crumb; no es quoteSummary)",
+                        paths=["sector", "industry"])
+    else:
+        sd = KNOWN_SECTORS.get(symbol)
+        info["sector"] = sd[0] if sd else "Unknown"
+        info["industry"] = sd[1] if sd else "Unknown"
+        info["_profile_source"] = "known_sectors" if sd else "sin_dato"
+        if sd:
+            _tag_provenance(info, "derivado", "lista fija KNOWN_SECTORS (búsqueda no disponible)",
+                            paths=["sector", "industry"])
+        else:
+            _tag_provenance(info, "sin_dato", "búsqueda no disponible y ticker fuera de KNOWN_SECTORS",
+                            paths=["sector", "industry"])
 
     try:
         from stock_database import POPULAR_STOCKS
-        info["longName"] = POPULAR_STOCKS.get(symbol, symbol)
+        info["longName"] = (POPULAR_STOCKS.get(symbol)
+                            or (prof or {}).get("name") or symbol)
         info["shortName"] = info["longName"]
     except Exception:
         info["longName"] = symbol
@@ -978,7 +1188,7 @@ def _fallback_yfinance(symbol: str) -> Dict[str, Any]:
             ex.submit(_get_bs): "balance",
             ex.submit(_get_cf): "cashflow",
         }
-        for f in as_completed(futs, timeout=30):
+        for f in as_completed(futs, timeout=_D["statements_timeout_s"]):
             key = futs[f]
             try:
                 results[key] = f.result()
@@ -1016,16 +1226,65 @@ def _fallback_yfinance(symbol: str) -> Dict[str, Any]:
 
     if not info.get("freeCashflow") and info.get("operatingCashflow") and info.get("capitalExpenditures"):
         info["freeCashflow"] = info["operatingCashflow"] + info["capitalExpenditures"]
+        _tag_provenance(info, "derivado", "OCF + capex (FY) por falta de 'Free Cash Flow'",
+                        paths=["freeCashflow"])
 
     shares = info.get("sharesOutstanding")
     equity = info.get("totalStockholderEquity")
     if shares and equity and shares > 0:
         info["bookValue"] = equity / shares
+        _tag_provenance(info, "derivado", "patrimonio (FY) / acciones de fast_info", paths=["bookValue"])
+
+    # Año previo para Piotroski/buyback: en el plan B (camino permanente de prod)
+    # no se ejecutaba y _prior_year solo tenía lo que aportaba Finnhub, sin
+    # acciones. Los estados anuales de yfinance (sin crumb) sí están disponibles.
+    try:
+        info = _enrich_prior_year_data(symbol, info)
+        info = _apply_ttm(symbol, info, plan_b=True)
+    except Exception as e:
+        logger.warning(f"[ENRICH] Prior-year enrichment (fallback) failed for {symbol}: {e}")
+        _tag_provenance(info, "sin_dato", f"estados anuales de yfinance: {e}",
+                        paths=["_prior_year", "_piotroski_current"], overwrite=True)
+    info["_data_path"] = "plan_b_yfinance"
+    _tag_provenance(info, "yfinance_statements", "plan B: yfinance fast_info (sin crumb)",
+                    paths=[k for k in ("regularMarketPrice", "currentPrice", "marketCap", "currency",
+                                       "exchange", "fiftyTwoWeekHigh", "fiftyTwoWeekLow", "shares",
+                                       "sharesOutstanding") if info.get(k) is not None])
+    _tag_provenance(info, "derivado", "símbolo pedido; nombre de stock_database o de la búsqueda",
+                    paths=["symbol", "longName", "shortName"])
+    _tag_provenance(info, "yfinance_statements", "plan B: estados anuales de yfinance (último FY)")
 
     elapsed = time.time() - t0
     logger.info(f"[FALLBACK] get_ticker_info({symbol}) in {elapsed:.2f}s")
-    _cache[symbol] = (time.time(), info, _is_degraded(info))
+    # Sin escribir _cache aquí (ver _do_fetch): solo get_ticker_info cachea.
     return info
+
+
+_SEARCH_URL = "https://query2.finance.yahoo.com/v1/finance/search"
+
+
+def _search_profile(symbol: str):
+    """Sector, industria y nombre desde la búsqueda de Yahoo (endpoint SIN crumb).
+
+    Se usa en el plan B: desde IPs de datacenter quoteSummary responde 401
+    ('Invalid Crumb') pero la búsqueda funciona (RECON §7.5). Solo acepta la
+    cotización cuyo símbolo coincide exactamente. Devuelve None si no hay
+    coincidencia o falla la llamada.
+    """
+    try:
+        _ensure_session()
+        r = _session.get(_SEARCH_URL, params={"q": symbol, "quotesCount": 5, "newsCount": 0,
+                                              "listsCount": 0}, timeout=_D["search_timeout_s"])
+        if r.status_code != 200:
+            return None
+        for q in (r.json() or {}).get("quotes", []):
+            if str(q.get("symbol", "")).upper() == symbol.upper():
+                return {"sector": q.get("sector") or q.get("sectorDisp"),
+                        "industry": q.get("industry") or q.get("industryDisp"),
+                        "name": q.get("longname") or q.get("shortname")}
+    except Exception as e:
+        logger.warning(f"[SEARCH] perfil de {symbol} no disponible: {e}")
+    return None
 
 
 def _sg(series, key):

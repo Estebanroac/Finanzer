@@ -35,20 +35,24 @@ from urllib.request import urlopen, Request
 from urllib.parse import urlencode
 from typing import Dict, Any, Optional
 
+from settings import cfg
+
 logger = logging.getLogger(__name__)
 
+_EPS_OVERRIDE_REL_DIFF = cfg("data.finnhub.eps_override_rel_diff")
+
 _BASE = "https://finnhub.io/api/v1"
-_TIMEOUT = 8
+_TIMEOUT = cfg("data.finnhub.timeout_s")
 
 # Cache interno (symbol -> (ts, payload)) para no repetir la llamada dentro del
 # TTL del adaptador de Yahoo y respetar el rate limit del free tier (60/min).
 _cache: Dict[str, tuple] = {}
-_CACHE_TTL = 300
+_CACHE_TTL = cfg("data.finnhub.cache_ttl_s")
 _lock = threading.Lock()
 
 # Campos cuyo None dispara la consulta a Finnhub (casi siempre presentes en una
 # respuesta sana de Yahoo; su ausencia es la firma de la degradación de Render).
-_GAP_FIELDS = ("beta", "forwardPE", "revenueGrowth")
+_GAP_FIELDS = cfg("data.finnhub.gap_fields")
 
 
 def _api_key() -> str:
@@ -125,17 +129,12 @@ def _growth(ttm, cagr3, cagr5) -> Optional[float]:
     hipergrowth REAL muestra un CAGR multi-año comparablemente alto; un artefacto
     no. Si el YoY es un pico implausible frente a la tendencia, se usa el CAGR-3Y
     suavizado en su lugar (para JPM ~3.4%, razonable) en vez de un dato roto.
+
+    Desde la etapa 3 la regla vive en validate.growth_guard (umbrales en
+    validate.THRESHOLDS) y se aplica también a las rutas Yahoo y plan B.
     """
-    ttm = _num(ttm)
-    c3 = _num(cagr3)
-    c5 = _num(cagr5)
-    lt = c5 if c5 is not None else c3
-    if ttm is not None:
-        if abs(ttm) <= 60 or (lt is not None and abs(ttm) <= 3 * abs(lt)):
-            return ttm / 100.0
-    if c3 is not None:
-        return c3 / 100.0
-    return None
+    from validate import growth_guard
+    return growth_guard(ttm, cagr3, cagr5)
 
 
 def _series_val(series: dict, key: str, idx: int) -> Optional[float]:
@@ -183,7 +182,7 @@ def enrich_info(info: Dict[str, Any], symbol: str, degraded: bool = False) -> Di
     _eps_ttm = _num(m.get("epsTTM"))
     if _eps_ttm is not None and _eps_ttm != 0:
         _cur_eps = _num(info.get("trailingEps"))
-        if _cur_eps is None or abs(_cur_eps - _eps_ttm) / abs(_eps_ttm) > 0.02:
+        if _cur_eps is None or abs(_cur_eps - _eps_ttm) / abs(_eps_ttm) > _EPS_OVERRIDE_REL_DIFF:
             if info.get("trailingEps") != _eps_ttm:
                 info["trailingEps"] = _eps_ttm
                 filled.append("trailingEps~")
@@ -231,6 +230,18 @@ def enrich_info(info: Dict[str, Any], symbol: str, degraded: bool = False) -> Di
         _fill_piotroski(info, series, filled)
     except Exception as e:
         logger.warning(f"[FINNHUB] piotroski fill for {symbol}: {e}")
+
+    # Procedencia: cada campo rellenado (o impuesto) desde Finnhub.
+    _tag_map = {"pio.roa": "_piotroski_current.roa", "prior.roa": "_prior_year.roa",
+                "pio.cr": "_piotroski_current.current_ratio", "prior.cr": "_prior_year.current_ratio",
+                "pio.gm": "_piotroski_current.gross_margin", "prior.gm": "_prior_year.gross_margin",
+                "pio.at": "_piotroski_current.asset_turnover", "prior.at": "_prior_year.asset_turnover",
+                "der.gm": "_current_derived.gross_margin", "der.at": "_current_derived.asset_turnover"}
+    prov = info.setdefault("_provenance", {})
+    for tag in filled:
+        path = _tag_map.get(tag) or (("_yahoo_ratios." + tag[3:]) if tag.startswith("yr.") else tag.rstrip("~"))
+        prov[path] = {"source": "finnhub",
+                      "detail": "/stock/metric" + (" (impuesto: difería >2% del existente)" if tag.endswith("~") else "")}
 
     if filled:
         head = ", ".join(filled[:12])

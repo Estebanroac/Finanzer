@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
 
 // Route-level error boundary: catches any render/runtime error in a page so the
 // user sees a branded fallback instead of the bare white "Application error"
@@ -35,12 +36,13 @@ export default function Error({
         >
           Reintentar
         </button>
-        <a
+        <Link
           href="/"
+          prefetch={false}
           className="px-4 py-2 rounded-lg text-sm font-medium text-[#0cc06c] bg-[#0cc06c]/10 border border-[#0cc06c]/20 hover:bg-[#0cc06c]/15 transition-colors"
         >
           Volver al inicio
-        </a>
+        </Link>
       </div>
     </div>
   );

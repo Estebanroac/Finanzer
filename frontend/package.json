@@ -4,9 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node scripts/check-analysis-literals.mjs",
     "build": "next build",
+    "postbuild": "node scripts/stamp-build.mjs",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "check": "node scripts/check-analysis-literals.mjs && node scripts/check-contract.mjs"
   },
   "dependencies": {
     "next": "16.1.7",

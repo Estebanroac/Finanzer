@@ -4,20 +4,21 @@ import { useLayoutEffect, useRef, useState } from "react";
 import type { StockAnalysis } from "@/lib/api";
 import ValuationTab from "./tabs/ValuationTab";
 import ProfitabilityTab from "./tabs/ProfitabilityTab";
-import HealthTab from "./tabs/HealthTab";
-import IntrinsicTab from "./tabs/IntrinsicTab";
-import EvaluationTab from "./tabs/EvaluationTab";
-import ComparativeTab from "./tabs/ComparativeTab";
+import SolvencyTab from "./tabs/SolvencyTab";
+import GrowthTab from "./tabs/GrowthTab";
 import HistoricalTab from "./tabs/HistoricalTab";
+import InstitutionalTab from "./tabs/InstitutionalTab";
+import AlertsTab from "./tabs/AlertsTab";
 
+// Mismas secciones que el PDF (01–06) + el histórico anual (dato bruto, solo web).
 const TABS = [
   { id: "valuation", label: "Valoración" },
   { id: "profitability", label: "Rentabilidad" },
-  { id: "health", label: "Solidez" },
+  { id: "solvency", label: "Solidez" },
+  { id: "growth", label: "Crecimiento" },
   { id: "historical", label: "Histórico" },
-  { id: "comparative", label: "Comparativa" },
-  { id: "intrinsic", label: "Valor Intrínseco" },
-  { id: "evaluation", label: "Evaluación" },
+  { id: "institutional", label: "Evaluación institucional" },
+  { id: "alerts", label: "Alertas" },
 ];
 
 interface TabsSectionProps {
@@ -88,13 +89,13 @@ export default function TabsSection({ data }: TabsSectionProps) {
 
       {/* Contenido — remonta por tab con slide direccional */}
       <div key={activeTab} className="tab-panel-in" style={{ "--dir": dir } as React.CSSProperties}>
-        {activeTab === "valuation" && <ValuationTab data={data} />}
-        {activeTab === "profitability" && <ProfitabilityTab data={data} />}
-        {activeTab === "health" && <HealthTab data={data} />}
+        {activeTab === "valuation" && <ValuationTab display={data.display} />}
+        {activeTab === "profitability" && <ProfitabilityTab display={data.display} />}
+        {activeTab === "solvency" && <SolvencyTab display={data.display} />}
+        {activeTab === "growth" && <GrowthTab display={data.display} />}
         {activeTab === "historical" && <HistoricalTab data={data} />}
-        {activeTab === "comparative" && <ComparativeTab data={data} />}
-        {activeTab === "intrinsic" && <IntrinsicTab data={data} />}
-        {activeTab === "evaluation" && <EvaluationTab data={data} />}
+        {activeTab === "institutional" && <InstitutionalTab display={data.display} />}
+        {activeTab === "alerts" && <AlertsTab display={data.display} />}
       </div>
     </div>
   );
