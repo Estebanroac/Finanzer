@@ -330,9 +330,13 @@ def test_verdict_confidence_weights():
     assert s["level"] == "media" and "sin TTM" in s["reasons"][0]
 
 
-def test_nflx_prod_contradiction_lowers_confidence(outputs_by_env):
-    """Fallo 1 del spec: múltiplos dicen barata y el DCF cara -> convergencia baja."""
-    c = outputs_by_env("prod")["NFLX"][0]["confidence"]
-    conv = c["dimensions"]["convergence"]
+def test_valuation_contradiction_lowers_confidence(outputs_by_env):
+    """Fallo 1 del spec: si los métodos se oponen, la convergencia es baja. Etapa 9a:
+    sin las bandas growth, los múltiplos de NFLX prod ya no dicen "barata" (en precio
+    frente al DCF cara: media); V local mantiene la oposición (DCF barata, múltiplos cara)."""
+    v = outputs_by_env("local")["V"][0]["confidence"]
+    conv = v["dimensions"]["convergence"]
     assert conv["level"] == "baja" and "direcciones opuestas" in conv["reasons"][0]
-    assert c["level"] != "alta" and c["limits_score"] is False
+    assert v["level"] != "alta" and v["limits_score"] is False
+    n = outputs_by_env("prod")["NFLX"][0]["confidence"]
+    assert n["dimensions"]["convergence"]["level"] == "media" and n["level"] == "media"

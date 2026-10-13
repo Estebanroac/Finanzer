@@ -58,7 +58,8 @@ def test_quality_is_not_contracted_by_convergence(outputs_by_env):
     by = {k: v["score"] for k, v in a["score"]["breakdown"].items()}
     assert q["score"] == round(sum(by[k] for k in cfg("thresholds.score.quality.categories")) * 100 / 80)
     p = a["price_attractiveness"]
-    assert p["score"] == round(50 + (p["score_raw"] - 50) * 0.75) and p["contracted"]
+    assert p["score"] == round(50 + (p["score_raw"] - 50) * 0.75) and p["factor"] == 0.75
+    assert p["contracted"] is (p["score"] != p["score_raw"])
 
 
 # ─────────────────────────── veredicto verbal ───────────────────────────
@@ -116,7 +117,7 @@ def test_high_confidence_requires_high_convergence():
 
 def test_v_local_no_longer_high_confidence(outputs_by_env):
     c = outputs_by_env("local")["V"][0]["confidence"]
-    assert c["dimensions"]["convergence"]["level"] == "media" and c["level"] == "media"
+    assert c["dimensions"]["convergence"]["level"] != "alta" and c["level"] != "alta"
 
 
 # ─────────────────────────── REIT: retorno total ───────────────────────────
@@ -143,6 +144,21 @@ def test_reit_dividend_yield_counted_once(outputs_by_env):
         assert not any("dividendo" in m.lower() for m in val)
         dy, ffo = a["key_metrics"]["dividend_yield"], a["archetype_metrics"]["ffo_per_share_cagr_3y"]
         assert cre["value"] == f"{dy + (0.0 if -0.02 <= ffo < 0 else ffo):.1%}"
+
+
+# ─────────────────────────── precio sin calidad (etapa 9a) ───────────────────────────
+def test_price_excludes_quality_built_bonuses_and_growth_bands(outputs_by_env):
+    T = cfg("thresholds.score.valoracion")
+    for k in ("garp_points", "growth_bonus_points", "rescue_quality_max", "pe_growth_mults",
+              "pfcf_growth_bounds", "ev_ebitda_growth_mults", "quality_growth_min_quality"):
+        assert k not in T, k
+    for env in _envs():
+        for sym, (a, _) in outputs_by_env(env).items():
+            metrics = {x["metric"] for x in a["score"]["breakdown"]["Valoración"]["adjustments"]}
+            assert not metrics & {"Perfil GARP", "Growth Quality", "Ajuste Growth", "Ajuste Crecimiento"}, (env, sym)
+    # Forward P/E y PEG se mantienen (son múltiplos)
+    nflx = {x["metric"] for x in outputs_by_env("prod")["NFLX"][0]["score"]["breakdown"]["Valoración"]["adjustments"]}
+    assert {"Forward P/E", "PEG Ratio"} <= nflx
 
 
 # ─────────────────────────── bandas: una sola fuente ───────────────────────────

@@ -868,107 +868,6 @@ def calculate_growth_quality_score(
     }
 
 
-def adjust_valuation_for_growth(
-    base_pe_adjustment: int,
-    pe: float,
-    sector_pe: float,
-    growth_quality_score: int,
-    company_type: str,
-    revenue_growth: Optional[float],
-    roe: Optional[float]
-) -> tuple:
-    """
-    Ajusta la penalización de P/E basado en la calidad del crecimiento.
-
-    v2.4: Ajustes MÁS GENEROSOS para growth de calidad.
-    El mercado paga múltiplos altos por empresas que crecen rápido con
-    buenos fundamentos. Penalizar -5 a NVDA por P/E alto no tiene sentido
-    si crece >50% con ROE >100%.
-
-    Returns:
-        (adjusted_value, reason, severity)
-    """
-    # Si el ajuste base es positivo (P/E bajo), no modificar
-    if base_pe_adjustment >= 0:
-        return base_pe_adjustment, None, None
-
-    pe_premium = pe / sector_pe if sector_pe > 0 else pe / _BENCH_FALLBACK["pe"]
-
-    # Calcular ajuste basado en calidad
-    adjustment_modifier = 0
-    reason_parts = []
-
-    T = _SC["growth_adjustment"]
-    qb, qm = T["quality_bounds"], T["quality_modifiers"]
-    # v2.4: Growth quality alta JUSTIFICA premium de forma más agresiva
-    if growth_quality_score >= qb[0]:
-        adjustment_modifier += qm[0]  # Antes: 3 → ahora puede neutralizar -5
-        reason_parts.append("calidad excepcional")
-    elif growth_quality_score >= qb[1]:
-        adjustment_modifier += qm[1]
-        reason_parts.append("calidad muy alta")
-    elif growth_quality_score >= qb[2]:
-        adjustment_modifier += qm[2]
-        reason_parts.append("alta calidad")
-    elif growth_quality_score >= qb[3]:
-        adjustment_modifier += qm[3]
-        reason_parts.append("calidad moderada")
-
-    # Tipo de empresa — growth legítimo merece más alivio
-    if company_type in ["garp", "growth"] and growth_quality_score >= T["legit_growth_min_quality"]:
-        adjustment_modifier += T["legit_growth_modifier"]
-        reason_parts.append("growth legítimo" if company_type == "growth" else "GARP")
-    elif company_type == "speculative_growth":
-        adjustment_modifier += T["speculative_modifier"]
-        reason_parts.append("especulativo")
-
-    # ROE excepcional justifica premium (ventaja competitiva duradera)
-    rb, rm = T["roe_bounds"], T["roe_modifiers"]
-    if roe is not None and roe >= rb[0]:
-        adjustment_modifier += rm[0]
-        reason_parts.append(f"ROE {roe:.0%}")
-    elif roe is not None and roe >= rb[1]:
-        adjustment_modifier += rm[1]
-        reason_parts.append(f"ROE {roe:.0%}")
-
-    # Aplicar modificador
-    new_adjustment = base_pe_adjustment + adjustment_modifier
-
-    # v2.4: Permitir que growth de calidad excepcional llegue a bonus moderado (+2 max)
-    cb, caps = T["cap_bounds"], T["caps"]
-    if growth_quality_score >= cb[0] and company_type in ["growth", "garp"]:
-        new_adjustment = min(new_adjustment, caps[0])  # Puede convertir en bonus leve
-    elif growth_quality_score >= cb[1]:
-        new_adjustment = min(new_adjustment, caps[1])  # Puede llegar a +1
-    else:
-        new_adjustment = min(new_adjustment, caps[2])  # No convertir en bonus
-
-    # Determinar severidad
-    if new_adjustment >= 0:
-        severity = "ok"
-    elif new_adjustment >= T["moderate_severity_floor"]:
-        severity = "moderate"
-    else:
-        severity = "severe"
-
-    # Construir razón
-    if adjustment_modifier > 0 and reason_parts:
-        if new_adjustment >= 0:
-            reason = f"Premium justificado por {', '.join(reason_parts[:2])}"
-        else:
-            reason = f"Premium parcialmente justificado ({', '.join(reason_parts[:2])})"
-    elif adjustment_modifier < 0:
-        reason = f"Premium no justificado"
-    else:
-        reason = None
-
-    return new_adjustment, reason, severity
-
-
-# =============================================================================
-# CONFIGURACIÓN ORIGINAL (preservada)
-# =============================================================================
-
 _TD = cfg("sectors.score_thresholds.default")
 
 
@@ -2656,14 +2555,9 @@ def score_valoracion(
 
     growth_quality_score = growth_quality["score"]
     company_type = company_profile["type"]
-    # Sin NINGÚN dato de crecimiento, growth_quality devuelve su base neutral
-    # (50) — no debe bastar para activar tolerancias/rescates de valoración:
-    # la ausencia de datos no es evidencia de calidad.
-    has_growth_data = any(x is not None for x in (revenue_growth_3y, eps_growth_3y, fcf_growth_3y))
-    is_quality_growth = (has_growth_data and company_type in ["growth", "garp"] and growth_quality_score >= T["quality_growth_min_quality"])
+    # company_type y growth_quality_score son informativos (perfil de la empresa):
+    # desde la etapa 9a no modifican el atractivo del precio.
 
-    # v2.4: Track negative adjustments to cap them for growth
-    total_negative = 0
 
     # ─── REIT: P/FFO en lugar de P/E y P/FCF (hasta ±4 pts) ────
     # El beneficio neto de un REIT está deprimido por la depreciación de
@@ -2687,8 +2581,6 @@ def score_valoracion(
             else:
                 adj = p[4]; sev = "severe"
                 reason = f"Muy caro por FFO ({p_ffo:.1f}x)"
-            if adj < 0:
-                total_negative += adj
             base_score += adj
             _a["pffo"] = adj
             adjustments.append({"metric": "P/FFO (REIT)", "value": f"{p_ffo:.1f}x", "adjustment": adj, "reason": reason, "severity": sev})
@@ -2716,8 +2608,6 @@ def score_valoracion(
             reason = (f"{tag}: {mult:.2f}x frente a {just:.2f}x justificado por su {ret_lbl} "
                       f"(Ke {xv.get('cost_of_equity', 0):.1%} con β ajustada {xv.get('beta_adjusted', 0):.2f}, "
                       f"g {xv.get('terminal_growth', 0):.1%})")
-            if adj < 0:
-                total_negative += adj
             base_score += adj
             _a[key] = adj
             adjustments.append({"metric": label, "value": f"{ratio:.2f}× justificado", "adjustment": adj,
@@ -2732,8 +2622,6 @@ def score_valoracion(
             adj = p[i]
             sev = ("excellent", "good", "ok", "moderate", "severe")[i]
             reason = ("Barato", "Atractivo", "En línea", "Exigente", "Muy caro")[i] + f" por ventas ({evs:.1f}x)"
-            if adj < 0:
-                total_negative += adj
             base_score += adj
             _a["evs"] = adj
             adjustments.append({"metric": "EV/Ventas", "value": f"{evs:.1f}x", "adjustment": adj,
@@ -2745,8 +2633,6 @@ def score_valoracion(
             sev = ("excellent", "good", "ok", "moderate", "severe")[i]
             reason = (f"Crecimiento {xv.get('revenue_cagr_3y', 0):.1%} (CAGR 3 años) + margen FCF "
                       f"{xv.get('fcf_margin', 0):.1%} = {r40 * 100:.0f}")
-            if adj < 0:
-                total_negative += adj
             base_score += adj
             _a["r40"] = adj
             adjustments.append({"metric": "Regla de 40", "value": f"{r40 * 100:.0f}", "adjustment": adj,
@@ -2756,66 +2642,26 @@ def score_valoracion(
     if not _na["pe"] and not is_reit and pe is not None and pe > 0:
         pe_threshold = sector_pe if sector_pe and sector_pe > 0 else _BENCH_FALLBACK["pe"]
 
-        # v2.4: Bandas más amplias para growth
-        if is_quality_growth:
-            # Growth stocks: tolerar hasta 1.5x sector como "en línea"
-            m, p = T["pe_growth_mults"], T["pe_growth_points"]
-            if pe <= pe_threshold * m[0]:
-                adj = p[0]; sev = "excellent"
-                reason = f"Barato ({pe:.1f}x vs {pe_threshold:.1f}x sector)"
-            elif pe <= pe_threshold * m[1]:
-                adj = p[1]; sev = "good"
-                reason = f"Atractivo para growth ({pe:.1f}x)"
-            elif pe <= pe_threshold * m[2]:
-                adj = p[2]; sev = "ok"
-                reason = f"Razonable para growth ({pe:.1f}x vs {pe_threshold:.1f}x)"
-            elif pe <= pe_threshold * m[3]:
-                adj = p[3]; sev = "moderate"
-                reason = f"Premium elevado ({pe:.1f}x vs {pe_threshold:.1f}x)"
-            else:
-                adj = p[4]; sev = "severe"  # v2.4: max -3 en vez de -5
-                reason = f"Muy caro ({pe:.1f}x vs {pe_threshold:.1f}x)"
+        # Etapa 9a: una sola banda por arquetipo. Sin bandas "growth" más tolerantes ni
+        # atenuación por calidad del crecimiento: el crecimiento entra al precio una sola
+        # vez, vía PEG y DCF.
+        m, p = T["pe_value_mults"], T["pe_value_points"]
+        if pe <= pe_threshold * m[0]:
+            adj = p[0]; sev = "excellent"
+            reason = f"Muy barato ({pe:.1f}x vs {pe_threshold:.1f}x sector)"
+        elif pe <= pe_threshold * m[1]:
+            adj = p[1]; sev = "good"
+            reason = f"Atractivo ({pe:.1f}x)"
+        elif pe <= pe_threshold * m[2]:
+            adj = p[2]; sev = "ok"
+            reason = f"En línea ({pe:.1f}x vs {pe_threshold:.1f}x)"
+        elif pe <= pe_threshold * m[3]:
+            adj = p[3]; sev = "moderate"
+            reason = f"Premium ({pe:.1f}x vs {pe_threshold:.1f}x)"
         else:
-            m, p = T["pe_value_mults"], T["pe_value_points"]
-            if pe <= pe_threshold * m[0]:
-                adj = p[0]; sev = "excellent"
-                reason = f"Muy barato ({pe:.1f}x vs {pe_threshold:.1f}x sector)"
-            elif pe <= pe_threshold * m[1]:
-                adj = p[1]; sev = "good"
-                reason = f"Atractivo ({pe:.1f}x)"
-            elif pe <= pe_threshold * m[2]:
-                adj = p[2]; sev = "ok"
-                reason = f"En línea ({pe:.1f}x vs {pe_threshold:.1f}x)"
-            elif pe <= pe_threshold * m[3]:
-                adj = p[3]; sev = "moderate"
-                reason = f"Premium ({pe:.1f}x vs {pe_threshold:.1f}x)"
-            else:
-                adj = p[4]; sev = "severe"
-                reason = f"Muy caro ({pe:.1f}x vs {pe_threshold:.1f}x)"
+            adj = p[4]; sev = "severe"
+            reason = f"Muy caro ({pe:.1f}x vs {pe_threshold:.1f}x)"
 
-        # v2.4: Ajustar penalización con growth quality (ahora más agresivo)
-        if adj < 0 and has_growth_data and growth_quality_score >= T["growth_adjust_min_quality"]:
-            original_adj = adj
-            adjusted_adj, adj_reason, adj_sev = adjust_valuation_for_growth(
-                base_pe_adjustment=adj,
-                pe=pe,
-                sector_pe=pe_threshold,
-                growth_quality_score=growth_quality_score,
-                company_type=company_type,
-                revenue_growth=revenue_growth_3y,
-                roe=roe
-            )
-            if adjusted_adj != original_adj:
-                adj = adjusted_adj
-                sev = adj_sev if adj_sev else sev
-                quality_label = growth_quality["label"]
-                if adj >= 0:
-                    reason = f"Premium justificado ({pe:.1f}x) - {quality_label}"
-                else:
-                    reason = f"Premium ajustado ({pe:.1f}x) - {quality_label}"
-
-        if adj < 0:
-            total_negative += adj
         base_score += adj
         _a["pe"] = adj
         adjustments.append({"metric": "P/E vs Sector", "value": f"{pe:.1f}x", "adjustment": adj, "reason": reason, "severity": sev})
@@ -2842,44 +2688,24 @@ def score_valoracion(
 
     # ─── P/FCF (hasta ±4 pts) — omitido para REITs (capex de cartera) ──
     if not _na["p_fcf"] and not is_reit and p_fcf is not None and p_fcf > 0:
-        # v2.4: Bandas más amplias para growth
-        if is_quality_growth:
-            b, p = T["pfcf_growth_bounds"], T["pfcf_growth_points"]
-            if p_fcf <= b[0]:
-                adj = p[0]; sev = "excellent"
-                reason = f"Excelente para growth ({p_fcf:.1f}x)"
-            elif p_fcf <= b[1]:
-                adj = p[1]; sev = "good"
-                reason = f"Bueno para growth ({p_fcf:.1f}x)"
-            elif p_fcf <= b[2]:
-                adj = p[2]; sev = "ok"
-                reason = f"Aceptable para growth ({p_fcf:.1f}x)"
-            elif p_fcf <= b[3]:
-                adj = p[3]; sev = "moderate"
-                reason = f"Elevado ({p_fcf:.1f}x) - growth premium"
-            else:
-                adj = p[4]; sev = "moderate"
-                reason = f"Muy alto ({p_fcf:.1f}x)"
+        # Etapa 9a: bandas de valor únicamente (ver P/E).
+        b, p = T["pfcf_value_bounds"], T["pfcf_value_points"]
+        if p_fcf <= b[0]:
+            adj = p[0]; sev = "excellent"
+            reason = f"Muy atractivo ({p_fcf:.1f}x)"
+        elif p_fcf <= b[1]:
+            adj = p[1]; sev = "good"
+            reason = f"Bueno ({p_fcf:.1f}x)"
+        elif p_fcf <= b[2]:
+            adj = p[2]; sev = "ok"
+            reason = f"Aceptable ({p_fcf:.1f}x)"
+        elif p_fcf <= b[3]:
+            adj = p[3]; sev = "moderate"
+            reason = f"Elevado ({p_fcf:.1f}x)"
         else:
-            b, p = T["pfcf_value_bounds"], T["pfcf_value_points"]
-            if p_fcf <= b[0]:
-                adj = p[0]; sev = "excellent"
-                reason = f"Muy atractivo ({p_fcf:.1f}x)"
-            elif p_fcf <= b[1]:
-                adj = p[1]; sev = "good"
-                reason = f"Bueno ({p_fcf:.1f}x)"
-            elif p_fcf <= b[2]:
-                adj = p[2]; sev = "ok"
-                reason = f"Aceptable ({p_fcf:.1f}x)"
-            elif p_fcf <= b[3]:
-                adj = p[3]; sev = "moderate"
-                reason = f"Elevado ({p_fcf:.1f}x)"
-            else:
-                adj = p[4]; sev = "severe"
-                reason = f"Muy alto ({p_fcf:.1f}x)"
+            adj = p[4]; sev = "severe"
+            reason = f"Muy alto ({p_fcf:.1f}x)"
 
-        if adj < 0:
-            total_negative += adj
         base_score += adj
         _a["pfcf"] = adj
         adjustments.append({"metric": "P/FCF normalizado" if _cyc else "P/FCF", "value": f"{p_fcf:.1f}x",
@@ -2889,43 +2715,24 @@ def score_valoracion(
     if not _na["ev_ebitda"] and ev_ebitda is not None and ev_ebitda > 0:
         ev_threshold = sector_ev_ebitda if sector_ev_ebitda and sector_ev_ebitda > 0 else _BENCH_FALLBACK["ev_ebitda"]
 
-        if is_quality_growth:
-            m, p = T["ev_ebitda_growth_mults"], T["ev_ebitda_growth_points"]
-            if ev_ebitda <= ev_threshold * m[0]:
-                adj = p[0]; sev = "excellent"
-                reason = f"Muy barato ({ev_ebitda:.1f}x vs {ev_threshold:.1f}x)"
-            elif ev_ebitda <= ev_threshold * m[1]:
-                adj = p[1]; sev = "good"
-                reason = f"Atractivo para growth ({ev_ebitda:.1f}x)"
-            elif ev_ebitda <= ev_threshold * m[2]:
-                adj = p[2]; sev = "ok"
-                reason = f"Razonable para growth ({ev_ebitda:.1f}x)"
-            elif ev_ebitda <= ev_threshold * m[3]:
-                adj = p[3]; sev = "moderate"
-                reason = f"Premium ({ev_ebitda:.1f}x vs {ev_threshold:.1f}x)"
-            else:
-                adj = p[4]; sev = "severe"
-                reason = f"Muy caro ({ev_ebitda:.1f}x vs {ev_threshold:.1f}x)"
+        # Etapa 9a: bandas de valor únicamente (ver P/E).
+        m, p = T["ev_ebitda_value_mults"], T["ev_ebitda_value_points"]
+        if ev_ebitda <= ev_threshold * m[0]:
+            adj = p[0]; sev = "excellent"
+            reason = f"Muy barato ({ev_ebitda:.1f}x vs {ev_threshold:.1f}x)"
+        elif ev_ebitda <= ev_threshold:
+            adj = p[1]; sev = "good"
+            reason = f"Atractivo ({ev_ebitda:.1f}x)"
+        elif ev_ebitda <= ev_threshold * m[1]:
+            adj = p[2]; sev = "ok"
+            reason = f"En línea ({ev_ebitda:.1f}x)"
+        elif ev_ebitda <= ev_threshold * m[2]:
+            adj = p[3]; sev = "moderate"
+            reason = f"Premium ({ev_ebitda:.1f}x vs {ev_threshold:.1f}x)"
         else:
-            m, p = T["ev_ebitda_value_mults"], T["ev_ebitda_value_points"]
-            if ev_ebitda <= ev_threshold * m[0]:
-                adj = p[0]; sev = "excellent"
-                reason = f"Muy barato ({ev_ebitda:.1f}x vs {ev_threshold:.1f}x)"
-            elif ev_ebitda <= ev_threshold:
-                adj = p[1]; sev = "good"
-                reason = f"Atractivo ({ev_ebitda:.1f}x)"
-            elif ev_ebitda <= ev_threshold * m[1]:
-                adj = p[2]; sev = "ok"
-                reason = f"En línea ({ev_ebitda:.1f}x)"
-            elif ev_ebitda <= ev_threshold * m[2]:
-                adj = p[3]; sev = "moderate"
-                reason = f"Premium ({ev_ebitda:.1f}x vs {ev_threshold:.1f}x)"
-            else:
-                adj = p[4]; sev = "severe"
-                reason = f"Muy caro ({ev_ebitda:.1f}x vs {ev_threshold:.1f}x)"
+            adj = p[4]; sev = "severe"
+            reason = f"Muy caro ({ev_ebitda:.1f}x vs {ev_threshold:.1f}x)"
 
-        if adj < 0:
-            total_negative += adj
         base_score += adj
         _a["ev"] = adj
         adjustments.append({"metric": "EV/EBITDA normalizado vs Sector" if _cyc else "EV/EBITDA vs Sector",
@@ -2951,8 +2758,6 @@ def score_valoracion(
             adj = p[4]; sev = "severe"  # v2.4: max -3 en vez de -4
             reason = f"Muy caro ({peg:.2f})"
 
-        if adj < 0:
-            total_negative += adj
         base_score += adj
         _a["peg"] = adj
         adjustments.append({"metric": "PEG Ratio", "value": f"{peg:.2f}", "adjustment": adj, "reason": reason, "severity": sev})
@@ -2966,46 +2771,10 @@ def score_valoracion(
     # (fcf_yield/earnings_yield siguen usándose para alertas y ajuste de growth,
     # no para un bonus redundante de valoración.)
 
-    # ─── GARP / Growth Quality Bonus (no aplica a FINANCIAL ni REIT) ──────
-    if _na["garp"]:
-        pass
-    elif company_type == "garp" and growth_quality_score >= T["garp_min_quality"]:
-        adj = T["garp_points"]; sev = "excellent"  # v2.4: subió de +2 a +3
-        reason = f"GARP: Growth + Fundamentos sólidos (Quality: {growth_quality_score})"
-        base_score += adj
-        adjustments.append({"metric": "Perfil GARP", "value": f"Score {growth_quality_score}", "adjustment": adj, "reason": reason, "severity": sev})
-    elif company_type == "growth" and growth_quality_score >= T["growth_bonus_min_quality"]:
-        adj = T["growth_bonus_points"]; sev = "excellent"
-        reason = f"Growth de alta calidad (Quality: {growth_quality_score})"
-        base_score += adj
-        adjustments.append({"metric": "Growth Quality", "value": f"Score {growth_quality_score}", "adjustment": adj, "reason": reason, "severity": sev})
-
-    # ─── v2.4: CAP DE PENALIZACIONES para growth ──────
-    # Para growth stocks de calidad, no permitir que las penalizaciones
-    # destruyan completamente la categoría.
-    # Max penalización neta: -4 para quality growth, -6 para moderate growth
-    if _na["garp"]:
-        pass
-    elif is_quality_growth and total_negative < -T["rescue_quality_net_cap"]:
-        rescue_pts = min(-total_negative - T["rescue_quality_net_cap"], T["rescue_quality_max"])  # Max rescue: 4 pts
-        base_score += rescue_pts
-        adjustments.append({
-            "metric": "Ajuste Growth",
-            "value": f"Quality {growth_quality_score}",
-            "adjustment": rescue_pts,
-            "reason": f"Límite de penalización para growth de calidad ({company_type})",
-            "severity": "good"
-        })
-    elif growth_quality_score >= T["rescue_moderate_min_quality"] and company_type not in ["speculative_growth"] and total_negative < -T["rescue_moderate_net_cap"]:
-        rescue_pts = min(-total_negative - T["rescue_moderate_net_cap"], T["rescue_moderate_max"])
-        base_score += rescue_pts
-        adjustments.append({
-            "metric": "Ajuste Crecimiento",
-            "value": f"Quality {growth_quality_score}",
-            "adjustment": rescue_pts,
-            "reason": f"Límite de penalización por calidad moderada",
-            "severity": "good"
-        })
+    # Etapa 9a: el bono GARP, el de Growth Quality y el rescate de penalizaciones
+    # para growth se construían con métricas de calidad (crecimiento, ROE/ROIC,
+    # márgenes): ya no puntúan en el atractivo del precio. La calidad del
+    # crecimiento se mide en Calidad del negocio (Crecimiento y Rentabilidad).
 
     # ─── DCF (etapa 8): ±4 alta, ±2 media, 0 baja ─────
     _dcf = dcf or {}
@@ -3045,9 +2814,9 @@ def score_valoracion(
     if is_reit and archetype is None:
         pass  # llamada antigua sin arquetipo: P/E y P/FCF omitidos para REIT
     else:
-        cov.comp("P/E", [*T["pe_growth_points"], *T["pe_value_points"]], _a.get("pe"), na=_na["pe"])
-        cov.comp("P/FCF", [*T["pfcf_growth_points"], *T["pfcf_value_points"]], _a.get("pfcf"), na=_na["p_fcf"])
-    cov.comp("EV/EBITDA", [*T["ev_ebitda_growth_points"], *T["ev_ebitda_value_points"]], _a.get("ev"),
+        cov.comp("P/E", T["pe_value_points"], _a.get("pe"), na=_na["pe"])
+        cov.comp("P/FCF", T["pfcf_value_points"], _a.get("pfcf"), na=_na["p_fcf"])
+    cov.comp("EV/EBITDA", T["ev_ebitda_value_points"], _a.get("ev"),
              na=_na["ev_ebitda"])
     cov.comp("PEG", T["peg_points"], _a.get("peg"), na=_na["peg"])
     if dcf is not None:

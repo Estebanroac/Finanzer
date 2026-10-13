@@ -708,22 +708,42 @@ correctos según los datos, pero aplican reglas genéricas a arquetipos que nece
   contraído) atractivo >= 65 / razonable >= 45 / exigente >= 30 / muy exigente. 50 es el neutro de las dos escalas
   (base 10/20 de cada categoría). Factores de contracción 1.0 / 0.75 / 0.5.
 - **Confianza "alta" exige convergencia alta:** con convergencia media o no evaluable, techo en "media" (V local deja
-  de ser "alta").
+  de ser "alta"; sin las bandas growth su convergencia pasa a baja: DCF barata frente a múltiplos cara).
 - **REIT — retorno total:** Crecimiento puntúa rentabilidad por dividendo + CAGR del FFO por acción (bandas 10% / 7% /
   4% / 0 frente al Ke de un REIT); la rentabilidad por dividendo sale de Valoración. O: 6.0% + 0% (FFO/acción plano)
   -> Crecimiento 9 -> 11; Valoración 15 -> 14 (prod) y 17 -> 14 (local).
-- **MATURE con dividendo alto (evaluado, no aplicado):** propuesta de umbral rentabilidad por dividendo >= 4% (unas 3
-  veces la del S&P 500; utilities, telecos, tabaco), con el mismo retorno total sobre el crecimiento por acción. No
-  afecta a ningún ticker del juego (NFLX 0%, V 0.7%) y no hay fixture para verificarlo: propuesta para la etapa 11
-  con un fixture de dividendo alto.
+- **MATURE con dividendo alto — umbral propuesto 4% (no aplicado; pendiente de un fixture que lo verifique):** con
+  rentabilidad por dividendo >= 4% (unas 3 veces la del S&P 500; utilities, telecos, tabaco), Crecimiento se
+  evaluaría como retorno total (dividendo + crecimiento por acción), igual que en REIT, y el dividendo no puntuaría
+  en Valoración. No afecta a ningún ticker del juego (NFLX 0%, V 0.7%, JPM es FINANCIAL), así que no hay forma de
+  verificarlo con los fixtures actuales: se aplica cuando exista un fixture MATURE de dividendo alto (etapa 11).
 - **Bandas, una sola fuente (parcial):** las lecturas del PDF de las métricas que puntúan usan las bandas del score:
   ROE y D/E con las bandas sectoriales (`sectors.score_thresholds`), spread ROIC−WACC, current ratio, cobertura,
   crecimiento (ingresos y BPA) y upside del DCF; sus copias en `thresholds.pdf` se eliminaron. `thresholds.pdf`
   conserva solo métricas que el score no puntúa (DN/EBITDA, payout fuera de REIT, beta, rango 52s, recompras, FCF
   yield, Graham, brecha frente al sector). **Pendiente (9b):** alinear las bandas de las alertas (cobertura, DCF,
   beta, DN/EBITDA) y generar las de la UI desde la misma config.
-- **Pendiente de decisión — bonos de crecimiento dentro del precio:** Valoración incluye bonos que no son múltiplos
-  (Perfil GARP +3, Growth Quality, rescate de penalizaciones para growth de calidad), construidos con ROE, ROIC,
-  márgenes y crecimiento: cuentan calidad dentro del precio. NFLX y V salen con precio "atractivo" en parte por ellos
-  (+5/+6 con el Forward P/E). Propuesta: sacarlos del atractivo del precio (el Forward P/E sí es un múltiplo).
+- **Precio sin calidad (decidido):** salen de Valoración todos los ajustes construidos con métricas de calidad: bono
+  "Perfil GARP", bono "Growth Quality", el rescate de penalizaciones para growth de calidad ("Ajuste Growth" /
+  "Ajuste Crecimiento") y el ajuste del P/E por calidad del crecimiento (`adjust_valuation_for_growth`, borrada). Se
+  mantienen Forward P/E y PEG (múltiplos). `company_type` y `growth_quality_score` siguen en la salida como
+  información de perfil, sin efecto en ninguna puntuación.
+- **Bandas de múltiplos unificadas por arquetipo:** P/E, P/FCF y EV/EBITDA usan una sola banda dentro de cada
+  arquetipo; se eliminan las bandas tolerantes "growth" (`pe_growth_*`, `pfcf_growth_*`, `ev_ebitda_growth_*`). El
+  crecimiento entra al precio una sola vez, por PEG y DCF; relajar además las bandas lo contaba dos veces.
+  Consecuencia: Valoración pasa a ser monótona en el P/E (antes un P/E mayor podía puntuar mejor al activar el tipo
+  growth). Efecto en prod (crudo -> mostrado): NFLX 85->76 atractivo => 50->50 razonable (P/E 0->-2, P/FCF 0->-2,
+  sin GARP +3; convergencia baja -> media); V 70->70 atractivo => 0->12 muy exigente (P/E +2->-4, EV/EBITDA -1->-4,
+  P/FCF 0->-2, sin GARP; confianza alta -> media); FCX 40->45 razonable => 10->30 exigente (P/FCF normalizado
+  -2->-4, EV/EBITDA normalizado 0->-4); SNOW 30->35 exigente => 20->28 muy exigente (sin "Ajuste Crecimiento" +2);
+  JPM y O sin cambios.
+- **Hueco en Calidad del negocio (pendiente de decisión, no movido):** de los componentes de `growth_quality`, el
+  crecimiento de ingresos, el del FCF, el ROE/ROIC y el margen operativo ya puntúan en Calidad (Crecimiento y
+  Rentabilidad). **No está reflejado** el crecimiento del BPA frente al de los ingresos (expansión de márgenes /
+  apalancamiento operativo): Crecimiento puntúa ingresos y BPA por separado, Rentabilidad solo niveles de margen y
+  Piotroski solo el cambio de margen bruto a un año. `fcf_to_net_income` se pasaba como None (sin efecto).
+- **Hallazgo — benchmark de V (pendiente de decisión, no corregido):** V se mapea a "financials" y se compara con
+  las medianas del sector (P/E 13, EV/EBITDA por defecto): P/E -4 y EV/EBITDA -4. Es un problema de benchmark (una
+  red de pagos valorada como un banco) que las bandas growth enmascaraban. Propuesta: benchmark por industria
+  (servicios de pago / tecnología financiera) o de mercado.
 - **Etapa 11 —** el PDF de revisión se genera desde los fixtures de prod (Rf de config, sin TTM).

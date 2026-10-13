@@ -218,7 +218,7 @@ EXPECTED_FULL = {
   "cats": {
    "Solidez Financiera": 20,
    "Rentabilidad": 20,
-   "Valoración": 20,
+   "Valoración": 14,
    "Calidad de Ganancias": 20,
    "Crecimiento": 18
   }
@@ -276,7 +276,8 @@ def _cats(res):
 @pytest.mark.parametrize("case", ["tech_full", "weak_full", "mid_full"])
 def test_full_data_gives_exactly_the_previous_score(case):
     """MATURE con todos los datos: categorías idénticas a antes de la etapa 5 (y de la 6).
-    Etapa 9a: sin total único; calidad = 4 categorías y precio = Valoración, a 100."""
+    Etapa 9a: sin total único; calidad = 4 categorías y precio = Valoración, a 100.
+    tech_full: Valoración 20 -> 14 a propósito (sin bandas growth ni bono GARP)."""
     r, c, kw = CASES[case]
     res = calculate_score_v2(r, c, **kw)
     assert res["archetype"] == "MATURE"
@@ -523,13 +524,14 @@ def test_missing_never_below_unfavorable_nor_above_favorable(case, where, key, f
     assert worst <= missing <= best, (case, key, worst, missing, best)
 
 
-def test_pe_is_not_monotone_even_with_full_data():
-    """Por qué P/E no está en _BOUNDS: el P/E alimenta el clasificador de tipo de
-    empresa, el bono de forward P/E y el ajuste growth, así que Valoración no es
-    monótona en el P/E ni con todos los datos (no es un efecto del reescalado)."""
+def test_pe_is_monotone_after_removing_growth_tolerances():
+    """Hasta la etapa 9a Valoración no era monótona en el P/E: el P/E alimentaba el tipo
+    de empresa, que activaba bandas growth, el ajuste por calidad del crecimiento y el
+    bono GARP. Sin ellos (el crecimiento entra solo por PEG y DCF), un P/E más alto nunca
+    mejora la valoración."""
     fav = _score_with("tech_full", "r", "pe", 1.0)["Valoración"]
     unfav = _score_with("tech_full", "r", "pe", 900.0)["Valoración"]
-    assert fav < unfav
+    assert fav > unfav
 
 
 def test_rescaling_bound_holds_for_random_components():
