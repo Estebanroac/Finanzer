@@ -102,3 +102,43 @@ def test_bug_prod_sector_unknown_outside_known_list_o(outputs_by_env):
         pytest.skip("falta el juego prod")
     profile = outputs_by_env("prod")["O"][0]["profile"]
     assert profile["sector"] == "Real Estate"
+
+
+# ABIERTO (etapa 9b, verificación previa a regenerar los golden): un revenueGrowth
+# marcado "crecimiento_incoherente" (acción "aviso": el valor se conserva) debería ser
+# solo informativo, pero entra en el score: es el crecimiento de entrada del DCF
+# (main: growth = financials.revenue_growth_yoy, con tope del 30%) y el DCF puntúa en
+# Valoración y vota en la convergencia de la confianza. Hoy no altera ningún golden
+# (SNOW local: DCF de fiabilidad baja, ajuste 0; FCX prod: CYCLICAL usa el crecimiento
+# normalizado), pero con un DCF fiable sí: V prod con +17 pp pasa de precio 39 a 48 y
+# confianza de media a baja. Se fuerza el caso inyectando el dato en la entrada.
+def _run_with_revenue_growth(sym, env, delta):
+    import validate
+    orig = validate.validate_info
+
+    def patched(info, symbol=""):
+        info["revenueGrowth"] = info["revenueGrowth"] + delta
+        return orig(info, symbol)
+
+    validate.validate_info = patched
+    try:
+        with fb.replay(fb.fixtures_dir(env)) as store:
+            return fb.run_analysis(sym, store)
+    finally:
+        validate.validate_info = orig
+
+
+@pytest.mark.xfail(reason="crecimiento_incoherente entra en el score a través del crecimiento del DCF")
+def test_bug_incoherent_revenue_growth_is_informative_only():
+    import conftest
+    if "prod" not in conftest.ENVS:
+        pytest.skip("falta el juego prod")
+    base = _run_with_revenue_growth("V", "prod", 0.0)
+    flagged = _run_with_revenue_growth("V", "prod", 0.17)
+    assert any(f["rule"] == "crecimiento_incoherente" for f in flagged["data_validation"])
+    assert not any(f["rule"] == "crecimiento_incoherente" for f in base["data_validation"])
+    # Solo informativo: ni el desglose, ni las dos puntuaciones, ni la confianza cambian.
+    assert flagged["score"]["breakdown"] == base["score"]["breakdown"]
+    assert flagged["quality"] == base["quality"]
+    assert flagged["price_attractiveness"] == base["price_attractiveness"]
+    assert flagged["confidence"]["level"] == base["confidence"]["level"]
