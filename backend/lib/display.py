@@ -1565,7 +1565,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         _models.append("P/E frente al sector y rentabilidad por dividendo")
     models_txt = ("los modelos de " + ", ".join(_models)) if _models else "los modelos de su arquetipo"
 
-    return {
+    D = {
         "version": 1,
         "archetype": archetype,
         "archetype_label": archetype_label(archetype),
@@ -1588,6 +1588,10 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         "methodology": {"models": _models, "models_text": models_txt},
         "tooltips": band_tooltips(a, sector_bench, _th, _mkt, _ref, _na_keys, de_mode, _cyc),
     }
+    # Etapa 9c: datos numéricos de los gráficos de la web (zonas de la misma config que las lecturas).
+    from display_charts import build_charts
+    D["charts"] = build_charts(a, D, sector_bench, th=_th, market=_mkt, de_mode=de_mode)
+    return D
 
 
 # ══════════════════════ BANDAS DE LOS TOOLTIPS (decisión C) ══════════════════════

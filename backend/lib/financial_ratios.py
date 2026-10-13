@@ -3235,7 +3235,8 @@ def score_crecimiento(
         adjustments.append({"metric": ("Crecimiento FCF por acción 3Y" if _reit else
                                        "Crecimiento FCF − SBC 3Y" if archetype == GROWTH_PRE_PROFIT else
                                        "Crecimiento FCF 3Y"),
-                            "value": f"{fcf_growth_3y:.1%}", "adjustment": adj, "reason": reason, "severity": sev})
+                            "value": f"{fcf_growth_3y:.1%}", "adjustment": adj, "reason": reason, "severity": sev,
+                            "raw": fcf_growth_3y})
     elif fcf_sustained_negative and not _na_fcf:
         # Etapa 9a (regla general): negativo en todos los ejercicios -> peor tramo, no "sin dato".
         adj = T["fcf_points"][-1]

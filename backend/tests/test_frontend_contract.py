@@ -49,6 +49,18 @@ def test_frontend_reads_only_exposed_fields(outputs_by_env, tmp_path):
     extra = tmp_path / "forzado"
     extra.mkdir()
     (extra / "SNOW_no_concluyente.json").write_text(fb.stable_json(a), encoding="utf-8")
+    # Etapa 9c, gráficos que ningún ticker de los 12 cubre: runway en años (pre-beneficio que
+    # quema caja) y caja neta en Deuda neta / EBITDA.
+    r = copy.deepcopy(outputs_by_env(ENVS[-1])["SNOW"][0])
+    r["archetype_metrics"]["runway"] = {"state": "runway", "years": 1.8}
+    r["display"] = display.build_display(r)
+    assert r["display"]["charts"]["solvency"]["runway"].get("years") == 1.8
+    (extra / "SNOW_runway.json").write_text(fb.stable_json(r), encoding="utf-8")
+    n = copy.deepcopy(outputs_by_env(ENVS[-1])["V"][0])
+    n["key_metrics"]["net_debt_to_ebitda"] = -0.4
+    n["display"] = display.build_display(n)
+    assert any(g.get("net_cash") for g in n["display"]["charts"]["solvency"]["gauges"])
+    (extra / "V_caja_neta.json").write_text(fb.stable_json(n), encoding="utf-8")
     r = _run("check-contract.mjs", "--strict-unions", *dirs, str(extra))
     assert r.returncode == 0, r.stderr or r.stdout
 

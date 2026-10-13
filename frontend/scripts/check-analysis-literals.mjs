@@ -29,6 +29,8 @@ const SCOPE = [
   "src/components/TabsSection.tsx",
   "src/components/InfoTooltip.tsx",
   "src/components/ui.tsx",
+  "src/components/charts.tsx",
+  "src/lib/useGrow.ts",
   "src/components/tabs",
   "src/lib/api.ts",
   "src/lib/tooltips.ts",

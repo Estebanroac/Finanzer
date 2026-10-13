@@ -282,6 +282,220 @@ export interface MetricBands {
   note: string | null;
 }
 
+/* ── Etapa 9c: datos de los gráficos (display.charts) ──
+   Cada gráfico trae su valor, su referencia, sus zonas (de la misma config que las
+   lecturas) y su tono; si no hay dato, `state` y el motivo en `text`. */
+
+/** Tramo de una escala: [from, to] en las unidades del eje, con su lectura y tono. */
+export interface Zone {
+  from: number;
+  to: number;
+  label: string;
+  tone: Tone;
+}
+
+/** Métrica frente a la referencia (sector o mercado): barra con marcador y chip de brecha. */
+export interface VsBench {
+  key: string;
+  label: string;
+  higher_is_better: boolean;
+  fmt: "mult" | "pct";
+  state: RowState;
+  text: string | null;
+  value?: number;
+  value_txt?: string;
+  bench?: number | null;
+  bench_txt?: string | null;
+  gap_txt?: string | null;
+  gap_pct?: number | null;
+  reading?: string;
+  tone?: Tone | null;
+}
+
+export interface FairValueChart {
+  state: RowState;
+  text: string | null;
+  price?: number;
+  fair_value?: number;
+  grid_low?: number | null;
+  grid_high?: number | null;
+  price_txt?: string;
+  fair_value_txt?: string;
+  grid_low_txt?: string | null;
+  grid_high_txt?: string | null;
+  axis?: number[];
+  zones?: Zone[];
+  badge?: { label: string; tone: Tone };
+  upside_txt?: string;
+  reliability?: string | null;
+  reliability_tone?: Tone | null;
+}
+
+export interface GaugeChart {
+  key: string;
+  label: string;
+  state: RowState;
+  text: string | null;
+  value?: number | null;
+  value_txt?: string;
+  axis_max?: number;
+  clamped?: boolean;
+  zones?: Zone[];
+  unit?: string;
+  reading?: string;
+  tone?: Tone | null;
+  /** Deuda neta negativa: caja neta (no se sitúa en la escala). */
+  net_cash?: boolean;
+  /** Cobertura negativa (EBIT < 0): no se sitúa en la escala. */
+  negative?: boolean;
+  /** D/E informativo (REIT): sin zonas ni juicio. */
+  informative?: boolean;
+}
+
+export interface RunwayChart {
+  state: RowState;
+  text: string | null;
+  years?: number;
+  years_txt?: string;
+  axis_max?: number;
+  zones?: Zone[];
+  self_funded?: boolean;
+  reading?: string;
+  tone?: Tone;
+}
+
+export interface StructureChart {
+  state: RowState;
+  assets?: number;
+  debt?: number | null;
+  equity?: number | null;
+  cash?: number | null;
+  net_debt?: number | null;
+  debt_pct?: number | null;
+  equity_pct?: number | null;
+  cash_pct?: number | null;
+  assets_txt?: string | null;
+  debt_txt?: string | null;
+  equity_txt?: string | null;
+  cash_txt?: string | null;
+  net_debt_txt?: string | null;
+}
+
+export interface LadderStep {
+  key: string;
+  label: string;
+  state: RowState;
+  text?: string | null;
+  pct?: number;
+  pct_txt?: string;
+  amount?: number | null;
+  amount_txt?: string | null;
+  tone?: Tone | null;
+  reading?: string | null;
+}
+
+export interface GrowthBar {
+  key: string;
+  label: string;
+  state: RowState;
+  text?: string | null;
+  value?: number;
+  value_txt?: string;
+  tone?: Tone;
+  reading?: string;
+  /** Negativo en todos los ejercicios: sin tasa, puntúa en el peor tramo. */
+  sustained_negative?: boolean;
+}
+
+export interface FlowItem {
+  key: string;
+  label: string;
+  state: RowState;
+  text?: string | null;
+  amount?: number | null;
+  amount_txt?: string | null;
+  pct_of_revenue?: number | null;
+  pct_txt?: string | null;
+  sign?: "pos" | "neg" | null;
+}
+
+export interface HistSeries {
+  key: string;
+  label: string;
+  state: RowState;
+  text?: string | null;
+  cagr?: number | null;
+  cagr_txt?: string | null;
+  points?: Array<{ year: number; value: number | null; value_txt: string; yoy_pct: number | null; yoy_txt: string | null }>;
+}
+
+export interface AltmanChart {
+  state: RowState;
+  text: string | null;
+  value?: number;
+  value_txt?: string;
+  model?: string;
+  axis_max?: number;
+  zones?: Zone[];
+  zone?: string | null;
+}
+
+export interface ComparisonItem {
+  key: string;
+  label: string;
+  fmt: "mult" | "pct";
+  value: number;
+  bench: number;
+  value_txt: string;
+  bench_txt: string;
+  gap_pct: number;
+  gap_txt: string | null;
+  higher_is_better: boolean;
+  reading: string;
+  tone: Tone;
+  text: string;
+}
+
+export interface Charts {
+  version: number;
+  price_card: {
+    price: number | null;
+    price_txt: string;
+    currency: string | null;
+    exchange: string | null;
+    from_high_pct: number | null;
+    from_high_txt: string | null;
+    low: number | null;
+    high: number | null;
+    low_txt: string | null;
+    high_txt: string | null;
+  };
+  valuation: {
+    fair_value: FairValueChart;
+    multiples: VsBench[];
+    dcf_composition: { explicit_pct: number; terminal_pct: number } | null;
+  };
+  profitability: {
+    returns: VsBench[];
+    margins: VsBench[];
+    spread: { state: RowState; text: string | null; value?: number; value_txt?: string; tone?: Tone; reading?: string };
+    margin_ladder: { revenue: number | null; revenue_txt: string | null; steps: LadderStep[] };
+  };
+  solvency: { gauges: GaugeChart[]; runway: RunwayChart | null; structure: StructureChart };
+  growth: GrowthBar[];
+  results_flow: FlowItem[];
+  historical: { years: number; series: HistSeries[] };
+  institutional: { altman: AltmanChart };
+  comparison: {
+    groups: Array<{ title: string; items: ComparisonItem[] }>;
+    better: number;
+    total: number;
+    ref: string;
+    note: string;
+    market_note: string | null;
+  };
+}
+
 export interface Display {
   version: number;
   archetype: string;
@@ -295,6 +509,7 @@ export interface Display {
   sections: Sections;
   methodology: { models: string[]; models_text: string };
   tooltips: Record<string, MetricBands>;
+  charts: Charts;
 }
 
 /** Fila del histórico anual: dato bruto de los estados (sin lecturas ni colores). */

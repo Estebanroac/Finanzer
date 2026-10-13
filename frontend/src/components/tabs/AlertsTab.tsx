@@ -1,35 +1,50 @@
 "use client";
 
+import type { ReactNode } from "react";
 import type { Display } from "@/lib/api";
-import { Panel, toneClass } from "../ui";
+import { ChartPanel, IconAlert, IconCheck, IconWarn, NotApplicable } from "../charts";
+import { toneClass } from "../ui";
+
+// Icono de cada grupo de alertas (la clave y el tono llegan del backend).
+const ICON: Record<string, () => ReactNode> = { red_flags: IconAlert, warnings: IconWarn, strengths: IconCheck };
 
 export default function AlertsTab({ display }: { display: Display }) {
   const A = display.sections.alerts;
   const empty = A.groups.every((g) => g.items.length === 0);
   return (
     <div className="space-y-4">
-      <p className="text-[15px]">
-        <b className="tone-neg fz-tone-fg">{A.counts.red_flags}</b> riesgo{A.counts.red_flags !== 1 && "s"} ·{" "}
-        <b className="tone-warn fz-tone-fg">{A.counts.warnings}</b> advertencia{A.counts.warnings !== 1 && "s"} ·{" "}
-        <b className="tone-pos fz-tone-fg">{A.counts.strengths}</b> fortaleza{A.counts.strengths !== 1 && "s"}
-      </p>
-      {empty && <Panel><p className="text-zinc-400 text-sm">No se detectaron alertas significativas.</p></Panel>}
-      {A.groups.filter((g) => g.items.length > 0).map((g) => (
-        <Panel key={g.key} className={toneClass(g.tone)}>
-          <h3 className="fz-tone-fg font-semibold mb-3">{g.title}</h3>
-          <ul className="fz-alerts">
-            {g.items.map((a, i) => (
-              <li key={i}>
-                <span className="fz-alert-dot fz-tone-bg" aria-hidden="true" />
-                <div>
-                  <p className="text-zinc-100 text-[14px] font-medium">{a.category}: {a.reason}</p>
-                  {a.detail && <p className="text-zinc-500 text-[12.5px] mt-0.5">{a.detail}</p>}
-                </div>
-              </li>
-            ))}
-          </ul>
-        </Panel>
-      ))}
+      <div className="cz-counts">
+        {A.groups.map((g) => {
+          const Ic = ICON[g.key] ?? IconWarn;
+          const n = g.items.length;
+          return (
+            <div key={g.key} className={`cz-count ${toneClass(g.tone)}`}>
+              <span className="cz-count-n">{n}</span>
+              <span className="cz-count-l"><span className="cz-ic !w-5 !h-5 !rounded-md" aria-hidden="true"><Ic /></span>{g.title}</span>
+            </div>
+          );
+        })}
+      </div>
+      {empty && <NotApplicable state="sin_dato" title="Alertas" text="no se detectaron alertas significativas" />}
+      {A.groups.filter((g) => g.items.length > 0).map((g) => {
+        const Ic = ICON[g.key] ?? IconWarn;
+        return (
+          <ChartPanel key={g.key} tone={g.tone} title={<span className={`${toneClass(g.tone)} fz-tone-fg`}>{g.title}</span>}
+            aside={<span className="cz-hint">{g.items.length}</span>}>
+            <ul>
+              {g.items.map((a, i) => (
+                <li key={i} className={`cz-alert ${toneClass(g.tone)}`}>
+                  <span className="cz-ic" aria-hidden="true"><Ic /></span>
+                  <div className="min-w-0">
+                    <p className="text-zinc-100 text-[14px] font-medium">{a.category}: {a.reason}</p>
+                    {a.detail && <p className="text-zinc-500 text-[12.5px] mt-0.5">{a.detail}</p>}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </ChartPanel>
+        );
+      })}
     </div>
   );
 }
