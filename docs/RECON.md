@@ -757,4 +757,47 @@ correctos según los datos, pero aplican reglas genéricas a arquetipos que nece
   "muy exigente" de V no era un artefacto del benchmark de bancos. Cambian solo textos: lecturas y alertas
   (prod y local pierden la alerta de P/E: +35% y +37% sobre la mediana ya no son prima fuerte). **Pendiente (9b):** el frontend
   sigue comparando V con el sector (`sectorBench.ts` no exporta el perfil market).
+- **Perfil market completo (override de todo lo sectorial):** cuando el arquetipo contradice al sector, no solo
+  las medianas de múltiplos sino también los umbrales del score (ROE, ROA, D/E, márgenes, cobertura, liquidez) y
+  los textos de alertas y lecturas usan el perfil market (`score_thresholds.overrides.market`, sector_key "market"
+  en el score, las alertas y el PDF; `benchmark.thresholds_key` y `benchmark.thresholds` en el JSON; el campo
+  `valuation_benchmark` pasa a llamarse `benchmark`). Los umbrales market son los de `score_thresholds.default`
+  (ROE 20%/8%, D/E 1.0x…): PROVISIONALES, fijados a mano, sin fuente; no son medianas del S&P 500. V: D/E 0.66x
+  frente a 1.0x pasa de +5 ("muy baja" frente a los 10x de un banco) a +2 ("controlada"); ROE 55.9% sigue
+  excepcional (20% rango alto). Solidez prod 20 -> 20 (tope), local 20 -> 19; Rentabilidad 20 -> 20.
+- **Bloque de múltiplos correlacionados:** P/E, Forward P/E, P/FCF, EV/EBITDA y PEG forman un bloque. Su ajuste es
+  el promedio de los ajustes normalizados (positivo / máximo, negativo / |mínimo|) de los miembros con dato y
+  aplicables, × `multiples_block_max` = 6, redondeado (mitades lejos de cero). El DCF sigue aparte (±4/±2/0). Los
+  miembros siguen en el desglose con su lectura (`in_block`, ajuste entre paréntesis en el PDF) y la línea "Bloque
+  de múltiplos" es la que puntúa. Cobertura: los miembros cuentan para la cobertura; se reescala el bloque. Forward
+  P/E con dato y sin compresión cuenta 0 en el promedio. La señal de múltiplos de la convergencia usa el promedio
+  del bloque como un solo múltiplo. **Efecto lateral a vigilar:** con un solo miembro el bloque amplifica su
+  ajuste a ±6 (O: EV/EBITDA +2/4 -> +3; SNOW: P/FCF -4/4 -> -6; FCX: dos miembros a -4 -> -6). EV/Ventas
+  (GROWTH_PRE_PROFIT), P/FFO (REIT) y P/B (FINANCIAL) quedan fuera del bloque (no estaban en la lista).
+- **Reportado / normalizado:** toda cifra calculada con el beneficio normalizado lo indica: en el desglose el
+  nombre ("ROE normalizado", "ROA normalizado", "Margen neto normalizado", "FCF / beneficio neto normalizado",
+  "P/E normalizado vs …", y el motivo del Forward P/E) con `normalized: true`; en las alertas el título y el texto
+  ("ROE normalizado excepcional — 55.9%"). La portada muestra las cifras reportadas y lo dice ("ROE reportado",
+  "P/E reportado (TTM)", "Margen neto reportado") cuando el score usa el normalizado. `normalized_metrics` en el
+  contexto lista qué ratios salen del normalizado.
+- **Crecimiento a 3 años = CAGR real (antes, interanual):** "Crecimiento Ingresos 3Y" y "Crecimiento EPS 3Y"
+  puntuaban el interanual de Yahoo (revenueGrowth / earningsGrowth, trimestre contra el del año anterior) con la
+  etiqueta de 3 años. Ahora: CAGR de los 4 ejercicios anuales (`historical_metrics.growth_rate`, con la regla de
+  base anómala); ingresos con los extremos positivos, BPA con la fila "Diluted EPS" (respaldo: beneficio neto /
+  acciones) y toda la ventana positiva; sin 4 ejercicios o con valores <= 0, sin dato con motivo (nunca el
+  interanual). FCF ya era CAGR 3 años. **Excepciones justificadas:** REIT (FFO y FCF por acción, ya CAGR 3 años);
+  CYCLICAL en ingresos conserva el crecimiento normalizado de ciclo medio (promedio interanual de todos los
+  ejercicios disponibles, RECON §7.9): un CAGR punta a punta de 3 años depende de la fase del ciclo. **Pendiente de
+  decisión:** el BPA de CYCLICAL usa ahora el CAGR punta a punta, que tiene el mismo problema de fase: FCX -14.0%
+  (2021 fue pico) frente a +53% interanual; Crecimiento FCX 11 -> 7. El dato informativo BPA frente a ingresos y
+  las alertas de crecimiento ("anual en tres años (CAGR)") usan los mismos CAGR.
+- **Rango de 52 semanas: solo posición, como contexto:** sin "cara"/"barata" en ninguna lectura; etiquetas de
+  posición ("En máximos de 52 semanas", "Parte alta del rango"…) en tono neutro, barra en grises, tarjeta de
+  portada "CONTEXTO · 52 SEM." y eje "CONTEXTO" en la página de crecimiento. **Pendiente (9b):** el frontend sigue
+  mostrando la barra en U con lectura de precio.
+- **Pendiente (9b) — motivos de confianza en lenguaje llano:** varios motivos de la confianza son jerga interna:
+  campos de Finnhub ("16 campos de Finnhub en lugar de los estados"), "^TNX no disponible", "sin TTM", "valor de
+  config", referencias a fixtures. Traducirlos a lenguaje llano para el lector (p. ej. "parte de los datos viene de
+  una fuente secundaria", "tipo sin riesgo de referencia, no de mercado") manteniendo el detalle técnico en el
+  anexo.
 - **Etapa 11 —** el PDF de revisión se genera desde los fixtures de prod (Rf de config, sin TTM).

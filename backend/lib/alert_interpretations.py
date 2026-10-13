@@ -58,6 +58,13 @@ class Ctx:
         self.sector = sector or "default"
         self.real_sector = real_sector or ""
         self.t: ThresholdConfig = SECTOR_THRESHOLDS.get(sector, SECTOR_THRESHOLDS["default"])
+        # sector "market": el arquetipo contradice al sector de Yahoo y todo lo sectorial
+        # (umbrales y medianas) es del mercado amplio (main._select_benchmark).
+        self.market = self.sector == "market"
+        self.del_ref = "del mercado" if self.market else "del sector"
+        # Etapa 9a: ratios calculados con el beneficio normalizado (main, etapa 7): el
+        # texto lo indica ("ROE normalizado 55.9%").
+        self.norm = set((contextual or {}).get("normalized_metrics") or [])
         # Etapa 6: el arquetipo del clasificador único, no el nombre del sector.
         self.archetype = archetype or MATURE
         self.xv = archetype_values or {}
@@ -67,6 +74,10 @@ class Ctx:
         self.altman = altman or {}
         self.piotroski = piotroski or {}
         self.dcf = dcf or {}
+
+    def nl(self, key: str) -> str:
+        """" normalizado" si el ratio sale del beneficio normalizado (etapa 9a)."""
+        return " normalizado" if key in self.norm else ""
 
     def na(self, key) -> bool:
         """¿El componente no aplica al arquetipo? (entonces no se emite señal)."""
@@ -102,7 +113,7 @@ def _pe(ctx: Ctx):
                     "La empresa no tiene beneficios positivos en los últimos doce meses, así que el "
                     "P/E no es interpretable; la valoración depende de que vuelva a generar utilidades.", T["w_loss"])
     sector_pe = ctx.c.get("sector_pe")
-    _ref_txt = "del mercado (S&P 500)" if ctx.c.get("benchmark_profile") == "market" else "del sector"
+    _ref_txt = "del mercado (S&P 500)" if ctx.market else "del sector"
     peg = ctx.g("peg")
     # brecha vs sector (si hay dato) o umbral absoluto
     ref = sector_pe if (sector_pe and sector_pe > 0) else None
@@ -110,25 +121,25 @@ def _pe(ctx: Ctx):
     if (dev is not None and dev > T["premium_dev"]) or pe > T["premium_abs"]:
         # ¿el crecimiento lo justifica? (PEG / spread)
         justified = (peg is not None and 0 < peg < T["justify_peg_max"]) or (ctx.spread is not None and ctx.spread > T["justify_spread_min"])
-        base = (f"El mercado paga {pe:.1f}x beneficios"
+        base = (f"El mercado paga {pe:.1f}x beneficios{' normalizados' if ctx.nl('pe') else ''}"
                 + (f", un {dev*100:+.0f}% sobre la mediana {_ref_txt} ({ref:.1f}x)" if ref else ", un múltiplo exigente"))
         if pe > T["strong_abs"] or (dev is not None and dev > T["strong_dev"]):
             if justified:
-                return _sig("warning", "Valoración", f"Valoración exigente — P/E {pe:.1f}x",
+                return _sig("warning", "Valoración", f"Valoración exigente — P/E{ctx.nl('pe')} {pe:.1f}x",
                             base + ". Es un precio alto que el mercado sostiene por su crecimiento y retornos; "
                             "deja poco margen de error: cualquier decepción en resultados puede corregir con fuerza.", T["w_demanding"])
-            return _sig("risk", "Valoración", f"Sobrevaloración — P/E {pe:.1f}x",
+            return _sig("risk", "Valoración", f"Sobrevaloración — P/E{ctx.nl('pe')} {pe:.1f}x",
                         base + ". A este nivel el precio ya descuenta un escenario muy optimista; el riesgo de "
                         "corrección ante cualquier tropiezo en resultados es elevado.", T["w_overvalued"])
         # moderado: si el crecimiento lo justifica, no es alerta (evita chocar con
         # el DCF); si no, es una advertencia de prima.
         if justified:
             return None
-        return _sig("warning", "Valoración", f"Prima sobre el sector — P/E {pe:.1f}x",
+        return _sig("warning", "Valoración", f"Prima sobre {'el mercado' if ctx.market else 'el sector'} — P/E{ctx.nl('pe')} {pe:.1f}x",
                     base + ". Conviene verificar que el crecimiento y los márgenes justifiquen pagar por encima de sus pares.", T["w_premium"])
     if ref and dev is not None and dev < T["discount_dev"]:
-        return _sig("strength", "Valoración", f"Cotiza con descuento — P/E {pe:.1f}x",
-                    f"Paga {pe:.1f}x beneficios frente a {ref:.1f}x del sector ({dev*100:.0f}%): un descuento que puede ser "
+        return _sig("strength", "Valoración", f"Cotiza con descuento — P/E{ctx.nl('pe')} {pe:.1f}x",
+                    f"Paga {pe:.1f}x beneficios{' normalizados' if ctx.nl('pe') else ''} frente a {ref:.1f}x {ctx.del_ref} ({dev*100:.0f}%): un descuento que puede ser "
                     "oportunidad si los fundamentos acompañan, o reflejar un riesgo que el mercado ya percibe.", T["w_discount"])
     return None
 
@@ -136,7 +147,7 @@ def _pe(ctx: Ctx):
 def _ev_ebitda(ctx: Ctx):
     ev = ctx.g("ev_ebitda")
     sec = ctx.c.get("sector_ev_ebitda")
-    _mkt = ctx.c.get("benchmark_profile") == "market"
+    _mkt = ctx.market
     norm = ""
     if ctx.archetype == CYCLICAL:   # sobre EBITDA normalizado de ciclo medio
         ev, norm = ctx.xv.get("ev_ebitda_normalized"), " normalizado"
@@ -235,26 +246,26 @@ def _roe(ctx: Ctx):
         return None
     T = _A["roe"]
     if roe < 0 and roa is not None and roa > T["negative_equity_min_roa"]:
-        return _sig("strength", "Rentabilidad", "ROE negativo por recompras, no por pérdidas",
+        return _sig("strength", "Rentabilidad", f"ROE{ctx.nl('roe')} negativo por recompras, no por pérdidas",
                     f"El ROE es negativo por un patrimonio contable erosionado por recompras agresivas, no por pérdidas: el "
                     f"ROA de {_pct(roa)} confirma que los activos siguen siendo rentables.", T["w_buyback_negative"])
     if roe < 0:
-        return _sig("risk", "Rentabilidad", f"ROE negativo — {_pct(roe)}",
+        return _sig("risk", "Rentabilidad", f"ROE{ctx.nl('roe')} negativo — {_pct(roe)}",
                     f"La empresa destruye valor para el accionista: no genera retorno sobre su patrimonio. Conviene "
                     "revisar si es puntual o refleja un deterioro sostenido del negocio.", T["w_negative"])
     t = ctx.t
     if roe >= T["exceptional"]:
-        return _sig("strength", "Rentabilidad", f"ROE excepcional — {_pct(roe)}",
-                    f"Genera {_pct(roe)} de retorno sobre el patrimonio, muy por encima del umbral de excelencia del sector "
+        return _sig("strength", "Rentabilidad", f"ROE{ctx.nl('roe')} excepcional — {_pct(roe)}",
+                    f"Genera {_pct(roe)}{ctx.nl('roe') and ' (normalizado)'} de retorno sobre el patrimonio, muy por encima del umbral de excelencia {ctx.del_ref} "
                     f"({_pct(t.roe_high, 0)}). Un nivel tan alto suele estar amplificado por una base de patrimonio reducida "
                     "por recompras acumuladas, más que por rentabilidad operativa pura.", T["w_exceptional"])
     if roe >= t.roe_high:
-        return _sig("strength", "Rentabilidad", f"ROE elevado — {_pct(roe)}",
-                    f"Genera {_pct(roe)} de retorno sobre el patrimonio, por encima del umbral de excelencia del sector "
+        return _sig("strength", "Rentabilidad", f"ROE{ctx.nl('roe')} elevado — {_pct(roe)}",
+                    f"Genera {_pct(roe)}{ctx.nl('roe') and ' (normalizado)'} de retorno sobre el patrimonio, por encima del umbral de excelencia {ctx.del_ref} "
                     f"({_pct(t.roe_high, 0)}): uso muy eficiente del capital de los accionistas.", T["w_high"])
     if roe < t.roe_low:
-        return _sig("warning", "Rentabilidad", f"ROE bajo — {_pct(roe)}",
-                    f"El retorno sobre el patrimonio ({_pct(roe)}) queda por debajo del mínimo del sector "
+        return _sig("warning", "Rentabilidad", f"ROE{ctx.nl('roe')} bajo — {_pct(roe)}",
+                    f"El retorno sobre el patrimonio{ctx.nl('roe')} ({_pct(roe)}) queda por debajo del mínimo {ctx.del_ref} "
                     f"({_pct(t.roe_low, 0)}): el capital de los accionistas no se está remunerando con holgura.", T["w_low"])
     return None
 
@@ -294,15 +305,16 @@ def _margins(ctx: Ctx):
     out = []
     if nm is not None:
         if nm < 0:
-            out.append(_sig("risk", "Rentabilidad", f"Margen neto negativo — {_pct(nm)}",
+            out.append(_sig("risk", "Rentabilidad", f"Margen neto{ctx.nl('net_margin')} negativo — {_pct(nm)}",
                             "La empresa pierde dinero a nivel neto: cada dólar vendido no cubre el total de costos, "
                             "gastos, intereses e impuestos. Insostenible si se prolonga.", T["w_net_negative"]))
         elif nm >= t.net_margin_low * T["net_solid_mult"]:
-            out.append(_sig("strength", "Rentabilidad", f"Margen neto sólido — {_pct(nm)}",
+            out.append(_sig("strength", "Rentabilidad", f"Margen neto{ctx.nl('net_margin')} sólido — {_pct(nm)}",
                             f"De cada dólar vendido quedan {nm*100:.0f} centavos de beneficio tras todos los costos: señala "
-                            "poder de fijación de precios y eficiencia por encima de la media de su sector.", T["w_net_solid"]))
+                            "poder de fijación de precios y eficiencia por encima de la media "
+                            + ("del mercado." if ctx.market else "de su sector."), T["w_net_solid"]))
         elif nm < t.net_margin_low:
-            out.append(_sig("warning", "Rentabilidad", f"Margen neto estrecho — {_pct(nm)}",
+            out.append(_sig("warning", "Rentabilidad", f"Margen neto{ctx.nl('net_margin')} estrecho — {_pct(nm)}",
                             f"Solo {nm*100:.1f} centavos de cada dólar vendido llegan a beneficio: márgenes finos que dejan "
                             "poco colchón ante subidas de costos o presión competitiva.", T["w_net_thin"]))
     if gm is not None and gm > T["gross_high"]:
@@ -468,12 +480,12 @@ def _earnings_quality(ctx: Ctx):
     T = _A["earnings_quality"]
     if q < T["low_below"]:
         return _sig("warning", "Flujo de caja", "Calidad del beneficio baja",
-                    f"El flujo de caja libre equivale a menos de la mitad del beneficio contable (FCF/BN {q:.0%}): parte de "
+                    f"El flujo de caja libre equivale a menos de la mitad del beneficio contable (FCF/BN{ctx.nl('fcf_to_net_income')} {q:.0%}): parte de "
                     "las utilidades no se está convirtiendo en caja real, señal a vigilar (devengos, capex o capital de "
                     "trabajo).", T["w_low"])
     if q > T["high_above"]:
         return _sig("strength", "Flujo de caja", "Beneficio de alta calidad",
-                    f"El flujo de caja libre supera al beneficio contable (FCF/BN {q:.0%}): las utilidades se convierten "
+                    f"El flujo de caja libre supera al beneficio contable (FCF/BN{ctx.nl('fcf_to_net_income')} {q:.0%}): las utilidades se convierten "
                     "íntegramente en efectivo, señal de contabilidad conservadora y negocio que 'respira' caja.", T["w_high"])
     return None
 
@@ -496,12 +508,12 @@ def _growth(ctx: Ctx):
                         _A["growth"]["w_strong"])
         return None
     if growth_for_bands(g3) < 0:   # entre −2% y 0: plano, no contracción
-        return _sig("warning", "Crecimiento", f"Ingresos en contracción — {_pct(g3)} interanual",
-                    f"Las ventas caen un {_pct(abs(g3))} interanual: un negocio que se encoge "
+        return _sig("warning", "Crecimiento", f"Ingresos en contracción — {_pct(g3)} anual (3 años)",
+                    f"Las ventas caen un {_pct(abs(g3))} anual en tres años (CAGR): un negocio que se encoge "
                     "presiona márgenes y valoración salvo que sea un bache puntual con catalizador de recuperación.", _A["growth"]["w_contraction"])
     if g3 > _A["growth"]["strong_above"]:
-        return _sig("strength", "Crecimiento", f"Crecimiento fuerte — ingresos +{_pct(g3)} interanual",
-                    f"Los ingresos crecen {_pct(g3)} interanual: ritmo de expansión elevado que, si mantiene "
+        return _sig("strength", "Crecimiento", f"Crecimiento fuerte — ingresos +{_pct(g3)} anual (3 años)",
+                    f"Los ingresos crecen {_pct(g3)} anual en tres años (CAGR): ritmo de expansión elevado que, si mantiene "
                     "márgenes, es el principal motor de creación de valor a largo plazo.", _A["growth"]["w_strong"])
     return None
 
@@ -512,12 +524,12 @@ def _eps_growth(ctx: Ctx):
         return None
     T = _A["eps_growth"]
     if e3 < T["decline_below"]:
-        return _sig("warning", "Crecimiento", f"Beneficio por acción en descenso — {_pct(e3)} interanual",
-                    f"El BPA cae {_pct(abs(e3))} interanual: la rentabilidad por acción se erosiona, ya sea por menores "
+        return _sig("warning", "Crecimiento", f"Beneficio por acción en descenso — {_pct(e3)} anual (3 años)",
+                    f"El BPA cae {_pct(abs(e3))} anual en tres años (CAGR): la rentabilidad por acción se erosiona, ya sea por menores "
                     "beneficios o por dilución. Contrasta con la evolución de ingresos para ubicar la causa.", T["w_decline"])
     if e3 > T["strong_above"]:
-        return _sig("strength", "Crecimiento", f"BPA en fuerte expansión — +{_pct(e3)} interanual",
-                    f"El beneficio por acción crece {_pct(e3)} interanual: la rentabilidad para el accionista se "
+        return _sig("strength", "Crecimiento", f"BPA en fuerte expansión — +{_pct(e3)} anual (3 años)",
+                    f"El beneficio por acción crece {_pct(e3)} anual en tres años (CAGR): la rentabilidad para el accionista se "
                     "acelera, a menudo apoyada en apalancamiento operativo o recompras.", T["w_strong"])
     return None
 

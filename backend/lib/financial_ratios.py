@@ -8,6 +8,7 @@ Autor: Esteban
 Versión: 3.1 - Configuración Centralizada
 """
 
+import math
 from typing import Optional, Dict, List, Tuple, Any
 from dataclasses import dataclass
 from enum import Enum
@@ -573,6 +574,30 @@ def piotroski_f_score(*args, **kwargs) -> Tuple[int, List[str], str]:
     r = piotroski_evaluate(*args, **kwargs)
     details = [f"{_PIO_SYMBOL[c['state']]} {c['detail']}" for c in r["criteria"]]
     return r["score"], details, r["interpretation"]
+
+
+# Etapa 9a: métricas del desglose calculadas con el beneficio normalizado (etapa 7).
+_NORMALIZED_LABELS = {"ROE": ("roe", "ROE normalizado"), "ROA": ("roa", "ROA normalizado"),
+                      "Margen Neto": ("net_margin", "Margen neto normalizado"),
+                      "FCF / Net Income": ("fcf_to_net_income", "FCF / beneficio neto normalizado"),
+                      "P/E vs Sector": ("pe", "P/E normalizado vs Sector")}
+
+
+def label_normalized(categories: List[Dict[str, Any]], keys) -> None:
+    """Toda cifra del desglose calculada con el beneficio normalizado lo indica en
+    el nombre ("ROE normalizado" 55.9%) y lleva normalized=True. El Forward P/E
+    compara el P/E normalizado con el forward: lo dice su motivo."""
+    keys = set(keys or [])
+    if not keys:
+        return
+    for cat in categories:
+        for a in cat.get("adjustments") or []:
+            m = a.get("metric")
+            if m in _NORMALIZED_LABELS and _NORMALIZED_LABELS[m][0] in keys:
+                a["metric"], a["normalized"] = _NORMALIZED_LABELS[m][1], True
+            elif m == "Forward P/E" and "pe" in keys and a.get("reason"):
+                a["reason"] = a["reason"].replace("P/E", "P/E normalizado", 1)
+                a["normalized"] = True
 
 
 def eps_vs_revenue_growth(revenue_growth: Optional[float], eps_growth: Optional[float],
@@ -1801,15 +1826,30 @@ class CategoryCoverage:
         self.items = []
         self.reasons: Dict[str, str] = {}
         self.not_applicable: Dict[str, str] = {}
+        # Etapa 9a (bloque de múltiplos): los miembros de un bloque cuentan en la
+        # cobertura pero no se reescalan uno a uno; se reescala el bloque (derived).
+        self.unscaled: set = set()
+        self.derived: List[Any] = []
 
-    def comp(self, name: str, points, adj, reason: Optional[str] = None, na: Optional[str] = None) -> None:
+    def comp(self, name: str, points, adj, reason: Optional[str] = None, na: Optional[str] = None,
+             rescale: bool = True) -> None:
         if na:
             self.not_applicable[name] = na
             return
         pts = [p for p in points]
         self.items.append((name, max(pts), min(pts), adj))
+        if not rescale:
+            self.unscaled.add(name)
         if adj is None and reason:
             self.reasons[name] = reason
+
+    def derived_comp(self, name: str, points, adj) -> None:
+        """Componente derivado (el bloque): entra en el reescalado, no en el recuento."""
+        self.derived.append((name, max(points), min(points), adj))
+
+    @property
+    def scaled_items(self) -> List[Any]:
+        return [it for it in self.items if it[0] not in self.unscaled] + self.derived
 
     @property
     def missing(self) -> List[str]:
@@ -1861,16 +1901,21 @@ class CategoryCoverage:
                 "severity": "neutral",
             })
             return base_score
-        av = [(mx, mn, a) for _, mx, mn, a in self.items if a is not None]
-        r_pos = sum(mx for _, mx, _, _ in self.items)
-        r_neg = sum(-mn for _, _, mn, _ in self.items)
+        items = self.scaled_items
+        av = [(mx, mn, a) for _, mx, mn, a in items if a is not None]
+        r_pos = sum(mx for _, mx, _, _ in items)
+        r_neg = sum(-mn for _, _, mn, _ in items)
         ra_pos = sum(mx for mx, _, _ in av)
         ra_neg = sum(-mn for _, mn, _ in av)
         s_pos = sum(a for _, _, a in av if a > 0)
         s_neg = sum(a for _, _, a in av if a < 0)
         scaled = ((s_pos * r_pos / ra_pos) if ra_pos else 0) + ((s_neg * r_neg / ra_neg) if ra_neg else 0)
         delta = round(scaled) - (s_pos + s_neg)
-        n, ev = len(self.items), len(av)
+        n, ev = len(self.items), len(self.items) - len(self.missing)
+        if all(a is not None for *_, a in items):
+            # Solo faltan miembros de un bloque: el bloque ya promedia sobre los que
+            # tienen dato, no hay nada que reescalar.
+            return base_score
         adjustments.append({
             "metric": "Cobertura", "value": f"{ev}/{n} componentes", "adjustment": delta,
             "reason": ("Reescalado sobre los componentes con dato (sin dato: " + ", ".join(self.missing) + ")"),
@@ -1889,6 +1934,7 @@ def score_solidez_financiera(
     net_debt: Optional[float] = None,
     archetype: Optional[str] = None,
     runway: Optional[Dict[str, Any]] = None,
+    market: bool = False,
 ) -> Dict[str, Any]:
     """
     Categoría 1: Solidez Financiera (20 pts máximo)
@@ -1977,11 +2023,12 @@ def score_solidez_financiera(
         elif debt_to_equity <= threshold * m[1]:
             adj = p[2]
             sev = "ok"
-            reason = f"Deuda aceptable - Cerca del límite sectorial ({debt_to_equity:.2f}x)"
+            reason = f"Deuda aceptable - Cerca del límite {'del mercado' if market else 'sectorial'} ({debt_to_equity:.2f}x)"
         elif debt_to_equity <= threshold * m[2]:
             adj = p[3]
             sev = "moderate"
-            reason = f"Deuda elevada - Por encima del sector ({debt_to_equity:.2f}x vs {threshold:.1f}x)"
+            reason = (f"Deuda elevada - Por encima {'del mercado' if market else 'del sector'} "
+                      f"({debt_to_equity:.2f}x vs {threshold:.1f}x)")
         elif interest_coverage is not None and interest_coverage >= T["de_mitigation_coverage"]:
             # Mitigación: D/E alto pero el beneficio operativo cubre los
             # intereses con mucha holgura — típico de mega-caps con patrimonio
@@ -2285,6 +2332,7 @@ def score_rentabilidad(
     roic: Optional[float] = None,
     wacc: Optional[float] = None,
     archetype: Optional[str] = None,
+    market: bool = False,
 ) -> Dict[str, Any]:
     """
     Categoría 2: Rentabilidad (20 pts máximo)
@@ -2300,6 +2348,9 @@ def score_rentabilidad(
     base_score = _CAT["base"]
     _a = {}  # etapa 5: cobertura
     adjustments = []
+    # Referencia de las bandas: el sector o, si el arquetipo lo contradice, el mercado.
+    su, para, adj_ref = (("el mercado", "frente al mercado", "del mercado") if market
+                         else ("su sector", "para su sector", "sectorial"))
     # Etapa 6 (FINANCIAL): sin margen operativo (no hay EBIT bancario) ni spread
     # ROIC−WACC (el WACC no es interpretable en un balance bancario).
     _na_opm, _na_spread = not_applicable(archetype, "operating_margin"), not_applicable(archetype, "roic_wacc")
@@ -2322,15 +2373,15 @@ def score_rentabilidad(
         elif roe >= sector_roe_high * T["roe_high_mult"]:
             adj = p[0]
             sev = "excellent"
-            reason = f"Excepcional para su sector ({roe:.1%} vs {sector_roe_high:.0%} rango alto sectorial)"
+            reason = f"Excepcional {para} ({roe:.1%} vs {sector_roe_high:.0%} rango alto {adj_ref})"
         elif roe >= sector_roe_high:
             adj = p[1]
             sev = "good"
-            reason = f"Muy bueno ({roe:.1%}) - En el rango alto de su sector"
+            reason = f"Muy bueno ({roe:.1%}) - En el rango alto de {su}"
         elif roe >= sector_roe_threshold:
             adj = p[2]
             sev = "ok"
-            reason = f"Bueno ({roe:.1%}) - Competitivo en su sector"
+            reason = f"Bueno ({roe:.1%}) - Competitivo en {su}"
         elif roe >= T["roe_floor"]:
             adj = p[3]
             sev = "moderate"
@@ -2355,15 +2406,15 @@ def score_rentabilidad(
         if roa >= sector_roa_high * T["roa_high_mult"]:
             adj = p[0]
             sev = "excellent"
-            reason = f"Excelente para su sector ({roa:.1%})"
+            reason = f"Excelente {para} ({roa:.1%})"
         elif roa >= sector_roa_high:
             adj = p[1]
             sev = "good"
-            reason = f"Bueno ({roa:.1%}) - Rango alto de su sector"
+            reason = f"Bueno ({roa:.1%}) - Rango alto de {su}"
         elif roa >= sector_roa_threshold:
             adj = p[2]
             sev = "ok"
-            reason = f"Aceptable ({roa:.1%}) - Normal para su sector"
+            reason = f"Aceptable ({roa:.1%}) - Normal para {su}"
         elif roa >= 0:
             adj = p[3]
             sev = "moderate"
@@ -2542,6 +2593,7 @@ def score_valoracion(
     base_score = _CAT["base"]
     adjustments = []
     _a = {}  # etapa 5: cobertura (componentes nucleares; bonos y rescates aparte)
+    _blk: Dict[str, Any] = {}  # etapa 9a: miembros del bloque de múltiplos -> (ajuste, puntos)
     # Etapa 6: el arquetipo decide qué múltiplos aplican y cuáles se normalizan.
     xv = xv or {}
     if archetype is not None:
@@ -2691,29 +2743,31 @@ def score_valoracion(
             adj = p[4]; sev = "severe"
             reason = f"Muy caro ({pe:.1f}x vs {pe_threshold:.1f}x{_vs})"
 
-        base_score += adj
         _a["pe"] = adj
-        adjustments.append({"metric": "P/E vs Sector", "value": f"{pe:.1f}x", "adjustment": adj, "reason": reason, "severity": sev})
+        _blk["P/E"] = (adj, T["pe_value_points"])
+        adjustments.append({"metric": "P/E vs Sector", "value": f"{pe:.1f}x", "adjustment": adj, "reason": reason,
+                            "severity": sev, "in_block": True})
 
-    # ─── Forward P/E Bonus (NUEVO v2.4) ────────────────
+    # ─── Forward P/E (miembro del bloque de múltiplos) ────────────────
     if not _na["forward_pe"] and forward_pe is not None and forward_pe > 0 and pe is not None and pe > 0:
         pe_compression = (pe - forward_pe) / pe  # % de "mejora" esperada
         b, p = T["forward_compression_bounds"], T["forward_compression_points"]
         if pe_compression >= b[0]:  # Forward P/E 25%+ menor que trailing
-            adj = p[0]; sev = "excellent"
+            adj, sev = p[0], "excellent"
             reason = f"Fuerte compresión P/E ({pe:.0f}x → {forward_pe:.0f}x forward)"
-            base_score += adj
-            adjustments.append({"metric": "Forward P/E", "value": f"{forward_pe:.1f}x", "adjustment": adj, "reason": reason, "severity": sev})
         elif pe_compression >= b[1]:
-            adj = p[1]; sev = "good"
+            adj, sev = p[1], "good"
             reason = f"P/E mejorando ({pe:.0f}x → {forward_pe:.0f}x forward)"
-            base_score += adj
-            adjustments.append({"metric": "Forward P/E", "value": f"{forward_pe:.1f}x", "adjustment": adj, "reason": reason, "severity": sev})
         elif pe_compression >= b[2]:
-            adj = p[2]; sev = "good"
+            adj, sev = p[2], "good"
             reason = f"P/E estable a mejor ({pe:.0f}x → {forward_pe:.0f}x)"
-            base_score += adj
-            adjustments.append({"metric": "Forward P/E", "value": f"{forward_pe:.1f}x", "adjustment": adj, "reason": reason, "severity": sev})
+        else:
+            # Etapa 9a: con dato y sin compresión cuenta como 0 en el promedio del bloque.
+            adj, sev = 0, "ok"
+            reason = f"Sin compresión del P/E ({pe:.0f}x → {forward_pe:.0f}x forward)"
+        _blk["Forward P/E"] = (adj, [*p, 0])
+        adjustments.append({"metric": "Forward P/E", "value": f"{forward_pe:.1f}x", "adjustment": adj,
+                            "reason": reason, "severity": sev, "in_block": True})
 
     # ─── P/FCF (hasta ±4 pts) — omitido para REITs (capex de cartera) ──
     if not _na["p_fcf"] and not is_reit and p_fcf is not None and p_fcf > 0:
@@ -2735,10 +2789,10 @@ def score_valoracion(
             adj = p[4]; sev = "severe"
             reason = f"Muy alto ({p_fcf:.1f}x)"
 
-        base_score += adj
         _a["pfcf"] = adj
+        _blk["P/FCF"] = (adj, T["pfcf_value_points"])
         adjustments.append({"metric": "P/FCF normalizado" if _cyc else "P/FCF", "value": f"{p_fcf:.1f}x",
-                            "adjustment": adj, "reason": reason + _cyc_note, "severity": sev})
+                            "adjustment": adj, "reason": reason + _cyc_note, "severity": sev, "in_block": True})
 
     # ─── EV/EBITDA vs Sector (hasta ±4 pts) ────────────
     if not _na["ev_ebitda"] and ev_ebitda is not None and ev_ebitda > 0:
@@ -2763,11 +2817,11 @@ def score_valoracion(
             adj = p[4]; sev = "severe"
             reason = f"Muy caro ({ev_ebitda:.1f}x vs {ev_threshold:.1f}x{_vs})"
 
-        base_score += adj
         _a["ev"] = adj
+        _blk["EV/EBITDA"] = (adj, T["ev_ebitda_value_points"])
         adjustments.append({"metric": "EV/EBITDA normalizado vs Sector" if _cyc else "EV/EBITDA vs Sector",
                             "value": f"{ev_ebitda:.1f}x", "adjustment": adj, "reason": reason + _cyc_note,
-                            "severity": sev})
+                            "severity": sev, "in_block": True})
 
     # ─── PEG Ratio (hasta ±4 pts) ─────────────────────
     if not _na["peg"] and peg is not None and peg > 0:
@@ -2788,9 +2842,38 @@ def score_valoracion(
             adj = p[4]; sev = "severe"  # v2.4: max -3 en vez de -4
             reason = f"Muy caro ({peg:.2f})"
 
-        base_score += adj
         _a["peg"] = adj
-        adjustments.append({"metric": "PEG Ratio", "value": f"{peg:.2f}", "adjustment": adj, "reason": reason, "severity": sev})
+        _blk["PEG"] = (adj, T["peg_points"])
+        adjustments.append({"metric": "PEG Ratio", "value": f"{peg:.2f}", "adjustment": adj, "reason": reason,
+                            "severity": sev, "in_block": True})
+
+    # ─── Bloque de múltiplos correlacionados (etapa 9a) ─────
+    # P/E, Forward P/E, P/FCF, EV/EBITDA y PEG miden lo mismo (precio frente a
+    # beneficio o caja): sumarlos contaba varias veces una sola señal. El bloque es
+    # el promedio de sus ajustes normalizados (positivo / máximo, negativo / |mínimo|)
+    # sobre los que tienen dato y aplican, escalado a ±multiples_block_max.
+    _block_raw = _block_adj = None
+    if _blk:
+        _norm = {k: (a / max(pts) if a > 0 else (a / abs(min(pts)) if a < 0 else 0.0))
+                 for k, (a, pts) in _blk.items()}
+        _mean = sum(_norm.values()) / len(_norm)
+        _bmax = T["multiples_block_max"]
+        _block_raw = _mean * _bmax
+        block = _block_adj = int(math.floor(abs(_block_raw) + 0.5)) * (1 if _block_raw >= 0 else -1)
+        base_score += block
+        _bs = T["multiples_block_strong"]
+        _bsev = ("excellent" if _mean >= _bs else "good" if _mean > 0 else "ok" if _mean == 0
+                 else "severe" if _mean <= -_bs else "moderate")
+        _missing_blk = [k for k in T["multiples_block"] if k not in _blk
+                        and not _na.get({"P/E": "pe", "Forward P/E": "forward_pe", "P/FCF": "p_fcf",
+                                         "EV/EBITDA": "ev_ebitda", "PEG": "peg"}[k])]
+        adjustments.append({
+            "metric": "Bloque de múltiplos", "value": f"{len(_blk)} múltiplo{'s' if len(_blk) != 1 else ''}",
+            "adjustment": block, "severity": _bsev, "block_mean": _mean, "block_members": list(_blk),
+            "reason": (f"promedio de los ajustes normalizados ({', '.join(f'{k} {v:+.2f}' for k, v in _norm.items())}) "
+                       f"= {_mean:+.2f} × {_bmax} = {_block_raw:+.1f}"
+                       + (f"; sin dato: {', '.join(_missing_blk)}" if _missing_blk else "")),
+        })
 
     # ─── De-dup de valoración (Fase B) ─────────────────
     # Se eliminaron los bonos separados de "FCF Yield" (+3) y "Earnings Yield"
@@ -2841,18 +2924,26 @@ def score_valoracion(
     if archetype == GROWTH_PRE_PROFIT:
         cov.comp("EV/Ventas", T["ev_sales_points"], _a.get("evs"))
         cov.comp("Regla de 40", T["rule_of_40_points"], _a.get("r40"))
+    # Miembros del bloque: cuentan en la cobertura, pero se reescala el bloque, no cada uno.
     if is_reit and archetype is None:
         pass  # llamada antigua sin arquetipo: P/E y P/FCF omitidos para REIT
     else:
-        cov.comp("P/E", T["pe_value_points"], _a.get("pe"), na=_na["pe"])
-        cov.comp("P/FCF", T["pfcf_value_points"], _a.get("pfcf"), na=_na["p_fcf"])
+        cov.comp("P/E", T["pe_value_points"], _a.get("pe"), na=_na["pe"], rescale=False)
+        cov.comp("P/FCF", T["pfcf_value_points"], _a.get("pfcf"), na=_na["p_fcf"], rescale=False)
     cov.comp("EV/EBITDA", T["ev_ebitda_value_points"], _a.get("ev"),
-             na=_na["ev_ebitda"])
-    cov.comp("PEG", T["peg_points"], _a.get("peg"), na=_na["peg"])
+             na=_na["ev_ebitda"], rescale=False)
+    cov.comp("PEG", T["peg_points"], _a.get("peg"), na=_na["peg"], rescale=False)
+    _bm = T["multiples_block_max"]
+    if any(n in ("P/E", "P/FCF", "EV/EBITDA", "PEG") for n, *_ in cov.items):
+        cov.derived_comp("Bloque de múltiplos", [_bm, -_bm], _block_adj)
     if dcf is not None:
         cov.comp("DCF", T["dcf_points_high"], _dcf_adj, _dcf_reason, na=_dcf.get("na"))
     from valuation_confidence import multiples_signal
-    _mult_signal = multiples_signal(cov.items)
+    # Señal de los múltiplos para la convergencia: el bloque (sin redondear) cuenta
+    # como un solo múltiplo, junto a los de la rama (P/FFO, EV/Ventas, P/B…).
+    _mult_signal = multiples_signal(
+        [it for it in cov.items if it[0] not in cov.unscaled]
+        + ([("Bloque de múltiplos", _bm, -_bm, _block_raw)] if _block_raw is not None else []))
     base_score = cov.apply(base_score, adjustments)
     final_score = max(_CAT["min"], min(_CAT["max"], base_score))
 
@@ -3066,6 +3157,7 @@ def score_crecimiento(
     revenue_note: Optional[str] = None,
     revenue_reason: Optional[str] = None,
     dividend_yield: Optional[float] = None,
+    eps_reason: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Categoría 5: Crecimiento (20 pts máximo)
@@ -3195,7 +3287,7 @@ def score_crecimiento(
         cov.comp("Retorno total", T["reit_total_return_points"], _a.get("rev"), revenue_reason)
     else:
         cov.comp("Crecimiento de ingresos", T["revenue_points"], _a.get("rev"), revenue_reason)
-    cov.comp("Crecimiento del BPA", T["eps_points"], _a.get("eps"), na=_na_eps)
+    cov.comp("Crecimiento del BPA", T["eps_points"], _a.get("eps"), eps_reason, na=_na_eps)
     cov.comp("Crecimiento del FCF", T["fcf_points"], _a.get("fcf"), fcf_growth_reason, na=_na_fcf)
     base_score = cov.apply(base_score, adjustments)
     final_score = max(_CAT["min"], min(_CAT["max"], base_score))
@@ -3239,8 +3331,9 @@ def calculate_score_v2(
     Returns:
         Dict con score total, desglose por categoría, y explicaciones
     """
-    # Obtener umbrales sectoriales
+    # Obtener umbrales sectoriales (o los del mercado: sector_key "market", main._select_benchmark)
     thresholds = SECTOR_THRESHOLDS.get(sector_key, ThresholdConfig())
+    _market = sector_key == "market"
     
     # Determinar si es growth company
     revenue_growth = contextual_values.get("revenue_cagr_3y")
@@ -3301,6 +3394,7 @@ def calculate_score_v2(
             net_debt=ratio_values.get("net_debt"),
             archetype=archetype,
             runway=xv.get("runway"),
+            market=_market,
         )
     
     rentabilidad = score_rentabilidad(
@@ -3316,6 +3410,7 @@ def calculate_score_v2(
         sector_roe_high=thresholds.roe_high,
         sector_roa_high=thresholds.roa_high,
         archetype=archetype,
+        market=_market,
     )
     
     # v2.4: Pasar datos de crecimiento + forward metrics a valoración
@@ -3367,11 +3462,18 @@ def calculate_score_v2(
         revenue_note=contextual_values.get("revenue_growth_note"),
         revenue_reason=contextual_values.get("revenue_growth_reason"),
         dividend_yield=ratio_values.get("dividend_yield"),
+        eps_reason=contextual_values.get("eps_growth_reason"),
     )
     
     # Calcular totales. Las categorías no concluyentes (cobertura < 50%) se
     # excluyen y el total se reescala a 100 sobre las restantes (etapa 5).
     categories = [solidez, rentabilidad, valoracion, calidad, crecimiento]
+    label_normalized(categories, contextual_values.get("normalized_metrics"))
+    if _market:   # perfil market: el nombre dice contra qué se compara
+        for cat in categories:
+            for a in cat.get("adjustments") or []:
+                if (a.get("metric") or "").endswith(" vs Sector"):
+                    a["metric"] = a["metric"][:-len(" vs Sector")] + " vs mercado"
     for cat in categories:
         cat["conclusive"] = (cat.get("coverage") or {}).get("conclusive", True)
         # Etapa 6: una categoría sin ningún componente aplicable al arquetipo

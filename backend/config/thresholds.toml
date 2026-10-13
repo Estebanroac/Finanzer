@@ -70,6 +70,11 @@ reit_pffo_bounds = [12, 16, 20, 25] # REIT: P/FFO ≤ (en lugar de P/E y P/FCF)
 reit_pffo_points = [4, 2, 0, -2, -4]
 pe_value_mults = [0.7, 0.9, 1.1, 1.3]
 pe_value_points = [5, 3, 0, -2, -4]
+# Etapa 9a: bloque de múltiplos correlacionados. Su ajuste es el promedio de los
+# ajustes normalizados de sus miembros (con dato y aplicables), escalado a ±max.
+multiples_block = ["P/E", "Forward P/E", "P/FCF", "EV/EBITDA", "PEG"]
+multiples_block_max = 6
+multiples_block_strong = 0.5        # |promedio normalizado| >= 0.5: severidad excellent / severe
 forward_compression_bounds = [0.25, 0.12, 0.05]   # (P/E − forward P/E) / P/E ≥
 forward_compression_points = [3, 2, 1]
 pfcf_value_bounds = [12, 18, 25, 35]

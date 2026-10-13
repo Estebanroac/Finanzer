@@ -127,21 +127,28 @@ def _select_benchmark(mapped_sector: str, archetype: Optional[str]) -> dict:
     import re
     key = re.sub(r'[\s-]+', '_', (mapped_sector or "default").lower())
     expected = cfg("sectors.benchmarks.sector_archetype").get(key)
+    from financial_ratios import SECTOR_THRESHOLDS, ThresholdConfig
+    _th_keys = ("roe_high", "roe_low", "roa_high", "roa_low", "debt_equity_high", "operating_margin_low",
+                "net_margin_low", "interest_coverage_low", "current_ratio_low")
+
+    def _th(k):
+        t = SECTOR_THRESHOLDS.get(k, ThresholdConfig())
+        return {n: getattr(t, n) for n in _th_keys}
     if expected and archetype and archetype != expected:
         market = dict(cfg("sectors.benchmarks.market"))
-        return {"profile": "market", "sector": key,
+        return {"profile": "market", "sector": key, "thresholds_key": "market", "thresholds": _th("market"),
                 "values": {**dict(cfg("sectors.benchmarks.default")), **market},
-                "reason": (f"arquetipo {archetype} dentro del sector {key}, cuyas medianas suponen {expected}: "
-                           "se usan las medianas del mercado amplio (S&P 500)"),
+                "reason": (f"arquetipo {archetype} dentro del sector {key}, cuyas medianas y umbrales suponen "
+                           f"{expected}: se usan los del mercado amplio (S&P 500)"),
                 "sources": {k: v for k, v in cfg("sectors.benchmarks.market_source").items() if k in market},
                 "provisional": True}
-    return {"profile": "sector", "sector": key, "values": _get_sector_benchmarks(mapped_sector),
-            "reason": None, "sources": None, "provisional": True}
+    return {"profile": "sector", "sector": key, "thresholds_key": mapped_sector, "thresholds": _th(mapped_sector),
+            "values": _get_sector_benchmarks(mapped_sector), "reason": None, "sources": None, "provisional": True}
 
 
 def _pdf_benchmark(analysis: dict) -> dict:
     """Benchmark del PDF: el mismo que usó el score (sector o market)."""
-    sel = (analysis.get("valuation_benchmark") or {}).get("values")
+    sel = (analysis.get("benchmark") or {}).get("values")
     return sel or _get_sector_benchmarks((analysis.get("sector_info") or {}).get("mapped_sector", "default"))
 
 
@@ -603,28 +610,32 @@ def _compute_analysis(symbol: str) -> dict:
             # banks) instead of a fixed ~20x. Without this, high-P/E sectors look
             # overvalued and low-P/E sectors look cheap regardless of fundamentals.
             _bench_sel = _select_benchmark(mapped_sector, archetype)
-            result["valuation_benchmark"] = _bench_sel
+            # Un solo benchmark por análisis (etapa 9a): medianas de múltiplos, umbrales del
+            # score (ROE, ROA, D/E, márgenes), alertas y PDF leen la misma clave.
+            result["benchmark"] = _bench_sel
+            score_sector = _bench_sel["thresholds_key"]
             _sector_bench = _bench_sel["values"]
             fin_dict["sector_pe"] = _sector_bench.get("pe")
             fin_dict["sector_ev_ebitda"] = _sector_bench.get("ev_ebitda")
             fin_dict["benchmark_profile"] = _bench_sel["profile"]
 
-            # Señal de crecimiento para el scorer (categoría Crecimiento de 20 pts +
-            # is_growth + bonos GARP/growth-quality de valoración). El CAGR histórico
-            # a 3 años NO está en el critical path (el fetch de históricos se removió
-            # por latencia), así que revenue_cagr_3y/eps_cagr_3y llegaban SIEMPRE en
-            # None y toda la categoría corría inerte (is_growth siempre False). Usamos
-            # el crecimiento YoY de Yahoo (revenueGrowth/earningsGrowth, ya disponibles
-            # y en decimal) como proxy para activar el motor de crecimiento.
-            # TODO(fase C): CAGR 3Y real re-habilitando el fetch histórico.
-            if fin_dict.get("revenue_cagr_3y") is None:
-                _rev_g = safe_float(financials.revenue_growth_yoy)
-                if _rev_g is not None:
-                    fin_dict["revenue_cagr_3y"] = _rev_g
-            if fin_dict.get("eps_cagr_3y") is None:
-                _eps_g = safe_float(financials.earnings_growth_rate)
-                if _eps_g is not None:
-                    fin_dict["eps_cagr_3y"] = _eps_g
+            # Crecimiento a 3 años para Crecimiento (etapa 9a): CAGR real de los 4
+            # ejercicios anuales de los estados (historical_metrics.growth_rate, con la
+            # regla de base anómala), no el interanual de Yahoo (revenueGrowth /
+            # earningsGrowth, que comparan un trimestre con el del año anterior). Sin 4
+            # ejercicios o con valores <= 0 en los extremos: sin dato con motivo, nunca
+            # el interanual con la etiqueta de 3 años.
+            _rev_r = growth_rate(_stmts.get("revenue") or [], 3, what="ingresos", strict_ends_only=True)
+            fin_dict["revenue_cagr_3y"] = _rev_r["value"]
+            fin_dict["revenue_growth_reason"] = _rev_r["reason"]
+            _eps_series = _stmts.get("diluted_eps") or per_share(_stmts.get("net_income") or [],
+                                                                  _stmts.get("ordinary_shares") or [])
+            _eps_r = growth_rate(_eps_series, 3, what="BPA")
+            fin_dict["eps_cagr_3y"] = _eps_r["value"]
+            fin_dict["eps_growth_reason"] = _eps_r["reason"]
+            if _rev_r.get("note") or _eps_r.get("note"):
+                fin_dict["growth_cagr_notes"] = {k: r["note"] for k, r in (("ingresos", _rev_r), ("BPA", _eps_r))
+                                                 if r.get("note")}
             # CAGR del FCF a 3 años con los 4 ejercicios anuales de los estados
             # (etapa 5). Indefinido -> sin dato con motivo, nunca un número.
             if fin_dict.get("fcf_cagr_3y") is None:
@@ -649,8 +660,6 @@ def _compute_analysis(symbol: str) -> dict:
                         f"ejercicios, acotado a [{_lo:.0%}, {_hi:.0%}]"
                         + ("; ciclo incompleto" if archetype_values.get("cycle_incomplete") else ""))
                 fin_dict["fcf_cagr_3y"] = None
-            elif archetype == FINANCIAL:
-                fin_dict["revenue_growth_note"] = "YoY de los estados anuales (arquetipo FINANCIAL)"
             elif archetype == REIT:
                 # REIT: crecimiento POR ACCIÓN (FFO y FCF por acción); el agregado lo
                 # infla la emisión estructural de acciones.
@@ -978,6 +987,12 @@ def _compute_analysis(symbol: str) -> dict:
                     ratios_score["net_income"] = _nin
                     if ratios.get("fcf") is not None and _nin:
                         ratios_score["fcf_to_net_income"] = ratios["fcf"] / _nin
+                    # Etapa 9a: qué ratios del score y de las alertas salen del beneficio
+                    # normalizado, para que el texto lo diga ("ROE normalizado 55.9%").
+                    fin_dict["normalized_metrics"] = (
+                        [k for k in ("net_margin", "roe", "roa") if ratios.get(k) is not None]
+                        + (["fcf_to_net_income"] if ratios.get("fcf") is not None else [])
+                        + (["pe", "earnings_yield"] if _scale else []))
             except Exception as e:
                 _sin_dato("normalizacion_ganancias", e)
 
@@ -1135,7 +1150,7 @@ def _compute_analysis(symbol: str) -> dict:
                     z_score_value=z_val,
                     z_score_level=z_zone,
                     f_score_value=_f_for_score,
-                    sector_key=mapped_sector,
+                    sector_key=score_sector,
                     real_sector=sector,
                     wacc=wacc_est,  # Fase C: spread ROIC-WACC en rentabilidad
                     archetype=archetype,
@@ -1205,7 +1220,7 @@ def _compute_analysis(symbol: str) -> dict:
             try:
                 result["alerts"] = build_signals(
                     ratios_score, fin_dict,
-                    sector=mapped_sector, real_sector=sector,
+                    sector=score_sector, real_sector=sector,
                     roic_wacc_spread=roic_wacc_spread,
                     altman=result.get("altman_z"),
                     piotroski=result.get("piotroski_f"),

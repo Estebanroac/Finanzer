@@ -215,14 +215,15 @@ def test_v_uses_market_benchmark_and_records_it(outputs_by_env):
     for env in _envs():
         res = outputs_by_env(env)
         a, pdf = res["V"]
-        b = a["valuation_benchmark"]
+        b = a["benchmark"]
         assert b["profile"] == "market" and b["sector"] == "financials"
-        pe = next(x for x in a["score"]["breakdown"]["Valoración"]["adjustments"] if x["metric"] == "P/E vs Sector")
+        pe = next(x for x in a["score"]["breakdown"]["Valoración"]["adjustments"]
+                  if x["metric"].startswith("P/E") and x["metric"].endswith("vs mercado"))
         assert f"vs {cfg('sectors.benchmarks.market.pe'):.1f}x mercado" in pe["reason"]
         text = fb.pdf_text(pdf).replace("\n", " ")
-        assert "MERCADO" in text and "Referencia de los múltiplos: medianas del mercado amplio (S&P 500)" in text
+        assert "MERCADO" in text and "Referencia: medianas y umbrales del mercado amplio (S&P 500)" in text
         for sym in ("NFLX", "JPM", "O", "FCX", "SNOW"):
-            assert res[sym][0]["valuation_benchmark"]["profile"] == "sector", (env, sym)
+            assert res[sym][0]["benchmark"]["profile"] == "sector", (env, sym)
 
 
 # ─────────────────────────── BPA frente a ingresos: informativo ───────────────────────────
@@ -242,3 +243,102 @@ def test_eps_vs_revenue_growth_is_informative_only(outputs_by_env):
                 assert e["scored"] is False and "Dato informativo, no puntúa" in fb.pdf_text(pdf).replace("\n", " ")
     nflx = outputs_by_env("prod")["NFLX"][0]["eps_vs_revenue_growth"]
     assert nflx["state"] == "expansion" and nflx["gap"] == pytest.approx(nflx["eps_growth"] - nflx["revenue_growth"])
+
+
+# ─────────────────────────── perfil market completo (umbrales y alertas) ───────────────────────────
+def _alert_text(a):
+    return " ".join(f"{x['reason']} {x['detail']}" for k in ("red_flags", "warnings", "strengths")
+                    for x in a["alerts"][k])
+
+
+def test_market_profile_overrides_thresholds_and_alert_texts(outputs_by_env):
+    D = cfg("sectors.score_thresholds.default")
+    for env in _envs():
+        res = outputs_by_env(env)
+        a, _ = res["V"]
+        b = a["benchmark"]
+        assert b["thresholds_key"] == "market"
+        assert b["thresholds"]["debt_equity_high"] == D["debt_equity_high"] and b["thresholds"]["roe_high"] == D["roe_high"]
+        sol = {x["metric"]: x for x in a["score"]["breakdown"]["Solidez Financiera"]["adjustments"]}
+        # D/E 0.66x frente a 1.0x del mercado: "controlada" (+2), no "muy baja" frente a los 10x de un banco
+        assert sol["Deuda/Equity"]["adjustment"] == cfg("thresholds.score.solidez.de_points")[1]
+        roe = next(x for x in a["score"]["breakdown"]["Rentabilidad"]["adjustments"] if x["metric"].startswith("ROE"))
+        assert f"vs {D['roe_high']:.0%} rango alto del mercado" in roe["reason"] and "sector" not in roe["reason"]
+        assert "del sector" not in _alert_text(a) and "del mercado" in _alert_text(a)
+        assert res["JPM"][0]["benchmark"]["thresholds_key"] == "financials"
+
+
+# ─────────────────────────── bloque de múltiplos correlacionados ───────────────────────────
+def test_multiples_block_averages_members_and_caps_at_max(outputs_by_env):
+    M = cfg("thresholds.score.valoracion.multiples_block_max")
+    for env in _envs():
+        for sym, (a, _) in outputs_by_env(env).items():
+            val = a["score"]["breakdown"]["Valoración"]
+            members = [x for x in val["adjustments"] if x.get("in_block")]
+            blk = [x for x in val["adjustments"] if x["metric"] == "Bloque de múltiplos"]
+            if not members:
+                assert not blk, (env, sym)
+                continue
+            assert len(blk) == 1 and len(blk[0]["block_members"]) == len(members), (env, sym)
+            raw = blk[0]["block_mean"] * M
+            assert abs(blk[0]["adjustment"]) <= M
+            assert blk[0]["adjustment"] == int(abs(raw) + 0.5) * (1 if raw >= 0 else -1), (env, sym)
+            counted = sum(x["adjustment"] for x in val["adjustments"] if not x.get("in_block"))
+            assert val["score"] == max(0, min(20, 10 + counted)), (env, sym)
+    v = outputs_by_env("prod")["V"][0]["score"]["breakdown"]["Valoración"]["adjustments"]
+    blk = next(x for x in v if x["metric"] == "Bloque de múltiplos")
+    assert blk["block_members"] == ["P/E", "Forward P/E", "P/FCF", "EV/EBITDA", "PEG"] and blk["adjustment"] == -3
+
+
+def test_block_pdf_shows_each_multiple_and_the_block_line(outputs_by_env):
+    text = fb.pdf_text(outputs_by_env("prod")["V"][1]).replace("\n", " ")
+    assert "Bloque de múltiplos" in text and "(-4)" in text and "promedio normalizado" in text
+
+
+# ─────────────────────────── reportado / normalizado ───────────────────────────
+def test_normalized_figures_are_labelled(outputs_by_env):
+    for env in _envs():
+        for sym, (a, pdf) in outputs_by_env(env).items():
+            if not (a.get("earnings_normalization") or {}).get("used_in_score"):
+                continue
+            metrics = [x["metric"] for c in a["score"]["breakdown"].values() for x in c["adjustments"]]
+            assert "ROE" not in metrics and "Margen Neto" not in metrics, (env, sym)
+            if "ROE normalizado" in metrics:
+                assert all("ROE" not in x["reason"].split(" — ")[0] or "normalizado" in x["reason"]
+                           for k in ("red_flags", "warnings", "strengths") for x in a["alerts"][k]
+                           if x["category"] == "Rentabilidad" and x["reason"].startswith("ROE")), (env, sym)
+            cover = fb.pdf_text(pdf).split("===== página 2")[0]
+            assert "REPORTADO" in cover or a["classification"]["archetype"] in ("REIT",), (env, sym)
+    v = outputs_by_env("prod")["V"][0]
+    roe = next(x for x in v["score"]["breakdown"]["Rentabilidad"]["adjustments"] if x["metric"] == "ROE normalizado")
+    assert roe["value"] == "55.9%" and roe["normalized"] is True
+
+
+# ─────────────────────────── crecimiento: CAGR 3 años, no interanual ───────────────────────────
+def test_growth_scores_three_year_cagr_not_yoy(outputs_by_env):
+    def crec(a, metric):
+        return next((x for x in a["score"]["breakdown"]["Crecimiento"]["adjustments"] if x["metric"] == metric), None)
+    prod, local = outputs_by_env("prod")["NFLX"][0], outputs_by_env("local")["NFLX"][0]
+    # el interanual de Yahoo difiere entre capturas (16.0% / 24.0%); el CAGR de los estados anuales no
+    assert prod["key_metrics"]["revenue_growth"] != local["key_metrics"]["revenue_growth"]
+    for m in ("Crecimiento Ingresos 3Y", "Crecimiento EPS 3Y"):
+        assert crec(prod, m)["value"] == crec(local, m)["value"], m
+    ci = prod["classification"]["inputs"]["revenue_cagr_3y"]
+    if "ingresos" not in prod["growth_basis"]["applied_to"]:
+        assert crec(prod, "Crecimiento Ingresos 3Y")["value"] == f"{ci:.1%}"
+
+
+# ─────────────────────────── rango de 52 semanas: solo posición ───────────────────────────
+def test_52_week_range_is_position_only(outputs_by_env):
+    import re
+    import pdf_report as pr
+    for p in (1, 15, 50, 80, 99):
+        lab, tone, txt = pr.read_pos52(p)
+        assert tone == "neu" and not re.search(r"\bcara\b|barata", f"{lab} {txt}", re.I)
+    for env in _envs():
+        for sym, (a, pdf) in outputs_by_env(env).items():
+            text = fb.pdf_text(pdf)
+            assert "PRECIO · 52 SEM." not in text and "¿Cara o barata hoy?" not in text, (env, sym)
+            for line in text.splitlines():
+                if "52 semanas" in line or "52 SEM" in line:
+                    assert not re.search(r"\bcara\b|barata", line, re.I), (env, sym, line)

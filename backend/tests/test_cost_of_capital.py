@@ -264,7 +264,8 @@ def test_dcf_subtracts_in_valuation(outputs_by_env):
     val = a["score"]["breakdown"]["Valoración"]
     row = _dcf_row(val)
     assert a["dcf"]["reliability"]["level"] == "media" and row["adjustment"] == -2
-    assert val["score"] == min(20, 10 + sum(x["adjustment"] for x in val["adjustments"]))
+    # Etapa 9a: los miembros del bloque de múltiplos puntúan a través del bloque.
+    assert val["score"] == min(20, 10 + sum(x["adjustment"] for x in val["adjustments"] if not x.get("in_block")))
 
 
 def test_low_reliability_dcf_explicit_in_report(outputs_by_env):

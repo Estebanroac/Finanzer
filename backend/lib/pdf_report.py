@@ -46,10 +46,9 @@ BRAND_PALE = colors.HexColor('#eaf8f1')
 RED,  RED_PALE  = colors.HexColor('#c0453e'), colors.HexColor('#faeeec')
 AMBER, AMBER_PALE = colors.HexColor('#9c7c14'), colors.HexColor('#faf4e0')
 
-# Zonas del rango de 52 semanas (curva de riesgo en U: los dos extremos son
-# alerta, el centro es saludable). Tonos suaves para no competir con el verde
-# de marca ni verse como bloques sólidos.
-Z_RED, Z_AMBER, Z_GREEN = colors.HexColor('#dd7a70'), colors.HexColor('#e3bf55'), colors.HexColor('#34c281')
+# Zonas del rango de 52 semanas. Etapa 9a: solo POSICIÓN (contexto), sin juicio de
+# precio: tramos en grises, sin rojo/ámbar/verde.
+Z_EDGE, Z_MID = colors.HexColor('#d4d4d9'), colors.HexColor('#e6e6ea')
 
 TONE_COLOR = {'pos': BRAND_TXT, 'neg': RED, 'warn': AMBER, 'neu': MUTED}
 TONE_PALE  = {'pos': BRAND_PALE, 'neg': RED_PALE, 'warn': AMBER_PALE, 'neu': PANEL}
@@ -141,7 +140,7 @@ def read_pe(pe, sector_pe, spread, ref="del sector"):
 # puntúan leen las bandas del score (thresholds.score.*) y, donde el arquetipo lo
 # permite, las sectoriales (sectors.score_thresholds: ROE y D/E). thresholds.pdf
 # solo conserva las bandas de métricas que el score no puntúa.
-def read_roe(roe, roa, th=None):
+def read_roe(roe, roa, th=None, market=False):
     if roe is None:
         return None
     T = cfg("thresholds.score.rentabilidad")
@@ -151,13 +150,15 @@ def read_roe(roe, roa, th=None):
         return ("Distorsionado", 'neu',
                 f"el ROE negativo responde a un patrimonio contable negativo por recompras agresivas, "
                 f"no a pérdidas: el ROA de {_pct(roa)} confirma la rentabilidad real de los activos")
-    ref = f" (sector: {_pct(lo)} competitivo, {_pct(hi)} rango alto)"
+    su = "el mercado" if market else "su sector"
+    ref = f" ({'mercado' if market else 'sector'}: {_pct(lo)} competitivo, {_pct(hi)} rango alto)"
     if roe >= hi * T["roe_high_mult"]:
-        return ("Excepcional", 'pos', f"el ROE de {_pct(roe)} es excepcional para su sector" + ref)
-    if roe >= hi:   return ("Alto", 'pos', f"el ROE de {_pct(roe)} está en el rango alto de su sector" + ref)
-    if roe >= lo:   return ("Competitivo", 'neu', f"el ROE de {_pct(roe)} es competitivo en su sector" + ref)
+        return ("Excepcional", 'pos', f"el ROE de {_pct(roe)} es excepcional "
+                                      f"{'frente al mercado' if market else 'para su sector'}" + ref)
+    if roe >= hi:   return ("Alto", 'pos', f"el ROE de {_pct(roe)} está en el rango alto de {su}" + ref)
+    if roe >= lo:   return ("Competitivo", 'neu', f"el ROE de {_pct(roe)} es competitivo en {su}" + ref)
     if roe >= T["roe_floor"]:
-        return ("Bajo", 'warn', f"el ROE de {_pct(roe)} queda por debajo del nivel competitivo de su sector" + ref)
+        return ("Bajo", 'warn', f"el ROE de {_pct(roe)} queda por debajo del nivel competitivo de {su}" + ref)
     if roe >= 0:    return ("Débil", 'neg', f"el ROE de {_pct(roe)} es débil para prácticamente cualquier sector")
     return ("Negativo", 'neg', f"el ROE de {_pct(roe)} refleja destrucción de valor para el accionista")
 
@@ -193,16 +194,16 @@ def read_current(cr):
     return ("Tensión", 'neg', f"el current ratio de {cr:.2f}x indica que los pasivos corrientes superan a los activos corrientes")
 
 
-def read_de(de, threshold=None, coverage=None):
+def read_de(de, threshold=None, coverage=None, market=False):
     if de is None: return None
     if de < 0:    return ("Equity negativo", 'warn', "el patrimonio contable es negativo por recompras acumuladas, lo que invalida la lectura tradicional del D/E")
     T = cfg("thresholds.score.solidez")                   # las del score, sobre el umbral sectorial
     t = threshold if threshold else ThresholdConfig().debt_equity_high
     m = T["de_mults"]
-    ref = f" (umbral del sector {t:.1f}x)"
+    ref = f" (umbral {'del mercado' if market else 'del sector'} {t:.1f}x)"
     if de <= t * m[0]: return ("Conservador", 'pos', f"el apalancamiento es conservador (D/E {de:.2f}x)" + ref)
     if de <= t:        return ("Controlado", 'pos', f"el apalancamiento está controlado (D/E {de:.2f}x)" + ref)
-    if de <= t * m[1]: return ("Aceptable", 'neu', f"el apalancamiento es aceptable, cerca del límite sectorial (D/E {de:.2f}x)" + ref)
+    if de <= t * m[1]: return ("Aceptable", 'neu', f"el apalancamiento es aceptable, cerca del límite {'del mercado' if market else 'sectorial'} (D/E {de:.2f}x)" + ref)
     if de <= t * m[2]: return ("Elevado", 'warn', f"el apalancamiento es elevado (D/E {de:.2f}x) y merece seguimiento" + ref)
     if coverage is not None and coverage >= T["de_mitigation_coverage"]:
         return ("Alto, servible", 'warn', f"el D/E es alto ({de:.2f}x) pero la deuda es fácilmente servible "
@@ -318,16 +319,16 @@ def read_beta(b):
 
 
 def read_pos52(p):
-    # Curva de riesgo en U: los DOS extremos son alerta. Cerca de mínimos puede
-    # ser oportunidad o problema; cerca de máximos, precio caro con poco recorrido.
-    # Es una señal de PRECIO (¿cara o barata?), no de calidad del negocio.
+    # Etapa 9a: solo POSICIÓN dentro del rango de 52 semanas, como contexto de
+    # mercado. No dice si la acción está cara o barata (eso es el atractivo del
+    # precio: múltiplos y DCF).
     if p is None: return None
     b = _PDF_BANDS["pos52_bounds"]
-    if p < b[0]:   return ("En mínimos · alerta", 'neg', f"cotiza en el {p:.0f}% del rango de 52 semanas, en la zona de mínimos: puede ser una oportunidad o reflejar un problema que el mercado ya descuenta")
-    if p < b[1]:   return ("Cerca del mínimo", 'warn', f"cotiza en el {p:.0f}% del rango anual, en la parte baja: barata, pero conviene cautela")
-    if p <= b[2]:  return ("Zona saludable", 'pos', f"cotiza en el {p:.0f}% del rango anual, en una zona cómoda del rango de 52 semanas")
-    if p < b[3]:   return ("Cerca del máximo", 'warn', f"cotiza en el {p:.0f}% del rango anual, en la parte alta: cara, con recorrido más limitado")
-    return ("En máximos · cara", 'neg', f"cotiza en el {p:.0f}% del rango de 52 semanas, en máximos: el mercado ya paga optimismo y aumenta el riesgo de corrección")
+    if p < b[0]:   return ("En mínimos de 52 semanas", 'neu', f"cotiza en el {p:.0f}% del rango de 52 semanas, en la zona de mínimos")
+    if p < b[1]:   return ("Parte baja del rango", 'neu', f"cotiza en el {p:.0f}% del rango de 52 semanas, en la parte baja")
+    if p <= b[2]:  return ("Zona media del rango", 'neu', f"cotiza en el {p:.0f}% del rango de 52 semanas, en la zona media")
+    if p < b[3]:   return ("Parte alta del rango", 'neu', f"cotiza en el {p:.0f}% del rango de 52 semanas, en la parte alta")
+    return ("En máximos de 52 semanas", 'neu', f"cotiza en el {p:.0f}% del rango de 52 semanas, en la zona de máximos")
 
 
 _QUALITY_TONE = {"excelente": 'pos', "sólida": 'pos', "media": 'warn', "débil": 'neg'}
@@ -414,14 +415,14 @@ def hbar(pct, width, height=6, fg=BRAND, bg=HAIR2):
 
 
 def zone_bar_52(pos_pct, width, height=7):
-    """Barra del rango de 52 semanas con las 5 zonas de riesgo en U (rojo en los
-    dos extremos, verde en el centro) y un marcador triangular en la posición
-    del precio. Refleja que tanto mínimos como máximos son señales de alerta."""
+    """Barra del rango de 52 semanas con sus 5 tramos (mínimos, parte baja, zona
+    media, parte alta, máximos) en grises y un marcador triangular en la posición
+    del precio. Etapa 9a: es contexto, no una señal de cara o barata."""
     p = max(0.0, min(100.0, pos_pct or 0.0)) / 100.0
     # anchos de zona (curva U) derivados de las bandas de read_pos52
     _edges = [0, *_PDF_BANDS["pos52_bounds"], 100]
     seg  = [(_edges[i + 1] - _edges[i]) / 100 for i in range(5)]
-    zcol = [Z_RED, Z_AMBER, Z_GREEN, Z_AMBER, Z_RED]
+    zcol = [Z_EDGE, Z_MID, Z_EDGE, Z_MID, Z_EDGE]
     cols = [width * s for s in seg]
     bar = Table([[''] * 5], colWidths=cols, rowHeights=[height])
     bcmds = [('TOPPADDING', (0, 0), (-1, -1), 0), ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
@@ -615,7 +616,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     S = _styles()
 
     # Benchmark de los múltiplos (main._select_benchmark): sector o mercado amplio.
-    _vb = analysis.get("valuation_benchmark") or {}
+    _vb = analysis.get("benchmark") or {}
     _mkt = _vb.get("profile") == "market"
     _ref = "del mercado (S&P 500)" if _mkt else "del sector"
     _bcol = "MERCADO" if _mkt else "SECTOR"
@@ -651,7 +652,8 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         _na_keys.add("ev_ebitda")   # EBITDA <= 0: EV/EBITDA no aplica (etapa 6)
     # Múltiplos propios de cada rama (filas del score de Valoración).
     _branch_metrics = ("P/B frente a ROE", "P/TBV frente a ROTE", "P/FFO (REIT)", "Rentabilidad por dividendo (REIT)",
-                       "EV/Ventas", "Regla de 40", "EV/EBITDA normalizado vs Sector", "P/FCF normalizado")
+                       "EV/Ventas", "Regla de 40", "EV/EBITDA normalizado vs Sector",
+                       "EV/EBITDA normalizado vs mercado", "P/FCF normalizado")
 
     # posición en rango 52 semanas
     h52, l52 = km.get("price_52w_high"), km.get("price_52w_low")
@@ -691,9 +693,11 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
                      and f.get("rule") == "multiplo_no_significativo"), None)
     _pe_in = km.get("pe") if km.get("pe") is not None or not _pe_flag else _pe_flag.get("old")
     r_pe = read_pe(_pe_in, sector_bench.get("pe"), km.get("roic_wacc_spread"), ref=_ref)
-    _th = SECTOR_THRESHOLDS.get((analysis.get("sector_info") or {}).get("mapped_sector") or "default",
-                                ThresholdConfig())   # bandas sectoriales del score (ROE, D/E)
-    r_roe = read_roe(km.get("roe"), km.get("roa"), _th)
+    # Bandas del score (ROE, D/E): las del sector o, con el perfil market, las del mercado.
+    _th = SECTOR_THRESHOLDS.get(_vb.get("thresholds_key")
+                                or (analysis.get("sector_info") or {}).get("mapped_sector") or "default",
+                                ThresholdConfig())
+    r_roe = read_roe(km.get("roe"), km.get("roa"), _th, market=_mkt)
     r_spread = read_spread(km.get("roic_wacc_spread"), km.get("roic"), km.get("wacc"))
     r_up = read_upside(dcf.get("upside"))
     # Etapa 8: fiabilidad del DCF. Con fiabilidad baja la lectura lo dice y el DCF
@@ -713,7 +717,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     r_rw = read_runway(_rw)
     # D/E contable sin lectura en financieras (los depósitos son pasivo): decisión
     # de la etapa 4. La celda muestra "—" y DE_NOT_APPLICABLE.
-    r_de = None if is_financial else read_de(km.get("de"), _th.debt_equity_high, km.get("interest_coverage"))
+    r_de = None if is_financial else read_de(km.get("de"), _th.debt_equity_high, km.get("interest_coverage"), market=_mkt)
     ic_state = km.get("interest_coverage_state")
     r_ic = read_coverage(km.get("interest_coverage"), ic_state)
     nde_state = km.get("net_debt_to_ebitda_state")
@@ -966,6 +970,11 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
                    (fv(km.get("net_margin"), "pct"), "Margen neto"), (fv(km.get("fcf_yield"), "pct"), "FCF yield"),
                    (fv(km.get("net_debt_to_ebitda"), "mult"), "Deuda neta/EBITDA"), (fv(km.get("beta"), "num"), "Beta")]
     _kpis = _k_common + _k_arch
+    # Etapa 9a: la portada muestra las cifras REPORTADAS; si el score usa el beneficio
+    # normalizado, lo dice la etiqueta (el normalizado va en el desglose, etiquetado).
+    if (analysis.get("earnings_normalization") or {}).get("used_in_score"):
+        _rep = {"P/E (TTM)": "P/E reportado (TTM)", "ROE": "ROE reportado", "Margen neto": "Margen neto reportado"}
+        _kpis = [(v, _rep.get(l, l)) for v, l in _kpis]
 
     def _krow(items):
         t = Table([[_kpi_card(v, l, _kw) for v, l in items]], colWidths=[CW / 4.0] * 4)
@@ -991,7 +1000,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     _watch = _R[0] if _R else (_W[0] if _W else None)
     _hl_watch = _watch["reason"] if _watch else "Sin alertas relevantes"
     _hl_wtone = 'neg' if _R else ('warn' if _W else 'pos')
-    # Tercera card = PRECIO (dónde cotiza en su rango) — sin solaparse con "A vigilar".
+    # Tercera card = CONTEXTO (posición en el rango de 52 semanas, sin juicio de precio).
     if r_52:
         _hl_val, _hl_vtone = r_52[0], r_52[1]
     elif r_up:
@@ -1002,7 +1011,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     hl_row = Table([[
         _hl_card("FORTALEZA CLAVE", _hl_pos, 'pos', _hlw),
         _hl_card("A VIGILAR", _hl_watch, _hl_wtone, _hlw),
-        _hl_card("PRECIO · 52 SEM.", _hl_val, _hl_vtone, _hlw),
+        _hl_card("CONTEXTO · 52 SEM." if r_52 else "PRECIO", _hl_val, _hl_vtone, _hlw),
     ]], colWidths=[CW / 3.0] * 3)
     hl_row.setStyle(TableStyle([
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
@@ -1160,7 +1169,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     _branch_val = next((a for a in (breakdown.get("Valoración") or {}).get("adjustments") or []
                         if a.get("metric") in _branch_metrics), None)
     if _r_val is None and _branch_val:
-        _r_val = (None, None, f"{_branch_val['metric'].replace(' vs Sector', '')}: {_branch_val['reason']}")
+        _r_val = (None, None, f"{_branch_val['metric'].replace(' vs Sector', '').replace(' vs mercado', '')}: {_branch_val['reason']}")
     _val = (_cap(_r_val[2]) + (" " + _cap(r_up[2]) if r_up else "")) if _r_val else (_cap(r_up[2]) if r_up else "")
     if _val.strip():
         exec_items.append(("ATRACTIVO DEL PRECIO", _esc(_val)))
@@ -1214,9 +1223,10 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
             _qrows.append(_bar_row(n, c.get("score", 0), c.get("max", 20)))
     _prows = [_head("ATRACTIVO DEL PRECIO", p_score, p_level, p_tone, _price_note)]
     for adj in (breakdown.get("Valoración") or {}).get("adjustments") or []:
-        if adj.get("metric") in ("No aplica", "Cobertura") or not isinstance(adj.get("adjustment"), int):
+        if adj.get("metric") in ("No aplica", "Cobertura") or not isinstance(adj.get("adjustment"), int) \
+                or adj.get("in_block"):     # los miembros del bloque puntúan a través del bloque
             continue
-        _prows.append(_bar_row(f"{adj['metric'].replace(' vs Sector', '')} · {adj.get('value', '')}",
+        _prows.append(_bar_row(f"{adj['metric'].replace(' vs Sector', '').replace(' vs mercado', '')} · {adj.get('value', '')}",
                                adj["adjustment"], None, signed=True))
 
     def _comp_tbl(rows):
@@ -1231,7 +1241,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
                    ParagraphStyle('rbt', leading=10)), ""],
         [_comp_tbl(_qrows), _comp_tbl(_prows)],
         [Paragraph("<font size='7.4' color='#9a9aa0'>Calidad: categorías 0–20 reescaladas a 100. Precio: Valoración "
-                   "(base 10/20 + ajustes de múltiplos y DCF) reescalada a 100 y contraída hacia 50 según la "
+                   "(base 10/20 + bloque de múltiplos y DCF) reescalada a 100 y contraída hacia 50 según la "
                    f"confianza.</font><br/><font size='8.5'>{_bal_line}</font>",
                    ParagraphStyle('rbc', leading=11)), ""],
     ], colWidths=[_halfw + 9, _halfw + 9])
@@ -1349,7 +1359,8 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     for adj in (breakdown.get("Valoración") or {}).get("adjustments") or []:
         if adj.get("metric") in _branch_metrics:
             lab_r, tone_r = _sev_read.get(adj.get("severity"), ("—", 'neu'))
-            rows.append([adj["metric"].replace(" vs Sector", ""), str(adj.get("value", "")), "—", "—", lab_r])
+            rows.append([adj["metric"].replace(" vs Sector", "").replace(" vs mercado", ""), str(adj.get("value", "")),
+                         "—", "—", lab_r])
             reads.append((len(rows) - 1, tone_r))
     if norm.get("pe_unreliable") and norm.get("pe_normalized") is not None and "pe" not in _na_keys:
         rows.append(["P/E normalizado", fv(norm["pe_normalized"], "mult"), "—", "—", "Sin no recurrentes"])
@@ -1360,7 +1371,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     if _mkt:
         _src = "; ".join(f"{k.replace('_', '/').upper()}: {v}" for k, v in (_vb.get("sources") or {}).items())
         story.append(Paragraph(_esc(
-            f"Referencia de los múltiplos: medianas del mercado amplio (S&P 500), no las del sector "
+            f"Referencia: medianas y umbrales del mercado amplio (S&P 500), no los del sector "
             f"({_vb.get('reason')}). PROVISIONALES. Fuentes: {_src}. El resto de referencias de la columna "
             "MERCADO (Forward P/E, P/B, PEG, P/FCF, FCF yield, rentabilidad y márgenes) son la referencia general "
             "PROVISIONAL, fijada a mano y sin fuente, no medianas del S&P 500."), S['small']))
@@ -1752,15 +1763,15 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
             f"{_evr['revenue_growth'] * 100:+.1f}% (los crecimientos que puntúa Crecimiento): {_evr['reading']}. "
             "Dato informativo, no puntúa: Crecimiento ya puntúa el BPA y los ingresos por separado."), S['small']))
 
-    # Rango 52 semanas con barra de ZONAS en curva de riesgo (U)
+    # Rango 52 semanas: posición del precio (contexto de mercado, etapa 9a)
     if pos52 is not None:
         story.append(Spacer(1, 10))
         story.append(Paragraph("Rango de precio · 52 semanas", S['h2']))
-        # Etiqueta de EJE: es una señal de PRECIO (¿cara o barata?), no de calidad.
+        # Etiqueta de EJE: es CONTEXTO (posición), ni precio (cara/barata) ni calidad.
         story.append(Paragraph(
-            f"<font color='{BRAND_TXT.hexval()}'><b>PRECIO</b></font>"
-            f"&nbsp;&nbsp;·&nbsp;&nbsp;¿Cara o barata hoy? Muestra dónde cotiza el precio dentro de su "
-            f"rango anual — una señal de precio, no de la calidad del negocio.",
+            f"<font color='{MUTED.hexval()}'><b>CONTEXTO</b></font>"
+            f"&nbsp;&nbsp;·&nbsp;&nbsp;Muestra dónde cotiza el precio dentro de su rango anual. Es contexto de "
+            f"mercado: no es una señal de valoración ni mide la calidad del negocio.",
             ParagraphStyle('praxis', parent=S['small'], spaceAfter=4)))
         if r_52:
             story.append(Paragraph(_join_sentences([r_52[2]]), S['body']))
@@ -1780,7 +1791,8 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
                 + (f"&nbsp;&nbsp;<font color='{TONE_COLOR[r_52[1]].hexval()}'><b>{_esc(r_52[0])}</b></font>" if r_52 else ""))
         story.append(Paragraph(_z52, ParagraphStyle('rngc', parent=S['small'], alignment=TA_CENTER, spaceBefore=4)))
         story.append(Paragraph(
-            "Zonas: los dos extremos (mínimos y máximos) son señales de alerta; el centro es la zona saludable.",
+            "Tramos: mínimos, parte baja, zona media, parte alta y máximos. Es contexto de mercado: la posición en "
+            "el rango no es una señal de valoración.",
             ParagraphStyle('rngz', parent=S['small'], alignment=TA_CENTER, textColor=FAINT, fontSize=6.8, spaceBefore=1)))
 
     # Evolución histórica anual (si está disponible)
@@ -1940,7 +1952,10 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
             "Cada categoría parte de una base neutral de 10/20. La columna Ajuste muestra cuánto suma o "
             "resta cada indicador según la banda en la que cae. Solidez, Rentabilidad, Calidad de ganancias y "
             "Crecimiento forman la calidad del negocio; Valoración, el atractivo del precio. Las categorías no "
-            "concluyentes se excluyen y cada puntuación se reescala a 100 sobre las demás."
+            "concluyentes se excluyen y cada puntuación se reescala a 100 sobre las demás. En Valoración, P/E, "
+            "Forward P/E, P/FCF, EV/EBITDA y PEG forman un solo bloque: su ajuste individual se muestra entre "
+            "paréntesis y puntúa a través del Bloque de múltiplos (promedio normalizado, máximo ±"
+            f"{cfg('thresholds.score.valoracion.multiples_block_max')})."
             + (f" {_esc(' · '.join(_cover_notes))}." if _cover_notes else ""), S['small']))
         story.append(Spacer(1, 4))
 
@@ -1998,6 +2013,9 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
                 sign = f"+{a}" if a > 0 else str(a)
                 if adj.get("metric") == "No aplica":
                     sign, tone_a = "n/a", 'neu'
+                elif adj.get("in_block"):
+                    # Lectura individual; puntúa a través del "Bloque de múltiplos".
+                    sign, tone_a = f"({sign})", 'neu'
                 val = adj.get("value", "")
                 bd_rows.append([
                     Paragraph(f"{_esc(adj.get('metric', ''))}"
@@ -2055,7 +2073,8 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         "dos puntuaciones Finanzer de 0 a 100: calidad del negocio (solidez, rentabilidad, calidad de ganancias y "
         "crecimiento) y atractivo del precio (valoración por múltiplos y DCF, contraída hacia 50 según la confianza "
         "del veredicto). Las lecturas se generan automáticamente según "
-        "la banda en la que cae cada indicador frente a umbrales canónicos y a la mediana de su sector.",
+        "la banda en la que cae cada indicador frente a umbrales canónicos y a la mediana de su sector (o del "
+        "mercado amplio cuando el arquetipo de la empresa contradice a su sector).",
         ParagraphStyle('meth', parent=S['small'], leading=10.5)))
     story.append(Spacer(1, 4))
     story.append(Paragraph(

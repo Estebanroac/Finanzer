@@ -218,7 +218,7 @@ EXPECTED_FULL = {
   "cats": {
    "Solidez Financiera": 20,
    "Rentabilidad": 20,
-   "Valoración": 14,
+   "Valoración": 11,
    "Calidad de Ganancias": 20,
    "Crecimiento": 18
   }
@@ -228,7 +228,7 @@ EXPECTED_FULL = {
   "cats": {
    "Solidez Financiera": 0,
    "Rentabilidad": 0,
-   "Valoración": 0,
+   "Valoración": 5,
    "Calidad de Ganancias": 0,
    "Crecimiento": 0
   }
@@ -277,7 +277,9 @@ def _cats(res):
 def test_full_data_gives_exactly_the_previous_score(case):
     """MATURE con todos los datos: categorías idénticas a antes de la etapa 5 (y de la 6).
     Etapa 9a: sin total único; calidad = 4 categorías y precio = Valoración, a 100.
-    tech_full: Valoración 20 -> 14 a propósito (sin bandas growth ni bono GARP)."""
+    tech_full: Valoración 20 -> 14 a propósito (sin bandas growth ni bono GARP) y 14 -> 11 con el
+    bloque de múltiplos; weak_full: 0 -> 5 (el bloque acota a -6 los múltiplos correlacionados, que antes
+    se sumaban)."""
     r, c, kw = CASES[case]
     res = calculate_score_v2(r, c, **kw)
     assert res["archetype"] == "MATURE"
