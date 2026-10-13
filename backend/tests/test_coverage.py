@@ -92,6 +92,9 @@ def test_main_reads_structured_state_not_symbol(outputs_by_env):
                 assert c["passed"] == (c["state"] == "cumple")
             n_eval = sum(1 for c in pf["details"].values() if c["state"] != "sin_dato")
             assert pf["evaluated"] == n_eval
+            if pf.get("applicable") is False:   # etapa 9b: sin puntuación cuando no aplica
+                assert pf["score"] is None and pf["scaled_score"] is None
+                continue
             assert pf["score"] == sum(1 for c in pf["details"].values() if c["state"] == "cumple")
 
 

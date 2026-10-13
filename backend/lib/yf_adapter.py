@@ -896,6 +896,7 @@ def _enrich_prior_year_data(symbol: str, info: Dict[str, Any]) -> Dict[str, Any]
     info["_statements_fy"] = {
         "inc_years": _years(inc), "bs_years": _years(bs), "cf_years": _years(cf),
         "revenue": _row(inc, "Total Revenue"),
+        "gross_profit": _row(inc, "Gross Profit"),   # etapa 9b: margen bruto en el histórico
         "net_income": _row(inc, "Net Income"),
         "diluted_eps": _row(inc, "Diluted EPS"),   # etapa 9a: CAGR 3 años del BPA
         "ordinary_shares": _row(bs, "Ordinary Shares Number"),

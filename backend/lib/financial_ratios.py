@@ -639,284 +639,6 @@ def _pts_str(v: int) -> str:
     return "0" if v == 0 else f"{v:+d}"
 
 
-def classify_company_type(
-    revenue_growth_3y: Optional[float],
-    eps_growth_3y: Optional[float],
-    pe: Optional[float],
-    sector_pe: Optional[float],
-    dividend_yield: Optional[float],
-    fcf_yield: Optional[float],
-    roe: Optional[float]
-) -> Dict[str, Any]:
-    """
-    Clasifica una empresa en categorías de inversión.
-    
-    Tipos:
-        - "deep_value": P/E muy bajo, fundamentos sólidos
-        - "value": P/E bajo, crecimiento moderado
-        - "garp": Growth at Reasonable Price (crecimiento + valoración razonable)
-        - "growth": Alto crecimiento, múltiplos elevados justificados
-        - "speculative_growth": Alto crecimiento pero fundamentos débiles
-        - "dividend": Foco en dividendos
-        - "blend": No encaja claramente en ninguna categoría
-    
-    Returns:
-        Dict con tipo, confianza, y razones
-    """
-    scores = {
-        "deep_value": 0,
-        "value": 0,
-        "garp": 0,
-        "growth": 0,
-        "speculative_growth": 0,
-        "dividend": 0
-    }
-    reasons = []
-    
-    T = _SC["company_type"]
-
-    def vote(table):
-        for k, v in table.items():
-            scores[k] += v
-
-    # Evaluar métricas de crecimiento
-    has_strong_growth = False
-    has_quality_growth = False
-    
-    if revenue_growth_3y is not None:
-        b = T["revenue_bounds"]
-        if revenue_growth_3y >= b[0]:
-            vote(T["revenue_votes_0"])
-            has_strong_growth = True
-            reasons.append(f"Revenue growth {revenue_growth_3y:.0%}")
-        elif revenue_growth_3y >= b[1]:
-            vote(T["revenue_votes_1"])
-            has_strong_growth = True
-        elif revenue_growth_3y >= b[2]:
-            vote(T["revenue_votes_2"])
-        elif growth_for_bands(revenue_growth_3y) < 0:
-            vote(T["revenue_votes_negative"])
-    
-    if eps_growth_3y is not None:
-        b = T["eps_bounds"]
-        if eps_growth_3y >= b[0]:
-            vote(T["eps_votes_0"])
-            has_quality_growth = True
-        elif eps_growth_3y >= b[1]:
-            vote(T["eps_votes_1"])
-    
-    # Evaluar valoración
-    if pe is not None and pe > 0:
-        pe_threshold = sector_pe if sector_pe and sector_pe > 0 else _BENCH_FALLBACK["pe"]
-        pe_ratio_to_sector = pe / pe_threshold
-        b = T["pe_to_sector_bounds"]
-        if pe_ratio_to_sector <= b[0]:
-            vote(T["pe_votes_0"])
-            reasons.append(f"P/E muy bajo vs sector")
-        elif pe_ratio_to_sector <= b[1]:
-            vote(T["pe_votes_1"])
-        elif pe_ratio_to_sector <= b[2]:
-            vote(T["pe_votes_2"])
-        elif pe_ratio_to_sector <= b[3]:
-            vote(T["pe_votes_3"])
-        else:
-            vote(T["pe_votes_4"])
-            reasons.append(f"P/E elevado ({pe:.0f}x)")
-    
-    # Evaluar calidad (ROE)
-    if roe is not None:
-        b = T["roe_bounds"]
-        if roe >= b[0]:
-            vote(T["roe_votes_0"])
-            has_quality_growth = True
-            reasons.append(f"ROE excepcional {roe:.0%}")
-        elif roe >= b[1]:
-            vote(T["roe_votes_1"])
-        elif roe < b[2]:
-            vote(T["roe_votes_low"])
-    
-    # Evaluar dividendos
-    if dividend_yield is not None:
-        b = T["dividend_yield_bounds"]
-        if dividend_yield >= b[0]:
-            vote(T["dividend_votes_0"])
-            reasons.append(f"Alto dividendo {dividend_yield:.1%}")
-        elif dividend_yield >= b[1]:
-            vote(T["dividend_votes_1"])
-    
-    # FCF Yield (indicador de value)
-    if fcf_yield is not None:
-        b = T["fcf_yield_bounds"]
-        if fcf_yield >= b[0]:
-            vote(T["fcf_yield_votes_0"])
-        elif fcf_yield >= b[1]:
-            vote(T["fcf_yield_votes_1"])
-    
-    # Determinar tipo ganador
-    best_type = max(scores, key=scores.get)
-    best_score = scores[best_type]
-    
-    # Si hay crecimiento fuerte + calidad, es GARP o Growth legítimo
-    if has_strong_growth and has_quality_growth:
-        if scores["garp"] >= scores["growth"] - T["garp_tiebreak_margin"]:
-            best_type = "garp"
-        else:
-            best_type = "growth"
-        # Reducir speculative si hay calidad
-        scores["speculative_growth"] = max(0, scores["speculative_growth"] - T["speculative_reduction"])
-    
-    # Calcular confianza
-    total_score = sum(scores.values())
-    confidence = best_score / max(total_score, 1)
-    
-    # Si la confianza es baja, es blend
-    if confidence < T["blend_max_confidence"] or best_score < T["blend_min_votes"]:
-        best_type = "blend"
-        confidence = T["blend_confidence"]
-    
-    return {
-        "type": best_type,
-        "confidence": round(confidence, 2),
-        "scores": scores,
-        "reasons": reasons,
-        "has_quality_growth": has_quality_growth
-    }
-
-
-def calculate_growth_quality_score(
-    revenue_growth_3y: Optional[float],
-    eps_growth_3y: Optional[float],
-    fcf_growth_3y: Optional[float],
-    roe: Optional[float],
-    roic: Optional[float],
-    operating_margin: Optional[float],
-    fcf_to_net_income: Optional[float]
-) -> Dict[str, Any]:
-    """
-    Calcula un score de calidad del crecimiento (0-100).
-    
-    Un crecimiento de calidad tiene:
-    - Crecimiento de revenue sostenido
-    - EPS creciendo igual o más que revenue (expansión de márgenes)
-    - FCF positivo y creciente
-    - ROE/ROIC altos
-    - Buenos márgenes operativos
-    
-    Returns:
-        Dict con score, nivel, y breakdown
-    """
-    T = _SC["growth_quality"]
-    score = T["base"]  # Base neutral
-    breakdown = []
-    
-    # 1. Crecimiento de Revenue (hasta ±15 pts)
-    if revenue_growth_3y is not None:
-        b, p = T["revenue_bounds"], T["revenue_points"]
-        if revenue_growth_3y >= b[0]:
-            score += p[0]
-            breakdown.append(("Revenue Growth", _pts_str(p[0]), "Excepcional"))
-        elif revenue_growth_3y >= b[1]:
-            score += p[1]
-            breakdown.append(("Revenue Growth", _pts_str(p[1]), "Fuerte"))
-        elif revenue_growth_3y >= b[2]:
-            score += p[2]
-            breakdown.append(("Revenue Growth", _pts_str(p[2]), "Sólido"))
-        elif growth_for_bands(revenue_growth_3y) >= 0:
-            score += p[3]
-            breakdown.append(("Revenue Growth", _pts_str(p[3]), "Estable"))
-        else:
-            score += p[4]
-            breakdown.append(("Revenue Growth", _pts_str(p[4]), "Contracción"))
-    
-    # 2. EPS vs Revenue growth (hasta ±10 pts)
-    if eps_growth_3y is not None and revenue_growth_3y is not None:
-        m, p = T["eps_vs_revenue_mults"], T["eps_vs_revenue_points"]
-        if eps_growth_3y > revenue_growth_3y * m[0]:
-            score += p[0]
-            breakdown.append(("EPS vs Revenue", _pts_str(p[0]), "Expansión de márgenes"))
-        elif eps_growth_3y >= revenue_growth_3y:
-            score += p[1]
-            breakdown.append(("EPS vs Revenue", _pts_str(p[1]), "Márgenes estables"))
-        elif eps_growth_3y >= revenue_growth_3y * m[1]:
-            score += p[2]
-            breakdown.append(("EPS vs Revenue", _pts_str(p[2]), "Compresión leve"))
-        else:
-            score += p[3]
-            breakdown.append(("EPS vs Revenue", _pts_str(p[3]), "Compresión severa"))
-    
-    # 3. FCF Growth (hasta ±10 pts)
-    if fcf_growth_3y is not None:
-        b, p = T["fcf_bounds"], T["fcf_points"]
-        if fcf_growth_3y >= b[0]:
-            score += p[0]
-            breakdown.append(("FCF Growth", _pts_str(p[0]), "Excelente"))
-        elif fcf_growth_3y >= b[1]:
-            score += p[1]
-            breakdown.append(("FCF Growth", _pts_str(p[1]), "Positivo"))
-        elif growth_for_bands(fcf_growth_3y) >= 0:
-            score += p[2]
-            breakdown.append(("FCF Growth", _pts_str(p[2]), "Estable"))
-        else:
-            score += p[3]
-            breakdown.append(("FCF Growth", _pts_str(p[3]), "Negativo"))
-    
-    # 4. ROE/ROIC - Calidad del capital (hasta ±10 pts)
-    best_return = max(filter(None, [roe, roic]), default=None)
-    if best_return is not None:
-        b, p = T["return_bounds"], T["return_points"]
-        if best_return >= b[0]:
-            score += p[0]
-            breakdown.append(("Return on Capital", _pts_str(p[0]), "Excepcional"))
-        elif best_return >= b[1]:
-            score += p[1]
-            breakdown.append(("Return on Capital", _pts_str(p[1]), "Bueno"))
-        elif best_return >= b[2]:
-            score += p[2]
-            breakdown.append(("Return on Capital", _pts_str(p[2]), "Aceptable"))
-        else:
-            score += p[3]
-            breakdown.append(("Return on Capital", _pts_str(p[3]), "Bajo"))
-    
-    # 5. Margen operativo (hasta ±5 pts)
-    if operating_margin is not None:
-        b, p = T["operating_margin_bounds"], T["operating_margin_points"]
-        if operating_margin >= b[0]:
-            score += p[0]
-            breakdown.append(("Op. Margin", _pts_str(p[0]), "Muy alto"))
-        elif operating_margin >= b[1]:
-            score += p[1]
-            breakdown.append(("Op. Margin", _pts_str(p[1]), "Saludable"))
-        elif operating_margin < b[2]:
-            score += p[2]
-            breakdown.append(("Op. Margin", _pts_str(p[2]), "Bajo"))
-    
-    # Normalizar a 0-100
-    score = max(T["min"], min(T["max"], score))
-    
-    # Determinar nivel
-    lv = T["level_bands"]
-    if score >= lv[0]:
-        level = "exceptional"
-        label = "Crecimiento Excepcional"
-    elif score >= lv[1]:
-        level = "high_quality"
-        label = "Alta Calidad"
-    elif score >= lv[2]:
-        level = "moderate"
-        label = "Calidad Moderada"
-    elif score >= lv[3]:
-        level = "low_quality"
-        label = "Baja Calidad"
-    else:
-        level = "poor"
-        label = "Crecimiento Pobre"
-    
-    return {
-        "score": score,
-        "level": level,
-        "label": label,
-        "breakdown": breakdown
-    }
 
 
 _TD = cfg("sectors.score_thresholds.default")
@@ -2707,31 +2429,8 @@ def score_valoracion(
         ev_ebitda = xv.get("ev_ebitda_normalized")
         p_fcf = xv.get("p_fcf_normalized")
 
-    # Calcular calidad del crecimiento y tipo de empresa
-    growth_quality = calculate_growth_quality_score(
-        revenue_growth_3y=revenue_growth_3y,
-        eps_growth_3y=eps_growth_3y,
-        fcf_growth_3y=fcf_growth_3y,
-        roe=roe,
-        roic=roic,
-        operating_margin=operating_margin,
-        fcf_to_net_income=None
-    )
-
-    company_profile = classify_company_type(
-        revenue_growth_3y=revenue_growth_3y,
-        eps_growth_3y=eps_growth_3y,
-        pe=pe,
-        sector_pe=sector_pe,
-        dividend_yield=dividend_yield,
-        fcf_yield=fcf_yield,
-        roe=roe
-    )
-
-    growth_quality_score = growth_quality["score"]
-    company_type = company_profile["type"]
-    # company_type y growth_quality_score son informativos (perfil de la empresa):
-    # desde la etapa 9a no modifican el atractivo del precio.
+    # Etapa 9b: sin tipo de empresa ni "growth quality" (growth/value/blend): el
+    # arquetipo del clasificador único los reemplaza.
 
 
     # ─── REIT: P/FFO en lugar de P/E y P/FCF (hasta ±4 pts) ────
@@ -3048,9 +2747,6 @@ def score_valoracion(
         "adjustments": adjustments,
         "total_adjustment": final_score - _CAT["base"],
         "coverage": cov.report(),
-        "company_type": company_type,
-        "growth_quality_score": growth_quality_score,
-        "growth_quality_label": growth_quality["label"],
         "multiples_signal": _mult_signal,
     }
 
@@ -3363,7 +3059,6 @@ def score_crecimiento(
     revenue_growth_3y: Optional[float],
     eps_growth_3y: Optional[float],
     fcf_growth_3y: Optional[float],
-    is_growth_company: bool = False,
     fcf_growth_reason: Optional[str] = None,
     fcf_sustained_negative: bool = False,
     archetype: Optional[str] = None,
@@ -3560,10 +3255,6 @@ def calculate_score_v2(
     thresholds = SECTOR_THRESHOLDS.get(sector_key, ThresholdConfig())
     _market = sector_key == "market"
     
-    # Determinar si es growth company
-    revenue_growth = contextual_values.get("revenue_cagr_3y")
-    is_growth = revenue_growth is not None and revenue_growth > _SC["total"]["growth_company_min_revenue_cagr"]
-    
     # =====================================================
     # Etapa 6: el arquetipo (clasificador único) decide la rama; ya no se
     # detecta aquí "es financiera" por el nombre del sector.
@@ -3691,7 +3382,6 @@ def calculate_score_v2(
         revenue_growth_3y=contextual_values.get("revenue_cagr_3y"),
         eps_growth_3y=contextual_values.get("eps_cagr_3y"),
         fcf_growth_3y=contextual_values.get("fcf_cagr_3y"),
-        is_growth_company=is_growth,
         fcf_growth_reason=contextual_values.get("fcf_cagr_3y_reason"),
         fcf_sustained_negative=bool(contextual_values.get("fcf_cagr_3y_sustained_negative")),
         archetype=archetype,
@@ -3726,10 +3416,6 @@ def calculate_score_v2(
     quality_part = _quality(categories)
     price_part = part_score(categories, cfg("thresholds.score.price.categories"))
 
-    # v2.2: Extraer información del perfil de la empresa
-    company_type = valoracion.get("company_type", "blend")
-    growth_quality = valoracion.get("growth_quality_score", _SC["total"]["growth_quality_default"])
-    
     result = {
         "quality": quality_part,
         "price_raw": price_part,
@@ -3743,15 +3429,11 @@ def calculate_score_v2(
             "calidad": calidad["score"],
             "crecimiento": crecimiento["score"]
         },
-        "is_growth_company": is_growth,
         "excluded_categories": [cat["category"] for cat in categories if cat["applicable"] and not cat["conclusive"]],
         "not_applicable_categories": [cat["category"] for cat in categories if not cat["applicable"]],
         "score_conclusive": bool(included),
         "categories_included": len(included),
         "categories_total": len(categories),
-        # Nuevos campos v2.2
-        "company_type": company_type,
-        "growth_quality_score": growth_quality,
         # v2.3: Campos para sector financiero
         "is_financial_sector": is_financial,
         "archetype": archetype,

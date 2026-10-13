@@ -591,6 +591,9 @@ def _compute_analysis(symbol: str) -> dict:
                 fcf_is_ttm="freeCashflow" in (_ttm_i.get("ttm_fields") or []),
                 sbc_ttm=safe_float(yinfo.get("stockBasedCompensation")) if _has_yahoo else None, st=_stmts)
             result["sbc"] = {k: (safe_float(v) if isinstance(v, float) else v) for k, v in sbc_info.items()}
+            # Etapa 9b: histórico anual (dato bruto, pestaña Histórico de la web).
+            result["yearly_financials"] = [{k: (safe_float(v) if isinstance(v, float) else v) for k, v in r_.items()}
+                                           for r_ in archetype_metrics.yearly_financials(_stmts, archetype)]
             archetype_values = archetype_metrics.compute(
                 archetype, _stmts, result["key_metrics"], beta=safe_float(financials.beta),
                 revenue_cagr_3y=classification["inputs"].get("revenue_cagr_3y"), rf=rf_info["value"],
@@ -835,14 +838,6 @@ def _compute_analysis(symbol: str) -> dict:
             # block below, so it can feed the Altman Z-Score and Piotroski
             # F-Score into the solidez/calidad categories (see "Score (0-100)").
 
-            # Company type: NO se calcula aquí. classify_company_type y
-            # detect_growth_company requieren múltiples argumentos posicionales;
-            # llamarlas con un solo dict lanzaba TypeError (tragado por el
-            # except), dejando company_type='balanced' e is_growth=False para
-            # TODA empresa. calculate_score_v2 ya computa ambos correctamente y
-            # se copian tras el bloque de score (ver "Score (0-100)").
-            result["company_type"] = "balanced"
-            result["is_growth"] = False
 
             # Institutional metrics — use prior-year data from Yahoo API
             # Defaults so the score block below can reference these even if the
@@ -894,12 +889,12 @@ def _compute_analysis(symbol: str) -> dict:
                     not_applicable_reason=not_applicable(archetype, "altman"),
                 )
                 result["altman_z"] = {
-                    "z_score": z_val if z_val is not None else 0,
+                    # Etapa 9b: null sin dato o cuando no aplica (nunca un z = 0).
+                    "z_score": z_val if (z_val is not None and not not_applicable(archetype, "altman")) else None,
                     "zone": z_zone.lower() if z_zone else "grey",
                     "interpretation": z_interp,
                     "model": z_details.get("model", ""),
                     "details": z_details,
-                    # Etapa 5: z_score 0 se conserva por contrato, pero NO es un dato:
                     # available=False indica "sin dato" (motivo en details.missing).
                     "available": z_val is not None,
                     "applicable": not not_applicable(archetype, "altman"),
@@ -966,14 +961,15 @@ def _compute_analysis(symbol: str) -> dict:
                 if _pio_na:
                     f_level, f_interp, f_score = "No aplica", _pio_na, None
                 result["piotroski_f"] = {
-                    "score": _pio["score"], "max_score": _pio["max_score"], "level": f_level,
+                    # Etapa 9b: null cuando no aplica (FINANCIAL, REIT).
+                    "score": None if _pio_na else _pio["score"], "max_score": _pio["max_score"], "level": f_level,
                     "interpretation": f_interp,
                     "applicable": not _pio_na,
                     "details": f_criteria,
                     "fiscal_year": fy_label,
                     # Cobertura (etapa 5): "X/N evaluados" y el escalado a base 9.
                     "evaluated": _pio["evaluated"],
-                    "scaled_score": safe_float(_pio["scaled_score"]),
+                    "scaled_score": None if _pio_na else safe_float(_pio["scaled_score"]),
                     "conclusive": _pio["conclusive"],
                 }
 
@@ -1256,11 +1252,6 @@ def _compute_analysis(symbol: str) -> dict:
                 if isinstance(score_result, dict) and score_result.get("financial_health"):
                     result["financial_health"] = score_result["financial_health"]
 
-                # Perfil de empresa: única fuente de verdad = el score v2 (los
-                # helpers directos lanzaban TypeError, ver "Company type" arriba).
-                if isinstance(score_result, dict):
-                    result["company_type"] = score_result.get("company_type", "balanced")
-                    result["is_growth"] = bool(score_result.get("is_growth_company", False))
             except Exception as e:
                 logger.error(f"Score calculation error: {e}")
                 result["score"] = None
@@ -1279,7 +1270,6 @@ def _compute_analysis(symbol: str) -> dict:
                     altman=result.get("altman_z"),
                     piotroski=result.get("piotroski_f"),
                     dcf=result.get("dcf"),
-                    is_growth=result.get("is_growth", False),
                     archetype=archetype,
                     archetype_values=archetype_values,
                 )
@@ -1298,20 +1288,8 @@ def _compute_analysis(symbol: str) -> dict:
             except Exception as e:
                 _sin_dato("price_history", e)
 
-            # Yearly financials (for historical trends chart)
-            try:
-                yearly = yinfo.get("_yearly_financials", []) if _has_yahoo else []
-                if yearly:
-                    result["yearly_financials"] = [
-                        {
-                            "year": y.get("year"),
-                            "revenue": safe_float(y.get("revenue")),
-                            "earnings": safe_float(y.get("earnings")),
-                        }
-                        for y in yearly if y.get("year")
-                    ]
-            except Exception as e:
-                _sin_dato("yearly_financials", e)
+            # Etapa 9b: yearly_financials sale de los estados anuales (archetype_metrics.yearly_financials),
+            # los mismos de los CAGR; ya no del módulo earnings de quoteSummary (solo local).
 
         # Validación de salida: múltiplos <= 0 -> "no significativo". Va al
         # final para no alterar las entradas del score ni de las alertas.

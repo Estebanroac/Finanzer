@@ -53,7 +53,7 @@ class Ctx:
 
     def __init__(self, ratios, contextual, *, sector, real_sector,
                  roic_wacc_spread=None, altman=None, piotroski=None, dcf=None,
-                 is_growth=False, archetype=MATURE, archetype_values=None):
+                 archetype=MATURE, archetype_values=None):
         self.r = ratios or {}
         self.c = contextual or {}
         self.sector = sector or "default"
@@ -70,7 +70,6 @@ class Ctx:
         self.archetype = archetype or MATURE
         self.xv = archetype_values or {}
         self.is_financial = self.archetype == FINANCIAL
-        self.is_growth = bool(is_growth)
         self.spread = roic_wacc_spread
         self.altman = altman or {}
         self.piotroski = piotroski or {}
@@ -483,12 +482,12 @@ def _fcf(ctx: Ctx):
     neg_years = ctx.c.get("fcf_trend_negative_years")
     T = _A["fcf"]
     if neg_years is not None and neg_years >= T["recurrent_negative_years"]:
-        note = "" if ctx.is_growth else " Si no es una fase de inversión deliberada, compromete la autofinanciación."
+        note = "" if ctx.archetype == GROWTH_PRE_PROFIT else " Si no es una fase de inversión deliberada, compromete la autofinanciación."
         return _sig("risk", "Flujo de caja", f"Quema de caja recurrente — {neg_years} años",
                     f"La empresa lleva {neg_years} años consecutivos con flujo de caja libre negativo: consume más efectivo "
                     f"del que genera.{note}", T["w_recurrent"])
     if fcf is not None and fcf < 0:
-        if ctx.is_growth:
+        if ctx.archetype == GROWTH_PRE_PROFIT:   # etapa 9b: el arquetipo, no la etiqueta "growth"
             return _sig("warning", "Flujo de caja", "Flujo de caja libre negativo",
                         "La empresa quema caja, algo esperable en una fase de fuerte inversión para crecer; la clave es que "
                         "esa inversión se traduzca en ingresos y márgenes futuros.", T["w_negative_growth"])
@@ -650,7 +649,7 @@ def build_signals(ratios: Dict[str, Any], contextual: Dict[str, Any], *,
                   sector: str = "default", real_sector: str = "",
                   roic_wacc_spread: Optional[float] = None,
                   altman: Optional[dict] = None, piotroski: Optional[dict] = None,
-                  dcf: Optional[dict] = None, is_growth: bool = False,
+                  dcf: Optional[dict] = None,
                   archetype: str = MATURE, archetype_values: Optional[dict] = None) -> Dict[str, List[dict]]:
     """Ejecuta todos los interpretadores y agrupa por tipo, ordenando por peso.
 
@@ -659,7 +658,7 @@ def build_signals(ratios: Dict[str, Any], contextual: Dict[str, Any], *,
     """
     ctx = Ctx(ratios, contextual, sector=sector, real_sector=real_sector,
               roic_wacc_spread=roic_wacc_spread, altman=altman,
-              piotroski=piotroski, dcf=dcf, is_growth=is_growth,
+              piotroski=piotroski, dcf=dcf,
               archetype=archetype, archetype_values=archetype_values)
 
     buckets = {"risk": [], "warning": [], "strength": []}

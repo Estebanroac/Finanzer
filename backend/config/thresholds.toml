@@ -162,8 +162,6 @@ reit_total_return_points = [5, 3, 1, -1, -4]
 
 [score.total]                       # calculate_score_v2 (etapa 9a: ya no hay un score total único)
 max = 100                           # escala de cada una de las dos puntuaciones
-growth_company_min_revenue_cagr = 0.15
-growth_quality_default = 50
 
 # Etapa 9a — dos puntuaciones 0–100 (spec fallo 6, cambio 4). Cada categoría parte
 # de 10/20 (= 50: sin señales), así que 50 es el punto neutro de las dos escalas.
@@ -189,57 +187,6 @@ neutral = 50
 # precio_mostrado = 50 + (precio − 50) × factor.
 confidence_factor = { alta = 1.0, media = 0.75, baja = 0.5 }
 
-[score.company_type]                # classify_company_type: votos por tipo de empresa
-revenue_bounds = [0.25, 0.15, 0.05] # y < 0
-revenue_votes_0 = { growth = 3, garp = 2 }
-revenue_votes_1 = { growth = 2, garp = 2 }
-revenue_votes_2 = { garp = 1, value = 1 }
-revenue_votes_negative = { value = 1, deep_value = 1 }
-eps_bounds = [0.20, 0.10]
-eps_votes_0 = { growth = 2, garp = 2 }
-eps_votes_1 = { garp = 1 }
-pe_to_sector_bounds = [0.6, 0.85, 1.15, 1.5]   # P/E / P/E del sector ≤
-pe_votes_0 = { deep_value = 3 }
-pe_votes_1 = { value = 2, deep_value = 1 }
-pe_votes_2 = { garp = 2, value = 1 }
-pe_votes_3 = { growth = 1, garp = 1 }
-pe_votes_4 = { growth = 2, speculative_growth = 1 }
-roe_bounds = [0.25, 0.15, 0.08]     # ≥ / ≥ / < (bajo)
-roe_votes_0 = { growth = 1, garp = 2 }
-roe_votes_1 = { garp = 1, value = 1 }
-roe_votes_low = { speculative_growth = 2, growth = -1 }
-dividend_yield_bounds = [0.04, 0.02]
-dividend_votes_0 = { dividend = 3, value = 1 }
-dividend_votes_1 = { dividend = 1, value = 1 }
-fcf_yield_bounds = [0.08, 0.05]
-fcf_yield_votes_0 = { deep_value = 2, value = 1 }
-fcf_yield_votes_1 = { value = 1, garp = 1 }
-garp_tiebreak_margin = 1            # crecimiento fuerte + calidad: GARP si votos garp ≥ growth − 1
-speculative_reduction = 2
-blend_max_confidence = 0.25         # confianza < 0.25 o < 3 votos -> "blend"
-blend_min_votes = 3
-blend_confidence = 0.5
-
-[score.growth_quality]              # calculate_growth_quality_score (0-100)
-base = 50
-min = 0
-max = 100
-revenue_bounds = [0.25, 0.15, 0.08] # y luego ≥0 / <0
-revenue_points = [15, 10, 5, 0, -10]
-eps_vs_revenue_mults = [1.2, 0.5]   # EPS > 1.2×ingresos / ≥ ingresos / ≥ 0.5× / resto
-eps_vs_revenue_points = [10, 5, -5, -10]
-fcf_bounds = [0.15, 0.05]           # y luego ≥0 / <0
-fcf_points = [10, 5, 0, -10]
-return_bounds = [0.25, 0.15, 0.08]  # máx(ROE, ROIC)
-return_points = [10, 5, 0, -10]
-operating_margin_bounds = [0.25, 0.15, 0.05]   # ≥ / ≥ / < (bajo)
-operating_margin_points = [5, 3, -5]
-level_bands = [80, 65, 50, 35]
-
-
-# ── Alertas (alert_interpretations.build_signals) ──
-# Umbrales propios de cada intérprete y `w_*` = peso de la señal (ordena las
-# listas de fortalezas/advertencias/riesgos; se muestran las 6 de más peso).
 [alerts]
 max_per_group = 6
 years_ebitda_plural_from = 1.5      # "~2 años" vs "~1 año"

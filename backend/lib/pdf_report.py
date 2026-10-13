@@ -660,7 +660,6 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     fin_health = analysis.get("financial_health")
     alerts = analysis.get("alerts") or {}
     sensitivity = analysis.get("sensitivity") or {}
-    company_type = (analysis.get("company_type") or "balanced").replace("_", " ")
     symbol = analysis.get("symbol", "")
     name = profile.get("name") or symbol
     sector = profile.get("sector") or "N/A"
@@ -1896,24 +1895,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
             "el rango no es una señal de valoración.",
             ParagraphStyle('rngz', parent=S['small'], alignment=TA_CENTER, textColor=FAINT, fontSize=6.8, spaceBefore=1)))
 
-    # Evolución histórica anual (si está disponible)
-    yearly = analysis.get("yearly_financials") or []
-    if yearly:
-        story.append(Spacer(1, 10))
-        story.append(Paragraph("Evolución histórica anual", S['h2']))
-        sorted_y = sorted(yearly, key=lambda x: x.get("year", 0))
-        yrows = []
-        for i, y in enumerate(sorted_y):
-            rev, earn = y.get("revenue"), y.get("earnings")
-            g = ""
-            if i > 0 and rev and sorted_y[i - 1].get("revenue"):
-                pr = sorted_y[i - 1]["revenue"]
-                if pr:
-                    g = f"{(rev - pr) / abs(pr) * 100:+.1f}%"
-            yrows.append([str(y.get("year", "")), fv(rev, "money"), fv(earn, "money"), g or "—"])
-        story.append(data_table(["AÑO", "INGRESOS", "BENEFICIO", "CREC. INGRESOS"],
-                                yrows, [1.2 * inch, 2.2 * inch, 2.2 * inch, CW - 5.6 * inch],
-                                aligns=['LEFT', 'RIGHT', 'RIGHT', 'RIGHT']))
+    # Etapa 9b: el histórico anual (yearly_financials) es dato bruto de la web; no va en el PDF.
 
     # ════════════════ EVALUACIÓN INSTITUCIONAL + ALERTAS ════════════════
     # Sin salto forzado: la sección fluye tras crecimiento para no dejar media

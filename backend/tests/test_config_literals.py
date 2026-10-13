@@ -24,7 +24,6 @@ MIGRATED = {
     "lib/financial_ratios.py": [
         "is_financial_sector", "altman_z_score", "financial_health_score", "piotroski_evaluate",
         "piotroski_level", "piotroski_f_score",
-        "classify_company_type", "calculate_growth_quality_score",
         "graham_number", "dcf_multi_stage", "dcf_multi_stage_dynamic",
         "calculate_all_ratios", "score_solidez_financiera", "score_solidez_financiera_financial",
         "score_rentabilidad", "score_valoracion", "score_calidad_ganancias", "score_crecimiento",

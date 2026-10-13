@@ -136,6 +136,38 @@ def runway(fcf: Optional[float], liquidity: Optional[float]) -> Dict[str, Any]:
     return {"state": "runway", "years": max(0.0, liquidity) / -fcf, "reason": None, "liquidity": liquidity, "fcf": fcf}
 
 
+def yearly_financials(st: Optional[Dict[str, Any]], archetype: Optional[str] = None) -> List[Dict[str, Any]]:
+    """Histórico anual (etapa 9b): los mismos estados anuales que alimentan los CAGR.
+
+    Dato bruto, sin lecturas: ingresos, beneficio neto, FCF y márgenes por ejercicio
+    (más antiguo primero); en GROWTH_PRE_PROFIT además FCF − SBC. Los ejercicios de la
+    cuenta de resultados y del estado de flujos se alinean por año."""
+    st = st or {}
+    inc_y, cf_y = st.get("inc_years") or [], st.get("cf_years") or []
+    def at(key, years, y):
+        vals = st.get(key) or []
+        i = years.index(y) if y in years else None
+        return vals[i] if (i is not None and i < len(vals)) else None
+    out = []
+    for y in sorted(set(inc_y) | set(cf_y)):
+        rev, ni, gp, oi = (at("revenue", inc_y, y), at("net_income", inc_y, y), at("gross_profit", inc_y, y),
+                           at("operating_income", inc_y, y))
+        fcf, sbc = at("free_cash_flow", cf_y, y), at("stock_based_compensation", cf_y, y)
+        if not_applicable(archetype, "fcf"):     # FINANCIAL: el FCF de un banco no se lee
+            fcf = None
+        if all(v is None for v in (rev, ni, fcf)):
+            continue
+        m = lambda a: (a / rev) if (a is not None and _pos(rev)) else None
+        row = {"year": int(y) if str(y).isdigit() else y, "revenue": rev, "net_income": ni, "free_cash_flow": fcf,
+               "gross_margin": m(gp), "operating_margin": m(oi), "net_margin": m(ni), "fcf_margin": m(fcf)}
+        if archetype == GROWTH_PRE_PROFIT:
+            row["sbc"] = sbc
+            row["fcf_minus_sbc"] = (fcf - sbc) if (fcf is not None and sbc is not None) else None
+            row["fcf_minus_sbc_margin"] = m(row["fcf_minus_sbc"])
+        out.append(row)
+    return out
+
+
 def sbc_adjustment(*, fcf: Optional[float], revenue: Optional[float], fcf_is_ttm: bool,
                    sbc_ttm: Optional[float], st: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     """FCF − compensación en acciones (SBC), en el MISMO periodo que el FCF (etapa 9a).
