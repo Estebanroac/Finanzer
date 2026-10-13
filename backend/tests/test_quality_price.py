@@ -391,8 +391,8 @@ def test_growth_pre_profit_profitability_and_regla_m(outputs_by_env):
     for env in _envs():
         a = outputs_by_env(env)["SNOW"][0]
         rent = _bd(a, "Rentabilidad")
-        assert {"Margen bruto", "Mejora del margen operativo", "Margen FCF"} <= set(rent)
-        assert not {"ROE", "ROA", "Margen Neto", "ROIC vs WACC", "Margen Operativo"} & set(rent)
+        assert {"Margen bruto", "Margen operativo", "Mejora del margen operativo", "Margen FCF − SBC"} <= set(rent)
+        assert not {"ROE", "ROA", "Margen Neto", "ROIC vs WACC"} & set(rent)
         assert "Growth Company" not in _bd(a, "Crecimiento")
         if (a["key_metrics"].get("net_debt") or 0) < 0:                          # caja neta: el D/E no puntúa
             assert _bd(a, "Solidez Financiera")["Deuda/Equity"]["adjustment"] == 0
@@ -428,3 +428,45 @@ def test_no_text_cites_a_not_applicable_metric(outputs_by_env):
             alerts = " ".join(x["reason"] for k in ("red_flags", "warnings", "strengths") for x in a["alerts"][k])
             if "roe" in na:
                 assert not alerts.startswith("ROE") and " ROE " not in f" {alerts} ", (env, sym)
+
+
+# ─────────────────────────── ronda 4: SBC y "no significativo" ───────────────────────────
+def test_growth_pre_profit_uses_fcf_minus_sbc_but_runway_uses_cash(outputs_by_env):
+    for env in _envs():
+        a = outputs_by_env(env)["SNOW"][0]
+        sb, xm = a["sbc"], a["archetype_metrics"]
+        assert sb["sbc"] > 0 and xm["fcf_margin"] == pytest.approx(sb["fcf_margin_adjusted"])
+        assert xm["fcf_margin"] == pytest.approx((sb["fcf"] - sb["sbc"]) / sb["revenue"])
+        assert xm["rule_of_40"] == pytest.approx(xm["revenue_cagr_3y"] + xm["fcf_margin"])
+        assert xm["runway"]["state"] == "autofinanciada" and xm["runway"]["fcf"] > 0      # caja pura
+        rent = _bd(a, "Rentabilidad")["Margen FCF − SBC"]
+        assert rent["value"] == f"{sb['fcf_margin_adjusted']:.1%}"
+        # el crecimiento del FCF se mide sobre FCF − SBC (negativo: sin dato con motivo, nunca el FCF bruto)
+        cov = a["score_coverage"]["crecimiento"]
+        assert "FCF − SBC" in (cov["missing_reasons"].get("Crecimiento del FCF") or "")
+    assert outputs_by_env("prod")["SNOW"][0]["sbc"]["basis"].startswith("FY")
+
+
+def test_sbc_without_data_is_sin_dato():
+    from archetype_metrics import sbc_adjustment
+    r = sbc_adjustment(fcf=100.0, revenue=1000.0, fcf_is_ttm=True, sbc_ttm=None, st={})
+    assert r["value"] is None and "no se usa el FCF bruto" in r["reason"]
+    r = sbc_adjustment(fcf=None, revenue=None, fcf_is_ttm=False, sbc_ttm=None,
+                       st={"free_cash_flow": [100.0], "revenue": [1000.0], "cf_years": ["2025"]})
+    assert r["value"] is None and "Stock Based Compensation" in r["reason"]
+
+
+def test_not_significant_is_excluded_like_not_applicable(outputs_by_env):
+    a = outputs_by_env("prod")["SNOW"][0]
+    sol = a["score_coverage"]["solidez"]
+    assert "Cobertura de intereses" in sol["not_significant"] and "Cobertura de intereses" not in sol["missing"]
+    assert not any(x["metric"] == "Cobertura" for x in a["score"]["breakdown"]["Solidez Financiera"]["adjustments"])
+
+
+def test_cyclical_growth_narrative_uses_cycle_average(outputs_by_env):
+    for env in _envs():
+        a, pdf = outputs_by_env(env)["FCX"]
+        text = fb.pdf_text(pdf).replace("\n", " ")
+        assert "propio de compañías growth" not in text
+        assert "Crecimiento del BPA (ciclo medio)" in text and "Crecimiento de beneficios (YoY)" not in text
+        assert f"{a['archetype_metrics']['eps_growth_normalized'] * 100:.1f}%".lstrip("-") in text

@@ -438,13 +438,11 @@ def test_negative_coverage_with_net_cash_is_not_significant():
     r, c, kw = CASES["mid_full"]
     res = calculate_score_v2(dict(r, interest_coverage=-8.4, net_debt=-1e9), c, **kw)
     sol, cov = _sol(res), res["coverage"]["solidez"]
-    assert cov["missing"] == ["Cobertura de intereses"]
-    assert "caja neta" in cov["missing_reasons"]["Cobertura de intereses"]
+    # Etapa 9a: "no significativo" se trata como "no aplica": fuera del denominador y sin reescalado.
+    assert cov["missing"] == [] and "caja neta" in cov["not_significant"]["Cobertura de intereses"]
     row = next(a for a in sol["adjustments"] if a["metric"] == "Cobertura Intereses")
     assert row["adjustment"] == 0 and row["value"] == "No significativo"
-    # igual que si la ratio no existiera
-    none = calculate_score_v2(dict(r, interest_coverage=None, net_debt=-1e9), c, **kw)
-    assert _sol(none)["score"] == sol["score"]
+    assert not any(a["metric"] == "Cobertura" for a in sol["adjustments"])
 
 
 def test_negative_coverage_with_net_debt_keeps_the_penalty():
@@ -467,7 +465,8 @@ def test_negative_coverage_end_to_end(outputs_by_env):
     assert a["key_metrics"]["interest_coverage_state"] == "no_significativo"
     assert a["key_metrics"]["interest_coverage"] is None and a["ratios"]["interest_coverage"] is None
     assert any(f["rule"] == "ratio_no_significativa" for f in a["data_validation"])
-    assert "Cobertura de intereses" in a["score_coverage"]["solidez"]["missing"]
+    assert "Cobertura de intereses" in a["score_coverage"]["solidez"]["not_significant"]
+    assert not any(x["metric"] == "Cobertura" for x in a["score"]["breakdown"]["Solidez Financiera"]["adjustments"])
     assert not any("Cobertura de intereses" in s.get("reason", "") for k in ("red_flags", "warnings") for s in a["alerts"][k])
     a, pdf = outputs_by_env("local")["SNOW"]
     txt = fixture_backend.pdf_text(pdf) if isinstance(pdf, bytes) else pdf

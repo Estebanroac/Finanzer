@@ -840,6 +840,32 @@ correctos según los datos, pero aplican reglas genéricas a arquetipos que nece
 - **Etiqueta "normalizado" solo si difiere:** si el beneficio normalizado no difiere del reportado más de
   `normalization.label_min_diff` (0.1%), ni el desglose, ni las alertas, ni la portada dicen "normalizado", y la
   línea de normalización del PDF no se muestra (JPM y FCX: normalizado = reportado).
+- **Compensación en acciones (SBC) — GROWTH_PRE_PROFIT:** el margen FCF, la regla de 40 y el crecimiento del FCF
+  usan FCF − SBC (fila Stock Based Compensation del estado de flujos, en el mismo periodo que el FCF: TTM con los
+  4 trimestres si el FCF es TTM; si no, el último ejercicio). Sin SBC del periodo: sin dato con motivo, nunca el
+  FCF bruto. El runway sigue en caja pura (FCF sin ajustar): mide liquidez. Se publica `sbc` (SBC, SBC/ingresos,
+  margen FCF bruto y ajustado) en todos los arquetipos. SNOW prod (FY2026): SBC 1.60B = 34.1% de los ingresos;
+  margen FCF 23.9% -> -10.3%; regla de 40 55 -> 21 (+2 -> -2 en Valoración); FCF − SBC negativo los 4 ejercicios
+  (crecimiento: CAGR no definido, sin dato). SNOW local (TTM): SBC 1.64B = 30.2%; margen -8.3%; regla de 40 23.
+- **SBC en MATURE (evaluado, no aplicado):** propuesta de umbral SBC/ingresos > 5%: a partir de ahí la SBC mueve
+  el margen FCF más de 5 pp y el P/FCF más de un 20% en una empresa con margen FCF del 25%. En el juego, ningún
+  MATURE ni otro arquetipo se acerca (NFLX 0.8%, V 2.2%, FCX 0.5%, O 0.5%; JPM sin fila de SBC). Pendiente de
+  decisión y de un fixture con SBC alta (etapa 11).
+- **GROWTH_PRE_PROFIT — margen operativo de vuelta:** un componente de nivel con bandas del arquetipo (>= 0% / -10%
+  / -20% / -30%, ±5, PROVISIONALES) además de la mejora interanual. ROE, ROA, margen neto y ROIC−WACC siguen en
+  "no aplica". SNOW prod -30.6% -> -5; Rentabilidad 20 -> 7.
+- **"No significativo" = "no aplica" en la cobertura:** la regla M (cobertura de intereses con EBIT < 0 y caja
+  neta, ROIC con capital invertido pequeño, FCF/beneficio con beneficio <= 0, D/E con caja neta) no cuenta en el
+  denominador ni provoca reescalado (`coverage.not_significant`). SNOW prod: Solidez 18 -> 16 (sin el +2 del
+  reescalado).
+- **CYCLICAL — narrativa de crecimiento:** la sección 04 y el resumen usan el crecimiento de ciclo medio de
+  ingresos y BPA (el del score), no el interanual ("FCX: 53.1%, ritmo propio de compañías growth" desaparece).
+- **Pendiente de decisión — SNOW sigue en calidad "sólida" (72 prod / 65 local):** Crecimiento 19 porque el CAGR
+  de FCF − SBC no está definido (negativo los 4 ejercicios, de -0.37B a -0.48B) y la cobertura lo trata como dato
+  ausente: el reescalado lleva los ingresos (+5) al máximo de la categoría (+4). Un FCF − SBC negativo en todo el
+  periodo no es un dato ausente sino una señal. Opciones: (a) puntuarlo en el peor tramo del crecimiento del FCF
+  (-4): Crecimiento 11, calidad 62 "media"; (b) tratarlo como "no significativo": Crecimiento 15, calidad 68
+  "sólida". Además, en Calidad de ganancias el componente FCF usa el FCF bruto (+3).
 - **Etapa 11 — saturación de la calidad:** NFLX (100) y V (98) saturan la calidad del negocio. Evaluar con una
   muestra amplia si los componentes correlacionados de Rentabilidad (ROE, ROA y el ROIC del spread) deben
   agruparse en un bloque como los múltiplos, y revisar con esa muestra los tramos superiores de las categorías.

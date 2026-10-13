@@ -88,7 +88,7 @@ export type Archetype = "FINANCIAL" | "REIT" | "GROWTH_PRE_PROFIT" | "CYCLICAL" 
 export const ARCHETYPE_NOT_APPLICABLE: Record<Archetype, readonly string[]> = {
   FINANCIAL: ["piotroski", "altman", "ocf", "fcf", "fcf_to_ni", "de", "ev_ebitda", "dcf", "graham", "pe", "peg", "forward_pe", "p_fcf", "garp", "current_ratio", "interest_coverage", "net_debt_ebitda", "roic_wacc", "operating_margin", "fcf_growth", "roce"],
   REIT: ["altman", "piotroski", "fcf_to_ni", "garp", "pe", "peg", "forward_pe", "p_fcf", "dcf", "roce", "eps_growth", "current_ratio", "graham", "roe", "roa", "net_margin", "roic_wacc", "gross_margin", "operating_margin"],
-  GROWTH_PRE_PROFIT: ["pe", "peg", "forward_pe", "graham", "eps_growth", "altman", "roe", "roa", "net_margin", "roic_wacc", "operating_margin"],
+  GROWTH_PRE_PROFIT: ["pe", "peg", "forward_pe", "graham", "eps_growth", "altman", "roe", "roa", "net_margin", "roic_wacc"],
   CYCLICAL: ["pe", "peg", "forward_pe", "fcf_growth"],
   MATURE: [],
 };

@@ -60,9 +60,9 @@ WHY_NOT_APPLICABLE_KEY = {
                             "los márgenes bruto y operativo no son comparables; la rentabilidad se mide sobre el FFO",
     (REIT, "operating_margin"): "estructura de arrendamiento neto: el inquilino paga los costes del inmueble, así que "
                                 "los márgenes bruto y operativo no son comparables; la rentabilidad se mide sobre el FFO",
-    **{(GROWTH_PRE_PROFIT, k): "negativo por definición del arquetipo (aún sin beneficio operativo); la rentabilidad "
-                               "se mide con el margen bruto, la mejora del margen operativo y el margen FCF"
-       for k in ("roe", "roa", "net_margin", "roic_wacc", "operating_margin")},
+    **{(GROWTH_PRE_PROFIT, k): "negativo por definición del arquetipo (aún sin beneficio); la rentabilidad se mide "
+                               "con el margen bruto, el margen operativo y su mejora, y el margen FCF − SBC"
+       for k in ("roe", "roa", "net_margin", "roic_wacc")},
 }
 
 # Nombre legible de cada componente (claves de sectors.archetypes.not_applicable).

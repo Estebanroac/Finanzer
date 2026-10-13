@@ -136,10 +136,40 @@ def runway(fcf: Optional[float], liquidity: Optional[float]) -> Dict[str, Any]:
     return {"state": "runway", "years": max(0.0, liquidity) / -fcf, "reason": None, "liquidity": liquidity, "fcf": fcf}
 
 
+def sbc_adjustment(*, fcf: Optional[float], revenue: Optional[float], fcf_is_ttm: bool,
+                   sbc_ttm: Optional[float], st: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    """FCF − compensación en acciones (SBC), en el MISMO periodo que el FCF (etapa 9a).
+
+    La SBC es un gasto real que no sale de caja (se paga en dilución): en una
+    pre-beneficio suele ser mayor que todo su FCF. FCF TTM -> SBC TTM (4 trimestres);
+    si no, el último ejercicio de los estados (FCF, SBC e ingresos del mismo año).
+    Sin SBC del periodo: sin dato con motivo (nunca el FCF bruto)."""
+    st = st or {}
+    if fcf_is_ttm:
+        if sbc_ttm is None:
+            return {"value": None, "basis": "TTM", "reason": "sin SBC TTM (fila Stock Based Compensation de los 4 "
+                                                             "últimos trimestres): no se usa el FCF bruto"}
+        f, s, rev = fcf, sbc_ttm, revenue
+        basis = "TTM"
+    else:
+        f, s, rev = _first(st.get("free_cash_flow")), _first(st.get("stock_based_compensation")), _first(st.get("revenue"))
+        basis = f"FY{(st.get('cf_years') or ['?'])[0]}"
+        if s is None:
+            return {"value": None, "basis": basis, "reason": "sin fila Stock Based Compensation en el estado de flujos: "
+                                                             "no se usa el FCF bruto"}
+    if f is None or not _pos(rev):
+        return {"value": None, "basis": basis, "reason": "sin FCF o ingresos del periodo"}
+    return {"value": f - s, "basis": basis, "reason": None, "sbc": s, "fcf": f, "revenue": rev,
+            "sbc_to_revenue": s / rev, "fcf_margin_raw": f / rev, "fcf_margin_adjusted": (f - s) / rev}
+
+
 def _growth_pre_profit(km: Dict[str, Any], revenue_cagr_3y: Optional[float],
-                       st: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+                       st: Optional[Dict[str, Any]] = None, sbc: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     fcf, rev = km.get("free_cash_flow"), km.get("revenue")
-    fcf_margin = (fcf / rev) if (fcf is not None and _pos(rev)) else None
+    # Etapa 9a: margen FCF y regla de 40 sobre FCF − SBC (sin SBC: sin dato con motivo).
+    # El runway sigue en caja pura (FCF sin ajustar): mide liquidez.
+    sbc = sbc or {}
+    fcf_margin = sbc.get("fcf_margin_adjusted")
     # Etapa 9a: mejora interanual del margen operativo (últimos dos ejercicios).
     om = ratio_series((st or {}).get("operating_income") or [], (st or {}).get("revenue") or [])
     om0, om1 = (om[0] if len(om) > 0 else None), (om[1] if len(om) > 1 else None)
@@ -148,6 +178,8 @@ def _growth_pre_profit(km: Dict[str, Any], revenue_cagr_3y: Optional[float],
     # key_metrics.cash = fila "Cash Cash Equivalents And Short Term Investments"
     # (caja + inversiones a corto plazo) del último balance.
     return {"ev_sales": ev_sales if _pos(ev_sales) else None, "fcf_margin": fcf_margin,
+            "fcf_margin_basis": "FCF − SBC", "fcf_margin_reason": sbc.get("reason"),
+            "fcf_margin_raw": (fcf / rev) if (fcf is not None and _pos(rev)) else None,
             "revenue_cagr_3y": revenue_cagr_3y, "rule_of_40": r40, "ebitda": km.get("ebitda"),
             "runway": runway(fcf, km.get("cash")), "gross_margin": km.get("gross_margin"),
             "operating_margin_fy": om0, "operating_margin_fy_prior": om1,
@@ -210,13 +242,13 @@ def _cyclical(st: Dict[str, Any], km: Dict[str, Any]) -> Dict[str, Any]:
 
 def compute(archetype: str, statements_fy: Optional[Dict[str, Any]], key_metrics: Dict[str, Any], *,
             beta: Optional[float] = None, revenue_cagr_3y: Optional[float] = None,
-            rf: Optional[float] = None) -> Dict[str, Any]:
+            rf: Optional[float] = None, sbc: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """Métricas de la rama del arquetipo ({} si la rama no necesita ninguna)."""
     st = statements_fy or {}
     if archetype == FINANCIAL:
         return _financial(st, key_metrics, beta, rf)
     if archetype == GROWTH_PRE_PROFIT:
-        return _growth_pre_profit(key_metrics, revenue_cagr_3y, st)
+        return _growth_pre_profit(key_metrics, revenue_cagr_3y, st, sbc)
     if archetype == REIT:
         return _reit(st, key_metrics)
     if archetype == CYCLICAL:

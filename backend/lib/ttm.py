@@ -35,6 +35,8 @@ FLOW_KEYS = {
     "capitalExpenditures": ("cf", "Capital Expenditure"),
     "freeCashflow": ("cf", "Free Cash Flow"),
     "dividendsPaid": ("cf", "Common Stock Dividend Paid"),
+    # Etapa 9a: compensación en acciones (FCF − SBC en GROWTH_PRE_PROFIT).
+    "stockBasedCompensation": ("cf", "Stock Based Compensation"),
 }
 BALANCE_KEYS = {
     "totalAssets": "Total Assets",

@@ -437,6 +437,7 @@ def _compute_analysis(symbol: str) -> dict:
                     roic_reason = (f"capital invertido {_ic_m / _ta_m:.0%} de los activos (< "
                                    f"{cfg('thresholds.score.rentabilidad.roic_min_invested_capital_share'):.0%}): "
                                    "ROIC no significativo")
+            fin_dict["roic_reason"] = roic_reason
 
             # Interest Coverage = Operating Income / |Interest Expense|
             interest_cov = r("interest_coverage")
@@ -582,9 +583,18 @@ def _compute_analysis(symbol: str) -> dict:
             # análisis: el mismo en Ke (P/B justificado de FINANCIAL), Kd y WACC.
             rf_info = risk_free()
             # Métricas de la rama (P/B justificado, EV/Ventas, normalizados de ciclo…)
+            # Etapa 9a: FCF − SBC en el periodo del FCF (informativo en todos los arquetipos;
+            # en GROWTH_PRE_PROFIT es la base del margen FCF, la regla de 40 y el crecimiento del FCF).
+            _ttm_i = (yinfo.get("_ttm") or {}) if _has_yahoo else {}
+            sbc_info = archetype_metrics.sbc_adjustment(
+                fcf=safe_float(financials.free_cash_flow), revenue=safe_float(financials.revenue),
+                fcf_is_ttm="freeCashflow" in (_ttm_i.get("ttm_fields") or []),
+                sbc_ttm=safe_float(yinfo.get("stockBasedCompensation")) if _has_yahoo else None, st=_stmts)
+            result["sbc"] = {k: (safe_float(v) if isinstance(v, float) else v) for k, v in sbc_info.items()}
             archetype_values = archetype_metrics.compute(
                 archetype, _stmts, result["key_metrics"], beta=safe_float(financials.beta),
-                revenue_cagr_3y=classification["inputs"].get("revenue_cagr_3y"), rf=rf_info["value"])
+                revenue_cagr_3y=classification["inputs"].get("revenue_cagr_3y"), rf=rf_info["value"],
+                sbc=sbc_info)
             result["archetype_metrics"] = {k: (safe_float(v) if isinstance(v, float) else v)
                                            for k, v in archetype_values.items()}
             # ROCE (etapa 6): contraste con el ROIC en MATURE y CYCLICAL; "no aplica"
@@ -725,6 +735,23 @@ def _compute_analysis(symbol: str) -> dict:
                     fin_dict["fcf_cagr_3y_reason"] = _fps["reason"]
                     growth_basis["fcf_cagr"] = {k: _fps.get(k) for k in ("method", "anomalous_base", "note")}
                     growth_basis["applied_to"].append("FCF")
+            # Etapa 9a: en GROWTH_PRE_PROFIT el crecimiento del FCF es el de FCF − SBC (misma base
+            # por acción si aplica). Sin la serie de SBC: sin dato con motivo, no el FCF bruto.
+            if archetype == GROWTH_PRE_PROFIT:
+                _f, _s = _stmts.get("free_cash_flow") or [], _stmts.get("stock_based_compensation") or []
+                if not _s:
+                    fin_dict["fcf_cagr_3y"] = None
+                    fin_dict["fcf_cagr_3y_reason"] = ("sin fila Stock Based Compensation: el crecimiento del FCF se "
+                                                      "mide sobre FCF − SBC")
+                else:
+                    _adj = [(a - b) if (a is not None and b is not None) else None for a, b in zip(_f, _s)]
+                    if "FCF" in growth_basis["applied_to"]:
+                        _adj = per_share(_adj, _stmts.get("ordinary_shares") or [])
+                    _ar = growth_rate(_adj, 3, what="FCF − SBC")
+                    fin_dict["fcf_cagr_3y"] = _ar["value"]
+                    fin_dict["fcf_cagr_3y_reason"] = _ar["reason"]
+                    growth_basis["fcf_cagr"] = dict({k: _ar.get(k) for k in ("method", "anomalous_base", "note")},
+                                                    basis="FCF − SBC")
             result["growth_basis"] = {k: (safe_float(v) if isinstance(v, float) else v)
                                       for k, v in growth_basis.items()}
 

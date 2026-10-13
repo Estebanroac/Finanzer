@@ -1841,6 +1841,12 @@ class CategoryCoverage:
         # cobertura pero no se reescalan uno a uno; se reescala el bloque (derived).
         self.unscaled: set = set()
         self.derived: List[Any] = []
+        # Etapa 9a: "no significativo" (regla M) se trata como "no aplica" en la cobertura:
+        # no cuenta en el denominador ni provoca reescalado (tiene su propia línea en el desglose).
+        self.not_significant: Dict[str, str] = {}
+
+    def not_sig(self, name: str, reason: str) -> None:
+        self.not_significant[name] = reason
 
     def comp(self, name: str, points, adj, reason: Optional[str] = None, na: Optional[str] = None,
              rescale: bool = True) -> None:
@@ -1873,6 +1879,7 @@ class CategoryCoverage:
         return {"components": n, "evaluated": ev, "coverage": cov, "missing": self.missing,
                 "missing_reasons": dict(self.reasons),
                 "not_applicable": dict(self.not_applicable),
+                "not_significant": dict(self.not_significant),
                 "applicable": self.applicable,
                 "conclusive": self.conclusive,
                 "low_confidence": (cov is not None and cov < _CAT_COVERAGE["low_confidence_below"])}
@@ -2163,8 +2170,11 @@ def score_solidez_financiera(
     if not _de_info and archetype != REIT:   # en REIT el D/E es informativo, con o sin dato
         cov.comp("D/E", [*T["de_points"], T["de_mitigated_points"], T["de_severe_points"]], _a.get("de"),
                  na=_na["de"])
-    cov.comp("Cobertura de intereses", T["coverage_points"], _a.get("coverage"), _ic_reason,
-             na=_na["interest_coverage"])
+    if _ic_state == "no_significativo" and not _na["interest_coverage"]:
+        cov.not_sig("Cobertura de intereses", _ic_reason)
+    else:
+        cov.comp("Cobertura de intereses", T["coverage_points"], _a.get("coverage"), _ic_reason,
+                 na=_na["interest_coverage"])
     base_score = cov.apply(base_score, adjustments)
     final_score = max(_CAT["min"], min(_CAT["max"], base_score))
     
@@ -2375,6 +2385,7 @@ def score_rentabilidad(
     wacc: Optional[float] = None,
     archetype: Optional[str] = None,
     market: bool = False,
+    roic_reason: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Categoría 2: Rentabilidad (20 pts máximo)
@@ -2564,6 +2575,11 @@ def score_rentabilidad(
     cov.comp("Margen neto", T["net_margin_points"], _a.get("nm"))
     if _na_spread:
         cov.comp("ROIC−WACC", T["spread_points"], None, na=_na_spread)
+    elif wacc is not None and roic is None and roic_reason:
+        # Regla M (etapa 9a): ROIC no significativo -> como "no aplica" en la cobertura.
+        cov.not_sig("ROIC−WACC", roic_reason)
+        adjustments.append({"metric": "ROIC vs WACC", "value": "No significativo", "adjustment": 0,
+                            "reason": roic_reason[0].upper() + roic_reason[1:], "severity": "neutral"})
     elif wacc is not None:  # sin WACC estimado no hay spread que evaluar
         cov.comp("ROIC−WACC", T["spread_points"], _a.get("spread"))
     base_score = cov.apply(base_score, adjustments)
@@ -2791,7 +2807,7 @@ def score_valoracion(
             i = next((k for k, x in enumerate(b) if r40 >= x), len(b))
             adj = p[i]
             sev = ("excellent", "good", "ok", "moderate", "severe")[i]
-            reason = (f"Crecimiento {xv.get('revenue_cagr_3y', 0):.1%} (CAGR 3 años) + margen FCF "
+            reason = (f"Crecimiento {xv.get('revenue_cagr_3y', 0):.1%} (CAGR 3 años) + margen FCF − SBC "
                       f"{xv.get('fcf_margin', 0):.1%} = {r40 * 100:.0f}")
             base_score += adj
             _a["r40"] = adj
@@ -3090,10 +3106,11 @@ def score_rentabilidad_reit(xv: Dict[str, Any]) -> Dict[str, Any]:
                                                                ("operating_margin", "Margen operativo")))
 
 
-def score_rentabilidad_growth(xv: Dict[str, Any], gross_margin: Optional[float]) -> Dict[str, Any]:
-    """GROWTH_PRE_PROFIT (etapa 9a): margen bruto, mejora interanual del margen
-    operativo y margen FCF. ROE, ROA, margen neto, ROIC−WACC y el nivel del margen
-    operativo son negativos por definición del arquetipo: no aplican."""
+def score_rentabilidad_growth(xv: Dict[str, Any], gross_margin: Optional[float],
+                              operating_margin: Optional[float] = None) -> Dict[str, Any]:
+    """GROWTH_PRE_PROFIT (etapa 9a): margen bruto, margen operativo (nivel, con bandas
+    del arquetipo), su mejora interanual y margen FCF − SBC. ROE, ROA, margen neto y
+    ROIC−WACC son negativos por definición del arquetipo: no aplican."""
     T = _SC["rentabilidad"]
     comps = []
     gm = gross_margin if gross_margin is not None else xv.get("gross_margin")
@@ -3104,6 +3121,16 @@ def score_rentabilidad_growth(xv: Dict[str, Any], gross_margin: Optional[float])
                               ("Excelente", "Alto", "En línea", "Bajo", "Muy bajo"))
         comps.append(("Margen bruto", T["gpp_gross_margin_points"], gm, adj,
                       f"{lab} ({gm:.1%}) - margen que financiará la escala", "{:.1%}", None))
+    om = xv.get("operating_margin_fy") if operating_margin is None else operating_margin
+    if om is None:
+        comps.append(("Margen operativo", T["gpp_operating_margin_points"], None, None, None, "{}",
+                      "sin margen operativo"))
+    else:
+        adj, _, lab = _banded(om, T["gpp_operating_margin_bounds"], T["gpp_operating_margin_points"],
+                              ("En equilibrio o positivo", "Cerca del equilibrio", "Pérdida operativa moderada",
+                               "Pérdida operativa alta", "Pérdida operativa muy alta"))
+        comps.append(("Margen operativo", T["gpp_operating_margin_points"], om, adj,
+                      f"{lab} ({om:.1%}) - bandas de pre-beneficio", "{:.1%}", None))
     ch = xv.get("operating_margin_change")
     if ch is None:
         comps.append(("Mejora del margen operativo", T["gpp_opm_change_points"], None, None, None, "{}",
@@ -3114,15 +3141,18 @@ def score_rentabilidad_growth(xv: Dict[str, Any], gross_margin: Optional[float])
         comps.append(("Mejora del margen operativo", T["gpp_opm_change_points"], ch * 100, adj,
                       f"{lab} ({ch * 100:+.1f} pp interanual: {xv.get('operating_margin_fy_prior', 0):.1%} → "
                       f"{xv.get('operating_margin_fy', 0):.1%})", "{:+.1f} pp", None))
-    fm = xv.get("fcf_margin")
+    fm = xv.get("fcf_margin")   # etapa 9a: FCF − SBC (archetype_metrics.sbc_adjustment)
     if fm is None:
-        comps.append(("Margen FCF", T["gpp_fcf_margin_points"], None, None, None, "{}", "sin FCF o ingresos"))
+        comps.append(("Margen FCF − SBC", T["gpp_fcf_margin_points"], None, None, None, "{}",
+                      xv.get("fcf_margin_reason") or "sin FCF, SBC o ingresos"))
     else:
         adj, _, lab = _banded(fm, T["gpp_fcf_margin_bounds"], T["gpp_fcf_margin_points"],
                               ("Excelente", "Alto", "Equilibrio", "Quema moderada", "Quema alta"))
-        comps.append(("Margen FCF", T["gpp_fcf_margin_points"], fm, adj, f"{lab} ({fm:.1%}) - FCF sobre ingresos",
-                      "{:.1%}", None))
-    return _rentabilidad_branch(GROWTH_PRE_PROFIT, comps, _RENT_NA_COMMON + (("operating_margin", "Margen operativo"),))
+        _raw = xv.get("fcf_margin_raw")
+        comps.append(("Margen FCF − SBC", T["gpp_fcf_margin_points"], fm, adj,
+                      f"{lab} ({fm:.1%}) - FCF menos compensación en acciones sobre ingresos"
+                      + (f" (FCF bruto {_raw:.1%})" if _raw is not None else ""), "{:.1%}", None))
+    return _rentabilidad_branch(GROWTH_PRE_PROFIT, comps, _RENT_NA_COMMON)
 
 
 def score_calidad_ganancias(
@@ -3442,7 +3472,9 @@ def score_crecimiento(
         
         base_score += adj
         _a["fcf"] = adj
-        adjustments.append({"metric": "Crecimiento FCF por acción 3Y" if _reit else "Crecimiento FCF 3Y",
+        adjustments.append({"metric": ("Crecimiento FCF por acción 3Y" if _reit else
+                                       "Crecimiento FCF − SBC 3Y" if archetype == GROWTH_PRE_PROFIT else
+                                       "Crecimiento FCF 3Y"),
                             "value": f"{fcf_growth_3y:.1%}", "adjustment": adj, "reason": reason, "severity": sev})
     
     # Etapa 9a: sin bono "Growth Company": las bandas de crecimiento ya lo puntúan
@@ -3569,7 +3601,7 @@ def calculate_score_v2(
     if archetype == REIT:
         rentabilidad = score_rentabilidad_reit(xv)
     elif archetype == GROWTH_PRE_PROFIT:
-        rentabilidad = score_rentabilidad_growth(xv, ratio_values.get("gross_margin"))
+        rentabilidad = score_rentabilidad_growth(xv, ratio_values.get("gross_margin"), ratio_values.get("operating_margin"))
     else:
         rentabilidad = None
     rentabilidad = rentabilidad or score_rentabilidad(
@@ -3586,6 +3618,7 @@ def calculate_score_v2(
         sector_roa_high=thresholds.roa_high,
         archetype=archetype,
         market=_market,
+        roic_reason=contextual_values.get("roic_reason"),
     )
     
     # v2.4: Pasar datos de crecimiento + forward metrics a valoración

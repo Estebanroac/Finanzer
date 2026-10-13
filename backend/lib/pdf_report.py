@@ -287,11 +287,18 @@ def read_payout(p, basis=None):
     return ("Insostenible", 'neg', f"el payout de {_pct(p, 0)} supera el beneficio: el dividendo actual no es sostenible")
 
 
-def read_growth(g, what="los ingresos", kind="revenue"):
+def read_growth(g, what="los ingresos", kind="revenue", cycle=False):
+    """cycle=True (CYCLICAL, etapa 9a): crecimiento de ciclo medio (promedio interanual de
+    los ejercicios disponibles), no el interanual de un tramo del ciclo."""
     if g is None: return None
+    per = "anual de ciclo medio" if cycle else "interanual"
     if growth_for_bands(g) < 0:   # entre −2% y 0: plano (estancamiento), no contracción
-        return ("Contracción", 'neg', f"{what} se contraen un {_pct(abs(g))} interanual")
+        return ("Contracción", 'neg', f"{what} se contraen un {_pct(abs(g))} {per}")
     b = cfg(f"thresholds.score.crecimiento.{kind}_bounds")   # las del score (ingresos o BPA)
+    if cycle:
+        if g >= b[1]: return ("Sólido", 'pos', f"{what} crecen {_pct(g)} {per}, un ritmo sólido a lo largo del ciclo")
+        if g >= b[2]: return ("Moderado", 'neu', f"{what} crecen {_pct(g)} {per}, un ritmo moderado")
+        return ("Plano", 'warn', f"{what} están prácticamente planos a lo largo del ciclo ({_pct(g)} {per})")
     if g >= b[0]: return ("Acelerado", 'pos', f"{what} crecen {_pct(g)}, un ritmo acelerado propio de compañías growth")
     if g >= b[1]: return ("Sólido", 'pos', f"{what} crecen {_pct(g)}, un ritmo sólido")
     if g >= b[2]: return ("Moderado", 'neu', f"{what} crecen {_pct(g)}, un ritmo moderado")
@@ -738,8 +745,13 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     nde_state = km.get("net_debt_to_ebitda_state")
     r_nde = read_nde(km.get("net_debt_to_ebitda"), nde_state, km.get("net_debt"), reit=archetype == "REIT")
     r_pay = read_payout(km.get("payout_ratio"), km.get("payout_basis"))
-    r_grev = read_growth(km.get("revenue_growth"), "los ingresos")
-    r_gearn = read_growth(km.get("earnings_growth"), "los beneficios", "eps")
+    if archetype == "CYCLICAL":
+        # Etapa 9a: en CYCLICAL el texto usa el crecimiento de ciclo medio (el del score), no el interanual.
+        r_grev = read_growth(xm.get("revenue_growth_normalized"), "los ingresos", cycle=True)
+        r_gearn = read_growth(xm.get("eps_growth_normalized"), "el BPA", "eps", cycle=True)
+    else:
+        r_grev = read_growth(km.get("revenue_growth"), "los ingresos")
+        r_gearn = read_growth(km.get("earnings_growth"), "los beneficios", "eps")
     r_beta = read_beta(km.get("beta"))
     r_52 = read_pos52(pos52)
     r_bb = read_buyback(km.get("buyback_yield"))
@@ -1683,7 +1695,8 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     _sev_tone = {"excellent": 'pos', "good": 'pos', "ok": 'neu', "moderate": 'warn', "severe": 'neg'}
     _sev_lab = {"excellent": "Excelente", "good": "Favorable", "ok": "En línea", "moderate": "Débil", "severe": "Muy débil"}
     for a in (breakdown.get("Rentabilidad") or {}).get("adjustments") or []:
-        if archetype in ("REIT", "GROWTH_PRE_PROFIT") and a.get("metric") not in ("No aplica", "Cobertura", "Margen bruto"):
+        if archetype in ("REIT", "GROWTH_PRE_PROFIT") and a.get("metric") not in ("No aplica", "Cobertura", "Margen bruto",
+                                                                                  "Margen operativo"):
             rows.append([a["metric"], str(a.get("value", "")), "—", "—", _sev_lab.get(a.get("severity"), "—")])
             reads.append((len(rows) - 1, _sev_tone.get(a.get("severity"), 'neu')))
     # ROCE (etapa 6): solo MATURE y CYCLICAL; "No aplica" o "Sin dato", nunca 0%.
@@ -1802,10 +1815,13 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         story.append(Paragraph(gro_txt, S['body']))
     story.append(Spacer(1, 4))
 
+    _cyc = archetype == "CYCLICAL"
     gro_defs = [
-        ("Crecimiento de ingresos (YoY)", km.get("revenue_growth"), "pct", r_grev),
-        ("Crecimiento de beneficios (YoY)", None if "eps_growth" in _na_keys else km.get("earnings_growth"), "pct",
-         r_gearn),
+        ("Crecimiento de ingresos (ciclo medio)" if _cyc else "Crecimiento de ingresos (YoY)",
+         xm.get("revenue_growth_normalized") if _cyc else km.get("revenue_growth"), "pct", r_grev),
+        ("Crecimiento del BPA (ciclo medio)" if _cyc else "Crecimiento de beneficios (YoY)",
+         None if "eps_growth" in _na_keys else (xm.get("eps_growth_normalized") if _cyc else km.get("earnings_growth")),
+         "pct", r_gearn),
         ("Buyback yield (recompras netas)", km.get("buyback_yield"), "pct", r_bb),
         ("Shareholder yield (div. + recompras)", km.get("shareholder_yield"), "pct", None),
         ("Dividend yield", km.get("dividend_yield"), "pct", None),
