@@ -646,6 +646,7 @@ def test_partial_total_is_shown_in_json_and_pdf(outputs_by_env):
                         excluded_categories=["Crecimiento"])
     a["price_attractiveness"].update(score=None, score_raw=None, level=None, partial=True,
                                      basis="calculado sobre 0 de 1 categorías")
+    a.pop("display")    # etapa 9b: el PDF maqueta `display`; tras forzar el análisis se recalcula
     with fixture_backend.replay(fixture_backend.fixtures_dir("prod")) as store:
         store.load("SNOW")
         pdf = fixture_backend.build_pdf_bytes(a, fixture_backend.capture_date(store.meta["SNOW"]))

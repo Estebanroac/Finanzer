@@ -34,10 +34,12 @@ MIGRATED = {
         "_margins", "_leverage", "_coverage", "_liquidity", "_altman", "_fcf", "_earnings_quality",
         "_growth", "_eps_growth", "_piotroski", "_deterioration", "_beta", "_drawdown", "build_signals",
     ],
-    "lib/pdf_report.py": [
+    # Etapa 9b: los lectores pasan de pdf_report a la capa de presentación compartida.
+    "lib/display.py": [
         "read_vs_sector", "read_pe", "read_roe", "read_spread", "read_current", "read_de",
         "read_coverage", "read_nde", "read_payout", "read_growth", "read_upside", "read_graham",
-        "read_beta", "read_pos52", "read_buyback", "read_fcf_yield",
+        "read_beta", "read_pos52", "read_buyback", "read_fcf_yield", "category_tone",
+        "build_display", "vs_bench_bands", "score_bands", "band_tooltips",
     ],
     "lib/validate.py": [
         "growth_guard", "_rule_fcf", "_rule_impossible", "_rule_margins", "_rule_units",
@@ -78,6 +80,12 @@ EXCEPTIONS = {
     ("lib/cost_of_capital.py", "risk_free", 3600): "segundos por hora (caché de 24 h en config)",
     ("lib/valuation_confidence.py", "convergence", 2):
         "convergencia: hacen falta al menos dos métodos para contrastar (definición)",
+    ("lib/display.py", "build_display", 20):
+        "máximo por defecto de una categoría (escala 0–20 del score, por definición)",
+    ("lib/display.py", "build_display", 9): "número de señales del Piotroski F-Score (por definición)",
+    ("lib/display.py", "build_display", 2): "índice de la 3.ª de las 5 bandas de color del grid (posición, no umbral)",
+    ("lib/display.py", "build_display", 3): "índice de la 4.ª de las 5 bandas de color del grid (posición, no umbral)",
+    ("lib/display.py", "build_display", 4): "índice de la 5.ª de las 5 bandas de color del grid (posición, no umbral)",
     ("main.py", "_compute_analysis", 400): "código HTTP",
     ("main.py", "_compute_analysis", 404): "código HTTP",
     ("main.py", "_compute_analysis", 500): "código HTTP",

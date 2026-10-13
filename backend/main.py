@@ -1361,6 +1361,14 @@ def _compute_analysis(symbol: str) -> dict:
             except Exception as e:
                 _sin_dato("veredicto", e)
 
+        # ── Etapa 9b: capa de presentación compartida (lib/display.py) ──
+        # Lo que se LEE de cada métrica se calcula una vez aquí; el PDF y la web lo consumen.
+        try:
+            from display import build_display
+            result["display"] = build_display(result, _pdf_benchmark(result))
+        except Exception as e:
+            _sin_dato("display", e)
+
         return result
 
     except HTTPException:
