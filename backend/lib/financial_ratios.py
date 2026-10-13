@@ -2124,6 +2124,11 @@ def score_solidez_financiera(
         if rw["state"] == "autofinanciada":
             adj, sev, val = p[0], "excellent", "Autofinanciada"
             reason = "FCF TTM positivo: no consume caja"
+            if rw.get("sbc_exceeds_fcf"):   # etapa 9a: en caja; la SBC se paga con dilución
+                val = "Autofinanciada en caja"
+                reason += (" (la compensación en acciones"
+                           + (f", {rw['sbc_to_revenue']:.1%} de los ingresos," if rw.get("sbc_to_revenue") is not None else "")
+                           + " supera el FCF y se paga con dilución)")
         elif rw["state"] == "runway":
             y = rw["years"]
             val = f"{y:.1f} años"
@@ -3268,20 +3273,29 @@ def score_calidad_ganancias(
         _a["ocf"] = adj
         adjustments.append({"metric": "Cash Flow Operativo", "value": "Positivo" if ocf > 0 else "Negativo", "adjustment": adj, "reason": reason, "severity": sev})
     
-    # FCF (hasta ±4 pts)
+    # FCF (hasta ±4 pts). Etapa 9a: en GROWTH_PRE_PROFIT, FCF − SBC (la misma definición
+    # que el margen FCF, la regla de 40 y el crecimiento del FCF); sin SBC, sin dato.
+    _gpp = archetype == GROWTH_PRE_PROFIT
+    _fcf_reason = None
+    if _gpp:
+        fcf = xv.get("fcf_minus_sbc")
+        _fcf_reason = None if fcf is not None else (xv.get("fcf_margin_reason") or "sin SBC del periodo")
     if fcf is not None:
+        _lbl = "FCF − SBC" if _gpp else "FCF"
         if fcf > 0:
             adj = T["fcf_points"][0]
             sev = "good"
-            reason = "FCF positivo"
+            reason = f"{_lbl} positivo"
         else:
             adj = T["fcf_points"][1]
             sev = "severe"
-            reason = "FCF negativo"
+            reason = f"{_lbl} negativo" + (" (la compensación en acciones supera el FCF)" if _gpp else "")
         
         base_score += adj
         _a["fcf"] = adj
-        adjustments.append({"metric": "Free Cash Flow", "value": "Positivo" if fcf > 0 else "Negativo", "adjustment": adj, "reason": reason, "severity": sev})
+        adjustments.append({"metric": "FCF − SBC" if _gpp else "Free Cash Flow",
+                            "value": "Positivo" if fcf > 0 else "Negativo", "adjustment": adj, "reason": reason,
+                            "severity": sev})
     
     # Calidad FCF vs Net Income (hasta ±3 pts)
     if fcf_to_net_income is not None and net_income is not None and net_income > 0:
@@ -3319,7 +3333,8 @@ def score_calidad_ganancias(
     # Piotroski None = no concluyente (o sin dato): no aporta y Calidad se reescala.
     cov.comp("Piotroski F", T["fscore_points"], _a.get("fscore"), na=_na["piotroski"])
     cov.comp("Flujo operativo", T["ocf_points"], _a.get("ocf"), na=_na["ocf"])
-    cov.comp("FCF", T["fcf_points"], _a.get("fcf"), na=_na["fcf"])
+    cov.comp("FCF − SBC" if archetype == GROWTH_PRE_PROFIT else "FCF", T["fcf_points"], _a.get("fcf"),
+             _fcf_reason, na=_na["fcf"])
     if _na["fcf_to_ni"]:
         cov.comp("FCF / beneficio neto", T["fcf_to_ni_points"], None, na=_na["fcf_to_ni"])
     elif not (net_income is not None and net_income <= 0):  # FCF/BN no aplica con BN <= 0
@@ -3350,6 +3365,7 @@ def score_crecimiento(
     fcf_growth_3y: Optional[float],
     is_growth_company: bool = False,
     fcf_growth_reason: Optional[str] = None,
+    fcf_sustained_negative: bool = False,
     archetype: Optional[str] = None,
     revenue_note: Optional[str] = None,
     revenue_reason: Optional[str] = None,
@@ -3476,6 +3492,17 @@ def score_crecimiento(
                                        "Crecimiento FCF − SBC 3Y" if archetype == GROWTH_PRE_PROFIT else
                                        "Crecimiento FCF 3Y"),
                             "value": f"{fcf_growth_3y:.1%}", "adjustment": adj, "reason": reason, "severity": sev})
+    elif fcf_sustained_negative and not _na_fcf:
+        # Etapa 9a (regla general): negativo en todos los ejercicios -> peor tramo, no "sin dato".
+        adj = T["fcf_points"][-1]
+        _a["fcf"] = adj
+        base_score += adj
+        adjustments.append({"metric": ("Crecimiento FCF por acción 3Y" if _reit else
+                                       "Crecimiento FCF − SBC 3Y" if archetype == GROWTH_PRE_PROFIT else
+                                       "Crecimiento FCF 3Y"),
+                            "value": "Negativo sostenido", "adjustment": adj, "severity": "severe",
+                            "reason": (fcf_growth_reason or "negativo en todos los ejercicios").capitalize()
+                                      + " — peor tramo"})
     
     # Etapa 9a: sin bono "Growth Company": las bandas de crecimiento ya lo puntúan
     # (contarlo aparte puntuaba dos veces el mismo crecimiento de ingresos).
@@ -3666,6 +3693,7 @@ def calculate_score_v2(
         fcf_growth_3y=contextual_values.get("fcf_cagr_3y"),
         is_growth_company=is_growth,
         fcf_growth_reason=contextual_values.get("fcf_cagr_3y_reason"),
+        fcf_sustained_negative=bool(contextual_values.get("fcf_cagr_3y_sustained_negative")),
         archetype=archetype,
         revenue_note=contextual_values.get("revenue_growth_note"),
         revenue_reason=contextual_values.get("revenue_growth_reason"),

@@ -860,12 +860,21 @@ correctos según los datos, pero aplican reglas genéricas a arquetipos que nece
   reescalado).
 - **CYCLICAL — narrativa de crecimiento:** la sección 04 y el resumen usan el crecimiento de ciclo medio de
   ingresos y BPA (el del score), no el interanual ("FCX: 53.1%, ritmo propio de compañías growth" desaparece).
-- **Pendiente de decisión — SNOW sigue en calidad "sólida" (72 prod / 65 local):** Crecimiento 19 porque el CAGR
-  de FCF − SBC no está definido (negativo los 4 ejercicios, de -0.37B a -0.48B) y la cobertura lo trata como dato
-  ausente: el reescalado lleva los ingresos (+5) al máximo de la categoría (+4). Un FCF − SBC negativo en todo el
-  periodo no es un dato ausente sino una señal. Opciones: (a) puntuarlo en el peor tramo del crecimiento del FCF
-  (-4): Crecimiento 11, calidad 62 "media"; (b) tratarlo como "no significativo": Crecimiento 15, calidad 68
-  "sólida". Además, en Calidad de ganancias el componente FCF usa el FCF bruto (+3).
+- **Regla general — negativo sostenido = señal, no "sin dato" (decidido):** un valor negativo en todos los
+  ejercicios de la ventana impide calcular una tasa, pero no es un dato ausente: puntúa en el peor tramo
+  (`historical_metrics.growth_rate` lo marca `sustained_negative`; un cambio de signo sigue siendo "sin dato").
+  SNOW: FCF − SBC negativo los 4 ejercicios -> crecimiento del FCF en el peor tramo (-3) en lugar del reescalado
+  que llevaba los ingresos al máximo; Crecimiento 19 -> 12.
+- **GROWTH_PRE_PROFIT — FCF − SBC también en Calidad de ganancias:** el componente FCF usa FCF − SBC (la misma
+  definición que el margen, la regla de 40 y el crecimiento). SNOW: +3 -> -3; Calidad de ganancias 16 -> 9.
+- **Autofinanciada en caja:** si la SBC supera el FCF, la fortaleza, el runway del desglose y la lectura del PDF
+  dicen que es autofinanciada en caja y que la compensación en acciones (SNOW: 34.1% de los ingresos) se paga con
+  dilución; no afirman que no dependa de capital.
+- **Resultado SNOW:** calidad 91 -> 72 -> **55 "media"** (prod) y 48 "media" (local); los otros cinco no cambian.
+- **Presentación:** la portada cabe siempre en una página (si el contenido no entra, se reduce en bloque con
+  `KeepInFrame` en lugar de desbordar a la página 2; SNOW desbordaba); concordancia en las lecturas de
+  crecimiento ("el BPA se contrae", "los ingresos se contraen").
+- **Etapa 9a cerrada** con estos cambios; goldens regenerados en un commit propio.
 - **Etapa 11 — saturación de la calidad:** NFLX (100) y V (98) saturan la calidad del negocio. Evaluar con una
   muestra amplia si los componentes correlacionados de Rentabilidad (ROE, ROA y el ROIC del spread) deben
   agruparse en un bloque como los múltiplos, y revisar con esa muestra los tramos superiores de las categorías.

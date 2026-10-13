@@ -18,7 +18,7 @@ from reportlab.lib.units import inch
 from reportlab.lib import colors
 from reportlab.platypus import (
     BaseDocTemplate, PageTemplate, Frame, Paragraph, Spacer, Table,
-    TableStyle, PageBreak, HRFlowable, Image, KeepTogether,
+    TableStyle, PageBreak, HRFlowable, Image, KeepTogether, KeepInFrame,
 )
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
@@ -259,6 +259,11 @@ def read_runway(rw):
     """Runway de GROWTH_PRE_PROFIT (etapa 7): (etiqueta, tono, frase) o None sin dato."""
     if not rw or rw.get("state") not in ("autofinanciada", "runway"):
         return None
+    if rw["state"] == "autofinanciada" and rw.get("sbc_exceeds_fcf"):
+        return ("Autofinanciada en caja", 'pos',
+                "el FCF de los últimos doce meses es positivo: la empresa no consume caja; la compensación en acciones"
+                + (f" ({rw['sbc_to_revenue']:.1%} de los ingresos)" if rw.get("sbc_to_revenue") is not None else "")
+                + " supera ese FCF y se paga con dilución")
     if rw["state"] == "autofinanciada":
         return ("Autofinanciada", 'pos', "el FCF de los últimos doce meses es positivo: la empresa no consume caja")
     b, y = cfg("thresholds.score.solidez.runway_bounds"), rw["years"]
@@ -292,17 +297,20 @@ def read_growth(g, what="los ingresos", kind="revenue", cycle=False):
     los ejercicios disponibles), no el interanual de un tramo del ciclo."""
     if g is None: return None
     per = "anual de ciclo medio" if cycle else "interanual"
+    pl = what.startswith(("los ", "las "))      # concordancia: "los ingresos se contraen" / "el BPA se contrae"
+    contrae, crece = ("se contraen", "crecen") if pl else ("se contrae", "crece")
+    plano = "están prácticamente planos" if pl else "está prácticamente plano"
     if growth_for_bands(g) < 0:   # entre −2% y 0: plano (estancamiento), no contracción
-        return ("Contracción", 'neg', f"{what} se contraen un {_pct(abs(g))} {per}")
+        return ("Contracción", 'neg', f"{what} {contrae} un {_pct(abs(g))} {per}")
     b = cfg(f"thresholds.score.crecimiento.{kind}_bounds")   # las del score (ingresos o BPA)
     if cycle:
-        if g >= b[1]: return ("Sólido", 'pos', f"{what} crecen {_pct(g)} {per}, un ritmo sólido a lo largo del ciclo")
-        if g >= b[2]: return ("Moderado", 'neu', f"{what} crecen {_pct(g)} {per}, un ritmo moderado")
-        return ("Plano", 'warn', f"{what} están prácticamente planos a lo largo del ciclo ({_pct(g)} {per})")
-    if g >= b[0]: return ("Acelerado", 'pos', f"{what} crecen {_pct(g)}, un ritmo acelerado propio de compañías growth")
-    if g >= b[1]: return ("Sólido", 'pos', f"{what} crecen {_pct(g)}, un ritmo sólido")
-    if g >= b[2]: return ("Moderado", 'neu', f"{what} crecen {_pct(g)}, un ritmo moderado")
-    return ("Plano", 'warn', f"{what} están prácticamente planos ({_pct(g)})")
+        if g >= b[1]: return ("Sólido", 'pos', f"{what} {crece} {_pct(g)} {per}, un ritmo sólido a lo largo del ciclo")
+        if g >= b[2]: return ("Moderado", 'neu', f"{what} {crece} {_pct(g)} {per}, un ritmo moderado")
+        return ("Plano", 'warn', f"{what} {plano} a lo largo del ciclo ({_pct(g)} {per})")
+    if g >= b[0]: return ("Acelerado", 'pos', f"{what} {crece} {_pct(g)}, un ritmo acelerado propio de compañías growth")
+    if g >= b[1]: return ("Sólido", 'pos', f"{what} {crece} {_pct(g)}, un ritmo sólido")
+    if g >= b[2]: return ("Moderado", 'neu', f"{what} {crece} {_pct(g)}, un ritmo moderado")
+    return ("Plano", 'warn', f"{what} {plano} ({_pct(g)})")
 
 
 def read_upside(up):
@@ -1082,10 +1090,17 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     _content = sum(b.wrap(CW, _avail)[1] for b in _bands)
     _gap = max(10.0, (_avail - _content) / (len(_bands) - 1))
     story.append(Spacer(1, _top_pad))
+    _cover = []
     for _i, _b in enumerate(_bands):
-        story.append(_b)
+        _cover.append(_b)
         if _i < len(_bands) - 1:
-            story.append(Spacer(1, _gap))
+            _cover.append(Spacer(1, _gap))
+    if _content + _gap * (len(_bands) - 1) > _avail:
+        # Etapa 9a: la portada cabe SIEMPRE en una página; si el contenido no entra
+        # (veredicto o motivos largos), se reduce en bloque en lugar de desbordar.
+        story.append(KeepInFrame(CW, _avail, _cover, mode='shrink'))
+    else:
+        story.extend(_cover)
     story.append(PageBreak())
 
     # ════════════════ PÁGINA 2 — RESUMEN EJECUTIVO ════════════════

@@ -90,6 +90,15 @@ def loglinear_growth(values_newest_first: List[Optional[float]]) -> Tuple[Option
     return math.exp(slope) - 1, None, len(pts)
 
 
+# Etapa 9a (regla general): un valor negativo en TODOS los ejercicios de la ventana impide
+# calcular una tasa, pero no es "sin dato": es una señal y puntúa en el peor tramo.
+SUSTAINED_NEGATIVE = "negativo en todos los ejercicios de la ventana"
+
+
+def is_sustained_negative(reason: Optional[str]) -> bool:
+    return bool(reason) and reason.startswith(SUSTAINED_NEGATIVE)
+
+
 def growth_rate(values_newest_first: List[Optional[float]], years: int = 3, *, what: str = "valor",
                 strict_ends_only: bool = False) -> Dict[str, Any]:
     """Crecimiento anual de una serie (etapa 7): CAGR de punta a punta, salvo con
@@ -109,6 +118,11 @@ def growth_rate(values_newest_first: List[Optional[float]], years: int = 3, *, w
         out["reason"] = (f"menos de {years + 1} ejercicios anuales" + (f" de {what}" if what != "valor" else ""))
         return out
     start, end = vals[years], vals[0]
+    if all(v is not None and v < 0 for v in vals):
+        out["reason"] = (f"{SUSTAINED_NEGATIVE} ({what} de {vals[years]:,.0f} a {vals[0]:,.0f}): la tasa no se "
+                         "calcula, pero es una señal, no un dato ausente")
+        out["sustained_negative"] = True
+        return out
     if start <= 0:
         out["reason"] = (f"{what} inicial <= 0: CAGR no definido" if not strict_ends_only
                          else "valor inicial o final <= 0: CAGR no definido")

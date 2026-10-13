@@ -170,6 +170,10 @@ def _growth_pre_profit(km: Dict[str, Any], revenue_cagr_3y: Optional[float],
     # El runway sigue en caja pura (FCF sin ajustar): mide liquidez.
     sbc = sbc or {}
     fcf_margin = sbc.get("fcf_margin_adjusted")
+    rw = runway(fcf, km.get("cash"))
+    # Etapa 9a: autofinanciada en CAJA; si la SBC supera el FCF, el coste económico se paga con dilución.
+    rw["sbc_to_revenue"] = sbc.get("sbc_to_revenue")
+    rw["sbc_exceeds_fcf"] = bool(sbc.get("sbc") is not None and sbc.get("fcf") is not None and sbc["sbc"] > sbc["fcf"])
     # Etapa 9a: mejora interanual del margen operativo (últimos dos ejercicios).
     om = ratio_series((st or {}).get("operating_income") or [], (st or {}).get("revenue") or [])
     om0, om1 = (om[0] if len(om) > 0 else None), (om[1] if len(om) > 1 else None)
@@ -181,7 +185,8 @@ def _growth_pre_profit(km: Dict[str, Any], revenue_cagr_3y: Optional[float],
             "fcf_margin_basis": "FCF − SBC", "fcf_margin_reason": sbc.get("reason"),
             "fcf_margin_raw": (fcf / rev) if (fcf is not None and _pos(rev)) else None,
             "revenue_cagr_3y": revenue_cagr_3y, "rule_of_40": r40, "ebitda": km.get("ebitda"),
-            "runway": runway(fcf, km.get("cash")), "gross_margin": km.get("gross_margin"),
+            "runway": rw, "gross_margin": km.get("gross_margin"),
+            "fcf_minus_sbc": sbc.get("value"), "sbc": sbc.get("sbc"), "sbc_to_revenue": sbc.get("sbc_to_revenue"),
             "operating_margin_fy": om0, "operating_margin_fy_prior": om1,
             "operating_margin_change": (om0 - om1) if (om0 is not None and om1 is not None) else None,
             "operating_margin_change_reason": (None if (om0 is not None and om1 is not None)

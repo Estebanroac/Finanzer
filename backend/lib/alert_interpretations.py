@@ -448,6 +448,14 @@ def _runway(ctx: Ctx):
     if not rw or rw.get("state") not in ("autofinanciada", "runway"):
         return None
     W, b = _A["runway"], cfg("thresholds.score.solidez.runway_bounds")
+    if rw["state"] == "autofinanciada" and rw.get("sbc_exceeds_fcf"):
+        # Etapa 9a: autofinanciada en caja, pero la SBC (mayor que el FCF) se paga con dilución.
+        return _sig("strength", "Solidez financiera", "Autofinanciada en caja — FCF TTM positivo",
+                    "El flujo de caja libre de los últimos doce meses es positivo: la empresa no consume caja para "
+                    "operar. Pero la compensación en acciones "
+                    + (f"({rw['sbc_to_revenue']:.1%} de los ingresos) " if rw.get("sbc_to_revenue") is not None else "")
+                    + "supera ese FCF y se paga con dilución del accionista: el FCF no cubre su coste económico "
+                      "completo.", W["w_self_funded"])
     if rw["state"] == "autofinanciada":
         return _sig("strength", "Solidez financiera", "Autofinanciada — FCF TTM positivo",
                     "El flujo de caja libre de los últimos doce meses es positivo: la empresa financia su crecimiento "

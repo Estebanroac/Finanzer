@@ -441,9 +441,15 @@ def test_growth_pre_profit_uses_fcf_minus_sbc_but_runway_uses_cash(outputs_by_en
         assert xm["runway"]["state"] == "autofinanciada" and xm["runway"]["fcf"] > 0      # caja pura
         rent = _bd(a, "Rentabilidad")["Margen FCF − SBC"]
         assert rent["value"] == f"{sb['fcf_margin_adjusted']:.1%}"
-        # el crecimiento del FCF se mide sobre FCF − SBC (negativo: sin dato con motivo, nunca el FCF bruto)
-        cov = a["score_coverage"]["crecimiento"]
-        assert "FCF − SBC" in (cov["missing_reasons"].get("Crecimiento del FCF") or "")
+        # el crecimiento del FCF se mide sobre FCF − SBC; negativo en los 4 ejercicios = señal, peor tramo
+        g = _bd(a, "Crecimiento")["Crecimiento FCF − SBC 3Y"]
+        assert g["value"] == "Negativo sostenido" and g["adjustment"] == cfg("thresholds.score.crecimiento.fcf_points")[-1]
+        assert not a["score_coverage"]["crecimiento"]["missing"]
+        cal = _bd(a, "Calidad de Ganancias")["FCF − SBC"]
+        assert cal["value"] == "Negativo" and "Free Cash Flow" not in _bd(a, "Calidad de Ganancias")
+        al = [x for x in a["alerts"]["strengths"] if x["reason"].startswith("Autofinanciada")]
+        assert al and al[0]["reason"].startswith("Autofinanciada en caja") and "dilución" in al[0]["detail"]
+        assert f"{sb['sbc_to_revenue']:.1%}" in al[0]["detail"] and "depender" not in al[0]["detail"]
     assert outputs_by_env("prod")["SNOW"][0]["sbc"]["basis"].startswith("FY")
 
 
@@ -470,3 +476,24 @@ def test_cyclical_growth_narrative_uses_cycle_average(outputs_by_env):
         assert "propio de compañías growth" not in text
         assert "Crecimiento del BPA (ciclo medio)" in text and "Crecimiento de beneficios (YoY)" not in text
         assert f"{a['archetype_metrics']['eps_growth_normalized'] * 100:.1f}%".lstrip("-") in text
+
+
+def test_sustained_negative_is_a_signal_not_missing():
+    from historical_metrics import growth_rate, is_sustained_negative
+    r = growth_rate([-5.0, -4.0, -6.0, -3.0], 3, what="FCF")
+    assert r["value"] is None and r.get("sustained_negative") and is_sustained_negative(r["reason"])
+    r = growth_rate([5.0, -4.0, 6.0, 3.0], 3, what="FCF")               # cambio de signo: sigue sin dato
+    assert r["value"] is None and not r.get("sustained_negative")
+
+
+def test_cover_fits_one_page(outputs_by_env):
+    for env in _envs():
+        for sym, (a, pdf) in outputs_by_env(env).items():
+            p2 = fb.pdf_text(pdf).split("===== página 2 =====")[1].split("===== página 3")[0]
+            assert "FORTALEZA CLAVE" not in p2 and "VEREDICTO" not in p2[:400], (env, sym)
+
+
+def test_singular_growth_reading_agrees():
+    import pdf_report as pr
+    assert pr.read_growth(-0.05, "el BPA", "eps", cycle=True)[2].startswith("el BPA se contrae un")
+    assert pr.read_growth(-0.05, "los ingresos", cycle=True)[2].startswith("los ingresos se contraen un")

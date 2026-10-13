@@ -239,10 +239,11 @@ def test_growth_pre_profit_solidez_uses_runway_not_altman(outputs_by_env):
         rw = a["archetype_metrics"]["runway"]
         assert rw["state"] == "autofinanciada" and rw["fcf"] > 0
         row = next(x for x in a["score"]["breakdown"]["Solidez Financiera"]["adjustments"] if x["metric"] == "Runway")
-        assert row["value"] == "Autofinanciada" and row["adjustment"] == cfg("thresholds.score.solidez.runway_points")[0]
-        assert "Autofinanciada — FCF TTM positivo" in _alert_reasons(a)
+        # Etapa 9a: con SBC > FCF es autofinanciada EN CAJA (la SBC se paga con dilución).
+        assert row["value"].startswith("Autofinanciada") and row["adjustment"] == cfg("thresholds.score.solidez.runway_points")[0]
+        assert any(r.startswith("Autofinanciada") and r.endswith("FCF TTM positivo") for r in _alert_reasons(a))
         text = fb.pdf_text(pdf)
-        assert "Runway\nAutofinanciada\nAutofinanciada" in text and "Altman Z de" not in text
+        assert "Runway\nAutofinanciada" in text and "Altman Z de" not in text
 
 
 def test_reit_payout_on_ffo(outputs_by_env):

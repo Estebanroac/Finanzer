@@ -25,7 +25,7 @@ from stock_database import search_stocks, POPULAR_STOCKS, TOP_STOCKS
 from sector_profiles import get_sector_profile, YAHOO_SECTOR_MAPPING
 from alert_interpretations import build_signals
 from settings import cfg
-from historical_metrics import fcf_cagr, growth_rate, per_share, per_share_basis
+from historical_metrics import fcf_cagr, growth_rate, is_sustained_negative, per_share, per_share_basis
 from classify import CYCLICAL, FINANCIAL, GROWTH_PRE_PROFIT, REIT, classify, not_applicable
 from normalize import normalize as normalize_earnings
 from yf_adapter import _UNUSUAL_ROWS
@@ -752,6 +752,8 @@ def _compute_analysis(symbol: str) -> dict:
                     fin_dict["fcf_cagr_3y_reason"] = _ar["reason"]
                     growth_basis["fcf_cagr"] = dict({k: _ar.get(k) for k in ("method", "anomalous_base", "note")},
                                                     basis="FCF − SBC")
+            # Etapa 9a (regla general): negativo sostenido -> peor tramo, no "sin dato".
+            fin_dict["fcf_cagr_3y_sustained_negative"] = is_sustained_negative(fin_dict.get("fcf_cagr_3y_reason"))
             result["growth_basis"] = {k: (safe_float(v) if isinstance(v, float) else v)
                                       for k, v in growth_basis.items()}
 
