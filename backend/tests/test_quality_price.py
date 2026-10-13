@@ -89,6 +89,13 @@ def test_verdict_sentence_and_confidence_phrase():
     assert v["full"] == "Calidad sólida · precio exigente (confianza media: el DCF y los múltiplos discrepan)"
     assert confidence_phrase({"level": "media", "dimensions": {"convergence": {"level": "no_evaluable"}}}) \
         == "un solo método de valoración evaluable, sin contraste"
+    # convergencia media por "uno en precio y otro con dirección": no se dice que coincidan en dirección
+    mixed = {"level": "media", "dimensions": {"convergence": {"level": "media", "methods": [
+        {"method": "DCF", "evaluable": True, "direction": "cara"},
+        {"method": "múltiplos frente al sector", "evaluable": True, "direction": "en precio"}]}}}
+    assert confidence_phrase(mixed) == "el DCF la ve cara y los múltiplos en precio"
+    mixed["dimensions"]["convergence"]["methods"][1]["direction"] = "cara"
+    assert confidence_phrase(mixed) == "el DCF y los múltiplos coinciden en dirección pero no en magnitud"
 
 
 def test_verdicts_in_fixtures(outputs_by_env):

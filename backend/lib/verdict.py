@@ -81,10 +81,12 @@ def confidence_phrase(conf: Optional[Dict[str, Any]]) -> Optional[str]:
         return None
     dims = conf.get("dimensions") or {}
     conv = dims.get("convergence") or {}
-    methods = [m["method"] for m in conv.get("methods") or [] if m.get("evaluable")]
+    ev = [m for m in conv.get("methods") or [] if m.get("evaluable")]
+    methods = [m["method"] for m in ev]
     names = {"DCF": "el DCF", "múltiplos frente al sector": "los múltiplos",
              "P/B justificado (Gordon)": "el P/B justificado", "P/B frente al sector": "el P/B del sector"}
     pair = " y ".join(names.get(m, m) for m in methods)
+    dirs = [m.get("direction") for m in ev]
     lvl = conv.get("level")
     if conf["level"] == "alta":
         return f"{pair} coinciden" if pair else "los métodos coinciden"
@@ -97,6 +99,9 @@ def confidence_phrase(conf: Optional[Dict[str, Any]]) -> Optional[str]:
         if (dims.get(key) or {}).get("level") == "baja":
             return txt
     if lvl == "media":
+        if len(set(dirs)) > 1 and all(dirs):         # uno en precio y otro con dirección
+            return " y ".join(f"{names.get(m['method'], m['method'])} {'la ve' if i == 0 else ''} {m['direction']}"
+                              .replace("  ", " ") for i, m in enumerate(ev))
         return f"{pair} coinciden en dirección pero no en magnitud" if pair else "convergencia parcial"
     if (dims.get("source") or {}).get("level") == "media":
         return "datos de fuente con incidencias"
