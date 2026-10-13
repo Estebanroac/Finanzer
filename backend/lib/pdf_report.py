@@ -25,7 +25,7 @@ from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
 from reportlab.lib.utils import ImageReader
 
 from settings import cfg
-from financial_ratios import IC_NEGATIVE, NET_CASH_TEXT, growth_for_bands
+from financial_ratios import IC_NEGATIVE, NET_CASH_TEXT, SECTOR_THRESHOLDS, ThresholdConfig, growth_for_bands
 
 _PDF_BANDS = cfg("thresholds.pdf")  # bandas de las lecturas del informe
 DE_NOT_APPLICABLE = "No aplica a entidades financieras"
@@ -137,27 +137,35 @@ def read_pe(pe, sector_pe, spread):
     return lab, tone, base
 
 
-def read_roe(roe, roa):
+# Etapa 9a: UNA sola fuente de bandas por métrica. Las lecturas de las métricas que
+# puntúan leen las bandas del score (thresholds.score.*) y, donde el arquetipo lo
+# permite, las sectoriales (sectors.score_thresholds: ROE y D/E). thresholds.pdf
+# solo conserva las bandas de métricas que el score no puntúa.
+def read_roe(roe, roa, th=None):
     if roe is None:
         return None
-    b = _PDF_BANDS["roe_bounds"]
-    if roe < 0 and roa is not None and roa > _PDF_BANDS["roe_negative_equity_min_roa"]:
+    T = cfg("thresholds.score.rentabilidad")
+    th = th or ThresholdConfig()
+    hi, lo = th.roe_high, th.roe_low
+    if roe < 0 and roa is not None and roa > T["negative_equity_min_roa"]:
         return ("Distorsionado", 'neu',
                 f"el ROE negativo responde a un patrimonio contable negativo por recompras agresivas, "
                 f"no a pérdidas: el ROA de {_pct(roa)} confirma la rentabilidad real de los activos")
-    if roe < 0:      return ("Negativo", 'neg', f"el ROE de {_pct(roe)} refleja destrucción de valor para el accionista")
-    if roe < b[0]:   return ("Débil", 'neg', f"el ROE de {_pct(roe)} es bajo para prácticamente cualquier estándar sectorial")
-    if roe < b[1]:   return ("Moderado", 'warn', f"el ROE de {_pct(roe)} se sitúa por debajo del umbral de excelencia (12–15%)")
-    if roe < b[2]:   return ("Sólido", 'pos', f"el ROE de {_pct(roe)} evidencia un uso eficiente del capital de los accionistas")
-    if roe < b[3]:   return ("Excelente", 'pos', f"el ROE de {_pct(roe)} sitúa a la compañía en el rango alto de generación de retornos")
-    return ("Excepcional", 'pos',
-            f"el ROE de {_pct(roe)} es excepcional, en parte amplificado por una base de patrimonio reducida por recompras")
+    ref = f" (sector: {_pct(lo)} competitivo, {_pct(hi)} rango alto)"
+    if roe >= hi * T["roe_high_mult"]:
+        return ("Excepcional", 'pos', f"el ROE de {_pct(roe)} es excepcional para su sector" + ref)
+    if roe >= hi:   return ("Alto", 'pos', f"el ROE de {_pct(roe)} está en el rango alto de su sector" + ref)
+    if roe >= lo:   return ("Competitivo", 'neu', f"el ROE de {_pct(roe)} es competitivo en su sector" + ref)
+    if roe >= T["roe_floor"]:
+        return ("Bajo", 'warn', f"el ROE de {_pct(roe)} queda por debajo del nivel competitivo de su sector" + ref)
+    if roe >= 0:    return ("Débil", 'neg', f"el ROE de {_pct(roe)} es débil para prácticamente cualquier sector")
+    return ("Negativo", 'neg', f"el ROE de {_pct(roe)} refleja destrucción de valor para el accionista")
 
 
 def read_spread(spread, roic, wacc):
     if spread is None:
         return None
-    b = _PDF_BANDS["spread_bounds"]
+    b = cfg("thresholds.score.rentabilidad.spread_bounds")   # las del score
     if spread >= b[0]:
         return ("Crea mucho valor", 'pos',
                 f"con un ROIC de {_pct(roic)} frente a un costo de capital (WACC) de {_pct(wacc)}, la compañía genera "
@@ -177,21 +185,29 @@ def read_spread(spread, roic, wacc):
 
 def read_current(cr):
     if cr is None: return None
-    b = _PDF_BANDS["current_bounds"]
-    if cr < b[0]:    return ("Tensión", 'neg', f"el current ratio de {cr:.2f}x indica que los pasivos corrientes superan a los activos corrientes")
-    if cr < b[1]:  return ("Ajustada", 'warn', f"la liquidez es ajustada (current ratio {cr:.2f}x), habitual en negocios con caja predecible")
-    if cr < b[2]:    return ("Cómoda", 'pos', f"la posición de liquidez es cómoda (current ratio {cr:.2f}x)")
-    return ("Holgada", 'neu', f"el current ratio de {cr:.2f}x es muy holgado, con posible caja ociosa")
+    b = cfg("thresholds.score.solidez.current_bounds")   # las del score
+    if cr >= b[0]:  return ("Holgada", 'pos', f"el current ratio de {cr:.2f}x cubre con holgura los pasivos corrientes")
+    if cr >= b[1]:  return ("Sólida", 'pos', f"la posición de liquidez es sólida (current ratio {cr:.2f}x)")
+    if cr >= b[2]:  return ("Justa", 'neu', f"la liquidez es justa (current ratio {cr:.2f}x): cubre sus obligaciones de corto plazo")
+    if cr >= b[3]:  return ("Ajustada", 'warn', f"la liquidez es ajustada (current ratio {cr:.2f}x), con poco margen de maniobra")
+    return ("Tensión", 'neg', f"el current ratio de {cr:.2f}x indica que los pasivos corrientes superan a los activos corrientes")
 
 
-def read_de(de):
+def read_de(de, threshold=None, coverage=None):
     if de is None: return None
     if de < 0:    return ("Equity negativo", 'warn', "el patrimonio contable es negativo por recompras acumuladas, lo que invalida la lectura tradicional del D/E")
-    b = _PDF_BANDS["de_bounds"]
-    if de < b[0]:  return ("Conservador", 'pos', f"el apalancamiento es conservador (D/E {de:.2f}x)")
-    if de < b[1]:    return ("Moderado", 'neu', f"el apalancamiento es moderado (D/E {de:.2f}x)")
-    if de < b[2]:    return ("Elevado", 'warn', f"el apalancamiento es elevado (D/E {de:.2f}x) y merece seguimiento")
-    return ("Alto", 'neg', f"el apalancamiento es alto (D/E {de:.2f}x) para un negocio no financiero")
+    T = cfg("thresholds.score.solidez")                   # las del score, sobre el umbral sectorial
+    t = threshold if threshold else ThresholdConfig().debt_equity_high
+    m = T["de_mults"]
+    ref = f" (umbral del sector {t:.1f}x)"
+    if de <= t * m[0]: return ("Conservador", 'pos', f"el apalancamiento es conservador (D/E {de:.2f}x)" + ref)
+    if de <= t:        return ("Controlado", 'pos', f"el apalancamiento está controlado (D/E {de:.2f}x)" + ref)
+    if de <= t * m[1]: return ("Aceptable", 'neu', f"el apalancamiento es aceptable, cerca del límite sectorial (D/E {de:.2f}x)" + ref)
+    if de <= t * m[2]: return ("Elevado", 'warn', f"el apalancamiento es elevado (D/E {de:.2f}x) y merece seguimiento" + ref)
+    if coverage is not None and coverage >= T["de_mitigation_coverage"]:
+        return ("Alto, servible", 'warn', f"el D/E es alto ({de:.2f}x) pero la deuda es fácilmente servible "
+                                          f"(cobertura {coverage:.0f}x)" + ref)
+    return ("Alto", 'neg', f"el apalancamiento es alto (D/E {de:.2f}x)" + ref)
 
 
 def read_coverage(ic, state=None):
@@ -204,11 +220,12 @@ def read_coverage(ic, state=None):
     if state == "negativa":
         return ("Riesgo", 'neg', "el resultado operativo es negativo (EBIT < 0) y la empresa tiene deuda neta: "
                 "los intereses no se cubren con el negocio")
-    b = _PDF_BANDS["coverage_bounds"]
-    if ic < b[0]:   return ("Crítica", 'neg', f"la cobertura de intereses ({ic:.1f}x) es críticamente baja")
-    if ic < b[1]:   return ("Justa", 'warn', f"la cobertura de intereses ({ic:.1f}x) deja poco margen ante caídas del beneficio operativo")
-    if ic < b[2]:  return ("Buena", 'pos', f"el beneficio operativo cubre {ic:.1f} veces el gasto por intereses")
-    return ("Muy holgada", 'pos', f"la deuda es fácilmente servible: cobertura de intereses de {ic:.1f}x")
+    b = cfg("thresholds.score.solidez.coverage_bounds")   # las del score
+    if ic >= b[0]:  return ("Muy holgada", 'pos', f"la deuda es fácilmente servible: cobertura de intereses de {ic:.1f}x")
+    if ic >= b[1]:  return ("Sólida", 'pos', f"el beneficio operativo cubre {ic:.1f} veces el gasto por intereses")
+    if ic >= b[2]:  return ("Aceptable", 'neu', f"la cobertura de intereses ({ic:.1f}x) es aceptable")
+    if ic >= b[3]:  return ("Justa", 'warn', f"la cobertura de intereses ({ic:.1f}x) deja poco margen ante caídas del beneficio operativo")
+    return ("Crítica", 'neg', f"la cobertura de intereses ({ic:.1f}x) es críticamente baja")
 
 
 def read_nde(nde, state=None, net_debt=None):
@@ -260,25 +277,25 @@ def read_payout(p, basis=None):
     return ("Insostenible", 'neg', f"el payout de {_pct(p, 0)} supera el beneficio: el dividendo actual no es sostenible")
 
 
-def read_growth(g, what="los ingresos"):
+def read_growth(g, what="los ingresos", kind="revenue"):
     if g is None: return None
     if growth_for_bands(g) < 0:   # entre −2% y 0: plano (estancamiento), no contracción
         return ("Contracción", 'neg', f"{what} se contraen un {_pct(abs(g))} interanual")
-    b = _PDF_BANDS["growth_bounds"]
-    if g < 0:     return ("Plano", 'warn', f"{what} están prácticamente planos ({_pct(g)})")
-    if g < b[0]:  return ("Plano", 'warn', f"{what} crecen apenas {_pct(g)}, prácticamente planos")
-    if g < b[1]:  return ("Moderado", 'neu', f"{what} crecen {_pct(g)}, un ritmo moderado")
-    if g < b[2]:  return ("Sólido", 'pos', f"{what} crecen {_pct(g)}, un ritmo sólido")
-    return ("Acelerado", 'pos', f"{what} crecen {_pct(g)}, un ritmo acelerado propio de compañías growth")
+    b = cfg(f"thresholds.score.crecimiento.{kind}_bounds")   # las del score (ingresos o BPA)
+    if g >= b[0]: return ("Acelerado", 'pos', f"{what} crecen {_pct(g)}, un ritmo acelerado propio de compañías growth")
+    if g >= b[1]: return ("Sólido", 'pos', f"{what} crecen {_pct(g)}, un ritmo sólido")
+    if g >= b[2]: return ("Moderado", 'neu', f"{what} crecen {_pct(g)}, un ritmo moderado")
+    return ("Plano", 'warn', f"{what} están prácticamente planos ({_pct(g)})")
 
 
 def read_upside(up):
+    """Upside del DCF en %: las bandas del DCF en Valoración (thresholds.score.valoracion)."""
     if up is None: return None
-    b = _PDF_BANDS["upside_bounds"]
+    b = [x * 100 for x in cfg("thresholds.score.valoracion.dcf_upside_bounds")]
     if up >= b[0]:   return ("Muy infravalorada", 'pos', f"el modelo DCF sugiere un descuento sustancial: potencial teórico de +{up:.0f}% hasta el valor justo estimado")
     if up >= b[1]:   return ("Infravalorada", 'pos', f"el precio cotiza por debajo del valor intrínseco estimado (potencial teórico de +{up:.0f}%)")
-    if up > -b[1]:   return ("Precio justo", 'neu', f"el precio cotiza en torno al valor justo estimado por el DCF ({'+' if up > 0 else ''}{up:.0f}%)")
-    if up > -b[0]:   return ("Prima", 'warn', f"el precio incorpora una prima de {abs(up):.0f}% sobre el valor intrínseco estimado")
+    if up >= b[2]:   return ("Precio justo", 'neu', f"el precio cotiza en torno al valor justo estimado por el DCF ({'+' if up > 0 else ''}{up:.0f}%)")
+    if up >= b[3]:   return ("Prima", 'warn', f"el precio incorpora una prima de {abs(up):.0f}% sobre el valor intrínseco estimado")
     return ("Sobrevalorada", 'neg', f"el precio excede en {abs(up):.0f}% el valor intrínseco estimado: el DCF exige asumir escenarios muy optimistas")
 
 
@@ -313,16 +330,18 @@ def read_pos52(p):
     return ("En máximos · cara", 'neg', f"cotiza en el {p:.0f}% del rango de 52 semanas, en máximos: el mercado ya paga optimismo y aumenta el riesgo de corrección")
 
 
-def score_band(pct):
-    """Nivel + tono del score (bandas de thresholds.score.total, las del motor).
-    Devuelve (etiqueta, tono) para que color y nivel coincidan con lo que ve
-    el usuario en pantalla."""
-    b = cfg("thresholds.score.total.level_bands")  # misma escala que el motor y la UI
-    if pct >= b[0]: return "Excelente", 'pos'
-    if pct >= b[1]: return "Favorable", 'pos'
-    if pct >= b[2]: return "Neutral", 'warn'
-    if pct >= b[3]: return "Precaución", 'neg'
-    return "Evitar", 'neg'
+_QUALITY_TONE = {"excelente": 'pos', "sólida": 'pos', "media": 'warn', "débil": 'neg'}
+_PRICE_TONE = {"atractivo": 'pos', "razonable": 'neu', "exigente": 'warn', "muy exigente": 'neg'}
+
+
+def quality_tone(level):
+    """Tono de un nivel de calidad (bandas de thresholds.score.quality, las del motor)."""
+    return _QUALITY_TONE.get(level, 'neu')
+
+
+def price_tone(level):
+    """Tono de un nivel de precio (bandas de thresholds.score.price, sobre el contraído)."""
+    return _PRICE_TONE.get(level, 'neu')
 
 
 def read_buyback(by):
@@ -592,68 +611,6 @@ def card_grid(cards, cols, width, gutter=8):
     return t, cell_w
 
 
-def radar_chart(labels, values, size=4.7 * inch, accent=None):
-    """Radar/araña dibujado A MANO para control total del encaje: rejilla
-    concéntrica (0–100), polígono de datos y ETIQUETAS colocadas fuera del plot,
-    con anclaje horizontal/vertical según su posición angular — así ninguna se
-    encima sobre el gráfico ni se recorta. `values` en 0-100."""
-    import math
-    from reportlab.graphics.shapes import Drawing, Polygon, Line, String, Circle
-    accent = accent or BRAND
-    n = len(values)
-    if n < 3:
-        return Drawing(size, size * 0.6)
-    W = size
-    H = size * 0.76
-    R = size * 0.235                 # radio del plot: deja margen amplio para etiquetas
-    fs = 8.8
-    d = Drawing(W, H)
-    cx, cy = W / 2.0, H / 2.0
-    # ejes: arranca arriba y va en sentido horario
-    angs = [math.pi / 2 - i * (2 * math.pi / n) for i in range(n)]
-    grid = colors.HexColor('#dfe0e2')
-
-    def pt(r, a):
-        return (cx + r * math.cos(a), cy + r * math.sin(a))
-
-    # anillos concéntricos 25/50/75/100
-    for ring in (0.25, 0.5, 0.75, 1.0):
-        pts = []
-        for a in angs:
-            x, y = pt(R * ring, a)
-            pts += [x, y]
-        d.add(Polygon(pts, strokeColor=grid, strokeWidth=0.5, fillColor=None))
-    # radios
-    for a in angs:
-        x, y = pt(R, a)
-        d.add(Line(cx, cy, x, y, strokeColor=grid, strokeWidth=0.5))
-    # polígono de datos
-    dp = []
-    for v, a in zip(values, angs):
-        x, y = pt(R * max(0.0, min(100.0, v)) / 100.0, a)
-        dp += [x, y]
-    d.add(Polygon(dp, strokeColor=accent, strokeWidth=1.8,
-                  fillColor=colors.Color(accent.red, accent.green, accent.blue, 0.15)))
-    for v, a in zip(values, angs):
-        x, y = pt(R * max(0.0, min(100.0, v)) / 100.0, a)
-        d.add(Circle(x, y, 2.6, strokeColor=None, fillColor=accent))
-    # etiquetas fuera del plot
-    for lab, a in zip(labels, angs):
-        ca, sa = math.cos(a), math.sin(a)
-        lx, ly = pt(R + 13, a)
-        anchor = 'middle' if abs(ca) < 0.32 else ('start' if ca > 0 else 'end')
-        if sa > 0.32:            # arriba → baseline algo por encima del vértice
-            by = ly + 3
-        elif sa < -0.32:         # abajo → baseline bajo el vértice (texto debajo)
-            by = ly - fs * 0.9
-        else:                    # lados → centrado vertical
-            by = ly - fs * 0.34
-        d.add(String(lx, by, lab, fontName='Helvetica', fontSize=fs,
-                     fillColor=INK, textAnchor=anchor))
-    return d
-
-
-# ══════════════════════════════ INFORME ══════════════════════════════
 def build_report(buf, analysis, sector_bench, logo_path=None):
     S = _styles()
 
@@ -693,16 +650,25 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     if h52 and l52 and price and (h52 - l52) > 0:
         pos52 = (price - l52) / (h52 - l52) * 100
 
-    total = score.get("total_score") or 0
     breakdown = score.get("breakdown") or {}
-    # Etapa 5: total parcial (categorías excluidas por cobertura < 50%).
-    _excl = score.get("excluded_categories") or []
-    basis = score.get("basis") if score.get("partial") else None
-    basis_full = (f"{_esc(basis)}<br/>{_esc(', '.join(_excl))} no concluyente" if basis and _excl
-                  else _esc(basis) if basis else None)
-    # Nivel y tono alineados con la app (80/60/40/20) para que el color y la
-    # etiqueta del informe coincidan con lo que ve el usuario en pantalla.
-    level, score_tone = score_band(total)
+    # Etapa 9a: dos puntuaciones, nunca un total único. Calidad del negocio y
+    # atractivo del precio (crudo y contraído por la confianza), con el veredicto.
+    _q = analysis.get("quality") or {}
+    _pa = analysis.get("price_attractiveness") or {}
+    _vd = analysis.get("verdict") or {}
+    q_score, q_level = _q.get("score"), _q.get("level")
+    p_score, p_raw, p_level = _pa.get("score"), _pa.get("score_raw"), _pa.get("level")
+    q_tone, p_tone = quality_tone(q_level), price_tone(p_level)
+    _cover_notes = []                    # cobertura parcial de cualquiera de las dos
+    if _q.get("basis"):
+        _cover_notes.append(f"Calidad {_q['basis']}" + (f" ({', '.join(_q.get('excluded_categories') or [])} "
+                                                      "no concluyente)" if _q.get("excluded_categories") else ""))
+    if _q.get("low_coverage_categories"):
+        _cover_notes.append("cobertura baja en " + ", ".join(_q["low_coverage_categories"]))
+    if _pa.get("basis") or (p_score is None and breakdown):
+        _cover_notes.append("Precio sin dato: Valoración no concluyente")
+    _price_note = (f"crudo {p_raw} · contraído por confianza {_pa.get('confidence')} (×{_pa.get('factor')})"
+                   if _pa.get("contracted") else None)
 
     n_red = len(alerts.get("red_flags") or [])
     n_warn = len(alerts.get("warnings") or [])
@@ -716,7 +682,9 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
                      and f.get("rule") == "multiplo_no_significativo"), None)
     _pe_in = km.get("pe") if km.get("pe") is not None or not _pe_flag else _pe_flag.get("old")
     r_pe = read_pe(_pe_in, sector_bench.get("pe"), km.get("roic_wacc_spread"))
-    r_roe = read_roe(km.get("roe"), km.get("roa"))
+    _th = SECTOR_THRESHOLDS.get((analysis.get("sector_info") or {}).get("mapped_sector") or "default",
+                                ThresholdConfig())   # bandas sectoriales del score (ROE, D/E)
+    r_roe = read_roe(km.get("roe"), km.get("roa"), _th)
     r_spread = read_spread(km.get("roic_wacc_spread"), km.get("roic"), km.get("wacc"))
     r_up = read_upside(dcf.get("upside"))
     # Etapa 8: fiabilidad del DCF. Con fiabilidad baja la lectura lo dice y el DCF
@@ -736,14 +704,14 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     r_rw = read_runway(_rw)
     # D/E contable sin lectura en financieras (los depósitos son pasivo): decisión
     # de la etapa 4. La celda muestra "—" y DE_NOT_APPLICABLE.
-    r_de = None if is_financial else read_de(km.get("de"))
+    r_de = None if is_financial else read_de(km.get("de"), _th.debt_equity_high, km.get("interest_coverage"))
     ic_state = km.get("interest_coverage_state")
     r_ic = read_coverage(km.get("interest_coverage"), ic_state)
     nde_state = km.get("net_debt_to_ebitda_state")
     r_nde = read_nde(km.get("net_debt_to_ebitda"), nde_state, km.get("net_debt"))
     r_pay = read_payout(km.get("payout_ratio"), km.get("payout_basis"))
     r_grev = read_growth(km.get("revenue_growth"), "los ingresos")
-    r_gearn = read_growth(km.get("earnings_growth"), "los beneficios")
+    r_gearn = read_growth(km.get("earnings_growth"), "los beneficios", "eps")
     r_beta = read_beta(km.get("beta"))
     r_52 = read_pos52(pos52)
     r_bb = read_buyback(km.get("buyback_yield"))
@@ -849,55 +817,79 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
             + _esc(" · ".join(_cls_note)),
             ParagraphStyle('ccls', fontName='Helvetica', fontSize=8.4, leading=11.5, textColor=BODY))]
 
-    # Banda 2 — score + DESGLOSE por categoría (número a la izquierda alineado
-    # con las 5 barras a la derecha; llena y organiza la portada).
+    # Banda 2 — las DOS puntuaciones (izquierda) y sus componentes (derecha):
+    # calidad = 4 categorías; precio = Valoración (múltiplos + DCF).
     _sl_w = 2.15 * inch
+    _ctr = ParagraphStyle('slc', leading=8.6, alignment=TA_CENTER)
+
+    def _score_block(kicker, sub, value, lvl, tone, note):
+        rows = [[Paragraph(f"<font size='6.6' color='#77777f'><b>{kicker}</b></font><br/>"
+                           f"<font size='6.6' color='#9a9aa0'>{sub}</font>", _ctr)],
+                [Paragraph(f"<font size='34' color='{TONE_COLOR[tone].hexval()}'><b>"
+                           f"{value if value is not None else '—'}</b></font>"
+                           f"<font size='11' color='#a5a5ac'> /100</font>",
+                           ParagraphStyle('heronum', fontName='Helvetica-Bold', leading=36, alignment=TA_CENTER))],
+                [chip(lvl or "sin dato", tone, size=8.4)]]
+        if note:
+            rows.append([Paragraph(f"<font size='6.4' color='{AMBER.hexval()}'><b>{_esc(note)}</b></font>",
+                                   ParagraphStyle('sln', leading=8.2, alignment=TA_CENTER, spaceBefore=3))])
+        t = Table(rows, colWidths=[_sl_w])
+        t.setStyle(TableStyle([('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                               ('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+                               ('TOPPADDING', (0, 0), (-1, -1), 1), ('BOTTOMPADDING', (0, 0), (-1, -1), 1)]))
+        return t
+
     score_left = Table([
-        [Paragraph(f"<font size='60' color='{TONE_COLOR[score_tone].hexval()}'><b>{total}</b></font>"
-                   f"<font size='16' color='#a5a5ac'> /100</font>",
-                   ParagraphStyle('heronum', fontName='Helvetica-Bold', leading=60, alignment=TA_CENTER))],
-        [Spacer(1, 6)],
-        [chip(level, score_tone, size=9)],
-        [Paragraph(f"<font size='6.8' color='{AMBER.hexval()}'><b>{basis_full}</b></font>",
-                   ParagraphStyle('slb', leading=8.6, alignment=TA_CENTER, spaceBefore=4))
-         if basis_full else Spacer(1, 1)],
-        [Spacer(1, 6)],
-        [Paragraph("<font size='6.6' color='#77777f'><b>CALIDAD FUNDAMENTAL</b></font><br/>"
-                   "<font size='6.6' color='#9a9aa0'>¿es buena la empresa?</font>",
-                   ParagraphStyle('slc', leading=8.6, alignment=TA_CENTER))],
+        [_score_block("CALIDAD DEL NEGOCIO", "¿es buena la empresa?", q_score, q_level, q_tone,
+                      "baja confianza: " + "; ".join(_q.get("low_confidence_reasons") or [])
+                      if _q.get("low_confidence") else None)],
+        [Spacer(1, 10)],
+        [_score_block("ATRACTIVO DEL PRECIO", "¿está cara hoy?", p_score, p_level, p_tone, _price_note)],
     ], colWidths=[_sl_w])
-    score_left.setStyle(TableStyle([('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                                    ('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+    score_left.setStyle(TableStyle([('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (0, 0), (-1, -1), 0),
                                     ('TOPPADDING', (0, 0), (-1, -1), 0), ('BOTTOMPADDING', (0, 0), (-1, -1), 0)]))
     _catw = CW - _sl_w - 42
     _barw = _catw - 1.55 * inch - 0.5 * inch
-    cat_rows = []
-    for cat_name, cat in breakdown.items():
-        cs, cm = cat.get("score", 0), cat.get("max", 20) or 20
-        pctc = cs / cm * 100
-        _t = 'pos' if pctc >= 60 else 'warn' if pctc >= 40 else 'neg'
-        if cat.get("conclusive") is False:
-            # Etapa 5: categoría no concluyente (cobertura < 50%), fuera del total.
+    _grp_st = ParagraphStyle('cgh', fontName='Helvetica-Bold', fontSize=6.6, leading=9, textColor=MUTED)
+    _groups = [("CALIDAD DEL NEGOCIO", cfg("thresholds.score.quality.categories")),
+               ("ATRACTIVO DEL PRECIO", cfg("thresholds.score.price.categories"))]
+    cat_rows, _grp_idx = [], []
+    for _gname, _gcats in _groups:
+        _grp_idx.append(len(cat_rows))
+        cat_rows.append([Paragraph(_gname, _grp_st), "", ""])
+        for cat_name in _gcats:
+            cat = breakdown.get(cat_name)
+            if cat is None:
+                continue
+            cs, cm = cat.get("score", 0), cat.get("max", 20) or 20
+            pctc = cs / cm * 100
+            _t = 'pos' if pctc >= 60 else 'warn' if pctc >= 40 else 'neg'
+            if cat.get("conclusive") is False:
+                # Etapa 5: categoría no concluyente (cobertura < 50%), fuera de su puntuación.
+                cat_rows.append([
+                    Paragraph(_esc(cat_name), ParagraphStyle('cn', fontName='Helvetica', fontSize=8.6, leading=11, textColor=BODY)),
+                    Paragraph(f"No concluyente · cobertura {(cat.get('coverage') or 0):.0%}",
+                              ParagraphStyle('cnc', fontName='Helvetica', fontSize=7.6, leading=10, textColor=MUTED)),
+                    Paragraph("<b>n/c</b>", ParagraphStyle('csc', fontName='Helvetica', fontSize=8.6, leading=11,
+                                                           alignment=TA_RIGHT, textColor=MUTED)),
+                ])
+                continue
             cat_rows.append([
                 Paragraph(_esc(cat_name), ParagraphStyle('cn', fontName='Helvetica', fontSize=8.6, leading=11, textColor=BODY)),
-                Paragraph(f"No concluyente · cobertura {(cat.get('coverage') or 0):.0%}",
-                          ParagraphStyle('cnc', fontName='Helvetica', fontSize=7.6, leading=10, textColor=MUTED)),
-                Paragraph("<b>n/c</b>", ParagraphStyle('csc', fontName='Helvetica', fontSize=8.6, leading=11,
-                                                       alignment=TA_RIGHT, textColor=MUTED)),
+                hbar(pctc, width=_barw, height=6, fg=(BRAND if _t == 'pos' else AMBER if _t == 'warn' else RED)),
+                Paragraph(f"<b>{cs}</b><font color='#a5a5ac'>/{cm}</font>",
+                          ParagraphStyle('csc', fontName='Helvetica', fontSize=8.6, leading=11, alignment=TA_RIGHT)),
             ])
-            continue
-        cat_rows.append([
-            Paragraph(_esc(cat_name), ParagraphStyle('cn', fontName='Helvetica', fontSize=8.6, leading=11, textColor=BODY)),
-            hbar(pctc, width=_barw, height=6, fg=(BRAND if _t == 'pos' else AMBER if _t == 'warn' else RED)),
-            Paragraph(f"<b>{cs}</b><font color='#a5a5ac'>/{cm}</font>",
-                      ParagraphStyle('csc', fontName='Helvetica', fontSize=8.6, leading=11, alignment=TA_RIGHT)),
-        ])
     cat_tbl = Table(cat_rows, colWidths=[1.55 * inch, _barw, 0.5 * inch])
-    cat_tbl.setStyle(TableStyle([
+    _ccmds = [
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('TOPPADDING', (0, 0), (-1, -1), 4.6), ('BOTTOMPADDING', (0, 0), (-1, -1), 4.6),
+        ('TOPPADDING', (0, 0), (-1, -1), 4.2), ('BOTTOMPADDING', (0, 0), (-1, -1), 4.2),
         ('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (1, 0), (1, -1), 8),
-    ]))
+    ]
+    for _gi in _grp_idx:
+        _ccmds += [('SPAN', (0, _gi), (-1, _gi)), ('TOPPADDING', (0, _gi), (-1, _gi), 8 if _gi else 0),
+                   ('LINEBELOW', (0, _gi), (-1, _gi), 0.4, HAIR)]
+    cat_tbl.setStyle(TableStyle(_ccmds))
     hero = Table([[score_left, cat_tbl]], colWidths=[_sl_w, CW - _sl_w])
     hero.setStyle(TableStyle([
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
@@ -907,6 +899,33 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         ('TOPPADDING', (0, 0), (-1, -1), 18), ('BOTTOMPADDING', (0, 0), (-1, -1), 18),
         ('LEFTPADDING', (0, 0), (0, 0), 6), ('RIGHTPADDING', (0, 0), (0, 0), 14),
         ('LEFTPADDING', (1, 0), (1, 0), 22), ('RIGHTPADDING', (1, 0), (1, 0), 20),
+    ]))
+
+    # Banda 2b — veredicto verbal + confianza (motivos) + cobertura parcial
+    _conf0 = analysis.get("confidence") or {}
+    _vrows = [[Paragraph(f"<font size='6.6' color='#77777f'><b>VEREDICTO</b></font>",
+                         ParagraphStyle('vk', leading=9))],
+              [Paragraph(_esc(_vd.get("text") or "Sin veredicto"),
+                         ParagraphStyle('vt', fontName='Helvetica-Bold', fontSize=15, leading=19, textColor=INK))]]
+    if _vd.get("confidence_text"):
+        _vrows.append([Paragraph(_esc(_vd["confidence_text"]),
+                                 ParagraphStyle('vc', fontName='Helvetica', fontSize=9.4, leading=12.5,
+                                                textColor=TONE_COLOR[{'alta': 'pos', 'media': 'warn', 'baja': 'neg'}
+                                                                     .get(_conf0.get('level'), 'neu')]))])
+    _why = [r for r in (_conf0.get("reasons") or [])][:3]
+    if _why:
+        _vrows.append([Paragraph(_esc("Motivos de la confianza: " + " · ".join(_why)),
+                                 ParagraphStyle('vr', fontName='Helvetica', fontSize=7.6, leading=10, textColor=BODY))])
+    if _cover_notes:
+        _vrows.append([Paragraph(_esc("Cobertura parcial: " + "; ".join(_cover_notes)),
+                                 ParagraphStyle('vn', fontName='Helvetica', fontSize=7.6, leading=10, textColor=AMBER))])
+    verdict_band = Table(_vrows, colWidths=[CW])
+    verdict_band.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, -1), colors.white), ('BOX', (0, 0), (-1, -1), 0.5, HAIR),
+        ('LINEBEFORE', (0, 0), (0, -1), 3, TONE_COLOR[q_tone]),
+        ('LEFTPADDING', (0, 0), (-1, -1), 14), ('RIGHTPADDING', (0, 0), (-1, -1), 12),
+        ('TOPPADDING', (0, 0), (0, 0), 9), ('TOPPADDING', (0, 1), (-1, -1), 2),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 2), ('BOTTOMPADDING', (0, -1), (-1, -1), 10),
     ]))
 
     # Banda 3 — KPIs (2 filas de 4 = 8 indicadores clave)
@@ -963,8 +982,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     _watch = _R[0] if _R else (_W[0] if _W else None)
     _hl_watch = _watch["reason"] if _watch else "Sin alertas relevantes"
     _hl_wtone = 'neg' if _R else ('warn' if _W else 'pos')
-    # Tercera card = PRECIO (dónde cotiza, cara/barata) — dimensión distinta al
-    # score (calidad) y sin solaparse con "A vigilar".
+    # Tercera card = PRECIO (dónde cotiza en su rango) — sin solaparse con "A vigilar".
     if r_52:
         _hl_val, _hl_vtone = r_52[0], r_52[1]
     elif r_up:
@@ -995,13 +1013,13 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         ('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (0, 0), (-1, -1), 0),
         ('TOPPADDING', (0, 0), (-1, -1), 0), ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
     ]))
-    _bands = [_title_band, hero, krow, hl_row]
+    _bands = [_title_band, hero, verdict_band, krow, hl_row]
     _frame_h = PAGE_H - M_TOP - M_BOT
     _mast_h = mast.wrap(CW, _frame_h)[1] + 0.8 + 6  # regla (grosor) + spaceAfter
     _top_pad = 26  # baja un poco el bloque de título para que no quede pegado al encabezado
     _avail = _frame_h - _mast_h - 4 - _top_pad  # colchón anti-desborde a página 2
     _content = sum(b.wrap(CW, _avail)[1] for b in _bands)
-    _gap = max(12.0, (_avail - _content) / 3.0)
+    _gap = max(10.0, (_avail - _content) / (len(_bands) - 1))
     story.append(Spacer(1, _top_pad))
     for _i, _b in enumerate(_bands):
         story.append(_b)
@@ -1097,9 +1115,37 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     else:
         sol_short = r_de[2] if r_de else None
 
+    # Etapa 9a: resumen ejecutivo construido alrededor del veredicto verbal:
+    # VEREDICTO -> lo que sostiene la CALIDAD -> lo que explica el PRECIO -> CONFIANZA.
     exec_items = []
-    # Etapa 6: la lectura de valoración es la del múltiplo primario del arquetipo
-    # (P/E solo donde aplica; en las demás ramas, su primer componente puntuado).
+    _qcats = [(n, breakdown[n]) for n in cfg("thresholds.score.quality.categories")
+              if n in breakdown and breakdown[n].get("conclusive", True) and breakdown[n].get("applicable", True)]
+    _qcats.sort(key=lambda kv: kv[1].get("score", 0), reverse=True)
+    _best = [f"{n} ({c['score']}/{c.get('max', 20)})" for n, c in _qcats[:2] if c.get("score", 0) >= 13]
+    _weak = [f"{n} ({c['score']}/{c.get('max', 20)})" for n, c in _qcats[-1:] if c.get("score", 0) < 10]
+    _vtxt = _vd.get("full") or _vd.get("text") or ""
+    if _vtxt:
+        exec_items.append(("VEREDICTO", _esc(
+            f"{_vtxt}. Calidad {q_score if q_score is not None else '—'}/100 · precio "
+            f"{p_score if p_score is not None else '—'}/100"
+            + (f" (crudo {p_raw}, contraído hacia 50 por la confianza)" if _pa.get("contracted") else "") + ".")))
+    _qtxt = []
+    if _best:
+        _qtxt.append("Destaca en " + " y ".join(_best))
+    if _weak:
+        _qtxt.append("el punto débil es " + _weak[0])
+    if _qtxt:
+        exec_items.append(("CALIDAD DEL NEGOCIO", _esc(_cap("; ".join(_qtxt)))))
+    if not is_financial and r_spread:
+        exec_items.append(("CREACIÓN DE VALOR", _esc(_cap(r_spread[2]))))
+    elif r_roe:
+        exec_items.append(("RENTABILIDAD", _esc(_cap(r_roe[2]))))
+    if sol_short:
+        exec_items.append(("SOLIDEZ", _esc(_cap(sol_short))))
+    _gro = " ".join(filter(None, [_cap(r_grev[2]) if r_grev else None, _cap(r_bb[2]) if r_bb else None]))
+    if _gro.strip():
+        exec_items.append(("CRECIMIENTO Y RETORNO", _esc(_gro)))
+    # Precio: la lectura del múltiplo primario del arquetipo y la del DCF
     _r_val = r_pe if "pe" not in _na_keys else None
     _branch_val = next((a for a in (breakdown.get("Valoración") or {}).get("adjustments") or []
                         if a.get("metric") in _branch_metrics), None)
@@ -1107,16 +1153,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         _r_val = (None, None, f"{_branch_val['metric'].replace(' vs Sector', '')}: {_branch_val['reason']}")
     _val = (_cap(_r_val[2]) + (" " + _cap(r_up[2]) if r_up else "")) if _r_val else (_cap(r_up[2]) if r_up else "")
     if _val.strip():
-        exec_items.append(("VALORACIÓN", _esc(_val)))
-    if not is_financial and r_spread:
-        exec_items.append(("CREACIÓN DE VALOR", _esc(_cap(r_spread[2]))))
-    elif r_roe:
-        exec_items.append(("RENTABILIDAD", _esc(_cap(r_roe[2]))))
-    _gro = " ".join(filter(None, [_cap(r_grev[2]) if r_grev else None, _cap(r_bb[2]) if r_bb else None]))
-    if _gro.strip():
-        exec_items.append(("CRECIMIENTO Y RETORNO", _esc(_gro)))
-    if sol_short:
-        exec_items.append(("SOLIDEZ", _esc(_cap(sol_short))))
+        exec_items.append(("ATRACTIVO DEL PRECIO", _esc(_val)))
     _ctx = " ".join(filter(None, [_cap(r_52[2]) if r_52 else None, _cap(r_beta[2]) if r_beta else None]))
     if _ctx.strip():
         exec_items.append(("CONTEXTO DE MERCADO", _esc(_ctx)))
@@ -1124,36 +1161,78 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         exec_items.append(("CONFIANZA DEL VEREDICTO", _esc(
             f"{_conf['level'].capitalize()}"
             + (f": {_conf['reasons'][0]}" if _conf.get("reasons") else ": los métodos y los datos coinciden")
-            + ". Se informa; en esta versión no limita la puntuación.")))
+            + ". Contrae el atractivo del precio hacia 50; la calidad no se contrae.")))
 
-    # ── Radar GRANDE y CENTRADO (perfil por categoría) ──
-    _short = {"Solidez Financiera": "Solidez", "Calidad de Ganancias": "Calidad",
-              "Valoración": "Valoración", "Rentabilidad": "Rentabilidad", "Crecimiento": "Crecimiento"}
-    # Categoría no concluyente: eje en la base neutral (50%) y marcada "(n/c)".
-    _rl = [_short.get(k, k) + (" (n/a)" if c.get("applicable") is False else
-                               " (n/c)" if c.get("conclusive") is False else "") for k, c in breakdown.items()]
-    _rv = [50.0 if c.get("conclusive") is False else (c.get("score", 0) / (c.get("max", 20) or 20)) * 100
-           for c in breakdown.values()]
-    radar_inner = radar_chart(_rl, _rv, size=4.8 * inch, accent=TONE_COLOR[score_tone]) \
-        if len(_rv) >= 3 else Spacer(1, 1)
+    # ── Composición de las dos puntuaciones (etapa 9a: sustituye al radar de 5 ejes,
+    # que mezclaba calidad y precio en un solo perfil). Izquierda: calidad y sus 4
+    # categorías; derecha: precio y los componentes de Valoración (múltiplos y DCF).
     _bal_line = (f"<font color='{BRAND_TXT.hexval()}'><b>{n_str}</b> fortaleza{'s' if n_str != 1 else ''}</font>"
                  f"&nbsp;&nbsp;·&nbsp;&nbsp;<font color='{AMBER.hexval()}'><b>{n_warn}</b> advertencia{'s' if n_warn != 1 else ''}</font>"
                  f"&nbsp;&nbsp;·&nbsp;&nbsp;<font color='{RED.hexval()}'><b>{n_red}</b> riesgo{'s' if n_red != 1 else ''}</font>")
-    radar_box = Table([
-        [Paragraph("<font size='7' color='#77777f'><b>PERFIL POR CATEGORÍA</b></font>",
-                   ParagraphStyle('rbt', leading=10, alignment=TA_CENTER))],
-        [radar_inner],
-        [Paragraph(f"<font size='8' color='#9a9aa0'>Cada eje 0–100 · Puntuación {total}/100{f' ({_esc(basis)})' if basis else ''}</font><br/>"
-                   f"<font size='8.5'>{_bal_line}</font>",
-                   ParagraphStyle('rbc', leading=12, alignment=TA_CENTER))],
-    ], colWidths=[CW])
-    radar_box.setStyle(TableStyle([
+    _halfw = (CW - 24 - 18) / 2.0
+    _lab_st = ParagraphStyle('cpl', fontName='Helvetica', fontSize=8.2, leading=10.5, textColor=BODY)
+    _num_st = ParagraphStyle('cpn', fontName='Helvetica-Bold', fontSize=8.2, leading=10.5, alignment=TA_RIGHT)
+
+    def _head(title, value, lvl, tone, extra=None):
+        return [Paragraph(f"<font size='6.8' color='#77777f'><b>{title}</b></font><br/>"
+                          f"<font size='17' color='{TONE_COLOR[tone].hexval()}'><b>"
+                          f"{value if value is not None else '—'}</b></font><font size='9' color='#a5a5ac'>/100</font>"
+                          f"&nbsp;&nbsp;<font size='8.4' color='{TONE_COLOR[tone].hexval()}'><b>{_esc(lvl or 'sin dato')}</b></font>"
+                          + (f"<br/><font size='6.8' color='{AMBER.hexval()}'>{_esc(extra)}</font>" if extra else ""),
+                          ParagraphStyle('cph', leading=13)), "", ""]
+
+    def _bar_row(label, value, mx, signed=False):
+        if signed:   # componente de Valoración: ajuste ± sobre la base 10/20
+            col = BRAND if value > 0 else RED if value < 0 else MUTED
+            return [Paragraph(_esc(label), _lab_st), hbar(min(100, abs(value) / 6 * 100), width=_halfw - 1.9 * inch,
+                                                         height=5, fg=col),
+                    Paragraph(f"<font color='{col.hexval()}'>{value:+d}</font>", _num_st)]
+        pct_ = value / (mx or 20) * 100
+        col = BRAND if pct_ >= 60 else AMBER if pct_ >= 40 else RED
+        return [Paragraph(_esc(label), _lab_st), hbar(pct_, width=_halfw - 1.9 * inch, height=5, fg=col),
+                Paragraph(f"{value}<font color='#a5a5ac'>/{mx}</font>", _num_st)]
+
+    _qrows = [_head("CALIDAD DEL NEGOCIO", q_score, q_level, q_tone,
+                    _q.get("basis") or ("baja confianza por cobertura" if _q.get("low_confidence") else None))]
+    for n in cfg("thresholds.score.quality.categories"):
+        c = breakdown.get(n)
+        if c is None:
+            continue
+        if c.get("conclusive") is False:
+            _qrows.append([Paragraph(_esc(n), _lab_st), Paragraph("no concluyente", _lab_st), Paragraph("n/c", _num_st)])
+        else:
+            _qrows.append(_bar_row(n, c.get("score", 0), c.get("max", 20)))
+    _prows = [_head("ATRACTIVO DEL PRECIO", p_score, p_level, p_tone, _price_note)]
+    for adj in (breakdown.get("Valoración") or {}).get("adjustments") or []:
+        if adj.get("metric") in ("No aplica", "Cobertura") or not isinstance(adj.get("adjustment"), int):
+            continue
+        _prows.append(_bar_row(f"{adj['metric'].replace(' vs Sector', '')} · {adj.get('value', '')}",
+                               adj["adjustment"], None, signed=True))
+
+    def _comp_tbl(rows):
+        t = Table(rows, colWidths=[1.4 * inch, _halfw - 1.9 * inch, 0.5 * inch])
+        t.setStyle(TableStyle([('SPAN', (0, 0), (-1, 0)), ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                               ('BOTTOMPADDING', (0, 0), (-1, 0), 6), ('LINEBELOW', (0, 0), (-1, 0), 0.4, HAIR),
+                               ('TOPPADDING', (0, 1), (-1, -1), 2.6), ('BOTTOMPADDING', (0, 1), (-1, -1), 2.6),
+                               ('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (0, 0), (-1, -1), 0)]))
+        return t
+    comp_box = Table([
+        [Paragraph("<font size='7' color='#77777f'><b>COMPOSICIÓN DE LAS DOS PUNTUACIONES</b></font>",
+                   ParagraphStyle('rbt', leading=10)), ""],
+        [_comp_tbl(_qrows), _comp_tbl(_prows)],
+        [Paragraph("<font size='7.4' color='#9a9aa0'>Calidad: categorías 0–20 reescaladas a 100. Precio: Valoración "
+                   "(base 10/20 + ajustes de múltiplos y DCF) reescalada a 100 y contraída hacia 50 según la "
+                   f"confianza.</font><br/><font size='8.5'>{_bal_line}</font>",
+                   ParagraphStyle('rbc', leading=11)), ""],
+    ], colWidths=[_halfw + 9, _halfw + 9])
+    comp_box.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, -1), colors.white), ('BOX', (0, 0), (-1, -1), 0.5, HAIR),
-        ('ALIGN', (0, 0), (0, -1), 'CENTER'),
-        ('LEFTPADDING', (0, 0), (-1, -1), 12), ('RIGHTPADDING', (0, 0), (-1, -1), 12),
-        ('TOPPADDING', (0, 0), (0, 0), 12), ('BOTTOMPADDING', (0, 0), (0, 0), 2),
-        ('TOPPADDING', (0, 1), (0, 1), 2), ('BOTTOMPADDING', (0, 1), (0, 1), 4),
-        ('TOPPADDING', (0, 2), (0, 2), 2), ('BOTTOMPADDING', (0, 2), (0, 2), 12),
+        ('SPAN', (0, 0), (-1, 0)), ('SPAN', (0, 2), (-1, 2)),
+        ('LINEAFTER', (0, 1), (0, 1), 0.4, HAIR),
+        ('LEFTPADDING', (0, 0), (-1, -1), 12), ('RIGHTPADDING', (0, 0), (-1, -1), 9),
+        ('TOPPADDING', (0, 0), (-1, 0), 11), ('BOTTOMPADDING', (0, 0), (-1, 0), 4),
+        ('TOPPADDING', (0, 1), (-1, 1), 4), ('BOTTOMPADDING', (0, 1), (-1, 1), 8),
+        ('TOPPADDING', (0, 2), (-1, 2), 2), ('BOTTOMPADDING', (0, 2), (-1, 2), 11),
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
     ]))
 
@@ -1195,9 +1274,9 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
     ]))
 
-    # Reparto de altura: cards · radar centrado · lectura, distribuido y simétrico
+    # Reparto de altura: cards · composición de las dos puntuaciones · lectura
     _rem2 = (PAGE_H - M_TOP - M_BOT) - 34
-    body2 = Table([[cg], [radar_box], [narr_box]], colWidths=[CW],
+    body2 = Table([[cg], [comp_box], [narr_box]], colWidths=[CW],
                   rowHeights=[_rem2 * 0.27, _rem2 * 0.46, _rem2 * 0.27])
     body2.setStyle(TableStyle([
         ('VALIGN', (0, 0), (0, 0), 'TOP'),
@@ -1478,7 +1557,9 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
             f"Confianza del veredicto: {_conf['level']}"
             + (f" (techo en {_conf['level']} sin contraste entre métodos; sin techo sería {_conf['capped_from']})"
                if _conf.get("capped_from") else "")
-            + ". En esta versión se informa y no limita la puntuación."), S['small']))
+            + (f". Contrae el atractivo del precio hacia 50 (factor {_pa.get('factor')}): crudo {p_raw}, mostrado "
+               f"{p_score}" if _pa.get("factor") is not None else "")
+            + ". La calidad del negocio no se contrae."), S['small']))
 
     # ════════════════ PÁGINA 3 — RENTABILIDAD + SOLIDEZ ════════════════
     story.append(PageBreak())
@@ -1827,12 +1908,13 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     # seguida de sus indicadores con ajuste coloreado y lectura del motor.
     if breakdown:
         story.append(Spacer(1, 10))
-        story.append(Paragraph("Desglose de la puntuación", S['h2']))
+        story.append(Paragraph("Desglose por categoría", S['h2']))
         story.append(Paragraph(
             "Cada categoría parte de una base neutral de 10/20. La columna Ajuste muestra cuánto suma o "
-            "resta cada indicador según la banda en la que cae."
-            + (f" Total {total}/100 {_esc(basis)}: las categorías no concluyentes se excluyen y el "
-               f"total se reescala a 100 sobre las demás." if basis else ""), S['small']))
+            "resta cada indicador según la banda en la que cae. Solidez, Rentabilidad, Calidad de ganancias y "
+            "Crecimiento forman la calidad del negocio; Valoración, el atractivo del precio. Las categorías no "
+            "concluyentes se excluyen y cada puntuación se reescala a 100 sobre las demás."
+            + (f" {_esc(' · '.join(_cover_notes))}." if _cover_notes else ""), S['small']))
         story.append(Spacer(1, 4))
 
         _hdr_st = ParagraphStyle('bdh', fontName='Helvetica-Bold', fontSize=7.4, leading=9, textColor=MUTED)
@@ -1862,7 +1944,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
                     Paragraph("<b>n/c</b>", ParagraphStyle('bdcs', fontName='Helvetica-Bold', fontSize=8.8,
                                                            leading=11, textColor=MUTED, alignment=TA_CENTER)),
                     Paragraph(_esc(f"No concluyente (cobertura {(cat.get('coverage') or 0):.0%}): "
-                                   "excluida del total, que se reescala sobre las demás categorías"), _rea_st),
+                                   "excluida de su puntuación, que se reescala sobre las demás categorías"), _rea_st),
                 ])
             else:
                 bd_rows.append([
@@ -1943,7 +2025,9 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     story.append(Paragraph(
         "<b>Metodología.</b> Este informe combina ratios TTM y del último ejercicio (fuente: Yahoo Finance) con los "
         "modelos de Altman (1968), Piotroski (2000), número de Graham, un DCF multietapa con WACC estimado por CAPM y "
-        "la puntuación propietaria Finanzer (5 categorías, 100 puntos). Las lecturas se generan automáticamente según "
+        "dos puntuaciones Finanzer de 0 a 100: calidad del negocio (solidez, rentabilidad, calidad de ganancias y "
+        "crecimiento) y atractivo del precio (valoración por múltiplos y DCF, contraída hacia 50 según la confianza "
+        "del veredicto). Las lecturas se generan automáticamente según "
         "la banda en la que cae cada indicador frente a umbrales canónicos y a la mediana de su sector.",
         ParagraphStyle('meth', parent=S['small'], leading=10.5)))
     story.append(Spacer(1, 4))

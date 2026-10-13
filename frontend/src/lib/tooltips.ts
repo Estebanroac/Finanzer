@@ -1,18 +1,18 @@
 import { TooltipContent } from "@/components/InfoTooltip";
 
 // ─── SCORE GENERAL ──────────────────────────────────────
+// Etapa 9a (mínimo; la 9b rehace la UI): la tarjeta muestra la CALIDAD del negocio.
 export const SCORE_TOOLTIP: TooltipContent = {
-  title: "Score General",
+  title: "Calidad del negocio",
   description:
-    "Puntuacion compuesta de 0 a 100 que evalua la salud financiera global de la empresa. Combina metricas de valoracion, rentabilidad, solidez financiera, crecimiento y calidad de ganancias.",
+    "Puntuacion de 0 a 100 de la calidad del negocio: solidez financiera, rentabilidad, calidad de ganancias y crecimiento. El atractivo del precio se puntua aparte (valoracion por multiplos y DCF).",
   thresholds: [
-    { label: "Excelente — empresa muy solida", value: "80–100", color: "#0cc06c" },
-    { label: "Favorable — buena inversion potencial", value: "60–79", color: "#22c55e" },
-    { label: "Neutral — riesgo moderado", value: "40–59", color: "#fbbf24" },
-    { label: "Precaucion — debilidades importantes", value: "20–39", color: "#f97316" },
-    { label: "Evitar — riesgo alto", value: "0–19", color: "#ff4d4d" },
+    { label: "Excelente", value: "80–100", color: "#0cc06c" },
+    { label: "Solida", value: "65–79", color: "#22c55e" },
+    { label: "Media", value: "45–64", color: "#fbbf24" },
+    { label: "Debil", value: "0–44", color: "#ff4d4d" },
   ],
-  tip: "El score es una guia, no una recomendacion. Siempre analiza los detalles de cada categoria.",
+  tip: "La calidad y el precio son preguntas distintas: una empresa excelente puede estar cara.",
 };
 
 // ─── METRICAS CLAVE (MetricsGrid) ───────────────────────

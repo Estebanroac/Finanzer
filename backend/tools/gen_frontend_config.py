@@ -40,7 +40,8 @@ def _pairs(d):
 
 def render() -> str:
     bench = cfg("sectors.benchmarks")
-    lv = cfg("thresholds.score.total.level_bands")
+    qb, ql = cfg("thresholds.score.quality.bands"), cfg("thresholds.score.quality.labels")
+    pb, pl = cfg("thresholds.score.price.bands"), cfg("thresholds.score.price.labels")
     pio = cfg("valuation.models.piotroski.bands")
     ms = cfg("thresholds.ui.metric_scale")
     na = cfg("sectors.archetypes.not_applicable")
@@ -59,8 +60,11 @@ export const SECTOR_DEFAULTS: SectorBenchmarks = {_obj(bench["default"])};
 
 export const SECTOR_MAP: Record<string, Partial<SectorBenchmarks>> = {sectors};
 
-/** Niveles del score: Excelente / Favorable / Neutral / Precaución / Evitar (thresholds.toml [score.total]). */
-export const SCORE_LEVEL_BANDS = [{', '.join(_num(x) for x in lv)}] as const;
+/** Etapa 9a: calidad del negocio y atractivo del precio, 0-100 (thresholds.toml [score.quality] / [score.price]). */
+export const QUALITY_BANDS = [{', '.join(_num(x) for x in qb)}] as const;
+export const QUALITY_LABELS = [{', '.join(repr(x).replace("'", '"') for x in ql)}] as const;
+export const PRICE_BANDS = [{', '.join(_num(x) for x in pb)}] as const;
+export const PRICE_LABELS = [{', '.join(repr(x).replace("'", '"') for x in pl)}] as const;
 
 /** Piotroski F-Score: Fuerte / Bueno / Neutral / Débil / Crítico (valuation.toml [models.piotroski]). */
 export const PIOTROSKI_BANDS = [{', '.join(_num(x) for x in pio)}] as const;

@@ -68,7 +68,8 @@ def test_reit_branch(outputs_by_env):
         val = a["score_coverage"]["valoracion"]
         assert {"P/E", "P/FCF", "PEG"} <= set(val["not_applicable"])
         assert "P/FFO (REIT)" in _metrics(a, "Valoración")
-        assert "Rentabilidad por dividendo (REIT)" in _metrics(a, "Valoración")
+        # Etapa 9a: la rentabilidad por dividendo puntúa en Crecimiento (retorno total), no aquí.
+        assert "Rentabilidad por dividendo (REIT)" not in _metrics(a, "Valoración")
         assert "Perfil GARP" not in _metrics(a, "Valoración")
         sol = a["score_coverage"]["solidez"]
         assert "Altman Z" in sol["not_applicable"] and "D/E" not in sol["not_applicable"] \
@@ -99,7 +100,8 @@ def test_growth_pre_profit_valuation_is_conclusive(outputs_by_env):
         val = a["score_coverage"]["valoracion"]
         assert val["conclusive"] and {"P/E", "PEG"} <= set(val["not_applicable"])
         assert {"EV/Ventas", "Regla de 40"} <= set(_metrics(a, "Valoración"))
-        assert a["score"]["excluded_categories"] == [] and a["score"]["partial"] is False
+        assert a["score"]["excluded_categories"] == [] and a["quality"]["partial"] is False
+        assert a["price_attractiveness"]["partial"] is False
         assert a.get("graham_number") is None and "graham" in a["not_applicable"]
         assert a.get("dcf") is not None          # FCF positivo: el DCF sí aplica
         assert "Crecimiento del BPA" in a["score_coverage"]["crecimiento"]["not_applicable"]
@@ -164,7 +166,7 @@ def test_bank_pdf_never_reads_pe_or_fcf_as_primary(outputs_by_env):
             if ln.strip() in ("P/E (TTM)", "Forward P/E", "P/FCF", "FCF Yield", "PEG", "EV/EBITDA"):
                 assert any(x.startswith("No aplica a FINANCIAL") for x in lines[i + 1:i + 5]), (env, ln, lines[i:i + 5])
         txt = "\n".join(lines)
-        assert "VALORACIÓN\nP/B frente a ROE" in txt, env
+        assert "ATRACTIVO DEL PRECIO\nP/B frente a ROE" in txt, env
         cover = txt.split("===== página 2")[0]
         assert "FCF YIELD" not in cover and "P/E (TTM)" not in cover and "P/B" in cover, env
 
@@ -190,7 +192,7 @@ def test_reit_growth_is_per_share(outputs_by_env):
         assert xm["shares_cagr_3y"] == pytest.approx(0.1225, abs=1e-3)
         assert xm["ffo_per_share_cagr_3y"] == pytest.approx(-0.0009, abs=1e-3)
         m = _metrics(a, "Crecimiento")
-        assert "Crecimiento FFO por acción 3Y" in m and "Crecimiento Ingresos 3Y" not in m
+        assert "Retorno total (dividendo + FFO por acción)" in m and "Crecimiento Ingresos 3Y" not in m
         assert "Crecimiento FCF por acción 3Y" in m
         assert "Crecimiento del BPA" in a["score_coverage"]["crecimiento"]["not_applicable"]
 

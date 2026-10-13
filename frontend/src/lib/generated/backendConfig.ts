@@ -40,8 +40,11 @@ export const SECTOR_MAP: Record<string, Partial<SectorBenchmarks>> = {
   materials: { pe: 14, forward_pe: 12, pb: 2, ev_ebitda: 8, roe: 0.12, net_margin: 0.08, de: 0.6 },
 };
 
-/** Niveles del score: Excelente / Favorable / Neutral / Precaución / Evitar (thresholds.toml [score.total]). */
-export const SCORE_LEVEL_BANDS = [80, 60, 40, 20] as const;
+/** Etapa 9a: calidad del negocio y atractivo del precio, 0-100 (thresholds.toml [score.quality] / [score.price]). */
+export const QUALITY_BANDS = [80, 65, 45] as const;
+export const QUALITY_LABELS = ["excelente", "sólida", "media", "débil"] as const;
+export const PRICE_BANDS = [65, 45, 30] as const;
+export const PRICE_LABELS = ["atractivo", "razonable", "exigente", "muy exigente"] as const;
 
 /** Piotroski F-Score: Fuerte / Bueno / Neutral / Débil / Crítico (valuation.toml [models.piotroski]). */
 export const PIOTROSKI_BANDS = [8, 6, 4, 2] as const;

@@ -275,13 +275,17 @@ def _cats(res):
 
 @pytest.mark.parametrize("case", ["tech_full", "weak_full", "mid_full"])
 def test_full_data_gives_exactly_the_previous_score(case):
-    """MATURE con todos los datos: idéntico a antes de la etapa 5 (y de la 6).
-    bank_full y reit_full cambian a propósito en la etapa 6 (ramas FINANCIAL y REIT)."""
+    """MATURE con todos los datos: categorías idénticas a antes de la etapa 5 (y de la 6).
+    Etapa 9a: sin total único; calidad = 4 categorías y precio = Valoración, a 100."""
     r, c, kw = CASES[case]
     res = calculate_score_v2(r, c, **kw)
     assert res["archetype"] == "MATURE"
-    assert res["score"] == EXPECTED_FULL[case]["score"]
-    assert _cats(res) == EXPECTED_FULL[case]["cats"]
+    cats = EXPECTED_FULL[case]["cats"]
+    assert _cats(res) == cats
+    q = [cats[k] for k in ("Solidez Financiera", "Rentabilidad", "Calidad de Ganancias", "Crecimiento")]
+    assert res["quality"]["score"] == round(sum(q) * 100 / 80)
+    assert res["price_raw"]["score"] == cats["Valoración"] * 5
+    assert "score" not in res and "level" not in res
     assert all(v["coverage"] == 1.0 and not v["missing"] and not v["not_applicable"]
                for v in res["coverage"].values())
 
@@ -583,8 +587,10 @@ def test_category_below_min_coverage_is_excluded_and_total_rescaled():
     cre = next(x for x in res["categories"] if x["category"] == "Crecimiento")
     assert cre["conclusive"] is False and cre["coverage"]["conclusive"] is False
     assert res["excluded_categories"] == ["Crecimiento"]
-    others = [x["score"] for x in res["categories"] if x["category"] != "Crecimiento"]
-    assert res["score"] == round(sum(others) * 100 / (20 * 4))
+    others = [x["score"] for x in res["categories"] if x["category"] not in ("Crecimiento", "Valoración")]
+    assert res["quality"]["score"] == round(sum(others) * 100 / (20 * 3))     # calidad sobre 3 de 4
+    assert res["quality"]["basis"] == "calculado sobre 3 de 4 categorías"
+    assert res["quality"]["low_confidence"] is True
     # sin reescalado: el único componente con dato conserva su ajuste
     assert cre["adjustments"][-1]["metric"] == "Cobertura" and cre["adjustments"][-1]["adjustment"] == 0
 
@@ -599,7 +605,8 @@ def test_category_at_50_percent_is_rescaled_and_low_confidence():
 
 def test_all_categories_inconclusive_is_neutral():
     res = calculate_score_v2({}, {}, sector_key="default")
-    assert res["score"] == 50 and res["score_conclusive"] is False
+    assert res["quality"]["score"] is None and res["price_raw"]["score"] is None   # sin dato, no un 50
+    assert res["score_conclusive"] is False
     assert len(res["excluded_categories"]) == 5
 
 
@@ -607,15 +614,16 @@ def test_all_categories_inconclusive_is_neutral():
 def test_partial_total_declares_its_basis():
     r, c, kw = CASES["mid_full"]
     full = calculate_score_v2(r, c, **kw)
-    assert (full["categories_included"], full["categories_total"]) == (5, 5)
+    assert (full["quality"]["categories_included"], full["quality"]["categories_total"]) == (4, 4)
     part = calculate_score_v2(r, dict(c, eps_cagr_3y=None, fcf_cagr_3y=None), **kw)
-    assert (part["categories_included"], part["categories_total"]) == (4, 5)
+    assert (part["quality"]["categories_included"], part["quality"]["categories_total"]) == (3, 4)
+    assert part["quality"]["partial"] is True and part["price_raw"]["partial"] is False
 
 
 def test_partial_total_is_shown_in_json_and_pdf(outputs_by_env):
-    """Total sobre 4 de 5 categorías, en el JSON y en el PDF. Desde la etapa 6 SNOW
-    (GROWTH_PRE_PROFIT) ya no tiene Valoración no concluyente, así que se fuerza el
-    caso sobre su análisis: Valoración no concluyente y total parcial."""
+    """Etapa 9a: cobertura parcial de cada puntuación, en el JSON y en la portada del PDF.
+    Se fuerza sobre SNOW: Crecimiento no concluyente (calidad sobre 3 de 4) y Valoración
+    no concluyente (precio sin dato)."""
     import copy
     import conftest
     if "prod" not in conftest.ENVS:
@@ -623,21 +631,22 @@ def test_partial_total_is_shown_in_json_and_pdf(outputs_by_env):
     a0, _ = outputs_by_env("prod")["SNOW"]
     a = copy.deepcopy(a0)
     a["score"]["breakdown"]["Valoración"].update(conclusive=False, coverage=0.25)
-    a["score"].update(partial=True, basis="calculado sobre 4 de 5 categorías", categories_included=4,
-                      categories_total=5, excluded_categories=["Valoración"])
+    a["score"]["breakdown"]["Crecimiento"].update(conclusive=False, coverage=0.33)
+    a["quality"].update(partial=True, basis="calculado sobre 3 de 4 categorías", categories_included=3,
+                        excluded_categories=["Crecimiento"])
+    a["price_attractiveness"].update(score=None, score_raw=None, level=None, partial=True,
+                                     basis="calculado sobre 0 de 1 categorías")
     with fixture_backend.replay(fixture_backend.fixtures_dir("prod")) as store:
         store.load("SNOW")
         pdf = fixture_backend.build_pdf_bytes(a, fixture_backend.capture_date(store.meta["SNOW"]))
-    sc = a["score"]
-    assert sc["partial"] is True and sc["basis"] == "calculado sobre 4 de 5 categorías"
-    assert (sc["categories_included"], sc["categories_total"]) == (4, 5)
-    assert sc["breakdown"]["Valoración"]["conclusive"] is False
-    txt = fixture_backend.pdf_text(pdf) if isinstance(pdf, bytes) else pdf
-    assert f"Puntuación {sc['total_score']}/100 (calculado sobre 4 de 5 categorías)" in txt
-    assert "Valoración no concluyente" in txt and "No concluyente · cobertura 25%" in txt
-    nflx = outputs_by_env("prod")["NFLX"][0]["score"]
-    assert nflx["partial"] is False and nflx["basis"] is None
-    assert a0["score"]["partial"] is False          # SNOW real (etapa 6): 5 de 5
+    txt = (fixture_backend.pdf_text(pdf) if isinstance(pdf, bytes) else pdf).replace("\n", " ")
+    cover = txt.split("===== página 2")[0]
+    assert "Calidad calculado sobre 3 de 4 categorías (Crecimiento no concluyente)" in cover
+    assert "Precio sin dato: Valoración no concluyente" in cover
+    assert "No concluyente · cobertura 25%" in cover
+    nflx = outputs_by_env("prod")["NFLX"][0]
+    assert nflx["quality"]["partial"] is False and nflx["quality"]["basis"] is None
+    assert a0["quality"]["partial"] is False          # SNOW real (etapa 6): 4 de 4
 
 
 # ─────────────────────────── etapa 6: "no aplica" frente a "sin dato" ───────────────────────────
@@ -694,10 +703,11 @@ def test_stagnation_tolerance_from_config():
     assert growth_for_bands(0.01) == 0.01 and growth_for_bands(None) is None
 
 
-@pytest.mark.parametrize("arch,key", [(None, "Crecimiento Ingresos 3Y"), ("REIT", "Crecimiento FFO por acción 3Y")])
+@pytest.mark.parametrize("arch,key", [(None, "Crecimiento Ingresos 3Y"),
+                                      ("REIT", "Retorno total (dividendo + FFO por acción)")])
 def test_stagnation_scores_like_the_flat_band(arch, key):
     def adj(g):
-        res = score_crecimiento(g, None, None, archetype=arch)
+        res = score_crecimiento(g, None, None, archetype=arch, dividend_yield=0.05)
         return next(a["adjustment"] for a in res["adjustments"] if a["metric"] == key)
     assert adj(-0.001) == adj(0.01) == adj(-0.019)          # plano
     assert adj(-0.03) < adj(-0.019)                           # contracción real

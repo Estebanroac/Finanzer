@@ -6,13 +6,14 @@ import { SCORE_TOOLTIP } from "@/lib/tooltips";
 import { getScoreColor, getScoreLabel } from "@/lib/api";
 
 interface ScoreCardProps {
-  score: number;
+  score: number;      // etapa 9a: calidad del negocio (0-100)
   maxScore: number;
+  verdict?: string;   // veredicto verbal "Calidad X · precio Y (confianza …)"
   companyType: string;
   isGrowth: boolean;
 }
 
-export default function ScoreCard({ score, maxScore, companyType, isGrowth }: ScoreCardProps) {
+export default function ScoreCard({ score, maxScore, verdict, companyType, isGrowth }: ScoreCardProps) {
   const pct = Math.round((score / maxScore) * 100);
   const color = getScoreColor(pct);
   const label = getScoreLabel(pct);
@@ -96,7 +97,8 @@ export default function ScoreCard({ score, maxScore, companyType, isGrowth }: Sc
             <span className="text-[17px] font-semibold" style={{ color }}>{label}</span>
             <InfoTooltip content={SCORE_TOOLTIP} size="md" />
           </div>
-          <div className="text-xs text-zinc-500 mt-1">{score} de {maxScore} pts</div>
+          <div className="text-xs text-zinc-500 mt-1">{score} de {maxScore}</div>
+          {verdict && <div className="text-xs text-zinc-400 mt-1.5">{verdict}</div>}
 
           <div className="flex gap-1.5 mt-3 flex-wrap">
             {isGrowth && (

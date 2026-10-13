@@ -158,8 +158,12 @@ def test_score_v2_total_is_sum_of_categories():
     cats = r["categories"]
     assert len(cats) == 5
     assert all(0 <= c["score"] <= 20 and c["max_score"] == 20 for c in cats)
-    assert r["score"] == sum(c["score"] for c in cats) and 0 <= r["score"] <= 100
-    assert r["level"] in {"Excelente", "Favorable", "Neutral", "Precaución", "Alto Riesgo"}
+    # Etapa 9a: dos puntuaciones, sin total único
+    by = {c["category"]: c["score"] for c in cats}
+    q = sum(by[k] for k in ("Solidez Financiera", "Rentabilidad", "Calidad de Ganancias", "Crecimiento"))
+    assert r["quality"]["score"] == round(q * 100 / 80) and r["price_raw"]["score"] == by["Valoración"] * 5
+    assert r["quality"]["level"] in {"excelente", "sólida", "media", "débil"}
+    assert "score" not in r and "level" not in r
     assert r["is_financial_sector"] is False and r["financial_health"] is None
 
 
@@ -172,4 +176,4 @@ def test_score_v2_financial_path():
 
 def test_score_v2_all_missing_is_neutral():
     r = calculate_score_v2({}, {}, sector_key="default")
-    assert r["score"] == 50  # 5 categorías en su base neutra de 10
+    assert r["quality"]["score"] is None  # ninguna categoría concluyente: sin dato

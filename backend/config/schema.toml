@@ -81,8 +81,6 @@ rescue_moderate_net_cap = "int"
 rescue_moderate_max = "int"
 financial_pb_ratio_bounds = "list[float]"
 financial_pb_points = "list[int]"
-reit_dividend_yield_bounds = "list[float]"
-reit_dividend_yield_points = "list[int]"
 ev_sales_bounds = "list[float]"
 ev_sales_points = "list[int]"
 rule_of_40_bounds = "list[float]"
@@ -112,14 +110,29 @@ fcf_bounds = "list[float]"
 fcf_points = "list[int]"
 growth_company_points = "int"
 flat_tolerance = "float"
-reit_ffo_ps_bounds = "list[float]"
-reit_ffo_ps_points = "list[int]"
+reit_total_return_bounds = "list[float]"
+reit_total_return_points = "list[int]"
 
 [thresholds.score.total]
 max = "int"
-level_bands = "list[int]"
 growth_company_min_revenue_cagr = "float"
 growth_quality_default = "int"
+
+[thresholds.score.quality]
+categories = "list[str]"
+bands = "list[int]"
+labels = "list[str]"
+
+[thresholds.score.price]
+categories = "list[str]"
+bands = "list[int]"
+labels = "list[str]"
+neutral = "int"
+
+[thresholds.score.price.confidence_factor]
+alta = "float"
+media = "float"
+baja = "float"
 
 [thresholds.score.company_type]
 revenue_bounds = "list[float]"
@@ -341,16 +354,8 @@ w = "int"
 [thresholds.pdf]
 vs_sector_bounds = "list[int]"
 pe_spread_support = "float"
-roe_negative_equity_min_roa = "float"
-roe_bounds = "list[float]"
-spread_bounds = "list[float]"
-current_bounds = "list[number]"
-de_bounds = "list[number]"
-coverage_bounds = "list[int]"
 nde_bounds = "list[number]"
 payout_bounds = "list[number]"
-growth_bounds = "list[float]"
-upside_bounds = "list[int]"
 graham_discount = "float"
 beta_bounds = "list[float]"
 pos52_bounds = "list[int]"

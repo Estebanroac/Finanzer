@@ -30,6 +30,7 @@ from classify import CYCLICAL, FINANCIAL, GROWTH_PRE_PROFIT, REIT, classify, not
 from normalize import normalize as normalize_earnings
 from yf_adapter import _UNUSUAL_ROWS
 from ttm import TTM_QUARTERS
+from verdict import price as verdict_price, verdict as build_verdict
 from cost_of_capital import adjusted_beta, effective_tax_rate, risk_free, wacc as compute_wacc
 from valuation_confidence import (convergence, coverage_dimension, dcf_reliability, signal_from_upside,
                                   source_dimension, stability_dimension, verdict_confidence)
@@ -954,6 +955,7 @@ def _compute_analysis(symbol: str) -> dict:
             # componente de Valoración con aporte acotado por su fiabilidad.
             dcf_for_score = None
             _multiples_signal = None
+            _quality_part = _price_part = None
             try:
                 price = financials.price
                 eps = financials.eps
@@ -1110,10 +1112,6 @@ def _compute_analysis(symbol: str) -> dict:
                     archetype_values=archetype_values,
                     dcf=dcf_for_score,
                 )
-                # Normalize: the brain returns different structures, unify them
-                raw_score = score_result.get("score", 0) if isinstance(score_result, dict) else 0
-                raw_max = score_result.get("max_score", 100) if isinstance(score_result, dict) else 100
-                raw_level = score_result.get("level", "N/A") if isinstance(score_result, dict) else "N/A"
 
                 # Build category breakdown from categories array or category_scores dict
                 breakdown = {}
@@ -1133,10 +1131,10 @@ def _compute_analysis(symbol: str) -> dict:
                         "adjustments": cat.get("adjustments", []),
                     }
 
+                # Etapa 9a: `score` ya no tiene total único (total_score / max_score /
+                # level): conserva el desglose por categoría. Las dos puntuaciones
+                # van en `quality` y `price_attractiveness` (veredicto en `verdict`).
                 result["score"] = {
-                    "total_score": raw_score,
-                    "max_score": raw_max,
-                    "level": raw_level,
                     "breakdown": breakdown,
                     # Etapa 5: categorías excluidas del total por cobertura < 50%.
                     "excluded_categories": (score_result.get("excluded_categories", [])
@@ -1144,16 +1142,8 @@ def _compute_analysis(symbol: str) -> dict:
                     "not_applicable_categories": (score_result.get("not_applicable_categories", [])
                                                   if isinstance(score_result, dict) else []),
                 }
-                # Un total parcial no puede leerse igual que uno completo: se
-                # declara sobre cuántas categorías se calculó.
-                _n_inc = score_result.get("categories_included") if isinstance(score_result, dict) else None
-                _n_tot = score_result.get("categories_total") if isinstance(score_result, dict) else None
-                if _n_inc is not None and _n_tot:
-                    result["score"]["categories_included"] = _n_inc
-                    result["score"]["categories_total"] = _n_tot
-                    result["score"]["partial"] = _n_inc < _n_tot
-                    result["score"]["basis"] = (f"calculado sobre {_n_inc} de {_n_tot} categorías"
-                                                if _n_inc < _n_tot else None)
+                _quality_part = score_result.get("quality")
+                _price_part = score_result.get("price_raw")
 
                 # Financial health (sector financiero): calculate_score_v2 ya lo
                 # computó correctamente con los argumentos correctos; exponerlo
@@ -1280,6 +1270,18 @@ def _compute_analysis(symbol: str) -> dict:
                 })
             except Exception as e:
                 _sin_dato("confianza", e)
+            # ── Etapa 9a: calidad del negocio y atractivo del precio (lib/verdict.py) ──
+            # El precio se contrae hacia 50 según la confianza del veredicto de valoración.
+            try:
+                if _quality_part is not None:
+                    result["quality"] = _quality_part
+                    _cats = score_result.get("categories") or []
+                    # `price` ya es el precio de la acción: la puntuación va en price_attractiveness.
+                    result["price_attractiveness"] = verdict_price(_cats, (result.get("confidence") or {}).get("level"))
+                    result["verdict"] = build_verdict(result["quality"], result["price_attractiveness"],
+                                                      result.get("confidence"))
+            except Exception as e:
+                _sin_dato("veredicto", e)
 
         return result
 

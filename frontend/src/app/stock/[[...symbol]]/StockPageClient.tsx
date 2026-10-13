@@ -206,10 +206,11 @@ function AnalysisContent({ data, symbol }: { data: StockAnalysis; symbol: string
         {/* ── Score + Key Metrics ── */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6 fade-up delay-2">
           <div>
-            {data.score ? (
+            {data.quality?.score != null ? (
               <ScoreCard
-                score={data.score.total_score}
-                maxScore={data.score.max_score}
+                score={data.quality.score}
+                maxScore={100}
+                verdict={data.verdict?.full}
                 companyType={data.company_type}
                 isGrowth={data.is_growth}
               />
@@ -301,14 +302,12 @@ function QuickSummary({ data }: { data: StockAnalysis }) {
 
   const items: Array<{ label: string; text: React.ReactNode }> = [];
 
-  if (score) {
-    const pct = Math.round((score.total_score / score.max_score) * 100);
+  // Etapa 9a: veredicto verbal (calidad · precio) en lugar de un total único.
+  if (score && data.verdict) {
     items.push({
-      label: "Puntuación",
-      text: <>Obtiene <b className="text-white">{pct}/100</b>{" "}
-        {pct >= 75 ? "— fundamentos sólidos en la mayoría de categorías."
-          : pct >= 50 ? "— fundamentos aceptables con áreas de mejora."
-          : "— se identifican varios frentes de riesgo."}</>,
+      label: "Veredicto",
+      text: <><b className="text-white">{data.verdict.text}</b>
+        {data.verdict.confidence_text ? <> {data.verdict.confidence_text}</> : null}</>,
     });
   }
 

@@ -37,7 +37,7 @@ export default function EvaluationTab({ data }: { data: StockAnalysis }) {
 
           <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 p-5">
             <h4 className="text-xs text-zinc-500 uppercase tracking-widest mb-4 font-medium">
-              Desglose del score · {score.total_score} / {score.max_score}
+              Desglose · calidad {data.quality?.score ?? "—"}/100 · precio {data.price_attractiveness?.score ?? "—"}/100
             </h4>
             <div className="space-y-3.5">
               {Object.entries(score.breakdown).map(([key, cat]) => {
@@ -81,7 +81,7 @@ export default function EvaluationTab({ data }: { data: StockAnalysis }) {
         <div>
           <div className="flex items-center gap-2 mb-4">
             <h4 className="text-xs text-zinc-500 uppercase tracking-widest font-medium">
-              Desglose detallado — {score.total_score}/{score.max_score} pts
+              Desglose detallado por categoría
             </h4>
             <InfoTooltip content={EVALUATION.score_breakdown} />
           </div>

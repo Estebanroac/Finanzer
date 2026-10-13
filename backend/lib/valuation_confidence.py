@@ -24,7 +24,7 @@ CONFIANZA DEL VEREDICTO = f(convergencia, cobertura, calidad de fuente, estabili
   · estabilidad: CYCLICAL la reduce a baja; "posible cíclica" o clasificación
     ambigua, a media.
 Cada dimensión es alta/media/baja; la media ponderada (pesos en config) da el
-nivel. En la etapa 8 la confianza se calcula y se muestra: no limita el score
+nivel. Techo en media si la convergencia no es alta (no evaluable o media: etapa 9a). En la etapa 8 la confianza se calcula y se muestra: no limita el score
 (el techo condicionado por la confianza es de la etapa 9).
 """
 from typing import Any, Dict, List, Optional
@@ -214,10 +214,16 @@ def verdict_confidence(dimensions: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
     reasons = [f"{labels[k]} {d['level'].replace('_', ' ')}: " + "; ".join(d["reasons"])
                for k, d in dimensions.items() if d["level"] != "alta" and d.get("reasons")]
     capped = None
-    if any(d["level"] == "no_evaluable" for d in dimensions.values()):
-        cap = C["no_evaluable_cap"]
-        if LEVELS.index(level) < LEVELS.index(cap):
-            capped, level = level, cap
-            reasons.append(f"techo en {cap}: sin contraste entre métodos de valoración")
+    conv = (dimensions.get("convergence") or {}).get("level")
+    if conv == "no_evaluable":
+        cap, why = C["no_evaluable_cap"], "sin contraste entre métodos de valoración"
+    elif conv is not None and conv != "alta":
+        # Etapa 9a: "alta" exige convergencia alta (caso V local, RECON 7.13).
+        cap, why = C["no_evaluable_cap"], f"la convergencia es {conv}: alta exige convergencia alta"
+    else:
+        cap = None
+    if cap and LEVELS.index(level) < LEVELS.index(cap):
+        capped, level = level, cap
+        reasons.append(f"techo en {cap}: {why}")
     return {"level": level, "score": score, "dimensions": dimensions, "reasons": reasons,
             "capped_from": capped, "limits_score": False}

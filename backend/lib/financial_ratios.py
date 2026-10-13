@@ -2692,23 +2692,8 @@ def score_valoracion(
             base_score += adj
             _a["pffo"] = adj
             adjustments.append({"metric": "P/FFO (REIT)", "value": f"{p_ffo:.1f}x", "adjustment": adj, "reason": reason, "severity": sev})
-        # Rentabilidad por dividendo (etapa 6): el REIT reparte casi todo su FFO.
-        if dividend_yield is not None and dividend_yield > 0:
-            b, p = T["reit_dividend_yield_bounds"], T["reit_dividend_yield_points"]
-            if dividend_yield >= b[0]:
-                adj, sev, reason = p[0], "excellent", f"Rentabilidad por dividendo alta ({dividend_yield:.1%})"
-            elif dividend_yield >= b[1]:
-                adj, sev, reason = p[1], "good", f"Rentabilidad por dividendo atractiva ({dividend_yield:.1%})"
-            elif dividend_yield >= b[2]:
-                adj, sev, reason = p[2], "moderate", f"Rentabilidad por dividendo modesta ({dividend_yield:.1%})"
-            else:
-                adj, sev, reason = p[3], "severe", f"Rentabilidad por dividendo baja para un REIT ({dividend_yield:.1%})"
-            if adj < 0:
-                total_negative += adj
-            base_score += adj
-            _a["dy"] = adj
-            adjustments.append({"metric": "Rentabilidad por dividendo (REIT)", "value": f"{dividend_yield:.1%}",
-                                "adjustment": adj, "reason": reason, "severity": sev})
+        # Etapa 9a: la rentabilidad por dividendo del REIT puntúa en Crecimiento, dentro
+        # del retorno total (dividendo + FFO por acción), no aquí: no se cuenta dos veces.
 
     # ─── FINANCIAL: P/B y P/TBV frente a los justificados por su retorno ────
     if archetype == FINANCIAL:
@@ -3054,8 +3039,6 @@ def score_valoracion(
         cov.comp("P/TBV frente a ROTE", T["financial_pb_points"], _a.get("ptbv"))
     if is_reit:
         cov.comp("P/FFO", T["reit_pffo_points"], _a.get("pffo"))
-        if archetype == REIT:
-            cov.comp("Rentabilidad por dividendo", T["reit_dividend_yield_points"], _a.get("dy"))
     if archetype == GROWTH_PRE_PROFIT:
         cov.comp("EV/Ventas", T["ev_sales_points"], _a.get("evs"))
         cov.comp("Regla de 40", T["rule_of_40_points"], _a.get("r40"))
@@ -3283,9 +3266,14 @@ def score_crecimiento(
     archetype: Optional[str] = None,
     revenue_note: Optional[str] = None,
     revenue_reason: Optional[str] = None,
+    dividend_yield: Optional[float] = None,
 ) -> Dict[str, Any]:
     """
     Categoría 5: Crecimiento (20 pts máximo)
+
+    Etapa 9a — REIT: el componente principal es el RETORNO TOTAL = rentabilidad
+    por dividendo + CAGR del FFO por acción (llega en revenue_growth_3y), con sus
+    propias bandas; la rentabilidad por dividendo ya no puntúa en Valoración.
     Base: 10 pts
 
     Etapa 6: el crecimiento de ingresos que llega ya es el de la rama (FINANCIAL:
@@ -3305,9 +3293,19 @@ def score_crecimiento(
     # Revenue Growth 3Y (hasta ±5 pts). REIT (etapa 6): el crecimiento se mide
     # por acción — llega el CAGR del FFO por acción, con sus propias bandas.
     _reit = archetype == REIT
-    _rev_metric = "Crecimiento FFO por acción 3Y" if _reit else "Crecimiento Ingresos 3Y"
+    _rev_metric = "Retorno total (dividendo + FFO por acción)" if _reit else "Crecimiento Ingresos 3Y"
+    _ffo_ps = revenue_growth_3y
+    if _reit:
+        if revenue_growth_3y is not None and dividend_yield is not None:
+            revenue_growth_3y = dividend_yield + growth_for_bands(revenue_growth_3y)
+            revenue_note = (f"rentabilidad por dividendo {dividend_yield:.1%} + FFO por acción {_ffo_ps:+.1%} "
+                            "(CAGR 3 años)" + (f"; {revenue_note}" if revenue_note else ""))
+        elif revenue_growth_3y is not None:
+            revenue_reason = "sin rentabilidad por dividendo: no hay retorno total"
+            revenue_growth_3y = None
     if revenue_growth_3y is not None:
-        b, p = (T["reit_ffo_ps_bounds"], T["reit_ffo_ps_points"]) if _reit else (T["revenue_bounds"], T["revenue_points"])
+        b, p = (T["reit_total_return_bounds"], T["reit_total_return_points"]) if _reit \
+            else (T["revenue_bounds"], T["revenue_points"])
         if revenue_growth_3y >= b[0]:
             adj = p[0]
             sev = "excellent"
@@ -3395,7 +3393,7 @@ def score_crecimiento(
     
     cov = CategoryCoverage()
     if _reit:
-        cov.comp("Crecimiento del FFO por acción", T["reit_ffo_ps_points"], _a.get("rev"), revenue_reason)
+        cov.comp("Retorno total", T["reit_total_return_points"], _a.get("rev"), revenue_reason)
     else:
         cov.comp("Crecimiento de ingresos", T["revenue_points"], _a.get("rev"), revenue_reason)
     cov.comp("Crecimiento del BPA", T["eps_points"], _a.get("eps"), na=_na_eps)
@@ -3568,6 +3566,7 @@ def calculate_score_v2(
         archetype=archetype,
         revenue_note=contextual_values.get("revenue_growth_note"),
         revenue_reason=contextual_values.get("revenue_growth_reason"),
+        dividend_yield=ratio_values.get("dividend_yield"),
     )
     
     # Calcular totales. Las categorías no concluyentes (cobertura < 50%) se
@@ -3579,41 +3578,22 @@ def calculate_score_v2(
         # tampoco puntúa, pero es "no aplica", no "no concluyente".
         cat["applicable"] = (cat.get("coverage") or {}).get("applicable", True)
     included = [cat for cat in categories if cat["conclusive"] and cat["applicable"]]
-    if len(included) == len(categories):
-        total_score = sum(cat["score"] for cat in categories)
-    elif included:
-        total_score = round(sum(cat["score"] for cat in included) * _SC["total"]["max"]
-                            / (_CAT["max"] * len(included)))
-    else:
-        total_score = _CAT["base"] * len(categories)  # sin ninguna categoría concluyente: neutral
-    
-    # Determinar nivel general
-    lv = _SC["total"]["level_bands"]
-    if total_score >= lv[0]:
-        level = "Excelente"
-        level_color = "#22c55e"
-    elif total_score >= lv[1]:
-        level = "Favorable"
-        level_color = "#84cc16"
-    elif total_score >= lv[2]:
-        level = "Neutral"
-        level_color = "#eab308"
-    elif total_score >= lv[3]:
-        level = "Precaución"
-        level_color = "#f97316"
-    else:
-        level = "Evitar"
-        level_color = "#ef4444"
-    
+    # Etapa 9a: no hay score total único. Dos puntuaciones 0–100 (lib/verdict.py):
+    # Calidad del negocio (Solidez, Rentabilidad, Calidad de ganancias, Crecimiento)
+    # y Atractivo del precio (Valoración), cada una reescalada a 100 sobre sus
+    # categorías concluyentes y aplicables. La contracción del precio por la
+    # confianza se aplica en main.py, cuando la confianza ya está calculada.
+    from verdict import part_score, quality as _quality
+    quality_part = _quality(categories)
+    price_part = part_score(categories, cfg("thresholds.score.price.categories"))
+
     # v2.2: Extraer información del perfil de la empresa
     company_type = valoracion.get("company_type", "blend")
     growth_quality = valoracion.get("growth_quality_score", _SC["total"]["growth_quality_default"])
     
     result = {
-        "score": total_score,
-        "max_score": _SC["total"]["max"],
-        "level": level,
-        "level_color": level_color,
+        "quality": quality_part,
+        "price_raw": price_part,
         "categories": categories,
         "category_scores": {
             "solidez": solidez["score"],

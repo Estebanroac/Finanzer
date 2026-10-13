@@ -99,9 +99,6 @@ rescue_moderate_max = 3             # ... con rescate máx. de 3 pts
 # (ROE − g) / (Ke − g) con Ke por CAPM y g = crecimiento terminal del DCF.
 financial_pb_ratio_bounds = [0.7, 0.9, 1.1, 1.4]   # P/B ÷ P/B justificado ≤
 financial_pb_points = [4, 2, 0, -2, -4]
-# REIT: rentabilidad por dividendo (junto al P/FFO).
-reit_dividend_yield_bounds = [0.06, 0.045, 0.03]   # ≥
-reit_dividend_yield_points = [3, 1, -1, -3]
 # GROWTH_PRE_PROFIT: EV/Ventas y regla de 40 (crecimiento + margen FCF).
 ev_sales_bounds = [5.0, 10.0, 15.0, 25.0]          # ≤
 ev_sales_points = [4, 2, 0, -2, -4]
@@ -138,16 +135,46 @@ growth_company_points = 2
 # FFO/acción, calidad del crecimiento, tipo de empresa, valor en libros, alerta y PDF).
 # Error de medición de agregados aproximados (FFO) de ese orden.
 flat_tolerance = 0.02
-# Etapa 6 — REIT: CAGR 3 años del FFO POR ACCIÓN (la emisión estructural infla
-# el agregado); un REIT sano crece su FFO/acción en dígito simple medio.
-reit_ffo_ps_bounds = [0.08, 0.05, 0.02]   # y luego ≥0 / <0
-reit_ffo_ps_points = [5, 3, 1, -1, -4]
+# Etapa 6 — REIT: el crecimiento se mide POR ACCIÓN (FFO por acción; la emisión
+# estructural infla el agregado). Etapa 9a: entra en el retorno total (abajo).
+# Etapa 9a — REIT: Crecimiento mide el RETORNO TOTAL para el accionista =
+# rentabilidad por dividendo + CAGR 3 años del FFO por acción (el REIT reparte
+# casi todo su FFO: el retorno llega sobre todo por el dividendo). Bandas frente
+# al coste del equity de un REIT (Ke ≈ 8–9% con la prima implícita): >= 10% lo
+# supera con holgura; 7–10% lo iguala; 4–7% queda por debajo pero en positivo
+# real; 0–4% débil; < 0 destruye valor. La rentabilidad por dividendo deja de
+# puntuar en Valoración (no se cuenta dos veces).
+reit_total_return_bounds = [0.10, 0.07, 0.04]   # y luego ≥0 / <0
+reit_total_return_points = [5, 3, 1, -1, -4]
 
-[score.total]                       # calculate_score_v2
-max = 100
-level_bands = [80, 60, 40, 20]      # Excelente / Favorable / Neutral / Precaución / Evitar: ÚNICA fuente (motor, PDF y UI generada)
+[score.total]                       # calculate_score_v2 (etapa 9a: ya no hay un score total único)
+max = 100                           # escala de cada una de las dos puntuaciones
 growth_company_min_revenue_cagr = 0.15
 growth_quality_default = 50
+
+# Etapa 9a — dos puntuaciones 0–100 (spec fallo 6, cambio 4). Cada categoría parte
+# de 10/20 (= 50: sin señales), así que 50 es el punto neutro de las dos escalas.
+[score.quality]                     # Calidad del negocio
+categories = ["Solidez Financiera", "Rentabilidad", "Calidad de Ganancias", "Crecimiento"]
+# Bandas (≥): excelente >= 80 (16/20 de media: casi todo en los tramos altos);
+# sólida 65–80 (claramente por encima del neutro); media 45–65 (alrededor del
+# neutro, con fortalezas y debilidades); débil < 45 (por debajo del neutro).
+bands = [80, 65, 45]
+labels = ["excelente", "sólida", "media", "débil"]
+
+[score.price]                       # Atractivo del precio (Valoración: múltiplos + DCF)
+categories = ["Valoración"]
+# Bandas (≥) sobre el valor CONTRAÍDO por la confianza: atractivo >= 65 (+3 netos
+# sobre 20 o más: múltiplos por debajo del sector y/o DCF con margen); razonable
+# 45–65 (en línea con el sector, ±); exigente 30–45; muy exigente < 30 (Valoración
+# <= 6/20: casi todos los múltiplos en prima). Con confianza baja (factor 0.5) el
+# precio no puede salir de [25, 75]: no llega a "muy exigente" ni a lo más alto.
+bands = [65, 45, 30]
+labels = ["atractivo", "razonable", "exigente", "muy exigente"]
+neutral = 50
+# Contracción hacia el neutro según la confianza del veredicto de valoración:
+# precio_mostrado = 50 + (precio − 50) × factor.
+confidence_factor = { alta = 1.0, media = 0.75, baja = 0.5 }
 
 [score.company_type]                # classify_company_type: votos por tipo de empresa
 revenue_bounds = [0.25, 0.15, 0.05] # y < 0
@@ -354,19 +381,12 @@ w = 34
 # ── Lecturas del PDF (pdf_report.read_*, score_band, grid) ──
 # Bandas propias del informe, distintas de las del motor (ver el informe de
 # conflictos de la etapa 4). Las etiquetas siguen en el código.
-[pdf]
+[pdf]                               # solo métricas que el score NO puntúa (etapa 9a: las demás
+                                    # lecturas usan las bandas del score, una sola fuente por métrica)
 vs_sector_bounds = [35, 10]         # % de brecha vs mediana: ±35 / ±10
 pe_spread_support = 0.05            # prima de P/E "respaldada" si spread > 5%
-roe_negative_equity_min_roa = 0.03
-roe_bounds = [0.05, 0.12, 0.20, 0.40]   # universal (no sectorial)
-spread_bounds = [0.10, 0.03, 0.0, -0.03]
-current_bounds = [1, 1.5, 3]
-de_bounds = [0.5, 1, 2]             # universal: "para un negocio no financiero" (también se aplica a bancos)
-coverage_bounds = [2, 5, 10]
 nde_bounds = [1, 2.5, 4]
 payout_bounds = [0.40, 0.60, 0.80, 1]
-growth_bounds = [0.03, 0.10, 0.20]
-upside_bounds = [30, 15]            # upside DCF: ±30 / ±15
 graham_discount = 0.20
 beta_bounds = [0.8, 1.2, 1.6]
 pos52_bounds = [10, 25, 70, 88]     # % del rango de 52 semanas (curva en U); también define la barra
@@ -438,7 +458,7 @@ neutral_band = 0.2                  # |señal| <= 0.2 (±10% de upside): "en pre
 # en dirección pero no en magnitud (media). Los múltiplos dan una señal de bandas, no un upside:
 # la escala es común solo de forma aproximada.
 convergence_spread_max = 0.6
-no_evaluable_cap = "media"          # con un solo método evaluable no hay contraste: techo de la confianza
+no_evaluable_cap = "media"          # techo de la confianza si la convergencia no es alta (no evaluable o media)
 coverage_bounds = [0.9, 0.7]        # componentes evaluados / aplicables: >= 0.9 alta; >= 0.7 media
 source_issue_bounds = [0, 2]        # incidencias de fuente: 0 alta; <= 2 media; más, baja
 excluded_multiple_components = ["DCF", "Regla de 40"]   # no son múltiplos frente al sector

@@ -38,7 +38,7 @@ MIGRATED = {
     "lib/pdf_report.py": [
         "read_vs_sector", "read_pe", "read_roe", "read_spread", "read_current", "read_de",
         "read_coverage", "read_nde", "read_payout", "read_growth", "read_upside", "read_graham",
-        "read_beta", "read_pos52", "score_band", "read_buyback", "read_fcf_yield",
+        "read_beta", "read_pos52", "read_buyback", "read_fcf_yield",
     ],
     "lib/validate.py": [
         "growth_guard", "_rule_fcf", "_rule_impossible", "_rule_margins", "_rule_units",
@@ -52,6 +52,8 @@ MIGRATED = {
         "source_dimension", "stability_dimension", "verdict_confidence",
     ],
     "lib/archetype_metrics.py": ["maintenance_fcf"],
+    # Etapa 9a: calidad, precio y veredicto.
+    "lib/verdict.py": ["part_score", "quality", "price", "confidence_phrase", "verdict"],
 }
 
 # (archivo, función, valor) -> justificación

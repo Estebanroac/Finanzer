@@ -1,4 +1,4 @@
-import { SCORE_LEVEL_BANDS, ARCHETYPE_NOT_APPLICABLE, type Archetype } from "./generated/backendConfig";
+import { QUALITY_BANDS, QUALITY_LABELS, ARCHETYPE_NOT_APPLICABLE, type Archetype } from "./generated/backendConfig";
 
 export type { Archetype };
 
@@ -56,12 +56,18 @@ export interface StockAnalysis {
   price: number | null;
   key_metrics: Record<string, number | null>;
   ratios: Record<string, number | null>;
+  // Etapa 9a: sin score total único. `score` conserva el desglose por categoría;
+  // las dos puntuaciones 0-100 van en `quality` y `price_attractiveness`.
   score: {
-    total_score: number;
-    max_score: number;
-    level: string;
     breakdown: Record<string, ScoreBreakdownCategory>;
   } | null;
+  quality?: { score: number | null; level: string | null; low_confidence?: boolean; basis?: string | null } | null;
+  price_attractiveness?: {
+    score: number | null; score_raw: number | null; level: string | null;
+    factor: number | null; confidence: string | null; contracted?: boolean;
+  } | null;
+  verdict?: { text: string; confidence_text: string | null; full: string; quality_level: string | null;
+    price_level: string | null; confidence: string | null } | null;
   company_type: string;
   is_growth: boolean;
   sector_info: { sector: string; mapped_sector: string; sector_etf: string };
@@ -150,25 +156,21 @@ export function formatPrice(val: number | null | undefined): string {
   return `$${val.toFixed(2)}`;
 }
 
-// Bandas del score GENERADAS desde backend/config (thresholds.toml
-// [score.total].level_bands): la misma escala que el `level` del motor y el
-// PDF. Deben coincidir con los rangos de SCORE_TOOLTIP en tooltips.ts.
-const [L_EXC, L_FAV, L_NEU, L_PRE] = SCORE_LEVEL_BANDS;
+// Etapa 9a (mínimo, la UI completa es la 9b): bandas de la CALIDAD del negocio
+// GENERADAS desde backend/config ([score.quality]), las mismas del motor y el PDF.
+const [Q_EXC, Q_SOL, Q_MED] = QUALITY_BANDS;
 
 export function getScoreColor(pct: number): string {
-  if (pct >= L_EXC) return "#0cc06c"; // Excelente
-  if (pct >= L_FAV) return "#22c55e"; // Favorable
-  if (pct >= L_NEU) return "#fbbf24"; // Neutral
-  if (pct >= L_PRE) return "#f97316"; // Precaución
-  return "#ff4d4d";                   // Evitar
+  if (pct >= Q_EXC) return "#0cc06c"; // excelente
+  if (pct >= Q_SOL) return "#22c55e"; // sólida
+  if (pct >= Q_MED) return "#fbbf24"; // media
+  return "#ff4d4d";                   // débil
 }
 
 export function getScoreLabel(pct: number): string {
-  if (pct >= L_EXC) return "Excelente";
-  if (pct >= L_FAV) return "Favorable";
-  if (pct >= L_NEU) return "Neutral";
-  if (pct >= L_PRE) return "Precaución";
-  return "Evitar";
+  const i = QUALITY_BANDS.findIndex((b) => pct >= b);
+  const label = QUALITY_LABELS[i === -1 ? QUALITY_LABELS.length - 1 : i];
+  return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
 // D/E contable sin lectura en entidades financieras (los depósitos son pasivo).
