@@ -229,9 +229,10 @@ def read_coverage(ic, state=None):
     return ("Crítica", 'neg', f"la cobertura de intereses ({ic:.1f}x) es críticamente baja")
 
 
-def read_nde(nde, state=None, net_debt=None):
+def read_nde(nde, state=None, net_debt=None, reit=False):
     # Etapa 5 (regla M): con EBITDA <= 0 la ratio no se lee; "caja neta" solo
-    # cuando la caja supera a la deuda total.
+    # cuando la caja supera a la deuda total. Etapa 9a: en REIT, las bandas de REIT
+    # del score (thresholds.score.solidez.reit_nde_*), una sola fuente.
     if state == "no_significativo":
         txt = "con EBITDA negativo, la deuda neta/EBITDA no es significativa"
         if net_debt is not None and net_debt < 0:
@@ -239,6 +240,14 @@ def read_nde(nde, state=None, net_debt=None):
         return ("No significativa", 'neu', txt)
     if nde is None: return None
     if nde < 0:    return ("Caja neta", 'pos', NET_CASH_TEXT)
+    if reit:
+        b = cfg("thresholds.score.solidez.reit_nde_bounds")
+        if nde <= b[0]: return ("Conservadora", 'pos', f"la deuda neta ({nde:.1f}x EBITDA) es conservadora para un REIT")
+        if nde <= b[1]: return ("Adecuada", 'pos', f"la deuda neta ({nde:.1f}x EBITDA) está en el rango habitual de un "
+                                                   f"REIT con grado de inversión (hasta {b[1]:.1f}x)")
+        if nde <= b[2]: return ("En línea", 'neu', f"la deuda neta ({nde:.1f}x EBITDA) está en línea con los REIT")
+        if nde <= b[3]: return ("Elevada", 'warn', f"la deuda neta ({nde:.1f}x EBITDA) es elevada para un REIT")
+        return ("Alta", 'neg', f"la deuda neta ({nde:.1f}x EBITDA) es alta para un REIT")
     b = _PDF_BANDS["nde_bounds"]
     if nde < b[0]:    return ("Baja", 'pos', f"la deuda neta equivale a {nde:.1f}x EBITDA, un nivel bajo")
     if nde < b[1]:  return ("Moderada", 'neu', f"la deuda neta ({nde:.1f}x EBITDA) es manejable")
@@ -721,7 +730,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     ic_state = km.get("interest_coverage_state")
     r_ic = read_coverage(km.get("interest_coverage"), ic_state)
     nde_state = km.get("net_debt_to_ebitda_state")
-    r_nde = read_nde(km.get("net_debt_to_ebitda"), nde_state, km.get("net_debt"))
+    r_nde = read_nde(km.get("net_debt_to_ebitda"), nde_state, km.get("net_debt"), reit=archetype == "REIT")
     r_pay = read_payout(km.get("payout_ratio"), km.get("payout_basis"))
     r_grev = read_growth(km.get("revenue_growth"), "los ingresos")
     r_gearn = read_growth(km.get("earnings_growth"), "los beneficios", "eps")
@@ -729,6 +738,21 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     r_52 = read_pos52(pos52)
     r_bb = read_buyback(km.get("buyback_yield"))
     r_fcfy = read_fcf_yield(km.get("fcf_yield"))
+    # Etapa 9a: ningún texto (intro de sección, resumen, Graham) cita una métrica que no
+    # aplica al arquetipo; el Número de Graham no se muestra donde el P/E no aplica.
+    _graham_shown = graham is not None and not ({"graham", "pe"} & _na_keys)
+    if "pe" in _na_keys:
+        r_pe = None
+    if "p_fcf" in _na_keys or archetype == "CYCLICAL":   # CYCLICAL: se lee el P/FCF normalizado, no el TTM
+        r_fcfy = None
+    if not _graham_shown:
+        r_graham = None
+    if "roe" in _na_keys:
+        r_roe = None
+    if "roic_wacc" in _na_keys:
+        r_spread = None
+    if "eps_growth" in _na_keys:
+        r_gearn = None
 
     doc = BaseDocTemplate(buf, pagesize=letter,
                           topMargin=M_TOP, bottomMargin=M_BOT,
@@ -958,7 +982,8 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         _r40 = xm.get("rule_of_40")
         _k_arch = [(fv(xm.get("ev_sales"), "mult"), "EV/Ventas"),
                    (f"{_r40 * 100:.0f}" if _r40 is not None else "N/A", "Regla de 40"),
-                   (fv(km.get("net_margin"), "pct"), "Margen neto"), (fv(km.get("fcf_yield"), "pct"), "FCF yield"),
+                   # Etapa 9a: el margen neto no aplica a pre-beneficio; el bruto sí.
+                   (fv(km.get("gross_margin"), "pct"), "Margen bruto"), (fv(km.get("fcf_yield"), "pct"), "FCF yield"),
                    (fv(km.get("net_debt_to_ebitda"), "mult"), "Deuda neta/EBITDA"), (fv(km.get("beta"), "num"), "Beta")]
     elif archetype == "CYCLICAL":
         _k_arch = [(fv(xm.get("ev_ebitda_normalized"), "mult"), "EV/EBITDA normalizado"),
@@ -972,7 +997,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     _kpis = _k_common + _k_arch
     # Etapa 9a: la portada muestra las cifras REPORTADAS; si el score usa el beneficio
     # normalizado, lo dice la etiqueta (el normalizado va en el desglose, etiquetado).
-    if (analysis.get("earnings_normalization") or {}).get("used_in_score"):
+    if (analysis.get("earnings_normalization") or {}).get("differs"):
         _rep = {"P/E (TTM)": "P/E reportado (TTM)", "ROE": "ROE reportado", "Margen neto": "Margen neto reportado"}
         _kpis = [(v, _rep.get(l, l)) for v, l in _kpis]
 
@@ -1131,6 +1156,8 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         sol_short = f"Altman Z de {altman['z_score']:.2f} ({_zmap.get(altman.get('zone'), '')})"
         if r_ic:
             sol_short += f"; {r_ic[2]}"
+    elif archetype == "REIT" and r_nde:
+        sol_short = r_nde[2] + (f"; {r_ic[2]}" if r_ic else "")
     else:
         sol_short = r_de[2] if r_de else None
 
@@ -1159,6 +1186,13 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         exec_items.append(("CREACIÓN DE VALOR", _esc(_cap(r_spread[2]))))
     elif r_roe:
         exec_items.append(("RENTABILIDAD", _esc(_cap(r_roe[2]))))
+    else:   # REIT / pre-beneficio: los componentes de su rama (FFO, márgenes de su fase)
+        _rb = [a for a in (breakdown.get("Rentabilidad") or {}).get("adjustments") or []
+               if a.get("metric") not in ("No aplica", "Cobertura")]
+        if _rb:
+            exec_items.append(("RENTABILIDAD", _esc(_cap("; ".join(f"{a['metric']} {a['value']}: "
+                                                                  f"{a['reason'].split(' - ')[0].lower()}"
+                                                                  for a in _rb[:2])))))
     if sol_short:
         exec_items.append(("SOLIDEZ", _esc(_cap(sol_short))))
     _gro = " ".join(filter(None, [_cap(r_grev[2]) if r_grev else None, _cap(r_bb[2]) if r_bb else None]))
@@ -1315,6 +1349,11 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         r_fcfy[2] if r_fcfy else None,
         r_graham[2] if r_graham else None,
     ])
+    if not val_txt:   # la rama del arquetipo (P/B justificado, P/FFO, normalizados…)
+        _bv = [a for a in (breakdown.get("Valoración") or {}).get("adjustments") or []
+               if a.get("metric") in _branch_metrics]
+        val_txt = _join_sentences([f"{a['metric'].replace(' vs Sector', '').replace(' vs mercado', '')}: "
+                                   f"{a['reason'][0].lower()}{a['reason'][1:]}" for a in _bv[:2]])
     if val_txt:
         story.append(Paragraph(val_txt, S['body']))
     story.append(Spacer(1, 4))
@@ -1334,7 +1373,8 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     ]
     # Etapa 6: lo que no aplica al arquetipo no se lee ("No aplica"), y la rama
     # añade sus múltiplos (P/B justificado, P/FFO, EV/Ventas, normalizados…).
-    _mult_na = {"P/E (TTM)": "pe", "Forward P/E": "forward_pe", "PEG": "peg", "EV/EBITDA": "ev_ebitda",
+    _mult_na = {"P/E (TTM)": "pe", "Earnings Yield (E/P)": "pe", "Forward P/E": "forward_pe", "PEG": "peg",
+                "EV/EBITDA": "ev_ebitda",
                 "P/FCF": "p_fcf", "FCF Yield": "p_fcf"}
     rows, reads = [], []
     norm = analysis.get("earnings_normalization") or {}
@@ -1376,7 +1416,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
             "MERCADO (Forward P/E, P/B, PEG, P/FCF, FCF yield, rentabilidad y márgenes) son la referencia general "
             "PROVISIONAL, fijada a mano y sin fuente, no medianas del S&P 500."), S['small']))
     # Etapa 7: beneficio normalizado (una línea cuando hay partidas no recurrentes aplicadas).
-    if norm.get("applied") and norm.get("normalized_net_income") is not None:
+    if norm.get("applied") and norm.get("normalized_net_income") is not None and norm.get("differs", True):
         def _it_txt(it):
             lab = f"{it.get('label') or it['type']} ({it['type']}, confianza {it['confidence']})"
             if it.get("recurrent"):
@@ -1409,11 +1449,9 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     if iv_txt:
         story.append(Paragraph(iv_txt, S['body']))
     iv_rows = [["Precio de mercado", fv(price, "price"), ""]]
-    if not_app.get("graham"):
-        iv_rows.append(["Número de Graham", "—", f"No aplica a {archetype}"])
     if not_app.get("dcf"):
         iv_rows.append(["Valor justo DCF", "—", f"No aplica a {archetype}"])
-    if graham is not None:
+    if _graham_shown:
         iv_rows.append(["Número de Graham", fv(graham, "price"),
                         (r_graham[0] if r_graham else "")])
     if dcf.get("fair_value") is not None:
@@ -1432,7 +1470,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     story.append(data_table(["CONCEPTO", "VALOR", "LECTURA"], iv_rows,
                             [3.4 * inch, 1.6 * inch, CW - 5.0 * inch],
                             aligns=['LEFT', 'RIGHT', 'RIGHT'], reads=iv_reads))
-    if graham is not None:
+    if _graham_shown:
         story.append(Paragraph(_esc(
             "Número de Graham: referencia del inversor defensivo (P/E 15 × P/B 1.5). Se muestra como referencia "
             "y no vota en la convergencia entre métodos."), S['small']))
@@ -1596,6 +1634,11 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         r_roe[2] if r_roe else None,
         (r_spread[2] if (r_spread and not is_financial) else None),
     ])
+    if not rent_txt and archetype in ("REIT", "GROWTH_PRE_PROFIT"):
+        _rb = [a for a in (breakdown.get("Rentabilidad") or {}).get("adjustments") or []
+               if a.get("metric") not in ("No aplica", "Cobertura")]
+        rent_txt = _join_sentences([f"{a['metric']} de {a['value']}: {a['reason'].split(' - ')[0].lower()}"
+                                    for a in _rb])
     if rent_txt:
         story.append(Paragraph(rent_txt, S['body']))
     story.append(Spacer(1, 4))
@@ -1609,7 +1652,18 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         ("Margen neto", km.get("net_margin"), sector_bench.get("net_margin"), True, "pct"),
     ]
     rows, reads = [], []
+    _ret_na = {"ROE": "roe", "ROA": "roa", "ROIC": "roic_wacc", "Margen bruto": "gross_margin",
+               "Margen operativo": "operating_margin", "Margen neto": "net_margin"}
     for i, (lab, val, bench, hb, fm) in enumerate(ret_defs):
+        if _ret_na.get(lab) in _na_keys:
+            # Etapa 9a: lo que no aplica al arquetipo no se lee.
+            rows.append([lab, fv(val, fm), "—", "—", f"No aplica a {archetype}"])
+            reads.append((len(rows) - 1, 'neu'))
+            continue
+        if lab == "ROIC" and val is None and km.get("roic_reason"):
+            rows.append([lab, "—", "—", "—", "No significativo"])
+            reads.append((len(rows) - 1, 'neu'))
+            continue
         r = _rvs(lab, val, bench, hb, fm) if bench else None
         rows.append([lab, fv(val, fm), fv(bench, fm) if bench else "—",
                      r[3] if r else "—", r[0] if r else "—"])
@@ -1618,6 +1672,13 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     if not is_financial and km.get("roic_wacc_spread") is not None and r_spread:
         rows.append(["Spread ROIC − WACC", f"{km['roic_wacc_spread'] * 100:+.1f} pp", "> 0", "—", r_spread[0]])
         reads.append((len(rows) - 1, r_spread[1]))
+    # Etapa 9a: métricas de rentabilidad de la rama (REIT: FFO; pre-beneficio: márgenes de su fase).
+    _sev_tone = {"excellent": 'pos', "good": 'pos', "ok": 'neu', "moderate": 'warn', "severe": 'neg'}
+    _sev_lab = {"excellent": "Excelente", "good": "Favorable", "ok": "En línea", "moderate": "Débil", "severe": "Muy débil"}
+    for a in (breakdown.get("Rentabilidad") or {}).get("adjustments") or []:
+        if archetype in ("REIT", "GROWTH_PRE_PROFIT") and a.get("metric") not in ("No aplica", "Cobertura", "Margen bruto"):
+            rows.append([a["metric"], str(a.get("value", "")), "—", "—", _sev_lab.get(a.get("severity"), "—")])
+            reads.append((len(rows) - 1, _sev_tone.get(a.get("severity"), 'neu')))
     # ROCE (etapa 6): solo MATURE y CYCLICAL; "No aplica" o "Sin dato", nunca 0%.
     _roce_state = km.get("roce_state")
     if _roce_state == "no_aplica":
@@ -1735,7 +1796,8 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
 
     gro_defs = [
         ("Crecimiento de ingresos (YoY)", km.get("revenue_growth"), "pct", r_grev),
-        ("Crecimiento de beneficios (YoY)", km.get("earnings_growth"), "pct", r_gearn),
+        ("Crecimiento de beneficios (YoY)", None if "eps_growth" in _na_keys else km.get("earnings_growth"), "pct",
+         r_gearn),
         ("Buyback yield (recompras netas)", km.get("buyback_yield"), "pct", r_bb),
         ("Shareholder yield (div. + recompras)", km.get("shareholder_yield"), "pct", None),
         ("Dividend yield", km.get("dividend_yield"), "pct", None),
@@ -1954,8 +2016,10 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
             "Crecimiento forman la calidad del negocio; Valoración, el atractivo del precio. Las categorías no "
             "concluyentes se excluyen y cada puntuación se reescala a 100 sobre las demás. En Valoración, P/E, "
             "Forward P/E, P/FCF, EV/EBITDA y PEG forman un solo bloque: su ajuste individual se muestra entre "
-            "paréntesis y puntúa a través del Bloque de múltiplos (promedio normalizado, máximo ±"
-            f"{cfg('thresholds.score.valoracion.multiples_block_max')})."
+            "paréntesis y puntúa a través del Bloque de múltiplos (promedio de los ajustes reescalados a ±1, máximo "
+            + " / ".join(f"±{m} con {i + 1}{'+' if i == 2 else ''}" for i, m in
+                         enumerate(cfg('thresholds.score.valoracion.multiples_block_max_by_members')))
+            + " miembros; en FINANCIAL, P/B y P/TBV forman su propio bloque)."
             + (f" {_esc(' · '.join(_cover_notes))}." if _cover_notes else ""), S['small']))
         story.append(Spacer(1, 4))
 
@@ -2064,12 +2128,21 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         story.append(Paragraph("No se detectaron alertas significativas.", S['body']))
 
     # Metodología + cierre
+    _models = [m for k, m in (("altman", "Altman (1968)"), ("piotroski", "Piotroski (2000)"),
+                              ("graham", "número de Graham"), ("dcf", "un DCF multietapa con WACC estimado por CAPM"))
+               if k not in _na_keys and (k != "graham" or _graham_shown)]
+    if archetype == "FINANCIAL":
+        _models.append("P/B y P/TBV justificados por el retorno (Gordon)")
+    elif archetype == "REIT":
+        _models.append("P/FFO y rentabilidad sobre el FFO")
+    _models_txt = ("los modelos de " + ", ".join(_models)) if _models else "los modelos de su arquetipo"
     story.append(Spacer(1, 14))
     story.append(HRFlowable(width="100%", thickness=0.5, color=HAIR))
     story.append(Spacer(1, 5))
     story.append(Paragraph(
-        "<b>Metodología.</b> Este informe combina ratios TTM y del último ejercicio (fuente: Yahoo Finance) con los "
-        "modelos de Altman (1968), Piotroski (2000), número de Graham, un DCF multietapa con WACC estimado por CAPM y "
+        "<b>Metodología.</b> Este informe combina ratios TTM y del último ejercicio (fuente: Yahoo Finance) con "
+        # Etapa 9a: solo los modelos que aplican al arquetipo.
+        + _models_txt + " y "
         "dos puntuaciones Finanzer de 0 a 100: calidad del negocio (solidez, rentabilidad, calidad de ganancias y "
         "crecimiento) y atractivo del precio (valoración por múltiplos y DCF, contraída hacia 50 según la confianza "
         "del veredicto). Las lecturas se generan automáticamente según "

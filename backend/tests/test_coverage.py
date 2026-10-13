@@ -189,7 +189,10 @@ BANK_C = dict(TECH_C, book_value=50.0, book_value_prior=46.0)
 BANK_XV = dict(pb=1.4, ptbv=1.8, pb_justified=1.5, ptbv_justified=1.9, pb_ratio=1.4 / 1.5, ptbv_ratio=1.8 / 1.9,
                cost_of_equity=0.10, terminal_growth=0.025, roe_std=0.015, roe_years=4,
                efficiency_ratio=0.56, book_value_cagr_3y=0.07, book_value_basis="tangible")
-REIT_R = dict(TECH_R, p_ffo=14.0, roe=0.07, roa=0.03, debt_to_equity=1.2, ffo_payout=0.8, dividend_yield=0.05)
+REIT_R = dict(TECH_R, p_ffo=14.0, roe=0.07, roa=0.03, debt_to_equity=1.2, ffo_payout=0.8, dividend_yield=0.05,
+              net_debt_to_ebitda=5.5)
+# Etapa 9a: rentabilidad del REIT sobre el FFO (archetype_metrics._reit).
+REIT_XV = dict(ffo_to_equity=0.085, ffo_margin=0.55)
 REIT_C = dict(TECH_C, sector_pe=35.0, sector_ev_ebitda=20.0)
 CASES = {
     "tech_full": (TECH_R, TECH_C, dict(z_score_value=4.0, z_score_level="SAFE", f_score_value=7,
@@ -200,7 +203,7 @@ CASES = {
                                        archetype="FINANCIAL", archetype_values=BANK_XV)),
     "reit_full": (REIT_R, REIT_C, dict(z_score_value=1.5, z_score_level="GREY", f_score_value=5,
                                        sector_key="real_estate", real_sector="Real Estate", wacc=0.08,
-                                       archetype="REIT")),
+                                       archetype="REIT", archetype_values=REIT_XV)),
 }
 MID_R = dict(TECH_R, roe=0.10, roa=0.04, operating_margin=0.12, net_margin=0.06, roic=0.09,
              current_ratio=1.2, debt_to_equity=0.9, interest_coverage=4.0, pe=19.0, forward_pe=18.5,
@@ -299,7 +302,8 @@ def test_full_data_gives_exactly_the_previous_score(case):
                    "valoracion": {"P/E", "P/FCF", "EV/EBITDA", "PEG"},
                    "calidad": {"Piotroski F", "Flujo operativo", "FCF", "FCF / beneficio neto"},
                    "crecimiento": {"Crecimiento del FCF"}}),
-    ("reit_full", {"solidez": {"Altman Z", "Current ratio"}, "rentabilidad": set(),
+    ("reit_full", {"solidez": {"Altman Z", "Current ratio"},
+                   "rentabilidad": {"ROE", "ROA", "Margen neto", "ROIC−WACC", "Margen bruto", "Margen operativo"},
                    "valoracion": {"P/E", "P/FCF", "PEG"},
                    "calidad": {"Piotroski F", "FCF / beneficio neto"}, "crecimiento": {"Crecimiento del BPA"}}),
 ])

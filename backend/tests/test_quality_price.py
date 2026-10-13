@@ -270,16 +270,18 @@ def test_market_profile_overrides_thresholds_and_alert_texts(outputs_by_env):
 
 # ─────────────────────────── bloque de múltiplos correlacionados ───────────────────────────
 def test_multiples_block_averages_members_and_caps_at_max(outputs_by_env):
-    M = cfg("thresholds.score.valoracion.multiples_block_max")
+    by_n = cfg("thresholds.score.valoracion.multiples_block_max_by_members")
     for env in _envs():
         for sym, (a, _) in outputs_by_env(env).items():
             val = a["score"]["breakdown"]["Valoración"]
             members = [x for x in val["adjustments"] if x.get("in_block")]
-            blk = [x for x in val["adjustments"] if x["metric"] == "Bloque de múltiplos"]
+            blk = [x for x in val["adjustments"] if x["metric"].startswith("Bloque")]
             if not members:
                 assert not blk, (env, sym)
                 continue
             assert len(blk) == 1 and len(blk[0]["block_members"]) == len(members), (env, sym)
+            M = by_n[min(len(members), len(by_n)) - 1]          # ±2 con 1, ±4 con 2, ±6 con 3+
+            assert blk[0]["block_max"] == M, (env, sym)
             raw = blk[0]["block_mean"] * M
             assert abs(blk[0]["adjustment"]) <= M
             assert blk[0]["adjustment"] == int(abs(raw) + 0.5) * (1 if raw >= 0 else -1), (env, sym)
@@ -292,14 +294,17 @@ def test_multiples_block_averages_members_and_caps_at_max(outputs_by_env):
 
 def test_block_pdf_shows_each_multiple_and_the_block_line(outputs_by_env):
     text = fb.pdf_text(outputs_by_env("prod")["V"][1]).replace("\n", " ")
-    assert "Bloque de múltiplos" in text and "(-4)" in text and "promedio normalizado" in text
+    assert "Bloque de múltiplos" in text and "(-4)" in text and "reescalados a ±1" in text
 
 
 # ─────────────────────────── reportado / normalizado ───────────────────────────
 def test_normalized_figures_are_labelled(outputs_by_env):
     for env in _envs():
         for sym, (a, pdf) in outputs_by_env(env).items():
-            if not (a.get("earnings_normalization") or {}).get("used_in_score"):
+            if not (a.get("earnings_normalization") or {}).get("differs"):
+                metrics = [x["metric"] for c in a["score"]["breakdown"].values() for x in c["adjustments"]]
+                assert not any("normalizado" in m and "EV/EBITDA" not in m and "P/FCF" not in m
+                               for m in metrics), (env, sym)   # JPM: normalizado = reportado, sin etiqueta
                 continue
             metrics = [x["metric"] for c in a["score"]["breakdown"].values() for x in c["adjustments"]]
             assert "ROE" not in metrics and "Margen Neto" not in metrics, (env, sym)
@@ -308,7 +313,9 @@ def test_normalized_figures_are_labelled(outputs_by_env):
                            for k in ("red_flags", "warnings", "strengths") for x in a["alerts"][k]
                            if x["category"] == "Rentabilidad" and x["reason"].startswith("ROE")), (env, sym)
             cover = fb.pdf_text(pdf).split("===== página 2")[0]
-            assert "REPORTADO" in cover or a["classification"]["archetype"] in ("REIT",), (env, sym)
+            if a["earnings_normalization"].get("differs") and a["classification"]["archetype"] not in (
+                    "REIT", "GROWTH_PRE_PROFIT"):      # sus portadas no muestran P/E, ROE ni margen neto
+                assert "REPORTADO" in cover, (env, sym)
     v = outputs_by_env("prod")["V"][0]
     roe = next(x for x in v["score"]["breakdown"]["Rentabilidad"]["adjustments"] if x["metric"] == "ROE normalizado")
     assert roe["value"] == "55.9%" and roe["normalized"] is True
@@ -342,3 +349,82 @@ def test_52_week_range_is_position_only(outputs_by_env):
             for line in text.splitlines():
                 if "52 semanas" in line or "52 SEM" in line:
                     assert not re.search(r"\bcara\b|barata", line, re.I), (env, sym, line)
+
+
+# ─────────────────────────── ronda 3 de la etapa 9a ───────────────────────────
+def _bd(a, cat):
+    return {x["metric"]: x for x in a["score"]["breakdown"][cat]["adjustments"]}
+
+
+def test_cyclical_eps_growth_uses_cycle_average(outputs_by_env):
+    for env in _envs():
+        a = outputs_by_env(env)["FCX"][0]
+        eps = _bd(a, "Crecimiento")["Crecimiento EPS 3Y"]
+        assert "normalizado de ciclo medio" in eps["reason"]
+        g = a["archetype_metrics"]["eps_growth_normalized"]
+        assert eps["value"] == f"{g:.1%}"
+
+
+def test_cyclical_pfcf_normalized_uses_maintenance_fcf(outputs_by_env):
+    for env in _envs():
+        a = outputs_by_env(env)["FCX"][0]
+        xm = a["archetype_metrics"]
+        assert xm["p_fcf_normalized"] == pytest.approx(a["key_metrics"]["market_cap"] / xm["fcf_maintenance"])
+
+
+def test_reit_profitability_on_ffo_and_leverage_on_net_debt(outputs_by_env):
+    for env in _envs():
+        a = outputs_by_env(env)["O"][0]
+        rent = _bd(a, "Rentabilidad")
+        assert {"FFO / patrimonio", "Margen FFO"} <= set(rent)
+        assert not {"ROE", "ROA", "Margen Neto", "ROIC vs WACC", "Margen Operativo"} & set(rent)
+        na = a["score_coverage"]["rentabilidad"]["not_applicable"]
+        assert {"ROE", "ROA", "Margen neto", "ROIC−WACC", "Margen bruto", "Margen operativo"} <= set(na)
+        sol = _bd(a, "Solidez Financiera")
+        assert sol["Deuda/Equity"]["adjustment"] == 0 and sol["Deuda/Equity"].get("informative")
+        assert sol["Deuda neta/EBITDA"]["adjustment"] >= 0          # ~6x: adecuado para un REIT, no riesgo
+        reasons = [x["reason"] for k in ("red_flags", "warnings", "strengths") for x in a["alerts"][k]]
+        assert not any(r.startswith(("Margen bruto", "Destruye valor", "Apalancamiento elevado")) for r in reasons)
+
+
+def test_growth_pre_profit_profitability_and_regla_m(outputs_by_env):
+    for env in _envs():
+        a = outputs_by_env(env)["SNOW"][0]
+        rent = _bd(a, "Rentabilidad")
+        assert {"Margen bruto", "Mejora del margen operativo", "Margen FCF"} <= set(rent)
+        assert not {"ROE", "ROA", "Margen Neto", "ROIC vs WACC", "Margen Operativo"} & set(rent)
+        assert "Growth Company" not in _bd(a, "Crecimiento")
+        if (a["key_metrics"].get("net_debt") or 0) < 0:                          # caja neta: el D/E no puntúa
+            assert _bd(a, "Solidez Financiera")["Deuda/Equity"]["adjustment"] == 0
+        assert _bd(a, "Calidad de Ganancias").get("FCF / beneficio neto", {}).get("value") in (None, "No significativo")
+        reasons = [x["reason"] for k in ("red_flags", "warnings", "strengths") for x in a["alerts"][k]]
+        assert "Calidad del beneficio baja" not in reasons and not any(r.startswith("Destruye valor") for r in reasons)
+    p = outputs_by_env("prod")["SNOW"][0]["key_metrics"]
+    assert p["roic"] is None and "ROIC no significativo" in p["roic_reason"]
+
+
+def test_financial_pb_block_and_policy_substitution(outputs_by_env):
+    for env in _envs():
+        a = outputs_by_env(env)["JPM"][0]
+        blk = _bd(a, "Valoración")["Bloque P/B y P/TBV"]
+        assert blk["block_max"] == cfg("thresholds.score.valoracion.multiples_block_max_by_members")[1]
+        src = a["confidence"]["dimensions"]["source"]["reasons"]
+        assert not any("crecimiento_financiera_estados" in r for r in src)
+        flags = [f for f in a["data_validation"] if f.get("rule") == "crecimiento_financiera_estados"]
+        assert all(f["action"] == "politica" for f in flags)
+
+
+def test_no_text_cites_a_not_applicable_metric(outputs_by_env):
+    import re
+    for env in _envs():
+        for sym, (a, pdf) in outputs_by_env(env).items():
+            na = set(cfg(f"sectors.archetypes.not_applicable.{a['classification']['archetype']}"))
+            text = fb.pdf_text(pdf).replace("\n", " ")
+            if "pe" in na:
+                assert "Número de Graham" not in text and "número de Graham" not in text, (env, sym)
+                assert not re.search(r"el mercado paga [\d.]+x beneficios", text, re.I), (env, sym)
+            if "eps_growth" in na:
+                assert "Crecimiento de beneficios" not in text, (env, sym)
+            alerts = " ".join(x["reason"] for k in ("red_flags", "warnings", "strengths") for x in a["alerts"][k])
+            if "roe" in na:
+                assert not alerts.startswith("ROE") and " ROE " not in f" {alerts} ", (env, sym)

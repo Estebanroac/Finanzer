@@ -58,7 +58,7 @@ MIGRATED = {
 
 # (archivo, función, valor) -> justificación
 EXCEPTIONS = {
-    ("lib/financial_ratios.py", "score_valoracion", 0.5):
+    ("lib/financial_ratios.py", "multiples_block", 0.5):
         "redondeo al entero más cercano, mitades lejos de cero (floor(|x| + 0.5)), del bloque de múltiplos",
     ("lib/financial_ratios.py", "dcf_sensitivity_analysis", 0.001):
         "tolerancia de punto flotante al generar los pasos del grid y localizar el caso base",

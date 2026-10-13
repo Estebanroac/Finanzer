@@ -176,7 +176,10 @@ def coverage_dimension(score_coverage: Optional[Dict[str, Any]], excluded: List[
 def source_dimension(*, input_flags: List[Dict[str, Any]], normalization: Optional[Dict[str, Any]],
                      ttm: Optional[Dict[str, Any]], provenance_fields: Dict[str, Any]) -> Dict[str, Any]:
     C = cfg("thresholds.confidence")
-    issues = [f"validación: {f.get('field')} ({f.get('rule')})" for f in input_flags or []]
+    # Etapa 9a: las sustituciones de política del arquetipo (p. ej. el crecimiento de una
+    # financiera siempre desde los estados) no son incidencias de la fuente.
+    issues = [f"validación: {f.get('field')} ({f.get('rule')})" for f in input_flags or []
+              if f.get("action") != "politica"]
     if (normalization or {}).get("confidence") == "media":
         issues.append("beneficio normalizado con ítems inferidos (confianza media)")
     if (ttm or {}).get("basis") == "anual":

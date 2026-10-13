@@ -127,7 +127,12 @@ def test_one_wacc_everywhere(outputs_by_env):
             w = a["wacc"]["value"]
             assert a["key_metrics"]["wacc"] == w == a["dcf"]["wacc"], (env, sym)
             assert a["sensitivity"]["base_case"]["discount_rate"] == pytest.approx(w)
-            assert a["key_metrics"]["roic_wacc_spread"] == pytest.approx(a["key_metrics"]["roic"] - w)
+            if a["key_metrics"].get("roic_reason"):   # etapa 9a, regla M: ROIC no significativo
+                assert a["key_metrics"]["roic"] is None and a["key_metrics"]["roic_wacc_spread"] is None
+            elif a["classification"]["archetype"] == "GROWTH_PRE_PROFIT":   # etapa 9a: ROIC−WACC no aplica
+                assert a["key_metrics"]["roic_wacc_spread"] is None
+            else:
+                assert a["key_metrics"]["roic_wacc_spread"] == pytest.approx(a["key_metrics"]["roic"] - w)
         jpm = outputs_by_env(env)["JPM"][0]
         assert jpm["wacc"]["applicable"] is False and jpm["key_metrics"]["wacc"] is None
         o = outputs_by_env(env)["O"][0]

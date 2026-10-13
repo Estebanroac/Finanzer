@@ -12,6 +12,9 @@ Política (igual para todas las reglas):
   · Si no, pasa a None ("sin dato") con flag y motivo -> action "sin_dato".
   · Si la regla solo detecta una sospecha y no hay base para corregir, se deja
     el valor y se emite un aviso                  -> action "aviso".
+  · Si el valor se sustituye por POLÍTICA del arquetipo (no porque sea erróneo),
+    se marca                                      -> action "politica" (no cuenta
+    como incidencia de la calidad de fuente).
   · Nunca se corrige en silencio: cada intervención queda en info["_validation"]
     y en la procedencia del campo (info["_provenance"]).
 
@@ -68,6 +71,8 @@ class _Ctx:
                            "old": old, "new": new, "reason": reason})
         if action == "recalculado":
             self.prov[field] = {"source": "recalculado_por_validacion", "rule": rule, "detail": reason}
+        elif action == "politica":
+            self.prov[field] = {"source": "politica_arquetipo", "rule": rule, "detail": reason}
         elif action == "sin_dato":
             self.prov[field] = {"source": "sin_dato", "rule": rule, "detail": reason}
 
@@ -260,7 +265,9 @@ def _rule_growth(c: _Ctx):
     if arch == FINANCIAL:
         if abs(g - stmt_yoy) > 1e-12:
             c.set("revenueGrowth", stmt_yoy)
-            c.flag("revenueGrowth", "crecimiento_financiera_estados", "recalculado", g, stmt_yoy,
+            # Etapa 9a: sustitución de POLÍTICA del arquetipo, no una corrección de un dato
+            # erróneo: queda registrada ("politica") pero no cuenta como incidencia de fuente.
+            c.flag("revenueGrowth", "crecimiento_financiera_estados", "politica", g, stmt_yoy,
                    f"arquetipo FINANCIAL: 'revenue' de la fuente con definición inestable (RECON C6, §7.8); "
                    f"se usa siempre el YoY de los estados FY{year} ({stmt_yoy:.1%}) en lugar de {g:.1%}")
         return

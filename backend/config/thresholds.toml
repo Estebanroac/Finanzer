@@ -36,6 +36,11 @@ coverage_points = [3, 1, 0, -2, -3]
 # probablemente dilutiva antes del próximo ejercicio.
 runway_bounds = [3.0, 2.0, 1.0]     # años: ≥3 / ≥2 / ≥1 / <1
 runway_points = [6, 2, -2, -6]
+# REIT (etapa 9a): la métrica de apalancamiento es deuda neta/EBITDA con bandas de
+# REIT (el D/E queda informativo). Un REIT con grado de inversión suele operar en
+# 5–6.5x; > 7.5x es elevado y > 9x alto. Propuesta PROVISIONAL, sin muestra.
+reit_nde_bounds = [5.0, 6.5, 7.5, 9.0]   # ≤5 conservador / ≤6.5 adecuado / ≤7.5 en línea / ≤9 elevado / alto
+reit_nde_points = [4, 2, 0, -2, -4]
 
 [score.solidez_financial]           # score_solidez_financiera_financial (bancos)
 max_without_regulatory = 18         # sin CET1/Tier 1 el máximo es 18/20
@@ -57,6 +62,21 @@ net_margin_bounds = [0.20, 0.10, 0.05]               # y luego ≥0 / <0
 net_margin_points = [3, 2, 0, -2, -3]
 spread_bounds = [0.10, 0.03, 0.0, -0.03]             # ROIC − WACC
 spread_points = [3, 2, 1, -1, -3]
+# Regla M (etapa 9a): ROIC no significativo si el capital invertido (patrimonio +
+# deuda − caja) es menor que esta fracción de los activos (la caja lo encoge).
+roic_min_invested_capital_share = 0.10
+# REIT (etapa 9a): rentabilidad sobre el FFO (beneficio neto + D&A). PROVISIONAL.
+reit_ffo_equity_bounds = [0.10, 0.08, 0.06, 0.04]    # FFO / patrimonio contable
+reit_ffo_equity_points = [6, 3, 0, -3, -6]
+reit_ffo_margin_bounds = [0.60, 0.50, 0.40, 0.25]    # FFO / ingresos
+reit_ffo_margin_points = [5, 3, 0, -3, -5]
+# GROWTH_PRE_PROFIT (etapa 9a): márgenes de su fase. PROVISIONAL.
+gpp_gross_margin_bounds = [0.75, 0.65, 0.50, 0.35]
+gpp_gross_margin_points = [5, 3, 0, -3, -5]
+gpp_opm_change_bounds = [0.05, 0.02, 0.0, -0.03]     # mejora interanual del margen operativo (pp)
+gpp_opm_change_points = [4, 2, 0, -2, -4]
+gpp_fcf_margin_bounds = [0.20, 0.10, 0.0, -0.10]     # FCF / ingresos
+gpp_fcf_margin_points = [5, 3, 0, -3, -5]
 
 [score.valoracion]                  # score_valoracion
 # DCF como componente de Valoración (etapa 8): upside del DCF frente al precio,
@@ -70,10 +90,13 @@ reit_pffo_bounds = [12, 16, 20, 25] # REIT: P/FFO ≤ (en lugar de P/E y P/FCF)
 reit_pffo_points = [4, 2, 0, -2, -4]
 pe_value_mults = [0.7, 0.9, 1.1, 1.3]
 pe_value_points = [5, 3, 0, -2, -4]
-# Etapa 9a: bloque de múltiplos correlacionados. Su ajuste es el promedio de los
-# ajustes normalizados de sus miembros (con dato y aplicables), escalado a ±max.
+# Etapa 9a: bloques de múltiplos correlacionados (P/E, Forward P/E, P/FCF,
+# EV/EBITDA, PEG; y en FINANCIAL, P/B y P/TBV frente a sus justificados). Su ajuste
+# es el promedio de los ajustes normalizados de los miembros con dato y aplicables,
+# escalado a un máximo que crece con el número de miembros: ±2 con 1, ±4 con 2,
+# ±6 con 3 o más (un solo múltiplo no pesa como tres).
 multiples_block = ["P/E", "Forward P/E", "P/FCF", "EV/EBITDA", "PEG"]
-multiples_block_max = 6
+multiples_block_max_by_members = [2, 4, 6]
 multiples_block_strong = 0.5        # |promedio normalizado| >= 0.5: severidad excellent / severe
 forward_compression_bounds = [0.25, 0.12, 0.05]   # (P/E − forward P/E) / P/E ≥
 forward_compression_points = [3, 2, 1]
@@ -117,7 +140,6 @@ eps_bounds = [0.25, 0.12, 0.05]     # y luego ≥0 / <0
 eps_points = [5, 3, 1, -1, -4]
 fcf_bounds = [0.15, 0.05, -0.05]
 fcf_points = [4, 2, 0, -3]
-growth_company_points = 2
 # Estancamiento: entre −2% y 0 un crecimiento se puntúa como plano (banda 0–x%), no
 # como contracción, en TODAS las bandas de crecimiento con corte en 0 (ingresos, BPA,
 # FFO/acción, calidad del crecimiento, tipo de empresa, valor en libros, alerta y PDF).
@@ -449,6 +471,7 @@ stability = 0.2
 
 [normalization]
 one_off_pct = 0.10                  # |no recurrentes netos| / beneficio neto > 10% -> P/E reportado no fiable
+label_min_diff = 0.001              # etapa 9a: etiqueta "normalizado" solo si difiere del reportado > 0.1%
 robust_z = 3.5                      # pico no operativo: |z robusto (mediana, MAD)| > 3.5 (Iglewicz-Hoaglin)
 min_quarters = 4                    # trimestres con resultado no operativo necesarios para inferir picos
 min_share_of_pretax = 0.03          # y el exceso debe ser >= 3% del beneficio antes de impuestos TTM

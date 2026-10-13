@@ -1017,6 +1017,17 @@ def roa(net_income: Optional[float], average_assets: Optional[float]) -> Optiona
     return safe_div(net_income, average_assets)
 
 
+def roic_significant(invested_capital: Optional[float], total_assets: Optional[float]) -> bool:
+    """Regla M (etapa 9a): el ROIC no es significativo si el capital invertido
+    (patrimonio + deuda − caja) es menor que roic_min_invested_capital_share de los
+    activos: la caja encoge el denominador y el ratio se dispara (SNOW)."""
+    if invested_capital is None or invested_capital <= 0:
+        return False
+    if not total_assets or total_assets <= 0:
+        return True
+    return invested_capital >= cfg("thresholds.score.rentabilidad.roic_min_invested_capital_share") * total_assets
+
+
 def roic(nopat: Optional[float], invested_capital: Optional[float]) -> Optional[float]:
     """Return on Invested Capital (ROIC) = NOPAT / Invested Capital.
     NOPAT = Net Operating Profit After Taxes = EBIT * (1 - Tax Rate)
@@ -1717,7 +1728,7 @@ def calculate_all_ratios(financial_data: Dict) -> Dict[str, Optional[float]]:
         # recompras) no tiene sentido económico como denominador y produciría un
         # ROIC negativo espurio; se trata como no informativo (misma convención
         # que el D/E negativo en el scoring).
-        if invested_cap <= 0:
+        if invested_cap <= 0 or not roic_significant(invested_cap, d.get("total_assets")):
             invested_cap = None
 
     # FFO para REITs. Yahoo no suele desglosar la depreciación, lo que dejaba
@@ -1935,6 +1946,7 @@ def score_solidez_financiera(
     archetype: Optional[str] = None,
     runway: Optional[Dict[str, Any]] = None,
     market: bool = False,
+    net_debt_to_ebitda: Optional[float] = None,
 ) -> Dict[str, Any]:
     """
     Categoría 1: Solidez Financiera (20 pts máximo)
@@ -2000,8 +2012,18 @@ def score_solidez_financiera(
         _a["current"] = adj
         adjustments.append({"metric": "Current Ratio", "value": f"{current_ratio:.2f}x", "adjustment": adj, "reason": reason, "severity": sev})
     
+    # Etapa 9a: el D/E no puntúa (queda informativo) en REIT, cuyo apalancamiento se
+    # mide por deuda neta/EBITDA, ni con caja neta (regla M: no mide apalancamiento).
+    _de_info = None
+    if debt_to_equity is not None and archetype == REIT:
+        _de_info = "Informativo: en REIT el apalancamiento se mide por deuda neta/EBITDA"
+    elif debt_to_equity is not None and net_debt is not None and net_debt < 0:
+        _de_info = "No significativo con caja neta (más efectivo que deuda): no mide apalancamiento, no puntúa"
+    if _de_info:
+        adjustments.append({"metric": "Deuda/Equity", "value": f"{debt_to_equity:.2f}x", "adjustment": 0,
+                            "reason": _de_info, "severity": "neutral", "informative": True})
     # Debt/Equity (hasta ±5 pts) - proporcional al sector
-    if debt_to_equity is not None:
+    elif debt_to_equity is not None:
         threshold = sector_de_threshold
         m, p = T["de_mults"], T["de_points"]
         if debt_to_equity < 0:
@@ -2119,8 +2141,28 @@ def score_solidez_financiera(
     if archetype == GROWTH_PRE_PROFIT:
         cov.comp("Runway", T["runway_points"], _a.get("runway"), _rw_reason)
     cov.comp("Current ratio", T["current_points"], _a.get("current"), na=_na["current_ratio"])
-    cov.comp("D/E", [*T["de_points"], T["de_mitigated_points"], T["de_severe_points"]], _a.get("de"),
-             na=_na["de"])
+    # REIT (etapa 9a): deuda neta/EBITDA con bandas de REIT es la métrica de apalancamiento.
+    if archetype == REIT:
+        b, p = T["reit_nde_bounds"], T["reit_nde_points"]
+        _nde_reason = None
+        if net_debt_to_ebitda is None:
+            _nde_reason = "sin deuda neta/EBITDA"
+        else:
+            if net_debt_to_ebitda < 0:
+                adj, sev, lab = p[0], "excellent", "Caja neta"
+            else:
+                adj, sev, lab = _banded(net_debt_to_ebitda, b, p,
+                                        ("Conservador para un REIT", "Adecuado para un REIT", "En línea con REIT",
+                                         "Elevado para un REIT", "Alto para un REIT"), higher=False)
+            base_score += adj
+            _a["nde"] = adj
+            adjustments.append({"metric": "Deuda neta/EBITDA", "value": f"{net_debt_to_ebitda:.1f}x", "adjustment": adj,
+                                "reason": f"{lab} ({net_debt_to_ebitda:.1f}x; bandas REIT ≤{b[0]:.1f}x / ≤{b[1]:.1f}x / "
+                                          f"≤{b[2]:.1f}x / ≤{b[3]:.1f}x)", "severity": sev})
+        cov.comp("Deuda neta/EBITDA", p, _a.get("nde"), _nde_reason)
+    if not _de_info and archetype != REIT:   # en REIT el D/E es informativo, con o sin dato
+        cov.comp("D/E", [*T["de_points"], T["de_mitigated_points"], T["de_severe_points"]], _a.get("de"),
+                 na=_na["de"])
     cov.comp("Cobertura de intereses", T["coverage_points"], _a.get("coverage"), _ic_reason,
              na=_na["interest_coverage"])
     base_score = cov.apply(base_score, adjustments)
@@ -2539,6 +2581,37 @@ def score_rentabilidad(
     }
 
 
+def block_max(members: int) -> int:
+    """Máximo del bloque según sus miembros: ±2 con 1, ±4 con 2, ±6 con 3 o más (config)."""
+    m = cfg("thresholds.score.valoracion.multiples_block_max_by_members")
+    return m[max(1, min(members, len(m))) - 1] if members else m[0]
+
+
+def multiples_block(members: Dict[str, Any], label: str, missing: Optional[List[str]] = None) -> Optional[Dict[str, Any]]:
+    """Bloque de múltiplos correlacionados (etapa 9a): promedio de los ajustes
+    normalizados de los miembros con dato (positivo / máximo, negativo / |mínimo|),
+    escalado a block_max(n) y redondeado (mitades lejos de cero).
+    members = {nombre: (ajuste, puntos)}. None si ningún miembro tiene dato."""
+    if not members:
+        return None
+    T = _SC["valoracion"]
+    norm = {k: (a / max(pts) if a > 0 else (a / abs(min(pts)) if a < 0 else 0.0)) for k, (a, pts) in members.items()}
+    mean_ = sum(norm.values()) / len(norm)
+    bmax = block_max(len(norm))
+    raw = mean_ * bmax
+    block = int(math.floor(abs(raw) + 0.5)) * (1 if raw >= 0 else -1)
+    bs = T["multiples_block_strong"]
+    sev = ("excellent" if mean_ >= bs else "good" if mean_ > 0 else "ok" if mean_ == 0
+           else "severe" if mean_ <= -bs else "moderate")
+    n = len(norm)
+    adj = {"metric": label, "value": f"{n} múltiplo{'s' if n != 1 else ''}", "adjustment": block, "severity": sev,
+           "block_mean": mean_, "block_members": list(norm), "block_max": bmax,
+           "reason": (f"promedio de los ajustes reescalados a ±1 ({', '.join(f'{k} {v:+.2f}' for k, v in norm.items())}) "
+                      f"= {mean_:+.2f} × {bmax} (máximo con {n} miembro{'s' if n != 1 else ''}) = {raw:+.1f}"
+                      + (f"; sin dato: {', '.join(missing)}" if missing else ""))}
+    return {"block": block, "raw": raw, "mean": mean_, "max": bmax, "adjustment": adj}
+
+
 def score_valoracion(
     pe: Optional[float],
     p_fcf: Optional[float],
@@ -2594,6 +2667,8 @@ def score_valoracion(
     adjustments = []
     _a = {}  # etapa 5: cobertura (componentes nucleares; bonos y rescates aparte)
     _blk: Dict[str, Any] = {}  # etapa 9a: miembros del bloque de múltiplos -> (ajuste, puntos)
+    _pb_blk: Dict[str, Any] = {}  # FINANCIAL: bloque P/B y P/TBV frente a sus justificados
+    _pb_block_adj = _pb_block_max = None
     # Etapa 6: el arquetipo decide qué múltiplos aplican y cuáles se normalizan.
     xv = xv or {}
     if archetype is not None:
@@ -2687,10 +2762,16 @@ def score_valoracion(
             reason = (f"{tag}: {mult:.2f}x frente a {just:.2f}x justificado por su {ret_lbl} "
                       f"(Ke {xv.get('cost_of_equity', 0):.1%} con β ajustada {xv.get('beta_adjusted', 0):.2f}, "
                       f"g {xv.get('terminal_growth', 0):.1%})")
-            base_score += adj
             _a[key] = adj
+            _pb_blk[label] = (adj, p)
             adjustments.append({"metric": label, "value": f"{ratio:.2f}× justificado", "adjustment": adj,
-                                "reason": reason, "severity": sev})
+                                "reason": reason, "severity": sev, "in_block": True})
+        # Etapa 9a: P/B y P/TBV frente a sus justificados miden lo mismo: un bloque.
+        _pbres = multiples_block(_pb_blk, "Bloque P/B y P/TBV")
+        if _pbres:
+            adjustments.append(_pbres["adjustment"])
+            base_score += _pbres["block"]
+            _pb_block_adj, _pb_block_max = _pbres["block"], _pbres["max"]
 
     # ─── GROWTH_PRE_PROFIT: EV/Ventas y regla de 40 ────
     if archetype == GROWTH_PRE_PROFIT:
@@ -2849,31 +2930,16 @@ def score_valoracion(
 
     # ─── Bloque de múltiplos correlacionados (etapa 9a) ─────
     # P/E, Forward P/E, P/FCF, EV/EBITDA y PEG miden lo mismo (precio frente a
-    # beneficio o caja): sumarlos contaba varias veces una sola señal. El bloque es
-    # el promedio de sus ajustes normalizados (positivo / máximo, negativo / |mínimo|)
-    # sobre los que tienen dato y aplican, escalado a ±multiples_block_max.
-    _block_raw = _block_adj = None
-    if _blk:
-        _norm = {k: (a / max(pts) if a > 0 else (a / abs(min(pts)) if a < 0 else 0.0))
-                 for k, (a, pts) in _blk.items()}
-        _mean = sum(_norm.values()) / len(_norm)
-        _bmax = T["multiples_block_max"]
-        _block_raw = _mean * _bmax
-        block = _block_adj = int(math.floor(abs(_block_raw) + 0.5)) * (1 if _block_raw >= 0 else -1)
-        base_score += block
-        _bs = T["multiples_block_strong"]
-        _bsev = ("excellent" if _mean >= _bs else "good" if _mean > 0 else "ok" if _mean == 0
-                 else "severe" if _mean <= -_bs else "moderate")
-        _missing_blk = [k for k in T["multiples_block"] if k not in _blk
-                        and not _na.get({"P/E": "pe", "Forward P/E": "forward_pe", "P/FCF": "p_fcf",
-                                         "EV/EBITDA": "ev_ebitda", "PEG": "peg"}[k])]
-        adjustments.append({
-            "metric": "Bloque de múltiplos", "value": f"{len(_blk)} múltiplo{'s' if len(_blk) != 1 else ''}",
-            "adjustment": block, "severity": _bsev, "block_mean": _mean, "block_members": list(_blk),
-            "reason": (f"promedio de los ajustes normalizados ({', '.join(f'{k} {v:+.2f}' for k, v in _norm.items())}) "
-                       f"= {_mean:+.2f} × {_bmax} = {_block_raw:+.1f}"
-                       + (f"; sin dato: {', '.join(_missing_blk)}" if _missing_blk else "")),
-        })
+    # beneficio o caja): sumarlos contaba varias veces una sola señal.
+    _missing_blk = [k for k in T["multiples_block"] if k not in _blk
+                    and not _na.get({"P/E": "pe", "Forward P/E": "forward_pe", "P/FCF": "p_fcf",
+                                     "EV/EBITDA": "ev_ebitda", "PEG": "peg"}[k])]
+    _bres = multiples_block(_blk, "Bloque de múltiplos", _missing_blk)
+    _block_raw = _block_adj = _bmax_used = None
+    if _bres:
+        adjustments.append(_bres["adjustment"])
+        base_score += _bres["block"]
+        _block_raw, _block_adj, _bmax_used = _bres["raw"], _bres["block"], _bres["max"]
 
     # ─── De-dup de valoración (Fase B) ─────────────────
     # Se eliminaron los bonos separados de "FCF Yield" (+3) y "Earnings Yield"
@@ -2917,8 +2983,10 @@ def score_valoracion(
     # Componentes aplicables: múltiplos <= 0 cuentan como sin dato (no significativos).
     cov = CategoryCoverage()
     if archetype == FINANCIAL:
-        cov.comp("P/B frente a ROE", T["financial_pb_points"], _a.get("pb"))
-        cov.comp("P/TBV frente a ROTE", T["financial_pb_points"], _a.get("ptbv"))
+        cov.comp("P/B frente a ROE", T["financial_pb_points"], _a.get("pb"), rescale=False)
+        cov.comp("P/TBV frente a ROTE", T["financial_pb_points"], _a.get("ptbv"), rescale=False)
+        _pbm = _pb_block_max or block_max(len([n for n, *_ in cov.items if n.startswith(("P/B", "P/TBV"))]))
+        cov.derived_comp("Bloque P/B y P/TBV", [_pbm, -_pbm], _pb_block_adj)
     if is_reit:
         cov.comp("P/FFO", T["reit_pffo_points"], _a.get("pffo"))
     if archetype == GROWTH_PRE_PROFIT:
@@ -2933,8 +3001,11 @@ def score_valoracion(
     cov.comp("EV/EBITDA", T["ev_ebitda_value_points"], _a.get("ev"),
              na=_na["ev_ebitda"], rescale=False)
     cov.comp("PEG", T["peg_points"], _a.get("peg"), na=_na["peg"], rescale=False)
-    _bm = T["multiples_block_max"]
-    if any(n in ("P/E", "P/FCF", "EV/EBITDA", "PEG") for n, *_ in cov.items):
+    # Rango del bloque en el reescalado: el de sus miembros con dato (o el de los
+    # aplicables si ninguno tiene dato).
+    _n_app = len([n for n, *_ in cov.items if n in ("P/E", "P/FCF", "EV/EBITDA", "PEG")])
+    _bm = _bmax_used or block_max(_n_app)
+    if _n_app:
         cov.derived_comp("Bloque de múltiplos", [_bm, -_bm], _block_adj)
     if dcf is not None:
         cov.comp("DCF", T["dcf_points_high"], _dcf_adj, _dcf_reason, na=_dcf.get("na"))
@@ -2961,6 +3032,97 @@ def score_valoracion(
         "growth_quality_label": growth_quality["label"],
         "multiples_signal": _mult_signal,
     }
+
+
+def _banded(value: float, bounds, points, labels, higher: bool = True):
+    """Tramo de `value` en bandas descendentes (higher=True: ≥ bounds[i]). (ajuste, severidad, etiqueta)."""
+    i = next((k for k, b in enumerate(bounds) if (value >= b if higher else value <= b)), len(bounds))
+    return points[i], ("excellent", "good", "ok", "moderate", "severe")[i], labels[i]
+
+
+def _rentabilidad_branch(archetype: str, comps: List[Any], na_keys) -> Dict[str, Any]:
+    """Rentabilidad por rama (etapa 9a): comps = [(nombre, puntos, valor, ajuste, motivo, fmt, sin_dato)]."""
+    base_score = _CAT["base"]
+    adjustments = []
+    cov = CategoryCoverage()
+    for name, pts, value, adj, reason, fmt, missing_reason in comps:
+        if adj is not None:
+            base_score += adj
+            adjustments.append({"metric": name, "value": fmt.format(value), "adjustment": adj, "reason": reason,
+                                "severity": _banded_sev(adj, pts)})
+        cov.comp(name, pts, adj, missing_reason)
+    for key, label in na_keys:
+        cov.comp(label, [0], None, na=not_applicable(archetype, key))
+    base_score = cov.apply(base_score, adjustments)
+    final_score = max(_CAT["min"], min(_CAT["max"], base_score))
+    return {"category": "Rentabilidad", "emoji": "💰", "score": final_score, "max_score": _CAT["max"],
+            "base": _CAT["base"], "adjustments": adjustments, "total_adjustment": final_score - _CAT["base"],
+            "coverage": cov.report()}
+
+
+def _banded_sev(adj, pts):
+    i = list(pts).index(adj) if adj in pts else 2
+    return ("excellent", "good", "ok", "moderate", "severe")[min(i, 4)]
+
+
+_RENT_NA_COMMON = (("roe", "ROE"), ("roa", "ROA"), ("net_margin", "Margen neto"), ("roic_wacc", "ROIC−WACC"))
+
+
+def score_rentabilidad_reit(xv: Dict[str, Any]) -> Dict[str, Any]:
+    """REIT (etapa 9a): rentabilidad sobre el FFO. ROE, ROA, margen neto y ROIC−WACC
+    (sobre el beneficio neto, deprimido por la depreciación) y los márgenes bruto y
+    operativo (arrendamiento neto) no aplican."""
+    T = _SC["rentabilidad"]
+    comps = []
+    for name, key, b, p, labels in (
+            ("FFO / patrimonio", "ffo_to_equity", T["reit_ffo_equity_bounds"], T["reit_ffo_equity_points"],
+             ("Excelente", "Alto", "En línea", "Bajo", "Muy bajo")),
+            ("Margen FFO", "ffo_margin", T["reit_ffo_margin_bounds"], T["reit_ffo_margin_points"],
+             ("Excelente", "Alto", "En línea", "Bajo", "Muy bajo"))):
+        v = xv.get(key)
+        if v is None:
+            comps.append((name, p, None, None, None, "{}", "sin FFO, patrimonio o ingresos"))
+            continue
+        adj, _, lab = _banded(v, b, p, labels)
+        what = "retorno del FFO sobre el patrimonio contable" if key == "ffo_to_equity" else "FFO sobre ingresos"
+        comps.append((name, p, v, adj, f"{lab} ({v:.1%}) - {what}", "{:.1%}", None))
+    return _rentabilidad_branch(REIT, comps, _RENT_NA_COMMON + (("gross_margin", "Margen bruto"),
+                                                               ("operating_margin", "Margen operativo")))
+
+
+def score_rentabilidad_growth(xv: Dict[str, Any], gross_margin: Optional[float]) -> Dict[str, Any]:
+    """GROWTH_PRE_PROFIT (etapa 9a): margen bruto, mejora interanual del margen
+    operativo y margen FCF. ROE, ROA, margen neto, ROIC−WACC y el nivel del margen
+    operativo son negativos por definición del arquetipo: no aplican."""
+    T = _SC["rentabilidad"]
+    comps = []
+    gm = gross_margin if gross_margin is not None else xv.get("gross_margin")
+    if gm is None:
+        comps.append(("Margen bruto", T["gpp_gross_margin_points"], None, None, None, "{}", "sin margen bruto"))
+    else:
+        adj, _, lab = _banded(gm, T["gpp_gross_margin_bounds"], T["gpp_gross_margin_points"],
+                              ("Excelente", "Alto", "En línea", "Bajo", "Muy bajo"))
+        comps.append(("Margen bruto", T["gpp_gross_margin_points"], gm, adj,
+                      f"{lab} ({gm:.1%}) - margen que financiará la escala", "{:.1%}", None))
+    ch = xv.get("operating_margin_change")
+    if ch is None:
+        comps.append(("Mejora del margen operativo", T["gpp_opm_change_points"], None, None, None, "{}",
+                      xv.get("operating_margin_change_reason") or "sin margen operativo de dos ejercicios"))
+    else:
+        adj, _, lab = _banded(ch, T["gpp_opm_change_bounds"], T["gpp_opm_change_points"],
+                              ("Fuerte mejora", "Mejora", "Estable", "Empeora", "Fuerte deterioro"))
+        comps.append(("Mejora del margen operativo", T["gpp_opm_change_points"], ch * 100, adj,
+                      f"{lab} ({ch * 100:+.1f} pp interanual: {xv.get('operating_margin_fy_prior', 0):.1%} → "
+                      f"{xv.get('operating_margin_fy', 0):.1%})", "{:+.1f} pp", None))
+    fm = xv.get("fcf_margin")
+    if fm is None:
+        comps.append(("Margen FCF", T["gpp_fcf_margin_points"], None, None, None, "{}", "sin FCF o ingresos"))
+    else:
+        adj, _, lab = _banded(fm, T["gpp_fcf_margin_bounds"], T["gpp_fcf_margin_points"],
+                              ("Excelente", "Alto", "Equilibrio", "Quema moderada", "Quema alta"))
+        comps.append(("Margen FCF", T["gpp_fcf_margin_points"], fm, adj, f"{lab} ({fm:.1%}) - FCF sobre ingresos",
+                      "{:.1%}", None))
+    return _rentabilidad_branch(GROWTH_PRE_PROFIT, comps, _RENT_NA_COMMON + (("operating_margin", "Margen operativo"),))
 
 
 def score_calidad_ganancias(
@@ -3132,6 +3294,11 @@ def score_calidad_ganancias(
         cov.comp("FCF / beneficio neto", T["fcf_to_ni_points"], None, na=_na["fcf_to_ni"])
     elif not (net_income is not None and net_income <= 0):  # FCF/BN no aplica con BN <= 0
         cov.comp("FCF / beneficio neto", T["fcf_to_ni_points"], _a.get("fcf_ni"))
+    else:
+        # Regla M (etapa 9a): con beneficio <= 0 el ratio no mide la conversión en caja.
+        adjustments.append({"metric": "FCF / beneficio neto", "value": "No significativo", "adjustment": 0,
+                            "reason": "Beneficio neto <= 0: el ratio no mide la conversión del beneficio en caja",
+                            "severity": "neutral"})
     base_score = cov.apply(base_score, adjustments)
     final_score = max(_CAT["min"], min(_CAT["max"], base_score))
     
@@ -3158,6 +3325,7 @@ def score_crecimiento(
     revenue_reason: Optional[str] = None,
     dividend_yield: Optional[float] = None,
     eps_reason: Optional[str] = None,
+    eps_note: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Categoría 5: Crecimiento (20 pts máximo)
@@ -3249,7 +3417,8 @@ def score_crecimiento(
         
         base_score += adj
         _a["eps"] = adj
-        adjustments.append({"metric": "Crecimiento EPS 3Y", "value": f"{eps_growth_3y:.1%}", "adjustment": adj, "reason": reason, "severity": sev})
+        adjustments.append({"metric": "Crecimiento EPS 3Y", "value": f"{eps_growth_3y:.1%}", "adjustment": adj,
+                            "reason": reason + (f" — {eps_note}" if eps_note else ""), "severity": sev})
     
     # FCF Growth (hasta ±4 pts)
     if fcf_growth_3y is not None:
@@ -3276,11 +3445,8 @@ def score_crecimiento(
         adjustments.append({"metric": "Crecimiento FCF por acción 3Y" if _reit else "Crecimiento FCF 3Y",
                             "value": f"{fcf_growth_3y:.1%}", "adjustment": adj, "reason": reason, "severity": sev})
     
-    # Growth Company Bonus
-    if is_growth_company:
-        adj = T["growth_company_points"]
-        base_score += adj
-        adjustments.append({"metric": "Growth Company", "value": "Sí", "adjustment": adj, "reason": "Perfil de alto crecimiento", "severity": "good"})
+    # Etapa 9a: sin bono "Growth Company": las bandas de crecimiento ya lo puntúan
+    # (contarlo aparte puntuaba dos veces el mismo crecimiento de ingresos).
     
     cov = CategoryCoverage()
     if _reit:
@@ -3395,9 +3561,18 @@ def calculate_score_v2(
             archetype=archetype,
             runway=xv.get("runway"),
             market=_market,
+            net_debt_to_ebitda=(ratio_values.get("net_debt_to_ebitda")
+                                if ratio_values.get("net_debt_to_ebitda") is not None
+                                else contextual_values.get("net_debt_to_ebitda")),
         )
     
-    rentabilidad = score_rentabilidad(
+    if archetype == REIT:
+        rentabilidad = score_rentabilidad_reit(xv)
+    elif archetype == GROWTH_PRE_PROFIT:
+        rentabilidad = score_rentabilidad_growth(xv, ratio_values.get("gross_margin"))
+    else:
+        rentabilidad = None
+    rentabilidad = rentabilidad or score_rentabilidad(
         roe=ratio_values.get("roe"),
         roa=ratio_values.get("roa"),
         operating_margin=ratio_values.get("operating_margin"),
@@ -3463,6 +3638,7 @@ def calculate_score_v2(
         revenue_reason=contextual_values.get("revenue_growth_reason"),
         dividend_yield=ratio_values.get("dividend_yield"),
         eps_reason=contextual_values.get("eps_growth_reason"),
+        eps_note=contextual_values.get("eps_growth_note"),
     )
     
     # Calcular totales. Las categorías no concluyentes (cobertura < 50%) se

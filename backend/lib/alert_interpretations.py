@@ -30,6 +30,7 @@ except ImportError:  # ejecución como script suelto
 from settings import cfg
 
 _A = cfg("thresholds.alerts")
+_SC_SOLIDEZ = cfg("thresholds.score.solidez")   # bandas de deuda neta/EBITDA de REIT (etapa 9a)
 
 
 # ── formato ──────────────────────────────────────────────────────────────
@@ -242,7 +243,7 @@ def _dcf(ctx: Ctx):
 def _roe(ctx: Ctx):
     roe = ctx.g("roe")
     roa = ctx.g("roa")
-    if roe is None:
+    if roe is None or ctx.na("roe"):   # etapa 9a: REIT (sobre FFO) y pre-beneficio no leen el ROE
         return None
     T = _A["roe"]
     if roe < 0 and roa is not None and roa > T["negative_equity_min_roa"]:
@@ -299,8 +300,8 @@ def _spread(ctx: Ctx):
 def _margins(ctx: Ctx):
     """Margen neto/operativo/bruto — emite la señal más informativa disponible."""
     t = ctx.t
-    nm = ctx.g("net_margin")
-    gm = ctx.g("gross_margin")
+    nm = None if ctx.na("net_margin") else ctx.g("net_margin")       # etapa 9a: no aplica en REIT / pre-beneficio
+    gm = None if ctx.na("gross_margin") else ctx.g("gross_margin")   # ni el bruto en REIT (arrendamiento neto)
     T = _A["margins"]
     out = []
     if nm is not None:
@@ -346,6 +347,22 @@ def _leverage(ctx: Ctx):
                     "La empresa tiene más efectivo que deuda: posición de caja neta que le da flexibilidad para invertir, "
                     "resistir ciclos o retribuir al accionista sin depender de la financiación externa.", T["w_net_cash"])
     t = ctx.t
+    if ctx.archetype == REIT:
+        # Etapa 9a: bandas de REIT (las mismas que Solidez): un REIT con grado de inversión
+        # opera en 5–6.5x; advertencia por encima de 7.5x y riesgo por encima de 9x.
+        b = _SC_SOLIDEZ["reit_nde_bounds"]
+        if nde > b[2]:
+            sev = "risk" if nde > b[3] else "warning"
+            return _sig(sev, "Solidez financiera", f"Apalancamiento elevado para un REIT — {nde:.1f}x EBITDA",
+                        f"Harían falta {_years_ebitda(nde)} de EBITDA íntegro para saldar la deuda neta, por encima del "
+                        f"rango habitual de un REIT con grado de inversión (hasta {b[1]:.1f}x): conviene vigilar la "
+                        "cobertura de intereses y el calendario de vencimientos.",
+                        T["w_high_risk"] if sev == "risk" else T["w_high_warning"])
+        if nde <= b[0]:
+            return _sig("strength", "Solidez financiera", f"Apalancamiento conservador para un REIT — {nde:.1f}x EBITDA",
+                        f"La deuda neta equivale a {_years_ebitda(nde)} de EBITDA, por debajo del rango habitual de un "
+                        "REIT: holgura para financiar adquisiciones sin tensionar el balance.", T["w_low"])
+        return None
     if nde > t.net_debt_ebitda_high:
         sev = "risk" if nde > t.net_debt_ebitda_high * T["risk_mult"] else "warning"
         w = T["w_high_risk"] if sev == "risk" else T["w_high_warning"]
@@ -476,6 +493,9 @@ def _fcf(ctx: Ctx):
 def _earnings_quality(ctx: Ctx):
     q = ctx.g("fcf_to_net_income")
     if q is None or ctx.na("fcf_to_ni"):
+        return None
+    ni = ctx.g("net_income")
+    if ni is not None and ni <= 0:   # regla M (etapa 9a): sin beneficio el ratio no es significativo
         return None
     T = _A["earnings_quality"]
     if q < T["low_below"]:

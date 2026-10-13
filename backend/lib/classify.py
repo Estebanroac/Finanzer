@@ -55,6 +55,14 @@ WHY_NOT_APPLICABLE_KEY = {
                              "el circulante no mide su liquidez",
     (GROWTH_PRE_PROFIT, "altman"): "el Altman se calibró con quiebras de empresas maduras endeudadas; "
                                    "su solidez se mide por el runway (caja frente a la quema de FCF)",
+    # Etapa 9a: rentabilidad de REIT (sobre FFO) y de GROWTH_PRE_PROFIT (márgenes de su fase).
+    (REIT, "gross_margin"): "estructura de arrendamiento neto: el inquilino paga los costes del inmueble, así que "
+                            "los márgenes bruto y operativo no son comparables; la rentabilidad se mide sobre el FFO",
+    (REIT, "operating_margin"): "estructura de arrendamiento neto: el inquilino paga los costes del inmueble, así que "
+                                "los márgenes bruto y operativo no son comparables; la rentabilidad se mide sobre el FFO",
+    **{(GROWTH_PRE_PROFIT, k): "negativo por definición del arquetipo (aún sin beneficio operativo); la rentabilidad "
+                               "se mide con el margen bruto, la mejora del margen operativo y el margen FCF"
+       for k in ("roe", "roa", "net_margin", "roic_wacc", "operating_margin")},
 }
 
 # Nombre legible de cada componente (claves de sectors.archetypes.not_applicable).
@@ -67,6 +75,7 @@ COMPONENT_LABELS = {
     "roic_wacc": "ROIC−WACC", "operating_margin": "Margen operativo",
     "fcf_growth": "Crecimiento del FCF", "eps_growth": "Crecimiento del BPA",
     "dcf": "DCF (FCFF)", "graham": "Número de Graham", "roce": "ROCE",
+    "roe": "ROE", "roa": "ROA", "net_margin": "Margen neto", "gross_margin": "Margen bruto",
 }
 
 

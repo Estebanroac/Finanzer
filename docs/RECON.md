@@ -774,6 +774,9 @@ correctos según los datos, pero aplican reglas genéricas a arquetipos que nece
   del bloque como un solo múltiplo. **Efecto lateral a vigilar:** con un solo miembro el bloque amplifica su
   ajuste a ±6 (O: EV/EBITDA +2/4 -> +3; SNOW: P/FCF -4/4 -> -6; FCX: dos miembros a -4 -> -6). EV/Ventas
   (GROWTH_PRE_PROFIT), P/FFO (REIT) y P/B (FINANCIAL) quedan fuera del bloque (no estaban en la lista).
+  **Resuelto:** el máximo escala con los miembros (`multiples_block_max_by_members` = ±2 con 1, ±4 con 2, ±6 con
+  3+): O +1, SNOW -2, FCX -3. En FINANCIAL, P/B y P/TBV frente a sus justificados forman su propio bloque con las
+  mismas reglas (JPM: -2 y -2 -> bloque -2 de ±4, antes -4).
 - **Reportado / normalizado:** toda cifra calculada con el beneficio normalizado lo indica: en el desglose el
   nombre ("ROE normalizado", "ROA normalizado", "Margen neto normalizado", "FCF / beneficio neto normalizado",
   "P/E normalizado vs …", y el motivo del Forward P/E) con `normalized: true`; en las alertas el título y el texto
@@ -789,7 +792,9 @@ correctos según los datos, pero aplican reglas genéricas a arquetipos que nece
   CYCLICAL en ingresos conserva el crecimiento normalizado de ciclo medio (promedio interanual de todos los
   ejercicios disponibles, RECON §7.9): un CAGR punta a punta de 3 años depende de la fase del ciclo. **Pendiente de
   decisión:** el BPA de CYCLICAL usa ahora el CAGR punta a punta, que tiene el mismo problema de fase: FCX -14.0%
-  (2021 fue pico) frente a +53% interanual; Crecimiento FCX 11 -> 7. El dato informativo BPA frente a ingresos y
+  (2021 fue pico) frente a +53% interanual; Crecimiento FCX 11 -> 7. **Resuelto:** el BPA de CYCLICAL usa el mismo
+  crecimiento de ciclo medio que los ingresos (promedio interanual de los ejercicios disponibles, acotado a
+  [-5%, 10%]): FCX -5.0% (cota inferior), sigue en "declive" (-4); Crecimiento 7. El dato informativo BPA frente a ingresos y
   las alertas de crecimiento ("anual en tres años (CAGR)") usan los mismos CAGR.
 - **Rango de 52 semanas: solo posición, como contexto:** sin "cara"/"barata" en ninguna lectura; etiquetas de
   posición ("En máximos de 52 semanas", "Parte alta del rango"…) en tono neutro, barra en grises, tarjeta de
@@ -800,4 +805,42 @@ correctos según los datos, pero aplican reglas genéricas a arquetipos que nece
   config", referencias a fixtures. Traducirlos a lenguaje llano para el lector (p. ej. "parte de los datos viene de
   una fuente secundaria", "tipo sin riesgo de referencia, no de mercado") manteniendo el detalle técnico en el
   anexo.
+- **CYCLICAL — P/FCF normalizado sobre el FCF de mantenimiento:** el mismo FCF que usa el DCF (flujo operativo −
+  capex de mantenimiento aproximado por la D&A, promedio de ciclo), no el margen FCF medio × ingresos actuales.
+  FCX: 71.4x -> 29.0x (-4 -> -2).
+- **REIT — rentabilidad sobre el FFO:** ROE, ROA, margen neto y ROIC−WACC (sobre el beneficio neto, deprimido por
+  la depreciación) y los márgenes bruto y operativo (arrendamiento neto) pasan a "no aplica" (lista del
+  arquetipo; también sin alertas: fuera "Margen bruto muy alto" y "Destruye valor"). Rentabilidad = FFO /
+  patrimonio (bandas 10% / 8% / 6% / 4%, ±6) y margen FFO = FFO / ingresos (60% / 50% / 40% / 25%, ±5),
+  PROVISIONALES. **Apalancamiento:** deuda neta/EBITDA con bandas de REIT ≤5.0x conservador (+4) / ≤6.5x adecuado
+  (+2) / ≤7.5x en línea (0) / ≤9.0x elevado (-2) / alto (-4), propuesta PROVISIONAL sin muestra (un REIT con grado
+  de inversión opera en 5–6.5x); la alerta usa las mismas bandas (advertencia > 7.5x, riesgo > 9x) y el PDF la
+  misma lectura. El D/E queda informativo, sin puntuar ni contar en la cobertura. O: deuda neta/EBITDA 6.0x =
+  "adecuado" (+2), sin alerta de riesgo; Solidez 13 -> 10 (pierde el +5 del D/E); Rentabilidad 17 -> 16.
+- **GROWTH_PRE_PROFIT — rentabilidad de su fase:** ROE, ROA, margen neto, ROIC−WACC y el nivel del margen
+  operativo "no aplican" (negativos por definición). Rentabilidad = margen bruto (75% / 65% / 50% / 35%, ±5),
+  mejora interanual del margen operativo (+5 / +2 / 0 / -3 pp, ±4) y margen FCF (20% / 10% / 0 / -10%, ±5),
+  PROVISIONALES. Sin bono "Growth Company" en ningún arquetipo (las bandas de crecimiento ya lo puntúan).
+  **Efecto a vigilar:** SNOW prod pasa de calidad 59 "media" a 91 "excelente": Rentabilidad 0 -> 20 (bruto 67%
+  +3, margen operativo -40.2% -> -30.6% +4, margen FCF 24% +5) y Solidez 11 -> 18 (el D/E -5 deja de puntuar con
+  caja neta; la cobertura de intereses "no significativa" cuenta como sin dato y el reescalado da +2).
+- **Regla M (todos los arquetipos):** ROIC no significativo si el capital invertido (patrimonio + deuda − caja) es
+  menor que el 10% de los activos (`roic_min_invested_capital_share`; SNOW prod 7%: sin ROIC ni spread, motivo
+  en `key_metrics.roic_reason`); FCF/beneficio no significativo con beneficio <= 0 (línea "No significativo" en
+  el desglose y sin la alerta "Calidad del beneficio baja"); D/E sin puntuar con caja neta.
+- **Narrativa sin métricas que no aplican:** ninguna lectura (intro de sección, resumen ejecutivo, tablas,
+  alertas, metodología) cita una métrica "no aplica" para el arquetipo: el P/E, el E/P, el FCF yield donde no
+  aplica el P/FCF (y en CYCLICAL el TTM, porque se lee el normalizado), el ROE, el spread y el crecimiento del
+  BPA se omiten o se marcan "No aplica"; el Número de Graham no se muestra donde el P/E no aplica (FINANCIAL,
+  REIT, GROWTH_PRE_PROFIT, CYCLICAL). Sin lectura propia, la intro de Valoración y la de Rentabilidad usan los
+  componentes de la rama (P/B justificado, P/FFO, FFO, márgenes de su fase).
+- **FINANCIAL — sustitución de política:** el crecimiento de una financiera desde los estados se marca con la
+  acción "politica" (procedencia `politica_arquetipo`): queda registrado pero no cuenta como incidencia de
+  validación ni baja la calidad de fuente (JPM: 3 -> 2 incidencias).
+- **Etiqueta "normalizado" solo si difiere:** si el beneficio normalizado no difiere del reportado más de
+  `normalization.label_min_diff` (0.1%), ni el desglose, ni las alertas, ni la portada dicen "normalizado", y la
+  línea de normalización del PDF no se muestra (JPM y FCX: normalizado = reportado).
+- **Etapa 11 — saturación de la calidad:** NFLX (100) y V (98) saturan la calidad del negocio. Evaluar con una
+  muestra amplia si los componentes correlacionados de Rentabilidad (ROE, ROA y el ROIC del spread) deben
+  agruparse en un bloque como los múltiplos, y revisar con esa muestra los tramos superiores de las categorías.
 - **Etapa 11 —** el PDF de revisión se genera desde los fixtures de prod (Rf de config, sin TTM).

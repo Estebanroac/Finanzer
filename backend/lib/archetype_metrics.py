@@ -100,7 +100,7 @@ def _per_share(values: List[Optional[float]], shares: List[Optional[float]]) -> 
     return [(v / s) if (v is not None and _pos(s)) else None for v, s in zip(values or [], shares or [])]
 
 
-def _reit(st: Dict[str, Any]) -> Dict[str, Any]:
+def _reit(st: Dict[str, Any], km: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     ni, ebitda, ebit = st.get("net_income") or [], st.get("ebitda") or [], st.get("ebit") or []
     ffo = [(n + (a - b)) if (n is not None and a is not None and b is not None) else None
            for n, a, b in zip(ni, ebitda, ebit)]
@@ -108,7 +108,13 @@ def _reit(st: Dict[str, Any]) -> Dict[str, Any]:
     ffo_ps = _per_share(ffo, shares)
     ffo_ps_cagr, ffo_ps_why = strict_cagr(ffo_ps, 3)
     fcf_ps_cagr, fcf_ps_why = fcf_cagr(_per_share(st.get("free_cash_flow") or [], shares))
+    # Etapa 9a: rentabilidad sobre el FFO (TTM, la misma definición del P/FFO).
+    km = km or {}
+    ffo_ttm, eq, rev = km.get("ffo"), km.get("total_equity"), km.get("revenue")
     return {
+        "ffo_ttm": ffo_ttm,
+        "ffo_to_equity": (ffo_ttm / eq) if (ffo_ttm is not None and _pos(eq)) else None,
+        "ffo_margin": (ffo_ttm / rev) if (ffo_ttm is not None and _pos(rev)) else None,
         "ffo_series": ffo, "ffo_per_share_series": ffo_ps,
         "ffo_cagr_3y": strict_cagr(ffo, 3)[0],
         "ffo_per_share_cagr_3y": ffo_ps_cagr, "ffo_per_share_cagr_3y_reason": ffo_ps_why,
@@ -130,16 +136,24 @@ def runway(fcf: Optional[float], liquidity: Optional[float]) -> Dict[str, Any]:
     return {"state": "runway", "years": max(0.0, liquidity) / -fcf, "reason": None, "liquidity": liquidity, "fcf": fcf}
 
 
-def _growth_pre_profit(km: Dict[str, Any], revenue_cagr_3y: Optional[float]) -> Dict[str, Any]:
+def _growth_pre_profit(km: Dict[str, Any], revenue_cagr_3y: Optional[float],
+                       st: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     fcf, rev = km.get("free_cash_flow"), km.get("revenue")
     fcf_margin = (fcf / rev) if (fcf is not None and _pos(rev)) else None
+    # Etapa 9a: mejora interanual del margen operativo (últimos dos ejercicios).
+    om = ratio_series((st or {}).get("operating_income") or [], (st or {}).get("revenue") or [])
+    om0, om1 = (om[0] if len(om) > 0 else None), (om[1] if len(om) > 1 else None)
     r40 = (revenue_cagr_3y + fcf_margin) if (revenue_cagr_3y is not None and fcf_margin is not None) else None
     ev_sales = km.get("ev_revenue")
     # key_metrics.cash = fila "Cash Cash Equivalents And Short Term Investments"
     # (caja + inversiones a corto plazo) del último balance.
     return {"ev_sales": ev_sales if _pos(ev_sales) else None, "fcf_margin": fcf_margin,
             "revenue_cagr_3y": revenue_cagr_3y, "rule_of_40": r40, "ebitda": km.get("ebitda"),
-            "runway": runway(fcf, km.get("cash"))}
+            "runway": runway(fcf, km.get("cash")), "gross_margin": km.get("gross_margin"),
+            "operating_margin_fy": om0, "operating_margin_fy_prior": om1,
+            "operating_margin_change": (om0 - om1) if (om0 is not None and om1 is not None) else None,
+            "operating_margin_change_reason": (None if (om0 is not None and om1 is not None)
+                                               else "sin margen operativo de los dos últimos ejercicios")}
 
 
 def maintenance_fcf(st: Dict[str, Any]) -> Dict[str, Any]:
@@ -171,6 +185,12 @@ def _cyclical(st: Dict[str, Any], km: Dict[str, Any]) -> Dict[str, Any]:
     g_raw = mean(yoy_growths(rev))
     lo, hi = _V["cyclical_growth_bounds"]
     g = None if g_raw is None else min(hi, max(lo, g_raw))
+    # Etapa 9a: el BPA de ciclo medio con la misma regla que los ingresos (promedio
+    # interanual de los ejercicios disponibles, acotado): un CAGR punta a punta
+    # depende de la fase del ciclo (FCX: 2021 fue pico).
+    eps = st.get("diluted_eps") or _per_share(st.get("net_income") or [], st.get("ordinary_shares") or [])
+    e_raw = mean(yoy_growths(eps))
+    e = None if e_raw is None else min(hi, max(lo, e_raw))
     maint = maintenance_fcf(st)
     return {
         "fcf_maintenance": maint["value"], "fcf_maintenance_years": maint["years"],
@@ -179,8 +199,12 @@ def _cyclical(st: Dict[str, Any], km: Dict[str, Any]) -> Dict[str, Any]:
         "ebitda_avg": ebitda_avg,
         "ev_ebitda_normalized": (ev / ebitda_avg) if (_pos(ev) and _pos(ebitda_avg)) else None,
         "fcf_margin_avg": fcf_margin_avg, "fcf_normalized": fcf_norm,
-        "p_fcf_normalized": (mcap / fcf_norm) if (_pos(mcap) and _pos(fcf_norm)) else None,
+        # Etapa 9a: P/FCF normalizado sobre el FCF de MANTENIMIENTO, el mismo que usa el DCF.
+        "p_fcf_normalized": (mcap / maint["value"]) if (_pos(mcap) and _pos(maint["value"])) else None,
+        "p_fcf_normalized_basis": "fcf_mantenimiento",
         "revenue_growth_normalized_raw": g_raw, "revenue_growth_normalized": g,
+        "eps_growth_normalized_raw": e_raw, "eps_growth_normalized": e,
+        "eps_cycle_years": len([x for x in eps if x is not None]),
     }
 
 
@@ -192,9 +216,9 @@ def compute(archetype: str, statements_fy: Optional[Dict[str, Any]], key_metrics
     if archetype == FINANCIAL:
         return _financial(st, key_metrics, beta, rf)
     if archetype == GROWTH_PRE_PROFIT:
-        return _growth_pre_profit(key_metrics, revenue_cagr_3y)
+        return _growth_pre_profit(key_metrics, revenue_cagr_3y, st)
     if archetype == REIT:
-        return _reit(st)
+        return _reit(st, key_metrics)
     if archetype == CYCLICAL:
         return _cyclical(st, key_metrics)
     return {}

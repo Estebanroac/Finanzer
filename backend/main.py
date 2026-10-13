@@ -18,7 +18,7 @@ from data_fetcher import FinancialDataService, InvalidSymbolError
 from financial_ratios import (
     calculate_all_ratios, calculate_score_v2,
     altman_z_score, piotroski_evaluate, piotroski_level, interest_coverage_state, net_debt_ebitda_state,
-    graham_number, margin_of_safety, dcf_multi_stage_dynamic,
+    graham_number, margin_of_safety, dcf_multi_stage_dynamic, roic_significant,
     dcf_sensitivity_analysis
 )
 from stock_database import search_stocks, POPULAR_STOCKS, TOP_STOCKS
@@ -426,8 +426,17 @@ def _compute_analysis(symbol: str) -> dict:
             if roic is None and oi_val and te_val:
                 nopat = oi_val * (1 - tax_info["rate"])  # misma t que calculate_all_ratios y el WACC
                 invested_capital = te_val + (td_val or 0) - (cash_val or 0)
-                if invested_capital > 0:
+                if roic_significant(invested_capital, safe_float(financials.total_assets)):
                     roic = nopat / invested_capital
+            # Regla M (etapa 9a): motivo cuando el capital invertido es demasiado pequeño.
+            roic_reason = None
+            _ta_m = safe_float(financials.total_assets)
+            if roic is None and te_val is not None and _ta_m:
+                _ic_m = te_val + (td_val or 0) - (cash_val or 0)
+                if not roic_significant(_ic_m, _ta_m):
+                    roic_reason = (f"capital invertido {_ic_m / _ta_m:.0%} de los activos (< "
+                                   f"{cfg('thresholds.score.rentabilidad.roic_min_invested_capital_share'):.0%}): "
+                                   "ROIC no significativo")
 
             # Interest Coverage = Operating Income / |Interest Expense|
             interest_cov = r("interest_coverage")
@@ -500,6 +509,7 @@ def _compute_analysis(symbol: str) -> dict:
                 "ebitda_margin": r("ebitda_margin"),
                 "roa": r("roa"),
                 "roic": safe_float(roic),
+                "roic_reason": roic_reason,
                 "current_ratio": r("current_ratio"),
                 "quick_ratio": r("quick_ratio"),
                 "interest_coverage": safe_float(interest_cov),
@@ -658,6 +668,17 @@ def _compute_analysis(symbol: str) -> dict:
                     fin_dict["revenue_growth_note"] = (
                         f"normalizado de ciclo medio: promedio interanual de {archetype_values['cycle_years']} "
                         f"ejercicios, acotado a [{_lo:.0%}, {_hi:.0%}]"
+                        + ("; ciclo incompleto" if archetype_values.get("cycle_incomplete") else ""))
+                # Etapa 9a: el BPA con la misma regla de ciclo medio que los ingresos.
+                _ge = archetype_values.get("eps_growth_normalized")
+                fin_dict["eps_cagr_3y"] = _ge
+                fin_dict["eps_growth_reason"] = (None if _ge is not None else
+                                                 "sin BPA positivo en ejercicios consecutivos para el promedio de ciclo")
+                if _ge is not None:
+                    _lo, _hi = cfg("valuation.archetypes.cyclical_growth_bounds")
+                    fin_dict["eps_growth_note"] = (
+                        f"normalizado de ciclo medio: promedio interanual del BPA de "
+                        f"{archetype_values['eps_cycle_years']} ejercicios, acotado a [{_lo:.0%}, {_hi:.0%}]"
                         + ("; ciclo incompleto" if archetype_values.get("cycle_incomplete") else ""))
                 fin_dict["fcf_cagr_3y"] = None
             elif archetype == REIT:
@@ -971,6 +992,9 @@ def _compute_analysis(symbol: str) -> dict:
                 _norm["pe_reported"] = safe_float(_pe_rep)
                 _norm["pe_normalized"] = safe_float(_pe_rep * _scale) if (_pe_rep and _scale) else None
                 _norm["used_in_score"] = bool(_norm["applied"] and _nin is not None)
+                # Etapa 9a: la etiqueta "normalizado" solo si difiere del reportado (> label_min_diff).
+                _norm["differs"] = bool(_norm["used_in_score"] and _ni and _nin is not None
+                                        and abs(_nin / _ni - 1) > cfg("thresholds.normalization.label_min_diff"))
                 result["earnings_normalization"] = {k: (safe_float(v) if isinstance(v, float) else v)
                                                     for k, v in _norm.items()}
                 result["key_metrics"]["pe_normalized"] = _norm["pe_normalized"]
@@ -990,9 +1014,10 @@ def _compute_analysis(symbol: str) -> dict:
                     # Etapa 9a: qué ratios del score y de las alertas salen del beneficio
                     # normalizado, para que el texto lo diga ("ROE normalizado 55.9%").
                     fin_dict["normalized_metrics"] = (
-                        [k for k in ("net_margin", "roe", "roa") if ratios.get(k) is not None]
-                        + (["fcf_to_net_income"] if ratios.get("fcf") is not None else [])
-                        + (["pe", "earnings_yield"] if _scale else []))
+                        ([k for k in ("net_margin", "roe", "roa") if ratios.get(k) is not None]
+                         + (["fcf_to_net_income"] if ratios.get("fcf") is not None else [])
+                         + (["pe", "earnings_yield"] if _scale else []))
+                        if _norm["differs"] else [])
             except Exception as e:
                 _sin_dato("normalizacion_ganancias", e)
 

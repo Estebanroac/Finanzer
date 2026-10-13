@@ -213,7 +213,8 @@ def test_real_hypergrowth_with_matching_cagr_kept():
 def test_financial_growth_incoherent_with_statements_uses_statement_yoy():
     info = _run(_info(sector="Financial Services", industry="Banks - Diversified", revenueGrowth=0.304))
     assert info["revenueGrowth"] == pytest.approx(5e10 / 4.55e10 - 1)
-    assert _flags(info, "crecimiento_financiera_estados")[0]["action"] == "recalculado"
+    # Etapa 9a: sustitución de política del arquetipo, no corrección de un dato erróneo.
+    assert _flags(info, "crecimiento_financiera_estados")[0]["action"] == "politica"
 
 
 def test_financial_growth_always_from_statements_even_if_close():
@@ -322,7 +323,7 @@ def test_positive_multiples_untouched():
 
 # ─────────────────────────── integración con los fixtures ───────────────────────────
 VOCAB = {"yahoo_quotesummary", "yfinance_statements", "finnhub", "derivado",
-         "recalculado_por_validacion", "sin_dato"}
+         "recalculado_por_validacion", "politica_arquetipo", "sin_dato"}
 
 
 @pytest.mark.parametrize("env", ["local", "prod"])
@@ -337,7 +338,7 @@ def test_provenance_block_present_and_in_vocabulary(env, outputs_by_env):
         assert {v["source"] for v in dp["fields"].values()} <= VOCAB, sym
         assert isinstance(a["data_validation"], list)
         for f in a["data_validation"]:
-            assert f["action"] in {"recalculado", "sin_dato", "aviso"} and f["reason"], (sym, f)
+            assert f["action"] in {"recalculado", "sin_dato", "aviso", "politica"} and f["reason"], (sym, f)
 
 
 def test_prod_provenance_marks_finnhub_and_statements(outputs_by_env):
@@ -393,9 +394,13 @@ def test_broad_except_logs_and_marks_block_sin_dato(monkeypatch):
     assert any("bloque 'alerts' sin calcular" in m for m in logged)
 
 
-def test_pdf_keeps_no_earnings_reading_for_non_significant_pe(analysis, fixture_store):
+def test_pdf_no_pe_reading_where_pe_does_not_apply(analysis, fixture_store):
+    """Etapa 9a: SNOW (GROWTH_PRE_PROFIT) — el P/E no aplica al arquetipo, así que ningún
+    texto lo comenta (antes: "no es significativo al no haber beneficios positivos");
+    la tabla de múltiplos lo marca "No aplica"."""
     import fixture_backend as fb
     a = analysis("SNOW")
     assert a["key_metrics"]["pe"] is None
     text = fb.pdf_text(fb.build_pdf_bytes(a, fb.capture_date(fixture_store.meta["SNOW"])))
-    assert "no es significativo al no haber beneficios positivos" in text
+    assert "no es significativo al no haber beneficios positivos" not in text
+    assert "No aplica a GROWTH_PRE_PROFIT" in text
