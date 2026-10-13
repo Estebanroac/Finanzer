@@ -4,8 +4,8 @@
     "strengths": [
       {
         "category": "Rentabilidad",
-        "detail": "Genera 12.2% de retorno sobre el patrimonio, por encima del umbral de excelencia del sector (12%): uso muy eficiente del capital de los accionistas.",
-        "reason": "ROE elevado — 12.2%"
+        "detail": "Genera 12.2% (normalizado) de retorno sobre el patrimonio, por encima del umbral de excelencia del sector (12%): uso muy eficiente del capital de los accionistas.",
+        "reason": "ROE normalizado elevado — 12.2%"
       },
       {
         "category": "Rentabilidad",
@@ -15,12 +15,7 @@
       {
         "category": "Rentabilidad",
         "detail": "De cada dólar vendido quedan 10 centavos de beneficio tras todos los costos: señala poder de fijación de precios y eficiencia por encima de la media de su sector.",
-        "reason": "Margen neto sólido — 9.5%"
-      },
-      {
-        "category": "Crecimiento",
-        "detail": "El beneficio por acción crece 55.4% interanual: la rentabilidad para el accionista se acelera, a menudo apoyada en apalancamiento operativo o recompras.",
-        "reason": "BPA en fuerte expansión — +55.4% interanual"
+        "reason": "Margen neto normalizado sólido — 9.5%"
       },
       {
         "category": "Solidez financiera",
@@ -31,6 +26,11 @@
         "category": "Solidez financiera",
         "detail": "La deuda neta equivale a menos de un año de EBITDA, un nivel cómodo que deja holgura financiera y capacidad de maniobra ante imprevistos.",
         "reason": "Deuda baja — 0.7x EBITDA"
+      },
+      {
+        "category": "Solidez financiera",
+        "detail": "El beneficio operativo cubre 15 veces el gasto por intereses: la carga financiera es holgada y no compromete la operación.",
+        "reason": "Deuda fácilmente servible — cobertura 15x"
       }
     ],
     "warnings": [
@@ -73,6 +73,9 @@
     "cycle_incomplete": true,
     "cycle_years": 4,
     "ebitda_avg": 9083750000.0,
+    "eps_cycle_years": 4,
+    "eps_growth_normalized": -0.05,
+    "eps_growth_normalized_raw": -0.0931931257376,
     "ev_ebitda_normalized": 12.34062268,
     "fcf_maintenance": 3654000000.0,
     "fcf_maintenance_reason": null,
@@ -85,9 +88,49 @@
     "fcf_maintenance_years": 4,
     "fcf_margin_avg": 0.0571700625066,
     "fcf_normalized": 1478875176.92,
-    "p_fcf_normalized": 71.5544740187,
+    "p_fcf_normalized": 28.9600808495,
+    "p_fcf_normalized_basis": "fcf_mantenimiento",
     "revenue_growth_normalized": 0.0450413775521,
     "revenue_growth_normalized_raw": 0.0450413775521
+  },
+  "benchmark": {
+    "profile": "sector",
+    "provisional": true,
+    "reason": null,
+    "sector": "materials",
+    "sources": null,
+    "thresholds": {
+      "current_ratio_low": 1.0,
+      "debt_equity_high": 0.6,
+      "interest_coverage_low": 3.0,
+      "net_margin_low": 0.06,
+      "operating_margin_low": 0.1,
+      "roa_high": 0.06,
+      "roa_low": 0.03,
+      "roe_high": 0.12,
+      "roe_low": 0.05
+    },
+    "thresholds_key": "materials",
+    "values": {
+      "current_ratio": 1.5,
+      "de": 0.6,
+      "earnings_growth": 0.1,
+      "ev_ebitda": 8,
+      "fcf_yield": 0.04,
+      "forward_pe": 12,
+      "gross_margin": 0.4,
+      "interest_coverage": 8,
+      "net_margin": 0.08,
+      "operating_margin": 0.15,
+      "pb": 2,
+      "pe": 14,
+      "peg": 1.5,
+      "pfcf": 25,
+      "revenue_growth": 0.08,
+      "roa": 0.06,
+      "roe": 0.12,
+      "roic": 0.1
+    }
   },
   "beta": {
     "adjusted": 1.26063,
@@ -116,7 +159,7 @@
     "rule": "industria_ciclica",
     "sector": "Basic Materials"
   },
-  "company_type": "growth",
+  "company_type": "blend",
   "confidence": {
     "capped_from": null,
     "dimensions": {
@@ -133,12 +176,12 @@
             "upside": -0.531415388791
           },
           {
-            "components": 2,
+            "components": 1,
             "direction": "cara",
             "evaluable": true,
             "kind": "relativo",
             "method": "múltiplos frente al sector",
-            "signal": -0.25
+            "signal": -0.75
           }
         ],
         "reasons": [
@@ -499,6 +542,10 @@
         "detail": "quoteSummary v10 (con crumb)",
         "source": "yahoo_quotesummary"
       },
+      "stockBasedCompensation": {
+        "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
+        "source": "yfinance_statements"
+      },
       "symbol": {
         "detail": "quoteSummary v10 (con crumb)",
         "source": "yahoo_quotesummary"
@@ -598,6 +645,7 @@
         "netIncome",
         "operatingCashflow",
         "operatingIncome",
+        "stockBasedCompensation",
         "totalRevenue"
       ]
     }
@@ -646,6 +694,7 @@
     "applied": true,
     "basis": "TTM (4 trimestres)",
     "confidence": "alta",
+    "differs": true,
     "inference": {
       "available": true,
       "reason": null
@@ -676,6 +725,16 @@
     "pe_unreliable": true,
     "reported_net_income": 2945000000.0,
     "used_in_score": true
+  },
+  "eps_vs_revenue_growth": {
+    "eps_growth": -0.05,
+    "gap": -0.0950413775521,
+    "label": "BPA por detrás",
+    "note": "dato informativo: no puntúa (Crecimiento ya puntúa BPA e ingresos por separado)",
+    "reading": "el BPA crece más despacio que los ingresos: márgenes en compresión o dilución",
+    "revenue_growth": 0.0450413775521,
+    "scored": false,
+    "state": "compresion"
   },
   "errors": [],
   "graham_margin": -1.91379325812,
@@ -761,6 +820,7 @@
     "roce_years": 4,
     "roe": 0.146451837486,
     "roic": 0.161672229533,
+    "roic_reason": null,
     "roic_wacc_spread": 0.0617668080925,
     "shareholder_yield": 0.0108756256074,
     "shares_outstanding": 1436017523.0,
@@ -829,6 +889,30 @@
     "score": 5
   },
   "price": 73.69,
+  "price_attractiveness": {
+    "basis": null,
+    "categories_included": 1,
+    "categories_total": 1,
+    "components": [
+      {
+        "category": "Valoración",
+        "included": true,
+        "max": 20,
+        "score": 7
+      }
+    ],
+    "confidence": "media",
+    "contracted": true,
+    "excluded_categories": [],
+    "factor": 0.75,
+    "level": "exigente",
+    "level_raw": "exigente",
+    "low_coverage_categories": [],
+    "not_applicable_categories": [],
+    "partial": false,
+    "score": 39,
+    "score_raw": 35
+  },
   "price_history": {
     "52w_high": 80.24,
     "52w_low": 38.54,
@@ -843,6 +927,45 @@
     "market_cap": 105820135424.0,
     "name": "Freeport-McMoRan Inc.",
     "sector": "Basic Materials"
+  },
+  "quality": {
+    "basis": null,
+    "categories_included": 4,
+    "categories_total": 4,
+    "components": [
+      {
+        "category": "Solidez Financiera",
+        "included": true,
+        "max": 20,
+        "score": 20
+      },
+      {
+        "category": "Rentabilidad",
+        "included": true,
+        "max": 20,
+        "score": 19
+      },
+      {
+        "category": "Calidad de Ganancias",
+        "included": true,
+        "max": 20,
+        "score": 17
+      },
+      {
+        "category": "Crecimiento",
+        "included": true,
+        "max": 20,
+        "score": 7
+      }
+    ],
+    "excluded_categories": [],
+    "level": "sólida",
+    "low_confidence": false,
+    "low_confidence_reasons": [],
+    "low_coverage_categories": [],
+    "not_applicable_categories": [],
+    "partial": false,
+    "score": 79
   },
   "ratios": {
     "asset_turnover": 0.433103956335,
@@ -897,8 +1020,18 @@
     "source": "config",
     "value": 0.0529
   },
+  "sbc": {
+    "basis": "TTM",
+    "fcf": 1762000000.0,
+    "fcf_margin_adjusted": 0.0623163754446,
+    "fcf_margin_raw": 0.0681150456162,
+    "reason": null,
+    "revenue": 25868000000.0,
+    "sbc": 150000000.0,
+    "sbc_to_revenue": 0.00579867017164,
+    "value": 1612000000.0
+  },
   "score": {
-    "basis": null,
     "breakdown": {
       "Calidad de Ganancias": {
         "adjustments": [
@@ -925,7 +1058,8 @@
           },
           {
             "adjustment": 1,
-            "metric": "FCF / Net Income",
+            "metric": "FCF / beneficio neto normalizado",
+            "normalized": true,
             "reason": "FCF sólido vs ganancias (71.6%)",
             "severity": "good",
             "value": "72%"
@@ -953,11 +1087,11 @@
             "value": "4.5%"
           },
           {
-            "adjustment": 5,
+            "adjustment": -4,
             "metric": "Crecimiento EPS 3Y",
-            "reason": "EPS excepcional (55.4%)",
-            "severity": "excellent",
-            "value": "55.4%"
+            "reason": "EPS en declive (-5.0%) — normalizado de ciclo medio: promedio interanual del BPA de 4 ejercicios, acotado a [-5%, 10%]; ciclo incompleto",
+            "severity": "severe",
+            "value": "-5.0%"
           },
           {
             "adjustment": 0,
@@ -972,24 +1106,26 @@
         "coverage": 1.0,
         "details": [
           "Crecimiento moderado (4.5%) — normalizado de ciclo medio: promedio interanual de 4 ejercicios, acotado a [-5%, 10%]; ciclo incompleto",
-          "EPS excepcional (55.4%)",
+          "EPS en declive (-5.0%) — normalizado de ciclo medio: promedio interanual del BPA de 4 ejercicios, acotado a [-5%, 10%]; ciclo incompleto",
           "No aplica a CYCLICAL: el resultado de un solo ejercicio depende de la fase del ciclo (no cuenta en la cobertura)"
         ],
         "max": 20,
-        "score": 16
+        "score": 7
       },
       "Rentabilidad": {
         "adjustments": [
           {
             "adjustment": 4,
-            "metric": "ROE",
+            "metric": "ROE normalizado",
+            "normalized": true,
             "reason": "Muy bueno (12.2%) - En el rango alto de su sector",
             "severity": "good",
             "value": "12.2%"
           },
           {
             "adjustment": 0,
-            "metric": "ROA",
+            "metric": "ROA normalizado",
+            "normalized": true,
             "reason": "Aceptable (4.1%) - Normal para su sector",
             "severity": "ok",
             "value": "4.1%"
@@ -1003,7 +1139,8 @@
           },
           {
             "adjustment": 0,
-            "metric": "Margen Neto",
+            "metric": "Margen neto normalizado",
+            "normalized": true,
             "reason": "Aceptable (9.5%) - Márgenes estándar",
             "severity": "ok",
             "value": "9.5%"
@@ -1076,17 +1213,32 @@
         "adjustments": [
           {
             "adjustment": -2,
+            "in_block": true,
             "metric": "P/FCF normalizado",
-            "reason": "Muy alto (71.6x) (ciclo incompleto: 4 ejercicios)",
+            "reason": "Elevado (29.0x) (ciclo incompleto: 4 ejercicios)",
             "severity": "moderate",
-            "value": "71.6x"
+            "value": "29.0x"
           },
           {
-            "adjustment": 0,
+            "adjustment": -4,
+            "in_block": true,
             "metric": "EV/EBITDA normalizado vs Sector",
-            "reason": "Razonable para growth (12.3x) (ciclo incompleto: 4 ejercicios)",
-            "severity": "ok",
+            "reason": "Muy caro (12.3x vs 8.0x) (ciclo incompleto: 4 ejercicios)",
+            "severity": "severe",
             "value": "12.3x"
+          },
+          {
+            "adjustment": -3,
+            "block_max": 4,
+            "block_mean": -0.75,
+            "block_members": [
+              "P/FCF",
+              "EV/EBITDA"
+            ],
+            "metric": "Bloque de múltiplos",
+            "reason": "promedio de los ajustes reescalados a ±1 (P/FCF -0.50, EV/EBITDA -1.00) = -0.75 × 4 (máximo con 2 miembros) = -3.0",
+            "severity": "severe",
+            "value": "2 múltiplos"
           },
           {
             "adjustment": 0,
@@ -1108,23 +1260,18 @@
         "conclusive": true,
         "coverage": 1.0,
         "details": [
-          "Muy alto (71.6x) (ciclo incompleto: 4 ejercicios)",
-          "Razonable para growth (12.3x) (ciclo incompleto: 4 ejercicios)",
+          "Elevado (29.0x) (ciclo incompleto: 4 ejercicios)",
+          "Muy caro (12.3x vs 8.0x) (ciclo incompleto: 4 ejercicios)",
+          "promedio de los ajustes reescalados a ±1 (P/FCF -0.50, EV/EBITDA -1.00) = -0.75 × 4 (máximo con 2 miembros) = -3.0",
           "El DCF no concilia con el precio bajo ningún supuesto razonable; no se usa en el score: el grid completo (19.09–66.74) no contiene el precio (73.69): ninguna combinación razonable de crecimiento y WACC lo reconcilia",
           "No aplica a CYCLICAL: el resultado de un solo ejercicio depende de la fase del ciclo (no cuenta en la cobertura)"
         ],
         "max": 20,
-        "score": 8
+        "score": 7
       }
     },
-    "categories_included": 5,
-    "categories_total": 5,
     "excluded_categories": [],
-    "level": "Excelente",
-    "max_score": 100,
-    "not_applicable_categories": [],
-    "partial": false,
-    "total_score": 80
+    "not_applicable_categories": []
   },
   "score_coverage": {
     "calidad": {
@@ -1136,7 +1283,8 @@
       "low_confidence": false,
       "missing": [],
       "missing_reasons": {},
-      "not_applicable": {}
+      "not_applicable": {},
+      "not_significant": {}
     },
     "crecimiento": {
       "applicable": true,
@@ -1149,7 +1297,8 @@
       "missing_reasons": {},
       "not_applicable": {
         "Crecimiento del FCF": "No aplica a CYCLICAL: el resultado de un solo ejercicio depende de la fase del ciclo"
-      }
+      },
+      "not_significant": {}
     },
     "rentabilidad": {
       "applicable": true,
@@ -1160,7 +1309,8 @@
       "low_confidence": false,
       "missing": [],
       "missing_reasons": {},
-      "not_applicable": {}
+      "not_applicable": {},
+      "not_significant": {}
     },
     "solidez": {
       "applicable": true,
@@ -1171,7 +1321,8 @@
       "low_confidence": false,
       "missing": [],
       "missing_reasons": {},
-      "not_applicable": {}
+      "not_applicable": {},
+      "not_significant": {}
     },
     "valoracion": {
       "applicable": true,
@@ -1185,7 +1336,8 @@
       "not_applicable": {
         "P/E": "No aplica a CYCLICAL: el resultado de un solo ejercicio depende de la fase del ciclo",
         "PEG": "No aplica a CYCLICAL: el resultado de un solo ejercicio depende de la fase del ciclo"
-      }
+      },
+      "not_significant": {}
     }
   },
   "sector_info": {
@@ -1277,6 +1429,14 @@
     "raw": 0.310790501954,
     "reason": null,
     "source": "efectiva"
+  },
+  "verdict": {
+    "confidence": "media",
+    "confidence_text": "(confianza media: un solo método de valoración evaluable, sin contraste)",
+    "full": "Calidad sólida · precio exigente (confianza media: un solo método de valoración evaluable, sin contraste)",
+    "price_level": "exigente",
+    "quality_level": "sólida",
+    "text": "Calidad sólida · precio exigente"
   },
   "wacc": {
     "applicable": true,

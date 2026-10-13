@@ -5,33 +5,23 @@
         "category": "Solidez financiera",
         "detail": "El resultado operativo es negativo y la empresa tiene deuda neta: los intereses no se pagan con el negocio, sino con caja o nueva financiación.",
         "reason": "Cobertura de intereses negativa (EBIT < 0)"
-      },
-      {
-        "category": "Rentabilidad",
-        "detail": "El retorno sobre el capital invertido no cubre su costo (ROIC -38.0% vs WACC 10.7%): crecer a estos retornos destruye valor para el accionista en lugar de crearlo.",
-        "reason": "Destruye valor — spread -48.7%"
-      },
-      {
-        "category": "Rentabilidad",
-        "detail": "La empresa destruye valor para el accionista: no genera retorno sobre su patrimonio. Conviene revisar si es puntual o refleja un deterioro sostenido del negocio.",
-        "reason": "ROE negativo — -51.7%"
-      },
-      {
-        "category": "Rentabilidad",
-        "detail": "La empresa pierde dinero a nivel neto: cada dólar vendido no cubre el total de costos, gastos, intereses e impuestos. Insostenible si se prolonga.",
-        "reason": "Margen neto negativo — -20.4%"
       }
     ],
     "strengths": [
       {
         "category": "Crecimiento",
-        "detail": "Los ingresos crecen 46.8% interanual: ritmo de expansión elevado que, si mantiene márgenes, es el principal motor de creación de valor a largo plazo.",
-        "reason": "Crecimiento fuerte — ingresos +46.8% interanual"
+        "detail": "Los ingresos crecen 28.7% anual en tres años (CAGR): ritmo de expansión elevado que, si mantiene márgenes, es el principal motor de creación de valor a largo plazo.",
+        "reason": "Crecimiento fuerte — ingresos +28.7% anual (3 años)"
+      },
+      {
+        "category": "Rentabilidad",
+        "detail": "Retiene 67% de cada venta tras el costo directo del producto: un margen bruto así suele reflejar marca fuerte, tecnología propia o poder de precios difícil de replicar.",
+        "reason": "Margen bruto muy alto — 67.0%"
       },
       {
         "category": "Solidez financiera",
-        "detail": "El flujo de caja libre de los últimos doce meses es positivo: la empresa financia su crecimiento sin consumir caja ni depender de nuevas rondas de capital o deuda.",
-        "reason": "Autofinanciada — FCF TTM positivo"
+        "detail": "El flujo de caja libre de los últimos doce meses es positivo: la empresa no consume caja para operar. Pero la compensación en acciones (30.2% de los ingresos) supera ese FCF y se paga con dilución del accionista: el FCF no cubre su coste económico completo.",
+        "reason": "Autofinanciada en caja — FCF TTM positivo"
       }
     ],
     "warnings": [
@@ -39,11 +29,6 @@
         "category": "Solidez financiera",
         "detail": "Los activos corrientes cubren solo 0.94x los pasivos de corto plazo: la empresa podría tensionarse para atender sus obligaciones inmediatas si el flujo de caja se resiente. Habitual y manejable en negocios con caja muy predecible.",
         "reason": "Liquidez ajustada — current ratio 0.94x"
-      },
-      {
-        "category": "Flujo de caja",
-        "detail": "El flujo de caja libre equivale a menos de la mitad del beneficio contable (FCF/BN -107%): parte de las utilidades no se está convirtiendo en caja real, señal a vigilar (devengos, capex o capital de trabajo).",
-        "reason": "Calidad del beneficio baja"
       },
       {
         "category": "Valoración",
@@ -73,15 +58,67 @@
   "archetype_metrics": {
     "ebitda": -813419000.0,
     "ev_sales": 24.024285662,
-    "fcf_margin": 0.219606535622,
+    "fcf_margin": -0.0825146509056,
+    "fcf_margin_basis": "FCF − SBC",
+    "fcf_margin_raw": 0.219606535622,
+    "fcf_margin_reason": null,
+    "fcf_minus_sbc": -448438000.0,
+    "gross_margin": 0.670304437436,
+    "operating_margin_change": 0.0951024683584,
+    "operating_margin_change_reason": null,
+    "operating_margin_fy": -0.306400842367,
+    "operating_margin_fy_prior": -0.401503310725,
     "revenue_cagr_3y": 0.313765188615,
-    "rule_of_40": 0.533371724238,
+    "rule_of_40": 0.23125053771,
     "runway": {
       "fcf": 1193484000.0,
       "liquidity": 2344695000.0,
       "reason": null,
+      "sbc_exceeds_fcf": true,
+      "sbc_to_revenue": 0.302121186528,
       "state": "autofinanciada",
       "years": null
+    },
+    "sbc": 1641922000.0,
+    "sbc_to_revenue": 0.302121186528
+  },
+  "benchmark": {
+    "profile": "sector",
+    "provisional": true,
+    "reason": null,
+    "sector": "technology",
+    "sources": null,
+    "thresholds": {
+      "current_ratio_low": 1.0,
+      "debt_equity_high": 0.8,
+      "interest_coverage_low": 3.0,
+      "net_margin_low": 0.1,
+      "operating_margin_low": 0.15,
+      "roa_high": 0.15,
+      "roa_low": 0.03,
+      "roe_high": 0.22,
+      "roe_low": 0.1
+    },
+    "thresholds_key": "technology",
+    "values": {
+      "current_ratio": 1.5,
+      "de": 0.8,
+      "earnings_growth": 0.18,
+      "ev_ebitda": 20,
+      "fcf_yield": 0.04,
+      "forward_pe": 25,
+      "gross_margin": 0.6,
+      "interest_coverage": 8,
+      "net_margin": 0.2,
+      "operating_margin": 0.25,
+      "pb": 8,
+      "pe": 30,
+      "peg": 1.5,
+      "pfcf": 25,
+      "revenue_growth": 0.15,
+      "roa": 0.1,
+      "roe": 0.25,
+      "roic": 0.18
     }
   },
   "beta": {
@@ -521,6 +558,10 @@
         "detail": "quoteSummary v10 (con crumb)",
         "source": "yahoo_quotesummary"
       },
+      "stockBasedCompensation": {
+        "detail": "TTM: suma de los 4 trimestres 2026-07-31, 2026-04-30, 2026-01-31, 2025-10-31",
+        "source": "yfinance_statements"
+      },
       "symbol": {
         "detail": "quoteSummary v10 (con crumb)",
         "source": "yahoo_quotesummary"
@@ -616,6 +657,7 @@
         "netIncome",
         "operatingCashflow",
         "operatingIncome",
+        "stockBasedCompensation",
         "totalRevenue"
       ]
     }
@@ -728,6 +770,7 @@
     "applied": true,
     "basis": "TTM (4 trimestres)",
     "confidence": "alta",
+    "differs": true,
     "inference": {
       "available": true,
       "reason": null
@@ -775,6 +818,7 @@
     "reported_net_income": -1090798000.0,
     "used_in_score": true
   },
+  "eps_vs_revenue_growth": null,
   "errors": [],
   "graham_number": null,
   "growth_basis": {
@@ -786,6 +830,7 @@
     "eps": "el BPA ya es por acción",
     "fcf_cagr": {
       "anomalous_base": false,
+      "basis": "FCF − SBC",
       "method": "cagr",
       "note": null
     },
@@ -861,7 +906,8 @@
     "roce_state": "ok",
     "roe": -0.507427207229,
     "roic": -0.380349172994,
-    "roic_wacc_spread": -0.48693783835,
+    "roic_reason": null,
+    "roic_wacc_spread": null,
     "shareholder_yield": -0.0301109729981,
     "shares_outstanding": 352800000.0,
     "total_assets": 8690459000.0,
@@ -932,6 +978,30 @@
     "score": 4
   },
   "price": 368.89,
+  "price_attractiveness": {
+    "basis": null,
+    "categories_included": 1,
+    "categories_total": 1,
+    "components": [
+      {
+        "category": "Valoración",
+        "included": true,
+        "max": 20,
+        "score": 4
+      }
+    ],
+    "confidence": "media",
+    "contracted": true,
+    "excluded_categories": [],
+    "factor": 0.75,
+    "level": "muy exigente",
+    "level_raw": "muy exigente",
+    "low_coverage_categories": [],
+    "not_applicable_categories": [],
+    "partial": false,
+    "score": 28,
+    "score_raw": 20
+  },
   "price_history": {
     "52w_high": 384.56,
     "52w_low": 118.3,
@@ -946,6 +1016,45 @@
     "market_cap": 130144395264.0,
     "name": "Snowflake Inc.",
     "sector": "Technology"
+  },
+  "quality": {
+    "basis": null,
+    "categories_included": 4,
+    "categories_total": 4,
+    "components": [
+      {
+        "category": "Solidez Financiera",
+        "included": true,
+        "max": 20,
+        "score": 6
+      },
+      {
+        "category": "Rentabilidad",
+        "included": true,
+        "max": 20,
+        "score": 11
+      },
+      {
+        "category": "Calidad de Ganancias",
+        "included": true,
+        "max": 20,
+        "score": 9
+      },
+      {
+        "category": "Crecimiento",
+        "included": true,
+        "max": 20,
+        "score": 12
+      }
+    ],
+    "excluded_categories": [],
+    "level": "media",
+    "low_confidence": false,
+    "low_confidence_reasons": [],
+    "low_coverage_categories": [],
+    "not_applicable_categories": [],
+    "partial": false,
+    "score": 48
   },
   "ratios": {
     "asset_turnover": 0.625357878105,
@@ -1000,8 +1109,18 @@
     "source": "config",
     "value": 0.0529
   },
+  "sbc": {
+    "basis": "TTM",
+    "fcf": 1193484000.0,
+    "fcf_margin_adjusted": -0.0825146509056,
+    "fcf_margin_raw": 0.219606535622,
+    "reason": null,
+    "revenue": 5434647000.0,
+    "sbc": 1641922000.0,
+    "sbc_to_revenue": 0.302121186528,
+    "value": -448438000.0
+  },
   "score": {
-    "basis": null,
     "breakdown": {
       "Calidad de Ganancias": {
         "adjustments": [
@@ -1020,11 +1139,18 @@
             "value": "Positivo"
           },
           {
-            "adjustment": 3,
-            "metric": "Free Cash Flow",
-            "reason": "FCF positivo",
-            "severity": "good",
-            "value": "Positivo"
+            "adjustment": -4,
+            "metric": "FCF − SBC",
+            "reason": "FCF − SBC negativo (la compensación en acciones supera el FCF)",
+            "severity": "severe",
+            "value": "Negativo"
+          },
+          {
+            "adjustment": 0,
+            "metric": "FCF / beneficio neto",
+            "reason": "Beneficio neto <= 0: el ratio no mide la conversión del beneficio en caja",
+            "severity": "neutral",
+            "value": "No significativo"
           }
         ],
         "applicable": true,
@@ -1033,33 +1159,27 @@
         "details": [
           "Neutral (4/9)",
           "Genera efectivo operativo",
-          "FCF positivo"
+          "FCF − SBC negativo (la compensación en acciones supera el FCF)",
+          "Beneficio neto <= 0: el ratio no mide la conversión del beneficio en caja"
         ],
         "max": 20,
-        "score": 16
+        "score": 9
       },
       "Crecimiento": {
         "adjustments": [
           {
             "adjustment": 5,
             "metric": "Crecimiento Ingresos 3Y",
-            "reason": "Crecimiento excepcional (46.8%) — por acción: +49.9% agregado ajustado por las acciones (+2.1% anual)",
+            "reason": "Crecimiento excepcional (28.7%) — por acción: +31.4% agregado ajustado por las acciones (+2.1% anual)",
             "severity": "excellent",
-            "value": "46.8%"
+            "value": "28.7%"
           },
           {
-            "adjustment": 4,
-            "metric": "Crecimiento FCF 3Y",
-            "reason": "FCF creciente (28.4%)",
-            "severity": "excellent",
-            "value": "28.4%"
-          },
-          {
-            "adjustment": 2,
-            "metric": "Growth Company",
-            "reason": "Perfil de alto crecimiento",
-            "severity": "good",
-            "value": "Sí"
+            "adjustment": -3,
+            "metric": "Crecimiento FCF − SBC 3Y",
+            "reason": "Negativo en todos los ejercicios de la ventana (fcf − sbc de -1 a -1): la tasa no se calcula, pero es una señal, no un dato ausente — peor tramo",
+            "severity": "severe",
+            "value": "Negativo sostenido"
           },
           {
             "adjustment": 0,
@@ -1073,64 +1193,63 @@
         "conclusive": true,
         "coverage": 1.0,
         "details": [
-          "Crecimiento excepcional (46.8%) — por acción: +49.9% agregado ajustado por las acciones (+2.1% anual)",
-          "FCF creciente (28.4%)",
-          "Perfil de alto crecimiento",
+          "Crecimiento excepcional (28.7%) — por acción: +31.4% agregado ajustado por las acciones (+2.1% anual)",
+          "Negativo en todos los ejercicios de la ventana (fcf − sbc de -1 a -1): la tasa no se calcula, pero es una señal, no un dato ausente — peor tramo",
           "No aplica a GROWTH_PRE_PROFIT: aún no tiene beneficios que capitalizar (no cuenta en la cobertura)"
         ],
         "max": 20,
-        "score": 20
+        "score": 12
       },
       "Rentabilidad": {
         "adjustments": [
           {
-            "adjustment": -6,
-            "metric": "ROE",
-            "reason": "Negativo (-51.7%) - Destruye valor para accionistas",
-            "severity": "severe",
-            "value": "-51.7%"
+            "adjustment": 3,
+            "metric": "Margen bruto",
+            "reason": "Alto (67.0%) - margen que financiará la escala",
+            "severity": "good",
+            "value": "67.0%"
           },
           {
-            "adjustment": -4,
-            "metric": "ROA",
-            "reason": "Negativo (-12.8%) - Perdiendo dinero con sus activos",
-            "severity": "severe",
-            "value": "-12.8%"
-          },
-          {
-            "adjustment": -5,
-            "metric": "Margen Operativo",
-            "reason": "Negativo (-22.8%) - Operaciones no rentables",
-            "severity": "severe",
+            "adjustment": -3,
+            "metric": "Margen operativo",
+            "reason": "Pérdida operativa alta (-22.8%) - bandas de pre-beneficio",
+            "severity": "moderate",
             "value": "-22.8%"
           },
           {
-            "adjustment": -3,
-            "metric": "Margen Neto",
-            "reason": "Negativo (-20.4%)",
-            "severity": "severe",
-            "value": "-20.4%"
+            "adjustment": 4,
+            "metric": "Mejora del margen operativo",
+            "reason": "Fuerte mejora (+9.5 pp interanual: -40.2% → -30.6%)",
+            "severity": "excellent",
+            "value": "+9.5 pp"
           },
           {
             "adjustment": -3,
-            "metric": "ROIC vs WACC",
-            "reason": "Destruye valor (ROIC -38.0% < WACC 10.7%, spread -48.7%)",
-            "severity": "severe",
-            "value": "-48.7%"
+            "metric": "Margen FCF − SBC",
+            "reason": "Quema moderada (-8.3%) - FCF menos compensación en acciones sobre ingresos (FCF bruto 22.0%)",
+            "severity": "moderate",
+            "value": "-8.3%"
+          },
+          {
+            "adjustment": 0,
+            "metric": "No aplica",
+            "reason": "No aplica a GROWTH_PRE_PROFIT: negativo por definición del arquetipo (aún sin beneficio); la rentabilidad se mide con el margen bruto, el margen operativo y su mejora, y el margen FCF − SBC (no cuenta en la cobertura)",
+            "severity": "neutral",
+            "value": "ROE, ROA, Margen neto, ROIC−WACC"
           }
         ],
         "applicable": true,
         "conclusive": true,
         "coverage": 1.0,
         "details": [
-          "Negativo (-51.7%) - Destruye valor para accionistas",
-          "Negativo (-12.8%) - Perdiendo dinero con sus activos",
-          "Negativo (-22.8%) - Operaciones no rentables",
-          "Negativo (-20.4%)",
-          "Destruye valor (ROIC -38.0% < WACC 10.7%, spread -48.7%)"
+          "Alto (67.0%) - margen que financiará la escala",
+          "Pérdida operativa alta (-22.8%) - bandas de pre-beneficio",
+          "Fuerte mejora (+9.5 pp interanual: -40.2% → -30.6%)",
+          "Quema moderada (-8.3%) - FCF menos compensación en acciones sobre ingresos (FCF bruto 22.0%)",
+          "No aplica a GROWTH_PRE_PROFIT: negativo por definición del arquetipo (aún sin beneficio); la rentabilidad se mide con el margen bruto, el margen operativo y su mejora, y el margen FCF − SBC (no cuenta en la cobertura)"
         ],
         "max": 20,
-        "score": 0
+        "score": 11
       },
       "Solidez Financiera": {
         "adjustments": [
@@ -1158,9 +1277,9 @@
           {
             "adjustment": 6,
             "metric": "Runway",
-            "reason": "FCF TTM positivo: no consume caja",
+            "reason": "FCF TTM positivo: no consume caja (la compensación en acciones, 30.2% de los ingresos, supera el FCF y se paga con dilución)",
             "severity": "excellent",
-            "value": "Autofinanciada"
+            "value": "Autofinanciada en caja"
           },
           {
             "adjustment": 0,
@@ -1177,7 +1296,7 @@
           "Liquidez ajustada - Poco margen de maniobra (0.94x)",
           "Deuda muy alta - Riesgo financiero elevado (1.29x)",
           "Riesgo de cobertura - EBIT negativo con deuda neta",
-          "FCF TTM positivo: no consume caja",
+          "FCF TTM positivo: no consume caja (la compensación en acciones, 30.2% de los ingresos, supera el FCF y se paga con dilución)",
           "No aplica a GROWTH_PRE_PROFIT: el Altman se calibró con quiebras de empresas maduras endeudadas; su solidez se mide por el runway (caja frente a la quema de FCF) (no cuenta en la cobertura)"
         ],
         "max": 20,
@@ -1193,18 +1312,31 @@
             "value": "24.0x"
           },
           {
-            "adjustment": 2,
+            "adjustment": -2,
             "metric": "Regla de 40",
-            "reason": "Crecimiento 31.4% (CAGR 3 años) + margen FCF 22.0% = 53",
-            "severity": "good",
-            "value": "53"
+            "reason": "Crecimiento 31.4% (CAGR 3 años) + margen FCF − SBC -8.3% = 23",
+            "severity": "moderate",
+            "value": "23"
           },
           {
             "adjustment": -4,
+            "in_block": true,
             "metric": "P/FCF",
             "reason": "Muy alto (109.0x)",
             "severity": "severe",
             "value": "109.0x"
+          },
+          {
+            "adjustment": -2,
+            "block_max": 2,
+            "block_mean": -1.0,
+            "block_members": [
+              "P/FCF"
+            ],
+            "metric": "Bloque de múltiplos",
+            "reason": "promedio de los ajustes reescalados a ±1 (P/FCF -1.00) = -1.00 × 2 (máximo con 1 miembro) = -2.0",
+            "severity": "severe",
+            "value": "1 múltiplo"
           },
           {
             "adjustment": 0,
@@ -1227,23 +1359,18 @@
         "coverage": 1.0,
         "details": [
           "Exigente por ventas (24.0x)",
-          "Crecimiento 31.4% (CAGR 3 años) + margen FCF 22.0% = 53",
+          "Crecimiento 31.4% (CAGR 3 años) + margen FCF − SBC -8.3% = 23",
           "Muy alto (109.0x)",
+          "promedio de los ajustes reescalados a ±1 (P/FCF -1.00) = -1.00 × 2 (máximo con 1 miembro) = -2.0",
           "El DCF no concilia con el precio bajo ningún supuesto razonable; no se usa en el score: el grid completo (75.06–158.84) no contiene el precio (368.89): ninguna combinación razonable de crecimiento y WACC lo reconcilia",
           "EV/EBITDA: No aplica a GROWTH_PRE_PROFIT: EBITDA <= 0, sin resultado operativo que capitalizar; P/E, PEG: No aplica a GROWTH_PRE_PROFIT: aún no tiene beneficios que capitalizar (no cuenta en la cobertura)"
         ],
         "max": 20,
-        "score": 6
+        "score": 4
       }
     },
-    "categories_included": 5,
-    "categories_total": 5,
     "excluded_categories": [],
-    "level": "Neutral",
-    "max_score": 100,
-    "not_applicable_categories": [],
-    "partial": false,
-    "total_score": 48
+    "not_applicable_categories": []
   },
   "score_coverage": {
     "calidad": {
@@ -1255,7 +1382,8 @@
       "low_confidence": false,
       "missing": [],
       "missing_reasons": {},
-      "not_applicable": {}
+      "not_applicable": {},
+      "not_significant": {}
     },
     "crecimiento": {
       "applicable": true,
@@ -1268,18 +1396,25 @@
       "missing_reasons": {},
       "not_applicable": {
         "Crecimiento del BPA": "No aplica a GROWTH_PRE_PROFIT: aún no tiene beneficios que capitalizar"
-      }
+      },
+      "not_significant": {}
     },
     "rentabilidad": {
       "applicable": true,
-      "components": 5,
+      "components": 4,
       "conclusive": true,
       "coverage": 1.0,
-      "evaluated": 5,
+      "evaluated": 4,
       "low_confidence": false,
       "missing": [],
       "missing_reasons": {},
-      "not_applicable": {}
+      "not_applicable": {
+        "Margen neto": "No aplica a GROWTH_PRE_PROFIT: negativo por definición del arquetipo (aún sin beneficio); la rentabilidad se mide con el margen bruto, el margen operativo y su mejora, y el margen FCF − SBC",
+        "ROA": "No aplica a GROWTH_PRE_PROFIT: negativo por definición del arquetipo (aún sin beneficio); la rentabilidad se mide con el margen bruto, el margen operativo y su mejora, y el margen FCF − SBC",
+        "ROE": "No aplica a GROWTH_PRE_PROFIT: negativo por definición del arquetipo (aún sin beneficio); la rentabilidad se mide con el margen bruto, el margen operativo y su mejora, y el margen FCF − SBC",
+        "ROIC−WACC": "No aplica a GROWTH_PRE_PROFIT: negativo por definición del arquetipo (aún sin beneficio); la rentabilidad se mide con el margen bruto, el margen operativo y su mejora, y el margen FCF − SBC"
+      },
+      "not_significant": {}
     },
     "solidez": {
       "applicable": true,
@@ -1292,7 +1427,8 @@
       "missing_reasons": {},
       "not_applicable": {
         "Altman Z": "No aplica a GROWTH_PRE_PROFIT: el Altman se calibró con quiebras de empresas maduras endeudadas; su solidez se mide por el runway (caja frente a la quema de FCF)"
-      }
+      },
+      "not_significant": {}
     },
     "valoracion": {
       "applicable": true,
@@ -1307,7 +1443,8 @@
         "EV/EBITDA": "No aplica a GROWTH_PRE_PROFIT: EBITDA <= 0, sin resultado operativo que capitalizar",
         "P/E": "No aplica a GROWTH_PRE_PROFIT: aún no tiene beneficios que capitalizar",
         "PEG": "No aplica a GROWTH_PRE_PROFIT: aún no tiene beneficios que capitalizar"
-      }
+      },
+      "not_significant": {}
     }
   },
   "sector_info": {
@@ -1386,6 +1523,14 @@
     "raw": null,
     "reason": "beneficio antes de impuestos <= 0: tipo legal 21%",
     "source": "legal"
+  },
+  "verdict": {
+    "confidence": "media",
+    "confidence_text": "(confianza media: un solo método de valoración evaluable, sin contraste)",
+    "full": "Calidad media · precio muy exigente (confianza media: un solo método de valoración evaluable, sin contraste)",
+    "price_level": "muy exigente",
+    "quality_level": "media",
+    "text": "Calidad media · precio muy exigente"
   },
   "wacc": {
     "applicable": true,
