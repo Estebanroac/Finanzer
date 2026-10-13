@@ -704,6 +704,12 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         return f"{_vs} {bench * 100:.1f}%" if fmt == 'pct' else f"{_vs} {bench:.1f}x"
 
     def _mkcard(key, label, raw, fmt, benchkey, higher):
+        if _state(key, raw) == "no_aplica":
+            # Etapa 9b: lo que no aplica al arquetipo no se lee tampoco en las tarjetas
+            # (antes: "Muy inferior" frente al sector para el ROE de un REIT o de un pre-beneficio).
+            v, u = _mvu(raw, fmt)
+            return {"key": key, "label": label, "value": v, "unit": u, "pill": "No aplica", "tone": 'neu',
+                    "delta": "", "bench": "", "state": "no_aplica"}
         bench = sector_bench.get(benchkey) if benchkey else None
         r = _rvs(label, raw, bench, higher, 'pct' if fmt == 'pct' else 'mult') \
             if (bench and raw is not None) else None
@@ -1110,7 +1116,9 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                  "rows": mrows, "market_note": market_note, "normalization_note": norm_note,
                  "intrinsic": {"intro": iv_txt, "rows": iv_rows, "graham_note": graham_note},
                  "dcf_params": dcf_params, "dcf_reliability": dcf_reliability_line,
-                 "dcf_reliability_level": _rel.get("level"), "dcf_missing": dcf_missing,
+                 "dcf_reliability_level": _rel.get("level"),
+                 "dcf_reliability_tone": {"alta": 'pos', "media": 'warn', "baja": 'neg'}.get(_rel.get("level")),
+                 "dcf_missing": dcf_missing,
                  "ke_note": ke_note, "wacc_note": wacc_note, "wacc_breakdown": wacc_breakdown,
                  "sensitivity": sens}
 

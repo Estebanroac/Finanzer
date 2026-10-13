@@ -1,708 +1,376 @@
-import { TooltipContent } from "@/components/InfoTooltip";
+/**
+ * Definiciones de las métricas (qué es, cómo se calcula, cómo leerla).
+ *
+ * Etapa 9b: aquí NO hay bandas ni umbrales. Las bandas que muestra cada tooltip
+ * llegan en `display.tooltips` (backend/lib/display.py): solo las aplicadas a esta
+ * empresa, según su arquetipo y su benchmark, generadas desde la config del score.
+ * Los textos tampoco citan cifras de corte: la lectura de una métrica la da el
+ * backend, igual en la web y en el PDF.
+ *
+ * Las claves coinciden con `Row.key` / `Kpi.key` / `MetricCard.key` del contrato.
+ */
+export interface Definition {
+  title: string;
+  description: string;
+  formula?: string;
+  good?: string;
+  bad?: string;
+  tip?: string;
+}
 
-// ─── SCORE GENERAL ──────────────────────────────────────
-// Etapa 9a (mínimo; la 9b rehace la UI): la tarjeta muestra la CALIDAD del negocio.
-export const SCORE_TOOLTIP: TooltipContent = {
-  title: "Calidad del negocio",
-  description:
-    "Puntuacion de 0 a 100 de la calidad del negocio: solidez financiera, rentabilidad, calidad de ganancias y crecimiento. El atractivo del precio se puntua aparte (valoracion por multiplos y DCF).",
-  thresholds: [
-    { label: "Excelente", value: "80–100", color: "#0cc06c" },
-    { label: "Solida", value: "65–79", color: "#22c55e" },
-    { label: "Media", value: "45–64", color: "#fbbf24" },
-    { label: "Debil", value: "0–44", color: "#ff4d4d" },
-  ],
-  tip: "La calidad y el precio son preguntas distintas: una empresa excelente puede estar cara.",
-};
+export const DEFINITIONS: Record<string, Definition> = {
+  // ── Puntuaciones ──
+  quality: {
+    title: "Calidad del negocio",
+    description:
+      "Puntuación de 0 a 100 de la calidad del negocio: solidez financiera, rentabilidad, calidad de ganancias y crecimiento. El atractivo del precio se puntúa aparte.",
+    tip: "La calidad y el precio son preguntas distintas: una empresa excelente puede estar cara.",
+  },
+  price: {
+    title: "Atractivo del precio",
+    description:
+      "Puntuación de 0 a 100 de lo atractivo que es el precio actual: valoración por múltiplos frente a su referencia y DCF. Se contrae hacia 50 cuando la confianza del veredicto no es alta.",
+    tip: "Si el precio está contraído verás dos cifras: la cruda (lo que dicen los métodos) y la mostrada (ajustada por la confianza).",
+  },
+  category: {
+    title: "Categorías de la puntuación",
+    description:
+      "Cada categoría parte de una base neutral de 10/20 y suma o resta según la banda en la que cae cada indicador. Solidez, Rentabilidad, Calidad de ganancias y Crecimiento forman la calidad del negocio; Valoración, el atractivo del precio.",
+    tip: "Una categoría «no concluyente» no tiene datos suficientes: se excluye y la puntuación se reescala sobre las demás.",
+  },
+  confidence: {
+    title: "Confianza del veredicto",
+    description:
+      "Mide cuánto fiarse del veredicto de precio: si los métodos de valoración coinciden, si hay datos suficientes, la calidad de la fuente y la estabilidad del tipo de empresa.",
+    tip: "La confianza contrae el atractivo del precio hacia 50; la calidad del negocio no se contrae.",
+  },
 
-// ─── METRICAS CLAVE (MetricsGrid) ───────────────────────
-export const METRICS: Record<string, TooltipContent> = {
-  sector_benchmark: {
-    title: "Comparación vs Sector",
-    description: "El punto de color y la flecha comparan el valor de la empresa con la MEDIANA de su sector. Verde = mejor que el sector; rojo = peor; ámbar = en línea (dentro de ±10%).",
-    tip: "Un P/E de 30 puede ser caro en un banco pero barato en tecnología — por eso cada métrica se compara contra su sector, no contra un número fijo.",
+  // ── Mercado ──
+  price_now: {
+    title: "Precio",
+    description: "Último precio de cotización disponible.",
   },
   market_cap: {
-    title: "Capitalizacion de Mercado",
-    description: "Valor total de la empresa en bolsa. Se calcula multiplicando el precio actual por el numero de acciones en circulacion.",
-    formula: "Precio × Acciones en circulacion",
-    thresholds: [
-      { label: "Mega cap", value: ">200B", color: "#3b82f6" },
-      { label: "Large cap", value: "10B–200B", color: "#22c55e" },
-      { label: "Mid cap", value: "2B–10B", color: "#fbbf24" },
-      { label: "Small cap", value: "<2B", color: "#f97316" },
-    ],
-    tip: "Empresas mas grandes tienden a ser mas estables pero con menor potencial de crecimiento explosivo.",
-  },
-  pe_ratio: {
-    title: "P/E Ratio (Precio/Beneficio)",
-    description: "Indica cuanto pagan los inversores por cada dolar de ganancia. Un P/E alto puede significar expectativas de crecimiento, o que la accion esta cara.",
-    formula: "Precio / Ganancia por Accion (EPS)",
-    thresholds: [
-      { label: "Posiblemente barata", value: "<15", color: "#0cc06c" },
-      { label: "Valoracion justa", value: "15–25", color: "#fbbf24" },
-      { label: "Cara / alto crecimiento", value: ">25", color: "#f97316" },
-    ],
-    good: "P/E bajo con ganancias estables puede indicar oportunidad de compra.",
-    bad: "P/E muy alto sin crecimiento que lo justifique sugiere sobrevaloracion.",
-    tip: "Compara siempre el P/E con el promedio del sector. Un P/E de 30 puede ser barato en tech pero caro en utilities.",
-  },
-  roe: {
-    title: "ROE (Return on Equity)",
-    description: "Mide que tan eficientemente la empresa genera ganancias con el dinero de los accionistas. Es uno de los indicadores favoritos de Warren Buffett.",
-    formula: "Ingreso Neto / Patrimonio de Accionistas",
-    thresholds: [
-      { label: "Excelente", value: ">20%", color: "#0cc06c" },
-      { label: "Bueno", value: "15–20%", color: "#22c55e" },
-      { label: "Aceptable", value: "10–15%", color: "#fbbf24" },
-      { label: "Bajo", value: "<10%", color: "#ff4d4d" },
-    ],
-    good: "ROE alto sostenido indica ventaja competitiva duradera.",
-    bad: "ROE alto por exceso de deuda es peligroso — revisa el D/E.",
-    tip: "Un ROE alto con deuda baja es la combinacion ideal.",
-  },
-  de_ratio: {
-    title: "D/E (Deuda/Patrimonio)",
-    description: "Compara la deuda total con el patrimonio de los accionistas. Indica cuanto depende la empresa de dinero prestado vs dinero propio.",
-    formula: "Deuda Total / Patrimonio",
-    thresholds: [
-      { label: "Conservador", value: "<0.5", color: "#0cc06c" },
-      { label: "Moderado", value: "0.5–1.0", color: "#fbbf24" },
-      { label: "Apalancado", value: "1.0–2.0", color: "#f97316" },
-      { label: "Muy endeudado", value: ">2.0", color: "#ff4d4d" },
-    ],
-    good: "D/E bajo significa que la empresa se financia mas con recursos propios.",
-    bad: "D/E muy alto aumenta el riesgo en recesiones o alzas de tasas de interes.",
-    tip: "Los bancos y REITs naturalmente tienen D/E altos — compara dentro del mismo sector.",
-  },
-  net_margin: {
-    title: "Margen Neto",
-    description: "Porcentaje de cada dolar de ventas que se convierte en ganancia final despues de TODOS los gastos, impuestos e intereses.",
-    formula: "Ingreso Neto / Ingresos Totales × 100",
-    thresholds: [
-      { label: "Excelente", value: ">20%", color: "#0cc06c" },
-      { label: "Bueno", value: "10–20%", color: "#22c55e" },
-      { label: "Aceptable", value: "5–10%", color: "#fbbf24" },
-      { label: "Bajo", value: "<5%", color: "#ff4d4d" },
-    ],
-    good: "Margenes altos sugieren poder de precios y eficiencia operativa.",
-    bad: "Margenes bajos o negativos indican presion competitiva o problemas de costos.",
-  },
-  fcf_yield: {
-    title: "FCF Yield (Rendimiento de Flujo Libre)",
-    description: "Mide cuanto flujo de caja libre genera la empresa en relacion a su valor de mercado. Es como el 'rendimiento real' de la empresa.",
-    formula: "Flujo de Caja Libre / Capitalizacion de Mercado × 100",
-    thresholds: [
-      { label: "Muy atractivo", value: ">8%", color: "#0cc06c" },
-      { label: "Atractivo", value: "5–8%", color: "#22c55e" },
-      { label: "Moderado", value: "3–5%", color: "#fbbf24" },
-      { label: "Bajo", value: "<3%", color: "#f97316" },
-    ],
-    good: "FCF Yield alto indica que la empresa genera mucho efectivo real para su tamano.",
-    bad: "FCF Yield bajo puede significar que la accion esta cara o que la empresa reinvierte todo.",
-    tip: "Muchos inversores de valor prefieren FCF Yield sobre P/E porque el flujo de caja es mas dificil de manipular que las ganancias.",
-  },
-  ev_ebitda: {
-    title: "EV/EBITDA",
-    description: "Compara el valor total de la empresa (incluyendo deuda) con sus ganancias operativas antes de intereses, impuestos, depreciacion y amortizacion. Es mas completo que el P/E.",
-    formula: "Enterprise Value / EBITDA",
-    thresholds: [
-      { label: "Posiblemente barata", value: "<10", color: "#0cc06c" },
-      { label: "Valoracion justa", value: "10–15", color: "#fbbf24" },
-      { label: "Cara", value: "15–20", color: "#f97316" },
-      { label: "Muy cara", value: ">20", color: "#ff4d4d" },
-    ],
-    good: "EV/EBITDA bajo con negocio estable puede ser oportunidad de compra.",
-    bad: "EV/EBITDA muy alto sin crecimiento rapido sugiere sobrevaloracion.",
-    tip: "EV/EBITDA es preferido por analistas profesionales porque incluye la deuda y ignora diferencias contables entre paises.",
+    title: "Capitalización de mercado",
+    description: "Valor total de la empresa en bolsa.",
+    formula: "Precio × acciones en circulación",
+    tip: "Las empresas más grandes tienden a ser más estables, con menos potencial de crecimiento explosivo.",
   },
   beta: {
-    title: "Beta (Volatilidad)",
-    description: "Mide la volatilidad de la accion comparada con el mercado (S&P 500 = 1.0). Indica cuanto se mueve la accion cuando el mercado sube o baja.",
-    formula: "Covarianza(Accion, Mercado) / Varianza(Mercado)",
-    thresholds: [
-      { label: "Muy estable (defensiva)", value: "<0.8", color: "#3b82f6" },
-      { label: "Similar al mercado", value: "0.8–1.2", color: "#22c55e" },
-      { label: "Mas volatil", value: "1.2–1.5", color: "#fbbf24" },
-      { label: "Muy volatil", value: ">1.5", color: "#ff4d4d" },
-    ],
-    good: "Beta bajo = menos volatilidad, ideal para inversores conservadores.",
-    bad: "Beta alto = la accion puede caer mucho mas que el mercado en correcciones.",
-    tip: "Beta mide riesgo de mercado, no riesgo de la empresa. Una empresa mala puede tener beta bajo si no se mueve.",
+    title: "Beta (volatilidad)",
+    description:
+      "Cuánto se mueve la acción cuando se mueve el mercado (S&P 500). Una beta igual a la unidad se mueve como el mercado.",
+    formula: "Covarianza(acción, mercado) / varianza(mercado)",
+    tip: "Mide riesgo de mercado, no riesgo del negocio: una empresa débil puede tener beta baja.",
   },
-};
+  pos52: {
+    title: "Posición en el rango de 52 semanas",
+    description:
+      "Dónde cotiza el precio dentro de su rango del último año. Es contexto de mercado: no dice si la acción está cara o barata ni mide la calidad del negocio.",
+    formula: "(Precio − mínimo 52s) / (máximo 52s − mínimo 52s)",
+    tip: "El atractivo del precio sale de los múltiplos y del DCF, no de la posición en el rango.",
+  },
 
-// ─── VALORACION (ValuationTab) ──────────────────────────
-export const VALUATION: Record<string, TooltipContent> = {
-  earnings_yield: {
-    title: "Earnings Yield (Rendimiento de Ganancias)",
-    description: "Cuánto genera la empresa en beneficios por cada dólar invertido al precio actual. Es el inverso del P/E, expresado como porcentaje.",
-    formula: "Ganancia por Acción / Precio × 100  (= 1 / P/E)",
-    thresholds: [
-      { label: "Atractivo", value: ">6%", color: "#0cc06c" },
-      { label: "Razonable", value: "4–6%", color: "#22c55e" },
-      { label: "Moderado", value: "2–4%", color: "#fbbf24" },
-      { label: "Bajo", value: "<2%", color: "#f97316" },
-    ],
-    tip: "Compáralo con el rendimiento de un bono del tesoro: si el earnings yield es menor, el activo 'sin riesgo' paga más y la acción luce cara.",
+  // ── Valoración ──
+  pe: {
+    title: "P/E (precio / beneficio, TTM)",
+    description: "Cuánto pagan los inversores por cada dólar de beneficio de los últimos doce meses.",
+    formula: "Precio / BPA de los últimos 12 meses",
+    good: "Un P/E por debajo de su referencia, con beneficios estables, puede indicar oportunidad.",
+    bad: "Un P/E muy por encima de su referencia sin crecimiento que lo respalde sugiere sobrevaloración.",
+    tip: "Se compara siempre con la mediana de su referencia (sector o mercado), nunca con un número fijo.",
   },
-  buyback_yield: {
-    title: "Buyback Yield (Recompra de Acciones)",
-    description: "Porcentaje de acciones que la empresa recompró en el último año. Recomprar reduce el número de acciones y aumenta tu participación en las ganancias.",
-    formula: "(Acciones año previo − Acciones actuales) / Acciones año previo × 100",
-    thresholds: [
-      { label: "Recompra fuerte", value: ">3%", color: "#0cc06c" },
-      { label: "Recompra moderada", value: "0.5–3%", color: "#22c55e" },
-      { label: "Neutral", value: "0–0.5%", color: "#9ca3af" },
-      { label: "Dilución (emite acciones)", value: "<0%", color: "#ff4d4d" },
-    ],
-    good: "Recompras sostenidas con la acción barata crean valor para el accionista.",
-    bad: "Buyback negativo = la empresa emite más acciones y diluye tu participación.",
-    tip: "Cuidado con recompras a precios altos: destruyen valor aunque suban el EPS.",
+  pe_normalized: {
+    title: "P/E normalizado",
+    description: "P/E calculado sobre el beneficio sin partidas no recurrentes.",
+    tip: "Se muestra cuando las partidas extraordinarias distorsionan el P/E reportado.",
   },
-  shareholder_yield: {
-    title: "Shareholder Yield (Retorno Total al Accionista)",
-    description: "Todo el efectivo que la empresa te devuelve: dividendos más recompras netas de acciones. Es la visión completa del retorno de capital.",
-    formula: "Dividend Yield + Buyback Yield",
-    thresholds: [
-      { label: "Alto retorno", value: ">5%", color: "#0cc06c" },
-      { label: "Bueno", value: "2–5%", color: "#22c55e" },
-      { label: "Bajo", value: "0–2%", color: "#fbbf24" },
-      { label: "Dilución neta", value: "<0%", color: "#ff4d4d" },
-    ],
-    tip: "Combina lo mejor de dividendos y recompras: mide el retorno de capital total, no solo el dividendo.",
-  },
-  pe_trailing: {
-    title: "P/E Trailing (TTM)",
-    description: "Precio actual dividido por las ganancias de los ultimos 12 meses. Refleja lo que ya paso.",
-    formula: "Precio / EPS (ultimos 12 meses)",
-    thresholds: [
-      { label: "Posible oportunidad", value: "<15", color: "#0cc06c" },
-      { label: "Valoracion justa", value: "15–25", color: "#fbbf24" },
-      { label: "Premium", value: ">25", color: "#f97316" },
-    ],
-    tip: "Util para empresas maduras con ganancias estables. Menos util para empresas de alto crecimiento.",
-  },
-  pe_forward: {
-    title: "P/E Forward",
-    description: "Precio actual dividido por las ganancias ESTIMADAS para los proximos 12 meses. Refleja expectativas del mercado.",
-    formula: "Precio / EPS estimado (proximo ano)",
-    good: "Si el Forward P/E es menor que el Trailing P/E, el mercado espera crecimiento.",
-    bad: "Si es mayor que el Trailing, el mercado espera caida de ganancias.",
-    tip: "Compara Forward vs Trailing para ver si los analistas esperan mejora o deterioro.",
+  forward_pe: {
+    title: "Forward P/E",
+    description: "Precio dividido por el beneficio estimado para los próximos doce meses.",
+    formula: "Precio / BPA estimado",
+    good: "Por debajo del P/E actual: el mercado espera que el beneficio crezca.",
+    bad: "Por encima del P/E actual: el mercado espera una caída del beneficio.",
   },
   pb: {
-    title: "P/B (Precio/Valor en Libros)",
-    description: "Compara el precio de mercado con el valor contable de la empresa. Un P/B de 1 significa que pagas exactamente lo que vale en libros.",
-    formula: "Precio / (Patrimonio / Acciones)",
-    thresholds: [
-      { label: "Descuento vs libros", value: "<1", color: "#0cc06c" },
-      { label: "Cerca de valor en libros", value: "1–3", color: "#fbbf24" },
-      { label: "Prima significativa", value: ">3", color: "#f97316" },
-    ],
-    tip: "Mas util para bancos y empresas intensivas en capital. Menos util para tech (muchos intangibles).",
+    title: "P/B (precio / valor en libros)",
+    description: "Compara el precio de mercado con el valor contable del patrimonio.",
+    formula: "Precio / (patrimonio / acciones)",
+    tip: "Más útil en bancos y empresas intensivas en capital que en negocios de intangibles.",
+  },
+  ptbv: {
+    title: "P/TBV (precio / valor en libros tangible)",
+    description: "Como el P/B, pero sin fondo de comercio ni intangibles: el patrimonio que respalda de verdad a un banco.",
+    formula: "Capitalización / patrimonio tangible",
   },
   ps: {
-    title: "P/S (Precio/Ventas)",
-    description: "Precio de mercado dividido por los ingresos por accion. Util para empresas sin ganancias que aun generan ventas.",
-    formula: "Capitalizacion / Ingresos Totales",
-    thresholds: [
-      { label: "Atractivo", value: "<2", color: "#0cc06c" },
-      { label: "Razonable", value: "2–5", color: "#fbbf24" },
-      { label: "Caro", value: ">5", color: "#f97316" },
-    ],
-    tip: "Muy usado para evaluar startups y empresas tech que reinvierten todo y aun no dan ganancias.",
+    title: "P/S (precio / ventas)",
+    description: "Capitalización dividida por los ingresos. Útil cuando aún no hay beneficios.",
+    formula: "Capitalización / ingresos",
   },
   peg: {
-    title: "PEG Ratio",
-    description: "Ajusta el P/E por la tasa de crecimiento de ganancias. Un PEG de 1 significa que pagas un precio justo por el crecimiento.",
-    formula: "P/E / Tasa de Crecimiento de Ganancias (%)",
-    thresholds: [
-      { label: "Subvalorada para su crecimiento", value: "<1", color: "#0cc06c" },
-      { label: "Valoracion justa", value: "1–1.5", color: "#fbbf24" },
-      { label: "Cara para su crecimiento", value: ">1.5", color: "#f97316" },
-    ],
-    good: "PEG < 1 es la senal clasica de Peter Lynch para encontrar oportunidades.",
-    bad: "PEG > 2 sugiere que estas pagando demasiado por el crecimiento esperado.",
-    tip: "El PEG depende de estimaciones futuras — si el crecimiento no se materializa, el PEG real sera mayor.",
+    title: "PEG",
+    description: "El P/E ajustado por el crecimiento esperado del beneficio.",
+    formula: "P/E / crecimiento del beneficio (%)",
+    tip: "Depende de estimaciones: si el crecimiento no llega, el PEG real será mayor.",
   },
   ev_ebitda: {
     title: "EV/EBITDA",
-    description: "Enterprise Value dividido por EBITDA. Mide cuantos anos de ganancias operativas necesitas para pagar toda la empresa (incluyendo deuda).",
-    formula: "Enterprise Value / EBITDA",
-    thresholds: [
-      { label: "Posiblemente barata", value: "<10", color: "#0cc06c" },
-      { label: "Valoracion justa", value: "10–15", color: "#fbbf24" },
-      { label: "Cara", value: ">15", color: "#f97316" },
-    ],
-    tip: "Preferido sobre P/E por analistas institucionales porque es neutral a la estructura de capital.",
+    description: "Valor de la empresa (incluida la deuda neta) frente a su beneficio operativo antes de amortizaciones.",
+    formula: "Enterprise value / EBITDA",
+    tip: "Neutral a la estructura de capital: compara empresas con distinto endeudamiento.",
+  },
+  ev_ebitda_normalized: {
+    title: "EV/EBITDA normalizado",
+    description: "EV/EBITDA sobre el EBITDA medio del ciclo, no sobre el de un año concreto.",
+    tip: "En empresas cíclicas el EBITDA de un año puede estar en el pico o en el valle del ciclo.",
   },
   pfcf: {
-    title: "P/FCF (Precio/Flujo de Caja Libre)",
-    description: "Precio dividido por el flujo de caja libre por accion. Mide cuanto pagas por cada dolar de efectivo real que genera la empresa.",
-    formula: "Capitalizacion / Flujo de Caja Libre",
-    thresholds: [
-      { label: "Atractivo", value: "<15", color: "#0cc06c" },
-      { label: "Razonable", value: "15–25", color: "#fbbf24" },
-      { label: "Caro", value: ">25", color: "#f97316" },
-    ],
-    tip: "El FCF es el dinero real que queda despues de operar y mantener el negocio — mas confiable que las ganancias contables.",
+    title: "P/FCF (precio / flujo de caja libre)",
+    description: "Cuánto se paga por cada dólar de caja libre que genera la empresa.",
+    formula: "Capitalización / flujo de caja libre",
   },
-  fcf_yield_val: {
-    title: "FCF Yield",
-    description: "Rendimiento del flujo de caja libre. Es el inverso del P/FCF expresado como porcentaje.",
-    formula: "FCF / Capitalizacion × 100",
-    thresholds: [
-      { label: "Muy atractivo", value: ">8%", color: "#0cc06c" },
-      { label: "Atractivo", value: "5–8%", color: "#22c55e" },
-      { label: "Moderado", value: "3–5%", color: "#fbbf24" },
-      { label: "Bajo", value: "<3%", color: "#f97316" },
-    ],
-    tip: "Piensalo como el 'interes' que te paga la empresa con su generacion de caja.",
+  p_fcf_normalized: {
+    title: "P/FCF normalizado",
+    description: "P/FCF sobre el flujo de caja libre de mantenimiento (flujo operativo − amortizaciones), promedio del ciclo.",
+  },
+  fcf_yield: {
+    title: "FCF yield",
+    description: "Flujo de caja libre en relación con el valor de mercado: el inverso del P/FCF.",
+    formula: "Flujo de caja libre / capitalización",
+    tip: "El flujo de caja es más difícil de maquillar que el beneficio contable.",
+  },
+  earnings_yield: {
+    title: "Earnings yield (E/P)",
+    description: "Beneficio por cada dólar invertido al precio actual: el inverso del P/E.",
+    formula: "BPA / precio",
+    tip: "Compáralo con la rentabilidad del bono del Tesoro.",
   },
   dividend_yield: {
-    title: "Dividend Yield",
-    description: "Porcentaje del precio que la empresa te devuelve anualmente en dividendos.",
-    formula: "Dividendo Anual por Accion / Precio × 100",
-    thresholds: [
-      { label: "Alto rendimiento", value: ">4%", color: "#0cc06c" },
-      { label: "Moderado", value: "2–4%", color: "#22c55e" },
-      { label: "Bajo", value: "1–2%", color: "#fbbf24" },
-      { label: "Minimo o sin dividendo", value: "<1%", color: "#9ca3af" },
-    ],
-    good: "Dividendos estables y crecientes indican empresa madura y confiable.",
-    bad: "Dividend Yield extremadamente alto (>8%) puede ser trampa — la empresa puede recortarlo.",
-    tip: "Empresas tech de crecimiento como NVDA y AMZN rara vez pagan dividendos significativos — reinvierten en el negocio.",
+    title: "Dividend yield",
+    description: "Porcentaje del precio que la empresa devuelve cada año en dividendos.",
+    formula: "Dividendo anual por acción / precio",
+    bad: "Una rentabilidad anormalmente alta puede anticipar un recorte del dividendo.",
   },
-};
-
-// ─── RENTABILIDAD (ProfitabilityTab) ────────────────────
-export const PROFITABILITY: Record<string, TooltipContent> = {
-  roic_wacc_spread: {
-    title: "ROIC − WACC (Creación de Valor)",
-    description: "La diferencia entre lo que la empresa GANA sobre su capital (ROIC) y lo que le CUESTA ese capital (WACC). Si es positivo, crea valor; si es negativo, lo destruye.",
-    formula: "ROIC − WACC  (en puntos porcentuales)",
-    thresholds: [
-      { label: "Crea mucho valor", value: ">5%", color: "#0cc06c" },
-      { label: "Crea valor", value: "0–5%", color: "#22c55e" },
-      { label: "Marginal", value: "−5–0%", color: "#fbbf24" },
-      { label: "Destruye valor", value: "<−5%", color: "#ff4d4d" },
-    ],
-    good: "Un spread positivo y creciente es la firma de un negocio con ventaja competitiva duradera.",
-    bad: "Spread negativo: la empresa ganaría más repartiendo el dinero que reinvirtiéndolo.",
-    tip: "Para muchos inversores es el indicador DEFINITIVO de calidad: ganar más que el costo de capital crea riqueza real.",
+  p_ffo: {
+    title: "P/FFO",
+    description: "El múltiplo de referencia de los REIT: precio frente a los fondos de operaciones (beneficio + amortización inmobiliaria).",
+    formula: "Precio / FFO por acción",
+  },
+  ev_sales: {
+    title: "EV/Ventas",
+    description: "Valor de la empresa frente a sus ingresos: el múltiplo de las compañías que aún no tienen beneficios.",
+    formula: "Enterprise value / ingresos",
+  },
+  rule_of_40: {
+    title: "Regla de 40",
+    description: "Crecimiento de ingresos más margen de flujo de caja libre (descontada la compensación en acciones en pre-beneficio).",
+    formula: "Crecimiento de ingresos + margen (FCF − SBC)",
+    tip: "Equilibra crecer rápido con generar caja.",
+  },
+  dcf_upside: {
+    title: "Valor justo DCF y potencial",
+    description: "El DCF estima el valor de la empresa descontando sus flujos de caja futuros al coste de capital (WACC). El potencial es la distancia entre ese valor y el precio.",
+    formula: "Σ FCF_t / (1 + WACC)^t + valor terminal descontado",
+    tip: "Muy sensible al crecimiento y a la tasa de descuento: revisa la tabla de sensibilidad y la fiabilidad del DCF.",
+  },
+  dcf_fair_value: {
+    title: "Valor justo DCF",
+    description: "Valor por acción que estima el modelo DCF con el escenario base.",
+  },
+  margin_of_safety: {
+    title: "Margen de seguridad",
+    description: "Distancia entre el valor intrínseco estimado y el precio, sobre el valor intrínseco. Concepto central de Benjamin Graham.",
+    formula: "(Valor intrínseco − precio) / valor intrínseco",
+  },
+  graham: {
+    title: "Número de Graham",
+    description: "Referencia del inversor defensivo de Benjamin Graham: el precio máximo que pagaría con un P/E de 15 y un P/B de 1,5.",
+    formula: "√(22,5 × BPA × valor en libros por acción)",
+    tip: "Es una referencia; no vota en la convergencia entre métodos de valoración.",
+  },
+  sensitivity: {
+    title: "Sensibilidad del valor justo",
+    description: "Cómo cambia el valor justo del DCF al variar el crecimiento (filas) y la tasa de descuento (columnas). El recuadro marca el escenario base.",
+    tip: "Fíjate en los escenarios conservadores: crecimiento bajo y descuento alto.",
   },
   wacc: {
-    title: "WACC (Costo de Capital)",
-    description: "El costo promedio ponderado del capital: la rentabilidad mínima que la empresa debe generar para no destruir valor. Es la 'valla' que sus retornos deben superar.",
-    formula: "Costo de deuda × %deuda + Costo del patrimonio × %patrimonio",
-    tip: "Suele estar entre 7% y 11%. Sirve como tasa de descuento en el DCF y como referencia para el ROIC.",
+    title: "WACC (coste de capital)",
+    description: "La rentabilidad mínima que la empresa debe generar para no destruir valor: el coste medio ponderado de su patrimonio y su deuda.",
+    formula: "%patrimonio × Ke + %deuda × Kd × (1 − t)",
   },
+  multiples_block: {
+    title: "Bloque de múltiplos",
+    description: "P/E, Forward P/E, P/FCF, EV/EBITDA y PEG están correlacionados: puntúan juntos, como un solo bloque. El ajuste individual de cada uno se muestra entre paréntesis.",
+  },
+
+  // ── Rentabilidad ──
   roe: {
-    title: "ROE (Return on Equity)",
-    description: "Retorno sobre el patrimonio. Mide cuantos centavos de ganancia genera la empresa por cada dolar que los accionistas han invertido.",
-    formula: "Ingreso Neto / Patrimonio × 100",
-    thresholds: [
-      { label: "Excelente", value: ">20%", color: "#0cc06c" },
-      { label: "Bueno", value: "15–20%", color: "#22c55e" },
-      { label: "Aceptable", value: "10–15%", color: "#fbbf24" },
-      { label: "Bajo", value: "<10%", color: "#ff4d4d" },
-    ],
-    tip: "Warren Buffett busca ROE consistentemente >15% durante 10+ anos.",
+    title: "ROE (rentabilidad sobre el patrimonio)",
+    description: "Cuánto beneficio genera la empresa por cada dólar de los accionistas.",
+    formula: "Beneficio neto / patrimonio",
+    bad: "Un ROE alto sostenido con mucha deuda es frágil: revisa el apalancamiento.",
   },
   roa: {
-    title: "ROA (Return on Assets)",
-    description: "Retorno sobre activos. Mide la eficiencia de la empresa para generar ganancias con todos sus recursos (propios y prestados).",
-    formula: "Ingreso Neto / Activos Totales × 100",
-    thresholds: [
-      { label: "Excelente", value: ">15%", color: "#0cc06c" },
-      { label: "Bueno", value: "8–15%", color: "#22c55e" },
-      { label: "Aceptable", value: "5–8%", color: "#fbbf24" },
-      { label: "Bajo", value: "<5%", color: "#ff4d4d" },
-    ],
-    tip: "ROA es mas confiable que ROE para comparar empresas con diferente nivel de deuda.",
+    title: "ROA (rentabilidad sobre activos)",
+    description: "Eficiencia para generar beneficio con todos los recursos, propios y prestados.",
+    formula: "Beneficio neto / activos totales",
+    tip: "Más comparable que el ROE entre empresas con distinto endeudamiento.",
   },
   roic: {
-    title: "ROIC (Return on Invested Capital)",
-    description: "Retorno sobre el capital invertido. Mide que tan bien la empresa usa TODO el capital (propio + deuda) para generar ganancias despues de impuestos.",
-    formula: "NOPAT / (Patrimonio + Deuda a Largo Plazo)",
-    thresholds: [
-      { label: "Crea valor (supera costo de capital)", value: ">12%", color: "#0cc06c" },
-      { label: "Aceptable", value: "8–12%", color: "#fbbf24" },
-      { label: "Destruye valor", value: "<8%", color: "#ff4d4d" },
-    ],
-    good: "ROIC > WACC (tipicamente 8-10%) significa que la empresa crea valor para accionistas.",
-    bad: "ROIC < costo de capital destruye valor — seria mejor repartir el dinero.",
-    tip: "ROIC es considerado por muchos como el indicador MAS importante de calidad empresarial.",
+    title: "ROIC (rentabilidad sobre el capital invertido)",
+    description: "Rentabilidad después de impuestos de todo el capital invertido en el negocio (patrimonio y deuda).",
+    formula: "NOPAT / capital invertido",
+    tip: "Cuando el capital invertido es muy pequeño, el ROIC deja de ser significativo.",
   },
-  eps: {
-    title: "EPS (Ganancia por Accion)",
-    description: "Cuanto gana la empresa por cada accion en circulacion. Es la base para calcular el P/E.",
-    formula: "Ingreso Neto / Acciones en Circulacion",
-    good: "EPS creciente de forma consistente indica negocio saludable.",
-    bad: "EPS decreciente o negativo indica problemas de rentabilidad.",
-    tip: "Busca empresas con EPS creciendo al menos 10% anual durante 5+ anos.",
+  roic_wacc_spread: {
+    title: "Spread ROIC − WACC (creación de valor)",
+    description: "Diferencia entre lo que la empresa gana sobre su capital y lo que le cuesta. Positivo: crea valor; negativo: lo destruye.",
+    formula: "ROIC − WACC",
+  },
+  roce: {
+    title: "ROCE (rentabilidad sobre el capital empleado)",
+    description: "Beneficio operativo antes de impuestos sobre el capital empleado (activos − pasivos corrientes).",
+    formula: "EBIT / capital empleado",
+  },
+  roce_avg: {
+    title: "ROCE promedio",
+    description: "ROCE medio de los últimos ejercicios: la rentabilidad a lo largo del ciclo.",
   },
   gross_margin: {
-    title: "Margen Bruto",
-    description: "Porcentaje de ventas que queda despues de pagar el costo directo de los productos/servicios. Mide el poder de precios basico.",
-    formula: "(Ingresos - Costo de Ventas) / Ingresos × 100",
-    thresholds: [
-      { label: "Excelente (software/tech)", value: ">70%", color: "#0cc06c" },
-      { label: "Bueno", value: "40–70%", color: "#22c55e" },
-      { label: "Moderado (manufactura)", value: "20–40%", color: "#fbbf24" },
-      { label: "Bajo (retail/commodities)", value: "<20%", color: "#f97316" },
-    ],
-    tip: "Margenes brutos altos y estables sugieren ventaja competitiva (marca, patentes, efecto red).",
+    title: "Margen bruto",
+    description: "Lo que queda de cada dólar de ventas tras el coste directo de lo vendido: el poder de precios básico.",
+    formula: "(Ingresos − coste de ventas) / ingresos",
   },
   operating_margin: {
-    title: "Margen Operativo",
-    description: "Porcentaje de ventas que queda despues de todos los gastos operativos (incluyendo salarios, investigacion, marketing, etc.).",
-    formula: "Ingreso Operativo / Ingresos × 100",
-    thresholds: [
-      { label: "Excelente", value: ">25%", color: "#0cc06c" },
-      { label: "Bueno", value: "15–25%", color: "#22c55e" },
-      { label: "Aceptable", value: "10–15%", color: "#fbbf24" },
-      { label: "Bajo", value: "<10%", color: "#ff4d4d" },
-    ],
-    tip: "La diferencia entre margen bruto y operativo revela cuanto gasta la empresa en operar.",
+    title: "Margen operativo",
+    description: "Lo que queda de cada dólar de ventas tras todos los gastos de operación.",
+    formula: "Beneficio operativo / ingresos",
   },
   net_margin: {
-    title: "Margen Neto",
-    description: "Porcentaje final de cada dolar de ventas que se convierte en ganancia neta despues de TODOS los gastos.",
-    formula: "Ingreso Neto / Ingresos × 100",
-    thresholds: [
-      { label: "Excelente", value: ">20%", color: "#0cc06c" },
-      { label: "Bueno", value: "10–20%", color: "#22c55e" },
-      { label: "Aceptable", value: "5–10%", color: "#fbbf24" },
-      { label: "Bajo", value: "<5%", color: "#ff4d4d" },
-    ],
-    tip: "El margen neto es el 'bottom line' — lo que realmente queda para los accionistas.",
+    title: "Margen neto",
+    description: "Lo que queda de cada dólar de ventas después de todos los gastos, intereses e impuestos.",
+    formula: "Beneficio neto / ingresos",
   },
-  ebitda_margin: {
-    title: "Margen EBITDA",
-    description: "Rentabilidad operativa antes de intereses, impuestos, depreciacion y amortizacion. Elimina diferencias contables entre empresas.",
-    formula: "EBITDA / Ingresos × 100",
-    thresholds: [
-      { label: "Excelente", value: ">30%", color: "#0cc06c" },
-      { label: "Bueno", value: "20–30%", color: "#22c55e" },
-      { label: "Aceptable", value: "10–20%", color: "#fbbf24" },
-      { label: "Bajo", value: "<10%", color: "#ff4d4d" },
-    ],
-    tip: "Muy usado en M&A porque permite comparar empresas de diferentes paises con distintas leyes fiscales.",
-  },
-};
 
-// ─── SOLIDEZ FINANCIERA (HealthTab) ─────────────────────
-export const HEALTH: Record<string, TooltipContent> = {
-  cash_ratio: {
-    title: "Cash Ratio (Razón de Efectivo)",
-    description: "La prueba de liquidez más estricta: mide si la empresa puede pagar sus deudas de corto plazo solo con efectivo, sin vender inventario ni cobrar cuentas.",
-    formula: "Efectivo y Equivalentes / Pasivos Corrientes",
-    thresholds: [
-      { label: "Muy líquida", value: ">0.5", color: "#0cc06c" },
-      { label: "Saludable", value: "0.2–0.5", color: "#22c55e" },
-      { label: "Ajustado", value: "0.1–0.2", color: "#fbbf24" },
-      { label: "Justo", value: "<0.1", color: "#f97316" },
-    ],
-    tip: "Un cash ratio muy alto es súper seguro, pero puede indicar efectivo ocioso sin invertir en crecimiento.",
-  },
-  net_debt_to_ebitda: {
-    title: "Deuda Neta / EBITDA",
-    description: "Cuántos años de EBITDA necesitaría la empresa para pagar toda su deuda neta (deuda menos caja). Es la medida de apalancamiento favorita de los bancos.",
-    formula: "(Deuda Total − Efectivo) / EBITDA",
-    thresholds: [
-      { label: "Caja neta (más caja que deuda)", value: "<0", color: "#0cc06c" },
-      { label: "Conservador", value: "0–1.5x", color: "#22c55e" },
-      { label: "Moderado", value: "1.5–3x", color: "#fbbf24" },
-      { label: "Muy apalancado", value: ">3x", color: "#ff4d4d" },
-    ],
-    good: "Por debajo de 3x la deuda suele ser manejable incluso en una recesión.",
-    bad: "Por encima de 4x, una caída de ganancias puede complicar el pago de la deuda.",
-    tip: "Es más fiable que Deuda/Patrimonio porque resta la caja y se mide contra la generación real de efectivo.",
-  },
-  equity_to_assets: {
-    title: "Patrimonio / Activos",
-    description: "Qué porcentaje de los activos pertenece realmente a los accionistas y no está financiado con deuda. Es el complemento de Deuda/Activos.",
-    formula: "Patrimonio / Activos Totales × 100",
-    thresholds: [
-      { label: "Muy sólido", value: ">70%", color: "#0cc06c" },
-      { label: "Saludable", value: "50–70%", color: "#22c55e" },
-      { label: "Moderado", value: "30–50%", color: "#fbbf24" },
-      { label: "Muy apalancado", value: "<30%", color: "#ff4d4d" },
-    ],
-    tip: "Cuanto mayor el porcentaje, menos depende la empresa de dinero prestado.",
+  // ── Solidez ──
+  runway: {
+    title: "Runway",
+    description: "Años que la caja cubre la quema de flujo de caja libre. Sustituye al Altman en las empresas pre-beneficio.",
+    formula: "(Caja + inversiones a corto plazo) / quema anual de FCF",
   },
   current_ratio: {
-    title: "Current Ratio (Razon Corriente)",
-    description: "Mide la capacidad de la empresa para pagar sus deudas a corto plazo. Compara activos liquidos contra obligaciones inmediatas.",
-    formula: "Activos Corrientes / Pasivos Corrientes",
-    thresholds: [
-      { label: "Muy solida", value: ">2.0", color: "#0cc06c" },
-      { label: "Saludable", value: "1.5–2.0", color: "#22c55e" },
-      { label: "Aceptable", value: "1.0–1.5", color: "#fbbf24" },
-      { label: "Riesgo de liquidez", value: "<1.0", color: "#ff4d4d" },
-    ],
-    good: "Current Ratio > 1.5 indica buena capacidad de pago a corto plazo.",
-    bad: "Current Ratio < 1 significa que debe mas de lo que puede pagar pronto.",
+    title: "Current ratio",
+    description: "Capacidad de pagar las deudas a corto plazo con los activos corrientes.",
+    formula: "Activos corrientes / pasivos corrientes",
   },
   quick_ratio: {
-    title: "Quick Ratio (Prueba Acida)",
-    description: "Igual que el Current Ratio pero excluye inventarios, que pueden ser dificiles de vender rapidamente. Es una prueba mas estricta.",
-    formula: "(Activos Corrientes - Inventarios) / Pasivos Corrientes",
-    thresholds: [
-      { label: "Muy liquida", value: ">1.5", color: "#0cc06c" },
-      { label: "Saludable", value: "1.0–1.5", color: "#22c55e" },
-      { label: "Ajustado", value: "0.5–1.0", color: "#fbbf24" },
-      { label: "Problematico", value: "<0.5", color: "#ff4d4d" },
-    ],
-    tip: "Si el Quick Ratio es mucho menor que el Current Ratio, la empresa depende mucho de vender inventario.",
+    title: "Quick ratio (prueba ácida)",
+    description: "Como el current ratio, pero sin inventarios, que pueden tardar en convertirse en caja.",
+    formula: "(Activos corrientes − inventarios) / pasivos corrientes",
   },
-  cash: {
-    title: "Efectivo y Equivalentes",
-    description: "Dinero en caja e inversiones a corto plazo que la empresa puede usar inmediatamente. Es el 'colchon de seguridad'.",
-    good: "Mucha caja permite invertir en oportunidades y sobrevivir crisis.",
-    bad: "Exceso de caja sin uso puede indicar falta de oportunidades de crecimiento.",
-    tip: "Compara la caja con la deuda total para ver la 'deuda neta' real.",
+  cash_ratio: {
+    title: "Cash ratio",
+    description: "La prueba de liquidez más estricta: solo caja frente a los pasivos corrientes.",
+    formula: "Caja y equivalentes / pasivos corrientes",
   },
-  fcf: {
-    title: "Flujo de Caja Libre (FCF)",
-    description: "Efectivo que genera la empresa despues de operar y mantener sus activos. Es el dinero disponible para dividendos, recompras, o reduccion de deuda.",
-    formula: "Flujo Operativo - Gastos de Capital (CapEx)",
-    good: "FCF positivo y creciente indica negocio sano que genera caja real.",
-    bad: "FCF negativo persistente indica que la empresa quema caja — necesita financiamiento.",
-    tip: "El FCF es mas dificil de manipular que las ganancias contables. Muchos inversores lo prefieren sobre el ingreso neto.",
-  },
-  de_ratio: {
-    title: "D/E (Deuda/Patrimonio)",
-    description: "Cuantos dolares de deuda tiene la empresa por cada dolar de patrimonio de accionistas.",
-    formula: "Deuda Total / Patrimonio",
-    thresholds: [
-      { label: "Conservador", value: "<0.5", color: "#0cc06c" },
-      { label: "Moderado", value: "0.5–1.0", color: "#fbbf24" },
-      { label: "Apalancado", value: "1.0–2.0", color: "#f97316" },
-      { label: "Alto riesgo", value: ">2.0", color: "#ff4d4d" },
-    ],
-    tip: "Sectores como utilities y real estate suelen operar con D/E mas altos que tech.",
+  de: {
+    title: "Deuda / patrimonio (D/E)",
+    description: "Dólares de deuda por cada dólar de patrimonio.",
+    formula: "Deuda total / patrimonio",
+    tip: "No mide lo mismo en todos los negocios: en bancos los depósitos son pasivo y en REIT el apalancamiento se mide por la deuda neta/EBITDA.",
   },
   debt_to_assets: {
-    title: "Deuda/Activos",
-    description: "Que porcentaje de los activos totales esta financiado con deuda. Mide la dependencia de financiamiento externo.",
-    formula: "Deuda Total / Activos Totales",
-    thresholds: [
-      { label: "Conservador", value: "<30%", color: "#0cc06c" },
-      { label: "Moderado", value: "30–50%", color: "#fbbf24" },
-      { label: "Alto", value: ">50%", color: "#ff4d4d" },
-    ],
+    title: "Deuda / activos",
+    description: "Porcentaje de los activos financiado con deuda.",
+    formula: "Deuda total / activos totales",
+  },
+  net_debt_to_ebitda: {
+    title: "Deuda neta / EBITDA",
+    description: "Años de EBITDA que harían falta para pagar la deuda neta (deuda menos caja).",
+    formula: "(Deuda total − caja) / EBITDA",
+    tip: "Con EBITDA negativo la ratio no es significativa.",
   },
   interest_coverage: {
-    title: "Cobertura de Intereses",
-    description: "Cuantas veces las ganancias operativas cubren los pagos de intereses de deuda. Mide la capacidad de servir la deuda.",
-    formula: "EBIT / Gastos por Intereses",
-    thresholds: [
-      { label: "Muy seguro", value: ">10x", color: "#0cc06c" },
-      { label: "Comodo", value: "5–10x", color: "#22c55e" },
-      { label: "Ajustado", value: "2–5x", color: "#fbbf24" },
-      { label: "Peligroso", value: "<2x", color: "#ff4d4d" },
-    ],
-    good: "Cobertura >5x significa que la empresa puede pagar intereses comodamente.",
-    bad: "Cobertura <2x indica riesgo — cualquier caida en ganancias puede impedir pagos.",
+    title: "Cobertura de intereses",
+    description: "Cuántas veces el beneficio operativo cubre el gasto por intereses.",
+    formula: "EBIT / gasto por intereses",
+    tip: "Con EBIT negativo y caja neta no es significativa: los intereses se pagan con caja.",
   },
   payout_ratio: {
-    title: "Payout Ratio",
-    description: "Porcentaje de las ganancias que la empresa distribuye como dividendos. El resto se reinvierte.",
-    formula: "Dividendos / Ingreso Neto × 100",
-    thresholds: [
-      { label: "Reinvierte mucho (crecimiento)", value: "<30%", color: "#3b82f6" },
-      { label: "Equilibrado", value: "30–60%", color: "#22c55e" },
-      { label: "Alto — distribuye mucho", value: "60–80%", color: "#fbbf24" },
-      { label: "Insostenible", value: ">80%", color: "#ff4d4d" },
-    ],
-    tip: "Payout > 100% significa que paga mas dividendos de lo que gana — insostenible a largo plazo.",
+    title: "Payout",
+    description: "Porcentaje del beneficio (en REIT, del FFO) que se reparte como dividendo.",
+    formula: "Dividendos / beneficio neto (o FFO)",
+    bad: "Un payout por encima del beneficio no es sostenible en el tiempo.",
   },
-};
 
-// ─── HISTORICO (HistoricalTab) ──────────────────────────
-export const HISTORICAL: Record<string, TooltipContent> = {
-  price_range: {
-    title: "Posición en el rango de 52 semanas",
-    description: "Dónde está el precio hoy dentro de su rango del último año. Los DOS extremos son alerta: en mínimos puede ser una oportunidad o un negocio deteriorándose; en máximos, fortaleza o estar caro/sobreextendido. La zona media es la más cómoda.",
-    formula: "(Precio − Mínimo 52s) / (Máximo 52s − Mínimo 52s) × 100",
-    thresholds: [
-      { label: "En mínimos — alerta (¿oportunidad o problema?)", value: "0–10%", color: "#ff453a" },
-      { label: "Cerca del mínimo — barata, con cautela", value: "10–25%", color: "#fbbf24" },
-      { label: "Zona saludable — rango cómodo", value: "25–70%", color: "#0cc06c" },
-      { label: "Cerca del máximo — cara, con cautela", value: "70–88%", color: "#fbbf24" },
-      { label: "En máximos — cara / sobreextendida", value: "88–100%", color: "#ff453a" },
-    ],
-    tip: "Es una señal POSICIONAL (dónde está el precio), no de valoración fundamental — úsala junto al score. Una acción en mínimos puede seguir cara por su P/E.",
-  },
-  beta_hist: {
-    title: "Beta",
-    description: "Mide cuanto se mueve la accion cuando el mercado sube o baja. Beta 1.0 = se mueve igual que el S&P 500.",
-    thresholds: [
-      { label: "Defensiva", value: "<0.8", color: "#3b82f6" },
-      { label: "Normal", value: "0.8–1.2", color: "#22c55e" },
-      { label: "Agresiva", value: ">1.2", color: "#f97316" },
-    ],
-  },
-  waterfall: {
-    title: "Cascada de Ingresos",
-    description: "Muestra como fluye el dinero desde los ingresos totales hasta el flujo de caja libre, pasando por cada nivel de gastos. Cada barra muestra cuanto queda despues de cada deduccion.",
-    tip: "Idealmente cada barra debe ser un porcentaje razonable de la anterior. Si hay caidas abruptas, revisa donde se va el dinero.",
-  },
+  // ── Crecimiento y retorno ──
   revenue_growth: {
-    title: "Crecimiento de Ingresos",
-    description: "Cambio porcentual de los ingresos respecto al ano anterior.",
-    thresholds: [
-      { label: "Alto crecimiento", value: ">20%", color: "#0cc06c" },
-      { label: "Crecimiento sano", value: "5–20%", color: "#22c55e" },
-      { label: "Estancado", value: "0–5%", color: "#fbbf24" },
-      { label: "Cayendo", value: "<0%", color: "#ff4d4d" },
-    ],
+    title: "Crecimiento de ingresos",
+    description: "Variación de los ingresos frente al año anterior (en cíclicas, el promedio del ciclo).",
   },
   earnings_growth: {
-    title: "Crecimiento de Ganancias",
-    description: "Cambio porcentual de las ganancias netas respecto al ano anterior. Es mas importante que el crecimiento de ingresos.",
-    thresholds: [
-      { label: "Excelente", value: ">25%", color: "#0cc06c" },
-      { label: "Bueno", value: "10–25%", color: "#22c55e" },
-      { label: "Moderado", value: "0–10%", color: "#fbbf24" },
-      { label: "Negativo", value: "<0%", color: "#ff4d4d" },
-    ],
-    tip: "Las ganancias deben crecer mas rapido o al mismo ritmo que los ingresos — si no, los margenes se estan comprimiendo.",
+    title: "Crecimiento del beneficio (BPA)",
+    description: "Variación del beneficio por acción frente al año anterior (en cíclicas, el promedio del ciclo).",
   },
-  yearly_chart: {
-    title: "Evolucion Anual",
-    description: "Grafico de barras que muestra los ingresos y ganancias de los ultimos 4 anos. Permite ver la tendencia de crecimiento a simple vista.",
-    tip: "Busca tendencia ascendente en ambas barras. Si ingresos crecen pero ganancias no, puede haber problemas de eficiencia.",
+  eps_vs_revenue: {
+    title: "BPA frente a ingresos",
+    description: "Diferencia entre el crecimiento del BPA y el de los ingresos: expansión o compresión de márgenes (o efecto de recompras). Es informativo: no puntúa.",
   },
-  balance_sheet: {
-    title: "Composicion del Balance",
-    description: "Muestra como se compone la estructura financiera: patrimonio propio (equity), deuda, y efectivo disponible.",
-    tip: "Una empresa saludable tiene mas equity que deuda, y suficiente caja para cubrir emergencias.",
+  buyback_yield: {
+    title: "Buyback yield (recompras netas)",
+    description: "Porcentaje de acciones retirado (o emitido) en el último año.",
+    formula: "(Acciones año previo − acciones actuales) / acciones año previo",
+    bad: "Negativo: la empresa emite acciones y diluye a los accionistas.",
   },
-  per_share: {
-    title: "Datos por Accion",
-    description: "Metricas normalizadas por accion para comparar empresas de diferente tamano: precio, ganancias, valor en libros, y flujo de caja.",
-    tip: "El valor en libros por accion vs precio te dice si estas pagando mas o menos que el valor contable de la empresa.",
+  shareholder_yield: {
+    title: "Shareholder yield",
+    description: "Todo lo que la empresa devuelve al accionista: dividendos más recompras netas.",
+    formula: "Dividend yield + buyback yield",
   },
-};
 
-// ─── EVALUACION (EvaluationTab) ─────────────────────────
-export const EVALUATION: Record<string, TooltipContent> = {
+  // ── Evaluación institucional ──
   financial_health: {
-    title: "Salud Financiera",
-    description: "Score compuesto (0–10) de solidez financiera para bancos y aseguradoras, donde el Altman Z-Score no aplica. Combina capitalización, liquidez, calidad de activos y rentabilidad.",
-    thresholds: [
-      { label: "Excelente", value: ">8", color: "#0cc06c" },
-      { label: "Buena", value: "6–8", color: "#22c55e" },
-      { label: "Neutral", value: "4–6", color: "#fbbf24" },
-      { label: "Débil", value: "<4", color: "#ff4d4d" },
-    ],
-    tip: "Reemplaza al Altman Z-Score en el sector financiero, cuyo balance no encaja en el modelo tradicional.",
+    title: "Salud financiera (sector financiero)",
+    description: "Puntuación de 0 a 10 de solidez para bancos y aseguradoras, donde el Altman no aplica: capitalización, liquidez, calidad de activos y rentabilidad.",
   },
-  score_category: {
-    title: "Categorías del Score",
-    description: "El score de 0–100 se compone de 5 categorías, cada una sobre 20 puntos: Valoración, Rentabilidad, Solidez Financiera, Crecimiento y Calidad de Ganancias.",
-    tip: "Un score alto con una categoría muy baja merece revisión: abre el desglose para ver de dónde viene la puntuación.",
-  },
-  altman_z: {
-    title: "Altman Z-Score (Adaptativo)",
-    description: "Modelo de Edward Altman que predice probabilidad de quiebra. Finanzer selecciona automaticamente la variante correcta segun el tipo de empresa: Z original (manufactura), Z'' (tech/servicios) o Z' (privadas).",
-    formula: "Manufactura: 1.2×X1+1.4×X2+3.3×X3+0.6×X4+1.0×X5 | No-Mfg: 6.56×X1+3.26×X2+6.72×X3+1.05×X4",
-    thresholds: [
-      { label: "Zona segura (umbral segun modelo)", value: ">2.60–2.99", color: "#0cc06c" },
-      { label: "Zona gris — monitorear de cerca", value: "1.10–2.60", color: "#fbbf24" },
-      { label: "Zona de riesgo — probabilidad alta", value: "<1.10–1.81", color: "#ff4d4d" },
-    ],
-    tip: "Para tech/servicios se usa Z'' que elimina asset turnover (X5), evitando sesgo en empresas asset-light. Los umbrales se ajustan automaticamente al modelo seleccionado.",
+  altman: {
+    title: "Altman Z-Score",
+    description: "Modelo de Edward Altman que estima el riesgo de insolvencia a dos años. Finanzer elige la variante (Z, Z' o Z'') según el sector exacto.",
+    tip: "No se calcula con ceros: si falta un componente, queda «sin dato». No aplica a bancos ni a REIT.",
   },
   piotroski: {
     title: "Piotroski F-Score",
-    description: "Sistema de puntuacion de 0 a 9 creado por el profesor Joseph Piotroski de Stanford. Evalua 9 criterios binarios (pasa/no pasa) de rentabilidad, apalancamiento y eficiencia operativa.",
-    thresholds: [
-      { label: "Excelente — empresa muy saludable", value: "8–9", color: "#0cc06c" },
-      { label: "Buena salud financiera", value: "6–7", color: "#22c55e" },
-      { label: "Neutral", value: "4–5", color: "#fbbf24" },
-      { label: "Debil", value: "2–3", color: "#f97316" },
-      { label: "Muy debil — senales de deterioro", value: "0–1", color: "#ff4d4d" },
-    ],
-    good: "Score 8+ indica fortaleza financiera excepcional; 6–7, buena salud operativa y financiera.",
-    bad: "Score 3 o menos indica deterioro en multiples areas — alta probabilidad de bajo rendimiento.",
-    tip: "Piotroski demostro que comprar acciones con F-Score alto y vender las de F-Score bajo genera retornos superiores al mercado.",
+    description: "Nueve señales contables de mejora en rentabilidad, estructura de capital y eficiencia operativa (Joseph Piotroski, 2000).",
+    tip: "Los criterios sin dato no cuentan como incumplidos: el resultado se escala sobre los evaluados.",
   },
-  score_breakdown: {
-    title: "Desglose del Score",
-    description: "Muestra como se compone la puntuacion total. Cada categoria (Valoracion, Rentabilidad, Solidez, Crecimiento, Calidad) contribuye un porcentaje al score final.",
-    tip: "Una empresa puede tener un score medio pero brillar en categorias especificas. Revisa que las categorias importantes para tu estrategia esten bien.",
+  breakdown: {
+    title: "Desglose por categoría",
+    description: "Cada indicador suma o resta puntos a su categoría según la banda en la que cae; la columna de ajuste muestra cuánto.",
   },
   alerts: {
-    title: "Alertas y Senales",
-    description: "Sistema automatico de deteccion de problemas (banderas rojas), advertencias (precaucion), y fortalezas. Analiza decenas de metricas para encontrar senales relevantes.",
-    tip: "Las banderas rojas son mas importantes que las fortalezas. Una sola bandera roja puede invalidar muchas fortalezas.",
+    title: "Alertas y señales",
+    description: "Riesgos, advertencias y fortalezas que detecta el motor a partir de las métricas.",
+    tip: "Un riesgo pesa más que varias fortalezas.",
+  },
+
+  // ── Histórico (dato bruto) ──
+  yearly: {
+    title: "Histórico anual",
+    description: "Cifras de los estados anuales, los mismos con los que se calculan los crecimientos a 3 años. Es dato bruto: sin lecturas ni colores.",
+  },
+  free_cash_flow: {
+    title: "Flujo de caja libre",
+    description: "Caja que genera el negocio tras invertir en mantenerlo.",
+    formula: "Flujo operativo − capex",
+  },
+  fcf_minus_sbc: {
+    title: "FCF − SBC",
+    description: "Flujo de caja libre descontada la compensación en acciones, que es un coste real pagado con dilución.",
   },
 };
 
-// ─── VALOR INTRINSECO (IntrinsicTab) ────────────────────
-export const INTRINSIC: Record<string, TooltipContent> = {
-  graham: {
-    title: "Valor Graham",
-    description: "Formula de Benjamin Graham (el padre del value investing y mentor de Buffett) para estimar el valor intrinseco de una accion basado en ganancias y crecimiento.",
-    formula: "V = EPS × (8.5 + 2g) × 4.4 / Y\ndonde g = tasa de crecimiento, Y = tasa del bono corporativo AAA",
-    good: "Si el precio es menor al valor Graham, la accion puede estar subvalorada.",
-    bad: "Si el precio supera al valor Graham por mucho, puede estar sobrevaluada.",
-    tip: "Graham disenó esta formula para inversores conservadores. Tiende a ser mas restrictiva que el DCF.",
-  },
-  dcf: {
-    title: "Valor DCF (Flujo de Caja Descontado)",
-    description: "Modelo que estima el valor de una empresa sumando todos sus flujos de caja futuros, descontados al presente. Es el metodo mas usado por analistas profesionales.",
-    formula: "V = Σ FCF_t / (1+r)^t + Terminal Value / (1+r)^n",
-    good: "Si el DCF > precio actual, el mercado puede estar subvalorando la empresa.",
-    bad: "DCF < precio sugiere que el mercado tiene expectativas muy optimistas.",
-    tip: "El DCF es muy sensible a las estimaciones de crecimiento y tasa de descuento. Siempre revisa la tabla de sensibilidad.",
-  },
-  sensitivity: {
-    title: "Tabla de Sensibilidad",
-    description: "Muestra como cambia el valor intrinseco al variar la tasa de crecimiento y la tasa de descuento. Cada celda es un escenario diferente.",
-    good: "Si la mayoria de celdas muestran valores > precio actual, hay margen de seguridad.",
-    bad: "Si casi todas las celdas muestran valores < precio, la accion esta cara en casi cualquier escenario.",
-    tip: "Enfocate en los escenarios conservadores (crecimiento bajo, descuento alto). Si aun asi el valor > precio, es buena senal.",
-  },
-  margin_safety: {
-    title: "Margen de Seguridad",
-    description: "Diferencia porcentual entre el valor intrinseco estimado y el precio de mercado. Concepto central de Benjamin Graham.",
-    formula: "(Valor Intrinseco - Precio) / Valor Intrinseco × 100",
-    thresholds: [
-      { label: "Gran margen — oportunidad potencial", value: ">30%", color: "#0cc06c" },
-      { label: "Margen moderado", value: "10–30%", color: "#22c55e" },
-      { label: "Precio justo", value: "0–10%", color: "#fbbf24" },
-      { label: "Sobrevaluada", value: "<0%", color: "#ff4d4d" },
-    ],
-    tip: "Graham recomendaba un margen de seguridad de al menos 30% antes de comprar.",
-  },
-};
-
-// ─── COMPARATIVA (ComparativeTab) ───────────────────────
-export const COMPARATIVE: Record<string, TooltipContent> = {
-  sector_comparison: {
-    title: "Comparacion vs Sector",
-    description: "Compara los indicadores de la empresa contra los promedios de su sector industrial. Permite saber si la empresa es mejor o peor que sus competidores tipicos.",
-    tip: "Una empresa puede parecer 'cara' en general pero ser 'barata' comparada con su sector. El contexto sectorial es clave.",
-  },
-  relative_indicator: {
-    title: "Indicador Relativo (%)",
-    description: "Muestra la diferencia porcentual entre el valor de la empresa y el promedio del sector. Verde = mejor que el sector, Rojo = peor.",
-    good: "La empresa supera al sector en este indicador.",
-    bad: "La empresa esta por debajo del promedio de su sector.",
-  },
-  summary: {
-    title: "Resumen Comparativo",
-    description: "Cuenta cuantos indicadores de la empresa superan al promedio de su sector. Mas indicadores verdes = empresa mas competitiva dentro de su industria.",
-    thresholds: [
-      { label: "Superior al sector", value: ">70%", color: "#0cc06c" },
-      { label: "En linea con el sector", value: "40–70%", color: "#fbbf24" },
-      { label: "Por debajo del sector", value: "<40%", color: "#ff4d4d" },
-    ],
-  },
-};
+/** Definición de una clave del contrato; las filas de rama sin definición propia usan su etiqueta. */
+export function definitionFor(key: string, fallbackTitle: string): Definition {
+  return DEFINITIONS[key] ?? { title: fallbackTitle, description: "" };
+}

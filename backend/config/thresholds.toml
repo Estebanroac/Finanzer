@@ -346,48 +346,6 @@ eps_revenue_gap = 0.02              # BPA vs ingresos (informativo): "en línea"
 category_tone_bounds = [60, 40]     # tono de una categoría (puntos/máximo, %): ≥60 pos / ≥40 warn / neg
 exec_category_bounds = [13, 10]     # resumen ejecutivo: "destaca" si ≥13/20; "punto débil" si <10/20
 
-# ── UI: color de calidad de cada métrica (frontend/src/lib/metricScale.ts) ──
-# Copia literal de las bandas del frontend (que a su vez reflejan los rangos
-# de src/lib/tooltips.ts). Es un TERCER juego de bandas, distinto del motor y
-# del PDF; no se unifica aquí. El frontend lo recibe GENERADO:
-#   python3 backend/tools/gen_frontend_config.py
-[ui.metric_scale.higher]            # mayor es mejor: [good, ok] -> ≥good verde, ≥ok ámbar, resto rojo
-roe = [0.15, 0.1]
-roa = [0.08, 0.05]
-roic = [0.12, 0.08]
-gross_margin = [0.4, 0.2]
-operating_margin = [0.15, 0.1]
-net_margin = [0.1, 0.05]
-ebitda_margin = [0.15, 0.1]
-fcf_yield = [0.05, 0.03]
-earnings_yield = [0.06, 0.03]
-revenue_growth = [0.08, 0.02]
-earnings_growth = [0.08, 0.02]
-current_ratio = [1.5, 1.0]
-quick_ratio = [1.0, 0.5]
-cash_ratio = [0.5, 0.2]
-interest_coverage = [5, 2]
-
-[ui.metric_scale.lower]             # menor es mejor: [good, ok] -> ≤good verde, ≤ok ámbar, resto rojo
-pe = [15, 25]
-forward_pe = [15, 25]
-pb = [1, 3]
-ps = [2, 5]
-pfcf = [15, 25]
-p_fcf = [15, 25]
-ev_ebitda = [10, 15]
-peg = [1, 1.5]
-de = [0.5, 1.0]
-debt_to_assets = [0.3, 0.5]
-net_debt_to_ebitda = [1.5, 3.0]
-
-[ui.metric_scale.special]
-dividend_yield = [0.02, 0.01]       # ≥0.02 verde / ≥0.01 ámbar / resto neutral (sin dividendo no es malo)
-payout_ratio = [0.3, 0.6, 0.8]      # <0.3 neutral / ≤0.6 verde / ≤0.8 ámbar / rojo
-buyback_yield = [0.005, -0.005]     # >0.005 verde / <−0.005 rojo / neutral
-shareholder_yield = [0.01, 0]       # >0.01 verde / <0 rojo / neutral
-beta = [0.8, 1.2, 1.5]              # <0.8 neutral / ≤1.2 verde / ≤1.5 ámbar / rojo
-
 # ── ROCE (etapa 6): contraste con el ROIC en MATURE y CYCLICAL ──
 [roce]
 divergence_pp = 0.10                # |ROCE − ROIC| > 10 pp -> se marca con sus causas probables

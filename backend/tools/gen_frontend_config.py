@@ -1,9 +1,9 @@
 """
 Genera frontend/src/lib/generated/backendConfig.ts desde backend/config/.
 
-El frontend (export estático de Next.js) usa las medianas sectoriales y las
-bandas de color de las métricas. En lugar de mantener copias a mano, este
-script las vuelca desde la config única del backend:
+El frontend (export estático de Next.js) pinta el bloque `display` del JSON
+(etapa 9b); solo necesita los vocabularios cerrados (arquetipos, rótulos de
+estado), que este script vuelca desde el backend en lugar de copiarlos a mano:
 
     python3 backend/tools/gen_frontend_config.py          # escribe el .ts
     python3 backend/tools/gen_frontend_config.py --check  # 1 si está desincronizado
@@ -23,71 +23,27 @@ OUT = os.path.normpath(os.path.join(BACKEND, "..", "frontend", "src", "lib", "ge
 from settings import cfg  # noqa: E402
 
 
-def _num(v):
-    if isinstance(v, bool) or not isinstance(v, (int, float)):
-        raise TypeError(f"valor no numérico en la config del frontend: {v!r}")
-    return repr(v)
-
-
-def _obj(d, indent="  "):
-    items = [f"{indent}{k}: {_num(v)}," for k, v in d.items()]
-    return "{\n" + "\n".join(items) + "\n" + indent[:-2] + "}"
-
-
-def _pairs(d):
-    return "{\n" + "\n".join(f"  {k}: [{', '.join(_num(x) for x in v)}]," for k, v in d.items()) + "\n}"
+def _q(v):
+    return json.dumps(v, ensure_ascii=False)
 
 
 def render() -> str:
-    bench = cfg("sectors.benchmarks")
-    qb, ql = cfg("thresholds.score.quality.bands"), cfg("thresholds.score.quality.labels")
-    pb, pl = cfg("thresholds.score.price.bands"), cfg("thresholds.score.price.labels")
-    pio = cfg("valuation.models.piotroski.bands")
-    ms = cfg("thresholds.ui.metric_scale")
+    # Etapa 9b: la web pinta el bloque `display` (lib/display.py): lecturas, tonos,
+    # medianas del benchmark y bandas llegan en el JSON. Aquí solo quedan los
+    # vocabularios cerrados que el frontend necesita para tipar y rotular.
     na = cfg("sectors.archetypes.not_applicable")
-    sectors = "{\n" + "\n".join(
-        f"  {name}: {{ " + ", ".join(f"{k}: {_num(v)}" for k, v in vals.items()) + " },"
-        for name, vals in bench["sectors"].items()) + "\n}"
-    keys = " ".join(f"{k}: number;" for k in bench["default"])
-    return f"""// GENERADO por backend/tools/gen_frontend_config.py desde backend/config/.
-// NO EDITAR A MANO: cambia el TOML y vuelve a ejecutar el generador.
+    from display import STATE_LABELS  # noqa: E402
+    return f"""// GENERADO por backend/tools/gen_frontend_config.py desde backend/.
+// NO EDITAR A MANO: cambia el backend y vuelve a ejecutar el generador.
 // tests/test_frontend_config_sync.py falla si este archivo se desincroniza.
 
-/** Medianas sectoriales PROVISIONALES (sectors.toml [benchmarks]). */
-export interface SectorBenchmarks {{ {keys} }}
+/** Arquetipos del clasificador único (sectors.toml [archetypes.not_applicable]). */
+export type Archetype = {" | ".join(_q(a) for a in na)};
 
-export const SECTOR_DEFAULTS: SectorBenchmarks = {_obj(bench["default"])};
-
-export const SECTOR_MAP: Record<string, Partial<SectorBenchmarks>> = {sectors};
-
-/** Etapa 9a: calidad del negocio y atractivo del precio, 0-100 (thresholds.toml [score.quality] / [score.price]). */
-export const QUALITY_BANDS = [{', '.join(_num(x) for x in qb)}] as const;
-export const QUALITY_LABELS = [{', '.join(repr(x).replace("'", '"') for x in ql)}] as const;
-export const PRICE_BANDS = [{', '.join(_num(x) for x in pb)}] as const;
-export const PRICE_LABELS = [{', '.join(repr(x).replace("'", '"') for x in pl)}] as const;
-
-/** Piotroski F-Score: Fuerte / Bueno / Neutral / Débil / Crítico (valuation.toml [models.piotroski]). */
-export const PIOTROSKI_BANDS = [{', '.join(_num(x) for x in pio)}] as const;
-
-/** Bandas de color de la UI (thresholds.toml [ui.metric_scale]). */
-export const METRIC_SCALE_HIGHER: Record<string, [number, number]> = {_pairs(ms["higher"])};
-
-export const METRIC_SCALE_LOWER: Record<string, [number, number]> = {_pairs(ms["lower"])};
-
-/** Arquetipos (etapa 6, sectors.toml [archetypes.not_applicable]): componentes que no aplican. */
-export type Archetype = {" | ".join(repr(a).replace("'", '"') for a in na)};
-
-export const ARCHETYPE_NOT_APPLICABLE: Record<Archetype, readonly string[]> = {{
-{chr(10).join(f'  {a}: [{", ".join(repr(k).replace(chr(39), chr(34)) for k in keys)}],' for a, keys in na.items())}
-}};
-
-export const METRIC_SCALE_SPECIAL = {{
-  dividend_yield: [{', '.join(_num(x) for x in ms["special"]["dividend_yield"])}] as const,
-  payout_ratio: [{', '.join(_num(x) for x in ms["special"]["payout_ratio"])}] as const,
-  buyback_yield: [{', '.join(_num(x) for x in ms["special"]["buyback_yield"])}] as const,
-  shareholder_yield: [{', '.join(_num(x) for x in ms["special"]["shareholder_yield"])}] as const,
-  beta: [{', '.join(_num(x) for x in ms["special"]["beta"])}] as const,
-}};
+/** Rótulo de cada estado de una métrica (lib/display.py STATE_LABELS). */
+export const STATE_LABELS = {{
+{chr(10).join(f"  {k}: {_q(v)}," for k, v in STATE_LABELS.items())}
+}} as const;
 """
 
 

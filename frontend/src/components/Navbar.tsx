@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
 import { searchStocks, SearchResult } from "@/lib/api";
 
 export default function Navbar({ symbol }: { symbol?: string }) {
@@ -27,7 +28,7 @@ export default function Navbar({ symbol }: { symbol?: string }) {
   }, []);
 
   useEffect(() => {
-    if (query.length < 1) { setResults([]); setShowDropdown(false); return; }
+    if (query.length < 1) return;   // el vaciado lo hace onChange (sin setState síncrono en el efecto)
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(async () => {
       const r = await searchStocks(query);
@@ -96,12 +97,12 @@ export default function Navbar({ symbol }: { symbol?: string }) {
         </button>
 
         {/* Logo */}
-        <a href="/" className="shrink-0 group flex items-center gap-2">
+        <Link href="/" prefetch={false} className="shrink-0 group flex items-center gap-2">
           <img src="/logo.png" alt="Finanzer" className="h-7 w-auto" />
           <span className="text-[15px] font-bold text-white tracking-tight group-hover:text-[#0cc06c] transition-colors">
             Finanzer
           </span>
-        </a>
+        </Link>
 
         {/* Divider */}
         <div className="w-px h-5 bg-white/[0.06] max-[560px]:hidden" />
@@ -116,7 +117,7 @@ export default function Navbar({ symbol }: { symbol?: string }) {
               ref={inputRef}
               type="text"
               value={query}
-              onChange={e => setQuery(e.target.value)}
+              onChange={e => { const v = e.target.value; setQuery(v); if (!v) { setResults([]); setShowDropdown(false); } }}
               onFocus={() => results.length > 0 && setShowDropdown(true)}
               onKeyDown={handleKeyDown}
               placeholder="Buscar por ticker o nombre (ej: AAPL, Tesla)..."

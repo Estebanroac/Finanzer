@@ -1,154 +1,127 @@
 "use client";
 
-import { formatMultiple, formatPercent, type StockAnalysis } from "@/lib/api";
-import InfoTooltip, { type TooltipContent } from "@/components/InfoTooltip";
-import { VALUATION, HEALTH } from "@/lib/tooltips";
-import { getSectorBenchmarks } from "@/lib/sectorBench";
-import { scaleColor } from "@/lib/metricScale";
-import { useGrow } from "@/lib/useGrow";
+import type { Display } from "@/lib/api";
+import { Collapsible, DataTable, Help, Intro, Note, Panel, PanelTitle, Pill } from "../ui";
 
-type Tone = "pos" | "warn" | "neg" | "neu";
+// Clase de cada una de las 5 bandas de color del grid (display.sensitivity: índice 0 = muy por
+// encima del precio … 4 = muy por debajo). Solo traduce el índice del backend a una clase.
+const GRID_CLASS = ["cell-strong-buy", "cell-buy", "cell-fair", "cell-sell", "cell-strong-sell"];
 
-/** Veredicto vs mediana sectorial para múltiplos (menor = mejor). */
-function multTone(diffPct: number): Tone {
-  if (diffPct <= -10) return "pos";
-  if (diffPct < 10) return "neu";
-  if (diffPct < 35) return "warn";
-  return "neg";
-}
-
-const FILL: Record<Tone, string> = {
-  pos: "var(--pos)",
-  neu: "rgba(255,255,255,0.4)",
-  warn: "var(--warn)",
-  neg: "var(--neg)",
-};
-
-/** Fila termómetro: pista barato→caro, tick = mediana del sector, fill = empresa. */
-function MultRow({ label, value, bench, grown, tooltip }: {
-  label: string;
-  value: number | null;
-  bench: number | null;
-  grown: boolean;
-  tooltip?: TooltipContent;
-}) {
-  const hasBar = value != null && value > 0 && bench != null && bench > 0;
-  const diff = hasBar ? ((value - bench) / bench) * 100 : 0;
-  const tone = hasBar ? multTone(diff) : "neu";
-  // escala 0→1.3×max para que tanto el fill como el tick queden dentro
-  const scale = hasBar ? Math.max(value, bench) * 1.3 : 1;
-  const fillPct = hasBar ? Math.min(100, (value / scale) * 100) : 0;
-  const tickPct = hasBar ? Math.min(100, (bench / scale) * 100) : 0;
+export default function ValuationTab({ display }: { display: Display }) {
+  const V = display.sections.valuation;
+  const tips = display.tooltips;
+  const block = display.sections.institutional.breakdown?.categories.find((c) => c.group === "price");
+  const sens = V.sensitivity;
+  const conf = display.confidence;
 
   return (
-    <div className="mval">
-      <div className="mval-top">
-        <span className="k flex items-center gap-1.5">
-          {label}
-          {tooltip && <InfoTooltip content={tooltip} value={value} valueLabel={formatMultiple(value)} />}
-        </span>
-        <span className="mval-r">
-          {hasBar && (
-            <span className={`pill ${tone}`}>
-              {diff > 0 ? "+" : ""}{diff.toFixed(0)}% vs sector
-            </span>
-          )}
-          <span className="v">{formatMultiple(value)}</span>
-        </span>
-      </div>
-      {hasBar && (
-        <div className="mval-track">
-          <i className="mval-tick" style={{ left: `${tickPct}%` }} />
-          <div
-            className="mval-fill"
-            style={{ width: grown ? `${fillPct}%` : 0, "--fill": FILL[tone] } as React.CSSProperties}
-          />
-        </div>
+    <div className="space-y-4">
+      <Intro text={V.intro} />
+      <Panel>
+        <PanelTitle>Múltiplos frente a la referencia {display.benchmark.ref}</PanelTitle>
+        <DataTable columns={V.columns} rows={V.rows} tooltips={tips} readings={display.readings} withBenchmark />
+        <Note>{V.market_note}</Note>
+        <Note>{V.normalization_note}</Note>
+      </Panel>
+
+      {block && (
+        <Panel>
+          <PanelTitle aside={<Help k="multiples_block" title="Bloque de múltiplos" />}>
+            Cómo puntúa Valoración · {block.conclusive ? `${block.score}/${block.max}` : "no concluyente"}
+          </PanelTitle>
+          <ul className="fz-adj-list">
+            {block.items.map((it, i) => (
+              <li key={i} className={it.in_block ? "is-member" : ""}>
+                <span className="fz-adj-m">
+                  {it.metric}{it.value && <span className="text-zinc-500"> ({it.value})</span>}
+                  {it.in_block && <span className="fz-adj-tag">miembro del bloque</span>}
+                </span>
+                <span className={`fz-adj-s tone-${it.tone} fz-tone-fg`}>{it.sign}</span>
+                <span className="fz-adj-r">{it.reason}</span>
+              </li>
+            ))}
+          </ul>
+          <Note>Los miembros del bloque muestran su ajuste individual entre paréntesis: puntúan a través del Bloque de múltiplos.</Note>
+        </Panel>
       )}
-    </div>
-  );
-}
 
-function YieldRow({ label, value, metricKey, raw, tooltip }: {
-  label: string;
-  value: string;
-  metricKey?: string;   // clave en metricScale para colorear por su banda
-  raw?: number | null;  // valor numérico crudo (decimal para %) para evaluar el umbral
-  tooltip?: TooltipContent;
-}) {
-  const isNA = value === "N/A";
-  // Color según la banda ABSOLUTA de la métrica (espeja el tooltip); si no hay
-  // escala definida o el dato falta, queda blanco/neutro.
-  const color = !isNA && metricKey ? scaleColor(metricKey, raw) : null;
-  return (
-    <div className="flex items-center justify-between py-3 border-b border-white/[0.04] last:border-0">
-      <div className="flex items-center gap-1.5">
-        <span className="text-sm text-zinc-300">{label}</span>
-        {tooltip && <InfoTooltip content={tooltip} value={raw} valueLabel={value} />}
-      </div>
-      <span
-        className={`text-sm font-semibold tabular-nums ${isNA ? "text-zinc-600" : "text-white"}`}
-        style={color ? { color } : undefined}
-      >
-        {value}
-      </span>
-    </div>
-  );
-}
+      <Panel>
+        <PanelTitle>Valor intrínseco</PanelTitle>
+        <Intro text={V.intrinsic.intro} />
+        <DataTable columns={["CONCEPTO", "VALOR", "LECTURA"]} rows={V.intrinsic.rows} tooltips={tips} />
+        <Note>{V.intrinsic.graham_note}</Note>
+        {V.dcf_params && <Note>{V.dcf_params}</Note>}
+        {V.dcf_reliability && (
+          <div className="mt-3 flex flex-wrap items-start gap-2">
+            {V.dcf_reliability_tone && <Pill tone={V.dcf_reliability_tone}>Fiabilidad del DCF: {V.dcf_reliability_level}</Pill>}
+            <p className="fz-note !mt-0 flex-1 min-w-[220px]">{V.dcf_reliability}</p>
+          </div>
+        )}
+        <Note>{V.dcf_missing}</Note>
+        <Note>{V.ke_note}</Note>
+        {V.wacc_breakdown && (
+          <div className="mt-3">
+            <Collapsible summary="Desglose del WACC">
+              <dl className="fz-kv">
+                {V.wacc_breakdown.map((w) => (
+                  <div key={w.label}><dt>{w.label}</dt><dd>{w.value}</dd></div>
+                ))}
+              </dl>
+              <Note>{V.wacc_note}</Note>
+            </Collapsible>
+          </div>
+        )}
+      </Panel>
 
-export default function ValuationTab({ data }: { data: StockAnalysis }) {
-  const m = data.key_metrics;
-  const b = getSectorBenchmarks(data.sector_info?.mapped_sector || "default");
-  const grown = useGrow();
+      {sens && (
+        <Panel>
+          <PanelTitle aside={<Help k="sensitivity" title="Sensibilidad del valor justo" />}>Sensibilidad del valor justo</PanelTitle>
+          <p className="fz-note !mt-0 mb-3">{sens.intro}</p>
+          <div className="overflow-x-auto -mx-1 px-1">
+            <table className="fz-grid">
+              <thead>
+                <tr><th>{sens.corner}</th>{sens.columns.map((c) => <th key={c}>{c}</th>)}</tr>
+              </thead>
+              <tbody>
+                {sens.rows.map((r) => (
+                  <tr key={r.label}>
+                    <th>{r.label}</th>
+                    {r.cells.map((c, j) => (
+                      <td key={j} className={`${c.band != null ? GRID_CLASS[c.band] : ""} ${c.base ? "is-base" : ""}`}>
+                        {c.value}
+                        {c.base && <span className="sr-only"> (escenario base)</span>}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="fz-grid-legend">
+            {sens.band_labels.map((l, i) => (
+              <span key={l}><i className={GRID_CLASS[i]} />{l}</span>
+            ))}
+            <span><i className="is-base-swatch" />Escenario base</span>
+          </div>
+          <Note>{sens.note}</Note>
+        </Panel>
+      )}
 
-  const buyback = m.buyback_yield;
-  const shareholder = m.shareholder_yield;
-
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-      {/* Múltiplos como termómetro barato→caro */}
-      <div className={`rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 px-5 py-4 ${grown ? "viz-in" : ""}`}>
-        <h4 className="text-xs text-zinc-500 uppercase tracking-widest mb-3 font-medium">
-          Múltiplos de valoración
-        </h4>
-        <div className="mval-legend">
-          <span className="mval-scale-lbl">Barato</span>
-          <span className="mval-ticknote"><i />Mediana sector</span>
-          <span className="mval-scale-lbl">Caro</span>
-        </div>
-        <MultRow label="P/E (TTM)" value={m.pe} bench={b.pe} grown={grown} tooltip={VALUATION.pe_trailing} />
-        <MultRow label="Forward P/E" value={m.forward_pe} bench={b.forward_pe} grown={grown} tooltip={VALUATION.pe_forward} />
-        <MultRow label="PEG" value={m.peg} bench={b.peg} grown={grown} tooltip={VALUATION.peg} />
-        <MultRow label="P/B" value={m.pb} bench={b.pb} grown={grown} tooltip={VALUATION.pb} />
-        <MultRow label="EV/EBITDA" value={m.ev_ebitda} bench={b.ev_ebitda} grown={grown} tooltip={VALUATION.ev_ebitda} />
-        <MultRow label="P/FCF" value={m.pfcf} bench={b.pfcf} grown={grown} tooltip={VALUATION.pfcf} />
-      </div>
-
-      {/* Rendimientos para el accionista */}
-      <div className="rounded-xl border border-white/[0.06] bg-[#0a0a0d]/85 px-5 py-4">
-        <h4 className="text-xs text-zinc-500 uppercase tracking-widest mb-1 font-medium">
-          Rendimientos
-        </h4>
-        <YieldRow label="FCF Yield" value={formatPercent(m.fcf_yield)} metricKey="fcf_yield" raw={m.fcf_yield} tooltip={VALUATION.fcf_yield_val} />
-        <YieldRow label="Earnings Yield" value={formatPercent(m.earnings_yield)} metricKey="earnings_yield" raw={m.earnings_yield} tooltip={VALUATION.earnings_yield} />
-        <YieldRow label="Dividend Yield" value={formatPercent(m.dividend_yield)} metricKey="dividend_yield" raw={m.dividend_yield} tooltip={VALUATION.dividend_yield} />
-        <YieldRow label="Payout Ratio" value={formatPercent(m.payout_ratio)} metricKey="payout_ratio" raw={m.payout_ratio} tooltip={HEALTH.payout_ratio} />
-        <YieldRow
-          label="Buyback Yield"
-          value={buyback != null ? formatPercent(buyback) : "N/A"}
-          metricKey="buyback_yield"
-          raw={buyback}
-          tooltip={VALUATION.buyback_yield}
-        />
-        <YieldRow
-          label="Shareholder Yield"
-          value={shareholder != null ? formatPercent(shareholder) : "N/A"}
-          metricKey="shareholder_yield"
-          raw={shareholder}
-          tooltip={VALUATION.shareholder_yield}
-        />
-        <YieldRow label="P/S" value={formatMultiple(m.ps)} metricKey="ps" raw={m.ps} tooltip={VALUATION.ps} />
-      </div>
+      {conf && (
+        <Panel>
+          <PanelTitle aside={<Help k="confidence" title="Confianza del veredicto" />}>Confianza del veredicto</PanelTitle>
+          <div className="fz-conf">
+            {conf.dimensions.map((d) => (
+              <div key={d.key} className="fz-conf-row">
+                <span className="fz-conf-l">{d.label}</span>
+                <span className="fz-conf-lv">{d.level}</span>
+                <span className="fz-conf-t">{d.text}</span>
+              </div>
+            ))}
+          </div>
+          <Note>{conf.summary}</Note>
+        </Panel>
+      )}
     </div>
   );
 }
