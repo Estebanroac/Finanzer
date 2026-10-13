@@ -15,7 +15,8 @@ from enum import Enum
 
 # Configuración única (backend/config/*.toml, validada al importar settings).
 from settings import cfg
-from classify import FINANCIAL, REIT, GROWTH_PRE_PROFIT, CYCLICAL, MATURE, not_applicable, norm_industry
+from classify import (FINANCIAL, REIT, GROWTH_PRE_PROFIT, CYCLICAL, MATURE, not_applicable, not_applicable_text,
+                      norm_industry)
 
 _WACC = cfg("valuation.wacc")
 _DCF = cfg("valuation.dcf")
@@ -140,7 +141,7 @@ def altman_z_score(
         return (
             None,
             "N/A",
-            f"{not_applicable_reason}. El Altman Z-Score fue diseñado para empresas industriales y comerciales.",
+            not_applicable_reason,   # etapa 9b: sin la coletilla que repetía el motivo
             {"model": "No Aplicable", "reason": "no_aplica", "sector": sector or ""},
         )
 
@@ -487,40 +488,40 @@ def piotroski_evaluate(
 
     # 1. ROA positivo
     if roa_current is None:
-        add("roa_positive", "sin_dato", "Sin datos de ROA")
+        add("roa_positive", "sin_dato", "Sin datos del ROA")
     elif roa_current > 0:
         add("roa_positive", "cumple", "ROA positivo")
     else:
         add("roa_positive", "no_cumple", "ROA negativo")
     # 2. CFO positivo
     if operating_cash_flow is None:
-        add("cfo_positive", "sin_dato", "Sin datos de Cash Flow Operativo")
+        add("cfo_positive", "sin_dato", "Sin datos del flujo de caja operativo")
     elif operating_cash_flow > 0:
-        add("cfo_positive", "cumple", "Cash Flow Operativo positivo")
+        add("cfo_positive", "cumple", "Flujo de caja operativo positivo")
     else:
-        add("cfo_positive", "no_cumple", "CFO negativo")
+        add("cfo_positive", "no_cumple", "Flujo de caja operativo negativo")
     # 3. ROA mejoró
     cmp("roa_improved", roa_current, roa_prior, lambda c, p: c > p,
-        "ROA mejoró vs año anterior", "ROA no mejoró", "Sin datos ROA histórico")
+        "El ROA mejoró frente al año anterior", "El ROA no mejoró", "Sin ROA del año anterior")
     # 4. Calidad de earnings (CFO > Net Income)
     cmp("earnings_quality", operating_cash_flow, net_income, lambda c, p: c > p,
-        "CFO > Net Income (earnings de calidad)", "CFO < Net Income (alerta calidad)",
-        "Sin datos para calidad de earnings")
+        "El flujo operativo supera al beneficio neto (beneficio de calidad)", "El flujo operativo no llega al beneficio neto (alerta de calidad)",
+        "Sin datos para la calidad del beneficio")
     # 5. Deuda LP disminuyó o igual
     cmp("debt_reduced", long_term_debt_current, long_term_debt_prior, lambda c, p: c <= p,
-        "Deuda LP estable o disminuyó", "Deuda LP aumentó", "Sin datos de deuda LP histórica")
+        "La deuda a largo plazo se mantuvo o bajó", "La deuda a largo plazo aumentó", "Sin deuda a largo plazo del año anterior")
     # 6. Current Ratio mejoró
     cmp("current_ratio_improved", current_ratio_current, current_ratio_prior, lambda c, p: c > p,
-        "Liquidez (Current Ratio) mejoró", "Liquidez no mejoró", "Sin datos de liquidez histórica")
+        "La liquidez (current ratio) mejoró", "La liquidez no mejoró", "Sin liquidez del año anterior")
     # 7. Sin dilución
     cmp("no_dilution", shares_current, shares_prior, lambda c, p: c <= p,
-        "Sin dilución de acciones", "Emisión de nuevas acciones (dilución)", "Sin datos de acciones históricas")
+        "Sin dilución de acciones", "Emitió nuevas acciones (dilución)", "Sin acciones del año anterior")
     # 8. Margen bruto mejoró
     cmp("gross_margin_improved", gross_margin_current, gross_margin_prior, lambda c, p: c > p,
-        "Margen bruto mejoró", "Margen bruto no mejoró", "Sin datos de margen bruto histórico")
+        "El margen bruto mejoró", "El margen bruto no mejoró", "Sin margen bruto del año anterior")
     # 9. Rotación de activos mejoró
     cmp("asset_turnover_improved", asset_turnover_current, asset_turnover_prior, lambda c, p: c > p,
-        "Eficiencia de activos mejoró", "Eficiencia de activos no mejoró", "Sin datos de asset turnover histórico")
+        "La rotación de activos mejoró", "La rotación de activos no mejoró", "Sin rotación de activos del año anterior")
 
     total = len(PIOTROSKI_CRITERIA)
     passed = sum(1 for c in crit if c["state"] == "cumple")
@@ -2419,7 +2420,8 @@ def score_valoracion(
     _na = {k: not_applicable(archetype, k) for k in ("pe", "peg", "forward_pe", "p_fcf", "ev_ebitda", "garp")}
     if archetype == GROWTH_PRE_PROFIT and xv.get("ebitda") is not None and xv["ebitda"] <= 0:
         # Sin EBITDA positivo el múltiplo no existe: no aplica (no es un dato ausente).
-        _na["ev_ebitda"] = "No aplica a GROWTH_PRE_PROFIT: EBITDA <= 0, sin resultado operativo que capitalizar"
+        _na["ev_ebitda"] = (f"{not_applicable_text(GROWTH_PRE_PROFIT)}: EBITDA negativo o nulo, sin resultado "
+                            "operativo que capitalizar")
     _cyc = archetype == CYCLICAL
     _cyc_note = (f" (ciclo incompleto: {xv.get('cycle_years')} ejercicios)" if _cyc and xv.get("cycle_incomplete")
                  else "")
@@ -3038,7 +3040,7 @@ def score_calidad_ganancias(
     else:
         # Regla M (etapa 9a): con beneficio <= 0 el ratio no mide la conversión en caja.
         adjustments.append({"metric": "FCF / beneficio neto", "value": "No significativo", "adjustment": 0,
-                            "reason": "Beneficio neto <= 0: el ratio no mide la conversión del beneficio en caja",
+                            "reason": "Beneficio neto negativo o nulo: el ratio no mide la conversión del beneficio en caja",
                             "severity": "neutral"})
     base_score = cov.apply(base_score, adjustments)
     final_score = max(_CAT["min"], min(_CAT["max"], base_score))
@@ -3129,8 +3131,10 @@ def score_crecimiento(
         
         base_score += adj
         _a["rev"] = adj
+        # raw (etapa 9b): la cifra que puntúa; los textos del PDF y de la web citan esta.
         adjustments.append({"metric": _rev_metric, "value": f"{revenue_growth_3y:.1%}", "adjustment": adj,
-                            "reason": reason + (f" — {revenue_note}" if revenue_note else ""), "severity": sev})
+                            "reason": reason + (f" — {revenue_note}" if revenue_note else ""), "severity": sev,
+                            "raw": revenue_growth_3y})
     
     # EPS Growth 3Y (hasta ±5 pts)
     if eps_growth_3y is not None:
@@ -3159,7 +3163,8 @@ def score_crecimiento(
         base_score += adj
         _a["eps"] = adj
         adjustments.append({"metric": "Crecimiento EPS 3Y", "value": f"{eps_growth_3y:.1%}", "adjustment": adj,
-                            "reason": reason + (f" — {eps_note}" if eps_note else ""), "severity": sev})
+                            "reason": reason + (f" — {eps_note}" if eps_note else ""), "severity": sev,
+                            "raw": eps_growth_3y})
     
     # FCF Growth (hasta ±4 pts)
     if fcf_growth_3y is not None:

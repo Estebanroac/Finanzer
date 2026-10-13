@@ -403,4 +403,4 @@ def test_pdf_no_pe_reading_where_pe_does_not_apply(analysis, fixture_store):
     assert a["key_metrics"]["pe"] is None
     text = fb.pdf_text(fb.build_pdf_bytes(a, fb.capture_date(fixture_store.meta["SNOW"])))
     assert "no es significativo al no haber beneficios positivos" not in text
-    assert "No aplica a GROWTH_PRE_PROFIT" in text
+    assert "No aplica a empresas en crecimiento sin beneficio" in text

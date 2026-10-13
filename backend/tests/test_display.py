@@ -5,6 +5,7 @@ estados y tonos válidos, serializable a JSON, motivos traducidos, y que las ban
 de los tooltips (decisión C) son exactamente las de los lectores.
 """
 import json
+import re
 
 import pytest
 
@@ -206,3 +207,102 @@ def test_tooltips_only_applied_bands(env_sym, outputs_by_env):
     for t in tips.values():
         for tb in t["tables"]:
             assert tb["bands"] and all(b["tone"] in TONES - {None} for b in tb["bands"])
+
+
+# ── Revisión de capturas (etapa 9b) ──
+_CODE = re.compile(r"\b(FINANCIAL|GROWTH_PRE_PROFIT|CYCLICAL|MATURE)\b")
+_TECH_KEYS = {"archetype", "na_keys", "classification_detail", "reasons", "dimensions", "thresholds_key", "wacc_note"}
+
+
+def _visible_strings(o, p=""):
+    if isinstance(o, dict):
+        for k, v in o.items():
+            if k not in _TECH_KEYS:
+                yield from _visible_strings(v, f"{p}.{k}")
+    elif isinstance(o, list):
+        for i, v in enumerate(o):
+            yield from _visible_strings(v, f"{p}[{i}]")
+    elif isinstance(o, str):
+        yield p, o
+
+
+@pytest.mark.parametrize("env_sym", ENV_TICKERS, ids=env_id)
+def test_visible_texts_without_jargon_or_bad_formats(env_sym, outputs_by_env):
+    """Sin código de arquetipo fuera del detalle técnico, sin "<=" en la clasificación, signo
+    antes del símbolo ($) y sin doble guion ("— -33%")."""
+    env, sym = env_sym
+    a, pdf = outputs_by_env(env)[sym]
+    for p, t in _visible_strings(a["display"]):
+        assert not _CODE.search(t), (p, t)
+        assert "$-" not in t and "— -" not in t, (p, t)
+    assert all("<" not in n and ">" not in n for n in a["display"]["cover"]["classification_notes"])
+    import fixture_backend as fb
+    for ln in fb.pdf_text(pdf).splitlines():
+        assert "$-" not in ln and "— -" not in ln, ln
+    cover = fb.pdf_text(pdf).split("===== página 2")[0]
+    assert not _CODE.search(cover), cover
+
+
+@pytest.mark.parametrize("env_sym", ENV_TICKERS, ids=env_id)
+def test_growth_texts_cite_the_scored_figure(env_sym, outputs_by_env):
+    """Resumen e intro de Crecimiento citan la cifra que puntúa (CAGR 3 años, ciclo medio o
+    retorno total REIT), no el interanual; el interanual queda en la tabla rotulado."""
+    env, sym = env_sym
+    a = outputs_by_env(env)[sym][0]
+    d = a["display"]
+    adj = {x["metric"]: x for x in a["score"]["breakdown"]["Crecimiento"]["adjustments"]}
+    scored = (adj.get("Crecimiento Ingresos 3Y") or adj.get("Retorno total (dividendo + FFO por acción)") or {})
+    rows = {r["key"]: r for r in d["sections"]["growth"]["rows"]}
+    if scored.get("raw") is not None:
+        key = "total_return" if d["archetype"] == "REIT" else "revenue_growth"
+        assert rows[key]["value"] == dp.fv(scored["raw"], "pct")
+        card = next(c for c in d["summary"]["cards"] if c["key"] == "revenue_growth")
+        assert card["value"] == f"{scored['raw'] * 100:.1f}"
+        if d["archetype"] != "REIT":
+            txt = f"{scored['raw'] * 100:.1f}%"
+            assert txt in (d["sections"]["growth"]["intro"] or "")
+            exec_g = next(e["text"] for e in d["summary"]["exec_items"] if e["label"] == "CRECIMIENTO Y RETORNO")
+            assert txt in exec_g
+    yoy = a["key_metrics"].get("revenue_growth")
+    if yoy is not None:
+        assert rows["revenue_growth_yoy"]["label"].endswith("(interanual)")
+        assert rows["revenue_growth_yoy"]["tone"] is None          # informativo: sin lectura
+
+
+def test_financial_not_applicable_figures(outputs_by_env):
+    for env in [e for e in ("local", "prod") if e in __import__("conftest").ENVS]:
+        d = outputs_by_env(env)["JPM"][0]["display"]
+        fig = {r[0]: r[1] for r in d["sections"]["profitability"]["figures"]}
+        fig.update({r[2]: r[3] for r in d["sections"]["profitability"]["figures"]})
+        assert fig["Flujo de caja operativo"] == fig["Flujo de caja libre"] == "No aplica a bancos y aseguradoras"
+        gm = next(r for r in d["sections"]["profitability"]["rows"] if r["key"] == "gross_margin")
+        assert gm["state"] == "no_aplica" and gm["bench"] == "—"
+        assert d["sections"]["historical"]["not_applicable"]["free_cash_flow"] == "No aplica a bancos y aseguradoras"
+
+
+def test_piotroski_criteria_in_spanish(outputs_by_env):
+    eng = re.compile(r"\b(CFO|Net Income|earnings|LP|asset turnover|Cash Flow)\b")
+    for env in [e for e in ("local", "prod") if e in __import__("conftest").ENVS]:
+        for sym, (a, _) in outputs_by_env(env).items():
+            for c in a["display"]["sections"]["institutional"]["piotroski_criteria"]:
+                assert not eng.search(c["label"] + " " + c["detail"]), (sym, c)
+
+
+def test_money_format_sign_before_symbol():
+    import numfmt
+    assert dp.fv(-147.78e9, "money") == "−$147.78B"
+    assert numfmt.amount(-1.0987) == "−$1.10 por acción"
+    assert numfmt.amount(-365_734_000) == "−$365.73M"
+    assert numfmt.signed_pct(-33.2) == "−33%"
+
+
+def test_price_wording_without_jargon(outputs_by_env):
+    for env in [e for e in ("local", "prod") if e in __import__("conftest").ENVS]:
+        for sym, (a, _) in outputs_by_env(env).items():
+            note = a["display"]["cover"]["price"]["note"]
+            blob = json.dumps(a["display"]["summary"], ensure_ascii=False)
+            assert "crudo" not in blob and "contraído por" not in blob
+            if a["price_attractiveness"].get("contracted"):
+                pa = a["price_attractiveness"]
+                assert note == (f"sin ajustar {pa['score_raw']} → ajustado a {pa['score']} "
+                                f"por confianza {pa['confidence']}")

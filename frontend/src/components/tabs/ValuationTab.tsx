@@ -21,6 +21,7 @@ export default function ValuationTab({ display }: { display: Display }) {
         <PanelTitle>Múltiplos frente a la referencia {display.benchmark.ref}</PanelTitle>
         <DataTable columns={V.columns} rows={V.rows} tooltips={tips} readings={display.readings} withBenchmark />
         <Note>{V.market_note}</Note>
+        <Note>{V.provisional_note}</Note>
         <Note>{V.normalization_note}</Note>
       </Panel>
 

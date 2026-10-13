@@ -27,6 +27,9 @@ except ImportError:  # ejecución como script suelto
     from classify import CYCLICAL, FINANCIAL, GROWTH_PRE_PROFIT, MATURE, REIT, not_applicable
 
 
+import re
+
+from numfmt import MINUS, signed_pct
 from settings import cfg
 
 _A = cfg("thresholds.alerts")
@@ -92,6 +95,8 @@ class Ctx:
 
 
 def _sig(kind: str, category: str, headline: str, detail: str, weight: int) -> Dict[str, Any]:
+    # Etapa 9b: sin doble guion ("— -33%" -> "−33%") en ningún titular.
+    headline = re.sub(r" — -(?=[\d$])", " " + MINUS, headline)
     return {"kind": kind, "category": category, "reason": headline,
             "detail": detail, "weight": weight}
 
@@ -216,23 +221,23 @@ def _dcf(ctx: Ctx):
     if rel.get("level") == "baja" and (up >= T["upside_moderate"] or up <= -T["upside_moderate"]):
         # Etapa 8: un DCF de fiabilidad baja no es una señal de valor: se avisa de que
         # no concilia, sin presentarlo como infra- o sobrevaloración.
-        return _sig("warning", "Valor intrínseco", f"DCF no concluyente — {up:+.0f}% (fiabilidad baja)",
-                    f"El DCF estima ${fv:,.0f} ({up:+.0f}% frente al precio), pero " + "; ".join(rel.get("reasons") or [])
+        return _sig("warning", "Valor intrínseco", f"DCF no concluyente {signed_pct(up)} (fiabilidad baja)",
+                    f"El DCF estima ${fv:,.0f} ({signed_pct(up)} frente al precio), pero " + "; ".join(rel.get("reasons") or [])
                     + ". No se usa en el score.", T["w_premium"])
     if up >= T["upside_strong"]:
-        return _sig("strength", "Valor intrínseco", f"Infravalorada según DCF — +{up:.0f}%",
+        return _sig("strength", "Valor intrínseco", f"Infravalorada según DCF {signed_pct(up)}",
                     f"El descuento de flujos estima un valor justo de ${fv:,.0f}, un {up:.0f}% por encima del precio: hay "
                     "margen de seguridad si se cumplen los supuestos de crecimiento y rentabilidad del modelo.", T["w_undervalued"])
     if up >= T["upside_moderate"]:
-        return _sig("strength", "Valor intrínseco", f"Cotiza bajo su valor justo — +{up:.0f}%",
+        return _sig("strength", "Valor intrínseco", f"Cotiza bajo su valor justo {signed_pct(up)}",
                     f"El DCF sitúa el valor intrínseco en ${fv:,.0f} (+{up:.0f}% sobre el precio): potencial teórico "
                     "moderado, condicionado a que el negocio ejecute según lo previsto.", T["w_below_fair"])
     if up <= -T["upside_strong"]:
-        return _sig("risk", "Valor intrínseco", f"Sobrevalorada según DCF — {up:.0f}%",
+        return _sig("risk", "Valor intrínseco", f"Sobrevalorada según DCF {signed_pct(up)}",
                     f"El precio excede en {abs(up):.0f}% el valor justo estimado por el DCF (${fv:,.0f}): sostenerlo exige "
                     "asumir escenarios de crecimiento muy optimistas.", T["w_overvalued"])
     if up <= -T["upside_moderate"]:
-        return _sig("warning", "Valor intrínseco", f"Prima sobre el valor justo — {up:.0f}%",
+        return _sig("warning", "Valor intrínseco", f"Prima sobre el valor justo {signed_pct(up)}",
                     f"El precio está un {abs(up):.0f}% por encima del valor intrínseco estimado (${fv:,.0f}): el mercado ya "
                     "paga buena parte del crecimiento futuro.", T["w_premium"])
     return None

@@ -440,7 +440,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     ]
     if C["classification_notes"]:
         _title_flow += [Spacer(1, 5), Paragraph(
-            f"<font color='{BRAND_TXT.hexval()}'><b>{_esc(archetype)}</b></font>&nbsp;&nbsp;·&nbsp;&nbsp;"
+            f"<font color='{BRAND_TXT.hexval()}'><b>{_esc(D['archetype_label'])}</b></font>&nbsp;&nbsp;·&nbsp;&nbsp;"
             + _esc(" · ".join(C["classification_notes"])),
             ParagraphStyle('ccls', fontName='Helvetica', fontSize=8.4, leading=11.5, textColor=BODY))]
 
@@ -821,6 +821,10 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         story.append(data_table(["DIMENSIÓN", "NIVEL", "MOTIVO"], _crows,
                                 [1.9 * inch, 0.8 * inch, CW - 2.7 * inch], aligns=['LEFT', 'CENTER', 'LEFT']))
         story.append(Paragraph(_esc(CF["summary"]), S['small']))
+        # Etapa 9b: el código del arquetipo y el motivo técnico de la clasificación, solo aquí.
+        if C["classification_detail"]:
+            story.append(Paragraph(_esc("Clasificación (detalle técnico): " + " · ".join(C["classification_detail"])),
+                                   S['small']))
 
     # ════════════════ 02 RENTABILIDAD + 03 SOLIDEZ ════════════════
     P = SEC["profitability"]

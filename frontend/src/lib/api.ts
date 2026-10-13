@@ -86,7 +86,10 @@ export interface Highlight {
 
 export interface Cover {
   archetype: string;
+  archetype_label: string;
   classification_notes: string[];
+  /** Código del arquetipo y motivo técnico: solo en el "Detalle técnico". */
+  classification_detail: string[];
   quality: ScoreBlock;
   price: PriceBlock;
   categories: Array<{ title: string; items: CategoryItem[] }>;
@@ -224,6 +227,7 @@ export interface Sections {
     columns: string[];
     rows: Row[];
     market_note: string | null;
+    provisional_note: string | null;
     normalization_note: string | null;
     intrinsic: { intro: string | null; rows: Row[]; graham_note: string | null };
     dcf_params: string | null;
@@ -257,6 +261,8 @@ export interface Sections {
     piotroski_criteria: Array<{ key: string; label: string; detail: string; status: string; tone: Tone }>;
     breakdown: { intro: string; coverage_notes: string[]; categories: BreakdownCategory[] } | null;
   };
+  /** Histórico (dato bruto): columnas que no aplican al arquetipo y su texto. */
+  historical: { not_applicable: Record<string, string> };
   alerts: {
     counts: { red_flags: number; warnings: number; strengths: number };
     groups: Array<{ key: string; title: string; tone: Tone; items: AlertItem[] }>;
@@ -277,6 +283,7 @@ export interface MetricBands {
 export interface Display {
   version: number;
   archetype: string;
+  archetype_label: string;
   na_keys: string[];
   benchmark: { profile: "market" | "sector"; ref: string; column: string; vs: string; thresholds_key: string };
   readings: Record<string, Reading | null>;

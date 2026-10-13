@@ -30,7 +30,7 @@ export const DEFINITIONS: Record<string, Definition> = {
     title: "Atractivo del precio",
     description:
       "Puntuación de 0 a 100 de lo atractivo que es el precio actual: valoración por múltiplos frente a su referencia y DCF. Se contrae hacia 50 cuando la confianza del veredicto no es alta.",
-    tip: "Si el precio está contraído verás dos cifras: la cruda (lo que dicen los métodos) y la mostrada (ajustada por la confianza).",
+    tip: "Si la confianza no es alta verás «sin ajustar X → ajustado a Y»: X es lo que dicen los métodos e Y la cifra ajustada por la confianza.",
   },
   category: {
     title: "Categorías de la puntuación",
@@ -57,9 +57,9 @@ export const DEFINITIONS: Record<string, Definition> = {
     tip: "Las empresas más grandes tienden a ser más estables, con menos potencial de crecimiento explosivo.",
   },
   beta: {
-    title: "Beta (volatilidad)",
+    title: "Beta bruta (volatilidad)",
     description:
-      "Cuánto se mueve la acción cuando se mueve el mercado (S&P 500). Una beta igual a la unidad se mueve como el mercado.",
+      "Cuánto se mueve la acción cuando se mueve el mercado (S&P 500), tal como la publica la fuente. Una beta igual a la unidad se mueve como el mercado. El coste de capital usa la beta ajustada (Blume), que verás en el desglose del WACC.",
     formula: "Covarianza(acción, mercado) / varianza(mercado)",
     tip: "Mide riesgo de mercado, no riesgo del negocio: una empresa débil puede tener beta baja.",
   },
@@ -307,11 +307,23 @@ export const DEFINITIONS: Record<string, Definition> = {
   // ── Crecimiento y retorno ──
   revenue_growth: {
     title: "Crecimiento de ingresos",
-    description: "Variación de los ingresos frente al año anterior (en cíclicas, el promedio del ciclo).",
+    description: "Tasa anual compuesta de los ingresos en los últimos 3 años (en cíclicas, el promedio del ciclo; con dilución o recompras relevantes, por acción). Es la cifra que puntúa Crecimiento.",
+  },
+  revenue_growth_yoy: {
+    title: "Crecimiento de ingresos (interanual)",
+    description: "Variación de los ingresos frente al mismo periodo del año anterior, tal como la publica la fuente. Es informativa: no puntúa.",
   },
   earnings_growth: {
-    title: "Crecimiento del beneficio (BPA)",
-    description: "Variación del beneficio por acción frente al año anterior (en cíclicas, el promedio del ciclo).",
+    title: "Crecimiento del beneficio por acción (BPA)",
+    description: "Tasa anual compuesta del BPA en los últimos 3 años (en cíclicas, el promedio del ciclo). Es la cifra que puntúa Crecimiento.",
+  },
+  earnings_growth_yoy: {
+    title: "Crecimiento del BPA (interanual)",
+    description: "Variación del beneficio frente al mismo periodo del año anterior, tal como la publica la fuente. Es informativa: no puntúa.",
+  },
+  total_return: {
+    title: "Retorno total por acción (REIT)",
+    description: "Rentabilidad por dividendo más el crecimiento anual del FFO por acción en los últimos 3 años: el crecimiento que puntúa en un REIT.",
   },
   eps_vs_revenue: {
     title: "BPA frente a ingresos",

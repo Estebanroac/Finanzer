@@ -1,26 +1,28 @@
 "use client";
 
-import type { StockAnalysis, ScoreBlock } from "@/lib/api";
+import type { Display, ScoreBlock, StockAnalysis } from "@/lib/api";
 import { pdfUrl } from "@/lib/api";
 import { Collapsible, Help, Pill, StateTag, ToneBar, toneClass } from "./ui";
 
 /**
- * Cabecera = portada del PDF: arquetipo y su motivo, las dos puntuaciones (precio
- * crudo y contraído si difieren), veredicto verbal, confianza con motivos en
- * lenguaje llano (y el detalle técnico desplegable), cobertura parcial, métricas
- * clave del arquetipo y fortaleza / a vigilar / contexto. Todo sale de display.cover.
+ * Cabecera = portada del PDF: tipo de empresa y su motivo, las dos puntuaciones, el
+ * veredicto verbal con la confianza (motivos en lenguaje llano y detalle técnico
+ * desplegable), cobertura parcial, componentes de cada puntuación, métricas clave
+ * del arquetipo y fortaleza / a vigilar / contexto. Todo sale de display.cover.
+ *
+ * Orden pensado para el móvil (390×844): el veredicto va justo debajo de las dos
+ * puntuaciones, antes de las barras de componentes, para leerse sin hacer scroll.
  */
 export default function StockHeader({ data }: { data: StockAnalysis }) {
   const D = data.display;
   const C = D.cover;
-  const conf = D.confidence;
   const tips = D.tooltips;
 
   return (
     <header className="mb-8 space-y-4">
       {/* Título */}
       <div className="fade-up">
-        <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-2.5 mb-1 min-w-0">
               <h1 className="text-2xl sm:text-4xl font-bold text-white tracking-tight truncate">{data.profile.name}</h1>
@@ -28,37 +30,42 @@ export default function StockHeader({ data }: { data: StockAnalysis }) {
                 {data.symbol}
               </span>
             </div>
-            <p className="text-sm text-zinc-500">
+            <p className="text-sm text-zinc-500 truncate">
               {[data.profile.sector, data.profile.industry, data.profile.exchange].filter(Boolean).join(" · ")}
             </p>
           </div>
-          <a href={pdfUrl(data.symbol)} target="_blank" rel="noopener noreferrer" className="fz-btn press">
+          <a href={pdfUrl(data.symbol)} target="_blank" rel="noopener noreferrer" className="fz-btn press shrink-0"
+            aria-label="Descargar el informe en PDF">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            Descargar PDF
+            <span className="hidden sm:inline">Descargar PDF</span>
+            <span className="sm:hidden">PDF</span>
           </a>
         </div>
         {C.classification_notes.length > 0 && (
           <p className="mt-3 text-[13px] leading-relaxed text-zinc-400">
-            <span className="fz-arch">{C.archetype}</span>{" "}
-            {C.classification_notes.join(" · ")}
+            <span className="fz-arch">{C.archetype_label}</span>{" "}
+            {C.classification_notes.join(" ")}
           </p>
         )}
       </div>
 
-      {/* Las dos puntuaciones y sus componentes */}
+      {/* Puntuaciones · veredicto · componentes */}
       <div className="fz-hero fade-up delay-1">
-        <div className="fz-hero-scores">
-          <ScoreBlockView b={C.quality} helpKey="quality" bands={tips.quality} />
-          <ScoreBlockView b={C.price} helpKey="price" bands={tips.price} />
+        <div className="fz-hero-main">
+          <div className="fz-hero-scores">
+            <ScoreBlockView b={C.quality} helpKey="quality" bands={tips.quality} />
+            <ScoreBlockView b={C.price} helpKey="price" bands={tips.price} />
+          </div>
+          <Verdict display={D} />
         </div>
         <div className="fz-hero-cats">
-          {C.categories.map((g) => (
+          {C.categories.map((g, gi) => (
             <div key={g.title} className="mb-3 last:mb-0">
               <div className="fz-kicker mb-2 flex items-center gap-2">
                 {g.title}
-                {g.title === C.categories[0].title && <Help k="category" title="Categorías" bands={tips.category} />}
+                {gi === 0 && <Help k="category" title="Categorías" bands={tips.category} />}
               </div>
               {g.items.map((c) => (
                 <div key={c.name} className="fz-cat-row">
@@ -79,43 +86,6 @@ export default function StockHeader({ data }: { data: StockAnalysis }) {
             </div>
           ))}
         </div>
-      </div>
-
-      {/* Veredicto + confianza */}
-      <div className={`fz-verdict fade-up delay-2 ${toneClass(C.quality.tone)}`}>
-        <div className="fz-kicker mb-1">Veredicto</div>
-        <p className="text-xl sm:text-2xl font-bold text-white leading-snug">{C.verdict.text}</p>
-        {C.verdict.confidence_text && (
-          <p className={`mt-1 text-[15px] ${toneClass(C.verdict.confidence_tone)} fz-tone-fg flex items-center gap-2`}>
-            {C.verdict.confidence_text}
-            <Help k="confidence" title="Confianza del veredicto" />
-          </p>
-        )}
-        {C.confidence_reasons.length > 0 && (
-          <div className="mt-3">
-            <div className="fz-kicker mb-1.5">Motivos de la confianza</div>
-            <ul className="fz-reasons">
-              {C.confidence_reasons.map((r) => <li key={r}>{r}</li>)}
-            </ul>
-          </div>
-        )}
-        {conf && conf.reasons.length > 0 && (
-          <div className="mt-3">
-            <Collapsible summary="Detalle técnico">
-              <ul className="fz-tech">
-                {conf.reasons.map((r, i) => (
-                  <li key={i}>
-                    {r.text && <span className="block text-zinc-300">{r.text}</span>}
-                    <span className="text-zinc-500">{r.dimension} {r.level.replace("_", " ")}: {r.detail}</span>
-                  </li>
-                ))}
-              </ul>
-            </Collapsible>
-          </div>
-        )}
-        {C.coverage_notes.length > 0 && (
-          <p className="mt-3 text-[13px] tone-warn fz-tone-fg">Cobertura parcial: {C.coverage_notes.join("; ")}</p>
-        )}
       </div>
 
       {/* Métricas clave del arquetipo */}
@@ -143,6 +113,53 @@ export default function StockHeader({ data }: { data: StockAnalysis }) {
         ))}
       </div>
     </header>
+  );
+}
+
+/** Veredicto verbal + confianza (llano) + cobertura parcial + detalle técnico desplegable. */
+function Verdict({ display }: { display: Display }) {
+  const C = display.cover;
+  const conf = display.confidence;
+  const tech = (conf?.reasons.length ?? 0) > 0 || C.classification_detail.length > 0;
+  return (
+    <div className={`fz-verdict ${toneClass(C.quality.tone)}`}>
+      <div className="fz-kicker mb-1">Veredicto</div>
+      <p className="text-xl sm:text-2xl font-bold text-white leading-snug">{C.verdict.text}</p>
+      {C.verdict.confidence_text && (
+        <p className={`mt-1 text-[14.5px] ${toneClass(C.verdict.confidence_tone)} fz-tone-fg flex items-center gap-2`}>
+          {C.verdict.confidence_text}
+          <Help k="confidence" title="Confianza del veredicto" />
+        </p>
+      )}
+      {C.confidence_reasons.length > 0 && (
+        <div className="mt-3">
+          <div className="fz-kicker mb-1.5">Motivos de la confianza</div>
+          <ul className="fz-reasons">
+            {C.confidence_reasons.map((r) => <li key={r}>{r}</li>)}
+          </ul>
+        </div>
+      )}
+      {C.coverage_notes.length > 0 && (
+        <p className="mt-3 text-[13px] tone-warn fz-tone-fg">Cobertura parcial: {C.coverage_notes.join("; ")}</p>
+      )}
+      {tech && (
+        <div className="mt-3">
+          <Collapsible summary="Detalle técnico">
+            <ul className="fz-tech">
+              {conf?.reasons.map((r, i) => (
+                <li key={i}>
+                  {r.text && <span className="block text-zinc-300">{r.text}</span>}
+                  <span className="text-zinc-500">{r.dimension} {r.level.replace("_", " ")}: {r.detail}</span>
+                </li>
+              ))}
+              {C.classification_detail.map((t) => (
+                <li key={t}><span className="text-zinc-500">Clasificación: {t}</span></li>
+              ))}
+            </ul>
+          </Collapsible>
+        </div>
+      )}
+    </div>
   );
 }
 

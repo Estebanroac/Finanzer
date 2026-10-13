@@ -151,7 +151,7 @@ def _pdf_text(pdf):
 def test_pdf_shows_archetype_and_reason(outputs_by_env):
     for env in _envs():
         txt = _pdf_text(outputs_by_env(env)["O"][1])
-        assert "REIT  ·  Clasificada como REIT por industria REIT - Retail" in txt
+        assert "REIT  ·  REIT por su industria (REIT - Retail)." in txt   # etapa 9b: etiqueta y motivo en prosa
 
 
 def test_bank_pdf_never_reads_pe_or_fcf_as_primary(outputs_by_env):
@@ -164,7 +164,7 @@ def test_bank_pdf_never_reads_pe_or_fcf_as_primary(outputs_by_env):
         lines = _pdf_text(pdf).splitlines()
         for i, ln in enumerate(lines):
             if ln.strip() in ("P/E (TTM)", "Forward P/E", "P/FCF", "FCF Yield", "PEG", "EV/EBITDA"):
-                assert any(x.startswith("No aplica a FINANCIAL") for x in lines[i + 1:i + 5]), (env, ln, lines[i:i + 5])
+                assert any(x.startswith("No aplica a bancos y aseguradoras") for x in lines[i + 1:i + 5]), (env, ln, lines[i:i + 5])
         txt = "\n".join(lines)
         assert "ATRACTIVO DEL PRECIO\nP/B frente a ROE" in txt, env
         cover = txt.split("===== página 2")[0]
@@ -179,7 +179,7 @@ def test_pdf_roce_rows(outputs_by_env):
         assert "ROCE promedio (4 ejercicios, ciclo incompleto)" in fcx
         jpm = _pdf_text(out["JPM"][1]).splitlines()
         i = jpm.index("ROCE")
-        assert "No aplica a FINANCIAL" in jpm[i + 1:i + 6]
+        assert "No aplica a bancos y aseguradoras" in jpm[i + 1:i + 6]
 
 
 # ─────────────────────────── correcciones de la etapa 6 ───────────────────────────

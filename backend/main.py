@@ -26,7 +26,8 @@ from sector_profiles import get_sector_profile, YAHOO_SECTOR_MAPPING
 from alert_interpretations import build_signals
 from settings import cfg
 from historical_metrics import fcf_cagr, growth_rate, is_sustained_negative, per_share, per_share_basis
-from classify import CYCLICAL, FINANCIAL, GROWTH_PRE_PROFIT, REIT, classify, not_applicable
+from classify import (ARCHETYPE_GROUP, CYCLICAL, FINANCIAL, GROWTH_PRE_PROFIT, REIT, archetype_label, classify,
+                      not_applicable, not_applicable_text)
 from normalize import normalize as normalize_earnings
 from yf_adapter import _UNUSUAL_ROWS
 from ttm import TTM_QUARTERS
@@ -138,8 +139,10 @@ def _select_benchmark(mapped_sector: str, archetype: Optional[str]) -> dict:
         market = dict(cfg("sectors.benchmarks.market"))
         return {"profile": "market", "sector": key, "thresholds_key": "market", "thresholds": _th("market"),
                 "values": {**dict(cfg("sectors.benchmarks.default")), **market},
-                "reason": (f"arquetipo {archetype} dentro del sector {key}, cuyas medianas y umbrales suponen "
-                           f"{expected}: se usan los del mercado amplio (S&P 500)"),
+                # Etapa 9b: etiquetas en español (el código queda en el detalle técnico).
+                "reason": (f"empresa clasificada como {archetype_label(archetype)} dentro del sector {key}, "
+                           f"cuyas medianas y umbrales suponen {ARCHETYPE_GROUP.get(expected, expected)}: se usan "
+                           "los del mercado amplio (S&P 500)"),
                 "sources": {k: v for k, v in cfg("sectors.benchmarks.market_source").items() if k in market},
                 "provisional": True}
     return {"profile": "sector", "sector": key, "thresholds_key": mapped_sector, "thresholds": _th(mapped_sector),
@@ -765,7 +768,7 @@ def _compute_analysis(symbol: str) -> dict:
             # E/(D+E)·Ke + D/(D+E)·Kd·(1−t); FINANCIAL no usa WACC (P/B justificado con Ke).
             if archetype == FINANCIAL:
                 wacc_info = {"value": None, "applicable": False,
-                             "reason": not_applicable(archetype, "roic_wacc") or "No aplica a FINANCIAL"}
+                             "reason": not_applicable(archetype, "roic_wacc") or not_applicable_text(FINANCIAL)}
             else:
                 wacc_info = compute_wacc(
                     beta=safe_float(financials.beta), rf=rf_info, market_cap=mcap, total_debt=td_val,
@@ -1074,7 +1077,8 @@ def _compute_analysis(symbol: str) -> dict:
                 growth = financials.revenue_growth_yoy or cfg("valuation.dcf.default_growth")
                 _dcf_na = not_applicable(archetype, "dcf")
                 if not _dcf_na and archetype == GROWTH_PRE_PROFIT and not (fcf and fcf > 0):
-                    _dcf_na = "No aplica a GROWTH_PRE_PROFIT con FCF negativo: no hay flujo que descontar"
+                    _dcf_na = (f"{not_applicable_text(GROWTH_PRE_PROFIT)} con FCF negativo: no hay flujo que "
+                               "descontar")
                 if _dcf_na:
                     result["not_applicable"]["dcf"] = _dcf_na
                 _fcf_source = ((yinfo.get("_provenance") or {}).get("freeCashflow") or {}).get("source") \

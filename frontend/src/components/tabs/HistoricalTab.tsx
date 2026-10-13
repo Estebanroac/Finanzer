@@ -13,6 +13,12 @@ type Col = { key: keyof YearRow; label: string; fmt: (v: number | null | undefin
  */
 export default function HistoricalTab({ data }: { data: StockAnalysis }) {
   const rows = data.yearly_financials;
+  // Columnas que no aplican al arquetipo (p. ej. FCF y márgenes en bancos): se dice, no "N/A".
+  const na = data.display.sections.historical.not_applicable;
+  const cell = (c: Col, r: YearRow) => {
+    const v = r[c.key] as number | null | undefined;
+    return v == null && na[c.key as string] ? na[c.key as string] : c.fmt(v);
+  };
   const sbc = rows.some((r) => r.sbc !== undefined);
   const cols: Col[] = [
     { key: "revenue", label: "Ingresos", fmt: formatMoney },
@@ -46,7 +52,7 @@ export default function HistoricalTab({ data }: { data: StockAnalysis }) {
                   const h = v == null || !peak ? 0 : (Math.abs(v) / peak) * 100;
                   return (
                     <span key={c.key as string} className={`fz-hist-bar s${i} ${v != null && v < 0 ? "is-neg" : ""}`}
-                      style={{ height: `${h}%` }} title={`${c.label}: ${c.fmt(v)}`} />
+                      style={{ height: `${h}%` }} title={`${c.label}: ${cell(c, r)}`} />
                   );
                 })}
               </div>
@@ -71,7 +77,13 @@ export default function HistoricalTab({ data }: { data: StockAnalysis }) {
               {cols.map((c) => (
                 <tr key={c.key as string}>
                   <th>{c.label}</th>
-                  {rows.map((r) => <td key={r.year}>{c.fmt(r[c.key] as number | null)}</td>)}
+                  {na[c.key as string] && rows.every((r) => r[c.key] == null) ? (
+                    <td colSpan={rows.length} className="fz-hist-na">{na[c.key as string]}</td>
+                  ) : rows.map((r) => (
+                    <td key={r.year} className={na[c.key as string] && r[c.key] == null ? "fz-hist-na" : ""}>
+                      {cell(c, r)}
+                    </td>
+                  ))}
                 </tr>
               ))}
             </tbody>

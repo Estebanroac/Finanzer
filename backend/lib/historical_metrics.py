@@ -119,7 +119,8 @@ def growth_rate(values_newest_first: List[Optional[float]], years: int = 3, *, w
         return out
     start, end = vals[years], vals[0]
     if all(v is not None and v < 0 for v in vals):
-        out["reason"] = (f"{SUSTAINED_NEGATIVE} ({what} de {vals[years]:,.0f} a {vals[0]:,.0f}): la tasa no se "
+        from numfmt import amount
+        out["reason"] = (f"{SUSTAINED_NEGATIVE} ({what} de {amount(vals[years])} a {amount(vals[0])}): la tasa no se "
                          "calcula, pero es una señal, no un dato ausente")
         out["sustained_negative"] = True
         return out

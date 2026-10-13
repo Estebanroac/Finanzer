@@ -1,6 +1,8 @@
 """ROCE (etapa 6): EBIT / (activos totales − pasivo corriente), solo MATURE y CYCLICAL."""
 import pytest
 
+from classify import not_applicable_text
+
 from archetype_metrics import roce
 
 
@@ -18,7 +20,7 @@ def test_roce_definition_and_fallback_to_operating_income():
 @pytest.mark.parametrize("arch", ["FINANCIAL", "REIT"])
 def test_roce_not_applicable(arch):
     r = roce(arch, _st([5.0], [100.0], [10.0]), {"roic": 0.1})
-    assert r["roce"] is None and r["state"] == "no_aplica" and r["reason"].startswith(f"No aplica a {arch}")
+    assert r["roce"] is None and r["state"] == "no_aplica" and r["reason"].startswith(not_applicable_text(arch))
 
 
 @pytest.mark.parametrize("st", [_st([5.0], [10.0], [12.0]),          # capital empleado <= 0

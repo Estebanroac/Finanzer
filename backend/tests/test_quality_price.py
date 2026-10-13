@@ -199,7 +199,8 @@ def test_benchmark_switches_to_market_when_archetype_contradicts_sector(sector, 
     if profile == "market":
         M = cfg("sectors.benchmarks.market")
         assert all(b["values"][k] == v for k, v in M.items()) and set(b["sources"]) == set(M)
-        assert "mercado amplio" in b["reason"] and arch in b["reason"]
+        from classify import archetype_label
+        assert "mercado amplio" in b["reason"] and archetype_label(arch) in b["reason"]   # etapa 9b: etiqueta
     else:
         assert b["values"] == main._get_sector_benchmarks(sector) and b["reason"] is None
 

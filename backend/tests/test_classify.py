@@ -209,7 +209,7 @@ def test_industry_normalization():
 
 
 def test_not_applicable_reason():
-    assert not_applicable(FINANCIAL, "piotroski").startswith("No aplica a FINANCIAL")
+    assert not_applicable(FINANCIAL, "piotroski").startswith("No aplica a bancos y aseguradoras")
     assert not_applicable(MATURE, "piotroski") is None
     assert not_applicable(REIT, "de") is None                      # D/E sí aplica a un REIT
     assert not_applicable(REIT, "altman") == ("No aplica a REIT: el beneficio contable está distorsionado "
