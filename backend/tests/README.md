@@ -135,6 +135,23 @@ de valor). Para cada una indica el input crudo que la causa, con su procedencia 
 `finnhub` (detectado repitiendo el replay con Finnhub desactivado) o `ausente en prod`. Los textos derivados y las
 celdas del grid se omiten salvo con `--full`.
 
+## Juego `panel` y `panel_run` (fase 0 del plan de fiabilidad)
+
+31 tickers en 9 grupos (`fixture_backend.PANEL_GROUPS`), capturados con `--render-sim` el 14-oct-2026 tras el
+cierre. Entran en la regresión y el determinismo (`conftest.REG_ENVS`), **no** en `conftest.ENVS`: los tests atados a
+los 6 tickers de local/prod no se corren sobre el panel. Los invariantes genéricos viven en `invariants.py` y
+`test_panel_invariants.py` los corre sobre los 31 (los fallos conocidos, como xfail estricto en
+`PANEL_KNOWN_FAILURES`); `test_invariants_detectan.py` prueba que cada uno detecta su violación.
+
+```bash
+../.venv313/bin/python tests/panel_run.py --mode replay --out ~/Downloads/panel_replay
+../.venv313/bin/python tests/panel_run.py --mode live --base-url https://finanzer.app --out ~/Downloads/panel_live
+../.venv313/bin/python tests/panel_run.py --mode replay --out <nueva> --compare <anterior>
+python3 tests/diff_golden.py --env panel [TICKERS]
+```
+
+Línea base: `docs/fiabilidad/F0_LINEA_BASE.md`.
+
 ## Revisar el efecto de un cambio: `diff_golden.py`
 
 ```bash

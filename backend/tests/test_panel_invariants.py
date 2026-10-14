@@ -14,7 +14,13 @@ import invariants as inv
 pytestmark = pytest.mark.skipif(not fb.panel_available(), reason="sin fixtures del panel")
 
 # (invariante, ticker) -> motivo. Rellenado con la captura del panel del 2026-10-14.
-PANEL_KNOWN_FAILURES = {}
+_CYCLE_FLOOR = ("la intro dice 'se contraen un 5.0% anual de ciclo medio' y el invariante busca '-5.0%' literal "
+                "(probable falso positivo del invariante con crecimientos negativos, por decidir); además el -5.0% "
+                "de ingresos y BPA es la cota inferior del ciclo medio [-5%, 10%] presentada como dato medido")
+PANEL_KNOWN_FAILURES = {
+    ("growth_texts_cite_the_scored_figure", "XOM"): _CYCLE_FLOOR,
+    ("growth_texts_cite_the_scored_figure", "DOW"): _CYCLE_FLOOR,
+}
 
 REJECTED = {"SPY"}   # el backend lo rechaza (422): no hay análisis que comprobar
 
