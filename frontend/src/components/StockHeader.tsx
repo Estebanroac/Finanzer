@@ -2,7 +2,12 @@
 
 import type { Display, ScoreBlock, StockAnalysis } from "@/lib/api";
 import { pdfUrl } from "@/lib/api";
+import { useGrow } from "@/lib/useGrow";
+import { Range52Bar, Ring } from "./charts";
 import { Collapsible, Help, Pill, StateTag, ToneBar, toneClass } from "./ui";
+
+// KPI que pasan a la tarjeta de precio (etapa 9c): no se repiten en la rejilla.
+const IN_PRICE_CARD = new Set(["price", "market_cap"]);
 
 /**
  * Cabecera = portada del PDF: tipo de empresa y su motivo, las dos puntuaciones, el
@@ -12,6 +17,8 @@ import { Collapsible, Help, Pill, StateTag, ToneBar, toneClass } from "./ui";
  *
  * Orden pensado para el móvil (390×844): el veredicto va justo debajo de las dos
  * puntuaciones, antes de las barras de componentes, para leerse sin hacer scroll.
+ * Etapa 9c: las puntuaciones son anillos animados con brillo y el precio tiene su
+ * tarjeta grande (con capitalización y el rango de 52 semanas, sin juicio).
  */
 export default function StockHeader({ data }: { data: StockAnalysis }) {
   const D = data.display;
@@ -55,13 +62,14 @@ export default function StockHeader({ data }: { data: StockAnalysis }) {
       {/* Puntuaciones · veredicto · componentes */}
       <div className="fz-hero fade-up delay-1">
         <div className="fz-hero-main">
-          <div className="fz-hero-scores">
-            <ScoreBlockView b={C.quality} helpKey="quality" bands={tips.quality} />
-            <ScoreBlockView b={C.price} helpKey="price" bands={tips.price} />
+          <div className="cz-hero-rings">
+            <ScoreRing b={C.quality} helpKey="quality" bands={tips.quality} />
+            <ScoreRing b={C.price} helpKey="price" bands={tips.price} />
           </div>
           <Verdict display={D} />
         </div>
         <div className="fz-hero-cats">
+          <PriceCard data={data} />
           {C.categories.map((g, gi) => (
             <div key={g.title} className="mb-3 last:mb-0">
               <div className="fz-kicker mb-2 flex items-center gap-2">
@@ -90,8 +98,8 @@ export default function StockHeader({ data }: { data: StockAnalysis }) {
       </div>
 
       {/* Métricas clave del arquetipo */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 fade-up delay-3">
-        {C.kpis.map((k) => (
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 fade-up delay-3">
+        {C.kpis.filter((k) => !IN_PRICE_CARD.has(k.key)).map((k) => (
           <div key={k.key + k.label} className="fz-kpi">
             <span className="fz-kpi-v">{k.value}</span>
             <span className="fz-kpi-l">
@@ -164,22 +172,44 @@ function Verdict({ display }: { display: Display }) {
   );
 }
 
-function ScoreBlockView({ b, helpKey, bands }: { b: ScoreBlock; helpKey: string;
+function ScoreRing({ b, helpKey, bands }: { b: ScoreBlock; helpKey: string;
   bands?: StockAnalysis["display"]["tooltips"][string] }) {
   return (
-    <div className={`fz-score ${toneClass(b.tone)}`}>
+    <div className={`cz-score ${toneClass(b.score == null ? null : b.tone)}`}>
       <div className="fz-kicker flex items-center gap-1.5">
         {b.title}
         <Help k={helpKey} title={b.title} bands={bands} value={b.score != null ? `${b.score}/100` : undefined}
           reading={b.level ? { label: b.level, tone: b.tone } : null} />
       </div>
-      <div className="text-[11px] text-zinc-500 mb-1">{b.question}</div>
-      <div className="flex items-baseline gap-1">
-        <span className="fz-score-n fz-tone-fg">{b.score ?? "—"}</span>
-        <span className="text-zinc-500 text-sm">/100</span>
+      <div className="cz-score-q">{b.question}</div>
+      <Ring value={b.score} max={100} tone={b.tone} size={112} stroke={10} />
+      <Pill tone={b.score == null ? null : b.tone}>{b.level ?? "sin dato"}</Pill>
+      {b.note && <div className="text-[11.5px] tone-warn fz-tone-fg leading-snug">{b.note}</div>}
+    </div>
+  );
+}
+
+/** Tarjeta de precio: cotización grande, capitalización, distancia al máximo y rango de 52 semanas. */
+function PriceCard({ data }: { data: StockAnalysis }) {
+  const P = data.display.charts.price_card;
+  const r = data.display.sections.growth.range52;
+  const cap = data.display.cover.kpis.find((k) => k.key === "market_cap");
+  const grown = useGrow();
+  return (
+    <div className="cz-price mb-5">
+      <div className="flex items-center justify-between gap-3">
+        <span className="fz-kicker flex items-center gap-1.5">Precio<Help k="price_now" title="Precio" /></span>
+        {P.exchange && <span className="text-[11px] font-mono text-zinc-500">{P.exchange}</span>}
       </div>
-      <Pill tone={b.tone}>{b.level ?? "sin dato"}</Pill>
-      {b.note && <div className="mt-1 text-[11.5px] tone-warn fz-tone-fg leading-snug">{b.note}</div>}
+      <div className="flex items-baseline flex-wrap gap-y-1">
+        <span className="cz-price-v">{P.price_txt}</span>
+        {P.currency && <span className="cz-price-cur">{P.currency}</span>}
+      </div>
+      <div className="cz-price-meta">
+        {cap && cap.state === "con_dato" && <span className="cz-price-chip">Cap. {cap.value}</span>}
+        {P.from_high_txt && <span className="cz-price-chip">{P.from_high_txt} desde el máximo de 52 s.</span>}
+      </div>
+      {r && <div className="mt-1"><Range52Bar r={r} mini grown={grown} /></div>}
     </div>
   );
 }

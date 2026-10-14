@@ -9,13 +9,15 @@ import GrowthTab from "./tabs/GrowthTab";
 import HistoricalTab from "./tabs/HistoricalTab";
 import InstitutionalTab from "./tabs/InstitutionalTab";
 import AlertsTab from "./tabs/AlertsTab";
+import ComparisonTab from "./tabs/ComparisonTab";
 
-// Mismas secciones que el PDF (01–06) + el histórico anual (dato bruto, solo web).
+// Mismas secciones que el PDF (01–06) + la comparativa con la referencia y el histórico anual (solo web).
 const TABS = [
   { id: "valuation", label: "Valoración" },
   { id: "profitability", label: "Rentabilidad" },
   { id: "solvency", label: "Solidez" },
   { id: "growth", label: "Crecimiento" },
+  { id: "comparison", label: "Comparativa" },
   { id: "historical", label: "Histórico" },
   { id: "institutional", label: "Evaluación institucional" },
   { id: "alerts", label: "Alertas" },
@@ -93,6 +95,7 @@ export default function TabsSection({ data }: TabsSectionProps) {
         {activeTab === "profitability" && <ProfitabilityTab display={data.display} />}
         {activeTab === "solvency" && <SolvencyTab display={data.display} />}
         {activeTab === "growth" && <GrowthTab display={data.display} />}
+        {activeTab === "comparison" && <ComparisonTab display={data.display} />}
         {activeTab === "historical" && <HistoricalTab data={data} />}
         {activeTab === "institutional" && <InstitutionalTab display={data.display} />}
         {activeTab === "alerts" && <AlertsTab display={data.display} />}

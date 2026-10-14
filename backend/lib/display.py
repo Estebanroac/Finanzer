@@ -318,15 +318,28 @@ def read_growth(g, what="los ingresos", kind="revenue", cycle=False, cagr=False)
     return ("Plano", 'warn', f"{what} {plano} ({_pct(g)}{sfx})")
 
 
-def read_upside(up):
-    """Upside del DCF en %: las bandas del DCF en Valoración (thresholds.score.valoracion)."""
+# Etapa 9c: con el precio por encima del valor justo, la frase dice si algún escenario del grid de
+# sensibilidad lo alcanza (dentro: parte alta del grid) o ninguno (fuera del grid). Nunca "muy optimistas"
+# cuando el grid contiene el precio.
+GRID_ABOVE = "ningún supuesto razonable lo justifica (el precio queda fuera del rango de sensibilidad del DCF)"
+GRID_INSIDE = ("requiere supuestos exigentes pero posibles (el precio cae en la parte alta del rango de "
+               "sensibilidad del DCF)")
+
+
+def _grid_clause(in_grid):
+    return f": {GRID_ABOVE}" if in_grid is False else f": {GRID_INSIDE}" if in_grid is True else ""
+
+
+def read_upside(up, in_grid=None):
+    """Upside del DCF en %: las bandas del DCF en Valoración (thresholds.score.valoracion).
+    `in_grid`: si el grid de sensibilidad contiene el precio (None si no hay grid)."""
     if up is None: return None
     b = [x * 100 for x in cfg("thresholds.score.valoracion.dcf_upside_bounds")]
     if up >= b[0]:   return ("Muy infravalorada", 'pos', f"el modelo DCF sugiere un descuento sustancial: potencial teórico de +{up:.0f}% hasta el valor justo estimado")
     if up >= b[1]:   return ("Infravalorada", 'pos', f"el precio cotiza por debajo del valor intrínseco estimado (potencial teórico de +{up:.0f}%)")
     if up >= b[2]:   return ("Precio justo", 'neu', f"el precio cotiza en torno al valor justo estimado por el DCF ({'+' if up > 0 else ''}{up:.0f}%)")
-    if up >= b[3]:   return ("Prima", 'warn', f"el precio incorpora una prima de {abs(up):.0f}% sobre el valor intrínseco estimado")
-    return ("Sobrevalorada", 'neg', f"el precio excede en {abs(up):.0f}% el valor intrínseco estimado: el DCF exige asumir escenarios muy optimistas")
+    if up >= b[3]:   return ("Prima", 'warn', f"el precio incorpora una prima de {abs(up):.0f}% sobre el valor intrínseco estimado{_grid_clause(in_grid)}")
+    return ("Sobrevalorada", 'neg', f"el precio excede en {abs(up):.0f}% el valor intrínseco estimado{_grid_clause(in_grid)}")
 
 
 def read_graham(m):
@@ -557,9 +570,11 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     _th = SECTOR_THRESHOLDS.get(_thkey, ThresholdConfig())
     r_roe = read_roe(km.get("roe"), km.get("roa"), _th, market=_mkt)
     r_spread = read_spread(km.get("roic_wacc_spread"), km.get("roic"), km.get("wacc"))
-    r_up = read_upside(dcf.get("upside"))
     # Etapa 8: fiabilidad del DCF. Con fiabilidad baja la lectura lo dice y el DCF no puntúa.
     _rel = dcf.get("reliability") or {}
+    # Fuera del grid con fiabilidad baja, DCF_NO_RECONCILE ya lo dice: sin repetirlo en la frase.
+    _in_grid = _rel.get("grid_contains_price")
+    r_up = read_upside(dcf.get("upside"), None if (_rel.get("level") == "baja" and _in_grid is False) else _in_grid)
     if r_up and _rel.get("level") == "baja":
         r_up = (r_up[0] + " (fiabilidad baja)", 'neu',
                 r_up[2] + ". " + (DCF_NO_RECONCILE if _rel.get("grid_contains_price") is False
@@ -1565,7 +1580,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         _models.append("P/E frente al sector y rentabilidad por dividendo")
     models_txt = ("los modelos de " + ", ".join(_models)) if _models else "los modelos de su arquetipo"
 
-    return {
+    D = {
         "version": 1,
         "archetype": archetype,
         "archetype_label": archetype_label(archetype),
@@ -1588,6 +1603,10 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         "methodology": {"models": _models, "models_text": models_txt},
         "tooltips": band_tooltips(a, sector_bench, _th, _mkt, _ref, _na_keys, de_mode, _cyc),
     }
+    # Etapa 9c: datos numéricos de los gráficos de la web (zonas de la misma config que las lecturas).
+    from display_charts import build_charts
+    D["charts"] = build_charts(a, D, sector_bench, th=_th, market=_mkt, de_mode=de_mode)
+    return D
 
 
 # ══════════════════════ BANDAS DE LOS TOOLTIPS (decisión C) ══════════════════════
