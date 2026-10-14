@@ -138,3 +138,116 @@ en todas salvo las indicadas.
   - «EV_EBITDA = -0.1: EBITDA <= 0» en TSM;
   - «<= 0» en la nota del WACC (SNOW).
 - **Control de errores:** el ticker inexistente da 404 limpio; SPY no se rechaza.
+
+---
+
+# Segunda verificación: etapas 11b y 9c (2026-10-14)
+
+Merge `9e78f3b` en main: `056402d` (fixes-muestra, etapa 11b) y visual-web (etapa 9c, rebasada
+sobre main), los dos `--no-ff`. Desplegado en Render el 2026-10-14. **Punto de rollback:
+a6482f9** (Render → Deploys → "Rollback" al deploy de a6482f9, o `git revert -m 1 9e78f3b` y
+`git revert -m 1 056402d`, y push). Este informe solo constata: no se corrigió nada.
+
+## 1. Preparación (main tras los dos merges, antes del push)
+
+| Comprobación | Resultado |
+|---|---|
+| Suite backend (`.venv313`) | 597 passed, 1 skipped |
+| `tsc --noEmit` · lint · umbrales literales | ok · 0 errores (3 avisos `<img>` preexistentes) · sin literales |
+| `build.sh` sin `pip install` | assets presentes; `frontend/out` = contrato de `src/lib/api.ts` (ea5f67fbf19c…) |
+| `requirements.txt`, `constraints.txt`, `.python-version` | sin cambios frente a a6482f9 |
+| Variables de entorno nuevas | ninguna |
+| Grep de secretos `a6482f9..main` | 0 coincidencias (solo el texto `FINNHUB_API_KEY` sin valor y la clave falsa `"fixture-replay"` de los fixtures) |
+| Merge | 12 commits (10 sin merge), 188 archivos, +122 570 / −1 105; de ellos 102 archivos / +118 214 son fixtures y golden |
+| Golden | dos commits: 11b (JPM, FCX, V) y 9c (los 12: `display.charts`, `raw` del FCF y la frase del upside según el grid) |
+
+## 2. Despliegue
+
+- Push `a6482f9..9e78f3b` a las 13:13:39 UTC. Render sirvió el sello nuevo a las 13:15:23 (≈ 1 min 44 s).
+- `/api/health` → 200 `{"status":"ok"}`.
+- `/build-stamp.json` → `contract_sha256` ea5f67fbf19c… = SHA-256 de `src/lib/api.ts`.
+
+## 3. Los 6 tickers (NFLX, JPM, O, FCX, SNOW, V)
+
+- `/api/analysis`: 200 en los 6 y `errors` vacío. `/api/pdf`: 200 en los 6, PDF válidos de 7–9 páginas, sin «muy optimistas».
+- TTM en vivo en los 6 (`data_provenance.ttm.basis = "ttm"`). ^TNX en vivo: Rf 5.325 %.
+- **Arquetipo idéntico al golden en los 6.**
+- **Contrato sobre los 6 JSON vivos: encaja.** Solo quedan campos que ningún ticker real produce: el runway en años y la
+  caja neta de `display.charts`, más el caso `kind: "nc"`. Los tres los cubre el pytest con muestras forzadas, por diseño.
+- **Web con los gráficos nuevos** (Chrome headless sobre finanzer.app, NFLX, JPM y SNOW, escritorio 1440×900 y móvil
+  390×844, la cabecera y las 8 pestañas):
+  - 0 errores de JS y sin desbordamiento horizontal en los 6 casos;
+  - se ven los anillos, la tarjeta de precio, la escala del valor razonable, los múltiplos por papel, los medidores,
+    el donut, el histórico, la comparativa, las alertas con iconos y los estados «no aplica» y «no significativo»
+    (JPM, SNOW);
+  - capturas en `~/Downloads/finanzer_deploy_verificacion_9c/`.
+
+| Ticker | Calidad (golden → vivo) | Precio mostrado | Causa del cambio |
+|---|---|---|---|
+| NFLX | 100 = 100 | 46 razonable = | — |
+| JPM | 91 = 91 | 40 exigente = | — |
+| O | 65 → 70 | 61 razonable = | FFO TTM (igual que en la verificación anterior) |
+| FCX | 75 → 79 | 42 → 39 exigente | ROE y FCF normalizados TTM; confianza baja → media (igual que la vez anterior) |
+| SNOW | 55 → 48 | 20 → 28 muy exigente | balance a 2026-07-31: deuda neta positiva, current ratio 0.94 |
+| V | 98 → 96 | **25 muy exigente → 30 exigente** | Datos, no código. P/E normalizado TTM 32.5x (31.1x), así que la compresión del Forward P/E suma +3; P/FCF 35.4x (−4); el bloque sigue en −3; el DCF pasa de fiabilidad alta a media (el precio está en el grid, fuera del caso base) y aporta −1 en lugar de −2. Valoración 5 → 6/20 y precio 30, justo en el suelo de «exigente». |
+
+## 4. Tiempos en frío (frente a la verificación anterior)
+
+«Fría» es la primera llamada del ticker tras el despliegue; «caliente», la segunda. El PDF se pide con el análisis ya en caché.
+
+| | `/api/analysis` fría | `/api/analysis` caliente | `/api/pdf` |
+|---|---|---|---|
+| Antes, a6482f9 (6 tickers) | 12.0–17.4 s (mediana ≈ 15.2) | 0.25–0.39 s | 1.6–3.8 s |
+| Antes, a6482f9 (muestra amplia) | 12.5–18.8 s | 0.28–0.66 s | 1.6–2.1 s |
+| **Ahora (6 tickers)** | **3.0–4.9 s (mediana ≈ 3.8)** | 0.24–0.68 s | 1.6–4.0 s (típico 1.7–2.6) |
+| **Ahora (19 de la muestra amplia)** | **3.1–4.9 s** | 0.25–0.69 s | 1.7–2.2 s |
+
+La primera llamada es **≈ 3–4 veces más rápida**. Es el efecto medido de la 11b: sin reintentos en el plan B, el
+bloqueo de quoteSummary se recuerda unos minutos y los estados anuales se descargan una sola vez.
+
+## 5. Muestra amplia en producción frente a la muestra local
+
+Todas responden 200 y generan PDF, con `errors` vacío. **SPY → 422** («ETF o fondo», ahora rechazado de forma
+controlada, en análisis y PDF). **ZZZQX → 404** limpio.
+
+**Arquetipo idéntico al local en los 19.** Las notas de moneda y de clase de acciones son literalmente iguales en
+local y en prod. ★ = los seis pedidos.
+
+| Ticker | Arquetipo | P/E (local → prod) | BPA | Cap. | Ingresos | Calidad | Precio | Observación |
+|---|---|---|---|---|---|---|---|---|
+| ★TSM | Madura = | 32.4 → 32.4 | 13.76 → 13.74 | $2 309B = | $142.9B = | 100 = | 50 → 54 razonable | TWD→USD y 1 ADR = 5 acciones aplicados en prod (antes: P/E 5.1) |
+| ★NVO | Madura = | 9.31 → 9.28 | 4.09 → 4.10 | $168B = | $51.5B = | 90 = | 54 → 58 razonable | DKK→USD aplicado. DCF $83 → $41 (ver beta abajo) |
+| ★ASML | Cíclica = | 55.8 → 53.3 | 30.8 → 32.2 | $660B = | $41.2B = | 91 = | 35 exigente = | EUR→USD aplicado. DCF $500 → $384 (beta) |
+| ★NEE | Utility = | 17.6 → 17.6 | 4.45 → 4.44 | $163B = | $28.7B = | 69 = | 50 razonable = | bandas propias de utility (11b) |
+| ★DUK | Utility = | 17.8 → 17.5 | 6.64 → 6.74 | $92B = | $33.2B → $32.2B | 71 → 74 | 54 razonable = | — |
+| ★BRK-B | Banco/aseguradora = | 13.1 → 16.8 | 39.8 → 31.0 | $1 114B = | $384.7B → $410.5B | 82 → 81 | 42 exigente → 50 razonable | Clase B aplicada (1 A = 1 488 B; antes: P/E 0.0087). Ingresos y beneficio anuales en prod (ver abajo) |
+| KO · PG · JNJ · XOM · T · CB · MA · MU · NVDA · PLTR · CROX · PFE | iguales | ±1 % | ±1 % | = | = | iguales | iguales o ±5 pt | PFE 61 → 69 (precio) |
+| AMZN | Madura = | 20.8 = | 12.43 = | $2 789B = | $775.7B → $716.9B | **78 → 68** | 42 → 46 | ver abajo |
+
+### Diferencias local/prod que vienen de la fuente (plan B), no de esta versión
+
+- **Beta de Finnhub en lugar de la de Yahoo.** En Render, quoteSummary da 401 y la beta sale de Finnhub
+  (`/stock/metric`). Para los ADR difiere mucho: NVO 0.59 → 1.64 y ASML 1.20 → 1.73. El WACC sube (NVO 7.4 % → 11.4 %)
+  y el DCF cae a la mitad (NVO $83 → $41, fiabilidad baja → alta; ASML $500 → $384).
+  - **Pendiente:** la beta de Finnhub de un ADR parece medida frente a otro índice; conviene revisarla.
+- **Ingresos y beneficio anuales en lugar de TTM.** yfinance no trae la cuenta de resultados de alguno de los 4
+  últimos trimestres (AMZN: `Total Revenue`, `Net Income`… «sin dato en alguno de los 4 últimos trimestres»; BRK-B:
+  ninguno). El plan B usa entonces el último FY para esas filas. Localmente venían en TTM de quoteSummary.
+  - En AMZN las bases quedan mezcladas: márgenes y calidad sobre FY2025 (beneficio $77.7B), P/E sobre BPA TTM
+    (beneficio ≈ $135B). Calidad 78 local → 68 prod.
+  - **Pendiente:** cuando el beneficio es anual, que el P/E use el mismo FY o se marque la mezcla.
+
+### Señales de la verificación anterior
+
+| Señal (2026-10-13) | Ahora en prod |
+|---|---|
+| TSM: P/E 5.1, DCF +1909 % (divisa/ADR) | Corregido: P/E 32.4, DCF $208, precio «razonable» |
+| BRK-B: P/E 0.0087 (clases A/B) | Corregido: P/E 16.8 |
+| NEE: arquetipo dudoso y valor razonable negativo | Utility con bandas propias. El DCF «no aplica a utilities reguladas» (FCF negativo por diseño); ya no se muestra un valor negativo |
+| SPY analizado como empresa | Rechazado con 422 y su motivo |
+| «CYCLICAL» en prosa · «$-8» · «<= 0» · «EV_EBITDA = …» | Ninguno en el texto visible (JSON y PDF). El código solo queda en «Clasificación (detalle técnico)» |
+| PLTR «exigente» con P/E 177x | Sigue igual (35 exigente). Registrado en RECON §7.17 como decisión de diseño para otra ronda |
+
+**Conclusión:** ninguna condición de parada (ningún 500, todos los PDF generados, la web carga con los gráficos
+nuevos en escritorio y en móvil). Los dos pendientes nuevos (beta de Finnhub en los ADR y bases mezcladas cuando el
+plan B cae a anual) vienen de la fuente de datos, no de esta versión.
