@@ -17,19 +17,19 @@
 
 | Campo | Valor |
 |---|---|
-| Fase en curso | **Ninguna.** Fase 0 ✅ cerrada el 2026-10-14 (registro #6). La fase 1 no ha empezado: espera la orden del usuario |
-| Rama de trabajo | `fiabilidad/f0-panel`, **mergeada en `main` local** (sin push; registro #6) |
+| Fase en curso | **Fase 1 — Lo visible hoy** (🛑 punto de parada 1: diseño del guardián, registro #7) |
+| Rama de trabajo | `fiabilidad/f1-visible` (desde `main` local `0f798c8`; registro #7) |
 | Producción | `9e78f3b` (etapas 11b + 9c), verificado el 2026-10-13. Rollback: `a6482f9` |
 | `main` local | merge de la fase 0 sobre `f9d6c30` (ver `git log`), **por delante de origin, sin push**: se sube con el deploy de la fase 1 (pushear redespliega) |
-| Último cierre de sesión | 2026-10-14 · operador F0 (ver registro #6) |
-| Bloqueos | Ninguno. La fase 1 empieza con D8 (retirar `prod` y `muestra`, commit propio) cuando el usuario lo ordene |
+| Último cierre de sesión | 2026-10-14 · operador F1 (ver registro #7) |
+| Bloqueos | Aprobación del diseño del guardián (`docs/fiabilidad/F1_DISENO_GUARDIAN.md`) |
 
 ## Fases
 
 | Fase | Estado | Rama | Commits | Aprobada por el usuario | Deploy |
 |---|---|---|---|---|---|
 | 0 Congelar y medir | ✅ cerrada (2026-10-14) | `fiabilidad/f0-panel` → `main` local | `0a8ac66`..`0ae214a` (9 commits) + cierre (registro #6) | sí, 2026-10-14 (registro #6) | no aplica (se sube con el deploy de la fase 1) |
-| 1 Lo visible hoy | ⏳ pendiente (puerta abierta; espera la orden del usuario) | — | — | — | — |
+| 1 Lo visible hoy | 🛑 parada 1 (T1) | `fiabilidad/f1-visible` | `d676b22` (D8) | — | — |
 | 2 Verdad de datos (EDGAR) | 🔒 espera F1 | — | — | — | — |
 | 3 Método por arquetipo | 🔒 espera F2 | — | — | — | — |
 | 4 Escalas y confianza | 🔒 espera F3 | — | — | — | — |
@@ -43,7 +43,7 @@ Leyenda: ⏳ pendiente · 🔧 en curso · 🛑 detenida esperando al usuario ·
 
 | # | Tema | Estado | Decidido | Fecha |
 |---|---|---|---|---|
-| D1 | Códigos internos en el PDF | abierta | — | — |
+| D1 | Códigos internos en el PDF | **decidida** | Anexo técnico: los códigos salen de las páginas de lectura y se reúnen en un anexo final del PDF rotulado "Detalle técnico para auditoría"; la web no los muestra (usuario, chat de planificación). Se aplica en la fase 1 (`prompts/F1_lo_visible_hoy.md`) | 2026-10-14 |
 | D2 | Papel de SEC EDGAR | abierta · **reforzada** al cerrar F0: Yahoo da a Render datos distintos que a local en 7/30 (registro #6) | — | — |
 | D3 | Precio con un solo método (RECON §7.17) | abierta · **prioridad alta en la fase 3** (18/30 del panel con un solo método evaluable; registro #6) | — | — |
 | D4 | Arquetipo "crecimiento rentable" | abierta · debe resolver también **qué pesa más cuando una empresa es cíclica y de alto crecimiento a la vez** (NVDA; registro #6) | — | — |
@@ -103,16 +103,16 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
 | Confianza "alta" con convergencia solo "media" (V local 0.80) | RECON §7.13 (c) | 4 |
 | Número de Graham calculado en REIT con BPA deprimido por la depreciación (se muestra, no vota) | RECON §7.13 (b) | 3 |
 | Barra de 52 semanas en la web con lectura de precio (curva en U) frente a "solo posición" del PDF: verificar si sigue | RECON §7.14 | 1 |
-| Mejoras aprobadas: P/FFO visible en la web | memoria (backlog) | 1 |
+| Mejoras aprobadas: P/FFO visible en la web (no es un defecto; decisión del planificador en el prompt F1) | memoria (backlog) | mejoras, después de la fase 4 |
 | Mejoras aprobadas: DuPont del ROE, margen FCF con tendencia, Rule of 40 (crecimiento rentable) | memoria (backlog) | 3 (D4) |
-| `golden/prod` en base anual mientras prod calcula en TTM → **D8 decidida**: retirar `prod` y `muestra` al empezar la fase 1, en un commit propio | F0 (registros #2, #6) | 1 (inicio) |
+| ✅ Hecho (F1, `d676b22`): `golden/prod` en base anual mientras prod calcula en TTM → D8: `prod` y `muestra` retirados | F0 (registros #2, #6, #7) | 1 (inicio) |
 | **Nuevo (panel):** Yahoo devuelve a Render datos distintos que a una IP residencial en 7/30 (acciones de fast_info en PG y NEE; balance trimestral de DUK al 31-mar en Render frente al 30-jun en local; acciones diluidas trimestrales ausentes en CAT y DUK; balance en el Altman de NVDA; acciones en MSFT; trimestres con resultado operativo en PLD). Local es estable. Efecto en el veredicto: DUK calidad 71 → 74, sin cambio de nivel. **Refuerza D2** | F0 (registros #5, #6) | 2 (D2) |
 | **Nuevo (panel):** el crecimiento de ciclo medio está en su cota en 5 cíclicas (XOM y DOW −5.0% en ingresos y BPA; FCX BPA −5.0%; MU y ASML +10.0%). **Texto** que presenta la cota como dato medido → fase 1; **método** del tope −5%/+10% → fase 3 | F0 (registros #5, #6) | 1 (texto) / 3 (método) |
 | **Nuevo (panel):** ajustar el invariante `growth_texts_cite_the_scored_figure` para aceptar el signo expresado con el verbo ("se contraen un 5.0%"); hoy xfail estricto en XOM y DOW | F0 (registros #5, #6) | 1 |
 | **Nuevo (panel):** efecto frontera: NVO cambia de nivel de precio con 10 pb de Rf (config 5.29% → ^TNX 5.19%: 58 "razonable" → 70 "atractivo", confianza media → alta). Banda de tolerancia o aviso de proximidad al umbral | F0 (registros #5, #6) | 4 |
 | **Nuevo (panel):** BRK-B en base anual (faltan capex y D&A en algún trimestre) | F0 (registro #5) | 2 |
 | **Nuevo (panel):** con la tabla validada (registro #6): CAT y TSM deberían ser CYCLICAL y salen "Madura"; PLTR y CRWD salen "Madura" (falta el arquetipo, D4); NVDA a decidir en D4 | F0 (registros #5, #6) | 3 (D4) |
-| `muestra` capturada por quoteSummary sin Finnhub: no representa producción → **se retira con D8** al empezar la fase 1 | F0 (registros #2, #6) | 1 (inicio) |
+| ✅ Hecho (F1, `d676b22`): `muestra` retirada con D8; sus 17 tests corren sobre el panel (`test_panel_cases.py`) | F0 (registros #2, #6, #7) | 1 (inicio) |
 | Descartado — resuelto, **verificado en el panel**: `yearly_financials` con datos en 30/30 (AAPL: 4 ejercicios) | RECON §7.7 | — |
 | Descartado — resuelto, **verificado en el panel**: normalización de partidas no recurrentes (C1): `earnings_normalization.items` en 12+ tickers (MSFT, KO, JNJ, JPM, V, O…); NFLX `differs` = true | RECON §7.7 | — |
 | Descartado — resuelto, **verificado en el panel**: financieras con el YoY de los estados: `data_validation` = `crecimiento_financiera_estados` en JPM, BAC, PGR y BRK-B | RECON §7.8 | — |
@@ -355,4 +355,32 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
   redespliega producción. Al retirar `prod` y `muestra`, revisar los tests atados que los usan
   (`test_muestra.py`, ramas de `prod` en `test_cost_of_capital`, `test_normalize`, `test_ingestion`,
   `test_known_bugs`, `test_display_charts`, `test_frontend_contract`).
+
+### #7 · 2026-10-14 · operador · Fase 1 (T0 hecha; detenida en el punto de parada 1)
+- **Objetivo de la sesión:** T0 (D8) y T1 (diseño del guardián narrativo) hasta el punto de parada 1.
+- **Hecho:**
+  - Rama `fiabilidad/f1-visible` desde `main` local `0f798c8`.
+  - T0 (`d676b22`, "F1: D8, retira los juegos prod y muestra"): fuera `fixtures/{prod,muestra}`, `golden/prod`,
+    `import_prod_capture.py`, `supplement_prod_search.py` y `diff_golden --local-vs-prod`. `test_muestra.py` →
+    `test_panel_cases.py` (los 17 tests, sobre el panel; PFE → KO para el grid con celda negativa). Tests atados a
+    los 6 tickers: `conftest.BOUND_ENVS = [local, panel]` en lugar de `prod`. Casos que el panel ya no da con el
+    mismo ticker: cobertura negativa con caja neta y ROIC no significativo → CRWD; base anual por trimestres
+    incompletos → BRK-B; EBITDA < 0 con caja neta → sin caso en ningún juego, lo cubre
+    `test_read_nde_net_cash_only_when_cash_exceeds_debt`.
+  - T1: diagnóstico verificado y diseño en `docs/fiabilidad/F1_DISENO_GUARDIAN.md` (enfoque b + a enlazados, 19
+    predicados, colector sin cambio de salida, prueba de que detecta).
+- **Verificación:** suite tras T0 → `1474 passed, 1 skipped, 2 xfailed` (47 s). La bajada desde 1538 son 64 tests:
+  los casos `prod` de la regresión y el determinismo (28) y de los 6 tests genéricos de `test_display` (36), cubiertos
+  por los golden y los invariantes del panel.
+- **Diagnóstico PLTR (verificado):** `interest_coverage_state` decide por el signo del cociente. PLTR no tiene gasto
+  financiero en los estados del plan B; la cobertura −1.53 viene de Finnhub (ingreso financiero neto) con EBIT
+  +2.63 B. El estado erróneo llega a 4 sitios: `display.read_coverage`, el motivo de `validate.py`, la Solidez y el
+  **rating sintético del WACC** (`cost_of_capital.synthetic_rating`: BBB por regla M). CRWD: EBIT GAAP −119 M y
+  gasto +26.6 M → su texto es correcto.
+- **Decisiones tomadas por el usuario:** ninguna en esta sesión (las de la fase vienen del prompt F1 y de D1/D8).
+- **Abierto / siguiente paso:** aprobación del diseño del guardián (y del tratamiento del WACC de PLTR en la misma
+  causa que la cobertura). Después, T2 (guardián en rojo).
+- **Archivos tocados:** `backend/tests/` (D8), `docs/fiabilidad/F1_DISENO_GUARDIAN.md`, `docs/fiabilidad/BITACORA.md`.
+- **Avisos para el siguiente chat:** la bitácora tenía sin commitear el cambio del planificador en D1 (decidida:
+  anexo técnico); va en el commit de esta entrada. `invariants.py` todavía nombra `test_muestra` en comentarios.
 
