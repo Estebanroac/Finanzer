@@ -964,3 +964,33 @@ Registrado en la revisión de la 11b; **decisión de diseño para otra ronda, si
   2. que el tope del bloque crezca cuando es el único método evaluable;
   3. que la contracción por confianza no se aplique, o se aplique menos, cuando la confianza baja solo porque falta
      el segundo método y no porque los métodos discrepen.
+
+### 7.18 Fase 0 del plan de fiabilidad: panel de referencia y línea base
+
+*Operador F0, 14-oct-2026. Detalle: [`fiabilidad/F0_LINEA_BASE.md`](fiabilidad/F0_LINEA_BASE.md); bitácora
+[`fiabilidad/BITACORA.md`](fiabilidad/BITACORA.md), registros #2–#5.*
+
+- **Qué se capturó:** juego `panel`, 31 tickers en 9 grupos (`fixture_backend.PANEL_GROUPS`), el 14-oct de 16:15 a
+  16:17 Nueva York (precio de cierre), con fixtures y golden propios (`tests/{fixtures,golden}/panel`). SPY se graba
+  como rechazo 422. No se tocaron los juegos `local`, `prod` ni `muestra`.
+- **Cómo:** `capture_fixtures.py --env panel --render-sim`: captura local con Render simulado (S1 quoteSummary 401
+  "Invalid Crumb"; S2 `ticker.info` vacío), así el pipeline va por el plan B + Finnhub como en producción. Finnhub a
+  ≤ 1 petición cada 1.1 s; la clave se lee del Llavero de macOS y no se graba. Rf congelada a la de config.
+  Validado contra finanzer.app (JPM, NFLX): con la Rf y el precio de prod, 0 diferencias. Se descartó reabrir
+  `/api/_capture` (exigía desplegar).
+- **Vara de medir:** el panel entra en la regresión y el determinismo; `invariants.py` reúne los 26 invariantes
+  genéricos (valen para cualquier ticker; los tests atados a los 6 tickers siguen en su archivo) y
+  `test_panel_invariants.py` los corre sobre el panel (780 comprobaciones; 2 xfail estrictos);
+  `test_invariants_detectan.py` prueba que cada uno detecta su violación. `panel_run.py` corre el panel en replay o
+  live, con `--compare` y, en live, las diferencias separadas en solo Rf / solo precio intradía / reales.
+- **Línea base:** F2 24/31 coinciden con la tabla propuesta (no: CAT, PLTR, NVDA, CRWD; dudoso: BRK-B; a decidir:
+  TSM, ASML). F3: PLTR "EBIT negativo" con EBIT +2.63 B, "STRONG" en 4 financieras, códigos en el detalle técnico,
+  panel "Composición" tapado en la página 2, cota del ciclo medio presentada como dato (XOM, DOW, FCX, MU, ASML).
+  F4: un solo método de precio en 18/30, calidad ≥ 95 en 5, DCF de fiabilidad baja en 11. F5: determinista;
+  live = replay salvo Rf y precio en 23/30. Latencia: p50 6.7 s, p95 45.9 s, máx 52.5 s; JPM en frío 46.1 s.
+- **Hallazgos nuevos:** (1) **Yahoo devuelve a Render datos distintos que a una IP residencial** en 7/30
+  (acciones, balance trimestral, acciones diluidas trimestrales), con local estable; la captura local con Render
+  simulado tiene ese límite y `panel_run --mode live` lo vigila. (2) **`golden/prod` ya no representa
+  producción**: sus fixtures (11-oct) no tienen trimestrales y su replay sale en base anual, mientras prod calcula
+  en TTM (D8). (3) NVO cambia de nivel de precio con 10 pb de Rf. (4) `muestra` se capturó por quoteSummary sin
+  Finnhub: no representa producción (la sustituye `panel`).

@@ -17,18 +17,18 @@
 
 | Campo | Valor |
 |---|---|
-| Fase en curso | **Fase 0 — Congelar y medir** (🛑 validación con Finnhub superada; espera visto bueno para capturar el panel, registro #4) |
-| Rama de trabajo | `fiabilidad/f0-panel` (creada desde `main` local `f9d6c30`; sin commits propios todavía) |
+| Fase en curso | **Fase 0 — Congelar y medir** (🛑 punto de parada 2: T1–T7 hechas, espera la aprobación del usuario para cerrar; registro #5) |
+| Rama de trabajo | `fiabilidad/f0-panel` (desde `main` local `f9d6c30`; commits `F0:` sin push ni merge, registro #5) |
 | Producción | `9e78f3b` (etapas 11b + 9c), verificado el 2026-10-13. Rollback: `a6482f9` |
 | `main` local | `f9d6c30` (informe de deploy), **1 commit por delante de origin, sin push** (pushear redespliega) |
-| Último cierre de sesión | 2026-10-14 · operador F0 (ver registro #4) |
-| Bloqueos | Visto bueno del usuario a la validación (condición 1) antes de capturar el panel |
+| Último cierre de sesión | 2026-10-14 · operador F0 (ver registro #5) |
+| Bloqueos | Aprobación de la fase 0 y validación de la tabla de arquetipos esperados (punto de parada 2); D8 abierta |
 
 ## Fases
 
 | Fase | Estado | Rama | Commits | Aprobada por el usuario | Deploy |
 |---|---|---|---|---|---|
-| 0 Congelar y medir | 🛑 T2 validada, espera T3 | `fiabilidad/f0-panel` | — | — | no aplica |
+| 0 Congelar y medir | 🛑 parada 2 | `fiabilidad/f0-panel` | 0a8ac66..(registro #5) | — | no aplica |
 | 1 Lo visible hoy | 🔒 espera F0 | — | — | — | — |
 | 2 Verdad de datos (EDGAR) | 🔒 espera F1 | — | — | — | — |
 | 3 Método por arquetipo | 🔒 espera F2 | — | — | — | — |
@@ -105,22 +105,28 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
 | Mejoras aprobadas: P/FFO visible en la web | memoria (backlog) | 1 |
 | Mejoras aprobadas: DuPont del ROE, margen FCF con tendencia, Rule of 40 (crecimiento rentable) | memoria (backlog) | 3 (D4) |
 | `golden/prod` en base anual mientras prod calcula en TTM | F0 (registro #2) | D8 |
+| **Nuevo (panel):** Yahoo devuelve a Render datos distintos que a una IP residencial en 7/30 (acciones de fast_info en PG y NEE; balance trimestral de DUK al 31-mar en Render frente al 30-jun en local; acciones diluidas trimestrales ausentes en CAT y DUK; balance en el Altman de NVDA; acciones en MSFT; trimestres con resultado operativo en PLD, que cambia la tasa de impuestos de FY a TTM). Local es estable (recaptura idéntica). Efecto en el veredicto: DUK calidad 71 → 74, sin cambio de nivel | F0 (registro #5) | 2 / 6 |
+| **Nuevo (panel):** el crecimiento de ciclo medio está en su cota en 5 cíclicas (XOM y DOW −5.0% en ingresos y BPA; FCX BPA −5.0%; MU y ASML +10.0%) y el texto lo presenta como dato medido ("se contraen un 5.0% anual de ciclo medio") | F0 (registro #5) | 3 (y texto: 1) |
+| **Nuevo (panel):** el invariante `growth_texts_cite_the_scored_figure` exige "-5.0%" literal y el texto dice "se contraen un 5.0%": decidir si se ajusta el invariante a crecimientos negativos (xfail estricto en XOM y DOW) | F0 (registro #5) | 1 |
+| **Nuevo (panel):** NVO cambia de nivel de precio solo por la Rf (config 5.29% → ^TNX 5.19%: precio 58 "razonable" → 70 "atractivo", confianza media → alta) | F0 (registro #5) | 4 |
+| **Nuevo (panel):** BRK-B en base anual (faltan capex y D&A en algún trimestre) | F0 (registro #5) | 2 |
+| **Nuevo (panel):** CAT, PLTR, NVDA, CRWD como "Madura"; TSM `ciclica_condicional_estable` → MATURE; ASML CYCLICAL (a decidir) | F0 (registro #5) | 3 (D4) |
 | `muestra` capturada por quoteSummary sin Finnhub: no representa producción | F0 (registro #2) | 0 (la sustituye `panel`) |
-| Descartado — resuelto: `yearly_financials` vacío en prod (9b: Histórico desde los estados anuales) | RECON §7.7 | — |
-| Descartado — resuelto: normalización de partidas no recurrentes (C1, etapa 7) | RECON §7.7 | — |
-| Descartado — resuelto: financieras con el YoY de los estados (G2 → política `crecimiento_financiera_estados`, visible en JPM prod) | RECON §7.8 | — |
-| Descartado — resuelto en la etapa 8: impuesto efectivo, WACC mostrado = usado, celdas del grid recortadas, sin suelo terminal | RECON §7.9 | — |
-| Descartado — resuelto: crecimiento muy negativo en cíclicas (ciclo medio, etapas 6 y 9a) | RECON §7.9 | — |
-| Descartado — resuelto: D/E de financieras en la UI y V clasificada como financiera (9b; V = MATURE por red de pagos) | RECON §7.9 | — |
-| Descartado — resuelto en las etapas 6–8: regresiones de §7.10 (ramas REIT, FINANCIAL, GROWTH_PRE_PROFIT, ciclo medio, base anómala) | RECON §7.10 | — |
-| Descartado — resuelto: crecimiento por acción generalizado (etapa 7) y DCF de mantenimiento en cíclicas (etapa 8) | RECON §7.11 | — |
-| Descartado — resuelto en F0: TTM en prod sin verificar (prod calcula en TTM; validado el 14-oct, registro #4) | RECON §7.12 / §7.13 | — |
-| Descartado — resuelto: motivos de la confianza en lenguaje llano (9b, `plain_language.py`) | RECON §7.14 | — |
-| Descartado — obsoleto: PDF de revisión desde los fixtures de prod (lo sustituye `panel_run`) | RECON §7.14 | — |
-| Descartado — resuelto: golden de la 9b sin regenerar (18a6a0c) | RECON §7.15 | — |
-| Descartado — resuelto en la 11b: clase de acciones BRK-B, filas IFRS, plan B "degradado" con reintentos | RECON §7.16 | — |
-| Descartado — resuelto en la 11b: TSM en TWD, BRK-B P/E 0.0087, SPY analizado, DCF negativo de NEE, "CYCLICAL" y "$-8" en la prosa | memoria (deploy 9b) | — |
-| Descartado — sin efecto material: SNOW con deuda neta en local y caja neta en prod (peso de la deuda 2%) | RECON §7.13 | — |
+| Descartado — resuelto, **verificado en el panel**: `yearly_financials` con datos en 30/30 (AAPL: 4 ejercicios) | RECON §7.7 | — |
+| Descartado — resuelto, **verificado en el panel**: normalización de partidas no recurrentes (C1): `earnings_normalization.items` en 12+ tickers (MSFT, KO, JNJ, JPM, V, O…); NFLX `differs` = true | RECON §7.7 | — |
+| Descartado — resuelto, **verificado en el panel**: financieras con el YoY de los estados: `data_validation` = `crecimiento_financiera_estados` en JPM, BAC, PGR y BRK-B | RECON §7.8 | — |
+| Descartado — resuelto en la etapa 8, **verificado en el panel**: impuesto efectivo (`tax_rate.source` = efectiva en 26/30; legal 21% en RIVN, AMZN, DOW, SNOW sin beneficio; ninguno en el 25% fijo); WACC mostrado = usado (`key_metrics.wacc` = `dcf.wacc` = `wacc.value` en 19/19 con DCF); sin suelo terminal (AAPL `dcf.growth_rate` 1.8% < terminal 2.5%). Celdas del grid recortadas: **sin verificar** (ningún caso del panel llega al tope) | RECON §7.9 | — |
+| Descartado — resuelto, **verificado en el panel**: crecimiento muy negativo en cíclicas ya no pasa a +8% (XOM, DOW: ciclo medio −5.0%). Ver la fila nueva de la cota del ciclo medio | RECON §7.9 | — |
+| Descartado — resuelto, **verificado en el panel**: V = MATURE (`classification.rule` = red_de_pagos); JPM fila D/E "No aplica a entidades financieras". La UI no se verifica con el panel (**sin verificar** en la web) | RECON §7.9 | — |
+| Descartado — resuelto en las etapas 6–8, **verificado en el panel**: ramas (JPM `piotroski_f.applicable` = false; O `key_metrics.p_ffo` 13.7; SNOW y RIVN GROWTH_PRE_PROFIT; FCX DCF con FCF de mantenimiento 3.65 B). Base anómala de NFLX: **sin verificar** (no se aisló en el panel) | RECON §7.10 | — |
+| Descartado — resuelto, **verificado en el panel**: crecimiento por acción (`growth_basis.basis` = por_accion en O, PLD, AMT, PLTR, CRWD, RIVN, SNOW) y DCF de mantenimiento en cíclicas (FCX) | RECON §7.11 | — |
+| Descartado — resuelto en F0, **verificado en el panel**: TTM en prod (`data_provenance.ttm.basis` = ttm en 29/30; BRK-B cae al anual porque faltan capex y D&A en algún trimestre, con aviso: ver fila nueva) | RECON §7.12 / §7.13 | — |
+| Descartado — resuelto, **verificado en el panel**: motivos de la confianza en lenguaje llano (invariante `confidence_reasons_translated` pasa en 30/30) | RECON §7.14 | — |
+| Descartado — obsoleto (no requiere verificación): PDF de revisión desde los fixtures de prod; lo sustituye `panel_run` | RECON §7.14 | — |
+| Descartado — resuelto, verificado en git (no en el panel): golden de la 9b regenerados en 18a6a0c | RECON §7.15 | — |
+| Descartado — resuelto en la 11b, **verificado en el panel**: BRK-B P/E 17.0 y BPA 31.0 (clase B); ASML `operating_cash_flow` 12.2 B (alias IFRS); plan B sin reintentos (`yahoo.http_statuses` = [401, 401, 200, 200] en los 31: un solo plan B) | RECON §7.16 | — |
+| Descartado — resuelto en la 11b, **verificado en el panel**: TSM convertida de TWD (`data_provenance.currency.converted` = true, factor ADR 5.0, P/E 31.3); BRK-B P/E 17.0; SPY 422; NEE `dcf_status` = no_aplica (utility); "CYCLICAL" y "$-8" fuera de la prosa (invariante `no_archetype_codes_nor_sign_after_symbol` pasa en 30/30; los códigos siguen en la línea del detalle técnico del PDF: fila D1) | memoria (deploy 9b) | — |
+| Descartado — sin efecto material, **sin verificar** (era una diferencia entre juegos local/prod, no aplica al panel): SNOW con deuda neta en local y caja neta en prod | RECON §7.13 | — |
 
 ## Registro de sesiones
 
@@ -265,4 +271,45 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
   `docs/fiabilidad/f0_t2_prototipo/evidencia/`.
 - **Avisos para el siguiente chat:** no pedir al usuario que exporte variables ni que use `!` para secretos; usar
   el Llavero. Responder siempre en español.
+
+### #5 · 2026-10-14 · operador · Fase 0 (T3–T7 hechas; detenida en el punto de parada 2)
+- **Objetivo de la sesión:** T3 (panel), T4 (`panel_run`), T5 (línea base, con los dos ajustes del usuario), T6
+  (mapa de pendientes) y T7 (cierre) hasta el punto de parada 2.
+- **Decisiones tomadas por el usuario (citas literales):**
+  - "Aprobado. Acepto tu propuesta para la condición 4: en panel_run --mode live, secciones separadas «solo Rf» y
+    «solo precio intradía»; todo lo demás es diferencia real. Para la captura: si el mercado de EE. UU. sigue
+    abierto, espera al cierre (16:00 Nueva York) para que los 31 compartan el precio de cierre del mismo día. Si ya
+    cerró, captura ahora. Registra en la línea base la latencia de 46 s de JPM en frío (va a la fase 6). Sigue con
+    T3 y T4 y detente en el punto de parada 2."
+  - Ajustes de T5: "1. En el mapa de pendientes, marca cada descartado «resuelto» como «verificado en el panel» o
+    «sin verificar», con la evidencia (ticker y campo). Si alguno no está resuelto, devuélvelo a su fase. 2. Separa
+    los tests de invariantes en dos grupos [...] Corre los genéricos sobre los 31 del panel sin tocar el motor. Lo
+    que fallen va al inventario de F3, con xfail estricto si hace falta para mantener la suite en verde."
+  - "Visto bueno a test_invariants_detectan.py (bdc7690)." · "Espera al cierre de las 16:00 y captura a las 16:15,
+    como acordamos."
+- **Hecho:**
+  - T3: 31 fixtures del panel capturados de 16:15 a 16:17 NY (plan B + Finnhub en los 31; SPY 422), sin secretos;
+    31 golden; el panel en la regresión y el determinismo (`REG_ENVS`, no en `conftest.ENVS`).
+  - T4: `tests/panel_run.py` (replay/live, `--compare`, solo Rf / solo precio / reales) con 6 tests; pypdfium2 4.30.0.
+  - T5: `docs/fiabilidad/F0_LINEA_BASE.md`. Ajuste 2: `tests/invariants.py` (26 genéricos; los tests existentes
+    delegan en él), `test_panel_invariants.py` (780 comprobaciones; 2 xfail estrictos: XOM y DOW) y
+    `test_invariants_detectan.py` (los 26 detectan su violación). Ajuste 1: 12 descartados verificados en el panel
+    con evidencia, 5 "sin verificar" con motivo; ninguno resultó no resuelto.
+  - T6: mapa de pendientes completo (filas nuevas del panel marcadas "Nuevo (panel)").
+  - T7: RECON §7.18; esta entrada.
+  - Commits en `fiabilidad/f0-panel`: `0a8ac66`, `00ebda0`, `27be92e`, `c415ecc`, `79f9d59`, `bdc7690` y los de
+    cierre de esta sesión (ver `git log`). Sin push ni merge.
+- **Verificación:** suite `../.venv313/bin/python -m pytest tests` → **1538 passed, 1 skipped, 2 xfailed** (51 s).
+  `panel_run --mode replay` y `--mode live` en `~/Downloads/finanzer_f0_panel_2026-10-14/`. Recaptura local de 7
+  tickers: 6 idénticos (PLD solo precio) → la diferencia con prod viene de Yahoo en Render.
+- **Abierto / siguiente paso (punto de parada 2):** el usuario valida la tabla de arquetipos esperados (TSM, ASML a
+  decidir; BRK-B dudoso), decide sobre el invariante de crecimientos negativos (xfail XOM/DOW), D8 (`golden/prod`)
+  y aprueba el cierre de la fase 0.
+- **Archivos tocados:** `backend/tests/` (fixture_backend, capture_fixtures, conftest, diff_golden, test_regression,
+  test_determinism, panel_run, test_panel_run, invariants, test_panel_invariants, test_invariants_detectan,
+  test_display, test_coverage, test_validation, test_quality_price, test_muestra, test_display_charts, README,
+  requirements), `backend/tests/{fixtures,golden}/panel/`, `docs/RECON.md`, `docs/fiabilidad/{BITACORA,F0_LINEA_BASE}.md`.
+- **Avisos para el siguiente chat:** la Rf congelada hace que NVO salga "razonable" en replay y "atractivo" en prod;
+  Yahoo da a Render datos distintos que a local en 7/30 (vigilar con `panel_run --mode live`); la clave de Finnhub
+  está en el Llavero (`finanzer-finnhub`).
 
