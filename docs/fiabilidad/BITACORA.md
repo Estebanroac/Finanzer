@@ -28,7 +28,7 @@
 
 | Fase | Estado | Rama | Commits | Aprobada por el usuario | Deploy |
 |---|---|---|---|---|---|
-| 0 Congelar y medir | 🛑 parada 2 | `fiabilidad/f0-panel` | 0a8ac66..(registro #5) | — | no aplica |
+| 0 Congelar y medir | 🛑 parada 2 | `fiabilidad/f0-panel` | `0a8ac66`..`0ae214a` (9 commits) | — | no aplica |
 | 1 Lo visible hoy | 🔒 espera F0 | — | — | — | — |
 | 2 Verdad de datos (EDGAR) | 🔒 espera F1 | — | — | — | — |
 | 3 Método por arquetipo | 🔒 espera F2 | — | — | — | — |
