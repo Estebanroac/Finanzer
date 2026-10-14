@@ -39,19 +39,20 @@ import urllib.request
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import fixture_backend as fb  # noqa: E402
 
-# Expectativas del planificador (PLAN_FIABILIDAD / prompt F0, T5). PROPUESTA pendiente de validar por el
-# usuario: no es la verdad. "?" = a decidir con el usuario; "422" = el backend debe rechazarlo.
+# Arquetipos esperados VALIDADOS por el usuario al cerrar la fase 0 (bitácora, registro #6): CAT, TSM y ASML
+# CYCLICAL; BRK-B FINANCIAL (el P/B es su métrica; la volatilidad de sus ingresos sigue en la fase 3); NVDA a
+# decidir en D4 (cíclica y de alto crecimiento a la vez). "?" = a decidir; "422" = el backend debe rechazarlo.
 EXPECTED = {
     **{t: "MATURE" for t in ("AAPL", "MSFT", "KO", "PG", "JNJ", "V", "NVO", "NFLX", "AMZN")},
     **{t: "FINANCIAL" for t in ("JPM", "BAC", "PGR", "BRK-B")},
     **{t: "REIT" for t in ("O", "PLD", "AMT")},
     **{t: "UTILITY" for t in ("NEE", "DUK")},
-    **{t: "CYCLICAL" for t in ("XOM", "FCX", "CAT", "MU", "DOW")},
-    **{t: "CRECIMIENTO_RENTABLE" for t in ("PLTR", "NVDA", "CRWD")},   # hoy no existe: saldrá discrepancia
+    **{t: "CYCLICAL" for t in ("XOM", "FCX", "CAT", "MU", "DOW", "TSM", "ASML")},
+    **{t: "CRECIMIENTO_RENTABLE" for t in ("PLTR", "CRWD")},   # hoy no existe (D4): saldrá discrepancia
     **{t: "GROWTH_PRE_PROFIT" for t in ("RIVN", "SNOW")},
-    "TSM": "?", "ASML": "?", "SPY": "422",
+    "NVDA": "?", "SPY": "422",
 }
-DOUBTFUL = {"BRK-B": "conglomerado: marcar como dudoso"}
+DOUBTFUL = {}
 
 COLUMNS = [
     "ticker", "grupo", "http", "arquetipo", "regla", "arquetipo_esperado", "coincide",

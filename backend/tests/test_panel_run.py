@@ -43,9 +43,10 @@ def test_rejected_ticker_row():
     assert r["http"] == 422 and r["coincide"] == "sí" and r["arquetipo"] == "" and "ETF" in r["errores"]
 
 
-def test_expected_table_marks_doubtful_and_undecided():
-    assert pr._match("BRK-B", "FINANCIAL", 200) == "dudoso"
-    assert pr._match("TSM", "CYCLICAL", 200) == "a decidir"
+def test_expected_table_validated_at_f0_close():
+    assert pr._match("BRK-B", "FINANCIAL", 200) == "sí"
+    assert pr._match("TSM", "MATURE", 200) == "no" and pr._match("ASML", "CYCLICAL", 200) == "sí"
+    assert pr._match("NVDA", "MATURE", 200) == "a decidir"
     assert pr._match("PLTR", "MATURE", 200) == "no"
     assert set(pr.EXPECTED) == set(pr.fb.PANEL_TICKERS)
 

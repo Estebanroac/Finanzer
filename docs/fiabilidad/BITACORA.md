@@ -17,19 +17,19 @@
 
 | Campo | Valor |
 |---|---|
-| Fase en curso | **Fase 0 — Congelar y medir** (🛑 punto de parada 2: T1–T7 hechas, espera la aprobación del usuario para cerrar; registro #5) |
-| Rama de trabajo | `fiabilidad/f0-panel` (desde `main` local `f9d6c30`; commits `F0:` sin push ni merge, registro #5) |
+| Fase en curso | **Ninguna.** Fase 0 ✅ cerrada el 2026-10-14 (registro #6). La fase 1 no ha empezado: espera la orden del usuario |
+| Rama de trabajo | `fiabilidad/f0-panel`, **mergeada en `main` local** (sin push; registro #6) |
 | Producción | `9e78f3b` (etapas 11b + 9c), verificado el 2026-10-13. Rollback: `a6482f9` |
-| `main` local | `f9d6c30` (informe de deploy), **1 commit por delante de origin, sin push** (pushear redespliega) |
-| Último cierre de sesión | 2026-10-14 · operador F0 (ver registro #5) |
-| Bloqueos | Aprobación de la fase 0 y validación de la tabla de arquetipos esperados (punto de parada 2); D8 abierta |
+| `main` local | merge de la fase 0 sobre `f9d6c30` (ver `git log`), **por delante de origin, sin push**: se sube con el deploy de la fase 1 (pushear redespliega) |
+| Último cierre de sesión | 2026-10-14 · operador F0 (ver registro #6) |
+| Bloqueos | Ninguno. La fase 1 empieza con D8 (retirar `prod` y `muestra`, commit propio) cuando el usuario lo ordene |
 
 ## Fases
 
 | Fase | Estado | Rama | Commits | Aprobada por el usuario | Deploy |
 |---|---|---|---|---|---|
-| 0 Congelar y medir | 🛑 parada 2 | `fiabilidad/f0-panel` | `0a8ac66`..`0ae214a` (9 commits) | — | no aplica |
-| 1 Lo visible hoy | 🔒 espera F0 | — | — | — | — |
+| 0 Congelar y medir | ✅ cerrada (2026-10-14) | `fiabilidad/f0-panel` → `main` local | `0a8ac66`..`0ae214a` (9 commits) + cierre (registro #6) | sí, 2026-10-14 (registro #6) | no aplica (se sube con el deploy de la fase 1) |
+| 1 Lo visible hoy | ⏳ pendiente (puerta abierta; espera la orden del usuario) | — | — | — | — |
 | 2 Verdad de datos (EDGAR) | 🔒 espera F1 | — | — | — | — |
 | 3 Método por arquetipo | 🔒 espera F2 | — | — | — | — |
 | 4 Escalas y confianza | 🔒 espera F3 | — | — | — | — |
@@ -44,13 +44,13 @@ Leyenda: ⏳ pendiente · 🔧 en curso · 🛑 detenida esperando al usuario ·
 | # | Tema | Estado | Decidido | Fecha |
 |---|---|---|---|---|
 | D1 | Códigos internos en el PDF | abierta | — | — |
-| D2 | Papel de SEC EDGAR | abierta | — | — |
-| D3 | Precio con un solo método (RECON §7.17) | abierta | — | — |
-| D4 | Arquetipo "crecimiento rentable" | abierta | — | — |
+| D2 | Papel de SEC EDGAR | abierta · **reforzada** al cerrar F0: Yahoo da a Render datos distintos que a local en 7/30 (registro #6) | — | — |
+| D3 | Precio con un solo método (RECON §7.17) | abierta · **prioridad alta en la fase 3** (18/30 del panel con un solo método evaluable; registro #6) | — | — |
+| D4 | Arquetipo "crecimiento rentable" | abierta · debe resolver también **qué pesa más cuando una empresa es cíclica y de alto crecimiento a la vez** (NVDA; registro #6) | — | — |
 | D5 | Capa técnica en el score | abierta | — | — |
 | D6 | Infraestructura | abierta | — | — |
 | D7 | Universo de empresas | abierta | — | — |
-| D8 | `golden/prod` ya no representa producción (base anual frente a TTM; registro #2): ¿retirarlo o sustituirlo por el juego `panel`? | abierta (decidir al cerrar F0) | — | — |
+| D8 | `golden/prod` ya no representa producción (base anual frente a TTM; registro #2) | **decidida** | Se retiran los juegos `prod` y `muestra` (fixtures y golden); se queda `local`. Se hace al principio de la fase 1, en un commit propio (registro #6) | 2026-10-14 |
 
 Decisiones nuevas que surjan en una sesión: se añaden aquí como D8, D9… con estado "abierta" y el operador se detiene.
 
@@ -81,6 +81,7 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
 | CAT, DOW como "Madura"; TSM `ciclica_condicional_estable` | corrida 2026-10-14 | 3 |
 | Crecimiento del DCF (CAGR 3a frente a interanual, AAPL) | corrida 2026-10-14 | 3 |
 | Precio con un solo método evaluable | RECON §7.17 | 3 (D3) |
+| **Nuevo (panel):** 18/30 con un solo método de precio evaluable → **D3 con prioridad alta en la fase 3** | F0 (registros #5, #6) | 3 (D3) |
 | Cobertura de intereses en utilities | memoria 11b | 3 |
 | BRK-B posible cíclica / conglomerado | RECON §7.16 | 3 |
 | AMZN sin categoría Crecimiento (base ≤ 0) | corrida 2026-10-14 | 3 |
@@ -104,14 +105,14 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
 | Barra de 52 semanas en la web con lectura de precio (curva en U) frente a "solo posición" del PDF: verificar si sigue | RECON §7.14 | 1 |
 | Mejoras aprobadas: P/FFO visible en la web | memoria (backlog) | 1 |
 | Mejoras aprobadas: DuPont del ROE, margen FCF con tendencia, Rule of 40 (crecimiento rentable) | memoria (backlog) | 3 (D4) |
-| `golden/prod` en base anual mientras prod calcula en TTM | F0 (registro #2) | D8 |
-| **Nuevo (panel):** Yahoo devuelve a Render datos distintos que a una IP residencial en 7/30 (acciones de fast_info en PG y NEE; balance trimestral de DUK al 31-mar en Render frente al 30-jun en local; acciones diluidas trimestrales ausentes en CAT y DUK; balance en el Altman de NVDA; acciones en MSFT; trimestres con resultado operativo en PLD, que cambia la tasa de impuestos de FY a TTM). Local es estable (recaptura idéntica). Efecto en el veredicto: DUK calidad 71 → 74, sin cambio de nivel | F0 (registro #5) | 2 / 6 |
-| **Nuevo (panel):** el crecimiento de ciclo medio está en su cota en 5 cíclicas (XOM y DOW −5.0% en ingresos y BPA; FCX BPA −5.0%; MU y ASML +10.0%) y el texto lo presenta como dato medido ("se contraen un 5.0% anual de ciclo medio") | F0 (registro #5) | 3 (y texto: 1) |
-| **Nuevo (panel):** el invariante `growth_texts_cite_the_scored_figure` exige "-5.0%" literal y el texto dice "se contraen un 5.0%": decidir si se ajusta el invariante a crecimientos negativos (xfail estricto en XOM y DOW) | F0 (registro #5) | 1 |
-| **Nuevo (panel):** NVO cambia de nivel de precio solo por la Rf (config 5.29% → ^TNX 5.19%: precio 58 "razonable" → 70 "atractivo", confianza media → alta) | F0 (registro #5) | 4 |
+| `golden/prod` en base anual mientras prod calcula en TTM → **D8 decidida**: retirar `prod` y `muestra` al empezar la fase 1, en un commit propio | F0 (registros #2, #6) | 1 (inicio) |
+| **Nuevo (panel):** Yahoo devuelve a Render datos distintos que a una IP residencial en 7/30 (acciones de fast_info en PG y NEE; balance trimestral de DUK al 31-mar en Render frente al 30-jun en local; acciones diluidas trimestrales ausentes en CAT y DUK; balance en el Altman de NVDA; acciones en MSFT; trimestres con resultado operativo en PLD). Local es estable. Efecto en el veredicto: DUK calidad 71 → 74, sin cambio de nivel. **Refuerza D2** | F0 (registros #5, #6) | 2 (D2) |
+| **Nuevo (panel):** el crecimiento de ciclo medio está en su cota en 5 cíclicas (XOM y DOW −5.0% en ingresos y BPA; FCX BPA −5.0%; MU y ASML +10.0%). **Texto** que presenta la cota como dato medido → fase 1; **método** del tope −5%/+10% → fase 3 | F0 (registros #5, #6) | 1 (texto) / 3 (método) |
+| **Nuevo (panel):** ajustar el invariante `growth_texts_cite_the_scored_figure` para aceptar el signo expresado con el verbo ("se contraen un 5.0%"); hoy xfail estricto en XOM y DOW | F0 (registros #5, #6) | 1 |
+| **Nuevo (panel):** efecto frontera: NVO cambia de nivel de precio con 10 pb de Rf (config 5.29% → ^TNX 5.19%: 58 "razonable" → 70 "atractivo", confianza media → alta). Banda de tolerancia o aviso de proximidad al umbral | F0 (registros #5, #6) | 4 |
 | **Nuevo (panel):** BRK-B en base anual (faltan capex y D&A en algún trimestre) | F0 (registro #5) | 2 |
-| **Nuevo (panel):** CAT, PLTR, NVDA, CRWD como "Madura"; TSM `ciclica_condicional_estable` → MATURE; ASML CYCLICAL (a decidir) | F0 (registro #5) | 3 (D4) |
-| `muestra` capturada por quoteSummary sin Finnhub: no representa producción | F0 (registro #2) | 0 (la sustituye `panel`) |
+| **Nuevo (panel):** con la tabla validada (registro #6): CAT y TSM deberían ser CYCLICAL y salen "Madura"; PLTR y CRWD salen "Madura" (falta el arquetipo, D4); NVDA a decidir en D4 | F0 (registros #5, #6) | 3 (D4) |
+| `muestra` capturada por quoteSummary sin Finnhub: no representa producción → **se retira con D8** al empezar la fase 1 | F0 (registros #2, #6) | 1 (inicio) |
 | Descartado — resuelto, **verificado en el panel**: `yearly_financials` con datos en 30/30 (AAPL: 4 ejercicios) | RECON §7.7 | — |
 | Descartado — resuelto, **verificado en el panel**: normalización de partidas no recurrentes (C1): `earnings_normalization.items` en 12+ tickers (MSFT, KO, JNJ, JPM, V, O…); NFLX `differs` = true | RECON §7.7 | — |
 | Descartado — resuelto, **verificado en el panel**: financieras con el YoY de los estados: `data_validation` = `crecimiento_financiera_estados` en JPM, BAC, PGR y BRK-B | RECON §7.8 | — |
@@ -312,4 +313,46 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
 - **Avisos para el siguiente chat:** la Rf congelada hace que NVO salga "razonable" en replay y "atractivo" en prod;
   Yahoo da a Render datos distintos que a local en 7/30 (vigilar con `panel_run --mode live`); la clave de Finnhub
   está en el Llavero (`finanzer-finnhub`).
+
+### #6 · 2026-10-14 · operador · Fase 0 cerrada
+- **Objetivo de la sesión:** registrar la aprobación del cierre, aplicar las decisiones y mergear en `main` local.
+- **Decisiones tomadas por el usuario (cita literal):**
+
+  > Apruebo el cierre de la fase 0, con estas decisiones (regístralas en la bitácora con esta cita):
+  > 
+  >   1. Tabla de arquetipos esperados validada con estos cambios:
+  >      - CAT: CYCLICAL (confirmado).
+  >      - BRK-B: FINANCIAL válido (el P/B es la métrica de la propia empresa); la volatilidad de sus ingresos sigue en la fase 3.
+  >      - TSM y ASML: esperado CYCLICAL.
+  >      - NVDA: «a decidir en D4». D4 debe resolver qué pesa más cuando una empresa es cíclica y de alto crecimiento a la vez.
+  >   2. Invariante growth_texts_cite_the_scored_figure (XOM, DOW): se ajusta en la fase 1 para aceptar el signo expresado con el verbo. El texto que presenta la cota del ciclo medio como dato medido (XOM, DOW, FCX, MU, ASML) va a la fase 1. El método del tope −5%/+10% va a la fase 3.
+  >   3. Nuevos pendientes en el mapa:
+  >      - Efecto frontera (NVO cambia de nivel con 10 pb de Rf): fase 4, banda de tolerancia o aviso de proximidad al umbral.
+  >      - Render ≠ local en 7/30: refuerza D2, fase 2.
+  >      - 18/30 con un solo método: D3 pasa a prioridad alta en la fase 3.
+  >   4. D8 decidida: se retiran los juegos prod y muestra (fixtures y golden); se queda local. Se hace al principio de la fase 1, en un commit propio.
+  >   5. Haz merge de fiabilidad/f0-panel en main EN LOCAL, sin push. Se subirá junto con el deploy de la fase 1.
+  > 
+  >   Cierra la fase 0 en la bitácora (estado, fila de la fase y D8) y detente. No empieces la fase 1.
+
+- **Hecho:**
+  - Decisión 1: `panel_run.EXPECTED` con la tabla validada (CAT, TSM y ASML CYCLICAL; BRK-B FINANCIAL sin "dudoso";
+    NVDA "?" para D4) y su test. Recuento con el replay del panel (`~/Downloads/finanzer_f0_panel_2026-10-14/replay_tabla_validada`):
+    **26/31 coinciden**; no coinciden CAT, PLTR, CRWD y TSM; NVDA a decidir. `F0_LINEA_BASE.md` actualizado.
+  - Decisiones 2–4: mapa de pendientes (invariante y texto de la cota → fase 1; método del tope → fase 3; efecto
+    frontera → fase 4; Render ≠ local → D2, fase 2; 18/30 un solo método → D3 prioridad alta en la fase 3;
+    D8 decidida, `prod` y `muestra` se retiran al empezar la fase 1). Tabla de decisiones: D2 reforzada, D3
+    prioridad alta, D4 con la pregunta de NVDA, D8 decidida.
+  - Decisión 5: merge `--no-ff` de `fiabilidad/f0-panel` en `main` local, sin push (ver `git log`).
+  - Estado actual y fila de la fase 0: ✅ cerrada. Fase 1: pendiente, sin empezar.
+- **Verificación:** `pytest tests/test_panel_run.py` → 6 passed; suite completa en `main` tras el merge (ver el
+  final de esta entrada en el mensaje de cierre del operador).
+- **Abierto / siguiente paso:** la fase 1 empieza, cuando el usuario lo ordene, con D8 en un commit propio
+  (retirar `prod` y `muestra`, fixtures y golden). El push de `main` va con el deploy de la fase 1.
+- **Archivos tocados:** `backend/tests/panel_run.py`, `backend/tests/test_panel_run.py`,
+  `docs/fiabilidad/{BITACORA,F0_LINEA_BASE}.md`.
+- **Avisos para el siguiente chat:** `main` local va por delante de `origin/main` (f9d6c30 + fase 0): pushear
+  redespliega producción. Al retirar `prod` y `muestra`, revisar los tests atados que los usan
+  (`test_muestra.py`, ramas de `prod` en `test_cost_of_capital`, `test_normalize`, `test_ingestion`,
+  `test_known_bugs`, `test_display_charts`, `test_frontend_contract`).
 

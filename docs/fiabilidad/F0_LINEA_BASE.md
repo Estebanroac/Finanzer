@@ -23,7 +23,7 @@ registros #2–#5.*
 | # | Propiedad | Línea base (14-oct-2026) |
 |---|---|---|
 | F1 | Dato correcto | No medible aún frente a la fuente oficial (fase 2). Hoy: Finnhub sustituye entre 6 y 16 campos por ticker; 12 de 30 tienen intervenciones de validación; Altman sin dato en JNJ; Yahoo da a Render datos distintos que a local en **7/30** |
-| F2 | Método adecuado | **24/31** coinciden con la tabla propuesta (incluido SPY 422); 4 no coinciden (CAT, PLTR, NVDA, CRWD → "Madura"); 1 dudoso (BRK-B); 2 a decidir (TSM → MATURE, ASML → CYCLICAL) |
+| F2 | Método adecuado | **26/31** coinciden con la tabla validada (incluido SPY 422); 4 no coinciden (CAT, PLTR, CRWD, TSM → "Madura"); NVDA a decidir en D4. Con la propuesta previa eran 24/31 |
 | F3 | Texto fiel al dato | 1 contradicción de cifra (PLTR "EBIT negativo" con EBIT +2.63 B); "STRONG" en 4 financieras; códigos internos en el detalle técnico del PDF en 30/30; panel "Composición" tapado y recortado en la página 2; 2 invariantes genéricos que fallan (XOM, DOW); cota del ciclo medio presentada como dato en 5 cíclicas |
 | F4 | Incertidumbre honesta | Calidad ≥ 95 en 5/30 (100 en 3); un solo método de precio evaluable en **18/30**; DCF de fiabilidad baja en 11/19 con DCF; confianza media en 24/30; NVO cambia de nivel de precio con 10 pb de Rf |
 | F5 | Reproducible | Determinismo: byte a byte en los 31 (suite). Live frente a replay: 23/30 solo difieren por Rf o precio; 7/30 con diferencias reales de datos (Render ≠ local), sin cambio de nivel salvo NVO (por la Rf). Latencia /api/analysis: p50 6.7 s · p95 45.9 s · máx 52.5 s; JPM en frío 46.1 s (14:28) y 10.8 s en la corrida del panel |
@@ -78,7 +78,10 @@ Notas:
 
 ## F2 · Método adecuado: arquetipo obtenido frente al esperado
 
-La tabla de expectativas es la **propuesta del planificador, pendiente de validar por el usuario**; no es la verdad.
+**Tabla validada por el usuario al cerrar la fase 0** (bitácora, registro #6): CAT, TSM y ASML → CYCLICAL; BRK-B →
+FINANCIAL (válido: el P/B es su métrica; la volatilidad de sus ingresos sigue en la fase 3); NVDA → a decidir en D4.
+Con ella, **F2 = 26/31 coinciden**; no coinciden CAT, PLTR, CRWD y TSM (los cuatro salen "Madura"); NVDA a decidir.
+`panel_run.EXPECTED` ya lleva la tabla validada. La tabla de abajo es la corrida original, con la propuesta previa:
 
 | Ticker | Grupo | Obtenido | Regla | Esperado | Coincide |
 |---|---|---|---|---|---|
