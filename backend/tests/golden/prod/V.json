@@ -76,6 +76,7 @@
     "sector": "financials",
     "sources": {
       "ev_ebitda": "mediana EV/EBITDA del S&P 500 a 1T-2025 (Ivaluate, 'EV/EBITDA multiples by sector 2025-2026', jul-2026); no hay mediana pública de constituyentes de 2026 (Damodaran ene-2026, agregado de todo EE. UU. sin financieras: 16.95x, no es una mediana)",
+      "forward_pe": "P/E forward del ÍNDICE S&P 500 (consenso de beneficios de los próximos 12 meses, Bloomberg): 18.91x al 30-sep-2026, según First Trust, 'Market Minute' de octubre de 2026 (ftportfolios.com); es un agregado del índice, NO una mediana de constituyentes: no hay mediana forward pública (chartrow.com no publica forward P/E)",
       "pe": "mediana de los miembros del S&P 500 (P/E TTM), chartrow.com/sp500/pe-ratio, cierre del 12-oct-2026; método de la mediana no documentado por la fuente"
     },
     "thresholds": {
@@ -96,7 +97,7 @@
       "earnings_growth": 0.1,
       "ev_ebitda": 13.2,
       "fcf_yield": 0.04,
-      "forward_pe": 18,
+      "forward_pe": 18.9,
       "gross_margin": 0.4,
       "interest_coverage": 8,
       "net_margin": 0.1,
@@ -214,6 +215,20 @@
     "score": 0.9
   },
   "data_provenance": {
+    "currency": {
+      "converted": false,
+      "price": "USD",
+      "share_class": {
+        "applied": false,
+        "factor": 1.02548515619,
+        "price_shares": 1877355259.0,
+        "statement_shares": 1925199951.0,
+        "statement_shares_date": "2025-09-30",
+        "tolerance": 1.5
+      },
+      "source": "no verificada (se asume la de la cotización)",
+      "statements": null
+    },
     "errors": [],
     "fields": {
       "_current_derived.asset_turnover": {
@@ -723,6 +738,7 @@
         "Parte de los datos proviene de una fuente secundaria."
       ],
       "coverage_notes": [],
+      "currency_note": null,
       "highlights": [
         {
           "kicker": "FORTALEZA CLAVE",
@@ -1803,7 +1819,7 @@
         },
         "intro": "El mercado paga 32.8x beneficios, un +43% frente a la mediana del mercado (S&P 500) (23.0x); una prima que encuentra respaldo parcial en la creación de valor de la compañía (ROIC−WACC de +41.1%). El FCF yield de 3.0% es bajo: se paga caro cada dólar de caja libre. Cotiza 427% por encima del número de Graham — habitual en compañías de calidad/crecimiento, donde este criterio de 1949 resulta demasiado restrictivo.",
         "ke_note": null,
-        "market_note": "Referencia: medianas y umbrales del mercado amplio (S&P 500), no los del sector (empresa clasificada como Madura dentro del sector financials, cuyas medianas y umbrales suponen bancos y aseguradoras: se usan los del mercado amplio (S&P 500)). PROVISIONALES. Fuentes: PE: mediana de los miembros del S&P 500 (P/E TTM), chartrow.com/sp500/pe-ratio, cierre del 12-oct-2026; método de la mediana no documentado por la fuente; EV/EBITDA: mediana EV/EBITDA del S&P 500 a 1T-2025 (Ivaluate, 'EV/EBITDA multiples by sector 2025-2026', jul-2026); no hay mediana pública de constituyentes de 2026 (Damodaran ene-2026, agregado de todo EE. UU. sin financieras: 16.95x, no es una mediana). El resto de referencias de la columna MERCADO (Forward P/E, P/B, PEG, P/FCF, FCF yield, rentabilidad y márgenes) son la referencia general PROVISIONAL, fijada a mano y sin fuente, no medianas del S&P 500.",
+        "market_note": "Referencia: medianas y umbrales del mercado amplio (S&P 500), no los del sector (empresa clasificada como Madura dentro del sector financials, cuyas medianas y umbrales suponen bancos y aseguradoras: se usan los del mercado amplio (S&P 500)). PROVISIONALES. Fuentes: PE: mediana de los miembros del S&P 500 (P/E TTM), chartrow.com/sp500/pe-ratio, cierre del 12-oct-2026; método de la mediana no documentado por la fuente; FORWARD/PE: P/E forward del ÍNDICE S&P 500 (consenso de beneficios de los próximos 12 meses, Bloomberg): 18.91x al 30-sep-2026, según First Trust, 'Market Minute' de octubre de 2026 (ftportfolios.com); es un agregado del índice, NO una mediana de constituyentes: no hay mediana forward pública (chartrow.com no publica forward P/E); EV/EBITDA: mediana EV/EBITDA del S&P 500 a 1T-2025 (Ivaluate, 'EV/EBITDA multiples by sector 2025-2026', jul-2026); no hay mediana pública de constituyentes de 2026 (Damodaran ene-2026, agregado de todo EE. UU. sin financieras: 16.95x, no es una mediana). El resto de referencias de la columna MERCADO (Forward P/E, P/B, PEG, P/FCF, FCF yield, rentabilidad y márgenes) son la referencia general PROVISIONAL, fijada a mano y sin fuente, no medianas del S&P 500.",
         "normalization_note": "Beneficio FY2025 (sin TTM): reportado $20.06B, normalizado $21.18B (no recurrentes 5.6% del beneficio; cargos especiales (deterioros, litigios, reestructuración) (explicita, confianza alta), recurrente (4 de los últimos 4 ejercicios): solo el exceso sobre su promedio, −$1.13B netos; ganancias por venta de valores (explicita, confianza alta), recurrente (3 de los últimos 4 ejercicios): sin exceso sobre su promedio, no se ajusta). El score usa el beneficio normalizado.",
         "provisional_note": null,
         "rows": [
@@ -1819,13 +1835,13 @@
             "value": "32.80x"
           },
           {
-            "bench": "18.00x",
-            "gap": "+34%",
+            "bench": "18.90x",
+            "gap": "+28%",
             "key": "forward_pe",
             "label": "Forward P/E",
             "reading": "Prima moderada",
             "state": "con_dato",
-            "text": "Forward P/E de 24.2x frente a 18.0x del mercado (S&P 500) (+34%): prima moderada",
+            "text": "Forward P/E de 24.2x frente a 18.9x del mercado (S&P 500) (+28%): prima moderada",
             "tone": "warn",
             "value": "24.16x"
           },
@@ -2678,31 +2694,31 @@
             "bands": [
               {
                 "label": "Descuento profundo",
-                "range": "≤ 11.7x",
+                "range": "≤ 12.3x",
                 "tone": "pos"
               },
               {
                 "label": "Descuento",
-                "range": "11.7x – 16.2x",
+                "range": "12.3x – 17.0x",
                 "tone": "pos"
               },
               {
                 "label": "En línea",
-                "range": "16.2x – 19.8x",
+                "range": "17.0x – 20.8x",
                 "tone": "neu"
               },
               {
                 "label": "Prima moderada",
-                "range": "19.8x – 24.3x",
+                "range": "20.8x – 25.5x",
                 "tone": "warn"
               },
               {
                 "label": "Prima elevada",
-                "range": "≥ 24.3x",
+                "range": "≥ 25.5x",
                 "tone": "neg"
               }
             ],
-            "title": "Frente a la mediana del mercado (S&P 500) (18.0x)"
+            "title": "Frente a la mediana del mercado (S&P 500) (18.9x)"
           }
         ]
       },

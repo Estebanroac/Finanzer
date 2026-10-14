@@ -63,10 +63,15 @@ TICKERS = ["NFLX", "JPM", "O", "FCX", "SNOW", "V"]
 # el pipeline en Render). Cada uno tiene sus fixtures y sus golden.
 ENVS = ("local", "prod")
 DEFAULT_ENV = "local"
+# Etapa 11b: muestra amplia (capturada en local con red). No tiene golden ni los 6 tickers:
+# la usan los tests de invariantes (textos visibles, moneda, clases, UTILITY, ETF).
+SAMPLE_ENV = "muestra"
+SAMPLE_TICKERS = ["KO", "PG", "JNJ", "PFE", "XOM", "NEE", "T", "CB", "BRK-B", "MA", "AMZN", "MU", "NVDA", "PLTR",
+                  "CROX", "TSM", "ASML", "NVO", "DUK", "SPY"]
 
 
 def fixtures_dir(env=DEFAULT_ENV):
-    if env not in ENVS:
+    if env not in ENVS and env != SAMPLE_ENV:
         raise ValueError(f"entorno desconocido: {env!r} (válidos: {ENVS})")
     return os.path.join(FIXTURES_ROOT, env)
 
@@ -98,6 +103,10 @@ _YF_FRAMES = ("income_stmt", "balance_sheet", "cashflow",
 # acceso no grabado.
 _OPTIONAL_YF = ("quarterly_income_stmt", "quarterly_balance_sheet", "quarterly_cashflow")
 _SECRET_PARAMS = ("token", "crumb", "apikey", "api_key")
+# Etapa 11b: la moneda de los estados (fundamentals-timeseries) es posterior a los fixtures
+# anteriores; su ausencia se emula como "la fuente no respondió" (404), no como un acceso
+# no grabado: el pipeline la trata como moneda no verificada.
+_OPTIONAL_HTTP = ("/ws/fundamentals-timeseries/",)
 
 
 class FixtureAbsent(RuntimeError):
@@ -217,6 +226,7 @@ class FixtureStore:
         self.http = {}      # sym -> [ {url, params, status, body_json|body_text} ]
         self.yf = {}        # sym -> {attr: obj}
         self.finnhub = {}   # sym -> [ {path, params, response} ]
+        self.fx = {}        # "TWD=X" -> cierres (etapa 11b); se guardan con el ticker analizado
         self.meta = {}      # sym -> dict
         self.misses = []    # accesos no satisfechos en replay
         self.unrecorded = {}  # sym -> [attr] accesos a yfinance no soportados en record
@@ -247,10 +257,13 @@ class FixtureStore:
         sym = sym.upper()
         d = self.dir_for(sym)
         os.makedirs(d, exist_ok=True)
+        yfd = dict(self.yf.get(sym, {}))
+        if self.fx:
+            yfd["fx_history"] = dict(self.fx)
         files = {
             "metadata.json": meta,
             "yahoo_http.json": self.http.get(sym, []),
-            "yfinance.json": self.yf.get(sym, {}),
+            "yfinance.json": yfd,
             "finnhub.json": self.finnhub.get(sym, []),
         }
         for name, payload in files.items():
@@ -276,6 +289,10 @@ class FixtureStore:
         with self._lock:
             self.yf.setdefault(sym, {}).setdefault("fast_info", {})[key] = _scalar(value)
 
+    def record_fx(self, fx_sym, obj):
+        with self._lock:
+            self.fx[fx_sym] = obj
+
     def record_finnhub(self, sym, path, params, response):
         with self._lock:
             self.finnhub.setdefault(sym, []).append(
@@ -296,6 +313,11 @@ class FixtureStore:
         sym = _symbol_from_url(url, params)
         self.load(sym)
         e = self._next(self.http, sym, _key(url, params), lambda x: _key(x["url"], x["params"]))
+        if e is None and any(u in url for u in _OPTIONAL_HTTP):
+            # Etapa 11b: la sonda de moneda lleva la fecha del día (period2): se busca por URL.
+            e = next((x for x in self.http.get(sym, []) if x["url"] == url), None)
+            if e is None:
+                return _FakeResponse(404, "")
         if e is None:
             self.misses.append(f"http {sym} {_key(url, params)}")
             raise FixtureMiss(f"HTTP no grabado: {url}")
@@ -316,6 +338,15 @@ class FixtureStore:
         if attr == "fast_info":
             return dict(obj)
         return copy.deepcopy(obj)
+
+    def replay_fx(self, fx_sym):
+        """Cierres de un tipo de cambio grabados con alguno de los tickers cargados."""
+        for sym in list(self.meta):
+            fh = (self.yf.get(sym) or {}).get("fx_history") or {}
+            if fx_sym in fh:
+                return obj_to_df(fh[fx_sym])
+        self.misses.append(f"fx {fx_sym}")
+        raise FixtureMiss(f"tipo de cambio {fx_sym} no grabado")
 
     def replay_finnhub(self, sym, path, params):
         self.load(sym)
@@ -375,6 +406,8 @@ class _FixtureTicker:
     def __getattr__(self, name):
         if name.startswith("_"):
             raise AttributeError(name)
+        if name == "history":   # etapa 11b: cierres de los tipos de cambio ("TWD=X")
+            return lambda *_a, **_kw: self._store.replay_fx(self._sym)
         return self._store.replay_yf(self._sym, name)
 
 
@@ -407,6 +440,12 @@ class _RecordingTicker:
         if name.startswith("_"):
             raise AttributeError(name)
         val = getattr(self._real, name)
+        if name == "history":   # etapa 11b: solo el cierre del tipo de cambio
+            def _hist(*a, **kw):
+                df = val(*a, **kw)
+                self._store.record_fx(self._sym, df_to_obj(df[["Close"]] if "Close" in df else df))
+                return df
+            return _hist
         if name in _YF_FRAMES:
             self._store.record_yf(self._sym, name, df_to_obj(val))
         elif name == "info":
@@ -477,6 +516,7 @@ def reset_state():
     yf_adapter._session = None
     yf_adapter._crumb = None
     yf_adapter._profile_idx = 0
+    yf_adapter._qs_blocked_until = 0.0   # etapa 11b: bloqueo recordado de quoteSummary
     data_fetcher._data_cache.clear()
     finnhub_fallback._cache.clear()
 
@@ -549,6 +589,10 @@ def record(base_dir=FIXTURES_DIR):
 
     p.set(yf_adapter, "_ensure_session", _rec_ensure_session)
     p.set(yfinance, "Ticker", lambda symbol, *a, **kw: _RecordingTicker(orig_ticker, store, symbol, *a, **kw))
+    # Etapa 11b: como en replay, el Rf es el de config (los fixtures no graban ^TNX); si no,
+    # la corrida en vivo y su replay difieren y la captura no se puede verificar.
+    import cost_of_capital
+    p.set(cost_of_capital, "_fetch_risk_free", lambda: None)
     p.set(finnhub_fallback, "_get", _rec_finnhub_get)
     try:
         reset_state()

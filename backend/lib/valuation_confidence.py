@@ -73,7 +73,7 @@ def dcf_reliability(*, dcf: Optional[Dict[str, Any]], sensitivity: Optional[Dict
     if fcf_source in R["inferred_sources"]:
         low.append(f"el FCF de entrada es inferido (fuente: {fcf_source}), no sale de los estados")
     if archetype == "CYCLICAL":
-        medium.append("arquetipo CYCLICAL: el FCF depende de la fase del ciclo")
+        medium.append("empresa cíclica: el FCF depende de la fase del ciclo")
     if possible_cyclical:
         medium.append("alerta de posible cíclica")
     level = _level_from(low, medium)
@@ -195,7 +195,7 @@ def source_dimension(*, input_flags: List[Dict[str, Any]], normalization: Option
 def stability_dimension(archetype: Optional[str], classification: Dict[str, Any]) -> Dict[str, Any]:
     alerts = [a.get("code") for a in (classification or {}).get("alerts") or []]
     if archetype == "CYCLICAL":
-        return {"level": "baja", "reasons": ["arquetipo CYCLICAL: resultados ligados a la fase del ciclo"]}
+        return {"level": "baja", "reasons": ["empresa cíclica: resultados ligados a la fase del ciclo"]}
     if "posible_ciclica" in alerts:
         return {"level": "media", "reasons": ["alerta de posible cíclica"]}
     if (classification or {}).get("ambiguous"):

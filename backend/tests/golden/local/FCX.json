@@ -25,7 +25,7 @@
       {
         "category": "Solidez financiera",
         "detail": "La deuda neta equivale a menos de un año de EBITDA, un nivel cómodo que deja holgura financiera y capacidad de maniobra ante imprevistos.",
-        "reason": "Deuda baja — 0.7x EBITDA"
+        "reason": "Deuda baja — 0.8x EBITDA"
       },
       {
         "category": "Solidez financiera",
@@ -204,7 +204,7 @@
       "stability": {
         "level": "baja",
         "reasons": [
-          "arquetipo CYCLICAL: resultados ligados a la fase del ciclo"
+          "empresa cíclica: resultados ligados a la fase del ciclo"
         ]
       }
     },
@@ -212,11 +212,33 @@
     "limits_score": false,
     "reasons": [
       "convergencia no evaluable: un solo método evaluable (múltiplos frente al sector): no hay contraste; no evaluable: DCF (fiabilidad baja)",
-      "estabilidad baja: arquetipo CYCLICAL: resultados ligados a la fase del ciclo"
+      "estabilidad baja: empresa cíclica: resultados ligados a la fase del ciclo"
     ],
     "score": 0.666666666667
   },
   "data_provenance": {
+    "currency": {
+      "converted": false,
+      "price": "USD",
+      "row_aliases": {
+        "cashflow": [
+          "Depreciation And Amortization ← Depreciation Amortization Depletion"
+        ],
+        "quarterly_cashflow": [
+          "Depreciation And Amortization ← Depreciation Amortization Depletion"
+        ]
+      },
+      "share_class": {
+        "applied": false,
+        "factor": 0.997898647331,
+        "price_shares": 1436017579.37,
+        "statement_shares": 1433000000.0,
+        "statement_shares_date": "2025-12-31",
+        "tolerance": 1.5
+      },
+      "source": "financialData.financialCurrency",
+      "statements": "USD"
+    },
     "errors": [],
     "fields": {
       "_current_derived.asset_turnover": {
@@ -403,6 +425,10 @@
         "detail": "quoteSummary v10 (con crumb)",
         "source": "yahoo_quotesummary"
       },
+      "depreciation": {
+        "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
+        "source": "yfinance_statements"
+      },
       "dividendRate": {
         "detail": "quoteSummary v10 (con crumb)",
         "source": "yahoo_quotesummary"
@@ -512,6 +538,10 @@
         "source": "yahoo_quotesummary"
       },
       "priceToBook": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "quoteType": {
         "detail": "quoteSummary v10 (con crumb)",
         "source": "yahoo_quotesummary"
       },
@@ -633,11 +663,10 @@
           "2025-09-30"
         ]
       },
-      "source_fields": {
-        "depreciation": "'Depreciation And Amortization' sin dato en alguno de los 4 últimos trimestres"
-      },
+      "source_fields": {},
       "ttm_fields": [
         "capitalExpenditures",
+        "depreciation",
         "dividendsPaid",
         "ebitda",
         "freeCashflow",
@@ -726,7 +755,7 @@
           "key": "stability",
           "label": "Estabilidad del arquetipo",
           "level": "Baja",
-          "text": "arquetipo CYCLICAL: resultados ligados a la fase del ciclo"
+          "text": "empresa cíclica: resultados ligados a la fase del ciclo"
         }
       ],
       "level": "media",
@@ -749,7 +778,7 @@
           "text": "El DCF no concilia con el precio y no se usa para contrastar."
         },
         {
-          "detail": "arquetipo CYCLICAL: resultados ligados a la fase del ciclo",
+          "detail": "empresa cíclica: resultados ligados a la fase del ciclo",
           "dimension": "estabilidad",
           "level": "baja",
           "text": "Empresa cíclica: sus resultados dependen de la fase del ciclo."
@@ -841,6 +870,7 @@
         "El DCF no concilia con el precio y no se usa para contrastar."
       ],
       "coverage_notes": [],
+      "currency_note": null,
       "highlights": [
         {
           "kicker": "FORTALEZA CLAVE",
@@ -902,7 +932,7 @@
           "key": "net_debt_to_ebitda",
           "label": "Deuda neta/EBITDA",
           "state": "con_dato",
-          "value": "0.68x"
+          "value": "0.75x"
         },
         {
           "key": "beta",
@@ -990,7 +1020,7 @@
       },
       "net_debt_to_ebitda": {
         "label": "Baja",
-        "text": "la deuda neta equivale a 0.7x EBITDA, un nivel bajo",
+        "text": "la deuda neta equivale a 0.8x EBITDA, un nivel bajo",
         "tone": "pos"
       },
       "payout_ratio": {
@@ -1082,7 +1112,7 @@
               {
                 "category": "Solidez financiera",
                 "detail": "La deuda neta equivale a menos de un año de EBITDA, un nivel cómodo que deja holgura financiera y capacidad de maniobra ante imprevistos.",
-                "reason": "Deuda baja — 0.7x EBITDA"
+                "reason": "Deuda baja — 0.8x EBITDA"
               },
               {
                 "category": "Solidez financiera",
@@ -1733,7 +1763,7 @@
           "VALOR",
           "LECTURA"
         ],
-        "intro": "El current ratio de 2.07x cubre con holgura los pasivos corrientes. El apalancamiento está controlado (D/E 0.52x) (umbral del sector 0.6x). La deuda neta equivale a 0.7x EBITDA, un nivel bajo. La deuda es fácilmente servible: cobertura de intereses de 14.5x. El payout de 29% deja amplio margen para sostener y aumentar el dividendo.",
+        "intro": "El current ratio de 2.07x cubre con holgura los pasivos corrientes. El apalancamiento está controlado (D/E 0.52x) (umbral del sector 0.6x). La deuda neta equivale a 0.8x EBITDA, un nivel bajo. La deuda es fácilmente servible: cobertura de intereses de 14.5x. El payout de 29% deja amplio margen para sostener y aumentar el dividendo.",
         "rows": [
           {
             "bench": null,
@@ -1797,9 +1827,9 @@
             "label": "Deuda neta / EBITDA",
             "reading": "Baja",
             "state": "con_dato",
-            "text": "la deuda neta equivale a 0.7x EBITDA, un nivel bajo",
+            "text": "la deuda neta equivale a 0.8x EBITDA, un nivel bajo",
             "tone": "pos",
-            "value": "0.68x"
+            "value": "0.75x"
           },
           {
             "bench": null,
@@ -1951,14 +1981,14 @@
           },
           {
             "bench": "8.00x",
-            "gap": "+52%",
+            "gap": "+68%",
             "key": "ev_ebitda",
             "label": "EV/EBITDA",
             "reading": "Prima elevada",
             "state": "con_dato",
-            "text": "EV/EBITDA de 12.1x frente a 8.0x del sector (+52%): prima elevada",
+            "text": "EV/EBITDA de 13.4x frente a 8.0x del sector (+68%): prima elevada",
             "tone": "neg",
-            "value": "12.15x"
+            "value": "13.45x"
           },
           {
             "bench": "25.00x",
@@ -3476,14 +3506,14 @@
     "earnings_growth": 0.554261514029,
     "earnings_yield": 0.0275478355272,
     "ebitda": 9227000000.0,
-    "ebitda_margin": 0.356695531158,
+    "ebitda_margin": 0.32229008814,
     "enterprise_value": 112099131270.0,
     "eps": 2.03,
-    "ev_ebitda": 12.1490334095,
+    "ev_ebitda": 13.4459795214,
     "ev_revenue": 4.33350592508,
     "fcf_yield": 0.0166508959955,
-    "ffo": 5982000000.0,
-    "ffo_payout": 0.144767636242,
+    "ffo": 5092000000.0,
+    "ffo_payout": 0.170070699136,
     "forward_pe": 17.0860702966,
     "free_cash_flow": 1762000000.0,
     "gross_margin": 0.27060460801,
@@ -3493,7 +3523,7 @@
     "inventory_turnover": 2.3992878942,
     "market_cap": 105820135424.0,
     "net_debt": 6279000000.0,
-    "net_debt_to_ebitda": 0.680502872006,
+    "net_debt_to_ebitda": 0.75314861461,
     "net_debt_to_ebitda_state": "ok",
     "net_income": 2945000000.0,
     "net_income_normalized": 2460405845.4,
@@ -3501,7 +3531,7 @@
     "operating_cash_flow": 5900000000.0,
     "operating_income": 6190000000.0,
     "operating_margin": 0.239291789083,
-    "p_ffo": 17.6897578184,
+    "p_ffo": 20.7816440043,
     "payout_basis": "beneficio_neto",
     "payout_ratio": 0.294057724958,
     "pb": 5.26232688199,
@@ -3685,19 +3715,19 @@
     "debt_to_equity": 0.515142473519,
     "dividend_yield": 0.0081422173972,
     "earnings_yield": 0.0275478355272,
-    "ebitda": 9227000000.0,
-    "ebitda_margin": 0.356695531158,
+    "ebitda": 8337000000.0,
+    "ebitda_margin": 0.32229008814,
     "enterprise_value": 112099131270.0,
     "eps": 2.03,
-    "ev_ebitda": 12.1490334095,
+    "ev_ebitda": 13.4459795214,
     "ev_fcf": 63.6203923212,
     "ev_revenue": 4.33350592508,
     "fcf": 1762000000.0,
     "fcf_to_net_income": 0.598302207131,
     "fcf_yield": 0.0166508959955,
-    "ffo": 5982000000.0,
-    "ffo_payout": 0.144767636242,
-    "ffo_per_share": 4.16568732915,
+    "ffo": 5092000000.0,
+    "ffo_payout": 0.170070699136,
+    "ffo_per_share": 3.54591773321,
     "forward_pe": 17.0860702966,
     "graham_number": 25.2903386827,
     "gross_margin": 0.27060460801,
@@ -3705,13 +3735,13 @@
     "inventory_turnover": 2.3992878942,
     "market_cap": 105820131270.0,
     "net_debt": 6279000000.0,
-    "net_debt_to_ebitda": 0.680502872006,
+    "net_debt_to_ebitda": 0.75314861461,
     "net_income": 2945000000.0,
     "net_margin": 0.11384722437,
     "operating_cash_flow": 5900000000.0,
     "operating_margin": 0.239291789083,
     "p_fcf": 60.0568281895,
-    "p_ffo": 17.6897578184,
+    "p_ffo": 20.7816440043,
     "payout_ratio": 0.294057724958,
     "pb": 5.26232688199,
     "pe": 36.3004926108,

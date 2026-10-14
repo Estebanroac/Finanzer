@@ -42,6 +42,88 @@ _best_cache: Dict[str, tuple] = {}   # symbol -> (ts, info) último snapshot bue
 _BEST_MAX_AGE = _D["last_known_good_max_age_s"]
 _NESTED_KEYS = ("_yahoo_ratios", "_prior_year", "_current_derived", "_piotroski_current")
 
+# ── Etapa 11b: moneda y clase de los estados (lib/currency.py) ──
+# Un StatementContext por símbolo mientras dura su fetch: los estados de yfinance se
+# leen a través de _stmt_ticker(), que los devuelve en la moneda y la clase de la
+# cotización. Se crea en _do_fetch / _fallback_yfinance y se retira en get_ticker_info.
+_STMT_CTX: Dict[str, Any] = {}
+# Etapa 11b (velocidad): hasta cuándo se da por bloqueado quoteSummary (401) y se va directo
+# al plan B. 0 = no bloqueado. Lo vacía el reset de los tests.
+_qs_blocked_until = 0.0
+_QS_BLOCK_TTL = _D["quotesummary_block_ttl_s"]
+_TIMESERIES_URL = "https://query2.finance.yahoo.com/ws/fundamentals-timeseries/v1/finance/timeseries/{sym}"
+_TIMESERIES_PERIOD1 = "473385600"   # 1985: todos los ejercicios disponibles (Yahoo da ~4)
+
+
+class _StatementsTicker:
+    """yf.Ticker cuyos estados llegan en la moneda y la clase de la cotización."""
+
+    def __init__(self, ticker, ctx):
+        self._t = ticker
+        self._ctx = ctx
+
+    def __getattr__(self, name):
+        from currency import STATEMENT_ATTRS, add_row_aliases
+        val = getattr(self._t, name)
+        if name in STATEMENT_ATTRS:
+            ctx = self._ctx
+            # Etapa 11b: filas con nombre IFRS -> nombre canónico (antes de convertir).
+            val, used = add_row_aliases(val)
+            if used:
+                ctx.row_aliases[name] = used
+            if not ctx._class_done:
+                try:
+                    raw_bs = val if name == "balance_sheet" else self._t.balance_sheet
+                except Exception:
+                    raw_bs = None
+                ctx.prepare_class(raw_bs)
+            val = ctx.convert(name, val)
+        return val
+
+
+def _stmt_ticker(symbol: str):
+    """yf.Ticker de `symbol`, envuelto si su fetch tiene contexto de moneda/clase."""
+    import yfinance as yf
+    t = yf.Ticker(symbol)
+    ctx = _STMT_CTX.get(symbol.upper())
+    return _StatementsTicker(t, ctx) if ctx is not None else t
+
+
+def _statement_currency(symbol: str):
+    """Moneda de los estados según fundamentals-timeseries (currencyCode), el mismo
+    endpoint del que yfinance saca los estados y que responde sin crumb (también en
+    Render, donde quoteSummary da 401). None si no hay respuesta o es ambigua."""
+    try:
+        _ensure_session()
+        r = _session.get(_TIMESERIES_URL.format(sym=symbol),
+                         params={"symbol": symbol, "type": "annualTotalRevenue,annualNetIncome",
+                                 # period2 en el futuro devuelve un resultado vacío: hasta hoy.
+                                 "period1": _TIMESERIES_PERIOD1, "period2": str(int(time.time()))},
+                         timeout=_D["search_timeout_s"])
+        if r.status_code != 200:
+            return None
+        codes = set()
+        for item in ((r.json() or {}).get("timeseries") or {}).get("result") or []:
+            for v in item.values():
+                if isinstance(v, list):
+                    codes |= {x.get("currencyCode") for x in v if isinstance(x, dict) and x.get("currencyCode")}
+        return codes.pop() if len(codes) == 1 else None
+    except Exception as e:
+        logger.warning(f"[CURRENCY] moneda de los estados de {symbol} no disponible: {e}")
+        return None
+
+
+def _new_statement_context(symbol: str, price_currency, statement_currency, source: str,
+                           market_cap, price, shares):
+    """Crea el contexto, descarga el tipo de cambio si hace falta y lo registra."""
+    import yfinance as yf
+    from currency import StatementContext
+    px_shares = (market_cap / price) if (market_cap and price and price > 0) else shares
+    ctx = StatementContext(symbol, price_currency, statement_currency, source, px_shares, yf.Ticker)
+    ctx.prepare_fx()   # CurrencyConversionError si no hay tipo de cambio: no se mezcla
+    _STMT_CTX[symbol.upper()] = ctx
+    return ctx
+
 
 # ── Trazabilidad de fuente (etapa 3) ──
 # info["_provenance"] = {"campo" | "bloque.campo": {"source": ..., "detail": ...}}
@@ -267,11 +349,21 @@ def get_ticker_info(symbol: str) -> Dict[str, Any]:
             logger.info(f"[CACHE HIT after lock] {symbol}")
             return cached
 
-        info = _do_fetch(symbol)
+        try:
+            info = _do_fetch(symbol)
+            _ctx = _STMT_CTX.get(symbol)
+            if _ctx is not None:
+                info["_currency"] = _ctx.summary()
+        finally:
+            _STMT_CTX.pop(symbol, None)
 
         # ── Defensa 1: reintento ante respuesta degradada ──
+        # Etapa 11b: no en el plan B. Ahí faltan por construcción beta, forward, dividendo y
+        # crecimientos (fast_info no los trae y info está bloqueado): siempre parecía
+        # "degradado" y se repetía todo dos veces más (+2.4 s de espera). Esos huecos los cubre
+        # Finnhub (defensa 4).
         attempts = 0
-        while _is_degraded(info) and attempts < 2:
+        while _is_degraded(info) and attempts < 2 and info.get("_data_path") != "plan_b_yfinance":
             attempts += 1
             logger.warning(
                 f"[DEGRADED] {symbol}: {_completeness(info)}/{len(_COMPLETENESS_FIELDS)} "
@@ -280,9 +372,14 @@ def get_ticker_info(symbol: str) -> Dict[str, Any]:
             time.sleep(_D["degraded_retry_sleep_step_s"] * attempts)
             try:
                 retry_info = _do_fetch(symbol)
+                _ctx = _STMT_CTX.get(symbol)
+                if _ctx is not None:
+                    retry_info["_currency"] = _ctx.summary()
             except Exception as e:
                 logger.warning(f"[DEGRADED] reintento falló para {symbol}: {e}")
                 break
+            finally:
+                _STMT_CTX.pop(symbol, None)
             if _quality(retry_info) > _quality(info):
                 info = retry_info
 
@@ -382,6 +479,11 @@ def _do_fetch(symbol: str) -> Dict[str, Any]:
 
     _ensure_session()
 
+    global _qs_blocked_until
+    if time.time() < _qs_blocked_until:
+        logger.info(f"[PLAN B] quoteSummary bloqueado (401 reciente): {symbol} va directo al plan B")
+        return _fallback_yfinance(symbol)
+
     modules = [
         "financialData", "defaultKeyStatistics", "assetProfile",
         "price", "summaryDetail",
@@ -410,6 +512,8 @@ def _do_fetch(symbol: str) -> Dict[str, Any]:
 
         if r.status_code != 200:
             logger.error(f"Yahoo API failed for {symbol}: {r.status_code}")
+            if r.status_code == 401:   # crumb rechazado aun refrescado: bloqueo de la IP, no del símbolo
+                _qs_blocked_until = time.time() + _QS_BLOCK_TTL
             return _fallback_yfinance(symbol)
 
     try:
@@ -461,6 +565,13 @@ def _do_fetch(symbol: str) -> Dict[str, Any]:
     current_price = _raw(price_data.get("regularMarketPrice"))
     market_cap = _raw(price_data.get("marketCap")) or _raw(summary.get("marketCap"))
     shares = _raw(kstat.get("impliedSharesOutstanding")) or _raw(kstat.get("sharesOutstanding"))
+
+    # Etapa 11b: moneda de los estados (financialData) frente a la de la cotización.
+    _fin_cur = fd.get("financialCurrency") or (data.get("earnings") or {}).get("financialCurrency")
+    ctx = _new_statement_context(symbol, price_data.get("currency"), _fin_cur,
+                                 "financialData.financialCurrency" if _fin_cur
+                                 else "no verificada (se asume la de la cotización)",
+                                 market_cap, current_price, shares)
 
     # ── Income statement: financialData is primary, incomeStatementHistory is backup ──
     revenue = _raw(fd.get("totalRevenue")) or _raw(latest_inc.get("totalRevenue"))
@@ -628,6 +739,8 @@ def _do_fetch(symbol: str) -> Dict[str, Any]:
         "previousClose": _raw(summary.get("previousClose")),
         "marketCap": market_cap,
         "currency": price_data.get("currency", "USD"),
+        # Etapa 11b: tipo de instrumento (EQUITY, ETF, MUTUALFUND…); main rechaza lo que no es acción.
+        "quoteType": price_data.get("quoteType"),
         "exchange": price_data.get("exchangeName", price_data.get("exchange", "Unknown")),
         "fiftyTwoWeekHigh": _raw(summary.get("fiftyTwoWeekHigh")),
         "fiftyTwoWeekLow": _raw(summary.get("fiftyTwoWeekLow")),
@@ -738,14 +851,25 @@ def _do_fetch(symbol: str) -> Dict[str, Any]:
         },
     }
 
+    if ctx.convert_currency:
+        _restate_quote_summary(info, ctx)
+    # Etapa 11b: beneficio de la MISMA fuente y ventana que trailingEps (defaultKeyStatistics),
+    # para la regla BPA × acciones ≈ beneficio (el TTM de los estados puede ir un trimestre atrás).
+    info["_eps_net_income"] = info.get("netIncome")
+
     # ── Enrich prior-year data with yfinance (historical statements) ──
+    from currency import CurrencyConversionError
     try:
         info = _enrich_prior_year_data(symbol, info)
         info = _apply_ttm(symbol, info, plan_b=False)
+    except CurrencyConversionError:
+        raise
     except Exception as e:
         logger.warning(f"[ENRICH] Prior-year enrichment failed for {symbol}: {e}")
         _tag_provenance(info, "sin_dato", f"estados anuales de yfinance: {e}",
                         paths=["_prior_year", "_piotroski_current"], overwrite=True)
+    if ctx.class_applied:
+        _restate_share_class(info, ctx)
     info["_data_path"] = "yahoo_quotesummary"
     _tag_provenance(info, "yahoo_quotesummary", "quoteSummary v10 (con crumb)")
 
@@ -767,6 +891,60 @@ _UNUSUAL_ROWS = (
 )
 
 
+# Importes de financialData / *History de quoteSummary (moneda de los estados).
+_QS_FLOW_KEYS = ("totalRevenue", "grossProfits", "operatingIncome", "netIncome", "ebitda", "interestExpense",
+                 "depreciation", "operatingCashflow", "capitalExpenditures", "freeCashflow", "dividendsPaid")
+_QS_BALANCE_KEYS = ("totalAssets", "totalCurrentAssets", "totalCurrentLiabilities", "totalDebt", "longTermDebt",
+                    "totalStockholderEquity", "totalLiab", "cash", "retainedEarnings", "inventory")
+# Ratios que Yahoo calcula mezclando la capitalización (cotización) con los estados.
+_QS_MIXED_RATIOS = ("enterpriseValue", "enterpriseToEbitda", "enterpriseToRevenue", "priceToBook")
+
+
+def _restate_quote_summary(info: Dict[str, Any], ctx) -> None:
+    """Etapa 11b, ruta quoteSummary: los importes de financialData y de los módulos
+    *History vienen en la moneda de los estados. Flujos (TTM) al promedio de los 12
+    meses; balance al último cierre; año previo al del ejercicio anterior. Los estados
+    de yfinance (ya convertidos por período) y el TTM trimestral los sustituyen
+    después donde haya dato. Los ratios mixtos de Yahoo se descartan (el motor los
+    recalcula con cifras en una sola moneda)."""
+    import pandas as pd
+    for k in _QS_FLOW_KEYS:
+        info[k] = ctx.convert_amount(info.get(k), "flow")
+    for k in _QS_BALANCE_KEYS:
+        info[k] = ctx.convert_amount(info.get(k), "balance")
+    py = info.get("_prior_year") or {}
+    end_prev = (ctx.fx.closes.index[-1] - pd.DateOffset(years=1)) if ctx.fx is not None else None
+    for k in ("net_income", "operating_cash_flow", "revenue"):
+        py[k] = ctx.convert_amount(py.get(k), "flow", end_prev)
+    for k in ("total_assets", "long_term_debt", "equity"):
+        py[k] = ctx.convert_amount(py.get(k), "balance", end_prev)
+    yr = info.get("_yahoo_ratios") or {}
+    for k in _QS_MIXED_RATIOS:
+        yr[k] = None
+    info["priceToBook"] = None
+    eq, sh = info.get("totalStockholderEquity"), ctx.price_shares or info.get("sharesOutstanding")
+    info["bookValue"] = (eq / sh) if (eq is not None and sh) else None
+    info["_yearly_financials"] = []
+    _tag_provenance(info, "derivado",
+                    f"convertido de {ctx.statement_currency} a {ctx.price_currency} (tipo de cambio de Yahoo)",
+                    paths=[k for k in _QS_FLOW_KEYS + _QS_BALANCE_KEYS + ("bookValue",) if info.get(k) is not None],
+                    overwrite=True)
+
+
+def _restate_share_class(info: Dict[str, Any], ctx) -> None:
+    """Etapa 11b, ruta quoteSummary con los estados en otra clase de acciones (BRK-B):
+    el valor en libros por acción y los ratios de Yahoo por acción vienen en la clase
+    de los estados; se rehacen con las acciones de la clase que cotiza."""
+    eq, sh = info.get("totalStockholderEquity"), ctx.price_shares or info.get("sharesOutstanding")
+    info["bookValue"] = (eq / sh) if (eq is not None and sh) else None
+    info["priceToBook"] = None
+    yr = info.get("_yahoo_ratios") or {}
+    for k in _QS_MIXED_RATIOS:
+        yr[k] = None
+    _tag_provenance(info, "derivado", "patrimonio / acciones de la clase que cotiza (los estados usan otra clase)",
+                    paths=["bookValue"], overwrite=True)
+
+
 def _apply_ttm(symbol: str, info: Dict[str, Any], plan_b: bool) -> Dict[str, Any]:
     """Etapa 7: TTM desde los estados TRIMESTRALES de yfinance (lib/ttm.py).
 
@@ -778,15 +956,19 @@ def _apply_ttm(symbol: str, info: Dict[str, Any], plan_b: bool) -> Dict[str, Any
     from ttm import build_ttm, FLOW_KEYS
     frames, errors = {}, []
     try:
-        import yfinance as yf
-        ticker = yf.Ticker(symbol)
+        from currency import CurrencyConversionError
+        ticker = _stmt_ticker(symbol)
         for attr in ("quarterly_income_stmt", "quarterly_cashflow", "quarterly_balance_sheet"):
             try:
                 frames[attr] = getattr(ticker, attr)
+            except CurrencyConversionError:
+                raise
             except Exception as e:
                 frames[attr] = None
                 errors.append(f"{attr}: {type(e).__name__}")
     except Exception as e:
+        if type(e).__name__ == "CurrencyConversionError":
+            raise
         errors.append(f"yfinance: {type(e).__name__}")
     t = build_ttm(frames.get("quarterly_income_stmt"), frames.get("quarterly_cashflow"),
                   frames.get("quarterly_balance_sheet"))
@@ -806,6 +988,7 @@ def _apply_ttm(symbol: str, info: Dict[str, Any], plan_b: bool) -> Dict[str, Any
     sh = (q.get("Diluted Average Shares") or [None])[0]
     if plan_b and "netIncome" in t["values"] and sh:
         info["trailingEps"] = t["values"]["netIncome"] / sh
+        info["_eps_net_income"] = t["values"]["netIncome"]   # etapa 11b: por construcción
         eps_basis = "ttm"
         _tag_provenance(info, "derivado", "BPA TTM = beneficio neto TTM / acciones diluidas medias del último "
                                           "trimestre", paths=["trailingEps"], overwrite=True)
@@ -824,7 +1007,7 @@ def _apply_ttm(symbol: str, info: Dict[str, Any], plan_b: bool) -> Dict[str, Any
     return info
 
 
-def _enrich_prior_year_data(symbol: str, info: Dict[str, Any]) -> Dict[str, Any]:
+def _enrich_prior_year_data(symbol: str, info: Dict[str, Any], ticker=None) -> Dict[str, Any]:
     """
     Enrich prior-year data using yfinance historical statements.
 
@@ -839,7 +1022,9 @@ def _enrich_prior_year_data(symbol: str, info: Dict[str, Any]) -> Dict[str, Any]
         return info
 
     t0 = time.time()
-    ticker = yf.Ticker(symbol)
+    # Etapa 11b: estados en la moneda y la clase de la cotización. El plan B pasa su propio
+    # Ticker (ya descargó los anuales): con uno nuevo se volvían a bajar los tres.
+    ticker = ticker if ticker is not None else _stmt_ticker(symbol)
 
     prior = info.get("_prior_year", {})
     derived = info.get("_current_derived", {})
@@ -857,10 +1042,13 @@ def _enrich_prior_year_data(symbol: str, info: Dict[str, Any]) -> Dict[str, Any]
         return None
 
     # ── Fetch statements (yfinance caches internally) ──
+    from currency import CurrencyConversionError
     try:
         inc = ticker.income_stmt
         bs = ticker.balance_sheet
         cf = ticker.cashflow
+    except CurrencyConversionError:
+        raise
     except Exception as e:
         logger.debug(f"[ENRICH] yfinance statement fetch failed: {e}")
         return info
@@ -1087,12 +1275,28 @@ def _fallback_yfinance(symbol: str) -> Dict[str, Any]:
     except Exception:
         return {}
 
+    # Etapa 11b: moneda de los estados (fundamentals-timeseries; quoteSummary da 401 en
+    # Render) y clase de acciones: los estados se leen ya reexpresados a la cotización.
+    _fin_cur = _statement_currency(symbol)
+    _ctx = _new_statement_context(symbol, fi.get("currency"), _fin_cur,
+                                  "fundamentals-timeseries (currencyCode)" if _fin_cur
+                                  else "no verificada (se asume la de la cotización)",
+                                  fi.get("marketCap"), fi.get("lastPrice"), fi.get("shares"))
+    ticker = _StatementsTicker(ticker, _ctx)
+    # El factor de clase necesita el balance anual: se lee ya (el mismo Ticker lo cachea para
+    # _get_bs). Si lo calculara el primer hilo que convierte, el balance se bajaría dos veces.
+    try:
+        _ctx.prepare_class(ticker._t.balance_sheet)
+    except Exception:
+        _ctx.prepare_class(None)
+
     info: Dict[str, Any] = {
         "symbol": symbol,
         "regularMarketPrice": fi.get("lastPrice"),
         "currentPrice": fi.get("lastPrice"),
         "marketCap": fi.get("marketCap"),
         "currency": fi.get("currency", "USD"),
+        "quoteType": fi.get("quoteType"),   # etapa 11b (ver _do_fetch)
         "exchange": fi.get("exchange", "Unknown"),
         "fiftyTwoWeekHigh": fi.get("yearHigh"),
         "fiftyTwoWeekLow": fi.get("yearLow"),
@@ -1188,10 +1392,13 @@ def _fallback_yfinance(symbol: str) -> Dict[str, Any]:
             ex.submit(_get_bs): "balance",
             ex.submit(_get_cf): "cashflow",
         }
+        from currency import CurrencyConversionError
         for f in as_completed(futs, timeout=_D["statements_timeout_s"]):
             key = futs[f]
             try:
                 results[key] = f.result()
+            except CurrencyConversionError:
+                raise
             except Exception:
                 results[key] = {}
 
@@ -1203,6 +1410,7 @@ def _fallback_yfinance(symbol: str) -> Dict[str, Any]:
     info["netIncome"] = inc.get("Net Income")
     info["ebitda"] = inc.get("EBITDA")
     info["trailingEps"] = inc.get("Diluted EPS")
+    info["_eps_net_income"] = inc.get("Net Income")   # etapa 11b: mismo ejercicio que el BPA
     info["interestExpense"] = inc.get("Interest Expense")
     info["depreciation"] = inc.get("Depreciation And Amortization")
 
@@ -1239,8 +1447,10 @@ def _fallback_yfinance(symbol: str) -> Dict[str, Any]:
     # no se ejecutaba y _prior_year solo tenía lo que aportaba Finnhub, sin
     # acciones. Los estados anuales de yfinance (sin crumb) sí están disponibles.
     try:
-        info = _enrich_prior_year_data(symbol, info)
+        info = _enrich_prior_year_data(symbol, info, ticker=ticker)
         info = _apply_ttm(symbol, info, plan_b=True)
+    except CurrencyConversionError:
+        raise
     except Exception as e:
         logger.warning(f"[ENRICH] Prior-year enrichment (fallback) failed for {symbol}: {e}")
         _tag_provenance(info, "sin_dato", f"estados anuales de yfinance: {e}",

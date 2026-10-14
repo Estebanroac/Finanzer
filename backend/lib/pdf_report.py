@@ -443,6 +443,10 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
             f"<font color='{BRAND_TXT.hexval()}'><b>{_esc(D['archetype_label'])}</b></font>&nbsp;&nbsp;·&nbsp;&nbsp;"
             + _esc(" · ".join(C["classification_notes"])),
             ParagraphStyle('ccls', fontName='Helvetica', fontSize=8.4, leading=11.5, textColor=BODY))]
+    if C.get("currency_note"):   # etapa 11b: estados convertidos a la moneda/clase de la cotización
+        _title_flow += [Spacer(1, 3), Paragraph(
+            _esc(C["currency_note"]), ParagraphStyle('ccur', fontName='Helvetica', fontSize=8.0, leading=10.8,
+                                                      textColor=MUTED))]
 
     # Banda 2 — las DOS puntuaciones (izquierda) y sus componentes (derecha):
     # calidad = 4 categorías; precio = Valoración (múltiplos + DCF).

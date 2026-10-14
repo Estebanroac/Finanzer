@@ -28,6 +28,15 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import fixture_backend as fb  # noqa: E402
 
 
+def _run(sym, store):
+    """Análisis o, si el backend lo rechaza (etapa 11b: ETF, sin tipo de cambio), su error HTTP."""
+    from fastapi import HTTPException
+    try:
+        return fb.run_analysis(sym, store)
+    except HTTPException as e:
+        return {"__http_error__": e.status_code, "detail": e.detail}
+
+
 def capture(sym, fixtures_dir, force, env="local"):
     import yf_adapter
     d = os.path.join(fixtures_dir, sym)
@@ -38,7 +47,7 @@ def capture(sym, fixtures_dir, force, env="local"):
     key_present = bool(os.environ.get("FINNHUB_API_KEY", "").strip())
     now_local = _dt.datetime.now().astimezone()
     with fb.record(fixtures_dir) as store:
-        live = fb.run_analysis(sym, store)
+        live = _run(sym, store)
         entry = yf_adapter._cache.get(sym)
         degraded = bool(entry[2]) if entry else None
 
@@ -77,7 +86,7 @@ def capture(sym, fixtures_dir, force, env="local"):
     # Verificación: replay desde .tmp == corrida en vivo
     with fb.replay(fixtures_dir) as rstore:
         rstore.dir_for = lambda _s: tmp
-        replayed = fb.run_analysis(sym, rstore)
+        replayed = _run(sym, rstore)
         misses = list(rstore.misses)
     ok = fb.raw_json(live) == fb.raw_json(replayed) and not misses
     if not ok:
@@ -96,7 +105,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("tickers", nargs="*", default=fb.TICKERS)
     ap.add_argument("--force", action="store_true", help="sobrescribir fixtures existentes")
-    ap.add_argument("--env", default=fb.DEFAULT_ENV, choices=["local"],
+    ap.add_argument("--env", default=fb.DEFAULT_ENV, choices=["local", fb.SAMPLE_ENV],
                     help="juego de datos a capturar (prod llega por /api/_capture)")
     args = ap.parse_args()
     logging.disable(logging.WARNING)

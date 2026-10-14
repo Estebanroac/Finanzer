@@ -41,6 +41,15 @@ runway_points = [6, 2, -2, -6]
 # 5–6.5x; > 7.5x es elevado y > 9x alto. Propuesta PROVISIONAL, sin muestra.
 reit_nde_bounds = [5.0, 6.5, 7.5, 9.0]   # ≤5 conservador / ≤6.5 adecuado / ≤7.5 en línea / ≤9 elevado / alto
 reit_nde_points = [4, 2, 0, -2, -4]
+# Etapa 11b (PROVISIONAL): UTILITY regulada, deuda neta/EBITDA. Una utility con grado de
+# inversión opera en 5.5–6.5x (base regulada financiada con deuda): ≤4.5 conservadora /
+# ≤5.5 adecuada / ≤6.5 en línea / ≤7.5 elevada / alta.
+utility_nde_bounds = [4.5, 5.5, 6.5, 7.5]
+utility_nde_points = [4, 2, 0, -2, -4]
+# Etapa 11b (PROVISIONAL): UTILITY, cobertura de intereses (EBIT / intereses). Una utility
+# regulada opera con 2.5–3.5x: ≥3.5 fuerte / ≥2.5 adecuada / ≥2.0 en línea / ≥1.5 ajustada / riesgo.
+utility_coverage_bounds = [3.5, 2.5, 2.0, 1.5]
+utility_coverage_points = [3, 1, 0, -2, -3]
 
 [score.solidez_financial]           # score_solidez_financiera_financial (bancos)
 max_without_regulatory = 18         # sin CET1/Tier 1 el máximo es 18/20
@@ -91,6 +100,9 @@ dcf_points_high = [4, 2, 0, -2, -4]
 dcf_points_medium = [2, 1, 0, -1, -2]
 reit_pffo_bounds = [12, 16, 20, 25] # REIT: P/FFO ≤ (en lugar de P/E y P/FCF)
 reit_pffo_points = [4, 2, 0, -2, -4]
+# Etapa 11b (PROVISIONAL): UTILITY, rentabilidad por dividendo ≥ (junto al P/E frente al sector).
+utility_yield_bounds = [0.05, 0.04, 0.03, 0.02]
+utility_yield_points = [4, 2, 0, -2, -4]
 pe_value_mults = [0.7, 0.9, 1.1, 1.3]
 pe_value_points = [5, 3, 0, -2, -4]
 # Etapa 9a: bloques de múltiplos correlacionados (P/E, Forward P/E, P/FCF,

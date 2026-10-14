@@ -13,6 +13,8 @@ Arquetipos, en orden de prioridad (listas y umbrales en config/sectors.toml):
                      corredores de seguros y redes de pago sin cartera de
                      préstamos (Credit Services con poca intensidad de balance).
   REIT               industria "REIT - …" (promotoras y servicios inmobiliarios no).
+  UTILITY            utilities reguladas (eléctricas, gas, agua y diversificadas);
+                     productores independientes y renovables no (etapa 11b).
   GROWTH_PRE_PROFIT  BPA TTM <= 0 o margen neto < 0, y CAGR real de ingresos a
                      3 años > 15% (con los 4 ejercicios anuales).
   CYCLICAL           industria de la lista de cíclicas de Yahoo; las
@@ -36,7 +38,8 @@ REIT = "REIT"
 GROWTH_PRE_PROFIT = "GROWTH_PRE_PROFIT"
 CYCLICAL = "CYCLICAL"
 MATURE = "MATURE"
-ARCHETYPES = (FINANCIAL, REIT, GROWTH_PRE_PROFIT, CYCLICAL, MATURE)
+UTILITY = "UTILITY"
+ARCHETYPES = (FINANCIAL, REIT, UTILITY, GROWTH_PRE_PROFIT, CYCLICAL, MATURE)
 
 _C = cfg("sectors.archetypes")
 
@@ -45,6 +48,7 @@ _C = cfg("sectors.archetypes")
 ARCHETYPE_LABELS = {
     FINANCIAL: "Banco/aseguradora",
     REIT: "REIT",
+    UTILITY: "Utility regulada",
     GROWTH_PRE_PROFIT: "Crecimiento sin beneficio",
     CYCLICAL: "Cíclica",
     MATURE: "Madura",
@@ -52,6 +56,7 @@ ARCHETYPE_LABELS = {
 ARCHETYPE_GROUP = {
     FINANCIAL: "bancos y aseguradoras",
     REIT: "REIT",
+    UTILITY: "utilities reguladas",
     GROWTH_PRE_PROFIT: "empresas en crecimiento sin beneficio",
     CYCLICAL: "empresas cíclicas",
     MATURE: "empresas maduras",
@@ -71,6 +76,8 @@ WHY_NOT_APPLICABLE = {
     FINANCIAL: "el balance es el producto (depósitos y préstamos)",
     REIT: "el beneficio contable está distorsionado por la depreciación inmobiliaria",
     GROWTH_PRE_PROFIT: "aún no tiene beneficios que capitalizar",
+    UTILITY: "su FCF es negativo por diseño: la inversión en la base de activos regulada supera al flujo "
+             "operativo y se financia con deuda",
     CYCLICAL: "el resultado de un solo ejercicio depende de la fase del ciclo",
     MATURE: "",
 }
@@ -79,6 +86,14 @@ WHY_NOT_APPLICABLE = {
 WHY_NOT_APPLICABLE_KEY = {
     (REIT, "current_ratio"): "activos inmobiliarios de largo plazo financiados con deuda a largo plazo; "
                              "el circulante no mide su liquidez",
+    (UTILITY, "altman"): "el Altman se calibró con quiebras de empresas industriales; una utility regulada opera con "
+                         "deuda alta y circulante negativo por diseño",
+    (UTILITY, "de"): "en una utility regulada el apalancamiento se mide por la deuda neta/EBITDA, con bandas propias",
+    (UTILITY, "current_ratio"): "la base regulada se financia a largo plazo; el circulante negativo es estructural y no "
+                                "mide su liquidez",
+    (UTILITY, "ev_ebitda"): "se valora por P/E frente al sector y rentabilidad por dividendo",
+    (UTILITY, "peg"): "su crecimiento lo fija la base regulada, no el mercado: se valora por P/E y dividendo",
+    (UTILITY, "garp"): "se valora por P/E y dividendo, sin bonos de crecimiento",
     (GROWTH_PRE_PROFIT, "altman"): "el Altman se calibró con quiebras de empresas maduras endeudadas; "
                                    "su solidez se mide por el runway (caja frente a la quema de FCF)",
     # Etapa 9a: rentabilidad de REIT (sobre FFO) y de GROWTH_PRE_PROFIT (márgenes de su fase).
@@ -261,6 +276,12 @@ def classify(*, sector: Optional[str], industry: Optional[str], eps_ttm: Optiona
     # 3. REIT: solo industrias "REIT - …".
     if any(ind.startswith(p) for p in _C["reit_prefixes"]):
         return out(REIT, f"Clasificada como REIT {by_ind}", "industria_reit", f"REIT por su industria ({ind_txt}).")
+
+    # 3b. UTILITY (etapa 11b): solo las reguladas, por industria.
+    if ind in _C["utility_industries"]:
+        return out(UTILITY, f"Clasificada como UTILITY {by_ind}", "industria_utility",
+                   f"Utility regulada por su industria ({ind_txt}): el regulador fija su retorno sobre una base de "
+                   "activos financiada con deuda.")
 
     # 4. GROWTH_PRE_PROFIT: sin beneficio y crecimiento real alto.
     no_profit = (eps_ttm is not None and eps_ttm <= 0) or (net_margin_ttm is not None and net_margin_ttm < 0)

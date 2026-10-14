@@ -150,10 +150,12 @@ de = 0.6
 # (bancos con P/E ~13). Las métricas que no figuran aquí heredan de default.
 [benchmarks.market]                # PROVISIONAL
 pe = 23.0
+forward_pe = 18.9
 ev_ebitda = 13.2
 
 [benchmarks.market_source]         # fuente y fecha de cada mediana del perfil market
 pe = "mediana de los miembros del S&P 500 (P/E TTM), chartrow.com/sp500/pe-ratio, cierre del 12-oct-2026; método de la mediana no documentado por la fuente"
+forward_pe = "P/E forward del ÍNDICE S&P 500 (consenso de beneficios de los próximos 12 meses, Bloomberg): 18.91x al 30-sep-2026, según First Trust, 'Market Minute' de octubre de 2026 (ftportfolios.com); es un agregado del índice, NO una mediana de constituyentes: no hay mediana forward pública (chartrow.com no publica forward P/E)"
 ev_ebitda = "mediana EV/EBITDA del S&P 500 a 1T-2025 (Ivaluate, 'EV/EBITDA multiples by sector 2025-2026', jul-2026); no hay mediana pública de constituyentes de 2026 (Damodaran ene-2026, agregado de todo EE. UU. sin financieras: 16.95x, no es una mediana)"
 
 # Arquetipo que suponen las medianas de cada sector. Si el arquetipo de la
@@ -350,6 +352,12 @@ financial_mature_industries = ["asset management", "financial data & stock excha
 payment_network_industries = ["credit services"]
 payment_network_max_assets_to_revenue = 3.0      # V 2.5x; AXP ~4x, SYF ~5.5x, COF ~12x
 reit_prefixes = ["reit"]                         # "REIT - Retail", ...; promotoras y servicios NO
+# Etapa 11b: UTILITY regulada (tarifa fijada por el regulador sobre una base de activos).
+# Fuera: "utilities - independent power producers" (generación mercantil, precio de
+# mercado: cíclica o madura según sus reglas) y "utilities - renewable" (mezcla
+# promotores en crecimiento y yieldcos; sin regulación tarifaria común).
+utility_industries = ["utilities - regulated electric", "utilities - regulated gas",
+                      "utilities - regulated water", "utilities - diversified"]
 growth_pre_profit_min_revenue_cagr = 0.15        # CAGR real de ingresos a 3 años (4 ejercicios)
 # Industrias cíclicas SIEMPRE (nombres exactos de Yahoo, normalizados).
 cyclical_industries = [
@@ -403,4 +411,10 @@ GROWTH_PRE_PROFIT = ["pe", "peg", "forward_pe", "graham", "eps_growth", "altman"
                      # bruto, margen operativo (bandas propias) y su mejora, y margen FCF − SBC.
                      "roe", "roa", "net_margin", "roic_wacc"]
 CYCLICAL = ["pe", "peg", "forward_pe", "fcf_growth"]
+# Etapa 11b: UTILITY regulada. Se valora por P/E y rentabilidad por dividendo; la solidez,
+# por deuda neta/EBITDA con bandas propias. El FCF es negativo por diseño (la inversión en
+# la base regulada supera al flujo operativo), así que FCF, P/FCF, DCF y su crecimiento no
+# aplican; tampoco el Altman ni el D/E genérico (deuda alta y circulante negativo por diseño).
+UTILITY = ["altman", "de", "current_ratio", "fcf", "fcf_to_ni", "p_fcf", "fcf_growth", "dcf",
+           "ev_ebitda", "peg", "garp"]
 MATURE = []

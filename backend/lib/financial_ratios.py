@@ -15,7 +15,7 @@ from enum import Enum
 
 # Configuración única (backend/config/*.toml, validada al importar settings).
 from settings import cfg
-from classify import (FINANCIAL, REIT, GROWTH_PRE_PROFIT, CYCLICAL, MATURE, not_applicable, not_applicable_text,
+from classify import (FINANCIAL, REIT, UTILITY, GROWTH_PRE_PROFIT, CYCLICAL, MATURE, not_applicable, not_applicable_text,
                       norm_industry)
 
 _WACC = cfg("valuation.wacc")
@@ -1830,7 +1830,13 @@ def score_solidez_financiera(
             adj = p[4]
             sev = "severe"
             reason = "Riesgo de cobertura"
-        
+        if archetype == UTILITY:
+            # Etapa 11b: bandas de utility regulada (opera con 2.5–3.5x por su deuda estructural).
+            b, p = T["utility_coverage_bounds"], T["utility_coverage_points"]
+            adj, sev, lab = _banded(interest_coverage, b, p, ("Fuerte", "Adecuada", "En línea", "Ajustada", "Riesgo"))
+            reason = (f"Cobertura {lab.lower()} para una utility (bandas ≥{b[0]:g}x / ≥{b[1]:g}x / ≥{b[2]:g}x / "
+                      f"≥{b[3]:g}x)")
+
         base_score += adj
         _a["coverage"] = adj
         if _ic_state == "negativa":
@@ -1876,9 +1882,12 @@ def score_solidez_financiera(
     if archetype == GROWTH_PRE_PROFIT:
         cov.comp("Runway", T["runway_points"], _a.get("runway"), _rw_reason)
     cov.comp("Current ratio", T["current_points"], _a.get("current"), na=_na["current_ratio"])
-    # REIT (etapa 9a): deuda neta/EBITDA con bandas de REIT es la métrica de apalancamiento.
-    if archetype == REIT:
-        b, p = T["reit_nde_bounds"], T["reit_nde_points"]
+    # REIT (etapa 9a) y UTILITY (etapa 11b): deuda neta/EBITDA con bandas propias es la
+    # métrica de apalancamiento.
+    if archetype in (REIT, UTILITY):
+        _k = "reit" if archetype == REIT else "utility"
+        b, p = T[f"{_k}_nde_bounds"], T[f"{_k}_nde_points"]
+        _who, _tag = (("un REIT", "REIT") if archetype == REIT else ("una utility regulada", "utility"))
         _nde_reason = None
         if net_debt_to_ebitda is None:
             _nde_reason = "sin deuda neta/EBITDA"
@@ -1887,12 +1896,13 @@ def score_solidez_financiera(
                 adj, sev, lab = p[0], "excellent", "Caja neta"
             else:
                 adj, sev, lab = _banded(net_debt_to_ebitda, b, p,
-                                        ("Conservador para un REIT", "Adecuado para un REIT", "En línea con REIT",
-                                         "Elevado para un REIT", "Alto para un REIT"), higher=False)
+                                        (f"Conservador para {_who}", f"Adecuado para {_who}",
+                                         "En línea con REIT" if archetype == REIT else "En línea con las utilities",
+                                         f"Elevado para {_who}", f"Alto para {_who}"), higher=False)
             base_score += adj
             _a["nde"] = adj
             adjustments.append({"metric": "Deuda neta/EBITDA", "value": f"{net_debt_to_ebitda:.1f}x", "adjustment": adj,
-                                "reason": f"{lab} ({net_debt_to_ebitda:.1f}x; bandas REIT ≤{b[0]:.1f}x / ≤{b[1]:.1f}x / "
+                                "reason": f"{lab} ({net_debt_to_ebitda:.1f}x; bandas {_tag} ≤{b[0]:.1f}x / ≤{b[1]:.1f}x / "
                                           f"≤{b[2]:.1f}x / ≤{b[3]:.1f}x)", "severity": sev})
         cov.comp("Deuda neta/EBITDA", p, _a.get("nde"), _nde_reason)
     if not _de_info and archetype != REIT:   # en REIT el D/E es informativo, con o sin dato
@@ -2365,6 +2375,7 @@ def score_valoracion(
     sector_ev_ebitda: Optional[float] = None,
     fcf_yield: Optional[float] = None,
     benchmark_profile: Optional[str] = None,
+    sector_forward_pe: Optional[float] = None,
     # Parámetros v2.2+ para ajuste growth/value
     revenue_growth_3y: Optional[float] = None,
     eps_growth_3y: Optional[float] = None,
@@ -2520,6 +2531,21 @@ def score_valoracion(
             adjustments.append({"metric": "Regla de 40", "value": f"{r40 * 100:.0f}", "adjustment": adj,
                                 "reason": reason, "severity": sev})
 
+    # ─── UTILITY (etapa 11b): rentabilidad por dividendo (junto al P/E frente al sector) ────
+    if archetype == UTILITY:
+        if dividend_yield is not None and dividend_yield > 0:
+            b, p = T["utility_yield_bounds"], T["utility_yield_points"]
+            i = next((k for k, x in enumerate(b) if dividend_yield >= x), len(b))
+            adj = p[i]
+            sev = ("excellent", "good", "ok", "moderate", "severe")[i]
+            reason = (("Muy atractiva", "Atractiva", "En línea", "Baja", "Muy baja")[i]
+                      + f" para una utility ({dividend_yield:.1%}; bandas ≥{b[0]:.0%} / ≥{b[1]:.0%} / ≥{b[2]:.0%} / "
+                        f"≥{b[3]:.0%})")
+            base_score += adj
+            _a["dy"] = adj
+            adjustments.append({"metric": "Rentabilidad por dividendo (utility)", "value": f"{dividend_yield:.1%}",
+                                "adjustment": adj, "reason": reason, "severity": sev})
+
     # ─── P/E vs Sector (hasta ±5 pts) — si aplica al arquetipo ─────
     if not _na["pe"] and not is_reit and pe is not None and pe > 0:
         pe_threshold = sector_pe if sector_pe and sector_pe > 0 else _BENCH_FALLBACK["pe"]
@@ -2568,6 +2594,15 @@ def score_valoracion(
             # Etapa 9a: con dato y sin compresión cuenta como 0 en el promedio del bloque.
             adj, sev = 0, "ok"
             reason = f"Sin compresión del P/E ({pe:.0f}x → {forward_pe:.0f}x forward)"
+        # Etapa 11b: la compresión no suma si el Forward P/E sigue en la peor banda frente a su
+        # referencia (PLTR: 177x -> 89x es "fuerte compresión", pero 89x sigue muy caro).
+        _fref = sector_forward_pe if sector_forward_pe and sector_forward_pe > 0 else (
+            sector_pe if sector_pe and sector_pe > 0 else _BENCH_FALLBACK["pe"])
+        _worst = _fref * T["pe_value_mults"][-1]
+        if adj > 0 and forward_pe > _worst:
+            reason = (f"{reason}, sin efecto: el Forward P/E ({forward_pe:.1f}x) sigue en la peor banda "
+                      f"(> {_worst:.1f}x = {_fref:.1f}x de referencia × {T['pe_value_mults'][-1]:g})")
+            adj, sev = 0, "ok"
         _blk["Forward P/E"] = (adj, [*p, 0])
         adjustments.append({"metric": "Forward P/E", "value": f"{forward_pe:.1f}x", "adjustment": adj,
                             "reason": reason, "severity": sev, "in_block": True})
@@ -2699,6 +2734,9 @@ def score_valoracion(
         adjustments.append({"metric": "DCF (upside)", "value": f"{up:+.0%}", "adjustment": adj,
                             "reason": reason + (": " + "; ".join(_dcf.get("reasons") or []) if _dcf.get("reasons") else ""),
                             "severity": sev, "reliability": rel})
+    elif _dcf.get("not_significant"):
+        adjustments.append({"metric": "DCF (upside)", "value": "No significativo", "adjustment": 0,
+                            "reason": _dcf["not_significant"], "severity": "neutral"})
     elif not _dcf.get("na"):
         _dcf_reason = _dcf.get("missing_reason") or "sin DCF"
 
@@ -2711,6 +2749,9 @@ def score_valoracion(
         cov.derived_comp("Bloque P/B y P/TBV", [_pbm, -_pbm], _pb_block_adj)
     if is_reit:
         cov.comp("P/FFO", T["reit_pffo_points"], _a.get("pffo"))
+    if archetype == UTILITY:
+        cov.comp("Rentabilidad por dividendo", T["utility_yield_points"], _a.get("dy"),
+                 None if dividend_yield else "sin dividendo")
     if archetype == GROWTH_PRE_PROFIT:
         cov.comp("EV/Ventas", T["ev_sales_points"], _a.get("evs"))
         cov.comp("Regla de 40", T["rule_of_40_points"], _a.get("r40"))
@@ -2729,7 +2770,10 @@ def score_valoracion(
     _bm = _bmax_used or block_max(_n_app)
     if _n_app:
         cov.derived_comp("Bloque de múltiplos", [_bm, -_bm], _block_adj)
-    if dcf is not None:
+    if dcf is not None and _dcf.get("not_significant"):
+        # Etapa 11b: FCF base <= 0 o capital <= 0: no significativo (no cuenta como dato ausente).
+        cov.not_sig("DCF", _dcf["not_significant"])
+    elif dcf is not None:
         cov.comp("DCF", T["dcf_points_high"], _dcf_adj, _dcf_reason, na=_dcf.get("na"))
     from valuation_confidence import multiples_signal
     # Señal de los múltiplos para la convergencia: el bloque (sin redondear) cuenta
@@ -3351,6 +3395,7 @@ def calculate_score_v2(
         ev_ebitda=ratio_values.get("ev_ebitda"),
         peg=ratio_values.get("peg"),
         sector_pe=contextual_values.get("sector_pe"),
+        sector_forward_pe=contextual_values.get("sector_forward_pe"),
         sector_ev_ebitda=contextual_values.get("sector_ev_ebitda"),
         benchmark_profile=contextual_values.get("benchmark_profile"),
         fcf_yield=ratio_values.get("fcf_yield"),

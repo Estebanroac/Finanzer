@@ -85,6 +85,8 @@ export interface Highlight {
 }
 
 export interface Cover {
+  /** Etapa 11b: conversión de moneda y clase de acciones aplicada a los estados (o null). */
+  currency_note: string | null;
   archetype: string;
   archetype_label: string;
   classification_notes: string[];
@@ -333,10 +335,22 @@ export async function searchStocks(query: string): Promise<SearchResult[]> {
   return res.json();
 }
 
+/** 422: el backend no analiza el símbolo y explica por qué (ETF o fondo; estados sin tipo de cambio). */
+const HTTP_NOT_ANALYZABLE = 422;
+
 export async function analyzeStock(symbol: string): Promise<StockAnalysis> {
   const res = await fetch(`${API_BASE}/api/analysis/${encodeURIComponent(symbol)}`);
   if (!res.ok) {
-    throw new Error(`Failed to analyze ${symbol}: ${res.status}`);
+    // 422: el backend explica por qué no analiza (ETF o fondo, estados sin tipo de cambio):
+    // ese motivo se muestra tal cual.
+    let detail: string | null = null;
+    try {
+      const body = await res.json();
+      if (typeof body?.detail === "string") detail = body.detail;
+    } catch {
+      /* respuesta sin JSON */
+    }
+    throw new Error(res.status === HTTP_NOT_ANALYZABLE && detail ? detail : `Failed to analyze ${symbol}: ${res.status}`);
   }
   return res.json();
 }

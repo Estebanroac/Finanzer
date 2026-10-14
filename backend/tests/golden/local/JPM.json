@@ -175,6 +175,28 @@
     "score": 1.0
   },
   "data_provenance": {
+    "currency": {
+      "converted": false,
+      "price": "USD",
+      "row_aliases": {
+        "cashflow": [
+          "Common Stock Dividend Paid ← Cash Dividends Paid"
+        ],
+        "quarterly_cashflow": [
+          "Common Stock Dividend Paid ← Cash Dividends Paid"
+        ]
+      },
+      "share_class": {
+        "applied": false,
+        "factor": 1.01432798122,
+        "price_shares": 2658186134.98,
+        "statement_shares": 2696272576.0,
+        "statement_shares_date": "2025-12-31",
+        "tolerance": 1.5
+      },
+      "source": "financialData.financialCurrency",
+      "statements": "USD"
+    },
     "errors": [],
     "fields": {
       "_current_derived.asset_turnover": {
@@ -337,6 +359,10 @@
         "detail": "quoteSummary v10 (con crumb)",
         "source": "yahoo_quotesummary"
       },
+      "dividendsPaid": {
+        "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
+        "source": "yfinance_statements"
+      },
       "earningsGrowth": {
         "detail": "quoteSummary v10 (con crumb)",
         "source": "yahoo_quotesummary"
@@ -430,6 +456,10 @@
         "source": "yahoo_quotesummary"
       },
       "priceToBook": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
+      "quoteType": {
         "detail": "quoteSummary v10 (con crumb)",
         "source": "yahoo_quotesummary"
       },
@@ -539,7 +569,6 @@
       },
       "source_fields": {
         "capitalExpenditures": "'Capital Expenditure' sin dato en alguno de los 4 últimos trimestres",
-        "dividendsPaid": "'Common Stock Dividend Paid' sin dato en alguno de los 4 últimos trimestres",
         "ebitda": "'EBITDA' sin dato en alguno de los 4 últimos trimestres",
         "grossProfits": "'Gross Profit' sin dato en alguno de los 4 últimos trimestres",
         "inventory": "'Inventory' sin dato en el último trimestre",
@@ -550,6 +579,7 @@
       },
       "ttm_fields": [
         "depreciation",
+        "dividendsPaid",
         "freeCashflow",
         "interestExpense",
         "netIncome",
@@ -694,6 +724,7 @@
       ],
       "confidence_reasons": [],
       "coverage_notes": [],
+      "currency_note": null,
       "highlights": [
         {
           "kicker": "FORTALEZA CLAVE",
@@ -850,7 +881,11 @@
         "text": "la deuda neta (2.2x EBITDA) es manejable",
         "tone": "neu"
       },
-      "payout_ratio": null,
+      "payout_ratio": {
+        "label": "Conservador",
+        "text": "el payout de 27% deja amplio margen para sostener y aumentar el dividendo",
+        "tone": "pos"
+      },
       "pe": null,
       "pos52": {
         "label": "Zona media del rango",
@@ -1443,7 +1478,7 @@
           "VALOR",
           "LECTURA"
         ],
-        "intro": "La deuda neta (2.2x EBITDA) es manejable. La cobertura de intereses (1.0x) es críticamente baja.",
+        "intro": "La deuda neta (2.2x EBITDA) es manejable. La cobertura de intereses (1.0x) es críticamente baja. El payout de 27% deja amplio margen para sostener y aumentar el dividendo.",
         "rows": [
           {
             "bench": null,
@@ -1499,6 +1534,17 @@
             "text": "la cobertura de intereses (1.0x) es críticamente baja",
             "tone": "neg",
             "value": "0.96x"
+          },
+          {
+            "bench": null,
+            "gap": null,
+            "key": "payout_ratio",
+            "label": "Payout del dividendo",
+            "reading": "Conservador",
+            "state": "con_dato",
+            "text": "el payout de 27% deja amplio margen para sostener y aumentar el dividendo",
+            "tone": "pos",
+            "value": "26.61%"
           }
         ]
       },
@@ -2611,7 +2657,7 @@
     "ev_revenue": 5.68614096215,
     "fcf_yield": -0.18362323897,
     "ffo": 74329000000.0,
-    "ffo_payout": null,
+    "ffo_payout": 0.232923892424,
     "forward_pe": 13.2546680322,
     "free_cash_flow": -162534000000.0,
     "gross_margin": 0.955964551288,
@@ -2631,7 +2677,7 @@
     "operating_margin": 0.481748775976,
     "p_ffo": 11.9085339648,
     "payout_basis": "beneficio_neto",
-    "payout_ratio": null,
+    "payout_ratio": 0.26607957951,
     "pb": 2.36293151878,
     "pe": 14.2669237361,
     "pe_normalized": 14.6640581046,
@@ -2823,7 +2869,7 @@
     "fcf_to_net_income": null,
     "fcf_yield": null,
     "ffo": 74329000000.0,
-    "ffo_payout": null,
+    "ffo_payout": 0.232923892424,
     "ffo_per_share": 27.96230006,
     "forward_pe": 13.2546680322,
     "graham_number": 272.039340276,
@@ -2839,7 +2885,7 @@
     "operating_margin": 0.481748775976,
     "p_fcf": null,
     "p_ffo": 11.9085339648,
-    "payout_ratio": null,
+    "payout_ratio": 0.26607957951,
     "pb": 2.36293151878,
     "pe": 14.2669237361,
     "peg": 1.54,

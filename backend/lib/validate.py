@@ -73,7 +73,7 @@ class _Ctx:
             self.prov[field] = {"source": "recalculado_por_validacion", "rule": rule, "detail": reason}
         elif action == "politica":
             self.prov[field] = {"source": "politica_arquetipo", "rule": rule, "detail": reason}
-        elif action == "sin_dato":
+        elif action in ("sin_dato", "invalido"):
             self.prov[field] = {"source": "sin_dato", "rule": rule, "detail": reason}
 
     # acceso a campos con ruta "a.b"
@@ -335,8 +335,80 @@ def _rule_jumps(c: _Ctx):
                        f"derivado de _prior_year.{key}, anulado por salto interanual")
 
 
+_P = cfg("validation.plausibility")
+
+
+def _rule_per_share_plausibility(c: _Ctx):
+    """Etapa 11b: múltiplos por acción imposibles delatan unidades mezcladas (otra clase de
+    acciones u otra moneda). Se marcan inválidos y no puntúan; nunca se corrigen en silencio.
+      · P/E fuera de [pe_min, pe_max];
+      · P/B por debajo de pb_min;
+      · BPA × acciones lejos del beneficio neto (más de eps_vs_net_income_max_dev)."""
+    price = _num(c.get("currentPrice")) or _num(c.get("regularMarketPrice"))
+    eps, shares = (_num(c.get(k)) for k in ("trailingEps", "sharesOutstanding"))
+    bad_eps = None
+    if price and eps and eps > 0:
+        pe = price / eps
+        if pe < _P["pe_min"] or pe > _P["pe_max"]:
+            bad_eps = ("pe_implausible", f"P/E de {pe:,.4g}x (precio {price:,.2f} / BPA {eps:,.4g}) fuera de "
+                                         f"[{_P['pe_min']:g}x, {_P['pe_max']:g}x]: BPA en otra clase o moneda")
+    # Beneficio de la misma fuente y ventana que el BPA (lo deja la ingesta). Sin él no se
+    # compara: un BPA TTM de Yahoo frente al TTM de los estados (un trimestre atrás) da falsos
+    # positivos en empresas que crecen deprisa (MU: 67 % sin error de unidades).
+    ni = _num(c.get("_eps_net_income"))
+    if bad_eps is None and eps and shares and ni:
+        dev = abs(eps * shares - ni) / abs(ni)
+        if dev > _P["eps_vs_net_income_max_dev"]:
+            bad_eps = ("bpa_incoherente", f"BPA × acciones = {eps * shares:,.4g} frente a un beneficio neto de "
+                                          f"{ni:,.4g} (desviación {dev:.0%} > "
+                                          f"{_P['eps_vs_net_income_max_dev']:.0%}): BPA en otra clase o moneda")
+    if bad_eps is not None:
+        rule, why = bad_eps
+        c.set("trailingEps", None)
+        c.flag("trailingEps", rule, "invalido", eps, None, why + "; no puntúa")
+        if c.get("trailingPE") is not None:
+            c.flag("trailingPE", rule, "invalido", c.get("trailingPE"), None, "P/E de la fuente sobre el mismo BPA; "
+                                                                           "no puntúa")
+            c.set("trailingPE", None)
+    bv = _num(c.get("bookValue"))
+    if price and bv and bv > 0 and price / bv < _P["pb_min"]:
+        c.set("bookValue", None)
+        c.flag("bookValue", "pb_implausible", "invalido", bv, None,
+               f"P/B de {price / bv:.4g}x < {_P['pb_min']:g}x: valor en libros por acción en otra clase o moneda; "
+               "no puntúa")
+    for path in ("_yahoo_ratios.priceToBook", "priceToBook"):
+        pb = _num(c.get(path))
+        if pb is not None and 0 < pb < _P["pb_min"]:
+            c.set(path, None)
+            c.flag(path, "pb_implausible", "invalido", pb, None,
+                   f"P/B de la fuente de {pb:.4g}x < {_P['pb_min']:g}x: mezcla clases o monedas; no puntúa")
+
+
+# Etapa 11b: nombre de Yahoo de cada fila requerida (texto del aviso).
+_ROW_NAMES = {"revenue": "Total Revenue", "net_income": "Net Income", "total_assets": "Total Assets",
+              "stockholders_equity": "Stockholders Equity", "operating_cash_flow": "Operating Cash Flow",
+              "capital_expenditure": "Capital Expenditure", "depreciation_amortization": "Depreciation And Amortization",
+              "stock_based_compensation": "Stock Based Compensation", "ebitda": "EBITDA"}
+
+
+def missing_key_rows(statements_fy: Optional[Dict[str, Any]], archetype: Optional[str]) -> List[Dict[str, Any]]:
+    """Avisos por filas de los estados anuales que el arquetipo necesita y no llegaron (ni con su
+    nombre alternativo IFRS). Se calcula tras clasificar: depende del arquetipo."""
+    st = statements_fy or {}
+    req = cfg("validation.required_rows")
+    keys = list(req["common"]) + [k for k in (req.get(archetype or "") or []) if k not in req["common"]]
+    flags = []
+    for k in keys:
+        if not any(v is not None for v in (st.get(k) or [])):
+            flags.append({"field": f"_statements_fy.{k}", "rule": "fila_clave_ausente", "action": "aviso",
+                          "old": None, "new": None,
+                          "reason": f"falta la fila '{_ROW_NAMES.get(k, k)}' en los estados anuales (ni con su nombre "
+                                    "alternativo IFRS): los componentes que la usan quedan sin dato"})
+    return flags
+
+
 _INPUT_RULES = (_rule_fcf, _rule_impossible, _rule_margins, _rule_units,
-                _rule_growth, _rule_split_basis, _rule_jumps)
+                _rule_growth, _rule_split_basis, _rule_jumps, _rule_per_share_plausibility)
 
 
 def validate_info(info: Dict[str, Any], symbol: str = "") -> Dict[str, Any]:
@@ -370,9 +442,12 @@ def validate_outputs(result: Dict[str, Any]) -> List[Dict[str, Any]]:
             if v is not None and v <= 0:
                 d[k] = None
                 denom = {"pe": "beneficio", "ev_ebitda": "EBITDA", "p_ffo": "FFO"}[k]
+                # Etapa 11b: nombre legible y signo tipográfico (el texto llega al informe).
+                name = {"pe": "P/E", "ev_ebitda": "EV/EBITDA", "p_ffo": "P/FFO"}[k]
                 flags.append({"field": f"{block}.{k}", "rule": "multiplo_no_significativo",
                               "action": "sin_dato", "old": v, "new": None,
-                              "reason": f"{k.upper()} = {v:.1f}: {denom} <= 0, el múltiplo no es significativo"})
+                              "reason": f"{name} de {v:.1f}x".replace("-", "−")
+                                        + f": {denom} ≤ 0, el múltiplo no es significativo"})
     # Regla M aplicada a la cobertura de intereses (etapa 5): EBIT < 0 con caja
     # neta -> la ratio no es significativa (los intereses se pagan con caja).
     km = result.get("key_metrics") or {}
@@ -395,5 +470,6 @@ def validate_outputs(result: Dict[str, Any]) -> List[Dict[str, Any]]:
                 d["net_debt_to_ebitda"] = None
                 flags.append({"field": f"{block}.net_debt_to_ebitda", "rule": "ratio_no_significativa",
                               "action": "sin_dato", "old": v, "new": None,
-                              "reason": f"Deuda neta/EBITDA = {v:.1f}x: EBITDA <= 0, la ratio no es significativa"})
+                              "reason": f"Deuda neta/EBITDA de {v:.1f}x".replace("-", "−")
+                                        + ": EBITDA ≤ 0, la ratio no es significativa"})
     return flags

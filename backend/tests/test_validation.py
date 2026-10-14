@@ -338,7 +338,7 @@ def test_provenance_block_present_and_in_vocabulary(env, outputs_by_env):
         assert {v["source"] for v in dp["fields"].values()} <= VOCAB, sym
         assert isinstance(a["data_validation"], list)
         for f in a["data_validation"]:
-            assert f["action"] in {"recalculado", "sin_dato", "aviso", "politica"} and f["reason"], (sym, f)
+            assert f["action"] in {"recalculado", "sin_dato", "aviso", "politica", "invalido"} and f["reason"], (sym, f)
 
 
 def test_prod_provenance_marks_finnhub_and_statements(outputs_by_env):

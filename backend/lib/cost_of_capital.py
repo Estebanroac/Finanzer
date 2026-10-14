@@ -82,7 +82,7 @@ def effective_tax_rate(pretax: Optional[float], tax: Optional[float], period: st
     T = cfg("valuation.tax")
     lo, hi = T["effective_bounds"]
     if pretax is None or tax is None or pretax <= 0:
-        why = "beneficio antes de impuestos <= 0" if (pretax is not None and pretax <= 0) else \
+        why = "beneficio antes de impuestos ≤ 0" if (pretax is not None and pretax <= 0) else \
             "sin beneficio antes de impuestos o provisión de impuestos"
         return {"rate": T["statutory_rate"], "source": "legal", "raw": None, "bounded": False, "period": period,
                 "reason": f"{why}: tipo legal {T['statutory_rate']:.0%}"}

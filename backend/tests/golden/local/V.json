@@ -81,6 +81,7 @@
     "sector": "financials",
     "sources": {
       "ev_ebitda": "mediana EV/EBITDA del S&P 500 a 1T-2025 (Ivaluate, 'EV/EBITDA multiples by sector 2025-2026', jul-2026); no hay mediana pública de constituyentes de 2026 (Damodaran ene-2026, agregado de todo EE. UU. sin financieras: 16.95x, no es una mediana)",
+      "forward_pe": "P/E forward del ÍNDICE S&P 500 (consenso de beneficios de los próximos 12 meses, Bloomberg): 18.91x al 30-sep-2026, según First Trust, 'Market Minute' de octubre de 2026 (ftportfolios.com); es un agregado del índice, NO una mediana de constituyentes: no hay mediana forward pública (chartrow.com no publica forward P/E)",
       "pe": "mediana de los miembros del S&P 500 (P/E TTM), chartrow.com/sp500/pe-ratio, cierre del 12-oct-2026; método de la mediana no documentado por la fuente"
     },
     "thresholds": {
@@ -101,7 +102,7 @@
       "earnings_growth": 0.1,
       "ev_ebitda": 13.2,
       "fcf_yield": 0.04,
-      "forward_pe": 18,
+      "forward_pe": 18.9,
       "gross_margin": 0.4,
       "interest_coverage": 8,
       "net_margin": 0.1,
@@ -168,11 +169,11 @@
             "evaluable": true,
             "kind": "relativo",
             "method": "múltiplos frente al sector",
-            "signal": -0.366666666667
+            "signal": -0.5
           }
         ],
         "reasons": [
-          "coinciden (cara) con distancia 0.12 (< 0.6)"
+          "coinciden (cara) con distancia 0.01 (< 0.6)"
         ]
       },
       "coverage": {
@@ -197,6 +198,20 @@
     "score": 1.0
   },
   "data_provenance": {
+    "currency": {
+      "converted": false,
+      "price": "USD",
+      "share_class": {
+        "applied": false,
+        "factor": 1.02548510178,
+        "price_shares": 1877355358.61,
+        "statement_shares": 1925199951.0,
+        "statement_shares_date": "2025-09-30",
+        "tolerance": 1.5
+      },
+      "source": "financialData.financialCurrency",
+      "statements": "USD"
+    },
     "errors": [],
     "fields": {
       "_current_derived.asset_turnover": {
@@ -491,6 +506,10 @@
         "detail": "quoteSummary v10 (con crumb)",
         "source": "yahoo_quotesummary"
       },
+      "quoteType": {
+        "detail": "quoteSummary v10 (con crumb)",
+        "source": "yahoo_quotesummary"
+      },
       "regularMarketPrice": {
         "detail": "quoteSummary v10 (con crumb)",
         "source": "yahoo_quotesummary"
@@ -673,7 +692,7 @@
           "key": "convergence",
           "label": "Convergencia entre métodos",
           "level": "Alta",
-          "text": "DCF -24% (cara) · múltiplos frente al sector -0.37 (cara). coinciden (cara) con distancia 0.12 (< 0.6)"
+          "text": "DCF -24% (cara) · múltiplos frente al sector -0.50 (cara). coinciden (cara) con distancia 0.01 (< 0.6)"
         },
         {
           "key": "coverage",
@@ -697,7 +716,7 @@
       "level": "alta",
       "plain": [],
       "reasons": [],
-      "summary": "Confianza del veredicto: alta. Contrae el atractivo del precio hacia 50 (factor 1.0): sin ajustar 30 → ajustado a 30. La calidad del negocio no se contrae.",
+      "summary": "Confianza del veredicto: alta. Contrae el atractivo del precio hacia 50 (factor 1.0): sin ajustar 25 → ajustado a 25. La calidad del negocio no se contrae.",
       "tone": "pos",
       "verdict_text": "(confianza alta: el DCF y los múltiplos coinciden)"
     },
@@ -762,8 +781,8 @@
               "coverage": 1.0,
               "max": 20,
               "name": "Valoración",
-              "pct": 30.0,
-              "score": 6,
+              "pct": 25.0,
+              "score": 5,
               "text": null,
               "tone": "neg"
             }
@@ -779,6 +798,7 @@
       ],
       "confidence_reasons": [],
       "coverage_notes": [],
+      "currency_note": null,
       "highlights": [
         {
           "kicker": "FORTALEZA CLAVE",
@@ -851,13 +871,13 @@
       ],
       "price": {
         "contracted": false,
-        "level": "exigente",
+        "level": "muy exigente",
         "note": null,
         "question": "¿está cara hoy?",
-        "raw": 30,
-        "score": 30,
+        "raw": 25,
+        "score": 25,
         "title": "ATRACTIVO DEL PRECIO",
-        "tone": "warn"
+        "tone": "neg"
       },
       "quality": {
         "level": "excelente",
@@ -870,8 +890,8 @@
       "verdict": {
         "confidence_text": "(confianza alta: el DCF y los múltiplos coinciden)",
         "confidence_tone": "pos",
-        "full": "Calidad excelente · precio exigente (confianza alta: el DCF y los múltiplos coinciden)",
-        "text": "Calidad excelente · precio exigente"
+        "full": "Calidad excelente · precio muy exigente (confianza alta: el DCF y los múltiplos coinciden)",
+        "text": "Calidad excelente · precio muy exigente"
       }
     },
     "methodology": {
@@ -1322,8 +1342,8 @@
                 {
                   "in_block": true,
                   "metric": "Forward P/E",
-                  "reason": "P/E normalizado mejorando (32x → 26x forward)",
-                  "sign": "(+2)",
+                  "reason": "P/E normalizado mejorando (32x → 26x forward), sin efecto: el Forward P/E (25.7x) sigue en la peor banda (> 24.6x = 18.9x de referencia × 1.3)",
+                  "sign": "(0)",
                   "state": "con_dato",
                   "tone": "neu",
                   "value": "25.7x"
@@ -1358,10 +1378,10 @@
                 {
                   "in_block": false,
                   "metric": "Bloque de múltiplos",
-                  "reason": "promedio de los ajustes reescalados a ±1 (P/E -1.00, Forward P/E +0.67, P/FCF -0.50, EV/EBITDA -1.00, PEG +0.00) = -0.37 × 6 (máximo con 5 miembros) = -2.2",
-                  "sign": "-2",
+                  "reason": "promedio de los ajustes reescalados a ±1 (P/E -1.00, Forward P/E +0.00, P/FCF -0.50, EV/EBITDA -1.00, PEG +0.00) = -0.50 × 6 (máximo con 5 miembros) = -3.0",
+                  "sign": "-3",
                   "state": "con_dato",
-                  "tone": "warn",
+                  "tone": "neg",
                   "value": "5 múltiplos"
                 },
                 {
@@ -1376,8 +1396,8 @@
               ],
               "max": 20,
               "name": "Valoración",
-              "pct": 30.0,
-              "score": 6,
+              "pct": 25.0,
+              "score": 5,
               "text": null,
               "tone": "neg"
             },
@@ -1849,7 +1869,7 @@
         },
         "intro": "El mercado paga 32.8x beneficios, un +43% frente a la mediana del mercado (S&P 500) (23.0x); una prima que encuentra respaldo parcial en la creación de valor de la compañía (ROIC−WACC de +45.4%). El FCF yield de 2.9% es bajo: se paga caro cada dólar de caja libre. Cotiza 446% por encima del número de Graham — habitual en compañías de calidad/crecimiento, donde este criterio de 1949 resulta demasiado restrictivo.",
         "ke_note": null,
-        "market_note": "Referencia: medianas y umbrales del mercado amplio (S&P 500), no los del sector (empresa clasificada como Madura dentro del sector financials, cuyas medianas y umbrales suponen bancos y aseguradoras: se usan los del mercado amplio (S&P 500)). PROVISIONALES. Fuentes: PE: mediana de los miembros del S&P 500 (P/E TTM), chartrow.com/sp500/pe-ratio, cierre del 12-oct-2026; método de la mediana no documentado por la fuente; EV/EBITDA: mediana EV/EBITDA del S&P 500 a 1T-2025 (Ivaluate, 'EV/EBITDA multiples by sector 2025-2026', jul-2026); no hay mediana pública de constituyentes de 2026 (Damodaran ene-2026, agregado de todo EE. UU. sin financieras: 16.95x, no es una mediana). El resto de referencias de la columna MERCADO (Forward P/E, P/B, PEG, P/FCF, FCF yield, rentabilidad y márgenes) son la referencia general PROVISIONAL, fijada a mano y sin fuente, no medianas del S&P 500.",
+        "market_note": "Referencia: medianas y umbrales del mercado amplio (S&P 500), no los del sector (empresa clasificada como Madura dentro del sector financials, cuyas medianas y umbrales suponen bancos y aseguradoras: se usan los del mercado amplio (S&P 500)). PROVISIONALES. Fuentes: PE: mediana de los miembros del S&P 500 (P/E TTM), chartrow.com/sp500/pe-ratio, cierre del 12-oct-2026; método de la mediana no documentado por la fuente; FORWARD/PE: P/E forward del ÍNDICE S&P 500 (consenso de beneficios de los próximos 12 meses, Bloomberg): 18.91x al 30-sep-2026, según First Trust, 'Market Minute' de octubre de 2026 (ftportfolios.com); es un agregado del índice, NO una mediana de constituyentes: no hay mediana forward pública (chartrow.com no publica forward P/E); EV/EBITDA: mediana EV/EBITDA del S&P 500 a 1T-2025 (Ivaluate, 'EV/EBITDA multiples by sector 2025-2026', jul-2026); no hay mediana pública de constituyentes de 2026 (Damodaran ene-2026, agregado de todo EE. UU. sin financieras: 16.95x, no es una mediana). El resto de referencias de la columna MERCADO (Forward P/E, P/B, PEG, P/FCF, FCF yield, rentabilidad y márgenes) son la referencia general PROVISIONAL, fijada a mano y sin fuente, no medianas del S&P 500.",
         "normalization_note": "Beneficio TTM (4 trimestres): reportado $22.59B, normalizado $23.42B (no recurrentes 3.7% del beneficio; cargos especiales (deterioros, litigios, reestructuración) (explicita, confianza alta), recurrente (4 de los últimos 4 ejercicios): solo el exceso sobre su promedio, −$830.34M netos; ganancias por venta de valores (explicita, confianza alta), recurrente (3 de los últimos 4 ejercicios): sin exceso sobre su promedio, no se ajusta). El score usa el beneficio normalizado.",
         "provisional_note": null,
         "rows": [
@@ -1865,13 +1885,13 @@
             "value": "32.80x"
           },
           {
-            "bench": "18.00x",
-            "gap": "+43%",
+            "bench": "18.90x",
+            "gap": "+36%",
             "key": "forward_pe",
             "label": "Forward P/E",
             "reading": "Prima elevada",
             "state": "con_dato",
-            "text": "Forward P/E de 25.7x frente a 18.0x del mercado (S&P 500) (+43%): prima elevada",
+            "text": "Forward P/E de 25.7x frente a 18.9x del mercado (S&P 500) (+36%): prima elevada",
             "tone": "neg",
             "value": "25.69x"
           },
@@ -2263,14 +2283,14 @@
       "composition": {
         "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: Valoración (base 10/20 + bloque de múltiplos y DCF) reescalada a 100 y contraída hacia 50 según la confianza.",
         "price": {
-          "level": "exigente",
+          "level": "muy exigente",
           "note": null,
           "rows": [
             {
               "kind": "signed",
               "label": "Bloque de múltiplos · 5 múltiplos",
               "tone": "neg",
-              "value": -2
+              "value": -3
             },
             {
               "kind": "signed",
@@ -2279,10 +2299,10 @@
               "value": -2
             }
           ],
-          "score": 30,
+          "score": 25,
           "signed_max": 6,
           "title": "ATRACTIVO DEL PRECIO",
-          "tone": "warn"
+          "tone": "neg"
         },
         "quality": {
           "level": "excelente",
@@ -2329,7 +2349,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad excelente · precio exigente (confianza alta: el DCF y los múltiplos coinciden). Calidad 96/100 · precio 30/100."
+          "text": "Calidad excelente · precio muy exigente (confianza alta: el DCF y los múltiplos coinciden). Calidad 96/100 · precio 25/100."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -2724,31 +2744,31 @@
             "bands": [
               {
                 "label": "Descuento profundo",
-                "range": "≤ 11.7x",
+                "range": "≤ 12.3x",
                 "tone": "pos"
               },
               {
                 "label": "Descuento",
-                "range": "11.7x – 16.2x",
+                "range": "12.3x – 17.0x",
                 "tone": "pos"
               },
               {
                 "label": "En línea",
-                "range": "16.2x – 19.8x",
+                "range": "17.0x – 20.8x",
                 "tone": "neu"
               },
               {
                 "label": "Prima moderada",
-                "range": "19.8x – 24.3x",
+                "range": "20.8x – 25.5x",
                 "tone": "warn"
               },
               {
                 "label": "Prima elevada",
-                "range": "≥ 24.3x",
+                "range": "≥ 25.5x",
                 "tone": "neg"
               }
             ],
-            "title": "Frente a la mediana del mercado (S&P 500) (18.0x)"
+            "title": "Frente a la mediana del mercado (S&P 500) (18.9x)"
           }
         ]
       },
@@ -3717,20 +3737,20 @@
         "category": "Valoración",
         "included": true,
         "max": 20,
-        "score": 6
+        "score": 5
       }
     ],
     "confidence": "alta",
     "contracted": false,
     "excluded_categories": [],
     "factor": 1.0,
-    "level": "exigente",
-    "level_raw": "exigente",
+    "level": "muy exigente",
+    "level_raw": "muy exigente",
     "low_coverage_categories": [],
     "not_applicable_categories": [],
     "partial": false,
-    "score": 30,
-    "score_raw": 30
+    "score": 25,
+    "score_raw": 25
   },
   "price_history": {
     "52w_high": 386.84,
@@ -4042,12 +4062,12 @@
             "value": "31.6x"
           },
           {
-            "adjustment": 2,
+            "adjustment": 0,
             "in_block": true,
             "metric": "Forward P/E",
             "normalized": true,
-            "reason": "P/E normalizado mejorando (32x → 26x forward)",
-            "severity": "good",
+            "reason": "P/E normalizado mejorando (32x → 26x forward), sin efecto: el Forward P/E (25.7x) sigue en la peor banda (> 24.6x = 18.9x de referencia × 1.3)",
+            "severity": "ok",
             "value": "25.7x"
           },
           {
@@ -4075,9 +4095,9 @@
             "value": "1.75"
           },
           {
-            "adjustment": -2,
+            "adjustment": -3,
             "block_max": 6,
-            "block_mean": -0.366666666667,
+            "block_mean": -0.5,
             "block_members": [
               "P/E",
               "Forward P/E",
@@ -4086,8 +4106,8 @@
               "PEG"
             ],
             "metric": "Bloque de múltiplos",
-            "reason": "promedio de los ajustes reescalados a ±1 (P/E -1.00, Forward P/E +0.67, P/FCF -0.50, EV/EBITDA -1.00, PEG +0.00) = -0.37 × 6 (máximo con 5 miembros) = -2.2",
-            "severity": "moderate",
+            "reason": "promedio de los ajustes reescalados a ±1 (P/E -1.00, Forward P/E +0.00, P/FCF -0.50, EV/EBITDA -1.00, PEG +0.00) = -0.50 × 6 (máximo con 5 miembros) = -3.0",
+            "severity": "severe",
             "value": "5 múltiplos"
           },
           {
@@ -4104,15 +4124,15 @@
         "coverage": 1.0,
         "details": [
           "Muy caro (31.6x vs 23.0x mercado)",
-          "P/E normalizado mejorando (32x → 26x forward)",
+          "P/E normalizado mejorando (32x → 26x forward), sin efecto: el Forward P/E (25.7x) sigue en la peor banda (> 24.6x = 18.9x de referencia × 1.3)",
           "Elevado (34.4x)",
           "Muy caro (24.0x vs 13.2x mercado)",
           "Razonable (1.75)",
-          "promedio de los ajustes reescalados a ±1 (P/E -1.00, Forward P/E +0.67, P/FCF -0.50, EV/EBITDA -1.00, PEG +0.00) = -0.37 × 6 (máximo con 5 miembros) = -2.2",
+          "promedio de los ajustes reescalados a ±1 (P/E -1.00, Forward P/E +0.00, P/FCF -0.50, EV/EBITDA -1.00, PEG +0.00) = -0.50 × 6 (máximo con 5 miembros) = -3.0",
           "Cara por DCF (fiabilidad alta)"
         ],
         "max": 20,
-        "score": 6
+        "score": 5
       }
     },
     "excluded_categories": [],
@@ -4273,10 +4293,10 @@
   "verdict": {
     "confidence": "alta",
     "confidence_text": "(confianza alta: el DCF y los múltiplos coinciden)",
-    "full": "Calidad excelente · precio exigente (confianza alta: el DCF y los múltiplos coinciden)",
-    "price_level": "exigente",
+    "full": "Calidad excelente · precio muy exigente (confianza alta: el DCF y los múltiplos coinciden)",
+    "price_level": "muy exigente",
     "quality_level": "excelente",
-    "text": "Calidad excelente · precio exigente"
+    "text": "Calidad excelente · precio muy exigente"
   },
   "wacc": {
     "applicable": true,

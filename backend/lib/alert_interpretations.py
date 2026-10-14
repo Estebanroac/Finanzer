@@ -20,11 +20,11 @@ from typing import Any, Dict, List, Optional
 try:
     from .financial_ratios import (SECTOR_THRESHOLDS, ThresholdConfig, growth_for_bands,
                                    interest_coverage_state, net_debt_ebitda_state)
-    from .classify import CYCLICAL, FINANCIAL, GROWTH_PRE_PROFIT, MATURE, REIT, not_applicable
+    from .classify import CYCLICAL, FINANCIAL, GROWTH_PRE_PROFIT, MATURE, REIT, UTILITY, not_applicable
 except ImportError:  # ejecución como script suelto
     from financial_ratios import (SECTOR_THRESHOLDS, ThresholdConfig, growth_for_bands,
                                   interest_coverage_state, net_debt_ebitda_state)
-    from classify import CYCLICAL, FINANCIAL, GROWTH_PRE_PROFIT, MATURE, REIT, not_applicable
+    from classify import CYCLICAL, FINANCIAL, GROWTH_PRE_PROFIT, MATURE, REIT, UTILITY, not_applicable
 
 
 import re
@@ -367,6 +367,22 @@ def _leverage(ctx: Ctx):
                         f"La deuda neta equivale a {_years_ebitda(nde)} de EBITDA, por debajo del rango habitual de un "
                         "REIT: holgura para financiar adquisiciones sin tensionar el balance.", T["w_low"])
         return None
+    if ctx.archetype == UTILITY:
+        # Etapa 11b: bandas de utility regulada (las mismas que Solidez): opera en 5.5–6.5x.
+        b = _SC_SOLIDEZ["utility_nde_bounds"]
+        if nde > b[2]:
+            sev = "risk" if nde > b[3] else "warning"
+            return _sig(sev, "Solidez financiera", f"Apalancamiento elevado para una utility — {nde:.1f}x EBITDA",
+                        f"Harían falta {_years_ebitda(nde)} de EBITDA íntegro para saldar la deuda neta, por encima del "
+                        f"rango habitual de una utility regulada con grado de inversión (hasta {b[1]:.1f}x): conviene "
+                        "vigilar la cobertura de intereses y las revisiones tarifarias.",
+                        T["w_high_risk"] if sev == "risk" else T["w_high_warning"])
+        if nde <= b[0]:
+            return _sig("strength", "Solidez financiera",
+                        f"Apalancamiento conservador para una utility — {nde:.1f}x EBITDA",
+                        f"La deuda neta equivale a {_years_ebitda(nde)} de EBITDA, por debajo del rango habitual de una "
+                        "utility regulada: holgura para financiar su plan de inversión.", T["w_low"])
+        return None
     if nde > t.net_debt_ebitda_high:
         sev = "risk" if nde > t.net_debt_ebitda_high * T["risk_mult"] else "warning"
         w = T["w_high_risk"] if sev == "risk" else T["w_high_warning"]
@@ -398,6 +414,22 @@ def _coverage(ctx: Ctx):
                     f"El beneficio operativo apenas cubre {ic:.1f} veces el gasto por intereses: un margen peligrosamente "
                     "fino que deja a la empresa muy expuesta ante cualquier caída del resultado operativo.", T["w_critical"])
     t = ctx.t
+    if ctx.archetype == UTILITY:
+        # Etapa 11b: bandas de utility regulada (las mismas que Solidez).
+        b = _SC_SOLIDEZ["utility_coverage_bounds"]
+        if ic < b[3]:
+            return _sig("risk", "Solidez financiera", f"Cobertura de intereses baja para una utility — {ic:.1f}x",
+                        f"El beneficio operativo cubre {ic:.1f} veces el gasto por intereses, por debajo de lo habitual "
+                        f"en una utility regulada ({b[3]:g}x): poco margen si sube el coste de la deuda.", T["w_critical"])
+        if ic < b[2]:
+            return _sig("warning", "Solidez financiera", f"Cobertura de intereses ajustada — {ic:.1f}x",
+                        f"Cubre {ic:.1f} veces sus intereses, en el tramo bajo de una utility regulada (en línea desde "
+                        f"{b[2]:g}x): conviene vigilar las revisiones tarifarias y el coste de la deuda.", T["w_tight"])
+        if ic >= b[0]:
+            return _sig("strength", "Solidez financiera", f"Cobertura de intereses fuerte para una utility — {ic:.1f}x",
+                        f"Cubre {ic:.1f} veces sus intereses, por encima de lo habitual en una utility regulada.",
+                        T["w_comfortable"])
+        return None
     if ic < t.interest_coverage_low:
         return _sig("warning", "Solidez financiera", f"Cobertura de intereses justa — {ic:.1f}x",
                     f"El resultado operativo cubre {ic:.1f}x el gasto por intereses, por debajo del mínimo cómodo "

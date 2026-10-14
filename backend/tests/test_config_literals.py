@@ -89,6 +89,7 @@ EXCEPTIONS = {
     ("main.py", "_compute_analysis", 400): "código HTTP",
     ("main.py", "_compute_analysis", 404): "código HTTP",
     ("main.py", "_compute_analysis", 500): "código HTTP",
+    ("main.py", "_compute_analysis", 422): "código HTTP (etapa 11b: ETF o fondo; estados sin tipo de cambio)",
 }
 
 
