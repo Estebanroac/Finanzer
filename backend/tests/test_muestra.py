@@ -18,34 +18,12 @@ import pytest
 from fastapi import HTTPException
 
 import fixture_backend as fb
+import invariants as inv
 
 SAMPLE_DIR = fb.fixtures_dir(fb.SAMPLE_ENV)
 pytestmark = pytest.mark.skipif(not os.path.isdir(SAMPLE_DIR), reason="sin fixtures de la muestra")
 
-# Códigos internos que no deben llegar a la prosa ("REIT" es también la etiqueta en español).
-CODES = re.compile(r"\b(FINANCIAL|GROWTH_PRE_PROFIT|CYCLICAL|MATURE|UTILITY)\b")
 BAD_SIGN = re.compile(r"\$\s*[-−]")
-# Campos de display que no son prosa: el código del arquetipo (lo usa el contrato, no se
-# pinta), la lista de claves no aplicables y el detalle técnico de la clasificación.
-NOT_PROSE = (".archetype", ".na_keys", ".classification_detail", ".thresholds_key")
-
-
-def _walk(o, p=""):
-    if isinstance(o, dict):
-        for k, v in o.items():
-            yield from _walk(v, f"{p}.{k}")
-    elif isinstance(o, list):
-        for i, v in enumerate(o):
-            yield from _walk(v, f"{p}[{i}]")
-    else:
-        yield p, o
-
-
-def _visible_strings(display):
-    for path, v in _walk(display):
-        if isinstance(v, str) and not any(re.sub(r"\[\d+\]", "", path).endswith(x) or f"{x}[" in path
-                                           or f"{x}." in path for x in NOT_PROSE):
-            yield path, v
 
 
 @pytest.fixture(scope="module")
@@ -81,16 +59,16 @@ def test_visible_text_has_no_archetype_codes_nor_sign_after_symbol(sample, outpu
             {"captured_at_local": "2026-10-13T12:00:00"})))))
     bad = []
     for name, a in analyses:
-        for path, v in _visible_strings(a["display"]):
-            if CODES.search(v) or BAD_SIGN.search(v):
-                bad.append(f"{name} {path}: {v[:120]}")
+        try:
+            inv.no_archetype_codes_nor_sign_after_symbol(a, "")
+        except AssertionError as e:
+            bad.append(f"{name} {e}")
     for name, txt in pdfs:
         # En el PDF el código solo puede ir en la línea del detalle técnico de la clasificación.
-        for line in txt.splitlines():
-            if "detalle técnico" in line or "Clasificada como" in line:
-                continue
-            if CODES.search(line) or BAD_SIGN.search(line):
-                bad.append(f"{name} PDF: {line[:120]}")
+        try:
+            inv.no_archetype_codes_nor_sign_after_symbol({"display": {}}, txt)
+        except AssertionError as e:
+            bad.append(f"{name} {e}")
     assert not bad, "\n".join(bad[:30])
 
 
@@ -186,8 +164,7 @@ def test_dcf_never_negative_fair_value(sample, outputs_by_env):
     allv = list(_ok(sample).items()) + [(f"{e}/{s}", o[0]) for e in fb.available_envs()
                                         for s, o in outputs_by_env(e).items()]
     for name, a in allv:
-        fv = (a.get("dcf") or {}).get("fair_value")
-        assert fv is None or fv > 0, (name, fv)
+        inv.dcf_never_negative_fair_value(a, None)
     amzn = sample["AMZN"]   # FCF TTM <= 0 en la captura: no significativo, no "sin dato"
     assert amzn["dcf_status"]["state"] == "no_significativo" and "no es significativo" in amzn["dcf_status"]["reason"]
 
