@@ -3,7 +3,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import type {
   AltmanChart, FairValueChart, FlowItem, GaugeChart, GrowthBar, HistSeries, LadderStep, MetricBands, Range52,
-  RowState, RunwayChart, StructureChart, Tone, VsBench, Zone,
+  Multiple, RowState, RunwayChart, ScoredItem, StructureChart, Tone, VsBench, Zone,
 } from "@/lib/api";
 import { STATE_LABELS } from "@/lib/generated/backendConfig";
 import { useCountUp, useGrow } from "@/lib/useGrow";
@@ -25,6 +25,7 @@ const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 const at = (v: number, lo: number, hi: number) => (hi === lo ? 0 : clamp01((v - lo) / (hi - lo)) * 100);
 /** Etiqueta de un marcador: el texto no se sale del panel en los extremos. */
 const labelAt = (p: number) => Math.min(88, Math.max(12, p));
+const lowerFirst = (t: string) => (t ? t[0].toLowerCase() + t.slice(1) : t);
 const toneStyle = (tone: Tone | null | undefined): CSSProperties | undefined =>
   tone ? ({ "--tone": `var(--${tone})` } as CSSProperties) : undefined;
 
@@ -179,15 +180,17 @@ export function FairValueScale({ fv, grown, tips }: { fv: FairValueChart; grown:
   const lo = fv.axis[0];
   const hi = fv.axis[fv.axis.length - 1];
   const active = fv.badge?.label?.replace(" (fiabilidad baja)", "");
+  // Etapa 9c: la escala y su insignia nombran el método (solo la lectura combinada de la cabecera va sin método).
+  const method = fv.method ?? "DCF";
   return (
     <div className={grown ? "viz-in" : ""}>
       <div className="flex items-center justify-between gap-3 flex-wrap mb-1">
         <span className="cz-title">
-          Precio frente al valor razonable
+          Precio frente al valor razonable ({method})
           <Help k="dcf_fair_value" title="Valor razonable (DCF)" bands={tips.dcf_upside} value={fv.upside_txt}
             reading={fv.badge ? { label: fv.badge.label, tone: fv.badge.tone } : null} text={fv.text} />
         </span>
-        {fv.badge && <Badge tone={fv.badge.tone}>{fv.badge.label}</Badge>}
+        {fv.badge && <Badge tone={fv.badge.tone}>Según {method}: {lowerFirst(fv.badge.label)}</Badge>}
       </div>
       <ZoneScale zones={fv.zones} lo={lo} hi={hi} active={active}
         marker={{ value: fv.price, label: "Precio", valueTxt: fv.price_txt ?? "" }}
@@ -237,14 +240,16 @@ export function DcfComposition({ comp, grown }: { comp: { explicit_pct: number; 
 /* ─────────────── Métrica frente a la referencia (termómetro) ─────────────── */
 
 /** Barra con el valor de la empresa, el marcador de la referencia y el chip de brecha. */
-export function BenchBar({ item, grown, tips, refShort }: { item: VsBench; grown: boolean; tips: Tips; refShort: string }) {
+export function BenchBar({ item, grown, tips, refShort, dim }: {
+  item: VsBench; grown: boolean; tips: Tips; refShort: string; dim?: boolean;
+}) {
   const v = item.value ?? 0;
   const b = item.bench ?? null;
   const scale = Math.max(Math.abs(v), b ?? 0) * 1.3 || 1;
   const fill = clamp01(Math.max(0, v) / scale) * 100;
   const tick = b == null ? null : clamp01(b / scale) * 100;
   return (
-    <div className={`cz-vs ${toneClass(item.tone)}`}>
+    <div className={`cz-vs ${toneClass(item.tone)} ${dim ? "is-dim" : ""}`}>
       <div className="cz-vs-top">
         <span className="cz-vs-k">
           {item.label}
@@ -261,7 +266,10 @@ export function BenchBar({ item, grown, tips, refShort }: { item: VsBench; grown
         {tick != null && <i className="cz-tick" style={{ left: `${tick}%` }} aria-hidden="true" />}
       </div>
       <div className="cz-vs-sub">
-        <span>{b != null ? `Referencia ${item.bench_txt}` : "Sin referencia"}</span>
+        <span>
+          {dim && <span className="cz-info-tag">informativo, no puntúa</span>}
+          {b != null ? `Referencia ${item.bench_txt}` : "Sin referencia"}
+        </span>
         {item.reading && <b>{item.reading}</b>}
       </div>
     </div>
@@ -280,6 +288,79 @@ export function BenchList({ items, grown, tips, refShort }: { items: VsBench[]; 
       {shown.map((i) => <BenchBar key={i.key} item={i} grown={grown} tips={tips} refShort={refShort} />)}
       {rest.length > 0 && (
         <div className={shown.length ? "mt-3" : ""}>
+          {groupNa(rest).map((g) => (
+            <div key={g.text ?? g.state} className="mb-2 last:mb-0">
+              <NotApplicable inline state={g.state} title={g.labels.join(", ")} text={g.text} />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Métrica que puntúa sin barra frente a la referencia: valor, lectura y su ajuste. */
+function ScoredRow({ it, tips }: { it: ScoredItem; tips: Tips }) {
+  return (
+    <div className={`cz-sc ${toneClass(it.tone)}`}>
+      <span className="cz-vs-k">
+        {it.label}
+        <Help k={it.key} title={it.label} bands={tips[it.key]} value={it.value_txt ?? undefined}
+          reading={it.reading ? { label: it.reading, tone: it.tone } : null} text={it.reason} />
+      </span>
+      <span className="cz-vs-r">
+        {it.reading && <span className="fz-pill">{it.reading}</span>}
+        {it.sign && <span className="cz-sc-sign fz-tone-fg" title={it.in_block ? "ajuste individual: puntúa a través del bloque" : "ajuste a Valoración"}>{it.sign}</span>}
+        <span className="cz-vs-v">{it.value_txt}</span>
+      </span>
+    </div>
+  );
+}
+
+/**
+ * Múltiplos de Valoración separados por su papel en el score: primero el bloque que puntúa
+ * (con su ajuste total), luego lo que puntúa aparte y, tenues y rotulados, los informativos.
+ */
+export function MultiplesView({ items, block, scored, grown, tips, refShort }: {
+  items: Multiple[]; block: { label: string; sign: string; tone: Tone; reason: string } | null; scored: ScoredItem[];
+  grown: boolean; tips: Tips; refShort: string;
+}) {
+  const live = items.filter((i) => i.state === "con_dato");
+  const members = live.filter((i) => i.role === "block");
+  const memberRows = scored.filter((s) => s.in_block);
+  const apart = [...live.filter((i) => i.role === "scored")];
+  const apartRows = scored.filter((s) => !s.in_block);
+  const info = live.filter((i) => i.role === "informative");
+  const rest = items.filter((i) => i.state !== "con_dato");
+  return (
+    <div>
+      {(members.length > 0 || memberRows.length > 0) && (
+        <div className="cz-group">
+          <div className="cz-group-h">
+            <span className="cz-title">{block?.label ?? "Bloque de múltiplos"} · puntúa</span>
+            {block && <span className={`cz-chip ${toneClass(block.tone)}`}>{block.sign} a Valoración</span>}
+          </div>
+          {members.length > 0 && <div className="cz-legend"><span><i />Marcador: referencia del {refShort}</span></div>}
+          {members.map((i) => <BenchBar key={i.key} item={i} grown={grown} tips={tips} refShort={refShort} />)}
+          {memberRows.map((s) => <ScoredRow key={s.key} it={s} tips={tips} />)}
+          <p className="cz-group-n">Entre paréntesis, el ajuste individual de cada miembro: puntúa a través del bloque.</p>
+        </div>
+      )}
+      {(apart.length > 0 || apartRows.length > 0) && (
+        <div className="cz-group">
+          <div className="cz-group-h"><span className="cz-title">Puntúan aparte</span></div>
+          {apart.map((i) => <BenchBar key={i.key} item={i} grown={grown} tips={tips} refShort={refShort} />)}
+          {apartRows.map((s) => <ScoredRow key={s.key} it={s} tips={tips} />)}
+        </div>
+      )}
+      {info.length > 0 && (
+        <div className="cz-group is-info">
+          <div className="cz-group-h"><span className="cz-title">Informativos · no puntúan</span></div>
+          {info.map((i) => <BenchBar key={i.key} item={i} grown={grown} tips={tips} refShort={refShort} dim />)}
+        </div>
+      )}
+      {rest.length > 0 && (
+        <div className="mt-3">
           {groupNa(rest).map((g) => (
             <div key={g.text ?? g.state} className="mb-2 last:mb-0">
               <NotApplicable inline state={g.state} title={g.labels.join(", ")} text={g.text} />

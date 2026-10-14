@@ -2,7 +2,7 @@
 
 import type { Display } from "@/lib/api";
 import { useGrow } from "@/lib/useGrow";
-import { BenchList, ChartPanel, DcfComposition, FairValueScale, ReadingLines } from "../charts";
+import { ChartPanel, DcfComposition, FairValueScale, MultiplesView, ReadingLines } from "../charts";
 import { Collapsible, DataTable, Help, Note, Pill } from "../ui";
 
 // Clase de cada una de las 5 bandas de color del grid (display.sensitivity: índice 0 = muy por
@@ -41,7 +41,7 @@ export default function ValuationTab({ display }: { display: Display }) {
       </ChartPanel>
 
       <ChartPanel grown={grown} title={<>Múltiplos frente a la referencia {display.benchmark.ref}</>}>
-        <BenchList items={C.multiples} grown={grown} tips={tips} refShort={refShort} />
+        <MultiplesView items={C.multiples} block={C.block} scored={C.scored} grown={grown} tips={tips} refShort={refShort} />
         <ReadingLines lines={[V.intro]} />
         <Note>{V.market_note}</Note>
         <Note>{V.provisional_note}</Note>

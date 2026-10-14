@@ -312,9 +312,28 @@ export interface VsBench {
   tone?: Tone | null;
 }
 
+/** Múltiplo de Valoración con su papel en el score: miembro del bloque, puntúa aparte o informativo (no puntúa). */
+export interface Multiple extends VsBench {
+  role: "block" | "scored" | "informative";
+}
+
+/** Métrica que puntúa en Valoración sin barra frente a la referencia (normalizados, P/B vs ROE, P/FFO…). */
+export interface ScoredItem {
+  key: string;
+  label: string;
+  in_block: boolean;
+  value_txt: string | null;
+  reading: string | null;
+  tone: Tone | null;
+  sign: string | null;
+  reason: string | null;
+}
+
 export interface FairValueChart {
   state: RowState;
   text: string | null;
+  /** Método de la escala (la insignia y el título lo nombran). */
+  method?: string;
   price?: number;
   fair_value?: number;
   grid_low?: number | null;
@@ -472,7 +491,10 @@ export interface Charts {
   };
   valuation: {
     fair_value: FairValueChart;
-    multiples: VsBench[];
+    multiples: Multiple[];
+    /** Línea del bloque de múltiplos del desglose (ajuste total) o null. */
+    block: { label: string; sign: string; tone: Tone; reason: string } | null;
+    scored: ScoredItem[];
     dcf_composition: { explicit_pct: number; terminal_pct: number } | null;
   };
   profitability: {

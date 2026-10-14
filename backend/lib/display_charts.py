@@ -131,7 +131,7 @@ def _fair_value(a, D, price) -> Dict[str, Any]:
     zones = [{"from": edges[i], "to": edges[i + 1], "label": _UPSIDE[0][i], "tone": _UPSIDE[1][i]}
              for i in range(len(edges) - 1)]
     rel = D["sections"]["valuation"]
-    return {"state": "con_dato", "price": price, "fair_value": fv, "grid_low": lo_g, "grid_high": hi_g,
+    return {"state": "con_dato", "method": "DCF", "price": price, "fair_value": fv, "grid_low": lo_g, "grid_high": hi_g,
             "price_txt": numfmt.price(price), "fair_value_txt": numfmt.price(fv),
             "grid_low_txt": numfmt.whole(lo_g) if lo_g else None, "grid_high_txt": numfmt.whole(hi_g) if hi_g else None,
             "axis": [lo, hi], "zones": zones,
@@ -169,6 +169,31 @@ def _vs_bench(keys, rows, km, bench, na_text=None) -> List[Dict[str, Any]]:
             item["state"] = "sin_dato"
         out.append(item)
     return out
+
+
+# Métrica del desglose de Valoración -> clave de su fila en la tabla (prefijos más largos primero).
+_BD_ROW = (("P/FCF normalizado", "p_fcf_normalizado"), ("EV/EBITDA normalizado", "ev_ebitda_normalizado"),
+           ("Forward P/E", "forward_pe"), ("PEG", "peg"), ("P/E", "pe"), ("P/FCF", "pfcf"), ("EV/EBITDA", "ev_ebitda"),
+           ("P/B frente a ROE", "p_b_frente_a_roe"), ("P/TBV frente a ROTE", "p_tbv_frente_a_rote"),
+           ("P/FFO", "p_ffo_reit"), ("EV/Ventas", "ev_ventas"), ("Regla de 40", "regla_de_40"))
+
+
+def _price_scoring(D) -> tuple:
+    """Del desglose de Valoración: la línea del bloque, sus miembros y lo que puntúa aparte (por clave de fila)."""
+    cats = ((D["sections"]["institutional"].get("breakdown") or {}).get("categories") or [])
+    cat = next((c for c in cats if c.get("group") == "price"), None)
+    block, members, others = None, {}, {}
+    for it in (cat or {}).get("items") or []:
+        m = it.get("metric") or ""
+        if m.startswith("Bloque"):
+            block = {"label": m, "sign": it.get("sign"), "tone": it.get("tone"), "reason": it.get("reason")}
+            continue
+        if m.startswith("DCF") or it.get("state") == "no_aplica":
+            continue
+        key = next((k for pre, k in _BD_ROW if m.startswith(pre)), None)
+        if key:
+            (members if it.get("in_block") else others)[key] = it
+    return block, members, others
 
 
 def _growth_raw(a) -> Dict[str, Any]:
@@ -217,7 +242,24 @@ def build_charts(a: Dict[str, Any], D: Dict[str, Any], sector_bench: Dict[str, A
             and vc.get("terminal_pct") is not None):
         explicit = (vc.get("stage1_pct") or 0) + (vc.get("stage2_pct") or 0)
         dcf_comp = {"explicit_pct": explicit, "terminal_pct": vc["terminal_pct"]}
-    valuation = {"fair_value": _fair_value(a, D, price), "multiples": _vs_bench(_VAL_KEYS, vrows, km, bench, na_text=f"No aplica a {D.get('archetype_label')}"),
+    # Etapa 9c: papel de cada múltiplo en el score. Los miembros del bloque puntúan a través de él; lo que
+    # no entra en el bloque ni puntúa aparte es informativo (se muestra tenue y rotulado).
+    block, members, others = _price_scoring(D)
+    multiples = _vs_bench(_VAL_KEYS, vrows, km, bench, na_text=f"No aplica a {D.get('archetype_label')}")
+    for it in multiples:
+        it["role"] = "block" if it["key"] in members else "scored" if it["key"] in others else "informative"
+    barred = {it["key"] for it in multiples if it["state"] == "con_dato"}
+    scored = []
+    for in_block, group in ((True, members), (False, others)):
+        for key, it in group.items():
+            if key in barred:
+                continue
+            r = vrows.get(key) or {}
+            scored.append({"key": key, "label": r.get("label") or it.get("metric"), "in_block": in_block,
+                           "value_txt": r.get("value") or it.get("value") or None,
+                           "reading": r.get("reading") if r.get("reading") not in (None, "—") else None,
+                           "tone": r.get("tone") or it.get("tone"), "sign": it.get("sign"), "reason": it.get("reason")})
+    valuation = {"fair_value": _fair_value(a, D, price), "multiples": multiples, "block": block, "scored": scored,
                  "dcf_composition": dcf_comp}
 
     # ── Rentabilidad ──

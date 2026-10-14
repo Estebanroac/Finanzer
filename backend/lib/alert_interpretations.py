@@ -234,8 +234,12 @@ def _dcf(ctx: Ctx):
                     "moderado, condicionado a que el negocio ejecute según lo previsto.", T["w_below_fair"])
     if up <= -T["upside_strong"]:
         return _sig("risk", "Valor intrínseco", f"Sobrevalorada según DCF {signed_pct(up)}",
-                    f"El precio excede en {abs(up):.0f}% el valor justo estimado por el DCF (${fv:,.0f}): sostenerlo exige "
-                    "asumir escenarios de crecimiento muy optimistas.", T["w_overvalued"])
+                    f"El precio excede en {abs(up):.0f}% el valor justo estimado por el DCF (${fv:,.0f}): "
+                    + ("ningún supuesto razonable del rango de sensibilidad lo justifica."
+                       if rel.get("grid_contains_price") is False else
+                       "sostenerlo requiere supuestos exigentes pero posibles (el precio cae en la parte alta del "
+                       "rango de sensibilidad)." if rel.get("grid_contains_price") else
+                       "sostenerlo exige supuestos más favorables que el caso base."), T["w_overvalued"])
     if up <= -T["upside_moderate"]:
         return _sig("warning", "Valor intrínseco", f"Prima sobre el valor justo {signed_pct(up)}",
                     f"El precio está un {abs(up):.0f}% por encima del valor intrínseco estimado (${fv:,.0f}): el mercado ya "
