@@ -1,6 +1,7 @@
 """
-Etapa 11b: invariantes sobre la muestra amplia (tests/fixtures/muestra, capturada en local
-con red) y sobre los 12 juegos con golden. Sin red.
+Casos de la etapa 11b sobre el PANEL (tests/fixtures/panel, ruta de producción: plan B + Finnhub). Hasta la
+fase 1 corrían sobre el juego "muestra", retirado por la decisión D8 (se capturó por quoteSummary y sin Finnhub);
+los tickers del panel cubren los mismos casos. Sin red.
 
   · textos visibles sin códigos de arquetipo ni "$-" (signo antes del símbolo);
   · moneda: los ADR (TSM, NVO, ASML) con los estados convertidos y múltiplos coherentes;
@@ -20,18 +21,18 @@ from fastapi import HTTPException
 import fixture_backend as fb
 import invariants as inv
 
-SAMPLE_DIR = fb.fixtures_dir(fb.SAMPLE_ENV)
-pytestmark = pytest.mark.skipif(not os.path.isdir(SAMPLE_DIR), reason="sin fixtures de la muestra")
+SAMPLE_DIR = fb.fixtures_dir(fb.PANEL_ENV)
+pytestmark = pytest.mark.skipif(not fb.panel_available(), reason="sin fixtures del panel")
 
 BAD_SIGN = re.compile(r"\$\s*[-−]")
 
 
 @pytest.fixture(scope="module")
 def sample():
-    """{ticker: análisis | HTTPException} de la muestra, desde los fixtures."""
+    """{ticker: análisis | HTTPException} del panel, desde los fixtures."""
     out = {}
     with fb.replay(SAMPLE_DIR) as store:
-        for sym in fb.SAMPLE_TICKERS:
+        for sym in fb.PANEL_TICKERS:
             try:
                 out[sym] = fb.run_analysis(sym, store)
             except HTTPException as e:
@@ -46,17 +47,17 @@ def _ok(sample):
 
 # ── 7. textos ──
 def test_visible_text_has_no_archetype_codes_nor_sign_after_symbol(sample, outputs_by_env):
-    """Recorre el texto visible (display, que pintan la web y el PDF) y el texto del PDF de
-    toda la muestra y de los 12 juegos con golden."""
-    analyses = [(f"muestra/{s}", a) for s, a in _ok(sample).items()]
+    """Recorre el texto visible (display, que pintan la web y el PDF) y el texto del PDF del panel y del
+    juego local."""
+    analyses = [(f"panel/{s}", a) for s, a in _ok(sample).items()]
     pdfs = []
     for env in fb.available_envs():
         for sym, (a, pdf) in outputs_by_env(env).items():
             analyses.append((f"{env}/{sym}", a))
             pdfs.append((f"{env}/{sym}", fb.pdf_text(pdf)))
     for name, a in _ok(sample).items():
-        pdfs.append((f"muestra/{name}", fb.pdf_text(fb.build_pdf_bytes(a, fb.capture_date(
-            {"captured_at_local": "2026-10-13T12:00:00"})))))
+        pdfs.append((f"panel/{name}", fb.pdf_text(fb.build_pdf_bytes(a, fb.capture_date(
+            {"captured_at_local": "2026-10-14T16:15:00"})))))
     bad = []
     for name, a in analyses:
         try:
@@ -195,14 +196,14 @@ def test_etf_rejected_with_clear_message(sample):
 
 
 def test_sensitivity_grid_sign_before_symbol(sample):
-    """La muestra no trae celdas negativas: se inyectan para cubrir el formato ("−$8", no "$-8")."""
+    """El panel no trae celdas negativas: se inyectan para cubrir el formato ("−$8", no "$-8")."""
     import copy
     import main
     import numfmt
     from display import build_display
     assert (numfmt.whole(-8.4), numfmt.whole(-0.3), numfmt.whole(142.6), numfmt.whole(None)) == ("−$8", "$0", "$143", "—")
-    a = copy.deepcopy(sample["PFE"])
-    assert a.get("sensitivity", {}).get("matrix"), "PFE debería tener grid"
+    a = copy.deepcopy(sample["KO"])
+    assert a.get("sensitivity", {}).get("matrix"), "KO debería tener grid"
     a["sensitivity"]["matrix"][0][0] = -8.0
     cells = [c["value"] for r in build_display(a, main._pdf_benchmark(a))["sections"]["valuation"]["sensitivity"]["rows"]
              for c in r["cells"]]

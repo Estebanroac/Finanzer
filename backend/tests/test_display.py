@@ -177,7 +177,7 @@ def test_growth_texts_cite_the_scored_figure(env_sym, outputs_by_env):
 
 
 def test_financial_not_applicable_figures(outputs_by_env):
-    for env in [e for e in ("local", "prod") if e in __import__("conftest").ENVS]:
+    for env in __import__("conftest").BOUND_ENVS:
         d = outputs_by_env(env)["JPM"][0]["display"]
         fig = {r[0]: r[1] for r in d["sections"]["profitability"]["figures"]}
         fig.update({r[2]: r[3] for r in d["sections"]["profitability"]["figures"]})
@@ -188,7 +188,7 @@ def test_financial_not_applicable_figures(outputs_by_env):
 
 
 def test_piotroski_criteria_in_spanish(outputs_by_env):
-    for env in [e for e in ("local", "prod") if e in __import__("conftest").ENVS]:
+    for env in __import__("conftest").ENVS:
         for sym, (a, _) in outputs_by_env(env).items():
             inv.piotroski_criteria_in_spanish(a, None)
 
@@ -202,6 +202,6 @@ def test_money_format_sign_before_symbol():
 
 
 def test_price_wording_without_jargon(outputs_by_env):
-    for env in [e for e in ("local", "prod") if e in __import__("conftest").ENVS]:
+    for env in __import__("conftest").ENVS:
         for sym, (a, _) in outputs_by_env(env).items():
             inv.price_wording_without_jargon(a, None)

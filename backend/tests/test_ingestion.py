@@ -1,5 +1,5 @@
 """Etapa 3: bugs de ingesta corregidos (uno por bloque) con datos sintéticos y
-con los fixtures de prod/local."""
+con los fixtures del panel (ruta de producción) y local."""
 import json
 
 import pytest
@@ -65,8 +65,8 @@ def test_search_profile_returns_none_without_exact_match(fake_search, status, pa
 @pytest.mark.parametrize("sym,sector", [("O", "Real Estate"), ("FCX", "Basic Materials"),
                                         ("NFLX", "Communication Services"), ("JPM", "Financial Services")])
 def test_prod_plan_b_sector_comes_from_source(sym, sector, outputs_by_env):
-    """En prod (plan B) el sector ya no depende de KNOWN_SECTORS."""
-    a = outputs_by_env("prod")[sym][0]
+    """En el plan B (panel) el sector ya no depende de KNOWN_SECTORS."""
+    a = outputs_by_env("panel")[sym][0]
     assert a["profile"]["sector"] == sector
     assert a["sector_info"]["mapped_sector"] != "Unknown"
 
@@ -75,19 +75,19 @@ def test_prod_plan_b_sector_comes_from_source(sym, sector, outputs_by_env):
 @pytest.mark.parametrize("sym", fb.TICKERS)
 def test_prod_plan_b_has_prior_year_for_piotroski(sym, outputs_by_env):
     """El plan B ejecuta el enriquecimiento con los estados del ejercicio anterior."""
-    pf = outputs_by_env("prod")[sym][0]["piotroski_f"]
+    pf = outputs_by_env("panel")[sym][0]["piotroski_f"]
     assert pf["fiscal_year"].startswith("FY") and " vs FY" in pf["fiscal_year"]
     assert "Sin datos de acciones históricas" not in pf["details"]["no_dilution"]["detail"]
     assert "Sin datos" not in pf["details"]["roa_improved"]["detail"]
 
 
 def test_prod_plan_b_prior_year_values_come_from_statements(fixture_store):
-    """_prior_year de NFLX en prod = columna FY2024 de los estados de yfinance."""
+    """_prior_year de NFLX en el panel (plan B) = columna FY2024 de los estados de yfinance."""
     import yf_adapter
-    st = fb.FixtureStore(fb.fixtures_dir("prod"))
+    st = fb.FixtureStore(fb.fixtures_dir("panel"))
     st.load("NFLX")
     inc = fb.obj_to_df(st.yf["NFLX"]["income_stmt"])
-    with fb.replay(fb.fixtures_dir("prod")) as store:
+    with fb.replay(fb.fixtures_dir("panel")) as store:
         fb.run_analysis("NFLX", store)
         prior = dict(yf_adapter._cache["NFLX"][1]["_prior_year"])
     assert prior["_fiscal_year"] == "2024"
@@ -95,14 +95,14 @@ def test_prod_plan_b_prior_year_values_come_from_statements(fixture_store):
 
 
 # ─────────────── bug (c): acciones en circulación y misma base en buyback ───────────────
-@pytest.mark.parametrize("env", ["local", "prod"])
+@pytest.mark.parametrize("env", ["local", "panel"])
 def test_nflx_no_dilution_uses_ordinary_shares(env, outputs_by_env):
     """NFLX recompró (4.28 -> 4.22B en circulación): no hay dilución."""
     a = outputs_by_env(env)["NFLX"][0]
     assert a["piotroski_f"]["details"]["no_dilution"]["passed"] is True
 
 
-@pytest.mark.parametrize("env", ["local", "prod"])
+@pytest.mark.parametrize("env", ["local", "panel"])
 def test_buyback_yield_same_fiscal_basis(env, outputs_by_env, fixture_store):
     """buyback = (FY previo − FY actual) / FY previo, ambos Ordinary Shares Number."""
     bs = fb.obj_to_df(fixture_store.yf["NFLX"]["balance_sheet"])

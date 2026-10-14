@@ -39,14 +39,16 @@ def test_ttm_needs_consecutive_quarters_else_annual_with_reason():
     assert "sin dato en alguno" in t["missing"]["totalRevenue"]
 
 
-def test_prod_replay_falls_back_to_annual_with_flag(outputs_by_env):
+def test_quarterly_gaps_fall_back_to_annual_with_flag(outputs_by_env):
+    """Sin 4 trimestres consecutivos con dato, el flujo se queda en el anual y lo dice. Antes se probaba con el
+    juego prod (sin trimestrales; retirado en la fase 1, D8); en el panel, BRK-B no trae capex ni D&A en algún
+    trimestre."""
     import conftest
-    if "prod" not in conftest.ENVS:
-        pytest.skip("falta el juego prod")
-    for sym, (a, _) in outputs_by_env("prod").items():
-        t = a["data_provenance"]["ttm"]
-        assert t["basis"] == "anual" and t["ttm_fields"] == [], sym
-        assert "totalRevenue" in t["annual_fields"] and t["errors"], sym
+    if "panel" not in conftest.BOUND_ENVS:
+        pytest.skip("falta el panel")
+    t = outputs_by_env("panel")["BRK-B"][0]["data_provenance"]["ttm"]
+    assert t["basis"] == "anual" and t["ttm_fields"] == []
+    assert t["annual_fields"] and all("sin dato en" in r for r in t["annual_fields"].values())
 
 
 def test_local_uses_ttm(outputs_by_env):
@@ -229,7 +231,7 @@ def test_recurrent_items_by_ticker(outputs_by_env):
 def test_reit_ffo_uses_reported_income_not_normalized(outputs_by_env):
     """REIT: el FFO va sobre el beneficio REPORTADO; el normalizado no entra en él,
     así que las ganancias por venta no se restan dos veces."""
-    for env in ("local", "prod"):
+    for env in ("local", "panel"):
         a = outputs_by_env(env)["O"][0]
         n, km = a["earnings_normalization"], a["key_metrics"]
         assert n["applied"] and n["normalized_net_income"] != n["reported_net_income"]
@@ -248,7 +250,7 @@ def test_per_share_basis_threshold():
 
 def test_per_share_applied_to_revenue_and_fcf(outputs_by_env):
     """SNOW: acciones +2.1% anual -> ingresos y FCF por acción; el BPA ya lo es."""
-    for env in ("local", "prod"):
+    for env in ("local", "panel"):
         a = outputs_by_env(env)["SNOW"][0]
         g = a["growth_basis"]
         assert g["basis"] == "por_accion" and g["applied_to"] == ["ingresos", "FCF"] and g["shares_cagr_3y"] > 0.02

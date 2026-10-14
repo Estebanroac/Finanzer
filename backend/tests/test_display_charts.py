@@ -4,12 +4,10 @@ Etapa 9c: display.charts (datos de los gráficos de la web).
 Los gráficos no pueden contradecir a las lecturas: cada marcador cae en la zona cuya
 etiqueta es la lectura de la tabla (las zonas salen de la misma config que los lectores),
 y lo que no aplica o no es significativo lleva su estado y su motivo, nunca un hueco.
-Corre sobre los 12 juegos con golden y la muestra amplia.
+Corre sobre el juego local y el panel.
 """
-import os
 
 import pytest
-from fastapi import HTTPException
 
 import fixture_backend as fb
 import invariants as inv
@@ -17,16 +15,10 @@ import invariants as inv
 
 @pytest.fixture(scope="module")
 def analyses(outputs_by_env):
-    out = [(f"{e}/{s}", o[0]) for e in fb.available_envs() for s, o in outputs_by_env(e).items()]
-    sample_dir = fb.fixtures_dir(fb.SAMPLE_ENV)
-    if os.path.isdir(sample_dir):
-        with fb.replay(sample_dir) as store:
-            for s in fb.SAMPLE_TICKERS:
-                try:
-                    out.append((f"muestra/{s}", fb.run_analysis(s, store)))
-                except HTTPException:
-                    pass
-    return out
+    """Juego local y panel (fase 1, D8: el panel sustituye a prod y a la muestra). Sin los rechazados (SPY)."""
+    import conftest
+    return [(f"{e}/{s}", o[0]) for e in conftest.REG_ENVS for s, o in outputs_by_env(e).items()
+            if not o[0].get("__http_error__")]
 
 
 def test_gauges_marker_falls_in_the_zone_of_its_reading(analyses):
@@ -47,16 +39,16 @@ def test_altman_value_falls_in_its_model_zone(analyses):
 def test_not_applicable_never_leaves_an_empty_chart(analyses):
     """Banco (JPM), REIT (O), pre-beneficio (SNOW) y utilities: estado propio con motivo."""
     by = dict(analyses)
-    jpm = by["prod/JPM"]["display"]["charts"]
+    jpm = by["panel/JPM"]["display"]["charts"]
     assert {g["key"]: g["state"] for g in jpm["solvency"]["gauges"]} == {
         "current_ratio": "no_aplica", "interest_coverage": "no_aplica", "net_debt_to_ebitda": "no_aplica",
         "de": "no_aplica"}
     assert all(g.get("text") for g in jpm["solvency"]["gauges"])
     assert jpm["valuation"]["fair_value"]["state"] == "no_aplica" and jpm["valuation"]["fair_value"]["text"]
     assert {f["key"]: f["state"] for f in jpm["results_flow"]}["fcf"] == "no_aplica"
-    o = by["prod/O"]["display"]["charts"]
+    o = by["panel/O"]["display"]["charts"]
     assert o["institutional"]["altman"]["state"] == "no_aplica"
-    snow = by["prod/SNOW"]["display"]["charts"]
+    snow = by["panel/SNOW"]["display"]["charts"]
     assert snow["solvency"]["runway"]["state"] == "con_dato"
 
 
@@ -70,12 +62,12 @@ def test_multiples_role_matches_the_score_breakdown(analyses):
     by = dict(analyses)
     for name, a in analyses:
         inv.chart_multiples_role_matches_breakdown(a, None)
-    nf = {m["key"]: m["role"] for m in by["prod/NFLX"]["display"]["charts"]["valuation"]["multiples"]}
+    nf = {m["key"]: m["role"] for m in by["panel/NFLX"]["display"]["charts"]["valuation"]["multiples"]}
     assert nf["pb"] == nf["fcf_yield"] == "informative" and nf["pe"] == nf["pfcf"] == "block"
-    fcx = by["prod/FCX"]["display"]["charts"]["valuation"]
+    fcx = by["panel/FCX"]["display"]["charts"]["valuation"]
     assert {s["key"] for s in fcx["scored"] if s["in_block"]} == {"p_fcf_normalizado", "ev_ebitda_normalizado"}
     assert {m["key"]: m["role"] for m in fcx["multiples"]}["pfcf"] == "informative"
-    o = by["prod/O"]["display"]["charts"]["valuation"]
+    o = by["panel/O"]["display"]["charts"]["valuation"]
     assert [s["key"] for s in o["scored"] if not s["in_block"]] == ["p_ffo_reit"]
 
 

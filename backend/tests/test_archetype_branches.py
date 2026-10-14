@@ -9,7 +9,7 @@ PRIMARY_FCF_PE = ("P/E", "P/FCF", "Free Cash Flow", "FCF / Net Income", "Cash Fl
 
 def _envs():
     import conftest
-    return conftest.ENVS
+    return conftest.BOUND_ENVS
 
 
 def _metrics(a, cat):

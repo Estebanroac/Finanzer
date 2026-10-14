@@ -98,9 +98,9 @@ def test_bug_jpm_revenue_growth_artifact(analysis, fixture_store):
 # CORREGIDO en la etapa 3 (bug a): el plan B toma sector/industria de la búsqueda de Yahoo.
 def test_bug_prod_sector_unknown_outside_known_list_o(outputs_by_env):
     import conftest
-    if "prod" not in conftest.ENVS:
-        pytest.skip("falta el juego prod")
-    profile = outputs_by_env("prod")["O"][0]["profile"]
+    if "panel" not in conftest.BOUND_ENVS:
+        pytest.skip("falta el panel")
+    profile = outputs_by_env("panel")["O"][0]["profile"]
     assert profile["sector"] == "Real Estate"
 
 
@@ -131,10 +131,10 @@ def _run_with_revenue_growth(sym, env, delta):
 
 def test_bug_incoherent_revenue_growth_is_informative_only():
     import conftest
-    if "prod" not in conftest.ENVS:
-        pytest.skip("falta el juego prod")
-    base = _run_with_revenue_growth("V", "prod", 0.0)
-    flagged = _run_with_revenue_growth("V", "prod", 0.17)
+    if "panel" not in conftest.BOUND_ENVS:
+        pytest.skip("falta el panel")
+    base = _run_with_revenue_growth("V", "panel", 0.0)
+    flagged = _run_with_revenue_growth("V", "panel", 0.17)
     assert any(f["rule"] == "crecimiento_incoherente" for f in flagged["data_validation"])
     assert not any(f["rule"] == "crecimiento_incoherente" for f in base["data_validation"])
     # Solo informativo: ni el desglose, ni las dos puntuaciones, ni la confianza cambian.

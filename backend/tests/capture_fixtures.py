@@ -7,8 +7,8 @@ congela en tests/fixtures/<env>/<TICKER>/. Uso EXPLÍCITO, nunca automático:
     python3 tests/capture_fixtures.py NFLX --force    # recapturar uno
     python3 tests/capture_fixtures.py --env local     # juego de datos (local por defecto)
 
-El juego "prod" no se captura aquí: viene de /api/_capture en Render (ver
-import_prod_capture.py).
+El juego "prod" (capturado en Render con /api/_capture) se retiró en la fase 1 (D8);
+la ruta de producción la cubre el juego "panel" capturado con --render-sim.
 
 Fase 0 del plan de fiabilidad: el juego "panel" se captura en local con Render
 simulado (fixture_backend.render_sim: S1 quoteSummary 401, S2 ticker.info vacío)
@@ -121,8 +121,8 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("tickers", nargs="*")
     ap.add_argument("--force", action="store_true", help="sobrescribir fixtures existentes")
-    ap.add_argument("--env", default=fb.DEFAULT_ENV, choices=["local", fb.SAMPLE_ENV, fb.PANEL_ENV],
-                    help="juego de datos a capturar (prod llega por /api/_capture)")
+    ap.add_argument("--env", default=fb.DEFAULT_ENV, choices=["local", fb.PANEL_ENV],
+                    help="juego de datos a capturar")
     ap.add_argument("--render-sim", action="store_true",
                     help="simular Render: quoteSummary 401 y ticker.info vacío (plan B + Finnhub)")
     ap.add_argument("--sin-finnhub", action="store_true",
