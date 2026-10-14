@@ -12,6 +12,11 @@ logging.disable(logging.CRITICAL)
 # Juegos de datos presentes (local siempre; prod cuando se haya importado).
 ENVS = fb.available_envs()
 ENV_TICKERS = [(e, t) for e in ENVS for t in fb.TICKERS]
+# Fase 0 del plan de fiabilidad: el juego panel (31 tickers) entra SOLO en la regresión y el determinismo.
+# No se añade a ENVS: los tests de invariantes están escritos para los 6 tickers de local/prod, y lo que el
+# panel revela es la línea base (docs/fiabilidad/F0_LINEA_BASE.md), no un fallo de la suite.
+REG_ENVS = ENVS + ([fb.PANEL_ENV] if fb.panel_available() else [])
+REG_ENV_TICKERS = [(e, t) for e in REG_ENVS for t in fb.env_tickers(e)]
 
 
 def env_id(param):
@@ -25,7 +30,7 @@ def outputs_by_env():
 
     def get(env):
         if env not in cache:
-            cache[env] = fb.compute_outputs(fb.TICKERS, fb.fixtures_dir(env))
+            cache[env] = fb.compute_outputs(fb.env_tickers(env), fb.fixtures_dir(env))
         return cache[env]
     return get
 
