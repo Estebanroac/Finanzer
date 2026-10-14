@@ -68,18 +68,43 @@ DEFAULT_ENV = "local"
 SAMPLE_ENV = "muestra"
 SAMPLE_TICKERS = ["KO", "PG", "JNJ", "PFE", "XOM", "NEE", "T", "CB", "BRK-B", "MA", "AMZN", "MU", "NVDA", "PLTR",
                   "CROX", "TSM", "ASML", "NVO", "DUK", "SPY"]
+# Fase 0 del plan de fiabilidad: panel de referencia (docs/PLAN_FIABILIDAD.md §3), capturado en local con
+# Render simulado (render_sim) y Finnhub activo. Grupo de cada ticker: lo usa panel_run.
+PANEL_ENV = "panel"
+PANEL_GROUPS = {
+    "Madura": ["AAPL", "MSFT", "KO", "PG", "JNJ"],
+    "Financiera": ["JPM", "BAC", "PGR", "V", "BRK-B"],
+    "REIT": ["O", "PLD", "AMT"],
+    "Utility": ["NEE", "DUK"],
+    "Cíclica": ["XOM", "FCX", "CAT", "MU", "DOW"],
+    "Crecimiento rentable": ["PLTR", "NVDA", "CRWD"],
+    "Pre-beneficio": ["RIVN", "SNOW"],
+    "ADR / IFRS": ["TSM", "ASML", "NVO"],
+    "Casos trampa": ["NFLX", "AMZN", "SPY"],
+}
+PANEL_TICKERS = [t for ts in PANEL_GROUPS.values() for t in ts]
 
 
 def fixtures_dir(env=DEFAULT_ENV):
-    if env not in ENVS and env != SAMPLE_ENV:
+    if env not in ENVS and env not in (SAMPLE_ENV, PANEL_ENV):
         raise ValueError(f"entorno desconocido: {env!r} (válidos: {ENVS})")
     return os.path.join(FIXTURES_ROOT, env)
 
 
 def golden_dir(env=DEFAULT_ENV):
-    if env not in ENVS:
+    if env not in ENVS and env != PANEL_ENV:
         raise ValueError(f"entorno desconocido: {env!r} (válidos: {ENVS})")
     return os.path.join(GOLDEN_ROOT, env)
+
+
+def env_tickers(env):
+    """Tickers con golden de un juego: los 31 del panel o los 6 de local/prod."""
+    return PANEL_TICKERS if env == PANEL_ENV else TICKERS
+
+
+def panel_available():
+    """El juego panel está capturado (fixtures de los 31)."""
+    return all(os.path.isfile(os.path.join(fixtures_dir(PANEL_ENV), t, "metadata.json")) for t in PANEL_TICKERS)
 
 
 def available_envs():
@@ -602,6 +627,86 @@ def record(base_dir=FIXTURES_DIR):
         p.undo()
 
 
+# ═══════════════════════ Render simulado (fase 0) ═══════════════════════
+# En Render (RECON §7.1, §7.5) quoteSummary responde 401 "Invalid Crumb" a todo, y también el quoteSummary
+# interno de yfinance (`ticker.info` solo trae `trailingPegRatio`). Lo demás (fast_info, estados anuales y
+# trimestrales, fundamentals-timeseries, búsqueda, tipos de cambio, Finnhub) responde. render_sim() reproduce
+# eso en una captura local; se entra ANTES que record(), que envuelve lo que encuentra, así que el 401 queda
+# grabado y el replay sigue el mismo camino.
+#   S1  quoteSummary          -> 401 con el cuerpo de prod (no sale a la red).
+#   S2  yfinance.Ticker.info  -> {} (el plan B solo lee `beta`: equivale al {'trailingPegRatio': x} de prod).
+RENDER_401_BODY = '{"finance":{"result":null,"error":{"code":"Unauthorized","description":"Invalid Crumb"}}}'
+RENDER_SIM_META = {
+    "S1": "quoteSummary responde 401 Invalid Crumb (simulado, como en Render)",
+    "S2": "yfinance.Ticker.info devuelve {} (simulado, como en Render)",
+}
+
+
+class _Render401Session:
+    def __init__(self, real):
+        self._real = real
+
+    def get(self, url, params=None, **kw):
+        if "/v10/finance/quoteSummary/" in url:
+            return _FakeResponse(401, RENDER_401_BODY)
+        return self._real.get(url, params=params, **kw)
+
+    def __getattr__(self, name):
+        return getattr(self._real, name)
+
+
+class _RenderTicker:
+    def __init__(self, real_cls, symbol, *a, **kw):
+        self._t = real_cls(symbol, *a, **kw)
+
+    def __getattr__(self, name):
+        if name == "info":
+            return {}
+        return getattr(self._t, name)
+
+
+def _throttled(fn, min_interval_s):
+    """Llamadas a `fn` separadas al menos `min_interval_s` (límite de peticiones de Finnhub)."""
+    last = [0.0]
+    lock = threading.Lock()
+
+    def wrapper(*a, **kw):
+        with lock:
+            wait = last[0] + min_interval_s - time.monotonic()
+            if wait > 0:
+                time.sleep(wait)
+            last[0] = time.monotonic()
+        return fn(*a, **kw)
+    return wrapper
+
+
+@contextlib.contextmanager
+def render_sim(finnhub_min_interval_s=1.1):
+    """S1 + S2 (y Finnhub a ≤ 1 petición cada `finnhub_min_interval_s`: 1.1 s ≈ 55/min, bajo el límite
+    gratuito de 60/min). Usar envolviendo a record()."""
+    import finnhub_fallback
+    import yf_adapter
+    import yfinance
+
+    p = _Patcher()
+    real_ensure = yf_adapter._ensure_session
+    real_ticker = yfinance.Ticker
+
+    def _ensure_render():
+        real_ensure()
+        s = yf_adapter._session
+        if s is not None and not isinstance(s, (_Render401Session, _RecordingSession)):
+            yf_adapter._session = _Render401Session(s)
+
+    p.set(yf_adapter, "_ensure_session", _ensure_render)
+    p.set(yfinance, "Ticker", lambda symbol, *a, **kw: _RenderTicker(real_ticker, symbol, *a, **kw))
+    p.set(finnhub_fallback, "_get", _throttled(finnhub_fallback._get, finnhub_min_interval_s))
+    try:
+        yield
+    finally:
+        p.undo()
+
+
 # ═══════════════════════════ ejecución ═══════════════════════════
 
 def run_analysis(symbol, store):
@@ -666,6 +771,8 @@ def build_pdf_bytes(analysis, frozen_now, table_style_cls=None):
 
 
 def pdf_text(pdf_bytes):
+    if pdf_bytes is None:      # ticker rechazado: sin PDF
+        return ""
     from pypdf import PdfReader
     reader = PdfReader(io.BytesIO(pdf_bytes))
     pages = []
@@ -681,11 +788,17 @@ def golden_paths(sym, base_dir=GOLDEN_DIR):
 
 
 def compute_outputs(symbols=None, fixtures_path=FIXTURES_DIR):
-    """{sym: (analysis, pdf_bytes)} desde los fixtures de `fixtures_path`."""
+    """{sym: (analysis, pdf_bytes)} desde los fixtures de `fixtures_path`. Si el backend rechaza el
+    ticker (p. ej. SPY, 422), el análisis es {"__http_error__", "detail"} y no hay PDF (None)."""
+    from fastapi import HTTPException
     out = {}
     with replay(fixtures_path) as store:
         for sym in symbols or TICKERS:
-            a = run_analysis(sym, store)
+            try:
+                a = run_analysis(sym, store)
+            except HTTPException as e:
+                out[sym.upper()] = ({"__http_error__": e.status_code, "detail": e.detail}, None)
+                continue
             pdf = build_pdf_bytes(a, capture_date(store.meta[sym.upper()]))
             out[sym.upper()] = (a, pdf)
         if store.misses:
@@ -720,7 +833,7 @@ if __name__ == "__main__":
     import logging
     logging.disable(logging.CRITICAL)
     args = sys.argv[1:]
-    env = args.pop(0) if args and args[0] in ENVS else DEFAULT_ENV
-    res = compute_outputs(args or None, fixtures_dir(env))
-    print(json.dumps({s: [sha256(raw_json(a)), sha256(pdf)] for s, (a, pdf) in res.items()},
+    env = args.pop(0) if args and args[0] in ENVS + (PANEL_ENV,) else DEFAULT_ENV
+    res = compute_outputs(args or env_tickers(env), fixtures_dir(env))
+    print(json.dumps({s: [sha256(raw_json(a)), sha256(pdf or b"")] for s, (a, pdf) in res.items()},
                      sort_keys=True))

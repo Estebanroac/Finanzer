@@ -10,20 +10,20 @@ import sys
 import pytest
 
 import fixture_backend as fb
-from conftest import ENVS
+from conftest import REG_ENVS
 
 
 def _hashes(res):
-    return {s: [fb.sha256(fb.raw_json(a)), fb.sha256(pdf)] for s, (a, pdf) in res.items()}
+    return {s: [fb.sha256(fb.raw_json(a)), fb.sha256(pdf or b"")] for s, (a, pdf) in res.items()}
 
 
-@pytest.mark.parametrize("env", ENVS)
+@pytest.mark.parametrize("env", REG_ENVS)
 def test_same_process_twice_identical(env, outputs_by_env):
-    second = fb.compute_outputs(fb.TICKERS, fb.fixtures_dir(env))
+    second = fb.compute_outputs(fb.env_tickers(env), fb.fixtures_dir(env))
     assert _hashes(second) == _hashes(outputs_by_env(env))
 
 
-@pytest.mark.parametrize("env", ENVS)
+@pytest.mark.parametrize("env", REG_ENVS)
 def test_across_processes_and_hash_seeds(env, outputs_by_env):
     script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fixture_backend.py")
     runs = []

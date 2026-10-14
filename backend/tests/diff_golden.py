@@ -297,17 +297,17 @@ def compare_envs(syms, full):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("tickers", nargs="*", default=fb.TICKERS)
+    ap.add_argument("tickers", nargs="*")
     ap.add_argument("--full", action="store_true", help="no recortar listados")
     ap.add_argument("--regenerate", action="store_true", help="reescribir los golden (explícito)")
     ap.add_argument("--yes", action="store_true", help="confirmar --regenerate sin preguntar")
-    ap.add_argument("--env", default=fb.DEFAULT_ENV, choices=fb.ENVS, help="juego de fixtures/golden")
+    ap.add_argument("--env", default=fb.DEFAULT_ENV, choices=fb.ENVS + (fb.PANEL_ENV,), help="juego de fixtures/golden")
     ap.add_argument("--local-vs-prod", action="store_true",
                     help="comparar los juegos local y prod con la causa en inputs crudos")
     args = ap.parse_args(argv)
     logging.disable(logging.CRITICAL)
 
-    syms = [t.upper() for t in args.tickers]
+    syms = [t.upper() for t in args.tickers] or fb.env_tickers(args.env)
     if args.local_vs_prod:
         return compare_envs(syms, args.full)
     gdir = fb.golden_dir(args.env)

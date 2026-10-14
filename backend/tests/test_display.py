@@ -11,70 +11,28 @@ import pytest
 
 import display as dp
 import plain_language as pl
+import invariants as inv
 from conftest import ENV_TICKERS, env_id
 from settings import cfg
-
-TONES = {"pos", "neg", "warn", "neu", None}
-
-
-def _rows(d):
-    S = d["sections"]
-    yield from S["valuation"]["rows"]
-    yield from S["valuation"]["intrinsic"]["rows"]
-    yield from S["profitability"]["rows"]
-    yield from S["solvency"]["rows"]
-    yield from S["growth"]["rows"]
 
 
 @pytest.mark.parametrize("env_sym", ENV_TICKERS, ids=env_id)
 def test_display_contract(env_sym, outputs_by_env):
     env, sym = env_sym
-    a = outputs_by_env(env)[sym][0]
-    d = a["display"]
-    json.dumps(d, allow_nan=False)                       # serializable, sin NaN
-    assert d["archetype"] == a["classification"]["archetype"]
-    for r in _rows(d):
-        assert r["state"] in dp.STATES, r
-        assert r["tone"] in TONES, r
-        # "no aplica" nunca se presenta como un valor leído (ni z = 0 ni 0%)
-        if r["state"] == "no_aplica":
-            assert r["reading"].startswith(("No aplica", dp.DE_NOT_APPLICABLE)), r
-    for c in d["summary"]["cards"]:
-        assert c["tone"] in TONES and c["state"] in dp.STATES
-    for h in d["cover"]["highlights"]:
-        assert h["tone"] in TONES - {None} and h["text"]
-    assert [h["kicker"] for h in d["cover"]["highlights"]][:2] == ["FORTALEZA CLAVE", "A VIGILAR"]
-    assert len(d["cover"]["kpis"]) == 8
-    # Sin score total en ningún texto del bloque
-    blob = json.dumps(d, ensure_ascii=False)
-    assert "score total" not in blob.lower() and "puntuación total" not in blob.lower()
+    inv.display_contract(outputs_by_env(env)[sym][0], None)
 
 
 @pytest.mark.parametrize("env_sym", ENV_TICKERS, ids=env_id)
 def test_institutional_not_applicable_never_zero(env_sym, outputs_by_env):
     """Altman / Piotroski "no aplica": tarjeta "No aplica" y z_score/score null, nunca 0."""
     env, sym = env_sym
-    a = outputs_by_env(env)[sym][0]
-    cards = {c["key"]: c for c in a["display"]["sections"]["institutional"]["cards"]}
-    if a["altman_z"].get("applicable") is False:
-        assert a["altman_z"]["z_score"] is None
-        assert cards["altman"]["state"] == "no_aplica" and cards["altman"]["value"] == "n/a"
-    if a["piotroski_f"].get("applicable") is False:
-        assert a["piotroski_f"]["score"] is None
-        assert cards["piotroski"]["state"] == "no_aplica"
+    inv.institutional_not_applicable_never_zero(outputs_by_env(env)[sym][0], None)
 
 
 @pytest.mark.parametrize("env_sym", ENV_TICKERS, ids=env_id)
 def test_every_confidence_reason_has_plain_translation(env_sym, outputs_by_env):
     env, sym = env_sym
-    a = outputs_by_env(env)[sym][0]
-    for r in pl.confidence_reasons(a.get("confidence")):
-        assert pl.has_translation(r["detail"]), f"motivo sin traducción: {r['detail']!r}"
-    d = a["display"]
-    # La portada y el resumen solo muestran el texto llano; el técnico queda como detalle.
-    for txt in d["cover"]["confidence_reasons"]:
-        assert "Finnhub" not in txt and "TTM" not in txt and "^TNX" not in txt
-    assert d["cover"]["confidence_reasons"] == pl.plain_reasons(a.get("confidence"))[:3]
+    inv.confidence_reasons_translated(outputs_by_env(env)[sym][0], None)
 
 
 def test_plain_language_examples():
@@ -194,53 +152,20 @@ def test_vs_bench_bands_match_reader(higher, fmt):
 def test_tooltips_only_applied_bands(env_sym, outputs_by_env):
     """El tooltip no ofrece bandas de lo que no aplica al arquetipo."""
     env, sym = env_sym
-    d = outputs_by_env(env)[sym][0]["display"]
-    tips = d["tooltips"]
-    na = set(d["na_keys"])
-    if "pe" in na:
-        assert not tips["pe"]["tables"] and "No aplica" in tips["pe"]["note"]
-    if "roe" in na:
-        assert all("score" not in t["title"] for t in tips["roe"]["tables"])
-    if d["archetype"] == "REIT":
-        assert tips["net_debt_to_ebitda"]["tables"][0]["title"] == "Bandas de REIT"
-        assert not tips["de"]["tables"]
-    for t in tips.values():
-        for tb in t["tables"]:
-            assert tb["bands"] and all(b["tone"] in TONES - {None} for b in tb["bands"])
+    inv.tooltips_only_applied_bands(outputs_by_env(env)[sym][0], None)
 
 
 # ── Revisión de capturas (etapa 9b) ──
-_CODE = re.compile(r"\b(FINANCIAL|GROWTH_PRE_PROFIT|CYCLICAL|MATURE)\b")
-_TECH_KEYS = {"archetype", "na_keys", "classification_detail", "reasons", "dimensions", "thresholds_key", "wacc_note"}
-
-
-def _visible_strings(o, p=""):
-    if isinstance(o, dict):
-        for k, v in o.items():
-            if k not in _TECH_KEYS:
-                yield from _visible_strings(v, f"{p}.{k}")
-    elif isinstance(o, list):
-        for i, v in enumerate(o):
-            yield from _visible_strings(v, f"{p}[{i}]")
-    elif isinstance(o, str):
-        yield p, o
 
 
 @pytest.mark.parametrize("env_sym", ENV_TICKERS, ids=env_id)
 def test_visible_texts_without_jargon_or_bad_formats(env_sym, outputs_by_env):
     """Sin código de arquetipo fuera del detalle técnico, sin "<=" en la clasificación, signo
     antes del símbolo ($) y sin doble guion ("— -33%")."""
+    import fixture_backend as fb
     env, sym = env_sym
     a, pdf = outputs_by_env(env)[sym]
-    for p, t in _visible_strings(a["display"]):
-        assert not _CODE.search(t), (p, t)
-        assert "$-" not in t and "— -" not in t, (p, t)
-    assert all("<" not in n and ">" not in n for n in a["display"]["cover"]["classification_notes"])
-    import fixture_backend as fb
-    for ln in fb.pdf_text(pdf).splitlines():
-        assert "$-" not in ln and "— -" not in ln, ln
-    cover = fb.pdf_text(pdf).split("===== página 2")[0]
-    assert not _CODE.search(cover), cover
+    inv.visible_texts_without_jargon_or_bad_formats(a, fb.pdf_text(pdf))
 
 
 @pytest.mark.parametrize("env_sym", ENV_TICKERS, ids=env_id)
@@ -248,25 +173,7 @@ def test_growth_texts_cite_the_scored_figure(env_sym, outputs_by_env):
     """Resumen e intro de Crecimiento citan la cifra que puntúa (CAGR 3 años, ciclo medio o
     retorno total REIT), no el interanual; el interanual queda en la tabla rotulado."""
     env, sym = env_sym
-    a = outputs_by_env(env)[sym][0]
-    d = a["display"]
-    adj = {x["metric"]: x for x in a["score"]["breakdown"]["Crecimiento"]["adjustments"]}
-    scored = (adj.get("Crecimiento Ingresos 3Y") or adj.get("Retorno total (dividendo + FFO por acción)") or {})
-    rows = {r["key"]: r for r in d["sections"]["growth"]["rows"]}
-    if scored.get("raw") is not None:
-        key = "total_return" if d["archetype"] == "REIT" else "revenue_growth"
-        assert rows[key]["value"] == dp.fv(scored["raw"], "pct")
-        card = next(c for c in d["summary"]["cards"] if c["key"] == "revenue_growth")
-        assert card["value"] == f"{scored['raw'] * 100:.1f}"
-        if d["archetype"] != "REIT":
-            txt = f"{scored['raw'] * 100:.1f}%"
-            assert txt in (d["sections"]["growth"]["intro"] or "")
-            exec_g = next(e["text"] for e in d["summary"]["exec_items"] if e["label"] == "CRECIMIENTO Y RETORNO")
-            assert txt in exec_g
-    yoy = a["key_metrics"].get("revenue_growth")
-    if yoy is not None:
-        assert rows["revenue_growth_yoy"]["label"].endswith("(interanual)")
-        assert rows["revenue_growth_yoy"]["tone"] is None          # informativo: sin lectura
+    inv.growth_texts_cite_the_scored_figure(outputs_by_env(env)[sym][0], None)
 
 
 def test_financial_not_applicable_figures(outputs_by_env):
@@ -281,11 +188,9 @@ def test_financial_not_applicable_figures(outputs_by_env):
 
 
 def test_piotroski_criteria_in_spanish(outputs_by_env):
-    eng = re.compile(r"\b(CFO|Net Income|earnings|LP|asset turnover|Cash Flow)\b")
     for env in [e for e in ("local", "prod") if e in __import__("conftest").ENVS]:
         for sym, (a, _) in outputs_by_env(env).items():
-            for c in a["display"]["sections"]["institutional"]["piotroski_criteria"]:
-                assert not eng.search(c["label"] + " " + c["detail"]), (sym, c)
+            inv.piotroski_criteria_in_spanish(a, None)
 
 
 def test_money_format_sign_before_symbol():
@@ -299,10 +204,4 @@ def test_money_format_sign_before_symbol():
 def test_price_wording_without_jargon(outputs_by_env):
     for env in [e for e in ("local", "prod") if e in __import__("conftest").ENVS]:
         for sym, (a, _) in outputs_by_env(env).items():
-            note = a["display"]["cover"]["price"]["note"]
-            blob = json.dumps(a["display"]["summary"], ensure_ascii=False)
-            assert "crudo" not in blob and "contraído por" not in blob
-            if a["price_attractiveness"].get("contracted"):
-                pa = a["price_attractiveness"]
-                assert note == (f"sin ajustar {pa['score_raw']} → ajustado a {pa['score']} "
-                                f"por confianza {pa['confidence']}")
+            inv.price_wording_without_jargon(a, None)

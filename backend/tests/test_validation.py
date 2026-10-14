@@ -322,23 +322,18 @@ def test_positive_multiples_untouched():
 
 
 # ─────────────────────────── integración con los fixtures ───────────────────────────
-VOCAB = {"yahoo_quotesummary", "yfinance_statements", "finnhub", "derivado",
-         "recalculado_por_validacion", "politica_arquetipo", "sin_dato"}
+from invariants import PROVENANCE_VOCAB as VOCAB  # noqa: E402
 
 
 @pytest.mark.parametrize("env", ["local", "prod"])
 def test_provenance_block_present_and_in_vocabulary(env, outputs_by_env):
     import conftest
+    import invariants as inv
     if env not in conftest.ENVS:
         pytest.skip(f"falta el juego {env}")
     for sym, (a, _) in outputs_by_env(env).items():
-        dp = a["data_provenance"]
-        assert dp["path"] == ("yahoo_quotesummary" if env == "local" else "plan_b_yfinance"), sym
-        assert dp["fields"], sym
-        assert {v["source"] for v in dp["fields"].values()} <= VOCAB, sym
-        assert isinstance(a["data_validation"], list)
-        for f in a["data_validation"]:
-            assert f["action"] in {"recalculado", "sin_dato", "aviso", "politica", "invalido"} and f["reason"], (sym, f)
+        assert a["data_provenance"]["path"] == ("yahoo_quotesummary" if env == "local" else "plan_b_yfinance"), sym
+        inv.provenance_in_vocabulary(a, None)
 
 
 def test_prod_provenance_marks_finnhub_and_statements(outputs_by_env):

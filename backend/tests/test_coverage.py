@@ -84,18 +84,10 @@ def test_legacy_wrapper_keeps_contract():
 def test_main_reads_structured_state_not_symbol(outputs_by_env):
     """main.py expone el estado estructurado; 'passed' sale del estado, no del texto."""
     import conftest
+    import invariants as inv
     for env in conftest.ENVS:
         for sym, (a, _) in outputs_by_env(env).items():
-            pf = a["piotroski_f"]
-            for key, c in pf["details"].items():
-                assert c["state"] in {"cumple", "no_cumple", "sin_dato"}, (env, sym, key)
-                assert c["passed"] == (c["state"] == "cumple")
-            n_eval = sum(1 for c in pf["details"].values() if c["state"] != "sin_dato")
-            assert pf["evaluated"] == n_eval
-            if pf.get("applicable") is False:   # etapa 9b: sin puntuación cuando no aplica
-                assert pf["score"] is None and pf["scaled_score"] is None
-                continue
-            assert pf["score"] == sum(1 for c in pf["details"].values() if c["state"] == "cumple")
+            inv.piotroski_state_is_structured(a, None)
 
 
 # ─────────────────────────── Altman: todos los componentes o sin dato ───────────────────────────

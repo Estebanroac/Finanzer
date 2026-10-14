@@ -2,6 +2,7 @@
 import pytest
 
 import fixture_backend as fb
+import invariants as inv
 from financial_ratios import score_crecimiento
 from settings import cfg
 from valuation_confidence import verdict_confidence
@@ -101,13 +102,7 @@ def test_verdict_sentence_and_confidence_phrase():
 def test_verdicts_in_fixtures(outputs_by_env):
     for env in _envs():
         for sym, (a, pdf) in outputs_by_env(env).items():
-            v = a["verdict"]
-            assert v["text"].startswith("Calidad ") and " · precio " in v["text"]
-            text = fb.pdf_text(pdf)
-            assert v["text"] in text.replace("\n", " "), (env, sym)
-            for banned in ("score total", "puntuación global", "Puntuación propietaria"):
-                assert banned not in text.lower(), (env, sym, banned)
-            assert "total_score" not in a["score"] and "max_score" not in a["score"]
+            inv.verdict_in_pdf(a, fb.pdf_text(pdf))
 
 
 # ─────────────────────────── regla de confianza alta ───────────────────────────
@@ -167,8 +162,7 @@ def test_price_excludes_quality_built_bonuses_and_growth_bands(outputs_by_env):
         assert k not in T, k
     for env in _envs():
         for sym, (a, _) in outputs_by_env(env).items():
-            metrics = {x["metric"] for x in a["score"]["breakdown"]["Valoración"]["adjustments"]}
-            assert not metrics & {"Perfil GARP", "Growth Quality", "Ajuste Growth", "Ajuste Crecimiento"}, (env, sym)
+            inv.price_excludes_quality_built_bonuses(a, None)
     # Forward P/E y PEG se mantienen (son múltiplos)
     nflx = {x["metric"] for x in outputs_by_env("prod")["NFLX"][0]["score"]["breakdown"]["Valoración"]["adjustments"]}
     assert {"Forward P/E", "PEG Ratio"} <= nflx
@@ -243,11 +237,7 @@ def test_eps_vs_revenue_growth_is_informative_only(outputs_by_env):
     assert eps_vs_revenue_growth(None, 0.1) is None and eps_vs_revenue_growth(0.1, 0.2, "REIT") is None
     for env in _envs():
         for sym, (a, pdf) in outputs_by_env(env).items():
-            e = a.get("eps_vs_revenue_growth")
-            metrics = {x["metric"] for c in a["score"]["breakdown"].values() for x in c["adjustments"]}
-            assert not any("frente a ingresos" in m for m in metrics), (env, sym)   # no puntúa
-            if e:
-                assert e["scored"] is False and "Dato informativo, no puntúa" in fb.pdf_text(pdf).replace("\n", " ")
+            inv.eps_vs_revenue_growth_is_informative_only(a, fb.pdf_text(pdf))
     nflx = outputs_by_env("prod")["NFLX"][0]["eps_vs_revenue_growth"]
     assert nflx["state"] == "expansion" and nflx["gap"] == pytest.approx(nflx["eps_growth"] - nflx["revenue_growth"])
 
@@ -277,23 +267,9 @@ def test_market_profile_overrides_thresholds_and_alert_texts(outputs_by_env):
 
 # ─────────────────────────── bloque de múltiplos correlacionados ───────────────────────────
 def test_multiples_block_averages_members_and_caps_at_max(outputs_by_env):
-    by_n = cfg("thresholds.score.valoracion.multiples_block_max_by_members")
     for env in _envs():
         for sym, (a, _) in outputs_by_env(env).items():
-            val = a["score"]["breakdown"]["Valoración"]
-            members = [x for x in val["adjustments"] if x.get("in_block")]
-            blk = [x for x in val["adjustments"] if x["metric"].startswith("Bloque")]
-            if not members:
-                assert not blk, (env, sym)
-                continue
-            assert len(blk) == 1 and len(blk[0]["block_members"]) == len(members), (env, sym)
-            M = by_n[min(len(members), len(by_n)) - 1]          # ±2 con 1, ±4 con 2, ±6 con 3+
-            assert blk[0]["block_max"] == M, (env, sym)
-            raw = blk[0]["block_mean"] * M
-            assert abs(blk[0]["adjustment"]) <= M
-            assert blk[0]["adjustment"] == int(abs(raw) + 0.5) * (1 if raw >= 0 else -1), (env, sym)
-            counted = sum(x["adjustment"] for x in val["adjustments"] if not x.get("in_block"))
-            assert val["score"] == max(0, min(20, 10 + counted)), (env, sym)
+            inv.multiples_block_averages_members_and_caps_at_max(a, None)
     v = outputs_by_env("prod")["V"][0]["score"]["breakdown"]["Valoración"]["adjustments"]
     blk = next(x for x in v if x["metric"] == "Bloque de múltiplos")
     # Etapa 11b: la compresión del Forward P/E no suma si el Forward P/E está en la peor banda. Con la mediana
@@ -313,21 +289,7 @@ def test_block_pdf_shows_each_multiple_and_the_block_line(outputs_by_env):
 def test_normalized_figures_are_labelled(outputs_by_env):
     for env in _envs():
         for sym, (a, pdf) in outputs_by_env(env).items():
-            if not (a.get("earnings_normalization") or {}).get("differs"):
-                metrics = [x["metric"] for c in a["score"]["breakdown"].values() for x in c["adjustments"]]
-                assert not any("normalizado" in m and "EV/EBITDA" not in m and "P/FCF" not in m
-                               for m in metrics), (env, sym)   # JPM: normalizado = reportado, sin etiqueta
-                continue
-            metrics = [x["metric"] for c in a["score"]["breakdown"].values() for x in c["adjustments"]]
-            assert "ROE" not in metrics and "Margen Neto" not in metrics, (env, sym)
-            if "ROE normalizado" in metrics:
-                assert all("ROE" not in x["reason"].split(" — ")[0] or "normalizado" in x["reason"]
-                           for k in ("red_flags", "warnings", "strengths") for x in a["alerts"][k]
-                           if x["category"] == "Rentabilidad" and x["reason"].startswith("ROE")), (env, sym)
-            cover = fb.pdf_text(pdf).split("===== página 2")[0]
-            if a["earnings_normalization"].get("differs") and a["classification"]["archetype"] not in (
-                    "REIT", "GROWTH_PRE_PROFIT"):      # sus portadas no muestran P/E, ROE ni margen neto
-                assert "REPORTADO" in cover, (env, sym)
+            inv.normalized_figures_are_labelled(a, fb.pdf_text(pdf))
     v = outputs_by_env("prod")["V"][0]
     roe = next(x for x in v["score"]["breakdown"]["Rentabilidad"]["adjustments"] if x["metric"] == "ROE normalizado")
     assert roe["value"] == "55.9%" and roe["normalized"] is True
@@ -356,11 +318,7 @@ def test_52_week_range_is_position_only(outputs_by_env):
         assert tone == "neu" and not re.search(r"\bcara\b|barata", f"{lab} {txt}", re.I)
     for env in _envs():
         for sym, (a, pdf) in outputs_by_env(env).items():
-            text = fb.pdf_text(pdf)
-            assert "PRECIO · 52 SEM." not in text and "¿Cara o barata hoy?" not in text, (env, sym)
-            for line in text.splitlines():
-                if "52 semanas" in line or "52 SEM" in line:
-                    assert not re.search(r"\bcara\b|barata", line, re.I), (env, sym, line)
+            inv.range_52w_is_position_only(a, fb.pdf_text(pdf))
 
 
 # ─────────────────────────── ronda 3 de la etapa 9a ───────────────────────────
@@ -427,19 +385,9 @@ def test_financial_pb_block_and_policy_substitution(outputs_by_env):
 
 
 def test_no_text_cites_a_not_applicable_metric(outputs_by_env):
-    import re
     for env in _envs():
         for sym, (a, pdf) in outputs_by_env(env).items():
-            na = set(cfg(f"sectors.archetypes.not_applicable.{a['classification']['archetype']}"))
-            text = fb.pdf_text(pdf).replace("\n", " ")
-            if "pe" in na:
-                assert "Número de Graham" not in text and "número de Graham" not in text, (env, sym)
-                assert not re.search(r"el mercado paga [\d.]+x beneficios", text, re.I), (env, sym)
-            if "eps_growth" in na:
-                assert "Crecimiento de beneficios" not in text, (env, sym)
-            alerts = " ".join(x["reason"] for k in ("red_flags", "warnings", "strengths") for x in a["alerts"][k])
-            if "roe" in na:
-                assert not alerts.startswith("ROE") and " ROE " not in f" {alerts} ", (env, sym)
+            inv.no_text_cites_a_not_applicable_metric(a, fb.pdf_text(pdf))
 
 
 # ─────────────────────────── ronda 4: SBC y "no significativo" ───────────────────────────
@@ -501,8 +449,7 @@ def test_sustained_negative_is_a_signal_not_missing():
 def test_cover_fits_one_page(outputs_by_env):
     for env in _envs():
         for sym, (a, pdf) in outputs_by_env(env).items():
-            p2 = fb.pdf_text(pdf).split("===== página 2 =====")[1].split("===== página 3")[0]
-            assert "FORTALEZA CLAVE" not in p2 and "VEREDICTO" not in p2[:400], (env, sym)
+            inv.cover_fits_one_page(a, fb.pdf_text(pdf))
 
 
 def test_singular_growth_reading_agrees():
