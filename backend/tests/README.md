@@ -45,22 +45,27 @@ No se tocó `requirements.txt`, ni Render las instala.
 | `test_determinism.py` | Dos corridas en el mismo proceso, y dos procesos con `PYTHONHASHSEED` distinto, dan salidas idénticas **byte a byte** (análisis sin redondear y bytes del PDF). |
 | `test_smoke.py` | Piezas aisladas con valores calculados a mano: `piotroski_f_score`, `altman_z_score`, `dcf_multi_stage`, `dcf_sensitivity_analysis`, `calculate_score_v2`. |
 | `test_cost_of_capital.py` | Etapa 8: WACC real (rating sintético, tasa efectiva, Rf con fallback), recorte del grid, g >= WACC, crecimiento bajo el terminal, fiabilidad del DCF, DCF en Valoración y confianza del veredicto. |
-| `test_known_bugs.py` | Un test por bug verificado en `docs/RECON.md`, marcado `xfail(strict=True, raises=AssertionError)`. Afirma el comportamiento **correcto**, así que hoy falla. |
+| `test_known_bugs.py` | Un test por bug verificado en `docs/RECON.md`. Afirma el comportamiento **correcto**; los de la tabla de abajo ya están corregidos y pasan. Un bug nuevo entra marcado `xfail(strict=True, raises=AssertionError)`. |
 
-### Tests de bug conocido (xfail)
+### Tests de bug conocido (antes xfail; hoy todos corregidos)
 
-| Test | Bug (RECON) |
-|---|---|
-| `test_bug_fcf_exceeds_ocf_nflx` | C5: el FCF viene de `financialData.freeCashflow` (apalancado): 25.4B > OCF 12.0B |
-| `test_bug_shares_issued_vs_ordinary_nflx` | C3: se usa `Share Issued` en vez de `Ordinary Shares Number` |
-| `test_bug_wacc_is_only_cost_of_equity_nflx` | C4: el WACC es solo Ke (Rf + β·MRP) |
-| `test_bug_dcf_vs_grid_growth_snow` | §6.5: el DCF ($142.6) y el caso base del grid ($318.9) usan crecimientos distintos |
-| `test_bug_base_case_box_never_drawn_nflx` | §1.4: el recuadro del escenario base nunca se dibuja en el PDF |
-| `test_bug_jpm_revenue_growth_artifact` | C6: crecimiento de ingresos de JPM 30.4% frente a ~7.3% en los estados |
+Hoy **no queda ningún test xfail**: los bugs verificados en RECON se corrigieron y sus tests pasan como tests
+normales (verificado el 2026-10-14: `597 passed, 1 skipped`, 0 xfail). Se conservan como regresión:
 
-**Cuando arregles uno**, su test pasará (XPASS) y, por `xfail_strict = true`, **la suite fallará a propósito**.
-Es la señal de que quedó corregido: quita su `@pytest.mark.xfail`. El arreglo también cambiará salidas,
-así que revisa `diff_golden.py` y regenera los golden de forma explícita.
+| Test | Bug (RECON) | Corregido en |
+|---|---|---|
+| `test_bug_fcf_exceeds_ocf_nflx` | C5: FCF apalancado (25.4B) > OCF (12.0B) | etapa 3 (bug d): FCF = OCF − capex |
+| `test_bug_shares_issued_vs_ordinary_nflx` | C3: `Share Issued` en vez de `Ordinary Shares Number` | etapa 3 (bug c) |
+| `test_bug_wacc_is_only_cost_of_equity_nflx` | C4: el WACC era solo Ke | etapa 8 (WACC real) |
+| `test_bug_dcf_vs_grid_growth_snow` | §6.5: DCF y grid con crecimientos distintos | etapas 4 y 8 |
+| `test_bug_base_case_box_never_drawn_nflx` | §1.4: el recuadro del caso base no se dibujaba | etapa 8 |
+| `test_bug_jpm_revenue_growth_artifact` | C6: crecimiento de JPM 30.4% frente a ~7.3% | etapa 3 (bug e) |
+| `test_bug_prod_sector_unknown_outside_known_list_o` | Sector "Unknown" fuera de `KNOWN_SECTORS` en prod | etapa 3 (bug a) |
+| `test_bug_incoherent_revenue_growth_is_informative_only` | G3: el crecimiento incoherente solo avisa | etapa 3 |
+
+**Para un bug nuevo** se mantiene la convención: test que afirma el comportamiento correcto, marcado
+`xfail(strict=True, raises=AssertionError)`. Al arreglarlo pasará (XPASS) y, por `xfail_strict = true`, la suite
+fallará a propósito: quita la marca y regenera los golden de forma explícita.
 `raises=AssertionError` garantiza que un test roto por otra causa (KeyError, etc.) **no** se cuente como bug conocido.
 
 ## Configuración única (etapa 4)
@@ -181,6 +186,21 @@ escribe: `token`, `crumb` y `apikey` se eliminan antes de guardar. Antes de comm
 `grep -rniE "ghp_|token=|apikey" tests/fixtures tests/golden`.
 
 Recapturar cambia los inputs: después hay que regenerar los golden y revisar el diff.
+
+### Captura con Render simulado (fase 0 del plan de fiabilidad)
+
+`--render-sim` reproduce en local el camino de datos de producción (RECON §7.1, §7.5) con dos ganchos de
+`fixture_backend.render_sim()`: **S1** `quoteSummary` responde 401 "Invalid Crumb" y **S2** `yfinance.Ticker.info`
+devuelve `{}`. Así el pipeline va por el plan B (`plan_b_yfinance`) + Finnhub, como en Render. Finnhub se limita a
+una petición cada 1.1 s (límite gratuito: 60/min). Los metadatos registran `render_simulation` (S1, S2),
+`finnhub.participated` y `risk_free.frozen` (la Rf de config: el replay no depende del día; prod en vivo usa ^TNX).
+
+```bash
+python3 tests/capture_fixtures.py --env panel --render-sim               # los 31 del panel (exige FINNHUB_API_KEY)
+python3 tests/capture_fixtures.py --render-sim --dir /ruta JPM NFLX      # a otra carpeta (validaciones)
+```
+
+Validado el 2026-10-14 contra `finanzer.app` del mismo día (bitácora de fiabilidad, registro #2 y siguientes).
 
 ## Cómo funciona la capa de inyección (`fixture_backend.py`)
 
