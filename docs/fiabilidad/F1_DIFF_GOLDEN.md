@@ -340,4 +340,4 @@ actual / justificado. **Cambio.** "95% del P/B justificado (0.73x frente a 0.76x
 |---|---|---|
 | panel | JPM, BAC, PGR, BRK-B | `score.breakdown.Valoración.adjustments[].value`, `display.sections.valuation.rows[].value`, `display.sections.institutional.breakdown…items[].value`, `display.charts.valuation.scored[].value_txt`: "1.32× justificado" → "132% del P/B justificado (2.46x frente a 1.87x)" (JPM) |
 | local | JPM | ídem |
-| panel | BCS | (golden nuevo) "96% del P/B justificado (0.73x frente a 0.76x)" |
+| panel | BCS | (golden nuevo) "98% del P/B justificado (0.73x frente a 0.74x)" y "94% del P/TBV justificado (0.81x frente a 0.87x)" (captura del 15-oct a las 10:11; el informe de producción decía 0.95×) |
