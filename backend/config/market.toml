@@ -1,0 +1,60 @@
+# Preparación de las fases 2b y 5 (PLAN_FIABILIDAD §2.2): serie diaria de precios, beta propia y señales
+# técnicas. Módulos AISLADOS (lib/price_series.py, lib/market_signals.py): no entran en el motor, el score,
+# la web ni el PDF. Las señales son contexto, nunca puntuación (PLAN §2.3).
+
+[price_series]                  # lib/price_series.py
+# 5 años: cubren el drawdown de 3 años (756 sesiones) y la beta de 2 años (104 semanas) con margen.
+period = "5y"
+interval = "1d"
+# Mercado de referencia de la beta (perspectiva del inversor en dólares). Si el índice falla, el ETF que lo
+# replica, declarado en la salida (`market_fallback`).
+market_symbol = "^GSPC"
+market_fallback_symbol = "SPY"
+max_attempts = 3                # intentos por serie (1 + 2 reintentos)
+retry_pause_s = 2.0             # pausa antes del reintento k: retry_pause_s × k (respeto a Yahoo)
+# Huecos: sesiones en que cotizó el mercado (calendario del índice) y la serie no, desde su primera fecha.
+# Con 0, un solo día sin cotización marca la serie como "sospechosa" (con las fechas).
+max_missing_days = 0
+# Salto en un día: max(p1/p0, p0/p1) − 1 > umbral → posible split sin ajustar (un 2:1 da 1.0; con 0.8 se
+# marca una caída ≥ 44% o una subida ≥ 80%). Con 0.5 (lectura simétrica del "50%" del prompt) se marcaba la
+# caída real de NFLX del 2022-04-20 (−35.1%, magnitud 0.54, la mayor de los 36); y un "50%" no simétrico no
+# detecta un 2:1 (−50% exacto, menos si ese día sube).
+jump_threshold = 0.8
+# Eventos de split que declara Yahoo (ya aplicados al cierre ajustado): un ratio que no es una fracción simple
+# (p/q con q ≤ spin_off_max_denominator, a spin_off_ratio_tol) es una posible escisión registrada como split
+# (UL, Magnum, 2025-12-09: 0.888). No bloquea señales: la beta y el drawdown cuya ventana la contiene llevan
+# una nota (decisión del usuario, 2026-10-15; se revisa en la fase 5).
+spin_off_max_denominator = 10
+spin_off_ratio_tol = 1e-6
+
+[signals]                       # lib/market_signals.py
+sessions_per_year = 252         # convención de sesiones bursátiles de EE. UU.
+
+[signals.momentum]              # Jegadeesh y Titman (1993): 12 meses excluyendo el último
+lookback_sessions = 252
+skip_sessions = 21
+
+[signals.trend]                 # Faber (2007): media de 200 sesiones
+sma_sessions = 200
+slope_sessions = 21             # pendiente: variación de la media en un mes de sesiones
+
+[signals.volatility]
+window_sessions = 252           # 1 año de rentabilidades diarias (logarítmicas)
+
+[signals.drawdown]
+windows_years = [1, 3]
+
+[signals.relative_strength]     # frente al ETF del sector: 6 y 12 meses
+windows_sessions = [126, 252]
+
+[signals.volume]                # Gervais, Kaniel y Mingelgrin (2001)
+recent_sessions = 5
+baseline_sessions = 90          # sesiones de referencia ANTERIORES a las recientes (sin solaparse)
+
+[signals.range52]
+window_sessions = 252           # 52 semanas, incluida la sesión de hoy (criterio de la fase 1)
+
+[signals.beta]                  # Práctica estándar (Bloomberg): 2 años semanales, MCO; Blume en valuation.capm
+frequency = "W-FRI"             # cierre ajustado del viernes (o última sesión de la semana)
+window_weeks = 104
+min_weeks = 52

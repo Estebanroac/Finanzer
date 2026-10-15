@@ -627,3 +627,48 @@ convergence = "float"
 coverage = "float"
 source = "float"
 stability = "float"
+
+# ── market.toml (preparación de las fases 2b y 5: serie de precios y señales; módulos aislados) ──
+[market.price_series]
+period = "str"
+interval = "str"
+market_symbol = "str"
+market_fallback_symbol = "str"
+max_attempts = "int"
+retry_pause_s = "float"
+max_missing_days = "int"
+jump_threshold = "float"
+spin_off_max_denominator = "int"
+spin_off_ratio_tol = "float"
+
+[market.signals]
+sessions_per_year = "int"
+
+[market.signals.momentum]
+lookback_sessions = "int"
+skip_sessions = "int"
+
+[market.signals.trend]
+sma_sessions = "int"
+slope_sessions = "int"
+
+[market.signals.volatility]
+window_sessions = "int"
+
+[market.signals.drawdown]
+windows_years = "list[int]"
+
+[market.signals.relative_strength]
+windows_sessions = "list[int]"
+
+[market.signals.volume]
+recent_sessions = "int"
+baseline_sessions = "int"
+
+[market.signals.range52]
+window_sessions = "int"
+
+[market.signals.beta]
+frequency = "str"
+window_weeks = "int"
+min_weeks = "int"

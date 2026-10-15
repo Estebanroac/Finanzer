@@ -59,6 +59,12 @@ MIGRATED = {
     "lib/reverse_dcf.py": ["_defaults", "growth_path", "equity_value_per_share", "implied_growth",
                            "classify_implied_growth"],
     "lib/bank_implied.py": ["_implied_return", "implied_rote", "implied_roe", "rote_sensitivity"],
+    # Preparación de las fases 2b y 5 (aislados): serie de precios, señales técnicas y beta propia.
+    "lib/price_series.py": ["normalize_frame", "download", "split_kind", "check_series", "fetch_price_series"],
+    "lib/market_signals.py": [
+        "momentum_12_1", "trend", "realized_volatility", "max_drawdown", "relative_strength",
+        "abnormal_volume", "range_52w_position", "weekly_returns", "beta", "all_signals",
+    ],
 }
 
 # (archivo, función, valor) -> justificación
