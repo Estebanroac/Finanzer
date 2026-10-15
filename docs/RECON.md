@@ -1035,3 +1035,63 @@ golden causa por causa), [`fiabilidad/F1_DISENO_GUARDIAN.md`](fiabilidad/F1_DISE
 - **Pendientes que deja (mapa de la bitácora):** origen del dividendo en ADR (fase 2), identidad del dividendo a la
   baja (fase 2), métricas que aplican a FINANCIAL (fase 3), factor ADR 4.154 frente a 4 y AT1 (fase 2/3), ROCE con
   referencia y bandas (fase 4).
+
+### 7.20 Fase 2a del plan de fiabilidad: verdad de datos (medir)
+
+*Operador F2a, 15-oct-2026. Detalle: [`fiabilidad/F2_EDGAR_DIAGNOSTICO.md`](fiabilidad/F2_EDGAR_DIAGNOSTICO.md)
+(cobertura, conceptos, huecos y factores ADR), [`fiabilidad/F2_DISCREPANCIAS.md`](fiabilidad/F2_DISCREPANCIAS.md)
+(línea base de F1, causas y efecto en el veredicto) y [`fiabilidad/F2_PRECEDENCIA.md`](fiabilidad/F2_PRECEDENCIA.md)
+(escenarios de D2, diseño de D7 y beta); bitácora, registros #17–#19. Deploy `8ed57a0..25b9d8a` (rollback
+`8ed57a0`). La 2a no corrige datos del motor: todo lo que encuentra va a la 2b.*
+
+- **T0, `/api/health`:** devuelve el commit desplegado (`RENDER_GIT_COMMIT`). Es el único cambio de código de
+  producción de la 2a. Verificado en finanzer.app: `{"status":"ok","commit":"25b9d8a3…"}` a las 16:34:57 (Nueva York).
+- **T1, panel ampliado:** HSBC, SHEL, UL y TM (grupo "Extranjeros (fase 2)"), capturados el 15-oct tras el cierre de
+  Nueva York. El panel pasa a **36 tickers**, con golden. El guardián tenía un falso positivo en UL ("sin TTM" leído
+  como "TTM"): arreglado con su test (`385e441`).
+- **T2, EDGAR:** extractos de companyfacts de los 35 emisores con estados, más los filings con XBRL que la API aún no
+  trae, leídos de su instancia. Incluye la tabla de conceptos por campo (US GAAP e IFRS) y los factores ADR con su
+  fuente (20-F y F-6).
+- **T3, línea base de F1 ("dato correcto"): 90.0%** de los campos comparables dentro de tolerancia (1,262 de 1,403);
+  PLAN §3 pide ≥ 95% para cerrar la fase 2.
+  - Por origen: EE. UU. 91.6%; extranjeros 82.9%.
+  - Ratios recalculados con EDGAR: 84.7%.
+  - Causas de lo que queda fuera: definición 78, fuente errónea 41, periodo 14, unidad + factor ADR 4, factor ADR 4.
+  - Hay 220 comparaciones sin dato del periodo en EDGAR y quedan fuera del porcentaje.
+  - Herramientas: `tests/edgar_verify.py` y `tests/beta_ref.py`.
+- **Efecto en el veredicto:**
+  - corregir solo los errores de dato: **0 cambios de nivel en 35**;
+  - EDGAR con la tabla de conceptos tal cual: 1 (NFLX, por la definición de D&A);
+  - deuda con la regla de coherencia con el EBITDA: 0;
+  - beta propia: 3 (BRK-B, NVO y NFLX).
+- **Casos confirmados:**
+  - el dividendo de Finnhub de los 7 ADR (BCS, TSM, NVO, HSBC, SHEL, UL y TM) viene en la moneda de la línea local y
+    por acción ordinaria;
+  - BCS: factor 4.154 por desfase de fechas (recompras) y cupones AT1 en los dividendos y el BPA;
+  - UL: perímetro (Yahoo ya trae los ingresos reexpresados) y factor 1.012, sin efecto;
+  - JNJ: BPA de Finnhub con un trimestre más que los estados (en vivo) y utilidades retenidas solo en EDGAR;
+  - la beta de Finnhub en los ADR: 6 de 8 difieren más de 0.3 de la de referencia.
+- **Casos descartados:** NVDA tiene bien el dato de origen. Es un **falso positivo** de la identidad del dividendo de
+  la fase 1 (subida del trimestral de 0.01 a 0.25), en producción.
+- **Casos nuevos:**
+  - TM: factor 11.07 frente a 10 oficial, porque la capitalización de Yahoo sale un 9.6% corta;
+  - HSBC: AT1 al revés que BCS (Yahoo da los dividendos al ordinario);
+  - deuda de O (+6.2%) y DUK (+1.1%): fuente errónea, con hipótesis para la 2b;
+  - la fase 0 vio datos distintos de Yahoo en Render y en local (7/30). Medidos contra EDGAR: Render tenía razón en 3,
+    en 2 son cortes distintos y los dos datos son reales, y 2 no se pueden verificar.
+- **T4, F2_PRECEDENCIA (criterios del usuario):**
+  - precedencia por campo con corte coherente;
+  - deuda coherente con el EBITDA: arrendamientos de IFRS 16 y financieros de US GAAP sí; operativos de US GAAP no;
+    en FINANCIAL, sin la subordinada. Solo cuentan los arrendamientos en balance (MSFT, AMZN y MU verificados);
+  - aviso "La empresa publicó resultados el <fecha>; este análisis aún no los incorpora";
+  - beta propia recomendada;
+  - D7: emisores registrados en la SEC.
+- **D2 decidida (usuario, 15-oct; literal):** "acepto tus recomendaciones". La recomendación aceptada: "D2 = EDGAR como
+  verificación por ahora, y como respaldo para lo que Yahoo no da (utilidades retenidas de JNJ, D&A de BCS). La 2b
+  arregla en origen los errores de dato: dividendo de Finnhub, factor ADR oficial, corte coherente y el falso positivo
+  de NVDA. EDGAR pasará a fuente principal campo a campo cuando la fase 3 cierre las definiciones (deuda, capex, EBIT
+  bancario)."
+- **Pendientes que deja para la 2b** (mapa de la bitácora): dividendo de Finnhub de los ADR en origen, factor ADR
+  oficial, corte coherente del BPA (JNJ), falso positivo de NVDA e identidad a la baja (PGR), EDGAR como respaldo
+  (utilidades retenidas de JNJ; D&A de BCS y de BRK-B), beta propia, deuda de O y DUK.
+  - Para la fase 3: definiciones de deuda, capex y EBIT bancario, y AT1 en el método de FINANCIAL.
