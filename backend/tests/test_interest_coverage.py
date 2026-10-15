@@ -74,3 +74,13 @@ def test_one_outlier_quarter_does_not_make_a_payer_a_net_lender(outputs_by_env):
     assert km["interest_coverage_state"] == "ok"
     # con la misma cifra y una cobertura ausente, el peor trimestre (negativo) impide "sin carga"
     assert st(None, 1e9, ebit=1.3e10, net_interest_income=min(km["net_interest_income"], -1.2e8)) is None
+
+
+def test_pltr_web_row_and_gauge_read_no_interest_burden_not_not_significant(pltr):
+    """La web pinta el estado de la fila y del medidor si no es "con_dato": con "no_significativo" decía
+    "Cobertura de intereses · No significativo" junto a "Sin carga financiera neta"."""
+    a, _ = pltr
+    row = next(r for r in a["display"]["sections"]["solvency"]["rows"] if r["key"] == "interest_coverage")
+    assert row["state"] == "con_dato" and row["reading"] == "Sin carga financiera" and row["tone"] == "pos"
+    g = next(x for x in a["display"]["charts"]["solvency"]["gauges"] if x["key"] == "interest_coverage")
+    assert g["state"] == "con_dato" and g["reading"] == "Sin carga financiera" and not g.get("zones")

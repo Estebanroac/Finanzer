@@ -330,7 +330,7 @@ def chart_gauges_marker_in_reading_zone(a, text):
     checked = 0
     for g in a["display"]["charts"]["solvency"]["gauges"]:
         assert g["state"] in CHART_STATES, g
-        if g["state"] != "con_dato" or g.get("informative") or g.get("net_cash") or g.get("negative"):
+        if g["state"] != "con_dato" or g.get("informative") or g.get("net_cash") or g.get("negative") or g.get("no_burden"):
             assert g["state"] == "con_dato" or g.get("text") or g["state"] == "sin_dato", g
             continue
         z = _zone_of(g["zones"], g["value"])

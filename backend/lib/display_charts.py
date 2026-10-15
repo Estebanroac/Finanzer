@@ -94,6 +94,10 @@ def _gauge(key, label, value, value_txt, zones, row, axis_max, *, unit="x", arch
     why = not_applicable(archetype, _GAUGE_NA.get(key, key))
     if why:
         return {"key": key, "label": label, "state": "no_aplica", "text": why}
+    if key == "interest_coverage" and value is None and (row or {}).get("value") == "Sin carga":
+        # Fase 1: sin carga financiera neta (EBIT > 0, ingresos financieros netos): lectura sin escala.
+        return {"key": key, "label": label, "state": "con_dato", "no_burden": True, "value_txt": row.get("value"),
+                "reading": row.get("reading"), "tone": row.get("tone"), "text": row.get("text")}
     if row is None or row.get("state") != "con_dato" or value is None:
         st = (row or {}).get("state") or "sin_dato"
         return {"key": key, "label": label, "state": "sin_dato" if st == "con_dato" else st,

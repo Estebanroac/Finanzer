@@ -256,3 +256,17 @@ de 0.85 (con caso sintético). Sin cambio en el texto de ningún PDF ni en el an
 |---|---|---|
 | Portada | **0.936** (TSM) | 9: TSM 0.936, AMZN 0.957, BRK-B 0.964, NVO 0.968, NVDA 0.973, ASML 0.986, MU 0.991, PLTR 0.991, SNOW (`local`) 0.991 |
 | Página 2 | **1.000** | ninguno |
+
+## P3.5 — (hallazgo de T6) Web: la cobertura "sin carga" se leía como "No significativo"
+
+**Causa.** En T3.1 la fila y el medidor de la cobertura con estado `sin_carga` quedaron con `state =
+no_significativo`; el PDF pinta la lectura, pero la web pinta el estado cuando no es `con_dato`: "Cobertura de
+intereses · No significativo" junto a "Sin carga financiera neta". **Cambio.** Fila `con_dato` con valor "Sin carga"
+y lectura "Sin carga financiera"; medidor `con_dato` sin escala (`no_burden`), que la web ya pinta como lectura +
+texto. El invariante de los medidores reconoce `no_burden`.
+
+| Juego | Ticker | Campos |
+|---|---|---|
+| panel | PLTR | `display.sections.solvency.rows[6].state` no_significativo → con_dato; `display.charts.solvency.gauges[1]`: state no_significativo → con_dato, + `reading`, `tone`, `value_txt`, `no_burden` |
+
+Sin cambio en el texto del PDF.

@@ -1561,7 +1561,8 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     srows = []
     for key, lab, val, fm, rd in sol_defs:
         if key == "interest_coverage" and ic_state == "sin_carga" and rd:   # fase 1: ratio sin sentido, lectura +
-            srows.append(_row(key, lab, "Sin carga", rd[0], rd[1], "no_significativo", text=rd[2]))
+            # con_dato: la web pinta la lectura ("Sin carga financiera"), no el estado ("No significativo")
+            srows.append(_row(key, lab, "Sin carga", rd[0], rd[1], "con_dato", text=rd[2]))
             continue
         if (key == "interest_coverage" and ic_state == "no_significativo") or \
                 (key == "net_debt_to_ebitda" and nde_state == "no_significativo"):
