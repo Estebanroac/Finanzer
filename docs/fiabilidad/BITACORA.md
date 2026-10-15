@@ -17,7 +17,7 @@
 
 | Campo | Valor |
 |---|---|
-| Fase en curso | **Fase 1 — Lo visible hoy** (🛑 desplegada `4e90ff6`; cierre (T8) presentado, esperando aprobación; registro #15) |
+| Fase en curso | **Fase 1 ✅ cerrada** (desplegada `4e90ff6`, cierre aprobado el 2026-10-15, registro #16). Fase 2 sin empezar |
 | Rama de trabajo | `fiabilidad/f1-visible` (desde `main` local `0f798c8`; registro #7) |
 | Producción | `9e78f3b` (etapas 11b + 9c), verificado el 2026-10-13. Rollback: `a6482f9` |
 | `main` local | merge de la fase 0 sobre `f9d6c30` (ver `git log`), **por delante de origin, sin push**: se sube con el deploy de la fase 1 (pushear redespliega) |
@@ -29,7 +29,7 @@
 | Fase | Estado | Rama | Commits | Aprobada por el usuario | Deploy |
 |---|---|---|---|---|---|
 | 0 Congelar y medir | ✅ cerrada (2026-10-14) | `fiabilidad/f0-panel` → `main` local | `0a8ac66`..`0ae214a` (9 commits) + cierre (registro #6) | sí, 2026-10-14 (registro #6) | no aplica (se sube con el deploy de la fase 1) |
-| 1 Lo visible hoy | 🛑 T8 (cierre presentado) | `fiabilidad/f1-visible` | `d676b22` (D8), `21c3f5f`, `0ebba81` (guardián), `d63de70`…`d7393fd` (T3, 8 commits), `7f32070`, `e3161d2`, `c369575` (T4) | — | — |
+| 1 Lo visible hoy | ✅ cerrada | `fiabilidad/f1-visible` | `d676b22` (D8), `21c3f5f`, `0ebba81` (guardián), `d63de70`…`d7393fd` (T3, 8 commits), `7f32070`, `e3161d2`, `c369575` (T4) | — | — |
 | 2 Verdad de datos (EDGAR) | 🔒 espera F1 | — | — | — | — |
 | 3 Método por arquetipo | 🔒 espera F2 | — | — | — | — |
 | 4 Escalas y confianza | 🔒 espera F3 | — | — | — | — |
@@ -631,4 +631,13 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
 - **Abierto / siguiente paso:** aprobación del cierre de la fase 1; revisión externa con el analista. Los commits de
   documentación del cierre (este registro, RECON §7.19, `DEPLOY_VERIFICATION.md`) están en `main` local sin
   pushear: subirlos redespliega Render sin cambio de código.
+
+### #16 · 2026-10-15 · operador · Fase 1 cerrada
+- **Aprobación del usuario (literal):**
+  > Apruebo el cierre de la fase 1. Regístralo en la bitácora con esta cita y pushea el commit de documentación (b143b0f), más los cambios del planificador que haya en BITACORA.md (filas «Revisión externa F1» y «Prioridad (JNJ)» del mapa). No cambies esas filas: inclúyelas tal cual.
+  >
+  > Revisión externa hecha por el planificador sobre BCS, UL y TXRH: no hay fallos de fase 1. Los hallazgos son de datos y de método y quedan en el mapa (fases 2, 3 y 4). Después del push, verifica que el sello de build cambió y detente. No empieces la fase 2.
+- **Hecho:** filas del planificador commiteadas tal cual; push de la documentación del cierre (`b143b0f`, este
+  registro y las filas del planificador). Sin cambios de código.
+- **Abierto / siguiente paso:** fase 2 (no empezada). Rollback de producción: `9e78f3b`.
 
