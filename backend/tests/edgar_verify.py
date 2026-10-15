@@ -363,6 +363,9 @@ def cash_total(ed: Edgar, period):
 
 
 def lease_parts(ed: Edgar, period) -> Dict[str, float]:
+    """Pasivos por arrendamiento EN BALANCE a esa fecha (conceptos de balance: el total o corriente + no corriente).
+    Por norma excluyen los arrendamientos firmados y aún no iniciados, que van en notas o en compromisos (MSFT:
+    329.1 mil millones de USD solo en texto; AMZN: tabla de compromisos). No usar las tablas de pagos futuros."""
     t = ed.tax
     out = {}
     if t == "us-gaap":
