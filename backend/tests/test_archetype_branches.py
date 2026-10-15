@@ -164,7 +164,9 @@ def test_bank_pdf_never_reads_pe_or_fcf_as_primary(outputs_by_env):
         lines = _pdf_text(pdf).splitlines()
         for i, ln in enumerate(lines):
             if ln.strip() in ("P/E (TTM)", "Forward P/E", "P/FCF", "FCF Yield", "PEG", "EV/EBITDA"):
-                assert any(x.startswith("No aplica a bancos y aseguradoras") for x in lines[i + 1:i + 5]), (env, ln, lines[i:i + 5])
+                # fase 1 (T4): la lectura larga se parte en líneas dentro de su columna
+                assert "No aplica a bancos y aseguradoras" in " ".join(" ".join(lines[i + 1:i + 6]).split()), \
+                    (env, ln, lines[i:i + 6])
         txt = "\n".join(lines)
         assert "ATRACTIVO DEL PRECIO\nP/B frente a ROE" in txt, env
         cover = txt.split("===== página 2")[0]
@@ -176,10 +178,10 @@ def test_pdf_roce_rows(outputs_by_env):
         out = outputs_by_env(env)
         assert "ROCE (EBIT / capital empleado)" in _pdf_text(out["NFLX"][1])
         fcx = _pdf_text(out["FCX"][1])
-        assert "ROCE promedio (4 ejercicios, ciclo incompleto)" in fcx
+        assert "ROCE promedio (4 ejercicios, ciclo incompleto)" in " ".join(fcx.split())
         jpm = _pdf_text(out["JPM"][1]).splitlines()
         i = jpm.index("ROCE")
-        assert "No aplica a bancos y aseguradoras" in jpm[i + 1:i + 6]
+        assert "No aplica a bancos y aseguradoras" in " ".join(" ".join(jpm[i + 1:i + 6]).split())
 
 
 # ─────────────────────────── correcciones de la etapa 6 ───────────────────────────

@@ -17,6 +17,7 @@ from xml.sax.saxutils import escape as _esc
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import inch
 from reportlab.lib import colors
+from reportlab.pdfbase.pdfmetrics import stringWidth
 from reportlab.platypus import (
     BaseDocTemplate, PageTemplate, Frame, Paragraph, Spacer, Table,
     TableStyle, PageBreak, HRFlowable, Image, KeepTogether, KeepInFrame,
@@ -177,10 +178,32 @@ def section_header(num, title, S):
     return [t, Spacer(1, 5)]
 
 
+_DT_SIZE, _DT_PAD = 8.6, 4   # cuerpo de data_table: cuerpo de letra y relleno lateral de celda
+
+
 def data_table(header, rows, widths, aligns=None, reads=None, bold_col=1):
     """Tabla editorial: cabecera gris con subrayado verde, hairlines, sin cebra.
     reads: lista opcional de (row_idx, tone) para colorear la última columna.
     bold_col: columna de valores en negrita (None para desactivar)."""
+    aligns = aligns or (['LEFT'] + ['RIGHT'] * (len(header) - 1))
+    tones = dict(reads or [])
+    last = len(header) - 1
+
+    # Fase 1 (T4): una celda de texto más ancha que su columna se pintaba encima de la vecina (comprobación
+    # geométrica: "No aplica a …" sobre la brecha, criterios de Piotroski sobre su detalle). Se parte en líneas
+    # dentro de su columna, con la misma fuente, color y alineación; las que caben no cambian.
+    def _fit(cell, ri, ci):
+        if not isinstance(cell, str):
+            return cell
+        bold = ci == bold_col or (ci == last and ri in tones)
+        font = 'Helvetica-Bold' if bold else 'Helvetica'
+        if stringWidth(cell, font, _DT_SIZE) <= widths[ci] - 2 * _DT_PAD:
+            return cell
+        color = TONE_COLOR[tones[ri]] if (ci == last and ri in tones) else INK if ci == bold_col else BODY
+        return Paragraph(_esc(cell), ParagraphStyle(
+            'dtw', fontName=font, fontSize=_DT_SIZE, leading=_DT_SIZE + 2, textColor=color,
+            alignment={'LEFT': TA_LEFT, 'RIGHT': TA_RIGHT, 'CENTER': TA_CENTER}[aligns[ci]]))
+    rows = [[_fit(c, ri, ci) for ci, c in enumerate(r)] for ri, r in enumerate(rows)]
     all_rows = [header] + rows
     t = Table(all_rows, colWidths=widths, repeatRows=1)
     cmds = [
@@ -188,20 +211,18 @@ def data_table(header, rows, widths, aligns=None, reads=None, bold_col=1):
         ('FONTSIZE', (0, 0), (-1, 0), 7.4),
         ('TEXTCOLOR', (0, 0), (-1, 0), MUTED),
         ('LINEBELOW', (0, 0), (-1, 0), 1, BRAND),
-        ('FONTSIZE', (0, 1), (-1, -1), 8.6),
+        ('FONTSIZE', (0, 1), (-1, -1), _DT_SIZE), ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('TEXTCOLOR', (0, 1), (-1, -1), BODY),
         ('LINEBELOW', (0, 1), (-1, -2), 0.4, HAIR),
         ('TOPPADDING', (0, 0), (-1, -1), 4.5), ('BOTTOMPADDING', (0, 0), (-1, -1), 4.5),
-        ('LEFTPADDING', (0, 0), (-1, -1), 4), ('RIGHTPADDING', (0, 0), (-1, -1), 4),
+        ('LEFTPADDING', (0, 0), (-1, -1), _DT_PAD), ('RIGHTPADDING', (0, 0), (-1, -1), _DT_PAD),
     ]
     if bold_col is not None:
         cmds.append(('FONTNAME', (bold_col, 1), (bold_col, -1), 'Helvetica-Bold'))
         cmds.append(('TEXTCOLOR', (bold_col, 1), (bold_col, -1), INK))
-    aligns = aligns or (['LEFT'] + ['RIGHT'] * (len(header) - 1))
     for i, a in enumerate(aligns):
         cmds.append(('ALIGN', (i, 0), (i, -1), a))
     if reads:
-        last = len(header) - 1
         for row_idx, tone in reads:
             cmds.append(('TEXTCOLOR', (last, row_idx + 1), (last, row_idx + 1), TONE_COLOR[tone]))
             cmds.append(('FONTNAME', (last, row_idx + 1), (last, row_idx + 1), 'Helvetica-Bold'))
