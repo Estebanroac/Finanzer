@@ -161,3 +161,31 @@ y su copia en `display.sections.alerts` de AMT. O y PLD sin cambio. Solo texto.
 
 **Estado tras T3:** guardián con 0 fallos y 0 xfail en los 30 del panel y los 6 de `local`; invariantes del panel
 sin xfail. Lo único rojo de la suite es la comparación con los golden (pendiente de aprobación en T5).
+
+---
+
+## T4 — Maquetación del PDF (tres commits; solo el texto del PDF, ningún campo del análisis)
+
+### a) Página 2 — `7f32070`
+**Causa.** Alturas fijas (27/46/27%) con la composición centrada (hueco encima) y la lectura alineada abajo: cuando
+la lectura no cabía en su 27%, crecía hacia arriba y se montaba sobre la composición (32 de 36 PDF). La composición
+era 24 pt más estrecha que el resto y su tabla de barras 12 pt más ancha que su celda (cifras sobre el borde).
+**Cambio.** Flujo natural a ancho completo; rellenos de cards, composición y lectura ajustados (sin quitar texto ni
+cambiar el cuerpo de letra de las cifras); la lectura en `KeepInFrame(shrink)` con el alto que queda, como la
+portada. Página 2 completa en 30 + 6 (test).
+
+### b) Comprobación geométrica y celdas largas — `e3161d2`
+`tests/pdf_geometry.py` (pypdfium2): texto dentro del área útil y sin solapes. Detecta en páginas sintéticas y en
+el código anterior a T4 (33 de 36 PDF). Encontró dos defectos más, arreglados en `data_table`: "No aplica a …" sobre
+la columna de brecha (RIVN, SNOW) y el criterio de Piotroski "Calidad del beneficio (flujo operativo frente a
+beneficio neto)" sobre su detalle (24 PDF). La celda que no cabe se parte en líneas dentro de su columna. En el texto
+extraído del PDF cambian los saltos de línea de esas celdas.
+
+### c) Anexo sin partir — `c369575`
+`KeepTogether` del anexo técnico (AAPL y SNOW dejaban el título al pie de una página).
+
+### Páginas (golden → ahora, T3.3 + T4)
+15 PDF sin cambio. Cambian: AAPL 9→10, JPM 7→8, BAC 7→8, PGR 7→8, BRK-B 7→8, PLD 6→7, AMT 6→7, NEE 8→7, XOM 8→9,
+FCX 8→9, CAT 8→9, MU 9→10, DOW 8→9, PLTR 8→9, NVDA 8→9, SNOW 9→10, TSM 9→10, ASML 9→10 (panel); JPM 7→8, FCX 8→9,
+SNOW 9→10 (`local`). Causas: el anexo al final (T3.3) y las filas con lectura partida en dos líneas (T4 b). Ninguna
+última página queda con un fragmento suelto del anexo.
