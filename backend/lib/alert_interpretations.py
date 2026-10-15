@@ -407,7 +407,10 @@ def _coverage(ctx: Ctx):
     if ic is None or ctx.na("interest_coverage"):
         return None
     T = _A["coverage"]
-    state = interest_coverage_state(ic, ctx.g("net_debt"))
+    # Fase 1: el estado lo decide main (EBIT y resultado financiero neto); sin él, la regla anterior.
+    state = ctx.g("interest_coverage_state") or interest_coverage_state(ic, ctx.g("net_debt"))
+    if state == "sin_carga":
+        return None  # EBIT > 0 e ingresos financieros netos: la deuda no es una carga
     if state == "no_significativo":
         return None  # EBIT < 0 con caja neta: los intereses se pagan con caja
     if state == "negativa":
@@ -692,7 +695,7 @@ def _signal_claims(name: str, ctx: "Ctx") -> List[dict]:
     El guardián las comprueba contra el análisis final (tests/guardian.py)."""
     nd = ctx.g("net_debt")
     if name == "_coverage":
-        st = interest_coverage_state(ctx.g("interest_coverage"), nd)
+        st = ctx.g("interest_coverage_state") or interest_coverage_state(ctx.g("interest_coverage"), nd)
         cl = [_claim("coverage", value=ctx.g("interest_coverage"), state=st)]
         if st in ("negativa", "no_significativo"):
             cl += [_claim("ebit_negative"), _claim("net_debt" if st == "negativa" else "net_cash")]

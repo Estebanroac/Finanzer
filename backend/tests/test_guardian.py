@@ -35,8 +35,6 @@ for env, t in (("panel", "ASML"), ("panel", "DOW"), ("panel", "FCX"), ("panel", 
     _known[("growth", env, t)] = _CYC
     _known[("basis", env, t)] = _BASIS
 _known.update({
-    ("ebit_negative", "panel", "PLTR"): "cobertura de intereses decidida por el signo del cociente: 'EBIT negativo' "
-                                        "con EBIT +2.63 B (T3.1)",
     ("referencia_mercado", "panel", "V"): "'múltiplos frente al sector' en la confianza con benchmark de mercado",
     ("referencia_mercado", "local", "V"): "'múltiplos frente al sector' en la confianza con benchmark de mercado",
     ("base_ttm", "panel", "BRK-B"): "'P/E (TTM)' con base anual (faltan trimestres)",

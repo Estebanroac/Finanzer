@@ -55,7 +55,7 @@ def _metric_claims(a, metric):
     m = str(metric or "")
     if m in _COV_METRICS:
         st = km.get("interest_coverage_state")
-        cl = [_claim("coverage", state=st)]
+        cl = [_claim("coverage", state=st)] + ([_claim("no_interest_burden")] if st == "sin_carga" else [])
         if st in ("negativa", "no_significativo"):
             cl += [_claim("ebit_negative"), _claim("net_debt" if st == "negativa" else "net_cash")]
         return cl
@@ -296,6 +296,9 @@ def read_de(de, threshold=None, coverage=None, market=False):
 def read_coverage(ic, state=None, utility=False):
     # Etapa 5: EBIT < 0 con caja neta -> no significativa; con deuda neta ->
     # riesgo, sin presentar la cifra negativa como si fuera una cobertura.
+    if state == "sin_carga":   # fase 1: EBIT > 0 e ingresos financieros netos
+        return ("Sin carga financiera", 'pos', "sin carga financiera neta: los ingresos financieros cubren los "
+                "gastos financieros y el resultado operativo es positivo")
     if state == "no_significativo":
         return ("No significativa", 'neu', "con EBIT negativo y caja neta, la cobertura de intereses no es "
                 "significativa: los intereses se pagan con caja")
@@ -783,6 +786,8 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
              *([_claim("net_cash", field="key_metrics.net_debt")] if de_mode == "no_significativo" else []))
         _ic_claims = [_claim("coverage", field="key_metrics.interest_coverage", value=km.get("interest_coverage"),
                              state=ic_state)]
+        if ic_state == "sin_carga":
+            _ic_claims.append(_claim("no_interest_burden"))
         if ic_state in ("no_significativo", "negativa"):
             _ic_claims.append(_claim("ebit_negative", field="key_metrics.operating_income"))
             _ic_claims.append(_claim("net_cash" if ic_state == "no_significativo" else "net_debt",
@@ -1519,6 +1524,9 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     ]
     srows = []
     for key, lab, val, fm, rd in sol_defs:
+        if key == "interest_coverage" and ic_state == "sin_carga" and rd:   # fase 1: ratio sin sentido, lectura +
+            srows.append(_row(key, lab, "Sin carga", rd[0], rd[1], "no_significativo", text=rd[2]))
+            continue
         if (key == "interest_coverage" and ic_state == "no_significativo") or \
                 (key == "net_debt_to_ebitda" and nde_state == "no_significativo"):
             srows.append(_row(key, lab, "—", rd[0], rd[1], "no_significativo", text=rd[2]))

@@ -451,6 +451,18 @@ def validate_outputs(result: Dict[str, Any]) -> List[Dict[str, Any]]:
     # Regla M aplicada a la cobertura de intereses (etapa 5): EBIT < 0 con caja
     # neta -> la ratio no es significativa (los intereses se pagan con caja).
     km = result.get("key_metrics") or {}
+    # Fase 1: EBIT > 0 con ingresos financieros netos -> una cobertura negativa no es una ratio con sentido.
+    if km.get("interest_coverage_state") == "sin_carga":
+        for block in ("key_metrics", "ratios"):
+            d = result.get(block) or {}
+            v = _num(d.get("interest_coverage"))
+            if v is not None and v < 0:
+                d["interest_coverage"] = None
+                flags.append({"field": f"{block}.interest_coverage", "rule": "ratio_no_significativa",
+                              "action": "sin_dato", "old": v, "new": None,
+                              "reason": f"Cobertura de intereses = {v:.1f}x".replace("-", "−")
+                                        + ": EBIT > 0 y los ingresos financieros superan a los gastos (sin carga "
+                                          "financiera neta), la ratio no es significativa"})
     if km.get("interest_coverage_state") == "no_significativo":
         for block in ("key_metrics", "ratios"):
             d = result.get(block) or {}

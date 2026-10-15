@@ -76,6 +76,7 @@ def pdf_reading_text(pdf_text):
 KEYWORDS = [
     ("ebit_negativo", r"ebit negativo|ebit < 0|resultado operativo (?:es )?negativo", {"ebit_negative"}),
     ("caja_neta", r"caja neta", {"net_cash"}),
+    ("sin_carga_financiera", r"sin carga financiera", {"no_interest_burden"}),
     ("deuda_neta_afirmada", r"(?:tiene|con) deuda neta", {"net_debt"}),
     ("maximos_minimos", r"en (?:la zona de )?m[aá]ximos|en (?:la zona de )?m[ií]nimos|zona de m[aá]ximos|zona de m[ií]nimos",
      {"pos52"}),
@@ -178,6 +179,19 @@ def _p_ebit_negative(a, c, text):
         return "dice EBIT negativo sin operating_income para respaldarlo"
     if oi >= 0:
         return f"dice EBIT negativo con operating_income = {oi / 1e9:+.2f} B"
+
+
+def _p_no_interest_burden(a, c, text):
+    """'Sin carga financiera neta': EBIT > 0 y resultado financiero neto >= 0 (o inferido y marcado)."""
+    km = a.get("key_metrics") or {}
+    oi, nii = km.get("operating_income"), km.get("net_interest_income")
+    inferred = "key_metrics.interest_coverage_state" in ((a.get("data_provenance") or {}).get("fields") or {})
+    if oi is None or oi <= 0:
+        return f"dice sin carga financiera con operating_income = {oi!r}"
+    if nii is None and not inferred:
+        return "dice sin carga financiera sin resultado financiero neto ni marca de inferido"
+    if nii is not None and nii < 0:
+        return f"dice sin carga financiera con resultado financiero neto {nii / 1e6:+.1f} M"
 
 
 def _p_net_cash(a, c, text):
@@ -335,6 +349,7 @@ def _p_share_dilution_3y(a, c, text):
 
 
 PREDICATES = {
+    "no_interest_burden": _p_no_interest_burden,
     "share_dilution_3y": _p_share_dilution_3y,
     "basis": _p_basis, "eps_vs_revenue": _p_eps_vs_revenue,
     "ebit_negative": _p_ebit_negative, "net_cash": _p_net_cash, "net_debt": _p_net_debt, "pos52": _p_pos52,

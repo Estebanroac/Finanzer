@@ -228,6 +228,8 @@ class FinancialStatements:
     net_income: Optional[float] = None
     ebitda: Optional[float] = None
     interest_expense: Optional[float] = None
+    net_interest_income: Optional[float] = None   # fase 1: resultado financiero neto (ingresos − gastos)
+    net_interest_income_min_q: Optional[float] = None   # fase 1: el peor de los 4 trimestres del TTM
     depreciation: Optional[float] = None
     
     # Balance Sheet
@@ -378,6 +380,8 @@ class YahooFinanceFetcher:
                 net_income = info.get("netIncome")
                 ebitda_val = info.get("ebitda")
                 interest_expense = info.get("interestExpense")
+                net_interest_income = info.get("netInterestIncome")
+                nii_min_q = info.get("_netInterestIncomeMinQ")
 
                 total_assets = info.get("totalAssets")
                 current_assets = info.get("totalCurrentAssets")
@@ -415,6 +419,8 @@ class YahooFinanceFetcher:
                     net_income=net_income,
                     ebitda=ebitda_val,
                     interest_expense=abs(interest_expense) if interest_expense else None,
+                    net_interest_income=net_interest_income,
+                    net_interest_income_min_q=nii_min_q,
                     depreciation=depreciation,
                     
                     # Balance Sheet

@@ -30,6 +30,8 @@ FLOW_KEYS = {
     "netIncome": ("inc", "Net Income"),
     "ebitda": ("inc", "EBITDA"),
     "interestExpense": ("inc", "Interest Expense"),
+    # Fase 1: resultado financiero neto (ingresos − gastos financieros) para el estado de la cobertura.
+    "netInterestIncome": ("inc", "Net Non Operating Interest Income Expense"),
     "depreciation": ("cf", "Depreciation And Amortization"),
     "operatingCashflow": ("cf", "Operating Cash Flow"),
     "capitalExpenditures": ("cf", "Capital Expenditure"),
@@ -99,7 +101,8 @@ def build_ttm(q_inc, q_cf, q_bs) -> Dict[str, Any]:
     """{values: {info_key: valor TTM}, missing: {info_key: motivo}, quarters, balance_date,
     quarterly: {fila: serie}} a partir de los tres estados trimestrales (o None)."""
     frames = {"inc": q_inc, "cf": q_cf}
-    out: Dict[str, Any] = {"values": {}, "missing": {}, "quarters": {}, "balance_date": None, "quarterly": {}}
+    out: Dict[str, Any] = {"values": {}, "missing": {}, "quarters": {}, "balance_date": None, "quarterly": {},
+                           "quarter_min": {}}
     for st, df in frames.items():
         dates = frame_dates(df)
         out["quarters"][st] = dates[:4]
@@ -116,6 +119,7 @@ def build_ttm(q_inc, q_cf, q_bs) -> Dict[str, Any]:
                 out["missing"][key] = f"'{row}' sin dato en alguno de los 4 últimos trimestres"
             else:
                 out["values"][key] = sum(vals)
+                out["quarter_min"][key] = min(vals)   # fase 1: el signo de un flujo no lo decide un trimestre atípico
     bdates = frame_dates(q_bs)
     if bdates:
         out["balance_date"] = bdates[0]

@@ -976,6 +976,8 @@ def _apply_ttm(symbol: str, info: Dict[str, Any], plan_b: bool) -> Dict[str, Any
     balance = [k for k in t["values"] if k not in FLOW_KEYS]
     for k, v in t["values"].items():
         info[k] = v
+    if "netInterestIncome" in t.get("quarter_min", {}):   # fase 1: signo estable del resultado financiero
+        info["_netInterestIncomeMinQ"] = t["quarter_min"]["netInterestIncome"]
     if flows:
         _tag_provenance(info, "yfinance_statements",
                         f"TTM: suma de los 4 trimestres {', '.join(t['quarters'].get('inc') or t['quarters'].get('cf') or [])}",
@@ -1353,7 +1355,7 @@ def _fallback_yfinance(symbol: str) -> Dict[str, Any]:
             return {k: _sg(latest, k) for k in [
                 "Total Revenue", "Gross Profit", "Operating Income",
                 "Net Income", "EBITDA", "Diluted EPS", "Interest Expense",
-                "Depreciation And Amortization"
+                "Depreciation And Amortization", "Net Non Operating Interest Income Expense"
             ]}
         return {}
 
@@ -1412,6 +1414,7 @@ def _fallback_yfinance(symbol: str) -> Dict[str, Any]:
     info["trailingEps"] = inc.get("Diluted EPS")
     info["_eps_net_income"] = inc.get("Net Income")   # etapa 11b: mismo ejercicio que el BPA
     info["interestExpense"] = inc.get("Interest Expense")
+    info["netInterestIncome"] = inc.get("Net Non Operating Interest Income Expense")   # fase 1
     info["depreciation"] = inc.get("Depreciation And Amortization")
 
     bs = results.get("balance", {})

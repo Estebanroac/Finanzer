@@ -284,6 +284,7 @@ def _compute_analysis(symbol: str) -> dict:
     Returns the full analysis dict or raises HTTPException.
     """
     symbol = symbol.upper().strip()
+    ic_state_inferred = False   # fase 1: estado de la cobertura inferido (sin resultado financiero en los estados)
     # Validate ticker characters (letters/digits and . - ^ = as used by real
     # tickers, e.g. BRK.B, BRK-B, ^GSPC, EURUSD=X). Reject anything else with a
     # clean 400 instead of letting it crash deep in the data fetch (500).
@@ -479,6 +480,17 @@ def _compute_analysis(symbol: str) -> dict:
             interest_cov = r("interest_coverage")
             if interest_cov is None and oi_val and ie_val and ie_val != 0:
                 interest_cov = oi_val / abs(ie_val)
+            # Fase 1 del plan de fiabilidad: el estado de la cobertura se decide UNA vez, con el signo del EBIT de
+            # los estados y el del resultado financiero neto, y lo leen el score, las alertas, el WACC y el texto.
+            nii_val = safe_float(getattr(financials, "net_interest_income", None))
+            # "Sin carga" exige el signo en el TTM y en cada trimestre: un trimestre atípico (NFLX 2026-03,
+            # +2.85 B de ingresos financieros) no convierte en acreedora neta a una empresa que paga intereses.
+            nii_q = safe_float(getattr(financials, "net_interest_income_min_q", None))
+            nii_sign = min(v for v in (nii_val, nii_q) if v is not None) if nii_val is not None else None
+            ic_state = interest_coverage_state(safe_float(interest_cov), r("net_debt"), ebit=oi_val,
+                                               net_interest_income=nii_sign)
+            ic_state_inferred = ic_state == "sin_carga" and nii_val is None
+            fin_dict["interest_coverage_state"] = ic_state
 
             # Payout Ratio — from Yahoo
             payout = r("payout_ratio")
@@ -552,7 +564,8 @@ def _compute_analysis(symbol: str) -> dict:
                 "interest_coverage": safe_float(interest_cov),
                 # Etapa 5: "no_significativo" (EBIT < 0 con caja neta), "negativa"
                 # (EBIT < 0 con deuda neta) u "ok".
-                "interest_coverage_state": interest_coverage_state(safe_float(interest_cov), r("net_debt")),
+                "interest_coverage_state": ic_state,
+                "net_interest_income": nii_val,
                 "debt_to_assets": safe_float(debt_to_assets),
                 # Métricas que se calculaban en calculate_all_ratios pero nunca se
                 # exponían (el frontend solo lee key_metrics), así que se
@@ -811,7 +824,7 @@ def _compute_analysis(symbol: str) -> dict:
                 wacc_info = compute_wacc(
                     beta=safe_float(financials.beta), rf=rf_info, market_cap=mcap, total_debt=td_val,
                     interest_coverage=safe_float(interest_cov),
-                    coverage_state=interest_coverage_state(safe_float(interest_cov), r("net_debt")),
+                    coverage_state=ic_state,
                     tax=tax_info)
                 wacc_info["applicable"] = True
             wacc_est = wacc_info["value"]
@@ -1374,6 +1387,11 @@ def _compute_analysis(symbol: str) -> dict:
             _sin_dato("validacion_salida", e)
         result["data_validation"] = list(yinfo.get("_validation") or []) + _row_flags + _out_flags
         result["data_provenance"] = _build_provenance(yinfo, _out_flags, _block_errors)
+        if ic_state_inferred:
+            result["data_provenance"].setdefault("fields", {})["key_metrics.interest_coverage_state"] = {
+                "source": "derivado",
+                "detail": ("inferido: EBIT > 0 y cobertura negativa sin fila de resultado financiero en los estados "
+                           "⇒ ingresos financieros netos (sin carga financiera neta)")}
 
         # ── Etapa 8: confianza del veredicto (spec Sección 3) ──
         # Se calcula y se muestra (JSON, PDF); NO limita el score: el techo
