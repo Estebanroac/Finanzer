@@ -232,6 +232,9 @@ Todo paso de código, en cualquier fase, pasa esta lista en el chat de código a
 8. **Aprobación del usuario** explícita. Sin ella no hay push (regla vigente).
 9. **Deploy y verificación en producción:** corrida del panel contra finanzer.app; resultado anotado en `docs/DEPLOY_VERIFICATION.md`; rollback identificado.
 10. **Registro:** RECON (§7.x nueva) y memoria actualizados.
+11. **Revisión externa (al cierre de cada fase):** 2–3 tickers **fuera del panel**, elegidos para estresar la fase
+    (otra moneda, otro tipo de negocio), con el PDF de producción contrastado por un analista independiente. El panel
+    mide los fallos que ya conocemos; esta revisión busca los que no (origen: BCS, 2026-10-15).
 
 **Revisión entre fases** (en un chat como este, sin código): corrida del panel en producción, comparación con las métricas F1–F5 de la fase 0 y decisión de pasar o no a la siguiente.
 
