@@ -426,12 +426,12 @@ class RawIndex:
         return self._by_sym[sym]
 
     KW = {"revenue": "Revenue|Income|Sales", "gross_profit": "Gross|Profit", "operating_income": "Operat|Profit",
-          "net_income": "Profit|Income|Earnings", "interest_expense": "Interest|Financ",
+          "net_income": r"^(?!.*Comprehensive).*(Profit|Income|Earnings)", "interest_expense": "Interest|FinanceCost",
           "depreciation": "Depreciat|Amorti", "operating_cash_flow": "Operat|CashFlow",
           "capex": "Purchase|Payment|Acquire|Capital|Additions", "dividends_paid": "Dividend|Distribution",
           "total_assets": "Assets", "current_assets": "Current|Assets", "cash": "Cash|Bank|Deposit",
           "inventories": "Inventor", "total_liabilities": "Liabilit", "current_liabilities": "Current|Liabilit",
-          "long_term_debt": "Debt|Borrow|Notes|Subordinat", "total_debt": "Debt|Borrow|Notes|Subordinat",
+          "long_term_debt": "Debt|Borrow|Notes|Bond|Subordinat", "total_debt": "Debt|Borrow|Notes|Bond|Subordinat",
           "equity_parent": "Equity", "retained_earnings": "Retained|Reserve|Earnings|Accumulated"}
 
     def search(self, sym: str, ed: Edgar, period, p: float, tol: float, efield: str = "") -> List[str]:
@@ -483,6 +483,22 @@ MANUAL = {
                      "4.35"),
     ("V", "dividend_per_share"): ("definición", "dividendo indicado = 0.67 × 4 = 2.68. El TTM de EDGAR (0.67) no es "
                                   "fiable: V etiqueta el acumulado del año con el importe de un trimestre"),
+    ("HSBC", "dividend_per_share"): ("unidad + factor ADR", "Finnhub 55.67 = peniques por acción ordinaria (línea de "
+                                     "Londres), leído como USD por ADR. En USD por ADR: 0.5567 GBP × 1.34 × 5 ≈ 3.73 "
+                                     "(DPA pagado de 2025 en EDGAR: 0.66 USD × 5 = 3.30)"),
+    ("SHEL", "dividend_per_share"): ("unidad + factor ADR", "Finnhub 112.82 = peniques por acción ordinaria (Londres). En "
+                                     "USD por ADR: 1.1282 GBP × 1.34 × 2 ≈ 3.02 (EDGAR: 1.432 USD × 2 = 2.86)"),
+    ("UL", "dividend_per_share"): ("unidad + factor ADR", "Finnhub 164.99 = peniques por acción ordinaria (Londres). En "
+                                   "USD por ADR: 1.6499 GBP × 1.34 ≈ 2.21 (EDGAR: 2.03 EUR × 1.13 = 2.29)"),
+    ("TM", "shares_outstanding"): ("fuente errónea", "Yahoo: capitalización / precio = 1,178 millones de ADR = 11,778 "
+                                   "millones de acciones, frente a 13,034 en circulación en el 20-F (2026-03-31) y en "
+                                   "la portada. De ahí el factor implícito 11.07 frente al oficial 10"),
+    ("UL", "FY1.ordinary_shares"): ("periodo", "consolidación de acciones con la escisión de helados (8 por 9: 2,452 "
+                                    "millones a 2025-06-30 → 2,180 a 2025-12-31); Yahoo la aplica a 2024 (2,476 × 8/9 "
+                                    "= 2,201)"),
+    ("SHEL", "long_term_debt"): ("definición", "probable: préstamos a largo plazo (66,515 millones de USD, que en IFRS "
+                                 "incluyen arrendamientos) sin la parte no corriente de los arrendamientos (≈ 24,300 = "
+                                 "28,933 de arrendamientos totales − la corriente). SHEL solo etiqueta el total"),
     ("TSM", "retained_earnings"): ("definición", "utilidades no asignadas: sin la reserva legal ni la especial, que "
                                    "RetainedEarnings de la 20-F sí incluye (diferencia 398 mil millones de TWD)"),
 }
@@ -767,6 +783,12 @@ def compare_ticker(sym: str, ext: Dict[str, Any], cap: Dict[str, Any]) -> List[D
     return rows
 
 
+def econcept_is(ed: Edgar, period, field: str, concept: str) -> bool:
+    """¿El valor principal del campo sale de ese concepto (p. ej. ProfitLoss, que incluye minoritarios)?"""
+    _, c, _, _ = ed.value(field, period)
+    return bool(c) and c.endswith(":" + concept)
+
+
 def _div(a, b):
     return a / b if (a is not None and b) else None
 
@@ -788,8 +810,9 @@ def _judge(row, sym, ed: Edgar, efield, kind, period, p, e, factor, eng_factor, 
         return row
     base = row["campo"].split(".", 1)[-1] if row["campo"].startswith("FY") else row["campo"]
     base = {"capital_expenditure": "capex", "stockholders_equity": "total_equity"}.get(base, base)
-    if (sym, base) in MANUAL:
-        row.update(estado="fuera", causa=MANUAL[(sym, base)][0], detalle=MANUAL[(sym, base)][1])
+    mk = (sym, row["campo"]) if (sym, row["campo"]) in MANUAL else (sym, base)
+    if mk in MANUAL:
+        row.update(estado="fuera", causa=MANUAL[mk][0], detalle=MANUAL[mk][1])
         return row
     cands = explanations(ed, efield, kind, period, e, factor, eng_factor, raw, rate, fy_years)
     hit = classify(p, cands, tol)
@@ -841,9 +864,6 @@ def explanations(ed: Edgar, efield, kind, period, e, factor, eng_factor, raw, ra
         out.append(("factor ADR", f"por acción ordinaria (sin ×{factor:g})", e / factor))
     if kind == "shares" and factor != 1:
         out.append(("factor ADR", f"acciones ordinarias (sin ÷{factor:g})", e * factor))
-    if rate and rate != 1:
-        out.append(("unidad", "moneda sin convertir", e * rate))
-        out.append(("unidad", "moneda convertida dos veces", e / rate))
     own = efield in E.CONCEPTS          # total_debt es una suma: sus piezas van en "deuda" más abajo
     # definición: otras etiquetas del mismo campo y combinaciones conocidas
     for c in (ed.concepts(efield) if own else []):
@@ -884,10 +904,15 @@ def explanations(ed: Edgar, efield, kind, period, e, factor, eng_factor, raw, ra
                 v, _, _, _ = ed.value("capex", period, concept=c)
                 if v is not None:
                     out.append(("definición", f"capex + {c.split(':')[1]}", e + abs(v)))
+    if efield in ("long_term_debt", "total_debt") and typ == "instant" and ed.tax == "ifrs-full":
+        ls = lease_parts(ed, period).get("arrendamientos")
+        if ls:
+            out.append(("definición", "deuda sin arrendamientos (en IFRS los préstamos etiquetados los incluyen)", e - ls))
     if efield in ("long_term_debt", "total_debt") and typ == "instant":
         lp = lease_parts(ed, period)
         for lab, v in lp.items():
-            out.append(("definición", f"deuda con arrendamientos {lab}", e + v))
+            out.append(("definición", "deuda con arrendamientos (IFRS 16)" if lab == "arrendamientos"
+                        else f"deuda con arrendamientos {lab}", e + v))
         if len(lp) > 1:
             out.append(("definición", "deuda con todos los arrendamientos", e + sum(lp.values())))
         tr, ctr, _, _ = ed.value("total_debt_reported", period)
@@ -908,6 +933,10 @@ def explanations(ed: Edgar, efield, kind, period, e, factor, eng_factor, raw, ra
             if ed.facts(c, "flow"):
                 v, _, _, _ = ed.value("net_income", period, concept=c)
                 out.append(("perímetro", "beneficio de las operaciones continuadas", scale(v)))
+        if econcept_is(ed, period, "net_income", "ProfitLoss"):
+            mi, _, _, _ = ed.value("net_income_minorities", period)
+            if mi:
+                out.append(("definición", "beneficio atribuido a la dominante (ProfitLoss − minoritarios)", e - mi))
         for c in (f"{ed.tax}:ProfitLoss",):
             if ed.facts(c, "flow"):
                 v, _, _, _ = ed.value("net_income", period, concept=c)
@@ -970,6 +999,10 @@ def explanations(ed: Edgar, efield, kind, period, e, factor, eng_factor, raw, ra
             continue
         v, c, det, _ = ed.value(efield, ap)
         out.append(("periodo", f"{ap[0]} {ap[1]} ({det})", scale(v)))
+    # moneda: solo con tipos lejos de 1 (con EUR/USD ≈ 1.13 una diferencia real del 12% coincidía por azar: UL)
+    if rate and not 0.8 < rate < 1.25:
+        out.append(("unidad", "moneda sin convertir", e * rate))
+        out.append(("unidad", "moneda convertida dos veces", e / rate))
     # perímetro / reexpresión: el valor original del mismo periodo
     v, c, det, groups = ed.value(efield, period) if own else (None, None, "", [])
     for g in groups or []:
