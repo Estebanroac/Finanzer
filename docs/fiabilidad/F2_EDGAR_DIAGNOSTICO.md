@@ -25,8 +25,12 @@
   una mediana de **3.6 MB** (máximo 8.0 MB, JPM). Es una descarga por emisor; con caché diaria, el coste es despreciable.
 - **Cuatro hechos contradicen el prompt o el mapa** (§6):
   1. Cuatro emisores 20-F publican **semestrales con XBRL en 6-K**: BCS, HSBC, SHEL y UL.
-  2. **La API `companyfacts` no incorpora** el 20-F de 2025 de TSM, el 20-F de FY2026 de TM ni los 6-K semestrales
-     de 2026. Esos filings sí tienen XBRL, y los hechos se leen de la instancia del filing.
+  2. **La API `companyfacts` no incorpora 12 filings con XBRL** del panel:
+     - el 20-F de 2025 de TSM y el 20-F de FY2026 de TM;
+     - los 6-K semestrales de 2026 de BCS, HSBC, SHEL y UL;
+     - los 10-Q del 2T-2026 de KO, V, PLD, NEE, DUK y DOW.
+
+     Los hechos se leen de la instancia del filing (corrección del mismo día, §6.2).
   3. **XOM cambió de CIK** (reorganización en holding, 2026-07-01).
   4. **ASML no es un ADR**: sus acciones ordinarias cotizan directamente, con factor 1.
 - **Factores ADR verificados en la SEC** (§5):
@@ -322,14 +326,20 @@ revisión externa F1), que se medirá cuando T1 capture UL.
   - TSM, NVO, TM y ASML no tienen interinos en XBRL. Los 6-K de TSM de 2021 son una excepción aislada.
 - La herramienta cuenta, por concepto, los periodos FY, Q, 6M y 9M (`periods` en `diag.json`).
 
-### 6.2 `companyfacts` no incorpora parte de los filings IFRS de 2026
+### 6.2 `companyfacts` no incorpora parte de los filings de 2026
+
+> **Corrección del 2026-10-15, después del punto de parada 1.** La primera versión de esta sección hablaba solo de
+> filings IFRS. Al construir la lectura de las instancias para T3 (`edgar.missing_filings`), salieron también seis
+> 10-Q de EE. UU. del 2T-2026. La tabla de §1 ya lo mostraba: el "último trimestre" de KO, V, PLD, NEE, DUK y DOW
+> es el 1T. Aquí está la lista completa.
 
 | Filing (con `isXBRL=1` en EDGAR) | ¿Hechos financieros en `companyfacts`? |
 |---|---|
 | TSM 20-F FY2025 (2026-04-16) | **No**: solo 2 hechos `dei`/`srt`; el último ejercicio con cifras es FY2024 |
 | TM 20-F FY2026, cierre 2026-03 (2026-06-10) | **No**: solo 1 hecho `dei`; el último es FY2025 (2025-03) |
 | 6-K semestral 2026 de BCS (07-28), HSBC (08-04), SHEL (07-30) y UL (07-28) | **No**; los de 2025 sí están |
-| 20-F FY2025 de NVO (02-04), BCS (02-10), HSBC (02-26), UL y SHEL (03-12) | Sí |
+| 10-Q del 2T-2026 de KO (07-29), V (07-29), PLD (07-29), NEE (07-24), DUK (08-04) y DOW (07-24) | **No**: el último trimestre en `companyfacts` es el 1T-2026 |
+| 20-F FY2025 de NVO (02-04), BCS (02-10), HSBC (02-26), UL y SHEL (03-12); los 10-Q del 2T de los otros 22 de EE. UU. | Sí |
 
 - **No es la versión de la taxonomía:** NVO y TSM declaran la misma, `ifrs` 2025-03-27, y NVO sí está.
 - **No es la ausencia de XBRL:** el filing de TSM trae su instancia (`tsm-20251231_htm.xml`, 10.8 MB, descargada
@@ -337,9 +347,12 @@ revisión externa F1), que se medirá cuando T1 capture UL.
   TWD.
 
 La causa está del lado de la API de la SEC y no se puede comprobar desde fuera. Lo que importa para la fase 2:
-**para los emisores IFRS, `companyfacts` puede ir uno o dos periodos por detrás de lo presentado.** La alternativa
-que funciona es leer la instancia XBRL del filing, a partir de la lista de filings de `submissions`. T3 la usa para
-TSM y TM, y T4 la cuenta como coste del escenario "EDGAR principal".
+**`companyfacts` puede ir uno o dos periodos por detrás de lo presentado**, en 12 de los 35 emisores a fecha de hoy.
+La alternativa que funciona es leer la instancia XBRL del filing, a partir de la lista de filings de `submissions`:
+- **coste:** una descarga de 4–15 MB por filing (de 0.2 a 0.8 s);
+- **implementación:** `edgar.missing_filings` y `edgar.supplement`;
+- **uso en T3:** los extractos de `tests/fixtures/edgar/<T>.json` ya incluyen esos 12 filings;
+- **en T4**, cuenta como coste del escenario "EDGAR principal".
 
 ### 6.3 Otros
 
@@ -374,7 +387,7 @@ trae el original.
 ## 7. Qué se lleva T3 de este diagnóstico
 
 1. **Fuente de verdad por emisor:** `companyfacts` (extracto en `tests/fixtures/edgar/<T>.json`), más la instancia
-   XBRL del filing para TSM FY2025 y TM FY2026, que la API no trae.
+   XBRL de los 12 filings que la API no trae (§6.2).
 2. **Periodo del pipeline:**
    - el TTM se compara con FY + acumulado − acumulado del mismo periodo del año anterior;
    - el balance, con la fecha del último trimestre;
