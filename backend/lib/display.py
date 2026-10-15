@@ -1028,7 +1028,10 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         if r:
             pill, tone, _f, delta = r
             # etiqueta más corta para la pill (que no envuelva en la card)
-            pill = {"Descuento profundo": "Gran descuento"}.get(pill, pill)
+            short = {"Descuento profundo": "Gran descuento"}.get(pill)
+            if short:   # fase 1: la etiqueta acortada lleva la misma afirmación que la lectura (BCS, guardián)
+                _record(short, *_vs_claims(label, raw, bench, higher), source="display.tarjetas")
+                pill = short
         else:
             pill, tone, delta = ("—" if raw is None else "En rango"), 'neu', ""
         return {"key": key, "label": label, "value": v, "unit": u, "pill": pill, "tone": tone, "delta": delta,
