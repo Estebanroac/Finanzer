@@ -1621,7 +1621,15 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         ("dividend_yield", "Dividend yield", km.get("dividend_yield"), "pct", None),
     ]
     grows = []
+    # Fase 1 (identidad del dividendo): el yield que no cuadra con lo pagado sale "sin dato" con su motivo,
+    # no desaparece de la tabla (BCS, TSM, NVO, NVDA).
+    _dy_bad = next((f for f in a.get("data_validation") or [] if f.get("rule") == "identidad_dividendo"), None)
     for key, lab, val, fm, rd in gro_defs:
+        if val is None and _dy_bad and key in ("dividend_yield", "shareholder_yield"):
+            grows.append(_row(key, lab, NO_DATA, "Sin dato", None, "sin_dato",
+                              text="no cuadra con lo que la empresa paga en dividendos (" +
+                                   _dy_bad["reason"].split(": no cuadra")[0] + "); no puntúa"))
+            continue
         if val is None:
             continue
         grows.append(_row(key, lab, fv(val, fm), rd[0] if rd else "—", rd[1] if rd else None, text=rd[2] if rd else None))

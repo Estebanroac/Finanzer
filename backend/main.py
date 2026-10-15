@@ -285,6 +285,8 @@ def _compute_analysis(symbol: str) -> dict:
     """
     symbol = symbol.upper().strip()
     ic_state_inferred = False   # fase 1: estado de la cobertura inferido (sin resultado financiero en los estados)
+    _id_flags: list = []        # fase 1: identidades de datos que no cuadran (data_validation)
+    dy_invalid = False
     # Validate ticker characters (letters/digits and . - ^ = as used by real
     # tickers, e.g. BRK.B, BRK-B, ^GSPC, EURUSD=X). Reject anything else with a
     # clean 400 instead of letting it crash deep in the data fetch (500).
@@ -515,6 +517,24 @@ def _compute_analysis(symbol: str) -> dict:
                 dy_yahoo = yr.get("dividendYield") or yinfo.get("dividendYield")
                 if dy_yahoo is not None and dy_yahoo != 0:
                     div_yield = dy_yahoo
+            # Fase 1 (guardián de identidades): el yield frente a lo que la empresa paga de verdad. Si no cuadra
+            # (BCS: 11.5 peniques por acción ordinaria divididos por el precio del ADR en dólares → 50%), sale
+            # "sin dato" con aviso y no puntúa.
+            from validate import dividend_yield_identity
+            _ni_id = safe_float(financials.net_income)
+            _dy_ok, _dy_est, _dy_basis = dividend_yield_identity(
+                safe_float(div_yield), safe_float(financials.dividends_paid), mcap, payout=safe_float(payout),
+                earnings_yield=(_ni_id / mcap) if (_ni_id is not None and mcap) else None)
+            if not _dy_ok:
+                _id_flags.append({"field": "key_metrics.dividend_yield", "rule": "identidad_dividendo",
+                                  "action": "sin_dato", "old": safe_float(div_yield), "new": None,
+                                  "reason": (f"dividend yield {safe_float(div_yield):.2%} frente a {_dy_est:.2%} "
+                                             f"({_dy_basis}): no cuadra (más de "
+                                             f"{cfg('validation.thresholds.dividend_identity_max_ratio'):g} veces lo "
+                                             f"que la empresa paga); sin dato, no puntúa")})
+                div_yield = None
+                dy_invalid = True
+                ratios["dividend_yield"] = None
 
             # Debt to Assets
             debt_to_assets = r("debt_to_assets")
@@ -872,7 +892,9 @@ def _compute_analysis(symbol: str) -> dict:
                     buyback_yield = None
             # Shareholder yield = dividendos + recompras netas.
             shareholder_yield = None
-            if div_yield is not None or buyback_yield is not None:
+            # Fase 1: con el dividend yield invalidado por la identidad, el shareholder yield tampoco tiene dato
+            # (antes sumaba 0 y quedaba igual a las recompras).
+            if not dy_invalid and (div_yield is not None or buyback_yield is not None):
                 shareholder_yield = (div_yield or 0.0) + (buyback_yield or 0.0)
             result["key_metrics"]["wacc"] = safe_float(wacc_est)
             result["key_metrics"]["roic_wacc_spread"] = safe_float(roic_wacc_spread)
@@ -1395,7 +1417,7 @@ def _compute_analysis(symbol: str) -> dict:
             _out_flags = validate_outputs(result)
         except Exception as e:
             _sin_dato("validacion_salida", e)
-        result["data_validation"] = list(yinfo.get("_validation") or []) + _row_flags + _out_flags
+        result["data_validation"] = list(yinfo.get("_validation") or []) + _row_flags + _id_flags + _out_flags
         result["data_provenance"] = _build_provenance(yinfo, _out_flags, _block_errors)
         for _attr, _src in range52_widened.items():
             result["data_provenance"].setdefault("fields", {})[f"key_metrics.{_attr}"] = {

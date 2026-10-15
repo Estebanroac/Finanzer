@@ -14,7 +14,8 @@ CASES = ([("panel", t) for t in fb.PANEL_TICKERS if t != "SPY"] if fb.panel_avai
         [("local", t) for t in fb.TICKERS]
 RULES = sorted(set(g.PREDICATES) | {"sin_respaldo", "ingles", "codigo_interno", "referencia_mercado", "veredicto",
                                      "base_ttm", "moneda", "no_aplica_con_cifra",
-                                     "ratio_negativo_en_tarjeta"})
+                                     "ratio_negativo_en_tarjeta", "identidad_dividendo",
+                                     "identidad_shareholder", "identidad_no_puntua"})
 
 # Vacía desde la fase 1 (T3.1–T3.6): los 85 fallos con los que entró el guardián en rojo (T2) están arreglados.
 PANEL_KNOWN_FAILURES = {}

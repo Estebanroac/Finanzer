@@ -410,6 +410,43 @@ def _structural(a, strings, pdf):
     return out
 
 
+# ═══════════════════════════ identidades (datos frente a datos) ═══════════════════════════
+
+def identities(a):
+    """Fase 1: identidades entre cifras del análisis, sin texto. [(regla, detalle)].
+
+    · identidad_dividendo: el dividend yield no supera `dividend_identity_max_ratio` veces payout × E/P (lo que la
+      empresa paga, por una vía distinta de la del motor, que usa dividendos pagados / capitalización). Solo por
+      arriba: un dividendo extraordinario (PGR) deja el yield indicado por debajo, con razón.
+    · identidad_shareholder: shareholder yield = dividend yield + buyback yield; con el dividend yield invalidado,
+      sin dato (no las recompras solas).
+    · identidad_no_puntua: el yield invalidado no aparece en el desglose del score ni en la salud bancaria."""
+    out = []
+    km = a.get("key_metrics") or {}
+    dy, po, ey = km.get("dividend_yield"), km.get("payout_ratio"), km.get("earnings_yield")
+    sy, by = km.get("shareholder_yield"), km.get("buyback_yield")
+    k = cfg("validation.thresholds.dividend_identity_max_ratio")
+    # En REIT el payout se mide sobre el FFO: lo pagado es payout × FFO / capitalización = payout / P/FFO.
+    ffo = km.get("payout_basis") == "ffo"
+    base = (1.0 / km["p_ffo"]) if ffo and km.get("p_ffo") else (None if ffo else ey)
+    what = "payout / P/FFO" if ffo else "payout × E/P"
+    if dy is not None and dy > 0 and po is not None and po > 0 and base is not None and base > 0 \
+            and dy > k * po * base:
+        out.append(("identidad_dividendo", f"dividend yield {dy:.2%} frente a {what} {po * base:.2%} "
+                                           f"({dy / (po * base):.1f} veces; tolerancia {k:g})"))
+    bad = [f for f in a.get("data_validation") or [] if f.get("rule") == "identidad_dividendo"]
+    if bad and sy is not None:
+        out.append(("identidad_shareholder", f"shareholder yield {sy:.2%} con el dividend yield invalidado"))
+    elif sy is not None and abs(sy - ((dy or 0.0) + (by or 0.0))) > 1e-9:
+        out.append(("identidad_shareholder", f"shareholder yield {sy:.4%} ≠ dividendo {dy} + recompras {by}"))
+    for f in bad:
+        old = f.get("old")
+        txt = repr((a.get("score") or {}).get("breakdown")) + repr(a.get("financial_health"))
+        if old is not None and re.search(rf"(?<![\d.])({re.escape(f'{old * 100:.2f}%')}|{re.escape(f'{old:.1%}')})", txt):
+            out.append(("identidad_no_puntua", f"el yield invalidado {old:.2%} aparece en el score"))
+    return out
+
+
 # ═══════════════════════════ comprobación ═══════════════════════════
 
 def check(a, pdf_text, records):
@@ -455,5 +492,8 @@ def check(a, pdf_text, records):
                           "detail": f"{where}: {m.group(0)} «…{s[max(0, m.start() - 40):m.end() + 20]}…»"})
     # 4. estructurales
     for rule, det in _structural(a, strings, pdf):
+        fails.append({"rule": rule, "detail": det})
+    # 5. identidades entre datos (fase 1)
+    for rule, det in identities(a):
         fails.append({"rule": rule, "detail": det})
     return fails

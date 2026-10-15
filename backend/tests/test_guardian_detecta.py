@@ -171,6 +171,31 @@ def test_negative_multiple_on_a_card_fails():
         {"key": "net_margin", "label": "Margen neto", "value": "-20.10%", "state": "con_dato"}]}})
 
 
+def test_dividend_identities():
+    """BCS: 50.30% de dividend yield con payout 28.2% y E/P 13.6% (lo que paga: 3.8%)."""
+    ids = lambda a: {r for r, _ in g.identities(a)}
+    bcs = {KM: {"dividend_yield": 0.503, "payout_ratio": 0.282, "earnings_yield": 0.136,
+                "buyback_yield": 0.0386, "shareholder_yield": 0.5416}}
+    assert "identidad_dividendo" in ids(bcs)
+    ok = {KM: {"dividend_yield": 0.0231, "payout_ratio": 0.772, "earnings_yield": 0.036,
+               "buyback_yield": 0.01, "shareholder_yield": 0.0331}}
+    assert not ids(ok)
+    special = {KM: {"dividend_yield": 0.0019, "payout_ratio": 0.697, "earnings_yield": 0.094}}   # PGR: extraordinario
+    reit = {KM: {"dividend_yield": 0.0588, "payout_ratio": 0.7865, "payout_basis": "ffo", "p_ffo": 13.7,
+                 "earnings_yield": 0.0245}}   # O: el payout es sobre el FFO, no sobre el beneficio
+    assert not ids(reit)
+    assert not ids(special)
+    assert "identidad_shareholder" in ids({KM: {"dividend_yield": 0.02, "buyback_yield": 0.01,
+                                                "shareholder_yield": 0.05}})
+    flagged = {KM: {"dividend_yield": None, "buyback_yield": 0.0386, "shareholder_yield": 0.0386},
+               "data_validation": [{"rule": "identidad_dividendo", "old": 0.503}]}
+    assert "identidad_shareholder" in ids(flagged)
+    scored = {KM: {"dividend_yield": None, "shareholder_yield": None},
+              "data_validation": [{"rule": "identidad_dividendo", "old": 0.503}],
+              "financial_health": {"details": [{"detail": "Dividendo sostenible (50.30%)"}]}}
+    assert "identidad_no_puntua" in ids(scored)
+
+
 def test_structural_rules():
     v = {"text": "Calidad sólida · precio razonable"}
     assert "veredicto" in {f["rule"] for f in g.check(

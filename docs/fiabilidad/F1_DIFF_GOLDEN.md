@@ -270,3 +270,50 @@ texto. El invariante de los medidores reconoce `no_burden`.
 | panel | PLTR | `display.sections.solvency.rows[6].state` no_significativo → con_dato; `display.charts.solvency.gauges[1]`: state no_significativo → con_dato, + `reading`, `tone`, `value_txt`, `no_burden` |
 
 Sin cambio en el texto del PDF.
+
+## P3.6 — BCS en el panel (caso de prueba) — `3f2138b`, `359f06a`
+
+Capturado con `--env panel --render-sim` el 2026-10-15 a las 10:11 (intradía; 401, 401, plan B; Finnhub activo).
+Grupo "Revisión externa". Su golden es **nuevo** y queda pendiente de la aprobación de la parada 3 (hoy la
+regresión falla con "falta golden"). Con BCS el guardián marcó "Gran descuento" (pill acortada) sin afirmación
+declarada: se declara (`359f06a`, sin cambio de salida).
+
+**Diagnóstico del 50.46% (confirmado, sin tocar el origen: fase 2).** El yield no viene de Yahoo sino de Finnhub
+`/stock/metric`, que para BCS devuelve la línea de Londres de la acción **ordinaria en peniques**
+(`dividendIndicatedAnnual` = 11.5, `52WeekHigh` = 538.3). `financial_ratios.dividend_yield` divide ese 11.5 entre
+el **precio del ADR en dólares** (22.87): 0.503. Tres errores a la vez: peniques frente a libras (×100), sin factor
+ADR (÷4.154; oficial 4) y libras frente a dólares (÷1.342). La hipótesis del planificador (peniques y sin factor
+ADR) es correcta; además falta la conversión de moneda: el error total es ≈ 18× (no 25×). Corregido, ≈ 2.8%
+(11.5 p × 4.154 × 1.342 / $22.87). Lo pagado según los estados (dividendos / capitalización) es 3.9%, que puede
+incluir cupones AT1 (mapa, fase 2).
+
+**El mismo defecto en el panel** (lo destapó la identidad): TSM 6.05% (26 TWD por acción ordinaria sobre $430 del
+ADR; real ≈ 0.95%), NVO 30.69% (11.7 DKK sobre $38; real ≈ 4.8%, que es lo pagado), NVDA 0.45%
+(`dividendIndicatedAnnual` = 1 de Finnhub; el dividendo es $0.04: ≈ 0.02%).
+
+## P3.7 — Guardián de identidades y dividend yield "sin dato" si no cuadra
+
+**Motor** (`main.py`, `validate.dividend_yield_identity`): el yield se compara con lo que la empresa paga
+(dividendos pagados del último ejercicio / capitalización; sin ellos, payout × E/P). Si lo supera más de
+`dividend_identity_max_ratio` veces, sale **sin dato** con aviso `identidad_dividendo` en `data_validation`, no
+puntúa, y el shareholder yield también queda sin dato (antes habría sumado 0 y quedado igual a las recompras).
+Las filas de la sección 04 se conservan con "—", "Sin dato" y el motivo.
+
+**Guardián** (`tests/guardian.py: identities`, datos frente a datos): yield frente a payout × E/P (payout / P/FFO
+en REIT, cuyo payout es sobre el FFO), por una vía distinta de la del motor; shareholder yield = dividendo +
+recompras (y sin dato si el dividendo se invalidó); el yield invalidado no aparece en el score. Casos en
+`test_guardian_detecta.py`. En rojo antes del arreglo exactamente en BCS, TSM, NVO y NVDA.
+
+**Tolerancia: 2.0, solo por arriba.** En el panel, los yields correctos están entre 0.82 y 1.20 veces lo pagado
+(desfase entre el dividendo indicado y el último ejercicio pagado, subidas, recompras); los erróneos, entre 3.6 y
+12.9 veces (unidades ×100, factor ADR ×4–5, moneda local ×6–32). 2.0 deja margen a ambos lados (1.7× sobre el
+mayor correcto, 1.8× bajo el menor erróneo); subir el dividendo más del doble en un año es excepcional y, si pasa,
+el coste es un "sin dato" con aviso, no una cifra falsa. Solo por arriba porque un dividendo extraordinario deja el
+yield indicado por debajo de lo pagado con razón (PGR: 0.19% frente a 6.6%).
+
+| Juego | Ticker | Campos |
+|---|---|---|
+| panel | TSM, NVO, NVDA | `key_metrics.dividend_yield` y `shareholder_yield` → null; `data_validation` + `identidad_dividendo`; filas "Dividend yield" y "Shareholder yield" de la sección 04: valor "—", "Sin dato", motivo |
+| panel | BCS | ídem (golden nuevo) |
+
+Ningún otro ticker de panel ni de `local` cambia.
