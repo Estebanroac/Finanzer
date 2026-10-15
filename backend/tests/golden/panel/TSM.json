@@ -657,7 +657,16 @@
       ]
     }
   },
-  "data_validation": [],
+  "data_validation": [
+    {
+      "action": "sin_dato",
+      "field": "key_metrics.dividend_yield",
+      "new": null,
+      "old": 0.0604651162791,
+      "reason": "dividend yield 6.05% frente a 0.77% (dividendos pagados / capitalización): no cuadra (más de 2 veces lo que la empresa paga); sin dato, no puntúa",
+      "rule": "identidad_dividendo"
+    }
+  ],
   "dcf": {
     "available": true,
     "fair_value": 209.32,
@@ -1957,10 +1966,10 @@
           "value": "1.62%"
         },
         {
-          "key": "net_debt_to_ebitda",
-          "label": "Deuda neta/EBITDA",
+          "key": "net_cash",
+          "label": "Caja neta",
           "state": "con_dato",
-          "value": "-0.78x"
+          "value": "$79.47B"
         },
         {
           "key": "beta",
@@ -2264,22 +2273,22 @@
             "gap": null,
             "key": "shareholder_yield",
             "label": "Shareholder yield (div. + recompras)",
-            "reading": "—",
-            "state": "con_dato",
-            "text": null,
+            "reading": "Sin dato",
+            "state": "sin_dato",
+            "text": "no cuadra con lo que la empresa paga en dividendos (dividend yield 6.05% frente a 0.77% (dividendos pagados / capitalización)); no puntúa",
             "tone": null,
-            "value": "6.05%"
+            "value": "—"
           },
           {
             "bench": null,
             "gap": null,
             "key": "dividend_yield",
             "label": "Dividend yield",
-            "reading": "—",
-            "state": "con_dato",
-            "text": null,
+            "reading": "Sin dato",
+            "state": "sin_dato",
+            "text": "no cuadra con lo que la empresa paga en dividendos (dividend yield 6.05% frente a 0.77% (dividendos pagados / capitalización)); no puntúa",
             "tone": null,
-            "value": "6.05%"
+            "value": "—"
           },
           {
             "bench": null,
@@ -3085,10 +3094,10 @@
             "key": "dividend_yield",
             "label": "Dividend Yield",
             "reading": "—",
-            "state": "con_dato",
+            "state": "sin_dato",
             "text": null,
             "tone": null,
-            "value": "6.05%"
+            "value": "—"
           }
         ],
         "sensitivity": {
@@ -4658,7 +4667,7 @@
     "current_ratio": 2.45763513953,
     "de": 0.165557179895,
     "debt_to_assets": 0.113586690851,
-    "dividend_yield": 0.0604651162791,
+    "dividend_yield": null,
     "earnings_growth": 0.5521,
     "earnings_yield": 0.031949266679,
     "ebitda": 108291555569.0,
@@ -4718,7 +4727,7 @@
     "roic": 0.543658787554,
     "roic_reason": null,
     "roic_wacc_spread": 0.450843696973,
-    "shareholder_yield": 0.0604731648329,
+    "shareholder_yield": null,
     "shares_outstanding": 5186474013.0,
     "total_assets": 294222184697.0,
     "total_debt": 33419724334.6,
