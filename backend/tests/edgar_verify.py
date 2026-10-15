@@ -303,33 +303,50 @@ def _sum_parts(ed: Edgar, period, parts: List[str]):
 
 
 def debt_total(ed: Edgar, period):
-    """Deuda financiera total en EDGAR: largo plazo (con su parte corriente) + papel comercial + préstamos a corto.
-    Sin arrendamientos (van como explicación de "definición"). Sin la pieza de largo plazo no se inventa un total."""
+    """Deuda financiera en EDGAR: largo plazo con su parte corriente + papel comercial + préstamos a corto (o, si el
+    emisor solo etiqueta el total corriente, `DebtCurrent`, que ya los incluye). Los arrendamientos van aparte
+    (`lease_parts`): la regla de coherencia con el EBITDA decide cuáles entran (F2_PRECEDENCIA §2.3). Sin la pieza de
+    largo plazo en esa fecha no se inventa un total."""
     t = ed.tax
+
+    def first(cs):
+        for c in cs:
+            v, _ = _sum_parts(ed, period, [f"{t}:{c}"])
+            if v is not None:
+                return v, [c]
+        return None, []
     if t == "us-gaap":
-        options = [[f"{t}:LongTermDebt"], [f"{t}:LongTermDebtNoncurrent", f"{t}:LongTermDebtCurrent"],
-                   [f"{t}:LongTermDebtAndCapitalLeaseObligations", f"{t}:LongTermDebtAndCapitalLeaseObligationsCurrent"],
-                   [f"{t}:NotesPayable", f"{t}:LoansPayable"], [f"{t}:SeniorNotes"], [f"{t}:UnsecuredDebt", f"{t}:SecuredDebt"]]
-        short = [f"{t}:CommercialPaper", f"{t}:ShortTermBorrowings", f"{t}:OtherShortTermBorrowings"]
+        whole, u = first(["LongTermDebt"])
+        if whole is not None:
+            st, u2 = _sum_parts(ed, period, [f"{t}:CommercialPaper", f"{t}:ShortTermBorrowings",
+                                              f"{t}:OtherShortTermBorrowings"])
+            return whole + (st or 0), " + ".join(u + u2), f"saldo a {period[1]}"
+        for nonc, cur in (("LongTermDebtNoncurrent", "LongTermDebtCurrent"),
+                          ("LongTermDebtAndCapitalLeaseObligations", "LongTermDebtAndCapitalLeaseObligationsCurrent"),
+                          ("NotesPayable", "LoansPayable"), ("SeniorNotes", None), ("UnsecuredDebt", "SecuredDebt")):
+            nv, u1 = first([nonc])
+            if nv is None:
+                continue
+            dc, u3 = first(["DebtCurrent"])
+            if dc is not None:                       # el total corriente ya lleva papel comercial y préstamos
+                return nv + dc, " + ".join(u1 + u3), f"saldo a {period[1]}"
+            cv, u2 = first([cur]) if cur else (None, [])
+            st, u4 = _sum_parts(ed, period, [f"{t}:CommercialPaper", f"{t}:ShortTermBorrowings",
+                                              f"{t}:OtherShortTermBorrowings"])
+            return nv + (cv or 0) + (st or 0), " + ".join(u1 + u2 + u4), f"saldo a {period[1]}"
     else:
-        options = [[f"{t}:Borrowings"], [f"{t}:NoncurrentPortionOfNoncurrentBorrowings",
-                                        f"{t}:CurrentBorrowingsAndCurrentPortionOfNoncurrentBorrowings"],
-                   [f"{t}:LongtermBorrowings", f"{t}:ShorttermBorrowings"]]
-        short = []
-    ltd, u1 = None, []
-    for opt in options:
-        if not ed.facts(opt[0], "stock"):
-            continue
-        first, _ = _sum_parts(ed, period, opt[:1])
-        if first is None:
-            continue                      # la pieza principal tiene que existir en esa fecha
-        ltd, u1 = _sum_parts(ed, period, opt)
-        break
-    if ltd is None:
-        v, c, det, _ = ed.value("total_debt_reported", period)
-        return v, c, det
-    st, u2 = _sum_parts(ed, period, short)
-    return ltd + (st or 0), " + ".join(u1 + u2), f"saldo a {period[1]}"
+        whole, u = first(["Borrowings"])
+        if whole is not None:
+            return whole, u[0], f"saldo a {period[1]}"
+        for parts in (["NoncurrentPortionOfNoncurrentBorrowings", "CurrentBorrowingsAndCurrentPortionOfNoncurrentBorrowings"],
+                      ["LongtermBorrowings", "ShorttermBorrowings"]):
+            nv, u1 = first(parts[:1])
+            if nv is None:
+                continue
+            tot, used = _sum_parts(ed, period, [f"{t}:{c}" for c in parts])
+            return tot, " + ".join(used), f"saldo a {period[1]}"
+    v, c, det, _ = ed.value("total_debt_reported", period)
+    return v, c, det
 
 
 def cash_total(ed: Edgar, period):
