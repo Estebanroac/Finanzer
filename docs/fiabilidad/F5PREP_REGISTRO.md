@@ -36,7 +36,11 @@
     F2_PRECEDENCIA §5 (no aplicado);
   - UL: la escisión de Magnum figura en Yahoo como "split" 0.888 el 2025-12-09 (−7.0% el día 8);
   - los splits reales (NFLX y NVDA 10:1, CRWD 4:1, NVO 2:1) vienen bien ajustados.
-- **Decisiones tomadas por el usuario:** ninguna.
+- **Decisiones tomadas por el usuario:** ninguna en esta sesión. Comunicada por el coordinador (2026-10-15):
+  **D5 decidida** — la capa técnica es solo contexto y nunca entra en el score hasta que la fase 7 la valide
+  (opción (a) de PLAN §6; cita literal del usuario: "sigue con d5 con lo que recomiendas, esta bien"). Es
+  coherente con estos módulos: aislados, sin importar desde el motor (`test_modules_are_isolated_from_the_engine`).
+  La fila D5 de la bitácora la lleva el coordinador; aquí no se edita.
 - **Abierto / para decidir (punto de parada):** umbral de salto 0.8 en lugar del 50% del prompt
   (`F5PREP_MUESTRA.md` §5.1); si una serie con un hueco aislado debe seguir bloqueando las señales; qué hacer con
   las escisiones registradas como split; latencia desde Render sin medir (RECON C8).
