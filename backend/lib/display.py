@@ -1409,6 +1409,9 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
 
     # Confianza del veredicto (etapa 8): técnica, con sus dimensiones (sección 01 del PDF).
     confidence, annex_conf = None, []
+
+    def _method_name(m):   # fase 1 (#6): con referencia de mercado, el método no se llama "frente al sector"
+        return m.replace("frente al sector", "frente al mercado") if _mkt else m
     if _conf.get("level"):
         _labels = {"convergence": "Convergencia entre métodos", "coverage": "Cobertura de datos",
                    "source": "Calidad de fuente", "stability": "Estabilidad del arquetipo"}
@@ -1422,7 +1425,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                                    "text": "; ".join(_dd["reasons"])})
             if _k == "convergence" and _dd.get("methods"):
                 _txt = " · ".join(
-                    f"{m['method']} {('%+.0f%%' % (m['upside'] * 100)) if m.get('upside') is not None else ('%+.2f' % m['signal'])}"
+                    f"{_method_name(m['method'])} {('%+.0f%%' % (m['upside'] * 100)) if m.get('upside') is not None else ('%+.2f' % m['signal'])}"
                     f" ({m.get('direction')}{'' if m.get('evaluable', True) else ', no evaluable'})"
                     for m in _dd["methods"] if m.get("signal") is not None) + ". " + _txt
             dims.append({"key": _k, "label": _labels.get(_k, _k), "level": _dd["level"].replace("_", " ").capitalize(),
