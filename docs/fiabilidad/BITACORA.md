@@ -17,12 +17,12 @@
 
 | Campo | Valor |
 |---|---|
-| Fase en curso | **Fase 2a ✅ cerrada** (2026-10-15; registros #17–#19). La 2b espera su prompt, que escribe el planificador |
-| Rama de trabajo | `fiabilidad/f2a-medir`, fusionada en `main` por fast-forward hasta `25b9d8a`. Encima lleva los commits locales del cierre (`65eefb4`, `aed575a` y el de T5), sin push |
-| Producción | `25b9d8a` (2a: `/api/health` con el commit, panel ampliado y documentos F2), verificado el 2026-10-15 a las 16:34:57 de Nueva York con `/api/health`. Rollback de código: `8ed57a0` (antes, `9e78f3b`) |
-| `main` local | = `origin/main` (`25b9d8a`) |
-| Último cierre de sesión | 2026-10-15 · operador F2a (ver registro #19) |
-| Bloqueos | Ninguno en la 2a. Los commits del cierre esperan un "ok, pushea" (pushear a `main` redespliega) |
+| Fase en curso | **Fase 2a ✅ cerrada; preparaciones F3prep, F5prep y F67prep fusionadas** (2026-10-15, registro #20). La 2b espera su prompt, que escribe el planificador |
+| Rama de trabajo | `main` (todas las ramas de trabajo fusionadas: `fiabilidad/f2a-medir`, `fiabilidad/f3-prep`, `fiabilidad/f5-prep`, `fiabilidad/f67-prep`) |
+| Producción | `a2572e0` (fusión de las preparaciones + documentos de planificación). Rollback de código: `74cd267` (antes, `25b9d8a` y `8ed57a0`) |
+| `main` local | = `origin/main` (`a2572e0`, más el commit de este registro) |
+| Último cierre de sesión | 2026-10-15 · operador principal (ver registro #20) |
+| Bloqueos | Ninguno. Pendiente del planificador: prompt de la 2b |
 
 ## Fases
 
@@ -31,11 +31,11 @@
 | 0 Congelar y medir | ✅ cerrada (2026-10-14) | `fiabilidad/f0-panel` → `main` local | `0a8ac66`..`0ae214a` (9 commits) + cierre (registro #6) | sí, 2026-10-14 (registro #6) | no aplica (se sube con el deploy de la fase 1) |
 | 1 Lo visible hoy | ✅ cerrada | `fiabilidad/f1-visible` | `d676b22` (D8), `21c3f5f`, `0ebba81` (guardián), `d63de70`…`d7393fd` (T3, 8 commits), `7f32070`, `e3161d2`, `c369575` (T4) | — | — |
 | 2 Verdad de datos (EDGAR) | ✅ 2a cerrada (2026-10-15); la 2b espera su prompt | `fiabilidad/f2a-medir` → `main` | `8d3a5cc` (planificador), `356f49c` (T0), `0b82c13`…`8e9948b` (T2), `385e441` + `4051a5e` (T1), `f8f13df`…`06a6ec0` (herramienta T3), `6946a64` (T3), `01aec9d`…`8d7c1fb` (T4), `aed575a` (RECON §7.20) + cierre (registros #18 y #19) | parada 1 sí; parada 2 y deploy sí; D2 decidida (2026-10-15, registro #19) | `25b9d8a` (T0 + panel, 2026-10-15) |
-| 3 Método por arquetipo | 🔒 espera F2 | — | — | — | — |
+| 3 Método por arquetipo | 🔒 espera la 2b · preparación F3prep fusionada (`fiabilidad/f3-prep`, módulos aislados sin conectar) | — | `0f6f21b`..`da34592` | — | `a2572e0` |
 | 4 Escalas y confianza | 🔒 espera F3 | — | — | — | — |
-| 5 Técnica y conductual | 🔒 espera F4 | — | — | — | — |
-| 6 Infraestructura | 🔒 diagnóstico en F2 | — | — | — | — |
-| 7 Vigilancia / calibración | 🔒 vigilancia tras F0 | — | — | — | — |
+| 5 Técnica y conductual | 🔒 espera F4 · preparación F5prep fusionada (`fiabilidad/f5-prep`, módulos aislados sin conectar; D5: solo contexto) | — | `e99e958`..`8e2bf07` | §5 de la muestra aceptado (registro #20) | `a2572e0` |
+| 6 Infraestructura | 🔒 diagnóstico hecho (F6_DIAGNOSTICO.md, F67prep fusionada); implementación en espera (D6 sin plan de pago) | — | `697eb83`..`583e685` | — | `a2572e0` (solo documentos y herramientas de test) |
+| 7 Vigilancia / calibración | 🔧 vigilancia semanal activa (tarea `finanzer-vigilancia-semanal`, sábados 09:00); calibración tras F4 | — | `697eb83`..`583e685` | tarea programada aprobada (registro F67prep) | — |
 
 Leyenda: ⏳ pendiente · 🔧 en curso · 🛑 detenida esperando al usuario · ✅ cerrada · 🔒 bloqueada por puerta
 
@@ -786,3 +786,25 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
     - las filas del mapa "Mejora (planificador, F2a)" y "Nuevo (F3prep, CAT)";
     - las entradas F3prep y F67prep;
   - la fila de CAT (F3prep) no lleva marca de la 2a: llegó después de T3 y no se midió.
+
+### #20 · 2026-10-15 · operador principal · Cierre del día: todo fusionado y desplegado
+- **Petición del usuario (literal):** "porfavor cerremos todo lo que este abierto hasta ahora. y commiteemos y despleguemos. todo lo pendiente. vigila los demas chats dependientes a este y asegurate que todo este cerrado".
+- **Decisiones del usuario registradas antes del cierre:**
+  - D5, solo contexto, y D6, sin plan de pago (filas de decisiones).
+  - D2 (registro #19).
+  - F5prep §5 aceptado: "acepto tus recomendaciones". Es decir: umbral de salto 0.8; series con huecos, a decidir en la fase 5; escisiones como split (UL) con nota y sin bloquear (`1493641`); `config/market.toml`.
+- **Hecho:**
+  - `7a94020`: los documentos de planificación que estaban sin commitear (`F3_DISENO_METODO.md` y los prompts de F2a, F3prep, F5prep y F67prep). Sin secretos (comprobado contra el Llavero).
+  - Fusiones `--no-ff` en `main`:
+    - `9b11795` (`fiabilidad/f67-prep`);
+    - `f93f5c1` (`fiabilidad/f3-prep`; el planificador había dicho "no fusionar hasta el inicio de la fase 3", y la petición del usuario de cerrar y desplegar todo lo pendiente lo supera);
+    - `a2572e0` (`fiabilidad/f5-prep`). Un conflicto, el previsto: `tests/test_config_literals.py`, donde las dos ramas añadían sus módulos a la misma lista. Se conservan las dos entradas.
+  - Push `74cd267..a2572e0` a `origin/main` (redespliega Render).
+- **Verificación:**
+  - `../.venv313/bin/python -m pytest tests -q` sobre la fusión → "3481 passed, 1 skipped in 67.71s".
+  - Ningún golden, nada del frontend ni `backend/main.py` cambia (`git diff --name-only 74cd267` → 0). Del motor solo cambia `lib/settings.py` (carga `market.toml`); los módulos nuevos (`reverse_dcf`, `bank_implied`, `price_series`, `market_signals`) no están conectados.
+  - `npm run check` → "StockAnalysis encaja con 41 salidas del backend".
+  - Producción: `/api/health` → `{"status":"ok","commit":"a2572e0f5ca2accbc123a5140b6929ca80d33952"}` desde las 17:08:29 de Nueva York (push a las 17:06:51). `/api/analysis/AAPL` → 200 en 4 s, MATURE, "Calidad sólida · precio exigente" (igual que su golden); `/api/pdf/AAPL` → 200 en 5 s (133 KB).
+- **Sesiones:** F2a, F3prep, F5prep y F67prep cerradas, con sus ramas fusionadas.
+  - Los worktrees `../finanzer_next-f3prep`, `-f5prep` y `-f67prep` siguen en disco. El de f67 no se debe borrar mientras la tarea programada corra desde él; si se borra, hay que cambiar la ruta de la tarea a la carpeta principal.
+- **Siguiente paso:** el planificador escribe el prompt de la 2b (correcciones de datos de F2_PRECEDENCIA y mapa de la fase 2).
