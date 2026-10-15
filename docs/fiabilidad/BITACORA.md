@@ -140,7 +140,9 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
 | Descartado — sin efecto material, **sin verificar** (era una diferencia entre juegos local/prod, no aplica al panel): SNOW con deuda neta en local y caja neta en prod | RECON §7.13 | — |
 | **Nuevo (BCS, informe de prod del 15-oct revisado por el usuario con un analista externo):** dividend yield **50.46%** imposible (≈ $11.50 por ADR sobre $22.79). Hipótesis del planificador: `dividendRate` en **peniques leído como libras** (×100) y **sin factor ADR** (÷4), ≈ 25×; real probablemente ~2% (verificar contra el dividendo declarado). Arrastra el shareholder yield (54.32%) y "Dividendo sostenible (50.46%)" en la salud financiera (que además cita el yield donde debería evaluar el payout). **Fase 1 (antes del push):** guardián de identidades datos↔datos (dividend yield ≈ payout × E/P y ≈ dividendos pagados / capitalización; shareholder yield = dividendo + recompras) → si no cuadra, "sin dato" + aviso; "dividendo sostenible" evalúa el payout. **Fase 1 ✅ hecha** (`bfc38e9` identidad y sin dato; `8c860be` dividendo sostenible por payout). **Diagnóstico confirmado (registro #13):** el yield viene de Finnhub `/stock/metric`, que para BCS da la línea de Londres de la acción ordinaria **en peniques** (`dividendIndicatedAnnual` 11.5); el motor lo divide por el precio del ADR en dólares: peniques (×100), sin factor ADR (÷4.154) y **sin conversión GBP→USD** (÷1.342) → ≈ 18×; real ≈ 2.8%. **Fase 2:** arreglar la unidad, el factor y la moneda en origen | usuario, 2026-10-15 | 1 (guardián) / 2 (origen) |
 | **Nuevo (F1, identidad del dividendo):** el mismo defecto de origen que BCS en **TSM** (6.05%: 26 TWD por acción ordinaria sobre $430 del ADR; real ≈ 0.95%), **NVO** (30.69%: 11.7 DKK sobre $38; real ≈ 4.8%) y **NVDA** (0.45%: `dividendIndicatedAnnual` = 1 de Finnhub; el dividendo es $0.04, ≈ 0.02%). Desde `bfc38e9` salen "sin dato" con aviso. Arreglar en origen: `dividendIndicatedAnnual` de Finnhub en moneda y acción de la línea local | F1 (registro #13) | 2 |
-| **Nuevo (F1, a decidir):** las **filas de tabla** con "No aplica" conservan la cifra (JPM P/E 14.27x "No aplica a bancos"); decisión de la etapa 9b protegida por `test_bank_pdf_never_reads_pe_or_fcf_as_primary`. Las tarjetas ya no (P3.1). ¿Mismo criterio en las tablas? | F1 (registro #13) | 1 (a decidir) |
+| **Decidido (usuario, 2026-10-15, registro #14):** las **filas de tabla** con "No aplica" pasan a la misma regla que las tarjetas: "—" y el motivo, sin cifra (también la tabla de valoración: el FCF yield de BCS del 29.31% no debe verse). **Cambia la regla de la etapa 9b** (que mostraba la cifra con "No aplica") por decisión del usuario; su test se ajusta | F1 (registros #13, #14) | 1 |
+| **Nuevo (usuario, 2026-10-15):** decidir qué métricas aplican de verdad a FINANCIAL. El P/E y el dividend yield son métricas legítimas de un banco; hoy salen como "no aplica" | usuario, registro #14 | 3 |
+| **Nuevo (usuario, 2026-10-15):** el control de identidad del dividendo solo detecta rentabilidades **infladas**; falta el sentido contrario (unidad 100 veces menor), resolviendo el caso de los dividendos extraordinarios como PGR (yield indicado 0.19% frente a 6.6% pagado) | usuario, registro #14 | 2 |
 | **Nuevo (BCS):** factor ADR **4.154** frente a **4** oficial: se infiere de acciones del balance (31-dic) / acciones de hoy, y las recompras entre ambas fechas (~3.9%) se cuelan en el factor. Desvía ~3.9% todas las cifras por acción. Usar el ratio oficial del depositario (o ajustar al entero cercano dentro de tolerancia, declarándolo) | usuario, 2026-10-15 | 2 |
 | **Nuevo (BCS):** bancos europeos con **AT1** (instrumentos híbridos contabilizados como patrimonio): el ROE/ROTE contable (10.0%) frente al RoTE reportado (12.2%); los cupones AT1 deben restarse del beneficio y los AT1 del patrimonio tangible; el payout de "dividendos pagados" puede incluir cupones AT1 | usuario, 2026-10-15 | 2 (datos) / 3 (método) |
 | **Nuevo (BCS):** "ROTE implícito en el precio" para bancos: con P/TBV 0.81, Ke 11%, g 2.5% → ROTE ≈ 9.4% descontado, frente al reportado y al objetivo de la gerencia (sensibilidad). Equivalente bancario del reverse DCF | usuario, 2026-10-15 | 3 |
@@ -567,3 +569,27 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
   verificación en producción (T7) y cierre (T8). A decidir: "No aplica" con cifra en las filas de tabla.
 - **Avisos para el siguiente chat:** el servidor de replay para la web está en el scratchpad de la sesión
   (`serve_replay.py`: parchea `main._compute_analysis` con `fb.run_analysis`); recrearlo si hace falta.
+
+### #14 · 2026-10-15 · operador · Fase 1 (parada 3 aprobada con condiciones)
+- **Decisión del usuario (literal):**
+  > Apruebo regenerar los golden del diff P3.1–P3.9 de F1_DIFF_GOLDEN.md, en su propio commit.
+  >
+  > Decisión sobre las filas «No aplica» de las tablas: misma regla que las tarjetas, «—» y el motivo, sin cifra (también la tabla de valoración: el FCF yield de BCS del 29.31% no debe verse). Ajusta el test de la 9b que protegía lo contrario y anota en la bitácora que la regla cambia por decisión del usuario.
+  >
+  > Antes del deploy, dos puntos más (un commit por causa, con test que falla antes):
+  > - Punto 9 (ROCE visible): mira la fila «Nuevo (ROCE)» del mapa. ROCE en el bloque visible de Rentabilidad, junto a ROIC − WACC (y el promedio de ciclo en CYCLICAL), y en el resumen del PDF. En FINANCIAL y REIT, «No aplica». Sin cambiar cálculos ni inventar bandas (eso es de la fase 4). Guardián: la cifra citada = key_metrics.roce redondeado.
+  > - La regla de las tablas que acabo de decidir.
+  >
+  > Añade al mapa de pendientes:
+  > - Fase 3: decidir qué métricas aplican de verdad a FINANCIAL. El P/E y el dividend yield son métricas legítimas de un banco; hoy salen como «no aplica».
+  > - Fase 2: el control de identidad del dividendo solo detecta rentabilidades infladas; falta el sentido contrario (unidad 100 veces menor), resolviendo el caso de dividendos extraordinarios como PGR.
+  >
+  > Ok, pushea, con esta condición: si el punto 9 y la regla de las tablas solo cambian presentación (en el panel ningún cambio de cifra, arquetipo, nivel de calidad, nivel de precio ni confianza frente a la corrida aprobada), regenera esos golden en su propio commit, haz merge a main con la suite y el guardián en verde, pushea y verifica producción con panel_run --mode live frente a la corrida F0 live. Si cambia cualquier otra cosa, detente y preséntamelo sin pushear.
+  >
+  > Ten en cuenta que Render apaga el servicio sin tráfico: la primera petición tras el deploy tardará. No lo cuentes como fallo; despiértalo antes de medir.
+  >
+  > Después del deploy, en T8, deja preparada la revisión externa (punto 11 del protocolo): los PDF de producción de BCS, UL y una empresa mediana de EE. UU. fuera del panel, para que yo los contraste con un analista independiente.
+- **Hecho:** `b25e75e` golden de P3.1–P3.9 regenerados y el de BCS creado; suite **2877 passed, 1 skipped**.
+- **Regla que cambia por decisión del usuario:** "No aplica" en las filas de tabla, sin cifra (antes, etapa 9b, con
+  cifra). Mapa: filas nuevas de fase 3 (métricas de FINANCIAL) y fase 2 (identidad del dividendo a la baja).
+
