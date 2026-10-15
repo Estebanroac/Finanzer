@@ -72,7 +72,7 @@ Lectura:
   causa); está cubierto por los tests y se probó a mano sobre JNJ (`replay_counterfactual` con la Rf y el precio
   de F1 y de la semana 0: nivel de precio "razonable" en los dos, confianza media → alta).
 
-## Tarea programada (diseño — **no creada**, pendiente del permiso del usuario)
+## Tarea programada (creada el 15-oct-2026 con el permiso del usuario: `finanzer-vigilancia-semanal`)
 
 | | Propuesta |
 |---|---|
@@ -82,7 +82,7 @@ Lectura:
 | Cómo avisa | Tarea programada de Claude (app de escritorio): ejecuta el comando, lee `alertas.md` y envía una notificación con la línea de resumen; si el código de salida es 1, la notificación lista las alertas por ticker. Requiere el Mac encendido y la app abierta a esa hora |
 | Coste | ≈ 3 min; 32 análisis + 32 PDF contra producción a concurrencia 3; ≈ 32 consultas a Finnhub desde producción (límite 60/min) |
 
-Texto preparado para la tarea (no se crea sin el permiso explícito del usuario):
+Texto de la tarea (el que quedó guardado, con dos reglas más: responder en español y no forzar la ventana prohibida):
 
 > Vigilancia semanal del panel de Finanzer (fase 7). Ejecuta en una terminal:
 > `cd /Users/joseestebanroa/Downloads/finanzer_next-f67prep/backend && /Users/joseestebanroa/Downloads/finanzer_next/.venv313/bin/python tests/vigilancia.py`
