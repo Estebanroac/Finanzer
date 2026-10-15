@@ -58,6 +58,7 @@ MIGRATED = {
     # Preparación de la fase 3: DCF inverso y ROTE implícito (módulos aislados, aún sin conectar).
     "lib/reverse_dcf.py": ["_defaults", "growth_path", "equity_value_per_share", "implied_growth",
                            "classify_implied_growth"],
+    "lib/bank_implied.py": ["_implied_return", "implied_rote", "implied_roe", "rote_sensitivity"],
 }
 
 # (archivo, función, valor) -> justificación
