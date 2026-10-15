@@ -1574,7 +1574,8 @@ async def download_pdf(symbol: str):
 
 @app.get("/api/health")
 async def health():
-    return {"status": "ok"}
+    # Fase 2a: el commit desplegado (Render define RENDER_GIT_COMMIT; en local, null).
+    return {"status": "ok", "commit": os.environ.get("RENDER_GIT_COMMIT") or None}
 
 
 # ── Serve frontend static files ──
