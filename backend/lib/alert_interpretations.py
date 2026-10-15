@@ -30,6 +30,7 @@ except ImportError:  # ejecución como script suelto
 import re
 
 from numfmt import MINUS, signed_pct
+from claims import active as _claims_active, claim as _claim, record as _record
 from settings import cfg
 
 _A = cfg("thresholds.alerts")
@@ -686,6 +687,38 @@ INTERPRETERS = [
 # ══════════════════════════════════════════════════════════════════════════
 # ORQUESTADOR
 # ══════════════════════════════════════════════════════════════════════════
+def _signal_claims(name: str, ctx: "Ctx") -> List[dict]:
+    """Fase 1 (guardián narrativo): afirmaciones que hace la señal de cada interpretador, con los valores que usa.
+    El guardián las comprueba contra el análisis final (tests/guardian.py)."""
+    nd = ctx.g("net_debt")
+    if name == "_coverage":
+        st = interest_coverage_state(ctx.g("interest_coverage"), nd)
+        cl = [_claim("coverage", value=ctx.g("interest_coverage"), state=st)]
+        if st in ("negativa", "no_significativo"):
+            cl += [_claim("ebit_negative"), _claim("net_debt" if st == "negativa" else "net_cash")]
+        return cl
+    if name == "_leverage":
+        return [] if nd is None else [_claim("net_cash" if nd < 0 else "net_debt")]
+    if name == "_spread":
+        return [_claim("spread", value=ctx.spread)]
+    if name == "_dcf":
+        return [_claim("dcf_upside"), _claim("dcf_rel")]
+    if name == "_altman":
+        return [_claim("altman_zone")]
+    if name == "_runway":
+        return [_claim("runway")]
+    if name == "_growth":   # en REIT, "la emisión de acciones ... diluye al accionista": afirma dilución
+        return [_claim("growth", value=ctx.c.get("revenue_cagr_3y"), cagr=True, what="ingresos"),
+                *([_claim("share_dilution_3y")] if ctx.archetype == REIT else [])]
+    if name == "_eps_growth":
+        return [_claim("growth", value=ctx.c.get("eps_cagr_3y"), cagr=True, what="bpa")]
+    if name == "_pe":
+        return [_claim("vs_bench", value=ctx.g("pe"), bench=ctx.c.get("sector_pe"), ref=ctx.del_ref)]
+    if name in ("_ev_ebitda", "_fcf_yield", "_peg", "_roe", "_margins"):
+        return [_claim("vs_bench", ref=ctx.del_ref)]
+    return []
+
+
 def build_signals(ratios: Dict[str, Any], contextual: Dict[str, Any], *,
                   sector: str = "default", real_sector: str = "",
                   roic_wacc_spread: Optional[float] = None,
@@ -710,6 +743,10 @@ def build_signals(ratios: Dict[str, Any], contextual: Dict[str, Any], *,
             s = None
         if s and s["kind"] in buckets:
             buckets[s["kind"]].append(s)
+            if _claims_active():   # fase 1 (guardián narrativo): sin efecto en la salida
+                _cl = _signal_claims(interp.__name__, ctx)
+                _record(s["reason"], *_cl, source=f"alertas{interp.__name__}")
+                _record(s["detail"], *_cl, source=f"alertas{interp.__name__}")
 
     def _clean(items, cap=_A["max_per_group"]):
         # ordena por materialidad (peso) y limita para mantener la lista de alto
