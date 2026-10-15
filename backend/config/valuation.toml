@@ -122,3 +122,14 @@ limited_analysis_below = 6              # máx. posible < 6 -> "(análisis limit
 [archetypes]
 cycle_full_years = 5                # menos ejercicios -> "ciclo incompleto" (EV/EBITDA, ROCE, FCF y crecimiento normalizados)
 cyclical_growth_bounds = [-0.05, 0.10]  # crecimiento normalizado de ciclo medio, acotado
+
+# ── Preparación de la fase 3 (F3_DISENO_METODO §2 y §3): módulos aislados, NO conectados al motor ──
+[reverse_dcf]                       # lib/reverse_dcf.py: crecimiento que exige el precio (D3)
+growth_bounds = [-0.20, 0.60]       # rango de la bisección; fuera de él, "fuera_de_rango" con el lado
+growth_tolerance = 1.0e-10          # la bisección para cuando el intervalo de g mide menos que esto
+value_tolerance = 1.0e-8            # |valor reconstruido − precio| / precio admitido (también "precio en el límite")
+max_iterations = 200                # tope de iteraciones de la bisección (con la tolerancia de arriba bastan ~33)
+monotonicity_points = 41            # puntos de la malla con la que se comprueba que el valor crece con g
+band_pp = 0.05                      # ± 5 pp frente al crecimiento logrado: barata / en precio / exigente (§2.2, a calibrar)
+very_demanding_base_rate = 0.10     # PROVISIONAL: si menos de esta proporción de comparables sostuvo g* 10 años,
+                                    # "muy exigente". Las tasas base reales y este umbral los fija la fase 3
