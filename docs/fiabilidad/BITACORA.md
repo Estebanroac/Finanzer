@@ -17,19 +17,19 @@
 
 | Campo | Valor |
 |---|---|
-| Fase en curso | **Fase 1 — Lo visible hoy** (🛑 punto de parada 1: diseño del guardián, registro #7) |
+| Fase en curso | **Fase 1 — Lo visible hoy** (🔧 T2: guardián en rojo; diseño aprobado con cambios, registro #8) |
 | Rama de trabajo | `fiabilidad/f1-visible` (desde `main` local `0f798c8`; registro #7) |
 | Producción | `9e78f3b` (etapas 11b + 9c), verificado el 2026-10-13. Rollback: `a6482f9` |
 | `main` local | merge de la fase 0 sobre `f9d6c30` (ver `git log`), **por delante de origin, sin push**: se sube con el deploy de la fase 1 (pushear redespliega) |
 | Último cierre de sesión | 2026-10-14 · operador F1 (ver registro #7) |
-| Bloqueos | Aprobación del diseño del guardián (`docs/fiabilidad/F1_DISENO_GUARDIAN.md`) |
+| Bloqueos | Ninguno |
 
 ## Fases
 
 | Fase | Estado | Rama | Commits | Aprobada por el usuario | Deploy |
 |---|---|---|---|---|---|
 | 0 Congelar y medir | ✅ cerrada (2026-10-14) | `fiabilidad/f0-panel` → `main` local | `0a8ac66`..`0ae214a` (9 commits) + cierre (registro #6) | sí, 2026-10-14 (registro #6) | no aplica (se sube con el deploy de la fase 1) |
-| 1 Lo visible hoy | 🛑 parada 1 (T1) | `fiabilidad/f1-visible` | `d676b22` (D8) | — | — |
+| 1 Lo visible hoy | 🔧 T2 | `fiabilidad/f1-visible` | `d676b22` (D8) | — | — |
 | 2 Verdad de datos (EDGAR) | 🔒 espera F1 | — | — | — | — |
 | 3 Método por arquetipo | 🔒 espera F2 | — | — | — | — |
 | 4 Escalas y confianza | 🔒 espera F3 | — | — | — | — |
@@ -383,4 +383,25 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
 - **Archivos tocados:** `backend/tests/` (D8), `docs/fiabilidad/F1_DISENO_GUARDIAN.md`, `docs/fiabilidad/BITACORA.md`.
 - **Avisos para el siguiente chat:** la bitácora tenía sin commitear el cambio del planificador en D1 (decidida:
   anexo técnico); va en el commit de esta entrada. `invariants.py` todavía nombra `test_muestra` en comentarios.
+
+### #8 · 2026-10-14 · operador · Fase 1 (diseño del guardián aprobado; T2 en curso)
+- **Decisiones tomadas por el usuario (cita literal):**
+
+  > Apruebo el diseño del guardián con estos cambios:
+  > 
+  >   1. Red de seguridad también sobre el PDF: normaliza el texto extraído (espacios, guiones, saltos de línea). Cada palabra de afirmación que aparezca en el PDF debe poder rastrearse hasta una frase de display con afirmaciones declaradas; si no, falla. Lo mismo para cualquier frase propia de pdf_report.py.
+  > 
+  >   2. Gasto financiero de PLTR: busca primero en los estados del plan B (Interest Income, Net Interest Income, Net Non Operating Interest Income Expense o equivalentes). Solo si no existen, infiere el signo desde la cobertura de Finnhub, y deja en data_provenance que el dato es inferido.
+  > 
+  >   3. Rating del WACC de PLTR: sí, en el mismo commit que la cobertura de intereses (misma causa). Cuantifica en el diff el cambio de Kd, WACC, valor del DCF y nivel de precio. Con caja neta, el peso de la deuda debería ser casi cero; si el nivel de precio cambia, explícalo antes de seguir.
+  > 
+  >   4. Añade al catálogo:
+  >      - #20 Base temporal: «(3 años)», «interanual», «TTM», «FY…» deben coincidir con la base real del dato (growth_basis, data_provenance.ttm).
+  >      - #21 Contracción del precio: «sin ajustar X → ajustado Y por confianza Z» debe cuadrar con price_attractiveness (score_raw, score, factor) y con confidence.level.
+  >      - Amplía la #6: si benchmark.profile = market, el texto debe decir «mercado», no «sector».
+  > 
+  >   Registra esta aprobación en la bitácora y sigue con T2 (guardián en rojo).
+
+- **Hecho:** aprobación registrada; el diseño se amplía con #20, #21, la #6 con «mercado» y la red sobre el PDF
+  normalizado (también frases propias de `pdf_report.py`). T2 en curso (ver la entrada siguiente).
 
