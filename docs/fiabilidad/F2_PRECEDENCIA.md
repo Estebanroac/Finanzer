@@ -160,7 +160,7 @@ una subida, el pagado va por detrás y el control anula un dato bueno.
 |---|---|---|
 | Yahoo suma **arrendamientos operativos** de US GAAP, que la regla excluye | **10:** MSFT, PG, AMT, FCX, MU, DOW, NVDA, CRWD, RIVN, AMZN | La diferencia es el pasivo por arrendamiento operativo (en MSFT y NVDA, su parte no corriente). Con la regla, la deuda correcta es la de EDGAR sin ellos |
 | **Deuda subordinada** en un banco | **1:** BCS | 126,837 + 11,098 de subordinada = 137,935 millones de GBP de Yahoo. Con la regla de FINANCIAL, fuera de las ratios |
-| Sin explicar | **2:** O (+6.2%), DUK (+1.1%) | Ningún arrendamiento ni etiqueta de EDGAR da el valor de Yahoo |
+| Sin explicar con datos de la misma fecha | **2:** O (+6.2%), DUK (+1.1%) | Ningún arrendamiento ni etiqueta de EDGAR al 30-jun da el valor de Yahoo. Hipótesis anotadas para la 2b (abajo) |
 | Total | **11 de 13** explicadas por la regla | XOM ya no es una discrepancia: era un fallo de la herramienta (no sumaba `DebtCurrent`), corregido |
 
 **La regla también cambia la deuda donde Yahoo y EDGAR coinciden pero falta el arrendamiento financiero:**
@@ -172,6 +172,37 @@ una subida, el pagado va por detrás y el control anula un dato bueno.
 | O | 0.11 mil millones | Menor |
 | RIVN | 0.10 mil millones | Menor |
 | AMT | 0.01 mil millones | Menor |
+
+**Verificación: solo pasivos ya en balance, sin arrendamientos firmados y aún no iniciados.** La herramienta lee
+`FinanceLeaseLiability` o `FinanceLeaseLiabilityCurrent` + `FinanceLeaseLiabilityNoncurrent`: son conceptos de
+balance. Se comprobó en los tickers donde el arrendamiento financiero pesa más del 20% de la deuda de la regla (MSFT
+62%, MU 47%) y en AMZN:
+
+| Ticker | Valor usado | Comprobación | Arrendamientos no iniciados (excluidos) |
+|---|---|---|---|
+| MSFT | 66,594 millones de USD (10-K, 2026-06-30) | = pagos futuros 89,686 − intereses implícitos 23,092 (tabla de vencimientos, solo arrendamientos iniciados) | **329.1 mil millones**, "primarily for datacenters", solo en el texto de la nota; en XBRL solo se etiqueta su plazo (`LesseeFinanceLeaseLeaseNotYetCommencedTermOfContract1`), sin importe |
+| AMZN | 13,325 millones (10-Q, 2026-03-31) | = corriente + no corriente = pagos − intereses | 137,214 millones en la tabla de compromisos ("Leases not yet commenced"), aparte de los pasivos por arrendamiento financiero (16,660 con intereses) |
+| MU | 2,670 millones (10-Q, 2026-05-28) | = corriente + no corriente; ya dentro de `LongTermDebtAndCapitalLeaseObligations` | Van en las obligaciones de compra (nota 10 del 10-K de 2026-10-09: "executed but have not yet commenced"), no en el pasivo |
+
+Ningún valor usado incluye arrendamientos no iniciados: **la herramienta y las cifras no cambian.** Los demás con
+arrendamientos financieros pesan ≤ 10% de la deuda (AMZN 10%, RIVN 2%, O y AMT < 1%).
+
+**O y DUK, para la 2b:**
+
+- **DUK (+1.1%, 970 millones de USD).** DUK solo etiqueta sus arrendamientos en el 10-K, no en los 10-Q. A
+  2025-12-31 tenía 1,271 millones de arrendamientos operativos (1,033 no corrientes) y 576 de financieros.
+  - **Hipótesis:** Yahoo suma el arrendamiento operativo no corriente (≈ 1,000 millones), el mismo patrón que MSFT y
+    NVDA. La herramienta no lo ve al 30-jun por falta de la etiqueta trimestral.
+  - Con la regla, sobra ese operativo y faltan los 576 de arrendamiento financiero.
+  - **En la 2b:** cuando el arrendamiento solo está en el FY, usar el del último 10-K con un aviso de fecha.
+- **O (+6.2%, 1,930 millones de USD).** Su deuda en EDGAR es notas 25,092 + préstamos 2,760 + papel comercial 1,400
+  = 29,252 millones; Yahoo, 31,180.
+  - **Hipótesis por orden:**
+    1. hipotecas o disposiciones de la línea de crédito que O etiqueta con conceptos propios (la API no los
+       publica);
+    2. pasivos ligados a arrendamientos: intangibles de arrendamientos por debajo de mercado 1,457 + pasivos por
+       arrendamiento 528 = 1,985 (+2.9% sobre la diferencia).
+  - **En la 2b:** leer el balance del 10-Q del 2T (línea "mortgages payable" y la línea de crédito) para decidirlo.
 
 **Efecto en el veredicto** (what-if con la deuda de la regla en los 12 tickers de EE. UU. donde cambia): **ningún
 cambio de nivel**. Calidad: DUK +3, RIVN +3, MSFT +1; precio sin cambios. Los emisores IFRS (todos sus arrendamientos
