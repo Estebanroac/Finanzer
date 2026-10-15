@@ -288,9 +288,9 @@ def metric_card(label, value, unit, pill, tone, delta, subnote, width):
         ('BOX', (0, 0), (-1, -1), 0.5, HAIR),
         ('LINEABOVE', (0, 0), (-1, 0), 2.2, accent),
         ('LEFTPADDING', (0, 0), (-1, -1), 10), ('RIGHTPADDING', (0, 0), (-1, -1), 10),
-        ('TOPPADDING', (0, 0), (0, 0), 11), ('BOTTOMPADDING', (0, 0), (0, 0), 4),
-        ('TOPPADDING', (0, 1), (0, 1), 0), ('BOTTOMPADDING', (0, 1), (0, 1), 5),
-        ('TOPPADDING', (0, 2), (0, 2), 0), ('BOTTOMPADDING', (0, 2), (0, 2), 12),
+        ('TOPPADDING', (0, 0), (0, 0), 8), ('BOTTOMPADDING', (0, 0), (0, 0), 4),
+        ('TOPPADDING', (0, 1), (0, 1), 0), ('BOTTOMPADDING', (0, 1), (0, 1), 4),
+        ('TOPPADDING', (0, 2), (0, 2), 0), ('BOTTOMPADDING', (0, 2), (0, 2), 8),
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
     ]))
     return card
@@ -607,8 +607,8 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     story.append(PageBreak())
 
     # ════════════════ PÁGINA 2 — RESUMEN EJECUTIVO ════════════════
-    story.extend(section_header("", "Resumen ejecutivo", S))
-    story.append(Spacer(1, 3))
+    _p2_head = section_header("", "Resumen ejecutivo", S) + [Spacer(1, 3)]
+    story.extend(_p2_head)
 
     # ── Grilla de metric-cards (valor + pill de estado + delta vs benchmark) ──
     _cellw = (CW - 8 * 2) / 3.0
@@ -629,7 +629,10 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     _bal_line = (f"<font color='{BRAND_TXT.hexval()}'><b>{n_str}</b> fortaleza{'s' if n_str != 1 else ''}</font>"
                  f"&nbsp;&nbsp;·&nbsp;&nbsp;<font color='{AMBER.hexval()}'><b>{n_warn}</b> advertencia{'s' if n_warn != 1 else ''}</font>"
                  f"&nbsp;&nbsp;·&nbsp;&nbsp;<font color='{RED.hexval()}'><b>{n_red}</b> riesgo{'s' if n_red != 1 else ''}</font>")
-    _halfw = (CW - 24 - 18) / 2.0
+    # Fase 1 (T4): cada mitad ocupa CW/2; su ancho interior descuenta el relleno de la celda (12 + 9), y la tabla
+    # de barras cabe exacta en él (antes era 12 pt más ancha que su celda y recortaba las cifras de la derecha).
+    _cpad_l, _cpad_r = 12, 9
+    _halfw = CW / 2.0 - _cpad_l - _cpad_r
     _lab_st = ParagraphStyle('cpl', fontName='Helvetica', fontSize=8.2, leading=10.5, textColor=BODY)
     _num_st = ParagraphStyle('cpn', fontName='Helvetica-Bold', fontSize=8.2, leading=10.5, alignment=TA_RIGHT)
     _CP = SM["composition"]
@@ -664,7 +667,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         t = Table(rows, colWidths=[1.4 * inch, _halfw - 1.9 * inch, 0.5 * inch])
         t.setStyle(TableStyle([('SPAN', (0, 0), (-1, 0)), ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
                                ('BOTTOMPADDING', (0, 0), (-1, 0), 6), ('LINEBELOW', (0, 0), (-1, 0), 0.4, HAIR),
-                               ('TOPPADDING', (0, 1), (-1, -1), 2.6), ('BOTTOMPADDING', (0, 1), (-1, -1), 2.6),
+                               ('TOPPADDING', (0, 1), (-1, -1), 2), ('BOTTOMPADDING', (0, 1), (-1, -1), 2),
                                ('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (0, 0), (-1, -1), 0)]))
         return t
     comp_box = Table([
@@ -674,21 +677,22 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         [Paragraph(f"<font size='7.4' color='#9a9aa0'>{_esc(_CP['caption'])}</font><br/>"
                    f"<font size='8.5'>{_bal_line}</font>",
                    ParagraphStyle('rbc', leading=11)), ""],
-    ], colWidths=[_halfw + 9, _halfw + 9])
+    ], colWidths=[CW / 2.0, CW / 2.0])
     comp_box.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, -1), colors.white), ('BOX', (0, 0), (-1, -1), 0.5, HAIR),
         ('SPAN', (0, 0), (-1, 0)), ('SPAN', (0, 2), (-1, 2)),
         ('LINEAFTER', (0, 1), (0, 1), 0.4, HAIR),
-        ('LEFTPADDING', (0, 0), (-1, -1), 12), ('RIGHTPADDING', (0, 0), (-1, -1), 9),
-        ('TOPPADDING', (0, 0), (-1, 0), 11), ('BOTTOMPADDING', (0, 0), (-1, 0), 4),
-        ('TOPPADDING', (0, 1), (-1, 1), 4), ('BOTTOMPADDING', (0, 1), (-1, 1), 8),
-        ('TOPPADDING', (0, 2), (-1, 2), 2), ('BOTTOMPADDING', (0, 2), (-1, 2), 11),
+        ('LEFTPADDING', (0, 0), (-1, -1), _cpad_l), ('RIGHTPADDING', (0, 0), (-1, -1), _cpad_r),
+        ('TOPPADDING', (0, 0), (-1, 0), 9), ('BOTTOMPADDING', (0, 0), (-1, 0), 3),
+        ('TOPPADDING', (0, 1), (-1, 1), 3), ('BOTTOMPADDING', (0, 1), (-1, 1), 6),
+        ('TOPPADDING', (0, 2), (-1, 2), 2), ('BOTTOMPADDING', (0, 2), (-1, 2), 9),
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
     ]))
 
     # ── Lectura del análisis — DEBAJO, ancho completo, 2 columnas ──
-    _exc_st = ParagraphStyle('exc', fontName='Helvetica', fontSize=8.6, leading=12.3,
-                             textColor=BODY, spaceAfter=8)
+    # Fase 1 (T4): sin doble espacio entre ítems (spaceAfter del párrafo + relleno de la celda).
+    _exc_st = ParagraphStyle('exc', fontName='Helvetica', fontSize=8.5, leading=11.4,
+                             textColor=BODY, spaceAfter=0)
 
     def _exec_cell(label, text):
         return Paragraph(
@@ -705,7 +709,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     inner_narr = Table(_grid, colWidths=[_innerw, _innerw])
     _incmds = [
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ('TOPPADDING', (0, 0), (-1, -1), 4), ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('TOPPADDING', (0, 0), (-1, -1), 5), ('BOTTOMPADDING', (0, 0), (-1, -1), 7),
         ('LEFTPADDING', (0, 0), (0, -1), 0), ('RIGHTPADDING', (0, 0), (0, -1), 16),
         ('LEFTPADDING', (1, 0), (1, -1), 16), ('RIGHTPADDING', (1, 0), (1, -1), 0),
     ]
@@ -725,18 +729,14 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
     ]))
 
-    # Reparto de altura: cards · composición de las dos puntuaciones · lectura
-    _rem2 = (PAGE_H - M_TOP - M_BOT) - 34
-    body2 = Table([[cg], [comp_box], [narr_box]], colWidths=[CW],
-                  rowHeights=[_rem2 * 0.27, _rem2 * 0.46, _rem2 * 0.27])
-    body2.setStyle(TableStyle([
-        ('VALIGN', (0, 0), (0, 0), 'TOP'),
-        ('VALIGN', (0, 1), (0, 1), 'MIDDLE'),
-        ('VALIGN', (0, 2), (0, 2), 'BOTTOM'),
-        ('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-        ('TOPPADDING', (0, 0), (-1, -1), 0), ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
-    ]))
-    story.append(body2)
+    # Fase 1 (T4): flujo natural, de arriba abajo: cards · composición · lectura. Antes, alturas fijas (27/46/27%)
+    # con la composición centrada (hueco encima) y la lectura alineada abajo, que crecía hacia arriba y se montaba
+    # sobre la composición cuando no cabía en su 27%.
+    # Lo que no quepa en el alto que queda en la página se contrae (como la portada), nunca se monta ni pasa de página.
+    _p2_top = _p2_head + [cg, Spacer(1, 8), comp_box, Spacer(1, 8)]
+    _p2_left = (PAGE_H - M_TOP - M_BOT) - sum(f.wrap(CW, PAGE_H)[1] for f in _p2_top)
+    story.extend(_p2_top[len(_p2_head):])
+    story.append(KeepInFrame(CW, _p2_left, [narr_box], mode='shrink'))
 
     # ════════════════ 01 VALORACIÓN ════════════════
     V = SEC["valuation"]
