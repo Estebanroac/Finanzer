@@ -78,6 +78,9 @@ PANEL_GROUPS = {
     "Pre-beneficio": ["RIVN", "SNOW"],
     "ADR / IFRS": ["TSM", "ASML", "NVO"],
     "Casos trampa": ["NFLX", "AMZN", "SPY"],
+    # Fase 1: informe de producción del 15-oct revisado con un analista externo (dividend yield 50.46%).
+    # Banco europeo con ADR y dividendo en peniques. El panel no se amplía más en la fase 1.
+    "Revisión externa": ["BCS"],
 }
 PANEL_TICKERS = [t for ts in PANEL_GROUPS.values() for t in ts]
 

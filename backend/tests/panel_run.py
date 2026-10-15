@@ -44,7 +44,7 @@ import fixture_backend as fb  # noqa: E402
 # decidir en D4 (cíclica y de alto crecimiento a la vez). "?" = a decidir; "422" = el backend debe rechazarlo.
 EXPECTED = {
     **{t: "MATURE" for t in ("AAPL", "MSFT", "KO", "PG", "JNJ", "V", "NVO", "NFLX", "AMZN")},
-    **{t: "FINANCIAL" for t in ("JPM", "BAC", "PGR", "BRK-B")},
+    **{t: "FINANCIAL" for t in ("JPM", "BAC", "PGR", "BRK-B", "BCS")},
     **{t: "REIT" for t in ("O", "PLD", "AMT")},
     **{t: "UTILITY" for t in ("NEE", "DUK")},
     **{t: "CYCLICAL" for t in ("XOM", "FCX", "CAT", "MU", "DOW", "TSM", "ASML")},
