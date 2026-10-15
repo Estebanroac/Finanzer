@@ -244,6 +244,7 @@ export interface Sections {
     columns: string[];
     rows: Row[];
     divergence_note: string | null;
+    roce_reading: string | null;
     figures: string[][];
   };
   solvency: { intro: string | null; columns: string[]; rows: Row[]; balance: string };
@@ -498,6 +499,11 @@ export interface Charts {
     returns: VsBench[];
     margins: VsBench[];
     spread: { state: RowState; text: string | null; value?: number; value_txt?: string; tone?: Tone; reading?: string };
+    /** Fase 1: ROCE visible junto a ROIC − WACC; la lectura es la comparación con el ROIC (sin bandas). */
+    roce: {
+      state: RowState; text: string | null; value_txt?: string; label?: string; basis?: string;
+      avg?: { label: string; value_txt: string; years: number; incomplete: boolean } | null;
+    };
     margin_ladder: { revenue: number | null; revenue_txt: string | null; steps: LadderStep[] };
   };
   solvency: { gauges: GaugeChart[]; runway: RunwayChart | null; structure: StructureChart };

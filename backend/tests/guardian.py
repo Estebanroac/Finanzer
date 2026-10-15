@@ -77,6 +77,7 @@ KEYWORDS = [
     ("ebit_negativo", r"ebit negativo|ebit < 0|resultado operativo (?:es )?negativo", {"ebit_negative"}),
     ("caja_neta", r"caja neta", {"net_cash"}),
     ("sin_carga_financiera", r"sin carga financiera", {"no_interest_burden"}),
+    ("roce", r"\broce\b", {"roce"}),
     ("deuda_neta_afirmada", r"(?:tiene|con) deuda neta", {"net_debt"}),
     ("maximos_minimos", r"en (?:la zona de )?m[aá]ximos|en (?:la zona de )?m[ií]nimos|zona de m[aá]ximos|zona de m[ií]nimos",
      {"pos52"}),
@@ -192,6 +193,24 @@ def _p_no_interest_burden(a, c, text):
         return "dice sin carga financiera sin resultado financiero neto ni marca de inferido"
     if nii is not None and nii < 0:
         return f"dice sin carga financiera con resultado financiero neto {nii / 1e6:+.1f} M"
+
+
+def _p_roce(a, c, text):
+    """Fase 1 (punto 9): la cifra de ROCE citada = key_metrics.roce (y el promedio del ciclo = roce_avg), redondeada
+    como se imprime. Una celda con la cifra sola se compara con el campo que declara la afirmación."""
+    km = a.get("key_metrics") or {}
+    cites = [("roce_avg", m) for m in re.findall(r"roce promedio(?: del ciclo)?[^%]*?\b(-?\d+\.\d+)%", text)]
+    cites += [("roce", m) for m in re.findall(r"\broce (?:de )?(-?\d+\.\d+)%", text)]
+    bare = re.fullmatch(r"\s*(-?\d+\.\d+)%\s*", text)
+    if bare and c.get("field"):
+        cites.append((c["field"].split(".")[-1], bare.group(1)))
+    for fld, s in cites:
+        v = km.get(fld)
+        if v is None:
+            return f"cita ROCE {s}% sin {fld}"
+        d = len(s.split(".")[1])
+        if abs(round(v * 100, d) - float(s)) > 1e-9:
+            return f"cita {s}% con {fld} = {v * 100:.{d + 2}f}%"
 
 
 def _p_net_cash(a, c, text):
@@ -351,6 +370,7 @@ def _p_share_dilution_3y(a, c, text):
 
 
 PREDICATES = {
+    "roce": _p_roce,
     "no_interest_burden": _p_no_interest_burden,
     "share_dilution_3y": _p_share_dilution_3y,
     "basis": _p_basis, "eps_vs_revenue": _p_eps_vs_revenue,

@@ -274,6 +274,18 @@ def build_charts(a: Dict[str, Any], D: Dict[str, Any], sector_bench: Dict[str, A
               if sp_row and sp_row.get("state") == "con_dato" and _num(km.get("roic_wacc_spread")) is not None
               else _na((sp_row or {}).get("state") or ("no_aplica" if "roic_wacc" in na else "sin_dato"),
                        (sp_row or {}).get("text")))
+    # Fase 1 (punto 9): ROCE en el bloque visible, junto a ROIC − WACC (y el promedio del ciclo en CYCLICAL). Sin
+    # bandas: la lectura es la comparación con el ROIC.
+    ro_row, ra_row = prows.get("roce"), prows.get("roce_avg")
+    if km.get("roce_state") == "ok" and ro_row and ro_row.get("state") == "con_dato":
+        roce = {"state": "con_dato", "value_txt": ro_row.get("value"), "label": "ROCE",
+                "basis": "EBIT / capital empleado, antes de impuestos",
+                "avg": ({"label": "ROCE promedio del ciclo", "value_txt": ra_row.get("value"),
+                         "years": km.get("roce_years"), "incomplete": bool(km.get("roce_cycle_incomplete"))}
+                        if ra_row else None),
+                "text": D["sections"]["profitability"].get("roce_reading")}
+    else:
+        roce = _na(km.get("roce_state") or "sin_dato", km.get("roce_reason"))
     rev = _num(km.get("revenue"))
     steps = []
     for key, label in (("gross_margin", "Margen bruto"), ("ebitda_margin", "Margen EBITDA"),
@@ -294,6 +306,7 @@ def build_charts(a: Dict[str, Any], D: Dict[str, Any], sector_bench: Dict[str, A
                           "reading": (r or {}).get("reading")})
     profitability = {"returns": _vs_bench(_RET_KEYS, prows, km, bench, na_text=f"No aplica a {D.get('archetype_label')}"),
                      "margins": _vs_bench(_MARGIN_KEYS, prows, km, bench, na_text=f"No aplica a {D.get('archetype_label')}"), "spread": spread,
+                     "roce": roce,
                      "margin_ladder": {"revenue": rev, "revenue_txt": numfmt.money(rev) if rev else None,
                                        "steps": steps}}
 

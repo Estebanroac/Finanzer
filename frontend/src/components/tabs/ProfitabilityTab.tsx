@@ -3,7 +3,7 @@
 import type { Display } from "@/lib/api";
 import { useGrow } from "@/lib/useGrow";
 import { BenchList, ChartPanel, FlowCards, MarginLadder, NotApplicable, ReadingLines } from "../charts";
-import { Collapsible, DataTable, Help, Note, toneClass } from "../ui";
+import { Collapsible, DataTable, Help, toneClass } from "../ui";
 
 /** Rentabilidad: retornos frente al sector, cascada de márgenes y flujo de resultados; tablas a demanda. */
 export default function ProfitabilityTab({ display }: { display: Display }) {
@@ -13,6 +13,7 @@ export default function ProfitabilityTab({ display }: { display: Display }) {
   const grown = useGrow();
   const refShort = display.benchmark.profile === "market" ? "mercado" : "sector";
   const sp = C.spread;
+  const ro = C.roce;
 
   return (
     <div className="space-y-4">
@@ -34,6 +35,27 @@ export default function ProfitabilityTab({ display }: { display: Display }) {
               <NotApplicable inline state={sp.state} title="ROIC − WACC" text={sp.text} />
             )}
           </div>
+          <div className="mt-2">
+            {ro.state === "con_dato" ? (
+              <div className="cz-g-note">
+                <span className="font-bold tabular-nums whitespace-nowrap text-zinc-100">{ro.value_txt}</span>
+                <span>
+                  <b className="text-zinc-200">ROCE</b>
+                  <Help k="roce" title="ROCE" value={ro.value_txt} text={ro.text} />
+                  <span className="text-zinc-400"> · {ro.basis}</span>
+                  {ro.avg && (
+                    <span className="block tabular-nums">
+                      {ro.avg.label}: <b className="text-zinc-200">{ro.avg.value_txt}</b>{" "}
+                      ({ro.avg.years} ejercicios{ro.avg.incomplete ? ", ciclo incompleto" : ""})
+                    </span>
+                  )}
+                  {ro.text && <span className="block text-zinc-400">{ro.text}</span>}
+                </span>
+              </div>
+            ) : (
+              <NotApplicable inline state={ro.state} title="ROCE" text={ro.text} />
+            )}
+          </div>
         </ChartPanel>
 
         <ChartPanel grown={grown} title="Márgenes" aside={<span className="cz-hint">de cada $1 de ingreso</span>}>
@@ -44,7 +66,6 @@ export default function ProfitabilityTab({ display }: { display: Display }) {
       <ChartPanel grown={grown} title="Flujo de resultados · últimos doce meses">
         <FlowCards flows={display.charts.results_flow} grown={grown} />
         <ReadingLines lines={[P.intro]} />
-        <Note>{P.divergence_note}</Note>
       </ChartPanel>
 
       <div className="cz-more">

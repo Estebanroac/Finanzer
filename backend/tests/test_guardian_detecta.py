@@ -27,6 +27,8 @@ CASES = {
                            [claim("no_interest_burden")],
                            {KM: {"operating_income": 2.6e9, "net_interest_income": 2.9e8}},
                            {KM: {"operating_income": 2.6e9, "net_interest_income": -1e8}}),
+    "roce": ("ROCE 68.72% (EBIT / capital empleado, antes de impuestos), 30.2 pp por debajo del ROIC",
+             [claim("roce")], {KM: {"roce": 0.687206, "roic": 0.989}}, {KM: {"roce": 0.6971, "roic": 0.989}}),
     "net_cash": ("la posición de caja supera a la deuda total (caja neta)", [claim("net_cash")],
                  {KM: {"net_debt": -1e9}}, {KM: {"net_debt": 4e8}}),
     "net_debt": ("el resultado operativo es negativo y la empresa tiene deuda neta",

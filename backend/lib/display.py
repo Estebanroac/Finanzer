@@ -97,6 +97,11 @@ def _declare_engine_texts(a, D):
         if c.get("key") == "altman":
             for k in ("subtitle", "body", "value"):
                 _record(c.get(k), _claim("altman_zone"), source="display.institucional")
+    ro = ((D.get("charts") or {}).get("profitability") or {}).get("roce") or {}   # fase 1 (punto 9)
+    for k, fld in (("label", "roce"), ("value_txt", "roce")):
+        _record(ro.get(k), _claim("roce", field=f"key_metrics.{fld}"), source="display.charts")
+    for k in ("label", "value_txt"):
+        _record((ro.get("avg") or {}).get(k), _claim("roce", field="key_metrics.roce_avg"), source="display.charts")
     al = ((D.get("charts") or {}).get("institutional") or {}).get("altman") or {}
     for k in ("zone", "text"):
         _record(al.get(k), _claim("altman_zone"), source="display.charts")
@@ -124,6 +129,7 @@ def _declare_engine_texts(a, D):
     _record(C.get("summary"), *ccl, source="display.confianza")
     # Filas con estado propio (cobertura, runway, deuda neta/EBITDA) y etiquetas con base temporal.
     rcl = {"interest_coverage": _metric_claims(a, "Cobertura Intereses"), "runway": [_claim("runway")],
+           "roce": [_claim("roce", field="key_metrics.roce")], "roce_avg": [_claim("roce", field="key_metrics.roce_avg")],
            "net_debt_to_ebitda": _metric_claims(a, "Deuda neta/EBITDA")}
     for sec in ("solvency", "growth", "profitability", "valuation"):
         for r in (S.get(sec) or {}).get("rows") or []:
@@ -1097,6 +1103,27 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
 
     # Etapa 9a: resumen ejecutivo construido alrededor del veredicto verbal:
     # VEREDICTO -> lo que sostiene la CALIDAD -> lo que explica el PRECIO -> CONFIANZA.
+    # Fase 1 (punto 9): ROCE visible. Sin bandas propias (fase 4): la lectura es la comparación con el ROIC, con el
+    # umbral de divergencia que ya existía (thresholds.roce.divergence_pp).
+    _roce, _roic = km.get("roce"), km.get("roic")
+    _rdiv = km.get("roce_roic_divergence") or {}
+    roce_vs_roic = roce_reading = roce_sentence = None
+    if km.get("roce_state") == "ok" and _roce is not None:
+        if _roic is not None and _rdiv:
+            _gp = _rdiv.get("gap") or 0.0
+            roce_vs_roic = (f"{abs(_gp) * 100:.1f} pp {'por debajo' if _gp < 0 else 'por encima'} del ROIC "
+                            f"({fv(_roic, 'pct')})" if _rdiv.get("diverges") else f"en línea con el ROIC ({fv(_roic, 'pct')})")
+            roce_reading = (None if _rdiv.get("diverges") else
+                            f"ROCE {fv(_roce, 'pct')} en línea con el ROIC {fv(_roic, 'pct')} ({_gp * 100:+.1f} pp, "
+                            f"dentro de {cfg('thresholds.roce.divergence_pp') * 100:.0f} pp).")
+        _avg = km.get("roce_avg")
+        roce_sentence = (f"ROCE {fv(_roce, 'pct')} (EBIT / capital empleado, antes de impuestos)"
+                         + (f", {roce_vs_roic}" if roce_vs_roic else "")
+                         + (f"; ROCE promedio del ciclo {fv(_avg, 'pct')} ({km.get('roce_years')} ejercicios"
+                            + (", ciclo incompleto" if km.get("roce_cycle_incomplete") else "") + ")"
+                            if _avg is not None else "") + ".")
+        _record(roce_sentence, _claim("roce"), source="display.roce")
+        _record(roce_reading, _claim("roce"), source="display.roce")
     exec_items = []
     _qcats = [(n, breakdown[n]) for n in cfg("thresholds.score.quality.categories")
               if n in breakdown and breakdown[n].get("conclusive", True) and breakdown[n].get("applicable", True)]
@@ -1118,7 +1145,8 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     if _qtxt:
         exec_items.append(("CALIDAD DEL NEGOCIO", cap("; ".join(_qtxt))))
     if not is_financial and r_spread:
-        exec_items.append(("CREACIÓN DE VALOR", cap(r_spread[2])))
+        exec_items.append(("CREACIÓN DE VALOR", join_sentences([cap(r_spread[2]), roce_sentence])
+                           if roce_sentence else cap(r_spread[2])))
     elif r_roe:
         exec_items.append(("RENTABILIDAD", cap(r_roe[2])))
     else:   # REIT / pre-beneficio: los componentes de su rama (FFO, márgenes de su fase)
@@ -1545,8 +1573,11 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                ["Flujo de caja operativo", _na_txt if "ocf" in _na_keys else fv(km.get("operating_cash_flow"), "money"),
                 "Flujo de caja libre", _na_txt if "fcf" in _na_keys else fv(km.get("free_cash_flow"), "money")],
                ["EPS", fv(km.get("eps"), "price"), "Valor en libros / acción", fv(km.get("book_value_per_share"), "price")]]
+    _record(div_note, _claim("roce"), source="display.roce")
     profitability = {"intro": rent_txt, "columns": ["MÉTRICA", "EMPRESA", _bcol, "BRECHA", "LECTURA"],
-                     "rows": prows, "divergence_note": div_note, "figures": figures}
+                     "rows": prows, "divergence_note": div_note, "figures": figures,
+                     # fase 1 (punto 9): lectura del ROCE = comparación con el ROIC (nota de divergencia o "en línea")
+                     "roce_reading": div_note or roce_reading}
 
     # ════════════════ 03 SOLIDEZ ════════════════
     # En REIT manda la deuda neta/EBITDA; el D/E (informativo) va detrás.

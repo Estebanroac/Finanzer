@@ -360,3 +360,23 @@ pasa a "—" si la había. El guardián extiende la regla #10 a las filas de las
 | local | FCX, JPM, O, SNOW | ídem (19 + 13) |
 
 Solo presentación: ninguna cifra del análisis, puntuación, arquetipo, nivel ni confianza cambia.
+
+## P3.11 — Punto 9: ROCE visible (web y resumen del PDF) y guardián del ROCE
+
+**Causa.** El ROCE se calculaba pero en la web era la última fila de una tabla plegada, sin lectura. **Cambio.** Sin
+tocar cálculos ni inventar bandas (fase 4):
+- Web, pestaña Rentabilidad, bloque visible "Retornos sobre el capital", junto a ROIC − WACC: ROCE con su base
+  ("EBIT / capital empleado, antes de impuestos"), el promedio del ciclo con sus ejercicios en CYCLICAL y, como
+  lectura, la comparación con el ROIC: la nota de divergencia existente o "en línea con el ROIC (… dentro de 10 pp)"
+  con el umbral que ya existía. La nota de divergencia deja de repetirse bajo el flujo de resultados. FINANCIAL y
+  REIT: "ROCE · No aplica" con su motivo (`roce_reason`).
+- PDF, resumen ejecutivo, "Creación de valor": "ROCE 68.72% (EBIT / capital empleado, antes de impuestos), 30.2 pp
+  por debajo del ROIC (98.92%)"; en CYCLICAL, "; ROCE promedio del ciclo 16.89% (4 ejercicios, ciclo incompleto)".
+- Guardián: palabra "ROCE" con afirmación declarada; la cifra citada = `key_metrics.roce` (o `roce_avg`) redondeada
+  como se imprime (caso en `test_guardian_detecta.py`).
+- Observación (sin cambio, es de método): el motor calcula el ROCE también en UTILITY y pre-beneficio (NEE, SNOW,
+  RIVN…); el bloque sigue el estado del motor.
+
+**Campos:** nuevos en todos los tickers `display.charts.profitability.roce` y
+`display.sections.profitability.roce_reading`; en los que tienen ROCE, el texto del resumen ejecutivo "Creación de
+valor" (display y PDF). La página 2 encoge en 4 PDF (mínima 0.968, NFLX). Ninguna cifra del análisis cambia.
