@@ -994,3 +994,44 @@ Registrado en la revisión de la 11b; **decisión de diseño para otra ronda, si
   producción**: sus fixtures (11-oct) no tienen trimestrales y su replay sale en base anual, mientras prod calcula
   en TTM (D8). (3) NVO cambia de nivel de precio con 10 pb de Rf. (4) `muestra` se capturó por quoteSummary sin
   Finnhub: no representa producción (la sustituye `panel`).
+
+### 7.19 Fase 1 del plan de fiabilidad: lo visible hoy
+
+*Operador F1, 14–15-oct-2026. Detalle: [`fiabilidad/F1_DIFF_GOLDEN.md`](fiabilidad/F1_DIFF_GOLDEN.md) (diff de
+golden causa por causa), [`fiabilidad/F1_DISENO_GUARDIAN.md`](fiabilidad/F1_DISENO_GUARDIAN.md); bitácora, registros
+#7–#15. Deploy `9e78f3b..4e90ff6` (rollback `9e78f3b`).*
+
+- **D8:** retirados los juegos `prod` y `muestra`; sus tests corren sobre el panel.
+- **Guardián narrativo** (`lib/claims.py`, `tests/guardian.py`): cada afirmación se declara junto a su texto y se
+  comprueba contra el dato; red de seguridad sobre el display y el PDF normalizado; lista negra (inglés, códigos fuera
+  del anexo); reglas estructurales (#6 mercado/sector, #7 veredicto, #10 "no aplica" sin cifra en tarjetas y tablas,
+  #17 moneda, #20 base temporal, posición 0–100, ningún múltiplo negativo como nivel en una tarjeta) e **identidades
+  entre datos** (dividend yield frente a payout × E/P, shareholder yield = dividendo + recompras). Entró en rojo con 85
+  xfail y cierra con 0 en 37 informes (1112 comprobaciones); `test_guardian_detecta.py` prueba cada mecanismo.
+- **Arreglos de texto y lógica (un commit por causa):** cobertura de intereses por el signo del EBIT y del
+  resultado financiero (PLTR: `sin_carga`, rating AAA, nivel de precio sin cambio); "STRONG"/"N/A" en castellano;
+  D1: anexo "Detalle técnico para auditoría" al final del PDF y la web sin códigos; cota del ciclo medio dicha como
+  cota; invariante del crecimiento con el signo del verbo; V "frente al mercado"; BRK-B "último ejercicio"; AMT sin
+  dilución inexistente; rango de 52 semanas con la cotización; caja neta en la portada; "No aplica" sin cifra en
+  tarjetas y tablas (cambia la regla de la 9b por decisión del usuario); dividendo sostenible por payout; etiqueta del
+  P/B justificado; ROCE visible en la web y en el resumen del PDF (sin bandas: comparación con el ROIC).
+- **Identidad del dividendo (BCS):** el 50.46% de BCS venía de Finnhub (dividendo de la acción ordinaria en peniques,
+  11.5) dividido por el precio del ADR en dólares: peniques, sin factor ADR y sin conversión de moneda (≈ 18×). El
+  mismo defecto en TSM (6.05%), NVO (30.69%) y NVDA (0.45%). El yield que supera 2 veces lo pagado sale sin dato con
+  aviso y no puntúa; el origen se arregla en la fase 2.
+- **Maquetación del PDF:** página 2 en flujo natural a ancho completo; celdas largas partidas en su columna; anexo sin
+  partir; `tests/pdf_geometry.py` (pypdfium2): texto dentro del área útil, sin solapes y escala de encogimiento
+  ≥ 0.85 (mínimas: portada 0.936, página 2 0.968).
+- **Producción:** push `9e78f3b..4e90ff6` el 15-oct a las 10:41 (Nueva York), sello servido a las 10:43.
+  `panel_run --mode live` frente a F0 live: NVO cambia de nivel por Rf y precio (efecto frontera conocido) y JNJ por
+  el dato (Finnhub impuso su `epsTTM` sobre el BPA TTM de Yahoo); nada atribuible al código. Detalle en
+  `DEPLOY_VERIFICATION.md`.
+- **Panel:** BCS añadido (grupo "Revisión externa"). Frente a la corrida F0, ningún cambio de arquetipo, nivel de
+  calidad, nivel de precio ni confianza; el único cambio de puntuación (fila de cobertura de PLTR) cae en una
+  categoría ya en su tope.
+- **Métricas F3 de cierre:** contradicciones 0 (línea base: PLTR); palabras en inglés 0 (STRONG en 4); códigos fuera
+  del anexo 0 (30/30); defectos de maquetación 0 (página 2 en todos); fallos del guardián 0 (85 al entrar); xfail de
+  invariantes 0 (2).
+- **Pendientes que deja (mapa de la bitácora):** origen del dividendo en ADR (fase 2), identidad del dividendo a la
+  baja (fase 2), métricas que aplican a FINANCIAL (fase 3), factor ADR 4.154 frente a 4 y AT1 (fase 2/3), ROCE con
+  referencia y bandas (fase 4).

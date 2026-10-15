@@ -251,3 +251,53 @@ local y en prod. ★ = los seis pedidos.
 **Conclusión:** ninguna condición de parada (ningún 500, todos los PDF generados, la web carga con los gráficos
 nuevos en escritorio y en móvil). Los dos pendientes nuevos (beta de Finnhub en los ADR y bases mezcladas cuando el
 plan B cae a anual) vienen de la fuente de datos, no de esta versión.
+
+---
+
+# Fase 1 del plan de fiabilidad — deploy `9e78f3b..4e90ff6` (2026-10-15)
+
+Merge `--no-ff` de `fiabilidad/f1-visible` en main (`4e90ff6`): sube la fase 0 y la 1 juntas (57 commits, 55 sin
+merge). **Punto de rollback: `9e78f3b`** (Render → Deploys → "Rollback" al deploy de 9e78f3b, o
+`git revert -m 1 4e90ff6` y el merge de la fase 0, y push).
+
+## 1. Preparación (main tras el merge, antes del push)
+
+| Comprobación | Resultado |
+|---|---|
+| Suite backend (`.venv313`) | 2915 passed, 1 skipped |
+| Guardián narrativo (`test_guardian.py` + `test_guardian_detecta.py`) | 1144 passed, 0 xfail |
+| `npm run check` (umbrales literales + contrato) | sin literales · `StockAnalysis` encaja con 37 salidas |
+| `frontend/out` | recompilado; sello de contrato 3829bd87c30b… |
+| `requirements.txt`, `constraints.txt`, `.python-version` | sin cambios frente a 9e78f3b |
+| Variables de entorno nuevas | ninguna |
+| Grep de secretos `9e78f3b..main` | 0 coincidencias (solo la clave falsa `"fixture-replay"`) |
+| Merge | 398 archivos, +762 030 / −60 082; de ellos 284 archivos son fixtures y golden |
+| Condición del usuario | solo presentación en los arreglos tras la parada 3: `panel_run` replay sin cambios en los 32 frente a la corrida aprobada; diff de golden sin campos fuera de `display` |
+
+## 2. Despliegue
+
+- Push `9e78f3b..4e90ff6` a las 10:41:14 (Nueva York). Render sirvió el sello nuevo a las 10:43:15 (≈ 2 min).
+- `/build-stamp.json` → `contract_sha256` 3829bd87c30b… = SHA-256 de `src/lib/api.ts`. `/api/health` → `{"status":"ok"}`.
+- Servicio despertado antes de medir (AAPL 5.1 s, MSFT 3.9 s; no cuenta como fallo).
+
+## 3. Panel en producción (`panel_run --mode live`, concurrencia 3) frente a la corrida F0 live
+
+Salida: `~/Downloads/finanzer_f1_panel_2026-10-15/live/`. HTTP 200 en 31, 422 en SPY (rechazo esperado).
+
+| Ticker | Cambio frente a F0 live (14-oct) | Causa |
+|---|---|---|
+| BCS | nuevo en el panel | — |
+| NVO | precio atractivo → razonable; confianza alta → media | **Rf y precio**: 0 diferencias reales con su fixture; ^TNX 5.19% → 5.06% y precio +3%. Efecto frontera ya registrado en F0 (fase 4) |
+| JNJ | precio razonable → exigente; confianza alta → media | **Dato, no código**: el replay del mismo código da el BPA TTM derivado (8.62); en producción Finnhub impuso su `epsTTM` 6.5886 ("difería >2% del existente"), con los trimestres de Yahoo aún en junio: P/E 30.1x → 39.4x. Fuente mezclada (mapa, fase 2) |
+
+Las demás diferencias frente al replay son solo Rf (^TNX 5.06% frente a 5.29% de config) y precio intradía, salvo
+las "reales" de datos que Yahoo devuelve distinto a Render (ya registradas en F0: PG, NEE, DUK, CAT, PLD…).
+Ningún cambio atribuible al código de la fase 1 fuera de lo esperado en T5.
+
+**Tiempos** (en caliente): p50 6.4 s, p95 12.3 s, máx 14.0 s (TSM); F0 live: p50 6.7 s, p95 49.3 s, máx 52.5 s
+(en frío).
+
+## 4. Revisión externa preparada (punto 11 del protocolo)
+
+PDF de producción de BCS, UL y TXRH en `~/Downloads/finanzer_f1_revision_externa_2026-10-15/` (con `LEEME.md`).
+UL habría mostrado un dividend yield del **251.70%** (mismo defecto de origen que BCS); ahora "sin dato" con aviso.

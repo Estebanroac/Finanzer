@@ -17,7 +17,7 @@
 
 | Campo | Valor |
 |---|---|
-| Fase en curso | **Fase 1 — Lo visible hoy** (🛑 punto de parada 3: diff de los arreglos tras la parada 2 y petición de "ok, pushea"; registro #13) |
+| Fase en curso | **Fase 1 — Lo visible hoy** (🛑 desplegada `4e90ff6`; cierre (T8) presentado, esperando aprobación; registro #15) |
 | Rama de trabajo | `fiabilidad/f1-visible` (desde `main` local `0f798c8`; registro #7) |
 | Producción | `9e78f3b` (etapas 11b + 9c), verificado el 2026-10-13. Rollback: `a6482f9` |
 | `main` local | merge de la fase 0 sobre `f9d6c30` (ver `git log`), **por delante de origin, sin push**: se sube con el deploy de la fase 1 (pushear redespliega) |
@@ -29,7 +29,7 @@
 | Fase | Estado | Rama | Commits | Aprobada por el usuario | Deploy |
 |---|---|---|---|---|---|
 | 0 Congelar y medir | ✅ cerrada (2026-10-14) | `fiabilidad/f0-panel` → `main` local | `0a8ac66`..`0ae214a` (9 commits) + cierre (registro #6) | sí, 2026-10-14 (registro #6) | no aplica (se sube con el deploy de la fase 1) |
-| 1 Lo visible hoy | 🛑 T7 (parada 3) | `fiabilidad/f1-visible` | `d676b22` (D8), `21c3f5f`, `0ebba81` (guardián), `d63de70`…`d7393fd` (T3, 8 commits), `7f32070`, `e3161d2`, `c369575` (T4) | — | — |
+| 1 Lo visible hoy | 🛑 T8 (cierre presentado) | `fiabilidad/f1-visible` | `d676b22` (D8), `21c3f5f`, `0ebba81` (guardián), `d63de70`…`d7393fd` (T3, 8 commits), `7f32070`, `e3161d2`, `c369575` (T4) | — | — |
 | 2 Verdad de datos (EDGAR) | 🔒 espera F1 | — | — | — | — |
 | 3 Método por arquetipo | 🔒 espera F2 | — | — | — | — |
 | 4 Escalas y confianza | 🔒 espera F3 | — | — | — | — |
@@ -140,6 +140,8 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
 | Descartado — sin efecto material, **sin verificar** (era una diferencia entre juegos local/prod, no aplica al panel): SNOW con deuda neta en local y caja neta en prod | RECON §7.13 | — |
 | **Nuevo (BCS, informe de prod del 15-oct revisado por el usuario con un analista externo):** dividend yield **50.46%** imposible (≈ $11.50 por ADR sobre $22.79). Hipótesis del planificador: `dividendRate` en **peniques leído como libras** (×100) y **sin factor ADR** (÷4), ≈ 25×; real probablemente ~2% (verificar contra el dividendo declarado). Arrastra el shareholder yield (54.32%) y "Dividendo sostenible (50.46%)" en la salud financiera (que además cita el yield donde debería evaluar el payout). **Fase 1 (antes del push):** guardián de identidades datos↔datos (dividend yield ≈ payout × E/P y ≈ dividendos pagados / capitalización; shareholder yield = dividendo + recompras) → si no cuadra, "sin dato" + aviso; "dividendo sostenible" evalúa el payout. **Fase 1 ✅ hecha** (`bfc38e9` identidad y sin dato; `8c860be` dividendo sostenible por payout). **Diagnóstico confirmado (registro #13):** el yield viene de Finnhub `/stock/metric`, que para BCS da la línea de Londres de la acción ordinaria **en peniques** (`dividendIndicatedAnnual` 11.5); el motor lo divide por el precio del ADR en dólares: peniques (×100), sin factor ADR (÷4.154) y **sin conversión GBP→USD** (÷1.342) → ≈ 18×; real ≈ 2.8%. **Fase 2:** arreglar la unidad, el factor y la moneda en origen | usuario, 2026-10-15 | 1 (guardián) / 2 (origen) |
 | **Nuevo (F1, identidad del dividendo):** el mismo defecto de origen que BCS en **TSM** (6.05%: 26 TWD por acción ordinaria sobre $430 del ADR; real ≈ 0.95%), **NVO** (30.69%: 11.7 DKK sobre $38; real ≈ 4.8%) y **NVDA** (0.45%: `dividendIndicatedAnnual` = 1 de Finnhub; el dividendo es $0.04, ≈ 0.02%). Desde `bfc38e9` salen "sin dato" con aviso. Arreglar en origen: `dividendIndicatedAnnual` de Finnhub en moneda y acción de la línea local | F1 (registro #13) | 2 |
+| **Nuevo (F1, producción 15-oct):** UL (fuera del panel) habría mostrado un dividend yield del **251.70%** (mismo defecto de origen de Finnhub, línea local en otra moneda); la identidad lo deja "sin dato". Entra en el arreglo de origen | F1 (registro #15) | 2 |
+| **Nuevo (F1, producción 15-oct):** JNJ: Finnhub **impone** su `epsTTM` (6.5886) sobre el BPA TTM derivado de Yahoo (8.62) por diferir >2%, con los trimestres de Yahoo aún en junio (probablemente Finnhub ya incluye el trimestre nuevo): bases mezcladas, P/E 30.1x → 39.4x y nivel de precio razonable → exigente. Regla de imposición de Finnhub a revisar | F1 (registro #15) | 2 |
 | **Decidido (usuario, 2026-10-15, registro #14):** las **filas de tabla** con "No aplica" pasan a la misma regla que las tarjetas: "—" y el motivo, sin cifra (también la tabla de valoración: el FCF yield de BCS del 29.31% no debe verse). **Cambia la regla de la etapa 9b** (que mostraba la cifra con "No aplica") por decisión del usuario; su test se ajusta | F1 (registros #13, #14) | 1 |
 | **Nuevo (usuario, 2026-10-15):** decidir qué métricas aplican de verdad a FINANCIAL. El P/E y el dividend yield son métricas legítimas de un banco; hoy salen como "no aplica" | usuario, registro #14 | 3 |
 | **Nuevo (usuario, 2026-10-15):** el control de identidad del dividendo solo detecta rentabilidades **infladas**; falta el sentido contrario (unidad 100 veces menor), resolviendo el caso de los dividendos extraordinarios como PGR (yield indicado 0.19% frente a 6.6% pagado) | usuario, registro #14 | 2 |
@@ -592,4 +594,34 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
 - **Hecho:** `b25e75e` golden de P3.1–P3.9 regenerados y el de BCS creado; suite **2877 passed, 1 skipped**.
 - **Regla que cambia por decisión del usuario:** "No aplica" en las filas de tabla, sin cifra (antes, etapa 9b, con
   cifra). Mapa: filas nuevas de fase 3 (métricas de FINANCIAL) y fase 2 (identidad del dividendo a la baja).
+
+### #15 · 2026-10-15 · operador · Fase 1 (punto 9, regla de tablas, deploy y cierre T8; esperando aprobación)
+- **Hecho:**
+  - `617fd0c` filas "No aplica" de las tablas sin cifra (regla de la 9b cambiada por decisión del usuario; el test
+    de la 9b exige ahora "—"). `2f8c652` ROCE visible en Rentabilidad (web) y en "Creación de valor" del resumen del
+    PDF, con la comparación con el ROIC como lectura (sin bandas) y guardián del ROCE. `b0f8aee` golden
+    regenerados tras verificar la condición del usuario (solo presentación: `panel_run` replay sin cambios en los 32;
+    diff sin campos fuera de `display`). `3ef6b24` `frontend/out` recompilado. Verificado en el navegador (XOM:
+    ROCE 11.12%, promedio del ciclo 16.89%; JPM: "ROCE · No aplica" con su motivo).
+  - Merge `4e90ff6` en main: suite 2915 passed, guardián 1144, contrato 37 salidas. **Push `9e78f3b..4e90ff6`** a
+    las 10:41; sello servido a las 10:43. `panel_run --mode live` frente a F0 live: NVO por Rf y precio (frontera),
+    JNJ por el dato (Finnhub impone `epsTTM`), BCS nuevo; nada atribuible al código (`DEPLOY_VERIFICATION.md`).
+  - T8: RECON §7.19; métricas F3 de cierre (abajo); revisión externa preparada en
+    `~/Downloads/finanzer_f1_revision_externa_2026-10-15/` (PDF de producción de BCS, UL y TXRH, con `LEEME.md`).
+- **Métricas F3 de cierre frente a la línea base (37 informes: 31 del panel sin SPY + 6 de `local`):**
+
+| Métrica | Línea base (F0 / entrada de F1) | Cierre |
+|---|---|---|
+| Contradicciones de cifra (guardián) | PLTR "EBIT negativo"; 85 xfail del guardián al entrar | **0** |
+| Palabras en inglés fuera del anexo | STRONG en 4 financieras; códigos de arquetipo en 30/30 | **0** |
+| Códigos internos fuera del anexo | 30/30 | **0** (anexo presente en 37/37) |
+| Defectos de maquetación | página 2 en todos (32/36 con la comprobación geométrica) + 2 tablas | **0** (escala mínima: portada 0.936, página 2 0.968) |
+| Fallos del guardián | 85 (T2) | **0** de 1112 comprobaciones |
+| xfail de invariantes del panel | 2 (XOM, DOW) | **0** de 808 |
+| Identidad del dividendo | — | dispara en 4 (BCS, TSM, NVO, NVDA), todas con el dato roto en origen |
+
+- **Decisiones tomadas por el usuario:** registro #14 (aprobación con condiciones y regla de las tablas).
+- **Abierto / siguiente paso:** aprobación del cierre de la fase 1; revisión externa con el analista. Los commits de
+  documentación del cierre (este registro, RECON §7.19, `DEPLOY_VERIFICATION.md`) están en `main` local sin
+  pushear: subirlos redespliega Render sin cambio de código.
 
