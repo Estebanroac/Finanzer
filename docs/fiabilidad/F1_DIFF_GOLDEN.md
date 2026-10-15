@@ -189,3 +189,27 @@ extraído del PDF cambian los saltos de línea de esas celdas.
 FCX 8→9, CAT 8→9, MU 9→10, DOW 8→9, PLTR 8→9, NVDA 8→9, SNOW 9→10, TSM 9→10, ASML 9→10 (panel); JPM 7→8, FCX 8→9,
 SNOW 9→10 (`local`). Causas: el anexo al final (T3.3) y las filas con lectura partida en dos líneas (T4 b). Ninguna
 última página queda con un fragmento suelto del anexo.
+
+---
+
+# Tras la parada 2 (golden regenerados en `da2b33e`): cuatro arreglos para el punto de parada 3
+
+Los golden de estos cuatro arreglos **no** se regeneran sin aprobación.
+
+## P3.1 — Tarjetas "No aplica" sin cifra; regla #10 del guardián
+
+**Por qué no lo detectó el guardián.** La regla #10 ("no aplica" con cifra) estaba en el diseño y en el docstring
+del guardián, pero no se implementó en `_structural`; y la red de seguridad no la cubría porque las tarjetas
+(`cover.kpis`, `summary.cards`) no declaran afirmaciones y "No aplica" no es una palabra de afirmación.
+**Cambio.** Regla `no_aplica_con_cifra` sobre todas las tarjetas de portada y resumen (caso en
+`test_guardian_detecta.py`); `_mkcard` con estado `no_aplica` pinta "—", sin unidad, y el motivo en la línea de
+referencia ("No aplica a REIT", "No aplica a empresas en crecimiento sin beneficio").
+
+| Juego | Tickers | Campos |
+|---|---|---|
+| panel | O, PLD, AMT (REIT); RIVN, SNOW (pre-beneficio) | `display.summary.cards[1..2]` (margen neto y ROE): `value` cifra → "—", `unit` "%" → "", `bench` "" → motivo |
+| local | O, SNOW | ídem |
+
+Las tarjetas de portada (`cover.kpis`) ya cumplían. Fuera del alcance (anotado para decidir): las **filas de tabla**
+con "No aplica" conservan la cifra (p. ej. JPM P/E 14.27x), decisión de la etapa 9b protegida por
+`test_bank_pdf_never_reads_pe_or_fcf_as_primary`.

@@ -1011,9 +1011,10 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         if _state(key, raw) == "no_aplica":
             # Etapa 9b: lo que no aplica al arquetipo no se lee tampoco en las tarjetas
             # (antes: "Muy inferior" frente al sector para el ROE de un REIT o de un pre-beneficio).
-            v, u = _mvu(raw, fmt)
-            return {"key": key, "label": label, "value": v, "unit": u, "pill": "No aplica", "tone": 'neu',
-                    "delta": "", "bench": "", "state": "no_aplica"}
+            # Fase 1: sin cifra (antes la tarjeta decía "No aplica" y pintaba el valor: AMT margen neto 31.1%);
+            # el motivo va en la línea de referencia.
+            return {"key": key, "label": label, "value": NO_DATA, "unit": "", "pill": "No aplica", "tone": 'neu',
+                    "delta": "", "bench": not_applicable_text(archetype), "state": "no_aplica"}
         bench = sector_bench.get(benchkey) if benchkey else None
         r = _rvs(label, raw, bench, higher, 'pct' if fmt == 'pct' else 'mult') \
             if (bench and raw is not None) else None

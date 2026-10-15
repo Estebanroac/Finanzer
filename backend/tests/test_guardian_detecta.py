@@ -137,6 +137,19 @@ def test_market_benchmark_must_not_say_sector():
     assert "referencia_mercado" not in _rules("múltiplos frente al sector", [], {"benchmark": {"profile": "sector"}})
 
 
+def test_not_applicable_card_with_a_figure_fails():
+    """#10: la tarjeta que no aplica no lleva cifra (AMT margen neto 31.1% con "No aplica")."""
+    bad = {"summary": {"cards": [{"key": "net_margin", "label": "Margen neto", "value": "31.1", "pill": "No aplica",
+                                  "state": "no_aplica"}]}}
+    ok = {"summary": {"cards": [{"key": "net_margin", "label": "Margen neto", "value": "—", "pill": "No aplica",
+                                 "state": "no_aplica"}]},
+          "cover": {"kpis": [{"key": "roe", "label": "ROE", "value": "—", "state": "no_aplica"}]}}
+    kpi = {"cover": {"kpis": [{"key": "roe", "label": "ROE", "value": "91.40%", "state": "no_aplica"}]}}
+    rules = lambda d: {f["rule"] for f in g.check({"display": d}, "", [])}
+    assert "no_aplica_con_cifra" in rules(bad) and "no_aplica_con_cifra" in rules(kpi)
+    assert "no_aplica_con_cifra" not in rules(ok)
+
+
 def test_structural_rules():
     v = {"text": "Calidad sólida · precio razonable"}
     assert "veredicto" in {f["rule"] for f in g.check(

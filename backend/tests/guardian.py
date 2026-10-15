@@ -361,10 +361,23 @@ PREDICATES = {
 
 # ═══════════════════════════ reglas estructurales ═══════════════════════════
 
+def cards(d):
+    """Todas las tarjetas de portada y resumen: (ruta, tarjeta)."""
+    for i, c in enumerate((d.get("cover") or {}).get("kpis") or []):
+        yield f".cover.kpis[{i}]", c
+    for i, c in enumerate((d.get("summary") or {}).get("cards") or []):
+        yield f".summary.cards[{i}]", c
+
+
 def _structural(a, strings, pdf):
     out = []
     km = a.get("key_metrics") or {}
     d = a.get("display") or {}
+    # #10 lo que no aplica no se cita con cifra (fase 1: faltaba; AMT y SNOW pintaban "No aplica" y el valor)
+    for p, c in cards(d):
+        na = c.get("state") == "no_aplica" or norm(str(c.get("pill") or "")) == "no aplica"
+        if na and re.search(r"\d", f"{c.get('value') or ''}"):
+            out.append(("no_aplica_con_cifra", f"{p} {c.get('label')!r}: 'no aplica' con valor {c.get('value')!r}"))
     # #6 referencia: con el perfil market, el texto dice "mercado", no "sector".
     if (a.get("benchmark") or {}).get("profile") == "market":
         # Solo frases de comparación (la nota de referencia explica el sector de Yahoo y es legítima).
