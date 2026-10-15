@@ -55,6 +55,12 @@ MIGRATED = {
     "lib/archetype_metrics.py": ["maintenance_fcf"],
     # Etapa 9a: calidad, precio y veredicto.
     "lib/verdict.py": ["part_score", "quality", "price", "confidence_phrase", "verdict"],
+    # Preparación de las fases 2b y 5 (aislados): serie de precios, señales técnicas y beta propia.
+    "lib/price_series.py": ["normalize_frame", "download", "check_series", "fetch_price_series"],
+    "lib/market_signals.py": [
+        "momentum_12_1", "trend", "realized_volatility", "max_drawdown", "relative_strength",
+        "abnormal_volume", "range_52w_position", "weekly_returns", "beta", "all_signals",
+    ],
 }
 
 # (archivo, función, valor) -> justificación
