@@ -481,7 +481,7 @@ def comparison(a, D, bench, market) -> Dict[str, Any]:
     for title, keys in _CMP:
         items = []
         for key, label, higher, fmt, nak in keys:
-            label = label.replace("(3 años)", per)
+            label = label.replace("(3 años)", per).replace("P/E (TTM)", D.get("pe_label") or "P/E (TTM)")
             if (nak and nak in na) or (key in rows_all and rows_all[key].get("state") != "con_dato"):
                 continue
             v = gvals[key] if key in gvals else _num(km.get(key))

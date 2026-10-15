@@ -1064,7 +1064,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     story.append(HRFlowable(width="100%", thickness=0.5, color=HAIR))
     story.append(Spacer(1, 5))
     story.append(Paragraph(
-        "<b>Metodología.</b> Este informe combina ratios TTM y del último ejercicio (fuente: Yahoo Finance) con "
+        "<b>Metodología.</b> Este informe combina " + D["methodology"]["ratios_text"] + " (fuente: Yahoo Finance) con "
         + D["methodology"]["models_text"] + " y "
         "dos puntuaciones Finanzer de 0 a 100: calidad del negocio (solidez, rentabilidad, calidad de ganancias y "
         "crecimiento) y atractivo del precio (valoración por múltiplos y DCF, contraída hacia 50 según la confianza "

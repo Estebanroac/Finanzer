@@ -17,7 +17,6 @@ RULES = sorted(set(g.PREDICATES) | {"sin_respaldo", "ingles", "codigo_interno", 
 
 _known = {}
 _known.update({
-    ("base_ttm", "panel", "BRK-B"): "'P/E (TTM)' con base anual (faltan trimestres)",
     ("share_dilution_3y", "panel", "AMT"): "atribuye la caída del FFO por acción a la emisión de acciones con las "
                                            "acciones planas en 3 años (+0.05% anual)",
 })

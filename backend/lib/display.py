@@ -657,6 +657,9 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     _mkt = _vb.get("profile") == "market"
     _ref = "del mercado (S&P 500)" if _mkt else "del sector"
     _bcol = "MERCADO" if _mkt else "SECTOR"
+    # Fase 1 (#20): "(TTM)" solo con ratios TTM; sin 4 trimestres consecutivos la base es el último ejercicio.
+    _annual = ((a.get("data_provenance") or {}).get("ttm") or {}).get("basis") == "anual"
+    _PE = "P/E (último ejercicio)" if _annual else "P/E (TTM)"
 
     def _rvs(*args, **k):
         return read_vs_sector(*args, ref=_ref, **k)
@@ -937,14 +940,14 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                    _k(km.get("roe"), "pct", "ROE", "roe"), _k(km.get("net_margin"), "pct", "Margen neto", "net_margin"),
                    _k(km.get("fcf_yield"), "pct", "FCF yield", "fcf_yield"), _nde, _beta]
     else:
-        _k_arch = [_k(km.get("pe"), "mult", "P/E (TTM)", "pe"), _k(km.get("roe"), "pct", "ROE", "roe"),
+        _k_arch = [_k(km.get("pe"), "mult", _PE, "pe"), _k(km.get("roe"), "pct", "ROE", "roe"),
                    _k(km.get("net_margin"), "pct", "Margen neto", "net_margin"),
                    _k(km.get("fcf_yield"), "pct", "FCF yield", "fcf_yield"), _nde, _beta]
     kpis = _k_common + _k_arch
     # Etapa 9a: la portada muestra las cifras REPORTADAS; si el score usa el beneficio
     # normalizado, lo dice la etiqueta (el normalizado va en el desglose, etiquetado).
     if norm.get("differs"):
-        _rep = {"P/E (TTM)": "P/E reportado (TTM)", "ROE": "ROE reportado", "Margen neto": "Margen neto reportado"}
+        _rep = {_PE: _PE.replace("P/E", "P/E reportado"), "ROE": "ROE reportado", "Margen neto": "Margen neto reportado"}
         kpis = [(v, _rep.get(l, l), k, r) for v, l, k, r in kpis]
 
     # "Lo esencial" (fortaleza clave · a vigilar · contexto), desde señales
@@ -1034,7 +1037,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                       _mkcard("dividend_yield", "Dividend yield", km.get("dividend_yield"), 'pct', None, True),
                       _mkcard("ev_ebitda", "EV/EBITDA", km.get("ev_ebitda"), 'mult', "ev_ebitda", False)]
     elif archetype == "UTILITY":
-        _val_cards = [_mkcard("pe", "P/E (TTM)", km.get("pe"), 'mult', "pe", False),
+        _val_cards = [_mkcard("pe", _PE, km.get("pe"), 'mult', "pe", False),
                       _mkcard("dividend_yield", "Dividend yield", km.get("dividend_yield"), 'pct', None, True),
                       _mkcard("forward_pe", "Forward P/E", km.get("forward_pe"), 'mult', "forward_pe", False)]
     elif archetype == "GROWTH_PRE_PROFIT":
@@ -1048,7 +1051,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                       _mkcard("p_fcf_normalized", "P/FCF normalizado", xm.get("p_fcf_normalized"), 'mult', "pfcf",
                               False)]
     else:
-        _val_cards = [_mkcard("pe", "P/E (TTM)", km.get("pe"), 'mult', "pe", False),
+        _val_cards = [_mkcard("pe", _PE, km.get("pe"), 'mult', "pe", False),
                       _mkcard("fcf_yield", "FCF yield", km.get("fcf_yield"), 'pct', "fcf_yield", True),
                       _mkcard("ev_ebitda", "EV/EBITDA", km.get("ev_ebitda"), 'mult', "ev_ebitda", False)]
     cards = [
@@ -1179,7 +1182,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         val_txt = join_sentences([f"{_clean_metric(x['metric'])}: {x['reason'][0].lower()}{x['reason'][1:]}"
                                   for x in _bv[:2]])
     mult_defs = [
-        ("pe", "P/E (TTM)", km.get("pe"), sector_bench.get("pe"), False, "mult"),
+        ("pe", _PE, km.get("pe"), sector_bench.get("pe"), False, "mult"),
         ("forward_pe", "Forward P/E", km.get("forward_pe"), sector_bench.get("forward_pe"), False, "mult"),
         ("pb", "P/B", km.get("pb"), sector_bench.get("pb"), False, "mult"),
         ("ps", "P/S", km.get("ps"), None, False, "mult"),
@@ -1810,7 +1813,9 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                                          ("gross_margin", "gross_margin"), ("operating_margin", "operating_margin"))
                          if comp in _na_keys}},
                      "alerts": {"counts": summary["alert_counts"], "groups": alert_groups}},
-        "methodology": {"models": _models, "models_text": models_txt},
+        "methodology": {"models": _models, "models_text": models_txt,
+                        "ratios_text": "ratios del último ejercicio" if _annual else "ratios TTM y del último ejercicio"},
+        "pe_label": _PE,
         "tooltips": band_tooltips(a, sector_bench, _th, _mkt, _ref, _na_keys, de_mode, _cyc),
     }
     # Etapa 9c: datos numéricos de los gráficos de la web (zonas de la misma config que las lecturas).
