@@ -184,8 +184,9 @@ def test_beta_equals_the_2a_method_on_the_same_series(ticker):
 
 
 # La 2a calculó a las 11:44 con el mercado abierto: su última semana usa el precio intradía y la propia el
-# cierre. Es 1 de 104 observaciones; la tolerancia se fija con la diferencia medida (F5PREP_MUESTRA.md).
-TOL_VS_2A_NUMBERS = 0.05
+# cierre de las 16:30. Es 1 de 104 observaciones. Diferencia medida en los 31: mediana 0.0037, máx. 0.0113
+# (SNOW) (F5PREP_MUESTRA.md §2); la tolerancia deja menos del doble de margen.
+TOL_VS_2A_NUMBERS = 0.02
 
 
 @needs_fixtures

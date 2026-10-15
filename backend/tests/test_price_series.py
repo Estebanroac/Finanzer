@@ -217,3 +217,17 @@ def test_split_events_declared_by_yahoo_are_listed_as_information():
     r = ps.fetch_price_series("AAA", "Technology", fetcher=_fetcher(_three(company=co)), sleep=lambda s: None)
     c = r["series"]["company"]
     assert c["status"] == "ok" and c["splits"] == [{"date": co.index[120].strftime("%Y-%m-%d"), "ratio": 0.888}]
+
+
+@needs_fixtures
+def test_real_crash_is_not_flagged_as_a_split():
+    """NFLX cayó un 35.1% el 2022-04-20 (resultados): es real; con el umbral simétrico de 0.5 se marcaba."""
+    c = pf.replay_series("NFLX")["series"]["company"]
+    assert c["status"] == "ok" and c["jumps"] == []
+    assert {"date": "2025-11-17", "ratio": 10.0} in c["splits"]   # el 10:1 viene ajustado
+
+
+@needs_fixtures
+def test_ul_spin_off_is_listed_as_a_split_event():
+    c = pf.replay_series("UL")["series"]["company"]
+    assert c["status"] == "ok" and any(s["date"] == "2025-12-09" for s in c["splits"])
