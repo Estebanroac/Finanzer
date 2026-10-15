@@ -544,9 +544,20 @@ def read_fcf_yield(fy):
 
 
 # ══════════════════════════════ FORMATO ══════════════════════════════
+# Fase 1 (T3.2): el motor conserva sus códigos; la presentación habla castellano. Sin dato: "—", como en las filas
+# "no significativa" (nunca "N/A").
+NO_DATA = "—"
+FIN_HEALTH_LEVEL_ES = {"STRONG": "Sólida", "GOOD": "Buena", "NEUTRAL": "Neutral", "WEAK": "Débil"}
+
+
+def _es_value(v):
+    """Valor que llega del motor ya formateado: "N/A" se presenta como "—"."""
+    return NO_DATA if v == "N/A" else v
+
+
 def fv(val, fmt="num"):
     if val is None:
-        return "N/A"
+        return NO_DATA
     try:
         v = float(val)
         if fmt == "pct":   return f"{v * 100:.2f}%"
@@ -555,7 +566,7 @@ def fv(val, fmt="num"):
         if fmt == "money": return _money(v)
         return f"{v:,.2f}"
     except (TypeError, ValueError):
-        return "N/A"
+        return NO_DATA
 
 
 def join_sentences(parts):
@@ -910,7 +921,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     elif archetype == "GROWTH_PRE_PROFIT":
         _r40 = xm.get("rule_of_40")
         _k_arch = [_k(xm.get("ev_sales"), "mult", "EV/Ventas", "ev_sales"),
-                   (f"{_r40 * 100:.0f}" if _r40 is not None else "N/A", "Regla de 40", "rule_of_40", _r40),
+                   (f"{_r40 * 100:.0f}" if _r40 is not None else NO_DATA, "Regla de 40", "rule_of_40", _r40),
                    # Etapa 9a: el margen neto no aplica a pre-beneficio; el bruto sí.
                    _k(km.get("gross_margin"), "pct", "Margen bruto", "gross_margin"),
                    _k(km.get("fcf_yield"), "pct", "FCF yield", "fcf_yield"), _nde, _beta]
@@ -974,7 +985,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     # ════════════════ RESUMEN EJECUTIVO ════════════════
     def _mvu(raw, fmt):
         if raw is None:
-            return ("N/A", "")
+            return (NO_DATA, "")
         if fmt == 'pct':
             return (f"{raw * 100:.1f}", "%")
         if fmt == 'mult':
@@ -1048,7 +1059,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
 
     if fin_health and isinstance(fin_health, dict) and fin_health.get("score") is not None:
         sol_short = (f"salud financiera bancaria de {fin_health['score']}/10 "
-                     f"({fin_health.get('level', '')})")
+                     f"({FIN_HEALTH_LEVEL_ES.get(fin_health.get('level'), '').lower()})")
     elif r_rw:
         sol_short = f"runway {r_rw[0].lower()}: {r_rw[2]}"
     elif altman.get("z_score") is not None and altman.get("available", True):
@@ -1253,7 +1264,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     if dcf.get("fair_value") is not None:
         iv_rows.append(_row("dcf_fair_value", "Valor justo DCF", fv(dcf.get("fair_value"), "price"), ""))
         iv_rows.append(_row("dcf_upside", "Potencial vs precio (upside)",
-                            (f"{dcf['upside']:+.1f}%" if dcf.get("upside") is not None else "N/A"),
+                            (f"{dcf['upside']:+.1f}%" if dcf.get("upside") is not None else NO_DATA),
                             r_up[0] if r_up else "", r_up[1] if r_up else None,
                             text=r_up[2] if r_up else None))
         if dcf.get("margin_of_safety") is not None:
@@ -1624,7 +1635,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                   'warn' if fin_health.get("level") == "NEUTRAL" else 'neg'
         det_txt = " · ".join(d.get("detail", "") for d in (fin_health.get("details") or [])[:4])
         inst_cards.append({"key": "financial_health", "value": f"{fin_health['score']}/10", "tone": fh_tone,
-                           "title": "Salud financiera (sector financiero)", "subtitle": str(fin_health.get("level", "")),
+                           "title": "Salud financiera (sector financiero)", "subtitle": FIN_HEALTH_LEVEL_ES.get(fin_health.get("level"), ""),
                            "state": "con_dato",
                            "body": (fin_health.get("interpretation", "") + ". " + det_txt).strip()})
     if altman and altman.get("applicable") is False:
@@ -1725,7 +1736,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                 elif adj.get("in_block"):
                     # Lectura individual; puntúa a través del "Bloque de múltiplos".
                     sign, tone_a = f"({sign})", 'neu'
-                items.append({"metric": adj.get("metric", ""), "value": adj.get("value", ""), "sign": sign,
+                items.append({"metric": adj.get("metric", ""), "value": _es_value(adj.get("value", "")), "sign": sign,
                               "tone": tone_a, "reason": adj.get("reason", ""), "in_block": bool(adj.get("in_block")),
                               "state": state})
             bd_cats.append({"name": cat_name, "score": cs, "max": cm, "pct": pctc,

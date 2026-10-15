@@ -345,7 +345,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     profile = analysis.get("profile", {}) or {}
     symbol = analysis.get("symbol", "")
     name = profile.get("name") or symbol
-    sector = profile.get("sector") or "N/A"
+    sector = profile.get("sector") or "—"
     archetype = D["archetype"]
 
     doc = BaseDocTemplate(buf, pagesize=letter,
@@ -434,7 +434,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         Spacer(1, 8),
         Paragraph(
             f"<b>{_esc(symbol)}</b>&nbsp;&nbsp;·&nbsp;&nbsp;{_esc(sector)}&nbsp;&nbsp;·&nbsp;&nbsp;"
-            f"{_esc(profile.get('industry') or 'N/A')}&nbsp;&nbsp;·&nbsp;&nbsp;{_esc(profile.get('exchange') or '')}"
+            f"{_esc(profile.get('industry') or '—')}&nbsp;&nbsp;·&nbsp;&nbsp;{_esc(profile.get('exchange') or '')}"
             f"&nbsp;&nbsp;·&nbsp;&nbsp;Corte al {_fecha_es()}",
             ParagraphStyle('csub', fontName='Helvetica', fontSize=9.5, leading=13, textColor=MUTED)),
     ]

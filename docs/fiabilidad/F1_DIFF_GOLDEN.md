@@ -63,3 +63,23 @@ El nivel de precio **no** cambia.
 - `data_provenance.ttm.ttm_fields`: entra `netInterestIncome` y desplaza el orden alfabético de la lista.
 
 Ningún otro campo cambia fuera de PLTR (comprobado filtrando el diff por estos tres campos: salida vacía).
+
+---
+
+## T3.2 — Inglés en la capa de presentación ("STRONG", "N/A")
+
+**Causa.** El display y el PDF pintaban tal cual el código del motor para la salud financiera bancaria
+(`STRONG`/`GOOD`/`NEUTRAL`/`WEAK`) y "N/A" para lo que falta. El motor conserva sus códigos; la presentación los
+traduce (`display.FIN_HEALTH_LEVEL_ES`, `NO_DATA = "—"`, `_es_value`), igual que las filas "no significativa".
+También en los formateadores de la web (`frontend/src/lib/api.ts`; `frontend/out` se recompila en T6).
+
+**Cambios** (solo texto; ninguna cifra, puntuación ni estado):
+| Juego | Tickers | Cambio |
+|---|---|---|
+| panel | JPM, BAC, PGR, BRK-B | subtítulo de la tarjeta "STRONG" → "Sólida"; resumen "(STRONG)" → "(sólida)" |
+| panel | JPM, BAC, PGR, BRK-B, DOW, RIVN, SNOW | valores "N/A" → "—" en rentabilidad, valoración, KPI de portada y tarjetas |
+| local | JPM | "STRONG" → "Sólida"/"(sólida)"; un "N/A" → "—" |
+| local | SNOW | "N/A" → "—" (portada y valoración) |
+
+Lo único que queda en inglés tras T3.2 son los códigos de arquetipo de "Clasificación (detalle técnico)": van al
+anexo técnico en T3.3 (D1).

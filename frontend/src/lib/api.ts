@@ -601,7 +601,7 @@ export function pdfUrl(symbol: string): string {
 const UNITS: Array<[number, string]> = [[1e12, "T"], [1e9, "B"], [1e6, "M"], [1e3, "K"]];
 
 export function formatMoney(val: number | null | undefined): string {
-  if (val == null || !Number.isFinite(val)) return "N/A";
+  if (val == null || !Number.isFinite(val)) return "—";
   const abs = Math.abs(val);
   const sign = val < 0 ? "−" : "";
   for (const [div, suffix] of UNITS) {
@@ -611,11 +611,11 @@ export function formatMoney(val: number | null | undefined): string {
 }
 
 export function formatPct(val: number | null | undefined): string {
-  if (val == null || !Number.isFinite(val)) return "N/A";
+  if (val == null || !Number.isFinite(val)) return "—";
   return `${(val * 100).toFixed(1)}%`;
 }
 
 export function formatPrice(val: number | null | undefined): string {
-  if (val == null || !Number.isFinite(val)) return "N/A";
+  if (val == null || !Number.isFinite(val)) return "—";
   return `$${val.toFixed(2)}`;
 }

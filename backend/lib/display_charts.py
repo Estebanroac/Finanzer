@@ -409,7 +409,7 @@ def build_charts(a: Dict[str, Any], D: Dict[str, Any], sector_bench: Dict[str, A
         pts, prev = [], None
         for r, v in zip(yrs, vals):
             yoy = ((v - prev) / abs(prev) * 100) if (v is not None and prev) else None
-            pts.append({"year": r.get("year"), "value": v, "value_txt": numfmt.money(v) if v is not None else "N/A",
+            pts.append({"year": r.get("year"), "value": v, "value_txt": numfmt.money(v) if v is not None else "—",
                         "yoy_pct": yoy, "yoy_txt": numfmt.signed_pct(yoy, 1) if yoy is not None else None})
             prev = v
         cg = _cagr_series(vals)
