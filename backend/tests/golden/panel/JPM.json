@@ -484,6 +484,7 @@
         "ebitda": "'EBITDA' sin dato en alguno de los 4 últimos trimestres",
         "grossProfits": "'Gross Profit' sin dato en alguno de los 4 últimos trimestres",
         "inventory": "'Inventory' sin dato en el último trimestre",
+        "netInterestIncome": "'Net Non Operating Interest Income Expense' sin dato en alguno de los 4 últimos trimestres",
         "operatingIncome": "'Operating Income' sin dato en alguno de los 4 últimos trimestres",
         "stockBasedCompensation": "'Stock Based Compensation' sin dato en alguno de los 4 últimos trimestres",
         "totalCurrentAssets": "'Current Assets' sin dato en el último trimestre",
@@ -543,6 +544,23 @@
     "state": "no_aplica"
   },
   "display": {
+    "annex": {
+      "items": [
+        {
+          "label": "Clasificación",
+          "text": "Arquetipo FINANCIAL (regla industria_banco): Clasificada como FINANCIAL por industria Banks - Diversified (banco)"
+        },
+        {
+          "label": "Confianza · Convergencia entre métodos (alta)",
+          "text": "coinciden (cara) con distancia 0.30 (< 0.6)"
+        },
+        {
+          "label": "Confianza · Calidad de fuente (media)",
+          "text": "11 campos de Finnhub en lugar de los estados"
+        }
+      ],
+      "title": "Detalle técnico para auditoría"
+    },
     "archetype": "FINANCIAL",
     "archetype_label": "Banco/aseguradora",
     "benchmark": {
@@ -1114,25 +1132,25 @@
           "key": "convergence",
           "label": "Convergencia entre métodos",
           "level": "Alta",
-          "text": "P/B justificado (Gordon) -24% (cara) · P/B frente al sector -39% (cara). coinciden (cara) con distancia 0.30 (< 0.6)"
+          "text": "P/B justificado (Gordon) -24% (cara) · P/B frente al sector -39% (cara). Los métodos de valoración coinciden."
         },
         {
           "key": "coverage",
           "label": "Cobertura de datos",
           "level": "Alta",
-          "text": "sin incidencias"
+          "text": "Sin incidencias."
         },
         {
           "key": "source",
           "label": "Calidad de fuente",
           "level": "Media",
-          "text": "11 campos de Finnhub en lugar de los estados"
+          "text": "Parte de los datos proviene de una fuente secundaria."
         },
         {
           "key": "stability",
           "label": "Estabilidad del arquetipo",
           "level": "Alta",
-          "text": "sin incidencias"
+          "text": "Sin incidencias."
         }
       ],
       "level": "alta",
@@ -1141,7 +1159,6 @@
       ],
       "reasons": [
         {
-          "detail": "11 campos de Finnhub en lugar de los estados",
           "dimension": "calidad de fuente",
           "level": "media",
           "text": "Parte de los datos proviene de una fuente secundaria."
@@ -1220,9 +1237,6 @@
           ],
           "title": "ATRACTIVO DEL PRECIO"
         }
-      ],
-      "classification_detail": [
-        "Arquetipo FINANCIAL (regla industria_banco): Clasificada como FINANCIAL por industria Banks - Diversified (banco)"
       ],
       "classification_notes": [
         "Banco por su industria (Banks - Diversified): el balance es el producto."
@@ -1331,7 +1345,8 @@
       "models": [
         "P/B y P/TBV justificados por el retorno (Gordon)"
       ],
-      "models_text": "los modelos de P/B y P/TBV justificados por el retorno (Gordon)"
+      "models_text": "los modelos de P/B y P/TBV justificados por el retorno (Gordon)",
+      "ratios_text": "ratios TTM y del último ejercicio"
     },
     "na_keys": [
       "altman",
@@ -1357,6 +1372,7 @@
       "roce",
       "roic_wacc"
     ],
+    "pe_label": "P/E (TTM)",
     "readings": {
       "beta": {
         "label": "De mercado",
@@ -1828,7 +1844,7 @@
             "body": "Excelente - Institución financiera muy sólida. ROA excelente (1.26% ≥ 0.5%) · ROE excelente (16.9% ≥ 12%) · Capitalización sólida (7.5% ≥ 6%) · Dividendo sostenible (1.97%)",
             "key": "financial_health",
             "state": "con_dato",
-            "subtitle": "STRONG",
+            "subtitle": "Sólida",
             "title": "Salud financiera (sector financiero)",
             "tone": "pos",
             "value": "10/10"
@@ -1922,7 +1938,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "N/A"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -1933,7 +1949,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "N/A"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -1944,7 +1960,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "N/A"
+            "value": "—"
           },
           {
             "bench": "25.00%",
@@ -2136,7 +2152,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "N/A"
+            "value": "—"
           },
           {
             "bench": "25.00x",
@@ -2147,7 +2163,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "N/A"
+            "value": "—"
           },
           {
             "bench": "4.00%",
@@ -2359,7 +2375,7 @@
         },
         {
           "label": "SOLIDEZ",
-          "text": "Salud financiera bancaria de 10/10 (STRONG)."
+          "text": "Salud financiera bancaria de 10/10 (sólida)."
         },
         {
           "label": "CRECIMIENTO Y RETORNO",
@@ -3148,6 +3164,7 @@
     "net_debt_to_ebitda_state": null,
     "net_income": 65067000000.0,
     "net_income_normalized": 63304845092.3,
+    "net_interest_income": null,
     "net_margin": 0.333829286187,
     "operating_cash_flow": -162534000000.0,
     "operating_income": null,

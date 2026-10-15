@@ -422,6 +422,10 @@
         "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
         "source": "yfinance_statements"
       },
+      "netInterestIncome": {
+        "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
+        "source": "yfinance_statements"
+      },
       "operatingCashflow": {
         "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
         "source": "yfinance_statements"
@@ -559,6 +563,7 @@
         "grossProfits",
         "interestExpense",
         "netIncome",
+        "netInterestIncome",
         "operatingCashflow",
         "operatingIncome",
         "stockBasedCompensation",
@@ -597,6 +602,23 @@
     "state": "ok"
   },
   "display": {
+    "annex": {
+      "items": [
+        {
+          "label": "Clasificación",
+          "text": "Arquetipo MATURE (regla por_defecto): Clasificada como MATURE por defecto: no es financiera, REIT, pre-beneficio con crecimiento ni de industria cíclica (industria Entertainment)"
+        },
+        {
+          "label": "Confianza · Convergencia entre métodos (media)",
+          "text": "uno lo ve en precio y otro con dirección: no coinciden, sin oponerse"
+        },
+        {
+          "label": "Confianza · Calidad de fuente (media)",
+          "text": "beneficio normalizado con ítems inferidos (confianza media); 11 campos de Finnhub en lugar de los estados"
+        }
+      ],
+      "title": "Detalle técnico para auditoría"
+    },
     "archetype": "MATURE",
     "archetype_label": "Madura",
     "benchmark": {
@@ -1699,25 +1721,25 @@
           "key": "convergence",
           "label": "Convergencia entre métodos",
           "level": "Media",
-          "text": "DCF -22% (cara) · múltiplos frente al sector +0.10 (en precio). uno lo ve en precio y otro con dirección: no coinciden, sin oponerse"
+          "text": "DCF -22% (cara) · múltiplos frente al sector +0.10 (en precio). Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
         },
         {
           "key": "coverage",
           "label": "Cobertura de datos",
           "level": "Alta",
-          "text": "sin incidencias"
+          "text": "Sin incidencias."
         },
         {
           "key": "source",
           "label": "Calidad de fuente",
           "level": "Media",
-          "text": "beneficio normalizado con ítems inferidos (confianza media); 11 campos de Finnhub en lugar de los estados"
+          "text": "El beneficio se ajustó por partidas extraordinarias identificadas de forma indirecta. Parte de los datos proviene de una fuente secundaria."
         },
         {
           "key": "stability",
           "label": "Estabilidad del arquetipo",
           "level": "Alta",
-          "text": "sin incidencias"
+          "text": "Sin incidencias."
         }
       ],
       "level": "media",
@@ -1728,19 +1750,16 @@
       ],
       "reasons": [
         {
-          "detail": "uno lo ve en precio y otro con dirección: no coinciden, sin oponerse",
           "dimension": "convergencia",
           "level": "media",
           "text": "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
         },
         {
-          "detail": "beneficio normalizado con ítems inferidos (confianza media)",
           "dimension": "calidad de fuente",
           "level": "media",
           "text": "El beneficio se ajustó por partidas extraordinarias identificadas de forma indirecta."
         },
         {
-          "detail": "11 campos de Finnhub en lugar de los estados",
           "dimension": "calidad de fuente",
           "level": "media",
           "text": "Parte de los datos proviene de una fuente secundaria."
@@ -1819,9 +1838,6 @@
           ],
           "title": "ATRACTIVO DEL PRECIO"
         }
-      ],
-      "classification_detail": [
-        "Arquetipo MATURE (regla por_defecto): Clasificada como MATURE por defecto: no es financiera, REIT, pre-beneficio con crecimiento ni de industria cíclica (industria Entertainment)"
       ],
       "classification_notes": [
         "No es un banco ni una aseguradora, ni un REIT, ni una empresa en crecimiento sin beneficio, ni de una industria cíclica (Entertainment)."
@@ -1935,9 +1951,11 @@
         "número de Graham",
         "un DCF multietapa con WACC estimado por CAPM"
       ],
-      "models_text": "los modelos de Altman (1968), Piotroski (2000), número de Graham, un DCF multietapa con WACC estimado por CAPM"
+      "models_text": "los modelos de Altman (1968), Piotroski (2000), número de Graham, un DCF multietapa con WACC estimado por CAPM",
+      "ratios_text": "ratios TTM y del último ejercicio"
     },
     "na_keys": [],
+    "pe_label": "P/E (TTM)",
     "readings": {
       "beta": {
         "label": "Muy volátil",
@@ -4645,6 +4663,7 @@
     "net_debt_to_ebitda_state": "ok",
     "net_income": 13649642000.0,
     "net_income_normalized": 11389422245.9,
+    "net_interest_income": 2138306000.0,
     "net_margin": 0.28218785215,
     "operating_cash_flow": 11970833000.0,
     "operating_income": 14354517000.0,

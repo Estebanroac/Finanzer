@@ -185,7 +185,7 @@
         ]
       },
       "coverage": {
-        "coverage": 0.944444444444,
+        "coverage": 0.947368421053,
         "level": "alta",
         "reasons": []
       },
@@ -421,7 +421,7 @@
         "source": "yahoo_quotesummary"
       },
       "key_metrics.interest_coverage": {
-        "detail": "Cobertura de intereses = -1.5x: EBIT < 0 con caja neta, la ratio no es significativa",
+        "detail": "Cobertura de intereses = −1.5x: EBIT > 0 y los ingresos financieros superan a los gastos (sin carga financiera neta), la ratio no es significativa",
         "rule": "ratio_no_significativa",
         "source": "sin_dato"
       },
@@ -434,6 +434,10 @@
         "source": "yfinance_statements"
       },
       "netIncome": {
+        "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
+        "source": "yfinance_statements"
+      },
+      "netInterestIncome": {
         "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
         "source": "yfinance_statements"
       },
@@ -462,7 +466,7 @@
         "source": "yfinance_statements"
       },
       "ratios.interest_coverage": {
-        "detail": "Cobertura de intereses = -1.5x: EBIT < 0 con caja neta, la ratio no es significativa",
+        "detail": "Cobertura de intereses = −1.5x: EBIT > 0 y los ingresos financieros superan a los gastos (sin carga financiera neta), la ratio no es significativa",
         "rule": "ratio_no_significativa",
         "source": "sin_dato"
       },
@@ -587,6 +591,7 @@
         "freeCashflow",
         "grossProfits",
         "netIncome",
+        "netInterestIncome",
         "operatingCashflow",
         "operatingIncome",
         "stockBasedCompensation",
@@ -608,7 +613,7 @@
       "field": "key_metrics.interest_coverage",
       "new": null,
       "old": -1.5291,
-      "reason": "Cobertura de intereses = -1.5x: EBIT < 0 con caja neta, la ratio no es significativa",
+      "reason": "Cobertura de intereses = −1.5x: EBIT > 0 y los ingresos financieros superan a los gastos (sin carga financiera neta), la ratio no es significativa",
       "rule": "ratio_no_significativa"
     },
     {
@@ -616,7 +621,7 @@
       "field": "ratios.interest_coverage",
       "new": null,
       "old": -1.5291,
-      "reason": "Cobertura de intereses = -1.5x: EBIT < 0 con caja neta, la ratio no es significativa",
+      "reason": "Cobertura de intereses = −1.5x: EBIT > 0 y los ingresos financieros superan a los gastos (sin carga financiera neta), la ratio no es significativa",
       "rule": "ratio_no_significativa"
     }
   ],
@@ -644,7 +649,7 @@
       "stage2_pct": 24.8,
       "terminal_pct": 51.8
     },
-    "wacc": 0.112518122469,
+    "wacc": 0.112515326578,
     "warnings": []
   },
   "dcf_status": {
@@ -652,6 +657,31 @@
     "state": "ok"
   },
   "display": {
+    "annex": {
+      "items": [
+        {
+          "label": "Clasificación",
+          "text": "Arquetipo MATURE (regla por_defecto): Clasificada como MATURE por defecto: no es financiera, REIT, pre-beneficio con crecimiento ni de industria cíclica (industria Software - Infrastructure)"
+        },
+        {
+          "label": "Clasificación",
+          "text": "Posible cíclica: crecimiento de ingresos volátil (20.2 pp > 15 pp). No cambia el arquetipo; baja la confianza."
+        },
+        {
+          "label": "Confianza · Convergencia entre métodos (no evaluable)",
+          "text": "un solo método evaluable (múltiplos frente al sector): no hay contraste; no evaluable: DCF (fiabilidad baja)"
+        },
+        {
+          "label": "Confianza · Calidad de fuente (media)",
+          "text": "validación: revenueGrowth (crecimiento_incoherente); 12 campos de Finnhub en lugar de los estados"
+        },
+        {
+          "label": "Confianza · Estabilidad del arquetipo (media)",
+          "text": "alerta de posible cíclica"
+        }
+      ],
+      "title": "Detalle técnico para auditoría"
+    },
     "archetype": "MATURE",
     "archetype_label": "Madura",
     "benchmark": {
@@ -1337,7 +1367,7 @@
             "key": "interest_coverage",
             "label": "Cobertura de intereses",
             "state": "no_significativo",
-            "text": "con EBIT negativo y caja neta, la cobertura de intereses no es significativa: los intereses se pagan con caja"
+            "text": "sin carga financiera neta: los ingresos financieros cubren los gastos financieros y el resultado operativo es positivo"
           },
           {
             "axis_max": 5.6,
@@ -1602,25 +1632,25 @@
           "key": "convergence",
           "label": "Convergencia entre métodos",
           "level": "No evaluable",
-          "text": "DCF -78% (cara, no evaluable) · múltiplos frente al sector -0.60 (cara). un solo método evaluable (múltiplos frente al sector): no hay contraste; no evaluable: DCF (fiabilidad baja)"
+          "text": "DCF -78% (cara, no evaluable) · múltiplos frente al sector -0.60 (cara). Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo. El DCF no concilia con el precio y no se usa para contrastar."
         },
         {
           "key": "coverage",
           "label": "Cobertura de datos",
           "level": "Alta",
-          "text": "sin incidencias"
+          "text": "Sin incidencias."
         },
         {
           "key": "source",
           "label": "Calidad de fuente",
           "level": "Media",
-          "text": "validación: revenueGrowth (crecimiento_incoherente); 12 campos de Finnhub en lugar de los estados"
+          "text": "El crecimiento que reporta la fuente difiere mucho del de los estados anuales; se mantiene, pero conviene tomarlo con cautela. Parte de los datos proviene de una fuente secundaria."
         },
         {
           "key": "stability",
           "label": "Estabilidad del arquetipo",
           "level": "Media",
-          "text": "alerta de posible cíclica"
+          "text": "La empresa podría ser cíclica: sus resultados actuales pueden no ser representativos."
         }
       ],
       "level": "media",
@@ -1633,31 +1663,26 @@
       ],
       "reasons": [
         {
-          "detail": "un solo método evaluable (múltiplos frente al sector): no hay contraste",
           "dimension": "convergencia",
           "level": "no_evaluable",
           "text": "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo."
         },
         {
-          "detail": "no evaluable: DCF (fiabilidad baja)",
           "dimension": "convergencia",
           "level": "no_evaluable",
           "text": "El DCF no concilia con el precio y no se usa para contrastar."
         },
         {
-          "detail": "validación: revenueGrowth (crecimiento_incoherente)",
           "dimension": "calidad de fuente",
           "level": "media",
           "text": "El crecimiento que reporta la fuente difiere mucho del de los estados anuales; se mantiene, pero conviene tomarlo con cautela."
         },
         {
-          "detail": "12 campos de Finnhub en lugar de los estados",
           "dimension": "calidad de fuente",
           "level": "media",
           "text": "Parte de los datos proviene de una fuente secundaria."
         },
         {
-          "detail": "alerta de posible cíclica",
           "dimension": "estabilidad",
           "level": "media",
           "text": "La empresa podría ser cíclica: sus resultados actuales pueden no ser representativos."
@@ -1736,10 +1761,6 @@
           ],
           "title": "ATRACTIVO DEL PRECIO"
         }
-      ],
-      "classification_detail": [
-        "Arquetipo MATURE (regla por_defecto): Clasificada como MATURE por defecto: no es financiera, REIT, pre-beneficio con crecimiento ni de industria cíclica (industria Software - Infrastructure)",
-        "Posible cíclica: crecimiento de ingresos volátil (20.2 pp > 15 pp). No cambia el arquetipo; baja la confianza."
       ],
       "classification_notes": [
         "No es un banco ni una aseguradora, ni un REIT, ni una empresa en crecimiento sin beneficio, ni de una industria cíclica (Software - Infrastructure).",
@@ -1854,9 +1875,11 @@
         "número de Graham",
         "un DCF multietapa con WACC estimado por CAPM"
       ],
-      "models_text": "los modelos de Altman (1968), Piotroski (2000), número de Graham, un DCF multietapa con WACC estimado por CAPM"
+      "models_text": "los modelos de Altman (1968), Piotroski (2000), número de Graham, un DCF multietapa con WACC estimado por CAPM",
+      "ratios_text": "ratios TTM y del último ejercicio"
     },
     "na_keys": [],
+    "pe_label": "P/E (TTM)",
     "readings": {
       "beta": {
         "label": "Muy volátil",
@@ -1895,9 +1918,9 @@
         "tone": "warn"
       },
       "interest_coverage": {
-        "label": "No significativa",
-        "text": "con EBIT negativo y caja neta, la cobertura de intereses no es significativa: los intereses se pagan con caja",
-        "tone": "neu"
+        "label": "Sin carga financiera",
+        "text": "sin carga financiera neta: los ingresos financieros cubren los gastos financieros y el resultado operativo es positivo",
+        "tone": "pos"
       },
       "net_debt_to_ebitda": {
         "label": "Caja neta",
@@ -2167,11 +2190,11 @@
                 {
                   "in_block": false,
                   "metric": "Cobertura Intereses",
-                  "reason": "No significativo: EBIT < 0 con caja neta (caja > deuda total); los intereses se pagan con caja",
-                  "sign": "0",
+                  "reason": "Sin carga financiera neta: los ingresos financieros cubren los gastos financieros y el resultado operativo es positivo",
+                  "sign": "+3",
                   "state": "con_dato",
-                  "tone": "neu",
-                  "value": "No significativo"
+                  "tone": "pos",
+                  "value": "Sin carga financiera neta"
                 }
               ],
               "max": 20,
@@ -2613,7 +2636,7 @@
           "VALOR",
           "LECTURA"
         ],
-        "intro": "El current ratio de 7.23x cubre con holgura los pasivos corrientes. Con caja neta, el D/E (0.02x) no mide apalancamiento. La posición de caja supera a la deuda total (caja neta). Con EBIT negativo y caja neta, la cobertura de intereses no es significativa: los intereses se pagan con caja.",
+        "intro": "El current ratio de 7.23x cubre con holgura los pasivos corrientes. Con caja neta, el D/E (0.02x) no mide apalancamiento. La posición de caja supera a la deuda total (caja neta). Sin carga financiera neta: los ingresos financieros cubren los gastos financieros y el resultado operativo es positivo.",
         "rows": [
           {
             "bench": null,
@@ -2686,11 +2709,11 @@
             "gap": null,
             "key": "interest_coverage",
             "label": "Cobertura de intereses",
-            "reading": "No significativa",
+            "reading": "Sin carga financiera",
             "state": "no_significativo",
-            "text": "con EBIT negativo y caja neta, la cobertura de intereses no es significativa: los intereses se pagan con caja",
-            "tone": "neu",
-            "value": "—"
+            "text": "sin carga financiera neta: los ingresos financieros cubren los gastos financieros y el resultado operativo es positivo",
+            "tone": "pos",
+            "value": "Sin carga"
           }
         ]
       },
@@ -3063,18 +3086,18 @@
           },
           {
             "label": "Coste de la deuda (Kd)",
-            "value": "6.40%"
+            "value": "5.69%"
           },
           {
             "label": "Rating sintético",
-            "value": "BBB"
+            "value": "AAA"
           },
           {
             "label": "Tipo impositivo (t)",
             "value": "10.00%"
           }
         ],
-        "wacc_note": "WACC 11.25% = 99.96% × Ke 11.25% (Rf 5.29% + β ajustada 1.42 [bruta 1.63, Blume] × prima implícita 4.20%) + 0.04% × Kd 6.40% × (1 − t 10.00%). Kd = Rf + spread del rating sintético BBB (tabla de empresas grandes); regla M: EBIT < 0 con caja neta, cobertura no significativa -> tramo de caja neta. t: tasa efectiva TTM (tasa efectiva 1.3% acotada a [10%, 35%]). Rf: ^TNX no disponible (sin cotización): valor de config."
+        "wacc_note": "WACC 11.25% = 99.96% × Ke 11.25% (Rf 5.29% + β ajustada 1.42 [bruta 1.63, Blume] × prima implícita 4.20%) + 0.04% × Kd 5.69% × (1 − t 10.00%). Kd = Rf + spread del rating sintético AAA (tabla de empresas grandes); sin carga financiera neta (EBIT > 0 e ingresos financieros netos) -> mejor tramo. t: tasa efectiva TTM (tasa efectiva 1.3% acotada a [10%, 35%]). Rf: ^TNX no disponible (sin cotización): valor de config."
       }
     },
     "summary": {
@@ -3232,7 +3255,7 @@
         },
         {
           "label": "SOLIDEZ",
-          "text": "Altman Z de 10.55 (zona segura); con EBIT negativo y caja neta, la cobertura de intereses no es significativa: los intereses se pagan con caja."
+          "text": "Altman Z de 10.55 (zona segura); sin carga financiera neta: los ingresos financieros cubren los gastos financieros y el resultado operativo es positivo."
         },
         {
           "label": "CRECIMIENTO Y RETORNO",
@@ -4415,7 +4438,7 @@
     "free_cash_flow": 3358272000.0,
     "gross_margin": 0.847961343359,
     "interest_coverage": null,
-    "interest_coverage_state": "no_significativo",
+    "interest_coverage_state": "sin_carga",
     "interest_expense": null,
     "inventory_turnover": null,
     "market_cap": 482942665659.0,
@@ -4424,6 +4447,7 @@
     "net_debt_to_ebitda_state": "caja_neta",
     "net_income": 3016692000.0,
     "net_income_normalized": 3016692000.0,
+    "net_interest_income": 266384000.0,
     "net_margin": 0.490045632341,
     "operating_cash_flow": 3400291000.0,
     "operating_income": 2634652000.0,
@@ -4456,7 +4480,7 @@
     "total_assets": 11678564000.0,
     "total_debt": 211400000.0,
     "total_equity": 9774194000.0,
-    "wacc": 0.112518122469
+    "wacc": 0.112515326578
   },
   "not_applicable": {},
   "piotroski_f": {
@@ -4818,11 +4842,11 @@
             "value": "0.02x"
           },
           {
-            "adjustment": 0,
+            "adjustment": 3,
             "metric": "Cobertura Intereses",
-            "reason": "No significativo: EBIT < 0 con caja neta (caja > deuda total); los intereses se pagan con caja",
-            "severity": "neutral",
-            "value": "No significativo"
+            "reason": "Sin carga financiera neta: los ingresos financieros cubren los gastos financieros y el resultado operativo es positivo",
+            "severity": "excellent",
+            "value": "Sin carga financiera neta"
           }
         ],
         "applicable": true,
@@ -4832,7 +4856,7 @@
           "Zona segura - Muy baja probabilidad de quiebra",
           "Liquidez excelente - Cubre 2x sus deudas corto plazo",
           "No significativo con caja neta (más efectivo que deuda): no mide apalancamiento, no puntúa",
-          "No significativo: EBIT < 0 con caja neta (caja > deuda total); los intereses se pagan con caja"
+          "Sin carga financiera neta: los ingresos financieros cubren los gastos financieros y el resultado operativo es positivo"
         ],
         "max": 20,
         "score": 20
@@ -4968,17 +4992,15 @@
     },
     "solidez": {
       "applicable": true,
-      "components": 2,
+      "components": 3,
       "conclusive": true,
       "coverage": 1.0,
-      "evaluated": 2,
+      "evaluated": 3,
       "low_confidence": false,
       "missing": [],
       "missing_reasons": {},
       "not_applicable": {},
-      "not_significant": {
-        "Cobertura de intereses": "No significativo: EBIT < 0 con caja neta (caja > deuda total); los intereses se pagan con caja"
-      }
+      "not_significant": {}
     },
     "valoracion": {
       "applicable": true,
@@ -5000,7 +5022,7 @@
   },
   "sensitivity": {
     "base_case": {
-      "discount_rate": 0.112518122469,
+      "discount_rate": 0.112515326578,
       "fair_value": 44.22,
       "growth_rate": 0.272678699721
     },
@@ -5037,7 +5059,7 @@
         33.12
       ],
       [
-        57.91,
+        57.92,
         50.16,
         44.22,
         39.52,
@@ -5047,15 +5069,15 @@
         62.98,
         54.44,
         47.89,
-        42.71,
+        42.72,
         38.53
       ]
     ],
     "statistics": {
       "current_price": 200.970001221,
       "max_value": 62.98,
-      "mean_value": 43.8875,
-      "median_value": 42.64,
+      "mean_value": 43.8885,
+      "median_value": 42.645,
       "min_value": 30.71,
       "upside_base_case": -77.9967160614
     },
@@ -5098,18 +5120,18 @@
     "clamped": false,
     "debt": 211400000.0,
     "equity": 482942665659.0,
-    "kd": 0.064,
-    "kd_after_tax": 0.0576,
+    "kd": 0.0569,
+    "kd_after_tax": 0.05121,
     "ke": 0.11254216195,
     "mrp": 0.042,
     "rating": {
       "coverage": -1.5291,
-      "flag": "regla M: EBIT < 0 con caja neta, cobertura no significativa -> tramo de caja neta",
-      "rating": "BBB",
-      "spread": 0.0111,
+      "flag": "sin carga financiera neta (EBIT > 0 e ingresos financieros netos) -> mejor tramo",
+      "rating": "AAA",
+      "spread": 0.004,
       "table": "grandes"
     },
-    "raw": 0.112518122469,
+    "raw": 0.112515326578,
     "reason": null,
     "rf": 0.0529,
     "rf_as_of": null,
@@ -5119,7 +5141,7 @@
     "tax_rate": 0.1,
     "tax_reason": "tasa efectiva 1.3% acotada a [10%, 35%]",
     "tax_source": "efectiva",
-    "value": 0.112518122469,
+    "value": 0.112515326578,
     "weights": {
       "debt": 0.000437541593925,
       "equity": 0.999562458406

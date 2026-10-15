@@ -428,6 +428,10 @@
         "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
         "source": "yfinance_statements"
       },
+      "netInterestIncome": {
+        "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
+        "source": "yfinance_statements"
+      },
       "operatingCashflow": {
         "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
         "source": "yfinance_statements"
@@ -559,6 +563,7 @@
         "freeCashflow",
         "interestExpense",
         "netIncome",
+        "netInterestIncome",
         "operatingCashflow",
         "stockBasedCompensation",
         "totalRevenue"
@@ -580,6 +585,23 @@
     "state": "no_aplica"
   },
   "display": {
+    "annex": {
+      "items": [
+        {
+          "label": "Clasificación",
+          "text": "Arquetipo FINANCIAL (regla industria_aseguradora): Clasificada como FINANCIAL por industria Insurance - Property & Casualty (aseguradora)"
+        },
+        {
+          "label": "Confianza · Convergencia entre métodos (baja)",
+          "text": "direcciones opuestas: P/B justificado (Gordon) dice barata y P/B frente al sector dice cara"
+        },
+        {
+          "label": "Confianza · Calidad de fuente (media)",
+          "text": "16 campos de Finnhub en lugar de los estados"
+        }
+      ],
+      "title": "Detalle técnico para auditoría"
+    },
     "archetype": "FINANCIAL",
     "archetype_label": "Banco/aseguradora",
     "benchmark": {
@@ -1151,25 +1173,25 @@
           "key": "convergence",
           "label": "Convergencia entre métodos",
           "level": "Baja",
-          "text": "P/B justificado (Gordon) +76% (barata) · P/B frente al sector -63% (cara). direcciones opuestas: P/B justificado (Gordon) dice barata y P/B frente al sector dice cara"
+          "text": "P/B justificado (Gordon) +76% (barata) · P/B frente al sector -63% (cara). Los métodos de valoración se contradicen: uno ve la acción barata y otro cara."
         },
         {
           "key": "coverage",
           "label": "Cobertura de datos",
           "level": "Alta",
-          "text": "sin incidencias"
+          "text": "Sin incidencias."
         },
         {
           "key": "source",
           "label": "Calidad de fuente",
           "level": "Media",
-          "text": "16 campos de Finnhub en lugar de los estados"
+          "text": "Parte de los datos proviene de una fuente secundaria."
         },
         {
           "key": "stability",
           "label": "Estabilidad del arquetipo",
           "level": "Alta",
-          "text": "sin incidencias"
+          "text": "Sin incidencias."
         }
       ],
       "level": "media",
@@ -1179,13 +1201,11 @@
       ],
       "reasons": [
         {
-          "detail": "direcciones opuestas: P/B justificado (Gordon) dice barata y P/B frente al sector dice cara",
           "dimension": "convergencia",
           "level": "baja",
           "text": "Los métodos de valoración se contradicen: uno ve la acción barata y otro cara."
         },
         {
-          "detail": "16 campos de Finnhub en lugar de los estados",
           "dimension": "calidad de fuente",
           "level": "media",
           "text": "Parte de los datos proviene de una fuente secundaria."
@@ -1264,9 +1284,6 @@
           ],
           "title": "ATRACTIVO DEL PRECIO"
         }
-      ],
-      "classification_detail": [
-        "Arquetipo FINANCIAL (regla industria_aseguradora): Clasificada como FINANCIAL por industria Insurance - Property & Casualty (aseguradora)"
       ],
       "classification_notes": [
         "Aseguradora por su industria (Insurance - Property & Casualty): el balance es el producto."
@@ -1376,7 +1393,8 @@
       "models": [
         "P/B y P/TBV justificados por el retorno (Gordon)"
       ],
-      "models_text": "los modelos de P/B y P/TBV justificados por el retorno (Gordon)"
+      "models_text": "los modelos de P/B y P/TBV justificados por el retorno (Gordon)",
+      "ratios_text": "ratios TTM y del último ejercicio"
     },
     "na_keys": [
       "altman",
@@ -1402,6 +1420,7 @@
       "roce",
       "roic_wacc"
     ],
+    "pe_label": "P/E (TTM)",
     "readings": {
       "beta": {
         "label": "Defensiva",
@@ -1888,7 +1907,7 @@
             "body": "Excelente - Institución financiera muy sólida. ROA excelente (9.36% ≥ 0.5%) · ROE excelente (34.1% ≥ 12%) · Capitalización sólida (27.5% ≥ 6%) · Payout ratio alto (70% > 60%)",
             "key": "financial_health",
             "state": "con_dato",
-            "subtitle": "STRONG",
+            "subtitle": "Sólida",
             "title": "Salud financiera (sector financiero)",
             "tone": "pos",
             "value": "9/10"
@@ -1982,7 +2001,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "N/A"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -1993,7 +2012,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "N/A"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -2004,7 +2023,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "N/A"
+            "value": "—"
           },
           {
             "bench": "25.00%",
@@ -2218,7 +2237,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "N/A"
+            "value": "—"
           },
           {
             "bench": "25.00x",
@@ -2441,7 +2460,7 @@
         },
         {
           "label": "SOLIDEZ",
-          "text": "Salud financiera bancaria de 9/10 (STRONG)."
+          "text": "Salud financiera bancaria de 9/10 (sólida)."
         },
         {
           "label": "CRECIMIENTO Y RETORNO",
@@ -3213,6 +3232,7 @@
     "net_debt_to_ebitda_state": null,
     "net_income": 11695000000.0,
     "net_income_normalized": 11695000000.0,
+    "net_interest_income": -297000000.0,
     "net_margin": 0.128489656006,
     "operating_cash_flow": 16339000000.0,
     "operating_income": null,

@@ -418,6 +418,10 @@
         "detail": "plan B: estados anuales de yfinance (último FY)",
         "source": "yfinance_statements"
       },
+      "netInterestIncome": {
+        "detail": "plan B: estados anuales de yfinance (último FY)",
+        "source": "yfinance_statements"
+      },
       "operatingCashflow": {
         "detail": "plan B: estados anuales de yfinance (último FY)",
         "source": "yfinance_statements"
@@ -508,6 +512,7 @@
         "interestExpense": "'Interest Expense' sin dato en alguno de los 4 últimos trimestres",
         "inventory": "'Inventory' sin dato en el último trimestre",
         "netIncome": "'Net Income' sin dato en alguno de los 4 últimos trimestres",
+        "netInterestIncome": "'Net Non Operating Interest Income Expense' sin dato en alguno de los 4 últimos trimestres",
         "operatingCashflow": "'Operating Cash Flow' sin dato en alguno de los 4 últimos trimestres",
         "operatingIncome": "'Operating Income' sin dato en alguno de los 4 últimos trimestres",
         "stockBasedCompensation": "'Stock Based Compensation' sin dato en alguno de los 4 últimos trimestres",
@@ -561,6 +566,35 @@
     "state": "no_aplica"
   },
   "display": {
+    "annex": {
+      "items": [
+        {
+          "label": "Clasificación",
+          "text": "Arquetipo FINANCIAL (regla industria_aseguradora): Clasificada como FINANCIAL por industria Insurance - Diversified (aseguradora)"
+        },
+        {
+          "label": "Clasificación",
+          "text": "Posible cíclica: crecimiento de ingresos volátil (52.5 pp > 15 pp). No cambia el arquetipo; baja la confianza."
+        },
+        {
+          "label": "Confianza · Convergencia entre métodos (alta)",
+          "text": "coinciden (en precio) con distancia 0.05 (< 0.6)"
+        },
+        {
+          "label": "Confianza · Cobertura de datos (media)",
+          "text": "9 de 11 componentes del score con dato (82%)"
+        },
+        {
+          "label": "Confianza · Calidad de fuente (media)",
+          "text": "sin TTM: estados anuales (hasta 12 meses de retraso); 14 campos de Finnhub en lugar de los estados"
+        },
+        {
+          "label": "Confianza · Estabilidad del arquetipo (media)",
+          "text": "alerta de posible cíclica"
+        }
+      ],
+      "title": "Detalle técnico para auditoría"
+    },
     "archetype": "FINANCIAL",
     "archetype_label": "Banco/aseguradora",
     "benchmark": {
@@ -1015,7 +1049,7 @@
             "fmt": "mult",
             "higher_is_better": false,
             "key": "pe",
-            "label": "P/E (TTM)",
+            "label": "P/E (último ejercicio)",
             "role": "informative",
             "state": "no_aplica",
             "text": "No aplica a Banco/aseguradora"
@@ -1114,25 +1148,25 @@
           "key": "convergence",
           "label": "Convergencia entre métodos",
           "level": "Alta",
-          "text": "P/B justificado (Gordon) -7% (en precio) · P/B frente al sector -4% (en precio). coinciden (en precio) con distancia 0.05 (< 0.6)"
+          "text": "P/B justificado (Gordon) -7% (en precio) · P/B frente al sector -4% (en precio). Los métodos de valoración coinciden."
         },
         {
           "key": "coverage",
           "label": "Cobertura de datos",
           "level": "Media",
-          "text": "9 de 11 componentes del score con dato (82%)"
+          "text": "Faltan datos en parte del análisis (9 de 11 indicadores con dato)."
         },
         {
           "key": "source",
           "label": "Calidad de fuente",
           "level": "Media",
-          "text": "sin TTM: estados anuales (hasta 12 meses de retraso); 14 campos de Finnhub en lugar de los estados"
+          "text": "Se usan los estados del último ejercicio anual (pueden tener hasta 12 meses de antigüedad). Parte de los datos proviene de una fuente secundaria."
         },
         {
           "key": "stability",
           "label": "Estabilidad del arquetipo",
           "level": "Media",
-          "text": "alerta de posible cíclica"
+          "text": "La empresa podría ser cíclica: sus resultados actuales pueden no ser representativos."
         }
       ],
       "level": "media",
@@ -1144,25 +1178,21 @@
       ],
       "reasons": [
         {
-          "detail": "9 de 11 componentes del score con dato (82%)",
           "dimension": "cobertura",
           "level": "media",
           "text": "Faltan datos en parte del análisis (9 de 11 indicadores con dato)."
         },
         {
-          "detail": "sin TTM: estados anuales (hasta 12 meses de retraso)",
           "dimension": "calidad de fuente",
           "level": "media",
           "text": "Se usan los estados del último ejercicio anual (pueden tener hasta 12 meses de antigüedad)."
         },
         {
-          "detail": "14 campos de Finnhub en lugar de los estados",
           "dimension": "calidad de fuente",
           "level": "media",
           "text": "Parte de los datos proviene de una fuente secundaria."
         },
         {
-          "detail": "alerta de posible cíclica",
           "dimension": "estabilidad",
           "level": "media",
           "text": "La empresa podría ser cíclica: sus resultados actuales pueden no ser representativos."
@@ -1242,10 +1272,6 @@
           "title": "ATRACTIVO DEL PRECIO"
         }
       ],
-      "classification_detail": [
-        "Arquetipo FINANCIAL (regla industria_aseguradora): Clasificada como FINANCIAL por industria Insurance - Diversified (aseguradora)",
-        "Posible cíclica: crecimiento de ingresos volátil (52.5 pp > 15 pp). No cambia el arquetipo; baja la confianza."
-      ],
       "classification_notes": [
         "Aseguradora por su industria (Insurance - Diversified): el balance es el producto.",
         "Podría ser cíclica: su crecimiento de ingresos oscila 52.5 puntos de un año a otro (el umbral es 15). No cambia su tipo, pero baja la confianza del veredicto."
@@ -1320,7 +1346,7 @@
           "key": "dividend_yield",
           "label": "Dividend yield",
           "state": "sin_dato",
-          "value": "N/A"
+          "value": "—"
         },
         {
           "key": "beta",
@@ -1358,7 +1384,8 @@
       "models": [
         "P/B y P/TBV justificados por el retorno (Gordon)"
       ],
-      "models_text": "los modelos de P/B y P/TBV justificados por el retorno (Gordon)"
+      "models_text": "los modelos de P/B y P/TBV justificados por el retorno (Gordon)",
+      "ratios_text": "ratios del último ejercicio"
     },
     "na_keys": [
       "altman",
@@ -1384,6 +1411,7 @@
       "roce",
       "roic_wacc"
     ],
+    "pe_label": "P/E (último ejercicio)",
     "readings": {
       "beta": {
         "label": "Defensiva",
@@ -1810,7 +1838,7 @@
             "body": "Excelente - Institución financiera muy sólida. ROA excelente (5.30% ≥ 0.5%) · ROE bueno (9.0% ≥ 8%) · Capitalización sólida (59.2% ≥ 6%)",
             "key": "financial_health",
             "state": "con_dato",
-            "subtitle": "STRONG",
+            "subtitle": "Sólida",
             "title": "Salud financiera (sector financiero)",
             "tone": "pos",
             "value": "9/10"
@@ -1904,7 +1932,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "N/A"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -1915,7 +1943,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "N/A"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -1926,7 +1954,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "N/A"
+            "value": "—"
           },
           {
             "bench": "25.00%",
@@ -2069,7 +2097,7 @@
             "bench": "13.00x",
             "gap": "—",
             "key": "pe",
-            "label": "P/E (TTM)",
+            "label": "P/E (último ejercicio)",
             "reading": "No aplica a bancos y aseguradoras",
             "state": "no_aplica",
             "text": null,
@@ -2129,7 +2157,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "N/A"
+            "value": "—"
           },
           {
             "bench": "25.00x",
@@ -2173,7 +2201,7 @@
             "state": "sin_dato",
             "text": null,
             "tone": null,
-            "value": "N/A"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -2274,7 +2302,7 @@
           "state": "sin_dato",
           "tone": "neu",
           "unit": "",
-          "value": "N/A"
+          "value": "—"
         }
       ],
       "composition": {
@@ -2352,7 +2380,7 @@
         },
         {
           "label": "SOLIDEZ",
-          "text": "Salud financiera bancaria de 9/10 (STRONG)."
+          "text": "Salud financiera bancaria de 9/10 (sólida)."
         },
         {
           "label": "CRECIMIENTO Y RETORNO",
@@ -3108,6 +3136,7 @@
     "net_debt_to_ebitda_state": null,
     "net_income": 66968000000.0,
     "net_income_normalized": 66968000000.0,
+    "net_interest_income": -5069000000.0,
     "net_margin": 0.163128894432,
     "operating_cash_flow": 45969000000.0,
     "operating_income": null,

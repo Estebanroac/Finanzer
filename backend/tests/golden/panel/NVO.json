@@ -513,6 +513,10 @@
         "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
         "source": "yfinance_statements"
       },
+      "netInterestIncome": {
+        "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
+        "source": "yfinance_statements"
+      },
       "operatingCashflow": {
         "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
         "source": "yfinance_statements"
@@ -643,6 +647,7 @@
         "freeCashflow",
         "grossProfits",
         "netIncome",
+        "netInterestIncome",
         "operatingCashflow",
         "operatingIncome",
         "totalRevenue"
@@ -680,6 +685,23 @@
     "state": "ok"
   },
   "display": {
+    "annex": {
+      "items": [
+        {
+          "label": "Clasificación",
+          "text": "Arquetipo MATURE (regla por_defecto): Clasificada como MATURE por defecto: no es financiera, REIT, pre-beneficio con crecimiento ni de industria cíclica (industria Drug Manufacturers - General)"
+        },
+        {
+          "label": "Confianza · Convergencia entre métodos (media)",
+          "text": "uno lo ve en precio y otro con dirección: no coinciden, sin oponerse"
+        },
+        {
+          "label": "Confianza · Calidad de fuente (media)",
+          "text": "15 campos de Finnhub en lugar de los estados"
+        }
+      ],
+      "title": "Detalle técnico para auditoría"
+    },
     "archetype": "MATURE",
     "archetype_label": "Madura",
     "benchmark": {
@@ -1782,25 +1804,25 @@
           "key": "convergence",
           "label": "Convergencia entre métodos",
           "level": "Media",
-          "text": "DCF +9% (en precio) · múltiplos frente al sector +0.27 (barata). uno lo ve en precio y otro con dirección: no coinciden, sin oponerse"
+          "text": "DCF +9% (en precio) · múltiplos frente al sector +0.27 (barata). Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
         },
         {
           "key": "coverage",
           "label": "Cobertura de datos",
           "level": "Alta",
-          "text": "sin incidencias"
+          "text": "Sin incidencias."
         },
         {
           "key": "source",
           "label": "Calidad de fuente",
           "level": "Media",
-          "text": "15 campos de Finnhub en lugar de los estados"
+          "text": "Parte de los datos proviene de una fuente secundaria."
         },
         {
           "key": "stability",
           "label": "Estabilidad del arquetipo",
           "level": "Alta",
-          "text": "sin incidencias"
+          "text": "Sin incidencias."
         }
       ],
       "level": "media",
@@ -1810,13 +1832,11 @@
       ],
       "reasons": [
         {
-          "detail": "uno lo ve en precio y otro con dirección: no coinciden, sin oponerse",
           "dimension": "convergencia",
           "level": "media",
           "text": "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
         },
         {
-          "detail": "15 campos de Finnhub en lugar de los estados",
           "dimension": "calidad de fuente",
           "level": "media",
           "text": "Parte de los datos proviene de una fuente secundaria."
@@ -1895,9 +1915,6 @@
           ],
           "title": "ATRACTIVO DEL PRECIO"
         }
-      ],
-      "classification_detail": [
-        "Arquetipo MATURE (regla por_defecto): Clasificada como MATURE por defecto: no es financiera, REIT, pre-beneficio con crecimiento ni de industria cíclica (industria Drug Manufacturers - General)"
       ],
       "classification_notes": [
         "No es un banco ni una aseguradora, ni un REIT, ni una empresa en crecimiento sin beneficio, ni de una industria cíclica (Drug Manufacturers - General)."
@@ -2010,9 +2027,11 @@
         "número de Graham",
         "un DCF multietapa con WACC estimado por CAPM"
       ],
-      "models_text": "los modelos de Altman (1968), Piotroski (2000), número de Graham, un DCF multietapa con WACC estimado por CAPM"
+      "models_text": "los modelos de Altman (1968), Piotroski (2000), número de Graham, un DCF multietapa con WACC estimado por CAPM",
+      "ratios_text": "ratios TTM y del último ejercicio"
     },
     "na_keys": [],
+    "pe_label": "P/E (TTM)",
     "readings": {
       "beta": {
         "label": "Muy volátil",
@@ -4714,6 +4733,7 @@
     "net_debt_to_ebitda_state": "ok",
     "net_income": 18199519622.1,
     "net_income_normalized": 18199519622.1,
+    "net_interest_income": 1040412711.55,
     "net_margin": 0.353645005274,
     "operating_cash_flow": 20594354254.8,
     "operating_income": 22208464805.2,

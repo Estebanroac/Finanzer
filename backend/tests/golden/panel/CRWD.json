@@ -434,6 +434,10 @@
         "detail": "TTM: suma de los 4 trimestres 2026-07-31, 2026-04-30, 2026-01-31, 2025-10-31",
         "source": "yfinance_statements"
       },
+      "netInterestIncome": {
+        "detail": "TTM: suma de los 4 trimestres 2026-07-31, 2026-04-30, 2026-01-31, 2025-10-31",
+        "source": "yfinance_statements"
+      },
       "operatingCashflow": {
         "detail": "TTM: suma de los 4 trimestres 2026-07-31, 2026-04-30, 2026-01-31, 2025-10-31",
         "source": "yfinance_statements"
@@ -578,6 +582,7 @@
         "grossProfits",
         "interestExpense",
         "netIncome",
+        "netInterestIncome",
         "operatingCashflow",
         "operatingIncome",
         "stockBasedCompensation",
@@ -651,6 +656,23 @@
     "state": "ok"
   },
   "display": {
+    "annex": {
+      "items": [
+        {
+          "label": "Clasificación",
+          "text": "Arquetipo MATURE (regla por_defecto): Clasificada como MATURE por defecto: no es financiera, REIT, pre-beneficio con crecimiento ni de industria cíclica (industria Software - Infrastructure)"
+        },
+        {
+          "label": "Confianza · Convergencia entre métodos (no evaluable)",
+          "text": "un solo método evaluable (múltiplos frente al sector): no hay contraste; no evaluable: DCF (fiabilidad baja)"
+        },
+        {
+          "label": "Confianza · Calidad de fuente (baja)",
+          "text": "validación: trailingEps (pe_implausible); validación: trailingPE (pe_implausible); beneficio normalizado con ítems inferidos (confianza media); 9 campos de Finnhub en lugar de los estados"
+        }
+      ],
+      "title": "Detalle técnico para auditoría"
+    },
     "archetype": "MATURE",
     "archetype_label": "Madura",
     "benchmark": {
@@ -1601,25 +1623,25 @@
           "key": "convergence",
           "label": "Convergencia entre métodos",
           "level": "No evaluable",
-          "text": "DCF -79% (cara, no evaluable) · múltiplos frente al sector -0.80 (cara). un solo método evaluable (múltiplos frente al sector): no hay contraste; no evaluable: DCF (fiabilidad baja)"
+          "text": "DCF -79% (cara, no evaluable) · múltiplos frente al sector -0.80 (cara). Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo. El DCF no concilia con el precio y no se usa para contrastar."
         },
         {
           "key": "coverage",
           "label": "Cobertura de datos",
           "level": "Alta",
-          "text": "sin incidencias"
+          "text": "Sin incidencias."
         },
         {
           "key": "source",
           "label": "Calidad de fuente",
           "level": "Baja",
-          "text": "validación: trailingEps (pe_implausible); validación: trailingPE (pe_implausible); beneficio normalizado con ítems inferidos (confianza media); 9 campos de Finnhub en lugar de los estados"
+          "text": "Un dato de la fuente no superó la validación y se corrigió o se descartó. El beneficio se ajustó por partidas extraordinarias identificadas de forma indirecta. Parte de los datos proviene de una fuente secundaria."
         },
         {
           "key": "stability",
           "label": "Estabilidad del arquetipo",
           "level": "Alta",
-          "text": "sin incidencias"
+          "text": "Sin incidencias."
         }
       ],
       "level": "media",
@@ -1632,37 +1654,31 @@
       ],
       "reasons": [
         {
-          "detail": "un solo método evaluable (múltiplos frente al sector): no hay contraste",
           "dimension": "convergencia",
           "level": "no_evaluable",
           "text": "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo."
         },
         {
-          "detail": "no evaluable: DCF (fiabilidad baja)",
           "dimension": "convergencia",
           "level": "no_evaluable",
           "text": "El DCF no concilia con el precio y no se usa para contrastar."
         },
         {
-          "detail": "validación: trailingEps (pe_implausible)",
           "dimension": "calidad de fuente",
           "level": "baja",
           "text": "Un dato de la fuente no superó la validación y se corrigió o se descartó."
         },
         {
-          "detail": "validación: trailingPE (pe_implausible)",
           "dimension": "calidad de fuente",
           "level": "baja",
           "text": "Un dato de la fuente no superó la validación y se corrigió o se descartó."
         },
         {
-          "detail": "beneficio normalizado con ítems inferidos (confianza media)",
           "dimension": "calidad de fuente",
           "level": "baja",
           "text": "El beneficio se ajustó por partidas extraordinarias identificadas de forma indirecta."
         },
         {
-          "detail": "9 campos de Finnhub en lugar de los estados",
           "dimension": "calidad de fuente",
           "level": "baja",
           "text": "Parte de los datos proviene de una fuente secundaria."
@@ -1741,9 +1757,6 @@
           ],
           "title": "ATRACTIVO DEL PRECIO"
         }
-      ],
-      "classification_detail": [
-        "Arquetipo MATURE (regla por_defecto): Clasificada como MATURE por defecto: no es financiera, REIT, pre-beneficio con crecimiento ni de industria cíclica (industria Software - Infrastructure)"
       ],
       "classification_notes": [
         "No es un banco ni una aseguradora, ni un REIT, ni una empresa en crecimiento sin beneficio, ni de una industria cíclica (Software - Infrastructure)."
@@ -1856,9 +1869,11 @@
         "Piotroski (2000)",
         "un DCF multietapa con WACC estimado por CAPM"
       ],
-      "models_text": "los modelos de Altman (1968), Piotroski (2000), un DCF multietapa con WACC estimado por CAPM"
+      "models_text": "los modelos de Altman (1968), Piotroski (2000), un DCF multietapa con WACC estimado por CAPM",
+      "ratios_text": "ratios TTM y del último ejercicio"
     },
     "na_keys": [],
+    "pe_label": "P/E (TTM)",
     "readings": {
       "beta": {
         "label": "De mercado",
@@ -4457,6 +4472,7 @@
     "net_debt_to_ebitda_state": "caja_neta",
     "net_income": 58460000.0,
     "net_income_normalized": 31476500.0,
+    "net_interest_income": 156516000.0,
     "net_margin": 0.0108336599554,
     "operating_cash_flow": 2016615000.0,
     "operating_income": -119489000.0,

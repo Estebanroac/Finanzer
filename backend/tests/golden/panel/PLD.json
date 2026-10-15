@@ -424,6 +424,10 @@
         "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
         "source": "yfinance_statements"
       },
+      "netInterestIncome": {
+        "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
+        "source": "yfinance_statements"
+      },
       "operatingCashflow": {
         "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
         "source": "yfinance_statements"
@@ -561,6 +565,7 @@
         "grossProfits",
         "interestExpense",
         "netIncome",
+        "netInterestIncome",
         "operatingCashflow",
         "operatingIncome",
         "stockBasedCompensation",
@@ -574,6 +579,31 @@
     "state": "no_aplica"
   },
   "display": {
+    "annex": {
+      "items": [
+        {
+          "label": "Clasificación",
+          "text": "Arquetipo REIT (regla industria_reit): Clasificada como REIT por industria REIT - Industrial"
+        },
+        {
+          "label": "Clasificación",
+          "text": "Posible cíclica: crecimiento de ingresos volátil (17.3 pp > 15 pp). No cambia el arquetipo; baja la confianza."
+        },
+        {
+          "label": "Confianza · Convergencia entre métodos (no evaluable)",
+          "text": "un solo método evaluable (múltiplos frente al sector): no hay contraste"
+        },
+        {
+          "label": "Confianza · Calidad de fuente (media)",
+          "text": "15 campos de Finnhub en lugar de los estados"
+        },
+        {
+          "label": "Confianza · Estabilidad del arquetipo (media)",
+          "text": "alerta de posible cíclica"
+        }
+      ],
+      "title": "Detalle técnico para auditoría"
+    },
     "archetype": "REIT",
     "archetype_label": "REIT",
     "benchmark": {
@@ -1210,25 +1240,25 @@
           "key": "convergence",
           "label": "Convergencia entre métodos",
           "level": "No evaluable",
-          "text": "múltiplos frente al sector -0.25 (cara). un solo método evaluable (múltiplos frente al sector): no hay contraste"
+          "text": "múltiplos frente al sector -0.25 (cara). Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo."
         },
         {
           "key": "coverage",
           "label": "Cobertura de datos",
           "level": "Alta",
-          "text": "sin incidencias"
+          "text": "Sin incidencias."
         },
         {
           "key": "source",
           "label": "Calidad de fuente",
           "level": "Media",
-          "text": "15 campos de Finnhub en lugar de los estados"
+          "text": "Parte de los datos proviene de una fuente secundaria."
         },
         {
           "key": "stability",
           "label": "Estabilidad del arquetipo",
           "level": "Media",
-          "text": "alerta de posible cíclica"
+          "text": "La empresa podría ser cíclica: sus resultados actuales pueden no ser representativos."
         }
       ],
       "level": "media",
@@ -1239,19 +1269,16 @@
       ],
       "reasons": [
         {
-          "detail": "un solo método evaluable (múltiplos frente al sector): no hay contraste",
           "dimension": "convergencia",
           "level": "no_evaluable",
           "text": "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo."
         },
         {
-          "detail": "15 campos de Finnhub en lugar de los estados",
           "dimension": "calidad de fuente",
           "level": "media",
           "text": "Parte de los datos proviene de una fuente secundaria."
         },
         {
-          "detail": "alerta de posible cíclica",
           "dimension": "estabilidad",
           "level": "media",
           "text": "La empresa podría ser cíclica: sus resultados actuales pueden no ser representativos."
@@ -1330,10 +1357,6 @@
           ],
           "title": "ATRACTIVO DEL PRECIO"
         }
-      ],
-      "classification_detail": [
-        "Arquetipo REIT (regla industria_reit): Clasificada como REIT por industria REIT - Industrial",
-        "Posible cíclica: crecimiento de ingresos volátil (17.3 pp > 15 pp). No cambia el arquetipo; baja la confianza."
       ],
       "classification_notes": [
         "REIT por su industria (REIT - Industrial).",
@@ -1445,7 +1468,8 @@
       "models": [
         "P/FFO y rentabilidad sobre el FFO"
       ],
-      "models_text": "los modelos de P/FFO y rentabilidad sobre el FFO"
+      "models_text": "los modelos de P/FFO y rentabilidad sobre el FFO",
+      "ratios_text": "ratios TTM y del último ejercicio"
     },
     "na_keys": [
       "altman",
@@ -1468,6 +1492,7 @@
       "roe",
       "roic_wacc"
     ],
+    "pe_label": "P/E (TTM)",
     "readings": {
       "beta": {
         "label": "Volátil",
@@ -3171,6 +3196,7 @@
     "net_debt_to_ebitda_state": "ok",
     "net_income": 4208216000.0,
     "net_income_normalized": 3587774758.52,
+    "net_interest_income": -1048929000.0,
     "net_margin": 0.457924073818,
     "operating_cash_flow": 5240975000.0,
     "operating_income": 3531671000.0,

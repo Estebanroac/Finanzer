@@ -513,6 +513,10 @@
         "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
         "source": "yfinance_statements"
       },
+      "netInterestIncome": {
+        "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
+        "source": "yfinance_statements"
+      },
       "operatingCashflow": {
         "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
         "source": "yfinance_statements"
@@ -645,6 +649,7 @@
         "grossProfits",
         "interestExpense",
         "netIncome",
+        "netInterestIncome",
         "operatingCashflow",
         "operatingIncome",
         "stockBasedCompensation",
@@ -685,6 +690,31 @@
     "state": "ok"
   },
   "display": {
+    "annex": {
+      "items": [
+        {
+          "label": "Clasificación",
+          "text": "Arquetipo MATURE (regla ciclica_condicional_estable): Clasificada como MATURE: industria Semiconductors (cíclica condicional) sin reversión en los ejercicios disponibles (ni caída pico-valle del margen ni caída anual de ingresos)"
+        },
+        {
+          "label": "Clasificación",
+          "text": "Posible cíclica: crecimiento de ingresos volátil (24.2 pp > 15 pp). No cambia el arquetipo; baja la confianza."
+        },
+        {
+          "label": "Confianza · Convergencia entre métodos (no evaluable)",
+          "text": "un solo método evaluable (múltiplos frente al sector): no hay contraste; no evaluable: DCF (fiabilidad baja)"
+        },
+        {
+          "label": "Confianza · Calidad de fuente (media)",
+          "text": "15 campos de Finnhub en lugar de los estados"
+        },
+        {
+          "label": "Confianza · Estabilidad del arquetipo (media)",
+          "text": "alerta de posible cíclica"
+        }
+      ],
+      "title": "Detalle técnico para auditoría"
+    },
     "archetype": "MATURE",
     "archetype_label": "Madura",
     "benchmark": {
@@ -1734,25 +1764,25 @@
           "key": "convergence",
           "label": "Convergencia entre métodos",
           "level": "No evaluable",
-          "text": "DCF -51% (cara, no evaluable) · múltiplos frente al sector +0.20 (barata). un solo método evaluable (múltiplos frente al sector): no hay contraste; no evaluable: DCF (fiabilidad baja)"
+          "text": "DCF -51% (cara, no evaluable) · múltiplos frente al sector +0.20 (barata). Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo. El DCF no concilia con el precio y no se usa para contrastar."
         },
         {
           "key": "coverage",
           "label": "Cobertura de datos",
           "level": "Alta",
-          "text": "sin incidencias"
+          "text": "Sin incidencias."
         },
         {
           "key": "source",
           "label": "Calidad de fuente",
           "level": "Media",
-          "text": "15 campos de Finnhub en lugar de los estados"
+          "text": "Parte de los datos proviene de una fuente secundaria."
         },
         {
           "key": "stability",
           "label": "Estabilidad del arquetipo",
           "level": "Media",
-          "text": "alerta de posible cíclica"
+          "text": "La empresa podría ser cíclica: sus resultados actuales pueden no ser representativos."
         }
       ],
       "level": "media",
@@ -1764,25 +1794,21 @@
       ],
       "reasons": [
         {
-          "detail": "un solo método evaluable (múltiplos frente al sector): no hay contraste",
           "dimension": "convergencia",
           "level": "no_evaluable",
           "text": "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo."
         },
         {
-          "detail": "no evaluable: DCF (fiabilidad baja)",
           "dimension": "convergencia",
           "level": "no_evaluable",
           "text": "El DCF no concilia con el precio y no se usa para contrastar."
         },
         {
-          "detail": "15 campos de Finnhub en lugar de los estados",
           "dimension": "calidad de fuente",
           "level": "media",
           "text": "Parte de los datos proviene de una fuente secundaria."
         },
         {
-          "detail": "alerta de posible cíclica",
           "dimension": "estabilidad",
           "level": "media",
           "text": "La empresa podría ser cíclica: sus resultados actuales pueden no ser representativos."
@@ -1861,10 +1887,6 @@
           ],
           "title": "ATRACTIVO DEL PRECIO"
         }
-      ],
-      "classification_detail": [
-        "Arquetipo MATURE (regla ciclica_condicional_estable): Clasificada como MATURE: industria Semiconductors (cíclica condicional) sin reversión en los ejercicios disponibles (ni caída pico-valle del margen ni caída anual de ingresos)",
-        "Posible cíclica: crecimiento de ingresos volátil (24.2 pp > 15 pp). No cambia el arquetipo; baja la confianza."
       ],
       "classification_notes": [
         "Su industria (Semiconductors) puede ser cíclica, pero en los ejercicios disponibles no hubo caídas fuertes del margen ni de los ingresos.",
@@ -1979,9 +2001,11 @@
         "número de Graham",
         "un DCF multietapa con WACC estimado por CAPM"
       ],
-      "models_text": "los modelos de Altman (1968), Piotroski (2000), número de Graham, un DCF multietapa con WACC estimado por CAPM"
+      "models_text": "los modelos de Altman (1968), Piotroski (2000), número de Graham, un DCF multietapa con WACC estimado por CAPM",
+      "ratios_text": "ratios TTM y del último ejercicio"
     },
     "na_keys": [],
+    "pe_label": "P/E (TTM)",
     "readings": {
       "beta": {
         "label": "De mercado",
@@ -4659,6 +4683,7 @@
     "net_debt_to_ebitda_state": "caja_neta",
     "net_income": 71251091773.9,
     "net_income_normalized": 69653496304.5,
+    "net_interest_income": 3310267008.57,
     "net_margin": 0.498543979382,
     "operating_cash_flow": 84573953435.1,
     "operating_income": 80064764722.6,

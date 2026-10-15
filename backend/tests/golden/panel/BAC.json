@@ -482,6 +482,7 @@
         "interestExpense": "'Interest Expense' sin dato en alguno de los 4 últimos trimestres",
         "inventory": "'Inventory' sin dato en el último trimestre",
         "netIncome": "'Net Income' sin dato en alguno de los 4 últimos trimestres",
+        "netInterestIncome": "'Net Non Operating Interest Income Expense' sin dato en alguno de los 4 últimos trimestres",
         "operatingIncome": "'Operating Income' sin dato en alguno de los 4 últimos trimestres",
         "totalCurrentAssets": "'Current Assets' sin dato en el último trimestre",
         "totalCurrentLiabilities": "'Current Liabilities' sin dato en el último trimestre",
@@ -539,6 +540,23 @@
     "state": "no_aplica"
   },
   "display": {
+    "annex": {
+      "items": [
+        {
+          "label": "Clasificación",
+          "text": "Arquetipo FINANCIAL (regla industria_banco): Clasificada como FINANCIAL por industria Banks - Diversified (banco)"
+        },
+        {
+          "label": "Confianza · Convergencia entre métodos (baja)",
+          "text": "direcciones opuestas: P/B frente al sector dice barata y P/B justificado (Gordon) dice cara"
+        },
+        {
+          "label": "Confianza · Calidad de fuente (media)",
+          "text": "12 campos de Finnhub en lugar de los estados"
+        }
+      ],
+      "title": "Detalle técnico para auditoría"
+    },
     "archetype": "FINANCIAL",
     "archetype_label": "Banco/aseguradora",
     "benchmark": {
@@ -1110,25 +1128,25 @@
           "key": "convergence",
           "label": "Convergencia entre métodos",
           "level": "Baja",
-          "text": "P/B justificado (Gordon) -16% (cara) · P/B frente al sector +27% (barata). direcciones opuestas: P/B frente al sector dice barata y P/B justificado (Gordon) dice cara"
+          "text": "P/B justificado (Gordon) -16% (cara) · P/B frente al sector +27% (barata). Los métodos de valoración se contradicen: uno ve la acción barata y otro cara."
         },
         {
           "key": "coverage",
           "label": "Cobertura de datos",
           "level": "Alta",
-          "text": "sin incidencias"
+          "text": "Sin incidencias."
         },
         {
           "key": "source",
           "label": "Calidad de fuente",
           "level": "Media",
-          "text": "12 campos de Finnhub en lugar de los estados"
+          "text": "Parte de los datos proviene de una fuente secundaria."
         },
         {
           "key": "stability",
           "label": "Estabilidad del arquetipo",
           "level": "Alta",
-          "text": "sin incidencias"
+          "text": "Sin incidencias."
         }
       ],
       "level": "media",
@@ -1138,13 +1156,11 @@
       ],
       "reasons": [
         {
-          "detail": "direcciones opuestas: P/B frente al sector dice barata y P/B justificado (Gordon) dice cara",
           "dimension": "convergencia",
           "level": "baja",
           "text": "Los métodos de valoración se contradicen: uno ve la acción barata y otro cara."
         },
         {
-          "detail": "12 campos de Finnhub en lugar de los estados",
           "dimension": "calidad de fuente",
           "level": "media",
           "text": "Parte de los datos proviene de una fuente secundaria."
@@ -1223,9 +1239,6 @@
           ],
           "title": "ATRACTIVO DEL PRECIO"
         }
-      ],
-      "classification_detail": [
-        "Arquetipo FINANCIAL (regla industria_banco): Clasificada como FINANCIAL por industria Banks - Diversified (banco)"
       ],
       "classification_notes": [
         "Banco por su industria (Banks - Diversified): el balance es el producto."
@@ -1335,7 +1348,8 @@
       "models": [
         "P/B y P/TBV justificados por el retorno (Gordon)"
       ],
-      "models_text": "los modelos de P/B y P/TBV justificados por el retorno (Gordon)"
+      "models_text": "los modelos de P/B y P/TBV justificados por el retorno (Gordon)",
+      "ratios_text": "ratios TTM y del último ejercicio"
     },
     "na_keys": [
       "altman",
@@ -1361,6 +1375,7 @@
       "roce",
       "roic_wacc"
     ],
+    "pe_label": "P/E (TTM)",
     "readings": {
       "beta": {
         "label": "Volátil",
@@ -1822,7 +1837,7 @@
             "body": "Excelente - Institución financiera muy sólida. ROA excelente (0.87% ≥ 0.5%) · ROE bueno (10.1% ≥ 8%) · Capitalización sólida (8.6% ≥ 6%) · Dividendo sostenible (2.49%)",
             "key": "financial_health",
             "state": "con_dato",
-            "subtitle": "STRONG",
+            "subtitle": "Sólida",
             "title": "Salud financiera (sector financiero)",
             "tone": "pos",
             "value": "9/10"
@@ -1916,7 +1931,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "N/A"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -1927,7 +1942,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "N/A"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -1938,7 +1953,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "N/A"
+            "value": "—"
           },
           {
             "bench": "25.00%",
@@ -2130,7 +2145,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "N/A"
+            "value": "—"
           },
           {
             "bench": "25.00x",
@@ -2353,7 +2368,7 @@
         },
         {
           "label": "SOLIDEZ",
-          "text": "Salud financiera bancaria de 9/10 (STRONG)."
+          "text": "Salud financiera bancaria de 9/10 (sólida)."
         },
         {
           "label": "CRECIMIENTO Y RETORNO",
@@ -3125,6 +3140,7 @@
     "net_debt_to_ebitda_state": null,
     "net_income": 30509000000.0,
     "net_income_normalized": 30509000000.0,
+    "net_interest_income": null,
     "net_margin": 0.269759586903,
     "operating_cash_flow": 56567000000.0,
     "operating_income": null,
