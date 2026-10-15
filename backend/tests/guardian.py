@@ -216,6 +216,8 @@ def _p_pos52(a, c, text):
     if re.search(r"m[aá]ximos", text) and not p >= b[3]:
         return f"dice máximos con posición {p:.0f}%"
     m = re.search(r"en el (\d+)% del rango", text)
+    if not 0 <= p <= 100 or (m and not 0 <= int(m.group(1)) <= 100):   # fase 1: XOM "101%"
+        return f"posición en el rango fuera de 0–100% ({p:.1f}%)"
     if m and abs(int(m.group(1)) - p) > 0.5 + 1e-9:
         return f"cita {m.group(1)}% con posición {p:.1f}%"
 

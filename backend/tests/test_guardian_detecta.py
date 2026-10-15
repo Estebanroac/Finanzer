@@ -150,6 +150,16 @@ def test_not_applicable_card_with_a_figure_fails():
     assert "no_aplica_con_cifra" not in rules(ok)
 
 
+def test_position_in_52w_range_is_between_0_and_100():
+    """XOM: "cotiza en el 101% del rango de 52 semanas" con el precio por encima del máximo de la fuente."""
+    text = "cotiza en el 101% del rango de 52 semanas, en la zona de máximos"
+    above = {"price": 101.0, KM: {"price_52w_high": 100.0, "price_52w_low": 0.0}}
+    assert "pos52" in _rules(text, [claim("pos52")], above)
+    ok = {"price": 100.0, KM: {"price_52w_high": 100.0, "price_52w_low": 0.0}}
+    assert "pos52" not in _rules("cotiza en el 100% del rango de 52 semanas, en la zona de máximos",
+                                 [claim("pos52")], ok)
+
+
 def test_structural_rules():
     v = {"text": "Calidad sólida · precio razonable"}
     assert "veredicto" in {f["rule"] for f in g.check(

@@ -213,3 +213,16 @@ referencia ("No aplica a REIT", "No aplica a empresas en crecimiento sin benefic
 Las tarjetas de portada (`cover.kpis`) ya cumplían. Fuera del alcance (anotado para decidir): las **filas de tabla**
 con "No aplica" conservan la cifra (p. ej. JPM P/E 14.27x), decisión de la etapa 9b protegida por
 `test_bank_pdf_never_reads_pe_or_fcf_as_primary`.
+
+## P3.2 — Rango de 52 semanas con la cotización actual
+
+**Causa.** El máximo de 52 semanas de la fuente (176.41) no incluía la cotización del día de XOM (177.06): "cotiza
+en el 101% del rango". **Cambio.** En `main.py`, máximo = max(máximo, precio) y mínimo = min(mínimo, precio) sobre
+`financials`, de modo que `key_metrics`, `price_history` y el display leen el mismo rango; si se amplía, queda en
+`data_provenance` como derivado. Guardián: la posición (dato y cifra citada) entre 0 y 100.
+
+| Juego | Ticker | Campos |
+|---|---|---|
+| panel | XOM | `key_metrics.price_52w_high` y `price_history.52w_high` 176.41 → 177.06; `data_provenance.fields.key_metrics.price_52w_high` (nuevo); posición 101% → 100% en la lectura, el rango de la sección 04, el resumen ejecutivo y la tarjeta de precio ("+0.4%" → "0.0%" desde el máximo) |
+
+Ningún otro ticker del panel ni de `local` tenía el precio fuera de su rango.
