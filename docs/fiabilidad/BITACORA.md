@@ -17,11 +17,11 @@
 
 | Campo | Valor |
 |---|---|
-| Fase en curso | **Fase 1 — Lo visible hoy** (🔧 T2: guardián en rojo; diseño aprobado con cambios, registro #8) |
+| Fase en curso | **Fase 1 — Lo visible hoy** (🔧 T2 hecha: guardián en rojo; sigue T3, registro #9) |
 | Rama de trabajo | `fiabilidad/f1-visible` (desde `main` local `0f798c8`; registro #7) |
 | Producción | `9e78f3b` (etapas 11b + 9c), verificado el 2026-10-13. Rollback: `a6482f9` |
 | `main` local | merge de la fase 0 sobre `f9d6c30` (ver `git log`), **por delante de origin, sin push**: se sube con el deploy de la fase 1 (pushear redespliega) |
-| Último cierre de sesión | 2026-10-14 · operador F1 (ver registro #7) |
+| Último cierre de sesión | 2026-10-15 · operador F1 (ver registro #9) |
 | Bloqueos | Ninguno |
 
 ## Fases
@@ -29,7 +29,7 @@
 | Fase | Estado | Rama | Commits | Aprobada por el usuario | Deploy |
 |---|---|---|---|---|---|
 | 0 Congelar y medir | ✅ cerrada (2026-10-14) | `fiabilidad/f0-panel` → `main` local | `0a8ac66`..`0ae214a` (9 commits) + cierre (registro #6) | sí, 2026-10-14 (registro #6) | no aplica (se sube con el deploy de la fase 1) |
-| 1 Lo visible hoy | 🔧 T2 | `fiabilidad/f1-visible` | `d676b22` (D8) | — | — |
+| 1 Lo visible hoy | 🔧 T3 | `fiabilidad/f1-visible` | `d676b22` (D8), `21c3f5f`, `0ebba81` (guardián) | — | — |
 | 2 Verdad de datos (EDGAR) | 🔒 espera F1 | — | — | — | — |
 | 3 Método por arquetipo | 🔒 espera F2 | — | — | — | — |
 | 4 Escalas y confianza | 🔒 espera F3 | — | — | — | — |
@@ -111,6 +111,12 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
 | **Nuevo (panel):** ajustar el invariante `growth_texts_cite_the_scored_figure` para aceptar el signo expresado con el verbo ("se contraen un 5.0%"); hoy xfail estricto en XOM y DOW | F0 (registros #5, #6) | 1 |
 | **Nuevo (panel):** efecto frontera: NVO cambia de nivel de precio con 10 pb de Rf (config 5.29% → ^TNX 5.19%: 58 "razonable" → 70 "atractivo", confianza media → alta). Banda de tolerancia o aviso de proximidad al umbral | F0 (registros #5, #6) | 4 |
 | **Nuevo (panel):** BRK-B en base anual (faltan capex y D&A en algún trimestre) | F0 (registro #5) | 2 |
+| **Nuevo (guardián):** "(3 años)" en tarjetas, tablas y comparación de cíclicas cuya cifra es de ciclo medio (XOM, DOW, FCX, MU, ASML) | F1 T2 (registro #9) | 1 (texto) |
+| **Nuevo (guardián):** V (benchmark de mercado) dice "múltiplos frente al sector" en la confianza | F1 T2 (registro #9) | 1 |
+| **Nuevo (guardián):** BRK-B "P/E (TTM)" con base anual (faltan trimestres) | F1 T2 (registro #9) | 1 (texto) / 2 (dato) |
+| **Nuevo (guardián):** AMT atribuye la caída del FFO por acción a la emisión de acciones con las acciones planas en 3 años (+0.05%) | F1 T2 (registro #9) | 1 |
+| **Nuevo (guardián):** "N/A" como valor en las tablas de las financieras (JPM, BAC…) | F1 T2 (registro #9) | 1 |
+| **Nuevo (guardián):** la web muestra códigos en el desplegable "Detalle técnico" (`crecimiento_incoherente`, `MATURE`…), contra D1 | F1 T2 (registro #9) | 1 (web) |
 | **Nuevo (panel):** con la tabla validada (registro #6): CAT y TSM deberían ser CYCLICAL y salen "Madura"; PLTR y CRWD salen "Madura" (falta el arquetipo, D4); NVDA a decidir en D4 | F0 (registros #5, #6) | 3 (D4) |
 | ✅ Hecho (F1, `d676b22`): `muestra` retirada con D8; sus 17 tests corren sobre el panel (`test_panel_cases.py`) | F0 (registros #2, #6, #7) | 1 (inicio) |
 | Descartado — resuelto, **verificado en el panel**: `yearly_financials` con datos en 30/30 (AAPL: 4 ejercicios) | RECON §7.7 | — |
@@ -404,4 +410,31 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
 
 - **Hecho:** aprobación registrada; el diseño se amplía con #20, #21, la #6 con «mercado» y la red sobre el PDF
   normalizado (también frases propias de `pdf_report.py`). T2 en curso (ver la entrada siguiente).
+
+### #9 · 2026-10-15 · operador · Fase 1 (T2: guardián narrativo en rojo)
+- **Objetivo de la sesión:** implementar el guardián aprobado (registro #8) sin arreglar nada.
+- **Hecho (`0ebba81`):**
+  - `lib/claims.py`: afirmaciones declaradas junto al texto; colector (`contextvars`) activo solo en tests.
+  - Instrumentación sin cambio de salida: lectores de `display.py` (en la llamada, con el campo que respalda cada
+    afirmación), `read_vs_sector` por decorador, textos del motor que `display` pasa al informe (desglose, tarjetas
+    institucionales, nota del WACC, confianza, filas y etiquetas con base temporal, criterios Piotroski, nota de
+    clasificación) y señales de `alert_interpretations.py` por intérprete.
+  - `tests/guardian.py`: 16 predicados (catálogo más #20 y #21), red de seguridad en el display y en el PDF
+    normalizado (la palabra se rastrea por ventana de caracteres, porque pypdf puede intercalar columnas; las
+    etiquetas cortas de celda valen por sí solas), lista negra y reglas #6/#7/#17/#20. Los tooltips (escalas de
+    bandas) y las zonas de los gráficos no son afirmaciones sobre la empresa: fuera de la red, dentro de la lista
+    negra. Las frases propias de `pdf_report.py` pasan por la misma red del PDF (no apareció ninguna sin respaldo).
+  - `test_guardian.py`: (regla × juego × ticker) sobre 30 del panel + 6 de local, 85 xfail estrictos.
+    `test_guardian_detecta.py`: los 16 predicados y cada mecanismo detectan su violación (25 tests).
+- **Verificación:** `diff_golden.py --env local` y `--env panel` → sin diferencias. Suite → **2244 passed, 1 skipped,
+  87 xfailed** (51 s).
+- **En rojo (casos conocidos):** PLTR "EBIT negativo" (6 frases: lectura, desglose, motivo de validación…); "STRONG"
+  en JPM, BAC, PGR, BRK-B; códigos internos en 30/30; cota del ciclo medio en XOM, DOW, FCX, MU, ASML.
+- **Nuevos (al mapa, fase 1):** "(3 años)" en cifras de ciclo medio; V "frente al sector" con benchmark de mercado;
+  BRK-B "TTM" con base anual; AMT atribuye la caída del FFO a una dilución inexistente; "N/A" en tablas; la web
+  enseña códigos en "Detalle técnico".
+- **Decisiones tomadas por el usuario:** ninguna nueva. (El commit `98cc1b2` lleva la entrada #8.)
+- **Abierto / siguiente paso:** T3, un commit por causa.
+- **Archivos tocados:** `backend/lib/{claims,display,alert_interpretations}.py`, `backend/tests/{guardian,test_guardian,test_guardian_detecta}.py`.
+- **Avisos para el siguiente chat:** el guardián tarda ~5 s en los 36 informes.
 
