@@ -31,3 +31,11 @@ def test_web_contract_has_no_technical_detail(env, sym, outputs_by_env):
     assert all("detail" not in r for r in (d.get("confidence") or {}).get("reasons") or [])
     visible = json.dumps({k: v for k, v in d.items() if k != "annex"}, ensure_ascii=False)
     assert "validación: " not in visible and "(regla " not in visible
+
+
+@pytest.mark.parametrize("env,sym", CASES, ids=[f"{e}-{t}" for e, t in CASES])
+def test_annex_is_not_split_across_pages(env, sym, outputs_by_env):
+    """El título del anexo y sus líneas van en la misma página (AAPL y SNOW lo partían)."""
+    pages = fb.pdf_text(outputs_by_env(env)[sym][1]).split("===== página ")
+    holder = [p for p in pages if ANNEX_TITLE in p]
+    assert len(holder) == 1 and holder[0] is pages[-1], "el anexo empieza y termina en la última página"

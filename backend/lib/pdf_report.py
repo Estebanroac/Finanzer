@@ -1104,12 +1104,12 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     AX = D.get("annex") or {}
     if AX.get("items"):
         story.append(Spacer(1, 12))
-        story.append(HRFlowable(width="100%", thickness=0.5, color=HAIR))
-        story.append(Spacer(1, 5))
-        story.append(Paragraph(_esc(AX["title"]), S['h2']))
-        for it in AX["items"]:
-            story.append(Paragraph(f"<b>{_esc(it['label'])}:</b> {_esc(it['text'])}",
-                                   ParagraphStyle('annex', parent=S['small'], textColor=FAINT, fontSize=7,
-                                                  leading=9.5, spaceAfter=2)))
+        # El anexo no se parte: si no cabe entero, pasa completo a la página siguiente (título con sus líneas).
+        story.append(KeepTogether(
+            [HRFlowable(width="100%", thickness=0.5, color=HAIR), Spacer(1, 5),
+             Paragraph(_esc(AX["title"]), S['h2'])]
+            + [Paragraph(f"<b>{_esc(it['label'])}:</b> {_esc(it['text'])}",
+                         ParagraphStyle('annex', parent=S['small'], textColor=FAINT, fontSize=7,
+                                        leading=9.5, spaceAfter=2)) for it in AX["items"]]))
 
     doc.build(story)
