@@ -55,6 +55,10 @@ MIGRATED = {
     "lib/archetype_metrics.py": ["maintenance_fcf"],
     # Etapa 9a: calidad, precio y veredicto.
     "lib/verdict.py": ["part_score", "quality", "price", "confidence_phrase", "verdict"],
+    # Preparación de la fase 3: DCF inverso y ROTE implícito (módulos aislados, aún sin conectar).
+    "lib/reverse_dcf.py": ["_defaults", "growth_path", "equity_value_per_share", "implied_growth",
+                           "classify_implied_growth"],
+    "lib/bank_implied.py": ["_implied_return", "implied_rote", "implied_roe", "rote_sensitivity"],
 }
 
 # (archivo, función, valor) -> justificación
@@ -90,6 +94,7 @@ EXCEPTIONS = {
     ("main.py", "_compute_analysis", 404): "código HTTP",
     ("main.py", "_compute_analysis", 500): "código HTTP",
     ("main.py", "_compute_analysis", 422): "código HTTP (etapa 11b: ETF o fondo; estados sin tipo de cambio)",
+    ("lib/reverse_dcf.py", "implied_growth", 2): "punto medio de la bisección (definición)",
 }
 
 
