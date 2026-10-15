@@ -81,6 +81,10 @@ PANEL_GROUPS = {
     # Fase 1: informe de producción del 15-oct revisado con un analista externo (dividend yield 50.46%).
     # Banco europeo con ADR y dividendo en peniques. El panel no se amplía más en la fase 1.
     "Revisión externa": ["BCS"],
+    # Fase 2a (T1): emisores extranjeros con ADR, capturados el 15-oct tras el cierre de Nueva York. Banco con AT1 que
+    # reporta en USD (HSBC, ADR = 5), energía en USD (SHEL, ADR = 2), EUR con escisión reciente (UL, ADR = 1) y JPY
+    # con año fiscal a marzo (TM, ADR = 10). Factores verificados en el 20-F y el F-6 (F2_EDGAR_DIAGNOSTICO §5).
+    "Extranjeros (fase 2)": ["HSBC", "SHEL", "UL", "TM"],
 }
 PANEL_TICKERS = [t for ts in PANEL_GROUPS.values() for t in ts]
 

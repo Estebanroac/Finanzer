@@ -8,7 +8,7 @@
 ## Juegos de datos (entornos)
 
 Hay dos juegos, cada uno con sus fixtures y sus golden: **`local`** (captura en desarrollo, ruta quoteSummary; los 6
-tickers de los tests de humo y de bugs conocidos) y **`panel`** (31 tickers capturados con Render simulado: la ruta de
+tickers de los tests de humo y de bugs conocidos) y **`panel`** (36 tickers capturados con Render simulado: la ruta de
 producción, plan B + Finnhub; ver más abajo). La regresión y el determinismo corren contra los dos.
 `diff_golden.py` y `capture_fixtures.py` aceptan `--env`.
 
@@ -102,10 +102,12 @@ RECON §7.6.
 
 ## Juego `panel` y `panel_run` (fase 0 del plan de fiabilidad)
 
-31 tickers en 9 grupos (`fixture_backend.PANEL_GROUPS`), capturados con `--render-sim` el 14-oct-2026 tras el
-cierre. Entran en la regresión y el determinismo (`conftest.REG_ENVS`), **no** en `conftest.ENVS`: los tests atados a
+36 tickers en 11 grupos (`fixture_backend.PANEL_GROUPS`), capturados con `--render-sim` tras el cierre: 31 el
+14-oct-2026 (SPY incluido), BCS el 15-oct (fase 1) y HSBC, SHEL, UL y TM el 15-oct (fase 2a, grupo
+"Extranjeros (fase 2)"). Entran en la regresión y el determinismo (`conftest.REG_ENVS`), **no** en `conftest.ENVS`:
+los tests atados a
 los 6 tickers no recorren el panel entero (indexan sus 6 tickers vía `BOUND_ENVS`). Los invariantes genéricos viven en `invariants.py` y
-`test_panel_invariants.py` los corre sobre los 31 (los fallos conocidos, como xfail estricto en
+`test_panel_invariants.py` los corre sobre los 36 (los fallos conocidos, como xfail estricto en
 `PANEL_KNOWN_FAILURES`); `test_invariants_detectan.py` prueba que cada uno detecta su violación.
 
 ```bash

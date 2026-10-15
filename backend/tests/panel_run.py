@@ -43,11 +43,11 @@ import fixture_backend as fb  # noqa: E402
 # CYCLICAL; BRK-B FINANCIAL (el P/B es su métrica; la volatilidad de sus ingresos sigue en la fase 3); NVDA a
 # decidir en D4 (cíclica y de alto crecimiento a la vez). "?" = a decidir; "422" = el backend debe rechazarlo.
 EXPECTED = {
-    **{t: "MATURE" for t in ("AAPL", "MSFT", "KO", "PG", "JNJ", "V", "NVO", "NFLX", "AMZN")},
-    **{t: "FINANCIAL" for t in ("JPM", "BAC", "PGR", "BRK-B", "BCS")},
+    **{t: "MATURE" for t in ("AAPL", "MSFT", "KO", "PG", "JNJ", "V", "NVO", "NFLX", "AMZN", "UL")},
+    **{t: "FINANCIAL" for t in ("JPM", "BAC", "PGR", "BRK-B", "BCS", "HSBC")},
     **{t: "REIT" for t in ("O", "PLD", "AMT")},
     **{t: "UTILITY" for t in ("NEE", "DUK")},
-    **{t: "CYCLICAL" for t in ("XOM", "FCX", "CAT", "MU", "DOW", "TSM", "ASML")},
+    **{t: "CYCLICAL" for t in ("XOM", "FCX", "CAT", "MU", "DOW", "TSM", "ASML", "SHEL", "TM")},
     **{t: "CRECIMIENTO_RENTABLE" for t in ("PLTR", "CRWD")},   # hoy no existe (D4): saldrá discrepancia
     **{t: "GROWTH_PRE_PROFIT" for t in ("RIVN", "SNOW")},
     "NVDA": "?", "SPY": "422",
