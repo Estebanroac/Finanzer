@@ -15,13 +15,7 @@ CASES = ([("panel", t) for t in fb.PANEL_TICKERS if t != "SPY"] if fb.panel_avai
 RULES = sorted(set(g.PREDICATES) | {"sin_respaldo", "ingles", "codigo_interno", "referencia_mercado", "veredicto",
                                      "base_ttm", "moneda"})
 
-_CYC = "cota del crecimiento de ciclo medio presentada como dato medido (−5% / +10%)"
-_BASIS = "'(3 años)' en una cifra de ciclo medio (CYCLICAL)"
 _known = {}
-for env, t in (("panel", "ASML"), ("panel", "DOW"), ("panel", "FCX"), ("panel", "MU"), ("panel", "XOM"),
-               ("local", "FCX")):
-    _known[("growth", env, t)] = _CYC
-    _known[("basis", env, t)] = _BASIS
 _known.update({
     ("referencia_mercado", "panel", "V"): "'múltiplos frente al sector' en la confianza con benchmark de mercado",
     ("referencia_mercado", "local", "V"): "'múltiplos frente al sector' en la confianza con benchmark de mercado",

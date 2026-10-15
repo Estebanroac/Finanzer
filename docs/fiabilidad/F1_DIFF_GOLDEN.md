@@ -114,3 +114,25 @@ técnico)…", columna MOTIVO de la tabla de confianza) y en el desplegable "Det
 CAT 8→9, MU 9→10, PLTR 8→9, NVDA 8→9, SNOW 9→10, TSM 9→10, ASML 9→10) y SNOW de `local` (9→10). Tres pierden una
 (NEE 8→7, DUK 8→7, RIVN 9→8): la tabla de confianza en llano es más corta que el texto técnico. A revisar en el
 PNG de T4.
+
+---
+
+## T3.4 — Cota del crecimiento de ciclo medio y base "(3 años)" en CYCLICAL
+
+**Causa.** En una CYCLICAL el crecimiento que puntúa es el promedio interanual de ciclo medio, acotado a
+[−5%, +10%] (`valuation.archetypes.cyclical_growth_bounds`). En la cota, el texto lo presentaba como dato medido
+("los ingresos se contraen un 5.0% anual de ciclo medio"), y el gráfico de comparación rotulaba la cifra
+"(3 años)" (catálogo #20).
+
+**Cambio.** `read_growth(cycle=True)` añade "(acotado al mínimo / máximo que admite el modelo)" cuando la cifra
+coincide con la cota de config; la comparación con el sector rotula "(ciclo medio)" en CYCLICAL. La web lee el
+mismo texto. Ninguna cifra cambia.
+
+| Juego | Ticker | Cota | Textos que cambian |
+|---|---|---|---|
+| panel | XOM | −5% (ingresos y BPA) | lecturas, intro y filas de crecimiento, resumen ejecutivo; etiqueta de comparación |
+| panel | DOW | −5% (ingresos y BPA) | ídem |
+| panel | MU | +10% (ingresos y BPA) | ídem |
+| panel | ASML | +10% (ingresos y BPA) | ídem |
+| panel | FCX | −5% (BPA) | lectura, intro y fila del BPA; etiqueta de comparación |
+| local | FCX | −5% (BPA) | ídem |

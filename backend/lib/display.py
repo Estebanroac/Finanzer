@@ -12,6 +12,7 @@ Tonos: pos, neg, warn, neu (None = sin lectura coloreada).
 
 Uso: build_display(analysis, sector_bench) -> dict serializable a JSON.
 """
+import math
 import re
 from typing import Any, Dict, Optional
 
@@ -437,6 +438,12 @@ def read_growth(g, what="los ingresos", kind="revenue", cycle=False, cagr=False)
     9b): la tasa anual compuesta a 3 años, la cifra que puntúa Crecimiento."""
     if g is None: return None
     per = "anual de ciclo medio" if cycle else ("anual en 3 años" if cagr else "interanual")
+    if cycle:   # fase 1: en la cota del modelo, la cifra no es un dato medido y el texto lo dice
+        lo, hi = cfg("valuation.archetypes.cyclical_growth_bounds")
+        if math.isclose(g, lo):
+            per += " (acotado al mínimo que admite el modelo)"
+        elif math.isclose(g, hi):
+            per += " (acotado al máximo que admite el modelo)"
     pl = what.startswith(("los ", "las "))      # concordancia: "los ingresos se contraen" / "el BPA se contrae"
     contrae, crece = ("se contraen", "crecen") if pl else ("se contrae", "crece")
     plano = "están prácticamente planos" if pl else "está prácticamente plano"

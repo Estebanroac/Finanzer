@@ -475,10 +475,13 @@ def comparison(a, D, bench, market) -> Dict[str, Any]:
     gvals = {"revenue_growth": (graw["revenue"] or {}).get("raw") if D.get("archetype") != "REIT" else None,
              "earnings_growth": (graw["eps"] or {}).get("raw")}
     ref = "del mercado" if market else "del sector"
+    # Fase 1 (#20): en CYCLICAL la cifra que puntúa es de ciclo medio, no una CAGR a 3 años.
+    per = "(ciclo medio)" if D.get("archetype") == "CYCLICAL" else "(3 años)"
     groups, better, total = [], 0, 0
     for title, keys in _CMP:
         items = []
         for key, label, higher, fmt, nak in keys:
+            label = label.replace("(3 años)", per)
             if (nak and nak in na) or (key in rows_all and rows_all[key].get("state") != "con_dato"):
                 continue
             v = gvals[key] if key in gvals else _num(km.get(key))
