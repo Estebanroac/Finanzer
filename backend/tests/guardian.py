@@ -429,9 +429,9 @@ def _structural(a, strings, pdf):
     v, cv = a.get("verdict") or {}, (d.get("cover") or {}).get("verdict") or {}
     if cv.get("text") != v.get("text") or (v.get("text") and norm(v["text"]) not in pdf):
         out.append(("veredicto", f"portada {cv.get('text')!r} / análisis {v.get('text')!r}"))
-    # #20 "TTM" en el texto ⇒ base TTM
+    # #20 "TTM" en el texto ⇒ base TTM ("sin TTM", que dice la base anual, no cuenta: UL, fase 2a)
     ttm = ((a.get("data_provenance") or {}).get("ttm") or {}).get("basis")
-    if ttm != "ttm" and "ttm" in pdf:
+    if ttm != "ttm" and re.search(r"(?<!sin )\bttm\b", pdf):
         out.append(("base_ttm", f"el PDF dice TTM con base {ttm!r}"))
     # #17 moneda
     cur = (a.get("data_provenance") or {}).get("currency") or {}

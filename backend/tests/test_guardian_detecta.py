@@ -214,6 +214,15 @@ def test_structural_rules():
     assert "moneda" in {f["rule"] for f in g.check({**cur, "display": note}, "", [])}
 
 
+def test_saying_there_is_no_ttm_is_not_a_ttm_claim():
+    """F2a (UL, base anual): "Beneficio FY2025 (sin TTM)" y "sin TTM: estados anuales" dicen lo correcto; la regla
+    solo salta cuando el texto afirma TTM."""
+    anual = {"data_provenance": {"ttm": {"basis": "anual"}}, "display": {}}
+    pdf = "beneficio fy2025 (sin ttm): reportado $10.70b · calidad de fuente (media): sin ttm: estados anuales"
+    assert "base_ttm" not in {f["rule"] for f in g.check(anual, pdf, [])}
+    assert "base_ttm" in {f["rule"] for f in g.check(anual, pdf + " · p/e (ttm) 17.0", [])}
+
+
 def test_reit_ffo_fall_cites_issuance_only_when_shares_grow():
     """T3.6 (AMT): con acciones planas la caída del FFO por acción no se atribuye a la emisión."""
     from alert_interpretations import Ctx, _growth
