@@ -167,6 +167,17 @@ def visible_texts_without_jargon_or_bad_formats(a, text):
     assert not _CODE.search(cover), cover
 
 
+def cites_growth(block, raw):
+    """La cifra que puntúa está citada: literal ('-5.0%') o con el signo dicho por el verbo ('se contraen un
+    5.0%'). Fase 1 (T3.5)."""
+    block = block or ""
+    lit = re.escape(f"{abs(raw) * 100:.1f}%")
+    by_verb = re.search(rf"se contraen? un {lit}", block) is not None
+    if raw < 0:
+        return f"-{abs(raw) * 100:.1f}%" in block or by_verb
+    return re.search(rf"(?<![-−\d.]){lit}", block) is not None and not by_verb
+
+
 def growth_texts_cite_the_scored_figure(a, text):
     d = a["display"]
     adj = {x["metric"]: x for x in a["score"]["breakdown"]["Crecimiento"]["adjustments"]}
@@ -178,10 +189,9 @@ def growth_texts_cite_the_scored_figure(a, text):
         card = next(c for c in d["summary"]["cards"] if c["key"] == "revenue_growth")
         assert card["value"] == f"{scored['raw'] * 100:.1f}"
         if d["archetype"] != "REIT":
-            txt = f"{scored['raw'] * 100:.1f}%"
-            assert txt in (d["sections"]["growth"]["intro"] or "")
+            assert cites_growth(d["sections"]["growth"]["intro"], scored["raw"]), d["sections"]["growth"]["intro"]
             exec_g = next(e["text"] for e in d["summary"]["exec_items"] if e["label"] == "CRECIMIENTO Y RETORNO")
-            assert txt in exec_g
+            assert cites_growth(exec_g, scored["raw"]), exec_g
     yoy = a["key_metrics"].get("revenue_growth")
     if yoy is not None:
         assert rows["revenue_growth_yoy"]["label"].endswith("(interanual)")

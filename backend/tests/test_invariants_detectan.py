@@ -107,3 +107,11 @@ def test_not_applicable_violation_uses_an_archetype_where_pe_does_not_apply(outp
     from settings import cfg
     a = outputs_by_env("local")[VIOLATIONS["no_text_cites_a_not_applicable_metric"][0]][0]
     assert "pe" in cfg(f"sectors.archetypes.not_applicable.{a['classification']['archetype']}")
+
+
+def test_growth_sign_by_verb_is_a_citation_but_a_wrong_verb_is_not():
+    assert inv.cites_growth("Los ingresos se contraen un 5.0% anual de ciclo medio.", -0.05)
+    assert inv.cites_growth("Los ingresos varían -5.0% anual.", -0.05)
+    assert not inv.cites_growth("Los ingresos crecen 5.0% anual.", -0.05)
+    assert not inv.cites_growth("Los ingresos se contraen un 4.0% anual.", -0.05)
+    assert not inv.cites_growth("Los ingresos se contraen un 5.0% anual.", +0.05)
