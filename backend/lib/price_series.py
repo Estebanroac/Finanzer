@@ -23,8 +23,9 @@ Cada serie lleva su estado:
 
 Nunca se devuelve una serie parcial sin avisar: el estado global (`status`) es el peor de los tres y
 `reasons` dice qué serie y por qué. Los días con volumen cero y los eventos de split que declara Yahoo
-(`splits`, ya aplicados al cierre ajustado) se listan como información: no cambian el estado. Un ratio no
-entero puede ser una escisión registrada como split (UL, Magnum, 2025-12-09: 0.888).
+(`splits`, ya aplicados al cierre ajustado) se listan como información: no cambian el estado. Cada split
+lleva `kind`: "split" o "posible_escision" (ratio que no es una fracción simple: UL, Magnum, 2025-12-09,
+0.888); market_signals marca con una nota la beta y el drawdown cuya ventana contiene una posible escisión.
 
 Sin secretos: Yahoo no usa clave. Concurrencia: este módulo descarga en serie; la pausa entre reintentos
 crece con el intento (retry_pause_s × k). La latencia de cada serie se mide y se devuelve (`latency_s`).
@@ -33,6 +34,7 @@ El descargador se inyecta (`fetcher`): en producción, yfinance; en los tests, e
 tests/fixtures/prices/ (sin red).
 """
 import time
+from fractions import Fraction
 from typing import Any, Callable, Dict, List, Optional
 
 import pandas as pd
@@ -97,6 +99,13 @@ def download(symbol: str, fetcher: Fetcher, sleep: Callable[[float], None] = tim
             "reason": f"sin dato tras {attempts} intentos ({reason})"}
 
 
+def split_kind(ratio: float) -> str:
+    """"split" si el ratio es una fracción simple (10:1, 3:2, 1:8…); si no, "posible_escision"."""
+    P = cfg("market.price_series")
+    simple = Fraction(ratio).limit_denominator(P["spin_off_max_denominator"])
+    return "split" if abs(float(simple) - ratio) <= P["spin_off_ratio_tol"] else "posible_escision"
+
+
 def check_series(frame: Optional[pd.DataFrame], calendar: Optional[pd.DatetimeIndex] = None) -> Dict[str, Any]:
     """Huecos frente al calendario del índice, saltos de un día y volumen cero → {status, reasons, ...}."""
     P = cfg("market.price_series")
@@ -113,7 +122,8 @@ def check_series(frame: Optional[pd.DataFrame], calendar: Optional[pd.DatetimeIn
     jumps = [{"date": d.strftime("%Y-%m-%d"), "change": float(ratio.loc[d] - 1)}
              for d in jump.index[jump > P["jump_threshold"]]]
     zero_vol = [d.strftime("%Y-%m-%d") for d in frame.index[frame["volume"] == 0]]
-    splits = [{"date": d.strftime("%Y-%m-%d"), "ratio": float(frame.loc[d, "split"])}
+    splits = [{"date": d.strftime("%Y-%m-%d"), "ratio": float(frame.loc[d, "split"]),
+               "kind": split_kind(float(frame.loc[d, "split"]))}
               for d in frame.index[frame["split"] != 0]] if "split" in frame else []
     reasons = []
     if len(missing) > P["max_missing_days"]:

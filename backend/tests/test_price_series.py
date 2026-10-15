@@ -216,7 +216,14 @@ def test_split_events_declared_by_yahoo_are_listed_as_information():
     co.iloc[120, 2] = 0.888          # escisión registrada como split (UL, Magnum, 2025-12-09)
     r = ps.fetch_price_series("AAA", "Technology", fetcher=_fetcher(_three(company=co)), sleep=lambda s: None)
     c = r["series"]["company"]
-    assert c["status"] == "ok" and c["splits"] == [{"date": co.index[120].strftime("%Y-%m-%d"), "ratio": 0.888}]
+    assert c["status"] == "ok" and c["splits"] == [{"date": co.index[120].strftime("%Y-%m-%d"), "ratio": 0.888,
+                                                     "kind": "posible_escision"}]
+
+
+@pytest.mark.parametrize("ratio,kind", [(10.0, "split"), (4.0, "split"), (2.0, "split"), (1.5, "split"),
+                                        (0.125, "split"), (0.888, "posible_escision"), (1.2345, "posible_escision")])
+def test_split_kind_tells_simple_splits_from_possible_spin_offs(ratio, kind):
+    assert ps.split_kind(ratio) == kind
 
 
 @needs_fixtures
@@ -224,10 +231,11 @@ def test_real_crash_is_not_flagged_as_a_split():
     """NFLX cayó un 35.1% el 2022-04-20 (resultados): es real; con el umbral simétrico de 0.5 se marcaba."""
     c = pf.replay_series("NFLX")["series"]["company"]
     assert c["status"] == "ok" and c["jumps"] == []
-    assert {"date": "2025-11-17", "ratio": 10.0} in c["splits"]   # el 10:1 viene ajustado
+    assert {"date": "2025-11-17", "ratio": 10.0, "kind": "split"} in c["splits"]   # el 10:1 viene ajustado
 
 
 @needs_fixtures
 def test_ul_spin_off_is_listed_as_a_split_event():
     c = pf.replay_series("UL")["series"]["company"]
-    assert c["status"] == "ok" and any(s["date"] == "2025-12-09" for s in c["splits"])
+    assert c["status"] == "ok"
+    assert {"date": "2025-12-09", "ratio": 0.888, "kind": "posible_escision"} in c["splits"]

@@ -20,6 +20,12 @@ max_missing_days = 0
 # caída real de NFLX del 2022-04-20 (−35.1%, magnitud 0.54, la mayor de los 36); y un "50%" no simétrico no
 # detecta un 2:1 (−50% exacto, menos si ese día sube).
 jump_threshold = 0.8
+# Eventos de split que declara Yahoo (ya aplicados al cierre ajustado): un ratio que no es una fracción simple
+# (p/q con q ≤ spin_off_max_denominator, a spin_off_ratio_tol) es una posible escisión registrada como split
+# (UL, Magnum, 2025-12-09: 0.888). No bloquea señales: la beta y el drawdown cuya ventana la contiene llevan
+# una nota (decisión del usuario, 2026-10-15; se revisa en la fase 5).
+spin_off_max_denominator = 10
+spin_off_ratio_tol = 1e-6
 
 [signals]                       # lib/market_signals.py
 sessions_per_year = 252         # convención de sesiones bursátiles de EE. UU.

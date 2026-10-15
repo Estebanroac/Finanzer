@@ -344,3 +344,43 @@ def test_modules_are_isolated_from_the_engine():
             if "price_series" in text or "market_signals" in text:
                 offenders.append(name)
     assert offenders == []
+
+
+
+# ── Escisiones registradas como split (decisión del usuario, 2026-10-15): nota, sin bloquear ──
+
+def _with_split(ratio, at):
+    close, volume = _synthetic(900)
+    f = pd.DataFrame({"close": close, "volume": volume})
+    entry = {"date": close.index[at].strftime("%Y-%m-%d"), "ratio": ratio,
+             "kind": "posible_escision" if ratio == 0.888 else "split"}
+    ps_ = _ps({"company": f, "market": f, "sector": f})
+    ps_["series"]["company"]["splits"] = [entry]
+    return ms.all_signals(ps_), entry
+
+
+def test_spin_off_inside_the_windows_adds_a_note_and_does_not_block():
+    sig, entry = _with_split(0.888, -50)
+    for s in (sig["beta"], sig["max_drawdown"]["1"], sig["max_drawdown"]["3"]):
+        assert s["status"] == "ok" and s["value"] is not None
+        assert len(s["notes"]) == 1 and entry["date"] in s["notes"][0] and "0.888" in s["notes"][0]
+    assert "notes" not in sig["momentum_12_1"] and "notes" not in sig["trend"]
+
+
+def test_spin_off_outside_a_window_adds_no_note_there():
+    sig, _ = _with_split(0.888, -600)          # dentro de 3 años, fuera de 1 año y de 104 semanas
+    assert "notes" in sig["max_drawdown"]["3"]
+    assert "notes" not in sig["max_drawdown"]["1"] and "notes" not in sig["beta"]
+
+
+def test_clean_split_adds_no_note():
+    sig, _ = _with_split(2.0, -50)
+    assert all("notes" not in s for s in (sig["beta"], *sig["max_drawdown"].values()))
+
+
+@needs_fixtures
+def test_ul_beta_and_drawdowns_carry_the_magnum_note():
+    sig = ms.all_signals(pf.replay_series("UL"))
+    for s in (sig["beta"], sig["max_drawdown"]["1"], sig["max_drawdown"]["3"]):
+        assert s["status"] == "ok" and any("2025-12-09" in n for n in s["notes"])
+    assert all("notes" not in ms.all_signals(pf.replay_series(t))["beta"] for t in ("NFLX", "NVDA", "CRWD", "NVO"))

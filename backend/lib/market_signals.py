@@ -119,7 +119,8 @@ def max_drawdown(close: pd.Series, years: int) -> Dict[str, Any]:
     trough = dd.idxmin()
     peak = window.loc[:trough].idxmax()
     return _result("ok", P, close, value=float(dd.loc[trough]), peak_date=_date(peak), trough_date=_date(trough),
-                   peak_price=float(window.loc[peak]), trough_price=float(window.loc[trough]))
+                   peak_price=float(window.loc[peak]), trough_price=float(window.loc[trough]),
+                   window_start=_date(window.index[0]))
 
 
 def relative_strength(close: pd.Series, sector_close: Optional[pd.Series]) -> Dict[str, Any]:
@@ -222,7 +223,8 @@ def beta(close: pd.Series, market_close: Optional[pd.Series], market_symbol: Opt
     raw = float(r.cov(rm)) / var_m
     corr = float(r.corr(rm))
     return _result("ok", P, close, value=raw, raw=raw, adjusted=C["blume_weight"] * raw + C["blume_prior"],
-                   r2=corr * corr, observations=len(df), first_week=_date(df.index[0]), last_week=_date(df.index[-1]))
+                   r2=corr * corr, observations=len(df), first_week=_date(df.index[0]), last_week=_date(df.index[-1]),
+                   window_start=_date(df.index[0] - pd.tseries.frequencies.to_offset(B["frequency"])))
 
 
 def _blocked(reason: str) -> Dict[str, Any]:
@@ -233,7 +235,11 @@ def all_signals(price_series: Dict[str, Any]) -> Dict[str, Any]:
     """Todas las señales de un resultado de price_series.fetch_price_series.
 
     Una serie `sin_dato` o `sospechosa` no alimenta señales: devuelven `sin_dato` con el motivo (un split sin
-    ajustar o un hueco falsearían el momentum, el drawdown y la beta)."""
+    ajustar o un hueco falsearían el momentum, el drawdown y la beta).
+
+    Una posible escisión registrada como split (price_series `splits[].kind`) NO bloquea: la beta y cada drawdown
+    cuya ventana la contiene llevan `notes` con la fecha y el ratio (decisión del usuario, 2026-10-15; se revisa
+    en la fase 5)."""
     S = price_series["series"]
 
     def usable(role):
@@ -261,4 +267,11 @@ def all_signals(price_series: Dict[str, Any]) -> Dict[str, Any]:
     out["abnormal_volume"] = abnormal_volume(co["volume"])
     out["range_52w_position"] = range_52w_position(close)
     out["beta"] = beta(close, mk["close"], S["market"]["symbol"]) if mk is not None else _blocked(why_m)
+    spin_offs = [s for s in S["company"].get("splits", []) if s.get("kind") == "posible_escision"]
+    for sig in [out["beta"], *out["max_drawdown"].values()]:
+        notes = [f"posible escisión registrada como split el {s['date']} (ratio {s['ratio']}): el cierre ajustado "
+                 f"puede no reflejarla; se revisa en la fase 5"
+                 for s in spin_offs if sig["status"] == "ok" and s["date"] > sig["window_start"]]
+        if notes:
+            sig["notes"] = notes
     return out
