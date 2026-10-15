@@ -371,17 +371,29 @@ def cards(d):
         yield f".summary.cards[{i}]", c
 
 
+def table_rows(d):
+    """Todas las filas de las tablas de las secciones: (ruta, fila). Fase 1: la regla #10 vale también aquí
+    (decisión del usuario, registro #14)."""
+    for sec, blk in ((d.get("sections") or {}).items()):
+        for k, rows in (blk or {}).items() if isinstance(blk, dict) else ():
+            if isinstance(rows, list):
+                for i, r in enumerate(rows):
+                    if isinstance(r, dict) and "state" in r and "value" in r:
+                        yield f".sections.{sec}.{k}[{i}]", r
+
+
 def _structural(a, strings, pdf):
     out = []
     km = a.get("key_metrics") or {}
     d = a.get("display") or {}
     # #10 lo que no aplica no se cita con cifra (fase 1: faltaba; AMT y SNOW pintaban "No aplica" y el valor)
-    for p, c in cards(d):
-        na = c.get("state") == "no_aplica" or norm(str(c.get("pill") or "")) == "no aplica"
+    for p, c in list(cards(d)) + list(table_rows(d)):
+        na = (c.get("state") == "no_aplica" or norm(str(c.get("pill") or "")) == "no aplica"
+              or norm(str(c.get("reading") or "")).startswith("no aplica"))
         if na and re.search(r"\d", f"{c.get('value') or ''}"):
             out.append(("no_aplica_con_cifra", f"{p} {c.get('label')!r}: 'no aplica' con valor {c.get('value')!r}"))
         # ningún múltiplo negativo se presenta como nivel en una tarjeta (PLTR "Deuda neta/EBITDA −3.45x")
-        if re.match(r"\s*[-−]\s*\d[\d.,]*\s*x\s*$", f"{c.get('value') or ''}{c.get('unit') or ''}"):
+        if p.startswith((".cover", ".summary")) and re.match(r"\s*[-−]\s*\d[\d.,]*\s*x\s*$", f"{c.get('value') or ''}{c.get('unit') or ''}"):
             out.append(("ratio_negativo_en_tarjeta", f"{p} {c.get('label')!r}: {c.get('value')!r}"))
     # #6 referencia: con el perfil market, el texto dice "mercado", no "sector".
     if (a.get("benchmark") or {}).get("profile") == "market":

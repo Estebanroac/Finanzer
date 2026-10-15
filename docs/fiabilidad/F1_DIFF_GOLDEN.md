@@ -341,3 +341,22 @@ actual / justificado. **Cambio.** "95% del P/B justificado (0.73x frente a 0.76x
 | panel | JPM, BAC, PGR, BRK-B | `score.breakdown.Valoración.adjustments[].value`, `display.sections.valuation.rows[].value`, `display.sections.institutional.breakdown…items[].value`, `display.charts.valuation.scored[].value_txt`: "1.32× justificado" → "132% del P/B justificado (2.46x frente a 1.87x)" (JPM) |
 | local | JPM | ídem |
 | panel | BCS | (golden nuevo) "98% del P/B justificado (0.73x frente a 0.74x)" y "94% del P/TBV justificado (0.81x frente a 0.87x)" (captura del 15-oct a las 10:11; el informe de producción decía 0.95×) |
+
+---
+
+# Tras la parada 3 (golden de P3.1–P3.9 regenerados en `b25e75e`)
+
+## P3.10 — Filas de tabla "No aplica" sin cifra (decisión del usuario, registro #14)
+
+**Regla que cambia.** Desde la etapa 9b, la fila que no aplica al arquetipo mostraba la cifra de la empresa junto a
+"No aplica" (FCF yield de BCS 29.31%). Por decisión del usuario, misma regla que las tarjetas: "—" y el motivo en la
+lectura. Se aplica en `display._row` (toda fila con estado `no_aplica` o lectura "No aplica…"); la brecha también
+pasa a "—" si la había. El guardián extiende la regla #10 a las filas de las tablas (con caso en
+`test_guardian_detecta.py`); `test_bank_pdf_never_reads_pe_or_fcf_as_primary` exige ahora "—" en el valor.
+
+| Juego | Tickers | Campos |
+|---|---|---|
+| panel | AMT, ASML, BAC, BCS, BRK-B, DOW, DUK, FCX, JPM, MU, NEE, O, PGR, PLD, RIVN, SNOW, XOM | `display.sections.valuation.rows[].value` (76) y `display.sections.profitability.rows[].value` (26): cifra → "—" |
+| local | FCX, JPM, O, SNOW | ídem (19 + 13) |
+
+Solo presentación: ninguna cifra del análisis, puntuación, arquetipo, nivel ni confianza cambia.

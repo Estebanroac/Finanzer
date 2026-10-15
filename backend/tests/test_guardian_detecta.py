@@ -148,6 +148,11 @@ def test_not_applicable_card_with_a_figure_fails():
     rules = lambda d: {f["rule"] for f in g.check({"display": d}, "", [])}
     assert "no_aplica_con_cifra" in rules(bad) and "no_aplica_con_cifra" in rules(kpi)
     assert "no_aplica_con_cifra" not in rules(ok)
+    row = {"sections": {"valuation": {"rows": [{"key": "fcf_yield", "label": "FCF Yield", "value": "29.31%",
+                                                "reading": "No aplica a bancos y aseguradoras", "state": "no_aplica"}]}}}
+    assert "no_aplica_con_cifra" in rules(row)                       # BCS: la tabla también (registro #14)
+    row["sections"]["valuation"]["rows"][0]["value"] = "—"
+    assert "no_aplica_con_cifra" not in rules(row)
 
 
 def test_position_in_52w_range_is_between_0_and_100():

@@ -607,6 +607,10 @@ def _rd(r):
 
 
 def _row(key, label, value, reading="—", tone=None, state="con_dato", bench=None, gap=None, text=None):
+    # Fase 1 (decisión del usuario, registro #14): lo que no aplica no se cita con cifra, tampoco en las tablas
+    # (antes, etapa 9b, la fila mostraba la cifra con "No aplica": FCF yield de BCS 29.31%). "—" y el motivo.
+    if state == "no_aplica" or str(reading or "").startswith("No aplica"):
+        value, gap = NO_DATA, (None if gap is None else "—")
     return {"key": key, "label": label, "value": value, "bench": bench, "gap": gap,
             "reading": reading, "tone": tone, "state": state, "text": text}
 

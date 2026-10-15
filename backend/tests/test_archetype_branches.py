@@ -155,7 +155,8 @@ def test_pdf_shows_archetype_and_reason(outputs_by_env):
 
 
 def test_bank_pdf_never_reads_pe_or_fcf_as_primary(outputs_by_env):
-    """En el PDF de un banco P/E, P/FCF y FCF yield solo aparecen como "No aplica"."""
+    """En el PDF de un banco P/E, P/FCF y FCF yield solo aparecen como "No aplica", y sin cifra: la regla de la
+    etapa 9b (cifra + "No aplica") cambia por decisión del usuario en la fase 1 (registro #14): "—" y el motivo."""
     with fb.replay(fb.fixtures_dir("local")) as store:
         trv = fb.run_analysis("TRV", store)
         trv_pdf = fb.build_pdf_bytes(trv, fb.capture_date(store.meta["TRV"]))
@@ -167,6 +168,7 @@ def test_bank_pdf_never_reads_pe_or_fcf_as_primary(outputs_by_env):
                 # fase 1 (T4): la lectura larga se parte en líneas dentro de su columna
                 assert "No aplica a bancos y aseguradoras" in " ".join(" ".join(lines[i + 1:i + 6]).split()), \
                     (env, ln, lines[i:i + 6])
+                assert lines[i + 1].strip() == "—", (env, ln, lines[i:i + 3])   # sin la cifra de la empresa
         txt = "\n".join(lines)
         assert "ATRACTIVO DEL PRECIO\nP/B frente a ROE" in txt, env
         cover = txt.split("===== página 2")[0]
