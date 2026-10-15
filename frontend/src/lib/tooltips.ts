@@ -285,6 +285,11 @@ export const DEFINITIONS: Record<string, Definition> = {
     description: "Porcentaje de los activos financiado con deuda.",
     formula: "Deuda total / activos totales",
   },
+  net_cash: {
+    title: "Caja neta",
+    description: "La caja supera a la deuda total: la empresa no tiene deuda neta. Importe = caja − deuda total.",
+    formula: "Caja − deuda total",
+  },
   net_debt_to_ebitda: {
     title: "Deuda neta / EBITDA",
     description: "Años de EBITDA que harían falta para pagar la deuda neta (deuda menos caja).",

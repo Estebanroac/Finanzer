@@ -913,6 +913,12 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     _k_common = [_k(price, "price", "Precio", "price"), _k(km.get("market_cap"), "money", "Market cap", "market_cap")]
     _beta = _k(km.get("beta"), "num", "Beta bruta", "beta")   # la ajustada (Blume) va en el detalle del WACC
     _nde = _k(km.get("net_debt_to_ebitda"), "mult", "Deuda neta/EBITDA", "net_debt_to_ebitda")
+    # Fase 1: un múltiplo negativo no es un nivel. Con caja neta, la tarjeta dice "Caja neta" y su importe (como la
+    # lectura de la fila de Solidez); con EBITDA negativo y deuda neta, sin cifra.
+    if (km.get("net_debt_to_ebitda") or 0) < 0:
+        _nd = km.get("net_debt")
+        _nde = (_k(-_nd, "money", "Caja neta", "net_cash") if (_nd is not None and _nd < 0)
+                else (NO_DATA, "Deuda neta/EBITDA", "net_debt_to_ebitda", None))
     if archetype == "FINANCIAL":
         _k_arch = [_k(xm.get("pb"), "mult", "P/B", "pb"), _k(km.get("roe"), "pct", "ROE", "roe"),
                    _k(km.get("net_margin"), "pct", "Margen neto", "net_margin"),

@@ -160,6 +160,17 @@ def test_position_in_52w_range_is_between_0_and_100():
                                  [claim("pos52")], ok)
 
 
+def test_negative_multiple_on_a_card_fails():
+    rules = lambda d: {f["rule"] for f in g.check({"display": d}, "", [])}
+    assert "ratio_negativo_en_tarjeta" in rules({"cover": {"kpis": [
+        {"key": "net_debt_to_ebitda", "label": "Deuda neta/EBITDA", "value": "-3.45x", "state": "con_dato"}]}})
+    assert "ratio_negativo_en_tarjeta" in rules({"summary": {"cards": [
+        {"key": "ev_ebitda", "label": "EV/EBITDA", "value": "-5.4", "unit": "x", "state": "con_dato"}]}})
+    assert "ratio_negativo_en_tarjeta" not in rules({"cover": {"kpis": [
+        {"key": "net_cash", "label": "Caja neta", "value": "$9.04B", "state": "con_dato"},
+        {"key": "net_margin", "label": "Margen neto", "value": "-20.10%", "state": "con_dato"}]}})
+
+
 def test_structural_rules():
     v = {"text": "Calidad sólida · precio razonable"}
     assert "veredicto" in {f["rule"] for f in g.check(

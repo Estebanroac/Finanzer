@@ -380,6 +380,9 @@ def _structural(a, strings, pdf):
         na = c.get("state") == "no_aplica" or norm(str(c.get("pill") or "")) == "no aplica"
         if na and re.search(r"\d", f"{c.get('value') or ''}"):
             out.append(("no_aplica_con_cifra", f"{p} {c.get('label')!r}: 'no aplica' con valor {c.get('value')!r}"))
+        # ningún múltiplo negativo se presenta como nivel en una tarjeta (PLTR "Deuda neta/EBITDA −3.45x")
+        if re.match(r"\s*[-−]\s*\d[\d.,]*\s*x\s*$", f"{c.get('value') or ''}{c.get('unit') or ''}"):
+            out.append(("ratio_negativo_en_tarjeta", f"{p} {c.get('label')!r}: {c.get('value')!r}"))
     # #6 referencia: con el perfil market, el texto dice "mercado", no "sector".
     if (a.get("benchmark") or {}).get("profile") == "market":
         # Solo frases de comparación (la nota de referencia explica el sector de Yahoo y es legítima).

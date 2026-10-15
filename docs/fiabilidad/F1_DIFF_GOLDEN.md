@@ -226,3 +226,21 @@ en el 101% del rango". **Cambio.** En `main.py`, máximo = max(máximo, precio) 
 | panel | XOM | `key_metrics.price_52w_high` y `price_history.52w_high` 176.41 → 177.06; `data_provenance.fields.key_metrics.price_52w_high` (nuevo); posición 101% → 100% en la lectura, el rango de la sección 04, el resumen ejecutivo y la tarjeta de precio ("+0.4%" → "0.0%" desde el máximo) |
 
 Ningún otro ticker del panel ni de `local` tenía el precio fuera de su rango.
+
+## P3.3 — Ningún múltiplo negativo como nivel en una tarjeta (caja neta en la portada)
+
+**Causa.** La portada pintaba "Deuda neta/EBITDA −3.45x" (PLTR) como si fuera un nivel: con caja neta el ratio sale
+negativo y no se sitúa en la escala. **Cambio.** Con deuda neta < 0, la tarjeta pasa a "Caja neta" con su importe
+(|deuda neta|), la misma lectura que la fila de Solidez; con EBITDA negativo y deuda neta, "—". Guardián: regla
+`ratio_negativo_en_tarjeta` sobre todas las tarjetas de portada y resumen (con caso en `test_guardian_detecta.py`).
+Tooltip `net_cash` en la web.
+
+| Juego | Ticker | `display.cover.kpis[6]` (key · label · value) |
+|---|---|---|
+| panel | PLTR | `net_debt_to_ebitda` · "Deuda neta/EBITDA" · "−3.45x" → `net_cash` · "Caja neta" · "$9.20B" |
+| panel | TSM | "−0.78x" → "$79.47B" |
+| panel | CRWD | "−19.67x" → "$4.19B" |
+| panel | MSFT | "−0.10x" → "$19.82B" |
+| panel | MU, NVDA, ASML | ídem (−0.29x, −0.12x, −0.40x → su caja neta) |
+
+La fila de Solidez (tabla) conserva "−3.45x" con la lectura "Caja neta"; el arreglo pedido es para las tarjetas.
