@@ -104,12 +104,13 @@ def _get_json(url, timeout):
 
 
 def _robust_get(url, timeout):
-    """`panel_run._get` sin caerse por un timeout o una conexión cortada: status 0 (lo marca como error)."""
+    """`panel_run._get` sin caerse por un timeout o una conexión cortada: status 599 (no 0, que
+    `panel_run.summarize` leería como 200)."""
     t0 = time.monotonic()
     try:
         return _orig_get(url, timeout)
     except (urllib.error.URLError, socket.timeout, TimeoutError, ConnectionError) as e:
-        return 0, json.dumps({"detail": f"sin respuesta: {type(e).__name__}"}).encode(), time.monotonic() - t0
+        return 599, json.dumps({"detail": f"sin respuesta: {type(e).__name__}"}).encode(), time.monotonic() - t0
 
 
 _orig_get = pr._get

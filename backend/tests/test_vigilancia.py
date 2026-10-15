@@ -188,3 +188,15 @@ def test_compare_no_toca_las_corridas():
     before = copy.deepcopy((prev, cur))
     _compare(prev, cur)
     assert (prev, cur) == before
+
+
+def test_timeout_no_tumba_la_corrida_y_queda_como_error(monkeypatch):
+    import socket
+
+    def boom(url, timeout):
+        raise socket.timeout("lento")
+    monkeypatch.setattr(vg, "_orig_get", boom)
+    status, body, _ = vg._robust_get("https://x/api/analysis/KO", 1)
+    assert status == 599 and b"sin respuesta" in body
+    row = vg.pr.summarize("KO", {"__http_error__": status, "detail": "sin respuesta"})
+    assert vg.errors_of({"rows": {"KO": row}}) == [("KO", "HTTP 599: sin respuesta")]
