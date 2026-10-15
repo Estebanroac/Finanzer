@@ -56,7 +56,8 @@ CONCEPTS: Dict[str, Dict[str, Any]] = {
     "tax_provision": dict(kind="flow", sign="+", engine="normalize (Tax Provision) · tasa efectiva WACC",
                           us=["IncomeTaxExpenseBenefit"], ifrs=["IncomeTaxExpenseContinuingOperations"]),
     "net_income": dict(kind="flow", sign="+", engine="FS.net_income · ttm netIncome · Piotroski · FY net_income",
-                       us=["NetIncomeLoss", "NetIncomeLossAvailableToCommonStockholdersBasic", "ProfitLoss"],
+                       us=["NetIncomeLoss", "NetIncomeLossAvailableToCommonStockholdersBasic",
+                           "NetIncomeLossAvailableToCommonStockholdersDiluted"],
                        ifrs=["ProfitLossAttributableToOwnersOfParent", "ProfitLoss"]),
     "net_income_minorities": dict(kind="flow", sign="+", engine="(definición: ROE del accionista ordinario)",
                                   us=["NetIncomeLossAttributableToNoncontrollingInterest"],
@@ -171,6 +172,27 @@ CONCEPTS: Dict[str, Dict[str, Any]] = {
                                      us=["ShareBasedCompensation", "AllocatedShareBasedCompensationExpense"],
                                      ifrs=["AdjustmentsForSharebasedPayments",
                                            "ExpenseFromSharebasedPaymentTransactionsWithEmployees"]),
+}
+
+# Conceptos que no son un campo del motor pero que T3 necesita para explicar diferencias de definición (deuda con
+# papel comercial y arrendamientos, capex con intangibles, beneficio del accionista ordinario sin cupones AT1,
+# beneficio de las operaciones continuadas). Van en los extractos; no en la tabla de cobertura.
+EXTRACT_EXTRA = {
+    "us": ["OtherShortTermBorrowings", "OperatingLeaseLiability", "OperatingLeaseLiabilityCurrent",
+           "OperatingLeaseLiabilityNoncurrent", "FinanceLeaseLiability", "FinanceLeaseLiabilityCurrent",
+           "FinanceLeaseLiabilityNoncurrent", "PaymentsToAcquireIntangibleAssets",
+           "NetIncomeLossAvailableToCommonStockholdersDiluted", "IncomeLossFromContinuingOperations",
+           "StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest", "CommonStockDividendsPerShareDeclared",
+           "LongTermDebtCurrent", "LongTermDebtNoncurrent", "LongTermDebt", "CommercialPaper", "ShortTermBorrowings",
+           "CashCashEquivalentsAndShortTermInvestments", "PaymentsToAcquireEquipmentOnLease", "PaymentsToDevelopSoftware",
+           "PaymentsForSoftware", "NotesPayable", "LoansPayable", "SeniorNotes", "UnsecuredDebt", "SecuredDebt",
+           "LongTermDebtAndCapitalLeaseObligations", "LongTermDebtAndCapitalLeaseObligationsCurrent"],
+    "ifrs": ["LeaseLiabilities", "CurrentLeaseLiabilities", "NoncurrentLeaseLiabilities",
+             "PurchaseOfIntangibleAssetsClassifiedAsInvestingActivities",
+             "ProfitLossAttributableToOrdinaryEquityHoldersOfParentEntity", "ProfitLossFromContinuingOperations",
+             "Equity", "CurrentBorrowingsAndCurrentPortionOfNoncurrentBorrowings",
+             "NoncurrentPortionOfNoncurrentBorrowings", "ShorttermBorrowings", "LongtermBorrowings", "Borrowings",
+             "SubordinatedLiabilities", "CapitalReserve"],
 }
 
 # Campos del motor que NO salen de unos estados con XBRL: se derivan de otros o son de mercado.

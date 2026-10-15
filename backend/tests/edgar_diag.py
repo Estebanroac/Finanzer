@@ -40,6 +40,7 @@ def extract(facts, tax):
     keep = {"dei": {c for s in E.CONCEPTS.values() for c in s.get("dei", [])}, tax: set()}
     for s in E.CONCEPTS.values():
         keep[tax].update(s.get("us" if tax == "us-gaap" else "ifrs", []))
+    keep[tax].update(E.EXTRACT_EXTRA["us" if tax == "us-gaap" else "ifrs"])
     out = {"cik": facts.get("cik"), "entityName": facts.get("entityName"), "taxonomy": tax, "facts": {}}
     for tx, concepts in keep.items():
         for c in sorted(concepts):
