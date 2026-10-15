@@ -146,3 +146,18 @@ def test_structural_rules():
     cur = {"data_provenance": {"currency": {"statements": "TWD", "price": "USD", "converted": True}}}
     note = {"cover": {"currency_note": "Estados en EUR convertidos a USD"}}
     assert "moneda" in {f["rule"] for f in g.check({**cur, "display": note}, "", [])}
+
+
+def test_reit_ffo_fall_cites_issuance_only_when_shares_grow():
+    """T3.6 (AMT): con acciones planas la caída del FFO por acción no se atribuye a la emisión."""
+    from alert_interpretations import Ctx, _growth
+    from settings import cfg
+    thr = cfg("thresholds.growth.per_share_min_shares_cagr")
+
+    def text(sh):
+        ctx = Ctx({}, {"revenue_cagr_3y": -0.038}, sector="real estate", real_sector="Real Estate",
+                  archetype="REIT", archetype_values={"shares_cagr_3y": sh})
+        return _growth(ctx)["detail"] if isinstance(_growth(ctx), dict) else str(_growth(ctx))
+    assert "emisión de acciones" in text(thr + 0.01)
+    assert "emisión de acciones" not in text(0.0005) and "+0.05%" in text(0.0005)
+    assert "se reduce un 1.50%" in text(-0.015)

@@ -563,6 +563,11 @@ def _earnings_quality(ctx: Ctx):
 
 
 # ── CRECIMIENTO ───────────────────────────────────────────────────────────
+def _reit_issuing(ctx: Ctx) -> bool:
+    sh = ctx.xv.get("shares_cagr_3y")
+    return sh is not None and sh >= cfg("thresholds.growth.per_share_min_shares_cagr")
+
+
 def _growth(ctx: Ctx):
     g3 = ctx.c.get("revenue_cagr_3y")
     if g3 is None:
@@ -570,13 +575,24 @@ def _growth(ctx: Ctx):
     if ctx.archetype == CYCLICAL and ctx.xv.get("revenue_growth_normalized") is not None:
         return None   # cíclica: el crecimiento es de ciclo medio, no una señal interanual
     if ctx.archetype == REIT:   # el dato es el CAGR 3 años del FFO por acción, no ingresos interanuales
+        # Fase 1: la emisión de acciones solo se cita si las acciones crecen de verdad (el mismo umbral con el que
+        # el motor pasa a medir por acción); con acciones planas, la caída es del propio FFO (AMT: +0.05% anual).
+        sh = ctx.xv.get("shares_cagr_3y")
+        issuing = _reit_issuing(ctx)
         if growth_for_bands(g3) < 0:
+            why = ("la emisión de acciones crece más deprisa que los fondos de operación, y diluye al accionista"
+                   if issuing else
+                   "son los propios fondos de operación los que caen" +
+                   ("" if sh is None else
+                    f" (el número de acciones se reduce un {abs(sh) * 100:.2f}% anual)" if sh < 0 else
+                    f" (las acciones apenas varían: {sh * 100:+.2f}% anual)"))
             return _sig("warning", "Crecimiento", f"FFO por acción en descenso — {_pct(g3)} anual (3 años)",
-                        f"El FFO por acción cae un {_pct(abs(g3))} anual en tres años: la emisión de acciones crece más "
-                        "deprisa que los fondos de operación, y diluye al accionista.", _A["growth"]["w_contraction"])
+                        f"El FFO por acción cae un {_pct(abs(g3))} anual en tres años: {why}.",
+                        _A["growth"]["w_contraction"])
         if g3 > _A["growth"]["strong_above"]:
             return _sig("strength", "Crecimiento", f"FFO por acción en fuerte alza — +{_pct(g3)} anual (3 años)",
-                        f"El FFO por acción crece {_pct(g3)} anual en tres años, por encima de la emisión de acciones.",
+                        f"El FFO por acción crece {_pct(g3)} anual en tres años"
+                        + (", por encima de la emisión de acciones." if issuing else "."),
                         _A["growth"]["w_strong"])
         return None
     if growth_for_bands(g3) < 0:   # entre −2% y 0: plano, no contracción
@@ -712,7 +728,7 @@ def _signal_claims(name: str, ctx: "Ctx") -> List[dict]:
         return [_claim("runway")]
     if name == "_growth":   # en REIT, "la emisión de acciones ... diluye al accionista": afirma dilución
         return [_claim("growth", value=ctx.c.get("revenue_cagr_3y"), cagr=True, what="ingresos"),
-                *([_claim("share_dilution_3y")] if ctx.archetype == REIT else [])]
+                *([_claim("share_dilution_3y")] if ctx.archetype == REIT and _reit_issuing(ctx) else [])]
     if name == "_eps_growth":
         return [_claim("growth", value=ctx.c.get("eps_cagr_3y"), cagr=True, what="bpa")]
     if name == "_pe":

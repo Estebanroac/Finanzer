@@ -136,3 +136,28 @@ mismo texto. Ninguna cifra cambia.
 | panel | ASML | +10% (ingresos y BPA) | ídem |
 | panel | FCX | −5% (BPA) | lectura, intro y fila del BPA; etiqueta de comparación |
 | local | FCX | −5% (BPA) | ídem |
+
+---
+
+## T3.6 — Resto de hallazgos del guardián (tres causas, tres commits)
+
+### a) V: "múltiplos frente al sector" con referencia de mercado (catálogo #6) — `90ab32a`
+La tabla de confianza nombraba el método con el nombre interno del motor. Con `benchmark.profile = market`, la
+presentación lo llama "múltiplos frente al mercado". Cambia `display.confidence.dimensions[0].text` en V (panel y
+`local`) y su línea del PDF. Solo texto.
+
+### b) BRK-B: "TTM" con base anual (catálogo #20) — `f6f0b36`
+Sin cuatro trimestres consecutivos la base es el último ejercicio (`data_provenance.ttm.basis = anual`). La etiqueta
+del P/E pasa a "P/E (último ejercicio)" y la metodología del PDF a "ratios del último ejercicio". Campos nuevos en
+todos los tickers (aditivos): `display.pe_label` y `display.methodology.ratios_text`; en BRK-B cambian
+`sections.valuation.rows[0].label` y `charts.valuation.multiples[0].label`. Solo texto.
+
+### c) AMT: caída del FFO por acción atribuida a la emisión con las acciones planas
+El texto decía "la emisión de acciones crece más deprisa que los fondos de operación, y diluye al accionista" con
+las acciones a +0.05% anual en 3 años. La emisión solo se cita si las acciones crecen al menos el umbral con el que
+el motor pasa a medir por acción (`thresholds.growth.per_share_min_shares_cagr`, 2%); si no, "son los propios
+fondos de operación los que caen (las acciones apenas varían: +0.05% anual)". Cambian `alerts.warnings[0].detail`
+y su copia en `display.sections.alerts` de AMT. O y PLD sin cambio. Solo texto.
+
+**Estado tras T3:** guardián con 0 fallos y 0 xfail en los 30 del panel y los 6 de `local`; invariantes del panel
+sin xfail. Lo único rojo de la suite es la comparación con los golden (pendiente de aprobación en T5).

@@ -15,12 +15,8 @@ CASES = ([("panel", t) for t in fb.PANEL_TICKERS if t != "SPY"] if fb.panel_avai
 RULES = sorted(set(g.PREDICATES) | {"sin_respaldo", "ingles", "codigo_interno", "referencia_mercado", "veredicto",
                                      "base_ttm", "moneda"})
 
-_known = {}
-_known.update({
-    ("share_dilution_3y", "panel", "AMT"): "atribuye la caída del FFO por acción a la emisión de acciones con las "
-                                           "acciones planas en 3 años (+0.05% anual)",
-})
-PANEL_KNOWN_FAILURES = _known
+# Vacía desde la fase 1 (T3.1–T3.6): los 85 fallos con los que entró el guardián en rojo (T2) están arreglados.
+PANEL_KNOWN_FAILURES = {}
 
 
 @pytest.fixture(scope="session")
