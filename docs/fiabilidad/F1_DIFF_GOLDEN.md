@@ -317,3 +317,16 @@ yield indicado por debajo de lo pagado con razón (PGR: 0.19% frente a 6.6%).
 | panel | BCS | ídem (golden nuevo) |
 
 Ningún otro ticker de panel ni de `local` cambia.
+
+## P3.8 — "Dividendo sostenible" de la salud bancaria evalúa y cita el payout
+
+**Causa.** El componente se activaba con el dividend yield y lo citaba ("Dividendo sostenible (50.46%)" en BCS),
+aunque lo que evalúa es el payout. **Cambio.** Se activa con el payout y lo cita ("Dividendo sostenible (payout
+27%)", "Payout alto (payout 70% > 60%)"); sin payout no se evalúa. Mismos puntos en todos los bancos del panel.
+
+| Juego | Ticker | Campos |
+|---|---|---|
+| panel | JPM, BAC | `financial_health.details[3].detail` y su copia en `score.breakdown.Solidez Financiera`: "(1.97%)" / "(2.49%)" → "(payout 27%)" / "(payout 32%)" |
+| panel | PGR | "Payout ratio alto (70% > 60%)" → "Payout alto (payout 70% > 60%)" |
+| local | JPM | "(1.98%)" → "(payout 27%)" |
+| panel | BCS | (golden nuevo) "Dividendo sostenible (payout 28%)" en lugar de "(50.46%)" |

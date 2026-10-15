@@ -369,22 +369,23 @@ def financial_health_score(
         details.append({"metric": "Book Value Growth", "points": pts, "max": H["book_value_growth_points"], "detail": detail, "severity": severity})
     
     # 5. Dividend (0-1 punto) - Bancos suelen pagar dividendos
-    if dividend_yield is not None and dividend_yield > 0:
+    # Fase 1: se evalúa y se cita el PAYOUT (antes citaba el dividend yield: BCS "Dividendo sostenible (50.46%)" con
+    # un yield imposible y un payout de 28%). Sin payout no hay nada que evaluar: el componente no cuenta.
+    if payout_ratio is not None and payout_ratio != 0:
         max_possible += H["dividend_points"]
         # Un payout negativo (dividendos pagados con ganancias negativas, año en
         # pérdidas) NO es sostenible: antes `payout < 0.60` lo daba por sostenible.
-        _sustainable = 0 <= payout_ratio < b["payout_sustainable"] if payout_ratio is not None else True
-        if _sustainable:
+        if 0 <= payout_ratio < b["payout_sustainable"]:
             pts = H["dividend_points"]
-            detail = f"Dividendo sostenible ({dividend_yield*100:.2f}%)"
+            detail = f"Dividendo sostenible (payout {payout_ratio:.0%})"
             severity = "excellent"
-        elif payout_ratio is not None and payout_ratio < 0:
+        elif payout_ratio < 0:
             pts = 0
-            detail = f"Dividendo insostenible (pagado con pérdidas)"
+            detail = f"Dividendo insostenible (pagado con pérdidas; payout {payout_ratio:.0%})"
             severity = "weak"
         else:
             pts = 0
-            detail = f"Payout ratio alto ({payout_ratio*100:.0f}% > 60%)"
+            detail = f"Payout alto (payout {payout_ratio:.0%} > {b['payout_sustainable']:.0%})"
             severity = "moderate"
         score += pts
         details.append({"metric": "Dividendo", "points": pts, "max": H["dividend_points"], "detail": detail, "severity": severity})
