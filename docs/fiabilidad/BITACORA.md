@@ -17,12 +17,12 @@
 
 | Campo | Valor |
 |---|---|
-| Fase en curso | **Fase 1 ✅ cerrada** (desplegada `4e90ff6`, cierre aprobado el 2026-10-15, registro #16). Fase 2 sin empezar |
-| Rama de trabajo | `fiabilidad/f1-visible` (desde `main` local `0f798c8`; registro #7) |
-| Producción | `9e78f3b` (etapas 11b + 9c), verificado el 2026-10-13. Rollback: `a6482f9` |
-| `main` local | merge de la fase 0 sobre `f9d6c30` (ver `git log`), **por delante de origin, sin push**: se sube con el deploy de la fase 1 (pushear redespliega) |
-| Último cierre de sesión | 2026-10-15 · operador F1 (ver registro #9) |
-| Bloqueos | Ninguno |
+| Fase en curso | **Fase 2a 🛑 detenida en el punto de parada 1** (T0 y T2 hechas; T1 pendiente del cierre de Nueva York). Registro #17 |
+| Rama de trabajo | `fiabilidad/f2a-medir` (desde `main` = `8ed57a0`), sin push |
+| Producción | `8ed57a0` (fase 1 + documentación). Rollback de código: `9e78f3b` |
+| `main` local | = `origin/main` (`8ed57a0`) |
+| Último cierre de sesión | 2026-10-15 · operador F2a (ver registro #17) |
+| Bloqueos | Ninguno; T1 (captura de HSBC, SHEL, UL y TM) espera al cierre de Nueva York |
 
 ## Fases
 
@@ -30,7 +30,7 @@
 |---|---|---|---|---|---|
 | 0 Congelar y medir | ✅ cerrada (2026-10-14) | `fiabilidad/f0-panel` → `main` local | `0a8ac66`..`0ae214a` (9 commits) + cierre (registro #6) | sí, 2026-10-14 (registro #6) | no aplica (se sube con el deploy de la fase 1) |
 | 1 Lo visible hoy | ✅ cerrada | `fiabilidad/f1-visible` | `d676b22` (D8), `21c3f5f`, `0ebba81` (guardián), `d63de70`…`d7393fd` (T3, 8 commits), `7f32070`, `e3161d2`, `c369575` (T4) | — | — |
-| 2 Verdad de datos (EDGAR) | 🔒 espera F1 | — | — | — | — |
+| 2 Verdad de datos (EDGAR) | 🛑 2a: parada 1 (T2) | `fiabilidad/f2a-medir` | `8d3a5cc` (planificador), `356f49c` (T0), `0b82c13`, `aa42104` (T2) | — | — (T0 se despliega en la parada 2 si se aprueba) |
 | 3 Método por arquetipo | 🔒 espera F2 | — | — | — | — |
 | 4 Escalas y confianza | 🔒 espera F3 | — | — | — | — |
 | 5 Técnica y conductual | 🔒 espera F4 | — | — | — | — |
@@ -641,3 +641,46 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
   registro y las filas del planificador). Sin cambios de código.
 - **Abierto / siguiente paso:** fase 2 (no empezada). Rollback de producción: `9e78f3b`.
 
+### #17 · 2026-10-15 · operador · Fase 2a (T0 y T2 hechas; detenida en el punto de parada 1)
+- **Objetivo de la sesión:** fase 2a (medir): T0, T1 y T2 hasta el punto de parada 1.
+- **Hecho:**
+  - **T0:**
+    - `8d3a5cc`: ediciones del planificador sobre D2 y D7, tal cual;
+    - `356f49c`: `/api/health` devuelve `commit` desde `RENDER_GIT_COMMIT`, `null` en local, con test.
+  - **User-Agent de la SEC:** guardado en el Llavero (`finanzer-sec-ua`) mediante un diálogo del sistema. No aparece
+    en el chat ni en ningún archivo.
+  - **T2:**
+    - `0b82c13`: `tests/edgar.py`, `tests/edgar_diag.py`, `tests/test_edgar_tools.py` y los extractos por ticker en
+      `tests/fixtures/edgar/` (7.9 MB; la caché cruda `raw/`, de 127 MB, queda fuera de git);
+    - `aa42104`: `F2_EDGAR_DIAGNOSTICO.md`.
+  - **Hallazgos de T2:**
+    - los 36 tickers tienen CIK (SPY sin estados) → **ningún caso D7 en el panel**;
+    - factores ADR confirmados en el 20-F y en el F-6: TSM 5, NVO 1, BCS 4, HSBC 5, SHEL 2, UL 1, TM 10; ASML no es
+      ADR;
+    - el motor aplica 4.154 en BCS. La hipótesis es un desfase de fechas de las acciones; se mide en T3;
+    - **contradicen el prompt:**
+      - BCS, HSBC, SHEL y UL publican semestrales con XBRL en 6-K;
+      - `companyfacts` no incorpora el 20-F de 2025 de TSM, el de FY2026 de TM ni los 6-K de 2026, aunque llevan
+        XBRL; se leen de la instancia del filing;
+      - XOM cambió de CIK (2115436; la historia está en 34088);
+    - perímetro de UL confirmado: ingresos de 2024 reexpresados de 60,761 a 52,479 millones de EUR.
+- **Verificación:**
+  - `python3 tests/edgar_diag.py --markdown` → "descarga companyfacts: mediana 0.42s (máx 0.91s), tamaño mediana
+    3.6 MB (máx 8.0 MB)";
+  - `../.venv313/bin/python -m pytest tests -q` → "2923 passed, 1 skipped in 55.35s";
+  - búsqueda del User-Agent y del correo en `backend/tests` y `docs` → 0 archivos.
+- **Decisiones tomadas por el usuario:** ninguna en esta sesión (D2 y D7 ya decididas por el planificador).
+- **Abierto / siguiente paso:**
+  - presentar el punto de parada 1;
+  - **T1** después del cierre de Nueva York (16:15), en una sola sesión, con `--render-sim` y Finnhub;
+  - luego, T3 (discrepancias) y T4 (precedencia).
+- **Archivos tocados:**
+  - `backend/main.py` (`/api/health`);
+  - `backend/tests/{test_health,edgar,edgar_diag,test_edgar_tools}.py`;
+  - `backend/tests/fixtures/edgar/`;
+  - `docs/fiabilidad/F2_EDGAR_DIAGNOSTICO.md` y esta bitácora.
+- **Avisos para el siguiente chat:**
+  - la herramienta lee la caché por defecto (`--refresh` para volver a descargar);
+  - no le pongas `print` al User-Agent;
+  - para TSM FY2025 y TM FY2026, `companyfacts` no basta: hay que leer `<ticker>-<fecha>_htm.xml` del filing;
+  - el resolutor ticker → CIK necesita `PREDECESSORS` (XOM).
