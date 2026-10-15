@@ -64,7 +64,7 @@ VIOLATIONS = {
         a, t.replace("===== página 2 =====", "===== página 2 =====\nFORTALEZA CLAVE", 1))),
     "provenance_in_vocabulary": ("NFLX", lambda a, t: (
         next(iter(a["data_provenance"]["fields"].values())).update(source="inventada") or a, t)),
-    "no_archetype_codes_nor_sign_after_symbol": ("NFLX", lambda a, t: (a, t + "\nValor razonable $-8")),
+    "no_archetype_codes_nor_sign_after_symbol": ("NFLX", lambda a, t: (a, "Valor razonable $-8\n" + t)),   # antes del anexo (D1)
     "dcf_never_negative_fair_value": ("NFLX", lambda a, t: (a["dcf"].update(fair_value=-5.0) or a, t)),
     "chart_gauges_marker_in_reading_zone": ("NFLX", lambda a, t: (
         _first(a["display"]["charts"]["solvency"]["gauges"],

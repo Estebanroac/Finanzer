@@ -4,15 +4,15 @@ import type { Display, ScoreBlock, StockAnalysis } from "@/lib/api";
 import { pdfUrl } from "@/lib/api";
 import { useGrow } from "@/lib/useGrow";
 import { Range52Bar, Ring } from "./charts";
-import { Collapsible, Help, Pill, StateTag, ToneBar, toneClass } from "./ui";
+import { Help, Pill, StateTag, ToneBar, toneClass } from "./ui";
 
 // KPI que pasan a la tarjeta de precio (etapa 9c): no se repiten en la rejilla.
 const IN_PRICE_CARD = new Set(["price", "market_cap"]);
 
 /**
  * Cabecera = portada del PDF: tipo de empresa y su motivo, las dos puntuaciones, el
- * veredicto verbal con la confianza (motivos en lenguaje llano y detalle técnico
- * desplegable), cobertura parcial, componentes de cada puntuación, métricas clave
+ * veredicto verbal con la confianza (motivos en lenguaje llano; los códigos técnicos
+ * solo van al anexo del PDF, D1), cobertura parcial, componentes de cada puntuación, métricas clave
  * del arquetipo y fortaleza / a vigilar / contexto. Todo sale de display.cover.
  *
  * Orden pensado para el móvil (390×844): el veredicto va justo debajo de las dos
@@ -125,11 +125,9 @@ export default function StockHeader({ data }: { data: StockAnalysis }) {
   );
 }
 
-/** Veredicto verbal + confianza (llano) + cobertura parcial + detalle técnico desplegable. */
+/** Veredicto verbal + confianza (llano) + cobertura parcial. Los códigos técnicos solo van al anexo del PDF (D1). */
 function Verdict({ display }: { display: Display }) {
   const C = display.cover;
-  const conf = display.confidence;
-  const tech = (conf?.reasons.length ?? 0) > 0 || C.classification_detail.length > 0;
   return (
     <div className={`fz-verdict ${toneClass(C.quality.tone)}`}>
       <div className="fz-kicker mb-1">Veredicto</div>
@@ -150,23 +148,6 @@ function Verdict({ display }: { display: Display }) {
       )}
       {C.coverage_notes.length > 0 && (
         <p className="mt-3 text-[13px] tone-warn fz-tone-fg">Cobertura parcial: {C.coverage_notes.join("; ")}</p>
-      )}
-      {tech && (
-        <div className="mt-3">
-          <Collapsible summary="Detalle técnico">
-            <ul className="fz-tech">
-              {conf?.reasons.map((r, i) => (
-                <li key={i}>
-                  {r.text && <span className="block text-zinc-300">{r.text}</span>}
-                  <span className="text-zinc-500">{r.dimension} {r.level.replace("_", " ")}: {r.detail}</span>
-                </li>
-              ))}
-              {C.classification_detail.map((t) => (
-                <li key={t}><span className="text-zinc-500">Clasificación: {t}</span></li>
-              ))}
-            </ul>
-          </Collapsible>
-        </div>
       )}
     </div>
   );

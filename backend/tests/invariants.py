@@ -24,11 +24,18 @@ PROVENANCE_VOCAB = {"yahoo_quotesummary", "yfinance_statements", "finnhub", "der
 
 # test_display (9b): código de arquetipo en el texto visible
 _CODE = re.compile(r"\b(FINANCIAL|GROWTH_PRE_PROFIT|CYCLICAL|MATURE)\b")
-_TECH_KEYS = {"archetype", "na_keys", "classification_detail", "reasons", "dimensions", "thresholds_key", "wacc_note"}
+_TECH_KEYS = {"archetype", "na_keys", "annex", "reasons", "dimensions", "thresholds_key", "wacc_note"}
 # test_panel_cases (antes test_muestra, 11b): códigos (incluido UTILITY) y signo después del símbolo
 CODES = re.compile(r"\b(FINANCIAL|GROWTH_PRE_PROFIT|CYCLICAL|MATURE|UTILITY)\b")
 BAD_SIGN = re.compile(r"\$\s*[-−]")
-NOT_PROSE = (".archetype", ".na_keys", ".classification_detail", ".thresholds_key")
+NOT_PROSE = (".archetype", ".na_keys", ".annex", ".thresholds_key")
+ANNEX_TITLE = "Detalle técnico para auditoría"   # D1: los códigos solo desde aquí hasta el final del PDF
+
+
+def reading_text(text):
+    """Texto del PDF sin el anexo técnico final (D1)."""
+    i = text.find(ANNEX_TITLE)
+    return text if i < 0 else text[:i]
 
 
 def _rows(d):
@@ -295,9 +302,7 @@ def provenance_in_vocabulary(a, text):
 
 def no_archetype_codes_nor_sign_after_symbol(a, text):
     bad = [f"{path}: {v[:120]}" for path, v in _prose_strings(a["display"]) if CODES.search(v) or BAD_SIGN.search(v)]
-    for line in text.splitlines():
-        if "detalle técnico" in line or "Clasificada como" in line:
-            continue
+    for line in reading_text(text).splitlines():
         if CODES.search(line) or BAD_SIGN.search(line):
             bad.append(f"PDF: {line[:120]}")
     assert not bad, "\n".join(bad[:30])

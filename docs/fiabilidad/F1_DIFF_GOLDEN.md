@@ -83,3 +83,34 @@ También en los formateadores de la web (`frontend/src/lib/api.ts`; `frontend/ou
 
 Lo único que queda en inglés tras T3.2 son los códigos de arquetipo de "Clasificación (detalle técnico)": van al
 anexo técnico en T3.3 (D1).
+
+---
+
+## T3.3 — D1: anexo técnico "Detalle técnico para auditoría"
+
+**Causa.** Los códigos internos (arquetipo `MATURE`/`CYCLICAL`…, reglas `por_defecto`/`industria_*`, reglas de
+validación `crecimiento_incoherente`…) salían en las páginas de lectura del PDF ("Clasificación (detalle
+técnico)…", columna MOTIVO de la tabla de confianza) y en el desplegable "Detalle técnico" de la web.
+
+**Cambio.**
+- `display.annex` = {title, items}: la clasificación técnica y los motivos técnicos de cada dimensión de la
+  confianza que no es "alta". El PDF lo imprime **al final**, tras el aviso legal; la web no lo pinta.
+- Tabla "Confianza del veredicto" (PDF y pestaña de valoración de la web): el motivo pasa a lenguaje llano con la
+  misma tabla de `plain_language` que ya usaba la portada. "sin incidencias" → "Sin incidencias.".
+- Se retiran del contrato de la web `cover.classification_detail` y `confidence.reasons[].detail`; se quita el
+  desplegable "Detalle técnico" de `StockHeader.tsx` (`frontend/out` se recompila en T6).
+- Ninguna cifra, puntuación ni estado cambia.
+
+**Cambios en los golden** (todos los tickers de ambos juegos):
+| Campo | Cambio |
+|---|---|
+| `display.annex` | nuevo: título + 1 ítem de clasificación + 1 por dimensión de confianza no "alta" |
+| `display.cover.classification_detail` | retirado (va al anexo) |
+| `display.confidence.reasons[].detail` | retirado (va al anexo) |
+| `display.confidence.dimensions[].text` | técnico → llano (convergencia conserva la lista de métodos y su signo) |
+| PDF | la línea "Clasificación (detalle técnico)…" desaparece de la sección 01; el anexo aparece al final |
+
+**Páginas.** El anexo cabe en la última página salvo en 10 del panel, que ganan una (AAPL 9→10, PLD 6→7, AMT 6→7,
+CAT 8→9, MU 9→10, PLTR 8→9, NVDA 8→9, SNOW 9→10, TSM 9→10, ASML 9→10) y SNOW de `local` (9→10). Tres pierden una
+(NEE 8→7, DUK 8→7, RIVN 9→8): la tabla de confianza en llano es más corta que el texto técnico. A revisar en el
+PNG de T4.

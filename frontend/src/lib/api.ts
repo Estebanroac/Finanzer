@@ -90,8 +90,6 @@ export interface Cover {
   archetype: string;
   archetype_label: string;
   classification_notes: string[];
-  /** Código del arquetipo y motivo técnico: solo en el "Detalle técnico". */
-  classification_detail: string[];
   quality: ScoreBlock;
   price: PriceBlock;
   categories: Array<{ title: string; items: CategoryItem[] }>;
@@ -143,7 +141,6 @@ export interface ConfidenceReason {
   dimension: string;
   level: string;
   text: string | null;
-  detail: string;
 }
 
 export interface Confidence {
@@ -528,6 +525,8 @@ export interface Display {
   cover: Cover;
   summary: Summary;
   confidence: Confidence | null;
+  /** Fase 1 (D1): códigos y motivos técnicos para el anexo del PDF; la web no lo muestra. */
+  annex: { title: string; items: Array<{ label: string; text: string }> };
   sections: Sections;
   methodology: { models: string[]; models_text: string };
   tooltips: Record<string, MetricBands>;

@@ -20,7 +20,7 @@ from financial_ratios import IC_NEGATIVE, NET_CASH_TEXT, SECTOR_THRESHOLDS, Thre
 from classify import archetype_label, not_applicable_text
 import numfmt
 from numfmt import money as _money, price as _price
-from plain_language import confidence_reasons, plain_reasons
+from plain_language import confidence_reasons, plain_reasons, translate as _plain_reason
 from claims import active as _claims_active, claim as _claim, declares as _declares, record as _record
 
 _PDF_BANDS = cfg("thresholds.pdf")  # bandas de las lecturas del informe
@@ -966,7 +966,6 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         "archetype": archetype,
         "archetype_label": archetype_label(archetype),
         "classification_notes": cls_notes,
-        "classification_detail": cls_detail,
         "quality": {"title": "CALIDAD DEL NEGOCIO", "question": "¿es buena la empresa?", "score": q_score,
                     "level": q_level, "tone": q_tone,
                     "note": ("baja confianza: " + "; ".join(_q.get("low_confidence_reasons") or [])
@@ -1402,13 +1401,18 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         }
 
     # Confianza del veredicto (etapa 8): técnica, con sus dimensiones (sección 01 del PDF).
-    confidence = None
+    confidence, annex_conf = None, []
     if _conf.get("level"):
         _labels = {"convergence": "Convergencia entre métodos", "coverage": "Cobertura de datos",
                    "source": "Calidad de fuente", "stability": "Estabilidad del arquetipo"}
-        dims = []
+        dims, annex_conf = [], []
         for _k, _dd in (_conf.get("dimensions") or {}).items():
-            _txt = "; ".join(_dd.get("reasons") or []) or "sin incidencias"
+            # Fase 1 (D1): en la tabla, el motivo en lenguaje llano; el técnico, al anexo del final del PDF.
+            _plain_txt = list(dict.fromkeys(t for t in map(_plain_reason, _dd.get("reasons") or []) if t))
+            _txt = " ".join(_plain_txt) or "Sin incidencias."
+            if _dd.get("reasons"):
+                annex_conf.append({"label": f"Confianza · {_labels.get(_k, _k)} ({_dd['level'].replace('_', ' ')})",
+                                   "text": "; ".join(_dd["reasons"])})
             if _k == "convergence" and _dd.get("methods"):
                 _txt = " · ".join(
                     f"{m['method']} {('%+.0f%%' % (m['upside'] * 100)) if m.get('upside') is not None else ('%+.2f' % m['signal'])}"
@@ -1418,7 +1422,8 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                          "text": _txt})
         confidence = {
             "level": _conf["level"], "tone": conf_tone, "verdict_text": _vd.get("confidence_text"),
-            "plain": plain, "reasons": confidence_reasons(_conf), "dimensions": dims,
+            "plain": plain, "dimensions": dims,
+            "reasons": [{k: v for k, v in r.items() if k != "detail"} for r in confidence_reasons(_conf)],
             "summary": (f"Confianza del veredicto: {_conf['level']}"
                         + (f" (techo en {_conf['level']} sin contraste entre métodos; sin techo sería "
                            f"{_conf['capped_from']})" if _conf.get("capped_from") else "")
@@ -1781,6 +1786,11 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         "cover": cover,
         "summary": summary,
         "confidence": confidence,
+        # Fase 1 (D1): códigos y motivos técnicos, solo en el anexo final del PDF ("Detalle técnico para
+        # auditoría"). La web no lo muestra.
+        "annex": {"title": "Detalle técnico para auditoría",
+                  "items": [{"label": "Clasificación", "text": t} for t in cls_detail]
+                           + annex_conf},
         "sections": {"valuation": valuation, "profitability": profitability, "solvency": solvency,
                      "growth": growth, "institutional": institutional,
                      # Histórico (dato bruto): columnas que no aplican al arquetipo, con su texto.

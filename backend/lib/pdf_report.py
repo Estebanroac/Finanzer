@@ -825,10 +825,6 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         story.append(data_table(["DIMENSIÓN", "NIVEL", "MOTIVO"], _crows,
                                 [1.9 * inch, 0.8 * inch, CW - 2.7 * inch], aligns=['LEFT', 'CENTER', 'LEFT']))
         story.append(Paragraph(_esc(CF["summary"]), S['small']))
-        # Etapa 9b: el código del arquetipo y el motivo técnico de la clasificación, solo aquí.
-        if C["classification_detail"]:
-            story.append(Paragraph(_esc("Clasificación (detalle técnico): " + " · ".join(C["classification_detail"])),
-                                   S['small']))
 
     # ════════════════ 02 RENTABILIDAD + 03 SOLIDEZ ════════════════
     P = SEC["profitability"]
@@ -1082,5 +1078,17 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         "constituye asesoría financiera, recomendación de inversión ni oferta de valores. Verifique los datos y "
         "consulte a un profesional antes de invertir.",
         ParagraphStyle('disc', parent=S['small'], textColor=FAINT, fontSize=7)))
+
+    # Fase 1 (D1): anexo final con los códigos y motivos técnicos; ninguna página de lectura los muestra.
+    AX = D.get("annex") or {}
+    if AX.get("items"):
+        story.append(Spacer(1, 12))
+        story.append(HRFlowable(width="100%", thickness=0.5, color=HAIR))
+        story.append(Spacer(1, 5))
+        story.append(Paragraph(_esc(AX["title"]), S['h2']))
+        for it in AX["items"]:
+            story.append(Paragraph(f"<b>{_esc(it['label'])}:</b> {_esc(it['text'])}",
+                                   ParagraphStyle('annex', parent=S['small'], textColor=FAINT, fontSize=7,
+                                                  leading=9.5, spaceAfter=2)))
 
     doc.build(story)

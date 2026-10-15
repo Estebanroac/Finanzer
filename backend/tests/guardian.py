@@ -43,7 +43,7 @@ def norm(s):
 
 
 # Rutas de `display` que no son prosa sobre la empresa: escalas de bandas (tooltips) y detalle técnico.
-SKIP_PATHS = (".tooltips", ".na_keys", ".archetype", ".classification_detail", ".thresholds_key", ".version",
+SKIP_PATHS = (".tooltips", ".na_keys", ".archetype", ".annex", ".thresholds_key", ".version",
               ".key", ".state", ".tone", ".unit", ".kicker", ".method", ".role", ".zones",
               ".confidence.reasons[].level")
 ANNEX_TITLE = "detalle técnico para auditoría"

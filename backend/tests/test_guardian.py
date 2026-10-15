@@ -15,21 +15,9 @@ CASES = ([("panel", t) for t in fb.PANEL_TICKERS if t != "SPY"] if fb.panel_avai
 RULES = sorted(set(g.PREDICATES) | {"sin_respaldo", "ingles", "codigo_interno", "referencia_mercado", "veredicto",
                                      "base_ttm", "moneda"})
 
-_EN = "inglés en el informe: 'STRONG' (salud financiera bancaria) y/o códigos de arquetipo en el detalle técnico (D1)"
-_CODE = "códigos internos fuera del anexo técnico: detalle técnico de clasificación y validación (D1)"
 _CYC = "cota del crecimiento de ciclo medio presentada como dato medido (−5% / +10%)"
 _BASIS = "'(3 años)' en una cifra de ciclo medio (CYCLICAL)"
 _known = {}
-for t in ("AAPL", "AMZN", "ASML", "BAC", "BRK-B", "CAT", "CRWD", "DOW", "DUK", "FCX", "JNJ", "JPM", "KO", "MSFT", "MU",
-          "NEE", "NFLX", "NVDA", "NVO", "PG", "PGR", "PLTR", "RIVN", "SNOW", "TSM", "V", "XOM"):
-    _known[("ingles", "panel", t)] = _EN
-for t in ("FCX", "JPM", "NFLX", "SNOW", "V"):
-    _known[("ingles", "local", t)] = _EN
-for t in fb.PANEL_TICKERS:
-    if t != "SPY":
-        _known[("codigo_interno", "panel", t)] = _CODE
-for t in fb.TICKERS:
-    _known[("codigo_interno", "local", t)] = _CODE
 for env, t in (("panel", "ASML"), ("panel", "DOW"), ("panel", "FCX"), ("panel", "MU"), ("panel", "XOM"),
                ("local", "FCX")):
     _known[("growth", env, t)] = _CYC
