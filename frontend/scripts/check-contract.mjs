@@ -15,7 +15,7 @@
  *   node scripts/check-contract.mjs [--strict-unions] [dir-con-json ...]
  * --strict-unions exige además que las muestras cubran cada caso de las uniones
  * discriminadas (el pytest añade una muestra forzada con categoría no concluyente).
- * Sin argumentos usa los golden del backend (backend/tests/golden/{local,prod}).
+ * Sin argumentos usa los golden del backend (backend/tests/golden/{local,panel}; fase 1: D8 retiró prod).
  * backend/tests/test_frontend_contract.py lo ejecuta sobre las salidas actuales.
  */
 import fs from "node:fs";
@@ -31,7 +31,9 @@ function loadSamples(dirs) {
   const out = [];
   for (const d of dirs) {
     for (const f of fs.readdirSync(d).filter((x) => x.endsWith(".json")).sort()) {
-      out.push({ name: `${path.basename(d)}/${f}`, value: JSON.parse(fs.readFileSync(path.join(d, f), "utf8")) });
+      const value = JSON.parse(fs.readFileSync(path.join(d, f), "utf8"));
+      if (value.__http_error__) continue;   // petición rechazada (SPY): no es un análisis
+      out.push({ name: `${path.basename(d)}/${f}`, value });
     }
   }
   return out;
@@ -153,7 +155,7 @@ export function check(dirs, { strictUnions = false } = {}) {
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const strictUnions = process.argv.includes("--strict-unions");
   const args = process.argv.slice(2).filter((a) => !a.startsWith("--"));
-  const dirs = args.length ? args : ["local", "prod"].map((e) => path.join(ROOT, "..", "backend", "tests", "golden", e));
+  const dirs = args.length ? args : ["local", "panel"].map((e) => path.join(ROOT, "..", "backend", "tests", "golden", e));
   const { errors, notes, samples } = check(dirs, { strictUnions });
   for (const n of notes) console.warn("aviso: " + n);
   if (errors.length) {
