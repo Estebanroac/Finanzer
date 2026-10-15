@@ -17,12 +17,12 @@
 
 | Campo | Valor |
 |---|---|
-| Fase en curso | **Fase 2a 🛑 detenida en el punto de parada 2** (T0–T4 hechas; T5 tras la aprobación). Registros #17 y #18 |
-| Rama de trabajo | `fiabilidad/f2a-medir` (desde `main` = `8ed57a0`), sin push |
-| Producción | `8ed57a0` (fase 1 + documentación). Rollback de código: `9e78f3b` |
-| `main` local | = `origin/main` (`8ed57a0`) |
+| Fase en curso | **Fase 2a 🛑 detenida en el punto de parada 2:** T0–T4 hechas; T0 y el panel desplegados (`25b9d8a`). Falta la decisión D2, y después T5. Registros #17 y #18 |
+| Rama de trabajo | `fiabilidad/f2a-medir`, fusionada en `main` por fast-forward hasta `25b9d8a` |
+| Producción | `25b9d8a` (2a: `/api/health` con el commit, panel ampliado y documentos F2), verificado el 2026-10-15 a las 16:34:57 de Nueva York con `/api/health`. Rollback de código: `8ed57a0` (antes, `9e78f3b`) |
+| `main` local | = `origin/main` (`25b9d8a`) |
 | Último cierre de sesión | 2026-10-15 · operador F2a (ver registro #18) |
-| Bloqueos | Espera la decisión del usuario sobre D2 y el "ok, pushea" de T0 + el panel ampliado |
+| Bloqueos | Espera la decisión del usuario sobre D2 ("D2 lo decido aparte") |
 
 ## Fases
 
@@ -731,3 +731,14 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
   - las ediciones del planificador en esta bitácora (D3, D4 y la fila "compromisos fuera de balance") siguen **sin commitear** en la copia de trabajo: no son del operador;
   - las clasificaciones "probable" de T3 no se han leído en la nota del filing;
   - el panel de 36 ya está en los golden: la suite tarda unos 80 s.
+- **Actualización (misma sesión): deploy de T0 y del panel ampliado.**
+  - **Aprobación del usuario (literal):** "Ok, pushea: merge de fiabilidad/f2a-medir a main con la suite en verde, push y verifica que /api/health devuelve el commit desplegado. D2 lo decido aparte."
+  - **Hecho:**
+    - fast-forward de `main` 8ed57a0 → 25b9d8a (19 commits, sin cambiar de rama: la carpeta la comparten otros operadores);
+    - el único cambio de código de producción es `/api/health` en `backend/main.py`.
+  - **Verificación:**
+    - `pytest tests -q` → "3195 passed, 1 skipped in 73.15s";
+    - `git push origin <sha>:refs/heads/main` → "8ed57a0..25b9d8a";
+    - `curl https://finanzer.app/api/health` → `{"status":"ok"}` a las 16:34:27 (código anterior) y `{"status":"ok","commit":"25b9d8a39bdeb41a12e119605bdaadf4dad19a69"}` a las 16:34:57;
+    - `/api/analysis/AAPL` → 200 en 4.8 s, MATURE, "Calidad sólida · precio exigente" (igual que su golden).
+  - **Siguiente:** decisión D2 del usuario y, con ella, T5 (RECON §7.20 y mapa de la fase 2). Este registro va en un commit local, sin push: pushear redespliega.
