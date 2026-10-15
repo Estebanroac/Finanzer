@@ -53,3 +53,25 @@
   - al fusionar con la 2b o F3prep, `settings.FILES` y el final de `schema.toml` pueden dar un conflicto trivial;
   - la sesión se interrumpió una vez a petición del usuario antes de la captura ("luego continuamos") y se
     reanudó ("continua").
+
+### F5prep · 2026-10-15 · operador en paralelo (worktree) · decisiones del punto de parada y cierre
+- **Decisión del usuario** (transmitida por el coordinador; cita literal): "acepto tus recomendaciones". Punto por
+  punto, según el coordinador:
+  1. umbral de salto 0.8: se acepta tal como está (`ebf4f79`);
+  2. una serie con un hueco (`max_missing_days = 0`) no alimenta señales: se deja así; si un hueco aislado se
+     tolera se decide en la fase 5;
+  3. escisiones registradas como split (UL): no bloquean la beta ni el drawdown; se marcan con una nota y se
+     revisan en la fase 5;
+  4. `config/market.toml`: se acepta.
+- **Hecho:** punto 3 implementado en un commit propio con sus tests (ver `git log`, "escisiones registradas como
+  split"): `price_series.split_kind` clasifica cada split de Yahoo (`split` si el ratio es una fracción simple p/q
+  con q ≤ 10; si no, `posible_escision`; parámetros en `market.toml`); `market_signals.all_signals` añade `notes`
+  a la beta y a cada drawdown cuya ventana contiene una posible escisión, sin cambiar su estado ni su valor. UL
+  (2025-12-09, 0.888) lleva la nota en la beta y en los drawdowns de 1 y 3 años; NFLX, NVDA, CRWD y NVO, no.
+  Puntos 1, 2 y 4: sin cambios (ya estaban así).
+- **Verificación:** `../../finanzer_next/.venv313/bin/python -m pytest tests -q` → **3067 passed, 4 skipped**;
+  `git diff --stat -- backend/tests/golden backend/tests/fixtures` vacío (0 golden, fixtures sin cambios).
+- **Abierto:** fase 5: tolerancia de huecos aislados, revisión de las escisiones y latencia desde Render (RECON
+  C8). Para la 2b: beta propia con la regla de R² < 0.1 de F2_PRECEDENCIA §5. La rama `fiabilidad/f5-prep` queda
+  **sin push ni merge**; no fusionar antes de decidir con la 2b y F3prep el orden (conflicto trivial en
+  `settings.FILES` y al final de `schema.toml`).
