@@ -15,8 +15,11 @@ retry_pause_s = 2.0             # pausa antes del reintento k: retry_pause_s × 
 # Huecos: sesiones en que cotizó el mercado (calendario del índice) y la serie no, desde su primera fecha.
 # Con 0, un solo día sin cotización marca la serie como "sospechosa" (con las fechas).
 max_missing_days = 0
-# Salto en un día: max(p1/p0, p0/p1) − 1 > umbral → posible split sin ajustar (un 2:1 da 1.0).
-jump_threshold = 0.5
+# Salto en un día: max(p1/p0, p0/p1) − 1 > umbral → posible split sin ajustar (un 2:1 da 1.0; con 0.8 se
+# marca una caída ≥ 44% o una subida ≥ 80%). Con 0.5 (lectura simétrica del "50%" del prompt) se marcaba la
+# caída real de NFLX del 2022-04-20 (−35.1%, magnitud 0.54, la mayor de los 36); y un "50%" no simétrico no
+# detecta un 2:1 (−50% exacto, menos si ese día sube).
+jump_threshold = 0.8
 
 [signals]                       # lib/market_signals.py
 sessions_per_year = 252         # convención de sesiones bursátiles de EE. UU.

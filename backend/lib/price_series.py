@@ -17,7 +17,8 @@ Cada serie lleva su estado:
   ok          serie completa, sin huecos ni saltos;
   sospechosa  huecos (sesiones en que cotizó el mercado y la serie no, desde su primera fecha; incluye una
               serie desactualizada que acaba antes que el índice) o saltos de un día mayores que el umbral
-              (max(p1/p0, p0/p1) − 1 > jump_threshold: posible split sin ajustar), con las fechas;
+              (max(p1/p0, p0/p1) − 1 > jump_threshold, 0.8: caída ≥ 44% o subida ≥ 80%; posible split sin
+              ajustar), con las fechas;
   sin_dato    la descarga falló tras `max_attempts` intentos o vino vacía, con el motivo.
 
 Nunca se devuelve una serie parcial sin avisar: el estado global (`status`) es el peor de los tres y
