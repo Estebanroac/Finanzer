@@ -74,7 +74,7 @@ Hay dos escenarios. "Principal" es la fuente que se usa; "respaldo", la que entr
 |---|---|---|---|---|---|
 | Ingresos | EDGAR (`revenue`, tabla T2) → Yahoo | Yahoo → EDGAR | TTM del corte; 20-F sin interinos: FY | Ingresos ≥ beneficio bruto ≥ 0 | Aviso; en bancos, "ingresos totales" no tiene etiqueta estándar: Yahoo con nota de definición (BCS, HSBC) |
 | Beneficio bruto | EDGAR → Yahoo | Yahoo | TTM | Bruto ≤ ingresos | Sin dato si falta (17 emisores no lo presentan: no aplica) |
-| Beneficio operativo | **EDGAR `OperatingIncomeLoss`** → Yahoo marcado "estimado" | Yahoo, marcado "estimado" si EDGAR difiere > 2% | TTM | EBIT ≤ beneficio bruto | Yahoo **construye** su "Operating Income": 18 de 63 comparaciones fuera, 13 sin ningún valor equivalente en los estados (KO, PLD, AMT, NEE, DUK, FCX, CRWD). Mostrar el de EDGAR, o el de Yahoo con la etiqueta "estimado por la fuente" |
+| Beneficio operativo | **EDGAR `OperatingIncomeLoss`** → Yahoo marcado "estimado" | Yahoo, marcado "estimado" si EDGAR difiere > 2% | TTM | EBIT ≤ beneficio bruto | Yahoo **construye** su "Operating Income": 21 de 67 comparaciones fuera, 16 sin ningún valor equivalente en los estados (KO, PLD, AMT, NEE, DUK, FCX, CRWD, UL). Mostrar el de EDGAR, o el de Yahoo con la etiqueta "estimado por la fuente" |
 | Beneficio neto | EDGAR (atribuido al accionista ordinario) → Yahoo | Yahoo → EDGAR | TTM | BPA × acciones medias = beneficio del ordinario (±2%) | Si no cuadra por AT1/preferentes (BCS: 7,172 frente a 6,175 millones de GBP), el ROE y el BPA usan el del ordinario |
 | D&A | EDGAR → Yahoo | Yahoo | TTM | — | NFLX y MSFT: Yahoo suma amortizaciones con etiqueta propia (NFLX: contenidos). En A, la D&A de EDGAR cambia el EBITDA de NFLX y su nivel de precio (§3) |
 | Gastos financieros | EDGAR → Yahoo | Yahoo | TTM | Cobertura = EBIT / intereses | NEE y CAT sin etiqueta estándar: Yahoo |
@@ -83,7 +83,7 @@ Hay dos escenarios. "Principal" es la fuente que se usa; "respaldo", la que entr
 | Dividendos pagados | EDGAR (al ordinario) → Yahoo | Yahoo | TTM | DPA × acciones ≈ dividendos pagados (±10%) | BCS: Yahoo incluye los cupones AT1 (1,254 + 997 = 2,251 millones de GBP). El payout usa el del ordinario |
 | Activo, pasivo, patrimonio | EDGAR → Yahoo | Yahoo | Balance a la fecha del corte | Activo = pasivo + patrimonio (+ minoritarios) ±1% | 100% dentro de tolerancia en T3 |
 | Caja | EDGAR (caja + inversiones a corto plazo) → Yahoo | Yahoo | Balance del corte | Caja ≤ activo | Definición distinta en bancos (BCS: caja en bancos centrales) y aseguradoras (PGR) |
-| Deuda total | EDGAR (largo plazo + parte corriente + papel comercial) **+ los arrendamientos que manda la regla de §2.3** | Yahoo, con los arrendamientos rehechos con la regla de §2.3 | Balance del corte | Deuda coherente con el EBITDA (§2.3) | Yahoo suma arrendamientos operativos de US GAAP en 10 de las 13 discrepancias, y la deuda subordinada de un banco en 1 (BCS) |
+| Deuda total | EDGAR (largo plazo + parte corriente + papel comercial) **+ los arrendamientos que manda la regla de §2.3** | Yahoo, con los arrendamientos rehechos con la regla de §2.3 | Balance del corte | Deuda coherente con el EBITDA (§2.3) | Yahoo suma arrendamientos operativos de US GAAP en 10 de las 15 discrepancias y la deuda subordinada de un banco en 2 (BCS, HSBC); en UL ya suma los arrendamientos IFRS, como pide la regla |
 | Utilidades retenidas | EDGAR → Yahoo | Yahoo → **EDGAR si Yahoo no la da** | Balance del corte | — | JNJ: Yahoo sin dato y EDGAR 169 mil millones. Con B + respaldo, el Altman de JNJ vuelve |
 | Acciones (para el BPA) | EDGAR: acciones medias diluidas del periodo | Yahoo | Mismo periodo que el beneficio | BPA × acciones = beneficio (±2%) | — |
 | Acciones (capitalización) | Cotización: acciones de hoy de la clase que cotiza | Igual | Fecha del precio | Acciones de los estados × factor oficial ≈ acciones de la cotización (±2%) | Factor ADR **oficial** de una tabla con fuente y fecha (T2 §5), nunca el implícito; el desfase se muestra como "recompras desde el cierre" |
@@ -154,14 +154,15 @@ una subida, el pagado va por detrás y el control anula un dato bueno.
   entra en ninguna ratio de apalancamiento de empresa**: ni D/E, ni deuda neta, ni EV. El apalancamiento de un
   banco se mide con capital (fase 3).
 
-**Cuántas discrepancias explica** (T3, deuda total al último balance, 31 tickers de EE. UU. y BCS):
+**Cuántas discrepancias explica** (T3, deuda total al último balance; 35 tickers, 25 con dato del mismo corte en EDGAR):
 
 | Grupo | Tickers | Lectura con la regla |
 |---|---|---|
 | Yahoo suma **arrendamientos operativos** de US GAAP, que la regla excluye | **10:** MSFT, PG, AMT, FCX, MU, DOW, NVDA, CRWD, RIVN, AMZN | La diferencia es el pasivo por arrendamiento operativo (en MSFT y NVDA, su parte no corriente). Con la regla, la deuda correcta es la de EDGAR sin ellos |
-| **Deuda subordinada** en un banco | **1:** BCS | 126,837 + 11,098 de subordinada = 137,935 millones de GBP de Yahoo. Con la regla de FINANCIAL, fuera de las ratios |
+| **Deuda subordinada** en un banco | **2:** BCS, HSBC | BCS: 126,837 + 11,098 de subordinada = 137,935 millones de GBP de Yahoo. HSBC: 132,899 de Yahoo frente a 105,027 de títulos de deuda. Con la regla de FINANCIAL, fuera de las ratios |
+| **IFRS 16: arrendamientos en la deuda**, como pide la regla | **1:** UL | Yahoo 27,600 millones de EUR = préstamos 26,038 + arrendamientos 1,326 (dentro de ±1%). Es la deuda de la regla; EDGAR solo difiere porque los préstamos etiquetados no llevan los arrendamientos. En SHEL los préstamos etiquetados ya los llevan (probable: el largo plazo de Yahoo, 42,190, es 66,515 menos ≈ 24,300 de arrendamientos no corrientes) y la deuda total de Yahoo cuadra exacta (73,080) |
 | Sin explicar con datos de la misma fecha | **2:** O (+6.2%), DUK (+1.1%) | Ningún arrendamiento ni etiqueta de EDGAR al 30-jun da el valor de Yahoo. Hipótesis anotadas para la 2b (abajo) |
-| Total | **11 de 13** explicadas por la regla | XOM ya no es una discrepancia: era un fallo de la herramienta (no sumaba `DebtCurrent`), corregido |
+| Total | **13 de 15** explicadas por la regla | XOM ya no es una discrepancia: era un fallo de la herramienta (no sumaba `DebtCurrent`), corregido |
 
 **La regla también cambia la deuda donde Yahoo y EDGAR coinciden pero falta el arrendamiento financiero:**
 
@@ -205,19 +206,19 @@ arrendamientos financieros pesan ≤ 10% de la deuda (AMZN 10%, RIVN 2%, O y AMT
   - **En la 2b:** leer el balance del 10-Q del 2T (línea "mortgages payable" y la línea de crédito) para decidirlo.
 
 **Efecto en el veredicto** (what-if con la deuda de la regla en los 12 tickers de EE. UU. donde cambia): **ningún
-cambio de nivel**. Calidad: DUK +3, RIVN +3, MSFT +1; precio sin cambios. Los emisores IFRS (todos sus arrendamientos
-en la deuda) se miden con T1 (SHEL, UL, HSBC y TM).
+cambio de nivel**. Calidad: DUK +3, RIVN +3, MSFT +1; precio sin cambios. En los emisores IFRS, Yahoo ya da la deuda
+de la regla (UL, SHEL), y en TSM, NVO y TM no hay balance de EDGAR del mismo corte (20-F sin interinos).
 
 ## 3. Los dos escenarios de D2
 
 | | **A. EDGAR fuente principal de los estados** | **B. EDGAR solo verificación** |
 |---|---|---|
-| **Qué gana** | Elimina las 33 filas de "fuente errónea" de T3 (sobre todo el EBIT construido por Yahoo, el capex anual de JNJ y el BPA de Finnhub) y los errores de unidad y de factor. Las reexpresiones y el perímetro quedan al día (UL y JNJ ya vienen reexpresados). Sin la dependencia de Yahoo bloqueado en Render (plan B) para los estados | Cambio pequeño. Lo que hoy cuadra (91% de los campos) sigue igual. Los errores de dato se detectan y se corrigen o se avisan sin cambiar de fuente |
+| **Qué gana** | Elimina las 41 filas de "fuente errónea" de T3 (sobre todo el EBIT construido por Yahoo, el capex anual de JNJ y el BPA de Finnhub) y los errores de unidad y de factor. Las reexpresiones y el perímetro quedan al día (UL y JNJ ya vienen reexpresados). Sin la dependencia de Yahoo bloqueado en Render (plan B) para los estados | Cambio pequeño. Lo que hoy cuadra (90% de los campos) sigue igual. Los errores de dato se detectan y se corrigen o se avisan sin cambiar de fuente |
 | **Qué cuesta** | **Latencia:** 1 descarga por emisor (mediana 0.42 s, 3.6 MB; máximo 0.91 s, 8 MB), más ~0.5–1.4 s y 1–15 MB por cada filing que companyfacts aún no trae (12 de 35 hoy; §3.1). Con caché diaria por CIK, el coste por análisis es casi nulo después del primero | Una descarga por análisis (o caché diaria) solo para verificar: la misma latencia, pero fuera del camino crítico si se hace en segundo plano |
 | **Cobertura** | Los campos principales en 35/35. Los huecos son definiciones (bancos, extensiones propias; T2 §4): esas celdas necesitan el respaldo de Yahoo | Igual que hoy |
 | **20-F sin trimestres** | TSM, NVO, TM y ASML solo tienen ejercicios en XBRL: el TTM sería el último FY, de 3 a 15 meses de antigüedad (TM: FY a marzo, más de 6 meses de retraso). Hace falta un respaldo de Yahoo trimestral **con el principio de §1** (el corte avanza entero). BCS, HSBC, SHEL y UL sí tienen semestrales en 6-K | Sin cambio: Yahoo trimestral como hoy, verificado contra el FY de EDGAR |
 | **Riesgo** | **Definiciones:** cambiar de fuente sin alinear las definiciones cambia veredictos. What-if A de T3: NFLX pasa de precio "razonable" a "exigente" porque la D&A de EDGAR no lleva la amortización de contenidos. La tabla de conceptos (T2 §3) tiene que llevar la definición que quiere el motor, campo a campo | Los errores que no se pueden corregir (sin dato oficial) solo se avisan |
-| **Efecto en el veredicto (T3)** | What-if A: 1 cambio de nivel en 31 (NFLX) | What-if B (solo errores de dato): **0 cambios de nivel en 31**; los scores se mueven ≤ 4 puntos (KO, PLD, DUK) |
+| **Efecto en el veredicto (T3)** | What-if A: 1 cambio de nivel en 35 (NFLX) | What-if B (solo errores de dato): **0 cambios de nivel en 35**; los scores se mueven ≤ 4 puntos (KO, PLD, DUK) |
 | **Trabajo en 2b** | Grande: cliente EDGAR en el camino del análisis, lector de instancias, tabla de conceptos por definición, corte coherente, respaldos | Medio: verificación en segundo plano, identidades nuevas y factor oficial |
 
 ### 3.1 Escenario A: filings recientes que companyfacts aún no trae
@@ -258,8 +259,8 @@ Si EDGAR es la fuente principal, cada análisis tiene que detectarlo y leerlo.
 - **A más adelante**, campo a campo, cuando la tabla de definiciones esté cerrada (fase 3: deuda con o sin
   arrendamientos, capex, EBIT bancario).
 
-El dato que lo apoya: con B, el veredicto no cambia en ningún ticker, y el 9% fuera de tolerancia es
-sobre todo de definición (64 de 113 filas), no de dato erróneo.
+El dato que lo apoya: con B, el veredicto no cambia en ningún ticker, y el 10% fuera de tolerancia es
+sobre todo de definición (78 de 141 filas), no de dato erróneo.
 
 ## 4. D7: emisores sin CIK
 
@@ -276,15 +277,18 @@ sobre todo de definición (64 de 113 filas), no de dato erróneo.
 
 ## 5. Beta
 
-**Datos de T3** (31 tickers del panel; beta de referencia de 2 años con rendimientos semanales frente a ^GSPC, sobre
+**Datos de T3** (35 tickers del panel; beta de referencia de 2 años con rendimientos semanales frente a ^GSPC, sobre
 la beta que usa hoy el motor, que es la de Finnhub):
 
-- Diferencia mediana **0.30**; 16 de 31 difieren más de 0.3 y 9 más de 0.5. Correlación 0.81.
+- Diferencia mediana **0.30**; 17 de 35 difieren más de 0.3 y 10 más de 0.5. Correlación 0.81.
 - **ADR:** Finnhub les da betas mucho más altas que su comportamiento frente al S&P 500 en dólares:
   - NVO 1.96 frente a 1.11;
   - ASML 2.09 frente a 1.24;
-  - BCS 1.64 frente a 1.24;
-  - TSM, al revés: 0.95 frente a 1.44.
+  - HSBC 1.47 frente a 0.77;
+  - UL 0.66 frente a −0.01;
+  - BCS 1.64 frente a 1.25;
+  - TSM, al revés: 0.95 frente a 1.43.
+  - SHEL (0.06 frente a 0.04) y TM (0.88 frente a 0.72) sí cuadran.
 
   Es coherente con una beta de Finnhub calculada sobre otro mercado u otro horizonte (no documentado).
 - **Defensivas:** Finnhub da betas mayores que las de 2 años:
@@ -297,11 +301,11 @@ la beta que usa hoy el motor, que es la de Finnhub):
   104 observaciones.
 - **Efecto:**
   - el WACC se mueve hasta ±2.4 pp: NVO de 11.3% a 9.2%, PLTR de 11.3% a 13.6%, AMT de 7.9% a 6.4%;
-  - **3 cambios de nivel en 31:** BRK-B (precio razonable → exigente), NVO (razonable → atractivo) y NFLX (confianza
+  - **3 cambios de nivel en 35:** BRK-B (precio razonable → exigente), NVO (razonable → atractivo) y NFLX (confianza
     media → alta).
 
 **Propuesta (opción recomendada).** Una beta propia, calculada con la serie de precios que la fase 5 también
-necesita. Con ella, el what-if de T3 da **3 cambios de nivel en 31**: BRK-B, NVO y NFLX (arriba).
+necesita. Con ella, el what-if de T3 da **3 cambios de nivel en 35**: BRK-B, NVO y NFLX (arriba).
 
 1. **Estimación:** 2 años semanales frente al S&P 500, para todos. Los ADR cotizan en dólares y el inversor del
    motor es en dólares, así que es la beta del CAPM que usa el WACC.
@@ -309,7 +313,7 @@ necesita. Con ella, el what-if de T3 da **3 cambios de nivel en 31**: BRK-B, NVO
    no la cruda. Esto evita las betas negativas de DUK, JNJ y XOM.
 3. **Comprobación:** Finnhub como contraste. Si \|propia − Finnhub\| > 0.5, aviso "beta discrepante entre fuentes" y
    la confianza lo registra.
-4. **Mientras no esté (2b):** la beta de Finnhub en los ADR con aviso, porque es la peor medida, en 4 de 4 ADR fuera
+4. **Mientras no esté (2b):** la beta de Finnhub en los ADR con aviso, porque es la peor medida, en 6 de 8 ADR fuera
    de ±0.3.
 
 Las cifras salen de `backend/tests/beta_ref.py` y del what-if de T3. La beta no se lleva al motor en la 2a.

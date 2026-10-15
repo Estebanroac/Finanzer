@@ -289,10 +289,10 @@ No se consultaron las webs de los depositarios: el F-6 es el documento del propi
 | ASML | — (no es ADR) | **1** (acción ordinaria cotizada en NASDAQ) | 12(b): "Ordinary Shares" (2026-02-25) | sin F-6 | 1.0034, no aplicado (por debajo de la tolerancia 1.5) | — |
 | NVO | JPMorgan | **1** acción B | "American Depositary Receipts, each representing one B Share" (2026-02-04) | F-6 (2023-08-31): "one (1) B share" | 1.0069, no aplicado | — |
 | BCS | JPMorgan | **4** acciones ordinarias de 25p | "each representing four 25p ordinary shares" (2026-02-10) | F-6EF (2025-11-20): "four (4) ordinary shares" | **4.154, aplicado** | **+3.85%** |
-| HSBC | BNY Mellon | **5** acciones ordinarias | "each representing 5 Ordinary Shares of nominal value US$0.50" (2026-02-26) | F-6EF (2010-08-17); la cifra va en el anexo | pendiente de T1 | — |
-| SHEL | JPMorgan | **2** acciones ordinarias | "representing two ordinary shares" (2026-03-12) | F-6 POS (2023-10-13): "two (2) ordinary shares" | pendiente de T1 | — |
-| UL | Deutsche Bank | **1** acción ordinaria | "each representing one ordinary share" (2026-03-12) | F-6EF (2020-11-27): "one deposited ordinary share" | pendiente de T1 | — |
-| TM | BNY Mellon | **10** acciones | "Each American Depositary Share representing ten shares" (2026-06-10) | F-6 (2021-09-21, el del cambio de 2 a 10 tras el split 5:1); la cifra va en el anexo | pendiente de T1 | — |
+| HSBC | BNY Mellon | **5** acciones ordinarias | "each representing 5 Ordinary Shares of nominal value US$0.50" (2026-02-26) | F-6EF (2010-08-17); la cifra va en el anexo | 5.012, aplicado (T1, fixture del 15-oct) | +0.23% |
+| SHEL | JPMorgan | **2** acciones ordinarias | "representing two ordinary shares" (2026-03-12) | F-6 POS (2023-10-13): "two (2) ordinary shares" | 2.0004, aplicado (T1) | +0.02% |
+| UL | Deutsche Bank | **1** acción ordinaria | "each representing one ordinary share" (2026-03-12) | F-6EF (2020-11-27): "one deposited ordinary share" | 1.012, no aplicado (dentro de la tolerancia) | +1.2% |
+| TM | BNY Mellon | **10** acciones | "Each American Depositary Share representing ten shares" (2026-06-10) | F-6 (2021-09-21, el del cambio de 2 a 10 tras el split 5:1); la cifra va en el anexo | **11.07, aplicado** (T1) | **+10.7%** |
 | BRK-B (clase) | — | **1/1500** de acción A (0.000667) | 10-K | — | 0.000672, aplicado | +0.8% |
 
 Los factores de la tabla del planificador (HSBC 5, SHEL 2, UL 1, TM 10) **se confirman**.
@@ -308,6 +308,11 @@ Los factores de la tabla del planificador (HSBC 5, SHEL 2, UL 1, TM 10) **se con
 La hipótesis para T3 es que el +3.85% es un **desfase de fechas entre las dos acciones del cociente**, no un factor
 distinto. Se confirma o se descarta allí con las acciones del 6-K semestral. Lo mismo vale para UL (1.012 en la
 revisión externa F1), que se medirá cuando T1 capture UL.
+
+> **Resultado de T3 (F2_DISCREPANCIAS §4):**
+> - **BCS y UL:** desfase de recompras **confirmado**. El de UL no tiene efecto, porque no se aplica.
+> - **TM (11.07):** no es un desfase. La capitalización de Yahoo implica 11,778 millones de acciones frente a 13,034
+>   en circulación en el 20-F (**fuente errónea**, −9.6%).
 
 ## 6. Periodos, reexpresiones y hechos que contradicen el prompt
 
