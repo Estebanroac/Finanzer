@@ -244,3 +244,15 @@ Tooltip `net_cash` en la web.
 | panel | MU, NVDA, ASML | ídem (−0.29x, −0.12x, −0.40x → su caja neta) |
 
 La fila de Solidez (tabla) conserva "−3.45x" con la lectura "Caja neta"; el arreglo pedido es para las tarjetas.
+
+## P3.4 — Escala mínima del contenido encogido (portada y página 2)
+
+**Cambio.** La portada y la página 2 declaran su escala efectiva en las palabras clave del PDF
+(`escala_portada=…`, `escala_pagina2=…`; 1.000 si cabe sin encoger) y la comprobación geométrica falla por debajo
+de 0.85 (con caso sintético). Sin cambio en el texto de ningún PDF ni en el análisis (los golden de texto no lo ven).
+
+**Escalas actuales** (30 del panel + 6 de `local`):
+| Bloque | Mínima | Encogidos |
+|---|---|---|
+| Portada | **0.936** (TSM) | 9: TSM 0.936, AMZN 0.957, BRK-B 0.964, NVO 0.968, NVDA 0.973, ASML 0.986, MU 0.991, PLTR 0.991, SNOW (`local`) 0.991 |
+| Página 2 | **1.000** | ninguno |

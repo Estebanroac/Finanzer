@@ -26,6 +26,12 @@ def test_pdf_text_inside_area_and_without_overlaps(env, sym, outputs_by_env):
 
 
 @pytest.mark.parametrize("env,sym", CASES, ids=IDS)
+def test_cover_and_page_2_declare_their_scale(env, sym, outputs_by_env):
+    sc = pg.scales(outputs_by_env(env)[sym][1])
+    assert set(sc) == {"portada", "pagina2"}, sc
+
+
+@pytest.mark.parametrize("env,sym", CASES, ids=IDS)
 def test_page_2_holds_the_whole_summary(env, sym, outputs_by_env):
     """Cards, composición y lectura en la página 2; la sección 01 empieza en la 3 (nada se desborda)."""
     a, pdf = outputs_by_env(env)[sym]
@@ -77,3 +83,14 @@ def test_header_and_footer_bands_are_allowed():
     pdf = _page(lambda c: (c.drawString(M_LR, PAGE_H - 30, "FINANZER · cabecera"),
                            c.drawString(M_LR, 24, "Finanzer · pie")))
     assert pg.check(pdf) == []
+
+
+def test_shrink_below_min_scale_fails():
+    def kw(c):
+        c.setKeywords("escala_portada=0.840 escala_pagina2=1.000")
+        c.drawString(M_LR + 10, 600, "Portada")
+    assert any("portada encogida a 0.840" in x for x in pg.check(_page(kw)))
+    def ok(c):
+        c.setKeywords("escala_portada=0.900 escala_pagina2=1.000")
+        c.drawString(M_LR + 10, 600, "Portada")
+    assert pg.check(_page(ok)) == []

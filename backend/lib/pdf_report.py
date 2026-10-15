@@ -19,6 +19,7 @@ from reportlab.lib.units import inch
 from reportlab.lib import colors
 from reportlab.pdfbase.pdfmetrics import stringWidth
 from reportlab.platypus import (
+    Flowable,
     BaseDocTemplate, PageTemplate, Frame, Paragraph, Spacer, Table,
     TableStyle, PageBreak, HRFlowable, Image, KeepTogether, KeepInFrame,
 )
@@ -176,6 +177,38 @@ def section_header(num, title, S):
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
     ]))
     return [t, Spacer(1, 5)]
+
+
+def _declare_scale(canv, tag, scale):
+    prev = getattr(canv._doc.info, "keywords", "") or ""
+    canv.setKeywords(f"{prev} escala_{tag}={scale:.3f}".strip())
+
+
+class _ScaleMark(Flowable):
+    """Marca sin tamaño: el bloque `tag` cabe sin encoger (escala 1.000)."""
+
+    def __init__(self, tag):
+        super().__init__()
+        self._tag = tag
+
+    def wrap(self, aw, ah):
+        return 0, 0
+
+    def draw(self):
+        _declare_scale(self.canv, self._tag, 1.0)
+
+
+class _ShrinkFrame(KeepInFrame):
+    """KeepInFrame en modo shrink que declara su escala efectiva en las palabras clave del PDF
+    ("escala_portada=0.973"): la comprobación geométrica (tests/pdf_geometry.py) falla por debajo de 0.85."""
+
+    def __init__(self, tag, max_w, max_h, content):
+        super().__init__(max_w, max_h, content, mode='shrink')
+        self._tag = tag
+
+    def drawOn(self, canv, x, y, _sW=0):
+        _declare_scale(canv, self._tag, 1.0 / getattr(self, '_scale', 1.0))
+        return super().drawOn(canv, x, y, _sW)
 
 
 _DT_SIZE, _DT_PAD = 8.6, 4   # cuerpo de data_table: cuerpo de letra y relleno lateral de celda
@@ -622,9 +655,9 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     if _content + _gap * (len(_bands) - 1) > _avail:
         # Etapa 9a: la portada cabe SIEMPRE en una página; si el contenido no entra
         # (veredicto o motivos largos), se reduce en bloque en lugar de desbordar.
-        story.append(KeepInFrame(CW, _avail, _cover, mode='shrink'))
+        story.append(_ShrinkFrame("portada", CW, _avail, _cover))
     else:
-        story.extend(_cover)
+        story.extend([_ScaleMark("portada")] + _cover)
     story.append(PageBreak())
 
     # ════════════════ PÁGINA 2 — RESUMEN EJECUTIVO ════════════════
@@ -757,7 +790,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     _p2_top = _p2_head + [cg, Spacer(1, 8), comp_box, Spacer(1, 8)]
     _p2_left = (PAGE_H - M_TOP - M_BOT) - sum(f.wrap(CW, PAGE_H)[1] for f in _p2_top)
     story.extend(_p2_top[len(_p2_head):])
-    story.append(KeepInFrame(CW, _p2_left, [narr_box], mode='shrink'))
+    story.append(_ShrinkFrame("pagina2", CW, _p2_left, [narr_box]))
 
     # ════════════════ 01 VALORACIÓN ════════════════
     V = SEC["valuation"]
