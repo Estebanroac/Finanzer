@@ -17,7 +17,7 @@
 
 | Campo | Valor |
 |---|---|
-| Fase en curso | **Fase 1 — Lo visible hoy** (🔧 parada 2 aprobada, golden regenerados en `da2b33e`; 4 arreglos más antes de T6, registro #12) |
+| Fase en curso | **Fase 1 — Lo visible hoy** (🛑 punto de parada 3: diff de los arreglos tras la parada 2 y petición de "ok, pushea"; registro #13) |
 | Rama de trabajo | `fiabilidad/f1-visible` (desde `main` local `0f798c8`; registro #7) |
 | Producción | `9e78f3b` (etapas 11b + 9c), verificado el 2026-10-13. Rollback: `a6482f9` |
 | `main` local | merge de la fase 0 sobre `f9d6c30` (ver `git log`), **por delante de origin, sin push**: se sube con el deploy de la fase 1 (pushear redespliega) |
@@ -29,7 +29,7 @@
 | Fase | Estado | Rama | Commits | Aprobada por el usuario | Deploy |
 |---|---|---|---|---|---|
 | 0 Congelar y medir | ✅ cerrada (2026-10-14) | `fiabilidad/f0-panel` → `main` local | `0a8ac66`..`0ae214a` (9 commits) + cierre (registro #6) | sí, 2026-10-14 (registro #6) | no aplica (se sube con el deploy de la fase 1) |
-| 1 Lo visible hoy | 🛑 T5 (parada 2) | `fiabilidad/f1-visible` | `d676b22` (D8), `21c3f5f`, `0ebba81` (guardián), `d63de70`…`d7393fd` (T3, 8 commits), `7f32070`, `e3161d2`, `c369575` (T4) | — | — |
+| 1 Lo visible hoy | 🛑 T7 (parada 3) | `fiabilidad/f1-visible` | `d676b22` (D8), `21c3f5f`, `0ebba81` (guardián), `d63de70`…`d7393fd` (T3, 8 commits), `7f32070`, `e3161d2`, `c369575` (T4) | — | — |
 | 2 Verdad de datos (EDGAR) | 🔒 espera F1 | — | — | — | — |
 | 3 Método por arquetipo | 🔒 espera F2 | — | — | — | — |
 | 4 Escalas y confianza | 🔒 espera F3 | — | — | — | — |
@@ -102,7 +102,7 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
 | Techo de la calidad cuando la lectura tiene señales en contra (NFLX 100 con P/E no fiable y DCF por debajo) | RECON §7.12 / §7.13 (a) | 4 |
 | Confianza "alta" con convergencia solo "media" (V local 0.80) | RECON §7.13 (c) | 4 |
 | Número de Graham calculado en REIT con BPA deprimido por la depreciación (se muestra, no vota) | RECON §7.13 (b) | 3 |
-| Barra de 52 semanas en la web con lectura de precio (curva en U) frente a "solo posición" del PDF: verificar si sigue | RECON §7.14 | 1 |
+| Descartado — **verificado en la web** (F1 T6, registro #13): la barra de 52 semanas de la web (`Range52Bar`, "contexto, sin juicio") muestra solo la posición, sin tono de curva en U; coincide con el PDF | RECON §7.14 | — |
 | Mejoras aprobadas: P/FFO visible en la web (no es un defecto; decisión del planificador en el prompt F1) | memoria (backlog) | mejoras, después de la fase 4 |
 | Mejoras aprobadas: DuPont del ROE, margen FCF con tendencia, Rule of 40 (crecimiento rentable) | memoria (backlog) | 3 (D4) |
 | ✅ Hecho (F1, `d676b22`): `golden/prod` en base anual mientras prod calcula en TTM → D8: `prod` y `muestra` retirados | F0 (registros #2, #6, #7) | 1 (inicio) |
@@ -119,9 +119,9 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
 | ✅ Hecho (F1, `51e8f96`; falta recompilar `frontend/out` en T6): la web mostraba códigos en el desplegable "Detalle técnico", contra D1 | F1 T2 (registro #9) | 1 (web) |
 | **Nuevo (panel):** con la tabla validada (registro #6): CAT y TSM deberían ser CYCLICAL y salen "Madura"; PLTR y CRWD salen "Madura" (falta el arquetipo, D4); NVDA a decidir en D4 | F0 (registros #5, #6) | 3 (D4) |
 | **Nuevo (F1 T3.1):** NFLX trae en 2026-03 un trimestre con +2.85 B de ingresos financieros (los demás, 40–50 M); el TTM del resultado financiero sale +2.14 B con el anual en −604 M. Sin efecto hoy (cobertura positiva; "sin carga" exige el signo en cada trimestre). Revisar la fuente | F1 (registro #10) | 2 |
-| **Nuevo (F1 T4, revisión visual):** XOM "cotiza en el 101% del rango de 52 semanas": el precio supera el máximo de 52 semanas de la fuente (máximo sin actualizar con la cotización del día) | F1 (registro #11) | 2 (dato) / 1 (texto, a decidir) |
-| **Nuevo (F1 T4, revisión visual):** tarjetas de la página 2 con la etiqueta "No aplica" y una cifra a la vez (AMT margen neto 31.1% y ROE 91.4%; SNOW margen neto −20.1% y ROE −50.7%) | F1 (registro #11) | 1 (texto, a decidir) |
-| **Nuevo (F1 T4, revisión visual):** KPI de portada "Deuda neta/EBITDA" negativo sin lectura (PLTR −3.45x, TSM −0.78x: es caja neta) | F1 (registro #11) | 1 (texto, a decidir) |
+| ✅ Hecho (F1, `ff6c591`): XOM "cotiza en el 101% del rango de 52 semanas" → el rango incluye la cotización actual (max/min con el precio, con traza en `data_provenance`); el guardián exige posición 0–100 | F1 (registro #11) | 1 |
+| ✅ Hecho (F1, `7c5f044`): tarjetas "No aplica" con cifra (AMT, SNOW, O, PLD, RIVN) → "—" y el motivo; regla #10 del guardián implementada (`no_aplica_con_cifra`) | F1 (registro #11) | 1 |
+| ✅ Hecho (F1, `b4935d7`): KPI de portada "Deuda neta/EBITDA" negativo (PLTR, TSM, MSFT, MU, NVDA, CRWD, ASML) → "Caja neta" y su importe; guardián `ratio_negativo_en_tarjeta` | F1 (registro #11) | 1 |
 | ✅ Hecho (F1, `d676b22`): `muestra` retirada con D8; sus 17 tests corren sobre el panel (`test_panel_cases.py`) | F0 (registros #2, #6, #7) | 1 (inicio) |
 | Descartado — resuelto, **verificado en el panel**: `yearly_financials` con datos en 30/30 (AAPL: 4 ejercicios) | RECON §7.7 | — |
 | Descartado — resuelto, **verificado en el panel**: normalización de partidas no recurrentes (C1): `earnings_normalization.items` en 12+ tickers (MSFT, KO, JNJ, JPM, V, O…); NFLX `differs` = true | RECON §7.7 | — |
@@ -138,13 +138,15 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
 | Descartado — resuelto en la 11b, **verificado en el panel**: BRK-B P/E 17.0 y BPA 31.0 (clase B); ASML `operating_cash_flow` 12.2 B (alias IFRS); plan B sin reintentos (`yahoo.http_statuses` = [401, 401, 200, 200] en los 31: un solo plan B) | RECON §7.16 | — |
 | Descartado — resuelto en la 11b, **verificado en el panel**: TSM convertida de TWD (`data_provenance.currency.converted` = true, factor ADR 5.0, P/E 31.3); BRK-B P/E 17.0; SPY 422; NEE `dcf_status` = no_aplica (utility); "CYCLICAL" y "$-8" fuera de la prosa (invariante `no_archetype_codes_nor_sign_after_symbol` pasa en 30/30; los códigos siguen en la línea del detalle técnico del PDF: fila D1) | memoria (deploy 9b) | — |
 | Descartado — sin efecto material, **sin verificar** (era una diferencia entre juegos local/prod, no aplica al panel): SNOW con deuda neta en local y caja neta en prod | RECON §7.13 | — |
-| **Nuevo (BCS, informe de prod del 15-oct revisado por el usuario con un analista externo):** dividend yield **50.46%** imposible (≈ $11.50 por ADR sobre $22.79). Hipótesis del planificador: `dividendRate` en **peniques leído como libras** (×100) y **sin factor ADR** (÷4), ≈ 25×; real probablemente ~2% (verificar contra el dividendo declarado). Arrastra el shareholder yield (54.32%) y "Dividendo sostenible (50.46%)" en la salud financiera (que además cita el yield donde debería evaluar el payout). **Fase 1 (antes del push):** guardián de identidades datos↔datos (dividend yield ≈ payout × E/P y ≈ dividendos pagados / capitalización; shareholder yield = dividendo + recompras) → si no cuadra, "sin dato" + aviso; "dividendo sostenible" evalúa el payout. **Fase 2:** arreglar la unidad en origen | usuario, 2026-10-15 | 1 (guardián) / 2 (origen) |
+| **Nuevo (BCS, informe de prod del 15-oct revisado por el usuario con un analista externo):** dividend yield **50.46%** imposible (≈ $11.50 por ADR sobre $22.79). Hipótesis del planificador: `dividendRate` en **peniques leído como libras** (×100) y **sin factor ADR** (÷4), ≈ 25×; real probablemente ~2% (verificar contra el dividendo declarado). Arrastra el shareholder yield (54.32%) y "Dividendo sostenible (50.46%)" en la salud financiera (que además cita el yield donde debería evaluar el payout). **Fase 1 (antes del push):** guardián de identidades datos↔datos (dividend yield ≈ payout × E/P y ≈ dividendos pagados / capitalización; shareholder yield = dividendo + recompras) → si no cuadra, "sin dato" + aviso; "dividendo sostenible" evalúa el payout. **Fase 1 ✅ hecha** (`bfc38e9` identidad y sin dato; `8c860be` dividendo sostenible por payout). **Diagnóstico confirmado (registro #13):** el yield viene de Finnhub `/stock/metric`, que para BCS da la línea de Londres de la acción ordinaria **en peniques** (`dividendIndicatedAnnual` 11.5); el motor lo divide por el precio del ADR en dólares: peniques (×100), sin factor ADR (÷4.154) y **sin conversión GBP→USD** (÷1.342) → ≈ 18×; real ≈ 2.8%. **Fase 2:** arreglar la unidad, el factor y la moneda en origen | usuario, 2026-10-15 | 1 (guardián) / 2 (origen) |
+| **Nuevo (F1, identidad del dividendo):** el mismo defecto de origen que BCS en **TSM** (6.05%: 26 TWD por acción ordinaria sobre $430 del ADR; real ≈ 0.95%), **NVO** (30.69%: 11.7 DKK sobre $38; real ≈ 4.8%) y **NVDA** (0.45%: `dividendIndicatedAnnual` = 1 de Finnhub; el dividendo es $0.04, ≈ 0.02%). Desde `bfc38e9` salen "sin dato" con aviso. Arreglar en origen: `dividendIndicatedAnnual` de Finnhub en moneda y acción de la línea local | F1 (registro #13) | 2 |
+| **Nuevo (F1, a decidir):** las **filas de tabla** con "No aplica" conservan la cifra (JPM P/E 14.27x "No aplica a bancos"); decisión de la etapa 9b protegida por `test_bank_pdf_never_reads_pe_or_fcf_as_primary`. Las tarjetas ya no (P3.1). ¿Mismo criterio en las tablas? | F1 (registro #13) | 1 (a decidir) |
 | **Nuevo (BCS):** factor ADR **4.154** frente a **4** oficial: se infiere de acciones del balance (31-dic) / acciones de hoy, y las recompras entre ambas fechas (~3.9%) se cuelan en el factor. Desvía ~3.9% todas las cifras por acción. Usar el ratio oficial del depositario (o ajustar al entero cercano dentro de tolerancia, declarándolo) | usuario, 2026-10-15 | 2 |
 | **Nuevo (BCS):** bancos europeos con **AT1** (instrumentos híbridos contabilizados como patrimonio): el ROE/ROTE contable (10.0%) frente al RoTE reportado (12.2%); los cupones AT1 deben restarse del beneficio y los AT1 del patrimonio tangible; el payout de "dividendos pagados" puede incluir cupones AT1 | usuario, 2026-10-15 | 2 (datos) / 3 (método) |
 | **Nuevo (BCS):** "ROTE implícito en el precio" para bancos: con P/TBV 0.81, Ke 11%, g 2.5% → ROTE ≈ 9.4% descontado, frente al reportado y al objetivo de la gerencia (sensibilidad). Equivalente bancario del reverse DCF | usuario, 2026-10-15 | 3 |
 | **Nuevo (BCS):** beta **1.64** idéntica a la de NVO (Finnhub en ADR, ya sospechosa): verificar contra una beta calculada sobre la serie de precios | usuario, 2026-10-15 | 2 |
-| **Nuevo (BCS):** etiqueta "P/B frente a ROE 0.95× justificado" se lee como si 0.95x fuera el múltiplo justificado; es el cociente actual/justificado. Reescribir ("cotiza al 95% del P/B justificado") | usuario, 2026-10-15 | 1 |
-| **Nuevo (proceso):** el panel no tiene emisores que reporten en peniques ni bancos europeos. Ampliarlo al inicio de la fase 2 con BCS, HSBC, SHEL, UL y TM (GBp/EUR/JPY, distintos factores ADR, AT1). En la fase 1 basta con capturar BCS para probar el guardián de identidades | planificador, 2026-10-15 | 1 (BCS) / 2 (resto) |
+| ✅ Hecho (F1, `48a0242`): etiqueta "P/B frente a ROE 0.95× justificado" → "95% del P/B justificado (0.73x frente a 0.76x)", ídem P/TBV | usuario, 2026-10-15 | 1 |
+| **Nuevo (proceso):** el panel no tiene emisores que reporten en peniques ni bancos europeos. Ampliarlo al inicio de la fase 2 con BCS, HSBC, SHEL, UL y TM (GBp/EUR/JPY, distintos factores ADR, AT1). En la fase 1 basta con capturar BCS para probar el guardián de identidades (✅ `3f2138b`, grupo "Revisión externa") | planificador, 2026-10-15 | 1 (BCS) / 2 (resto) |
 | **Nuevo (proceso):** revisión externa al cierre de cada fase: 2–3 tickers **fuera del panel**, contrastados con un analista independiente (como hizo el usuario con BCS). Se añade al protocolo de PLAN_FIABILIDAD §5 | planificador, 2026-10-15 | todas |
 
 ## Registro de sesiones
@@ -519,3 +521,47 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
   > Presenta en el punto de parada 3 el diff de estos cuatro arreglos (qué tickers y campos cambian) junto con la petición de «ok, pushea». No regeneres los golden de estos cuatro sin esa aprobación.
 - **Hecho:** `da2b33e` golden de panel y `local` regenerados (72 archivos); suite **2580 passed, 1 skipped**.
 - **Abierto / siguiente paso:** los cuatro arreglos (un commit por causa), T6 y punto de parada 3.
+
+### #13 · 2026-10-15 · operador · Fase 1 (arreglos tras la parada 2, T6 y BCS; detenida en el punto de parada 3)
+- **Instrucción del usuario (BCS, literal):**
+  > Hallazgo nuevo de producción (BCS, informe del 15-oct revisado con un analista externo). Lee las filas «Nuevo (BCS)» del mapa de pendientes de la bitácora: las añadió el planificador.
+  >
+  > Dentro de la fase 1, antes del punto de parada 3 (un commit por causa, con test que falla antes):
+  >
+  > 5. Captura BCS en el panel con --render-sim, como caso de prueba. No amplíes más el panel: eso es del inicio de la fase 2.
+  >
+  > 6. Guardián de identidades (datos frente a datos, no texto): dividend yield ≈ payout × earnings yield, y ≈ dividendos pagados / capitalización, con una tolerancia que justifiques. Shareholder yield = dividend yield + buyback yield. Si una identidad no cuadra, la cifra sale «sin dato» con aviso en data_validation y no puntúa. Debe dispararse en BCS (hoy 50.46%) y en ningún ticker del panel que esté bien. Con prueba de que detecta.
+  >
+  > 7. «Dividendo sostenible (X%)» en la salud financiera bancaria: evalúa y cita el payout, no el dividend yield.
+  >
+  > 8. Etiqueta «P/B frente a ROE 0.95× justificado» (y P/TBV): reescríbela para que no parezca el múltiplo justificado, p. ej. «cotiza al 95% del P/B justificado (0.73x frente a 0.76x)».
+  >
+  > No toques en esta fase el origen del dato (peniques/libras, factor ADR 4.154 frente a 4, AT1, beta de Finnhub): es de la fase 2. Solo diagnostica y anota en el mapa la causa confirmada del 50.46%: verifica si dividendRate viene en peniques y sin factor ADR, que es la hipótesis del planificador.
+  >
+  > Incluye estos cuatro arreglos en el diff que presentarás en el punto de parada 3.
+- **Hecho (un commit por causa; golden sin regenerar):**
+  - `7c5f044` tarjetas "No aplica" sin cifra; regla #10 del guardián (no estaba implementada). `ff6c591` rango de 52
+    semanas con la cotización actual (XOM 101% → 100%). `b4935d7` caja neta en la portada en lugar de un ratio
+    negativo. `c09ee29` escala mínima 0.85 del contenido encogido (mínimas: portada 0.936 TSM, página 2 1.000).
+  - T6: `8ca3718` `npm run check` reparado (leía `golden/prod`, retirado en D8); `b3309a8` en la web la
+    cobertura "sin carga" se leía "No significativo" (hallazgo de T6); `450a4d4` `frontend/out` recompilado.
+    Verificado en el navegador con un servidor local que sirve el mismo análisis que los tests (replay del panel,
+    ruta de producción): PLTR "sin carga financiera neta" y "Caja neta $9.20B"; JPM "sólida", sin "STRONG" ni "N/A";
+    XOM 100% y "acotado al mínimo"; AMT tarjetas "—"; ningún código ni "Detalle técnico". La barra de 52 semanas de
+    la web solo muestra la posición (RECON §7.14: descartado, verificado).
+  - BCS: `3f2138b` en el panel (render-sim, 10:11 intradía); `359f06a` "Gran descuento" declarado (guardián);
+    `bfc38e9` guardián de identidades y dividend yield sin dato si no cuadra (tolerancia 2.0 por arriba, justificada
+    en `F1_DIFF_GOLDEN.md` P3.7); `8c860be` dividendo sostenible por payout; `48a0242` etiqueta del P/B justificado.
+  - **Diagnóstico del 50.46%:** confirmado y ampliado (mapa): peniques, sin factor ADR y sin conversión GBP→USD
+    (≈ 18×). La identidad destapa el mismo defecto en TSM, NVO y NVDA (mapa, fase 2).
+- **Verificación:** suite → **45 failed, 2832 passed, 1 skipped**: los 45 son la regresión de golden de 22 tickers
+  (19 del panel, 3 de `local`; BCS sin golden). Guardián, invariantes, geometría y contrato de la web en verde.
+  `panel_run --mode replay --compare …/replay` (la corrida aprobada en la parada 2): ningún cambio de arquetipo,
+  nivel de calidad, nivel de precio ni confianza en los 31; `validaciones` +1 en TSM, NVO y NVDA; BCS nuevo
+  (FINANCIAL, calidad 75 sólida, precio 50 razonable, confianza media).
+- **Decisiones tomadas por el usuario:** la de BCS (arriba).
+- **Abierto / siguiente paso:** **punto de parada 3**: aprobación de los golden de estos arreglos (y del nuevo de
+  BCS) y "ok, pushea". Con ella: regenerar golden (commit propio), merge en `main` local, suite en verde, push,
+  verificación en producción (T7) y cierre (T8). A decidir: "No aplica" con cifra en las filas de tabla.
+- **Avisos para el siguiente chat:** el servidor de replay para la web está en el scratchpad de la sesión
+  (`serve_replay.py`: parchea `main._compute_analysis` con `fb.run_analysis`); recrearlo si hace falta.
