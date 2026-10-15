@@ -405,3 +405,111 @@ def resolve(facts: Dict[str, Any], field: str, tax: str, unit: Optional[str]) ->
         # el concepto existe pero no llega al último ejercicio con balance: dejó de etiquetarse (o cambió de nombre)
         "stale": bool(latest_fy and best["last_end"] < latest_fy),
     }
+
+
+# ───────────────────── filings con XBRL que companyfacts no trae ─────────────────────
+# Medido el 2026-10-15 (F2_EDGAR_DIAGNOSTICO §6.2): companyfacts no incorpora el 20-F FY2025 de TSM, el 20-F FY2026
+# de TM ni los 6-K semestrales de 2026 de BCS, HSBC, SHEL y UL, aunque llevan XBRL. Se leen de la instancia del filing
+# (`<x>_htm.xml`), solo los hechos sin dimensiones (como companyfacts).
+
+SUPPLEMENT_FORMS = ANNUAL_FORMS | QUARTERLY_FORMS | {"6-K", "6-K/A"}
+_NS_TAX = {"fasb.org/us-gaap/": "us-gaap", "xbrl.ifrs.org/taxonomy/": "ifrs-full", "xbrl.sec.gov/dei/": "dei"}
+
+
+def _tax_of(ns: str) -> Optional[str]:
+    ns = ns.split("://", 1)[-1]          # IFRS usa https, la FASB http
+    return next((t for pre, t in _NS_TAX.items() if ns.startswith(pre)), None)
+
+
+def parse_instance(xml: bytes, form: str, filed: str, accn: str) -> Dict[str, Any]:
+    """Hechos no dimensionales de una instancia XBRL, con la forma de companyfacts ({tax: {concepto: {units}}})."""
+    import xml.etree.ElementTree as ET
+    root = ET.fromstring(xml)
+    X = "{http://www.xbrl.org/2003/instance}"
+    ctx: Dict[str, Dict[str, str]] = {}
+    for c in root.iter(X + "context"):
+        if c.find(f"{X}entity/{X}segment") is not None or c.find(X + "scenario") is not None:
+            continue
+        p = c.find(X + "period")
+        inst, st, en = p.find(X + "instant"), p.find(X + "startDate"), p.find(X + "endDate")
+        ctx[c.get("id")] = ({"end": inst.text.strip()[:10]} if inst is not None else
+                            {"start": st.text.strip()[:10], "end": en.text.strip()[:10]})
+    units: Dict[str, str] = {}
+    for u in root.iter(X + "unit"):
+        meas = [m.text.split(":")[-1] for m in u.iter(X + "measure")]
+        div = u.find(X + "divide")
+        units[u.get("id")] = "/".join(meas) if div is not None else (meas[0] if meas else "")
+    out: Dict[str, Any] = {}
+    for el in root:
+        if not el.tag.startswith("{") or el.get("contextRef") not in ctx or el.text is None:
+            continue
+        ns, name = el.tag[1:].split("}")
+        tx = _tax_of(ns)
+        if not tx or el.get("unitRef") is None:
+            continue
+        try:
+            val = float(el.text.strip())
+        except ValueError:
+            continue
+        val = int(val) if val.is_integer() else val
+        f = {**ctx[el.get("contextRef")], "val": val, "form": form, "filed": filed, "accn": accn}
+        out.setdefault(tx, {}).setdefault(name, {"units": {}})["units"].setdefault(units[el.get("unitRef")], [])
+        lst = out[tx][name]["units"][units[el.get("unitRef")]]
+        if f not in lst:
+            lst.append(f)
+    return out
+
+
+def missing_filings(cik: int, facts: Dict[str, Any], since: str = "2025-01-01") -> List[Dict[str, str]]:
+    """Filings con XBRL (formularios de estados) presentados desde `since` cuyo número no aparece en companyfacts."""
+    sub, _ = submissions(cik)
+    rec = (sub or {}).get("filings", {}).get("recent", {})
+    have = {x.get("accn") for cs in facts.get("facts", {}).values() for node in cs.values()
+            for fs in node.get("units", {}).values() for x in fs if x.get("form") != "dei"}
+    have_fin = {x.get("accn") for tx, cs in facts.get("facts", {}).items() if tx != "dei" and tx != "srt"
+                for node in cs.values() for fs in node.get("units", {}).values() for x in fs}
+    out = []
+    for i, form in enumerate(rec.get("form", [])):
+        if form in SUPPLEMENT_FORMS and rec["isXBRL"][i] and rec["filingDate"][i] >= since \
+                and rec["accessionNumber"][i] not in have_fin:
+            out.append({"form": form, "filed": rec["filingDate"][i], "accn": rec["accessionNumber"][i],
+                        "report": rec["reportDate"][i], "in_companyfacts_dei_only": rec["accessionNumber"][i] in have})
+    return out
+
+
+def filing_facts(cik: int, filing: Dict[str, str], refresh: bool = False) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    """Hechos de la instancia XBRL de un filing (caché en disco) y su meta (fichero, segundos, bytes)."""
+    acc = filing["accn"].replace("-", "")
+    idx, _ = fetch_json(f"https://www.sec.gov/Archives/edgar/data/{cik}/{acc}/index.json", f"idx-{acc}", refresh)
+    names = [i["name"] for i in (idx or {}).get("directory", {}).get("item", [])]
+    inst = next((n for n in names if n.endswith("_htm.xml")), None)
+    if not inst:
+        return {}, {"file": None}
+    path = CACHE / f"inst-{acc}-{inst}"
+    meta = {"file": inst}
+    if path.exists() and not refresh:
+        body = path.read_bytes()
+    else:
+        body, status, secs = _get(f"https://www.sec.gov/Archives/edgar/data/{cik}/{acc}/{inst}")
+        meta.update(status=status, seconds=round(secs, 3))
+        if body is None:
+            return {}, meta
+        path.write_bytes(body)
+    meta["bytes"] = len(body)
+    return parse_instance(body, filing["form"], filing["filed"], filing["accn"]), meta
+
+
+def supplement(cik: int, facts: Dict[str, Any], refresh: bool = False) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
+    """companyfacts + los filings con XBRL que le faltan (leídos de su instancia)."""
+    added = []
+    for fl in missing_filings(cik, facts):
+        extra, meta = filing_facts(cik, fl, refresh)
+        if not extra:
+            continue
+        pred = facts.get("predecessor")
+        facts = merge_facts(facts, {"facts": extra})
+        facts.pop("predecessor", None)
+        if pred:
+            facts["predecessor"] = pred
+        added.append({**fl, **meta})
+    return facts, added

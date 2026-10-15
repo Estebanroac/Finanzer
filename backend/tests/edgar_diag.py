@@ -11,7 +11,8 @@ trimestral, acumulados) y las reexpresiones de los ejercicios. Registra también
     python3 tests/edgar_diag.py --markdown            # además, las tablas para F2_EDGAR_DIAGNOSTICO.md
 
 Escribe tests/fixtures/edgar/diag.json y, por ticker, tests/fixtures/edgar/<T>.json con solo los conceptos de la
-tabla desde 2020, solo de 10-K/10-Q/20-F/40-F (el extracto que usa la verificación de T3 sin red). Ningún secreto en la salida.
+tabla desde 2020, de 10-K/10-Q/20-F/40-F/6-K, más los filings con XBRL que companyfacts no trae (el extracto que
+usa la verificación de T3 sin red). Ningún secreto en la salida.
 """
 import argparse
 import json
@@ -25,7 +26,7 @@ import edgar as E  # noqa: E402
 
 EXTRA = ["HSBC", "SHEL", "UL", "TM"]           # T1: panel ampliado a emisores extranjeros
 SINCE = "2020-01-01"
-FORMS = E.ANNUAL_FORMS | E.QUARTERLY_FORMS
+FORMS = E.ANNUAL_FORMS | E.QUARTERLY_FORMS | {"6-K", "6-K/A"}
 KEEP = ("start", "end", "val", "form", "filed", "accn")
 
 
@@ -39,7 +40,7 @@ def extract(facts, tax):
     keep = {"dei": {c for s in E.CONCEPTS.values() for c in s.get("dei", [])}, tax: set()}
     for s in E.CONCEPTS.values():
         keep[tax].update(s.get("us" if tax == "us-gaap" else "ifrs", []))
-    out = {"cik": facts.get("cik"), "entityName": facts.get("entityName"), "facts": {}}
+    out = {"cik": facts.get("cik"), "entityName": facts.get("entityName"), "taxonomy": tax, "facts": {}}
     for tx, concepts in keep.items():
         for c in sorted(concepts):
             node = facts.get("facts", {}).get(tx, {}).get(c)
@@ -95,7 +96,12 @@ def diag_one(t, ciks, refresh=False):
     row["xbrl_lag"] = bool(row.get("last_annual_report") and row["xbrl_last_fy"]
                            and row["last_annual_report"] > row["xbrl_last_fy"])
     row["fields"] = {f: E.resolve(facts, f, tax, unit) for f in E.CONCEPTS}
-    return row, extract(facts, tax)
+    # El diagnóstico describe companyfacts tal cual; el extracto para T3 añade los filings con XBRL que la API no
+    # trae (F2_EDGAR_DIAGNOSTICO §6.2), leídos de su instancia.
+    full, added = E.supplement(cik, facts, refresh)
+    row["supplemented"] = [{k: a.get(k) for k in ("form", "filed", "report", "accn", "file", "bytes", "seconds")}
+                           for a in added]
+    return row, extract(full, tax)
 
 
 def ticker_table(rows):
