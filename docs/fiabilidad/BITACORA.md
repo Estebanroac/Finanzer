@@ -17,7 +17,7 @@
 
 | Campo | Valor |
 |---|---|
-| Fase en curso | **Fase 1 — Lo visible hoy** (🔧 T3 hecha: guardián en verde, golden sin regenerar; sigue T4, registro #10) |
+| Fase en curso | **Fase 1 — Lo visible hoy** (🛑 punto de parada 2: diff de golden explicado, esperando aprobación para regenerar; registro #11) |
 | Rama de trabajo | `fiabilidad/f1-visible` (desde `main` local `0f798c8`; registro #7) |
 | Producción | `9e78f3b` (etapas 11b + 9c), verificado el 2026-10-13. Rollback: `a6482f9` |
 | `main` local | merge de la fase 0 sobre `f9d6c30` (ver `git log`), **por delante de origin, sin push**: se sube con el deploy de la fase 1 (pushear redespliega) |
@@ -29,7 +29,7 @@
 | Fase | Estado | Rama | Commits | Aprobada por el usuario | Deploy |
 |---|---|---|---|---|---|
 | 0 Congelar y medir | ✅ cerrada (2026-10-14) | `fiabilidad/f0-panel` → `main` local | `0a8ac66`..`0ae214a` (9 commits) + cierre (registro #6) | sí, 2026-10-14 (registro #6) | no aplica (se sube con el deploy de la fase 1) |
-| 1 Lo visible hoy | 🔧 T4 | `fiabilidad/f1-visible` | `d676b22` (D8), `21c3f5f`, `0ebba81` (guardián), `d63de70`…`d7393fd` (T3, 8 commits) | — | — |
+| 1 Lo visible hoy | 🛑 T5 (parada 2) | `fiabilidad/f1-visible` | `d676b22` (D8), `21c3f5f`, `0ebba81` (guardián), `d63de70`…`d7393fd` (T3, 8 commits), `7f32070`, `e3161d2`, `c369575` (T4) | — | — |
 | 2 Verdad de datos (EDGAR) | 🔒 espera F1 | — | — | — | — |
 | 3 Método por arquetipo | 🔒 espera F2 | — | — | — | — |
 | 4 Escalas y confianza | 🔒 espera F3 | — | — | — | — |
@@ -69,7 +69,7 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
 
 | Pendiente | Origen | Fase |
 |---|---|---|
-| Maquetación página 2 del PDF (panel "Composición" recortado/solapado) | corrida 2026-10-14 | 1 |
+| ✅ Hecho (F1, `7f32070` + `e3161d2` + `c369575`): maquetación de la página 2 del PDF (panel "Composición" recortado/solapado); comprobación geométrica en verde en 30 + 6 | corrida 2026-10-14 | 1 |
 | ✅ Hecho (F1, `d63de70`): PLTR "EBIT negativo" con EBIT +$2.63B → estado `sin_carga` (rating AAA; nivel de precio sin cambio) | corrida 2026-10-14 | 1 |
 | ✅ Hecho (F1, `87c147d` + `51e8f96`): "STRONG" en JPM; "MATURE"/"por_defecto" en el PDF → castellano y anexo técnico (D1) | corrida 2026-10-14 | 1 (D1) |
 | Piotroski FY frente a TTM (AAPL) / bases mezcladas plan B (AMZN) | corrida + memoria 11b | 2 |
@@ -119,6 +119,9 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
 | ✅ Hecho (F1, `51e8f96`; falta recompilar `frontend/out` en T6): la web mostraba códigos en el desplegable "Detalle técnico", contra D1 | F1 T2 (registro #9) | 1 (web) |
 | **Nuevo (panel):** con la tabla validada (registro #6): CAT y TSM deberían ser CYCLICAL y salen "Madura"; PLTR y CRWD salen "Madura" (falta el arquetipo, D4); NVDA a decidir en D4 | F0 (registros #5, #6) | 3 (D4) |
 | **Nuevo (F1 T3.1):** NFLX trae en 2026-03 un trimestre con +2.85 B de ingresos financieros (los demás, 40–50 M); el TTM del resultado financiero sale +2.14 B con el anual en −604 M. Sin efecto hoy (cobertura positiva; "sin carga" exige el signo en cada trimestre). Revisar la fuente | F1 (registro #10) | 2 |
+| **Nuevo (F1 T4, revisión visual):** XOM "cotiza en el 101% del rango de 52 semanas": el precio supera el máximo de 52 semanas de la fuente (máximo sin actualizar con la cotización del día) | F1 (registro #11) | 2 (dato) / 1 (texto, a decidir) |
+| **Nuevo (F1 T4, revisión visual):** tarjetas de la página 2 con la etiqueta "No aplica" y una cifra a la vez (AMT margen neto 31.1% y ROE 91.4%; SNOW margen neto −20.1% y ROE −50.7%) | F1 (registro #11) | 1 (texto, a decidir) |
+| **Nuevo (F1 T4, revisión visual):** KPI de portada "Deuda neta/EBITDA" negativo sin lectura (PLTR −3.45x, TSM −0.78x: es caja neta) | F1 (registro #11) | 1 (texto, a decidir) |
 | ✅ Hecho (F1, `d676b22`): `muestra` retirada con D8; sus 17 tests corren sobre el panel (`test_panel_cases.py`) | F0 (registros #2, #6, #7) | 1 (inicio) |
 | Descartado — resuelto, **verificado en el panel**: `yearly_financials` con datos en 30/30 (AAPL: 4 ejercicios) | RECON §7.7 | — |
 | Descartado — resuelto, **verificado en el panel**: normalización de partidas no recurrentes (C1): `earnings_normalization.items` en 12+ tickers (MSFT, KO, JNJ, JPM, V, O…); NFLX `differs` = true | RECON §7.7 | — |
@@ -464,3 +467,29 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
 - **Archivos tocados:** `backend/lib/{financial_ratios,ttm,yf_adapter,data_fetcher,validate,cost_of_capital,alert_interpretations,display,display_charts,pdf_report}.py`, `backend/main.py`, `backend/tests/{guardian,invariants,test_guardian,test_guardian_detecta,test_invariants_detectan,test_panel_invariants,test_interest_coverage,test_presentacion_castellano,test_anexo_tecnico,test_cota_ciclo_medio}.py`, `frontend/src/{lib/api.ts,components/StockHeader.tsx}`.
 - **Avisos para el siguiente chat:** la regresión de golden falla a propósito hasta T5; para ver solo lo demás,
   `pytest tests | grep -v matches_golden`.
+
+### #11 · 2026-10-15 · operador · Fase 1 (T4 hecha; T5: detenida en el punto de parada 2)
+- **Objetivo de la sesión:** T4 (maquetación del PDF y comprobación geométrica) y T5 (golden y panel) del prompt F1.
+- **Hecho:**
+  - `7f32070` página 2 en flujo natural y a ancho completo; la lectura en `KeepInFrame(shrink)` con el alto que
+    queda (antes: alturas fijas 27/46/27%, composición 24 pt más estrecha, barras 12 pt más anchas que su celda,
+    lectura montada sobre la composición en 32 de 36 PDF).
+  - `e3161d2` `tests/pdf_geometry.py` (pypdfium2): texto dentro del área útil y sin solapes; prueba de que detecta en
+    páginas sintéticas y en el código anterior a T4 (33 de 36). Encontró y se arreglaron en `data_table` dos
+    defectos más: "No aplica a …" sobre la brecha (RIVN, SNOW) y el criterio de Piotroski sobre su detalle (24 PDF).
+  - `c369575` el anexo técnico no se parte entre páginas (AAPL, SNOW).
+  - `19449a1` apartado T4 de `F1_DIFF_GOLDEN.md`.
+  - Revisión visual de las páginas 1 y 2 de un ticker por grupo (AAPL, JPM, AMT, NEE, XOM, PLTR, SNOW, TSM, NFLX):
+    `~/Downloads/finanzer_f1_panel_2026-10-15/revision_visual/`. Sin defectos de maquetación; tres hallazgos de
+    contenido al mapa (a decidir).
+- **Verificación:** suite → **72 failed, 2508 passed, 1 skipped, 0 xfailed**: los 72 son la comparación con los
+  golden (36 análisis + 36 PDF). Comprobación geométrica y página 2: 72/72 en verde. `panel_run --mode replay
+  --compare ~/Downloads/finanzer_f0_panel_2026-10-14/replay_tabla_validada` → **0 cambios** de arquetipo, nivel de
+  calidad, nivel de precio o confianza en los 31; solo cambia `paginas_pdf` en 18 (anexo y filas partidas).
+- **Decisiones tomadas por el usuario:** ninguna nueva.
+- **Abierto / siguiente paso:** **punto de parada 2**: aprobación del diff de golden (`F1_DIFF_GOLDEN.md`) para
+  regenerarlos; decidir los tres hallazgos de la revisión visual. Después T6 (web, con `frontend/out` recompilado),
+  T7 (merge y deploy con "ok, pushea"), T8 (cierre).
+- **Archivos tocados:** `backend/lib/pdf_report.py`, `backend/tests/{pdf_geometry,test_pdf_geometry,test_anexo_tecnico,test_archetype_branches}.py`, `docs/fiabilidad/F1_DIFF_GOLDEN.md`.
+- **Avisos para el siguiente chat:** el margen de la página 2 es estrecho (NFLX y SNOW quedan a 3–4 pt); si un texto
+  crece, la lectura se contrae un poco en vez de desbordar. `test_page_2_holds_the_whole_summary` lo vigila.
