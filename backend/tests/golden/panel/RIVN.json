@@ -443,6 +443,10 @@
         "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
         "source": "yfinance_statements"
       },
+      "netInterestIncome": {
+        "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
+        "source": "yfinance_statements"
+      },
       "operatingCashflow": {
         "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
         "source": "yfinance_statements"
@@ -596,6 +600,7 @@
         "grossProfits",
         "interestExpense",
         "netIncome",
+        "netInterestIncome",
         "operatingCashflow",
         "operatingIncome",
         "stockBasedCompensation",
@@ -674,6 +679,31 @@
     "state": "no_aplica"
   },
   "display": {
+    "annex": {
+      "items": [
+        {
+          "label": "Clasificación",
+          "text": "Arquetipo GROWTH_PRE_PROFIT (regla pre_beneficio_con_crecimiento): Clasificada como GROWTH_PRE_PROFIT: BPA TTM -2.58 <= 0 y CAGR de ingresos a 3 años 44.0% > 15%"
+        },
+        {
+          "label": "Clasificación",
+          "text": "Posible cíclica: margen operativo volátil (98.3 pp alrededor de su tendencia > 5 pp); crecimiento de ingresos volátil (90.8 pp > 15 pp). No cambia el arquetipo; baja la confianza."
+        },
+        {
+          "label": "Confianza · Convergencia entre métodos (no evaluable)",
+          "text": "un solo método evaluable (múltiplos frente al sector): no hay contraste"
+        },
+        {
+          "label": "Confianza · Calidad de fuente (media)",
+          "text": "beneficio normalizado con ítems inferidos (confianza media); 8 campos de Finnhub en lugar de los estados"
+        },
+        {
+          "label": "Confianza · Estabilidad del arquetipo (media)",
+          "text": "alerta de posible cíclica"
+        }
+      ],
+      "title": "Detalle técnico para auditoría"
+    },
     "archetype": "GROWTH_PRE_PROFIT",
     "archetype_label": "Crecimiento sin beneficio",
     "benchmark": {
@@ -1122,6 +1152,14 @@
             "text": "No aplica a Crecimiento sin beneficio"
           }
         ],
+        "roce": {
+          "avg": null,
+          "basis": "EBIT / capital empleado, antes de impuestos",
+          "label": "ROCE",
+          "state": "con_dato",
+          "text": "Divergencia ROCE–ROIC: ROCE -29.95% frente a ROIC -54.21% (+24.3 pp, más de 10 pp). Causas probables: base fiscal distinta: el ROCE es antes de impuestos y el ROIC después; capital distinto: el ROIC usa patrimonio + deuda − caja; el ROCE, activos − pasivo corriente (incluye pasivos a largo plazo no financieros e intereses minoritarios).",
+          "value_txt": "-29.95%"
+        },
         "spread": {
           "state": "no_aplica",
           "text": null
@@ -1467,25 +1505,25 @@
           "key": "convergence",
           "label": "Convergencia entre métodos",
           "level": "No evaluable",
-          "text": "múltiplos frente al sector +1.00 (barata). un solo método evaluable (múltiplos frente al sector): no hay contraste"
+          "text": "múltiplos frente al sector +1.00 (barata). Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo."
         },
         {
           "key": "coverage",
           "label": "Cobertura de datos",
           "level": "Alta",
-          "text": "sin incidencias"
+          "text": "Sin incidencias."
         },
         {
           "key": "source",
           "label": "Calidad de fuente",
           "level": "Media",
-          "text": "beneficio normalizado con ítems inferidos (confianza media); 8 campos de Finnhub en lugar de los estados"
+          "text": "El beneficio se ajustó por partidas extraordinarias identificadas de forma indirecta. Parte de los datos proviene de una fuente secundaria."
         },
         {
           "key": "stability",
           "label": "Estabilidad del arquetipo",
           "level": "Media",
-          "text": "alerta de posible cíclica"
+          "text": "La empresa podría ser cíclica: sus resultados actuales pueden no ser representativos."
         }
       ],
       "level": "media",
@@ -1497,25 +1535,21 @@
       ],
       "reasons": [
         {
-          "detail": "un solo método evaluable (múltiplos frente al sector): no hay contraste",
           "dimension": "convergencia",
           "level": "no_evaluable",
           "text": "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo."
         },
         {
-          "detail": "beneficio normalizado con ítems inferidos (confianza media)",
           "dimension": "calidad de fuente",
           "level": "media",
           "text": "El beneficio se ajustó por partidas extraordinarias identificadas de forma indirecta."
         },
         {
-          "detail": "8 campos de Finnhub en lugar de los estados",
           "dimension": "calidad de fuente",
           "level": "media",
           "text": "Parte de los datos proviene de una fuente secundaria."
         },
         {
-          "detail": "alerta de posible cíclica",
           "dimension": "estabilidad",
           "level": "media",
           "text": "La empresa podría ser cíclica: sus resultados actuales pueden no ser representativos."
@@ -1595,10 +1629,6 @@
           "title": "ATRACTIVO DEL PRECIO"
         }
       ],
-      "classification_detail": [
-        "Arquetipo GROWTH_PRE_PROFIT (regla pre_beneficio_con_crecimiento): Clasificada como GROWTH_PRE_PROFIT: BPA TTM -2.58 <= 0 y CAGR de ingresos a 3 años 44.0% > 15%",
-        "Posible cíclica: margen operativo volátil (98.3 pp alrededor de su tendencia > 5 pp); crecimiento de ingresos volátil (90.8 pp > 15 pp). No cambia el arquetipo; baja la confianza."
-      ],
       "classification_notes": [
         "Beneficio por acción negativo en los últimos doce meses (−2.58) e ingresos totales que crecen un 44.0% anual en 3 años, por encima del 15%.",
         "Podría ser cíclica: su margen operativo oscila 98.3 puntos alrededor de su tendencia (el umbral es 5) y su crecimiento de ingresos oscila 90.8 puntos de un año a otro (el umbral es 15). No cambia su tipo, pero baja la confianza del veredicto."
@@ -1671,7 +1701,7 @@
           "key": "net_debt_to_ebitda",
           "label": "Deuda neta/EBITDA",
           "state": "no_significativo",
-          "value": "N/A"
+          "value": "—"
         },
         {
           "key": "beta",
@@ -1710,7 +1740,8 @@
         "Piotroski (2000)",
         "un DCF multietapa con WACC estimado por CAPM"
       ],
-      "models_text": "los modelos de Piotroski (2000), un DCF multietapa con WACC estimado por CAPM"
+      "models_text": "los modelos de Piotroski (2000), un DCF multietapa con WACC estimado por CAPM",
+      "ratios_text": "ratios TTM y del último ejercicio"
     },
     "na_keys": [
       "altman",
@@ -1725,6 +1756,7 @@
       "roe",
       "roic_wacc"
     ],
+    "pe_label": "P/E (TTM)",
     "readings": {
       "beta": {
         "label": "Muy volátil",
@@ -2344,6 +2376,7 @@
           ]
         ],
         "intro": "Margen bruto de 7.5%: muy bajo, margen que financiará la escala. Margen operativo de -60.1%: pérdida operativa muy alta, bandas de pre-beneficio. Mejora del margen operativo de +27.8 pp: fuerte mejora. Margen FCF − SBC de -72.9%: quema alta, FCF menos compensación en acciones sobre ingresos (FCF bruto -59.3%).",
+        "roce_reading": "Divergencia ROCE–ROIC: ROCE -29.95% frente a ROIC -54.21% (+24.3 pp, más de 10 pp). Causas probables: base fiscal distinta: el ROCE es antes de impuestos y el ROIC después; capital distinto: el ROIC usa patrimonio + deuda − caja; el ROCE, activos − pasivo corriente (incluye pasivos a largo plazo no financieros e intereses minoritarios).",
         "rows": [
           {
             "bench": "—",
@@ -2354,7 +2387,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "-63.32%"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -2365,7 +2398,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "-21.35%"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -2376,7 +2409,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "-54.21%"
+            "value": "—"
           },
           {
             "bench": "35.00%",
@@ -2409,7 +2442,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "-54.95%"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -2601,7 +2634,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "N/A"
+            "value": "—"
           },
           {
             "bench": "17.00x",
@@ -2612,7 +2645,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "N/A"
+            "value": "—"
           },
           {
             "bench": "5.00x",
@@ -2645,7 +2678,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "N/A"
+            "value": "—"
           },
           {
             "bench": "13.00x",
@@ -2656,7 +2689,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "N/A"
+            "value": "—"
           },
           {
             "bench": "25.00x",
@@ -2689,7 +2722,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "-19.94%"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -2794,26 +2827,26 @@
           "value": "30.7"
         },
         {
-          "bench": "",
+          "bench": "No aplica a empresas en crecimiento sin beneficio",
           "delta": "",
           "key": "net_margin",
           "label": "Margen neto",
           "pill": "No aplica",
           "state": "no_aplica",
           "tone": "neu",
-          "unit": "%",
-          "value": "-55.0"
+          "unit": "",
+          "value": "—"
         },
         {
-          "bench": "",
+          "bench": "No aplica a empresas en crecimiento sin beneficio",
           "delta": "",
           "key": "roe",
           "label": "ROE",
           "pill": "No aplica",
           "state": "no_aplica",
           "tone": "neu",
-          "unit": "%",
-          "value": "-63.3"
+          "unit": "",
+          "value": "—"
         },
         {
           "bench": "",
@@ -3788,6 +3821,7 @@
     "net_debt_to_ebitda_state": "no_significativo",
     "net_income": -3233000000.0,
     "net_income_normalized": -3599165000.0,
+    "net_interest_income": -28000000.0,
     "net_margin": -0.54954954955,
     "operating_cash_flow": -1845000000.0,
     "operating_income": -3533000000.0,

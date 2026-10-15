@@ -30,6 +30,7 @@ except ImportError:  # ejecución como script suelto
 import re
 
 from numfmt import MINUS, signed_pct
+from claims import active as _claims_active, claim as _claim, record as _record
 from settings import cfg
 
 _A = cfg("thresholds.alerts")
@@ -406,7 +407,10 @@ def _coverage(ctx: Ctx):
     if ic is None or ctx.na("interest_coverage"):
         return None
     T = _A["coverage"]
-    state = interest_coverage_state(ic, ctx.g("net_debt"))
+    # Fase 1: el estado lo decide main (EBIT y resultado financiero neto); sin él, la regla anterior.
+    state = ctx.g("interest_coverage_state") or interest_coverage_state(ic, ctx.g("net_debt"))
+    if state == "sin_carga":
+        return None  # EBIT > 0 e ingresos financieros netos: la deuda no es una carga
     if state == "no_significativo":
         return None  # EBIT < 0 con caja neta: los intereses se pagan con caja
     if state == "negativa":
@@ -559,6 +563,11 @@ def _earnings_quality(ctx: Ctx):
 
 
 # ── CRECIMIENTO ───────────────────────────────────────────────────────────
+def _reit_issuing(ctx: Ctx) -> bool:
+    sh = ctx.xv.get("shares_cagr_3y")
+    return sh is not None and sh >= cfg("thresholds.growth.per_share_min_shares_cagr")
+
+
 def _growth(ctx: Ctx):
     g3 = ctx.c.get("revenue_cagr_3y")
     if g3 is None:
@@ -566,13 +575,24 @@ def _growth(ctx: Ctx):
     if ctx.archetype == CYCLICAL and ctx.xv.get("revenue_growth_normalized") is not None:
         return None   # cíclica: el crecimiento es de ciclo medio, no una señal interanual
     if ctx.archetype == REIT:   # el dato es el CAGR 3 años del FFO por acción, no ingresos interanuales
+        # Fase 1: la emisión de acciones solo se cita si las acciones crecen de verdad (el mismo umbral con el que
+        # el motor pasa a medir por acción); con acciones planas, la caída es del propio FFO (AMT: +0.05% anual).
+        sh = ctx.xv.get("shares_cagr_3y")
+        issuing = _reit_issuing(ctx)
         if growth_for_bands(g3) < 0:
+            why = ("la emisión de acciones crece más deprisa que los fondos de operación, y diluye al accionista"
+                   if issuing else
+                   "son los propios fondos de operación los que caen" +
+                   ("" if sh is None else
+                    f" (el número de acciones se reduce un {abs(sh) * 100:.2f}% anual)" if sh < 0 else
+                    f" (las acciones apenas varían: {sh * 100:+.2f}% anual)"))
             return _sig("warning", "Crecimiento", f"FFO por acción en descenso — {_pct(g3)} anual (3 años)",
-                        f"El FFO por acción cae un {_pct(abs(g3))} anual en tres años: la emisión de acciones crece más "
-                        "deprisa que los fondos de operación, y diluye al accionista.", _A["growth"]["w_contraction"])
+                        f"El FFO por acción cae un {_pct(abs(g3))} anual en tres años: {why}.",
+                        _A["growth"]["w_contraction"])
         if g3 > _A["growth"]["strong_above"]:
             return _sig("strength", "Crecimiento", f"FFO por acción en fuerte alza — +{_pct(g3)} anual (3 años)",
-                        f"El FFO por acción crece {_pct(g3)} anual en tres años, por encima de la emisión de acciones.",
+                        f"El FFO por acción crece {_pct(g3)} anual en tres años"
+                        + (", por encima de la emisión de acciones." if issuing else "."),
                         _A["growth"]["w_strong"])
         return None
     if growth_for_bands(g3) < 0:   # entre −2% y 0: plano, no contracción
@@ -686,6 +706,38 @@ INTERPRETERS = [
 # ══════════════════════════════════════════════════════════════════════════
 # ORQUESTADOR
 # ══════════════════════════════════════════════════════════════════════════
+def _signal_claims(name: str, ctx: "Ctx") -> List[dict]:
+    """Fase 1 (guardián narrativo): afirmaciones que hace la señal de cada interpretador, con los valores que usa.
+    El guardián las comprueba contra el análisis final (tests/guardian.py)."""
+    nd = ctx.g("net_debt")
+    if name == "_coverage":
+        st = ctx.g("interest_coverage_state") or interest_coverage_state(ctx.g("interest_coverage"), nd)
+        cl = [_claim("coverage", value=ctx.g("interest_coverage"), state=st)]
+        if st in ("negativa", "no_significativo"):
+            cl += [_claim("ebit_negative"), _claim("net_debt" if st == "negativa" else "net_cash")]
+        return cl
+    if name == "_leverage":
+        return [] if nd is None else [_claim("net_cash" if nd < 0 else "net_debt")]
+    if name == "_spread":
+        return [_claim("spread", value=ctx.spread)]
+    if name == "_dcf":
+        return [_claim("dcf_upside"), _claim("dcf_rel")]
+    if name == "_altman":
+        return [_claim("altman_zone")]
+    if name == "_runway":
+        return [_claim("runway")]
+    if name == "_growth":   # en REIT, "la emisión de acciones ... diluye al accionista": afirma dilución
+        return [_claim("growth", value=ctx.c.get("revenue_cagr_3y"), cagr=True, what="ingresos"),
+                *([_claim("share_dilution_3y")] if ctx.archetype == REIT and _reit_issuing(ctx) else [])]
+    if name == "_eps_growth":
+        return [_claim("growth", value=ctx.c.get("eps_cagr_3y"), cagr=True, what="bpa")]
+    if name == "_pe":
+        return [_claim("vs_bench", value=ctx.g("pe"), bench=ctx.c.get("sector_pe"), ref=ctx.del_ref)]
+    if name in ("_ev_ebitda", "_fcf_yield", "_peg", "_roe", "_margins"):
+        return [_claim("vs_bench", ref=ctx.del_ref)]
+    return []
+
+
 def build_signals(ratios: Dict[str, Any], contextual: Dict[str, Any], *,
                   sector: str = "default", real_sector: str = "",
                   roic_wacc_spread: Optional[float] = None,
@@ -710,6 +762,10 @@ def build_signals(ratios: Dict[str, Any], contextual: Dict[str, Any], *,
             s = None
         if s and s["kind"] in buckets:
             buckets[s["kind"]].append(s)
+            if _claims_active():   # fase 1 (guardián narrativo): sin efecto en la salida
+                _cl = _signal_claims(interp.__name__, ctx)
+                _record(s["reason"], *_cl, source=f"alertas{interp.__name__}")
+                _record(s["detail"], *_cl, source=f"alertas{interp.__name__}")
 
     def _clean(items, cap=_A["max_per_group"]):
         # ordena por materialidad (peso) y limita para mantener la lista de alto

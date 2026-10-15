@@ -17,6 +17,9 @@ ENV_TICKERS = [(e, t) for e in ENVS for t in fb.TICKERS]
 # panel revela es la línea base (docs/fiabilidad/F0_LINEA_BASE.md), no un fallo de la suite.
 REG_ENVS = ENVS + ([fb.PANEL_ENV] if fb.panel_available() else [])
 REG_ENV_TICKERS = [(e, t) for e in REG_ENVS for t in fb.env_tickers(e)]
+# Fase 1 (D8): juegos para los tests ATADOS a los 6 tickers (NFLX, JPM, O, FCX, SNOW, V). "panel" sustituye al
+# retirado "prod" como ruta de producción (plan B + Finnhub); solo se indexan esos 6 tickers.
+BOUND_ENVS = ["local"] + ([fb.PANEL_ENV] if fb.panel_available() else [])
 
 
 def env_id(param):

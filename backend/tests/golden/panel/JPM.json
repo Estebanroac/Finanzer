@@ -484,6 +484,7 @@
         "ebitda": "'EBITDA' sin dato en alguno de los 4 últimos trimestres",
         "grossProfits": "'Gross Profit' sin dato en alguno de los 4 últimos trimestres",
         "inventory": "'Inventory' sin dato en el último trimestre",
+        "netInterestIncome": "'Net Non Operating Interest Income Expense' sin dato en alguno de los 4 últimos trimestres",
         "operatingIncome": "'Operating Income' sin dato en alguno de los 4 últimos trimestres",
         "stockBasedCompensation": "'Stock Based Compensation' sin dato en alguno de los 4 últimos trimestres",
         "totalCurrentAssets": "'Current Assets' sin dato en el último trimestre",
@@ -543,6 +544,23 @@
     "state": "no_aplica"
   },
   "display": {
+    "annex": {
+      "items": [
+        {
+          "label": "Clasificación",
+          "text": "Arquetipo FINANCIAL (regla industria_banco): Clasificada como FINANCIAL por industria Banks - Diversified (banco)"
+        },
+        {
+          "label": "Confianza · Convergencia entre métodos (alta)",
+          "text": "coinciden (cara) con distancia 0.30 (< 0.6)"
+        },
+        {
+          "label": "Confianza · Calidad de fuente (media)",
+          "text": "11 campos de Finnhub en lugar de los estados"
+        }
+      ],
+      "title": "Detalle técnico para auditoría"
+    },
     "archetype": "FINANCIAL",
     "archetype_label": "Banco/aseguradora",
     "benchmark": {
@@ -908,6 +926,10 @@
             "text": "No aplica a Banco/aseguradora"
           }
         ],
+        "roce": {
+          "state": "no_aplica",
+          "text": "No aplica a bancos y aseguradoras: el balance es el producto (depósitos y préstamos)"
+        },
         "spread": {
           "state": "no_aplica",
           "text": null
@@ -1092,7 +1114,7 @@
             "reason": "Prima: 2.46x frente a 1.87x justificado por su ROE (Ke 9.6% con β ajustada 1.02, g 2.5%)",
             "sign": "(-2)",
             "tone": "warn",
-            "value_txt": "1.32× justificado"
+            "value_txt": "132% del P/B justificado (2.46x frente a 1.87x)"
           },
           {
             "in_block": true,
@@ -1102,7 +1124,7 @@
             "reason": "Prima: 3.20x frente a 2.54x justificado por su ROTE (Ke 9.6% con β ajustada 1.02, g 2.5%)",
             "sign": "(-2)",
             "tone": "warn",
-            "value_txt": "1.26× justificado"
+            "value_txt": "126% del P/TBV justificado (3.20x frente a 2.54x)"
           }
         ]
       },
@@ -1114,25 +1136,25 @@
           "key": "convergence",
           "label": "Convergencia entre métodos",
           "level": "Alta",
-          "text": "P/B justificado (Gordon) -24% (cara) · P/B frente al sector -39% (cara). coinciden (cara) con distancia 0.30 (< 0.6)"
+          "text": "P/B justificado (Gordon) -24% (cara) · P/B frente al sector -39% (cara). Los métodos de valoración coinciden."
         },
         {
           "key": "coverage",
           "label": "Cobertura de datos",
           "level": "Alta",
-          "text": "sin incidencias"
+          "text": "Sin incidencias."
         },
         {
           "key": "source",
           "label": "Calidad de fuente",
           "level": "Media",
-          "text": "11 campos de Finnhub en lugar de los estados"
+          "text": "Parte de los datos proviene de una fuente secundaria."
         },
         {
           "key": "stability",
           "label": "Estabilidad del arquetipo",
           "level": "Alta",
-          "text": "sin incidencias"
+          "text": "Sin incidencias."
         }
       ],
       "level": "alta",
@@ -1141,7 +1163,6 @@
       ],
       "reasons": [
         {
-          "detail": "11 campos de Finnhub en lugar de los estados",
           "dimension": "calidad de fuente",
           "level": "media",
           "text": "Parte de los datos proviene de una fuente secundaria."
@@ -1220,9 +1241,6 @@
           ],
           "title": "ATRACTIVO DEL PRECIO"
         }
-      ],
-      "classification_detail": [
-        "Arquetipo FINANCIAL (regla industria_banco): Clasificada como FINANCIAL por industria Banks - Diversified (banco)"
       ],
       "classification_notes": [
         "Banco por su industria (Banks - Diversified): el balance es el producto."
@@ -1331,7 +1349,8 @@
       "models": [
         "P/B y P/TBV justificados por el retorno (Gordon)"
       ],
-      "models_text": "los modelos de P/B y P/TBV justificados por el retorno (Gordon)"
+      "models_text": "los modelos de P/B y P/TBV justificados por el retorno (Gordon)",
+      "ratios_text": "ratios TTM y del último ejercicio"
     },
     "na_keys": [
       "altman",
@@ -1357,6 +1376,7 @@
       "roce",
       "roic_wacc"
     ],
+    "pe_label": "P/E (TTM)",
     "readings": {
       "beta": {
         "label": "De mercado",
@@ -1695,7 +1715,7 @@
                   "sign": "(-2)",
                   "state": "con_dato",
                   "tone": "neu",
-                  "value": "1.32× justificado"
+                  "value": "132% del P/B justificado (2.46x frente a 1.87x)"
                 },
                 {
                   "in_block": true,
@@ -1704,7 +1724,7 @@
                   "sign": "(-2)",
                   "state": "con_dato",
                   "tone": "neu",
-                  "value": "1.26× justificado"
+                  "value": "126% del P/TBV justificado (3.20x frente a 2.54x)"
                 },
                 {
                   "in_block": false,
@@ -1825,10 +1845,10 @@
         },
         "cards": [
           {
-            "body": "Excelente - Institución financiera muy sólida. ROA excelente (1.26% ≥ 0.5%) · ROE excelente (16.9% ≥ 12%) · Capitalización sólida (7.5% ≥ 6%) · Dividendo sostenible (1.97%)",
+            "body": "Excelente - Institución financiera muy sólida. ROA excelente (1.26% ≥ 0.5%) · ROE excelente (16.9% ≥ 12%) · Capitalización sólida (7.5% ≥ 6%) · Dividendo sostenible (payout 27%)",
             "key": "financial_health",
             "state": "con_dato",
-            "subtitle": "STRONG",
+            "subtitle": "Sólida",
             "title": "Salud financiera (sector financiero)",
             "tone": "pos",
             "value": "10/10"
@@ -1890,6 +1910,7 @@
           ]
         ],
         "intro": "El ROE de 17.4% es excepcional para su sector (sector: 6.0% competitivo, 12.0% rango alto).",
+        "roce_reading": null,
         "rows": [
           {
             "bench": "12.00%",
@@ -1922,7 +1943,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "N/A"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -1933,7 +1954,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "N/A"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -1944,7 +1965,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "N/A"
+            "value": "—"
           },
           {
             "bench": "25.00%",
@@ -2081,7 +2102,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "13.88x"
+            "value": "—"
           },
           {
             "bench": "11.00x",
@@ -2092,7 +2113,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "13.57x"
+            "value": "—"
           },
           {
             "bench": "1.50x",
@@ -2125,7 +2146,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "1.35x"
+            "value": "—"
           },
           {
             "bench": "14.00x",
@@ -2136,7 +2157,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "N/A"
+            "value": "—"
           },
           {
             "bench": "25.00x",
@@ -2147,7 +2168,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "N/A"
+            "value": "—"
           },
           {
             "bench": "4.00%",
@@ -2158,7 +2179,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "-18.25%"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -2169,7 +2190,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "7.20%"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -2191,7 +2212,7 @@
             "state": "con_dato",
             "text": "Prima: 2.46x frente a 1.87x justificado por su ROE (Ke 9.6% con β ajustada 1.02, g 2.5%)",
             "tone": "warn",
-            "value": "1.32× justificado"
+            "value": "132% del P/B justificado (2.46x frente a 1.87x)"
           },
           {
             "bench": "—",
@@ -2202,7 +2223,7 @@
             "state": "con_dato",
             "text": "Prima: 3.20x frente a 2.54x justificado por su ROTE (Ke 9.6% con β ajustada 1.02, g 2.5%)",
             "tone": "warn",
-            "value": "1.26× justificado"
+            "value": "126% del P/TBV justificado (3.20x frente a 2.54x)"
           }
         ],
         "sensitivity": null,
@@ -2359,7 +2380,7 @@
         },
         {
           "label": "SOLIDEZ",
-          "text": "Salud financiera bancaria de 10/10 (STRONG)."
+          "text": "Salud financiera bancaria de 10/10 (sólida)."
         },
         {
           "label": "CRECIMIENTO Y RETORNO",
@@ -3088,7 +3109,7 @@
         "severity": "excellent"
       },
       {
-        "detail": "Dividendo sostenible (1.97%)",
+        "detail": "Dividendo sostenible (payout 27%)",
         "max": 1,
         "metric": "Dividendo",
         "points": 1,
@@ -3148,6 +3169,7 @@
     "net_debt_to_ebitda_state": null,
     "net_income": 65067000000.0,
     "net_income_normalized": 63304845092.3,
+    "net_interest_income": null,
     "net_margin": 0.333829286187,
     "operating_cash_flow": -162534000000.0,
     "operating_income": null,
@@ -3539,7 +3561,7 @@
                 "severity": "excellent"
               },
               {
-                "detail": "Dividendo sostenible (1.97%)",
+                "detail": "Dividendo sostenible (payout 27%)",
                 "max": 1,
                 "metric": "Dividendo",
                 "points": 1,
@@ -3577,7 +3599,7 @@
             "metric": "P/B frente a ROE",
             "reason": "Prima: 2.46x frente a 1.87x justificado por su ROE (Ke 9.6% con β ajustada 1.02, g 2.5%)",
             "severity": "moderate",
-            "value": "1.32× justificado"
+            "value": "132% del P/B justificado (2.46x frente a 1.87x)"
           },
           {
             "adjustment": -2,
@@ -3585,7 +3607,7 @@
             "metric": "P/TBV frente a ROTE",
             "reason": "Prima: 3.20x frente a 2.54x justificado por su ROTE (Ke 9.6% con β ajustada 1.02, g 2.5%)",
             "severity": "moderate",
-            "value": "1.26× justificado"
+            "value": "126% del P/TBV justificado (3.20x frente a 2.54x)"
           },
           {
             "adjustment": -2,

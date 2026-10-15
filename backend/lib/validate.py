@@ -25,7 +25,7 @@ resultado final para presentación, sin alterar las entradas del score.
 Los umbrales viven en backend/config/validation.toml (etapa 4) y se exponen
 aquí como THRESHOLDS.
 """
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from settings import cfg
 
@@ -429,6 +429,27 @@ def validate_info(info: Dict[str, Any], symbol: str = "") -> Dict[str, Any]:
 NON_SIGNIFICANT_MULTIPLES = ("pe", "ev_ebitda", "p_ffo")
 
 
+def dividend_yield_identity(dy: Optional[float], dividends_paid: Optional[float], market_cap: Optional[float],
+                            payout: Optional[float] = None, earnings_yield: Optional[float] = None
+                            ) -> Tuple[bool, Optional[float], Optional[str]]:
+    """Fase 1 (guardián de identidades, datos frente a datos): el dividend yield frente a lo que la empresa paga.
+
+    Estimación: dividendos pagados del último ejercicio / capitalización (base caja); sin dividendos pagados,
+    payout × rentabilidad del beneficio (E/P), que es la misma identidad por otra vía. El yield no cuadra si supera
+    `dividend_identity_max_ratio` veces la estimación. Devuelve (cuadra, estimación, base). Sin estimación (o sin
+    dividendo), no hay nada que comprobar: cuadra."""
+    if dy is None or dy <= 0:
+        return True, None, None
+    est, basis = None, None
+    if dividends_paid is not None and dividends_paid > 0 and market_cap:
+        est, basis = dividends_paid / market_cap, "dividendos pagados / capitalización"
+    elif payout is not None and payout > 0 and earnings_yield is not None and earnings_yield > 0:
+        est, basis = payout * earnings_yield, "payout × E/P"
+    if est is None:
+        return True, None, None
+    return dy <= THRESHOLDS["dividend_identity_max_ratio"] * est, est, basis
+
+
 def validate_outputs(result: Dict[str, Any]) -> List[Dict[str, Any]]:
     """Múltiplos <= 0 (P/E, EV/EBITDA, P/FFO) no son múltiplos válidos: pasan a
     None ("no significativo") en lo que se presenta (key_metrics y ratios). Se
@@ -451,6 +472,18 @@ def validate_outputs(result: Dict[str, Any]) -> List[Dict[str, Any]]:
     # Regla M aplicada a la cobertura de intereses (etapa 5): EBIT < 0 con caja
     # neta -> la ratio no es significativa (los intereses se pagan con caja).
     km = result.get("key_metrics") or {}
+    # Fase 1: EBIT > 0 con ingresos financieros netos -> una cobertura negativa no es una ratio con sentido.
+    if km.get("interest_coverage_state") == "sin_carga":
+        for block in ("key_metrics", "ratios"):
+            d = result.get(block) or {}
+            v = _num(d.get("interest_coverage"))
+            if v is not None and v < 0:
+                d["interest_coverage"] = None
+                flags.append({"field": f"{block}.interest_coverage", "rule": "ratio_no_significativa",
+                              "action": "sin_dato", "old": v, "new": None,
+                              "reason": f"Cobertura de intereses = {v:.1f}x".replace("-", "−")
+                                        + ": EBIT > 0 y los ingresos financieros superan a los gastos (sin carga "
+                                          "financiera neta), la ratio no es significativa"})
     if km.get("interest_coverage_state") == "no_significativo":
         for block in ("key_metrics", "ratios"):
             d = result.get(block) or {}

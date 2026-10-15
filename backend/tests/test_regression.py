@@ -1,5 +1,5 @@
 """Regresión: el comportamiento actual desde fixtures == golden, en cada juego
-de datos disponible (local siempre; prod cuando se haya importado).
+de datos disponible (local y, desde la fase 0, el panel).
 
 Si falla tras un cambio intencionado, revisa con
 `python3 tests/diff_golden.py --env <env>` y regenera de forma explícita.
@@ -77,12 +77,3 @@ def test_golden_is_valid_json(env_sym):
     with open(fb.golden_paths(sym, fb.golden_dir(env))[0], encoding="utf-8") as fh:
         g = json.load(fh)
         assert g.get("symbol") == sym or g.get("__http_error__")
-
-
-@pytest.mark.skipif(not {"local", "prod"} <= set(ENVS), reason="faltan los juegos local y prod")
-def test_local_vs_prod_compare_runs(capsys):
-    """El modo --local-vs-prod de diff_golden corre y atribuye causas."""
-    import diff_golden
-    assert diff_golden.compare_envs(["NFLX"], full=False) == 0
-    out = capsys.readouterr().out
-    assert "NFLX" in out and "← causa:" in out

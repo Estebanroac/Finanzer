@@ -414,6 +414,10 @@
         "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
         "source": "yfinance_statements"
       },
+      "netInterestIncome": {
+        "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
+        "source": "yfinance_statements"
+      },
       "operatingCashflow": {
         "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
         "source": "yfinance_statements"
@@ -548,6 +552,7 @@
         "grossProfits",
         "interestExpense",
         "netIncome",
+        "netInterestIncome",
         "operatingCashflow",
         "operatingIncome",
         "totalRevenue"
@@ -560,6 +565,23 @@
     "state": "no_aplica"
   },
   "display": {
+    "annex": {
+      "items": [
+        {
+          "label": "Clasificación",
+          "text": "Arquetipo UTILITY (regla industria_utility): Clasificada como UTILITY por industria Utilities - Regulated Electric"
+        },
+        {
+          "label": "Confianza · Convergencia entre métodos (no evaluable)",
+          "text": "un solo método evaluable (múltiplos frente al sector): no hay contraste"
+        },
+        {
+          "label": "Confianza · Calidad de fuente (media)",
+          "text": "16 campos de Finnhub en lugar de los estados"
+        }
+      ],
+      "title": "Detalle técnico para auditoría"
+    },
     "archetype": "UTILITY",
     "archetype_label": "Utility regulada",
     "benchmark": {
@@ -1059,6 +1081,14 @@
             "value_txt": "5.25%"
           }
         ],
+        "roce": {
+          "avg": null,
+          "basis": "EBIT / capital empleado, antes de impuestos",
+          "label": "ROCE",
+          "state": "con_dato",
+          "text": "ROCE 5.35% en línea con el ROIC 5.25% (+0.1 pp, dentro de 10 pp).",
+          "value_txt": "5.35%"
+        },
         "spread": {
           "reading": "Al límite",
           "state": "con_dato",
@@ -1350,25 +1380,25 @@
           "key": "convergence",
           "label": "Convergencia entre métodos",
           "level": "No evaluable",
-          "text": "múltiplos frente al sector +0.17 (en precio). un solo método evaluable (múltiplos frente al sector): no hay contraste"
+          "text": "múltiplos frente al sector +0.17 (en precio). Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo."
         },
         {
           "key": "coverage",
           "label": "Cobertura de datos",
           "level": "Alta",
-          "text": "sin incidencias"
+          "text": "Sin incidencias."
         },
         {
           "key": "source",
           "label": "Calidad de fuente",
           "level": "Media",
-          "text": "16 campos de Finnhub en lugar de los estados"
+          "text": "Parte de los datos proviene de una fuente secundaria."
         },
         {
           "key": "stability",
           "label": "Estabilidad del arquetipo",
           "level": "Alta",
-          "text": "sin incidencias"
+          "text": "Sin incidencias."
         }
       ],
       "level": "media",
@@ -1378,19 +1408,16 @@
       ],
       "reasons": [
         {
-          "detail": "un solo método evaluable (múltiplos frente al sector): no hay contraste",
           "dimension": "convergencia",
           "level": "no_evaluable",
           "text": "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo."
         },
         {
-          "detail": "16 campos de Finnhub en lugar de los estados",
           "dimension": "calidad de fuente",
           "level": "media",
           "text": "Parte de los datos proviene de una fuente secundaria."
         },
         {
-          "detail": "techo en media: sin contraste entre métodos de valoración",
           "dimension": "techo",
           "level": "media",
           "text": null
@@ -1469,9 +1496,6 @@
           ],
           "title": "ATRACTIVO DEL PRECIO"
         }
-      ],
-      "classification_detail": [
-        "Arquetipo UTILITY (regla industria_utility): Clasificada como UTILITY por industria Utilities - Regulated Electric"
       ],
       "classification_notes": [
         "Utility regulada por su industria (Utilities - Regulated Electric): el regulador fija su retorno sobre una base de activos financiada con deuda."
@@ -1583,7 +1607,8 @@
         "número de Graham",
         "P/E frente al sector y rentabilidad por dividendo"
       ],
-      "models_text": "los modelos de Piotroski (2000), número de Graham, P/E frente al sector y rentabilidad por dividendo"
+      "models_text": "los modelos de Piotroski (2000), número de Graham, P/E frente al sector y rentabilidad por dividendo",
+      "ratios_text": "ratios TTM y del último ejercicio"
     },
     "na_keys": [
       "altman",
@@ -1598,6 +1623,7 @@
       "p_fcf",
       "peg"
     ],
+    "pe_label": "P/E (TTM)",
     "readings": {
       "beta": {
         "label": "Defensiva",
@@ -2228,6 +2254,7 @@
           ]
         ],
         "intro": "El ROE de 9.6% es competitivo en su sector (sector: 5.0% competitivo, 10.0% rango alto). El ROIC (5.2%) queda ligeramente por debajo del costo de capital (6.7%).",
+        "roce_reading": "ROCE 5.35% en línea con el ROIC 5.25% (+0.1 pp, dentro de 10 pp).",
         "rows": [
           {
             "bench": "10.00%",
@@ -2529,7 +2556,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "2.41x"
+            "value": "—"
           },
           {
             "bench": "12.00x",
@@ -2540,7 +2567,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "11.14x"
+            "value": "—"
           },
           {
             "bench": "25.00x",
@@ -2551,7 +2578,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "-21.83x"
+            "value": "—"
           },
           {
             "bench": "4.00%",
@@ -2562,7 +2589,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "-4.58%"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -2799,7 +2826,7 @@
         },
         {
           "label": "CREACIÓN DE VALOR",
-          "text": "El ROIC (5.2%) queda ligeramente por debajo del costo de capital (6.7%)."
+          "text": "El ROIC (5.2%) queda ligeramente por debajo del costo de capital (6.7%). ROCE 5.35% (EBIT / capital empleado, antes de impuestos), en línea con el ROIC (5.25%)."
         },
         {
           "label": "SOLIDEZ",
@@ -3778,6 +3805,7 @@
     "net_debt_to_ebitda_state": "ok",
     "net_income": 5247000000.0,
     "net_income_normalized": 4862394658.6,
+    "net_interest_income": -3722000000.0,
     "net_margin": 0.157804511278,
     "operating_cash_flow": 11562000000.0,
     "operating_income": 8850000000.0,

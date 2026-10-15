@@ -459,6 +459,10 @@
         "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
         "source": "yfinance_statements"
       },
+      "netInterestIncome": {
+        "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
+        "source": "yfinance_statements"
+      },
       "operatingCashflow": {
         "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
         "source": "yfinance_statements"
@@ -593,6 +597,7 @@
         "grossProfits",
         "interestExpense",
         "netIncome",
+        "netInterestIncome",
         "operatingCashflow",
         "operatingIncome",
         "totalRevenue"
@@ -632,6 +637,23 @@
     "state": "ok"
   },
   "display": {
+    "annex": {
+      "items": [
+        {
+          "label": "Clasificación",
+          "text": "Arquetipo MATURE (regla por_defecto): Clasificada como MATURE por defecto: no es financiera, REIT, pre-beneficio con crecimiento ni de industria cíclica (industria Farm & Heavy Construction Machinery)"
+        },
+        {
+          "label": "Confianza · Convergencia entre métodos (no evaluable)",
+          "text": "un solo método evaluable (múltiplos frente al sector): no hay contraste; no evaluable: DCF (fiabilidad baja)"
+        },
+        {
+          "label": "Confianza · Calidad de fuente (media)",
+          "text": "16 campos de Finnhub en lugar de los estados"
+        }
+      ],
+      "title": "Detalle técnico para auditoría"
+    },
     "archetype": "MATURE",
     "archetype_label": "Madura",
     "benchmark": {
@@ -1280,6 +1302,14 @@
             "value_txt": "17.32%"
           }
         ],
+        "roce": {
+          "avg": null,
+          "basis": "EBIT / capital empleado, antes de impuestos",
+          "label": "ROCE",
+          "state": "con_dato",
+          "text": "ROCE 19.42% en línea con el ROIC 17.32% (+2.1 pp, dentro de 10 pp).",
+          "value_txt": "19.42%"
+        },
         "spread": {
           "reading": "Crea valor",
           "state": "con_dato",
@@ -1734,25 +1764,25 @@
           "key": "convergence",
           "label": "Convergencia entre métodos",
           "level": "No evaluable",
-          "text": "DCF -73% (cara, no evaluable) · múltiplos frente al sector -0.50 (cara). un solo método evaluable (múltiplos frente al sector): no hay contraste; no evaluable: DCF (fiabilidad baja)"
+          "text": "DCF -73% (cara, no evaluable) · múltiplos frente al sector -0.50 (cara). Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo. El DCF no concilia con el precio y no se usa para contrastar."
         },
         {
           "key": "coverage",
           "label": "Cobertura de datos",
           "level": "Alta",
-          "text": "sin incidencias"
+          "text": "Sin incidencias."
         },
         {
           "key": "source",
           "label": "Calidad de fuente",
           "level": "Media",
-          "text": "16 campos de Finnhub en lugar de los estados"
+          "text": "Parte de los datos proviene de una fuente secundaria."
         },
         {
           "key": "stability",
           "label": "Estabilidad del arquetipo",
           "level": "Alta",
-          "text": "sin incidencias"
+          "text": "Sin incidencias."
         }
       ],
       "level": "media",
@@ -1763,25 +1793,21 @@
       ],
       "reasons": [
         {
-          "detail": "un solo método evaluable (múltiplos frente al sector): no hay contraste",
           "dimension": "convergencia",
           "level": "no_evaluable",
           "text": "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo."
         },
         {
-          "detail": "no evaluable: DCF (fiabilidad baja)",
           "dimension": "convergencia",
           "level": "no_evaluable",
           "text": "El DCF no concilia con el precio y no se usa para contrastar."
         },
         {
-          "detail": "16 campos de Finnhub en lugar de los estados",
           "dimension": "calidad de fuente",
           "level": "media",
           "text": "Parte de los datos proviene de una fuente secundaria."
         },
         {
-          "detail": "techo en media: sin contraste entre métodos de valoración",
           "dimension": "techo",
           "level": "media",
           "text": null
@@ -1860,9 +1886,6 @@
           ],
           "title": "ATRACTIVO DEL PRECIO"
         }
-      ],
-      "classification_detail": [
-        "Arquetipo MATURE (regla por_defecto): Clasificada como MATURE por defecto: no es financiera, REIT, pre-beneficio con crecimiento ni de industria cíclica (industria Farm & Heavy Construction Machinery)"
       ],
       "classification_notes": [
         "No es un banco ni una aseguradora, ni un REIT, ni una empresa en crecimiento sin beneficio, ni de una industria cíclica (Farm & Heavy Construction Machinery)."
@@ -1976,9 +1999,11 @@
         "número de Graham",
         "un DCF multietapa con WACC estimado por CAPM"
       ],
-      "models_text": "los modelos de Altman (1968), Piotroski (2000), número de Graham, un DCF multietapa con WACC estimado por CAPM"
+      "models_text": "los modelos de Altman (1968), Piotroski (2000), número de Graham, un DCF multietapa con WACC estimado por CAPM",
+      "ratios_text": "ratios TTM y del último ejercicio"
     },
     "na_keys": [],
+    "pe_label": "P/E (TTM)",
     "readings": {
       "beta": {
         "label": "Volátil",
@@ -2693,6 +2718,7 @@
           ]
         ],
         "intro": "El ROE de 55.9% es excepcional para su sector (sector: 8.0% competitivo, 15.0% rango alto). El ROIC (17.3%) supera al WACC (10.4%) en 7.0%, señal de creación de valor.",
+        "roce_reading": "ROCE 19.42% en línea con el ROIC 17.32% (+2.1 pp, dentro de 10 pp).",
         "rows": [
           {
             "bench": "18.00%",
@@ -3447,7 +3473,7 @@
         },
         {
           "label": "CREACIÓN DE VALOR",
-          "text": "El ROIC (17.3%) supera al WACC (10.4%) en 7.0%, señal de creación de valor."
+          "text": "El ROIC (17.3%) supera al WACC (10.4%) en 7.0%, señal de creación de valor. ROCE 19.42% (EBIT / capital empleado, antes de impuestos), en línea con el ROIC (17.32%)."
         },
         {
           "label": "SOLIDEZ",
@@ -4702,6 +4728,7 @@
     "net_debt_to_ebitda_state": "ok",
     "net_income": 10844000000.0,
     "net_income_normalized": 10745312773.9,
+    "net_interest_income": -529000000.0,
     "net_margin": 0.145111001084,
     "operating_cash_flow": 13569000000.0,
     "operating_income": 13092000000.0,

@@ -17,19 +17,19 @@
 
 | Campo | Valor |
 |---|---|
-| Fase en curso | **Ninguna.** Fase 0 ✅ cerrada el 2026-10-14 (registro #6). La fase 1 no ha empezado: espera la orden del usuario |
-| Rama de trabajo | `fiabilidad/f0-panel`, **mergeada en `main` local** (sin push; registro #6) |
+| Fase en curso | **Fase 1 — Lo visible hoy** (🛑 punto de parada 3: diff de los arreglos tras la parada 2 y petición de "ok, pushea"; registro #13) |
+| Rama de trabajo | `fiabilidad/f1-visible` (desde `main` local `0f798c8`; registro #7) |
 | Producción | `9e78f3b` (etapas 11b + 9c), verificado el 2026-10-13. Rollback: `a6482f9` |
 | `main` local | merge de la fase 0 sobre `f9d6c30` (ver `git log`), **por delante de origin, sin push**: se sube con el deploy de la fase 1 (pushear redespliega) |
-| Último cierre de sesión | 2026-10-14 · operador F0 (ver registro #6) |
-| Bloqueos | Ninguno. La fase 1 empieza con D8 (retirar `prod` y `muestra`, commit propio) cuando el usuario lo ordene |
+| Último cierre de sesión | 2026-10-15 · operador F1 (ver registro #9) |
+| Bloqueos | Ninguno |
 
 ## Fases
 
 | Fase | Estado | Rama | Commits | Aprobada por el usuario | Deploy |
 |---|---|---|---|---|---|
 | 0 Congelar y medir | ✅ cerrada (2026-10-14) | `fiabilidad/f0-panel` → `main` local | `0a8ac66`..`0ae214a` (9 commits) + cierre (registro #6) | sí, 2026-10-14 (registro #6) | no aplica (se sube con el deploy de la fase 1) |
-| 1 Lo visible hoy | ⏳ pendiente (puerta abierta; espera la orden del usuario) | — | — | — | — |
+| 1 Lo visible hoy | 🛑 T7 (parada 3) | `fiabilidad/f1-visible` | `d676b22` (D8), `21c3f5f`, `0ebba81` (guardián), `d63de70`…`d7393fd` (T3, 8 commits), `7f32070`, `e3161d2`, `c369575` (T4) | — | — |
 | 2 Verdad de datos (EDGAR) | 🔒 espera F1 | — | — | — | — |
 | 3 Método por arquetipo | 🔒 espera F2 | — | — | — | — |
 | 4 Escalas y confianza | 🔒 espera F3 | — | — | — | — |
@@ -43,7 +43,7 @@ Leyenda: ⏳ pendiente · 🔧 en curso · 🛑 detenida esperando al usuario ·
 
 | # | Tema | Estado | Decidido | Fecha |
 |---|---|---|---|---|
-| D1 | Códigos internos en el PDF | abierta | — | — |
+| D1 | Códigos internos en el PDF | **decidida** | Anexo técnico: los códigos salen de las páginas de lectura y se reúnen en un anexo final del PDF rotulado "Detalle técnico para auditoría"; la web no los muestra (usuario, chat de planificación). Se aplica en la fase 1 (`prompts/F1_lo_visible_hoy.md`) | 2026-10-14 |
 | D2 | Papel de SEC EDGAR | abierta · **reforzada** al cerrar F0: Yahoo da a Render datos distintos que a local en 7/30 (registro #6) | — | — |
 | D3 | Precio con un solo método (RECON §7.17) | abierta · **prioridad alta en la fase 3** (18/30 del panel con un solo método evaluable; registro #6) | — | — |
 | D4 | Arquetipo "crecimiento rentable" | abierta · debe resolver también **qué pesa más cuando una empresa es cíclica y de alto crecimiento a la vez** (NVDA; registro #6) | — | — |
@@ -69,9 +69,9 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
 
 | Pendiente | Origen | Fase |
 |---|---|---|
-| Maquetación página 2 del PDF (panel "Composición" recortado/solapado) | corrida 2026-10-14 | 1 |
-| PLTR "EBIT negativo" con EBIT +$2.63B | corrida 2026-10-14 | 1 |
-| "STRONG" en JPM; "MATURE"/"por_defecto" en el PDF | corrida 2026-10-14 | 1 (D1) |
+| ✅ Hecho (F1, `7f32070` + `e3161d2` + `c369575`): maquetación de la página 2 del PDF (panel "Composición" recortado/solapado); comprobación geométrica en verde en 30 + 6 | corrida 2026-10-14 | 1 |
+| ✅ Hecho (F1, `d63de70`): PLTR "EBIT negativo" con EBIT +$2.63B → estado `sin_carga` (rating AAA; nivel de precio sin cambio) | corrida 2026-10-14 | 1 |
+| ✅ Hecho (F1, `87c147d` + `51e8f96`): "STRONG" en JPM; "MATURE"/"por_defecto" en el PDF → castellano y anexo técnico (D1) | corrida 2026-10-14 | 1 (D1) |
 | Piotroski FY frente a TTM (AAPL) / bases mezcladas plan B (AMZN) | corrida + memoria 11b | 2 |
 | JNJ sin Altman (utilidades retenidas) | corrida 2026-10-14 | 2 |
 | TSM forward P/E 18.9 frente a TTM 31.7 (¿ADR/ordinaria?) | corrida 2026-10-14 | 2 |
@@ -102,17 +102,27 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
 | Techo de la calidad cuando la lectura tiene señales en contra (NFLX 100 con P/E no fiable y DCF por debajo) | RECON §7.12 / §7.13 (a) | 4 |
 | Confianza "alta" con convergencia solo "media" (V local 0.80) | RECON §7.13 (c) | 4 |
 | Número de Graham calculado en REIT con BPA deprimido por la depreciación (se muestra, no vota) | RECON §7.13 (b) | 3 |
-| Barra de 52 semanas en la web con lectura de precio (curva en U) frente a "solo posición" del PDF: verificar si sigue | RECON §7.14 | 1 |
-| Mejoras aprobadas: P/FFO visible en la web | memoria (backlog) | 1 |
+| Descartado — **verificado en la web** (F1 T6, registro #13): la barra de 52 semanas de la web (`Range52Bar`, "contexto, sin juicio") muestra solo la posición, sin tono de curva en U; coincide con el PDF | RECON §7.14 | — |
+| Mejoras aprobadas: P/FFO visible en la web (no es un defecto; decisión del planificador en el prompt F1) | memoria (backlog) | mejoras, después de la fase 4 |
 | Mejoras aprobadas: DuPont del ROE, margen FCF con tendencia, Rule of 40 (crecimiento rentable) | memoria (backlog) | 3 (D4) |
-| `golden/prod` en base anual mientras prod calcula en TTM → **D8 decidida**: retirar `prod` y `muestra` al empezar la fase 1, en un commit propio | F0 (registros #2, #6) | 1 (inicio) |
+| ✅ Hecho (F1, `d676b22`): `golden/prod` en base anual mientras prod calcula en TTM → D8: `prod` y `muestra` retirados | F0 (registros #2, #6, #7) | 1 (inicio) |
 | **Nuevo (panel):** Yahoo devuelve a Render datos distintos que a una IP residencial en 7/30 (acciones de fast_info en PG y NEE; balance trimestral de DUK al 31-mar en Render frente al 30-jun en local; acciones diluidas trimestrales ausentes en CAT y DUK; balance en el Altman de NVDA; acciones en MSFT; trimestres con resultado operativo en PLD). Local es estable. Efecto en el veredicto: DUK calidad 71 → 74, sin cambio de nivel. **Refuerza D2** | F0 (registros #5, #6) | 2 (D2) |
-| **Nuevo (panel):** el crecimiento de ciclo medio está en su cota en 5 cíclicas (XOM y DOW −5.0% en ingresos y BPA; FCX BPA −5.0%; MU y ASML +10.0%). **Texto** que presenta la cota como dato medido → fase 1; **método** del tope −5%/+10% → fase 3 | F0 (registros #5, #6) | 1 (texto) / 3 (método) |
-| **Nuevo (panel):** ajustar el invariante `growth_texts_cite_the_scored_figure` para aceptar el signo expresado con el verbo ("se contraen un 5.0%"); hoy xfail estricto en XOM y DOW | F0 (registros #5, #6) | 1 |
+| **Nuevo (panel):** el crecimiento de ciclo medio está en su cota en 5 cíclicas (XOM y DOW −5.0% en ingresos y BPA; FCX BPA −5.0%; MU y ASML +10.0%). **Texto** ✅ hecho (F1, `eac35b3`: "acotado al mínimo/máximo que admite el modelo"); **método** del tope −5%/+10% → fase 3 | F0 (registros #5, #6) | 1 (texto) / 3 (método) |
+| ✅ Hecho (F1, `83e0f70`): invariante `growth_texts_cite_the_scored_figure` acepta el signo expresado con el verbo; 0 xfail | F0 (registros #5, #6) | 1 |
 | **Nuevo (panel):** efecto frontera: NVO cambia de nivel de precio con 10 pb de Rf (config 5.29% → ^TNX 5.19%: 58 "razonable" → 70 "atractivo", confianza media → alta). Banda de tolerancia o aviso de proximidad al umbral | F0 (registros #5, #6) | 4 |
 | **Nuevo (panel):** BRK-B en base anual (faltan capex y D&A en algún trimestre) | F0 (registro #5) | 2 |
+| ✅ Hecho (F1, `eac35b3`): "(3 años)" en la comparación de cíclicas cuya cifra es de ciclo medio → "(ciclo medio)" | F1 T2 (registro #9) | 1 (texto) |
+| ✅ Hecho (F1, `90ab32a`): V (benchmark de mercado) decía "múltiplos frente al sector" en la confianza | F1 T2 (registro #9) | 1 |
+| **Nuevo (guardián):** BRK-B "P/E (TTM)" con base anual (faltan trimestres). **Texto** ✅ hecho (F1, `f6f0b36`: "P/E (último ejercicio)"); dato (trimestres que faltan) → fase 2 | F1 T2 (registro #9) | 1 (texto) / 2 (dato) |
+| ✅ Hecho (F1, `d7393fd`): AMT atribuía la caída del FFO por acción a la emisión de acciones con las acciones planas en 3 años (+0.05%) | F1 T2 (registro #9) | 1 |
+| ✅ Hecho (F1, `87c147d`): "N/A" como valor en las tablas → "—" | F1 T2 (registro #9) | 1 |
+| ✅ Hecho (F1, `51e8f96`; falta recompilar `frontend/out` en T6): la web mostraba códigos en el desplegable "Detalle técnico", contra D1 | F1 T2 (registro #9) | 1 (web) |
 | **Nuevo (panel):** con la tabla validada (registro #6): CAT y TSM deberían ser CYCLICAL y salen "Madura"; PLTR y CRWD salen "Madura" (falta el arquetipo, D4); NVDA a decidir en D4 | F0 (registros #5, #6) | 3 (D4) |
-| `muestra` capturada por quoteSummary sin Finnhub: no representa producción → **se retira con D8** al empezar la fase 1 | F0 (registros #2, #6) | 1 (inicio) |
+| **Nuevo (F1 T3.1):** NFLX trae en 2026-03 un trimestre con +2.85 B de ingresos financieros (los demás, 40–50 M); el TTM del resultado financiero sale +2.14 B con el anual en −604 M. Sin efecto hoy (cobertura positiva; "sin carga" exige el signo en cada trimestre). Revisar la fuente | F1 (registro #10) | 2 |
+| ✅ Hecho (F1, `ff6c591`): XOM "cotiza en el 101% del rango de 52 semanas" → el rango incluye la cotización actual (max/min con el precio, con traza en `data_provenance`); el guardián exige posición 0–100 | F1 (registro #11) | 1 |
+| ✅ Hecho (F1, `7c5f044`): tarjetas "No aplica" con cifra (AMT, SNOW, O, PLD, RIVN) → "—" y el motivo; regla #10 del guardián implementada (`no_aplica_con_cifra`) | F1 (registro #11) | 1 |
+| ✅ Hecho (F1, `b4935d7`): KPI de portada "Deuda neta/EBITDA" negativo (PLTR, TSM, MSFT, MU, NVDA, CRWD, ASML) → "Caja neta" y su importe; guardián `ratio_negativo_en_tarjeta` | F1 (registro #11) | 1 |
+| ✅ Hecho (F1, `d676b22`): `muestra` retirada con D8; sus 17 tests corren sobre el panel (`test_panel_cases.py`) | F0 (registros #2, #6, #7) | 1 (inicio) |
 | Descartado — resuelto, **verificado en el panel**: `yearly_financials` con datos en 30/30 (AAPL: 4 ejercicios) | RECON §7.7 | — |
 | Descartado — resuelto, **verificado en el panel**: normalización de partidas no recurrentes (C1): `earnings_normalization.items` en 12+ tickers (MSFT, KO, JNJ, JPM, V, O…); NFLX `differs` = true | RECON §7.7 | — |
 | Descartado — resuelto, **verificado en el panel**: financieras con el YoY de los estados: `data_validation` = `crecimiento_financiera_estados` en JPM, BAC, PGR y BRK-B | RECON §7.8 | — |
@@ -128,6 +138,20 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
 | Descartado — resuelto en la 11b, **verificado en el panel**: BRK-B P/E 17.0 y BPA 31.0 (clase B); ASML `operating_cash_flow` 12.2 B (alias IFRS); plan B sin reintentos (`yahoo.http_statuses` = [401, 401, 200, 200] en los 31: un solo plan B) | RECON §7.16 | — |
 | Descartado — resuelto en la 11b, **verificado en el panel**: TSM convertida de TWD (`data_provenance.currency.converted` = true, factor ADR 5.0, P/E 31.3); BRK-B P/E 17.0; SPY 422; NEE `dcf_status` = no_aplica (utility); "CYCLICAL" y "$-8" fuera de la prosa (invariante `no_archetype_codes_nor_sign_after_symbol` pasa en 30/30; los códigos siguen en la línea del detalle técnico del PDF: fila D1) | memoria (deploy 9b) | — |
 | Descartado — sin efecto material, **sin verificar** (era una diferencia entre juegos local/prod, no aplica al panel): SNOW con deuda neta en local y caja neta en prod | RECON §7.13 | — |
+| **Nuevo (BCS, informe de prod del 15-oct revisado por el usuario con un analista externo):** dividend yield **50.46%** imposible (≈ $11.50 por ADR sobre $22.79). Hipótesis del planificador: `dividendRate` en **peniques leído como libras** (×100) y **sin factor ADR** (÷4), ≈ 25×; real probablemente ~2% (verificar contra el dividendo declarado). Arrastra el shareholder yield (54.32%) y "Dividendo sostenible (50.46%)" en la salud financiera (que además cita el yield donde debería evaluar el payout). **Fase 1 (antes del push):** guardián de identidades datos↔datos (dividend yield ≈ payout × E/P y ≈ dividendos pagados / capitalización; shareholder yield = dividendo + recompras) → si no cuadra, "sin dato" + aviso; "dividendo sostenible" evalúa el payout. **Fase 1 ✅ hecha** (`bfc38e9` identidad y sin dato; `8c860be` dividendo sostenible por payout). **Diagnóstico confirmado (registro #13):** el yield viene de Finnhub `/stock/metric`, que para BCS da la línea de Londres de la acción ordinaria **en peniques** (`dividendIndicatedAnnual` 11.5); el motor lo divide por el precio del ADR en dólares: peniques (×100), sin factor ADR (÷4.154) y **sin conversión GBP→USD** (÷1.342) → ≈ 18×; real ≈ 2.8%. **Fase 2:** arreglar la unidad, el factor y la moneda en origen | usuario, 2026-10-15 | 1 (guardián) / 2 (origen) |
+| **Nuevo (F1, identidad del dividendo):** el mismo defecto de origen que BCS en **TSM** (6.05%: 26 TWD por acción ordinaria sobre $430 del ADR; real ≈ 0.95%), **NVO** (30.69%: 11.7 DKK sobre $38; real ≈ 4.8%) y **NVDA** (0.45%: `dividendIndicatedAnnual` = 1 de Finnhub; el dividendo es $0.04, ≈ 0.02%). Desde `bfc38e9` salen "sin dato" con aviso. Arreglar en origen: `dividendIndicatedAnnual` de Finnhub en moneda y acción de la línea local | F1 (registro #13) | 2 |
+| **Decidido (usuario, 2026-10-15, registro #14):** las **filas de tabla** con "No aplica" pasan a la misma regla que las tarjetas: "—" y el motivo, sin cifra (también la tabla de valoración: el FCF yield de BCS del 29.31% no debe verse). **Cambia la regla de la etapa 9b** (que mostraba la cifra con "No aplica") por decisión del usuario; su test se ajusta | F1 (registros #13, #14) | 1 |
+| **Nuevo (usuario, 2026-10-15):** decidir qué métricas aplican de verdad a FINANCIAL. El P/E y el dividend yield son métricas legítimas de un banco; hoy salen como "no aplica" | usuario, registro #14 | 3 |
+| **Nuevo (usuario, 2026-10-15):** el control de identidad del dividendo solo detecta rentabilidades **infladas**; falta el sentido contrario (unidad 100 veces menor), resolviendo el caso de los dividendos extraordinarios como PGR (yield indicado 0.19% frente a 6.6% pagado) | usuario, registro #14 | 2 |
+| **Nuevo (BCS):** factor ADR **4.154** frente a **4** oficial: se infiere de acciones del balance (31-dic) / acciones de hoy, y las recompras entre ambas fechas (~3.9%) se cuelan en el factor. Desvía ~3.9% todas las cifras por acción. Usar el ratio oficial del depositario (o ajustar al entero cercano dentro de tolerancia, declarándolo) | usuario, 2026-10-15 | 2 |
+| **Nuevo (BCS):** bancos europeos con **AT1** (instrumentos híbridos contabilizados como patrimonio): el ROE/ROTE contable (10.0%) frente al RoTE reportado (12.2%); los cupones AT1 deben restarse del beneficio y los AT1 del patrimonio tangible; el payout de "dividendos pagados" puede incluir cupones AT1 | usuario, 2026-10-15 | 2 (datos) / 3 (método) |
+| **Nuevo (BCS):** "ROTE implícito en el precio" para bancos: con P/TBV 0.81, Ke 11%, g 2.5% → ROTE ≈ 9.4% descontado, frente al reportado y al objetivo de la gerencia (sensibilidad). Equivalente bancario del reverse DCF | usuario, 2026-10-15 | 3 |
+| **Nuevo (BCS):** beta **1.64** idéntica a la de NVO (Finnhub en ADR, ya sospechosa): verificar contra una beta calculada sobre la serie de precios | usuario, 2026-10-15 | 2 |
+| ✅ Hecho (F1, `48a0242`): etiqueta "P/B frente a ROE 0.95× justificado" → "95% del P/B justificado (0.73x frente a 0.76x)", ídem P/TBV | usuario, 2026-10-15 | 1 |
+| **Nuevo (proceso):** el panel no tiene emisores que reporten en peniques ni bancos europeos. Ampliarlo al inicio de la fase 2 con BCS, HSBC, SHEL, UL y TM (GBp/EUR/JPY, distintos factores ADR, AT1). En la fase 1 basta con capturar BCS para probar el guardián de identidades (✅ `3f2138b`, grupo "Revisión externa") | planificador, 2026-10-15 | 1 (BCS) / 2 (resto) |
+| **Nuevo (ROCE, usuario 2026-10-15):** el ROCE se calcula (AAPL 68.72%; promedio de ciclo en cíclicas) pero en la web es la **última fila de "Tabla de rentabilidad y eficiencia", plegada por defecto** (desde la 9b); solo se ve la nota de divergencia ROCE–ROIC. La fila no tiene referencia, brecha ni lectura ("Antes de impuestos"). En FINANCIAL/REIT "No aplica" (correcto). **Fase 1 (T6):** subirlo al bloque visible de Rentabilidad junto a ROIC − WACC (con el promedio de ciclo en CYCLICAL) y al resumen del PDF, sin cambiar cálculos. **Fase 4:** referencia por sector, bandas de lectura y ROCE promedio como prueba de persistencia de la calidad | usuario + planificador, 2026-10-15 | 1 (visible) / 4 (bandas) |
+| **Nuevo (infra):** Render **apaga el servicio sin tráfico** ("Service waking up" al abrir finanzer.app el 15-oct): explica buena parte de los 46–52 s en frío, además de la atención en serie | planificador, 2026-10-15 | 6 (D6) |
+| **Nuevo (proceso):** revisión externa al cierre de cada fase: 2–3 tickers **fuera del panel**, contrastados con un analista independiente (como hizo el usuario con BCS). Se añade al protocolo de PLAN_FIABILIDAD §5 | planificador, 2026-10-15 | todas |
 
 ## Registro de sesiones
 
@@ -355,4 +379,217 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
   redespliega producción. Al retirar `prod` y `muestra`, revisar los tests atados que los usan
   (`test_muestra.py`, ramas de `prod` en `test_cost_of_capital`, `test_normalize`, `test_ingestion`,
   `test_known_bugs`, `test_display_charts`, `test_frontend_contract`).
+
+### #7 · 2026-10-14 · operador · Fase 1 (T0 hecha; detenida en el punto de parada 1)
+- **Objetivo de la sesión:** T0 (D8) y T1 (diseño del guardián narrativo) hasta el punto de parada 1.
+- **Hecho:**
+  - Rama `fiabilidad/f1-visible` desde `main` local `0f798c8`.
+  - T0 (`d676b22`, "F1: D8, retira los juegos prod y muestra"): fuera `fixtures/{prod,muestra}`, `golden/prod`,
+    `import_prod_capture.py`, `supplement_prod_search.py` y `diff_golden --local-vs-prod`. `test_muestra.py` →
+    `test_panel_cases.py` (los 17 tests, sobre el panel; PFE → KO para el grid con celda negativa). Tests atados a
+    los 6 tickers: `conftest.BOUND_ENVS = [local, panel]` en lugar de `prod`. Casos que el panel ya no da con el
+    mismo ticker: cobertura negativa con caja neta y ROIC no significativo → CRWD; base anual por trimestres
+    incompletos → BRK-B; EBITDA < 0 con caja neta → sin caso en ningún juego, lo cubre
+    `test_read_nde_net_cash_only_when_cash_exceeds_debt`.
+  - T1: diagnóstico verificado y diseño en `docs/fiabilidad/F1_DISENO_GUARDIAN.md` (enfoque b + a enlazados, 19
+    predicados, colector sin cambio de salida, prueba de que detecta).
+- **Verificación:** suite tras T0 → `1474 passed, 1 skipped, 2 xfailed` (47 s). La bajada desde 1538 son 64 tests:
+  los casos `prod` de la regresión y el determinismo (28) y de los 6 tests genéricos de `test_display` (36), cubiertos
+  por los golden y los invariantes del panel.
+- **Diagnóstico PLTR (verificado):** `interest_coverage_state` decide por el signo del cociente. PLTR no tiene gasto
+  financiero en los estados del plan B; la cobertura −1.53 viene de Finnhub (ingreso financiero neto) con EBIT
+  +2.63 B. El estado erróneo llega a 4 sitios: `display.read_coverage`, el motivo de `validate.py`, la Solidez y el
+  **rating sintético del WACC** (`cost_of_capital.synthetic_rating`: BBB por regla M). CRWD: EBIT GAAP −119 M y
+  gasto +26.6 M → su texto es correcto.
+- **Decisiones tomadas por el usuario:** ninguna en esta sesión (las de la fase vienen del prompt F1 y de D1/D8).
+- **Abierto / siguiente paso:** aprobación del diseño del guardián (y del tratamiento del WACC de PLTR en la misma
+  causa que la cobertura). Después, T2 (guardián en rojo).
+- **Archivos tocados:** `backend/tests/` (D8), `docs/fiabilidad/F1_DISENO_GUARDIAN.md`, `docs/fiabilidad/BITACORA.md`.
+- **Avisos para el siguiente chat:** la bitácora tenía sin commitear el cambio del planificador en D1 (decidida:
+  anexo técnico); va en el commit de esta entrada. `invariants.py` todavía nombra `test_muestra` en comentarios.
+
+### #8 · 2026-10-14 · operador · Fase 1 (diseño del guardián aprobado; T2 en curso)
+- **Decisiones tomadas por el usuario (cita literal):**
+
+  > Apruebo el diseño del guardián con estos cambios:
+  > 
+  >   1. Red de seguridad también sobre el PDF: normaliza el texto extraído (espacios, guiones, saltos de línea). Cada palabra de afirmación que aparezca en el PDF debe poder rastrearse hasta una frase de display con afirmaciones declaradas; si no, falla. Lo mismo para cualquier frase propia de pdf_report.py.
+  > 
+  >   2. Gasto financiero de PLTR: busca primero en los estados del plan B (Interest Income, Net Interest Income, Net Non Operating Interest Income Expense o equivalentes). Solo si no existen, infiere el signo desde la cobertura de Finnhub, y deja en data_provenance que el dato es inferido.
+  > 
+  >   3. Rating del WACC de PLTR: sí, en el mismo commit que la cobertura de intereses (misma causa). Cuantifica en el diff el cambio de Kd, WACC, valor del DCF y nivel de precio. Con caja neta, el peso de la deuda debería ser casi cero; si el nivel de precio cambia, explícalo antes de seguir.
+  > 
+  >   4. Añade al catálogo:
+  >      - #20 Base temporal: «(3 años)», «interanual», «TTM», «FY…» deben coincidir con la base real del dato (growth_basis, data_provenance.ttm).
+  >      - #21 Contracción del precio: «sin ajustar X → ajustado Y por confianza Z» debe cuadrar con price_attractiveness (score_raw, score, factor) y con confidence.level.
+  >      - Amplía la #6: si benchmark.profile = market, el texto debe decir «mercado», no «sector».
+  > 
+  >   Registra esta aprobación en la bitácora y sigue con T2 (guardián en rojo).
+
+- **Hecho:** aprobación registrada; el diseño se amplía con #20, #21, la #6 con «mercado» y la red sobre el PDF
+  normalizado (también frases propias de `pdf_report.py`). T2 en curso (ver la entrada siguiente).
+
+### #9 · 2026-10-15 · operador · Fase 1 (T2: guardián narrativo en rojo)
+- **Objetivo de la sesión:** implementar el guardián aprobado (registro #8) sin arreglar nada.
+- **Hecho (`0ebba81`):**
+  - `lib/claims.py`: afirmaciones declaradas junto al texto; colector (`contextvars`) activo solo en tests.
+  - Instrumentación sin cambio de salida: lectores de `display.py` (en la llamada, con el campo que respalda cada
+    afirmación), `read_vs_sector` por decorador, textos del motor que `display` pasa al informe (desglose, tarjetas
+    institucionales, nota del WACC, confianza, filas y etiquetas con base temporal, criterios Piotroski, nota de
+    clasificación) y señales de `alert_interpretations.py` por intérprete.
+  - `tests/guardian.py`: 16 predicados (catálogo más #20 y #21), red de seguridad en el display y en el PDF
+    normalizado (la palabra se rastrea por ventana de caracteres, porque pypdf puede intercalar columnas; las
+    etiquetas cortas de celda valen por sí solas), lista negra y reglas #6/#7/#17/#20. Los tooltips (escalas de
+    bandas) y las zonas de los gráficos no son afirmaciones sobre la empresa: fuera de la red, dentro de la lista
+    negra. Las frases propias de `pdf_report.py` pasan por la misma red del PDF (no apareció ninguna sin respaldo).
+  - `test_guardian.py`: (regla × juego × ticker) sobre 30 del panel + 6 de local, 85 xfail estrictos.
+    `test_guardian_detecta.py`: los 16 predicados y cada mecanismo detectan su violación (25 tests).
+- **Verificación:** `diff_golden.py --env local` y `--env panel` → sin diferencias. Suite → **2244 passed, 1 skipped,
+  87 xfailed** (51 s).
+- **En rojo (casos conocidos):** PLTR "EBIT negativo" (6 frases: lectura, desglose, motivo de validación…); "STRONG"
+  en JPM, BAC, PGR, BRK-B; códigos internos en 30/30; cota del ciclo medio en XOM, DOW, FCX, MU, ASML.
+- **Nuevos (al mapa, fase 1):** "(3 años)" en cifras de ciclo medio; V "frente al sector" con benchmark de mercado;
+  BRK-B "TTM" con base anual; AMT atribuye la caída del FFO a una dilución inexistente; "N/A" en tablas; la web
+  enseña códigos en "Detalle técnico".
+- **Decisiones tomadas por el usuario:** ninguna nueva. (El commit `98cc1b2` lleva la entrada #8.)
+- **Abierto / siguiente paso:** T3, un commit por causa.
+- **Archivos tocados:** `backend/lib/{claims,display,alert_interpretations}.py`, `backend/tests/{guardian,test_guardian,test_guardian_detecta}.py`.
+- **Avisos para el siguiente chat:** el guardián tarda ~5 s en los 36 informes.
+
+### #10 · 2026-10-15 · operador · Fase 1 (T3: arreglos, un commit por causa)
+- **Objetivo de la sesión:** T3 del prompt F1: convertir en verde los 85 xfail del guardián, una causa por commit.
+- **Hecho:**
+  - `d63de70` T3.1 cobertura de intereses por el signo del EBIT y del resultado financiero (*Net Non Operating
+    Interest Income Expense* de los estados del plan B; sin inferir en ningún ticker). PLTR: `sin_carga`, rating
+    BBB → AAA, Kd 6.40% → 5.69%, WACC −0.0003 pp (peso de la deuda 0.04%), DCF 44.22 sin cambio, Solidez ya en
+    20/20: **nivel de precio sin cambio**. "Sin carga" exige el signo en el TTM y en cada trimestre (NFLX, ver mapa).
+  - `87c147d` T3.2 "STRONG"/"N/A" en castellano en la capa de presentación (también en la web, `api.ts`).
+  - `51e8f96` T3.3 D1: `display.annex` → anexo "Detalle técnico para auditoría" al final del PDF; tabla de
+    confianza en lenguaje llano; la web deja de recibir y de mostrar el detalle técnico.
+  - `eac35b3` T3.4 cota del ciclo medio dicha como cota; "(ciclo medio)" en la comparación de CYCLICAL.
+  - `83e0f70` T3.5 invariante del crecimiento: signo con el verbo (y deja de aceptar "5.0%" positivo dentro de
+    "se contraen un 5.0%"). 0 xfail en el panel.
+  - `90ab32a`, `f6f0b36`, `d7393fd` T3.6: V "frente al mercado"; BRK-B "P/E (último ejercicio)"; AMT sin dilución
+    inexistente.
+  - `docs/fiabilidad/F1_DIFF_GOLDEN.md`: diff de golden explicado causa por causa (para T5).
+- **Verificación:** suite → **72 failed, 2395 passed, 1 skipped, 0 xfailed**; los 72 son la comparación con los
+  golden (36 análisis + 36 PDF), sin regenerar a propósito hasta el punto de parada 2. Guardián: 0 fallos, tabla
+  de conocidos vacía. Cada cambio de golden, atribuido en `F1_DIFF_GOLDEN.md`; fuera de PLTR ninguna cifra cambia.
+- **Decisiones tomadas por el usuario:** ninguna nueva.
+- **Abierto / siguiente paso:** T4 (página 2 + comprobación geométrica + PNG); el anexo cambia el número de
+  páginas en 14 PDF (revisar en T4). `frontend/out` se recompila en T6 (cambios de `api.ts` y `StockHeader.tsx`).
+- **Archivos tocados:** `backend/lib/{financial_ratios,ttm,yf_adapter,data_fetcher,validate,cost_of_capital,alert_interpretations,display,display_charts,pdf_report}.py`, `backend/main.py`, `backend/tests/{guardian,invariants,test_guardian,test_guardian_detecta,test_invariants_detectan,test_panel_invariants,test_interest_coverage,test_presentacion_castellano,test_anexo_tecnico,test_cota_ciclo_medio}.py`, `frontend/src/{lib/api.ts,components/StockHeader.tsx}`.
+- **Avisos para el siguiente chat:** la regresión de golden falla a propósito hasta T5; para ver solo lo demás,
+  `pytest tests | grep -v matches_golden`.
+
+### #11 · 2026-10-15 · operador · Fase 1 (T4 hecha; T5: detenida en el punto de parada 2)
+- **Objetivo de la sesión:** T4 (maquetación del PDF y comprobación geométrica) y T5 (golden y panel) del prompt F1.
+- **Hecho:**
+  - `7f32070` página 2 en flujo natural y a ancho completo; la lectura en `KeepInFrame(shrink)` con el alto que
+    queda (antes: alturas fijas 27/46/27%, composición 24 pt más estrecha, barras 12 pt más anchas que su celda,
+    lectura montada sobre la composición en 32 de 36 PDF).
+  - `e3161d2` `tests/pdf_geometry.py` (pypdfium2): texto dentro del área útil y sin solapes; prueba de que detecta en
+    páginas sintéticas y en el código anterior a T4 (33 de 36). Encontró y se arreglaron en `data_table` dos
+    defectos más: "No aplica a …" sobre la brecha (RIVN, SNOW) y el criterio de Piotroski sobre su detalle (24 PDF).
+  - `c369575` el anexo técnico no se parte entre páginas (AAPL, SNOW).
+  - `19449a1` apartado T4 de `F1_DIFF_GOLDEN.md`.
+  - Revisión visual de las páginas 1 y 2 de un ticker por grupo (AAPL, JPM, AMT, NEE, XOM, PLTR, SNOW, TSM, NFLX):
+    `~/Downloads/finanzer_f1_panel_2026-10-15/revision_visual/`. Sin defectos de maquetación; tres hallazgos de
+    contenido al mapa (a decidir).
+- **Verificación:** suite → **72 failed, 2508 passed, 1 skipped, 0 xfailed**: los 72 son la comparación con los
+  golden (36 análisis + 36 PDF). Comprobación geométrica y página 2: 72/72 en verde. `panel_run --mode replay
+  --compare ~/Downloads/finanzer_f0_panel_2026-10-14/replay_tabla_validada` → **0 cambios** de arquetipo, nivel de
+  calidad, nivel de precio o confianza en los 31; solo cambia `paginas_pdf` en 18 (anexo y filas partidas).
+- **Decisiones tomadas por el usuario:** ninguna nueva.
+- **Abierto / siguiente paso:** **punto de parada 2**: aprobación del diff de golden (`F1_DIFF_GOLDEN.md`) para
+  regenerarlos; decidir los tres hallazgos de la revisión visual. Después T6 (web, con `frontend/out` recompilado),
+  T7 (merge y deploy con "ok, pushea"), T8 (cierre).
+- **Archivos tocados:** `backend/lib/pdf_report.py`, `backend/tests/{pdf_geometry,test_pdf_geometry,test_anexo_tecnico,test_archetype_branches}.py`, `docs/fiabilidad/F1_DIFF_GOLDEN.md`.
+- **Avisos para el siguiente chat:** el margen de la página 2 es estrecho (NFLX y SNOW quedan a 3–4 pt); si un texto
+  crece, la lectura se contrae un poco en vez de desbordar. `test_page_2_holds_the_whole_summary` lo vigila.
+
+### #12 · 2026-10-15 · operador · Fase 1 (punto de parada 2 aprobado)
+- **Decisión del usuario (literal):**
+  > Apruebo regenerar los golden de panel y local con el diff de F1_DIFF_GOLDEN.md. Regenéralos ahora, en un commit propio, para que los arreglos siguientes tengan su diff aislado.
+  >
+  > Después, antes de T6, cuatro cosas más dentro de la fase 1 (un commit por causa, con test que falla antes):
+  >
+  > 1. Punto ciego del guardián: la afirmación #10 («no aplica» con cifra) no detectó las tarjetas de AMT y SNOW. Explica por qué (¿las tarjetas KPI y metric_card no declaran afirmaciones?), haz que el guardián cubra todas las tarjetas de portada y resumen, y añade el caso a test_guardian_detecta.py. Arregla las tarjetas: si no aplica, valor «—» y el motivo, sin cifra.
+  >
+  > 2. Rango de 52 semanas: máximo = max(máximo, precio) y mínimo = min(mínimo, precio), para que la posición nunca pase de 0–100% (XOM «101%»). Añade al guardián que la posición citada está entre 0 y 100.
+  >
+  > 3. Deuda neta/EBITDA negativa en la portada (PLTR, TSM): se muestra «Caja neta» con su importe, igual que en la fila de Solidez. Ningún ratio negativo se presenta como nivel en una tarjeta.
+  >
+  > 4. Escala mínima del KeepInFrame(shrink) en la portada y en la página 2: la comprobación geométrica falla si la escala baja de 0.85. Reporta la escala mínima actual en el panel.
+  >
+  > Presenta en el punto de parada 3 el diff de estos cuatro arreglos (qué tickers y campos cambian) junto con la petición de «ok, pushea». No regeneres los golden de estos cuatro sin esa aprobación.
+- **Hecho:** `da2b33e` golden de panel y `local` regenerados (72 archivos); suite **2580 passed, 1 skipped**.
+- **Abierto / siguiente paso:** los cuatro arreglos (un commit por causa), T6 y punto de parada 3.
+
+### #13 · 2026-10-15 · operador · Fase 1 (arreglos tras la parada 2, T6 y BCS; detenida en el punto de parada 3)
+- **Instrucción del usuario (BCS, literal):**
+  > Hallazgo nuevo de producción (BCS, informe del 15-oct revisado con un analista externo). Lee las filas «Nuevo (BCS)» del mapa de pendientes de la bitácora: las añadió el planificador.
+  >
+  > Dentro de la fase 1, antes del punto de parada 3 (un commit por causa, con test que falla antes):
+  >
+  > 5. Captura BCS en el panel con --render-sim, como caso de prueba. No amplíes más el panel: eso es del inicio de la fase 2.
+  >
+  > 6. Guardián de identidades (datos frente a datos, no texto): dividend yield ≈ payout × earnings yield, y ≈ dividendos pagados / capitalización, con una tolerancia que justifiques. Shareholder yield = dividend yield + buyback yield. Si una identidad no cuadra, la cifra sale «sin dato» con aviso en data_validation y no puntúa. Debe dispararse en BCS (hoy 50.46%) y en ningún ticker del panel que esté bien. Con prueba de que detecta.
+  >
+  > 7. «Dividendo sostenible (X%)» en la salud financiera bancaria: evalúa y cita el payout, no el dividend yield.
+  >
+  > 8. Etiqueta «P/B frente a ROE 0.95× justificado» (y P/TBV): reescríbela para que no parezca el múltiplo justificado, p. ej. «cotiza al 95% del P/B justificado (0.73x frente a 0.76x)».
+  >
+  > No toques en esta fase el origen del dato (peniques/libras, factor ADR 4.154 frente a 4, AT1, beta de Finnhub): es de la fase 2. Solo diagnostica y anota en el mapa la causa confirmada del 50.46%: verifica si dividendRate viene en peniques y sin factor ADR, que es la hipótesis del planificador.
+  >
+  > Incluye estos cuatro arreglos en el diff que presentarás en el punto de parada 3.
+- **Hecho (un commit por causa; golden sin regenerar):**
+  - `7c5f044` tarjetas "No aplica" sin cifra; regla #10 del guardián (no estaba implementada). `ff6c591` rango de 52
+    semanas con la cotización actual (XOM 101% → 100%). `b4935d7` caja neta en la portada en lugar de un ratio
+    negativo. `c09ee29` escala mínima 0.85 del contenido encogido (mínimas: portada 0.936 TSM, página 2 1.000).
+  - T6: `8ca3718` `npm run check` reparado (leía `golden/prod`, retirado en D8); `b3309a8` en la web la
+    cobertura "sin carga" se leía "No significativo" (hallazgo de T6); `450a4d4` `frontend/out` recompilado.
+    Verificado en el navegador con un servidor local que sirve el mismo análisis que los tests (replay del panel,
+    ruta de producción): PLTR "sin carga financiera neta" y "Caja neta $9.20B"; JPM "sólida", sin "STRONG" ni "N/A";
+    XOM 100% y "acotado al mínimo"; AMT tarjetas "—"; ningún código ni "Detalle técnico". La barra de 52 semanas de
+    la web solo muestra la posición (RECON §7.14: descartado, verificado).
+  - BCS: `3f2138b` en el panel (render-sim, 10:11 intradía); `359f06a` "Gran descuento" declarado (guardián);
+    `bfc38e9` guardián de identidades y dividend yield sin dato si no cuadra (tolerancia 2.0 por arriba, justificada
+    en `F1_DIFF_GOLDEN.md` P3.7); `8c860be` dividendo sostenible por payout; `48a0242` etiqueta del P/B justificado.
+  - **Diagnóstico del 50.46%:** confirmado y ampliado (mapa): peniques, sin factor ADR y sin conversión GBP→USD
+    (≈ 18×). La identidad destapa el mismo defecto en TSM, NVO y NVDA (mapa, fase 2).
+- **Verificación:** suite → **45 failed, 2832 passed, 1 skipped**: los 45 son la regresión de golden de 22 tickers
+  (19 del panel, 3 de `local`; BCS sin golden). Guardián, invariantes, geometría y contrato de la web en verde.
+  `panel_run --mode replay --compare …/replay` (la corrida aprobada en la parada 2): ningún cambio de arquetipo,
+  nivel de calidad, nivel de precio ni confianza en los 31; `validaciones` +1 en TSM, NVO y NVDA; BCS nuevo
+  (FINANCIAL, calidad 75 sólida, precio 50 razonable, confianza media).
+- **Decisiones tomadas por el usuario:** la de BCS (arriba).
+- **Abierto / siguiente paso:** **punto de parada 3**: aprobación de los golden de estos arreglos (y del nuevo de
+  BCS) y "ok, pushea". Con ella: regenerar golden (commit propio), merge en `main` local, suite en verde, push,
+  verificación en producción (T7) y cierre (T8). A decidir: "No aplica" con cifra en las filas de tabla.
+- **Avisos para el siguiente chat:** el servidor de replay para la web está en el scratchpad de la sesión
+  (`serve_replay.py`: parchea `main._compute_analysis` con `fb.run_analysis`); recrearlo si hace falta.
+
+### #14 · 2026-10-15 · operador · Fase 1 (parada 3 aprobada con condiciones)
+- **Decisión del usuario (literal):**
+  > Apruebo regenerar los golden del diff P3.1–P3.9 de F1_DIFF_GOLDEN.md, en su propio commit.
+  >
+  > Decisión sobre las filas «No aplica» de las tablas: misma regla que las tarjetas, «—» y el motivo, sin cifra (también la tabla de valoración: el FCF yield de BCS del 29.31% no debe verse). Ajusta el test de la 9b que protegía lo contrario y anota en la bitácora que la regla cambia por decisión del usuario.
+  >
+  > Antes del deploy, dos puntos más (un commit por causa, con test que falla antes):
+  > - Punto 9 (ROCE visible): mira la fila «Nuevo (ROCE)» del mapa. ROCE en el bloque visible de Rentabilidad, junto a ROIC − WACC (y el promedio de ciclo en CYCLICAL), y en el resumen del PDF. En FINANCIAL y REIT, «No aplica». Sin cambiar cálculos ni inventar bandas (eso es de la fase 4). Guardián: la cifra citada = key_metrics.roce redondeado.
+  > - La regla de las tablas que acabo de decidir.
+  >
+  > Añade al mapa de pendientes:
+  > - Fase 3: decidir qué métricas aplican de verdad a FINANCIAL. El P/E y el dividend yield son métricas legítimas de un banco; hoy salen como «no aplica».
+  > - Fase 2: el control de identidad del dividendo solo detecta rentabilidades infladas; falta el sentido contrario (unidad 100 veces menor), resolviendo el caso de dividendos extraordinarios como PGR.
+  >
+  > Ok, pushea, con esta condición: si el punto 9 y la regla de las tablas solo cambian presentación (en el panel ningún cambio de cifra, arquetipo, nivel de calidad, nivel de precio ni confianza frente a la corrida aprobada), regenera esos golden en su propio commit, haz merge a main con la suite y el guardián en verde, pushea y verifica producción con panel_run --mode live frente a la corrida F0 live. Si cambia cualquier otra cosa, detente y preséntamelo sin pushear.
+  >
+  > Ten en cuenta que Render apaga el servicio sin tráfico: la primera petición tras el deploy tardará. No lo cuentes como fallo; despiértalo antes de medir.
+  >
+  > Después del deploy, en T8, deja preparada la revisión externa (punto 11 del protocolo): los PDF de producción de BCS, UL y una empresa mediana de EE. UU. fuera del panel, para que yo los contraste con un analista independiente.
+- **Hecho:** `b25e75e` golden de P3.1–P3.9 regenerados y el de BCS creado; suite **2877 passed, 1 skipped**.
+- **Regla que cambia por decisión del usuario:** "No aplica" en las filas de tabla, sin cifra (antes, etapa 9b, con
+  cifra). Mapa: filas nuevas de fase 3 (métricas de FINANCIAL) y fase 2 (identidad del dividendo a la baja).
 

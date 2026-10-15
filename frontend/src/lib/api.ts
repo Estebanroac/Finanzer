@@ -90,8 +90,6 @@ export interface Cover {
   archetype: string;
   archetype_label: string;
   classification_notes: string[];
-  /** Código del arquetipo y motivo técnico: solo en el "Detalle técnico". */
-  classification_detail: string[];
   quality: ScoreBlock;
   price: PriceBlock;
   categories: Array<{ title: string; items: CategoryItem[] }>;
@@ -143,7 +141,6 @@ export interface ConfidenceReason {
   dimension: string;
   level: string;
   text: string | null;
-  detail: string;
 }
 
 export interface Confidence {
@@ -247,6 +244,7 @@ export interface Sections {
     columns: string[];
     rows: Row[];
     divergence_note: string | null;
+    roce_reading: string | null;
     figures: string[][];
   };
   solvency: { intro: string | null; columns: string[]; rows: Row[]; balance: string };
@@ -501,6 +499,11 @@ export interface Charts {
     returns: VsBench[];
     margins: VsBench[];
     spread: { state: RowState; text: string | null; value?: number; value_txt?: string; tone?: Tone; reading?: string };
+    /** Fase 1: ROCE visible junto a ROIC − WACC; la lectura es la comparación con el ROIC (sin bandas). */
+    roce: {
+      state: RowState; text: string | null; value_txt?: string; label?: string; basis?: string;
+      avg?: { label: string; value_txt: string; years: number; incomplete: boolean } | null;
+    };
     margin_ladder: { revenue: number | null; revenue_txt: string | null; steps: LadderStep[] };
   };
   solvency: { gauges: GaugeChart[]; runway: RunwayChart | null; structure: StructureChart };
@@ -528,6 +531,8 @@ export interface Display {
   cover: Cover;
   summary: Summary;
   confidence: Confidence | null;
+  /** Fase 1 (D1): códigos y motivos técnicos para el anexo del PDF; la web no lo muestra. */
+  annex: { title: string; items: Array<{ label: string; text: string }> };
   sections: Sections;
   methodology: { models: string[]; models_text: string };
   tooltips: Record<string, MetricBands>;
@@ -601,7 +606,7 @@ export function pdfUrl(symbol: string): string {
 const UNITS: Array<[number, string]> = [[1e12, "T"], [1e9, "B"], [1e6, "M"], [1e3, "K"]];
 
 export function formatMoney(val: number | null | undefined): string {
-  if (val == null || !Number.isFinite(val)) return "N/A";
+  if (val == null || !Number.isFinite(val)) return "—";
   const abs = Math.abs(val);
   const sign = val < 0 ? "−" : "";
   for (const [div, suffix] of UNITS) {
@@ -611,11 +616,11 @@ export function formatMoney(val: number | null | undefined): string {
 }
 
 export function formatPct(val: number | null | undefined): string {
-  if (val == null || !Number.isFinite(val)) return "N/A";
+  if (val == null || !Number.isFinite(val)) return "—";
   return `${(val * 100).toFixed(1)}%`;
 }
 
 export function formatPrice(val: number | null | undefined): string {
-  if (val == null || !Number.isFinite(val)) return "N/A";
+  if (val == null || !Number.isFinite(val)) return "—";
   return `$${val.toFixed(2)}`;
 }

@@ -486,6 +486,10 @@
         "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
         "source": "yfinance_statements"
       },
+      "netInterestIncome": {
+        "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
+        "source": "yfinance_statements"
+      },
       "operatingCashflow": {
         "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
         "source": "yfinance_statements"
@@ -622,6 +626,7 @@
         "grossProfits",
         "interestExpense",
         "netIncome",
+        "netInterestIncome",
         "operatingCashflow",
         "operatingIncome",
         "stockBasedCompensation",
@@ -680,6 +685,27 @@
     "state": "ok"
   },
   "display": {
+    "annex": {
+      "items": [
+        {
+          "label": "Clasificación",
+          "text": "Arquetipo CYCLICAL (regla industria_ciclica): Clasificada como CYCLICAL por industria Copper"
+        },
+        {
+          "label": "Confianza · Convergencia entre métodos (no evaluable)",
+          "text": "un solo método evaluable (múltiplos frente al sector): no hay contraste; no evaluable: DCF (fiabilidad baja)"
+        },
+        {
+          "label": "Confianza · Calidad de fuente (media)",
+          "text": "validación: revenueGrowth (crecimiento_incoherente); 16 campos de Finnhub en lugar de los estados"
+        },
+        {
+          "label": "Confianza · Estabilidad del arquetipo (baja)",
+          "text": "empresa cíclica: resultados ligados a la fase del ciclo"
+        }
+      ],
+      "title": "Detalle técnico para auditoría"
+    },
     "archetype": "CYCLICAL",
     "archetype_label": "Cíclica",
     "benchmark": {
@@ -913,9 +939,9 @@
                 "gap_txt": "-44%",
                 "higher_is_better": true,
                 "key": "revenue_growth",
-                "label": "Crecimiento de ingresos (3 años)",
+                "label": "Crecimiento de ingresos (ciclo medio)",
                 "reading": "Muy inferior",
-                "text": "Crecimiento de ingresos (3 años) de 4.5% frente a 8.0% del sector (-44%): muy inferior",
+                "text": "Crecimiento de ingresos (ciclo medio) de 4.5% frente a 8.0% del sector (-44%): muy inferior",
                 "tone": "neg",
                 "value": 0.0450413775521,
                 "value_txt": "4.50%"
@@ -928,9 +954,9 @@
                 "gap_txt": "-150%",
                 "higher_is_better": true,
                 "key": "earnings_growth",
-                "label": "Crecimiento del BPA (3 años)",
+                "label": "Crecimiento del BPA (ciclo medio)",
                 "reading": "Muy inferior",
-                "text": "Crecimiento del BPA (3 años) de -5.0% frente a 10.0% del sector (-150%): muy inferior",
+                "text": "Crecimiento del BPA (ciclo medio) de -5.0% frente a 10.0% del sector (-150%): muy inferior",
                 "tone": "neg",
                 "value": -0.05,
                 "value_txt": "−5.00%"
@@ -1280,6 +1306,19 @@
             "value_txt": "16.17%"
           }
         ],
+        "roce": {
+          "avg": {
+            "incomplete": true,
+            "label": "ROCE promedio del ciclo",
+            "value_txt": "14.45%",
+            "years": 4
+          },
+          "basis": "EBIT / capital empleado, antes de impuestos",
+          "label": "ROCE",
+          "state": "con_dato",
+          "text": "ROCE 12.93% en línea con el ROIC 16.17% (-3.2 pp, dentro de 10 pp).",
+          "value_txt": "12.93%"
+        },
         "spread": {
           "reading": "Crea valor",
           "state": "con_dato",
@@ -1731,25 +1770,25 @@
           "key": "convergence",
           "label": "Convergencia entre métodos",
           "level": "No evaluable",
-          "text": "DCF -50% (cara, no evaluable) · múltiplos frente al sector -0.50 (cara). un solo método evaluable (múltiplos frente al sector): no hay contraste; no evaluable: DCF (fiabilidad baja)"
+          "text": "DCF -50% (cara, no evaluable) · múltiplos frente al sector -0.50 (cara). Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo. El DCF no concilia con el precio y no se usa para contrastar."
         },
         {
           "key": "coverage",
           "label": "Cobertura de datos",
           "level": "Alta",
-          "text": "sin incidencias"
+          "text": "Sin incidencias."
         },
         {
           "key": "source",
           "label": "Calidad de fuente",
           "level": "Media",
-          "text": "validación: revenueGrowth (crecimiento_incoherente); 16 campos de Finnhub en lugar de los estados"
+          "text": "El crecimiento que reporta la fuente difiere mucho del de los estados anuales; se mantiene, pero conviene tomarlo con cautela. Parte de los datos proviene de una fuente secundaria."
         },
         {
           "key": "stability",
           "label": "Estabilidad del arquetipo",
           "level": "Baja",
-          "text": "empresa cíclica: resultados ligados a la fase del ciclo"
+          "text": "Empresa cíclica: sus resultados dependen de la fase del ciclo."
         }
       ],
       "level": "media",
@@ -1762,31 +1801,26 @@
       ],
       "reasons": [
         {
-          "detail": "un solo método evaluable (múltiplos frente al sector): no hay contraste",
           "dimension": "convergencia",
           "level": "no_evaluable",
           "text": "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo."
         },
         {
-          "detail": "no evaluable: DCF (fiabilidad baja)",
           "dimension": "convergencia",
           "level": "no_evaluable",
           "text": "El DCF no concilia con el precio y no se usa para contrastar."
         },
         {
-          "detail": "validación: revenueGrowth (crecimiento_incoherente)",
           "dimension": "calidad de fuente",
           "level": "media",
           "text": "El crecimiento que reporta la fuente difiere mucho del de los estados anuales; se mantiene, pero conviene tomarlo con cautela."
         },
         {
-          "detail": "16 campos de Finnhub en lugar de los estados",
           "dimension": "calidad de fuente",
           "level": "media",
           "text": "Parte de los datos proviene de una fuente secundaria."
         },
         {
-          "detail": "empresa cíclica: resultados ligados a la fase del ciclo",
           "dimension": "estabilidad",
           "level": "baja",
           "text": "Empresa cíclica: sus resultados dependen de la fase del ciclo."
@@ -1865,9 +1899,6 @@
           ],
           "title": "ATRACTIVO DEL PRECIO"
         }
-      ],
-      "classification_detail": [
-        "Arquetipo CYCLICAL (regla industria_ciclica): Clasificada como CYCLICAL por industria Copper"
       ],
       "classification_notes": [
         "Cíclica por su industria (Copper)."
@@ -1980,7 +2011,8 @@
         "Piotroski (2000)",
         "un DCF multietapa con WACC estimado por CAPM"
       ],
-      "models_text": "los modelos de Altman (1968), Piotroski (2000), un DCF multietapa con WACC estimado por CAPM"
+      "models_text": "los modelos de Altman (1968), Piotroski (2000), un DCF multietapa con WACC estimado por CAPM",
+      "ratios_text": "ratios TTM y del último ejercicio"
     },
     "na_keys": [
       "fcf_growth",
@@ -1988,6 +2020,7 @@
       "pe",
       "peg"
     ],
+    "pe_label": "P/E (TTM)",
     "readings": {
       "beta": {
         "label": "Volátil",
@@ -2016,7 +2049,7 @@
       },
       "earnings_growth": {
         "label": "Contracción",
-        "text": "el BPA se contrae un 5.0% anual de ciclo medio",
+        "text": "el BPA se contrae un 5.0% anual de ciclo medio (acotado al mínimo que admite el modelo)",
         "tone": "neg"
       },
       "fcf_yield": null,
@@ -2141,7 +2174,7 @@
           "LECTURA"
         ],
         "eps_vs_revenue_note": "BPA frente a ingresos: BPA -5.0% frente a ingresos +4.5% (los crecimientos que puntúa Crecimiento): el BPA crece más despacio que los ingresos: márgenes en compresión o dilución. Dato informativo, no puntúa: Crecimiento ya puntúa el BPA y los ingresos por separado.",
-        "intro": "Los ingresos crecen 4.5% anual de ciclo medio, un ritmo moderado. El BPA se contrae un 5.0% anual de ciclo medio. El número de acciones se mantuvo estable.",
+        "intro": "Los ingresos crecen 4.5% anual de ciclo medio, un ritmo moderado. El BPA se contrae un 5.0% anual de ciclo medio (acotado al mínimo que admite el modelo). El número de acciones se mantuvo estable.",
         "range52": {
           "axis": "Muestra dónde cotiza el precio dentro de su rango anual. Es contexto de mercado: no es una señal de valoración ni mide la calidad del negocio.",
           "caption": "Precio actual $69.61 — posición 75% del rango.",
@@ -2208,7 +2241,7 @@
             "label": "Crecimiento del BPA (ciclo medio)",
             "reading": "Contracción",
             "state": "con_dato",
-            "text": "el BPA se contrae un 5.0% anual de ciclo medio",
+            "text": "el BPA se contrae un 5.0% anual de ciclo medio (acotado al mínimo que admite el modelo)",
             "tone": "neg",
             "value": "-5.00%"
           },
@@ -2662,6 +2695,7 @@
           ]
         ],
         "intro": "El ROE de 14.6% está en el rango alto de su sector (sector: 5.0% competitivo, 12.0% rango alto). El ROIC (16.2%) supera al WACC (9.9%) en 6.3%, señal de creación de valor.",
+        "roce_reading": "ROCE 12.93% en línea con el ROIC 16.17% (-3.2 pp, dentro de 10 pp).",
         "rows": [
           {
             "bench": "12.00%",
@@ -2941,7 +2975,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "34.11x"
+            "value": "—"
           },
           {
             "bench": "12.00x",
@@ -2952,7 +2986,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "19.29x"
+            "value": "—"
           },
           {
             "bench": "2.00x",
@@ -2985,7 +3019,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "0.63x"
+            "value": "—"
           },
           {
             "bench": "8.00x",
@@ -3029,7 +3063,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "2.93%"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -3438,7 +3472,7 @@
         },
         {
           "label": "CREACIÓN DE VALOR",
-          "text": "El ROIC (16.2%) supera al WACC (9.9%) en 6.3%, señal de creación de valor."
+          "text": "El ROIC (16.2%) supera al WACC (9.9%) en 6.3%, señal de creación de valor. ROCE 12.93% (EBIT / capital empleado, antes de impuestos), en línea con el ROIC (16.17%); ROCE promedio del ciclo 14.45% (4 ejercicios, ciclo incompleto)."
         },
         {
           "label": "SOLIDEZ",
@@ -4535,6 +4569,7 @@
     "net_debt_to_ebitda_state": "ok",
     "net_income": 2945000000.0,
     "net_income_normalized": 2460405845.4,
+    "net_interest_income": -426000000.0,
     "net_margin": 0.11384722437,
     "operating_cash_flow": 5900000000.0,
     "operating_income": 6190000000.0,

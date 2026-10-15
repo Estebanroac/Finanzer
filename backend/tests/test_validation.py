@@ -325,22 +325,24 @@ def test_positive_multiples_untouched():
 from invariants import PROVENANCE_VOCAB as VOCAB  # noqa: E402
 
 
-@pytest.mark.parametrize("env", ["local", "prod"])
+@pytest.mark.parametrize("env", ["local", "panel"])
 def test_provenance_block_present_and_in_vocabulary(env, outputs_by_env):
     import conftest
     import invariants as inv
-    if env not in conftest.ENVS:
+    if env not in conftest.REG_ENVS:
         pytest.skip(f"falta el juego {env}")
     for sym, (a, _) in outputs_by_env(env).items():
+        if a.get("__http_error__"):          # SPY en el panel: rechazado, sin análisis
+            continue
         assert a["data_provenance"]["path"] == ("yahoo_quotesummary" if env == "local" else "plan_b_yfinance"), sym
         inv.provenance_in_vocabulary(a, None)
 
 
 def test_prod_provenance_marks_finnhub_and_statements(outputs_by_env):
     import conftest
-    if "prod" not in conftest.ENVS:
-        pytest.skip("falta el juego prod")
-    f = outputs_by_env("prod")["NFLX"][0]["data_provenance"]["fields"]
+    if "panel" not in conftest.BOUND_ENVS:
+        pytest.skip("falta el panel")
+    f = outputs_by_env("panel")["NFLX"][0]["data_provenance"]["fields"]
     assert f["beta"]["source"] == "finnhub"
     assert f["_prior_year.shares"]["source"] == "yfinance_statements"
     assert f["sector"]["detail"].startswith("búsqueda de Yahoo")

@@ -433,6 +433,10 @@
         "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
         "source": "yfinance_statements"
       },
+      "netInterestIncome": {
+        "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
+        "source": "yfinance_statements"
+      },
       "operatingCashflow": {
         "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
         "source": "yfinance_statements"
@@ -567,6 +571,7 @@
         "grossProfits",
         "interestExpense",
         "netIncome",
+        "netInterestIncome",
         "operatingCashflow",
         "operatingIncome",
         "totalRevenue"
@@ -579,6 +584,31 @@
     "state": "no_aplica"
   },
   "display": {
+    "annex": {
+      "items": [
+        {
+          "label": "Clasificación",
+          "text": "Arquetipo UTILITY (regla industria_utility): Clasificada como UTILITY por industria Utilities - Regulated Electric"
+        },
+        {
+          "label": "Clasificación",
+          "text": "Posible cíclica: margen operativo volátil (7.9 pp alrededor de su tendencia > 5 pp); crecimiento de ingresos volátil (23.1 pp > 15 pp). No cambia el arquetipo; baja la confianza."
+        },
+        {
+          "label": "Confianza · Convergencia entre métodos (no evaluable)",
+          "text": "un solo método evaluable (múltiplos frente al sector): no hay contraste"
+        },
+        {
+          "label": "Confianza · Calidad de fuente (media)",
+          "text": "16 campos de Finnhub en lugar de los estados"
+        },
+        {
+          "label": "Confianza · Estabilidad del arquetipo (media)",
+          "text": "alerta de posible cíclica"
+        }
+      ],
+      "title": "Detalle técnico para auditoría"
+    },
     "archetype": "UTILITY",
     "archetype_label": "Utility regulada",
     "benchmark": {
@@ -1078,6 +1108,14 @@
             "value_txt": "4.45%"
           }
         ],
+        "roce": {
+          "avg": null,
+          "basis": "EBIT / capital empleado, antes de impuestos",
+          "label": "ROCE",
+          "state": "con_dato",
+          "text": "ROCE 4.79% en línea con el ROIC 4.45% (+0.3 pp, dentro de 10 pp).",
+          "value_txt": "4.79%"
+        },
         "spread": {
           "reading": "Destruye valor",
           "state": "con_dato",
@@ -1369,25 +1407,25 @@
           "key": "convergence",
           "label": "Convergencia entre métodos",
           "level": "No evaluable",
-          "text": "múltiplos frente al sector +0.00 (en precio). un solo método evaluable (múltiplos frente al sector): no hay contraste"
+          "text": "múltiplos frente al sector +0.00 (en precio). Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo."
         },
         {
           "key": "coverage",
           "label": "Cobertura de datos",
           "level": "Alta",
-          "text": "sin incidencias"
+          "text": "Sin incidencias."
         },
         {
           "key": "source",
           "label": "Calidad de fuente",
           "level": "Media",
-          "text": "16 campos de Finnhub en lugar de los estados"
+          "text": "Parte de los datos proviene de una fuente secundaria."
         },
         {
           "key": "stability",
           "label": "Estabilidad del arquetipo",
           "level": "Media",
-          "text": "alerta de posible cíclica"
+          "text": "La empresa podría ser cíclica: sus resultados actuales pueden no ser representativos."
         }
       ],
       "level": "media",
@@ -1398,19 +1436,16 @@
       ],
       "reasons": [
         {
-          "detail": "un solo método evaluable (múltiplos frente al sector): no hay contraste",
           "dimension": "convergencia",
           "level": "no_evaluable",
           "text": "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo."
         },
         {
-          "detail": "16 campos de Finnhub en lugar de los estados",
           "dimension": "calidad de fuente",
           "level": "media",
           "text": "Parte de los datos proviene de una fuente secundaria."
         },
         {
-          "detail": "alerta de posible cíclica",
           "dimension": "estabilidad",
           "level": "media",
           "text": "La empresa podría ser cíclica: sus resultados actuales pueden no ser representativos."
@@ -1489,10 +1524,6 @@
           ],
           "title": "ATRACTIVO DEL PRECIO"
         }
-      ],
-      "classification_detail": [
-        "Arquetipo UTILITY (regla industria_utility): Clasificada como UTILITY por industria Utilities - Regulated Electric",
-        "Posible cíclica: margen operativo volátil (7.9 pp alrededor de su tendencia > 5 pp); crecimiento de ingresos volátil (23.1 pp > 15 pp). No cambia el arquetipo; baja la confianza."
       ],
       "classification_notes": [
         "Utility regulada por su industria (Utilities - Regulated Electric): el regulador fija su retorno sobre una base de activos financiada con deuda.",
@@ -1606,7 +1637,8 @@
         "número de Graham",
         "P/E frente al sector y rentabilidad por dividendo"
       ],
-      "models_text": "los modelos de Piotroski (2000), número de Graham, P/E frente al sector y rentabilidad por dividendo"
+      "models_text": "los modelos de Piotroski (2000), número de Graham, P/E frente al sector y rentabilidad por dividendo",
+      "ratios_text": "ratios TTM y del último ejercicio"
     },
     "na_keys": [
       "altman",
@@ -1621,6 +1653,7 @@
       "p_fcf",
       "peg"
     ],
+    "pe_label": "P/E (TTM)",
     "readings": {
       "beta": {
         "label": "Defensiva",
@@ -2262,6 +2295,7 @@
           ]
         ],
         "intro": "El ROE de 16.3% es excepcional para su sector (sector: 5.0% competitivo, 10.0% rango alto). El ROIC (4.5%) no cubre el costo de capital (7.5%): el crecimiento a estos retornos destruye valor.",
+        "roce_reading": "ROCE 4.79% en línea con el ROIC 4.45% (+0.3 pp, dentro de 10 pp).",
         "rows": [
           {
             "bench": "10.00%",
@@ -2563,7 +2597,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "2.02x"
+            "value": "—"
           },
           {
             "bench": "12.00x",
@@ -2574,7 +2608,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "17.61x"
+            "value": "—"
           },
           {
             "bench": "25.00x",
@@ -2585,7 +2619,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "53.63x"
+            "value": "—"
           },
           {
             "bench": "4.00%",
@@ -2596,7 +2630,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "1.86%"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -2833,7 +2867,7 @@
         },
         {
           "label": "CREACIÓN DE VALOR",
-          "text": "El ROIC (4.5%) no cubre el costo de capital (7.5%): el crecimiento a estos retornos destruye valor."
+          "text": "El ROIC (4.5%) no cubre el costo de capital (7.5%): el crecimiento a estos retornos destruye valor. ROCE 4.79% (EBIT / capital empleado, antes de impuestos), en línea con el ROIC (4.45%)."
         },
         {
           "label": "SOLIDEZ",
@@ -3812,6 +3846,7 @@
     "net_debt_to_ebitda_state": "ok",
     "net_income": 9299000000.0,
     "net_income_normalized": 9067984458.45,
+    "net_interest_income": -3512000000.0,
     "net_margin": 0.323995679593,
     "operating_cash_flow": 13803000000.0,
     "operating_income": 8135000000.0,

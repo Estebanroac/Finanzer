@@ -17,7 +17,9 @@ from xml.sax.saxutils import escape as _esc
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import inch
 from reportlab.lib import colors
+from reportlab.pdfbase.pdfmetrics import stringWidth
 from reportlab.platypus import (
+    Flowable,
     BaseDocTemplate, PageTemplate, Frame, Paragraph, Spacer, Table,
     TableStyle, PageBreak, HRFlowable, Image, KeepTogether, KeepInFrame,
 )
@@ -177,10 +179,64 @@ def section_header(num, title, S):
     return [t, Spacer(1, 5)]
 
 
+def _declare_scale(canv, tag, scale):
+    prev = getattr(canv._doc.info, "keywords", "") or ""
+    canv.setKeywords(f"{prev} escala_{tag}={scale:.3f}".strip())
+
+
+class _ScaleMark(Flowable):
+    """Marca sin tamaño: el bloque `tag` cabe sin encoger (escala 1.000)."""
+
+    def __init__(self, tag):
+        super().__init__()
+        self._tag = tag
+
+    def wrap(self, aw, ah):
+        return 0, 0
+
+    def draw(self):
+        _declare_scale(self.canv, self._tag, 1.0)
+
+
+class _ShrinkFrame(KeepInFrame):
+    """KeepInFrame en modo shrink que declara su escala efectiva en las palabras clave del PDF
+    ("escala_portada=0.973"): la comprobación geométrica (tests/pdf_geometry.py) falla por debajo de 0.85."""
+
+    def __init__(self, tag, max_w, max_h, content):
+        super().__init__(max_w, max_h, content, mode='shrink')
+        self._tag = tag
+
+    def drawOn(self, canv, x, y, _sW=0):
+        _declare_scale(canv, self._tag, 1.0 / getattr(self, '_scale', 1.0))
+        return super().drawOn(canv, x, y, _sW)
+
+
+_DT_SIZE, _DT_PAD = 8.6, 4   # cuerpo de data_table: cuerpo de letra y relleno lateral de celda
+
+
 def data_table(header, rows, widths, aligns=None, reads=None, bold_col=1):
     """Tabla editorial: cabecera gris con subrayado verde, hairlines, sin cebra.
     reads: lista opcional de (row_idx, tone) para colorear la última columna.
     bold_col: columna de valores en negrita (None para desactivar)."""
+    aligns = aligns or (['LEFT'] + ['RIGHT'] * (len(header) - 1))
+    tones = dict(reads or [])
+    last = len(header) - 1
+
+    # Fase 1 (T4): una celda de texto más ancha que su columna se pintaba encima de la vecina (comprobación
+    # geométrica: "No aplica a …" sobre la brecha, criterios de Piotroski sobre su detalle). Se parte en líneas
+    # dentro de su columna, con la misma fuente, color y alineación; las que caben no cambian.
+    def _fit(cell, ri, ci):
+        if not isinstance(cell, str):
+            return cell
+        bold = ci == bold_col or (ci == last and ri in tones)
+        font = 'Helvetica-Bold' if bold else 'Helvetica'
+        if stringWidth(cell, font, _DT_SIZE) <= widths[ci] - 2 * _DT_PAD:
+            return cell
+        color = TONE_COLOR[tones[ri]] if (ci == last and ri in tones) else INK if ci == bold_col else BODY
+        return Paragraph(_esc(cell), ParagraphStyle(
+            'dtw', fontName=font, fontSize=_DT_SIZE, leading=_DT_SIZE + 2, textColor=color,
+            alignment={'LEFT': TA_LEFT, 'RIGHT': TA_RIGHT, 'CENTER': TA_CENTER}[aligns[ci]]))
+    rows = [[_fit(c, ri, ci) for ci, c in enumerate(r)] for ri, r in enumerate(rows)]
     all_rows = [header] + rows
     t = Table(all_rows, colWidths=widths, repeatRows=1)
     cmds = [
@@ -188,20 +244,18 @@ def data_table(header, rows, widths, aligns=None, reads=None, bold_col=1):
         ('FONTSIZE', (0, 0), (-1, 0), 7.4),
         ('TEXTCOLOR', (0, 0), (-1, 0), MUTED),
         ('LINEBELOW', (0, 0), (-1, 0), 1, BRAND),
-        ('FONTSIZE', (0, 1), (-1, -1), 8.6),
+        ('FONTSIZE', (0, 1), (-1, -1), _DT_SIZE), ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('TEXTCOLOR', (0, 1), (-1, -1), BODY),
         ('LINEBELOW', (0, 1), (-1, -2), 0.4, HAIR),
         ('TOPPADDING', (0, 0), (-1, -1), 4.5), ('BOTTOMPADDING', (0, 0), (-1, -1), 4.5),
-        ('LEFTPADDING', (0, 0), (-1, -1), 4), ('RIGHTPADDING', (0, 0), (-1, -1), 4),
+        ('LEFTPADDING', (0, 0), (-1, -1), _DT_PAD), ('RIGHTPADDING', (0, 0), (-1, -1), _DT_PAD),
     ]
     if bold_col is not None:
         cmds.append(('FONTNAME', (bold_col, 1), (bold_col, -1), 'Helvetica-Bold'))
         cmds.append(('TEXTCOLOR', (bold_col, 1), (bold_col, -1), INK))
-    aligns = aligns or (['LEFT'] + ['RIGHT'] * (len(header) - 1))
     for i, a in enumerate(aligns):
         cmds.append(('ALIGN', (i, 0), (i, -1), a))
     if reads:
-        last = len(header) - 1
         for row_idx, tone in reads:
             cmds.append(('TEXTCOLOR', (last, row_idx + 1), (last, row_idx + 1), TONE_COLOR[tone]))
             cmds.append(('FONTNAME', (last, row_idx + 1), (last, row_idx + 1), 'Helvetica-Bold'))
@@ -288,9 +342,9 @@ def metric_card(label, value, unit, pill, tone, delta, subnote, width):
         ('BOX', (0, 0), (-1, -1), 0.5, HAIR),
         ('LINEABOVE', (0, 0), (-1, 0), 2.2, accent),
         ('LEFTPADDING', (0, 0), (-1, -1), 10), ('RIGHTPADDING', (0, 0), (-1, -1), 10),
-        ('TOPPADDING', (0, 0), (0, 0), 11), ('BOTTOMPADDING', (0, 0), (0, 0), 4),
-        ('TOPPADDING', (0, 1), (0, 1), 0), ('BOTTOMPADDING', (0, 1), (0, 1), 5),
-        ('TOPPADDING', (0, 2), (0, 2), 0), ('BOTTOMPADDING', (0, 2), (0, 2), 12),
+        ('TOPPADDING', (0, 0), (0, 0), 8), ('BOTTOMPADDING', (0, 0), (0, 0), 4),
+        ('TOPPADDING', (0, 1), (0, 1), 0), ('BOTTOMPADDING', (0, 1), (0, 1), 4),
+        ('TOPPADDING', (0, 2), (0, 2), 0), ('BOTTOMPADDING', (0, 2), (0, 2), 8),
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
     ]))
     return card
@@ -345,7 +399,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     profile = analysis.get("profile", {}) or {}
     symbol = analysis.get("symbol", "")
     name = profile.get("name") or symbol
-    sector = profile.get("sector") or "N/A"
+    sector = profile.get("sector") or "—"
     archetype = D["archetype"]
 
     doc = BaseDocTemplate(buf, pagesize=letter,
@@ -434,7 +488,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         Spacer(1, 8),
         Paragraph(
             f"<b>{_esc(symbol)}</b>&nbsp;&nbsp;·&nbsp;&nbsp;{_esc(sector)}&nbsp;&nbsp;·&nbsp;&nbsp;"
-            f"{_esc(profile.get('industry') or 'N/A')}&nbsp;&nbsp;·&nbsp;&nbsp;{_esc(profile.get('exchange') or '')}"
+            f"{_esc(profile.get('industry') or '—')}&nbsp;&nbsp;·&nbsp;&nbsp;{_esc(profile.get('exchange') or '')}"
             f"&nbsp;&nbsp;·&nbsp;&nbsp;Corte al {_fecha_es()}",
             ParagraphStyle('csub', fontName='Helvetica', fontSize=9.5, leading=13, textColor=MUTED)),
     ]
@@ -601,14 +655,14 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     if _content + _gap * (len(_bands) - 1) > _avail:
         # Etapa 9a: la portada cabe SIEMPRE en una página; si el contenido no entra
         # (veredicto o motivos largos), se reduce en bloque en lugar de desbordar.
-        story.append(KeepInFrame(CW, _avail, _cover, mode='shrink'))
+        story.append(_ShrinkFrame("portada", CW, _avail, _cover))
     else:
-        story.extend(_cover)
+        story.extend([_ScaleMark("portada")] + _cover)
     story.append(PageBreak())
 
     # ════════════════ PÁGINA 2 — RESUMEN EJECUTIVO ════════════════
-    story.extend(section_header("", "Resumen ejecutivo", S))
-    story.append(Spacer(1, 3))
+    _p2_head = section_header("", "Resumen ejecutivo", S) + [Spacer(1, 3)]
+    story.extend(_p2_head)
 
     # ── Grilla de metric-cards (valor + pill de estado + delta vs benchmark) ──
     _cellw = (CW - 8 * 2) / 3.0
@@ -629,7 +683,10 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     _bal_line = (f"<font color='{BRAND_TXT.hexval()}'><b>{n_str}</b> fortaleza{'s' if n_str != 1 else ''}</font>"
                  f"&nbsp;&nbsp;·&nbsp;&nbsp;<font color='{AMBER.hexval()}'><b>{n_warn}</b> advertencia{'s' if n_warn != 1 else ''}</font>"
                  f"&nbsp;&nbsp;·&nbsp;&nbsp;<font color='{RED.hexval()}'><b>{n_red}</b> riesgo{'s' if n_red != 1 else ''}</font>")
-    _halfw = (CW - 24 - 18) / 2.0
+    # Fase 1 (T4): cada mitad ocupa CW/2; su ancho interior descuenta el relleno de la celda (12 + 9), y la tabla
+    # de barras cabe exacta en él (antes era 12 pt más ancha que su celda y recortaba las cifras de la derecha).
+    _cpad_l, _cpad_r = 12, 9
+    _halfw = CW / 2.0 - _cpad_l - _cpad_r
     _lab_st = ParagraphStyle('cpl', fontName='Helvetica', fontSize=8.2, leading=10.5, textColor=BODY)
     _num_st = ParagraphStyle('cpn', fontName='Helvetica-Bold', fontSize=8.2, leading=10.5, alignment=TA_RIGHT)
     _CP = SM["composition"]
@@ -664,7 +721,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         t = Table(rows, colWidths=[1.4 * inch, _halfw - 1.9 * inch, 0.5 * inch])
         t.setStyle(TableStyle([('SPAN', (0, 0), (-1, 0)), ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
                                ('BOTTOMPADDING', (0, 0), (-1, 0), 6), ('LINEBELOW', (0, 0), (-1, 0), 0.4, HAIR),
-                               ('TOPPADDING', (0, 1), (-1, -1), 2.6), ('BOTTOMPADDING', (0, 1), (-1, -1), 2.6),
+                               ('TOPPADDING', (0, 1), (-1, -1), 2), ('BOTTOMPADDING', (0, 1), (-1, -1), 2),
                                ('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (0, 0), (-1, -1), 0)]))
         return t
     comp_box = Table([
@@ -674,21 +731,22 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         [Paragraph(f"<font size='7.4' color='#9a9aa0'>{_esc(_CP['caption'])}</font><br/>"
                    f"<font size='8.5'>{_bal_line}</font>",
                    ParagraphStyle('rbc', leading=11)), ""],
-    ], colWidths=[_halfw + 9, _halfw + 9])
+    ], colWidths=[CW / 2.0, CW / 2.0])
     comp_box.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, -1), colors.white), ('BOX', (0, 0), (-1, -1), 0.5, HAIR),
         ('SPAN', (0, 0), (-1, 0)), ('SPAN', (0, 2), (-1, 2)),
         ('LINEAFTER', (0, 1), (0, 1), 0.4, HAIR),
-        ('LEFTPADDING', (0, 0), (-1, -1), 12), ('RIGHTPADDING', (0, 0), (-1, -1), 9),
-        ('TOPPADDING', (0, 0), (-1, 0), 11), ('BOTTOMPADDING', (0, 0), (-1, 0), 4),
-        ('TOPPADDING', (0, 1), (-1, 1), 4), ('BOTTOMPADDING', (0, 1), (-1, 1), 8),
-        ('TOPPADDING', (0, 2), (-1, 2), 2), ('BOTTOMPADDING', (0, 2), (-1, 2), 11),
+        ('LEFTPADDING', (0, 0), (-1, -1), _cpad_l), ('RIGHTPADDING', (0, 0), (-1, -1), _cpad_r),
+        ('TOPPADDING', (0, 0), (-1, 0), 9), ('BOTTOMPADDING', (0, 0), (-1, 0), 3),
+        ('TOPPADDING', (0, 1), (-1, 1), 3), ('BOTTOMPADDING', (0, 1), (-1, 1), 6),
+        ('TOPPADDING', (0, 2), (-1, 2), 2), ('BOTTOMPADDING', (0, 2), (-1, 2), 9),
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
     ]))
 
     # ── Lectura del análisis — DEBAJO, ancho completo, 2 columnas ──
-    _exc_st = ParagraphStyle('exc', fontName='Helvetica', fontSize=8.6, leading=12.3,
-                             textColor=BODY, spaceAfter=8)
+    # Fase 1 (T4): sin doble espacio entre ítems (spaceAfter del párrafo + relleno de la celda).
+    _exc_st = ParagraphStyle('exc', fontName='Helvetica', fontSize=8.5, leading=11.4,
+                             textColor=BODY, spaceAfter=0)
 
     def _exec_cell(label, text):
         return Paragraph(
@@ -705,7 +763,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     inner_narr = Table(_grid, colWidths=[_innerw, _innerw])
     _incmds = [
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ('TOPPADDING', (0, 0), (-1, -1), 4), ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('TOPPADDING', (0, 0), (-1, -1), 5), ('BOTTOMPADDING', (0, 0), (-1, -1), 7),
         ('LEFTPADDING', (0, 0), (0, -1), 0), ('RIGHTPADDING', (0, 0), (0, -1), 16),
         ('LEFTPADDING', (1, 0), (1, -1), 16), ('RIGHTPADDING', (1, 0), (1, -1), 0),
     ]
@@ -725,18 +783,14 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
     ]))
 
-    # Reparto de altura: cards · composición de las dos puntuaciones · lectura
-    _rem2 = (PAGE_H - M_TOP - M_BOT) - 34
-    body2 = Table([[cg], [comp_box], [narr_box]], colWidths=[CW],
-                  rowHeights=[_rem2 * 0.27, _rem2 * 0.46, _rem2 * 0.27])
-    body2.setStyle(TableStyle([
-        ('VALIGN', (0, 0), (0, 0), 'TOP'),
-        ('VALIGN', (0, 1), (0, 1), 'MIDDLE'),
-        ('VALIGN', (0, 2), (0, 2), 'BOTTOM'),
-        ('LEFTPADDING', (0, 0), (-1, -1), 0), ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-        ('TOPPADDING', (0, 0), (-1, -1), 0), ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
-    ]))
-    story.append(body2)
+    # Fase 1 (T4): flujo natural, de arriba abajo: cards · composición · lectura. Antes, alturas fijas (27/46/27%)
+    # con la composición centrada (hueco encima) y la lectura alineada abajo, que crecía hacia arriba y se montaba
+    # sobre la composición cuando no cabía en su 27%.
+    # Lo que no quepa en el alto que queda en la página se contrae (como la portada), nunca se monta ni pasa de página.
+    _p2_top = _p2_head + [cg, Spacer(1, 8), comp_box, Spacer(1, 8)]
+    _p2_left = (PAGE_H - M_TOP - M_BOT) - sum(f.wrap(CW, PAGE_H)[1] for f in _p2_top)
+    story.extend(_p2_top[len(_p2_head):])
+    story.append(_ShrinkFrame("pagina2", CW, _p2_left, [narr_box]))
 
     # ════════════════ 01 VALORACIÓN ════════════════
     V = SEC["valuation"]
@@ -825,10 +879,6 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         story.append(data_table(["DIMENSIÓN", "NIVEL", "MOTIVO"], _crows,
                                 [1.9 * inch, 0.8 * inch, CW - 2.7 * inch], aligns=['LEFT', 'CENTER', 'LEFT']))
         story.append(Paragraph(_esc(CF["summary"]), S['small']))
-        # Etapa 9b: el código del arquetipo y el motivo técnico de la clasificación, solo aquí.
-        if C["classification_detail"]:
-            story.append(Paragraph(_esc("Clasificación (detalle técnico): " + " · ".join(C["classification_detail"])),
-                                   S['small']))
 
     # ════════════════ 02 RENTABILIDAD + 03 SOLIDEZ ════════════════
     P = SEC["profitability"]
@@ -1068,7 +1118,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     story.append(HRFlowable(width="100%", thickness=0.5, color=HAIR))
     story.append(Spacer(1, 5))
     story.append(Paragraph(
-        "<b>Metodología.</b> Este informe combina ratios TTM y del último ejercicio (fuente: Yahoo Finance) con "
+        "<b>Metodología.</b> Este informe combina " + D["methodology"]["ratios_text"] + " (fuente: Yahoo Finance) con "
         + D["methodology"]["models_text"] + " y "
         "dos puntuaciones Finanzer de 0 a 100: calidad del negocio (solidez, rentabilidad, calidad de ganancias y "
         "crecimiento) y atractivo del precio (valoración por múltiplos y DCF, contraída hacia 50 según la confianza "
@@ -1082,5 +1132,17 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         "constituye asesoría financiera, recomendación de inversión ni oferta de valores. Verifique los datos y "
         "consulte a un profesional antes de invertir.",
         ParagraphStyle('disc', parent=S['small'], textColor=FAINT, fontSize=7)))
+
+    # Fase 1 (D1): anexo final con los códigos y motivos técnicos; ninguna página de lectura los muestra.
+    AX = D.get("annex") or {}
+    if AX.get("items"):
+        story.append(Spacer(1, 12))
+        # El anexo no se parte: si no cabe entero, pasa completo a la página siguiente (título con sus líneas).
+        story.append(KeepTogether(
+            [HRFlowable(width="100%", thickness=0.5, color=HAIR), Spacer(1, 5),
+             Paragraph(_esc(AX["title"]), S['h2'])]
+            + [Paragraph(f"<b>{_esc(it['label'])}:</b> {_esc(it['text'])}",
+                         ParagraphStyle('annex', parent=S['small'], textColor=FAINT, fontSize=7,
+                                        leading=9.5, spaceAfter=2)) for it in AX["items"]]))
 
     doc.build(story)

@@ -20,7 +20,7 @@ def _ke(raw_beta):
 
 def _envs():
     import conftest
-    return conftest.ENVS
+    return conftest.BOUND_ENVS
 
 
 # ─────────────────────────── WACC ───────────────────────────
@@ -140,10 +140,16 @@ def test_one_wacc_everywhere(outputs_by_env):
 
 
 def test_roic_uses_the_wacc_tax_rate(outputs_by_env):
-    a = outputs_by_env("prod")["NFLX"][0]
+    a = outputs_by_env("panel")["NFLX"][0]
     t = a["tax_rate"]
     assert t["source"] == "efectiva" and a["wacc"]["tax_rate"] == t["rate"]
-    assert t["rate"] == pytest.approx(1.741 / 12.723, rel=1e-3)           # provisión / BAI FY2025
+    # provisión / BAI de los 4 últimos trimestres (TTM) del fixture del panel (antes: FY2025 de prod).
+    import fixture_backend as fb
+    st = fb.FixtureStore(fb.fixtures_dir("panel"))
+    st.load("NFLX")
+    q = fb.obj_to_df(st.yf["NFLX"]["quarterly_income_stmt"])
+    tax, pretax = q.loc["Tax Provision"].iloc[:4].sum(), q.loc["Pretax Income"].iloc[:4].sum()
+    assert t["period"] == "TTM" and t["rate"] == pytest.approx(tax / pretax, rel=1e-6)
 
 
 def test_beta_raw_and_adjusted_exposed_and_used_by_financial(outputs_by_env):
@@ -158,7 +164,7 @@ def test_beta_raw_and_adjusted_exposed_and_used_by_financial(outputs_by_env):
 
 
 def test_rf_fallback_marked_in_replay(outputs_by_env):
-    a = outputs_by_env("prod")["NFLX"][0]
+    a = outputs_by_env("panel")["NFLX"][0]
     assert a["risk_free"]["fallback"] and a["wacc"]["rf"] == cfg("valuation.capm.risk_free_rate")
 
 
@@ -263,18 +269,18 @@ def test_dcf_component_bounded_by_reliability():
 
 
 def test_dcf_subtracts_in_valuation(outputs_by_env):
-    """Fallo 1 del spec: el DCF resta. NFLX prod (−33%, fiabilidad media) -> −2, y Valoración
-    es la suma de sus ajustes (el rescate de growth no lo compensa)."""
-    a = outputs_by_env("prod")["NFLX"][0]
+    """Fallo 1 del spec: el DCF resta. NFLX del panel (−22%, fiabilidad alta: banda "cara") -> −2, y
+    Valoración es la suma de sus ajustes (el rescate de growth no lo compensa). Antes: NFLX prod (−33%, media)."""
+    a = outputs_by_env("panel")["NFLX"][0]
     val = a["score"]["breakdown"]["Valoración"]
     row = _dcf_row(val)
-    assert a["dcf"]["reliability"]["level"] == "media" and row["adjustment"] == -2
+    assert a["dcf"]["reliability"]["level"] == "alta" and a["dcf"]["upside"] < -10 and row["adjustment"] == -2
     # Etapa 9a: los miembros del bloque de múltiplos puntúan a través del bloque.
     assert val["score"] == min(20, 10 + sum(x["adjustment"] for x in val["adjustments"] if not x.get("in_block")))
 
 
 def test_low_reliability_dcf_explicit_in_report(outputs_by_env):
-    a, pdf = outputs_by_env("prod")["SNOW"]
+    a, pdf = outputs_by_env("panel")["SNOW"]
     assert a["dcf"]["reliability"]["level"] == "baja" and a["dcf"]["reliability"]["grid_contains_price"] is False
     text = fb.pdf_text(pdf).replace("\n", " ")
     assert "El DCF no concilia con el precio bajo ningún supuesto razonable; no se usa en el score" in text
@@ -347,5 +353,5 @@ def test_valuation_contradiction_lowers_confidence(outputs_by_env):
     alta = {"level": "alta", "reasons": []}
     v = verdict_confidence({"convergence": conv, "coverage": alta, "source": alta, "stability": alta})
     assert v["level"] != "alta" and v["limits_score"] is False
-    n = outputs_by_env("prod")["NFLX"][0]["confidence"]
+    n = outputs_by_env("panel")["NFLX"][0]["confidence"]
     assert n["dimensions"]["convergence"]["level"] == "media" and n["level"] == "media"

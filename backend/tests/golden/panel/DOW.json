@@ -471,6 +471,10 @@
         "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
         "source": "yfinance_statements"
       },
+      "netInterestIncome": {
+        "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
+        "source": "yfinance_statements"
+      },
       "operatingCashflow": {
         "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
         "source": "yfinance_statements"
@@ -606,6 +610,7 @@
         "grossProfits",
         "interestExpense",
         "netIncome",
+        "netInterestIncome",
         "operatingCashflow",
         "operatingIncome",
         "totalRevenue"
@@ -672,6 +677,27 @@
     "state": "ok"
   },
   "display": {
+    "annex": {
+      "items": [
+        {
+          "label": "Clasificación",
+          "text": "Arquetipo CYCLICAL (regla industria_ciclica): Clasificada como CYCLICAL por industria Chemicals"
+        },
+        {
+          "label": "Confianza · Convergencia entre métodos (baja)",
+          "text": "direcciones opuestas: múltiplos frente al sector dice barata y DCF dice cara"
+        },
+        {
+          "label": "Confianza · Calidad de fuente (media)",
+          "text": "14 campos de Finnhub en lugar de los estados"
+        },
+        {
+          "label": "Confianza · Estabilidad del arquetipo (baja)",
+          "text": "empresa cíclica: resultados ligados a la fase del ciclo"
+        }
+      ],
+      "title": "Detalle técnico para auditoría"
+    },
     "archetype": "CYCLICAL",
     "archetype_label": "Cíclica",
     "benchmark": {
@@ -905,9 +931,9 @@
                 "gap_txt": "-162%",
                 "higher_is_better": true,
                 "key": "revenue_growth",
-                "label": "Crecimiento de ingresos (3 años)",
+                "label": "Crecimiento de ingresos (ciclo medio)",
                 "reading": "Muy inferior",
-                "text": "Crecimiento de ingresos (3 años) de -5.0% frente a 8.0% del sector (-162%): muy inferior",
+                "text": "Crecimiento de ingresos (ciclo medio) de -5.0% frente a 8.0% del sector (-162%): muy inferior",
                 "tone": "neg",
                 "value": -0.05,
                 "value_txt": "−5.00%"
@@ -920,9 +946,9 @@
                 "gap_txt": "-150%",
                 "higher_is_better": true,
                 "key": "earnings_growth",
-                "label": "Crecimiento del BPA (3 años)",
+                "label": "Crecimiento del BPA (ciclo medio)",
                 "reading": "Muy inferior",
-                "text": "Crecimiento del BPA (3 años) de -5.0% frente a 10.0% del sector (-150%): muy inferior",
+                "text": "Crecimiento del BPA (ciclo medio) de -5.0% frente a 10.0% del sector (-150%): muy inferior",
                 "tone": "neg",
                 "value": -0.05,
                 "value_txt": "−5.00%"
@@ -1272,6 +1298,19 @@
             "value_txt": "3.82%"
           }
         ],
+        "roce": {
+          "avg": {
+            "incomplete": true,
+            "label": "ROCE promedio del ciclo",
+            "value_txt": "4.60%",
+            "years": 4
+          },
+          "basis": "EBIT / capital empleado, antes de impuestos",
+          "label": "ROCE",
+          "state": "con_dato",
+          "text": "ROCE -3.34% en línea con el ROIC 3.82% (-7.2 pp, dentro de 10 pp).",
+          "value_txt": "-3.34%"
+        },
         "spread": {
           "reading": "Destruye valor",
           "state": "con_dato",
@@ -1723,25 +1762,25 @@
           "key": "convergence",
           "label": "Convergencia entre métodos",
           "level": "Baja",
-          "text": "DCF -64% (cara) · múltiplos frente al sector +0.50 (barata). direcciones opuestas: múltiplos frente al sector dice barata y DCF dice cara"
+          "text": "DCF -64% (cara) · múltiplos frente al sector +0.50 (barata). Los métodos de valoración se contradicen: uno ve la acción barata y otro cara."
         },
         {
           "key": "coverage",
           "label": "Cobertura de datos",
           "level": "Alta",
-          "text": "sin incidencias"
+          "text": "Sin incidencias."
         },
         {
           "key": "source",
           "label": "Calidad de fuente",
           "level": "Media",
-          "text": "14 campos de Finnhub en lugar de los estados"
+          "text": "Parte de los datos proviene de una fuente secundaria."
         },
         {
           "key": "stability",
           "label": "Estabilidad del arquetipo",
           "level": "Baja",
-          "text": "empresa cíclica: resultados ligados a la fase del ciclo"
+          "text": "Empresa cíclica: sus resultados dependen de la fase del ciclo."
         }
       ],
       "level": "baja",
@@ -1752,19 +1791,16 @@
       ],
       "reasons": [
         {
-          "detail": "direcciones opuestas: múltiplos frente al sector dice barata y DCF dice cara",
           "dimension": "convergencia",
           "level": "baja",
           "text": "Los métodos de valoración se contradicen: uno ve la acción barata y otro cara."
         },
         {
-          "detail": "14 campos de Finnhub en lugar de los estados",
           "dimension": "calidad de fuente",
           "level": "media",
           "text": "Parte de los datos proviene de una fuente secundaria."
         },
         {
-          "detail": "empresa cíclica: resultados ligados a la fase del ciclo",
           "dimension": "estabilidad",
           "level": "baja",
           "text": "Empresa cíclica: sus resultados dependen de la fase del ciclo."
@@ -1843,9 +1879,6 @@
           ],
           "title": "ATRACTIVO DEL PRECIO"
         }
-      ],
-      "classification_detail": [
-        "Arquetipo CYCLICAL (regla industria_ciclica): Clasificada como CYCLICAL por industria Chemicals"
       ],
       "classification_notes": [
         "Cíclica por su industria (Chemicals)."
@@ -1958,7 +1991,8 @@
         "Piotroski (2000)",
         "un DCF multietapa con WACC estimado por CAPM"
       ],
-      "models_text": "los modelos de Altman (1968), Piotroski (2000), un DCF multietapa con WACC estimado por CAPM"
+      "models_text": "los modelos de Altman (1968), Piotroski (2000), un DCF multietapa con WACC estimado por CAPM",
+      "ratios_text": "ratios TTM y del último ejercicio"
     },
     "na_keys": [
       "fcf_growth",
@@ -1966,6 +2000,7 @@
       "pe",
       "peg"
     ],
+    "pe_label": "P/E (TTM)",
     "readings": {
       "beta": {
         "label": "Defensiva",
@@ -1994,7 +2029,7 @@
       },
       "earnings_growth": {
         "label": "Contracción",
-        "text": "el BPA se contrae un 5.0% anual de ciclo medio",
+        "text": "el BPA se contrae un 5.0% anual de ciclo medio (acotado al mínimo que admite el modelo)",
         "tone": "neg"
       },
       "fcf_yield": null,
@@ -2022,7 +2057,7 @@
       },
       "revenue_growth": {
         "label": "Contracción",
-        "text": "los ingresos se contraen un 5.0% anual de ciclo medio",
+        "text": "los ingresos se contraen un 5.0% anual de ciclo medio (acotado al mínimo que admite el modelo)",
         "tone": "neg"
       },
       "roe": {
@@ -2110,7 +2145,7 @@
           "LECTURA"
         ],
         "eps_vs_revenue_note": "BPA frente a ingresos: BPA -5.0% frente a ingresos -5.0% (los crecimientos que puntúa Crecimiento): el BPA crece en línea con los ingresos. Dato informativo, no puntúa: Crecimiento ya puntúa el BPA y los ingresos por separado.",
-        "intro": "Los ingresos se contraen un 5.0% anual de ciclo medio. El BPA se contrae un 5.0% anual de ciclo medio. La emisión de acciones diluyó a los accionistas un 1.9% en el año.",
+        "intro": "Los ingresos se contraen un 5.0% anual de ciclo medio (acotado al mínimo que admite el modelo). El BPA se contrae un 5.0% anual de ciclo medio (acotado al mínimo que admite el modelo). La emisión de acciones diluyó a los accionistas un 1.9% en el año.",
         "range52": {
           "axis": "Muestra dónde cotiza el precio dentro de su rango anual. Es contexto de mercado: no es una señal de valoración ni mide la calidad del negocio.",
           "caption": "Precio actual $29.19 — posición 38% del rango.",
@@ -2155,7 +2190,7 @@
             "label": "Crecimiento de ingresos (ciclo medio)",
             "reading": "Contracción",
             "state": "con_dato",
-            "text": "los ingresos se contraen un 5.0% anual de ciclo medio",
+            "text": "los ingresos se contraen un 5.0% anual de ciclo medio (acotado al mínimo que admite el modelo)",
             "tone": "neg",
             "value": "-5.00%"
           },
@@ -2177,7 +2212,7 @@
             "label": "Crecimiento del BPA (ciclo medio)",
             "reading": "Contracción",
             "state": "con_dato",
-            "text": "el BPA se contrae un 5.0% anual de ciclo medio",
+            "text": "el BPA se contrae un 5.0% anual de ciclo medio (acotado al mínimo que admite el modelo)",
             "tone": "neg",
             "value": "-5.00%"
           },
@@ -2620,6 +2655,7 @@
           ]
         ],
         "intro": "El ROE de -8.2% refleja destrucción de valor para el accionista. El ROIC (3.8%) no cubre el costo de capital (7.2%): el crecimiento a estos retornos destruye valor.",
+        "roce_reading": "ROCE -3.34% en línea con el ROIC 3.82% (-7.2 pp, dentro de 10 pp).",
         "rows": [
           {
             "bench": "12.00%",
@@ -2899,7 +2935,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "N/A"
+            "value": "—"
           },
           {
             "bench": "12.00x",
@@ -2910,7 +2946,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "15.03x"
+            "value": "—"
           },
           {
             "bench": "2.00x",
@@ -2943,7 +2979,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "N/A"
+            "value": "—"
           },
           {
             "bench": "8.00x",
@@ -2987,7 +3023,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "-6.11%"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -3370,7 +3406,7 @@
         },
         {
           "label": "CREACIÓN DE VALOR",
-          "text": "El ROIC (3.8%) no cubre el costo de capital (7.2%): el crecimiento a estos retornos destruye valor."
+          "text": "El ROIC (3.8%) no cubre el costo de capital (7.2%): el crecimiento a estos retornos destruye valor. ROCE -3.34% (EBIT / capital empleado, antes de impuestos), en línea con el ROIC (3.82%); ROCE promedio del ciclo 4.60% (4 ejercicios, ciclo incompleto)."
         },
         {
           "label": "SOLIDEZ",
@@ -3378,7 +3414,7 @@
         },
         {
           "label": "CRECIMIENTO Y RETORNO",
-          "text": "Los ingresos se contraen un 5.0% anual de ciclo medio. La emisión de acciones diluyó a los accionistas un 1.9% en el año."
+          "text": "Los ingresos se contraen un 5.0% anual de ciclo medio (acotado al mínimo que admite el modelo). La emisión de acciones diluyó a los accionistas un 1.9% en el año."
         },
         {
           "label": "ATRACTIVO DEL PRECIO",
@@ -4466,6 +4502,7 @@
     "net_debt_to_ebitda_state": "ok",
     "net_income": -1293000000.0,
     "net_income_normalized": -705612227.927,
+    "net_interest_income": -704000000.0,
     "net_margin": -0.0312931097074,
     "operating_cash_flow": 3866000000.0,
     "operating_income": 1525000000.0,

@@ -5,7 +5,7 @@
     "warnings": [
       {
         "category": "Crecimiento",
-        "detail": "El FFO por acción cae un 3.8% anual en tres años: la emisión de acciones crece más deprisa que los fondos de operación, y diluye al accionista.",
+        "detail": "El FFO por acción cae un 3.8% anual en tres años: son los propios fondos de operación los que caen (las acciones apenas varían: +0.05% anual).",
         "reason": "FFO por acción en descenso −3.8% anual (3 años)"
       }
     ]
@@ -418,6 +418,10 @@
         "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
         "source": "yfinance_statements"
       },
+      "netInterestIncome": {
+        "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
+        "source": "yfinance_statements"
+      },
       "operatingCashflow": {
         "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
         "source": "yfinance_statements"
@@ -555,6 +559,7 @@
         "grossProfits",
         "interestExpense",
         "netIncome",
+        "netInterestIncome",
         "operatingCashflow",
         "operatingIncome",
         "stockBasedCompensation",
@@ -568,6 +573,23 @@
     "state": "no_aplica"
   },
   "display": {
+    "annex": {
+      "items": [
+        {
+          "label": "Clasificación",
+          "text": "Arquetipo REIT (regla industria_reit): Clasificada como REIT por industria REIT - Specialty"
+        },
+        {
+          "label": "Confianza · Convergencia entre métodos (no evaluable)",
+          "text": "un solo método evaluable (múltiplos frente al sector): no hay contraste"
+        },
+        {
+          "label": "Confianza · Calidad de fuente (media)",
+          "text": "16 campos de Finnhub en lugar de los estados"
+        }
+      ],
+      "title": "Detalle técnico para auditoría"
+    },
     "archetype": "REIT",
     "archetype_label": "REIT",
     "benchmark": {
@@ -905,6 +927,10 @@
             "text": "No aplica a REIT"
           }
         ],
+        "roce": {
+          "state": "no_aplica",
+          "text": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria"
+        },
         "spread": {
           "state": "no_aplica",
           "text": null
@@ -1204,25 +1230,25 @@
           "key": "convergence",
           "label": "Convergencia entre métodos",
           "level": "No evaluable",
-          "text": "múltiplos frente al sector +0.50 (barata). un solo método evaluable (múltiplos frente al sector): no hay contraste"
+          "text": "múltiplos frente al sector +0.50 (barata). Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo."
         },
         {
           "key": "coverage",
           "label": "Cobertura de datos",
           "level": "Alta",
-          "text": "sin incidencias"
+          "text": "Sin incidencias."
         },
         {
           "key": "source",
           "label": "Calidad de fuente",
           "level": "Media",
-          "text": "16 campos de Finnhub en lugar de los estados"
+          "text": "Parte de los datos proviene de una fuente secundaria."
         },
         {
           "key": "stability",
           "label": "Estabilidad del arquetipo",
           "level": "Alta",
-          "text": "sin incidencias"
+          "text": "Sin incidencias."
         }
       ],
       "level": "media",
@@ -1232,19 +1258,16 @@
       ],
       "reasons": [
         {
-          "detail": "un solo método evaluable (múltiplos frente al sector): no hay contraste",
           "dimension": "convergencia",
           "level": "no_evaluable",
           "text": "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo."
         },
         {
-          "detail": "16 campos de Finnhub en lugar de los estados",
           "dimension": "calidad de fuente",
           "level": "media",
           "text": "Parte de los datos proviene de una fuente secundaria."
         },
         {
-          "detail": "techo en media: sin contraste entre métodos de valoración",
           "dimension": "techo",
           "level": "media",
           "text": null
@@ -1323,9 +1346,6 @@
           ],
           "title": "ATRACTIVO DEL PRECIO"
         }
-      ],
-      "classification_detail": [
-        "Arquetipo REIT (regla industria_reit): Clasificada como REIT por industria REIT - Specialty"
       ],
       "classification_notes": [
         "REIT por su industria (REIT - Specialty)."
@@ -1435,7 +1455,8 @@
       "models": [
         "P/FFO y rentabilidad sobre el FFO"
       ],
-      "models_text": "los modelos de P/FFO y rentabilidad sobre el FFO"
+      "models_text": "los modelos de P/FFO y rentabilidad sobre el FFO",
+      "ratios_text": "ratios TTM y del último ejercicio"
     },
     "na_keys": [
       "altman",
@@ -1458,6 +1479,7 @@
       "roe",
       "roic_wacc"
     ],
+    "pe_label": "P/E (TTM)",
     "readings": {
       "beta": {
         "label": "De mercado",
@@ -1527,7 +1549,7 @@
             "items": [
               {
                 "category": "Crecimiento",
-                "detail": "El FFO por acción cae un 3.8% anual en tres años: la emisión de acciones crece más deprisa que los fondos de operación, y diluye al accionista.",
+                "detail": "El FFO por acción cae un 3.8% anual en tres años: son los propios fondos de operación los que caen (las acciones apenas varían: +0.05% anual).",
                 "reason": "FFO por acción en descenso −3.8% anual (3 años)"
               }
             ],
@@ -1950,6 +1972,7 @@
           ]
         ],
         "intro": "FFO / patrimonio de 147.1%: excelente, retorno del FFO sobre el patrimonio contable. Margen FFO de 50.0%: alto, FFO sobre ingresos.",
+        "roce_reading": null,
         "rows": [
           {
             "bench": "—",
@@ -1960,7 +1983,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "91.43%"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -1971,7 +1994,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "5.37%"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -1982,7 +2005,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "9.47%"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -1993,7 +2016,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "73.77%"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -2004,7 +2027,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "45.56%"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -2015,7 +2038,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "31.08%"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -2207,7 +2230,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "24.60x"
+            "value": "—"
           },
           {
             "bench": "30.00x",
@@ -2218,7 +2241,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "24.71x"
+            "value": "—"
           },
           {
             "bench": "2.00x",
@@ -2251,7 +2274,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "0.15x"
+            "value": "—"
           },
           {
             "bench": "20.00x",
@@ -2273,7 +2296,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "21.11x"
+            "value": "—"
           },
           {
             "bench": "4.00%",
@@ -2284,7 +2307,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "4.74%"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -2295,7 +2318,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "4.07%"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -2389,26 +2412,26 @@
           "value": "0.2"
         },
         {
-          "bench": "",
+          "bench": "No aplica a REIT",
           "delta": "",
           "key": "net_margin",
           "label": "Margen neto",
           "pill": "No aplica",
           "state": "no_aplica",
           "tone": "neu",
-          "unit": "%",
-          "value": "31.1"
+          "unit": "",
+          "value": "—"
         },
         {
-          "bench": "",
+          "bench": "No aplica a REIT",
           "delta": "",
           "key": "roe",
           "label": "ROE",
           "pill": "No aplica",
           "state": "no_aplica",
           "tone": "neu",
-          "unit": "%",
-          "value": "91.4"
+          "unit": "",
+          "value": "—"
         },
         {
           "bench": "",
@@ -3145,6 +3168,7 @@
     "net_debt_to_ebitda_state": "ok",
     "net_income": 3401000000.0,
     "net_income_normalized": 3361071774.42,
+    "net_interest_income": -1236400000.0,
     "net_margin": 0.310834894667,
     "operating_cash_flow": 5774900000.0,
     "operating_income": 4985400000.0,

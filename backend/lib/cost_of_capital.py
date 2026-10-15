@@ -100,7 +100,10 @@ def synthetic_rating(coverage: Optional[float], market_cap: Optional[float],
     large = market_cap is not None and market_cap >= R["large_cap_min"]
     bounds = R["large_coverage_bounds"] if large else R["small_coverage_bounds"]
     flag = None
-    if coverage_state == "no_significativo":
+    if coverage_state == "sin_carga":
+        rating = R["ratings"][0]
+        flag = "sin carga financiera neta (EBIT > 0 e ingresos financieros netos) -> mejor tramo"
+    elif coverage_state == "no_significativo":
         rating = R["net_cash_rating"]
         flag = "regla M: EBIT < 0 con caja neta, cobertura no significativa -> tramo de caja neta"
     elif coverage_state == "negativa":

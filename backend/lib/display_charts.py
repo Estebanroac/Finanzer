@@ -94,6 +94,10 @@ def _gauge(key, label, value, value_txt, zones, row, axis_max, *, unit="x", arch
     why = not_applicable(archetype, _GAUGE_NA.get(key, key))
     if why:
         return {"key": key, "label": label, "state": "no_aplica", "text": why}
+    if key == "interest_coverage" and value is None and (row or {}).get("value") == "Sin carga":
+        # Fase 1: sin carga financiera neta (EBIT > 0, ingresos financieros netos): lectura sin escala.
+        return {"key": key, "label": label, "state": "con_dato", "no_burden": True, "value_txt": row.get("value"),
+                "reading": row.get("reading"), "tone": row.get("tone"), "text": row.get("text")}
     if row is None or row.get("state") != "con_dato" or value is None:
         st = (row or {}).get("state") or "sin_dato"
         return {"key": key, "label": label, "state": "sin_dato" if st == "con_dato" else st,
@@ -270,6 +274,18 @@ def build_charts(a: Dict[str, Any], D: Dict[str, Any], sector_bench: Dict[str, A
               if sp_row and sp_row.get("state") == "con_dato" and _num(km.get("roic_wacc_spread")) is not None
               else _na((sp_row or {}).get("state") or ("no_aplica" if "roic_wacc" in na else "sin_dato"),
                        (sp_row or {}).get("text")))
+    # Fase 1 (punto 9): ROCE en el bloque visible, junto a ROIC − WACC (y el promedio del ciclo en CYCLICAL). Sin
+    # bandas: la lectura es la comparación con el ROIC.
+    ro_row, ra_row = prows.get("roce"), prows.get("roce_avg")
+    if km.get("roce_state") == "ok" and ro_row and ro_row.get("state") == "con_dato":
+        roce = {"state": "con_dato", "value_txt": ro_row.get("value"), "label": "ROCE",
+                "basis": "EBIT / capital empleado, antes de impuestos",
+                "avg": ({"label": "ROCE promedio del ciclo", "value_txt": ra_row.get("value"),
+                         "years": km.get("roce_years"), "incomplete": bool(km.get("roce_cycle_incomplete"))}
+                        if ra_row else None),
+                "text": D["sections"]["profitability"].get("roce_reading")}
+    else:
+        roce = _na(km.get("roce_state") or "sin_dato", km.get("roce_reason"))
     rev = _num(km.get("revenue"))
     steps = []
     for key, label in (("gross_margin", "Margen bruto"), ("ebitda_margin", "Margen EBITDA"),
@@ -290,6 +306,7 @@ def build_charts(a: Dict[str, Any], D: Dict[str, Any], sector_bench: Dict[str, A
                           "reading": (r or {}).get("reading")})
     profitability = {"returns": _vs_bench(_RET_KEYS, prows, km, bench, na_text=f"No aplica a {D.get('archetype_label')}"),
                      "margins": _vs_bench(_MARGIN_KEYS, prows, km, bench, na_text=f"No aplica a {D.get('archetype_label')}"), "spread": spread,
+                     "roce": roce,
                      "margin_ladder": {"revenue": rev, "revenue_txt": numfmt.money(rev) if rev else None,
                                        "steps": steps}}
 
@@ -409,7 +426,7 @@ def build_charts(a: Dict[str, Any], D: Dict[str, Any], sector_bench: Dict[str, A
         pts, prev = [], None
         for r, v in zip(yrs, vals):
             yoy = ((v - prev) / abs(prev) * 100) if (v is not None and prev) else None
-            pts.append({"year": r.get("year"), "value": v, "value_txt": numfmt.money(v) if v is not None else "N/A",
+            pts.append({"year": r.get("year"), "value": v, "value_txt": numfmt.money(v) if v is not None else "—",
                         "yoy_pct": yoy, "yoy_txt": numfmt.signed_pct(yoy, 1) if yoy is not None else None})
             prev = v
         cg = _cagr_series(vals)
@@ -475,10 +492,13 @@ def comparison(a, D, bench, market) -> Dict[str, Any]:
     gvals = {"revenue_growth": (graw["revenue"] or {}).get("raw") if D.get("archetype") != "REIT" else None,
              "earnings_growth": (graw["eps"] or {}).get("raw")}
     ref = "del mercado" if market else "del sector"
+    # Fase 1 (#20): en CYCLICAL la cifra que puntúa es de ciclo medio, no una CAGR a 3 años.
+    per = "(ciclo medio)" if D.get("archetype") == "CYCLICAL" else "(3 años)"
     groups, better, total = [], 0, 0
     for title, keys in _CMP:
         items = []
         for key, label, higher, fmt, nak in keys:
+            label = label.replace("(3 años)", per).replace("P/E (TTM)", D.get("pe_label") or "P/E (TTM)")
             if (nak and nak in na) or (key in rows_all and rows_all[key].get("state") != "con_dato"):
                 continue
             v = gvals[key] if key in gvals else _num(km.get(key))

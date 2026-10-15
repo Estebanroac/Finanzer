@@ -420,6 +420,10 @@
         "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
         "source": "yfinance_statements"
       },
+      "netInterestIncome": {
+        "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
+        "source": "yfinance_statements"
+      },
       "operatingCashflow": {
         "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
         "source": "yfinance_statements"
@@ -557,6 +561,7 @@
         "grossProfits",
         "interestExpense",
         "netIncome",
+        "netInterestIncome",
         "operatingCashflow",
         "operatingIncome",
         "stockBasedCompensation",
@@ -570,6 +575,23 @@
     "state": "no_aplica"
   },
   "display": {
+    "annex": {
+      "items": [
+        {
+          "label": "Clasificación",
+          "text": "Arquetipo REIT (regla industria_reit): Clasificada como REIT por industria REIT - Retail"
+        },
+        {
+          "label": "Confianza · Convergencia entre métodos (no evaluable)",
+          "text": "un solo método evaluable (múltiplos frente al sector): no hay contraste"
+        },
+        {
+          "label": "Confianza · Calidad de fuente (media)",
+          "text": "16 campos de Finnhub en lugar de los estados"
+        }
+      ],
+      "title": "Detalle técnico para auditoría"
+    },
     "archetype": "REIT",
     "archetype_label": "REIT",
     "benchmark": {
@@ -907,6 +929,10 @@
             "text": "No aplica a REIT"
           }
         ],
+        "roce": {
+          "state": "no_aplica",
+          "text": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria"
+        },
         "spread": {
           "state": "no_aplica",
           "text": null
@@ -1206,25 +1232,25 @@
           "key": "convergence",
           "label": "Convergencia entre métodos",
           "level": "No evaluable",
-          "text": "múltiplos frente al sector +0.50 (barata). un solo método evaluable (múltiplos frente al sector): no hay contraste"
+          "text": "múltiplos frente al sector +0.50 (barata). Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo."
         },
         {
           "key": "coverage",
           "label": "Cobertura de datos",
           "level": "Alta",
-          "text": "sin incidencias"
+          "text": "Sin incidencias."
         },
         {
           "key": "source",
           "label": "Calidad de fuente",
           "level": "Media",
-          "text": "16 campos de Finnhub en lugar de los estados"
+          "text": "Parte de los datos proviene de una fuente secundaria."
         },
         {
           "key": "stability",
           "label": "Estabilidad del arquetipo",
           "level": "Alta",
-          "text": "sin incidencias"
+          "text": "Sin incidencias."
         }
       ],
       "level": "media",
@@ -1234,19 +1260,16 @@
       ],
       "reasons": [
         {
-          "detail": "un solo método evaluable (múltiplos frente al sector): no hay contraste",
           "dimension": "convergencia",
           "level": "no_evaluable",
           "text": "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo."
         },
         {
-          "detail": "16 campos de Finnhub en lugar de los estados",
           "dimension": "calidad de fuente",
           "level": "media",
           "text": "Parte de los datos proviene de una fuente secundaria."
         },
         {
-          "detail": "techo en media: sin contraste entre métodos de valoración",
           "dimension": "techo",
           "level": "media",
           "text": null
@@ -1325,9 +1348,6 @@
           ],
           "title": "ATRACTIVO DEL PRECIO"
         }
-      ],
-      "classification_detail": [
-        "Arquetipo REIT (regla industria_reit): Clasificada como REIT por industria REIT - Retail"
       ],
       "classification_notes": [
         "REIT por su industria (REIT - Retail)."
@@ -1437,7 +1457,8 @@
       "models": [
         "P/FFO y rentabilidad sobre el FFO"
       ],
-      "models_text": "los modelos de P/FFO y rentabilidad sobre el FFO"
+      "models_text": "los modelos de P/FFO y rentabilidad sobre el FFO",
+      "ratios_text": "ratios TTM y del último ejercicio"
     },
     "na_keys": [
       "altman",
@@ -1460,6 +1481,7 @@
       "roe",
       "roic_wacc"
     ],
+    "pe_label": "P/E (TTM)",
     "readings": {
       "beta": {
         "label": "Defensiva",
@@ -1958,6 +1980,7 @@
           ]
         ],
         "intro": "FFO / patrimonio de 9.6%: alto, retorno del FFO sobre el patrimonio contable. Margen FFO de 63.8%: excelente, FFO sobre ingresos.",
+        "roce_reading": null,
         "rows": [
           {
             "bench": "—",
@@ -1968,7 +1991,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "3.21%"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -1979,7 +2002,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "1.66%"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -1990,7 +2013,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "3.50%"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -2001,7 +2024,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "92.56%"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -2012,7 +2035,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "45.76%"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -2023,7 +2046,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "21.23%"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -2215,7 +2238,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "40.80x"
+            "value": "—"
           },
           {
             "bench": "30.00x",
@@ -2226,7 +2249,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "32.76x"
+            "value": "—"
           },
           {
             "bench": "2.00x",
@@ -2259,7 +2282,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "1.86x"
+            "value": "—"
           },
           {
             "bench": "20.00x",
@@ -2281,7 +2304,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "12.53x"
+            "value": "—"
           },
           {
             "bench": "4.00%",
@@ -2292,7 +2315,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "7.98%"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -2303,7 +2326,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "2.45%"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -2397,26 +2420,26 @@
           "value": "5.9"
         },
         {
-          "bench": "",
+          "bench": "No aplica a REIT",
           "delta": "",
           "key": "net_margin",
           "label": "Margen neto",
           "pill": "No aplica",
           "state": "no_aplica",
           "tone": "neu",
-          "unit": "%",
-          "value": "21.2"
+          "unit": "",
+          "value": "—"
         },
         {
-          "bench": "",
+          "bench": "No aplica a REIT",
           "delta": "",
           "key": "roe",
           "label": "ROE",
           "pill": "No aplica",
           "state": "no_aplica",
           "tone": "neu",
-          "unit": "%",
-          "value": "3.2"
+          "unit": "",
+          "value": "—"
         },
         {
           "bench": "",
@@ -3169,6 +3192,7 @@
     "net_debt_to_ebitda_state": "ok",
     "net_income": 1267577000.0,
     "net_income_normalized": 1331939123.16,
+    "net_interest_income": -1109143000.0,
     "net_margin": 0.212320045614,
     "operating_cash_flow": 4166154000.0,
     "operating_income": 2732025000.0,

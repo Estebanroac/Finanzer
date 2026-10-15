@@ -64,7 +64,7 @@ VIOLATIONS = {
         a, t.replace("===== página 2 =====", "===== página 2 =====\nFORTALEZA CLAVE", 1))),
     "provenance_in_vocabulary": ("NFLX", lambda a, t: (
         next(iter(a["data_provenance"]["fields"].values())).update(source="inventada") or a, t)),
-    "no_archetype_codes_nor_sign_after_symbol": ("NFLX", lambda a, t: (a, t + "\nValor razonable $-8")),
+    "no_archetype_codes_nor_sign_after_symbol": ("NFLX", lambda a, t: (a, "Valor razonable $-8\n" + t)),   # antes del anexo (D1)
     "dcf_never_negative_fair_value": ("NFLX", lambda a, t: (a["dcf"].update(fair_value=-5.0) or a, t)),
     "chart_gauges_marker_in_reading_zone": ("NFLX", lambda a, t: (
         _first(a["display"]["charts"]["solvency"]["gauges"],
@@ -107,3 +107,11 @@ def test_not_applicable_violation_uses_an_archetype_where_pe_does_not_apply(outp
     from settings import cfg
     a = outputs_by_env("local")[VIOLATIONS["no_text_cites_a_not_applicable_metric"][0]][0]
     assert "pe" in cfg(f"sectors.archetypes.not_applicable.{a['classification']['archetype']}")
+
+
+def test_growth_sign_by_verb_is_a_citation_but_a_wrong_verb_is_not():
+    assert inv.cites_growth("Los ingresos se contraen un 5.0% anual de ciclo medio.", -0.05)
+    assert inv.cites_growth("Los ingresos varían -5.0% anual.", -0.05)
+    assert not inv.cites_growth("Los ingresos crecen 5.0% anual.", -0.05)
+    assert not inv.cites_growth("Los ingresos se contraen un 4.0% anual.", -0.05)
+    assert not inv.cites_growth("Los ingresos se contraen un 5.0% anual.", +0.05)

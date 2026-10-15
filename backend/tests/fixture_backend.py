@@ -59,15 +59,12 @@ for _p in (BACKEND_DIR, LIB_DIR):
 FIXTURES_ROOT = os.path.join(TESTS_DIR, "fixtures")
 GOLDEN_ROOT = os.path.join(TESTS_DIR, "golden")
 TICKERS = ["NFLX", "JPM", "O", "FCX", "SNOW", "V"]
-# Juegos de datos: "local" (captura en desarrollo) y "prod" (inputs que recibió
-# el pipeline en Render). Cada uno tiene sus fixtures y sus golden.
-ENVS = ("local", "prod")
+# Juegos de datos con los 6 tickers: "local" (captura en desarrollo, ruta quoteSummary). Los juegos "prod"
+# (capturado en Render el 11-oct, sin trimestrales) y "muestra" (etapa 11b, por quoteSummary y sin Finnhub) se
+# retiraron en la fase 1 del plan de fiabilidad (decisión D8): ya no representaban producción. La ruta de
+# producción (plan B + Finnhub) la cubre el juego "panel", que también contiene los 6 tickers.
+ENVS = ("local",)
 DEFAULT_ENV = "local"
-# Etapa 11b: muestra amplia (capturada en local con red). No tiene golden ni los 6 tickers:
-# la usan los tests de invariantes (textos visibles, moneda, clases, UTILITY, ETF).
-SAMPLE_ENV = "muestra"
-SAMPLE_TICKERS = ["KO", "PG", "JNJ", "PFE", "XOM", "NEE", "T", "CB", "BRK-B", "MA", "AMZN", "MU", "NVDA", "PLTR",
-                  "CROX", "TSM", "ASML", "NVO", "DUK", "SPY"]
 # Fase 0 del plan de fiabilidad: panel de referencia (docs/PLAN_FIABILIDAD.md §3), capturado en local con
 # Render simulado (render_sim) y Finnhub activo. Grupo de cada ticker: lo usa panel_run.
 PANEL_ENV = "panel"
@@ -81,12 +78,15 @@ PANEL_GROUPS = {
     "Pre-beneficio": ["RIVN", "SNOW"],
     "ADR / IFRS": ["TSM", "ASML", "NVO"],
     "Casos trampa": ["NFLX", "AMZN", "SPY"],
+    # Fase 1: informe de producción del 15-oct revisado con un analista externo (dividend yield 50.46%).
+    # Banco europeo con ADR y dividendo en peniques. El panel no se amplía más en la fase 1.
+    "Revisión externa": ["BCS"],
 }
 PANEL_TICKERS = [t for ts in PANEL_GROUPS.values() for t in ts]
 
 
 def fixtures_dir(env=DEFAULT_ENV):
-    if env not in ENVS and env not in (SAMPLE_ENV, PANEL_ENV):
+    if env not in ENVS and env != PANEL_ENV:
         raise ValueError(f"entorno desconocido: {env!r} (válidos: {ENVS})")
     return os.path.join(FIXTURES_ROOT, env)
 

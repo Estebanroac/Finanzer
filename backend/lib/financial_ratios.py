@@ -369,22 +369,23 @@ def financial_health_score(
         details.append({"metric": "Book Value Growth", "points": pts, "max": H["book_value_growth_points"], "detail": detail, "severity": severity})
     
     # 5. Dividend (0-1 punto) - Bancos suelen pagar dividendos
-    if dividend_yield is not None and dividend_yield > 0:
+    # Fase 1: se evalúa y se cita el PAYOUT (antes citaba el dividend yield: BCS "Dividendo sostenible (50.46%)" con
+    # un yield imposible y un payout de 28%). Sin payout no hay nada que evaluar: el componente no cuenta.
+    if payout_ratio is not None and payout_ratio != 0:
         max_possible += H["dividend_points"]
         # Un payout negativo (dividendos pagados con ganancias negativas, año en
         # pérdidas) NO es sostenible: antes `payout < 0.60` lo daba por sostenible.
-        _sustainable = 0 <= payout_ratio < b["payout_sustainable"] if payout_ratio is not None else True
-        if _sustainable:
+        if 0 <= payout_ratio < b["payout_sustainable"]:
             pts = H["dividend_points"]
-            detail = f"Dividendo sostenible ({dividend_yield*100:.2f}%)"
+            detail = f"Dividendo sostenible (payout {payout_ratio:.0%})"
             severity = "excellent"
-        elif payout_ratio is not None and payout_ratio < 0:
+        elif payout_ratio < 0:
             pts = 0
-            detail = f"Dividendo insostenible (pagado con pérdidas)"
+            detail = f"Dividendo insostenible (pagado con pérdidas; payout {payout_ratio:.0%})"
             severity = "weak"
         else:
             pts = 0
-            detail = f"Payout ratio alto ({payout_ratio*100:.0f}% > 60%)"
+            detail = f"Payout alto (payout {payout_ratio:.0%} > {b['payout_sustainable']:.0%})"
             severity = "moderate"
         score += pts
         details.append({"metric": "Dividendo", "points": pts, "max": H["dividend_points"], "detail": detail, "severity": severity})
@@ -1026,18 +1027,31 @@ def interest_coverage(ebit: Optional[float], interest_expense: Optional[float]) 
     return safe_div(ebit, interest_expense)
 
 
-def interest_coverage_state(ic: Optional[float], net_debt: Optional[float]) -> Optional[str]:
-    """Estado de la cobertura de intereses (etapa 5).
+def interest_coverage_state(ic: Optional[float], net_debt: Optional[float], ebit: Optional[float] = None,
+                            net_interest_income: Optional[float] = None) -> Optional[str]:
+    """Estado de la cobertura de intereses (etapa 5; fase 1 del plan de fiabilidad).
 
-    · "no_significativo": EBIT < 0 (cobertura negativa) con caja neta (caja >
-      deuda total). No hay riesgo de impago: los intereses se pagan con caja;
-      la ratio no tiene sentido y no puntúa (misma regla M de la etapa 3).
-    · "negativa": EBIT < 0 con deuda neta. Señal real de riesgo: se penaliza,
-      pero la cifra negativa no se presenta como una cobertura.
-    · "ok": cobertura >= 0. None si no hay cobertura."""
+    Se decide con el signo del EBIT de los estados (`ebit`) y el del resultado financiero neto
+    (`net_interest_income`: ingresos − gastos financieros), no con el signo del cociente: una cobertura
+    negativa también sale cuando la empresa cobra más intereses de los que paga (PLTR).
+
+    · "sin_carga": EBIT > 0 e ingreso financiero neto (o, sin ese dato, una cobertura negativa con EBIT > 0,
+      que solo puede venir de intereses netos a favor). La deuda no es una carga: mejor tramo. Solo sustituye
+      a una cobertura negativa o ausente; una cobertura positiva se sigue leyendo como cobertura.
+    · "no_significativo": EBIT < 0 con caja neta (caja > deuda total): los intereses se pagan con caja; la
+      ratio no tiene sentido y no puntúa (regla M de la etapa 3).
+    · "negativa": EBIT < 0 con deuda neta. Riesgo real: se penaliza sin presentar la cifra como cobertura.
+    · "ok": cobertura >= 0. None si no hay cobertura (ni caso "sin_carga").
+    Sin EBIT de los estados, la regla anterior por el signo del cociente."""
+    if ebit is not None and ebit > 0 and (ic is None or ic < 0):
+        if net_interest_income is not None:
+            return "sin_carga" if net_interest_income >= 0 else (None if ic is None else "ok")
+        if ic is not None:            # cobertura negativa con EBIT > 0: intereses netos a favor (inferido)
+            return "sin_carga"
+        return None
     if ic is None:
         return None
-    if ic < 0:
+    if (ebit is not None and ebit < 0) or (ebit is None and ic < 0):
         return "no_significativo" if (net_debt is not None and net_debt < 0) else "negativa"
     return "ok"
 
@@ -1059,6 +1073,9 @@ def net_debt_ebitda_state(ebitda: Optional[float], net_debt: Optional[float]) ->
 NET_CASH_TEXT = "la posición de caja supera a la deuda total (caja neta)"
 IC_NOT_SIGNIFICANT = "No significativo: EBIT < 0 con caja neta (caja > deuda total); los intereses se pagan con caja"
 IC_NEGATIVE = "Negativa (EBIT < 0)"
+# Fase 1: EBIT > 0 y los ingresos financieros cubren los gastos financieros (resultado financiero neto >= 0).
+IC_NO_BURDEN = ("Sin carga financiera neta: los ingresos financieros cubren los gastos financieros y el resultado "
+                "operativo es positivo")
 
 
 # =========================
@@ -1677,6 +1694,7 @@ def score_solidez_financiera(
     runway: Optional[Dict[str, Any]] = None,
     market: bool = False,
     net_debt_to_ebitda: Optional[float] = None,
+    ic_state: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Categoría 1: Solidez Financiera (20 pts máximo)
@@ -1802,9 +1820,16 @@ def score_solidez_financiera(
     
     # Interest Coverage (hasta ±3 pts). EBIT < 0 con caja neta: no significativo,
     # no puntúa (sin dato). EBIT < 0 con deuda neta: se penaliza (riesgo real).
-    _ic_state = interest_coverage_state(interest_coverage, net_debt)
+    # Fase 1: el estado lo decide main con el EBIT y el resultado financiero neto (`ic_state`).
+    _ic_state = ic_state if ic_state is not None else interest_coverage_state(interest_coverage, net_debt)
     _ic_reason = None
-    if _ic_state == "no_significativo":
+    if _ic_state == "sin_carga":
+        adj = T["coverage_points"][0]
+        base_score += adj
+        _a["coverage"] = adj
+        adjustments.append({"metric": "Cobertura Intereses", "value": "Sin carga financiera neta", "adjustment": adj,
+                            "reason": IC_NO_BURDEN, "severity": "excellent"})
+    elif _ic_state == "no_significativo":
         _ic_reason = IC_NOT_SIGNIFICANT
         adjustments.append({"metric": "Cobertura Intereses", "value": "No significativo", "adjustment": 0,
                             "reason": _ic_reason, "severity": "neutral"})
@@ -2497,7 +2522,11 @@ def score_valoracion(
                       f"g {xv.get('terminal_growth', 0):.1%})")
             _a[key] = adj
             _pb_blk[label] = (adj, p)
-            adjustments.append({"metric": label, "value": f"{ratio:.2f}× justificado", "adjustment": adj,
+            # Fase 1 (BCS): "0.95× justificado" se leía como si 0.95x fuera el múltiplo justificado; es la parte
+            # del justificado a la que cotiza.
+            _short = label.split(" frente")[0]
+            adjustments.append({"metric": label, "value": f"{ratio:.0%} del {_short} justificado "
+                                                          f"({mult:.2f}x frente a {just:.2f}x)", "adjustment": adj,
                                 "reason": reason, "severity": sev, "in_block": True})
         # Etapa 9a: P/B y P/TBV frente a sus justificados miden lo mismo: un bloque.
         _pbres = multiples_block(_pb_blk, "Bloque P/B y P/TBV")
@@ -3364,6 +3393,7 @@ def calculate_score_v2(
             net_debt_to_ebitda=(ratio_values.get("net_debt_to_ebitda")
                                 if ratio_values.get("net_debt_to_ebitda") is not None
                                 else contextual_values.get("net_debt_to_ebitda")),
+            ic_state=contextual_values.get("interest_coverage_state"),
         )
     
     if archetype == REIT:

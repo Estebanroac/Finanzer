@@ -484,6 +484,10 @@
         "detail": "TTM: suma de los 4 trimestres 2026-05-31, 2026-02-28, 2025-11-30, 2025-08-31",
         "source": "yfinance_statements"
       },
+      "netInterestIncome": {
+        "detail": "TTM: suma de los 4 trimestres 2026-05-31, 2026-02-28, 2025-11-30, 2025-08-31",
+        "source": "yfinance_statements"
+      },
       "operatingCashflow": {
         "detail": "TTM: suma de los 4 trimestres 2026-05-31, 2026-02-28, 2025-11-30, 2025-08-31",
         "source": "yfinance_statements"
@@ -621,6 +625,7 @@
         "grossProfits",
         "interestExpense",
         "netIncome",
+        "netInterestIncome",
         "operatingCashflow",
         "operatingIncome",
         "stockBasedCompensation",
@@ -687,6 +692,27 @@
     "state": "ok"
   },
   "display": {
+    "annex": {
+      "items": [
+        {
+          "label": "Clasificación",
+          "text": "Arquetipo CYCLICAL (regla industria_ciclica_condicional): Clasificada como CYCLICAL por industria Semiconductors (cíclica condicional) con reversión en la ventana: el margen operativo cayó 66.3 pp desde un pico (> 10 pp); los ingresos cayeron 49.5% en un ejercicio (> 10%)"
+        },
+        {
+          "label": "Confianza · Convergencia entre métodos (no evaluable)",
+          "text": "un solo método evaluable (múltiplos frente al sector): no hay contraste; no evaluable: DCF (fiabilidad baja)"
+        },
+        {
+          "label": "Confianza · Calidad de fuente (baja)",
+          "text": "validación: revenueGrowth (crecimiento_artefacto); validación: revenueGrowth (crecimiento_incoherente); 15 campos de Finnhub en lugar de los estados"
+        },
+        {
+          "label": "Confianza · Estabilidad del arquetipo (baja)",
+          "text": "empresa cíclica: resultados ligados a la fase del ciclo"
+        }
+      ],
+      "title": "Detalle técnico para auditoría"
+    },
     "archetype": "CYCLICAL",
     "archetype_label": "Cíclica",
     "benchmark": {
@@ -905,9 +931,9 @@
                 "gap_txt": "-33%",
                 "higher_is_better": true,
                 "key": "revenue_growth",
-                "label": "Crecimiento de ingresos (3 años)",
+                "label": "Crecimiento de ingresos (ciclo medio)",
                 "reading": "Inferior",
-                "text": "Crecimiento de ingresos (3 años) de 10.0% frente a 15.0% del sector (-33%): inferior",
+                "text": "Crecimiento de ingresos (ciclo medio) de 10.0% frente a 15.0% del sector (-33%): inferior",
                 "tone": "warn",
                 "value": 0.1,
                 "value_txt": "10.00%"
@@ -920,9 +946,9 @@
                 "gap_txt": "-44%",
                 "higher_is_better": true,
                 "key": "earnings_growth",
-                "label": "Crecimiento del BPA (3 años)",
+                "label": "Crecimiento del BPA (ciclo medio)",
                 "reading": "Muy inferior",
-                "text": "Crecimiento del BPA (3 años) de 10.0% frente a 18.0% del sector (-44%): muy inferior",
+                "text": "Crecimiento del BPA (ciclo medio) de 10.0% frente a 18.0% del sector (-44%): muy inferior",
                 "tone": "neg",
                 "value": 0.1,
                 "value_txt": "10.00%"
@@ -1272,6 +1298,19 @@
             "value_txt": "62.46%"
           }
         ],
+        "roce": {
+          "avg": {
+            "incomplete": true,
+            "label": "ROCE promedio del ciclo",
+            "value_txt": "6.24%",
+            "years": 4
+          },
+          "basis": "EBIT / capital empleado, antes de impuestos",
+          "label": "ROCE",
+          "state": "con_dato",
+          "text": "Divergencia ROCE–ROIC: ROCE 14.20% frente a ROIC 62.46% (-48.3 pp, más de 10 pp). Causas probables: caja excedente elevada (19% de los activos) que infla el capital empleado; capital distinto: el ROIC usa patrimonio + deuda − caja; el ROCE, activos − pasivo corriente (incluye pasivos a largo plazo no financieros e intereses minoritarios).",
+          "value_txt": "14.20%"
+        },
         "spread": {
           "reading": "Crea mucho valor",
           "state": "con_dato",
@@ -1685,25 +1724,25 @@
           "key": "convergence",
           "label": "Convergencia entre métodos",
           "level": "No evaluable",
-          "text": "DCF -94% (cara, no evaluable) · múltiplos frente al sector -1.00 (cara). un solo método evaluable (múltiplos frente al sector): no hay contraste; no evaluable: DCF (fiabilidad baja)"
+          "text": "DCF -94% (cara, no evaluable) · múltiplos frente al sector -1.00 (cara). Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo. El DCF no concilia con el precio y no se usa para contrastar."
         },
         {
           "key": "coverage",
           "label": "Cobertura de datos",
           "level": "Alta",
-          "text": "sin incidencias"
+          "text": "Sin incidencias."
         },
         {
           "key": "source",
           "label": "Calidad de fuente",
           "level": "Baja",
-          "text": "validación: revenueGrowth (crecimiento_artefacto); validación: revenueGrowth (crecimiento_incoherente); 15 campos de Finnhub en lugar de los estados"
+          "text": "El crecimiento reportado por la fuente era incoherente y se recalculó con los estados (o se descartó si no había estados). El crecimiento que reporta la fuente difiere mucho del de los estados anuales; se mantiene, pero conviene tomarlo con cautela. Parte de los datos proviene de una fuente secundaria."
         },
         {
           "key": "stability",
           "label": "Estabilidad del arquetipo",
           "level": "Baja",
-          "text": "empresa cíclica: resultados ligados a la fase del ciclo"
+          "text": "Empresa cíclica: sus resultados dependen de la fase del ciclo."
         }
       ],
       "level": "baja",
@@ -1717,37 +1756,31 @@
       ],
       "reasons": [
         {
-          "detail": "un solo método evaluable (múltiplos frente al sector): no hay contraste",
           "dimension": "convergencia",
           "level": "no_evaluable",
           "text": "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo."
         },
         {
-          "detail": "no evaluable: DCF (fiabilidad baja)",
           "dimension": "convergencia",
           "level": "no_evaluable",
           "text": "El DCF no concilia con el precio y no se usa para contrastar."
         },
         {
-          "detail": "validación: revenueGrowth (crecimiento_artefacto)",
           "dimension": "calidad de fuente",
           "level": "baja",
           "text": "El crecimiento reportado por la fuente era incoherente y se recalculó con los estados (o se descartó si no había estados)."
         },
         {
-          "detail": "validación: revenueGrowth (crecimiento_incoherente)",
           "dimension": "calidad de fuente",
           "level": "baja",
           "text": "El crecimiento que reporta la fuente difiere mucho del de los estados anuales; se mantiene, pero conviene tomarlo con cautela."
         },
         {
-          "detail": "15 campos de Finnhub en lugar de los estados",
           "dimension": "calidad de fuente",
           "level": "baja",
           "text": "Parte de los datos proviene de una fuente secundaria."
         },
         {
-          "detail": "empresa cíclica: resultados ligados a la fase del ciclo",
           "dimension": "estabilidad",
           "level": "baja",
           "text": "Empresa cíclica: sus resultados dependen de la fase del ciclo."
@@ -1827,9 +1860,6 @@
           "title": "ATRACTIVO DEL PRECIO"
         }
       ],
-      "classification_detail": [
-        "Arquetipo CYCLICAL (regla industria_ciclica_condicional): Clasificada como CYCLICAL por industria Semiconductors (cíclica condicional) con reversión en la ventana: el margen operativo cayó 66.3 pp desde un pico (> 10 pp); los ingresos cayeron 49.5% en un ejercicio (> 10%)"
-      ],
       "classification_notes": [
         "Su industria (Semiconductors) puede serlo y en los últimos ejercicios su margen operativo cayó 66.3 puntos desde un máximo y sus ingresos cayeron un 49.5% en un ejercicio."
       ],
@@ -1898,10 +1928,10 @@
           "value": "2.53%"
         },
         {
-          "key": "net_debt_to_ebitda",
-          "label": "Deuda neta/EBITDA",
+          "key": "net_cash",
+          "label": "Caja neta",
           "state": "con_dato",
-          "value": "-0.29x"
+          "value": "$19.65B"
         },
         {
           "key": "beta",
@@ -1941,7 +1971,8 @@
         "Piotroski (2000)",
         "un DCF multietapa con WACC estimado por CAPM"
       ],
-      "models_text": "los modelos de Altman (1968), Piotroski (2000), un DCF multietapa con WACC estimado por CAPM"
+      "models_text": "los modelos de Altman (1968), Piotroski (2000), un DCF multietapa con WACC estimado por CAPM",
+      "ratios_text": "ratios TTM y del último ejercicio"
     },
     "na_keys": [
       "fcf_growth",
@@ -1949,6 +1980,7 @@
       "pe",
       "peg"
     ],
+    "pe_label": "P/E (TTM)",
     "readings": {
       "beta": {
         "label": "Muy volátil",
@@ -1977,7 +2009,7 @@
       },
       "earnings_growth": {
         "label": "Moderado",
-        "text": "el BPA crece 10.0% anual de ciclo medio, un ritmo moderado",
+        "text": "el BPA crece 10.0% anual de ciclo medio (acotado al máximo que admite el modelo), un ritmo moderado",
         "tone": "neu"
       },
       "fcf_yield": null,
@@ -2005,7 +2037,7 @@
       },
       "revenue_growth": {
         "label": "Sólido",
-        "text": "los ingresos crecen 10.0% anual de ciclo medio, un ritmo sólido a lo largo del ciclo",
+        "text": "los ingresos crecen 10.0% anual de ciclo medio (acotado al máximo que admite el modelo), un ritmo sólido a lo largo del ciclo",
         "tone": "pos"
       },
       "roe": {
@@ -2107,7 +2139,7 @@
           "LECTURA"
         ],
         "eps_vs_revenue_note": "BPA frente a ingresos: BPA +10.0% frente a ingresos +10.0% (los crecimientos que puntúa Crecimiento): el BPA crece en línea con los ingresos. Dato informativo, no puntúa: Crecimiento ya puntúa el BPA y los ingresos por separado.",
-        "intro": "Los ingresos crecen 10.0% anual de ciclo medio, un ritmo sólido a lo largo del ciclo. El BPA crece 10.0% anual de ciclo medio, un ritmo moderado. La emisión de acciones diluyó a los accionistas un 1.2% en el año.",
+        "intro": "Los ingresos crecen 10.0% anual de ciclo medio (acotado al máximo que admite el modelo), un ritmo sólido a lo largo del ciclo. El BPA crece 10.0% anual de ciclo medio (acotado al máximo que admite el modelo), un ritmo moderado. La emisión de acciones diluyó a los accionistas un 1.2% en el año.",
         "range52": {
           "axis": "Muestra dónde cotiza el precio dentro de su rango anual. Es contexto de mercado: no es una señal de valoración ni mide la calidad del negocio.",
           "caption": "Precio actual $914.13 — posición 68% del rango.",
@@ -2152,7 +2184,7 @@
             "label": "Crecimiento de ingresos (ciclo medio)",
             "reading": "Sólido",
             "state": "con_dato",
-            "text": "los ingresos crecen 10.0% anual de ciclo medio, un ritmo sólido a lo largo del ciclo",
+            "text": "los ingresos crecen 10.0% anual de ciclo medio (acotado al máximo que admite el modelo), un ritmo sólido a lo largo del ciclo",
             "tone": "pos",
             "value": "10.00%"
           },
@@ -2174,7 +2206,7 @@
             "label": "Crecimiento del BPA (ciclo medio)",
             "reading": "Moderado",
             "state": "con_dato",
-            "text": "el BPA crece 10.0% anual de ciclo medio, un ritmo moderado",
+            "text": "el BPA crece 10.0% anual de ciclo medio (acotado al máximo que admite el modelo), un ritmo moderado",
             "tone": "neu",
             "value": "10.00%"
           },
@@ -2617,6 +2649,7 @@
           ]
         ],
         "intro": "El ROE de 50.1% es excepcional para su sector (sector: 10.0% competitivo, 22.0% rango alto). Con un ROIC de 62.5% frente a un costo de capital (WACC) de 13.3%, la compañía genera un spread de +49.2%: cada dólar reinvertido crea valor económico sustancial.",
+        "roce_reading": "Divergencia ROCE–ROIC: ROCE 14.20% frente a ROIC 62.46% (-48.3 pp, más de 10 pp). Causas probables: caja excedente elevada (19% de los activos) que infla el capital empleado; capital distinto: el ROIC usa patrimonio + deuda − caja; el ROCE, activos − pasivo corriente (incluye pasivos a largo plazo no financieros e intereses minoritarios).",
         "rows": [
           {
             "bench": "25.00%",
@@ -2896,7 +2929,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "12.32x"
+            "value": "—"
           },
           {
             "bench": "25.00x",
@@ -2907,7 +2940,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "6.52x"
+            "value": "—"
           },
           {
             "bench": "8.00x",
@@ -2940,7 +2973,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "0.03x"
+            "value": "—"
           },
           {
             "bench": "20.00x",
@@ -2984,7 +3017,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "8.12%"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -3393,7 +3426,7 @@
         },
         {
           "label": "CREACIÓN DE VALOR",
-          "text": "Con un ROIC de 62.5% frente a un costo de capital (WACC) de 13.3%, la compañía genera un spread de +49.2%: cada dólar reinvertido crea valor económico sustancial."
+          "text": "Con un ROIC de 62.5% frente a un costo de capital (WACC) de 13.3%, la compañía genera un spread de +49.2%: cada dólar reinvertido crea valor económico sustancial. ROCE 14.20% (EBIT / capital empleado, antes de impuestos), 48.3 pp por debajo del ROIC (62.46%); ROCE promedio del ciclo 6.24% (4 ejercicios, ciclo incompleto)."
         },
         {
           "label": "SOLIDEZ",
@@ -3401,7 +3434,7 @@
         },
         {
           "label": "CRECIMIENTO Y RETORNO",
-          "text": "Los ingresos crecen 10.0% anual de ciclo medio, un ritmo sólido a lo largo del ciclo. La emisión de acciones diluyó a los accionistas un 1.2% en el año."
+          "text": "Los ingresos crecen 10.0% anual de ciclo medio (acotado al máximo que admite el modelo), un ritmo sólido a lo largo del ciclo. La emisión de acciones diluyó a los accionistas un 1.2% en el año."
         },
         {
           "label": "ATRACTIVO DEL PRECIO",
@@ -4437,6 +4470,7 @@
     "net_debt_to_ebitda_state": "caja_neta",
     "net_income": 50469000000.0,
     "net_income_normalized": 50469000000.0,
+    "net_interest_income": 425000000.0,
     "net_margin": 0.559064625474,
     "operating_cash_flow": 51432000000.0,
     "operating_income": 59282000000.0,

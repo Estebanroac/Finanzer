@@ -12,6 +12,7 @@ Tonos: pos, neg, warn, neu (None = sin lectura coloreada).
 
 Uso: build_display(analysis, sector_bench) -> dict serializable a JSON.
 """
+import math
 import re
 from typing import Any, Dict, Optional
 
@@ -20,7 +21,8 @@ from financial_ratios import IC_NEGATIVE, NET_CASH_TEXT, SECTOR_THRESHOLDS, Thre
 from classify import archetype_label, not_applicable_text
 import numfmt
 from numfmt import money as _money, price as _price
-from plain_language import confidence_reasons, plain_reasons
+from plain_language import confidence_reasons, plain_reasons, translate as _plain_reason
+from claims import active as _claims_active, claim as _claim, declares as _declares, record as _record
 
 _PDF_BANDS = cfg("thresholds.pdf")  # bandas de las lecturas del informe
 DE_NOT_APPLICABLE = "No aplica a entidades financieras"
@@ -36,10 +38,148 @@ ARCHETYPES = ("FINANCIAL", "REIT", "UTILITY", "GROWTH_PRE_PROFIT", "CYCLICAL", "
 # Cada lector devuelve (etiqueta_corta, tono, frase) o None si no hay dato.
 # tono ∈ {pos, neg, warn, neu} → color en tablas y acentos del texto.
 
+def _rec(r, *cl):
+    """Fase 1 (guardián narrativo): declara las afirmaciones de una lectura (etiqueta y frase). Sin efecto en la
+    salida; solo registra si hay un colector activo (tests)."""
+    if r is not None and _claims_active():
+        _record(r[0], *cl, source="display.lectura")
+        _record(r[2], *cl, source="display.lectura")
+    return r
+
+
+_COV_METRICS = ("Cobertura Intereses", "Cobertura de intereses")
+
+
+def _metric_claims(a, metric):
+    """Fase 1 (guardián): afirmaciones que hace un texto del desglose según su métrica."""
+    km, arch = a.get("key_metrics") or {}, (a.get("classification") or {}).get("archetype")
+    m = str(metric or "")
+    if m in _COV_METRICS:
+        st = km.get("interest_coverage_state")
+        cl = [_claim("coverage", state=st)] + ([_claim("no_interest_burden")] if st == "sin_carga" else [])
+        if st in ("negativa", "no_significativo"):
+            cl += [_claim("ebit_negative"), _claim("net_debt" if st == "negativa" else "net_cash")]
+        return cl
+    if m.startswith("Deuda neta"):
+        nd = km.get("net_debt")
+        return [] if nd is None else [_claim("net_cash" if nd < 0 else "net_debt")]
+    if "ROIC" in m and "WACC" in m:
+        return [_claim("spread")]
+    if m.startswith("DCF"):
+        return [_claim("dcf_upside"), _claim("dcf_rel")]
+    if m.startswith("Altman"):
+        return [_claim("altman_zone")]
+    if m.startswith("Runway"):
+        return [_claim("runway")]
+    if m.startswith("Mejora"):            # "+27.8 pp interanual": variación de un año a otro
+        return [_claim("basis", per="interanual", metric=m)]
+    if m.startswith(("Crecimiento", "Retorno total")):
+        bd = ((a.get("score") or {}).get("breakdown") or {}).get("Crecimiento") or {}
+        adj = next((x for x in bd.get("adjustments") or [] if x.get("metric") == m), {})
+        return [_claim("growth", field=f"score.breakdown.Crecimiento[{m}].raw", value=adj.get("raw"),
+                       cycle=arch == "CYCLICAL", cagr=arch != "CYCLICAL", what=m)]
+    return [_claim("vs_bench")]
+
+
+def _declare_engine_texts(a, D):
+    """Fase 1 (guardián narrativo): declara las afirmaciones de los textos del motor que `display` pasa al
+    informe (desglose, tarjetas institucionales, nota del WACC, confianza, filas y etiquetas). Sin efecto en la
+    salida: solo registra con un colector activo."""
+    km = a.get("key_metrics") or {}
+    S = D.get("sections") or {}
+    for cat in ((S.get("institutional") or {}).get("breakdown") or {}).get("categories") or []:
+        for it in cat.get("items") or []:
+            cl = _metric_claims(a, it.get("metric"))
+            _record(it.get("reason"), *cl, source="display.desglose")
+            _record(it.get("value"), *cl, source="display.desglose")
+    alt = a.get("altman_z") or {}
+    for c in (S.get("institutional") or {}).get("cards") or []:
+        if c.get("key") == "altman":
+            for k in ("subtitle", "body", "value"):
+                _record(c.get(k), _claim("altman_zone"), source="display.institucional")
+    ro = ((D.get("charts") or {}).get("profitability") or {}).get("roce") or {}   # fase 1 (punto 9)
+    for k, fld in (("label", "roce"), ("value_txt", "roce")):
+        _record(ro.get(k), _claim("roce", field=f"key_metrics.{fld}"), source="display.charts")
+    for k in ("label", "value_txt"):
+        _record((ro.get("avg") or {}).get(k), _claim("roce", field="key_metrics.roce_avg"), source="display.charts")
+    al = ((D.get("charts") or {}).get("institutional") or {}).get("altman") or {}
+    for k in ("zone", "text"):
+        _record(al.get(k), _claim("altman_zone"), source="display.charts")
+    if alt.get("z_score") is not None:
+        _zm = {"safe": "zona segura", "grey": "zona gris", "distress": "zona de riesgo"}
+        _record(f"Altman Z de {alt['z_score']:.2f} ({_zm.get(alt.get('zone'), '')})", _claim("altman_zone"),
+                source="display.resumen")
+    # Nota del WACC: el rating sintético cita la regla M ("EBIT < 0 con caja neta / deuda neta").
+    flag = str(((a.get("wacc") or {}).get("rating") or {}).get("flag") or "")
+    wcl = []
+    if "EBIT < 0" in flag:
+        wcl = [_claim("ebit_negative"), _claim("net_cash" if "caja neta" in flag else "net_debt")]
+    V = S.get("valuation") or {}
+    _record(V.get("wacc_note"), *wcl, source="display.wacc")
+    _record(flag, *wcl, source="display.wacc")
+    _record(V.get("dcf_reliability"), _claim("dcf_rel"), source="display.dcf")
+    # Confianza: fiabilidad del DCF citada y contracción del precio.
+    pa, C = a.get("price_attractiveness") or {}, D.get("confidence") or {}
+    ccl = [_claim("dcf_rel"), _claim("price_contraction", raw=pa.get("score_raw"), score=pa.get("score"),
+                                     confidence=pa.get("confidence"), factor=pa.get("factor"))]
+    for d in C.get("dimensions") or []:
+        _record(d.get("text"), *ccl, source="display.confianza")
+    for r in C.get("reasons") or []:
+        _record(r.get("detail"), *ccl, source="display.confianza")
+    _record(C.get("summary"), *ccl, source="display.confianza")
+    # Filas con estado propio (cobertura, runway, deuda neta/EBITDA) y etiquetas con base temporal.
+    rcl = {"interest_coverage": _metric_claims(a, "Cobertura Intereses"), "runway": [_claim("runway")],
+           "roce": [_claim("roce", field="key_metrics.roce")], "roce_avg": [_claim("roce", field="key_metrics.roce_avg")],
+           "net_debt_to_ebitda": _metric_claims(a, "Deuda neta/EBITDA")}
+    for sec in ("solvency", "growth", "profitability", "valuation"):
+        for r in (S.get(sec) or {}).get("rows") or []:
+            cl = list(rcl.get(r.get("key"), []))
+            lab = str(r.get("label") or "")
+            if "(interanual)" in lab or " interanual" in str(r.get("text") or ""):
+                cl.append(_claim("basis", per="interanual", metric=r.get("key")))
+            if "(3 años)" in lab:
+                cl.append(_claim("basis", per="3 años", metric=r.get("key")))
+            for k in ("label", "value", "reading", "text"):
+                _record(r.get(k), *cl, source=f"display.{sec}")
+    for c in (D.get("summary") or {}).get("cards") or []:
+        if "(3 años)" in str(c.get("label")):
+            _record(c.get("label"), _claim("basis", per="3 años", metric=c.get("key")), source="display.tarjetas")
+    for g in ((D.get("charts") or {}).get("comparison") or {}).get("groups") or []:
+        for it in g.get("items") or []:
+            if "(3 años)" in str(it.get("label")):
+                _record(it.get("label"), _claim("basis", per="3 años", metric=it.get("key")), source="display.charts")
+    pio = (S.get("institutional") or {}).get("piotroski_criteria") or []
+    for c in pio:
+        for k in ("label", "detail"):
+            _record(c.get(k), _claim("piotroski", criterion=c.get("label"), state=c.get("state")),
+                    source="display.piotroski")
+    cls = a.get("classification") or {}
+    inp = cls.get("inputs") or {}
+    for t in (D.get("cover") or {}).get("classification_notes") or []:
+        _record(t, _claim("archetype", value=cls.get("archetype")),
+                _claim("growth", field="classification.inputs.revenue_cagr_3y", value=inp.get("revenue_cagr_3y"),
+                       cagr=True, what="ingresos"), source="display.clasificacion")
+    ev = a.get("eps_vs_revenue_growth") or {}
+    if ev:
+        ecl = [_claim("eps_vs_revenue", eps=ev.get("eps_growth"), revenue=ev.get("revenue_growth"),
+                      state=ev.get("state"))]
+        G = S.get("growth") or {}
+        _record(G.get("eps_vs_revenue_note"), *ecl, source="display.crecimiento")
+        for r in G.get("rows") or []:
+            if str(r.get("text") or "").lower().startswith("el bpa crece"):
+                _record(r.get("text"), *ecl, source="display.crecimiento")
+
+
 def _pct(v, dec=1):
     return f"{v * 100:.{dec}f}%"
 
 
+def _vs_claims(name, val, bench, higher_better, fmt="mult", ref="del sector", result=None):
+    return [_claim("vs_bench", metric=name, value=val, bench=bench, ref=ref, higher_better=higher_better),
+            *([_claim("basis", per="3 años", metric=name)] if "(3 años)" in str(name) else [])]
+
+
+@_declares(_vs_claims, source="display.read_vs_sector")
 def read_vs_sector(name, val, bench, higher_better, fmt="mult", ref="del sector"):
     """Lectura genérica de una métrica vs la mediana sectorial (o la del mercado: `ref`)."""
     if val is None or bench in (None, 0):
@@ -163,6 +303,9 @@ def read_de(de, threshold=None, coverage=None, market=False):
 def read_coverage(ic, state=None, utility=False):
     # Etapa 5: EBIT < 0 con caja neta -> no significativa; con deuda neta ->
     # riesgo, sin presentar la cifra negativa como si fuera una cobertura.
+    if state == "sin_carga":   # fase 1: EBIT > 0 e ingresos financieros netos
+        return ("Sin carga financiera", 'pos', "sin carga financiera neta: los ingresos financieros cubren los "
+                "gastos financieros y el resultado operativo es positivo")
     if state == "no_significativo":
         return ("No significativa", 'neu', "con EBIT negativo y caja neta, la cobertura de intereses no es "
                 "significativa: los intereses se pagan con caja")
@@ -301,6 +444,12 @@ def read_growth(g, what="los ingresos", kind="revenue", cycle=False, cagr=False)
     9b): la tasa anual compuesta a 3 años, la cifra que puntúa Crecimiento."""
     if g is None: return None
     per = "anual de ciclo medio" if cycle else ("anual en 3 años" if cagr else "interanual")
+    if cycle:   # fase 1: en la cota del modelo, la cifra no es un dato medido y el texto lo dice
+        lo, hi = cfg("valuation.archetypes.cyclical_growth_bounds")
+        if math.isclose(g, lo):
+            per += " (acotado al mínimo que admite el modelo)"
+        elif math.isclose(g, hi):
+            per += " (acotado al máximo que admite el modelo)"
     pl = what.startswith(("los ", "las "))      # concordancia: "los ingresos se contraen" / "el BPA se contrae"
     contrae, crece = ("se contraen", "crecen") if pl else ("se contrae", "crece")
     plano = "están prácticamente planos" if pl else "está prácticamente plano"
@@ -408,9 +557,20 @@ def read_fcf_yield(fy):
 
 
 # ══════════════════════════════ FORMATO ══════════════════════════════
+# Fase 1 (T3.2): el motor conserva sus códigos; la presentación habla castellano. Sin dato: "—", como en las filas
+# "no significativa" (nunca "N/A").
+NO_DATA = "—"
+FIN_HEALTH_LEVEL_ES = {"STRONG": "Sólida", "GOOD": "Buena", "NEUTRAL": "Neutral", "WEAK": "Débil"}
+
+
+def _es_value(v):
+    """Valor que llega del motor ya formateado: "N/A" se presenta como "—"."""
+    return NO_DATA if v == "N/A" else v
+
+
 def fv(val, fmt="num"):
     if val is None:
-        return "N/A"
+        return NO_DATA
     try:
         v = float(val)
         if fmt == "pct":   return f"{v * 100:.2f}%"
@@ -419,7 +579,7 @@ def fv(val, fmt="num"):
         if fmt == "money": return _money(v)
         return f"{v:,.2f}"
     except (TypeError, ValueError):
-        return "N/A"
+        return NO_DATA
 
 
 def join_sentences(parts):
@@ -453,6 +613,10 @@ def _rd(r):
 
 
 def _row(key, label, value, reading="—", tone=None, state="con_dato", bench=None, gap=None, text=None):
+    # Fase 1 (decisión del usuario, registro #14): lo que no aplica no se cita con cifra, tampoco en las tablas
+    # (antes, etapa 9b, la fila mostraba la cifra con "No aplica": FCF yield de BCS 29.31%). "—" y el motivo.
+    if state == "no_aplica" or str(reading or "").startswith("No aplica"):
+        value, gap = NO_DATA, (None if gap is None else "—")
     return {"key": key, "label": label, "value": value, "bench": bench, "gap": gap,
             "reading": reading, "tone": tone, "state": state, "text": text}
 
@@ -503,6 +667,9 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     _mkt = _vb.get("profile") == "market"
     _ref = "del mercado (S&P 500)" if _mkt else "del sector"
     _bcol = "MERCADO" if _mkt else "SECTOR"
+    # Fase 1 (#20): "(TTM)" solo con ratios TTM; sin 4 trimestres consecutivos la base es el último ejercicio.
+    _annual = ((a.get("data_provenance") or {}).get("ttm") or {}).get("basis") == "anual"
+    _PE = "P/E (último ejercicio)" if _annual else "P/E (TTM)"
 
     def _rvs(*args, **k):
         return read_vs_sector(*args, ref=_ref, **k)
@@ -634,6 +801,46 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     r_fcfy = read_fcf_yield(km.get("fcf_yield"))
     # Etapa 9a: ningún texto cita una métrica que no aplica al arquetipo; el Número de
     # Graham no se muestra donde el P/E no aplica.
+    # ── Fase 1 (guardián narrativo): afirmaciones de cada lectura, con el campo que las respalda ──
+    if _claims_active():
+        _rec(r_pe, _claim("vs_bench", metric="pe", field="key_metrics.pe", value=_pe_in, bench=sector_bench.get("pe"),
+                          ref=_ref, higher_better=False),
+             _claim("spread", field="key_metrics.roic_wacc_spread", value=km.get("roic_wacc_spread")))
+        _rec(r_roe, _claim("figure", field="key_metrics.roe", value=km.get("roe"), fmt="pct"))
+        _rec(r_spread, _claim("spread", field="key_metrics.roic_wacc_spread", value=km.get("roic_wacc_spread")))
+        _rec(r_up, _claim("dcf_upside", field="dcf.upside", value=dcf.get("upside")),
+             _claim("dcf_rel", field="dcf.reliability.level", value=_rel.get("level")))
+        _rec(r_graham, _claim("graham", field="graham_margin", value=graham_margin))
+        _rec(r_cr, _claim("figure", field="key_metrics.current_ratio", value=km.get("current_ratio"), fmt="mult2"))
+        _rec(r_rw, _claim("runway", field="archetype_metrics.runway", value=_rw))
+        _rec(r_de, _claim("figure", field="key_metrics.de", value=km.get("de"), fmt="mult2"),
+             *([_claim("net_cash", field="key_metrics.net_debt")] if de_mode == "no_significativo" else []))
+        _ic_claims = [_claim("coverage", field="key_metrics.interest_coverage", value=km.get("interest_coverage"),
+                             state=ic_state)]
+        if ic_state == "sin_carga":
+            _ic_claims.append(_claim("no_interest_burden"))
+        if ic_state in ("no_significativo", "negativa"):
+            _ic_claims.append(_claim("ebit_negative", field="key_metrics.operating_income"))
+            _ic_claims.append(_claim("net_cash" if ic_state == "no_significativo" else "net_debt",
+                                     field="key_metrics.net_debt"))
+        _rec(r_ic, *_ic_claims)
+        _rec(r_nde, _claim("nde", field="key_metrics.net_debt_to_ebitda", value=km.get("net_debt_to_ebitda"),
+                           state=nde_state),
+             *([_claim("net_cash", field="key_metrics.net_debt")]
+               if (km.get("net_debt") or 0) < 0 and r_nde and "caja neta" in r_nde[2] else []))
+        _rec(r_pay, _claim("payout", field="key_metrics.payout_ratio", value=km.get("payout_ratio"),
+                           basis=km.get("payout_basis")))
+        for _r, _adj, _what in ((r_grev, _rev_adj, "ingresos"), (r_gearn, _eps_adj, "bpa")):
+            if _adj:
+                _rec(_r, _claim("growth", field=f"score.breakdown.Crecimiento[{_adj.get('metric')}].raw",
+                                value=_adj.get("raw"), what=_what, cycle=_cyc, cagr=not _cyc,
+                                archetype=archetype))
+        _rec(r_beta, _claim("figure", field="key_metrics.beta", value=km.get("beta"), fmt="num2"))
+        _rec(r_52, _claim("pos52", field="pos52", value=pos52))
+        _rec(r_bb, _claim("buyback", field="key_metrics.buyback_yield", value=km.get("buyback_yield")))
+        _rec(r_fcfy, _claim("figure", field="key_metrics.fcf_yield", value=km.get("fcf_yield"), fmt="pct"))
+        _record(price_note, _claim("price_contraction", field="price_attractiveness",
+                                   raw=p_raw, score=p_score, confidence=_pa.get("confidence")), source="display")
     graham_shown = graham is not None and not ({"graham", "pe"} & _na_keys)
     if "pe" in _na_keys:
         r_pe = None
@@ -716,6 +923,12 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     _k_common = [_k(price, "price", "Precio", "price"), _k(km.get("market_cap"), "money", "Market cap", "market_cap")]
     _beta = _k(km.get("beta"), "num", "Beta bruta", "beta")   # la ajustada (Blume) va en el detalle del WACC
     _nde = _k(km.get("net_debt_to_ebitda"), "mult", "Deuda neta/EBITDA", "net_debt_to_ebitda")
+    # Fase 1: un múltiplo negativo no es un nivel. Con caja neta, la tarjeta dice "Caja neta" y su importe (como la
+    # lectura de la fila de Solidez); con EBITDA negativo y deuda neta, sin cifra.
+    if (km.get("net_debt_to_ebitda") or 0) < 0:
+        _nd = km.get("net_debt")
+        _nde = (_k(-_nd, "money", "Caja neta", "net_cash") if (_nd is not None and _nd < 0)
+                else (NO_DATA, "Deuda neta/EBITDA", "net_debt_to_ebitda", None))
     if archetype == "FINANCIAL":
         _k_arch = [_k(xm.get("pb"), "mult", "P/B", "pb"), _k(km.get("roe"), "pct", "ROE", "roe"),
                    _k(km.get("net_margin"), "pct", "Margen neto", "net_margin"),
@@ -734,7 +947,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     elif archetype == "GROWTH_PRE_PROFIT":
         _r40 = xm.get("rule_of_40")
         _k_arch = [_k(xm.get("ev_sales"), "mult", "EV/Ventas", "ev_sales"),
-                   (f"{_r40 * 100:.0f}" if _r40 is not None else "N/A", "Regla de 40", "rule_of_40", _r40),
+                   (f"{_r40 * 100:.0f}" if _r40 is not None else NO_DATA, "Regla de 40", "rule_of_40", _r40),
                    # Etapa 9a: el margen neto no aplica a pre-beneficio; el bruto sí.
                    _k(km.get("gross_margin"), "pct", "Margen bruto", "gross_margin"),
                    _k(km.get("fcf_yield"), "pct", "FCF yield", "fcf_yield"), _nde, _beta]
@@ -743,14 +956,14 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                    _k(km.get("roe"), "pct", "ROE", "roe"), _k(km.get("net_margin"), "pct", "Margen neto", "net_margin"),
                    _k(km.get("fcf_yield"), "pct", "FCF yield", "fcf_yield"), _nde, _beta]
     else:
-        _k_arch = [_k(km.get("pe"), "mult", "P/E (TTM)", "pe"), _k(km.get("roe"), "pct", "ROE", "roe"),
+        _k_arch = [_k(km.get("pe"), "mult", _PE, "pe"), _k(km.get("roe"), "pct", "ROE", "roe"),
                    _k(km.get("net_margin"), "pct", "Margen neto", "net_margin"),
                    _k(km.get("fcf_yield"), "pct", "FCF yield", "fcf_yield"), _nde, _beta]
     kpis = _k_common + _k_arch
     # Etapa 9a: la portada muestra las cifras REPORTADAS; si el score usa el beneficio
     # normalizado, lo dice la etiqueta (el normalizado va en el desglose, etiquetado).
     if norm.get("differs"):
-        _rep = {"P/E (TTM)": "P/E reportado (TTM)", "ROE": "ROE reportado", "Margen neto": "Margen neto reportado"}
+        _rep = {_PE: _PE.replace("P/E", "P/E reportado"), "ROE": "ROE reportado", "Margen neto": "Margen neto reportado"}
         kpis = [(v, _rep.get(l, l), k, r) for v, l, k, r in kpis]
 
     # "Lo esencial" (fortaleza clave · a vigilar · contexto), desde señales
@@ -779,7 +992,6 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         "archetype": archetype,
         "archetype_label": archetype_label(archetype),
         "classification_notes": cls_notes,
-        "classification_detail": cls_detail,
         "quality": {"title": "CALIDAD DEL NEGOCIO", "question": "¿es buena la empresa?", "score": q_score,
                     "level": q_level, "tone": q_tone,
                     "note": ("baja confianza: " + "; ".join(_q.get("low_confidence_reasons") or [])
@@ -798,7 +1010,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     # ════════════════ RESUMEN EJECUTIVO ════════════════
     def _mvu(raw, fmt):
         if raw is None:
-            return ("N/A", "")
+            return (NO_DATA, "")
         if fmt == 'pct':
             return (f"{raw * 100:.1f}", "%")
         if fmt == 'mult':
@@ -815,9 +1027,10 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         if _state(key, raw) == "no_aplica":
             # Etapa 9b: lo que no aplica al arquetipo no se lee tampoco en las tarjetas
             # (antes: "Muy inferior" frente al sector para el ROE de un REIT o de un pre-beneficio).
-            v, u = _mvu(raw, fmt)
-            return {"key": key, "label": label, "value": v, "unit": u, "pill": "No aplica", "tone": 'neu',
-                    "delta": "", "bench": "", "state": "no_aplica"}
+            # Fase 1: sin cifra (antes la tarjeta decía "No aplica" y pintaba el valor: AMT margen neto 31.1%);
+            # el motivo va en la línea de referencia.
+            return {"key": key, "label": label, "value": NO_DATA, "unit": "", "pill": "No aplica", "tone": 'neu',
+                    "delta": "", "bench": not_applicable_text(archetype), "state": "no_aplica"}
         bench = sector_bench.get(benchkey) if benchkey else None
         r = _rvs(label, raw, bench, higher, 'pct' if fmt == 'pct' else 'mult') \
             if (bench and raw is not None) else None
@@ -825,7 +1038,10 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         if r:
             pill, tone, _f, delta = r
             # etiqueta más corta para la pill (que no envuelva en la card)
-            pill = {"Descuento profundo": "Gran descuento"}.get(pill, pill)
+            short = {"Descuento profundo": "Gran descuento"}.get(pill)
+            if short:   # fase 1: la etiqueta acortada lleva la misma afirmación que la lectura (BCS, guardián)
+                _record(short, *_vs_claims(label, raw, bench, higher), source="display.tarjetas")
+                pill = short
         else:
             pill, tone, delta = ("—" if raw is None else "En rango"), 'neu', ""
         return {"key": key, "label": label, "value": v, "unit": u, "pill": pill, "tone": tone, "delta": delta,
@@ -841,7 +1057,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                       _mkcard("dividend_yield", "Dividend yield", km.get("dividend_yield"), 'pct', None, True),
                       _mkcard("ev_ebitda", "EV/EBITDA", km.get("ev_ebitda"), 'mult', "ev_ebitda", False)]
     elif archetype == "UTILITY":
-        _val_cards = [_mkcard("pe", "P/E (TTM)", km.get("pe"), 'mult', "pe", False),
+        _val_cards = [_mkcard("pe", _PE, km.get("pe"), 'mult', "pe", False),
                       _mkcard("dividend_yield", "Dividend yield", km.get("dividend_yield"), 'pct', None, True),
                       _mkcard("forward_pe", "Forward P/E", km.get("forward_pe"), 'mult', "forward_pe", False)]
     elif archetype == "GROWTH_PRE_PROFIT":
@@ -855,7 +1071,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                       _mkcard("p_fcf_normalized", "P/FCF normalizado", xm.get("p_fcf_normalized"), 'mult', "pfcf",
                               False)]
     else:
-        _val_cards = [_mkcard("pe", "P/E (TTM)", km.get("pe"), 'mult', "pe", False),
+        _val_cards = [_mkcard("pe", _PE, km.get("pe"), 'mult', "pe", False),
                       _mkcard("fcf_yield", "FCF yield", km.get("fcf_yield"), 'pct', "fcf_yield", True),
                       _mkcard("ev_ebitda", "EV/EBITDA", km.get("ev_ebitda"), 'mult', "ev_ebitda", False)]
     cards = [
@@ -872,7 +1088,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
 
     if fin_health and isinstance(fin_health, dict) and fin_health.get("score") is not None:
         sol_short = (f"salud financiera bancaria de {fin_health['score']}/10 "
-                     f"({fin_health.get('level', '')})")
+                     f"({FIN_HEALTH_LEVEL_ES.get(fin_health.get('level'), '').lower()})")
     elif r_rw:
         sol_short = f"runway {r_rw[0].lower()}: {r_rw[2]}"
     elif altman.get("z_score") is not None and altman.get("available", True):
@@ -887,6 +1103,27 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
 
     # Etapa 9a: resumen ejecutivo construido alrededor del veredicto verbal:
     # VEREDICTO -> lo que sostiene la CALIDAD -> lo que explica el PRECIO -> CONFIANZA.
+    # Fase 1 (punto 9): ROCE visible. Sin bandas propias (fase 4): la lectura es la comparación con el ROIC, con el
+    # umbral de divergencia que ya existía (thresholds.roce.divergence_pp).
+    _roce, _roic = km.get("roce"), km.get("roic")
+    _rdiv = km.get("roce_roic_divergence") or {}
+    roce_vs_roic = roce_reading = roce_sentence = None
+    if km.get("roce_state") == "ok" and _roce is not None:
+        if _roic is not None and _rdiv:
+            _gp = _rdiv.get("gap") or 0.0
+            roce_vs_roic = (f"{abs(_gp) * 100:.1f} pp {'por debajo' if _gp < 0 else 'por encima'} del ROIC "
+                            f"({fv(_roic, 'pct')})" if _rdiv.get("diverges") else f"en línea con el ROIC ({fv(_roic, 'pct')})")
+            roce_reading = (None if _rdiv.get("diverges") else
+                            f"ROCE {fv(_roce, 'pct')} en línea con el ROIC {fv(_roic, 'pct')} ({_gp * 100:+.1f} pp, "
+                            f"dentro de {cfg('thresholds.roce.divergence_pp') * 100:.0f} pp).")
+        _avg = km.get("roce_avg")
+        roce_sentence = (f"ROCE {fv(_roce, 'pct')} (EBIT / capital empleado, antes de impuestos)"
+                         + (f", {roce_vs_roic}" if roce_vs_roic else "")
+                         + (f"; ROCE promedio del ciclo {fv(_avg, 'pct')} ({km.get('roce_years')} ejercicios"
+                            + (", ciclo incompleto" if km.get("roce_cycle_incomplete") else "") + ")"
+                            if _avg is not None else "") + ".")
+        _record(roce_sentence, _claim("roce"), source="display.roce")
+        _record(roce_reading, _claim("roce"), source="display.roce")
     exec_items = []
     _qcats = [(n, breakdown[n]) for n in cfg("thresholds.score.quality.categories")
               if n in breakdown and breakdown[n].get("conclusive", True) and breakdown[n].get("applicable", True)]
@@ -908,7 +1145,8 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     if _qtxt:
         exec_items.append(("CALIDAD DEL NEGOCIO", cap("; ".join(_qtxt))))
     if not is_financial and r_spread:
-        exec_items.append(("CREACIÓN DE VALOR", cap(r_spread[2])))
+        exec_items.append(("CREACIÓN DE VALOR", join_sentences([cap(r_spread[2]), roce_sentence])
+                           if roce_sentence else cap(r_spread[2])))
     elif r_roe:
         exec_items.append(("RENTABILIDAD", cap(r_roe[2])))
     else:   # REIT / pre-beneficio: los componentes de su rama (FFO, márgenes de su fase)
@@ -986,7 +1224,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         val_txt = join_sentences([f"{_clean_metric(x['metric'])}: {x['reason'][0].lower()}{x['reason'][1:]}"
                                   for x in _bv[:2]])
     mult_defs = [
-        ("pe", "P/E (TTM)", km.get("pe"), sector_bench.get("pe"), False, "mult"),
+        ("pe", _PE, km.get("pe"), sector_bench.get("pe"), False, "mult"),
         ("forward_pe", "Forward P/E", km.get("forward_pe"), sector_bench.get("forward_pe"), False, "mult"),
         ("pb", "P/B", km.get("pb"), sector_bench.get("pb"), False, "mult"),
         ("ps", "P/S", km.get("ps"), None, False, "mult"),
@@ -1077,7 +1315,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     if dcf.get("fair_value") is not None:
         iv_rows.append(_row("dcf_fair_value", "Valor justo DCF", fv(dcf.get("fair_value"), "price"), ""))
         iv_rows.append(_row("dcf_upside", "Potencial vs precio (upside)",
-                            (f"{dcf['upside']:+.1f}%" if dcf.get("upside") is not None else "N/A"),
+                            (f"{dcf['upside']:+.1f}%" if dcf.get("upside") is not None else NO_DATA),
                             r_up[0] if r_up else "", r_up[1] if r_up else None,
                             text=r_up[2] if r_up else None))
         if dcf.get("margin_of_safety") is not None:
@@ -1215,23 +1453,32 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         }
 
     # Confianza del veredicto (etapa 8): técnica, con sus dimensiones (sección 01 del PDF).
-    confidence = None
+    confidence, annex_conf = None, []
+
+    def _method_name(m):   # fase 1 (#6): con referencia de mercado, el método no se llama "frente al sector"
+        return m.replace("frente al sector", "frente al mercado") if _mkt else m
     if _conf.get("level"):
         _labels = {"convergence": "Convergencia entre métodos", "coverage": "Cobertura de datos",
                    "source": "Calidad de fuente", "stability": "Estabilidad del arquetipo"}
-        dims = []
+        dims, annex_conf = [], []
         for _k, _dd in (_conf.get("dimensions") or {}).items():
-            _txt = "; ".join(_dd.get("reasons") or []) or "sin incidencias"
+            # Fase 1 (D1): en la tabla, el motivo en lenguaje llano; el técnico, al anexo del final del PDF.
+            _plain_txt = list(dict.fromkeys(t for t in map(_plain_reason, _dd.get("reasons") or []) if t))
+            _txt = " ".join(_plain_txt) or "Sin incidencias."
+            if _dd.get("reasons"):
+                annex_conf.append({"label": f"Confianza · {_labels.get(_k, _k)} ({_dd['level'].replace('_', ' ')})",
+                                   "text": "; ".join(_dd["reasons"])})
             if _k == "convergence" and _dd.get("methods"):
                 _txt = " · ".join(
-                    f"{m['method']} {('%+.0f%%' % (m['upside'] * 100)) if m.get('upside') is not None else ('%+.2f' % m['signal'])}"
+                    f"{_method_name(m['method'])} {('%+.0f%%' % (m['upside'] * 100)) if m.get('upside') is not None else ('%+.2f' % m['signal'])}"
                     f" ({m.get('direction')}{'' if m.get('evaluable', True) else ', no evaluable'})"
                     for m in _dd["methods"] if m.get("signal") is not None) + ". " + _txt
             dims.append({"key": _k, "label": _labels.get(_k, _k), "level": _dd["level"].replace("_", " ").capitalize(),
                          "text": _txt})
         confidence = {
             "level": _conf["level"], "tone": conf_tone, "verdict_text": _vd.get("confidence_text"),
-            "plain": plain, "reasons": confidence_reasons(_conf), "dimensions": dims,
+            "plain": plain, "dimensions": dims,
+            "reasons": [{k: v for k, v in r.items() if k != "detail"} for r in confidence_reasons(_conf)],
             "summary": (f"Confianza del veredicto: {_conf['level']}"
                         + (f" (techo en {_conf['level']} sin contraste entre métodos; sin techo sería "
                            f"{_conf['capped_from']})" if _conf.get("capped_from") else "")
@@ -1326,8 +1573,11 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                ["Flujo de caja operativo", _na_txt if "ocf" in _na_keys else fv(km.get("operating_cash_flow"), "money"),
                 "Flujo de caja libre", _na_txt if "fcf" in _na_keys else fv(km.get("free_cash_flow"), "money")],
                ["EPS", fv(km.get("eps"), "price"), "Valor en libros / acción", fv(km.get("book_value_per_share"), "price")]]
+    _record(div_note, _claim("roce"), source="display.roce")
     profitability = {"intro": rent_txt, "columns": ["MÉTRICA", "EMPRESA", _bcol, "BRECHA", "LECTURA"],
-                     "rows": prows, "divergence_note": div_note, "figures": figures}
+                     "rows": prows, "divergence_note": div_note, "figures": figures,
+                     # fase 1 (punto 9): lectura del ROCE = comparación con el ROIC (nota de divergencia o "en línea")
+                     "roce_reading": div_note or roce_reading}
 
     # ════════════════ 03 SOLIDEZ ════════════════
     # En REIT manda la deuda neta/EBITDA; el D/E (informativo) va detrás.
@@ -1348,6 +1598,10 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     ]
     srows = []
     for key, lab, val, fm, rd in sol_defs:
+        if key == "interest_coverage" and ic_state == "sin_carga" and rd:   # fase 1: ratio sin sentido, lectura +
+            # con_dato: la web pinta la lectura ("Sin carga financiera"), no el estado ("No significativo")
+            srows.append(_row(key, lab, "Sin carga", rd[0], rd[1], "con_dato", text=rd[2]))
+            continue
         if (key == "interest_coverage" and ic_state == "no_significativo") or \
                 (key == "net_debt_to_ebitda" and nde_state == "no_significativo"):
             srows.append(_row(key, lab, "—", rd[0], rd[1], "no_significativo", text=rd[2]))
@@ -1402,7 +1656,15 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         ("dividend_yield", "Dividend yield", km.get("dividend_yield"), "pct", None),
     ]
     grows = []
+    # Fase 1 (identidad del dividendo): el yield que no cuadra con lo pagado sale "sin dato" con su motivo,
+    # no desaparece de la tabla (BCS, TSM, NVO, NVDA).
+    _dy_bad = next((f for f in a.get("data_validation") or [] if f.get("rule") == "identidad_dividendo"), None)
     for key, lab, val, fm, rd in gro_defs:
+        if val is None and _dy_bad and key in ("dividend_yield", "shareholder_yield"):
+            grows.append(_row(key, lab, NO_DATA, "Sin dato", None, "sin_dato",
+                              text="no cuadra con lo que la empresa paga en dividendos (" +
+                                   _dy_bad["reason"].split(": no cuadra")[0] + "); no puntúa"))
+            continue
         if val is None:
             continue
         grows.append(_row(key, lab, fv(val, fm), rd[0] if rd else "—", rd[1] if rd else None, text=rd[2] if rd else None))
@@ -1445,7 +1707,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                   'warn' if fin_health.get("level") == "NEUTRAL" else 'neg'
         det_txt = " · ".join(d.get("detail", "") for d in (fin_health.get("details") or [])[:4])
         inst_cards.append({"key": "financial_health", "value": f"{fin_health['score']}/10", "tone": fh_tone,
-                           "title": "Salud financiera (sector financiero)", "subtitle": str(fin_health.get("level", "")),
+                           "title": "Salud financiera (sector financiero)", "subtitle": FIN_HEALTH_LEVEL_ES.get(fin_health.get("level"), ""),
                            "state": "con_dato",
                            "body": (fin_health.get("interpretation", "") + ". " + det_txt).strip()})
     if altman and altman.get("applicable") is False:
@@ -1546,7 +1808,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                 elif adj.get("in_block"):
                     # Lectura individual; puntúa a través del "Bloque de múltiplos".
                     sign, tone_a = f"({sign})", 'neu'
-                items.append({"metric": adj.get("metric", ""), "value": adj.get("value", ""), "sign": sign,
+                items.append({"metric": adj.get("metric", ""), "value": _es_value(adj.get("value", "")), "sign": sign,
                               "tone": tone_a, "reason": adj.get("reason", ""), "in_block": bool(adj.get("in_block")),
                               "state": state})
             bd_cats.append({"name": cat_name, "score": cs, "max": cm, "pct": pctc,
@@ -1591,6 +1853,11 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         "cover": cover,
         "summary": summary,
         "confidence": confidence,
+        # Fase 1 (D1): códigos y motivos técnicos, solo en el anexo final del PDF ("Detalle técnico para
+        # auditoría"). La web no lo muestra.
+        "annex": {"title": "Detalle técnico para auditoría",
+                  "items": [{"label": "Clasificación", "text": t} for t in cls_detail]
+                           + annex_conf},
         "sections": {"valuation": valuation, "profitability": profitability, "solvency": solvency,
                      "growth": growth, "institutional": institutional,
                      # Histórico (dato bruto): columnas que no aplican al arquetipo, con su texto.
@@ -1600,12 +1867,16 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                                          ("gross_margin", "gross_margin"), ("operating_margin", "operating_margin"))
                          if comp in _na_keys}},
                      "alerts": {"counts": summary["alert_counts"], "groups": alert_groups}},
-        "methodology": {"models": _models, "models_text": models_txt},
+        "methodology": {"models": _models, "models_text": models_txt,
+                        "ratios_text": "ratios del último ejercicio" if _annual else "ratios TTM y del último ejercicio"},
+        "pe_label": _PE,
         "tooltips": band_tooltips(a, sector_bench, _th, _mkt, _ref, _na_keys, de_mode, _cyc),
     }
     # Etapa 9c: datos numéricos de los gráficos de la web (zonas de la misma config que las lecturas).
     from display_charts import build_charts
     D["charts"] = build_charts(a, D, sector_bench, th=_th, market=_mkt, de_mode=de_mode)
+    if _claims_active():   # fase 1 (guardián narrativo): sin efecto en la salida
+        _declare_engine_texts(a, D)
     return D
 
 

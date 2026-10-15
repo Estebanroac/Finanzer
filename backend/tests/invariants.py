@@ -24,11 +24,18 @@ PROVENANCE_VOCAB = {"yahoo_quotesummary", "yfinance_statements", "finnhub", "der
 
 # test_display (9b): código de arquetipo en el texto visible
 _CODE = re.compile(r"\b(FINANCIAL|GROWTH_PRE_PROFIT|CYCLICAL|MATURE)\b")
-_TECH_KEYS = {"archetype", "na_keys", "classification_detail", "reasons", "dimensions", "thresholds_key", "wacc_note"}
-# test_muestra (11b): códigos (incluido UTILITY) y signo después del símbolo
+_TECH_KEYS = {"archetype", "na_keys", "annex", "reasons", "dimensions", "thresholds_key", "wacc_note"}
+# test_panel_cases (antes test_muestra, 11b): códigos (incluido UTILITY) y signo después del símbolo
 CODES = re.compile(r"\b(FINANCIAL|GROWTH_PRE_PROFIT|CYCLICAL|MATURE|UTILITY)\b")
 BAD_SIGN = re.compile(r"\$\s*[-−]")
-NOT_PROSE = (".archetype", ".na_keys", ".classification_detail", ".thresholds_key")
+NOT_PROSE = (".archetype", ".na_keys", ".annex", ".thresholds_key")
+ANNEX_TITLE = "Detalle técnico para auditoría"   # D1: los códigos solo desde aquí hasta el final del PDF
+
+
+def reading_text(text):
+    """Texto del PDF sin el anexo técnico final (D1)."""
+    i = text.find(ANNEX_TITLE)
+    return text if i < 0 else text[:i]
 
 
 def _rows(d):
@@ -160,6 +167,17 @@ def visible_texts_without_jargon_or_bad_formats(a, text):
     assert not _CODE.search(cover), cover
 
 
+def cites_growth(block, raw):
+    """La cifra que puntúa está citada: literal ('-5.0%') o con el signo dicho por el verbo ('se contraen un
+    5.0%'). Fase 1 (T3.5)."""
+    block = block or ""
+    lit = re.escape(f"{abs(raw) * 100:.1f}%")
+    by_verb = re.search(rf"se contraen? un {lit}", block) is not None
+    if raw < 0:
+        return f"-{abs(raw) * 100:.1f}%" in block or by_verb
+    return re.search(rf"(?<![-−\d.]){lit}", block) is not None and not by_verb
+
+
 def growth_texts_cite_the_scored_figure(a, text):
     d = a["display"]
     adj = {x["metric"]: x for x in a["score"]["breakdown"]["Crecimiento"]["adjustments"]}
@@ -171,10 +189,9 @@ def growth_texts_cite_the_scored_figure(a, text):
         card = next(c for c in d["summary"]["cards"] if c["key"] == "revenue_growth")
         assert card["value"] == f"{scored['raw'] * 100:.1f}"
         if d["archetype"] != "REIT":
-            txt = f"{scored['raw'] * 100:.1f}%"
-            assert txt in (d["sections"]["growth"]["intro"] or "")
+            assert cites_growth(d["sections"]["growth"]["intro"], scored["raw"]), d["sections"]["growth"]["intro"]
             exec_g = next(e["text"] for e in d["summary"]["exec_items"] if e["label"] == "CRECIMIENTO Y RETORNO")
-            assert txt in exec_g
+            assert cites_growth(exec_g, scored["raw"]), exec_g
     yoy = a["key_metrics"].get("revenue_growth")
     if yoy is not None:
         assert rows["revenue_growth_yoy"]["label"].endswith("(interanual)")
@@ -291,13 +308,11 @@ def provenance_in_vocabulary(a, text):
         assert f["action"] in {"recalculado", "sin_dato", "aviso", "politica", "invalido"} and f["reason"], f
 
 
-# ═══════════════════════ test_muestra ═══════════════════════
+# ═══════════════════════ test_panel_cases (antes test_muestra) ═══════════════════════
 
 def no_archetype_codes_nor_sign_after_symbol(a, text):
     bad = [f"{path}: {v[:120]}" for path, v in _prose_strings(a["display"]) if CODES.search(v) or BAD_SIGN.search(v)]
-    for line in text.splitlines():
-        if "detalle técnico" in line or "Clasificada como" in line:
-            continue
+    for line in reading_text(text).splitlines():
         if CODES.search(line) or BAD_SIGN.search(line):
             bad.append(f"PDF: {line[:120]}")
     assert not bad, "\n".join(bad[:30])
@@ -315,7 +330,7 @@ def chart_gauges_marker_in_reading_zone(a, text):
     checked = 0
     for g in a["display"]["charts"]["solvency"]["gauges"]:
         assert g["state"] in CHART_STATES, g
-        if g["state"] != "con_dato" or g.get("informative") or g.get("net_cash") or g.get("negative"):
+        if g["state"] != "con_dato" or g.get("informative") or g.get("net_cash") or g.get("negative") or g.get("no_burden"):
             assert g["state"] == "con_dato" or g.get("text") or g["state"] == "sin_dato", g
             continue
         z = _zone_of(g["zones"], g["value"])

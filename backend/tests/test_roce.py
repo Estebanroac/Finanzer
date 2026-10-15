@@ -51,7 +51,7 @@ def test_divergence_flag_and_probable_causes():
 
 def test_fixtures(outputs_by_env):
     import conftest
-    for env in conftest.ENVS:
+    for env in conftest.BOUND_ENVS:
         out = outputs_by_env(env)
         nflx = out["NFLX"][0]["key_metrics"]
         assert nflx["roce"] == pytest.approx(0.3026, abs=5e-4)      # RECON §4: 30.3%

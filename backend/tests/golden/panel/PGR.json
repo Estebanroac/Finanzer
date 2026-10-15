@@ -428,6 +428,10 @@
         "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
         "source": "yfinance_statements"
       },
+      "netInterestIncome": {
+        "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
+        "source": "yfinance_statements"
+      },
       "operatingCashflow": {
         "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
         "source": "yfinance_statements"
@@ -559,6 +563,7 @@
         "freeCashflow",
         "interestExpense",
         "netIncome",
+        "netInterestIncome",
         "operatingCashflow",
         "stockBasedCompensation",
         "totalRevenue"
@@ -580,6 +585,23 @@
     "state": "no_aplica"
   },
   "display": {
+    "annex": {
+      "items": [
+        {
+          "label": "Clasificación",
+          "text": "Arquetipo FINANCIAL (regla industria_aseguradora): Clasificada como FINANCIAL por industria Insurance - Property & Casualty (aseguradora)"
+        },
+        {
+          "label": "Confianza · Convergencia entre métodos (baja)",
+          "text": "direcciones opuestas: P/B justificado (Gordon) dice barata y P/B frente al sector dice cara"
+        },
+        {
+          "label": "Confianza · Calidad de fuente (media)",
+          "text": "16 campos de Finnhub en lugar de los estados"
+        }
+      ],
+      "title": "Detalle técnico para auditoría"
+    },
     "archetype": "FINANCIAL",
     "archetype_label": "Banco/aseguradora",
     "benchmark": {
@@ -945,6 +967,10 @@
             "text": "No aplica a Banco/aseguradora"
           }
         ],
+        "roce": {
+          "state": "no_aplica",
+          "text": "No aplica a bancos y aseguradoras: el balance es el producto (depósitos y préstamos)"
+        },
         "spread": {
           "state": "no_aplica",
           "text": null
@@ -1129,7 +1155,7 @@
             "reason": "Barato: 4.09x frente a 7.21x justificado por su ROE (Ke 7.3% con β ajustada 0.49, g 2.5%)",
             "sign": "(+4)",
             "tone": "pos",
-            "value_txt": "0.57× justificado"
+            "value_txt": "57% del P/B justificado (4.09x frente a 7.21x)"
           },
           {
             "in_block": true,
@@ -1139,7 +1165,7 @@
             "reason": "Barato: 4.09x frente a 7.21x justificado por su ROTE (Ke 7.3% con β ajustada 0.49, g 2.5%)",
             "sign": "(+4)",
             "tone": "pos",
-            "value_txt": "0.57× justificado"
+            "value_txt": "57% del P/TBV justificado (4.09x frente a 7.21x)"
           }
         ]
       },
@@ -1151,25 +1177,25 @@
           "key": "convergence",
           "label": "Convergencia entre métodos",
           "level": "Baja",
-          "text": "P/B justificado (Gordon) +76% (barata) · P/B frente al sector -63% (cara). direcciones opuestas: P/B justificado (Gordon) dice barata y P/B frente al sector dice cara"
+          "text": "P/B justificado (Gordon) +76% (barata) · P/B frente al sector -63% (cara). Los métodos de valoración se contradicen: uno ve la acción barata y otro cara."
         },
         {
           "key": "coverage",
           "label": "Cobertura de datos",
           "level": "Alta",
-          "text": "sin incidencias"
+          "text": "Sin incidencias."
         },
         {
           "key": "source",
           "label": "Calidad de fuente",
           "level": "Media",
-          "text": "16 campos de Finnhub en lugar de los estados"
+          "text": "Parte de los datos proviene de una fuente secundaria."
         },
         {
           "key": "stability",
           "label": "Estabilidad del arquetipo",
           "level": "Alta",
-          "text": "sin incidencias"
+          "text": "Sin incidencias."
         }
       ],
       "level": "media",
@@ -1179,13 +1205,11 @@
       ],
       "reasons": [
         {
-          "detail": "direcciones opuestas: P/B justificado (Gordon) dice barata y P/B frente al sector dice cara",
           "dimension": "convergencia",
           "level": "baja",
           "text": "Los métodos de valoración se contradicen: uno ve la acción barata y otro cara."
         },
         {
-          "detail": "16 campos de Finnhub en lugar de los estados",
           "dimension": "calidad de fuente",
           "level": "media",
           "text": "Parte de los datos proviene de una fuente secundaria."
@@ -1264,9 +1288,6 @@
           ],
           "title": "ATRACTIVO DEL PRECIO"
         }
-      ],
-      "classification_detail": [
-        "Arquetipo FINANCIAL (regla industria_aseguradora): Clasificada como FINANCIAL por industria Insurance - Property & Casualty (aseguradora)"
       ],
       "classification_notes": [
         "Aseguradora por su industria (Insurance - Property & Casualty): el balance es el producto."
@@ -1376,7 +1397,8 @@
       "models": [
         "P/B y P/TBV justificados por el retorno (Gordon)"
       ],
-      "models_text": "los modelos de P/B y P/TBV justificados por el retorno (Gordon)"
+      "models_text": "los modelos de P/B y P/TBV justificados por el retorno (Gordon)",
+      "ratios_text": "ratios TTM y del último ejercicio"
     },
     "na_keys": [
       "altman",
@@ -1402,6 +1424,7 @@
       "roce",
       "roic_wacc"
     ],
+    "pe_label": "P/E (TTM)",
     "readings": {
       "beta": {
         "label": "Defensiva",
@@ -1755,7 +1778,7 @@
                   "sign": "(+4)",
                   "state": "con_dato",
                   "tone": "neu",
-                  "value": "0.57× justificado"
+                  "value": "57% del P/B justificado (4.09x frente a 7.21x)"
                 },
                 {
                   "in_block": true,
@@ -1764,7 +1787,7 @@
                   "sign": "(+4)",
                   "state": "con_dato",
                   "tone": "neu",
-                  "value": "0.57× justificado"
+                  "value": "57% del P/TBV justificado (4.09x frente a 7.21x)"
                 },
                 {
                   "in_block": false,
@@ -1885,10 +1908,10 @@
         },
         "cards": [
           {
-            "body": "Excelente - Institución financiera muy sólida. ROA excelente (9.36% ≥ 0.5%) · ROE excelente (34.1% ≥ 12%) · Capitalización sólida (27.5% ≥ 6%) · Payout ratio alto (70% > 60%)",
+            "body": "Excelente - Institución financiera muy sólida. ROA excelente (9.36% ≥ 0.5%) · ROE excelente (34.1% ≥ 12%) · Capitalización sólida (27.5% ≥ 6%) · Payout alto (payout 70% > 60%)",
             "key": "financial_health",
             "state": "con_dato",
-            "subtitle": "STRONG",
+            "subtitle": "Sólida",
             "title": "Salud financiera (sector financiero)",
             "tone": "pos",
             "value": "9/10"
@@ -1950,6 +1973,7 @@
           ]
         ],
         "intro": "El ROE de 34.1% es excepcional para su sector (sector: 6.0% competitivo, 12.0% rango alto).",
+        "roce_reading": null,
         "rows": [
           {
             "bench": "12.00%",
@@ -1982,7 +2006,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "N/A"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -1993,7 +2017,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "N/A"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -2004,7 +2028,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "N/A"
+            "value": "—"
           },
           {
             "bench": "25.00%",
@@ -2163,7 +2187,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "10.66x"
+            "value": "—"
           },
           {
             "bench": "11.00x",
@@ -2174,7 +2198,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "12.34x"
+            "value": "—"
           },
           {
             "bench": "1.50x",
@@ -2207,7 +2231,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "41.15x"
+            "value": "—"
           },
           {
             "bench": "14.00x",
@@ -2218,7 +2242,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "N/A"
+            "value": "—"
           },
           {
             "bench": "25.00x",
@@ -2229,7 +2253,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "7.77x"
+            "value": "—"
           },
           {
             "bench": "4.00%",
@@ -2240,7 +2264,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "12.87%"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -2251,7 +2275,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "9.38%"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -2273,7 +2297,7 @@
             "state": "con_dato",
             "text": "Barato: 4.09x frente a 7.21x justificado por su ROE (Ke 7.3% con β ajustada 0.49, g 2.5%)",
             "tone": "pos",
-            "value": "0.57× justificado"
+            "value": "57% del P/B justificado (4.09x frente a 7.21x)"
           },
           {
             "bench": "—",
@@ -2284,7 +2308,7 @@
             "state": "con_dato",
             "text": "Barato: 4.09x frente a 7.21x justificado por su ROTE (Ke 7.3% con β ajustada 0.49, g 2.5%)",
             "tone": "pos",
-            "value": "0.57× justificado"
+            "value": "57% del P/TBV justificado (4.09x frente a 7.21x)"
           }
         ],
         "sensitivity": null,
@@ -2441,7 +2465,7 @@
         },
         {
           "label": "SOLIDEZ",
-          "text": "Salud financiera bancaria de 9/10 (STRONG)."
+          "text": "Salud financiera bancaria de 9/10 (sólida)."
         },
         {
           "label": "CRECIMIENTO Y RETORNO",
@@ -3153,7 +3177,7 @@
         "severity": "excellent"
       },
       {
-        "detail": "Payout ratio alto (70% > 60%)",
+        "detail": "Payout alto (payout 70% > 60%)",
         "max": 1,
         "metric": "Dividendo",
         "points": 0,
@@ -3213,6 +3237,7 @@
     "net_debt_to_ebitda_state": null,
     "net_income": 11695000000.0,
     "net_income_normalized": 11695000000.0,
+    "net_interest_income": -297000000.0,
     "net_margin": 0.128489656006,
     "operating_cash_flow": 16339000000.0,
     "operating_income": null,
@@ -3607,7 +3632,7 @@
                 "severity": "excellent"
               },
               {
-                "detail": "Payout ratio alto (70% > 60%)",
+                "detail": "Payout alto (payout 70% > 60%)",
                 "max": 1,
                 "metric": "Dividendo",
                 "points": 0,
@@ -3645,7 +3670,7 @@
             "metric": "P/B frente a ROE",
             "reason": "Barato: 4.09x frente a 7.21x justificado por su ROE (Ke 7.3% con β ajustada 0.49, g 2.5%)",
             "severity": "excellent",
-            "value": "0.57× justificado"
+            "value": "57% del P/B justificado (4.09x frente a 7.21x)"
           },
           {
             "adjustment": 4,
@@ -3653,7 +3678,7 @@
             "metric": "P/TBV frente a ROTE",
             "reason": "Barato: 4.09x frente a 7.21x justificado por su ROTE (Ke 7.3% con β ajustada 0.49, g 2.5%)",
             "severity": "excellent",
-            "value": "0.57× justificado"
+            "value": "57% del P/TBV justificado (4.09x frente a 7.21x)"
           },
           {
             "adjustment": 4,

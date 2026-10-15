@@ -284,6 +284,9 @@ def _compute_analysis(symbol: str) -> dict:
     Returns the full analysis dict or raises HTTPException.
     """
     symbol = symbol.upper().strip()
+    ic_state_inferred = False   # fase 1: estado de la cobertura inferido (sin resultado financiero en los estados)
+    _id_flags: list = []        # fase 1: identidades de datos que no cuadran (data_validation)
+    dy_invalid = False
     # Validate ticker characters (letters/digits and . - ^ = as used by real
     # tickers, e.g. BRK.B, BRK-B, ^GSPC, EURUSD=X). Reject anything else with a
     # clean 400 instead of letting it crash deep in the data fetch (500).
@@ -321,6 +324,16 @@ def _compute_analysis(symbol: str) -> dict:
         profile = data["profile"]
         financials = data.get("financials")
         historical = data.get("historical", {})
+        # Fase 1: el rango de 52 semanas incluye la cotización actual (la fuente puede no haberlo actualizado aún:
+        # XOM salía "en el 101% del rango"). Máximo = max(máximo, precio), mínimo = min(mínimo, precio).
+        range52_widened = {}
+        if financials is not None and safe_float(financials.price) is not None:
+            _px = safe_float(financials.price)
+            for _attr, _fn in (("price_52w_high", max), ("price_52w_low", min)):
+                _v = safe_float(getattr(financials, _attr))
+                if _v is not None and _fn(_v, _px) != _v:
+                    setattr(financials, _attr, _px)
+                    range52_widened[_attr] = _v
 
         # Build response
         result = {
@@ -479,6 +492,17 @@ def _compute_analysis(symbol: str) -> dict:
             interest_cov = r("interest_coverage")
             if interest_cov is None and oi_val and ie_val and ie_val != 0:
                 interest_cov = oi_val / abs(ie_val)
+            # Fase 1 del plan de fiabilidad: el estado de la cobertura se decide UNA vez, con el signo del EBIT de
+            # los estados y el del resultado financiero neto, y lo leen el score, las alertas, el WACC y el texto.
+            nii_val = safe_float(getattr(financials, "net_interest_income", None))
+            # "Sin carga" exige el signo en el TTM y en cada trimestre: un trimestre atípico (NFLX 2026-03,
+            # +2.85 B de ingresos financieros) no convierte en acreedora neta a una empresa que paga intereses.
+            nii_q = safe_float(getattr(financials, "net_interest_income_min_q", None))
+            nii_sign = min(v for v in (nii_val, nii_q) if v is not None) if nii_val is not None else None
+            ic_state = interest_coverage_state(safe_float(interest_cov), r("net_debt"), ebit=oi_val,
+                                               net_interest_income=nii_sign)
+            ic_state_inferred = ic_state == "sin_carga" and nii_val is None
+            fin_dict["interest_coverage_state"] = ic_state
 
             # Payout Ratio — from Yahoo
             payout = r("payout_ratio")
@@ -493,6 +517,24 @@ def _compute_analysis(symbol: str) -> dict:
                 dy_yahoo = yr.get("dividendYield") or yinfo.get("dividendYield")
                 if dy_yahoo is not None and dy_yahoo != 0:
                     div_yield = dy_yahoo
+            # Fase 1 (guardián de identidades): el yield frente a lo que la empresa paga de verdad. Si no cuadra
+            # (BCS: 11.5 peniques por acción ordinaria divididos por el precio del ADR en dólares → 50%), sale
+            # "sin dato" con aviso y no puntúa.
+            from validate import dividend_yield_identity
+            _ni_id = safe_float(financials.net_income)
+            _dy_ok, _dy_est, _dy_basis = dividend_yield_identity(
+                safe_float(div_yield), safe_float(financials.dividends_paid), mcap, payout=safe_float(payout),
+                earnings_yield=(_ni_id / mcap) if (_ni_id is not None and mcap) else None)
+            if not _dy_ok:
+                _id_flags.append({"field": "key_metrics.dividend_yield", "rule": "identidad_dividendo",
+                                  "action": "sin_dato", "old": safe_float(div_yield), "new": None,
+                                  "reason": (f"dividend yield {safe_float(div_yield):.2%} frente a {_dy_est:.2%} "
+                                             f"({_dy_basis}): no cuadra (más de "
+                                             f"{cfg('validation.thresholds.dividend_identity_max_ratio'):g} veces lo "
+                                             f"que la empresa paga); sin dato, no puntúa")})
+                div_yield = None
+                dy_invalid = True
+                ratios["dividend_yield"] = None
 
             # Debt to Assets
             debt_to_assets = r("debt_to_assets")
@@ -552,7 +594,8 @@ def _compute_analysis(symbol: str) -> dict:
                 "interest_coverage": safe_float(interest_cov),
                 # Etapa 5: "no_significativo" (EBIT < 0 con caja neta), "negativa"
                 # (EBIT < 0 con deuda neta) u "ok".
-                "interest_coverage_state": interest_coverage_state(safe_float(interest_cov), r("net_debt")),
+                "interest_coverage_state": ic_state,
+                "net_interest_income": nii_val,
                 "debt_to_assets": safe_float(debt_to_assets),
                 # Métricas que se calculaban en calculate_all_ratios pero nunca se
                 # exponían (el frontend solo lee key_metrics), así que se
@@ -811,7 +854,7 @@ def _compute_analysis(symbol: str) -> dict:
                 wacc_info = compute_wacc(
                     beta=safe_float(financials.beta), rf=rf_info, market_cap=mcap, total_debt=td_val,
                     interest_coverage=safe_float(interest_cov),
-                    coverage_state=interest_coverage_state(safe_float(interest_cov), r("net_debt")),
+                    coverage_state=ic_state,
                     tax=tax_info)
                 wacc_info["applicable"] = True
             wacc_est = wacc_info["value"]
@@ -849,7 +892,9 @@ def _compute_analysis(symbol: str) -> dict:
                     buyback_yield = None
             # Shareholder yield = dividendos + recompras netas.
             shareholder_yield = None
-            if div_yield is not None or buyback_yield is not None:
+            # Fase 1: con el dividend yield invalidado por la identidad, el shareholder yield tampoco tiene dato
+            # (antes sumaba 0 y quedaba igual a las recompras).
+            if not dy_invalid and (div_yield is not None or buyback_yield is not None):
                 shareholder_yield = (div_yield or 0.0) + (buyback_yield or 0.0)
             result["key_metrics"]["wacc"] = safe_float(wacc_est)
             result["key_metrics"]["roic_wacc_spread"] = safe_float(roic_wacc_spread)
@@ -1372,8 +1417,18 @@ def _compute_analysis(symbol: str) -> dict:
             _out_flags = validate_outputs(result)
         except Exception as e:
             _sin_dato("validacion_salida", e)
-        result["data_validation"] = list(yinfo.get("_validation") or []) + _row_flags + _out_flags
+        result["data_validation"] = list(yinfo.get("_validation") or []) + _row_flags + _id_flags + _out_flags
         result["data_provenance"] = _build_provenance(yinfo, _out_flags, _block_errors)
+        for _attr, _src in range52_widened.items():
+            result["data_provenance"].setdefault("fields", {})[f"key_metrics.{_attr}"] = {
+                "source": "derivado",
+                "detail": (f"{'máximo' if _attr.endswith('high') else 'mínimo'} de 52 semanas de la fuente "
+                           f"{_src:.2f} ampliado con la cotización actual")}
+        if ic_state_inferred:
+            result["data_provenance"].setdefault("fields", {})["key_metrics.interest_coverage_state"] = {
+                "source": "derivado",
+                "detail": ("inferido: EBIT > 0 y cobertura negativa sin fila de resultado financiero en los estados "
+                           "⇒ ingresos financieros netos (sin carga financiera neta)")}
 
         # ── Etapa 8: confianza del veredicto (spec Sección 3) ──
         # Se calcula y se muestra (JSON, PDF); NO limita el score: el techo

@@ -7,14 +7,22 @@
 
 ## Juegos de datos (entornos)
 
-Hay dos juegos, cada uno con sus fixtures y sus golden: **`local`** (captura en desarrollo; es el que usan los
-tests de humo y de bugs conocidos) y **`prod`** (los inputs que recibió el pipeline en Render). La regresión y el
-determinismo corren contra **todos los juegos presentes**. `diff_golden.py` y `capture_fixtures.py` aceptan `--env`.
+Hay dos juegos, cada uno con sus fixtures y sus golden: **`local`** (captura en desarrollo, ruta quoteSummary; los 6
+tickers de los tests de humo y de bugs conocidos) y **`panel`** (31 tickers capturados con Render simulado: la ruta de
+producción, plan B + Finnhub; ver más abajo). La regresión y el determinismo corren contra los dos.
+`diff_golden.py` y `capture_fixtures.py` aceptan `--env`.
+
+**Retirados en la fase 1 del plan de fiabilidad (decisión D8):** el juego `prod` (capturado en Render el 11-oct con
+`/api/_capture`; sin estados trimestrales, así que su replay salía en base anual mientras producción calcula en TTM)
+y el juego `muestra` (etapa 11b; capturado por quoteSummary y sin Finnhub). Sus tests se reescribieron contra el
+panel (`test_panel_cases.py` y los atados a los 6 tickers vía `conftest.BOUND_ENVS = ["local", "panel"]`). Quedan
+en el historial de git, igual que `import_prod_capture.py`, `supplement_prod_search.py` y el modo
+`diff_golden.py --local-vs-prod`.
 
 ## Correr los tests (en el entorno espejo de prod, `.venv313`)
 
 La suite se corre en **`finanzer_next/.venv313`**: Python 3.13.4 con las mismas versiones que prod. Ahí ya se verificó
-que todos los golden (local y prod) se mantienen.
+que todos los golden (local y panel) se mantienen.
 
 ```bash
 cd finanzer_next/backend
@@ -92,54 +100,11 @@ procedencia de cada campo en `analysis["data_provenance"]` (`path`, `fields`, `e
 casos positivos y negativos sintéticos, están en `test_validation.py`. La regla del crecimiento está documentada en
 RECON §7.6.
 
-## Juego `prod`: línea base de producción (etapa 2.1)
-
-**Por qué existe:** el veredicto cambia de signo según el entorno. En prod (Render), **Yahoo responde `401` a todas
-las llamadas a quoteSummary** (6 de 6 con reintentos), así que el pipeline siempre cae en `_fallback_yfinance` +
-Finnhub, con versiones distintas (Python 3.13.4, yfinance 1.7.0, pandas 3.0.6). Que los tests pasen con `local` no
-garantiza nada en prod.
-
-**Origen:** `GET /api/_capture/{symbol}` en `finanzer.app` (rama `capture-endpoint`, temporal). Devuelve los inputs
-crudos que recibe `get_ticker_info` en frío y responde 404 salvo que exista `CAPTURE_TOKEN` en el servidor y llegue
-en la cabecera `X-Capture-Token`. Captura actual: 11-oct-2026, ~23:50 UTC, commit `e0be7d4`, un solo proceso
-(mismo `hostname:pid` en captura y análisis), sin contaminación, Finnhub activo en los 6.
-
-**Importar** (desde la carpeta con `capture_<T>.json`, `analysis_<T>.json` y sus `.headers`):
-
-```bash
-python3 tests/import_prod_capture.py --src ~/Downloads/finanzer_prod_capture [--force]
-python3 tests/diff_golden.py --env prod --regenerate     # golden de prod (explícito)
-```
-
-El importador rechaza capturas con patrones de secreto. Además compara el replay con el `/api/analysis` que dio prod
-**solo si ambos los sirvió el mismo proceso** (la caché es por proceso) y guarda el resultado en
-`metadata.verification`. Verificado: **con el código de prod el replay coincide exactamente en los 6 tickers**. Con
-el de esta rama solo difieren los textos "anual" → "interanual" (commit `4bbfc18`, no desplegado).
-
-**Finnhub en el juego local (punto 2 de la etapa 2.1): cubierto por el juego `prod`.** En local, Yahoo trae completos
-`beta`, `forwardPE`, `revenueGrowth` y el ROA del año previo para los 6 tickers, y Finnhub solo se consulta si falta
-alguno o la respuesta viene degradada (`finnhub_fallback.should_fill`). Con la clave presente el resultado sería
-`participated: false` y los mismos golden. El efecto real de Finnhub está medido en `prod`, donde rellenó entre 18 y
-29 campos por ticker. Si recapturas en local con Finnhub, exporta `FINNHUB_API_KEY` **en la misma pestaña** del panel
-de terminal donde corras `capture_fixtures.py`. No uses `!` en el chat: cada `!` es un shell nuevo y la salida
-queda en la conversación.
-
-**Comparar entornos:**
-
-```bash
-python3 tests/diff_golden.py --local-vs-prod [TICKERS] [--full]
-```
-
-Por ticker muestra el camino de datos de cada entorno y las diferencias relevantes por bloque (más del 1% o cambio
-de valor). Para cada una indica el input crudo que la causa, con su procedencia en prod: `yfinance fallback`,
-`finnhub` (detectado repitiendo el replay con Finnhub desactivado) o `ausente en prod`. Los textos derivados y las
-celdas del grid se omiten salvo con `--full`.
-
 ## Juego `panel` y `panel_run` (fase 0 del plan de fiabilidad)
 
 31 tickers en 9 grupos (`fixture_backend.PANEL_GROUPS`), capturados con `--render-sim` el 14-oct-2026 tras el
 cierre. Entran en la regresión y el determinismo (`conftest.REG_ENVS`), **no** en `conftest.ENVS`: los tests atados a
-los 6 tickers de local/prod no se corren sobre el panel. Los invariantes genéricos viven en `invariants.py` y
+los 6 tickers no recorren el panel entero (indexan sus 6 tickers vía `BOUND_ENVS`). Los invariantes genéricos viven en `invariants.py` y
 `test_panel_invariants.py` los corre sobre los 31 (los fallos conocidos, como xfail estricto en
 `PANEL_KNOWN_FAILURES`); `test_invariants_detectan.py` prueba que cada uno detecta su violación.
 

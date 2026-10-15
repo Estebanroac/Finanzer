@@ -444,6 +444,10 @@
         "detail": "TTM: suma de los 4 trimestres 2026-07-31, 2026-04-30, 2026-01-31, 2025-10-31",
         "source": "yfinance_statements"
       },
+      "netInterestIncome": {
+        "detail": "TTM: suma de los 4 trimestres 2026-07-31, 2026-04-30, 2026-01-31, 2025-10-31",
+        "source": "yfinance_statements"
+      },
       "operatingCashflow": {
         "detail": "TTM: suma de los 4 trimestres 2026-07-31, 2026-04-30, 2026-01-31, 2025-10-31",
         "source": "yfinance_statements"
@@ -597,6 +601,7 @@
         "grossProfits",
         "interestExpense",
         "netIncome",
+        "netInterestIncome",
         "operatingCashflow",
         "operatingIncome",
         "stockBasedCompensation",
@@ -702,6 +707,23 @@
     "state": "ok"
   },
   "display": {
+    "annex": {
+      "items": [
+        {
+          "label": "Clasificación",
+          "text": "Arquetipo GROWTH_PRE_PROFIT (regla pre_beneficio_con_crecimiento): Clasificada como GROWTH_PRE_PROFIT: BPA TTM -3.12 <= 0 y CAGR de ingresos a 3 años 31.4% > 15%"
+        },
+        {
+          "label": "Confianza · Convergencia entre métodos (no evaluable)",
+          "text": "un solo método evaluable (múltiplos frente al sector): no hay contraste; no evaluable: DCF (fiabilidad baja)"
+        },
+        {
+          "label": "Confianza · Calidad de fuente (media)",
+          "text": "6 campos de Finnhub en lugar de los estados"
+        }
+      ],
+      "title": "Detalle técnico para auditoría"
+    },
     "archetype": "GROWTH_PRE_PROFIT",
     "archetype_label": "Crecimiento sin beneficio",
     "benchmark": {
@@ -1150,6 +1172,14 @@
             "text": "No aplica a Crecimiento sin beneficio"
           }
         ],
+        "roce": {
+          "avg": null,
+          "basis": "EBIT / capital empleado, antes de impuestos",
+          "label": "ROCE",
+          "state": "con_dato",
+          "text": "Divergencia ROCE–ROIC: ROCE -27.67% frente a ROIC -38.03% (+10.4 pp, más de 10 pp). Causas probables: base fiscal distinta: el ROCE es antes de impuestos y el ROIC después; capital distinto: el ROIC usa patrimonio + deuda − caja; el ROCE, activos − pasivo corriente (incluye pasivos a largo plazo no financieros e intereses minoritarios).",
+          "value_txt": "-27.67%"
+        },
         "spread": {
           "state": "no_aplica",
           "text": null
@@ -1527,25 +1557,25 @@
           "key": "convergence",
           "label": "Convergencia entre métodos",
           "level": "No evaluable",
-          "text": "DCF -67% (cara, no evaluable) · múltiplos frente al sector -0.75 (cara). un solo método evaluable (múltiplos frente al sector): no hay contraste; no evaluable: DCF (fiabilidad baja)"
+          "text": "DCF -67% (cara, no evaluable) · múltiplos frente al sector -0.75 (cara). Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo. El DCF no concilia con el precio y no se usa para contrastar."
         },
         {
           "key": "coverage",
           "label": "Cobertura de datos",
           "level": "Alta",
-          "text": "sin incidencias"
+          "text": "Sin incidencias."
         },
         {
           "key": "source",
           "label": "Calidad de fuente",
           "level": "Media",
-          "text": "6 campos de Finnhub en lugar de los estados"
+          "text": "Parte de los datos proviene de una fuente secundaria."
         },
         {
           "key": "stability",
           "label": "Estabilidad del arquetipo",
           "level": "Alta",
-          "text": "sin incidencias"
+          "text": "Sin incidencias."
         }
       ],
       "level": "media",
@@ -1556,25 +1586,21 @@
       ],
       "reasons": [
         {
-          "detail": "un solo método evaluable (múltiplos frente al sector): no hay contraste",
           "dimension": "convergencia",
           "level": "no_evaluable",
           "text": "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo."
         },
         {
-          "detail": "no evaluable: DCF (fiabilidad baja)",
           "dimension": "convergencia",
           "level": "no_evaluable",
           "text": "El DCF no concilia con el precio y no se usa para contrastar."
         },
         {
-          "detail": "6 campos de Finnhub en lugar de los estados",
           "dimension": "calidad de fuente",
           "level": "media",
           "text": "Parte de los datos proviene de una fuente secundaria."
         },
         {
-          "detail": "techo en media: sin contraste entre métodos de valoración",
           "dimension": "techo",
           "level": "media",
           "text": null
@@ -1654,9 +1680,6 @@
           "title": "ATRACTIVO DEL PRECIO"
         }
       ],
-      "classification_detail": [
-        "Arquetipo GROWTH_PRE_PROFIT (regla pre_beneficio_con_crecimiento): Clasificada como GROWTH_PRE_PROFIT: BPA TTM -3.12 <= 0 y CAGR de ingresos a 3 años 31.4% > 15%"
-      ],
       "classification_notes": [
         "Beneficio por acción negativo en los últimos doce meses (−3.12) e ingresos totales que crecen un 31.4% anual en 3 años, por encima del 15%."
       ],
@@ -1728,7 +1751,7 @@
           "key": "net_debt_to_ebitda",
           "label": "Deuda neta/EBITDA",
           "state": "no_significativo",
-          "value": "N/A"
+          "value": "—"
         },
         {
           "key": "beta",
@@ -1767,7 +1790,8 @@
         "Piotroski (2000)",
         "un DCF multietapa con WACC estimado por CAPM"
       ],
-      "models_text": "los modelos de Piotroski (2000), un DCF multietapa con WACC estimado por CAPM"
+      "models_text": "los modelos de Piotroski (2000), un DCF multietapa con WACC estimado por CAPM",
+      "ratios_text": "ratios TTM y del último ejercicio"
     },
     "na_keys": [
       "altman",
@@ -1782,6 +1806,7 @@
       "roe",
       "roic_wacc"
     ],
+    "pe_label": "P/E (TTM)",
     "readings": {
       "beta": {
         "label": "Volátil",
@@ -2422,6 +2447,7 @@
           ]
         ],
         "intro": "Margen bruto de 67.0%: alto, margen que financiará la escala. Margen operativo de -22.8%: pérdida operativa alta, bandas de pre-beneficio. Mejora del margen operativo de +9.5 pp: fuerte mejora. Margen FCF − SBC de -8.3%: quema moderada, FCF menos compensación en acciones sobre ingresos (FCF bruto 22.0%).",
+        "roce_reading": "Divergencia ROCE–ROIC: ROCE -27.67% frente a ROIC -38.03% (+10.4 pp, más de 10 pp). Causas probables: base fiscal distinta: el ROCE es antes de impuestos y el ROIC después; capital distinto: el ROIC usa patrimonio + deuda − caja; el ROCE, activos − pasivo corriente (incluye pasivos a largo plazo no financieros e intereses minoritarios).",
         "rows": [
           {
             "bench": "—",
@@ -2432,7 +2458,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "-50.74%"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -2443,7 +2469,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "-12.55%"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -2454,7 +2480,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "-38.03%"
+            "value": "—"
           },
           {
             "bench": "60.00%",
@@ -2487,7 +2513,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "-20.07%"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -2701,7 +2727,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "N/A"
+            "value": "—"
           },
           {
             "bench": "25.00x",
@@ -2712,7 +2738,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "160.53x"
+            "value": "—"
           },
           {
             "bench": "8.00x",
@@ -2745,7 +2771,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "N/A"
+            "value": "—"
           },
           {
             "bench": "20.00x",
@@ -2756,7 +2782,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "N/A"
+            "value": "—"
           },
           {
             "bench": "25.00x",
@@ -2789,7 +2815,7 @@
             "state": "no_aplica",
             "text": null,
             "tone": "neu",
-            "value": "-0.93%"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -2800,7 +2826,7 @@
             "state": "sin_dato",
             "text": null,
             "tone": null,
-            "value": "N/A"
+            "value": "—"
           },
           {
             "bench": "—",
@@ -3006,26 +3032,26 @@
           "value": "28.7"
         },
         {
-          "bench": "",
+          "bench": "No aplica a empresas en crecimiento sin beneficio",
           "delta": "",
           "key": "net_margin",
           "label": "Margen neto",
           "pill": "No aplica",
           "state": "no_aplica",
           "tone": "neu",
-          "unit": "%",
-          "value": "-20.1"
+          "unit": "",
+          "value": "—"
         },
         {
-          "bench": "",
+          "bench": "No aplica a empresas en crecimiento sin beneficio",
           "delta": "",
           "key": "roe",
           "label": "ROE",
           "pill": "No aplica",
           "state": "no_aplica",
           "tone": "neu",
-          "unit": "%",
-          "value": "-50.7"
+          "unit": "",
+          "value": "—"
         },
         {
           "bench": "",
@@ -4051,6 +4077,7 @@
     "net_debt_to_ebitda_state": "no_significativo",
     "net_income": -1090798000.0,
     "net_income_normalized": -1110514820.0,
+    "net_interest_income": 162753000.0,
     "net_margin": -0.200711840162,
     "operating_cash_flow": 1253253000.0,
     "operating_income": -1236753000.0,

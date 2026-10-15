@@ -436,6 +436,10 @@
         "detail": "plan B: estados anuales de yfinance (último FY)",
         "source": "yfinance_statements"
       },
+      "netInterestIncome": {
+        "detail": "plan B: estados anuales de yfinance (último FY)",
+        "source": "yfinance_statements"
+      },
       "operatingCashflow": {
         "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
         "source": "yfinance_statements"
@@ -537,6 +541,7 @@
         "grossProfits": "'Gross Profit' sin dato en alguno de los 4 últimos trimestres",
         "interestExpense": "'Interest Expense' sin dato en alguno de los 4 últimos trimestres",
         "netIncome": "'Net Income' sin dato en alguno de los 4 últimos trimestres",
+        "netInterestIncome": "'Net Non Operating Interest Income Expense' sin dato en alguno de los 4 últimos trimestres",
         "operatingIncome": "'Operating Income' sin dato en alguno de los 4 últimos trimestres",
         "totalRevenue": "'Total Revenue' sin dato en alguno de los 4 últimos trimestres"
       },
@@ -586,6 +591,27 @@
     "state": "no_significativo"
   },
   "display": {
+    "annex": {
+      "items": [
+        {
+          "label": "Clasificación",
+          "text": "Arquetipo MATURE (regla por_defecto): Clasificada como MATURE por defecto: no es financiera, REIT, pre-beneficio con crecimiento ni de industria cíclica (industria Internet Retail)"
+        },
+        {
+          "label": "Confianza · Convergencia entre métodos (no evaluable)",
+          "text": "un solo método evaluable (múltiplos frente al sector): no hay contraste"
+        },
+        {
+          "label": "Confianza · Cobertura de datos (baja)",
+          "text": "categorías excluidas por cobertura: Crecimiento; 17 de 20 componentes del score con dato (85%)"
+        },
+        {
+          "label": "Confianza · Calidad de fuente (media)",
+          "text": "12 campos de Finnhub en lugar de los estados"
+        }
+      ],
+      "title": "Detalle técnico para auditoría"
+    },
     "archetype": "MATURE",
     "archetype_label": "Madura",
     "benchmark": {
@@ -1213,6 +1239,14 @@
             "value_txt": "12.42%"
           }
         ],
+        "roce": {
+          "avg": null,
+          "basis": "EBIT / capital empleado, antes de impuestos",
+          "label": "ROCE",
+          "state": "con_dato",
+          "text": "ROCE 16.60% en línea con el ROIC 12.42% (+4.2 pp, dentro de 10 pp).",
+          "value_txt": "16.60%"
+        },
         "spread": {
           "reading": "Marginal",
           "state": "con_dato",
@@ -1612,25 +1646,25 @@
           "key": "convergence",
           "label": "Convergencia entre métodos",
           "level": "No evaluable",
-          "text": "múltiplos frente al sector -0.12 (en precio). un solo método evaluable (múltiplos frente al sector): no hay contraste"
+          "text": "múltiplos frente al sector -0.12 (en precio). Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo."
         },
         {
           "key": "coverage",
           "label": "Cobertura de datos",
           "level": "Baja",
-          "text": "categorías excluidas por cobertura: Crecimiento; 17 de 20 componentes del score con dato (85%)"
+          "text": "Faltan datos para evaluar: Crecimiento. Faltan datos en parte del análisis (17 de 20 indicadores con dato)."
         },
         {
           "key": "source",
           "label": "Calidad de fuente",
           "level": "Media",
-          "text": "12 campos de Finnhub en lugar de los estados"
+          "text": "Parte de los datos proviene de una fuente secundaria."
         },
         {
           "key": "stability",
           "label": "Estabilidad del arquetipo",
           "level": "Alta",
-          "text": "sin incidencias"
+          "text": "Sin incidencias."
         }
       ],
       "level": "media",
@@ -1642,25 +1676,21 @@
       ],
       "reasons": [
         {
-          "detail": "un solo método evaluable (múltiplos frente al sector): no hay contraste",
           "dimension": "convergencia",
           "level": "no_evaluable",
           "text": "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo."
         },
         {
-          "detail": "categorías excluidas por cobertura: Crecimiento",
           "dimension": "cobertura",
           "level": "baja",
           "text": "Faltan datos para evaluar: Crecimiento."
         },
         {
-          "detail": "17 de 20 componentes del score con dato (85%)",
           "dimension": "cobertura",
           "level": "baja",
           "text": "Faltan datos en parte del análisis (17 de 20 indicadores con dato)."
         },
         {
-          "detail": "12 campos de Finnhub en lugar de los estados",
           "dimension": "calidad de fuente",
           "level": "media",
           "text": "Parte de los datos proviene de una fuente secundaria."
@@ -1739,9 +1769,6 @@
           ],
           "title": "ATRACTIVO DEL PRECIO"
         }
-      ],
-      "classification_detail": [
-        "Arquetipo MATURE (regla por_defecto): Clasificada como MATURE por defecto: no es financiera, REIT, pre-beneficio con crecimiento ni de industria cíclica (industria Internet Retail)"
       ],
       "classification_notes": [
         "No es un banco ni una aseguradora, ni un REIT, ni una empresa en crecimiento sin beneficio, ni de una industria cíclica (Internet Retail)."
@@ -1857,9 +1884,11 @@
         "número de Graham",
         "un DCF multietapa con WACC estimado por CAPM"
       ],
-      "models_text": "los modelos de Altman (1968), Piotroski (2000), número de Graham, un DCF multietapa con WACC estimado por CAPM"
+      "models_text": "los modelos de Altman (1968), Piotroski (2000), número de Graham, un DCF multietapa con WACC estimado por CAPM",
+      "ratios_text": "ratios TTM y del último ejercicio"
     },
     "na_keys": [],
+    "pe_label": "P/E (TTM)",
     "readings": {
       "beta": {
         "label": "Volátil",
@@ -2504,6 +2533,7 @@
           ]
         ],
         "intro": "El ROE de 17.6% es competitivo en su sector (sector: 8.0% competitivo, 18.0% rango alto). El ROIC (12.4%) apenas cubre el costo de capital (10.5%): la creación de valor es marginal.",
+        "roce_reading": "ROCE 16.60% en línea con el ROIC 12.42% (+4.2 pp, dentro de 10 pp).",
         "rows": [
           {
             "bench": "20.00%",
@@ -3060,7 +3090,7 @@
         },
         {
           "label": "CREACIÓN DE VALOR",
-          "text": "El ROIC (12.4%) apenas cubre el costo de capital (10.5%): la creación de valor es marginal."
+          "text": "El ROIC (12.4%) apenas cubre el costo de capital (10.5%): la creación de valor es marginal. ROCE 16.60% (EBIT / capital empleado, antes de impuestos), en línea con el ROIC (12.42%)."
         },
         {
           "label": "SOLIDEZ",
@@ -4306,6 +4336,7 @@
     "net_debt_to_ebitda_state": "ok",
     "net_income": 77670000000.0,
     "net_income_normalized": 65354930994.4,
+    "net_interest_income": 2107000000.0,
     "net_margin": 0.108337843342,
     "operating_cash_flow": 148531000000.0,
     "operating_income": 79975000000.0,

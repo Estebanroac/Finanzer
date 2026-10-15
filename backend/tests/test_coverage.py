@@ -150,10 +150,10 @@ def test_altman_z_double_prime_with_book_equity_in_fixtures(outputs_by_env):
 
 def test_altman_same_model_in_both_envs(outputs_by_env):
     import conftest
-    if len(conftest.ENVS) < 2:
+    if len(conftest.BOUND_ENVS) < 2:
         pytest.skip("faltan los dos juegos")
     for sym in fixture_backend.TICKERS:
-        models = {env: outputs_by_env(env)[sym][0]["altman_z"]["model"] for env in conftest.ENVS}
+        models = {env: outputs_by_env(env)[sym][0]["altman_z"]["model"] for env in conftest.BOUND_ENVS}
         assert len(set(models.values())) == 1, (sym, models)
 
 
@@ -406,12 +406,13 @@ def test_read_nde_net_cash_only_when_cash_exceeds_debt():
 
 
 def test_net_debt_ebitda_end_to_end(outputs_by_env):
-    """SNOW local (EBITDA < 0, deuda neta) y prod (EBITDA < 0, caja neta): ratio fuera del JSON;
-    la frase de caja neta solo en prod. El score no usa la ratio."""
+    """SNOW (EBITDA < 0, deuda neta) en local y en el panel: ratio fuera del JSON y sin la frase de caja neta.
+    El score no usa la ratio. El caso EBITDA < 0 con caja neta (antes SNOW prod) ya no está en ningún juego: lo
+    cubre test_read_nde_net_cash_only_when_cash_exceeds_debt."""
     import conftest
-    if not {"prod", "local"} <= set(conftest.ENVS):
+    if not {"panel", "local"} <= set(conftest.BOUND_ENVS):
         pytest.skip("faltan juegos de fixtures")
-    for env, net_cash in (("local", False), ("prod", True)):
+    for env, net_cash in (("local", False), ("panel", False)):
         a, pdf = outputs_by_env(env)["SNOW"]
         txt = fixture_backend.pdf_text(pdf) if isinstance(pdf, bytes) else pdf
         km = a["key_metrics"]
@@ -422,7 +423,7 @@ def test_net_debt_ebitda_end_to_end(outputs_by_env):
         assert ("(caja neta)" in txt) is net_cash
         assert "x EBITDA) es manejable" not in txt and "Deuda neta / EBITDA\n—\nNo significativa" in txt
     # con EBITDA > 0 no cambia nada
-    assert outputs_by_env("prod")["NFLX"][0]["key_metrics"]["net_debt_to_ebitda_state"] in ("ok", "caja_neta")
+    assert outputs_by_env("panel")["NFLX"][0]["key_metrics"]["net_debt_to_ebitda_state"] in ("ok", "caja_neta")
 
 
 def _sol(res):
@@ -451,12 +452,13 @@ def test_negative_coverage_with_net_debt_keeps_the_penalty():
 
 
 def test_negative_coverage_end_to_end(outputs_by_env):
-    """SNOW prod (caja neta): no significativa, fuera del JSON y sin −3.
+    """CRWD del panel (EBIT GAAP < 0 y caja neta; antes SNOW prod): no significativa, fuera del JSON y sin −3.
     SNOW local (deuda neta): penaliza y el PDF no imprime −8.4x como cobertura."""
     import conftest
-    if not {"prod", "local"} <= set(conftest.ENVS):
+    if not {"panel", "local"} <= set(conftest.BOUND_ENVS):
         pytest.skip("faltan juegos de fixtures")
-    a, pdf = outputs_by_env("prod")["SNOW"]
+    a, pdf = outputs_by_env("panel")["CRWD"]
+    assert a["key_metrics"]["operating_income"] < 0 and a["key_metrics"]["net_debt"] < 0
     assert a["key_metrics"]["interest_coverage_state"] == "no_significativo"
     assert a["key_metrics"]["interest_coverage"] is None and a["ratios"]["interest_coverage"] is None
     assert any(f["rule"] == "ratio_no_significativa" for f in a["data_validation"])
@@ -565,9 +567,9 @@ def test_rescaling_bound_holds_for_random_components():
 def test_fcf_cagr_reaches_the_scorer_with_reason(outputs_by_env):
     """fcf_cagr_3y sale de los 4 ejercicios anuales; indefinido -> sin dato con motivo."""
     import conftest
-    if "prod" not in conftest.ENVS:
-        pytest.skip("falta el juego prod")
-    out = outputs_by_env("prod")
+    if "panel" not in conftest.BOUND_ENVS:
+        pytest.skip("falta el panel")
+    out = outputs_by_env("panel")
     nflx = out["NFLX"][0]["score_coverage"]["crecimiento"]
     assert "Crecimiento del FCF" not in nflx["missing"] and not nflx["not_applicable"]
     # Etapa 6: en JPM (FINANCIAL, FCF 107 -> 13 -> -42 -> -148) y FCX (CYCLICAL) no aplica;
@@ -628,9 +630,9 @@ def test_partial_total_is_shown_in_json_and_pdf(outputs_by_env):
     no concluyente (precio sin dato)."""
     import copy
     import conftest
-    if "prod" not in conftest.ENVS:
-        pytest.skip("falta el juego prod")
-    a0, _ = outputs_by_env("prod")["SNOW"]
+    if "panel" not in conftest.BOUND_ENVS:
+        pytest.skip("falta el panel")
+    a0, _ = outputs_by_env("panel")["SNOW"]
     a = copy.deepcopy(a0)
     a["score"]["breakdown"]["Valoración"].update(conclusive=False, coverage=0.25)
     a["score"]["breakdown"]["Crecimiento"].update(conclusive=False, coverage=0.33)
@@ -639,7 +641,7 @@ def test_partial_total_is_shown_in_json_and_pdf(outputs_by_env):
     a["price_attractiveness"].update(score=None, score_raw=None, level=None, partial=True,
                                      basis="calculado sobre 0 de 1 categorías")
     a.pop("display")    # etapa 9b: el PDF maqueta `display`; tras forzar el análisis se recalcula
-    with fixture_backend.replay(fixture_backend.fixtures_dir("prod")) as store:
+    with fixture_backend.replay(fixture_backend.fixtures_dir("panel")) as store:
         store.load("SNOW")
         pdf = fixture_backend.build_pdf_bytes(a, fixture_backend.capture_date(store.meta["SNOW"]))
     txt = (fixture_backend.pdf_text(pdf) if isinstance(pdf, bytes) else pdf).replace("\n", " ")
@@ -647,7 +649,7 @@ def test_partial_total_is_shown_in_json_and_pdf(outputs_by_env):
     assert "Calidad calculado sobre 3 de 4 categorías (Crecimiento no concluyente)" in cover
     assert "Precio sin dato: Valoración no concluyente" in cover
     assert "No concluyente · cobertura 25%" in cover
-    nflx = outputs_by_env("prod")["NFLX"][0]
+    nflx = outputs_by_env("panel")["NFLX"][0]
     assert nflx["quality"]["partial"] is False and nflx["quality"]["basis"] is None
     assert a0["quality"]["partial"] is False          # SNOW real (etapa 6): 4 de 4
 

@@ -10,6 +10,14 @@ from verdict import confidence_phrase, part_score, price, quality, verdict
 
 
 def _envs():
+    """Juegos para los tests atados a los 6 tickers (local y panel)."""
+    import conftest
+    return conftest.BOUND_ENVS
+
+
+def _generic_envs():
+    """Juegos para los bucles que recorren TODOS los tickers de un juego: solo local (sobre el panel, esos
+    invariantes los corre test_panel_invariants)."""
     import conftest
     return conftest.ENVS
 
@@ -53,7 +61,7 @@ def test_price_contracts_towards_50_by_confidence(level, factor, shown):
 
 
 def test_quality_is_not_contracted_by_convergence(outputs_by_env):
-    a = outputs_by_env("prod")["NFLX"][0]                  # convergencia baja, confianza media
+    a = outputs_by_env("panel")["NFLX"][0]                  # convergencia baja, confianza media
     assert a["confidence"]["level"] == "media"
     q = a["quality"]
     by = {k: v["score"] for k, v in a["score"]["breakdown"].items()}
@@ -100,7 +108,7 @@ def test_verdict_sentence_and_confidence_phrase():
 
 
 def test_verdicts_in_fixtures(outputs_by_env):
-    for env in _envs():
+    for env in _generic_envs():
         for sym, (a, pdf) in outputs_by_env(env).items():
             inv.verdict_in_pdf(a, fb.pdf_text(pdf))
 
@@ -160,11 +168,11 @@ def test_price_excludes_quality_built_bonuses_and_growth_bands(outputs_by_env):
     for k in ("garp_points", "growth_bonus_points", "rescue_quality_max", "pe_growth_mults",
               "pfcf_growth_bounds", "ev_ebitda_growth_mults", "quality_growth_min_quality"):
         assert k not in T, k
-    for env in _envs():
+    for env in _generic_envs():
         for sym, (a, _) in outputs_by_env(env).items():
             inv.price_excludes_quality_built_bonuses(a, None)
     # Forward P/E y PEG se mantienen (son múltiplos)
-    nflx = {x["metric"] for x in outputs_by_env("prod")["NFLX"][0]["score"]["breakdown"]["Valoración"]["adjustments"]}
+    nflx = {x["metric"] for x in outputs_by_env("panel")["NFLX"][0]["score"]["breakdown"]["Valoración"]["adjustments"]}
     assert {"Forward P/E", "PEG Ratio"} <= nflx
 
 
@@ -235,10 +243,10 @@ def test_eps_vs_revenue_growth_is_informative_only(outputs_by_env):
     assert eps_vs_revenue_growth(0.10, 0.10 - tol - 0.01)["state"] == "compresion"
     assert eps_vs_revenue_growth(0.10, 0.10)["state"] == "en_linea"
     assert eps_vs_revenue_growth(None, 0.1) is None and eps_vs_revenue_growth(0.1, 0.2, "REIT") is None
-    for env in _envs():
+    for env in _generic_envs():
         for sym, (a, pdf) in outputs_by_env(env).items():
             inv.eps_vs_revenue_growth_is_informative_only(a, fb.pdf_text(pdf))
-    nflx = outputs_by_env("prod")["NFLX"][0]["eps_vs_revenue_growth"]
+    nflx = outputs_by_env("panel")["NFLX"][0]["eps_vs_revenue_growth"]
     assert nflx["state"] == "expansion" and nflx["gap"] == pytest.approx(nflx["eps_growth"] - nflx["revenue_growth"])
 
 
@@ -267,10 +275,10 @@ def test_market_profile_overrides_thresholds_and_alert_texts(outputs_by_env):
 
 # ─────────────────────────── bloque de múltiplos correlacionados ───────────────────────────
 def test_multiples_block_averages_members_and_caps_at_max(outputs_by_env):
-    for env in _envs():
+    for env in _generic_envs():
         for sym, (a, _) in outputs_by_env(env).items():
             inv.multiples_block_averages_members_and_caps_at_max(a, None)
-    v = outputs_by_env("prod")["V"][0]["score"]["breakdown"]["Valoración"]["adjustments"]
+    v = outputs_by_env("panel")["V"][0]["score"]["breakdown"]["Valoración"]["adjustments"]
     blk = next(x for x in v if x["metric"] == "Bloque de múltiplos")
     # Etapa 11b: la compresión del Forward P/E no suma si el Forward P/E está en la peor banda. Con la mediana
     # forward explícita del perfil market (18.9x), 24.2x queda bajo el corte de la peor banda (18.9 × 1.3 = 24.6x):
@@ -281,25 +289,27 @@ def test_multiples_block_averages_members_and_caps_at_max(outputs_by_env):
 
 
 def test_block_pdf_shows_each_multiple_and_the_block_line(outputs_by_env):
-    text = fb.pdf_text(outputs_by_env("prod")["V"][1]).replace("\n", " ")
+    text = fb.pdf_text(outputs_by_env("panel")["V"][1]).replace("\n", " ")
     assert "Bloque de múltiplos" in text and "(-4)" in text and "reescalados a ±1" in text
 
 
 # ─────────────────────────── reportado / normalizado ───────────────────────────
 def test_normalized_figures_are_labelled(outputs_by_env):
-    for env in _envs():
+    for env in _generic_envs():
         for sym, (a, pdf) in outputs_by_env(env).items():
             inv.normalized_figures_are_labelled(a, fb.pdf_text(pdf))
-    v = outputs_by_env("prod")["V"][0]
+    v = outputs_by_env("panel")["V"][0]
     roe = next(x for x in v["score"]["breakdown"]["Rentabilidad"]["adjustments"] if x["metric"] == "ROE normalizado")
-    assert roe["value"] == "55.9%" and roe["normalized"] is True
+    # El ROE que puntúa es el normalizado y no el reportado (panel: 66.6% frente a 64.2%; antes, prod 55.9%).
+    assert roe["normalized"] is True and v["earnings_normalization"]["differs"]
+    assert roe["value"] != f"{v['key_metrics']['roe']:.1%}"
 
 
 # ─────────────────────────── crecimiento: CAGR 3 años, no interanual ───────────────────────────
 def test_growth_scores_three_year_cagr_not_yoy(outputs_by_env):
     def crec(a, metric):
         return next((x for x in a["score"]["breakdown"]["Crecimiento"]["adjustments"] if x["metric"] == metric), None)
-    prod, local = outputs_by_env("prod")["NFLX"][0], outputs_by_env("local")["NFLX"][0]
+    prod, local = outputs_by_env("panel")["NFLX"][0], outputs_by_env("local")["NFLX"][0]
     # el interanual de Yahoo difiere entre capturas (16.0% / 24.0%); el CAGR de los estados anuales no
     assert prod["key_metrics"]["revenue_growth"] != local["key_metrics"]["revenue_growth"]
     for m in ("Crecimiento Ingresos 3Y", "Crecimiento EPS 3Y"):
@@ -316,7 +326,7 @@ def test_52_week_range_is_position_only(outputs_by_env):
     for p in (1, 15, 50, 80, 99):
         lab, tone, txt = pr.read_pos52(p)
         assert tone == "neu" and not re.search(r"\bcara\b|barata", f"{lab} {txt}", re.I)
-    for env in _envs():
+    for env in _generic_envs():
         for sym, (a, pdf) in outputs_by_env(env).items():
             inv.range_52w_is_position_only(a, fb.pdf_text(pdf))
 
@@ -369,7 +379,9 @@ def test_growth_pre_profit_profitability_and_regla_m(outputs_by_env):
         assert _bd(a, "Calidad de Ganancias").get("FCF / beneficio neto", {}).get("value") in (None, "No significativo")
         reasons = [x["reason"] for k in ("red_flags", "warnings", "strengths") for x in a["alerts"][k]]
         assert "Calidad del beneficio baja" not in reasons and not any(r.startswith("Destruye valor") for r in reasons)
-    p = outputs_by_env("prod")["SNOW"][0]["key_metrics"]
+    # Regla M del ROIC (capital invertido < 10% de los activos). Antes con SNOW prod; en el panel SNOW tiene deuda
+    # neta y ROIC calculable, y el caso lo da CRWD (capital invertido 8% de los activos).
+    p = outputs_by_env("panel")["CRWD"][0]["key_metrics"]
     assert p["roic"] is None and "ROIC no significativo" in p["roic_reason"]
 
 
@@ -385,7 +397,7 @@ def test_financial_pb_block_and_policy_substitution(outputs_by_env):
 
 
 def test_no_text_cites_a_not_applicable_metric(outputs_by_env):
-    for env in _envs():
+    for env in _generic_envs():
         for sym, (a, pdf) in outputs_by_env(env).items():
             inv.no_text_cites_a_not_applicable_metric(a, fb.pdf_text(pdf))
 
@@ -410,7 +422,8 @@ def test_growth_pre_profit_uses_fcf_minus_sbc_but_runway_uses_cash(outputs_by_en
         al = [x for x in a["alerts"]["strengths"] if x["reason"].startswith("Autofinanciada")]
         assert al and al[0]["reason"].startswith("Autofinanciada en caja") and "dilución" in al[0]["detail"]
         assert f"{sb['sbc_to_revenue']:.1%}" in al[0]["detail"] and "depender" not in al[0]["detail"]
-    assert outputs_by_env("prod")["SNOW"][0]["sbc"]["basis"].startswith("FY")
+    # Con trimestrales (panel) la SBC es TTM; el juego prod, sin trimestrales, daba FY.
+    assert outputs_by_env("panel")["SNOW"][0]["sbc"]["basis"].startswith("TTM")
 
 
 def test_sbc_without_data_is_sin_dato():
@@ -423,7 +436,8 @@ def test_sbc_without_data_is_sin_dato():
 
 
 def test_not_significant_is_excluded_like_not_applicable(outputs_by_env):
-    a = outputs_by_env("prod")["SNOW"][0]
+    # CRWD del panel: EBIT GAAP < 0 con caja neta (antes SNOW prod).
+    a = outputs_by_env("panel")["CRWD"][0]
     sol = a["score_coverage"]["solidez"]
     assert "Cobertura de intereses" in sol["not_significant"] and "Cobertura de intereses" not in sol["missing"]
     assert not any(x["metric"] == "Cobertura" for x in a["score"]["breakdown"]["Solidez Financiera"]["adjustments"])
@@ -447,7 +461,7 @@ def test_sustained_negative_is_a_signal_not_missing():
 
 
 def test_cover_fits_one_page(outputs_by_env):
-    for env in _envs():
+    for env in _generic_envs():
         for sym, (a, pdf) in outputs_by_env(env).items():
             inv.cover_fits_one_page(a, fb.pdf_text(pdf))
 
