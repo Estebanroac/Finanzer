@@ -30,6 +30,7 @@ import price_series  # noqa: E402
 from settings import cfg  # noqa: E402
 
 PAUSE_BETWEEN_TICKERS_S = 1.0
+CLOSE_REL_TOL = 1e-6   # el ruido observado entre descargas es ~1e-7 relativo
 
 
 def sector_of(ticker):
@@ -41,6 +42,20 @@ def sector_of(ticker):
             return si["sector"], "golden del panel (sector_info.sector)"
     import yfinance as yf
     return (yf.Ticker(ticker).info or {}).get("sector"), "yfinance info (en la captura)"
+
+
+def compare(a, b):
+    """None si son iguales; "ruido" si solo difieren en el redondeo del cierre ajustado (float32 de Yahoo al
+    recalcular el ajuste por dividendos) o en el volumen de la última sesión; "distinta" en otro caso."""
+    if a == b:
+        return None
+    if a["dates"] != b["dates"] or a.get("splits") != b.get("splits"):
+        return "distinta"
+    if any(abs(x - y) > CLOSE_REL_TOL * abs(x) for x, y in zip(a["close"], b["close"])):
+        return "distinta"
+    if a["volume"][:-1] != b["volume"][:-1]:
+        return "distinta"
+    return "ruido"
 
 
 def main():
@@ -59,6 +74,7 @@ def main():
     started = _dt.datetime.now(_dt.timezone.utc)
     recorded = {}          # símbolo → objeto JSON grabado
     mismatches = []        # descargas posteriores de una serie compartida que no coinciden
+    noise = []             # ... que solo difieren en redondeo del ajuste o en el volumen de hoy
     meta_t, latency = {}, {}
 
     def fetcher(symbol, period, interval):
@@ -74,8 +90,9 @@ def main():
                 continue
             obj = pf.frame_to_obj(s["symbol"], s["frame"])
             if s["symbol"] in recorded:
-                if recorded[s["symbol"]] != obj:
-                    mismatches.append({"ticker": t, "symbol": s["symbol"]})
+                kind = compare(recorded[s["symbol"]], obj)
+                if kind:
+                    (noise if kind == "ruido" else mismatches).append({"ticker": t, "symbol": s["symbol"]})
             else:
                 recorded[s["symbol"]] = obj
         meta_t[t] = {"sector": sector, "sector_source": src, "sector_etf": res["sector_etf"],
@@ -110,12 +127,14 @@ def main():
         "latency_summary_s": {"tickers": len(tot), "sum": round(sum(tot), 3),
                               "median": round(sorted(tot)[len(tot) // 2], 3), "max": round(max(tot), 3)},
         "shared_series_mismatches": mismatches,
+        "shared_series_noise": {"count": len(noise), "close_rel_tol": CLOSE_REL_TOL,
+                                "note": "redondeo float32 del cierre ajustado o volumen de la última sesión"},
         "symbols": sorted(recorded),
     }
     with open(os.path.join(base, "metadata.json"), "w", encoding="utf-8") as fh:
         json.dump(meta, fh, indent=1, ensure_ascii=False)
     print(f"\n{len(recorded)} series → {base}; latencia por ticker mediana {meta['latency_summary_s']['median']} s, "
-          f"máx. {meta['latency_summary_s']['max']} s; series compartidas distintas: {len(mismatches)}")
+          f"máx. {meta['latency_summary_s']['max']} s; series compartidas distintas: {len(mismatches)} (solo ruido: {len(noise)})")
 
 
 if __name__ == "__main__":
