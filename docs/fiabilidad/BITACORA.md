@@ -44,12 +44,12 @@ Leyenda: ⏳ pendiente · 🔧 en curso · 🛑 detenida esperando al usuario ·
 | # | Tema | Estado | Decidido | Fecha |
 |---|---|---|---|---|
 | D1 | Códigos internos en el PDF | **decidida** | Anexo técnico: los códigos salen de las páginas de lectura y se reúnen en un anexo final del PDF rotulado "Detalle técnico para auditoría"; la web no los muestra (usuario, chat de planificación). Se aplica en la fase 1 (`prompts/F1_lo_visible_hoy.md`) | 2026-10-14 |
-| D2 | Papel de SEC EDGAR | abierta · **reforzada** al cerrar F0: Yahoo da a Render datos distintos que a local en 7/30 (registro #6) | — | — |
+| D2 | Papel de SEC EDGAR | **decidida (fase de medida)** | Verificar y luego decidir: en la 2a EDGAR no alimenta el motor; con el informe de discrepancias (`F2_DISCREPANCIAS.md`) el usuario decide si pasa a fuente principal de los estados (usuario, chat de planificación). Reforzada al cerrar F0: Render ≠ local en 7/30 | 2026-10-15 |
 | D3 | Precio con un solo método (RECON §7.17) | abierta · **prioridad alta en la fase 3** (18/30 del panel con un solo método evaluable; registro #6) | — | — |
 | D4 | Arquetipo "crecimiento rentable" | abierta · debe resolver también **qué pesa más cuando una empresa es cíclica y de alto crecimiento a la vez** (NVDA; registro #6) | — | — |
 | D5 | Capa técnica en el score | abierta | — | — |
 | D6 | Infraestructura | abierta | — | — |
-| D7 | Universo de empresas | abierta | — | — |
+| D7 | Universo de empresas | **decidida** | Emisores registrados en la SEC (10-K y 20-F con CIK en EDGAR). Los demás se analizan con aviso visible ("sin fuente oficial para verificar") y confianza limitada a "baja"; no se rechazan (interpretación del planificador, modificable por el usuario). Diseño en la 2a, implementación en la 2b | 2026-10-15 |
 | D8 | `golden/prod` ya no representa producción (base anual frente a TTM; registro #2) | **decidida** | Se retiran los juegos `prod` y `muestra` (fixtures y golden); se queda `local`. Se hace al principio de la fase 1, en un commit propio (registro #6) | 2026-10-14 |
 
 Decisiones nuevas que surjan en una sesión: se añaden aquí como D8, D9… con estado "abierta" y el operador se detiene.
