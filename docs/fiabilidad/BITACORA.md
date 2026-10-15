@@ -17,7 +17,7 @@
 
 | Campo | Valor |
 |---|---|
-| Fase en curso | **Fase 1 — Lo visible hoy** (🛑 punto de parada 2: diff de golden explicado, esperando aprobación para regenerar; registro #11) |
+| Fase en curso | **Fase 1 — Lo visible hoy** (🔧 parada 2 aprobada, golden regenerados en `da2b33e`; 4 arreglos más antes de T6, registro #12) |
 | Rama de trabajo | `fiabilidad/f1-visible` (desde `main` local `0f798c8`; registro #7) |
 | Producción | `9e78f3b` (etapas 11b + 9c), verificado el 2026-10-13. Rollback: `a6482f9` |
 | `main` local | merge de la fase 0 sobre `f9d6c30` (ver `git log`), **por delante de origin, sin push**: se sube con el deploy de la fase 1 (pushear redespliega) |
@@ -493,3 +493,21 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
 - **Archivos tocados:** `backend/lib/pdf_report.py`, `backend/tests/{pdf_geometry,test_pdf_geometry,test_anexo_tecnico,test_archetype_branches}.py`, `docs/fiabilidad/F1_DIFF_GOLDEN.md`.
 - **Avisos para el siguiente chat:** el margen de la página 2 es estrecho (NFLX y SNOW quedan a 3–4 pt); si un texto
   crece, la lectura se contrae un poco en vez de desbordar. `test_page_2_holds_the_whole_summary` lo vigila.
+
+### #12 · 2026-10-15 · operador · Fase 1 (punto de parada 2 aprobado)
+- **Decisión del usuario (literal):**
+  > Apruebo regenerar los golden de panel y local con el diff de F1_DIFF_GOLDEN.md. Regenéralos ahora, en un commit propio, para que los arreglos siguientes tengan su diff aislado.
+  >
+  > Después, antes de T6, cuatro cosas más dentro de la fase 1 (un commit por causa, con test que falla antes):
+  >
+  > 1. Punto ciego del guardián: la afirmación #10 («no aplica» con cifra) no detectó las tarjetas de AMT y SNOW. Explica por qué (¿las tarjetas KPI y metric_card no declaran afirmaciones?), haz que el guardián cubra todas las tarjetas de portada y resumen, y añade el caso a test_guardian_detecta.py. Arregla las tarjetas: si no aplica, valor «—» y el motivo, sin cifra.
+  >
+  > 2. Rango de 52 semanas: máximo = max(máximo, precio) y mínimo = min(mínimo, precio), para que la posición nunca pase de 0–100% (XOM «101%»). Añade al guardián que la posición citada está entre 0 y 100.
+  >
+  > 3. Deuda neta/EBITDA negativa en la portada (PLTR, TSM): se muestra «Caja neta» con su importe, igual que en la fila de Solidez. Ningún ratio negativo se presenta como nivel en una tarjeta.
+  >
+  > 4. Escala mínima del KeepInFrame(shrink) en la portada y en la página 2: la comprobación geométrica falla si la escala baja de 0.85. Reporta la escala mínima actual en el panel.
+  >
+  > Presenta en el punto de parada 3 el diff de estos cuatro arreglos (qué tickers y campos cambian) junto con la petición de «ok, pushea». No regeneres los golden de estos cuatro sin esa aprobación.
+- **Hecho:** `da2b33e` golden de panel y `local` regenerados (72 archivos); suite **2580 passed, 1 skipped**.
+- **Abierto / siguiente paso:** los cuatro arreglos (un commit por causa), T6 y punto de parada 3.
