@@ -330,3 +330,14 @@ aunque lo que evalúa es el payout. **Cambio.** Se activa con el payout y lo cit
 | panel | PGR | "Payout ratio alto (70% > 60%)" → "Payout alto (payout 70% > 60%)" |
 | local | JPM | "(1.98%)" → "(payout 27%)" |
 | panel | BCS | (golden nuevo) "Dividendo sostenible (payout 28%)" en lugar de "(50.46%)" |
+
+## P3.9 — Etiqueta del P/B y del P/TBV justificados
+
+**Causa.** "P/B frente a ROE 0.95× justificado" se leía como si 0.95x fuera el múltiplo justificado; es el cociente
+actual / justificado. **Cambio.** "95% del P/B justificado (0.73x frente a 0.76x)", ídem P/TBV. Mismos puntos.
+
+| Juego | Tickers | Campos (P/B y P/TBV) |
+|---|---|---|
+| panel | JPM, BAC, PGR, BRK-B | `score.breakdown.Valoración.adjustments[].value`, `display.sections.valuation.rows[].value`, `display.sections.institutional.breakdown…items[].value`, `display.charts.valuation.scored[].value_txt`: "1.32× justificado" → "132% del P/B justificado (2.46x frente a 1.87x)" (JPM) |
+| local | JPM | ídem |
+| panel | BCS | (golden nuevo) "96% del P/B justificado (0.73x frente a 0.76x)" |

@@ -2522,7 +2522,11 @@ def score_valoracion(
                       f"g {xv.get('terminal_growth', 0):.1%})")
             _a[key] = adj
             _pb_blk[label] = (adj, p)
-            adjustments.append({"metric": label, "value": f"{ratio:.2f}× justificado", "adjustment": adj,
+            # Fase 1 (BCS): "0.95× justificado" se leía como si 0.95x fuera el múltiplo justificado; es la parte
+            # del justificado a la que cotiza.
+            _short = label.split(" frente")[0]
+            adjustments.append({"metric": label, "value": f"{ratio:.0%} del {_short} justificado "
+                                                          f"({mult:.2f}x frente a {just:.2f}x)", "adjustment": adj,
                                 "reason": reason, "severity": sev, "in_block": True})
         # Etapa 9a: P/B y P/TBV frente a sus justificados miden lo mismo: un bloque.
         _pbres = multiples_block(_pb_blk, "Bloque P/B y P/TBV")
