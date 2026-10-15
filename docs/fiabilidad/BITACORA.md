@@ -17,7 +17,7 @@
 
 | Campo | Valor |
 |---|---|
-| Fase en curso | **Fase 1 — Lo visible hoy** (🔧 T2 hecha: guardián en rojo; sigue T3, registro #9) |
+| Fase en curso | **Fase 1 — Lo visible hoy** (🔧 T3 hecha: guardián en verde, golden sin regenerar; sigue T4, registro #10) |
 | Rama de trabajo | `fiabilidad/f1-visible` (desde `main` local `0f798c8`; registro #7) |
 | Producción | `9e78f3b` (etapas 11b + 9c), verificado el 2026-10-13. Rollback: `a6482f9` |
 | `main` local | merge de la fase 0 sobre `f9d6c30` (ver `git log`), **por delante de origin, sin push**: se sube con el deploy de la fase 1 (pushear redespliega) |
@@ -29,7 +29,7 @@
 | Fase | Estado | Rama | Commits | Aprobada por el usuario | Deploy |
 |---|---|---|---|---|---|
 | 0 Congelar y medir | ✅ cerrada (2026-10-14) | `fiabilidad/f0-panel` → `main` local | `0a8ac66`..`0ae214a` (9 commits) + cierre (registro #6) | sí, 2026-10-14 (registro #6) | no aplica (se sube con el deploy de la fase 1) |
-| 1 Lo visible hoy | 🔧 T3 | `fiabilidad/f1-visible` | `d676b22` (D8), `21c3f5f`, `0ebba81` (guardián) | — | — |
+| 1 Lo visible hoy | 🔧 T4 | `fiabilidad/f1-visible` | `d676b22` (D8), `21c3f5f`, `0ebba81` (guardián), `d63de70`…`d7393fd` (T3, 8 commits) | — | — |
 | 2 Verdad de datos (EDGAR) | 🔒 espera F1 | — | — | — | — |
 | 3 Método por arquetipo | 🔒 espera F2 | — | — | — | — |
 | 4 Escalas y confianza | 🔒 espera F3 | — | — | — | — |
@@ -70,8 +70,8 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
 | Pendiente | Origen | Fase |
 |---|---|---|
 | Maquetación página 2 del PDF (panel "Composición" recortado/solapado) | corrida 2026-10-14 | 1 |
-| PLTR "EBIT negativo" con EBIT +$2.63B | corrida 2026-10-14 | 1 |
-| "STRONG" en JPM; "MATURE"/"por_defecto" en el PDF | corrida 2026-10-14 | 1 (D1) |
+| ✅ Hecho (F1, `d63de70`): PLTR "EBIT negativo" con EBIT +$2.63B → estado `sin_carga` (rating AAA; nivel de precio sin cambio) | corrida 2026-10-14 | 1 |
+| ✅ Hecho (F1, `87c147d` + `51e8f96`): "STRONG" en JPM; "MATURE"/"por_defecto" en el PDF → castellano y anexo técnico (D1) | corrida 2026-10-14 | 1 (D1) |
 | Piotroski FY frente a TTM (AAPL) / bases mezcladas plan B (AMZN) | corrida + memoria 11b | 2 |
 | JNJ sin Altman (utilidades retenidas) | corrida 2026-10-14 | 2 |
 | TSM forward P/E 18.9 frente a TTM 31.7 (¿ADR/ordinaria?) | corrida 2026-10-14 | 2 |
@@ -107,17 +107,18 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
 | Mejoras aprobadas: DuPont del ROE, margen FCF con tendencia, Rule of 40 (crecimiento rentable) | memoria (backlog) | 3 (D4) |
 | ✅ Hecho (F1, `d676b22`): `golden/prod` en base anual mientras prod calcula en TTM → D8: `prod` y `muestra` retirados | F0 (registros #2, #6, #7) | 1 (inicio) |
 | **Nuevo (panel):** Yahoo devuelve a Render datos distintos que a una IP residencial en 7/30 (acciones de fast_info en PG y NEE; balance trimestral de DUK al 31-mar en Render frente al 30-jun en local; acciones diluidas trimestrales ausentes en CAT y DUK; balance en el Altman de NVDA; acciones en MSFT; trimestres con resultado operativo en PLD). Local es estable. Efecto en el veredicto: DUK calidad 71 → 74, sin cambio de nivel. **Refuerza D2** | F0 (registros #5, #6) | 2 (D2) |
-| **Nuevo (panel):** el crecimiento de ciclo medio está en su cota en 5 cíclicas (XOM y DOW −5.0% en ingresos y BPA; FCX BPA −5.0%; MU y ASML +10.0%). **Texto** que presenta la cota como dato medido → fase 1; **método** del tope −5%/+10% → fase 3 | F0 (registros #5, #6) | 1 (texto) / 3 (método) |
-| **Nuevo (panel):** ajustar el invariante `growth_texts_cite_the_scored_figure` para aceptar el signo expresado con el verbo ("se contraen un 5.0%"); hoy xfail estricto en XOM y DOW | F0 (registros #5, #6) | 1 |
+| **Nuevo (panel):** el crecimiento de ciclo medio está en su cota en 5 cíclicas (XOM y DOW −5.0% en ingresos y BPA; FCX BPA −5.0%; MU y ASML +10.0%). **Texto** ✅ hecho (F1, `eac35b3`: "acotado al mínimo/máximo que admite el modelo"); **método** del tope −5%/+10% → fase 3 | F0 (registros #5, #6) | 1 (texto) / 3 (método) |
+| ✅ Hecho (F1, `83e0f70`): invariante `growth_texts_cite_the_scored_figure` acepta el signo expresado con el verbo; 0 xfail | F0 (registros #5, #6) | 1 |
 | **Nuevo (panel):** efecto frontera: NVO cambia de nivel de precio con 10 pb de Rf (config 5.29% → ^TNX 5.19%: 58 "razonable" → 70 "atractivo", confianza media → alta). Banda de tolerancia o aviso de proximidad al umbral | F0 (registros #5, #6) | 4 |
 | **Nuevo (panel):** BRK-B en base anual (faltan capex y D&A en algún trimestre) | F0 (registro #5) | 2 |
-| **Nuevo (guardián):** "(3 años)" en tarjetas, tablas y comparación de cíclicas cuya cifra es de ciclo medio (XOM, DOW, FCX, MU, ASML) | F1 T2 (registro #9) | 1 (texto) |
-| **Nuevo (guardián):** V (benchmark de mercado) dice "múltiplos frente al sector" en la confianza | F1 T2 (registro #9) | 1 |
-| **Nuevo (guardián):** BRK-B "P/E (TTM)" con base anual (faltan trimestres) | F1 T2 (registro #9) | 1 (texto) / 2 (dato) |
-| **Nuevo (guardián):** AMT atribuye la caída del FFO por acción a la emisión de acciones con las acciones planas en 3 años (+0.05%) | F1 T2 (registro #9) | 1 |
-| **Nuevo (guardián):** "N/A" como valor en las tablas de las financieras (JPM, BAC…) | F1 T2 (registro #9) | 1 |
-| **Nuevo (guardián):** la web muestra códigos en el desplegable "Detalle técnico" (`crecimiento_incoherente`, `MATURE`…), contra D1 | F1 T2 (registro #9) | 1 (web) |
+| ✅ Hecho (F1, `eac35b3`): "(3 años)" en la comparación de cíclicas cuya cifra es de ciclo medio → "(ciclo medio)" | F1 T2 (registro #9) | 1 (texto) |
+| ✅ Hecho (F1, `90ab32a`): V (benchmark de mercado) decía "múltiplos frente al sector" en la confianza | F1 T2 (registro #9) | 1 |
+| **Nuevo (guardián):** BRK-B "P/E (TTM)" con base anual (faltan trimestres). **Texto** ✅ hecho (F1, `f6f0b36`: "P/E (último ejercicio)"); dato (trimestres que faltan) → fase 2 | F1 T2 (registro #9) | 1 (texto) / 2 (dato) |
+| ✅ Hecho (F1, `d7393fd`): AMT atribuía la caída del FFO por acción a la emisión de acciones con las acciones planas en 3 años (+0.05%) | F1 T2 (registro #9) | 1 |
+| ✅ Hecho (F1, `87c147d`): "N/A" como valor en las tablas → "—" | F1 T2 (registro #9) | 1 |
+| ✅ Hecho (F1, `51e8f96`; falta recompilar `frontend/out` en T6): la web mostraba códigos en el desplegable "Detalle técnico", contra D1 | F1 T2 (registro #9) | 1 (web) |
 | **Nuevo (panel):** con la tabla validada (registro #6): CAT y TSM deberían ser CYCLICAL y salen "Madura"; PLTR y CRWD salen "Madura" (falta el arquetipo, D4); NVDA a decidir en D4 | F0 (registros #5, #6) | 3 (D4) |
+| **Nuevo (F1 T3.1):** NFLX trae en 2026-03 un trimestre con +2.85 B de ingresos financieros (los demás, 40–50 M); el TTM del resultado financiero sale +2.14 B con el anual en −604 M. Sin efecto hoy (cobertura positiva; "sin carga" exige el signo en cada trimestre). Revisar la fuente | F1 (registro #10) | 2 |
 | ✅ Hecho (F1, `d676b22`): `muestra` retirada con D8; sus 17 tests corren sobre el panel (`test_panel_cases.py`) | F0 (registros #2, #6, #7) | 1 (inicio) |
 | Descartado — resuelto, **verificado en el panel**: `yearly_financials` con datos en 30/30 (AAPL: 4 ejercicios) | RECON §7.7 | — |
 | Descartado — resuelto, **verificado en el panel**: normalización de partidas no recurrentes (C1): `earnings_normalization.items` en 12+ tickers (MSFT, KO, JNJ, JPM, V, O…); NFLX `differs` = true | RECON §7.7 | — |
@@ -438,3 +439,28 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
 - **Archivos tocados:** `backend/lib/{claims,display,alert_interpretations}.py`, `backend/tests/{guardian,test_guardian,test_guardian_detecta}.py`.
 - **Avisos para el siguiente chat:** el guardián tarda ~5 s en los 36 informes.
 
+### #10 · 2026-10-15 · operador · Fase 1 (T3: arreglos, un commit por causa)
+- **Objetivo de la sesión:** T3 del prompt F1: convertir en verde los 85 xfail del guardián, una causa por commit.
+- **Hecho:**
+  - `d63de70` T3.1 cobertura de intereses por el signo del EBIT y del resultado financiero (*Net Non Operating
+    Interest Income Expense* de los estados del plan B; sin inferir en ningún ticker). PLTR: `sin_carga`, rating
+    BBB → AAA, Kd 6.40% → 5.69%, WACC −0.0003 pp (peso de la deuda 0.04%), DCF 44.22 sin cambio, Solidez ya en
+    20/20: **nivel de precio sin cambio**. "Sin carga" exige el signo en el TTM y en cada trimestre (NFLX, ver mapa).
+  - `87c147d` T3.2 "STRONG"/"N/A" en castellano en la capa de presentación (también en la web, `api.ts`).
+  - `51e8f96` T3.3 D1: `display.annex` → anexo "Detalle técnico para auditoría" al final del PDF; tabla de
+    confianza en lenguaje llano; la web deja de recibir y de mostrar el detalle técnico.
+  - `eac35b3` T3.4 cota del ciclo medio dicha como cota; "(ciclo medio)" en la comparación de CYCLICAL.
+  - `83e0f70` T3.5 invariante del crecimiento: signo con el verbo (y deja de aceptar "5.0%" positivo dentro de
+    "se contraen un 5.0%"). 0 xfail en el panel.
+  - `90ab32a`, `f6f0b36`, `d7393fd` T3.6: V "frente al mercado"; BRK-B "P/E (último ejercicio)"; AMT sin dilución
+    inexistente.
+  - `docs/fiabilidad/F1_DIFF_GOLDEN.md`: diff de golden explicado causa por causa (para T5).
+- **Verificación:** suite → **72 failed, 2395 passed, 1 skipped, 0 xfailed**; los 72 son la comparación con los
+  golden (36 análisis + 36 PDF), sin regenerar a propósito hasta el punto de parada 2. Guardián: 0 fallos, tabla
+  de conocidos vacía. Cada cambio de golden, atribuido en `F1_DIFF_GOLDEN.md`; fuera de PLTR ninguna cifra cambia.
+- **Decisiones tomadas por el usuario:** ninguna nueva.
+- **Abierto / siguiente paso:** T4 (página 2 + comprobación geométrica + PNG); el anexo cambia el número de
+  páginas en 14 PDF (revisar en T4). `frontend/out` se recompila en T6 (cambios de `api.ts` y `StockHeader.tsx`).
+- **Archivos tocados:** `backend/lib/{financial_ratios,ttm,yf_adapter,data_fetcher,validate,cost_of_capital,alert_interpretations,display,display_charts,pdf_report}.py`, `backend/main.py`, `backend/tests/{guardian,invariants,test_guardian,test_guardian_detecta,test_invariants_detectan,test_panel_invariants,test_interest_coverage,test_presentacion_castellano,test_anexo_tecnico,test_cota_ciclo_medio}.py`, `frontend/src/{lib/api.ts,components/StockHeader.tsx}`.
+- **Avisos para el siguiente chat:** la regresión de golden falla a propósito hasta T5; para ver solo lo demás,
+  `pytest tests | grep -v matches_golden`.
