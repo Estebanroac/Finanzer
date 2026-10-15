@@ -17,12 +17,12 @@
 
 | Campo | Valor |
 |---|---|
-| Fase en curso | **Fase 2a 🛑 detenida en el punto de parada 1** (T0 y T2 hechas; T1 pendiente del cierre de Nueva York). Registro #17 |
+| Fase en curso | **Fase 2a 🛑 detenida en el punto de parada 2** (T0–T4 hechas; T5 tras la aprobación). Registros #17 y #18 |
 | Rama de trabajo | `fiabilidad/f2a-medir` (desde `main` = `8ed57a0`), sin push |
 | Producción | `8ed57a0` (fase 1 + documentación). Rollback de código: `9e78f3b` |
 | `main` local | = `origin/main` (`8ed57a0`) |
-| Último cierre de sesión | 2026-10-15 · operador F2a (ver registro #17) |
-| Bloqueos | Ninguno; T1 (captura de HSBC, SHEL, UL y TM) espera al cierre de Nueva York |
+| Último cierre de sesión | 2026-10-15 · operador F2a (ver registro #18) |
+| Bloqueos | Espera la decisión del usuario sobre D2 y el "ok, pushea" de T0 + el panel ampliado |
 
 ## Fases
 
@@ -30,7 +30,7 @@
 |---|---|---|---|---|---|
 | 0 Congelar y medir | ✅ cerrada (2026-10-14) | `fiabilidad/f0-panel` → `main` local | `0a8ac66`..`0ae214a` (9 commits) + cierre (registro #6) | sí, 2026-10-14 (registro #6) | no aplica (se sube con el deploy de la fase 1) |
 | 1 Lo visible hoy | ✅ cerrada | `fiabilidad/f1-visible` | `d676b22` (D8), `21c3f5f`, `0ebba81` (guardián), `d63de70`…`d7393fd` (T3, 8 commits), `7f32070`, `e3161d2`, `c369575` (T4) | — | — |
-| 2 Verdad de datos (EDGAR) | 🛑 2a: parada 1 (T2) | `fiabilidad/f2a-medir` | `8d3a5cc` (planificador), `356f49c` (T0), `0b82c13`, `aa42104` (T2) | — | — (T0 se despliega en la parada 2 si se aprueba) |
+| 2 Verdad de datos (EDGAR) | 🛑 2a: parada 2 (T3 y T4) | `fiabilidad/f2a-medir` | `8d3a5cc` (planificador), `356f49c` (T0), `0b82c13`…`8e9948b` (T2), `385e441` + `4051a5e` (T1), `f8f13df`…`06a6ec0` (herramienta T3), `6946a64` (T3), `01aec9d`…`8d7c1fb` (T4) | parada 1 sí (2026-10-15) | — (T0 se despliega en la parada 2 si se aprueba) |
 | 3 Método por arquetipo | 🔒 espera F2 | — | — | — | — |
 | 4 Escalas y confianza | 🔒 espera F3 | — | — | — | — |
 | 5 Técnica y conductual | 🔒 espera F4 | — | — | — | — |
@@ -687,3 +687,47 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
   - no le pongas `print` al User-Agent;
   - para TSM FY2025 y TM FY2026, `companyfacts` no basta: hay que leer `<ticker>-<fecha>_htm.xml` del filing;
   - el resolutor ticker → CIK necesita `PREDECESSORS` (XOM).
+
+### #18 · 2026-10-15 · operador · Fase 2a (T1, T3 y T4 hechas; detenida en el punto de parada 2)
+- **Objetivo de la sesión:** continuar la 2a tras el punto de parada 1 (aprobado: "Apruebo el punto de parada 1. Sigue con T1 después del cierre de Nueva York y luego con T3"), con los criterios del usuario para T4.
+- **Hecho:**
+  - **T4:** `F2_PRECEDENCIA.md` con los 4 criterios del usuario (`01aec9d`, `36652af`):
+    - deuda coherente con el EBITDA;
+    - identidad del dividendo con magnitudes equivalentes;
+    - aviso de resultados publicados y no incorporados;
+    - filings que companyfacts aún no trae;
+    - beta propia recomendada;
+    - verificación de que los arrendamientos financieros de MSFT, AMZN y MU son solo pasivos en balance (MSFT: 329.1 mil millones no iniciados, excluidos).
+  - **Mapa:** NVDA (falso positivo, 2b), O y DUK (2b).
+  - **T1** (`385e441`, `4051a5e`):
+    - HSBC, SHEL, UL y TM capturados el 15-oct a las 16:15 de Nueva York, en una sola sesión, con `--render-sim` y Finnhub; los cuatro con el arquetipo esperado;
+    - golden nuevos;
+    - el guardián daba un falso positivo en UL (base anual: "sin TTM" contaba como TTM): corregido con un test que fallaba primero.
+  - **Herramienta de T3** (`f8f13df`…`06a6ec0`): `tests/edgar_verify.py` y `tests/beta_ref.py`, con extractos que incluyen los 12 filings que companyfacts no trae.
+  - **T3** (`6946a64`): `F2_DISCREPANCIAS.md`. Las cifras de T4 y T2 se pusieron al día con los 36 (`8d7c1fb`).
+- **Resultados:**
+  - **Línea base F1: 90.0%** de los campos comparables dentro de tolerancia (1,262/1,403): EE. UU. 91.6%, extranjeros 82.9%.
+  - **Causas de lo que queda fuera:** definición 78, fuente errónea 41 (la mitad, el beneficio operativo construido por Yahoo), periodo 14, unidad + factor ADR 4, factor ADR 4.
+  - **What-if B** (solo errores de dato): 0 cambios de nivel. **What-if A:** 1 (NFLX). **Beta propia:** 3 (BRK-B, NVO, NFLX).
+  - **Casos conocidos:**
+    - confirmados: BCS (peniques, factor 4.154 por recompras, AT1 997 millones de GBP), UL (perímetro y factor 1.012 sin efecto), JNJ (BPA de Finnhub 6.5886 en vivo; utilidades retenidas 169 mil millones), TSM, NVO y el dividendo de HSBC, SHEL, UL y TM (moneda de la línea local);
+    - descartado: NVDA;
+    - **nuevo: TM**, con el factor 11.07 por una capitalización de Yahoo un 9.6% corta.
+- **Verificación:**
+  - `pytest tests -q` → "3195 passed, 1 skipped";
+  - `npm run check` → "StockAnalysis encaja con 41 salidas del backend";
+  - captura: "[HSBC] OK … [TM] OK", con la clave en 0 fixtures;
+  - `edgar_verify.py --whatif` → 2065 filas;
+  - búsqueda de secretos → 0 archivos.
+- **Decisiones tomadas por el usuario:** criterios de T4 (deuda, dividendo, aviso de resultados, retraso de companyfacts, beta propia); arrendamientos solo en balance; O y DUK a la 2b. D2 sigue pendiente de decisión con T3 y T4.
+- **Abierto / siguiente paso:**
+  - **punto de parada 2:** decisión D2 y "ok, pushea" para T0 (`/api/health`) y el panel ampliado;
+  - después, T5 (RECON §7.20, mapa de fase 2 marcado "medida en F2_DISCREPANCIAS").
+- **Archivos tocados:**
+  - `backend/tests/{guardian,test_guardian_detecta,fixture_backend,panel_run,edgar,edgar_diag,edgar_verify,beta_ref,test_edgar_verify}.py` y `backend/tests/README.md`;
+  - fixtures y golden de HSBC, SHEL, UL y TM;
+  - `docs/fiabilidad/F2_{DISCREPANCIAS,PRECEDENCIA,EDGAR_DIAGNOSTICO}.md` y esta bitácora.
+- **Avisos para el siguiente chat:**
+  - las ediciones del planificador en esta bitácora (D3, D4 y la fila "compromisos fuera de balance") siguen **sin commitear** en la copia de trabajo: no son del operador;
+  - las clasificaciones "probable" de T3 no se han leído en la nota del filing;
+  - el panel de 36 ya está en los golden: la suite tarda unos 80 s.
