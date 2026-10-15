@@ -12,6 +12,13 @@
 - **Nunca borres entradas.** Si algo resultó falso, añade una entrada nueva que lo corrija y enlace a la anterior.
 - Dos tipos de chat: **planificación** (no toca código; decide fases y revisa) y **operador** (escribe código de
   una fase). El operador no salta de fase ni toma decisiones D# por su cuenta: las propone y se detiene.
+- **Sin parches (principio del usuario, 2026-10-15):** "no quiero un modelo con parches. quiero algo real y
+  funcional".
+  - Todo arreglo se declara como **de fondo** (corrige el dato o el método en origen) o como **protección
+    provisional** (tapa un síntoma). Una protección provisional lleva siempre la fase que la sustituye, y esa fase no
+    se cierra mientras siga en pie.
+  - Lo financiero se justifica con práctica estándar citable y se mide contra la fuente oficial (SEC EDGAR); no se
+    añaden reglas para callar una inquietud.
 
 ## Estado actual
 
@@ -163,6 +170,7 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
 | **Revisión externa F1 (BCS):** P/B 0.73x frente a 1.50x "del sector" (bancos de EE. UU.): "descuento profundo −51%". Hace falta referencia por **geografía** (los bancos europeos cotizan estructuralmente más bajo por menor ROE) | planificador, 2026-10-15 | 4 |
 | **Revisión externa F1 (UL):** factor ADR 1.012 frente a 1 oficial (mismo defecto que BCS: recompras en el factor) **2a: medida en F2_DISCREPANCIAS §4, confirmada, sin efecto:** está dentro de la tolerancia del motor y no se aplica. | planificador, 2026-10-15 | 2 |
 | **Prioridad (JNJ):** las reglas de **precedencia de fuentes** (qué fuente manda y con qué periodo) son el núcleo de la fase 2: Finnhub sustituyó el BPA por uno con el trimestre nuevo mientras los estados siguen en junio (periodos mezclados → cambio de nivel en producción) **2a: medida** (JNJ, F2_DISCREPANCIAS §4). Reglas en F2_PRECEDENCIA §1; D2 decidida. | planificador, 2026-10-15 | 2 (alta) |
+| **Principio "sin parches" (usuario, 2026-10-15): la 2b no se cierra mientras sigan en pie las dos protecciones provisionales de la fase 1.** (1) **Dividend yield "sin dato" por la identidad** (`bfc38e9`): tapa el dividendo de Finnhub en moneda local por acción ordinaria (BCS, TSM, NVO, UL y los ADR nuevos) y da un falso positivo en NVDA. Sustituirla por la corrección en origen (moneda, acción ordinaria, factor ADR oficial; F2_PRECEDENCIA §2.2). La identidad queda solo como verificación, con magnitudes equivalentes. (2) **Rango de 52 semanas ampliado con el precio** (`range52_widened`): tapa un rango de la fuente desfasado del precio. Sustituirlo por el rango correcto desde la serie de precios (`lib/price_series.py`, F5prep) o desde la fuente, de la misma sesión que el precio | usuario, 2026-10-15 (registro #20) | 2 (2b, alta) |
 | **Mejora (planificador, F2a):** compromisos relevantes **fuera de balance** como contexto de solidez, sin entrar en las ratios. Caso: MSFT con 329.1 mil millones de arrendamientos firmados y aún no iniciados (centros de datos), ≈ 5× su deuda en balance; AMZN 137.2 mil millones. En XBRL solo aparece el plazo, sin importe: necesita lectura del texto de la nota o fuente alternativa | planificador, 2026-10-15 | 3 |
 | **Nuevo (F3prep, CAT):** deuda de **financieras cautivas** (Cat Financial; también Deere, Ford, GM) dentro de la deuda neta industrial: CAT carga 83.61 $/acción y su DCF directo da −73%. Práctica de analista: excluir la deuda de la financiera (respaldada por su cartera de préstamos) de la deuda industrial. Separar datos (2b) y usarlos (3) | planificador, 2026-10-15 | 2 / 3 |
 | **Nuevo (proceso):** revisión externa al cierre de cada fase: 2–3 tickers **fuera del panel**, contrastados con un analista independiente (como hizo el usuario con BCS). Se añade al protocolo de PLAN_FIABILIDAD §5 | planificador, 2026-10-15 | todas |
