@@ -35,6 +35,7 @@ TICKERS_URL = "https://www.sec.gov/files/company_tickers.json"
 SUBMISSIONS_URL = "https://data.sec.gov/submissions/CIK{cik:010d}.json"
 PERIODIC_FORMS = {"10-Q", "10-Q/A", "10-K", "10-K/A", "10-KT", "20-F", "20-F/A", "40-F", "40-F/A", "6-K", "6-K/A"}
 ANNUAL_OR_QUARTERLY = PERIODIC_FORMS - {"6-K", "6-K/A"}
+USED_FORMS = PERIODIC_FORMS | {"8-K", "8-K/A"}
 
 _cache: Dict[str, Tuple[float, Any]] = {}
 _lock = threading.Lock()
@@ -136,7 +137,9 @@ def filings(cik: int, budget: Budget) -> List[Dict[str, Any]]:
         out = []
         for i, form in enumerate(r.get("form") or []):
             fd = r["filingDate"][i]
-            if fd < E["since"]:
+            # Solo los formularios que se usan (JPM presenta decenas de miles de folletos 424B2: la caché por
+            # proceso no debe crecer con ellos; Render tiene 512 MB).
+            if fd < E["since"] or form not in USED_FORMS:
                 continue
             out.append({"form": form, "filingDate": fd, "reportDate": (r.get("reportDate") or [""] * (i + 1))[i] or None,
                         "items": (r.get("items") or [""] * (i + 1))[i] or "",
