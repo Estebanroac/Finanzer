@@ -361,10 +361,15 @@ def currency_note(cur) -> Optional[str]:
         off = sc.get("official") or {}
         if basis == "oficial":
             dep = off.get("depositary")
-            who = f"factor del depositario, {dep}" if dep and dep != "—" else "factor oficial del emisor"
+            if off.get("origin") == "portada_20f":
+                who = f"factor de la portada del {off.get('source', '').split(' (')[0] or '20-F'} en SEC EDGAR"
+            else:
+                who = f"factor del depositario, {dep}" if dep and dep != "—" else "factor oficial del emisor"
             parts.append("Cifras por acción en la clase que cotiza: "
                          + (f"cada título cotizado equivale a {f:,.0f} {off.get('share_class') or 'acciones'} "
                             f"({who})." if f > 1 else
+                            f"cada título cotizado equivale a {f:g} {off.get('share_class') or 'acciones'} ({who})."
+                            if off.get("adr") else
                             f"los estados cuentan otra clase de acciones, y cada una equivale a {1 / f:,.0f} "
                             f"títulos cotizados ({who})."))
         else:

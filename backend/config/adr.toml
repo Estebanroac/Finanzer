@@ -11,9 +11,12 @@
 
 implied_tolerance = 0.02        # |implícito / oficial − 1| por encima del cual se anota el desfase
 
-# Emisores fuera de la tabla (PROPUESTA de la 2b, pendiente de aprobación del usuario en el punto de parada 1):
-# el implícito se ajusta a la fracción simple más cercana (n o 1/n) si está a ≤ `inferred_tolerance`, declarado
-# "factor inferido, sin verificar con el depositario". Si no, se aplica el implícito tal cual con aviso.
+# Emisores fuera de la tabla (regla aprobada en el punto de parada 1 de la 2b, 2026-10-16):
+#   B. el factor de la portada de su 20-F en EDGAR ("Title of 12(b) Security": "American Depositary Shares, each
+#      representing N shares"; lib/sec_edgar.cover_factor);
+#   A. si la portada no lo dice o EDGAR no responde: el implícito se ajusta a la fracción simple más cercana (n o 1/n)
+#      si está a ≤ `inferred_tolerance`, declarado "factor inferido, sin verificar con el depositario"; si no, se
+#      aplica el implícito tal cual con aviso.
 inferred_tolerance = 0.02
 inferred_max_ratio = 100        # candidatos: 1..100 acciones por título y 1/1..1/100
 

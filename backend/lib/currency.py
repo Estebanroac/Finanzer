@@ -36,6 +36,27 @@ def official_factor(symbol: Optional[str]) -> Optional[Dict[str, Any]]:
     return dict(ent) if ent is not None else None
 
 
+def cover_official(cover: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """Fase 2b (T4, regla B del punto de parada 1): el factor de la portada del 20-F leído de EDGAR
+    (lib/sec_edgar.cover_factor), con la forma de una entrada de config/adr.toml."""
+    if not cover or not cover.get("factor"):
+        return None
+    return {"factor": float(cover["factor"]), "share_class": "acciones ordinarias", "depositary": None, "adr": True,
+            "origin": "portada_20f",
+            "source": f"{cover.get('form')} ({cover.get('date')}), 12(b): \"{cover.get('title')}\" (SEC EDGAR)",
+            "filing": cover.get("accn"), "verified": None}
+
+
+def is_adr(official: Optional[Dict[str, Any]]) -> bool:
+    """La clase que cotiza es un certificado de depósito (ADR/ADS): por la portada del 20-F o por tener depositario
+    en la tabla ("—" = cotiza la acción misma, ASML; BRK-B es otra clase, sin depositario)."""
+    if not official:
+        return False
+    if "adr" in official:
+        return bool(official["adr"])
+    return official.get("depositary") not in (None, "—")
+
+
 def nearest_simple_ratio(x: float) -> Optional[float]:
     """La fracción simple (n o 1/n, n ≤ inferred_max_ratio) más cercana a `x` si está a ≤ inferred_tolerance."""
     if not x or x <= 0:
@@ -214,6 +235,9 @@ class StatementContext:
         self._class_done = False
         self._cache: Dict[str, Any] = {}
         self.row_aliases: Dict[str, list] = {}   # estado -> [(fila canónica, alternativa)]
+        # Fase 2b (T4): factor de la portada del 20-F (SEC EDGAR) para los ADR fuera de config/adr.toml; lo pone
+        # yf_adapter (espera a la etapa 1 del hilo de EDGAR). None: sin EDGAR, regla A.
+        self.cover_lookup = None
 
     # ── preparación (una vez por fetch) ──
     def prepare_fx(self) -> None:
@@ -243,6 +267,12 @@ class StatementContext:
                        "statement_shares_date": str(getattr(when, "date", lambda: when)())}
                       if implied is not None else {})
             official = official_factor(self.symbol)
+            tol = _V["share_class_tolerance"]
+            same_class = implied is not None and 1.0 / tol <= implied <= tol
+            if official is None and self.cover_lookup is not None and not same_class:
+                # Regla B: portada del 20-F (EDGAR). Solo si las clases difieren: una acción de EE. UU. (misma
+                # clase) no espera a EDGAR.
+                official = cover_official(self.cover_lookup())
             if official is not None:
                 self._set_official(official, implied, counts)
                 return
@@ -274,7 +304,8 @@ class StatementContext:
                          f"factor implícito {implied:.3f} frente al oficial {f:g}")}
 
     def _set_inferred(self, implied: float, counts: Dict[str, Any]) -> None:
-        """Fase 2b (T1, propuesta pendiente de aprobación): emisor sin factor oficial en la tabla."""
+        """Fase 2b (T1; regla A, respaldo de la B aprobada en el punto de parada 1): emisor sin factor oficial (ni en
+        la tabla ni en la portada de su 20-F)."""
         tol = _V["share_class_tolerance"]
         base = {"implied": implied, "tolerance": tol, **counts}
         if 1.0 / tol <= implied <= tol:

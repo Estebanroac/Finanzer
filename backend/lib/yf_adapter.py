@@ -120,6 +120,8 @@ def _new_statement_context(symbol: str, price_currency, statement_currency, sour
     from currency import StatementContext
     px_shares = (market_cap / price) if (market_cap and price and price > 0) else shares
     ctx = StatementContext(symbol, price_currency, statement_currency, source, px_shares, yf.Ticker)
+    import sec_edgar
+    ctx.cover_lookup = lambda: sec_edgar.cover_factor_for(symbol)    # fase 2b (T4): regla B del factor ADR
     ctx.prepare_fx()   # CurrencyConversionError si no hay tipo de cambio: no se mezcla
     _STMT_CTX[symbol.upper()] = ctx
     return ctx
@@ -462,10 +464,10 @@ def _apply_edgar(symbol: str, info: Dict[str, Any], ed: Dict[str, Any], hist: Di
 def _foreign_line(cur: Dict[str, Any]) -> bool:
     """Fase 2b: la cotización no es la línea local del emisor (ADR u otra moneda en los estados). Finnhub da entonces
     el dividendo de la línea local, en su moneda y por acción ordinaria, en una unidad que no declara."""
+    from currency import is_adr
     sc = cur.get("share_class") or {}
-    dep = (sc.get("official") or {}).get("depositary")
-    return bool(cur.get("converted")) or bool(sc.get("applied") and (sc.get("basis") != "oficial"
-                                                                     or dep not in (None, "—")))
+    return bool(cur.get("converted")) or bool(sc.get("applied") and sc.get("basis") != "oficial") \
+        or is_adr(sc.get("official") if sc.get("basis") == "oficial" else None)
 
 
 def _apply_dividend(info: Dict[str, Any], hist: Dict[str, Any]) -> None:
@@ -501,8 +503,9 @@ def _apply_dividend(info: Dict[str, Any], hist: Dict[str, Any]) -> None:
                       (src_rate / 100.0 * factor * spot,
                        f"{src_rate:g} céntimos de {fin} por acción × {factor:g} acciones por título × {spot:.4g} "
                        f"{px}/{fin}")]
-    dep = (sc.get("official") or {}).get("depositary")
-    unit = "ADR" if (foreign and (sc.get("applied") and sc.get("basis") != "oficial" or dep not in (None, "—"))) \
+    from currency import is_adr
+    unit = "ADR" if (foreign and (sc.get("applied") and sc.get("basis") != "oficial"
+                                  or is_adr(sc.get("official") if sc.get("basis") == "oficial" else None))) \
         else "título"
     res = dividends.assess(events, as_of, src_rate, src_name, foreign, paid_per_unit, candidates,
                            currency=info.get("currency") or "USD", unit=unit)
