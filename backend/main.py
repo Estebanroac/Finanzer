@@ -408,8 +408,20 @@ def _compute_analysis(symbol: str) -> dict:
                     "inventory_turnover": yr.get("inventoryTurnover"),
                 }
 
+                # Fase 2b (T3, F2_PRECEDENCIA §1, paso 3): una ratio TTM de Finnhub solo entra si casa con el corte, y
+                # aquí solo llegaría cuando el motor no la tiene del corte: no hay con qué casarla, así que no entra
+                # y se anota (es de su propio periodo; JNJ, MU).
+                _fprov = yinfo.get("_provenance") or {}
+                _yr_key = {"current_ratio": "currentRatio", "quick_ratio": "quickRatio", "payout_ratio": "payoutRatio",
+                           "interest_coverage": "interestCoverage", "inventory_turnover": "inventoryTurnover"}
                 for k, v in fallback_map.items():
                     if ratios.get(k) is None and v is not None:
+                        if k in _yr_key and (_fprov.get(f"_yahoo_ratios.{_yr_key[k]}") or {}).get("source") == "finnhub":
+                            _id_flags.append({"field": f"ratios.{k}", "rule": "periodo_incoherente", "action": "aviso",
+                                              "old": v, "new": None,
+                                              "reason": (f"{k} de Finnhub ({v:.4g}) sin dato del corte de los estados "
+                                                         "con que casarlo: es de otro periodo y no entra")})
+                            continue
                         ratios[k] = v
 
                 # PEG de MERCADO (Yahoo defaultKeyStatistics.pegRatio o forwardPEG
@@ -515,7 +527,9 @@ def _compute_analysis(symbol: str) -> dict:
             payout = r("payout_ratio")
             if payout is None:
                 pr_yahoo = yr.get("payoutRatio") if _has_yahoo else None
-                if pr_yahoo is not None:
+                # Fase 2b (T3): el payout TTM de Finnhub no entra sin dato del corte con que casarlo (ver arriba).
+                if pr_yahoo is not None and ((yinfo.get("_provenance") or {}).get("_yahoo_ratios.payoutRatio")
+                                             or {}).get("source") != "finnhub":
                     payout = pr_yahoo
 
             # Dividend yield from Yahoo — check _yahoo_ratios AND main info dict
