@@ -902,4 +902,14 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
     `fuente_oficial`, `official_source_badge` y la fila "Fuente oficial" del anexo.
 - **Abierto / siguiente paso:** aprobación de los golden de T4 (o junto con los de T5–T7 en la parada de T8);
   T5 (deuda coherente con el EBITDA), T6, T7, T8, T9. El arquetipo esperado de MC.PA queda "?" para el usuario.
+- **Comprobaciones pedidas con la aprobación de la parada 1** (llegaron por el coordinador, cita del usuario: "Sí,
+  envíale la respuesta recomendada a la sesión de la 2b."; los golden ya estaban regenerados con la aprobación
+  directa de este chat, `67f784b`):
+  - (i) AAPL, cobertura de intereses sin dato: se trata como **dato ausente**, no como criterio suspendido
+    (`score_coverage.solidez.missing = ["Cobertura de intereses"]`, `not_applicable` vacío; solidez reescalada sobre
+    3 de 4 componentes). No hay nada que corregir;
+  - (ii) ASML, los 3 campos descartados (gastos financieros, dividendos pagados, beneficios retenidos): **no se pueden
+    recuperar del mismo corte**. Sus 6-K trimestrales no llevan XBRL (`isXBRL = 0` desde 2025-10) y EDGAR solo los
+    tiene al 2025-12-31, con el corte en 2026-03-31. El respaldo de T4 los deja sin dato con ese motivo y la confianza
+    baja se mantiene (convergencia no evaluable, estabilidad cíclica y calidad de fuente baja).
 
