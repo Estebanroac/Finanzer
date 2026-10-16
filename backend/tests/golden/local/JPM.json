@@ -175,6 +175,76 @@
     "score": 1.0
   },
   "data_provenance": {
+    "as_of": {
+      "date": "2026-06-30",
+      "fields": {
+        "cash": {
+          "period_end": "2026-06-30",
+          "period_type": "balance"
+        },
+        "depreciation": {
+          "period_end": "2026-06-30",
+          "period_type": "ttm"
+        },
+        "dividendsPaid": {
+          "period_end": "2026-06-30",
+          "period_type": "ttm"
+        },
+        "freeCashflow": {
+          "period_end": "2026-06-30",
+          "period_type": "ttm"
+        },
+        "grossProfits": {
+          "period_end": null,
+          "period_type": "fuente"
+        },
+        "interestExpense": {
+          "period_end": "2026-06-30",
+          "period_type": "ttm"
+        },
+        "longTermDebt": {
+          "period_end": "2026-06-30",
+          "period_type": "balance"
+        },
+        "netIncome": {
+          "period_end": "2026-06-30",
+          "period_type": "ttm"
+        },
+        "operatingCashflow": {
+          "period_end": "2026-06-30",
+          "period_type": "ttm"
+        },
+        "operatingIncome": {
+          "period_end": null,
+          "period_type": "fuente"
+        },
+        "retainedEarnings": {
+          "period_end": "2026-06-30",
+          "period_type": "balance"
+        },
+        "totalAssets": {
+          "period_end": "2026-06-30",
+          "period_type": "balance"
+        },
+        "totalDebt": {
+          "period_end": "2026-06-30",
+          "period_type": "balance"
+        },
+        "totalLiab": {
+          "period_end": "2026-06-30",
+          "period_type": "balance"
+        },
+        "totalRevenue": {
+          "period_end": "2026-06-30",
+          "period_type": "ttm"
+        },
+        "totalStockholderEquity": {
+          "period_end": "2026-06-30",
+          "period_type": "balance"
+        }
+      },
+      "type": "ttm"
+    },
     "currency": {
       "converted": false,
       "price": "USD",
@@ -188,7 +258,9 @@
       },
       "share_class": {
         "applied": false,
+        "basis": "misma_clase",
         "factor": 1.01432798122,
+        "implied": 1.01432798122,
         "price_shares": 2658186134.98,
         "statement_shares": 2696272576.0,
         "statement_shares_date": "2025-12-31",
@@ -196,6 +268,90 @@
       },
       "source": "financialData.financialCurrency",
       "statements": "USD"
+    },
+    "dividend": {
+      "as_of": "2026-10-09",
+      "basis": "declarado",
+      "change": {
+        "date": "2026-10-06",
+        "from": 1.5,
+        "kind": "aumento",
+        "to": 1.65
+      },
+      "currency": "USD",
+      "foreign_line": false,
+      "identity": {
+        "collected_ttm": 6.15,
+        "ok": true,
+        "paid_per_unit_statements": 6.51308791817,
+        "ratio": 1.05903868588
+      },
+      "notes": [
+        "dividendo aumentado el 2026-10-06 (de 1.50 a 1.65 USD por pago)"
+      ],
+      "paid_per_unit_statements": 6.51308791817,
+      "payments": {
+        "basis": "ultimo_x_frecuencia",
+        "change": {
+          "date": "2026-10-06",
+          "from": 1.5,
+          "kind": "aumento",
+          "to": 1.65
+        },
+        "extraordinary": [],
+        "frequency": 4,
+        "last": {
+          "amount": 1.65,
+          "date": "2026-10-06"
+        },
+        "payments": [
+          {
+            "amount": 1.25,
+            "date": "2025-01-06"
+          },
+          {
+            "amount": 1.4,
+            "date": "2025-04-04"
+          },
+          {
+            "amount": 1.4,
+            "date": "2025-07-03"
+          },
+          {
+            "amount": 1.5,
+            "date": "2025-10-06"
+          },
+          {
+            "amount": 1.5,
+            "date": "2026-01-06"
+          },
+          {
+            "amount": 1.5,
+            "date": "2026-04-06"
+          },
+          {
+            "amount": 1.5,
+            "date": "2026-07-06"
+          },
+          {
+            "amount": 1.65,
+            "date": "2026-10-06"
+          }
+        ],
+        "rate": 6.6,
+        "ttm_total": 6.15
+      },
+      "rate": 6.6,
+      "source": "yahoo_quotesummary",
+      "source_name": "yahoo_quotesummary",
+      "source_rate": 6.6,
+      "unit": "título"
+    },
+    "edgar": {
+      "cik": 19617,
+      "reason": null,
+      "status": "ok",
+      "title": "JPMORGAN CHASE & CO"
     },
     "errors": [],
     "fields": {
@@ -272,8 +428,8 @@
         "source": "yfinance_statements"
       },
       "_yahoo_ratios.dividendYield": {
-        "detail": "quoteSummary v10 (con crumb)",
-        "source": "yahoo_quotesummary"
+        "detail": "dividendo indicado / precio",
+        "source": "derivado"
       },
       "_yahoo_ratios.ebitdaMargins": {
         "detail": "quoteSummary v10 (con crumb)",
@@ -352,12 +508,12 @@
         "source": "yfinance_statements"
       },
       "dividendRate": {
-        "detail": "quoteSummary v10 (con crumb)",
+        "detail": "yahoo_quotesummary: indicado declarado, verificado con los pagos",
         "source": "yahoo_quotesummary"
       },
       "dividendYield": {
-        "detail": "quoteSummary v10 (con crumb)",
-        "source": "yahoo_quotesummary"
+        "detail": "dividendo indicado / precio",
+        "source": "derivado"
       },
       "dividendsPaid": {
         "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
@@ -538,10 +694,24 @@
       }
     },
     "path": "yahoo_quotesummary",
+    "pending_results": null,
+    "price_history": {
+      "attempts": 1,
+      "first_date": "2024-10-16",
+      "interval": "1d",
+      "last_date": "2026-10-09",
+      "period": "2y",
+      "reason": null,
+      "rows": 497,
+      "source": "Yahoo Finance (yfinance history: precios sin ajustar por dividendos y eventos)",
+      "status": "ok",
+      "symbol": "JPM"
+    },
     "ttm": {
       "annual_fields": {},
       "balance_date": "2026-06-30",
       "basis": "ttm",
+      "cut": "2026-06-30",
       "eps": "fuente",
       "errors": [],
       "last_quarter_fields": [
@@ -568,15 +738,15 @@
         ]
       },
       "source_fields": {
-        "capitalExpenditures": "'Capital Expenditure' sin dato en alguno de los 4 últimos trimestres",
-        "ebitda": "'EBITDA' sin dato en alguno de los 4 últimos trimestres",
-        "grossProfits": "'Gross Profit' sin dato en alguno de los 4 últimos trimestres",
-        "inventory": "'Inventory' sin dato en el último trimestre",
-        "netInterestIncome": "'Net Non Operating Interest Income Expense' sin dato en alguno de los 4 últimos trimestres",
-        "operatingIncome": "'Operating Income' sin dato en alguno de los 4 últimos trimestres",
-        "stockBasedCompensation": "'Stock Based Compensation' sin dato en alguno de los 4 últimos trimestres",
-        "totalCurrentAssets": "'Current Assets' sin dato en el último trimestre",
-        "totalCurrentLiabilities": "'Current Liabilities' sin dato en el último trimestre"
+        "capitalExpenditures": "'Capital Expenditure' no llega al corte (2026-06-30)",
+        "ebitda": "'EBITDA' no llega al corte (2026-06-30)",
+        "grossProfits": "'Gross Profit' no llega al corte (2026-06-30)",
+        "inventory": "'Inventory' sin dato en el balance del corte (2026-06-30)",
+        "netInterestIncome": "'Net Non Operating Interest Income Expense' no llega al corte (2026-06-30)",
+        "operatingIncome": "'Operating Income' no llega al corte (2026-06-30)",
+        "stockBasedCompensation": "'Stock Based Compensation' no llega al corte (2026-06-30)",
+        "totalCurrentAssets": "'Current Assets' sin dato en el balance del corte (2026-06-30)",
+        "totalCurrentLiabilities": "'Current Liabilities' sin dato en el balance del corte (2026-06-30)"
       },
       "ttm_fields": [
         "depreciation",
@@ -1223,6 +1393,7 @@
     "cover": {
       "archetype": "FINANCIAL",
       "archetype_label": "Banco/aseguradora",
+      "as_of_note": "Estados financieros a 30 de junio de 2026 (últimos doce meses).",
       "categories": [
         {
           "items": [
@@ -1296,6 +1467,7 @@
       "confidence_reasons": [],
       "coverage_notes": [],
       "currency_note": null,
+      "data_notices": [],
       "highlights": [
         {
           "kicker": "FORTALEZA CLAVE",
@@ -1640,7 +1812,7 @@
             "label": "Dividend yield",
             "reading": "—",
             "state": "con_dato",
-            "text": null,
+            "text": "6.60 USD al año por título (último dividendo declarado por su frecuencia); dividendo aumentado el 2026-10-06 (de 1.50 a 1.65 USD por pago)",
             "tone": null,
             "value": "1.98%"
           },

@@ -112,7 +112,7 @@
     "industry": "Banks - Diversified",
     "inputs": {
       "assets_to_revenue": 24.3330932047,
-      "eps_ttm": 24.1507683171,
+      "eps_ttm": 23.34,
       "net_margin_ttm": 0.333829286187,
       "op_margin_detrended_std": null,
       "revenue_cagr_3y": 0.124970522941,
@@ -160,22 +160,19 @@
       },
       "source": {
         "finnhub_fields": [
-          "_yahoo_ratios.dividendYield",
           "_yahoo_ratios.forwardPE",
           "_yahoo_ratios.payoutRatio",
           "_yahoo_ratios.pegRatio",
           "beta",
           "dividendRate",
-          "dividendYield",
           "earningsGrowth",
           "forwardPE",
-          "payoutRatio",
-          "trailingPE"
+          "payoutRatio"
         ],
         "issues": 1,
         "level": "media",
         "reasons": [
-          "11 campos de Finnhub en lugar de los estados"
+          "8 campos de Finnhub en lugar de los estados"
         ]
       },
       "stability": {
@@ -186,11 +183,73 @@
     "level": "alta",
     "limits_score": false,
     "reasons": [
-      "calidad de fuente media: 11 campos de Finnhub en lugar de los estados"
+      "calidad de fuente media: 8 campos de Finnhub en lugar de los estados"
     ],
     "score": 0.9
   },
   "data_provenance": {
+    "as_of": {
+      "date": "2026-06-30",
+      "fields": {
+        "cash": {
+          "period_end": "2026-06-30",
+          "period_type": "balance"
+        },
+        "depreciation": {
+          "period_end": "2026-06-30",
+          "period_type": "ttm"
+        },
+        "dividendsPaid": {
+          "period_end": "2026-06-30",
+          "period_type": "ttm"
+        },
+        "freeCashflow": {
+          "period_end": "2026-06-30",
+          "period_type": "ttm"
+        },
+        "interestExpense": {
+          "period_end": "2026-06-30",
+          "period_type": "ttm"
+        },
+        "longTermDebt": {
+          "period_end": "2026-06-30",
+          "period_type": "balance"
+        },
+        "netIncome": {
+          "period_end": "2026-06-30",
+          "period_type": "ttm"
+        },
+        "operatingCashflow": {
+          "period_end": "2026-06-30",
+          "period_type": "ttm"
+        },
+        "retainedEarnings": {
+          "period_end": "2026-06-30",
+          "period_type": "balance"
+        },
+        "totalAssets": {
+          "period_end": "2026-06-30",
+          "period_type": "balance"
+        },
+        "totalDebt": {
+          "period_end": "2026-06-30",
+          "period_type": "balance"
+        },
+        "totalLiab": {
+          "period_end": "2026-06-30",
+          "period_type": "balance"
+        },
+        "totalRevenue": {
+          "period_end": "2026-06-30",
+          "period_type": "ttm"
+        },
+        "totalStockholderEquity": {
+          "period_end": "2026-06-30",
+          "period_type": "balance"
+        }
+      },
+      "type": "ttm"
+    },
     "currency": {
       "converted": false,
       "price": "USD",
@@ -204,7 +263,9 @@
       },
       "share_class": {
         "applied": false,
+        "basis": "misma_clase",
         "factor": 1.01531577647,
+        "implied": 1.01531577647,
         "price_shares": 2655600000.0,
         "statement_shares": 2696272576.0,
         "statement_shares_date": "2025-12-31",
@@ -212,6 +273,90 @@
       },
       "source": "fundamentals-timeseries (currencyCode)",
       "statements": "USD"
+    },
+    "dividend": {
+      "as_of": "2026-10-14",
+      "basis": "declarado",
+      "change": {
+        "date": "2026-10-06",
+        "from": 1.5,
+        "kind": "aumento",
+        "to": 1.65
+      },
+      "currency": "USD",
+      "foreign_line": false,
+      "identity": {
+        "collected_ttm": 6.15,
+        "ok": true,
+        "paid_per_unit_statements": 6.51943063714,
+        "ratio": 1.0600700223
+      },
+      "notes": [
+        "dividendo aumentado el 2026-10-06 (de 1.50 a 1.65 USD por pago)"
+      ],
+      "paid_per_unit_statements": 6.51943063714,
+      "payments": {
+        "basis": "ultimo_x_frecuencia",
+        "change": {
+          "date": "2026-10-06",
+          "from": 1.5,
+          "kind": "aumento",
+          "to": 1.65
+        },
+        "extraordinary": [],
+        "frequency": 4,
+        "last": {
+          "amount": 1.65,
+          "date": "2026-10-06"
+        },
+        "payments": [
+          {
+            "amount": 1.25,
+            "date": "2025-01-06"
+          },
+          {
+            "amount": 1.4,
+            "date": "2025-04-04"
+          },
+          {
+            "amount": 1.4,
+            "date": "2025-07-03"
+          },
+          {
+            "amount": 1.5,
+            "date": "2025-10-06"
+          },
+          {
+            "amount": 1.5,
+            "date": "2026-01-06"
+          },
+          {
+            "amount": 1.5,
+            "date": "2026-04-06"
+          },
+          {
+            "amount": 1.5,
+            "date": "2026-07-06"
+          },
+          {
+            "amount": 1.65,
+            "date": "2026-10-06"
+          }
+        ],
+        "rate": 6.6,
+        "ttm_total": 6.15
+      },
+      "rate": 6.6,
+      "source": "finnhub",
+      "source_name": "finnhub",
+      "source_rate": 6.6,
+      "unit": "título"
+    },
+    "edgar": {
+      "cik": 19617,
+      "reason": null,
+      "status": "ok",
+      "title": "JPMORGAN CHASE & CO"
     },
     "errors": [],
     "fields": {
@@ -284,8 +429,8 @@
         "source": "yfinance_statements"
       },
       "_yahoo_ratios.dividendYield": {
-        "detail": "/stock/metric",
-        "source": "finnhub"
+        "detail": "dividendo indicado / precio",
+        "source": "derivado"
       },
       "_yahoo_ratios.forwardPE": {
         "detail": "/stock/metric",
@@ -324,12 +469,12 @@
         "source": "yfinance_statements"
       },
       "dividendRate": {
-        "detail": "/stock/metric",
+        "detail": "finnhub: indicado declarado, verificado con los pagos",
         "source": "finnhub"
       },
       "dividendYield": {
-        "detail": "/stock/metric",
-        "source": "finnhub"
+        "detail": "dividendo indicado / precio",
+        "source": "derivado"
       },
       "dividendsPaid": {
         "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
@@ -469,29 +614,47 @@
         "source": "yfinance_statements"
       },
       "trailingEps": {
-        "detail": "BPA TTM = beneficio neto TTM / acciones diluidas medias del último trimestre",
+        "detail": "BPA TTM = suma de los BPA diluidos de los 4 trimestres del corte",
         "source": "derivado"
-      },
-      "trailingPE": {
-        "detail": "/stock/metric",
-        "source": "finnhub"
       }
     },
     "path": "plan_b_yfinance",
+    "pending_results": {
+      "accn": "0001628280-26-065582",
+      "as_of": "2026-06-30",
+      "date": "2026-10-13",
+      "form": "8-K",
+      "items": "2.02,9.01",
+      "report_date": "2026-10-13",
+      "source": "SEC EDGAR"
+    },
+    "price_history": {
+      "attempts": 1,
+      "first_date": "2024-10-16",
+      "interval": "1d",
+      "last_date": "2026-10-14",
+      "period": "2y",
+      "reason": null,
+      "rows": 500,
+      "source": "Yahoo Finance (yfinance history: precios sin ajustar por dividendos y eventos)",
+      "status": "ok",
+      "symbol": "JPM"
+    },
     "ttm": {
       "annual_fields": {
-        "capitalExpenditures": "'Capital Expenditure' sin dato en alguno de los 4 últimos trimestres",
-        "ebitda": "'EBITDA' sin dato en alguno de los 4 últimos trimestres",
-        "grossProfits": "'Gross Profit' sin dato en alguno de los 4 últimos trimestres",
-        "inventory": "'Inventory' sin dato en el último trimestre",
-        "netInterestIncome": "'Net Non Operating Interest Income Expense' sin dato en alguno de los 4 últimos trimestres",
-        "operatingIncome": "'Operating Income' sin dato en alguno de los 4 últimos trimestres",
-        "stockBasedCompensation": "'Stock Based Compensation' sin dato en alguno de los 4 últimos trimestres",
-        "totalCurrentAssets": "'Current Assets' sin dato en el último trimestre",
-        "totalCurrentLiabilities": "'Current Liabilities' sin dato en el último trimestre"
+        "capitalExpenditures": "'Capital Expenditure' no llega al corte (2026-06-30)",
+        "ebitda": "'EBITDA' no llega al corte (2026-06-30)",
+        "grossProfits": "'Gross Profit' no llega al corte (2026-06-30)",
+        "inventory": "'Inventory' sin dato en el balance del corte (2026-06-30)",
+        "netInterestIncome": "'Net Non Operating Interest Income Expense' no llega al corte (2026-06-30)",
+        "operatingIncome": "'Operating Income' no llega al corte (2026-06-30)",
+        "stockBasedCompensation": "'Stock Based Compensation' no llega al corte (2026-06-30)",
+        "totalCurrentAssets": "'Current Assets' sin dato en el balance del corte (2026-06-30)",
+        "totalCurrentLiabilities": "'Current Liabilities' sin dato en el balance del corte (2026-06-30)"
       },
       "balance_date": "2026-06-30",
       "basis": "ttm",
+      "cut": "2026-06-30",
       "eps": "ttm",
       "errors": [],
       "last_quarter_fields": [
@@ -531,6 +694,14 @@
   },
   "data_validation": [
     {
+      "action": "aviso",
+      "field": "trailingEps",
+      "new": null,
+      "old": 23.8691,
+      "reason": "BPA TTM de Finnhub 23.8691 no casa con el del corte de los estados (23.34 a 2026-06-30): es de otro periodo y no entra",
+      "rule": "periodo_incoherente"
+    },
+    {
       "action": "politica",
       "field": "revenueGrowth",
       "new": 0.0732298939441,
@@ -556,7 +727,7 @@
         },
         {
           "label": "Confianza · Calidad de fuente (media)",
-          "text": "11 campos de Finnhub en lugar de los estados"
+          "text": "8 campos de Finnhub en lugar de los estados"
         }
       ],
       "title": "Detalle técnico para auditoría"
@@ -1175,6 +1346,7 @@
     "cover": {
       "archetype": "FINANCIAL",
       "archetype_label": "Banco/aseguradora",
+      "as_of_note": "Estados financieros a 30 de junio de 2026 (últimos doce meses).",
       "categories": [
         {
           "items": [
@@ -1250,6 +1422,9 @@
       ],
       "coverage_notes": [],
       "currency_note": null,
+      "data_notices": [
+        "La empresa publicó resultados el 13 de octubre de 2026; este análisis aún no los incorpora."
+      ],
       "highlights": [
         {
           "kicker": "FORTALEZA CLAVE",
@@ -1586,7 +1761,7 @@
             "label": "Dividend yield",
             "reading": "—",
             "state": "con_dato",
-            "text": null,
+            "text": "6.60 USD al año por título (último dividendo declarado por su frecuencia); dividendo aumentado el 2026-10-06 (de 1.50 a 1.65 USD por pago)",
             "tone": null,
             "value": "1.97%"
           },
@@ -1904,7 +2079,7 @@
           ],
           [
             "EPS",
-            "$24.15",
+            "$23.34",
             "Valor en libros / acción",
             "$141.06"
           ]
@@ -3068,8 +3243,8 @@
     "normalized_net_income": 63304845092.3,
     "one_off_net": 1762154907.7,
     "one_off_pct": 0.0270821600459,
-    "pe_normalized": 14.2692296521,
-    "pe_reported": 13.8827880909,
+    "pe_normalized": 14.7649040013,
+    "pe_reported": 14.3650385081,
     "pe_unreliable": false,
     "reported_net_income": 65067000000.0,
     "used_in_score": true
@@ -3146,11 +3321,11 @@
     "debt_to_assets": 0.106270322502,
     "dividend_yield": 0.0196850394417,
     "earnings_growth": 0.1948,
-    "earnings_yield": 0.072031640435,
+    "earnings_yield": 0.0696134576622,
     "ebitda": null,
     "ebitda_margin": null,
     "enterprise_value": 1113511564760.0,
-    "eps": 24.1507683171,
+    "eps": 23.34,
     "ev_ebitda": null,
     "ev_revenue": 5.71292315343,
     "fcf_yield": -0.182546670993,
@@ -3178,8 +3353,8 @@
     "payout_basis": "beneficio_neto",
     "payout_ratio": 0.26607957951,
     "pb": 2.37686684061,
-    "pe": 13.8827880909,
-    "pe_normalized": 14.2692296521,
+    "pe": 14.3650385081,
+    "pe_normalized": 14.7649040013,
     "peg": 1.34707,
     "pfcf": null,
     "price_52w_high": 366.5,
@@ -3356,11 +3531,11 @@
     "debt_to_assets": 0.106270322502,
     "debt_to_equity": 1.42273316996,
     "dividend_yield": 0.0196850394417,
-    "earnings_yield": 0.072031640435,
+    "earnings_yield": 0.0696134576622,
     "ebitda": null,
     "ebitda_margin": null,
     "enterprise_value": 1113511564760.0,
-    "eps": 24.1507683171,
+    "eps": 23.34,
     "ev_ebitda": null,
     "ev_fcf": null,
     "ev_revenue": 5.71292315343,
@@ -3371,7 +3546,7 @@
     "ffo_payout": 0.232923892424,
     "ffo_per_share": 27.989531556,
     "forward_pe": 13.57398,
-    "graham_number": 276.858672427,
+    "graham_number": 272.171772791,
     "gross_margin": null,
     "interest_coverage": null,
     "inventory_turnover": null,
@@ -3386,7 +3561,7 @@
     "p_ffo": 11.9787642072,
     "payout_ratio": 0.26607957951,
     "pb": 2.37686684061,
-    "pe": 13.8827880909,
+    "pe": 14.3650385081,
     "peg": 1.34707,
     "ps": 4.56808268778,
     "quick_ratio": null,

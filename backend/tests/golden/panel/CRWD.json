@@ -182,17 +182,15 @@
           "_yahoo_ratios.pegRatio",
           "_yahoo_ratios.quickRatio",
           "beta",
-          "dividendRate",
           "forwardPE",
           "revenueGrowth"
         ],
-        "issues": 4,
+        "issues": 3,
         "level": "baja",
         "reasons": [
           "validación: trailingEps (pe_implausible)",
-          "validación: trailingPE (pe_implausible)",
           "beneficio normalizado con ítems inferidos (confianza media)",
-          "9 campos de Finnhub en lugar de los estados"
+          "8 campos de Finnhub en lugar de los estados"
         ]
       },
       "stability": {
@@ -204,17 +202,109 @@
     "limits_score": false,
     "reasons": [
       "convergencia no evaluable: un solo método evaluable (múltiplos frente al sector): no hay contraste; no evaluable: DCF (fiabilidad baja)",
-      "calidad de fuente baja: validación: trailingEps (pe_implausible); validación: trailingPE (pe_implausible); beneficio normalizado con ítems inferidos (confianza media); 9 campos de Finnhub en lugar de los estados"
+      "calidad de fuente baja: validación: trailingEps (pe_implausible); beneficio normalizado con ítems inferidos (confianza media); 8 campos de Finnhub en lugar de los estados"
     ],
     "score": 0.666666666667
   },
   "data_provenance": {
+    "as_of": {
+      "date": "2026-07-31",
+      "fields": {
+        "capitalExpenditures": {
+          "period_end": "2026-07-31",
+          "period_type": "ttm"
+        },
+        "cash": {
+          "period_end": "2026-07-31",
+          "period_type": "balance"
+        },
+        "depreciation": {
+          "period_end": "2026-07-31",
+          "period_type": "ttm"
+        },
+        "ebitda": {
+          "period_end": "2026-07-31",
+          "period_type": "ttm"
+        },
+        "freeCashflow": {
+          "period_end": "2026-07-31",
+          "period_type": "ttm"
+        },
+        "grossProfits": {
+          "period_end": "2026-07-31",
+          "period_type": "ttm"
+        },
+        "interestExpense": {
+          "period_end": "2026-07-31",
+          "period_type": "ttm"
+        },
+        "longTermDebt": {
+          "period_end": "2026-07-31",
+          "period_type": "balance"
+        },
+        "netIncome": {
+          "period_end": "2026-07-31",
+          "period_type": "ttm"
+        },
+        "netInterestIncome": {
+          "period_end": "2026-07-31",
+          "period_type": "ttm"
+        },
+        "operatingCashflow": {
+          "period_end": "2026-07-31",
+          "period_type": "ttm"
+        },
+        "operatingIncome": {
+          "period_end": "2026-07-31",
+          "period_type": "ttm"
+        },
+        "retainedEarnings": {
+          "period_end": "2026-07-31",
+          "period_type": "balance"
+        },
+        "stockBasedCompensation": {
+          "period_end": "2026-07-31",
+          "period_type": "ttm"
+        },
+        "totalAssets": {
+          "period_end": "2026-07-31",
+          "period_type": "balance"
+        },
+        "totalCurrentAssets": {
+          "period_end": "2026-07-31",
+          "period_type": "balance"
+        },
+        "totalCurrentLiabilities": {
+          "period_end": "2026-07-31",
+          "period_type": "balance"
+        },
+        "totalDebt": {
+          "period_end": "2026-07-31",
+          "period_type": "balance"
+        },
+        "totalLiab": {
+          "period_end": "2026-07-31",
+          "period_type": "balance"
+        },
+        "totalRevenue": {
+          "period_end": "2026-07-31",
+          "period_type": "ttm"
+        },
+        "totalStockholderEquity": {
+          "period_end": "2026-07-31",
+          "period_type": "balance"
+        }
+      },
+      "type": "ttm"
+    },
     "currency": {
       "converted": false,
       "price": "USD",
       "share_class": {
         "applied": false,
+        "basis": "misma_clase",
         "factor": 0.989762198169,
+        "implied": 0.989762198169,
         "price_shares": 1023934842.0,
         "statement_shares": 1013452000.0,
         "statement_shares_date": "2026-01-31",
@@ -222,6 +312,30 @@
       },
       "source": "fundamentals-timeseries (currencyCode)",
       "statements": "USD"
+    },
+    "dividend": {
+      "as_of": "2026-10-14",
+      "basis": "sin_dividendo",
+      "currency": "USD",
+      "foreign_line": false,
+      "notes": [],
+      "paid_per_unit_statements": null,
+      "payments": {
+        "rate": null,
+        "reason": "la serie de precios no declara dividendos en los últimos 2 años"
+      },
+      "rate": 0.0,
+      "reason": "no paga dividendos (sin pagos en 2 años ni en los estados)",
+      "source": "sin_dividendo",
+      "source_name": "finnhub",
+      "source_rate": 0.0,
+      "unit": "título"
+    },
+    "edgar": {
+      "cik": 1535527,
+      "reason": null,
+      "status": "ok",
+      "title": "CrowdStrike Holdings, Inc."
     },
     "errors": [],
     "fields": {
@@ -317,6 +431,10 @@
         "detail": "/stock/metric",
         "source": "finnhub"
       },
+      "_yahoo_ratios.dividendYield": {
+        "detail": "dividendo indicado / precio",
+        "source": "derivado"
+      },
       "_yahoo_ratios.forwardPE": {
         "detail": "/stock/metric",
         "source": "finnhub"
@@ -362,12 +480,12 @@
         "source": "yfinance_statements"
       },
       "dividendRate": {
-        "detail": "/stock/metric",
-        "source": "finnhub"
+        "detail": "no paga dividendos: sin pagos en 2 años ni dividendos en los estados",
+        "source": "derivado"
       },
       "dividendYield": {
-        "detail": "la fuente no lo devolvió",
-        "source": "sin_dato"
+        "detail": "dividendo indicado / precio",
+        "source": "derivado"
       },
       "earningsGrowth": {
         "detail": "la fuente no lo devolvió",
@@ -528,24 +646,33 @@
         "source": "yfinance_statements"
       },
       "trailingEps": {
-        "detail": "P/E de 4,454x (precio 249.29 / BPA 0.05597) fuera de [1x, 1000x]: BPA en otra clase o moneda; no puntúa",
-        "rule": "pe_implausible",
-        "source": "sin_dato"
-      },
-      "trailingPE": {
-        "detail": "P/E de la fuente sobre el mismo BPA; no puntúa",
+        "detail": "P/E de 6,232x (precio 249.29 / BPA 0.04) fuera de [1x, 1000x]: BPA en otra clase o moneda; no puntúa",
         "rule": "pe_implausible",
         "source": "sin_dato"
       }
     },
     "path": "plan_b_yfinance",
+    "pending_results": null,
+    "price_history": {
+      "attempts": 1,
+      "first_date": "2024-10-16",
+      "interval": "1d",
+      "last_date": "2026-10-14",
+      "period": "2y",
+      "reason": null,
+      "rows": 500,
+      "source": "Yahoo Finance (yfinance history: precios sin ajustar por dividendos y eventos)",
+      "status": "ok",
+      "symbol": "CRWD"
+    },
     "ttm": {
       "annual_fields": {
-        "dividendsPaid": "'Common Stock Dividend Paid' sin dato en alguno de los 4 últimos trimestres",
-        "inventory": "'Inventory' sin dato en el último trimestre"
+        "dividendsPaid": "'Common Stock Dividend Paid' no llega al corte (2026-07-31)",
+        "inventory": "'Inventory' sin dato en el balance del corte (2026-07-31)"
       },
       "balance_date": "2026-07-31",
       "basis": "ttm",
+      "cut": "2026-07-31",
       "eps": "ttm",
       "errors": [],
       "last_quarter_fields": [
@@ -592,20 +719,28 @@
   },
   "data_validation": [
     {
-      "action": "invalido",
+      "action": "aviso",
       "field": "trailingEps",
       "new": null,
-      "old": 0.055971024511,
-      "reason": "P/E de 4,454x (precio 249.29 / BPA 0.05597) fuera de [1x, 1000x]: BPA en otra clase o moneda; no puntúa",
-      "rule": "pe_implausible"
+      "old": 0.057,
+      "reason": "BPA TTM de Finnhub 0.057 no casa con el del corte de los estados (0.04 a 2026-07-31): es de otro periodo y no entra",
+      "rule": "periodo_incoherente"
     },
     {
       "action": "invalido",
-      "field": "trailingPE",
+      "field": "trailingEps",
       "new": null,
-      "old": 4586.7763,
-      "reason": "P/E de la fuente sobre el mismo BPA; no puntúa",
+      "old": 0.04,
+      "reason": "P/E de 6,232x (precio 249.29 / BPA 0.04) fuera de [1x, 1000x]: BPA en otra clase o moneda; no puntúa",
       "rule": "pe_implausible"
+    },
+    {
+      "action": "aviso",
+      "field": "ratios.quick_ratio",
+      "new": null,
+      "old": 1.4542,
+      "reason": "quick_ratio de Finnhub (1.454) sin dato del corte de los estados con que casarlo: es de otro periodo y no entra",
+      "rule": "periodo_incoherente"
     },
     {
       "action": "sin_dato",
@@ -668,7 +803,7 @@
         },
         {
           "label": "Confianza · Calidad de fuente (baja)",
-          "text": "validación: trailingEps (pe_implausible); validación: trailingPE (pe_implausible); beneficio normalizado con ítems inferidos (confianza media); 9 campos de Finnhub en lugar de los estados"
+          "text": "validación: trailingEps (pe_implausible); beneficio normalizado con ítems inferidos (confianza media); 8 campos de Finnhub en lugar de los estados"
         }
       ],
       "title": "Detalle técnico para auditoría"
@@ -1679,11 +1814,6 @@
         {
           "dimension": "calidad de fuente",
           "level": "baja",
-          "text": "Un dato de la fuente no superó la validación y se corrigió o se descartó."
-        },
-        {
-          "dimension": "calidad de fuente",
-          "level": "baja",
           "text": "El beneficio se ajustó por partidas extraordinarias identificadas de forma indirecta."
         },
         {
@@ -1699,6 +1829,7 @@
     "cover": {
       "archetype": "MATURE",
       "archetype_label": "Madura",
+      "as_of_note": "Estados financieros a 31 de julio de 2026 (últimos doce meses).",
       "categories": [
         {
           "items": [
@@ -1776,6 +1907,7 @@
       ],
       "coverage_notes": [],
       "currency_note": null,
+      "data_notices": [],
       "highlights": [
         {
           "kicker": "FORTALEZA CLAVE",
@@ -2438,63 +2570,63 @@
         ],
         "piotroski_criteria": [
           {
-            "detail": "ROA negativo",
+            "detail": "FY2026: ROA negativo",
             "key": "roa_positive",
             "label": "ROA positivo",
             "status": "No cumple",
             "tone": "neg"
           },
           {
-            "detail": "Flujo de caja operativo positivo",
+            "detail": "FY2026: Flujo de caja operativo positivo",
             "key": "cfo_positive",
             "label": "Flujo de caja operativo positivo",
             "status": "Cumple",
             "tone": "pos"
           },
           {
-            "detail": "El ROA no mejoró",
+            "detail": "FY2026: El ROA no mejoró",
             "key": "roa_improved",
             "label": "ROA en mejora",
             "status": "No cumple",
             "tone": "neg"
           },
           {
-            "detail": "El flujo operativo supera al beneficio neto (beneficio de calidad)",
+            "detail": "FY2026: El flujo operativo supera al beneficio neto (beneficio de calidad)",
             "key": "earnings_quality",
             "label": "Calidad del beneficio (flujo operativo frente a beneficio neto)",
             "status": "Cumple",
             "tone": "pos"
           },
           {
-            "detail": "La deuda a largo plazo aumentó",
+            "detail": "FY2026: La deuda a largo plazo aumentó",
             "key": "debt_reduced",
             "label": "Reducción de deuda a largo plazo",
             "status": "No cumple",
             "tone": "neg"
           },
           {
-            "detail": "La liquidez (current ratio) mejoró",
+            "detail": "FY2026: La liquidez (current ratio) mejoró",
             "key": "current_ratio_improved",
             "label": "Liquidez en mejora",
             "status": "Cumple",
             "tone": "pos"
           },
           {
-            "detail": "Emitió nuevas acciones (dilución)",
+            "detail": "FY2026: Emitió nuevas acciones (dilución)",
             "key": "no_dilution",
             "label": "Sin dilución de acciones",
             "status": "No cumple",
             "tone": "neg"
           },
           {
-            "detail": "El margen bruto no mejoró",
+            "detail": "FY2026: El margen bruto no mejoró",
             "key": "gross_margin_improved",
             "label": "Margen bruto en mejora",
             "status": "No cumple",
             "tone": "neg"
           },
           {
-            "detail": "La rotación de activos no mejoró",
+            "detail": "FY2026: La rotación de activos no mejoró",
             "key": "asset_turnover_improved",
             "label": "Rotación de activos en mejora",
             "status": "No cumple",
@@ -2638,17 +2770,6 @@
             "text": "la posición de liquidez es sólida (current ratio 1.57x)",
             "tone": "pos",
             "value": "1.57x"
-          },
-          {
-            "bench": null,
-            "gap": null,
-            "key": "quick_ratio",
-            "label": "Quick ratio",
-            "reading": "—",
-            "state": "con_dato",
-            "text": null,
-            "tone": null,
-            "value": "1.45x"
           },
           {
             "bench": null,
@@ -4497,7 +4618,7 @@
     "price_52w_high": 286.989990234,
     "price_52w_low": 85.6800003052,
     "ps": 47.3035305552,
-    "quick_ratio": 1.4542,
+    "quick_ratio": null,
     "revenue": 5396145000.0,
     "revenue_growth": 0.243,
     "roa": 0.00486153805725,
@@ -4695,7 +4816,7 @@
     "pe": 4366.34809934,
     "peg": 5.60309,
     "ps": 47.3035305552,
-    "quick_ratio": 1.4542,
+    "quick_ratio": null,
     "roa": 0.00486153805725,
     "roe": 0.0114588715501,
     "roic": null

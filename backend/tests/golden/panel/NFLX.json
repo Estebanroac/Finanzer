@@ -121,7 +121,7 @@
     "industry": "Entertainment",
     "inputs": {
       "assets_to_revenue": 1.23048378157,
-      "eps_ttm": 3.20316382325,
+      "eps_ttm": 3.177,
       "net_margin_ttm": 0.28218785215,
       "op_margin_detrended_std": 0.0104249309892,
       "revenue_cagr_3y": 0.126397183714,
@@ -175,17 +175,15 @@
           "_yahoo_ratios.pegRatio",
           "_yahoo_ratios.quickRatio",
           "beta",
-          "dividendRate",
           "earningsGrowth",
           "forwardPE",
-          "revenueGrowth",
-          "trailingPE"
+          "revenueGrowth"
         ],
         "issues": 2,
         "level": "media",
         "reasons": [
           "beneficio normalizado con ítems inferidos (confianza media)",
-          "11 campos de Finnhub en lugar de los estados"
+          "9 campos de Finnhub en lugar de los estados"
         ]
       },
       "stability": {
@@ -197,17 +195,109 @@
     "limits_score": false,
     "reasons": [
       "convergencia media: uno lo ve en precio y otro con dirección: no coinciden, sin oponerse",
-      "calidad de fuente media: beneficio normalizado con ítems inferidos (confianza media); 11 campos de Finnhub en lugar de los estados"
+      "calidad de fuente media: beneficio normalizado con ítems inferidos (confianza media); 9 campos de Finnhub en lugar de los estados"
     ],
     "score": 0.7
   },
   "data_provenance": {
+    "as_of": {
+      "date": "2026-06-30",
+      "fields": {
+        "capitalExpenditures": {
+          "period_end": "2026-06-30",
+          "period_type": "ttm"
+        },
+        "cash": {
+          "period_end": "2026-06-30",
+          "period_type": "balance"
+        },
+        "depreciation": {
+          "period_end": "2026-06-30",
+          "period_type": "ttm"
+        },
+        "ebitda": {
+          "period_end": "2026-06-30",
+          "period_type": "ttm"
+        },
+        "freeCashflow": {
+          "period_end": "2026-06-30",
+          "period_type": "ttm"
+        },
+        "grossProfits": {
+          "period_end": "2026-06-30",
+          "period_type": "ttm"
+        },
+        "interestExpense": {
+          "period_end": "2026-06-30",
+          "period_type": "ttm"
+        },
+        "longTermDebt": {
+          "period_end": "2026-06-30",
+          "period_type": "balance"
+        },
+        "netIncome": {
+          "period_end": "2026-06-30",
+          "period_type": "ttm"
+        },
+        "netInterestIncome": {
+          "period_end": "2026-06-30",
+          "period_type": "ttm"
+        },
+        "operatingCashflow": {
+          "period_end": "2026-06-30",
+          "period_type": "ttm"
+        },
+        "operatingIncome": {
+          "period_end": "2026-06-30",
+          "period_type": "ttm"
+        },
+        "retainedEarnings": {
+          "period_end": "2026-06-30",
+          "period_type": "balance"
+        },
+        "stockBasedCompensation": {
+          "period_end": "2026-06-30",
+          "period_type": "ttm"
+        },
+        "totalAssets": {
+          "period_end": "2026-06-30",
+          "period_type": "balance"
+        },
+        "totalCurrentAssets": {
+          "period_end": "2026-06-30",
+          "period_type": "balance"
+        },
+        "totalCurrentLiabilities": {
+          "period_end": "2026-06-30",
+          "period_type": "balance"
+        },
+        "totalDebt": {
+          "period_end": "2026-06-30",
+          "period_type": "balance"
+        },
+        "totalLiab": {
+          "period_end": "2026-06-30",
+          "period_type": "balance"
+        },
+        "totalRevenue": {
+          "period_end": "2026-06-30",
+          "period_type": "ttm"
+        },
+        "totalStockholderEquity": {
+          "period_end": "2026-06-30",
+          "period_type": "balance"
+        }
+      },
+      "type": "ttm"
+    },
     "currency": {
       "converted": false,
       "price": "USD",
       "share_class": {
         "applied": false,
+        "basis": "misma_clase",
         "factor": 1.01398254502,
+        "implied": 1.01398254502,
         "price_shares": 4163939676.0,
         "statement_shares": 4222162150.0,
         "statement_shares_date": "2025-12-31",
@@ -215,6 +305,30 @@
       },
       "source": "fundamentals-timeseries (currencyCode)",
       "statements": "USD"
+    },
+    "dividend": {
+      "as_of": "2026-10-14",
+      "basis": "sin_dividendo",
+      "currency": "USD",
+      "foreign_line": false,
+      "notes": [],
+      "paid_per_unit_statements": null,
+      "payments": {
+        "rate": null,
+        "reason": "la serie de precios no declara dividendos en los últimos 2 años"
+      },
+      "rate": 0.0,
+      "reason": "no paga dividendos (sin pagos en 2 años ni en los estados)",
+      "source": "sin_dividendo",
+      "source_name": "finnhub",
+      "source_rate": 0.0,
+      "unit": "título"
+    },
+    "edgar": {
+      "cik": 1065280,
+      "reason": null,
+      "status": "ok",
+      "title": "NETFLIX INC"
     },
     "errors": [],
     "fields": {
@@ -310,6 +424,10 @@
         "detail": "/stock/metric",
         "source": "finnhub"
       },
+      "_yahoo_ratios.dividendYield": {
+        "detail": "dividendo indicado / precio",
+        "source": "derivado"
+      },
       "_yahoo_ratios.forwardPE": {
         "detail": "/stock/metric",
         "source": "finnhub"
@@ -355,12 +473,12 @@
         "source": "yfinance_statements"
       },
       "dividendRate": {
-        "detail": "/stock/metric",
-        "source": "finnhub"
+        "detail": "no paga dividendos: sin pagos en 2 años ni dividendos en los estados",
+        "source": "derivado"
       },
       "dividendYield": {
-        "detail": "la fuente no lo devolvió",
-        "source": "sin_dato"
+        "detail": "dividendo indicado / precio",
+        "source": "derivado"
       },
       "earningsGrowth": {
         "detail": "/stock/metric",
@@ -511,22 +629,32 @@
         "source": "yfinance_statements"
       },
       "trailingEps": {
-        "detail": "BPA TTM = beneficio neto TTM / acciones diluidas medias del último trimestre",
+        "detail": "BPA TTM = suma de los BPA diluidos de los 4 trimestres del corte",
         "source": "derivado"
-      },
-      "trailingPE": {
-        "detail": "/stock/metric",
-        "source": "finnhub"
       }
     },
     "path": "plan_b_yfinance",
+    "pending_results": null,
+    "price_history": {
+      "attempts": 1,
+      "first_date": "2024-10-16",
+      "interval": "1d",
+      "last_date": "2026-10-14",
+      "period": "2y",
+      "reason": null,
+      "rows": 500,
+      "source": "Yahoo Finance (yfinance history: precios sin ajustar por dividendos y eventos)",
+      "status": "ok",
+      "symbol": "NFLX"
+    },
     "ttm": {
       "annual_fields": {
-        "dividendsPaid": "'Common Stock Dividend Paid' sin dato en alguno de los 4 últimos trimestres",
-        "inventory": "'Inventory' sin dato en el último trimestre"
+        "dividendsPaid": "'Common Stock Dividend Paid' no llega al corte (2026-06-30)",
+        "inventory": "'Inventory' sin dato en el balance del corte (2026-06-30)"
       },
       "balance_date": "2026-06-30",
       "basis": "ttm",
+      "cut": "2026-06-30",
       "eps": "ttm",
       "errors": [],
       "last_quarter_fields": [
@@ -571,7 +699,16 @@
       ]
     }
   },
-  "data_validation": [],
+  "data_validation": [
+    {
+      "action": "aviso",
+      "field": "ratios.quick_ratio",
+      "new": null,
+      "old": 1.0934,
+      "reason": "quick_ratio de Finnhub (1.093) sin dato del corte de los estados con que casarlo: es de otro periodo y no entra",
+      "rule": "periodo_incoherente"
+    }
+  ],
   "dcf": {
     "available": true,
     "fair_value": 55.07,
@@ -614,7 +751,7 @@
         },
         {
           "label": "Confianza · Calidad de fuente (media)",
-          "text": "beneficio normalizado con ítems inferidos (confianza media); 11 campos de Finnhub en lugar de los estados"
+          "text": "beneficio normalizado con ítems inferidos (confianza media); 9 campos de Finnhub en lugar de los estados"
         }
       ],
       "title": "Detalle técnico para auditoría"
@@ -638,16 +775,16 @@
                 "bench": 18.0,
                 "bench_txt": "18.00x",
                 "fmt": "mult",
-                "gap_pct": 22.3963479529,
-                "gap_txt": "+22%",
+                "gap_pct": 23.4043291974,
+                "gap_txt": "+23%",
                 "higher_is_better": false,
                 "key": "pe",
                 "label": "P/E (TTM)",
                 "reading": "Prima moderada",
-                "text": "P/E (TTM) de 22.0x frente a 18.0x del sector (+22%): prima moderada",
+                "text": "P/E (TTM) de 22.2x frente a 18.0x del sector (+23%): prima moderada",
                 "tone": "warn",
-                "value": 22.0313426315,
-                "value_txt": "22.03x"
+                "value": 22.2127792555,
+                "value_txt": "22.21x"
               },
               {
                 "bench": 16.0,
@@ -1603,7 +1740,7 @@
             "bench": 18.0,
             "bench_txt": "18.00x",
             "fmt": "mult",
-            "gap_pct": 22.3963479529,
+            "gap_pct": 23.4043291974,
             "gap_txt": null,
             "higher_is_better": false,
             "key": "pe",
@@ -1613,8 +1750,8 @@
             "state": "con_dato",
             "text": null,
             "tone": "warn",
-            "value": 22.0313426315,
-            "value_txt": "22.03x"
+            "value": 22.2127792555,
+            "value_txt": "22.21x"
           },
           {
             "bench": 16.0,
@@ -1780,6 +1917,7 @@
     "cover": {
       "archetype": "MATURE",
       "archetype_label": "Madura",
+      "as_of_note": "Estados financieros a 30 de junio de 2026 (últimos doce meses).",
       "categories": [
         {
           "items": [
@@ -1857,6 +1995,7 @@
       ],
       "coverage_notes": [],
       "currency_note": null,
+      "data_notices": [],
       "highlights": [
         {
           "kicker": "FORTALEZA CLAVE",
@@ -1894,7 +2033,7 @@
           "key": "pe",
           "label": "P/E reportado (TTM)",
           "state": "con_dato",
-          "value": "22.03x"
+          "value": "22.21x"
         },
         {
           "key": "roe",
@@ -2002,7 +2141,7 @@
       },
       "graham": {
         "label": "Sobre Graham",
-        "text": "cotiza 209% por encima del número de Graham — habitual en compañías de calidad/crecimiento, donde este criterio de 1949 resulta demasiado restrictivo",
+        "text": "cotiza 210% por encima del número de Graham — habitual en compañías de calidad/crecimiento, donde este criterio de 1949 resulta demasiado restrictivo",
         "tone": "warn"
       },
       "interest_coverage": {
@@ -2018,7 +2157,7 @@
       "payout_ratio": null,
       "pe": {
         "label": "Prima moderada",
-        "text": "el mercado paga 22.0x beneficios, un +22% frente a la mediana del sector (18.0x); una prima que encuentra respaldo parcial en la creación de valor de la compañía (ROIC−WACC de +22.7%)",
+        "text": "el mercado paga 22.2x beneficios, un +23% frente a la mediana del sector (18.0x); una prima que encuentra respaldo parcial en la creación de valor de la compañía (ROIC−WACC de +22.7%)",
         "tone": "warn"
       },
       "pos52": {
@@ -2383,16 +2522,16 @@
                 {
                   "in_block": true,
                   "metric": "P/E normalizado vs Sector",
-                  "reason": "Muy caro (26.4x vs 18.0x)",
+                  "reason": "Muy caro (26.6x vs 18.0x)",
                   "sign": "(-4)",
                   "state": "con_dato",
                   "tone": "neu",
-                  "value": "26.4x"
+                  "value": "26.6x"
                 },
                 {
                   "in_block": true,
                   "metric": "Forward P/E",
-                  "reason": "Fuerte compresión P/E normalizado (26x → 19x forward)",
+                  "reason": "Fuerte compresión P/E normalizado (27x → 19x forward)",
                   "sign": "(+3)",
                   "state": "con_dato",
                   "tone": "neu",
@@ -2564,63 +2703,63 @@
         ],
         "piotroski_criteria": [
           {
-            "detail": "ROA positivo",
+            "detail": "FY2025: ROA positivo",
             "key": "roa_positive",
             "label": "ROA positivo",
             "status": "Cumple",
             "tone": "pos"
           },
           {
-            "detail": "Flujo de caja operativo positivo",
+            "detail": "FY2025: Flujo de caja operativo positivo",
             "key": "cfo_positive",
             "label": "Flujo de caja operativo positivo",
             "status": "Cumple",
             "tone": "pos"
           },
           {
-            "detail": "El ROA mejoró frente al año anterior",
+            "detail": "FY2025: El ROA mejoró frente al año anterior",
             "key": "roa_improved",
             "label": "ROA en mejora",
             "status": "Cumple",
             "tone": "pos"
           },
           {
-            "detail": "El flujo operativo no llega al beneficio neto (alerta de calidad)",
+            "detail": "FY2025: El flujo operativo no llega al beneficio neto (alerta de calidad)",
             "key": "earnings_quality",
             "label": "Calidad del beneficio (flujo operativo frente a beneficio neto)",
             "status": "No cumple",
             "tone": "neg"
           },
           {
-            "detail": "La deuda a largo plazo se mantuvo o bajó",
+            "detail": "FY2025: La deuda a largo plazo se mantuvo o bajó",
             "key": "debt_reduced",
             "label": "Reducción de deuda a largo plazo",
             "status": "Cumple",
             "tone": "pos"
           },
           {
-            "detail": "La liquidez no mejoró",
+            "detail": "FY2025: La liquidez no mejoró",
             "key": "current_ratio_improved",
             "label": "Liquidez en mejora",
             "status": "No cumple",
             "tone": "neg"
           },
           {
-            "detail": "Sin dilución de acciones",
+            "detail": "FY2025: Sin dilución de acciones",
             "key": "no_dilution",
             "label": "Sin dilución de acciones",
             "status": "Cumple",
             "tone": "pos"
           },
           {
-            "detail": "El margen bruto mejoró",
+            "detail": "FY2025: El margen bruto mejoró",
             "key": "gross_margin_improved",
             "label": "Margen bruto en mejora",
             "status": "Cumple",
             "tone": "pos"
           },
           {
-            "detail": "La rotación de activos mejoró",
+            "detail": "FY2025: La rotación de activos mejoró",
             "key": "asset_turnover_improved",
             "label": "Rotación de activos en mejora",
             "status": "Cumple",
@@ -2658,7 +2797,7 @@
           ],
           [
             "EPS",
-            "$3.20",
+            "$3.18",
             "Valor en libros / acción",
             "$7.24"
           ]
@@ -2779,17 +2918,6 @@
           {
             "bench": null,
             "gap": null,
-            "key": "quick_ratio",
-            "label": "Quick ratio",
-            "reading": "—",
-            "state": "con_dato",
-            "text": null,
-            "tone": null,
-            "value": "1.09x"
-          },
-          {
-            "bench": null,
-            "gap": null,
             "key": "cash_ratio",
             "label": "Cash ratio",
             "reading": "—",
@@ -2879,9 +3007,9 @@
               "label": "Número de Graham",
               "reading": "Sobre Graham",
               "state": "con_dato",
-              "text": "cotiza 209% por encima del número de Graham — habitual en compañías de calidad/crecimiento, donde este criterio de 1949 resulta demasiado restrictivo",
+              "text": "cotiza 210% por encima del número de Graham — habitual en compañías de calidad/crecimiento, donde este criterio de 1949 resulta demasiado restrictivo",
               "tone": "warn",
-              "value": "$22.84"
+              "value": "$22.75"
             },
             {
               "bench": null,
@@ -2918,10 +3046,10 @@
             }
           ]
         },
-        "intro": "El mercado paga 22.0x beneficios, un +22% frente a la mediana del sector (18.0x); una prima que encuentra respaldo parcial en la creación de valor de la compañía (ROIC−WACC de +22.7%). El FCF yield de 3.8% es razonable. Cotiza 209% por encima del número de Graham — habitual en compañías de calidad/crecimiento, donde este criterio de 1949 resulta demasiado restrictivo.",
+        "intro": "El mercado paga 22.2x beneficios, un +23% frente a la mediana del sector (18.0x); una prima que encuentra respaldo parcial en la creación de valor de la compañía (ROIC−WACC de +22.7%). El FCF yield de 3.8% es razonable. Cotiza 210% por encima del número de Graham — habitual en compañías de calidad/crecimiento, donde este criterio de 1949 resulta demasiado restrictivo.",
         "ke_note": null,
         "market_note": null,
-        "normalization_note": "Beneficio TTM (4 trimestres): reportado $13.65B, normalizado $11.39B (no recurrentes 16.6% del beneficio; pico de resultado no operativo (inferida, confianza media): $2.26B netos). El score usa el beneficio normalizado. P/E reportado 22.03x no fiable; P/E normalizado 26.40x.",
+        "normalization_note": "Beneficio TTM (4 trimestres): reportado $13.65B, normalizado $11.39B (no recurrentes 16.6% del beneficio; pico de resultado no operativo (inferida, confianza media): $2.26B netos). El score usa el beneficio normalizado. P/E reportado 22.21x no fiable; P/E normalizado 26.62x.",
         "provisional_note": "Medianas del sector: referencia PROVISIONAL, fijada a mano (no son medianas calculadas).",
         "rows": [
           {
@@ -2933,7 +3061,7 @@
             "state": "con_dato",
             "text": null,
             "tone": "warn",
-            "value": "22.03x"
+            "value": "22.21x"
           },
           {
             "bench": "16.00x",
@@ -3021,7 +3149,7 @@
             "state": "con_dato",
             "text": null,
             "tone": null,
-            "value": "4.54%"
+            "value": "4.50%"
           },
           {
             "bench": "—",
@@ -3043,7 +3171,7 @@
             "state": "con_dato",
             "text": null,
             "tone": null,
-            "value": "26.40x"
+            "value": "26.62x"
           }
         ],
         "sensitivity": {
@@ -3310,14 +3438,14 @@
         },
         {
           "bench": "vs sector 18.0x",
-          "delta": "+22%",
+          "delta": "+23%",
           "key": "pe",
           "label": "P/E (TTM)",
           "pill": "Prima moderada",
           "state": "con_dato",
           "tone": "warn",
           "unit": "x",
-          "value": "22.0"
+          "value": "22.2"
         },
         {
           "bench": "vs sector 4.0%",
@@ -3431,7 +3559,7 @@
         },
         {
           "label": "ATRACTIVO DEL PRECIO",
-          "text": "El mercado paga 22.0x beneficios, un +22% frente a la mediana del sector (18.0x); una prima que encuentra respaldo parcial en la creación de valor de la compañía (ROIC−WACC de +22.7%). El precio incorpora una prima de 22% sobre el valor intrínseco estimado: requiere supuestos exigentes pero posibles (el precio cae en la parte alta del rango de sensibilidad del DCF)."
+          "text": "El mercado paga 22.2x beneficios, un +23% frente a la mediana del sector (18.0x); una prima que encuentra respaldo parcial en la creación de valor de la compañía (ROIC−WACC de +22.7%). El precio incorpora una prima de 22% sobre el valor intrínseco estimado: requiere supuestos exigentes pero posibles (el precio cae en la parte alta del rango de sensibilidad del DCF)."
         },
         {
           "label": "CONTEXTO DE MERCADO",
@@ -4605,8 +4733,8 @@
     "normalized_net_income": 11389422245.9,
     "one_off_net": 2260219754.13,
     "one_off_pct": 0.165588207671,
-    "pe_normalized": 26.4034411235,
-    "pe_reported": 22.0313426315,
+    "pe_normalized": 26.6208836689,
+    "pe_reported": 22.2127792555,
     "pe_unreliable": true,
     "reported_net_income": 13649642000.0,
     "used_in_score": true
@@ -4622,8 +4750,8 @@
     "state": "expansion"
   },
   "errors": [],
-  "graham_margin": -2.08910776352,
-  "graham_number": 22.8447840273,
+  "graham_margin": -2.10180168063,
+  "graham_number": 22.7512932679,
   "growth_basis": {
     "applied_to": [],
     "basis": "agregado",
@@ -4649,11 +4777,11 @@
     "debt_to_assets": 0.244810915969,
     "dividend_yield": 0.0,
     "earnings_growth": 0.3526,
-    "earnings_yield": 0.0453898800779,
+    "earnings_yield": 0.0450191301366,
     "ebitda": 35008877000.0,
     "ebitda_margin": 0.662034612478,
     "enterprise_value": 299030617665.0,
-    "eps": 3.20316382325,
+    "eps": 3.177,
     "ev_ebitda": 9.33796012583,
     "ev_revenue": 6.18205281324,
     "fcf_yield": 0.0379514532549,
@@ -4681,14 +4809,14 @@
     "payout_basis": "beneficio_neto",
     "payout_ratio": null,
     "pb": 9.74557956004,
-    "pe": 22.0313426315,
-    "pe_normalized": 26.4034411235,
+    "pe": 22.2127792555,
+    "pe_normalized": 26.6208836689,
     "peg": 0.93375,
     "pfcf": 26.3494521088,
     "price_52w_high": 124.86000061,
     "price_52w_low": 65.0800018311,
     "ps": 6.07493447208,
-    "quick_ratio": 1.0934,
+    "quick_ratio": null,
     "revenue": 48370764000.0,
     "revenue_growth": 0.1602,
     "roa": 0.233525047313,
@@ -4857,11 +4985,11 @@
     "debt_to_assets": 0.244810915969,
     "debt_to_equity": 0.474571548232,
     "dividend_yield": 0.0,
-    "earnings_yield": 0.0453898800779,
+    "earnings_yield": 0.0450191301366,
     "ebitda": 32023120000.0,
     "ebitda_margin": 0.662034612478,
     "enterprise_value": 299030617665.0,
-    "eps": 3.20316382325,
+    "eps": 3.177,
     "ev_ebitda": 9.33796012583,
     "ev_fcf": 26.8140677541,
     "ev_revenue": 6.18205281324,
@@ -4872,7 +5000,7 @@
     "ffo_payout": null,
     "ffo_per_share": 7.52130132444,
     "forward_pe": 19.21432,
-    "graham_number": 22.8447840273,
+    "graham_number": 22.7512932679,
     "gross_margin": 0.491178721097,
     "interest_coverage": 16.9384625188,
     "inventory_turnover": null,
@@ -4887,10 +5015,10 @@
     "p_ffo": 9.38268481087,
     "payout_ratio": null,
     "pb": 9.74557956004,
-    "pe": 22.0313426315,
+    "pe": 22.2127792555,
     "peg": 0.93375,
     "ps": 6.07493447208,
-    "quick_ratio": 1.0934,
+    "quick_ratio": null,
     "roa": 0.233525047313,
     "roe": 0.452693634251,
     "roic": 0.336224089955
@@ -5101,16 +5229,16 @@
             "in_block": true,
             "metric": "P/E normalizado vs Sector",
             "normalized": true,
-            "reason": "Muy caro (26.4x vs 18.0x)",
+            "reason": "Muy caro (26.6x vs 18.0x)",
             "severity": "severe",
-            "value": "26.4x"
+            "value": "26.6x"
           },
           {
             "adjustment": 3,
             "in_block": true,
             "metric": "Forward P/E",
             "normalized": true,
-            "reason": "Fuerte compresión P/E normalizado (26x → 19x forward)",
+            "reason": "Fuerte compresión P/E normalizado (27x → 19x forward)",
             "severity": "excellent",
             "value": "19.2x"
           },
@@ -5167,8 +5295,8 @@
         "conclusive": true,
         "coverage": 1.0,
         "details": [
-          "Muy caro (26.4x vs 18.0x)",
-          "Fuerte compresión P/E normalizado (26x → 19x forward)",
+          "Muy caro (26.6x vs 18.0x)",
+          "Fuerte compresión P/E normalizado (27x → 19x forward)",
           "Elevado (26.3x)",
           "Atractivo (9.3x)",
           "Bueno (0.93)",

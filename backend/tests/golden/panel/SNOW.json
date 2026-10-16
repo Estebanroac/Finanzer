@@ -139,7 +139,7 @@
     "industry": "Software - Application",
     "inputs": {
       "assets_to_revenue": 1.94974386981,
-      "eps_ttm": -3.12319581283,
+      "eps_ttm": -3.18,
       "net_margin_ttm": -0.200711840162,
       "op_margin_detrended_std": 0.0347751900977,
       "revenue_cagr_3y": 0.313765188615,
@@ -147,8 +147,8 @@
       "revenue_growth_std": 0.0385417505442
     },
     "label": "Crecimiento sin beneficio",
-    "reason": "Clasificada como GROWTH_PRE_PROFIT: BPA TTM -3.12 <= 0 y CAGR de ingresos a 3 años 31.4% > 15%",
-    "reason_plain": "Crecimiento sin beneficio: beneficio por acción negativo en los últimos doce meses (−3.12) e ingresos totales que crecen un 31.4% anual en 3 años, por encima del 15%.",
+    "reason": "Clasificada como GROWTH_PRE_PROFIT: BPA TTM -3.18 <= 0 y CAGR de ingresos a 3 años 31.4% > 15%",
+    "reason_plain": "Crecimiento sin beneficio: beneficio por acción negativo en los últimos doce meses (−3.18) e ingresos totales que crecen un 31.4% anual en 3 años, por encima del 15%.",
     "rule": "pre_beneficio_con_crecimiento",
     "sector": "Technology"
   },
@@ -216,12 +216,104 @@
     "score": 0.833333333333
   },
   "data_provenance": {
+    "as_of": {
+      "date": "2026-07-31",
+      "fields": {
+        "capitalExpenditures": {
+          "period_end": "2026-07-31",
+          "period_type": "ttm"
+        },
+        "cash": {
+          "period_end": "2026-07-31",
+          "period_type": "balance"
+        },
+        "depreciation": {
+          "period_end": "2026-07-31",
+          "period_type": "ttm"
+        },
+        "ebitda": {
+          "period_end": "2026-07-31",
+          "period_type": "ttm"
+        },
+        "freeCashflow": {
+          "period_end": "2026-07-31",
+          "period_type": "ttm"
+        },
+        "grossProfits": {
+          "period_end": "2026-07-31",
+          "period_type": "ttm"
+        },
+        "interestExpense": {
+          "period_end": "2026-07-31",
+          "period_type": "ttm"
+        },
+        "longTermDebt": {
+          "period_end": "2026-07-31",
+          "period_type": "balance"
+        },
+        "netIncome": {
+          "period_end": "2026-07-31",
+          "period_type": "ttm"
+        },
+        "netInterestIncome": {
+          "period_end": "2026-07-31",
+          "period_type": "ttm"
+        },
+        "operatingCashflow": {
+          "period_end": "2026-07-31",
+          "period_type": "ttm"
+        },
+        "operatingIncome": {
+          "period_end": "2026-07-31",
+          "period_type": "ttm"
+        },
+        "retainedEarnings": {
+          "period_end": "2026-07-31",
+          "period_type": "balance"
+        },
+        "stockBasedCompensation": {
+          "period_end": "2026-07-31",
+          "period_type": "ttm"
+        },
+        "totalAssets": {
+          "period_end": "2026-07-31",
+          "period_type": "balance"
+        },
+        "totalCurrentAssets": {
+          "period_end": "2026-07-31",
+          "period_type": "balance"
+        },
+        "totalCurrentLiabilities": {
+          "period_end": "2026-07-31",
+          "period_type": "balance"
+        },
+        "totalDebt": {
+          "period_end": "2026-07-31",
+          "period_type": "balance"
+        },
+        "totalLiab": {
+          "period_end": "2026-07-31",
+          "period_type": "balance"
+        },
+        "totalRevenue": {
+          "period_end": "2026-07-31",
+          "period_type": "ttm"
+        },
+        "totalStockholderEquity": {
+          "period_end": "2026-07-31",
+          "period_type": "balance"
+        }
+      },
+      "type": "ttm"
+    },
     "currency": {
       "converted": false,
       "price": "USD",
       "share_class": {
         "applied": false,
+        "basis": "misma_clase",
         "factor": 0.974824263039,
+        "implied": 0.974824263039,
         "price_shares": 352800000.0,
         "statement_shares": 343918000.0,
         "statement_shares_date": "2026-01-31",
@@ -229,6 +321,30 @@
       },
       "source": "fundamentals-timeseries (currencyCode)",
       "statements": "USD"
+    },
+    "dividend": {
+      "as_of": "2026-10-14",
+      "basis": "sin_dividendo",
+      "currency": "USD",
+      "foreign_line": false,
+      "notes": [],
+      "paid_per_unit_statements": null,
+      "payments": {
+        "rate": null,
+        "reason": "la serie de precios no declara dividendos en los últimos 2 años"
+      },
+      "rate": 0.0,
+      "reason": "no paga dividendos (sin pagos en 2 años ni en los estados)",
+      "source": "sin_dividendo",
+      "source_name": null,
+      "source_rate": null,
+      "unit": "título"
+    },
+    "edgar": {
+      "cik": 1640147,
+      "reason": null,
+      "status": "ok",
+      "title": "Snowflake Inc."
     },
     "errors": [],
     "fields": {
@@ -324,6 +440,10 @@
         "detail": "/stock/metric",
         "source": "finnhub"
       },
+      "_yahoo_ratios.dividendYield": {
+        "detail": "dividendo indicado / precio",
+        "source": "derivado"
+      },
       "_yahoo_ratios.forwardPE": {
         "detail": "/stock/metric",
         "source": "finnhub"
@@ -360,9 +480,13 @@
         "detail": "TTM: suma de los 4 trimestres 2026-07-31, 2026-04-30, 2026-01-31, 2025-10-31",
         "source": "yfinance_statements"
       },
+      "dividendRate": {
+        "detail": "no paga dividendos: sin pagos en 2 años ni dividendos en los estados",
+        "source": "derivado"
+      },
       "dividendYield": {
-        "detail": "la fuente no lo devolvió",
-        "source": "sin_dato"
+        "detail": "dividendo indicado / precio",
+        "source": "derivado"
       },
       "earningsGrowth": {
         "detail": "la fuente no lo devolvió",
@@ -424,7 +548,7 @@
         "source": "sin_dato"
       },
       "key_metrics.pe": {
-        "detail": "P/E de −107.3x: beneficio ≤ 0, el múltiplo no es significativo",
+        "detail": "P/E de −105.4x: beneficio ≤ 0, el múltiplo no es significativo",
         "rule": "multiplo_no_significativo",
         "source": "sin_dato"
       },
@@ -480,7 +604,7 @@
         "source": "sin_dato"
       },
       "ratios.pe": {
-        "detail": "P/E de −107.3x: beneficio ≤ 0, el múltiplo no es significativo",
+        "detail": "P/E de −105.4x: beneficio ≤ 0, el múltiplo no es significativo",
         "rule": "multiplo_no_significativo",
         "source": "sin_dato"
       },
@@ -553,18 +677,32 @@
         "source": "yfinance_statements"
       },
       "trailingEps": {
-        "detail": "BPA TTM = beneficio neto TTM / acciones diluidas medias del último trimestre",
+        "detail": "BPA TTM = suma de los BPA diluidos de los 4 trimestres del corte",
         "source": "derivado"
       }
     },
     "path": "plan_b_yfinance",
+    "pending_results": null,
+    "price_history": {
+      "attempts": 1,
+      "first_date": "2024-10-16",
+      "interval": "1d",
+      "last_date": "2026-10-14",
+      "period": "2y",
+      "reason": null,
+      "rows": 500,
+      "source": "Yahoo Finance (yfinance history: precios sin ajustar por dividendos y eventos)",
+      "status": "ok",
+      "symbol": "SNOW"
+    },
     "ttm": {
       "annual_fields": {
-        "dividendsPaid": "'Common Stock Dividend Paid' sin dato en alguno de los 4 últimos trimestres",
-        "inventory": "'Inventory' sin dato en el último trimestre"
+        "dividendsPaid": "'Common Stock Dividend Paid' no llega al corte (2026-07-31)",
+        "inventory": "'Inventory' sin dato en el balance del corte (2026-07-31)"
       },
       "balance_date": "2026-07-31",
       "basis": "ttm",
+      "cut": "2026-07-31",
       "eps": "ttm",
       "errors": [],
       "last_quarter_fields": [
@@ -611,11 +749,19 @@
   },
   "data_validation": [
     {
+      "action": "aviso",
+      "field": "ratios.quick_ratio",
+      "new": null,
+      "old": 0.8828,
+      "reason": "quick_ratio de Finnhub (0.8828) sin dato del corte de los estados con que casarlo: es de otro periodo y no entra",
+      "rule": "periodo_incoherente"
+    },
+    {
       "action": "sin_dato",
       "field": "key_metrics.pe",
       "new": null,
-      "old": -107.287537079,
-      "reason": "P/E de −107.3x: beneficio ≤ 0, el múltiplo no es significativo",
+      "old": -105.37106496,
+      "reason": "P/E de −105.4x: beneficio ≤ 0, el múltiplo no es significativo",
       "rule": "multiplo_no_significativo"
     },
     {
@@ -638,8 +784,8 @@
       "action": "sin_dato",
       "field": "ratios.pe",
       "new": null,
-      "old": -107.287537079,
-      "reason": "P/E de −107.3x: beneficio ≤ 0, el múltiplo no es significativo",
+      "old": -105.37106496,
+      "reason": "P/E de −105.4x: beneficio ≤ 0, el múltiplo no es significativo",
       "rule": "multiplo_no_significativo"
     },
     {
@@ -711,7 +857,7 @@
       "items": [
         {
           "label": "Clasificación",
-          "text": "Arquetipo GROWTH_PRE_PROFIT (regla pre_beneficio_con_crecimiento): Clasificada como GROWTH_PRE_PROFIT: BPA TTM -3.12 <= 0 y CAGR de ingresos a 3 años 31.4% > 15%"
+          "text": "Arquetipo GROWTH_PRE_PROFIT (regla pre_beneficio_con_crecimiento): Clasificada como GROWTH_PRE_PROFIT: BPA TTM -3.18 <= 0 y CAGR de ingresos a 3 años 31.4% > 15%"
         },
         {
           "label": "Confianza · Convergencia entre métodos (no evaluable)",
@@ -1613,6 +1759,7 @@
     "cover": {
       "archetype": "GROWTH_PRE_PROFIT",
       "archetype_label": "Crecimiento sin beneficio",
+      "as_of_note": "Estados financieros a 31 de julio de 2026 (últimos doce meses).",
       "categories": [
         {
           "items": [
@@ -1681,7 +1828,7 @@
         }
       ],
       "classification_notes": [
-        "Beneficio por acción negativo en los últimos doce meses (−3.12) e ingresos totales que crecen un 31.4% anual en 3 años, por encima del 15%."
+        "Beneficio por acción negativo en los últimos doce meses (−3.18) e ingresos totales que crecen un 31.4% anual en 3 años, por encima del 15%."
       ],
       "confidence_reasons": [
         "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo.",
@@ -1690,6 +1837,7 @@
       ],
       "coverage_notes": [],
       "currency_note": null,
+      "data_notices": [],
       "highlights": [
         {
           "kicker": "FORTALEZA CLAVE",
@@ -2024,6 +2172,17 @@
             "text": null,
             "tone": null,
             "value": "-3.01%"
+          },
+          {
+            "bench": null,
+            "gap": null,
+            "key": "dividend_yield",
+            "label": "Dividend yield",
+            "reading": "—",
+            "state": "con_dato",
+            "text": null,
+            "tone": null,
+            "value": "0.00%"
           }
         ],
         "score_components": [
@@ -2347,63 +2506,63 @@
         ],
         "piotroski_criteria": [
           {
-            "detail": "ROA negativo",
+            "detail": "FY2026: ROA negativo",
             "key": "roa_positive",
             "label": "ROA positivo",
             "status": "No cumple",
             "tone": "neg"
           },
           {
-            "detail": "Flujo de caja operativo positivo",
+            "detail": "FY2026: Flujo de caja operativo positivo",
             "key": "cfo_positive",
             "label": "Flujo de caja operativo positivo",
             "status": "Cumple",
             "tone": "pos"
           },
           {
-            "detail": "El ROA no mejoró",
+            "detail": "FY2026: El ROA no mejoró",
             "key": "roa_improved",
             "label": "ROA en mejora",
             "status": "No cumple",
             "tone": "neg"
           },
           {
-            "detail": "El flujo operativo supera al beneficio neto (beneficio de calidad)",
+            "detail": "FY2026: El flujo operativo supera al beneficio neto (beneficio de calidad)",
             "key": "earnings_quality",
             "label": "Calidad del beneficio (flujo operativo frente a beneficio neto)",
             "status": "Cumple",
             "tone": "pos"
           },
           {
-            "detail": "La deuda a largo plazo aumentó",
+            "detail": "FY2026: La deuda a largo plazo aumentó",
             "key": "debt_reduced",
             "label": "Reducción de deuda a largo plazo",
             "status": "No cumple",
             "tone": "neg"
           },
           {
-            "detail": "La liquidez no mejoró",
+            "detail": "FY2026: La liquidez no mejoró",
             "key": "current_ratio_improved",
             "label": "Liquidez en mejora",
             "status": "No cumple",
             "tone": "neg"
           },
           {
-            "detail": "Emitió nuevas acciones (dilución)",
+            "detail": "FY2026: Emitió nuevas acciones (dilución)",
             "key": "no_dilution",
             "label": "Sin dilución de acciones",
             "status": "No cumple",
             "tone": "neg"
           },
           {
-            "detail": "El margen bruto mejoró",
+            "detail": "FY2026: El margen bruto mejoró",
             "key": "gross_margin_improved",
             "label": "Margen bruto en mejora",
             "status": "Cumple",
             "tone": "pos"
           },
           {
-            "detail": "La rotación de activos mejoró",
+            "detail": "FY2026: La rotación de activos mejoró",
             "key": "asset_turnover_improved",
             "label": "Rotación de activos en mejora",
             "status": "Cumple",
@@ -2441,7 +2600,7 @@
           ],
           [
             "EPS",
-            "−$3.12",
+            "−$3.18",
             "Valor en libros / acción",
             "$6.09"
           ]
@@ -2580,17 +2739,6 @@
             "text": "la liquidez es ajustada (current ratio 0.94x), con poco margen de maniobra",
             "tone": "warn",
             "value": "0.94x"
-          },
-          {
-            "bench": null,
-            "gap": null,
-            "key": "quick_ratio",
-            "label": "Quick ratio",
-            "reading": "—",
-            "state": "con_dato",
-            "text": null,
-            "tone": null,
-            "value": "0.88x"
           },
           {
             "bench": null,
@@ -2823,10 +2971,10 @@
             "key": "dividend_yield",
             "label": "Dividend Yield",
             "reading": "—",
-            "state": "sin_dato",
+            "state": "con_dato",
             "text": null,
             "tone": null,
-            "value": "—"
+            "value": "0.00%"
           },
           {
             "bench": "—",
@@ -4052,13 +4200,13 @@
     "current_ratio": 0.938816847152,
     "de": 1.28569627626,
     "debt_to_assets": 0.318028656484,
-    "dividend_yield": null,
+    "dividend_yield": 0.0,
     "earnings_growth": null,
-    "earnings_yield": -0.00932074709915,
+    "earnings_yield": -0.00949027136037,
     "ebitda": -813419000.0,
     "ebitda_margin": -0.181008444523,
     "enterprise_value": 118635339263.0,
-    "eps": -3.12319581283,
+    "eps": -3.18,
     "ev_ebitda": null,
     "ev_revenue": 21.8294471127,
     "fcf_yield": 0.0100957720306,
@@ -4093,7 +4241,7 @@
     "price_52w_high": 384.559997559,
     "price_52w_low": 118.300003052,
     "ps": 21.7523271084,
-    "quick_ratio": 0.8828,
+    "quick_ratio": null,
     "revenue": 5434647000.0,
     "revenue_growth": 0.3204,
     "roa": -0.125516730474,
@@ -4267,12 +4415,12 @@
     "current_ratio": 0.938816847152,
     "debt_to_assets": 0.318028656484,
     "debt_to_equity": 1.28569627626,
-    "dividend_yield": null,
-    "earnings_yield": -0.00932074709915,
+    "dividend_yield": 0.0,
+    "earnings_yield": -0.00949027136037,
     "ebitda": -983717000.0,
     "ebitda_margin": -0.181008444523,
     "enterprise_value": 118635339263.0,
-    "eps": -3.12319581283,
+    "eps": -3.18,
     "ev_ebitda": null,
     "ev_fcf": 99.402538503,
     "ev_revenue": 21.8294471127,
@@ -4301,7 +4449,7 @@
     "pe": null,
     "peg": null,
     "ps": 21.7523271084,
-    "quick_ratio": 0.8828,
+    "quick_ratio": null,
     "roa": -0.125516730474,
     "roe": -0.507427207229,
     "roic": -0.380349172994

@@ -24,12 +24,12 @@
 
 | Campo | Valor |
 |---|---|
-| Fase en curso | **Fase 2b 🛑 detenida en el punto de parada 1** (2026-10-16, registro #21): T0–T3 hechas en la rama; esperan la aprobación de los golden, la regla del factor fuera de la tabla y la fuente del dividendo |
+| Fase en curso | **Fase 2b 🔧 en curso** (2026-10-16, registro #22): punto de parada 1 aprobado; golden regenerados; T4 en curso |
 | Rama de trabajo | `fiabilidad/f2b-corregir` (worktree `../finanzer_next-f2b`), desde `main` = `60f8a69`; 9 commits `F2b:` sin push |
 | Producción | `60f8a69` (= `2d58a35` en código). Rollback de código: `a2572e0` |
 | `main` local | = `origin/main` (`60f8a69`) |
 | Último cierre de sesión | 2026-10-16 · operador F2b (ver registro #21) |
-| Bloqueos | Punto de parada 1: decisiones del usuario (F2b_PARADA1.md §1.2, §2.1 y §4) y la variable `SEC_EDGAR_USER_AGENT` en Render |
+| Bloqueos | La variable `SEC_EDGAR_USER_AGENT` en Render (antes del deploy de la 2b) |
 
 ## Fases
 
@@ -37,7 +37,7 @@
 |---|---|---|---|---|---|
 | 0 Congelar y medir | ✅ cerrada (2026-10-14) | `fiabilidad/f0-panel` → `main` local | `0a8ac66`..`0ae214a` (9 commits) + cierre (registro #6) | sí, 2026-10-14 (registro #6) | no aplica (se sube con el deploy de la fase 1) |
 | 1 Lo visible hoy | ✅ cerrada | `fiabilidad/f1-visible` | `d676b22` (D8), `21c3f5f`, `0ebba81` (guardián), `d63de70`…`d7393fd` (T3, 8 commits), `7f32070`, `e3161d2`, `c369575` (T4) | — | — |
-| 2 Verdad de datos (EDGAR) | ✅ 2a cerrada (2026-10-15); 🛑 2b detenida en el punto de parada 1 (2026-10-16, registro #21; rama `fiabilidad/f2b-corregir`: `b25aed6`…`0fd5bd3`) | `fiabilidad/f2a-medir` → `main` | `8d3a5cc` (planificador), `356f49c` (T0), `0b82c13`…`8e9948b` (T2), `385e441` + `4051a5e` (T1), `f8f13df`…`06a6ec0` (herramienta T3), `6946a64` (T3), `01aec9d`…`8d7c1fb` (T4), `aed575a` (RECON §7.20) + cierre (registros #18 y #19) | parada 1 sí; parada 2 y deploy sí; D2 decidida (2026-10-15, registro #19) | `25b9d8a` (T0 + panel, 2026-10-15) |
+| 2 Verdad de datos (EDGAR) | ✅ 2a cerrada (2026-10-15); 🔧 2b en curso, parada 1 aprobada (2026-10-16, registros #21 y #22; rama `fiabilidad/f2b-corregir`: `b25aed6`…`0fd5bd3`) | `fiabilidad/f2a-medir` → `main` | `8d3a5cc` (planificador), `356f49c` (T0), `0b82c13`…`8e9948b` (T2), `385e441` + `4051a5e` (T1), `f8f13df`…`06a6ec0` (herramienta T3), `6946a64` (T3), `01aec9d`…`8d7c1fb` (T4), `aed575a` (RECON §7.20) + cierre (registros #18 y #19) | parada 1 sí; parada 2 y deploy sí; D2 decidida (2026-10-15, registro #19) | `25b9d8a` (T0 + panel, 2026-10-15) |
 | 3 Método por arquetipo | 🔒 espera la 2b · preparación F3prep fusionada (`fiabilidad/f3-prep`, módulos aislados sin conectar) | — | `0f6f21b`..`da34592` | — | `a2572e0` |
 | 4 Escalas y confianza | 🔒 espera F3 | — | — | — | — |
 | 5 Técnica y conductual | 🔒 espera F4 · preparación F5prep fusionada (`fiabilidad/f5-prep`, módulos aislados sin conectar; D5: solo contexto) | — | `e99e958`..`8e2bf07` | §5 de la muestra aceptado (registro #20) | `a2572e0` |
@@ -858,3 +858,17 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
   - las series de precios y las listas de EDGAR del replay están en juegos aparte y se cortan en la fecha de captura
     de cada ticker; una recaptura del panel las llevará dentro;
   - en el worktree, `.venv313` y `frontend/node_modules` son enlaces a la carpeta principal (ignorados por git).
+
+### #22 · 2026-10-16 · operador · Fase 2b (parada 1 aprobada; golden regenerados; T4 en curso)
+- **Objetivo de la sesión:** con la parada 1 aprobada, regenerar los golden y seguir con T4.
+- **Decisiones tomadas por el usuario (cita literal):**
+  > "Apruebo el punto de parada 1: regenera los golden con el diff causa por causa de F2b_PARADA1 §4, regla del factor
+  > B (20-F vía EDGAR en T4) y dividendo (b), pagos del ADR. Sigue con T4."
+  - golden: aprobados con el diff causa por causa de F2b_PARADA1 §4;
+  - factor ADR fuera de la tabla (§1.2): **regla B**, el factor del 20-F vía EDGAR, en T4 (A queda de respaldo);
+  - fuente del dividendo (§2.1): **(b)**, los pagos del propio ADR.
+- **Hecho:**
+  - golden regenerados (`diff_golden.py --env panel --regenerate --yes` y `--regenerate --yes`); después, los dos
+    `diff_golden.py` → "Resultado: sin diferencias"; `pytest -q` → "3521 passed, 1 skipped"; `npm run check` →
+    "check-contract: StockAnalysis encaja con 41 salidas del backend".
+

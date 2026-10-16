@@ -108,7 +108,7 @@
     "industry": "Banks - Diversified",
     "inputs": {
       "assets_to_revenue": 54.1148339536,
-      "eps_ttm": 3.10568789325,
+      "eps_ttm": 2.67523048561,
       "net_margin_ttm": 0.255191285035,
       "op_margin_detrended_std": null,
       "revenue_cagr_3y": 0.0747463440893,
@@ -156,23 +156,25 @@
       },
       "source": {
         "finnhub_fields": [
-          "_yahoo_ratios.dividendYield",
           "_yahoo_ratios.forwardPE",
           "_yahoo_ratios.payoutRatio",
           "_yahoo_ratios.pegRatio",
           "beta",
-          "dividendRate",
-          "dividendYield",
           "earningsGrowth",
           "forwardPE",
           "payoutRatio",
           "pio.ltd",
           "prior.ltd"
         ],
-        "issues": 1,
-        "level": "media",
+        "issues": 6,
+        "level": "baja",
         "reasons": [
-          "12 campos de Finnhub en lugar de los estados"
+          "validación: interestExpense (periodo_incoherente)",
+          "validación: operatingCashflow (periodo_incoherente)",
+          "validación: capitalExpenditures (periodo_incoherente)",
+          "validación: freeCashflow (periodo_incoherente)",
+          "validación: dividendsPaid (periodo_incoherente)",
+          "9 campos de Finnhub en lugar de los estados"
         ]
       },
       "stability": {
@@ -184,11 +186,69 @@
     "limits_score": false,
     "reasons": [
       "convergencia media: uno lo ve en precio y otro con dirección: no coinciden, sin oponerse",
-      "calidad de fuente media: 12 campos de Finnhub en lugar de los estados"
+      "calidad de fuente baja: validación: interestExpense (periodo_incoherente); validación: operatingCashflow (periodo_incoherente); validación: capitalExpenditures (periodo_incoherente); validación: freeCashflow (periodo_incoherente); validación: dividendsPaid (periodo_incoherente); 9 campos de Finnhub en lugar de los estados"
     ],
-    "score": 0.7
+    "score": 0.6
   },
   "data_provenance": {
+    "as_of": {
+      "date": "2026-06-30",
+      "fields": {
+        "capitalExpenditures": {
+          "period_end": "2025-12-31",
+          "period_type": "fy"
+        },
+        "cash": {
+          "period_end": "2026-06-30",
+          "period_type": "balance"
+        },
+        "dividendsPaid": {
+          "period_end": "2025-12-31",
+          "period_type": "fy"
+        },
+        "freeCashflow": {
+          "period_end": "2025-12-31",
+          "period_type": "fy"
+        },
+        "interestExpense": {
+          "period_end": "2025-12-31",
+          "period_type": "fy"
+        },
+        "netIncome": {
+          "period_end": "2026-06-30",
+          "period_type": "ttm"
+        },
+        "operatingCashflow": {
+          "period_end": "2025-12-31",
+          "period_type": "fy"
+        },
+        "retainedEarnings": {
+          "period_end": "2026-06-30",
+          "period_type": "balance"
+        },
+        "totalAssets": {
+          "period_end": "2026-06-30",
+          "period_type": "balance"
+        },
+        "totalDebt": {
+          "period_end": "2026-06-30",
+          "period_type": "balance"
+        },
+        "totalLiab": {
+          "period_end": "2026-06-30",
+          "period_type": "balance"
+        },
+        "totalRevenue": {
+          "period_end": "2026-06-30",
+          "period_type": "ttm"
+        },
+        "totalStockholderEquity": {
+          "period_end": "2026-06-30",
+          "period_type": "balance"
+        }
+      },
+      "type": "ttm"
+    },
     "currency": {
       "balance_rate": {
         "date": "2026-06-30",
@@ -239,15 +299,82 @@
       },
       "share_class": {
         "applied": true,
-        "factor": 4.15403341031,
+        "basis": "oficial",
+        "factor": 4.0,
+        "implied": 4.15403341031,
+        "implied_check": {
+          "deviation": 0.0385083525768,
+          "implied": 4.15403341031,
+          "note": "recompras/emisiones desde el cierre: las acciones de la cotización (13,331,398,272 en la clase de los estados) son un 3.7% menos que las del balance al 2025-12-31 (13,844,768,457); factor implícito 4.154 frente al oficial 4",
+          "price_shares_in_statement_class": 13331398272.0
+        },
+        "official": {
+          "depositary": "JPMorgan",
+          "factor": 4.0,
+          "share_class": "acciones ordinarias de 25 peniques",
+          "source": "20-F (2026-02-10): \"each representing four 25p ordinary shares\"; F-6EF (2025-11-20)",
+          "verified": "2026-10-15"
+        },
         "price_shares": 3332849568.0,
         "statement_shares": 13844768457.0,
-        "statement_shares_date": "2025-12-31",
-        "tolerance": 1.5
+        "statement_shares_date": "2025-12-31"
       },
       "source": "fundamentals-timeseries (currencyCode)",
+      "spot_rate": {
+        "date": "2026-10-15",
+        "rate": 1.32624231938
+      },
       "statements": "GBP",
       "ttm_rate": 1.34217913576
+    },
+    "dividend": {
+      "as_of": "2026-10-15",
+      "basis": "suma_ultimo_ciclo",
+      "currency": "USD",
+      "foreign_line": true,
+      "notes": [],
+      "paid_per_unit_statements": null,
+      "payments": {
+        "basis": "suma_ultimo_ciclo",
+        "extraordinary": [],
+        "frequency": 2,
+        "last": {
+          "amount": 0.313,
+          "date": "2026-08-07"
+        },
+        "payments": [
+          {
+            "amount": 0.274,
+            "date": "2025-02-28"
+          },
+          {
+            "amount": 0.16,
+            "date": "2025-08-08"
+          },
+          {
+            "amount": 0.307,
+            "date": "2026-02-20"
+          },
+          {
+            "amount": 0.313,
+            "date": "2026-08-07"
+          }
+        ],
+        "rate": 0.62,
+        "ttm_total": 0.62
+      },
+      "rate": 0.62,
+      "source": "pagos",
+      "source_name": "finnhub",
+      "source_note": "la fuente da 11.50 en la moneda de la cotización local y por acción ordinaria; se usa lo que paga el ADR",
+      "source_rate": 11.5,
+      "unit": "ADR"
+    },
+    "edgar": {
+      "cik": 312069,
+      "reason": null,
+      "status": "ok",
+      "title": "BARCLAYS PLC"
     },
     "errors": [],
     "fields": {
@@ -312,8 +439,8 @@
         "source": "yfinance_statements"
       },
       "_yahoo_ratios.dividendYield": {
-        "detail": "/stock/metric",
-        "source": "finnhub"
+        "detail": "dividendo indicado / precio",
+        "source": "derivado"
       },
       "_yahoo_ratios.forwardPE": {
         "detail": "/stock/metric",
@@ -336,8 +463,9 @@
         "source": "derivado"
       },
       "capitalExpenditures": {
-        "detail": "plan B: estados anuales de yfinance (último FY)",
-        "source": "yfinance_statements"
+        "detail": "dato de otro periodo descartado: capitalExpenditures del ejercicio cerrado el 2025-12-31 en un análisis con corte a 2026-06-30",
+        "rule": "periodo_incoherente",
+        "source": "sin_dato"
       },
       "cash": {
         "detail": "balance del último trimestre (2026-06-30)",
@@ -352,16 +480,17 @@
         "source": "yfinance_statements"
       },
       "dividendRate": {
-        "detail": "/stock/metric",
-        "source": "finnhub"
+        "detail": "pagos del propio título en la serie de precios (Yahoo)",
+        "source": "derivado"
       },
       "dividendYield": {
-        "detail": "/stock/metric",
-        "source": "finnhub"
+        "detail": "dividendo indicado / precio",
+        "source": "derivado"
       },
       "dividendsPaid": {
-        "detail": "plan B: estados anuales de yfinance (último FY)",
-        "source": "yfinance_statements"
+        "detail": "dato de otro periodo descartado: dividendsPaid del ejercicio cerrado el 2025-12-31 en un análisis con corte a 2026-06-30",
+        "rule": "periodo_incoherente",
+        "source": "sin_dato"
       },
       "earningsGrowth": {
         "detail": "/stock/metric",
@@ -392,8 +521,9 @@
         "source": "finnhub"
       },
       "freeCashflow": {
-        "detail": "plan B: estados anuales de yfinance (último FY)",
-        "source": "yfinance_statements"
+        "detail": "dato de otro periodo descartado: freeCashflow del ejercicio cerrado el 2025-12-31 en un análisis con corte a 2026-06-30",
+        "rule": "periodo_incoherente",
+        "source": "sin_dato"
       },
       "grossProfits": {
         "detail": "la fuente no lo devolvió",
@@ -404,8 +534,9 @@
         "source": "yahoo_quotesummary"
       },
       "interestExpense": {
-        "detail": "plan B: estados anuales de yfinance (último FY)",
-        "source": "yfinance_statements"
+        "detail": "dato de otro periodo descartado: interestExpense del ejercicio cerrado el 2025-12-31 en un análisis con corte a 2026-06-30",
+        "rule": "periodo_incoherente",
+        "source": "sin_dato"
       },
       "longName": {
         "detail": "símbolo pedido; nombre de stock_database o de la búsqueda",
@@ -420,8 +551,9 @@
         "source": "yfinance_statements"
       },
       "operatingCashflow": {
-        "detail": "plan B: estados anuales de yfinance (último FY)",
-        "source": "yfinance_statements"
+        "detail": "dato de otro periodo descartado: operatingCashflow del ejercicio cerrado el 2025-12-31 en un análisis con corte a 2026-06-30",
+        "rule": "periodo_incoherente",
+        "source": "sin_dato"
       },
       "operatingIncome": {
         "detail": "la fuente no lo devolvió",
@@ -501,31 +633,45 @@
         "source": "yfinance_statements"
       },
       "trailingEps": {
-        "detail": "BPA TTM = beneficio neto TTM / acciones diluidas medias del último trimestre",
+        "detail": "BPA TTM = suma de los BPA diluidos de los 4 trimestres del corte",
         "source": "derivado"
       }
     },
     "path": "plan_b_yfinance",
+    "pending_results": null,
+    "price_history": {
+      "attempts": 1,
+      "first_date": "2024-10-16",
+      "interval": "1d",
+      "last_date": "2026-10-15",
+      "period": "2y",
+      "reason": null,
+      "rows": 501,
+      "source": "Yahoo Finance (yfinance history: precios sin ajustar por dividendos y eventos)",
+      "status": "ok",
+      "symbol": "BCS"
+    },
     "ttm": {
       "annual_fields": {
         "capitalExpenditures": "sin estados trimestrales",
         "depreciation": "sin estados trimestrales",
         "dividendsPaid": "sin estados trimestrales",
-        "ebitda": "'EBITDA' sin dato en alguno de los 4 últimos trimestres",
+        "ebitda": "'EBITDA' no llega al corte (2026-06-30)",
         "freeCashflow": "sin estados trimestrales",
-        "grossProfits": "'Gross Profit' sin dato en alguno de los 4 últimos trimestres",
-        "interestExpense": "'Interest Expense' sin dato en alguno de los 4 últimos trimestres",
-        "inventory": "'Inventory' sin dato en el último trimestre",
-        "longTermDebt": "'Long Term Debt' sin dato en el último trimestre",
-        "netInterestIncome": "'Net Non Operating Interest Income Expense' sin dato en alguno de los 4 últimos trimestres",
+        "grossProfits": "'Gross Profit' no llega al corte (2026-06-30)",
+        "interestExpense": "'Interest Expense' no llega al corte (2026-06-30)",
+        "inventory": "'Inventory' sin dato en el balance del corte (2026-06-30)",
+        "longTermDebt": "'Long Term Debt' sin dato en el balance del corte (2026-06-30)",
+        "netInterestIncome": "'Net Non Operating Interest Income Expense' no llega al corte (2026-06-30)",
         "operatingCashflow": "sin estados trimestrales",
-        "operatingIncome": "'Operating Income' sin dato en alguno de los 4 últimos trimestres",
+        "operatingIncome": "'Operating Income' no llega al corte (2026-06-30)",
         "stockBasedCompensation": "sin estados trimestrales",
-        "totalCurrentAssets": "'Current Assets' sin dato en el último trimestre",
-        "totalCurrentLiabilities": "'Current Liabilities' sin dato en el último trimestre"
+        "totalCurrentAssets": "'Current Assets' sin dato en el balance del corte (2026-06-30)",
+        "totalCurrentLiabilities": "'Current Liabilities' sin dato en el balance del corte (2026-06-30)"
       },
       "balance_date": "2026-06-30",
       "basis": "ttm",
+      "cut": "2026-06-30",
       "eps": "ttm",
       "errors": [],
       "last_quarter_fields": [
@@ -554,6 +700,46 @@
   },
   "data_validation": [
     {
+      "action": "sin_dato",
+      "field": "interestExpense",
+      "new": null,
+      "old": 28601219325.2,
+      "reason": "dato de otro periodo descartado: interestExpense del ejercicio cerrado el 2025-12-31 en un análisis con corte a 2026-06-30",
+      "rule": "periodo_incoherente"
+    },
+    {
+      "action": "sin_dato",
+      "field": "operatingCashflow",
+      "new": null,
+      "old": 24712202551.4,
+      "reason": "dato de otro periodo descartado: operatingCashflow del ejercicio cerrado el 2025-12-31 en un análisis con corte a 2026-06-30",
+      "rule": "periodo_incoherente"
+    },
+    {
+      "action": "sin_dato",
+      "field": "capitalExpenditures",
+      "new": null,
+      "old": -2451570763.81,
+      "reason": "dato de otro periodo descartado: capitalExpenditures del ejercicio cerrado el 2025-12-31 en un análisis con corte a 2026-06-30",
+      "rule": "periodo_incoherente"
+    },
+    {
+      "action": "sin_dato",
+      "field": "freeCashflow",
+      "new": null,
+      "old": 22260631787.6,
+      "reason": "dato de otro periodo descartado: freeCashflow del ejercicio cerrado el 2025-12-31 en un análisis con corte a 2026-06-30",
+      "rule": "periodo_incoherente"
+    },
+    {
+      "action": "sin_dato",
+      "field": "dividendsPaid",
+      "new": null,
+      "old": -2968523824.28,
+      "reason": "dato de otro periodo descartado: dividendsPaid del ejercicio cerrado el 2025-12-31 en un análisis con corte a 2026-06-30",
+      "rule": "periodo_incoherente"
+    },
+    {
       "action": "politica",
       "field": "revenueGrowth",
       "new": 0.146124755457,
@@ -562,12 +748,12 @@
       "rule": "crecimiento_financiera_estados"
     },
     {
-      "action": "sin_dato",
-      "field": "key_metrics.dividend_yield",
+      "action": "aviso",
+      "field": "ratios.payout_ratio",
       "new": null,
-      "old": 0.503502623606,
-      "reason": "dividend yield 50.35% frente a 3.90% (dividendos pagados / capitalización): no cuadra (más de 2 veces lo que la empresa paga); sin dato, no puntúa",
-      "rule": "identidad_dividendo"
+      "old": 0.2238631,
+      "reason": "payout_ratio de Finnhub (0.2239) sin dato del corte de los estados con que casarlo: es de otro periodo y no entra",
+      "rule": "periodo_incoherente"
     }
   ],
   "dcf_status": {
@@ -586,8 +772,8 @@
           "text": "uno lo ve en precio y otro con dirección: no coinciden, sin oponerse"
         },
         {
-          "label": "Confianza · Calidad de fuente (media)",
-          "text": "12 campos de Finnhub en lugar de los estados"
+          "label": "Confianza · Calidad de fuente (baja)",
+          "text": "validación: interestExpense (periodo_incoherente); validación: operatingCashflow (periodo_incoherente); validación: capitalExpenditures (periodo_incoherente); validación: freeCashflow (periodo_incoherente); validación: dividendsPaid (periodo_incoherente); 9 campos de Finnhub en lugar de los estados"
         }
       ],
       "title": "Detalle técnico para auditoría"
@@ -1178,8 +1364,8 @@
         {
           "key": "source",
           "label": "Calidad de fuente",
-          "level": "Media",
-          "text": "Parte de los datos proviene de una fuente secundaria."
+          "level": "Baja",
+          "text": "Un dato de la fuente no superó la validación y se corrigió o se descartó. Parte de los datos proviene de una fuente secundaria."
         },
         {
           "key": "stability",
@@ -1191,6 +1377,7 @@
       "level": "media",
       "plain": [
         "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no.",
+        "Un dato de la fuente no superó la validación y se corrigió o se descartó.",
         "Parte de los datos proviene de una fuente secundaria."
       ],
       "reasons": [
@@ -1201,17 +1388,43 @@
         },
         {
           "dimension": "calidad de fuente",
-          "level": "media",
+          "level": "baja",
+          "text": "Un dato de la fuente no superó la validación y se corrigió o se descartó."
+        },
+        {
+          "dimension": "calidad de fuente",
+          "level": "baja",
+          "text": "Un dato de la fuente no superó la validación y se corrigió o se descartó."
+        },
+        {
+          "dimension": "calidad de fuente",
+          "level": "baja",
+          "text": "Un dato de la fuente no superó la validación y se corrigió o se descartó."
+        },
+        {
+          "dimension": "calidad de fuente",
+          "level": "baja",
+          "text": "Un dato de la fuente no superó la validación y se corrigió o se descartó."
+        },
+        {
+          "dimension": "calidad de fuente",
+          "level": "baja",
+          "text": "Un dato de la fuente no superó la validación y se corrigió o se descartó."
+        },
+        {
+          "dimension": "calidad de fuente",
+          "level": "baja",
           "text": "Parte de los datos proviene de una fuente secundaria."
         }
       ],
       "summary": "Confianza del veredicto: media. Contrae el atractivo del precio hacia 50 (factor 0.75): sin ajustar 50 → ajustado a 50. La calidad del negocio no se contrae.",
       "tone": "warn",
-      "verdict_text": "(confianza media: el P/B justificado la ve en precio y el P/B del sector barata)"
+      "verdict_text": "(confianza media: datos de fuente con incidencias)"
     },
     "cover": {
       "archetype": "FINANCIAL",
       "archetype_label": "Banco/aseguradora",
+      "as_of_note": "Estados financieros a 30 de junio de 2026 (últimos doce meses).",
       "categories": [
         {
           "items": [
@@ -1221,8 +1434,8 @@
               "coverage": 1.0,
               "max": 20,
               "name": "Solidez Financiera",
-              "pct": 70.0,
-              "score": 14,
+              "pct": 60.0,
+              "score": 12,
               "text": null,
               "tone": "pos"
             },
@@ -1284,10 +1497,14 @@
       ],
       "confidence_reasons": [
         "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no.",
+        "Un dato de la fuente no superó la validación y se corrigió o se descartó.",
         "Parte de los datos proviene de una fuente secundaria."
       ],
       "coverage_notes": [],
-      "currency_note": "Estados financieros en GBP convertidos a USD, la moneda de la cotización, con el tipo de cambio de Yahoo (GBP=X): el balance al cierre de cada período y los resultados y flujos al promedio del período (TTM: 1 GBP = 1.3422 USD; balance al 2026-06-30: 1 GBP = 1.3254 USD). Cifras por acción en la clase que cotiza: cada título cotizado equivale a 4.15 acciones de los estados (ADR u otra clase).",
+      "currency_note": "Estados financieros en GBP convertidos a USD, la moneda de la cotización, con el tipo de cambio de Yahoo (GBP=X): el balance al cierre de cada período y los resultados y flujos al promedio del período (TTM: 1 GBP = 1.3422 USD; balance al 2026-06-30: 1 GBP = 1.3254 USD). Cifras por acción en la clase que cotiza: cada título cotizado equivale a 4 acciones ordinarias de 25 peniques (factor del depositario, JPMorgan). Desde el balance del 2025-12-31 la empresa tiene un 3.7% menos de acciones (recompras); el valor por acción usa las de hoy.",
+      "data_notices": [
+        "Sin dato del corte, descartados por ser de otro periodo: dividendos pagados, flujo de caja libre, flujo de operaciones, gastos financieros, inversión (capex)."
+      ],
       "highlights": [
         {
           "kicker": "FORTALEZA CLAVE",
@@ -1348,8 +1565,8 @@
         {
           "key": "dividend_yield",
           "label": "Dividend yield",
-          "state": "sin_dato",
-          "value": "—"
+          "state": "con_dato",
+          "value": "2.71%"
         },
         {
           "key": "beta",
@@ -1372,14 +1589,14 @@
         "level": "sólida",
         "note": null,
         "question": "¿es buena la empresa?",
-        "score": 75,
+        "score": 72,
         "title": "CALIDAD DEL NEGOCIO",
         "tone": "pos"
       },
       "verdict": {
-        "confidence_text": "(confianza media: el P/B justificado la ve en precio y el P/B del sector barata)",
+        "confidence_text": "(confianza media: datos de fuente con incidencias)",
         "confidence_tone": "warn",
-        "full": "Calidad sólida · precio razonable (confianza media: el P/B justificado la ve en precio y el P/B del sector barata)",
+        "full": "Calidad sólida · precio razonable (confianza media: datos de fuente con incidencias)",
         "text": "Calidad sólida · precio razonable"
       }
     },
@@ -1438,11 +1655,7 @@
       "graham": null,
       "interest_coverage": null,
       "net_debt_to_ebitda": null,
-      "payout_ratio": {
-        "label": "Conservador",
-        "text": "el payout de 28% deja amplio margen para sostener y aumentar el dividendo",
-        "tone": "pos"
-      },
+      "payout_ratio": null,
       "pe": null,
       "pos52": {
         "label": "Zona media del rango",
@@ -1607,22 +1820,22 @@
             "gap": null,
             "key": "shareholder_yield",
             "label": "Shareholder yield (div. + recompras)",
-            "reading": "Sin dato",
-            "state": "sin_dato",
-            "text": "no cuadra con lo que la empresa paga en dividendos (dividend yield 50.35% frente a 3.90% (dividendos pagados / capitalización)); no puntúa",
+            "reading": "—",
+            "state": "con_dato",
+            "text": null,
             "tone": null,
-            "value": "—"
+            "value": "6.57%"
           },
           {
             "bench": null,
             "gap": null,
             "key": "dividend_yield",
             "label": "Dividend yield",
-            "reading": "Sin dato",
-            "state": "sin_dato",
-            "text": "no cuadra con lo que la empresa paga en dividendos (dividend yield 50.35% frente a 3.90% (dividendos pagados / capitalización)); no puntúa",
+            "reading": "—",
+            "state": "con_dato",
+            "text": "0.62 USD al año por ADR (suma de los pagos ordinarios del último año)",
             "tone": null,
-            "value": "—"
+            "value": "2.71%"
           },
           {
             "bench": null,
@@ -1667,11 +1880,11 @@
                 {
                   "in_block": false,
                   "metric": "Solidez Bancaria",
-                  "reason": "Buena salud financiera (7/10)",
-                  "sign": "+4",
+                  "reason": "Buena salud financiera (6/10)",
+                  "sign": "+2",
                   "state": "con_dato",
                   "tone": "pos",
-                  "value": "7/10"
+                  "value": "6/10"
                 },
                 {
                   "in_block": false,
@@ -1685,8 +1898,8 @@
               ],
               "max": 20,
               "name": "Solidez Financiera",
-              "pct": 70.0,
-              "score": 14,
+              "pct": 60.0,
+              "score": 12,
               "text": null,
               "tone": "pos"
             },
@@ -1879,13 +2092,13 @@
         },
         "cards": [
           {
-            "body": "Buena salud financiera. ROA bueno (0.46% ≥ 0.3%) · ROE bueno (10.0% ≥ 8%) · Capitalización aceptable (4.6%) · Dividendo sostenible (payout 28%)",
+            "body": "Buena salud financiera. ROA bueno (0.46% ≥ 0.3%) · ROE bueno (10.0% ≥ 8%) · Capitalización aceptable (4.6%)",
             "key": "financial_health",
             "state": "con_dato",
             "subtitle": "Buena",
             "title": "Salud financiera (sector financiero)",
             "tone": "pos",
-            "value": "7/10"
+            "value": "6/10"
           },
           {
             "body": "No aplica a bancos y aseguradoras: el balance es el producto (depósitos y préstamos)",
@@ -1938,7 +2151,7 @@
           ],
           [
             "EPS",
-            "$3.11",
+            "$2.68",
             "Valor en libros / acción",
             "$31.56"
           ]
@@ -2032,7 +2245,7 @@
           "VALOR",
           "LECTURA"
         ],
-        "intro": "El payout de 28% deja amplio margen para sostener y aumentar el dividendo.",
+        "intro": null,
         "rows": [
           {
             "bench": null,
@@ -2066,17 +2279,6 @@
             "text": null,
             "tone": null,
             "value": "7.97%"
-          },
-          {
-            "bench": null,
-            "gap": null,
-            "key": "payout_ratio",
-            "label": "Payout del dividendo",
-            "reading": "Conservador",
-            "state": "con_dato",
-            "text": "el payout de 28% deja amplio margen para sostener y aumentar el dividendo",
-            "tone": "pos",
-            "value": "28.19%"
           }
         ]
       },
@@ -2232,10 +2434,10 @@
             "key": "dividend_yield",
             "label": "Dividend Yield",
             "reading": "—",
-            "state": "sin_dato",
+            "state": "con_dato",
             "text": null,
             "tone": null,
-            "value": "—"
+            "value": "2.71%"
           },
           {
             "bench": "—",
@@ -2332,11 +2534,11 @@
           "delta": "",
           "key": "dividend_yield",
           "label": "Dividend yield",
-          "pill": "—",
-          "state": "sin_dato",
+          "pill": "En rango",
+          "state": "con_dato",
           "tone": "neu",
-          "unit": "",
-          "value": "—"
+          "unit": "%",
+          "value": "2.7"
         }
       ],
       "composition": {
@@ -2365,9 +2567,9 @@
               "kind": "bar",
               "label": "Solidez Financiera",
               "max": 20,
-              "pct": 70.0,
+              "pct": 60.0,
               "tone": "pos",
-              "value": 14
+              "value": 12
             },
             {
               "kind": "bar",
@@ -2394,7 +2596,7 @@
               "value": 14
             }
           ],
-          "score": 75,
+          "score": 72,
           "title": "CALIDAD DEL NEGOCIO",
           "tone": "pos"
         }
@@ -2402,11 +2604,11 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad sólida · precio razonable (confianza media: el P/B justificado la ve en precio y el P/B del sector barata). Calidad 75/100 · precio 50/100."
+          "text": "Calidad sólida · precio razonable (confianza media: datos de fuente con incidencias). Calidad 72/100 · precio 50/100."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
-          "text": "Destaca en Calidad de Ganancias (19/20) y Solidez Financiera (14/20)."
+          "text": "Destaca en Calidad de Ganancias (19/20) y Crecimiento (14/20)."
         },
         {
           "label": "RENTABILIDAD",
@@ -2414,7 +2616,7 @@
         },
         {
           "label": "SOLIDEZ",
-          "text": "Salud financiera bancaria de 7/10 (buena)."
+          "text": "Salud financiera bancaria de 6/10 (buena)."
         },
         {
           "label": "CRECIMIENTO Y RETORNO",
@@ -3102,8 +3304,8 @@
     "normalized_net_income": 10563609688.7,
     "one_off_net": -31445620.7335,
     "one_off_pct": 0.002985675169,
-    "pe_normalized": 7.33235634409,
-    "pe_reported": 7.35424837836,
+    "pe_normalized": 8.51216762417,
+    "pe_reported": 8.53758219168,
     "pe_unreliable": false,
     "reported_net_income": 10532164068.0,
     "used_in_score": true
@@ -3141,18 +3343,11 @@
         "metric": "Equity/Assets",
         "points": 1,
         "severity": "ok"
-      },
-      {
-        "detail": "Dividendo sostenible (payout 28%)",
-        "max": 1,
-        "metric": "Dividendo",
-        "points": 1,
-        "severity": "excellent"
       }
     ],
     "interpretation": "Buena salud financiera",
     "level": "GOOD",
-    "score": 7
+    "score": 6
   },
   "graham_number": null,
   "growth_basis": {
@@ -3178,24 +3373,24 @@
     "current_ratio": null,
     "de": 1.73813604173,
     "debt_to_assets": 0.0797147179948,
-    "dividend_yield": null,
+    "dividend_yield": 0.0271453588379,
     "earnings_growth": 0.1729,
-    "earnings_yield": 0.135975826292,
+    "earnings_yield": 0.117129179848,
     "ebitda": null,
     "ebitda_margin": null,
     "enterprise_value": -66920031944.2,
-    "eps": 3.10568789325,
+    "eps": 2.67523048561,
     "ev_ebitda": null,
     "ev_revenue": -1.62145299258,
-    "fcf_yield": 0.292432523438,
+    "fcf_yield": null,
     "ffo": null,
     "ffo_payout": null,
     "forward_pe": 7.59566,
-    "free_cash_flow": 22260631787.6,
+    "free_cash_flow": null,
     "gross_margin": null,
     "interest_coverage": null,
     "interest_coverage_state": null,
-    "interest_expense": 28601219325.2,
+    "interest_expense": null,
     "inventory_turnover": null,
     "market_cap": 76122284641.7,
     "net_debt": -143042316586.0,
@@ -3205,17 +3400,17 @@
     "net_income_normalized": 10563609688.7,
     "net_interest_income": null,
     "net_margin": 0.255191285035,
-    "operating_cash_flow": 24712202551.4,
+    "operating_cash_flow": null,
     "operating_income": null,
     "operating_margin": null,
     "p_ffo": null,
     "payout_basis": "beneficio_neto",
-    "payout_ratio": 0.281853169503,
+    "payout_ratio": null,
     "pb": 0.723726705577,
-    "pe": 7.35424837836,
-    "pe_normalized": 7.33235634409,
+    "pe": 8.53758219168,
+    "pe_normalized": 8.51216762417,
     "peg": 0.45483,
-    "pfcf": 3.41959228148,
+    "pfcf": null,
     "price_52w_high": 28.6900005341,
     "price_52w_low": 19.2900009155,
     "ps": 1.84442091028,
@@ -3231,7 +3426,7 @@
     "roic": null,
     "roic_reason": "capital invertido -2% de los activos (< 10%): ROIC no significativo",
     "roic_wacc_spread": null,
-    "shareholder_yield": null,
+    "shareholder_yield": 0.0657431342632,
     "shares_outstanding": 3332849568.0,
     "total_assets": 2293414039910.0,
     "total_debt": 182818853436.0,
@@ -3352,7 +3547,7 @@
         "category": "Solidez Financiera",
         "included": true,
         "max": 20,
-        "score": 14
+        "score": 12
       },
       {
         "category": "Rentabilidad",
@@ -3380,7 +3575,7 @@
     "low_coverage_categories": [],
     "not_applicable_categories": [],
     "partial": false,
-    "score": 75
+    "score": 72
   },
   "ratios": {
     "asset_turnover": 0.017995723435,
@@ -3389,23 +3584,23 @@
     "current_ratio": null,
     "debt_to_assets": 0.0797147179948,
     "debt_to_equity": 1.73813604173,
-    "dividend_yield": 0.503502623606,
-    "earnings_yield": 0.135975826292,
+    "dividend_yield": 0.0271453588379,
+    "earnings_yield": 0.117129179848,
     "ebitda": null,
     "ebitda_margin": null,
     "enterprise_value": -66920031944.2,
-    "eps": 3.10568789325,
+    "eps": 2.67523048561,
     "ev_ebitda": null,
-    "ev_fcf": -3.00620542052,
+    "ev_fcf": null,
     "ev_revenue": -1.62145299258,
-    "fcf": 22260631787.6,
-    "fcf_to_net_income": 2.11358574021,
-    "fcf_yield": 0.292432523438,
+    "fcf": null,
+    "fcf_to_net_income": null,
+    "fcf_yield": null,
     "ffo": null,
     "ffo_payout": null,
     "ffo_per_share": null,
     "forward_pe": 7.59566,
-    "graham_number": 46.9603057235,
+    "graham_number": 43.5845547287,
     "gross_margin": null,
     "interest_coverage": null,
     "inventory_turnover": null,
@@ -3414,13 +3609,13 @@
     "net_debt_to_ebitda": null,
     "net_income": 10532164068.0,
     "net_margin": 0.255191285035,
-    "operating_cash_flow": 24712202551.4,
+    "operating_cash_flow": null,
     "operating_margin": null,
-    "p_fcf": 3.41959228148,
+    "p_fcf": null,
     "p_ffo": null,
-    "payout_ratio": 0.281853169503,
+    "payout_ratio": null,
     "pb": 0.723726705577,
-    "pe": 7.35424837836,
+    "pe": 8.53758219168,
     "peg": 0.45483,
     "ps": 1.84442091028,
     "quick_ratio": null,
@@ -3571,7 +3766,7 @@
       "Solidez Financiera": {
         "adjustments": [
           {
-            "adjustment": 4,
+            "adjustment": 2,
             "details": [
               {
                 "detail": "ROA bueno (0.46% ≥ 0.3%)",
@@ -3593,19 +3788,12 @@
                 "metric": "Equity/Assets",
                 "points": 1,
                 "severity": "ok"
-              },
-              {
-                "detail": "Dividendo sostenible (payout 28%)",
-                "max": 1,
-                "metric": "Dividendo",
-                "points": 1,
-                "severity": "excellent"
               }
             ],
             "metric": "Solidez Bancaria",
-            "reason": "Buena salud financiera (7/10)",
+            "reason": "Buena salud financiera (6/10)",
             "severity": "good",
-            "value": "7/10"
+            "value": "6/10"
           },
           {
             "adjustment": 0,
@@ -3619,11 +3807,11 @@
         "conclusive": true,
         "coverage": 1.0,
         "details": [
-          "Buena salud financiera (7/10)",
+          "Buena salud financiera (6/10)",
           "No aplica a bancos y aseguradoras: el balance es el producto (depósitos y préstamos) (no cuenta en la cobertura)"
         ],
         "max": 20,
-        "score": 14
+        "score": 12
       },
       "Valoración": {
         "adjustments": [
@@ -3780,8 +3968,8 @@
   },
   "verdict": {
     "confidence": "media",
-    "confidence_text": "(confianza media: el P/B justificado la ve en precio y el P/B del sector barata)",
-    "full": "Calidad sólida · precio razonable (confianza media: el P/B justificado la ve en precio y el P/B del sector barata)",
+    "confidence_text": "(confianza media: datos de fuente con incidencias)",
+    "full": "Calidad sólida · precio razonable (confianza media: datos de fuente con incidencias)",
     "price_level": "razonable",
     "quality_level": "sólida",
     "text": "Calidad sólida · precio razonable"

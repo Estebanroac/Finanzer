@@ -217,6 +217,104 @@
     "score": 0.666666666667
   },
   "data_provenance": {
+    "as_of": {
+      "date": "2026-06-30",
+      "fields": {
+        "capitalExpenditures": {
+          "period_end": "2026-06-30",
+          "period_type": "ttm"
+        },
+        "cash": {
+          "period_end": "2026-06-30",
+          "period_type": "balance"
+        },
+        "depreciation": {
+          "period_end": "2026-06-30",
+          "period_type": "ttm"
+        },
+        "dividendsPaid": {
+          "period_end": "2026-06-30",
+          "period_type": "ttm"
+        },
+        "ebitda": {
+          "period_end": "2026-06-30",
+          "period_type": "ttm"
+        },
+        "freeCashflow": {
+          "period_end": "2026-06-30",
+          "period_type": "ttm"
+        },
+        "grossProfits": {
+          "period_end": "2026-06-30",
+          "period_type": "ttm"
+        },
+        "interestExpense": {
+          "period_end": "2026-06-30",
+          "period_type": "ttm"
+        },
+        "inventory": {
+          "period_end": "2026-06-30",
+          "period_type": "balance"
+        },
+        "longTermDebt": {
+          "period_end": "2026-06-30",
+          "period_type": "balance"
+        },
+        "netIncome": {
+          "period_end": "2026-06-30",
+          "period_type": "ttm"
+        },
+        "netInterestIncome": {
+          "period_end": "2026-06-30",
+          "period_type": "ttm"
+        },
+        "operatingCashflow": {
+          "period_end": "2026-06-30",
+          "period_type": "ttm"
+        },
+        "operatingIncome": {
+          "period_end": "2026-06-30",
+          "period_type": "ttm"
+        },
+        "retainedEarnings": {
+          "period_end": "2026-06-30",
+          "period_type": "balance"
+        },
+        "stockBasedCompensation": {
+          "period_end": "2026-06-30",
+          "period_type": "ttm"
+        },
+        "totalAssets": {
+          "period_end": "2026-06-30",
+          "period_type": "balance"
+        },
+        "totalCurrentAssets": {
+          "period_end": "2026-06-30",
+          "period_type": "balance"
+        },
+        "totalCurrentLiabilities": {
+          "period_end": "2026-06-30",
+          "period_type": "balance"
+        },
+        "totalDebt": {
+          "period_end": "2026-06-30",
+          "period_type": "balance"
+        },
+        "totalLiab": {
+          "period_end": "2026-06-30",
+          "period_type": "balance"
+        },
+        "totalRevenue": {
+          "period_end": "2026-06-30",
+          "period_type": "ttm"
+        },
+        "totalStockholderEquity": {
+          "period_end": "2026-06-30",
+          "period_type": "balance"
+        }
+      },
+      "type": "ttm"
+    },
     "currency": {
       "converted": false,
       "price": "USD",
@@ -230,7 +328,9 @@
       },
       "share_class": {
         "applied": false,
+        "basis": "misma_clase",
         "factor": 0.997898647331,
+        "implied": 0.997898647331,
         "price_shares": 1436017579.37,
         "statement_shares": 1433000000.0,
         "statement_shares_date": "2025-12-31",
@@ -238,6 +338,72 @@
       },
       "source": "financialData.financialCurrency",
       "statements": "USD"
+    },
+    "dividend": {
+      "as_of": "2026-10-09",
+      "basis": "declarado",
+      "currency": "USD",
+      "foreign_line": false,
+      "identity": {
+        "collected_ttm": 0.6,
+        "ok": true,
+        "paid_per_unit_statements": 0.603056684291,
+        "ratio": 1.00509447382
+      },
+      "notes": [],
+      "paid_per_unit_statements": 0.603056684291,
+      "payments": {
+        "basis": "ultimo_x_frecuencia",
+        "extraordinary": [],
+        "frequency": 4,
+        "last": {
+          "amount": 0.15,
+          "date": "2026-07-15"
+        },
+        "payments": [
+          {
+            "amount": 0.15,
+            "date": "2025-01-15"
+          },
+          {
+            "amount": 0.15,
+            "date": "2025-04-15"
+          },
+          {
+            "amount": 0.15,
+            "date": "2025-07-15"
+          },
+          {
+            "amount": 0.15,
+            "date": "2025-10-15"
+          },
+          {
+            "amount": 0.15,
+            "date": "2026-01-15"
+          },
+          {
+            "amount": 0.15,
+            "date": "2026-04-15"
+          },
+          {
+            "amount": 0.15,
+            "date": "2026-07-15"
+          }
+        ],
+        "rate": 0.6,
+        "ttm_total": 0.6
+      },
+      "rate": 0.6,
+      "source": "yahoo_quotesummary",
+      "source_name": "yahoo_quotesummary",
+      "source_rate": 0.6,
+      "unit": "título"
+    },
+    "edgar": {
+      "cik": 831259,
+      "reason": null,
+      "status": "ok",
+      "title": "FREEPORT-MCMORAN INC"
     },
     "errors": [],
     "fields": {
@@ -338,8 +504,8 @@
         "source": "yahoo_quotesummary"
       },
       "_yahoo_ratios.dividendYield": {
-        "detail": "quoteSummary v10 (con crumb)",
-        "source": "yahoo_quotesummary"
+        "detail": "dividendo indicado / precio",
+        "source": "derivado"
       },
       "_yahoo_ratios.ebitdaMargins": {
         "detail": "quoteSummary v10 (con crumb)",
@@ -430,12 +596,12 @@
         "source": "yfinance_statements"
       },
       "dividendRate": {
-        "detail": "quoteSummary v10 (con crumb)",
+        "detail": "yahoo_quotesummary: indicado declarado, verificado con los pagos",
         "source": "yahoo_quotesummary"
       },
       "dividendYield": {
-        "detail": "quoteSummary v10 (con crumb)",
-        "source": "yahoo_quotesummary"
+        "detail": "dividendo indicado / precio",
+        "source": "derivado"
       },
       "dividendsPaid": {
         "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
@@ -635,10 +801,32 @@
       }
     },
     "path": "yahoo_quotesummary",
+    "pending_results": {
+      "accn": "0000831259-26-000043",
+      "as_of": "2026-06-30",
+      "date": "2026-10-02",
+      "form": "8-K",
+      "items": "2.02,7.01,9.01",
+      "report_date": "2026-10-02",
+      "source": "SEC EDGAR"
+    },
+    "price_history": {
+      "attempts": 1,
+      "first_date": "2024-10-16",
+      "interval": "1d",
+      "last_date": "2026-10-09",
+      "period": "2y",
+      "reason": null,
+      "rows": 497,
+      "source": "Yahoo Finance (yfinance history: precios sin ajustar por dividendos y eventos)",
+      "status": "ok",
+      "symbol": "FCX"
+    },
     "ttm": {
       "annual_fields": {},
       "balance_date": "2026-06-30",
       "basis": "ttm",
+      "cut": "2026-06-30",
       "eps": "fuente",
       "errors": [],
       "last_quarter_fields": [
@@ -1859,6 +2047,7 @@
     "cover": {
       "archetype": "CYCLICAL",
       "archetype_label": "Cíclica",
+      "as_of_note": "Estados financieros a 30 de junio de 2026 (últimos doce meses).",
       "categories": [
         {
           "items": [
@@ -1936,6 +2125,9 @@
       ],
       "coverage_notes": [],
       "currency_note": null,
+      "data_notices": [
+        "La empresa publicó resultados el 2 de octubre de 2026; este análisis aún no los incorpora."
+      ],
       "highlights": [
         {
           "kicker": "FORTALEZA CLAVE",
@@ -2311,7 +2503,7 @@
             "label": "Dividend yield",
             "reading": "—",
             "state": "con_dato",
-            "text": null,
+            "text": "0.6 USD al año por título (último dividendo declarado por su frecuencia)",
             "tone": null,
             "value": "0.81%"
           },
@@ -2621,63 +2813,63 @@
         ],
         "piotroski_criteria": [
           {
-            "detail": "ROA positivo",
+            "detail": "FY2025: ROA positivo",
             "key": "roa_positive",
             "label": "ROA positivo",
             "status": "Cumple",
             "tone": "pos"
           },
           {
-            "detail": "Flujo de caja operativo positivo",
+            "detail": "FY2025: Flujo de caja operativo positivo",
             "key": "cfo_positive",
             "label": "Flujo de caja operativo positivo",
             "status": "Cumple",
             "tone": "pos"
           },
           {
-            "detail": "El ROA mejoró frente al año anterior",
+            "detail": "FY2025: El ROA mejoró frente al año anterior",
             "key": "roa_improved",
             "label": "ROA en mejora",
             "status": "Cumple",
             "tone": "pos"
           },
           {
-            "detail": "El flujo operativo supera al beneficio neto (beneficio de calidad)",
+            "detail": "FY2025: El flujo operativo supera al beneficio neto (beneficio de calidad)",
             "key": "earnings_quality",
             "label": "Calidad del beneficio (flujo operativo frente a beneficio neto)",
             "status": "Cumple",
             "tone": "pos"
           },
           {
-            "detail": "La deuda a largo plazo aumentó",
+            "detail": "FY2025: La deuda a largo plazo aumentó",
             "key": "debt_reduced",
             "label": "Reducción de deuda a largo plazo",
             "status": "No cumple",
             "tone": "neg"
           },
           {
-            "detail": "La liquidez no mejoró",
+            "detail": "FY2025: La liquidez no mejoró",
             "key": "current_ratio_improved",
             "label": "Liquidez en mejora",
             "status": "No cumple",
             "tone": "neg"
           },
           {
-            "detail": "Sin dilución de acciones",
+            "detail": "FY2025: Sin dilución de acciones",
             "key": "no_dilution",
             "label": "Sin dilución de acciones",
             "status": "Cumple",
             "tone": "pos"
           },
           {
-            "detail": "El margen bruto no mejoró",
+            "detail": "FY2025: El margen bruto no mejoró",
             "key": "gross_margin_improved",
             "label": "Margen bruto en mejora",
             "status": "No cumple",
             "tone": "neg"
           },
           {
-            "detail": "La rotación de activos no mejoró",
+            "detail": "FY2025: La rotación de activos no mejoró",
             "key": "asset_turnover_improved",
             "label": "Rotación de activos en mejora",
             "status": "No cumple",
