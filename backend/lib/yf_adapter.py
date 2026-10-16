@@ -1199,6 +1199,26 @@ def _enrich_prior_year_data(symbol: str, info: Dict[str, Any], ticker=None) -> D
         logger.debug(f"[ENRICH] yfinance statement fetch failed: {e}")
         return info
 
+    # Fase 2b: Yahoo mete a veces en los estados ANUALES columnas interinas sin las cifras del ejercicio (TM: 2025-09-30
+    # y 2025-06-30 entre el FY2026 y el FY2025, con solo acciones medias y BPA). No son ejercicios: se descartan las
+    # columnas sin las filas núcleo del estado (las del corte trimestral, lib/ttm.py), y el FY1 vuelve a ser el
+    # ejercicio anterior (Piotroski, CAGR, Altman).
+    from ttm import CORE_ROWS, CF_CORE_ROW
+
+    def _drop_empty(df, name, core):
+        if df is None or getattr(df, "empty", True):
+            return df
+        rows = [r for r in core if r in df.index]
+        empty = [c for c in df.columns if not rows or not df.loc[rows, c].notna().any()]
+        if empty and len(empty) < len(df.columns):
+            logger.info(f"[ENRICH] {symbol}: columnas anuales sin {', '.join(core)} en {name}: "
+                        f"{', '.join(str(getattr(c, 'date', lambda: c)()) for c in empty)}")
+            df = df.drop(columns=empty)
+        return df
+    inc = _drop_empty(inc, "resultados", CORE_ROWS)
+    bs = _drop_empty(bs, "balance", ("Total Assets",))
+    cf = _drop_empty(cf, "flujos", (CF_CORE_ROW,))
+
     has_inc = inc is not None and not inc.empty and len(inc.columns) >= 2
     has_bs = bs is not None and not bs.empty and len(bs.columns) >= 2
     has_cf = cf is not None and not cf.empty and len(cf.columns) >= 2
