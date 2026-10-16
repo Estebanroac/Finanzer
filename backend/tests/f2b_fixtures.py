@@ -75,10 +75,12 @@ def save_facts(cik, reduced, base=F2B_DIR):
 _NS = {"us-gaap": "http://fasb.org/us-gaap/2025", "ifrs-full": "https://xbrl.ifrs.org/taxonomy/2025-03-27/ifrs-full"}
 
 
-def instance_xml(facts):
-    """Instancia XBRL mínima con los hechos (forma de companyfacts) que lee sec_edgar.parse_instance."""
+def instance_xml(facts, segment=None):
+    """Instancia XBRL mínima con los hechos (forma de companyfacts) que lee sec_edgar.parse_instance y, si se da
+    `segment` = {axis, member, by_date: {fecha: {concepto: valor}}}, los saldos con esa dimensión (parse_segment)."""
     from xml.sax.saxutils import escape
     ctx, units, body = {}, {}, []
+    seg_ctx = []
     for tx, cs in sorted(facts.get("facts", {}).items()):
         for c, node in sorted(cs.items()):
             for u, fs in sorted(node["units"].items()):
@@ -87,9 +89,22 @@ def instance_xml(facts):
                     key = (f.get("start"), f["end"])
                     cid = ctx.setdefault(key, f"c{len(ctx)}")
                     body.append(f'<{tx}:{c} contextRef="{cid}" unitRef="{uid}" decimals="INF">{f["val"]}</{tx}:{c}>')
+    if segment:
+        uid = units.setdefault("USD", f"u{len(units)}")
+        for i, (d, vals) in enumerate(sorted(segment["by_date"].items())):
+            cid = f"s{i}"
+            seg_ctx.append((cid, d))
+            for c, v in sorted(vals.items()):
+                body.append(f'<us-gaap:{c} contextRef="{cid}" unitRef="{uid}" decimals="INF">{v:.0f}</us-gaap:{c}>')
     head = ['<?xml version="1.0" encoding="utf-8"?>',
             '<xbrli:xbrl xmlns:xbrli="http://www.xbrl.org/2003/instance" xmlns:iso4217="http://www.xbrl.org/2003/iso4217" '
+            'xmlns:xbrldi="http://xbrl.org/2006/xbrldi" xmlns:srt="http://fasb.org/srt/2025" '
             + " ".join(f'xmlns:{k}="{v}"' for k, v in _NS.items()) + ">"]
+    for cid, d in seg_ctx:
+        head.append(f'<xbrli:context id="{cid}"><xbrli:entity><xbrli:identifier scheme="http://www.sec.gov/CIK">0'
+                    f'</xbrli:identifier><xbrli:segment><xbrldi:explicitMember dimension="srt:{segment["axis"]}">'
+                    f'srt:{segment["member"]}</xbrldi:explicitMember></xbrli:segment></xbrli:entity><xbrli:period>'
+                    f'<xbrli:instant>{d}</xbrli:instant></xbrli:period></xbrli:context>')
     for (st, en), cid in ctx.items():
         per = (f"<xbrli:startDate>{st}</xbrli:startDate><xbrli:endDate>{en}</xbrli:endDate>" if st
                else f"<xbrli:instant>{en}</xbrli:instant>")
@@ -100,11 +115,11 @@ def instance_xml(facts):
     return "\n".join(head + body + ["</xbrli:xbrl>", ""])
 
 
-def save_instance(accn, facts, base=F2B_DIR):
+def save_instance(accn, facts, base=F2B_DIR, segment=None):
     path = os.path.join(base, "edgar", "instances", f"{accn}.xml")
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as fh:
-        fh.write(instance_xml(facts))
+        fh.write(instance_xml(facts, segment))
 
 
 def save_cover(accn, html_text, base=F2B_DIR):

@@ -103,8 +103,30 @@ CONCEPTS: Dict[str, Tuple[str, int, Tuple[str, ...], Tuple[str, ...]]] = {
     "equity_parent": ("stock", 1, ("StockholdersEquity", "StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest"),
                       ("EquityAttributableToOwnersOfParent", "Equity")),
 }
-_WANTED = {"us-gaap": {c for v in CONCEPTS.values() for c in v[2]},
-           "ifrs-full": {c for v in CONCEPTS.values() for c in v[3]}}
+# Componentes de la deuda (T5, F2_PRECEDENCIA §2.3): saldos de balance, el total o sus partes corriente y no
+# corriente. Solo pasivos ya en balance: los arrendamientos firmados y aún no iniciados van en notas (MSFT: 329.1 mil
+# millones de USD solo en texto) y no tienen estos conceptos.
+DEBT_PARTS: Dict[str, Dict[str, Tuple[str, ...]]] = {
+    "us-gaap": {
+        "operating_leases": ("OperatingLeaseLiability", "OperatingLeaseLiabilityCurrent",
+                             "OperatingLeaseLiabilityNoncurrent"),
+        "finance_leases": ("FinanceLeaseLiability", "FinanceLeaseLiabilityCurrent", "FinanceLeaseLiabilityNoncurrent"),
+        "subordinated": ("SubordinatedDebt",),
+        # El emisor presenta su deuda con el arrendamiento financiero dentro (XOM, MU): no se vuelve a sumar.
+        "debt_with_finance_leases": ("LongTermDebtAndCapitalLeaseObligations",
+                                     "LongTermDebtAndCapitalLeaseObligationsCurrent", "DebtAndCapitalLeaseObligations"),
+    },
+    "ifrs-full": {
+        "leases": ("LeaseLiabilities", "CurrentLeaseLiabilities", "NoncurrentLeaseLiabilities"),
+        "subordinated": ("SubordinatedLiabilities",),
+    },
+}
+_WANTED = {"us-gaap": {c for v in CONCEPTS.values() for c in v[2]} | {c for v in DEBT_PARTS["us-gaap"].values() for c in v},
+           "ifrs-full": {c for v in CONCEPTS.values() for c in v[3]}
+           | {c for v in DEBT_PARTS["ifrs-full"].values() for c in v}}
+# Deuda de la financiera cautiva (T5): solo va con dimensiones en la instancia del filing.
+CAPTIVE_DEBT_CONCEPTS = ("LongTermDebtAndCapitalLeaseObligations", "LongTermDebtAndCapitalLeaseObligationsCurrent",
+                         "LongTermDebtNoncurrent", "LongTermDebtCurrent", "ShortTermBorrowings", "CommercialPaper")
 _FACT_KEYS = ("start", "end", "val", "filed", "form", "accn")
 
 _cache: Dict[str, Tuple[float, Any]] = {}
@@ -343,6 +365,70 @@ def parse_instance(xml: bytes, form: str, filed: str, accn: str) -> Dict[str, An
     return _index_facts(out)
 
 
+def parse_segment(xml: bytes, axis: str, member: str, concepts: Tuple[str, ...]) -> Dict[str, Dict[str, float]]:
+    """Saldos de `concepts` (us-gaap) con UNA sola dimensión, `axis` = `member` (la cautiva de CAT:
+    ProductOrServiceAxis = FinancialProductsMember): {fecha: {concepto: valor}}."""
+    import io
+    import xml.etree.ElementTree as ET
+    X = "{http://www.xbrl.org/2003/instance}"
+    XD = "{http://xbrl.org/2006/xbrldi}"
+    ctx: Dict[str, str] = {}
+    raw: List[Tuple[str, str, str]] = []
+    depth = 0
+    for ev, el in ET.iterparse(io.BytesIO(xml), events=("start", "end")):
+        if ev == "start":
+            depth += 1
+            continue
+        depth -= 1
+        if depth != 1:
+            continue
+        if el.tag == X + "context":
+            mem = list(el.iter(XD + "explicitMember"))
+            inst = el.find(f"{X}period/{X}instant")
+            if (inst is not None and len(mem) == 1 and mem[0].get("dimension", "").split(":")[-1] == axis
+                    and (mem[0].text or "").split(":")[-1] == member):
+                ctx[el.get("id")] = inst.text.strip()[:10]
+        elif el.tag.startswith("{") and el.get("contextRef") and el.text:
+            ns, name = el.tag[1:].split("}")
+            if _tax_of(ns) == "us-gaap" and name in concepts:
+                raw.append((name, el.get("contextRef"), el.text.strip()))
+        el.clear()
+    out: Dict[str, Dict[str, float]] = {}
+    for name, cref, text in raw:
+        if cref in ctx:
+            try:
+                out.setdefault(ctx[cref], {})[name] = float(text)
+            except ValueError:
+                continue
+    return out
+
+
+def captive_debt(cik: int, fl: List[Dict[str, Any]], budget: Budget, spec: Dict[str, Any]) -> Dict[str, Any]:
+    """Deuda de la financiera cautiva en el último 10-Q/10-K (instancia con dimensiones; caché por filing)."""
+    per = [f for f in fl or [] if f["form"] in ANNUAL_OR_QUARTERLY and f["isXBRL"] and f.get("reportDate")]
+    if not per:
+        return {"status": "sin_dato", "reason": "sin 10-Q/10-K con XBRL"}
+    f = per[0]
+    acc = f["accessionNumber"].replace("-", "")
+
+    def make():
+        idx = _get_json(ARCHIVE_URL.format(cik=cik, acc=acc, name="index.json"), budget)
+        names = [i.get("name") for i in ((idx or {}).get("directory") or {}).get("item") or []]
+        inst = next((n for n in names if n and n.endswith("_htm.xml")), None)
+        if inst is None:
+            return {}
+        return parse_segment(_get(ARCHIVE_URL.format(cik=cik, acc=acc, name=inst), budget), spec["axis"],
+                             spec["member"], CAPTIVE_DEBT_CONCEPTS)
+    by_date = _cached(f"captive:{acc}:{spec['member']}", cfg("data.edgar.facts_ttl_s"), make)
+    at = f["reportDate"]
+    vals = by_date.get(at) or {}
+    if not vals:
+        return {"status": "sin_dato", "reason": f"el {f['form']} del {f['filingDate']} no trae la deuda de "
+                                                f"{spec['name']} a {at}"}
+    return {"status": "ok", "name": spec["name"], "date": at, "form": f["form"], "accn": f["accessionNumber"],
+            "parts": vals, "value": sum(vals.values())}
+
+
 def pending_filings(fl: Optional[List[Dict[str, Any]]], facts: Dict[str, Any]) -> List[Dict[str, Any]]:
     """F2_PRECEDENCIA §3.1: filings con XBRL de estados presentados después del último que trae companyfacts y que
     no aparecen en él (del más antiguo al más reciente)."""
@@ -520,6 +606,48 @@ def field_value(facts: Dict[str, Any], field: str, at: _dt.date, tol: int) -> Op
     return r
 
 
+def debt_part(facts: Dict[str, Any], part: str, at: _dt.date, tol: int,
+              latest_before: bool = False) -> Optional[Dict[str, Any]]:
+    """Saldo de un componente de la deuda (DEBT_PARTS) a la fecha `at`: el total etiquetado o la suma de corriente y
+    no corriente. Con `latest_before`, si no hay saldo a esa fecha, el del último informe ANUAL anterior (DUK solo
+    etiqueta sus arrendamientos en el 10-K)."""
+    tax = taxonomy(facts)
+    unit = reporting_unit(facts, tax)
+    names = DEBT_PARTS.get(tax or "", {}).get(part)
+    if not names or unit is None:
+        return None
+
+    def fs(c):
+        return (facts.get("facts") or {}).get(tax, {}).get(c, {}).get("units", {}).get(unit) or []
+
+    def at_date(d, annual_only=False):
+        sel = (lambda L: [f for f in L if f.get("form") in ANNUAL_FORMS]) if annual_only else (lambda L: L)
+        whole = stock_at(sel(fs(names[0])), d, tol)
+        if whole is not None:
+            return whole["value"], [names[0]], whole["period"], whole["accns"]
+        parts = [stock_at(sel(fs(c)), d, tol) for c in names[1:]]
+        got = [(c, p) for c, p in zip(names[1:], parts) if p is not None]
+        if not got:
+            return None
+        return (sum(p["value"] for _c, p in got), [c for c, _p in got], got[0][1]["period"],
+                sorted({a for _c, p in got for a in p["accns"]}))
+    r = at_date(at)
+    basis = "corte"
+    if r is None and latest_before:
+        ends = sorted({f["end"] for c in names for f in fs(c) if not f.get("start") and f.get("form") in ANNUAL_FORMS
+                       and _date(f["end"]) <= at}, reverse=True)
+        for e in ends:
+            r = at_date(_date(e), annual_only=True)
+            if r is not None:
+                basis = "ultimo_anual"
+                break
+    if r is None:
+        return None
+    v, used, period, accns = r
+    return {"value": v, "concepts": [f"{tax}:{c}" for c in used], "period": period, "basis": basis,
+            "accns": accns, "unit": unit}
+
+
 def latest_fy_end(facts: Dict[str, Any]) -> Optional[str]:
     """Fin del último ejercicio con balance anual en los hechos (Assets de un formulario anual)."""
     tax = taxonomy(facts)
@@ -628,6 +756,12 @@ def fetch(ticker: str, stage1: Optional[Future] = None) -> Dict[str, Any]:
             except Unavailable as e:
                 res["cover_reason"] = str(e)
         publish(res)
+        spec = (cfg("data.edgar.captive") or {}).get(ticker.upper())
+        if spec:
+            try:
+                res["captive"] = captive_debt(ent["cik"], fl, budget, spec)
+            except Unavailable as e:
+                res["captive"] = {"status": "no_disponible", "reason": str(e)}
         try:
             res["facts"], res["pending_filings"] = facts_with_pending(ent["cik"], fl, budget, _predecessors(ticker))
             res["facts_status"], res["facts_reason"] = "ok", None
@@ -688,7 +822,7 @@ def collect(future, ticker: Optional[str] = None) -> Dict[str, Any]:
 def summary(ed: Dict[str, Any]) -> Dict[str, Any]:
     """Registro para data_provenance.edgar (sin los hechos ni la lista de filings)."""
     out = {k: ed.get(k) for k in ("status", "reason", "cik", "title")}
-    for k in ("facts_status", "facts_reason", "pending_filings", "cover", "cover_reason"):
+    for k in ("facts_status", "facts_reason", "pending_filings", "cover", "cover_reason", "captive"):
         if ed.get(k) is not None:
             out[k] = ed[k]
     return out

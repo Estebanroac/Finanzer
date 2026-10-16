@@ -57,3 +57,8 @@ fy_backup_years = 4              # ejercicios de los estados anuales que el resp
 # XOM: reorganización en holding (8-K12B de ExxonMobil Holdings Corp, CIK 2115436, del 2026-07-01); los estados hasta
 # el 1T-2026 están en Exxon Mobil Corp (CIK 34088). Verificado en la 2a (tests/edgar.py, PREDECESSORS).
 XOM = [34088]
+
+[edgar.captive]                 # deuda de financieras cautivas (T5): solo se separa y se declara; usarla es de la fase 3
+# CAT: Cat Financial ("Financial Products"), verificado en el 10-Q del 2T-2026 (2026-08-05): largo plazo 21,384 +
+# parte corriente 8,026 + préstamos a corto 5,046 millones de USD, con dimensión ProductOrServiceAxis.
+CAT = { name = "Cat Financial", axis = "ProductOrServiceAxis", member = "FinancialProductsMember" }

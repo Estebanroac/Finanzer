@@ -106,12 +106,24 @@ def capture_facts(symbols, base):
         except edgar.NotFound:
             report[s] = {"ciks": ciks, "companyfacts": 404}
             continue
+        spec = (edgar.cfg("data.edgar.captive") or {}).get(s)
+        captive = edgar.captive_debt(ent["cik"], fl, b, spec) if spec else None
+        cap_acc = (captive or {}).get("accn")
         for rec in log:
             if rec["read"]:
                 acc = rec["accn"].replace("-", "")
                 inst = edgar._cache.get(f"inst:{acc}")
-                ff.save_instance(rec["accn"], inst[1], base)
-        report[s] = {"ciks": ciks, "pending": [{k: r[k] for k in ("form", "date", "accn", "read", "reason")}
+                seg = None
+                if rec["accn"] == cap_acc:
+                    seg = {"axis": spec["axis"], "member": spec["member"],
+                           "by_date": edgar._cache[f"captive:{acc}:{spec['member']}"][1]}
+                ff.save_instance(rec["accn"], inst[1], base, seg)
+        if cap_acc and cap_acc not in {r["accn"] for r in log if r["read"]}:
+            acc = cap_acc.replace("-", "")
+            ff.save_instance(cap_acc, {"facts": {}}, base,
+                             {"axis": spec["axis"], "member": spec["member"],
+                              "by_date": edgar._cache[f"captive:{acc}:{spec['member']}"][1]})
+        report[s] = {"ciks": ciks, "captive": captive, "pending": [{k: r[k] for k in ("form", "date", "accn", "read", "reason")}
                                                for r in log]}
         print(f"[{s}] CIK {ent['cik']}: {len(log)} pendientes "
               + ", ".join(f"{r['form']} {r['date']}{'' if r['read'] else ' (sin leer: ' + str(r['reason']) + ')'}"
