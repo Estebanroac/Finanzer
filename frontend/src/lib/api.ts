@@ -91,6 +91,8 @@ export interface Cover {
   as_of_note: string | null;
   /** Fase 2b: avisos de datos (resultados publicados y aún no incorporados; datos de otro periodo descartados). */
   data_notices: string[];
+  /** Fase 2b (D7): insignia "Sin fuente oficial" junto a la confianza (emisor sin estados en la SEC), o null. */
+  official_source_badge: { label: string; tooltip: string } | null;
   archetype: string;
   archetype_label: string;
   classification_notes: string[];

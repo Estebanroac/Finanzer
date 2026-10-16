@@ -23,6 +23,9 @@ CONFIANZA DEL VEREDICTO = f(convergencia, cobertura, calidad de fuente, estabili
     estados.
   · estabilidad: CYCLICAL la reduce a baja; "posible cíclica" o clasificación
     ambigua, a media.
+  · fuente oficial (fase 2b, D7): no pondera; un emisor sin estados en la SEC
+    (EDGAR) pone techo en `no_official_source_cap` ("baja"). Sin verificación
+    disponible (sin User-Agent o con EDGAR caído) no es culpa del emisor: sin techo.
 Cada dimensión es alta/media/baja; la media ponderada (pesos en config) da el
 nivel. Techo en media si la convergencia no es alta (no evaluable o media: etapa 9a). En la etapa 8 la confianza se calcula y se muestra: no limita el score
 (el techo condicionado por la confianza es de la etapa 9).
@@ -206,17 +209,29 @@ def stability_dimension(archetype: Optional[str], classification: Dict[str, Any]
     return {"level": "alta", "reasons": []}
 
 
+def official_dimension(official: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    """Fase 2b (D7, F2_PRECEDENCIA §4): fuente oficial del emisor (data_provenance.official_source)."""
+    o = official or {}
+    if o.get("registered") is False:
+        return {"level": "baja", "status": o.get("status"),
+                "reasons": ["el emisor no presenta estados en la SEC (EDGAR): cifras de proveedores sin contrastar"]}
+    if o.get("registered") is None:
+        return {"level": "no_evaluable", "status": o.get("status") or "no_disponible", "reasons": []}
+    return {"level": "alta", "status": o.get("status"), "reasons": []}
+
+
 def verdict_confidence(dimensions: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
-    """Media ponderada de las cuatro dimensiones -> alta / media / baja con motivos."""
+    """Media ponderada de las cuatro dimensiones -> alta / media / baja con motivos (fuente_oficial no pondera:
+    solo pone techo)."""
     C = cfg("thresholds.confidence")
     val = dict(zip(LEVELS, C["level_values"]))
     W = C["weights"]
-    rated = {k: d for k, d in dimensions.items() if d["level"] in val}   # "no_evaluable" no pondera
+    rated = {k: d for k, d in dimensions.items() if d["level"] in val and k in W}   # "no_evaluable" no pondera
     score = sum(W[k] * val[d["level"]] for k, d in rated.items()) / sum(W[k] for k in rated)
     hi, mid = C["overall_bounds"]
     level = "alta" if score >= hi else ("media" if score >= mid else "baja")
     labels = {"convergence": "convergencia", "coverage": "cobertura", "source": "calidad de fuente",
-              "stability": "estabilidad"}
+              "stability": "estabilidad", "fuente_oficial": "fuente oficial"}
     reasons = [f"{labels[k]} {d['level'].replace('_', ' ')}: " + "; ".join(d["reasons"])
                for k, d in dimensions.items() if d["level"] != "alta" and d.get("reasons")]
     capped = None
@@ -228,8 +243,12 @@ def verdict_confidence(dimensions: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
         cap, why = C["no_evaluable_cap"], f"la convergencia es {conv}: alta exige convergencia alta"
     else:
         cap = None
-    if cap and LEVELS.index(level) < LEVELS.index(cap):
-        capped, level = level, cap
-        reasons.append(f"techo en {cap}: {why}")
+    caps = [(cap, why)] if cap else []
+    if (dimensions.get("fuente_oficial") or {}).get("level") == "baja":
+        caps.append((C["no_official_source_cap"], "sin fuente oficial para verificar los datos"))
+    for cap, why in caps:
+        if LEVELS.index(level) < LEVELS.index(cap):
+            capped, level = capped or level, cap
+            reasons.append(f"techo en {cap}: {why}")
     return {"level": level, "score": score, "dimensions": dimensions, "reasons": reasons,
             "capped_from": capped, "limits_score": False}

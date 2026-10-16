@@ -33,7 +33,7 @@ from yf_adapter import _UNUSUAL_ROWS
 from ttm import TTM_QUARTERS
 from verdict import price as verdict_price, verdict as build_verdict
 from cost_of_capital import adjusted_beta, effective_tax_rate, risk_free, wacc as compute_wacc
-from valuation_confidence import (convergence, coverage_dimension, dcf_reliability, signal_from_upside,
+from valuation_confidence import (convergence, coverage_dimension, dcf_reliability, signal_from_upside, official_dimension,
                                   source_dimension, stability_dimension, verdict_confidence)
 import archetype_metrics
 import numfmt
@@ -267,6 +267,8 @@ def _build_provenance(yinfo: dict, out_flags: list, block_errors: list) -> dict:
         "as_of": yinfo.get("_as_of"),
         "pending_results": yinfo.get("_pending_results"),
         "edgar": yinfo.get("_edgar"),
+        # Fase 2b (T4, D7): emisor con estados en la SEC, sin ellos (aviso y techo "baja") o sin verificación.
+        "official_source": yinfo.get("_official_source"),
         # Fase 2b: serie diaria de precios y dividendo indicado en la moneda y la clase del precio (T2).
         "price_history": yinfo.get("_price_history"),
         "dividend": yinfo.get("_dividend"),
@@ -1490,6 +1492,8 @@ def _compute_analysis(symbol: str) -> dict:
                         normalization=result.get("earnings_normalization"),
                         ttm=yinfo.get("_ttm"), provenance_fields=(yinfo.get("_provenance") or {})),
                     "stability": stability_dimension(_cls.get("archetype"), _cls),
+                    # Fase 2b (D7): emisor sin estados en la SEC -> techo "baja"
+                    "fuente_oficial": official_dimension(yinfo.get("_official_source") if _has_yahoo else None),
                 })
             except Exception as e:
                 _sin_dato("confianza", e)

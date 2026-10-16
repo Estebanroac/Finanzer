@@ -418,7 +418,42 @@ def data_notices(a) -> list:
     if gone:
         names = sorted({_FIELD_NAMES.get(f["field"], f["field"]) for f in gone})
         out.append("Sin dato del corte, descartados por ser de otro periodo: " + ", ".join(names) + ".")
+    # Fase 2b (T4, D7): emisor sin estados en la SEC: aviso literal de F2_PRECEDENCIA §4.
+    off = (a.get("data_provenance") or {}).get("official_source") or {}
+    if off.get("registered") is False and off.get("note"):
+        out.append(off["note"])
     return out
+
+
+def official_source_badge(a) -> Optional[dict]:
+    """Fase 2b (D7): insignia de la cabecera web junto a la confianza, con el aviso como tooltip."""
+    off = (a.get("data_provenance") or {}).get("official_source") or {}
+    if off.get("registered") is False:
+        return {"label": "Sin fuente oficial", "tooltip": off.get("note")}
+    return None
+
+
+def official_source_annex(a) -> list:
+    """Fase 2b (T4): filas del anexo técnico: fuente oficial (D7) y campos respaldados con SEC EDGAR."""
+    dp = a.get("data_provenance") or {}
+    off = dp.get("official_source") or {}
+    items = []
+    if off:
+        if off.get("registered") is False:
+            txt = f"no. {off.get('note')} Motivo: {off.get('reason')}."
+        elif off.get("registered") is None:
+            txt = f"{off.get('note') or 'verificación oficial no disponible'} ({off.get('reason')})."
+        else:
+            txt = (f"sí, SEC EDGAR (CIK {off.get('cik')}); último ejercicio en EDGAR: FY {off.get('fy')}"
+                   + (f" ({off.get('note')})" if off.get("note") else "") + ".")
+        items.append({"label": "Fuente oficial", "text": txt})
+    bk = (dp.get("edgar") or {}).get("backup") or {}
+    rows = [f"{_FIELD_NAMES.get(x['field'], x['field'])} ({x['concept']}; {x['how']})" for x in bk.get("cut") or []]
+    rows += [f"{x['field'].replace('FY.', 'ejercicio a ')} {x['fy_end']} ({x['concept']})" for x in bk.get("fy") or []]
+    if rows:
+        items.append({"label": "Respaldo de SEC EDGAR (lo que Yahoo no da del mismo corte)",
+                      "text": "; ".join(rows) + "."})
+    return items
 
 
 _FIELD_NAMES = {
@@ -1080,6 +1115,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         # de otro periodo descartados).
         "as_of_note": as_of_note((a.get("data_provenance") or {}).get("as_of")),
         "data_notices": data_notices(a),
+        "official_source_badge": official_source_badge(a),
         "archetype": archetype,
         "archetype_label": archetype_label(archetype),
         "classification_notes": cls_notes,
@@ -1550,9 +1586,12 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         return m.replace("frente al sector", "frente al mercado") if _mkt else m
     if _conf.get("level"):
         _labels = {"convergence": "Convergencia entre métodos", "coverage": "Cobertura de datos",
-                   "source": "Calidad de fuente", "stability": "Estabilidad del arquetipo"}
+                   "source": "Calidad de fuente", "stability": "Estabilidad del arquetipo",
+                   "fuente_oficial": "Fuente oficial (SEC)"}
         dims, annex_conf = [], []
         for _k, _dd in (_conf.get("dimensions") or {}).items():
+            if _k == "fuente_oficial" and _dd.get("level") != "baja":
+                continue        # fase 2b (D7): no pondera; solo se muestra cuando pone techo
             # Fase 1 (D1): en la tabla, el motivo en lenguaje llano; el técnico, al anexo del final del PDF.
             _plain_txt = list(dict.fromkeys(t for t in map(_plain_reason, _dd.get("reasons") or []) if t))
             _txt = " ".join(_plain_txt) or "Sin incidencias."
@@ -1571,8 +1610,11 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
             "plain": plain, "dimensions": dims,
             "reasons": [{k: v for k, v in r.items() if k != "detail"} for r in confidence_reasons(_conf)],
             "summary": (f"Confianza del veredicto: {_conf['level']}"
-                        + (f" (techo en {_conf['level']} sin contraste entre métodos; sin techo sería "
-                           f"{_conf['capped_from']})" if _conf.get("capped_from") else "")
+                        + (f" (techo en {_conf['level']} "
+                           + ("sin fuente oficial para verificar los datos"
+                              if ((_conf.get("dimensions") or {}).get("fuente_oficial") or {}).get("level") == "baja"
+                              else "sin contraste entre métodos")
+                           + f"; sin techo sería {_conf['capped_from']})" if _conf.get("capped_from") else "")
                         + (f". Contrae el atractivo del precio hacia 50 (factor {_pa.get('factor')}): sin ajustar "
                            f"{p_raw} → ajustado a {p_score}" if _pa.get("factor") is not None else "")
                         + ". La calidad del negocio no se contrae."),
@@ -1956,7 +1998,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         # auditoría"). La web no lo muestra.
         "annex": {"title": "Detalle técnico para auditoría",
                   "items": [{"label": "Clasificación", "text": t} for t in cls_detail]
-                           + annex_conf},
+                           + annex_conf + official_source_annex(a)},
         "sections": {"valuation": valuation, "profitability": profitability, "solvency": solvency,
                      "growth": growth, "institutional": institutional,
                      # Histórico (dato bruto): columnas que no aplican al arquetipo, con su texto.

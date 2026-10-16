@@ -30,9 +30,16 @@ EXTRA_TICKERS = ["HSBC", "SHEL", "UL", "TM"]
 TZ = "America/New_York"
 
 
+# Grupos del panel añadidos después de capturar este juego (2026-10-15, F5prep): sus series no están aquí. El juego es
+# una medida de una sola sesión; se amplía recapturándolo entero, no añadiendo un ticker de otro día.
+LATER_GROUPS = ("Sin CIK (fase 2b)",)
+
+
 def panel_tickers():
     import fixture_backend as fb
-    return list(fb.PANEL_TICKERS) + [t for t in EXTRA_TICKERS if t not in fb.PANEL_TICKERS]
+    later = {t for g in LATER_GROUPS for t in fb.PANEL_GROUPS.get(g, [])}
+    base = [t for t in fb.PANEL_TICKERS if t not in later]
+    return base + [t for t in EXTRA_TICKERS if t not in base]
 
 
 def series_file(symbol, base=PRICES_DIR):

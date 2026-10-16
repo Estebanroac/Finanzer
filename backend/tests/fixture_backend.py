@@ -85,6 +85,9 @@ PANEL_GROUPS = {
     # reporta en USD (HSBC, ADR = 5), energía en USD (SHEL, ADR = 2), EUR con escisión reciente (UL, ADR = 1) y JPY
     # con año fiscal a marzo (TM, ADR = 10). Factores verificados en el 20-F y el F-6 (F2_EDGAR_DIAGNOSTICO §5).
     "Extranjeros (fase 2)": ["HSBC", "SHEL", "UL", "TM"],
+    # Fase 2b (T4, D7): emisor que no presenta estados en la SEC (LVMH, solo en Euronext París): se analiza con el
+    # aviso "Sin fuente oficial" y la confianza limitada a "baja" (F2_PRECEDENCIA §4).
+    "Sin CIK (fase 2b)": ["MC.PA"],
 }
 PANEL_TICKERS = [t for ts in PANEL_GROUPS.values() for t in ts]
 

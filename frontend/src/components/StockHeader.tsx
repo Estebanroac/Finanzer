@@ -140,6 +140,12 @@ function Verdict({ display }: { display: Display }) {
         <p className={`mt-1 text-[14.5px] ${toneClass(C.verdict.confidence_tone)} fz-tone-fg flex items-center gap-2`}>
           {C.verdict.confidence_text}
           <Help k="confidence" title="Confianza del veredicto" />
+          {C.official_source_badge && (
+            <span title={C.official_source_badge.tooltip}
+                  className="rounded-full border border-amber-400/40 px-2 py-0.5 text-[11.5px] text-amber-300">
+              {C.official_source_badge.label}
+            </span>
+          )}
         </p>
       )}
       {C.confidence_reasons.length > 0 && (

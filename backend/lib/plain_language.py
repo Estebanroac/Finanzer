@@ -64,7 +64,11 @@ TABLE = [
     (r"^alerta de posible cíclica",
      "La empresa podría ser cíclica: sus resultados actuales pueden no ser representativos."),
     (r"^clasificación ambigua", "El tipo de empresa no está claro, lo que hace menos fiable la comparación."),
-    # ── techo de la confianza: redundante con el motivo de convergencia ──
+    # ── fuente oficial (fase 2b, D7) ──
+    (r"^el emisor no presenta estados en la SEC",
+     "La empresa no presenta sus cuentas ante la SEC: las cifras vienen de proveedores de datos y no se han podido "
+     "contrastar con una fuente oficial."),
+    # ── techo de la confianza: redundante con el motivo de su dimensión ──
     (r"^techo en ", None),
 ]
 _COMPILED = [(re.compile(p), t) for p, t in TABLE]
@@ -90,7 +94,7 @@ def has_translation(technical: str) -> bool:
 
 
 _DIM_LABELS = {"convergence": "convergencia", "coverage": "cobertura", "source": "calidad de fuente",
-               "stability": "estabilidad"}
+               "stability": "estabilidad", "fuente_oficial": "fuente oficial"}
 
 
 def confidence_reasons(confidence: Optional[Dict[str, Any]]) -> List[Dict[str, Any]]:
