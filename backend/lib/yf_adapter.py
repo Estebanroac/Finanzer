@@ -349,6 +349,10 @@ def get_ticker_info(symbol: str) -> Dict[str, Any]:
             logger.info(f"[CACHE HIT after lock] {symbol}")
             return cached
 
+        # Fase 2b: la serie diaria de precios (dividendos del propio título, rango de 52 semanas y beta) se
+        # descarga en un hilo, en paralelo con los estados; se recoge después de Finnhub.
+        import price_history
+        _hist_future = price_history.start(symbol)
         try:
             info = _do_fetch(symbol)
             _ctx = _STMT_CTX.get(symbol)
@@ -399,6 +403,17 @@ def get_ticker_info(symbol: str) -> Dict[str, Any]:
         except Exception as e:
             logger.warning(f"[FINNHUB] enrich falló para {symbol}: {e}")
 
+        # ── Fase 2b: serie diaria de precios y lo que el motor toma de ella (D5) ──
+        _hist = price_history.collect(_hist_future)
+        info["_price_history"] = price_history.summary(_hist)
+        try:
+            _apply_dividend(info, _hist)
+        except Exception as e:
+            logger.error(f"[DIVIDEND] {symbol}: {e}")
+            info["_dividend"] = {"rate": None, "reason": f"error al calcular el dividendo: {type(e).__name__}: {e}"}
+            info["dividendRate"] = info["dividendYield"] = None
+            (info.get("_yahoo_ratios") or {})["dividendYield"] = None
+
         # ── Validación de entrada (lib/validate.py): después de toda la ingesta
         # y antes de cualquier cálculo del motor. Nunca corrige en silencio:
         # deja info["_validation"] y actualiza info["_provenance"].
@@ -414,6 +429,70 @@ def get_ticker_info(symbol: str) -> Dict[str, Any]:
         # ── Defensa 2: los snapshots degradados caducan rápido ──
         _cache[symbol] = (time.time(), info, degraded)
         return info
+
+
+def _foreign_line(cur: Dict[str, Any]) -> bool:
+    """Fase 2b: la cotización no es la línea local del emisor (ADR u otra moneda en los estados). Finnhub da entonces
+    el dividendo de la línea local, en su moneda y por acción ordinaria, en una unidad que no declara."""
+    sc = cur.get("share_class") or {}
+    dep = (sc.get("official") or {}).get("depositary")
+    return bool(cur.get("converted")) or bool(sc.get("applied") and (sc.get("basis") != "oficial"
+                                                                     or dep not in (None, "—")))
+
+
+def _apply_dividend(info: Dict[str, Any], hist: Dict[str, Any]) -> None:
+    """Fase 2b (T2): el dividendo indicado en la moneda y la clase del precio (lib/dividends.py) sustituye al de la
+    fuente; el dividend yield sale de él y del precio. Deja info["_dividend"] (-> data_provenance.dividend)."""
+    import datetime as _dt
+    import dividends
+    import price_history
+    cur = info.get("_currency") or {}
+    sc = cur.get("share_class") or {}
+    foreign = _foreign_line(cur)
+    price = info.get("currentPrice") or info.get("regularMarketPrice")
+    mcap = info.get("marketCap")
+    units = (mcap / price) if (mcap and price) else info.get("sharesOutstanding")
+    paid = info.get("dividendsPaid")
+    paid_per_unit = (abs(paid) / units) if (paid and units) else None
+    src_rate = info.get("dividendRate")
+    src_name = ((info.get("_provenance") or {}).get("dividendRate") or {}).get("source")
+    frame = hist.get("frame")
+    as_of = frame.index[-1].date() if frame is not None else _dt.date.today()
+    events = price_history.dividend_events(frame) if frame is not None else None
+    candidates = []
+    spot = (cur.get("spot_rate") or {}).get("rate")
+    factor = sc.get("factor") if sc.get("applied") else 1.0
+    if foreign and src_rate and spot and factor:
+        fin, px = cur.get("statements"), cur.get("price")
+        candidates = [(src_rate * factor * spot,
+                       f"{src_rate:g} {fin} por acción × {factor:g} acciones por título × {spot:.4g} {px}/{fin}"),
+                      (src_rate / 100.0 * factor * spot,
+                       f"{src_rate:g} céntimos de {fin} por acción × {factor:g} acciones por título × {spot:.4g} "
+                       f"{px}/{fin}")]
+    dep = (sc.get("official") or {}).get("depositary")
+    unit = "ADR" if (foreign and (sc.get("applied") and sc.get("basis") != "oficial" or dep not in (None, "—"))) \
+        else "título"
+    res = dividends.assess(events, as_of, src_rate, src_name, foreign, paid_per_unit, candidates,
+                           currency=info.get("currency") or "USD", unit=unit)
+    res["as_of"] = as_of.isoformat()
+    rate = res.get("rate")
+    dy = (rate / price) if (rate is not None and price) else None
+    info["dividendRate"] = rate
+    info["dividendYield"] = dy
+    yr = info.get("_yahoo_ratios")
+    if isinstance(yr, dict):
+        yr["dividendYield"] = dy
+    info["_dividend"] = res
+    detail = {"pagos": "pagos del propio título en la serie de precios (Yahoo)",
+              "fuente_local_convertida": "dividendo de la línea local convertido a la clase y la moneda del precio",
+              "sin_dividendo": "no paga dividendos: sin pagos en 2 años ni dividendos en los estados"}.get(res.get("source"), f"{res.get('source')}: indicado declarado, verificado con los pagos")
+    if rate is None:
+        _tag_provenance(info, "sin_dato", res.get("reason") or "sin dividendo", paths=["dividendRate", "dividendYield"],
+                        overwrite=True)
+    else:
+        _tag_provenance(info, res.get("source") if res.get("source") in ("finnhub", "yahoo_quotesummary")
+                        else "derivado", detail, paths=["dividendRate"], overwrite=True)
+        _tag_provenance(info, "derivado", "dividendo indicado / precio", paths=["dividendYield"], overwrite=True)
 
 
 def _merge_last_known_good(symbol: str, fresh: Dict[str, Any], fresh_degraded: bool) -> Dict[str, Any]:

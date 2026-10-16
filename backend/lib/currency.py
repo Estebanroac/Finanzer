@@ -397,6 +397,11 @@ class StatementContext:
             if q:
                 last4 = sorted(q)[-4:]
                 out["ttm_rate"] = sum(q[d] for d in last4) / len(last4)
+            if self.fx is not None and len(self.fx.closes):
+                # Fase 2b: último cierre del cruce (importe de los estados → moneda del precio), para convertir
+                # importes sueltos de hoy (el dividendo de la línea local, T2).
+                out["spot_rate"] = {"date": str(self.fx.closes.index[-1].date()),
+                                    "rate": float(self.fx.closes.iloc[-1]) * self.subunit}
             for attr in ("quarterly_balance_sheet", "balance_sheet"):
                 b = self.rates.get(attr) or {}
                 if b:

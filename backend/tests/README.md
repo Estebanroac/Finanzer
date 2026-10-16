@@ -156,6 +156,19 @@ Captura actual: **11-oct-2026, local, sin `FINNHUB_API_KEY` (Finnhub no particip
 sin fallback**. Por ticker hay 1 llamada a quoteSummary y 3 estados anuales. En producción (Render)
 Yahoo puede venir degradado y Finnhub participa, así que **estos golden no garantizan el comportamiento en prod**.
 
+### Serie diaria de precios (fase 2b): `fixtures/history/`
+
+Desde la 2b el análisis descarga una serie diaria de 2 años del título y del S&P 500 (`lib/price_history.py`:
+dividendos del propio título, rango de 52 semanas y beta). Los fixtures del panel y del juego local son anteriores y
+no la traen: el replay la sirve del juego aparte `fixtures/history/` (`history_fixtures.py`), **cortada en la fecha
+de captura del ticker analizado**, así el análisis ve lo que habría descargado ese día (precios sin ajustar y
+eventos pasados no cambian). Un fixture capturado desde la 2b la lleva dentro (`yfinance.json`: `price_history` y
+`market_history`) y manda sobre el juego aparte.
+
+```bash
+../.venv313/bin/python tests/capture_history.py          # panel + local + ^GSPC y SPY (fuera de 15:55–16:45 NY)
+```
+
 ### Recapturar (con red, explícito)
 
 ```bash

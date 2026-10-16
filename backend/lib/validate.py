@@ -25,7 +25,7 @@ resultado final para presentación, sin alterar las entradas del score.
 Los umbrales viven en backend/config/validation.toml (etapa 4) y se exponen
 aquí como THRESHOLDS.
 """
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from settings import cfg
 
@@ -427,27 +427,6 @@ def validate_info(info: Dict[str, Any], symbol: str = "") -> Dict[str, Any]:
 
 # ═══════════════════════════ reglas de salida ═══════════════════════════
 NON_SIGNIFICANT_MULTIPLES = ("pe", "ev_ebitda", "p_ffo")
-
-
-def dividend_yield_identity(dy: Optional[float], dividends_paid: Optional[float], market_cap: Optional[float],
-                            payout: Optional[float] = None, earnings_yield: Optional[float] = None
-                            ) -> Tuple[bool, Optional[float], Optional[str]]:
-    """Fase 1 (guardián de identidades, datos frente a datos): el dividend yield frente a lo que la empresa paga.
-
-    Estimación: dividendos pagados del último ejercicio / capitalización (base caja); sin dividendos pagados,
-    payout × rentabilidad del beneficio (E/P), que es la misma identidad por otra vía. El yield no cuadra si supera
-    `dividend_identity_max_ratio` veces la estimación. Devuelve (cuadra, estimación, base). Sin estimación (o sin
-    dividendo), no hay nada que comprobar: cuadra."""
-    if dy is None or dy <= 0:
-        return True, None, None
-    est, basis = None, None
-    if dividends_paid is not None and dividends_paid > 0 and market_cap:
-        est, basis = dividends_paid / market_cap, "dividendos pagados / capitalización"
-    elif payout is not None and payout > 0 and earnings_yield is not None and earnings_yield > 0:
-        est, basis = payout * earnings_yield, "payout × E/P"
-    if est is None:
-        return True, None, None
-    return dy <= THRESHOLDS["dividend_identity_max_ratio"] * est, est, basis
 
 
 def validate_outputs(result: Dict[str, Any]) -> List[Dict[str, Any]]:

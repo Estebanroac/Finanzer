@@ -258,6 +258,7 @@ class FixtureStore:
         self.fx = {}        # "TWD=X" -> cierres (etapa 11b); se guardan con el ticker analizado
         self.meta = {}      # sym -> dict
         self.misses = []    # accesos no satisfechos en replay
+        self.current = None  # fase 2b: ticker en análisis (la serie de precios se corta en su fecha de captura)
         self.unrecorded = {}  # sym -> [attr] accesos a yfinance no soportados en record
         self._cursor = {}
         self._lock = threading.Lock()
@@ -533,13 +534,54 @@ def check_seams():
     return missing
 
 
+# ═══════════════════ serie diaria de precios (fase 2b, lib/price_history.py) ═══════════════════
+# Los fixtures del panel y del juego local son anteriores a la 2b y no traen la serie: el replay la sirve del juego
+# tests/fixtures/history (history_fixtures.py) cortada en la fecha de captura del ticker analizado. Un fixture
+# capturado desde la 2b la trae dentro (yfinance.json: "price_history" del ticker y "market_history" del índice) y
+# manda sobre el juego aparte.
+
+def _history_replay_fetcher(store):
+    import history_fixtures as hf
+
+    def fetch(symbol, period, interval):
+        sym = str(symbol).upper()
+        cur = store.current
+        own = (store.yf.get(cur) or {}) if cur else {}
+        key = "price_history" if sym == cur else "market_history"
+        if key in own and (key == "price_history" or (own[key] or {}).get("symbol") == sym):
+            return hf.obj_to_history(own[key])
+        until = str((store.meta.get(cur) or {}).get("captured_at_local") or "")[:10] or None
+        try:
+            return hf.load_frame(sym, until)
+        except KeyError:
+            store.misses.append(f"history {sym}")
+            raise FixtureMiss(f"serie de precios no grabada: {sym}")
+    return fetch
+
+
+def _history_record_fetcher(store, real):
+    import history_fixtures as hf
+    import price_history
+
+    def fetch(symbol, period, interval):
+        raw = real(symbol, period, interval)
+        frame = price_history.normalize(raw)
+        sym, cur = str(symbol).upper(), store.current
+        if frame is not None and cur:
+            store.record_yf(cur, "price_history" if sym == cur else "market_history", hf.frame_to_obj(sym, frame))
+        return raw
+    return fetch
+
+
 def reset_state():
     """Vacía cachés en memoria del pipeline: cada corrida empieza en frío."""
     import cost_of_capital
     import data_fetcher
     import finnhub_fallback
+    import price_history
     import yf_adapter
     cost_of_capital.reset_cache()
+    price_history.reset()
     yf_adapter._cache.clear()
     yf_adapter._best_cache.clear()
     yf_adapter._session = None
@@ -576,6 +618,8 @@ def replay(base_dir=FIXTURES_DIR):
     p.set(yf_adapter, "_ensure_session", _fake_ensure_session)
     p.set(yfinance, "Ticker", lambda symbol, *a, **kw: _FixtureTicker(store, symbol, *a, **kw))
     p.set(finnhub_fallback, "_get", _fake_finnhub_get)
+    import price_history
+    p.set(price_history, "FETCHER", _history_replay_fetcher(store))
     # Etapa 8: los fixtures no tienen ^TNX; en replay el Rf es siempre el de config
     # (marcado como fallback), así los golden no dependen del día de la captura.
     import cost_of_capital
@@ -623,6 +667,8 @@ def record(base_dir=FIXTURES_DIR):
     import cost_of_capital
     p.set(cost_of_capital, "_fetch_risk_free", lambda: None)
     p.set(finnhub_fallback, "_get", _rec_finnhub_get)
+    import price_history
+    p.set(price_history, "FETCHER", _history_record_fetcher(store, price_history.FETCHER))
     try:
         reset_state()
         yield store
@@ -720,6 +766,7 @@ def run_analysis(symbol, store):
     ninguna clave real entra al proceso de test)."""
     import main
     sym = symbol.upper()
+    store.current = sym
     if store.mode == "replay":
         store.load(sym)
         if store.meta[sym].get("finnhub", {}).get("participated"):

@@ -332,8 +332,13 @@ def test_no_rsi_macd_or_chart_patterns():
 
 
 def test_modules_are_isolated_from_the_engine():
-    """Nada del motor, la web ni el PDF importa price_series ni market_signals (fase 5: contexto aparte)."""
+    """Nada del motor, la web ni el PDF importa price_series ni market_signals (fase 5: contexto aparte). Desde la 2b
+    la serie de precios entra por lib/price_history.py (D5: solo dividendos, rango de 52 semanas y beta), que lee la
+    config de la serie pero no importa estos módulos."""
+    import re
     backend = os.path.dirname(pf.TESTS_DIR)
+    imports = re.compile(r"^\s*(from\s+(price_series|market_signals)\s+import|import\s+(price_series|market_signals)\b)",
+                         re.M)
     offenders = []
     for folder in (backend, os.path.join(backend, "lib")):
         for name in os.listdir(folder):
@@ -341,7 +346,7 @@ def test_modules_are_isolated_from_the_engine():
                 continue
             with open(os.path.join(folder, name), encoding="utf-8") as fh:
                 text = fh.read()
-            if "price_series" in text or "market_signals" in text:
+            if imports.search(text):
                 offenders.append(name)
     assert offenders == []
 

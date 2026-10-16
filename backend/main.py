@@ -263,6 +263,9 @@ def _build_provenance(yinfo: dict, out_flags: list, block_errors: list) -> dict:
         "ttm": yinfo.get("_ttm"),
         # Etapa 11b: moneda y clase de los estados frente a la cotización, y la conversión aplicada.
         "currency": yinfo.get("_currency"),
+        # Fase 2b: serie diaria de precios y dividendo indicado en la moneda y la clase del precio (T2).
+        "price_history": yinfo.get("_price_history"),
+        "dividend": yinfo.get("_dividend"),
     }
 
 
@@ -517,21 +520,17 @@ def _compute_analysis(symbol: str) -> dict:
                 dy_yahoo = yr.get("dividendYield") or yinfo.get("dividendYield")
                 if dy_yahoo is not None and dy_yahoo != 0:
                     div_yield = dy_yahoo
-            # Fase 1 (guardián de identidades): el yield frente a lo que la empresa paga de verdad. Si no cuadra
-            # (BCS: 11.5 peniques por acción ordinaria divididos por el precio del ADR en dólares → 50%), sale
-            # "sin dato" con aviso y no puntúa.
-            from validate import dividend_yield_identity
-            _ni_id = safe_float(financials.net_income)
-            _dy_ok, _dy_est, _dy_basis = dividend_yield_identity(
-                safe_float(div_yield), safe_float(financials.dividends_paid), mcap, payout=safe_float(payout),
-                earnings_yield=(_ni_id / mcap) if (_ni_id is not None and mcap) else None)
-            if not _dy_ok:
-                _id_flags.append({"field": "key_metrics.dividend_yield", "rule": "identidad_dividendo",
-                                  "action": "sin_dato", "old": safe_float(div_yield), "new": None,
-                                  "reason": (f"dividend yield {safe_float(div_yield):.2%} frente a {_dy_est:.2%} "
-                                             f"({_dy_basis}): no cuadra (más de "
-                                             f"{cfg('validation.thresholds.dividend_identity_max_ratio'):g} veces lo "
-                                             f"que la empresa paga); sin dato, no puntúa")})
+            # Fase 2b (T2): el dividendo indicado ya llega en la moneda y la clase del precio (yf_adapter.
+            # _apply_dividend, lib/dividends.py), verificado con los pagos del propio título en los dos sentidos. Se
+            # retira la protección de la fase 1 (yield > 2 × lo pagado → sin dato), que comparaba ventanas distintas
+            # (anulaba la subida de NVDA) y tapaba un dato mal unido en origen (BCS en peniques). "Sin dato" queda solo
+            # si la empresa paga dividendos y ninguna fuente da uno que cuadre, con el motivo.
+            _div = yinfo.get("_dividend") or {}
+            if _div.get("rate") is None and (_div.get("paid_per_unit_statements") or 0) > 0:
+                _id_flags.append({"field": "key_metrics.dividend_yield", "rule": "dividendo_sin_fuente",
+                                  "action": "sin_dato", "old": None, "new": None,
+                                  "reason": ("la empresa paga dividendos, pero ninguna fuente da un dividendo indicado "
+                                             f"que cuadre ({_div.get('reason')}); sin dato, no puntúa")})
                 div_yield = None
                 dy_invalid = True
                 ratios["dividend_yield"] = None
@@ -892,8 +891,8 @@ def _compute_analysis(symbol: str) -> dict:
                     buyback_yield = None
             # Shareholder yield = dividendos + recompras netas.
             shareholder_yield = None
-            # Fase 1: con el dividend yield invalidado por la identidad, el shareholder yield tampoco tiene dato
-            # (antes sumaba 0 y quedaba igual a las recompras).
+            # Fase 1: sin dividend yield de una empresa que paga dividendos (fase 2b: ninguna fuente cuadra), el
+            # shareholder yield tampoco tiene dato (antes sumaba 0 y quedaba igual a las recompras).
             if not dy_invalid and (div_yield is not None or buyback_yield is not None):
                 shareholder_yield = (div_yield or 0.0) + (buyback_yield or 0.0)
             result["key_metrics"]["wacc"] = safe_float(wacc_est)

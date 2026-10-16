@@ -445,30 +445,52 @@ def _structural(a, strings, pdf):
 # ═══════════════════════════ identidades (datos frente a datos) ═══════════════════════════
 
 def identities(a):
-    """Fase 1: identidades entre cifras del análisis, sin texto. [(regla, detalle)].
+    """Identidades entre cifras del análisis, sin texto. [(regla, detalle)].
 
-    · identidad_dividendo: el dividend yield no supera `dividend_identity_max_ratio` veces payout × E/P (lo que la
-      empresa paga, por una vía distinta de la del motor, que usa dividendos pagados / capitalización). Solo por
-      arriba: un dividendo extraordinario (PGR) deja el yield indicado por debajo, con razón.
-    · identidad_shareholder: shareholder yield = dividend yield + buyback yield; con el dividend yield invalidado,
-      sin dato (no las recompras solas).
-    · identidad_no_puntua: el yield invalidado no aparece en el desglose del score ni en la salud bancaria."""
+    Fase 2b (F2_PRECEDENCIA §2.2): el dividendo se compara con magnitudes equivalentes y en los dos sentidos.
+    · identidad_dividendo:
+        - unidad: dividend yield = dividendo indicado / precio (los dos en la moneda y la clase del precio);
+        - hacia arriba: el indicado no supera `dividend_identity_max_ratio` veces lo cobrado por título en 12 meses
+          salvo una subida verificada (último pago × frecuencia; NVDA 0.25 × 4); y el yield no supera esas veces
+          payout × E/P (lo pagado según los estados, la vía de la fase 1) salvo esa misma subida;
+        - hacia abajo: un indicado menor que lo cobrado / `dividend_identity_max_ratio` lleva su explicación
+          (extraordinario separado, PGR; recorte; o la nota de que es menos de la mitad).
+    · identidad_shareholder: shareholder yield = dividend yield + buyback yield; sin dividend yield de una empresa
+      que paga (regla dividendo_sin_fuente), sin dato (no las recompras solas).
+    · identidad_no_puntua: un yield invalidado no aparece en el desglose del score ni en la salud bancaria."""
     out = []
     km = a.get("key_metrics") or {}
+    dv = (a.get("data_provenance") or {}).get("dividend") or {}
+    pay = dv.get("payments") or {}
     dy, po, ey = km.get("dividend_yield"), km.get("payout_ratio"), km.get("earnings_yield")
     sy, by = km.get("shareholder_yield"), km.get("buyback_yield")
     k = cfg("validation.thresholds.dividend_identity_max_ratio")
+    rate, price = dv.get("rate"), a.get("price")
+    raised = (dv.get("change") or {}).get("kind") == "aumento"
+    if dy is not None and rate is not None and price and abs(dy - rate / price) > 1e-9 * max(1.0, abs(dy)):
+        out.append(("identidad_dividendo", f"dividend yield {dy:.4%} ≠ indicado {rate} / precio {price}"))
+    ttm = pay.get("ttm_total")
+    if rate and ttm:
+        if rate > k * ttm and not raised:
+            out.append(("identidad_dividendo", f"indicado {rate:g} frente a {ttm:g} cobrados en 12 meses "
+                                               f"({rate / ttm:.1f} veces) sin una subida verificada"))
+        explained = bool(pay.get("extraordinary")) or (dv.get("change") or {}).get("kind") == "recorte" or \
+            any("menos de la mitad" in n for n in dv.get("notes") or [])
+        if rate < ttm / k and not explained:
+            out.append(("identidad_dividendo", f"indicado {rate:g} frente a {ttm:g} cobrados en 12 meses "
+                                               "sin extraordinario ni recorte dichos"))
     # En REIT el payout se mide sobre el FFO: lo pagado es payout × FFO / capitalización = payout / P/FFO.
     ffo = km.get("payout_basis") == "ffo"
     base = (1.0 / km["p_ffo"]) if ffo and km.get("p_ffo") else (None if ffo else ey)
     what = "payout / P/FFO" if ffo else "payout × E/P"
     if dy is not None and dy > 0 and po is not None and po > 0 and base is not None and base > 0 \
-            and dy > k * po * base:
+            and dy > k * po * base and not raised:
         out.append(("identidad_dividendo", f"dividend yield {dy:.2%} frente a {what} {po * base:.2%} "
                                            f"({dy / (po * base):.1f} veces; tolerancia {k:g})"))
-    bad = [f for f in a.get("data_validation") or [] if f.get("rule") == "identidad_dividendo"]
+    bad = [f for f in a.get("data_validation") or [] if f.get("rule") in ("identidad_dividendo",
+                                                                          "dividendo_sin_fuente")]
     if bad and sy is not None:
-        out.append(("identidad_shareholder", f"shareholder yield {sy:.2%} con el dividend yield invalidado"))
+        out.append(("identidad_shareholder", f"shareholder yield {sy:.2%} sin dividend yield de una empresa que paga"))
     elif sy is not None and abs(sy - ((dy or 0.0) + (by or 0.0))) > 1e-9:
         out.append(("identidad_shareholder", f"shareholder yield {sy:.4%} ≠ dividendo {dy} + recompras {by}"))
     for f in bad:

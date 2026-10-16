@@ -384,6 +384,24 @@ def currency_note(cur) -> Optional[str]:
     return " ".join(parts) or None
 
 
+def dividend_text(d) -> Optional[str]:
+    """Fase 2b (T2): qué dividendo indicado hay detrás del yield y lo que encontró el control en los dos sentidos."""
+    if not d or d.get("rate") in (None, 0.0):
+        return None
+    how = {"pagos": ("suma de los pagos ordinarios del último año" if d.get("basis") == "suma_ultimo_ciclo"
+                     else "último pago ordinario por su frecuencia"),
+           "fuente_local_convertida": "dividendo de la cotización local convertido a la del precio"}.get(
+        d.get("source"), "último dividendo declarado por su frecuencia")
+    cur = d.get("currency") or "USD"
+    parts = [f"{_num_txt(d['rate'])} {cur} al año por {d.get('unit') or 'título'} ({how})"]
+    parts += list(d.get("notes") or [])
+    return "; ".join(parts)
+
+
+def _num_txt(x: float) -> str:
+    return f"{x:,.4f}".rstrip("0").rstrip(".") if abs(x) < 1 else f"{x:,.2f}"
+
+
 def read_nde(nde, state=None, net_debt=None, reit=False, utility=False):
     # Etapa 5 (regla M): con EBITDA <= 0 la ratio no se lee; "caja neta" solo
     # cuando la caja supera a la deuda total. Etapa 9a: en REIT, las bandas de REIT
@@ -1675,18 +1693,22 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         ("dividend_yield", "Dividend yield", km.get("dividend_yield"), "pct", None),
     ]
     grows = []
-    # Fase 1 (identidad del dividendo): el yield que no cuadra con lo pagado sale "sin dato" con su motivo,
-    # no desaparece de la tabla (BCS, TSM, NVO, NVDA).
-    _dy_bad = next((f for f in a.get("data_validation") or [] if f.get("rule") == "identidad_dividendo"), None)
+    # Fase 2b (T2): el dividendo indicado llega en la moneda y la clase del precio; su fila dice cuánto es al año, de
+    # dónde sale y lo que el control en los dos sentidos encontró (subida, extraordinario, recorte). "Sin dato" solo
+    # si la empresa paga y ninguna fuente cuadra, con el motivo; el shareholder yield lo sigue.
+    _div = (a.get("data_provenance") or {}).get("dividend") or {}
+    _dy_bad = next((f for f in a.get("data_validation") or [] if f.get("rule") == "dividendo_sin_fuente"), None)
     for key, lab, val, fm, rd in gro_defs:
         if val is None and _dy_bad and key in ("dividend_yield", "shareholder_yield"):
             grows.append(_row(key, lab, NO_DATA, "Sin dato", None, "sin_dato",
-                              text="no cuadra con lo que la empresa paga en dividendos (" +
-                                   _dy_bad["reason"].split(": no cuadra")[0] + "); no puntúa"))
+                              text=_dy_bad["reason"].replace("; sin dato, no puntúa", "") + "; no puntúa"))
             continue
         if val is None:
             continue
-        grows.append(_row(key, lab, fv(val, fm), rd[0] if rd else "—", rd[1] if rd else None, text=rd[2] if rd else None))
+        txt = rd[2] if rd else None
+        if key == "dividend_yield":
+            txt = dividend_text(_div) or txt
+        grows.append(_row(key, lab, fv(val, fm), rd[0] if rd else "—", rd[1] if rd else None, text=txt))
     # Etapa 9a: BPA frente a ingresos, informativo (no puntúa: Crecimiento ya puntúa ambos).
     _evr = a.get("eps_vs_revenue_growth")
     evr_note = None

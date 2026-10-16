@@ -58,3 +58,36 @@ window_sessions = 252           # 52 semanas, incluida la sesión de hoy (criter
 frequency = "W-FRI"             # cierre ajustado del viernes (o última sesión de la semana)
 window_weeks = 104
 min_weeks = 52
+
+# ── Fase 2b: la serie de precios entra en el análisis (lib/price_history.py), solo para lo que permite D5 ──
+# Una descarga diaria SIN ajustar (cierre, máximo y mínimo reales; cierre ajustado aparte) con los dividendos y
+# splits declarados: de ella salen el dividendo indicado de los ADR (T2), el rango de 52 semanas (T6) y la beta
+# propia (T6). 2 años bastan para la beta (104 semanas) y el rango (252 sesiones) y cubren dos ciclos de dividendo.
+[history]
+period = "2y"
+interval = "1d"
+max_attempts = 2                # en el camino del análisis: un reintento corto, nunca bloquea el análisis
+retry_pause_s = 0.5
+cache_ttl_s = 300               # empresa: el mismo TTL que los datos del ticker (data.yahoo.cache_ttl_s)
+market_cache_ttl_s = 21600      # S&P 500: 6 h por proceso (la beta usa semanas cerradas)
+wait_timeout_s = 20.0           # espera máxima al hilo de la descarga antes de seguir sin la serie
+
+# Fase 2b (T2): dividendo indicado en la moneda y la clase del precio, desde los pagos del propio título
+# (F2_PRECEDENCIA §2.2). Frecuencia por la mediana de los intervalos entre pagos (días).
+[dividends]
+monthly_max_gap_days = 45
+quarterly_max_gap_days = 135
+semiannual_max_gap_days = 270
+# Extraordinario: un pago mayor que `extraordinary_multiple` veces la mediana de los demás del periodo y SIN un
+# pago comparable (≥ su mitad) un año antes (±`seasonal_window_days`): así el dividendo final mayor que los
+# trimestrales (HSBC, ASML) o el semestral desigual (NVO, BCS) son ordinarios y el anual variable de PGR no.
+extraordinary_multiple = 3.0
+seasonal_min_ratio = 0.5
+seasonal_lag_days = 365
+seasonal_window_days = 60
+level_tolerance = 0.02          # dos pagos "iguales" (cambio de nivel: subida o recorte)
+stale_gap_multiple = 1.5        # el último pago es más antiguo que 1.5 intervalos + el periodo: historial incompleto
+lookback_days = 760             # pagos que se miran (2 años y un margen)
+source_tolerance = 0.25         # |indicado de la fuente / indicado de los pagos − 1| aceptable (subida declarada y aún no pagada)
+downward_ratio = 0.5           # indicado < la mitad de lo cobrado en 12 meses: extraordinario o recorte (§2.2.4)
+paid_band = [0.5, 2.0]          # pagado por título en los estados (TTM) frente a lo cobrado por título: fuera, aviso

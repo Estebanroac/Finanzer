@@ -26,8 +26,10 @@ growth_vs_statements_pp = 0.15
 # Unidades: |crecimiento| > 1000% o yield > 50% delatan escala porcentual.
 growth_units_abs_max = 10.0
 dividend_yield_max = 0.5
-# Fase 1 (guardián de identidades): el dividend yield no puede superar este múltiplo de lo que la empresa paga
-# (dividendos pagados / capitalización, o payout × E/P). Calibrado en el panel; justificación en
+# Guardián de identidades (tests/guardian.py): el dividendo indicado no puede superar este múltiplo de lo cobrado en
+# 12 meses (ni el yield el de payout × E/P) sin una subida verificada, ni quedar por debajo de lo cobrado / este
+# múltiplo sin un extraordinario o un recorte dichos (fase 2b: magnitudes equivalentes, en los dos sentidos). El
+# motor ya no anula el dato con él (fase 1, retirado en la 2b). Calibrado en el panel; justificación en
 # docs/fiabilidad/F1_DIFF_GOLDEN.md (P3.7).
 dividend_identity_max_ratio = 2.0
 payout_ratio_max = 10.0

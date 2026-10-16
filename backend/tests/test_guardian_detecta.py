@@ -179,7 +179,7 @@ def test_negative_multiple_on_a_card_fails():
 
 
 def test_dividend_identities():
-    """BCS: 50.30% de dividend yield con payout 28.2% y E/P 13.6% (lo que paga: 3.8%)."""
+    """BCS (fase 1): 50.30% de dividend yield con payout 28.2% y E/P 13.6% (lo que paga: 3.8%)."""
     ids = lambda a: {r for r, _ in g.identities(a)}
     bcs = {KM: {"dividend_yield": 0.503, "payout_ratio": 0.282, "earnings_yield": 0.136,
                 "buyback_yield": 0.0386, "shareholder_yield": 0.5416}}
@@ -187,20 +187,44 @@ def test_dividend_identities():
     ok = {KM: {"dividend_yield": 0.0231, "payout_ratio": 0.772, "earnings_yield": 0.036,
                "buyback_yield": 0.01, "shareholder_yield": 0.0331}}
     assert not ids(ok)
-    special = {KM: {"dividend_yield": 0.0019, "payout_ratio": 0.697, "earnings_yield": 0.094}}   # PGR: extraordinario
     reit = {KM: {"dividend_yield": 0.0588, "payout_ratio": 0.7865, "payout_basis": "ffo", "p_ffo": 13.7,
                  "earnings_yield": 0.0245}}   # O: el payout es sobre el FFO, no sobre el beneficio
     assert not ids(reit)
-    assert not ids(special)
     assert "identidad_shareholder" in ids({KM: {"dividend_yield": 0.02, "buyback_yield": 0.01,
                                                 "shareholder_yield": 0.05}})
     flagged = {KM: {"dividend_yield": None, "buyback_yield": 0.0386, "shareholder_yield": 0.0386},
-               "data_validation": [{"rule": "identidad_dividendo", "old": 0.503}]}
+               "data_validation": [{"rule": "dividendo_sin_fuente", "old": None}]}
     assert "identidad_shareholder" in ids(flagged)
     scored = {KM: {"dividend_yield": None, "shareholder_yield": None},
               "data_validation": [{"rule": "identidad_dividendo", "old": 0.503}],
               "financial_health": {"details": [{"detail": "Dividendo sostenible (50.30%)"}]}}
     assert "identidad_no_puntua" in ids(scored)
+
+
+def _dv(rate, ttm, price, **kw):
+    pay = {"ttm_total": ttm, "extraordinary": kw.pop("extraordinary", [])}
+    return {"price": price, "data_provenance": {"dividend": {"rate": rate, "payments": pay, **kw}}}
+
+
+def test_dividend_identity_two_directions_fase_2b():
+    """Fase 2b: magnitudes equivalentes (indicado frente a lo cobrado en 12 meses, la misma unidad)."""
+    ids = lambda a: {r for r, _ in g.identities(a)}
+    # NVDA: 0.25 × 4 = 1.00 con 0.52 cobrados y payout × E/P muy por debajo: una subida verificada no se anula.
+    nvda = {KM: {"dividend_yield": 1.0 / 221.3, "payout_ratio": 0.035, "earnings_yield": 0.024},
+            **_dv(1.0, 0.52, 221.3, change={"kind": "aumento", "date": "2026-06-04", "from": 0.01, "to": 0.25})}
+    assert not ids(nvda)
+    sin_subida = {KM: dict(nvda[KM]), **_dv(1.0, 0.40, 221.3)}
+    assert "identidad_dividendo" in ids(sin_subida)
+    # PGR: 0.40 indicado frente a 13.90 cobrados: vale con el extraordinario separado, no sin él.
+    pgr = {KM: {"dividend_yield": 0.4 / 210.0}, **_dv(0.4, 13.9, 210.0,
+                                                    extraordinary=[{"date": "2026-01-02", "amount": 13.6}])}
+    assert not ids(pgr)
+    pgr_mudo = {KM: {"dividend_yield": 0.4 / 210.0}, **_dv(0.4, 13.9, 210.0)}
+    assert "identidad_dividendo" in ids(pgr_mudo)
+    # BCS: el yield tiene que ser el indicado por ADR / el precio del ADR (no 11.5 peniques / 22.79 dólares).
+    bcs = {KM: {"dividend_yield": 11.5 / 22.79}, **_dv(0.62, 0.62, 22.79)}
+    assert "identidad_dividendo" in ids(bcs)
+    assert not ids({KM: {"dividend_yield": 0.62 / 22.79}, **_dv(0.62, 0.62, 22.79)})
 
 
 def test_structural_rules():
