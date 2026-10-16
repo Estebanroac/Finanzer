@@ -95,8 +95,8 @@ def test_tsm_per_share_figures_per_adr(sample):
     """TSM: 1 ADR = 5 acciones ordinarias. El balance cuenta ordinarias; el BPA, por ADR."""
     a = sample["TSM"]
     sc = a["data_provenance"]["currency"]["share_class"]
-    assert sc["applied"] and abs(sc["factor"] - 5) < 0.05
-    assert "5.00 acciones de los estados" in a["display"]["cover"]["currency_note"]
+    assert sc["applied"] and sc["factor"] == 5 and sc["basis"] == "oficial"   # fase 2b: factor del depositario
+    assert "5 acciones comunes (factor del depositario, Citibank)" in a["display"]["cover"]["currency_note"]
     assert 20 < a["key_metrics"]["pe"] < 50 and 3 < a["key_metrics"]["pb"] < 30
 
 

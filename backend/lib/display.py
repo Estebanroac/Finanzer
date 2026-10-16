@@ -356,12 +356,31 @@ def currency_note(cur) -> Optional[str]:
                      + (f" ({'; '.join(rates)})" if rates else "") + ".")
     sc = cur.get("share_class") or {}
     f = sc.get("factor")
+    basis = sc.get("basis")
     if sc.get("applied") and f:
-        parts.append("Cifras por acción en la clase que cotiza: "
-                     + (f"cada título cotizado equivale a {f:,.2f} acciones de los estados (ADR u otra clase)."
-                        if f > 1 else
-                        f"los estados cuentan otra clase de acciones, y cada una equivale a {1 / f:,.0f} títulos "
-                        "cotizados."))
+        off = sc.get("official") or {}
+        if basis == "oficial":
+            dep = off.get("depositary")
+            who = f"factor del depositario, {dep}" if dep and dep != "—" else "factor oficial del emisor"
+            parts.append("Cifras por acción en la clase que cotiza: "
+                         + (f"cada título cotizado equivale a {f:,.0f} {off.get('share_class') or 'acciones'} "
+                            f"({who})." if f > 1 else
+                            f"los estados cuentan otra clase de acciones, y cada una equivale a {1 / f:,.0f} "
+                            f"títulos cotizados ({who})."))
+        else:
+            parts.append("Cifras por acción en la clase que cotiza: "
+                         + (f"cada título cotizado equivale a {f:,.2f} acciones de los estados"
+                            if f > 1 else
+                            f"los estados cuentan otra clase de acciones, y cada una equivale a {1 / f:,.0f} "
+                            "títulos cotizados")
+                         + " (factor deducido de las acciones, sin verificar con el depositario).")
+    gap = sc.get("implied_check") or {}
+    if gap.get("deviation") is not None and sc.get("statement_shares_date"):
+        dev = gap["deviation"]
+        change = 1.0 / (1.0 + dev) - 1.0       # acciones de hoy frente a las del balance
+        parts.append(f"Desde el balance del {sc['statement_shares_date']} la empresa tiene un {abs(change):.1%} "
+                     f"{'menos' if change < 0 else 'más'} de acciones "
+                     f"({'recompras' if change < 0 else 'emisiones'}); el valor por acción usa las de hoy.")
     return " ".join(parts) or None
 
 

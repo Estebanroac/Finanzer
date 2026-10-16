@@ -1,0 +1,81 @@
+# Fase 2b (T1): factor oficial de clase de las acciones que cotizan (lib/currency.py).
+#
+# Un ADR representa N acciones ordinarias; la clase B de BRK equivale a 1/1500 de la clase A. El factor sale del
+# contrato de depósito (F-6 del banco depositario) y de la portada del 20-F ("Title of each class", 12(b)), no de
+# XBRL. Verificado en EDGAR el 2026-10-15 (docs/fiabilidad/F2_EDGAR_DIAGNOSTICO.md §5).
+#
+# El factor IMPLÍCITO (acciones de los estados / acciones de la cotización) solo es una comprobación: entre la
+# fecha del balance y la de la cotización se cuelan las recompras y emisiones (BCS 4.154 por las recompras de 2026;
+# TM 11.07 por la recompra de ~1,200 millones de acciones a Toyota Industries en el 1T del FY2027, 6-K del
+# 2026-08-04). Si difiere del oficial más de `implied_tolerance`, se anota con la cifra y el factor no se toca.
+
+implied_tolerance = 0.02        # |implícito / oficial − 1| por encima del cual se anota el desfase
+
+# Emisores fuera de la tabla (PROPUESTA de la 2b, pendiente de aprobación del usuario en el punto de parada 1):
+# el implícito se ajusta a la fracción simple más cercana (n o 1/n) si está a ≤ `inferred_tolerance`, declarado
+# "factor inferido, sin verificar con el depositario". Si no, se aplica el implícito tal cual con aviso.
+inferred_tolerance = 0.02
+inferred_max_ratio = 100        # candidatos: 1..100 acciones por título y 1/1..1/100
+
+[factors.TSM]
+factor = 5.0
+share_class = "acciones comunes"
+depositary = "Citibank"
+source = "20-F (2026-04-16): \"each ADS represents five (5) common shares\"; F-6 POS (2007-11-16)"
+verified = "2026-10-15"
+
+[factors.ASML]
+factor = 1.0
+share_class = "acciones ordinarias (cotizan directamente en NASDAQ; no es un ADR)"
+depositary = "—"
+source = "20-F (2026-02-25), 12(b): \"Ordinary Shares\"; sin F-6"
+verified = "2026-10-15"
+
+[factors.NVO]
+factor = 1.0
+share_class = "acciones B"
+depositary = "JPMorgan"
+source = "20-F (2026-02-04): \"American Depositary Receipts, each representing one B Share\"; F-6 (2023-08-31)"
+verified = "2026-10-15"
+
+[factors.BCS]
+factor = 4.0
+share_class = "acciones ordinarias de 25 peniques"
+depositary = "JPMorgan"
+source = "20-F (2026-02-10): \"each representing four 25p ordinary shares\"; F-6EF (2025-11-20)"
+verified = "2026-10-15"
+
+[factors.HSBC]
+factor = 5.0
+share_class = "acciones ordinarias"
+depositary = "BNY Mellon"
+source = "20-F (2026-02-26): \"each representing 5 Ordinary Shares of nominal value US$0.50\"; F-6EF (2010-08-17)"
+verified = "2026-10-15"
+
+[factors.SHEL]
+factor = 2.0
+share_class = "acciones ordinarias"
+depositary = "JPMorgan"
+source = "20-F (2026-03-12): \"representing two ordinary shares\"; F-6 POS (2023-10-13)"
+verified = "2026-10-15"
+
+[factors.UL]
+factor = 1.0
+share_class = "acciones ordinarias"
+depositary = "Deutsche Bank"
+source = "20-F (2026-03-12): \"each representing one ordinary share\"; F-6EF (2020-11-27)"
+verified = "2026-10-15"
+
+[factors.TM]
+factor = 10.0
+share_class = "acciones ordinarias"
+depositary = "BNY Mellon"
+source = "20-F (2026-06-10): \"Each American Depositary Share representing ten shares\"; F-6 (2021-09-21)"
+verified = "2026-10-15"
+
+[factors.BRK-B]
+factor = 0.0006666666666666666  # 1/1500
+share_class = "clase B (1/1500 de una acción de clase A)"
+depositary = "—"
+source = "10-K: cada acción de clase B equivale a 1/1500 de una de clase A"
+verified = "2026-10-15"

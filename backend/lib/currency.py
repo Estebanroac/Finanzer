@@ -27,6 +27,28 @@ from typing import Any, Dict, Optional, Tuple
 from settings import cfg
 
 _V = cfg("validation.currency")
+_ADR = cfg("adr")
+
+
+def official_factor(symbol: Optional[str]) -> Optional[Dict[str, Any]]:
+    """Factor oficial de clase (config/adr.toml): acciones de los estados por título cotizado, con su fuente."""
+    ent = (_ADR["factors"].get((symbol or "").upper()))
+    return dict(ent) if ent is not None else None
+
+
+def nearest_simple_ratio(x: float) -> Optional[float]:
+    """La fracción simple (n o 1/n, n ≤ inferred_max_ratio) más cercana a `x` si está a ≤ inferred_tolerance."""
+    if not x or x <= 0:
+        return None
+    n = round(x) if x >= 1 else round(1.0 / x)
+    if not 1 <= n <= _ADR["inferred_max_ratio"]:
+        return None
+    cand = float(n) if x >= 1 else 1.0 / n
+    return cand if abs(x / cand - 1.0) <= _ADR["inferred_tolerance"] else None
+
+
+def _ratio_txt(f: float) -> str:
+    return f"{f:g}" if f >= 1 else f"1/{round(1 / f)}"
 
 # Subunidades de cotización (precio en peniques, etc.): moneda base y factor.
 SUBUNITS = {"GBp": ("GBP", 0.01), "GBX": ("GBP", 0.01), "ZAc": ("ZAR", 0.01), "ILA": ("ILS", 0.01)}
@@ -216,18 +238,61 @@ class StatementContext:
                             break
                 if stmt_sh:
                     break
-            if not stmt_sh or not self.price_shares:
-                self.class_detail = {"factor": None, "applied": False,
+            implied = (float(stmt_sh) / float(self.price_shares)) if (stmt_sh and self.price_shares) else None
+            counts = ({"statement_shares": float(stmt_sh), "price_shares": float(self.price_shares),
+                       "statement_shares_date": str(getattr(when, "date", lambda: when)())}
+                      if implied is not None else {})
+            official = official_factor(self.symbol)
+            if official is not None:
+                self._set_official(official, implied, counts)
+                return
+            if implied is None:
+                self.class_detail = {"factor": None, "applied": False, "basis": None,
                                      "reason": "sin acciones de los estados o de la cotización"}
                 return
-            f = float(stmt_sh) / float(self.price_shares)
-            tol = _V["share_class_tolerance"]
-            self.class_factor = f
-            self.class_applied = not (1.0 / tol <= f <= tol)
-            self.class_detail = {"factor": f, "applied": self.class_applied,
-                                 "statement_shares": float(stmt_sh), "price_shares": float(self.price_shares),
-                                 "statement_shares_date": str(getattr(when, "date", lambda: when)()),
-                                 "tolerance": tol}
+            self._set_inferred(implied, counts)
+
+    def _set_official(self, official: Dict[str, Any], implied: Optional[float], counts: Dict[str, Any]) -> None:
+        """Fase 2b (T1): factor del depositario (config/adr.toml). El implícito solo comprueba: un desfase por encima
+        de la tolerancia son recompras o emisiones entre el balance y la cotización, y se anota sin tocar el factor."""
+        f = official["factor"]
+        self.class_factor = f
+        self.class_applied = not math.isclose(f, 1.0)
+        self.class_detail = {"factor": f, "applied": self.class_applied, "basis": "oficial",
+                             "official": dict(official), "implied": implied, **counts}
+        if implied is None:
+            return
+        dev = implied / f - 1.0
+        if abs(dev) > _ADR["implied_tolerance"]:
+            px_in_stmt = counts["price_shares"] * f
+            self.class_detail["implied_check"] = {
+                "implied": implied, "deviation": dev, "price_shares_in_statement_class": px_in_stmt,
+                "note": (f"recompras/emisiones desde el cierre: las acciones de la cotización ({px_in_stmt:,.0f} en "
+                         f"la clase de los estados) son un {abs(1 / (1 + dev) - 1):.1%} "
+                         f"{'menos' if dev > 0 else 'más'} que las del balance al "
+                         f"{counts['statement_shares_date']} ({counts['statement_shares']:,.0f}); "
+                         f"factor implícito {implied:.3f} frente al oficial {f:g}")}
+
+    def _set_inferred(self, implied: float, counts: Dict[str, Any]) -> None:
+        """Fase 2b (T1, propuesta pendiente de aprobación): emisor sin factor oficial en la tabla."""
+        tol = _V["share_class_tolerance"]
+        base = {"implied": implied, "tolerance": tol, **counts}
+        if 1.0 / tol <= implied <= tol:
+            self.class_factor, self.class_applied = implied, False
+            self.class_detail = {"factor": implied, "applied": False, "basis": "misma_clase", **base}
+            return
+        snapped = nearest_simple_ratio(implied)
+        if snapped is not None:
+            self.class_factor, self.class_applied = snapped, True
+            self.class_detail = {"factor": snapped, "applied": True, "basis": "inferido", **base,
+                                 "note": f"factor inferido ({implied:.3f} ajustado a {_ratio_txt(snapped)}), sin "
+                                         "verificar con el depositario"}
+            return
+        self.class_factor, self.class_applied = implied, True
+        self.class_detail = {"factor": implied, "applied": True, "basis": "implicito", **base,
+                             "note": f"factor implícito {implied:.3f} sin fracción simple a menos del "
+                                     f"{_ADR['inferred_tolerance']:.0%}: puede llevar recompras o emisiones entre el "
+                                     "balance y la cotización; sin verificar con el depositario"}
 
     @property
     def active(self) -> bool:
