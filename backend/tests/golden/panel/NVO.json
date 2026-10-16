@@ -65,6 +65,7 @@
     },
     "interpretation": "Z''-Score (No Manufactura): Zona segura — bajo riesgo de bancarrota",
     "model": "Z''-Score (No Manufactura)",
+    "operating_leases_excluded": null,
     "z_score": 2.76,
     "zone": "safe"
   },
@@ -172,6 +173,11 @@
         "level": "alta",
         "reasons": []
       },
+      "fuente_oficial": {
+        "level": "alta",
+        "reasons": [],
+        "status": "registrado"
+      },
       "source": {
         "finnhub_fields": [
           "_yahoo_ratios.currentRatio",
@@ -187,10 +193,12 @@
           "payoutRatio",
           "revenueGrowth"
         ],
-        "issues": 2,
-        "level": "media",
+        "issues": 4,
+        "level": "baja",
         "reasons": [
           "validación: interestExpense (periodo_incoherente)",
+          "validación: capitalLeaseObligations (periodo_incoherente)",
+          "validación: commercialPaper (periodo_incoherente)",
           "12 campos de Finnhub en lugar de los estados"
         ]
       },
@@ -203,9 +211,9 @@
     "limits_score": false,
     "reasons": [
       "convergencia media: uno lo ve en precio y otro con dirección: no coinciden, sin oponerse",
-      "calidad de fuente media: validación: interestExpense (periodo_incoherente); 12 campos de Finnhub en lugar de los estados"
+      "calidad de fuente baja: validación: interestExpense (periodo_incoherente); validación: capitalLeaseObligations (periodo_incoherente); validación: commercialPaper (periodo_incoherente); 12 campos de Finnhub en lugar de los estados"
     ],
-    "score": 0.7
+    "score": 0.6
   },
   "data_provenance": {
     "as_of": {
@@ -215,9 +223,17 @@
           "period_end": "2026-06-30",
           "period_type": "ttm"
         },
+        "capitalLeaseObligations": {
+          "period_end": "2025-12-31",
+          "period_type": "fy_balance"
+        },
         "cash": {
           "period_end": "2026-06-30",
           "period_type": "balance"
+        },
+        "commercialPaper": {
+          "period_end": "2025-12-31",
+          "period_type": "fy_balance"
         },
         "depreciation": {
           "period_end": "2026-06-30",
@@ -391,6 +407,39 @@
       "statements": "DKK",
       "ttm_rate": 0.156193259589
     },
+    "debt": {
+      "applied": false,
+      "components": {
+        "commercial_paper": {
+          "in_rule_debt": true,
+          "source": "Yahoo",
+          "value": 117177052.688
+        },
+        "leases_ifrs16": {
+          "accns": [
+            "0000353278-26-000012"
+          ],
+          "basis": "ultimo_anual",
+          "concepts": [
+            "ifrs-full:LeaseLiabilities"
+          ],
+          "in_rule_debt": true,
+          "note": "del último informe anual (2025-12-31): el emisor no lo etiqueta en el filing del corte",
+          "period": "2025-12-31",
+          "source": "SEC EDGAR",
+          "unit": "DKK",
+          "value": 1348243886.76
+        }
+      },
+      "date": "2026-06-30",
+      "notes": [
+        "IFRS 16: los arrendamientos ya están en la deuda de la fuente (regla cumplida)"
+      ],
+      "rule": "un arrendamiento entra en la deuda si y solo si su coste no está restado del EBITDA",
+      "source_total": 21409026403.7,
+      "standard": "ifrs-full",
+      "total": 21409026403.7
+    },
     "dividend": {
       "as_of": "2026-10-14",
       "basis": "suma_ultimo_ciclo",
@@ -441,7 +490,20 @@
       "unit": "ADR"
     },
     "edgar": {
+      "backup": {
+        "cut": [],
+        "fy": [],
+        "reason": null,
+        "skipped": [
+          {
+            "field": "interestExpense",
+            "reason": "EDGAR no lo tiene del periodo que acaba el 2026-06-30"
+          }
+        ]
+      },
       "cik": 353278,
+      "facts_status": "ok",
+      "pending_filings": [],
       "reason": null,
       "status": "ok",
       "title": "NOVO NORDISK A S"
@@ -580,9 +642,19 @@
         "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
         "source": "yfinance_statements"
       },
+      "capitalLeaseObligations": {
+        "detail": "dato de otro periodo descartado: capitalLeaseObligations del ejercicio cerrado el 2025-12-31 en un análisis con corte a 2026-06-30",
+        "rule": "periodo_incoherente",
+        "source": "sin_dato"
+      },
       "cash": {
         "detail": "balance del último trimestre (2026-06-30)",
         "source": "yfinance_statements"
+      },
+      "commercialPaper": {
+        "detail": "dato de otro periodo descartado: commercialPaper del ejercicio cerrado el 2025-12-31 en un análisis con corte a 2026-06-30",
+        "rule": "periodo_incoherente",
+        "source": "sin_dato"
       },
       "currency": {
         "detail": "plan B: yfinance fast_info (sin crumb)",
@@ -762,6 +834,16 @@
         "source": "derivado"
       }
     },
+    "official_source": {
+      "cik": 353278,
+      "fy": "2025",
+      "fy_end": "2025-12-31",
+      "last_annual_filing": "2026-02-04",
+      "note": null,
+      "reason": null,
+      "registered": true,
+      "status": "registrado"
+    },
     "path": "plan_b_yfinance",
     "pending_results": null,
     "price_history": {
@@ -778,6 +860,8 @@
     },
     "ttm": {
       "annual_fields": {
+        "capitalLeaseObligations": "'Capital Lease Obligations' sin dato en el balance del corte (2026-06-30)",
+        "commercialPaper": "'Commercial Paper' sin dato en el balance del corte (2026-06-30)",
         "interestExpense": "'Interest Expense' sin dato en alguno de los 4 trimestres del corte (2026-06-30)",
         "stockBasedCompensation": "'Stock Based Compensation' no llega al corte (2026-06-30)"
       },
@@ -838,6 +922,22 @@
       "rule": "periodo_incoherente"
     },
     {
+      "action": "sin_dato",
+      "field": "capitalLeaseObligations",
+      "new": null,
+      "old": 1348243886.76,
+      "reason": "dato de otro periodo descartado: capitalLeaseObligations del ejercicio cerrado el 2025-12-31 en un análisis con corte a 2026-06-30",
+      "rule": "periodo_incoherente"
+    },
+    {
+      "action": "sin_dato",
+      "field": "commercialPaper",
+      "new": null,
+      "old": 117177052.688,
+      "reason": "dato de otro periodo descartado: commercialPaper del ejercicio cerrado el 2025-12-31 en un análisis con corte a 2026-06-30",
+      "rule": "periodo_incoherente"
+    },
+    {
       "action": "aviso",
       "field": "ratios.interest_coverage",
       "new": null,
@@ -887,8 +987,16 @@
           "text": "uno lo ve en precio y otro con dirección: no coinciden, sin oponerse"
         },
         {
-          "label": "Confianza · Calidad de fuente (media)",
-          "text": "validación: interestExpense (periodo_incoherente); 12 campos de Finnhub en lugar de los estados"
+          "label": "Confianza · Calidad de fuente (baja)",
+          "text": "validación: interestExpense (periodo_incoherente); validación: capitalLeaseObligations (periodo_incoherente); validación: commercialPaper (periodo_incoherente); 12 campos de Finnhub en lugar de los estados"
+        },
+        {
+          "label": "Fuente oficial",
+          "text": "sí, SEC EDGAR (CIK 353278); último ejercicio en EDGAR: FY 2025."
+        },
+        {
+          "label": "Deuda coherente con el EBITDA (arrendamiento dentro solo si su coste no está en el EBITDA)",
+          "text": "deuda $21.41B; papel comercial (dentro de los préstamos) $117.18M (dentro); arrendamientos IFRS 16 $1.35B (dentro; del último informe anual (2025-12-31): el emisor no lo etiqueta en el filing del corte); IFRS 16: los arrendamientos ya están en la deuda de la fuente (regla cumplida)."
         }
       ],
       "title": "Detalle técnico para auditoría"
@@ -1960,7 +2068,7 @@
         {
           "key": "source",
           "label": "Calidad de fuente",
-          "level": "Media",
+          "level": "Baja",
           "text": "Un dato de la fuente no superó la validación y se corrigió o se descartó. Parte de los datos proviene de una fuente secundaria."
         },
         {
@@ -1984,18 +2092,28 @@
         },
         {
           "dimension": "calidad de fuente",
-          "level": "media",
+          "level": "baja",
           "text": "Un dato de la fuente no superó la validación y se corrigió o se descartó."
         },
         {
           "dimension": "calidad de fuente",
-          "level": "media",
+          "level": "baja",
+          "text": "Un dato de la fuente no superó la validación y se corrigió o se descartó."
+        },
+        {
+          "dimension": "calidad de fuente",
+          "level": "baja",
+          "text": "Un dato de la fuente no superó la validación y se corrigió o se descartó."
+        },
+        {
+          "dimension": "calidad de fuente",
+          "level": "baja",
           "text": "Parte de los datos proviene de una fuente secundaria."
         }
       ],
       "summary": "Confianza del veredicto: media. Contrae el atractivo del precio hacia 50 (factor 0.75): sin ajustar 60 → ajustado a 58. La calidad del negocio no se contrae.",
       "tone": "warn",
-      "verdict_text": "(confianza media: el DCF la ve en precio y los múltiplos barata)"
+      "verdict_text": "(confianza media: datos de fuente con incidencias)"
     },
     "cover": {
       "archetype": "MATURE",
@@ -2079,7 +2197,7 @@
       "coverage_notes": [],
       "currency_note": "Estados financieros en DKK convertidos a USD, la moneda de la cotización, con el tipo de cambio de Yahoo (DKK=X): el balance al cierre de cada período y los resultados y flujos al promedio del período (TTM: 1 USD = 6.40 DKK; balance al 2026-06-30: 1 USD = 6.55 DKK).",
       "data_notices": [
-        "Sin dato del corte, descartados por ser de otro periodo: gastos financieros."
+        "Sin dato del corte, descartados por ser de otro periodo: capitalLeaseObligations, commercialPaper, gastos financieros."
       ],
       "highlights": [
         {
@@ -2151,6 +2269,7 @@
           "value": "1.96"
         }
       ],
+      "official_source_badge": null,
       "price": {
         "contracted": true,
         "level": "razonable",
@@ -2170,9 +2289,9 @@
         "tone": "pos"
       },
       "verdict": {
-        "confidence_text": "(confianza media: el DCF la ve en precio y los múltiplos barata)",
+        "confidence_text": "(confianza media: datos de fuente con incidencias)",
         "confidence_tone": "warn",
-        "full": "Calidad excelente · precio razonable (confianza media: el DCF la ve en precio y los múltiplos barata)",
+        "full": "Calidad excelente · precio razonable (confianza media: datos de fuente con incidencias)",
         "text": "Calidad excelente · precio razonable"
       }
     },
@@ -3629,7 +3748,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad excelente · precio razonable (confianza media: el DCF la ve en precio y los múltiplos barata). Calidad 88/100 · precio 58/100 (sin ajustar 60 → ajustado a 58 por confianza media)."
+          "text": "Calidad excelente · precio razonable (confianza media: datos de fuente con incidencias). Calidad 88/100 · precio 58/100 (sin ajustar 60 → ajustado a 58 por confianza media)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -5529,8 +5648,8 @@
   },
   "verdict": {
     "confidence": "media",
-    "confidence_text": "(confianza media: el DCF la ve en precio y los múltiplos barata)",
-    "full": "Calidad excelente · precio razonable (confianza media: el DCF la ve en precio y los múltiplos barata)",
+    "confidence_text": "(confianza media: datos de fuente con incidencias)",
+    "full": "Calidad excelente · precio razonable (confianza media: datos de fuente con incidencias)",
     "price_level": "razonable",
     "quality_level": "excelente",
     "text": "Calidad excelente · precio razonable"

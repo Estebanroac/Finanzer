@@ -71,6 +71,7 @@
     },
     "interpretation": "Z''-Score (No Manufactura): Zona segura — bajo riesgo de bancarrota",
     "model": "Z''-Score (No Manufactura)",
+    "operating_leases_excluded": null,
     "z_score": 2.86,
     "zone": "safe"
   },
@@ -178,6 +179,11 @@
         "level": "alta",
         "reasons": []
       },
+      "fuente_oficial": {
+        "level": "alta",
+        "reasons": [],
+        "status": "registrado"
+      },
       "source": {
         "finnhub_fields": [
           "_yahoo_ratios.currentRatio",
@@ -221,9 +227,18 @@
           "period_end": "2025-12-31",
           "period_type": "fy"
         },
+        "capitalLeaseObligations": {
+          "period_end": "2025-12-31",
+          "period_type": "fy_balance"
+        },
         "cash": {
           "period_end": "2025-12-31",
           "period_type": "fy_balance"
+        },
+        "depreciation": {
+          "period_end": "2025-12-31",
+          "period_type": "fy",
+          "source": "sec_edgar"
         },
         "dividendsPaid": {
           "period_end": "2025-12-31",
@@ -366,6 +381,33 @@
       },
       "statements": "EUR"
     },
+    "debt": {
+      "applied": false,
+      "components": {
+        "leases_ifrs16": {
+          "accns": [
+            "0000217410-26-000007"
+          ],
+          "basis": "corte",
+          "concepts": [
+            "ifrs-full:LeaseLiabilities"
+          ],
+          "in_rule_debt": true,
+          "period": "2025-12-31",
+          "source": "SEC EDGAR",
+          "unit": "EUR",
+          "value": 1557690940.47
+        }
+      },
+      "date": "2025-12-31",
+      "notes": [
+        "IFRS 16: los arrendamientos ya están en la deuda de la fuente (regla cumplida)"
+      ],
+      "rule": "un arrendamiento entra en la deuda si y solo si su coste no está restado del EBITDA",
+      "source_total": 32419002175.2,
+      "standard": "ifrs-full",
+      "total": 32419002175.2
+    },
     "dividend": {
       "as_of": "2026-10-15",
       "basis": "suma_ultimo_ciclo",
@@ -432,7 +474,35 @@
       "unit": "ADR"
     },
     "edgar": {
+      "backup": {
+        "cut": [
+          {
+            "accns": [
+              "0000217410-26-000007"
+            ],
+            "concept": "ifrs-full:DepreciationAndAmortisationExpense",
+            "field": "depreciation",
+            "how": "ejercicio 2025-01-01 a 2025-12-31",
+            "period_end": "2025-12-31",
+            "value": 1480507437.65
+          }
+        ],
+        "fy": [],
+        "reason": null,
+        "skipped": []
+      },
       "cik": 217410,
+      "facts_status": "ok",
+      "pending_filings": [
+        {
+          "accn": "0000217410-26-000057",
+          "date": "2026-07-28",
+          "form": "6-K",
+          "read": true,
+          "reason": null,
+          "report_date": "2026-06-30"
+        }
+      ],
       "reason": null,
       "status": "ok",
       "title": "UNILEVER PLC"
@@ -571,6 +641,10 @@
         "detail": "plan B: estados anuales de yfinance (último FY)",
         "source": "yfinance_statements"
       },
+      "capitalLeaseObligations": {
+        "detail": "plan B: estados anuales de yfinance (último FY)",
+        "source": "yfinance_statements"
+      },
       "cash": {
         "detail": "plan B: estados anuales de yfinance (último FY)",
         "source": "yfinance_statements"
@@ -582,6 +656,10 @@
       "currentPrice": {
         "detail": "plan B: yfinance fast_info (sin crumb)",
         "source": "yfinance_statements"
+      },
+      "depreciation": {
+        "detail": "SEC EDGAR (ifrs-full:DepreciationAndAmortisationExpense): ejercicio 2025-01-01 a 2025-12-31",
+        "source": "sec_edgar"
       },
       "dividendRate": {
         "detail": "pagos del propio título en la serie de precios (Yahoo)",
@@ -748,6 +826,16 @@
         "source": "yfinance_statements"
       }
     },
+    "official_source": {
+      "cik": 217410,
+      "fy": "2025",
+      "fy_end": "2025-12-31",
+      "last_annual_filing": "2026-03-12",
+      "note": null,
+      "reason": null,
+      "registered": true,
+      "status": "registrado"
+    },
     "path": "plan_b_yfinance",
     "pending_results": {
       "accn": "0000217410-26-000057",
@@ -773,7 +861,9 @@
     "ttm": {
       "annual_fields": {
         "capitalExpenditures": "sin estados trimestrales",
+        "capitalLeaseObligations": "sin corte trimestral: el balance es el del ejercicio",
         "cash": "sin corte trimestral: el balance es el del ejercicio",
+        "commercialPaper": "sin corte trimestral: el balance es el del ejercicio",
         "depreciation": "sin estados trimestrales",
         "dividendsPaid": "sin estados trimestrales",
         "ebitda": "sin estados trimestrales",
@@ -856,6 +946,18 @@
         {
           "label": "Confianza · Calidad de fuente (media)",
           "text": "sin TTM: estados anuales (hasta 12 meses de retraso); 12 campos de Finnhub en lugar de los estados"
+        },
+        {
+          "label": "Fuente oficial",
+          "text": "sí, SEC EDGAR (CIK 217410); último ejercicio en EDGAR: FY 2025."
+        },
+        {
+          "label": "Deuda coherente con el EBITDA (arrendamiento dentro solo si su coste no está en el EBITDA)",
+          "text": "deuda $32.42B; arrendamientos IFRS 16 $1.56B (dentro); IFRS 16: los arrendamientos ya están en la deuda de la fuente (regla cumplida)."
+        },
+        {
+          "label": "Respaldo de SEC EDGAR (lo que Yahoo no da del mismo corte)",
+          "text": "amortizaciones (ifrs-full:DepreciationAndAmortisationExpense; ejercicio 2025-01-01 a 2025-12-31)."
         }
       ],
       "title": "Detalle técnico para auditoría"
@@ -939,16 +1041,16 @@
                 "bench": 16.0,
                 "bench_txt": "16.00x",
                 "fmt": "mult",
-                "gap_pct": -17.7429779947,
-                "gap_txt": "-18%",
+                "gap_pct": -19.850288255,
+                "gap_txt": "-20%",
                 "higher_is_better": false,
                 "key": "ev_ebitda",
                 "label": "EV/EBITDA",
                 "reading": "Descuento",
-                "text": "EV/EBITDA de 13.2x frente a 16.0x del sector (-18%): descuento",
+                "text": "EV/EBITDA de 12.8x frente a 16.0x del sector (-20%): descuento",
                 "tone": "pos",
-                "value": 13.1611235209,
-                "value_txt": "13.16x"
+                "value": 12.8239538792,
+                "value_txt": "12.82x"
               },
               {
                 "bench": 25.0,
@@ -1374,12 +1476,12 @@
               "tone": "pos"
             },
             {
-              "amount": 12594484645.1,
-              "amount_txt": "$12.59B",
+              "amount": 12925621041.5,
+              "amount_txt": "$12.93B",
               "key": "ebitda_margin",
               "label": "Margen EBITDA",
-              "pct": 0.220660158802,
-              "pct_txt": "22.1%",
+              "pct": 0.226461794349,
+              "pct_txt": "22.6%",
               "reading": null,
               "state": "con_dato",
               "tone": null
@@ -1679,8 +1781,8 @@
             "text": "la deuda neta (2.1x EBITDA) es manejable",
             "tone": "neu",
             "unit": "x",
-            "value": 2.10657760853,
-            "value_txt": "2.11x",
+            "value": 2.05261002618,
+            "value_txt": "2.05x",
             "zones": [
               {
                 "from": 0.0,
@@ -1912,18 +2014,18 @@
             "bench": 16.0,
             "bench_txt": "16.00x",
             "fmt": "mult",
-            "gap_pct": -17.7429779947,
-            "gap_txt": "-18%",
+            "gap_pct": -19.850288255,
+            "gap_txt": "-20%",
             "higher_is_better": false,
             "key": "ev_ebitda",
             "label": "EV/EBITDA",
             "reading": "Descuento",
             "role": "block",
             "state": "con_dato",
-            "text": "EV/EBITDA de 13.2x frente a 16.0x del sector (-18%): descuento",
+            "text": "EV/EBITDA de 12.8x frente a 16.0x del sector (-20%): descuento",
             "tone": "pos",
-            "value": 13.1611235209,
-            "value_txt": "13.16x"
+            "value": 12.8239538792,
+            "value_txt": "12.82x"
           },
           {
             "bench": 25.0,
@@ -2163,7 +2265,7 @@
           "key": "net_debt_to_ebitda",
           "label": "Deuda neta/EBITDA",
           "state": "con_dato",
-          "value": "2.11x"
+          "value": "2.05x"
         },
         {
           "key": "beta",
@@ -2172,6 +2274,7 @@
           "value": "0.66"
         }
       ],
+      "official_source_badge": null,
       "price": {
         "contracted": true,
         "level": "razonable",
@@ -2670,11 +2773,11 @@
                 {
                   "in_block": true,
                   "metric": "EV/EBITDA vs Sector",
-                  "reason": "Atractivo (13.2x)",
+                  "reason": "Atractivo (12.8x)",
                   "sign": "(+2)",
                   "state": "con_dato",
                   "tone": "neu",
-                  "value": "13.2x"
+                  "value": "12.8x"
                 },
                 {
                   "in_block": true,
@@ -3089,7 +3192,7 @@
             "state": "con_dato",
             "text": "la deuda neta (2.1x EBITDA) es manejable",
             "tone": "neu",
-            "value": "2.11x"
+            "value": "2.05x"
           },
           {
             "bench": null,
@@ -3252,14 +3355,14 @@
           },
           {
             "bench": "16.00x",
-            "gap": "-18%",
+            "gap": "-20%",
             "key": "ev_ebitda",
             "label": "EV/EBITDA",
             "reading": "Descuento",
             "state": "con_dato",
-            "text": "EV/EBITDA de 13.2x frente a 16.0x del sector (-18%): descuento",
+            "text": "EV/EBITDA de 12.8x frente a 16.0x del sector (-20%): descuento",
             "tone": "pos",
-            "value": "13.16x"
+            "value": "12.82x"
           },
           {
             "bench": "25.00x",
@@ -3566,14 +3669,14 @@
         },
         {
           "bench": "vs sector 16.0x",
-          "delta": "-18%",
+          "delta": "-20%",
           "key": "ev_ebitda",
           "label": "EV/EBITDA",
           "pill": "Descuento",
           "state": "con_dato",
           "tone": "pos",
           "unit": "x",
-          "value": "13.2"
+          "value": "12.8"
         }
       ],
       "composition": {
@@ -4887,14 +4990,14 @@
     "earnings_growth": 0.0869,
     "earnings_yield": 0.0755186999837,
     "ebitda": 12594484645.1,
-    "ebitda_margin": 0.220660158802,
+    "ebitda_margin": 0.226461794349,
     "enterprise_value": 165757568096.0,
     "eps": 4.88228406918,
-    "ev_ebitda": 13.1611235209,
+    "ev_ebitda": 12.8239538792,
     "ev_revenue": 2.90413560613,
     "fcf_yield": 0.0548656381953,
-    "ffo": 11850840451.3,
-    "ffo_payout": 0.424661453366,
+    "ffo": 12181976847.6,
+    "ffo_payout": 0.413118100009,
     "forward_pe": 16.07562,
     "free_cash_flow": 7638740283.24,
     "gross_margin": 0.469457259965,
@@ -4904,7 +5007,7 @@
     "inventory_turnover": 6.37580960384,
     "market_cap": 139226308752.0,
     "net_debt": 26531259344.3,
-    "net_debt_to_ebitda": 2.10657760853,
+    "net_debt_to_ebitda": 2.05261002618,
     "net_debt_to_ebitda_state": "ok",
     "net_income": 10701469410.0,
     "net_income_normalized": 10756741844.4,
@@ -4913,7 +5016,7 @@
     "operating_cash_flow": 9436822217.05,
     "operating_income": 11445113603.8,
     "operating_margin": 0.200522741223,
-    "p_ffo": 11.7482223581,
+    "p_ffo": 11.4288764864,
     "payout_basis": "beneficio_neto",
     "payout_ratio": 0.470271411976,
     "pb": 7.63153821525,
@@ -5094,19 +5197,19 @@
     "debt_to_equity": 1.77701223439,
     "dividend_yield": 0.0343904400236,
     "earnings_yield": 0.0755186999837,
-    "ebitda": 12594484645.1,
-    "ebitda_margin": 0.220660158802,
+    "ebitda": 12925621041.5,
+    "ebitda_margin": 0.226461794349,
     "enterprise_value": 165757568096.0,
     "eps": 4.88228406918,
-    "ev_ebitda": 13.1611235209,
+    "ev_ebitda": 12.8239538792,
     "ev_fcf": 21.699594691,
     "ev_revenue": 2.90413560613,
     "fcf": 7638740283.24,
     "fcf_to_net_income": 0.713802935896,
     "fcf_yield": 0.0548656381953,
-    "ffo": 11850840451.3,
-    "ffo_payout": 0.424661453366,
-    "ffo_per_share": 5.502960325,
+    "ffo": 12181976847.6,
+    "ffo_payout": 0.413118100009,
+    "ffo_per_share": 5.65672414106,
     "forward_pe": 16.07562,
     "graham_number": 30.5057010164,
     "gross_margin": 0.469457259965,
@@ -5114,13 +5217,13 @@
     "inventory_turnover": 6.37580960384,
     "market_cap": 139226308752.0,
     "net_debt": 26531259344.3,
-    "net_debt_to_ebitda": 2.10657760853,
+    "net_debt_to_ebitda": 2.05261002618,
     "net_income": 10701469410.0,
     "net_margin": 0.187493812249,
     "operating_cash_flow": 9436822217.05,
     "operating_margin": 0.200522741223,
     "p_fcf": 18.2263440815,
-    "p_ffo": 11.7482223581,
+    "p_ffo": 11.4288764864,
     "payout_ratio": 0.470271411976,
     "pb": 7.63153821525,
     "pe": 13.2417533699,
@@ -5362,9 +5465,9 @@
             "adjustment": 2,
             "in_block": true,
             "metric": "EV/EBITDA vs Sector",
-            "reason": "Atractivo (13.2x)",
+            "reason": "Atractivo (12.8x)",
             "severity": "good",
-            "value": "13.2x"
+            "value": "12.8x"
           },
           {
             "adjustment": -3,
@@ -5406,7 +5509,7 @@
           "Muy barato (13.2x vs 23.0x sector)",
           "Sin compresión del P/E normalizado (13x → 16x forward)",
           "Aceptable (18.2x)",
-          "Atractivo (13.2x)",
+          "Atractivo (12.8x)",
           "Muy caro (2.74)",
           "promedio de los ajustes reescalados a ±1 (P/E +1.00, Forward P/E +0.00, P/FCF +0.00, EV/EBITDA +0.50, PEG -1.00) = +0.10 × 6 (máximo con 5 miembros) = +0.6",
           "Claramente cara por DCF (fiabilidad media): el precio está en el grid pero fuera del caso base ±1 (23.87–58.38)"

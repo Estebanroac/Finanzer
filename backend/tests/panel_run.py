@@ -51,8 +51,8 @@ EXPECTED = {
     **{t: "CRECIMIENTO_RENTABLE" for t in ("PLTR", "CRWD")},   # hoy no existe (D4): saldrá discrepancia
     **{t: "GROWTH_PRE_PROFIT" for t in ("RIVN", "SNOW")},
     "NVDA": "?", "SPY": "422",
-    # Fase 2b (D7): añadido sin validar por el usuario (el panel de la fase 0 no lo tenía): "?" hasta que lo decida.
-    "MC.PA": "?",
+    # Fase 2b (D7): el que asigna hoy el motor, a revisar en la fase 3 (decisión del usuario, 2026-10-16).
+    "MC.PA": "MATURE",
 }
 DOUBTFUL = {}
 

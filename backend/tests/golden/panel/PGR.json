@@ -41,6 +41,7 @@
     },
     "interpretation": "No aplica a bancos y aseguradoras: el balance es el producto (depósitos y préstamos)",
     "model": "No Aplicable",
+    "operating_leases_excluded": 205000000.0,
     "z_score": null,
     "zone": "n/a"
   },
@@ -169,6 +170,11 @@
         "level": "alta",
         "reasons": []
       },
+      "fuente_oficial": {
+        "level": "alta",
+        "reasons": [],
+        "status": "registrado"
+      },
       "source": {
         "finnhub_fields": [
           "_piotroski_current.current_ratio",
@@ -295,6 +301,37 @@
       "source": "fundamentals-timeseries (currencyCode)",
       "statements": "USD"
     },
+    "debt": {
+      "applied": true,
+      "components": {
+        "borrowings": {
+          "in_rule_debt": true,
+          "source": "Yahoo (deuda total − su fila de arrendamientos)",
+          "value": 8387000000.0
+        },
+        "operating_leases": {
+          "accns": [
+            "0000080661-26-000086"
+          ],
+          "basis": "ultimo_anual",
+          "concepts": [
+            "us-gaap:OperatingLeaseLiability"
+          ],
+          "in_rule_debt": false,
+          "note": "US GAAP: su alquiler ya está restado del EBITDA",
+          "period": "2025-12-31",
+          "source": "SEC EDGAR",
+          "unit": "USD",
+          "value": 205000000
+        }
+      },
+      "date": "2026-06-30",
+      "notes": [],
+      "rule": "un arrendamiento entra en la deuda si y solo si su coste no está restado del EBITDA",
+      "source_total": 8387000000.0,
+      "standard": "us-gaap",
+      "total": 8387000000.0
+    },
     "dividend": {
       "as_of": "2026-10-14",
       "basis": "declarado",
@@ -367,7 +404,36 @@
       "unit": "título"
     },
     "edgar": {
+      "backup": {
+        "cut": [],
+        "fy": [],
+        "reason": null,
+        "skipped": [
+          {
+            "field": "grossProfits",
+            "reason": "EDGAR no lo tiene del periodo que acaba el 2026-06-30"
+          },
+          {
+            "field": "operatingIncome",
+            "reason": "EDGAR no lo tiene del periodo que acaba el 2026-06-30"
+          },
+          {
+            "field": "totalCurrentAssets",
+            "reason": "EDGAR no lo tiene del periodo que acaba el 2026-06-30"
+          },
+          {
+            "field": "totalCurrentLiabilities",
+            "reason": "EDGAR no lo tiene del periodo que acaba el 2026-06-30"
+          },
+          {
+            "field": "inventory",
+            "reason": "EDGAR no lo tiene del periodo que acaba el 2026-06-30"
+          }
+        ]
+      },
       "cik": 80661,
+      "facts_status": "ok",
+      "pending_filings": [],
       "reason": null,
       "status": "ok",
       "title": "PROGRESSIVE CORP/OH/"
@@ -644,8 +710,8 @@
         "source": "sin_dato"
       },
       "totalDebt": {
-        "detail": "balance del último trimestre (2026-06-30)",
-        "source": "yfinance_statements"
+        "detail": "deuda coherente con el EBITDA: préstamos y bonos (Yahoo, sin sus arrendamientos) + arrendamiento financiero (SEC EDGAR); el operativo queda fuera (US GAAP, su alquiler ya está en el EBITDA)",
+        "source": "derivado"
       },
       "totalLiab": {
         "detail": "balance del último trimestre (2026-06-30)",
@@ -663,6 +729,16 @@
         "detail": "plan B: estados anuales de yfinance (último FY)",
         "source": "yfinance_statements"
       }
+    },
+    "official_source": {
+      "cik": 80661,
+      "fy": "2025",
+      "fy_end": "2025-12-31",
+      "last_annual_filing": "2026-03-02",
+      "note": null,
+      "reason": null,
+      "registered": true,
+      "status": "registrado"
     },
     "path": "plan_b_yfinance",
     "pending_results": {
@@ -688,6 +764,8 @@
     },
     "ttm": {
       "annual_fields": {
+        "capitalLeaseObligations": "'Capital Lease Obligations' sin dato en el balance del corte (2026-06-30)",
+        "commercialPaper": "'Commercial Paper' sin dato en el balance del corte (2026-06-30)",
         "ebitda": "'EBITDA' no llega al corte (2026-06-30)",
         "grossProfits": "'Gross Profit' no llega al corte (2026-06-30)",
         "inventory": "'Inventory' sin dato en el balance del corte (2026-06-30)",
@@ -798,6 +876,14 @@
         {
           "label": "Confianza · Calidad de fuente (media)",
           "text": "13 campos de Finnhub en lugar de los estados"
+        },
+        {
+          "label": "Fuente oficial",
+          "text": "sí, SEC EDGAR (CIK 80661); último ejercicio en EDGAR: FY 2025."
+        },
+        {
+          "label": "Deuda coherente con el EBITDA (arrendamiento dentro solo si su coste no está en el EBITDA)",
+          "text": "deuda de la regla $8.39B (la fuente daba $8.39B); préstamos y bonos $8.39B (dentro); arrendamiento operativo $205.00M (fuera; US GAAP: su alquiler ya está restado del EBITDA)."
         }
       ],
       "title": "Detalle técnico para auditoría"
@@ -1572,6 +1658,7 @@
           "value": "0.23"
         }
       ],
+      "official_source_badge": null,
       "price": {
         "contracted": true,
         "level": "atractivo",

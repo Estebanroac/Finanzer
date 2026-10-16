@@ -19,8 +19,8 @@
       },
       {
         "category": "Solidez financiera",
-        "detail": "El Altman Z de 4.55 (> 2.60) ubica a la empresa en zona segura: baja probabilidad estadística de problemas de solvencia según el modelo.",
-        "reason": "Solvencia sólida — Altman Z 4.55"
+        "detail": "El Altman Z de 4.56 (> 2.60) ubica a la empresa en zona segura: baja probabilidad estadística de problemas de solvencia según el modelo.",
+        "reason": "Solvencia sólida — Altman Z 4.56"
       },
       {
         "category": "Solidez financiera",
@@ -58,14 +58,15 @@
       "X1_wc_ta": 0.0931,
       "X2_re_ta": 0.7669,
       "X3_ebit_ta": 0.1423,
-      "X4_book_tl": 0.456,
+      "X4_book_tl": 0.4674,
       "grey_threshold": 1.1,
       "model": "Z''-Score (No Manufactura)",
       "safe_threshold": 2.6
     },
     "interpretation": "Z''-Score (No Manufactura): Zona segura — bajo riesgo de bancarrota",
     "model": "Z''-Score (No Manufactura)",
-    "z_score": 4.55,
+    "operating_leases_excluded": 1722000000.0,
+    "z_score": 4.56,
     "zone": "safe"
   },
   "archetype_metrics": {},
@@ -172,6 +173,11 @@
         "level": "alta",
         "reasons": []
       },
+      "fuente_oficial": {
+        "level": "alta",
+        "reasons": [],
+        "status": "registrado"
+      },
       "source": {
         "finnhub_fields": [
           "_yahoo_ratios.currentRatio",
@@ -188,9 +194,10 @@
           "payoutRatio",
           "revenueGrowth"
         ],
-        "issues": 1,
+        "issues": 2,
         "level": "media",
         "reasons": [
+          "validación: commercialPaper (periodo_incoherente)",
           "13 campos de Finnhub en lugar de los estados"
         ]
       },
@@ -202,7 +209,7 @@
     "level": "alta",
     "limits_score": false,
     "reasons": [
-      "calidad de fuente media: 13 campos de Finnhub en lugar de los estados"
+      "calidad de fuente media: validación: commercialPaper (periodo_incoherente); 13 campos de Finnhub en lugar de los estados"
     ],
     "score": 0.9
   },
@@ -217,6 +224,10 @@
         "cash": {
           "period_end": "2026-06-30",
           "period_type": "balance"
+        },
+        "commercialPaper": {
+          "period_end": "2025-12-31",
+          "period_type": "fy_balance"
         },
         "depreciation": {
           "period_end": "2026-06-30",
@@ -321,6 +332,42 @@
       "source": "fundamentals-timeseries (currencyCode)",
       "statements": "USD"
     },
+    "debt": {
+      "applied": true,
+      "components": {
+        "borrowings": {
+          "in_rule_debt": true,
+          "source": "Yahoo (deuda total − su fila de arrendamientos)",
+          "value": 43543000000.0
+        },
+        "commercial_paper": {
+          "in_rule_debt": true,
+          "source": "Yahoo",
+          "value": 1495000000.0
+        },
+        "operating_leases": {
+          "accns": [
+            "0001628280-26-010047"
+          ],
+          "basis": "ultimo_anual",
+          "concepts": [
+            "us-gaap:OperatingLeaseLiability"
+          ],
+          "in_rule_debt": false,
+          "note": "US GAAP: su alquiler ya está restado del EBITDA",
+          "period": "2025-12-31",
+          "source": "SEC EDGAR",
+          "unit": "USD",
+          "value": 1722000000
+        }
+      },
+      "date": "2026-06-30",
+      "notes": [],
+      "rule": "un arrendamiento entra en la deuda si y solo si su coste no está restado del EBITDA",
+      "source_total": 43543000000.0,
+      "standard": "us-gaap",
+      "total": 43543000000.0
+    },
     "dividend": {
       "as_of": "2026-10-14",
       "basis": "declarado",
@@ -400,7 +447,24 @@
       "unit": "título"
     },
     "edgar": {
+      "backup": {
+        "cut": [],
+        "fy": [],
+        "reason": null,
+        "skipped": []
+      },
       "cik": 21344,
+      "facts_status": "ok",
+      "pending_filings": [
+        {
+          "accn": "0001628280-26-050503",
+          "date": "2026-07-29",
+          "form": "10-Q",
+          "read": true,
+          "reason": null,
+          "report_date": "2026-07-03"
+        }
+      ],
       "reason": null,
       "status": "ok",
       "title": "COCA COLA CO"
@@ -542,6 +606,11 @@
       "cash": {
         "detail": "balance del último trimestre (2026-06-30)",
         "source": "yfinance_statements"
+      },
+      "commercialPaper": {
+        "detail": "dato de otro periodo descartado: commercialPaper del ejercicio cerrado el 2025-12-31 en un análisis con corte a 2026-06-30",
+        "rule": "periodo_incoherente",
+        "source": "sin_dato"
       },
       "currency": {
         "detail": "plan B: yfinance fast_info (sin crumb)",
@@ -704,8 +773,8 @@
         "source": "yfinance_statements"
       },
       "totalDebt": {
-        "detail": "balance del último trimestre (2026-06-30)",
-        "source": "yfinance_statements"
+        "detail": "deuda coherente con el EBITDA: préstamos y bonos (Yahoo, sin sus arrendamientos) + arrendamiento financiero (SEC EDGAR); el operativo queda fuera (US GAAP, su alquiler ya está en el EBITDA)",
+        "source": "derivado"
       },
       "totalLiab": {
         "detail": "balance del último trimestre (2026-06-30)",
@@ -724,6 +793,16 @@
         "source": "derivado"
       }
     },
+    "official_source": {
+      "cik": 21344,
+      "fy": "2025",
+      "fy_end": "2025-12-31",
+      "last_annual_filing": "2026-02-20",
+      "note": null,
+      "reason": null,
+      "registered": true,
+      "status": "registrado"
+    },
     "path": "plan_b_yfinance",
     "pending_results": null,
     "price_history": {
@@ -739,7 +818,10 @@
       "symbol": "KO"
     },
     "ttm": {
-      "annual_fields": {},
+      "annual_fields": {
+        "capitalLeaseObligations": "'Capital Lease Obligations' sin dato en el balance del corte (2026-06-30)",
+        "commercialPaper": "'Commercial Paper' sin dato en el balance del corte (2026-06-30)"
+      },
       "balance_date": "2026-06-30",
       "basis": "ttm",
       "cut": "2026-06-30",
@@ -789,7 +871,16 @@
       ]
     }
   },
-  "data_validation": [],
+  "data_validation": [
+    {
+      "action": "sin_dato",
+      "field": "commercialPaper",
+      "new": null,
+      "old": 1495000000.0,
+      "reason": "dato de otro periodo descartado: commercialPaper del ejercicio cerrado el 2025-12-31 en un análisis con corte a 2026-06-30",
+      "rule": "periodo_incoherente"
+    }
+  ],
   "dcf": {
     "available": true,
     "fair_value": 70.96,
@@ -832,7 +923,15 @@
         },
         {
           "label": "Confianza · Calidad de fuente (media)",
-          "text": "13 campos de Finnhub en lugar de los estados"
+          "text": "validación: commercialPaper (periodo_incoherente); 13 campos de Finnhub en lugar de los estados"
+        },
+        {
+          "label": "Fuente oficial",
+          "text": "sí, SEC EDGAR (CIK 21344); último ejercicio en EDGAR: FY 2025."
+        },
+        {
+          "label": "Deuda coherente con el EBITDA (arrendamiento dentro solo si su coste no está en el EBITDA)",
+          "text": "deuda de la regla $43.54B (la fuente daba $43.54B); papel comercial (dentro de los préstamos) $1.50B (dentro); préstamos y bonos $43.54B (dentro); arrendamiento operativo $1.72B (fuera; US GAAP: su alquiler ya está restado del EBITDA)."
         }
       ],
       "title": "Detalle técnico para auditoría"
@@ -1297,8 +1396,8 @@
           "model": "Z''-Score (No Manufactura)",
           "state": "con_dato",
           "text": "Z''-Score (No Manufactura): Zona segura — bajo riesgo de bancarrota",
-          "value": 4.55,
-          "value_txt": "4.55",
+          "value": 4.56,
+          "value_txt": "4.56",
           "zone": "Zona segura",
           "zones": [
             {
@@ -1959,7 +2058,7 @@
           "key": "source",
           "label": "Calidad de fuente",
           "level": "Media",
-          "text": "Parte de los datos proviene de una fuente secundaria."
+          "text": "Un dato de la fuente no superó la validación y se corrigió o se descartó. Parte de los datos proviene de una fuente secundaria."
         },
         {
           "key": "stability",
@@ -1970,9 +2069,15 @@
       ],
       "level": "alta",
       "plain": [
+        "Un dato de la fuente no superó la validación y se corrigió o se descartó.",
         "Parte de los datos proviene de una fuente secundaria."
       ],
       "reasons": [
+        {
+          "dimension": "calidad de fuente",
+          "level": "media",
+          "text": "Un dato de la fuente no superó la validación y se corrigió o se descartó."
+        },
         {
           "dimension": "calidad de fuente",
           "level": "media",
@@ -2058,11 +2163,14 @@
         "No es un banco ni una aseguradora, ni un REIT, ni una empresa en crecimiento sin beneficio, ni de una industria cíclica (Beverages - Non-Alcoholic)."
       ],
       "confidence_reasons": [
+        "Un dato de la fuente no superó la validación y se corrigió o se descartó.",
         "Parte de los datos proviene de una fuente secundaria."
       ],
       "coverage_notes": [],
       "currency_note": null,
-      "data_notices": [],
+      "data_notices": [
+        "Sin dato del corte, descartados por ser de otro periodo: commercialPaper."
+      ],
       "highlights": [
         {
           "kicker": "FORTALEZA CLAVE",
@@ -2133,6 +2241,7 @@
           "value": "0.29"
         }
       ],
+      "official_source_badge": null,
       "price": {
         "contracted": false,
         "level": "muy exigente",
@@ -2308,8 +2417,8 @@
               },
               {
                 "category": "Solidez financiera",
-                "detail": "El Altman Z de 4.55 (> 2.60) ubica a la empresa en zona segura: baja probabilidad estadística de problemas de solvencia según el modelo.",
-                "reason": "Solvencia sólida — Altman Z 4.55"
+                "detail": "El Altman Z de 4.56 (> 2.60) ubica a la empresa en zona segura: baja probabilidad estadística de problemas de solvencia según el modelo.",
+                "reason": "Solvencia sólida — Altman Z 4.56"
               },
               {
                 "category": "Solidez financiera",
@@ -2497,7 +2606,7 @@
                   "sign": "+6",
                   "state": "con_dato",
                   "tone": "pos",
-                  "value": "4.55"
+                  "value": "4.56"
                 },
                 {
                   "in_block": false,
@@ -2765,7 +2874,7 @@
             "subtitle": "Zona segura",
             "title": "Altman Z-Score",
             "tone": "pos",
-            "value": "4.55"
+            "value": "4.56"
           },
           {
             "body": "Bueno - Salud financiera sólida. El F-Score de Piotroski verifica 9 señales contables de mejora en rentabilidad, estructura de capital y eficiencia operativa (FY2025 vs FY2024).",
@@ -3612,7 +3721,7 @@
         },
         {
           "label": "SOLIDEZ",
-          "text": "Altman Z de 4.55 (zona segura); la deuda es fácilmente servible: cobertura de intereses de 10.2x."
+          "text": "Altman Z de 4.56 (zona segura); la deuda es fácilmente servible: cobertura de intereses de 10.2x."
         },
         {
           "label": "CRECIMIENTO Y RETORNO",
@@ -3628,7 +3737,7 @@
         },
         {
           "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Alta: parte de los datos proviene de una fuente secundaria. Contrae el atractivo del precio hacia 50; la calidad no se contrae."
+          "text": "Alta: un dato de la fuente no superó la validación y se corrigió o se descartó. Contrae el atractivo del precio hacia 50; la calidad no se contrae."
         }
       ]
     },
@@ -5245,7 +5354,7 @@
             "metric": "Altman Z-Score",
             "reason": "Zona segura - Muy baja probabilidad de quiebra",
             "severity": "excellent",
-            "value": "4.55"
+            "value": "4.56"
           },
           {
             "adjustment": 0,

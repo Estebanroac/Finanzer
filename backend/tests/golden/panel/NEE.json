@@ -3,7 +3,7 @@
     "red_flags": [
       {
         "category": "Rentabilidad",
-        "detail": "El retorno sobre el capital invertido no cubre su costo (ROIC 4.5% vs WACC 7.5%): crecer a estos retornos destruye valor para el accionista en lugar de crearlo.",
+        "detail": "El retorno sobre el capital invertido no cubre su costo (ROIC 4.4% vs WACC 7.5%): crecer a estos retornos destruye valor para el accionista en lugar de crearlo.",
         "reason": "Destruye valor — spread -3.0%"
       }
     ],
@@ -33,7 +33,7 @@
       {
         "category": "Solidez financiera",
         "detail": "Harían falta ~7 años de EBITDA íntegro para saldar la deuda neta, por encima del rango habitual de una utility regulada con grado de inversión (hasta 5.5x): conviene vigilar la cobertura de intereses y las revisiones tarifarias.",
-        "reason": "Apalancamiento elevado para una utility — 7.0x EBITDA"
+        "reason": "Apalancamiento elevado para una utility — 7.1x EBITDA"
       }
     ]
   },
@@ -47,6 +47,7 @@
     },
     "interpretation": "No aplica a utilities reguladas: el Altman se calibró con quiebras de empresas industriales; una utility regulada opera con deuda alta y circulante negativo por diseño",
     "model": "No Aplicable",
+    "operating_leases_excluded": 458000000.0,
     "z_score": null,
     "zone": "n/a"
   },
@@ -151,6 +152,11 @@
         "level": "alta",
         "reasons": []
       },
+      "fuente_oficial": {
+        "level": "alta",
+        "reasons": [],
+        "status": "registrado"
+      },
       "source": {
         "finnhub_fields": [
           "_yahoo_ratios.currentRatio",
@@ -198,6 +204,10 @@
           "period_type": "ttm"
         },
         "cash": {
+          "period_end": "2026-06-30",
+          "period_type": "balance"
+        },
+        "commercialPaper": {
           "period_end": "2026-06-30",
           "period_type": "balance"
         },
@@ -300,6 +310,58 @@
       "source": "fundamentals-timeseries (currencyCode)",
       "statements": "USD"
     },
+    "debt": {
+      "applied": true,
+      "components": {
+        "borrowings": {
+          "in_rule_debt": true,
+          "source": "Yahoo (deuda total − su fila de arrendamientos)",
+          "value": 110197000000.0
+        },
+        "commercial_paper": {
+          "in_rule_debt": true,
+          "source": "Yahoo",
+          "value": 1736000000.0
+        },
+        "finance_leases": {
+          "accns": [
+            "0000753308-26-000015"
+          ],
+          "added": 1143000000.0,
+          "basis": "ultimo_anual",
+          "concepts": [
+            "us-gaap:FinanceLeaseLiability"
+          ],
+          "in_rule_debt": true,
+          "note": "del último informe anual (2025-12-31): el emisor no lo etiqueta en el filing del corte",
+          "period": "2025-12-31",
+          "source": "SEC EDGAR",
+          "unit": "USD",
+          "value": 1143000000
+        },
+        "operating_leases": {
+          "accns": [
+            "0000753308-26-000015"
+          ],
+          "basis": "ultimo_anual",
+          "concepts": [
+            "us-gaap:OperatingLeaseLiability"
+          ],
+          "in_rule_debt": false,
+          "note": "US GAAP: su alquiler ya está restado del EBITDA",
+          "period": "2025-12-31",
+          "source": "SEC EDGAR",
+          "unit": "USD",
+          "value": 458000000
+        }
+      },
+      "date": "2026-06-30",
+      "notes": [],
+      "rule": "un arrendamiento entra en la deuda si y solo si su coste no está restado del EBITDA",
+      "source_total": 110197000000.0,
+      "standard": "us-gaap",
+      "total": 111340000000.0
+    },
     "dividend": {
       "as_of": "2026-10-14",
       "basis": "declarado",
@@ -379,7 +441,24 @@
       "unit": "título"
     },
     "edgar": {
+      "backup": {
+        "cut": [],
+        "fy": [],
+        "reason": null,
+        "skipped": []
+      },
       "cik": 753308,
+      "facts_status": "ok",
+      "pending_filings": [
+        {
+          "accn": "0000753308-26-000060",
+          "date": "2026-07-24",
+          "form": "10-Q",
+          "read": true,
+          "reason": null,
+          "report_date": "2026-06-30"
+        }
+      ],
       "reason": null,
       "status": "ok",
       "title": "NEXTERA ENERGY INC"
@@ -519,6 +598,10 @@
         "source": "yfinance_statements"
       },
       "cash": {
+        "detail": "balance del último trimestre (2026-06-30)",
+        "source": "yfinance_statements"
+      },
+      "commercialPaper": {
         "detail": "balance del último trimestre (2026-06-30)",
         "source": "yfinance_statements"
       },
@@ -679,8 +762,8 @@
         "source": "yfinance_statements"
       },
       "totalDebt": {
-        "detail": "balance del último trimestre (2026-06-30)",
-        "source": "yfinance_statements"
+        "detail": "deuda coherente con el EBITDA: préstamos y bonos (Yahoo, sin sus arrendamientos) + arrendamiento financiero (SEC EDGAR); el operativo queda fuera (US GAAP, su alquiler ya está en el EBITDA)",
+        "source": "derivado"
       },
       "totalLiab": {
         "detail": "balance del último trimestre (2026-06-30)",
@@ -699,6 +782,16 @@
         "source": "derivado"
       }
     },
+    "official_source": {
+      "cik": 753308,
+      "fy": "2025",
+      "fy_end": "2025-12-31",
+      "last_annual_filing": "2026-02-13",
+      "note": null,
+      "reason": null,
+      "registered": true,
+      "status": "registrado"
+    },
     "path": "plan_b_yfinance",
     "pending_results": null,
     "price_history": {
@@ -715,6 +808,7 @@
     },
     "ttm": {
       "annual_fields": {
+        "capitalLeaseObligations": "'Capital Lease Obligations' sin dato en el balance del corte (2026-06-30)",
         "stockBasedCompensation": "'Stock Based Compensation' no llega al corte (2026-06-30)"
       },
       "balance_date": "2026-06-30",
@@ -724,6 +818,7 @@
       "errors": [],
       "last_quarter_fields": [
         "cash",
+        "commercialPaper",
         "inventory",
         "longTermDebt",
         "retainedEarnings",
@@ -792,6 +887,14 @@
         {
           "label": "Confianza · Estabilidad del arquetipo (media)",
           "text": "alerta de posible cíclica"
+        },
+        {
+          "label": "Fuente oficial",
+          "text": "sí, SEC EDGAR (CIK 753308); último ejercicio en EDGAR: FY 2025."
+        },
+        {
+          "label": "Deuda coherente con el EBITDA (arrendamiento dentro solo si su coste no está en el EBITDA)",
+          "text": "deuda de la regla $111.34B (la fuente daba $110.20B); papel comercial (dentro de los préstamos) $1.74B (dentro); préstamos y bonos $110.20B (dentro); arrendamiento operativo $458.00M (fuera; US GAAP: su alquiler ya está restado del EBITDA); arrendamiento financiero $1.14B (dentro; del último informe anual (2025-12-31): el emisor no lo etiqueta en el filing del corte)."
         }
       ],
       "title": "Detalle técnico para auditoría"
@@ -895,16 +998,16 @@
                 "bench": 0.1,
                 "bench_txt": "10.00%",
                 "fmt": "pct",
-                "gap_pct": -55.4807639687,
-                "gap_txt": "-55%",
+                "gap_pct": -55.7880434783,
+                "gap_txt": "-56%",
                 "higher_is_better": true,
                 "key": "roic",
                 "label": "ROIC",
                 "reading": "Muy inferior",
-                "text": "ROIC de 4.5% frente a 10.0% del sector (-55%): muy inferior",
+                "text": "ROIC de 4.4% frente a 10.0% del sector (-56%): muy inferior",
                 "tone": "neg",
-                "value": 0.0445192360313,
-                "value_txt": "4.45%"
+                "value": 0.0442119565217,
+                "value_txt": "4.42%"
               },
               {
                 "bench": 0.4,
@@ -1282,17 +1385,17 @@
             "bench": 0.1,
             "bench_txt": "10.00%",
             "fmt": "pct",
-            "gap_pct": -55.4807639687,
-            "gap_txt": "-55%",
+            "gap_pct": -55.7880434783,
+            "gap_txt": "-56%",
             "higher_is_better": true,
             "key": "roic",
             "label": "ROIC",
             "reading": "Muy inferior",
             "state": "con_dato",
-            "text": "ROIC de 4.5% frente a 10.0% del sector (-55%): muy inferior",
+            "text": "ROIC de 4.4% frente a 10.0% del sector (-56%): muy inferior",
             "tone": "neg",
-            "value": 0.0445192360313,
-            "value_txt": "4.45%"
+            "value": 0.0442119565217,
+            "value_txt": "4.42%"
           }
         ],
         "roce": {
@@ -1300,15 +1403,15 @@
           "basis": "EBIT / capital empleado, antes de impuestos",
           "label": "ROCE",
           "state": "con_dato",
-          "text": "ROCE 4.79% en línea con el ROIC 4.45% (+0.3 pp, dentro de 10 pp).",
+          "text": "ROCE 4.79% en línea con el ROIC 4.42% (+0.4 pp, dentro de 10 pp).",
           "value_txt": "4.79%"
         },
         "spread": {
           "reading": "Destruye valor",
           "state": "con_dato",
-          "text": "el ROIC (4.5%) no cubre el costo de capital (7.5%): el crecimiento a estos retornos destruye valor",
+          "text": "el ROIC (4.4%) no cubre el costo de capital (7.5%): el crecimiento a estos retornos destruye valor",
           "tone": "neg",
-          "value": -0.0301050276657,
+          "value": -0.0303516079625,
           "value_txt": "-3.0 pp"
         }
       },
@@ -1420,11 +1523,11 @@
             "label": "Deuda neta / EBITDA",
             "reading": "Elevada",
             "state": "con_dato",
-            "text": "la deuda neta (7.0x EBITDA) es elevada para una utility",
+            "text": "la deuda neta (7.1x EBITDA) es elevada para una utility",
             "tone": "warn",
             "unit": "x",
-            "value": 6.97815486639,
-            "value_txt": "6.98x",
+            "value": 7.05246732982,
+            "value_txt": "7.05x",
             "zones": [
               {
                 "from": 0.0,
@@ -1472,14 +1575,14 @@
           "cash": 2866000000.0,
           "cash_pct": 1.23106263987,
           "cash_txt": "$2.87B",
-          "debt": 110197000000.0,
-          "debt_pct": 47.3340578247,
-          "debt_txt": "$110.20B",
+          "debt": 111340000000.0,
+          "debt_pct": 47.8250224435,
+          "debt_txt": "$111.34B",
           "equity": 57126000000.0,
           "equity_pct": 24.5379219697,
           "equity_txt": "$57.13B",
-          "net_debt": 107331000000.0,
-          "net_debt_txt": "$107.33B",
+          "net_debt": 108474000000.0,
+          "net_debt_txt": "$108.47B",
           "state": "con_dato"
         }
       },
@@ -1780,7 +1883,7 @@
           "key": "net_debt_to_ebitda",
           "label": "Deuda neta/EBITDA",
           "state": "con_dato",
-          "value": "6.98x"
+          "value": "7.05x"
         },
         {
           "key": "roe",
@@ -1795,6 +1898,7 @@
           "value": "0.63"
         }
       ],
+      "official_source_badge": null,
       "price": {
         "contracted": false,
         "level": "razonable",
@@ -1875,7 +1979,7 @@
       },
       "net_debt_to_ebitda": {
         "label": "Elevada",
-        "text": "la deuda neta (7.0x EBITDA) es elevada para una utility",
+        "text": "la deuda neta (7.1x EBITDA) es elevada para una utility",
         "tone": "warn"
       },
       "payout_ratio": {
@@ -1905,7 +2009,7 @@
       },
       "roic_wacc_spread": {
         "label": "Destruye valor",
-        "text": "el ROIC (4.5%) no cubre el costo de capital (7.5%): el crecimiento a estos retornos destruye valor",
+        "text": "el ROIC (4.4%) no cubre el costo de capital (7.5%): el crecimiento a estos retornos destruye valor",
         "tone": "neg"
       },
       "runway": null
@@ -1922,7 +2026,7 @@
             "items": [
               {
                 "category": "Rentabilidad",
-                "detail": "El retorno sobre el capital invertido no cubre su costo (ROIC 4.5% vs WACC 7.5%): crecer a estos retornos destruye valor para el accionista en lugar de crearlo.",
+                "detail": "El retorno sobre el capital invertido no cubre su costo (ROIC 4.4% vs WACC 7.5%): crecer a estos retornos destruye valor para el accionista en lugar de crearlo.",
                 "reason": "Destruye valor — spread -3.0%"
               }
             ],
@@ -1935,7 +2039,7 @@
               {
                 "category": "Solidez financiera",
                 "detail": "Harían falta ~7 años de EBITDA íntegro para saldar la deuda neta, por encima del rango habitual de una utility regulada con grado de inversión (hasta 5.5x): conviene vigilar la cobertura de intereses y las revisiones tarifarias.",
-                "reason": "Apalancamiento elevado para una utility — 7.0x EBITDA"
+                "reason": "Apalancamiento elevado para una utility — 7.1x EBITDA"
               }
             ],
             "key": "warnings",
@@ -2143,11 +2247,11 @@
                 {
                   "in_block": false,
                   "metric": "Deuda neta/EBITDA",
-                  "reason": "Elevado para una utility regulada (7.0x; bandas utility ≤4.5x / ≤5.5x / ≤6.5x / ≤7.5x)",
+                  "reason": "Elevado para una utility regulada (7.1x; bandas utility ≤4.5x / ≤5.5x / ≤6.5x / ≤7.5x)",
                   "sign": "-2",
                   "state": "con_dato",
                   "tone": "warn",
-                  "value": "7.0x"
+                  "value": "7.1x"
                 },
                 {
                   "in_block": false,
@@ -2209,7 +2313,7 @@
                 {
                   "in_block": false,
                   "metric": "ROIC vs WACC",
-                  "reason": "Destruye valor (ROIC 4.5% < WACC 7.5%, spread -3.0%)",
+                  "reason": "Destruye valor (ROIC 4.4% < WACC 7.5%, spread -3.0%)",
                   "sign": "-3",
                   "state": "con_dato",
                   "tone": "neg",
@@ -2483,8 +2587,8 @@
             "$27.39"
           ]
         ],
-        "intro": "El ROE de 16.3% es excepcional para su sector (sector: 5.0% competitivo, 10.0% rango alto). El ROIC (4.5%) no cubre el costo de capital (7.5%): el crecimiento a estos retornos destruye valor.",
-        "roce_reading": "ROCE 4.79% en línea con el ROIC 4.45% (+0.3 pp, dentro de 10 pp).",
+        "intro": "El ROE de 16.3% es excepcional para su sector (sector: 5.0% competitivo, 10.0% rango alto). El ROIC (4.4%) no cubre el costo de capital (7.5%): el crecimiento a estos retornos destruye valor.",
+        "roce_reading": "ROCE 4.79% en línea con el ROIC 4.42% (+0.4 pp, dentro de 10 pp).",
         "rows": [
           {
             "bench": "10.00%",
@@ -2510,14 +2614,14 @@
           },
           {
             "bench": "10.00%",
-            "gap": "-55%",
+            "gap": "-56%",
             "key": "roic",
             "label": "ROIC",
             "reading": "Muy inferior",
             "state": "con_dato",
-            "text": "ROIC de 4.5% frente a 10.0% del sector (-55%): muy inferior",
+            "text": "ROIC de 4.4% frente a 10.0% del sector (-56%): muy inferior",
             "tone": "neg",
-            "value": "4.45%"
+            "value": "4.42%"
           },
           {
             "bench": "40.00%",
@@ -2559,7 +2663,7 @@
             "label": "Spread ROIC − WACC",
             "reading": "Destruye valor",
             "state": "con_dato",
-            "text": "el ROIC (4.5%) no cubre el costo de capital (7.5%): el crecimiento a estos retornos destruye valor",
+            "text": "el ROIC (4.4%) no cubre el costo de capital (7.5%): el crecimiento a estos retornos destruye valor",
             "tone": "neg",
             "value": "-3.0 pp"
           },
@@ -2577,13 +2681,13 @@
         ]
       },
       "solvency": {
-        "balance": "Balance — deuda total $110.20B · caja $2.87B · patrimonio $57.13B · activos $232.81B",
+        "balance": "Balance — deuda total $111.34B · caja $2.87B · patrimonio $57.13B · activos $232.81B",
         "columns": [
           "MÉTRICA",
           "VALOR",
           "LECTURA"
         ],
-        "intro": "La deuda neta (7.0x EBITDA) es elevada para una utility. La cobertura de intereses (2.3x) está en línea con las utilities reguladas. El payout de 53% es sostenible.",
+        "intro": "La deuda neta (7.1x EBITDA) es elevada para una utility. La cobertura de intereses (2.3x) está en línea con las utilities reguladas. El payout de 53% es sostenible.",
         "rows": [
           {
             "bench": null,
@@ -2638,7 +2742,7 @@
             "state": "con_dato",
             "text": null,
             "tone": null,
-            "value": "47.33%"
+            "value": "47.83%"
           },
           {
             "bench": null,
@@ -2647,9 +2751,9 @@
             "label": "Deuda neta / EBITDA",
             "reading": "Elevada",
             "state": "con_dato",
-            "text": "la deuda neta (7.0x EBITDA) es elevada para una utility",
+            "text": "la deuda neta (7.1x EBITDA) es elevada para una utility",
             "tone": "warn",
-            "value": "6.98x"
+            "value": "7.05x"
           },
           {
             "bench": null,
@@ -2863,7 +2967,7 @@
           },
           {
             "label": "Peso del patrimonio",
-            "value": "59.73%"
+            "value": "59.49%"
           },
           {
             "label": "Coste del patrimonio (Ke)",
@@ -2887,7 +2991,7 @@
           },
           {
             "label": "Peso de la deuda",
-            "value": "40.27%"
+            "value": "40.51%"
           },
           {
             "label": "Coste de la deuda (Kd)",
@@ -2902,7 +3006,7 @@
             "value": "10.00%"
           }
         ],
-        "wacc_note": "WACC 7.46% = 59.73% × Ke 8.45% (Rf 5.29% + β ajustada 0.75 [bruta 0.63, Blume] × prima implícita 4.20%) + 40.27% × Kd 6.67% × (1 − t 10.00%). Kd = Rf + spread del rating sintético BB+ (tabla de empresas grandes, cobertura 2.3x). t: tasa efectiva TTM (tasa efectiva -8.6% acotada a [10%, 35%]). Rf: ^TNX no disponible (sin cotización): valor de config."
+        "wacc_note": "WACC 7.46% = 59.49% × Ke 8.45% (Rf 5.29% + β ajustada 0.75 [bruta 0.63, Blume] × prima implícita 4.20%) + 40.51% × Kd 6.67% × (1 − t 10.00%). Kd = Rf + spread del rating sintético BB+ (tabla de empresas grandes, cobertura 2.3x). t: tasa efectiva TTM (tasa efectiva -8.6% acotada a [10%, 35%]). Rf: ^TNX no disponible (sin cotización): valor de config."
       }
     },
     "summary": {
@@ -3056,11 +3160,11 @@
         },
         {
           "label": "CREACIÓN DE VALOR",
-          "text": "El ROIC (4.5%) no cubre el costo de capital (7.5%): el crecimiento a estos retornos destruye valor. ROCE 4.79% (EBIT / capital empleado, antes de impuestos), en línea con el ROIC (4.45%)."
+          "text": "El ROIC (4.4%) no cubre el costo de capital (7.5%): el crecimiento a estos retornos destruye valor. ROCE 4.79% (EBIT / capital empleado, antes de impuestos), en línea con el ROIC (4.42%)."
         },
         {
           "label": "SOLIDEZ",
-          "text": "La deuda neta (7.0x EBITDA) es elevada para una utility; la cobertura de intereses (2.3x) está en línea con las utilities reguladas."
+          "text": "La deuda neta (7.1x EBITDA) es elevada para una utility; la cobertura de intereses (2.3x) está en línea con las utilities reguladas."
         },
         {
           "label": "CRECIMIENTO Y RETORNO",
@@ -4008,17 +4112,17 @@
     "cash": 2866000000.0,
     "cash_ratio": 0.0989162697591,
     "current_ratio": 0.533823427901,
-    "de": 1.92901655989,
-    "debt_to_assets": 0.473340578247,
+    "de": 1.94902496236,
+    "debt_to_assets": 0.478250224435,
     "dividend_yield": 0.0318080887155,
     "earnings_growth": 0.553,
     "earnings_yield": 0.0567819298717,
     "ebitda": 17698000000.0,
     "ebitda_margin": 0.535904672311,
-    "enterprise_value": 270809117969.0,
+    "enterprise_value": 271952117969.0,
     "eps": 4.45,
-    "ev_ebitda": 17.6067302496,
-    "ev_revenue": 9.43552900487,
+    "ev_ebitda": 17.681042713,
+    "ev_revenue": 9.47535340123,
     "fcf_yield": 0.0186446971489,
     "ffo": 16545000000.0,
     "ffo_payout": 0.299002719855,
@@ -4030,8 +4134,8 @@
     "interest_expense": 3512000000.0,
     "inventory_turnover": 4.27599388379,
     "market_cap": 163478117969.0,
-    "net_debt": 107331000000.0,
-    "net_debt_to_ebitda": 6.97815486639,
+    "net_debt": 108474000000.0,
+    "net_debt_to_ebitda": 7.05246732982,
     "net_debt_to_ebitda_state": "ok",
     "net_income": 9299000000.0,
     "net_income_normalized": 9067984458.45,
@@ -4060,19 +4164,19 @@
     "roce_roic_divergence": {
       "causes": [],
       "diverges": false,
-      "gap": 0.00341024412709
+      "gap": 0.00371752363666
     },
     "roce_state": "ok",
     "roe": 0.162780520253,
-    "roic": 0.0445192360313,
+    "roic": 0.0442119565217,
     "roic_reason": null,
-    "roic_wacc_spread": -0.0301050276657,
+    "roic_wacc_spread": -0.0303516079625,
     "shareholder_yield": 0.0191683220651,
     "shares_outstanding": 2085978209.0,
     "total_assets": 232807000000.0,
-    "total_debt": 110197000000.0,
+    "total_debt": 111340000000.0,
     "total_equity": 57126000000.0,
-    "wacc": 0.074624263697
+    "wacc": 0.0745635644843
   },
   "not_applicable": {
     "altman": "No aplica a utilities reguladas: el Altman se calibró con quiebras de empresas industriales; una utility regulada opera con deuda alta y circulante negativo por diseño",
@@ -4220,17 +4324,17 @@
     "beta": 0.62906665,
     "cash_ratio": 0.0989162697591,
     "current_ratio": 0.533823427901,
-    "debt_to_assets": 0.473340578247,
-    "debt_to_equity": 1.92901655989,
+    "debt_to_assets": 0.478250224435,
+    "debt_to_equity": 1.94902496236,
     "dividend_yield": 0.0318080887155,
     "earnings_yield": 0.0567819298717,
     "ebitda": 15381000000.0,
     "ebitda_margin": 0.535904672311,
-    "enterprise_value": 270809117969.0,
+    "enterprise_value": 271952117969.0,
     "eps": 4.45,
-    "ev_ebitda": 17.6067302496,
-    "ev_fcf": 88.8481358165,
-    "ev_revenue": 9.43552900487,
+    "ev_ebitda": 17.681042713,
+    "ev_fcf": 89.2231358165,
+    "ev_revenue": 9.47535340123,
     "fcf": 3048000000.0,
     "fcf_to_net_income": 0.327777180342,
     "fcf_yield": 0.0186446971489,
@@ -4243,8 +4347,8 @@
     "interest_coverage": 2.31634396355,
     "inventory_turnover": 4.27599388379,
     "market_cap": 163478117969.0,
-    "net_debt": 107331000000.0,
-    "net_debt_to_ebitda": 6.97815486639,
+    "net_debt": 108474000000.0,
+    "net_debt_to_ebitda": 7.05246732982,
     "net_income": 9299000000.0,
     "net_margin": 0.323995679593,
     "operating_cash_flow": 13803000000.0,
@@ -4259,7 +4363,7 @@
     "quick_ratio": 0.443535583627,
     "roa": 0.0399429570417,
     "roe": 0.162780520253,
-    "roic": 0.0445192360313
+    "roic": 0.0442119565217
   },
   "risk_free": {
     "as_of": null,
@@ -4383,7 +4487,7 @@
           {
             "adjustment": -3,
             "metric": "ROIC vs WACC",
-            "reason": "Destruye valor (ROIC 4.5% < WACC 7.5%, spread -3.0%)",
+            "reason": "Destruye valor (ROIC 4.4% < WACC 7.5%, spread -3.0%)",
             "severity": "severe",
             "value": "-3.0%"
           }
@@ -4396,7 +4500,7 @@
           "Bueno (3.9%) - Rango alto de su sector",
           "Muy bueno (28.3%) - Operaciones eficientes",
           "Excelente (31.6%) - Alta rentabilidad final",
-          "Destruye valor (ROIC 4.5% < WACC 7.5%, spread -3.0%)"
+          "Destruye valor (ROIC 4.4% < WACC 7.5%, spread -3.0%)"
         ],
         "max": 20,
         "score": 20
@@ -4413,9 +4517,9 @@
           {
             "adjustment": -2,
             "metric": "Deuda neta/EBITDA",
-            "reason": "Elevado para una utility regulada (7.0x; bandas utility ≤4.5x / ≤5.5x / ≤6.5x / ≤7.5x)",
+            "reason": "Elevado para una utility regulada (7.1x; bandas utility ≤4.5x / ≤5.5x / ≤6.5x / ≤7.5x)",
             "severity": "moderate",
-            "value": "7.0x"
+            "value": "7.1x"
           },
           {
             "adjustment": 0,
@@ -4430,7 +4534,7 @@
         "coverage": 1.0,
         "details": [
           "Cobertura en línea para una utility (bandas ≥3.5x / ≥2.5x / ≥2x / ≥1.5x)",
-          "Elevado para una utility regulada (7.0x; bandas utility ≤4.5x / ≤5.5x / ≤6.5x / ≤7.5x)",
+          "Elevado para una utility regulada (7.1x; bandas utility ≤4.5x / ≤5.5x / ≤6.5x / ≤7.5x)",
           "Altman Z: No aplica a utilities reguladas: el Altman se calibró con quiebras de empresas industriales; una utility regulada opera con deuda alta y circulante negativo por diseño; D/E: No aplica a utilities reguladas: en una utility regulada el apalancamiento se mide por la deuda neta/EBITDA, con bandas propias; Current ratio: No aplica a utilities reguladas: la base regulada se financia a largo plazo; el circulante negativo es estructural y no mide su liquidez (no cuenta en la cobertura)"
         ],
         "max": 20,
@@ -4610,7 +4714,7 @@
       0.2
     ],
     "clamped": false,
-    "debt": 110197000000.0,
+    "debt": 111340000000.0,
     "equity": 163478117969.0,
     "kd": 0.0667,
     "kd_after_tax": 0.06003,
@@ -4623,7 +4727,7 @@
       "spread": 0.0138,
       "table": "grandes"
     },
-    "raw": 0.074624263697,
+    "raw": 0.0745635644843,
     "reason": null,
     "rf": 0.0529,
     "rf_as_of": null,
@@ -4633,10 +4737,10 @@
     "tax_rate": 0.1,
     "tax_reason": "tasa efectiva -8.6% acotada a [10%, 35%]",
     "tax_source": "efectiva",
-    "value": 0.074624263697,
+    "value": 0.0745635644843,
     "weights": {
-      "debt": 0.402656261987,
-      "equity": 0.597343738013
+      "debt": 0.405140682947,
+      "equity": 0.594859317053
     }
   },
   "yearly_financials": [

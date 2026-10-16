@@ -20,6 +20,7 @@
     },
     "interpretation": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria",
     "model": "No Aplicable",
+    "operating_leases_excluded": 643500000.0,
     "z_score": null,
     "zone": "n/a"
   },
@@ -40,8 +41,7 @@
       5954259000.0,
       6312154000.0,
       5544105000.0,
-      5177633000.0,
-      null
+      5177633000.0
     ],
     "ffo_to_equity": 0.129286098752,
     "ffo_ttm": 6945989000.0,
@@ -147,6 +147,11 @@
         "level": "alta",
         "reasons": []
       },
+      "fuente_oficial": {
+        "level": "alta",
+        "reasons": [],
+        "status": "registrado"
+      },
       "source": {
         "finnhub_fields": [
           "_yahoo_ratios.currentRatio",
@@ -162,9 +167,10 @@
           "payoutRatio",
           "revenueGrowth"
         ],
-        "issues": 1,
+        "issues": 2,
         "level": "media",
         "reasons": [
+          "validación: capitalLeaseObligations (periodo_incoherente)",
           "12 campos de Finnhub en lugar de los estados"
         ]
       },
@@ -179,7 +185,7 @@
     "limits_score": false,
     "reasons": [
       "convergencia no evaluable: un solo método evaluable (múltiplos frente al sector): no hay contraste",
-      "calidad de fuente media: 12 campos de Finnhub en lugar de los estados",
+      "calidad de fuente media: validación: capitalLeaseObligations (periodo_incoherente); 12 campos de Finnhub en lugar de los estados",
       "estabilidad media: alerta de posible cíclica"
     ],
     "score": 0.666666666667
@@ -188,6 +194,10 @@
     "as_of": {
       "date": "2026-06-30",
       "fields": {
+        "capitalLeaseObligations": {
+          "period_end": "2025-12-31",
+          "period_type": "fy_balance"
+        },
         "cash": {
           "period_end": "2026-06-30",
           "period_type": "balance"
@@ -299,6 +309,39 @@
       "source": "fundamentals-timeseries (currencyCode)",
       "statements": "USD"
     },
+    "debt": {
+      "applied": true,
+      "components": {
+        "borrowings": {
+          "in_rule_debt": true,
+          "source": "Yahoo (deuda total − su fila de arrendamientos)",
+          "value": 36442085000.0
+        },
+        "operating_leases": {
+          "accns": [
+            "0001193125-26-323746"
+          ],
+          "basis": "corte",
+          "concepts": [
+            "us-gaap:OperatingLeaseLiability"
+          ],
+          "in_rule_debt": false,
+          "note": "US GAAP: su alquiler ya está restado del EBITDA",
+          "period": "2026-06-30",
+          "source": "SEC EDGAR",
+          "unit": "USD",
+          "value": 650400000
+        }
+      },
+      "date": "2026-06-30",
+      "notes": [
+        "la fila de arrendamientos de Yahoo es de otro periodo (2025-12-31): el balance del corte no la trae y la deuda total no la incluye"
+      ],
+      "rule": "un arrendamiento entra en la deuda si y solo si su coste no está restado del EBITDA",
+      "source_total": 36442085000.0,
+      "standard": "us-gaap",
+      "total": 36442085000.0
+    },
     "dividend": {
       "as_of": "2026-10-14",
       "basis": "declarado",
@@ -378,7 +421,37 @@
       "unit": "título"
     },
     "edgar": {
+      "backup": {
+        "cut": [],
+        "fy": [],
+        "reason": null,
+        "skipped": [
+          {
+            "field": "capitalExpenditures",
+            "reason": "capex de un REIT (mejoras frente a adquisiciones): definición pendiente (fase 3)"
+          },
+          {
+            "field": "inventory",
+            "reason": "EDGAR no lo tiene del periodo que acaba el 2026-06-30"
+          },
+          {
+            "field": "FY.capital_expenditure",
+            "reason": "capex de un REIT (mejoras frente a adquisiciones): definición pendiente (fase 3)"
+          }
+        ]
+      },
       "cik": 1045609,
+      "facts_status": "ok",
+      "pending_filings": [
+        {
+          "accn": "0001193125-26-323746",
+          "date": "2026-07-29",
+          "form": "10-Q",
+          "read": true,
+          "reason": null,
+          "report_date": "2026-06-30"
+        }
+      ],
       "reason": null,
       "status": "ok",
       "title": "Prologis, Inc."
@@ -508,6 +581,11 @@
       "bookValue": {
         "detail": "patrimonio (FY) / acciones de fast_info",
         "source": "derivado"
+      },
+      "capitalLeaseObligations": {
+        "detail": "dato de otro periodo descartado: capitalLeaseObligations del ejercicio cerrado el 2025-12-31 en un análisis con corte a 2026-06-30",
+        "rule": "periodo_incoherente",
+        "source": "sin_dato"
       },
       "cash": {
         "detail": "balance del último trimestre (2026-06-30)",
@@ -670,8 +748,8 @@
         "source": "yfinance_statements"
       },
       "totalDebt": {
-        "detail": "balance del último trimestre (2026-06-30)",
-        "source": "yfinance_statements"
+        "detail": "deuda coherente con el EBITDA: préstamos y bonos (Yahoo, sin sus arrendamientos) + arrendamiento financiero (SEC EDGAR); el operativo queda fuera (US GAAP, su alquiler ya está en el EBITDA)",
+        "source": "derivado"
       },
       "totalLiab": {
         "detail": "balance del último trimestre (2026-06-30)",
@@ -690,6 +768,16 @@
         "source": "yfinance_statements"
       }
     },
+    "official_source": {
+      "cik": 1045609,
+      "fy": "2025",
+      "fy_end": "2025-12-31",
+      "last_annual_filing": "2026-02-13",
+      "note": null,
+      "reason": null,
+      "registered": true,
+      "status": "registrado"
+    },
     "path": "plan_b_yfinance",
     "pending_results": null,
     "price_history": {
@@ -707,6 +795,8 @@
     "ttm": {
       "annual_fields": {
         "capitalExpenditures": "'Capital Expenditure' no llega al corte (2026-06-30)",
+        "capitalLeaseObligations": "'Capital Lease Obligations' sin dato en el balance del corte (2026-06-30)",
+        "commercialPaper": "'Commercial Paper' sin dato en el balance del corte (2026-06-30)",
         "inventory": "'Inventory' sin dato en el balance del corte (2026-06-30)"
       },
       "balance_date": "2026-06-30",
@@ -758,6 +848,14 @@
   },
   "data_validation": [
     {
+      "action": "sin_dato",
+      "field": "capitalLeaseObligations",
+      "new": null,
+      "old": 643461000.0,
+      "reason": "dato de otro periodo descartado: capitalLeaseObligations del ejercicio cerrado el 2025-12-31 en un análisis con corte a 2026-06-30",
+      "rule": "periodo_incoherente"
+    },
+    {
       "action": "aviso",
       "field": "trailingEps",
       "new": null,
@@ -795,11 +893,19 @@
         },
         {
           "label": "Confianza · Calidad de fuente (media)",
-          "text": "12 campos de Finnhub en lugar de los estados"
+          "text": "validación: capitalLeaseObligations (periodo_incoherente); 12 campos de Finnhub en lugar de los estados"
         },
         {
           "label": "Confianza · Estabilidad del arquetipo (media)",
           "text": "alerta de posible cíclica"
+        },
+        {
+          "label": "Fuente oficial",
+          "text": "sí, SEC EDGAR (CIK 1045609); último ejercicio en EDGAR: FY 2025."
+        },
+        {
+          "label": "Deuda coherente con el EBITDA (arrendamiento dentro solo si su coste no está en el EBITDA)",
+          "text": "deuda de la regla $36.44B (la fuente daba $36.44B); préstamos y bonos $36.44B (dentro); arrendamiento operativo $650.40M (fuera; US GAAP: su alquiler ya está restado del EBITDA); la fila de arrendamientos de Yahoo es de otro periodo (2025-12-31): el balance del corte no la trae y la deuda total no la incluye."
         }
       ],
       "title": "Detalle técnico para auditoría"
@@ -1456,7 +1562,7 @@
           "key": "source",
           "label": "Calidad de fuente",
           "level": "Media",
-          "text": "Parte de los datos proviene de una fuente secundaria."
+          "text": "Un dato de la fuente no superó la validación y se corrigió o se descartó. Parte de los datos proviene de una fuente secundaria."
         },
         {
           "key": "stability",
@@ -1468,14 +1574,20 @@
       "level": "media",
       "plain": [
         "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo.",
-        "Parte de los datos proviene de una fuente secundaria.",
-        "La empresa podría ser cíclica: sus resultados actuales pueden no ser representativos."
+        "Un dato de la fuente no superó la validación y se corrigió o se descartó.",
+        "La empresa podría ser cíclica: sus resultados actuales pueden no ser representativos.",
+        "Parte de los datos proviene de una fuente secundaria."
       ],
       "reasons": [
         {
           "dimension": "convergencia",
           "level": "no_evaluable",
           "text": "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo."
+        },
+        {
+          "dimension": "calidad de fuente",
+          "level": "media",
+          "text": "Un dato de la fuente no superó la validación y se corrigió o se descartó."
         },
         {
           "dimension": "calidad de fuente",
@@ -1569,12 +1681,14 @@
       ],
       "confidence_reasons": [
         "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo.",
-        "Parte de los datos proviene de una fuente secundaria.",
+        "Un dato de la fuente no superó la validación y se corrigió o se descartó.",
         "La empresa podría ser cíclica: sus resultados actuales pueden no ser representativos."
       ],
       "coverage_notes": [],
       "currency_note": null,
-      "data_notices": [],
+      "data_notices": [
+        "Sin dato del corte, descartados por ser de otro periodo: capitalLeaseObligations."
+      ],
       "highlights": [
         {
           "kicker": "FORTALEZA CLAVE",
@@ -1645,6 +1759,7 @@
           "value": "1.31"
         }
       ],
+      "official_source_badge": null,
       "price": {
         "contracted": true,
         "level": "razonable",

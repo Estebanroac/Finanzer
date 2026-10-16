@@ -30,6 +30,7 @@
     },
     "interpretation": "No aplica a bancos y aseguradoras: el balance es el producto (depósitos y préstamos)",
     "model": "No Aplicable",
+    "operating_leases_excluded": 9337000000.0,
     "z_score": null,
     "zone": "n/a"
   },
@@ -158,6 +159,11 @@
         "level": "alta",
         "reasons": []
       },
+      "fuente_oficial": {
+        "level": "alta",
+        "reasons": [],
+        "status": "registrado"
+      },
       "source": {
         "finnhub_fields": [],
         "issues": 0,
@@ -269,6 +275,37 @@
       "source": "financialData.financialCurrency",
       "statements": "USD"
     },
+    "debt": {
+      "applied": true,
+      "components": {
+        "borrowings": {
+          "in_rule_debt": true,
+          "source": "Yahoo (deuda total − su fila de arrendamientos)",
+          "value": 532953000000.0
+        },
+        "operating_leases": {
+          "accns": [
+            "0001628280-26-054343"
+          ],
+          "basis": "corte",
+          "concepts": [
+            "us-gaap:OperatingLeaseLiability"
+          ],
+          "in_rule_debt": false,
+          "note": "US GAAP: su alquiler ya está restado del EBITDA",
+          "period": "2026-06-30",
+          "source": "SEC EDGAR",
+          "unit": "USD",
+          "value": 9474000000
+        }
+      },
+      "date": "2026-06-30",
+      "notes": [],
+      "rule": "un arrendamiento entra en la deuda si y solo si su coste no está restado del EBITDA",
+      "source_total": 532953000000.0,
+      "standard": "us-gaap",
+      "total": 532953000000.0
+    },
     "dividend": {
       "as_of": "2026-10-09",
       "basis": "declarado",
@@ -348,7 +385,36 @@
       "unit": "título"
     },
     "edgar": {
+      "backup": {
+        "cut": [],
+        "fy": [],
+        "reason": null,
+        "skipped": [
+          {
+            "field": "capitalExpenditures",
+            "reason": "EDGAR no lo tiene del periodo que acaba el 2026-06-30"
+          },
+          {
+            "field": "totalCurrentAssets",
+            "reason": "EDGAR no lo tiene del periodo que acaba el 2026-06-30"
+          },
+          {
+            "field": "totalCurrentLiabilities",
+            "reason": "EDGAR no lo tiene del periodo que acaba el 2026-06-30"
+          },
+          {
+            "field": "inventory",
+            "reason": "EDGAR no lo tiene del periodo que acaba el 2026-06-30"
+          },
+          {
+            "field": "FY.operating_income",
+            "reason": "beneficio operativo de un banco: definición del EBIT bancario pendiente (fase 3)"
+          }
+        ]
+      },
       "cik": 19617,
+      "facts_status": "ok",
+      "pending_filings": [],
       "reason": null,
       "status": "ok",
       "title": "JPMORGAN CHASE & CO"
@@ -567,6 +633,38 @@
         "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
         "source": "yfinance_statements"
       },
+      "key_metrics.de": {
+        "detail": "banco: la deuda (subordinada, depósitos y emisiones de la actividad) no entra en las ratios de apalancamiento de empresa; su apalancamiento se mide con capital (F2_PRECEDENCIA §2.3)",
+        "source": "politica_arquetipo"
+      },
+      "key_metrics.debt_to_assets": {
+        "detail": "banco: la deuda (subordinada, depósitos y emisiones de la actividad) no entra en las ratios de apalancamiento de empresa; su apalancamiento se mide con capital (F2_PRECEDENCIA §2.3)",
+        "source": "politica_arquetipo"
+      },
+      "key_metrics.enterprise_value": {
+        "detail": "banco: la deuda (subordinada, depósitos y emisiones de la actividad) no entra en las ratios de apalancamiento de empresa; su apalancamiento se mide con capital (F2_PRECEDENCIA §2.3)",
+        "source": "politica_arquetipo"
+      },
+      "key_metrics.ev_ebitda": {
+        "detail": "banco: la deuda (subordinada, depósitos y emisiones de la actividad) no entra en las ratios de apalancamiento de empresa; su apalancamiento se mide con capital (F2_PRECEDENCIA §2.3)",
+        "source": "politica_arquetipo"
+      },
+      "key_metrics.ev_revenue": {
+        "detail": "banco: la deuda (subordinada, depósitos y emisiones de la actividad) no entra en las ratios de apalancamiento de empresa; su apalancamiento se mide con capital (F2_PRECEDENCIA §2.3)",
+        "source": "politica_arquetipo"
+      },
+      "key_metrics.net_debt": {
+        "detail": "banco: la deuda (subordinada, depósitos y emisiones de la actividad) no entra en las ratios de apalancamiento de empresa; su apalancamiento se mide con capital (F2_PRECEDENCIA §2.3)",
+        "source": "politica_arquetipo"
+      },
+      "key_metrics.net_debt_to_ebitda": {
+        "detail": "banco: la deuda (subordinada, depósitos y emisiones de la actividad) no entra en las ratios de apalancamiento de empresa; su apalancamiento se mide con capital (F2_PRECEDENCIA §2.3)",
+        "source": "politica_arquetipo"
+      },
+      "key_metrics.net_debt_to_ebitda_state": {
+        "detail": "banco: la deuda (subordinada, depósitos y emisiones de la actividad) no entra en las ratios de apalancamiento de empresa; su apalancamiento se mide con capital (F2_PRECEDENCIA §2.3)",
+        "source": "politica_arquetipo"
+      },
       "lastSplitDate": {
         "detail": "quoteSummary v10 (con crumb)",
         "source": "yahoo_quotesummary"
@@ -661,8 +759,8 @@
         "source": "sin_dato"
       },
       "totalDebt": {
-        "detail": "balance del último trimestre (2026-06-30)",
-        "source": "yfinance_statements"
+        "detail": "deuda coherente con el EBITDA: préstamos y bonos (Yahoo, sin sus arrendamientos) + arrendamiento financiero (SEC EDGAR); el operativo queda fuera (US GAAP, su alquiler ya está en el EBITDA)",
+        "source": "derivado"
       },
       "totalLiab": {
         "detail": "balance del último trimestre (2026-06-30)",
@@ -692,6 +790,16 @@
         "detail": "quoteSummary v10 (con crumb)",
         "source": "yahoo_quotesummary"
       }
+    },
+    "official_source": {
+      "cik": 19617,
+      "fy": "2025",
+      "fy_end": "2025-12-31",
+      "last_annual_filing": "2026-02-13",
+      "note": null,
+      "reason": null,
+      "registered": true,
+      "status": "registrado"
     },
     "path": "yahoo_quotesummary",
     "pending_results": null,
@@ -739,6 +847,8 @@
       },
       "source_fields": {
         "capitalExpenditures": "'Capital Expenditure' no llega al corte (2026-06-30)",
+        "capitalLeaseObligations": "'Capital Lease Obligations' sin dato en el balance del corte (2026-06-30)",
+        "commercialPaper": "'Commercial Paper' sin dato en el balance del corte (2026-06-30)",
         "ebitda": "'EBITDA' no llega al corte (2026-06-30)",
         "grossProfits": "'Gross Profit' no llega al corte (2026-06-30)",
         "inventory": "'Inventory' sin dato en el balance del corte (2026-06-30)",
@@ -783,6 +893,14 @@
         {
           "label": "Confianza · Convergencia entre métodos (alta)",
           "text": "coinciden (cara) con distancia 0.31 (< 0.6)"
+        },
+        {
+          "label": "Fuente oficial",
+          "text": "sí, SEC EDGAR (CIK 19617); último ejercicio en EDGAR: FY 2025."
+        },
+        {
+          "label": "Deuda coherente con el EBITDA (arrendamiento dentro solo si su coste no está en el EBITDA)",
+          "text": "deuda de la regla $532.95B (la fuente daba $532.95B); préstamos y bonos $532.95B (dentro); arrendamiento operativo $9.47B (fuera; US GAAP: su alquiler ya está restado del EBITDA)."
         }
       ],
       "title": "Detalle técnico para auditoría"
@@ -1225,7 +1343,7 @@
             "key": "de",
             "label": "Deuda / Equity",
             "state": "no_aplica",
-            "text": "No aplica a entidades financieras"
+            "text": "En un banco la deuda (subordinada, depósitos y emisiones) es parte del negocio: su apalancamiento se mide con capital, no con esta ratio."
           }
         ],
         "runway": null,
@@ -1241,8 +1359,8 @@
           "equity": 374598000000.0,
           "equity_pct": 7.46944857588,
           "equity_txt": "$374.60B",
-          "net_debt": 223142000000.0,
-          "net_debt_txt": "$223.14B",
+          "net_debt": null,
+          "net_debt_txt": null,
           "state": "con_dato"
         }
       },
@@ -1538,6 +1656,7 @@
           "value": "1.01"
         }
       ],
+      "official_source_badge": null,
       "price": {
         "contracted": false,
         "level": "exigente",
@@ -1621,11 +1740,7 @@
         "text": "la cobertura de intereses (1.0x) es críticamente baja",
         "tone": "neg"
       },
-      "net_debt_to_ebitda": {
-        "label": "Moderada",
-        "text": "la deuda neta (2.2x EBITDA) es manejable",
-        "tone": "neu"
-      },
+      "net_debt_to_ebitda": null,
       "payout_ratio": {
         "label": "Conservador",
         "text": "el payout de 27% deja amplio margen para sostener y aumentar el dividendo",
@@ -2224,7 +2339,7 @@
           "VALOR",
           "LECTURA"
         ],
-        "intro": "La deuda neta (2.2x EBITDA) es manejable. La cobertura de intereses (1.0x) es críticamente baja. El payout de 27% deja amplio margen para sostener y aumentar el dividendo.",
+        "intro": "La cobertura de intereses (1.0x) es críticamente baja. El payout de 27% deja amplio margen para sostener y aumentar el dividendo.",
         "rows": [
           {
             "bench": null,
@@ -2244,7 +2359,7 @@
             "label": "Deuda / Equity",
             "reading": "No aplica a entidades financieras",
             "state": "no_aplica",
-            "text": null,
+            "text": "En un banco la deuda (subordinada, depósitos y emisiones) es parte del negocio: su apalancamiento se mide con capital, no con esta ratio.",
             "tone": null,
             "value": "—"
           },
@@ -2253,22 +2368,11 @@
             "gap": null,
             "key": "debt_to_assets",
             "label": "Deuda / Activos",
-            "reading": "—",
-            "state": "con_dato",
-            "text": null,
+            "reading": "No aplica",
+            "state": "no_aplica",
+            "text": "En un banco la deuda (subordinada, depósitos y emisiones) es parte del negocio: su apalancamiento se mide con capital, no con esta ratio.",
             "tone": null,
-            "value": "10.63%"
-          },
-          {
-            "bench": null,
-            "gap": null,
-            "key": "net_debt_to_ebitda",
-            "label": "Deuda neta / EBITDA",
-            "reading": "Moderada",
-            "state": "con_dato",
-            "text": "la deuda neta (2.2x EBITDA) es manejable",
-            "tone": "neu",
-            "value": "2.16x"
+            "value": "—"
           },
           {
             "bench": null,
@@ -3390,17 +3494,17 @@
     "cash": 309811000000.0,
     "cash_ratio": null,
     "current_ratio": null,
-    "de": 1.42273316996,
-    "debt_to_assets": 0.106270322502,
+    "de": null,
+    "debt_to_assets": null,
     "dividend_yield": 0.0198204150275,
     "earnings_growth": 0.469,
     "earnings_yield": 0.0700921949608,
     "ebitda": 103160135674.0,
     "ebitda_margin": 0.529267900089,
-    "enterprise_value": 1108291421070.0,
+    "enterprise_value": null,
     "eps": 23.34,
-    "ev_ebitda": 10.7434079437,
-    "ev_revenue": 5.68614096215,
+    "ev_ebitda": null,
+    "ev_revenue": null,
     "fcf_yield": -0.18362323897,
     "ffo": 74329000000.0,
     "ffo_payout": 0.232923892424,
@@ -3412,9 +3516,9 @@
     "interest_expense": 98224000000.0,
     "inventory_turnover": null,
     "market_cap": 885149401088.0,
-    "net_debt": 223142000000.0,
-    "net_debt_to_ebitda": 2.16306423544,
-    "net_debt_to_ebitda_state": "ok",
+    "net_debt": null,
+    "net_debt_to_ebitda": null,
+    "net_debt_to_ebitda_state": null,
     "net_income": 65067000000.0,
     "net_income_normalized": 63304845092.3,
     "net_interest_income": null,

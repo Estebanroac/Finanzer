@@ -24,8 +24,8 @@
       },
       {
         "category": "Solidez financiera",
-        "detail": "El Altman Z de 5.29 (> 2.60) ubica a la empresa en zona segura: baja probabilidad estadística de problemas de solvencia según el modelo.",
-        "reason": "Solvencia sólida — Altman Z 5.29"
+        "detail": "El Altman Z de 5.39 (> 2.60) ubica a la empresa en zona segura: baja probabilidad estadística de problemas de solvencia según el modelo.",
+        "reason": "Solvencia sólida — Altman Z 5.39"
       },
       {
         "category": "Solidez financiera",
@@ -53,14 +53,15 @@
       "X1_wc_ta": 0.0367,
       "X2_re_ta": 0.7605,
       "X3_ebit_ta": 0.2397,
-      "X4_book_tl": 0.9184,
+      "X4_book_tl": 1.0056,
       "grey_threshold": 1.1,
       "model": "Z''-Score (No Manufactura)",
       "safe_threshold": 2.6
     },
     "interpretation": "Z''-Score (No Manufactura): Zona segura — bajo riesgo de bancarrota",
     "model": "Z''-Score (No Manufactura)",
-    "z_score": 5.29,
+    "operating_leases_excluded": 2513001000.0,
+    "z_score": 5.39,
     "zone": "safe"
   },
   "archetype_metrics": {},
@@ -166,6 +167,11 @@
         "coverage": 1.0,
         "level": "alta",
         "reasons": []
+      },
+      "fuente_oficial": {
+        "level": "alta",
+        "reasons": [],
+        "status": "registrado"
       },
       "source": {
         "finnhub_fields": [],
@@ -295,6 +301,37 @@
       "source": "financialData.financialCurrency",
       "statements": "USD"
     },
+    "debt": {
+      "applied": true,
+      "components": {
+        "borrowings": {
+          "in_rule_debt": true,
+          "source": "Yahoo (deuda total − su fila de arrendamientos)",
+          "value": 14309306000.0
+        },
+        "operating_leases": {
+          "accns": [
+            "0001065280-26-000212"
+          ],
+          "basis": "corte",
+          "concepts": [
+            "us-gaap:OperatingLeaseLiability"
+          ],
+          "in_rule_debt": false,
+          "note": "US GAAP: su alquiler ya está restado del EBITDA",
+          "period": "2026-06-30",
+          "source": "SEC EDGAR",
+          "unit": "USD",
+          "value": 2330421000
+        }
+      },
+      "date": "2026-06-30",
+      "notes": [],
+      "rule": "un arrendamiento entra en la deuda si y solo si su coste no está restado del EBITDA",
+      "source_total": 14309306000.0,
+      "standard": "us-gaap",
+      "total": 14309306000.0
+    },
     "dividend": {
       "as_of": "2026-10-09",
       "basis": "sin_dividendo",
@@ -314,7 +351,24 @@
       "unit": "título"
     },
     "edgar": {
+      "backup": {
+        "cut": [],
+        "fy": [],
+        "reason": null,
+        "skipped": [
+          {
+            "field": "dividendsPaid",
+            "reason": "EDGAR no lo tiene del periodo que acaba el 2026-06-30"
+          },
+          {
+            "field": "inventory",
+            "reason": "EDGAR no lo tiene del periodo que acaba el 2026-06-30"
+          }
+        ]
+      },
       "cik": 1065280,
+      "facts_status": "ok",
+      "pending_filings": [],
       "reason": null,
       "status": "ok",
       "title": "NETFLIX INC"
@@ -674,8 +728,8 @@
         "source": "yfinance_statements"
       },
       "totalDebt": {
-        "detail": "balance del último trimestre (2026-06-30)",
-        "source": "yfinance_statements"
+        "detail": "deuda coherente con el EBITDA: préstamos y bonos (Yahoo, sin sus arrendamientos) + arrendamiento financiero (SEC EDGAR); el operativo queda fuera (US GAAP, su alquiler ya está en el EBITDA)",
+        "source": "derivado"
       },
       "totalLiab": {
         "detail": "balance del último trimestre (2026-06-30)",
@@ -705,6 +759,16 @@
         "detail": "quoteSummary v10 (con crumb)",
         "source": "yahoo_quotesummary"
       }
+    },
+    "official_source": {
+      "cik": 1065280,
+      "fy": "2025",
+      "fy_end": "2025-12-31",
+      "last_annual_filing": "2026-01-23",
+      "note": null,
+      "reason": null,
+      "registered": true,
+      "status": "registrado"
     },
     "path": "yahoo_quotesummary",
     "pending_results": null,
@@ -753,6 +817,8 @@
         ]
       },
       "source_fields": {
+        "capitalLeaseObligations": "'Capital Lease Obligations' sin dato en el balance del corte (2026-06-30)",
+        "commercialPaper": "'Commercial Paper' sin dato en el balance del corte (2026-06-30)",
         "dividendsPaid": "'Common Stock Dividend Paid' no llega al corte (2026-06-30)",
         "inventory": "'Inventory' sin dato en el balance del corte (2026-06-30)"
       },
@@ -816,6 +882,14 @@
         {
           "label": "Confianza · Calidad de fuente (media)",
           "text": "beneficio normalizado con ítems inferidos (confianza media)"
+        },
+        {
+          "label": "Fuente oficial",
+          "text": "sí, SEC EDGAR (CIK 1065280); último ejercicio en EDGAR: FY 2025."
+        },
+        {
+          "label": "Deuda coherente con el EBITDA (arrendamiento dentro solo si su coste no está en el EBITDA)",
+          "text": "deuda de la regla $14.31B (la fuente daba $14.31B); préstamos y bonos $14.31B (dentro); arrendamiento operativo $2.33B (fuera; US GAAP: su alquiler ya está restado del EBITDA)."
         }
       ],
       "title": "Detalle técnico para auditoría"
@@ -1276,12 +1350,12 @@
       },
       "institutional": {
         "altman": {
-          "axis_max": 5.819,
+          "axis_max": 5.929,
           "model": "Z''-Score (No Manufactura)",
           "state": "con_dato",
           "text": "Z''-Score (No Manufactura): Zona segura — bajo riesgo de bancarrota",
-          "value": 5.29,
-          "value_txt": "5.29",
+          "value": 5.39,
+          "value_txt": "5.39",
           "zone": "Zona segura",
           "zones": [
             {
@@ -1299,7 +1373,7 @@
             {
               "from": 2.6,
               "label": "Zona segura",
-              "to": 5.819,
+              "to": 5.929,
               "tone": "pos"
             }
           ]
@@ -2123,6 +2197,7 @@
           "value": "1.61"
         }
       ],
+      "official_source_badge": null,
       "price": {
         "contracted": true,
         "level": "razonable",
@@ -2294,8 +2369,8 @@
               },
               {
                 "category": "Solidez financiera",
-                "detail": "El Altman Z de 5.29 (> 2.60) ubica a la empresa en zona segura: baja probabilidad estadística de problemas de solvencia según el modelo.",
-                "reason": "Solvencia sólida — Altman Z 5.29"
+                "detail": "El Altman Z de 5.39 (> 2.60) ubica a la empresa en zona segura: baja probabilidad estadística de problemas de solvencia según el modelo.",
+                "reason": "Solvencia sólida — Altman Z 5.39"
               },
               {
                 "category": "Solidez financiera",
@@ -2478,7 +2553,7 @@
                   "sign": "+6",
                   "state": "con_dato",
                   "tone": "pos",
-                  "value": "5.29"
+                  "value": "5.39"
                 },
                 {
                   "in_block": false,
@@ -2746,7 +2821,7 @@
             "subtitle": "Zona segura",
             "title": "Altman Z-Score",
             "tone": "pos",
-            "value": "5.29"
+            "value": "5.39"
           },
           {
             "body": "Bueno - Salud financiera sólida. El F-Score de Piotroski verifica 9 señales contables de mejora en rentabilidad, estructura de capital y eficiencia operativa (FY2025 vs FY2024).",
@@ -3619,7 +3694,7 @@
         },
         {
           "label": "SOLIDEZ",
-          "text": "Altman Z de 5.29 (zona segura); la deuda es fácilmente servible: cobertura de intereses de 16.9x."
+          "text": "Altman Z de 5.39 (zona segura); la deuda es fácilmente servible: cobertura de intereses de 16.9x."
         },
         {
           "label": "CRECIMIENTO Y RETORNO",
@@ -5254,7 +5329,7 @@
             "metric": "Altman Z-Score",
             "reason": "Zona segura - Muy baja probabilidad de quiebra",
             "severity": "excellent",
-            "value": "5.29"
+            "value": "5.39"
           },
           {
             "adjustment": 0,

@@ -50,6 +50,7 @@
     },
     "interpretation": "Z-Score Original (Manufactura): Zona gris — riesgo moderado, monitorear",
     "model": "Z-Score Original (Manufactura)",
+    "operating_leases_excluded": null,
     "z_score": 2.53,
     "zone": "grey"
   },
@@ -178,6 +179,11 @@
         "level": "alta",
         "reasons": []
       },
+      "fuente_oficial": {
+        "level": "alta",
+        "reasons": [],
+        "status": "registrado"
+      },
       "source": {
         "finnhub_fields": [
           "_yahoo_ratios.currentRatio",
@@ -193,9 +199,10 @@
           "payoutRatio",
           "revenueGrowth"
         ],
-        "issues": 3,
+        "issues": 4,
         "level": "baja",
         "reasons": [
+          "validación: capitalLeaseObligations (periodo_incoherente)",
           "validación: longTermDebt (periodo_incoherente)",
           "validación: revenueGrowth (crecimiento_incoherente)",
           "12 campos de Finnhub en lugar de los estados"
@@ -211,7 +218,7 @@
     "level": "media",
     "limits_score": false,
     "reasons": [
-      "calidad de fuente baja: validación: longTermDebt (periodo_incoherente); validación: revenueGrowth (crecimiento_incoherente); 12 campos de Finnhub en lugar de los estados",
+      "calidad de fuente baja: validación: capitalLeaseObligations (periodo_incoherente); validación: longTermDebt (periodo_incoherente); validación: revenueGrowth (crecimiento_incoherente); 12 campos de Finnhub en lugar de los estados",
       "estabilidad baja: empresa cíclica: resultados ligados a la fase del ciclo"
     ],
     "score": 0.6
@@ -223,6 +230,10 @@
         "capitalExpenditures": {
           "period_end": "2026-06-30",
           "period_type": "ttm"
+        },
+        "capitalLeaseObligations": {
+          "period_end": "2025-12-31",
+          "period_type": "fy_balance"
         },
         "cash": {
           "period_end": "2026-06-30",
@@ -333,6 +344,34 @@
       "source": "fundamentals-timeseries (currencyCode)",
       "statements": "USD"
     },
+    "debt": {
+      "applied": false,
+      "components": {
+        "leases_ifrs16": {
+          "accns": [
+            "0001628280-26-017024"
+          ],
+          "basis": "ultimo_anual",
+          "concepts": [
+            "ifrs-full:LeaseLiabilities"
+          ],
+          "in_rule_debt": true,
+          "note": "del último informe anual (2025-12-31): el emisor no lo etiqueta en el filing del corte",
+          "period": "2025-12-31",
+          "source": "SEC EDGAR",
+          "unit": "USD",
+          "value": 28933000000
+        }
+      },
+      "date": "2026-06-30",
+      "notes": [
+        "IFRS 16: los arrendamientos ya están en la deuda de la fuente (regla cumplida)"
+      ],
+      "rule": "un arrendamiento entra en la deuda si y solo si su coste no está restado del EBITDA",
+      "source_total": 73076000000.0,
+      "standard": "ifrs-full",
+      "total": 73076000000.0
+    },
     "dividend": {
       "as_of": "2026-10-15",
       "basis": "suma_ultimo_ciclo",
@@ -399,7 +438,24 @@
       "unit": "ADR"
     },
     "edgar": {
+      "backup": {
+        "cut": [],
+        "fy": [],
+        "reason": null,
+        "skipped": []
+      },
       "cik": 1306965,
+      "facts_status": "ok",
+      "pending_filings": [
+        {
+          "accn": "0001628280-26-050763",
+          "date": "2026-07-30",
+          "form": "6-K",
+          "read": true,
+          "reason": null,
+          "report_date": "2026-06-30"
+        }
+      ],
       "reason": null,
       "status": "ok",
       "title": "Shell plc"
@@ -537,6 +593,11 @@
       "capitalExpenditures": {
         "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
         "source": "yfinance_statements"
+      },
+      "capitalLeaseObligations": {
+        "detail": "dato de otro periodo descartado: capitalLeaseObligations del ejercicio cerrado el 2025-12-31 en un análisis con corte a 2026-06-30",
+        "rule": "periodo_incoherente",
+        "source": "sin_dato"
       },
       "cash": {
         "detail": "balance del último trimestre (2026-06-30)",
@@ -720,6 +781,16 @@
         "source": "derivado"
       }
     },
+    "official_source": {
+      "cik": 1306965,
+      "fy": "2025",
+      "fy_end": "2025-12-31",
+      "last_annual_filing": "2026-03-12",
+      "note": null,
+      "reason": null,
+      "registered": true,
+      "status": "registrado"
+    },
     "path": "plan_b_yfinance",
     "pending_results": null,
     "price_history": {
@@ -736,6 +807,8 @@
     },
     "ttm": {
       "annual_fields": {
+        "capitalLeaseObligations": "'Capital Lease Obligations' sin dato en el balance del corte (2026-06-30)",
+        "commercialPaper": "'Commercial Paper' sin dato en el balance del corte (2026-06-30)",
         "longTermDebt": "'Long Term Debt' sin dato en el balance del corte (2026-06-30)",
         "stockBasedCompensation": "'Stock Based Compensation' no llega al corte (2026-06-30)"
       },
@@ -787,6 +860,14 @@
     }
   },
   "data_validation": [
+    {
+      "action": "sin_dato",
+      "field": "capitalLeaseObligations",
+      "new": null,
+      "old": 28933000000.0,
+      "reason": "dato de otro periodo descartado: capitalLeaseObligations del ejercicio cerrado el 2025-12-31 en un análisis con corte a 2026-06-30",
+      "rule": "periodo_incoherente"
+    },
     {
       "action": "sin_dato",
       "field": "longTermDebt",
@@ -858,11 +939,19 @@
         },
         {
           "label": "Confianza · Calidad de fuente (baja)",
-          "text": "validación: longTermDebt (periodo_incoherente); validación: revenueGrowth (crecimiento_incoherente); 12 campos de Finnhub en lugar de los estados"
+          "text": "validación: capitalLeaseObligations (periodo_incoherente); validación: longTermDebt (periodo_incoherente); validación: revenueGrowth (crecimiento_incoherente); 12 campos de Finnhub en lugar de los estados"
         },
         {
           "label": "Confianza · Estabilidad del arquetipo (baja)",
           "text": "empresa cíclica: resultados ligados a la fase del ciclo"
+        },
+        {
+          "label": "Fuente oficial",
+          "text": "sí, SEC EDGAR (CIK 1306965); último ejercicio en EDGAR: FY 2025."
+        },
+        {
+          "label": "Deuda coherente con el EBITDA (arrendamiento dentro solo si su coste no está en el EBITDA)",
+          "text": "deuda $73.08B; arrendamientos IFRS 16 $28.93B (dentro; del último informe anual (2025-12-31): el emisor no lo etiqueta en el filing del corte); IFRS 16: los arrendamientos ya están en la deuda de la fuente (regla cumplida)."
         }
       ],
       "title": "Detalle técnico para auditoría"
@@ -1968,6 +2057,11 @@
         {
           "dimension": "calidad de fuente",
           "level": "baja",
+          "text": "Un dato de la fuente no superó la validación y se corrigió o se descartó."
+        },
+        {
+          "dimension": "calidad de fuente",
+          "level": "baja",
           "text": "El crecimiento que reporta la fuente difiere mucho del de los estados anuales; se mantiene, pero conviene tomarlo con cautela."
         },
         {
@@ -2067,7 +2161,7 @@
       "coverage_notes": [],
       "currency_note": "Cifras por acción en la clase que cotiza: cada título cotizado equivale a 2 acciones ordinarias (factor del depositario, JPMorgan).",
       "data_notices": [
-        "Sin dato del corte, descartados por ser de otro periodo: deuda a largo plazo."
+        "Sin dato del corte, descartados por ser de otro periodo: capitalLeaseObligations, deuda a largo plazo."
       ],
       "highlights": [
         {
@@ -2139,6 +2233,7 @@
           "value": "0.06"
         }
       ],
+      "official_source_badge": null,
       "price": {
         "contracted": true,
         "level": "atractivo",

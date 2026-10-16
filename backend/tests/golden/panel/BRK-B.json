@@ -25,6 +25,7 @@
     },
     "interpretation": "No aplica a bancos y aseguradoras: el balance es el producto (depósitos y préstamos)",
     "model": "No Aplicable",
+    "operating_leases_excluded": 6290000000.0,
     "z_score": null,
     "zone": "n/a"
   },
@@ -161,6 +162,11 @@
           "9 de 11 componentes del score con dato (82%)"
         ]
       },
+      "fuente_oficial": {
+        "level": "alta",
+        "reasons": [],
+        "status": "registrado"
+      },
       "source": {
         "finnhub_fields": [
           "_current_derived.gross_margin",
@@ -213,6 +219,11 @@
           "period_end": "2025-12-31",
           "period_type": "fy_balance"
         },
+        "depreciation": {
+          "period_end": "2025-12-31",
+          "period_type": "fy",
+          "source": "sec_edgar"
+        },
         "freeCashflow": {
           "period_end": "2025-12-31",
           "period_type": "fy"
@@ -220,6 +231,11 @@
         "interestExpense": {
           "period_end": "2025-12-31",
           "period_type": "fy"
+        },
+        "inventory": {
+          "period_end": "2025-12-31",
+          "period_type": "fy_balance",
+          "source": "sec_edgar"
         },
         "longTermDebt": {
           "period_end": "2025-12-31",
@@ -287,6 +303,37 @@
       "source": "fundamentals-timeseries (currencyCode)",
       "statements": "USD"
     },
+    "debt": {
+      "applied": true,
+      "components": {
+        "borrowings": {
+          "in_rule_debt": true,
+          "source": "Yahoo (deuda total − su fila de arrendamientos)",
+          "value": 129081000000.0
+        },
+        "operating_leases": {
+          "accns": [
+            "0001193125-26-083899"
+          ],
+          "basis": "corte",
+          "concepts": [
+            "us-gaap:OperatingLeaseLiability"
+          ],
+          "in_rule_debt": false,
+          "note": "US GAAP: su alquiler ya está restado del EBITDA",
+          "period": "2025-12-31",
+          "source": "SEC EDGAR",
+          "unit": "USD",
+          "value": 6290000000
+        }
+      },
+      "date": "2025-12-31",
+      "notes": [],
+      "rule": "un arrendamiento entra en la deuda si y solo si su coste no está restado del EBITDA",
+      "source_total": 129081000000.0,
+      "standard": "us-gaap",
+      "total": 129081000000.0
+    },
     "dividend": {
       "as_of": "2026-10-14",
       "basis": "sin_dividendo",
@@ -306,7 +353,57 @@
       "unit": "título"
     },
     "edgar": {
+      "backup": {
+        "cut": [
+          {
+            "accns": [
+              "0001193125-26-083899"
+            ],
+            "concept": "us-gaap:DepreciationDepletionAndAmortization",
+            "field": "depreciation",
+            "how": "ejercicio 2025-01-01 a 2025-12-31",
+            "period_end": "2025-12-31",
+            "value": 13476000000.0
+          },
+          {
+            "accns": [
+              "0001193125-26-341032"
+            ],
+            "concept": "us-gaap:InventoryNet",
+            "field": "inventory",
+            "how": "saldo al 2025-12-31",
+            "period_end": "2025-12-31",
+            "value": 24424000000.0
+          }
+        ],
+        "fy": [],
+        "reason": null,
+        "skipped": [
+          {
+            "field": "grossProfits",
+            "reason": "EDGAR no lo tiene del periodo que acaba el 2025-12-31"
+          },
+          {
+            "field": "operatingIncome",
+            "reason": "EDGAR no lo tiene del periodo que acaba el 2025-12-31"
+          },
+          {
+            "field": "dividendsPaid",
+            "reason": "EDGAR no lo tiene del periodo que acaba el 2025-12-31"
+          },
+          {
+            "field": "totalCurrentAssets",
+            "reason": "EDGAR no lo tiene del periodo que acaba el 2025-12-31"
+          },
+          {
+            "field": "totalCurrentLiabilities",
+            "reason": "EDGAR no lo tiene del periodo que acaba el 2025-12-31"
+          }
+        ]
+      },
       "cik": 1067983,
+      "facts_status": "ok",
+      "pending_filings": [],
       "reason": null,
       "status": "ok",
       "title": "BERKSHIRE HATHAWAY INC"
@@ -453,6 +550,10 @@
         "detail": "plan B: yfinance fast_info (sin crumb)",
         "source": "yfinance_statements"
       },
+      "depreciation": {
+        "detail": "SEC EDGAR (us-gaap:DepreciationDepletionAndAmortization): ejercicio 2025-01-01 a 2025-12-31",
+        "source": "sec_edgar"
+      },
       "dividendRate": {
         "detail": "no paga dividendos: sin pagos en 2 años ni dividendos en los estados",
         "source": "derivado"
@@ -504,6 +605,10 @@
       "interestExpense": {
         "detail": "plan B: estados anuales de yfinance (último FY)",
         "source": "yfinance_statements"
+      },
+      "inventory": {
+        "detail": "SEC EDGAR (us-gaap:InventoryNet): saldo al 2025-12-31",
+        "source": "sec_edgar"
       },
       "longName": {
         "detail": "símbolo pedido; nombre de stock_database o de la búsqueda",
@@ -583,8 +688,8 @@
         "source": "sin_dato"
       },
       "totalDebt": {
-        "detail": "plan B: estados anuales de yfinance (último FY)",
-        "source": "yfinance_statements"
+        "detail": "deuda coherente con el EBITDA: préstamos y bonos (Yahoo, sin sus arrendamientos) + arrendamiento financiero (SEC EDGAR); el operativo queda fuera (US GAAP, su alquiler ya está en el EBITDA)",
+        "source": "derivado"
       },
       "totalLiab": {
         "detail": "plan B: estados anuales de yfinance (último FY)",
@@ -602,6 +707,16 @@
         "detail": "plan B: estados anuales de yfinance (último FY)",
         "source": "yfinance_statements"
       }
+    },
+    "official_source": {
+      "cik": 1067983,
+      "fy": "2025",
+      "fy_end": "2025-12-31",
+      "last_annual_filing": "2026-03-02",
+      "note": null,
+      "reason": null,
+      "registered": true,
+      "status": "registrado"
     },
     "path": "plan_b_yfinance",
     "pending_results": {
@@ -628,7 +743,9 @@
     "ttm": {
       "annual_fields": {
         "capitalExpenditures": "sin corte trimestral (ingresos y beneficio de 4 trimestres consecutivos con balance): el dato es el del ejercicio",
+        "capitalLeaseObligations": "sin corte trimestral: el balance es el del ejercicio",
         "cash": "sin corte trimestral: el balance es el del ejercicio",
+        "commercialPaper": "sin corte trimestral: el balance es el del ejercicio",
         "depreciation": "sin corte trimestral (ingresos y beneficio de 4 trimestres consecutivos con balance): el dato es el del ejercicio",
         "dividendsPaid": "sin corte trimestral (ingresos y beneficio de 4 trimestres consecutivos con balance): el dato es el del ejercicio",
         "ebitda": "sin corte trimestral (ingresos y beneficio de 4 trimestres consecutivos con balance): el dato es el del ejercicio",
@@ -737,6 +854,18 @@
         {
           "label": "Confianza · Estabilidad del arquetipo (media)",
           "text": "alerta de posible cíclica"
+        },
+        {
+          "label": "Fuente oficial",
+          "text": "sí, SEC EDGAR (CIK 1067983); último ejercicio en EDGAR: FY 2025."
+        },
+        {
+          "label": "Deuda coherente con el EBITDA (arrendamiento dentro solo si su coste no está en el EBITDA)",
+          "text": "deuda de la regla $129.08B (la fuente daba $129.08B); préstamos y bonos $129.08B (dentro); arrendamiento operativo $6.29B (fuera; US GAAP: su alquiler ya está restado del EBITDA)."
+        },
+        {
+          "label": "Respaldo de SEC EDGAR (lo que Yahoo no da del mismo corte)",
+          "text": "amortizaciones (us-gaap:DepreciationDepletionAndAmortization; ejercicio 2025-01-01 a 2025-12-31); existencias (us-gaap:InventoryNet; saldo al 2025-12-31)."
         }
       ],
       "title": "Detalle técnico para auditoría"
@@ -1509,6 +1638,7 @@
           "value": "0.18"
         }
       ],
+      "official_source_badge": null,
       "price": {
         "contracted": false,
         "level": "razonable",
@@ -3261,7 +3391,7 @@
     "ev_ebitda": null,
     "ev_revenue": 2.14978137057,
     "fcf_yield": 0.0222247358582,
-    "ffo": null,
+    "ffo": 80444000000.0,
     "ffo_payout": null,
     "forward_pe": 23.2989209801,
     "free_cash_flow": 25042000000.0,
@@ -3281,7 +3411,7 @@
     "operating_cash_flow": 45969000000.0,
     "operating_income": null,
     "operating_margin": null,
-    "p_ffo": null,
+    "p_ffo": 14.0067941401,
     "payout_basis": "beneficio_neto",
     "payout_ratio": null,
     "pb": 1.57057806917,
@@ -3478,9 +3608,9 @@
     "fcf": 25042000000.0,
     "fcf_to_net_income": 0.37393979214,
     "fcf_yield": 0.0222247358582,
-    "ffo": null,
+    "ffo": 80444000000.0,
     "ffo_payout": null,
-    "ffo_per_share": null,
+    "ffo_per_share": 37.5781902925,
     "forward_pe": 23.2989209801,
     "graham_number": 483.808793221,
     "gross_margin": null,
@@ -3494,7 +3624,7 @@
     "operating_cash_flow": 45969000000.0,
     "operating_margin": null,
     "p_fcf": 44.9949104628,
-    "p_ffo": null,
+    "p_ffo": 14.0067941401,
     "payout_ratio": null,
     "pb": 1.57057806917,
     "pe": 16.9560500061,

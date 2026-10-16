@@ -23,14 +23,14 @@
         "reason": "BPA en fuerte expansión — +17.9% anual (3 años)"
       },
       {
+        "category": "Solidez financiera",
+        "detail": "El Altman Z de 4.41 (> 2.60) ubica a la empresa en zona segura: baja probabilidad estadística de problemas de solvencia según el modelo.",
+        "reason": "Solvencia sólida — Altman Z 4.41"
+      },
+      {
         "category": "Flujo de caja",
         "detail": "El flujo de caja libre supera al beneficio contable (FCF/BN 106%): las utilidades se convierten íntegramente en efectivo, señal de contabilidad conservadora y negocio que 'respira' caja.",
         "reason": "Beneficio de alta calidad"
-      },
-      {
-        "category": "Solidez financiera",
-        "detail": "La deuda neta equivale a menos de un año de EBITDA, un nivel cómodo que deja holgura financiera y capacidad de maniobra ante imprevistos.",
-        "reason": "Deuda baja — 0.8x EBITDA"
       }
     ],
     "warnings": [
@@ -43,17 +43,21 @@
   },
   "altman_z": {
     "applicable": true,
-    "available": false,
+    "available": true,
     "details": {
-      "missing": [
-        "utilidades retenidas"
-      ],
-      "reason": "sin_dato"
+      "X1_wc_ta": 0.0075,
+      "X2_re_ta": 0.8482,
+      "X3_ebit_ta": 0.1285,
+      "X4_book_tl": 0.7014,
+      "grey_threshold": 1.1,
+      "model": "Z''-Score (No Manufactura)",
+      "safe_threshold": 2.6
     },
-    "interpretation": "Datos insuficientes para el Z-Score: falta utilidades retenidas",
-    "model": "",
-    "z_score": null,
-    "zone": "n/a"
+    "interpretation": "Z''-Score (No Manufactura): Zona segura — bajo riesgo de bancarrota",
+    "model": "Z''-Score (No Manufactura)",
+    "operating_leases_excluded": 1400000000.0,
+    "z_score": 4.41,
+    "zone": "safe"
   },
   "archetype_metrics": {},
   "benchmark": {
@@ -155,9 +159,14 @@
         ]
       },
       "coverage": {
-        "coverage": 0.952380952381,
+        "coverage": 1.0,
         "level": "alta",
         "reasons": []
+      },
+      "fuente_oficial": {
+        "level": "alta",
+        "reasons": [],
+        "status": "registrado"
       },
       "source": {
         "finnhub_fields": [
@@ -253,6 +262,11 @@
           "period_end": "2026-06-30",
           "period_type": "ttm"
         },
+        "retainedEarnings": {
+          "period_end": "2026-06-30",
+          "period_type": "balance",
+          "source": "sec_edgar"
+        },
         "stockBasedCompensation": {
           "period_end": "2026-06-30",
           "period_type": "ttm"
@@ -303,6 +317,37 @@
       },
       "source": "fundamentals-timeseries (currencyCode)",
       "statements": "USD"
+    },
+    "debt": {
+      "applied": true,
+      "components": {
+        "borrowings": {
+          "in_rule_debt": true,
+          "source": "Yahoo (deuda total − su fila de arrendamientos)",
+          "value": 49036000000.0
+        },
+        "operating_leases": {
+          "accns": [
+            "0000200406-26-000016"
+          ],
+          "basis": "ultimo_anual",
+          "concepts": [
+            "us-gaap:OperatingLeaseLiability"
+          ],
+          "in_rule_debt": false,
+          "note": "US GAAP: su alquiler ya está restado del EBITDA",
+          "period": "2025-12-28",
+          "source": "SEC EDGAR",
+          "unit": "USD",
+          "value": 1400000000
+        }
+      },
+      "date": "2026-06-30",
+      "notes": [],
+      "rule": "un arrendamiento entra en la deuda si y solo si su coste no está restado del EBITDA",
+      "source_total": 49036000000.0,
+      "standard": "us-gaap",
+      "total": 49036000000.0
     },
     "dividend": {
       "as_of": "2026-10-14",
@@ -383,7 +428,47 @@
       "unit": "título"
     },
     "edgar": {
+      "backup": {
+        "cut": [
+          {
+            "accns": [
+              "0000200406-26-000153"
+            ],
+            "concept": "us-gaap:RetainedEarningsAccumulatedDeficit",
+            "field": "retainedEarnings",
+            "how": "saldo al 2026-06-28",
+            "period_end": "2026-06-30",
+            "value": 171665000000.0
+          }
+        ],
+        "fy": [
+          {
+            "accns": [
+              "0000200406-26-000153"
+            ],
+            "concept": "us-gaap:RetainedEarningsAccumulatedDeficit",
+            "field": "FY.retained_earnings",
+            "fy_end": "2025-12-31",
+            "how": "saldo al 2025-12-28",
+            "value": 168978000000.0
+          },
+          {
+            "accns": [
+              "0000200406-26-000016"
+            ],
+            "concept": "us-gaap:RetainedEarningsAccumulatedDeficit",
+            "field": "FY.retained_earnings",
+            "fy_end": "2024-12-31",
+            "how": "saldo al 2024-12-29",
+            "value": 155791000000.0
+          }
+        ],
+        "reason": null,
+        "skipped": []
+      },
       "cik": 200406,
+      "facts_status": "ok",
+      "pending_filings": [],
       "reason": null,
       "status": "ok",
       "title": "JOHNSON & JOHNSON"
@@ -638,6 +723,10 @@
         "detail": "plan B: yfinance fast_info (sin crumb)",
         "source": "yfinance_statements"
       },
+      "retainedEarnings": {
+        "detail": "SEC EDGAR (us-gaap:RetainedEarningsAccumulatedDeficit): saldo al 2026-06-28",
+        "source": "sec_edgar"
+      },
       "revenueGrowth": {
         "detail": "/stock/metric",
         "source": "finnhub"
@@ -683,8 +772,8 @@
         "source": "yfinance_statements"
       },
       "totalDebt": {
-        "detail": "balance del último trimestre (2026-06-30)",
-        "source": "yfinance_statements"
+        "detail": "deuda coherente con el EBITDA: préstamos y bonos (Yahoo, sin sus arrendamientos) + arrendamiento financiero (SEC EDGAR); el operativo queda fuera (US GAAP, su alquiler ya está en el EBITDA)",
+        "source": "derivado"
       },
       "totalLiab": {
         "detail": "balance del último trimestre (2026-06-30)",
@@ -702,6 +791,16 @@
         "detail": "BPA TTM = suma de los BPA diluidos de los 4 trimestres del corte",
         "source": "derivado"
       }
+    },
+    "official_source": {
+      "cik": 200406,
+      "fy": "2025",
+      "fy_end": "2025-12-28",
+      "last_annual_filing": "2026-02-11",
+      "note": null,
+      "reason": null,
+      "registered": true,
+      "status": "registrado"
     },
     "path": "plan_b_yfinance",
     "pending_results": {
@@ -727,6 +826,8 @@
     },
     "ttm": {
       "annual_fields": {
+        "capitalLeaseObligations": "'Capital Lease Obligations' sin dato en el balance del corte (2026-06-30)",
+        "commercialPaper": "'Commercial Paper' sin dato en el balance del corte (2026-06-30)",
         "retainedEarnings": "'Retained Earnings' sin dato en el balance del corte (2026-06-30)"
       },
       "balance_date": "2026-06-30",
@@ -821,6 +922,18 @@
         {
           "label": "Confianza · Calidad de fuente (media)",
           "text": "13 campos de Finnhub en lugar de los estados"
+        },
+        {
+          "label": "Fuente oficial",
+          "text": "sí, SEC EDGAR (CIK 200406); último ejercicio en EDGAR: FY 2025."
+        },
+        {
+          "label": "Deuda coherente con el EBITDA (arrendamiento dentro solo si su coste no está en el EBITDA)",
+          "text": "deuda de la regla $49.04B (la fuente daba $49.04B); préstamos y bonos $49.04B (dentro); arrendamiento operativo $1.40B (fuera; US GAAP: su alquiler ya está restado del EBITDA)."
+        },
+        {
+          "label": "Respaldo de SEC EDGAR (lo que Yahoo no da del mismo corte)",
+          "text": "beneficios retenidos (us-gaap:RetainedEarningsAccumulatedDeficit; saldo al 2026-06-28); ejercicio a retained_earnings 2025-12-31 (us-gaap:RetainedEarningsAccumulatedDeficit); ejercicio a retained_earnings 2024-12-31 (us-gaap:RetainedEarningsAccumulatedDeficit)."
         }
       ],
       "title": "Detalle técnico para auditoría"
@@ -1281,8 +1394,33 @@
       },
       "institutional": {
         "altman": {
-          "state": "sin_dato",
-          "text": "Datos insuficientes para el Z-Score: falta utilidades retenidas"
+          "axis_max": 5.2,
+          "model": "Z''-Score (No Manufactura)",
+          "state": "con_dato",
+          "text": "Z''-Score (No Manufactura): Zona segura — bajo riesgo de bancarrota",
+          "value": 4.41,
+          "value_txt": "4.41",
+          "zone": "Zona segura",
+          "zones": [
+            {
+              "from": 0.0,
+              "label": "Zona de riesgo",
+              "to": 1.1,
+              "tone": "neg"
+            },
+            {
+              "from": 1.1,
+              "label": "Zona gris",
+              "to": 2.6,
+              "tone": "warn"
+            },
+            {
+              "from": 2.6,
+              "label": "Zona segura",
+              "to": 5.2,
+              "tone": "pos"
+            }
+          ]
         }
       },
       "price_card": {
@@ -1956,11 +2094,11 @@
             {
               "applicable": true,
               "conclusive": true,
-              "coverage": 0.75,
+              "coverage": 1.0,
               "max": 20,
               "name": "Solidez Financiera",
-              "pct": 90.0,
-              "score": 18,
+              "pct": 100.0,
+              "score": 20,
               "text": null,
               "tone": "pos"
             },
@@ -2098,6 +2236,7 @@
           "value": "0.20"
         }
       ],
+      "official_source_badge": null,
       "price": {
         "contracted": false,
         "level": "razonable",
@@ -2112,7 +2251,7 @@
         "level": "excelente",
         "note": null,
         "question": "¿es buena la empresa?",
-        "score": 84,
+        "score": 86,
         "title": "CALIDAD DEL NEGOCIO",
         "tone": "pos"
       },
@@ -2267,14 +2406,14 @@
                 "reason": "BPA en fuerte expansión — +17.9% anual (3 años)"
               },
               {
+                "category": "Solidez financiera",
+                "detail": "El Altman Z de 4.41 (> 2.60) ubica a la empresa en zona segura: baja probabilidad estadística de problemas de solvencia según el modelo.",
+                "reason": "Solvencia sólida — Altman Z 4.41"
+              },
+              {
                 "category": "Flujo de caja",
                 "detail": "El flujo de caja libre supera al beneficio contable (FCF/BN 106%): las utilidades se convierten íntegramente en efectivo, señal de contabilidad conservadora y negocio que 'respira' caja.",
                 "reason": "Beneficio de alta calidad"
-              },
-              {
-                "category": "Solidez financiera",
-                "detail": "La deuda neta equivale a menos de un año de EBITDA, un nivel cómodo que deja holgura financiera y capacidad de maniobra ante imprevistos.",
-                "reason": "Deuda baja — 0.8x EBITDA"
               }
             ],
             "key": "strengths",
@@ -2447,6 +2586,15 @@
               "items": [
                 {
                   "in_block": false,
+                  "metric": "Altman Z-Score",
+                  "reason": "Zona segura - Muy baja probabilidad de quiebra",
+                  "sign": "+6",
+                  "state": "con_dato",
+                  "tone": "pos",
+                  "value": "4.41"
+                },
+                {
+                  "in_block": false,
                   "metric": "Current Ratio",
                   "reason": "Liquidez justa - Cubre sus obligaciones (1.09x)",
                   "sign": "0",
@@ -2471,21 +2619,12 @@
                   "state": "con_dato",
                   "tone": "pos",
                   "value": "25.9x"
-                },
-                {
-                  "in_block": false,
-                  "metric": "Cobertura",
-                  "reason": "Reescalado sobre los componentes con dato (sin dato: Altman Z)",
-                  "sign": "+3",
-                  "state": "con_dato",
-                  "tone": "pos",
-                  "value": "3/4 componentes"
                 }
               ],
               "max": 20,
               "name": "Solidez Financiera",
-              "pct": 90.0,
-              "score": 18,
+              "pct": 100.0,
+              "score": 20,
               "text": null,
               "tone": "pos"
             },
@@ -2714,13 +2853,13 @@
         },
         "cards": [
           {
-            "body": "Datos insuficientes para el Z-Score: falta utilidades retenidas. Altman exige todos sus componentes; no se estima con ceros.",
+            "body": "Z''-Score (No Manufactura): Zona segura — bajo riesgo de bancarrota. El modelo Altman Z pondera capital de trabajo, beneficios retenidos, EBIT y patrimonio contable frente al pasivo para estimar el riesgo de insolvencia a 2 años: por encima de 2.60 el riesgo es bajo; por debajo de 1.10, elevado.",
             "key": "altman",
-            "state": "sin_dato",
-            "subtitle": "Sin dato",
+            "state": "con_dato",
+            "subtitle": "Zona segura",
             "title": "Altman Z-Score",
-            "tone": "neu",
-            "value": "—"
+            "tone": "pos",
+            "value": "4.41"
           },
           {
             "body": "Débil - Señales de debilidad financiera. El F-Score de Piotroski verifica 9 señales contables de mejora en rentabilidad, estructura de capital y eficiencia operativa (FY2025 vs FY2024).",
@@ -3518,9 +3657,9 @@
               "kind": "bar",
               "label": "Solidez Financiera",
               "max": 20,
-              "pct": 90.0,
+              "pct": 100.0,
               "tone": "pos",
-              "value": 18
+              "value": 20
             },
             {
               "kind": "bar",
@@ -3547,7 +3686,7 @@
               "value": 14
             }
           ],
-          "score": 84,
+          "score": 86,
           "title": "CALIDAD DEL NEGOCIO",
           "tone": "pos"
         }
@@ -3555,11 +3694,11 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad excelente · precio razonable (confianza alta: el DCF y los múltiplos coinciden). Calidad 84/100 · precio 45/100."
+          "text": "Calidad excelente · precio razonable (confianza alta: el DCF y los múltiplos coinciden). Calidad 86/100 · precio 45/100."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
-          "text": "Destaca en Rentabilidad (20/20) y Solidez Financiera (18/20)."
+          "text": "Destaca en Solidez Financiera (20/20) y Rentabilidad (20/20)."
         },
         {
           "label": "CREACIÓN DE VALOR",
@@ -3567,7 +3706,7 @@
         },
         {
           "label": "SOLIDEZ",
-          "text": "El apalancamiento está controlado (D/E 0.58x) (umbral del sector 1.0x)."
+          "text": "Altman Z de 4.41 (zona segura); la deuda es fácilmente servible: cobertura de intereses de 25.9x."
         },
         {
           "label": "CRECIMIENTO Y RETORNO",
@@ -3588,6 +3727,31 @@
       ]
     },
     "tooltips": {
+      "altman": {
+        "note": null,
+        "tables": [
+          {
+            "bands": [
+              {
+                "label": "Zona segura",
+                "range": "≥ 2.60",
+                "tone": "pos"
+              },
+              {
+                "label": "Zona gris",
+                "range": "1.10 – 2.60",
+                "tone": "warn"
+              },
+              {
+                "label": "Zona de riesgo",
+                "range": "< 1.10",
+                "tone": "neg"
+              }
+            ],
+            "title": "Umbrales del modelo Z''-Score (No Manufactura)"
+          }
+        ]
+      },
       "beta": {
         "note": null,
         "tables": [
@@ -4940,7 +5104,7 @@
         "category": "Solidez Financiera",
         "included": true,
         "max": 20,
-        "score": 18
+        "score": 20
       },
       {
         "category": "Rentabilidad",
@@ -4968,7 +5132,7 @@
     "low_coverage_categories": [],
     "not_applicable_categories": [],
     "partial": false,
-    "score": 84
+    "score": 86
   },
   "ratios": {
     "asset_turnover": 0.487061140649,
@@ -5171,6 +5335,13 @@
       "Solidez Financiera": {
         "adjustments": [
           {
+            "adjustment": 6,
+            "metric": "Altman Z-Score",
+            "reason": "Zona segura - Muy baja probabilidad de quiebra",
+            "severity": "excellent",
+            "value": "4.41"
+          },
+          {
             "adjustment": 0,
             "metric": "Current Ratio",
             "reason": "Liquidez justa - Cubre sus obligaciones (1.09x)",
@@ -5190,26 +5361,19 @@
             "reason": "Cobertura excelente",
             "severity": "excellent",
             "value": "25.9x"
-          },
-          {
-            "adjustment": 3,
-            "metric": "Cobertura",
-            "reason": "Reescalado sobre los componentes con dato (sin dato: Altman Z)",
-            "severity": "neutral",
-            "value": "3/4 componentes"
           }
         ],
         "applicable": true,
         "conclusive": true,
-        "coverage": 0.75,
+        "coverage": 1.0,
         "details": [
+          "Zona segura - Muy baja probabilidad de quiebra",
           "Liquidez justa - Cubre sus obligaciones (1.09x)",
           "Deuda controlada - Dentro del rango saludable (0.58x)",
-          "Cobertura excelente",
-          "Reescalado sobre los componentes con dato (sin dato: Altman Z)"
+          "Cobertura excelente"
         ],
         "max": 20,
-        "score": 18
+        "score": 20
       },
       "Valoración": {
         "adjustments": [
@@ -5338,12 +5502,10 @@
       "applicable": true,
       "components": 4,
       "conclusive": true,
-      "coverage": 0.75,
-      "evaluated": 3,
+      "coverage": 1.0,
+      "evaluated": 4,
       "low_confidence": false,
-      "missing": [
-        "Altman Z"
-      ],
+      "missing": [],
       "missing_reasons": {},
       "not_applicable": {},
       "not_significant": {}

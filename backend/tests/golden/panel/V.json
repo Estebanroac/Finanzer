@@ -19,8 +19,8 @@
       },
       {
         "category": "Solidez financiera",
-        "detail": "El Altman Z de 3.11 (> 2.60) ubica a la empresa en zona segura: baja probabilidad estadística de problemas de solvencia según el modelo.",
-        "reason": "Solvencia sólida — Altman Z 3.11"
+        "detail": "El Altman Z de 3.12 (> 2.60) ubica a la empresa en zona segura: baja probabilidad estadística de problemas de solvencia según el modelo.",
+        "reason": "Solvencia sólida — Altman Z 3.12"
       },
       {
         "category": "Solidez financiera",
@@ -63,14 +63,15 @@
       "X1_wc_ta": 0.0273,
       "X2_re_ta": 0.1516,
       "X3_ebit_ta": 0.2666,
-      "X4_book_tl": 0.6142,
+      "X4_book_tl": 0.6235,
       "grey_threshold": 1.1,
       "model": "Z''-Score (No Manufactura)",
       "safe_threshold": 2.6
     },
     "interpretation": "Z''-Score (No Manufactura): Zona segura — bajo riesgo de bancarrota",
     "model": "Z''-Score (No Manufactura)",
-    "z_score": 3.11,
+    "operating_leases_excluded": 913000000.0,
+    "z_score": 3.12,
     "zone": "safe"
   },
   "archetype_metrics": {},
@@ -181,6 +182,11 @@
         "level": "alta",
         "reasons": []
       },
+      "fuente_oficial": {
+        "level": "alta",
+        "reasons": [],
+        "status": "registrado"
+      },
       "source": {
         "finnhub_fields": [
           "_yahoo_ratios.currentRatio",
@@ -229,6 +235,11 @@
         "depreciation": {
           "period_end": "2026-06-30",
           "period_type": "ttm"
+        },
+        "dividendsPaid": {
+          "period_end": "2026-06-30",
+          "period_type": "ttm",
+          "source": "sec_edgar"
         },
         "ebitda": {
           "period_end": "2026-06-30",
@@ -321,6 +332,37 @@
       "source": "fundamentals-timeseries (currencyCode)",
       "statements": "USD"
     },
+    "debt": {
+      "applied": true,
+      "components": {
+        "borrowings": {
+          "in_rule_debt": true,
+          "source": "Yahoo (deuda total − su fila de arrendamientos)",
+          "value": 23858000000.0
+        },
+        "operating_leases": {
+          "accns": [
+            "0001403161-25-000089"
+          ],
+          "basis": "ultimo_anual",
+          "concepts": [
+            "us-gaap:OperatingLeaseLiability"
+          ],
+          "in_rule_debt": false,
+          "note": "US GAAP: su alquiler ya está restado del EBITDA",
+          "period": "2025-09-30",
+          "source": "SEC EDGAR",
+          "unit": "USD",
+          "value": 913000000
+        }
+      },
+      "date": "2026-06-30",
+      "notes": [],
+      "rule": "un arrendamiento entra en la deuda si y solo si su coste no está restado del EBITDA",
+      "source_total": 23858000000.0,
+      "standard": "us-gaap",
+      "total": 23858000000.0
+    },
     "dividend": {
       "as_of": "2026-10-14",
       "basis": "declarado",
@@ -332,10 +374,16 @@
       },
       "currency": "USD",
       "foreign_line": false,
+      "identity": {
+        "collected_ttm": 2.68,
+        "ok": true,
+        "paid_per_unit_statements": 2.66225583892,
+        "ratio": 0.993379044373
+      },
       "notes": [
         "dividendo aumentado el 2025-11-12 (de 0.59 a 0.67 USD por pago)"
       ],
-      "paid_per_unit_statements": null,
+      "paid_per_unit_statements": 2.66225583892,
       "payments": {
         "basis": "ultimo_x_frecuencia",
         "change": {
@@ -394,7 +442,41 @@
       "unit": "título"
     },
     "edgar": {
+      "backup": {
+        "cut": [
+          {
+            "accns": [
+              "0001403161-25-000089",
+              "0001403161-26-000104"
+            ],
+            "concept": "us-gaap:PaymentsOfDividends",
+            "field": "dividendsPaid",
+            "how": "ejercicio 2024-10-01 a 2025-09-30 + acumulado 2025-10-01 a 2026-06-30 − acumulado 2024-10-01 a 2025-06-30",
+            "period_end": "2026-06-30",
+            "value": -4998000000.0
+          }
+        ],
+        "fy": [],
+        "reason": null,
+        "skipped": [
+          {
+            "field": "inventory",
+            "reason": "EDGAR no lo tiene del periodo que acaba el 2026-06-30"
+          }
+        ]
+      },
       "cik": 1403161,
+      "facts_status": "ok",
+      "pending_filings": [
+        {
+          "accn": "0001403161-26-000104",
+          "date": "2026-07-29",
+          "form": "10-Q",
+          "read": true,
+          "reason": null,
+          "report_date": "2026-06-30"
+        }
+      ],
       "reason": null,
       "status": "ok",
       "title": "VISA INC."
@@ -553,6 +635,10 @@
         "detail": "dividendo indicado / precio",
         "source": "derivado"
       },
+      "dividendsPaid": {
+        "detail": "SEC EDGAR (us-gaap:PaymentsOfDividends): ejercicio 2024-10-01 a 2025-09-30 + acumulado 2025-10-01 a 2026-06-30 − acumulado 2024-10-01 a 2025-06-30",
+        "source": "sec_edgar"
+      },
       "earningsGrowth": {
         "detail": "/stock/metric",
         "source": "finnhub"
@@ -686,8 +772,8 @@
         "source": "yfinance_statements"
       },
       "totalDebt": {
-        "detail": "balance del último trimestre (2026-06-30)",
-        "source": "yfinance_statements"
+        "detail": "deuda coherente con el EBITDA: préstamos y bonos (Yahoo, sin sus arrendamientos) + arrendamiento financiero (SEC EDGAR); el operativo queda fuera (US GAAP, su alquiler ya está en el EBITDA)",
+        "source": "derivado"
       },
       "totalLiab": {
         "detail": "balance del último trimestre (2026-06-30)",
@@ -706,6 +792,16 @@
         "source": "derivado"
       }
     },
+    "official_source": {
+      "cik": 1403161,
+      "fy": "2025",
+      "fy_end": "2025-09-30",
+      "last_annual_filing": "2025-11-06",
+      "note": null,
+      "reason": null,
+      "registered": true,
+      "status": "registrado"
+    },
     "path": "plan_b_yfinance",
     "pending_results": null,
     "price_history": {
@@ -722,6 +818,8 @@
     },
     "ttm": {
       "annual_fields": {
+        "capitalLeaseObligations": "'Capital Lease Obligations' sin dato en el balance del corte (2026-06-30)",
+        "commercialPaper": "'Commercial Paper' sin dato en el balance del corte (2026-06-30)",
         "dividendsPaid": "'Common Stock Dividend Paid' sin dato en alguno de los 4 trimestres del corte (2026-06-30)",
         "inventory": "'Inventory' sin dato en el balance del corte (2026-06-30)"
       },
@@ -780,14 +878,6 @@
       "old": 0.9105,
       "reason": "quick_ratio de Finnhub (0.9105) sin dato del corte de los estados con que casarlo: es de otro periodo y no entra",
       "rule": "periodo_incoherente"
-    },
-    {
-      "action": "aviso",
-      "field": "ratios.payout_ratio",
-      "new": null,
-      "old": 0.2212,
-      "reason": "payout_ratio de Finnhub (0.2212) sin dato del corte de los estados con que casarlo: es de otro periodo y no entra",
-      "rule": "periodo_incoherente"
     }
   ],
   "dcf": {
@@ -833,6 +923,18 @@
         {
           "label": "Confianza · Calidad de fuente (media)",
           "text": "12 campos de Finnhub en lugar de los estados"
+        },
+        {
+          "label": "Fuente oficial",
+          "text": "sí, SEC EDGAR (CIK 1403161); último ejercicio en EDGAR: FY 2025."
+        },
+        {
+          "label": "Deuda coherente con el EBITDA (arrendamiento dentro solo si su coste no está en el EBITDA)",
+          "text": "deuda de la regla $23.86B (la fuente daba $23.86B); préstamos y bonos $23.86B (dentro); arrendamiento operativo $913.00M (fuera; US GAAP: su alquiler ya está restado del EBITDA)."
+        },
+        {
+          "label": "Respaldo de SEC EDGAR (lo que Yahoo no da del mismo corte)",
+          "text": "dividendos pagados (us-gaap:PaymentsOfDividends; ejercicio 2024-10-01 a 2025-09-30 + acumulado 2025-10-01 a 2026-06-30 − acumulado 2024-10-01 a 2025-06-30)."
         }
       ],
       "title": "Detalle técnico para auditoría"
@@ -1297,8 +1399,8 @@
           "model": "Z''-Score (No Manufactura)",
           "state": "con_dato",
           "text": "Z''-Score (No Manufactura): Zona segura — bajo riesgo de bancarrota",
-          "value": 3.11,
-          "value_txt": "3.11",
+          "value": 3.12,
+          "value_txt": "3.12",
           "zone": "Zona segura",
           "zones": [
             {
@@ -2133,6 +2235,7 @@
           "value": "0.83"
         }
       ],
+      "official_source_badge": null,
       "price": {
         "contracted": false,
         "level": "muy exigente",
@@ -2221,7 +2324,11 @@
         "text": "la deuda neta equivale a 0.3x EBITDA, un nivel bajo",
         "tone": "pos"
       },
-      "payout_ratio": null,
+      "payout_ratio": {
+        "label": "Conservador",
+        "text": "el payout de 22% deja amplio margen para sostener y aumentar el dividendo",
+        "tone": "pos"
+      },
       "pe": {
         "label": "Prima elevada",
         "text": "el mercado paga 33.3x beneficios, un +45% frente a la mediana del mercado (S&P 500) (23.0x); una prima que encuentra respaldo parcial en la creación de valor de la compañía (ROIC−WACC de +45.2%)",
@@ -2309,8 +2416,8 @@
               },
               {
                 "category": "Solidez financiera",
-                "detail": "El Altman Z de 3.11 (> 2.60) ubica a la empresa en zona segura: baja probabilidad estadística de problemas de solvencia según el modelo.",
-                "reason": "Solvencia sólida — Altman Z 3.11"
+                "detail": "El Altman Z de 3.12 (> 2.60) ubica a la empresa en zona segura: baja probabilidad estadística de problemas de solvencia según el modelo.",
+                "reason": "Solvencia sólida — Altman Z 3.12"
               },
               {
                 "category": "Solidez financiera",
@@ -2498,7 +2605,7 @@
                   "sign": "+6",
                   "state": "con_dato",
                   "tone": "pos",
-                  "value": "3.11"
+                  "value": "3.12"
                 },
                 {
                   "in_block": false,
@@ -2766,7 +2873,7 @@
             "subtitle": "Zona segura",
             "title": "Altman Z-Score",
             "tone": "pos",
-            "value": "3.11"
+            "value": "3.12"
           },
           {
             "body": "Bueno - Salud financiera sólida. El F-Score de Piotroski verifica 9 señales contables de mejora en rentabilidad, estructura de capital y eficiencia operativa (FY2025 vs FY2024).",
@@ -2979,7 +3086,7 @@
           "VALOR",
           "LECTURA"
         ],
-        "intro": "La liquidez es ajustada (current ratio 0.99x), con poco margen de maniobra. El apalancamiento está controlado (D/E 0.68x) (umbral del mercado 1.0x). La deuda neta equivale a 0.3x EBITDA, un nivel bajo. La deuda es fácilmente servible: cobertura de intereses de 37.6x.",
+        "intro": "La liquidez es ajustada (current ratio 0.99x), con poco margen de maniobra. El apalancamiento está controlado (D/E 0.68x) (umbral del mercado 1.0x). La deuda neta equivale a 0.3x EBITDA, un nivel bajo. La deuda es fácilmente servible: cobertura de intereses de 37.6x. El payout de 22% deja amplio margen para sostener y aumentar el dividendo.",
         "rows": [
           {
             "bench": null,
@@ -3046,6 +3153,17 @@
             "text": "la deuda es fácilmente servible: cobertura de intereses de 37.6x",
             "tone": "pos",
             "value": "37.61x"
+          },
+          {
+            "bench": null,
+            "gap": null,
+            "key": "payout_ratio",
+            "label": "Payout del dividendo",
+            "reading": "Conservador",
+            "state": "con_dato",
+            "text": "el payout de 22% deja amplio margen para sostener y aumentar el dividendo",
+            "tone": "pos",
+            "value": "22.12%"
           }
         ]
       },
@@ -3617,7 +3735,7 @@
         },
         {
           "label": "SOLIDEZ",
-          "text": "Altman Z de 3.11 (zona segura); la deuda es fácilmente servible: cobertura de intereses de 37.6x."
+          "text": "Altman Z de 3.12 (zona segura); la deuda es fácilmente servible: cobertura de intereses de 37.6x."
         },
         {
           "label": "CRECIMIENTO Y RETORNO",
@@ -4870,7 +4988,7 @@
     "ev_revenue": 16.7442716076,
     "fcf_yield": 0.0285948285709,
     "ffo": 23934000000.0,
-    "ffo_payout": null,
+    "ffo_payout": 0.208824266734,
     "forward_pe": 24.15752,
     "free_cash_flow": 21013000000.0,
     "gross_margin": 0.80181172451,
@@ -4891,7 +5009,7 @@
     "operating_margin": 0.656109512678,
     "p_ffo": 30.7033155879,
     "payout_basis": "beneficio_neto",
-    "payout_ratio": null,
+    "payout_ratio": 0.221228753541,
     "pb": 20.889566072,
     "pe": 33.2848633228,
     "pe_normalized": 32.1048860054,
@@ -5083,7 +5201,7 @@
     "fcf_to_net_income": 0.930108002833,
     "fcf_yield": 0.0285948285709,
     "ffo": 23934000000.0,
-    "ffo_payout": null,
+    "ffo_payout": 0.208824266734,
     "ffo_per_share": 12.748785764,
     "forward_pe": 24.15752,
     "graham_number": 70.4137153716,
@@ -5099,7 +5217,7 @@
     "operating_margin": 0.656109512678,
     "p_fcf": 34.9713584581,
     "p_ffo": 30.7033155879,
-    "payout_ratio": null,
+    "payout_ratio": 0.221228753541,
     "pb": 20.889566072,
     "pe": 33.2848633228,
     "peg": 1.89768,
@@ -5272,7 +5390,7 @@
             "metric": "Altman Z-Score",
             "reason": "Zona segura - Muy baja probabilidad de quiebra",
             "severity": "excellent",
-            "value": "3.11"
+            "value": "3.12"
           },
           {
             "adjustment": -2,

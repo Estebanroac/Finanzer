@@ -60,6 +60,7 @@
     },
     "interpretation": "Z''-Score (No Manufactura): Zona segura — bajo riesgo de bancarrota",
     "model": "Z''-Score (No Manufactura)",
+    "operating_leases_excluded": null,
     "z_score": 7.67,
     "zone": "safe"
   },
@@ -176,6 +177,11 @@
         "level": "alta",
         "reasons": []
       },
+      "fuente_oficial": {
+        "level": "alta",
+        "reasons": [],
+        "status": "registrado"
+      },
       "source": {
         "finnhub_fields": [
           "_yahoo_ratios.currentRatio",
@@ -220,6 +226,10 @@
         "capitalExpenditures": {
           "period_end": "2026-06-30",
           "period_type": "ttm"
+        },
+        "capitalLeaseObligations": {
+          "period_end": "2026-06-30",
+          "period_type": "balance"
         },
         "cash": {
           "period_end": "2026-06-30",
@@ -394,6 +404,34 @@
       "statements": "TWD",
       "ttm_rate": 0.0322425428784
     },
+    "debt": {
+      "applied": false,
+      "components": {
+        "leases_ifrs16": {
+          "accns": [
+            "0001628280-26-025362"
+          ],
+          "basis": "ultimo_anual",
+          "concepts": [
+            "ifrs-full:LeaseLiabilities"
+          ],
+          "in_rule_debt": true,
+          "note": "del último informe anual (2025-12-31): el emisor no lo etiqueta en el filing del corte",
+          "period": "2025-12-31",
+          "source": "SEC EDGAR",
+          "unit": "TWD",
+          "value": 1133928197.82
+        }
+      },
+      "date": "2026-06-30",
+      "notes": [
+        "IFRS 16: los arrendamientos ya están en la deuda de la fuente (regla cumplida)"
+      ],
+      "rule": "un arrendamiento entra en la deuda si y solo si su coste no está restado del EBITDA",
+      "source_total": 33419724334.6,
+      "standard": "ifrs-full",
+      "total": 33419724334.6
+    },
     "dividend": {
       "as_of": "2026-10-14",
       "basis": "suma_ultimo_ciclo",
@@ -460,7 +498,24 @@
       "unit": "ADR"
     },
     "edgar": {
+      "backup": {
+        "cut": [],
+        "fy": [],
+        "reason": null,
+        "skipped": []
+      },
       "cik": 1046179,
+      "facts_status": "ok",
+      "pending_filings": [
+        {
+          "accn": "0001628280-26-025362",
+          "date": "2026-04-16",
+          "form": "20-F",
+          "read": true,
+          "reason": null,
+          "report_date": "2025-12-31"
+        }
+      ],
       "reason": null,
       "status": "ok",
       "title": "TAIWAN SEMICONDUCTOR MANUFACTURING CO LTD"
@@ -597,6 +652,10 @@
       },
       "capitalExpenditures": {
         "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
+        "source": "yfinance_statements"
+      },
+      "capitalLeaseObligations": {
+        "detail": "balance del último trimestre (2026-06-30)",
         "source": "yfinance_statements"
       },
       "cash": {
@@ -784,6 +843,16 @@
         "source": "derivado"
       }
     },
+    "official_source": {
+      "cik": 1046179,
+      "fy": "2025",
+      "fy_end": "2025-12-31",
+      "last_annual_filing": "2026-04-16",
+      "note": null,
+      "reason": null,
+      "registered": true,
+      "status": "registrado"
+    },
     "path": "plan_b_yfinance",
     "pending_results": null,
     "price_history": {
@@ -799,13 +868,16 @@
       "symbol": "TSM"
     },
     "ttm": {
-      "annual_fields": {},
+      "annual_fields": {
+        "commercialPaper": "'Commercial Paper' sin dato en el balance del corte (2026-06-30)"
+      },
       "balance_date": "2026-06-30",
       "basis": "ttm",
       "cut": "2026-06-30",
       "eps": "ttm",
       "errors": [],
       "last_quarter_fields": [
+        "capitalLeaseObligations",
         "cash",
         "inventory",
         "longTermDebt",
@@ -903,6 +975,14 @@
         {
           "label": "Confianza · Estabilidad del arquetipo (media)",
           "text": "alerta de posible cíclica"
+        },
+        {
+          "label": "Fuente oficial",
+          "text": "sí, SEC EDGAR (CIK 1046179); último ejercicio en EDGAR: FY 2025."
+        },
+        {
+          "label": "Deuda coherente con el EBITDA (arrendamiento dentro solo si su coste no está en el EBITDA)",
+          "text": "deuda $33.42B; arrendamientos IFRS 16 $1.13B (dentro; del último informe anual (2025-12-31): el emisor no lo etiqueta en el filing del corte); IFRS 16: los arrendamientos ya están en la deuda de la fuente (regla cumplida)."
         }
       ],
       "title": "Detalle técnico para auditoría"
@@ -2171,6 +2251,7 @@
           "value": "0.95"
         }
       ],
+      "official_source_badge": null,
       "price": {
         "contracted": true,
         "level": "razonable",

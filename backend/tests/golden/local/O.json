@@ -26,6 +26,7 @@
     },
     "interpretation": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria",
     "model": "No Aplicable",
+    "operating_leases_excluded": 429675000.0,
     "z_score": null,
     "zone": "n/a"
   },
@@ -40,15 +41,13 @@
       3.83606627586,
       3.6526930122,
       3.67791776307,
-      3.84642776003,
-      null
+      3.84642776003
     ],
     "ffo_series": [
       3582790000.0,
       3256416000.0,
       2767486000.0,
-      2539797000.0,
-      null
+      2539797000.0
     ],
     "ffo_to_equity": 0.0963334431281,
     "ffo_ttm": 3809945000.0,
@@ -148,6 +147,11 @@
         "level": "alta",
         "reasons": []
       },
+      "fuente_oficial": {
+        "level": "alta",
+        "reasons": [],
+        "status": "registrado"
+      },
       "source": {
         "finnhub_fields": [],
         "issues": 0,
@@ -171,6 +175,10 @@
     "as_of": {
       "date": "2026-06-30",
       "fields": {
+        "capitalLeaseObligations": {
+          "period_end": "2026-06-30",
+          "period_type": "balance"
+        },
         "cash": {
           "period_end": "2026-06-30",
           "period_type": "balance"
@@ -273,6 +281,60 @@
       },
       "source": "financialData.financialCurrency",
       "statements": "USD"
+    },
+    "debt": {
+      "applied": true,
+      "components": {
+        "borrowings": {
+          "in_rule_debt": true,
+          "source": "Yahoo (deuda total − su fila de arrendamientos)",
+          "value": 30651653000.0
+        },
+        "finance_leases": {
+          "accns": [
+            "0000726728-26-000048"
+          ],
+          "added": 0.0,
+          "basis": "corte",
+          "concepts": [
+            "us-gaap:FinanceLeaseLiability"
+          ],
+          "in_rule_debt": true,
+          "note": "ya en la fila de arrendamientos de la fuente",
+          "period": "2026-06-30",
+          "source": "SEC EDGAR",
+          "unit": "USD",
+          "value": 114306000
+        },
+        "leases_in_source_total": {
+          "finance": 114306000.0,
+          "in_rule_debt": false,
+          "operating": 414231000,
+          "source": "Yahoo (Capital Lease Obligations)",
+          "value": 528537000.0
+        },
+        "operating_leases": {
+          "accns": [
+            "0000726728-26-000048"
+          ],
+          "basis": "corte",
+          "concepts": [
+            "us-gaap:OperatingLeaseLiability"
+          ],
+          "in_rule_debt": false,
+          "note": "US GAAP: su alquiler ya está restado del EBITDA",
+          "period": "2026-06-30",
+          "source": "SEC EDGAR",
+          "unit": "USD",
+          "value": 414231000
+        }
+      },
+      "date": "2026-06-30",
+      "notes": [],
+      "rule": "un arrendamiento entra en la deuda si y solo si su coste no está restado del EBITDA",
+      "source_total": 31180190000.0,
+      "standard": "us-gaap",
+      "total": 30765959000.0
     },
     "dividend": {
       "as_of": "2026-10-09",
@@ -403,7 +465,28 @@
       "unit": "título"
     },
     "edgar": {
+      "backup": {
+        "cut": [],
+        "fy": [],
+        "reason": null,
+        "skipped": [
+          {
+            "field": "capitalExpenditures",
+            "reason": "capex de un REIT (mejoras frente a adquisiciones): definición pendiente (fase 3)"
+          },
+          {
+            "field": "inventory",
+            "reason": "EDGAR no lo tiene del periodo que acaba el 2026-06-30"
+          },
+          {
+            "field": "FY.capital_expenditure",
+            "reason": "capex de un REIT (mejoras frente a adquisiciones): definición pendiente (fase 3)"
+          }
+        ]
+      },
       "cik": 726728,
+      "facts_status": "ok",
+      "pending_filings": [],
       "reason": null,
       "status": "ok",
       "title": "REALTY INCOME CORP"
@@ -573,6 +656,10 @@
       "bookValue": {
         "detail": "quoteSummary v10 (con crumb)",
         "source": "yahoo_quotesummary"
+      },
+      "capitalLeaseObligations": {
+        "detail": "balance del último trimestre (2026-06-30)",
+        "source": "yfinance_statements"
       },
       "cash": {
         "detail": "balance del último trimestre (2026-06-30)",
@@ -763,8 +850,8 @@
         "source": "yfinance_statements"
       },
       "totalDebt": {
-        "detail": "balance del último trimestre (2026-06-30)",
-        "source": "yfinance_statements"
+        "detail": "deuda coherente con el EBITDA: préstamos y bonos (Yahoo, sin sus arrendamientos) + arrendamiento financiero (SEC EDGAR); el operativo queda fuera (US GAAP, su alquiler ya está en el EBITDA)",
+        "source": "derivado"
       },
       "totalLiab": {
         "detail": "balance del último trimestre (2026-06-30)",
@@ -795,6 +882,16 @@
         "source": "yahoo_quotesummary"
       }
     },
+    "official_source": {
+      "cik": 726728,
+      "fy": "2025",
+      "fy_end": "2025-12-31",
+      "last_annual_filing": "2026-02-25",
+      "note": null,
+      "reason": null,
+      "registered": true,
+      "status": "registrado"
+    },
     "path": "yahoo_quotesummary",
     "pending_results": null,
     "price_history": {
@@ -817,6 +914,7 @@
       "eps": "fuente",
       "errors": [],
       "last_quarter_fields": [
+        "capitalLeaseObligations",
         "cash",
         "longTermDebt",
         "retainedEarnings",
@@ -843,6 +941,7 @@
       },
       "source_fields": {
         "capitalExpenditures": "'Capital Expenditure' no llega al corte (2026-06-30)",
+        "commercialPaper": "'Commercial Paper' sin dato en el balance del corte (2026-06-30)",
         "inventory": "'Inventory' sin dato en el balance del corte (2026-06-30)"
       },
       "ttm_fields": [
@@ -876,6 +975,14 @@
         {
           "label": "Confianza · Convergencia entre métodos (no evaluable)",
           "text": "un solo método evaluable (múltiplos frente al sector): no hay contraste"
+        },
+        {
+          "label": "Fuente oficial",
+          "text": "sí, SEC EDGAR (CIK 726728); último ejercicio en EDGAR: FY 2025."
+        },
+        {
+          "label": "Deuda coherente con el EBITDA (arrendamiento dentro solo si su coste no está en el EBITDA)",
+          "text": "deuda de la regla $30.77B (la fuente daba $31.18B); préstamos y bonos $30.65B (dentro); arrendamientos que la fuente sumaba $528.54M (fuera); arrendamiento operativo $414.23M (fuera; US GAAP: su alquiler ya está restado del EBITDA); arrendamiento financiero $114.31M (dentro; ya en la fila de arrendamientos de la fuente)."
         }
       ],
       "title": "Detalle técnico para auditoría"
@@ -914,16 +1021,16 @@
                 "bench": 20.0,
                 "bench_txt": "20.00x",
                 "fmt": "mult",
-                "gap_pct": -22.3667680547,
-                "gap_txt": "-22%",
+                "gap_pct": -22.7594492599,
+                "gap_txt": "-23%",
                 "higher_is_better": false,
                 "key": "ev_ebitda",
                 "label": "EV/EBITDA",
                 "reading": "Descuento",
-                "text": "EV/EBITDA de 15.5x frente a 20.0x del sector (-22%): descuento",
+                "text": "EV/EBITDA de 15.4x frente a 20.0x del sector (-23%): descuento",
                 "tone": "pos",
-                "value": 15.5266463891,
-                "value_txt": "15.53x"
+                "value": 15.448110148,
+                "value_txt": "15.45x"
               }
             ],
             "title": "Valoración"
@@ -934,16 +1041,16 @@
                 "bench": 1.0,
                 "bench_txt": "1.00x",
                 "fmt": "mult",
-                "gap_pct": -21.1617212299,
-                "gap_txt": "-21%",
+                "gap_pct": -22.2090932649,
+                "gap_txt": "-22%",
                 "higher_is_better": false,
                 "key": "de",
                 "label": "Deuda / Equity",
                 "reading": "Descuento",
-                "text": "Deuda / Equity de 0.8x frente a 1.0x del sector (-21%): descuento",
+                "text": "Deuda / Equity de 0.8x frente a 1.0x del sector (-22%): descuento",
                 "tone": "pos",
-                "value": 0.788382787701,
-                "value_txt": "0.79x"
+                "value": 0.777909067351,
+                "value_txt": "0.78x"
               },
               {
                 "bench": 8.0,
@@ -1338,11 +1445,11 @@
             "label": "Deuda neta / EBITDA",
             "reading": "Adecuada",
             "state": "con_dato",
-            "text": "la deuda neta (5.8x EBITDA) está en el rango habitual de un REIT con grado de inversión (hasta 6.5x)",
+            "text": "la deuda neta (5.7x EBITDA) está en el rango habitual de un REIT con grado de inversión (hasta 6.5x)",
             "tone": "pos",
             "unit": "x",
-            "value": 5.80683729862,
-            "value_txt": "5.81x",
+            "value": 5.72830105758,
+            "value_txt": "5.73x",
             "zones": [
               {
                 "from": 0.0,
@@ -1382,10 +1489,10 @@
             "label": "Deuda / Equity",
             "reading": "Informativo",
             "state": "con_dato",
-            "text": "el D/E de 0.79x es informativo: en un REIT el apalancamiento se mide por la deuda neta/EBITDA",
+            "text": "el D/E de 0.78x es informativo: en un REIT el apalancamiento se mide por la deuda neta/EBITDA",
             "tone": "neu",
-            "value": 0.788382787701,
-            "value_txt": "0.79x"
+            "value": 0.777909067351,
+            "value_txt": "0.78x"
           }
         ],
         "runway": null,
@@ -1395,14 +1502,14 @@
           "cash": 552648000.0,
           "cash_pct": 0.722968781018,
           "cash_txt": "$552.65M",
-          "debt": 31180190000.0,
-          "debt_pct": 40.7896236958,
-          "debt_txt": "$31.18B",
+          "debt": 30765959000.0,
+          "debt_pct": 40.2477306986,
+          "debt_txt": "$30.77B",
           "equity": 39549557000.0,
           "equity_pct": 51.7383488479,
           "equity_txt": "$39.55B",
-          "net_debt": 30627542000.0,
-          "net_debt_txt": "$30.63B",
+          "net_debt": 30213311000.0,
+          "net_debt_txt": "$30.21B",
           "state": "con_dato"
         }
       },
@@ -1467,18 +1574,18 @@
             "bench": 20.0,
             "bench_txt": "20.00x",
             "fmt": "mult",
-            "gap_pct": -22.3667680547,
-            "gap_txt": "-22%",
+            "gap_pct": -22.7594492599,
+            "gap_txt": "-23%",
             "higher_is_better": false,
             "key": "ev_ebitda",
             "label": "EV/EBITDA",
             "reading": "Descuento",
             "role": "block",
             "state": "con_dato",
-            "text": "EV/EBITDA de 15.5x frente a 20.0x del sector (-22%): descuento",
+            "text": "EV/EBITDA de 15.4x frente a 20.0x del sector (-23%): descuento",
             "tone": "pos",
-            "value": 15.5266463891,
-            "value_txt": "15.53x"
+            "value": 15.448110148,
+            "value_txt": "15.45x"
           },
           {
             "fmt": "mult",
@@ -1696,13 +1803,13 @@
           "key": "de",
           "label": "Deuda/Equity",
           "state": "con_dato",
-          "value": "0.79x"
+          "value": "0.78x"
         },
         {
           "key": "net_debt_to_ebitda",
           "label": "Deuda neta/EBITDA",
           "state": "con_dato",
-          "value": "5.81x"
+          "value": "5.73x"
         },
         {
           "key": "beta",
@@ -1711,6 +1818,7 @@
           "value": "0.70"
         }
       ],
+      "official_source_badge": null,
       "price": {
         "contracted": true,
         "level": "razonable",
@@ -1780,7 +1888,7 @@
       "dcf_upside": null,
       "de": {
         "label": "Informativo",
-        "text": "el D/E de 0.79x es informativo: en un REIT el apalancamiento se mide por la deuda neta/EBITDA",
+        "text": "el D/E de 0.78x es informativo: en un REIT el apalancamiento se mide por la deuda neta/EBITDA",
         "tone": "neu"
       },
       "earnings_growth": null,
@@ -1793,7 +1901,7 @@
       },
       "net_debt_to_ebitda": {
         "label": "Adecuada",
-        "text": "la deuda neta (5.8x EBITDA) está en el rango habitual de un REIT con grado de inversión (hasta 6.5x)",
+        "text": "la deuda neta (5.7x EBITDA) está en el rango habitual de un REIT con grado de inversión (hasta 6.5x)",
         "tone": "pos"
       },
       "payout_ratio": {
@@ -1990,7 +2098,7 @@
                   "sign": "0",
                   "state": "con_dato",
                   "tone": "neu",
-                  "value": "0.79x"
+                  "value": "0.78x"
                 },
                 {
                   "in_block": false,
@@ -2004,11 +2112,11 @@
                 {
                   "in_block": false,
                   "metric": "Deuda neta/EBITDA",
-                  "reason": "Adecuado para un REIT (5.8x; bandas REIT ≤5.0x / ≤6.5x / ≤7.5x / ≤9.0x)",
+                  "reason": "Adecuado para un REIT (5.7x; bandas REIT ≤5.0x / ≤6.5x / ≤7.5x / ≤9.0x)",
                   "sign": "+2",
                   "state": "con_dato",
                   "tone": "pos",
-                  "value": "5.8x"
+                  "value": "5.7x"
                 },
                 {
                   "in_block": false,
@@ -2082,11 +2190,11 @@
                 {
                   "in_block": true,
                   "metric": "EV/EBITDA vs Sector",
-                  "reason": "Atractivo (15.5x)",
+                  "reason": "Atractivo (15.4x)",
                   "sign": "(+2)",
                   "state": "con_dato",
                   "tone": "neu",
-                  "value": "15.5x"
+                  "value": "15.4x"
                 },
                 {
                   "in_block": false,
@@ -2367,13 +2475,13 @@
         ]
       },
       "solvency": {
-        "balance": "Balance — deuda total $31.18B · caja $552.65M · patrimonio $39.55B · activos $76.44B",
+        "balance": "Balance — deuda total $30.77B · caja $552.65M · patrimonio $39.55B · activos $76.44B",
         "columns": [
           "MÉTRICA",
           "VALOR",
           "LECTURA"
         ],
-        "intro": "La deuda neta (5.8x EBITDA) está en el rango habitual de un REIT con grado de inversión (hasta 6.5x). El D/E de 0.79x es informativo: en un REIT el apalancamiento se mide por la deuda neta/EBITDA. La cobertura de intereses (2.4x) deja poco margen ante caídas del beneficio operativo. El payout sobre FFO de 79% está cubierto por el FFO.",
+        "intro": "La deuda neta (5.7x EBITDA) está en el rango habitual de un REIT con grado de inversión (hasta 6.5x). El D/E de 0.78x es informativo: en un REIT el apalancamiento se mide por la deuda neta/EBITDA. La cobertura de intereses (2.4x) deja poco margen ante caídas del beneficio operativo. El payout sobre FFO de 79% está cubierto por el FFO.",
         "rows": [
           {
             "bench": null,
@@ -2415,9 +2523,9 @@
             "label": "Deuda / Equity",
             "reading": "Informativo",
             "state": "con_dato",
-            "text": "el D/E de 0.79x es informativo: en un REIT el apalancamiento se mide por la deuda neta/EBITDA",
+            "text": "el D/E de 0.78x es informativo: en un REIT el apalancamiento se mide por la deuda neta/EBITDA",
             "tone": "neu",
-            "value": "0.79x"
+            "value": "0.78x"
           },
           {
             "bench": null,
@@ -2428,7 +2536,7 @@
             "state": "con_dato",
             "text": null,
             "tone": null,
-            "value": "40.79%"
+            "value": "40.25%"
           },
           {
             "bench": null,
@@ -2437,9 +2545,9 @@
             "label": "Deuda neta / EBITDA",
             "reading": "Adecuada",
             "state": "con_dato",
-            "text": "la deuda neta (5.8x EBITDA) está en el rango habitual de un REIT con grado de inversión (hasta 6.5x)",
+            "text": "la deuda neta (5.7x EBITDA) está en el rango habitual de un REIT con grado de inversión (hasta 6.5x)",
             "tone": "pos",
-            "value": "5.81x"
+            "value": "5.73x"
           },
           {
             "bench": null,
@@ -2569,14 +2677,14 @@
           },
           {
             "bench": "20.00x",
-            "gap": "-22%",
+            "gap": "-23%",
             "key": "ev_ebitda",
             "label": "EV/EBITDA",
             "reading": "Descuento",
             "state": "con_dato",
-            "text": "EV/EBITDA de 15.5x frente a 20.0x del sector (-22%): descuento",
+            "text": "EV/EBITDA de 15.4x frente a 20.0x del sector (-23%): descuento",
             "tone": "pos",
-            "value": "15.53x"
+            "value": "15.45x"
           },
           {
             "bench": "25.00x",
@@ -2638,11 +2746,11 @@
         "wacc_breakdown": [
           {
             "label": "WACC",
-            "value": "7.64%"
+            "value": "7.65%"
           },
           {
             "label": "Peso del patrimonio",
-            "value": "62.18%"
+            "value": "62.50%"
           },
           {
             "label": "Coste del patrimonio (Ke)",
@@ -2666,7 +2774,7 @@
           },
           {
             "label": "Peso de la deuda",
-            "value": "37.82%"
+            "value": "37.50%"
           },
           {
             "label": "Coste de la deuda (Kd)",
@@ -2681,7 +2789,7 @@
             "value": "10.00%"
           }
         ],
-        "wacc_note": "WACC 7.64% = 62.18% × Ke 8.63% (Rf 5.29% + β ajustada 0.80 [bruta 0.70, Blume] × prima implícita 4.20%) + 37.82% × Kd 6.67% × (1 − t 10.00%). Kd = Rf + spread del rating sintético BB+ (tabla de empresas grandes, cobertura 2.4x). t: tasa efectiva TTM (tasa efectiva 6.9% acotada a [10%, 35%]). Rf: ^TNX no disponible (sin cotización): valor de config."
+        "wacc_note": "WACC 7.65% = 62.50% × Ke 8.63% (Rf 5.29% + β ajustada 0.80 [bruta 0.70, Blume] × prima implícita 4.20%) + 37.50% × Kd 6.67% × (1 − t 10.00%). Kd = Rf + spread del rating sintético BB+ (tabla de empresas grandes, cobertura 2.4x). t: tasa efectiva TTM (tasa efectiva 6.9% acotada a [10%, 35%]). Rf: ^TNX no disponible (sin cotización): valor de config."
       }
     },
     "summary": {
@@ -2748,14 +2856,14 @@
         },
         {
           "bench": "vs sector 20.0x",
-          "delta": "-22%",
+          "delta": "-23%",
           "key": "ev_ebitda",
           "label": "EV/EBITDA",
           "pill": "Descuento",
           "state": "con_dato",
           "tone": "pos",
           "unit": "x",
-          "value": "15.5"
+          "value": "15.4"
         }
       ],
       "composition": {
@@ -2839,7 +2947,7 @@
         },
         {
           "label": "SOLIDEZ",
-          "text": "La deuda neta (5.8x EBITDA) está en el rango habitual de un REIT con grado de inversión (hasta 6.5x); la cobertura de intereses (2.4x) deja poco margen ante caídas del beneficio operativo."
+          "text": "La deuda neta (5.7x EBITDA) está en el rango habitual de un REIT con grado de inversión (hasta 6.5x); la cobertura de intereses (2.4x) deja poco margen ante caídas del beneficio operativo."
         },
         {
           "label": "CRECIMIENTO Y RETORNO",
@@ -3448,17 +3556,17 @@
     "cash": 552648000.0,
     "cash_ratio": 0.125693517316,
     "current_ratio": 0.493526186149,
-    "de": 0.788382787701,
-    "debt_to_assets": 0.407896236958,
+    "de": 0.777909067351,
+    "debt_to_assets": 0.402477306986,
     "dividend_yield": 0.0601698043559,
     "earnings_growth": 0.494972785481,
     "earnings_yield": 0.0254706533776,
     "ebitda": 5103703000.0,
     "ebitda_margin": 0.883464564555,
-    "enterprise_value": 81893635027.9,
+    "enterprise_value": 81479404027.9,
     "eps": 1.38,
-    "ev_ebitda": 15.5266463891,
-    "ev_revenue": 13.7172418911,
+    "ev_ebitda": 15.448110148,
+    "ev_revenue": 13.6478579051,
     "fcf_yield": 0.0812652915729,
     "ffo": 3809945000.0,
     "ffo_payout": 0.786476445198,
@@ -3470,8 +3578,8 @@
     "interest_expense": 1152950000.0,
     "inventory_turnover": null,
     "market_cap": 51266093056.0,
-    "net_debt": 30627542000.0,
-    "net_debt_to_ebitda": 5.80683729862,
+    "net_debt": 30213311000.0,
+    "net_debt_to_ebitda": 5.72830105758,
     "net_debt_to_ebitda_state": "ok",
     "net_income": 1267577000.0,
     "net_income_normalized": 1331939123.16,
@@ -3501,15 +3609,15 @@
     "roce_roic_divergence": null,
     "roce_state": "no_aplica",
     "roe": 0.0320503463541,
-    "roic": 0.035037391614,
+    "roic": 0.0352454331436,
     "roic_reason": null,
     "roic_wacc_spread": null,
     "shareholder_yield": 0.0125383113064,
     "shares_outstanding": 946218033.0,
     "total_assets": 76441475000.0,
-    "total_debt": 31180190000.0,
+    "total_debt": 30765959000.0,
     "total_equity": 39549557000.0,
-    "wacc": 0.0763932579401
+    "wacc": 0.0764758862364
   },
   "not_applicable": {
     "altman": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria",
@@ -3660,17 +3768,17 @@
     "beta": 0.696,
     "cash_ratio": 0.125693517316,
     "current_ratio": 0.493526186149,
-    "debt_to_assets": 0.407896236958,
-    "debt_to_equity": 0.788382787701,
+    "debt_to_assets": 0.402477306986,
+    "debt_to_equity": 0.777909067351,
     "dividend_yield": 0.0601698043559,
     "earnings_yield": 0.0254706533776,
     "ebitda": 5274393000.0,
     "ebitda_margin": 0.883464564555,
-    "enterprise_value": 81893635027.9,
+    "enterprise_value": 81479404027.9,
     "eps": 1.38,
-    "ev_ebitda": 15.5266463891,
+    "ev_ebitda": 15.448110148,
     "ev_fcf": null,
-    "ev_revenue": 13.7172418911,
+    "ev_revenue": 13.6478579051,
     "fcf": null,
     "fcf_to_net_income": null,
     "fcf_yield": null,
@@ -3683,8 +3791,8 @@
     "interest_coverage": 2.36959538575,
     "inventory_turnover": null,
     "market_cap": 51266093027.9,
-    "net_debt": 30627542000.0,
-    "net_debt_to_ebitda": 5.80683729862,
+    "net_debt": 30213311000.0,
+    "net_debt_to_ebitda": 5.72830105758,
     "net_income": 1267577000.0,
     "net_margin": 0.212320045614,
     "operating_cash_flow": 4166154000.0,
@@ -3699,7 +3807,7 @@
     "quick_ratio": 0.741,
     "roa": 0.0165823200036,
     "roe": 0.0320503463541,
-    "roic": 0.035037391614
+    "roic": 0.0352454331436
   },
   "risk_free": {
     "as_of": null,
@@ -3844,7 +3952,7 @@
             "metric": "Deuda/Equity",
             "reason": "Informativo: en REIT el apalancamiento se mide por deuda neta/EBITDA",
             "severity": "neutral",
-            "value": "0.79x"
+            "value": "0.78x"
           },
           {
             "adjustment": -2,
@@ -3856,9 +3964,9 @@
           {
             "adjustment": 2,
             "metric": "Deuda neta/EBITDA",
-            "reason": "Adecuado para un REIT (5.8x; bandas REIT ≤5.0x / ≤6.5x / ≤7.5x / ≤9.0x)",
+            "reason": "Adecuado para un REIT (5.7x; bandas REIT ≤5.0x / ≤6.5x / ≤7.5x / ≤9.0x)",
             "severity": "good",
-            "value": "5.8x"
+            "value": "5.7x"
           },
           {
             "adjustment": 0,
@@ -3874,7 +3982,7 @@
         "details": [
           "Informativo: en REIT el apalancamiento se mide por deuda neta/EBITDA",
           "Cobertura ajustada",
-          "Adecuado para un REIT (5.8x; bandas REIT ≤5.0x / ≤6.5x / ≤7.5x / ≤9.0x)",
+          "Adecuado para un REIT (5.7x; bandas REIT ≤5.0x / ≤6.5x / ≤7.5x / ≤9.0x)",
           "Current ratio: No aplica a REIT: activos inmobiliarios de largo plazo financiados con deuda a largo plazo; el circulante no mide su liquidez; Altman Z: No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria (no cuenta en la cobertura)"
         ],
         "max": 20,
@@ -3893,9 +4001,9 @@
             "adjustment": 2,
             "in_block": true,
             "metric": "EV/EBITDA vs Sector",
-            "reason": "Atractivo (15.5x)",
+            "reason": "Atractivo (15.4x)",
             "severity": "good",
-            "value": "15.5x"
+            "value": "15.4x"
           },
           {
             "adjustment": 1,
@@ -3922,7 +4030,7 @@
         "coverage": 1.0,
         "details": [
           "Atractivo por FFO (13.5x)",
-          "Atractivo (15.5x)",
+          "Atractivo (15.4x)",
           "promedio de los ajustes reescalados a ±1 (EV/EBITDA +0.50) = +0.50 × 2 (máximo con 1 miembro) = +1.0",
           "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria (no cuenta en la cobertura)"
         ],
@@ -4048,7 +4156,7 @@
       0.2
     ],
     "clamped": false,
-    "debt": 31180190000.0,
+    "debt": 30765959000.0,
     "equity": 51266093056.0,
     "kd": 0.0667,
     "kd_after_tax": 0.06003,
@@ -4061,7 +4169,7 @@
       "spread": 0.0138,
       "table": "grandes"
     },
-    "raw": 0.0763932579401,
+    "raw": 0.0764758862364,
     "reason": null,
     "rf": 0.0529,
     "rf_as_of": null,
@@ -4071,10 +4179,10 @@
     "tax_rate": 0.1,
     "tax_reason": "tasa efectiva 6.9% acotada a [10%, 35%]",
     "tax_source": "efectiva",
-    "value": 0.0763932579401,
+    "value": 0.0764758862364,
     "weights": {
-      "debt": 0.378187940611,
-      "equity": 0.621812059389
+      "debt": 0.375048023655,
+      "equity": 0.624951976345
     }
   },
   "yearly_financials": [
