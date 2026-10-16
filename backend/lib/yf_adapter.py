@@ -364,6 +364,7 @@ def get_ticker_info(symbol: str) -> Dict[str, Any]:
                 info["_currency"] = _ctx.summary()
         finally:
             _STMT_CTX.pop(symbol, None)
+        _info_ctx = _ctx        # fase 2b (T4): el respaldo de EDGAR convierte con el mismo contexto que los estados
 
         # ── Defensa 1: reintento ante respuesta degradada ──
         # Etapa 11b: no en el plan B. Ahí faltan por construcción beta, forward, dividendo y
@@ -390,6 +391,7 @@ def get_ticker_info(symbol: str) -> Dict[str, Any]:
                 _STMT_CTX.pop(symbol, None)
             if _quality(retry_info) > _quality(info):
                 info = retry_info
+                _info_ctx = _ctx
 
         degraded = _is_degraded(info)
 
@@ -410,6 +412,18 @@ def get_ticker_info(symbol: str) -> Dict[str, Any]:
         # ── Fase 2b: serie diaria de precios y lo que el motor toma de ella (D5) ──
         _hist = price_history.collect(_hist_future)
         info["_price_history"] = price_history.summary(_hist)
+
+        # ── Fase 2b (T3–T4): EDGAR: respaldo del mismo corte, fuente oficial (D7) y resultados publicados y aún no
+        # incorporados (F2_PRECEDENCIA §1.1). Antes del dividendo: lo pagado del corte entra en su identidad. ──
+        try:
+            _apply_edgar(symbol, info, edgar.collect(_edgar_future, symbol), _hist, _info_ctx)
+        except Exception as e:
+            logger.error(f"[EDGAR] {symbol}: {e}")
+            info["_edgar"] = {"status": "no_disponible", "reason": f"{type(e).__name__}: {e}"}
+            info["_official_source"] = {"registered": None, "status": "no_disponible", "cik": None,
+                                        "reason": f"{type(e).__name__}: {e}", "fy": None,
+                                        "note": "verificación oficial no disponible"}
+
         try:
             _apply_dividend(info, _hist)
         except Exception as e:
@@ -417,13 +431,6 @@ def get_ticker_info(symbol: str) -> Dict[str, Any]:
             info["_dividend"] = {"rate": None, "reason": f"error al calcular el dividendo: {type(e).__name__}: {e}"}
             info["dividendRate"] = info["dividendYield"] = None
             (info.get("_yahoo_ratios") or {})["dividendYield"] = None
-
-        # ── Fase 2b (T3): resultados publicados y aún no incorporados (F2_PRECEDENCIA §1.1) ──
-        try:
-            _apply_edgar(symbol, info, edgar.collect(_edgar_future), _hist)
-        except Exception as e:
-            logger.error(f"[EDGAR] {symbol}: {e}")
-            info["_edgar"] = {"status": "no_disponible", "reason": f"{type(e).__name__}: {e}"}
 
         # ── Validación de entrada (lib/validate.py): después de toda la ingesta
         # y antes de cualquier cálculo del motor. Nunca corrige en silencio:
@@ -442,16 +449,23 @@ def get_ticker_info(symbol: str) -> Dict[str, Any]:
         return info
 
 
-def _apply_edgar(symbol: str, info: Dict[str, Any], ed: Dict[str, Any], hist: Dict[str, Any]) -> None:
-    """Fase 2b (T3): resumen de EDGAR (info["_edgar"]) y aviso de resultados publicados después del corte
-    (info["_pending_results"]): por los filings de EDGAR o, sin 8-K (20-F) o sin EDGAR, por el calendario de
-    resultados del proveedor. No mezcla periodos ni baja la confianza: solo avisa."""
+def _apply_edgar(symbol: str, info: Dict[str, Any], ed: Dict[str, Any], hist: Dict[str, Any], ctx=None) -> None:
+    """Fase 2b: lo que el análisis toma de EDGAR (D2: verificación y respaldo).
+      · T4: respaldo de lo que Yahoo no da del mismo corte (lib/edgar_backup.py) y fuente oficial del emisor (D7,
+        info["_official_source"]);
+      · T3: aviso de resultados publicados después del corte (info["_pending_results"]): por los filings de EDGAR o,
+        sin 8-K (20-F) o sin EDGAR, por el calendario de resultados del proveedor. No mezcla periodos ni baja la
+        confianza: solo avisa.
+    Resumen en info["_edgar"] (sin los hechos)."""
     import datetime as _dt
+    import edgar_backup
     import sec_edgar as edgar
-    info["_edgar"] = {k: ed.get(k) for k in ("status", "reason", "cik", "title")}
-    cut = (info.get("_as_of") or {}).get("date")
     frame = (hist or {}).get("frame")
     today = frame.index[-1].date() if frame is not None else _dt.date.today()
+    info["_edgar"] = edgar.summary(ed)
+    info["_edgar"]["backup"] = edgar_backup.apply(info, ed, ctx)
+    info["_official_source"] = edgar_backup.official_source(ed, today)
+    cut = (info.get("_as_of") or {}).get("date")
     pend = edgar.pending_results(ed.get("filings"), cut) if ed.get("status") == "ok" else None
     if pend is None and cut and (ed.get("status") != "ok" or edgar.foreign_filer(ed.get("filings"))):
         from finnhub_fallback import earnings_calendar, is_enabled
@@ -1258,8 +1272,16 @@ def _enrich_prior_year_data(symbol: str, info: Dict[str, Any], ticker=None) -> D
         except Exception:
             return []
 
+    def _ends(df):
+        try:
+            return [str(c.date()) for c in df.columns][:5] if df is not None and not df.empty else []
+        except Exception:
+            return []
+
     info["_statements_fy"] = {
         "inc_years": _years(inc), "bs_years": _years(bs), "cf_years": _years(cf),
+        # Fase 2b (T4): fecha de cierre de cada ejercicio (el respaldo de EDGAR casa por fecha, no por año)
+        "inc_ends": _ends(inc), "bs_ends": _ends(bs), "cf_ends": _ends(cf),
         "revenue": _row(inc, "Total Revenue"),
         "gross_profit": _row(inc, "Gross Profit"),   # etapa 9b: margen bruto en el histórico
         "net_income": _row(inc, "Net Income"),

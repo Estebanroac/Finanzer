@@ -19,7 +19,7 @@ from settings import cfg
 
 TONES = {"pos", "neg", "warn", "neu", None}
 CHART_STATES = {"con_dato", "sin_dato", "no_aplica", "no_significativo"}
-PROVENANCE_VOCAB = {"yahoo_quotesummary", "yfinance_statements", "finnhub", "derivado",
+PROVENANCE_VOCAB = {"yahoo_quotesummary", "yfinance_statements", "finnhub", "derivado", "sec_edgar",
                     "recalculado_por_validacion", "politica_arquetipo", "sin_dato"}
 
 # test_display (9b): código de arquetipo en el texto visible
