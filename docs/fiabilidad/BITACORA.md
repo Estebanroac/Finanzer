@@ -24,8 +24,8 @@
 
 | Campo | Valor |
 |---|---|
-| Fase en curso | **Fase 2b 🔧 en curso** (2026-10-16, registro #22): punto de parada 1 aprobado; golden regenerados; T4 en curso |
-| Rama de trabajo | `fiabilidad/f2b-corregir` (worktree `../finanzer_next-f2b`), desde `main` = `60f8a69`; 9 commits `F2b:` sin push |
+| Fase en curso | **Fase 2b 🔧 en curso** (2026-10-16, registro #22): parada 1 aprobada; golden regenerados; **T4 hecha** (golden de T4 pendientes de aprobación); sigue T5 |
+| Rama de trabajo | `fiabilidad/f2b-corregir` (worktree `../finanzer_next-f2b`), desde `main` = `60f8a69`; 17 commits `F2b:` sin push |
 | Producción | `60f8a69` (= `2d58a35` en código). Rollback de código: `a2572e0` |
 | `main` local | = `origin/main` (`60f8a69`) |
 | Último cierre de sesión | 2026-10-16 · operador F2b (ver registro #21) |
@@ -871,4 +871,35 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
   - golden regenerados (`diff_golden.py --env panel --regenerate --yes` y `--regenerate --yes`); después, los dos
     `diff_golden.py` → "Resultado: sin diferencias"; `pytest -q` → "3521 passed, 1 skipped"; `npm run check` →
     "check-contract: StockAnalysis encaja con 41 salidas del backend".
+  - **T4 hecha** (`5857741`, `104df65`, `1362d7a`, `3ef20e7`, `aa89c6c`, `08c97a1`):
+    - cliente de EDGAR (`lib/sec_edgar.py`): companyfacts reducido en caché diaria, las instancias de los filings
+      que companyfacts aún no trae (iterparse; hasta 3 por análisis), portada del 20-F, sucesión de XOM en config;
+      dos etapas en un hilo dentro del presupuesto de 3 s;
+    - **regla B** del factor ADR (portada del 20-F; A de respaldo). En vivo sobre 21 portadas: coincide con la tabla
+      en los 5 ADR del panel que lo dicen; TSM, TM, BP, GSK, RIO, DEO, SONY, AZN y TTE no lo dicen (regla A);
+    - **respaldo del mismo corte** (`lib/edgar_backup.py`): JNJ utilidades retenidas → Altman 4.41; BCS gastos
+      financieros, D&A, OCF y dividendos (6-K semestral pendiente leído); BRK-B D&A e inventario; HSBC OCF, capex y
+      dividendos; DUK y V dividendos; UL D&A; NVDA pasivo total FY → Altman 12.85. No respalda EBIT bancario ni capex
+      de REIT (fase 3, D2), ni deuda (T5), ni salta de concepto (HSBC: la D&A del 6-K incluye deterioros);
+    - **D7**: `data_provenance.official_source`, aviso literal (portada y web), insignia "Sin fuente oficial",
+      anexo técnico, techo "baja" (dimensión `fuente_oficial`); sin User-Agent o EDGAR caído: nota, sin techo.
+      Fixture nuevo del panel **MC.PA** (LVMH), grupo "Sin CIK (fase 2b)";
+    - de paso, dos defectos de origen: TM tomaba como FY1 una columna anual de Yahoo sin cifras (calidad 51 → 59,
+      Piotroski 5 → 6) y la alerta de BPA en descenso suponía una dilución sin dato (guardián, MC.PA).
+- **Verificación T4:**
+  - `pytest tests/test_edgar_t4.py` → "36 passed"; `pytest -q` → "85 failed, 3538 passed, 1 skipped" (los 85 son
+    golden: 42 análisis + 42 PDF + el de MC.PA, que no existe aún); `npm run check` → contrato roto solo por
+    `official_source_badge` ausente en los golden;
+  - `edgar_verify.py --whatif` → "1276/1412 (90.4%)" (antes 1264/1391, 90.9%): +12 dentro y +12 fuera. "Sin dato en
+    el pipeline" 41 → 16. Las 12 filas nuevas "fuera" son de **periodo**: la herramienta compara el TTM del corte
+    (junio de 2026, ahora con el dato de EDGAR) con el FY2025 de EDGAR y las etiqueta "fuente errónea"/"definición";
+    no reclasifico la herramienta (regla de la fase); va a la medida final (T8);
+  - A/B en vivo, 8 tickers en frío intercalados (con UA / sin UA): mediana 3.64 s frente a 3.83 s (ruido de red);
+    EDGAR terminó sus dos etapas dentro del presupuesto en los 8;
+  - golden de T4 (sin regenerar): ningún cambio de nivel (calidad, precio, confianza) en 41 análisis; puntuaciones:
+    JNJ calidad 84 → 86 y Altman sin dato → 4.41; BCS calidad 72 → 75; TM 51 → 59; NVDA Altman 11.33 → 12.85. En
+    todos, `data_provenance.official_source`, `edgar` (hechos, pendientes, respaldo), la dimensión
+    `fuente_oficial`, `official_source_badge` y la fila "Fuente oficial" del anexo.
+- **Abierto / siguiente paso:** aprobación de los golden de T4 (o junto con los de T5–T7 en la parada de T8);
+  T5 (deuda coherente con el EBITDA), T6, T7, T8, T9. El arquetipo esperado de MC.PA queda "?" para el usuario.
 
