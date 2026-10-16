@@ -338,17 +338,8 @@ def _compute_analysis(symbol: str) -> dict:
         profile = data["profile"]
         financials = data.get("financials")
         historical = data.get("historical", {})
-        # Fase 1: el rango de 52 semanas incluye la cotización actual (la fuente puede no haberlo actualizado aún:
-        # XOM salía "en el 101% del rango"). Máximo = max(máximo, precio), mínimo = min(mínimo, precio).
-        range52_widened = {}
-        if financials is not None and safe_float(financials.price) is not None:
-            _px = safe_float(financials.price)
-            for _attr, _fn in (("price_52w_high", max), ("price_52w_low", min)):
-                _v = safe_float(getattr(financials, _attr))
-                if _v is not None and _fn(_v, _px) != _v:
-                    setattr(financials, _attr, _px)
-                    range52_widened[_attr] = _v
-
+        # Fase 2b (T6): el rango de 52 semanas sale de la serie de precios de la misma sesión que la cotización
+        # (lib/beta.py); ya no se ensancha con el precio (protección 2 de la fase 1, retirada).
         # Build response
         result = {
             "symbol": symbol,
@@ -1472,11 +1463,6 @@ def _compute_analysis(symbol: str) -> dict:
             _sin_dato("validacion_salida", e)
         result["data_validation"] = list(yinfo.get("_validation") or []) + _row_flags + _id_flags + _out_flags
         result["data_provenance"] = _build_provenance(yinfo, _out_flags, _block_errors)
-        for _attr, _src in range52_widened.items():
-            result["data_provenance"].setdefault("fields", {})[f"key_metrics.{_attr}"] = {
-                "source": "derivado",
-                "detail": (f"{'máximo' if _attr.endswith('high') else 'mínimo'} de 52 semanas de la fuente "
-                           f"{_src:.2f} ampliado con la cotización actual")}
         for _k in _bank_leverage_na:
             result["data_provenance"].setdefault("fields", {})[f"key_metrics.{_k}"] = {
                 "source": "politica_arquetipo",
