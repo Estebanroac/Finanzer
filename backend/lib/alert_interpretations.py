@@ -613,8 +613,9 @@ def _eps_growth(ctx: Ctx):
     T = _A["eps_growth"]
     if e3 < T["decline_below"]:
         return _sig("warning", "Crecimiento", f"Beneficio por acción en descenso — {_pct(e3)} anual (3 años)",
-                    f"El BPA cae {_pct(abs(e3))} anual en tres años (CAGR): la rentabilidad por acción se erosiona, ya sea por menores "
-                    "beneficios o por dilución. Contrasta con la evolución de ingresos para ubicar la causa.", T["w_decline"])
+                    f"El BPA cae {_pct(abs(e3))} anual en tres años (CAGR): la rentabilidad por acción se erosiona. "
+                    "Contrasta con la evolución de los ingresos y del número de acciones para ubicar la causa.",
+                    T["w_decline"])
     if e3 > T["strong_above"]:
         return _sig("strength", "Crecimiento", f"BPA en fuerte expansión — +{_pct(e3)} anual (3 años)",
                     f"El beneficio por acción crece {_pct(e3)} anual en tres años (CAGR): la rentabilidad para el accionista se "
