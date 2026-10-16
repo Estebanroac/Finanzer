@@ -60,3 +60,18 @@ def test_quarterly_cash_flow_is_part_of_the_cut_when_the_issuer_reports_it():
     bs = _q(Q5, {"Total Assets": [100, 90, 80, 70, 60]})
     assert build_ttm(inc, cf, bs)["cut"] == "2026-03-31"
     assert build_ttm(inc, None, bs)["cut"] == "2026-06-30"        # sin flujos trimestrales (BCS, HSBC)
+
+
+def test_ttm_eps_is_the_sum_of_the_four_quarterly_diluted_eps():
+    """RIVN: con dilución, beneficio TTM / acciones del último trimestre sesga el BPA (−2.44 frente a −2.59 de
+    EDGAR). El BPA TTM es la suma de los BPA diluidos de los 4 trimestres del corte."""
+    inc = _q(Q5, {"Total Revenue": [12, 11, 10, 9, 8], "Net Income": [-4, -4, -4, -4, -4],
+                  "Diluted EPS": [-0.40, -0.42, -0.44, -0.46, -0.5],
+                  "Diluted Average Shares": [10, 9.5, 9.1, 8.7, 8]})
+    bs = _q(Q5, {"Total Assets": [100, 90, 80, 70, 60]})
+    t = build_ttm(inc, None, bs)
+    assert t["eps"]["value"] == pytest.approx(-1.72) and t["eps"]["basis"] == "suma_bpa_trimestral"
+    inc2 = inc.drop(index="Diluted EPS")
+    t2 = build_ttm(inc2, None, bs)
+    assert t2["eps"]["value"] == pytest.approx(-16 / ((10 + 9.5 + 9.1 + 8.7) / 4))
+    assert t2["eps"]["basis"] == "beneficio_entre_acciones_medias"

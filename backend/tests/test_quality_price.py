@@ -285,9 +285,7 @@ def test_multiples_block_averages_members_and_caps_at_max(outputs_by_env):
     # la compresión suma (+2 → +0.67 en el bloque) y el bloque queda en −3 (−4 con el 18x heredado de default).
     assert blk["block_members"] == ["P/E", "Forward P/E", "P/FCF", "EV/EBITDA", "PEG"] and blk["adjustment"] == -3
     fpe = next(x for x in v if x["metric"] == "Forward P/E")
-    # Fase 2b (T3): el P/E TTM usa el BPA del corte (10.73), no el de Finnhub que antes se imponía (11.75): 36.5x en
-    # lugar de 33.3x, y la compresión hacia el forward suma 3 en lugar de 2 (el bloque sigue en −3).
-    assert fpe["adjustment"] == 3 and "sin efecto" not in fpe["reason"]
+    assert fpe["adjustment"] == 2 and "sin efecto" not in fpe["reason"]
 
 
 def test_block_pdf_shows_each_multiple_and_the_block_line(outputs_by_env):

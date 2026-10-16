@@ -129,6 +129,23 @@ def find_cut(q_inc, q_bs, q_cf=None) -> Optional[str]:
     return None
 
 
+def _ttm_eps(q_inc, cut: Optional[str], ni_ttm: Optional[float]) -> Optional[Dict[str, Any]]:
+    """Fase 2b (T3): BPA TTM del corte. La suma de los BPA diluidos de sus 4 trimestres (práctica estándar: cada
+    trimestre con sus acciones medias); sin ellos, beneficio TTM / media de las acciones diluidas de los 4
+    trimestres. Con las acciones del último trimestre se sesgaba con dilución o recompras (RIVN −2.44 frente a −2.59
+    de EDGAR)."""
+    if not cut or ni_ttm is None:
+        return None
+    dates = frame_dates(q_inc)
+    eps = _window(q_inc, dates, cut, "Diluted EPS")
+    if eps is not None:
+        return {"value": sum(eps), "basis": "suma_bpa_trimestral"}
+    sh = _window(q_inc, dates, cut, "Diluted Average Shares")
+    if sh is not None and all(x > 0 for x in sh):
+        return {"value": ni_ttm / (sum(sh) / len(sh)), "basis": "beneficio_entre_acciones_medias"}
+    return None
+
+
 def build_ttm(q_inc, q_cf, q_bs) -> Dict[str, Any]:
     """{cut, values: {info_key: valor del corte}, missing: {info_key: motivo}, quarters, balance_date,
     quarterly: {fila: serie desde el corte}} a partir de los tres estados trimestrales (o None).
@@ -180,6 +197,7 @@ def build_ttm(q_inc, q_cf, q_bs) -> Dict[str, Any]:
         why = "sin balance trimestral" if not bdates else "sin corte trimestral: el balance es el del ejercicio"
         for key in (*BALANCE_KEYS, "cash"):
             out["missing"][key] = why
+    out["eps"] = _ttm_eps(q_inc, cut, out["values"].get("netIncome"))
     inc_dates = frame_dates(q_inc)
     k = inc_dates.index(cut) if cut and cut in inc_dates else len(inc_dates)
     out["quarterly"] = {"dates": inc_dates[k:], **{r: frame_series(q_inc, r)[k:] for r in QUARTERLY_ROWS

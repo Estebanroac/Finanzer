@@ -1127,13 +1127,16 @@ def _apply_ttm(symbol: str, info: Dict[str, Any], plan_b: bool) -> Dict[str, Any
                         paths=balance, overwrite=True)
     eps_basis = "fuente"
     q = t["quarterly"]
-    sh = (q.get("Diluted Average Shares") or [None])[0]
-    if plan_b and "netIncome" in t["values"] and sh:
-        info["trailingEps"] = t["values"]["netIncome"] / sh
+    _eps = t.get("eps")
+    if plan_b and "netIncome" in t["values"] and _eps:
+        info["trailingEps"] = _eps["value"]
         info["_eps_net_income"] = t["values"]["netIncome"]   # etapa 11b: por construcción
         eps_basis = "ttm"
-        _tag_provenance(info, "derivado", "BPA TTM = beneficio neto TTM / acciones diluidas medias del último "
-                                          "trimestre", paths=["trailingEps"], overwrite=True)
+        _tag_provenance(info, "derivado",
+                        "BPA TTM = suma de los BPA diluidos de los 4 trimestres del corte"
+                        if _eps["basis"] == "suma_bpa_trimestral" else
+                        "BPA TTM = beneficio neto TTM / media de las acciones diluidas de los 4 trimestres del corte",
+                        paths=["trailingEps"], overwrite=True)
     shares = info.get("sharesOutstanding")
     if plan_b and "totalStockholderEquity" in t["values"] and shares:
         info["bookValue"] = t["values"]["totalStockholderEquity"] / shares
