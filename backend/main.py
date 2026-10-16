@@ -682,6 +682,16 @@ def _compute_analysis(symbol: str) -> dict:
             from validate import missing_key_rows
             _row_flags = missing_key_rows(_stmts, archetype) if _has_yahoo else []
             result["classification"] = classification
+            # Fase 2b (T5, F2_PRECEDENCIA §2.3): en un banco la deuda (subordinada, depósitos y emisiones de la
+            # actividad bancaria) no entra en ninguna ratio de apalancamiento de empresa: su apalancamiento se mide
+            # con capital (fase 3). Antes salían D/E, deuda neta y EV con toda la deuda emitida (BCS: EV negativo).
+            _bank_leverage_na = []
+            if classification.get("rule") == "industria_banco":
+                for _k in ("de", "debt_to_assets", "net_debt", "net_debt_to_ebitda", "net_debt_to_ebitda_state",
+                           "enterprise_value", "ev_ebitda", "ev_revenue"):
+                    if result["key_metrics"].get(_k) is not None:
+                        result["key_metrics"][_k] = None
+                        _bank_leverage_na.append(_k)
             # Rf (etapa 8): ^TNX con caché de 24 h o el de config, marcado. Uno por
             # análisis: el mismo en Ke (P/B justificado de FINANCIAL), Kd y WACC.
             rf_info = risk_free()
@@ -1445,6 +1455,11 @@ def _compute_analysis(symbol: str) -> dict:
                 "source": "derivado",
                 "detail": (f"{'máximo' if _attr.endswith('high') else 'mínimo'} de 52 semanas de la fuente "
                            f"{_src:.2f} ampliado con la cotización actual")}
+        for _k in _bank_leverage_na:
+            result["data_provenance"].setdefault("fields", {})[f"key_metrics.{_k}"] = {
+                "source": "politica_arquetipo",
+                "detail": ("banco: la deuda (subordinada, depósitos y emisiones de la actividad) no entra en las ratios "
+                           "de apalancamiento de empresa; su apalancamiento se mide con capital (F2_PRECEDENCIA §2.3)")}
         if ic_state_inferred:
             result["data_provenance"].setdefault("fields", {})["key_metrics.interest_coverage_state"] = {
                 "source": "derivado",

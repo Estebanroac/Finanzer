@@ -392,6 +392,8 @@ def currency_note(cur) -> Optional[str]:
     return " ".join(parts) or None
 
 
+BANK_LEVERAGE_NA = ("En un banco la deuda (subordinada, depósitos y emisiones) es parte del negocio: su "
+                    "apalancamiento se mide con capital, no con esta ratio.")
 PENDING_RESULTS_TEXT = "La empresa publicó resultados el {date}; este análisis aún no los incorpora"
 
 
@@ -1753,7 +1755,15 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
          km.get("payout_ratio"), "pct", r_pay),
     ]
     srows = []
+    # Fase 2b (T5): en un banco, D/E y deuda / activos no se calculan (main: su deuda no entra en las ratios de
+    # apalancamiento de empresa); la fila queda como "No aplica" con el motivo.
+    _bank_na = {k.split(".", 1)[1] for k, v in ((a.get("data_provenance") or {}).get("fields") or {}).items()
+                if k.startswith("key_metrics.") and (v or {}).get("source") == "politica_arquetipo"}
     for key, lab, val, fm, rd in sol_defs:
+        if key in ("de", "debt_to_assets") and key in _bank_na:
+            srows.append(_row(key, lab, "—", DE_NOT_APPLICABLE if key == "de" else "No aplica", None, "no_aplica",
+                              text=BANK_LEVERAGE_NA))
+            continue
         if key == "interest_coverage" and ic_state == "sin_carga" and rd:   # fase 1: ratio sin sentido, lectura +
             # con_dato: la web pinta la lectura ("Sin carga financiera"), no el estado ("No significativo")
             srows.append(_row(key, lab, "Sin carga", rd[0], rd[1], "con_dato", text=rd[2]))
