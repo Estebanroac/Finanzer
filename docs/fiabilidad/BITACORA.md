@@ -24,12 +24,12 @@
 
 | Campo | Valor |
 |---|---|
-| Fase en curso | **Fase 2a ✅ cerrada; preparaciones F3prep, F5prep y F67prep fusionadas** (2026-10-15, registro #20). La 2b espera su prompt, que escribe el planificador |
-| Rama de trabajo | `main` (todas las ramas de trabajo fusionadas: `fiabilidad/f2a-medir`, `fiabilidad/f3-prep`, `fiabilidad/f5-prep`, `fiabilidad/f67-prep`) |
-| Producción | `a2572e0` (fusión de las preparaciones + documentos de planificación). Rollback de código: `74cd267` (antes, `25b9d8a` y `8ed57a0`) |
-| `main` local | = `origin/main` (`a2572e0`, más el commit de este registro) |
-| Último cierre de sesión | 2026-10-15 · operador principal (ver registro #20) |
-| Bloqueos | Ninguno. Pendiente del planificador: prompt de la 2b |
+| Fase en curso | **Fase 2b 🛑 detenida en el punto de parada 1** (2026-10-16, registro #21): T0–T3 hechas en la rama; esperan la aprobación de los golden, la regla del factor fuera de la tabla y la fuente del dividendo |
+| Rama de trabajo | `fiabilidad/f2b-corregir` (worktree `../finanzer_next-f2b`), desde `main` = `60f8a69`; 9 commits `F2b:` sin push |
+| Producción | `60f8a69` (= `2d58a35` en código). Rollback de código: `a2572e0` |
+| `main` local | = `origin/main` (`60f8a69`) |
+| Último cierre de sesión | 2026-10-16 · operador F2b (ver registro #21) |
+| Bloqueos | Punto de parada 1: decisiones del usuario (F2b_PARADA1.md §1.2, §2.1 y §4) y la variable `SEC_EDGAR_USER_AGENT` en Render |
 
 ## Fases
 
@@ -37,7 +37,7 @@
 |---|---|---|---|---|---|
 | 0 Congelar y medir | ✅ cerrada (2026-10-14) | `fiabilidad/f0-panel` → `main` local | `0a8ac66`..`0ae214a` (9 commits) + cierre (registro #6) | sí, 2026-10-14 (registro #6) | no aplica (se sube con el deploy de la fase 1) |
 | 1 Lo visible hoy | ✅ cerrada | `fiabilidad/f1-visible` | `d676b22` (D8), `21c3f5f`, `0ebba81` (guardián), `d63de70`…`d7393fd` (T3, 8 commits), `7f32070`, `e3161d2`, `c369575` (T4) | — | — |
-| 2 Verdad de datos (EDGAR) | ✅ 2a cerrada (2026-10-15); la 2b espera su prompt | `fiabilidad/f2a-medir` → `main` | `8d3a5cc` (planificador), `356f49c` (T0), `0b82c13`…`8e9948b` (T2), `385e441` + `4051a5e` (T1), `f8f13df`…`06a6ec0` (herramienta T3), `6946a64` (T3), `01aec9d`…`8d7c1fb` (T4), `aed575a` (RECON §7.20) + cierre (registros #18 y #19) | parada 1 sí; parada 2 y deploy sí; D2 decidida (2026-10-15, registro #19) | `25b9d8a` (T0 + panel, 2026-10-15) |
+| 2 Verdad de datos (EDGAR) | ✅ 2a cerrada (2026-10-15); 🛑 2b detenida en el punto de parada 1 (2026-10-16, registro #21; rama `fiabilidad/f2b-corregir`: `b25aed6`…`0fd5bd3`) | `fiabilidad/f2a-medir` → `main` | `8d3a5cc` (planificador), `356f49c` (T0), `0b82c13`…`8e9948b` (T2), `385e441` + `4051a5e` (T1), `f8f13df`…`06a6ec0` (herramienta T3), `6946a64` (T3), `01aec9d`…`8d7c1fb` (T4), `aed575a` (RECON §7.20) + cierre (registros #18 y #19) | parada 1 sí; parada 2 y deploy sí; D2 decidida (2026-10-15, registro #19) | `25b9d8a` (T0 + panel, 2026-10-15) |
 | 3 Método por arquetipo | 🔒 espera la 2b · preparación F3prep fusionada (`fiabilidad/f3-prep`, módulos aislados sin conectar) | — | `0f6f21b`..`da34592` | — | `a2572e0` |
 | 4 Escalas y confianza | 🔒 espera F3 | — | — | — | — |
 | 5 Técnica y conductual | 🔒 espera F4 · preparación F5prep fusionada (`fiabilidad/f5-prep`, módulos aislados sin conectar; D5: solo contexto) | — | `e99e958`..`8e2bf07` | §5 de la muestra aceptado (registro #20) | `a2572e0` |
@@ -816,3 +816,45 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
 - **Sesiones:** F2a, F3prep, F5prep y F67prep cerradas, con sus ramas fusionadas.
   - Los worktrees `../finanzer_next-f3prep`, `-f5prep` y `-f67prep` siguen en disco. El de f67 no se debe borrar mientras la tarea programada corra desde él; si se borra, hay que cambiar la ruta de la tarea a la carpeta principal.
 - **Siguiente paso:** el planificador escribe el prompt de la 2b (correcciones de datos de F2_PRECEDENCIA y mapa de la fase 2).
+
+### #21 · 2026-10-16 · operador · Fase 2b (T0–T3 hechas; detenida en el punto de parada 1)
+- **Objetivo de la sesión:** prompt `prompts/F2b_verdad_de_datos_corregir.md` hasta el punto de parada 1 (T0–T3).
+- **Hecho** (rama `fiabilidad/f2b-corregir`, worktree `../finanzer_next-f2b`; informe completo en
+  [`F2b_PARADA1.md`](F2b_PARADA1.md)):
+  - **T0:** línea base reproducida, **90.0%** (1,262/1,403); análisis en frío desde este Mac 3.4–4.35 s.
+  - **T1** (`b25aed6`): `config/adr.toml` con el factor oficial (depositario, 20-F, F-6, fecha); el implícito, solo
+    comprobación ("recompras/emisiones desde el cierre"). BCS 4.154 → 4; TM 11.07 → 10. **Corrige a la 2a:** el 9.6%
+    de TM no es un error de Yahoo; es la recompra y amortización de ~1,200 millones de acciones (6-K del 2026-08-04).
+  - **T2** (`c9b661d`, `5570d8b`): dividendo indicado en la moneda y la clase del precio con los pagos del propio
+    título (`lib/price_history.py`, `lib/dividends.py`); identidad con magnitudes equivalentes en los dos sentidos
+    (NVDA subida, PGR extraordinario); **protección 1 retirada** (`main.py`, `display.py`); guardián adaptado. BCS
+    2.71%, UL 3.44%, NVDA 0.45%, ASML 0.47% → 0.55% (otro caso del mismo defecto).
+  - **T3** (`0c8d211`, `c0b0414`, `4c102ee`, `e6364b2`, `d984181`, `0fd5bd3`): corte coherente (`ttm.find_cut`,
+    `data_provenance.as_of`, regla `periodo_incoherente`); Finnhub solo si casa con el corte (BPA y ratios TTM); BPA
+    TTM = suma de los BPA diluidos trimestrales; aviso de resultados publicados (`lib/sec_edgar.py`, calendario de
+    Finnhub para los 20-F); base del Piotroski declarada.
+- **Verificación:**
+  - `edgar_verify.py --whatif` → "1264/1391 (90.9%)"; filas "factor ADR" 4 → 0;
+  - `pytest tests -q` → "82 failed, 3439 passed, 1 skipped" (los 82, golden: 41 análisis + 41 PDF; regenerarlos
+    espera la aprobación);
+  - `panel_run --mode replay --compare` → 2 cambios: AMZN precio razonable → exigente; ASML confianza media → baja;
+  - `npm run check` → falla solo porque los golden no tienen aún `as_of_note` ni `data_notices`;
+  - A/B del análisis en frío (6 tickers, red local) → mediana ≈ 4.2 s sin los hilos nuevos y ≈ 3.6 s con ellos.
+- **Decisiones tomadas por el usuario:** ninguna en esta sesión (las pide el punto de parada 1).
+- **Abierto / siguiente paso:**
+  - el usuario: aprobar los golden (F2b_PARADA1 §4), elegir la regla del factor fuera de la tabla (§1.2; recomiendo B,
+    el factor del 20-F vía EDGAR, en T4) y la fuente del dividendo (§2.1; recomiendo b), y poner
+    `SEC_EDGAR_USER_AGENT` en Render;
+  - el operador, con eso: regenerar los golden, T4–T9.
+- **Archivos tocados:** `backend/config/{adr,data,market,schema,validation}.toml`;
+  `backend/lib/{currency,display,dividends,finnhub_fallback,numfmt,pdf_report,price_history,sec_edgar,settings,ttm,
+  validate,valuation_confidence,yf_adapter}.py`; `backend/main.py`; tests nuevos (`test_adr_factor`, `test_dividends`,
+  `test_corte`) y adaptados; fixtures nuevas `tests/fixtures/{history,f2b}` y sus herramientas (`capture_history.py`,
+  `history_fixtures.py`, `capture_f2b_sources.py`, `f2b_fixtures.py`); `frontend/src/{lib/api.ts,
+  components/StockHeader.tsx}`; `docs/fiabilidad/F2b_PARADA1.md` y esta bitácora.
+- **Avisos para el siguiente chat:**
+  - `tests/edgar.py` (herramienta de la 2a) y el módulo de producción se llaman distinto a propósito
+    (`lib/sec_edgar.py`): con el mismo nombre, `tests/` tapaba a `lib/`;
+  - las series de precios y las listas de EDGAR del replay están en juegos aparte y se cortan en la fecha de captura
+    de cada ticker; una recaptura del panel las llevará dentro;
+  - en el worktree, `.venv313` y `frontend/node_modules` son enlaces a la carpeta principal (ignorados por git).
