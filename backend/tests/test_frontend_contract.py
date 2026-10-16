@@ -14,9 +14,6 @@ import subprocess
 
 import pytest
 
-import copy
-
-import display
 import fixture_backend as fb
 from conftest import ENVS
 
@@ -41,35 +38,26 @@ def test_frontend_reads_only_exposed_fields(outputs_by_env, tmp_path):
         for sym, (analysis, _) in outputs_by_env(env).items():
             (d / f"{sym}.json").write_text(fb.stable_json(analysis), encoding="utf-8")
         dirs.append(str(d))
-    # Caso raro que ningún ticker real cubre: categoría no concluyente (cobertura < 50%),
-    # generado por el mismo display.build_display sobre SNOW prod forzado.
-    a = copy.deepcopy(outputs_by_env(ENVS[-1])["SNOW"][0])
-    a["score"]["breakdown"]["Crecimiento"].update(conclusive=False, coverage=0.33)
-    a["display"] = display.build_display(a)
+    # Casos raros que ningún ticker real cubre (tests/contract_forced.py): los mismos que ve `npm run check`.
     extra = tmp_path / "forzado"
     extra.mkdir()
-    (extra / "SNOW_no_concluyente.json").write_text(fb.stable_json(a), encoding="utf-8")
-    # Etapa 9c, gráficos que ningún ticker de los 12 cubre: runway en años (pre-beneficio que
-    # quema caja) y caja neta en Deuda neta / EBITDA.
-    r = copy.deepcopy(outputs_by_env(ENVS[-1])["SNOW"][0])
-    r["archetype_metrics"]["runway"] = {"state": "runway", "years": 1.8}
-    r["display"] = display.build_display(r)
-    assert r["display"]["charts"]["solvency"]["runway"].get("years") == 1.8
-    (extra / "SNOW_runway.json").write_text(fb.stable_json(r), encoding="utf-8")
-    n = copy.deepcopy(outputs_by_env(ENVS[-1])["V"][0])
-    n["key_metrics"]["net_debt_to_ebitda"] = -0.4
-    n["display"] = display.build_display(n)
-    assert any(g.get("net_cash") for g in n["display"]["charts"]["solvency"]["gauges"])
-    (extra / "V_caja_neta.json").write_text(fb.stable_json(n), encoding="utf-8")
-    # Fase 2b (T5): EBIT < 0 con deuda neta (cobertura negativa). Con la deuda coherente con el EBITDA, SNOW pasó a
-    # caja neta y ningún ticker de los juegos lo cubre.
-    q = copy.deepcopy(outputs_by_env(ENVS[-1])["SNOW"][0])
-    q["key_metrics"].update(net_debt=4e8, interest_coverage=-8.4, interest_coverage_state="negativa")
-    q["display"] = display.build_display(q)
-    assert any(g.get("negative") for g in q["display"]["charts"]["solvency"]["gauges"])
-    (extra / "SNOW_cobertura_negativa.json").write_text(fb.stable_json(q), encoding="utf-8")
+    import contract_forced
+    contract_forced.write(contract_forced.build({t: a for t, (a, _) in outputs_by_env(ENVS[-1]).items()}), str(extra))
     r = _run("check-contract.mjs", "--strict-unions", *dirs, str(extra))
     assert r.returncode == 0, r.stderr or r.stdout
+
+
+def test_forced_samples_are_up_to_date(outputs_by_env):
+    """Las muestras forzadas guardadas (tests/golden/forzados, las que lee `npm run check`) son las de hoy."""
+    import contract_forced
+    if ENVS[-1] != "local":
+        pytest.skip("las muestras forzadas salen del juego local")
+    now = contract_forced.build({t: a for t, (a, _) in outputs_by_env("local").items()})
+    for name, a in now.items():
+        path = os.path.join(contract_forced.FORCED_DIR, f"{name}.json")
+        assert os.path.isfile(path), f"falta {path}: ../.venv313/bin/python tests/contract_forced.py --write"
+        with open(path, encoding="utf-8") as fh:
+            assert fh.read() == fb.stable_json(a), f"{name} desactualizada: tests/contract_forced.py --write"
 
 
 @needs_node

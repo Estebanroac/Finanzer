@@ -15,7 +15,8 @@
  *   node scripts/check-contract.mjs [--strict-unions] [dir-con-json ...]
  * --strict-unions exige además que las muestras cubran cada caso de las uniones
  * discriminadas (el pytest añade una muestra forzada con categoría no concluyente).
- * Sin argumentos usa los golden del backend (backend/tests/golden/{local,panel}; fase 1: D8 retiró prod).
+ * Sin argumentos usa los golden del backend (backend/tests/golden/{local,panel}; fase 1: D8 retiró prod) y las
+ * muestras forzadas (backend/tests/golden/forzados, tests/contract_forced.py).
  * backend/tests/test_frontend_contract.py lo ejecuta sobre las salidas actuales.
  */
 import fs from "node:fs";
@@ -155,7 +156,8 @@ export function check(dirs, { strictUnions = false } = {}) {
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const strictUnions = process.argv.includes("--strict-unions");
   const args = process.argv.slice(2).filter((a) => !a.startsWith("--"));
-  const dirs = args.length ? args : ["local", "panel"].map((e) => path.join(ROOT, "..", "backend", "tests", "golden", e));
+  // Fase 2b: con los golden van las muestras forzadas de los casos que ningún ticker cubre (tests/contract_forced.py).
+  const dirs = args.length ? args : ["local", "panel", "forzados"].map((e) => path.join(ROOT, "..", "backend", "tests", "golden", e));
   const { errors, notes, samples } = check(dirs, { strictUnions });
   for (const n of notes) console.warn("aviso: " + n);
   if (errors.length) {
