@@ -987,6 +987,14 @@ def _compute_analysis(symbol: str) -> dict:
                 # Estimate total_liabilities if missing
                 if z_tl is None and z_ta and z_te:
                     z_tl = z_ta - z_te
+                # Fase 2b (T5, F2_PRECEDENCIA §2.3): en US GAAP el pasivo por arrendamiento operativo sale del pasivo de
+                # X4 (su alquiler ya está restado en el EBIT de X3); en IFRS 16 se queda.
+                _ol_fy = None
+                if _has_yahoo and (yinfo.get("_debt") or {}).get("applied") \
+                        and safe_float(((_stmts.get("total_liabilities") or [None]) or [None])[0]) is not None:
+                    _ol_fy = safe_float(((_stmts.get("operating_lease_liabilities") or [None]) or [None])[0])
+                    if _ol_fy and z_tl is not None:
+                        z_tl = z_tl - _ol_fy
 
                 # Working capital — only compute if both components are available
                 ca_val = _fy("current_assets", safe_float(financials.current_assets))
@@ -1015,6 +1023,8 @@ def _compute_analysis(symbol: str) -> dict:
                     # available=False indica "sin dato" (motivo en details.missing).
                     "available": z_val is not None,
                     "applicable": not not_applicable(archetype, "altman"),
+                    # Fase 2b (T5): pasivo de X4 sin el arrendamiento operativo (US GAAP), o None.
+                    "operating_leases_excluded": _ol_fy if _ol_fy else None,
                 }
 
                 # Piotroski F-Score — uses PURE fiscal year data (no TTM mixing)
