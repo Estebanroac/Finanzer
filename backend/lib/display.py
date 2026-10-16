@@ -1856,10 +1856,14 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         inst_cards.append({"key": "piotroski", "value": f"{f_sc}/{f_n}" if f_n < f_max else f"{f_sc}/{f_max}",
                            "tone": f_tone, "title": "Piotroski F-Score", "subtitle": str(piotroski.get("level", "")),
                            "state": "con_dato", "body": f_body})
+        # Fase 2b (T3, base temporal única): los criterios comparan ejercicios (FY frente a FY), no el TTM del resto
+        # del informe; cada detalle lo dice (AAPL: "el flujo operativo no llega al beneficio" es del FY2025, y el TTM
+        # da OCF/beneficio 1.06).
+        _fy0 = str(piotroski.get("fiscal_year") or "").split(" ")[0]
         for k, crit in (piotroski.get("details") or {}).items():
             st = crit.get("state") or ("cumple" if crit.get("passed") else "no_cumple")
             pio_criteria.append({"key": k, "label": PIOTROSKI_LABELS.get(k, k.replace("_", " ").title()),
-                                 "detail": (crit.get("detail") or "")[:72],
+                                 "detail": (f"{_fy0}: " if _fy0.startswith("FY") else "") + (crit.get("detail") or "")[:72],
                                  "status": {"cumple": "Cumple", "no_cumple": "No cumple", "sin_dato": "Sin dato"}[st],
                                  "tone": {"cumple": 'pos', "no_cumple": 'neg', "sin_dato": 'neu'}[st]})
 
