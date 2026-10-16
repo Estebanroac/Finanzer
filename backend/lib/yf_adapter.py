@@ -519,12 +519,13 @@ def _apply_dividend(info: Dict[str, Any], hist: Dict[str, Any]) -> None:
               "fuente_local_convertida": "dividendo de la línea local convertido a la clase y la moneda del precio",
               "sin_dividendo": "no paga dividendos: sin pagos en 2 años ni dividendos en los estados"}.get(res.get("source"), f"{res.get('source')}: indicado declarado, verificado con los pagos")
     if rate is None:
-        _tag_provenance(info, "sin_dato", res.get("reason") or "sin dividendo", paths=["dividendRate", "dividendYield"],
-                        overwrite=True)
+        _tag_provenance(info, "sin_dato", res.get("reason") or "sin dividendo",
+                        paths=["dividendRate", "dividendYield", "_yahoo_ratios.dividendYield"], overwrite=True)
     else:
         _tag_provenance(info, res.get("source") if res.get("source") in ("finnhub", "yahoo_quotesummary")
                         else "derivado", detail, paths=["dividendRate"], overwrite=True)
-        _tag_provenance(info, "derivado", "dividendo indicado / precio", paths=["dividendYield"], overwrite=True)
+        _tag_provenance(info, "derivado", "dividendo indicado / precio",
+                        paths=["dividendYield", "_yahoo_ratios.dividendYield"], overwrite=True)
 
 
 def _merge_last_known_good(symbol: str, fresh: Dict[str, Any], fresh_degraded: bool) -> Dict[str, Any]:
