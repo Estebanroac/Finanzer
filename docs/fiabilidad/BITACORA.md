@@ -24,8 +24,8 @@
 
 | Campo | Valor |
 |---|---|
-| Fase en curso | **Fase 2b 🔧 en curso** (2026-10-16, registro #22): parada 1 aprobada; golden regenerados; **T4 y T5 hechas** (sus golden, pendientes de aprobación); sigue T6 |
-| Rama de trabajo | `fiabilidad/f2b-corregir` (worktree `../finanzer_next-f2b`), desde `main` = `60f8a69`; 23 commits `F2b:` sin push |
+| Fase en curso | **Fase 2b 🔧 en curso** (2026-10-16, registro #22): T4–T6 hechas; golden de T4–T5 regenerados (aprobados); **las dos protecciones retiradas**; golden de T6 pendientes de aprobación; sigue T7 |
+| Rama de trabajo | `fiabilidad/f2b-corregir` (worktree `../finanzer_next-f2b`), desde `main` = `60f8a69`; 29 commits `F2b:` sin push |
 | Producción | `60f8a69` (= `2d58a35` en código). Rollback de código: `a2572e0` |
 | `main` local | = `origin/main` (`60f8a69`) |
 | Último cierre de sesión | 2026-10-16 · operador F2b (ver registro #21) |
@@ -932,4 +932,23 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
   ya los golden de T4 (y el arquetipo esperado de MC.PA = el del motor, a revisar en la fase 3, y corregir en T8
   el emparejamiento de periodos de `edgar_verify`), lo que contradice su instrucción directa aquí (aprobarlos en
   T8). No se ha regenerado nada hasta su confirmación aquí.
+- **Decisión del usuario (cita literal, en este chat):** "Confirmo lo que pasó el coordinador: regenera ya los golden
+  (T4 y T5, sin cambios de nivel), MC.PA con el arquetipo que asigna hoy el motor, y en T8 corrige el emparejamiento
+  de periodos de edgar_verify. Sigue con T6." → golden regenerados (`65dde21`), MC.PA esperado = MATURE; las
+  muestras forzadas del contrato también en `npm run check` (`6f7a9e7`).
+  - **T6 hecha** (`01324a3`, `c8ae863`): beta propia (2 años semanales frente al S&P 500, Blume) o, con R² < 0.1, la
+    del sector (`config/betas.toml`: Damodaran, "Betas by Sector (US)", enero de 2026; entra sin Blume); sin serie, la
+    de la fuente con aviso; `beta_discrepante` (> 0.5) como aviso. Rango de 52 semanas de la serie (365 días: el
+    mínimo de Yahoo en 35 de 35). **Protección 2 retirada** (`c8ae863`): con la 1 (`5570d8b`, registro #21), la 2b
+    ya no tiene protecciones provisionales en pie.
+  - Desviación justificada del prompt: no se conecta `lib/price_series.py`; la serie del título y del índice ya
+    entra por `lib/price_history.py` (T2) y una segunda descarga sería redundante ("descarga lo mínimo").
+  - Verificado con Render simulado en vivo (MSFT, DUK, BCS): serie y ^GSPC se descargan; 3.4–4.7 s.
+- **Verificación T6:** `pytest -q` → "84 failed, 3564 passed" (los 84, golden de T6); `npm run check` → 46 salidas;
+  F1 "1282/1411 (90.9%)". Niveles frente a los golden aprobados: **BRK-B, NVO, NFLX** (previstos por la 2a), **JNJ**
+  (precio razonable → exigente, confianza alta → media: R² 0.00 → beta del sector farma 0.98, antes 0.46) y **TM**
+  (precio razonable → atractivo: beta propia 0.81, antes 0.92).
+  - **Observación para el usuario:** la beta de farma de Damodaran es la media de 228 empresas, muchas pequeñas; para
+    un gigante defensivo como JNJ resulta alta. Es la regla aprobada (F2_PRECEDENCIA §5); si se quiere otra (p. ej.
+    ponderada por capitalización), es una decisión nueva (D#).
 
