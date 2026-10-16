@@ -36,8 +36,8 @@
       },
       {
         "category": "Valor intrínseco",
-        "detail": "El DCF estima $116 (−69% frente al precio), pero el grid completo (75.36–160.79) no contiene el precio (368.89): ninguna combinación razonable de crecimiento y WACC lo reconcilia. No se usa en el score.",
-        "reason": "DCF no concluyente −69% (fiabilidad baja)"
+        "detail": "El DCF estima $111 (−70% frente al precio), pero el grid completo (72.77–151.86) no contiene el precio (368.89): ninguna combinación razonable de crecimiento y WACC lo reconcilia. No se usa en el score.",
+        "reason": "DCF no concluyente −70% (fiabilidad baja)"
       }
     ]
   },
@@ -122,14 +122,28 @@
     }
   },
   "beta": {
-    "adjusted": 1.23517,
+    "adjusted": 1.31063263265,
     "coefficients": [
       0.67,
       0.33
     ],
     "default": false,
+    "discrepancy": null,
     "method": "Blume",
-    "raw": 1.351
+    "own": {
+      "adjusted": 1.31063263265,
+      "first_week": "2024-10-25",
+      "last_week": "2026-10-09",
+      "observations": 103,
+      "r2": 0.131376469465,
+      "raw": 1.463630795,
+      "reason": null,
+      "status": "ok"
+    },
+    "raw": 1.463630795,
+    "reason": "2 años semanales frente al S&P 500 (103 semanas, R² 0.13), ajustada por Blume",
+    "source": "propia",
+    "source_beta": 1.351
   },
   "classification": {
     "alerts": [],
@@ -165,7 +179,7 @@
             "method": "DCF",
             "reliability": "baja",
             "signal": -1.0,
-            "upside": -0.685787091003
+            "upside": -0.69928705034
           },
           {
             "components": 2,
@@ -307,6 +321,25 @@
         }
       },
       "type": "ttm"
+    },
+    "beta": {
+      "adjusted": false,
+      "discrepancy": null,
+      "own": {
+        "adjusted": 1.31063263265,
+        "first_week": "2024-10-25",
+        "last_week": "2026-10-09",
+        "observations": 103,
+        "r2": 0.131376469465,
+        "raw": 1.463630795,
+        "reason": null,
+        "status": "ok"
+      },
+      "reason": "2 años semanales frente al S&P 500 (103 semanas, R² 0.13), ajustada por Blume",
+      "source": "propia",
+      "source_beta": 1.351,
+      "source_name": "yahoo_quotesummary",
+      "value": 1.463630795
     },
     "currency": {
       "converted": false,
@@ -563,8 +596,8 @@
         "source": "yahoo_quotesummary"
       },
       "beta": {
-        "detail": "quoteSummary v10 (con crumb)",
-        "source": "yahoo_quotesummary"
+        "detail": "2 años semanales frente al S&P 500 (103 semanas, R² 0.13), ajustada por Blume",
+        "source": "derivado"
       },
       "bookValue": {
         "detail": "quoteSummary v10 (con crumb)",
@@ -623,12 +656,12 @@
         "source": "yahoo_quotesummary"
       },
       "fiftyTwoWeekHigh": {
-        "detail": "quoteSummary v10 (con crumb)",
-        "source": "yahoo_quotesummary"
+        "detail": "máximo y mínimo diarios de las 251 sesiones de la serie (2025-10-10 a 2026-10-09, Yahoo history)",
+        "source": "derivado"
       },
       "fiftyTwoWeekLow": {
-        "detail": "quoteSummary v10 (con crumb)",
-        "source": "yahoo_quotesummary"
+        "detail": "máximo y mínimo diarios de las 251 sesiones de la serie (2025-10-10 a 2026-10-09, Yahoo history)",
+        "source": "derivado"
       },
       "forwardEps": {
         "detail": "quoteSummary v10 (con crumb)",
@@ -850,12 +883,31 @@
       "first_date": "2024-10-16",
       "interval": "1d",
       "last_date": "2026-10-09",
+      "market": {
+        "fallback_of": null,
+        "last_date": "2026-10-09",
+        "reason": null,
+        "rows": 497,
+        "status": "ok",
+        "symbol": "^GSPC"
+      },
       "period": "2y",
       "reason": null,
       "rows": 497,
       "source": "Yahoo Finance (yfinance history: precios sin ajustar por dividendos y eventos)",
       "status": "ok",
       "symbol": "SNOW"
+    },
+    "range52": {
+      "first_session": "2025-10-10",
+      "high": 384.559997559,
+      "high_date": "2026-09-03",
+      "last_session": "2026-10-09",
+      "low": 118.300003052,
+      "low_date": "2026-04-10",
+      "reason": null,
+      "sessions": 251,
+      "status": "ok"
     },
     "ttm": {
       "annual_fields": {},
@@ -1003,29 +1055,29 @@
   ],
   "dcf": {
     "available": true,
-    "fair_value": 115.91,
+    "fair_value": 110.93,
     "fcf_input": 1193484000.0,
     "growth_basis": "CAGR de ingresos por acción a 3 años",
     "growth_rate": 0.286975427392,
     "growth_source": "revenue_growth_3y",
-    "margin_of_safety": -2.18255543094,
+    "margin_of_safety": -2.32543045164,
     "reason": null,
     "reliability": {
       "central_contains_price": false,
       "grid_contains_price": false,
       "level": "baja",
       "reasons": [
-        "el grid completo (75.36–160.79) no contiene el precio (368.89): ninguna combinación razonable de crecimiento y WACC lo reconcilia"
+        "el grid completo (72.77–151.86) no contiene el precio (368.89): ninguna combinación razonable de crecimiento y WACC lo reconcilia"
       ]
     },
     "terminal_growth": 0.025,
-    "upside": -68.5787091003,
+    "upside": -69.928705034,
     "value_composition": {
-      "stage1_pct": 20.8,
-      "stage2_pct": 23.6,
-      "terminal_pct": 55.6
+      "stage1_pct": 21.6,
+      "stage2_pct": 24.1,
+      "terminal_pct": 54.3
     },
-    "wacc": 0.103842059965,
+    "wacc": 0.106956827541,
     "warnings": []
   },
   "dcf_status": {
@@ -1383,11 +1435,11 @@
       "price_card": {
         "currency": "USD",
         "exchange": "NYSE",
-        "from_high_pct": -4.07478676929,
+        "from_high_pct": -4.07478616031,
         "from_high_txt": "−4.1%",
-        "high": 384.56,
+        "high": 384.559997559,
         "high_txt": "$384.56",
-        "low": 118.3,
+        "low": 118.300003052,
         "low_txt": "$118.30",
         "price": 368.89,
         "price_txt": "$368.89"
@@ -1712,59 +1764,59 @@
           "tone": "neg"
         },
         "dcf_composition": {
-          "explicit_pct": 44.4,
-          "terminal_pct": 55.6
+          "explicit_pct": 45.7,
+          "terminal_pct": 54.3
         },
         "fair_value": {
           "axis": [
-            64.056,
+            61.8545,
             405.779
           ],
           "badge": {
             "label": "Sobrevalorada (fiabilidad baja)",
             "tone": "neu"
           },
-          "fair_value": 115.91,
-          "fair_value_txt": "$115.91",
-          "grid_high": 160.79,
-          "grid_high_txt": "$161",
-          "grid_low": 75.36,
-          "grid_low_txt": "$75",
+          "fair_value": 110.93,
+          "fair_value_txt": "$110.93",
+          "grid_high": 151.86,
+          "grid_high_txt": "$152",
+          "grid_low": 72.77,
+          "grid_low_txt": "$73",
           "method": "DCF",
           "price": 368.89,
           "price_txt": "$368.89",
           "reliability": "baja",
           "reliability_tone": "neg",
           "state": "con_dato",
-          "text": "el precio excede en 69% el valor intrínseco estimado. El DCF no concilia con el precio bajo ningún supuesto razonable; no se usa en el score",
-          "upside_txt": "-68.6%",
+          "text": "el precio excede en 70% el valor intrínseco estimado. El DCF no concilia con el precio bajo ningún supuesto razonable; no se usa en el score",
+          "upside_txt": "-69.9%",
           "zones": [
             {
-              "from": 64.056,
+              "from": 61.8545,
               "label": "Muy infravalorada",
-              "to": 89.1615384615,
+              "to": 85.3307692308,
               "tone": "pos"
             },
             {
-              "from": 89.1615384615,
+              "from": 85.3307692308,
               "label": "Infravalorada",
-              "to": 105.372727273,
+              "to": 100.845454545,
               "tone": "pos"
             },
             {
-              "from": 105.372727273,
+              "from": 100.845454545,
               "label": "Precio justo",
-              "to": 128.788888889,
+              "to": 123.255555556,
               "tone": "neu"
             },
             {
-              "from": 128.788888889,
+              "from": 123.255555556,
               "label": "Prima",
-              "to": 165.585714286,
+              "to": 158.471428571,
               "tone": "warn"
             },
             {
-              "from": 165.585714286,
+              "from": 158.471428571,
               "label": "Sobrevalorada",
               "to": 405.779,
               "tone": "neg"
@@ -1891,7 +1943,7 @@
           "key": "convergence",
           "label": "Convergencia entre métodos",
           "level": "No evaluable",
-          "text": "DCF -69% (cara, no evaluable) · múltiplos frente al sector -0.75 (cara). Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo. El DCF no concilia con el precio y no se usa para contrastar."
+          "text": "DCF -70% (cara, no evaluable) · múltiplos frente al sector -0.75 (cara). Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo. El DCF no concilia con el precio y no se usa para contrastar."
         },
         {
           "key": "coverage",
@@ -2093,7 +2145,7 @@
           "key": "beta",
           "label": "Beta bruta",
           "state": "con_dato",
-          "value": "1.35"
+          "value": "1.46"
         }
       ],
       "official_source_badge": null,
@@ -2147,7 +2199,7 @@
     "readings": {
       "beta": {
         "label": "Volátil",
-        "text": "con beta 1.35, la acción amplifica los movimientos del mercado",
+        "text": "con beta 1.46, la acción amplifica los movimientos del mercado",
         "tone": "warn"
       },
       "buyback_yield": {
@@ -2162,7 +2214,7 @@
       },
       "dcf_upside": {
         "label": "Sobrevalorada (fiabilidad baja)",
-        "text": "el precio excede en 69% el valor intrínseco estimado. El DCF no concilia con el precio bajo ningún supuesto razonable; no se usa en el score",
+        "text": "el precio excede en 70% el valor intrínseco estimado. El DCF no concilia con el precio bajo ningún supuesto razonable; no se usa en el score",
         "tone": "neu"
       },
       "de": {
@@ -2235,8 +2287,8 @@
               },
               {
                 "category": "Valor intrínseco",
-                "detail": "El DCF estima $116 (−69% frente al precio), pero el grid completo (75.36–160.79) no contiene el precio (368.89): ninguna combinación razonable de crecimiento y WACC lo reconcilia. No se usa en el score.",
-                "reason": "DCF no concluyente −69% (fiabilidad baja)"
+                "detail": "El DCF estima $111 (−70% frente al precio), pero el grid completo (72.77–151.86) no contiene el precio (368.89): ninguna combinación razonable de crecimiento y WACC lo reconcilia. No se usa en el score.",
+                "reason": "DCF no concluyente −70% (fiabilidad baja)"
               }
             ],
             "key": "warnings",
@@ -2285,7 +2337,7 @@
           "caption": "Precio actual $368.89 — posición 94% del rango.",
           "high": "$384.56",
           "low": "$118.30",
-          "pos": 94.1147750319,
+          "pos": 94.1147758274,
           "price": "$368.89",
           "reading": {
             "label": "En máximos de 52 semanas",
@@ -2549,11 +2601,11 @@
                 {
                   "in_block": false,
                   "metric": "DCF (upside)",
-                  "reason": "El DCF no concilia con el precio bajo ningún supuesto razonable; no se usa en el score: el grid completo (75.36–160.79) no contiene el precio (368.89): ninguna combinación razonable de crecimiento y WACC lo reconcilia",
+                  "reason": "El DCF no concilia con el precio bajo ningún supuesto razonable; no se usa en el score: el grid completo (72.77–151.86) no contiene el precio (368.89): ninguna combinación razonable de crecimiento y WACC lo reconcilia",
                   "sign": "0",
                   "state": "con_dato",
                   "tone": "neu",
-                  "value": "-69%"
+                  "value": "-70%"
                 },
                 {
                   "in_block": false,
@@ -3005,13 +3057,13 @@
           "LECTURA"
         ],
         "dcf_missing": null,
-        "dcf_params": "Parámetros del modelo — WACC 10.38% · crecimiento 28.70% (CAGR de ingresos por acción a 3 años) · terminal 2.50% · el valor terminal aporta el 56% del valor total",
-        "dcf_reliability": "Fiabilidad del DCF: baja (el grid completo (75.36–160.79) no contiene el precio (368.89): ninguna combinación razonable de crecimiento y WACC lo reconcilia). El DCF no concilia con el precio bajo ningún supuesto razonable; no se usa en el score.",
+        "dcf_params": "Parámetros del modelo — WACC 10.70% · crecimiento 28.70% (CAGR de ingresos por acción a 3 años) · terminal 2.50% · el valor terminal aporta el 54% del valor total",
+        "dcf_reliability": "Fiabilidad del DCF: baja (el grid completo (72.77–151.86) no contiene el precio (368.89): ninguna combinación razonable de crecimiento y WACC lo reconcilia). El DCF no concilia con el precio bajo ningún supuesto razonable; no se usa en el score.",
         "dcf_reliability_level": "baja",
         "dcf_reliability_tone": "neg",
         "intrinsic": {
           "graham_note": null,
-          "intro": "El precio excede en 69% el valor intrínseco estimado. El DCF no concilia con el precio bajo ningún supuesto razonable; no se usa en el score.",
+          "intro": "El precio excede en 70% el valor intrínseco estimado. El DCF no concilia con el precio bajo ningún supuesto razonable; no se usa en el score.",
           "rows": [
             {
               "bench": null,
@@ -3033,7 +3085,7 @@
               "state": "con_dato",
               "text": null,
               "tone": null,
-              "value": "$115.91"
+              "value": "$110.93"
             },
             {
               "bench": null,
@@ -3042,9 +3094,9 @@
               "label": "Potencial vs precio (upside)",
               "reading": "Sobrevalorada (fiabilidad baja)",
               "state": "con_dato",
-              "text": "el precio excede en 69% el valor intrínseco estimado. El DCF no concilia con el precio bajo ningún supuesto razonable; no se usa en el score",
+              "text": "el precio excede en 70% el valor intrínseco estimado. El DCF no concilia con el precio bajo ningún supuesto razonable; no se usa en el score",
               "tone": "neu",
-              "value": "-68.6%"
+              "value": "-69.9%"
             },
             {
               "bench": null,
@@ -3055,7 +3107,7 @@
               "state": "con_dato",
               "text": null,
               "tone": null,
-              "value": "-218.26%"
+              "value": "-232.54%"
             }
           ]
         },
@@ -3209,11 +3261,11 @@
           "base_discount_idx": 2,
           "base_growth_idx": 2,
           "columns": [
-            "8.4%",
-            "9.4%",
-            "10.4%",
-            "11.4%",
-            "12.4%"
+            "8.7%",
+            "9.7%",
+            "10.7%",
+            "11.7%",
+            "12.7%"
           ],
           "corner": "CREC. \\ WACC",
           "intro": "Valor justo estimado según crecimiento (filas) y tasa de descuento (columnas). Verde: escenario por encima del precio actual; rojo: por debajo.",
@@ -3224,47 +3276,12 @@
                 {
                   "band": 4,
                   "base": false,
-                  "value": "$134"
+                  "value": "$127"
                 },
                 {
                   "band": 4,
                   "base": false,
-                  "value": "$113"
-                },
-                {
-                  "band": 4,
-                  "base": false,
-                  "value": "$97"
-                },
-                {
-                  "band": 4,
-                  "base": false,
-                  "value": "$85"
-                },
-                {
-                  "band": 4,
-                  "base": false,
-                  "value": "$75"
-                }
-              ],
-              "label": "23.7%"
-            },
-            {
-              "cells": [
-                {
-                  "band": 4,
-                  "base": false,
-                  "value": "$147"
-                },
-                {
-                  "band": 4,
-                  "base": false,
-                  "value": "$123"
-                },
-                {
-                  "band": 4,
-                  "base": false,
-                  "value": "$106"
+                  "value": "$107"
                 },
                 {
                   "band": 4,
@@ -3275,6 +3292,41 @@
                   "band": 4,
                   "base": false,
                   "value": "$82"
+                },
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$73"
+                }
+              ],
+              "label": "23.7%"
+            },
+            {
+              "cells": [
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$139"
+                },
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$118"
+                },
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$102"
+                },
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$89"
+                },
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$79"
                 }
               ],
               "label": "26.2%"
@@ -3284,27 +3336,27 @@
                 {
                   "band": 4,
                   "base": false,
-                  "value": "$161"
+                  "value": "$152"
                 },
                 {
                   "band": 4,
                   "base": false,
-                  "value": "$135"
+                  "value": "$128"
                 },
                 {
                   "band": 4,
                   "base": true,
-                  "value": "$116"
+                  "value": "$111"
                 },
                 {
                   "band": 4,
                   "base": false,
-                  "value": "$101"
+                  "value": "$97"
                 },
                 {
                   "band": 4,
                   "base": false,
-                  "value": "$90"
+                  "value": "$86"
                 }
               ],
               "label": "28.7%"
@@ -3314,7 +3366,7 @@
         "wacc_breakdown": [
           {
             "label": "WACC",
-            "value": "10.38%"
+            "value": "10.70%"
           },
           {
             "label": "Peso del patrimonio",
@@ -3322,19 +3374,19 @@
           },
           {
             "label": "Coste del patrimonio (Ke)",
-            "value": "10.48%"
+            "value": "10.79%"
           },
           {
             "label": "Tasa libre de riesgo (Rf)",
             "value": "5.29%"
           },
           {
-            "label": "Beta bruta (de la fuente)",
-            "value": "1.35"
+            "label": "Beta bruta (propia, 2 años)",
+            "value": "1.46"
           },
           {
             "label": "Beta ajustada (Blume)",
-            "value": "1.24"
+            "value": "1.31"
           },
           {
             "label": "Prima de mercado implícita",
@@ -3357,7 +3409,7 @@
             "value": "21.00%"
           }
         ],
-        "wacc_note": "WACC 10.38% = 98.28% × Ke 10.48% (Rf 5.29% + β ajustada 1.24 [bruta 1.35, Blume] × prima implícita 4.20%) + 1.72% × Kd 6.40% × (1 − t 21.00%). Kd = Rf + spread del rating sintético BBB (tabla de empresas grandes); regla M: EBIT < 0 con caja neta, cobertura no significativa -> tramo de caja neta. t: tipo legal (beneficio antes de impuestos ≤ 0: tipo legal 21%). Rf: ^TNX no disponible (sin cotización): valor de config."
+        "wacc_note": "WACC 10.70% = 98.28% × Ke 10.79% (Rf 5.29% + β ajustada 1.31 [bruta 1.46, propia, 2 años semanales frente al S&P 500, Blume] × prima implícita 4.20%) + 1.72% × Kd 6.40% × (1 − t 21.00%). Kd = Rf + spread del rating sintético BBB (tabla de empresas grandes); regla M: EBIT < 0 con caja neta, cobertura no significativa -> tramo de caja neta. t: tipo legal (beneficio antes de impuestos ≤ 0: tipo legal 21%). Rf: ^TNX no disponible (sin cotización): valor de config."
       }
     },
     "summary": {
@@ -3460,7 +3512,7 @@
             },
             {
               "kind": "signed",
-              "label": "DCF (upside) · -69%",
+              "label": "DCF (upside) · -70%",
               "tone": "neu",
               "value": 0
             }
@@ -3535,11 +3587,11 @@
         },
         {
           "label": "ATRACTIVO DEL PRECIO",
-          "text": "EV/Ventas: Exigente por ventas (23.9x). El precio excede en 69% el valor intrínseco estimado. El DCF no concilia con el precio bajo ningún supuesto razonable; no se usa en el score."
+          "text": "EV/Ventas: Exigente por ventas (23.9x). El precio excede en 70% el valor intrínseco estimado. El DCF no concilia con el precio bajo ningún supuesto razonable; no se usa en el score."
         },
         {
           "label": "CONTEXTO DE MERCADO",
-          "text": "Cotiza en el 94% del rango de 52 semanas, en la zona de máximos. Con beta 1.35, la acción amplifica los movimientos del mercado."
+          "text": "Cotiza en el 94% del rango de 52 semanas, en la zona de máximos. Con beta 1.46, la acción amplifica los movimientos del mercado."
         },
         {
           "label": "CONFIANZA DEL VEREDICTO",
@@ -4391,7 +4443,7 @@
   },
   "key_metrics": {
     "asset_turnover": 0.625357878105,
-    "beta": 1.351,
+    "beta": 1.463630795,
     "book_value_per_share": 6.099,
     "buyback_yield": -0.0301109729981,
     "cash": 2344695000.0,
@@ -4437,8 +4489,8 @@
     "pe_normalized": null,
     "peg": 6.61,
     "pfcf": 109.045778578,
-    "price_52w_high": 384.56,
-    "price_52w_low": 118.3,
+    "price_52w_high": 384.559997559,
+    "price_52w_low": 118.300003052,
     "ps": 23.9471656577,
     "quick_ratio": 0.83,
     "revenue": 5434647000.0,
@@ -4464,7 +4516,7 @@
     "total_assets": 8690459000.0,
     "total_debt": 2283985000.0,
     "total_equity": 2149664000.0,
-    "wacc": 0.103842059965
+    "wacc": 0.106956827541
   },
   "not_applicable": {
     "altman": "No aplica a empresas en crecimiento sin beneficio: el Altman se calibró con quiebras de empresas maduras endeudadas; su solidez se mide por el runway (caja frente a la quema de FCF)",
@@ -4554,9 +4606,9 @@
     "score_raw": 20
   },
   "price_history": {
-    "52w_high": 384.56,
-    "52w_low": 118.3,
-    "beta": 1.351
+    "52w_high": 384.559997559,
+    "52w_low": 118.300003052,
+    "beta": 1.463630795
   },
   "profile": {
     "country": "United States",
@@ -4609,7 +4661,7 @@
   },
   "ratios": {
     "asset_turnover": 0.625357878105,
-    "beta": 1.351,
+    "beta": 1.463630795,
     "cash_ratio": 0.630035058152,
     "current_ratio": 0.938816847152,
     "debt_to_assets": 0.262815232199,
@@ -4894,10 +4946,10 @@
           {
             "adjustment": 0,
             "metric": "DCF (upside)",
-            "reason": "El DCF no concilia con el precio bajo ningún supuesto razonable; no se usa en el score: el grid completo (75.36–160.79) no contiene el precio (368.89): ninguna combinación razonable de crecimiento y WACC lo reconcilia",
+            "reason": "El DCF no concilia con el precio bajo ningún supuesto razonable; no se usa en el score: el grid completo (72.77–151.86) no contiene el precio (368.89): ninguna combinación razonable de crecimiento y WACC lo reconcilia",
             "reliability": "baja",
             "severity": "neutral",
-            "value": "-69%"
+            "value": "-70%"
           },
           {
             "adjustment": 0,
@@ -4915,7 +4967,7 @@
           "Crecimiento 31.4% (CAGR 3 años) + margen FCF − SBC -8.3% = 23",
           "Muy alto (109.0x)",
           "promedio de los ajustes reescalados a ±1 (P/FCF -1.00) = -1.00 × 2 (máximo con 1 miembro) = -2.0",
-          "El DCF no concilia con el precio bajo ningún supuesto razonable; no se usa en el score: el grid completo (75.36–160.79) no contiene el precio (368.89): ninguna combinación razonable de crecimiento y WACC lo reconcilia",
+          "El DCF no concilia con el precio bajo ningún supuesto razonable; no se usa en el score: el grid completo (72.77–151.86) no contiene el precio (368.89): ninguna combinación razonable de crecimiento y WACC lo reconcilia",
           "EV/EBITDA: No aplica a empresas en crecimiento sin beneficio: EBITDA negativo o nulo, sin resultado operativo que capitalizar; P/E, PEG: No aplica a empresas en crecimiento sin beneficio: aún no tiene beneficios que capitalizar (no cuenta en la cobertura)"
         ],
         "max": 20,
@@ -5009,18 +5061,18 @@
   },
   "sensitivity": {
     "base_case": {
-      "discount_rate": 0.103842059965,
-      "fair_value": 115.91,
+      "discount_rate": 0.106956827541,
+      "fair_value": 110.93,
       "growth_rate": 0.286975427392
     },
     "base_discount_idx": 2,
     "base_growth_idx": 2,
     "discount_rates": [
-      0.0838,
-      0.0938,
-      0.1038,
-      0.1138,
-      0.1238
+      0.087,
+      0.097,
+      0.107,
+      0.117,
+      0.127
     ],
     "growth_rates": [
       0.237,
@@ -5031,34 +5083,34 @@
     "is_valid": true,
     "matrix": [
       [
-        133.9,
-        112.76,
-        97.07,
-        84.96,
-        75.36
+        126.57,
+        107.4,
+        92.97,
+        81.74,
+        72.77
       ],
       [
-        146.79,
-        123.45,
-        106.11,
-        92.76,
-        82.16
+        138.7,
+        117.52,
+        101.59,
+        89.2,
+        79.3
       ],
       [
-        160.79,
-        135.03,
-        115.91,
-        101.19,
-        89.52
+        151.86,
+        128.49,
+        110.93,
+        97.27,
+        86.36
       ]
     ],
     "statistics": {
       "current_price": 368.89,
-      "max_value": 160.79,
-      "mean_value": 110.517333333,
-      "median_value": 106.11,
-      "min_value": 75.36,
-      "upside_base_case": -68.5787091003
+      "max_value": 151.86,
+      "mean_value": 105.511333333,
+      "median_value": 101.59,
+      "min_value": 72.77,
+      "upside_base_case": -69.928705034
     },
     "trimmed": {
       "discount": [],
@@ -5089,10 +5141,10 @@
   },
   "wacc": {
     "applicable": true,
-    "beta": 1.23517,
+    "beta": 1.31063263265,
     "beta_default": false,
     "beta_method": "Blume",
-    "beta_raw": 1.351,
+    "beta_raw": 1.463630795,
     "bounds": [
       0.06,
       0.2
@@ -5102,7 +5154,7 @@
     "equity": 130144395264.0,
     "kd": 0.064,
     "kd_after_tax": 0.05056,
-    "ke": 0.10477714,
+    "ke": 0.107946570571,
     "mrp": 0.042,
     "rating": {
       "coverage": -148.755472697,
@@ -5111,7 +5163,7 @@
       "spread": 0.0111,
       "table": "grandes"
     },
-    "raw": 0.103842059965,
+    "raw": 0.106956827541,
     "reason": null,
     "rf": 0.0529,
     "rf_as_of": null,
@@ -5121,7 +5173,7 @@
     "tax_rate": 0.21,
     "tax_reason": "beneficio antes de impuestos ≤ 0: tipo legal 21%",
     "tax_source": "legal",
-    "value": 0.103842059965,
+    "value": 0.106956827541,
     "weights": {
       "debt": 0.0172469450691,
       "equity": 0.982753054931

@@ -63,6 +63,14 @@ min_weeks = 52
 # Una descarga diaria SIN ajustar (cierre, máximo y mínimo reales; cierre ajustado aparte) con los dividendos y
 # splits declarados: de ella salen el dividendo indicado de los ADR (T2), el rango de 52 semanas (T6) y la beta
 # propia (T6). 2 años bastan para la beta (104 semanas) y el rango (252 sesiones) y cubren dos ciclos de dividendo.
+
+[beta_choice]                   # lib/beta.py (fase 2b, T6; F2_PRECEDENCIA §5): qué beta usa el motor
+min_r2 = 0.1                    # beta propia con R² menor (o < min_weeks): la del sector (config/betas.toml)
+discrepancy = 0.5               # |propia − fuente| mayor: aviso "beta discrepante entre fuentes" (la confianza lo registra)
+# Rango de 52 semanas del motor (lib/beta.py): sesiones de los últimos `range52_window_days` días, sin el mismo día de
+# hace un año (la definición de Yahoo: coincide con su mínimo en 35 de 35 tickers del panel; 252 sesiones, en 30).
+range52_window_days = 365
+
 [history]
 period = "2y"
 interval = "1d"

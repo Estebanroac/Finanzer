@@ -334,7 +334,8 @@ def test_no_rsi_macd_or_chart_patterns():
 def test_modules_are_isolated_from_the_engine():
     """Nada del motor, la web ni el PDF importa price_series ni market_signals (fase 5: contexto aparte). Desde la 2b
     la serie de precios entra por lib/price_history.py (D5: solo dividendos, rango de 52 semanas y beta), que lee la
-    config de la serie pero no importa estos módulos."""
+    config de la serie pero no importa estos módulos. Excepción única (T6): lib/beta.py importa la función `beta` de
+    market_signals y nada más."""
     import re
     backend = os.path.dirname(pf.TESTS_DIR)
     imports = re.compile(r"^\s*(from\s+(price_series|market_signals)\s+import|import\s+(price_series|market_signals)\b)",
@@ -346,6 +347,13 @@ def test_modules_are_isolated_from_the_engine():
                 continue
             with open(os.path.join(folder, name), encoding="utf-8") as fh:
                 text = fh.read()
+            if folder.endswith("lib") and name == "beta.py":
+                found = imports.findall(text)
+                assert [line for line in text.splitlines() if "market_signals" in line and "import" in line] == [
+                    "from market_signals import beta as _regression_beta   # D5: lo único de market_signals que entra "
+                    "en el motor"], "lib/beta.py solo puede importar la función beta de market_signals"
+                assert len(found) == 1
+                continue
             if imports.search(text):
                 offenders.append(name)
     assert offenders == []

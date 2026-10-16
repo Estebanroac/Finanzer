@@ -343,7 +343,9 @@ def test_prod_provenance_marks_finnhub_and_statements(outputs_by_env):
     if "panel" not in conftest.BOUND_ENVS:
         pytest.skip("falta el panel")
     f = outputs_by_env("panel")["NFLX"][0]["data_provenance"]["fields"]
-    assert f["beta"]["source"] == "finnhub"
+    # Fase 2b (T6): la beta sale de la serie de precios (propia); Finnhub queda en lo que solo él da.
+    assert f["beta"]["source"] == "derivado" and "2 años semanales" in f["beta"]["detail"]
+    assert f["_yahoo_ratios.forwardPE"]["source"] == "finnhub"
     assert f["_prior_year.shares"]["source"] == "yfinance_statements"
     assert f["sector"]["detail"].startswith("búsqueda de Yahoo")
     assert f["forwardEps"]["source"] == "sin_dato"

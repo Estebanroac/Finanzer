@@ -123,9 +123,19 @@ def market() -> Dict[str, Any]:
     return _cached("^MARKET", H["market_cache_ttl_s"], make)
 
 
+def _company_and_market(symbol: str) -> Dict[str, Any]:
+    """El título y, después, el S&P 500 (en caché casi siempre) para la beta propia (T6)."""
+    res = dict(company(symbol))
+    try:
+        res["market"] = market()
+    except Exception as e:  # el índice falla de muchas maneras: el análisis sigue sin beta propia y lo dice
+        res["market"] = {"symbol": None, "frame": None, "reason": f"{type(e).__name__}: {e}"}
+    return res
+
+
 def start(symbol: str):
-    """Lanza la descarga del título en un hilo (se recoge con `collect`)."""
-    return _pool.submit(company, symbol)
+    """Lanza la descarga del título y del índice en un hilo (se recoge con `collect`)."""
+    return _pool.submit(_company_and_market, symbol)
 
 
 def collect(future) -> Dict[str, Any]:
@@ -157,6 +167,12 @@ def summary(res: Dict[str, Any]) -> Dict[str, Any]:
     if f is not None:
         out.update({"first_date": f.index[0].strftime("%Y-%m-%d"), "last_date": f.index[-1].strftime("%Y-%m-%d"),
                     "rows": len(f)})
+    mk = res.get("market")
+    if mk is not None:
+        mf = mk.get("frame")
+        out["market"] = {"symbol": mk.get("symbol"), "status": "ok" if mf is not None else "sin_dato",
+                         "reason": mk.get("reason"), "fallback_of": mk.get("fallback_of"),
+                         **({"last_date": mf.index[-1].strftime("%Y-%m-%d"), "rows": len(mf)} if mf is not None else {})}
     return out
 
 

@@ -61,7 +61,8 @@ def test_price_contracts_towards_50_by_confidence(level, factor, shown):
 
 
 def test_quality_is_not_contracted_by_convergence(outputs_by_env):
-    a = outputs_by_env("panel")["NFLX"][0]                  # convergencia baja, confianza media
+    a = outputs_by_env("panel")["PG"][0]                    # convergencia media, confianza media (fase 2b, T6: NFLX
+    #                                                         pasó a confianza alta con su beta propia)
     assert a["confidence"]["level"] == "media"
     q = a["quality"]
     by = {k: v["score"] for k, v in a["score"]["breakdown"].items()}

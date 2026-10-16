@@ -269,9 +269,10 @@ def test_dcf_component_bounded_by_reliability():
 
 
 def test_dcf_subtracts_in_valuation(outputs_by_env):
-    """Fallo 1 del spec: el DCF resta. NFLX del panel (−22%, fiabilidad alta: banda "cara") -> −2, y
-    Valoración es la suma de sus ajustes (el rescate de growth no lo compensa). Antes: NFLX prod (−33%, media)."""
-    a = outputs_by_env("panel")["NFLX"][0]
+    """Fallo 1 del spec: el DCF resta. V del panel (−25%, fiabilidad alta: banda "cara") -> −2, y Valoración es la
+    suma de sus ajustes. Antes NFLX del panel (−22%); desde la fase 2b (T6) su beta propia (0.96, frente a 1.61 de
+    Finnhub) baja el WACC y su DCF queda en precio."""
+    a = outputs_by_env("panel")["V"][0]
     val = a["score"]["breakdown"]["Valoración"]
     row = _dcf_row(val)
     assert a["dcf"]["reliability"]["level"] == "alta" and a["dcf"]["upside"] < -10 and row["adjustment"] == -2
@@ -353,5 +354,6 @@ def test_valuation_contradiction_lowers_confidence(outputs_by_env):
     alta = {"level": "alta", "reasons": []}
     v = verdict_confidence({"convergence": conv, "coverage": alta, "source": alta, "stability": alta})
     assert v["level"] != "alta" and v["limits_score"] is False
-    n = outputs_by_env("panel")["NFLX"][0]["confidence"]
+    # Caso real con convergencia media (fase 2b, T6: NFLX, el de antes, pasó a convergencia alta con su beta propia).
+    n = outputs_by_env("panel")["PG"][0]["confidence"]
     assert n["dimensions"]["convergence"]["level"] == "media" and n["level"] == "media"

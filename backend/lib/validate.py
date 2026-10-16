@@ -429,8 +429,18 @@ def _rule_period(c: _Ctx) -> None:
         c.flag(r["field"], "periodo_incoherente", "aviso", r.get("value"), None, r["reason"])
 
 
+def _rule_beta(c: _Ctx) -> None:
+    """Fase 2b (T6, F2_PRECEDENCIA §5): la beta propia y la de la fuente difieren más que `discrepancy`. Se usa la
+    propia y se avisa ("beta discrepante entre fuentes"); la confianza lo cuenta como incidencia de fuente."""
+    d = (c.info.get("_beta") or {}).get("discrepancy")
+    if d:
+        c.flag("beta", "beta_discrepante", "aviso", d["source"], d["own"],
+               f"beta discrepante entre fuentes: propia {d['own']:.2f} frente a {d['source']:.2f} de "
+               f"{d.get('source_name') or 'la fuente'} (diferencia > {d['threshold']:g}); se usa la propia")
+
+
 _INPUT_RULES = (_rule_period, _rule_fcf, _rule_impossible, _rule_margins, _rule_units,
-                _rule_growth, _rule_split_basis, _rule_jumps, _rule_per_share_plausibility)
+                _rule_growth, _rule_split_basis, _rule_jumps, _rule_per_share_plausibility, _rule_beta)
 
 
 def validate_info(info: Dict[str, Any], symbol: str = "") -> Dict[str, Any]:

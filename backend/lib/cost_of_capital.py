@@ -119,28 +119,34 @@ def synthetic_rating(coverage: Optional[float], market_cap: Optional[float],
             "table": "grandes" if large else "pequeñas", "coverage": coverage, "flag": flag}
 
 
-def adjusted_beta(beta: Optional[float]) -> float:
-    """Beta ajustada de Blume: blume_weight × β bruta + blume_prior (sin beta: la de mercado)."""
+def adjusted_beta(beta: Optional[float], preadjusted: bool = False) -> float:
+    """Beta ajustada de Blume: blume_weight × β bruta + blume_prior (sin beta: la de mercado). Fase 2b (T6): una beta
+    del sector (`preadjusted`) ya es una media de industria y entra tal cual (Blume corrige el error de estimación de
+    una sola regresión)."""
     C = cfg("valuation.capm")
+    if preadjusted and beta is not None:
+        return beta
     raw = beta if beta is not None else C["default_beta"]
     return C["blume_weight"] * raw + C["blume_prior"]
 
 
-def cost_of_equity(beta: Optional[float], rf: float) -> float:
-    """Ke = Rf + β ajustada (Blume) × prima implícita. `beta` es la beta BRUTA."""
-    return rf + adjusted_beta(beta) * cfg("valuation.capm.market_risk_premium")
+def cost_of_equity(beta: Optional[float], rf: float, preadjusted: bool = False) -> float:
+    """Ke = Rf + β ajustada (Blume) × prima implícita. `beta` es la beta BRUTA (o la del sector, `preadjusted`)."""
+    return rf + adjusted_beta(beta, preadjusted) * cfg("valuation.capm.market_risk_premium")
 
 
 def wacc(*, beta: Optional[float], rf: Dict[str, Any], market_cap: Optional[float],
          total_debt: Optional[float], interest_coverage: Optional[float],
-         coverage_state: Optional[str], tax: Dict[str, Any]) -> Dict[str, Any]:
+         coverage_state: Optional[str], tax: Dict[str, Any], beta_preadjusted: bool = False) -> Dict[str, Any]:
     """WACC ponderado con todos sus componentes (lo mostrado es lo usado: `value`)."""
     C, W = cfg("valuation.capm"), cfg("valuation.wacc")
     b = beta if beta is not None else C["default_beta"]
-    ke = cost_of_equity(b, rf["value"])
+    pre = beta_preadjusted and beta is not None
+    ke = cost_of_equity(b, rf["value"], pre)
     out: Dict[str, Any] = {
         "value": None, "raw": None, "clamped": False, "bounds": [W["clamp_min"], W["clamp_max"]],
-        "ke": ke, "beta": adjusted_beta(b), "beta_raw": b, "beta_method": "Blume",
+        "ke": ke, "beta": adjusted_beta(b, pre), "beta_raw": None if pre else b,
+        "beta_method": "beta del sector (sin Blume)" if pre else "Blume",
         "beta_default": beta is None, "rf": rf["value"], "rf_source": rf["source"],
         "rf_fallback": rf["fallback"], "rf_reason": rf.get("reason"), "rf_as_of": rf.get("as_of"),
         "mrp": C["market_risk_premium"], "kd": None, "kd_after_tax": None, "rating": None,

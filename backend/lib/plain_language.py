@@ -27,6 +27,8 @@ VALIDATION_RULES = {
     "unidades": "Un dato de la fuente venía en unidades incoherentes y se corrigió o se descartó.",
     "base_de_split": "Los datos del ejercicio anterior no reflejaban un split y se corrigieron.",
     "salto_interanual": "Un dato del ejercicio anterior tenía un salto incoherente y se descartó.",
+    "beta_discrepante": ("La beta calculada con dos años de cotizaciones difiere mucho de la del proveedor de datos; "
+                         "se usa la calculada."),
 }
 _VALIDATION_DEFAULT = "Un dato de la fuente no superó la validación y se corrigió o se descartó."
 

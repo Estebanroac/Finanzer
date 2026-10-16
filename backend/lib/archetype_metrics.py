@@ -38,9 +38,9 @@ def _pos(v: Optional[float]) -> bool:
     return v is not None and v > 0
 
 
-def cost_of_equity(beta: Optional[float], rf: Optional[float] = None) -> float:
+def cost_of_equity(beta: Optional[float], rf: Optional[float] = None, preadjusted: bool = False) -> float:
     """Ke por CAPM (Rf + β·MRP): el mismo Rf que el WACC (etapa 8, cost_of_capital)."""
-    return _ke(beta, cfg("valuation.capm.risk_free_rate") if rf is None else rf)
+    return _ke(beta, cfg("valuation.capm.risk_free_rate") if rf is None else rf, preadjusted)
 
 
 def justified_multiple(ret: Optional[float], ke: float, g: float) -> Optional[float]:
@@ -51,7 +51,7 @@ def justified_multiple(ret: Optional[float], ke: float, g: float) -> Optional[fl
 
 
 def _financial(st: Dict[str, Any], km: Dict[str, Any], beta: Optional[float],
-               rf: Optional[float] = None) -> Dict[str, Any]:
+               rf: Optional[float] = None, beta_preadjusted: bool = False) -> Dict[str, Any]:
     ni, eq, tbv = st.get("net_income") or [], st.get("stockholders_equity") or [], st.get("tangible_book_value") or []
     rev = st.get("revenue") or []
     mcap = km.get("market_cap")
@@ -59,7 +59,7 @@ def _financial(st: Dict[str, Any], km: Dict[str, Any], beta: Optional[float],
     roe_series = ratio_series(ni, eq)
     roe_fy = _first(roe_series)
     rote = (ni0 / tbv0) if (ni0 is not None and _pos(tbv0)) else None
-    ke, g = cost_of_equity(beta, rf), cfg("valuation.dcf.terminal_growth")   # β ajustada de Blume
+    ke, g = cost_of_equity(beta, rf, beta_preadjusted), cfg("valuation.dcf.terminal_growth")   # β ajustada
     pb = (mcap / eq0) if (_pos(mcap) and _pos(eq0)) else None
     ptbv = (mcap / tbv0) if (_pos(mcap) and _pos(tbv0)) else None
     j_pb, j_ptbv = justified_multiple(roe_fy, ke, g), justified_multiple(rote, ke, g)
@@ -81,8 +81,9 @@ def _financial(st: Dict[str, Any], km: Dict[str, Any], beta: Optional[float],
     rev_yoy = _first(yoy_growths(rev))
     return {
         "cost_of_equity": ke, "terminal_growth": g,
-        "beta_raw": beta if beta is not None else cfg("valuation.capm.default_beta"),
-        "beta_adjusted": _blume(beta),
+        "beta_raw": None if (beta_preadjusted and beta is not None) else (
+            beta if beta is not None else cfg("valuation.capm.default_beta")),
+        "beta_adjusted": _blume(beta, beta_preadjusted),
         "roe_fy": roe_fy, "rote": rote, "pb": pb, "ptbv": ptbv,
         "pb_justified": j_pb, "ptbv_justified": j_ptbv,
         "pb_ratio": (pb / j_pb) if (pb is not None and j_pb) else None,
@@ -279,11 +280,12 @@ def _cyclical(st: Dict[str, Any], km: Dict[str, Any]) -> Dict[str, Any]:
 
 def compute(archetype: str, statements_fy: Optional[Dict[str, Any]], key_metrics: Dict[str, Any], *,
             beta: Optional[float] = None, revenue_cagr_3y: Optional[float] = None,
-            rf: Optional[float] = None, sbc: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+            rf: Optional[float] = None, sbc: Optional[Dict[str, Any]] = None,
+            beta_preadjusted: bool = False) -> Dict[str, Any]:
     """Métricas de la rama del arquetipo ({} si la rama no necesita ninguna)."""
     st = statements_fy or {}
     if archetype == FINANCIAL:
-        return _financial(st, key_metrics, beta, rf)
+        return _financial(st, key_metrics, beta, rf, beta_preadjusted)
     if archetype == GROWTH_PRE_PROFIT:
         return _growth_pre_profit(key_metrics, revenue_cagr_3y, st, sbc)
     if archetype == REIT:

@@ -412,6 +412,11 @@ def get_ticker_info(symbol: str) -> Dict[str, Any]:
         # ── Fase 2b: serie diaria de precios y lo que el motor toma de ella (D5) ──
         _hist = price_history.collect(_hist_future)
         info["_price_history"] = price_history.summary(_hist)
+        try:
+            _apply_beta_and_range(info, _hist)
+        except Exception as e:
+            logger.error(f"[BETA] {symbol}: {e}")
+            info["_beta"] = {"source": "error", "reason": f"{type(e).__name__}: {e}"}
 
         # ── Fase 2b (T3–T4): EDGAR: respaldo del mismo corte, fuente oficial (D7) y resultados publicados y aún no
         # incorporados (F2_PRECEDENCIA §1.1). Antes del dividendo: lo pagado del corte entra en su identidad. ──
@@ -475,6 +480,37 @@ def _apply_edgar(symbol: str, info: Dict[str, Any], ed: Dict[str, Any], hist: Di
             start = (_dt.date.fromisoformat(cut) + _dt.timedelta(days=1)).isoformat()
             pend = edgar.pending_from_calendar(earnings_calendar(symbol, start, today.isoformat()), cut, today)
     info["_pending_results"] = pend
+
+
+def _apply_beta_and_range(info: Dict[str, Any], hist: Dict[str, Any]) -> None:
+    """Fase 2b (T6, D5): la beta y el rango de 52 semanas salen de la serie de precios (lib/beta.py). La beta de la
+    fuente queda como contraste (o como respaldo, con aviso, si no hay serie); el rango de la fuente no se usa: sin
+    serie, sin dato."""
+    import beta as beta_mod
+    frame = (hist or {}).get("frame")
+    src = info.get("beta")
+    src_name = ((info.get("_provenance") or {}).get("beta") or {}).get("source")
+    ch = beta_mod.choose(beta_mod.own_beta(frame, (hist or {}).get("market")), src, src_name,
+                         info.get("sector"), info.get("industry"))
+    info["_beta"] = ch
+    info["beta"] = ch["value"]
+    if ch["source"] in ("propia", "sector"):
+        _tag_provenance(info, "derivado", ch["reason"], paths=["beta"], overwrite=True)
+    elif ch["source"] == "sin_dato":
+        _tag_provenance(info, "sin_dato", ch["reason"], paths=["beta"], overwrite=True)
+    else:
+        _tag_provenance(info, src_name or "finnhub", ch["reason"], paths=["beta"], overwrite=True)
+    price = info.get("currentPrice") or info.get("regularMarketPrice")
+    rg = beta_mod.range_52w(frame, price)
+    info["_range52"] = rg
+    info["fiftyTwoWeekHigh"], info["fiftyTwoWeekLow"] = rg["high"], rg["low"]
+    if rg["status"] == "ok":
+        _tag_provenance(info, "derivado",
+                        f"máximo y mínimo diarios de las {rg['sessions']} sesiones de la serie ({rg['first_session']} a "
+                        f"{rg['last_session']}, Yahoo history)", paths=["fiftyTwoWeekHigh", "fiftyTwoWeekLow"],
+                        overwrite=True)
+    else:
+        _tag_provenance(info, "sin_dato", rg["reason"], paths=["fiftyTwoWeekHigh", "fiftyTwoWeekLow"], overwrite=True)
 
 
 def _foreign_line(cur: Dict[str, Any]) -> bool:

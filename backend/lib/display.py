@@ -430,6 +430,17 @@ def data_notices(a) -> list:
     return out
 
 
+def beta_text(adjusted: Optional[float], raw: Optional[float], source: Optional[str]) -> str:
+    """Fase 2b (T6): qué beta entra en el Ke y de dónde sale (lib/beta.py)."""
+    adj = f"{adjusted:.2f}" if adjusted is not None else "—"
+    if source == "sector":
+        return f"β del sector {adj} [Damodaran, enero de 2026; sin Blume: es una media de industria]"
+    rw = f"{raw:.2f}" if raw is not None else "—"
+    who = {"propia": "propia, 2 años semanales frente al S&P 500", "fuente": "de la fuente, sin verificar"}.get(
+        source, "de la fuente")
+    return f"β ajustada {adj} [bruta {rw}, {who}, Blume]"
+
+
 def official_source_badge(a) -> Optional[dict]:
     """Fase 2b (D7): insignia de la cabecera web junto a la confianza, con el aviso como tooltip."""
     off = (a.get("data_provenance") or {}).get("official_source") or {}
@@ -1068,7 +1079,9 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         return (fv(raw, fmt), label, key, raw)
 
     _k_common = [_k(price, "price", "Precio", "price"), _k(km.get("market_cap"), "money", "Market cap", "market_cap")]
-    _beta = _k(km.get("beta"), "num", "Beta bruta", "beta")   # la ajustada (Blume) va en el detalle del WACC
+    # La ajustada (Blume) va en el detalle del WACC; la del sector ya es la que entra (fase 2b, T6).
+    _beta = _k(km.get("beta"), "num", "Beta del sector" if (a.get("beta") or {}).get("source") == "sector"
+               else "Beta bruta", "beta")
     _nde = _k(km.get("net_debt_to_ebitda"), "mult", "Deuda neta/EBITDA", "net_debt_to_ebitda")
     # Fase 1: un múltiplo negativo no es un nivel. Con caja neta, la tarjeta dice "Caja neta" y su importe (como la
     # lectura de la fila de Solidez); con EBITDA negativo y deuda neta, sin cifra.
@@ -1518,7 +1531,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     ke_note = None
     if is_financial and xm.get("cost_of_equity") is not None:
         ke_note = (f"Ke {fv(xm['cost_of_equity'], 'pct')} = Rf {fv((a.get('risk_free') or {}).get('value'), 'pct')} + "
-                   f"β ajustada {xm.get('beta_adjusted', 0):.2f} (bruta {xm.get('beta_raw', 0):.2f}, Blume) × prima "
+                   f"{beta_text(xm.get('beta_adjusted'), xm.get('beta_raw'), (a.get('beta') or {}).get('source'))} × prima "
                    f"implícita {fv(cfg('valuation.capm.market_risk_premium'), 'pct')}. Bancos y aseguradoras no usan "
                    "WACC: se valoran por P/B justificado con Ke.")
     # WACC usado (etapa 8): el mismo en DCF, grid y spread ROIC−WACC.
@@ -1529,8 +1542,8 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                + (f" (acotado desde {fv(_w.get('raw'), 'pct')} al rango "
                   f"{fv(_w['bounds'][0], 'pct')}–{fv(_w['bounds'][1], 'pct')})" if _w.get("clamped") else "")
                + f" = {fv((_w.get('weights') or {}).get('equity'), 'pct')} × Ke {fv(_w.get('ke'), 'pct')} "
-               f"(Rf {fv(_w.get('rf'), 'pct')} + β ajustada {_w.get('beta', 0):.2f} [bruta {_w.get('beta_raw', 0):.2f}, "
-               f"Blume] × prima implícita {fv(_w.get('mrp'), 'pct')})")
+               f"(Rf {fv(_w.get('rf'), 'pct')} + {beta_text(_w.get('beta'), _w.get('beta_raw'), (a.get('beta') or {}).get('source'))}"
+               f" × prima implícita {fv(_w.get('mrp'), 'pct')})")
         _rt = _w.get("rating") or {}
         if _w.get("kd") is not None:
             _wl += (f" + {fv((_w.get('weights') or {}).get('debt'), 'pct')} × Kd {fv(_w['kd'], 'pct')} × "
@@ -1558,8 +1571,11 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
             {"label": "Peso del patrimonio", "value": fv((_w.get("weights") or {}).get("equity"), "pct")},
             {"label": "Coste del patrimonio (Ke)", "value": fv(_w.get("ke"), "pct")},
             {"label": "Tasa libre de riesgo (Rf)", "value": fv(_w.get("rf"), "pct")},
-            {"label": "Beta bruta (de la fuente)", "value": f"{_w.get('beta_raw', 0):.2f}"},
-            {"label": "Beta ajustada (Blume)", "value": f"{_w.get('beta', 0):.2f}"},
+            *([{"label": "Beta del sector (Damodaran, sin Blume)", "value": f"{_w.get('beta', 0):.2f}"}]
+              if _w.get("beta_raw") is None else
+              [{"label": "Beta bruta" + {"propia": " (propia, 2 años)", "fuente": " (de la fuente, sin verificar)"}.get(
+                  (a.get("beta") or {}).get("source"), ""), "value": f"{_w.get('beta_raw', 0):.2f}"},
+               {"label": "Beta ajustada (Blume)", "value": f"{_w.get('beta', 0):.2f}"}]),
             {"label": "Prima de mercado implícita", "value": fv(_w.get("mrp"), "pct")},
         ]
         if _w.get("kd") is not None:

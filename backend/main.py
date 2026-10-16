@@ -274,6 +274,9 @@ def _build_provenance(yinfo: dict, out_flags: list, block_errors: list) -> dict:
         # Fase 2b: serie diaria de precios y dividendo indicado en la moneda y la clase del precio (T2).
         "price_history": yinfo.get("_price_history"),
         "dividend": yinfo.get("_dividend"),
+        # Fase 2b (T6): beta (propia, del sector o de la fuente) y rango de 52 semanas de la serie.
+        "beta": yinfo.get("_beta"),
+        "range52": yinfo.get("_range52"),
     }
 
 
@@ -707,10 +710,13 @@ def _compute_analysis(symbol: str) -> dict:
             # Etapa 9b: histórico anual (dato bruto, pestaña Histórico de la web).
             result["yearly_financials"] = [{k: (safe_float(v) if isinstance(v, float) else v) for k, v in r_.items()}
                                            for r_ in archetype_metrics.yearly_financials(_stmts, archetype)]
+            # Fase 2b (T6): la beta del sector (Damodaran) entra ya ajustada; la propia y la de la fuente, con Blume.
+            _beta_info = (yinfo.get("_beta") or {}) if _has_yahoo else {}
+            _beta_pre = bool(_beta_info.get("adjusted"))
             archetype_values = archetype_metrics.compute(
                 archetype, _stmts, result["key_metrics"], beta=safe_float(financials.beta),
                 revenue_cagr_3y=classification["inputs"].get("revenue_cagr_3y"), rf=rf_info["value"],
-                sbc=sbc_info)
+                sbc=sbc_info, beta_preadjusted=_beta_pre)
             result["archetype_metrics"] = {k: (safe_float(v) if isinstance(v, float) else v)
                                            for k, v in archetype_values.items()}
             # ROCE (etapa 6): contraste con el ROIC en MATURE y CYCLICAL; "no aplica"
@@ -883,16 +889,22 @@ def _compute_analysis(symbol: str) -> dict:
                              "reason": not_applicable(archetype, "roic_wacc") or not_applicable_text(FINANCIAL)}
             else:
                 wacc_info = compute_wacc(
-                    beta=safe_float(financials.beta), rf=rf_info, market_cap=mcap, total_debt=td_val,
+                    beta=safe_float(financials.beta), beta_preadjusted=_beta_pre, rf=rf_info, market_cap=mcap,
+                    total_debt=td_val,
                     interest_coverage=safe_float(interest_cov),
                     coverage_state=ic_state,
                     tax=tax_info)
                 wacc_info["applicable"] = True
             wacc_est = wacc_info["value"]
-            # Beta bruta (la de la fuente) y ajustada de Blume (la del Ke, también en FINANCIAL).
+            # Beta (fase 2b, T6: propia, del sector o de la fuente; lib/beta.py) y la ajustada que usa el Ke (también
+            # en FINANCIAL): Blume sobre la propia y la de la fuente; la del sector ya es una media de industria.
             _braw = safe_float(financials.beta)
-            result["beta"] = {"raw": _braw, "adjusted": safe_float(adjusted_beta(_braw)), "method": "Blume",
-                              "default": _braw is None,
+            result["beta"] = {"raw": None if _beta_pre else _braw, "adjusted": safe_float(adjusted_beta(_braw, _beta_pre)),
+                              "method": "beta del sector (sin Blume)" if _beta_pre else "Blume",
+                              "default": _braw is None, "source": _beta_info.get("source"),
+                              "reason": _beta_info.get("reason"), "own": _beta_info.get("own"),
+                              "source_beta": _beta_info.get("source_beta"),
+                              "discrepancy": _beta_info.get("discrepancy"),
                               "coefficients": [cfg("valuation.capm.blume_weight"), cfg("valuation.capm.blume_prior")]}
             result["wacc"] = {k: (safe_float(v) if isinstance(v, float) else v) for k, v in wacc_info.items()}
             result["tax_rate"] = {k: (safe_float(v) if isinstance(v, float) else v) for k, v in tax_info.items()}
