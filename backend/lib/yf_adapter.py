@@ -453,6 +453,10 @@ def _apply_dividend(info: Dict[str, Any], hist: Dict[str, Any]) -> None:
     mcap = info.get("marketCap")
     units = (mcap / price) if (mcap and price) else info.get("sharesOutstanding")
     paid = info.get("dividendsPaid")
+    _ao = info.get("_as_of") or {}
+    _pp = ((_ao.get("fields") or {}).get("dividendsPaid") or {}).get("period_end")
+    if _ao.get("date") and _pp not in (None, _ao.get("date")):
+        paid = None                      # fase 2b (T3): lo pagado de otro periodo no se compara (se descarta)
     paid_per_unit = (abs(paid) / units) if (paid and units) else None
     src_rate = info.get("dividendRate")
     src_name = ((info.get("_provenance") or {}).get("dividendRate") or {}).get("source")
@@ -1024,6 +1028,34 @@ def _restate_share_class(info: Dict[str, Any], ctx) -> None:
                     paths=["bookValue"], overwrite=True)
 
 
+def _as_of(info: Dict[str, Any], t: Dict[str, Any], plan_b: bool) -> Dict[str, Any]:
+    """Fase 2b (T3, F2_PRECEDENCIA §1): el corte del análisis y el periodo de cada campo de los estados.
+
+    Con corte trimestral, los flujos del corte son TTM (4 trimestres que acaban en él) y el balance es el de esa
+    fecha; un campo que no llega al corte conserva el valor de la fuente con SU periodo (el ejercicio en el plan B),
+    y validate (periodo_incoherente) lo descarta. Sin corte trimestral, el corte es el último ejercicio."""
+    from ttm import BALANCE_KEYS, FLOW_KEYS
+    fy = info.get("_fy_dates") or {}
+    cut = t.get("cut")
+    fields: Dict[str, Dict[str, Any]] = {}
+    for key, (st, _row) in FLOW_KEYS.items():
+        if key in t["values"]:
+            fields[key] = {"period_end": cut, "period_type": "ttm"}
+        elif info.get(key) is not None:
+            fields[key] = ({"period_end": fy.get(st), "period_type": "fy"} if plan_b
+                           else {"period_end": None, "period_type": "fuente"})
+    for key in (*BALANCE_KEYS, "cash"):
+        if key in t["values"]:
+            fields[key] = {"period_end": cut, "period_type": "balance"}
+        elif info.get(key) is not None:
+            fields[key] = ({"period_end": fy.get("bs"), "period_type": "fy_balance"} if plan_b
+                           else {"period_end": None, "period_type": "fuente"})
+    if cut:
+        return {"type": "ttm", "date": cut, "fields": fields}
+    return {"type": "fy" if plan_b else "fuente", "date": fy.get("inc") if plan_b else None, "fields": fields,
+            "reason": "sin corte trimestral: ingresos y beneficio de 4 trimestres consecutivos con balance"}
+
+
 def _apply_ttm(symbol: str, info: Dict[str, Any], plan_b: bool) -> Dict[str, Any]:
     """Etapa 7: TTM desde los estados TRIMESTRALES de yfinance (lib/ttm.py).
 
@@ -1051,6 +1083,7 @@ def _apply_ttm(symbol: str, info: Dict[str, Any], plan_b: bool) -> Dict[str, Any
         errors.append(f"yfinance: {type(e).__name__}")
     t = build_ttm(frames.get("quarterly_income_stmt"), frames.get("quarterly_cashflow"),
                   frames.get("quarterly_balance_sheet"))
+    info["_as_of"] = _as_of(info, t, plan_b)
     flows = [k for k in t["values"] if k in FLOW_KEYS]
     balance = [k for k in t["values"] if k not in FLOW_KEYS]
     for k, v in t["values"].items():
@@ -1079,7 +1112,7 @@ def _apply_ttm(symbol: str, info: Dict[str, Any], plan_b: bool) -> Dict[str, Any
     info["_quarterly"] = q
     info["_ttm"] = {
         "basis": "ttm" if flows else ("anual" if plan_b else "fuente"),
-        "quarters": t["quarters"], "balance_date": t["balance_date"],
+        "cut": t.get("cut"), "quarters": t["quarters"], "balance_date": t["balance_date"],
         "ttm_fields": sorted(flows), "last_quarter_fields": sorted(balance),
         "annual_fields": ({k: v for k, v in t["missing"].items()} if plan_b else {}),
         "source_fields": ({} if plan_b else {k: v for k, v in t["missing"].items()}),
@@ -1137,6 +1170,14 @@ def _enrich_prior_year_data(symbol: str, info: Dict[str, Any], ticker=None) -> D
     has_inc = inc is not None and not inc.empty and len(inc.columns) >= 2
     has_bs = bs is not None and not bs.empty and len(bs.columns) >= 2
     has_cf = cf is not None and not cf.empty and len(cf.columns) >= 2
+
+    # Fase 2b (T3): fecha de cierre del último ejercicio de cada estado (periodo de los campos anuales del plan B).
+    def _last_date(df):
+        try:
+            return str(df.columns[0].date()) if df is not None and not df.empty else None
+        except Exception:
+            return None
+    info["_fy_dates"] = {"inc": _last_date(inc), "bs": _last_date(bs), "cf": _last_date(cf)}
 
     if not (has_inc or has_bs or has_cf):
         return info

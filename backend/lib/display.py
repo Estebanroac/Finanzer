@@ -384,6 +384,51 @@ def currency_note(cur) -> Optional[str]:
     return " ".join(parts) or None
 
 
+PENDING_RESULTS_TEXT = "La empresa publicó resultados el {date}; este análisis aún no los incorpora"
+
+
+def as_of_note(ao) -> Optional[str]:
+    """Fase 2b (T3): de qué fecha son los estados del análisis."""
+    if not ao or not ao.get("date"):
+        return None
+    d = numfmt.date_long(ao["date"])
+    if ao.get("type") == "ttm":
+        return f"Estados financieros a {d} (últimos doce meses)."
+    if ao.get("type") == "fy":
+        return f"Estados financieros del ejercicio cerrado el {d} (sin trimestres completos más recientes)."
+    return None
+
+
+def data_notices(a) -> list:
+    """Fase 2b (T3): avisos de datos de la portada (PDF) y de la cabecera (web)."""
+    out = []
+    pr = (a.get("data_provenance") or {}).get("pending_results")
+    if pr and pr.get("date"):
+        txt = PENDING_RESULTS_TEXT.format(date=numfmt.date_long(pr["date"]))
+        if pr.get("form") is None:
+            txt += " (según el calendario de resultados)"
+        out.append(txt + ".")
+    gone = [f for f in a.get("data_validation") or [] if f.get("rule") == "periodo_incoherente"
+            and f.get("action") == "sin_dato"]
+    if gone:
+        names = sorted({_FIELD_NAMES.get(f["field"], f["field"]) for f in gone})
+        out.append("Sin dato del corte, descartados por ser de otro periodo: " + ", ".join(names) + ".")
+    return out
+
+
+_FIELD_NAMES = {
+    "totalRevenue": "ingresos", "grossProfits": "beneficio bruto", "operatingIncome": "beneficio operativo",
+    "netIncome": "beneficio neto", "ebitda": "EBITDA", "interestExpense": "gastos financieros",
+    "netInterestIncome": "resultado financiero", "depreciation": "amortizaciones",
+    "operatingCashflow": "flujo de operaciones", "capitalExpenditures": "inversión (capex)",
+    "freeCashflow": "flujo de caja libre", "dividendsPaid": "dividendos pagados",
+    "stockBasedCompensation": "pagos en acciones", "totalAssets": "activo", "totalCurrentAssets": "activo corriente",
+    "totalCurrentLiabilities": "pasivo corriente", "totalDebt": "deuda total", "longTermDebt": "deuda a largo plazo",
+    "totalStockholderEquity": "patrimonio", "totalLiab": "pasivo", "retainedEarnings": "beneficios retenidos",
+    "inventory": "existencias", "cash": "caja",
+}
+
+
 def dividend_text(d) -> Optional[str]:
     """Fase 2b (T2): qué dividendo indicado hay detrás del yield y lo que encontró el control en los dos sentidos."""
     if not d or d.get("rate") in (None, 0.0):
@@ -1026,6 +1071,10 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     cover = {
         # Etapa 11b: conversión de moneda y clase de acciones aplicada a los estados (o None).
         "currency_note": currency_note((a.get("data_provenance") or {}).get("currency")),
+        # Fase 2b (T3): fecha de los datos (corte) y avisos de datos (resultados publicados no incorporados, datos
+        # de otro periodo descartados).
+        "as_of_note": as_of_note((a.get("data_provenance") or {}).get("as_of")),
+        "data_notices": data_notices(a),
         "archetype": archetype,
         "archetype_label": archetype_label(archetype),
         "classification_notes": cls_notes,

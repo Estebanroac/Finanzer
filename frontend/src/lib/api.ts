@@ -87,6 +87,10 @@ export interface Highlight {
 export interface Cover {
   /** Etapa 11b: conversión de moneda y clase de acciones aplicada a los estados (o null). */
   currency_note: string | null;
+  /** Fase 2b: fecha de los estados del análisis (corte), o null. */
+  as_of_note: string | null;
+  /** Fase 2b: avisos de datos (resultados publicados y aún no incorporados; datos de otro periodo descartados). */
+  data_notices: string[];
   archetype: string;
   archetype_label: string;
   classification_notes: string[];

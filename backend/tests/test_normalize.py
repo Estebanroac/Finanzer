@@ -32,11 +32,13 @@ def test_ttm_sums_four_consecutive_quarters_and_takes_last_balance():
 def test_ttm_needs_consecutive_quarters_else_annual_with_reason():
     gap = ["2026-06-30", "2026-03-31", "2025-09-30", "2025-06-30"]          # falta un trimestre
     assert not consecutive(gap) and consecutive(Q4)
-    t = build_ttm(_q(gap, {"Total Revenue": [1, 1, 1, 1]}), None, None)
-    assert "totalRevenue" not in t["values"]
-    assert t["missing"]["totalRevenue"] == "los 4 últimos trimestres no son consecutivos"
-    t = build_ttm(_q(Q4, {"Total Revenue": [1, None, 1, 1, 1]}), None, None)
-    assert "sin dato en alguno" in t["missing"]["totalRevenue"]
+    # Fase 2b: sin 4 trimestres consecutivos de ingresos y beneficio con balance no hay corte trimestral.
+    bs = _q(Q4, {"Total Assets": [1, 1, 1, 1, 1]})
+    t = build_ttm(_q(gap, {"Total Revenue": [1, 1, 1, 1], "Net Income": [1, 1, 1, 1]}), None, bs)
+    assert "totalRevenue" not in t["values"] and t["cut"] is None
+    assert t["missing"]["totalRevenue"].startswith("sin corte trimestral")
+    t = build_ttm(_q(Q4, {"Total Revenue": [1, None, 1, 1, 1], "Net Income": [1, 1, 1, 1, 1]}), None, bs)
+    assert t["cut"] is None and "totalRevenue" not in t["values"]
 
 
 def test_quarterly_gaps_fall_back_to_annual_with_flag(outputs_by_env):
@@ -48,7 +50,7 @@ def test_quarterly_gaps_fall_back_to_annual_with_flag(outputs_by_env):
         pytest.skip("falta el panel")
     t = outputs_by_env("panel")["BRK-B"][0]["data_provenance"]["ttm"]
     assert t["basis"] == "anual" and t["ttm_fields"] == []
-    assert t["annual_fields"] and all("sin dato en" in r for r in t["annual_fields"].values())
+    assert t["annual_fields"] and all("sin corte trimestral" in r for r in t["annual_fields"].values())
 
 
 def test_local_uses_ttm(outputs_by_env):

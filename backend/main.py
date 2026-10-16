@@ -263,6 +263,8 @@ def _build_provenance(yinfo: dict, out_flags: list, block_errors: list) -> dict:
         "ttm": yinfo.get("_ttm"),
         # Etapa 11b: moneda y clase de los estados frente a la cotización, y la conversión aplicada.
         "currency": yinfo.get("_currency"),
+        # Fase 2b (T3): corte coherente: fecha y tipo del corte y periodo de cada campo de los estados.
+        "as_of": yinfo.get("_as_of"),
         # Fase 2b: serie diaria de precios y dividendo indicado en la moneda y la clase del precio (T2).
         "price_history": yinfo.get("_price_history"),
         "dividend": yinfo.get("_dividend"),

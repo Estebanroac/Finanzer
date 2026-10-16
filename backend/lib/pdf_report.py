@@ -501,6 +501,14 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         _title_flow += [Spacer(1, 3), Paragraph(
             _esc(C["currency_note"]), ParagraphStyle('ccur', fontName='Helvetica', fontSize=8.0, leading=10.8,
                                                       textColor=MUTED))]
+    if C.get("as_of_note"):      # fase 2b (T3): fecha de los estados del análisis (corte)
+        _title_flow += [Spacer(1, 3), Paragraph(
+            _esc(C["as_of_note"]), ParagraphStyle('casof', fontName='Helvetica', fontSize=8.0, leading=10.8,
+                                                   textColor=MUTED))]
+    for _nt in C.get("data_notices") or []:   # fase 2b (T3): bloque de avisos de datos, junto a la fecha
+        _title_flow += [Spacer(1, 3), Paragraph(
+            f"<b>Aviso.</b> {_esc(_nt)}", ParagraphStyle('cnot', fontName='Helvetica', fontSize=8.0, leading=10.8,
+                                                         textColor=AMBER))]
 
     # Banda 2 — las DOS puntuaciones (izquierda) y sus componentes (derecha):
     # calidad = 4 categorías; precio = Valoración (múltiplos + DCF).

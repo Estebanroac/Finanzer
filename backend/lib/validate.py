@@ -407,7 +407,29 @@ def missing_key_rows(statements_fy: Optional[Dict[str, Any]], archetype: Optiona
     return flags
 
 
-_INPUT_RULES = (_rule_fcf, _rule_impossible, _rule_margins, _rule_units,
+def _rule_period(c: _Ctx) -> None:
+    """Fase 2b (T3, F2_PRECEDENCIA §1, paso 2): periodo_incoherente. Todo campo de los estados pertenece al corte
+    (`_as_of`). Un campo con otro periodo (el ejercicio cuando el corte es un trimestre: no llega a 4 trimestres que
+    acaben en el corte) se descarta y lo dice: no se mezcla un dato de diciembre con el TTM a junio. Lo que otra
+    fuente no pudo demostrar que es del corte (Finnhub, paso 3) se anota aquí también."""
+    a = c.info.get("_as_of") or {}
+    cut, kind = a.get("date"), a.get("type")
+    if kind in ("ttm", "fy") and cut:
+        for field, per in (a.get("fields") or {}).items():
+            if per.get("period_end") in (None, cut) or per.get("period_type") == "fuente":
+                continue
+            old = c.get(field)
+            if old is None:
+                continue
+            c.set(field, None)
+            c.flag(field, "periodo_incoherente", "sin_dato", old, None,
+                   f"dato de otro periodo descartado: {field} del {'ejercicio' if per['period_type'].startswith('fy') else 'periodo'} "
+                   f"cerrado el {per['period_end']} en un análisis con corte a {cut}")
+    for r in c.info.get("_period_rejected") or []:
+        c.flag(r["field"], "periodo_incoherente", "aviso", r.get("value"), None, r["reason"])
+
+
+_INPUT_RULES = (_rule_period, _rule_fcf, _rule_impossible, _rule_margins, _rule_units,
                 _rule_growth, _rule_split_basis, _rule_jumps, _rule_per_share_plausibility)
 
 

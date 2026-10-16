@@ -57,6 +57,10 @@ export default function StockHeader({ data }: { data: StockAnalysis }) {
           </p>
         )}
         {C.currency_note && <p className="mt-1.5 text-[12px] leading-relaxed text-zinc-500">{C.currency_note}</p>}
+        {C.as_of_note && <p className="mt-1.5 text-[12px] leading-relaxed text-zinc-500">{C.as_of_note}</p>}
+        {(C.data_notices ?? []).map((n) => (
+          <p key={n} className="mt-1.5 text-[12px] leading-relaxed text-amber-400" role="note">{n}</p>
+        ))}
       </div>
 
       {/* Puntuaciones · veredicto · componentes */}

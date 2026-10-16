@@ -56,3 +56,15 @@ def signed_pct(v: Optional[float], dec: int = 0) -> str:
         return "N/A"
     s = "+" if v > 0 else (MINUS if v < 0 else "")
     return f"{s}{abs(v):.{dec}f}%"
+
+
+MESES = ("enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre",
+         "noviembre", "diciembre")
+
+
+def date_long(iso: Optional[str]) -> str:
+    """'2026-10-13' → '13 de octubre de 2026' (fase 2b: fechas de los avisos)."""
+    if not iso:
+        return "—"
+    y, m, d = (int(x) for x in str(iso)[:10].split("-"))
+    return f"{d} de {MESES[m - 1]} de {y}"

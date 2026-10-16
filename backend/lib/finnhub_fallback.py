@@ -39,7 +39,7 @@ from settings import cfg
 
 logger = logging.getLogger(__name__)
 
-_EPS_OVERRIDE_REL_DIFF = cfg("data.finnhub.eps_override_rel_diff")
+_CUT_MATCH_REL_TOL = cfg("data.finnhub.cut_match_rel_tol")
 
 _BASE = "https://finnhub.io/api/v1"
 _TIMEOUT = cfg("data.finnhub.timeout_s")
@@ -148,10 +148,9 @@ def _series_val(series: dict, key: str, idx: int) -> Optional[float]:
 def enrich_info(info: Dict[str, Any], symbol: str, degraded: bool = False) -> Dict[str, Any]:
     """Rellena los None de `info` con Finnhub. No-op si la key no está.
 
-    `degraded`: cuando la respuesta de Yahoo vino degradada, sus cifras POR ACCIÓN
-    (trailingEps) pueden ser un valor anual obsoleto arrastrado por el
-    'último bueno conocido'; en ese caso el epsTTM de Finnhub (TTM diluido) SÍ se
-    impone sobre lo existente. Fuera de degradación se respeta el dato de Yahoo.
+    Fase 2b: nada de Finnhub se impone sobre los estados. Sus métricas TTM por acción (BPA, P/E) solo entran si
+    casan con el corte de los estados; si no, se anotan (info["_period_rejected"] → validate). `degraded` se
+    conserva en la firma por compatibilidad: ya no cambia la regla.
     """
     if not is_enabled() or not isinstance(info, dict):
         return info
@@ -178,22 +177,22 @@ def enrich_info(info: Dict[str, Any], symbol: str, degraded: bool = False) -> Di
     # ── Tier 1: métricas de mercado (nivel superior de info) ──
     set_top("beta", _num(m.get("beta")))
     set_top("forwardPE", _num(m.get("forwardPE")))
-    if not _restated:
-        set_top("trailingPE", _num(m.get("peTTM")))
-    # trailingEps: cuando consultamos Finnhub (Yahoo vino incompleto), su epsTTM
-    # (TTM diluido) es la fuente fiable. Se IMPONE sobre el trailingEps existente
-    # si falta o difiere >2% — el de Yahoo/LKG puede ser un EPS ANUAL obsoleto
-    # que infla el P/E (AAPL 7.46 anual vs 8.27 TTM). Diferencias pequeñas se
-    # respetan (sin churn). No depende del flag 'degraded' estricto: el estado
-    # 'gappy pero no degradado' también trae EPS anual obsoleto.
+    # Fase 2b (T3, F2_PRECEDENCIA §1, paso 3): las métricas TTM de Finnhub solo entran si casan con el corte de los
+    # estados (±cut_match_rel_tol). Antes era al revés: su epsTTM se IMPONÍA si difería más de un 2%, y en JNJ
+    # mezclaba un BPA a septiembre (con el trimestre del 8-K) con estados a junio (P/E 30.1x → 39.4x). Si no casa,
+    # no entra y se anota (validate: periodo_incoherente). Sin BPA del corte no hay con qué casarlo: no entra.
     _eps_ttm = None if _restated else _num(m.get("epsTTM"))
+    _cur_eps = _num(info.get("trailingEps"))
     if _eps_ttm is not None and _eps_ttm != 0:
-        _cur_eps = _num(info.get("trailingEps"))
-        if _cur_eps is None or abs(_cur_eps - _eps_ttm) / abs(_eps_ttm) > _EPS_OVERRIDE_REL_DIFF:
-            if info.get("trailingEps") != _eps_ttm:
-                info["trailingEps"] = _eps_ttm
-                info["_eps_net_income"] = None   # etapa 11b: ventana de Finnhub desconocida
-                filled.append("trailingEps~")
+        _cut = (info.get("_as_of") or {}).get("date")
+        if _cur_eps is None or abs(_cur_eps - _eps_ttm) / abs(_eps_ttm) > _CUT_MATCH_REL_TOL:
+            info.setdefault("_period_rejected", []).append({
+                "field": "trailingEps", "value": _eps_ttm,
+                "reason": (f"BPA TTM de Finnhub {_eps_ttm:g} no casa con el del corte de los estados "
+                           + (f"({_cur_eps:.4g} a {_cut})" if _cur_eps is not None else "(sin BPA del corte)")
+                           + ": es de otro periodo y no entra")})
+    # El P/E TTM de Finnhub no se trae: el motor lo calcula con el precio y el BPA del corte (un P/E de la fuente
+    # sería de su propio periodo).
     # OJO: NO mapear forwardEps desde epsTTM/epsExclExtraItemsTTM — esos son
     # TRAILING, no estimados forward. Usarlos haría forward_pe = price/eps_TTM
     # (≈ el trailing P/E otra vez), anulando la señal de compresión. Se deja

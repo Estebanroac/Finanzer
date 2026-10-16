@@ -178,8 +178,11 @@ def source_dimension(*, input_flags: List[Dict[str, Any]], normalization: Option
     C = cfg("thresholds.confidence")
     # Etapa 9a: las sustituciones de política del arquetipo (p. ej. el crecimiento de una
     # financiera siempre desde los estados) no son incidencias de la fuente.
+    # Fase 2b: un dato de otra fuente que NO entra por no ser del corte (Finnhub, periodo_incoherente "aviso") no es
+    # una incidencia del dato usado: el análisis usa el del corte.
     issues = [f"validación: {f.get('field')} ({f.get('rule')})" for f in input_flags or []
-              if f.get("action") != "politica"]
+              if f.get("action") != "politica"
+              and not (f.get("rule") == "periodo_incoherente" and f.get("action") == "aviso")]
     if (normalization or {}).get("confidence") == "media":
         issues.append("beneficio normalizado con ítems inferidos (confianza media)")
     if (ttm or {}).get("basis") == "anual":
