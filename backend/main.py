@@ -269,6 +269,8 @@ def _build_provenance(yinfo: dict, out_flags: list, block_errors: list) -> dict:
         "edgar": yinfo.get("_edgar"),
         # Fase 2b (T4, D7): emisor con estados en la SEC, sin ellos (aviso y techo "baja") o sin verificación.
         "official_source": yinfo.get("_official_source"),
+        # Fase 2b (T5): deuda coherente con el EBITDA y sus componentes (F2_PRECEDENCIA §2.3).
+        "debt": yinfo.get("_debt"),
         # Fase 2b: serie diaria de precios y dividendo indicado en la moneda y la clase del precio (T2).
         "price_history": yinfo.get("_price_history"),
         "dividend": yinfo.get("_dividend"),

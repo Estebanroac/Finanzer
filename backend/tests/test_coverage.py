@@ -406,13 +406,14 @@ def test_read_nde_net_cash_only_when_cash_exceeds_debt():
 
 
 def test_net_debt_ebitda_end_to_end(outputs_by_env):
-    """SNOW (EBITDA < 0, deuda neta) en local y en el panel: ratio fuera del JSON y sin la frase de caja neta.
-    El score no usa la ratio. El caso EBITDA < 0 con caja neta (antes SNOW prod) ya no está en ningún juego: lo
-    cubre test_read_nde_net_cash_only_when_cash_exceeds_debt."""
+    """SNOW (EBITDA < 0) en local y en el panel: ratio fuera del JSON. El score no usa la ratio.
+    Fase 2b (T5): con la deuda coherente con el EBITDA (sin su arrendamiento operativo de US GAAP, 0.48 mil millones)
+    SNOW tiene caja neta en los dos juegos, y el texto lo dice; el caso con deuda neta lo cubre
+    test_read_nde_net_cash_only_when_cash_exceeds_debt."""
     import conftest
     if not {"panel", "local"} <= set(conftest.BOUND_ENVS):
         pytest.skip("faltan juegos de fixtures")
-    for env, net_cash in (("local", False), ("panel", False)):
+    for env, net_cash in (("local", True), ("panel", True)):
         a, pdf = outputs_by_env(env)["SNOW"]
         txt = fixture_backend.pdf_text(pdf) if isinstance(pdf, bytes) else pdf
         km = a["key_metrics"]
@@ -453,7 +454,9 @@ def test_negative_coverage_with_net_debt_keeps_the_penalty():
 
 def test_negative_coverage_end_to_end(outputs_by_env):
     """CRWD del panel (EBIT GAAP < 0 y caja neta; antes SNOW prod): no significativa, fuera del JSON y sin −3.
-    SNOW local (deuda neta): penaliza y el PDF no imprime −8.4x como cobertura."""
+    SNOW local: con la deuda de la regla (fase 2b, T5) también tiene caja neta: no significativa, como CRWD. El caso
+    EBIT < 0 con deuda neta (penaliza y no imprime la cobertura negativa) ya no está en ningún juego: lo cubren
+    test_interest_coverage_state (unitario) y test_interest_coverage.py."""
     import conftest
     if not {"panel", "local"} <= set(conftest.BOUND_ENVS):
         pytest.skip("faltan juegos de fixtures")
@@ -467,11 +470,11 @@ def test_negative_coverage_end_to_end(outputs_by_env):
     assert not any("Cobertura de intereses" in s.get("reason", "") for k in ("red_flags", "warnings") for s in a["alerts"][k])
     a, pdf = outputs_by_env("local")["SNOW"]
     txt = fixture_backend.pdf_text(pdf) if isinstance(pdf, bytes) else pdf
-    assert a["key_metrics"]["interest_coverage_state"] == "negativa"
+    assert a["key_metrics"]["net_debt"] < 0 and a["key_metrics"]["interest_coverage_state"] == "no_significativo"
     _ic = next(x for x in a["score"]["breakdown"]["Solidez Financiera"]["adjustments"]
                if x["metric"] == "Cobertura Intereses")
-    assert _ic["adjustment"] == cfg("thresholds.score.solidez.coverage_points")[-1]   # la penalización se mantiene
-    assert "Cobertura de intereses\nNegativa (EBIT < 0)" in txt
+    assert _ic["adjustment"] == 0 and _ic["value"] == "No significativo"          # como CRWD: no penaliza
+    assert "Cobertura de intereses" in a["score_coverage"]["solidez"]["not_significant"]
     assert "-8.4x" not in txt
 
 

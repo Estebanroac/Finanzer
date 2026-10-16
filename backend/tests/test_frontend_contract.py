@@ -61,6 +61,13 @@ def test_frontend_reads_only_exposed_fields(outputs_by_env, tmp_path):
     n["display"] = display.build_display(n)
     assert any(g.get("net_cash") for g in n["display"]["charts"]["solvency"]["gauges"])
     (extra / "V_caja_neta.json").write_text(fb.stable_json(n), encoding="utf-8")
+    # Fase 2b (T5): EBIT < 0 con deuda neta (cobertura negativa). Con la deuda coherente con el EBITDA, SNOW pasó a
+    # caja neta y ningún ticker de los juegos lo cubre.
+    q = copy.deepcopy(outputs_by_env(ENVS[-1])["SNOW"][0])
+    q["key_metrics"].update(net_debt=4e8, interest_coverage=-8.4, interest_coverage_state="negativa")
+    q["display"] = display.build_display(q)
+    assert any(g.get("negative") for g in q["display"]["charts"]["solvency"]["gauges"])
+    (extra / "SNOW_cobertura_negativa.json").write_text(fb.stable_json(q), encoding="utf-8")
     r = _run("check-contract.mjs", "--strict-unions", *dirs, str(extra))
     assert r.returncode == 0, r.stderr or r.stdout
 

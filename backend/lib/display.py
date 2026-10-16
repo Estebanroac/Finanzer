@@ -63,6 +63,9 @@ def _metric_claims(a, metric):
     if m.startswith("Deuda neta"):
         nd = km.get("net_debt")
         return [] if nd is None else [_claim("net_cash" if nd < 0 else "net_debt")]
+    if m.startswith("Deuda/Equity") and (km.get("net_debt") or 0) < 0:
+        # El D/E con caja neta no puntúa y el motivo lo dice ("no significativo con caja neta").
+        return [_claim("net_cash", field="key_metrics.net_debt"), _claim("vs_bench")]
     if "ROIC" in m and "WACC" in m:
         return [_claim("spread")]
     if m.startswith("DCF"):
@@ -447,6 +450,26 @@ def official_source_annex(a) -> list:
             txt = (f"sí, SEC EDGAR (CIK {off.get('cik')}); último ejercicio en EDGAR: FY {off.get('fy')}"
                    + (f" ({off.get('note')})" if off.get("note") else "") + ".")
         items.append({"label": "Fuente oficial", "text": txt})
+    dt = dp.get("debt") or {}
+    if dt:
+        names = {"borrowings": "préstamos y bonos", "commercial_paper": "papel comercial (dentro de los préstamos)",
+                 "finance_leases": "arrendamiento financiero", "operating_leases": "arrendamiento operativo",
+                 "leases_in_source_total": "arrendamientos que la fuente sumaba", "leases_ifrs16": "arrendamientos IFRS 16",
+                 "subordinated": "deuda subordinada", "captive": "financiera cautiva"}
+        parts = []
+        for k, c in (dt.get("components") or {}).items():
+            if c.get("value") is None:
+                continue
+            txt = f"{names.get(k, k)} {numfmt.money(c['value'])} ({'dentro' if c.get('in_rule_debt') else 'fuera'}"
+            if c.get("note"):
+                txt += f"; {c['note']}"
+            parts.append(txt + ")")
+        head = (f"deuda de la regla {numfmt.money(dt['total'])} (la fuente daba {numfmt.money(dt['source_total'])})"
+                if dt.get("applied") else
+                (f"deuda {numfmt.money(dt['total'])}" if dt.get("total") is not None else "sin deuda total"))
+        items.append({"label": "Deuda coherente con el EBITDA (arrendamiento dentro solo si su coste no está en el "
+                               "EBITDA)",
+                      "text": "; ".join([head] + parts + list(dt.get("notes") or [])) + "."})
     bk = (dp.get("edgar") or {}).get("backup") or {}
     rows = [f"{_FIELD_NAMES.get(x['field'], x['field'])} ({x['concept']}; {x['how']})" for x in bk.get("cut") or []]
     rows += [f"{x['field'].replace('FY.', 'ejercicio a ')} {x['fy_end']} ({x['concept']})" for x in bk.get("fy") or []]

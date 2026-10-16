@@ -43,9 +43,12 @@ def test_pltr_has_no_interest_burden_and_never_says_negative_ebit(pltr):
 
 
 def test_pltr_wacc_rating_not_by_rule_m(pltr):
+    """Fase 2b (T5): la "deuda" de PLTR en Yahoo (0.21 mil millones) era su arrendamiento operativo; con la deuda
+    coherente con el EBITDA no tiene deuda financiera: WACC = Ke, sin rating de Kd (y nunca por la regla M)."""
     a, _ = pltr
-    rating = a["wacc"]["rating"]
-    assert "regla M" not in (rating.get("flag") or "") and rating["rating"] == "AAA"
+    w = a["wacc"]
+    assert w["rating"] is None and w["weights"]["debt"] == 0.0
+    assert "sin deuda financiera" in a["display"]["sections"]["valuation"]["wacc_note"]
 
 
 def test_pltr_solidez_coverage_is_top_band(pltr):

@@ -45,6 +45,10 @@ BALANCE_KEYS = {
     "totalCurrentAssets": "Current Assets",
     "totalCurrentLiabilities": "Current Liabilities",
     "totalDebt": "Total Debt",
+    # Fase 2b (T5): componentes de la deuda de Yahoo para la regla de coherencia con el EBITDA (lib/debt.py). En
+    # EE. UU. esta fila de Yahoo es el arrendamiento operativo (a veces con el financiero), no la "capital lease".
+    "capitalLeaseObligations": "Capital Lease Obligations",
+    "commercialPaper": "Commercial Paper",
     "longTermDebt": "Long Term Debt",
     "totalStockholderEquity": "Stockholders Equity",
     "totalLiab": "Total Liabilities Net Minority Interest",
