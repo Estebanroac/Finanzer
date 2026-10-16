@@ -45,3 +45,15 @@ since = "2024-01-01"            # filings que se miran
 # `calendar_min_lag_days` días después del corte es de un periodo posterior (la del propio corte llega antes: TSM
 # +16, TM +35, UL y BCS +28–31 días; la siguiente, a +105–130).
 calendar_min_lag_days = 70
+# T4: hechos XBRL (companyfacts y las instancias de los filings que aún no trae; F2_PRECEDENCIA §3.1)
+facts_ttl_s = 86400             # companyfacts, instancias y portadas: caché diaria por CIK / filing
+max_pending_filings = 3         # filings pendientes que se leen por análisis (los más recientes; ~0.5–1.4 s cada uno)
+# D7 (F2_PRECEDENCIA §4): con CIK, pero el último informe anual tiene más de estos meses o EDGAR va por detrás
+# (un filing pendiente sin leer) → "verificado con el FY X" (nota informativa, sin tope de confianza).
+annual_stale_months = 15
+fy_backup_years = 4              # ejercicios de los estados anuales que el respaldo completa (FY0–FY3: Piotroski y CAGR a 3 años)
+
+[edgar.predecessors]            # sucesión de emisor: el ticker apunta al CIK nuevo y la historia XBRL sigue en el anterior
+# XOM: reorganización en holding (8-K12B de ExxonMobil Holdings Corp, CIK 2115436, del 2026-07-01); los estados hasta
+# el 1T-2026 están en Exxon Mobil Corp (CIK 34088). Verificado en la 2a (tests/edgar.py, PREDECESSORS).
+XOM = [34088]

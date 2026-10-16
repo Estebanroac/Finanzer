@@ -169,6 +169,24 @@ eventos pasados no cambian). Un fixture capturado desde la 2b la lleva dentro (`
 ../.venv313/bin/python tests/capture_history.py          # panel + local + ^GSPC y SPY (fuera de 15:55–16:45 NY)
 ```
 
+### SEC EDGAR y calendario de resultados (fase 2b): `fixtures/f2b/`
+
+El análisis consulta EDGAR (`lib/sec_edgar.py`): la lista de emisores y de filings (aviso de resultados publicados,
+D7), la portada del 20-F de los ADR fuera de `config/adr.toml` (factor, regla B) y los hechos XBRL para el respaldo
+del mismo corte (`lib/edgar_backup.py`): `companyfacts` reducido a los conceptos que se usan y la instancia de cada
+filing que companyfacts aún no traía el día de la captura (XBRL mínimo con los mismos conceptos). El replay lo sirve
+de `fixtures/f2b/` (`f2b_fixtures.py`) **cortado en la fecha de captura del ticker analizado** (filings y hechos con
+`filed` posterior no existían ese día). Un `.404` junto a un companyfacts es la respuesta grabada de la SEC (SPY).
+`MC.PA` (LVMH, grupo "Sin CIK" del panel) no está en la lista de emisores: es el caso D7.
+
+```bash
+SEC_EDGAR_USER_AGENT="$(security find-generic-password -s finanzer-sec-ua -w)" \
+FINNHUB_API_KEY="$(security find-generic-password -s finanzer-finnhub -w)" \
+../.venv313/bin/python tests/capture_f2b_sources.py           # listas de filings y calendario
+SEC_EDGAR_USER_AGENT="$(security find-generic-password -s finanzer-sec-ua -w)" \
+../.venv313/bin/python tests/capture_f2b_sources.py --facts   # solo hechos (companyfacts e instancias pendientes)
+```
+
 ### Recapturar (con red, explícito)
 
 ```bash

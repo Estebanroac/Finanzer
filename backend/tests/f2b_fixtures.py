@@ -5,6 +5,11 @@ Finnhub): juego SEPARADO del panel, en tests/fixtures/f2b/.
     metadata.json                     fecha de la captura y resumen por ticker
     edgar/company_tickers.json        {TICKER: {cik, title}} de los tickers capturados
     edgar/submissions/CIK<10>.json    filings recientes del CIK (desde SINCE), con los campos que usa lib/sec_edgar.py
+    edgar/companyfacts/CIK<10>.json   companyfacts reducido a los conceptos de sec_edgar.CONCEPTS (T4); .404 si
+                                      la SEC respondió 404 (CIK sin estados XBRL)
+    edgar/instances/<accn>.xml        instancia XBRL mínima (los mismos conceptos) de cada filing que companyfacts
+                                      aún no traía el día de la captura (F2_PRECEDENCIA §3.1)
+    edgar/covers/<accn>.htm           portada (R1) del 20-F de los ADR fuera de config/adr.toml (regla B; hoy ninguno)
     finnhub_calendar/<TICKER>.json    publicaciones de resultados (Finnhub /calendar/earnings)
 
 Replay sin red: `edgar_fetcher(store)` sirve las respuestas de la SEC con los filings presentados hasta la fecha de
@@ -49,6 +54,66 @@ def save_submissions(cik, raw, base=F2B_DIR):
     _write(os.path.join(base, "edgar", "submissions", f"CIK{int(cik):010d}.json"), out)
 
 
+FACTS_SINCE = "2019-01-01"   # el análisis usa como mucho 5 ejercicios (y el anterior para un TTM)
+
+
+def save_facts_not_found(cik, base=F2B_DIR):
+    path = os.path.join(base, "edgar", "companyfacts", f"CIK{int(cik):010d}.404")
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write("companyfacts: 404 en la captura\n")
+
+
+def save_facts(cik, reduced, base=F2B_DIR):
+    """companyfacts reducido, con los hechos que acaban desde FACTS_SINCE (el juego no necesita más historia)."""
+    out = {k: reduced[k] for k in ("cik", "entityName") if k in reduced}
+    out["facts"] = {tx: {c: {"units": {u: [f for f in fs if f["end"] >= FACTS_SINCE]
+                                       for u, fs in node["units"].items()}}
+                         for c, node in cs.items()} for tx, cs in reduced.get("facts", {}).items()}
+    _write(os.path.join(base, "edgar", "companyfacts", f"CIK{int(cik):010d}.json"), out)
+
+
+_NS = {"us-gaap": "http://fasb.org/us-gaap/2025", "ifrs-full": "https://xbrl.ifrs.org/taxonomy/2025-03-27/ifrs-full"}
+
+
+def instance_xml(facts):
+    """Instancia XBRL mínima con los hechos (forma de companyfacts) que lee sec_edgar.parse_instance."""
+    from xml.sax.saxutils import escape
+    ctx, units, body = {}, {}, []
+    for tx, cs in sorted(facts.get("facts", {}).items()):
+        for c, node in sorted(cs.items()):
+            for u, fs in sorted(node["units"].items()):
+                uid = units.setdefault(u, f"u{len(units)}")
+                for f in fs:
+                    key = (f.get("start"), f["end"])
+                    cid = ctx.setdefault(key, f"c{len(ctx)}")
+                    body.append(f'<{tx}:{c} contextRef="{cid}" unitRef="{uid}" decimals="INF">{f["val"]}</{tx}:{c}>')
+    head = ['<?xml version="1.0" encoding="utf-8"?>',
+            '<xbrli:xbrl xmlns:xbrli="http://www.xbrl.org/2003/instance" xmlns:iso4217="http://www.xbrl.org/2003/iso4217" '
+            + " ".join(f'xmlns:{k}="{v}"' for k, v in _NS.items()) + ">"]
+    for (st, en), cid in ctx.items():
+        per = (f"<xbrli:startDate>{st}</xbrli:startDate><xbrli:endDate>{en}</xbrli:endDate>" if st
+               else f"<xbrli:instant>{en}</xbrli:instant>")
+        head.append(f'<xbrli:context id="{cid}"><xbrli:entity><xbrli:identifier scheme="http://www.sec.gov/CIK">0'
+                    f'</xbrli:identifier></xbrli:entity><xbrli:period>{per}</xbrli:period></xbrli:context>')
+    for u, uid in units.items():
+        head.append(f'<xbrli:unit id="{uid}"><xbrli:measure>iso4217:{escape(u)}</xbrli:measure></xbrli:unit>')
+    return "\n".join(head + body + ["</xbrli:xbrl>", ""])
+
+
+def save_instance(accn, facts, base=F2B_DIR):
+    path = os.path.join(base, "edgar", "instances", f"{accn}.xml")
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(instance_xml(facts))
+
+
+def save_cover(accn, html_text, base=F2B_DIR):
+    path = os.path.join(base, "edgar", "covers", f"{accn}.htm")
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(html_text)
+
+
 def save_calendar(symbol, entries, base=F2B_DIR):
     _write(os.path.join(base, "finnhub_calendar", f"{symbol.upper()}.json"), entries)
 
@@ -75,6 +140,37 @@ def edgar_fetcher(store, base=F2B_DIR):
                     for i, (t, v) in enumerate(sorted(table.items()))}
             return json.dumps(body).encode(), 200
         name = url.rstrip("/").rsplit("/", 1)[-1]
+        if "/Archives/edgar/data/" in url:
+            acc = url.rstrip("/").rsplit("/", 2)[-2]
+            accn = f"{acc[:10]}-{acc[10:12]}-{acc[12:]}"
+            inst = os.path.join(base, "edgar", "instances", f"{accn}.xml")
+            if name == "index.json":
+                if not os.path.isfile(inst):
+                    store.misses.append(f"edgar índice {accn}")
+                    return None, 404
+                return json.dumps({"directory": {"item": [{"name": f"{acc}_htm.xml"}]}}).encode(), 200
+            if name == "R1.htm":
+                path = os.path.join(base, "edgar", "covers", f"{accn}.htm")
+            else:
+                path = inst
+            if not os.path.isfile(path):
+                store.misses.append(f"edgar {name}")
+                return None, 404
+            with open(path, "rb") as fh:
+                return fh.read(), 200
+        if "/api/xbrl/companyfacts/" in url:
+            path = os.path.join(base, "edgar", "companyfacts", name)
+            if os.path.isfile(path.replace(".json", ".404")):
+                return None, 404            # la SEC respondió 404 en la captura (CIK sin estados XBRL: SPY)
+            if not os.path.isfile(path):
+                store.misses.append(f"edgar companyfacts {name}")
+                return None, 404
+            obj = _load(path)
+            for cs in obj.get("facts", {}).values():
+                for node in cs.values():
+                    node["units"] = {u: [f for f in fs if until is None or f.get("filed", "") <= until]
+                                     for u, fs in node["units"].items()}
+            return json.dumps(obj).encode(), 200
         path = os.path.join(base, "edgar", "submissions", name)
         if not os.path.isfile(path):
             store.misses.append(f"edgar {name}")
