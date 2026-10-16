@@ -24,8 +24,8 @@
 
 | Campo | Valor |
 |---|---|
-| Fase en curso | **Fase 2b 🔧 en curso** (2026-10-16, registro #22): parada 1 aprobada; golden regenerados; **T4 hecha** (golden de T4 pendientes de aprobación); sigue T5 |
-| Rama de trabajo | `fiabilidad/f2b-corregir` (worktree `../finanzer_next-f2b`), desde `main` = `60f8a69`; 17 commits `F2b:` sin push |
+| Fase en curso | **Fase 2b 🔧 en curso** (2026-10-16, registro #22): parada 1 aprobada; golden regenerados; **T4 y T5 hechas** (sus golden, pendientes de aprobación); sigue T6 |
+| Rama de trabajo | `fiabilidad/f2b-corregir` (worktree `../finanzer_next-f2b`), desde `main` = `60f8a69`; 23 commits `F2b:` sin push |
 | Producción | `60f8a69` (= `2d58a35` en código). Rollback de código: `a2572e0` |
 | `main` local | = `origin/main` (`60f8a69`) |
 | Último cierre de sesión | 2026-10-16 · operador F2b (ver registro #21) |
@@ -912,4 +912,24 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
     recuperar del mismo corte**. Sus 6-K trimestrales no llevan XBRL (`isXBRL = 0` desde 2025-10) y EDGAR solo los
     tiene al 2025-12-31, con el corte en 2026-03-31. El respaldo de T4 los deja sin dato con ese motivo y la confianza
     baja se mantiene (convergencia no evaluable, estabilidad cíclica y calidad de fuente baja).
+  - **T5 hecha** (`4f01557`, `4fca871`, `61a964c`, `4960463`): deuda coherente con el EBITDA (`lib/debt.py`).
+    - En US GAAP, la fila "Capital Lease Obligations" de Yahoo resultó ser el **arrendamiento operativo** (a veces con
+      el financiero): sale lo operativo y entra el financiero de EDGAR si no está ya (XOM lo presenta dentro de
+      `LongTermDebtAndCapitalLeaseObligations`: sin doble cuenta). IFRS 16: la de Yahoo ya es la de la regla.
+    - MSFT 56.8 → 106.9 (= what-if de la 2a); AMZN 209.9 → 132.4 (2a: 136.1; la diferencia es la parte corriente de
+      su deuda a largo plazo, que AMZN presenta en gastos devengados y Yahoo no recoge; D2: no se sustituye);
+      PLTR 0.21 → 0 (era arrendamiento operativo; WACC = Ke); SNOW pasa a caja neta.
+    - **O resuelto** (hipótesis 1 del mapa): su 10-Q del 2T da notas 25,092 + préstamos 2,760 + línea de crédito y
+      papel comercial 2,763 (`RevolvingCreditFacilityAndCommercialPaper`) + hipotecas 37 = 30,652 = los préstamos de
+      Yahoo; la 2a no sumaba la línea de crédito. **DUK:** financiero del 10-K (576) con aviso de fecha.
+    - **Bancos:** D/E, deuda / activos, deuda neta y EV fuera ("No aplica": se mide con capital, fase 3);
+      subordinada declarada (BCS 14.7, HSBC 27.9 mil millones). **CAT:** cautiva declarada, 34.46 de 45.15 (Cat
+      Financial, con dimensión en el 10-Q). **Altman X4** US GAAP sin el arrendamiento operativo.
+- **Verificación T5:** `pytest tests/test_debt_t5.py` → "11 passed"; `pytest -q` → "85 failed, 3549 passed,
+  1 skipped" (los 85, golden); niveles frente a los golden aprobados → 0 cambios en 42 análisis (calidad MSFT +1,
+  DUK +3, RIVN +3, como preveía la 2a; SNOW +10 por la caja neta); `edgar_verify --whatif` → "1282/1411 (90.9%)".
+- **Pendiente de confirmar por el usuario en este chat:** el coordinador transmitió que el usuario aprobó regenerar
+  ya los golden de T4 (y el arquetipo esperado de MC.PA = el del motor, a revisar en la fase 3, y corregir en T8
+  el emparejamiento de periodos de `edgar_verify`), lo que contradice su instrucción directa aquí (aprobarlos en
+  T8). No se ha regenerado nada hasta su confirmación aquí.
 
