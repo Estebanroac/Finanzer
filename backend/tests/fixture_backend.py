@@ -580,8 +580,10 @@ def reset_state():
     import finnhub_fallback
     import price_history
     import yf_adapter
+    import sec_edgar
     cost_of_capital.reset_cache()
     price_history.reset()
+    sec_edgar.reset()
     yf_adapter._cache.clear()
     yf_adapter._best_cache.clear()
     yf_adapter._session = None
@@ -620,6 +622,13 @@ def replay(base_dir=FIXTURES_DIR):
     p.set(finnhub_fallback, "_get", _fake_finnhub_get)
     import price_history
     p.set(price_history, "FETCHER", _history_replay_fetcher(store))
+    # Fase 2b: SEC EDGAR (lista de filings) y calendario de resultados de Finnhub, desde tests/fixtures/f2b cortados
+    # en la fecha de captura del ticker analizado. El User-Agent es ficticio: nada sale a la red.
+    import f2b_fixtures
+    import sec_edgar
+    p.set(sec_edgar, "FETCHER", f2b_fixtures.edgar_fetcher(store))
+    p.set(finnhub_fallback, "earnings_calendar", f2b_fixtures.calendar(store))
+    p.env("SEC_EDGAR_USER_AGENT", "finanzer-replay replay@example.invalid")
     # Etapa 8: los fixtures no tienen ^TNX; en replay el Rf es siempre el de config
     # (marcado como fallback), así los golden no dependen del día de la captura.
     import cost_of_capital
@@ -669,6 +678,8 @@ def record(base_dir=FIXTURES_DIR):
     p.set(finnhub_fallback, "_get", _rec_finnhub_get)
     import price_history
     p.set(price_history, "FETCHER", _history_record_fetcher(store, price_history.FETCHER))
+    # Fase 2b: EDGAR y el calendario de resultados aún no se graban con el ticker (juego aparte tests/fixtures/f2b,
+    # tests/capture_f2b_sources.py); en una captura nueva se consultan en vivo y quedan fuera del replay.
     try:
         reset_state()
         yield store

@@ -31,3 +31,17 @@ timeout_s = 8
 cache_ttl_s = 300
 gap_fields = ["beta", "forwardPE", "revenueGrowth"]
 cut_match_rel_tol = 0.02        # fase 2b: una métrica TTM de Finnhub entra solo si casa con el corte a ±2%
+
+[edgar]                         # lib/sec_edgar.py (fase 2b): SEC EDGAR en el camino del análisis (D2: verificación y respaldo)
+user_agent_env = "SEC_EDGAR_USER_AGENT"   # nombre y correo de contacto; lo pone el usuario en Render. Sin él, desactivado
+budget_s = 3.0                  # tiempo máximo de EDGAR por análisis (propuesta de la 2a); si se agota, se sigue sin EDGAR
+min_interval_s = 0.12           # ≤ 8.3 peticiones/s (la SEC admite 10/s)
+timeout_s = 2.5                 # por petición (nunca más que lo que queda del presupuesto)
+tickers_ttl_s = 86400           # company_tickers.json: caché diaria
+submissions_ttl_s = 21600       # lista de filings por CIK: 6 h (un 8-K de resultados aparece el mismo día)
+report_date_tolerance_days = 14 # Yahoo fecha el trimestre a fin de mes; EDGAR, al cierre real (JNJ 06-28)
+since = "2024-01-01"            # filings que se miran
+# Emisores sin 8-K (20-F/40-F): calendario de resultados del proveedor (Finnhub). Una publicación más de
+# `calendar_min_lag_days` días después del corte es de un periodo posterior (la del propio corte llega antes: TSM
+# +16, TM +35, UL y BCS +28–31 días; la siguiente, a +105–130).
+calendar_min_lag_days = 70

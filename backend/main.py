@@ -265,6 +265,8 @@ def _build_provenance(yinfo: dict, out_flags: list, block_errors: list) -> dict:
         "currency": yinfo.get("_currency"),
         # Fase 2b (T3): corte coherente: fecha y tipo del corte y periodo de cada campo de los estados.
         "as_of": yinfo.get("_as_of"),
+        "pending_results": yinfo.get("_pending_results"),
+        "edgar": yinfo.get("_edgar"),
         # Fase 2b: serie diaria de precios y dividendo indicado en la moneda y la clase del precio (T2).
         "price_history": yinfo.get("_price_history"),
         "dividend": yinfo.get("_dividend"),

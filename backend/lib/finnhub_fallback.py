@@ -105,6 +105,22 @@ def _basic_financials(symbol: str) -> Optional[dict]:
     return data
 
 
+def earnings_calendar(symbol: str, start: str, end: str) -> Optional[list]:
+    """Fase 2b (T3): publicaciones de resultados del símbolo entre `start` y `end` (calendario de Finnhub), para el
+    aviso de resultados publicados de los emisores sin 8-K. None sin clave o si falla."""
+    key = f"cal:{symbol}:{start}:{end}"
+    now = time.time()
+    with _lock:
+        ent = _cache.get(key)
+        if ent and now - ent[0] < _CACHE_TTL:
+            return ent[1]
+    data = _get("/calendar/earnings", {"symbol": symbol, "from": start, "to": end})
+    out = (data or {}).get("earningsCalendar") if isinstance(data, dict) else None
+    with _lock:
+        _cache[key] = (now, out)
+    return out
+
+
 def _num(v) -> Optional[float]:
     try:
         if v is None:

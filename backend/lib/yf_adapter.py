@@ -351,8 +351,10 @@ def get_ticker_info(symbol: str) -> Dict[str, Any]:
 
         # Fase 2b: la serie diaria de precios (dividendos del propio título, rango de 52 semanas y beta) se
         # descarga en un hilo, en paralelo con los estados; se recoge después de Finnhub.
+        import sec_edgar as edgar
         import price_history
         _hist_future = price_history.start(symbol)
+        _edgar_future = edgar.start(symbol)
         try:
             info = _do_fetch(symbol)
             _ctx = _STMT_CTX.get(symbol)
@@ -414,6 +416,13 @@ def get_ticker_info(symbol: str) -> Dict[str, Any]:
             info["dividendRate"] = info["dividendYield"] = None
             (info.get("_yahoo_ratios") or {})["dividendYield"] = None
 
+        # ── Fase 2b (T3): resultados publicados y aún no incorporados (F2_PRECEDENCIA §1.1) ──
+        try:
+            _apply_edgar(symbol, info, edgar.collect(_edgar_future), _hist)
+        except Exception as e:
+            logger.error(f"[EDGAR] {symbol}: {e}")
+            info["_edgar"] = {"status": "no_disponible", "reason": f"{type(e).__name__}: {e}"}
+
         # ── Validación de entrada (lib/validate.py): después de toda la ingesta
         # y antes de cualquier cálculo del motor. Nunca corrige en silencio:
         # deja info["_validation"] y actualiza info["_provenance"].
@@ -429,6 +438,25 @@ def get_ticker_info(symbol: str) -> Dict[str, Any]:
         # ── Defensa 2: los snapshots degradados caducan rápido ──
         _cache[symbol] = (time.time(), info, degraded)
         return info
+
+
+def _apply_edgar(symbol: str, info: Dict[str, Any], ed: Dict[str, Any], hist: Dict[str, Any]) -> None:
+    """Fase 2b (T3): resumen de EDGAR (info["_edgar"]) y aviso de resultados publicados después del corte
+    (info["_pending_results"]): por los filings de EDGAR o, sin 8-K (20-F) o sin EDGAR, por el calendario de
+    resultados del proveedor. No mezcla periodos ni baja la confianza: solo avisa."""
+    import datetime as _dt
+    import sec_edgar as edgar
+    info["_edgar"] = {k: ed.get(k) for k in ("status", "reason", "cik", "title")}
+    cut = (info.get("_as_of") or {}).get("date")
+    frame = (hist or {}).get("frame")
+    today = frame.index[-1].date() if frame is not None else _dt.date.today()
+    pend = edgar.pending_results(ed.get("filings"), cut) if ed.get("status") == "ok" else None
+    if pend is None and cut and (ed.get("status") != "ok" or edgar.foreign_filer(ed.get("filings"))):
+        from finnhub_fallback import earnings_calendar, is_enabled
+        if is_enabled():
+            start = (_dt.date.fromisoformat(cut) + _dt.timedelta(days=1)).isoformat()
+            pend = edgar.pending_from_calendar(earnings_calendar(symbol, start, today.isoformat()), cut, today)
+    info["_pending_results"] = pend
 
 
 def _foreign_line(cur: Dict[str, Any]) -> bool:
