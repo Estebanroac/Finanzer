@@ -119,8 +119,8 @@ def convergence(methods: List[Dict[str, Any]]) -> Dict[str, Any]:
       media   coinciden en dirección pero superan el umbral, o uno está en precio y
               otro tiene dirección (no coinciden, pero tampoco se oponen);
       baja    apuntan en direcciones opuestas (uno barata y otro cara);
-      no_evaluable  menos de dos métodos evaluables: no hay contraste (la confianza
-              tiene entonces techo, no_evaluable_cap)."""
+      no_evaluable  menos de dos métodos evaluables: no hay contraste (fase 3, opción 3 de RECON
+              §7.17: sin techo; solo la discrepancia o los datos débiles contraen la confianza)."""
     C = cfg("thresholds.confidence")
     for m in methods:
         m["evaluable"] = m.get("signal") is not None and m.get("reliability") != "baja"
@@ -240,7 +240,10 @@ def verdict_confidence(dimensions: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
     capped = None
     conv = (dimensions.get("convergence") or {}).get("level")
     if conv == "no_evaluable":
-        cap, why = C["no_evaluable_cap"], "sin contraste entre métodos de valoración"
+        # Fase 3 (T3, D3, opción 3 de RECON §7.17): la mera ausencia de un segundo método NO contrae la confianza;
+        # la contraen la discrepancia entre métodos (convergencia media o baja) y los datos débiles (las otras
+        # dimensiones). Con el DCF inverso conectado, casi todos los análisis tienen ya dos métodos.
+        cap = None
     elif conv is not None and conv != "alta":
         # Etapa 9a: "alta" exige convergencia alta (caso V local, RECON 7.13).
         cap, why = C["no_evaluable_cap"], f"la convergencia es {conv}: alta exige convergencia alta"

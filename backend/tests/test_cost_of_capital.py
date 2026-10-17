@@ -305,7 +305,7 @@ def test_convergence_by_direction():
     assert convergence([_m("DCF", 0.05), _m("múltiplos", -0.1)])["level"] == "alta"          # ambas en precio
 
 
-def test_single_evaluable_method_is_not_evaluable_and_caps_confidence():
+def test_single_evaluable_method_is_not_evaluable_and_does_not_cap_confidence():
     c = convergence([_m("múltiplos", 0.3)])
     assert c["level"] == "no_evaluable" and "un solo método evaluable" in c["reasons"][0]
     c = convergence([_m("DCF", -0.5, "baja"), _m("múltiplos", -0.4)])     # el DCF no fiable no vota
@@ -313,8 +313,12 @@ def test_single_evaluable_method_is_not_evaluable_and_caps_confidence():
 
     def d(level):
         return {"level": level, "reasons": [level]}
+    # Fase 3 (T3, opción 3 de RECON §7.17): sin segundo método no hay techo; la discrepancia sí lo pone.
     r = verdict_confidence({"convergence": c, "coverage": d("alta"), "source": d("alta"), "stability": d("alta")})
-    assert r["score"] == 1.0 and r["level"] == "media" and r["capped_from"] == "alta"
+    assert r["score"] == 1.0 and r["level"] == "alta" and r["capped_from"] is None
+    m = convergence([_m("DCF", -0.1), _m("múltiplos", -0.9)])                   # en precio frente a cara
+    r = verdict_confidence({"convergence": m, "coverage": d("alta"), "source": d("alta"), "stability": d("alta")})
+    assert m["level"] == "media" and r["level"] == "media" and r["capped_from"] == "alta"
 
 
 def test_graham_does_not_vote_and_financial_has_two_methods(outputs_by_env):
