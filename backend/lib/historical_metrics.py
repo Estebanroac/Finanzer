@@ -154,6 +154,31 @@ def per_share(values: List[Optional[float]], shares: List[Optional[float]]) -> L
             for v, s in zip(values or [], shares or [])]
 
 
+def on_statement(st: Dict[str, Any], key: str, stmt: str, target: str) -> List[Optional[float]]:
+    """La fila `key` del estado `stmt` ("inc", "bs", "cf") en los ejercicios del estado `target`, casados por la FECHA
+    DE CIERRE (un mismo ejercicio: menos de medio año entre cierres). Cada estado descarta sus columnas vacías por
+    separado (TM), y el año de la fecha no es el ejercicio con cierres de 52/53 semanas (revisión de código F4,
+    hallazgos 4 y 5). Sin fechas, los ejercicios `*_years`; sin ellos, la posición."""
+    from datetime import date
+    vals = list((st or {}).get(key) or [])
+    own, tgt = (st or {}).get(f"{stmt}_ends") or [], (st or {}).get(f"{target}_ends") or []
+    if own and tgt:
+        d = [date.fromisoformat(str(e)[:10]) if e else None for e in own]
+        out = []
+        for t in tgt:
+            t = date.fromisoformat(str(t)[:10]) if t else None
+            i = next((k for k, x in enumerate(d) if t and x and round(abs((x - t).days) / 365.25) == 0), None)
+            out.append(vals[i] if i is not None and i < len(vals) else None)
+        return out
+    oy, ty = (st or {}).get(f"{stmt}_years") or [], (st or {}).get(f"{target}_years") or []
+    if oy and ty:
+        m = {}
+        for y, v in zip(oy, vals):
+            m.setdefault(y, v)
+        return [m.get(y) for y in ty]
+    return vals
+
+
 def per_share_basis(shares_newest_first: List[Optional[float]], years: int = 3) -> Dict[str, Any]:
     """¿El crecimiento debe evaluarse por acción? (etapa 7). Sí si las acciones en
     circulación (balance anual, base ajustada por splits) crecen más que

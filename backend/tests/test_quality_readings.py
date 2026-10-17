@@ -54,3 +54,13 @@ def test_statements_are_crossed_by_fiscal_year_not_position():
           "free_cash_flow": [20.0, 8.0], "cf_years": [2025, 2023]}
     m = qr.fcf_margin_trend(st)
     assert m["series"] == [pytest.approx(0.20), pytest.approx(0.10)] and m["years"] == [2025, 2023]
+
+
+def test_statements_are_crossed_by_closing_date_with_52_53_week_years():
+    """Revisión de código F4 (hallazgo 4): FY2021 cierra el 2022-01-01 y FY2022 el 2022-12-31 (mismo año natural)."""
+    st = {"revenue": [1000.0, 1000.0, 2000.0, 500.0],
+          "inc_ends": ["2024-12-28", "2023-12-30", "2022-12-31", "2022-01-01"],
+          "free_cash_flow": [100.0, 100.0, 400.0, 50.0],
+          "cf_ends": ["2024-12-28", "2023-12-30", "2022-12-31", "2022-01-01"]}
+    m = qr.fcf_margin_trend(st)
+    assert m["series"] == [pytest.approx(0.10), pytest.approx(0.10), pytest.approx(0.20), pytest.approx(0.10)]

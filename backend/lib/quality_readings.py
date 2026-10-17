@@ -17,6 +17,7 @@ Series anuales de los estados (más reciente primero), en la moneda de los estad
 import math
 from typing import Any, Dict, List, Optional
 
+from historical_metrics import on_statement
 from settings import cfg
 
 
@@ -33,22 +34,11 @@ def _first_last(vals: List[Optional[float]]):
     return (idx[0], idx[-1]) if len(idx) >= 2 else (None, None)
 
 
-def _on(st: Dict[str, Any], key: str, years_key: str, yrs: List[Any]) -> List[Optional[float]]:
-    """La serie `key` (de su estado, con sus ejercicios `years_key`) en los ejercicios `yrs`. Revisión de código F3
-    (hallazgo 8): cada estado descarta sus columnas vacías por separado; cruzarlos por posición podía dividir el flujo
-    de un ejercicio por los ingresos de otro."""
-    vals, own = st.get(key) or [], st.get(years_key) or []
-    if not own:   # sin ejercicios declarados, la posición (mismo estado)
-        return [vals[i] if i < len(vals) else None for i in range(len(yrs))]
-    m = {y: v for y, v in zip(own, vals) if y is not None}
-    return [m.get(y) for y in yrs]
-
-
 def dupont(st: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     yrs = st.get("inc_years") or []
     ni, rev = st.get("net_income") or [], st.get("revenue") or []
-    ta = _on(st, "total_assets", "bs_years", yrs) if yrs else st.get("total_assets") or []
-    eq = _on(st, "stockholders_equity", "bs_years", yrs) if yrs else st.get("stockholders_equity") or []
+    ta = on_statement(st, "total_assets", "bs", "inc")
+    eq = on_statement(st, "stockholders_equity", "bs", "inc")
     rows = []
     for i in range(min(len(ni), len(rev), len(ta), len(eq))):
         if _ok(ni[i], rev[i], ta[i], eq[i]) and rev[i] > 0 and ta[i] > 0 and eq[i] > 0:
@@ -85,7 +75,7 @@ def dupont_text(d: Dict[str, Any]) -> str:
 def fcf_margin_trend(st: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     yrs = st.get("cf_years") or []
     fcf, sbc = st.get("free_cash_flow") or [], st.get("stock_based_compensation") or []
-    rev = _on(st, "revenue", "inc_years", yrs) if yrs else st.get("revenue") or []
+    rev = on_statement(st, "revenue", "inc", "cf")
     use_sbc = bool(sbc) and all(s is not None for s, f in zip(sbc, fcf) if f is not None)
     m = []
     for i in range(min(len(fcf), len(rev))):
@@ -138,7 +128,7 @@ def interest_coverage(st: Dict[str, Any], ebit_ttm: Optional[float], ebitda_ttm:
     intereses pagados."""
     yrs = st.get("inc_years") or []
     ie = st.get("interest_expense") or []
-    paid = _on(st, "interest_paid", "cf_years", yrs) if yrs else st.get("interest_paid") or []
+    paid = on_statement(st, "interest_paid", "cf", "inc")
     ebit = st.get("ebit") or st.get("operating_income") or []
     basis = "gasto por intereses"
     i_ttm = abs(interest_ttm) if interest_ttm else None
