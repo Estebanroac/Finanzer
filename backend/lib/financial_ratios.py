@@ -3176,8 +3176,18 @@ def score_crecimiento(
     # Revenue Growth 3Y (hasta ±5 pts). REIT (etapa 6): el crecimiento se mide
     # por acción — llega el CAGR del FFO por acción, con sus propias bandas.
     _reit = archetype == REIT
-    _rev_metric = "Retorno total (dividendo + FFO por acción)" if _reit else "Crecimiento Ingresos 3Y"
+    # Fase 3 (T5, F3_DISENO §4): MATURE de dividendo alto, crecimiento como retorno total (dividendo + ingresos por
+    # acción): reparte la mayor parte de lo que gana y su retorno llega sobre todo por el dividendo, como un REIT.
+    _mature_tr = (archetype == MATURE and dividend_yield is not None
+                  and dividend_yield >= T["mature_total_return_min_yield"])
+    _rev_metric = ("Retorno total (dividendo + FFO por acción)" if _reit
+                   else "Retorno total (dividendo + ingresos por acción)" if _mature_tr else "Crecimiento Ingresos 3Y")
     _ffo_ps = revenue_growth_3y
+    if _mature_tr and revenue_growth_3y is not None:
+        revenue_note = (f"dividendo alto (≥ {T['mature_total_return_min_yield']:.0%}): rentabilidad por dividendo "
+                        f"{dividend_yield:.1%} + ingresos {_ffo_ps:+.1%} (CAGR 3 años)"
+                        + (f"; {revenue_note}" if revenue_note else ""))
+        revenue_growth_3y = dividend_yield + growth_for_bands(revenue_growth_3y)
     if _reit:
         if revenue_growth_3y is not None and dividend_yield is not None:
             revenue_growth_3y = dividend_yield + growth_for_bands(revenue_growth_3y)
@@ -3187,7 +3197,7 @@ def score_crecimiento(
             revenue_reason = "sin rentabilidad por dividendo: no hay retorno total"
             revenue_growth_3y = None
     if revenue_growth_3y is not None:
-        b, p = (T["reit_total_return_bounds"], T["reit_total_return_points"]) if _reit \
+        b, p = (T["reit_total_return_bounds"], T["reit_total_return_points"]) if (_reit or _mature_tr) \
             else (T["revenue_bounds"], T["revenue_points"])
         if revenue_growth_3y >= b[0]:
             adj = p[0]

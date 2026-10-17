@@ -1035,7 +1035,8 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     # lleva el valor en `raw`): CAGR a 3 años, ciclo medio en CYCLICAL, retorno total por
     # acción en REIT. El interanual de la fuente queda solo en la tabla, rotulado.
     _gadj = {x.get("metric"): x for x in (breakdown.get("Crecimiento") or {}).get("adjustments") or []}
-    _rev_adj = _gadj.get("Crecimiento Ingresos 3Y") or _gadj.get("Retorno total (dividendo + FFO por acción)")
+    _rev_adj = (_gadj.get("Crecimiento Ingresos 3Y") or _gadj.get("Retorno total (dividendo + FFO por acción)")
+                or _gadj.get("Retorno total (dividendo + ingresos por acción)"))
     _eps_adj = _gadj.get("Crecimiento EPS 3Y")
     g_rev = (_rev_adj or {}).get("raw")
     # Con dilución o recompras relevantes el score mide los ingresos POR ACCIÓN (etapa 7): se rotula.
