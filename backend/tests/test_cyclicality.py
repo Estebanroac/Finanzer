@@ -190,3 +190,12 @@ def test_share_break_cuts_the_per_share_series():
     assert abs(g["revenue_ps_cagr_3y"] - ((4475 / 2565) / (1906 / 2064)) ** (1 / 3) + 1) < 1e-9
     m = cy.measure(h)
     assert m["basis"] == "por_accion" and m["decline_episodes"] == []      # sin la falsa caída de 2020–21
+
+
+def test_priority_archetype_with_cyclical_history_keeps_an_alert():
+    # Un banco con un ciclo en su historia sigue siendo FINANCIAL, con la alerta y lo medido.
+    c = _cls("Banks - Diversified", CYCLE, sector="Financial Services")
+    assert c["archetype"] == FINANCIAL and [a["code"] for a in c["alerts"]] == ["posible_ciclica"]
+    assert "historia" in c["alerts"][0]["detail"]
+    # Y sin ciclo en la historia, sin alerta.
+    assert not _cls("Banks - Diversified", STEADY, sector="Financial Services")["alerts"]

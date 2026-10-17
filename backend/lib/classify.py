@@ -344,6 +344,18 @@ def classify(*, sector: Optional[str], industry: Optional[str], eps_ttm: Optiona
                                      "plain": "Clasificación ambigua: confianza baja."}
         else:
             res["low_confidence"] = None
+        if arch != CYCLICAL and hist_decides and cyc["cyclical"]:
+            # Arquetipo de prioridad mayor (FINANCIAL, REIT, UTILITY) cuya historia muestra ciclo: no cambia el
+            # arquetipo (sus herramientas son las suyas), pero se avisa con lo medido.
+            mm = cyc["measures"]
+            eps_ = ", ".join(ep[0][:4] + (f"–{ep[-1][:4]}" if len(ep) > 1 else "") for ep in mm["decline_episodes"])
+            col = ", ".join(y[:4] for y in mm["eps_collapse_with_decline"])
+            det = "; ".join(filter(None, [f"caídas de ingresos en {eps_}" if eps_ else "",
+                                          f"desplomes del BPA con caída de ingresos en {col}" if col else ""]))
+            res["alerts"].append({"code": "posible_ciclica",
+                                  "detail": f"su historia ({mm['years']} ejercicios en EDGAR) muestra ciclo: {det}",
+                                  "detail_plain": f"Su historia muestra un comportamiento cíclico: {det}."})
+            res["confidence"] = "baja"
         if arch != CYCLICAL and not hist_decides:
             # Con historia suficiente la ciclicidad ya se midió en 10+ ejercicios; la alerta de la ventana corta de
             # Yahoo (4 ejercicios) solo queda para los emisores sin esa historia.
