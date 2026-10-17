@@ -50,19 +50,55 @@ def justified_multiple(ret: Optional[float], ke: float, g: float) -> Optional[fl
     return (ret - g) / (ke - g)
 
 
+def at1_by_year(st: Dict[str, Any]) -> List[Optional[float]]:
+    """AT1 dentro del patrimonio de cada ejercicio (fase 3, T4; lib/ordinary.py): en un emisor IFRS, Yahoo deja el
+    "Common Stock Equity" igual al patrimonio y da el AT1 en "Other Equity Interest". Es AT1 solo si el emisor paga
+    cupones a esos instrumentos (beneficio de los propietarios > beneficio del ordinario); si no, 0."""
+    ni, nic = st.get("net_income") or [], st.get("net_income_common") or []
+    eq, cse, oei = st.get("stockholders_equity") or [], st.get("common_stock_equity") or [], \
+        st.get("other_equity_interest") or []
+    tol = cfg("valuation.bank_implied.at1_relative_tolerance")
+    out = []
+    for i in range(len(eq)):
+        n, c = (ni[i] if i < len(ni) else None), (nic[i] if i < len(nic) else None)
+        e, ce, o = eq[i], (cse[i] if i < len(cse) else None), (oei[i] if i < len(oei) else None)
+        pays = n is not None and c is not None and (n - c) > tol * abs(n)
+        inside = e is not None and ce is not None and abs(e - ce) <= tol * abs(e)
+        out.append(o if (pays and inside and _pos(o)) else 0.0)
+    return out
+
+
 def _financial(st: Dict[str, Any], km: Dict[str, Any], beta: Optional[float],
-               rf: Optional[float] = None, beta_preadjusted: bool = False) -> Dict[str, Any]:
+               rf: Optional[float] = None, beta_preadjusted: bool = False,
+               subtype: Optional[str] = None) -> Dict[str, Any]:
     ni, eq, tbv = st.get("net_income") or [], st.get("stockholders_equity") or [], st.get("tangible_book_value") or []
     rev = st.get("revenue") or []
     mcap = km.get("market_cap")
     ni0, eq0, tbv0, rev0 = _first(ni), _first(eq), _first(tbv), _first(rev)
     roe_series = ratio_series(ni, eq)
     roe_fy = _first(roe_series)
-    rote = (ni0 / tbv0) if (ni0 is not None and _pos(tbv0)) else None
+    # Fase 3 (T4, §1.4 y §3): ROTE del accionista ordinario, ajustado por AT1 (beneficio del ordinario sobre el
+    # tangible sin AT1). En EE. UU. Yahoo ya resta los preferentes; en un banco IFRS (BCS) el AT1 sigue dentro.
+    nic = st.get("net_income_common") or []
+    ni_ord = [(c if c is not None else n) for n, c in zip(ni, nic + [None] * (len(ni) - len(nic)))] if ni else []
+    at1 = at1_by_year(st)
+    tbv_ord = [(t - (at1[i] if i < len(at1) else 0.0)) if t is not None else None for i, t in enumerate(tbv)]
+    rote_series = ratio_series(ni_ord, tbv_ord)
+    rote = _first(rote_series)
+    tbv_ord0 = _first(tbv_ord)
     ke, g = cost_of_equity(beta, rf, beta_preadjusted), cfg("valuation.dcf.terminal_growth")   # β ajustada
     pb = (mcap / eq0) if (_pos(mcap) and _pos(eq0)) else None
-    ptbv = (mcap / tbv0) if (_pos(mcap) and _pos(tbv0)) else None
-    j_pb, j_ptbv = justified_multiple(roe_fy, ke, g), justified_multiple(rote, ke, g)
+    ptbv = (mcap / tbv_ord0) if (_pos(mcap) and _pos(tbv_ord0)) else None
+    # §8.8: aseguradora y conglomerado, ROE medio del ciclo de suscripción (los ejercicios disponibles), no el de un
+    # año; banco, el ROTE del último ejercicio (§3) con la media como contexto.
+    roe_vals = [x for x in roe_series if x is not None]
+    roe_avg = mean(roe_vals) if roe_vals else None
+    rote_vals = [x for x in rote_series if x is not None]
+    rote_avg = mean(rote_vals) if rote_vals else None
+    roe_ref = roe_avg if subtype in ("aseguradora", "conglomerado") else roe_fy
+    j_pb, j_ptbv = justified_multiple(roe_ref, ke, g), justified_multiple(rote, ke, g)
+    implied = _implied_reading(subtype, pb, ptbv, ke, g, roe_ref=roe_ref, roe_years=len(roe_vals), rote=rote,
+                               rote_avg=rote_avg, rote_years=len(rote_vals), at1=_first(at1))
 
     # Gastos no financieros: la fila total si existe; si no, la suma de las
     # partidas bancarias desglosadas (exige al menos una partida bancaria).
@@ -76,6 +112,11 @@ def _financial(st: Dict[str, Any], km: Dict[str, Any], beta: Optional[float],
             nie_why = "sin gastos no financieros desglosados en los estados"
     efficiency = (nie0 / rev0) if (nie0 is not None and _pos(rev0)) else None
 
+    # Fase 3 (T4, §1.4): crecimiento bancario con el margen de intereses y las comisiones. El "Total Revenue" de un
+    # banco ya es el ingreso neto (margen de intereses + otros ingresos); el margen de intereses, aparte.
+    nii = st.get("net_interest_income") or []
+    nii_cagr, nii_why = strict_cagr(nii, 3)
+    nii_share = (_first(nii) / rev0) if (_first(nii) is not None and _pos(rev0)) else None
     bv_series = tbv if (tbv and all(_pos(x) for x in tbv[:4])) else eq
     bv_growth, bv_why = strict_cagr(bv_series, 3)
     rev_yoy = _first(yoy_growths(rev))
@@ -85,6 +126,8 @@ def _financial(st: Dict[str, Any], km: Dict[str, Any], beta: Optional[float],
             beta if beta is not None else cfg("valuation.capm.default_beta")),
         "beta_adjusted": _blume(beta, beta_preadjusted),
         "roe_fy": roe_fy, "rote": rote, "pb": pb, "ptbv": ptbv,
+        "roe_avg": roe_avg, "roe_reference": roe_ref, "rote_avg": rote_avg, "rote_years": len(rote_vals),
+        "at1": _first(at1), "tangible_book_ordinary": tbv_ord0, "implied": implied,
         "pb_justified": j_pb, "ptbv_justified": j_ptbv,
         "pb_ratio": (pb / j_pb) if (pb is not None and j_pb) else None,
         "ptbv_ratio": (ptbv / j_ptbv) if (ptbv is not None and j_ptbv) else None,
@@ -94,7 +137,36 @@ def _financial(st: Dict[str, Any], km: Dict[str, Any], beta: Optional[float],
         "book_value_cagr_3y": bv_growth, "book_value_cagr_3y_reason": bv_why,
         "book_value_basis": "tangible" if bv_series is tbv else "contable",
         "revenue_growth_statements": rev_yoy,
+        "net_interest_income_cagr_3y": nii_cagr, "net_interest_income_cagr_3y_reason": nii_why,
+        "net_interest_income_share": nii_share,
     }
+
+
+def _implied_reading(subtype, pb, ptbv, ke, g, *, roe_ref, roe_years, rote, rote_avg, rote_years, at1):
+    """ROTE (banco) o ROE (aseguradora, conglomerado) que descuenta el precio frente al que obtiene (F3_DISENO §3,
+    §8.8): banda y sensibilidad (P/TBV o P/B justificado a ±2 pp)."""
+    import bank_implied as bi
+    C = cfg("valuation.bank_implied")
+    bank = subtype == "banco"
+    if bank:
+        imp = bi.implied_rote(ptbv, ke, g)
+        own, label, mult = rote, "ROTE", ptbv
+    else:
+        imp = bi.implied_roe(pb, ke, g)
+        own, label, mult = roe_ref, "ROE", pb
+    out = {"metric": label, "state": imp["state"], "reason": imp["reason"], "implied": imp["value"],
+           "multiple": mult, "own": own, "own_avg": rote_avg if bank else roe_ref,
+           "own_years": rote_years if bank else roe_years, "at1": at1 if bank else None,
+           "band": None, "gap": None, "sensitivity": [], "subtype": subtype}
+    if imp["state"] != bi.OK or own is None:
+        return out
+    gap = own - imp["value"]
+    band = ("barata" if gap > C["band_pp"] else "en_precio" if gap >= -C["band_pp"]
+            else "exigente" if gap >= -C["very_demanding_pp"] else "muy_exigente")
+    out.update(gap=gap, band=band,
+               sensitivity=[{"delta": d, "return": own + d, "multiple_justified": justified_multiple(own + d, ke, g)}
+                            for d in C["rote_sensitivity_deltas"]])
+    return out
 
 
 def _per_share(values: List[Optional[float]], shares: List[Optional[float]]) -> List[Optional[float]]:
@@ -317,11 +389,11 @@ def growth_values(archetype: str, st_local: Dict[str, Any]) -> Dict[str, Any]:
 def compute(archetype: str, statements_fy: Optional[Dict[str, Any]], key_metrics: Dict[str, Any], *,
             beta: Optional[float] = None, revenue_cagr_3y: Optional[float] = None,
             rf: Optional[float] = None, sbc: Optional[Dict[str, Any]] = None,
-            beta_preadjusted: bool = False) -> Dict[str, Any]:
+            beta_preadjusted: bool = False, subtype: Optional[str] = None) -> Dict[str, Any]:
     """Métricas de la rama del arquetipo ({} si la rama no necesita ninguna)."""
     st = statements_fy or {}
     if archetype == FINANCIAL:
-        return _financial(st, key_metrics, beta, rf, beta_preadjusted)
+        return _financial(st, key_metrics, beta, rf, beta_preadjusted, subtype=subtype)
     if archetype == GROWTH_PRE_PROFIT:
         return _growth_pre_profit(key_metrics, revenue_cagr_3y, st, sbc)
     if archetype == REIT:

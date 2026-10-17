@@ -1397,6 +1397,9 @@ def _enrich_prior_year_data(symbol: str, info: Dict[str, Any], ticker=None) -> D
         "net_income_discontinued": _row(inc, "Net Income Discontinuous Operations"),
         # gastos no financieros de un banco (ratio de eficiencia aproximado)
         "non_interest_expense": _row(inc, "Non Interest Expense"),
+        # Fase 3 (T4): margen de intereses de un banco (el "Total Revenue" bancario es el ingreso neto: margen de
+        # intereses + otros ingresos, comisiones incluidas).
+        "net_interest_income": _row(inc, "Net Interest Income"),
         "sga": _row(inc, "Selling General And Administration"),
         "occupancy": _row(inc, "Occupancy And Equipment"),
         "professional_services": _row(inc, "Professional Expense And Contract Services Expense"),

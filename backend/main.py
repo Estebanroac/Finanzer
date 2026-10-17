@@ -723,7 +723,7 @@ def _compute_analysis(symbol: str) -> dict:
             archetype_values = archetype_metrics.compute(
                 archetype, _stmts, result["key_metrics"], beta=safe_float(financials.beta),
                 revenue_cagr_3y=classification["inputs"].get("revenue_cagr_3y"), rf=rf_info["value"],
-                sbc=sbc_info, beta_preadjusted=_beta_pre)
+                sbc=sbc_info, beta_preadjusted=_beta_pre, subtype=classification.get("subtype"))
             if growth_currency.converted(_cur_info):
                 archetype_values.update(archetype_metrics.growth_values(archetype, _stmts_g))
             result["archetype_metrics"] = {k: (safe_float(v) if isinstance(v, float) else v)

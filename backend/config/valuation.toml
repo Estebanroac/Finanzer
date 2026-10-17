@@ -140,3 +140,9 @@ band_points = { barata = 2, en_precio = 0, exigente = -2, muy_exigente = -4 }
 
 [bank_implied]                      # lib/bank_implied.py: ROTE/ROE implícitos en el precio (§3)
 rote_sensitivity_deltas = [-0.02, -0.01, 0.0, 0.01, 0.02]   # ± pp de ROTE para la sensibilidad (§3: ±2 pp)
+# Fase 3 (T4): lectura del retorno implícito frente al obtenido (banco: ROTE del último ejercicio ajustado por AT1;
+# aseguradora y conglomerado: ROE medio de los ejercicios). Obtiene > implícito + 2 pp: barata; ±2 pp: en precio;
+# hasta −5 pp: exigente; peor: muy exigente. Los ±2 pp son la sensibilidad que pide §3.
+band_pp = 0.02
+very_demanding_pp = 0.05
+at1_relative_tolerance = 0.001      # diferencia relativa mínima para ver cupones AT1 o AT1 fuera del ordinario
