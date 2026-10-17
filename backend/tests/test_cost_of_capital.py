@@ -189,7 +189,7 @@ def test_grid_trimmed_at_growth_cap_and_wacc_range():
     assert s["base_growth_idx"] == 2 and s["discount_rates"][s["base_discount_idx"]] == pytest.approx(0.065)
     assert max(s["growth_rates"]) <= cfg("valuation.dcf.source_cap_revenue") + 1e-9
     base = dcf_multi_stage(fcf=100.0, shares_outstanding=10.0, high_growth_rate=0.30, discount_rate=0.065,
-                           terminal_growth=0.025, decay_type="linear")
+                           terminal_growth=0.025)
     assert s["base_case"]["fair_value"] == base["fair_value_per_share"]
 
 

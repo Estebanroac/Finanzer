@@ -1290,7 +1290,7 @@ def _compute_analysis(symbol: str) -> dict:
                     _g_used = dcf_result.get("growth_estimated")
                     if _g_used is None:
                         _g_used = growth
-                    _decay = dcf_result.get("decay_type") or "linear"
+                    _decay = dcf_result.get("decay_type") or "step"
                     _fv = safe_float(dcf_result.get("fair_value_per_share"))
                     if _fv is not None and _fv <= 0:
                         # Etapa 11b: nunca un valor razonable negativo. Si la deuda neta se come todo el

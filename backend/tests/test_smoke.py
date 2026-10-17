@@ -86,7 +86,7 @@ def test_altman_missing_total_assets():
 # ─────────────────────────── DCF multietapa ───────────────────────────
 def _dcf(**kw):
     base = dict(fcf=100.0, shares_outstanding=10.0, high_growth_rate=0.10,
-                discount_rate=0.10, terminal_growth=0.025, decay_type="linear")
+                discount_rate=0.10, terminal_growth=0.025)
     base.update(kw)
     return dcf_multi_stage(**base)
 

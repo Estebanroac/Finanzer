@@ -1111,18 +1111,20 @@ def dcf_multi_stage(
     transition_years: int = DCF_TRANSITION_YEARS,
     terminal_growth: float = DCF_TERMINAL_GROWTH,
     discount_rate: float = DCF_WACC_DEFAULT,
-    decay_type: str = "linear",
+    decay_type: str = "step",
     margin_of_safety_pct: float = 0.0,
     net_debt: Optional[float] = 0.0,
 ) -> Dict[str, Any]:
     """
-    DCF Multi-Stage (3 etapas) - Modelo más realista.
-    
-    Etapas:
-    - Etapa 1 (High Growth): Años 1-5, crecimiento alto con decay gradual
-    - Etapa 2 (Transition): Años 6-10, convergencia hacia terminal growth
-    - Etapa 3 (Terminal): Año 10+, perpetuidad con Gordon Growth Model
+    DCF Multi-Stage (3 etapas) con UNA sola estructura (fase 3, T3; F3_DISENO §8.2), la misma que el DCF inverso:
+    - Etapa 1: años 1-5, crecimiento constante;
+    - Etapa 2: años 6-10, convergencia lineal hasta el crecimiento terminal;
+    - Etapa 3: valor terminal de Gordon.
+    Se retiraron los decaimientos lineal (> 15%) y exponencial (> 25%) desde el año 1: cambiaban la estructura según
+    el crecimiento y hacían el directo y el inverso incomparables. `decay_type` solo admite "step".
     """
+    if decay_type != "step":
+        raise ValueError(f"decay_type {decay_type!r} retirado en la fase 3: una sola estructura (step)")
     result = {
         "fair_value_per_share": None,
         "fair_value_with_mos": None,
@@ -1177,29 +1179,12 @@ def dcf_multi_stage(
         result["warnings"].append(f"Growth capped de {high_growth_rate:.1%} a {MAX_GROWTH:.1%}")
         high_growth_rate = MAX_GROWTH
     
-    # ETAPA 1: Alto Crecimiento
+    # ETAPA 1: crecimiento constante
     pv_stage1 = 0.0
     projected_fcf = fcf
     stage1_rates = []
-    
-    if decay_type == "linear" and high_growth_years > 1:
-        yearly_decay = (high_growth_rate - terminal_growth) / (high_growth_years + transition_years)
-    else:
-        yearly_decay = 0
-    
-    decay_factor = _DCF["exponential_decay_factor"] if decay_type == "exponential" else 1.0
-    
     for year in range(1, high_growth_years + 1):
-        if decay_type == "linear":
-            year_growth = high_growth_rate - (yearly_decay * (year - 1))
-        elif decay_type == "exponential":
-            year_growth = terminal_growth + (high_growth_rate - terminal_growth) * (decay_factor ** (year - 1))
-        else:
-            year_growth = high_growth_rate
-        
-        # no cruza el terminal: converge hacia él desde arriba o desde abajo
-        year_growth = max(year_growth, terminal_growth) if high_growth_rate >= terminal_growth \
-            else min(year_growth, terminal_growth)
+        year_growth = high_growth_rate
         stage1_rates.append(year_growth)
         projected_fcf *= (1 + year_growth)
         pv_stage1 += projected_fcf / ((1 + discount_rate) ** year)
@@ -1357,13 +1342,8 @@ def dcf_multi_stage_dynamic(
     result["growth_estimated"] = growth_rate
     result["growth_source"] = growth_source
     
-    # EJECUTAR DCF MULTI-STAGE
-    if growth_rate > _DCF["decay_exponential_above"]:
-        decay_type = "exponential"
-    elif growth_rate > _DCF["decay_linear_above"]:
-        decay_type = "linear"
-    else:
-        decay_type = "step"
+    # EJECUTAR DCF MULTI-STAGE (una sola estructura: fase 3, T3)
+    decay_type = "step"
     result["decay_type"] = decay_type  # el grid de sensibilidad usa el mismo
     
     model_result = dcf_multi_stage(
@@ -3549,7 +3529,7 @@ def dcf_sensitivity_analysis(
     discount_rate_range: tuple = _GRID["discount_range"],  # (min_delta, max_delta, step)
     terminal_growth: float = DCF_TERMINAL_GROWTH,
     net_debt: Optional[float] = 0.0,
-    decay_type: str = "linear",
+    decay_type: str = "step",
 ) -> Dict[str, Any]:
     """
     Genera una matriz de sensibilidad para análisis DCF.
@@ -3567,7 +3547,7 @@ def dcf_sensitivity_analysis(
         growth_rate_range: (delta_min, delta_max, step) para growth rates
         discount_rate_range: (delta_min, delta_max, step) para discount rates
         terminal_growth: Tasa de crecimiento terminal
-        decay_type: decaimiento del crecimiento; main.py pasa el del DCF (etapa 4)
+        decay_type: estructura del crecimiento; solo "step" (fase 3: una sola estructura)
     
     Returns:
         Dict con matriz de sensibilidad, estadísticas y metadata
