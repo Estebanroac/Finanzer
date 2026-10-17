@@ -534,10 +534,27 @@ def _apply_edgar(symbol: str, info: Dict[str, Any], ed: Dict[str, Any], hist: Di
     import sec_edgar as edgar
     frame = (hist or {}).get("frame")
     today = frame.index[-1].date() if frame is not None else _dt.date.today()
-    info["_edgar"] = edgar.summary(ed)
-    info["_edgar"]["backup"] = edgar_backup.apply(info, ed, ctx)
+    import copy
     import edgar_primary
-    info["_edgar"]["primary"] = edgar_primary.apply(info, ed, ctx, symbol)   # fase 3 (T1b): EDGAR manda, campo a campo
+    # Fase 6: sin corte trimestral de Yahoo, el corte pasa al último trimestre de EDGAR (BRK-B) si conserva todo lo
+    # que tenía el del ejercicio: se ensaya en una copia y, si perdería un campo, se queda el ejercicio y se dice.
+    trial = copy.deepcopy(info)
+    _recut = edgar_backup.recut(trial, ed, ctx)
+    if _recut:
+        t_backup = edgar_backup.apply(trial, ed, ctx)
+        t_primary = edgar_primary.apply(trial, ed, ctx, symbol)
+        edgar_backup.recut_eps(trial, _recut)
+        _recut = edgar_backup.recut_verdict(_recut)
+        if _recut["status"] == "aplicado":
+            info.clear()
+            info.update(trial)
+    info["_edgar"] = edgar.summary(ed)
+    if _recut and _recut["status"] == "aplicado":
+        info["_edgar"]["backup"], info["_edgar"]["primary"] = t_backup, t_primary
+    else:
+        info["_edgar"]["backup"] = edgar_backup.apply(info, ed, ctx)
+        info["_edgar"]["primary"] = edgar_primary.apply(info, ed, ctx, symbol)   # fase 3 (T1b): EDGAR manda
+    info["_edgar"]["recut"] = _recut
     # Fase 3 (T1b): historia anual larga (10+ ejercicios, moneda de los estados) para clasificar y para el ciclo medio
     # (T2); en data_provenance solo el resumen.
     if ed.get("status") == "ok" and ed.get("facts"):
@@ -1309,6 +1326,8 @@ def _apply_ttm(symbol: str, info: Dict[str, Any], plan_b: bool) -> Dict[str, Any
     if plan_b and "totalStockholderEquity" in t["values"] and shares:
         info["bookValue"] = t["values"]["totalStockholderEquity"] / shares
     info["_quarterly"] = q
+    if plan_b and not flows and t.get("latest_balance"):
+        info["_latest_q_balance"] = t["latest_balance"]       # fase 6: para edgar_backup.recut
     info["_ttm"] = {
         "basis": "ttm" if flows else ("anual" if plan_b else "fuente"),
         "cut": t.get("cut"), "quarters": t["quarters"], "balance_date": t["balance_date"],

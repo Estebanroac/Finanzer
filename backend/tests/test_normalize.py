@@ -43,14 +43,18 @@ def test_ttm_needs_consecutive_quarters_else_annual_with_reason():
 
 def test_quarterly_gaps_fall_back_to_annual_with_flag(outputs_by_env):
     """Sin 4 trimestres consecutivos con dato, el flujo se queda en el anual y lo dice. Antes se probaba con el
-    juego prod (sin trimestrales; retirado en la fase 1, D8); en el panel, BRK-B no trae capex ni D&A en algún
-    trimestre."""
+    juego prod (sin trimestrales; retirado en la fase 1, D8) y luego con BRK-B, que desde la fase 6 toma los doce
+    meses de SEC EDGAR (edgar_backup.recut). MC.PA no presenta en la SEC: sigue en el ejercicio."""
     import conftest
     if "panel" not in conftest.BOUND_ENVS:
         pytest.skip("falta el panel")
-    t = outputs_by_env("panel")["BRK-B"][0]["data_provenance"]["ttm"]
+    t = outputs_by_env("panel")["MC.PA"][0]["data_provenance"]["ttm"]
     assert t["basis"] == "anual" and t["ttm_fields"] == []
-    assert t["annual_fields"] and all("sin corte trimestral" in r for r in t["annual_fields"].values())
+    assert t["annual_fields"] and all(r.startswith(("sin corte trimestral", "sin estados trimestrales"))
+                                      for r in t["annual_fields"].values())
+    b = outputs_by_env("panel")["BRK-B"][0]["data_provenance"]
+    assert b["ttm"]["basis"] == "ttm_edgar" and b["as_of"]["date"] == "2026-06-30"
+    assert b["edgar"]["recut"]["status"] == "aplicado"
 
 
 def test_local_uses_ttm(outputs_by_env):

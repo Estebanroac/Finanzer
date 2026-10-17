@@ -1313,6 +1313,12 @@ def _compute_analysis(symbol: str) -> dict:
                             _rows[_r] = sum(_v)
                     _basis = "TTM (4 trimestres)"
                     _qn = _q
+                elif _tinfo.get("basis") == "ttm_edgar":
+                    # Fase 6: beneficio de doce meses de SEC EDGAR (corte posterior al ejercicio). Las partidas
+                    # inusuales de los estados son del ejercicio: de otro periodo, no se aplican.
+                    _rows = {}
+                    _basis = f"TTM a {_tinfo.get('cut')} (SEC EDGAR; sin desglose de partidas inusuales del periodo)"
+                    _qn = None
                 else:
                     _rows = dict(_stmts.get("unusual_fy0") or {})
                     _basis = f"FY{(_stmts.get('inc_years') or ['?'])[0]} (sin TTM)"

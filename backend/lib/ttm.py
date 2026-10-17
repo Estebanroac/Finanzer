@@ -205,6 +205,22 @@ def build_ttm(q_inc, q_cf, q_bs) -> Dict[str, Any]:
         why = "sin balance trimestral" if not bdates else "sin corte trimestral: el balance es el del ejercicio"
         for key in (*BALANCE_KEYS, "cash"):
             out["missing"][key] = why
+        if bdates:
+            # Fase 6: no se usa aquí. Si EDGAR da los doce meses de un trimestre posterior al ejercicio (BRK-B: Yahoo
+            # no trae el 3T de 2025), el corte pasa a ese trimestre y el balance es el de Yahoo de esa fecha (misma
+            # definición de caja y deuda que el resto del análisis): lib/edgar_backup.recut.
+            lb = {"date": bdates[0], "values": {}, "ordinary": {}}
+            for key, row in BALANCE_KEYS.items():
+                v = (frame_series(q_bs, row, n=len(bdates))[:1] or [None])[0]
+                if v is not None:
+                    lb["values"][key] = v
+            cash = next((v for v in ((frame_series(q_bs, r, n=len(bdates))[:1] or [None])[0] for r in CASH_ROWS)
+                         if v is not None), None)
+            if cash is not None:
+                lb["values"]["cash"] = cash
+            for key, row in ORDINARY_BALANCE_ROWS.items():
+                lb["ordinary"][key] = (frame_series(q_bs, row, n=len(bdates))[:1] or [None])[0]
+            out["latest_balance"] = lb
     if cut:
         inc_dates = frame_dates(q_inc)
         nic = _window(q_inc, inc_dates, cut, ORDINARY_FLOW_ROW)

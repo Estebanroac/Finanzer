@@ -133,6 +133,99 @@ def apply(info: Dict[str, Any], ed: Dict[str, Any], ctx=None) -> Dict[str, Any]:
     return log
 
 
+def recut(info: Dict[str, Any], ed: Dict[str, Any], ctx=None) -> Optional[Dict[str, Any]]:
+    """Fase 6 (bitácora, fila "BRK-B en base anual"; definición de ingresos cerrada en la fase 3): si Yahoo no da 4
+    trimestres consecutivos (corte = último ejercicio), el corte pasa al último trimestre presentado en EDGAR (10-Q o
+    6-K) posterior al ejercicio, con la misma regla que el corte de Yahoo: ingresos y beneficio de doce meses (ejercicio
+    + acumulado del año − acumulado del año anterior) y balance a esa fecha. Solo cambia `_as_of`; `apply` rellena
+    después cada campo con el dato de EDGAR de ese corte, y lo que EDGAR no tenga de él conserva su periodo (validate,
+    `periodo_incoherente`, lo descarta: nunca se mezclan periodos). Devuelve el registro o None si no aplica."""
+    ao = info.get("_as_of") or {}
+    facts = ed.get("facts") if ed.get("status") == "ok" else None
+    if ao.get("type") != "fy" or not ao.get("date") or not facts:
+        return None
+    unit = edgar.reporting_unit(facts, edgar.taxonomy(facts))
+    stmt_cur = _statement_currency(info)
+    if unit is None or (stmt_cur and unit != stmt_cur):
+        return None
+    tol = cfg("data.edgar.report_date_tolerance_days")
+    fy_end = _dt.date.fromisoformat(ao["date"])
+    ends = set()
+    for _c, fs in edgar.candidates(facts, "net_income")[:1]:
+        for f in fs:
+            d = edgar._days(f)
+            if d is not None and 80 <= d < 350 and (edgar._date(f["end"]) - fy_end).days > tol:
+                ends.add(f["end"])
+    for end in sorted(ends, reverse=True):
+        at = _dt.date.fromisoformat(end)
+        got = {k: edgar.field_value(facts, k, at, tol) for k in ("revenue", "net_income", "total_assets")}
+        if any(v is None for v in got.values()) or any("acumulado" not in got[k]["how"]
+                                                        for k in ("revenue", "net_income")):
+            continue
+        rec = {"from": ao["date"], "date": end, "source": "SEC EDGAR",
+               "how": got["net_income"]["how"], "accns": sorted(set().union(*(v["accns"] for v in got.values()))),
+               "fy_net_income": info.get("netIncome"), "fy_eps": info.get("trailingEps"), "not_in_cut": []}
+        ao.update(type="ttm", date=end, recut=True)
+        ao.pop("reason", None)
+        # El balance del corte: el trimestral de Yahoo de esa fecha si lo hay (caja y deuda con la definición del
+        # resto del análisis; EDGAR no las da con la misma). `apply` completa después lo que falte.
+        lb = info.get("_latest_q_balance") or {}
+        if lb.get("date") and abs((_dt.date.fromisoformat(str(lb["date"])[:10]) - at).days) <= tol:
+            from yf_adapter import _tag_provenance
+            fields = ao.setdefault("fields", {})
+            for key, v in (lb.get("values") or {}).items():
+                info[key] = v
+                fields[key] = {"period_end": end, "period_type": "balance"}
+            if lb.get("values"):
+                _tag_provenance(info, "yfinance_statements", f"balance trimestral de Yahoo al {lb['date']} (corte "
+                                "de SEC EDGAR)", paths=sorted(lb["values"]), overwrite=True)
+                rec["yahoo_balance"] = sorted(lb["values"])
+            # el ordinario (lib/ordinary.py) del mismo corte: patrimonio sí; beneficio del ordinario, sin desglose
+            info["_ordinary_src"] = {"period_type": "ttm", "netIncomeToCommon": None, **(lb.get("ordinary") or {})}
+        tt = info.setdefault("_ttm", {})
+        tt.update(basis="ttm_edgar", cut=end, annual_fields={}, recut=f"SEC EDGAR: {rec['how']}")
+        return rec
+    return None
+
+
+def recut_eps(info: Dict[str, Any], rec: Optional[Dict[str, Any]]) -> None:
+    """Tras `recut` y `apply`: el BPA del nuevo corte. El de la fuente es el del ejercicio (plan B: "Diluted EPS"); el
+    del corte = BPA del ejercicio × beneficio de los doce meses / beneficio del ejercicio (las acciones medias del
+    ejercicio: la recompra o emisión del semestre no se recoge, y se dice). Así no se rehace la clase de acciones
+    (BRK-B: Yahoo da el BPA por acción B y EDGAR por acción A). Los campos que EDGAR no dio del corte, al registro."""
+    if not rec:
+        return
+    from yf_adapter import _tag_provenance
+    ao = info.get("_as_of") or {}
+    fields = ao.get("fields") or {}
+    rec["not_in_cut"] = sorted(k for k, f in fields.items()
+                               if info.get(k) is not None and (f or {}).get("period_end") not in (None, rec["date"]))
+    ni, fy_ni, fy_eps = info.get("netIncome"), rec.get("fy_net_income"), rec.get("fy_eps")
+    if ((fields.get("netIncome") or {}).get("period_end") == rec["date"] and ni is not None and fy_ni and fy_eps
+            and fy_ni > 0 and fy_eps > 0):
+        info["trailingEps"] = fy_eps * ni / fy_ni
+        info["_eps_net_income"] = ni
+        _tag_provenance(info, "derivado",
+                        f"BPA de los doce meses al {rec['date']} = BPA del ejercicio ({fy_eps:.2f}) × beneficio de los "
+                        f"doce meses / beneficio del ejercicio (acciones medias del ejercicio)",
+                        paths=["trailingEps"], overwrite=True)
+    else:
+        info["trailingEps"] = None
+        _tag_provenance(info, "sin_dato", f"sin BPA de los doce meses al {rec['date']} (beneficio del ejercicio no "
+                                          "positivo o sin dato)", paths=["trailingEps"], overwrite=True)
+
+
+def recut_verdict(rec: Dict[str, Any]) -> Dict[str, Any]:
+    """El corte de EDGAR solo se aplica si no pierde campos que el del ejercicio tenía (salvo `recut_droppable`): un
+    corte más reciente pero incompleto no es mejor para analizar (UL: el 6-K semestral no trae la deuda ni el EBITDA)."""
+    lost = [k for k in rec.get("not_in_cut") or [] if k not in cfg("data.edgar.recut_droppable")]
+    if lost:
+        return dict(rec, status="descartado", lost=lost,
+                    reason=(f"el corte de SEC EDGAR al {rec['date']} no tiene {', '.join(lost)}: se mantiene el "
+                            f"ejercicio cerrado el {rec['from']}"))
+    return dict(rec, status="aplicado")
+
+
 def _apply_fy(info: Dict[str, Any], facts: Dict[str, Any], ctx, tol: int, log: Dict[str, Any]) -> None:
     st = info.get("_statements_fy")
     if not isinstance(st, dict):
