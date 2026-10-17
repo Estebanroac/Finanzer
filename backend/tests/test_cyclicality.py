@@ -199,3 +199,20 @@ def test_priority_archetype_with_cyclical_history_keeps_an_alert():
     assert "historia" in c["alerts"][0]["detail"]
     # Y sin ciclo en la historia, sin alerta.
     assert not _cls("Banks - Diversified", STEADY, sector="Financial Services")["alerts"]
+
+
+def test_split_across_taxonomies():
+    # TM: pasa a NIIF en 2021 con un split 5:1; el FY2020 está en las dos taxonomías (antes y después del split).
+    def fx(y, val, filed):
+        return {"start": f"{y - 1}-04-01", "end": f"{y}-03-31", "val": val, "form": "20-F", "filed": filed}
+    facts = {"facts": {
+        "us-gaap": {"Assets": {"units": {"JPY": [{"end": "2020-03-31", "val": 1, "form": "20-F"}]}},
+                    "EarningsPerShareDiluted": {"units": {"JPY/shares": [fx(2019, 645.0, "2019-06-20"),
+                                                                          fx(2020, 720.3, "2020-06-20")]}}},
+        "ifrs-full": {"Assets": {"units": {"JPY": [{"end": "2022-03-31", "val": 1, "form": "20-F"}]}},
+                      "DilutedEarningsLossPerShare": {"units": {"JPY/shares": [fx(2020, 144.06, "2021-06-20"),
+                                                                                fx(2021, 160.0, "2021-06-20"),
+                                                                                fx(2022, 205.0, "2022-06-20")]}}}}}
+    h = sec_edgar.annual_history(facts, "diluted_eps")
+    ep = {v["fy_end"][:4]: round(v["value"], 2) for v in h["values"]}
+    assert ep == {"2019": 129.0, "2020": 144.06, "2021": 160.0, "2022": 205.0} and h["cross_taxonomy_split"] == 5.0

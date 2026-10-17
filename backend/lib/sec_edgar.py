@@ -769,7 +769,20 @@ def annual_history(facts: Dict[str, Any], field: str) -> Dict[str, Any]:
     if main and field in HISTORY_CROSS_TAXONOMY:
         other = "ifrs-full" if tax == "us-gaap" else "us-gaap"
         first = min(main)
-        older = {e: v for e, v in years(other, ifrs if other == "ifrs-full" else us).items() if e < first}
+        oth = years(other, ifrs if other == "ifrs-full" else us)
+        older = {e: v for e, v in oth.items() if e < first}
+        if older and kind == "per_share":
+            # Split entre taxonomías (TM: 5:1 en 2021, el año del paso a NIIF): las acciones de la taxonomía vigente
+            # no llegan a antes del split. El ejercicio que las dos presentan da el factor: FY2020 de TM, 720.3 en US
+            # GAAP (antes del split) frente a 144.05 en NIIF (reexpresado).
+            both = sorted(e for e in oth if e in main)
+            r = _split_ratio(oth[both[-1]]["value"] / main[both[-1]]["value"]) if both and main[both[-1]]["value"] \
+                else None
+            if r is not None:
+                for v in older.values():
+                    v["value"] = v["value"] / r
+                    v["split_adjusted"] = r
+                out["cross_taxonomy_split"] = r
         if older:
             main.update(older)
             out["cross_taxonomy"] = {"taxonomy": other, "until": max(older), "years": len(older)}
