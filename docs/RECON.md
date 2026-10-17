@@ -1347,3 +1347,27 @@ arreglo es de fondo; la fase no deja protecciones provisionales nuevas.*
 - **Decisiones de método posteriores (bitácora #36):**
   - REIT: FFO/activos totales sustituye a FFO/patrimonio (decisión del usuario);
   - aseguradoras y conglomerados: P/E operativo, sin las ganancias de su cartera (ASC 321), con la rentabilidad sobre el reportado (decisión del operador). BRK-B: 13.2 → 26.8x.
+
+
+### 7.27 Referencias por industria y región (Damodaran) y estudio v3
+
+*Operador, 17-oct-2026, con el permiso del usuario para descargar los datos de Damodaran. Detalle en
+[`fiabilidad/GOLDEN_DIFF_DAMODARAN.md`](fiabilidad/GOLDEN_DIFF_DAMODARAN.md) y F7_CALIBRACION §10.*
+
+- **Datos:** 31 Excel de Damodaran de enero de 2026 (P/E, P/B, EV/EBITDA, ROE, márgenes y deuda; EE. UU., Europa,
+  Japón, emergentes y global), `indname.xls` (48 157 empresas con su industria, país y grupo regional) y
+  `histimpl.xls`. Están en `~/Downloads/finanzer_damodaran/raw`, fuera del repositorio.
+  `tools/damodaran_import.py` genera `config/industries.toml` y `config/damodaran_firms.tsv.gz`.
+- **Referencia:**
+  - la industria de la empresa: su clasificación en Damodaran por el símbolo o, para un ADR, por el nombre legal; si
+    no, el mapa de la industria de Yahoo;
+  - la región: la de la empresa en Damodaran o la de su país;
+  - si la fila no es representativa (menos de 10 empresas, o agregado ≥ 1.5 × la media simple), la industria global;
+  - solo se muestra lo que tiene fuente.
+- **País del emisor:** la dirección comercial de EDGAR (Yahoo no lo da en Render) o el sufijo del ticker.
+- **Arreglo de paso** (`e2529d6`): el guion interno del nombre de industria (KO: beta del sector 0.80 → 0.64).
+- **Panel:**
+  - 9 cambios de nivel de precio (BCS y HSBC frente a la banca europea, TM frente a la automoción japonesa…), 0 de
+    calidad y 7 de confianza;
+  - golden y muestras forzadas sin regenerar: esperan la aprobación del usuario.
+- **Estudio v3:** H3a pasa la regla prerregistrada, pero no es robusta. Ninguna escala cambia.

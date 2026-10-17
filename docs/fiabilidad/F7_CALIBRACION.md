@@ -195,3 +195,58 @@ lado: `resultados_v1.md`, `resultados_v1/` y `observaciones_v1.json`.
 | 9. El prerregistro no es verificable con git | Declarado en §5 | — |
 | 10. Cadencia mensual que se desplaza; un dato antiguo salía "vigente" | Meses de calendario y aviso de dato antiguo | EV/EBITDA del S&P 500 marcado |
 | 11. TGT sin sector | Declarado | — |
+
+## 10. Versión 3: referencias de Damodaran y prima de cada fecha (17-oct-2026)
+
+Con el permiso del usuario para descargar los datos de Damodaran, se repitió el estudio (§6.5). Se mantuvieron las
+mismas observaciones, hipótesis, regla y pruebas de robustez. Hubo dos corridas para separar efectos:
+
+- **v3a:** el motor de HEAD (referencias por industria y región de Damodaran, enero de 2026) con la prima fija
+  (4.20%);
+- **v3b:** lo mismo con la prima implícita de cada fecha: la de Damodaran a 31 de diciembre del año anterior a D, que
+  es la que se conocía en D (histimpl.xls, columna "Implied ERP (FCFE)", la del método de la app). La prima va del
+  5.0% al 6.1% en 2012–2016 y del 4.2% al 5.9% después.
+
+| Hipótesis | v2 | v3a | v3b | Robusta (empresa × año; sector × año) |
+|---|---|---|---|---|
+| H1 · calidad excelente → ROE persistente | −3.8 pp, no concluyente | −3.8 pp, no concluyente | −3.4 pp, no concluyente | no |
+| H2 · calidad excelente → menor caída máxima | +3.8 pp, validada | +3.8 pp, validada | +3.8 pp, validada | no (IC −0.8 a +9.3) |
+| H3a · "muy exigente" → peor a 1 año | −9.2 pp (IC −12.9 a +0.7), no concluyente | −10.1 pp (IC −14.4 a −2.7), **validada** | −5.2 pp (IC −10.6 a −0.1), **validada** | no (IC −13.4 a +2.6) |
+| H3b · lo mismo a 3 años | +2.3 pp, no concluyente | −2.9 pp, no concluyente | −1.8 pp, no concluyente | no |
+
+Proporción "atractivo / muy exigente" por ejercicio, en %:
+
+| | 2012 | 2014 | 2016 | 2018 | 2020 |
+|---|---|---|---|---|---|
+| v2 | 45 / 3 | 28 / 9 | 24 / 7 | 41 / 6 | 32 / 11 |
+| v3a | 44 / 0 | 32 / 10 | 23 / 8 | 35 / 6 | 29 / 11 |
+| v3b | 41 / 2 | 25 / 12 | 18 / 11 | 24 / 8 | 28 / 13 |
+
+**Lectura:**
+
+- Con la referencia de su industria, la señal "muy exigente" se refuerza: H3a pasa la regla prerregistrada en v3a y
+  en v3b.
+- No es robusta: con el bootstrap de dos vías el intervalo cruza el cero, y neutralizada por sector y año se queda
+  en −3.2 pp.
+- La prima de cada fecha baja la proporción de "atractivo" en todos los años, pero no quita la dispersión entre
+  años: las bandas son absolutas y pesa el nivel del mercado.
+
+**Decisión (la regla de §6, sin cambios):** ninguna escala cambia. La app no dice que el precio anticipe la
+cotización. H3a queda como candidata para la vigilancia con datos nuevos: si sigue validada en v4 (muestra mayor o
+años nuevos) y pasa a robusta, se reabre.
+
+Sigue sin ser point-in-time:
+
+- las referencias de industria (Damodaran publica una actualización por año; aquí se usa la de enero de 2026);
+- los umbrales;
+- las tasas base;
+- la clasificación de hoy.
+
+Reproducir:
+
+```
+python -I tools/damodaran_import.py --raw ~/Downloads/finanzer_damodaran/raw --lib <xlrd> --out config/industries.toml --erp-out ~/Downloads/finanzer_calibracion/damodaran_erp.json
+python tests/calibracion_ejecutar.py --data ~/Downloads/finanzer_calibracion --out-dir resultados_v3a
+python tests/calibracion_ejecutar.py --data ~/Downloads/finanzer_calibracion --erp ~/Downloads/finanzer_calibracion/damodaran_erp.json --out-dir resultados_v3b
+python tests/calibracion_analizar.py --data ~/Downloads/finanzer_calibracion --results resultados_v3b --out informe_v3b.md
+```

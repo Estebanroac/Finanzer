@@ -103,7 +103,7 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
 | Forward EPS sin fuente en prod (Finnhub da forward P/E, no BPA) **2a: no medida**, porque las estimaciones no están en EDGAR. **2b: ✅ hecha** (`8f461cf`): el BPA forward no tiene fuente y queda "sin dato" declarado; no se usa ni se muestra. | RECON §7.7 / §7.5 | 2 |
 | Crecimiento bancario con "Total Revenue": medirlo con margen de intereses neto o ingresos netos **F3: ✅ hecha** (T4, `e2b4c3b` + `9155044`): Crecimiento puntúa los ingresos netos del banco (su "Total Revenue" ya es margen de intereses + comisiones, con los ingresos de los estados); el margen de intereses se calcula y se muestra aparte, informativo (JPM +12.7% anual en 3 años, 52% de los ingresos netos). | RECON §7.8 | 3 |
 | Bandas paralelas: alinear las de las alertas (cobertura, DCF, beta, DN/EBITDA) con las del score; "cuatro copias de umbrales" **F4: ✅ hecha** (`ea2926b`, `71b5184`): DCF, cobertura, deuda neta/EBITDA y beta con una sola fuente de umbrales (alertas, lectura, gráfico, tooltip y pre-mortem). | RECON §7.9 / §7.14 / PLAN §1 | 4 |
-| Benchmarks y medianas sectoriales PROVISIONALES sin fuente (market P/E 23x, ROE 20%/8%, D/E 1.0x…; forward market 18.9x) **F4: ⏸️ espera el permiso del usuario para descargar los conjuntos de datos de Damodaran** (F4_PARADA §5); sin ellos no hay fuente con fecha para sustituirlas. | RECON §7.14 / §7.16 | 4 |
+| Benchmarks y medianas sectoriales PROVISIONALES sin fuente (market P/E 23x, ROE 20%/8%, D/E 1.0x…; forward market 18.9x) **F4: ⏸️ espera el permiso del usuario para descargar los conjuntos de datos de Damodaran** (F4_PARADA §5); sin ellos no hay fuente con fecha para sustituirlas. **F7: ✅ hecha** (registro #41, `645c5c1`…`a16bd93`): referencia por industria y región de Damodaran (enero de 2026), con la clasificación de la propia empresa; detalle en GOLDEN_DIFF_DAMODARAN.md. | RECON §7.14 / §7.16 | 4 |
 | Bandas de REIT (DN/EBITDA ≤5.0x…) y de utilities (cobertura ≥3.5x…) PROVISIONALES, sin muestra **F4: ➡️ movida a la fase 7** (calibración con la historia de EDGAR de una muestra amplia de REIT y utilities; sin muestra no hay umbral con fuente). | RECON §7.14 / 61212c1 | 7 |
 | MATURE de dividendo alto (≥ 4%): Crecimiento como retorno total, propuesto sin aplicar (faltaba fixture; el panel trae KO, PG, JNJ, DOW) **F3: ✅ hecha** (T5, `c12ad29`): MATURE con dividendo ≥ 4%: Crecimiento como retorno total (crecimiento + rentabilidad por dividendo), declarado. | RECON §7.11 / §7.14 | 3 |
 | SBC en MATURE (> 5% de ingresos): propuesto sin aplicar (faltaba fixture; el panel trae PLTR, CRWD, SNOW, NVDA) **F3: ✅ hecha** (T3, `fa9a156` + `817eda4`; T6, `51201e2`): el DCF descuenta FCF − SBC en todos los arquetipos; con SBC material, lectura "SBC como coste real". | RECON §7.14 | 3 |
@@ -165,10 +165,10 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
 | **Nuevo (ROCE, usuario 2026-10-15):** el ROCE se calcula (AAPL 68.72%; promedio de ciclo en cíclicas) pero en la web es la **última fila de "Tabla de rentabilidad y eficiencia", plegada por defecto** (desde la 9b); solo se ve la nota de divergencia ROCE–ROIC. La fila no tiene referencia, brecha ni lectura ("Antes de impuestos"). En FINANCIAL/REIT "No aplica" (correcto). **Fase 1 (T6):** subirlo al bloque visible de Rentabilidad junto a ROIC − WACC (con el promedio de ciclo en CYCLICAL) y al resumen del PDF, sin cambiar cálculos. **Fase 4:** referencia por sector, bandas de lectura y ROCE promedio como prueba de persistencia de la calidad | usuario + planificador, 2026-10-15 | 1 (visible) / 4 (bandas) |
 | **Nuevo (infra):** Render **apaga el servicio sin tráfico** ("Service waking up" al abrir finanzer.app el 15-oct): explica buena parte de los 46–52 s en frío, además de la atención en serie **F6: ⏸ fuera por D6** (sin plan de pago): no se quita con código. La parte de la cola sí se quitó (registro #34). | planificador, 2026-10-15 | 6 (D6) |
 | **Revisión externa F1 (UL, planificador 2026-10-15):** "Los ingresos se contraen un 3.4% anual" → DCF con g −3.4% → alerta "Sobrevalorada según DCF −40%". Probable **cambio de perímetro** (escisión de helados/Magnum a finales de 2025; verificar en los estados): los años comparados no son homogéneos. El motor no detecta escisiones/desinversiones (operaciones discontinuadas, salto de ingresos) **2a: medida en F2_DISCREPANCIAS §4, confirmada** (perímetro: los ingresos de 2024 se reexpresan de 60,761 a 52,479 millones de EUR). Yahoo ya trae 2024 y 2025 con el perímetro nuevo. No se verificó si los años anteriores del CAGR también lo traen. **2b: ✅ hecha** la detección (`a435698`): data_provenance.perimeter declara los ejercicios reexpresados (UL 2023 y 2024), las discontinuadas y la base de cada ejercicio de Yahoo; en UL, 2022 está en el perímetro anterior y el CAGR a 3 años mezcla las dos bases. El crecimiento sin el perímetro, en la fase 3. **F3: ✅ hecha** (T5, `381c863`): perímetro homogéneo: los ejercicios con operaciones discontinuadas materiales se excluyen del CAGR (UL), declarado. | planificador, 2026-10-15 | 2 (detectar ✅) / 3 (crecimiento sin el perímetro) |
-| **Revisión externa F1 (TXRH):** referencias por **sector amplio** (consumer_cyclical) para un restaurante: "Margen bruto 15.7% vs 35% muy inferior". Hace falta referencia por **industria** **F4: ⏸️ espera el permiso del usuario para descargar los conjuntos de datos de Damodaran** (F4_PARADA §5); sin ellos no hay fuente con fecha para sustituirlas. | planificador, 2026-10-15 | 4 |
+| **Revisión externa F1 (TXRH):** referencias por **sector amplio** (consumer_cyclical) para un restaurante: "Margen bruto 15.7% vs 35% muy inferior". Hace falta referencia por **industria** **F4: ⏸️ espera el permiso del usuario para descargar los conjuntos de datos de Damodaran** (F4_PARADA §5); sin ellos no hay fuente con fecha para sustituirlas. **F7: ✅ hecha** (registro #41, `645c5c1`…`a16bd93`): referencia por industria y región de Damodaran (enero de 2026), con la clasificación de la propia empresa; detalle en GOLDEN_DIFF_DAMODARAN.md. | planificador, 2026-10-15 | 4 |
 | **Revisión externa F1 (TXRH):** lecturas ciegas al modelo de negocio: current ratio < 1 "Tensión" (normal en restauración/comercio con capital circulante negativo); Altman Z'' y Piotroski castigados por pasivos por arrendamiento (ASC 842) **F3: ✅ hecha** (T6, `ceac134`): capital circulante negativo estructural (no puntúa ni alerta salvo empeoramiento > 15%), Altman referencial y aviso del Piotroski por industria. | planificador, 2026-10-15 | 3 |
 | **Revisión externa F1 (TXRH):** DCF con g = CAGR histórico 13.5% sin convergencia al largo plazo y fiabilidad "alta" (el CAGR incluye inflación de precios) **F3: ✅ hecha en parte** (T3, `f8e5750`): el DCF converge linealmente al crecimiento terminal en los años 6–10 y la fiabilidad la mide la conciliación con el precio. La parte de la inflación de precios se descarta: no hay fuente estructurada de precios por producto para separarla. | planificador, 2026-10-15 | 3 |
-| **Revisión externa F1 (BCS):** P/B 0.73x frente a 1.50x "del sector" (bancos de EE. UU.): "descuento profundo −51%". Hace falta referencia por **geografía** (los bancos europeos cotizan estructuralmente más bajo por menor ROE) **F4: ⏸️ espera el permiso del usuario para descargar los conjuntos de datos de Damodaran** (F4_PARADA §5); sin ellos no hay fuente con fecha para sustituirlas. | planificador, 2026-10-15 | 4 |
+| **Revisión externa F1 (BCS):** P/B 0.73x frente a 1.50x "del sector" (bancos de EE. UU.): "descuento profundo −51%". Hace falta referencia por **geografía** (los bancos europeos cotizan estructuralmente más bajo por menor ROE) **F4: ⏸️ espera el permiso del usuario para descargar los conjuntos de datos de Damodaran** (F4_PARADA §5); sin ellos no hay fuente con fecha para sustituirlas. **F7: ✅ hecha** (registro #41, `645c5c1`…`a16bd93`): referencia por industria y región de Damodaran (enero de 2026), con la clasificación de la propia empresa; detalle en GOLDEN_DIFF_DAMODARAN.md. | planificador, 2026-10-15 | 4 |
 | **Revisión externa F1 (UL):** factor ADR 1.012 frente a 1 oficial (mismo defecto que BCS: recompras en el factor) **2a: medida en F2_DISCREPANCIAS §4, confirmada, sin efecto:** está dentro de la tolerancia del motor y no se aplica. **2b: ✅ hecha** (`b25aed6`: factor ADR oficial, 1). | planificador, 2026-10-15 | 2 |
 | **Prioridad (JNJ):** las reglas de **precedencia de fuentes** (qué fuente manda y con qué periodo) son el núcleo de la fase 2: Finnhub sustituyó el BPA por uno con el trimestre nuevo mientras los estados siguen en junio (periodos mezclados → cambio de nivel en producción) **2a: medida** (JNJ, F2_DISCREPANCIAS §4). Reglas en F2_PRECEDENCIA §1; D2 decidida. **2b: ✅ hecha** (`0c8d211`, `d984181`, `3ef20e7`): precedencia y corte coherente de F2_PRECEDENCIA aplicados. | planificador, 2026-10-15 | 2 (alta) |
 | **Principio "sin parches" (usuario, 2026-10-15): la 2b no se cierra mientras sigan en pie las dos protecciones provisionales de la fase 1.** (1) **Dividend yield "sin dato" por la identidad** (`bfc38e9`): tapa el dividendo de Finnhub en moneda local por acción ordinaria (BCS, TSM, NVO, UL y los ADR nuevos) y da un falso positivo en NVDA. Sustituirla por la corrección en origen (moneda, acción ordinaria, factor ADR oficial; F2_PRECEDENCIA §2.2). La identidad queda solo como verificación, con magnitudes equivalentes. (2) **Rango de 52 semanas ampliado con el precio** (`range52_widened`): tapa un rango de la fuente desfasado del precio. Sustituirlo por el rango correcto desde la serie de precios (`lib/price_series.py`, F5prep) o desde la fuente, de la misma sesión que el precio **2b: ✅ hecha**: la protección 1, retirada en `c9b661d`; la 2, en `c8ae863`. Las dos sustituidas por el arreglo en origen. | usuario, 2026-10-15 (registro #20) | 2 (2b, alta) |
@@ -1571,3 +1571,43 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
   - **AAPL** (4.3 s) y **O** (4.5 s): EDGAR "ok", corte de Yahoo 2026-06-30.
   - PDF de BRK-B: 200, en 2.7 s.
 - **Estado:** todas las fases (F3–F7) están en producción con EDGAR. Solo queda pendiente del usuario el permiso para descargar los datos de Damodaran.
+
+
+### #41 · 2026-10-17 · operador · Damodaran: referencias por industria y región, y estudio v3
+- **Permiso del usuario:** "Sí, tienes permiso para descargar los datos de Damodaran (medianas por sector y prima de riesgo histórica) y continuar con esa tarea."
+- **Descargado** en `~/Downloads/finanzer_damodaran/raw`, fuera del repositorio:
+  - 30 tablas por industria (P/E, P/B, EV/EBITDA, ROE, márgenes y deuda × EE. UU., Europa, Japón, emergentes y global);
+  - `indname.xls` (48 157 empresas: industria, país y grupo regional, 22 MB);
+  - `histimpl.xls`.
+- **Commits:**
+  - `e2529d6`: guion interno del nombre de industria. KO no casaba; su beta del sector pasa de 0.80 a 0.64.
+  - `645c5c1`: referencias por industria y región:
+    - `tools/damodaran_import.py` → `config/industries.toml`;
+    - `lib/industry_bench.py`;
+    - solo se muestra lo que tiene fuente;
+    - prueba de representatividad;
+    - país del emisor desde EDGAR o el sufijo, con los fixtures de `submissions` ampliados con la dirección.
+  - `3b32491`: frontend recompilado.
+  - `6ddc780`: "la referencia" en lugar de "la mediana".
+  - `a16bd93`: la clasificación de la propia empresa (`config/damodaran_firms.tsv.gz`, 655 KB; los ADR, por su nombre legal). AAPL → Computers/Peripherals, BRK-B → Diversified.
+  - `c3e86d1`: gzip determinista.
+  - `e762f31`: el estudio puede usar la prima de cada fecha.
+  - `e07227e`: revisión de parámetros (referencias vigentes hasta el 5-ene-2027).
+- **Decisiones del operador** (como analista):
+  - agregados de Damodaran (P/E de las empresas con beneficio), no sus medias simples (sesgadas);
+  - sin P/E adelantado con fuente (el estimador por cociente daba cifras absurdas);
+  - una fila dominada por pocas empresas (agregado ≥ 1.5 × la media; Auto & Truck de EE. UU., 119.6x por Tesla) se sustituye por la industria global;
+  - los umbrales del score siguen por sector y PROVISIONALES.
+- **Panel:**
+  - calidad sin cambios;
+  - precio: 9 cambios de nivel (AMZN, BCS, FCX, HSBC, JPM, NEE, TM, TSM y UL), todos explicados en GOLDEN_DIFF_DAMODARAN.md §3;
+  - confianza: 7 cambios.
+- **Estudio v3** (F7_CALIBRACION §10):
+  - H3a ("muy exigente" → peor a 1 año) pasa la regla prerregistrada con la referencia de industria (v3a: −10.1 pp; v3b, con la prima de cada fecha: −5.2 pp), pero no es robusta;
+  - H2 sigue validada y no robusta;
+  - H1 y H3b, no concluyentes;
+  - ninguna escala cambia.
+- **Suite:** 4072 tests pasan. Fallan solo los golden y las muestras forzadas del contrato: 85.
+- **Pendiente del usuario:**
+  - aprobar la regeneración de los golden (panel y local) y de las muestras forzadas con el diff de GOLDEN_DIFF_DAMODARAN.md;
+  - después, "ok, pushea".
