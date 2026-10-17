@@ -27,3 +27,10 @@ def test_long_lists_are_cut():
 
 def test_without_provenance_there_is_no_row():
     assert display.provenance_annex({}) is None
+
+
+def test_edgar_fiscal_year_backup_has_readable_names():
+    a = {"data_provenance": {"edgar": {"backup": {"fy": [
+        {"field": "FY.retained_earnings", "fy_end": "2025-12-31", "concept": "us-gaap:RetainedEarningsAccumulatedDeficit"}]}}}}
+    row = [r for r in display.official_source_annex(a) if r["label"].startswith("Respaldo")][0]
+    assert "beneficios retenidos del ejercicio cerrado el 2025-12-31" in row["text"] and "retained_earnings " not in row["text"]

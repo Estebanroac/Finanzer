@@ -509,7 +509,8 @@ def official_source_annex(a) -> list:
                       "text": "; ".join([head] + parts + list(dt.get("notes") or [])) + "."})
     bk = (dp.get("edgar") or {}).get("backup") or {}
     rows = [f"{_FIELD_NAMES.get(x['field'], x['field'])} ({x['concept']}; {x['how']})" for x in bk.get("cut") or []]
-    rows += [f"{x['field'].replace('FY.', 'ejercicio a ')} {x['fy_end']} ({x['concept']})" for x in bk.get("fy") or []]
+    rows += [f"{_fy_field_name(x['field'])} del ejercicio cerrado el {x['fy_end']} ({x['concept']})"
+             for x in bk.get("fy") or []]
     if rows:
         items.append({"label": "Respaldo de SEC EDGAR (lo que Yahoo no da del mismo corte)",
                       "text": "; ".join(rows) + "."})
@@ -565,6 +566,21 @@ _MORE_FIELD_NAMES = {
     "debt_to_assets": "deuda/activo", "enterprise_value": "valor de empresa", "ev_revenue": "EV/ventas",
     "net_debt": "deuda neta", "long_term_debt": "deuda a largo plazo",
 }
+
+
+def _fy_field_name(field: str) -> str:
+    """`FY.retained_earnings` -> "beneficios retenidos" (antes salía el código: "ejercicio a retained_earnings")."""
+    key = str(field).split(".", 1)[-1]
+    return _FY_FIELD_NAMES.get(key) or _FIELD_NAMES.get(key) or _MORE_FIELD_NAMES.get(key) or key
+
+
+_FY_FIELD_NAMES = {"retained_earnings": "beneficios retenidos", "total_liabilities": "pasivo total",
+                   "total_assets": "activo", "revenue": "ingresos", "net_income": "beneficio neto",
+                   "operating_income": "beneficio operativo", "operating_cash_flow": "flujo de operaciones",
+                   "capex": "inversión (capex)", "depreciation": "amortizaciones", "total_debt": "deuda total",
+                   "stockholders_equity": "patrimonio", "current_assets": "activo corriente",
+                   "current_liabilities": "pasivo corriente", "gross_profit": "beneficio bruto",
+                   "interest_expense": "gastos financieros", "shares": "acciones"}
 
 
 _FIELD_NAMES = {
