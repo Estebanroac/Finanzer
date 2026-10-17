@@ -36,6 +36,7 @@ from cost_of_capital import adjusted_beta, effective_tax_rate, risk_free, wacc a
 from valuation_confidence import (convergence, coverage_dimension, dcf_reliability, signal_from_upside, official_dimension,
                                   source_dimension, stability_dimension, verdict_confidence)
 import archetype_metrics
+import growth_currency
 import numfmt
 from currency import CurrencyConversionError
 
@@ -675,8 +676,12 @@ def _compute_analysis(symbol: str) -> dict:
             # Arquetipo (etapa 6): una sola decisión, antes de puntuar, que leen
             # el score, la valoración, las alertas, el PDF y el frontend.
             _stmts = (yinfo.get("_statements_fy") or {}) if _has_yahoo else {}
+            # Fase 3 (T1b): el crecimiento se mide en la moneda de los estados (sin el tipo de cambio); la
+            # valoración sigue en la del precio. Sin conversión, son las mismas filas.
+            _cur_info = (yinfo.get("_currency") or {}) if _has_yahoo else {}
+            _stmts_g = growth_currency.local(_stmts, _cur_info)
             classification = classify(sector=sector, industry=profile.industry, eps_ttm=eps_val,
-                                      net_margin_ttm=r("net_margin"), statements_fy=_stmts)
+                                      net_margin_ttm=r("net_margin"), statements_fy=_stmts_g)
             archetype = classification["archetype"]
             # Etapa 11b: aviso por filas clave del arquetipo ausentes en los estados.
             from validate import missing_key_rows
@@ -714,6 +719,8 @@ def _compute_analysis(symbol: str) -> dict:
                 archetype, _stmts, result["key_metrics"], beta=safe_float(financials.beta),
                 revenue_cagr_3y=classification["inputs"].get("revenue_cagr_3y"), rf=rf_info["value"],
                 sbc=sbc_info, beta_preadjusted=_beta_pre)
+            if growth_currency.converted(_cur_info):
+                archetype_values.update(archetype_metrics.growth_values(archetype, _stmts_g))
             result["archetype_metrics"] = {k: (safe_float(v) if isinstance(v, float) else v)
                                            for k, v in archetype_values.items()}
             # ROCE (etapa 6): contraste con el ROIC en MATURE y CYCLICAL; "no aplica"
@@ -766,11 +773,11 @@ def _compute_analysis(symbol: str) -> dict:
             # earningsGrowth, que comparan un trimestre con el del año anterior). Sin 4
             # ejercicios o con valores <= 0 en los extremos: sin dato con motivo, nunca
             # el interanual con la etiqueta de 3 años.
-            _rev_r = growth_rate(_stmts.get("revenue") or [], 3, what="ingresos", strict_ends_only=True)
+            _rev_r = growth_rate(_stmts_g.get("revenue") or [], 3, what="ingresos", strict_ends_only=True)
             fin_dict["revenue_cagr_3y"] = _rev_r["value"]
             fin_dict["revenue_growth_reason"] = _rev_r["reason"]
-            _eps_series = _stmts.get("diluted_eps") or per_share(_stmts.get("net_income") or [],
-                                                                  _stmts.get("ordinary_shares") or [])
+            _eps_series = _stmts_g.get("diluted_eps") or per_share(_stmts_g.get("net_income") or [],
+                                                                    _stmts_g.get("ordinary_shares") or [])
             _eps_r = growth_rate(_eps_series, 3, what="BPA")
             fin_dict["eps_cagr_3y"] = _eps_r["value"]
             fin_dict["eps_growth_reason"] = _eps_r["reason"]
@@ -780,8 +787,7 @@ def _compute_analysis(symbol: str) -> dict:
             # CAGR del FCF a 3 años con los 4 ejercicios anuales de los estados
             # (etapa 5). Indefinido -> sin dato con motivo, nunca un número.
             if fin_dict.get("fcf_cagr_3y") is None:
-                _fcf_series = ((yinfo.get("_statements_fy") or {}).get("free_cash_flow")
-                               if _has_yahoo else None)
+                _fcf_series = _stmts_g.get("free_cash_flow") if _has_yahoo else None
                 _fcf_r = growth_rate(_fcf_series, 3, what="FCF")   # con la regla de base anómala (etapa 7)
                 fin_dict["fcf_cagr_3y"] = _fcf_r["value"]
                 fin_dict["fcf_cagr_3y_reason"] = _fcf_r["reason"]
@@ -834,8 +840,8 @@ def _compute_analysis(symbol: str) -> dict:
             growth_basis = dict(_gb, applied_to=[], eps="el BPA ya es por acción",
                                 fcf_cagr=fin_dict.get("fcf_cagr_3y_method"))
             if archetype == REIT:
-                _fps = growth_rate(per_share(_stmts.get("free_cash_flow") or [],
-                                             _stmts.get("ordinary_shares") or []), 3, what="FCF por acción")
+                _fps = growth_rate(per_share(_stmts_g.get("free_cash_flow") or [],
+                                             _stmts_g.get("ordinary_shares") or []), 3, what="FCF por acción")
                 growth_basis["fcf_cagr"] = {k: _fps.get(k) for k in ("method", "anomalous_base", "note")}
                 growth_basis.update(basis="por_accion", applied_to=["FFO", "FCF"],
                                     reason="REIT: crecimiento por acción siempre (FFO y FCF por acción); "
@@ -850,8 +856,8 @@ def _compute_analysis(symbol: str) -> dict:
                         f"por acción: {_g:+.1%} agregado ajustado por las acciones ({_s:+.1%} anual)"]))
                     growth_basis["applied_to"].append("ingresos")
                 if fin_dict.get("fcf_cagr_3y") is not None or fin_dict.get("fcf_cagr_3y_reason"):
-                    _fps = growth_rate(per_share(_stmts.get("free_cash_flow") or [],
-                                                 _stmts.get("ordinary_shares") or []), 3, what="FCF por acción")
+                    _fps = growth_rate(per_share(_stmts_g.get("free_cash_flow") or [],
+                                                 _stmts_g.get("ordinary_shares") or []), 3, what="FCF por acción")
                     fin_dict["fcf_cagr_3y"] = _fps["value"]
                     fin_dict["fcf_cagr_3y_reason"] = _fps["reason"]
                     growth_basis["fcf_cagr"] = {k: _fps.get(k) for k in ("method", "anomalous_base", "note")}
@@ -859,7 +865,7 @@ def _compute_analysis(symbol: str) -> dict:
             # Etapa 9a: en GROWTH_PRE_PROFIT el crecimiento del FCF es el de FCF − SBC (misma base
             # por acción si aplica). Sin la serie de SBC: sin dato con motivo, no el FCF bruto.
             if archetype == GROWTH_PRE_PROFIT:
-                _f, _s = _stmts.get("free_cash_flow") or [], _stmts.get("stock_based_compensation") or []
+                _f, _s = _stmts_g.get("free_cash_flow") or [], _stmts_g.get("stock_based_compensation") or []
                 if not _s:
                     fin_dict["fcf_cagr_3y"] = None
                     fin_dict["fcf_cagr_3y_reason"] = ("sin fila Stock Based Compensation: el crecimiento del FCF se "
@@ -867,7 +873,7 @@ def _compute_analysis(symbol: str) -> dict:
                 else:
                     _adj = [(a - b) if (a is not None and b is not None) else None for a, b in zip(_f, _s)]
                     if "FCF" in growth_basis["applied_to"]:
-                        _adj = per_share(_adj, _stmts.get("ordinary_shares") or [])
+                        _adj = per_share(_adj, _stmts_g.get("ordinary_shares") or [])
                     _ar = growth_rate(_adj, 3, what="FCF − SBC")
                     fin_dict["fcf_cagr_3y"] = _ar["value"]
                     fin_dict["fcf_cagr_3y_reason"] = _ar["reason"]
@@ -877,6 +883,20 @@ def _compute_analysis(symbol: str) -> dict:
             fin_dict["fcf_cagr_3y_sustained_negative"] = is_sustained_negative(fin_dict.get("fcf_cagr_3y_reason"))
             result["growth_basis"] = {k: (safe_float(v) if isinstance(v, float) else v)
                                       for k, v in growth_basis.items()}
+            # Fase 3 (T1b): crecimiento en la moneda de los estados, con el efecto divisa declarado aparte.
+            if growth_currency.converted(_cur_info):
+                _rev_usd = growth_rate(_stmts.get("revenue") or [], 3, what="ingresos", strict_ends_only=True)["value"]
+                _yoy = growth_currency.yoy(_stmts_g.get("revenue"))
+                _yoy_usd = growth_currency.yoy(_stmts.get("revenue"))
+                if _yoy is not None:
+                    result["key_metrics"]["revenue_growth"] = _yoy
+                result["growth_currency"] = {
+                    "statements": _cur_info.get("statements"), "price": _cur_info.get("price"),
+                    "revenue_growth_yoy": {"statements": _yoy, "price": _yoy_usd,
+                                           "fx_effect": growth_currency.fx_effect(_yoy_usd, _yoy)},
+                    "revenue_cagr_3y": {"statements": _rev_r["value"], "price": _rev_usd,
+                                        "fx_effect": growth_currency.fx_effect(_rev_usd, _rev_r["value"])},
+                    "note": "crecimiento medido en la moneda de los estados; el efecto del tipo de cambio va aparte"}
 
             # ── Fase C: creación de valor (ROIC-WACC) y retorno al accionista ──
             # ── Etapa 8: un solo WACC (DCF, grid, spread y lo que se muestra) ──

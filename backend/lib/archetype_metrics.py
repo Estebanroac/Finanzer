@@ -278,6 +278,25 @@ def _cyclical(st: Dict[str, Any], km: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
+def growth_values(archetype: str, st_local: Dict[str, Any]) -> Dict[str, Any]:
+    """Fase 3 (T1b): las métricas de crecimiento de la rama medidas con las filas anuales en la moneda de los estados
+    (lib/growth_currency.local). Solo crecimientos: lo que mezcla las filas con importes del precio (EV/EBITDA,
+    FCF normalizado) sigue en compute() con las filas convertidas."""
+    if archetype == CYCLICAL:
+        lo, hi = _V["cyclical_growth_bounds"]
+        rev = st_local.get("revenue") or []
+        eps = st_local.get("diluted_eps") or _per_share(st_local.get("net_income") or [],
+                                                         st_local.get("ordinary_shares") or [])
+        g_raw, e_raw = mean(yoy_growths(rev)), mean(yoy_growths(eps))
+        return {"revenue_growth_normalized_raw": g_raw,
+                "revenue_growth_normalized": None if g_raw is None else min(hi, max(lo, g_raw)),
+                "eps_growth_normalized_raw": e_raw,
+                "eps_growth_normalized": None if e_raw is None else min(hi, max(lo, e_raw))}
+    if archetype == FINANCIAL:
+        return {"revenue_growth_statements": _first(yoy_growths(st_local.get("revenue") or []))}
+    return {}
+
+
 def compute(archetype: str, statements_fy: Optional[Dict[str, Any]], key_metrics: Dict[str, Any], *,
             beta: Optional[float] = None, revenue_cagr_3y: Optional[float] = None,
             rf: Optional[float] = None, sbc: Optional[Dict[str, Any]] = None,
