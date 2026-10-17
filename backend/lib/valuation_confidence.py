@@ -18,12 +18,11 @@ CONFIANZA DEL VEREDICTO = f(convergencia, cobertura, calidad de fuente, estabili
     referencia del inversor defensivo. Señales opuestas -> baja; con un solo
     método evaluable, "no evaluable" y techo en media.
   · cobertura: componentes evaluados / aplicables del score (etapa 5).
-  · calidad de fuente: lo que afecta al dato USADO. Datos rechazados o corregidos por la validación de entrada,
-    ítems inferidos en la normalización y TTM con fallback al anual. Fase 4 (T2, causas reales): no cuentan los
-    avisos (el análisis usa su propio dato: la beta propia frente a la del proveedor, el interanual de los estados),
-    los datos de otro periodo descartados (es cobertura: lo mide su dimensión) ni las métricas no significativas por
-    la economía de la empresa; tampoco los campos de Finnhub, que desde la 2b solo entran si casan con el corte (se
-    listan en `finnhub_fields`, sin restar).
+  · calidad de fuente: lo que afecta al dato USADO. Datos rechazados, sospechosos o corregidos por la validación de
+    entrada, ítems inferidos en la normalización y TTM con fallback al anual. Fase 4 (T2, causas reales): no cuentan
+    las reglas que no son incidencias del dato usado (`source_ignored_rules`: el dato de otro periodo que no entra, la
+    beta del proveedor cuando se usa la propia, las métricas no significativas por la economía de la empresa) ni los
+    campos de Finnhub, que desde la 2b solo entran si casan con el corte (se listan en `finnhub_fields`).
   · estabilidad: CYCLICAL la reduce a baja; "posible cíclica" o clasificación
     ambigua, a media.
   · fuente oficial (fase 2b, D7): no pondera; un emisor sin estados en la SEC
@@ -187,9 +186,11 @@ def source_dimension(*, input_flags: List[Dict[str, Any]], normalization: Option
     # financiera siempre desde los estados) no son incidencias de la fuente.
     # Fase 2b: un dato de otra fuente que NO entra por no ser del corte (Finnhub, periodo_incoherente "aviso") no es
     # una incidencia del dato usado: el análisis usa el del corte.
-    ignored = set(C["source_ignored_actions"])
+    # Fase 4 (T2; revisión de código F4, hallazgo 1): se excluye por REGLA, no por acción: "sin_dato" es también como
+    # se rechaza un dato imposible (márgenes, unidades, saltos) y "aviso", a veces, un dato sospechoso que se usa.
+    ignored = set(C["source_ignored_rules"])
     issues = [f"validación: {f.get('field')} ({f.get('rule')})" for f in input_flags or []
-              if f.get("action") not in ignored]
+              if f.get("action") != "politica" and f.get("rule") not in ignored]
     if (normalization or {}).get("confidence") == "media":
         issues.append("beneficio normalizado con ítems inferidos (confianza media)")
     if (ttm or {}).get("basis") == "anual":

@@ -382,6 +382,10 @@ def test_f4_confidence_counts_only_real_causes():
     s = source_dimension(input_flags=[{"field": "trailingEps", "rule": "pe_implausible", "action": "invalido"}],
                          normalization=None, ttm=None, provenance_fields={})
     assert s["issues"] == 1
+    # Revisión F4 (hallazgo 1): un dato imposible rechazado ("sin_dato") cuenta.
+    s = source_dimension(input_flags=[{"field": "totalAssets", "rule": "valor_imposible", "action": "sin_dato"}],
+                         normalization=None, ttm=None, provenance_fields={})
+    assert s["issues"] == 1
     r = verdict_confidence({"convergence": d("alta"), "coverage": d("alta"), "source": d("alta"),
                             "stability": d("baja")})
     assert r["level"] == "media" and r["capped_from"] == "alta"
