@@ -844,6 +844,13 @@ _REVERSE_BANDS = {"barata": ("Barata", "pos"), "en_precio": ("En precio", "neu")
                   "muy_exigente": ("Muy exigente", "neg")}
 
 
+def _shown_archetype_label(a: Dict[str, Any], archetype: Optional[str]) -> str:
+    """Etiqueta del arquetipo para el usuario; en FINANCIAL, el subtipo (fase 3, T4/T7: banco, aseguradora,
+    conglomerado o entidad financiera) en lugar de "Banco/aseguradora"."""
+    sub = (a.get("classification") or {}).get("subtype_label")
+    return sub if (archetype == "FINANCIAL" and sub) else archetype_label(archetype)
+
+
 def _implied_return_block(a: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     """Financieras (fase 3, T4; F3_DISENO §3, §8.8): el ROTE (banco) o ROE (aseguradora, conglomerado) que descuenta
     el precio frente al que obtiene, con la sensibilidad del múltiplo justificado a ±2 pp."""
@@ -1269,7 +1276,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         "data_notices": data_notices(a),
         "official_source_badge": official_source_badge(a),
         "archetype": archetype,
-        "archetype_label": archetype_label(archetype),
+        "archetype_label": _shown_archetype_label(a, archetype),
         "classification_notes": cls_notes,
         "quality": {"title": "CALIDAD DEL NEGOCIO", "question": "¿es buena la empresa?", "score": q_score,
                     "level": q_level, "tone": q_tone,
@@ -2204,7 +2211,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     D = {
         "version": 1,
         "archetype": archetype,
-        "archetype_label": archetype_label(archetype),
+        "archetype_label": _shown_archetype_label(a, archetype),
         "na_keys": sorted(_na_keys),
         "benchmark": {"profile": "market" if _mkt else "sector", "ref": _ref, "column": _bcol,
                       "vs": "vs mercado" if _mkt else "vs sector", "thresholds_key": _thkey},
