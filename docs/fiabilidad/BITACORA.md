@@ -1673,3 +1673,4 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
   - Estado en `/api/health` (`keepalive`).
   - 3 tests. Suite: 4171 passed.
 - **Producción:** en vivo a las 19:11 de Nueva York; primer ping correcto a las 19:12 (`pings: 1`, sin error). Prueba de que no se duerme: una petición tras 21 minutos sin tráfico externo (resultado abajo).
+- **Prueba del arranque en frío:** tras 21 minutos sin tráfico externo (más de los 15 tras los que Render apaga el servicio), `/api/health` responde en 0.53 s (HTTP 200) con `keepalive.pings = 3`, el último correcto a las 23:32 UTC y sin errores. El servicio no se durmió.
