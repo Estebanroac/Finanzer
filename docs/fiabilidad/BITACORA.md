@@ -24,11 +24,11 @@
 
 | Campo | Valor |
 |---|---|
-| Fase en curso | **Fase 3 ✅ cerrada en código** (parada 3 decidida por el operador bajo la delegación del usuario, registro #31) · **Fase 4 🔧** a continuación. Pendientes del usuario para la fase 3: regenerar los golden (bloqueado por permisos en la sesión), `SEC_EDGAR_USER_AGENT` en Render, el "ok, pushea" y el deploy |
-| Rama de trabajo | `fiabilidad/f3-metodo` (worktree `../finanzer_next-f3`), sin subir |
+| Fase en curso | **Fases 3 y 4 ✅ cerradas en código** (bajo la delegación del usuario, registros #31 y #32) · **Fase 5 🔧** a continuación. Pendientes del usuario: regenerar los golden (bloqueado por permisos en la sesión), `SEC_EDGAR_USER_AGENT` en Render, el "ok, pushea", el deploy y el permiso para descargar los datos sectoriales de Damodaran (F4_PARADA §5) |
+| Rama de trabajo | `fiabilidad/f4-escalas` (sale de `fiabilidad/f3-metodo`; worktree `../finanzer_next-f3`), sin subir |
 | Producción | `01336e2` (código `103c76f`). Rollback de código: `60f8a69` |
 | `main` local | `b2f1972` (borrador del prompt de la fase 3), un commit por delante de `origin/main`; sin subir |
-| Último cierre de sesión | 2026-10-17 · operador F3 (ver registro #31) |
+| Último cierre de sesión | 2026-10-17 · operador F3–F4 (ver registro #32) |
 | Bloqueos | `SEC_EDGAR_USER_AGENT` en Render (la pone el usuario): sin ella no hay deploy de la fase 3. Golden de la fase 3 sin regenerar (permiso del usuario) |
 
 ## Fases
@@ -39,7 +39,7 @@
 | 1 Lo visible hoy | ✅ cerrada | `fiabilidad/f1-visible` | `d676b22` (D8), `21c3f5f`, `0ebba81` (guardián), `d63de70`…`d7393fd` (T3, 8 commits), `7f32070`, `e3161d2`, `c369575` (T4) | — | — |
 | 2 Verdad de datos (EDGAR) | ✅ cerrada: 2a (2026-10-15) y 2b (2026-10-16, registros #21–#23). F1 91.4% (objetivo 95% no alcanzado; lo que falta, en la fase 3 o por diseño: RECON §7.21) | `fiabilidad/f2a-medir` y `fiabilidad/f2b-corregir` → `main` | 2a: `8d3a5cc`…`aed575a`; 2b: `b25aed6`…`103c76f` (T1–T8) + cierre (RECON §7.21, registro #23) | 2a: sí; 2b: paradas 1 y 2 sí, "ok, pushea" (2026-10-16) | 2a `25b9d8a`; 2b `103c76f` |
 | 3 Método por arquetipo | ✅ cerrada en código (2026-10-17, registros #24–#31; RECON §7.22) · preparación F3prep fusionada (`fiabilidad/f3-prep`) | `fiabilidad/f3-metodo` | T1: `3d52202`…`20c2a2e`; T1b: `d34c858`…`3966a43`; T2: `dc62a83`…`0fe8ef0`; T3–T8: `f8e5750`…`784b7eb` | paradas 1 y 1b sí (registros #25, #27); parada 2 y 3 bajo delegación (#29, #31) | — (falta `SEC_EDGAR_USER_AGENT`, golden y "ok, pushea") |
-| 4 Escalas y confianza | 🔒 espera F3 | — | — | — | — |
+| 4 Escalas y confianza | ✅ cerrada en código (2026-10-17, registro #32; F4_PARADA, RECON §7.23); referencias por industria y geografía en espera del permiso de descarga | `fiabilidad/f4-escalas` | `1f12e33`…`f99859a` | bajo delegación (#29, #32) | — (con la fase 3) |
 | 5 Técnica y conductual | 🔒 espera F4 · preparación F5prep fusionada (`fiabilidad/f5-prep`, módulos aislados sin conectar; D5: solo contexto) | — | `e99e958`..`8e2bf07` | §5 de la muestra aceptado (registro #20) | `a2572e0` |
 | 6 Infraestructura | 🔒 diagnóstico hecho (F6_DIAGNOSTICO.md, F67prep fusionada); implementación en espera (D6 sin plan de pago) | — | `697eb83`..`583e685` | — | `a2572e0` (solo documentos y herramientas de test) |
 | 7 Vigilancia / calibración | 🔧 vigilancia semanal activa (tarea `finanzer-vigilancia-semanal`, sábados 09:00); calibración tras F4 | — | `697eb83`..`583e685` | tarea programada aprobada (registro F67prep) | — |
@@ -93,7 +93,7 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
 | **Nuevo (usuario, 2026-10-17):** cobertura de intereses: (1) empresas que no publican el gasto por intereses (AAPL desde 2023): intereses pagados del estado de flujos (`InterestPaidNet`), declarado "intereses pagados (caja)"; (2) cobertura con EBITDA (y con FFO en REIT) como segunda medida; (3) tendencia con la historia larga. Usuario: "lo cubrimos cuando requiera" **F3: ✅ hecha** (T6, `51201e2`): las tres partes: intereses pagados como respaldo declarado, EBITDA como segunda medida y tendencia por ejercicio. En REIT, además, (FFO + intereses) / intereses (`784b7eb`; O 4.3x, PLD 7.8x, AMT 4.9x). | usuario, registro #27 | 3 (T6) |
 | BRK-B posible cíclica / conglomerado **F3: ✅ hecha** (T2 + T4): BRK-B es FINANCIAL con subtipo conglomerado (67% de ingresos no aseguradores), P/B frente al ROE medio; no cíclica (sin episodios confirmados). La suma de partes no se calcula, y se dice. | RECON §7.16 | 3 |
 | AMZN sin categoría Crecimiento (base ≤ 0) **F3: ✅ hecha** (T5, `57e8d46`): base ≤ 0 → "no significativo" declarado en vez de un crecimiento sin sentido. | corrida 2026-10-14 | 3 |
-| Calidad saturada en 100 (PLTR, TSM, NFLX, V) | corrida + RECON 7.14 | 4 |
+| Calidad saturada en 100 (PLTR, TSM, NFLX, V) **F4: ✅ hecha** (`1f12e33`, `92a279e`): por encima de 80 la calidad exige persistencia en 5 ejercicios; > 95 pasa de 4 a 2 (TSM 99, V 96), ninguna en 100 (F4_PARADA §2). | corrida + RECON 7.14 | 4 |
 | Producción atiende en serie; PDF de 20–60 s; JPM 46.1 s en frío (14-oct, 14:28) | corrida 2026-10-14 + F0 | 6 (D6) |
 | Etapa 10 del spec: capa conductual + noticias | redesign-spec §5 | 5 |
 | Rf y prima de riesgo con revisión mensual | RECON §7.13 | 7 |
@@ -102,13 +102,13 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
 | Plan B sin `lastSplitFactor` (un estado sin ajustar por split anularía la comparación de acciones) **2a: no reproducida en el panel.** Yahoo ya aplica los splits posteriores al filing (CRWD 4:1, UL 8 por 9; F2_DISCREPANCIAS §3, periodo). El plan B no se probó. **2b: ✅ hecha** (`20fc859`): el plan B toma el factor del último evento de split de la serie de precios (CRWD 4:1, NFLX 10:1, UL 0.888 de la escisión). Sin efecto hoy en el panel: Yahoo ya ajusta los estados. | RECON §7.7 | 2 |
 | Forward EPS sin fuente en prod (Finnhub da forward P/E, no BPA) **2a: no medida**, porque las estimaciones no están en EDGAR. **2b: ✅ hecha** (`8f461cf`): el BPA forward no tiene fuente y queda "sin dato" declarado; no se usa ni se muestra. | RECON §7.7 / §7.5 | 2 |
 | Crecimiento bancario con "Total Revenue": medirlo con margen de intereses neto o ingresos netos **F3: ✅ hecha** (T4, `e2b4c3b` + `9155044`): Crecimiento puntúa los ingresos netos del banco (su "Total Revenue" ya es margen de intereses + comisiones, con los ingresos de los estados); el margen de intereses se calcula y se muestra aparte, informativo (JPM +12.7% anual en 3 años, 52% de los ingresos netos). | RECON §7.8 | 3 |
-| Bandas paralelas: alinear las de las alertas (cobertura, DCF, beta, DN/EBITDA) con las del score; "cuatro copias de umbrales" | RECON §7.9 / §7.14 / PLAN §1 | 4 |
-| Benchmarks y medianas sectoriales PROVISIONALES sin fuente (market P/E 23x, ROE 20%/8%, D/E 1.0x…; forward market 18.9x) | RECON §7.14 / §7.16 | 4 |
-| Bandas de REIT (DN/EBITDA ≤5.0x…) y de utilities (cobertura ≥3.5x…) PROVISIONALES, sin muestra | RECON §7.14 / 61212c1 | 4 |
+| Bandas paralelas: alinear las de las alertas (cobertura, DCF, beta, DN/EBITDA) con las del score; "cuatro copias de umbrales" **F4: ✅ hecha** (`ea2926b`, `71b5184`): DCF, cobertura, deuda neta/EBITDA y beta con una sola fuente de umbrales (alertas, lectura, gráfico, tooltip y pre-mortem). | RECON §7.9 / §7.14 / PLAN §1 | 4 |
+| Benchmarks y medianas sectoriales PROVISIONALES sin fuente (market P/E 23x, ROE 20%/8%, D/E 1.0x…; forward market 18.9x) **F4: ⏸️ espera el permiso del usuario para descargar los conjuntos de datos de Damodaran** (F4_PARADA §5); sin ellos no hay fuente con fecha para sustituirlas. | RECON §7.14 / §7.16 | 4 |
+| Bandas de REIT (DN/EBITDA ≤5.0x…) y de utilities (cobertura ≥3.5x…) PROVISIONALES, sin muestra **F4: ➡️ movida a la fase 7** (calibración con la historia de EDGAR de una muestra amplia de REIT y utilities; sin muestra no hay umbral con fuente). | RECON §7.14 / 61212c1 | 7 |
 | MATURE de dividendo alto (≥ 4%): Crecimiento como retorno total, propuesto sin aplicar (faltaba fixture; el panel trae KO, PG, JNJ, DOW) **F3: ✅ hecha** (T5, `c12ad29`): MATURE con dividendo ≥ 4%: Crecimiento como retorno total (crecimiento + rentabilidad por dividendo), declarado. | RECON §7.11 / §7.14 | 3 |
 | SBC en MATURE (> 5% de ingresos): propuesto sin aplicar (faltaba fixture; el panel trae PLTR, CRWD, SNOW, NVDA) **F3: ✅ hecha** (T3, `fa9a156` + `817eda4`; T6, `51201e2`): el DCF descuenta FCF − SBC en todos los arquetipos; con SBC material, lectura "SBC como coste real". | RECON §7.14 | 3 |
-| Techo de la calidad cuando la lectura tiene señales en contra (NFLX 100 con P/E no fiable y DCF por debajo) | RECON §7.12 / §7.13 (a) | 4 |
-| Confianza "alta" con convergencia solo "media" (V local 0.80) | RECON §7.13 (c) | 4 |
+| Techo de la calidad cuando la lectura tiene señales en contra (NFLX 100 con P/E no fiable y DCF por debajo) **F4: ✅ hecha** en lo que toca a la calidad (`1f12e33`): NFLX 100 → 93 por persistencia (margen y conversión en caja recientes). Las señales de precio (P/E, DCF) no limitan la calidad por diseño (dos puntuaciones, etapa 9a): van al precio y a la confianza. | RECON §7.12 / §7.13 (a) | 4 |
+| Confianza "alta" con convergencia solo "media" (V local 0.80) **F4: ✅ hecha** (etapa 9a, verificado en el panel de F4: ninguna alta con convergencia media) y ampliado (`122cbb4`): alta exige además que ninguna dimensión sea baja. | RECON §7.13 (c) | 4 |
 | Número de Graham calculado en REIT con BPA deprimido por la depreciación (se muestra, no vota) **F3: descartada, ya resuelta** (etapa 9a, `1ca1588`; verificado en el panel de T7): en REIT el Graham no se calcula (`graham_number` vacío en O) y la tarjeta dice "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria". El método intrínseco del REIT es el DCF inverso sobre FFO (T3). | RECON §7.13 (b) | — |
 | Descartado — **verificado en la web** (F1 T6, registro #13): la barra de 52 semanas de la web (`Range52Bar`, "contexto, sin juicio") muestra solo la posición, sin tono de curva en U; coincide con el PDF | RECON §7.14 | — |
 | Mejoras aprobadas: P/FFO visible en la web (no es un defecto; decisión del planificador en el prompt F1) | memoria (backlog) | mejoras, después de la fase 4 |
@@ -117,7 +117,7 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
 | **Nuevo (panel):** Yahoo devuelve a Render datos distintos que a una IP residencial en 7/30 (acciones de fast_info en PG y NEE; balance trimestral de DUK al 31-mar en Render frente al 30-jun en local; acciones diluidas trimestrales ausentes en CAT y DUK; balance en el Altman de NVDA; acciones en MSFT; trimestres con resultado operativo en PLD). Local es estable. Efecto en el veredicto: DUK calidad 71 → 74, sin cambio de nivel. **Refuerza D2** **2a: medida en F2_DISCREPANCIAS §4.1.** Render tenía razón en 3; en 2, los dos datos son reales pero de cortes distintos (periodo); 2 no se pueden verificar. **2b: ➡️ movida a la fase 6** (infraestructura). En la 2b, el corte coherente (`0c8d211`) y el respaldo de EDGAR (`3ef20e7`) acotan su efecto: un dato de otro periodo no entra y lo que falta del corte lo da EDGAR. | F0 (registros #5, #6) | 6 |
 | **Nuevo (panel):** el crecimiento de ciclo medio está en su cota en 5 cíclicas (XOM y DOW −5.0% en ingresos y BPA; FCX BPA −5.0%; MU y ASML +10.0%). **Texto** ✅ hecho (F1, `eac35b3`: "acotado al mínimo/máximo que admite el modelo"); **método** del tope −5%/+10% → fase 3 **F3: ✅ hecha** (T5, `e353392`): crecimiento de ciclo medio de pico a pico (XOM +0.6%, CAT +0.4%, FCX −7.4%, MU +10.3%, SHEL +5.3%); la cota −5%/+10% queda solo cuando la historia no tiene dos picos (DOW tras la escisión de 2019; ASML), dicho como "acotado: historia corta". | F0 (registros #5, #6) | 1 (texto) / 3 (método) |
 | ✅ Hecho (F1, `83e0f70`): invariante `growth_texts_cite_the_scored_figure` acepta el signo expresado con el verbo; 0 xfail | F0 (registros #5, #6) | 1 |
-| **Nuevo (panel):** efecto frontera: NVO cambia de nivel de precio con 10 pb de Rf (config 5.29% → ^TNX 5.19%: 58 "razonable" → 70 "atractivo", confianza media → alta). Banda de tolerancia o aviso de proximidad al umbral | F0 (registros #5, #6) | 4 |
+| **Nuevo (panel):** efecto frontera: NVO cambia de nivel de precio con 10 pb de Rf (config 5.29% → ^TNX 5.19%: 58 "razonable" → 70 "atractivo", confianza media → alta). Banda de tolerancia o aviso de proximidad al umbral **F4: ✅ hecha** (`a0aa922`): aviso de frontera a ≤ 2 puntos de un umbral, en calidad y en precio (11 en el panel). | F0 (registros #5, #6) | 4 |
 | **Nuevo (panel):** BRK-B en base anual (faltan capex y D&A en algún trimestre) **2a: reproducida.** El fixture sigue en base anual. La D&A del FY falta en el pipeline y EDGAR la tiene (13,476 millones de USD); no se comprobó si EDGAR trae los trimestres. EDGAR como respaldo en la 2b. **2b: ➡️ movida a la fase 3** (definición): Yahoo no trae el 3T-2025 de BRK-B (resultados, flujos ni balance; confirmado en vivo el 2026-10-16) y completar el corte con EDGAR mezclaría dos definiciones de ingresos: Yahoo suma las ganancias y pérdidas de inversión (FY2025 410.5 frente a 371.4 mil millones de `us-gaap:Revenues`; 2T-26 117.9 frente a 101.8). Beneficio neto, D&A, capex e intereses sí casan. La D&A del FY la cubre ya el respaldo (`3ef20e7`). Corte trimestral de BRK-B con EDGAR cuando la fase 3 decida qué ingresos usa. **F3: ➡️ movida a la fase 6**: la decisión de definición está tomada (ingresos de EDGAR `us-gaap:Revenues`, sin ganancias de inversión); falta construir el corte LTM con los 10-Q de EDGAR (ejercicio + acumulado del año − acumulado del año anterior), que es infraestructura de datos. | F0 (registro #5) | 6 |
 | ✅ Hecho (F1, `eac35b3`): "(3 años)" en la comparación de cíclicas cuya cifra es de ciclo medio → "(ciclo medio)" | F1 T2 (registro #9) | 1 (texto) |
 | ✅ Hecho (F1, `90ab32a`): V (benchmark de mercado) decía "múltiplos frente al sector" en la confianza | F1 T2 (registro #9) | 1 |
@@ -165,10 +165,10 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
 | **Nuevo (ROCE, usuario 2026-10-15):** el ROCE se calcula (AAPL 68.72%; promedio de ciclo en cíclicas) pero en la web es la **última fila de "Tabla de rentabilidad y eficiencia", plegada por defecto** (desde la 9b); solo se ve la nota de divergencia ROCE–ROIC. La fila no tiene referencia, brecha ni lectura ("Antes de impuestos"). En FINANCIAL/REIT "No aplica" (correcto). **Fase 1 (T6):** subirlo al bloque visible de Rentabilidad junto a ROIC − WACC (con el promedio de ciclo en CYCLICAL) y al resumen del PDF, sin cambiar cálculos. **Fase 4:** referencia por sector, bandas de lectura y ROCE promedio como prueba de persistencia de la calidad | usuario + planificador, 2026-10-15 | 1 (visible) / 4 (bandas) |
 | **Nuevo (infra):** Render **apaga el servicio sin tráfico** ("Service waking up" al abrir finanzer.app el 15-oct): explica buena parte de los 46–52 s en frío, además de la atención en serie | planificador, 2026-10-15 | 6 (D6) |
 | **Revisión externa F1 (UL, planificador 2026-10-15):** "Los ingresos se contraen un 3.4% anual" → DCF con g −3.4% → alerta "Sobrevalorada según DCF −40%". Probable **cambio de perímetro** (escisión de helados/Magnum a finales de 2025; verificar en los estados): los años comparados no son homogéneos. El motor no detecta escisiones/desinversiones (operaciones discontinuadas, salto de ingresos) **2a: medida en F2_DISCREPANCIAS §4, confirmada** (perímetro: los ingresos de 2024 se reexpresan de 60,761 a 52,479 millones de EUR). Yahoo ya trae 2024 y 2025 con el perímetro nuevo. No se verificó si los años anteriores del CAGR también lo traen. **2b: ✅ hecha** la detección (`a435698`): data_provenance.perimeter declara los ejercicios reexpresados (UL 2023 y 2024), las discontinuadas y la base de cada ejercicio de Yahoo; en UL, 2022 está en el perímetro anterior y el CAGR a 3 años mezcla las dos bases. El crecimiento sin el perímetro, en la fase 3. **F3: ✅ hecha** (T5, `381c863`): perímetro homogéneo: los ejercicios con operaciones discontinuadas materiales se excluyen del CAGR (UL), declarado. | planificador, 2026-10-15 | 2 (detectar ✅) / 3 (crecimiento sin el perímetro) |
-| **Revisión externa F1 (TXRH):** referencias por **sector amplio** (consumer_cyclical) para un restaurante: "Margen bruto 15.7% vs 35% muy inferior". Hace falta referencia por **industria** | planificador, 2026-10-15 | 4 |
+| **Revisión externa F1 (TXRH):** referencias por **sector amplio** (consumer_cyclical) para un restaurante: "Margen bruto 15.7% vs 35% muy inferior". Hace falta referencia por **industria** **F4: ⏸️ espera el permiso del usuario para descargar los conjuntos de datos de Damodaran** (F4_PARADA §5); sin ellos no hay fuente con fecha para sustituirlas. | planificador, 2026-10-15 | 4 |
 | **Revisión externa F1 (TXRH):** lecturas ciegas al modelo de negocio: current ratio < 1 "Tensión" (normal en restauración/comercio con capital circulante negativo); Altman Z'' y Piotroski castigados por pasivos por arrendamiento (ASC 842) **F3: ✅ hecha** (T6, `ceac134`): capital circulante negativo estructural (no puntúa ni alerta salvo empeoramiento > 15%), Altman referencial y aviso del Piotroski por industria. | planificador, 2026-10-15 | 3 |
 | **Revisión externa F1 (TXRH):** DCF con g = CAGR histórico 13.5% sin convergencia al largo plazo y fiabilidad "alta" (el CAGR incluye inflación de precios) **F3: ✅ hecha en parte** (T3, `f8e5750`): el DCF converge linealmente al crecimiento terminal en los años 6–10 y la fiabilidad la mide la conciliación con el precio. La parte de la inflación de precios se descarta: no hay fuente estructurada de precios por producto para separarla. | planificador, 2026-10-15 | 3 |
-| **Revisión externa F1 (BCS):** P/B 0.73x frente a 1.50x "del sector" (bancos de EE. UU.): "descuento profundo −51%". Hace falta referencia por **geografía** (los bancos europeos cotizan estructuralmente más bajo por menor ROE) | planificador, 2026-10-15 | 4 |
+| **Revisión externa F1 (BCS):** P/B 0.73x frente a 1.50x "del sector" (bancos de EE. UU.): "descuento profundo −51%". Hace falta referencia por **geografía** (los bancos europeos cotizan estructuralmente más bajo por menor ROE) **F4: ⏸️ espera el permiso del usuario para descargar los conjuntos de datos de Damodaran** (F4_PARADA §5); sin ellos no hay fuente con fecha para sustituirlas. | planificador, 2026-10-15 | 4 |
 | **Revisión externa F1 (UL):** factor ADR 1.012 frente a 1 oficial (mismo defecto que BCS: recompras en el factor) **2a: medida en F2_DISCREPANCIAS §4, confirmada, sin efecto:** está dentro de la tolerancia del motor y no se aplica. **2b: ✅ hecha** (`b25aed6`: factor ADR oficial, 1). | planificador, 2026-10-15 | 2 |
 | **Prioridad (JNJ):** las reglas de **precedencia de fuentes** (qué fuente manda y con qué periodo) son el núcleo de la fase 2: Finnhub sustituyó el BPA por uno con el trimestre nuevo mientras los estados siguen en junio (periodos mezclados → cambio de nivel en producción) **2a: medida** (JNJ, F2_DISCREPANCIAS §4). Reglas en F2_PRECEDENCIA §1; D2 decidida. **2b: ✅ hecha** (`0c8d211`, `d984181`, `3ef20e7`): precedencia y corte coherente de F2_PRECEDENCIA aplicados. | planificador, 2026-10-15 | 2 (alta) |
 | **Principio "sin parches" (usuario, 2026-10-15): la 2b no se cierra mientras sigan en pie las dos protecciones provisionales de la fase 1.** (1) **Dividend yield "sin dato" por la identidad** (`bfc38e9`): tapa el dividendo de Finnhub en moneda local por acción ordinaria (BCS, TSM, NVO, UL y los ADR nuevos) y da un falso positivo en NVDA. Sustituirla por la corrección en origen (moneda, acción ordinaria, factor ADR oficial; F2_PRECEDENCIA §2.2). La identidad queda solo como verificación, con magnitudes equivalentes. (2) **Rango de 52 semanas ampliado con el precio** (`range52_widened`): tapa un rango de la fuente desfasado del precio. Sustituirlo por el rango correcto desde la serie de precios (`lib/price_series.py`, F5prep) o desde la fuente, de la misma sesión que el precio **2b: ✅ hecha**: la protección 1, retirada en `c9b661d`; la 2, en `c8ae863`. Las dos sustituidas por el arreglo en origen. | usuario, 2026-10-15 (registro #20) | 2 (2b, alta) |
@@ -1281,3 +1281,58 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
   - `npm run build` en el checkout principal.
 - **Siguiente:** fase 4 (escalas y confianza) según PLAN_FIABILIDAD §4, en la rama `fiabilidad/f4-escalas`, que sale de
   `fiabilidad/f3-metodo`, bajo la misma delegación.
+
+
+### #32 · 2026-10-17 · operador · Fase 4 (cerrada en código bajo la delegación del registro #29) y revisión de código de la fase 3
+- **Sin prompt del planificador:** con la delegación, el operador leyó PLAN_FIABILIDAD §4 y lo ejecutó. Rama
+  `fiabilidad/f4-escalas`, que sale de `fiabilidad/f3-metodo`.
+- **Hecho (un commit por causa; detalle en F4_PARADA §1):**
+  - `1f12e33`, `92a279e`: persistencia de la calidad por encima de 80;
+  - `122cbb4`, `e5baf6e`: confianza por causas reales;
+  - `a0aa922`: aviso de frontera;
+  - `bc4fa89`, `f99859a`: pre-mortem;
+  - `ea2926b`, `71b5184`: bandas paralelas.
+- **Revisión de código independiente de la fase 3** (protocolo §5.7). De los 8 hallazgos, 6 confirmados y 2
+  plausibles, todos arreglados con prefijo F3:
+  - `6578a63`: el ciclo medio se dividía dos veces por las acciones;
+  - `583f112`: los ejercicios de 52/53 semanas desplazaban el año (JNJ: 3 años 9.6% → 8.9%);
+  - `9fecbf3`: el tramo de tamaño de las tasas base leía otra moneda como USD;
+  - `c12b3e8`: el rótulo del DCF inverso decía "flujo de mantenimiento" cuando no lo era;
+  - `dea16bf`: el retorno total de la madura de dividendo alto se calcula por acción;
+  - `d8b59a1`: el perímetro se casa por fecha;
+  - `8c53940`: las lecturas de calidad cruzan estados por ejercicio.
+  - El hallazgo 3 (interanual de la fuente en la mezcla del DCF) no se reproduce: la 2b (`f762e03`) ya lo sustituye
+    por el de los estados.
+- **Decisiones del operador (delegación #29), con su porqué de analista:**
+  - **Persistencia en el total y no por categoría.** Por categoría rebajaba también lo que solo es "excelente" (KO
+    82 → 79); el plan pide que el 100 sea raro, no mover el umbral de excelente.
+  - **Anclas:** el margen frente al actual (¿es un pico?), ingresos sin retrocesos y conversión en caja. Es la
+    persistencia del rendimiento (Mauboussin). Un año sin dato no prueba nada.
+  - **"Alta" exige ninguna dimensión baja:** una cíclica o datos rechazados son una debilidad clara.
+  - **Finnhub deja de restar en la fuente:** desde la 2b solo entra si casa con el corte.
+  - **Pre-mortem en el sentido del nivel:** con precio exigente, la lectura falla si la empresa sí sostiene el
+    crecimiento exigido; con precio razonable o atractivo, si crece menos de lo que ya descuenta.
+- **Medido (replay, panel):**
+  - calidad > 95: 4 → 2 (TSM 99, V 96), ninguna en 100;
+  - confianza alta: 10 → 12;
+  - frontera: 11;
+  - pre-mortem: 34 de 36 (el mensaje de `bc4fa89` dice 33 por error; son 34);
+  - niveles de calidad y de precio: 0 cambios;
+  - tiempo: 8.1 s;
+  - `pytest tests -q --ignore=tests/test_regression.py` → "1 failed, 3803 passed, 1 skipped". Lo que falla son las
+    muestras forzadas del contrato, que van con los golden.
+- **Revisión externa:**
+  - NOW: sin hallazgos;
+  - DE: la deuda del pre-mortem incluye la cautiva, y ahora se dice;
+  - SAN: la ventana se anclaba en los ingresos IFRS de EDGAR, que acaban en 2017. Error de fondo, arreglado.
+- **Web:** comprobada en replay (NFLX: nota de persistencia y pre-mortem).
+- **No hecho, del usuario:**
+  - permiso para descargar los conjuntos de datos de Damodaran: referencias por industria y geografía, y medianas
+    con fuente;
+  - golden;
+  - `SEC_EDGAR_USER_AGENT`;
+  - "ok, pushea";
+  - deploy.
+- **Movido:** las bandas de REIT y utilities sin muestra, a la fase 7 (calibración con EDGAR).
+- **Siguiente:** fase 5 (capa técnica y conductual), PLAN §4; la preparación F5prep ya está fusionada, con los módulos
+  aislados.

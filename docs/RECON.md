@@ -1248,3 +1248,39 @@ arreglo es de fondo; la fase no deja protecciones provisionales nuevas.*
   - techo de calidad;
   - confianza "alta" con convergencia media;
   - efecto frontera (NVO).
+
+### 7.23 Fase 4 del plan de fiabilidad: escalas y confianza honestas
+
+*Operador, 17-oct-2026, bajo la delegación del usuario (bitácora #29 y #32). Detalle en
+[`fiabilidad/F4_PARADA.md`](fiabilidad/F4_PARADA.md). Rama `fiabilidad/f4-escalas`, que sale de
+`fiabilidad/f3-metodo`, sin subir.*
+
+- **§4.1 saturación** (`1f12e33`, `92a279e`):
+  - la calidad por encima de 80 exige persistencia: 80 + (calidad − 80) × persistencia ponderada de las categorías
+    del tramo alto (lib/persistence.py);
+  - anclas en 5 ejercicios: margen ≥ 75% del actual, ingresos al alza, flujo operativo ≥ beneficio y FCF > 0;
+  - historia de EDGAR completada con los estados, por ejercicio canónico;
+  - panel: > 95 pasa de 4 a 2 (TSM 99, V 96); ningún 100;
+  - NFLX 100 → 93, PLTR 99 → 95, MU 95 → 90.
+- **§4.2 confianza** (`122cbb4`, `e5baf6e`):
+  - la fuente cuenta solo las incidencias del dato usado;
+  - "alta" exige que ninguna dimensión sea baja;
+  - el resumen cita el motivo real del techo;
+  - panel: alta 10 → 12.
+- **Efecto frontera** (`a0aa922`): aviso a ≤ 2 puntos de un umbral de nivel.
+- **§4.3 pre-mortem** (`bc4fa89`, `f99859a`):
+  - lib/premortem.py, hasta 3 condiciones con su cifra: crecimiento exigido o ROTE/ROE implícito en el sentido del
+    nivel, margen frente a su historia y deuda;
+  - en Valoración (web y PDF), con predicado del guardián.
+- **Bandas paralelas** (`ea2926b`, `71b5184`): alertas, lecturas, gráficos y tooltips del DCF, la cobertura, la deuda
+  neta/EBITDA y la beta con una sola fuente de umbrales.
+- **Revisión de código de la fase 3:** 7 arreglos (`6578a63`…`8c53940`); el hallazgo 3 no se reproduce.
+- **Revisión externa:** SAN destapó la ventana anclada en una serie cortada, arreglado; DE, cautiva en el pre-mortem,
+  declarada.
+- **En espera del usuario:**
+  - permiso para descargar los datos sectoriales de Damodaran: referencias por industria y geografía, y medianas con
+    fuente y fecha;
+  - golden;
+  - `SEC_EDGAR_USER_AGENT`;
+  - "ok, pushea".
+- **Movido a la fase 7:** bandas de REIT y utilities sin muestra.
