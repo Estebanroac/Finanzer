@@ -490,7 +490,7 @@ def _apply_edgar(symbol: str, info: Dict[str, Any], ed: Dict[str, Any], hist: Di
             for f, h in info["_history_fy"].items()}
     info["_ebit"] = edgar_backup.ebit_check(info, ed, ctx)     # F2_PRECEDENCIA §2.1: EBIT "estimado por la fuente"
     import debt
-    info["_debt"] = debt.apply(info, ed, ctx)          # T5: deuda coherente con el EBITDA
+    info["_debt"] = debt.apply(info, ed, ctx, symbol=symbol)   # T5: deuda coherente con el EBITDA
     import perimeter
     from settings import cfg as _cfg
     info["_perimeter"] = perimeter.detect(info, ed, ctx, _cfg("data.edgar.report_date_tolerance_days"))   # T7

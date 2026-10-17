@@ -37,7 +37,7 @@ def _conv(ctx, value: Optional[float], end: Optional[str]) -> Optional[float]:
     return ctx.convert_amount(value, "balance", end=end)
 
 
-def apply(info: Dict[str, Any], ed: Dict[str, Any], ctx=None) -> Dict[str, Any]:
+def apply(info: Dict[str, Any], ed: Dict[str, Any], ctx=None, symbol: Optional[str] = None) -> Dict[str, Any]:
     """Deuda de la regla en info["totalDebt"] y sus componentes en el registro (-> data_provenance.debt)."""
     from yf_adapter import _tag_provenance
     total = info.get("totalDebt")
@@ -54,6 +54,14 @@ def apply(info: Dict[str, Any], ed: Dict[str, Any], ctx=None) -> Dict[str, Any]:
     tax = edgar.taxonomy(facts) if facts else None
     out["standard"] = tax
     cap = ed.get("captive") or {}
+    # Fase 3 (T7): financiera cautiva sin desglose estructurado por segmento (DE: John Deere Financial no se etiqueta
+    # con dimensión en el XBRL del 10-Q ni del 10-K): la deuda neta la incluye y se dice (apalancamiento sobrestimado).
+    _unsep = (cfg("data.edgar.captive_unseparable") or {}).get((symbol or "").upper())
+    if _unsep:
+        out["captive_unseparable"] = _unsep
+        out["notes"].append(f"deuda de la financiera cautiva ({_unsep}) sin desglose estructurado por segmento: la "
+                            "deuda y el apalancamiento incluyen la de la financiera (sobrestimados para la "
+                            "actividad industrial)")
     if cap.get("status") == "ok":
         comps["captive"] = {"value": _conv(ctx, cap["value"], cap["date"]), "name": cap["name"], "date": cap["date"],
                             "source": f"SEC EDGAR ({cap['form']} {cap['accn']}, segmento {cap['name']})",

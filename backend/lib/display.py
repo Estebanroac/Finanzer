@@ -1968,6 +1968,13 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                           text=rd[2] if rd else None))
     balance = (f"Balance — deuda total {fv(km.get('total_debt'), 'money')} · caja {fv(km.get('cash'), 'money')} · "
                f"patrimonio {fv(km.get('total_equity'), 'money')} · activos {fv(km.get('total_assets'), 'money')}")
+    _dprov = (a.get("data_provenance") or {}).get("debt") or {}
+    if _dprov.get("captive_excluded"):
+        balance += (f". La deuda no incluye la de la financiera cautiva ({fv(_dprov['captive_excluded'], 'money')}): "
+                    "financia su cartera de clientes, no la actividad industrial")
+    elif _dprov.get("captive_unseparable"):
+        balance += (f". La deuda incluye la de la financiera cautiva ({_dprov['captive_unseparable']}), que no se "
+                    "puede separar con datos estructurados: el apalancamiento de la actividad industrial es menor")
     solvency = {"intro": sol_txt, "columns": ["MÉTRICA", "VALOR", "LECTURA"], "rows": srows, "balance": balance,
                 "quality_readings": _qr_items(("coverage",))}
 
