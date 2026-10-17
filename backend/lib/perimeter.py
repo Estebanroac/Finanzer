@@ -9,7 +9,8 @@ crecimiento y el DCF con ello es de la fase 3.
 
 Fuentes: las discontinuadas, de la fila anual de Yahoo ("Net Income Discontinuous Operations"); la reexpresión, de
 EDGAR (los ingresos anuales del concepto preferido que cambian entre dos informes anuales más de `restated_rel_tol`)
-y, con ella, en qué perímetro está cada ejercicio de la serie de Yahoo (el valor de EDGAR con el que casa).
+y, con ella, en qué perímetro está cada ejercicio de la serie de Yahoo (el valor de EDGAR con el que casa). Solo
+los ejercicios que usa el análisis (fase 3, T1b: con la historia larga de EDGAR, una reexpresión antigua no cuenta).
 """
 import datetime as _dt
 from typing import Any, Dict, List, Optional
@@ -49,7 +50,15 @@ def detect(info: Dict[str, Any], ed: Dict[str, Any], ctx=None, tol_days: int = 0
         conv = (lambda v, end: ctx.convert_amount(v, "flow", end=end)) \
             if (ctx is not None and getattr(ctx, "convert_currency", False)) else (lambda v, end: v)
         comparable = not (stmt_cur and unit != stmt_cur)
+        # Solo los ejercicios que usa el análisis (la serie anual de Yahoo; sin ella, los `_CAGR_YEARS + 1` últimos
+        # de EDGAR): companyfacts trae desde 2007 y una reexpresión de 2015 no cambia el perímetro de la serie que
+        # usa el motor (fase 3, T1b).
+        ends = [e for e in (st.get("inc_ends") or []) if e]
+        oldest = (_dt.date.fromisoformat(min(ends)) - _dt.timedelta(days=tol_days)).isoformat() if ends else \
+            (sorted({e for (_s, e) in rev["periods"]}, reverse=True)[:_CAGR_YEARS + 1] or [""])[-1]
         for (start, end), group in sorted(rev["periods"].items()):
+            if end < oldest:
+                continue
             vals = sorted({(f.get("filed") or "", f["val"], f["accn"]) for f in group})
             old, new = vals[0], vals[-1]
             if old[1] and abs(new[1] / old[1] - 1.0) > _RESTATED_REL_TOL:
