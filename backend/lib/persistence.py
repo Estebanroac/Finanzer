@@ -37,18 +37,36 @@ def _cfg(key: str):
     return cfg(f"thresholds.quality_persistence.{key}")
 
 
+_STMT_FIELDS = (("revenue", "revenue", "inc"), ("operating_income", "operating_income", "inc"),
+                ("net_income", "net_income", "inc"), ("operating_cash_flow", "operating_cash_flow", "cf"),
+                ("capex", "capital_expenditure", "cf"))
+
+
 def history_from_statements(st: Dict[str, Any]) -> Dict[str, Any]:
     """Historia con la forma de lib/sec_edgar.annual_history desde los estados anuales de Yahoo (más reciente
-    primero; `inc_years` / `cf_years` son los ejercicios)."""
+    primero; `inc_ends` / `cf_ends` son las fechas de cierre, o los ejercicios `*_years` si no las hay)."""
     st = st or {}
     out: Dict[str, Any] = {}
-    for field, src, yk in (("revenue", "revenue", "inc_years"), ("operating_income", "operating_income", "inc_years"),
-                           ("net_income", "net_income", "inc_years"),
-                           ("operating_cash_flow", "operating_cash_flow", "cf_years"),
-                           ("capex", "capital_expenditure", "cf_years")):
-        vals, yrs = st.get(src) or [], st.get(yk) or []
-        out[field] = {"values": [{"fy_end": f"{y}-12-31", "value": abs(v) if field == "capex" else v}
-                                 for y, v in zip(yrs, vals) if y is not None and v is not None]}
+    for field, src, stmt in _STMT_FIELDS:
+        vals = st.get(src) or []
+        ends = st.get(f"{stmt}_ends") or [f"{y}-12-31" if y is not None else None for y in st.get(f"{stmt}_years") or []]
+        out[field] = {"values": [{"fy_end": str(e)[:10], "value": abs(v) if field == "capex" else v}
+                                 for e, v in zip(ends, vals) if e and v is not None]}
+    return out
+
+
+def merge_history(hist: Optional[Dict[str, Any]], st: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    """La historia de EDGAR completada con los estados en los ejercicios que no trae (un concepto que deja de
+    usarse, como los ingresos IFRS de un banco desde 2018: SAN). Un ejercicio de los estados se añade si ninguno de
+    EDGAR cierra a menos de medio año de él."""
+    from cyclicality import fiscal_years_between
+    out = {k: {"values": list((v or {}).get("values") or [])} for k, v in (hist or {}).items()}
+    for field, items in history_from_statements(st).items():
+        cur = out.setdefault(field, {"values": []})["values"]
+        have = [x["fy_end"] for x in cur]
+        for x in items["values"]:
+            if not any(fiscal_years_between(min(h, x["fy_end"]), max(h, x["fy_end"])) == 0 for h in have):
+                cur.append(x)
     return out
 
 
@@ -67,21 +85,40 @@ def measure(hist: Optional[Dict[str, Any]], archetype: str, source: str) -> Dict
     ratio = float(_cfg("margin_ratio"))
     fin = archetype == FINANCIAL
     hist = hist or {}
-    cuts = set(perimeter_years(hist, cfg("sectors.archetypes.cyclicality.discontinued_material_share")))
-    rev = _series(hist, "revenue")
-    out: Dict[str, Any] = {"window": window, "source": source, "perimeter": sorted(_year(e) for e in cuts)}
-    # Ventana: los `window` últimos ejercicios con ingresos, sin los de cambio de perímetro.
-    ends = [e for e, _ in rev][-window:]
+    out: Dict[str, Any] = {"window": window, "source": source}
+    # Ejercicios canónicos: un cierre por año fiscal con dato en cualquier serie (EDGAR y los estados pueden fechar
+    # el mismo ejercicio con días de diferencia). Cada serie se lee por ejercicio, no por la fecha exacta.
+    from cyclicality import fiscal_years_between
+    _all = sorted({e for f in ("revenue", "operating_income", "net_income", "operating_cash_flow")
+                   for e, _v in _series(hist, f)})
+    canon: List[str] = []
+    for e in reversed(_all):
+        if not any(fiscal_years_between(min(e, x), max(e, x)) == 0 for x in canon):
+            canon.append(e)
+    canon.sort()
+
+    def _canon(e: str) -> Optional[str]:
+        return next((c for c in canon if fiscal_years_between(min(e, c), max(e, c)) == 0), None)
+
+    def fy(field: str) -> Dict[str, float]:
+        return {c: v for c, v in ((_canon(e), v) for e, v in _series(hist, field)) if c is not None}
+
+    cuts = {c for c in (_canon(e) for e in perimeter_years(
+        hist, cfg("sectors.archetypes.cyclicality.discontinued_material_share"))) if c}
+    out["perimeter"] = sorted(_year(e) for e in cuts)
+    # Ventana: los `window` últimos ejercicios (una serie que se corta, como los ingresos IFRS de un banco, no ancla
+    # la ventana en el pasado), sin los de cambio de perímetro.
+    ends = canon[-window:]
     evaluable = [e for e in ends if e not in cuts]
-    den = len([e for e in ends if e not in cuts]) + (window - len(ends))   # sin dato: cuenta y no cumple
+    den = len(evaluable) + (window - len(ends))   # sin dato: cuenta y no cumple
     if den <= 0:
         return out
-    rv = dict(rev)
+    rv = fy("revenue")
 
     # Rentabilidad: margen de cada ejercicio frente al del último.
-    num = dict(_series(hist, "net_income" if fin else "operating_income"))
+    num = fy("net_income" if fin else "operating_income")
     if not fin and len([e for e in evaluable if e in num]) < 2:          # sin operativo en la historia: margen neto
-        num, fin_margin = dict(_series(hist, "net_income")), True
+        num, fin_margin = fy("net_income"), True
     else:
         fin_margin = fin
     # El margen de referencia es el del último ejercicio con dato, aunque sea de cambio de perímetro: es el negocio de
@@ -97,21 +134,19 @@ def measure(hist: Optional[Dict[str, Any]], archetype: str, source: str) -> Dict
         "rule": f"{lab} positivo y al menos el {ratio:.0%} del último ({_pct(last)})" if last is not None else None}
 
     # Crecimiento: ingresos por encima del ejercicio anterior.
-    prev = {}
-    for (_e0, v0), (e1, _v1) in zip(rev, rev[1:]):
-        prev[e1] = v0
-    ok = [e for e in evaluable if e in prev and prev[e] and rv[e] > prev[e]]
+    prev = {c1: rv[c0] for c0, c1 in zip(canon, canon[1:]) if c0 in rv}
+    ok = [e for e in evaluable if prev.get(e) and e in rv and rv[e] > prev[e]]
     out["Crecimiento"] = {"persistence": len(ok) / den, "years_ok": [_year(e) for e in sorted(ok)],
                           "years": [_year(e) for e in evaluable], "anchor": "ingresos",
                           "rule": "ingresos por encima del ejercicio anterior"}
 
     # Calidad de ganancias: el beneficio se convierte en caja.
-    ni = dict(_series(hist, "net_income"))
+    ni = fy("net_income")
     if fin:
         ok = [e for e in evaluable if ni.get(e) is not None and ni[e] > 0]
         rule = "beneficio neto positivo (sin pérdidas)"
     else:
-        ocf, capex = dict(_series(hist, "operating_cash_flow")), dict(_series(hist, "capex"))
+        ocf, capex = fy("operating_cash_flow"), fy("capex")
         ok = [e for e in evaluable if ocf.get(e) is not None and ni.get(e) is not None and capex.get(e) is not None
               and ocf[e] >= ni[e] and ocf[e] - abs(capex[e]) > 0]
         rule = "flujo operativo ≥ beneficio neto y FCF positivo"

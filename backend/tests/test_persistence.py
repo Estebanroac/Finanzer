@@ -67,3 +67,14 @@ def test_without_measure_nothing_changes():
     q = {"score": 100}
     P.adjust_quality(q, _cats(20, 20, 20, 20), None)
     assert q == {"score": 100}
+
+
+def test_window_is_anchored_on_latest_data_and_completed_with_statements():
+    """SAN: los ingresos IFRS del banco en EDGAR acaban en 2017; la ventana no se ancla ahí y los estados completan."""
+    hist = {"revenue": {"values": [{"fy_end": f"{y}-12-31", "value": 70.0} for y in (2015, 2016, 2017)]},
+            "net_income": {"values": [{"fy_end": f"{y}-12-31", "value": v}
+                                      for y, v in ((2021, 8.1), (2022, 9.6), (2023, 11.1), (2024, 12.6), (2025, 14.1))]}}
+    st = {"revenue": [60.0, 58.0, 55.0, 50.0], "inc_ends": ["2025-12-31", "2024-12-31", "2023-12-31", "2022-12-31"]}
+    m = P.measure(P.merge_history(hist, st), "FINANCIAL", "edgar")
+    assert m["Calidad de Ganancias"]["years_ok"] == ["2021", "2022", "2023", "2024", "2025"]
+    assert m["Crecimiento"]["years_ok"] == ["2023", "2024", "2025"]     # 2022 sin el ejercicio anterior: sin prueba

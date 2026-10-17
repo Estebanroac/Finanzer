@@ -1638,7 +1638,7 @@ def _compute_analysis(symbol: str) -> dict:
                 try:
                     import persistence as _pers
                     _hfy = yinfo.get("_history_fy") if _has_yahoo else None
-                    _persist = (_pers.measure(_hfy, archetype, "edgar") if _hfy
+                    _persist = (_pers.measure(_pers.merge_history(_hfy, _stmts_g), archetype, "edgar") if _hfy
                                 else _pers.measure(_pers.history_from_statements(_stmts_g), archetype, "estados"))
                 except Exception as e:
                     _sin_dato("persistencia", e)
@@ -1842,7 +1842,9 @@ def _compute_analysis(symbol: str) -> dict:
         # ── Fase 4 (T3): pre-mortem, "Esta lectura sería errónea si…" (lib/premortem.py) ──
         try:
             import premortem as _pm
-            result["premortem"] = _pm.build(result, yinfo.get("_history_fy") if _has_yahoo else None)
+            import persistence as _pers
+            _hpm = yinfo.get("_history_fy") if _has_yahoo else None
+            result["premortem"] = _pm.build(result, _pers.merge_history(_hpm, _stmts_g) if _hpm else None)
         except Exception as e:
             _sin_dato("premortem", e)
 
