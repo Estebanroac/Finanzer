@@ -839,6 +839,14 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     elif V["dcf_missing"]:
         story.append(Spacer(1, 6))
         story.append(Paragraph(_esc(V["dcf_missing"]), S['small']))
+    RV = V.get("reverse_dcf")
+    if RV:
+        # Fase 3 (T3, D3): crecimiento que exige el precio, con su banda y su papel en el veredicto.
+        story.append(Spacer(1, 8))
+        story.append(Paragraph(_esc(RV["title"]), S['h2']))
+        for ln in RV["lines"]:
+            story.append(Paragraph(_esc((f"{ln['label']}. " if ln.get("label") else "") + ln["text"]), S['body']))
+        story.append(Paragraph(_esc(RV["role"] + " " + RV["method"]), S['small']))
     if V["ke_note"]:
         story.append(Spacer(1, 3))
         story.append(Paragraph(_esc(V["ke_note"]), S['small']))

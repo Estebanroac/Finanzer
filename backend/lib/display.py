@@ -834,6 +834,45 @@ def na_keys(analysis):
 
 
 # ══════════════════════════════ BLOQUE DISPLAY ══════════════════════════════
+_REVERSE_BANDS = {"barata": ("Barata", "pos"), "en_precio": ("En precio", "neu"), "exigente": ("Exigente", "warn"),
+                  "muy_exigente": ("Muy exigente", "neg")}
+
+
+def _reverse_block(a: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Bloque del DCF inverso (fase 3, T3): la frase de cada lectura (pasa por el guardián), su banda y el papel
+    que tiene en el veredicto. None si no aplica (con el motivo en el análisis)."""
+    rv = a.get("reverse_dcf") or {}
+    m = rv.get("main") or {}
+    if not rv.get("applicable") or not m.get("text"):
+        return None
+    lines = []
+    for key, x in (("main", m), ("ttm", rv.get("ttm") or {})):
+        if not x.get("text"):
+            continue
+        txt = x["text"] if key == "main" else "Con el flujo del periodo: " + x["text"][0].lower() + x["text"][1:]
+        _record(txt, _claim("implied_growth", field=f"reverse_dcf.{key}.g10", value=x.get("g10"), band=x.get("band")),
+                source="display.reverse_dcf")
+        lab, tone = _REVERSE_BANDS.get(x.get("band"), (None, "neu"))
+        lines.append({"text": txt, "label": lab, "tone": tone})
+    if not lines:
+        return None
+    adj = next((x for x in (((a.get("score") or {}).get("breakdown") or {}).get("Valoración") or {}).get("adjustments")
+                or [] if str(x.get("metric", "")).startswith("DCF inverso")
+                or str(x.get("reason", "")).startswith("El DCF directo no concilia")), None)
+    role = ("Es el método intrínseco del veredicto: el DCF directo no concilia con el precio"
+            if (adj is not None and str(adj.get("reason", "")).startswith("El DCF directo"))
+            else "Es el método intrínseco del veredicto: sin DCF directo, se valora el FFO por acción"
+            if adj is not None else "Contraste del DCF directo: no puntúa")
+    if adj is not None:
+        role += f" (aporta {adj['adjustment']:+d} puntos a Valoración)."
+    else:
+        role += "."
+    return {"title": "Crecimiento que exige el precio (DCF inverso)", "lines": lines, "role": role,
+            "method": ("Misma estructura que el DCF directo (crecimiento constante 5 años y convergencia al "
+                       "terminal en los 5 siguientes). Referencia principal: tasas base de Mauboussin y Callahan "
+                       "(2021) por tamaño e industria; segunda: la historia propia.")}
+
+
 def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     a = analysis
     if sector_bench is None:
@@ -1534,7 +1573,12 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
             _rl = f"Fiabilidad del DCF: {_rel['level']}"
             if _rel.get("reasons"):
                 _rl += " (" + "; ".join(_rel["reasons"]) + ")"
-            if _rel["level"] == "baja":
+            if _rel["level"] == "baja" and _dcf_adj is not None and \
+                    str(_dcf_adj.get("reason") or "").startswith("El DCF directo no concilia"):
+                # Fase 3 (T3, §2.3): el DCF inverso sustituye al directo como método intrínseco.
+                _rl += (". El DCF directo no concilia con el precio: el método intrínseco es el DCF inverso, que "
+                        f"aporta {_dcf_adj['adjustment']:+d} puntos a Valoración.")
+            elif _rel["level"] == "baja":
                 _rl += ". " + (DCF_NO_RECONCILE if _rel.get("grid_contains_price") is False
                                else "DCF de fiabilidad baja: no se usa en el score") + "."
             elif _dcf_adj is not None:
@@ -1547,6 +1591,8 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         dcf_missing = f"DCF no significativo: {_dcf_ns}."
     elif dcf.get("reason"):
         dcf_missing = f"DCF sin dato: {dcf['reason']}."
+    # Fase 3 (T3, D3): crecimiento que exige el precio (DCF inverso), con sus dos referencias.
+    reverse_block = _reverse_block(a)
     # FINANCIAL (etapa 8): sin WACC; el P/B justificado usa Ke con la beta ajustada.
     ke_note = None
     if is_financial and xm.get("cost_of_equity") is not None:
@@ -1691,6 +1737,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                  "dcf_reliability_level": _rel.get("level"),
                  "dcf_reliability_tone": {"alta": 'pos', "media": 'warn', "baja": 'neg'}.get(_rel.get("level")),
                  "dcf_missing": dcf_missing,
+                 "reverse_dcf": reverse_block,
                  "ke_note": ke_note, "wacc_note": wacc_note, "wacc_breakdown": wacc_breakdown,
                  "sensitivity": sens}
 

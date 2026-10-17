@@ -45,6 +45,12 @@ CASES = {
                  [claim("vs_bench", value=0.30, bench=0.20)], {}, None),
     "spread": ("cada dólar reinvertido crea valor económico", [claim("spread")],
                {KM: {"roic_wacc_spread": 0.05}}, {KM: {"roic_wacc_spread": -0.05}}),
+    "implied_growth": ("El precio actual exige que el FCF − SBC por acción crezca un 12.5% anual durante 10 años "
+                       "(17.0% los 5 primeros y convergencia al 2.5%); en los últimos 10 años, sus ingresos por "
+                       "acción crecieron un 11.2% anual.",
+                       [claim("implied_growth", field="reverse_dcf.main.g10", value=0.125)],
+                       {"reverse_dcf": {"main": {"g10": 0.125, "own_growth": {"cagr": 0.112}}}},
+                       {"reverse_dcf": {"main": {"g10": 0.205, "own_growth": {"cagr": 0.112}}}}),
     "dcf_upside": ("el precio incorpora una prima de 20% sobre el valor intrínseco", [claim("dcf_upside")],
                    {"dcf": {"upside": -20.0}}, {"dcf": {"upside": 20.0}}),
     "dcf_rel": ("DCF no concluyente (fiabilidad baja)", [claim("dcf_rel")],

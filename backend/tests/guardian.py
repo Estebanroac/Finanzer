@@ -96,6 +96,8 @@ KEYWORDS = [
     ("fiabilidad_dcf", r"fiabilidad (?:alta|media|baja)", {"dcf_rel"}),
     ("zona_altman", r"zona (?:segura|gris|de riesgo|de peligro)", {"altman_zone"}),
     ("contraccion_precio", r"sin ajustar", {"price_contraction"}),
+    # Fase 3 (T3): la frase del DCF inverso afirma un crecimiento exigido y lo compara con la historia.
+    ("crecimiento_exigido", r"el precio actual (?:exige|se justifica)", {"implied_growth"}),
     ("base_temporal", r"\binteranual\b|anual en 3 años|\(3 años\)|anual de ciclo medio",
      {"growth", "basis", "eps_vs_revenue"}),
 ]
@@ -314,6 +316,30 @@ def _p_dcf_rel(a, c, text):
         return f"dice fiabilidad {m.group(1)} con {lvl!r}"
 
 
+def _p_implied_growth(a, c, text):
+    """El crecimiento exigido de la frase es el CAGR equivalente de la lectura (main o ttm) y la historia citada es
+    la de la lectura."""
+    parts = (c.get("field") or "reverse_dcf.main.g10").split(".")
+    key = parts[1] if len(parts) > 1 else "main"
+    x = ((a.get("reverse_dcf") or {}).get(key)) or {}
+    m = re.search(r"(?:crezca|caiga) un (−?\d+(?:[.,]\d+)?)%", text)
+    if m and x.get("g10") is not None:
+        said = float(m.group(1).replace("−", "-").replace(",", ".")) / 100
+        real = x["g10"] if "crezca" in m.group(0) else -x["g10"]
+        if abs(said - real) > 0.0006:
+            return f"dice {said:+.1%} exigido con g10 {x['g10']:+.2%}"
+    if m and x.get("g10") is None:
+        return "afirma un crecimiento exigido sin lectura del DCF inverso"
+    o = x.get("own_growth") or {}
+    h = re.search(r"(crecieron|creció|cayeron|cayó) un (\d+(?:[.,]\d+)?)% anual", text)
+    if h and o.get("cagr") is not None:
+        val = float(h.group(2).replace(",", ".")) / 100 * (-1 if h.group(1).startswith("cay") else 1)
+        if abs(val - o["cagr"]) > 0.0006:
+            return f"dice historia {val:+.1%} con {o['cagr']:+.2%}"
+    if c.get("band") is not None and c.get("band") != x.get("band"):
+        return f"banda declarada {c.get('band')!r} con {x.get('band')!r}"
+
+
 def _p_altman(a, c, text):
     z = {"safe": "segura", "grey": "gris", "distress": "de riesgo"}.get((a.get("altman_z") or {}).get("zone"))
     m = re.search(r"zona (segura|gris|de riesgo|de peligro)", text)
@@ -377,7 +403,7 @@ PREDICATES = {
     "ebit_negative": _p_ebit_negative, "net_cash": _p_net_cash, "net_debt": _p_net_debt, "pos52": _p_pos52,
     "buyback": _p_buyback, "growth": _p_growth, "vs_bench": _p_vs_bench, "spread": _p_spread,
     "dcf_upside": _p_dcf_upside, "dcf_rel": _p_dcf_rel, "altman_zone": _p_altman, "runway": _p_runway,
-    "price_contraction": _p_price_contraction,
+    "price_contraction": _p_price_contraction, "implied_growth": _p_implied_growth,
 }
 
 

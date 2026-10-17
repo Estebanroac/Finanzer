@@ -71,6 +71,19 @@ export default function ValuationTab({ display }: { display: Display }) {
           </Collapsible>
         )}
 
+        {V.reverse_dcf && (
+          <div className="mt-4">
+            <div className="fz-kicker mb-1">{V.reverse_dcf.title}</div>
+            {V.reverse_dcf.lines.map((ln, i) => (
+              <div key={i} className="mt-2 flex flex-wrap items-start gap-2">
+                {ln.label && <Pill tone={ln.tone}>{ln.label}</Pill>}
+                <p className="fz-note !mt-0 flex-1 min-w-[220px]">{ln.text}</p>
+              </div>
+            ))}
+            <Note>{V.reverse_dcf.role} {V.reverse_dcf.method}</Note>
+          </div>
+        )}
+
         <Collapsible summary="Valor intrínseco: cifras y supuestos">
           <DataTable columns={["CONCEPTO", "VALOR", "LECTURA"]} rows={V.intrinsic.rows} tooltips={tips} />
           <Note>{V.intrinsic.graham_note}</Note>

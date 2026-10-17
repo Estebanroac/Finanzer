@@ -240,6 +240,12 @@ export interface Sections {
     dcf_reliability_level: string | null;
     dcf_reliability_tone: Tone | null;
     dcf_missing: string | null;
+    reverse_dcf: {
+      title: string;
+      lines: Array<{ text: string; label: string | null; tone: Tone }>;
+      role: string;
+      method: string;
+    } | null;
     ke_note: string | null;
     wacc_note: string | null;
     wacc_breakdown: Array<{ label: string; value: string }> | null;
