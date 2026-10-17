@@ -3,8 +3,13 @@
 > Copia todo lo que hay debajo de la línea en un chat nuevo de Claude Code abierto en
 > `/Users/joseestebanroa/Downloads/finanzer_next`.
 >
-> **Borrador del operador principal (2026-10-16), para revisión del planificador.** Implementa
+> Borrador del operador principal (2026-10-16), **revisado por el planificador el 2026-10-16** (cambios: T1b de
+> implementación y deploy intermedio, EDGAR en producción como requisito, memoria y caché en Render, sensibilidad de
+> la calibración, guardián y web en todo texto nuevo, métricas de incertidumbre en T7). Implementa
 > `F3_DISENO_METODO.md` (D3, D4 y los ajustes de su §8) con lo que dejó la fase 2 (RECON §7.21, F2b_PARADA2 §1.1 y §6).
+>
+> **La fase tiene dos deploys:** el primero tras T1b (definiciones, EDGAR principal por campo e historia larga: es
+> capa de datos y acerca F1 a su meta del 95%); el segundo tras T7 (método).
 
 ---
 
@@ -34,11 +39,19 @@ En este orden:
 
 Hechos que debes tener presentes:
 
-- **Producción:** `01336e2` (código `103c76f`). Rollback de código: `60f8a69`. `main` local = `origin/main`.
+- **Producción:** `01336e2` (código `103c76f`). Rollback de código: `60f8a69` (mismo código que antes de la 2b).
+  `main` local puede llevar por delante commits de documentación de planificación (este prompt): súbelos solo con el
+  "ok, pushea" del usuario.
   `/api/health` devuelve el commit desplegado. Render se apaga sin tráfico (D6: sin plan de pago).
-- **Si `SEC_EDGAR_USER_AGENT` aún no está en Render, producción va sin EDGAR.** Compruébalo al empezar (`/api/health`
-  o un análisis de JNJ: si su Altman sale "sin dato", no está). Todo lo que la fase 3 apoye en EDGAR debe degradar
-  igual que en la 2b ("verificación oficial no disponible") y decirlo.
+- **Si `SEC_EDGAR_USER_AGENT` aún no está en Render, producción va sin EDGAR** (comprobado por el planificador el
+  2026-10-16: `data_provenance.edgar.status = "desactivado"` en JNJ). Compruébalo al empezar. Todo lo que la fase 3
+  apoye en EDGAR debe degradar igual que en la 2b ("verificación oficial no disponible") y decirlo. **Pero la fase 3
+  depende de EDGAR para clasificar (10+ ejercicios): sin la variable en Render, ningún deploy de esta fase se hace.**
+  Si al llegar a un deploy sigue sin estar, detente y pídesela al usuario; no despliegues una clasificación que en
+  producción caería entera a la regla de industria.
+- **Render (plan gratuito, D6):** memoria limitada (comprueba el límite del plan en el panel de Render; históricamente
+  512 MB) y disco efímero (la caché en disco se pierde en cada reinicio o deploy). El JSON de companyfacts de una
+  empresa grande pesa varios MB: mide el pico de memoria y diseña la caché con eso.
 - **F1 al cierre de la fase 2: 91.4%** (1290/1411; `edgar_verify.py --whatif`). Es la referencia que la fase 3 **no
   puede empeorar** salvo por un cambio de definición aprobado y explicado.
 - `frontend/out` se compila con `npm run build` (Turbopack) en el checkout principal; en un worktree el
@@ -93,7 +106,10 @@ Hechos que debes tener presentes:
   latencia, efecto en el veredicto con un what-if).
 - **Historia larga:** el cliente de la 2b guarda 4 ejercicios para el respaldo (`edgar.fy_backup_years`). La
   clasificación y el ciclo medio necesitan 10+. Diseña cómo se obtiene (companyfacts ya trae la historia; la
-  cuestión es qué se conserva y en qué caché) y mide su coste.
+  cuestión es qué se conserva y en qué caché) y mide su coste: **latencia en frío y en caliente, tamaño del JSON y
+  pico de memoria del proceso** al analizar las 3 empresas con más hechos del panel, frente al límite de Render. Con
+  disco efímero, di qué pasa tras cada reinicio (primera petición) y si basta una caché en memoria con extracto
+  reducido (solo los conceptos y ejercicios que usa el motor).
 - **Moneda del crecimiento** (F2b_PARADA2 §6): UL crece +0.5% en USD y −3.8% en EUR. Propón medir el crecimiento y el
   CAGR en la moneda de los estados (práctica estándar: el crecimiento operativo no incluye el tipo de cambio) y
   declarar aparte el efecto divisa.
@@ -101,11 +117,27 @@ Hechos que debes tener presentes:
 - **Detente y presenta** las cuatro cosas. El usuario decide la definición de cada campo, qué campos pasan a EDGAR
   principal, la moneda del crecimiento y la fuente de tasas base. Registra cada decisión literal en la bitácora.
 
+### T1b. Implementar las decisiones de T1 (capa de datos) → **PUNTO DE PARADA 1b: primer deploy**
+- Las definiciones aprobadas, EDGAR como fuente principal **en los campos aprobados** (con el respaldo de la fuente
+  actual y la regla del corte coherente de la 2b), la historia de 10+ ejercicios con la caché diseñada y el
+  crecimiento en la moneda decidida (con el efecto divisa declarado aparte). Un commit por decisión, test antes.
+- **F1** con `edgar_verify.py`: es el momento de acercarse a la meta del 95%. Informa el número con y sin los
+  cambios de definición, y las filas que siguen fuera con su causa.
+- Panel frente a T0 (`panel_run --compare`): cada cambio de nivel explicado por un campo. Golden: diff explicado y
+  aprobado antes de regenerar. Memoria y latencia medidas en local frente a T0.
+- **Requisito de deploy:** `SEC_EDGAR_USER_AGENT` en Render. Pide el "ok, pushea"; tras el deploy, comprobación en
+  producción (EDGAR "activo" en JNJ, BCS, UL y TSM; latencia en frío y en caliente; sin errores de memoria en el log
+  de Render que te muestre el usuario).
+- **Detente.** El clasificador (T2) se construye sobre la historia ya desplegada.
+
 ### T2. Clasificador (D4) → **PUNTO DE PARADA 2**
 - Implementa el orden de F3_DISENO §1.1 con la ciclicidad medida (§1.2) y GROWTH_PROFITABLE (§1.3), con los
   subtipos de FINANCIAL (§1.4: banco, aseguradora, conglomerado).
 - **Calibra los umbrales de §1.2 con el panel** y anota la calibración (qué umbral, qué tickers cambia, por qué).
   Prohibido elegir umbrales para que salga un ticker concreto: los casos esperados son la prueba, no el objetivo.
+- **Sensibilidad:** con 37 tickers el riesgo de sobreajuste es real. Muestra qué tickers cambian de arquetipo si cada
+  umbral se mueve ±20%. Un arquetipo que cambia con un movimiento pequeño se marca "frontera" y su confianza de
+  clasificación baja (y se dice en el informe).
 - Con historia < 8 ejercicios, la regla de industria actual con confianza baja, y dicho.
 - Entrega la **tabla de arquetipos del panel**: obtenido, esperado según el diseño, las medidas que lo deciden y la
   justificación de analista en una línea.
@@ -163,6 +195,10 @@ saques del texto a mano.
 ### T7. Verificación y despliegue → **PUNTO DE PARADA 3**
 - **Panel:** tabla final de arquetipo, calidad, precio y confianza frente a T0. Cada cambio de nivel, explicado por una
   regla de F3_DISENO con su commit.
+- **Incertidumbre (F4) antes y después:** distribución de niveles de precio y de confianza; nº de tickers con un solo
+  método de precio evaluable (en la línea base, 18/30: debe tender a 0); cuántos niveles cambian solo por la opción 3
+  de §7.17 (no contraer por falta del segundo método). Si la distribución de precio se vuelve extrema (casi todo
+  "muy exigente" o "atractivo"), detente: es señal de una banda mal calibrada, no de un mercado extremo.
 - **Ningún precio con DCF de fiabilidad baja sin el inverso mostrado** (PLAN §4: terminado cuando).
 - **Fichas de analista:** para un ticker de cada arquetipo, "cómo lo analizaría un analista" frente a lo que hace el
   motor.
@@ -172,6 +208,9 @@ saques del texto a mano.
   salvo por definiciones aprobadas; informa el número con y sin ellas.
 - Golden: un diff por causa, explicado, y **aprobado por el usuario antes de regenerar**. Tiempo del análisis frente
   a T0.
+- **Web:** los bloques nuevos (crecimiento exigido, ROTE implícito, subtipo financiero, GROWTH_PROFITABLE con su
+  etiqueta en castellano, perímetro, lecturas por modelo de negocio) se ven en la web y en el PDF; `frontend/out`
+  recompilado con `npm run build` en el checkout principal; comprobación visual de un ticker por arquetipo.
 - **Detente y presenta.** Pide el "ok, pushea". Tras el deploy, `/api/health` y comprobación en producción
   (concurrencia ≤ 3) de un ticker por arquetipo, más PLTR, NVDA, CAT, MU, BCS, BRK-B, UL y AMZN.
 
@@ -181,6 +220,9 @@ motivo). Detente: el prompt de la fase 4 lo escribe el planificador.
 
 ## 4. Reglas que no se rompen
 
+- **Todo texto nuevo pasa por el guardián:** cada frase nueva (crecimiento exigido, ROTE implícito, ciclicidad,
+  perímetro, cautiva, lecturas por industria) declara sus afirmaciones, con su caso en `test_guardian_detecta.py`.
+  Ningún código interno (`GROWTH_PROFITABLE`, nombres de reglas) fuera del anexo técnico (D1).
 - **Sin parches.** Cada regla de método, con práctica estándar citada y medida en el panel. Cada cambio dice si es
   arreglo de fondo o provisional. Uno provisional, solo con la aprobación del usuario y su fase de sustitución en el
   mapa.
@@ -203,7 +245,8 @@ motivo). Detente: el prompt de la fase 4 lo escribe el planificador.
 
 ## 5. Definición de terminado de la fase 3
 
-- [ ] Definiciones de D2 decididas por el usuario, y EDGAR como fuente principal en los campos que él apruebe.
+- [ ] Definiciones de D2 decididas por el usuario, y EDGAR como fuente principal en los campos que él apruebe;
+      primer deploy (T1b) con EDGAR activo en producción.
 - [ ] Historia de 10+ ejercicios disponible para clasificar y para el ciclo medio; crecimiento en la moneda decidida.
 - [ ] Fuente de tasas base verificada (con página y edición) y en `config/`.
 - [ ] Clasificador D4 calibrado y documentado; **todo el panel con arquetipo aprobado línea a línea**.
@@ -212,5 +255,7 @@ motivo). Detente: el prompt de la fase 4 lo escribe el planificador.
 - [ ] Financieras con sus métricas (ROTE implícito y ajustado por AT1, aseguradora, conglomerado); BRK-B resuelto.
 - [ ] Crecimiento (§4) y lecturas por modelo de negocio (§5), incluida la cautiva de CAT.
 - [ ] Fichas de analista por arquetipo y revisión externa de 2–3 tickers.
-- [ ] F1 sin empeorar (o explicado por definiciones aprobadas); golden aprobados; tiempo medido.
+- [ ] F1 sin empeorar (o explicado por definiciones aprobadas), informado tras T1b y tras T7; golden aprobados;
+      tiempo y memoria medidos.
+- [ ] Métricas de incertidumbre antes/después (niveles de precio y confianza, métodos evaluables).
 - [ ] Desplegado con "ok, pushea" y verificado en producción; RECON §7.22 y bitácora al día.
