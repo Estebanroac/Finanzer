@@ -168,3 +168,11 @@ def test_scale_error_is_dropped():
     h = sec_edgar.annual_history(_facts(shares, []), "diluted_shares")
     assert [v["fy_end"][:4] for v in h["values"]] == ["2021", "2020", "2019"]
     assert h["dropped_scale_errors"] == ["2018-12-31"]
+
+
+def test_cyclical_with_structural_growth_keeps_cyclical():
+    # §1.1 paso 6: cíclica que además crece con beneficio → CYCLICAL con la nota de crecimiento estructural.
+    rev = [100, 130, 95, 140, 190, 150, 120, 200, 280, 220, 330, 480]
+    h = H(rev, eps=[2, 4, 0.5, 4, 7, 3, -1, 6, 10, 2, 12, 20], shares=[10.0] * 12)
+    c = _cls("Semiconductors", h, om=0.35)
+    assert c["archetype"] == CYCLICAL and c["structural_growth"] and "crecimiento estructural" in c["reason"]

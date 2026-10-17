@@ -422,10 +422,18 @@ def classify(*, sector: Optional[str], industry: Optional[str], eps_ttm: Optiona
             what = "; ".join(filter(None, [
                 f"caídas de ingresos ≥ {_C['cyclicality']['revenue_decline'] * 100:.0f}% en {eps_}" if eps_ else "",
                 f"desplomes del BPA con caída de ingresos en {col}" if col else ""]))
-            return out(CYCLICAL, f"Clasificada como CYCLICAL por su historia ({m['years']} ejercicios en EDGAR): {what}",
-                       "historia_ciclica",
-                       f"Cíclica por su historia: en {m['years']} ejercicios, {what}.",
-                       frontier=cyc["sensitivity"])
+            # §1.1 paso 6: si además crece con beneficio, se reconoce como nota (crecimiento estructural), sin
+            # cambiar de herramienta: la que más crece en la parte alta del ciclo es la que más necesita el ciclo medio.
+            gp = _growth_profitable(eps_ttm, operating_margin_ttm, fcf_sbc_margin, history, st)
+            inputs["growth_profitable"] = gp
+            note = (f"; además crece con beneficio (crecimiento estructural: ingresos por acción "
+                    f"{gp['revenue_ps_cagr_3y'] * 100:.1f}% anual a 3 años)" if gp["meets"] else "")
+            res = out(CYCLICAL, f"Clasificada como CYCLICAL por su historia ({m['years']} ejercicios en EDGAR): "
+                                f"{what}{note}", "historia_ciclica",
+                      f"Cíclica por su historia: en {m['years']} ejercicios, {what}{note}.",
+                      frontier=cyc["sensitivity"])
+            res["structural_growth"] = gp["meets"]
+            return res
     elif ind in _C["cyclical_industries"] or ind in _C["cyclical_conditional_industries"]:
         short = (f" (historia corta: {cyc['measures']['years']} ejercicios en EDGAR, menos de "
                  f"{_C['cyclicality']['min_years']})" if cyc is not None else " (sin historia de EDGAR)")
