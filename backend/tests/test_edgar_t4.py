@@ -346,3 +346,16 @@ def test_tm_annual_statements_drop_the_empty_interim_columns():
         store.current = "TM"
         st = yf_adapter.get_ticker_info("TM")["_statements_fy"]
     assert st["inc_ends"][:2] == ["2026-03-31", "2025-03-31"] and st["revenue"][1] is not None
+
+
+def test_results_8k_of_the_cut_itself_is_not_pending():
+    """Fase 6: BRK-B presenta el 10-Q (2026-08-10) un día antes que el 8-K de resultados del mismo trimestre."""
+    fl = [{"form": "8-K", "reportDate": "2026-08-08", "filingDate": "2026-08-11", "items": "2.02,9.01",
+           "accessionNumber": "8k", "isXBRL": False},
+          {"form": "10-Q", "reportDate": "2026-06-30", "filingDate": "2026-08-10", "items": "",
+           "accessionNumber": "q2", "isXBRL": True}]
+    assert edgar.pending_results(fl, "2026-06-30") is None
+    fl.append({"form": "8-K", "reportDate": "2026-11-01", "filingDate": "2026-11-02", "items": "2.02",
+               "accessionNumber": "q3", "isXBRL": False})
+    assert edgar.pending_results(fl, "2026-06-30")["accn"] == "q3"
+

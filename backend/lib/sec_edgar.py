@@ -1040,8 +1040,11 @@ def pending_results(fl: Optional[List[Dict[str, Any]]], cut: Optional[str]) -> O
     base = max([f["filingDate"] for f in covering] + [cut])
     newer = [f for f in fl if (f["form"] in ANNUAL_OR_QUARTERLY or (f["form"].startswith("6-K") and f["isXBRL"]))
              and rd(f) and rd(f) > c + tol]
+    # Fase 6: un 8-K de resultados dentro de `calendar_min_lag_days` del corte es el comunicado del propio corte, aunque
+    # llegue después de su 10-Q (BRK-B: 10-Q el 2026-08-10, 8-K el 08-11). Los del trimestre siguiente llegan después.
+    own = (c + _dt.timedelta(days=cfg("data.edgar.calendar_min_lag_days"))).isoformat()
     results_8k = [f for f in fl if f["form"] in ("8-K", "8-K/A") and "2.02" in (f.get("items") or "")
-                  and f["filingDate"] > base]
+                  and f["filingDate"] > max(base, own)]
     cands = newer + results_8k
     if not cands:
         return None
