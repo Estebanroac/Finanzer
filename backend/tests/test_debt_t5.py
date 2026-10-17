@@ -112,11 +112,15 @@ def test_bank_leverage_ratios_do_not_apply():
 
 
 @needs_panel
-def test_cat_captive_is_declared_not_used():
+def test_cat_captive_is_out_of_industrial_debt():
+    """Fase 3 (T6, F3_DISENO §8.6): la deuda de Cat Financial sale de la deuda industrial (DCF y apalancamiento)."""
     a = _run("CAT")
     d = a["data_provenance"]["debt"]
-    assert d["components"]["captive"]["value"] == pytest.approx(34.456e9, rel=1e-3)
-    assert a["key_metrics"]["total_debt"] == pytest.approx(d["source_total"])
+    cap = d["components"]["captive"]
+    assert cap["value"] == pytest.approx(34.456e9, rel=1e-3) and cap["in_rule_debt"] is False
+    assert d["captive_excluded"] == pytest.approx(cap["value"])
+    assert d["total"] == pytest.approx(d["total_with_captive"] - cap["value"])
+    assert a["key_metrics"]["total_debt"] == pytest.approx(d["total"])
 
 
 @needs_panel

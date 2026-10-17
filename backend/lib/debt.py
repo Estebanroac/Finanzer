@@ -136,6 +136,24 @@ def apply(info: Dict[str, Any], ed: Dict[str, Any], ctx=None) -> Dict[str, Any]:
                     "deuda coherente con el EBITDA: préstamos y bonos (Yahoo, sin sus arrendamientos) + arrendamiento "
                     "financiero (SEC EDGAR); el operativo queda fuera (US GAAP, su alquiler ya está en el EBITDA)",
                     paths=["totalDebt"], overwrite=True)
+    # Fase 3 (T6, F3_DISENO §8.6): la deuda de la financiera cautiva (CAT) financia su cartera de préstamos y
+    # arrendamientos a clientes, no la actividad industrial: queda fuera de la deuda neta del DCF y de las ratios de
+    # apalancamiento (la práctica de las propias empresas: CAT presenta "ME&T" sin Financial Products). Solo con el
+    # dato de la cautiva del mismo corte.
+    capc = comps.get("captive")
+    if capc and capc.get("value") and abs((_dt.date.fromisoformat(capc["date"]) - day).days) <= tol:
+        industrial = rule - capc["value"]
+        capc["in_rule_debt"] = False
+        capc["note"] = ("deuda de la financiera cautiva: fuera de la deuda industrial (deuda neta del DCF y ratios "
+                        "de apalancamiento; F3_DISENO §8.6). Su cartera de clientes, que la respalda, tampoco se valora "
+                        "en el DCF industrial")
+        out.update(total=industrial, total_with_captive=rule, captive_excluded=capc["value"])
+        info["totalDebt"] = industrial
+        _tag_provenance(info, "derivado",
+                        "deuda industrial: la deuda coherente con el EBITDA sin la de la financiera cautiva "
+                        f"({capc['name']}, SEC EDGAR)", paths=["totalDebt"], overwrite=True)
+    elif capc:
+        out["notes"].append(f"deuda de la financiera cautiva de otro corte ({capc['date']} frente a {at}): no se separa")
     _operating_leases_fy(info, facts, ctx, tol)
     return out
 
