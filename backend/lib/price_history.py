@@ -46,7 +46,10 @@ _pool = ThreadPoolExecutor(max_workers=2, thread_name_prefix="price_history")
 
 def normalize(raw) -> Optional[pd.DataFrame]:
     """DataFrame de yfinance → columnas open/high/low/close (sin ajustar), adj_close, volume, dividend, split;
-    índice de fechas de sesión (sin zona ni hora). Filas sin cierre se descartan."""
+    índice de fechas de sesión (sin zona ni hora). Se descartan las filas sin cierre, salvo la de una sesión que trae
+    máximo y mínimo: Yahoo da la barra del día con el cierre vacío hasta que la consolida (XOM en producción el
+    2026-10-16 a las 20:53 de Nueva York: máximo 179.16, mínimo 175.15, cierre NaN). Es la sesión de la cotización y
+    el rango de 52 semanas la necesita (la beta usa cierres y los descarta vacíos)."""
     if raw is None or getattr(raw, "empty", True) or "Close" not in raw:
         return None
     idx = pd.DatetimeIndex(raw.index)
@@ -66,8 +69,8 @@ def normalize(raw) -> Optional[pd.DataFrame]:
     df[["dividend", "split"]] = df[["dividend", "split"]].fillna(0.0)
     df.index.name = "date"
     df = df[~df.index.duplicated(keep="last")].sort_index()
-    df = df[df["close"].notna()]
-    return None if df.empty else df
+    df = df[df["close"].notna() | (df["high"].notna() & df["low"].notna())]
+    return None if df.empty or df["close"].notna().sum() == 0 else df
 
 
 def _download(symbol: str, fetcher: Fetcher, sleep=time.sleep, clock=time.perf_counter) -> Dict[str, Any]:

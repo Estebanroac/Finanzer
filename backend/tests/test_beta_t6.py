@@ -117,3 +117,21 @@ def test_without_price_series_beta_from_source_and_range_without_data():
         a = fb.run_analysis("MSFT", store)
     assert a["beta"]["source"] == "fuente" and B.SOURCE_UNVERIFIED in a["beta"]["reason"]
     assert a["key_metrics"]["price_52w_high"] is None and a["data_provenance"]["range52"]["status"] == "sin_dato"
+
+
+def test_session_without_close_kept_for_the_range():
+    """Producción, XOM 2026-10-16: Yahoo da la barra de hoy sin cierre (máximo 179.16, mínimo 175.15) y la cotización
+    178.98 es de hoy. Sin esa fila, el precio quedaba fuera de la serie y el rango salía sin dato."""
+    import pandas as pd
+    import price_history
+    import beta as B
+    idx = pd.date_range("2025-10-01", "2026-10-16", freq="B", tz="America/New_York")
+    raw = pd.DataFrame({"Open": 150.0, "High": 160.0, "Low": 140.0, "Close": 155.0, "Volume": 1.0}, index=idx)
+    raw.loc[idx[-2], ["High", "Close"]] = [178.69, 174.68]
+    raw.loc[idx[-1], ["High", "Low", "Close"]] = [179.16, 175.15, float("nan")]
+    frame = price_history.normalize(raw)
+    assert frame.index[-1] == pd.Timestamp("2026-10-16") and pd.isna(frame["close"].iloc[-1])
+    rg = B.range_52w(frame, 178.98)
+    assert rg["status"] == "ok" and rg["high"] == 179.16 and rg["last_session"] == "2026-10-16"
+    raw.loc[idx[-1], ["High", "Low"]] = [float("nan"), float("nan")]
+    assert price_history.normalize(raw).index[-1] == pd.Timestamp("2026-10-15")   # sin datos de la sesión: fuera
