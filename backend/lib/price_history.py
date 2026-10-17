@@ -126,6 +126,31 @@ def market() -> Dict[str, Any]:
     return _cached("^MARKET", H["market_cache_ttl_s"], make)
 
 
+def peek(symbol: str) -> Optional[Dict[str, Any]]:
+    """Fase 5: la serie del título que ya descargó el análisis (caché), sin volver a descargar si falló."""
+    with _lock:
+        ent = _cache.get(symbol.upper())
+    return ent[1] if ent else None
+
+
+def peek_market() -> Optional[Dict[str, Any]]:
+    with _lock:
+        ent = _cache.get("^MARKET")
+    return ent[1] if ent else None
+
+
+def sector(etf: Optional[str]) -> Dict[str, Any]:
+    """Fase 5: serie diaria del ETF del sector (fuerza relativa), en caché como la del índice (`market_cache_ttl_s`):
+    los análisis del mismo sector la comparten. Nunca bloquea: sin serie, la señal lo dice."""
+    if not etf:
+        return {"symbol": None, "frame": None, "attempts": 0, "latency_s": None, "reason": "sin ETF de sector"}
+    H = cfg("market.history")
+    try:
+        return _cached(f"^SECTOR:{etf.upper()}", H["market_cache_ttl_s"], lambda: _download(etf.upper(), FETCHER))
+    except Exception as e:  # la fuente falla de muchas maneras: el contexto sigue sin fuerza relativa
+        return {"symbol": etf, "frame": None, "attempts": None, "latency_s": None, "reason": f"{type(e).__name__}: {e}"}
+
+
 def _company_and_market(symbol: str) -> Dict[str, Any]:
     """El título y, después, el S&P 500 (en caché casi siempre) para la beta propia (T6)."""
     res = dict(company(symbol))
