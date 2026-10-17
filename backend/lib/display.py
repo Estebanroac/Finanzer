@@ -993,6 +993,15 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     # Etapa 9b: sin jerga ("crudo / contraído"): sin ajustar X → ajustado a Y por confianza media.
     price_note = (f"sin ajustar {p_raw} → ajustado a {p_score} por confianza {_pa.get('confidence')}"
                   if _pa.get("contracted") else None)
+    # Fase 4 (T2; mapa, efecto frontera): a 2 puntos o menos de otro nivel, se dice.
+    _bq, _bp = (_q.get("border") or {}).get("text"), (_pa.get("border") or {}).get("text")
+    for _part, _src, _key in (("quality", _q, "quality"), ("price", _pa, "price_attractiveness")):
+        _b = _src.get("border") or {}
+        if _b.get("text"):
+            _record(_b["text"], _claim("level_border", field=f"{_key}.border.points", value=_b.get("points"),
+                                       part=_part), source="display.border")
+    if _bp:
+        price_note = (price_note + "; " if price_note else "") + _bp
 
     n_red = len(alerts.get("red_flags") or [])
     n_warn = len(alerts.get("warnings") or [])
@@ -1288,8 +1297,8 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         "classification_notes": cls_notes,
         "quality": {"title": "CALIDAD DEL NEGOCIO", "question": "¿es buena la empresa?", "score": q_score,
                     "level": q_level, "tone": q_tone,
-                    "note": ("baja confianza: " + "; ".join(_q.get("low_confidence_reasons") or [])
-                             if _q.get("low_confidence") else _persist_txt)},
+                    "note": "; ".join(x for x in (("baja confianza: " + "; ".join(_q.get("low_confidence_reasons") or [])
+                                                   if _q.get("low_confidence") else _persist_txt), _bq) if x) or None},
         "price": {"title": "ATRACTIVO DEL PRECIO", "question": "¿está cara hoy?", "score": p_score, "raw": p_raw,
                   "contracted": bool(_pa.get("contracted")), "level": p_level, "tone": p_tone, "note": price_note},
         "categories": cat_groups,

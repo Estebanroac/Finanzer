@@ -62,6 +62,11 @@ CASES = {
                             {"quality": {"score": 93, "persistence": {"applied": True, "score_before": 100, "weighted": 0.65}}},
                             {"quality": {"score": 96, "persistence": {"applied": True, "score_before": 100,
                                                                       "weighted": 0.65}}}),
+    "level_border": ("en la frontera con «exigente» (a 1 punto): un cambio pequeño en los datos o en los supuestos "
+                     "cambiaría el nivel",
+                     [claim("level_border", field="price_attractiveness.border.points", value=1, part="price")],
+                     {"price_attractiveness": {"border": {"neighbor": "exigente", "points": 1}}},
+                     {"price_attractiveness": {"border": {"neighbor": "exigente", "points": 2}}}),
     "dcf_upside": ("el precio incorpora una prima de 20% sobre el valor intrínseco", [claim("dcf_upside")],
                    {"dcf": {"upside": -20.0}}, {"dcf": {"upside": 20.0}}),
     "dcf_rel": ("DCF no concluyente (fiabilidad baja)", [claim("dcf_rel")],

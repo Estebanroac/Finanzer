@@ -178,6 +178,12 @@ mature_total_return_min_yield = 0.04
 [score.total]                       # calculate_score_v2 (etapa 9a: ya no hay un score total único)
 max = 100                           # escala de cada una de las dos puntuaciones
 
+[score]
+# Fase 4 (T2; mapa, efecto frontera): a 2 puntos o menos de un umbral de nivel se avisa de la frontera. 2 puntos son
+# un ajuste de ±1 sobre 20 en una sola categoría reescalada (5 puntos) contraído por la confianza media (×0.75 ≈ 4)
+# a la mitad: el orden de lo que mueven 10 pb de Rf en el DCF o un múltiplo en el borde de su banda.
+border_points = 2
+
 # Etapa 9a — dos puntuaciones 0–100 (spec fallo 6, cambio 4). Cada categoría parte
 # de 10/20 (= 50: sin señales), así que 50 es el punto neutro de las dos escalas.
 [score.quality]                     # Calidad del negocio

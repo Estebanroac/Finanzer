@@ -26,6 +26,28 @@ def _level(value: Optional[float], bands, labels) -> Optional[str]:
     return next((labels[i] for i, b in enumerate(bands) if value >= b), labels[-1])
 
 
+def border(value: Optional[float], bands, labels) -> Optional[Dict[str, Any]]:
+    """Fase 4 (T2; mapa, efecto frontera de NVO): el nivel vecino si `value` está a `border_points` o menos de un
+    umbral. Un cambio pequeño en los datos o en los supuestos (10 pb de Rf) cambiaría el nivel: se dice."""
+    if value is None:
+        return None
+    k = cfg("thresholds.score.border_points")
+    best = None
+    for i, b in enumerate(bands):
+        d = value - b
+        # puntos que faltan para cruzar (el umbral pertenece a la banda alta): por encima, bajar d + 1; por debajo, −d
+        pts = int(round(d + 1 if d >= 0 else -d))
+        if pts <= k and (best is None or pts < best[0]):
+            # por encima del umbral i, el vecino es la banda de abajo (i + 1); por debajo, la de arriba (i)
+            best = (pts, labels[i + 1] if d >= 0 else labels[i])
+    if best is None:
+        return None
+    pts, nb = best
+    return {"neighbor": nb, "points": pts,
+            "text": f"en la frontera con «{nb}» (a {pts} punto{'s' if pts != 1 else ''}): "
+                    "un cambio pequeño en los datos o en los supuestos cambiaría el nivel"}
+
+
 def part_score(categories: List[Dict[str, Any]], names: List[str]) -> Dict[str, Any]:
     """Reescala a 0–100 las categorías `names` concluyentes y aplicables."""
     mx = cfg("thresholds.score.category.max")
@@ -52,6 +74,7 @@ def quality(categories: List[Dict[str, Any]]) -> Dict[str, Any]:
     Q = cfg("thresholds.score.quality")
     q = part_score(categories, Q["categories"])
     q["level"] = _level(q["score"], Q["bands"], Q["labels"])
+    q["border"] = border(q["score"], Q["bands"], Q["labels"])
     reasons = []
     if q["excluded_categories"]:
         reasons.append("categorías no concluyentes: " + ", ".join(q["excluded_categories"]))
@@ -71,7 +94,8 @@ def price(categories: List[Dict[str, Any]], confidence_level: Optional[str]) -> 
     shown = None if raw is None else (raw if factor is None else round(P["neutral"] + (raw - P["neutral"]) * factor))
     p.update(score_raw=raw, score=shown, factor=factor, confidence=confidence_level,
              contracted=(raw is not None and shown != raw),
-             level=_level(shown, P["bands"], P["labels"]), level_raw=_level(raw, P["bands"], P["labels"]))
+             level=_level(shown, P["bands"], P["labels"]), level_raw=_level(raw, P["bands"], P["labels"]),
+             border=border(shown, P["bands"], P["labels"]))
     return p
 
 

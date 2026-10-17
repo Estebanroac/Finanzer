@@ -101,6 +101,7 @@ KEYWORDS = [
     ("retorno_implicito", r"el precio descuenta un (?:rote|roe)", {"implied_return"}),
     # Fase 4 (T1): la calidad limitada por la persistencia cita el antes y el después.
     ("persistencia_calidad", r"exige persistencia", {"quality_persistence"}),
+    ("frontera_nivel", r"en la frontera con «", {"level_border"}),
     ("base_temporal", r"\binteranual\b|anual en 3 años|\(3 años\)|anual de ciclo medio",
      {"growth", "basis", "eps_vs_revenue"}),
 ]
@@ -365,6 +366,15 @@ def _p_quality_persistence(a, c, text):
         return f"dice {m.group(1)} → {m.group(2)} con {pq.get('score_before')} → {q.get('score')}"
 
 
+def _p_level_border(a, c, text):
+    """La frontera citada (nivel vecino y puntos) es la del análisis."""
+    part = (a.get("quality") if c.get("part") == "quality" else a.get("price_attractiveness")) or {}
+    b = part.get("border") or {}
+    m = re.search(r"en la frontera con «([^»]+)» \(a (\d+) puntos?\)", text)
+    if m and (m.group(1) != b.get("neighbor") or int(m.group(2)) != b.get("points")):
+        return f"dice frontera con {m.group(1)} a {m.group(2)} con {b.get('neighbor')!r} a {b.get('points')}"
+
+
 def _p_altman(a, c, text):
     z = {"safe": "segura", "grey": "gris", "distress": "de riesgo"}.get((a.get("altman_z") or {}).get("zone"))
     m = re.search(r"zona (segura|gris|de riesgo|de peligro)", text)
@@ -431,6 +441,7 @@ PREDICATES = {
     "price_contraction": _p_price_contraction, "implied_growth": _p_implied_growth,
     "implied_return": _p_implied_return,
     "quality_persistence": _p_quality_persistence,
+    "level_border": _p_level_border,
 }
 
 

@@ -210,8 +210,9 @@ def price_wording_without_jargon(a, text):
     assert "crudo" not in blob and "contraído por" not in blob
     if a["price_attractiveness"].get("contracted"):
         pa = a["price_attractiveness"]
-        assert note == (f"sin ajustar {pa['score_raw']} → ajustado a {pa['score']} "
-                        f"por confianza {pa['confidence']}")
+        # Fase 4 (T2): tras la contracción puede ir el aviso de frontera ("; en la frontera con «…»").
+        assert note.startswith(f"sin ajustar {pa['score_raw']} → ajustado a {pa['score']} "
+                               f"por confianza {pa['confidence']}")
 
 
 # ═══════════════════════ test_quality_price ═══════════════════════

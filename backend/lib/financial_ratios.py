@@ -3564,6 +3564,8 @@ def calculate_score_v2(
         from verdict import _level
         _Q = cfg("thresholds.score.quality")
         quality_part["level"] = _level(quality_part["score"], _Q["bands"], _Q["labels"])
+        from verdict import border as _border
+        quality_part["border"] = _border(quality_part["score"], _Q["bands"], _Q["labels"])
     price_part = part_score(categories, cfg("thresholds.score.price.categories"))
 
     result = {
