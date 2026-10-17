@@ -1494,3 +1494,20 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
   - `SEC_EDGAR_USER_AGENT` en Render;
   - "ok, pushea" y deploy;
   - permiso para descargar los datos de Damodaran.
+
+### #38 · 2026-10-17 · operador · Push de F3–F7 a `main` y deploy
+- **Aprobación del usuario:** "Ya puse SEC_EDGAR_USER_AGENT en Render. ok, pushea y despliega."
+- **Fusión:** fast-forward de `main` hasta `fiabilidad/f7-calibracion` (`134b6b6`, 119 commits).
+- **Frontend:** `frontend/out` recompilado con Turbopack (`5216bc6`). Lleva las pestañas de contexto de mercado y las lecturas de calidad; el sello del contrato coincide y no queda ningún archivo sin seguimiento.
+- **Suite en `main`:** "4113 passed, 1 skipped".
+- **Push:** `01336e2..5216bc6` a las 14:49 de Nueva York.
+- **Comprobación del checkout limpio** (`git archive`, sin variables de entorno):
+  - pasan todas las comprobaciones de `build.sh` (recursos, contrato);
+  - la app arranca y `/api/health` y `/` dan 200.
+- **Estado del deploy:** a los 45 minutos producción seguía en `01336e2`. Render no lo había desplegado, o falló sin que se vea desde fuera. Se hace un segundo push (este registro) para reintentar el deploy automático. La causa tiene que mirarse en el panel de Render, que solo puede abrir el usuario.
+- **Verificación en producción pendiente** del deploy:
+  - BRK-B, AAPL y O con concurrencia ≤ 3;
+  - `data_provenance.edgar.status`;
+  - P/E operativo de BRK-B;
+  - PDF;
+  - latencias.
