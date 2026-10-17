@@ -105,6 +105,19 @@ def apply(info: Dict[str, Any], ed: Dict[str, Any], ctx=None, symbol: Optional[s
             log["cut"].append({"field": key, "concept": got["concept"], "period_end": cut, "how": got["how"],
                                "accns": got["accns"], "value": val, "replaced": old, "why": r["why"]})
             _follow(info, key, old, val, fields, cut, ao["type"])
+        # Fase 7 (registro #36): beneficio operativo de aseguradoras y conglomerados. Las ganancias de inversiones
+        # del corte (realizadas y no realizadas, ASC 321) se guardan para que la normalización las excluya del
+        # beneficio con el que se valora (BRK-B: 39 mil millones antes de impuestos en 2025 sobre 67 de beneficio).
+        if any(r.get("why", "").startswith("ingresos sin ganancias de inversión") for r in rules):
+            gi = edgar.field_value(facts, "investment_gains", _dt.date.fromisoformat(cut), tol)
+            if gi is not None:
+                val = _convert(ctx, float(gi["value"]), "flow", cut)
+                info["_investment_gains"] = {"value": val, "concept": gi["concept"], "how": gi["how"],
+                                             "period_end": cut, "accns": gi["accns"]}
+                log["investment_gains"] = dict(info["_investment_gains"])
+            else:
+                log["skipped"].append({"field": "investment_gains",
+                                       "reason": f"EDGAR no tiene las ganancias de inversiones del periodo que acaba el {cut}"})
     else:
         log["reason"] = "sin corte identificable (ruta quoteSummary): manda la fuente"
     _apply_fy(info, facts, rules, ctx, tol, log)

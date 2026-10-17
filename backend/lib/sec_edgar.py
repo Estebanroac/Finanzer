@@ -96,6 +96,10 @@ CONCEPTS: Dict[str, Tuple[str, int, Tuple[str, ...], Tuple[str, ...]]] = {
         "PaymentsOfDividendsCommonStock", "PaymentsOfDividends", "PaymentsOfOrdinaryDividends"), (
         "DividendsPaidClassifiedAsFinancingActivities", "DividendsPaidToEquityHoldersOfParentClassifiedAsFinancingActivities",
         "DividendsPaid")),
+    # Fase 7 (decisión de método, registro #36): ganancias de inversiones en el resultado (realizadas y no realizadas,
+    # ASC 321), antes de impuestos. Las aseguradoras y los conglomerados las excluyen de su beneficio operativo.
+    "investment_gains": ("flow", 1, ("GainLossOnInvestments", "RealizedInvestmentGainsLosses",
+                                     "DebtAndEquitySecuritiesGainLoss", "EquitySecuritiesFvNiGainLoss"), ()),
     "total_assets": ("stock", 1, ("Assets",), ("Assets",)),
     "current_assets": ("stock", 1, ("AssetsCurrent",), ("CurrentAssets",)),
     "current_liabilities": ("stock", 1, ("LiabilitiesCurrent",), ("CurrentLiabilities",)),

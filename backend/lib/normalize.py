@@ -216,12 +216,34 @@ def infer_peaks(q: Dict[str, Any], ttm_quarters: int = 4) -> Dict[str, Any]:
 def normalize(*, net_income: Optional[float], explicit_rows: Dict[str, Optional[float]],
               quarterly: Optional[Dict[str, Any]], basis: str,
               tax_rate_fallback: Optional[float] = None,
-              annual_rows: Optional[Dict[str, List[Optional[float]]]] = None) -> Dict[str, Any]:
+              annual_rows: Optional[Dict[str, List[Optional[float]]]] = None,
+              investment_gains: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """Beneficio reportado y normalizado, ítems con tipo/confianza/origen y one_off_pct.
-    annual_rows: {fila de Yahoo: serie anual (más reciente primero)} para la recurrencia."""
+    annual_rows: {fila de Yahoo: serie anual (más reciente primero)} para la recurrencia.
+    investment_gains (fase 7, registro #36): ganancias de inversiones del periodo de una aseguradora o un
+    conglomerado ({value, concept, how}, de SEC EDGAR). Ítem ESTRUCTURAL: se excluye entero, sin prueba de recurrencia
+    (se repiten cada año: no son inusuales, son otra actividad), después de impuestos al tipo legal. Con él, las
+    ganancias por venta de valores de Yahoo no se cuentan otra vez, y un total de partidas inusuales que las incluya
+    tampoco."""
     C = cfg("thresholds.normalization")
     items: List[Dict[str, Any]] = []
-    ex = typed_items(explicit_rows or {}, annual_rows)
+    rows = dict(explicit_rows or {})
+    structural = investment_gains if (investment_gains or {}).get("value") not in (None, 0) else None
+    if structural:
+        rows.pop("Gain On Sale Of Security", None)
+        if any(rows.get(r) is not None for r in ("Total Unusual Items", "Total Unusual Items Excluding Goodwill")):
+            rows = {}
+        t = cfg("valuation.tax.statutory_rate")
+        g = float(structural["value"])
+        items.append({"type": "estructural", "confidence": "alta", "applied": True,
+                      "item_type": "ganancias_de_inversiones",
+                      "label": "ganancias de inversiones (realizadas y no realizadas)",
+                      "origin": f"SEC EDGAR ({structural.get('concept')}): {structural.get('how')} · beneficio operativo "
+                                "de una aseguradora o un conglomerado: sin las ganancias de su cartera",
+                      "period_gross": g, "gross": g, "net": g * (1 - t),
+                      "tax_source": f"tipo legal de EE. UU. {t:.0%}", "recurrent": True, "recurrent_years": None,
+                      "recurrent_average": None, "recurrence_window": None})
+    ex = typed_items(rows, annual_rows)
     if ex["gross"] not in (None, 0):
         # Efecto fiscal: tipo implícito de Yahoo (Tax Effect / bruto) aplicado a cada tipo,
         # si es un tipo plausible (tax_rate_bounds); si no (o con bruto ~0 por tipos de signo
@@ -260,7 +282,7 @@ def normalize(*, net_income: Optional[float], explicit_rows: Dict[str, Optional[
                       "recurrent": p["recurrent"], "recurrent_years": p["repeats"],
                       "applied": share is not None and share > C["one_off_pct"]})
     applied_net = sum(i["net"] for i in items if i["applied"])
-    has_explicit = any(i["type"] == "explicita" for i in items)
+    has_explicit = any(i["type"] in ("explicita", "estructural") for i in items)
     has_inferred = any(i["type"] == "inferida" and i["applied"] for i in items)
     normalized = (ni - applied_net) if (ni is not None and (has_explicit or has_inferred)) else ni
     one_off = (abs(applied_net) / abs(ni)) if (ni and (has_explicit or has_inferred)) else (0.0 if ni else None)

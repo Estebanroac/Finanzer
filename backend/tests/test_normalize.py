@@ -288,3 +288,27 @@ def test_nflx_fcf_growth_marked_anomalous(outputs_by_env):
         fcf = next(x for x in a["score"]["breakdown"]["Crecimiento"]["adjustments"]
                    if x["metric"] == "Crecimiento FCF 3Y")
         assert fcf["value"] == "69.8%"
+
+
+def test_insurer_investment_gains_are_a_structural_item():
+    """Fase 7 (registro #36): las ganancias de inversiones de una aseguradora o un conglomerado salen enteras del
+    beneficio operativo (sin prueba de recurrencia), después de impuestos al tipo legal; las ganancias por venta de
+    valores de Yahoo no se cuentan otra vez."""
+    from normalize import normalize
+    n = normalize(net_income=100.0, explicit_rows={"Gain On Sale Of Security": 10.0}, quarterly=None, basis="TTM",
+                  investment_gains={"value": 50.0, "concept": "us-gaap:GainLossOnInvestments", "how": "x"})
+    st = [i for i in n["items"] if i["type"] == "estructural"]
+    assert len(n["items"]) == 1 and st and st[0]["net"] == pytest.approx(50.0 * 0.79)
+    assert n["normalized_net_income"] == pytest.approx(100.0 - 39.5) and n["applied"]
+
+
+def test_brk_valued_on_operating_earnings_but_profitability_on_reported(outputs_by_env):
+    import conftest
+    if "panel" not in conftest.BOUND_ENVS:
+        pytest.skip("falta el panel")
+    a = outputs_by_env("panel")["BRK-B"][0]
+    n, km = a["earnings_normalization"], a["key_metrics"]
+    assert [i["item_type"] for i in n["items"]] == ["ganancias_de_inversiones"]
+    assert km["pe_normalized"] > km["pe"] * 1.5          # operativo ≈ la mitad del reportado
+    rent = {c["metric"]: c for c in a["score"]["breakdown"]["Rentabilidad"]["adjustments"]}
+    assert "ROE normalizado" not in str(rent)             # la rentabilidad sigue sobre el reportado

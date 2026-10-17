@@ -1731,6 +1731,9 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     if norm.get("applied") and norm.get("normalized_net_income") is not None and norm.get("differs", True):
         def _it_txt(it):
             lab = f"{it.get('label') or it['type']} ({it['type']}, confianza {it['confidence']})"
+            if it["type"] == "estructural":    # fase 7 (registro #36): beneficio operativo de una aseguradora
+                return (lab + f": {fv(it['net'], 'money')} netos, fuera del beneficio operativo con el que se calcula "
+                              "el P/E; la rentabilidad (ROE, ROA, margen) sigue sobre el beneficio reportado")
             if it.get("recurrent"):
                 per = (f"{it.get('recurrent_years')} trimestres" if it["type"] == "inferida" else
                        f"{it.get('recurrent_years')} de los últimos {it.get('recurrence_window')} ejercicios")
@@ -1741,10 +1744,14 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                 lab += f": {fv(it['net'], 'money')} netos"
             return lab + ("" if it.get("applied") else ", bajo el umbral, no aplicada")
         _its = "; ".join(_it_txt(it) for it in norm.get("items") or [])
+        _only_struct = all(it["type"] == "estructural" for it in norm.get("items") or [] if it.get("applied"))
         norm_note = (f"Beneficio {norm.get('basis')}: reportado {fv(norm.get('reported_net_income'), 'money')}, "
-                     f"normalizado {fv(norm.get('normalized_net_income'), 'money')} "
-                     f"(no recurrentes {norm['one_off_pct'] * 100:.1f}% del beneficio; {_its}). "
-                     + ("El score usa el beneficio normalizado." if norm.get("used_in_score") else ""))
+                     + (f"operativo {fv(norm.get('normalized_net_income'), 'money')} "
+                        f"(sin las ganancias de su cartera, {norm['one_off_pct'] * 100:.1f}% del beneficio; {_its})."
+                        if _only_struct else
+                        f"normalizado {fv(norm.get('normalized_net_income'), 'money')} "
+                        f"(no recurrentes {norm['one_off_pct'] * 100:.1f}% del beneficio; {_its}). "
+                        + ("El score usa el beneficio normalizado." if norm.get("used_in_score") else "")))
         if norm.get("pe_unreliable") and norm.get("pe_normalized") is not None and "pe" not in _na_keys:
             norm_note += (f" P/E reportado {fv(norm.get('pe_reported'), 'mult')} no fiable; "
                           f"P/E normalizado {fv(norm['pe_normalized'], 'mult')}.")

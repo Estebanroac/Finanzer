@@ -266,6 +266,13 @@ def normalized_figures_are_labelled(a, text):
     if not (a.get("earnings_normalization") or {}).get("differs"):
         assert not any("normalizado" in m and "EV/EBITDA" not in m and "P/FCF" not in m for m in metrics)
         return
+    applied = [i for i in a["earnings_normalization"].get("items") or [] if i.get("applied")]
+    if applied and all(i["type"] == "estructural" for i in applied):
+        # Fase 7 (registro #36): las ganancias de inversiones de una aseguradora salen solo del beneficio con el que se
+        # valora: el P/E va rotulado "normalizado" y la rentabilidad sigue sobre el reportado, sin rótulo.
+        assert any(m.startswith("P/E normalizado") for m in metrics) or "pe" in (a.get("not_applicable") or {})
+        assert "ROE normalizado" not in metrics and "Margen Neto normalizado" not in metrics
+        return
     assert "ROE" not in metrics and "Margen Neto" not in metrics
     if "ROE normalizado" in metrics:
         assert all("ROE" not in x["reason"].split(" — ")[0] or "normalizado" in x["reason"]

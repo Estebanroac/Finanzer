@@ -1325,7 +1325,8 @@ def _compute_analysis(symbol: str) -> dict:
                 _pt, _tx = (_stmts.get("pretax_income") or [None])[0], (_stmts.get("tax_provision") or [None])[0]
                 _t_fy = (_tx / _pt) if (_pt and _tx is not None and _pt > 0) else None
                 _norm = normalize_earnings(net_income=_ni, explicit_rows=_rows, quarterly=_qn, basis=_basis,
-                                           tax_rate_fallback=_t_fy, annual_rows=_stmts.get("unusual_fy") or {})
+                                           tax_rate_fallback=_t_fy, annual_rows=_stmts.get("unusual_fy") or {},
+                                           investment_gains=(yinfo.get("_investment_gains") if _has_yahoo else None))
                 _pe_rep = r("pe") if (r("pe") or 0) > 0 else None   # P/E <= 0 no es un múltiplo
                 _nin = _norm["normalized_net_income"]
                 _scale = (_ni / _nin) if (_norm["applied"] and _ni and _nin and _nin > 0 and _ni > 0) else None
@@ -1340,7 +1341,12 @@ def _compute_analysis(symbol: str) -> dict:
                 result["key_metrics"]["pe_normalized"] = _norm["pe_normalized"]
                 result["key_metrics"]["net_income_normalized"] = safe_float(_nin)
                 if _norm["used_in_score"] and _ni:
-                    _k = _nin / _ni
+                    # Fase 7 (registro #36): las ganancias de inversiones de una aseguradora o un conglomerado salen del
+                    # beneficio con el que se VALORA (P/E operativo, convención del mercado), no del de la RENTABILIDAD:
+                    # su patrimonio ya incluye la cartera a valor razonable e invertir el float es parte del negocio.
+                    _struct = sum(i["net"] for i in _norm["items"] if i.get("type") == "estructural" and i["applied"])
+                    _nin_q = _nin + _struct
+                    _k = _nin_q / _ni
                     ratios_score = dict(ratios)
                     if _scale:
                         ratios_score["pe"] = _norm["pe_normalized"]
@@ -1348,15 +1354,16 @@ def _compute_analysis(symbol: str) -> dict:
                     for _key in ("net_margin", "roe", "roa"):
                         if ratios.get(_key) is not None:
                             ratios_score[_key] = ratios[_key] * _k
-                    ratios_score["net_income"] = _nin
-                    if ratios.get("fcf") is not None and _nin:
-                        ratios_score["fcf_to_net_income"] = ratios["fcf"] / _nin
+                    ratios_score["net_income"] = _nin_q
+                    if ratios.get("fcf") is not None and _nin_q:
+                        ratios_score["fcf_to_net_income"] = ratios["fcf"] / _nin_q
+                    _q_differs = abs(_k - 1) > cfg("thresholds.normalization.label_min_diff")
                     # Etapa 9a: qué ratios del score y de las alertas salen del beneficio
                     # normalizado, para que el texto lo diga ("ROE normalizado 55.9%").
                     fin_dict["normalized_metrics"] = (
-                        ([k for k in ("net_margin", "roe", "roa") if ratios.get(k) is not None]
-                         + (["fcf_to_net_income"] if ratios.get("fcf") is not None else [])
-                         + (["pe", "earnings_yield"] if _scale else []))
+                        (([k for k in ("net_margin", "roe", "roa") if ratios.get(k) is not None]
+                          + (["fcf_to_net_income"] if ratios.get("fcf") is not None else [])) if _q_differs else [])
+                        + (["pe", "earnings_yield"] if _scale else [])
                         if _norm["differs"] else [])
             except Exception as e:
                 _sin_dato("normalizacion_ganancias", e)
