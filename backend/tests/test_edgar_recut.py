@@ -30,7 +30,8 @@ def _facts(with_q2_assets=True):
 def _info():
     fy = lambda t: {"period_end": "2025-12-31", "period_type": t}
     return {"totalRevenue": 1000.0, "netIncome": 100.0, "operatingCashflow": 150.0, "totalAssets": 5000.0,
-            "cash": 30.0, "trailingEps": 2.0, "currency": "USD",
+            "cash": 30.0, "trailingEps": 2.0, "currency": "USD", "totalStockholderEquity": 800.0,
+            "sharesOutstanding": 100.0, "bookValue": 8.0,
             "_as_of": {"type": "fy", "date": "2025-12-31", "reason": "sin corte trimestral",
                        "fields": {"totalRevenue": fy("fy"), "netIncome": fy("fy"), "operatingCashflow": fy("fy"),
                                   "totalAssets": fy("fy_balance"), "cash": fy("fy_balance")}},
@@ -93,3 +94,22 @@ def test_a_fresher_but_incomplete_cut_is_rejected():
     assert ok["status"] == "aplicado"
     no = eb.recut_verdict({"date": "2026-06-30", "from": "2025-12-31", "not_in_cut": ["totalDebt", "ebitda"]})
     assert no["status"] == "descartado" and no["lost"] == ["totalDebt", "ebitda"] and "se mantiene el ejercicio" in no["reason"]
+
+
+def test_book_value_per_share_follows_the_new_cut():
+    """Revisión de F6, hallazgo 3: la ficha mostraba el valor en libros del ejercicio junto a un P/B del corte."""
+    info, ed = _info(), {"status": "ok", "facts": _facts()}
+    info["_as_of"]["fields"]["totalStockholderEquity"] = {"period_end": "2025-12-31", "period_type": "fy_balance"}
+    info["_latest_q_balance"] = {"date": "2026-06-30", "values": {"totalStockholderEquity": 900.0}, "ordinary": {}}
+    rec = eb.recut(info, ed)
+    eb.apply(info, ed)
+    eb.recut_eps(info, rec)
+    assert info["bookValue"] == 9.0
+
+
+def test_recut_is_told_in_the_annex():
+    import display
+    a = {"data_provenance": {"edgar": {"recut": {"status": "aplicado", "date": "2026-06-30", "how": "ejercicio x",
+                                                 "yahoo_balance": ["cash"]}}}}
+    row = [r for r in display.official_source_annex(a) if r["label"].startswith("Corte de los doce meses")][0]
+    assert "BPA aproximado" in row["text"] and "acciones medias del ejercicio" in row["text"]

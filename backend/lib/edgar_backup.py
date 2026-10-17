@@ -182,6 +182,7 @@ def recut(info: Dict[str, Any], ed: Dict[str, Any], ctx=None) -> Optional[Dict[s
                 rec["yahoo_balance"] = sorted(lb["values"])
             # el ordinario (lib/ordinary.py) del mismo corte: patrimonio sí; beneficio del ordinario, sin desglose
             info["_ordinary_src"] = {"period_type": "ttm", "netIncomeToCommon": None, **(lb.get("ordinary") or {})}
+
         tt = info.setdefault("_ttm", {})
         tt.update(basis="ttm_edgar", cut=end, annual_fields={}, recut=f"SEC EDGAR: {rec['how']}")
         return rec
@@ -200,6 +201,11 @@ def recut_eps(info: Dict[str, Any], rec: Optional[Dict[str, Any]]) -> None:
     fields = ao.get("fields") or {}
     rec["not_in_cut"] = sorted(k for k, f in fields.items()
                                if info.get(k) is not None and (f or {}).get("period_end") not in (None, rec["date"]))
+    # Revisión de F6 (hallazgo 3): el valor en libros por acción, del patrimonio del nuevo corte (como _apply_ttm);
+    # si no, la ficha mostraba el del ejercicio junto a un P/B del corte.
+    eq, sh = info.get("totalStockholderEquity"), info.get("sharesOutstanding")
+    if eq is not None and sh and (fields.get("totalStockholderEquity") or {}).get("period_end") == rec["date"]:
+        info["bookValue"] = eq / sh
     ni, fy_ni, fy_eps = info.get("netIncome"), rec.get("fy_net_income"), rec.get("fy_eps")
     if ((fields.get("netIncome") or {}).get("period_end") == rec["date"] and ni is not None and fy_ni and fy_eps
             and fy_ni > 0 and fy_eps > 0):

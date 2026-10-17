@@ -507,6 +507,16 @@ def official_source_annex(a) -> list:
         items.append({"label": "Deuda coherente con el EBITDA (arrendamiento dentro solo si su coste no está en el "
                                "EBITDA)",
                       "text": "; ".join([head] + parts + list(dt.get("notes") or [])) + "."})
+    rc = (dp.get("edgar") or {}).get("recut") or {}
+    if rc.get("status") == "aplicado":
+        items.append({"label": "Corte de los doce meses (SEC EDGAR; Yahoo no trae 4 trimestres seguidos)", "text": (
+            f"al {rc['date']}: {rc['how']}; balance de Yahoo de esa fecha"
+            + (" y de SEC EDGAR lo que falte" if rc.get("yahoo_balance") else " (SEC EDGAR)")
+            + ". BPA aproximado: el del ejercicio × beneficio de los doce meses / beneficio del ejercicio (acciones "
+              "medias del ejercicio: no recoge la recompra o emisión posterior). Las partidas inusuales del ejercicio "
+              "no se aplican al beneficio de los doce meses.")})
+    elif rc.get("status") == "descartado":
+        items.append({"label": "Corte de SEC EDGAR descartado", "text": rc.get("reason", "") + "."})
     bk = (dp.get("edgar") or {}).get("backup") or {}
     rows = [f"{_FIELD_NAMES.get(x['field'], x['field'])} ({x['concept']}; {x['how']})" for x in bk.get("cut") or []]
     rows += [f"{_fy_field_name(x['field'])} del ejercicio cerrado el {x['fy_end']} ({x['concept']})"
@@ -529,12 +539,14 @@ _PROV_MAX_NAMES = 8
 
 def provenance_annex(a) -> Optional[Dict[str, str]]:
     """Fila del anexo técnico: campos del análisis por fuente. El mismo dato en varias rutas internas (p. ej.
-    `forwardPE` y `_yahoo_ratios.forwardPE`) cuenta una vez, con la fuente de la última ruta registrada."""
+    `forwardPE` y `_yahoo_ratios.forwardPE`, o `currentRatio` y `current_ratio`) cuenta una vez en cada fuente que
+    lo aportó (por su nombre legible)."""
     fields = (a.get("data_provenance") or {}).get("fields") or {}
     by_src: Dict[str, Dict[str, None]] = {}
     for k, v in fields.items():
         leaf = str(k).rsplit(".", 1)[-1]
-        by_src.setdefault(str((v or {}).get("source")), {})[leaf] = None
+        name = _FIELD_NAMES.get(leaf) or _MORE_FIELD_NAMES.get(leaf) or leaf
+        by_src.setdefault(str((v or {}).get("source")), {})[name] = None
     if not by_src:
         return None
     known = [c for c, _ in _SOURCE_NAMES]
@@ -547,7 +559,7 @@ def provenance_annex(a) -> Optional[Dict[str, str]]:
         if code in _COUNT_ONLY:
             parts.append(f"{label}: {len(names)} campos")
             continue
-        shown = [_FIELD_NAMES.get(n) or _MORE_FIELD_NAMES.get(n) or n for n in names[:_PROV_MAX_NAMES]]
+        shown = names[:_PROV_MAX_NAMES]
         rest = len(names) - len(shown)
         parts.append(f"{label}: {len(names)} ({', '.join(shown)}{f' y {rest} más' if rest else ''})")
     return {"label": "Procedencia de los datos (campos del análisis por fuente)", "text": "; ".join(parts) + "."}
@@ -564,7 +576,9 @@ _MORE_FIELD_NAMES = {
     "asset_turnover": "rotación del activo", "pe": "P/E", "ev_ebitda": "EV/EBITDA",
     "net_debt_to_ebitda": "deuda neta/EBITDA", "p_ffo": "P/FFO", "de": "deuda/patrimonio",
     "debt_to_assets": "deuda/activo", "enterprise_value": "valor de empresa", "ev_revenue": "EV/ventas",
-    "net_debt": "deuda neta", "long_term_debt": "deuda a largo plazo",
+    "net_debt": "deuda neta", "long_term_debt": "deuda a largo plazo", "trailingEps": "BPA",
+    "sharesOutstanding": "acciones", "marketCap": "capitalización", "currentPrice": "precio",
+    "regularMarketPrice": "precio", "fiftyTwoWeekHigh": "máximo de 52 semanas", "fiftyTwoWeekLow": "mínimo de 52 semanas",
 }
 
 
@@ -580,7 +594,8 @@ _FY_FIELD_NAMES = {"retained_earnings": "beneficios retenidos", "total_liabiliti
                    "capex": "inversión (capex)", "depreciation": "amortizaciones", "total_debt": "deuda total",
                    "stockholders_equity": "patrimonio", "current_assets": "activo corriente",
                    "current_liabilities": "pasivo corriente", "gross_profit": "beneficio bruto",
-                   "interest_expense": "gastos financieros", "shares": "acciones"}
+                   "interest_expense": "gastos financieros", "shares": "acciones",
+                   "capital_expenditure": "inversión (capex)", "depreciation_amortization": "amortizaciones"}
 
 
 _FIELD_NAMES = {

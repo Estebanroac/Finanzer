@@ -34,3 +34,13 @@ def test_edgar_fiscal_year_backup_has_readable_names():
         {"field": "FY.retained_earnings", "fy_end": "2025-12-31", "concept": "us-gaap:RetainedEarningsAccumulatedDeficit"}]}}}}
     row = [r for r in display.official_source_annex(a) if r["label"].startswith("Respaldo")][0]
     assert "beneficios retenidos del ejercicio cerrado el 2025-12-31" in row["text"] and "retained_earnings " not in row["text"]
+
+
+def test_same_field_under_two_internal_names_counts_once_and_every_fy_row_is_named():
+    """Revisión de F6, hallazgo 4: "liquidez corriente" salía dos veces (BRK-B, PGR); capex y amortizaciones de las
+    filas anuales, con su código."""
+    a = _a({"_yahoo_ratios.currentRatio": "finnhub", "_piotroski_current.current_ratio": "finnhub"})
+    assert "Finnhub: 1 (liquidez corriente)" in display.provenance_annex(a)["text"]
+    import edgar_backup
+    for row in edgar_backup.FY_ROWS:
+        assert display._fy_field_name(f"FY.{row}") != row, row
