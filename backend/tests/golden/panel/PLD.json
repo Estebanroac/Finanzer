@@ -1,7 +1,13 @@
 {
   "alerts": {
     "red_flags": [],
-    "strengths": [],
+    "strengths": [
+      {
+        "category": "Riesgo de mercado",
+        "detail": "Con beta 0.73, la acción se mueve menos que el mercado y tiende a amortiguar las caídas: un perfil más estable, útil para reducir la volatilidad de una cartera.",
+        "reason": "Perfil defensivo — Beta 0.73"
+      }
+    ],
     "warnings": [
       {
         "category": "Valoración",
@@ -28,7 +34,7 @@
     "fcf_per_share_cagr_3y": 0.0643952226266,
     "fcf_per_share_cagr_3y_reason": null,
     "ffo_cagr_3y": 0.0476884417165,
-    "ffo_margin": 0.755839429243,
+    "ffo_margin": 0.755211339394,
     "ffo_per_share_cagr_3y": 0.0454242703739,
     "ffo_per_share_cagr_3y_reason": null,
     "ffo_per_share_series": [
@@ -43,8 +49,8 @@
       5544105000.0,
       5177633000.0
     ],
-    "ffo_to_equity": 0.129286098752,
-    "ffo_ttm": 6945989000.0,
+    "ffo_to_equity": 0.129178664179,
+    "ffo_ttm": 6940217000.0,
     "shares_cagr_3y": 0.00216579182906
   },
   "benchmark": {
@@ -87,14 +93,34 @@
     }
   },
   "beta": {
-    "adjusted": 1.207889744,
+    "adjusted": 0.821657995622,
     "coefficients": [
       0.67,
       0.33
     ],
     "default": false,
+    "discrepancy": {
+      "note": "beta discrepante entre fuentes",
+      "own": 0.733817903914,
+      "source": 1.3102832,
+      "source_name": "finnhub",
+      "threshold": 0.5
+    },
     "method": "Blume",
-    "raw": 1.3102832
+    "own": {
+      "adjusted": 0.821657995622,
+      "first_week": "2024-10-25",
+      "last_week": "2026-10-16",
+      "observations": 104,
+      "r2": 0.215137467394,
+      "raw": 0.733817903914,
+      "reason": null,
+      "status": "ok"
+    },
+    "raw": 0.733817903914,
+    "reason": "2 años semanales frente al S&P 500 (104 semanas, R² 0.22), ajustada por Blume",
+    "source": "propia",
+    "source_beta": 1.3102832
   },
   "classification": {
     "alerts": [
@@ -111,7 +137,7 @@
     "inputs": {
       "assets_to_revenue": 11.2312661694,
       "eps_ttm": 3.56,
-      "net_margin_ttm": 0.457924073818,
+      "net_margin_ttm": 0.457295983968,
       "op_margin_detrended_std": 0.00509078848095,
       "revenue_cagr_3y": 0.137411044374,
       "revenue_cagr_3y_reason": null,
@@ -160,18 +186,16 @@
           "_yahoo_ratios.payoutRatio",
           "_yahoo_ratios.pegRatio",
           "_yahoo_ratios.quickRatio",
-          "beta",
           "dividendRate",
-          "earningsGrowth",
           "forwardPE",
-          "payoutRatio",
-          "revenueGrowth"
+          "payoutRatio"
         ],
-        "issues": 2,
-        "level": "media",
+        "issues": 3,
+        "level": "baja",
         "reasons": [
           "validación: capitalLeaseObligations (periodo_incoherente)",
-          "12 campos de Finnhub en lugar de los estados"
+          "validación: beta (beta_discrepante)",
+          "9 campos de Finnhub en lugar de los estados"
         ]
       },
       "stability": {
@@ -185,10 +209,10 @@
     "limits_score": false,
     "reasons": [
       "convergencia no evaluable: un solo método evaluable (múltiplos frente al sector): no hay contraste",
-      "calidad de fuente media: validación: capitalLeaseObligations (periodo_incoherente); 12 campos de Finnhub en lugar de los estados",
+      "calidad de fuente baja: validación: capitalLeaseObligations (periodo_incoherente); validación: beta (beta_discrepante); 9 campos de Finnhub en lugar de los estados",
       "estabilidad media: alerta de posible cíclica"
     ],
-    "score": 0.666666666667
+    "score": 0.5
   },
   "data_provenance": {
     "as_of": {
@@ -284,6 +308,31 @@
         }
       },
       "type": "ttm"
+    },
+    "beta": {
+      "adjusted": false,
+      "discrepancy": {
+        "note": "beta discrepante entre fuentes",
+        "own": 0.733817903914,
+        "source": 1.3102832,
+        "source_name": "finnhub",
+        "threshold": 0.5
+      },
+      "own": {
+        "adjusted": 0.821657995622,
+        "first_week": "2024-10-25",
+        "last_week": "2026-10-16",
+        "observations": 104,
+        "r2": 0.215137467394,
+        "raw": 0.733817903914,
+        "reason": null,
+        "status": "ok"
+      },
+      "reason": "2 años semanales frente al S&P 500 (104 semanas, R² 0.22), ajustada por Blume",
+      "source": "propia",
+      "source_beta": 1.3102832,
+      "source_name": "finnhub",
+      "value": 0.733817903914
     },
     "currency": {
       "converted": false,
@@ -420,6 +469,20 @@
       "source_rate": 4.22,
       "unit": "título"
     },
+    "ebit": {
+      "accns": [
+        "0001193125-26-051453",
+        "0001193125-26-323746"
+      ],
+      "concept": "us-gaap:OperatingIncomeLoss",
+      "diff": -0.297757067326,
+      "edgar_value": 5029130000.0,
+      "how": "ejercicio 2025-01-01 a 2025-12-31 + acumulado 2026-01-01 a 2026-06-30 − acumulado 2025-01-01 a 2025-06-30",
+      "period_end": "2026-06-30",
+      "source_value": 3531671000.0,
+      "status": "estimado",
+      "tolerance": 0.02
+    },
     "edgar": {
       "backup": {
         "cut": [],
@@ -555,7 +618,7 @@
         "source": "derivado"
       },
       "_yahoo_ratios.forwardPE": {
-        "detail": "/stock/metric",
+        "detail": "/stock/metric (forwardPE: estimación de consenso del proveedor, horizonte no documentado)",
         "source": "finnhub"
       },
       "_yahoo_ratios.interestCoverage": {
@@ -575,11 +638,11 @@
         "source": "finnhub"
       },
       "beta": {
-        "detail": "/stock/metric",
-        "source": "finnhub"
+        "detail": "2 años semanales frente al S&P 500 (104 semanas, R² 0.22), ajustada por Blume",
+        "source": "derivado"
       },
       "bookValue": {
-        "detail": "patrimonio (FY) / acciones de fast_info",
+        "detail": "patrimonio del accionista ordinario / acciones",
         "source": "derivado"
       },
       "capitalLeaseObligations": {
@@ -590,6 +653,10 @@
       "cash": {
         "detail": "balance del último trimestre (2026-06-30)",
         "source": "yfinance_statements"
+      },
+      "commonEquity": {
+        "detail": "patrimonio del accionista ordinario: el de los propietarios (53,725,722,000) sin preferentes 63,948,000",
+        "source": "derivado"
       },
       "currency": {
         "detail": "plan B: yfinance fast_info (sin crumb)",
@@ -616,8 +683,9 @@
         "source": "yfinance_statements"
       },
       "earningsGrowth": {
-        "detail": "/stock/metric",
-        "source": "finnhub"
+        "detail": "FY2025 frente a FY2024 de los estados anuales",
+        "rule": "periodo_incoherente",
+        "source": "derivado"
       },
       "ebitda": {
         "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
@@ -628,19 +696,19 @@
         "source": "yfinance_statements"
       },
       "fiftyTwoWeekHigh": {
-        "detail": "plan B: yfinance fast_info (sin crumb)",
-        "source": "yfinance_statements"
+        "detail": "máximo y mínimo diarios de las 251 sesiones de la serie (2025-10-15 a 2026-10-14, Yahoo history)",
+        "source": "derivado"
       },
       "fiftyTwoWeekLow": {
-        "detail": "plan B: yfinance fast_info (sin crumb)",
-        "source": "yfinance_statements"
+        "detail": "máximo y mínimo diarios de las 251 sesiones de la serie (2025-10-15 a 2026-10-14, Yahoo history)",
+        "source": "derivado"
       },
       "forwardEps": {
         "detail": "la fuente no lo devolvió",
         "source": "sin_dato"
       },
       "forwardPE": {
-        "detail": "/stock/metric",
+        "detail": "/stock/metric (forwardPE: estimación de consenso del proveedor, horizonte no documentado)",
         "source": "finnhub"
       },
       "freeCashflow": {
@@ -672,8 +740,8 @@
         "source": "yfinance_statements"
       },
       "netIncome": {
-        "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
-        "source": "yfinance_statements"
+        "detail": "beneficio atribuido al accionista ordinario: el de los propietarios (4,208,216,000) sin los cupones AT1 o dividendos preferentes (5,772,000)",
+        "source": "derivado"
       },
       "netInterestIncome": {
         "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
@@ -684,7 +752,7 @@
         "source": "yfinance_statements"
       },
       "operatingIncome": {
-        "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
+        "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30 · estimado por la fuente: difiere un -29.8% del que presenta el emisor en SEC EDGAR (us-gaap:OperatingIncomeLoss, 5,029,130,000)",
         "source": "yfinance_statements"
       },
       "payoutRatio": {
@@ -704,8 +772,9 @@
         "source": "yfinance_statements"
       },
       "revenueGrowth": {
-        "detail": "/stock/metric",
-        "source": "finnhub"
+        "detail": "FY2025 frente a FY2024 de los estados anuales",
+        "rule": "periodo_incoherente",
+        "source": "derivado"
       },
       "sector": {
         "detail": "búsqueda de Yahoo /v1/finance/search (sin crumb; no es quoteSummary)",
@@ -778,19 +847,80 @@
       "registered": true,
       "status": "registrado"
     },
+    "ordinary": {
+      "at1": 0.0,
+      "distributions": 5772000.0,
+      "equity_common": 53661774000.0,
+      "equity_owners": 53725722000.0,
+      "net_income_common": 4202444000.0,
+      "net_income_owners": 4208216000.0,
+      "notes": [],
+      "period_end": "2026-06-30",
+      "period_type": "ttm",
+      "preferred": 63948000.0,
+      "source": "Yahoo (estados de yfinance)"
+    },
     "path": "plan_b_yfinance",
     "pending_results": null,
+    "perimeter": {
+      "changed": false,
+      "discontinued": [],
+      "mixed_cagr": false,
+      "note": null,
+      "restated": [],
+      "series": [
+        {
+          "basis": "vigente",
+          "fy_end": "2025-12-31",
+          "restated": false
+        },
+        {
+          "basis": "vigente",
+          "fy_end": "2024-12-31",
+          "restated": false
+        },
+        {
+          "basis": "vigente",
+          "fy_end": "2023-12-31",
+          "restated": false
+        },
+        {
+          "basis": "vigente",
+          "fy_end": "2022-12-31",
+          "restated": false
+        }
+      ]
+    },
     "price_history": {
       "attempts": 1,
       "first_date": "2024-10-16",
       "interval": "1d",
       "last_date": "2026-10-14",
+      "market": {
+        "fallback_of": null,
+        "last_date": "2026-10-14",
+        "reason": null,
+        "rows": 500,
+        "status": "ok",
+        "symbol": "^GSPC"
+      },
       "period": "2y",
       "reason": null,
       "rows": 500,
       "source": "Yahoo Finance (yfinance history: precios sin ajustar por dividendos y eventos)",
       "status": "ok",
       "symbol": "PLD"
+    },
+    "range52": {
+      "first_session": "2025-10-15",
+      "high": 153.350006104,
+      "high_date": "2026-07-17",
+      "last_session": "2026-10-14",
+      "low": 116.510002136,
+      "low_date": "2025-10-15",
+      "reason": null,
+      "sessions": 251,
+      "status": "ok"
     },
     "ttm": {
       "annual_fields": {
@@ -865,6 +995,30 @@
     },
     {
       "action": "aviso",
+      "field": "revenueGrowth",
+      "new": 0.0717562771212,
+      "old": 0.0735,
+      "reason": "el interanual de la fuente (7.3%) es de su propio periodo: se usa el de los estados, FY2025 frente a FY2024 (7.2%)",
+      "rule": "periodo_incoherente"
+    },
+    {
+      "action": "aviso",
+      "field": "earningsGrowth",
+      "new": -0.112219451372,
+      "old": 0.2155,
+      "reason": "el interanual de la fuente (21.6%) es de su propio periodo: se usa el de los estados, FY2025 frente a FY2024 (-11.2%)",
+      "rule": "periodo_incoherente"
+    },
+    {
+      "action": "aviso",
+      "field": "beta",
+      "new": 0.733817903914,
+      "old": 1.3102832,
+      "reason": "beta discrepante entre fuentes: propia 0.73 frente a 1.31 de finnhub (diferencia > 0.5); se usa la propia",
+      "rule": "beta_discrepante"
+    },
+    {
+      "action": "aviso",
       "field": "ratios.quick_ratio",
       "new": null,
       "old": 0.2736,
@@ -892,12 +1046,16 @@
           "text": "un solo método evaluable (múltiplos frente al sector): no hay contraste"
         },
         {
-          "label": "Confianza · Calidad de fuente (media)",
-          "text": "validación: capitalLeaseObligations (periodo_incoherente); 12 campos de Finnhub en lugar de los estados"
+          "label": "Confianza · Calidad de fuente (baja)",
+          "text": "validación: capitalLeaseObligations (periodo_incoherente); validación: beta (beta_discrepante); 9 campos de Finnhub en lugar de los estados"
         },
         {
           "label": "Confianza · Estabilidad del arquetipo (media)",
           "text": "alerta de posible cíclica"
+        },
+        {
+          "label": "Beneficio operativo",
+          "text": "estimado por la fuente: el del proveedor de datos difiere un -29.8% del que presenta el emisor en SEC EDGAR (us-gaap:OperatingIncomeLoss, $5.03B en los doce meses al 2026-06-30). Se usa el del proveedor (D2) y se marca."
         },
         {
           "label": "Fuente oficial",
@@ -929,15 +1087,15 @@
                 "bench": 2.0,
                 "bench_txt": "2.00x",
                 "fmt": "mult",
-                "gap_pct": 15.4801003349,
-                "gap_txt": "+15%",
+                "gap_pct": 15.6177163864,
+                "gap_txt": "+16%",
                 "higher_is_better": false,
                 "key": "pb",
                 "label": "P/B",
                 "reading": "Prima moderada",
-                "text": "P/B de 2.3x frente a 2.0x del sector (+15%): prima moderada",
+                "text": "P/B de 2.3x frente a 2.0x del sector (+16%): prima moderada",
                 "tone": "warn",
-                "value": 2.3096020067,
+                "value": 2.31235432773,
                 "value_txt": "2.31x"
               },
               {
@@ -1208,7 +1366,7 @@
             "fmt": "pct",
             "higher_is_better": true,
             "key": "operating_margin",
-            "label": "Margen operativo",
+            "label": "Margen operativo (estimado por la fuente)",
             "state": "no_aplica",
             "text": "No aplica a REIT"
           },
@@ -1288,12 +1446,12 @@
           "state": "con_dato"
         },
         {
-          "amount": 4208216000.0,
-          "amount_txt": "$4.21B",
+          "amount": 4202444000.0,
+          "amount_txt": "$4.20B",
           "key": "net_income",
           "label": "Beneficio neto",
-          "pct_of_revenue": 45.7924073818,
-          "pct_txt": "45.8%",
+          "pct_of_revenue": 45.7295983968,
+          "pct_txt": "45.7%",
           "sign": "pos",
           "state": "con_dato"
         },
@@ -1471,17 +1629,17 @@
             "bench": 2.0,
             "bench_txt": "2.00x",
             "fmt": "mult",
-            "gap_pct": 15.4801003349,
-            "gap_txt": "+15%",
+            "gap_pct": 15.6177163864,
+            "gap_txt": "+16%",
             "higher_is_better": false,
             "key": "pb",
             "label": "P/B",
             "reading": "Prima moderada",
             "role": "informative",
             "state": "con_dato",
-            "text": "P/B de 2.3x frente a 2.0x del sector (+15%): prima moderada",
+            "text": "P/B de 2.3x frente a 2.0x del sector (+16%): prima moderada",
             "tone": "warn",
-            "value": 2.3096020067,
+            "value": 2.31235432773,
             "value_txt": "2.31x"
           },
           {
@@ -1561,8 +1719,8 @@
         {
           "key": "source",
           "label": "Calidad de fuente",
-          "level": "Media",
-          "text": "Un dato de la fuente no superó la validación y se corrigió o se descartó. Parte de los datos proviene de una fuente secundaria."
+          "level": "Baja",
+          "text": "Un dato de la fuente no superó la validación y se corrigió o se descartó. La beta calculada con dos años de cotizaciones difiere mucho de la del proveedor de datos; se usa la calculada. Parte de los datos proviene de una fuente secundaria."
         },
         {
           "key": "stability",
@@ -1576,6 +1734,7 @@
         "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo.",
         "Un dato de la fuente no superó la validación y se corrigió o se descartó.",
         "La empresa podría ser cíclica: sus resultados actuales pueden no ser representativos.",
+        "La beta calculada con dos años de cotizaciones difiere mucho de la del proveedor de datos; se usa la calculada.",
         "Parte de los datos proviene de una fuente secundaria."
       ],
       "reasons": [
@@ -1586,12 +1745,17 @@
         },
         {
           "dimension": "calidad de fuente",
-          "level": "media",
+          "level": "baja",
           "text": "Un dato de la fuente no superó la validación y se corrigió o se descartó."
         },
         {
           "dimension": "calidad de fuente",
-          "level": "media",
+          "level": "baja",
+          "text": "La beta calculada con dos años de cotizaciones difiere mucho de la del proveedor de datos; se usa la calculada."
+        },
+        {
+          "dimension": "calidad de fuente",
+          "level": "baja",
           "text": "Parte de los datos proviene de una fuente secundaria."
         },
         {
@@ -1693,7 +1857,7 @@
         {
           "kicker": "FORTALEZA CLAVE",
           "kind": "strength",
-          "text": "Fundamentos sólidos en la mayoría de categorías",
+          "text": "Perfil defensivo — Beta 0.73",
           "tone": "pos"
         },
         {
@@ -1726,7 +1890,7 @@
           "key": "p_ffo",
           "label": "P/FFO",
           "state": "con_dato",
-          "value": "17.86x"
+          "value": "17.88x"
         },
         {
           "key": "dividend_yield",
@@ -1738,7 +1902,7 @@
           "key": "payout_ratio",
           "label": "Payout sobre FFO",
           "state": "con_dato",
-          "value": "55.94%"
+          "value": "55.98%"
         },
         {
           "key": "de",
@@ -1756,7 +1920,7 @@
           "key": "beta",
           "label": "Beta bruta",
           "state": "con_dato",
-          "value": "1.31"
+          "value": "0.73"
         }
       ],
       "official_source_badge": null,
@@ -1816,9 +1980,9 @@
     "pe_label": "P/E (TTM)",
     "readings": {
       "beta": {
-        "label": "Volátil",
-        "text": "con beta 1.31, la acción amplifica los movimientos del mercado",
-        "tone": "warn"
+        "label": "Defensiva",
+        "text": "con beta 0.73, la acción amortigua los movimientos del mercado",
+        "tone": "pos"
       },
       "buyback_yield": {
         "label": "Neutra",
@@ -1869,7 +2033,7 @@
       "alerts": {
         "counts": {
           "red_flags": 0,
-          "strengths": 0,
+          "strengths": 1,
           "warnings": 1
         },
         "groups": [
@@ -1892,7 +2056,13 @@
             "tone": "warn"
           },
           {
-            "items": [],
+            "items": [
+              {
+                "category": "Riesgo de mercado",
+                "detail": "Con beta 0.73, la acción se mueve menos que el mercado y tiende a amortiguar las caídas: un perfil más estable, útil para reducir la volatilidad de una cartera.",
+                "reason": "Perfil defensivo — Beta 0.73"
+              }
+            ],
             "key": "strengths",
             "title": "Fortalezas",
             "tone": "pos"
@@ -1959,12 +2129,12 @@
             "bench": null,
             "gap": null,
             "key": "revenue_growth_yoy",
-            "label": "Crecimiento de ingresos (interanual)",
+            "label": "Crecimiento de ingresos (último ejercicio)",
             "reading": "—",
             "state": "con_dato",
             "text": null,
             "tone": null,
-            "value": "7.35%"
+            "value": "7.18%"
           },
           {
             "bench": null,
@@ -2086,11 +2256,11 @@
                 {
                   "in_block": false,
                   "metric": "Margen FFO",
-                  "reason": "Excelente (75.6%) - FFO sobre ingresos",
+                  "reason": "Excelente (75.5%) - FFO sobre ingresos",
                   "sign": "+5",
                   "state": "con_dato",
                   "tone": "pos",
-                  "value": "75.6%"
+                  "value": "75.5%"
                 },
                 {
                   "in_block": false,
@@ -2287,10 +2457,10 @@
             "$8.52B"
           ],
           [
-            "Beneficio operativo",
+            "Beneficio operativo (estimado por la fuente)",
             "$3.53B",
             "Beneficio neto",
-            "$4.21B"
+            "$4.20B"
           ],
           [
             "Flujo de caja operativo",
@@ -2302,10 +2472,10 @@
             "EPS",
             "$3.56",
             "Valor en libros / acción",
-            "$56.53"
+            "$56.47"
           ]
         ],
-        "intro": "FFO / patrimonio de 12.9%: excelente, retorno del FFO sobre el patrimonio contable. Margen FFO de 75.6%: excelente, FFO sobre ingresos.",
+        "intro": "FFO / patrimonio de 12.9%: excelente, retorno del FFO sobre el patrimonio contable. Margen FFO de 75.5%: excelente, FFO sobre ingresos.",
         "roce_reading": null,
         "rows": [
           {
@@ -2356,7 +2526,7 @@
             "bench": "—",
             "gap": "—",
             "key": "operating_margin",
-            "label": "Margen operativo",
+            "label": "Margen operativo (estimado por la fuente)",
             "reading": "No aplica a REIT",
             "state": "no_aplica",
             "text": null,
@@ -2392,9 +2562,9 @@
             "label": "Margen FFO",
             "reading": "Excelente",
             "state": "con_dato",
-            "text": "Excelente (75.6%) - FFO sobre ingresos",
+            "text": "Excelente (75.5%) - FFO sobre ingresos",
             "tone": "pos",
-            "value": "75.6%"
+            "value": "75.5%"
           },
           {
             "bench": "—",
@@ -2493,7 +2663,7 @@
             "state": "con_dato",
             "text": "el payout sobre FFO de 56% deja margen para sostener el dividendo",
             "tone": "pos",
-            "value": "55.94%"
+            "value": "55.98%"
           }
         ]
       },
@@ -2541,7 +2711,7 @@
         "intro": "P/FFO (REIT): en línea (17.9x FFO).",
         "ke_note": null,
         "market_note": null,
-        "normalization_note": "Beneficio TTM (4 trimestres): reportado $4.21B, normalizado $3.59B (no recurrentes 14.7% del beneficio; cargos especiales (deterioros, litigios, reestructuración) (explicita, confianza alta): −$5.10M netos; ganancias por venta de valores (explicita, confianza alta), recurrente (4 de los últimos 4 ejercicios): solo el exceso sobre su promedio, $625.54M netos). El score usa el beneficio normalizado.",
+        "normalization_note": "Beneficio TTM (4 trimestres): reportado $4.20B, normalizado $3.58B (no recurrentes 14.8% del beneficio; cargos especiales (deterioros, litigios, reestructuración) (explicita, confianza alta): −$5.10M netos; ganancias por venta de valores (explicita, confianza alta), recurrente (4 de los últimos 4 ejercicios): solo el exceso sobre su promedio, $625.54M netos). El score usa el beneficio normalizado.",
         "provisional_note": "Medianas del sector: referencia PROVISIONAL, fijada a mano (no son medianas calculadas).",
         "rows": [
           {
@@ -2568,12 +2738,12 @@
           },
           {
             "bench": "2.00x",
-            "gap": "+15%",
+            "gap": "+16%",
             "key": "pb",
             "label": "P/B",
             "reading": "Prima moderada",
             "state": "con_dato",
-            "text": "P/B de 2.3x frente a 2.0x del sector (+15%): prima moderada",
+            "text": "P/B de 2.3x frente a 2.0x del sector (+16%): prima moderada",
             "tone": "warn",
             "value": "2.31x"
           },
@@ -2670,7 +2840,7 @@
         "wacc_breakdown": [
           {
             "label": "WACC",
-            "value": "9.27%"
+            "value": "8.02%"
           },
           {
             "label": "Peso del patrimonio",
@@ -2678,19 +2848,19 @@
           },
           {
             "label": "Coste del patrimonio (Ke)",
-            "value": "10.36%"
+            "value": "8.74%"
           },
           {
             "label": "Tasa libre de riesgo (Rf)",
             "value": "5.29%"
           },
           {
-            "label": "Beta bruta (de la fuente)",
-            "value": "1.31"
+            "label": "Beta bruta (propia, 2 años)",
+            "value": "0.73"
           },
           {
             "label": "Beta ajustada (Blume)",
-            "value": "1.21"
+            "value": "0.82"
           },
           {
             "label": "Prima de mercado implícita",
@@ -2713,13 +2883,13 @@
             "value": "10.00%"
           }
         ],
-        "wacc_note": "WACC 9.27% = 77.30% × Ke 10.36% (Rf 5.29% + β ajustada 1.21 [bruta 1.31, Blume] × prima implícita 4.20%) + 22.70% × Kd 6.18% × (1 − t 10.00%). Kd = Rf + spread del rating sintético A- (tabla de empresas grandes, cobertura 3.5x). t: tasa efectiva FY2025 (tasa efectiva 5.4% acotada a [10%, 35%]). Rf: ^TNX no disponible (sin cotización): valor de config."
+        "wacc_note": "WACC 8.02% = 77.30% × Ke 8.74% (Rf 5.29% + β ajustada 0.82 [bruta 0.73, propia, 2 años semanales frente al S&P 500, Blume] × prima implícita 4.20%) + 22.70% × Kd 6.18% × (1 − t 10.00%). Kd = Rf + spread del rating sintético A- (tabla de empresas grandes, cobertura 3.5x). t: tasa efectiva FY2025 (tasa efectiva 5.4% acotada a [10%, 35%]). Rf: ^TNX no disponible (sin cotización): valor de config."
       }
     },
     "summary": {
       "alert_counts": {
         "red_flags": 0,
-        "strengths": 0,
+        "strengths": 1,
         "warnings": 1
       },
       "cards": [
@@ -2867,7 +3037,7 @@
         },
         {
           "label": "RENTABILIDAD",
-          "text": "FFO / patrimonio 12.9%: excelente (12.9%); Margen FFO 75.6%: excelente (75.6%)."
+          "text": "FFO / patrimonio 12.9%: excelente (12.9%); Margen FFO 75.5%: excelente (75.5%)."
         },
         {
           "label": "SOLIDEZ",
@@ -2883,7 +3053,7 @@
         },
         {
           "label": "CONTEXTO DE MERCADO",
-          "text": "Cotiza en el 38% del rango de 52 semanas, en la zona media. Con beta 1.31, la acción amplifica los movimientos del mercado."
+          "text": "Cotiza en el 38% del rango de 52 semanas, en la zona media. Con beta 0.73, la acción amortigua los movimientos del mercado."
         },
         {
           "label": "CONFIANZA DEL VEREDICTO",
@@ -3444,13 +3614,13 @@
         "type": "explicita"
       }
     ],
-    "normalized_net_income": 3587774758.52,
+    "normalized_net_income": 3582002758.52,
     "one_off_net": 620441241.48,
-    "one_off_pct": 0.147435692816,
-    "pe_normalized": 43.0195916489,
+    "one_off_pct": 0.147638193746,
+    "pe_normalized": 43.0298120826,
     "pe_reported": 36.6769683495,
     "pe_unreliable": true,
-    "reported_net_income": 4208216000.0,
+    "reported_net_income": 4202444000.0,
     "used_in_score": true
   },
   "eps_vs_revenue_growth": null,
@@ -3474,8 +3644,8 @@
   },
   "key_metrics": {
     "asset_turnover": 0.0909771081166,
-    "beta": 1.3102832,
-    "book_value_per_share": 56.5335529436,
+    "beta": 0.733817903914,
+    "book_value_per_share": 56.4662628726,
     "buyback_yield": -0.00309840513105,
     "cash": 1765043000.0,
     "cash_ratio": 0.579885208524,
@@ -3483,7 +3653,7 @@
     "de": 0.67829865553,
     "debt_to_assets": 0.360770316186,
     "dividend_yield": 0.0323198266316,
-    "earnings_growth": 0.2155,
+    "earnings_growth": -0.112219451372,
     "earnings_yield": 0.0272650670162,
     "ebitda": 8522234000.0,
     "ebitda_margin": 0.682220051692,
@@ -3492,8 +3662,8 @@
     "ev_ebitda": 25.323151039,
     "ev_revenue": 17.2759614108,
     "fcf_yield": 0.0422369626243,
-    "ffo": 6945989000.0,
-    "ffo_payout": 0.559383984052,
+    "ffo": 6940217000.0,
+    "ffo_payout": 0.559849209326,
     "forward_pe": 44.26453,
     "free_cash_flow": 5240975000.0,
     "gross_margin": 0.743050858302,
@@ -3505,20 +3675,20 @@
     "net_debt": 34677042000.0,
     "net_debt_to_ebitda": 5.53111918696,
     "net_debt_to_ebitda_state": "ok",
-    "net_income": 4208216000.0,
-    "net_income_normalized": 3587774758.52,
+    "net_income": 4202444000.0,
+    "net_income_normalized": 3582002758.52,
     "net_interest_income": -1048929000.0,
-    "net_margin": 0.457924073818,
+    "net_margin": 0.457295983968,
     "operating_cash_flow": 5240975000.0,
     "operating_income": 3531671000.0,
     "operating_margin": 0.384304696267,
-    "p_ffo": 17.8642717894,
+    "p_ffo": 17.8791290449,
     "payout_basis": "ffo",
-    "payout_ratio": 0.559383984052,
-    "payout_ratio_net_income": 0.923306931013,
-    "pb": 2.3096020067,
+    "payout_ratio": 0.559849209326,
+    "payout_ratio_net_income": 0.924575080596,
+    "pb": 2.31235432773,
     "pe": 36.6769683495,
-    "pe_normalized": 43.0195916489,
+    "pe_normalized": 43.0298120826,
     "peg": 1.31953563841,
     "pfcf": 23.6759449039,
     "price_52w_high": 153.350006104,
@@ -3526,13 +3696,13 @@
     "ps": 13.5025209932,
     "quick_ratio": null,
     "revenue": 9189768000.0,
-    "revenue_growth": 0.0735,
-    "roa": 0.0416606079729,
+    "revenue_growth": 0.0717562771212,
+    "roa": 0.0416034661747,
     "roce": null,
     "roce_reason": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria",
     "roce_roic_divergence": null,
     "roce_state": "no_aplica",
-    "roe": 0.0783277700763,
+    "roe": 0.0783135496042,
     "roic": 0.0359548022729,
     "roic_reason": null,
     "roic_wacc_spread": null,
@@ -3541,7 +3711,7 @@
     "total_assets": 101011872000.0,
     "total_debt": 36442085000.0,
     "total_equity": 53725722000.0,
-    "wacc": 0.0927320620445
+    "wacc": 0.0801929075271
   },
   "not_applicable": {
     "altman": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria",
@@ -3636,7 +3806,7 @@
   "price_history": {
     "52w_high": 153.350006104,
     "52w_low": 116.510002136,
-    "beta": 1.3102832
+    "beta": 0.733817903914
   },
   "profile": {
     "country": "Unknown",
@@ -3689,7 +3859,7 @@
   },
   "ratios": {
     "asset_turnover": 0.0909771081166,
-    "beta": 1.3102832,
+    "beta": 0.733817903914,
     "cash_ratio": 0.579885208524,
     "current_ratio": 0.743817884341,
     "debt_to_assets": 0.360770316186,
@@ -3706,31 +3876,31 @@
     "fcf": null,
     "fcf_to_net_income": null,
     "fcf_yield": null,
-    "ffo": 6945989000.0,
-    "ffo_payout": 0.559383984052,
-    "ffo_per_share": 7.30900250865,
+    "ffo": 6940217000.0,
+    "ffo_payout": 0.559849209326,
+    "ffo_per_share": 7.30292885053,
     "forward_pe": 44.26453,
-    "graham_number": 67.2929237794,
+    "graham_number": 67.2528635532,
     "gross_margin": 0.743050858302,
     "interest_coverage": 3.46635108024,
     "inventory_turnover": null,
     "market_cap": 124085035342.0,
     "net_debt": 34677042000.0,
     "net_debt_to_ebitda": 5.53111918696,
-    "net_income": 4208216000.0,
-    "net_margin": 0.457924073818,
+    "net_income": 4202444000.0,
+    "net_margin": 0.457295983968,
     "operating_cash_flow": 5240975000.0,
     "operating_margin": 0.384304696267,
     "p_fcf": null,
-    "p_ffo": 17.8642717894,
-    "payout_ratio": 0.923306931013,
-    "pb": 2.3096020067,
+    "p_ffo": 17.8791290449,
+    "payout_ratio": 0.924575080596,
+    "pb": 2.31235432773,
     "pe": 36.6769683495,
     "peg": 1.31953563841,
     "ps": 13.5025209932,
     "quick_ratio": null,
-    "roa": 0.0416606079729,
-    "roe": 0.0783277700763,
+    "roa": 0.0416034661747,
+    "roe": 0.0783135496042,
     "roic": 0.0359548022729
   },
   "risk_free": {
@@ -3845,9 +4015,9 @@
           {
             "adjustment": 5,
             "metric": "Margen FFO",
-            "reason": "Excelente (75.6%) - FFO sobre ingresos",
+            "reason": "Excelente (75.5%) - FFO sobre ingresos",
             "severity": "excellent",
-            "value": "75.6%"
+            "value": "75.5%"
           },
           {
             "adjustment": 0,
@@ -3862,7 +4032,7 @@
         "coverage": 1.0,
         "details": [
           "Excelente (12.9%) - retorno del FFO sobre el patrimonio contable",
-          "Excelente (75.6%) - FFO sobre ingresos",
+          "Excelente (75.5%) - FFO sobre ingresos",
           "ROE, ROA, Margen neto, ROIC−WACC: No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria; Margen bruto, Margen operativo: No aplica a REIT: estructura de arrendamiento neto: el inquilino paga los costes del inmueble, así que los márgenes bruto y operativo no son comparables; la rentabilidad se mide sobre el FFO (no cuenta en la cobertura)"
         ],
         "max": 20,
@@ -4071,10 +4241,10 @@
   },
   "wacc": {
     "applicable": true,
-    "beta": 1.207889744,
+    "beta": 0.821657995622,
     "beta_default": false,
     "beta_method": "Blume",
-    "beta_raw": 1.3102832,
+    "beta_raw": 0.733817903914,
     "bounds": [
       0.06,
       0.2
@@ -4084,7 +4254,7 @@
     "equity": 124085035342.0,
     "kd": 0.0618,
     "kd_after_tax": 0.05562,
-    "ke": 0.103631369248,
+    "ke": 0.0874096358161,
     "mrp": 0.042,
     "rating": {
       "coverage": 3.46635108024,
@@ -4093,7 +4263,7 @@
       "spread": 0.0089,
       "table": "grandes"
     },
-    "raw": 0.0927320620445,
+    "raw": 0.0801929075271,
     "reason": null,
     "rf": 0.0529,
     "rf_as_of": null,
@@ -4103,7 +4273,7 @@
     "tax_rate": 0.1,
     "tax_reason": "tasa efectiva 5.4% acotada a [10%, 35%]",
     "tax_source": "efectiva",
-    "value": 0.0927320620445,
+    "value": 0.0801929075271,
     "weights": {
       "debt": 0.22701512942,
       "equity": 0.77298487058

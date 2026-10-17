@@ -10,8 +10,8 @@
     "strengths": [
       {
         "category": "Rentabilidad",
-        "detail": "El ROIC supera al costo de capital (ROIC 15.7% vs WACC 10.6%): la reinversión genera valor, no solo crecimiento.",
-        "reason": "Crea valor — spread +5.0%"
+        "detail": "El ROIC supera al costo de capital (ROIC 15.7% vs WACC 10.5%): la reinversión genera valor, no solo crecimiento.",
+        "reason": "Crea valor — spread +5.1%"
       },
       {
         "category": "Solidez financiera",
@@ -59,11 +59,6 @@
         "category": "Valoración",
         "detail": "Se paga 17.5x EBITDA frente a 13.0x de sus pares (+35%): el mercado le asigna una prima que conviene contrastar con su ventaja competitiva.",
         "reason": "EV/EBITDA sobre el sector — 17.5x"
-      },
-      {
-        "category": "Riesgo de mercado",
-        "detail": "La acción amplifica ~52% los movimientos del mercado: cae más en las correcciones y sube más en los rallies. Razonable con horizonte largo y tolerancia al riesgo; resta si buscas estabilidad.",
-        "reason": "Volatilidad elevada — Beta 1.52"
       }
     ]
   },
@@ -126,14 +121,28 @@
     }
   },
   "beta": {
-    "adjusted": 1.345348619,
+    "adjusted": 1.32093269001,
     "coefficients": [
       0.67,
       0.33
     ],
     "default": false,
+    "discrepancy": null,
     "method": "Blume",
-    "raw": 1.5154457
+    "own": {
+      "adjusted": 1.32093269001,
+      "first_week": "2024-10-25",
+      "last_week": "2026-10-16",
+      "observations": 104,
+      "r2": 0.43866101857,
+      "raw": 1.47900401495,
+      "reason": null,
+      "status": "ok"
+    },
+    "raw": 1.47900401495,
+    "reason": "2 años semanales frente al S&P 500 (104 semanas, R² 0.44), ajustada por Blume",
+    "source": "propia",
+    "source_beta": 1.5154457
   },
   "classification": {
     "alerts": [],
@@ -196,14 +205,12 @@
           "_yahoo_ratios.inventoryTurnover",
           "_yahoo_ratios.pegRatio",
           "_yahoo_ratios.quickRatio",
-          "beta",
-          "forwardPE",
-          "revenueGrowth"
+          "forwardPE"
         ],
         "issues": 1,
         "level": "media",
         "reasons": [
-          "9 campos de Finnhub en lugar de los estados"
+          "7 campos de Finnhub en lugar de los estados"
         ]
       },
       "stability": {
@@ -216,7 +223,7 @@
     "reasons": [
       "convergencia no evaluable: un solo método evaluable (múltiplos frente al sector): no hay contraste",
       "cobertura baja: categorías excluidas por cobertura: Crecimiento; 16 de 19 componentes del score con dato (84%)",
-      "calidad de fuente media: 9 campos de Finnhub en lugar de los estados"
+      "calidad de fuente media: 7 campos de Finnhub en lugar de los estados"
     ],
     "score": 0.5
   },
@@ -319,6 +326,25 @@
       },
       "type": "ttm"
     },
+    "beta": {
+      "adjusted": false,
+      "discrepancy": null,
+      "own": {
+        "adjusted": 1.32093269001,
+        "first_week": "2024-10-25",
+        "last_week": "2026-10-16",
+        "observations": 104,
+        "r2": 0.43866101857,
+        "raw": 1.47900401495,
+        "reason": null,
+        "status": "ok"
+      },
+      "reason": "2 años semanales frente al S&P 500 (104 semanas, R² 0.44), ajustada por Blume",
+      "source": "propia",
+      "source_beta": 1.5154457,
+      "source_name": "finnhub",
+      "value": 1.47900401495
+    },
     "currency": {
       "converted": false,
       "price": "USD",
@@ -405,6 +431,20 @@
       "source_name": "finnhub",
       "source_rate": 0.0,
       "unit": "título"
+    },
+    "ebit": {
+      "accns": [
+        "0001018724-26-000004",
+        "0001018724-26-000014"
+      ],
+      "concept": "us-gaap:OperatingIncomeLoss",
+      "diff": 0.0,
+      "edgar_value": 85422000000.0,
+      "how": "ejercicio 2025-01-01 a 2025-12-31 + acumulado 2026-01-01 a 2026-03-31 − acumulado 2025-01-01 a 2025-03-31",
+      "period_end": "2026-03-31",
+      "source_value": 85422000000.0,
+      "status": "coincide",
+      "tolerance": 0.02
     },
     "edgar": {
       "backup": {
@@ -524,7 +564,7 @@
         "source": "derivado"
       },
       "_yahoo_ratios.forwardPE": {
-        "detail": "/stock/metric",
+        "detail": "/stock/metric (forwardPE: estimación de consenso del proveedor, horizonte no documentado)",
         "source": "finnhub"
       },
       "_yahoo_ratios.interestCoverage": {
@@ -544,8 +584,8 @@
         "source": "finnhub"
       },
       "beta": {
-        "detail": "/stock/metric",
-        "source": "finnhub"
+        "detail": "2 años semanales frente al S&P 500 (104 semanas, R² 0.44), ajustada por Blume",
+        "source": "derivado"
       },
       "bookValue": {
         "detail": "patrimonio (FY) / acciones de fast_info",
@@ -584,8 +624,9 @@
         "source": "derivado"
       },
       "earningsGrowth": {
-        "detail": "la fuente no lo devolvió",
-        "source": "sin_dato"
+        "detail": "FY2025 frente a FY2024 de los estados anuales",
+        "rule": "periodo_incoherente",
+        "source": "derivado"
       },
       "ebitda": {
         "detail": "TTM: suma de los 4 trimestres 2026-03-31, 2025-12-31, 2025-09-30, 2025-06-30",
@@ -596,19 +637,19 @@
         "source": "yfinance_statements"
       },
       "fiftyTwoWeekHigh": {
-        "detail": "plan B: yfinance fast_info (sin crumb)",
-        "source": "yfinance_statements"
+        "detail": "máximo y mínimo diarios de las 251 sesiones de la serie (2025-10-15 a 2026-10-14, Yahoo history)",
+        "source": "derivado"
       },
       "fiftyTwoWeekLow": {
-        "detail": "plan B: yfinance fast_info (sin crumb)",
-        "source": "yfinance_statements"
+        "detail": "máximo y mínimo diarios de las 251 sesiones de la serie (2025-10-15 a 2026-10-14, Yahoo history)",
+        "source": "derivado"
       },
       "forwardEps": {
         "detail": "la fuente no lo devolvió",
         "source": "sin_dato"
       },
       "forwardPE": {
-        "detail": "/stock/metric",
+        "detail": "/stock/metric (forwardPE: estimación de consenso del proveedor, horizonte no documentado)",
         "source": "finnhub"
       },
       "freeCashflow": {
@@ -676,8 +717,9 @@
         "source": "yfinance_statements"
       },
       "revenueGrowth": {
-        "detail": "/stock/metric",
-        "source": "finnhub"
+        "detail": "FY2025 frente a FY2024 de los estados anuales",
+        "rule": "periodo_incoherente",
+        "source": "derivado"
       },
       "sector": {
         "detail": "búsqueda de Yahoo /v1/finance/search (sin crumb; no es quoteSummary)",
@@ -750,6 +792,19 @@
       "registered": true,
       "status": "registrado"
     },
+    "ordinary": {
+      "at1": 0.0,
+      "distributions": 0.0,
+      "equity_common": 441914000000.0,
+      "equity_owners": 441914000000.0,
+      "net_income_common": 90798000000.0,
+      "net_income_owners": 90798000000.0,
+      "notes": [],
+      "period_end": "2026-03-31",
+      "period_type": "ttm",
+      "preferred": 0.0,
+      "source": "Yahoo (estados de yfinance)"
+    },
     "path": "plan_b_yfinance",
     "pending_results": {
       "accn": "0001018724-26-000026",
@@ -760,17 +815,65 @@
       "report_date": "2026-06-30",
       "source": "SEC EDGAR"
     },
+    "perimeter": {
+      "changed": false,
+      "discontinued": [],
+      "mixed_cagr": false,
+      "note": null,
+      "restated": [],
+      "series": [
+        {
+          "basis": "vigente",
+          "fy_end": "2025-12-31",
+          "restated": false
+        },
+        {
+          "basis": "vigente",
+          "fy_end": "2024-12-31",
+          "restated": false
+        },
+        {
+          "basis": "vigente",
+          "fy_end": "2023-12-31",
+          "restated": false
+        },
+        {
+          "basis": "vigente",
+          "fy_end": "2022-12-31",
+          "restated": false
+        }
+      ]
+    },
     "price_history": {
       "attempts": 1,
       "first_date": "2024-10-16",
       "interval": "1d",
       "last_date": "2026-10-14",
+      "market": {
+        "fallback_of": null,
+        "last_date": "2026-10-14",
+        "reason": null,
+        "rows": 500,
+        "status": "ok",
+        "symbol": "^GSPC"
+      },
       "period": "2y",
       "reason": null,
       "rows": 500,
       "source": "Yahoo Finance (yfinance history: precios sin ajustar por dividendos y eventos)",
       "status": "ok",
       "symbol": "AMZN"
+    },
+    "range52": {
+      "first_session": "2025-10-15",
+      "high": 287.200012207,
+      "high_date": "2026-08-03",
+      "last_session": "2026-10-14",
+      "low": 196.0,
+      "low_date": "2026-02-17",
+      "reason": null,
+      "sessions": 251,
+      "status": "ok"
     },
     "ttm": {
       "annual_fields": {
@@ -834,6 +937,14 @@
       "old": 12.4325,
       "reason": "BPA TTM de Finnhub 12.4325 no casa con el del corte de los estados (8.36 a 2026-03-31): es de otro periodo y no entra",
       "rule": "periodo_incoherente"
+    },
+    {
+      "action": "aviso",
+      "field": "revenueGrowth",
+      "new": 0.123777546833,
+      "old": 0.1577,
+      "reason": "el interanual de la fuente (15.8%) es de su propio periodo: se usa el de los estados, FY2025 frente a FY2024 (12.4%)",
+      "rule": "periodo_incoherente"
     }
   ],
   "dcf_status": {
@@ -857,7 +968,7 @@
         },
         {
           "label": "Confianza · Calidad de fuente (media)",
-          "text": "9 campos de Finnhub en lugar de los estados"
+          "text": "7 campos de Finnhub en lugar de los estados"
         },
         {
           "label": "Fuente oficial",
@@ -1493,10 +1604,10 @@
         "spread": {
           "reading": "Crea valor",
           "state": "con_dato",
-          "text": "el ROIC (15.7%) supera al WACC (10.6%) en 5.0%, señal de creación de valor",
+          "text": "el ROIC (15.7%) supera al WACC (10.5%) en 5.1%, señal de creación de valor",
           "tone": "pos",
-          "value": 0.0503187481097,
-          "value_txt": "+5.0 pp"
+          "value": 0.051296959294,
+          "value_txt": "+5.1 pp"
         }
       },
       "results_flow": [
@@ -1995,7 +2106,7 @@
         {
           "kicker": "FORTALEZA CLAVE",
           "kind": "strength",
-          "text": "Crea valor — spread +5.0%",
+          "text": "Crea valor — spread +5.1%",
           "tone": "pos"
         },
         {
@@ -2058,7 +2169,7 @@
           "key": "beta",
           "label": "Beta bruta",
           "state": "con_dato",
-          "value": "1.52"
+          "value": "1.48"
         }
       ],
       "official_source_badge": null,
@@ -2102,7 +2213,7 @@
     "readings": {
       "beta": {
         "label": "Volátil",
-        "text": "con beta 1.52, la acción amplifica los movimientos del mercado",
+        "text": "con beta 1.48, la acción amplifica los movimientos del mercado",
         "tone": "warn"
       },
       "buyback_yield": {
@@ -2145,7 +2256,7 @@
       "payout_ratio": null,
       "pe": {
         "label": "Prima elevada",
-        "text": "el mercado paga 30.4x beneficios, un +52% frente a la mediana del sector (20.0x); una prima que encuentra respaldo parcial en la creación de valor de la compañía (ROIC−WACC de +5.0%)",
+        "text": "el mercado paga 30.4x beneficios, un +52% frente a la mediana del sector (20.0x); una prima que encuentra respaldo parcial en la creación de valor de la compañía (ROIC−WACC de +5.1%)",
         "tone": "neg"
       },
       "pos52": {
@@ -2165,7 +2276,7 @@
       },
       "roic_wacc_spread": {
         "label": "Crea valor",
-        "text": "el ROIC (15.7%) supera al WACC (10.6%) en 5.0%, señal de creación de valor",
+        "text": "el ROIC (15.7%) supera al WACC (10.5%) en 5.1%, señal de creación de valor",
         "tone": "pos"
       },
       "runway": null
@@ -2175,7 +2286,7 @@
         "counts": {
           "red_flags": 1,
           "strengths": 6,
-          "warnings": 5
+          "warnings": 4
         },
         "groups": [
           {
@@ -2211,11 +2322,6 @@
                 "category": "Valoración",
                 "detail": "Se paga 17.5x EBITDA frente a 13.0x de sus pares (+35%): el mercado le asigna una prima que conviene contrastar con su ventaja competitiva.",
                 "reason": "EV/EBITDA sobre el sector — 17.5x"
-              },
-              {
-                "category": "Riesgo de mercado",
-                "detail": "La acción amplifica ~52% los movimientos del mercado: cae más en las correcciones y sube más en los rallies. Razonable con horizonte largo y tolerancia al riesgo; resta si buscas estabilidad.",
-                "reason": "Volatilidad elevada — Beta 1.52"
               }
             ],
             "key": "warnings",
@@ -2226,8 +2332,8 @@
             "items": [
               {
                 "category": "Rentabilidad",
-                "detail": "El ROIC supera al costo de capital (ROIC 15.7% vs WACC 10.6%): la reinversión genera valor, no solo crecimiento.",
-                "reason": "Crea valor — spread +5.0%"
+                "detail": "El ROIC supera al costo de capital (ROIC 15.7% vs WACC 10.5%): la reinversión genera valor, no solo crecimiento.",
+                "reason": "Crea valor — spread +5.1%"
               },
               {
                 "category": "Solidez financiera",
@@ -2321,12 +2427,23 @@
             "bench": null,
             "gap": null,
             "key": "revenue_growth_yoy",
-            "label": "Crecimiento de ingresos (interanual)",
+            "label": "Crecimiento de ingresos (último ejercicio)",
             "reading": "—",
             "state": "con_dato",
             "text": null,
             "tone": null,
-            "value": "15.77%"
+            "value": "12.38%"
+          },
+          {
+            "bench": null,
+            "gap": null,
+            "key": "earnings_growth_yoy",
+            "label": "Crecimiento del BPA (último ejercicio)",
+            "reading": "—",
+            "state": "con_dato",
+            "text": null,
+            "tone": null,
+            "value": "29.66%"
           },
           {
             "bench": null,
@@ -2467,11 +2584,11 @@
                 {
                   "in_block": false,
                   "metric": "ROIC vs WACC",
-                  "reason": "Crea valor (ROIC 15.7% > WACC 10.6%, spread +5.0%)",
+                  "reason": "Crea valor (ROIC 15.7% > WACC 10.5%, spread +5.1%)",
                   "sign": "+2",
                   "state": "con_dato",
                   "tone": "pos",
-                  "value": "+5.0%"
+                  "value": "+5.1%"
                 }
               ],
               "max": 20,
@@ -2752,7 +2869,7 @@
             "$40.97"
           ]
         ],
-        "intro": "El ROE de 20.5% está en el rango alto de su sector (sector: 8.0% competitivo, 18.0% rango alto). El ROIC (15.7%) supera al WACC (10.6%) en 5.0%, señal de creación de valor.",
+        "intro": "El ROE de 20.5% está en el rango alto de su sector (sector: 8.0% competitivo, 18.0% rango alto). El ROIC (15.7%) supera al WACC (10.5%) en 5.1%, señal de creación de valor.",
         "roce_reading": "ROCE 16.60% en línea con el ROIC 15.68% (+0.9 pp, dentro de 10 pp).",
         "rows": [
           {
@@ -2828,9 +2945,9 @@
             "label": "Spread ROIC − WACC",
             "reading": "Crea valor",
             "state": "con_dato",
-            "text": "el ROIC (15.7%) supera al WACC (10.6%) en 5.0%, señal de creación de valor",
+            "text": "el ROIC (15.7%) supera al WACC (10.5%) en 5.1%, señal de creación de valor",
             "tone": "pos",
-            "value": "+5.0 pp"
+            "value": "+5.1 pp"
           },
           {
             "bench": "—",
@@ -2985,7 +3102,7 @@
             }
           ]
         },
-        "intro": "El mercado paga 30.4x beneficios, un +52% frente a la mediana del sector (20.0x); una prima que encuentra respaldo parcial en la creación de valor de la compañía (ROIC−WACC de +5.0%). La compañía quema caja libre a nivel operativo. Cotiza 189% por encima del número de Graham — habitual en compañías de calidad/crecimiento, donde este criterio de 1949 resulta demasiado restrictivo.",
+        "intro": "El mercado paga 30.4x beneficios, un +52% frente a la mediana del sector (20.0x); una prima que encuentra respaldo parcial en la creación de valor de la compañía (ROIC−WACC de +5.1%). La compañía quema caja libre a nivel operativo. Cotiza 189% por encima del número de Graham — habitual en compañías de calidad/crecimiento, donde este criterio de 1949 resulta demasiado restrictivo.",
         "ke_note": null,
         "market_note": null,
         "normalization_note": "Beneficio TTM (4 trimestres): reportado $90.80B, normalizado $69.22B (no recurrentes 23.8% del beneficio; partidas no recurrentes (total de Yahoo) (explicita, confianza alta): $21.58B netos). El score usa el beneficio normalizado. P/E reportado 30.39x no fiable; P/E normalizado 39.87x.",
@@ -3117,7 +3234,7 @@
         "wacc_breakdown": [
           {
             "label": "WACC",
-            "value": "10.64%"
+            "value": "10.55%"
           },
           {
             "label": "Peso del patrimonio",
@@ -3125,19 +3242,19 @@
           },
           {
             "label": "Coste del patrimonio (Ke)",
-            "value": "10.94%"
+            "value": "10.84%"
           },
           {
             "label": "Tasa libre de riesgo (Rf)",
             "value": "5.29%"
           },
           {
-            "label": "Beta bruta (de la fuente)",
-            "value": "1.52"
+            "label": "Beta bruta (propia, 2 años)",
+            "value": "1.48"
           },
           {
             "label": "Beta ajustada (Blume)",
-            "value": "1.35"
+            "value": "1.32"
           },
           {
             "label": "Prima de mercado implícita",
@@ -3160,14 +3277,14 @@
             "value": "20.87%"
           }
         ],
-        "wacc_note": "WACC 10.64% = 95.39% × Ke 10.94% (Rf 5.29% + β ajustada 1.35 [bruta 1.52, Blume] × prima implícita 4.20%) + 4.61% × Kd 5.69% × (1 − t 20.87%). Kd = Rf + spread del rating sintético AAA (tabla de empresas grandes, cobertura 33.7x). t: tasa efectiva TTM. Rf: ^TNX no disponible (sin cotización): valor de config."
+        "wacc_note": "WACC 10.55% = 95.39% × Ke 10.84% (Rf 5.29% + β ajustada 1.32 [bruta 1.48, propia, 2 años semanales frente al S&P 500, Blume] × prima implícita 4.20%) + 4.61% × Kd 5.69% × (1 − t 20.87%). Kd = Rf + spread del rating sintético AAA (tabla de empresas grandes, cobertura 33.7x). t: tasa efectiva TTM. Rf: ^TNX no disponible (sin cotización): valor de config."
       }
     },
     "summary": {
       "alert_counts": {
         "red_flags": 1,
         "strengths": 6,
-        "warnings": 5
+        "warnings": 4
       },
       "cards": [
         {
@@ -3310,7 +3427,7 @@
         },
         {
           "label": "CREACIÓN DE VALOR",
-          "text": "El ROIC (15.7%) supera al WACC (10.6%) en 5.0%, señal de creación de valor. ROCE 16.60% (EBIT / capital empleado, antes de impuestos), en línea con el ROIC (15.68%)."
+          "text": "El ROIC (15.7%) supera al WACC (10.5%) en 5.1%, señal de creación de valor. ROCE 16.60% (EBIT / capital empleado, antes de impuestos), en línea con el ROIC (15.68%)."
         },
         {
           "label": "SOLIDEZ",
@@ -3322,11 +3439,11 @@
         },
         {
           "label": "ATRACTIVO DEL PRECIO",
-          "text": "El mercado paga 30.4x beneficios, un +52% frente a la mediana del sector (20.0x); una prima que encuentra respaldo parcial en la creación de valor de la compañía (ROIC−WACC de +5.0%)."
+          "text": "El mercado paga 30.4x beneficios, un +52% frente a la mediana del sector (20.0x); una prima que encuentra respaldo parcial en la creación de valor de la compañía (ROIC−WACC de +5.1%)."
         },
         {
           "label": "CONTEXTO DE MERCADO",
-          "text": "Cotiza en el 64% del rango de 52 semanas, en la zona media. Con beta 1.52, la acción amplifica los movimientos del mercado."
+          "text": "Cotiza en el 64% del rango de 52 semanas, en la zona media. Con beta 1.48, la acción amplifica los movimientos del mercado."
         },
         {
           "label": "CONFIANZA DEL VEREDICTO",
@@ -4487,7 +4604,7 @@
   },
   "key_metrics": {
     "asset_turnover": 0.810333504249,
-    "beta": 1.5154457,
+    "beta": 1.47900401495,
     "book_value_per_share": 40.9698825322,
     "buyback_yield": -0.0130274709714,
     "cash": 143089000000.0,
@@ -4496,7 +4613,7 @@
     "de": 0.299603542771,
     "debt_to_assets": 0.144441050369,
     "dividend_yield": 0.0,
-    "earnings_growth": null,
+    "earnings_growth": 0.296564195298,
     "earnings_yield": 0.0329030224329,
     "ebitda": 188438000000.0,
     "ebitda_margin": 0.209835805142,
@@ -4538,7 +4655,7 @@
     "ps": 3.68965417855,
     "quick_ratio": 1.00860414475,
     "revenue": 742776000000.0,
-    "revenue_growth": 0.1577,
+    "revenue_growth": 0.123777546833,
     "roa": 0.0990563258894,
     "roce": 0.165964765506,
     "roce_reason": null,
@@ -4551,13 +4668,13 @@
     "roe": 0.205465316781,
     "roic": 0.1567565951,
     "roic_reason": null,
-    "roic_wacc_spread": 0.0503187481097,
+    "roic_wacc_spread": 0.051296959294,
     "shareholder_yield": -0.0130274709714,
     "shares_outstanding": 10786313572.0,
     "total_assets": 916630000000.0,
     "total_debt": 132399000000.0,
     "total_equity": 441914000000.0,
-    "wacc": 0.10643784699
+    "wacc": 0.105459635806
   },
   "not_applicable": {},
   "piotroski_f": {
@@ -4646,7 +4763,7 @@
   "price_history": {
     "52w_high": 287.200012207,
     "52w_low": 196.0,
-    "beta": 1.5154457
+    "beta": 1.47900401495
   },
   "profile": {
     "country": "Unknown",
@@ -4703,7 +4820,7 @@
   },
   "ratios": {
     "asset_turnover": 0.810333504249,
-    "beta": 1.5154457,
+    "beta": 1.47900401495,
     "cash_ratio": 0.660138589013,
     "current_ratio": 1.17715311226,
     "debt_to_assets": 0.144441050369,
@@ -4875,9 +4992,9 @@
           {
             "adjustment": 2,
             "metric": "ROIC vs WACC",
-            "reason": "Crea valor (ROIC 15.7% > WACC 10.6%, spread +5.0%)",
+            "reason": "Crea valor (ROIC 15.7% > WACC 10.5%, spread +5.1%)",
             "severity": "good",
-            "value": "+5.0%"
+            "value": "+5.1%"
           }
         ],
         "applicable": true,
@@ -4888,7 +5005,7 @@
           "Aceptable (7.6%) - Normal para su sector",
           "Bueno (11.5%) - Márgenes saludables",
           "Aceptable (9.3%) - Márgenes estándar",
-          "Crea valor (ROIC 15.7% > WACC 10.6%, spread +5.0%)"
+          "Crea valor (ROIC 15.7% > WACC 10.5%, spread +5.1%)"
         ],
         "max": 20,
         "score": 15
@@ -5112,10 +5229,10 @@
   },
   "wacc": {
     "applicable": true,
-    "beta": 1.345348619,
+    "beta": 1.32093269001,
     "beta_default": false,
     "beta_method": "Blume",
-    "beta_raw": 1.5154457,
+    "beta_raw": 1.47900401495,
     "bounds": [
       0.06,
       0.2
@@ -5125,7 +5242,7 @@
     "equity": 2740586572120.0,
     "kd": 0.0569,
     "kd_after_tax": 0.0450268200163,
-    "ke": 0.109404641998,
+    "ke": 0.108379172981,
     "mrp": 0.042,
     "rating": {
       "coverage": 33.7236478484,
@@ -5134,7 +5251,7 @@
       "spread": 0.004,
       "table": "grandes"
     },
-    "raw": 0.10643784699,
+    "raw": 0.105459635806,
     "reason": null,
     "rf": 0.0529,
     "rf_as_of": null,
@@ -5144,7 +5261,7 @@
     "tax_rate": 0.208667486533,
     "tax_reason": null,
     "tax_source": "efectiva",
-    "value": 0.10643784699,
+    "value": 0.105459635806,
     "weights": {
       "debt": 0.0460841158705,
       "equity": 0.95391588413

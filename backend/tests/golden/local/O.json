@@ -4,8 +4,8 @@
     "strengths": [
       {
         "category": "Riesgo de mercado",
-        "detail": "Con beta 0.70, la acción se mueve menos que el mercado y tiende a amortiguar las caídas: un perfil más estable, útil para reducir la volatilidad de una cartera.",
-        "reason": "Perfil defensivo — Beta 0.70"
+        "detail": "Con beta 0.62, la acción se mueve menos que el mercado y tiende a amortiguar las caídas: un perfil más estable, útil para reducir la volatilidad de una cartera.",
+        "reason": "Perfil defensivo — Beta 0.62"
       }
     ],
     "warnings": [
@@ -93,14 +93,28 @@
     }
   },
   "beta": {
-    "adjusted": 0.79632,
+    "adjusted": 0.62,
     "coefficients": [
       0.67,
       0.33
     ],
     "default": false,
-    "method": "Blume",
-    "raw": 0.696
+    "discrepancy": null,
+    "method": "beta del sector (sin Blume)",
+    "own": {
+      "adjusted": 0.448423176983,
+      "first_week": "2024-10-25",
+      "last_week": "2026-10-09",
+      "observations": 103,
+      "r2": 0.0238764380548,
+      "raw": 0.176751010423,
+      "reason": null,
+      "status": "ok"
+    },
+    "raw": null,
+    "reason": "beta propia no fiable (R² 0.02 < 0.1: la regresión no explica el título); beta del sector (Retail (REITs), A. Damodaran, Betas by Sector (US), NYU Stern, enero de 2026 (columna Beta)), sin Blume",
+    "source": "sector",
+    "source_beta": 0.696
   },
   "classification": {
     "alerts": [],
@@ -265,6 +279,33 @@
         }
       },
       "type": "ttm"
+    },
+    "beta": {
+      "adjusted": true,
+      "discrepancy": null,
+      "own": {
+        "adjusted": 0.448423176983,
+        "first_week": "2024-10-25",
+        "last_week": "2026-10-09",
+        "observations": 103,
+        "r2": 0.0238764380548,
+        "raw": 0.176751010423,
+        "reason": null,
+        "status": "ok"
+      },
+      "reason": "beta propia no fiable (R² 0.02 < 0.1: la regresión no explica el título); beta del sector (Retail (REITs), A. Damodaran, Betas by Sector (US), NYU Stern, enero de 2026 (columna Beta)), sin Blume",
+      "sector": {
+        "basis": "industria",
+        "damodaran": "Retail (REITs)",
+        "firms": 26,
+        "source": "A. Damodaran, Betas by Sector (US), NYU Stern, enero de 2026 (columna Beta)",
+        "url": "https://pages.stern.nyu.edu/~adamodar/New_Home_Page/datafile/Betas.html",
+        "value": 0.62
+      },
+      "source": "sector",
+      "source_beta": 0.696,
+      "source_name": "yahoo_quotesummary",
+      "value": 0.62
     },
     "currency": {
       "converted": false,
@@ -464,6 +505,10 @@
       "source_rate": 3.26,
       "unit": "título"
     },
+    "ebit": {
+      "reason": "EDGAR no tiene el beneficio operativo del periodo que acaba el 2026-06-30",
+      "status": "sin_edgar"
+    },
     "edgar": {
       "backup": {
         "cut": [],
@@ -650,8 +695,8 @@
         "source": "yahoo_quotesummary"
       },
       "beta": {
-        "detail": "quoteSummary v10 (con crumb)",
-        "source": "yahoo_quotesummary"
+        "detail": "beta propia no fiable (R² 0.02 < 0.1: la regresión no explica el título); beta del sector (Retail (REITs), A. Damodaran, Betas by Sector (US), NYU Stern, enero de 2026 (columna Beta)), sin Blume",
+        "source": "derivado"
       },
       "bookValue": {
         "detail": "quoteSummary v10 (con crumb)",
@@ -694,8 +739,9 @@
         "source": "yfinance_statements"
       },
       "earningsGrowth": {
-        "detail": "quoteSummary v10 (con crumb)",
-        "source": "yahoo_quotesummary"
+        "detail": "FY2025 frente a FY2024 de los estados anuales",
+        "rule": "periodo_incoherente",
+        "source": "derivado"
       },
       "ebitda": {
         "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
@@ -710,12 +756,12 @@
         "source": "yahoo_quotesummary"
       },
       "fiftyTwoWeekHigh": {
-        "detail": "quoteSummary v10 (con crumb)",
-        "source": "yahoo_quotesummary"
+        "detail": "máximo y mínimo diarios de las 251 sesiones de la serie (2025-10-10 a 2026-10-09, Yahoo history)",
+        "source": "derivado"
       },
       "fiftyTwoWeekLow": {
-        "detail": "quoteSummary v10 (con crumb)",
-        "source": "yahoo_quotesummary"
+        "detail": "máximo y mínimo diarios de las 251 sesiones de la serie (2025-10-10 a 2026-10-09, Yahoo history)",
+        "source": "derivado"
       },
       "forwardEps": {
         "detail": "quoteSummary v10 (con crumb)",
@@ -806,8 +852,9 @@
         "source": "yfinance_statements"
       },
       "revenueGrowth": {
-        "detail": "quoteSummary v10 (con crumb)",
-        "source": "yahoo_quotesummary"
+        "detail": "FY2025 frente a FY2024 de los estados anuales",
+        "rule": "periodo_incoherente",
+        "source": "derivado"
       },
       "sector": {
         "detail": "quoteSummary v10 (con crumb)",
@@ -892,19 +939,80 @@
       "registered": true,
       "status": "registrado"
     },
+    "ordinary": {
+      "at1": 0.0,
+      "distributions": 0.0,
+      "equity_common": 39549557000.0,
+      "equity_owners": 39549557000.0,
+      "net_income_common": 1267577000.0,
+      "net_income_owners": 1267577000.0,
+      "notes": [],
+      "period_end": "2026-06-30",
+      "period_type": "ttm",
+      "preferred": 0.0,
+      "source": "Yahoo (estados de yfinance)"
+    },
     "path": "yahoo_quotesummary",
     "pending_results": null,
+    "perimeter": {
+      "changed": false,
+      "discontinued": [],
+      "mixed_cagr": false,
+      "note": null,
+      "restated": [],
+      "series": [
+        {
+          "basis": "vigente",
+          "fy_end": "2025-12-31",
+          "restated": false
+        },
+        {
+          "basis": "vigente",
+          "fy_end": "2024-12-31",
+          "restated": false
+        },
+        {
+          "basis": "vigente",
+          "fy_end": "2023-12-31",
+          "restated": false
+        },
+        {
+          "basis": "vigente",
+          "fy_end": "2022-12-31",
+          "restated": false
+        }
+      ]
+    },
     "price_history": {
       "attempts": 1,
       "first_date": "2024-10-16",
       "interval": "1d",
       "last_date": "2026-10-09",
+      "market": {
+        "fallback_of": null,
+        "last_date": "2026-10-09",
+        "reason": null,
+        "rows": 497,
+        "status": "ok",
+        "symbol": "^GSPC"
+      },
       "period": "2y",
       "reason": null,
       "rows": 497,
       "source": "Yahoo Finance (yfinance history: precios sin ajustar por dividendos y eventos)",
       "status": "ok",
       "symbol": "O"
+    },
+    "range52": {
+      "first_session": "2025-10-10",
+      "high": 67.9400024414,
+      "high_date": "2026-02-27",
+      "last_session": "2026-10-09",
+      "low": 53.1500015259,
+      "low_date": "2026-10-08",
+      "reason": null,
+      "sessions": 251,
+      "status": "ok"
     },
     "ttm": {
       "annual_fields": {},
@@ -960,7 +1068,24 @@
       ]
     }
   },
-  "data_validation": [],
+  "data_validation": [
+    {
+      "action": "aviso",
+      "field": "revenueGrowth",
+      "new": 0.0907270189268,
+      "old": 0.202579681618,
+      "reason": "el interanual de la fuente (20.3%) es de su propio periodo: se usa el de los estados, FY2025 frente a FY2024 (9.1%)",
+      "rule": "periodo_incoherente"
+    },
+    {
+      "action": "aviso",
+      "field": "earningsGrowth",
+      "new": 0.19387755102,
+      "old": 0.494972785481,
+      "reason": "el interanual de la fuente (49.5%) es de su propio periodo: se usa el de los estados, FY2025 frente a FY2024 (19.4%)",
+      "rule": "periodo_incoherente"
+    }
+  ],
   "dcf_status": {
     "reason": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria",
     "state": "no_aplica"
@@ -1227,11 +1352,11 @@
       "price_card": {
         "currency": "USD",
         "exchange": "NYSE",
-        "from_high_pct": -20.253164557,
+        "from_high_pct": -20.2531674226,
         "from_high_txt": "−20.3%",
-        "high": 67.94,
+        "high": 67.9400024414,
         "high_txt": "$67.94",
-        "low": 53.15,
+        "low": 53.1500015259,
         "low_txt": "$53.15",
         "price": 54.18,
         "price_txt": "$54.18"
@@ -1752,7 +1877,7 @@
         {
           "kicker": "FORTALEZA CLAVE",
           "kind": "strength",
-          "text": "Perfil defensivo — Beta 0.70",
+          "text": "Perfil defensivo — Beta 0.62",
           "tone": "pos"
         },
         {
@@ -1813,9 +1938,9 @@
         },
         {
           "key": "beta",
-          "label": "Beta bruta",
+          "label": "Beta del sector",
           "state": "con_dato",
-          "value": "0.70"
+          "value": "0.62"
         }
       ],
       "official_source_badge": null,
@@ -1876,7 +2001,7 @@
     "readings": {
       "beta": {
         "label": "Defensiva",
-        "text": "con beta 0.70, la acción amortigua los movimientos del mercado",
+        "text": "con beta 0.62, la acción amortigua los movimientos del mercado",
         "tone": "pos"
       },
       "buyback_yield": {
@@ -1954,8 +2079,8 @@
             "items": [
               {
                 "category": "Riesgo de mercado",
-                "detail": "Con beta 0.70, la acción se mueve menos que el mercado y tiende a amortiguar las caídas: un perfil más estable, útil para reducir la volatilidad de una cartera.",
-                "reason": "Perfil defensivo — Beta 0.70"
+                "detail": "Con beta 0.62, la acción se mueve menos que el mercado y tiende a amortiguar las caídas: un perfil más estable, útil para reducir la volatilidad de una cartera.",
+                "reason": "Perfil defensivo — Beta 0.62"
               }
             ],
             "key": "strengths",
@@ -1977,7 +2102,7 @@
           "caption": "Precio actual $54.18 — posición 7% del rango.",
           "high": "$67.94",
           "low": "$53.15",
-          "pos": 6.96416497634,
+          "pos": 6.96415422828,
           "price": "$54.18",
           "reading": {
             "label": "En mínimos de 52 semanas",
@@ -2024,12 +2149,12 @@
             "bench": null,
             "gap": null,
             "key": "revenue_growth_yoy",
-            "label": "Crecimiento de ingresos (interanual)",
+            "label": "Crecimiento de ingresos (último ejercicio)",
             "reading": "—",
             "state": "con_dato",
             "text": null,
             "tone": null,
-            "value": "20.26%"
+            "value": "9.07%"
           },
           {
             "bench": null,
@@ -2746,7 +2871,7 @@
         "wacc_breakdown": [
           {
             "label": "WACC",
-            "value": "7.65%"
+            "value": "7.18%"
           },
           {
             "label": "Peso del patrimonio",
@@ -2754,19 +2879,15 @@
           },
           {
             "label": "Coste del patrimonio (Ke)",
-            "value": "8.63%"
+            "value": "7.89%"
           },
           {
             "label": "Tasa libre de riesgo (Rf)",
             "value": "5.29%"
           },
           {
-            "label": "Beta bruta (de la fuente)",
-            "value": "0.70"
-          },
-          {
-            "label": "Beta ajustada (Blume)",
-            "value": "0.80"
+            "label": "Beta del sector (Damodaran, sin Blume)",
+            "value": "0.62"
           },
           {
             "label": "Prima de mercado implícita",
@@ -2789,7 +2910,7 @@
             "value": "10.00%"
           }
         ],
-        "wacc_note": "WACC 7.65% = 62.50% × Ke 8.63% (Rf 5.29% + β ajustada 0.80 [bruta 0.70, Blume] × prima implícita 4.20%) + 37.50% × Kd 6.67% × (1 − t 10.00%). Kd = Rf + spread del rating sintético BB+ (tabla de empresas grandes, cobertura 2.4x). t: tasa efectiva TTM (tasa efectiva 6.9% acotada a [10%, 35%]). Rf: ^TNX no disponible (sin cotización): valor de config."
+        "wacc_note": "WACC 7.18% = 62.50% × Ke 7.89% (Rf 5.29% + β del sector 0.62 [Damodaran, enero de 2026; sin Blume: es una media de industria] × prima implícita 4.20%) + 37.50% × Kd 6.67% × (1 − t 10.00%). Kd = Rf + spread del rating sintético BB+ (tabla de empresas grandes, cobertura 2.4x). t: tasa efectiva TTM (tasa efectiva 6.9% acotada a [10%, 35%]). Rf: ^TNX no disponible (sin cotización): valor de config."
       }
     },
     "summary": {
@@ -2959,7 +3080,7 @@
         },
         {
           "label": "CONTEXTO DE MERCADO",
-          "text": "Cotiza en el 7% del rango de 52 semanas, en la zona de mínimos. Con beta 0.70, la acción amortigua los movimientos del mercado."
+          "text": "Cotiza en el 7% del rango de 52 semanas, en la zona de mínimos. Con beta 0.62, la acción amortigua los movimientos del mercado."
         },
         {
           "label": "CONFIANZA DEL VEREDICTO",
@@ -3550,7 +3671,7 @@
   },
   "key_metrics": {
     "asset_turnover": 0.078100586102,
-    "beta": 0.696,
+    "beta": 0.62,
     "book_value_per_share": 41.798,
     "buyback_yield": -0.0476314930494,
     "cash": 552648000.0,
@@ -3559,7 +3680,7 @@
     "de": 0.777909067351,
     "debt_to_assets": 0.402477306986,
     "dividend_yield": 0.0601698043559,
-    "earnings_growth": 0.494972785481,
+    "earnings_growth": 0.19387755102,
     "earnings_yield": 0.0254706533776,
     "ebitda": 5103703000.0,
     "ebitda_margin": 0.883464564555,
@@ -3597,12 +3718,12 @@
     "pe_normalized": 37.3637010848,
     "peg": 2.73,
     "pfcf": 12.305376387,
-    "price_52w_high": 67.94,
-    "price_52w_low": 53.15,
+    "price_52w_high": 67.9400024414,
+    "price_52w_low": 53.1500015259,
     "ps": 8.58710690564,
     "quick_ratio": 0.741,
     "revenue": 5970124000.0,
-    "revenue_growth": 0.202579681618,
+    "revenue_growth": 0.0907270189268,
     "roa": 0.0165823200036,
     "roce": null,
     "roce_reason": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria",
@@ -3617,7 +3738,7 @@
     "total_assets": 76441475000.0,
     "total_debt": 30765959000.0,
     "total_equity": 39549557000.0,
-    "wacc": 0.0764758862364
+    "wacc": 0.0718478418727
   },
   "not_applicable": {
     "altman": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria",
@@ -3710,9 +3831,9 @@
     "score_raw": 65
   },
   "price_history": {
-    "52w_high": 67.94,
-    "52w_low": 53.15,
-    "beta": 0.696
+    "52w_high": 67.9400024414,
+    "52w_low": 53.1500015259,
+    "beta": 0.62
   },
   "profile": {
     "country": "United States",
@@ -3765,7 +3886,7 @@
   },
   "ratios": {
     "asset_turnover": 0.078100586102,
-    "beta": 0.696,
+    "beta": 0.62,
     "cash_ratio": 0.125693517316,
     "current_ratio": 0.493526186149,
     "debt_to_assets": 0.402477306986,
@@ -4147,10 +4268,10 @@
   },
   "wacc": {
     "applicable": true,
-    "beta": 0.79632,
+    "beta": 0.62,
     "beta_default": false,
-    "beta_method": "Blume",
-    "beta_raw": 0.696,
+    "beta_method": "beta del sector (sin Blume)",
+    "beta_raw": null,
     "bounds": [
       0.06,
       0.2
@@ -4160,7 +4281,7 @@
     "equity": 51266093056.0,
     "kd": 0.0667,
     "kd_after_tax": 0.06003,
-    "ke": 0.08634544,
+    "ke": 0.07894,
     "mrp": 0.042,
     "rating": {
       "coverage": 2.36959538575,
@@ -4169,7 +4290,7 @@
       "spread": 0.0138,
       "table": "grandes"
     },
-    "raw": 0.0764758862364,
+    "raw": 0.0718478418727,
     "reason": null,
     "rf": 0.0529,
     "rf_as_of": null,
@@ -4179,7 +4300,7 @@
     "tax_rate": 0.1,
     "tax_reason": "tasa efectiva 6.9% acotada a [10%, 35%]",
     "tax_source": "efectiva",
-    "value": 0.0764758862364,
+    "value": 0.0718478418727,
     "weights": {
       "debt": 0.375048023655,
       "equity": 0.624951976345

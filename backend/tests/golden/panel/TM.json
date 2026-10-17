@@ -8,8 +8,8 @@
       },
       {
         "category": "Rentabilidad",
-        "detail": "El retorno sobre el capital invertido no cubre su costo (ROIC 4.5% vs WACC 6.6%): crecer a estos retornos destruye valor para el accionista en lugar de crearlo.",
-        "reason": "Destruye valor — spread -2.1%"
+        "detail": "El retorno sobre el capital invertido no cubre su costo (ROIC 4.5% vs WACC 6.4%): crecer a estos retornos destruye valor para el accionista en lugar de crearlo.",
+        "reason": "Destruye valor — spread -1.9%"
       }
     ],
     "strengths": [
@@ -27,6 +27,11 @@
         "category": "Solidez financiera",
         "detail": "El Altman Z de 2.67 (> 2.60) ubica a la empresa en zona segura: baja probabilidad estadística de problemas de solvencia según el modelo.",
         "reason": "Solvencia sólida — Altman Z 2.67"
+      },
+      {
+        "category": "Riesgo de mercado",
+        "detail": "Con beta 0.72, la acción se mueve menos que el mercado y tiende a amortiguar las caídas: un perfil más estable, útil para reducir la volatilidad de una cartera.",
+        "reason": "Perfil defensivo — Beta 0.72"
       }
     ],
     "warnings": [
@@ -129,14 +134,28 @@
     }
   },
   "beta": {
-    "adjusted": 0.919610318,
+    "adjusted": 0.810108486658,
     "coefficients": [
       0.67,
       0.33
     ],
     "default": false,
+    "discrepancy": null,
     "method": "Blume",
-    "raw": 0.8800154
+    "own": {
+      "adjusted": 0.810108486658,
+      "first_week": "2024-10-25",
+      "last_week": "2026-10-16",
+      "observations": 104,
+      "r2": 0.148783694026,
+      "raw": 0.716579830833,
+      "reason": null,
+      "status": "ok"
+    },
+    "raw": 0.716579830833,
+    "reason": "2 años semanales frente al S&P 500 (104 semanas, R² 0.15), ajustada por Blume",
+    "source": "propia",
+    "source_beta": 0.8800154
   },
   "classification": {
     "alerts": [],
@@ -161,16 +180,16 @@
     "capped_from": null,
     "dimensions": {
       "convergence": {
-        "level": "media",
+        "level": "alta",
         "methods": [
           {
-            "direction": "en precio",
+            "direction": "barata",
             "evaluable": true,
             "kind": "intrínseco",
             "method": "DCF",
             "reliability": "media",
-            "signal": 0.0524121860437,
-            "upside": 0.0262060930219
+            "signal": 0.256851070596,
+            "upside": 0.128425535298
           },
           {
             "components": 1,
@@ -182,7 +201,7 @@
           }
         ],
         "reasons": [
-          "uno lo ve en precio y otro con dirección: no coinciden, sin oponerse"
+          "coinciden (barata) con distancia 0.49 (< 0.6)"
         ]
       },
       "coverage": {
@@ -204,17 +223,14 @@
           "_yahoo_ratios.payoutRatio",
           "_yahoo_ratios.pegRatio",
           "_yahoo_ratios.quickRatio",
-          "beta",
-          "earningsGrowth",
           "forwardPE",
-          "payoutRatio",
-          "revenueGrowth"
+          "payoutRatio"
         ],
         "issues": 2,
         "level": "media",
         "reasons": [
           "validación: capitalLeaseObligations (periodo_incoherente)",
-          "12 campos de Finnhub en lugar de los estados"
+          "9 campos de Finnhub en lugar de los estados"
         ]
       },
       "stability": {
@@ -227,11 +243,10 @@
     "level": "media",
     "limits_score": false,
     "reasons": [
-      "convergencia media: uno lo ve en precio y otro con dirección: no coinciden, sin oponerse",
-      "calidad de fuente media: validación: capitalLeaseObligations (periodo_incoherente); 12 campos de Finnhub en lugar de los estados",
+      "calidad de fuente media: validación: capitalLeaseObligations (periodo_incoherente); 9 campos de Finnhub en lugar de los estados",
       "estabilidad baja: empresa cíclica: resultados ligados a la fase del ciclo"
     ],
-    "score": 0.5
+    "score": 0.7
   },
   "data_provenance": {
     "as_of": {
@@ -331,6 +346,25 @@
         }
       },
       "type": "ttm"
+    },
+    "beta": {
+      "adjusted": false,
+      "discrepancy": null,
+      "own": {
+        "adjusted": 0.810108486658,
+        "first_week": "2024-10-25",
+        "last_week": "2026-10-16",
+        "observations": 104,
+        "r2": 0.148783694026,
+        "raw": 0.716579830833,
+        "reason": null,
+        "status": "ok"
+      },
+      "reason": "2 años semanales frente al S&P 500 (104 semanas, R² 0.15), ajustada por Blume",
+      "source": "propia",
+      "source_beta": 0.8800154,
+      "source_name": "finnhub",
+      "value": 0.716579830833
     },
     "currency": {
       "balance_rate": {
@@ -480,6 +514,10 @@
       "source_rate": 100.0,
       "unit": "ADR"
     },
+    "ebit": {
+      "reason": "EDGAR no tiene el beneficio operativo del periodo que acaba el 2026-06-30",
+      "status": "sin_edgar"
+    },
     "edgar": {
       "backup": {
         "cut": [],
@@ -602,7 +640,7 @@
         "source": "derivado"
       },
       "_yahoo_ratios.forwardPE": {
-        "detail": "/stock/metric",
+        "detail": "/stock/metric (forwardPE: estimación de consenso del proveedor, horizonte no documentado)",
         "source": "finnhub"
       },
       "_yahoo_ratios.interestCoverage": {
@@ -626,8 +664,8 @@
         "source": "finnhub"
       },
       "beta": {
-        "detail": "/stock/metric",
-        "source": "finnhub"
+        "detail": "2 años semanales frente al S&P 500 (104 semanas, R² 0.15), ajustada por Blume",
+        "source": "derivado"
       },
       "bookValue": {
         "detail": "patrimonio (FY) / acciones de fast_info",
@@ -671,8 +709,9 @@
         "source": "yfinance_statements"
       },
       "earningsGrowth": {
-        "detail": "/stock/metric",
-        "source": "finnhub"
+        "detail": "FY2026 frente a FY2025 de los estados anuales",
+        "rule": "periodo_incoherente",
+        "source": "derivado"
       },
       "ebitda": {
         "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
@@ -683,19 +722,19 @@
         "source": "yfinance_statements"
       },
       "fiftyTwoWeekHigh": {
-        "detail": "plan B: yfinance fast_info (sin crumb)",
-        "source": "yfinance_statements"
+        "detail": "máximo y mínimo diarios de las 251 sesiones de la serie (2025-10-16 a 2026-10-15, Yahoo history)",
+        "source": "derivado"
       },
       "fiftyTwoWeekLow": {
-        "detail": "plan B: yfinance fast_info (sin crumb)",
-        "source": "yfinance_statements"
+        "detail": "máximo y mínimo diarios de las 251 sesiones de la serie (2025-10-16 a 2026-10-15, Yahoo history)",
+        "source": "derivado"
       },
       "forwardEps": {
         "detail": "la fuente no lo devolvió",
         "source": "sin_dato"
       },
       "forwardPE": {
-        "detail": "/stock/metric",
+        "detail": "/stock/metric (forwardPE: estimación de consenso del proveedor, horizonte no documentado)",
         "source": "finnhub"
       },
       "freeCashflow": {
@@ -763,8 +802,9 @@
         "source": "yfinance_statements"
       },
       "revenueGrowth": {
-        "detail": "/stock/metric",
-        "source": "finnhub"
+        "detail": "FY2026 frente a FY2025 de los estados anuales",
+        "rule": "periodo_incoherente",
+        "source": "derivado"
       },
       "sector": {
         "detail": "búsqueda de Yahoo /v1/finance/search (sin crumb; no es quoteSummary)",
@@ -833,19 +873,80 @@
       "registered": true,
       "status": "registrado"
     },
+    "ordinary": {
+      "at1": 0.0,
+      "distributions": 0.0,
+      "equity_common": 230410917805.0,
+      "equity_owners": 230410917805.0,
+      "net_income_common": 28969220336.5,
+      "net_income_owners": 28969220336.5,
+      "notes": [],
+      "period_end": "2026-06-30",
+      "period_type": "ttm",
+      "preferred": 0.0,
+      "source": "Yahoo (estados de yfinance)"
+    },
     "path": "plan_b_yfinance",
     "pending_results": null,
+    "perimeter": {
+      "changed": false,
+      "discontinued": [],
+      "mixed_cagr": false,
+      "note": null,
+      "restated": [],
+      "series": [
+        {
+          "basis": "vigente",
+          "fy_end": "2026-03-31",
+          "restated": false
+        },
+        {
+          "basis": "vigente",
+          "fy_end": "2025-03-31",
+          "restated": false
+        },
+        {
+          "basis": "vigente",
+          "fy_end": "2024-03-31",
+          "restated": false
+        },
+        {
+          "basis": "vigente",
+          "fy_end": "2023-03-31",
+          "restated": false
+        }
+      ]
+    },
     "price_history": {
       "attempts": 1,
       "first_date": "2024-10-16",
       "interval": "1d",
       "last_date": "2026-10-15",
+      "market": {
+        "fallback_of": null,
+        "last_date": "2026-10-15",
+        "reason": null,
+        "rows": 501,
+        "status": "ok",
+        "symbol": "^GSPC"
+      },
       "period": "2y",
       "reason": null,
       "rows": 501,
       "source": "Yahoo Finance (yfinance history: precios sin ajustar por dividendos y eventos)",
       "status": "ok",
       "symbol": "TM"
+    },
+    "range52": {
+      "first_session": "2025-10-16",
+      "high": 248.899993896,
+      "high_date": "2026-02-13",
+      "last_session": "2026-10-15",
+      "low": 166.100006104,
+      "low_date": "2026-06-25",
+      "reason": null,
+      "sessions": 251,
+      "status": "ok"
     },
     "ttm": {
       "annual_fields": {
@@ -909,16 +1010,32 @@
       "old": 4448251605.01,
       "reason": "dato de otro periodo descartado: capitalLeaseObligations del ejercicio cerrado el 2026-03-31 en un análisis con corte a 2026-06-30",
       "rule": "periodo_incoherente"
+    },
+    {
+      "action": "aviso",
+      "field": "revenueGrowth",
+      "new": 0.0676957086943,
+      "old": 0.0723,
+      "reason": "el interanual de la fuente (7.2%) es de su propio periodo: se usa el de los estados, FY2026 frente a FY2025 (6.8%)",
+      "rule": "periodo_incoherente"
+    },
+    {
+      "action": "aviso",
+      "field": "earningsGrowth",
+      "new": -0.169078123586,
+      "old": 0.0791,
+      "reason": "el interanual de la fuente (7.9%) es de su propio periodo: se usa el de los estados, FY2026 frente a FY2025 (-16.9%)",
+      "rule": "periodo_incoherente"
     }
   ],
   "dcf": {
     "available": true,
-    "fair_value": 196.97,
+    "fair_value": 216.59,
     "fcf_input": 12854092614.8,
     "growth_basis": "ciclo medio de los ingresos",
     "growth_rate": 0.071197890432,
     "growth_source": "revenue_growth_3y",
-    "margin_of_safety": 0.0255368713946,
+    "margin_of_safety": 0.113809490552,
     "normalized": {
       "cycle_incomplete": true,
       "fcf": -5707407226.64,
@@ -938,13 +1055,13 @@
       ]
     },
     "terminal_growth": 0.025,
-    "upside": 2.62060930219,
+    "upside": 12.8425535298,
     "value_composition": {
-      "stage1_pct": 15.5,
-      "stage2_pct": 14.9,
-      "terminal_pct": 69.6
+      "stage1_pct": 14.8,
+      "stage2_pct": 14.4,
+      "terminal_pct": 70.9
     },
-    "wacc": 0.0662779353148,
+    "wacc": 0.0641881308575,
     "warnings": []
   },
   "dcf_status": {
@@ -959,12 +1076,12 @@
           "text": "Arquetipo CYCLICAL (regla industria_ciclica): Clasificada como CYCLICAL por industria Auto Manufacturers"
         },
         {
-          "label": "Confianza · Convergencia entre métodos (media)",
-          "text": "uno lo ve en precio y otro con dirección: no coinciden, sin oponerse"
+          "label": "Confianza · Convergencia entre métodos (alta)",
+          "text": "coinciden (barata) con distancia 0.49 (< 0.6)"
         },
         {
           "label": "Confianza · Calidad de fuente (media)",
-          "text": "validación: capitalLeaseObligations (periodo_incoherente); 12 campos de Finnhub en lugar de los estados"
+          "text": "validación: capitalLeaseObligations (periodo_incoherente); 9 campos de Finnhub en lugar de los estados"
         },
         {
           "label": "Confianza · Estabilidad del arquetipo (baja)",
@@ -1597,10 +1714,10 @@
         "spread": {
           "reading": "Al límite",
           "state": "con_dato",
-          "text": "el ROIC (4.5%) queda ligeramente por debajo del costo de capital (6.6%)",
+          "text": "el ROIC (4.5%) queda ligeramente por debajo del costo de capital (6.4%)",
           "tone": "warn",
-          "value": -0.0212696260372,
-          "value_txt": "-2.1 pp"
+          "value": -0.01917982158,
+          "value_txt": "-1.9 pp"
         }
       },
       "results_flow": [
@@ -1858,61 +1975,61 @@
           "tone": "pos"
         },
         "dcf_composition": {
-          "explicit_pct": 30.4,
-          "terminal_pct": 69.6
+          "explicit_pct": 29.2,
+          "terminal_pct": 70.9
         },
         "fair_value": {
           "axis": [
-            15.4275,
-            350.35
+            20.7655,
+            380.039
           ],
           "badge": {
-            "label": "Precio justo",
-            "tone": "neu"
+            "label": "Infravalorada",
+            "tone": "pos"
           },
-          "fair_value": 196.97,
-          "fair_value_txt": "$196.97",
-          "grid_high": 318.5,
-          "grid_high_txt": "$318",
-          "grid_low": 18.15,
-          "grid_low_txt": "$18",
+          "fair_value": 216.59,
+          "fair_value_txt": "$216.59",
+          "grid_high": 345.49,
+          "grid_high_txt": "$345",
+          "grid_low": 24.43,
+          "grid_low_txt": "$24",
           "method": "DCF",
           "price": 191.940002441,
           "price_txt": "$191.94",
           "reliability": "media",
           "reliability_tone": "warn",
           "state": "con_dato",
-          "text": "el precio cotiza en torno al valor justo estimado por el DCF (+3%)",
-          "upside_txt": "+2.6%",
+          "text": "el precio cotiza por debajo del valor intrínseco estimado (potencial teórico de +13%)",
+          "upside_txt": "+12.8%",
           "zones": [
             {
-              "from": 15.4275,
+              "from": 20.7655,
               "label": "Muy infravalorada",
-              "to": 151.515384615,
+              "to": 166.607692308,
               "tone": "pos"
             },
             {
-              "from": 151.515384615,
+              "from": 166.607692308,
               "label": "Infravalorada",
-              "to": 179.063636364,
+              "to": 196.9,
               "tone": "pos"
             },
             {
-              "from": 179.063636364,
+              "from": 196.9,
               "label": "Precio justo",
-              "to": 218.855555556,
+              "to": 240.655555556,
               "tone": "neu"
             },
             {
-              "from": 218.855555556,
+              "from": 240.655555556,
               "label": "Prima",
-              "to": 281.385714286,
+              "to": 309.414285714,
               "tone": "warn"
             },
             {
-              "from": 281.385714286,
+              "from": 309.414285714,
               "label": "Sobrevalorada",
-              "to": 350.35,
+              "to": 380.039,
               "tone": "neg"
             }
           ]
@@ -2044,8 +2161,8 @@
         {
           "key": "convergence",
           "label": "Convergencia entre métodos",
-          "level": "Media",
-          "text": "DCF +3% (en precio) · múltiplos frente al sector +0.75 (barata). Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
+          "level": "Alta",
+          "text": "DCF +13% (barata) · múltiplos frente al sector +0.75 (barata). Los métodos de valoración coinciden."
         },
         {
           "key": "coverage",
@@ -2068,17 +2185,11 @@
       ],
       "level": "media",
       "plain": [
-        "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no.",
         "Un dato de la fuente no superó la validación y se corrigió o se descartó.",
         "Empresa cíclica: sus resultados dependen de la fase del ciclo.",
         "Parte de los datos proviene de una fuente secundaria."
       ],
       "reasons": [
-        {
-          "dimension": "convergencia",
-          "level": "media",
-          "text": "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
-        },
         {
           "dimension": "calidad de fuente",
           "level": "media",
@@ -2095,7 +2206,7 @@
           "text": "Empresa cíclica: sus resultados dependen de la fase del ciclo."
         }
       ],
-      "summary": "Confianza del veredicto: media. Contrae el atractivo del precio hacia 50 (factor 0.75): sin ajustar 65 → ajustado a 61. La calidad del negocio no se contrae.",
+      "summary": "Confianza del veredicto: media. Contrae el atractivo del precio hacia 50 (factor 0.75): sin ajustar 70 → ajustado a 65. La calidad del negocio no se contrae.",
       "tone": "warn",
       "verdict_text": "(confianza media: negocio cíclico)"
     },
@@ -2161,8 +2272,8 @@
               "coverage": 1.0,
               "max": 20,
               "name": "Valoración",
-              "pct": 65.0,
-              "score": 13,
+              "pct": 70.0,
+              "score": 14,
               "text": null,
               "tone": "pos"
             }
@@ -2174,9 +2285,9 @@
         "Cíclica por su industria (Auto Manufacturers)."
       ],
       "confidence_reasons": [
-        "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no.",
         "Un dato de la fuente no superó la validación y se corrigió o se descartó.",
-        "Empresa cíclica: sus resultados dependen de la fase del ciclo."
+        "Empresa cíclica: sus resultados dependen de la fase del ciclo.",
+        "Parte de los datos proviene de una fuente secundaria."
       ],
       "coverage_notes": [],
       "currency_note": "Estados financieros en JPY convertidos a USD, la moneda de la cotización, con el tipo de cambio de Yahoo (JPY=X): el balance al cierre de cada período y los resultados y flujos al promedio del período (TTM: 1 USD = 154.26 JPY; balance al 2026-06-30: 1 USD = 161.92 JPY). Cifras por acción en la clase que cotiza: cada título cotizado equivale a 10 acciones ordinarias (factor del depositario, BNY Mellon). Desde el balance del 2026-03-31 la empresa tiene un 9.6% menos de acciones (recompras); el valor por acción usa las de hoy.",
@@ -2250,19 +2361,19 @@
           "key": "beta",
           "label": "Beta bruta",
           "state": "con_dato",
-          "value": "0.88"
+          "value": "0.72"
         }
       ],
       "official_source_badge": null,
       "price": {
         "contracted": true,
-        "level": "razonable",
-        "note": "sin ajustar 65 → ajustado a 61 por confianza media",
+        "level": "atractivo",
+        "note": "sin ajustar 70 → ajustado a 65 por confianza media",
         "question": "¿está cara hoy?",
-        "raw": 65,
-        "score": 61,
+        "raw": 70,
+        "score": 65,
         "title": "ATRACTIVO DEL PRECIO",
-        "tone": "neu"
+        "tone": "pos"
       },
       "quality": {
         "level": "media",
@@ -2275,8 +2386,8 @@
       "verdict": {
         "confidence_text": "(confianza media: negocio cíclico)",
         "confidence_tone": "warn",
-        "full": "Calidad media · precio razonable (confianza media: negocio cíclico)",
-        "text": "Calidad media · precio razonable"
+        "full": "Calidad media · precio atractivo (confianza media: negocio cíclico)",
+        "text": "Calidad media · precio atractivo"
       }
     },
     "methodology": {
@@ -2297,9 +2408,9 @@
     "pe_label": "P/E (TTM)",
     "readings": {
       "beta": {
-        "label": "De mercado",
-        "text": "con beta 0.88, la acción se mueve en línea con el mercado",
-        "tone": "neu"
+        "label": "Defensiva",
+        "text": "con beta 0.72, la acción amortigua los movimientos del mercado",
+        "tone": "pos"
       },
       "buyback_yield": {
         "label": "Neutra",
@@ -2312,9 +2423,9 @@
         "tone": "neu"
       },
       "dcf_upside": {
-        "label": "Precio justo",
-        "text": "el precio cotiza en torno al valor justo estimado por el DCF (+3%)",
-        "tone": "neu"
+        "label": "Infravalorada",
+        "text": "el precio cotiza por debajo del valor intrínseco estimado (potencial teórico de +13%)",
+        "tone": "pos"
       },
       "de": {
         "label": "Aceptable",
@@ -2361,7 +2472,7 @@
       },
       "roic_wacc_spread": {
         "label": "Al límite",
-        "text": "el ROIC (4.5%) queda ligeramente por debajo del costo de capital (6.6%)",
+        "text": "el ROIC (4.5%) queda ligeramente por debajo del costo de capital (6.4%)",
         "tone": "warn"
       },
       "runway": null
@@ -2370,7 +2481,7 @@
       "alerts": {
         "counts": {
           "red_flags": 2,
-          "strengths": 3,
+          "strengths": 4,
           "warnings": 3
         },
         "groups": [
@@ -2383,8 +2494,8 @@
               },
               {
                 "category": "Rentabilidad",
-                "detail": "El retorno sobre el capital invertido no cubre su costo (ROIC 4.5% vs WACC 6.6%): crecer a estos retornos destruye valor para el accionista en lugar de crearlo.",
-                "reason": "Destruye valor — spread -2.1%"
+                "detail": "El retorno sobre el capital invertido no cubre su costo (ROIC 4.5% vs WACC 6.4%): crecer a estos retornos destruye valor para el accionista en lugar de crearlo.",
+                "reason": "Destruye valor — spread -1.9%"
               }
             ],
             "key": "red_flags",
@@ -2429,6 +2540,11 @@
                 "category": "Solidez financiera",
                 "detail": "El Altman Z de 2.67 (> 2.60) ubica a la empresa en zona segura: baja probabilidad estadística de problemas de solvencia según el modelo.",
                 "reason": "Solvencia sólida — Altman Z 2.67"
+              },
+              {
+                "category": "Riesgo de mercado",
+                "detail": "Con beta 0.72, la acción se mueve menos que el mercado y tiende a amortiguar las caídas: un perfil más estable, útil para reducir la volatilidad de una cartera.",
+                "reason": "Perfil defensivo — Beta 0.72"
               }
             ],
             "key": "strengths",
@@ -2497,12 +2613,12 @@
             "bench": null,
             "gap": null,
             "key": "revenue_growth_yoy",
-            "label": "Crecimiento de ingresos (interanual)",
+            "label": "Crecimiento de ingresos (último ejercicio)",
             "reading": "—",
             "state": "con_dato",
             "text": null,
             "tone": null,
-            "value": "7.23%"
+            "value": "6.77%"
           },
           {
             "bench": null,
@@ -2519,12 +2635,12 @@
             "bench": null,
             "gap": null,
             "key": "earnings_growth_yoy",
-            "label": "Crecimiento del BPA (interanual)",
+            "label": "Crecimiento del BPA (último ejercicio)",
             "reading": "—",
             "state": "con_dato",
             "text": null,
             "tone": null,
-            "value": "7.91%"
+            "value": "-16.91%"
           },
           {
             "bench": null,
@@ -2681,11 +2797,11 @@
                 {
                   "in_block": false,
                   "metric": "ROIC vs WACC",
-                  "reason": "Retorno apenas por debajo del costo de capital (spread -2.1%)",
+                  "reason": "Retorno apenas por debajo del costo de capital (spread -1.9%)",
                   "sign": "-1",
                   "state": "con_dato",
                   "tone": "warn",
-                  "value": "-2.1%"
+                  "value": "-1.9%"
                 }
               ],
               "max": 20,
@@ -2729,11 +2845,11 @@
                 {
                   "in_block": false,
                   "metric": "DCF (upside)",
-                  "reason": "En precio por DCF (fiabilidad media): empresa cíclica: el FCF depende de la fase del ciclo",
-                  "sign": "0",
+                  "reason": "Barata por DCF (fiabilidad media): empresa cíclica: el FCF depende de la fase del ciclo",
+                  "sign": "+1",
                   "state": "con_dato",
-                  "tone": "neu",
-                  "value": "+3%"
+                  "tone": "pos",
+                  "value": "+13%"
                 },
                 {
                   "in_block": false,
@@ -2747,8 +2863,8 @@
               ],
               "max": 20,
               "name": "Valoración",
-              "pct": 65.0,
-              "score": 13,
+              "pct": 70.0,
+              "score": 14,
               "text": null,
               "tone": "pos"
             },
@@ -2964,7 +3080,7 @@
             "$195.63"
           ]
         ],
-        "intro": "El ROE de 12.6% es competitivo en su sector (sector: 8.0% competitivo, 18.0% rango alto). El ROIC (4.5%) queda ligeramente por debajo del costo de capital (6.6%).",
+        "intro": "El ROE de 12.6% es competitivo en su sector (sector: 8.0% competitivo, 18.0% rango alto). El ROIC (4.5%) queda ligeramente por debajo del costo de capital (6.4%).",
         "roce_reading": "ROCE 7.70% en línea con el ROIC 4.50% (+3.2 pp, dentro de 10 pp).",
         "rows": [
           {
@@ -3040,9 +3156,9 @@
             "label": "Spread ROIC − WACC",
             "reading": "Al límite",
             "state": "con_dato",
-            "text": "el ROIC (4.5%) queda ligeramente por debajo del costo de capital (6.6%)",
+            "text": "el ROIC (4.5%) queda ligeramente por debajo del costo de capital (6.4%)",
             "tone": "warn",
-            "value": "-2.1 pp"
+            "value": "-1.9 pp"
           },
           {
             "bench": "—",
@@ -3176,13 +3292,13 @@
           "LECTURA"
         ],
         "dcf_missing": null,
-        "dcf_params": "Parámetros del modelo — WACC 6.63% · crecimiento 7.12% (ciclo medio de los ingresos) · terminal 2.50% · el valor terminal aporta el 70% del valor total · FCF de mantenimiento $12.85B (flujo operativo − D&A como capex de mantenimiento, promedio de 4 ejercicios), frente al FCF normalizado −$5.71B (margen FCF promedio -1.70% × ingresos actuales, que incluye el capex de expansión; ciclo incompleto: 4 ejercicios): el DCF usa el de mantenimiento, con crecimiento normalizado de ciclo medio",
-        "dcf_reliability": "Fiabilidad del DCF: media (empresa cíclica: el FCF depende de la fase del ciclo). Aporta +0 puntos a Valoración (máximo ±2 con fiabilidad media).",
+        "dcf_params": "Parámetros del modelo — WACC 6.42% · crecimiento 7.12% (ciclo medio de los ingresos) · terminal 2.50% · el valor terminal aporta el 71% del valor total · FCF de mantenimiento $12.85B (flujo operativo − D&A como capex de mantenimiento, promedio de 4 ejercicios), frente al FCF normalizado −$5.71B (margen FCF promedio -1.70% × ingresos actuales, que incluye el capex de expansión; ciclo incompleto: 4 ejercicios): el DCF usa el de mantenimiento, con crecimiento normalizado de ciclo medio",
+        "dcf_reliability": "Fiabilidad del DCF: media (empresa cíclica: el FCF depende de la fase del ciclo). Aporta +1 puntos a Valoración (máximo ±2 con fiabilidad media).",
         "dcf_reliability_level": "media",
         "dcf_reliability_tone": "warn",
         "intrinsic": {
           "graham_note": null,
-          "intro": "El precio cotiza en torno al valor justo estimado por el DCF (+3%).",
+          "intro": "El precio cotiza por debajo del valor intrínseco estimado (potencial teórico de +13%).",
           "rows": [
             {
               "bench": null,
@@ -3204,18 +3320,18 @@
               "state": "con_dato",
               "text": null,
               "tone": null,
-              "value": "$196.97"
+              "value": "$216.59"
             },
             {
               "bench": null,
               "gap": null,
               "key": "dcf_upside",
               "label": "Potencial vs precio (upside)",
-              "reading": "Precio justo",
+              "reading": "Infravalorada",
               "state": "con_dato",
-              "text": "el precio cotiza en torno al valor justo estimado por el DCF (+3%)",
-              "tone": "neu",
-              "value": "+2.6%"
+              "text": "el precio cotiza por debajo del valor intrínseco estimado (potencial teórico de +13%)",
+              "tone": "pos",
+              "value": "+12.8%"
             },
             {
               "bench": null,
@@ -3226,7 +3342,7 @@
               "state": "con_dato",
               "text": null,
               "tone": null,
-              "value": "2.55%"
+              "value": "11.38%"
             }
           ]
         },
@@ -3380,30 +3496,30 @@
           "base_discount_idx": 0,
           "base_growth_idx": 2,
           "columns": [
-            "6.6%",
-            "7.6%",
-            "8.6%"
+            "6.4%",
+            "7.4%",
+            "8.4%"
           ],
           "corner": "CREC. \\ WACC",
           "intro": "Valor justo estimado según crecimiento (filas) y tasa de descuento (columnas). Verde: escenario por encima del precio actual; rojo: por debajo.",
-          "note": "Precio actual: $191.94. El recuadro verde marca el escenario base del modelo. Grid asimétrico: WACC recortado en [6%, 20%]: se omiten 4.6%, 5.6%.",
+          "note": "Precio actual: $191.94. El recuadro verde marca el escenario base del modelo. Grid asimétrico: WACC recortado en [6%, 20%]: se omiten 4.4%, 5.4%.",
           "rows": [
             {
               "cells": [
                 {
                   "band": 4,
                   "base": false,
-                  "value": "$104"
+                  "value": "$118"
                 },
                 {
                   "band": 4,
                   "base": false,
-                  "value": "$53"
+                  "value": "$62"
                 },
                 {
                   "band": 4,
                   "base": false,
-                  "value": "$18"
+                  "value": "$24"
                 }
               ],
               "label": "2.1%"
@@ -3413,17 +3529,17 @@
                 {
                   "band": 3,
                   "base": false,
-                  "value": "$147"
+                  "value": "$164"
                 },
                 {
                   "band": 4,
                   "base": false,
-                  "value": "$87"
+                  "value": "$97"
                 },
                 {
                   "band": 4,
                   "base": false,
-                  "value": "$46"
+                  "value": "$53"
                 }
               ],
               "label": "4.6%"
@@ -3431,19 +3547,19 @@
             {
               "cells": [
                 {
-                  "band": 2,
+                  "band": 1,
                   "base": true,
-                  "value": "$197"
+                  "value": "$217"
+                },
+                {
+                  "band": 3,
+                  "base": false,
+                  "value": "$138"
                 },
                 {
                   "band": 4,
                   "base": false,
-                  "value": "$125"
-                },
-                {
-                  "band": 4,
-                  "base": false,
-                  "value": "$77"
+                  "value": "$86"
                 }
               ],
               "label": "7.1%"
@@ -3453,17 +3569,17 @@
                 {
                   "band": 0,
                   "base": false,
-                  "value": "$254"
+                  "value": "$277"
                 },
                 {
-                  "band": 3,
+                  "band": 2,
                   "base": false,
-                  "value": "$169"
+                  "value": "$184"
                 },
                 {
                   "band": 4,
                   "base": false,
-                  "value": "$113"
+                  "value": "$123"
                 }
               ],
               "label": "9.6%"
@@ -3473,17 +3589,17 @@
                 {
                   "band": 0,
                   "base": false,
-                  "value": "$318"
+                  "value": "$345"
                 },
                 {
                   "band": 1,
                   "base": false,
-                  "value": "$220"
+                  "value": "$237"
                 },
                 {
                   "band": 3,
                   "base": false,
-                  "value": "$154"
+                  "value": "$166"
                 }
               ],
               "label": "12.1%"
@@ -3493,7 +3609,7 @@
         "wacc_breakdown": [
           {
             "label": "WACC",
-            "value": "6.63%"
+            "value": "6.42%"
           },
           {
             "label": "Peso del patrimonio",
@@ -3501,19 +3617,19 @@
           },
           {
             "label": "Coste del patrimonio (Ke)",
-            "value": "9.15%"
+            "value": "8.69%"
           },
           {
             "label": "Tasa libre de riesgo (Rf)",
             "value": "5.29%"
           },
           {
-            "label": "Beta bruta (de la fuente)",
-            "value": "0.88"
+            "label": "Beta bruta (propia, 2 años)",
+            "value": "0.72"
           },
           {
             "label": "Beta ajustada (Blume)",
-            "value": "0.92"
+            "value": "0.81"
           },
           {
             "label": "Prima de mercado implícita",
@@ -3536,13 +3652,13 @@
             "value": "20.47%"
           }
         ],
-        "wacc_note": "WACC 6.63% = 45.44% × Ke 9.15% (Rf 5.29% + β ajustada 0.92 [bruta 0.88, Blume] × prima implícita 4.20%) + 54.56% × Kd 5.69% × (1 − t 20.47%). Kd = Rf + spread del rating sintético AAA (tabla de empresas grandes, cobertura 11.0x). t: tasa efectiva TTM. Rf: ^TNX no disponible (sin cotización): valor de config."
+        "wacc_note": "WACC 6.42% = 45.44% × Ke 8.69% (Rf 5.29% + β ajustada 0.81 [bruta 0.72, propia, 2 años semanales frente al S&P 500, Blume] × prima implícita 4.20%) + 54.56% × Kd 5.69% × (1 − t 20.47%). Kd = Rf + spread del rating sintético AAA (tabla de empresas grandes, cobertura 11.0x). t: tasa efectiva TTM. Rf: ^TNX no disponible (sin cotización): valor de config."
       }
     },
     "summary": {
       "alert_counts": {
         "red_flags": 2,
-        "strengths": 3,
+        "strengths": 4,
         "warnings": 3
       },
       "cards": [
@@ -3616,8 +3732,8 @@
       "composition": {
         "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: Valoración (base 10/20 + bloque de múltiplos y DCF) reescalada a 100 y contraída hacia 50 según la confianza.",
         "price": {
-          "level": "razonable",
-          "note": "sin ajustar 65 → ajustado a 61 por confianza media",
+          "level": "atractivo",
+          "note": "sin ajustar 70 → ajustado a 65 por confianza media",
           "rows": [
             {
               "kind": "signed",
@@ -3627,15 +3743,15 @@
             },
             {
               "kind": "signed",
-              "label": "DCF (upside) · +3%",
-              "tone": "neu",
-              "value": 0
+              "label": "DCF (upside) · +13%",
+              "tone": "pos",
+              "value": 1
             }
           ],
-          "score": 61,
+          "score": 65,
           "signed_max": 6,
           "title": "ATRACTIVO DEL PRECIO",
-          "tone": "neu"
+          "tone": "pos"
         },
         "quality": {
           "level": "media",
@@ -3682,7 +3798,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad media · precio razonable (confianza media: negocio cíclico). Calidad 59/100 · precio 61/100 (sin ajustar 65 → ajustado a 61 por confianza media)."
+          "text": "Calidad media · precio atractivo (confianza media: negocio cíclico). Calidad 59/100 · precio 65/100 (sin ajustar 70 → ajustado a 65 por confianza media)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -3690,7 +3806,7 @@
         },
         {
           "label": "CREACIÓN DE VALOR",
-          "text": "El ROIC (4.5%) queda ligeramente por debajo del costo de capital (6.6%). ROCE 7.70% (EBIT / capital empleado, antes de impuestos), en línea con el ROIC (4.50%); ROCE promedio del ciclo 9.26% (4 ejercicios, ciclo incompleto)."
+          "text": "El ROIC (4.5%) queda ligeramente por debajo del costo de capital (6.4%). ROCE 7.70% (EBIT / capital empleado, antes de impuestos), en línea con el ROIC (4.50%); ROCE promedio del ciclo 9.26% (4 ejercicios, ciclo incompleto)."
         },
         {
           "label": "SOLIDEZ",
@@ -3702,15 +3818,15 @@
         },
         {
           "label": "ATRACTIVO DEL PRECIO",
-          "text": "P/FCF normalizado: Bueno (17.6x) (ciclo incompleto: 4 ejercicios). El precio cotiza en torno al valor justo estimado por el DCF (+3%)."
+          "text": "P/FCF normalizado: Bueno (17.6x) (ciclo incompleto: 4 ejercicios). El precio cotiza por debajo del valor intrínseco estimado (potencial teórico de +13%)."
         },
         {
           "label": "CONTEXTO DE MERCADO",
-          "text": "Cotiza en el 31% del rango de 52 semanas, en la zona media. Con beta 0.88, la acción se mueve en línea con el mercado."
+          "text": "Cotiza en el 31% del rango de 52 semanas, en la zona media. Con beta 0.72, la acción amortigua los movimientos del mercado."
         },
         {
           "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Media: los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no. Contrae el atractivo del precio hacia 50; la calidad no se contrae."
+          "text": "Media: un dato de la fuente no superó la validación y se corrigió o se descartó. Contrae el atractivo del precio hacia 50; la calidad no se contrae."
         }
       ]
     },
@@ -4754,7 +4870,7 @@
   },
   "key_metrics": {
     "asset_turnover": 0.530983074519,
-    "beta": 0.8800154,
+    "beta": 0.716579830833,
     "book_value_per_share": 195.627132154,
     "buyback_yield": 0.00119130842676,
     "cash": 82450057482.9,
@@ -4763,7 +4879,7 @@
     "de": 1.17809029005,
     "debt_to_assets": 0.428246877998,
     "dividend_yield": 0.0329579612283,
-    "earnings_growth": 0.0791,
+    "earnings_growth": -0.169078123586,
     "earnings_yield": 0.102185770013,
     "ebitda": 56122880777.1,
     "ebitda_margin": 0.118285648386,
@@ -4805,7 +4921,7 @@
     "ps": 0.671693829813,
     "quick_ratio": 1.00434165648,
     "revenue": 336564342623.0,
-    "revenue_growth": 0.0723,
+    "revenue_growth": 0.0676957086943,
     "roa": 0.0457034918223,
     "roce": 0.0769719630834,
     "roce_avg": 0.092575782025,
@@ -4821,13 +4937,13 @@
     "roe": 0.125728505457,
     "roic": 0.0450083092776,
     "roic_reason": null,
-    "roic_wacc_spread": -0.0212696260372,
+    "roic_wacc_spread": -0.01917982158,
     "shareholder_yield": 0.0341492696551,
     "shares_outstanding": 1177806551.0,
     "total_assets": 633851357554.0,
     "total_debt": 271444864988.0,
     "total_equity": 230410917805.0,
-    "wacc": 0.0662779353148
+    "wacc": 0.0641881308575
   },
   "not_applicable": {},
   "piotroski_f": {
@@ -4898,25 +5014,25 @@
         "category": "Valoración",
         "included": true,
         "max": 20,
-        "score": 13
+        "score": 14
       }
     ],
     "confidence": "media",
     "contracted": true,
     "excluded_categories": [],
     "factor": 0.75,
-    "level": "razonable",
+    "level": "atractivo",
     "level_raw": "atractivo",
     "low_coverage_categories": [],
     "not_applicable_categories": [],
     "partial": false,
-    "score": 61,
-    "score_raw": 65
+    "score": 65,
+    "score_raw": 70
   },
   "price_history": {
     "52w_high": 248.899993896,
     "52w_low": 166.100006104,
-    "beta": 0.8800154
+    "beta": 0.716579830833
   },
   "profile": {
     "country": "Unknown",
@@ -4969,7 +5085,7 @@
   },
   "ratios": {
     "asset_turnover": 0.530983074519,
-    "beta": 0.8800154,
+    "beta": 0.716579830833,
     "cash_ratio": 0.401657182941,
     "current_ratio": 1.16890304602,
     "debt_to_assets": 0.428246877998,
@@ -5144,9 +5260,9 @@
           {
             "adjustment": -1,
             "metric": "ROIC vs WACC",
-            "reason": "Retorno apenas por debajo del costo de capital (spread -2.1%)",
+            "reason": "Retorno apenas por debajo del costo de capital (spread -1.9%)",
             "severity": "moderate",
-            "value": "-2.1%"
+            "value": "-1.9%"
           }
         ],
         "applicable": true,
@@ -5157,7 +5273,7 @@
           "Aceptable (4.3%) - Normal para su sector",
           "Ajustado (7.1%) - Márgenes bajo presión",
           "Aceptable (8.1%) - Márgenes estándar",
-          "Retorno apenas por debajo del costo de capital (spread -2.1%)"
+          "Retorno apenas por debajo del costo de capital (spread -1.9%)"
         ],
         "max": 20,
         "score": 10
@@ -5237,12 +5353,12 @@
             "value": "2 múltiplos"
           },
           {
-            "adjustment": 0,
+            "adjustment": 1,
             "metric": "DCF (upside)",
-            "reason": "En precio por DCF (fiabilidad media): empresa cíclica: el FCF depende de la fase del ciclo",
+            "reason": "Barata por DCF (fiabilidad media): empresa cíclica: el FCF depende de la fase del ciclo",
             "reliability": "media",
-            "severity": "ok",
-            "value": "+3%"
+            "severity": "good",
+            "value": "+13%"
           },
           {
             "adjustment": 0,
@@ -5259,11 +5375,11 @@
           "Bueno (17.6x) (ciclo incompleto: 4 ejercicios)",
           "Muy barato (7.8x vs 13.0x) (ciclo incompleto: 4 ejercicios)",
           "promedio de los ajustes reescalados a ±1 (P/FCF +0.50, EV/EBITDA +1.00) = +0.75 × 4 (máximo con 2 miembros) = +3.0",
-          "En precio por DCF (fiabilidad media): empresa cíclica: el FCF depende de la fase del ciclo",
+          "Barata por DCF (fiabilidad media): empresa cíclica: el FCF depende de la fase del ciclo",
           "No aplica a empresas cíclicas: el resultado de un solo ejercicio depende de la fase del ciclo (no cuenta en la cobertura)"
         ],
         "max": 20,
-        "score": 13
+        "score": 14
       }
     },
     "excluded_categories": [],
@@ -5343,16 +5459,16 @@
   },
   "sensitivity": {
     "base_case": {
-      "discount_rate": 0.0662779353148,
-      "fair_value": 196.97,
+      "discount_rate": 0.0641881308575,
+      "fair_value": 216.59,
       "growth_rate": 0.071197890432
     },
     "base_discount_idx": 0,
     "base_growth_idx": 2,
     "discount_rates": [
-      0.0663,
-      0.0763,
-      0.0863
+      0.0642,
+      0.0742,
+      0.0842
     ],
     "growth_rates": [
       0.0212,
@@ -5365,46 +5481,46 @@
     "is_valid": true,
     "matrix": [
       [
-        104.37,
-        52.85,
-        18.15
+        118.45,
+        61.89,
+        24.43
       ],
       [
-        147.47,
-        86.59,
-        45.62
+        164.12,
+        97.26,
+        53.03
       ],
       [
-        196.97,
-        125.26,
-        77.04
+        216.59,
+        137.83,
+        85.77
       ],
       [
-        253.67,
-        169.48,
-        112.92
+        276.73,
+        184.23,
+        123.15
       ],
       [
-        318.5,
-        219.96,
-        153.8
+        345.49,
+        237.21,
+        165.76
       ]
     ],
     "statistics": {
       "current_price": 191.940002441,
-      "max_value": 318.5,
-      "mean_value": 138.843333333,
-      "median_value": 125.26,
-      "min_value": 18.15,
-      "upside_base_case": 2.62060930219
+      "max_value": 345.49,
+      "mean_value": 152.796,
+      "median_value": 137.83,
+      "min_value": 24.43,
+      "upside_base_case": 12.8425535298
     },
     "trimmed": {
       "discount": [
-        0.0463,
-        0.0563
+        0.0442,
+        0.0542
       ],
       "growth": [],
-      "note": "WACC recortado en [6%, 20%]: se omiten 4.6%, 5.6%"
+      "note": "WACC recortado en [6%, 20%]: se omiten 4.4%, 5.4%"
     },
     "warnings": []
   },
@@ -5420,17 +5536,17 @@
   "verdict": {
     "confidence": "media",
     "confidence_text": "(confianza media: negocio cíclico)",
-    "full": "Calidad media · precio razonable (confianza media: negocio cíclico)",
-    "price_level": "razonable",
+    "full": "Calidad media · precio atractivo (confianza media: negocio cíclico)",
+    "price_level": "atractivo",
     "quality_level": "media",
-    "text": "Calidad media · precio razonable"
+    "text": "Calidad media · precio atractivo"
   },
   "wacc": {
     "applicable": true,
-    "beta": 0.919610318,
+    "beta": 0.810108486658,
     "beta_default": false,
     "beta_method": "Blume",
-    "beta_raw": 0.8800154,
+    "beta_raw": 0.716579830833,
     "bounds": [
       0.06,
       0.2
@@ -5440,7 +5556,7 @@
     "equity": 226068192274.0,
     "kd": 0.0569,
     "kd_after_tax": 0.0452524894323,
-    "ke": 0.091523633356,
+    "ke": 0.0869245564396,
     "mrp": 0.042,
     "rating": {
       "coverage": 11.0439618483,
@@ -5449,7 +5565,7 @@
       "spread": 0.004,
       "table": "grandes"
     },
-    "raw": 0.0662779353148,
+    "raw": 0.0641881308575,
     "reason": null,
     "rf": 0.0529,
     "rf_as_of": null,
@@ -5459,7 +5575,7 @@
     "tax_rate": 0.204701415952,
     "tax_reason": null,
     "tax_source": "efectiva",
-    "value": 0.0662779353148,
+    "value": 0.0641881308575,
     "weights": {
       "debt": 0.545603499296,
       "equity": 0.454396500704

@@ -23,11 +23,6 @@
         "category": "Flujo de caja",
         "detail": "La empresa quema caja, algo esperable en una fase de fuerte inversión para crecer; la clave es que esa inversión se traduzca en ingresos y márgenes futuros.",
         "reason": "Flujo de caja libre negativo"
-      },
-      {
-        "category": "Riesgo de mercado",
-        "detail": "La acción amplifica ~62% los movimientos del mercado: cae más en las correcciones y sube más en los rallies. Razonable con horizonte largo y tolerancia al riesgo; resta si buscas estabilidad.",
-        "reason": "Volatilidad elevada — Beta 1.62"
       }
     ]
   },
@@ -112,14 +107,28 @@
     }
   },
   "beta": {
-    "adjusted": 1.416419137,
+    "adjusted": 1.46,
     "coefficients": [
       0.67,
       0.33
     ],
     "default": false,
-    "method": "Blume",
-    "raw": 1.6215211
+    "discrepancy": null,
+    "method": "beta del sector (sin Blume)",
+    "own": {
+      "adjusted": 1.03308232334,
+      "first_week": "2024-10-25",
+      "last_week": "2026-10-16",
+      "observations": 104,
+      "r2": 0.0789762290714,
+      "raw": 1.049376602,
+      "reason": null,
+      "status": "ok"
+    },
+    "raw": null,
+    "reason": "beta propia no fiable (R² 0.08 < 0.1: la regresión no explica el título); beta del sector (Auto & Truck, A. Damodaran, Betas by Sector (US), NYU Stern, enero de 2026 (columna Beta)), sin Blume",
+    "source": "sector",
+    "source_beta": 1.6215211
   },
   "classification": {
     "alerts": [
@@ -182,15 +191,13 @@
           "_yahoo_ratios.currentRatio",
           "_yahoo_ratios.interestCoverage",
           "_yahoo_ratios.inventoryTurnover",
-          "_yahoo_ratios.quickRatio",
-          "beta",
-          "revenueGrowth"
+          "_yahoo_ratios.quickRatio"
         ],
         "issues": 2,
         "level": "media",
         "reasons": [
           "beneficio normalizado con ítems inferidos (confianza media)",
-          "6 campos de Finnhub en lugar de los estados"
+          "4 campos de Finnhub en lugar de los estados"
         ]
       },
       "stability": {
@@ -204,7 +211,7 @@
     "limits_score": false,
     "reasons": [
       "convergencia no evaluable: un solo método evaluable (múltiplos frente al sector): no hay contraste",
-      "calidad de fuente media: beneficio normalizado con ítems inferidos (confianza media); 6 campos de Finnhub en lugar de los estados",
+      "calidad de fuente media: beneficio normalizado con ítems inferidos (confianza media); 4 campos de Finnhub en lugar de los estados",
       "estabilidad media: alerta de posible cíclica"
     ],
     "score": 0.666666666667
@@ -308,6 +315,33 @@
       },
       "type": "ttm"
     },
+    "beta": {
+      "adjusted": true,
+      "discrepancy": null,
+      "own": {
+        "adjusted": 1.03308232334,
+        "first_week": "2024-10-25",
+        "last_week": "2026-10-16",
+        "observations": 104,
+        "r2": 0.0789762290714,
+        "raw": 1.049376602,
+        "reason": null,
+        "status": "ok"
+      },
+      "reason": "beta propia no fiable (R² 0.08 < 0.1: la regresión no explica el título); beta del sector (Auto & Truck, A. Damodaran, Betas by Sector (US), NYU Stern, enero de 2026 (columna Beta)), sin Blume",
+      "sector": {
+        "basis": "industria",
+        "damodaran": "Auto & Truck",
+        "firms": 33,
+        "source": "A. Damodaran, Betas by Sector (US), NYU Stern, enero de 2026 (columna Beta)",
+        "url": "https://pages.stern.nyu.edu/~adamodar/New_Home_Page/datafile/Betas.html",
+        "value": 1.46
+      },
+      "source": "sector",
+      "source_beta": 1.6215211,
+      "source_name": "finnhub",
+      "value": 1.46
+    },
     "currency": {
       "converted": false,
       "price": "USD",
@@ -396,6 +430,20 @@
       "source_name": "finnhub",
       "source_rate": 0.0,
       "unit": "título"
+    },
+    "ebit": {
+      "accns": [
+        "0001874178-26-000008",
+        "0001874178-26-000054"
+      ],
+      "concept": "us-gaap:OperatingIncomeLoss",
+      "diff": 0.0,
+      "edgar_value": -3533000000.0,
+      "how": "ejercicio 2025-01-01 a 2025-12-31 + acumulado 2026-01-01 a 2026-06-30 − acumulado 2025-01-01 a 2025-06-30",
+      "period_end": "2026-06-30",
+      "source_value": -3533000000.0,
+      "status": "coincide",
+      "tolerance": 0.02
     },
     "edgar": {
       "backup": {
@@ -527,8 +575,8 @@
         "source": "finnhub"
       },
       "beta": {
-        "detail": "/stock/metric",
-        "source": "finnhub"
+        "detail": "beta propia no fiable (R² 0.08 < 0.1: la regresión no explica el título); beta del sector (Auto & Truck, A. Damodaran, Betas by Sector (US), NYU Stern, enero de 2026 (columna Beta)), sin Blume",
+        "source": "derivado"
       },
       "bookValue": {
         "detail": "patrimonio (FY) / acciones de fast_info",
@@ -579,12 +627,12 @@
         "source": "yfinance_statements"
       },
       "fiftyTwoWeekHigh": {
-        "detail": "plan B: yfinance fast_info (sin crumb)",
-        "source": "yfinance_statements"
+        "detail": "máximo y mínimo diarios de las 251 sesiones de la serie (2025-10-15 a 2026-10-14, Yahoo history)",
+        "source": "derivado"
       },
       "fiftyTwoWeekLow": {
-        "detail": "plan B: yfinance fast_info (sin crumb)",
-        "source": "yfinance_statements"
+        "detail": "máximo y mínimo diarios de las 251 sesiones de la serie (2025-10-15 a 2026-10-14, Yahoo history)",
+        "source": "derivado"
       },
       "forwardEps": {
         "detail": "la fuente no lo devolvió",
@@ -705,8 +753,9 @@
         "source": "yfinance_statements"
       },
       "revenueGrowth": {
-        "detail": "/stock/metric",
-        "source": "finnhub"
+        "detail": "FY2025 frente a FY2024 de los estados anuales",
+        "rule": "periodo_incoherente",
+        "source": "derivado"
       },
       "sector": {
         "detail": "búsqueda de Yahoo /v1/finance/search (sin crumb; no es quoteSummary)",
@@ -779,19 +828,80 @@
       "registered": true,
       "status": "registrado"
     },
+    "ordinary": {
+      "at1": 0.0,
+      "distributions": 0.0,
+      "equity_common": 5106000000.0,
+      "equity_owners": 5106000000.0,
+      "net_income_common": -3233000000.0,
+      "net_income_owners": -3233000000.0,
+      "notes": [],
+      "period_end": "2026-06-30",
+      "period_type": "ttm",
+      "preferred": 0.0,
+      "source": "Yahoo (estados de yfinance)"
+    },
     "path": "plan_b_yfinance",
     "pending_results": null,
+    "perimeter": {
+      "changed": false,
+      "discontinued": [],
+      "mixed_cagr": false,
+      "note": null,
+      "restated": [],
+      "series": [
+        {
+          "basis": "vigente",
+          "fy_end": "2025-12-31",
+          "restated": false
+        },
+        {
+          "basis": "vigente",
+          "fy_end": "2024-12-31",
+          "restated": false
+        },
+        {
+          "basis": "vigente",
+          "fy_end": "2023-12-31",
+          "restated": false
+        },
+        {
+          "basis": "vigente",
+          "fy_end": "2022-12-31",
+          "restated": false
+        }
+      ]
+    },
     "price_history": {
       "attempts": 1,
       "first_date": "2024-10-16",
       "interval": "1d",
       "last_date": "2026-10-14",
+      "market": {
+        "fallback_of": null,
+        "last_date": "2026-10-14",
+        "reason": null,
+        "rows": 500,
+        "status": "ok",
+        "symbol": "^GSPC"
+      },
       "period": "2y",
       "reason": null,
       "rows": 500,
       "source": "Yahoo Finance (yfinance history: precios sin ajustar por dividendos y eventos)",
       "status": "ok",
       "symbol": "RIVN"
+    },
+    "range52": {
+      "first_session": "2025-10-15",
+      "high": 22.6900005341,
+      "high_date": "2025-12-22",
+      "last_session": "2026-10-14",
+      "low": 12.3900003433,
+      "low_date": "2025-11-04",
+      "reason": null,
+      "sessions": 251,
+      "status": "ok"
     },
     "ttm": {
       "annual_fields": {
@@ -848,6 +958,14 @@
     }
   },
   "data_validation": [
+    {
+      "action": "aviso",
+      "field": "revenueGrowth",
+      "new": 0.0839034205231,
+      "old": 0.1421,
+      "reason": "el interanual de la fuente (14.2%) es de su propio periodo: se usa el de los estados, FY2025 frente a FY2024 (8.4%)",
+      "rule": "periodo_incoherente"
+    },
     {
       "action": "sin_dato",
       "field": "key_metrics.pe",
@@ -950,7 +1068,7 @@
         },
         {
           "label": "Confianza · Calidad de fuente (media)",
-          "text": "beneficio normalizado con ítems inferidos (confianza media); 6 campos de Finnhub en lugar de los estados"
+          "text": "beneficio normalizado con ítems inferidos (confianza media); 4 campos de Finnhub en lugar de los estados"
         },
         {
           "label": "Confianza · Estabilidad del arquetipo (media)",
@@ -1897,9 +2015,9 @@
         },
         {
           "key": "beta",
-          "label": "Beta bruta",
+          "label": "Beta del sector",
           "state": "con_dato",
-          "value": "1.62"
+          "value": "1.46"
         }
       ],
       "official_source_badge": null,
@@ -1952,9 +2070,9 @@
     "pe_label": "P/E (TTM)",
     "readings": {
       "beta": {
-        "label": "Muy volátil",
-        "text": "con beta 1.62, la acción es notablemente más volátil que el mercado",
-        "tone": "neg"
+        "label": "Volátil",
+        "text": "con beta 1.46, la acción amplifica los movimientos del mercado",
+        "tone": "warn"
       },
       "buyback_yield": {
         "label": "Dilución",
@@ -2014,7 +2132,7 @@
         "counts": {
           "red_flags": 0,
           "strengths": 2,
-          "warnings": 3
+          "warnings": 2
         },
         "groups": [
           {
@@ -2034,11 +2152,6 @@
                 "category": "Flujo de caja",
                 "detail": "La empresa quema caja, algo esperable en una fase de fuerte inversión para crecer; la clave es que esa inversión se traduzca en ingresos y márgenes futuros.",
                 "reason": "Flujo de caja libre negativo"
-              },
-              {
-                "category": "Riesgo de mercado",
-                "detail": "La acción amplifica ~62% los movimientos del mercado: cae más en las correcciones y sube más en los rallies. Razonable con horizonte largo y tolerancia al riesgo; resta si buscas estabilidad.",
-                "reason": "Volatilidad elevada — Beta 1.62"
               }
             ],
             "key": "warnings",
@@ -2124,12 +2237,12 @@
             "bench": null,
             "gap": null,
             "key": "revenue_growth_yoy",
-            "label": "Crecimiento de ingresos (interanual)",
+            "label": "Crecimiento de ingresos (último ejercicio)",
             "reading": "—",
             "state": "con_dato",
             "text": null,
             "tone": null,
-            "value": "14.21%"
+            "value": "8.39%"
           },
           {
             "bench": null,
@@ -2954,7 +3067,7 @@
         "wacc_breakdown": [
           {
             "label": "WACC",
-            "value": "10.03%"
+            "value": "10.18%"
           },
           {
             "label": "Peso del patrimonio",
@@ -2962,19 +3075,15 @@
           },
           {
             "label": "Coste del patrimonio (Ke)",
-            "value": "11.24%"
+            "value": "11.42%"
           },
           {
             "label": "Tasa libre de riesgo (Rf)",
             "value": "5.29%"
           },
           {
-            "label": "Beta bruta (de la fuente)",
-            "value": "1.62"
-          },
-          {
-            "label": "Beta ajustada (Blume)",
-            "value": "1.42"
+            "label": "Beta del sector (Damodaran, sin Blume)",
+            "value": "1.46"
           },
           {
             "label": "Prima de mercado implícita",
@@ -2997,14 +3106,14 @@
             "value": "21.00%"
           }
         ],
-        "wacc_note": "WACC 10.03% = 80.50% × Ke 11.24% (Rf 5.29% + β ajustada 1.42 [bruta 1.62, Blume] × prima implícita 4.20%) + 19.50% × Kd 6.40% × (1 − t 21.00%). Kd = Rf + spread del rating sintético BBB (tabla de empresas grandes); regla M: EBIT < 0 con caja neta, cobertura no significativa -> tramo de caja neta. t: tipo legal (beneficio antes de impuestos ≤ 0: tipo legal 21%). Rf: ^TNX no disponible (sin cotización): valor de config."
+        "wacc_note": "WACC 10.18% = 80.50% × Ke 11.42% (Rf 5.29% + β del sector 1.46 [Damodaran, enero de 2026; sin Blume: es una media de industria] × prima implícita 4.20%) + 19.50% × Kd 6.40% × (1 − t 21.00%). Kd = Rf + spread del rating sintético BBB (tabla de empresas grandes); regla M: EBIT < 0 con caja neta, cobertura no significativa -> tramo de caja neta. t: tipo legal (beneficio antes de impuestos ≤ 0: tipo legal 21%). Rf: ^TNX no disponible (sin cotización): valor de config."
       }
     },
     "summary": {
       "alert_counts": {
         "red_flags": 0,
         "strengths": 2,
-        "warnings": 3
+        "warnings": 2
       },
       "cards": [
         {
@@ -3167,7 +3276,7 @@
         },
         {
           "label": "CONTEXTO DE MERCADO",
-          "text": "Cotiza en el 5% del rango de 52 semanas, en la zona de mínimos. Con beta 1.62, la acción es notablemente más volátil que el mercado."
+          "text": "Cotiza en el 5% del rango de 52 semanas, en la zona de mínimos. Con beta 1.46, la acción amplifica los movimientos del mercado."
         },
         {
           "label": "CONFIANZA DEL VEREDICTO",
@@ -3944,7 +4053,7 @@
   },
   "key_metrics": {
     "asset_turnover": 0.38857331572,
-    "beta": 1.6215211,
+    "beta": 1.46,
     "book_value_per_share": 3.52658252749,
     "buyback_yield": -0.0963748894783,
     "cash": 5310000000.0,
@@ -3995,7 +4104,7 @@
     "ps": 3.1871145474,
     "quick_ratio": 1.6455801105,
     "revenue": 5883000000.0,
-    "revenue_growth": 0.1421,
+    "revenue_growth": 0.0839034205231,
     "roa": -0.213540290621,
     "roce": -0.299525557246,
     "roce_reason": null,
@@ -4017,7 +4126,7 @@
     "total_assets": 15140000000.0,
     "total_debt": 4543000000.0,
     "total_equity": 5106000000.0,
-    "wacc": 0.100330428748
+    "wacc": 0.10180382661
   },
   "not_applicable": {
     "altman": "No aplica a empresas en crecimiento sin beneficio: el Altman se calibró con quiebras de empresas maduras endeudadas; su solidez se mide por el runway (caja frente a la quema de FCF)",
@@ -4110,7 +4219,7 @@
   "price_history": {
     "52w_high": 22.6900005341,
     "52w_low": 12.3900003433,
-    "beta": 1.6215211
+    "beta": 1.46
   },
   "profile": {
     "country": "Unknown",
@@ -4163,7 +4272,7 @@
   },
   "ratios": {
     "asset_turnover": 0.38857331572,
-    "beta": 1.6215211,
+    "beta": 1.46,
     "cash_ratio": 1.46685082873,
     "current_ratio": 2.1044198895,
     "debt_to_assets": 0.300066050198,
@@ -4560,10 +4669,10 @@
   },
   "wacc": {
     "applicable": true,
-    "beta": 1.416419137,
+    "beta": 1.46,
     "beta_default": false,
-    "beta_method": "Blume",
-    "beta_raw": 1.6215211,
+    "beta_method": "beta del sector (sin Blume)",
+    "beta_raw": null,
     "bounds": [
       0.06,
       0.2
@@ -4573,7 +4682,7 @@
     "equity": 18749794882.3,
     "kd": 0.064,
     "kd_after_tax": 0.05056,
-    "ke": 0.112389603754,
+    "ke": 0.11422,
     "mrp": 0.042,
     "rating": {
       "coverage": -13.2819548872,
@@ -4582,7 +4691,7 @@
       "spread": 0.0111,
       "table": "grandes"
     },
-    "raw": 0.100330428748,
+    "raw": 0.10180382661,
     "reason": null,
     "rf": 0.0529,
     "rf_as_of": null,
@@ -4592,7 +4701,7 @@
     "tax_rate": 0.21,
     "tax_reason": "beneficio antes de impuestos ≤ 0: tipo legal 21%",
     "tax_source": "legal",
-    "value": 0.100330428748,
+    "value": 0.10180382661,
     "weights": {
       "debt": 0.195038853128,
       "equity": 0.804961146872
