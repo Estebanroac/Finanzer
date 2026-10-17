@@ -9,7 +9,9 @@ Lee los conjuntos de datos de A. Damodaran (NYU Stern) descargados en una carpet
         --out config/industries.toml
 
 Ficheros (https://pages.stern.nyu.edu/~adamodar/pc/datasets/): por región R en {"" (EE. UU.), Europe, Japan, emerg,
-Global}: pedata.xls | pe{R}.xls, pbvdata.xls | pbv{R}.xls, vebitda{R}.xls, roe{R}.xls, margin{R}.xls, dbtfund{R}.xls.
+Global}: pedata.xls | pe{R}.xls, pbvdata.xls | pbv{R}.xls, vebitda{R}.xls, roe{R}.xls, margin{R}.xls, dbtfund{R}.xls;
+e indname.xls ("Companies in each industry": la industria, el país y el grupo regional de cada empresa), que sale a
+config/damodaran_firms.tsv.gz.
 xlrd solo hace falta para esta herramienta (no es una dependencia de la app).
 
 Columnas y por qué (todas son agregados de la industria salvo lo que se dice):
@@ -30,10 +32,14 @@ Un margen de 0 o 1 (±0.2 puntos) es un artefacto de definición (la banca no ti
 estas tablas: margen bruto 100%, operativo 0%), no una medida: sin dato. Un múltiplo ≤ 0 tampoco es una referencia.
 """
 import argparse
+import collections
 import datetime as dt
+import gzip
 import math
 import os
 import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "lib"))
 
 REGIONS = {"us": ("", "EE. UU."), "europe": ("Europe", "Europa"), "japan": ("Japan", "Japón"),
            "emerging": ("emerg", "mercados emergentes"), "global": ("Global", "global")}
@@ -126,6 +132,72 @@ def region_rows(raw, code):
     return rows, upd
 
 
+# "Exchange:Ticker" de Damodaran -> sufijo del símbolo de Yahoo ("" = EE. UU.). Las bolsas fuera de la tabla (OTC,
+# mercados pequeños) no entran: esas empresas usan el mapa de la industria de Yahoo.
+EXCHANGES = {
+    "NYSE": "", "NasdaqGS": "", "NasdaqGM": "", "NasdaqCM": "", "NYSEAM": "", "ARCA": "", "BATS": "",
+    "ENXTPA": ".PA", "ENXTAM": ".AS", "ENXTBR": ".BR", "ENXTLS": ".LS", "LSE": ".L", "AIM": ".L", "XTRA": ".DE",
+    "DB": ".F", "BME": ".MC", "BIT": ".MI", "SWX": ".SW", "OM": ".ST", "CPSE": ".CO", "OB": ".OL", "HLSE": ".HE",
+    "ISE": ".IR", "WSE": ".WA", "WBAG": ".VI", "ATSE": ".AT", "IBSE": ".IS", "TSE": ".T", "SEHK": ".HK", "SHSE": ".SS",
+    "SZSE": ".SZ", "TWSE": ".TW", "TPEX": ".TWO", "KOSE": ".KS", "KOSDAQ": ".KQ", "NSEI": ".NS", "BSE": ".BO",
+    "SGX": ".SI", "IDX": ".JK", "SET": ".BK", "KLSE": ".KL", "BOVESPA": ".SA", "BMV": ".MX", "JSE": ".JO",
+    "TASE": ".TA", "TSX": ".TO", "TSXV": ".V", "ASX": ".AX", "NZSE": ".NZ", "SASE": ".SR",
+}
+BROAD_GROUPS = {"United States": "us", "Developed Europe": "europe", "Japan": "japan", "Emerging Markets": "emerging",
+                "Australia, NZ and Canada": "global"}
+
+
+def yahoo_symbol(exch_ticker):
+    """"NasdaqGS:AAPL" -> "AAPL", "NYSE:BRK.A" -> "BRK-A", "ENXTPA:MC" -> "MC.PA", "SEHK:700" -> "0700.HK",
+    "KOSE:A005930" -> "005930.KS", "CPSE:MAERSK B" -> "MAERSK-B.CO". None si la bolsa no está en la tabla."""
+    ex, _, t = str(exch_ticker).partition(":")
+    if ex not in EXCHANGES or not t:
+        return None
+    t = t.strip().replace(" ", "-")
+    if ex == "SEHK" and t.isdigit():
+        t = t.zfill(4)
+    if ex in ("KOSE", "KOSDAQ") and t.startswith("A") and t[1:].isdigit():
+        t = t[1:]
+    if EXCHANGES[ex] == "":
+        t = t.replace(".", "-")
+    return (t + EXCHANGES[ex]).upper()
+
+
+def write_firms(raw, out, industries):
+    """Una línea por empresa: S<TAB>símbolo<TAB>industria<TAB>región y, para emparejar ADR por el nombre legal,
+    N<TAB>nombre|país<TAB>industria<TAB>región (solo los nombres que llevan a una sola industria)."""
+    import xlrd
+    from industry_bench import norm_name
+    s = xlrd.open_workbook(os.path.join(raw, "indname.xls"), on_demand=True).sheet_by_name("By company name")
+    head = [str(c.value).strip() for c in s.row(0)]
+    ci = {k: head.index(k) for k in ("Company Name", "Exchange:Ticker", "Industry Group", "Country", "Broad Group")}
+    sym, names = {}, collections.defaultdict(set)
+    skipped = collections.Counter()
+    for r in range(1, s.nrows):
+        row = [s.cell_value(r, i) for i in range(len(head))]
+        ind, reg = str(row[ci["Industry Group"]]).strip(), BROAD_GROUPS.get(str(row[ci["Broad Group"]]).strip())
+        if ind not in industries or reg is None:
+            skipped["industria o región fuera de las tablas"] += 1
+            continue
+        y = yahoo_symbol(row[ci["Exchange:Ticker"]])
+        if y:
+            sym[y] = (ind, reg)
+        else:
+            skipped["bolsa fuera de la tabla"] += 1
+        country = str(row[ci["Country"]]).strip()
+        if country != "United States":
+            names[f"{norm_name(row[ci['Company Name']])}|{country}"].add((ind, reg))
+    with gzip.open(out, "wt", encoding="utf-8") as fh:
+        fh.write("# GENERADO por backend/tools/damodaran_import.py desde indname.xls de A. Damodaran (NYU Stern)\n")
+        for k in sorted(sym):
+            fh.write(f"S\t{k}\t{sym[k][0]}\t{sym[k][1]}\n")
+        for k in sorted(names):
+            if len(names[k]) == 1:
+                ind, reg = next(iter(names[k]))
+                fh.write(f"N\t{k}\t{ind}\t{reg}\n")
+    return len(sym), sum(1 for v in names.values() if len(v) == 1), dict(skipped)
+
+
 def _fmt(x):
     if isinstance(x, int):
         return str(x)
@@ -175,6 +247,12 @@ def main():
         sys.path.insert(0, os.path.expanduser(a.lib))
     counts, as_of = write(os.path.expanduser(a.raw), a.out)
     print(f"industrias por región: {counts}; actualización de Damodaran: {as_of}")
+    import tomllib
+    with open(a.out, "rb") as fh:
+        industries = set(tomllib.load(fh)["regions"]["global"]["industries"])
+    firms_out = os.path.join(os.path.dirname(os.path.abspath(a.out)), "damodaran_firms.tsv.gz")
+    n_sym, n_names, skipped = write_firms(os.path.expanduser(a.raw), firms_out, industries)
+    print(f"empresas: {n_sym} símbolos de Yahoo, {n_names} nombres legales únicos; fuera: {skipped}")
 
 
 if __name__ == "__main__":

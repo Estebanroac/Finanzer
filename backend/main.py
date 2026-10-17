@@ -127,7 +127,8 @@ def _get_sector_benchmarks(sector: str) -> dict:
 
 
 def _select_benchmark(mapped_sector: str, archetype: Optional[str], sector: Optional[str] = None,
-                      industry: Optional[str] = None, country: Optional[str] = None) -> dict:
+                      industry: Optional[str] = None, country: Optional[str] = None, symbol: Optional[str] = None,
+                      title: Optional[str] = None) -> dict:
     """Benchmark de valoración relativa: la industria de la empresa en su región (Damodaran, lib/industry_bench.py)
     o, si el arquetipo contradice al sector de Yahoo, el mercado amplio (perfil market).
 
@@ -169,7 +170,7 @@ def _select_benchmark(mapped_sector: str, archetype: Optional[str], sector: Opti
                 "sources": sources, "industry": {k: v for k, v in mk.items() if k != "values"},
                 "ref": "del mercado (S&P 500)" if mk["region"] == "us" else f"del mercado ({mk['region_label']})",
                 "short": "mercado", "provisional": False}
-    ib = industry_bench.industry(sector, industry, country)
+    ib = industry_bench.industry(sector, industry, country, symbol, title)
     if ib is None:
         # sin industria ni sector en el mapa: la referencia PROVISIONAL de siempre, dicho
         return {"profile": "sector", "sector": key, "thresholds_key": mapped_sector, "thresholds": _th(mapped_sector),
@@ -836,7 +837,8 @@ def _compute_analysis(symbol: str) -> dict:
             # banks) instead of a fixed ~20x. Without this, high-P/E sectors look
             # overvalued and low-P/E sectors look cheap regardless of fundamentals.
             _bench_sel = _select_benchmark(mapped_sector, archetype, profile.sector, profile.industry,
-                                           profile.country)
+                                           profile.country, symbol,
+                                           ((yinfo.get("_edgar") or {}).get("title") if _has_yahoo else None))
             # Un solo benchmark por análisis (etapa 9a): medianas de múltiplos, umbrales del
             # score (ROE, ROA, D/E, márgenes), alertas y PDF leen la misma clave.
             result["benchmark"] = _bench_sel

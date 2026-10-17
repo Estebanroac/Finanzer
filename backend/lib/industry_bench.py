@@ -13,12 +13,72 @@ conjuntos de datos de A. Damodaran (config/industries.toml, generado por tools/d
 Las cifras son agregados de la industria (la definición de cada una, en la cabecera de la herramienta), no medianas.
 """
 import math
-from typing import Any, Dict, List, Optional
+import gzip
+import os
+import re
+import threading
+from typing import Any, Dict, List, Optional, Tuple
 
 from beta import _norm
 from settings import cfg
 
 MARKET_ROW = "Total Market (without financials)"
+FIRMS_FILE = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "config",
+                                           "damodaran_firms.tsv.gz"))
+BROAD_GROUPS = {"United States": "us", "Developed Europe": "europe", "Japan": "japan", "Emerging Markets": "emerging",
+                "Australia, NZ and Canada": "global"}
+_LEGAL = re.compile(r"\b(inc|incorporated|corp|corporation|co|company|ltd|limited|plc|sa|s a|nv|n v|ag|as|a s|asa|"
+                    r"se|spa|s p a|ab|oyj|holding|holdings|group|the|de|cv|sab|kk|tbk|bhd|berhad|pcl|llc|lp)\b")
+
+
+def norm_name(name: Optional[str]) -> str:
+    """Nombre legal sin la forma jurídica ni la puntuación: "TAIWAN SEMICONDUCTOR MANUFACTURING CO LTD" y "Taiwan
+    Semiconductor Manufacturing Company Limited (TWSE:2330)" -> "taiwan semiconductor manufacturing"."""
+    s = re.sub(r"\([^)]*\)", " ", str(name or "")).lower()
+    s = re.sub(r"[^a-z0-9& ]+", " ", s.replace("/", " "))
+    s = _LEGAL.sub(" ", s)
+    return re.sub(r"\s+", " ", s).strip()
+
+
+_firms: Dict[str, Any] = {}
+_firms_lock = threading.Lock()
+
+
+def _load_firms() -> Dict[str, Dict[str, Tuple[str, str]]]:
+    """{"symbol": {símbolo de Yahoo: (industria, región)}, "name": {"nombre|país": (industria, región)}} del archivo
+    generado por tools/damodaran_import.py (se lee una vez por proceso)."""
+    with _firms_lock:
+        if not _firms:
+            sym, names = {}, {}
+            if os.path.isfile(FIRMS_FILE):
+                with gzip.open(FIRMS_FILE, "rt", encoding="utf-8") as fh:
+                    for line in fh:
+                        if line.startswith("#"):
+                            continue
+                        kind, key, ind, reg = line.rstrip("\n").split("\t")
+                        (sym if kind == "S" else names)[key] = (ind, reg)
+            _firms.update(symbol=sym, name=names)
+        return _firms
+
+
+def firm(symbol: Optional[str], title: Optional[str] = None,
+         country: Optional[str] = None) -> Optional[Dict[str, str]]:
+    """La clasificación de la propia empresa en Damodaran ("Companies in each industry"): por su símbolo (la otra clase
+    de acciones si solo figura una: BRK-B -> BRK.A) o, para un ADR, por el nombre legal de EDGAR y el país (un
+    emparejamiento exacto y único). None si no figura."""
+    F = _load_firms()
+    s = str(symbol or "").upper()
+    hit = F["symbol"].get(s)
+    m = re.fullmatch(r"(.+)-([A-Z])", s)
+    if hit is None and m:
+        hit = next((F["symbol"][f"{m.group(1)}-{c}"] for c in "ABC" if f"{m.group(1)}-{c}" in F["symbol"]), None)
+    if hit is not None:
+        return {"industry": hit[0], "region": hit[1], "how": "símbolo"}
+    if title and country and country != "United States":
+        hit = F["name"].get(f"{norm_name(title)}|{country}")
+        if hit is not None:
+            return {"industry": hit[0], "region": hit[1], "how": "nombre legal (ADR)"}
+    return None
 
 
 def region(country: Optional[str]) -> str:
@@ -57,23 +117,31 @@ def _meta(reg: str) -> Dict[str, Any]:
             "as_of": I["as_of"]}
 
 
-def industry(sector: Optional[str], yahoo_industry: Optional[str], country: Optional[str]) -> Optional[Dict[str, Any]]:
+def industry(sector: Optional[str], yahoo_industry: Optional[str], country: Optional[str],
+             symbol: Optional[str] = None, title: Optional[str] = None) -> Optional[Dict[str, Any]]:
     """{values, basis (industria | industria_global | sector), damodaran, firms, region, region_label, source, url,
-    as_of} o None si ni la industria ni el sector están en el mapa."""
+    as_of, classified} o None si ni la empresa, ni su industria, ni su sector están en las tablas. `classified`: cómo
+    se eligió la industria (la clasificación de la propia empresa en Damodaran, o el mapa de la industria de Yahoo)."""
     reg = region(country)
     I, B = cfg("industries"), cfg("betas")
-    ind = B["yahoo_industries"].get(_norm(yahoo_industry))
+    f = firm(symbol, title, country)
+    if f is not None and f["industry"] in I["regions"][f["region"]]["industries"]:
+        ind, reg = f["industry"], f["region"]
+        classified = f"Damodaran clasifica a la empresa en esa industria ({f['how']})"
+    else:
+        ind = B["yahoo_industries"].get(_norm(yahoo_industry))
+        classified = "industria de Yahoo, por el mapa a las de Damodaran"
     if ind:
         row = _row(reg, ind)
         why = _why_not(row)
         if why is None:
             return {**_meta(reg), "values": row["values"], "basis": "industria", "damodaran": ind,
-                    "firms": row["firms"]}
+                    "firms": row["firms"], "classified": classified}
         glob = _row("global", ind)
         if _why_not(glob) is None:
             return {**_meta("global"), "values": glob["values"], "basis": "industria_global", "damodaran": ind,
                     "firms": glob["firms"], "home_region": reg, "home_label": I["regions"][reg]["label"],
-                    "home_why": why}
+                    "home_why": why, "classified": classified}
     group: List[str] = list(B["yahoo_sectors"].get(str(sector or "")) or [])
     rows = [r for r in (_row(reg, g) for g in group) if r and r["firms"] > 0]
     if not rows:
@@ -85,7 +153,7 @@ def industry(sector: Optional[str], yahoo_industry: Optional[str], country: Opti
         if n:
             values[c] = sum(w * v for w, v in pts) / n
     return {**_meta(reg), "values": values, "basis": "sector", "damodaran": group,
-            "firms": sum(r["firms"] for r in rows)}
+            "firms": sum(r["firms"] for r in rows), "classified": "sector de Yahoo (su industria no está en el mapa)"}
 
 
 def market(country: Optional[str]) -> Dict[str, Any]:

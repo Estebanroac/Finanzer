@@ -1994,7 +1994,8 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                 "industrias de su sector (media ponderada por número de empresas)")
         _glob = (f" (la de {_ind.get('home_label')} no es representativa: {_ind.get('home_why')})"
                  if _ind.get("basis") == "industria_global" else "")
-        reference_note = (f"Referencia: {_who}, {_ind.get('region_label')}, {_ind.get('firms')} empresas{_glob} "
+        _cls = f"; {_ind['classified']}" if _ind.get("classified") and isinstance(_ind.get("damodaran"), str) else ""
+        reference_note = (f"Referencia: {_who}{_cls}, {_ind.get('region_label')}, {_ind.get('firms')} empresas{_glob} "
                           f"(A. Damodaran, NYU Stern, {_ind.get('as_of')}): agregados de la industria, no medianas."
                           + (f" Sin referencia con fuente: {', '.join(_no_ref)}." if _no_ref else ""))
     valuation = {"intro": val_txt, "columns": ["MÚLTIPLO", "EMPRESA", _bcol, "BRECHA", "LECTURA"],

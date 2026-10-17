@@ -146,3 +146,50 @@ def test_country_precedence_yahoo_then_edgar_then_suffix():
     info = {"country": None}
     Y._apply_country("T", info)                                                # AT&T: "T" no es el sufijo ".T"
     assert info["country"] is None
+
+
+# ─────────────────────────── la clasificación de la propia empresa ───────────────────────────
+@pytest.mark.parametrize("sym,title,country,industry,reg,how", [
+    ("AAPL", None, "United States", "Computers/Peripherals", "us", "símbolo"),          # no "Consumer Electronics"
+    ("BRK-B", None, "United States", "Diversified", "us", "símbolo"),                   # solo figura la clase A
+    ("MC.PA", None, "France", "Apparel", "europe", "símbolo"),
+    ("TSM", "TAIWAN SEMICONDUCTOR MANUFACTURING CO LTD", "Taiwan", "Semiconductor", "emerging", "nombre legal (ADR)"),
+    ("ASML", "ASML HOLDING NV", "Netherlands", "Semiconductor Equip", "europe", "nombre legal (ADR)"),
+    ("TM", "TOYOTA MOTOR CORP/", "Japan", "Auto & Truck", "japan", "nombre legal (ADR)")])
+def test_firm_classification_from_damodaran(sym, title, country, industry, reg, how):
+    f = IB.firm(sym, title, country)
+    assert (f["industry"], f["region"], f["how"]) == (industry, reg, how)
+
+
+def test_unknown_firm_and_us_name_are_not_matched():
+    assert IB.firm("NOEXISTE", None, "United States") is None
+    # el nombre legal solo empareja ADR (emisor fuera de EE. UU.): una empresa de EE. UU. va por su símbolo
+    assert IB.firm("NOEXISTE", "Apple Inc.", "United States") is None
+
+
+def test_norm_name_drops_legal_forms():
+    assert IB.norm_name("TAIWAN SEMICONDUCTOR MANUFACTURING CO LTD") == IB.norm_name(
+        "Taiwan Semiconductor Manufacturing Company Limited (TWSE:2330)") == "taiwan semiconductor manufacturing"
+    assert IB.norm_name("NOVO NORDISK A S") == IB.norm_name("Novo Nordisk A/S") == "novo nordisk"
+
+
+def test_firm_classification_wins_over_the_yahoo_map():
+    """AAPL: Yahoo dice "Consumer Electronics" (fabricantes de electrónica de consumo, EV/EBITDA ~7x); Damodaran la
+    clasifica en Computers/Peripherals de EE. UU."""
+    r = IB.industry("Technology", "Consumer Electronics", "United States", "AAPL")
+    assert r["damodaran"] == "Computers/Peripherals" and r["region"] == "us" and "clasifica" in r["classified"]
+    r = IB.industry("Technology", "Consumer Electronics", "United States", "NOEXISTE")
+    assert r["damodaran"] == "Electronics (Consumer & Office)" and "Yahoo" in r["classified"]
+
+
+def test_yahoo_symbol_translation():
+    import importlib.util
+    import os
+    spec = importlib.util.spec_from_file_location(
+        "damodaran_import", os.path.join(os.path.dirname(__file__), "..", "tools", "damodaran_import.py"))
+    T = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(T)
+    assert T.yahoo_symbol("NasdaqGS:AAPL") == "AAPL" and T.yahoo_symbol("NYSE:BRK.A") == "BRK-A"
+    assert T.yahoo_symbol("ENXTPA:MC") == "MC.PA" and T.yahoo_symbol("SEHK:700") == "0700.HK"
+    assert T.yahoo_symbol("KOSE:A005930") == "005930.KS" and T.yahoo_symbol("CPSE:MAERSK B") == "MAERSK-B.CO"
+    assert T.yahoo_symbol("OTCPK:ABCD") is None
