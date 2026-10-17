@@ -136,6 +136,15 @@ HISTORY: Dict[str, Tuple[str, Tuple[str, ...], Tuple[str, ...]]] = {
                        ("AdjustedWeightedAverageShares",)),
     "operating_cash_flow": ("money", CONCEPTS["operating_cash_flow"][2], CONCEPTS["operating_cash_flow"][3]),
     "capex": ("money", CONCEPTS["capex"][2], CONCEPTS["capex"][3]),
+    # T2: ciclicidad sin el cambio de perímetro (resultado de operaciones discontinuadas) y subtipo financiero (los
+    # ingresos de contratos con clientes excluyen los contratos de seguro por norma, ASC 606 / NIIF 15: en una
+    # aseguradora son los negocios no aseguradores).
+    "discontinued": ("money", ("IncomeLossFromDiscontinuedOperationsNetOfTax",
+                               "IncomeLossFromDiscontinuedOperationsNetOfTaxAttributableToReportingEntity"),
+                     ("ProfitLossFromDiscontinuedOperations",)),
+    "contract_revenue": ("money", ("RevenueFromContractWithCustomerExcludingAssessedTax",
+                                   "RevenueFromContractWithCustomerIncludingAssessedTax"),
+                         ("RevenueFromContractsWithCustomers",)),
 }
 # Campos cuya definición no cambia de forma material entre US GAAP e IFRS: con el cambio de norma (TM, IFRS desde el
 # FY2021) la historia anterior se completa con la otra taxonomía y se declara.
