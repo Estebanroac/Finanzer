@@ -32,7 +32,9 @@ def test_status_by_cadence():
     erp = P["market_risk_premium"]
     assert R.estado(erp, dt.date(2026, 10, 17))[0] == "vigente"
     assert R.estado(erp, dt.date(2026, 11, 2)) == ("revisar", dt.date(2026, 11, 1))
-    assert R.estado(P["sector_medians"], dt.date(2026, 10, 17)) == ("sin fuente", None)
+    # fase 4/7: las referencias por industria ya tienen fuente (Damodaran, ene-2026); los umbrales siguen sin ella
+    assert R.estado(P["sector_medians"], dt.date(2026, 10, 17)) == ("vigente", dt.date(2027, 1, 5))
+    assert R.estado(P["score_thresholds"], dt.date(2026, 10, 17)) == ("sin fuente", None)
     # consultado después de la publicación esperada (2021 + 5 años) y sin edición nueva: cuenta desde la consulta
     assert R.estado(P["base_rates"], dt.date(2026, 10, 17))[0] == "vigente"
 
