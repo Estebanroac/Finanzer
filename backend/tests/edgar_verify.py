@@ -442,8 +442,8 @@ def f3_value(sym: str, ed: "Edgar", efield: str, period):
         return abs(e) + extra, f"{c} + {' + '.join(used)} (definición F3)", det
     if efield == "cash" and period[0] == "instant" and CTX.get("archetype") != "FINANCIAL":
         base, c, det = cash_total(ed, period)
-        if base is None:
-            return None
+        if base is None or "CashCashEquivalentsAndShortTermInvestments" in str(c):
+            return None             # el total "caja e inversiones a corto plazo" del emisor ya es la definición
         parts = [n for n in F3_CASH_EXTRA if n not in str(c)]
         extra, used = _sum_parts(ed, period, [f"{t}:{n}" for n in parts])
         if not used:
