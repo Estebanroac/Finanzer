@@ -1,5 +1,14 @@
 # Fase 2b · Punto de parada 2 (T8): medida final
 
+> **Resuelto por el usuario (2026-10-16):** "si. aprueba y genera. con F1 haz lo que mejor financieramente podemos
+> hacer. y con todo lo demas haces lo que debe hacer una app de analisis financiero. y si, ya puedes pushear".
+> - **Golden:** regenerados (`dcdda74`); `pytest -q` → 3662 passed, 1 skipped.
+> - **F1:** referencia del beneficio y del ROE del accionista ordinario (`a3b4c7a`). Campos **1290/1411 (91.4%)**,
+>   ratios 193/216 (89.4%). Con la referencia anterior: 1284/1411 (91.0%).
+> - **EBIT:** marcado "estimado por la fuente" si difiere más de un 2% del de EDGAR (`4310fc8`): KO, PLD, NEE, DUK,
+>   FCX, CRWD, UL y V. Sin cambios de nivel. Las 21 filas de F1 siguen fuera: el dato del proveedor es distinto,
+>   ahora rotulado.
+
 Rama `fiabilidad/f2b-corregir` (worktree `../finanzer_next-f2b`), sin push. Fecha: 2026-10-16.
 
 ## 0. Lo que te toca

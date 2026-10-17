@@ -995,3 +995,12 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
   de D7, la tabla de Crecimiento con "(último ejercicio)", sin errores en la consola.
 - **Punto de parada 2:** esperando del usuario la aprobación de los golden de T6–T7, la decisión sobre la referencia
   del beneficio neto en F1, el alcance del EBIT "estimado" y el "ok, pushea". Falta `SEC_EDGAR_USER_AGENT` en Render.
+- **Decisión del usuario (cita literal, en este chat):** "si. aprueba y genera. con F1 haz lo que mejor
+  financieramente podemos hacer. y con todo lo demas haces lo que debe hacer una app de analisis financiero. y si, ya
+  puedes pushear".
+  - EBIT de la fuente marcado "estimado por la fuente" si difiere > 2% del de EDGAR (`4310fc8`; F2_PRECEDENCIA
+    §2.1, escenario B): KO, PLD, NEE, DUK, FCX, CRWD, UL, V. Sin cambios de nivel.
+  - F1 con la referencia del accionista ordinario (`a3b4c7a`): campos **1290/1411 (91.4%)**, ratios 193/216 (89.4%).
+    Objetivo del 95% no alcanzado: lo que queda fuera se cierra en la fase 3 (definiciones de D2, EBIT) o es
+    definición por diseño (dividendo indicado, deuda de la regla).
+  - Golden regenerados (`dcdda74`). `pytest -q` → "3662 passed, 1 skipped"; `npm run check` → 46 salidas.
