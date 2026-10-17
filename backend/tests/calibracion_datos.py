@@ -57,7 +57,10 @@ EXTRA = {"us-gaap": {
     "PaymentsForRepurchaseOfCommonStock", "NetIncomeLossAvailableToCommonStockholdersBasic",
     "StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest", "InterestExpense",
     "DepreciationDepletionAndAmortization", "InterestIncomeExpenseNonoperatingNet", "InvestmentIncomeInterest",
-    "NoninterestIncome", "InterestIncomeExpenseNet", "Revenues"},
+    "NoninterestIncome", "InterestIncomeExpenseNet", "Revenues",
+    # deuda de los REIT (calibracion_bandas.py): O da NotesPayable + LoansPayable; otros, DebtInstrumentCarryingAmount
+    "NotesPayable", "LoansPayable", "NotesAndLoansPayable", "DebtInstrumentCarryingAmount", "LineOfCredit",
+    "UnsecuredDebt", "SecuredDebt", "SeniorNotes"},
     "dei": {"EntityCommonStockSharesOutstanding"}}
 
 _last = [0.0]
@@ -100,7 +103,7 @@ def _write(path, obj):
         json.dump(obj, fh, separators=(",", ":"))
 
 
-def fetch_edgar(out, ua, tickers):
+def fetch_edgar(out, ua, tickers, force=False):
     import sec_edgar as edgar
     tpath = os.path.join(out, "edgar", "company_tickers.json")
     if not os.path.isfile(tpath):
@@ -115,7 +118,7 @@ def fetch_edgar(out, ua, tickers):
             continue
         name = f"CIK{int(cik):010d}.json"
         fpath = os.path.join(out, "edgar", "companyfacts", name)
-        if not os.path.isfile(fpath):
+        if force or not os.path.isfile(fpath):
             raw = _sec_get(f"https://data.sec.gov/api/xbrl/companyfacts/{name}", ua)
             _write(fpath, _reduce(raw) if raw else {"facts": {}})
         spath = os.path.join(out, "edgar", "submissions", name)

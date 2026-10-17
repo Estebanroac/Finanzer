@@ -38,15 +38,17 @@ runway_bounds = [3.0, 2.0, 1.0]     # años: ≥3 / ≥2 / ≥1 / <1
 runway_points = [6, 2, -2, -6]
 # REIT (etapa 9a): la métrica de apalancamiento es deuda neta/EBITDA con bandas de
 # REIT (el D/E queda informativo). Un REIT con grado de inversión suele operar en
-# 5–6.5x; > 7.5x es elevado y > 9x alto. Propuesta PROVISIONAL, sin muestra.
+# 5–6.5x; > 7.5x es elevado y > 9x alto. Contrastada en la fase 7 (F7_CALIBRACION §4): 26 REIT, 295
+# empresa-año 2012–2025, mediana 5.5x en el tramo ≤6.5; bien centrada.
 reit_nde_bounds = [5.0, 6.5, 7.5, 9.0]   # ≤5 conservador / ≤6.5 adecuado / ≤7.5 en línea / ≤9 elevado / alto
 reit_nde_points = [4, 2, 0, -2, -4]
-# Etapa 11b (PROVISIONAL): UTILITY regulada, deuda neta/EBITDA. Una utility con grado de
+# Etapa 11b: UTILITY regulada, deuda neta/EBITDA (contrastada en la fase 7, F7_CALIBRACION §4: 25 utilities,
+# 342 empresa-año, mediana 5.1x; bien centrada). Una utility con grado de
 # inversión opera en 5.5–6.5x (base regulada financiada con deuda): ≤4.5 conservadora /
 # ≤5.5 adecuada / ≤6.5 en línea / ≤7.5 elevada / alta.
 utility_nde_bounds = [4.5, 5.5, 6.5, 7.5]
 utility_nde_points = [4, 2, 0, -2, -4]
-# Etapa 11b (PROVISIONAL): UTILITY, cobertura de intereses (EBIT / intereses). Una utility
+# Etapa 11b: UTILITY, cobertura de intereses (EBIT / intereses; contrastada en la fase 7: mediana 2.9x, bien centrada). Una utility
 # regulada opera con 2.5–3.5x: ≥3.5 fuerte / ≥2.5 adecuada / ≥2.0 en línea / ≥1.5 ajustada / riesgo.
 utility_coverage_bounds = [3.5, 2.5, 2.0, 1.5]
 utility_coverage_points = [3, 1, 0, -2, -3]
@@ -74,7 +76,8 @@ spread_points = [3, 2, 1, -1, -3]
 # Regla M (etapa 9a): ROIC no significativo si el capital invertido (patrimonio +
 # deuda − caja) es menor que esta fracción de los activos (la caja lo encoge).
 roic_min_invested_capital_share = 0.10
-# REIT (etapa 9a): rentabilidad sobre el FFO (beneficio neto + D&A). PROVISIONAL.
+# REIT (etapa 9a): rentabilidad sobre el FFO (beneficio neto + D&A). PROVISIONAL. Fase 7 (F7_CALIBRACION §4):
+# FFO/patrimonio da el tramo más alto al 82% de los REIT (satura); FFO/ingresos, casi centrada. Decisión del usuario.
 reit_ffo_equity_bounds = [0.10, 0.08, 0.06, 0.04]    # FFO / patrimonio contable
 reit_ffo_equity_points = [6, 3, 0, -3, -6]
 reit_ffo_margin_bounds = [0.60, 0.50, 0.40, 0.25]    # FFO / ingresos
@@ -98,9 +101,10 @@ gpp_fcf_margin_points = [5, 3, 0, -3, -5]
 dcf_upside_bounds = [0.30, 0.10, -0.10, -0.30]
 dcf_points_high = [4, 2, 0, -2, -4]
 dcf_points_medium = [2, 1, 0, -1, -2]
-reit_pffo_bounds = [12, 16, 20, 25] # REIT: P/FFO ≤ (en lugar de P/E y P/FCF)
+reit_pffo_bounds = [12, 16, 20, 25] # REIT: P/FFO ≤ (en lugar de P/E y P/FCF); contrastada en la fase 7 (mediana 16.7x)
 reit_pffo_points = [4, 2, 0, -2, -4]
-# Etapa 11b (PROVISIONAL): UTILITY, rentabilidad por dividendo ≥ (junto al P/E frente al sector).
+# Etapa 11b: UTILITY, rentabilidad por dividendo ≥ (junto al P/E frente al sector; contrastada en la fase 7:
+# mediana 3.6%, bien centrada).
 utility_yield_bounds = [0.05, 0.04, 0.03, 0.02]
 utility_yield_points = [4, 2, 0, -2, -4]
 pe_value_mults = [0.7, 0.9, 1.1, 1.3]

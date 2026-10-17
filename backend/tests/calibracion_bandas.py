@@ -57,7 +57,7 @@ def metrics(data, t, kind):
     facts = json.load(open(os.path.join(data, "edgar", "companyfacts", f"CIK{int(cik):010d}.json")))
     out = []
     for e in _fy_ends(facts):
-        inc, bs, cf, _ = G.statements(facts, G._d(e), "9999-12-31", n=1)
+        inc, bs, cf, _ = G.statements(facts, G._d(e), "9999-12-31", n=1, reit_debt=(kind == "reit"))
         if inc.empty:
             continue
         col = lambda df, row: (float(df.loc[row].iloc[0]) if row in df.index and df.loc[row].iloc[0] == df.loc[row].iloc[0]
@@ -170,6 +170,7 @@ def main():
         if not ua:
             sys.exit("falta SEC_EDGAR_USER_AGENT en el entorno")
         CD.fetch_edgar(data, ua, REITS + UTILITIES)
+        CD.fetch_edgar(data, ua, REITS, force=True)      # con las etiquetas de deuda de los REIT (EXTRA)
         CD.fetch_yahoo(data, REITS + UTILITIES)
     txt, verdicts = study(data)
     with open(os.path.expanduser(a.out), "w") as fh:

@@ -144,7 +144,7 @@ def tenk_filing(facts, fy):
     return end, cands[end]
 
 
-def statements(facts, fy_end, until, n=4):
+def statements(facts, fy_end, until, n=4, reit_debt=False):
     """(income_stmt, balance_sheet, cashflow) con forma de yfinance: filas de Yahoo, columnas = cierres de ejercicio."""
     import pandas as pd
     ends = [e for e in fiscal_years(facts, until) if e <= fy_end.isoformat()][:n]
@@ -189,6 +189,15 @@ def statements(facts, fy_end, until, n=4):
                 total = ltd_all + (stb or 0.0) + (cp or 0.0)
             elif lt_nc is not None or cur is not None:
                 total = (lt_nc or 0.0) + (cur or 0.0)
+        if reit_debt:
+            # Solo el estudio de bandas (calibracion_bandas.py): los REIT etiquetan su deuda como pagarés y préstamos
+            # (O) o como importe de los instrumentos; el estudio principal no usa esta rama (sus fixtures no cambian).
+            inst = g("DebtInstrumentCarryingAmount")
+            notes = [x for x in (g("NotesPayable", "NotesAndLoansPayable", "SeniorNotes", "UnsecuredDebt"),
+                                 g("LoansPayable"), g("LineOfCredit"), g("SecuredDebt"), cp) if x is not None]
+            alt = inst if inst is not None else (sum(notes) if notes else None)
+            if alt is not None and (total is None or alt > total):
+                total = alt
         bcol["Long Term Debt"] = lt_nc
         bcol["Current Debt"] = cur
         bcol["Total Debt"] = total
