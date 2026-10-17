@@ -142,8 +142,8 @@
     "alerts": [
       {
         "code": "posible_ciclica",
-        "detail": "Posible cíclica: margen operativo volátil (12.8 pp alrededor de su tendencia > 5 pp); crecimiento de ingresos volátil (32.0 pp > 15 pp). No cambia el arquetipo; baja la confianza.",
-        "detail_plain": "Podría ser cíclica: su margen operativo oscila 12.8 puntos alrededor de su tendencia (el umbral es 5) y su crecimiento de ingresos oscila 32.0 puntos de un año a otro (el umbral es 15). No cambia su tipo, pero baja la confianza del veredicto."
+        "detail": "Posible cíclica: margen operativo volátil (14.7 pp alrededor de su tendencia > 5 pp); crecimiento de ingresos volátil (32.0 pp > 15 pp). No cambia el arquetipo; baja la confianza.",
+        "detail_plain": "Podría ser cíclica: su margen operativo oscila 14.7 puntos alrededor de su tendencia (el umbral es 5) y su crecimiento de ingresos oscila 32.0 puntos de un año a otro (el umbral es 15). No cambia su tipo, pero baja la confianza del veredicto."
       }
     ],
     "ambiguous": false,
@@ -154,7 +154,7 @@
       "assets_to_revenue": 0.957696190573,
       "eps_ttm": 7.91,
       "net_margin_ttm": 0.636629490146,
-      "op_margin_detrended_std": 0.127617281257,
+      "op_margin_detrended_std": 0.146576288284,
       "op_margin_peak_to_trough": 0.0203584320828,
       "revenue_cagr_3y": 1.01417756381,
       "revenue_cagr_3y_reason": null,
@@ -303,7 +303,8 @@
         },
         "operatingIncome": {
           "period_end": "2026-07-31",
-          "period_type": "ttm"
+          "period_type": "ttm",
+          "source": "sec_edgar"
         },
         "retainedEarnings": {
           "period_end": "2026-07-31",
@@ -495,20 +496,7 @@
       "source_rate": 1.0,
       "unit": "título"
     },
-    "ebit": {
-      "accns": [
-        "0001045810-26-000021",
-        "0001045810-26-000075"
-      ],
-      "concept": "us-gaap:OperatingIncomeLoss",
-      "diff": 0.0,
-      "edgar_value": 197579000000.0,
-      "how": "ejercicio 2025-01-27 a 2026-01-25 + acumulado 2026-01-26 a 2026-07-26 − acumulado 2025-01-27 a 2025-07-27",
-      "period_end": "2026-07-31",
-      "source_value": 197579000000.0,
-      "status": "coincide",
-      "tolerance": 0.02
-    },
+    "ebit": null,
     "edgar": {
       "backup": {
         "cut": [],
@@ -559,7 +547,123 @@
       },
       "cik": 1045810,
       "facts_status": "ok",
+      "history": {
+        "capex": {
+          "cross_taxonomy": null,
+          "first": "2010-01-31",
+          "last": "2026-01-25",
+          "unit": "USD",
+          "years": 8
+        },
+        "diluted_eps": {
+          "cross_taxonomy": null,
+          "first": "2008-01-27",
+          "last": "2026-01-25",
+          "unit": "USD/shares",
+          "years": 19
+        },
+        "diluted_shares": {
+          "cross_taxonomy": null,
+          "first": "2008-01-27",
+          "last": "2026-01-25",
+          "unit": "shares",
+          "years": 19
+        },
+        "net_income": {
+          "cross_taxonomy": null,
+          "first": "2008-01-27",
+          "last": "2026-01-25",
+          "unit": "USD",
+          "years": 19
+        },
+        "operating_cash_flow": {
+          "cross_taxonomy": null,
+          "first": "2008-01-27",
+          "last": "2026-01-25",
+          "unit": "USD",
+          "years": 19
+        },
+        "operating_income": {
+          "cross_taxonomy": null,
+          "first": "2008-01-27",
+          "last": "2026-01-25",
+          "unit": "USD",
+          "years": 19
+        },
+        "revenue": {
+          "cross_taxonomy": null,
+          "first": "2008-01-27",
+          "last": "2026-01-25",
+          "unit": "USD",
+          "years": 19
+        }
+      },
       "pending_filings": [],
+      "primary": {
+        "cut": [
+          {
+            "accns": [
+              "0001045810-26-000021",
+              "0001045810-26-000075"
+            ],
+            "concept": "us-gaap:OperatingIncomeLoss",
+            "field": "operatingIncome",
+            "how": "ejercicio 2025-01-27 a 2026-01-25 + acumulado 2026-01-26 a 2026-07-26 − acumulado 2025-01-27 a 2025-07-27",
+            "period_end": "2026-07-31",
+            "replaced": 197579000000.0,
+            "value": 197579000000.0,
+            "why": "EBIT que presenta el emisor (F3_T1_PARADA1 §1)"
+          }
+        ],
+        "fy": [
+          {
+            "accns": [
+              "0001045810-26-000021"
+            ],
+            "concept": "us-gaap:OperatingIncomeLoss",
+            "field": "FY.operating_income",
+            "fy_end": "2026-01-31",
+            "how": "ejercicio 2025-01-27 a 2026-01-25",
+            "replaced": 130387000000.0,
+            "value": 130387000000.0
+          },
+          {
+            "accns": [
+              "0001045810-26-000021"
+            ],
+            "concept": "us-gaap:OperatingIncomeLoss",
+            "field": "FY.operating_income",
+            "fy_end": "2025-01-31",
+            "how": "ejercicio 2024-01-29 a 2025-01-26",
+            "replaced": 81453000000.0,
+            "value": 81453000000.0
+          },
+          {
+            "accns": [
+              "0001045810-26-000021"
+            ],
+            "concept": "us-gaap:OperatingIncomeLoss",
+            "field": "FY.operating_income",
+            "fy_end": "2024-01-31",
+            "how": "ejercicio 2023-01-30 a 2024-01-28",
+            "replaced": 32972000000.0,
+            "value": 32972000000.0
+          },
+          {
+            "accns": [
+              "0001045810-25-000023"
+            ],
+            "concept": "us-gaap:OperatingIncomeLoss",
+            "field": "FY.operating_income",
+            "fy_end": "2023-01-31",
+            "how": "ejercicio 2022-01-31 a 2023-01-29",
+            "replaced": 5577000000.0,
+            "value": 4224000000.0
+          }
+        ],
+        "reason": null,
+        "skipped": []
+      },
       "reason": null,
       "status": "ok",
       "title": "NVIDIA CORP"
@@ -804,8 +908,8 @@
         "source": "yfinance_statements"
       },
       "operatingIncome": {
-        "detail": "TTM: suma de los 4 trimestres 2026-07-31, 2026-04-30, 2026-01-31, 2025-10-31",
-        "source": "yfinance_statements"
+        "detail": "SEC EDGAR, fuente principal (us-gaap:OperatingIncomeLoss): ejercicio 2025-01-27 a 2026-01-25 + acumulado 2026-01-26 a 2026-07-26 − acumulado 2025-01-27 a 2025-07-27 · EBIT que presenta el emisor (F3_T1_PARADA1 §1)",
+        "source": "sec_edgar"
       },
       "payoutRatio": {
         "detail": "/stock/metric",
@@ -1086,7 +1190,7 @@
         },
         {
           "label": "Clasificación",
-          "text": "Posible cíclica: margen operativo volátil (12.8 pp alrededor de su tendencia > 5 pp); crecimiento de ingresos volátil (32.0 pp > 15 pp). No cambia el arquetipo; baja la confianza."
+          "text": "Posible cíclica: margen operativo volátil (14.7 pp alrededor de su tendencia > 5 pp); crecimiento de ingresos volátil (32.0 pp > 15 pp). No cambia el arquetipo; baja la confianza."
         },
         {
           "label": "Confianza · Convergencia entre métodos (no evaluable)",
@@ -2299,7 +2403,7 @@
       ],
       "classification_notes": [
         "Su industria (Semiconductors) puede ser cíclica, pero en los ejercicios disponibles no hubo caídas fuertes del margen ni de los ingresos.",
-        "Podría ser cíclica: su margen operativo oscila 12.8 puntos alrededor de su tendencia (el umbral es 5) y su crecimiento de ingresos oscila 32.0 puntos de un año a otro (el umbral es 15). No cambia su tipo, pero baja la confianza del veredicto."
+        "Podría ser cíclica: su margen operativo oscila 14.7 puntos alrededor de su tendencia (el umbral es 5) y su crecimiento de ingresos oscila 32.0 puntos de un año a otro (el umbral es 15). No cambia su tipo, pero baja la confianza del veredicto."
       ],
       "confidence_reasons": [
         "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo.",
@@ -5764,7 +5868,7 @@
       "gross_margin": 0.56928894491,
       "net_income": 4368000000.0,
       "net_margin": 0.161933713947,
-      "operating_margin": 0.206754652628,
+      "operating_margin": 0.156595239861,
       "revenue": 26974000000.0,
       "year": 2023
     },

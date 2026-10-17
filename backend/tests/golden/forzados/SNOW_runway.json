@@ -273,7 +273,8 @@
         },
         "operatingIncome": {
           "period_end": "2026-07-31",
-          "period_type": "ttm"
+          "period_type": "ttm",
+          "source": "sec_edgar"
         },
         "retainedEarnings": {
           "period_end": "2026-07-31",
@@ -406,20 +407,7 @@
       "source_rate": null,
       "unit": "título"
     },
-    "ebit": {
-      "accns": [
-        "0001640147-26-000008",
-        "0001640147-26-000037"
-      ],
-      "concept": "us-gaap:OperatingIncomeLoss",
-      "diff": 0.0,
-      "edgar_value": -1236753000.0,
-      "how": "ejercicio 2025-02-01 a 2026-01-31 + acumulado 2026-02-01 a 2026-07-31 − acumulado 2025-02-01 a 2025-07-31",
-      "period_end": "2026-07-31",
-      "source_value": -1236753000.0,
-      "status": "coincide",
-      "tolerance": 0.02
-    },
+    "ebit": null,
     "edgar": {
       "backup": {
         "cut": [],
@@ -438,7 +426,123 @@
       },
       "cik": 1640147,
       "facts_status": "ok",
+      "history": {
+        "capex": {
+          "cross_taxonomy": null,
+          "first": "2019-01-31",
+          "last": "2026-01-31",
+          "unit": "USD",
+          "years": 8
+        },
+        "diluted_eps": {
+          "cross_taxonomy": null,
+          "first": "2019-01-31",
+          "last": "2026-01-31",
+          "unit": "USD/shares",
+          "years": 8
+        },
+        "diluted_shares": {
+          "cross_taxonomy": null,
+          "first": "2020-01-31",
+          "last": "2026-01-31",
+          "unit": "shares",
+          "years": 7
+        },
+        "net_income": {
+          "cross_taxonomy": null,
+          "first": "2019-01-31",
+          "last": "2026-01-31",
+          "unit": "USD",
+          "years": 8
+        },
+        "operating_cash_flow": {
+          "cross_taxonomy": null,
+          "first": "2019-01-31",
+          "last": "2026-01-31",
+          "unit": "USD",
+          "years": 8
+        },
+        "operating_income": {
+          "cross_taxonomy": null,
+          "first": "2019-01-31",
+          "last": "2026-01-31",
+          "unit": "USD",
+          "years": 8
+        },
+        "revenue": {
+          "cross_taxonomy": null,
+          "first": "2019-01-31",
+          "last": "2026-01-31",
+          "unit": "USD",
+          "years": 8
+        }
+      },
       "pending_filings": [],
+      "primary": {
+        "cut": [
+          {
+            "accns": [
+              "0001640147-26-000008",
+              "0001640147-26-000037"
+            ],
+            "concept": "us-gaap:OperatingIncomeLoss",
+            "field": "operatingIncome",
+            "how": "ejercicio 2025-02-01 a 2026-01-31 + acumulado 2026-02-01 a 2026-07-31 − acumulado 2025-02-01 a 2025-07-31",
+            "period_end": "2026-07-31",
+            "replaced": -1236753000.0,
+            "value": -1236753000.0,
+            "why": "EBIT que presenta el emisor (F3_T1_PARADA1 §1)"
+          }
+        ],
+        "fy": [
+          {
+            "accns": [
+              "0001640147-26-000008"
+            ],
+            "concept": "us-gaap:OperatingIncomeLoss",
+            "field": "FY.operating_income",
+            "fy_end": "2026-01-31",
+            "how": "ejercicio 2025-02-01 a 2026-01-31",
+            "replaced": -1435165000.0,
+            "value": -1435165000.0
+          },
+          {
+            "accns": [
+              "0001640147-26-000008"
+            ],
+            "concept": "us-gaap:OperatingIncomeLoss",
+            "field": "FY.operating_income",
+            "fy_end": "2025-01-31",
+            "how": "ejercicio 2024-02-01 a 2025-01-31",
+            "replaced": -1456010000.0,
+            "value": -1456010000.0
+          },
+          {
+            "accns": [
+              "0001640147-26-000008"
+            ],
+            "concept": "us-gaap:OperatingIncomeLoss",
+            "field": "FY.operating_income",
+            "fy_end": "2024-01-31",
+            "how": "ejercicio 2023-02-01 a 2024-01-31",
+            "replaced": -1094773000.0,
+            "value": -1094773000.0
+          },
+          {
+            "accns": [
+              "0001640147-25-000052"
+            ],
+            "concept": "us-gaap:OperatingIncomeLoss",
+            "field": "FY.operating_income",
+            "fy_end": "2023-01-31",
+            "how": "ejercicio 2022-02-01 a 2023-01-31",
+            "replaced": -842267000.0,
+            "value": -842267000.0
+          }
+        ],
+        "reason": null,
+        "skipped": []
+      },
       "reason": null,
       "status": "ok",
       "title": "Snowflake Inc."
@@ -747,8 +851,8 @@
         "source": "yfinance_statements"
       },
       "operatingIncome": {
-        "detail": "TTM: suma de los 4 trimestres 2026-07-31, 2026-04-30, 2026-01-31, 2025-10-31",
-        "source": "yfinance_statements"
+        "detail": "SEC EDGAR, fuente principal (us-gaap:OperatingIncomeLoss): ejercicio 2025-02-01 a 2026-01-31 + acumulado 2026-02-01 a 2026-07-31 − acumulado 2025-02-01 a 2025-07-31 · EBIT que presenta el emisor (F3_T1_PARADA1 §1)",
+        "source": "sec_edgar"
       },
       "payoutRatio": {
         "detail": "la fuente no lo devolvió",

@@ -5,7 +5,7 @@
       {
         "category": "Rentabilidad",
         "detail": "De cada dólar vendido quedan 26 centavos de beneficio tras todos los costos: señala poder de fijación de precios y eficiencia por encima de la media de su sector.",
-        "reason": "Margen neto sólido — 25.9%"
+        "reason": "Margen neto sólido — 26.3%"
       }
     ],
     "warnings": []
@@ -118,7 +118,7 @@
     "inputs": {
       "assets_to_revenue": 30.1664765644,
       "eps_ttm": 4.04,
-      "net_margin_ttm": 0.25878973868,
+      "net_margin_ttm": 0.262973193655,
       "op_margin_detrended_std": null,
       "revenue_cagr_3y": 0.0600313396958,
       "revenue_cagr_3y_reason": null,
@@ -254,7 +254,8 @@
         },
         "totalRevenue": {
           "period_end": "2026-03-31",
-          "period_type": "ttm"
+          "period_type": "ttm",
+          "source": "sec_edgar"
         },
         "totalStockholderEquity": {
           "period_end": "2026-03-31",
@@ -454,7 +455,128 @@
       },
       "cik": 70858,
       "facts_status": "ok",
+      "history": {
+        "capex": {
+          "cross_taxonomy": null,
+          "first": null,
+          "last": null,
+          "unit": "USD",
+          "years": 0
+        },
+        "diluted_eps": {
+          "cross_taxonomy": null,
+          "first": "2007-12-31",
+          "last": "2025-12-31",
+          "unit": "USD/shares",
+          "years": 19
+        },
+        "diluted_shares": {
+          "cross_taxonomy": null,
+          "first": "2007-12-31",
+          "last": "2025-12-31",
+          "unit": "shares",
+          "years": 19
+        },
+        "net_income": {
+          "cross_taxonomy": null,
+          "first": "2007-12-31",
+          "last": "2025-12-31",
+          "unit": "USD",
+          "years": 19
+        },
+        "operating_cash_flow": {
+          "cross_taxonomy": null,
+          "first": "2007-12-31",
+          "last": "2025-12-31",
+          "unit": "USD",
+          "years": 19
+        },
+        "operating_income": {
+          "cross_taxonomy": null,
+          "first": null,
+          "last": null,
+          "unit": "USD",
+          "years": 0
+        },
+        "revenue": {
+          "cross_taxonomy": null,
+          "first": "2007-12-31",
+          "last": "2025-12-31",
+          "unit": "USD",
+          "years": 19
+        }
+      },
       "pending_filings": [],
+      "primary": {
+        "cut": [
+          {
+            "accns": [
+              "0000070858-26-000157",
+              "0000070858-26-000249"
+            ],
+            "concept": "us-gaap:Revenues",
+            "field": "totalRevenue",
+            "how": "ejercicio 2025-01-01 a 2025-12-31 + acumulado 2026-01-01 a 2026-03-31 − acumulado 2025-01-01 a 2025-03-31",
+            "period_end": "2026-03-31",
+            "replaced": 116983000000.0,
+            "value": 115122000000.0,
+            "why": "ingresos netos totales de un banco"
+          }
+        ],
+        "fy": [
+          {
+            "accns": [
+              "0000070858-26-000157"
+            ],
+            "concept": "us-gaap:Revenues",
+            "field": "FY.revenue",
+            "fy_end": "2025-12-31",
+            "how": "ejercicio 2025-01-01 a 2025-12-31",
+            "replaced": 113097000000.0,
+            "value": 113097000000.0
+          },
+          {
+            "accns": [
+              "0000070858-26-000157"
+            ],
+            "concept": "us-gaap:Revenues",
+            "field": "FY.revenue",
+            "fy_end": "2024-12-31",
+            "how": "ejercicio 2024-01-01 a 2024-12-31",
+            "replaced": 105856000000.0,
+            "value": 105856000000.0
+          },
+          {
+            "accns": [
+              "0000070858-26-000157"
+            ],
+            "concept": "us-gaap:Revenues",
+            "field": "FY.revenue",
+            "fy_end": "2023-12-31",
+            "how": "ejercicio 2023-01-01 a 2023-12-31",
+            "replaced": 102769000000.0,
+            "value": 102769000000.0
+          },
+          {
+            "accns": [
+              "0000070858-25-000139"
+            ],
+            "concept": "us-gaap:Revenues",
+            "field": "FY.revenue",
+            "fy_end": "2022-12-31",
+            "how": "ejercicio 2022-01-01 a 2022-12-31",
+            "replaced": 94950000000.0,
+            "value": 94950000000.0
+          }
+        ],
+        "reason": null,
+        "skipped": [
+          {
+            "field": "operatingIncome",
+            "reason": "beneficio operativo de un banco: no aplica (su equivalente es el beneficio antes de provisiones)"
+          }
+        ]
+      },
       "reason": null,
       "status": "ok",
       "title": "BANK OF AMERICA CORP /DE/"
@@ -736,8 +858,8 @@
         "source": "yfinance_statements"
       },
       "totalRevenue": {
-        "detail": "TTM: suma de los 4 trimestres 2026-03-31, 2025-12-31, 2025-09-30, 2025-06-30",
-        "source": "yfinance_statements"
+        "detail": "SEC EDGAR, fuente principal (us-gaap:Revenues): ejercicio 2025-01-01 a 2025-12-31 + acumulado 2026-01-01 a 2026-03-31 − acumulado 2025-01-01 a 2025-03-31 · ingresos netos totales de un banco",
+        "source": "sec_edgar"
       },
       "totalStockholderEquity": {
         "detail": "balance del último trimestre (2026-03-31)",
@@ -1041,16 +1163,16 @@
                 "bench": 0.25,
                 "bench_txt": "25.00%",
                 "fmt": "pct",
-                "gap_pct": 3.51589547199,
-                "gap_txt": "+4%",
+                "gap_pct": 5.18927746217,
+                "gap_txt": "+5%",
                 "higher_is_better": true,
                 "key": "net_margin",
                 "label": "Margen neto",
                 "reading": "En línea",
-                "text": "Margen neto de 25.9% frente a 25.0% del sector (+4%): en línea",
+                "text": "Margen neto de 26.3% frente a 25.0% del sector (+5%): en línea",
                 "tone": "neu",
-                "value": 0.25878973868,
-                "value_txt": "25.88%"
+                "value": 0.262973193655,
+                "value_txt": "26.30%"
               }
             ],
             "title": "Rentabilidad"
@@ -1227,8 +1349,8 @@
       },
       "profitability": {
         "margin_ladder": {
-          "revenue": 116983000000.0,
-          "revenue_txt": "$116.98B",
+          "revenue": 115122000000.0,
+          "revenue_txt": "$115.12B",
           "steps": [
             {
               "key": "gross_margin",
@@ -1253,8 +1375,8 @@
               "amount_txt": "$30.27B",
               "key": "net_margin",
               "label": "Margen neto",
-              "pct": 0.25878973868,
-              "pct_txt": "25.9%",
+              "pct": 0.262973193655,
+              "pct_txt": "26.3%",
               "reading": "En línea",
               "state": "con_dato",
               "tone": "neu"
@@ -1282,17 +1404,17 @@
             "bench": 0.25,
             "bench_txt": "25.00%",
             "fmt": "pct",
-            "gap_pct": 3.51589547199,
-            "gap_txt": "+4%",
+            "gap_pct": 5.18927746217,
+            "gap_txt": "+5%",
             "higher_is_better": true,
             "key": "net_margin",
             "label": "Margen neto",
             "reading": "En línea",
             "state": "con_dato",
-            "text": "Margen neto de 25.9% frente a 25.0% del sector (+4%): en línea",
+            "text": "Margen neto de 26.3% frente a 25.0% del sector (+5%): en línea",
             "tone": "neu",
-            "value": 0.25878973868,
-            "value_txt": "25.88%"
+            "value": 0.262973193655,
+            "value_txt": "26.30%"
           }
         ],
         "returns": [
@@ -1348,8 +1470,8 @@
       },
       "results_flow": [
         {
-          "amount": 116983000000.0,
-          "amount_txt": "$116.98B",
+          "amount": 115122000000.0,
+          "amount_txt": "$115.12B",
           "key": "revenue",
           "label": "Ingresos",
           "pct_of_revenue": 100.0,
@@ -1374,8 +1496,8 @@
           "amount_txt": "$30.27B",
           "key": "net_income",
           "label": "Beneficio neto",
-          "pct_of_revenue": 25.878973868,
-          "pct_txt": "25.9%",
+          "pct_of_revenue": 26.2973193655,
+          "pct_txt": "26.3%",
           "sign": "pos",
           "state": "con_dato"
         },
@@ -1676,7 +1798,7 @@
         {
           "kicker": "FORTALEZA CLAVE",
           "kind": "strength",
-          "text": "Margen neto sólido — 25.9%",
+          "text": "Margen neto sólido — 26.3%",
           "tone": "pos"
         },
         {
@@ -1721,7 +1843,7 @@
           "key": "net_margin",
           "label": "Margen neto",
           "state": "con_dato",
-          "value": "25.88%"
+          "value": "26.30%"
         },
         {
           "key": "ptbv",
@@ -1872,7 +1994,7 @@
               {
                 "category": "Rentabilidad",
                 "detail": "De cada dólar vendido quedan 26 centavos de beneficio tras todos los costos: señala poder de fijación de precios y eficiencia por encima de la media de su sector.",
-                "reason": "Margen neto sólido — 25.9%"
+                "reason": "Margen neto sólido — 26.3%"
               }
             ],
             "key": "strengths",
@@ -2094,11 +2216,11 @@
                 {
                   "in_block": false,
                   "metric": "Margen Neto",
-                  "reason": "Excelente (25.9%) - Alta rentabilidad final",
+                  "reason": "Excelente (26.3%) - Alta rentabilidad final",
                   "sign": "+3",
                   "state": "con_dato",
                   "tone": "pos",
-                  "value": "25.9%"
+                  "value": "26.3%"
                 },
                 {
                   "in_block": false,
@@ -2299,7 +2421,7 @@
         "figures": [
           [
             "Ingresos",
-            "$116.98B",
+            "$115.12B",
             "EBITDA",
             "No aplica a bancos y aseguradoras"
           ],
@@ -2382,14 +2504,14 @@
           },
           {
             "bench": "25.00%",
-            "gap": "+4%",
+            "gap": "+5%",
             "key": "net_margin",
             "label": "Margen neto",
             "reading": "En línea",
             "state": "con_dato",
-            "text": "Margen neto de 25.9% frente a 25.0% del sector (+4%): en línea",
+            "text": "Margen neto de 26.3% frente a 25.0% del sector (+5%): en línea",
             "tone": "neu",
-            "value": "25.88%"
+            "value": "26.30%"
           },
           {
             "bench": "—",
@@ -2548,7 +2670,7 @@
             "state": "con_dato",
             "text": null,
             "tone": null,
-            "value": "3.07x"
+            "value": "3.12x"
           },
           {
             "bench": "1.50x",
@@ -2664,14 +2786,14 @@
         },
         {
           "bench": "vs sector 25.0%",
-          "delta": "+4%",
+          "delta": "+5%",
           "key": "net_margin",
           "label": "Margen neto",
           "pill": "En línea",
           "state": "con_dato",
           "tone": "neu",
           "unit": "%",
-          "value": "25.9"
+          "value": "26.3"
         },
         {
           "bench": "vs sector 12.0%",
@@ -3531,7 +3653,7 @@
     "threshold": 0.02
   },
   "key_metrics": {
-    "asset_turnover": 0.0334601763179,
+    "asset_turnover": 0.0329278819834,
     "beta": 1.15284752243,
     "book_value_per_share": 39.422553996,
     "buyback_yield": 0.0523459694474,
@@ -3566,7 +3688,7 @@
     "net_income": 30274000000.0,
     "net_income_normalized": 30274000000.0,
     "net_interest_income": null,
-    "net_margin": 0.25878973868,
+    "net_margin": 0.262973193655,
     "operating_cash_flow": 56567000000.0,
     "operating_income": null,
     "operating_margin": null,
@@ -3580,9 +3702,9 @@
     "pfcf": 6.35277342283,
     "price_52w_high": 65.2300033569,
     "price_52w_low": 46.1199989319,
-    "ps": 3.07187654795,
+    "ps": 3.12153484312,
     "quick_ratio": null,
-    "revenue": 116983000000.0,
+    "revenue": 115122000000.0,
     "revenue_growth": 0.0684042472793,
     "roa": 0.00865915028548,
     "roce": null,
@@ -3745,7 +3867,7 @@
     "score": 71
   },
   "ratios": {
-    "asset_turnover": 0.0334601763179,
+    "asset_turnover": 0.0329278819834,
     "beta": 1.15284752243,
     "cash_ratio": null,
     "current_ratio": null,
@@ -3759,7 +3881,7 @@
     "eps": 4.04,
     "ev_ebitda": null,
     "ev_fcf": null,
-    "ev_revenue": 4.21502555251,
+    "ev_revenue": 4.28316337633,
     "fcf": null,
     "fcf_to_net_income": null,
     "fcf_yield": null,
@@ -3775,7 +3897,7 @@
     "net_debt": 133729000000.0,
     "net_debt_to_ebitda": null,
     "net_income": 30274000000.0,
-    "net_margin": 0.25878973868,
+    "net_margin": 0.262973193655,
     "operating_cash_flow": 56567000000.0,
     "operating_margin": null,
     "p_fcf": null,
@@ -3784,7 +3906,7 @@
     "pb": 1.3035684952,
     "pe": 12.7202968786,
     "peg": 0.83975,
-    "ps": 3.07187654795,
+    "ps": 3.12153484312,
     "quick_ratio": null,
     "roa": 0.00865915028548,
     "roe": 0.109818915233,
@@ -3800,12 +3922,12 @@
   "sbc": {
     "basis": "TTM",
     "fcf": 56567000000.0,
-    "fcf_margin_adjusted": 0.449065248797,
-    "fcf_margin_raw": 0.483548891719,
+    "fcf_margin_adjusted": 0.456324594778,
+    "fcf_margin_raw": 0.491365681625,
     "reason": null,
-    "revenue": 116983000000.0,
+    "revenue": 115122000000.0,
     "sbc": 4034000000.0,
-    "sbc_to_revenue": 0.0344836429225,
+    "sbc_to_revenue": 0.035041086847,
     "value": 52533000000.0
   },
   "score": {
@@ -3909,9 +4031,9 @@
           {
             "adjustment": 3,
             "metric": "Margen Neto",
-            "reason": "Excelente (25.9%) - Alta rentabilidad final",
+            "reason": "Excelente (26.3%) - Alta rentabilidad final",
             "severity": "excellent",
-            "value": "25.9%"
+            "value": "26.3%"
           },
           {
             "adjustment": 0,
@@ -3927,7 +4049,7 @@
         "details": [
           "Bueno (11.0%) - Competitivo en su sector",
           "Aceptable (0.9%) - Normal para su sector",
-          "Excelente (25.9%) - Alta rentabilidad final",
+          "Excelente (26.3%) - Alta rentabilidad final",
           "No aplica a bancos y aseguradoras: el balance es el producto (depósitos y préstamos) (no cuenta en la cobertura)"
         ],
         "max": 20,

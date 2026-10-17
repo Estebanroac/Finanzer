@@ -274,7 +274,8 @@
         },
         "operatingIncome": {
           "period_end": "2026-06-30",
-          "period_type": "ttm"
+          "period_type": "ttm",
+          "source": "sec_edgar"
         },
         "retainedEarnings": {
           "period_end": "2026-06-30",
@@ -431,20 +432,7 @@
       "source_rate": 0.0,
       "unit": "título"
     },
-    "ebit": {
-      "accns": [
-        "0001874178-26-000008",
-        "0001874178-26-000054"
-      ],
-      "concept": "us-gaap:OperatingIncomeLoss",
-      "diff": 0.0,
-      "edgar_value": -3533000000.0,
-      "how": "ejercicio 2025-01-01 a 2025-12-31 + acumulado 2026-01-01 a 2026-06-30 − acumulado 2025-01-01 a 2025-06-30",
-      "period_end": "2026-06-30",
-      "source_value": -3533000000.0,
-      "status": "coincide",
-      "tolerance": 0.02
-    },
+    "ebit": null,
     "edgar": {
       "backup": {
         "cut": [],
@@ -459,7 +447,123 @@
       },
       "cik": 1874178,
       "facts_status": "ok",
+      "history": {
+        "capex": {
+          "cross_taxonomy": null,
+          "first": "2019-12-31",
+          "last": "2025-12-31",
+          "unit": "USD",
+          "years": 7
+        },
+        "diluted_eps": {
+          "cross_taxonomy": null,
+          "first": "2019-12-31",
+          "last": "2025-12-31",
+          "unit": "USD/shares",
+          "years": 7
+        },
+        "diluted_shares": {
+          "cross_taxonomy": null,
+          "first": "2019-12-31",
+          "last": "2025-12-31",
+          "unit": "shares",
+          "years": 7
+        },
+        "net_income": {
+          "cross_taxonomy": null,
+          "first": "2019-12-31",
+          "last": "2025-12-31",
+          "unit": "USD",
+          "years": 7
+        },
+        "operating_cash_flow": {
+          "cross_taxonomy": null,
+          "first": "2019-12-31",
+          "last": "2025-12-31",
+          "unit": "USD",
+          "years": 7
+        },
+        "operating_income": {
+          "cross_taxonomy": null,
+          "first": "2019-12-31",
+          "last": "2025-12-31",
+          "unit": "USD",
+          "years": 7
+        },
+        "revenue": {
+          "cross_taxonomy": null,
+          "first": "2019-12-31",
+          "last": "2025-12-31",
+          "unit": "USD",
+          "years": 7
+        }
+      },
       "pending_filings": [],
+      "primary": {
+        "cut": [
+          {
+            "accns": [
+              "0001874178-26-000008",
+              "0001874178-26-000054"
+            ],
+            "concept": "us-gaap:OperatingIncomeLoss",
+            "field": "operatingIncome",
+            "how": "ejercicio 2025-01-01 a 2025-12-31 + acumulado 2026-01-01 a 2026-06-30 − acumulado 2025-01-01 a 2025-06-30",
+            "period_end": "2026-06-30",
+            "replaced": -3533000000.0,
+            "value": -3533000000.0,
+            "why": "EBIT que presenta el emisor (F3_T1_PARADA1 §1)"
+          }
+        ],
+        "fy": [
+          {
+            "accns": [
+              "0001874178-26-000008"
+            ],
+            "concept": "us-gaap:OperatingIncomeLoss",
+            "field": "FY.operating_income",
+            "fy_end": "2025-12-31",
+            "how": "ejercicio 2025-01-01 a 2025-12-31",
+            "replaced": -3585000000.0,
+            "value": -3585000000.0
+          },
+          {
+            "accns": [
+              "0001874178-26-000008"
+            ],
+            "concept": "us-gaap:OperatingIncomeLoss",
+            "field": "FY.operating_income",
+            "fy_end": "2024-12-31",
+            "how": "ejercicio 2024-01-01 a 2024-12-31",
+            "replaced": -4689000000.0,
+            "value": -4689000000.0
+          },
+          {
+            "accns": [
+              "0001874178-26-000008"
+            ],
+            "concept": "us-gaap:OperatingIncomeLoss",
+            "field": "FY.operating_income",
+            "fy_end": "2023-12-31",
+            "how": "ejercicio 2023-01-01 a 2023-12-31",
+            "replaced": -5739000000.0,
+            "value": -5739000000.0
+          },
+          {
+            "accns": [
+              "0001874178-25-000007"
+            ],
+            "concept": "us-gaap:OperatingIncomeLoss",
+            "field": "FY.operating_income",
+            "fy_end": "2022-12-31",
+            "how": "ejercicio 2022-01-01 a 2022-12-31",
+            "replaced": -6856000000.0,
+            "value": -6856000000.0
+          }
+        ],
+        "reason": null,
+        "skipped": []
+      },
       "reason": null,
       "status": "ok",
       "title": "Rivian Automotive, Inc. / DE"
@@ -708,8 +812,8 @@
         "source": "yfinance_statements"
       },
       "operatingIncome": {
-        "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
-        "source": "yfinance_statements"
+        "detail": "SEC EDGAR, fuente principal (us-gaap:OperatingIncomeLoss): ejercicio 2025-01-01 a 2025-12-31 + acumulado 2026-01-01 a 2026-06-30 − acumulado 2025-01-01 a 2025-06-30 · EBIT que presenta el emisor (F3_T1_PARADA1 §1)",
+        "source": "sec_edgar"
       },
       "payoutRatio": {
         "detail": "la fuente no lo devolvió",

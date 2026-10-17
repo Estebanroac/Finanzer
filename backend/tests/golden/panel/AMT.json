@@ -126,7 +126,7 @@
       "assets_to_revenue": 5.93638088796,
       "eps_ttm": 7.27,
       "net_margin_ttm": 0.310834894667,
-      "op_margin_detrended_std": 0.0270887032078,
+      "op_margin_detrended_std": 0.0369984381754,
       "revenue_cagr_3y": 0.0334029599844,
       "revenue_cagr_3y_reason": null,
       "revenue_growth_std": 0.0201808465758
@@ -257,7 +257,8 @@
         },
         "operatingIncome": {
           "period_end": "2026-06-30",
-          "period_type": "ttm"
+          "period_type": "ttm",
+          "source": "sec_edgar"
         },
         "retainedEarnings": {
           "period_end": "2026-06-30",
@@ -473,20 +474,7 @@
       "source_rate": 7.07,
       "unit": "título"
     },
-    "ebit": {
-      "accns": [
-        "0001053507-26-000035",
-        "0001053507-26-000133"
-      ],
-      "concept": "us-gaap:OperatingIncomeLoss",
-      "diff": 0.0170134638923,
-      "edgar_value": 4902000000.0,
-      "how": "ejercicio 2025-01-01 a 2025-12-31 + acumulado 2026-01-01 a 2026-06-30 − acumulado 2025-01-01 a 2025-06-30",
-      "period_end": "2026-06-30",
-      "source_value": 4985400000.0,
-      "status": "coincide",
-      "tolerance": 0.02
-    },
+    "ebit": null,
     "edgar": {
       "backup": {
         "cut": [],
@@ -501,7 +489,123 @@
       },
       "cik": 1053507,
       "facts_status": "ok",
+      "history": {
+        "capex": {
+          "cross_taxonomy": null,
+          "first": "2007-12-31",
+          "last": "2025-12-31",
+          "unit": "USD",
+          "years": 19
+        },
+        "diluted_eps": {
+          "cross_taxonomy": null,
+          "first": "2007-12-31",
+          "last": "2025-12-31",
+          "unit": "USD/shares",
+          "years": 19
+        },
+        "diluted_shares": {
+          "cross_taxonomy": null,
+          "first": "2007-12-31",
+          "last": "2025-12-31",
+          "unit": "shares",
+          "years": 19
+        },
+        "net_income": {
+          "cross_taxonomy": null,
+          "first": "2007-12-31",
+          "last": "2025-12-31",
+          "unit": "USD",
+          "years": 19
+        },
+        "operating_cash_flow": {
+          "cross_taxonomy": null,
+          "first": "2007-12-31",
+          "last": "2025-12-31",
+          "unit": "USD",
+          "years": 19
+        },
+        "operating_income": {
+          "cross_taxonomy": null,
+          "first": "2007-12-31",
+          "last": "2025-12-31",
+          "unit": "USD",
+          "years": 19
+        },
+        "revenue": {
+          "cross_taxonomy": null,
+          "first": "2007-12-31",
+          "last": "2025-12-31",
+          "unit": "USD",
+          "years": 19
+        }
+      },
       "pending_filings": [],
+      "primary": {
+        "cut": [
+          {
+            "accns": [
+              "0001053507-26-000035",
+              "0001053507-26-000133"
+            ],
+            "concept": "us-gaap:OperatingIncomeLoss",
+            "field": "operatingIncome",
+            "how": "ejercicio 2025-01-01 a 2025-12-31 + acumulado 2026-01-01 a 2026-06-30 − acumulado 2025-01-01 a 2025-06-30",
+            "period_end": "2026-06-30",
+            "replaced": 4985400000.0,
+            "value": 4902000000.0,
+            "why": "EBIT que presenta el emisor (F3_T1_PARADA1 §1)"
+          }
+        ],
+        "fy": [
+          {
+            "accns": [
+              "0001053507-26-000035"
+            ],
+            "concept": "us-gaap:OperatingIncomeLoss",
+            "field": "FY.operating_income",
+            "fy_end": "2025-12-31",
+            "how": "ejercicio 2025-01-01 a 2025-12-31",
+            "replaced": 4929200000.0,
+            "value": 4845800000.0
+          },
+          {
+            "accns": [
+              "0001053507-26-000035"
+            ],
+            "concept": "us-gaap:OperatingIncomeLoss",
+            "field": "FY.operating_income",
+            "fy_end": "2024-12-31",
+            "how": "ejercicio 2024-01-01 a 2024-12-31",
+            "replaced": 4603000000.0,
+            "value": 4516500000.0
+          },
+          {
+            "accns": [
+              "0001053507-26-000035"
+            ],
+            "concept": "us-gaap:OperatingIncomeLoss",
+            "field": "FY.operating_income",
+            "fy_end": "2023-12-31",
+            "how": "ejercicio 2023-01-01 a 2023-12-31",
+            "replaced": 3536800000.0,
+            "value": 3125500000.0
+          },
+          {
+            "accns": [
+              "0001053507-25-000025"
+            ],
+            "concept": "us-gaap:OperatingIncomeLoss",
+            "field": "FY.operating_income",
+            "fy_end": "2022-12-31",
+            "how": "ejercicio 2022-01-01 a 2022-12-31",
+            "replaced": 2922700000.0,
+            "value": 2738600000.0
+          }
+        ],
+        "reason": null,
+        "skipped": []
+      },
       "reason": null,
       "status": "ok",
       "title": "AMERICAN TOWER CORP /MA/"
@@ -742,8 +846,8 @@
         "source": "yfinance_statements"
       },
       "operatingIncome": {
-        "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
-        "source": "yfinance_statements"
+        "detail": "SEC EDGAR, fuente principal (us-gaap:OperatingIncomeLoss): ejercicio 2025-01-01 a 2025-12-31 + acumulado 2026-01-01 a 2026-06-30 − acumulado 2025-01-01 a 2025-06-30 · EBIT que presenta el emisor (F3_T1_PARADA1 §1)",
+        "source": "sec_edgar"
       },
       "payoutRatio": {
         "detail": "/stock/metric",
@@ -1101,16 +1205,16 @@
                 "bench": 20.0,
                 "bench_txt": "20.00x",
                 "fmt": "mult",
-                "gap_pct": -15.6697584123,
-                "gap_txt": "-16%",
+                "gap_pct": -14.6611912645,
+                "gap_txt": "-15%",
                 "higher_is_better": false,
                 "key": "ev_ebitda",
                 "label": "EV/EBITDA",
                 "reading": "Descuento",
-                "text": "EV/EBITDA de 16.9x frente a 20.0x del sector (-16%): descuento",
+                "text": "EV/EBITDA de 17.1x frente a 20.0x del sector (-15%): descuento",
                 "tone": "pos",
-                "value": 16.8660483175,
-                "value_txt": "16.87x"
+                "value": 17.0677617471,
+                "value_txt": "17.07x"
               }
             ],
             "title": "Valoración"
@@ -1136,16 +1240,16 @@
                 "bench": 8.0,
                 "bench_txt": "8.00x",
                 "fmt": "mult",
-                "gap_pct": -55.273451518,
-                "gap_txt": "-55%",
+                "gap_pct": -56.0216751597,
+                "gap_txt": "-56%",
                 "higher_is_better": true,
                 "key": "interest_coverage",
                 "label": "Cobertura de intereses",
                 "reading": "Muy inferior",
-                "text": "Cobertura de intereses de 3.6x frente a 8.0x del sector (-55%): muy inferior",
+                "text": "Cobertura de intereses de 3.5x frente a 8.0x del sector (-56%): muy inferior",
                 "tone": "neg",
-                "value": 3.57812387856,
-                "value_txt": "3.58x"
+                "value": 3.51826598722,
+                "value_txt": "3.52x"
               }
             ],
             "title": "Solidez"
@@ -1328,12 +1432,12 @@
               "text": "No aplica a REIT"
             },
             {
-              "amount": 7056800000.0,
-              "amount_txt": "$7.06B",
+              "amount": 6973400000.0,
+              "amount_txt": "$6.97B",
               "key": "ebitda_margin",
               "label": "Margen EBITDA",
-              "pct": 0.644957272769,
-              "pct_txt": "64.5%",
+              "pct": 0.637334917516,
+              "pct_txt": "63.7%",
               "reading": null,
               "state": "con_dato",
               "tone": null
@@ -1435,12 +1539,12 @@
           "state": "con_dato"
         },
         {
-          "amount": 4985400000.0,
-          "amount_txt": "$4.99B",
+          "amount": 4902000000.0,
+          "amount_txt": "$4.90B",
           "key": "operating_income",
           "label": "Resultado operativo",
-          "pct_of_revenue": 45.5641365443,
-          "pct_txt": "45.6%",
+          "pct_of_revenue": 44.8019010191,
+          "pct_txt": "44.8%",
           "sign": "pos",
           "state": "con_dato"
         },
@@ -1480,11 +1584,11 @@
             "label": "Cobertura de intereses",
             "reading": "Aceptable",
             "state": "con_dato",
-            "text": "la cobertura de intereses (3.6x) es aceptable",
+            "text": "la cobertura de intereses (3.5x) es aceptable",
             "tone": "neu",
             "unit": "x",
-            "value": 3.57812387856,
-            "value_txt": "3.58x",
+            "value": 3.51826598722,
+            "value_txt": "3.52x",
             "zones": [
               {
                 "from": 0.0,
@@ -1525,11 +1629,11 @@
             "label": "Deuda neta / EBITDA",
             "reading": "Adecuada",
             "state": "con_dato",
-            "text": "la deuda neta (5.0x EBITDA) está en el rango habitual de un REIT con grado de inversión (hasta 6.5x)",
+            "text": "la deuda neta (5.1x EBITDA) está en el rango habitual de un REIT con grado de inversión (hasta 6.5x)",
             "tone": "pos",
             "unit": "x",
-            "value": 5.02027831312,
-            "value_txt": "5.02x",
+            "value": 5.08031949981,
+            "value_txt": "5.08x",
             "zones": [
               {
                 "from": 0.0,
@@ -1654,18 +1758,18 @@
             "bench": 20.0,
             "bench_txt": "20.00x",
             "fmt": "mult",
-            "gap_pct": -15.6697584123,
-            "gap_txt": "-16%",
+            "gap_pct": -14.6611912645,
+            "gap_txt": "-15%",
             "higher_is_better": false,
             "key": "ev_ebitda",
             "label": "EV/EBITDA",
             "reading": "Descuento",
             "role": "block",
             "state": "con_dato",
-            "text": "EV/EBITDA de 16.9x frente a 20.0x del sector (-16%): descuento",
+            "text": "EV/EBITDA de 17.1x frente a 20.0x del sector (-15%): descuento",
             "tone": "pos",
-            "value": 16.8660483175,
-            "value_txt": "16.87x"
+            "value": 17.0677617471,
+            "value_txt": "17.07x"
           },
           {
             "fmt": "mult",
@@ -1896,7 +2000,7 @@
           "key": "net_debt_to_ebitda",
           "label": "Deuda neta/EBITDA",
           "state": "con_dato",
-          "value": "5.02x"
+          "value": "5.08x"
         },
         {
           "key": "beta",
@@ -1983,12 +2087,12 @@
       "graham": null,
       "interest_coverage": {
         "label": "Aceptable",
-        "text": "la cobertura de intereses (3.6x) es aceptable",
+        "text": "la cobertura de intereses (3.5x) es aceptable",
         "tone": "neu"
       },
       "net_debt_to_ebitda": {
         "label": "Adecuada",
-        "text": "la deuda neta (5.0x EBITDA) está en el rango habitual de un REIT con grado de inversión (hasta 6.5x)",
+        "text": "la deuda neta (5.1x EBITDA) está en el rango habitual de un REIT con grado de inversión (hasta 6.5x)",
         "tone": "pos"
       },
       "payout_ratio": {
@@ -2194,16 +2298,16 @@
                   "sign": "0",
                   "state": "con_dato",
                   "tone": "neu",
-                  "value": "3.6x"
+                  "value": "3.5x"
                 },
                 {
                   "in_block": false,
                   "metric": "Deuda neta/EBITDA",
-                  "reason": "Adecuado para un REIT (5.0x; bandas REIT ≤5.0x / ≤6.5x / ≤7.5x / ≤9.0x)",
+                  "reason": "Adecuado para un REIT (5.1x; bandas REIT ≤5.0x / ≤6.5x / ≤7.5x / ≤9.0x)",
                   "sign": "+2",
                   "state": "con_dato",
                   "tone": "pos",
-                  "value": "5.0x"
+                  "value": "5.1x"
                 },
                 {
                   "in_block": false,
@@ -2277,11 +2381,11 @@
                 {
                   "in_block": true,
                   "metric": "EV/EBITDA vs Sector",
-                  "reason": "Atractivo (16.9x)",
+                  "reason": "Atractivo (17.1x)",
                   "sign": "(+2)",
                   "state": "con_dato",
                   "tone": "neu",
-                  "value": "16.9x"
+                  "value": "17.1x"
                 },
                 {
                   "in_block": false,
@@ -2440,7 +2544,7 @@
           ],
           [
             "Beneficio operativo",
-            "$4.99B",
+            "$4.90B",
             "Beneficio neto",
             "$3.40B"
           ],
@@ -2568,7 +2672,7 @@
           "VALOR",
           "LECTURA"
         ],
-        "intro": "La deuda neta (5.0x EBITDA) está en el rango habitual de un REIT con grado de inversión (hasta 6.5x). El D/E de 10.00x es informativo: en un REIT el apalancamiento se mide por la deuda neta/EBITDA. La cobertura de intereses (3.6x) es aceptable. El payout sobre FFO de 59% deja margen para sostener el dividendo.",
+        "intro": "La deuda neta (5.1x EBITDA) está en el rango habitual de un REIT con grado de inversión (hasta 6.5x). El D/E de 10.00x es informativo: en un REIT el apalancamiento se mide por la deuda neta/EBITDA. La cobertura de intereses (3.5x) es aceptable. El payout sobre FFO de 59% deja margen para sostener el dividendo.",
         "rows": [
           {
             "bench": null,
@@ -2621,9 +2725,9 @@
             "label": "Deuda neta / EBITDA",
             "reading": "Adecuada",
             "state": "con_dato",
-            "text": "la deuda neta (5.0x EBITDA) está en el rango habitual de un REIT con grado de inversión (hasta 6.5x)",
+            "text": "la deuda neta (5.1x EBITDA) está en el rango habitual de un REIT con grado de inversión (hasta 6.5x)",
             "tone": "pos",
-            "value": "5.02x"
+            "value": "5.08x"
           },
           {
             "bench": null,
@@ -2632,9 +2736,9 @@
             "label": "Cobertura de intereses",
             "reading": "Aceptable",
             "state": "con_dato",
-            "text": "la cobertura de intereses (3.6x) es aceptable",
+            "text": "la cobertura de intereses (3.5x) es aceptable",
             "tone": "neu",
-            "value": "3.58x"
+            "value": "3.52x"
           },
           {
             "bench": null,
@@ -2753,14 +2857,14 @@
           },
           {
             "bench": "20.00x",
-            "gap": "-16%",
+            "gap": "-15%",
             "key": "ev_ebitda",
             "label": "EV/EBITDA",
             "reading": "Descuento",
             "state": "con_dato",
-            "text": "EV/EBITDA de 16.9x frente a 20.0x del sector (-16%): descuento",
+            "text": "EV/EBITDA de 17.1x frente a 20.0x del sector (-15%): descuento",
             "tone": "pos",
-            "value": "16.87x"
+            "value": "17.07x"
           },
           {
             "bench": "25.00x",
@@ -2861,7 +2965,7 @@
             "value": "10.83%"
           }
         ],
-        "wacc_note": "WACC 7.22% = 69.21% × Ke 7.98% (Rf 5.29% + β del sector 0.64 [Damodaran, enero de 2026; sin Blume: es una media de industria] × prima implícita 4.20%) + 30.79% × Kd 6.18% × (1 − t 10.83%). Kd = Rf + spread del rating sintético A- (tabla de empresas grandes, cobertura 3.6x). t: tasa efectiva TTM. Rf: ^TNX no disponible (sin cotización): valor de config."
+        "wacc_note": "WACC 7.22% = 69.21% × Ke 7.98% (Rf 5.29% + β del sector 0.64 [Damodaran, enero de 2026; sin Blume: es una media de industria] × prima implícita 4.20%) + 30.79% × Kd 6.18% × (1 − t 10.83%). Kd = Rf + spread del rating sintético A- (tabla de empresas grandes, cobertura 3.5x). t: tasa efectiva TTM. Rf: ^TNX no disponible (sin cotización): valor de config."
       }
     },
     "summary": {
@@ -2928,14 +3032,14 @@
         },
         {
           "bench": "vs sector 20.0x",
-          "delta": "-16%",
+          "delta": "-15%",
           "key": "ev_ebitda",
           "label": "EV/EBITDA",
           "pill": "Descuento",
           "state": "con_dato",
           "tone": "pos",
           "unit": "x",
-          "value": "16.9"
+          "value": "17.1"
         }
       ],
       "composition": {
@@ -3019,7 +3123,7 @@
         },
         {
           "label": "SOLIDEZ",
-          "text": "La deuda neta (5.0x EBITDA) está en el rango habitual de un REIT con grado de inversión (hasta 6.5x); la cobertura de intereses (3.6x) es aceptable."
+          "text": "La deuda neta (5.1x EBITDA) está en el rango habitual de un REIT con grado de inversión (hasta 6.5x); la cobertura de intereses (3.5x) es aceptable."
         },
         {
           "label": "CRECIMIENTO Y RETORNO",
@@ -3618,10 +3722,10 @@
     "earnings_growth": 0.120331950207,
     "earnings_yield": 0.0405239701635,
     "ebitda": 7407000000.0,
-    "ebitda_margin": 0.644957272769,
+    "ebitda_margin": 0.637334917516,
     "enterprise_value": 119020329767.0,
     "eps": 7.27,
-    "ev_ebitda": 16.8660483175,
+    "ev_ebitda": 17.0677617471,
     "ev_revenue": 10.8778805253,
     "fcf_yield": 0.0473698648925,
     "ffo": 5472400000.0,
@@ -3629,21 +3733,21 @@
     "forward_pe": 24.70727,
     "free_cash_flow": 3959800000.0,
     "gross_margin": 0.73774162592,
-    "interest_coverage": 3.57812387856,
+    "interest_coverage": 3.51826598722,
     "interest_coverage_state": "ok",
     "interest_expense": 1393300000.0,
     "inventory_turnover": null,
     "market_cap": 83593229767.2,
     "net_debt": 35427100000.0,
-    "net_debt_to_ebitda": 5.02027831312,
+    "net_debt_to_ebitda": 5.08031949981,
     "net_debt_to_ebitda_state": "ok",
     "net_income": 3401000000.0,
     "net_income_normalized": 3361071774.42,
     "net_interest_income": -1236400000.0,
     "net_margin": 0.310834894667,
     "operating_cash_flow": 5774900000.0,
-    "operating_income": 4985400000.0,
-    "operating_margin": 0.455641365443,
+    "operating_income": 4902000000.0,
+    "operating_margin": 0.448019010191,
     "p_ffo": 15.2754239031,
     "payout_basis": "ffo",
     "payout_ratio": 0.590929025656,
@@ -3665,7 +3769,7 @@
     "roce_roic_divergence": null,
     "roce_state": "no_aplica",
     "roe": 0.914321047396,
-    "roic": 0.113560898668,
+    "roic": 0.111661155629,
     "roic_reason": null,
     "roic_wacc_spread": null,
     "shareholder_yield": 0.0416901426265,
@@ -3828,11 +3932,11 @@
     "debt_to_equity": 9.99801059225,
     "dividend_yield": 0.0394091429238,
     "earnings_yield": 0.0405239701635,
-    "ebitda": 7056800000.0,
-    "ebitda_margin": 0.644957272769,
+    "ebitda": 6973400000.0,
+    "ebitda_margin": 0.637334917516,
     "enterprise_value": 119020329767.0,
     "eps": 7.27,
-    "ev_ebitda": 16.8660483175,
+    "ev_ebitda": 17.0677617471,
     "ev_fcf": 30.0571568683,
     "ev_revenue": 10.8778805253,
     "fcf": 3959800000.0,
@@ -3844,15 +3948,15 @@
     "forward_pe": 24.70727,
     "graham_number": 36.1358338897,
     "gross_margin": 0.73774162592,
-    "interest_coverage": 3.57812387856,
+    "interest_coverage": 3.51826598722,
     "inventory_turnover": null,
     "market_cap": 83593229767.2,
     "net_debt": 35427100000.0,
-    "net_debt_to_ebitda": 5.02027831312,
+    "net_debt_to_ebitda": 5.08031949981,
     "net_income": 3401000000.0,
     "net_margin": 0.310834894667,
     "operating_cash_flow": 5774900000.0,
-    "operating_margin": 0.455641365443,
+    "operating_margin": 0.448019010191,
     "p_fcf": 21.1104676416,
     "p_ffo": 15.2754239031,
     "payout_ratio": 0.950837988827,
@@ -3863,7 +3967,7 @@
     "quick_ratio": null,
     "roa": 0.0537281931624,
     "roe": 0.914321047396,
-    "roic": 0.113560898668
+    "roic": 0.111661155629
   },
   "risk_free": {
     "as_of": null,
@@ -4015,14 +4119,14 @@
             "metric": "Cobertura Intereses",
             "reason": "Cobertura aceptable",
             "severity": "ok",
-            "value": "3.6x"
+            "value": "3.5x"
           },
           {
             "adjustment": 2,
             "metric": "Deuda neta/EBITDA",
-            "reason": "Adecuado para un REIT (5.0x; bandas REIT ≤5.0x / ≤6.5x / ≤7.5x / ≤9.0x)",
+            "reason": "Adecuado para un REIT (5.1x; bandas REIT ≤5.0x / ≤6.5x / ≤7.5x / ≤9.0x)",
             "severity": "good",
-            "value": "5.0x"
+            "value": "5.1x"
           },
           {
             "adjustment": 0,
@@ -4038,7 +4142,7 @@
         "details": [
           "Informativo: en REIT el apalancamiento se mide por deuda neta/EBITDA",
           "Cobertura aceptable",
-          "Adecuado para un REIT (5.0x; bandas REIT ≤5.0x / ≤6.5x / ≤7.5x / ≤9.0x)",
+          "Adecuado para un REIT (5.1x; bandas REIT ≤5.0x / ≤6.5x / ≤7.5x / ≤9.0x)",
           "Current ratio: No aplica a REIT: activos inmobiliarios de largo plazo financiados con deuda a largo plazo; el circulante no mide su liquidez; Altman Z: No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria (no cuenta en la cobertura)"
         ],
         "max": 20,
@@ -4057,9 +4161,9 @@
             "adjustment": 2,
             "in_block": true,
             "metric": "EV/EBITDA vs Sector",
-            "reason": "Atractivo (16.9x)",
+            "reason": "Atractivo (17.1x)",
             "severity": "good",
-            "value": "16.9x"
+            "value": "17.1x"
           },
           {
             "adjustment": 1,
@@ -4086,7 +4190,7 @@
         "coverage": 1.0,
         "details": [
           "Atractivo por FFO (15.3x)",
-          "Atractivo (16.9x)",
+          "Atractivo (17.1x)",
           "promedio de los ajustes reescalados a ±1 (EV/EBITDA +0.50) = +0.50 × 2 (máximo con 1 miembro) = +1.0",
           "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria (no cuenta en la cobertura)"
         ],
@@ -4219,7 +4323,7 @@
     "ke": 0.07978,
     "mrp": 0.042,
     "rating": {
-      "coverage": 3.57812387856,
+      "coverage": 3.51826598722,
       "flag": null,
       "rating": "A-",
       "spread": 0.0089,
@@ -4248,7 +4352,7 @@
       "gross_margin": 0.733634685964,
       "net_income": 1765800000.0,
       "net_margin": 0.183071723309,
-      "operating_margin": 0.303014908661,
+      "operating_margin": 0.283928090074,
       "revenue": 9645400000.0,
       "year": 2022
     },
@@ -4258,7 +4362,7 @@
       "gross_margin": 0.744162122211,
       "net_income": 1483300000.0,
       "net_margin": 0.148149257905,
-      "operating_margin": 0.353249036176,
+      "operating_margin": 0.312169153633,
       "revenue": 10012200000.0,
       "year": 2023
     },
@@ -4268,7 +4372,7 @@
       "gross_margin": 0.745793506596,
       "net_income": 2255000000.0,
       "net_margin": 0.222667667272,
-      "operating_margin": 0.45451852437,
+      "operating_margin": 0.445977170393,
       "revenue": 10127200000.0,
       "year": 2024
     },
@@ -4278,7 +4382,7 @@
       "gross_margin": 0.741831538996,
       "net_income": 2529500000.0,
       "net_margin": 0.237632226669,
-      "operating_margin": 0.463070477049,
+      "operating_margin": 0.455235518479,
       "revenue": 10644600000.0,
       "year": 2025
     }

@@ -75,7 +75,7 @@
     "ebitda_avg": 10853417463.4,
     "eps_cycle_years": 4,
     "eps_growth_normalized": 0.1,
-    "eps_growth_normalized_raw": 0.197137647782,
+    "eps_growth_normalized_raw": 0.166669057277,
     "ev_ebitda_normalized": 57.7961513495,
     "fcf_maintenance": 9413313358.72,
     "fcf_maintenance_reason": null,
@@ -91,7 +91,7 @@
     "p_fcf_normalized": 67.3264530616,
     "p_fcf_normalized_basis": "fcf_mantenimiento",
     "revenue_growth_normalized": 0.1,
-    "revenue_growth_normalized_raw": 0.189760640104
+    "revenue_growth_normalized_raw": 0.160986437791
   },
   "benchmark": {
     "profile": "sector",
@@ -169,10 +169,10 @@
     "confidence": "normal",
     "industry": "Semiconductor Equipment & Materials",
     "inputs": {
-      "assets_to_revenue": 1.60897384632,
+      "assets_to_revenue": 1.8183952263,
       "eps_ttm": 29.9981087437,
       "net_margin_ttm": 0.297137822205,
-      "revenue_cagr_3y": 0.182827271414,
+      "revenue_cagr_3y": 0.155511342633,
       "revenue_cagr_3y_reason": null
     },
     "label": "Cíclica",
@@ -491,21 +491,6 @@
           "source": "SEC EDGAR",
           "unit": "EUR",
           "value": 19383032.0647
-        },
-        "operating_leases": {
-          "accns": [
-            "0000937966-24-000008"
-          ],
-          "basis": "ultimo_anual",
-          "concepts": [
-            "us-gaap:OperatingLeaseLiability"
-          ],
-          "in_rule_debt": false,
-          "note": "US GAAP: su alquiler ya está restado del EBITDA",
-          "period": "2023-12-31",
-          "source": "SEC EDGAR",
-          "unit": "EUR",
-          "value": 251469300.445
         }
       },
       "date": "2026-03-31",
@@ -600,7 +585,114 @@
       },
       "cik": 937966,
       "facts_status": "ok",
+      "history": {
+        "capex": {
+          "cross_taxonomy": null,
+          "first": "2007-12-31",
+          "last": "2025-12-31",
+          "unit": "EUR",
+          "years": 19
+        },
+        "diluted_eps": {
+          "cross_taxonomy": null,
+          "first": "2007-12-31",
+          "last": "2025-12-31",
+          "unit": "EUR/shares",
+          "years": 19
+        },
+        "diluted_shares": {
+          "cross_taxonomy": null,
+          "first": "2007-12-31",
+          "last": "2025-12-31",
+          "unit": "shares",
+          "years": 19
+        },
+        "net_income": {
+          "cross_taxonomy": null,
+          "first": "2007-12-31",
+          "last": "2025-12-31",
+          "unit": "EUR",
+          "years": 19
+        },
+        "operating_cash_flow": {
+          "cross_taxonomy": null,
+          "first": "2007-12-31",
+          "last": "2025-12-31",
+          "unit": "EUR",
+          "years": 19
+        },
+        "operating_income": {
+          "cross_taxonomy": null,
+          "first": "2007-12-31",
+          "last": "2025-12-31",
+          "unit": "EUR",
+          "years": 19
+        },
+        "revenue": {
+          "cross_taxonomy": null,
+          "first": "2007-12-31",
+          "last": "2025-12-31",
+          "unit": "EUR",
+          "years": 19
+        }
+      },
       "pending_filings": [],
+      "primary": {
+        "cut": [],
+        "fy": [
+          {
+            "accns": [
+              "0001628280-26-011378"
+            ],
+            "concept": "us-gaap:OperatingIncomeLoss",
+            "field": "FY.operating_income",
+            "fy_end": "2025-12-31",
+            "how": "ejercicio 2025-01-01 a 2025-12-31",
+            "replaced": 12772371569.3,
+            "value": 12772371569.3
+          },
+          {
+            "accns": [
+              "0001628280-26-011378"
+            ],
+            "concept": "us-gaap:OperatingIncomeLoss",
+            "field": "FY.operating_income",
+            "fy_end": "2024-12-31",
+            "how": "ejercicio 2024-01-01 a 2024-12-31",
+            "replaced": 9765505135.01,
+            "value": 9765505135.01
+          },
+          {
+            "accns": [
+              "0001628280-26-011378"
+            ],
+            "concept": "us-gaap:OperatingIncomeLoss",
+            "field": "FY.operating_income",
+            "fy_end": "2023-12-31",
+            "how": "ejercicio 2023-01-01 a 2023-12-31",
+            "replaced": 9781215223.36,
+            "value": 9781215223.36
+          },
+          {
+            "accns": [
+              "0000937966-25-000009"
+            ],
+            "concept": "us-gaap:OperatingIncomeLoss",
+            "field": "FY.operating_income",
+            "fy_end": "2022-12-31",
+            "how": "ejercicio 2022-01-01 a 2022-12-31",
+            "replaced": 6849487438.72,
+            "value": 6849487438.72
+          }
+        ],
+        "reason": null,
+        "skipped": [
+          {
+            "field": "operatingIncome",
+            "reason": "EDGAR no lo tiene del periodo que acaba el 2026-03-31"
+          }
+        ]
+      },
       "reason": null,
       "status": "ok",
       "title": "ASML HOLDING NV"
@@ -1206,7 +1298,7 @@
         },
         {
           "label": "Deuda coherente con el EBITDA (arrendamiento dentro solo si su coste no está en el EBITDA)",
-          "text": "deuda de la regla $3.12B (la fuente daba $3.10B); préstamos y bonos $3.10B (dentro); arrendamiento operativo $251.47M (fuera; US GAAP: su alquiler ya está restado del EBITDA); arrendamiento financiero $19.38M (dentro; del último informe anual (2025-12-31): el emisor no lo etiqueta en el filing del corte)."
+          "text": "deuda de la regla $3.12B (la fuente daba $3.10B); préstamos y bonos $3.10B (dentro); arrendamiento financiero $19.38M (dentro; del último informe anual (2025-12-31): el emisor no lo etiqueta en el filing del corte)."
         }
       ],
       "title": "Detalle técnico para auditoría"
@@ -2652,7 +2744,7 @@
             "state": "con_dato",
             "text": null,
             "tone": null,
-            "value": "20.69%"
+            "value": "15.58%"
           },
           {
             "bench": null,
@@ -4890,6 +4982,21 @@
     "shares_cagr_3y": -0.00780874147106,
     "threshold": 0.02
   },
+  "growth_currency": {
+    "note": "crecimiento medido en la moneda de los estados; el efecto del tipo de cambio va aparte",
+    "price": "USD",
+    "revenue_cagr_3y": {
+      "fx_effect": 0.0273159287807,
+      "price": 0.182827271414,
+      "statements": 0.155511342633
+    },
+    "revenue_growth_yoy": {
+      "fx_effect": 0.051067423108,
+      "price": 0.206904226833,
+      "statements": 0.155836803725
+    },
+    "statements": "EUR"
+  },
   "key_metrics": {
     "asset_turnover": 0.709312919582,
     "beta": 1.24496124814,
@@ -4943,7 +5050,7 @@
     "ps": 16.2224825069,
     "quick_ratio": 0.782363958991,
     "revenue": 39067078650.2,
-    "revenue_growth": 0.206904226833,
+    "revenue_growth": 0.155836803725,
     "roa": 0.210763696187,
     "roce": 0.42152129526,
     "roce_avg": 0.372449489863,

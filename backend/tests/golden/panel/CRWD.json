@@ -27,8 +27,8 @@
     "warnings": [
       {
         "category": "Valoración",
-        "detail": "El valor de empresa equivale a 1177.5 veces su EBITDA anual, un múltiplo caro en términos absolutos que exige un crecimiento sostenido para no defraudar.",
-        "reason": "EV/EBITDA alto — 1177.5x"
+        "detail": "El valor de empresa equivale a 1256.9 veces su EBITDA anual, un múltiplo caro en términos absolutos que exige un crecimiento sostenido para no defraudar.",
+        "reason": "EV/EBITDA alto — 1256.9x"
       },
       {
         "category": "Valoración",
@@ -283,7 +283,8 @@
         },
         "operatingIncome": {
           "period_end": "2026-07-31",
-          "period_type": "ttm"
+          "period_type": "ttm",
+          "source": "sec_edgar"
         },
         "retainedEarnings": {
           "period_end": "2026-07-31",
@@ -415,20 +416,7 @@
       "source_rate": 0.0,
       "unit": "título"
     },
-    "ebit": {
-      "accns": [
-        "0001535527-26-000010",
-        "0001535527-26-000031"
-      ],
-      "concept": "us-gaap:OperatingIncomeLoss",
-      "diff": 0.101275629165,
-      "edgar_value": -132954000.0,
-      "how": "ejercicio 2025-02-01 a 2026-01-31 + acumulado 2026-02-01 a 2026-07-31 − acumulado 2025-02-01 a 2025-07-31",
-      "period_end": "2026-07-31",
-      "source_value": -119489000.0,
-      "status": "estimado",
-      "tolerance": 0.02
-    },
+    "ebit": null,
     "edgar": {
       "backup": {
         "cut": [],
@@ -447,7 +435,123 @@
       },
       "cik": 1535527,
       "facts_status": "ok",
+      "history": {
+        "capex": {
+          "cross_taxonomy": null,
+          "first": "2018-01-31",
+          "last": "2026-01-31",
+          "unit": "USD",
+          "years": 9
+        },
+        "diluted_eps": {
+          "cross_taxonomy": null,
+          "first": "2018-01-31",
+          "last": "2026-01-31",
+          "unit": "USD/shares",
+          "years": 9
+        },
+        "diluted_shares": {
+          "cross_taxonomy": null,
+          "first": "2020-01-31",
+          "last": "2026-01-31",
+          "unit": "shares",
+          "years": 7
+        },
+        "net_income": {
+          "cross_taxonomy": null,
+          "first": "2018-01-31",
+          "last": "2026-01-31",
+          "unit": "USD",
+          "years": 9
+        },
+        "operating_cash_flow": {
+          "cross_taxonomy": null,
+          "first": "2018-01-31",
+          "last": "2026-01-31",
+          "unit": "USD",
+          "years": 9
+        },
+        "operating_income": {
+          "cross_taxonomy": null,
+          "first": "2018-01-31",
+          "last": "2026-01-31",
+          "unit": "USD",
+          "years": 9
+        },
+        "revenue": {
+          "cross_taxonomy": null,
+          "first": "2018-01-31",
+          "last": "2026-01-31",
+          "unit": "USD",
+          "years": 9
+        }
+      },
       "pending_filings": [],
+      "primary": {
+        "cut": [
+          {
+            "accns": [
+              "0001535527-26-000010",
+              "0001535527-26-000031"
+            ],
+            "concept": "us-gaap:OperatingIncomeLoss",
+            "field": "operatingIncome",
+            "how": "ejercicio 2025-02-01 a 2026-01-31 + acumulado 2026-02-01 a 2026-07-31 − acumulado 2025-02-01 a 2025-07-31",
+            "period_end": "2026-07-31",
+            "replaced": -119489000.0,
+            "value": -132954000.0,
+            "why": "EBIT que presenta el emisor (F3_T1_PARADA1 §1)"
+          }
+        ],
+        "fy": [
+          {
+            "accns": [
+              "0001535527-26-000010"
+            ],
+            "concept": "us-gaap:OperatingIncomeLoss",
+            "field": "FY.operating_income",
+            "fy_end": "2026-01-31",
+            "how": "ejercicio 2025-02-01 a 2026-01-31",
+            "replaced": -293292000.0,
+            "value": -293292000.0
+          },
+          {
+            "accns": [
+              "0001535527-26-000010"
+            ],
+            "concept": "us-gaap:OperatingIncomeLoss",
+            "field": "FY.operating_income",
+            "fy_end": "2025-01-31",
+            "how": "ejercicio 2024-02-01 a 2025-01-31",
+            "replaced": -116400000.0,
+            "value": -116400000.0
+          },
+          {
+            "accns": [
+              "0001535527-26-000010"
+            ],
+            "concept": "us-gaap:OperatingIncomeLoss",
+            "field": "FY.operating_income",
+            "fy_end": "2024-01-31",
+            "how": "ejercicio 2023-02-01 a 2024-01-31",
+            "replaced": -19141000.0,
+            "value": -19141000.0
+          },
+          {
+            "accns": [
+              "0001535527-25-000009"
+            ],
+            "concept": "us-gaap:OperatingIncomeLoss",
+            "field": "FY.operating_income",
+            "fy_end": "2023-01-31",
+            "how": "ejercicio 2022-02-01 a 2023-01-31",
+            "replaced": -190112000.0,
+            "value": -190112000.0
+          }
+        ],
+        "reason": null,
+        "skipped": []
+      },
       "reason": null,
       "status": "ok",
       "title": "CrowdStrike Holdings, Inc."
@@ -651,7 +755,7 @@
         "source": "yfinance_statements"
       },
       "key_metrics.interest_coverage": {
-        "detail": "Cobertura de intereses = -4.5x: EBIT < 0 con caja neta, la ratio no es significativa",
+        "detail": "Cobertura de intereses = -5.0x: EBIT < 0 con caja neta, la ratio no es significativa",
         "rule": "ratio_no_significativa",
         "source": "sin_dato"
       },
@@ -688,8 +792,8 @@
         "source": "yfinance_statements"
       },
       "operatingIncome": {
-        "detail": "TTM: suma de los 4 trimestres 2026-07-31, 2026-04-30, 2026-01-31, 2025-10-31 · estimado por la fuente: difiere un +10.1% del que presenta el emisor en SEC EDGAR (us-gaap:OperatingIncomeLoss, -132,954,000)",
-        "source": "yfinance_statements"
+        "detail": "SEC EDGAR, fuente principal (us-gaap:OperatingIncomeLoss): ejercicio 2025-02-01 a 2026-01-31 + acumulado 2026-02-01 a 2026-07-31 − acumulado 2025-02-01 a 2025-07-31 · EBIT que presenta el emisor (F3_T1_PARADA1 §1)",
+        "source": "sec_edgar"
       },
       "payoutRatio": {
         "detail": "la fuente no lo devolvió",
@@ -700,7 +804,7 @@
         "source": "yfinance_statements"
       },
       "ratios.interest_coverage": {
-        "detail": "Cobertura de intereses = -4.5x: EBIT < 0 con caja neta, la ratio no es significativa",
+        "detail": "Cobertura de intereses = -5.0x: EBIT < 0 con caja neta, la ratio no es significativa",
         "rule": "ratio_no_significativa",
         "source": "sin_dato"
       },
@@ -955,16 +1059,16 @@
       "action": "sin_dato",
       "field": "key_metrics.interest_coverage",
       "new": null,
-      "old": -4.48431284245,
-      "reason": "Cobertura de intereses = -4.5x: EBIT < 0 con caja neta, la ratio no es significativa",
+      "old": -4.98964197253,
+      "reason": "Cobertura de intereses = -5.0x: EBIT < 0 con caja neta, la ratio no es significativa",
       "rule": "ratio_no_significativa"
     },
     {
       "action": "sin_dato",
       "field": "ratios.interest_coverage",
       "new": null,
-      "old": -4.48431284245,
-      "reason": "Cobertura de intereses = -4.5x: EBIT < 0 con caja neta, la ratio no es significativa",
+      "old": -4.98964197253,
+      "reason": "Cobertura de intereses = -5.0x: EBIT < 0 con caja neta, la ratio no es significativa",
       "rule": "ratio_no_significativa"
     }
   ],
@@ -1013,10 +1117,6 @@
         {
           "label": "Confianza · Calidad de fuente (baja)",
           "text": "validación: trailingEps (pe_implausible); beneficio normalizado con ítems inferidos (confianza media); 6 campos de Finnhub en lugar de los estados"
-        },
-        {
-          "label": "Beneficio operativo",
-          "text": "estimado por la fuente: el del proveedor de datos difiere un +10.1% del que presenta el emisor en SEC EDGAR (us-gaap:OperatingIncomeLoss, −$132.95M en los doce meses al 2026-07-31). Se usa el del proveedor (D2) y se marca."
         },
         {
           "label": "Fuente oficial",
@@ -1108,16 +1208,16 @@
                 "bench": 20.0,
                 "bench_txt": "20.00x",
                 "fmt": "mult",
-                "gap_pct": 5787.50572093,
-                "gap_txt": "+5788%",
+                "gap_pct": 6184.49936871,
+                "gap_txt": "+6184%",
                 "higher_is_better": false,
                 "key": "ev_ebitda",
                 "label": "EV/EBITDA",
                 "reading": "Prima elevada",
-                "text": "EV/EBITDA de 1177.5x frente a 20.0x del sector (+5788%): prima elevada",
+                "text": "EV/EBITDA de 1256.9x frente a 20.0x del sector (+6184%): prima elevada",
                 "tone": "neg",
-                "value": 1177.50114419,
-                "value_txt": "1177.50x"
+                "value": 1256.89987374,
+                "value_txt": "1256.90x"
               },
               {
                 "bench": 25.0,
@@ -1203,16 +1303,16 @@
                 "bench": 0.25,
                 "bench_txt": "25.00%",
                 "fmt": "pct",
-                "gap_pct": -108.857360208,
-                "gap_txt": "-109%",
+                "gap_pct": -109.855480162,
+                "gap_txt": "-110%",
                 "higher_is_better": true,
                 "key": "operating_margin",
                 "label": "Margen operativo",
                 "reading": "Muy inferior",
-                "text": "Margen operativo de -2.2% frente a 25.0% del sector (-109%): muy inferior",
+                "text": "Margen operativo de -2.5% frente a 25.0% del sector (-110%): muy inferior",
                 "tone": "neg",
-                "value": -0.0221434005202,
-                "value_txt": "−2.21%"
+                "value": -0.0246387004056,
+                "value_txt": "−2.46%"
               },
               {
                 "bench": 0.2,
@@ -1480,23 +1580,23 @@
               "tone": "pos"
             },
             {
-              "amount": 213154000.0,
-              "amount_txt": "$213.15M",
+              "amount": 199689000.0,
+              "amount_txt": "$199.69M",
               "key": "ebitda_margin",
               "label": "Margen EBITDA",
-              "pct": 0.0395011624039,
-              "pct_txt": "4.0%",
+              "pct": 0.0370058625185,
+              "pct_txt": "3.7%",
               "reading": null,
               "state": "con_dato",
               "tone": null
             },
             {
-              "amount": -119489000.0,
-              "amount_txt": "−$119.49M",
+              "amount": -132954000.0,
+              "amount_txt": "−$132.95M",
               "key": "operating_margin",
               "label": "Margen operativo",
-              "pct": -0.0221434005202,
-              "pct_txt": "−2.2%",
+              "pct": -0.0246387004056,
+              "pct_txt": "−2.5%",
               "reading": "Muy inferior",
               "state": "con_dato",
               "tone": "neg"
@@ -1535,17 +1635,17 @@
             "bench": 0.25,
             "bench_txt": "25.00%",
             "fmt": "pct",
-            "gap_pct": -108.857360208,
-            "gap_txt": "-109%",
+            "gap_pct": -109.855480162,
+            "gap_txt": "-110%",
             "higher_is_better": true,
             "key": "operating_margin",
-            "label": "Margen operativo (estimado por la fuente)",
+            "label": "Margen operativo",
             "reading": "Muy inferior",
             "state": "con_dato",
-            "text": "Margen operativo (estimado por la fuente) de -2.2% frente a 25.0% del sector (-109%): muy inferior",
+            "text": "Margen operativo de -2.5% frente a 25.0% del sector (-110%): muy inferior",
             "tone": "neg",
-            "value": -0.0221434005202,
-            "value_txt": "-2.21%"
+            "value": -0.0246387004056,
+            "value_txt": "-2.46%"
           },
           {
             "bench": 0.2,
@@ -1641,12 +1741,12 @@
           "state": "con_dato"
         },
         {
-          "amount": -119489000.0,
-          "amount_txt": "−$119.49M",
+          "amount": -132954000.0,
+          "amount_txt": "−$132.95M",
           "key": "operating_income",
           "label": "Resultado operativo",
-          "pct_of_revenue": -2.21434005202,
-          "pct_txt": "−2.2%",
+          "pct_of_revenue": -2.46387004056,
+          "pct_txt": "−2.5%",
           "sign": "neg",
           "state": "con_dato"
         },
@@ -1735,8 +1835,8 @@
             "text": "la posición de caja supera a la deuda total (caja neta)",
             "tone": "pos",
             "unit": "x",
-            "value": -20.0213507605,
-            "value_txt": "-20.02x",
+            "value": -21.3713875076,
+            "value_txt": "-21.37x",
             "zones": [
               {
                 "from": 0.0,
@@ -1929,18 +2029,18 @@
             "bench": 20.0,
             "bench_txt": "20.00x",
             "fmt": "mult",
-            "gap_pct": 5787.50572093,
-            "gap_txt": "+5788%",
+            "gap_pct": 6184.49936871,
+            "gap_txt": "+6184%",
             "higher_is_better": false,
             "key": "ev_ebitda",
             "label": "EV/EBITDA",
             "reading": "Prima elevada",
             "role": "block",
             "state": "con_dato",
-            "text": "EV/EBITDA de 1177.5x frente a 20.0x del sector (+5788%): prima elevada",
+            "text": "EV/EBITDA de 1256.9x frente a 20.0x del sector (+6184%): prima elevada",
             "tone": "neg",
-            "value": 1177.50114419,
-            "value_txt": "1177.50x"
+            "value": 1256.89987374,
+            "value_txt": "1256.90x"
           },
           {
             "bench": 25.0,
@@ -2327,8 +2427,8 @@
             "items": [
               {
                 "category": "Valoración",
-                "detail": "El valor de empresa equivale a 1177.5 veces su EBITDA anual, un múltiplo caro en términos absolutos que exige un crecimiento sostenido para no defraudar.",
-                "reason": "EV/EBITDA alto — 1177.5x"
+                "detail": "El valor de empresa equivale a 1256.9 veces su EBITDA anual, un múltiplo caro en términos absolutos que exige un crecimiento sostenido para no defraudar.",
+                "reason": "EV/EBITDA alto — 1256.9x"
               },
               {
                 "category": "Valoración",
@@ -2577,11 +2677,11 @@
                 {
                   "in_block": false,
                   "metric": "Margen Operativo",
-                  "reason": "Negativo (-2.2%) - Operaciones no rentables",
+                  "reason": "Negativo (-2.5%) - Operaciones no rentables",
                   "sign": "-5",
                   "state": "con_dato",
                   "tone": "neg",
-                  "value": "-2.2%"
+                  "value": "-2.5%"
                 },
                 {
                   "in_block": false,
@@ -2643,11 +2743,11 @@
                 {
                   "in_block": true,
                   "metric": "EV/EBITDA vs Sector",
-                  "reason": "Muy caro (1177.5x vs 20.0x)",
+                  "reason": "Muy caro (1256.9x vs 20.0x)",
                   "sign": "(-4)",
                   "state": "con_dato",
                   "tone": "neu",
-                  "value": "1177.5x"
+                  "value": "1256.9x"
                 },
                 {
                   "in_block": true,
@@ -2878,8 +2978,8 @@
             "$436.86M"
           ],
           [
-            "Beneficio operativo (estimado por la fuente)",
-            "−$119.49M",
+            "Beneficio operativo",
+            "−$132.95M",
             "Beneficio neto",
             "$58.46M"
           ],
@@ -2945,14 +3045,14 @@
           },
           {
             "bench": "25.00%",
-            "gap": "-109%",
+            "gap": "-110%",
             "key": "operating_margin",
-            "label": "Margen operativo (estimado por la fuente)",
+            "label": "Margen operativo",
             "reading": "Muy inferior",
             "state": "con_dato",
-            "text": "Margen operativo (estimado por la fuente) de -2.2% frente a 25.0% del sector (-109%): muy inferior",
+            "text": "Margen operativo de -2.5% frente a 25.0% del sector (-110%): muy inferior",
             "tone": "neg",
-            "value": "-2.21%"
+            "value": "-2.46%"
           },
           {
             "bench": "20.00%",
@@ -3040,7 +3140,7 @@
             "state": "con_dato",
             "text": "la posición de caja supera a la deuda total (caja neta)",
             "tone": "pos",
-            "value": "-20.02x"
+            "value": "-21.37x"
           },
           {
             "bench": null,
@@ -3181,14 +3281,14 @@
           },
           {
             "bench": "20.00x",
-            "gap": "+5788%",
+            "gap": "+6184%",
             "key": "ev_ebitda",
             "label": "EV/EBITDA",
             "reading": "Prima elevada",
             "state": "con_dato",
-            "text": "EV/EBITDA de 1177.5x frente a 20.0x del sector (+5788%): prima elevada",
+            "text": "EV/EBITDA de 1256.9x frente a 20.0x del sector (+6184%): prima elevada",
             "tone": "neg",
-            "value": "1177.50x"
+            "value": "1256.90x"
           },
           {
             "bench": "25.00x",
@@ -3532,14 +3632,14 @@
         },
         {
           "bench": "vs sector 20.0x",
-          "delta": "+5788%",
+          "delta": "+6184%",
           "key": "ev_ebitda",
           "label": "EV/EBITDA",
           "pill": "Prima elevada",
           "state": "con_dato",
           "tone": "neg",
           "unit": "x",
-          "value": "1177.5"
+          "value": "1256.9"
         }
       ],
       "composition": {
@@ -4808,10 +4908,10 @@
     "earnings_growth": null,
     "earnings_yield": 0.00022902434191,
     "ebitda": 436857000.0,
-    "ebitda_margin": 0.0395011624039,
+    "ebitda_margin": 0.0370058625185,
     "enterprise_value": 250989078888.0,
     "eps": 0.057093476657,
-    "ev_ebitda": 1177.50114419,
+    "ev_ebitda": 1256.89987374,
     "ev_revenue": 46.5126639272,
     "fcf_yield": 0.00596498717182,
     "ffo": 391103000.0,
@@ -4825,15 +4925,15 @@
     "inventory_turnover": null,
     "market_cap": 255256709888.0,
     "net_debt": -4267631000.0,
-    "net_debt_to_ebitda": -20.0213507605,
+    "net_debt_to_ebitda": -21.3713875076,
     "net_debt_to_ebitda_state": "caja_neta",
     "net_income": 58460000.0,
     "net_income_normalized": 31476500.0,
     "net_interest_income": 156516000.0,
     "net_margin": 0.0108336599554,
     "operating_cash_flow": 2016615000.0,
-    "operating_income": -119489000.0,
-    "operating_margin": -0.0221434005202,
+    "operating_income": -132954000.0,
+    "operating_margin": -0.0246387004056,
     "p_ffo": 652.65853212,
     "payout_basis": "beneficio_neto",
     "payout_ratio": null,
@@ -5011,11 +5111,11 @@
     "debt_to_equity": 0.146267418622,
     "dividend_yield": 0.0,
     "earnings_yield": 0.00022902434191,
-    "ebitda": 213154000.0,
-    "ebitda_margin": 0.0395011624039,
+    "ebitda": 199689000.0,
+    "ebitda_margin": 0.0370058625185,
     "enterprise_value": 250989078888.0,
     "eps": 0.057093476657,
-    "ev_ebitda": 1177.50114419,
+    "ev_ebitda": 1256.89987374,
     "ev_fcf": 164.842101905,
     "ev_revenue": 46.5126639272,
     "fcf": 1522603000.0,
@@ -5031,11 +5131,11 @@
     "inventory_turnover": null,
     "market_cap": 255256709888.0,
     "net_debt": -4267631000.0,
-    "net_debt_to_ebitda": -20.0213507605,
+    "net_debt_to_ebitda": -21.3713875076,
     "net_income": 58460000.0,
     "net_margin": 0.0108336599554,
     "operating_cash_flow": 2016615000.0,
-    "operating_margin": -0.0221434005202,
+    "operating_margin": -0.0246387004056,
     "p_fcf": 167.644953995,
     "p_ffo": 652.65853212,
     "payout_ratio": null,
@@ -5170,9 +5270,9 @@
           {
             "adjustment": -5,
             "metric": "Margen Operativo",
-            "reason": "Negativo (-2.2%) - Operaciones no rentables",
+            "reason": "Negativo (-2.5%) - Operaciones no rentables",
             "severity": "severe",
-            "value": "-2.2%"
+            "value": "-2.5%"
           },
           {
             "adjustment": -2,
@@ -5196,7 +5296,7 @@
         "details": [
           "Muy bajo (0.6%) - Poco eficiente con el capital",
           "Bajo (0.3%) - Activos poco productivos",
-          "Negativo (-2.2%) - Operaciones no rentables",
+          "Negativo (-2.5%) - Operaciones no rentables",
           "Bajo (0.6%) - Poca ganancia por venta",
           "Capital invertido 7% de los activos (< 10%): ROIC no significativo"
         ],
@@ -5279,9 +5379,9 @@
             "adjustment": -4,
             "in_block": true,
             "metric": "EV/EBITDA vs Sector",
-            "reason": "Muy caro (1177.5x vs 20.0x)",
+            "reason": "Muy caro (1256.9x vs 20.0x)",
             "severity": "severe",
-            "value": "1177.5x"
+            "value": "1256.9x"
           },
           {
             "adjustment": -3,
@@ -5323,7 +5423,7 @@
           "Muy caro (8109.4x vs 30.0x)",
           "Fuerte compresión P/E normalizado (8109x → 170x forward), sin efecto: el Forward P/E (169.9x) sigue en la peor banda (> 32.5x = 25.0x de referencia × 1.3)",
           "Muy alto (167.6x)",
-          "Muy caro (1177.5x vs 20.0x)",
+          "Muy caro (1256.9x vs 20.0x)",
           "Muy caro (5.60)",
           "promedio de los ajustes reescalados a ±1 (P/E -1.00, Forward P/E +0.00, P/FCF -1.00, EV/EBITDA -1.00, PEG -1.00) = -0.80 × 6 (máximo con 5 miembros) = -4.8",
           "El DCF no concilia con el precio bajo ningún supuesto razonable; no se usa en el score: el grid completo (30.62–69.97) no contiene el precio (249.29): ninguna combinación razonable de crecimiento y WACC lo reconcilia"
@@ -5521,7 +5621,7 @@
     "ke": 0.11264957887,
     "mrp": 0.042,
     "rating": {
-      "coverage": -4.48431284245,
+      "coverage": -4.98964197253,
       "flag": "regla M: EBIT < 0 con caja neta, cobertura no significativa -> tramo de caja neta",
       "rating": "BBB",
       "spread": 0.0111,

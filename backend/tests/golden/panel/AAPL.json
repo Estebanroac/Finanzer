@@ -285,7 +285,8 @@
         },
         "operatingIncome": {
           "period_end": "2026-06-30",
-          "period_type": "ttm"
+          "period_type": "ttm",
+          "source": "sec_edgar"
         },
         "retainedEarnings": {
           "period_end": "2026-06-30",
@@ -491,20 +492,7 @@
       "source_rate": 1.08,
       "unit": "título"
     },
-    "ebit": {
-      "accns": [
-        "0000320193-25-000079",
-        "0000320193-26-000020"
-      ],
-      "concept": "us-gaap:OperatingIncomeLoss",
-      "diff": 0.0,
-      "edgar_value": 154859000000.0,
-      "how": "ejercicio 2024-09-29 a 2025-09-27 + acumulado 2025-09-28 a 2026-06-27 − acumulado 2024-09-29 a 2025-06-28",
-      "period_end": "2026-06-30",
-      "source_value": 154859000000.0,
-      "status": "coincide",
-      "tolerance": 0.02
-    },
+    "ebit": null,
     "edgar": {
       "backup": {
         "cut": [],
@@ -519,7 +507,123 @@
       },
       "cik": 320193,
       "facts_status": "ok",
+      "history": {
+        "capex": {
+          "cross_taxonomy": null,
+          "first": "2007-09-29",
+          "last": "2025-09-27",
+          "unit": "USD",
+          "years": 19
+        },
+        "diluted_eps": {
+          "cross_taxonomy": null,
+          "first": "2007-09-29",
+          "last": "2025-09-27",
+          "unit": "USD/shares",
+          "years": 19
+        },
+        "diluted_shares": {
+          "cross_taxonomy": null,
+          "first": "2007-09-29",
+          "last": "2025-09-27",
+          "unit": "shares",
+          "years": 19
+        },
+        "net_income": {
+          "cross_taxonomy": null,
+          "first": "2007-09-29",
+          "last": "2025-09-27",
+          "unit": "USD",
+          "years": 19
+        },
+        "operating_cash_flow": {
+          "cross_taxonomy": null,
+          "first": "2007-09-29",
+          "last": "2025-09-27",
+          "unit": "USD",
+          "years": 19
+        },
+        "operating_income": {
+          "cross_taxonomy": null,
+          "first": "2007-09-29",
+          "last": "2025-09-27",
+          "unit": "USD",
+          "years": 19
+        },
+        "revenue": {
+          "cross_taxonomy": null,
+          "first": "2007-09-29",
+          "last": "2025-09-27",
+          "unit": "USD",
+          "years": 19
+        }
+      },
       "pending_filings": [],
+      "primary": {
+        "cut": [
+          {
+            "accns": [
+              "0000320193-25-000079",
+              "0000320193-26-000020"
+            ],
+            "concept": "us-gaap:OperatingIncomeLoss",
+            "field": "operatingIncome",
+            "how": "ejercicio 2024-09-29 a 2025-09-27 + acumulado 2025-09-28 a 2026-06-27 − acumulado 2024-09-29 a 2025-06-28",
+            "period_end": "2026-06-30",
+            "replaced": 154859000000.0,
+            "value": 154859000000.0,
+            "why": "EBIT que presenta el emisor (F3_T1_PARADA1 §1)"
+          }
+        ],
+        "fy": [
+          {
+            "accns": [
+              "0000320193-25-000079"
+            ],
+            "concept": "us-gaap:OperatingIncomeLoss",
+            "field": "FY.operating_income",
+            "fy_end": "2025-09-30",
+            "how": "ejercicio 2024-09-29 a 2025-09-27",
+            "replaced": 133050000000.0,
+            "value": 133050000000.0
+          },
+          {
+            "accns": [
+              "0000320193-25-000079"
+            ],
+            "concept": "us-gaap:OperatingIncomeLoss",
+            "field": "FY.operating_income",
+            "fy_end": "2024-09-30",
+            "how": "ejercicio 2023-10-01 a 2024-09-28",
+            "replaced": 123216000000.0,
+            "value": 123216000000.0
+          },
+          {
+            "accns": [
+              "0000320193-25-000079"
+            ],
+            "concept": "us-gaap:OperatingIncomeLoss",
+            "field": "FY.operating_income",
+            "fy_end": "2023-09-30",
+            "how": "ejercicio 2022-09-25 a 2023-09-30",
+            "replaced": 114301000000.0,
+            "value": 114301000000.0
+          },
+          {
+            "accns": [
+              "0000320193-24-000123"
+            ],
+            "concept": "us-gaap:OperatingIncomeLoss",
+            "field": "FY.operating_income",
+            "fy_end": "2022-09-30",
+            "how": "ejercicio 2021-09-26 a 2022-09-24",
+            "replaced": 119437000000.0,
+            "value": 119437000000.0
+          }
+        ],
+        "reason": null,
+        "skipped": []
+      },
       "reason": null,
       "status": "ok",
       "title": "Apple Inc."
@@ -756,8 +860,8 @@
         "source": "yfinance_statements"
       },
       "operatingIncome": {
-        "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
-        "source": "yfinance_statements"
+        "detail": "SEC EDGAR, fuente principal (us-gaap:OperatingIncomeLoss): ejercicio 2024-09-29 a 2025-09-27 + acumulado 2025-09-28 a 2026-06-27 − acumulado 2024-09-29 a 2025-06-28 · EBIT que presenta el emisor (F3_T1_PARADA1 §1)",
+        "source": "sec_edgar"
       },
       "payoutRatio": {
         "detail": "/stock/metric",

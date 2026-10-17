@@ -3,11 +3,6 @@
     "red_flags": [],
     "strengths": [
       {
-        "category": "Crecimiento",
-        "detail": "Los ingresos crecen 20.6% anual en tres años (CAGR): ritmo de expansión elevado que, si mantiene márgenes, es el principal motor de creación de valor a largo plazo.",
-        "reason": "Crecimiento fuerte — ingresos +20.6% anual (3 años)"
-      },
-      {
         "category": "Riesgo de mercado",
         "detail": "Con beta 0.40, la acción se mueve menos que el mercado y tiende a amortiguar las caídas: un perfil más estable, útil para reducir la volatilidad de una cartera.",
         "reason": "Perfil defensivo — Beta 0.40"
@@ -44,7 +39,7 @@
     "ptbv": 1.87623958286,
     "ptbv_justified": 1.6334289798,
     "ptbv_ratio": 1.14865084804,
-    "revenue_growth_statements": -0.0323172226518,
+    "revenue_growth_statements": 2.96150315131e-05,
     "roe_fy": 0.0933457296224,
     "roe_std": 0.0964559137098,
     "roe_years": 4,
@@ -115,25 +110,19 @@
     "source_beta": 0.18139505
   },
   "classification": {
-    "alerts": [
-      {
-        "code": "posible_ciclica",
-        "detail": "Posible cíclica: crecimiento de ingresos volátil (52.5 pp > 15 pp). No cambia el arquetipo; baja la confianza.",
-        "detail_plain": "Podría ser cíclica: su crecimiento de ingresos oscila 52.5 puntos de un año a otro (el umbral es 15). No cambia su tipo, pero baja la confianza del veredicto."
-      }
-    ],
+    "alerts": [],
     "ambiguous": false,
     "archetype": "FINANCIAL",
-    "confidence": "baja",
+    "confidence": "normal",
     "industry": "Insurance - Diversified",
     "inputs": {
-      "assets_to_revenue": 2.97712668261,
+      "assets_to_revenue": 3.29033717061,
       "eps_ttm": 31.042016,
-      "net_margin_ttm": 0.163128894432,
+      "net_margin_ttm": 0.180290972529,
       "op_margin_detrended_std": null,
-      "revenue_cagr_3y": 0.205864995854,
+      "revenue_cagr_3y": 0.0714022352325,
       "revenue_cagr_3y_reason": null,
-      "revenue_growth_std": 0.525324799712
+      "revenue_growth_std": 0.114287588354
     },
     "label": "Banco/aseguradora",
     "reason": "Clasificada como FINANCIAL por industria Insurance - Diversified (aseguradora)",
@@ -204,10 +193,8 @@
         ]
       },
       "stability": {
-        "level": "media",
-        "reasons": [
-          "alerta de posible cíclica"
-        ]
+        "level": "alta",
+        "reasons": []
       }
     },
     "level": "media",
@@ -215,10 +202,9 @@
     "reasons": [
       "convergencia media: uno lo ve en precio y otro con dirección: no coinciden, sin oponerse",
       "cobertura media: 9 de 11 componentes del score con dato (82%)",
-      "calidad de fuente media: sin TTM: estados anuales (hasta 12 meses de retraso); 12 campos de Finnhub en lugar de los estados",
-      "estabilidad media: alerta de posible cíclica"
+      "calidad de fuente media: sin TTM: estados anuales (hasta 12 meses de retraso); 12 campos de Finnhub en lugar de los estados"
     ],
-    "score": 0.5
+    "score": 0.6
   },
   "data_provenance": {
     "as_of": {
@@ -284,7 +270,8 @@
         },
         "totalRevenue": {
           "period_end": "2025-12-31",
-          "period_type": "fy"
+          "period_type": "fy",
+          "source": "sec_edgar"
         },
         "totalStockholderEquity": {
           "period_end": "2025-12-31",
@@ -436,7 +423,127 @@
       },
       "cik": 1067983,
       "facts_status": "ok",
+      "history": {
+        "capex": {
+          "cross_taxonomy": null,
+          "first": "2007-12-31",
+          "last": "2025-12-31",
+          "unit": "USD",
+          "years": 19
+        },
+        "diluted_eps": {
+          "cross_taxonomy": null,
+          "first": null,
+          "last": null,
+          "unit": "USD/shares",
+          "years": 0
+        },
+        "diluted_shares": {
+          "cross_taxonomy": null,
+          "first": null,
+          "last": null,
+          "unit": "shares",
+          "years": 0
+        },
+        "net_income": {
+          "cross_taxonomy": null,
+          "first": "2007-12-31",
+          "last": "2025-12-31",
+          "unit": "USD",
+          "years": 19
+        },
+        "operating_cash_flow": {
+          "cross_taxonomy": null,
+          "first": "2007-12-31",
+          "last": "2025-12-31",
+          "unit": "USD",
+          "years": 19
+        },
+        "operating_income": {
+          "cross_taxonomy": null,
+          "first": "2009-12-31",
+          "last": "2012-12-31",
+          "unit": "USD",
+          "years": 4
+        },
+        "revenue": {
+          "cross_taxonomy": null,
+          "first": "2007-12-31",
+          "last": "2025-12-31",
+          "unit": "USD",
+          "years": 19
+        }
+      },
       "pending_filings": [],
+      "primary": {
+        "cut": [
+          {
+            "accns": [
+              "0001193125-26-083899"
+            ],
+            "concept": "us-gaap:Revenues",
+            "field": "totalRevenue",
+            "how": "ejercicio 2025-01-01 a 2025-12-31",
+            "period_end": "2025-12-31",
+            "replaced": 410522000000.0,
+            "value": 371444000000.0,
+            "why": "ingresos sin ganancias de inversión (aseguradora o conglomerado)"
+          }
+        ],
+        "fy": [
+          {
+            "accns": [
+              "0001193125-26-083899"
+            ],
+            "concept": "us-gaap:Revenues",
+            "field": "FY.revenue",
+            "fy_end": "2025-12-31",
+            "how": "ejercicio 2025-01-01 a 2025-12-31",
+            "replaced": 410522000000.0,
+            "value": 371444000000.0
+          },
+          {
+            "accns": [
+              "0001193125-26-083899"
+            ],
+            "concept": "us-gaap:Revenues",
+            "field": "FY.revenue",
+            "fy_end": "2024-12-31",
+            "how": "ejercicio 2024-01-01 a 2024-12-31",
+            "replaced": 424232000000.0,
+            "value": 371433000000.0
+          },
+          {
+            "accns": [
+              "0001193125-26-083899"
+            ],
+            "concept": "us-gaap:Revenues",
+            "field": "FY.revenue",
+            "fy_end": "2023-12-31",
+            "how": "ejercicio 2023-01-01 a 2023-12-31",
+            "replaced": 439337000000.0,
+            "value": 364482000000.0
+          },
+          {
+            "accns": [
+              "0000950170-25-025210"
+            ],
+            "concept": "us-gaap:Revenues",
+            "field": "FY.revenue",
+            "fy_end": "2022-12-31",
+            "how": "ejercicio 2022-01-01 a 2022-12-31",
+            "replaced": 234121000000.0,
+            "value": 302020000000.0
+          }
+        ],
+        "reason": null,
+        "skipped": [
+          {
+            "field": "operatingIncome",
+            "reason": "EDGAR no lo tiene del periodo que acaba el 2025-12-31"
+          }
+        ]
+      },
       "reason": null,
       "status": "ok",
       "title": "BERKSHIRE HATHAWAY INC"
@@ -689,7 +796,7 @@
         "source": "yfinance_statements"
       },
       "revenueGrowth": {
-        "detail": "arquetipo FINANCIAL: 'revenue' de la fuente con definición inestable (RECON C6, §7.8); se usa siempre el YoY de los estados FY2025 (-3.2%) en lugar de 3.9%",
+        "detail": "arquetipo FINANCIAL: 'revenue' de la fuente con definición inestable (RECON C6, §7.8); se usa siempre el YoY de los estados FY2025 (0.0%) en lugar de 3.9%",
         "rule": "crecimiento_financiera_estados",
         "source": "politica_arquetipo"
       },
@@ -730,8 +837,8 @@
         "source": "yfinance_statements"
       },
       "totalRevenue": {
-        "detail": "plan B: estados anuales de yfinance (último FY)",
-        "source": "yfinance_statements"
+        "detail": "SEC EDGAR, fuente principal (us-gaap:Revenues): ejercicio 2025-01-01 a 2025-12-31 · ingresos sin ganancias de inversión (aseguradora o conglomerado)",
+        "source": "sec_edgar"
       },
       "totalStockholderEquity": {
         "detail": "plan B: estados anuales de yfinance (último FY)",
@@ -783,22 +890,22 @@
       "restated": [],
       "series": [
         {
-          "basis": "sin_casar",
+          "basis": "vigente",
           "fy_end": "2025-12-31",
           "restated": false
         },
         {
-          "basis": "sin_casar",
+          "basis": "vigente",
           "fy_end": "2024-12-31",
           "restated": false
         },
         {
-          "basis": "sin_casar",
+          "basis": "vigente",
           "fy_end": "2023-12-31",
           "restated": false
         },
         {
-          "basis": "sin_casar",
+          "basis": "vigente",
           "fy_end": "2022-12-31",
           "restated": false
         }
@@ -881,9 +988,9 @@
     {
       "action": "politica",
       "field": "revenueGrowth",
-      "new": -0.0323172226518,
+      "new": 2.96150315131e-05,
       "old": 0.0393,
-      "reason": "arquetipo FINANCIAL: 'revenue' de la fuente con definición inestable (RECON C6, §7.8); se usa siempre el YoY de los estados FY2025 (-3.2%) en lugar de 3.9%",
+      "reason": "arquetipo FINANCIAL: 'revenue' de la fuente con definición inestable (RECON C6, §7.8); se usa siempre el YoY de los estados FY2025 (0.0%) en lugar de 3.9%",
       "rule": "crecimiento_financiera_estados"
     },
     {
@@ -939,10 +1046,6 @@
           "text": "Arquetipo FINANCIAL (regla industria_aseguradora): Clasificada como FINANCIAL por industria Insurance - Diversified (aseguradora)"
         },
         {
-          "label": "Clasificación",
-          "text": "Posible cíclica: crecimiento de ingresos volátil (52.5 pp > 15 pp). No cambia el arquetipo; baja la confianza."
-        },
-        {
           "label": "Confianza · Convergencia entre métodos (media)",
           "text": "uno lo ve en precio y otro con dirección: no coinciden, sin oponerse"
         },
@@ -953,10 +1056,6 @@
         {
           "label": "Confianza · Calidad de fuente (media)",
           "text": "sin TTM: estados anuales (hasta 12 meses de retraso); 12 campos de Finnhub en lugar de los estados"
-        },
-        {
-          "label": "Confianza · Estabilidad del arquetipo (media)",
-          "text": "alerta de posible cíclica"
         },
         {
           "label": "Fuente oficial",
@@ -984,7 +1083,7 @@
     },
     "charts": {
       "comparison": {
-        "better": 2,
+        "better": 1,
         "groups": [
           {
             "items": [
@@ -1042,16 +1141,16 @@
                 "bench": 0.25,
                 "bench_txt": "25.00%",
                 "fmt": "pct",
-                "gap_pct": -34.7484422272,
-                "gap_txt": "-35%",
+                "gap_pct": -27.8836109885,
+                "gap_txt": "-28%",
                 "higher_is_better": true,
                 "key": "net_margin",
                 "label": "Margen neto",
                 "reading": "Inferior",
-                "text": "Margen neto de 16.3% frente a 25.0% del sector (-35%): inferior",
+                "text": "Margen neto de 18.0% frente a 25.0% del sector (-28%): inferior",
                 "tone": "warn",
-                "value": 0.163128894432,
-                "value_txt": "16.31%"
+                "value": 0.180290972529,
+                "value_txt": "18.03%"
               }
             ],
             "title": "Rentabilidad"
@@ -1062,16 +1161,16 @@
                 "bench": 0.08,
                 "bench_txt": "8.00%",
                 "fmt": "pct",
-                "gap_pct": 157.331244818,
-                "gap_txt": "+157%",
+                "gap_pct": -10.7472059594,
+                "gap_txt": "-11%",
                 "higher_is_better": true,
                 "key": "revenue_growth",
                 "label": "Crecimiento de ingresos (3 años)",
-                "reading": "Muy superior",
-                "text": "Crecimiento de ingresos (3 años) de 20.6% frente a 8.0% del sector (+157%): muy superior",
-                "tone": "pos",
-                "value": 0.205864995854,
-                "value_txt": "20.59%"
+                "reading": "Inferior",
+                "text": "Crecimiento de ingresos (3 años) de 7.1% frente a 8.0% del sector (-11%): inferior",
+                "tone": "warn",
+                "value": 0.0714022352325,
+                "value_txt": "7.14%"
               }
             ],
             "title": "Crecimiento"
@@ -1086,11 +1185,11 @@
         {
           "key": "revenue",
           "label": "Ingresos",
-          "reading": "Crecimiento excepcional (20.6%)",
+          "reading": "Crecimiento moderado (7.1%)",
           "state": "con_dato",
-          "tone": "pos",
-          "value": 0.205864995854,
-          "value_txt": "20.6%"
+          "tone": "neu",
+          "value": 0.0714022352325,
+          "value_txt": "7.1%"
         },
         {
           "key": "eps",
@@ -1108,38 +1207,38 @@
       "historical": {
         "series": [
           {
-            "cagr": 0.205864995854,
-            "cagr_txt": "20.6%",
+            "cagr": 0.0714022352325,
+            "cagr_txt": "7.1%",
             "key": "revenue",
             "label": "Ingresos",
             "points": [
               {
-                "value": 234121000000.0,
-                "value_txt": "$234.12B",
+                "value": 302020000000.0,
+                "value_txt": "$302.02B",
                 "year": 2022,
                 "yoy_pct": null,
                 "yoy_txt": null
               },
               {
-                "value": 439337000000.0,
-                "value_txt": "$439.34B",
+                "value": 364482000000.0,
+                "value_txt": "$364.48B",
                 "year": 2023,
-                "yoy_pct": 87.6538200332,
-                "yoy_txt": "+87.7%"
+                "yoy_pct": 20.681411827,
+                "yoy_txt": "+20.7%"
               },
               {
-                "value": 424232000000.0,
-                "value_txt": "$424.23B",
+                "value": 371433000000.0,
+                "value_txt": "$371.43B",
                 "year": 2024,
-                "yoy_pct": -3.43813519007,
-                "yoy_txt": "−3.4%"
+                "yoy_pct": 1.90709006206,
+                "yoy_txt": "+1.9%"
               },
               {
-                "value": 410522000000.0,
-                "value_txt": "$410.52B",
+                "value": 371444000000.0,
+                "value_txt": "$371.44B",
                 "year": 2025,
-                "yoy_pct": -3.23172226518,
-                "yoy_txt": "−3.2%"
+                "yoy_pct": 0.00296150315131,
+                "yoy_txt": "+0.0%"
               }
             ],
             "state": "con_dato"
@@ -1210,8 +1309,8 @@
       },
       "profitability": {
         "margin_ladder": {
-          "revenue": 410522000000.0,
-          "revenue_txt": "$410.52B",
+          "revenue": 371444000000.0,
+          "revenue_txt": "$371.44B",
           "steps": [
             {
               "key": "gross_margin",
@@ -1236,8 +1335,8 @@
               "amount_txt": "$66.97B",
               "key": "net_margin",
               "label": "Margen neto",
-              "pct": 0.163128894432,
-              "pct_txt": "16.3%",
+              "pct": 0.180290972529,
+              "pct_txt": "18.0%",
               "reading": "Inferior",
               "state": "con_dato",
               "tone": "warn"
@@ -1265,17 +1364,17 @@
             "bench": 0.25,
             "bench_txt": "25.00%",
             "fmt": "pct",
-            "gap_pct": -34.7484422272,
-            "gap_txt": "-35%",
+            "gap_pct": -27.8836109885,
+            "gap_txt": "-28%",
             "higher_is_better": true,
             "key": "net_margin",
             "label": "Margen neto",
             "reading": "Inferior",
             "state": "con_dato",
-            "text": "Margen neto de 16.3% frente a 25.0% del sector (-35%): inferior",
+            "text": "Margen neto de 18.0% frente a 25.0% del sector (-28%): inferior",
             "tone": "warn",
-            "value": 0.163128894432,
-            "value_txt": "16.31%"
+            "value": 0.180290972529,
+            "value_txt": "18.03%"
           }
         ],
         "returns": [
@@ -1331,8 +1430,8 @@
       },
       "results_flow": [
         {
-          "amount": 410522000000.0,
-          "amount_txt": "$410.52B",
+          "amount": 371444000000.0,
+          "amount_txt": "$371.44B",
           "key": "revenue",
           "label": "Ingresos",
           "pct_of_revenue": 100.0,
@@ -1357,8 +1456,8 @@
           "amount_txt": "$66.97B",
           "key": "net_income",
           "label": "Beneficio neto",
-          "pct_of_revenue": 16.3128894432,
-          "pct_txt": "16.3%",
+          "pct_of_revenue": 18.0290972529,
+          "pct_txt": "18.0%",
           "sign": "pos",
           "state": "con_dato"
         },
@@ -1547,8 +1646,8 @@
         {
           "key": "stability",
           "label": "Estabilidad del arquetipo",
-          "level": "Media",
-          "text": "La empresa podría ser cíclica: sus resultados actuales pueden no ser representativos."
+          "level": "Alta",
+          "text": "Sin incidencias."
         }
       ],
       "level": "media",
@@ -1556,7 +1655,6 @@
         "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no.",
         "Faltan datos en parte del análisis (9 de 11 indicadores con dato).",
         "Se usan los estados del último ejercicio anual (pueden tener hasta 12 meses de antigüedad).",
-        "La empresa podría ser cíclica: sus resultados actuales pueden no ser representativos.",
         "Parte de los datos proviene de una fuente secundaria."
       ],
       "reasons": [
@@ -1579,11 +1677,6 @@
           "dimension": "calidad de fuente",
           "level": "media",
           "text": "Parte de los datos proviene de una fuente secundaria."
-        },
-        {
-          "dimension": "estabilidad",
-          "level": "media",
-          "text": "La empresa podría ser cíclica: sus resultados actuales pueden no ser representativos."
         }
       ],
       "summary": "Confianza del veredicto: media. Contrae el atractivo del precio hacia 50 (factor 0.75): sin ajustar 40 → ajustado a 42. La calidad del negocio no se contrae.",
@@ -1636,8 +1729,8 @@
               "coverage": 0.5,
               "max": 20,
               "name": "Crecimiento",
-              "pct": 100.0,
-              "score": 20,
+              "pct": 60.0,
+              "score": 12,
               "text": null,
               "tone": "pos"
             }
@@ -1662,8 +1755,7 @@
         }
       ],
       "classification_notes": [
-        "Aseguradora por su industria (Insurance - Diversified): el balance es el producto.",
-        "Podría ser cíclica: su crecimiento de ingresos oscila 52.5 puntos de un año a otro (el umbral es 15). No cambia su tipo, pero baja la confianza del veredicto."
+        "Aseguradora por su industria (Insurance - Diversified): el balance es el producto."
       ],
       "confidence_reasons": [
         "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no.",
@@ -1681,7 +1773,7 @@
         {
           "kicker": "FORTALEZA CLAVE",
           "kind": "strength",
-          "text": "Crecimiento fuerte — ingresos +20.6% anual (3 años)",
+          "text": "Perfil defensivo — Beta 0.40",
           "tone": "pos"
         },
         {
@@ -1726,7 +1818,7 @@
           "key": "net_margin",
           "label": "Margen neto",
           "state": "con_dato",
-          "value": "16.31%"
+          "value": "18.03%"
         },
         {
           "key": "ptbv",
@@ -1759,18 +1851,18 @@
         "tone": "warn"
       },
       "quality": {
-        "level": "excelente",
+        "level": "sólida",
         "note": "baja confianza: cobertura baja en Crecimiento",
         "question": "¿es buena la empresa?",
-        "score": 81,
+        "score": 71,
         "title": "CALIDAD DEL NEGOCIO",
         "tone": "pos"
       },
       "verdict": {
         "confidence_text": "(confianza media: el P/B justificado la ve cara y el P/B del sector en precio)",
         "confidence_tone": "warn",
-        "full": "Calidad excelente · precio exigente (confianza media: el P/B justificado la ve cara y el P/B del sector en precio)",
-        "text": "Calidad excelente · precio exigente"
+        "full": "Calidad sólida · precio exigente (confianza media: el P/B justificado la ve cara y el P/B del sector en precio)",
+        "text": "Calidad sólida · precio exigente"
       }
     },
     "methodology": {
@@ -1832,9 +1924,9 @@
         "tone": "neu"
       },
       "revenue_growth": {
-        "label": "Acelerado",
-        "text": "los ingresos crecen 20.6% anual en 3 años, un ritmo acelerado propio de compañías growth",
-        "tone": "pos"
+        "label": "Moderado",
+        "text": "los ingresos crecen 7.1% anual en 3 años, un ritmo moderado",
+        "tone": "neu"
       },
       "roe": {
         "label": "Competitivo",
@@ -1848,7 +1940,7 @@
       "alerts": {
         "counts": {
           "red_flags": 0,
-          "strengths": 2,
+          "strengths": 1,
           "warnings": 0
         },
         "groups": [
@@ -1866,11 +1958,6 @@
           },
           {
             "items": [
-              {
-                "category": "Crecimiento",
-                "detail": "Los ingresos crecen 20.6% anual en tres años (CAGR): ritmo de expansión elevado que, si mantiene márgenes, es el principal motor de creación de valor a largo plazo.",
-                "reason": "Crecimiento fuerte — ingresos +20.6% anual (3 años)"
-              },
               {
                 "category": "Riesgo de mercado",
                 "detail": "Con beta 0.40, la acción se mueve menos que el mercado y tiende a amortiguar las caídas: un perfil más estable, útil para reducir la volatilidad de una cartera.",
@@ -1890,7 +1977,7 @@
           "LECTURA"
         ],
         "eps_vs_revenue_note": null,
-        "intro": "Los ingresos crecen 20.6% anual en 3 años, un ritmo acelerado propio de compañías growth. El número de acciones se mantuvo estable.",
+        "intro": "Los ingresos crecen 7.1% anual en 3 años, un ritmo moderado. El número de acciones se mantuvo estable.",
         "range52": {
           "axis": "Muestra dónde cotiza el precio dentro de su rango anual. Es contexto de mercado: no es una señal de valoración ni mide la calidad del negocio.",
           "caption": "Precio actual $526.35 — posición 85% del rango.",
@@ -1933,11 +2020,11 @@
             "gap": null,
             "key": "revenue_growth",
             "label": "Crecimiento de ingresos (CAGR 3 años)",
-            "reading": "Acelerado",
+            "reading": "Moderado",
             "state": "con_dato",
-            "text": "los ingresos crecen 20.6% anual en 3 años, un ritmo acelerado propio de compañías growth",
-            "tone": "pos",
-            "value": "20.59%"
+            "text": "los ingresos crecen 7.1% anual en 3 años, un ritmo moderado",
+            "tone": "neu",
+            "value": "7.14%"
           },
           {
             "bench": null,
@@ -1948,7 +2035,7 @@
             "state": "con_dato",
             "text": null,
             "tone": null,
-            "value": "-3.23%"
+            "value": "0.00%"
           },
           {
             "bench": null,
@@ -1998,8 +2085,8 @@
         "score_components": [
           {
             "metric": "Crecimiento Ingresos 3Y",
-            "reason": "Crecimiento excepcional (20.6%)",
-            "value": "20.6%"
+            "reason": "Crecimiento moderado (7.1%)",
+            "value": "7.1%"
           }
         ]
       },
@@ -2069,11 +2156,11 @@
                 {
                   "in_block": false,
                   "metric": "Margen Neto",
-                  "reason": "Bueno (16.3%) - Ganancias sólidas",
+                  "reason": "Bueno (18.0%) - Ganancias sólidas",
                   "sign": "+2",
                   "state": "con_dato",
                   "tone": "pos",
-                  "value": "16.3%"
+                  "value": "18.0%"
                 },
                 {
                   "in_block": false,
@@ -2195,11 +2282,11 @@
                 {
                   "in_block": false,
                   "metric": "Crecimiento Ingresos 3Y",
-                  "reason": "Crecimiento excepcional (20.6%)",
-                  "sign": "+5",
+                  "reason": "Crecimiento moderado (7.1%)",
+                  "sign": "+1",
                   "state": "con_dato",
                   "tone": "pos",
-                  "value": "20.6%"
+                  "value": "7.1%"
                 },
                 {
                   "in_block": false,
@@ -2214,7 +2301,7 @@
                   "in_block": false,
                   "metric": "Cobertura",
                   "reason": "Reescalado sobre los componentes con dato (sin dato: Crecimiento del BPA)",
-                  "sign": "+5",
+                  "sign": "+1",
                   "state": "con_dato",
                   "tone": "pos",
                   "value": "1/2 componentes"
@@ -2222,8 +2309,8 @@
               ],
               "max": 20,
               "name": "Crecimiento",
-              "pct": 100.0,
-              "score": 20,
+              "pct": 60.0,
+              "score": 12,
               "text": null,
               "tone": "pos"
             }
@@ -2276,7 +2363,7 @@
         "figures": [
           [
             "Ingresos",
-            "$410.52B",
+            "$371.44B",
             "EBITDA",
             "No aplica a bancos y aseguradoras"
           ],
@@ -2359,14 +2446,14 @@
           },
           {
             "bench": "25.00%",
-            "gap": "-35%",
+            "gap": "-28%",
             "key": "net_margin",
             "label": "Margen neto",
             "reading": "Inferior",
             "state": "con_dato",
-            "text": "Margen neto de 16.3% frente a 25.0% del sector (-35%): inferior",
+            "text": "Margen neto de 18.0% frente a 25.0% del sector (-28%): inferior",
             "tone": "warn",
-            "value": "16.31%"
+            "value": "18.03%"
           },
           {
             "bench": "—",
@@ -2514,7 +2601,7 @@
             "state": "con_dato",
             "text": null,
             "tone": null,
-            "value": "2.74x"
+            "value": "3.03x"
           },
           {
             "bench": "1.50x",
@@ -2613,31 +2700,31 @@
     "summary": {
       "alert_counts": {
         "red_flags": 0,
-        "strengths": 2,
+        "strengths": 1,
         "warnings": 0
       },
       "cards": [
         {
           "bench": "vs sector 8.0%",
-          "delta": "+157%",
+          "delta": "-11%",
           "key": "revenue_growth",
           "label": "Crecimiento ingresos (3 años)",
-          "pill": "Muy superior",
+          "pill": "Inferior",
           "state": "con_dato",
-          "tone": "pos",
+          "tone": "warn",
           "unit": "%",
-          "value": "20.6"
+          "value": "7.1"
         },
         {
           "bench": "vs sector 25.0%",
-          "delta": "-35%",
+          "delta": "-28%",
           "key": "net_margin",
           "label": "Margen neto",
           "pill": "Inferior",
           "state": "con_dato",
           "tone": "warn",
           "unit": "%",
-          "value": "16.3"
+          "value": "18.0"
         },
         {
           "bench": "vs sector 12.0%",
@@ -2703,7 +2790,7 @@
           "tone": "warn"
         },
         "quality": {
-          "level": "excelente",
+          "level": "sólida",
           "note": "baja confianza por cobertura",
           "rows": [
             {
@@ -2734,12 +2821,12 @@
               "kind": "bar",
               "label": "Crecimiento",
               "max": 20,
-              "pct": 100.0,
+              "pct": 60.0,
               "tone": "pos",
-              "value": 20
+              "value": 12
             }
           ],
-          "score": 81,
+          "score": 71,
           "title": "CALIDAD DEL NEGOCIO",
           "tone": "pos"
         }
@@ -2747,11 +2834,11 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad excelente · precio exigente (confianza media: el P/B justificado la ve cara y el P/B del sector en precio). Calidad 81/100 · precio 42/100 (sin ajustar 40 → ajustado a 42 por confianza media)."
+          "text": "Calidad sólida · precio exigente (confianza media: el P/B justificado la ve cara y el P/B del sector en precio). Calidad 71/100 · precio 42/100 (sin ajustar 40 → ajustado a 42 por confianza media)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
-          "text": "Destaca en Crecimiento (20/20) y Rentabilidad (18/20)."
+          "text": "Destaca en Rentabilidad (18/20) y Solidez Financiera (17/20)."
         },
         {
           "label": "RENTABILIDAD",
@@ -2763,7 +2850,7 @@
         },
         {
           "label": "CRECIMIENTO Y RETORNO",
-          "text": "Los ingresos crecen 20.6% anual en 3 años, un ritmo acelerado propio de compañías growth. El número de acciones se mantuvo estable."
+          "text": "Los ingresos crecen 7.1% anual en 3 años, un ritmo moderado. El número de acciones se mantuvo estable."
         },
         {
           "label": "ATRACTIVO DEL PRECIO",
@@ -3481,7 +3568,7 @@
     "threshold": 0.02
   },
   "key_metrics": {
-    "asset_turnover": 0.335894339277,
+    "asset_turnover": 0.303920220983,
     "beta": 0.398140829572,
     "book_value_per_share": 335.131367181,
     "buyback_yield": 0.0,
@@ -3498,7 +3585,7 @@
     "enterprise_value": 882532547808.0,
     "eps": 31.042016,
     "ev_ebitda": null,
-    "ev_revenue": 2.14978137057,
+    "ev_revenue": 2.37595047385,
     "fcf_yield": 0.0222247358582,
     "ffo": 80444000000.0,
     "ffo_payout": null,
@@ -3516,7 +3603,7 @@
     "net_income": 66968000000.0,
     "net_income_normalized": 66968000000.0,
     "net_interest_income": -5069000000.0,
-    "net_margin": 0.163128894432,
+    "net_margin": 0.180290972529,
     "operating_cash_flow": 45969000000.0,
     "operating_income": null,
     "operating_margin": null,
@@ -3530,10 +3617,10 @@
     "pfcf": 44.9949104628,
     "price_52w_high": 537.739990234,
     "price_52w_low": 464.010009766,
-    "ps": 2.74470685568,
+    "ps": 3.03346546938,
     "quick_ratio": null,
-    "revenue": 410522000000.0,
-    "revenue_growth": -0.0323172226518,
+    "revenue": 371444000000.0,
+    "revenue_growth": 2.96150315131e-05,
     "roa": 0.0547940722122,
     "roce": null,
     "roce_reason": "No aplica a bancos y aseguradoras: el balance es el producto (depósitos y préstamos)",
@@ -3682,11 +3769,11 @@
         "category": "Crecimiento",
         "included": true,
         "max": 20,
-        "score": 20
+        "score": 12
       }
     ],
     "excluded_categories": [],
-    "level": "excelente",
+    "level": "sólida",
     "low_confidence": true,
     "low_confidence_reasons": [
       "cobertura baja en Crecimiento"
@@ -3696,10 +3783,10 @@
     ],
     "not_applicable_categories": [],
     "partial": false,
-    "score": 81
+    "score": 71
   },
   "ratios": {
-    "asset_turnover": 0.335894339277,
+    "asset_turnover": 0.303920220983,
     "beta": 0.398140829572,
     "cash_ratio": null,
     "current_ratio": null,
@@ -3713,7 +3800,7 @@
     "eps": 31.042016,
     "ev_ebitda": null,
     "ev_fcf": 35.2420951924,
-    "ev_revenue": 2.14978137057,
+    "ev_revenue": 2.37595047385,
     "fcf": 25042000000.0,
     "fcf_to_net_income": 0.37393979214,
     "fcf_yield": 0.0222247358582,
@@ -3729,7 +3816,7 @@
     "net_debt": -244230000000.0,
     "net_debt_to_ebitda": null,
     "net_income": 66968000000.0,
-    "net_margin": 0.163128894432,
+    "net_margin": 0.180290972529,
     "operating_cash_flow": 45969000000.0,
     "operating_margin": null,
     "p_fcf": 44.9949104628,
@@ -3738,7 +3825,7 @@
     "pb": 1.57057806917,
     "pe": 16.9560500061,
     "peg": 0.358935126543,
-    "ps": 2.74470685568,
+    "ps": 3.03346546938,
     "quick_ratio": null,
     "roa": 0.0547940722122,
     "roe": 0.0933457296224,
@@ -3804,12 +3891,12 @@
       "Crecimiento": {
         "adjustments": [
           {
-            "adjustment": 5,
+            "adjustment": 1,
             "metric": "Crecimiento Ingresos 3Y",
-            "raw": 0.205864995854,
-            "reason": "Crecimiento excepcional (20.6%)",
-            "severity": "excellent",
-            "value": "20.6%"
+            "raw": 0.0714022352325,
+            "reason": "Crecimiento moderado (7.1%)",
+            "severity": "ok",
+            "value": "7.1%"
           },
           {
             "adjustment": 0,
@@ -3819,7 +3906,7 @@
             "value": "Crecimiento del FCF"
           },
           {
-            "adjustment": 5,
+            "adjustment": 1,
             "metric": "Cobertura",
             "reason": "Reescalado sobre los componentes con dato (sin dato: Crecimiento del BPA)",
             "severity": "neutral",
@@ -3830,12 +3917,12 @@
         "conclusive": true,
         "coverage": 0.5,
         "details": [
-          "Crecimiento excepcional (20.6%)",
+          "Crecimiento moderado (7.1%)",
           "No aplica a bancos y aseguradoras: el balance es el producto (depósitos y préstamos) (no cuenta en la cobertura)",
           "Reescalado sobre los componentes con dato (sin dato: Crecimiento del BPA)"
         ],
         "max": 20,
-        "score": 20
+        "score": 12
       },
       "Rentabilidad": {
         "adjustments": [
@@ -3856,9 +3943,9 @@
           {
             "adjustment": 2,
             "metric": "Margen Neto",
-            "reason": "Bueno (16.3%) - Ganancias sólidas",
+            "reason": "Bueno (18.0%) - Ganancias sólidas",
             "severity": "good",
-            "value": "16.3%"
+            "value": "18.0%"
           },
           {
             "adjustment": 0,
@@ -3874,7 +3961,7 @@
         "details": [
           "Bueno (9.3%) - Competitivo en su sector",
           "Excelente para su sector (5.5%)",
-          "Bueno (16.3%) - Ganancias sólidas",
+          "Bueno (18.0%) - Ganancias sólidas",
           "No aplica a bancos y aseguradoras: el balance es el producto (depósitos y préstamos) (no cuenta en la cobertura)"
         ],
         "max": 20,
@@ -4090,10 +4177,10 @@
   "verdict": {
     "confidence": "media",
     "confidence_text": "(confianza media: el P/B justificado la ve cara y el P/B del sector en precio)",
-    "full": "Calidad excelente · precio exigente (confianza media: el P/B justificado la ve cara y el P/B del sector en precio)",
+    "full": "Calidad sólida · precio exigente (confianza media: el P/B justificado la ve cara y el P/B del sector en precio)",
     "price_level": "exigente",
-    "quality_level": "excelente",
-    "text": "Calidad excelente · precio exigente"
+    "quality_level": "sólida",
+    "text": "Calidad sólida · precio exigente"
   },
   "wacc": {
     "applicable": false,
@@ -4106,9 +4193,9 @@
       "free_cash_flow": null,
       "gross_margin": null,
       "net_income": -22759000000.0,
-      "net_margin": -0.0972104168357,
+      "net_margin": -0.0753559366929,
       "operating_margin": null,
-      "revenue": 234121000000.0,
+      "revenue": 302020000000.0,
       "year": 2022
     },
     {
@@ -4116,9 +4203,9 @@
       "free_cash_flow": null,
       "gross_margin": null,
       "net_income": 96223000000.0,
-      "net_margin": 0.219018657659,
+      "net_margin": 0.263999319582,
       "operating_margin": null,
-      "revenue": 439337000000.0,
+      "revenue": 364482000000.0,
       "year": 2023
     },
     {
@@ -4126,9 +4213,9 @@
       "free_cash_flow": null,
       "gross_margin": null,
       "net_income": 88995000000.0,
-      "net_margin": 0.209779083143,
+      "net_margin": 0.239599066319,
       "operating_margin": null,
-      "revenue": 424232000000.0,
+      "revenue": 371433000000.0,
       "year": 2024
     },
     {
@@ -4136,9 +4223,9 @@
       "free_cash_flow": null,
       "gross_margin": null,
       "net_income": 66968000000.0,
-      "net_margin": 0.163128894432,
+      "net_margin": 0.180290972529,
       "operating_margin": null,
-      "revenue": 410522000000.0,
+      "revenue": 371444000000.0,
       "year": 2025
     }
   ]

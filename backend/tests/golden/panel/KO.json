@@ -10,8 +10,8 @@
     "strengths": [
       {
         "category": "Rentabilidad",
-        "detail": "El retorno sobre el capital invertido supera con holgura su costo (ROIC 21.0% vs WACC 8.3%): cada dólar reinvertido crea valor económico sustancial, el rasgo de un negocio con ventaja competitiva duradera.",
-        "reason": "Crea mucho valor — spread +12.8%"
+        "detail": "El retorno sobre el capital invertido supera con holgura su costo (ROIC 19.6% vs WACC 8.3%): cada dólar reinvertido crea valor económico sustancial, el rasgo de un negocio con ventaja competitiva duradera.",
+        "reason": "Crea mucho valor — spread +11.3%"
       },
       {
         "category": "Rentabilidad",
@@ -25,20 +25,20 @@
       },
       {
         "category": "Solidez financiera",
-        "detail": "El Altman Z de 4.56 (> 2.60) ubica a la empresa en zona segura: baja probabilidad estadística de problemas de solvencia según el modelo.",
-        "reason": "Solvencia sólida — Altman Z 4.56"
+        "detail": "El Altman Z de 4.48 (> 2.60) ubica a la empresa en zona segura: baja probabilidad estadística de problemas de solvencia según el modelo.",
+        "reason": "Solvencia sólida — Altman Z 4.48"
       },
       {
         "category": "Solidez financiera",
         "detail": "La deuda neta equivale a ~2 años de EBITDA, un nivel cómodo que deja holgura financiera y capacidad de maniobra ante imprevistos.",
-        "reason": "Deuda baja — 1.6x EBITDA"
+        "reason": "Deuda baja — 1.7x EBITDA"
       }
     ],
     "warnings": [
       {
         "category": "Valoración",
-        "detail": "Se paga 24.9x EBITDA frente a 16.0x de sus pares (+55%): el mercado le asigna una prima que conviene contrastar con su ventaja competitiva.",
-        "reason": "EV/EBITDA sobre el sector — 24.9x"
+        "detail": "El valor de empresa equivale a 26.6 veces su EBITDA anual, un múltiplo caro en términos absolutos que exige un crecimiento sostenido para no defraudar.",
+        "reason": "EV/EBITDA alto — 26.6x"
       },
       {
         "category": "Valoración",
@@ -53,7 +53,7 @@
     "details": {
       "X1_wc_ta": 0.0931,
       "X2_re_ta": 0.7669,
-      "X3_ebit_ta": 0.1423,
+      "X3_ebit_ta": 0.1313,
       "X4_book_tl": 0.4674,
       "grey_threshold": 1.1,
       "model": "Z''-Score (No Manufactura)",
@@ -62,7 +62,7 @@
     "interpretation": "Z''-Score (No Manufactura): Zona segura — bajo riesgo de bancarrota",
     "model": "Z''-Score (No Manufactura)",
     "operating_leases_excluded": 1722000000.0,
-    "z_score": 4.56,
+    "z_score": 4.48,
     "zone": "safe"
   },
   "archetype_metrics": {},
@@ -139,7 +139,7 @@
       "assets_to_revenue": 2.1863540602,
       "eps_ttm": 3.33,
       "net_margin_ttm": 0.285583195356,
-      "op_margin_detrended_std": 0.00249619690094,
+      "op_margin_detrended_std": 0.0360662553527,
       "revenue_cagr_3y": 0.0368901411419,
       "revenue_cagr_3y_reason": null,
       "revenue_growth_std": 0.0237929831078
@@ -282,7 +282,8 @@
         },
         "operatingIncome": {
           "period_end": "2026-06-30",
-          "period_type": "ttm"
+          "period_type": "ttm",
+          "source": "sec_edgar"
         },
         "retainedEarnings": {
           "period_end": "2026-06-30",
@@ -489,20 +490,7 @@
       "source_rate": 2.12,
       "unit": "título"
     },
-    "ebit": {
-      "accns": [
-        "0001628280-26-010047",
-        "0001628280-26-050503"
-      ],
-      "concept": "us-gaap:OperatingIncomeLoss",
-      "diff": 0.0731789416992,
-      "edgar_value": 14854000000.0,
-      "how": "ejercicio 2025-01-01 a 2025-12-31 + acumulado 2026-01-01 a 2026-07-03 − acumulado 2025-01-01 a 2025-06-27",
-      "period_end": "2026-06-30",
-      "source_value": 15941000000.0,
-      "status": "estimado",
-      "tolerance": 0.02
-    },
+    "ebit": null,
     "edgar": {
       "backup": {
         "cut": [],
@@ -512,6 +500,57 @@
       },
       "cik": 21344,
       "facts_status": "ok",
+      "history": {
+        "capex": {
+          "cross_taxonomy": null,
+          "first": "2007-12-31",
+          "last": "2025-12-31",
+          "unit": "USD",
+          "years": 19
+        },
+        "diluted_eps": {
+          "cross_taxonomy": null,
+          "first": "2007-12-31",
+          "last": "2025-12-31",
+          "unit": "USD/shares",
+          "years": 19
+        },
+        "diluted_shares": {
+          "cross_taxonomy": null,
+          "first": "2007-12-31",
+          "last": "2025-12-31",
+          "unit": "shares",
+          "years": 19
+        },
+        "net_income": {
+          "cross_taxonomy": null,
+          "first": "2007-12-31",
+          "last": "2025-12-31",
+          "unit": "USD",
+          "years": 19
+        },
+        "operating_cash_flow": {
+          "cross_taxonomy": null,
+          "first": "2007-12-31",
+          "last": "2025-12-31",
+          "unit": "USD",
+          "years": 19
+        },
+        "operating_income": {
+          "cross_taxonomy": null,
+          "first": "2007-12-31",
+          "last": "2025-12-31",
+          "unit": "USD",
+          "years": 19
+        },
+        "revenue": {
+          "cross_taxonomy": null,
+          "first": "2007-12-31",
+          "last": "2025-12-31",
+          "unit": "USD",
+          "years": 19
+        }
+      },
       "pending_filings": [
         {
           "accn": "0001628280-26-050503",
@@ -522,6 +561,71 @@
           "report_date": "2026-07-03"
         }
       ],
+      "primary": {
+        "cut": [
+          {
+            "accns": [
+              "0001628280-26-010047",
+              "0001628280-26-050503"
+            ],
+            "concept": "us-gaap:OperatingIncomeLoss",
+            "field": "operatingIncome",
+            "how": "ejercicio 2025-01-01 a 2025-12-31 + acumulado 2026-01-01 a 2026-07-03 − acumulado 2025-01-01 a 2025-06-27",
+            "period_end": "2026-06-30",
+            "replaced": 15941000000.0,
+            "value": 14854000000.0,
+            "why": "EBIT que presenta el emisor (F3_T1_PARADA1 §1)"
+          }
+        ],
+        "fy": [
+          {
+            "accns": [
+              "0001628280-26-010047"
+            ],
+            "concept": "us-gaap:OperatingIncomeLoss",
+            "field": "FY.operating_income",
+            "fy_end": "2025-12-31",
+            "how": "ejercicio 2025-01-01 a 2025-12-31",
+            "replaced": 14911000000.0,
+            "value": 13762000000.0
+          },
+          {
+            "accns": [
+              "0001628280-26-010047"
+            ],
+            "concept": "us-gaap:OperatingIncomeLoss",
+            "field": "FY.operating_income",
+            "fy_end": "2024-12-31",
+            "how": "ejercicio 2024-01-01 a 2024-12-31",
+            "replaced": 14022000000.0,
+            "value": 9992000000.0
+          },
+          {
+            "accns": [
+              "0001628280-26-010047"
+            ],
+            "concept": "us-gaap:OperatingIncomeLoss",
+            "field": "FY.operating_income",
+            "fy_end": "2023-12-31",
+            "how": "ejercicio 2023-01-01 a 2023-12-31",
+            "replaced": 13098000000.0,
+            "value": 11311000000.0
+          },
+          {
+            "accns": [
+              "0000021344-25-000047"
+            ],
+            "concept": "us-gaap:OperatingIncomeLoss",
+            "field": "FY.operating_income",
+            "fy_end": "2022-12-31",
+            "how": "ejercicio 2022-01-01 a 2022-12-31",
+            "replaced": 12042000000.0,
+            "value": 10909000000.0
+          }
+        ],
+        "reason": null,
+        "skipped": []
+      },
       "reason": null,
       "status": "ok",
       "title": "COCA COLA CO"
@@ -767,8 +871,8 @@
         "source": "yfinance_statements"
       },
       "operatingIncome": {
-        "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30 · estimado por la fuente: difiere un +7.3% del que presenta el emisor en SEC EDGAR (us-gaap:OperatingIncomeLoss, 14,854,000,000)",
-        "source": "yfinance_statements"
+        "detail": "SEC EDGAR, fuente principal (us-gaap:OperatingIncomeLoss): ejercicio 2025-01-01 a 2025-12-31 + acumulado 2026-01-01 a 2026-07-03 − acumulado 2025-01-01 a 2025-06-27 · EBIT que presenta el emisor (F3_T1_PARADA1 §1)",
+        "source": "sec_edgar"
       },
       "payoutRatio": {
         "detail": "/stock/metric",
@@ -1064,10 +1168,6 @@
           "text": "validación: commercialPaper (periodo_incoherente); 10 campos de Finnhub en lugar de los estados"
         },
         {
-          "label": "Beneficio operativo",
-          "text": "estimado por la fuente: el del proveedor de datos difiere un +7.3% del que presenta el emisor en SEC EDGAR (us-gaap:OperatingIncomeLoss, $14.85B en los doce meses al 2026-06-30). Se usa el del proveedor (D2) y se marca."
-        },
-        {
           "label": "Fuente oficial",
           "text": "sí, SEC EDGAR (CIK 21344); último ejercicio en EDGAR: FY 2025."
         },
@@ -1157,16 +1257,16 @@
                 "bench": 16.0,
                 "bench_txt": "16.00x",
                 "fmt": "mult",
-                "gap_pct": 55.3976304383,
-                "gap_txt": "+55%",
+                "gap_pct": 66.0293791975,
+                "gap_txt": "+66%",
                 "higher_is_better": false,
                 "key": "ev_ebitda",
                 "label": "EV/EBITDA",
                 "reading": "Prima elevada",
-                "text": "EV/EBITDA de 24.9x frente a 16.0x del sector (+55%): prima elevada",
+                "text": "EV/EBITDA de 26.6x frente a 16.0x del sector (+66%): prima elevada",
                 "tone": "neg",
-                "value": 24.8636208701,
-                "value_txt": "24.86x"
+                "value": 26.5647006716,
+                "value_txt": "26.56x"
               },
               {
                 "bench": 25.0,
@@ -1237,16 +1337,16 @@
                 "bench": 0.1,
                 "bench_txt": "10.00%",
                 "fmt": "pct",
-                "gap_pct": 110.427946282,
-                "gap_txt": "+110%",
+                "gap_pct": 96.0790862604,
+                "gap_txt": "+96%",
                 "higher_is_better": true,
                 "key": "roic",
                 "label": "ROIC",
                 "reading": "Muy superior",
-                "text": "ROIC de 21.0% frente a 10.0% del sector (+110%): muy superior",
+                "text": "ROIC de 19.6% frente a 10.0% del sector (+96%): muy superior",
                 "tone": "pos",
-                "value": 0.210427946282,
-                "value_txt": "21.04%"
+                "value": 0.19607908626,
+                "value_txt": "19.61%"
               },
               {
                 "bench": 0.35,
@@ -1267,16 +1367,16 @@
                 "bench": 0.15,
                 "bench_txt": "15.00%",
                 "fmt": "pct",
-                "gap_pct": 111.999707422,
-                "gap_txt": "+112%",
+                "gap_pct": 97.543670663,
+                "gap_txt": "+98%",
                 "higher_is_better": true,
                 "key": "operating_margin",
                 "label": "Margen operativo",
                 "reading": "Muy superior",
-                "text": "Margen operativo de 31.8% frente a 15.0% del sector (+112%): muy superior",
+                "text": "Margen operativo de 29.6% frente a 15.0% del sector (+98%): muy superior",
                 "tone": "pos",
-                "value": 0.317999561132,
-                "value_txt": "31.80%"
+                "value": 0.296315505995,
+                "value_txt": "29.63%"
               },
               {
                 "bench": 0.08,
@@ -1332,16 +1432,16 @@
                 "bench": 8.0,
                 "bench_txt": "8.00x",
                 "fmt": "mult",
-                "gap_pct": 27.2429757344,
-                "gap_txt": "+27%",
+                "gap_pct": 18.5664112388,
+                "gap_txt": "+19%",
                 "higher_is_better": true,
                 "key": "interest_coverage",
                 "label": "Cobertura de intereses",
                 "reading": "Superior",
-                "text": "Cobertura de intereses de 10.2x frente a 8.0x del sector (+27%): superior",
+                "text": "Cobertura de intereses de 9.5x frente a 8.0x del sector (+19%): superior",
                 "tone": "pos",
-                "value": 10.1794380587,
-                "value_txt": "10.18x"
+                "value": 9.48531289911,
+                "value_txt": "9.49x"
               }
             ],
             "title": "Solidez"
@@ -1538,8 +1638,8 @@
           "model": "Z''-Score (No Manufactura)",
           "state": "con_dato",
           "text": "Z''-Score (No Manufactura): Zona segura — bajo riesgo de bancarrota",
-          "value": 4.56,
-          "value_txt": "4.56",
+          "value": 4.48,
+          "value_txt": "4.48",
           "zone": "Zona segura",
           "zones": [
             {
@@ -1592,23 +1692,23 @@
               "tone": "pos"
             },
             {
-              "amount": 16975000000.0,
-              "amount_txt": "$16.98B",
+              "amount": 15888000000.0,
+              "amount_txt": "$15.89B",
               "key": "ebitda_margin",
               "label": "Margen EBITDA",
-              "pct": 0.338626344032,
-              "pct_txt": "33.9%",
+              "pct": 0.316942288895,
+              "pct_txt": "31.7%",
               "reading": null,
               "state": "con_dato",
               "tone": null
             },
             {
-              "amount": 15941000000.0,
-              "amount_txt": "$15.94B",
+              "amount": 14854000000.0,
+              "amount_txt": "$14.85B",
               "key": "operating_margin",
               "label": "Margen operativo",
-              "pct": 0.317999561132,
-              "pct_txt": "31.8%",
+              "pct": 0.296315505995,
+              "pct_txt": "29.6%",
               "reading": "Muy superior",
               "state": "con_dato",
               "tone": "pos"
@@ -1647,17 +1747,17 @@
             "bench": 0.15,
             "bench_txt": "15.00%",
             "fmt": "pct",
-            "gap_pct": 111.999707422,
-            "gap_txt": "+112%",
+            "gap_pct": 97.543670663,
+            "gap_txt": "+98%",
             "higher_is_better": true,
             "key": "operating_margin",
-            "label": "Margen operativo (estimado por la fuente)",
+            "label": "Margen operativo",
             "reading": "Muy superior",
             "state": "con_dato",
-            "text": "Margen operativo (estimado por la fuente) de 31.8% frente a 15.0% del sector (+112%): muy superior",
+            "text": "Margen operativo de 29.6% frente a 15.0% del sector (+98%): muy superior",
             "tone": "pos",
-            "value": 0.317999561132,
-            "value_txt": "31.80%"
+            "value": 0.296315505995,
+            "value_txt": "29.63%"
           },
           {
             "bench": 0.08,
@@ -1713,17 +1813,17 @@
             "bench": 0.1,
             "bench_txt": "10.00%",
             "fmt": "pct",
-            "gap_pct": 110.427946282,
-            "gap_txt": "+110%",
+            "gap_pct": 96.0790862604,
+            "gap_txt": "+96%",
             "higher_is_better": true,
             "key": "roic",
             "label": "ROIC",
             "reading": "Muy superior",
             "state": "con_dato",
-            "text": "ROIC de 21.0% frente a 10.0% del sector (+110%): muy superior",
+            "text": "ROIC de 19.6% frente a 10.0% del sector (+96%): muy superior",
             "tone": "pos",
-            "value": 0.210427946282,
-            "value_txt": "21.04%"
+            "value": 0.19607908626,
+            "value_txt": "19.61%"
           }
         ],
         "roce": {
@@ -1731,16 +1831,16 @@
           "basis": "EBIT / capital empleado, antes de impuestos",
           "label": "ROCE",
           "state": "con_dato",
-          "text": "ROCE 21.13% en línea con el ROIC 21.04% (+0.1 pp, dentro de 10 pp).",
+          "text": "ROCE 21.13% en línea con el ROIC 19.61% (+1.5 pp, dentro de 10 pp).",
           "value_txt": "21.13%"
         },
         "spread": {
           "reading": "Crea mucho valor",
           "state": "con_dato",
-          "text": "con un ROIC de 21.0% frente a un costo de capital (WACC) de 8.3%, la compañía genera un spread de +12.8%: cada dólar reinvertido crea valor económico sustancial",
+          "text": "con un ROIC de 19.6% frente a un costo de capital (WACC) de 8.3%, la compañía genera un spread de +11.3%: cada dólar reinvertido crea valor económico sustancial",
           "tone": "pos",
-          "value": 0.12775005854,
-          "value_txt": "+12.8 pp"
+          "value": 0.113401198518,
+          "value_txt": "+11.3 pp"
         }
       },
       "results_flow": [
@@ -1765,12 +1865,12 @@
           "state": "con_dato"
         },
         {
-          "amount": 15941000000.0,
-          "amount_txt": "$15.94B",
+          "amount": 14854000000.0,
+          "amount_txt": "$14.85B",
           "key": "operating_income",
           "label": "Resultado operativo",
-          "pct_of_revenue": 31.7999561132,
-          "pct_txt": "31.8%",
+          "pct_of_revenue": 29.6315505995,
+          "pct_txt": "29.6%",
           "sign": "pos",
           "state": "con_dato"
         },
@@ -1847,13 +1947,13 @@
             "clamped": false,
             "key": "interest_coverage",
             "label": "Cobertura de intereses",
-            "reading": "Muy holgada",
+            "reading": "Sólida",
             "state": "con_dato",
-            "text": "la deuda es fácilmente servible: cobertura de intereses de 10.2x",
+            "text": "el beneficio operativo cubre 9.5 veces el gasto por intereses",
             "tone": "pos",
             "unit": "x",
-            "value": 10.1794380587,
-            "value_txt": "10.18x",
+            "value": 9.48531289911,
+            "value_txt": "9.49x",
             "zones": [
               {
                 "from": 0.0,
@@ -1894,11 +1994,11 @@
             "label": "Deuda neta / EBITDA",
             "reading": "Moderada",
             "state": "con_dato",
-            "text": "la deuda neta (1.6x EBITDA) es manejable",
+            "text": "la deuda neta (1.7x EBITDA) es manejable",
             "tone": "neu",
             "unit": "x",
-            "value": 1.60070692194,
-            "value_txt": "1.60x",
+            "value": 1.71022155086,
+            "value_txt": "1.71x",
             "zones": [
               {
                 "from": 0.0,
@@ -2130,18 +2230,18 @@
             "bench": 16.0,
             "bench_txt": "16.00x",
             "fmt": "mult",
-            "gap_pct": 55.3976304383,
-            "gap_txt": "+55%",
+            "gap_pct": 66.0293791975,
+            "gap_txt": "+66%",
             "higher_is_better": false,
             "key": "ev_ebitda",
             "label": "EV/EBITDA",
             "reading": "Prima elevada",
             "role": "block",
             "state": "con_dato",
-            "text": "EV/EBITDA de 24.9x frente a 16.0x del sector (+55%): prima elevada",
+            "text": "EV/EBITDA de 26.6x frente a 16.0x del sector (+66%): prima elevada",
             "tone": "neg",
-            "value": 24.8636208701,
-            "value_txt": "24.86x"
+            "value": 26.5647006716,
+            "value_txt": "26.56x"
           },
           {
             "bench": 25.0,
@@ -2243,8 +2343,8 @@
               "coverage": 1.0,
               "max": 20,
               "name": "Solidez Financiera",
-              "pct": 95.0,
-              "score": 19,
+              "pct": 85.0,
+              "score": 17,
               "text": null,
               "tone": "pos"
             },
@@ -2317,7 +2417,7 @@
         {
           "kicker": "FORTALEZA CLAVE",
           "kind": "strength",
-          "text": "Crea mucho valor — spread +12.8%",
+          "text": "Crea mucho valor — spread +11.3%",
           "tone": "pos"
         },
         {
@@ -2374,7 +2474,7 @@
           "key": "net_debt_to_ebitda",
           "label": "Deuda neta/EBITDA",
           "state": "con_dato",
-          "value": "1.60x"
+          "value": "1.71x"
         },
         {
           "key": "beta",
@@ -2398,7 +2498,7 @@
         "level": "excelente",
         "note": null,
         "question": "¿es buena la empresa?",
-        "score": 85,
+        "score": 82,
         "title": "CALIDAD DEL NEGOCIO",
         "tone": "pos"
       },
@@ -2463,13 +2563,13 @@
         "tone": "warn"
       },
       "interest_coverage": {
-        "label": "Muy holgada",
-        "text": "la deuda es fácilmente servible: cobertura de intereses de 10.2x",
+        "label": "Sólida",
+        "text": "el beneficio operativo cubre 9.5 veces el gasto por intereses",
         "tone": "pos"
       },
       "net_debt_to_ebitda": {
         "label": "Moderada",
-        "text": "la deuda neta (1.6x EBITDA) es manejable",
+        "text": "la deuda neta (1.7x EBITDA) es manejable",
         "tone": "neu"
       },
       "payout_ratio": {
@@ -2479,7 +2579,7 @@
       },
       "pe": {
         "label": "Prima moderada",
-        "text": "el mercado paga 27.6x beneficios, un +20% frente a la mediana del sector (23.0x); una prima que encuentra respaldo parcial en la creación de valor de la compañía (ROIC−WACC de +12.8%)",
+        "text": "el mercado paga 27.6x beneficios, un +20% frente a la mediana del sector (23.0x); una prima que encuentra respaldo parcial en la creación de valor de la compañía (ROIC−WACC de +11.3%)",
         "tone": "warn"
       },
       "pos52": {
@@ -2499,7 +2599,7 @@
       },
       "roic_wacc_spread": {
         "label": "Crea mucho valor",
-        "text": "con un ROIC de 21.0% frente a un costo de capital (WACC) de 8.3%, la compañía genera un spread de +12.8%: cada dólar reinvertido crea valor económico sustancial",
+        "text": "con un ROIC de 19.6% frente a un costo de capital (WACC) de 8.3%, la compañía genera un spread de +11.3%: cada dólar reinvertido crea valor económico sustancial",
         "tone": "pos"
       },
       "runway": null
@@ -2528,8 +2628,8 @@
             "items": [
               {
                 "category": "Valoración",
-                "detail": "Se paga 24.9x EBITDA frente a 16.0x de sus pares (+55%): el mercado le asigna una prima que conviene contrastar con su ventaja competitiva.",
-                "reason": "EV/EBITDA sobre el sector — 24.9x"
+                "detail": "El valor de empresa equivale a 26.6 veces su EBITDA anual, un múltiplo caro en términos absolutos que exige un crecimiento sostenido para no defraudar.",
+                "reason": "EV/EBITDA alto — 26.6x"
               },
               {
                 "category": "Valoración",
@@ -2545,8 +2645,8 @@
             "items": [
               {
                 "category": "Rentabilidad",
-                "detail": "El retorno sobre el capital invertido supera con holgura su costo (ROIC 21.0% vs WACC 8.3%): cada dólar reinvertido crea valor económico sustancial, el rasgo de un negocio con ventaja competitiva duradera.",
-                "reason": "Crea mucho valor — spread +12.8%"
+                "detail": "El retorno sobre el capital invertido supera con holgura su costo (ROIC 19.6% vs WACC 8.3%): cada dólar reinvertido crea valor económico sustancial, el rasgo de un negocio con ventaja competitiva duradera.",
+                "reason": "Crea mucho valor — spread +11.3%"
               },
               {
                 "category": "Rentabilidad",
@@ -2560,13 +2660,13 @@
               },
               {
                 "category": "Solidez financiera",
-                "detail": "El Altman Z de 4.56 (> 2.60) ubica a la empresa en zona segura: baja probabilidad estadística de problemas de solvencia según el modelo.",
-                "reason": "Solvencia sólida — Altman Z 4.56"
+                "detail": "El Altman Z de 4.48 (> 2.60) ubica a la empresa en zona segura: baja probabilidad estadística de problemas de solvencia según el modelo.",
+                "reason": "Solvencia sólida — Altman Z 4.48"
               },
               {
                 "category": "Solidez financiera",
                 "detail": "La deuda neta equivale a ~2 años de EBITDA, un nivel cómodo que deja holgura financiera y capacidad de maniobra ante imprevistos.",
-                "reason": "Deuda baja — 1.6x EBITDA"
+                "reason": "Deuda baja — 1.7x EBITDA"
               }
             ],
             "key": "strengths",
@@ -2744,7 +2844,7 @@
                   "sign": "+6",
                   "state": "con_dato",
                   "tone": "pos",
-                  "value": "4.56"
+                  "value": "4.48"
                 },
                 {
                   "in_block": false,
@@ -2767,17 +2867,17 @@
                 {
                   "in_block": false,
                   "metric": "Cobertura Intereses",
-                  "reason": "Cobertura excelente",
-                  "sign": "+3",
+                  "reason": "Cobertura sólida",
+                  "sign": "+1",
                   "state": "con_dato",
                   "tone": "pos",
-                  "value": "10.2x"
+                  "value": "9.5x"
                 }
               ],
               "max": 20,
               "name": "Solidez Financiera",
-              "pct": 95.0,
-              "score": 19,
+              "pct": 85.0,
+              "score": 17,
               "text": null,
               "tone": "pos"
             },
@@ -2806,11 +2906,11 @@
                 {
                   "in_block": false,
                   "metric": "Margen Operativo",
-                  "reason": "Excepcional (31.8%) - Alto poder de fijación de precios",
-                  "sign": "+5",
+                  "reason": "Muy bueno (29.6%) - Operaciones eficientes",
+                  "sign": "+3",
                   "state": "con_dato",
                   "tone": "pos",
-                  "value": "31.8%"
+                  "value": "29.6%"
                 },
                 {
                   "in_block": false,
@@ -2824,11 +2924,11 @@
                 {
                   "in_block": false,
                   "metric": "ROIC vs WACC",
-                  "reason": "Crea mucho valor (ROIC 21.0% vs WACC 8.3%, spread +12.8%)",
+                  "reason": "Crea mucho valor (ROIC 19.6% vs WACC 8.3%, spread +11.3%)",
                   "sign": "+3",
                   "state": "con_dato",
                   "tone": "pos",
-                  "value": "+12.8%"
+                  "value": "+11.3%"
                 }
               ],
               "max": 20,
@@ -2872,11 +2972,11 @@
                 {
                   "in_block": true,
                   "metric": "EV/EBITDA vs Sector",
-                  "reason": "Muy caro (24.9x vs 16.0x)",
+                  "reason": "Muy caro (26.6x vs 16.0x)",
                   "sign": "(-4)",
                   "state": "con_dato",
                   "tone": "neu",
-                  "value": "24.9x"
+                  "value": "26.6x"
                 },
                 {
                   "in_block": true,
@@ -3012,7 +3112,7 @@
             "subtitle": "Zona segura",
             "title": "Altman Z-Score",
             "tone": "pos",
-            "value": "4.56"
+            "value": "4.48"
           },
           {
             "body": "Bueno - Salud financiera sólida. El F-Score de Piotroski verifica 9 señales contables de mejora en rentabilidad, estructura de capital y eficiencia operativa (FY2025 vs FY2024).",
@@ -3107,8 +3207,8 @@
             "$19.83B"
           ],
           [
-            "Beneficio operativo (estimado por la fuente)",
-            "$15.94B",
+            "Beneficio operativo",
+            "$14.85B",
             "Beneficio neto",
             "$14.32B"
           ],
@@ -3125,8 +3225,8 @@
             "$8.40"
           ]
         ],
-        "intro": "El ROE de 39.6% es excepcional para su sector (sector: 10.0% competitivo, 20.0% rango alto). Con un ROIC de 21.0% frente a un costo de capital (WACC) de 8.3%, la compañía genera un spread de +12.8%: cada dólar reinvertido crea valor económico sustancial.",
-        "roce_reading": "ROCE 21.13% en línea con el ROIC 21.04% (+0.1 pp, dentro de 10 pp).",
+        "intro": "El ROE de 39.6% es excepcional para su sector (sector: 10.0% competitivo, 20.0% rango alto). Con un ROIC de 19.6% frente a un costo de capital (WACC) de 8.3%, la compañía genera un spread de +11.3%: cada dólar reinvertido crea valor económico sustancial.",
+        "roce_reading": "ROCE 21.13% en línea con el ROIC 19.61% (+1.5 pp, dentro de 10 pp).",
         "rows": [
           {
             "bench": "25.00%",
@@ -3152,14 +3252,14 @@
           },
           {
             "bench": "10.00%",
-            "gap": "+110%",
+            "gap": "+96%",
             "key": "roic",
             "label": "ROIC",
             "reading": "Muy superior",
             "state": "con_dato",
-            "text": "ROIC de 21.0% frente a 10.0% del sector (+110%): muy superior",
+            "text": "ROIC de 19.6% frente a 10.0% del sector (+96%): muy superior",
             "tone": "pos",
-            "value": "21.04%"
+            "value": "19.61%"
           },
           {
             "bench": "35.00%",
@@ -3174,14 +3274,14 @@
           },
           {
             "bench": "15.00%",
-            "gap": "+112%",
+            "gap": "+98%",
             "key": "operating_margin",
-            "label": "Margen operativo (estimado por la fuente)",
+            "label": "Margen operativo",
             "reading": "Muy superior",
             "state": "con_dato",
-            "text": "Margen operativo (estimado por la fuente) de 31.8% frente a 15.0% del sector (+112%): muy superior",
+            "text": "Margen operativo de 29.6% frente a 15.0% del sector (+98%): muy superior",
             "tone": "pos",
-            "value": "31.80%"
+            "value": "29.63%"
           },
           {
             "bench": "8.00%",
@@ -3201,9 +3301,9 @@
             "label": "Spread ROIC − WACC",
             "reading": "Crea mucho valor",
             "state": "con_dato",
-            "text": "con un ROIC de 21.0% frente a un costo de capital (WACC) de 8.3%, la compañía genera un spread de +12.8%: cada dólar reinvertido crea valor económico sustancial",
+            "text": "con un ROIC de 19.6% frente a un costo de capital (WACC) de 8.3%, la compañía genera un spread de +11.3%: cada dólar reinvertido crea valor económico sustancial",
             "tone": "pos",
-            "value": "+12.8 pp"
+            "value": "+11.3 pp"
           },
           {
             "bench": "—",
@@ -3225,7 +3325,7 @@
           "VALOR",
           "LECTURA"
         ],
-        "intro": "La liquidez es justa (current ratio 1.30x): cubre sus obligaciones de corto plazo. El apalancamiento es aceptable, cerca del límite sectorial (D/E 1.20x) (umbral del sector 1.2x). La deuda neta (1.6x EBITDA) es manejable. La deuda es fácilmente servible: cobertura de intereses de 10.2x. El payout de 77% es exigente y depende de la estabilidad del beneficio.",
+        "intro": "La liquidez es justa (current ratio 1.30x): cubre sus obligaciones de corto plazo. El apalancamiento es aceptable, cerca del límite sectorial (D/E 1.20x) (umbral del sector 1.2x). La deuda neta (1.7x EBITDA) es manejable. El beneficio operativo cubre 9.5 veces el gasto por intereses. El payout de 77% es exigente y depende de la estabilidad del beneficio.",
         "rows": [
           {
             "bench": null,
@@ -3289,20 +3389,20 @@
             "label": "Deuda neta / EBITDA",
             "reading": "Moderada",
             "state": "con_dato",
-            "text": "la deuda neta (1.6x EBITDA) es manejable",
+            "text": "la deuda neta (1.7x EBITDA) es manejable",
             "tone": "neu",
-            "value": "1.60x"
+            "value": "1.71x"
           },
           {
             "bench": null,
             "gap": null,
             "key": "interest_coverage",
             "label": "Cobertura de intereses",
-            "reading": "Muy holgada",
+            "reading": "Sólida",
             "state": "con_dato",
-            "text": "la deuda es fácilmente servible: cobertura de intereses de 10.2x",
+            "text": "el beneficio operativo cubre 9.5 veces el gasto por intereses",
             "tone": "pos",
-            "value": "10.18x"
+            "value": "9.49x"
           },
           {
             "bench": null,
@@ -3391,7 +3491,7 @@
             }
           ]
         },
-        "intro": "El mercado paga 27.6x beneficios, un +20% frente a la mediana del sector (23.0x); una prima que encuentra respaldo parcial en la creación de valor de la compañía (ROIC−WACC de +12.8%). El FCF yield de 3.6% es razonable. Cotiza 266% por encima del número de Graham — habitual en compañías de calidad/crecimiento, donde este criterio de 1949 resulta demasiado restrictivo.",
+        "intro": "El mercado paga 27.6x beneficios, un +20% frente a la mediana del sector (23.0x); una prima que encuentra respaldo parcial en la creación de valor de la compañía (ROIC−WACC de +11.3%). El FCF yield de 3.6% es razonable. Cotiza 266% por encima del número de Graham — habitual en compañías de calidad/crecimiento, donde este criterio de 1949 resulta demasiado restrictivo.",
         "ke_note": null,
         "market_note": null,
         "normalization_note": null,
@@ -3454,14 +3554,14 @@
           },
           {
             "bench": "16.00x",
-            "gap": "+55%",
+            "gap": "+66%",
             "key": "ev_ebitda",
             "label": "EV/EBITDA",
             "reading": "Prima elevada",
             "state": "con_dato",
-            "text": "EV/EBITDA de 24.9x frente a 16.0x del sector (+55%): prima elevada",
+            "text": "EV/EBITDA de 26.6x frente a 16.0x del sector (+66%): prima elevada",
             "tone": "neg",
-            "value": "24.86x"
+            "value": "26.56x"
           },
           {
             "bench": "25.00x",
@@ -3723,7 +3823,7 @@
             "value": "16.41%"
           }
         ],
-        "wacc_note": "WACC 8.27% = 90.07% × Ke 8.66% (Rf 5.29% + β del sector 0.80 [Damodaran, enero de 2026; sin Blume: es una media de industria] × prima implícita 4.20%) + 9.93% × Kd 5.69% × (1 − t 16.41%). Kd = Rf + spread del rating sintético AAA (tabla de empresas grandes, cobertura 10.2x). t: tasa efectiva TTM. Rf: ^TNX no disponible (sin cotización): valor de config."
+        "wacc_note": "WACC 8.27% = 90.07% × Ke 8.66% (Rf 5.29% + β del sector 0.80 [Damodaran, enero de 2026; sin Blume: es una media de industria] × prima implícita 4.20%) + 9.93% × Kd 5.69% × (1 − t 16.41%). Kd = Rf + spread del rating sintético AAA (tabla de empresas grandes, cobertura 9.5x). t: tasa efectiva TTM. Rf: ^TNX no disponible (sin cotización): valor de config."
       }
     },
     "summary": {
@@ -3790,14 +3890,14 @@
         },
         {
           "bench": "vs sector 16.0x",
-          "delta": "+55%",
+          "delta": "+66%",
           "key": "ev_ebitda",
           "label": "EV/EBITDA",
           "pill": "Prima elevada",
           "state": "con_dato",
           "tone": "neg",
           "unit": "x",
-          "value": "24.9"
+          "value": "26.6"
         }
       ],
       "composition": {
@@ -3832,9 +3932,9 @@
               "kind": "bar",
               "label": "Solidez Financiera",
               "max": 20,
-              "pct": 95.0,
+              "pct": 85.0,
               "tone": "pos",
-              "value": 19
+              "value": 17
             },
             {
               "kind": "bar",
@@ -3861,7 +3961,7 @@
               "value": 9
             }
           ],
-          "score": 85,
+          "score": 82,
           "title": "CALIDAD DEL NEGOCIO",
           "tone": "pos"
         }
@@ -3869,7 +3969,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad excelente · precio muy exigente (confianza alta: el DCF y los múltiplos coinciden). Calidad 85/100 · precio 25/100."
+          "text": "Calidad excelente · precio muy exigente (confianza alta: el DCF y los múltiplos coinciden). Calidad 82/100 · precio 25/100."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -3877,11 +3977,11 @@
         },
         {
           "label": "CREACIÓN DE VALOR",
-          "text": "Con un ROIC de 21.0% frente a un costo de capital (WACC) de 8.3%, la compañía genera un spread de +12.8%: cada dólar reinvertido crea valor económico sustancial. ROCE 21.13% (EBIT / capital empleado, antes de impuestos), en línea con el ROIC (21.04%)."
+          "text": "Con un ROIC de 19.6% frente a un costo de capital (WACC) de 8.3%, la compañía genera un spread de +11.3%: cada dólar reinvertido crea valor económico sustancial. ROCE 21.13% (EBIT / capital empleado, antes de impuestos), en línea con el ROIC (19.61%)."
         },
         {
           "label": "SOLIDEZ",
-          "text": "Altman Z de 4.56 (zona segura); la deuda es fácilmente servible: cobertura de intereses de 10.2x."
+          "text": "Altman Z de 4.48 (zona segura); el beneficio operativo cubre 9.5 veces el gasto por intereses."
         },
         {
           "label": "CRECIMIENTO Y RETORNO",
@@ -3889,7 +3989,7 @@
         },
         {
           "label": "ATRACTIVO DEL PRECIO",
-          "text": "El mercado paga 27.6x beneficios, un +20% frente a la mediana del sector (23.0x); una prima que encuentra respaldo parcial en la creación de valor de la compañía (ROIC−WACC de +12.8%). El precio excede en 38% el valor intrínseco estimado: requiere supuestos exigentes pero posibles (el precio cae en la parte alta del rango de sensibilidad del DCF)."
+          "text": "El mercado paga 27.6x beneficios, un +20% frente a la mediana del sector (23.0x); una prima que encuentra respaldo parcial en la creación de valor de la compañía (ROIC−WACC de +11.3%). El precio excede en 38% el valor intrínseco estimado: requiere supuestos exigentes pero posibles (el precio cae en la parte alta del rango de sensibilidad del DCF)."
         },
         {
           "label": "CONTEXTO DE MERCADO",
@@ -5111,10 +5211,10 @@
     "earnings_growth": 0.235772357724,
     "earnings_yield": 0.036282414952,
     "ebitda": 19831000000.0,
-    "ebitda_margin": 0.338626344032,
+    "ebitda_margin": 0.316942288895,
     "enterprise_value": 422059964270.0,
     "eps": 3.33,
-    "ev_ebitda": 24.8636208701,
+    "ev_ebitda": 26.5647006716,
     "ev_revenue": 8.41947703466,
     "fcf_yield": 0.0362052057637,
     "ffo": 15350000000.0,
@@ -5122,21 +5222,21 @@
     "forward_pe": 25.55502,
     "free_cash_flow": 14297000000.0,
     "gross_margin": 0.618883281135,
-    "interest_coverage": 10.1794380587,
+    "interest_coverage": 9.48531289911,
     "interest_coverage_state": "ok",
     "interest_expense": 1566000000.0,
     "inventory_turnover": 4.11125457284,
     "market_cap": 394887964270.0,
     "net_debt": 27172000000.0,
-    "net_debt_to_ebitda": 1.60070692194,
+    "net_debt_to_ebitda": 1.71022155086,
     "net_debt_to_ebitda_state": "ok",
     "net_income": 14316000000.0,
     "net_income_normalized": 14316000000.0,
     "net_interest_income": -728000000.0,
     "net_margin": 0.285583195356,
     "operating_cash_flow": 16342000000.0,
-    "operating_income": 15941000000.0,
-    "operating_margin": 0.317999561132,
+    "operating_income": 14854000000.0,
+    "operating_margin": 0.296315505995,
     "p_ffo": 25.7256002782,
     "payout_basis": "beneficio_neto",
     "payout_ratio": 0.772422464376,
@@ -5157,13 +5257,13 @@
     "roce_roic_divergence": {
       "causes": [],
       "diverges": false,
-      "gap": 0.000884677168984
+      "gap": 0.0152335371909
     },
     "roce_state": "ok",
     "roe": 0.39601659751,
-    "roic": 0.210427946282,
+    "roic": 0.19607908626,
     "roic_reason": null,
-    "roic_wacc_spread": 0.12775005854,
+    "roic_wacc_spread": 0.113401198518,
     "shareholder_yield": 0.0231896386129,
     "shares_outstanding": 4302549243.0,
     "total_assets": 107922000000.0,
@@ -5279,7 +5379,7 @@
         "category": "Solidez Financiera",
         "included": true,
         "max": 20,
-        "score": 19
+        "score": 17
       },
       {
         "category": "Rentabilidad",
@@ -5307,7 +5407,7 @@
     "low_coverage_categories": [],
     "not_applicable_categories": [],
     "partial": false,
-    "score": 85
+    "score": 82
   },
   "ratios": {
     "asset_turnover": 0.464492874483,
@@ -5318,11 +5418,11 @@
     "debt_to_equity": 1.20450899032,
     "dividend_yield": 0.0230987146241,
     "earnings_yield": 0.036282414952,
-    "ebitda": 16975000000.0,
-    "ebitda_margin": 0.338626344032,
+    "ebitda": 15888000000.0,
+    "ebitda_margin": 0.316942288895,
     "enterprise_value": 422059964270.0,
     "eps": 3.33,
-    "ev_ebitda": 24.8636208701,
+    "ev_ebitda": 26.5647006716,
     "ev_fcf": 29.5208760069,
     "ev_revenue": 8.41947703466,
     "fcf": 14297000000.0,
@@ -5334,15 +5434,15 @@
     "forward_pe": 25.55502,
     "graham_number": 25.0902276527,
     "gross_margin": 0.618883281135,
-    "interest_coverage": 10.1794380587,
+    "interest_coverage": 9.48531289911,
     "inventory_turnover": 4.11125457284,
     "market_cap": 394887964270.0,
     "net_debt": 27172000000.0,
-    "net_debt_to_ebitda": 1.60070692194,
+    "net_debt_to_ebitda": 1.71022155086,
     "net_income": 14316000000.0,
     "net_margin": 0.285583195356,
     "operating_cash_flow": 16342000000.0,
-    "operating_margin": 0.317999561132,
+    "operating_margin": 0.296315505995,
     "p_fcf": 27.6203374324,
     "p_ffo": 25.7256002782,
     "payout_ratio": 0.772422464376,
@@ -5353,7 +5453,7 @@
     "quick_ratio": 1.1201984127,
     "roa": 0.132651359315,
     "roe": 0.39601659751,
-    "roic": 0.210427946282
+    "roic": 0.19607908626
   },
   "risk_free": {
     "as_of": null,
@@ -5473,11 +5573,11 @@
             "value": "13.3%"
           },
           {
-            "adjustment": 5,
+            "adjustment": 3,
             "metric": "Margen Operativo",
-            "reason": "Excepcional (31.8%) - Alto poder de fijación de precios",
-            "severity": "excellent",
-            "value": "31.8%"
+            "reason": "Muy bueno (29.6%) - Operaciones eficientes",
+            "severity": "good",
+            "value": "29.6%"
           },
           {
             "adjustment": 3,
@@ -5489,9 +5589,9 @@
           {
             "adjustment": 3,
             "metric": "ROIC vs WACC",
-            "reason": "Crea mucho valor (ROIC 21.0% vs WACC 8.3%, spread +12.8%)",
+            "reason": "Crea mucho valor (ROIC 19.6% vs WACC 8.3%, spread +11.3%)",
             "severity": "excellent",
-            "value": "+12.8%"
+            "value": "+11.3%"
           }
         ],
         "applicable": true,
@@ -5500,9 +5600,9 @@
         "details": [
           "Excepcional para su sector (39.6% vs 20% rango alto sectorial)",
           "Bueno (13.3%) - Rango alto de su sector",
-          "Excepcional (31.8%) - Alto poder de fijación de precios",
+          "Muy bueno (29.6%) - Operaciones eficientes",
           "Excelente (28.6%) - Alta rentabilidad final",
-          "Crea mucho valor (ROIC 21.0% vs WACC 8.3%, spread +12.8%)"
+          "Crea mucho valor (ROIC 19.6% vs WACC 8.3%, spread +11.3%)"
         ],
         "max": 20,
         "score": 20
@@ -5514,7 +5614,7 @@
             "metric": "Altman Z-Score",
             "reason": "Zona segura - Muy baja probabilidad de quiebra",
             "severity": "excellent",
-            "value": "4.56"
+            "value": "4.48"
           },
           {
             "adjustment": 0,
@@ -5531,11 +5631,11 @@
             "value": "1.20x"
           },
           {
-            "adjustment": 3,
+            "adjustment": 1,
             "metric": "Cobertura Intereses",
-            "reason": "Cobertura excelente",
-            "severity": "excellent",
-            "value": "10.2x"
+            "reason": "Cobertura sólida",
+            "severity": "good",
+            "value": "9.5x"
           }
         ],
         "applicable": true,
@@ -5545,10 +5645,10 @@
           "Zona segura - Muy baja probabilidad de quiebra",
           "Liquidez justa - Cubre sus obligaciones (1.30x)",
           "Deuda aceptable - Cerca del límite sectorial (1.20x)",
-          "Cobertura excelente"
+          "Cobertura sólida"
         ],
         "max": 20,
-        "score": 19
+        "score": 17
       },
       "Valoración": {
         "adjustments": [
@@ -5580,9 +5680,9 @@
             "adjustment": -4,
             "in_block": true,
             "metric": "EV/EBITDA vs Sector",
-            "reason": "Muy caro (24.9x vs 16.0x)",
+            "reason": "Muy caro (26.6x vs 16.0x)",
             "severity": "severe",
-            "value": "24.9x"
+            "value": "26.6x"
           },
           {
             "adjustment": -3,
@@ -5624,7 +5724,7 @@
           "Premium (27.6x vs 23.0x)",
           "P/E estable a mejor (28x → 26x)",
           "Elevado (27.6x)",
-          "Muy caro (24.9x vs 16.0x)",
+          "Muy caro (26.6x vs 16.0x)",
           "Muy caro (3.22)",
           "promedio de los ajustes reescalados a ±1 (P/E -0.50, Forward P/E +0.33, P/FCF -0.50, EV/EBITDA -1.00, PEG -1.00) = -0.53 × 6 (máximo con 5 miembros) = -3.2",
           "Claramente cara por DCF (fiabilidad media): el precio está en el grid pero fuera del caso base ±1 (40.42–82.51)"
@@ -5814,7 +5914,7 @@
     "ke": 0.0865500662252,
     "mrp": 0.042,
     "rating": {
-      "coverage": 10.1794380587,
+      "coverage": 9.48531289911,
       "flag": null,
       "rating": "AAA",
       "spread": 0.004,
@@ -5843,7 +5943,7 @@
       "gross_margin": 0.581434285183,
       "net_income": 9542000000.0,
       "net_margin": 0.221886336155,
-      "operating_margin": 0.280020463213,
+      "operating_margin": 0.25367407683,
       "revenue": 43004000000.0,
       "year": 2022
     },
@@ -5853,7 +5953,7 @@
       "gross_margin": 0.595226646851,
       "net_income": 10714000000.0,
       "net_margin": 0.234165318879,
-      "operating_margin": 0.286270052892,
+      "operating_margin": 0.247213358395,
       "revenue": 45754000000.0,
       "year": 2023
     },
@@ -5863,7 +5963,7 @@
       "gross_margin": 0.610633008223,
       "net_income": 10631000000.0,
       "net_margin": 0.225898302204,
-      "operating_margin": 0.29795371964,
+      "operating_margin": 0.212320180192,
       "revenue": 47061000000.0,
       "year": 2024
     },
@@ -5873,7 +5973,7 @@
       "gross_margin": 0.616257483156,
       "net_income": 13107000000.0,
       "net_margin": 0.273398552387,
-      "operating_margin": 0.311028138754,
+      "operating_margin": 0.287061179366,
       "revenue": 47941000000.0,
       "year": 2025
     }

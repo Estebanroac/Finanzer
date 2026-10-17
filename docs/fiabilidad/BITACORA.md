@@ -1138,3 +1138,13 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
   - el juego f2b ya trae la historia larga: se amplía con `tests/f3_extend_history_fixtures.py` desde la caché local
     de la 2a (no captura en vivo; los CIK sin caché local se listan);
   - la regla de industria debe normalizarse con `classify.norm_industry` (Yahoo usa raya: "Insurance—Diversified").
+
+### #27 · 2026-10-16 · operador · Fase 3 (parada 1b: golden aprobados; EBITDA)
+- **Decisiones tomadas por el usuario (cita literal):** "Apruebo los golden de T1b (F3_T1B_PARADA1B §3) y el EBITDA =
+  EBIT reportado + D&A (opción a). También te autorizo a descargar el PDF "The Impact of Intangibles on Base Rates" de
+  Morgan Stanley."
+  - golden de T1b: aprobados con el diff de F3_T1B_PARADA1B §3;
+  - EBITDA = EBIT que presenta el emisor + D&A (opción a de §5);
+  - tasas base: descarga autorizada de "The Impact of Intangibles on Base Rates" (Morgan Stanley, 23-jun-2021).
+- **Hecho:** golden regenerados (`diff_golden.py --regenerate --yes` en los dos juegos y `contract_forced.py --write`);
+  después, los dos `diff_golden.py` sin diferencias (código de salida 0) y `pytest tests -q` → "3701 passed, 1 skipped".
