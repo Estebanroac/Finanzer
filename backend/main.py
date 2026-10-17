@@ -772,6 +772,16 @@ def _compute_analysis(symbol: str) -> dict:
             fin_dict["sector_ev_ebitda"] = _sector_bench.get("ev_ebitda")
             fin_dict["benchmark_profile"] = _bench_sel["profile"]
 
+            # Fase 3 (T6, F3_DISENO §5): lecturas por modelo de negocio (circulante estructural, Altman referencial,
+            # avisos del Piotroski); las leen el score, las alertas y el informe.
+            import business_model as _bmod
+            _bm_ctx = {"current_ratio": _bmod.current_ratio_context(profile.industry, _stmts,
+                                                                    safe_float(result["key_metrics"].get("current_ratio"))),
+                       "altman_referential": _bmod.altman_referential(profile.industry),
+                       "piotroski_caveat": _bmod.piotroski_caveat(profile.industry)}
+            fin_dict["business_model"] = _bm_ctx
+            result["business_model"] = _bm_ctx
+
             # Crecimiento a 3 años para Crecimiento (etapa 9a): CAGR real de los 4
             # ejercicios anuales de los estados (historical_metrics.growth_rate, con la
             # regla de base anómala), no el interanual de Yahoo (revenueGrowth /

@@ -76,6 +76,17 @@ def zones_desc(bounds, labels, tones, top: float) -> List[Dict[str, Any]]:
     return out
 
 
+def structural_zones(zones: List[Dict[str, Any]], cut: float) -> List[Dict[str, Any]]:
+    """Fase 3 (T6): la parte del eje por debajo de `cut` pasa a una sola zona "Estructural" neutra (circulante
+    negativo propio del modelo de negocio); la zona que cruza `cut` se parte."""
+    out = [{"from": 0.0, "to": cut, "label": "Estructural", "tone": "neu"}]
+    for z in zones:
+        if z["to"] <= cut:
+            continue
+        out.append(dict(z, **{"from": max(z["from"], cut)}))
+    return out
+
+
 def zones_asc(bounds, labels, tones, top: float) -> List[Dict[str, Any]]:
     """Zonas "menor es mejor" (≤ b0 la mejor) sobre el eje [0, top]."""
     edges = [0.0] + list(bounds) + [max(top, bounds[-1])]
@@ -317,8 +328,12 @@ def build_charts(a: Dict[str, Any], D: Dict[str, Any], sector_bench: Dict[str, A
     gauges = []
     cr = _num(km.get("current_ratio"))
     cb = _SOL["current_bounds"]
+    _crz = zones_desc(cb, *_CURRENT, top=cb[0] * 1.5)
+    if (srows.get("current_ratio") or {}).get("reading") == "Estructural":
+        # Fase 3 (T6, §5): circulante negativo estructural: por debajo de 1x la zona es "Estructural" (neutra).
+        _crz = structural_zones(_crz, 1.0)
     gauges.append(_gauge("current_ratio", "Current ratio", cr, srows.get("current_ratio", {}).get("value"),
-                         zones_desc(cb, *_CURRENT, top=cb[0] * 1.5), srows.get("current_ratio"), cb[0] * 1.5, archetype=archetype))
+                         _crz, srows.get("current_ratio"), cb[0] * 1.5, archetype=archetype))
     ic = _num(km.get("interest_coverage"))
     icb = _SOL["utility_coverage_bounds"] if utility else _SOL["coverage_bounds"]
     gauges.append(_gauge("interest_coverage", "Cobertura de intereses", ic,

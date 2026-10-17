@@ -454,6 +454,16 @@ def _liquidity(ctx: Ctx):
     if cr is None or ctx.na("current_ratio"):
         return None
     t = ctx.t
+    # Fase 3 (T6, §5): circulante negativo estructural de la industria -> sin alerta, salvo que empeore frente a su
+    # propia historia (entonces la alerta lo dice).
+    bmc = ((ctx.c.get("business_model") or {}).get("current_ratio")) or {}
+    if bmc.get("applies"):
+        return None
+    if bmc.get("structural") and bmc.get("worsening") and cr < t.current_ratio_low:
+        return _sig("warning", "Solidez financiera", f"Liquidez en deterioro — current ratio {cr:.2f}x",
+                    f"El circulante negativo es normal en su industria, pero el current ratio ({cr:.2f}x) cae por "
+                    f"debajo de su propia historia (mediana de los ejercicios anteriores {bmc['median_prior']:.2f}x): "
+                    "vigilar el capital circulante.", _A["liquidity"]["w_tight"])
     if cr < t.current_ratio_low:
         return _sig("warning", "Solidez financiera", f"Liquidez ajustada — current ratio {cr:.2f}x",
                     f"Los activos corrientes cubren solo {cr:.2f}x los pasivos de corto plazo: la empresa podría tensionarse "
@@ -471,6 +481,8 @@ def _altman(ctx: Ctx):
     zone = ctx.altman.get("zone")
     if z is None or ctx.na("altman") or ctx.altman.get("available") is False:
         return None
+    if (ctx.c.get("business_model") or {}).get("altman_referential"):
+        return None     # fase 3 (T6, §5): referencial en esta industria, no emite señal
     # Umbrales del modelo realmente usado (Z, Z' o Z''), no los del Z original.
     det = ctx.altman.get("details") or {}
     safe_t, grey_t = det.get("safe_threshold"), det.get("grey_threshold")

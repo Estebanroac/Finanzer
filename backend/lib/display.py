@@ -278,8 +278,14 @@ def read_spread(spread, roic, wacc):
             f"el ROIC ({_pct(roic)}) no cubre el costo de capital ({_pct(wacc)}): el crecimiento a estos retornos destruye valor")
 
 
-def read_current(cr):
+def read_current(cr, bm=None):
     if cr is None: return None
+    bm = bm or {}
+    if bm.get("applies"):
+        # Fase 3 (T6, §5): circulante negativo estructural de la industria.
+        h = f" (mediana de sus ejercicios anteriores {bm['median_prior']:.2f}x)" if bm.get("median_prior") else ""
+        return ("Estructural", 'neu', f"el current ratio de {cr:.2f}x es normal en un negocio que cobra antes de "
+                                      f"pagar: no empeora frente a su historia{h}")
     b = cfg("thresholds.score.solidez.current_bounds")   # las del score
     if cr >= b[0]:  return ("Holgada", 'pos', f"el current ratio de {cr:.2f}x cubre con holgura los pasivos corrientes")
     if cr >= b[1]:  return ("Sólida", 'pos', f"la posición de liquidez es sólida (current ratio {cr:.2f}x)")
@@ -1006,7 +1012,8 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     _conf = a.get("confidence") or {}
     _wacc = a.get("wacc") or {}
     r_graham = read_graham(graham_margin)
-    r_cr = None if "current_ratio" in _na_keys else read_current(km.get("current_ratio"))
+    r_cr = None if "current_ratio" in _na_keys else read_current(
+        km.get("current_ratio"), ((a.get("business_model") or {}).get("current_ratio")))
     _rw = xm.get("runway") if archetype == "GROWTH_PRE_PROFIT" else None
     r_rw = read_runway(_rw)
     # D/E contable sin lectura en financieras (los depósitos son pasivo): decisión de la etapa 4.
@@ -2034,12 +2041,17 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         _zd = altman.get("details") or {}  # umbrales del modelo usado (Z, Z' o Z'')
         _vars = ("EBIT y patrimonio contable frente al pasivo" if "Z''" in (altman.get("model") or "")
                  else "EBIT, valor de mercado y ventas")
-        inst_cards.append({"key": "altman", "value": f"{z:.2f}", "tone": z_tone, "title": "Altman Z-Score",
-                           "subtitle": z_lab, "state": "con_dato",
+        _alt_ref = bool((a.get("business_model") or {}).get("altman_referential"))
+        inst_cards.append({"key": "altman", "value": f"{z:.2f}", "tone": 'neu' if _alt_ref else z_tone,
+                           "title": "Altman Z-Score",
+                           "subtitle": ("Referencial" if _alt_ref else z_lab), "state": "con_dato",
                            "body": (f"{altman.get('interpretation', '')}. El modelo Altman Z pondera capital de trabajo, "
                                     f"beneficios retenidos, {_vars} para estimar el riesgo de insolvencia a 2 años: por "
                                     f"encima de {_zd.get('safe_threshold', 0):.2f} el riesgo es bajo; por debajo de "
-                                    f"{_zd.get('grey_threshold', 0):.2f}, elevado.")})
+                                    f"{_zd.get('grey_threshold', 0):.2f}, elevado."
+                                    + (" En esta industria es solo una referencia: el modelo se calibró con "
+                                       "manufactureras de circulante positivo y aquí pesan los arrendamientos y el "
+                                       "circulante negativo estructural; no puntúa en Solidez." if _alt_ref else ""))})
     pio_criteria = []
     if piotroski and piotroski.get("applicable") is False:
         inst_cards.append({"key": "piotroski", "value": "n/a", "tone": 'neu', "title": "Piotroski F-Score",
@@ -2065,6 +2077,9 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
             f_body += (f" Evaluados {f_n} de {f_max} criterios (el resto, sin dato)"
                        + (f"; resultado escalado a base {f_max}: {f_scaled:.1f}/{f_max}." if f_scaled is not None
                           else "; cobertura insuficiente para un resultado concluyente."))
+        _pcav = (a.get("business_model") or {}).get("piotroski_caveat")
+        if _pcav:       # fase 3 (T6, §5): qué criterios informan poco en la industria
+            f_body += " " + _pcav
         inst_cards.append({"key": "piotroski", "value": f"{f_sc}/{f_n}" if f_n < f_max else f"{f_sc}/{f_max}",
                            "tone": f_tone, "title": "Piotroski F-Score", "subtitle": str(piotroski.get("level", "")),
                            "state": "con_dato", "body": f_body})

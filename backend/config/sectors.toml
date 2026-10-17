@@ -455,3 +455,24 @@ UTILITY = ["altman", "de", "current_ratio", "fcf", "fcf_to_ni", "p_fcf", "fcf_gr
            "ev_ebitda", "peg", "garp"]
 MATURE = []
 GROWTH_PROFITABLE = []   # fase 3 (T2): con las herramientas de MATURE hasta la T3/T6 (provisional)
+
+# ── Fase 3 (T6, F3_DISENO §5): lecturas por modelo de negocio (lib/business_model.py) ──
+[business_model]
+# Capital circulante negativo estructural: cobran antes de pagar (restauración, comercio, aerolíneas), cobran por
+# adelantado (software por suscripción: ingresos diferidos) o los proveedores financian el circulante (consumo básico
+# de marca: PG, UL, KO). Un current ratio < 1 no puntúa ni alerta salvo que empeore frente a su historia; el Altman es
+# referencial y no vota.
+negative_working_capital_industries = [
+    "restaurants", "discount stores", "department stores", "grocery stores", "specialty retail",
+    "home improvement retail", "internet retail", "apparel retail", "airlines",
+    "software - application", "software - infrastructure",
+    "household & personal products", "beverages - non-alcoholic", "packaged foods", "tobacco",
+]
+worsening_rel = 0.15                # último ejercicio > 15% por debajo de la mediana de los anteriores: empeora
+# Altman referencial (no vota): industrias con pasivos por arrendamiento y circulante negativo para las que el modelo
+# (calibrado con manufactureras) no se diseñó. No el consumo básico de marca, que fabrica.
+altman_referential_industries = [
+    "restaurants", "discount stores", "department stores", "grocery stores", "specialty retail",
+    "home improvement retail", "internet retail", "apparel retail", "airlines",
+]
+

@@ -1687,6 +1687,7 @@ def score_solidez_financiera(
     market: bool = False,
     net_debt_to_ebitda: Optional[float] = None,
     ic_state: Optional[str] = None,
+    business_model: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """
     Categoría 1: Solidez Financiera (20 pts máximo)
@@ -1708,8 +1709,17 @@ def score_solidez_financiera(
     if _na["interest_coverage"]:
         interest_coverage = None
     
+    # Fase 3 (T6, §5): lecturas por modelo de negocio (lib/business_model.py).
+    _bm = business_model or {}
+    _cr_struct = (_bm.get("current_ratio") or {}).get("applies")
+    _altman_ref = bool(_bm.get("altman_referential")) and z_score is not None
     # Z-Score (peso alto: hasta ±6 pts)
-    if z_score is not None:
+    if _altman_ref:
+        adjustments.append({"metric": "Altman Z-Score", "value": f"{z_score:.2f}", "adjustment": 0,
+                            "severity": "neutral",
+                            "reason": ("Referencial: el modelo de Altman no se diseñó para esta industria (pasivos por "
+                                       "arrendamiento y circulante negativo estructurales); no puntúa")})
+    elif z_score is not None:
         if z_score_level == "SAFE":
             adj = T["altman_points"][0]
             adjustments.append({"metric": "Altman Z-Score", "value": f"{z_score:.2f}", "adjustment": adj, "reason": "Zona segura - Muy baja probabilidad de quiebra", "severity": "excellent"})
@@ -1725,7 +1735,12 @@ def score_solidez_financiera(
         _a["altman"] = adj if z_score_level in ("SAFE", "GREY", "DISTRESS") else None
     
     # Current Ratio (hasta ±4 pts)
-    if current_ratio is not None:
+    if current_ratio is not None and _cr_struct:
+        adjustments.append({"metric": "Current Ratio", "value": f"{current_ratio:.2f}x", "adjustment": 0,
+                            "severity": "neutral",
+                            "reason": ("Capital circulante negativo estructural: normal en un negocio que cobra antes "
+                                       "de pagar; no empeora frente a su historia, así que no puntúa")})
+    elif current_ratio is not None:
         b, p = T["current_bounds"], T["current_points"]
         if current_ratio >= b[0]:
             adj = p[0]
@@ -1895,10 +1910,16 @@ def score_solidez_financiera(
                                 "severity": sev})
 
     cov = CategoryCoverage()
-    cov.comp("Altman Z", T["altman_points"], _a.get("altman"), na=_na["altman"])
+    if _altman_ref:
+        cov.not_sig("Altman Z", "referencial: el modelo no se diseñó para esta industria")
+    else:
+        cov.comp("Altman Z", T["altman_points"], _a.get("altman"), na=_na["altman"])
     if archetype == GROWTH_PRE_PROFIT:
         cov.comp("Runway", T["runway_points"], _a.get("runway"), _rw_reason)
-    cov.comp("Current ratio", T["current_points"], _a.get("current"), na=_na["current_ratio"])
+    if current_ratio is not None and _cr_struct:
+        cov.not_sig("Current ratio", "capital circulante negativo estructural de la industria")
+    else:
+        cov.comp("Current ratio", T["current_points"], _a.get("current"), na=_na["current_ratio"])
     # REIT (etapa 9a) y UTILITY (etapa 11b): deuda neta/EBITDA con bandas propias es la
     # métrica de apalancamiento.
     if archetype in (REIT, UTILITY):
@@ -3422,6 +3443,7 @@ def calculate_score_v2(
                                 if ratio_values.get("net_debt_to_ebitda") is not None
                                 else contextual_values.get("net_debt_to_ebitda")),
             ic_state=contextual_values.get("interest_coverage_state"),
+            business_model=contextual_values.get("business_model"),
         )
     
     if archetype == REIT:
