@@ -1611,3 +1611,16 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
 - **Pendiente del usuario:**
   - aprobar la regeneración de los golden (panel y local) y de las muestras forzadas con el diff de GOLDEN_DIFF_DAMODARAN.md;
   - después, "ok, pushea".
+
+### #42 · 2026-10-17 · operador · Golden de Damodaran regenerados, desplegado y verificado; C5
+- **Aprobación del usuario:** "Apruebo regenerar los golden del panel y local y las muestras forzadas del contrato con el diff de GOLDEN_DIFF_DAMODARAN.md. Ok, pushea y despliega, y verifica en producción."
+- **Golden regenerados** (`d3de317`): coinciden con el resumen del documento. Suite: 4157 passed, 0 fallos.
+- **Desplegado:** `4fc1bc3..d3de317`, en vivo a las 18:39 de Nueva York, con EDGAR activo.
+- **Verificación en producción** (en serie, 18:40):
+  - AAPL: Computers/Peripherals, EE. UU., por su clasificación en Damodaran; P/E de referencia 34.3x.
+  - BCS: Bank (Money Center), Europa, emparejado como ADR por su nombre legal; precio 65, "atractivo".
+  - TM: Auto & Truck, Japón (9.3x).
+  - BRK-B: Diversified, EE. UU.; P/E operativo 27.1x frente a 16.8x.
+  - Todos con EDGAR "ok" y la nota de la referencia visible en la web, sin errores de consola.
+- **Hallazgo (C5, `a024b7b`):** la web de AAPL mostraba "ROE frente a −0.2% de su industria". El ROE de Damodaran para Computers/Peripherals de EE. UU. contradice su margen neto y su P/B. Nueva regla: ROE y margen neto de distinto signo → sin dato. Solo afecta a esa fila. Diff: solo la presentación de AAPL (GOLDEN_DIFF_DAMODARAN.md §5).
+- **Pendiente del usuario:** aprobar el golden de AAPL (C5) y "ok, pushea".
