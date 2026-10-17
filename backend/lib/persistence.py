@@ -108,7 +108,8 @@ def measure(hist: Optional[Dict[str, Any]], archetype: str, source: str) -> Dict
     out["perimeter"] = sorted(_year(e) for e in cuts)
     # Ventana: los `window` últimos ejercicios (una serie que se corta, como los ingresos IFRS de un banco, no ancla
     # la ventana en el pasado), sin los de cambio de perímetro.
-    ends = canon[-window:]
+    # Los `window` últimos ejercicios fiscales (por fecha): un año sin dato en ninguna serie cuenta y no cumple.
+    ends = [e for e in canon if fiscal_years_between(e, canon[-1]) < window] if canon else []
     evaluable = [e for e in ends if e not in cuts]
     den = len(evaluable) + (window - len(ends))   # sin dato: cuenta y no cumple
     if den <= 0:
@@ -131,10 +132,13 @@ def measure(hist: Optional[Dict[str, Any]], archetype: str, source: str) -> Dict
     out["Rentabilidad"] = {
         "persistence": len(ok) / den, "years_ok": [_year(e) for e in sorted(ok)],
         "years": [_year(e) for e in evaluable], "anchor": lab,
-        "rule": f"{lab} positivo y al menos el {ratio:.0%} del último ({_pct(last)})" if last is not None else None}
+        "rule": (f"{lab} positivo y al menos el {ratio:.0%} del último ({_pct(last)})" if last is not None
+                 else f"{lab} (sin dato en la ventana)")}
 
     # Crecimiento: ingresos por encima del ejercicio anterior.
-    prev = {c1: rv[c0] for c0, c1 in zip(canon, canon[1:]) if c0 in rv}
+    # El ejercicio anterior, solo si es el inmediato (revisión F4, hallazgo 7: con un año sin dato no se compara con
+    # el de dos años antes).
+    prev = {c1: rv[c0] for c0, c1 in zip(canon, canon[1:]) if c0 in rv and fiscal_years_between(c0, c1) == 1}
     ok = [e for e in evaluable if prev.get(e) and e in rv and rv[e] > prev[e]]
     out["Crecimiento"] = {"persistence": len(ok) / den, "years_ok": [_year(e) for e in sorted(ok)],
                           "years": [_year(e) for e in evaluable], "anchor": "ingresos",

@@ -78,3 +78,12 @@ def test_window_is_anchored_on_latest_data_and_completed_with_statements():
     m = P.measure(P.merge_history(hist, st), "FINANCIAL", "edgar")
     assert m["Calidad de Ganancias"]["years_ok"] == ["2021", "2022", "2023", "2024", "2025"]
     assert m["Crecimiento"]["years_ok"] == ["2023", "2024", "2025"]     # 2022 sin el ejercicio anterior: sin prueba
+
+
+def test_a_missing_year_is_not_compared_with_two_years_before():
+    """Revisión de código F4 (hallazgo 7): sin 2023, 2024 no cuenta como año de crecimiento frente a 2022."""
+    ys = (2020, 2021, 2022, 2024, 2025)
+    hist = {"revenue": {"values": [{"fy_end": f"{y}-12-31", "value": 100.0 + i} for i, y in enumerate(ys)]}}
+    m = P.measure(hist, "MATURE", "edgar")
+    assert m["Crecimiento"]["years_ok"] == ["2021", "2022", "2025"] and m["denominator"] == 5
+    assert "sin dato en la ventana" in m["Rentabilidad"]["rule"]
