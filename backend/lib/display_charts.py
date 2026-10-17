@@ -341,7 +341,10 @@ def build_charts(a: Dict[str, Any], D: Dict[str, Any], sector_bench: Dict[str, A
                          zones_desc(icb, *(_COVERAGE_UTILITY if utility else _COVERAGE), top=icb[0] * 1.5),
                          srows.get("interest_coverage"), icb[0] * 1.5, archetype=archetype))
     nde = _num(km.get("net_debt_to_ebitda"))
-    ndb = (_SOL["utility_nde_bounds"] if utility else _SOL["reit_nde_bounds"] if reit else _PDF["nde_bounds"])
+    # Fase 4 (mapa, bandas paralelas): fuera de utility y REIT, los umbrales de las alertas del sector.
+    ndb = (_SOL["utility_nde_bounds"] if utility else _SOL["reit_nde_bounds"] if reit else
+           [th.net_debt_ebitda_low, th.net_debt_ebitda_high,
+            th.net_debt_ebitda_high * cfg("thresholds.alerts.leverage.risk_mult")])
     ndl = _NDE_BRANCH if (utility or reit) else _NDE
     g = _gauge("net_debt_to_ebitda", "Deuda neta / EBITDA", nde, srows.get("net_debt_to_ebitda", {}).get("value"),
                zones_asc(ndb, *ndl, top=ndb[-1] * 1.4), srows.get("net_debt_to_ebitda"), ndb[-1] * 1.4, archetype=archetype)

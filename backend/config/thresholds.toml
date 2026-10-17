@@ -351,10 +351,9 @@ w = 34
                                     # lecturas usan las bandas del score, una sola fuente por métrica)
 vs_sector_bounds = [35, 10]         # % de brecha vs mediana: ±35 / ±10
 pe_spread_support = 0.05            # prima de P/E "respaldada" si spread > 5%
-nde_bounds = [1, 2.5, 4]
 payout_bounds = [0.40, 0.60, 0.80, 1]
 graham_discount = 0.20
-beta_bounds = [0.8, 1.2, 1.6]
+beta_market_upper = 1.2            # beta "de mercado" hasta 1.2; defensiva y muy volátil: beta_low / beta_high del sector
 pos52_bounds = [10, 25, 70, 88]     # % del rango de 52 semanas (curva en U); también define la barra
 buyback_bounds = [0.03, 0.005]      # ≥3% / ≥0.5% / > −0.5% / dilución
 fcf_yield_bounds = [0.03, 0.05, 0.08]
@@ -435,8 +434,6 @@ coverage_trend_rel = 0.20           # cobertura con el EBIT de cada ejercicio: �
 margin_gap_rel = 0.20               # margen operativo de hoy > 120% del de referencia: la lectura depende de que se mantenga
 margin_years = 10                   # mediana del margen de los últimos 10 ejercicios de EDGAR (un ciclo largo)
 min_margin_years = 5                # con menos, sin referencia (no se afirma una media)
-nde_high = 3.0                      # deuda neta / EBITDA ≥ 3x: el umbral habitual de apalancamiento alto (grado de inversión bajo)
-nde_high_regulated = 6.5            # utility y REIT: el techo de su banda "en línea" (score.solidez, utility/reit_nde_bounds)
 max_items = 3
 
 [quality_persistence]               # fase 4 (T1, PLAN §4.1; lib/persistence.py): lo extraordinario exige persistencia

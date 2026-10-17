@@ -547,7 +547,18 @@ def _num_txt(x: float) -> str:
     return f"{x:,.4f}".rstrip("0").rstrip(".") if abs(x) < 1 else f"{x:,.2f}"
 
 
-def read_nde(nde, state=None, net_debt=None, reit=False, utility=False):
+def nde_bounds(th) -> list:
+    """Deuda neta / EBITDA (empresa no regulada): [baja <, elevada ≥, alta ≥], los umbrales de las alertas."""
+    hi = th.net_debt_ebitda_high
+    return [th.net_debt_ebitda_low, hi, hi * cfg("thresholds.alerts.leverage.risk_mult")]
+
+
+def beta_bounds(th) -> list:
+    """Beta: [defensiva <, volátil ≥, muy volátil ≥]: beta_low y beta_high del sector, los de la alerta."""
+    return [th.beta_low, _PDF_BANDS["beta_market_upper"], th.beta_high]
+
+
+def read_nde(nde, state=None, net_debt=None, reit=False, utility=False, th=None):
     # Etapa 5 (regla M): con EBITDA <= 0 la ratio no se lee; "caja neta" solo
     # cuando la caja supera a la deuda total. Etapa 9a: en REIT, las bandas de REIT
     # del score (thresholds.score.solidez.reit_nde_*), una sola fuente.
@@ -576,10 +587,12 @@ def read_nde(nde, state=None, net_debt=None, reit=False, utility=False):
                                                    "reguladas")
         if nde <= b[3]: return ("Elevada", 'warn', f"la deuda neta ({nde:.1f}x EBITDA) es elevada para una utility")
         return ("Alta", 'neg', f"la deuda neta ({nde:.1f}x EBITDA) es alta incluso para una utility regulada")
-    b = _PDF_BANDS["nde_bounds"]
-    if nde < b[0]:    return ("Baja", 'pos', f"la deuda neta equivale a {nde:.1f}x EBITDA, un nivel bajo")
-    if nde < b[1]:  return ("Moderada", 'neu', f"la deuda neta ({nde:.1f}x EBITDA) es manejable")
-    if nde < b[2]:    return ("Elevada", 'warn', f"la deuda neta ({nde:.1f}x EBITDA) es elevada")
+    # Fase 4 (mapa, bandas paralelas): las de las alertas, una sola fuente: baja < net_debt_ebitda_low del sector;
+    # elevada > net_debt_ebitda_high; alta > high × alerts.leverage.risk_mult.
+    lo, hi, risk = nde_bounds(th or ThresholdConfig())
+    if nde < lo:      return ("Baja", 'pos', f"la deuda neta equivale a {nde:.1f}x EBITDA, un nivel bajo")
+    if nde < hi:      return ("Moderada", 'neu', f"la deuda neta ({nde:.1f}x EBITDA) es manejable")
+    if nde < risk:    return ("Elevada", 'warn', f"la deuda neta ({nde:.1f}x EBITDA) es elevada")
     return ("Alta", 'neg', f"la deuda neta ({nde:.1f}x EBITDA) es alta y condiciona la flexibilidad financiera")
 
 
@@ -682,9 +695,11 @@ def read_graham(m):
             "donde este criterio de 1949 resulta demasiado restrictivo")
 
 
-def read_beta(b):
+def read_beta(b, th=None):
     if b is None: return None
-    bb = _PDF_BANDS["beta_bounds"]
+    # Fase 4 (mapa, bandas paralelas): defensiva y muy volátil son los umbrales de la alerta (beta_low / beta_high del
+    # sector); "de mercado" hasta el punto medio del informe.
+    bb = beta_bounds(th or ThresholdConfig())
     if b < bb[0]:   return ("Defensiva", 'pos', f"con beta {b:.2f}, la acción amortigua los movimientos del mercado")
     if b < bb[1]:   return ("De mercado", 'neu', f"con beta {b:.2f}, la acción se mueve en línea con el mercado")
     if b < bb[2]:   return ("Volátil", 'warn', f"con beta {b:.2f}, la acción amplifica los movimientos del mercado")
@@ -1071,7 +1086,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     r_ic = read_coverage(km.get("interest_coverage"), ic_state, utility=archetype == "UTILITY")
     nde_state = km.get("net_debt_to_ebitda_state")
     r_nde = read_nde(km.get("net_debt_to_ebitda"), nde_state, km.get("net_debt"), reit=archetype == "REIT",
-                     utility=archetype == "UTILITY")
+                     utility=archetype == "UTILITY", th=_th)
     r_pay = read_payout(km.get("payout_ratio"), km.get("payout_basis"))
     _cyc = archetype == "CYCLICAL"
     # Etapa 9b: los textos citan la cifra que PUNTÚA Crecimiento (su ajuste del desglose
@@ -1097,7 +1112,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         r_grev = read_growth(g_rev, "los ingresos por acción" if _rev_ps else "los ingresos", cycle=_cyc,
                              cagr=not _cyc)
         r_gearn = read_growth(g_eps, "el BPA", "eps", cycle=_cyc, cagr=not _cyc)
-    r_beta = read_beta(km.get("beta"))
+    r_beta = read_beta(km.get("beta"), _th)
     r_52 = read_pos52(pos52)
     r_bb = read_buyback(km.get("buyback_yield"))
     r_fcfy = read_fcf_yield(km.get("fcf_yield"))
@@ -2404,7 +2419,8 @@ def score_bands(key, *, th=None, reit=False, utility=False, ffo=False, cycle=Fal
             return cash + _asc(cfg(f"thresholds.score.solidez.{'reit' if reit else 'utility'}_nde_bounds"),
                                ["Conservadora", "Adecuada", "En línea", "Elevada", "Alta"],
                                ['pos', 'pos', 'neu', 'warn', 'neg'], _f_mult)
-        return cash + _asc(_PDF_BANDS["nde_bounds"], ["Baja", "Moderada", "Elevada", "Alta"],
+        th = th or ThresholdConfig()
+        return cash + _asc(nde_bounds(th), ["Baja", "Moderada", "Elevada", "Alta"],
                            ['pos', 'neu', 'warn', 'neg'], _f_mult, strict=True)
     if key == "runway":
         return ([{"range": "FCF > 0", "label": "Autofinanciada", "tone": 'pos'}]
@@ -2439,7 +2455,7 @@ def score_bands(key, *, th=None, reit=False, utility=False, ffo=False, cycle=Fal
         return _desc([_PDF_BANDS["graham_discount"], 0], ["Descuento Graham", "Cerca de Graham", "Sobre Graham"],
                      ['pos', 'neu', 'warn'], _f_pp)
     if key == "beta":
-        return _asc(_PDF_BANDS["beta_bounds"], ["Defensiva", "De mercado", "Volátil", "Muy volátil"],
+        return _asc(beta_bounds(th or ThresholdConfig()), ["Defensiva", "De mercado", "Volátil", "Muy volátil"],
                     ['pos', 'neu', 'warn', 'neg'], _f_num, strict=True)
     if key == "pos52":
         e = [0, *_PDF_BANDS["pos52_bounds"], 100]
@@ -2525,7 +2541,7 @@ def band_tooltips(a, sector_bench, th, mkt, ref, na, de_mode, cyc):
     add("interest_coverage", "Bandas de utility regulada" if utility else "Bandas del score",
         score_bands("interest_coverage", utility=utility))
     add("net_debt_to_ebitda", "Bandas de REIT" if reit else "Bandas de utility regulada" if utility
-        else "Bandas del informe", score_bands("net_debt_to_ebitda", reit=reit, utility=utility))
+        else f"Umbrales del sector ({who})", score_bands("net_debt_to_ebitda", reit=reit, utility=utility, th=th))
     if archetype == "GROWTH_PRE_PROFIT":
         add("runway", "Años de caja frente a la quema de FCF", score_bands("runway"))
     ffo = km.get("payout_basis") == "ffo"
@@ -2541,7 +2557,7 @@ def band_tooltips(a, sector_bench, th, mkt, ref, na, de_mode, cyc):
         add("dcf_upside", "Bandas del DCF en Valoración", score_bands("dcf_upside"))
     if "graham" not in na and "pe" not in na:
         add("graham", "Margen frente al número de Graham", score_bands("graham"))
-    add("beta", "Bandas del informe", score_bands("beta"))
+    add("beta", f"Umbrales del sector ({who})", score_bands("beta", th=th))
     add("pos52", "Posición en el rango (contexto, sin juicio de precio)", score_bands("pos52"))
     add("buyback_yield", "Bandas del informe", score_bands("buyback_yield"))
     if "p_fcf" not in na and not cyc:

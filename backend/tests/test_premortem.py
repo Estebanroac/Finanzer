@@ -23,11 +23,11 @@ def test_price_condition_follows_the_level():
 def test_margin_above_its_history_and_high_debt():
     hist = {"revenue": {"values": [{"fy_end": f"{2015 + i}-12-31", "value": 100.0} for i in range(10)]},
             "operating_income": {"values": [{"fy_end": f"{2015 + i}-12-31", "value": 20.0} for i in range(10)]}}
-    a = _a("razonable", key_metrics={"operating_margin": 0.30, "net_debt_to_ebitda": 3.4})
+    a = _a("razonable", key_metrics={"operating_margin": 0.30, "net_debt_to_ebitda": 4.4})
     items = P.build(a, hist)["items"]
     assert [i["kind"] for i in items] == ["margen", "deuda"]
     assert "mediana de 10 ejercicios (20.0% frente al 30.0% de hoy)" in items[0]["text"]
-    assert "3.4 veces el EBITDA" in items[1]["text"]
+    assert "4.4 veces el EBITDA" in items[1]["text"]
     # Margen en línea con su historia y deuda baja: nada que decir.
     assert P.build(_a("razonable", key_metrics={"operating_margin": 0.21, "net_debt_to_ebitda": 1.0}), hist) is None
 

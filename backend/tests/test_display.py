@@ -100,7 +100,7 @@ def test_bands_match_readers():
     # deuda neta/EBITDA (REIT y general)
     got = ["Caja neta"] + [dp.read_nde(v, reit=True)[0] for v in _samples_asc(T["solidez"]["reit_nde_bounds"], 0.1)]
     assert got == _labels(dp.score_bands("net_debt_to_ebitda", reit=True))
-    got = ["Caja neta"] + [dp.read_nde(v)[0] for v in _samples_asc(P["nde_bounds"], 0.1)]
+    got = ["Caja neta"] + [dp.read_nde(v)[0] for v in _samples_asc(dp.nde_bounds(th), 0.1)]
     assert got == _labels(dp.score_bands("net_debt_to_ebitda"))
     # runway
     got = ["Autofinanciada"] + [dp.read_runway({"state": "runway", "years": v})[0]
@@ -127,7 +127,7 @@ def test_bands_match_readers():
     assert [dp.read_upside(v)[0] for v in _samples_desc(up, 1)] == _labels(dp.score_bands("dcf_upside"))
     assert [dp.read_graham(v)[0] for v in _samples_desc([P["graham_discount"], 0], 0.05)] == _labels(
         dp.score_bands("graham"))
-    assert [dp.read_beta(v)[0] for v in _samples_asc(P["beta_bounds"], 0.1)] == _labels(dp.score_bands("beta"))
+    assert [dp.read_beta(v)[0] for v in _samples_asc(dp.beta_bounds(th), 0.1)] == _labels(dp.score_bands("beta"))
     e = [0, *P["pos52_bounds"], 100]
     assert [dp.read_pos52((lo + hi) / 2)[0] for lo, hi in zip(e, e[1:])] == _labels(dp.score_bands("pos52"))
     b = P["buyback_bounds"]

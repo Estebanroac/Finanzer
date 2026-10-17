@@ -11,8 +11,9 @@ mide.
       - ROTE/ROE implícito (bancos, aseguradoras, utilities): lo mismo con la rentabilidad que descuenta el precio.
   · **Calidad** (excelente o sólida): el margen operativo de hoy por encima de su mediana de los últimos ejercicios
     (o de la de ciclo medio en una cíclica) en más de `margin_gap_rel`: la lectura falla si el margen vuelve a ella.
-  · **Deuda**: deuda neta / EBITDA por encima de `nde_high` (`nde_high_regulated` en utilities y REIT, que se
-    financian con deuda por diseño): la lectura falla si el EBITDA cae o la deuda se refinancia más cara.
+  · **Deuda**: deuda neta / EBITDA en el tramo "elevada" de la lectura y de las alertas (el `net_debt_ebitda_high` del
+    sector; en utilities y REIT, por encima de su banda "en línea", porque se financian con deuda por diseño): la
+    lectura falla si el EBITDA cae o la deuda se refinancia más cara.
 Como mucho `max_items`, en ese orden.
 """
 from statistics import median
@@ -104,8 +105,15 @@ def _debt_item(a: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     x = (a.get("key_metrics") or {}).get("net_debt_to_ebitda")
     if x is None or arch == "FINANCIAL":
         return None
-    hi = _cfg("nde_high_regulated") if arch in ("UTILITY", "REIT") else _cfg("nde_high")
-    if x < hi:
+    if arch in ("UTILITY", "REIT"):
+        hi = cfg(f"thresholds.score.solidez.{'utility' if arch == 'UTILITY' else 'reit'}_nde_bounds")[2]
+    else:
+        from financial_ratios import SECTOR_THRESHOLDS, ThresholdConfig
+        # La misma clave que la lectura (display): la del benchmark (sector o "market"), o el sector.
+        key = ((a.get("benchmark") or {}).get("thresholds_key") or (a.get("sector_info") or {}).get("mapped_sector")
+               or "default")
+        hi = SECTOR_THRESHOLDS.get(key, ThresholdConfig()).net_debt_ebitda_high
+    if x <= hi:
         return None
     return {"kind": "deuda", "field": "key_metrics.net_debt_to_ebitda", "value": x,
             "text": (f"el EBITDA cayera o la deuda se refinanciara más cara: la deuda neta equivale a {x:.1f} veces "
