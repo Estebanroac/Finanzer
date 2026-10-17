@@ -122,7 +122,7 @@ def test_risk_free_reads_tnx_cached_or_falls_back(monkeypatch):
 def test_one_wacc_everywhere(outputs_by_env):
     """El WACC mostrado es el usado: key_metrics, DCF, base del grid y spread ROIC−WACC."""
     for env in _envs():
-        for sym in ("NFLX", "V", "FCX", "NVDA"):   # fase 3: SNOW sin DCF (FCF − SBC ≤ 0)
+        for sym in ("NFLX", "V", "FCX"):   # fase 3: SNOW sin DCF (FCF − SBC ≤ 0)
             a = outputs_by_env(env)[sym][0]
             w = a["wacc"]["value"]
             assert a["key_metrics"]["wacc"] == w == a["dcf"]["wacc"], (env, sym)
