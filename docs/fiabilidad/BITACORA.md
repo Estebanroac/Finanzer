@@ -1004,3 +1004,21 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
     Objetivo del 95% no alcanzado: lo que queda fuera se cierra en la fase 3 (definiciones de D2, EBIT) o es
     definición por diseño (dividendo indicado, deuda de la regla).
   - Golden regenerados (`dcdda74`). `pytest -q` → "3662 passed, 1 skipped"; `npm run check` → 46 salidas.
+- **Push y deploy (2026-10-16):** rama `fiabilidad/f2b-corregir` subida y `main` adelantado (fast-forward desde
+  `60f8a69`).
+  - El primer deploy (`bdc474d`) no pasaba las guardas de `build.sh`: la web compilada con webpack no traía
+    `build-stamp.json` y referenciaba el chunk de `/stock/[[...symbol]]` codificado. Se recompiló con Turbopack en el
+    checkout principal (`fafee5d`) y se comprobó con las dos guardas en local.
+  - **Comprobación en producción** (`/api/health` = `fafee5d`; 20:53 de Nueva York; concurrencia 3): BCS, TSM, NVO,
+    UL, NVDA, PGR, JNJ, MSFT, AMZN, XOM y MC.PA responden en 4.6–12.2 s.
+    - Dividendos correctos: BCS 2.72%, TSM 0.93%, NVO 4.77%, UL 3.36%, NVDA 0.47%, PGR 0.18% (ordinario).
+    - Beta propia o del sector; corte coherente; aviso de resultados pendientes en TSM, PGR y JNJ.
+  - **Fallo encontrado y corregido en origen** (`103c76f`): XOM con el rango "sin dato". Yahoo da la barra del día
+    con el cierre vacío y la serie la descartaba, así que la cotización de hoy quedaba fuera del rango. Tras el
+    redeploy (`/api/health` = `103c76f`): XOM 111.18–179.16, "En máximos de 52 semanas"; la web, sin errores en la
+    consola.
+  - **Pendiente del usuario:** `SEC_EDGAR_USER_AGENT` en Render. Sin él, producción va sin EDGAR ("verificación
+    oficial no disponible"). Queda sin la deuda de la regla (MSFT 56.8 y AMZN 209.9 son los de la fuente), sin el
+    respaldo (Altman de JNJ sin dato), sin la marca del EBIT estimado y sin el aviso D7 de MC.PA. Con la variable
+    puesta, repetir la comprobación.
+  - **Siguiente:** T9 (RECON §7.21 y cierre de la 2b en la bitácora).
