@@ -2918,9 +2918,10 @@ def score_rentabilidad_reit(xv: Dict[str, Any]) -> Dict[str, Any]:
             comps.append((name, p, None, None, None, "{}", "sin FFO, activos o ingresos"))
             continue
         adj, _, lab = _banded(v, b, p, labels)
-        what = ("FFO sobre los activos totales, frente a los REIT de EE. UU. (fase 7)" if key == "ffo_to_assets"
+        what = ("FFO sobre los activos totales, frente a los REIT de EE. UU." if key == "ffo_to_assets"
                 else "FFO sobre ingresos")
-        comps.append((name, p, v, adj, f"{lab} ({v:.1%}) - {what}", "{:.1%}", None))
+        fm = "{:.2%}" if key == "ffo_to_assets" else "{:.1%}"   # 4.98% no es 5.0%: el tramo cambia en el 5%
+        comps.append((name, p, v, adj, f"{lab} ({fm.format(v)}) - {what}", fm, None))
     return _rentabilidad_branch(REIT, comps, _RENT_NA_COMMON + (("gross_margin", "Margen bruto"),
                                                                ("operating_margin", "Margen operativo")))
 

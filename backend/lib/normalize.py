@@ -213,6 +213,22 @@ def infer_peaks(q: Dict[str, Any], ttm_quarters: int = 4) -> Dict[str, Any]:
     return {"available": True, "reason": None, "peaks": peaks, "tax_rate": t_eff}
 
 
+def operating_pe(net_income: Optional[float], structural_net: float, market_cap: Optional[float]) -> Dict[str, Any]:
+    """Fase 7 (registro #36; revisión, hallazgo A): P/E y E/P de una aseguradora o un conglomerado sobre su beneficio
+    OPERATIVO (reportado − ganancias netas de la cartera). Operativo ≤ 0: sin P/E, aunque el reportado sea positivo;
+    reportado negativo por minusvalías y operativo positivo: P/E operativo (BRK 2022)."""
+    ni_op = (net_income - structural_net) if net_income is not None else None
+    pe = (market_cap / ni_op) if (market_cap and ni_op is not None and ni_op > 0) else None
+    return {"net_income_operating": ni_op, "pe": pe,
+            "earnings_yield": (ni_op / market_cap) if (market_cap and ni_op is not None) else None,
+            "basis": "operativo" if pe else "operativo_negativo"}
+
+
+def _unreliable(ni, struct_net, other_net, limit):
+    base = (ni - struct_net) if ni is not None else None
+    return bool(base and other_net and abs(other_net) / abs(base) > limit)
+
+
 def normalize(*, net_income: Optional[float], explicit_rows: Dict[str, Optional[float]],
               quarterly: Optional[Dict[str, Any]], basis: str,
               tax_rate_fallback: Optional[float] = None,
@@ -230,10 +246,16 @@ def normalize(*, net_income: Optional[float], explicit_rows: Dict[str, Optional[
     rows = dict(explicit_rows or {})
     structural = investment_gains if (investment_gains or {}).get("value") not in (None, 0) else None
     if structural:
-        rows.pop("Gain On Sale Of Security", None)
-        if any(rows.get(r) is not None for r in ("Total Unusual Items", "Total Unusual Items Excluding Goodwill")):
-            rows = {}
-        t = cfg("valuation.tax.statutory_rate")
+        # Sin doble conteo (revisión, hallazgo C): las ganancias por venta de valores de Yahoo salen, y también del
+        # total de partidas inusuales si lo trae; el resto (deterioros, reestructuraciones…) se sigue normalizando.
+        sec = rows.pop("Gain On Sale Of Security", None)
+        for tr in ("Total Unusual Items", "Total Unusual Items Excluding Goodwill"):
+            if rows.get(tr) is not None and sec is not None:
+                rows[tr] = rows[tr] - sec
+        # Tipo efectivo del ejercicio si es plausible (emisores de Bermudas o Suiza en US GAAP), si no el legal
+        lo, hi = cfg("valuation.tax.effective_bounds")
+        t = (tax_rate_fallback if (tax_rate_fallback is not None and lo <= tax_rate_fallback <= hi)
+             else cfg("valuation.tax.statutory_rate"))
         g = float(structural["value"])
         items.append({"type": "estructural", "confidence": "alta", "applied": True,
                       "item_type": "ganancias_de_inversiones",
@@ -241,7 +263,7 @@ def normalize(*, net_income: Optional[float], explicit_rows: Dict[str, Optional[
                       "origin": f"SEC EDGAR ({structural.get('concept')}): {structural.get('how')} · beneficio operativo "
                                 "de una aseguradora o un conglomerado: sin las ganancias de su cartera",
                       "period_gross": g, "gross": g, "net": g * (1 - t),
-                      "tax_source": f"tipo legal de EE. UU. {t:.0%}", "recurrent": True, "recurrent_years": None,
+                      "tax_source": f"tipo {t:.1%}", "recurrent": True, "recurrent_years": None,
                       "recurrent_average": None, "recurrence_window": None})
     ex = typed_items(rows, annual_rows)
     if ex["gross"] not in (None, 0):
@@ -267,8 +289,14 @@ def normalize(*, net_income: Optional[float], explicit_rows: Dict[str, Optional[
                 "tax_source": tax_src, "recurrent": rec["recurrent"], "recurrent_years": rec["years"],
                 "recurrent_average": rec["average"], "recurrence_window": C["recurrence_window"],
             })
-    inferred = infer_peaks(quarterly) if quarterly else {"available": False, "reason": "sin estados trimestrales",
-                                                         "peaks": []}
+    if structural:
+        # Revisión, hallazgo B: en una aseguradora el resultado no operativo ES su cartera (ya excluida entera): no
+        # se infieren picos de él (se restaría dos veces).
+        inferred = {"available": False, "peaks": [],
+                    "reason": "aseguradora o conglomerado: el resultado no operativo es la cartera, ya excluida"}
+    else:
+        inferred = infer_peaks(quarterly) if quarterly else {"available": False, "reason": "sin estados trimestrales",
+                                                             "peaks": []}
     ni = net_income
     for p in inferred["peaks"]:
         share = abs(p["net"]) / abs(ni) if ni else None
@@ -282,6 +310,7 @@ def normalize(*, net_income: Optional[float], explicit_rows: Dict[str, Optional[
                       "recurrent": p["recurrent"], "recurrent_years": p["repeats"],
                       "applied": share is not None and share > C["one_off_pct"]})
     applied_net = sum(i["net"] for i in items if i["applied"])
+    struct_net = sum(i["net"] for i in items if i["applied"] and i["type"] == "estructural")
     has_explicit = any(i["type"] in ("explicita", "estructural") for i in items)
     has_inferred = any(i["type"] == "inferida" and i["applied"] for i in items)
     normalized = (ni - applied_net) if (ni is not None and (has_explicit or has_inferred)) else ni
@@ -293,7 +322,9 @@ def normalize(*, net_income: Optional[float], explicit_rows: Dict[str, Optional[
         "items": items,
         "one_off_net": applied_net if (has_explicit or has_inferred) else 0.0,
         "one_off_pct": one_off,
-        "pe_unreliable": one_off is not None and one_off > C["one_off_pct"],
+        # El P/E de una aseguradora ya es el operativo (main.py): su fiabilidad depende solo de lo demás.
+        "pe_unreliable": _unreliable(ni, struct_net, applied_net - struct_net, C["one_off_pct"]),
+        "structural_net": struct_net,
         "applied": has_explicit or has_inferred,
         "confidence": ("media" if has_inferred else "alta") if (has_explicit or has_inferred) else None,
         "inference": {"available": inferred["available"], "reason": inferred.get("reason")},

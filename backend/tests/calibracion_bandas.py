@@ -99,8 +99,8 @@ def metrics(data, t, kind):
 
 # (métrica, clave de config de los tramos, sentido: True = mejor cuanto MENOR ("≤"), puntos)
 BANDS = {"reit": [("nde", "thresholds.score.solidez.reit_nde_bounds", True, "thresholds.score.solidez.reit_nde_points"),
-                  ("ffo_equity", "thresholds.score.rentabilidad.reit_ffo_equity_bounds", False,
-                   "thresholds.score.rentabilidad.reit_ffo_equity_points"),
+                  ("ffo_assets", "thresholds.score.rentabilidad.reit_ffo_assets_bounds", False,
+                   "thresholds.score.rentabilidad.reit_ffo_assets_points"),
                   ("ffo_margin", "thresholds.score.rentabilidad.reit_ffo_margin_bounds", False,
                    "thresholds.score.rentabilidad.reit_ffo_margin_points"),
                   ("ffo_payout", "thresholds.score.calidad.reit_ffo_payout_bounds", True,

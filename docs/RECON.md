@@ -1344,3 +1344,6 @@ arreglo es de fondo; la fase no deja protecciones provisionales nuevas.*
 - **Abierto:**
   - decisiones del usuario (F7_CALIBRACION §6);
   - repetir el estudio con más empresas y con prima de riesgo point-in-time.
+- **Decisiones de método posteriores (bitácora #36):**
+  - REIT: FFO/activos totales sustituye a FFO/patrimonio (decisión del usuario);
+  - aseguradoras y conglomerados: P/E operativo, sin las ganancias de su cartera (ASC 321), con la rentabilidad sobre el reportado (decisión del operador). BRK-B: 13.2 → 26.8x.

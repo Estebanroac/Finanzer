@@ -1089,6 +1089,9 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     # Fase 1 (#20): "(TTM)" solo con ratios TTM; sin 4 trimestres consecutivos la base es el último ejercicio.
     _annual = ((a.get("data_provenance") or {}).get("ttm") or {}).get("basis") == "anual"
     _PE = "P/E (último ejercicio)" if _annual else "P/E (TTM)"
+    # Fase 7 (registro #36): aseguradora o conglomerado, valorado sobre su beneficio operativo
+    if (a.get("key_metrics") or {}).get("pe_basis") in ("operativo", "operativo_negativo"):
+        _PE = "P/E operativo (sin ganancias de la cartera)"
 
     def _rvs(*args, **k):
         return read_vs_sector(*args, ref=_ref, **k)
@@ -1698,6 +1701,11 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     mrows = []
     for key, lab, val, bench, hb, fm in mult_defs:
         bstr = fv(bench, fm) if bench else "—"
+        if key == "pe" and km.get("pe_basis") == "operativo_negativo" and _mult_na.get(key) not in _na_keys:
+            mrows.append(_row(key, lab, "—", "Sin beneficio operativo", 'warn', "no_significativo", bstr, "—",
+                              text=(f"el beneficio sin las ganancias de la cartera es negativo; el reportado "
+                                    f"({fv(norm.get('reported_net_income'), 'money')}) lo sostienen esas ganancias")))
+            continue
         if key == "pe" and norm.get("pe_unreliable") and _mult_na.get(key) not in _na_keys:
             # Etapa 7: con no recurrentes > umbral el P/E reportado no es fiable.
             mrows.append(_row(key, lab, fv(val, fm), f"No fiable ({norm['one_off_pct'] * 100:.0f}% no recurrente)",
@@ -1732,8 +1740,8 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         def _it_txt(it):
             lab = f"{it.get('label') or it['type']} ({it['type']}, confianza {it['confidence']})"
             if it["type"] == "estructural":    # fase 7 (registro #36): beneficio operativo de una aseguradora
-                return (lab + f": {fv(it['net'], 'money')} netos, fuera del beneficio operativo con el que se calcula "
-                              "el P/E; la rentabilidad (ROE, ROA, margen) sigue sobre el beneficio reportado")
+                return (lab + f": {fv(it['net'], 'money')} netos ({it.get('tax_source')}), fuera del beneficio "
+                              "operativo con el que se calcula el P/E; la rentabilidad (ROE, ROA, margen) no las excluye")
             if it.get("recurrent"):
                 per = (f"{it.get('recurrent_years')} trimestres" if it["type"] == "inferida" else
                        f"{it.get('recurrent_years')} de los últimos {it.get('recurrence_window')} ejercicios")
@@ -1746,8 +1754,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         _its = "; ".join(_it_txt(it) for it in norm.get("items") or [])
         _only_struct = all(it["type"] == "estructural" for it in norm.get("items") or [] if it.get("applied"))
         norm_note = (f"Beneficio {norm.get('basis')}: reportado {fv(norm.get('reported_net_income'), 'money')}, "
-                     + (f"operativo {fv(norm.get('normalized_net_income'), 'money')} "
-                        f"(sin las ganancias de su cartera, {norm['one_off_pct'] * 100:.1f}% del beneficio; {_its})."
+                     + (f"operativo {fv(norm.get('normalized_net_income'), 'money')} ({_its})."
                         if _only_struct else
                         f"normalizado {fv(norm.get('normalized_net_income'), 'money')} "
                         f"(no recurrentes {norm['one_off_pct'] * 100:.1f}% del beneficio; {_its}). "
@@ -2031,6 +2038,12 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
             prows.append(_row(_slug(x["metric"]), x["metric"], str(x.get("value", "")),
                               _SEV_LAB.get(x.get("severity"), "—"), _SEV_TONE.get(x.get("severity"), 'neu'),
                               "con_dato", "—", "—", x.get("reason")))
+    # Fase 7 (decisión del usuario): FFO / patrimonio contable ya no puntúa; se muestra como dato informativo.
+    _fe = (a.get("archetype_metrics") or {}).get("ffo_to_equity")
+    if archetype == "REIT" and _fe is not None:
+        prows.append(_row("ffo_patrimonio", "FFO / patrimonio contable (informativo)", fv(_fe, "pct"), "Informativo",
+                          'neu', "con_dato", "—", "—",
+                          "no puntúa: depende de cómo se financia el REIT y de lo ya amortizado"))
     # ROCE (etapa 6): solo MATURE y CYCLICAL; "No aplica" o "Sin dato", nunca 0%.
     _roce_state = km.get("roce_state")
     if _roce_state == "no_aplica":

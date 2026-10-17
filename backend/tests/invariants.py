@@ -266,12 +266,13 @@ def normalized_figures_are_labelled(a, text):
     if not (a.get("earnings_normalization") or {}).get("differs"):
         assert not any("normalizado" in m and "EV/EBITDA" not in m and "P/FCF" not in m for m in metrics)
         return
-    applied = [i for i in a["earnings_normalization"].get("items") or [] if i.get("applied")]
-    if applied and all(i["type"] == "estructural" for i in applied):
-        # Fase 7 (registro #36): las ganancias de inversiones de una aseguradora salen solo del beneficio con el que se
-        # valora: el P/E va rotulado "normalizado" y la rentabilidad sigue sobre el reportado, sin rótulo.
-        assert any(m.startswith("P/E normalizado") for m in metrics) or "pe" in (a.get("not_applicable") or {})
-        assert "ROE normalizado" not in metrics and "Margen Neto normalizado" not in metrics
+    en = a["earnings_normalization"]
+    if any(i.get("applied") and i["type"] == "estructural" for i in en.get("items") or []):
+        # Fase 7 (registro #36): una aseguradora se valora sobre su beneficio operativo: el P/E del análisis ya es el
+        # operativo (rotulado así) y la rentabilidad solo lleva "normalizado" si OTRAS partidas la cambian.
+        assert a["key_metrics"].get("pe_basis") in ("operativo", "operativo_negativo")
+        assert "P/E operativo" in text
+        assert ("ROE normalizado" in metrics) == bool(en.get("quality_differs") and a["key_metrics"].get("roe") is not None)
         return
     assert "ROE" not in metrics and "Margen Neto" not in metrics
     if "ROE normalizado" in metrics:

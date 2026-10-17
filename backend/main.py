@@ -1327,9 +1327,29 @@ def _compute_analysis(symbol: str) -> dict:
                 _norm = normalize_earnings(net_income=_ni, explicit_rows=_rows, quarterly=_qn, basis=_basis,
                                            tax_rate_fallback=_t_fy, annual_rows=_stmts.get("unusual_fy") or {},
                                            investment_gains=(yinfo.get("_investment_gains") if _has_yahoo else None))
+                # Fase 7 (registro #36; revisión, hallazgos A y D): una aseguradora o un conglomerado se valora sobre su
+                # beneficio OPERATIVO. Su P/E (y el E/P) pasa a ser capitalización / beneficio operativo en todo el
+                # análisis (tabla, portada, alertas, score), con el reportado aparte. Beneficio operativo ≤ 0: sin P/E
+                # (aunque el reportado sea positivo por las ganancias de la cartera).
+                _struct = _norm.get("structural_net") or 0.0
+                _ni_base = _ni
+                if _struct and _ni is not None:
+                    from normalize import operating_pe
+                    _op = operating_pe(_ni, _struct, safe_float(result["key_metrics"].get("market_cap")))
+                    _ni_base, _pe_op, _ey_op = _op["net_income_operating"], _op["pe"], _op["earnings_yield"]
+                    result["key_metrics"]["pe_reported"] = result["key_metrics"].get("pe")
+                    result["key_metrics"]["pe_basis"] = _op["basis"]
+                    for _d in (ratios, result["key_metrics"], result.get("ratios") or {}):
+                        _d["pe"] = safe_float(_pe_op)
+                        _d["earnings_yield"] = safe_float(_ey_op)
+                    _norm["pe_operating"] = safe_float(_pe_op)
+                    _norm["net_income_operating"] = safe_float(_ni_base)
                 _pe_rep = r("pe") if (r("pe") or 0) > 0 else None   # P/E <= 0 no es un múltiplo
                 _nin = _norm["normalized_net_income"]
-                _scale = (_ni / _nin) if (_norm["applied"] and _ni and _nin and _nin > 0 and _ni > 0) else None
+                # Lo demás (partidas inusuales) se normaliza sobre esa base: el P/E operativo no se escala dos veces.
+                _other = any(i["applied"] and i["type"] != "estructural" for i in _norm["items"])
+                _scale = ((_ni_base / _nin) if (_other and _ni_base and _nin and _nin > 0 and _ni_base > 0)
+                          else None)
                 _norm["pe_reported"] = safe_float(_pe_rep)
                 _norm["pe_normalized"] = safe_float(_pe_rep * _scale) if (_pe_rep and _scale) else None
                 _norm["used_in_score"] = bool(_norm["applied"] and _nin is not None)
@@ -1358,6 +1378,8 @@ def _compute_analysis(symbol: str) -> dict:
                     if ratios.get("fcf") is not None and _nin_q:
                         ratios_score["fcf_to_net_income"] = ratios["fcf"] / _nin_q
                     _q_differs = abs(_k - 1) > cfg("thresholds.normalization.label_min_diff")
+                    _norm["quality_differs"] = _q_differs
+                    result["earnings_normalization"]["quality_differs"] = _q_differs
                     # Etapa 9a: qué ratios del score y de las alertas salen del beneficio
                     # normalizado, para que el texto lo diga ("ROE normalizado 55.9%").
                     fin_dict["normalized_metrics"] = (

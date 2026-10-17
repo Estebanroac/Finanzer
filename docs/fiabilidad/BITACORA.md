@@ -1444,3 +1444,40 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
     - PLD, 85 "excelente" → 79 "sólida", en la frontera;
     - AMT, 79 → 75.
   - Golden de los tres pendientes de regenerar (F7_CALIBRACION §6).
+
+### #36 · 2026-10-17 · operador · Decisiones de método bajo la delegación (registro #29): aseguradoras y REIT
+- **Beneficio operativo de aseguradoras y conglomerados** (abierto desde el #34). El operador lo decide como analista:
+  - se valoran sobre el beneficio **sin las ganancias de su cartera**, realizadas y no realizadas (ASC 321), que es la convención del mercado y la del propio Berkshire;
+  - la rentabilidad (ROE, ROA, margen) **no** las excluye: su patrimonio ya incluye la cartera a valor razonable, e invertir el float es parte del negocio.
+
+  Implementación:
+  - `sec_edgar.investment_gains` (GainLossOnInvestments, RealizedInvestmentGainsLosses…);
+  - `edgar_primary`: las ganancias de doce meses del corte, en aseguradoras y conglomerados; fuera los corredores; en IFRS se declara;
+  - `normalize`: ítem "estructural", entero, al tipo efectivo; sin doble conteo con las ganancias de valores de Yahoo, con el total de partidas inusuales ni con los picos inferidos;
+  - `operating_pe`: el P/E y el E/P del análisis pasan a ser capitalización / beneficio operativo en todos sus consumidores (tabla "P/E operativo", portada, alertas, score), con el reportado aparte. Con un beneficio operativo ≤ 0 no hay P/E.
+
+  Resultados:
+  - **BRK-B:** beneficio operativo de doce meses 43.4 mil millones (Berkshire publica 44–47); P/E 13.2 → 26.8; precio 42 → 35, sigue "exigente"; calidad sin cambio (71);
+  - **PGR:** P/E 11.1 → 11.4, sin cambio de nivel.
+- **REIT, FFO/activos** (decisión del usuario, `21e8341`): verificado con el estudio de bandas, bien centrada (19 / 25 / 18 / 21 / 17%).
+  - FFO/patrimonio se muestra como dato informativo, sin puntuar.
+  - La cifra va con dos decimales (O: 4.98%, justo bajo el corte del 5%).
+- **Revisión independiente** de los dos cambios: 11 hallazgos, arreglados en el commit siguiente:
+  - el P/E con beneficio operativo negativo o con pérdida reportada;
+  - el doble conteo con los picos inferidos;
+  - el total de partidas inusuales que borraba los deterioros;
+  - el P/E mostrado distinto del que puntuaba;
+  - textos que llamaban "no recurrente" a la cartera;
+  - el alcance (corredores) y el tipo fiscal;
+  - el estudio de bandas roto;
+  - "(fase 7)" en un texto;
+  - FFO/patrimonio, que no se mostraba.
+
+  Queda de diseño: el P/B justificado de las financieras usa el ROE con las ganancias.
+- **Panel:** 0 cambios de nivel frente al cierre de la fase 7, salvo los ya registrados de O y PLD.
+- **Suite:** "1 failed, 3936 passed, 1 skipped". Lo que falla son las muestras forzadas del contrato, que van con los golden.
+- **Bloqueado para el usuario** (reglas suyas vigentes; la delegación no las levanta):
+  - regenerar los golden (el clasificador de permisos lo denegó);
+  - `SEC_EDGAR_USER_AGENT` en Render;
+  - "ok, pushea" y deploy;
+  - el permiso para descargar los datos de Damodaran (medianas sectoriales y prima histórica).

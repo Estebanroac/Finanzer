@@ -151,7 +151,8 @@ patrimonio. La métrica premia el apalancamiento y los activos viejos y amortiza
    Los golden de O, PLD y AMT cambian por esta causa: van con la regeneración pendiente.
 2. **Escala de precio:** ninguna regla cambia. El estudio no sostiene que "atractivo" o "muy exigente" anticipen la rentabilidad. La app ya no lo dice y no debe empezar a decirlo.
 3. **Escala de calidad:** ninguna regla cambia. Se presenta como descripción de la solidez y la rentabilidad del negocio, no como señal de inversión, y así se presenta hoy.
-4. **Repetir el estudio** con una muestra mayor (Russell 1000 con las empresas desaparecidas) y con la prima de riesgo de cada fecha (histórico de Damodaran, requiere su descarga), para que la escala de precio sea evaluable.
+4. **Aseguradoras y conglomerados** (abierto desde el registro #34; decidido por el operador en el #36): valoración sobre el beneficio operativo, sin las ganancias de la cartera, y rentabilidad sobre el reportado. BRK-B: P/E operativo de 26.8x.
+5. **Repetir el estudio** con una muestra mayor (Russell 1000 con las empresas desaparecidas) y con la prima de riesgo de cada fecha (histórico de Damodaran, requiere su descarga), para que la escala de precio sea evaluable.
 
 ## 7. Revisión mensual de parámetros (punto 2 del plan)
 

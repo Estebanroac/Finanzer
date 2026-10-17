@@ -309,6 +309,38 @@ def test_brk_valued_on_operating_earnings_but_profitability_on_reported(outputs_
     a = outputs_by_env("panel")["BRK-B"][0]
     n, km = a["earnings_normalization"], a["key_metrics"]
     assert [i["item_type"] for i in n["items"]] == ["ganancias_de_inversiones"]
-    assert km["pe_normalized"] > km["pe"] * 1.5          # operativo ≈ la mitad del reportado
+    assert km["pe_basis"] == "operativo" and km["pe"] > km["pe_reported"] * 1.5   # operativo ≈ la mitad
+    assert km["earnings_yield"] == pytest.approx(1 / km["pe"])
     rent = {c["metric"]: c for c in a["score"]["breakdown"]["Rentabilidad"]["adjustments"]}
     assert "ROE normalizado" not in str(rent)             # la rentabilidad sigue sobre el reportado
+
+
+
+def test_structural_gains_review_cases():
+    """Revisión del registro #36: B (sin doble conteo con picos inferidos), C (un total de partidas inusuales no borra
+    los deterioros) y el P/E fiable aunque las ganancias pesen mucho."""
+    from normalize import normalize
+    ig = {"value": 4.0, "concept": "us-gaap:GainLossOnInvestments", "how": "x"}
+    # C: total = cargos especiales (−3) + ganancias de valores (+4); quedan los −3 de cargos
+    n = normalize(net_income=9.0, explicit_rows={"Total Unusual Items": 1.0, "Special Income Charges": -3.0,
+                                                 "Gain On Sale Of Security": 4.0},
+                  quarterly=None, basis="TTM", investment_gains=ig, tax_rate_fallback=0.21)
+    types = {i["type"] for i in n["items"] if i["applied"]}
+    assert "estructural" in types and "explicita" in types
+    assert n["normalized_net_income"] == pytest.approx(9.0 - 4.0 * 0.79 + 3.0 * 0.79)
+    # B: con ítem estructural no se infieren picos del resultado no operativo
+    n = normalize(net_income=9.0, explicit_rows={}, quarterly={"dates": ["2026-06-30"]}, basis="TTM",
+                  investment_gains=ig)
+    assert [i["type"] for i in n["items"]] == ["estructural"] and not n["inference"]["available"]
+    assert n["pe_unreliable"] is False
+
+
+def test_operating_pe_signs():
+    """Revisión del registro #36, hallazgo A."""
+    from normalize import operating_pe
+    # reportado 3, ganancias netas 3.16: operativo negativo -> sin P/E (no el reportado inflado)
+    o = operating_pe(3.0, 3.16, 100.0)
+    assert o["pe"] is None and o["basis"] == "operativo_negativo" and o["earnings_yield"] < 0
+    # reportado −2 por minusvalías, operativo +2.74 -> P/E operativo
+    o = operating_pe(-2.0, -4.74, 100.0)
+    assert o["pe"] == pytest.approx(100.0 / 2.74) and o["basis"] == "operativo"
