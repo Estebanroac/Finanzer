@@ -293,6 +293,25 @@ _INSTRUMENT_NAMES = {"ETF": "un ETF", "MUTUALFUND": "un fondo de inversión", "I
                      "OPTION": "una opción", "MONEYMARKET": "un fondo monetario"}
 
 
+def _revenue_usd(revenue: Optional[float], price_currency: Optional[str]) -> Optional[float]:
+    """Ventas en USD para el tramo de tamaño de las tasas base (revisión de código F3, hallazgo 4): los importes van
+    en la moneda de la cotización (EUR en MC.PA, KRW en 005930.KS). Sin moneda o sin tipo de cambio, None: la lectura
+    del inverso queda sin tasa base y lo dice; nunca se lee otra moneda como USD."""
+    from currency import base_currency, fetch_fx
+    cur, unit = base_currency(price_currency)
+    if revenue is None or cur is None:
+        return None
+    if cur == "USD":
+        return revenue * unit
+    try:
+        import datetime as _dt
+        import yfinance as yf
+        return revenue * unit * fetch_fx(cur, "USD", yf.Ticker).close_at(_dt.date.today())
+    except Exception as e:
+        logger.info(f"sin tipo de cambio {cur}→USD para las tasas base: {e}")
+        return None
+
+
 def not_a_stock_message(symbol: str, quote_type: str) -> str:
     what = _INSTRUMENT_NAMES.get(str(quote_type).upper(), "un instrumento que no es una acción")
     return (f"Finanzer analiza acciones individuales: {symbol} es {what}, así que no se analiza "
@@ -1524,7 +1543,8 @@ def _compute_analysis(symbol: str) -> dict:
                 _nd_r = ((td_val or 0.0) - (cash_val or 0.0)) if (td_val is not None or cash_val is not None) else 0.0
                 _own_r = rr.own_growth(yinfo.get("_history_fy") if _has_yahoo else None,
                                        safe_float(fin_dict.get("revenue_cagr_3y")))
-                _rv_args = dict(price=_price_r, shares=_sh_r, revenue_usd=safe_float(financials.revenue), sector=sector)
+                _rv_args = dict(price=_price_r, shares=_sh_r, revenue_usd=_revenue_usd(safe_float(financials.revenue),
+                                                                         profile.currency), sector=sector)
                 _rv = {"applicable": False, "reason": None, "main": None, "ttm": None}
                 if archetype == FINANCIAL:
                     _rv["reason"] = "no aplica a bancos y aseguradoras: su método intrínseco es el P/B justificado"

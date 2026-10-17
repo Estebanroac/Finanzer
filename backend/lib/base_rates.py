@@ -56,12 +56,12 @@ def share_sustaining(g: Optional[float], revenue_usd: Optional[float], sector: O
                      horizon_years: int = 10) -> Dict[str, Any]:
     """Proporción de comparables (tramo × industria) cuyo CAGR de ventas a `horizon_years` fue ≥ g."""
     out = {"share": None, "bin": None, "industry": industry_for(sector), "cell": None, "median": None, "std": None,
-           "count": None, "horizon_years": horizon_years, "reason": None}
+           "count": None, "horizon_years": horizon_years, "reason": None, "revenue_usd": revenue_usd}
     if g is None:
         return dict(out, reason="sin crecimiento exigido")
     b = size_bin(revenue_usd)
     if b is None:
-        return dict(out, reason="sin ventas para el tramo de tamaño")
+        return dict(out, reason="sin ventas en USD para el tramo de tamaño (sin tipo de cambio)")
     T = cfg("base_rates.table")
     try:
         h = cfg("base_rates.horizons_years").index(horizon_years)

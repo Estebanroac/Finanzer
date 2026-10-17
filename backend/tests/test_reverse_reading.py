@@ -75,3 +75,23 @@ def test_reading_end_to_end_and_sentence():
     y = rr.reading(price=1000.0, flow=1e8, shares=1e9, rate=0.09, net_debt=0.0, revenue_usd=40e9,
                    sector="Technology", own=own, flow_label="FCF")
     assert y["band"] == rd.VERY_DEMANDING and "más de un 60% anual" in y["text"]
+
+
+def test_size_bin_revenue_is_converted_to_usd(monkeypatch):
+    """Revisión de código F3 (hallazgo 4): las ventas van en la moneda de la cotización; el tramo de tamaño se mide
+    en USD y, sin tipo de cambio, no se lee otra moneda como USD."""
+    import currency
+    import main
+
+    class Fx:
+        def close_at(self, d):
+            return 0.00072          # USD por 1 KRW
+
+    monkeypatch.setattr(currency, "fetch_fx", lambda fin, px, cls: Fx())
+    assert main._revenue_usd(2e12, "KRW") == pytest.approx(1.44e9)
+    assert main._revenue_usd(5e9, "USD") == 5e9
+
+    def boom(fin, px, cls):
+        raise currency.CurrencyConversionError("sin red")
+    monkeypatch.setattr(currency, "fetch_fx", boom)
+    assert main._revenue_usd(2e12, "KRW") is None
