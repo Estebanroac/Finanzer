@@ -147,9 +147,10 @@ def tenk_filing(facts, fy):
 def statements(facts, fy_end, until, n=4):
     """(income_stmt, balance_sheet, cashflow) con forma de yfinance: filas de Yahoo, columnas = cierres de ejercicio."""
     import pandas as pd
-    ends = [e for e in fiscal_years(facts, until) if e <= fy_end][:n]
+    ends = [e for e in fiscal_years(facts, until) if e <= fy_end.isoformat()][:n]
     cols = [pd.Timestamp(e) for e in ends]
     inc, bs, cf = {}, {}, {}
+    ebit_proxy = []
     for e, c in zip(ends, cols):
         end = _d(e)
         col = {}
@@ -161,20 +162,36 @@ def statements(facts, fy_end, until, n=4):
             col["Gross Profit"] = col["Total Revenue"] - col["Cost Of Revenue"]
         if col["Interest Expense"] is not None:
             col["Interest Expense"] = abs(col["Interest Expense"])
+        # Muchos emisores no etiquetan OperatingIncomeLoss (IBM, MRK, NKE, ADP); Yahoo construye su "Operating Income".
+        # Respaldo: EBIT ≈ beneficio antes de impuestos + gastos financieros (incluye lo no operativo; se registra).
+        if col["Operating Income"] is None and col["Pretax Income"] is not None:
+            col["Operating Income"] = col["Pretax Income"] + (col["Interest Expense"] or 0.0)
+            ebit_proxy.append(e)
         inc[c] = col
         bcol = {row: _row(facts, concepts, end, until, False) for row, concepts in STOCK.items()}
         cash = bcol["Cash And Cash Equivalents"]
         sti = _row(facts, ST_INVEST, end, until, False)
         bcol["Cash Cash Equivalents And Short Term Investments"] = (cash + (sti or 0.0)) if cash is not None else None
-        ltd_all = _row(facts, ("LongTermDebt",), end, until, False)
-        ltd_nc = _row(facts, ("LongTermDebtNoncurrent",), end, until, False)
-        ltd_c = _row(facts, ("LongTermDebtCurrent",), end, until, False)
-        stb = _row(facts, ("ShortTermBorrowings",), end, until, False)
-        cp = bcol["Commercial Paper"]
-        lt_total = ltd_all if ltd_all is not None else ((ltd_nc or 0.0) + (ltd_c or 0.0) if (ltd_nc or ltd_c) else None)
-        bcol["Long Term Debt"] = ltd_nc if ltd_nc is not None else lt_total
-        parts = [x for x in (lt_total, stb, cp) if x is not None]
-        bcol["Total Debt"] = sum(parts) if parts else None
+        # Deuda: las etiquetas varían por emisor (CSX y WM dan el total con arrendamientos; ACN, la no corriente con
+        # arrendamientos y la corriente; HPQ, la de largo plazo con su parte corriente).
+        g = lambda *cs: _row(facts, cs, end, until, False)
+        stb, cp = g("ShortTermBorrowings"), bcol["Commercial Paper"]
+        lt_nc = g("LongTermDebtNoncurrent", "LongTermDebtAndCapitalLeaseObligations")
+        cur = g("DebtCurrent")
+        if cur is None:
+            lc = g("LongTermDebtAndCapitalLeaseObligationsCurrent", "LongTermDebtCurrent")
+            short = [x for x in (lc, stb, cp) if x is not None]
+            cur = sum(short) if short else None
+        total = g("DebtAndCapitalLeaseObligations")
+        if total is None:
+            ltd_all = g("LongTermDebt")
+            if ltd_all is not None:
+                total = ltd_all + (stb or 0.0) + (cp or 0.0)
+            elif lt_nc is not None or cur is not None:
+                total = (lt_nc or 0.0) + (cur or 0.0)
+        bcol["Long Term Debt"] = lt_nc
+        bcol["Current Debt"] = cur
+        bcol["Total Debt"] = total
         eq = bcol["Stockholders Equity"]
         bcol["Common Stock Equity"] = eq
         if eq is not None:
@@ -200,6 +217,7 @@ def statements(facts, fy_end, until, n=4):
     def frame(d):
         df = pd.DataFrame(d).astype("float64")
         return df.dropna(how="all") if not df.empty else df
+    statements.ebit_proxy = ebit_proxy
     return frame(inc), frame(bs), frame(cf), ends
 
 
@@ -351,6 +369,7 @@ def generate(data):
                     "risk_free": {"source": "^TNX en D (calibración)"},
                     "calibracion": {"fy": fy, "fy_end": fy_end, "tenk_filed": filed, "D": D, "price": px,
                                     "shares": shares, "shares_source": sh_src, "fy_columns": ends,
+                                    "ebit_proxy_years": list(statements.ebit_proxy),
                                     "sector": quote.get("sector"), "industry": quote.get("industry"),
                                     "sector_etf": etf if "sector_history" in yfd else None}}
             d = os.path.join(data, "fixtures", f"FY{fy}", t)
