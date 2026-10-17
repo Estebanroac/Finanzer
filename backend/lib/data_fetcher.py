@@ -14,7 +14,7 @@ import time
 import random
 import logging
 from typing import Optional, Dict, List, Any, Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError as FuturesTimeoutError
 import hashlib
@@ -291,6 +291,8 @@ class FinancialStatements:
     # Metadata
     fiscal_year_end: Optional[str] = None
     last_updated: Optional[str] = None
+    # Fase 7: el snapshot de get_ticker_info del que salen; el análisis lee de él lo demás (sin mezclar snapshots)
+    snapshot: Optional[Dict[str, Any]] = field(default=None, repr=False, compare=False)
 
 
 class YahooFinanceFetcher:
@@ -303,16 +305,17 @@ class YahooFinanceFetcher:
     def get_company_profile(self, symbol: str) -> Optional[CompanyProfile]:
         """Obtiene el perfil de la empresa (con caché y retry para rate limiting)."""
         cache_key = _data_cache._make_key("profile", symbol.upper())
-        
-        # Verificar caché
         cached = _data_cache.get(cache_key)
-        if cached:
-            return cached
         
         last_error = None
         for attempt in range(MAX_RETRIES):
             try:
                 info = get_ticker_info(symbol)
+                # Fase 7 (verificación en prod con EDGAR): lo derivado vale solo para el snapshot del que sale. Con su
+                # propio TTL sobrevivía al snapshot (5 min) y se mezclaba con uno nuevo: BRK-B tomó el beneficio del
+                # ejercicio de un análisis sin EDGAR y las ganancias de la cartera del corte de EDGAR (P/E 49x).
+                if cached and cached[0] is info:
+                    return cached[1]
 
                 # Validar que obtuvimos datos válidos
                 if not info or info.get("regularMarketPrice") is None:
@@ -332,7 +335,7 @@ class YahooFinanceFetcher:
                 )
                 
                 # Guardar en caché (30 min para perfiles, cambian poco)
-                _data_cache.set(cache_key, profile, ttl_minutes=_F["profile_ttl_min"])
+                _data_cache.set(cache_key, (info, profile), ttl_minutes=_F["profile_ttl_min"])
                 logger.debug(f"Perfil de {symbol} obtenido correctamente")
                 return profile
             
@@ -371,11 +374,7 @@ class YahooFinanceFetcher:
     def get_financial_data(self, symbol: str) -> Optional[FinancialStatements]:
         """Obtiene todos los datos financieros de una empresa (con caché y retry para rate limiting)."""
         cache_key = _data_cache._make_key("financials", symbol.upper())
-        
-        # Verificar caché
-        cached = _data_cache.get(cache_key)
-        if cached:
-            return cached
+        cached = _data_cache.get(cache_key)     # (snapshot de get_ticker_info, estados): ver get_company_profile
         
         # Helper function
         def get_latest(df, key):
@@ -393,6 +392,8 @@ class YahooFinanceFetcher:
                 # get_ticker_info already fetches fast_info + 3 statements IN PARALLEL
                 # DO NOT re-fetch statements — use the data from info directly
                 info = get_ticker_info(symbol)
+                if cached and cached[0] is info:
+                    return cached[1]
 
                 # All financial data comes pre-extracted from yf_adapter
                 revenue = info.get("totalRevenue")
@@ -484,7 +485,8 @@ class YahooFinanceFetcher:
                 )
                 
                 # Guardar en caché (60 min para datos financieros - reduce rate limiting)
-                _data_cache.set(cache_key, result, ttl_minutes=_F["financials_ttl_min"])
+                result.snapshot = info
+                _data_cache.set(cache_key, (info, result), ttl_minutes=_F["financials_ttl_min"])
                 logger.debug(f"Datos financieros de {symbol} cacheados correctamente")
                 return result
             

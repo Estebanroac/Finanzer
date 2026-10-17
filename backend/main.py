@@ -91,7 +91,7 @@ def financials_to_dict(fin) -> Dict[str, Any]:
     _str_meta = {"fiscal_year_end", "last_updated"}
     out: Dict[str, Any] = {}
     for k, v in fin.__dict__.items():
-        if v is None:
+        if v is None or k == "snapshot":
             continue
         if k in _str_meta:
             out[k] = v
@@ -412,7 +412,8 @@ def _compute_analysis(symbol: str) -> dict:
             _has_yahoo = False
             try:
                 from yf_adapter import get_ticker_info
-                yinfo = get_ticker_info(symbol)  # cached, instant
+                # Fase 7: el mismo snapshot del que salen los estados (otro, si caducó entre medias, mezclaría periodos)
+                yinfo = getattr(financials, "snapshot", None) or get_ticker_info(symbol)
                 yr = yinfo.get("_yahoo_ratios", {})
                 _has_yahoo = True
 
