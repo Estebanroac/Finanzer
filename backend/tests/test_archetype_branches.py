@@ -106,7 +106,8 @@ def test_growth_pre_profit_valuation_is_conclusive(outputs_by_env):
         assert a["score"]["excluded_categories"] == [] and a["quality"]["partial"] is False
         assert a["price_attractiveness"]["partial"] is False
         assert a.get("graham_number") is None and "graham" in a["not_applicable"]
-        assert a.get("dcf") is not None          # FCF positivo: el DCF sí aplica
+        # Fase 3 (T3, §8.4): FCF positivo, pero FCF − SBC ≤ 0: el DCF no es significativo (la SBC es coste real).
+        assert a["dcf_status"]["state"] == "no_significativo" and "FCF − SBC" in a["dcf_status"]["reason"]
         assert "Crecimiento del BPA" in a["score_coverage"]["crecimiento"]["not_applicable"]
 
 

@@ -122,7 +122,7 @@ def test_risk_free_reads_tnx_cached_or_falls_back(monkeypatch):
 def test_one_wacc_everywhere(outputs_by_env):
     """El WACC mostrado es el usado: key_metrics, DCF, base del grid y spread ROIC−WACC."""
     for env in _envs():
-        for sym in ("NFLX", "V", "FCX", "SNOW"):
+        for sym in ("NFLX", "V", "FCX", "NVDA"):   # fase 3: SNOW sin DCF (FCF − SBC ≤ 0)
             a = outputs_by_env(env)[sym][0]
             w = a["wacc"]["value"]
             assert a["key_metrics"]["wacc"] == w == a["dcf"]["wacc"], (env, sym)
@@ -173,7 +173,11 @@ def test_cyclical_dcf_uses_maintenance_fcf(outputs_by_env):
     for env in _envs():
         a = outputs_by_env(env)["FCX"][0]
         nz = a["dcf"]["normalized"]
-        assert nz["fcf_used"] == "mantenimiento" and a["dcf"]["fcf_input"] == pytest.approx(nz["fcf_maintenance"])
+        # Fase 3 (T3): FCF de mantenimiento − SBC de los mismos ejercicios (§8.4).
+        net = a["archetype_metrics"]["fcf_maintenance_minus_sbc"]
+        assert a["dcf"]["fcf_basis"] == "FCF − SBC" and net is not None
+        assert nz["fcf_used"] == "mantenimiento" and a["dcf"]["fcf_input"] == pytest.approx(net)
+        assert net < nz["fcf_maintenance"]
         assert nz["fcf_maintenance"] > nz["fcf"]           # el normalizado incluye el capex de expansión
         assert nz["fcf_maintenance_years"] >= 3
 
@@ -269,19 +273,19 @@ def test_dcf_component_bounded_by_reliability():
 
 
 def test_dcf_subtracts_in_valuation(outputs_by_env):
-    """Fallo 1 del spec: el DCF resta. V del panel (−25%, fiabilidad alta: banda "cara") -> −2, y Valoración es la
-    suma de sus ajustes. Antes NFLX del panel (−22%); desde la fase 2b (T6) su beta propia (0.96, frente a 1.61 de
-    Finnhub) baja el WACC y su DCF queda en precio."""
+    """Fallo 1 del spec: el DCF resta. V del panel (−29% con FCF − SBC desde la fase 3; fiabilidad media) resta, y
+    Valoración es la suma de sus ajustes. Antes NFLX del panel (−22%); desde la fase 2b (T6) su beta propia (0.96,
+    frente a 1.61 de Finnhub) baja el WACC y su DCF queda en precio."""
     a = outputs_by_env("panel")["V"][0]
     val = a["score"]["breakdown"]["Valoración"]
     row = _dcf_row(val)
-    assert a["dcf"]["reliability"]["level"] == "alta" and a["dcf"]["upside"] < -10 and row["adjustment"] == -2
+    assert a["dcf"]["reliability"]["level"] == "media" and a["dcf"]["upside"] < -10 and row["adjustment"] < 0
     # Etapa 9a: los miembros del bloque de múltiplos puntúan a través del bloque.
     assert val["score"] == min(20, 10 + sum(x["adjustment"] for x in val["adjustments"] if not x.get("in_block")))
 
 
 def test_low_reliability_dcf_explicit_in_report(outputs_by_env):
-    a, pdf = outputs_by_env("panel")["SNOW"]
+    a, pdf = outputs_by_env("panel")["MU"]       # fase 3: SNOW ya no tiene DCF (FCF − SBC ≤ 0)
     assert a["dcf"]["reliability"]["level"] == "baja" and a["dcf"]["reliability"]["grid_contains_price"] is False
     text = fb.pdf_text(pdf).replace("\n", " ")
     assert "El DCF no concilia con el precio bajo ningún supuesto razonable; no se usa en el score" in text

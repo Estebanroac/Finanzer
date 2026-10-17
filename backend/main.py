@@ -1254,11 +1254,20 @@ def _compute_analysis(symbol: str) -> dict:
                 _fcf_fields = cfg("thresholds.dcf_reliability.fcf_fields")
                 _fcf_flags = [f"{f.get('field')}: {f.get('rule')}" for f in (yinfo.get("_validation") or [])
                               if f.get("field") in _fcf_fields] if _has_yahoo else []
+                _fcf_gross = fcf
                 if archetype == CYCLICAL:
                     # Etapa 8: FCF de MANTENIMIENTO (OCF − D&A como capex de mantenimiento,
                     # promedio de los ejercicios): el normalizado (margen FCF medio ×
                     # ingresos) incluye el capex de expansión. Se muestran los dos.
-                    fcf = safe_float(archetype_values.get("fcf_maintenance"))
+                    _fcf_gross = safe_float(archetype_values.get("fcf_maintenance"))
+                    _fcf_net = safe_float(archetype_values.get("fcf_maintenance_minus_sbc"))
+                else:
+                    # Fase 3 (T3, §8.4): FCF − SBC en el periodo del FCF (sbc_info, el mismo de la etapa 9a).
+                    _fcf_net = safe_float(sbc_info.get("value"))
+                # FCF − SBC siempre que haya SBC del mismo periodo; si no, el FCF con el motivo declarado.
+                fcf = _fcf_net if _fcf_net is not None else _fcf_gross
+                _fcf_basis = ("FCF − SBC" if _fcf_net is not None
+                              else "FCF sin restar la SBC (sin SBC del mismo periodo)")
                 _dcf_missing = None
                 # Etapa 11b: FCF base <= 0 (ya normalizado por el arquetipo: el de mantenimiento en
                 # CYCLICAL) no es un dato ausente: el DCF "no es significativo" y no da valor razonable.
@@ -1268,8 +1277,8 @@ def _compute_analysis(symbol: str) -> dict:
                 elif fcf is None:
                     _dcf_missing = "sin FCF de entrada: no hay flujo que descontar"
                 elif fcf <= 0:
-                    _dcf_not_sig = (f"FCF base {numfmt.money(fcf)} (≤ 0): no hay flujo positivo que descontar, "
-                                    "así que el DCF no es significativo")
+                    _dcf_not_sig = (f"{'FCF − SBC' if _fcf_net is not None else 'FCF'} base {numfmt.money(fcf)} "
+                                    "(≤ 0): no hay flujo positivo que descontar, así que el DCF no es significativo")
                 elif wacc_est is None:
                     _dcf_missing = wacc_info.get("reason") or "sin WACC"
                 if not _dcf_na and not _dcf_missing and not _dcf_not_sig and price and financials.shares_outstanding:
@@ -1315,6 +1324,8 @@ def _compute_analysis(symbol: str) -> dict:
                         "upside": safe_float(_dcf_upside),
                         "value_composition": _dcf_model.get("value_composition"),
                         "fcf_input": safe_float(fcf),
+                        "fcf_basis": _fcf_basis,
+                        "fcf_gross": safe_float(_fcf_gross),
                         "available": _fv is not None,
                         "reason": dcf_result.get("invalid_reason"),
                         "warnings": dcf_result.get("warnings") or [],

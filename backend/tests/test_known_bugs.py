@@ -57,7 +57,8 @@ def test_bug_wacc_is_only_cost_of_equity_nflx(analysis):
 # (tope 30%, mismo suelo) con su mismo decaimiento. Etapa 8: la celda base usa el WACC
 # exacto (sin redondear), así que coincide con el DCF.
 def test_bug_dcf_vs_grid_growth_snow(analysis):
-    a = analysis("SNOW")
+    # Fase 3: SNOW ya no tiene DCF (FCF − SBC ≤ 0); la misma comprobación en NFLX, también de crecimiento.
+    a = analysis("NFLX")
     fair = a["dcf"]["fair_value"]
     base = a["sensitivity"]["base_case"]["fair_value"]
     assert base == pytest.approx(fair, rel=0.01)

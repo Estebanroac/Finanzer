@@ -240,15 +240,24 @@ def maintenance_fcf(st: Dict[str, Any]) -> Dict[str, Any]:
     disponibles. Excluye el capex de expansión, que el FCF normalizado incluye."""
     ocf, capex = st.get("operating_cash_flow") or [], st.get("capital_expenditure") or []
     da = st.get("depreciation_amortization") or []
-    series = []
-    for o, c, d in zip(ocf, capex, da):
+    sbc = st.get("stock_based_compensation") or []
+    series, series_sbc = [], []
+    for i, (o, c, d) in enumerate(zip(ocf, capex, da)):
         if o is None or d is None:
             series.append(None)
+            series_sbc.append(None)
             continue
         m = min(abs(d), abs(c)) if c is not None else abs(d)
         series.append(o - m)
+        s = sbc[i] if i < len(sbc) else None
+        series_sbc.append(o - m - s if s is not None else None)
     vals = [x for x in series if x is not None]
+    # Fase 3 (T3, §8.4): FCF − SBC siempre que haya SBC, en los MISMOS ejercicios (la SBC es un coste real que el
+    # flujo operativo devuelve como gasto sin caja). Sin SBC en alguno de ellos, sin dato (nunca mezclar).
+    vals_sbc = [x for x in series_sbc if x is not None]
+    complete = bool(vals) and len(vals_sbc) == len(vals)
     return {"value": mean(vals) if vals else None, "years": len(vals), "series": series,
+            "value_minus_sbc": mean(vals_sbc) if complete else None,
             "reason": None if vals else "sin flujo operativo y D&A del mismo ejercicio"}
 
 
@@ -271,6 +280,7 @@ def _cyclical(st: Dict[str, Any], km: Dict[str, Any]) -> Dict[str, Any]:
     maint = maintenance_fcf(st)
     return {
         "fcf_maintenance": maint["value"], "fcf_maintenance_years": maint["years"],
+        "fcf_maintenance_minus_sbc": maint["value_minus_sbc"],
         "fcf_maintenance_series": maint["series"], "fcf_maintenance_reason": maint["reason"],
         "cycle_years": years, "cycle_incomplete": years < _V["cycle_full_years"],
         "ebitda_avg": ebitda_avg,
