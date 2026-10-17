@@ -61,8 +61,8 @@ def test_price_contracts_towards_50_by_confidence(level, factor, shown):
 
 
 def test_quality_is_not_contracted_by_convergence(outputs_by_env):
-    a = outputs_by_env("panel")["PG"][0]                    # convergencia media, confianza media (fase 2b, T6: NFLX
-    #                                                         pasó a confianza alta con su beta propia)
+    a = outputs_by_env("panel")["MSFT"][0]                  # convergencia media, confianza media (fase 4/7: PG, el de
+    #                                                         antes, pasó a convergencia alta con su industria)
     assert a["confidence"]["level"] == "media"
     q = a["quality"]
     by = {k: v["score"] for k, v in a["score"]["breakdown"].items()}
@@ -203,11 +203,14 @@ def test_pdf_readings_use_score_bands():
     ("technology", "GROWTH_PRE_PROFIT", "sector"), ("communication", "MATURE", "sector")])
 def test_benchmark_switches_to_market_when_archetype_contradicts_sector(sector, arch, profile):
     import main
-    b = main._select_benchmark(sector, arch)
+    b = main._select_benchmark(sector, arch, country="United States")
     assert b["profile"] == profile
     if profile == "market":
+        # fase 4/7: P/E, Forward P/E y EV/EBITDA del S&P 500 con su fuente; el resto, el mercado de EE. UU. sin
+        # financieras de Damodaran, también con fuente
         M = cfg("sectors.benchmarks.market")
-        assert all(b["values"][k] == v for k, v in M.items()) and set(b["sources"]) == set(M)
+        assert all(b["values"][k] == v for k, v in M.items()) and set(b["sources"]) == set(b["values"])
+        assert all("Damodaran" in b["sources"][k] for k in set(b["values"]) - set(M))
         from classify import archetype_label
         assert "mercado amplio" in b["reason"] and archetype_label(arch) in b["reason"]   # etapa 9b: etiqueta
     else:
@@ -231,7 +234,7 @@ def test_v_uses_market_benchmark_and_records_it(outputs_by_env):
                   if x["metric"].startswith("P/E") and x["metric"].endswith("vs mercado"))
         assert f"vs {cfg('sectors.benchmarks.market.pe'):.1f}x mercado" in pe["reason"]
         text = fb.pdf_text(pdf).replace("\n", " ")
-        assert "MERCADO" in text and "Referencia: medianas y umbrales del mercado amplio (S&P 500)" in text
+        assert "MERCADO" in text and "Referencia: el mercado amplio, no el sector" in text
         for sym in ("NFLX", "JPM", "O", "FCX", "SNOW"):
             assert res[sym][0]["benchmark"]["profile"] == "sector", (env, sym)
 

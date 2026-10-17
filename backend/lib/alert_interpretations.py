@@ -66,7 +66,9 @@ class Ctx:
         # sector "market": el arquetipo contradice al sector de Yahoo y todo lo sectorial
         # (umbrales y medianas) es del mercado amplio (main._select_benchmark).
         self.market = self.sector == "market"
-        self.del_ref = "del mercado" if self.market else "del sector"
+        # fase 4/7: la referencia de los múltiplos es la industria en su región (main._select_benchmark)
+        self.bench_ref = self.c.get("benchmark_ref") or ("del mercado (S&P 500)" if self.market else "del sector")
+        self.del_ref = "del mercado" if self.market else self.bench_ref
         # Etapa 9a: ratios calculados con el beneficio normalizado (main, etapa 7): el
         # texto lo indica ("ROE normalizado 55.9%").
         self.norm = set((contextual or {}).get("normalized_metrics") or [])
@@ -119,7 +121,9 @@ def _pe(ctx: Ctx):
                     "La empresa no tiene beneficios positivos en los últimos doce meses, así que el "
                     "P/E no es interpretable; la valoración depende de que vuelva a generar utilidades.", T["w_loss"])
     sector_pe = ctx.c.get("sector_pe")
-    _ref_txt = "del mercado (S&P 500)" if ctx.market else "del sector"
+    _ref_txt = ctx.bench_ref
+    _who = {"mercado": "el mercado", "industria": "su industria"}.get(ctx.c.get("benchmark_short"),
+                                                                    "el mercado" if ctx.market else "el sector")
     peg = ctx.g("peg")
     # brecha vs sector (si hay dato) o umbral absoluto
     ref = sector_pe if (sector_pe and sector_pe > 0) else None
@@ -141,7 +145,7 @@ def _pe(ctx: Ctx):
         # el DCF); si no, es una advertencia de prima.
         if justified:
             return None
-        return _sig("warning", "Valoración", f"Prima sobre {'el mercado' if ctx.market else 'el sector'} — P/E{ctx.nl('pe')} {pe:.1f}x",
+        return _sig("warning", "Valoración", f"Prima sobre {_who} — P/E{ctx.nl('pe')} {pe:.1f}x",
                     base + ". Conviene verificar que el crecimiento y los márgenes justifiquen pagar por encima de sus pares.", T["w_premium"])
     if ref and dev is not None and dev < T["discount_dev"]:
         return _sig("strength", "Valoración", f"Cotiza con descuento — P/E{ctx.nl('pe')} {pe:.1f}x",
@@ -166,12 +170,14 @@ def _ev_ebitda(ctx: Ctx):
                     f"El valor de empresa equivale a {ev:.1f} veces su EBITDA anual, un múltiplo caro en términos absolutos "
                     "que exige un crecimiento sostenido para no defraudar.", T["w_high"])
     if sec and sec > 0 and ev > T["premium_mult"] * sec:
-        return _sig("warning", "Valoración", f"EV/EBITDA{norm} sobre el {'mercado' if _mkt else 'sector'} — {ev:.1f}x",
+        _who = {"mercado": "el mercado", "industria": "su industria"}.get(ctx.c.get("benchmark_short"),
+                                                                        "el mercado" if _mkt else "el sector")
+        return _sig("warning", "Valoración", f"EV/EBITDA{norm} sobre {_who} — {ev:.1f}x",
                     f"Se paga {ev:.1f}x EBITDA frente a {sec:.1f}x {'de la mediana del mercado' if _mkt else 'de sus pares'} ({(ev-sec)/sec*100:+.0f}%): el mercado le "
                     "asigna una prima que conviene contrastar con su ventaja competitiva.", T["w_premium"])
     if sec and sec > 0 and ev < T["discount_mult"] * sec:
         return _sig("strength", "Valoración", f"EV/EBITDA{norm} barato — {ev:.1f}x",
-                    f"Cotiza a {ev:.1f}x EBITDA frente a {sec:.1f}x {'del mercado' if _mkt else 'del sector'}: valoración atractiva sobre flujo operativo, "
+                    f"Cotiza a {ev:.1f}x EBITDA frente a {sec:.1f}x {ctx.del_ref}: valoración atractiva sobre flujo operativo, "
                     "a validar que no responda a un deterioro del negocio.", T["w_discount"])
     return None
 

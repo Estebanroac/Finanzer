@@ -510,7 +510,7 @@ def comparison(a, D, bench, market) -> Dict[str, Any]:
     graw = _growth_raw(a)
     gvals = {"revenue_growth": (graw["revenue"] or {}).get("raw") if D.get("archetype") != "REIT" else None,
              "earnings_growth": (graw["eps"] or {}).get("raw")}
-    ref = "del mercado" if market else "del sector"
+    ref = "del mercado" if market else (D.get("benchmark") or {}).get("ref", "del sector")
     # Fase 1 (#20): en CYCLICAL la cifra que puntúa es de ciclo medio, no una CAGR a 3 años.
     per = "(ciclo medio)" if D.get("archetype") == "CYCLICAL" else "(3 años)"
     groups, better, total = [], 0, 0
@@ -538,6 +538,6 @@ def comparison(a, D, bench, market) -> Dict[str, Any]:
             groups.append({"title": title, "items": items})
     vs = D["sections"]["valuation"]
     return {"groups": groups, "better": better, "total": total,
-            "ref": "mercado (S&P 500)" if market else "sector",
-            "note": vs.get("provisional_note") or "Medianas de referencia provisionales (fijadas a mano).",
+            "ref": (D.get("benchmark") or {}).get("ref", "del sector"),
+            "note": vs.get("reference_note"),
             "market_note": vs.get("market_note")}

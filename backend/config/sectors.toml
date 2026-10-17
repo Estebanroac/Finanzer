@@ -158,6 +158,83 @@ pe = "mediana de los miembros del S&P 500 (P/E TTM), chartrow.com/sp500/pe-ratio
 forward_pe = "P/E forward del ÍNDICE S&P 500 (consenso de beneficios de los próximos 12 meses, Bloomberg): 18.91x al 30-sep-2026, según First Trust, 'Market Minute' de octubre de 2026 (ftportfolios.com); es un agregado del índice, NO una mediana de constituyentes: no hay mediana forward pública (chartrow.com no publica forward P/E)"
 ev_ebitda = "mediana EV/EBITDA del S&P 500 a 1T-2025 (Ivaluate, 'EV/EBITDA multiples by sector 2025-2026', jul-2026); no hay mediana pública de constituyentes de 2026 (Damodaran ene-2026, agregado de todo EE. UU. sin financieras: 16.95x, no es una mediana)"
 
+# Fase 4/7 (F4_PARADA §5; permiso del usuario del 2026-10-17): referencias por industria y región de Damodaran
+# (config/industries.toml, generado por tools/damodaran_import.py). País del emisor (Yahoo) -> región de Damodaran;
+# un país fuera de estas listas (Canadá, Australia, Nueva Zelanda…) usa la tabla global.
+[benchmarks.regions]
+us = ["United States"]
+europe = ["Austria", "Belgium", "Bulgaria", "Croatia", "Cyprus", "Czech Republic", "Denmark", "Estonia", "Finland",
+          "France", "Germany", "Greece", "Hungary", "Iceland", "Ireland", "Italy", "Latvia", "Liechtenstein",
+          "Lithuania", "Luxembourg", "Malta", "Monaco", "Netherlands", "Norway", "Poland", "Portugal", "Romania",
+          "Slovakia", "Slovenia", "Spain", "Sweden", "Switzerland", "United Kingdom", "Jersey", "Guernsey",
+          "Isle of Man", "Gibraltar", "Faroe Islands"]
+japan = ["Japan"]
+emerging = ["China", "Hong Kong", "Macau", "Taiwan", "South Korea", "India", "Indonesia", "Malaysia", "Philippines",
+            "Thailand", "Vietnam", "Pakistan", "Bangladesh", "Sri Lanka", "Singapore", "Brazil", "Mexico", "Argentina",
+            "Chile", "Colombia", "Peru", "Uruguay", "Panama", "South Africa", "Egypt", "Nigeria", "Kenya", "Morocco",
+            "Israel", "Turkey", "Saudi Arabia", "United Arab Emirates", "Qatar", "Kuwait", "Bahrain", "Oman", "Jordan",
+            "Russia", "Kazakhstan", "Ukraine"]
+# Cuándo la fila de la industria en la región no es representativa (lib/industry_bench.py):
+#   · menos de `min_firms` empresas: la misma industria a escala global;
+#   · dominada: P/E agregado ≥ `dominance_ratio` × la media simple de Damodaran. Lo normal es lo contrario (la media
+#     supera al agregado por las empresas con beneficio casi nulo: mediana del cociente 0.66 en EE. UU.); un agregado
+#     que la supera en un 50% delata pocas empresas de múltiplo extremo (Auto & Truck de EE. UU.: 119.6x por Tesla
+#     frente a 64.3x de media). Umbral fijado tras ver la distribución de enero de 2026: solo lo cruzan Auto & Truck
+#     (EE. UU.), Chemical (Diversified) (Europa, 7 empresas) y Diversified (Japón). Se usa la industria global.
+[benchmarks.industry]
+min_firms = 10
+dominance_ratio = 1.5
+
+# País del emisor cuando Yahoo no lo da (assetProfile de quoteSummary da 401 en Render): la dirección comercial en
+# SEC EDGAR (nombres de EDGAR -> los de las listas de arriba) o, sin EDGAR, el sufijo del ticker en Yahoo.
+[benchmarks.country_aliases]
+"Korea, Republic of" = "South Korea"
+"Korea, Republic Of" = "South Korea"
+"Taiwan, Province of China" = "Taiwan"
+"Russian Federation" = "Russia"
+"Viet Nam" = "Vietnam"
+"Hong Kong SAR" = "Hong Kong"
+
+[benchmarks.suffix_country]
+".PA" = "France"
+".L" = "United Kingdom"
+".DE" = "Germany"
+".F" = "Germany"
+".AS" = "Netherlands"
+".BR" = "Belgium"
+".MC" = "Spain"
+".MI" = "Italy"
+".LS" = "Portugal"
+".SW" = "Switzerland"
+".VI" = "Austria"
+".ST" = "Sweden"
+".CO" = "Denmark"
+".OL" = "Norway"
+".HE" = "Finland"
+".IR" = "Ireland"
+".WA" = "Poland"
+".T" = "Japan"
+".HK" = "Hong Kong"
+".SS" = "China"
+".SZ" = "China"
+".TW" = "Taiwan"
+".KS" = "South Korea"
+".KQ" = "South Korea"
+".NS" = "India"
+".BO" = "India"
+".SI" = "Singapore"
+".JK" = "Indonesia"
+".BK" = "Thailand"
+".KL" = "Malaysia"
+".SA" = "Brazil"
+".MX" = "Mexico"
+".JO" = "South Africa"
+".TA" = "Israel"
+".TO" = "Canada"
+".V" = "Canada"
+".AX" = "Australia"
+".NZ" = "New Zealand"
+
 # Arquetipo que suponen las medianas de cada sector. Si el arquetipo de la
 # empresa es otro, el benchmark es el perfil market (y se registra por qué).
 [benchmarks.sector_archetype]

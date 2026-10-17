@@ -12,7 +12,7 @@ export default function ProfitabilityTab({ display }: { display: Display }) {
   const C = display.charts.profitability;
   const tips = display.tooltips;
   const grown = useGrow();
-  const refShort = display.benchmark.profile === "market" ? "mercado" : "sector";
+  const refShort = display.benchmark.short;
   const sp = C.spread;
   const ro = C.roce;
 
@@ -72,7 +72,7 @@ export default function ProfitabilityTab({ display }: { display: Display }) {
       <QualityReadings items={P.quality_readings} grown={grown} title="Lecturas de calidad que no puntúan" />
 
       <div className="cz-more">
-        <Collapsible summary={`Márgenes frente a la referencia del ${refShort}`}>
+        <Collapsible summary={`Márgenes frente a la referencia ${display.benchmark.ref}`}>
           <BenchList items={C.margins} grown={grown} tips={tips} refShort={refShort} />
         </Collapsible>
         <Collapsible summary="Tabla de rentabilidad y eficiencia">

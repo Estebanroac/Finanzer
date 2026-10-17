@@ -25,14 +25,16 @@ export default function ComparisonTab({ display }: { display: Display }) {
         <div className="cz-cmp-sum">
           <Ring value={C.better} max={C.total || 1} tone={ringTone} size={116} caption={`de ${C.total}`} />
           <div className="min-w-0 flex-1">
-            <div className="cz-title mb-1">Frente a la referencia del {C.ref}</div>
+            <div className="cz-title mb-1">Frente a la referencia {C.ref}</div>
             <p className="text-[17px] font-semibold text-white leading-snug">
               {C.better} de {C.total} métricas con lectura favorable frente a la referencia
             </p>
-            <div className="mt-3 cz-g-note tone-warn">
-              <span className="fz-tone-fg font-bold" aria-hidden="true">!</span>
-              <span>{C.note}</span>
-            </div>
+            {C.note && (
+              <div className="mt-3 cz-g-note tone-warn">
+                <span className="fz-tone-fg font-bold" aria-hidden="true">!</span>
+                <span>{C.note}</span>
+              </div>
+            )}
             {C.market_note && <Note>{C.market_note}</Note>}
           </div>
         </div>

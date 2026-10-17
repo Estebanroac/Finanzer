@@ -126,13 +126,16 @@ def _get_sector_benchmarks(sector: str) -> dict:
     return {**defaults, **overrides}
 
 
-def _select_benchmark(mapped_sector: str, archetype: Optional[str]) -> dict:
-    """Benchmark de valoración relativa: medianas del sector o, si el arquetipo
-    contradice al sector de Yahoo, las del mercado amplio (perfil market).
+def _select_benchmark(mapped_sector: str, archetype: Optional[str], sector: Optional[str] = None,
+                      industry: Optional[str] = None, country: Optional[str] = None) -> dict:
+    """Benchmark de valoración relativa: la industria de la empresa en su región (Damodaran, lib/industry_bench.py)
+    o, si el arquetipo contradice al sector de Yahoo, el mercado amplio (perfil market).
 
-    Devuelve {profile, sector, values, reason, sources}: `values` alimenta el score
-    (P/E y EV/EBITDA frente a la mediana) y las tablas comparativas del PDF."""
+    Devuelve {profile, sector, values, reason, sources, industry, provisional, ...}: `values` alimenta el score (P/E y
+    EV/EBITDA frente a la referencia) y las tablas comparativas. Fase 4/7 (F4_PARADA §5): solo entra en `values` lo que
+    tiene fuente; una métrica sin referencia con fuente se muestra sin referencia (no con una cifra fijada a mano)."""
     import re
+    import industry_bench
     key = re.sub(r'[\s-]+', '_', (mapped_sector or "default").lower())
     expected = cfg("sectors.benchmarks.sector_archetype").get(key)
     from financial_ratios import SECTOR_THRESHOLDS, ThresholdConfig
@@ -142,18 +145,46 @@ def _select_benchmark(mapped_sector: str, archetype: Optional[str]) -> dict:
     def _th(k):
         t = SECTOR_THRESHOLDS.get(k, ThresholdConfig())
         return {n: getattr(t, n) for n in _th_keys}
+
+    def _src(ib):
+        where = (f"industria «{ib['damodaran']}»" if isinstance(ib["damodaran"], str) else
+                 "industrias de su sector (media ponderada por empresas)")
+        return f"{ib['source']}, {ib['as_of']}: {where}, {ib['region_label']}, {ib['firms']} empresas"
+
+    mk = industry_bench.market(country)
     if expected and archetype and archetype != expected:
-        market = dict(cfg("sectors.benchmarks.market"))
+        values = dict(mk["values"])
+        sources = {k: _src(mk) for k in values}
+        if mk["region"] == "us":
+            # P/E, Forward P/E y EV/EBITDA del S&P 500 (medianas y agregado del índice con su fuente)
+            market = dict(cfg("sectors.benchmarks.market"))
+            values.update(market)
+            sources.update({k: v for k, v in cfg("sectors.benchmarks.market_source").items() if k in market})
         return {"profile": "market", "sector": key, "thresholds_key": "market", "thresholds": _th("market"),
-                "values": {**dict(cfg("sectors.benchmarks.default")), **market},
+                "values": values,
                 # Etapa 9b: etiquetas en español (el código queda en el detalle técnico).
                 "reason": (f"empresa clasificada como {archetype_label(archetype)} dentro del sector {key}, "
                            f"cuyas medianas y umbrales suponen {ARCHETYPE_GROUP.get(expected, expected)}: se usan "
-                           "los del mercado amplio (S&P 500)"),
-                "sources": {k: v for k, v in cfg("sectors.benchmarks.market_source").items() if k in market},
-                "provisional": True}
+                           "los del mercado amplio"),
+                "sources": sources, "industry": {k: v for k, v in mk.items() if k != "values"},
+                "ref": "del mercado (S&P 500)" if mk["region"] == "us" else f"del mercado ({mk['region_label']})",
+                "short": "mercado", "provisional": False}
+    ib = industry_bench.industry(sector, industry, country)
+    if ib is None:
+        # sin industria ni sector en el mapa: la referencia PROVISIONAL de siempre, dicho
+        return {"profile": "sector", "sector": key, "thresholds_key": mapped_sector, "thresholds": _th(mapped_sector),
+                "values": _get_sector_benchmarks(mapped_sector), "reason": None, "sources": None, "industry": None,
+                "ref": "del sector", "short": "sector", "provisional": True}
+    values = dict(ib["values"])
+    sources = {k: _src(ib) for k in values}
+    for k in ("pe", "ev_ebitda"):     # los dos que puntúan: sin dato de la industria, el mercado de su región
+        if k not in values and k in mk["values"]:
+            values[k] = mk["values"][k]
+            sources[k] = _src(mk) + " (la industria no tiene dato)"
     return {"profile": "sector", "sector": key, "thresholds_key": mapped_sector, "thresholds": _th(mapped_sector),
-            "values": _get_sector_benchmarks(mapped_sector), "reason": None, "sources": None, "provisional": True}
+            "values": values, "reason": None, "sources": sources,
+            "industry": {k: v for k, v in ib.items() if k != "values"}, "ref": "de su industria", "short": "industria",
+            "provisional": False}
 
 
 def _pdf_benchmark(analysis: dict) -> dict:
@@ -804,7 +835,8 @@ def _compute_analysis(symbol: str) -> dict:
             # EV/EBITDA against the stock's SECTOR (e.g. ~30x for tech, ~12x for
             # banks) instead of a fixed ~20x. Without this, high-P/E sectors look
             # overvalued and low-P/E sectors look cheap regardless of fundamentals.
-            _bench_sel = _select_benchmark(mapped_sector, archetype)
+            _bench_sel = _select_benchmark(mapped_sector, archetype, profile.sector, profile.industry,
+                                           profile.country)
             # Un solo benchmark por análisis (etapa 9a): medianas de múltiplos, umbrales del
             # score (ROE, ROA, D/E, márgenes), alertas y PDF leen la misma clave.
             result["benchmark"] = _bench_sel
@@ -815,6 +847,8 @@ def _compute_analysis(symbol: str) -> dict:
             fin_dict["sector_forward_pe"] = _sector_bench.get("forward_pe") or _sector_bench.get("pe")
             fin_dict["sector_ev_ebitda"] = _sector_bench.get("ev_ebitda")
             fin_dict["benchmark_profile"] = _bench_sel["profile"]
+            fin_dict["benchmark_ref"] = _bench_sel["ref"]     # fase 4/7: "de su industria", "del mercado (…)"…
+            fin_dict["benchmark_short"] = _bench_sel["short"]
 
             # Fase 3 (T6, F3_DISENO §5): lecturas por modelo de negocio (circulante estructural, Altman referencial,
             # avisos del Piotroski); las leen el score, las alertas y el informe.
@@ -1837,7 +1871,7 @@ def _compute_analysis(symbol: str) -> dict:
                     if _pb and _xm.get("pb_justified"):
                         _methods.append({"method": "P/B justificado (Gordon)", "kind": "intrínseco",
                                          "upside": _xm["pb_justified"] / _pb - 1})
-                    _spb = _get_sector_benchmarks(mapped_sector).get("pb")
+                    _spb = ((result.get("benchmark") or {}).get("values") or {}).get("pb")
                     if _pb and _spb:
                         _methods.append({"method": "P/B frente al sector", "kind": "relativo",
                                          "upside": _spb / _pb - 1, "benchmark": _spb})

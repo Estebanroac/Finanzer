@@ -22,7 +22,7 @@ export default function ValuationTab({ display }: { display: Display }) {
   const block = display.sections.institutional.breakdown?.categories.find((c) => c.group === "price");
   const sens = V.sensitivity;
   const conf = display.confidence;
-  const refShort = display.benchmark.profile === "market" ? "mercado" : "sector";
+  const refShort = display.benchmark.short;
 
   return (
     <div className="space-y-4">
@@ -44,7 +44,7 @@ export default function ValuationTab({ display }: { display: Display }) {
         <MultiplesView items={C.multiples} block={C.block} scored={C.scored} grown={grown} tips={tips} refShort={refShort} />
         <ReadingLines lines={[V.intro]} />
         <Note>{V.market_note}</Note>
-        <Note>{V.provisional_note}</Note>
+        <Note>{V.reference_note}</Note>
       </ChartPanel>
 
       <div className="cz-more">

@@ -324,12 +324,30 @@ def cik_for(ticker: str, budget: Budget) -> Optional[Dict[str, Any]]:
     return table.get(ticker.upper().replace(".", "-"))
 
 
-def filings(cik: int, budget: Budget) -> List[Dict[str, Any]]:
-    """Filings recientes del CIK (desde `since`), del más reciente al más antiguo."""
+def issuer_country(sub: Dict[str, Any]) -> Optional[str]:
+    """Fase 4/7: país de la dirección comercial del emisor en EDGAR (si no, la postal). Un código de dos letras es un
+    estado o territorio de EE. UU.; uno con dígito (P7, X0…) es extranjero y vale su descripción; la dirección
+    extranjera nueva trae `country` (TSM: Taiwan)."""
+    for kind in ("business", "mailing"):
+        a = (sub.get("addresses") or {}).get(kind) or {}
+        if a.get("country"):
+            return str(a["country"])
+        code, desc = a.get("stateOrCountry"), a.get("stateOrCountryDescription")
+        if code and re.fullmatch(r"[A-Z]{2}", str(code)):
+            return "United States"
+        if desc:
+            return str(desc)
+    return None
+
+
+def submissions(cik: int, budget: Budget) -> Dict[str, Any]:
+    """{filings, country} del CIK: filings recientes (desde `since`, del más reciente al más antiguo) y el país del
+    emisor (issuer_country)."""
     E = cfg("data.edgar")
 
     def make():
-        r = (_get_json(SUBMISSIONS_URL.format(cik=cik), budget).get("filings") or {}).get("recent") or {}
+        raw = _get_json(SUBMISSIONS_URL.format(cik=cik), budget) or {}
+        r = (raw.get("filings") or {}).get("recent") or {}
         out = []
         for i, form in enumerate(r.get("form") or []):
             fd = r["filingDate"][i]
@@ -341,8 +359,14 @@ def filings(cik: int, budget: Budget) -> List[Dict[str, Any]]:
                         "items": (r.get("items") or [""] * (i + 1))[i] or "",
                         "accessionNumber": r["accessionNumber"][i],
                         "isXBRL": bool((r.get("isXBRL") or [0] * (i + 1))[i])})
-        return sorted(out, key=lambda f: (f["filingDate"], f["accessionNumber"]), reverse=True)
+        return {"filings": sorted(out, key=lambda f: (f["filingDate"], f["accessionNumber"]), reverse=True),
+                "country": issuer_country(raw)}
     return _cached(f"sub:{cik}", E["submissions_ttl_s"], make)
+
+
+def filings(cik: int, budget: Budget) -> List[Dict[str, Any]]:
+    """Filings recientes del CIK (desde `since`), del más reciente al más antiguo."""
+    return submissions(cik, budget)["filings"]
 
 
 # ───────────────────────── hechos XBRL: companyfacts e instancias ─────────────────────────
@@ -972,9 +996,10 @@ def fetch(ticker: str, stage1: Optional[Future] = None, budget: Optional["Budget
         if ent is None:
             return publish({"status": "sin_cik", "reason": "el ticker no figura en la lista de emisores de la SEC",
                             "cik": None, "filings": None, "latency_s": time.monotonic() - t0})
-        fl = filings(ent["cik"], budget)
+        _sub = submissions(ent["cik"], budget)
+        fl = _sub["filings"]
         res = {"status": "ok", "reason": None, "cik": ent["cik"], "title": ent.get("title"), "filings": fl,
-               "cover": None, "cover_reason": None}
+               "country": _sub["country"], "cover": None, "cover_reason": None}
         from currency import official_factor
         if official_factor(ticker) is None and foreign_filer(fl):
             try:
@@ -1062,7 +1087,7 @@ def collect(future, ticker: Optional[str] = None) -> Dict[str, Any]:
 def summary(ed: Dict[str, Any]) -> Dict[str, Any]:
     """Registro para data_provenance.edgar (sin los hechos ni la lista de filings)."""
     out = {k: ed.get(k) for k in ("status", "reason", "cik", "title")}
-    for k in ("facts_status", "facts_reason", "pending_filings", "cover", "cover_reason", "captive"):
+    for k in ("facts_status", "facts_reason", "pending_filings", "cover", "cover_reason", "captive", "country"):
         if ed.get(k) is not None:
             out[k] = ed[k]
     return out

@@ -26,6 +26,7 @@ def test_cyclical_texts_say_bound_and_cycle_basis(sym, outputs_by_env):
     a, pdf = outputs_by_env("panel")[sym]
     assert a["classification"]["archetype"] == "CYCLICAL"
     labels = [it["label"] for g in a["display"]["charts"]["comparison"]["groups"] for it in g["items"]]
+    labels += [r["label"] for r in a["display"]["sections"]["growth"]["rows"]]
     assert not any("(3 años)" in x for x in labels) and any("(ciclo medio)" in x for x in labels)
     for g in (a["key_metrics"].get("revenue_cagr_3y"), a["key_metrics"].get("eps_cagr_3y")):
         if g is not None and (abs(g - LO) < 1e-12 or abs(g - HI) < 1e-12):

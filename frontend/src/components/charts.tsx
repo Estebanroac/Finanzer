@@ -283,7 +283,7 @@ export function BenchList({ items, grown, tips, refShort }: { items: VsBench[]; 
   return (
     <div>
       {shown.length > 0 && (
-        <div className="cz-legend"><span><i />Marcador: referencia del {refShort}</span></div>
+        <div className="cz-legend"><span><i />Marcador: referencia ({refShort})</span></div>
       )}
       {shown.map((i) => <BenchBar key={i.key} item={i} grown={grown} tips={tips} refShort={refShort} />)}
       {rest.length > 0 && (
@@ -340,7 +340,7 @@ export function MultiplesView({ items, block, scored, grown, tips, refShort }: {
             <span className="cz-title">{block?.label ?? "Bloque de múltiplos"} · puntúa</span>
             {block && <span className={`cz-chip ${toneClass(block.tone)}`}>{block.sign} a Valoración</span>}
           </div>
-          {members.length > 0 && <div className="cz-legend"><span><i />Marcador: referencia del {refShort}</span></div>}
+          {members.length > 0 && <div className="cz-legend"><span><i />Marcador: referencia ({refShort})</span></div>}
           {members.map((i) => <BenchBar key={i.key} item={i} grown={grown} tips={tips} refShort={refShort} />)}
           {memberRows.map((s) => <ScoredRow key={s.key} it={s} tips={tips} />)}
           <p className="cz-group-n">Entre paréntesis, el ajuste individual de cada miembro: puntúa a través del bloque.</p>

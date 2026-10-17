@@ -325,6 +325,22 @@ pe = "str"
 forward_pe = "str"
 ev_ebitda = "str"
 
+[sectors.benchmarks.regions]
+us = "list[str]"
+europe = "list[str]"
+japan = "list[str]"
+emerging = "list[str]"
+
+[sectors.benchmarks.industry]
+min_firms = "int"
+dominance_ratio = "float"
+
+[sectors.benchmarks.country_aliases]
+"*" = "str"
+
+[sectors.benchmarks.suffix_country]
+"*" = "str"
+
 [sectors.benchmarks.sector_archetype]
 "*" = "str"
 
@@ -789,6 +805,19 @@ share_class = "str"
 depositary = "str"
 source = "str"
 verified = "str"
+
+[industries]
+source = "str"
+url = "str"
+as_of = "str"
+columns = "list[str]"
+
+[industries.regions."*"]
+label = "str"
+file_suffix = "str"
+
+[industries.regions."*".industries]
+"*" = "list[number]"
 
 [betas]
 source = "str"

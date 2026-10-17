@@ -1086,8 +1086,11 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     # Benchmark de los múltiplos (main._select_benchmark): sector o mercado amplio.
     _vb = a.get("benchmark") or {}
     _mkt = _vb.get("profile") == "market"
-    _ref = "del mercado (S&P 500)" if _mkt else "del sector"
-    _bcol = "MERCADO" if _mkt else "SECTOR"
+    # Fase 4/7: la referencia es la industria de la empresa en su región (Damodaran); "sector" solo si no hay industria
+    _ind = _vb.get("industry") or {}
+    _short = _vb.get("short") or ("mercado" if _mkt else "sector")
+    _ref = _vb.get("ref") or ("del mercado (S&P 500)" if _mkt else "del sector")
+    _bcol = _short.upper()
     # Fase 1 (#20): "(TTM)" solo con ratios TTM; sin 4 trimestres consecutivos la base es el último ejercicio.
     _annual = ((a.get("data_provenance") or {}).get("ttm") or {}).get("basis") == "anual"
     _PE = "P/E (último ejercicio)" if _annual else "P/E (TTM)"
@@ -1732,10 +1735,8 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     market_note = None
     if _mkt:
         _src = "; ".join(f"{k.replace('_', '/').upper()}: {v}" for k, v in (_vb.get("sources") or {}).items())
-        market_note = (f"Referencia: medianas y umbrales del mercado amplio (S&P 500), no los del sector "
-                       f"({_vb.get('reason')}). PROVISIONALES. Fuentes: {_src}. El resto de referencias de la columna "
-                       "MERCADO (Forward P/E, P/B, PEG, P/FCF, FCF yield, rentabilidad y márgenes) son la referencia "
-                       "general PROVISIONAL, fijada a mano y sin fuente, no medianas del S&P 500.")
+        market_note = (f"Referencia: el mercado amplio, no el sector ({_vb.get('reason')}). Los umbrales del score "
+                       f"son los del mercado, PROVISIONALES. Fuentes: {_src}.")
     # Etapa 7: beneficio normalizado (una línea cuando hay partidas no recurrentes aplicadas).
     norm_note = None
     if norm.get("applied") and norm.get("normalized_net_income") is not None and norm.get("differs", True):
@@ -1982,10 +1983,22 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         }
 
     # Etapa 9b: las medianas sectoriales están fijadas a mano: la web lo dice junto a la tabla.
-    provisional_note = (None if _mkt else
-                        "Medianas del sector: referencia PROVISIONAL, fijada a mano (no son medianas calculadas).")
+    _no_ref = [lab for k, lab in (("forward_pe", "Forward P/E"), ("peg", "PEG"), ("pfcf", "P/FCF"),
+                                    ("fcf_yield", "FCF yield"), ("roa", "ROA")) if k not in sector_bench]
+    if _mkt:
+        reference_note = None           # la dice market_note
+    elif _vb.get("provisional") or not _vb:
+        reference_note = "Medianas del sector: referencia PROVISIONAL, fijada a mano (no son medianas calculadas)."
+    else:
+        _who = (f"industria «{_ind['damodaran']}»" if isinstance(_ind.get("damodaran"), str) else
+                "industrias de su sector (media ponderada por número de empresas)")
+        _glob = (f" (la de {_ind.get('home_label')} no es representativa: {_ind.get('home_why')})"
+                 if _ind.get("basis") == "industria_global" else "")
+        reference_note = (f"Referencia: {_who}, {_ind.get('region_label')}, {_ind.get('firms')} empresas{_glob} "
+                          f"(A. Damodaran, NYU Stern, {_ind.get('as_of')}): agregados de la industria, no medianas."
+                          + (f" Sin referencia con fuente: {', '.join(_no_ref)}." if _no_ref else ""))
     valuation = {"intro": val_txt, "columns": ["MÚLTIPLO", "EMPRESA", _bcol, "BRECHA", "LECTURA"],
-                 "rows": mrows, "market_note": market_note, "provisional_note": provisional_note, "normalization_note": norm_note,
+                 "rows": mrows, "market_note": market_note, "reference_note": reference_note, "normalization_note": norm_note,
                  "intrinsic": {"intro": iv_txt, "rows": iv_rows, "graham_note": graham_note},
                  "dcf_params": dcf_params, "dcf_reliability": dcf_reliability_line,
                  "dcf_reliability_level": _rel.get("level"),
@@ -2419,8 +2432,8 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         "archetype": archetype,
         "archetype_label": _shown_archetype_label(a, archetype),
         "na_keys": sorted(_na_keys),
-        "benchmark": {"profile": "market" if _mkt else "sector", "ref": _ref, "column": _bcol,
-                      "vs": "vs mercado" if _mkt else "vs sector", "thresholds_key": _thkey},
+        "benchmark": {"profile": "market" if _mkt else "sector", "ref": _ref, "column": _bcol, "short": _short,
+                      "vs": f"vs {_short}", "thresholds_key": _thkey},
         "readings": readings,
         "cover": cover,
         "summary": summary,

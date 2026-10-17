@@ -499,6 +499,8 @@ def get_ticker_info(symbol: str) -> Dict[str, Any]:
                                         "reason": f"{type(e).__name__}: {e}", "fy": None,
                                         "note": "verificación oficial no disponible"}
 
+        _apply_country(symbol, info)
+
         try:
             import ordinary
             ordinary.apply(info)
@@ -589,6 +591,27 @@ def _apply_edgar(symbol: str, info: Dict[str, Any], ed: Dict[str, Any], hist: Di
             start = (_dt.date.fromisoformat(cut) + _dt.timedelta(days=1)).isoformat()
             pend = edgar.pending_from_calendar(earnings_calendar(symbol, start, today.isoformat()), cut, today)
     info["_pending_results"] = pend
+
+
+def _apply_country(symbol: str, info: Dict[str, Any]) -> None:
+    """Fase 4/7: país del emisor para la región de su referencia (lib/industry_bench.py). El de Yahoo si llega; si
+    no (assetProfile da 401 en Render), la dirección comercial del emisor en SEC EDGAR; sin EDGAR, el sufijo del
+    ticker (MC.PA: Francia). Sin ninguno, queda sin país y la referencia es la global."""
+    from settings import cfg as _cfg
+    if info.get("country") not in (None, "", "Unknown"):
+        return
+    B = _cfg("sectors.benchmarks")
+    ed = (info.get("_edgar") or {}).get("country")
+    if ed:
+        info["country"] = B["country_aliases"].get(ed, ed)
+        _tag_provenance(info, "sec_edgar", "SEC EDGAR: país de la dirección comercial del emisor", paths=["country"],
+                        overwrite=True)
+        return
+    suf = next((s for s in sorted(B["suffix_country"], key=len, reverse=True) if symbol.upper().endswith(s)), None)
+    if suf:
+        info["country"] = B["suffix_country"][suf]
+        _tag_provenance(info, "derivado", f"país del mercado de cotización (sufijo {suf} del ticker)",
+                        paths=["country"], overwrite=True)
 
 
 def _apply_beta_and_range(info: Dict[str, Any], hist: Dict[str, Any]) -> None:

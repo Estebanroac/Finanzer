@@ -49,7 +49,11 @@ def save_submissions(cik, raw, base=F2B_DIR):
     """Solo los filings desde SINCE y los campos que usa lib/sec_edgar.py (más el documento principal)."""
     r = (raw.get("filings") or {}).get("recent") or {}
     keep = [i for i, d in enumerate(r.get("filingDate") or []) if d >= SINCE]
+    # fase 4/7: la dirección del emisor (país para la región de su referencia, sec_edgar.issuer_country)
+    addresses = {k: {x: v.get(x) for x in ("stateOrCountry", "stateOrCountryDescription", "country", "countryCode",
+                                           "isForeignLocation")} for k, v in (raw.get("addresses") or {}).items()}
     out = {"cik": raw.get("cik"), "name": raw.get("name"), "fiscalYearEnd": raw.get("fiscalYearEnd"),
+           "addresses": addresses,
            "filings": {"recent": {k: [r[k][i] for i in keep] for k in KEEP if k in r}}}
     _write(os.path.join(base, "edgar", "submissions", f"CIK{int(cik):010d}.json"), out)
 

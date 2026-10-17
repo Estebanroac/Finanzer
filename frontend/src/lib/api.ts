@@ -235,7 +235,7 @@ export interface Sections {
     columns: string[];
     rows: Row[];
     market_note: string | null;
-    provisional_note: string | null;
+    reference_note: string | null;
     normalization_note: string | null;
     intrinsic: { intro: string | null; rows: Row[]; graham_note: string | null };
     dcf_params: string | null;
@@ -547,7 +547,7 @@ export interface Charts {
     better: number;
     total: number;
     ref: string;
-    note: string;
+    note: string | null;
     market_note: string | null;
   };
 }
@@ -557,7 +557,7 @@ export interface Display {
   archetype: string;
   archetype_label: string;
   na_keys: string[];
-  benchmark: { profile: "market" | "sector"; ref: string; column: string; vs: string; thresholds_key: string };
+  benchmark: { profile: "market" | "sector"; ref: string; column: string; short: string; vs: string; thresholds_key: string };
   readings: Record<string, Reading | null>;
   cover: Cover;
   summary: Summary;

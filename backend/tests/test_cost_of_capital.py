@@ -364,8 +364,9 @@ def test_valuation_contradiction_lowers_confidence(outputs_by_env):
     alta = {"level": "alta", "reasons": []}
     v = verdict_confidence({"convergence": conv, "coverage": alta, "source": alta, "stability": alta})
     assert v["level"] != "alta" and v["limits_score"] is False
-    # Caso real con convergencia media (fase 2b, T6: NFLX, el de antes, pasó a convergencia alta con su beta propia).
-    n = outputs_by_env("panel")["PG"][0]["confidence"]
+    # Caso real con convergencia media (fase 4/7: PG, el de antes, pasó a convergencia alta con su industria, Household
+    # Products de Damodaran).
+    n = outputs_by_env("panel")["MSFT"][0]["confidence"]
     assert n["dimensions"]["convergence"]["level"] == "media" and n["level"] == "media"
 
 

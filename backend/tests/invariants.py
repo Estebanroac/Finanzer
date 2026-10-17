@@ -383,7 +383,7 @@ def chart_comparison_only_applicable_metrics(a, text):
     if "roe" in na:
         assert "roe" not in keys
     assert c["total"] == len(keys) and 0 <= c["better"] <= c["total"]
-    assert c["note"]
+    assert c["note"] or c["market_note"]          # fase 4/7: con el perfil de mercado, la nota es market_note
     for g in c["groups"]:
         for i in g["items"]:
             assert (i["tone"] == "pos") == (i["reading"] in ("Muy superior", "Superior", "Descuento profundo",
