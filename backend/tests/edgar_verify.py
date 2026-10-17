@@ -404,6 +404,73 @@ def leases(ed: Edgar, period):
     return v
 
 
+# ───────────── definiciones aprobadas en la fase 3 (F3_T1_PARADA1 §1.1; registro #25) ─────────────
+# Con --sin-definiciones-f3 la herramienta compara como en el cierre de la fase 2 (91.4%). Las tolerancias y la
+# clasificación de causas no cambian: solo con qué cifra de EDGAR se compara cada campo.
+DEF_F3 = True
+F3_CAPEX_EXTRA = ("PaymentsToDevelopSoftware", "PaymentsForSoftware", "PaymentsToAcquireIntangibleAssets",
+                  "PurchaseOfIntangibleAssetsClassifiedAsInvestingActivities")
+F3_CASH_EXTRA = ("MarketableSecuritiesCurrent", "AvailableForSaleSecuritiesDebtSecuritiesCurrent", "ShortTermInvestments")
+F3_UTILITY_REVENUE = "RegulatedAndUnregulatedOperatingRevenue"
+
+
+def f3_value(sym: str, ed: "Edgar", efield: str, period):
+    """(valor, concepto, detalle) de EDGAR con la definición aprobada en la fase 3, o None si el campo no cambia:
+      · capex: PP&E + software capitalizado + intangibles comprados; con financiera cautiva, solo PP&E (el motor saca
+        el equipo arrendado a terceros);
+      · caja (no financieras): caja + inversiones a corto plazo + valores negociables corrientes; en bancos y
+        aseguradoras, la reportada (no entra en la deuda neta ni en el EV), como antes;
+      · ingresos de utilities: los de explotación regulados y no regulados;
+      · deuda total (US GAAP): la de la regla de la 2b (arrendamientos financieros dentro, operativos fuera)."""
+    if not DEF_F3:
+        return None
+    t = ed.tax
+    if efield == "capex":
+        e, c, det, _ = ed.value("capex", period)
+        if e is None or sym in (cfg_captive() or {}) or CTX.get("archetype") == "FINANCIAL":
+            return None             # cautiva: el motor usa solo PP&E; un banco no usa capex (sin FCF)
+        extra, used = 0.0, []
+        for name in F3_CAPEX_EXTRA:
+            cc = f"{t}:{name}"
+            if ed.facts(cc, "flow"):
+                v, _, _, _ = ed.value("capex", period, concept=cc)
+                if v is not None:
+                    extra += abs(v)
+                    used.append(name)
+        if not used:
+            return None
+        return abs(e) + extra, f"{c} + {' + '.join(used)} (definición F3)", det
+    if efield == "cash" and period[0] == "instant" and CTX.get("archetype") != "FINANCIAL":
+        base, c, det = cash_total(ed, period)
+        if base is None:
+            return None
+        parts = [n for n in F3_CASH_EXTRA if n not in str(c)]
+        extra, used = _sum_parts(ed, period, [f"{t}:{n}" for n in parts])
+        if not used:
+            return None
+        return base + extra, f"{c} + {' + '.join(used)} (definición F3)", det
+    if efield == "revenue" and ed.facts(f"{t}:{F3_UTILITY_REVENUE}", "flow"):
+        v, c, det, _ = ed.value("revenue", period, concept=f"{t}:{F3_UTILITY_REVENUE}")
+        if v is not None:
+            return v, f"{c} (definición F3)", det
+    if efield == "total_debt" and t == "us-gaap" and period[0] == "instant":
+        d, c, det = debt_total(ed, period)
+        if d is None:
+            return None
+        if "CapitalLeaseObligations" in str(c):
+            return d, f"{c} (definición F3: ya con los arrendamientos financieros)", det
+        fl = lease_parts(ed, period).get("financieros")
+        if fl:
+            return d + fl, f"{c} + arrendamientos financieros (definición F3)", det
+        return d, f"{c} (definición F3)", det
+    return None
+
+
+def cfg_captive():
+    from settings import cfg
+    return cfg("data.edgar.captive")
+
+
 class RawIndex:
     """Todos los conceptos del emisor (companyfacts crudo de la caché + filings que le faltan), para buscar en qué
     etiqueta está un valor del pipeline que no casa con la tabla. Solo lectura de la caché de tests/edgar.py."""
@@ -628,6 +695,7 @@ def compare_ticker(sym: str, ext: Dict[str, Any], cap: Dict[str, Any]) -> List[D
     price = getattr(fs, "price", None)
     rows: List[Dict[str, Any]] = []
     CTX.clear()
+    CTX["archetype"] = ((cap.get("analysis") or {}).get("classification") or {}).get("archetype")
     if getattr(fs, "shares_outstanding", None):
         CTX["shares_ordinary_now"] = fs.shares_outstanding * factor
 
@@ -678,7 +746,10 @@ def compare_ticker(sym: str, ext: Dict[str, Any], cap: Dict[str, Any]) -> List[D
         else:
             p = raw
         # EDGAR
-        if efield == "total_debt":
+        f3 = f3_value(sym, ed, efield, period)
+        if f3 is not None:
+            e, econcept, edet = f3
+        elif efield == "total_debt":
             e, econcept, edet = debt_total(ed, period)
         elif efield == "cash":
             e, econcept, edet = cash_total(ed, period)
@@ -744,7 +815,10 @@ def compare_ticker(sym: str, ext: Dict[str, Any], cap: Dict[str, Any]) -> List[D
                 p = raw / rate if rate else None
             else:
                 p = raw
-            if kind == "shares":
+            f3 = f3_value(sym, ed, efield, period)
+            if f3 is not None:
+                e, econcept, edet = f3
+            elif kind == "shares":
                 e, econcept, edet = ed.shares_at(fy_end)
             elif efield == "total_liabilities":
                 e, econcept, edet, _ = ed.value(efield, period)
@@ -1102,12 +1176,15 @@ def main():
     ap.add_argument("--report-only", action="store_true", help="rehace resumen.md desde resultado.json")
     ap.add_argument("--sin-as-of", action="store_true",
                     help="empareja periodos como antes de la 2b (T8): sin data_provenance.as_of")
+    ap.add_argument("--sin-definiciones-f3", action="store_true",
+                    help="compara como en el cierre de la fase 2 (sin las definiciones aprobadas en la fase 3)")
     ap.add_argument("--ni-propietarios", action="store_true",
                     help="beneficio neto del corte frente al de los propietarios (referencia anterior a T8)")
     args = ap.parse_args()
-    global PAIR_AS_OF, NI_COMMON
+    global PAIR_AS_OF, NI_COMMON, DEF_F3
     PAIR_AS_OF = not args.sin_as_of
     NI_COMMON = not args.ni_propietarios
+    DEF_F3 = not args.sin_definiciones_f3
     if args.report_only:
         o = Path(os.path.expanduser(args.out))
         res = json.loads((o / "resultado.json").read_text())
