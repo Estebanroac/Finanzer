@@ -189,3 +189,12 @@ def test_converted_like_the_source_when_the_quote_is_in_another_currency():
     _fields(info, "operatingIncome")
     edgar_primary.apply(info, ed, Ctx())
     assert info["operatingIncome"] == pytest.approx(110)
+
+
+def test_industry_with_an_em_dash_is_normalised_like_the_classifier():
+    """BRK-B: Yahoo da "Insurance—Diversified" (raya), no "Insurance - Diversified"."""
+    ed = _ed(_fy("Revenues", [371444]))
+    info = _info(totalRevenue=410522.0, sector="Financial Services", industry="Insurance—Diversified")
+    _fields(info, "totalRevenue")
+    edgar_primary.apply(info, ed)
+    assert info["totalRevenue"] == 371444

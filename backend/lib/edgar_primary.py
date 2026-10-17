@@ -41,8 +41,9 @@ def _starts(value: str, prefixes) -> bool:
 def _rules(info: Dict[str, Any], facts: Dict[str, Any], symbol: Optional[str]) -> List[Dict[str, Any]]:
     """[(clave del corte, fila anual, campo de EDGAR, motivo)] que manda EDGAR para este emisor; y los que no, con
     su motivo, como {"skip": ...}."""
+    from classify import norm_industry
     sector = str(info.get("sector") or "")
-    industry = str(info.get("industry") or "").lower()          # como lib/classify.py
+    industry = norm_industry(info.get("industry")) or ""         # como lib/classify.py ("Insurance—Diversified")
     fin = sector == "Financial Services"
     bank = fin and _starts(industry, cfg("sectors.archetypes.bank_prefixes"))
     insurer = fin and _starts(industry, cfg("sectors.archetypes.insurance_prefixes"))
