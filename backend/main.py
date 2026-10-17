@@ -726,7 +726,8 @@ def _compute_analysis(symbol: str) -> dict:
                 if archetype != FINANCIAL:
                     _qr["coverage"] = qr.interest_coverage(
                         _stmts_g, safe_float(financials.operating_income),
-                        safe_float(result["key_metrics"].get("ebitda")), safe_float(financials.interest_expense))
+                        safe_float(result["key_metrics"].get("ebitda")), safe_float(financials.interest_expense),
+                        ffo_ttm=safe_float(result["key_metrics"].get("ffo")) if archetype == REIT else None)
                 result["quality_readings"] = {k: v for k, v in _qr.items() if v}
             except Exception as e:
                 _sin_dato("lecturas_calidad", e)

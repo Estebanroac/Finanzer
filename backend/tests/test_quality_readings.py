@@ -42,3 +42,7 @@ def test_interest_coverage_with_ebitda_trend_and_paid_fallback():
     st = dict(ST, interest_expense=[], interest_paid=[-4.0, -4.0])
     c = qr.interest_coverage(st, 40.0, 50.0, None)
     assert c["ebit"] == pytest.approx(10.0) and c["basis"].startswith("intereses pagados")
+    # REIT: (FFO + intereses) / intereses, como segunda medida.
+    c = qr.interest_coverage(ST, 40.0, 50.0, 2.0, ffo_ttm=8.0)
+    assert c["ffo"] == pytest.approx(5.0) and "el FFO más los intereses, 5.0 veces" in c["text"]
+    assert qr.interest_coverage(ST, 40.0, 50.0, 2.0)["ffo"] is None

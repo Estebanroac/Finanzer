@@ -9,7 +9,9 @@ Informan, no puntúan (el score no cambia): cada una devuelve sus cifras y una f
   · **Regla de 40** (GROWTH_PROFITABLE, §1.3): crecimiento de ingresos a 3 años + margen FCF − SBC.
   · **SBC como coste real** (§5): con SBC > `sbc_material` de los ingresos, cuánto baja el margen FCF al restarla.
   · **Cobertura de intereses** (petición del usuario, mapa T6): con EBITDA además de EBIT, su tendencia por
-    ejercicio, y los intereses PAGADOS del estado de flujos cuando el gasto por intereses no se presenta.
+    ejercicio, y los intereses PAGADOS del estado de flujos cuando el gasto por intereses no se presenta. En REIT,
+    además, con FFO: (FFO + intereses) / intereses, la cobertura que usan las agencias de rating para inmobiliarias
+    (el FFO se calcula después de intereses; se suman para medir lo que hay antes de pagarlos).
 Series anuales de los estados (más reciente primero), en la moneda de los estados.
 """
 import math
@@ -118,8 +120,9 @@ def sbc_cost(sbc: Dict[str, Any]) -> Optional[Dict[str, Any]]:
 
 
 def interest_coverage(st: Dict[str, Any], ebit_ttm: Optional[float], ebitda_ttm: Optional[float],
-                      interest_ttm: Optional[float]) -> Optional[Dict[str, Any]]:
-    """Cobertura con EBIT y con EBITDA (TTM), su tendencia por ejercicio y el respaldo de los intereses pagados."""
+                      interest_ttm: Optional[float], ffo_ttm: Optional[float] = None) -> Optional[Dict[str, Any]]:
+    """Cobertura con EBIT y con EBITDA (TTM), con FFO en REIT, su tendencia por ejercicio y el respaldo de los
+    intereses pagados."""
     ie, paid = st.get("interest_expense") or [], st.get("interest_paid") or []
     ebit = st.get("ebit") or st.get("operating_income") or []
     yrs = st.get("inc_years") or []
@@ -132,7 +135,8 @@ def interest_coverage(st: Dict[str, Any], ebit_ttm: Optional[float], ebitda_ttm:
     if not i_ttm:
         return None
     out = {"basis": basis, "ebit": (ebit_ttm / i_ttm) if ebit_ttm is not None else None,
-           "ebitda": (ebitda_ttm / i_ttm) if ebitda_ttm is not None else None, "trend": None}
+           "ebitda": (ebitda_ttm / i_ttm) if ebitda_ttm is not None else None,
+           "ffo": ((ffo_ttm + i_ttm) / i_ttm) if ffo_ttm is not None else None, "trend": None}
     series = []
     for k in range(min(len(ebit), max(len(ie), len(paid)))):
         den = (abs(ie[k]) if k < len(ie) and ie[k] else (abs(paid[k]) if k < len(paid) and paid[k] else None))
@@ -149,6 +153,8 @@ def interest_coverage(st: Dict[str, Any], ebit_ttm: Optional[float], ebitda_ttm:
         parts.append(f"el EBIT cubre {out['ebit']:.1f} veces los intereses")
     if out["ebitda"] is not None:
         parts.append(f"el EBITDA, {out['ebitda']:.1f} veces")
+    if out["ffo"] is not None:
+        parts.append(f"el FFO más los intereses, {out['ffo']:.1f} veces")
     t = ("Cobertura (" + basis + "): " + "; ".join(parts)) if parts else None
     tr = out["trend"]
     if t and tr:
