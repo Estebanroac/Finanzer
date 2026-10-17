@@ -46,7 +46,8 @@ def _close_at(data, sym, day):
         return None
     obj = json.load(open(p))
     idx = [i for i, d in enumerate(obj["dates"]) if d <= day]
-    return obj["close"][idx[-1]] if idx else None
+    # como se veía ese día: sin los splits posteriores (revisión de F7, hallazgo 7: NEE ×4, NI ×2.5…)
+    return obj["close"][idx[-1]] * G.split_factor_after(obj, day) if idx else None
 
 
 def metrics(data, t, kind):

@@ -123,25 +123,44 @@ def _row(facts, concepts, end, until, flow, unit=_usd):
     return None
 
 
+ANNUAL_FLOW = ("NetIncomeLoss", "ProfitLoss", "NetCashProvidedByUsedInOperatingActivities",
+               "NetCashProvidedByUsedInOperatingActivitiesContinuingOperations") + FLOW["Total Revenue"]
+
+
+def _annual_ends(facts, until=None):
+    """{fin de ejercicio: primera presentación en 10-K} de flujos ANUALES (350–380 días) presentados en 10-K.
+    Revisión de F7 (hallazgo 4): las fechas de Assets de un 10-K incluyen saldos trimestrales (BMY) y de apertura
+    (CVS 2019-01-01), y los ejercicios de 52/53 semanas daban dos cierres del mismo año (CSCO 07-28/07-29)."""
+    out = {}
+    for c in ANNUAL_FLOW:
+        for f in _facts(facts, c, _usd):
+            if f.get("form") not in ("10-K", "10-K/A") or not f.get("start"):
+                continue
+            if not 350 <= (_d(f["end"]) - _d(f["start"])).days <= 380 or (until and f.get("filed", "9999") > until):
+                continue
+            if f["end"] not in out or f["filed"] < out[f["end"]]:
+                out[f["end"]] = f["filed"]
+    keep = {}
+    for e in sorted(out, reverse=True):                 # un ejercicio = un cierre (± 20 días)
+        if all(abs((_d(e) - _d(k)).days) > 20 for k in keep):
+            keep[e] = out[e]
+    return keep
+
+
 def fiscal_years(facts, until):
-    """Cierres de ejercicio presentados en 10-K hasta `until` (fecha de Assets en un 10-K), del más reciente al más viejo."""
-    ends = {f["end"] for f in _facts(facts, "Assets", _usd) if f.get("form") in ("10-K", "10-K/A")
-            and f.get("filed", "9999") <= until and not f.get("start")}
-    return sorted(ends, reverse=True)
+    """Cierres de ejercicio presentados en 10-K hasta `until`, del más reciente al más viejo."""
+    return sorted(_annual_ends(facts, until), reverse=True)
 
 
 def tenk_filing(facts, fy):
-    """(fin del ejercicio, fecha de presentación del 10-K) del ejercicio fiscal que acaba en el año `fy` (o None)."""
-    cands = {}
-    for f in _facts(facts, "Assets", _usd):
-        if f.get("form") == "10-K" and not f.get("start") and f["end"][:4] == str(fy):
-            # el 10-K del propio ejercicio es el primero que trae ese saldo
-            if f["end"] not in cands or f["filed"] < cands[f["end"]]:
-                cands[f["end"]] = f["filed"]
-    if not cands:
-        return None
-    end = max(cands)
-    return end, cands[end]
+    """(fin del ejercicio, fecha del 10-K que lo presentó por primera vez) del ejercicio que acaba en el año `fy`.
+    Revisión de F7 (hallazgo 4): solo si ese 10-K llegó en los 120 días siguientes al cierre (si no, la fecha sería la
+    de un 10-K posterior que solo lo repite como comparativo: DE 2015 con D en 2017)."""
+    ends = {e: f for e, f in _annual_ends(facts).items() if e[:4] == str(fy)}
+    for e in sorted(ends, reverse=True):
+        if (_d(ends[e]) - _d(e)).days <= 120:
+            return e, ends[e]
+    return None
 
 
 def statements(facts, fy_end, until, n=4, reit_debt=False):
@@ -192,12 +211,16 @@ def statements(facts, fy_end, until, n=4, reit_debt=False):
         if reit_debt:
             # Solo el estudio de bandas (calibracion_bandas.py): los REIT etiquetan su deuda como pagarés y préstamos
             # (O) o como importe de los instrumentos; el estudio principal no usa esta rama (sus fixtures no cambian).
-            inst = g("DebtInstrumentCarryingAmount")
-            notes = [x for x in (g("NotesPayable", "NotesAndLoansPayable", "SeniorNotes", "UnsecuredDebt"),
-                                 g("LoansPayable"), g("LineOfCredit"), g("SecuredDebt"), cp) if x is not None]
-            alt = inst if inst is not None else (sum(notes) if notes else None)
-            if alt is not None and (total is None or alt > total):
-                total = alt
+            # Revisión de F7 (hallazgo 6): una etiqueta de total antes que sumar etiquetas que se solapan, y nunca
+            # una deuda mayor que el pasivo total.
+            liab = bcol["Total Liabilities Net Minority Interest"]
+            cands = [g("DebtInstrumentCarryingAmount"), g("NotesPayable", "NotesAndLoansPayable")]
+            if cands[1] is not None:
+                cands[1] += (g("LoansPayable") or 0.0) + (g("LineOfCredit") or 0.0)
+            for alt in cands:
+                if alt is not None and (liab is None or alt <= liab) and (total is None or alt > total):
+                    total = alt
+                    break
         bcol["Long Term Debt"] = lt_nc
         bcol["Current Debt"] = cur
         bcol["Total Debt"] = total
@@ -243,17 +266,33 @@ def cover_shares(facts, until, fallback):
     return fallback, "acciones diluidas medias del ejercicio"
 
 
+def split_factor_after(series_obj, day):
+    """Producto de los splits (y escisiones que Yahoo registra como split) POSTERIORES a `day`. La serie de yfinance
+    viene ajustada por todos los splits hasta hoy, también con auto_adjust=False: el precio que se veía en `day` es el
+    de la serie × este factor (revisión de F7, hallazgo 1: WMT salía a un tercio por el split de 2024)."""
+    f = 1.0
+    for d, r in (series_obj.get("split") or {}).items():
+        if d > day and r and r > 0:
+            f *= r
+    return f
+
+
 def window(series_obj, start, end):
-    """Objeto de serie (history_fixtures) recortado a [start, end]."""
+    """Objeto de serie (history_fixtures) recortado a [start, end], como se veía en `end`: sin los splits posteriores."""
     dates = series_obj["dates"]
     keep = [i for i, d in enumerate(dates) if start <= d <= end]
+    k = split_factor_after(series_obj, end)
     out = {"symbol": series_obj["symbol"], "tz": series_obj.get("tz", hf.TZ), "dates": [dates[i] for i in keep]}
     for _, c in hf.COLS:
         if c in ("dividend", "split"):
             ev = series_obj.get(c) or {}
-            out[c] = {d: v for d, v in ev.items() if start <= d <= end}
+            out[c] = {d: (v * k if c == "dividend" else v) for d, v in ev.items() if start <= d <= end}
         else:
-            out[c] = [series_obj[c][i] for i in keep]
+            vals = [series_obj[c][i] for i in keep]
+            if c == "volume":
+                out[c] = [None if v is None else v / k for v in vals]
+            else:
+                out[c] = [None if v is None else v * k for v in vals]
     return out
 
 

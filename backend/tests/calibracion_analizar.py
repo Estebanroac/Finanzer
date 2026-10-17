@@ -91,17 +91,18 @@ def outcomes(data, rows):
         if cik not in facts_cache:
             facts_cache[cik] = json.load(open(os.path.join(data, "edgar", "companyfacts", f"CIK{int(cik):010d}.json")))
         f = facts_cache[cik]
-        r["roe_fy"], r["roe_fy3"] = _roe(f, r["fy_end"], 0), _roe(f, r["fy_end"], 3)
+        # el ROE de partida, el que se conocía en D (revisión de F7, hallazgo 8); el de FY+3, el de hoy
+        r["roe_fy"], r["roe_fy3"] = _roe(f, r["fy_end"], 0, until=r["D"]), _roe(f, r["fy_end"], 3)
     return rows
 
 
-def _roe(facts, fy_end, k):
+def _roe(facts, fy_end, k, until="9999-12-31"):
     import datetime as dt
     e = dt.date.fromisoformat(fy_end)
     e = e.replace(year=e.year + k)
-    ni = G._row(facts, ("NetIncomeLoss",), e, "9999-12-31", True)
-    eq1 = G._row(facts, ("StockholdersEquity",), e, "9999-12-31", False)
-    eq0 = G._row(facts, ("StockholdersEquity",), e.replace(year=e.year - 1), "9999-12-31", False)
+    ni = G._row(facts, ("NetIncomeLoss",), e, until, True)
+    eq1 = G._row(facts, ("StockholdersEquity",), e, until, False)
+    eq0 = G._row(facts, ("StockholdersEquity",), e.replace(year=e.year - 1), until, False)
     if ni is None or not eq1:
         return None
     eq = (eq1 + eq0) / 2 if eq0 else eq1
@@ -163,6 +164,47 @@ def boot(rows, h, seed=7):
     return out[int(0.05 * len(out))], out[int(0.95 * len(out)) - 1]
 
 
+def boot2(rows, h, seed=11):
+    """ROBUSTEZ (añadida tras la revisión de F7, hallazgo 2; no es la regla prerregistrada): bootstrap de dos vías,
+    empresas y años remuestreados a la vez; recoge el choque común de cada año (2020–2022), que el de empresas no."""
+    firms = sorted({r["ticker"] for r in rows})
+    years = sorted({r["fy"] for r in rows})
+    by = {}
+    for r in rows:
+        by.setdefault((r["ticker"], r["fy"]), []).append(r)
+    rnd = random.Random(seed)
+    out = []
+    for _ in range(B):
+        cf, cy = {}, {}
+        for f in (rnd.choice(firms) for _ in firms):
+            cf[f] = cf.get(f, 0) + 1
+        for y in (rnd.choice(years) for _ in years):
+            cy[y] = cy.get(y, 0) + 1
+        sample = [r for (f, y), rs in by.items() if f in cf and y in cy for r in rs for _ in range(cf[f] * cy[y])]
+        d, _, _ = diff(sample, h)
+        if d is not None:
+            out.append(d)
+    out.sort()
+    if len(out) < B * 0.9:
+        return None
+    return out[int(0.05 * len(out))], out[int(0.95 * len(out)) - 1]
+
+
+def neutral(rows, h):
+    """ROBUSTEZ: la métrica menos la mediana de su sector y año (¿aporta el nivel algo más allá del sector y del año?)."""
+    import copy
+    groups = {}
+    for r in rows:
+        v = h["metric"](r)
+        if v is not None:
+            groups.setdefault((r.get("sector"), r["fy"]), []).append(v)
+    med = {k: statistics.median(v) for k, v in groups.items()}
+    hh = dict(h, metric=lambda r, m=h["metric"]: (None if m(r) is None
+                                                 else m(r) - med[(r.get("sector"), r["fy"])]))
+    d, _, _ = diff(rows, hh)
+    return d, boot(rows, hh)
+
+
 def verdict(rows, h):
     firms = sorted({r["ticker"] for r in rows})
     halves = {"periodo": ([r for r in rows if r["fy"] in TRAIN], [r for r in rows if r["fy"] in TEST]),
@@ -178,8 +220,13 @@ def verdict(rows, h):
         v = "contradicha"
     else:
         v = "no concluyente"
+    ci2 = boot2(rows, h)
+    nd, nci = neutral(rows, h) if h["id"] != "H1" else (None, None)
+    robust = (v == "validada" and ci2 is not None and ci2[0] * h["sign"] > 0 and ci2[1] * h["sign"] > 0
+              and (h["id"] == "H1" or (nci is not None and nci[0] * h["sign"] > 0 and nci[1] * h["sign"] > 0)))
     return {"id": h["id"], "label": h["label"], "diff": total, "n_group": ng, "n_contrast": nc, "ci90": ci,
-            "halves": parts, "verdict": v}
+            "halves": parts, "verdict": v, "ci90_2way": ci2, "neutral_diff": nd, "neutral_ci90": nci,
+            "robust": robust}
 
 
 def by_level(rows, scale, labels, metric, how="median"):
@@ -209,6 +256,13 @@ def report(rows, failed):
         he = " / ".join(_pct(x) for x in v["halves"]["empresa"])
         lines.append(f"| {v['id']} | {v['label']} | {_pct(v['diff'])} | {ci} | {v['n_group']} / {v['n_contrast']} | "
                      f"{hp} | {he} | **{v['verdict']}** |")
+    lines += ["\n## Robustez (añadida tras la revisión de F7; no cambia el veredicto prerregistrado)\n",
+              "| | IC 90% empresa × año | Neto de sector × año: diferencia | IC 90% (por empresa) | ¿Robusta? |",
+              "|---|---|---|---|---|"]
+    for v in res:
+        c2 = "—" if not v["ci90_2way"] else f"{_pct(v['ci90_2way'][0])} a {_pct(v['ci90_2way'][1])}"
+        nc = "—" if not v["neutral_ci90"] else f"{_pct(v['neutral_ci90'][0])} a {_pct(v['neutral_ci90'][1])}"
+        lines.append(f"| {v['id']} | {c2} | {_pct(v['neutral_diff'])} | {nc} | {'sí' if v['robust'] else 'no'} |")
     lines += ["\n## Descriptivo por nivel\n", "| Escala | Nivel | n | ROE persistente | Caída máx. 3a (mediana) | "
               "Relativa 1a (mediana) | Relativa 3a (mediana) |", "|---|---|---|---|---|---|---|"]
     for scale, labels in (("quality_level", ql), ("price_level", pl), ("price_level_raw", pl)):
