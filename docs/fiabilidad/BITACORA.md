@@ -1504,10 +1504,18 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
 - **Comprobación del checkout limpio** (`git archive`, sin variables de entorno):
   - pasan todas las comprobaciones de `build.sh` (recursos, contrato);
   - la app arranca y `/api/health` y `/` dan 200.
-- **Estado del deploy:** a los 45 minutos producción seguía en `01336e2`. Render no lo había desplegado, o falló sin que se vea desde fuera. Se hace un segundo push (este registro) para reintentar el deploy automático. La causa tiene que mirarse en el panel de Render, que solo puede abrir el usuario.
-- **Verificación en producción pendiente** del deploy:
-  - BRK-B, AAPL y O con concurrencia ≤ 3;
-  - `data_provenance.edgar.status`;
-  - P/E operativo de BRK-B;
-  - PDF;
-  - latencias.
+- **Deploy:** en vivo en unos 2 minutos: `5216bc6` a las 14:51 y `35f7135` (este registro) a las 14:53 de Nueva York. Un sondeo se quedó colgado y dio la impresión de que el deploy no llegaba; el reloj real lo desmiente.
+- **Verificación en producción** (14:53 de Nueva York, concurrencia 3, fuera de 15:55–16:45):
+  - BRK-B, AAPL y O responden 200: 18.3 s en frío las tres a la vez y 0.5–0.8 s en caliente;
+  - PDF de BRK-B: 200, 129 KB, 2.9 s;
+  - en la web hay 12 recursos con 200 y el sello coincide con el contrato;
+  - la pestaña "Contexto de mercado" y FFO/activos de O (4.98%, "muy bajo") se ven, sin errores de consola.
+- **Fallo abierto:** `data_provenance.edgar.status` = "desactivado" ("sin User-Agent de la SEC"). La app solo activa EDGAR si `SEC_EDGAR_USER_AGENT` existe y contiene un correo (`@`). En el Llavero el valor es correcto (nombre y correo). En el servicio de Render que sirve finanzer.app la variable no llega o no lleva el correo.
+
+  Sin EDGAR, producción no tiene:
+  - el respaldo ni el recorte TTM;
+  - la deuda de la regla;
+  - el P/E operativo de las aseguradoras (BRK-B sale con el reportado, 17.1x);
+  - D7.
+
+  Pendiente del usuario: revisar la variable en el panel de Render (nombre exacto, valor "Nombre correo@dominio", servicio correcto) y guardar con redeploy. Después se repite la comprobación de EDGAR, BRK-B y las latencias con EDGAR.
