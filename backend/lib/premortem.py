@@ -115,9 +115,11 @@ def _debt_item(a: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         hi = SECTOR_THRESHOLDS.get(key, ThresholdConfig()).net_debt_ebitda_high
     if x <= hi:
         return None
-    return {"kind": "deuda", "field": "key_metrics.net_debt_to_ebitda", "value": x,
-            "text": (f"el EBITDA cayera o la deuda se refinanciara más cara: la deuda neta equivale a {x:.1f} veces "
-                     "el EBITDA")}
+    t = f"el EBITDA cayera o la deuda se refinanciara más cara: la deuda neta equivale a {x:.1f} veces el EBITDA"
+    if ((a.get("data_provenance") or {}).get("debt") or {}).get("captive_unseparable"):
+        # T7 de la fase 3 (DE): la deuda de la financiera cautiva no se puede separar y está dentro.
+        t += " (incluye la de la financiera cautiva, que no se puede separar: la de la actividad industrial es menor)"
+    return {"kind": "deuda", "field": "key_metrics.net_debt_to_ebitda", "value": x, "text": t}
 
 
 def build(a: Dict[str, Any], hist: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
