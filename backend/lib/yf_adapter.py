@@ -479,6 +479,9 @@ def _apply_edgar(symbol: str, info: Dict[str, Any], ed: Dict[str, Any], hist: Di
     info["_edgar"]["backup"] = edgar_backup.apply(info, ed, ctx)
     import debt
     info["_debt"] = debt.apply(info, ed, ctx)          # T5: deuda coherente con el EBITDA
+    import perimeter
+    from settings import cfg as _cfg
+    info["_perimeter"] = perimeter.detect(info, ed, ctx, _cfg("data.edgar.report_date_tolerance_days"))   # T7
     info["_official_source"] = edgar_backup.official_source(ed, today)
     cut = (info.get("_as_of") or {}).get("date")
     pend = edgar.pending_results(ed.get("filings"), cut) if ed.get("status") == "ok" else None
@@ -1378,6 +1381,8 @@ def _enrich_prior_year_data(symbol: str, info: Dict[str, Any], ticker=None) -> D
         "net_income_common": _row(inc, "Net Income Common Stockholders"),
         "common_stock_equity": _row(bs, "Common Stock Equity"),
         "other_equity_interest": _row(bs, "Other Equity Interest"),
+        # Fase 2b (T7): operaciones discontinuadas por ejercicio (lib/perimeter.py).
+        "net_income_discontinued": _row(inc, "Net Income Discontinuous Operations"),
         # gastos no financieros de un banco (ratio de eficiencia aproximado)
         "non_interest_expense": _row(inc, "Non Interest Expense"),
         "sga": _row(inc, "Selling General And Administration"),

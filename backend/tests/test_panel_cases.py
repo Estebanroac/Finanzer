@@ -360,3 +360,22 @@ def test_ordinary_in_the_panel(sample):
     # el beneficio neto y el patrimonio del ordinario quedan declarados en la procedencia
     st = sample["BCS"]["data_provenance"]["fields"]
     assert "commonEquity" in st and st["netIncome"]["source"] == "derivado"
+
+
+# ── Fase 2b (T7): cambio de perímetro declarado (lib/perimeter.py) ──
+def test_ul_perimeter_change_declared(sample):
+    """UL (escisión de Magnum): el 20-F de 2026 reexpresa 2023 y 2024 sin helados (EDGAR ifrs-full:Revenue 60,761 →
+    52,479 millones de EUR en 2024) y Yahoo deja 2022 en el perímetro anterior: el CAGR a 3 años mezcla bases."""
+    p = sample["UL"]["data_provenance"]["perimeter"]
+    r = {x["fy_end"]: x for x in p["restated"]}
+    assert r["2024-12-31"]["previous"] == 60761e6 and r["2024-12-31"]["current"] == 52479e6
+    assert [x["basis"] for x in p["series"]] == ["vigente", "vigente", "vigente", "perimetro_anterior"]
+    assert p["mixed_cagr"] and "fase 3" in p["note"]
+    assert any(d["fy_end"] == "2025-12-31" for d in p["discontinued"])
+
+
+def test_restated_series_already_homogeneous_is_not_mixed(sample):
+    """AMT y JNJ reexpresaron (India; Kenvue), pero Yahoo da toda la serie en la base vigente."""
+    for sym in ("AMT", "JNJ"):
+        p = sample[sym]["data_provenance"]["perimeter"]
+        assert p["restated"] and not p["mixed_cagr"], sym
