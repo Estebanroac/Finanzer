@@ -24,11 +24,11 @@
 
 | Campo | Valor |
 |---|---|
-| Fase en curso | **Fase 3 🛑 punto de parada 1b** (registros #26–#27): falta `SEC_EDGAR_USER_AGENT` en Render y el "ok, pushea" |
+| Fase en curso | **Fase 3 🛑 punto de parada 2** (T2, registro #28, `F3_T2_PARADA2.md`): arquetipos línea a línea, reapertura de las medidas de ciclicidad, KO y golden. Sigue pendiente de la 1b: `SEC_EDGAR_USER_AGENT` en Render y el "ok, pushea" |
 | Rama de trabajo | `fiabilidad/f3-metodo` (worktree `../finanzer_next-f3`), sin subir |
 | Producción | `01336e2` (código `103c76f`). Rollback de código: `60f8a69` |
 | `main` local | `b2f1972` (borrador del prompt de la fase 3), un commit por delante de `origin/main`; sin subir |
-| Último cierre de sesión | 2026-10-16 · operador F3 (ver registro #24) |
+| Último cierre de sesión | 2026-10-17 · operador F3 (ver registro #28) |
 | Bloqueos | `SEC_EDGAR_USER_AGENT` en Render (la pone el usuario): sin ella no hay deploy de la fase 3. Permiso para descargar el PDF de tasas base |
 
 ## Fases
@@ -38,7 +38,7 @@
 | 0 Congelar y medir | ✅ cerrada (2026-10-14) | `fiabilidad/f0-panel` → `main` local | `0a8ac66`..`0ae214a` (9 commits) + cierre (registro #6) | sí, 2026-10-14 (registro #6) | no aplica (se sube con el deploy de la fase 1) |
 | 1 Lo visible hoy | ✅ cerrada | `fiabilidad/f1-visible` | `d676b22` (D8), `21c3f5f`, `0ebba81` (guardián), `d63de70`…`d7393fd` (T3, 8 commits), `7f32070`, `e3161d2`, `c369575` (T4) | — | — |
 | 2 Verdad de datos (EDGAR) | ✅ cerrada: 2a (2026-10-15) y 2b (2026-10-16, registros #21–#23). F1 91.4% (objetivo 95% no alcanzado; lo que falta, en la fase 3 o por diseño: RECON §7.21) | `fiabilidad/f2a-medir` y `fiabilidad/f2b-corregir` → `main` | 2a: `8d3a5cc`…`aed575a`; 2b: `b25aed6`…`103c76f` (T1–T8) + cierre (RECON §7.21, registro #23) | 2a: sí; 2b: paradas 1 y 2 sí, "ok, pushea" (2026-10-16) | 2a `25b9d8a`; 2b `103c76f` |
-| 3 Método por arquetipo | 🛑 punto de parada 1 (T0–T1 hechas, registro #24) · preparación F3prep fusionada (`fiabilidad/f3-prep`) | `fiabilidad/f3-metodo` | `3d52202`, `3c331dd`, `20c2a2e` | — | — |
+| 3 Método por arquetipo | 🛑 punto de parada 2 (T0–T2 hechas; registros #24–#28) · preparación F3prep fusionada (`fiabilidad/f3-prep`) | `fiabilidad/f3-metodo` | T1: `3d52202`…`20c2a2e`; T1b: `d34c858`…`3966a43`; T2: `dc62a83`…`9e76d50` | paradas 1 y 1b sí (registros #25, #27) | — (falta `SEC_EDGAR_USER_AGENT`) |
 | 4 Escalas y confianza | 🔒 espera F3 | — | — | — | — |
 | 5 Técnica y conductual | 🔒 espera F4 · preparación F5prep fusionada (`fiabilidad/f5-prep`, módulos aislados sin conectar; D5: solo contexto) | — | `e99e958`..`8e2bf07` | §5 de la muestra aceptado (registro #20) | `a2572e0` |
 | 6 Infraestructura | 🔒 diagnóstico hecho (F6_DIAGNOSTICO.md, F67prep fusionada); implementación en espera (D6 sin plan de pago) | — | `697eb83`..`583e685` | — | `a2572e0` (solo documentos y herramientas de test) |
@@ -1158,4 +1158,27 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
 - **Decisión del usuario (cita literal):** "Apruebo el diff del EBITDA (F3_T1B_PARADA1B §6.2): regenera sus golden."
   Golden regenerados (`diff_golden.py --regenerate --yes` en los dos juegos y `contract_forced.py --write`); los dos
   `diff_golden.py` sin diferencias; `pytest tests -q` → "3713 passed, 1 skipped".
+
+### #28 · 2026-10-17 · operador · Fase 3 (T2 hecha; detenida en el punto de parada 2)
+- **Decisión del usuario sobre la cobertura de intereses (cita literal):** "okat predecto. lo cubrimos cuando requiera.
+  bueno, continua con el plan. sigue ejecutando". Las tres mejoras quedan en el mapa para la T6 (commit `3966a43`).
+- **Hecho (T2, un commit por causa, tests antes):**
+  - historia: `dc62a83` (discontinuadas e ingresos de contratos con clientes), `b07983c` (splits y errores de escala),
+    `9e76d50` (split entre taxonomías, TM);
+  - clasificador: `9ea8193` (ciclicidad por la historia, GROWTH_PROFITABLE, subtipos de FINANCIAL, frontera ±20%,
+    industria con confianza baja sin historia), `0ca5937` (nota de crecimiento estructural), `ddd7796` (motivo
+    concreto de la confianza baja), `4516eae` (rupturas del capital: PLTR), `0f121bc` (alerta medida con la historia
+    en FINANCIAL, REIT y UTILITY);
+  - herramienta: `d2333b3` (`tests/f3_t2_measures.py`).
+- **Reapertura de diseño (no la decido yo):** las medidas de F3_DISENO §1.2 marcan cíclicas a KO, PG, JNJ, V, NVDA,
+  PLTR, NFLX y AMZN. Propuesta: episodios repetidos de caída de ingresos y desplomes del BPA con caída de ventas
+  (F3_T2_PARADA2 §2).
+- **Provisional, declarado:** GROWTH_PROFITABLE usa las herramientas de MATURE hasta la T3/T6.
+- **Verificación:** `pytest tests -q` → "71 failed, 3660 passed, 1 skipped". Lo que falla son los golden de los dos
+  juegos y las muestras forzadas del contrato, pendientes de aprobación. `panel_run --compare` frente a `3966a43`:
+  8 cambios de arquetipo (CAT, KO → CYCLICAL; TM → MATURE; MSFT, NVDA, NVO, PLTR, TSM → GROWTH_PROFITABLE), cada uno
+  explicado (F3_T2_PARADA2 §6).
+- **Abierto:** aprobación línea a línea de los arquetipos (§5), reapertura de §1.2, KO (§3, recomendada la opción a:
+  desinversiones como cambio de perímetro), golden (§7). De la 1b: `SEC_EDGAR_USER_AGENT` en Render y "ok, pushea".
+  Sin la aprobación de los arquetipos no empieza la T3.
 
