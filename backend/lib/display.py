@@ -512,9 +512,11 @@ def official_source_annex(a) -> list:
         items.append({"label": "Corte de los doce meses (SEC EDGAR; Yahoo no trae 4 trimestres seguidos)", "text": (
             f"al {rc['date']}: {rc['how']}; balance de Yahoo de esa fecha"
             + (" y de SEC EDGAR lo que falte" if rc.get("yahoo_balance") else " (SEC EDGAR)")
-            + ". BPA aproximado: el del ejercicio × beneficio de los doce meses / beneficio del ejercicio (acciones "
-              "medias del ejercicio: no recoge la recompra o emisión posterior). Las partidas inusuales del ejercicio "
-              "no se aplican al beneficio de los doce meses.")})
+            + (". BPA aproximado: el de la fuente × beneficio de los doce meses / beneficio de la fuente (acciones "
+               "medias de la fuente: no recoge la recompra o emisión posterior)." if rc.get("from_type") == "fuente" else
+               ". BPA aproximado: el del ejercicio × beneficio de los doce meses / beneficio del ejercicio (acciones "
+               "medias del ejercicio: no recoge la recompra o emisión posterior).")
+            + " Las partidas inusuales del ejercicio no se aplican al beneficio de los doce meses.")})
     elif rc.get("status") == "descartado":
         items.append({"label": "Corte de SEC EDGAR descartado", "text": rc.get("reason", "") + "."})
     bk = (dp.get("edgar") or {}).get("backup") or {}

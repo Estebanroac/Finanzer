@@ -1336,8 +1336,8 @@ def _apply_ttm(symbol: str, info: Dict[str, Any], plan_b: bool) -> Dict[str, Any
     if plan_b and "totalStockholderEquity" in t["values"] and shares:
         info["bookValue"] = t["values"]["totalStockholderEquity"] / shares
     info["_quarterly"] = q
-    if plan_b and not flows and t.get("latest_balance"):
-        info["_latest_q_balance"] = t["latest_balance"]       # fase 6: para edgar_backup.recut
+    if not flows and t.get("latest_balance"):
+        info["_latest_q_balance"] = t["latest_balance"]       # fase 6: para edgar_backup.recut (plan B y fuente)
     info["_ttm"] = {
         "basis": "ttm" if flows else ("anual" if plan_b else "fuente"),
         "cut": t.get("cut"), "quarters": t["quarters"], "balance_date": t["balance_date"],

@@ -113,3 +113,50 @@ def test_recut_is_told_in_the_annex():
                                                  "yahoo_balance": ["cash"]}}}}
     row = [r for r in display.official_source_annex(a) if r["label"].startswith("Corte de los doce meses")][0]
     assert "BPA aproximado" in row["text"] and "acciones medias del ejercicio" in row["text"]
+
+
+def _info_fuente():
+    """Ruta quoteSummary sin 4 trimestres: los flujos son los doce meses de Yahoo sin fecha (`fuente`)."""
+    info = _info()
+    src = lambda: {"period_end": None, "period_type": "fuente"}
+    info["_as_of"] = {"type": "fuente", "date": None, "reason": "sin corte trimestral",
+                      "fields": {k: src() for k in ("totalRevenue", "netIncome", "operatingCashflow", "totalAssets")}}
+    info["netIncome"], info["totalRevenue"] = 110.0, 1030.0       # otros doce meses que los del 10-Q
+    info["_ttm"] = {"basis": "fuente", "annual_fields": {}}
+    return info
+
+
+def test_source_route_cut_moves_to_edgar_and_replaces_the_source_twelve_months():
+    """Fase 7 (verificación de prod, BRK-B en local): en la ruta quoteSummary el corte de EDGAR también se busca
+    después del último ejercicio, y lo de la fuente (periodo desconocido) se sustituye por el dato de EDGAR del corte."""
+    info, ed = _info_fuente(), {"status": "ok", "facts": _facts()}
+    rec = eb.recut(info, ed)
+    assert rec["from"] == "2025-12-31" and rec["from_type"] == "fuente" and rec["date"] == "2026-06-30"
+    assert info["_as_of"]["recut_from"] == "fuente"
+    eb.apply(info, ed)
+    eb.recut_eps(info, rec)
+    assert info["netIncome"] == 120 and info["totalRevenue"] == 1060 and info["totalAssets"] == 5200
+    assert eb.recut_verdict(rec)["status"] == "aplicado"
+    # BPA de la fuente (ya de doce meses) escalado por el beneficio: 2.0 × 120 / 110, y dicho así
+    assert abs(info["trailingEps"] - 2.0 * 120 / 110) < 1e-12
+    assert "BPA de la fuente" in info["_provenance"]["trailingEps"]["detail"]
+
+
+def test_source_route_field_edgar_lacks_counts_as_lost():
+    """Un campo de la fuente que EDGAR no da del corte tiene otros doce meses: el corte se descarta (no se mezcla)."""
+    info, ed = _info_fuente(), {"status": "ok", "facts": _facts()}
+    info["grossProfits"] = 400.0
+    info["_as_of"]["fields"]["grossProfits"] = {"period_end": None, "period_type": "fuente"}
+    rec = eb.recut(info, ed)
+    eb.apply(info, ed)
+    eb.recut_eps(info, rec)
+    v = eb.recut_verdict(rec)
+    assert v["status"] == "descartado" and v["lost"] == ["grossProfits"]
+    assert "se mantienen los doce meses de la fuente" in v["reason"]
+
+
+def test_plan_b_record_keeps_its_shape():
+    """Los golden del plan B no cambian: sin `from_type` ni `recut_from` cuando el corte venía del ejercicio."""
+    info = _info()
+    rec = eb.recut(info, {"status": "ok", "facts": _facts()})
+    assert "from_type" not in rec and "recut_from" not in info["_as_of"]

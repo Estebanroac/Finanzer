@@ -95,11 +95,14 @@ def apply(info: Dict[str, Any], ed: Dict[str, Any], ctx=None) -> Dict[str, Any]:
     cut = ao.get("date")
     if ao.get("type") in ("ttm", "fy") and cut:
         fy_dates = info.get("_fy_dates") or {}
+        # Periodo desconocido (ruta quoteSummary) = del corte, salvo si el corte lo puso `recut` desde esa ruta: entonces
+        # lo de la fuente es de otros doce meses y se sustituye por el dato de EDGAR del corte.
+        same = (None,) if ao.get("recut_from") != "fuente" else ()
         for key, field in CUT_FIELDS.items():
             kind = edgar.CONCEPTS[field][0]
             at = cut if (ao["type"] == "ttm" or kind == "flow") else (fy_dates.get("bs") or cut)
             have = fields.get(key) or {}
-            if info.get(key) is not None and have.get("period_end") in (None, at):
+            if info.get(key) is not None and have.get("period_end") in (*same, at):
                 continue            # Yahoo lo da del mismo corte (o de periodo desconocido: ruta quoteSummary)
             why = _excluded(field, info)
             if why:
@@ -107,7 +110,7 @@ def apply(info: Dict[str, Any], ed: Dict[str, Any], ctx=None) -> Dict[str, Any]:
                 continue
             r = edgar.field_value(facts, field, _dt.date.fromisoformat(at), tol)
             if r is None:
-                if info.get(key) is None or have.get("period_end") not in (None, at):
+                if info.get(key) is None or have.get("period_end") not in (*same, at):
                     log["skipped"].append({"field": key, "reason": f"EDGAR no lo tiene del periodo que acaba el {at}"})
                 continue
             val = _convert(ctx, float(r["value"]), kind, at)
@@ -142,14 +145,19 @@ def recut(info: Dict[str, Any], ed: Dict[str, Any], ctx=None) -> Optional[Dict[s
     `periodo_incoherente`, lo descarta: nunca se mezclan periodos). Devuelve el registro o None si no aplica."""
     ao = info.get("_as_of") or {}
     facts = ed.get("facts") if ed.get("status") == "ok" else None
-    if ao.get("type") != "fy" or not ao.get("date") or not facts:
+    # Ruta quoteSummary sin 4 trimestres (`fuente`: los flujos son los doce meses de Yahoo sin fecha de cierre): el
+    # corte de EDGAR se busca después del último ejercicio de los estados anuales, igual que en el plan B. Sin esto, en
+    # esa ruta EDGAR no mandaba en nada del corte y las aseguradoras perdían el P/E operativo (BRK-B en local).
+    src = ao.get("type")
+    fy_date = ao.get("date") if src == "fy" else (info.get("_fy_dates") or {}).get("inc")
+    if src not in ("fy", "fuente") or not fy_date or not facts:
         return None
     unit = edgar.reporting_unit(facts, edgar.taxonomy(facts))
     stmt_cur = _statement_currency(info)
     if unit is None or (stmt_cur and unit != stmt_cur):
         return None
     tol = cfg("data.edgar.report_date_tolerance_days")
-    fy_end = _dt.date.fromisoformat(ao["date"])
+    fy_end = _dt.date.fromisoformat(fy_date)
     ends = set()
     for _c, fs in edgar.candidates(facts, "net_income")[:1]:
         for f in fs:
@@ -162,10 +170,11 @@ def recut(info: Dict[str, Any], ed: Dict[str, Any], ctx=None) -> Optional[Dict[s
         if any(v is None for v in got.values()) or any("acumulado" not in got[k]["how"]
                                                         for k in ("revenue", "net_income")):
             continue
-        rec = {"from": ao["date"], "date": end, "source": "SEC EDGAR",
+        rec = {"from": fy_date, **({"from_type": src} if src == "fuente" else {}), "date": end,
+               "source": "SEC EDGAR",
                "how": got["net_income"]["how"], "accns": sorted(set().union(*(v["accns"] for v in got.values()))),
                "fy_net_income": info.get("netIncome"), "fy_eps": info.get("trailingEps"), "not_in_cut": []}
-        ao.update(type="ttm", date=end, recut=True)
+        ao.update(type="ttm", date=end, recut=True, **({"recut_from": src} if src == "fuente" else {}))
         ao.pop("reason", None)
         # El balance del corte: el trimestral de Yahoo de esa fecha si lo hay (caja y deuda con la definición del
         # resto del análisis; EDGAR no las da con la misma). `apply` completa después lo que falte.
@@ -199,8 +208,10 @@ def recut_eps(info: Dict[str, Any], rec: Optional[Dict[str, Any]]) -> None:
     from yf_adapter import _tag_provenance
     ao = info.get("_as_of") or {}
     fields = ao.get("fields") or {}
+    # En la ruta `fuente` el periodo de lo que no rellena EDGAR es desconocido: tampoco es del corte (no se mezcla).
+    keep = (rec["date"],) if rec.get("from_type") == "fuente" else (None, rec["date"])
     rec["not_in_cut"] = sorted(k for k, f in fields.items()
-                               if info.get(k) is not None and (f or {}).get("period_end") not in (None, rec["date"]))
+                               if info.get(k) is not None and (f or {}).get("period_end") not in keep)
     # Revisión de F6 (hallazgo 3): el valor en libros por acción, del patrimonio del nuevo corte (como _apply_ttm);
     # si no, la ficha mostraba el del ejercicio junto a un P/B del corte.
     eq, sh = info.get("totalStockholderEquity"), info.get("sharesOutstanding")
@@ -211,9 +222,10 @@ def recut_eps(info: Dict[str, Any], rec: Optional[Dict[str, Any]]) -> None:
             and fy_ni > 0 and fy_eps > 0):
         info["trailingEps"] = fy_eps * ni / fy_ni
         info["_eps_net_income"] = ni
+        base = "de la fuente" if rec.get("from_type") == "fuente" else "del ejercicio"
         _tag_provenance(info, "derivado",
-                        f"BPA de los doce meses al {rec['date']} = BPA del ejercicio ({fy_eps:.2f}) × beneficio de los "
-                        f"doce meses / beneficio del ejercicio (acciones medias del ejercicio)",
+                        f"BPA de los doce meses al {rec['date']} = BPA {base} ({fy_eps:.2f}) × beneficio de los "
+                        f"doce meses / beneficio {base} (acciones medias {base})",
                         paths=["trailingEps"], overwrite=True)
     else:
         info["trailingEps"] = None
@@ -227,8 +239,9 @@ def recut_verdict(rec: Dict[str, Any]) -> Dict[str, Any]:
     lost = [k for k in rec.get("not_in_cut") or [] if k not in cfg("data.edgar.recut_droppable")]
     if lost:
         return dict(rec, status="descartado", lost=lost,
-                    reason=(f"el corte de SEC EDGAR al {rec['date']} no tiene {', '.join(lost)}: se mantiene el "
-                            f"ejercicio cerrado el {rec['from']}"))
+                    reason=(f"el corte de SEC EDGAR al {rec['date']} no tiene {', '.join(lost)}: "
+                            + ("se mantienen los doce meses de la fuente" if rec.get("from_type") == "fuente"
+                               else f"se mantiene el ejercicio cerrado el {rec['from']}")))
     return dict(rec, status="aplicado")
 
 
