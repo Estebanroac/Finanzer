@@ -24,7 +24,7 @@
 
 | Campo | Valor |
 |---|---|
-| Fase en curso | **Fase 3 🛑 punto de parada 1b** (registros #26–#27): diff del EBITDA, variable de Render y "ok, pushea" |
+| Fase en curso | **Fase 3 🛑 punto de parada 1b** (registros #26–#27): falta `SEC_EDGAR_USER_AGENT` en Render y el "ok, pushea" |
 | Rama de trabajo | `fiabilidad/f3-metodo` (worktree `../finanzer_next-f3`), sin subir |
 | Producción | `01336e2` (código `103c76f`). Rollback de código: `60f8a69` |
 | `main` local | `b2f1972` (borrador del prompt de la fase 3), un commit por delante de `origin/main`; sin subir |
@@ -1154,4 +1154,7 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
   - `97c8c6b`: tasas base en `config/base_rates.toml` (Mauboussin y Callahan, 2021, Exhibit 3, pp. 6–8). Tramos e
     industrias cuadran con el total (test).
 - **Abierto:** aprobación del diff del EBITDA, `SEC_EDGAR_USER_AGENT` en Render y "ok, pushea" del primer deploy.
+- **Decisión del usuario (cita literal):** "Apruebo el diff del EBITDA (F3_T1B_PARADA1B §6.2): regenera sus golden."
+  Golden regenerados (`diff_golden.py --regenerate --yes` en los dos juegos y `contract_forced.py --write`); los dos
+  `diff_golden.py` sin diferencias; `pytest tests -q` → "3713 passed, 1 skipped".
 
