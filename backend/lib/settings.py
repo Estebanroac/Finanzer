@@ -28,7 +28,7 @@ from types import MappingProxyType
 from typing import Any, Dict, List
 
 CONFIG_DIR = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "config"))
-FILES = ("thresholds", "sectors", "valuation", "validation", "data", "market", "adr", "betas", "base_rates")
+FILES = ("thresholds", "sectors", "valuation", "validation", "data", "market", "adr", "betas", "base_rates", "review")
 
 
 class SettingsError(RuntimeError):

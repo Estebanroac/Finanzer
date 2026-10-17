@@ -1,0 +1,109 @@
+# Fase 7 (PLAN_FIABILIDAD §4, punto 2; RECON §7.13): revisión mensual de los parámetros de mercado, con su fuente y su
+# fecha legibles por programa. La herramienta `tests/revision_parametros.py` dice cuáles toca revisar (edad frente a
+# su cadencia) y el test `tests/test_revision_parametros.py` exige que cada uno tenga fuente y fechas y que los pares
+# (Rf y prima de riesgo) vayan con la misma fecha. Actualizar un parámetro = cambiar su valor en su archivo Y su fila
+# aquí (consulted y published), en el mismo commit.
+#
+# Campos: key (ruta de cfg), source, url, published (fecha del dato en la fuente, "" si no la da), consulted (cuándo se
+# leyó; "" = sin fuente), cadence_days (cada cuánto se revisa), pair (otra fila que debe ir con la misma fecha, "" si
+# ninguna), note.
+
+[parameters.market_risk_premium]
+key = "valuation.capm.market_risk_premium"
+source = "A. Damodaran, Implied ERP (trailing 12 months, adjusted payout), NYU Stern"
+url = "https://pages.stern.nyu.edu/~adamodar/"
+published = "2026-10-01"
+consulted = "2026-10-12"
+cadence_days = 31
+pair = "risk_free_rate"
+note = "Damodaran la publica el día 1 de cada mes"
+
+[parameters.risk_free_rate]
+key = "valuation.capm.risk_free_rate"
+source = "Tesoro de EE. UU. a 10 años que usa Damodaran para la prima implícita (respaldo si ^TNX no responde)"
+url = "https://pages.stern.nyu.edu/~adamodar/"
+published = "2026-10-01"
+consulted = "2026-10-12"
+cadence_days = 31
+pair = "market_risk_premium"
+note = "en uso normal manda ^TNX en vivo (caché de 24 h); este es el respaldo"
+
+[parameters.rating_spreads]
+key = "valuation.synthetic_rating.spreads"
+source = "A. Damodaran, ratings.xls (cobertura de intereses -> rating -> spread), NYU Stern"
+url = "https://pages.stern.nyu.edu/~adamodar/pc/ratings.xls"
+published = "2026-01-26"
+consulted = "2026-10-12"
+cadence_days = 366
+pair = ""
+note = "se actualiza cada enero"
+
+[parameters.sector_betas]
+key = "betas.industries"
+source = "A. Damodaran, Betas by Sector (US), NYU Stern"
+url = "https://pages.stern.nyu.edu/~adamodar/New_Home_Page/datafile/Betas.html"
+published = "2026-01-01"
+consulted = "2026-10-16"
+cadence_days = 366
+pair = ""
+note = "se actualiza cada enero"
+
+[parameters.base_rates]
+key = "base_rates"
+source = "Mauboussin y Callahan, The Impact of Intangibles on Base Rates (2021), Exhibit 3"
+url = "https://www.morganstanley.com/im/en-us/individual-investor/insights/consilient-observer/the-impact-of-intangibles-on-base-rates.html"
+published = "2021-06-23"
+consulted = "2026-10-16"
+cadence_days = 1830
+pair = ""
+note = "estudio académico 1984-2020: se revisa si los autores publican una actualización"
+
+[parameters.market_pe]
+key = "sectors.benchmarks.market.pe"
+source = "mediana del P/E TTM de los miembros del S&P 500 (chartrow.com)"
+url = "https://chartrow.com/sp500/pe-ratio"
+published = "2026-10-12"
+consulted = "2026-10-12"
+cadence_days = 92
+pair = ""
+note = "método de la mediana no documentado por la fuente"
+
+[parameters.market_forward_pe]
+key = "sectors.benchmarks.market.forward_pe"
+source = "P/E forward del índice S&P 500 (First Trust, Market Minute; consenso de Bloomberg)"
+url = "https://www.ftportfolios.com"
+published = "2026-09-30"
+consulted = "2026-10-12"
+cadence_days = 92
+pair = ""
+note = "agregado del índice, no mediana de constituyentes"
+
+[parameters.market_ev_ebitda]
+key = "sectors.benchmarks.market.ev_ebitda"
+source = "mediana EV/EBITDA del S&P 500 a 1T-2025 (Ivaluate)"
+url = ""
+published = "2025-03-31"
+consulted = "2026-10-12"
+cadence_days = 366
+pair = ""
+note = "no hay mediana pública de constituyentes de 2026"
+
+[parameters.sector_medians]
+key = "sectors.benchmarks.sectors"
+source = "PROVISIONAL: fijadas a mano en versiones anteriores, sin fuente (RECON §2.1, fallo 3)"
+url = ""
+published = ""
+consulted = ""
+cadence_days = 366
+pair = ""
+note = "sustituir por las medianas por industria de Damodaran (requiere el permiso de descarga del usuario; F4_PARADA §5)"
+
+[parameters.score_thresholds]
+key = "sectors.score_thresholds"
+source = "PROVISIONAL: umbrales por sector fijados a mano, sin fuente"
+url = ""
+published = ""
+consulted = ""
+cadence_days = 366
+pair = ""
+note = "REIT y utilities se calibran en la fase 7 con la historia de EDGAR"
