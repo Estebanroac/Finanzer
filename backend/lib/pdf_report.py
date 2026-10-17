@@ -1186,8 +1186,9 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         "dos puntuaciones Finanzer de 0 a 100: calidad del negocio (solidez, rentabilidad, calidad de ganancias y "
         "crecimiento) y atractivo del precio (valoración por múltiplos y DCF, contraída hacia 50 según la confianza "
         "del veredicto). Las lecturas se generan automáticamente según "
-        "la banda en la que cae cada indicador frente a umbrales canónicos y a la mediana de su sector (o del "
-        "mercado amplio cuando el arquetipo de la empresa contradice a su sector).",
+        "la banda en la que cae cada indicador frente a umbrales canónicos y a la referencia de su industria en su "
+        "región (agregados de A. Damodaran, NYU Stern), o la del mercado amplio cuando el arquetipo de la empresa "
+        "contradice a su sector.",
         ParagraphStyle('meth', parent=S['small'], leading=10.5)))
     story.append(Spacer(1, 4))
     story.append(Paragraph(

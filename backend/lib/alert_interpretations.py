@@ -132,7 +132,7 @@ def _pe(ctx: Ctx):
         # ¿el crecimiento lo justifica? (PEG / spread)
         justified = (peg is not None and 0 < peg < T["justify_peg_max"]) or (ctx.spread is not None and ctx.spread > T["justify_spread_min"])
         base = (f"El mercado paga {pe:.1f}x beneficios{' normalizados' if ctx.nl('pe') else ''}"
-                + (f", un {dev*100:+.0f}% sobre la mediana {_ref_txt} ({ref:.1f}x)" if ref else ", un múltiplo exigente"))
+                + (f", un {dev*100:+.0f}% sobre la referencia {_ref_txt} ({ref:.1f}x)" if ref else ", un múltiplo exigente"))
         if pe > T["strong_abs"] or (dev is not None and dev > T["strong_dev"]):
             if justified:
                 return _sig("warning", "Valoración", f"Valoración exigente — P/E{ctx.nl('pe')} {pe:.1f}x",
@@ -173,7 +173,7 @@ def _ev_ebitda(ctx: Ctx):
         _who = {"mercado": "el mercado", "industria": "su industria"}.get(ctx.c.get("benchmark_short"),
                                                                         "el mercado" if _mkt else "el sector")
         return _sig("warning", "Valoración", f"EV/EBITDA{norm} sobre {_who} — {ev:.1f}x",
-                    f"Se paga {ev:.1f}x EBITDA frente a {sec:.1f}x {'de la mediana del mercado' if _mkt else 'de sus pares'} ({(ev-sec)/sec*100:+.0f}%): el mercado le "
+                    f"Se paga {ev:.1f}x EBITDA frente a {sec:.1f}x {'de la referencia del mercado' if _mkt else 'de sus pares'} ({(ev-sec)/sec*100:+.0f}%): el mercado le "
                     "asigna una prima que conviene contrastar con su ventaja competitiva.", T["w_premium"])
     if sec and sec > 0 and ev < T["discount_mult"] * sec:
         return _sig("strength", "Valoración", f"EV/EBITDA{norm} barato — {ev:.1f}x",

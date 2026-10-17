@@ -220,7 +220,7 @@ def read_pe(pe, sector_pe, spread, ref="del sector"):
     if r is None:
         return ("—", 'neu', f"el P/E se sitúa en {pe:.1f}x")
     lab, tone, _, d = r
-    base = (f"el mercado paga {pe:.1f}x beneficios, un {d} frente a la mediana {ref} "
+    base = (f"el mercado paga {pe:.1f}x beneficios, un {d} frente a la referencia {ref} "
             f"({sector_pe:.1f}x)")
     if tone in ('warn', 'neg') and spread is not None and spread > _PDF_BANDS["pe_spread_support"]:
         base += (f"; una prima que encuentra respaldo parcial en la creación de valor de la compañía "
@@ -1476,7 +1476,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     def _benchtxt(bench, fmt):
         if bench is None:
             return ""
-        _vs = "vs mercado" if _mkt else "vs sector"
+        _vs = f"vs {_short}"
         return f"{_vs} {bench * 100:.1f}%" if fmt == 'pct' else f"{_vs} {bench:.1f}x"
 
     def _mkcard(key, label, raw, fmt, benchkey, higher):
@@ -2667,7 +2667,7 @@ def band_tooltips(a, sector_bench, th, mkt, ref, na, de_mode, cyc):
             continue
         bench = sector_bench.get(bkey)
         if bench:
-            add(key, f"Frente a la mediana {who} ({_f_pct(bench) if fm == 'pct' else _f_mult(bench)})",
+            add(key, f"Frente a la referencia {ref} ({_f_pct(bench) if fm == 'pct' else _f_mult(bench)})",
                 vs_bench_bands(bench, hb, fm))
     # Bandas del score (texto de las secciones y del resumen).
     if "roe" not in na:
