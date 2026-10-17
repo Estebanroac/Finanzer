@@ -217,6 +217,11 @@ def _reversion(st: Dict[str, Any]) -> Dict[str, Any]:
             "flag": bool(reasons), "detail": "; ".join(reasons), "detail_plain": " y ".join(plain)}
 
 
+# Reglas que dependen de la medida de ciclicidad: sin historia suficiente, su confianza es baja por ese motivo.
+_HISTORY_RULES = ("industria_ciclica", "industria_ciclica_condicional", "ciclica_condicional_estable", "por_defecto",
+                  "crecimiento_rentable")
+
+
 def _insurer_subtype(history: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     """Aseguradora o conglomerado: peso de los ingresos de contratos con clientes (los contratos de seguro quedan
     fuera por norma, ASC 606 / NIIF 15) en los ingresos del último ejercicio de la historia de EDGAR."""
@@ -320,6 +325,25 @@ def classify(*, sector: Optional[str], industry: Optional[str], eps_ttm: Optiona
                "frontier": frontier or None}
         if frontier:
             res["confidence"] = "baja"
+        # Fase 3 (T2): por qué la confianza de la clasificación es baja, con su motivo concreto.
+        if frontier:
+            res["low_confidence"] = {
+                "code": "frontera",
+                "detail": f"clasificación de frontera: un umbral movido ±20% la cambia ({'; '.join(frontier)})",
+                "plain": "Clasificación en la frontera: un cambio pequeño en uno de sus umbrales la cambiaría."}
+        elif ambiguous and rule in _HISTORY_RULES and not hist_decides:
+            n = cyc["measures"]["years"] if cyc is not None else 0
+            need = _C["cyclicality"]["min_years"]
+            res["low_confidence"] = {
+                "code": "sin_historia",
+                "detail": f"ciclicidad sin medir: {n} ejercicios en EDGAR (hacen falta {need})",
+                "plain": (f"No hay historia suficiente para medir si es cíclica ({n} ejercicios en la SEC; hacen "
+                          f"falta {need})." if n else "No hay historia en la SEC para medir si es cíclica.")}
+        elif ambiguous:
+            res["low_confidence"] = {"code": "ambigua", "detail": "clasificación ambigua",
+                                     "plain": "Clasificación ambigua: confianza baja."}
+        else:
+            res["low_confidence"] = None
         if arch != CYCLICAL and not hist_decides:
             # Con historia suficiente la ciclicidad ya se midió en 10+ ejercicios; la alerta de la ventana corta de
             # Yahoo (4 ejercicios) solo queda para los emisores sin esa historia.

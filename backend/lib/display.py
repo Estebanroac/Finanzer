@@ -1061,7 +1061,9 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         if _plain.startswith(_lab):        # la etiqueta ya va delante (chip / negrita): no se repite
             _plain = _plain[len(_lab)].upper() + _plain[len(_lab) + 1:]
         cls_notes = [_plain]
-        if classification.get("ambiguous"):
+        if classification.get("low_confidence"):      # fase 3 (T2): con su motivo
+            cls_notes.append(classification["low_confidence"]["plain"])
+        elif classification.get("ambiguous"):
             cls_notes.append("Clasificación ambigua: confianza baja.")
         cls_notes += [x.get("detail_plain") or x.get("detail") for x in classification.get("alerts") or []
                       if x.get("detail_plain") or x.get("detail")]

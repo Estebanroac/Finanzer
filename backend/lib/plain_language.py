@@ -66,6 +66,10 @@ TABLE = [
     (r"^alerta de posible cíclica",
      "La empresa podría ser cíclica: sus resultados actuales pueden no ser representativos."),
     (r"^clasificación ambigua", "El tipo de empresa no está claro, lo que hace menos fiable la comparación."),
+    (r"^clasificación de frontera", "El tipo de empresa está en la frontera entre dos: un cambio pequeño en un umbral "
+                                    "lo cambiaría, lo que hace menos fiable la comparación."),
+    (r"^ciclicidad sin medir: (\d+) ejercicios en EDGAR \(hacen falta (\d+)\)",
+     "No hay historia suficiente para medir si la empresa es cíclica ({0} ejercicios en la SEC; hacen falta {1})."),
     # ── fuente oficial (fase 2b, D7) ──
     (r"^el emisor no presenta estados en la SEC",
      "La empresa no presenta sus cuentas ante la SEC: las cifras vienen de proveedores de datos y no se han podido "

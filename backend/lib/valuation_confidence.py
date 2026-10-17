@@ -204,6 +204,9 @@ def stability_dimension(archetype: Optional[str], classification: Dict[str, Any]
         return {"level": "baja", "reasons": ["empresa cíclica: resultados ligados a la fase del ciclo"]}
     if "posible_ciclica" in alerts:
         return {"level": "media", "reasons": ["alerta de posible cíclica"]}
+    low = (classification or {}).get("low_confidence")
+    if low:     # fase 3 (T2): frontera, ciclicidad sin medir o ambigua, con su motivo
+        return {"level": "media", "reasons": [low["detail"]]}
     if (classification or {}).get("ambiguous"):
         return {"level": "media", "reasons": ["clasificación ambigua"]}
     return {"level": "alta", "reasons": []}
