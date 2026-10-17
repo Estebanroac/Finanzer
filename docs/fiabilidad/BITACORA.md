@@ -1653,3 +1653,11 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
   - el estudio de calibración no valida de forma robusta ninguna escala (F7 §10): es un resultado, no una tarea;
   - la vigilancia semanal sigue activa.
 - **Golden:** C6 y C7 cambian el contexto de mercado de todos (C6) y el P/E de HSBC y TM (C7), sin cambios de nivel (GOLDEN_DIFF_DAMODARAN.md §6). **Pendiente del usuario:** aprobar su regeneración y "ok, pushea".
+- **Desplegado** con la orden del usuario ("termina y despliega sin esperar que te lo diga"):
+  - golden regenerados (§6); suite: 4168 passed;
+  - `c7cc1c7`, en vivo a las 19:05 de Nueva York, con EDGAR activo.
+- **Producción:**
+  - CAT: P/E de 38.9x a 31.8x (BPA de doce meses);
+  - PEAD en vivo: MSFT con sorpresa de +9.5% el 2026-07-29; CAT, +30.5% el 2026-08-04; BRK-B, +19.0% el 2026-08-11;
+  - fila "Resultados y deriva (PEAD)" visible en la pestaña de contexto de mercado, sin errores de consola;
+  - BRK-B: P/E operativo 27.1x.
