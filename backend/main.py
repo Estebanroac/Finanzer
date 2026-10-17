@@ -189,8 +189,11 @@ async def search(q: str = Query("", min_length=1, max_length=100)):
 def _yahoo_search(query: str, limit: int = 5) -> list:
     """Search Yahoo Finance autocomplete API for stocks."""
     try:
-        from yf_adapter import _ensure_session, _session
-        _ensure_session()
+        # El módulo, no el nombre: `from yf_adapter import _session` copiaba el valor de antes de crear la sesión (None
+        # en un proceso recién arrancado) y la búsqueda en Yahoo fallaba en silencio hasta el primer análisis.
+        import yf_adapter as _ya
+        _ya._ensure_session()
+        _session = _ya._session
         url = "https://query2.finance.yahoo.com/v1/finance/search"
         params = {
             "q": query,
