@@ -25,7 +25,8 @@ from stock_database import search_stocks, POPULAR_STOCKS, TOP_STOCKS
 from sector_profiles import get_sector_profile, YAHOO_SECTOR_MAPPING
 from alert_interpretations import build_signals
 from settings import cfg
-from historical_metrics import mean as hm_mean, fcf_cagr, growth_rate, is_sustained_negative, per_share, per_share_basis
+from historical_metrics import (mean as hm_mean, fcf_cagr, growth_rate, is_sustained_negative, on_statement, per_share,
+                                per_share_basis)
 from classify import (ARCHETYPE_GROUP, CYCLICAL, FINANCIAL, GROWTH_PRE_PROFIT, REIT, archetype_label, classify,
                       not_applicable, not_applicable_text)
 from normalize import normalize as normalize_earnings
@@ -828,8 +829,9 @@ def _compute_analysis(symbol: str) -> dict:
             fin_dict["revenue_cagr_3y"] = _rev_r["value"]
             fin_dict["revenue_growth_reason"] = _rev_r["reason"]
             # Revisión F3 (hallazgo 6): ingresos por acción a 3 años para el retorno total de la madura de dividendo alto.
-            fin_dict["revenue_ps_cagr_3y"] = growth_rate(per_share(_stmts_g.get("revenue") or [],
-                                                                   _stmts_g.get("ordinary_shares") or []), 3,
+            # Acciones del balance casadas con los ejercicios de resultados por fecha (revisión F4, hallazgo 5).
+            _sh_inc = on_statement(_stmts_g, "ordinary_shares", "bs", "inc")
+            fin_dict["revenue_ps_cagr_3y"] = growth_rate(per_share(_stmts_g.get("revenue") or [], _sh_inc), 3,
                                                          what="ingresos por acción", strict_ends_only=True)["value"]
             _eps_series = _stmts_g.get("diluted_eps") or per_share(_stmts_g.get("net_income") or [],
                                                                     _stmts_g.get("ordinary_shares") or [])
@@ -854,6 +856,11 @@ def _compute_analysis(symbol: str) -> dict:
                 if _yrs >= cfg("thresholds.growth.perimeter_min_years"):
                     _rev_r = growth_rate((_stmts_g.get("revenue") or [])[:_n], _yrs, what="ingresos",
                                          strict_ends_only=True)
+                    # Revisión F4 (hallazgo 2): el retorno total por acción, en el mismo perímetro homogéneo.
+                    fin_dict["revenue_ps_cagr_3y"] = growth_rate(
+                        per_share((_stmts_g.get("revenue") or [])[:_n], _sh_inc[:_n]), _yrs,
+                        what="ingresos por acción", strict_ends_only=True)["value"]
+                    fin_dict["revenue_ps_cagr_years"] = _yrs
                     _ni = _stmts_g.get("net_income") or []
                     _disc = _stmts_g.get("net_income_discontinued") or []
                     _cont = [(n - (_disc[i] if i < len(_disc) and _disc[i] else 0.0)) if n is not None else None
@@ -865,6 +872,7 @@ def _compute_analysis(symbol: str) -> dict:
                     fin_dict["revenue_growth_note"] = _why
                     fin_dict["eps_growth_note"] = _why + "; BPA de operaciones continuadas"
                 else:
+                    fin_dict["revenue_ps_cagr_3y"] = None
                     _rev_r = {"value": None, "reason": "no comparable: el cambio de perímetro deja menos de 2 años "
                                                          "homogéneos; no puntúa"}
                     _eps_r = {"value": None, "reason": _rev_r["reason"]}
