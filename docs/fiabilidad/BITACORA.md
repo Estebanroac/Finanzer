@@ -1549,3 +1549,18 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
 - **Golden intactos:** las claves nuevas solo existen en la ruta `fuente`.
 - **Suite:** "4117 passed, 1 skipped". Textos nuevos revisados con el guardián: solo van al anexo.
 - **Vigilancia:** queda un sondeo de `/api/health` en esta sesión (hasta 2 h). Cuando `enabled=true`, verifica BRK-B, AAPL y O en producción.
+
+### #40 · 2026-10-17 · operador · EDGAR activo en producción y mezcla de snapshots corregida
+- **Variable en Render:** el usuario la puso, guiado paso a paso. El primer intento tenía como valor el texto del comando en lugar de su resultado. A las 17:32 de Nueva York, `/api/health` da `edgar.enabled = true`.
+- **Primera ronda** (BRK-B, AAPL y O a la vez, arranque en frío, 17:33):
+  - las tres con EDGAR "ok", 20.8 s en frío y 0.5–0.8 s en caliente; PDF en 3.5 s;
+  - BRK-B con el presupuesto de EDGAR agotado (3 s) en el arranque en frío, así que sin recorte. Su companyfacts comprimido pesa unos 200 KB: no es el tamaño, sino la cola del arranque.
+- **Segunda ronda** (BRK-B sola, ya caducada la caché de 5 min, 17:39): el recorte se aplica, pero el **P/E operativo sale 49.0x con un reportado de 17.1x** (con datos frescos: 27.1x y 13.4x).
+  - **Causa:** el perfil y los estados de `data_fetcher` (caché de 30 y 60 min) sobrevivían al snapshot de `get_ticker_info` (5 min). El análisis restaba las ganancias de la cartera de los doce meses al 2T-2026 (snapshot nuevo) al beneficio del ejercicio 2025 (estados del snapshot sin EDGAR). Es una mezcla de periodos.
+- **Arreglo en origen** (`d0a20b9`):
+  - lo derivado se guarda con su snapshot y solo se reutiliza si el vigente es el mismo objeto;
+  - `FinancialStatements.snapshot` lleva el snapshot y `main` lee `yinfo` de él, sin pedir otro que pudiera haber caducado entre medias.
+  - Tests en `test_snapshot_cache.py`: fallan con el código anterior y pasan con el arreglo.
+  - Suite: "4120 passed, 1 skipped".
+  - En local, emulando Render: BRK-B 27.1x operativo y 13.4x reportado.
+- **Pendiente:** "ok, pushea" de `d0a20b9`. Hasta el deploy, producción puede seguir mostrando un P/E mezclado en BRK-B mientras convivan dos snapshots.
