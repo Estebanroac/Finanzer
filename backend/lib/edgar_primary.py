@@ -58,6 +58,9 @@ def _rules(info: Dict[str, Any], facts: Dict[str, Any], symbol: Optional[str]) -
     elif bank and edgar.taxonomy(facts) == "us-gaap":
         out.append({"key": "totalRevenue", "row": "revenue", "field": "revenue",
                     "why": "ingresos netos totales de un banco"})
+    if symbol and symbol.upper() in (cfg("data.edgar.captive") or {}):
+        out.append({"key": "capitalExpenditures", "row": "capital_expenditure", "field": "capex",
+                    "why": "capex sin el equipo que la financiera cautiva arrienda a terceros"})
     return out
 
 

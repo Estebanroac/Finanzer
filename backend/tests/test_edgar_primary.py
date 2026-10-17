@@ -138,6 +138,30 @@ def test_industrial_revenue_stays_with_the_source():
     assert info["totalRevenue"] == 323900.0
 
 
+# ───────────── capex con cautiva ─────────────
+
+def test_captive_capex_excludes_equipment_leased_to_others():
+    ed = _ed({**_fy("PaymentsToAcquirePropertyPlantAndEquipment", [2821, 1988]),
+              **_fy("PaymentsToAcquireEquipmentOnLease", [1465, 1227])})
+    st = {"cf_ends": ["2025-12-31", "2024-12-31"], "capital_expenditure": [-4286.0, -3215.0],
+          "operating_cash_flow": [12000.0, 11000.0], "free_cash_flow": [7714.0, 7785.0]}
+    info = _info(symbol="CAT", capitalExpenditures=-4286.0, operatingCashflow=12000.0, freeCashflow=7714.0,
+                 _statements_fy=st)
+    _fields(info, "capitalExpenditures", "operatingCashflow", "freeCashflow")
+    edgar_primary.apply(info, ed)
+    assert info["capitalExpenditures"] == -2821
+    assert info["freeCashflow"] == 12000 - 2821
+    assert st["capital_expenditure"] == [-2821, -1988] and st["free_cash_flow"] == [12000 - 2821, 11000 - 1988]
+
+
+def test_capex_without_captive_stays_with_the_source():
+    ed = _ed(_fy("PaymentsToAcquirePropertyPlantAndEquipment", [302]))
+    info = _info(symbol="CRWD", capitalExpenditures=-371.0)
+    _fields(info, "capitalExpenditures")
+    edgar_primary.apply(info, ed)
+    assert info["capitalExpenditures"] == -371.0, "el software capitalizado es capex (definición aprobada)"
+
+
 # ───────────── degradación ─────────────
 
 def test_without_edgar_nothing_changes():
