@@ -1523,3 +1523,10 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
   - Afecta a MSFT y BRK-B, y también a CINF, que no estaba en caché.
   - Se sondeó cada 40 s durante 5 minutos.
   - El proceso de producción todavía no ve `SEC_EDGAR_USER_AGENT` con un correo.
+- **Diagnóstico** (`0a9216d`, publicado con el "ok, pushea" del usuario; en vivo a las 15:29 de Nueva York): `/api/health` → `edgar = {enabled: false, present: false, has_contact: false, near_miss: false}`.
+  - La variable no existe en el entorno del proceso que sirve finanzer.app, ni con el nombre exacto ni con espacios o mayúsculas distintas.
+  - Causas posibles, que se miran en el panel de Render:
+    - está en otro servicio;
+    - está en un Environment Group que no está enlazado a este servicio;
+    - tiene un nombre distinto;
+    - no se llegó a guardar.
