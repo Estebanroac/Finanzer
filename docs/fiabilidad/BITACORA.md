@@ -974,3 +974,24 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
   crecimiento de Finnhub que ya no entra; precio 40 → 35. **NVO:** el PEG trailing usa el crecimiento del BPA del
   último ejercicio, 6.2% frente al 4.9% de Finnhub: 1.89 → 1.50; convergencia y confianza media → alta; precio
   65 → 70. Las demás causas: 0 cambios.
+- **Decisión del usuario (cita literal, en este chat):** "Sigue con T8 hasta la parada 2."
+  - **T8 hecha hasta el punto de parada 2** (informe `docs/fiabilidad/F2b_PARADA2.md`; muestreo manual en
+    `docs/fiabilidad/F2b_MUESTREO_MANUAL.md`).
+    - **F1:** 1284/1411 (**91.0%**) con el arreglo de la herramienta (`db4db68`: empareja por data_provenance.as_of,
+      TTM frente a TTM), 1276/1411 (90.4%) sin él. Objetivo ≥ 95%: **no alcanzado** (faltan 57 filas).
+      - 31 filas fuera son definiciones que cierra la fase 3 por D2 (capex 20, ingresos de bancos 6, caja de bancos y
+        aseguradoras 5).
+      - 6 son el beneficio del ordinario (T7) frente a la referencia de los propietarios de la herramienta: decisión
+        abierta para el usuario.
+      - 21 son el EBIT que construye Yahoo: la marca "estimado" de F2_PRECEDENCIA no estaba en el prompt; se propone
+        para la fase 3.
+    - **Golden de T6–T7 sin regenerar:** diff causa por causa en el informe, §3. Cambios de nivel solo en T6 (BRK-B,
+      JNJ, NVO, TM, NFLX); T7 no cambia ningún veredicto.
+    - **Tiempo** en frío: mediana ≈ 3.2 s (T0 ≈ 4.2 s).
+    - **Web recompilada** (`7805de9`, con webpack: el `node_modules` del worktree es un enlace).
+- **Verificación T8:** `edgar_verify.py --whatif` → "1284/1411 (91.0%)"; `--sin-as-of` → "1276/1411 (90.4%)";
+  `pytest -q` → "84 failed, 3577 passed, 1 skipped" (los 84, golden de T6–T7); `npm run check` → 46 salidas;
+  `perfil_local.py --red-local` → 3.09–3.44 s en frío. Navegador (replay del panel): MC.PA con la insignia y el aviso
+  de D7, la tabla de Crecimiento con "(último ejercicio)", sin errores en la consola.
+- **Punto de parada 2:** esperando del usuario la aprobación de los golden de T6–T7, la decisión sobre la referencia
+  del beneficio neto en F1, el alcance del EBIT "estimado" y el "ok, pushea". Falta `SEC_EDGAR_USER_AGENT` en Render.
