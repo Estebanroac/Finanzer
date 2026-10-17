@@ -143,3 +143,12 @@ Solo cruza la regla esa fila, de las 480.
 
 No cambian el score, las alertas, los niveles ni la confianza. El golden de AAPL (análisis y PDF) espera la
 aprobación del usuario.
+
+## 6. Adenda: cierre de los pendientes abiertos (C6 `e4aa569`, C7 `c779371`)
+
+| # | Commit | Causa | Qué cambia en la salida |
+|---|---|---|---|
+| C6 | `e4aa569` | PEAD: la sorpresa del BPA frente al consenso (Finnhub) con la fecha del 8-K de resultados (EDGAR) | `market_context.pead` y su fila "Resultados y deriva (PEAD)" en el panel de mercado, y la nota del PEAD en todos los tickers, web y PDF. D5: ni score, ni alertas, ni niveles. Fixtures con la respuesta real de `/stock/earnings` |
+| C7 | `c779371` | Sin BPA ni acciones diluidas trimestrales, el BPA de doce meses ya no es el del ejercicio (mezcla de periodos; CAT en Render, P/E 38.9x frente a 31.4x) | Panel: **HSBC** con P/E 15.8x → 13.8x (BPA 6.00 → 6.86) y **TM** con P/E 9.8x → 8.6x (BPA 19.61 → 22.23), con su detalle en Valoración y el DCF de TM. Sin cambios de nivel, de puntuación de categoría ni de confianza |
+
+Ninguna de las dos cambia niveles de calidad, de precio ni de confianza en el panel ni en local.
