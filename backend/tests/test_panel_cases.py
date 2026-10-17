@@ -292,3 +292,14 @@ def test_plan_b_is_not_retried_and_quote_summary_block_is_remembered(monkeypatch
     yf_adapter.get_ticker_info("BBB")
     assert calls == {"qs": 2, "b": 2}          # bloqueo recordado: directo al plan B
     yf_adapter._cache.clear()
+
+
+def test_nflx_termination_fee_isolated_as_non_operating(sample):
+    """Fase 2b (T7, fila "trimestre de NFLX con +2.85 B de ingresos financieros"): el dato es real. 10-Q del 1T-2026
+    (0001065280-26-000138): "Interest and other income (expense)" 2,852,166 miles, que incluye la comisión de ruptura
+    de 2.8 mil millones de la fusión con WBD. El motor la aísla como pico no operativo y la cobertura no la usa."""
+    a = sample["NFLX"]
+    it = next(i for i in a["earnings_normalization"]["items"] if i["item_type"] == "pico_no_operativo")
+    assert "2026-03-31" in it["origin"] and 2.5e9 < it["gross"] < 2.9e9
+    assert a["earnings_normalization"]["differs"] is True
+    assert 15 < a["key_metrics"]["interest_coverage"] < 19        # EBIT / gasto financiero, sin la comisión
