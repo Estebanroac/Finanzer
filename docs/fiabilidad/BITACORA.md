@@ -1564,3 +1564,10 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
   - Suite: "4120 passed, 1 skipped".
   - En local, emulando Render: BRK-B 27.1x operativo y 13.4x reportado.
 - **Pendiente:** "ok, pushea" de `d0a20b9`. Hasta el deploy, producción puede seguir mostrando un P/E mezclado en BRK-B mientras convivan dos snapshots.
+- **Desplegado** con el "ok, pushea" del usuario (`4fc1bc3`, en vivo a las 17:47 de Nueva York). **Verificación en producción**, en serie:
+  - **BRK-B** (6.8 s en frío): EDGAR "ok", recorte aplicado (corte 2026-06-30), **P/E operativo 27.1x** y reportado 13.4x.
+    - La ficha y el PDF dicen "P/E operativo (sin ganancias de la cartera) 27.1x frente a 13.0x del sector".
+    - Repetido a las 17:53, ya caducado el snapshot de 5 min: 27.1x. La mezcla no se reproduce.
+  - **AAPL** (4.3 s) y **O** (4.5 s): EDGAR "ok", corte de Yahoo 2026-06-30.
+  - PDF de BRK-B: 200, en 2.7 s.
+- **Estado:** todas las fases (F3–F7) están en producción con EDGAR. Solo queda pendiente del usuario el permiso para descargar los datos de Damodaran.
