@@ -5,7 +5,9 @@ import sys
 import os
 import io
 import logging
+import threading
 from typing import Optional, Dict, Any
+from starlette.concurrency import run_in_threadpool
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, FileResponse, HTMLResponse
@@ -173,7 +175,8 @@ async def search(q: str = Query("", min_length=1, max_length=100)):
     # If fewer than 5 local results, supplement with Yahoo search
     if len(results) < 5:
         try:
-            yahoo_results = _yahoo_search(q, limit=8 - len(results))
+            # Fase 6: la petición a Yahoo es bloqueante: fuera del bucle de eventos.
+            yahoo_results = await run_in_threadpool(_yahoo_search, q, 8 - len(results))
             # Deduplicate
             existing_tickers = {r["ticker"] for r in results}
             for yr in yahoo_results:
@@ -1900,22 +1903,40 @@ def _compute_analysis(symbol: str) -> dict:
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# Fase 6 (F6_DIAGNOSTICO §2, D6 sin plan de pago): el análisis y el PDF son bloqueantes (red de Yahoo, SEC y Finnhub;
+# reportlab). En un `async def` congelaban el bucle de eventos: producción atendía en serie y /api/health esperaba a
+# que terminara el análisis en curso. Ahora corren en el pool de hilos (`run_in_threadpool`) y, como mucho,
+# `max_concurrent_analyses` a la vez (memoria de la instancia y respeto a las fuentes); el resto espera su turno sin
+# bloquear el bucle. El estado compartido ya era seguro entre hilos: sesión de Yahoo y cachés con locks, afirmaciones
+# del guardián en un ContextVar.
+_ANALYSIS_SLOTS = threading.BoundedSemaphore(cfg("data.server.max_concurrent_analyses"))
+
+
+def _compute_limited(symbol: str) -> dict:
+    with _ANALYSIS_SLOTS:
+        return _compute_analysis(symbol)
+
+
 @app.get("/api/analysis/{symbol}")
 async def analyze_stock(symbol: str):
     """Complete stock analysis - the main endpoint."""
-    return _compute_analysis(symbol)
+    return await run_in_threadpool(_compute_limited, symbol)
 
 
 @app.get("/api/pdf/{symbol}")
 async def download_pdf(symbol: str):
     """Generate a comprehensive PDF financial report mirroring the app."""
+    return await run_in_threadpool(_pdf_response, symbol)
+
+
+def _pdf_response(symbol: str):
     from datetime import datetime
 
     symbol = symbol.upper().strip()
 
     try:
         # Re-use the same analysis logic as the API endpoint
-        analysis = _compute_analysis(symbol)
+        analysis = _compute_limited(symbol)
 
         # El informe completo (identidad Finanzer, narrativa adaptativa por
         # bandas, logo, layout editorial) vive en lib/pdf_report.py.

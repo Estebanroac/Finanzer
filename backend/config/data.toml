@@ -73,3 +73,9 @@ CAT = { name = "Cat Financial", axis = "ProductOrServiceAxis", member = "Financi
 [edgar.captive_unseparable]     # fase 3 (T7): cautiva sin desglose de su deuda en XBRL (se dice, no se separa)
 # DE: John Deere Financial; ni el 10-Q (2026-08-27) ni el 10-K (2025-12-18) etiquetan su deuda por segmento.
 DE = "John Deere Financial"
+
+[server]                        # main.py (fase 6, F6_DIAGNOSTICO §2; D6: sin plan de pago)
+# Análisis (y PDF) a la vez en el pool de hilos. Memoria: el proceso ocupa ≈ 190 MB y un análisis en curso unas
+# decenas más (pandas); con 512 MB en Render caben 4 con margen. Cada análisis frío hace ≈ 15 peticiones: 4 a la vez
+# son ≈ 60, por debajo de lo que Yahoo ha tolerado en las capturas. El resto espera su turno sin bloquear el bucle.
+max_concurrent_analyses = 4
