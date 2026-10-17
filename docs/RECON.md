@@ -1284,3 +1284,24 @@ arreglo es de fondo; la fase no deja protecciones provisionales nuevas.*
   - `SEC_EDGAR_USER_AGENT`;
   - "ok, pushea".
 - **Movido a la fase 7:** bandas de REIT y utilities sin muestra.
+
+### 7.24 Fase 5 del plan de fiabilidad: capa técnica y conductual
+
+*Operador, 17-oct-2026, bajo la delegación del usuario (bitácora #33). Detalle en
+[`fiabilidad/F5_PARADA.md`](fiabilidad/F5_PARADA.md). Rama `fiabilidad/f5-contexto`, sin subir. D5: solo contexto.*
+
+- **Datos** (`9363163`): ETF del sector como tercera serie, en caché 6 h por proceso y por sector; fixtures derivados
+  sin red de F5prep.
+- **Contexto** (`309ed32`):
+  - lib/market_context.py con las señales de F5prep sobre el cierre ajustado de 2 años;
+  - lectura conductual solo cuando los datos la sostienen: anclaje 52 semanas, sobrerreacción sin deterioro y
+    extrapolación frente a tasas base;
+  - titulares de 7 días de Finnhub, sin interpretar;
+  - pestaña web y sección 07 del PDF, en tono neutro;
+  - guardián con predicados `market_signal` y `behavioral`;
+  - D5 con test estructural: se calcula después del veredicto y nada del motor lo lee.
+- **Verificado:**
+  - contraste independiente a 1e-9 (7 tickers);
+  - 0 cambios de nivel;
+  - revisión externa (NOW, DE, SAN) y web.
+- **Abierto:** PEAD (sin sorpresa del BPA con fuente); latencia en Render (con el deploy).

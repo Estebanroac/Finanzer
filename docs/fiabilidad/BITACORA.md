@@ -24,11 +24,11 @@
 
 | Campo | Valor |
 |---|---|
-| Fase en curso | **Fases 3 y 4 ✅ cerradas en código** (bajo la delegación del usuario, registros #31 y #32) · **Fase 5 🔧** a continuación. Pendientes del usuario: regenerar los golden (bloqueado por permisos en la sesión), `SEC_EDGAR_USER_AGENT` en Render, el "ok, pushea", el deploy y el permiso para descargar los datos sectoriales de Damodaran (F4_PARADA §5) |
-| Rama de trabajo | `fiabilidad/f4-escalas` (sale de `fiabilidad/f3-metodo`; worktree `../finanzer_next-f3`), sin subir |
+| Fase en curso | **Fases 3, 4 y 5 ✅ cerradas en código** (bajo la delegación del usuario, registros #31–#33) · **Fases 6 y 7 🔧** a continuación. Pendientes del usuario: regenerar los golden (bloqueado por permisos en la sesión), `SEC_EDGAR_USER_AGENT` en Render, el "ok, pushea", el deploy y el permiso para descargar los datos sectoriales de Damodaran (F4_PARADA §5) |
+| Rama de trabajo | `fiabilidad/f5-contexto` (sale de `fiabilidad/f4-escalas`, que sale de `fiabilidad/f3-metodo`; worktree `../finanzer_next-f3`), sin subir |
 | Producción | `01336e2` (código `103c76f`). Rollback de código: `60f8a69` |
 | `main` local | `b2f1972` (borrador del prompt de la fase 3), un commit por delante de `origin/main`; sin subir |
-| Último cierre de sesión | 2026-10-17 · operador F3–F4 (ver registro #32) |
+| Último cierre de sesión | 2026-10-17 · operador F3–F5 (ver registro #33) |
 | Bloqueos | `SEC_EDGAR_USER_AGENT` en Render (la pone el usuario): sin ella no hay deploy de la fase 3. Golden de la fase 3 sin regenerar (permiso del usuario) |
 
 ## Fases
@@ -40,7 +40,7 @@
 | 2 Verdad de datos (EDGAR) | ✅ cerrada: 2a (2026-10-15) y 2b (2026-10-16, registros #21–#23). F1 91.4% (objetivo 95% no alcanzado; lo que falta, en la fase 3 o por diseño: RECON §7.21) | `fiabilidad/f2a-medir` y `fiabilidad/f2b-corregir` → `main` | 2a: `8d3a5cc`…`aed575a`; 2b: `b25aed6`…`103c76f` (T1–T8) + cierre (RECON §7.21, registro #23) | 2a: sí; 2b: paradas 1 y 2 sí, "ok, pushea" (2026-10-16) | 2a `25b9d8a`; 2b `103c76f` |
 | 3 Método por arquetipo | ✅ cerrada en código (2026-10-17, registros #24–#31; RECON §7.22) · preparación F3prep fusionada (`fiabilidad/f3-prep`) | `fiabilidad/f3-metodo` | T1: `3d52202`…`20c2a2e`; T1b: `d34c858`…`3966a43`; T2: `dc62a83`…`0fe8ef0`; T3–T8: `f8e5750`…`784b7eb` | paradas 1 y 1b sí (registros #25, #27); parada 2 y 3 bajo delegación (#29, #31) | — (falta `SEC_EDGAR_USER_AGENT`, golden y "ok, pushea") |
 | 4 Escalas y confianza | ✅ cerrada en código (2026-10-17, registro #32; F4_PARADA, RECON §7.23); referencias por industria y geografía en espera del permiso de descarga | `fiabilidad/f4-escalas` | `1f12e33`…`f99859a` | bajo delegación (#29, #32) | — (con la fase 3) |
-| 5 Técnica y conductual | 🔒 espera F4 · preparación F5prep fusionada (`fiabilidad/f5-prep`, módulos aislados sin conectar; D5: solo contexto) | — | `e99e958`..`8e2bf07` | §5 de la muestra aceptado (registro #20) | `a2572e0` |
+| 5 Técnica y conductual | ✅ cerrada en código (2026-10-17, registro #33; F5_PARADA, RECON §7.24); latencia desde Render, en la comprobación de producción | `fiabilidad/f5-contexto` | `e99e958`..`8e2bf07` (prep) + `9363163`, `309ed32` | §5 de la muestra aceptado (#20); lecturas conductuales revisadas bajo delegación (#33) | — (con las fases 3 y 4) |
 | 6 Infraestructura | 🔒 diagnóstico hecho (F6_DIAGNOSTICO.md, F67prep fusionada); implementación en espera (D6 sin plan de pago) | — | `697eb83`..`583e685` | — | `a2572e0` (solo documentos y herramientas de test) |
 | 7 Vigilancia / calibración | 🔧 vigilancia semanal activa (tarea `finanzer-vigilancia-semanal`, sábados 09:00); calibración tras F4 | — | `697eb83`..`583e685` | tarea programada aprobada (registro F67prep) | — |
 
@@ -95,9 +95,9 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
 | AMZN sin categoría Crecimiento (base ≤ 0) **F3: ✅ hecha** (T5, `57e8d46`): base ≤ 0 → "no significativo" declarado en vez de un crecimiento sin sentido. | corrida 2026-10-14 | 3 |
 | Calidad saturada en 100 (PLTR, TSM, NFLX, V) **F4: ✅ hecha** (`1f12e33`, `92a279e`): por encima de 80 la calidad exige persistencia en 5 ejercicios; > 95 pasa de 4 a 2 (TSM 99, V 96), ninguna en 100 (F4_PARADA §2). | corrida + RECON 7.14 | 4 |
 | Producción atiende en serie; PDF de 20–60 s; JPM 46.1 s en frío (14-oct, 14:28) | corrida 2026-10-14 + F0 | 6 (D6) |
-| Etapa 10 del spec: capa conductual + noticias | redesign-spec §5 | 5 |
+| Etapa 10 del spec: capa conductual + noticias **F5: ✅ hecha** (`9363163`, `309ed32`): contexto de mercado (momentum, tendencia, volatilidad, caídas, fuerza relativa, volumen), lectura conductual (anclaje, sobrerreacción, extrapolación) y titulares de 7 días de Finnhub, aparte y sin puntuar (D5); F5_PARADA. | redesign-spec §5 | 5 |
 | Rf y prima de riesgo con revisión mensual | RECON §7.13 | 7 |
-| Fecha de resultados no se lee en ninguna ruta (bug f): necesaria para PEAD | RECON §7.7 | 5 |
+| Fecha de resultados no se lee en ninguna ruta (bug f): necesaria para PEAD **F5: hecha en parte**: la fecha se lee desde la 2b (T3, aviso de resultados); el PEAD no se lee porque falta la sorpresa del BPA frente al consenso con fuente y fecha, y el informe lo dice. | RECON §7.7 | 5 |
 | Crecimiento de Finnhub sospechoso (FCX −24.2% frente a +1.8% en estados): desde 9b ya no puntúa (el DCF y Crecimiento usan el CAGR de los estados), pero se muestra como dato "(interanual)" **2a: no medida.** T3 no compara el crecimiento de Finnhub. **2b: ✅ hecha** (`f762e03`): el interanual sale siempre de los estados (FY0 frente a FY1) y se rotula "(último ejercicio)"; el de la fuente no entra (periodo_incoherente, aviso). FCX: +1.8%. | RECON §7.7 / §7.15 | 2 |
 | Plan B sin `lastSplitFactor` (un estado sin ajustar por split anularía la comparación de acciones) **2a: no reproducida en el panel.** Yahoo ya aplica los splits posteriores al filing (CRWD 4:1, UL 8 por 9; F2_DISCREPANCIAS §3, periodo). El plan B no se probó. **2b: ✅ hecha** (`20fc859`): el plan B toma el factor del último evento de split de la serie de precios (CRWD 4:1, NFLX 10:1, UL 0.888 de la escisión). Sin efecto hoy en el panel: Yahoo ya ajusta los estados. | RECON §7.7 | 2 |
 | Forward EPS sin fuente en prod (Finnhub da forward P/E, no BPA) **2a: no medida**, porque las estimaciones no están en EDGAR. **2b: ✅ hecha** (`8f461cf`): el BPA forward no tiene fuente y queda "sin dato" declarado; no se usa ni se muestra. | RECON §7.7 / §7.5 | 2 |
@@ -1343,3 +1343,35 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
   - `72ad982`: retorno total por acción en el perímetro homogéneo y con las acciones casadas por fecha;
   - `f27d5c5`: pre-mortem fuera de rango en el sentido del nivel;
   - `4d7b1e2`: persistencia con ventana por fecha, sin regla vacía.
+
+
+### #33 · 2026-10-17 · operador · Fase 5 (cerrada en código bajo la delegación del registro #29)
+- **Hecho:**
+  - `9363163`: serie del ETF del sector y sus fixtures;
+  - `309ed32`: contexto de mercado y lectura conductual, aparte y sin puntuar, en una pestaña web y en la sección 07
+    del PDF, más los titulares de 7 días de Finnhub;
+  - `a0a13a3`: fixture de MC.PA con su EUR→USD; destapado al probar un ticker suelto.
+- **Comprobado con la clave:** Finnhub `company-news` es gratuito en el plan actual (AAPL, 247 titulares en 7 días).
+  La clave no salió del Llavero ni se imprimió.
+- **Decisiones del operador (delegación #29):**
+  - huecos sueltos tolerados (≤ 5) y declarados;
+  - calendario de EE. UU. solo para lo que cotiza en dólares;
+  - ventana de 2 años: caída de 1 año y de la serie entera;
+  - sobrerreacción con el BPA sin caer y sin cíclicas;
+  - PEAD sin leer, por falta de fuente para la sorpresa, y se dice.
+- **Revisión de 5 lecturas conductuales** (la del usuario según el plan, hecha bajo la delegación): ninguna suena a
+  recomendación. Se corrigió la redacción de la extrapolación de NVDA, que decía "en línea" con un crecimiento
+  logrado del doble (F5_PARADA §2).
+- **Medido (replay, panel):**
+  - señales en 36 de 36;
+  - contraste independiente a 1e-9 en 7 tickers;
+  - lectura conductual: anclaje 7, sobrerreacción 2, extrapolación 4;
+  - 0 cambios de nivel;
+  - 8.6 s;
+  - `pytest tests -q --ignore=tests/test_regression.py` → "1 failed, 3902 passed, 1 skipped". Lo que falla son las
+    muestras forzadas del contrato.
+- **Revisión externa:** NOW, DE y SAN, sin hallazgos.
+- **Web:** comprobada en replay.
+- **Pendiente:** medir la latencia en Render (va con el deploy); golden, `SEC_EDGAR_USER_AGENT`, "ok, pushea" y
+  deploy, del usuario.
+- **Siguiente:** fase 6 (infraestructura, solo código por D6) y fase 7 (calibración).
