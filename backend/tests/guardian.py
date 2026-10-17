@@ -106,7 +106,13 @@ KEYWORDS = [
     ("premortem", r"como exige el precio|ya descuenta el precio|que descuenta el precio \(obtiene|volviera a su "
                   r"(?:mediana|media de ciclo)|veces el ebitda", {"premortem"}),
     ("base_temporal", r"\binteranual\b|anual en 3 años|\(3 años\)|anual de ciclo medio",
-     {"growth", "basis", "eps_vs_revenue", "premortem"}),
+     {"growth", "basis", "eps_vs_revenue", "premortem", "behavioral"}),
+    # Fase 5: el contexto de mercado y la lectura conductual citan la señal que los mide.
+    ("senal_mercado", r"el mercado (?:viene premiando|viene castigando|apenas ha movido)|régimen (?:alcista|bajista|"
+                      r"lateral)|volatilidad anual realizada|llegó a caer un|del etf de su sector|volumen de las "
+                      r"últimas 5 sesiones|volumen en el rango habitual", {"market_signal"}),
+    ("conductual", r"actúa como ancla|patrón de sobrerreacción|da por hecho que el crecimiento pasado",
+     {"behavioral"}),
 ]
 
 ENGLISH = re.compile(r"\b(STRONG|GOOD|NEUTRAL|WEAK|MODERATE|POOR|EXCELLENT|MATURE|CYCLICAL|FINANCIAL|UTILITY|"
@@ -419,6 +425,72 @@ def _p_premortem(a, c, text):
         return f"dice deuda neta / EBITDA {x} con {km.get('net_debt_to_ebitda')}"
 
 
+def _near(said, real, tol=0.0006):
+    return said is None or (real is not None and abs(said - real) <= tol)
+
+
+def _p_market_signal(a, c, text):
+    """Cada cifra y cada sentido del contexto de mercado son los de su señal (lib/market_context.py)."""
+    S = (a.get("market_context") or {}).get("signals") or {}
+    k = c.get("signal")
+    pct = lambda rx: (lambda m: float(m.group(1).replace("−", "-")) / 100 if m else None)(re.search(rx, text))  # noqa
+    if k == "momentum":
+        v = (S.get("momentum_12_1") or {}).get("value")
+        if v is not None and (("subió" in text) != (v >= 0) or not _near(pct(r"(?:subió|cayó) un (\d+(?:\.\d+)?)%"),
+                                                                       abs(v))):
+            return f"momentum dicho distinto de {v:+.4f}"
+    if k == "trend":
+        t = S.get("trend") or {}
+        if t.get("value") is not None:
+            if ("por encima" in text) != (t["value"] >= 0) or f"régimen {t.get('regime')}" not in text:
+                return f"tendencia dicha distinta de {t['value']:+.4f} ({t.get('regime')})"
+            if not _near(pct(r"cotiza un (\d+(?:\.\d+)?)%"), abs(t["value"])):
+                return "distancia a la media de 200 sesiones distinta"
+    if k == "volatility" and not _near(pct(r"realizada del (\d+(?:\.\d+)?)%"),
+                                       (S.get("realized_volatility") or {}).get("value")):
+        return "volatilidad distinta"
+    if k == "drawdown" and not _near(pct(r"llegó a caer un (\d+(?:\.\d+)?)%"),
+                                     abs(((S.get("max_drawdown") or {}).get("1") or {}).get("value") or 0)):
+        return "caída máxima distinta"
+    if k == "relative_strength":
+        w = max(((S.get("relative_strength") or {}).get("windows") or {}).items(), key=lambda kv: int(kv[0]),
+                default=(None, {}))[1]
+        if not (_near(pct(r"la acción ([+−-]?\d+(?:\.\d+)?)%"), w.get("company"))
+                and _near(pct(r"frente al ([+−-]?\d+(?:\.\d+)?)%"), w.get("sector"))):
+            return "fuerza relativa distinta"
+    if k == "volume":
+        m = re.search(r"z = ([−-]?\d+(?:\.\d+)?)", text)
+        v = (S.get("abnormal_volume") or {}).get("value")
+        if m and v is not None and abs(float(m.group(1).replace("−", "-")) - v) > 0.051:
+            return f"z dicho {m.group(1)} con {v:.2f}"
+
+
+def _p_behavioral(a, c, text):
+    """La lectura conductual cita las cifras del análisis (máximo de 52 semanas, caída desde el máximo, crecimiento
+    exigido y logrado)."""
+    km = a.get("key_metrics") or {}
+    pct = lambda rx: (lambda m: float(m.group(1).replace("−", "-")) / 100 if m else None)(re.search(rx, text))  # noqa
+    if "actúa como ancla" in text:
+        p, h = km.get("price") or a.get("price"), km.get("price_52w_high")
+        if p and h and not _near(pct(r"a un (\d+(?:\.\d+)?)% de su máximo"), abs(p / h - 1)):
+            return "distancia al máximo de 52 semanas distinta"
+    if "sobrerreacción" in text:
+        dd = (a.get("market_context") or {}).get("series_drawdown") or {}
+        if not _near(pct(r"cotiza un (\d+(?:\.\d+)?)% por debajo"), abs(dd.get("from_high") or 0)):
+            return "caída desde el máximo distinta"
+        g = {x.get("metric"): x.get("raw") for x in
+             (((a.get("score") or {}).get("breakdown") or {}).get("Crecimiento") or {}).get("adjustments") or []}
+        rev = next((v for k, v in g.items() if str(k).startswith(("Crecimiento Ingresos", "Retorno total"))), None)
+        if not _near(pct(r"ingresos ([+−-]?\d+(?:\.\d+)?)%"), rev) or not _near(
+                pct(r"BPA ([+−-]?\d+(?:\.\d+)?)% anual"), g.get("Crecimiento EPS 3Y")):
+            return "crecimiento citado distinto del que puntúa"
+    if "da por hecho" in text:
+        m = ((a.get("reverse_dcf") or {}).get("main")) or {}
+        if not (_near(pct(r"exige crecer un (\d+(?:\.\d+)?)%"), m.get("g10"))
+                and _near(pct(r"logró un ([+−-]?\d+(?:\.\d+)?)%"), (m.get("own_growth") or {}).get("cagr"))):
+            return "crecimiento exigido o logrado distinto"
+
+
 def _p_altman(a, c, text):
     z = {"safe": "segura", "grey": "gris", "distress": "de riesgo"}.get((a.get("altman_z") or {}).get("zone"))
     m = re.search(r"zona (segura|gris|de riesgo|de peligro)", text)
@@ -487,6 +559,8 @@ PREDICATES = {
     "quality_persistence": _p_quality_persistence,
     "level_border": _p_level_border,
     "premortem": _p_premortem,
+    "market_signal": _p_market_signal,
+    "behavioral": _p_behavioral,
 }
 
 

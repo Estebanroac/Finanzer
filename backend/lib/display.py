@@ -859,6 +859,38 @@ _REVERSE_BANDS = {"barata": ("Barata", "pos"), "en_precio": ("En precio", "neu")
                   "muy_exigente": ("Muy exigente", "neg")}
 
 
+def _market_block(a: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Fase 5 (D5: solo contexto): señales de mercado y lectura conductual (lib/market_context.py), con la
+    afirmación de cada frase. Tono neutro siempre (efecto marco, PLAN §2.3)."""
+    mc = a.get("market_context") or {}
+    if not mc:
+        return None
+    rows = []
+    for r in mc.get("readings") or []:
+        _record(r["text"], _claim("market_signal", field=r["field"], value=r["num"], signal=r["key"]),
+                source="display.market")
+        rows.append({"key": r["key"], "label": r["label"], "value": r["value"], "text": r["text"], "tone": 'neu'})
+    beh = []
+    for b in mc.get("behavioral") or []:
+        _record(b["text"], _claim("behavioral", field=b["field"], value=b["num"], kind_b=b["kind"]),
+                source="display.market")
+        beh.append(b["text"])
+    bad = {k: v for k, v in (mc.get("series_status") or {}).items() if v != "ok"}
+    status = (("Sin señales: " if not rows else "Señales parciales: ")
+              + "; ".join(f"la serie {'de la empresa' if k == 'company' else 'del índice' if k == 'market' else 'del sector'} "
+                          f"es {v.replace('_', ' ')}" for k, v in bad.items())) if bad else None
+    return {"title": "Contexto de mercado", "note": mc.get("note"), "rows": rows, "status_note": status,
+            "behavioral_title": "Lectura conductual del mercado", "behavioral": beh,
+            "news": (mc.get("news") or {}).get("items") or [],
+            "news_note": ((f"Titulares de los últimos {(mc.get('news') or {}).get('days')} días (Finnhub), sin "
+                           "interpretación: no puntúan." if (mc.get("news") or {}).get("items") else
+                           (mc.get("news") or {}).get("reason")) if mc.get("news") else None),
+            "pead_note": ("La deriva tras los resultados (PEAD) no se lee: hace falta la sorpresa del BPA frente al "
+                          "consenso y no hay fuente con fecha para ella."),
+            "source": (f"Serie diaria de Yahoo Finance (cierre ajustado por dividendos y splits, 2 años), S&P 500 y "
+                       f"ETF del sector ({mc.get('sector_etf')}).")}
+
+
 def _premortem_block(a: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     """Fase 4 (T3): "Esta lectura sería errónea si…" (lib/premortem.py), con la afirmación de cada condición."""
     pm = a.get("premortem") or {}
@@ -2294,7 +2326,8 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         "annex": {"title": "Detalle técnico para auditoría",
                   "items": [{"label": "Clasificación", "text": t} for t in cls_detail]
                            + annex_conf + official_source_annex(a)},
-        "sections": {"valuation": valuation, "profitability": profitability, "solvency": solvency,
+        "sections": {"market": _market_block(a), "valuation": valuation, "profitability": profitability,
+                     "solvency": solvency,
                      "growth": growth, "institutional": institutional,
                      # Histórico (dato bruto): columnas que no aplican al arquetipo, con su texto.
                      "historical": {"not_applicable": {

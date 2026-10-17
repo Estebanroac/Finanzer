@@ -274,6 +274,19 @@ export interface Sections {
     score_components: Array<{ metric: string; value: string; reason: string }>;
     range52: Range52 | null;
   };
+  /** Fase 5 (D5): contexto de mercado y lectura conductual; no puntúa. */
+  market?: {
+    title: string;
+    note: string;
+    rows: Array<{ key: string; label: string; value: string; text: string; tone: Tone }>;
+    status_note: string | null;
+    behavioral_title: string;
+    behavioral: string[];
+    news: Array<{ date: string | null; source: string | null; headline: string; url: string | null }>;
+    news_note: string | null;
+    pead_note: string;
+    source: string;
+  } | null;
   institutional: {
     cards: InstitutionalCard[];
     piotroski_criteria: Array<{ key: string; label: string; detail: string; status: string; tone: Tone }>;

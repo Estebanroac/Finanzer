@@ -121,6 +121,22 @@ def earnings_calendar(symbol: str, start: str, end: str) -> Optional[list]:
     return out
 
 
+def company_news(symbol: str, start: str, end: str) -> Optional[list]:
+    """Fase 5 (PLAN §4, fase 5): titulares de la empresa entre `start` y `end` (`/company-news`, gratuito en el plan
+    actual: comprobado el 2026-10-17). None sin clave o si falla. Contexto: no puntúa ni se interpreta."""
+    key = f"news:{symbol}:{start}:{end}"
+    now = time.time()
+    with _lock:
+        ent = _cache.get(key)
+        if ent and now - ent[0] < _CACHE_TTL:
+            return ent[1]
+    data = _get("/company-news", {"symbol": symbol, "from": start, "to": end})
+    out = data if isinstance(data, list) else None
+    with _lock:
+        _cache[key] = (now, out)
+    return out
+
+
 def _num(v) -> Optional[float]:
     try:
         if v is None:

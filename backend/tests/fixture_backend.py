@@ -385,6 +385,8 @@ class FixtureStore:
         self.load(sym)
         e = self._next(self.finnhub, sym, _key(path, params), lambda x: _key(x["path"], x["params"]))
         if e is None:
+            if path == "/company-news":   # fase 5: titulares opcionales; los fixtures anteriores no los traen
+                return None
             self.misses.append(f"finnhub {sym} {_key(path, params)}")
             return None
         return copy.deepcopy(e["response"])
@@ -550,9 +552,11 @@ def _history_replay_fetcher(store):
         sym = str(symbol).upper()
         cur = store.current
         own = (store.yf.get(cur) or {}) if cur else {}
-        key = "price_history" if sym == cur else "market_history"
-        if key in own and (key == "price_history" or (own[key] or {}).get("symbol") == sym):
-            return hf.obj_to_history(own[key])
+        if sym == cur and "price_history" in own:
+            return hf.obj_to_history(own["price_history"])
+        for key in ("market_history", "sector_history"):     # fase 5: el ETF del sector, aparte del índice
+            if (own.get(key) or {}).get("symbol") == sym:
+                return hf.obj_to_history(own[key])
         until = str((store.meta.get(cur) or {}).get("captured_at_local") or "")[:10] or None
         try:
             return hf.load_frame(sym, until)
@@ -571,7 +575,10 @@ def _history_record_fetcher(store, real):
         frame = price_history.normalize(raw)
         sym, cur = str(symbol).upper(), store.current
         if frame is not None and cur:
-            store.record_yf(cur, "price_history" if sym == cur else "market_history", hf.frame_to_obj(sym, frame))
+            from settings import cfg
+            mkt = {cfg("market.price_series.market_symbol"), cfg("market.price_series.market_fallback_symbol")}
+            key = "price_history" if sym == cur else "market_history" if sym in mkt else "sector_history"
+            store.record_yf(cur, key, hf.frame_to_obj(sym, frame))
         return raw
     return fetch
 

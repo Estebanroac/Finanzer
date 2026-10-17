@@ -335,7 +335,8 @@ def test_modules_are_isolated_from_the_engine():
     """Nada del motor, la web ni el PDF importa price_series ni market_signals (fase 5: contexto aparte). Desde la 2b
     la serie de precios entra por lib/price_history.py (D5: solo dividendos, rango de 52 semanas y beta), que lee la
     config de la serie pero no importa estos módulos. Excepción única (T6): lib/beta.py importa la función `beta` de
-    market_signals y nada más."""
+    market_signals y nada más. Fase 5: lib/market_context.py (el contexto de mercado, aparte y sin puntuar) es la capa
+    que los usa."""
     import re
     backend = os.path.dirname(pf.TESTS_DIR)
     imports = re.compile(r"^\s*(from\s+(price_series|market_signals)\s+import|import\s+(price_series|market_signals)\b)",
@@ -343,7 +344,7 @@ def test_modules_are_isolated_from_the_engine():
     offenders = []
     for folder in (backend, os.path.join(backend, "lib")):
         for name in os.listdir(folder):
-            if not name.endswith(".py") or name in ("price_series.py", "market_signals.py"):
+            if not name.endswith(".py") or name in ("price_series.py", "market_signals.py", "market_context.py"):
                 continue
             with open(os.path.join(folder, name), encoding="utf-8") as fh:
                 text = fh.read()
@@ -397,3 +398,18 @@ def test_ul_beta_and_drawdowns_carry_the_magnum_note():
     for s in (sig["beta"], sig["max_drawdown"]["1"], sig["max_drawdown"]["3"]):
         assert s["status"] == "ok" and any("2025-12-09" in n for n in s["notes"])
     assert all("notes" not in ms.all_signals(pf.replay_series(t))["beta"] for t in ("NFLX", "NVDA", "CRWD", "NVO"))
+
+
+def test_market_context_never_feeds_the_scores():
+    """D5 (fase 5): el contexto de mercado se calcula DESPUÉS del score, la confianza y el veredicto, y no importa nada
+    que puntúe; nada del motor lee `market_context`."""
+    backend = os.path.dirname(pf.TESTS_DIR)
+    main_src = open(os.path.join(backend, "main.py"), encoding="utf-8").read()
+    assert main_src.index('result["market_context"] =') > main_src.index('result["verdict"] = build_verdict(')
+    ctx_src = open(os.path.join(backend, "lib", "market_context.py"), encoding="utf-8").read()
+    for engine in ("financial_ratios", "verdict", "valuation_confidence", "persistence"):
+        assert f"import {engine}" not in ctx_src and f"from {engine} " not in ctx_src, engine
+    for name in os.listdir(os.path.join(backend, "lib")):
+        if name.endswith(".py") and name not in ("market_context.py", "display.py", "pdf_report.py"):
+            src = open(os.path.join(backend, "lib", name), encoding="utf-8").read()
+            assert '"market_context"' not in src, f"{name} lee el contexto de mercado"

@@ -74,6 +74,16 @@ CASES = {
                    "reverse_dcf": {"main": {"g10": 0.089, "own_growth": {"cagr": 0.010, "years": 10}}}},
                   {"price_attractiveness": {"level": "razonable"},
                    "reverse_dcf": {"main": {"g10": 0.089, "own_growth": {"cagr": 0.010, "years": 10}}}}),
+    "market_signal": ("en los 12 meses anteriores al último, la acción subió un 34.3%: el mercado viene premiando la "
+                      "acción", [claim("market_signal", field="market_context.signals.momentum_12_1.value",
+                                       value=0.343, signal="momentum")],
+                      {"market_context": {"signals": {"momentum_12_1": {"value": 0.343}}}},
+                      {"market_context": {"signals": {"momentum_12_1": {"value": -0.343}}}}),
+    "behavioral": ("Cotiza a un 1.5% de su máximo de 52 semanas. Cerca del máximo, el mercado tiende a infravalorar las "
+                   "buenas noticias y a incorporarlas tarde: el máximo actúa como ancla (George y Hwang, 2004).",
+                   [claim("behavioral", field="market_context.anchor_gap", value=-0.015, kind_b="anclaje_52s")],
+                   {"key_metrics": {"price": 98.5, "price_52w_high": 100.0}, "market_context": {"anchor_gap": -0.015}},
+                   {"key_metrics": {"price": 90.0, "price_52w_high": 100.0}, "market_context": {"anchor_gap": -0.015}}),
     "dcf_upside": ("el precio incorpora una prima de 20% sobre el valor intrínseco", [claim("dcf_upside")],
                    {"dcf": {"upside": -20.0}}, {"dcf": {"upside": 20.0}}),
     "dcf_rel": ("DCF no concluyente (fiabilidad baja)", [claim("dcf_rel")],

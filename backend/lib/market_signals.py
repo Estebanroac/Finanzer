@@ -231,7 +231,7 @@ def _blocked(reason: str) -> Dict[str, Any]:
     return {"status": "sin_dato", "value": None, "params": {}, "as_of": None, "reason": reason}
 
 
-def all_signals(price_series: Dict[str, Any]) -> Dict[str, Any]:
+def all_signals(price_series: Dict[str, Any], drawdown_years=None) -> Dict[str, Any]:
     """Todas las señales de un resultado de price_series.fetch_price_series.
 
     Una serie `sin_dato` o `sospechosa` no alimenta señales: devuelven `sin_dato` con el motivo (un split sin
@@ -241,6 +241,7 @@ def all_signals(price_series: Dict[str, Any]) -> Dict[str, Any]:
     cuya ventana la contiene llevan `notes` con la fecha y el ratio (decisión del usuario, 2026-10-15; se revisa
     en la fase 5)."""
     S = price_series["series"]
+    dd_years = drawdown_years or cfg("market.signals.drawdown.windows_years")   # fase 5: la ventana del análisis
 
     def usable(role):
         s = S[role]
@@ -256,13 +257,13 @@ def all_signals(price_series: Dict[str, Any]) -> Dict[str, Any]:
         for name in ("momentum_12_1", "trend", "realized_volatility", "abnormal_volume", "range_52w_position",
                      "relative_strength", "beta"):
             out[name] = _blocked(why)
-        out["max_drawdown"] = {str(y): _blocked(why) for y in cfg("market.signals.drawdown.windows_years")}
+        out["max_drawdown"] = {str(y): _blocked(why) for y in dd_years}
         return out
     close = co["close"]
     out["momentum_12_1"] = momentum_12_1(close)
     out["trend"] = trend(close)
     out["realized_volatility"] = realized_volatility(close)
-    out["max_drawdown"] = {str(y): max_drawdown(close, y) for y in cfg("market.signals.drawdown.windows_years")}
+    out["max_drawdown"] = {str(y): max_drawdown(close, y) for y in dd_years}
     out["relative_strength"] = relative_strength(close, se["close"]) if se is not None else _blocked(why_s)
     out["abnormal_volume"] = abnormal_volume(co["volume"])
     out["range_52w_position"] = range_52w_position(close)

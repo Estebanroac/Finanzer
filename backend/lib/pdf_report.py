@@ -1143,6 +1143,39 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     if not (n_red or n_warn or n_str):
         story.append(Paragraph("No se detectaron alertas significativas.", S['body']))
 
+    # ════════════════ 07 CONTEXTO DE MERCADO (fase 5; D5: no puntúa) ════════════════
+    MK = SEC.get("market")
+    if MK:
+        story.append(Spacer(1, 12))
+        story.extend(section_header("07", MK["title"], S))
+        story.append(Paragraph(_esc(MK["note"]), S['small']))
+        if MK.get("status_note"):
+            story.append(Paragraph(_esc(MK["status_note"]), S['small']))
+        if MK["rows"]:
+            story.append(Spacer(1, 4))
+            _mrows = [[Paragraph(f"<b>{_esc(r['label'])}</b>", S['small']), Paragraph(_esc(r["value"]), S['small']),
+                       Paragraph(_esc(r["text"]), S['small'])] for r in MK["rows"]]
+            mt = Table(_mrows, colWidths=[1.55 * inch, 0.85 * inch, CW - 2.4 * inch])
+            mt.setStyle(TableStyle([('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                                    ('LINEBELOW', (0, 0), (-1, -2), 0.4, HAIR),
+                                    ('TOPPADDING', (0, 0), (-1, -1), 3), ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+                                    ('LEFTPADDING', (0, 0), (-1, -1), 0)]))
+            story.append(mt)
+        if MK["behavioral"]:
+            story.append(Spacer(1, 6))
+            story.append(Paragraph(_esc(MK["behavioral_title"]), S['h2']))
+            for t in MK["behavioral"]:
+                story.append(Paragraph("• " + _esc(t), S['body']))
+        if MK.get("news"):
+            story.append(Spacer(1, 6))
+            story.append(Paragraph("Titulares recientes", S['h2']))
+            for n in MK["news"]:
+                story.append(Paragraph(f"• {_esc(n.get('date') or '')} · {_esc(n.get('source') or '')}: "
+                                       f"{_esc(n['headline'])}", S['small']))
+        if MK.get("news_note"):
+            story.append(Paragraph(_esc(MK["news_note"]), S['small']))
+        story.append(Paragraph(_esc(MK["pead_note"] + " " + MK["source"]), S['small']))
+
     # Metodología + cierre (solo los modelos que aplican al arquetipo)
     story.append(Spacer(1, 14))
     story.append(HRFlowable(width="100%", thickness=0.5, color=HAIR))

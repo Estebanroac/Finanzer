@@ -10,8 +10,9 @@ import HistoricalTab from "./tabs/HistoricalTab";
 import InstitutionalTab from "./tabs/InstitutionalTab";
 import AlertsTab from "./tabs/AlertsTab";
 import ComparisonTab from "./tabs/ComparisonTab";
+import MarketTab from "./tabs/MarketTab";
 
-// Mismas secciones que el PDF (01–06) + la comparativa con la referencia y el histórico anual (solo web).
+// Mismas secciones que el PDF (01–07; 07, contexto de mercado, no puntúa) + la comparativa con la referencia y el histórico anual (solo web).
 const TABS = [
   { id: "valuation", label: "Valoración" },
   { id: "profitability", label: "Rentabilidad" },
@@ -21,6 +22,7 @@ const TABS = [
   { id: "historical", label: "Histórico" },
   { id: "institutional", label: "Evaluación institucional" },
   { id: "alerts", label: "Alertas" },
+  { id: "market", label: "Contexto de mercado" },
 ];
 
 interface TabsSectionProps {
@@ -99,6 +101,7 @@ export default function TabsSection({ data }: TabsSectionProps) {
         {activeTab === "historical" && <HistoricalTab data={data} />}
         {activeTab === "institutional" && <InstitutionalTab display={data.display} />}
         {activeTab === "alerts" && <AlertsTab display={data.display} />}
+        {activeTab === "market" && <MarketTab display={data.display} />}
       </div>
     </div>
   );

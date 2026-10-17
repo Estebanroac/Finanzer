@@ -1856,6 +1856,18 @@ def _compute_analysis(symbol: str) -> dict:
         except Exception as e:
             _sin_dato("premortem", e)
 
+        # ── Fase 5 (D5: solo contexto): señales de mercado y lectura conductual (lib/market_context.py) ──
+        try:
+            if _has_yahoo:
+                import market_context as _mctx
+                import price_history as _ph
+                import sector_profiles as _sp
+                _etf = _sp.get_sector_profile(sector or "").sector_etf
+                result["market_context"] = _mctx.build(_ph.peek(symbol), _ph.peek_market(), _ph.sector(_etf), _etf,
+                                                       result)
+        except Exception as e:
+            _sin_dato("contexto_mercado", e)
+
         # ── Etapa 9b: capa de presentación compartida (lib/display.py) ──
         # Lo que se LEE de cada métrica se calcula una vez aquí; el PDF y la web lo consumen.
         try:

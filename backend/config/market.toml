@@ -99,3 +99,16 @@ lookback_days = 760             # pagos que se miran (2 años y un margen)
 source_tolerance = 0.25         # |indicado de la fuente / indicado de los pagos − 1| aceptable (subida declarada y aún no pagada)
 downward_ratio = 0.5           # indicado < la mitad de lo cobrado en 12 meses: extraordinario o recorte (§2.2.4)
 paid_band = [0.5, 2.0]          # pagado por título en los estados (TTM) frente a lo cobrado por título: fuera, aviso
+
+# ── Fase 5: contexto de mercado y lectura conductual en el análisis (lib/market_context.py; D5: no puntúa) ──
+[context]
+drawdown_years = [1]                # la serie del análisis es de 2 años: la caída de toda la serie se calcula aparte
+tolerated_missing_days = 5          # sesiones sueltas sin cotización toleradas (festivos de un ADR); un salto sigue bloqueando
+momentum_band = 0.10                # |momentum 12-1| < 10%: "apenas ha movido la acción" (ni premio ni castigo)
+relative_band = 0.10                # |empresa − ETF| ≥ 10 pp en 12 meses: el movimiento es propio de la empresa
+volume_z = 2.0                      # z ≥ 2 (dos desviaciones típicas): atención inusual (Gervais, Kaniel y Mingelgrin, 2001)
+anchor_within = 0.05                # a menos del 5% del máximo de 52 semanas: el máximo actúa como ancla (George y Hwang, 2004)
+overreaction_drop = 0.40            # ≥ 40% bajo el máximo de 2 años sin deterioro fundamental (De Bondt y Thaler, 1985: perdedores extremos)
+extrapolation_own_ratio = 0.8       # lo que exige el precio está en línea con lo logrado (≥ 80% del crecimiento propio)
+news_days = 7                       # PLAN §4 (fase 5): titulares de 7 días si Finnhub company-news es gratuito (lo es)
+news_max = 5                        # los 5 más recientes de la propia empresa, sin interpretar
