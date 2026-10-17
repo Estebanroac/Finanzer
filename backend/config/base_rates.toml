@@ -1,0 +1,320 @@
+# Fase 3 (T1, parada 1; F3_DISENO_METODO §8.1): tasas base del crecimiento de las ventas, la referencia principal del
+# DCF inverso. Fuente oficial: M. J. Mauboussin y D. Callahan, "The Impact of Intangibles on Base Rates", Consilient
+# Observer, Counterpoint Global (Morgan Stanley Investment Management), 23 de junio de 2021; PDF vigente
+# (© 2025 Morgan Stanley, 14 páginas), Exhibit 3 (pp. 6–8), "Base Rates for Sales Growth by Size and Industry,
+# 1984-2020". Descargado con permiso del usuario el 2026-10-16 (registro #27) y extraído por programa del texto del PDF
+# (pypdf); la fila "All" de cada tramo suma la del universo completo (test).
+#
+# Universo: constituyentes del Russell 3000 a fin de año, 1984–2020 (FactSet). Crecimiento NOMINAL de las ventas; los
+# tramos de tamaño, por las ventas del año inicial en dólares de 2020 (se excluyen las de menos de 1 millón).
+# Industrias: las cinco de Fama y French por código SIC, con las modificaciones de Ewens (Appendix B: hospitales a
+# Consumer; radio y TV a Consumer). Manufacturing incluye energía y utilities; Other, minería, construcción,
+# transporte, servicios a empresas, ocio y finanzas.
+#
+# Por tramo e industria: mediana, media y desviación típica del CAGR de ventas a 1, 3, 5 y 10 años, y el número de
+# observaciones (empresa-periodo). Los autores advierten que la distribución no es normal (cola a la derecha); el uso
+# en el motor (bandas del DCF inverso) se decide y se calibra en la T3.
+
+source = "M. J. Mauboussin y D. Callahan, The Impact of Intangibles on Base Rates, Consilient Observer (Counterpoint Global, Morgan Stanley IM), 2021-06-23, Exhibit 3 (pp. 6-8)"
+url = "https://www.morganstanley.com/im/en-us/individual-investor/insights/consilient-observer/the-impact-of-intangibles-on-base-rates.html"
+as_of = "2021-06-23"
+period = "1984-2020"
+growth = "nominal"
+horizons_years = [1, 3, 5, 10]
+
+[bins]                          # tramo -> ventas mínimas del año inicial, en miles de millones de USD de 2020
+"0-1" = 0
+"1-5" = 1
+"5-10" = 5
+"10-25" = 10
+"25-50" = 25
+"50-100" = 50
+"100+" = 100
+
+[table."todas".Healthcare]
+median = [0.115, 0.108, 0.104, 0.093]
+mean = [0.526, 0.168, 0.126, 0.093]
+std = [4.063, 0.459, 0.306, 0.225]
+count = [6493, 5278, 4282, 2511]
+
+[table."todas".Technology]
+median = [0.097, 0.084, 0.079, 0.072]
+mean = [0.154, 0.106, 0.090, 0.073]
+std = [0.490, 0.219, 0.165, 0.130]
+count = [14491, 12009, 9874, 6012]
+
+[table."todas".Consumer]
+median = [0.069, 0.064, 0.060, 0.059]
+mean = [0.135, 0.089, 0.077, 0.066]
+std = [1.647, 0.188, 0.139, 0.095]
+count = [19568, 16798, 14318, 9329]
+
+[table."todas".Manufacturing]
+median = [0.054, 0.051, 0.050, 0.055]
+mean = [0.093, 0.068, 0.061, 0.060]
+std = [0.504, 0.175, 0.131, 0.094]
+count = [19659, 17333, 15139, 10544]
+
+[table."todas".Other]
+median = [0.076, 0.073, 0.069, 0.063]
+mean = [0.162, 0.096, 0.081, 0.066]
+std = [1.945, 0.225, 0.158, 0.122]
+count = [30514, 24951, 20639, 12749]
+
+[table."todas".All]
+median = [0.074, 0.069, 0.065, 0.062]
+mean = [0.166, 0.095, 0.080, 0.067]
+std = [1.773, 0.232, 0.164, 0.120]
+count = [90725, 76369, 64252, 41145]
+
+[table."0-1".Healthcare]
+median = [0.147, 0.134, 0.126, 0.119]
+mean = [0.665, 0.196, 0.142, 0.101]
+std = [4.654, 0.524, 0.351, 0.265]
+count = [4930, 3945, 3151, 1748]
+
+[table."0-1".Technology]
+median = [0.116, 0.102, 0.094, 0.084]
+mean = [0.184, 0.123, 0.105, 0.085]
+std = [0.565, 0.240, 0.175, 0.136]
+count = [10157, 8346, 6795, 4062]
+
+[table."0-1".Consumer]
+median = [0.095, 0.084, 0.078, 0.074]
+mean = [0.222, 0.125, 0.102, 0.082]
+std = [2.563, 0.252, 0.181, 0.121]
+count = [7992, 6811, 5744, 3603]
+
+[table."0-1".Manufacturing]
+median = [0.073, 0.072, 0.069, 0.072]
+mean = [0.139, 0.099, 0.085, 0.080]
+std = [0.665, 0.215, 0.158, 0.111]
+count = [8274, 7262, 6268, 4259]
+
+[table."0-1".Other]
+median = [0.092, 0.089, 0.084, 0.076]
+mean = [0.218, 0.120, 0.100, 0.080]
+std = [2.489, 0.262, 0.178, 0.134]
+count = [18466, 14926, 12256, 7453]
+
+[table."0-1".All]
+median = [0.097, 0.090, 0.084, 0.078]
+mean = [0.243, 0.125, 0.103, 0.083]
+std = [2.377, 0.286, 0.198, 0.144]
+count = [49819, 41290, 34214, 21125]
+
+[table."1-5".Healthcare]
+median = [0.083, 0.083, 0.081, 0.077]
+mean = [0.097, 0.092, 0.093, 0.086]
+std = [0.187, 0.122, 0.098, 0.070]
+count = [915, 765, 637, 409]
+
+[table."1-5".Technology]
+median = [0.072, 0.062, 0.060, 0.057]
+mean = [0.088, 0.068, 0.060, 0.053]
+std = [0.229, 0.159, 0.141, 0.120]
+count = [3103, 2606, 2177, 1348]
+
+[table."1-5".Consumer]
+median = [0.063, 0.061, 0.059, 0.059]
+mean = [0.084, 0.072, 0.068, 0.063]
+std = [0.217, 0.131, 0.104, 0.078]
+count = [6940, 5938, 5053, 3343]
+
+[table."1-5".Manufacturing]
+median = [0.047, 0.045, 0.046, 0.051]
+mean = [0.069, 0.054, 0.052, 0.055]
+std = [0.390, 0.138, 0.107, 0.081]
+count = [7166, 6289, 5506, 3885]
+
+[table."1-5".Other]
+median = [0.065, 0.064, 0.061, 0.056]
+mean = [0.086, 0.070, 0.063, 0.054]
+std = [0.308, 0.148, 0.119, 0.101]
+count = [8110, 6655, 5515, 3418]
+
+[table."1-5".All]
+median = [0.061, 0.057, 0.056, 0.056]
+mean = [0.082, 0.067, 0.062, 0.058]
+std = [0.301, 0.142, 0.114, 0.091]
+count = [26234, 22253, 18888, 12403]
+
+[table."5-10".Healthcare]
+median = [0.079, 0.086, 0.082, 0.083]
+mean = [0.086, 0.090, 0.087, 0.082]
+std = [0.121, 0.095, 0.079, 0.050]
+count = [194, 166, 138, 79]
+
+[table."5-10".Technology]
+median = [0.053, 0.049, 0.039, 0.025]
+mean = [0.074, 0.065, 0.054, 0.044]
+std = [0.221, 0.154, 0.131, 0.104]
+count = [519, 441, 367, 232]
+
+[table."5-10".Consumer]
+median = [0.055, 0.054, 0.051, 0.052]
+mean = [0.068, 0.058, 0.054, 0.052]
+std = [0.195, 0.109, 0.086, 0.061]
+count = [1936, 1673, 1432, 950]
+
+[table."5-10".Manufacturing]
+median = [0.037, 0.036, 0.039, 0.045]
+mean = [0.051, 0.042, 0.042, 0.045]
+std = [0.221, 0.132, 0.097, 0.062]
+count = [1933, 1710, 1494, 1045]
+
+[table."5-10".Other]
+median = [0.049, 0.045, 0.044, 0.037]
+mean = [0.056, 0.044, 0.039, 0.031]
+std = [0.212, 0.152, 0.134, 0.120]
+count = [1871, 1583, 1333, 849]
+
+[table."5-10".All]
+median = [0.049, 0.045, 0.045, 0.045]
+mean = [0.060, 0.051, 0.047, 0.044]
+std = [0.209, 0.133, 0.108, 0.085]
+count = [6453, 5573, 4764, 3155]
+
+[table."10-25".Healthcare]
+median = [0.073, 0.072, 0.069, 0.063]
+mean = [0.079, 0.075, 0.071, 0.065]
+std = [0.147, 0.090, 0.070, 0.061]
+count = [284, 252, 223, 175]
+
+[table."10-25".Technology]
+median = [0.057, 0.052, 0.049, 0.044]
+mean = [0.064, 0.054, 0.050, 0.047]
+std = [0.173, 0.114, 0.096, 0.072]
+count = [431, 370, 320, 228]
+
+[table."10-25".Consumer]
+median = [0.051, 0.046, 0.044, 0.045]
+mean = [0.059, 0.052, 0.049, 0.050]
+std = [0.169, 0.106, 0.087, 0.066]
+count = [1582, 1383, 1208, 819]
+
+[table."10-25".Manufacturing]
+median = [0.032, 0.025, 0.024, 0.027]
+mean = [0.040, 0.028, 0.024, 0.025]
+std = [0.210, 0.115, 0.088, 0.061]
+count = [1577, 1434, 1296, 960]
+
+[table."10-25".Other]
+median = [0.049, 0.040, 0.038, 0.032]
+mean = [0.057, 0.042, 0.036, 0.038]
+std = [0.235, 0.126, 0.097, 0.065]
+count = [1352, 1158, 984, 652]
+
+[table."10-25".All]
+median = [0.048, 0.040, 0.038, 0.036]
+mean = [0.054, 0.043, 0.039, 0.040]
+std = [0.200, 0.115, 0.091, 0.065]
+count = [5226, 4597, 4031, 2834]
+
+[table."25-50".Healthcare]
+median = [0.055, 0.052, 0.044, 0.053]
+mean = [0.076, 0.062, 0.054, 0.047]
+std = [0.158, 0.097, 0.079, 0.046]
+count = [93, 80, 71, 60]
+
+[table."25-50".Technology]
+median = [0.052, 0.040, 0.032, 0.049]
+mean = [0.064, 0.051, 0.043, 0.041]
+std = [0.147, 0.127, 0.114, 0.085]
+count = [145, 130, 118, 86]
+
+[table."25-50".Consumer]
+median = [0.047, 0.040, 0.037, 0.043]
+mean = [0.052, 0.044, 0.041, 0.041]
+std = [0.157, 0.101, 0.082, 0.063]
+count = [614, 544, 486, 360]
+
+[table."25-50".Manufacturing]
+median = [0.037, 0.024, 0.022, 0.022]
+mean = [0.040, 0.017, 0.010, 0.019]
+std = [0.219, 0.147, 0.112, 0.071]
+count = [414, 369, 332, 224]
+
+[table."25-50".Other]
+median = [0.046, 0.041, 0.035, 0.035]
+mean = [0.054, 0.054, 0.046, 0.045]
+std = [0.170, 0.122, 0.089, 0.060]
+count = [448, 401, 352, 246]
+
+[table."25-50".All]
+median = [0.046, 0.037, 0.034, 0.037]
+mean = [0.052, 0.042, 0.036, 0.037]
+std = [0.176, 0.122, 0.096, 0.066]
+count = [1714, 1524, 1359, 976]
+
+[table."50-100".Healthcare]
+median = [0.035, 0.017, 0.020, 0.016]
+mean = [0.026, 0.010, 0.013, 0.022]
+std = [0.171, 0.104, 0.074, 0.044]
+count = [61, 56, 50, 33]
+
+[table."50-100".Technology]
+median = [0.055, 0.055, 0.061, 0.088]
+mean = [0.066, 0.059, 0.059, 0.069]
+std = [0.163, 0.123, 0.104, 0.073]
+count = [77, 63, 48, 22]
+
+[table."50-100".Consumer]
+median = [0.047, 0.042, 0.044, 0.040]
+mean = [0.052, 0.040, 0.037, 0.030]
+std = [0.148, 0.099, 0.083, 0.060]
+count = [298, 274, 250, 169]
+
+[table."50-100".Manufacturing]
+median = [0.033, 0.022, 0.015, 0.028]
+mean = [0.017, -0.001, 0.000, 0.008]
+std = [0.289, 0.151, 0.120, 0.096]
+count = [177, 163, 145, 99]
+
+[table."50-100".Other]
+median = [0.050, 0.033, 0.037, 0.052]
+mean = [0.084, 0.046, 0.041, 0.043]
+std = [0.258, 0.128, 0.091, 0.052]
+count = [184, 156, 136, 93]
+
+[table."50-100".All]
+median = [0.043, 0.035, 0.033, 0.039]
+mean = [0.051, 0.031, 0.029, 0.029]
+std = [0.217, 0.123, 0.097, 0.070]
+count = [797, 712, 629, 416]
+
+[table."100+".Healthcare]
+median = [0.055, 0.057, 0.061, 0.079]
+mean = [0.074, 0.073, 0.074, 0.078]
+std = [0.075, 0.041, 0.029, 0.004]
+count = [16, 14, 12, 7]
+
+[table."100+".Technology]
+median = [0.051, 0.030, 0.018, 0.020]
+mean = [0.037, 0.021, 0.009, 0.003]
+std = [0.111, 0.079, 0.063, 0.036]
+count = [59, 53, 49, 34]
+
+[table."100+".Consumer]
+median = [0.045, 0.040, 0.036, 0.034]
+mean = [0.049, 0.044, 0.040, 0.035]
+std = [0.091, 0.066, 0.054, 0.048]
+count = [206, 175, 145, 85]
+
+[table."100+".Manufacturing]
+median = [0.004, 0.006, 0.008, 0.010]
+mean = [-0.002, -0.001, 0.001, 0.004]
+std = [0.207, 0.122, 0.099, 0.076]
+count = [118, 106, 98, 72]
+
+[table."100+".Other]
+median = [0.044, 0.004, 0.007, -0.013]
+mean = [0.024, 0.014, 0.009, -0.012]
+std = [0.131, 0.087, 0.070, 0.044]
+count = [83, 72, 63, 38]
+
+[table."100+".All]
+median = [0.041, 0.034, 0.029, 0.022]
+mean = [0.032, 0.026, 0.021, 0.015]
+std = [0.138, 0.090, 0.074, 0.059]
+count = [482, 420, 367, 236]
