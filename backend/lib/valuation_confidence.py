@@ -255,7 +255,7 @@ def verdict_confidence(dimensions: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
     weak = [labels[k] for k, d in dimensions.items()
             if k in W and k != "convergence" and d.get("level") == "baja"]
     if weak:
-        caps.append((C["weak_dimension_cap"], f"{', '.join(weak)} baja: alta exige que ninguna dimensión sea baja"))
+        caps.append((C["weak_dimension_cap"], f"{', '.join(weak)} baja, y alta exige que ninguna dimensión lo sea"))
     if (dimensions.get("fuente_oficial") or {}).get("level") == "baja":
         caps.append((C["no_official_source_cap"], "sin fuente oficial para verificar los datos"))
     for cap, why in caps:

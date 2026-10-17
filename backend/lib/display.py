@@ -1825,10 +1825,11 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
             "plain": plain, "dimensions": dims,
             "reasons": [{k: v for k, v in r.items() if k != "detail"} for r in confidence_reasons(_conf)],
             "summary": (f"Confianza del veredicto: {_conf['level']}"
-                        + (f" (techo en {_conf['level']} "
-                           + ("sin fuente oficial para verificar los datos"
-                              if ((_conf.get("dimensions") or {}).get("fuente_oficial") or {}).get("level") == "baja"
-                              else "sin contraste entre métodos")
+                        # Fase 4 (T2): el motivo del techo es el que lo puso (convergencia, una dimensión baja o la
+                        # fuente oficial), no uno fijo.
+                        + (f" (techo en {_conf['level']}: "
+                           + ("; ".join(r.split(": ", 1)[1] for r in _conf.get("reasons") or []
+                                        if r.startswith(f"techo en {_conf['level']}: ")) or "techo de la confianza")
                            + f"; sin techo sería {_conf['capped_from']})" if _conf.get("capped_from") else "")
                         + (f". Contrae el atractivo del precio hacia 50 (factor {_pa.get('factor')}): sin ajustar "
                            f"{p_raw} → ajustado a {p_score}" if _pa.get("factor") is not None else "")
