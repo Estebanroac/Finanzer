@@ -263,8 +263,14 @@ def enrich_info(info: Dict[str, Any], symbol: str, degraded: bool = False) -> Di
     prov = info.setdefault("_provenance", {})
     for tag in filled:
         path = _tag_map.get(tag) or (("_yahoo_ratios." + tag[3:]) if tag.startswith("yr.") else tag.rstrip("~"))
-        prov[path] = {"source": "finnhub",
-                      "detail": "/stock/metric" + (" (impuesto: difería >2% del existente)" if tag.endswith("~") else "")}
+        detail = "/stock/metric" + (" (impuesto: difería >2% del existente)" if tag.endswith("~") else "")
+        if path.endswith("forwardPE"):
+            # Fase 2b (T7): estimación de consenso del proveedor, horizonte no documentado. Contrastada en vivo con
+            # Yahoo el 2026-10-16 (TSM 18.9 frente a 17.9; AAPL 35.3/35.9; KO 25.6/26.6; BCS 7.6/7.0; NVO 11.5/11.4;
+            # TM 9.3/12.3 y ASML 30.6/26.2 difieren, probablemente por el horizonte). El P/E no depende de la
+            # moneda ni del factor ADR: no hay error de unidad.
+            detail += " (forwardPE: estimación de consenso del proveedor, horizonte no documentado)"
+        prov[path] = {"source": "finnhub", "detail": detail}
 
     if filled:
         head = ", ".join(filled[:12])
