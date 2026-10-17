@@ -239,3 +239,16 @@ def test_mid_cycle_growth_peak_to_peak():
     assert abs(r["cagr"] - ((150 / 120) ** (1 / 8) - 1)) < 1e-12
     # Historia corta: sin ciclo medio de pico a pico (queda la cota, declarada).
     assert cy.mid_cycle_growth(H(rev[:7], first=2010)) is None
+
+
+def test_per_share_cagr_uses_calendar_years_with_gaps():
+    # Acciones sin dato en 2014–2016 (NOW): el CAGR de 2013 a 2025 son 12 años, no 9 puntos.
+    rev = [100.0 * 1.2 ** i for i in range(13)]                     # 2013..2025
+    sh = [10.0, None, None, None] + [10.0] * 9
+    h = H(rev, shares=[s for s in sh], first=2013)
+    h["diluted_shares"]["values"] = [v for v in h["diluted_shares"]["values"] if v["value"] is not None]
+    r = cy.revenue_ps_cagr_long(h)
+    # Ventana de 10 años (desde 2015): sin acciones en 2015–2016, el primer ejercicio es 2017 -> 8 años reales.
+    assert r["years"] == 8 and r["from"][:4] == "2017" and abs(r["cagr"] - 0.2) < 1e-12
+    g = cy.growth_profitable_measures(h)
+    assert abs(g["revenue_ps_cagr_3y"] - 0.2) < 1e-12 and abs(g["revenue_ps_cagr_5y"] - 0.2) < 1e-12

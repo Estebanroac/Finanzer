@@ -245,12 +245,16 @@ def growth_profitable_measures(hist: Dict[str, Any]) -> Dict[str, Any]:
     if brk:
         sh = [x for x in sh if x[0] >= brk[-1]]
     basis = "por_accion" if len(sh) >= 4 else "agregado"
-    ps = [r / s for _e, r, s in sh] if basis == "por_accion" else [v for _e, v in rev]
+    pts = [(e, r / s) for e, r, s in sh] if basis == "por_accion" else rev
     out = {"basis": basis, "revenue_ps_cagr_3y": None, "revenue_ps_cagr_5y": None, "share_break": brk[-1] if brk else None}
-    if len(ps) >= 4 and ps[-4] > 0 and ps[-1] > 0:
-        out["revenue_ps_cagr_3y"] = cagr(ps[-1], ps[-4], 3)
-    if len(ps) >= 6 and ps[-6] > 0 and ps[-1] > 0:
-        out["revenue_ps_cagr_5y"] = cagr(ps[-1], ps[-6], 5)
+    # T7: el ejercicio de hace exactamente N años, por la fecha de cierre (una serie con huecos no cuenta puntos).
+    if pts:
+        e1, v1 = pts[-1]
+        by_year = {int(e[:4]): v for e, v in pts}
+        for n, key in ((3, "revenue_ps_cagr_3y"), (5, "revenue_ps_cagr_5y")):
+            v0 = by_year.get(int(e1[:4]) - n)
+            if v0 is not None and v0 > 0 and v1 > 0:
+                out[key] = cagr(v1, v0, n)
     return out
 
 
@@ -265,10 +269,17 @@ def revenue_ps_cagr_long(hist: Dict[str, Any], max_years: int = 10, min_years: i
     basis = "por_accion" if len(sh) >= min_years + 1 else "agregado"
     pts = [(e, r / s) for e, r, s in sh] if basis == "por_accion" else rev
     out = {"cagr": None, "years": None, "basis": basis, "from": None, "to": None}
-    if len(pts) < min_years + 1:
+    if not pts:
         return out
-    n = min(max_years, len(pts) - 1)
-    (e0, v0), (e1, v1) = pts[-1 - n], pts[-1]
+    # T7: los años salen de las fechas de cierre (NOW: acciones sin dato en 2014–2016; contar puntos daba 9 años
+    # entre 2013 y 2025). El primer ejercicio dentro de la ventana de `max_years`, con al menos `min_years`.
+    e1, v1 = pts[-1]
+    y1 = int(e1[:4])
+    cand = [(e, v) for e, v in pts[:-1] if min_years <= y1 - int(e[:4]) <= max_years]
+    if not cand:
+        return out
+    e0, v0 = cand[0]
+    n = y1 - int(e0[:4])
     if v0 > 0 and v1 > 0:
         out.update(cagr=cagr(v1, v0, n), years=n, **{"from": e0, "to": e1})
     return out
