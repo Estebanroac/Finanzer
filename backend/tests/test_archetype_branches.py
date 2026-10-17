@@ -54,8 +54,11 @@ def test_bank_quality_uses_what_applies(outputs_by_env):
 
 
 def test_bank_revenue_growth_always_from_statements(outputs_by_env):
-    """RECON §7.8: en FINANCIAL el crecimiento sale de los estados, no de Finnhub (prod 3.4% -> 7.3%)."""
-    stmt_yoy = 181.85 / 169.44 - 1
+    """RECON §7.8: en FINANCIAL el crecimiento sale de los estados, no de Finnhub (prod 3.4% -> 7.3%).
+    Fase 3 (T1b, D2): los ingresos de un banco de EE. UU. son los netos totales que presenta en EDGAR
+    (`Revenues` = `RevenuesNetOfInterestExpense`: 182,447 en 2025 y 177,556 en 2024), no los de Yahoo (181.85 y 169.44
+    mil millones, sin la ganancia de 2024 por las acciones de Visa)."""
+    stmt_yoy = 182447 / 177556 - 1
     for env in _envs():
         a = outputs_by_env(env)["JPM"][0]
         assert a["key_metrics"]["revenue_growth"] == pytest.approx(stmt_yoy, abs=5e-4), env

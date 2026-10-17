@@ -52,6 +52,12 @@ def _rules(info: Dict[str, Any], facts: Dict[str, Any], symbol: Optional[str]) -
     else:
         out.append({"key": "operatingIncome", "row": "operating_income", "field": "operating_income",
                     "why": "EBIT que presenta el emisor (F3_T1_PARADA1 §1)"})
+    if insurer:
+        out.append({"key": "totalRevenue", "row": "revenue", "field": "revenue",
+                    "why": "ingresos sin ganancias de inversión (aseguradora o conglomerado)"})
+    elif bank and edgar.taxonomy(facts) == "us-gaap":
+        out.append({"key": "totalRevenue", "row": "revenue", "field": "revenue",
+                    "why": "ingresos netos totales de un banco"})
     return out
 
 

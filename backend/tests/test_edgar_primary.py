@@ -101,6 +101,43 @@ def test_same_value_is_not_logged_as_a_replacement():
     assert log["cut"][0]["replaced"] == 100.4
 
 
+# ───────────── ingresos ─────────────
+
+def test_conglomerate_revenue_excludes_investment_gains():
+    ed = _ed({**_fy("Revenues", [371444]), **_fy("GainLossOnInvestments", [39078])})
+    info = _info(totalRevenue=410522.0, sector="Financial Services", industry="Insurance - Diversified")
+    _fields(info, "totalRevenue")
+    edgar_primary.apply(info, ed)
+    assert info["totalRevenue"] == 371444
+
+
+def test_us_bank_revenue_is_net_revenue():
+    ed = _ed(_fy("RevenuesNetOfInterestExpense", [182447]))
+    info = _info(totalRevenue=170000.0, sector="Financial Services", industry="Banks - Diversified")
+    _fields(info, "totalRevenue")
+    edgar_primary.apply(info, ed)
+    assert info["totalRevenue"] == 182447
+
+
+def test_ifrs_bank_revenue_stays_with_the_source():
+    """BCS: "Total income" no tiene etiqueta estándar en IFRS (parada 1, §1.2)."""
+    ed = _ed({"RevenueFromContractsWithCustomers": {"units": {"GBP": [
+        _f("2025-01-01", "2025-12-31", 11110, "2026-02-10", "20-F")]}}}, unit="GBP", tax="ifrs-full")
+    info = _info(totalRevenue=29140.0, sector="Financial Services", industry="Banks - Diversified",
+                 _currency={"statements": "GBP"})
+    _fields(info, "totalRevenue")
+    edgar_primary.apply(info, ed)
+    assert info["totalRevenue"] == 29140.0
+
+
+def test_industrial_revenue_stays_with_the_source():
+    ed = _ed(_fy("Revenues", [332238]))
+    info = _info(totalRevenue=323900.0, sector="Energy", industry="Oil & Gas Integrated")
+    _fields(info, "totalRevenue")
+    edgar_primary.apply(info, ed)
+    assert info["totalRevenue"] == 323900.0
+
+
 # ───────────── degradación ─────────────
 
 def test_without_edgar_nothing_changes():
