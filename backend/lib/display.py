@@ -516,6 +516,57 @@ def official_source_annex(a) -> list:
     return items
 
 
+# Fase 6 (PLAN §4: "registro de qué fuente aportó cada campo: exponerlo en el anexo").
+_SOURCE_NAMES = (("yfinance_statements", "estados de Yahoo (yfinance)"), ("sec_edgar", "SEC EDGAR"),
+                 ("finnhub", "Finnhub"), ("yahoo_quotesummary", "Yahoo (cotización y perfil)"),
+                 ("derivado", "calculados con otros datos del análisis"),
+                 ("politica_arquetipo", "fijados por la regla del arquetipo"),
+                 ("sin_dato", "sin dato utilizable (ausente o de otro periodo)"))
+_COUNT_ONLY = {"yfinance_statements", "derivado"}
+_PROV_MAX_NAMES = 8
+
+
+def provenance_annex(a) -> Optional[Dict[str, str]]:
+    """Fila del anexo técnico: campos del análisis por fuente. El mismo dato en varias rutas internas (p. ej.
+    `forwardPE` y `_yahoo_ratios.forwardPE`) cuenta una vez, con la fuente de la última ruta registrada."""
+    fields = (a.get("data_provenance") or {}).get("fields") or {}
+    by_src: Dict[str, Dict[str, None]] = {}
+    for k, v in fields.items():
+        leaf = str(k).rsplit(".", 1)[-1]
+        by_src.setdefault(str((v or {}).get("source")), {})[leaf] = None
+    if not by_src:
+        return None
+    known = [c for c, _ in _SOURCE_NAMES]
+    parts = []
+    for code in known + sorted(c for c in by_src if c not in known):
+        names = list(by_src.get(code) or ())
+        if not names:
+            continue
+        label = dict(_SOURCE_NAMES).get(code, code)
+        if code in _COUNT_ONLY:
+            parts.append(f"{label}: {len(names)} campos")
+            continue
+        shown = [_FIELD_NAMES.get(n) or _MORE_FIELD_NAMES.get(n) or n for n in names[:_PROV_MAX_NAMES]]
+        rest = len(names) - len(shown)
+        parts.append(f"{label}: {len(names)} ({', '.join(shown)}{f' y {rest} más' if rest else ''})")
+    return {"label": "Procedencia de los datos (campos del análisis por fuente)", "text": "; ".join(parts) + "."}
+
+
+_MORE_FIELD_NAMES = {
+    "forwardPE": "P/E adelantado", "forwardEps": "BPA estimado", "pegRatio": "PEG", "currentRatio": "liquidez corriente",
+    "current_ratio": "liquidez corriente", "quickRatio": "prueba ácida", "interestCoverage": "cobertura de intereses",
+    "interest_coverage": "cobertura de intereses", "payoutRatio": "payout", "inventoryTurnover": "rotación de existencias",
+    "dividendRate": "dividendo por acción", "dividendYield": "rentabilidad por dividendo", "totalCash": "caja total",
+    "beta": "beta", "industry": "industria", "sector": "sector", "revenueGrowth": "crecimiento de ingresos",
+    "earningsGrowth": "crecimiento del beneficio", "capitalLeaseObligations": "arrendamiento financiero",
+    "commercialPaper": "papel comercial", "ltd": "deuda a largo plazo", "gross_margin": "margen bruto",
+    "asset_turnover": "rotación del activo", "pe": "P/E", "ev_ebitda": "EV/EBITDA",
+    "net_debt_to_ebitda": "deuda neta/EBITDA", "p_ffo": "P/FFO", "de": "deuda/patrimonio",
+    "debt_to_assets": "deuda/activo", "enterprise_value": "valor de empresa", "ev_revenue": "EV/ventas",
+    "net_debt": "deuda neta", "long_term_debt": "deuda a largo plazo",
+}
+
+
 _FIELD_NAMES = {
     "totalRevenue": "ingresos", "grossProfits": "beneficio bruto", "operatingIncome": "beneficio operativo",
     "netIncome": "beneficio neto", "ebitda": "EBITDA", "interestExpense": "gastos financieros",
@@ -2325,7 +2376,8 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         # auditoría"). La web no lo muestra.
         "annex": {"title": "Detalle técnico para auditoría",
                   "items": [{"label": "Clasificación", "text": t} for t in cls_detail]
-                           + annex_conf + official_source_annex(a)},
+                           + annex_conf + official_source_annex(a)
+                           + [r for r in (provenance_annex(a),) if r]},
         "sections": {"market": _market_block(a), "valuation": valuation, "profitability": profitability,
                      "solvency": solvency,
                      "growth": growth, "institutional": institutional,
