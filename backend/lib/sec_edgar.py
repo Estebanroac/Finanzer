@@ -660,7 +660,7 @@ def debt_part(facts: Dict[str, Any], part: str, at: _dt.date, tol: int,
               latest_before: bool = False) -> Optional[Dict[str, Any]]:
     """Saldo de un componente de la deuda (DEBT_PARTS) a la fecha `at`: el total etiquetado o la suma de corriente y
     no corriente. Con `latest_before`, si no hay saldo a esa fecha, el del último informe ANUAL anterior (DUK solo
-    etiqueta sus arrendamientos en el 10-K)."""
+    etiqueta sus arrendamientos en el 10-K), y solo ese."""
     tax = taxonomy(facts)
     unit = reporting_unit(facts, tax)
     names = DEBT_PARTS.get(tax or "", {}).get(part)
@@ -684,13 +684,15 @@ def debt_part(facts: Dict[str, Any], part: str, at: _dt.date, tol: int,
     r = at_date(at)
     basis = "corte"
     if r is None and latest_before:
-        ends = sorted({f["end"] for c in names for f in fs(c) if not f.get("start") and f.get("form") in ANNUAL_FORMS
-                       and _date(f["end"]) <= at}, reverse=True)
-        for e in ends:
-            r = at_date(_date(e), annual_only=True)
+        # Solo el ÚLTIMO informe anual anterior al corte (el balance anual más reciente del emisor). Si el componente
+        # no está en él, el emisor ya no lo presenta: no se busca más atrás (con la historia larga, BAC traía una
+        # deuda subordinada de 2012; fase 3, T1b).
+        annual = sorted({f["end"] for f in (facts.get("facts") or {}).get(tax, {}).get("Assets", {}).get("units", {})
+                         .get(unit) or [] if f.get("form") in ANNUAL_FORMS and _date(f["end"]) <= at}, reverse=True)
+        if annual:
+            r = at_date(_date(annual[0]), annual_only=True)
             if r is not None:
                 basis = "ultimo_anual"
-                break
     if r is None:
         return None
     v, used, period, accns = r
