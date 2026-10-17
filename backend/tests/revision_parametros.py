@@ -9,7 +9,8 @@ Por parámetro: valor de hoy, fuente, fecha del dato, fecha de consulta y estado
     posterior a esa fecha, no había otra más nueva y cuenta desde la consulta);
   · "revisar": ya debería haber una más reciente en la fuente;
   · "sin fuente": PROVISIONAL, fijado a mano (no hay fecha que vigilar; hay que sustituirlo).
-Código de salida 1 si algo está por revisar o sin fuente (para encadenarlo con la vigilancia semanal).
+  · "vigente, dato antiguo": no hay otro más nuevo, pero el que hay tiene más de una cadencia y media.
+Código de salida 1 si algo está por revisar, sin fuente o con un dato antiguo (para encadenarlo con la vigilancia semanal).
 """
 import argparse
 import datetime as _dt
@@ -24,14 +25,26 @@ def estado(item, hoy: _dt.date):
     """(estado, próxima fecha esperada o None)."""
     if not item["consulted"]:
         return "sin fuente", None
-    cad = _dt.timedelta(days=item["cadence_days"])
     consulted = _dt.date.fromisoformat(item["consulted"])
     base = _dt.date.fromisoformat(item["published"]) if item["published"] else consulted
+
+    def plus(d):
+        # cadencias de meses en meses de calendario (revisión de F7, hallazgo 10: 31 días desde el 1 de noviembre
+        # caían el 2 de diciembre y se iban desplazando)
+        months = round(item["cadence_days"] / 30.44)
+        if 1 <= months <= 12 and abs(months * 30.44 - item["cadence_days"]) <= 3:
+            y, m = divmod(d.month - 1 + months, 12)
+            return d.replace(year=d.year + y, month=m + 1, day=min(d.day, 28))
+        return d + _dt.timedelta(days=item["cadence_days"])
     # Si se consultó después de la publicación esperada, se miró y no había otra más nueva: cuenta desde la consulta.
-    if consulted >= base + cad:
+    if consulted >= plus(base):
         base = consulted
-    due = base + cad
-    return ("revisar" if hoy >= due else "vigente"), due
+    due = plus(base)
+    st = "revisar" if hoy >= due else "vigente"
+    # un dato de la fuente con más de una cadencia y media de antigüedad se marca aunque no haya otro (EV/EBITDA a 1T-2025)
+    if st == "vigente" and item["published"] and (hoy - _dt.date.fromisoformat(item["published"])).days > 1.5 * item["cadence_days"]:
+        st = "vigente, dato antiguo"
+    return st, due
 
 
 def _valor(key):
@@ -47,7 +60,7 @@ def informe(hoy: _dt.date):
     rows, malos = [], 0
     for name, it in cfg("review.parameters").items():
         st, due = estado(it, hoy)
-        malos += st != "vigente"
+        malos += not st.startswith("vigente") or st.endswith("antiguo")
         rows.append(f"| {name} | `{it['key']}` | {_valor(it['key'])} | {st} | {it['published'] or '—'} | "
                     f"{it['consulted'] or '—'} | {due or '—'} | {it['source']} |")
     head = (f"# Revisión de parámetros · {hoy}\n\n{malos} por revisar o sin fuente.\n\n"

@@ -35,3 +35,10 @@ def test_status_by_cadence():
     assert R.estado(P["sector_medians"], dt.date(2026, 10, 17)) == ("sin fuente", None)
     # consultado después de la publicación esperada (2021 + 5 años) y sin edición nueva: cuenta desde la consulta
     assert R.estado(P["base_rates"], dt.date(2026, 10, 17))[0] == "vigente"
+
+
+def test_monthly_cadence_follows_the_calendar_and_old_data_is_flagged():
+    """Revisión de F7, hallazgo 10."""
+    erp = dict(P["market_risk_premium"], published="2026-11-01", consulted="2026-11-03")
+    assert R.estado(erp, dt.date(2026, 11, 20))[1] == dt.date(2026, 12, 1)
+    assert R.estado(P["market_ev_ebitda"], dt.date(2026, 10, 17))[0] == "vigente, dato antiguo"
