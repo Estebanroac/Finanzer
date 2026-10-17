@@ -1336,3 +1336,10 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
 - **Movido:** las bandas de REIT y utilities sin muestra, a la fase 7 (calibración con EDGAR).
 - **Siguiente:** fase 5 (capa técnica y conductual), PLAN §4; la preparación F5prep ya está fusionada, con los módulos
   aislados.
+- **Adenda, revisión de código independiente de la fase 4** (protocolo §5.7). De los 7 hallazgos, todos arreglados y
+  sin cambios en el panel:
+  - `8834e60`: la fuente excluye por regla, no por acción; antes se perdían los rechazos "sin_dato";
+  - `bbcdf67`: estados casados por fecha de cierre, ejercicios de 52/53 semanas;
+  - `72ad982`: retorno total por acción en el perímetro homogéneo y con las acciones casadas por fecha;
+  - `f27d5c5`: pre-mortem fuera de rango en el sentido del nivel;
+  - `4d7b1e2`: persistencia con ventana por fecha, sin regla vacía.
