@@ -24,12 +24,12 @@
 
 | Campo | Valor |
 |---|---|
-| Fase en curso | **Fase 2b ✅ cerrada** (2026-10-16, registros #21–#23). Siguiente: el planificador escribe el prompt de la fase 3 |
-| Rama de trabajo | `fiabilidad/f2b-corregir` fusionada en `main` (avance directo desde `60f8a69`); subida |
-| Producción | `103c76f` (código de la 2b, verificado en vivo; `/api/health`). Rollback de código: `60f8a69` |
-| `main` local | = `origin/main` (cierre de la 2b, registro #23) |
-| Último cierre de sesión | 2026-10-16 · operador F2b (ver registro #23) |
-| Bloqueos | La variable `SEC_EDGAR_USER_AGENT` en Render (la pone el usuario): sin ella, producción va sin EDGAR |
+| Fase en curso | **Fase 3 🛑 detenida en el punto de parada 1** (2026-10-16, registro #24): definiciones de D2, historia larga, moneda del crecimiento y tasas base, en `F3_T1_PARADA1.md` |
+| Rama de trabajo | `fiabilidad/f3-metodo` (worktree `../finanzer_next-f3`), sin subir |
+| Producción | `01336e2` (código `103c76f`). Rollback de código: `60f8a69` |
+| `main` local | `b2f1972` (borrador del prompt de la fase 3), un commit por delante de `origin/main`; sin subir |
+| Último cierre de sesión | 2026-10-16 · operador F3 (ver registro #24) |
+| Bloqueos | `SEC_EDGAR_USER_AGENT` en Render (la pone el usuario): sin ella no hay deploy de la fase 3. Permiso para descargar el PDF de tasas base |
 
 ## Fases
 
@@ -38,7 +38,7 @@
 | 0 Congelar y medir | ✅ cerrada (2026-10-14) | `fiabilidad/f0-panel` → `main` local | `0a8ac66`..`0ae214a` (9 commits) + cierre (registro #6) | sí, 2026-10-14 (registro #6) | no aplica (se sube con el deploy de la fase 1) |
 | 1 Lo visible hoy | ✅ cerrada | `fiabilidad/f1-visible` | `d676b22` (D8), `21c3f5f`, `0ebba81` (guardián), `d63de70`…`d7393fd` (T3, 8 commits), `7f32070`, `e3161d2`, `c369575` (T4) | — | — |
 | 2 Verdad de datos (EDGAR) | ✅ cerrada: 2a (2026-10-15) y 2b (2026-10-16, registros #21–#23). F1 91.4% (objetivo 95% no alcanzado; lo que falta, en la fase 3 o por diseño: RECON §7.21) | `fiabilidad/f2a-medir` y `fiabilidad/f2b-corregir` → `main` | 2a: `8d3a5cc`…`aed575a`; 2b: `b25aed6`…`103c76f` (T1–T8) + cierre (RECON §7.21, registro #23) | 2a: sí; 2b: paradas 1 y 2 sí, "ok, pushea" (2026-10-16) | 2a `25b9d8a`; 2b `103c76f` |
-| 3 Método por arquetipo | 🔒 espera el prompt del planificador (la 2b ya cerrada) · preparación F3prep fusionada (`fiabilidad/f3-prep`, módulos aislados sin conectar) | — | `0f6f21b`..`da34592` | — | `a2572e0` |
+| 3 Método por arquetipo | 🛑 punto de parada 1 (T0–T1 hechas, registro #24) · preparación F3prep fusionada (`fiabilidad/f3-prep`) | `fiabilidad/f3-metodo` | `3d52202`, `3c331dd`, `20c2a2e` | — | — |
 | 4 Escalas y confianza | 🔒 espera F3 | — | — | — | — |
 | 5 Técnica y conductual | 🔒 espera F4 · preparación F5prep fusionada (`fiabilidad/f5-prep`, módulos aislados sin conectar; D5: solo contexto) | — | `e99e958`..`8e2bf07` | §5 de la muestra aceptado (registro #20) | `a2572e0` |
 | 6 Infraestructura | 🔒 diagnóstico hecho (F6_DIAGNOSTICO.md, F67prep fusionada); implementación en espera (D6 sin plan de pago) | — | `697eb83`..`583e685` | — | `a2572e0` (solo documentos y herramientas de test) |
@@ -1057,3 +1057,46 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
   - Para medir niveles por causa: exportar cada commit con `git archive` y enlazar `tests/fixtures/edgar/raw`
     (ignorado por git).
   - F1: `edgar_verify.py --sin-as-of --ni-propietarios` reproduce la medida de la 2a.
+
+### #24 · 2026-10-16 · operador · Fase 3 (T0–T1 hechas; detenida en el punto de parada 1)
+- **Objetivo de la sesión:** arrancar la fase 3 con el prompt revisado por el planificador: línea base (T0) y
+  propuesta de definiciones de D2, historia larga, moneda del crecimiento y tasas base (T1).
+- **Decisiones tomadas por el usuario (cita literal):** "Eres el operador de la fase 3 del plan de fiabilidad de
+  Finanzer. Lee y sigue al pie de la letra docs/fiabilidad/prompts/F3_metodo_por_tipo_de_negocio.md (versión revisada
+  por el planificador, sin commitear en main: commitéala en tu rama como primer commit, "F3: prompt revisado por el
+  planificador")."
+- **Hecho:**
+  - rama `fiabilidad/f3-metodo` en el worktree `../finanzer_next-f3`, desde `main` = `b2f1972` (local, sin subir);
+    primer commit `3d52202` con el prompt revisado. La copia sin commitear del prompt en el checkout principal se
+    descartó tras comprobar que era idéntica a la commiteada (`cmp`);
+  - T0 (línea base): suite, F1, panel de 37 y estado de EDGAR en producción (abajo);
+  - T1: `3c331dd` (herramientas `tests/f3_t1_whatif.py`, `f3_t1_depth.py`, `f3_t1_mem.py`) y `20c2a2e`
+    (`docs/fiabilidad/F3_T1_PARADA1.md`): definición propuesta de capex, EBIT, EBIT bancario, ingresos de bancos, de
+    BRK-B, de utilities y de XOM, caja y deuda, con la causa medida de cada diferencia de Yahoo (CAT suma el equipo
+    arrendado de Cat Financial; KO excluye otros cargos operativos; BRK-B suma las ganancias de inversión; NEE, DUK y
+    XOM: concepto equivocado de la herramienta); EDGAR principal recomendado en EBIT, ingresos de BRK-B y de bancos de
+    EE. UU. y capex con cautiva; historia larga ya disponible en la descarga de la 2b (19 ejercicios en EE. UU.; NVO 7,
+    TM 6 en IFRS); coste en frío 0.45–0.75 s y pico de memoria +80–116 MB por lectura (propuesta: LRU de 64 y semáforo
+    de 1); crecimiento en la moneda de los estados; tasas base: fuente oficial localizada (Mauboussin y Callahan,
+    Morgan Stanley, "Bayes and Base Rates", 10-feb-2026), pendiente de permiso de descarga.
+- **Verificación:**
+  - `pytest tests -q` → "3660 passed, 4 skipped" (T0, sin `node_modules` enlazado) y "3663 passed, 1 skipped" (tras
+    enlazar `frontend/node_modules` y añadir las herramientas);
+  - `edgar_verify.py --whatif` → "1290/1411 (91.4%)" (igual que el cierre de la 2b);
+  - `panel_run.py --mode replay` → 37 tickers, 18 con un solo método de precio, arquetipo distinto del esperado en
+    CAT, PLTR, NVDA, CRWD y TSM; precio: 15 razonable, 14 exigente, 4 atractivo, 3 muy exigente; confianza: 28
+    media, 5 alta, 3 baja;
+  - `curl https://finanzer.app/api/analysis/JNJ` → `data_provenance.edgar.status = "desactivado"` (`/api/health` =
+    `01336e2`): **`SEC_EDGAR_USER_AGENT` sigue sin estar en Render**;
+  - `f3_t1_whatif.py` → 1 cambio de nivel en 36 (BRK-B calidad excelente → sólida, 81 → 76); KO 85 → 82, PLD 82 → 85
+    y precio 46 → 50, AMT 79 → 75, CAT precio 39 → 42.
+- **Abierto / siguiente paso:** decisiones del usuario en F3_T1_PARADA1 §0 (definiciones, EDGAR principal por campo,
+  moneda del crecimiento, permiso para descargar el PDF de tasas base) y la variable de Render. Después, T1b.
+- **Archivos tocados:** `docs/fiabilidad/prompts/F3_metodo_por_tipo_de_negocio.md` (revisión del planificador),
+  `docs/fiabilidad/F3_T1_PARADA1.md`, `backend/tests/f3_t1_*.py` y esta bitácora.
+- **Avisos para el siguiente chat:**
+  - en el worktree, `tests/fixtures/edgar/raw` y `frontend/node_modules` son enlaces al checkout principal
+    (excluidos en `.git/info/exclude`);
+  - el PDF de Morgan Stanley no se puede leer sin descargarlo (403 a lecturas automáticas): descargar es una acción
+    que el usuario autoriza;
+  - `main` local va por delante de `origin/main` con `b2f1972` (borrador del prompt): no se ha subido.
