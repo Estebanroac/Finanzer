@@ -1624,3 +1624,8 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
   - Todos con EDGAR "ok" y la nota de la referencia visible en la web, sin errores de consola.
 - **Hallazgo (C5, `a024b7b`):** la web de AAPL mostraba "ROE frente a −0.2% de su industria". El ROE de Damodaran para Computers/Peripherals de EE. UU. contradice su margen neto y su P/B. Nueva regla: ROE y margen neto de distinto signo → sin dato. Solo afecta a esa fila. Diff: solo la presentación de AAPL (GOLDEN_DIFF_DAMODARAN.md §5).
 - **Pendiente del usuario:** aprobar el golden de AAPL (C5) y "ok, pushea".
+- **C5 aprobado y desplegado** ("Apruebo regenerar el golden de AAPL por C5… Ok, pushea, despliega y verifica AAPL en producción"):
+  - golden de AAPL regenerado; suite: 4157 passed;
+  - `1faf9c9`, en vivo a las 18:47 de Nueva York.
+  - **AAPL en producción:** EDGAR "ok"; Computers/Peripherals de EE. UU.; ROE de referencia sin dato (ya no sale "−0.2%"); "ROIC de 98.0% frente a 44.8% de su industria"; 5 de 8 métricas favorables; PDF 200.
+- **Estado del plan:** fases 3–7 y referencias de Damodaran en producción y verificadas. No queda nada pendiente del usuario. Siguiente revisión de parámetros: prima y Rf el 1-nov-2026; Damodaran por industria el 5-ene-2027.
