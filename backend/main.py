@@ -935,7 +935,9 @@ def _compute_analysis(symbol: str) -> dict:
             elif _gb["basis"] == "por_accion":
                 _s = _gb["shares_cagr_3y"]
                 _g = fin_dict.get("revenue_cagr_3y")
-                if _g is not None:
+                # El ciclo medio ya decide su base con las acciones de EDGAR de su propia ventana de pico a pico
+                # (lib/cyclicality.mid_cycle_growth): no se vuelve a dividir por las de Yahoo a 3 años.
+                if _g is not None and _mc is None:
                     fin_dict["revenue_cagr_3y"] = (1 + _g) / (1 + _s) - 1
                     fin_dict["revenue_growth_note"] = "; ".join(filter(None, [
                         fin_dict.get("revenue_growth_note"),
@@ -948,6 +950,8 @@ def _compute_analysis(symbol: str) -> dict:
                     fin_dict["fcf_cagr_3y_reason"] = _fps["reason"]
                     growth_basis["fcf_cagr"] = {k: _fps.get(k) for k in ("method", "anomalous_base", "note")}
                     growth_basis["applied_to"].append("FCF")
+            if _mc is not None and _mc["basis"] == "por_accion" and "ingresos" not in growth_basis["applied_to"]:
+                growth_basis["applied_to"].append("ingresos")
             # Etapa 9a: en GROWTH_PRE_PROFIT el crecimiento del FCF es el de FCF − SBC (misma base
             # por acción si aplica). Sin la serie de SBC: sin dato con motivo, no el FCF bruto.
             if archetype == GROWTH_PRE_PROFIT:
