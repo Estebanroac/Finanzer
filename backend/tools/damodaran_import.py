@@ -187,7 +187,10 @@ def write_firms(raw, out, industries):
         country = str(row[ci["Country"]]).strip()
         if country != "United States":
             names[f"{norm_name(row[ci['Company Name']])}|{country}"].add((ind, reg))
-    with gzip.open(out, "wt", encoding="utf-8") as fh:
+    import io
+    # mtime=0: el mismo contenido da el mismo archivo (gzip guarda la hora; sin esto cada ejecución cambia el binario)
+    with open(out, "wb") as raw_fh, gzip.GzipFile(fileobj=raw_fh, mode="wb", mtime=0, filename="") as gz, \
+            io.TextIOWrapper(gz, encoding="utf-8") as fh:
         fh.write("# GENERADO por backend/tools/damodaran_import.py desde indname.xls de A. Damodaran (NYU Stern)\n")
         for k in sorted(sym):
             fh.write(f"S\t{k}\t{sym[k][0]}\t{sym[k][1]}\n")
@@ -196,6 +199,27 @@ def write_firms(raw, out, industries):
                 ind, reg = next(iter(names[k]))
                 fh.write(f"N\t{k}\t{ind}\t{reg}\n")
     return len(sym), sum(1 for v in names.values() if len(v) == 1), dict(skipped)
+
+
+def write_erp(raw, out):
+    """Prima implícita de fin de año de histimpl.xls, columna "Implied ERP (FCFE)" (la del método de la app: la de fin
+    de 2025, 4.23%, casa con el 4.20% de config). Para el estudio de calibración (tests/calibracion_ejecutar.py)."""
+    import json
+    import xlrd
+    s = xlrd.open_workbook(os.path.join(raw, "histimpl.xls")).sheet_by_index(0)
+    head = next(r for r in range(s.nrows) if str(s.cell_value(r, 0)).strip() == "Year")
+    cols = [str(c.value).strip() for c in s.row(head)]
+    ci = cols.index("Implied ERP (FCFE)")
+    by_year = {}
+    for r in range(head + 1, s.nrows):
+        y, v = s.cell_value(r, 0), s.cell_value(r, ci)
+        if isinstance(y, float) and isinstance(v, float):
+            by_year[str(int(y))] = round(v, 6)
+    with open(out, "w", encoding="utf-8") as fh:
+        json.dump({"source": "A. Damodaran, histimpl.xls (Historical Implied Equity Risk Premiums), NYU Stern",
+                   "column": "Implied ERP (FCFE)", "meaning": "prima implícita a 31 de diciembre de cada año",
+                   "by_year": by_year}, fh, ensure_ascii=False, indent=1)
+    return len(by_year)
 
 
 def _fmt(x):
@@ -242,6 +266,7 @@ def main():
     ap.add_argument("--raw", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--lib", help="carpeta que contiene el paquete xlrd")
+    ap.add_argument("--erp-out", help="JSON con la prima implícita histórica (estudio de calibración)")
     a = ap.parse_args()
     if a.lib:
         sys.path.insert(0, os.path.expanduser(a.lib))
@@ -253,6 +278,8 @@ def main():
     firms_out = os.path.join(os.path.dirname(os.path.abspath(a.out)), "damodaran_firms.tsv.gz")
     n_sym, n_names, skipped = write_firms(os.path.expanduser(a.raw), firms_out, industries)
     print(f"empresas: {n_sym} símbolos de Yahoo, {n_names} nombres legales únicos; fuera: {skipped}")
+    if a.erp_out:
+        print(f"prima implícita histórica: {write_erp(os.path.expanduser(a.raw), os.path.expanduser(a.erp_out))} años")
 
 
 if __name__ == "__main__":
