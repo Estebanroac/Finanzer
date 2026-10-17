@@ -219,6 +219,9 @@ class Budget:
         return self.deadline - time.monotonic()
 
     def add_queue(self, seconds: float) -> None:
+        """La cola se perdona hasta `queue_max_s` en total: con una carga extrema (12 análisis en frío a la vez son ≈ 50
+        peticiones al ritmo de la SEC) EDGAR se agota por carga y el análisis lo dice, en vez de esperar sin límite."""
+        seconds = min(max(seconds, 0.0), cfg("data.edgar.queue_max_s") - self.queued_s)
         if seconds > 0:
             self.deadline += seconds
             self.queued_s += seconds
@@ -378,8 +381,9 @@ def merge_facts(base: Dict[str, Any], extra: Dict[str, Any]) -> Dict[str, Any]:
 def company_facts(cik: int, budget: Budget) -> Dict[str, Any]:
     """companyfacts reducido del CIK (caché diaria). NotFound si el CIK no tiene estados XBRL."""
     def make():
+        body = _get(FACTS_URL.format(cik=cik), budget)          # la descarga, fuera del turno (solo el parseo pesa)
         with budget.turn(_parsing()):
-            return reduce_facts(_get_json(FACTS_URL.format(cik=cik), budget))
+            return reduce_facts(json.loads(body))
     return _cached(f"facts:{cik}", cfg("data.edgar.facts_ttl_s"), make)
 
 
@@ -526,9 +530,9 @@ def instance_facts(cik: int, filing: Dict[str, Any], budget: Budget) -> Dict[str
         inst = next((n for n in names if n and n.endswith("_htm.xml")), None)
         if inst is None:
             return {"facts": {}, "accns": [], "last_filed": None, "reason": "el filing no publica la instancia XBRL"}
+        xml = _get(ARCHIVE_URL.format(cik=cik, acc=acc, name=inst), budget)
         with budget.turn(_parsing()):
-            return parse_instance(_get(ARCHIVE_URL.format(cik=cik, acc=acc, name=inst), budget), filing["form"],
-                                  filing["filingDate"], filing["accessionNumber"])
+            return parse_instance(xml, filing["form"], filing["filingDate"], filing["accessionNumber"])
     return _cached(f"inst:{acc}", cfg("data.edgar.facts_ttl_s"), make)
 
 

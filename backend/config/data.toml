@@ -39,6 +39,9 @@ cut_match_rel_tol = 0.02        # fase 2b: una métrica TTM de Finnhub entra sol
 [edgar]                         # lib/sec_edgar.py (fase 2b): SEC EDGAR en el camino del análisis (D2: verificación y respaldo)
 user_agent_env = "SEC_EDGAR_USER_AGENT"   # nombre y correo de contacto; lo pone el usuario en Render. Sin él, desactivado
 budget_s = 3.0                  # tiempo máximo de EDGAR por análisis (propuesta de la 2a); si se agota, se sigue sin EDGAR
+# Fase 6 (revisión de código, hallazgo 2): la espera en cola detrás de otros análisis (turno de parseo y ritmo de la
+# SEC) no gasta el presupuesto, hasta este total por análisis; con más carga, EDGAR se agota y el análisis lo dice.
+queue_max_s = 4.0
 min_interval_s = 0.12           # ≤ 8.3 peticiones/s (la SEC admite 10/s)
 timeout_s = 2.5                 # por petición (nunca más que lo que queda del presupuesto)
 tickers_ttl_s = 86400           # company_tickers.json: caché diaria
