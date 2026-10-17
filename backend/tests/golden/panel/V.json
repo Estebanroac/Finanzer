@@ -51,8 +51,8 @@
       },
       {
         "category": "Valor intrínseco",
-        "detail": "El precio está un 25% por encima del valor intrínseco estimado ($292): el mercado ya paga buena parte del crecimiento futuro.",
-        "reason": "Prima sobre el valor justo −25%"
+        "detail": "El precio está un 29% por encima del valor intrínseco estimado ($279): el mercado ya paga buena parte del crecimiento futuro.",
+        "reason": "Prima sobre el valor justo −29%"
       }
     ]
   },
@@ -142,26 +142,45 @@
     "source": "propia",
     "source_beta": 0.82789946
   },
+  "business_model": {
+    "altman_referential": false,
+    "current_ratio": {
+      "applies": false,
+      "history": [
+        1.07755078749,
+        1.28344081155,
+        1.45172742229,
+        1.44847264183
+      ],
+      "industry": "Credit Services",
+      "median_prior": 1.44847264183,
+      "structural": false,
+      "worsening": true
+    },
+    "piotroski_caveat": null
+  },
   "classification": {
     "alerts": [],
     "ambiguous": false,
     "archetype": "MATURE",
     "confidence": "normal",
+    "frontier": null,
     "industry": "Credit Services",
     "inputs": {
       "assets_to_revenue": 2.490675,
       "eps_ttm": 11.76,
       "net_margin_ttm": 0.504495594318,
-      "op_margin_detrended_std": 0.024393998207,
       "revenue_cagr_3y": 0.109212421303,
-      "revenue_cagr_3y_reason": null,
-      "revenue_growth_std": 0.00779675457921
+      "revenue_cagr_3y_reason": null
     },
     "label": "Madura",
+    "low_confidence": null,
     "reason": "Clasificada como MATURE por industria Credit Services de tipo red de pagos (activos/ingresos 2.5x <= 3.0x): excepción dentro de Financial Services",
     "reason_plain": "Madura: red de pagos (Credit Services) con 2.5 veces sus ingresos en activos (hasta 3.0 veces), sin cartera de préstamos en el balance.",
     "rule": "red_de_pagos",
-    "sector": "Financial Services"
+    "sector": "Financial Services",
+    "subtype": null,
+    "subtype_label": null
   },
   "confidence": {
     "capped_from": null,
@@ -174,9 +193,9 @@
             "evaluable": true,
             "kind": "intrínseco",
             "method": "DCF",
-            "reliability": "alta",
-            "signal": -0.508954318982,
-            "upside": -0.254477159491
+            "reliability": "media",
+            "signal": -0.575326340764,
+            "upside": -0.287663170382
           },
           {
             "components": 1,
@@ -188,7 +207,7 @@
           }
         ],
         "reasons": [
-          "coinciden (cara) con distancia 0.01 (< 0.6)"
+          "coinciden (cara) con distancia 0.08 (< 0.6)"
         ]
       },
       "coverage": {
@@ -213,11 +232,9 @@
           "forwardPE",
           "payoutRatio"
         ],
-        "issues": 1,
-        "level": "media",
-        "reasons": [
-          "9 campos de Finnhub en lugar de los estados"
-        ]
+        "issues": 0,
+        "level": "alta",
+        "reasons": []
       },
       "stability": {
         "level": "alta",
@@ -226,10 +243,8 @@
     },
     "level": "alta",
     "limits_score": false,
-    "reasons": [
-      "calidad de fuente media: 9 campos de Finnhub en lugar de los estados"
-    ],
-    "score": 0.9
+    "reasons": [],
+    "score": 1.0
   },
   "data_provenance": {
     "as_of": {
@@ -508,6 +523,13 @@
           "unit": "USD",
           "years": 19
         },
+        "contract_revenue": {
+          "cross_taxonomy": null,
+          "first": "2019-09-30",
+          "last": "2025-09-30",
+          "unit": "USD",
+          "years": 7
+        },
         "diluted_eps": {
           "cross_taxonomy": null,
           "first": null,
@@ -520,6 +542,13 @@
           "first": null,
           "last": null,
           "unit": "shares",
+          "years": 0
+        },
+        "discontinued": {
+          "cross_taxonomy": null,
+          "first": null,
+          "last": null,
+          "unit": "USD",
           "years": 0
         },
         "net_income": {
@@ -627,6 +656,7 @@
         "skipped": []
       },
       "reason": null,
+      "recut": null,
       "status": "ok",
       "title": "VISA INC."
     },
@@ -1114,21 +1144,25 @@
   ],
   "dcf": {
     "available": true,
-    "fair_value": 291.82,
-    "fcf_input": 21013000000.0,
+    "fair_value": 278.83,
+    "fcf_basis": "FCF − SBC",
+    "fcf_gross": 21013000000.0,
+    "fcf_input": 20094000000.0,
     "growth_basis": "CAGR de ingresos a 3 años",
     "growth_rate": 0.109212421303,
     "growth_source": "revenue_growth_3y",
-    "margin_of_safety": -0.341340527297,
+    "margin_of_safety": -0.403830264591,
     "reason": null,
     "reliability": {
-      "central_contains_price": true,
+      "central_contains_price": false,
       "grid_contains_price": true,
-      "level": "alta",
-      "reasons": []
+      "level": "media",
+      "reasons": [
+        "el precio está en el grid pero fuera del caso base ±1 (205.80–389.23)"
+      ]
     },
     "terminal_growth": 0.025,
-    "upside": -25.4477159491,
+    "upside": -28.7663170382,
     "value_composition": {
       "stage1_pct": 20.0,
       "stage2_pct": 19.9,
@@ -1137,6 +1171,7 @@
     "wacc": 0.0871153963367,
     "warnings": []
   },
+  "dcf_growth_blend": null,
   "dcf_status": {
     "reason": null,
     "state": "ok"
@@ -1150,11 +1185,7 @@
         },
         {
           "label": "Confianza · Convergencia entre métodos (alta)",
-          "text": "coinciden (cara) con distancia 0.01 (< 0.6)"
-        },
-        {
-          "label": "Confianza · Calidad de fuente (media)",
-          "text": "9 campos de Finnhub en lugar de los estados"
+          "text": "coinciden (cara) con distancia 0.08 (< 0.6)"
         },
         {
           "label": "Fuente oficial",
@@ -1167,6 +1198,10 @@
         {
           "label": "Respaldo de SEC EDGAR (lo que Yahoo no da del mismo corte)",
           "text": "dividendos pagados (us-gaap:PaymentsOfDividends; ejercicio 2024-10-01 a 2025-09-30 + acumulado 2025-10-01 a 2026-06-30 − acumulado 2024-10-01 a 2025-06-30)."
+        },
+        {
+          "label": "Procedencia de los datos (campos del análisis por fuente)",
+          "text": "estados de Yahoo (yfinance): 33 campos; SEC EDGAR: 2 (dividendos pagados, beneficio operativo); Finnhub: 7 (liquidez corriente, P/E adelantado, cobertura de intereses, payout, PEG, prueba ácida, dividendo por acción); Yahoo (cotización y perfil): 2 (industria, sector); calculados con otros datos del análisis: 15 campos; sin dato utilizable (ausente o de otro periodo): 2 (BPA estimado, caja total)."
         }
       ],
       "title": "Detalle técnico para auditoría"
@@ -1981,7 +2016,7 @@
             ]
           },
           {
-            "axis_max": 5.6,
+            "axis_max": 8.4,
             "clamped": false,
             "key": "net_debt_to_ebitda",
             "label": "Deuda neta / EBITDA",
@@ -1996,25 +2031,25 @@
               {
                 "from": 0.0,
                 "label": "Baja",
-                "to": 1,
+                "to": 2.0,
                 "tone": "pos"
               },
               {
-                "from": 1,
+                "from": 2.0,
                 "label": "Moderada",
-                "to": 2.5,
+                "to": 4.0,
                 "tone": "neu"
               },
               {
-                "from": 2.5,
+                "from": 4.0,
                 "label": "Elevada",
-                "to": 4,
+                "to": 6.0,
                 "tone": "warn"
               },
               {
-                "from": 4,
+                "from": 6.0,
                 "label": "Alta",
-                "to": 5.6,
+                "to": 8.4,
                 "tone": "neg"
               }
             ]
@@ -2096,56 +2131,56 @@
         },
         "fair_value": {
           "axis": [
-            138.4055,
-            651.409
+            132.158,
+            622.666
           ],
           "badge": {
             "label": "Prima",
             "tone": "warn"
           },
-          "fair_value": 291.82,
-          "fair_value_txt": "$291.82",
-          "grid_high": 592.19,
-          "grid_high_txt": "$592",
-          "grid_low": 162.83,
-          "grid_low_txt": "$163",
+          "fair_value": 278.83,
+          "fair_value_txt": "$278.83",
+          "grid_high": 566.06,
+          "grid_high_txt": "$566",
+          "grid_low": 155.48,
+          "grid_low_txt": "$155",
           "method": "DCF",
           "price": 391.429992676,
           "price_txt": "$391.43",
-          "reliability": "alta",
-          "reliability_tone": "pos",
+          "reliability": "media",
+          "reliability_tone": "warn",
           "state": "con_dato",
-          "text": "el precio incorpora una prima de 25% sobre el valor intrínseco estimado: requiere supuestos exigentes pero posibles (el precio cae en la parte alta del rango de sensibilidad del DCF)",
-          "upside_txt": "-25.4%",
+          "text": "el precio incorpora una prima de 29% sobre el valor intrínseco estimado: requiere supuestos exigentes pero posibles (el precio cae en la parte alta del rango de sensibilidad del DCF)",
+          "upside_txt": "-28.8%",
           "zones": [
             {
-              "from": 138.4055,
+              "from": 132.158,
               "label": "Muy infravalorada",
-              "to": 224.476923077,
+              "to": 214.484615385,
               "tone": "pos"
             },
             {
-              "from": 224.476923077,
+              "from": 214.484615385,
               "label": "Infravalorada",
-              "to": 265.290909091,
+              "to": 253.481818182,
               "tone": "pos"
             },
             {
-              "from": 265.290909091,
+              "from": 253.481818182,
               "label": "Precio justo",
-              "to": 324.244444444,
+              "to": 309.811111111,
               "tone": "neu"
             },
             {
-              "from": 324.244444444,
+              "from": 309.811111111,
               "label": "Prima",
-              "to": 416.885714286,
+              "to": 398.328571429,
               "tone": "warn"
             },
             {
-              "from": 416.885714286,
+              "from": 398.328571429,
               "label": "Sobrevalorada",
-              "to": 651.409,
+              "to": 622.666,
               "tone": "neg"
             }
           ]
@@ -2281,7 +2316,7 @@
           "key": "convergence",
           "label": "Convergencia entre métodos",
           "level": "Alta",
-          "text": "DCF -25% (cara) · múltiplos frente al mercado -0.50 (cara). Los métodos de valoración coinciden."
+          "text": "DCF -29% (cara) · múltiplos frente al mercado -0.50 (cara). Los métodos de valoración coinciden."
         },
         {
           "key": "coverage",
@@ -2292,8 +2327,8 @@
         {
           "key": "source",
           "label": "Calidad de fuente",
-          "level": "Media",
-          "text": "Parte de los datos proviene de una fuente secundaria."
+          "level": "Alta",
+          "text": "Sin incidencias."
         },
         {
           "key": "stability",
@@ -2303,17 +2338,9 @@
         }
       ],
       "level": "alta",
-      "plain": [
-        "Parte de los datos proviene de una fuente secundaria."
-      ],
-      "reasons": [
-        {
-          "dimension": "calidad de fuente",
-          "level": "media",
-          "text": "Parte de los datos proviene de una fuente secundaria."
-        }
-      ],
-      "summary": "Confianza del veredicto: alta. Contrae el atractivo del precio hacia 50 (factor 1.0): sin ajustar 25 → ajustado a 25. La calidad del negocio no se contrae.",
+      "plain": [],
+      "reasons": [],
+      "summary": "Confianza del veredicto: alta. Contrae el atractivo del precio hacia 50 (factor 1.0): sin ajustar 30 → ajustado a 30. La calidad del negocio no se contrae.",
       "tone": "pos",
       "verdict_text": "(confianza alta: el DCF y los múltiplos coinciden)"
     },
@@ -2379,8 +2406,8 @@
               "coverage": 1.0,
               "max": 20,
               "name": "Valoración",
-              "pct": 25.0,
-              "score": 5,
+              "pct": 30.0,
+              "score": 6,
               "text": null,
               "tone": "neg"
             }
@@ -2391,9 +2418,7 @@
       "classification_notes": [
         "Red de pagos (Credit Services) con 2.5 veces sus ingresos en activos (hasta 3.0 veces), sin cartera de préstamos en el balance."
       ],
-      "confidence_reasons": [
-        "Parte de los datos proviene de una fuente secundaria."
-      ],
+      "confidence_reasons": [],
       "coverage_notes": [],
       "currency_note": null,
       "data_notices": [],
@@ -2470,13 +2495,13 @@
       "official_source_badge": null,
       "price": {
         "contracted": false,
-        "level": "muy exigente",
-        "note": null,
+        "level": "exigente",
+        "note": "en la frontera con «muy exigente» (a 1 punto): un cambio pequeño en los datos o en los supuestos cambiaría el nivel",
         "question": "¿está cara hoy?",
-        "raw": 25,
-        "score": 25,
+        "raw": 30,
+        "score": 30,
         "title": "ATRACTIVO DEL PRECIO",
-        "tone": "neg"
+        "tone": "warn"
       },
       "quality": {
         "level": "excelente",
@@ -2489,8 +2514,8 @@
       "verdict": {
         "confidence_text": "(confianza alta: el DCF y los múltiplos coinciden)",
         "confidence_tone": "pos",
-        "full": "Calidad excelente · precio muy exigente (confianza alta: el DCF y los múltiplos coinciden)",
-        "text": "Calidad excelente · precio muy exigente"
+        "full": "Calidad excelente · precio exigente (confianza alta: el DCF y los múltiplos coinciden)",
+        "text": "Calidad excelente · precio exigente"
       }
     },
     "methodology": {
@@ -2523,7 +2548,7 @@
       },
       "dcf_upside": {
         "label": "Prima",
-        "text": "el precio incorpora una prima de 25% sobre el valor intrínseco estimado: requiere supuestos exigentes pero posibles (el precio cae en la parte alta del rango de sensibilidad del DCF)",
+        "text": "el precio incorpora una prima de 29% sobre el valor intrínseco estimado: requiere supuestos exigentes pero posibles (el precio cae en la parte alta del rango de sensibilidad del DCF)",
         "tone": "warn"
       },
       "de": {
@@ -2621,8 +2646,8 @@
               },
               {
                 "category": "Valor intrínseco",
-                "detail": "El precio está un 25% por encima del valor intrínseco estimado ($292): el mercado ya paga buena parte del crecimiento futuro.",
-                "reason": "Prima sobre el valor justo −25%"
+                "detail": "El precio está un 29% por encima del valor intrínseco estimado ($279): el mercado ya paga buena parte del crecimiento futuro.",
+                "reason": "Prima sobre el valor justo −29%"
               }
             ],
             "key": "warnings",
@@ -2992,17 +3017,17 @@
                 {
                   "in_block": false,
                   "metric": "DCF (upside)",
-                  "reason": "Cara por DCF (fiabilidad alta)",
-                  "sign": "-2",
+                  "reason": "Cara por DCF (fiabilidad media): el precio está en el grid pero fuera del caso base ±1 (205.80–389.23)",
+                  "sign": "-1",
                   "state": "con_dato",
                   "tone": "warn",
-                  "value": "-25%"
+                  "value": "-29%"
                 }
               ],
               "max": 20,
               "name": "Valoración",
-              "pct": 25.0,
-              "score": 5,
+              "pct": 30.0,
+              "score": 6,
               "text": null,
               "tone": "neg"
             },
@@ -3183,6 +3208,64 @@
           }
         ]
       },
+      "market": {
+        "behavioral": [
+          "Cotiza a un 1.5% de su máximo de 52 semanas. George y Hwang (2004) documentan que, cerca de ese máximo, los inversores lo toman como referencia y reaccionan con retraso a las noticias: el máximo actúa como ancla. Describe un sesgo estudiado, no una previsión.",
+          "El precio exige crecer un 12.5% anual durante 10 años (sus ingresos: 11.2% anual en los últimos 10 años), un ritmo que solo un 7% de las comparables sostuvo: el precio da por hecho que el crecimiento pasado continúa, y las tasas base dicen que pocas empresas lo repiten (Lakonishok, Shleifer y Vishny, 1994)."
+        ],
+        "behavioral_title": "Lectura conductual del mercado",
+        "news": [],
+        "news_note": "sin titulares de Finnhub (no disponibles o sin respuesta)",
+        "note": "Contexto de mercado: no puntúa en la calidad ni en el precio. Describe cómo se ha movido la acción, no qué hará.",
+        "pead_note": "La deriva tras los resultados (PEAD) no se lee: hace falta la sorpresa del BPA frente al consenso y no hay fuente con fecha para ella.",
+        "rows": [
+          {
+            "key": "momentum",
+            "label": "Momentum 12-1",
+            "text": "en los 12 meses anteriores al último, la acción subió un 10.3%: el mercado viene premiando la acción",
+            "tone": "neu",
+            "value": "+10.3%"
+          },
+          {
+            "key": "trend",
+            "label": "Tendencia (200 sesiones)",
+            "text": "cotiza un 15.9% por encima de su media de 200 sesiones, que sube: régimen alcista",
+            "tone": "neu",
+            "value": "Alcista"
+          },
+          {
+            "key": "volatility",
+            "label": "Volatilidad (1 año)",
+            "text": "volatilidad anual realizada del 22.2% (S&P 500 en la misma ventana: 12.7%)",
+            "tone": "neu",
+            "value": "22.2%"
+          },
+          {
+            "key": "drawdown",
+            "label": "Caída máxima",
+            "text": "en el último año llegó a caer un 17.2% desde su máximo (2026-01-06 → 2026-03-27); en los 2 años de la serie, un 20.4%",
+            "tone": "neu",
+            "value": "−17.2%"
+          },
+          {
+            "key": "relative_strength",
+            "label": "Fuerza relativa frente a XLF (12 meses)",
+            "text": "en 12 meses, la acción +14.9% frente al +5.2% del ETF de su sector (XLF): se mueve con su sector",
+            "tone": "neu",
+            "value": "+9.8 pp"
+          },
+          {
+            "key": "volume",
+            "label": "Volumen (últimas 5 sesiones)",
+            "text": "volumen en el rango habitual (z = −0.3)",
+            "tone": "neu",
+            "value": "z = −0.3"
+          }
+        ],
+        "source": "Serie diaria de Yahoo Finance (cierre ajustado por dividendos y splits, 2 años), S&P 500 y ETF del sector (XLF).",
+        "status_note": null,
+        "title": "Contexto de mercado"
+      },
       "profitability": {
         "columns": [
           "MÉTRICA",
@@ -3219,6 +3302,20 @@
           ]
         ],
         "intro": "El ROE de 64.7% es excepcional frente al mercado (mercado: 8.0% competitivo, 20.0% rango alto). Con un ROIC de 50.0% frente a un costo de capital (WACC) de 8.7%, la compañía genera un spread de +41.3%: cada dólar reinvertido crea valor económico sustancial.",
+        "quality_readings": [
+          {
+            "key": "dupont",
+            "label": "DuPont del ROE",
+            "text": "ROE 52.9% = margen neto 50.1% × rotación de activos 0.40 × apalancamiento 2.63; frente a FY2022 (ROE 42.0%), el cambio lo explica sobre todo la rotación de activos.",
+            "tone": "neu"
+          },
+          {
+            "key": "fcf_margin",
+            "label": "Margen FCF con tendencia",
+            "text": "El margen FCF − SBC es del 51.7% en FY2025, frente al 58.9% en FY2022: empeora (−7.2 pp).",
+            "tone": "warn"
+          }
+        ],
         "roce_reading": "Divergencia ROCE–ROIC: ROCE 37.15% frente a ROIC 50.01% (-12.9 pp, más de 10 pp). Causas probables: capital distinto: el ROIC usa patrimonio + deuda − caja; el ROCE, activos − pasivo corriente (incluye pasivos a largo plazo no financieros e intereses minoritarios).",
         "rows": [
           {
@@ -3319,6 +3416,14 @@
           "LECTURA"
         ],
         "intro": "La liquidez es ajustada (current ratio 0.99x), con poco margen de maniobra. El apalancamiento está controlado (D/E 0.68x) (umbral del mercado 1.0x). La deuda neta equivale a 0.4x EBITDA, un nivel bajo. La deuda es fácilmente servible: cobertura de intereses de 34.8x. El payout de 22% deja amplio margen para sostener y aumentar el dividendo.",
+        "quality_readings": [
+          {
+            "key": "coverage",
+            "label": "Cobertura de intereses",
+            "text": "Cobertura (gasto por intereses): el EBIT cubre 34.8 veces los intereses; el EBITDA, 36.5 veces; con el EBIT de cada ejercicio, de 35.0 veces en FY2022 a 40.7 en FY2025 (estable).",
+            "tone": "neu"
+          }
+        ],
         "rows": [
           {
             "bench": null,
@@ -3409,12 +3514,12 @@
         ],
         "dcf_missing": null,
         "dcf_params": "Parámetros del modelo — WACC 8.71% · crecimiento 10.92% (CAGR de ingresos a 3 años) · terminal 2.50% · el valor terminal aporta el 60% del valor total",
-        "dcf_reliability": "Fiabilidad del DCF: alta. Aporta -2 puntos a Valoración (máximo ±4 con fiabilidad alta).",
-        "dcf_reliability_level": "alta",
-        "dcf_reliability_tone": "pos",
+        "dcf_reliability": "Fiabilidad del DCF: media (el precio está en el grid pero fuera del caso base ±1 (205.80–389.23)). Aporta -1 puntos a Valoración (máximo ±2 con fiabilidad media).",
+        "dcf_reliability_level": "media",
+        "dcf_reliability_tone": "warn",
         "intrinsic": {
           "graham_note": "Número de Graham: referencia del inversor defensivo (P/E 15 × P/B 1.5). Se muestra como referencia y no vota en la convergencia entre métodos.",
-          "intro": "El precio incorpora una prima de 25% sobre el valor intrínseco estimado: requiere supuestos exigentes pero posibles (el precio cae en la parte alta del rango de sensibilidad del DCF).",
+          "intro": "El precio incorpora una prima de 29% sobre el valor intrínseco estimado: requiere supuestos exigentes pero posibles (el precio cae en la parte alta del rango de sensibilidad del DCF).",
           "rows": [
             {
               "bench": null,
@@ -3447,7 +3552,7 @@
               "state": "con_dato",
               "text": null,
               "tone": null,
-              "value": "$291.82"
+              "value": "$278.83"
             },
             {
               "bench": null,
@@ -3456,9 +3561,9 @@
               "label": "Potencial vs precio (upside)",
               "reading": "Prima",
               "state": "con_dato",
-              "text": "el precio incorpora una prima de 25% sobre el valor intrínseco estimado: requiere supuestos exigentes pero posibles (el precio cae en la parte alta del rango de sensibilidad del DCF)",
+              "text": "el precio incorpora una prima de 29% sobre el valor intrínseco estimado: requiere supuestos exigentes pero posibles (el precio cae en la parte alta del rango de sensibilidad del DCF)",
               "tone": "warn",
-              "value": "-25.4%"
+              "value": "-28.8%"
             },
             {
               "bench": null,
@@ -3469,7 +3574,7 @@
               "state": "con_dato",
               "text": null,
               "tone": null,
-              "value": "-34.13%"
+              "value": "-40.38%"
             }
           ]
         },
@@ -3477,7 +3582,26 @@
         "ke_note": null,
         "market_note": "Referencia: medianas y umbrales del mercado amplio (S&P 500), no los del sector (empresa clasificada como Madura dentro del sector financials, cuyas medianas y umbrales suponen bancos y aseguradoras: se usan los del mercado amplio (S&P 500)). PROVISIONALES. Fuentes: PE: mediana de los miembros del S&P 500 (P/E TTM), chartrow.com/sp500/pe-ratio, cierre del 12-oct-2026; método de la mediana no documentado por la fuente; FORWARD/PE: P/E forward del ÍNDICE S&P 500 (consenso de beneficios de los próximos 12 meses, Bloomberg): 18.91x al 30-sep-2026, según First Trust, 'Market Minute' de octubre de 2026 (ftportfolios.com); es un agregado del índice, NO una mediana de constituyentes: no hay mediana forward pública (chartrow.com no publica forward P/E); EV/EBITDA: mediana EV/EBITDA del S&P 500 a 1T-2025 (Ivaluate, 'EV/EBITDA multiples by sector 2025-2026', jul-2026); no hay mediana pública de constituyentes de 2026 (Damodaran ene-2026, agregado de todo EE. UU. sin financieras: 16.95x, no es una mediana). El resto de referencias de la columna MERCADO (Forward P/E, P/B, PEG, P/FCF, FCF yield, rentabilidad y márgenes) son la referencia general PROVISIONAL, fijada a mano y sin fuente, no medianas del S&P 500.",
         "normalization_note": "Beneficio TTM (4 trimestres): reportado $22.44B, normalizado $23.27B (no recurrentes 3.7% del beneficio; cargos especiales (deterioros, litigios, reestructuración) (explicita, confianza alta), recurrente (4 de los últimos 4 ejercicios): solo el exceso sobre su promedio, −$830.34M netos; ganancias por venta de valores (explicita, confianza alta), recurrente (3 de los últimos 4 ejercicios): sin exceso sobre su promedio, no se ajusta). El score usa el beneficio normalizado.",
+        "premortem": {
+          "items": [
+            "el FCF − SBC por acción creciera al menos un 12.5% anual durante 10 años, como exige el precio; historia propia: sus ingresos, 11.2% anual en 10 años"
+          ],
+          "note": "Condiciones que invalidarían la lectura de hoy, con la cifra que las mide: no son previsiones.",
+          "title": "Esta lectura sería errónea si…"
+        },
         "provisional_note": null,
+        "reverse_dcf": {
+          "lines": [
+            {
+              "label": "Muy exigente",
+              "text": "El precio actual exige que el FCF − SBC por acción crezca un 12.5% anual durante 10 años (17.0% los 5 primeros y convergencia al 2.5%); en los últimos 10 años, sus ingresos crecieron un 11.2% anual. Lo sostuvo 10 años el 7% de las empresas comparables (ventas de 25 a 50 mil millones, otros sectores).",
+              "tone": "neg"
+            }
+          ],
+          "method": "Misma estructura que el DCF directo (crecimiento constante 5 años y convergencia al terminal en los 5 siguientes). Referencia principal: tasas base de Mauboussin y Callahan (2021) por tamaño e industria; segunda: la historia propia.",
+          "role": "Contraste del DCF directo: no puntúa.",
+          "title": "Crecimiento que exige el precio (DCF inverso)"
+        },
         "rows": [
           {
             "bench": "23.00x",
@@ -3616,27 +3740,27 @@
                 {
                   "band": 3,
                   "base": false,
-                  "value": "$329"
+                  "value": "$314"
                 },
                 {
                   "band": 4,
                   "base": false,
-                  "value": "$263"
+                  "value": "$252"
                 },
                 {
                   "band": 4,
                   "base": false,
-                  "value": "$219"
+                  "value": "$209"
                 },
                 {
                   "band": 4,
                   "base": false,
-                  "value": "$187"
+                  "value": "$179"
                 },
                 {
                   "band": 4,
                   "base": false,
-                  "value": "$163"
+                  "value": "$155"
                 }
               ],
               "label": "5.9%"
@@ -3646,27 +3770,27 @@
                 {
                   "band": 2,
                   "base": false,
-                  "value": "$382"
+                  "value": "$365"
                 },
                 {
                   "band": 3,
                   "base": false,
-                  "value": "$305"
+                  "value": "$292"
                 },
                 {
                   "band": 4,
                   "base": false,
-                  "value": "$253"
+                  "value": "$242"
                 },
                 {
                   "band": 4,
                   "base": false,
-                  "value": "$215"
+                  "value": "$206"
                 },
                 {
                   "band": 4,
                   "base": false,
-                  "value": "$187"
+                  "value": "$179"
                 }
               ],
               "label": "8.4%"
@@ -3674,29 +3798,29 @@
             {
               "cells": [
                 {
-                  "band": 1,
-                  "base": false,
-                  "value": "$443"
-                },
-                {
                   "band": 2,
                   "base": false,
-                  "value": "$353"
+                  "value": "$424"
+                },
+                {
+                  "band": 3,
+                  "base": false,
+                  "value": "$337"
                 },
                 {
                   "band": 3,
                   "base": true,
-                  "value": "$292"
+                  "value": "$279"
                 },
                 {
                   "band": 4,
                   "base": false,
-                  "value": "$248"
+                  "value": "$237"
                 },
                 {
                   "band": 4,
                   "base": false,
-                  "value": "$215"
+                  "value": "$205"
                 }
               ],
               "label": "10.9%"
@@ -3704,29 +3828,29 @@
             {
               "cells": [
                 {
-                  "band": 0,
+                  "band": 1,
                   "base": false,
-                  "value": "$513"
+                  "value": "$490"
                 },
                 {
                   "band": 2,
                   "base": false,
-                  "value": "$407"
+                  "value": "$389"
                 },
                 {
                   "band": 3,
                   "base": false,
-                  "value": "$336"
-                },
-                {
-                  "band": 3,
-                  "base": false,
-                  "value": "$285"
+                  "value": "$321"
                 },
                 {
                   "band": 4,
                   "base": false,
-                  "value": "$246"
+                  "value": "$272"
+                },
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$235"
                 }
               ],
               "label": "13.4%"
@@ -3736,27 +3860,27 @@
                 {
                   "band": 0,
                   "base": false,
-                  "value": "$592"
+                  "value": "$566"
                 },
                 {
                   "band": 1,
                   "base": false,
-                  "value": "$469"
+                  "value": "$448"
                 },
                 {
                   "band": 2,
                   "base": false,
-                  "value": "$386"
+                  "value": "$369"
                 },
                 {
                   "band": 3,
                   "base": false,
-                  "value": "$326"
+                  "value": "$312"
                 },
                 {
-                  "band": 3,
+                  "band": 4,
                   "base": false,
-                  "value": "$281"
+                  "value": "$269"
                 }
               ],
               "label": "15.9%"
@@ -3889,8 +4013,8 @@
       "composition": {
         "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: Valoración (base 10/20 + bloque de múltiplos y DCF) reescalada a 100 y contraída hacia 50 según la confianza.",
         "price": {
-          "level": "muy exigente",
-          "note": null,
+          "level": "exigente",
+          "note": "en la frontera con «muy exigente» (a 1 punto): un cambio pequeño en los datos o en los supuestos cambiaría el nivel",
           "rows": [
             {
               "kind": "signed",
@@ -3900,15 +4024,15 @@
             },
             {
               "kind": "signed",
-              "label": "DCF (upside) · -25%",
+              "label": "DCF (upside) · -29%",
               "tone": "neg",
-              "value": -2
+              "value": -1
             }
           ],
-          "score": 25,
+          "score": 30,
           "signed_max": 6,
           "title": "ATRACTIVO DEL PRECIO",
-          "tone": "neg"
+          "tone": "warn"
         },
         "quality": {
           "level": "excelente",
@@ -3955,7 +4079,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad excelente · precio muy exigente (confianza alta: el DCF y los múltiplos coinciden). Calidad 96/100 · precio 25/100."
+          "text": "Calidad excelente · precio exigente (confianza alta: el DCF y los múltiplos coinciden). Calidad 96/100 · precio 30/100 (en la frontera con «muy exigente» (a 1 punto): un cambio pequeño en los datos o en los supuestos cambiaría el nivel)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -3975,7 +4099,7 @@
         },
         {
           "label": "ATRACTIVO DEL PRECIO",
-          "text": "El mercado paga 33.3x beneficios, un +45% frente a la mediana del mercado (S&P 500) (23.0x); una prima que encuentra respaldo parcial en la creación de valor de la compañía (ROIC−WACC de +41.3%). El precio incorpora una prima de 25% sobre el valor intrínseco estimado: requiere supuestos exigentes pero posibles (el precio cae en la parte alta del rango de sensibilidad del DCF)."
+          "text": "El mercado paga 33.3x beneficios, un +45% frente a la mediana del mercado (S&P 500) (23.0x); una prima que encuentra respaldo parcial en la creación de valor de la compañía (ROIC−WACC de +41.3%). El precio incorpora una prima de 29% sobre el valor intrínseco estimado: requiere supuestos exigentes pero posibles (el precio cae en la parte alta del rango de sensibilidad del DCF)."
         },
         {
           "label": "CONTEXTO DE MERCADO",
@@ -3983,7 +4107,7 @@
         },
         {
           "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Alta: parte de los datos proviene de una fuente secundaria. Contrae el atractivo del precio hacia 50; la calidad no se contrae."
+          "text": "Alta: los métodos y los datos coinciden. Contrae el atractivo del precio hacia 50; la calidad no se contrae."
         }
       ]
     },
@@ -4030,16 +4154,16 @@
               },
               {
                 "label": "Volátil",
-                "range": "1.20 – 1.60",
+                "range": "1.20 – 1.50",
                 "tone": "warn"
               },
               {
                 "label": "Muy volátil",
-                "range": "≥ 1.60",
+                "range": "≥ 1.50",
                 "tone": "neg"
               }
             ],
-            "title": "Bandas del informe"
+            "title": "Umbrales del sector (del mercado (S&P 500))"
           }
         ]
       },
@@ -4485,26 +4609,26 @@
               },
               {
                 "label": "Baja",
-                "range": "< 1.0x",
+                "range": "< 2.0x",
                 "tone": "pos"
               },
               {
                 "label": "Moderada",
-                "range": "1.0x – 2.5x",
+                "range": "2.0x – 4.0x",
                 "tone": "neu"
               },
               {
                 "label": "Elevada",
-                "range": "2.5x – 4.0x",
+                "range": "4.0x – 6.0x",
                 "tone": "warn"
               },
               {
                 "label": "Alta",
-                "range": "≥ 4.0x",
+                "range": "≥ 6.0x",
                 "tone": "neg"
               }
             ],
-            "title": "Bandas del informe"
+            "title": "Umbrales del sector (del mercado (S&P 500))"
           }
         ]
       },
@@ -5170,7 +5294,9 @@
     "pe_normalized": 32.0973826078,
     "pe_reported": 33.2848633228,
     "pe_unreliable": false,
+    "quality_differs": true,
     "reported_net_income": 22444000000.0,
+    "structural_net": 0,
     "used_in_score": true
   },
   "eps_vs_revenue_growth": {
@@ -5275,6 +5401,226 @@
     "total_equity": 35178000000.0,
     "wacc": 0.0871153963367
   },
+  "market_context": {
+    "anchor_gap": -0.0145019001743,
+    "behavioral": [
+      {
+        "field": "market_context.anchor_gap",
+        "kind": "anclaje_52s",
+        "num": -0.0145019001743,
+        "text": "Cotiza a un 1.5% de su máximo de 52 semanas. George y Hwang (2004) documentan que, cerca de ese máximo, los inversores lo toman como referencia y reaccionan con retraso a las noticias: el máximo actúa como ancla. Describe un sesgo estudiado, no una previsión."
+      },
+      {
+        "field": "reverse_dcf.main.g10",
+        "kind": "extrapolacion",
+        "num": 0.125221464532,
+        "text": "El precio exige crecer un 12.5% anual durante 10 años (sus ingresos: 11.2% anual en los últimos 10 años), un ritmo que solo un 7% de las comparables sostuvo: el precio da por hecho que el crecimiento pasado continúa, y las tasas base dicen que pocas empresas lo repiten (Lakonishok, Shleifer y Vishny, 1994)."
+      }
+    ],
+    "market_volatility": {
+      "as_of": "2026-10-14",
+      "observations": 252,
+      "params": {
+        "sessions_per_year": 252,
+        "window_sessions": 252
+      },
+      "status": "ok",
+      "value": 0.126737646948
+    },
+    "news": {
+      "items": [],
+      "reason": "sin titulares de Finnhub (no disponibles o sin respuesta)"
+    },
+    "note": "Contexto de mercado: no puntúa en la calidad ni en el precio. Describe cómo se ha movido la acción, no qué hará.",
+    "readings": [
+      {
+        "field": "market_context.signals.momentum_12_1.value",
+        "key": "momentum",
+        "label": "Momentum 12-1",
+        "num": 0.102895600099,
+        "text": "en los 12 meses anteriores al último, la acción subió un 10.3%: el mercado viene premiando la acción",
+        "value": "+10.3%"
+      },
+      {
+        "field": "market_context.signals.trend.value",
+        "key": "trend",
+        "label": "Tendencia (200 sesiones)",
+        "num": 0.158621030721,
+        "text": "cotiza un 15.9% por encima de su media de 200 sesiones, que sube: régimen alcista",
+        "value": "Alcista"
+      },
+      {
+        "field": "market_context.signals.realized_volatility.value",
+        "key": "volatility",
+        "label": "Volatilidad (1 año)",
+        "num": 0.221860954075,
+        "text": "volatilidad anual realizada del 22.2% (S&P 500 en la misma ventana: 12.7%)",
+        "value": "22.2%"
+      },
+      {
+        "field": "market_context.signals.max_drawdown.1.value",
+        "key": "drawdown",
+        "label": "Caída máxima",
+        "num": -0.171805137813,
+        "text": "en el último año llegó a caer un 17.2% desde su máximo (2026-01-06 → 2026-03-27); en los 2 años de la serie, un 20.4%",
+        "value": "−17.2%"
+      },
+      {
+        "field": "market_context.signals.relative_strength.value",
+        "key": "relative_strength",
+        "label": "Fuerza relativa frente a XLF (12 meses)",
+        "num": 0.0976699962571,
+        "text": "en 12 meses, la acción +14.9% frente al +5.2% del ETF de su sector (XLF): se mueve con su sector",
+        "value": "+9.8 pp"
+      },
+      {
+        "field": "market_context.signals.abnormal_volume.value",
+        "key": "volume",
+        "label": "Volumen (últimas 5 sesiones)",
+        "num": -0.260848630714,
+        "text": "volumen en el rango habitual (z = −0.3)",
+        "value": "z = −0.3"
+      }
+    ],
+    "sector_etf": "XLF",
+    "series_drawdown": {
+      "from_high": -0.0116901603579,
+      "high_date": "2026-10-13",
+      "peak_date": "2025-06-11",
+      "trough_date": "2026-03-27",
+      "value": -0.203776940068,
+      "years": 2.0
+    },
+    "series_status": {
+      "company": "ok",
+      "market": "ok",
+      "sector": "ok"
+    },
+    "signals": {
+      "abnormal_volume": {
+        "as_of": "2026-10-14",
+        "baseline_mean": 7306552.22222,
+        "baseline_std": 3070179.89716,
+        "params": {
+          "baseline_sessions": 90,
+          "recent_sessions": 5
+        },
+        "recent_mean": 6505700.0,
+        "status": "ok",
+        "value": -0.260848630714,
+        "zero_volume_sessions": 0
+      },
+      "beta": {
+        "adjusted": 0.845129797194,
+        "as_of": "2026-10-14",
+        "first_week": "2024-10-25",
+        "last_week": "2026-10-16",
+        "observations": 104,
+        "params": {
+          "blume_prior": 0.33,
+          "blume_weight": 0.67,
+          "frequency": "W-FRI",
+          "market_symbol": "^GSPC",
+          "min_weeks": 52,
+          "window_weeks": 104
+        },
+        "r2": 0.303119323115,
+        "raw": 0.768850443573,
+        "status": "ok",
+        "value": 0.768850443573,
+        "window_start": "2024-10-18"
+      },
+      "max_drawdown": {
+        "1": {
+          "as_of": "2026-10-14",
+          "params": {
+            "sessions_per_year": 252,
+            "years": 1
+          },
+          "peak_date": "2026-01-06",
+          "peak_price": 355.425720215,
+          "status": "ok",
+          "trough_date": "2026-03-27",
+          "trough_price": 294.361755371,
+          "value": -0.171805137813,
+          "window_start": "2025-10-13"
+        }
+      },
+      "momentum_12_1": {
+        "as_of": "2026-10-14",
+        "end_date": "2026-09-15",
+        "params": {
+          "lookback_sessions": 252,
+          "skip_sessions": 21
+        },
+        "start_date": "2025-10-13",
+        "status": "ok",
+        "value": 0.102895600099
+      },
+      "range_52w_position": {
+        "as_of": "2026-10-14",
+        "high": 396.059997559,
+        "high_date": "2026-10-13",
+        "low": 294.361755371,
+        "low_date": "2026-03-27",
+        "params": {
+          "window_sessions": 252
+        },
+        "status": "ok",
+        "value": 0.954473108058
+      },
+      "realized_volatility": {
+        "as_of": "2026-10-14",
+        "observations": 252,
+        "params": {
+          "sessions_per_year": 252,
+          "window_sessions": 252
+        },
+        "status": "ok",
+        "value": 0.221860954075
+      },
+      "relative_strength": {
+        "as_of": "2026-10-14",
+        "params": {
+          "windows_sessions": [
+            126,
+            252
+          ]
+        },
+        "status": "ok",
+        "value": 0.0976699962571,
+        "windows": {
+          "126": {
+            "company": 0.243930779125,
+            "difference": 0.191513330815,
+            "sector": 0.0524174483104,
+            "start_date": "2026-04-15",
+            "status": "ok"
+          },
+          "252": {
+            "company": 0.149316922104,
+            "difference": 0.0976699962571,
+            "sector": 0.0516469258471,
+            "start_date": "2025-10-13",
+            "status": "ok"
+          }
+        }
+      },
+      "trend": {
+        "as_of": "2026-10-14",
+        "params": {
+          "slope_sessions": 21,
+          "sma_sessions": 200
+        },
+        "price": 391.429992676,
+        "regime": "alcista",
+        "slope": 0.0105867587962,
+        "sma": 337.841263275,
+        "status": "ok",
+        "value": 0.158621030721
+      }
+    }
+  },
   "not_applicable": {},
   "piotroski_f": {
     "applicable": true,
@@ -5334,9 +5680,25 @@
     "scaled_score": 6.0,
     "score": 6
   },
+  "premortem": {
+    "items": [
+      {
+        "field": "reverse_dcf.main.g10",
+        "kind": "precio_inverso",
+        "text": "el FCF − SBC por acción creciera al menos un 12.5% anual durante 10 años, como exige el precio; historia propia: sus ingresos, 11.2% anual en 10 años",
+        "value": 0.125221464532
+      }
+    ],
+    "title": "Esta lectura sería errónea si…"
+  },
   "price": 391.429992676,
   "price_attractiveness": {
     "basis": null,
+    "border": {
+      "neighbor": "muy exigente",
+      "points": 1,
+      "text": "en la frontera con «muy exigente» (a 1 punto): un cambio pequeño en los datos o en los supuestos cambiaría el nivel"
+    },
     "categories_included": 1,
     "categories_total": 1,
     "components": [
@@ -5344,20 +5706,20 @@
         "category": "Valoración",
         "included": true,
         "max": 20,
-        "score": 5
+        "score": 6
       }
     ],
     "confidence": "alta",
     "contracted": false,
     "excluded_categories": [],
     "factor": 1.0,
-    "level": "muy exigente",
-    "level_raw": "muy exigente",
+    "level": "exigente",
+    "level_raw": "exigente",
     "low_coverage_categories": [],
     "not_applicable_categories": [],
     "partial": false,
-    "score": 25,
-    "score_raw": 25
+    "score": 30,
+    "score_raw": 30
   },
   "price_history": {
     "52w_high": 397.190002441,
@@ -5376,6 +5738,7 @@
   },
   "quality": {
     "basis": null,
+    "border": null,
     "categories_included": 4,
     "categories_total": 4,
     "components": [
@@ -5411,7 +5774,128 @@
     "low_coverage_categories": [],
     "not_applicable_categories": [],
     "partial": false,
+    "persistence": {
+      "applied": false,
+      "by_category": [
+        {
+          "anchor": null,
+          "category": "Solidez Financiera",
+          "persistence": null,
+          "rule": null,
+          "surplus": 3.0,
+          "years_ok": null
+        },
+        {
+          "anchor": "margen operativo",
+          "category": "Rentabilidad",
+          "persistence": 1.0,
+          "rule": "margen operativo positivo y al menos el 75% del último (60.0%)",
+          "surplus": 4.0,
+          "years_ok": [
+            "2021",
+            "2022",
+            "2023",
+            "2024",
+            "2025"
+          ]
+        },
+        {
+          "anchor": "conversión en caja",
+          "category": "Calidad de Ganancias",
+          "persistence": 1.0,
+          "rule": "flujo operativo ≥ beneficio neto y FCF positivo",
+          "surplus": 4.0,
+          "years_ok": [
+            "2021",
+            "2022",
+            "2023",
+            "2024",
+            "2025"
+          ]
+        },
+        {
+          "anchor": "ingresos",
+          "category": "Crecimiento",
+          "persistence": 1.0,
+          "rule": "ingresos por encima del ejercicio anterior",
+          "surplus": 2.0,
+          "years_ok": [
+            "2021",
+            "2022",
+            "2023",
+            "2024",
+            "2025"
+          ]
+        }
+      ],
+      "denominator": 5,
+      "score_before": 96,
+      "source": "edgar",
+      "weighted": 1.0,
+      "window": 5
+    },
     "score": 96
+  },
+  "quality_readings": {
+    "coverage": {
+      "basis": "gasto por intereses",
+      "ebit": 34.7886597938,
+      "ebitda": 36.5180412371,
+      "ffo": null,
+      "text": "Cobertura (gasto por intereses): el EBIT cubre 34.8 veces los intereses; el EBITDA, 36.5 veces; con el EBIT de cada ejercicio, de 35.0 veces en FY2022 a 40.7 en FY2025 (estable).",
+      "trend": {
+        "direction": "estable",
+        "fy_latest": "2025",
+        "fy_oldest": "2022",
+        "latest": 40.7368421053,
+        "oldest": 34.968401487
+      }
+    },
+    "dupont": {
+      "changes": {
+        "leverage": 0.0895283770145,
+        "margin": -0.0175020404023,
+        "turnover": 0.158045558981
+      },
+      "current": {
+        "fy": "2025",
+        "i": 0,
+        "leverage": 2.62805666201,
+        "margin": 0.50145,
+        "roe": 0.529109182516,
+        "turnover": 0.401497585996
+      },
+      "driver": "turnover",
+      "prior": {
+        "fy": "2022",
+        "i": 3,
+        "leverage": 2.402995981,
+        "margin": 0.510303650631,
+        "roe": 0.420364801439,
+        "turnover": 0.342803008152
+      },
+      "text": "ROE 52.9% = margen neto 50.1% × rotación de activos 0.40 × apalancamiento 2.63; frente a FY2022 (ROE 42.0%), el cambio lo explica sobre todo la rotación de activos."
+    },
+    "fcf_margin": {
+      "basis": "margen FCF − SBC",
+      "change": -0.0724575230297,
+      "direction": "empeora",
+      "latest": 0.517,
+      "oldest": 0.58945752303,
+      "series": [
+        0.517,
+        0.496659800701,
+        0.579762962056,
+        0.58945752303
+      ],
+      "text": "El margen FCF − SBC es del 51.7% en FY2025, frente al 58.9% en FY2022: empeora (−7.2 pp).",
+      "years": [
+        "2025",
+        "2024",
+        "2023",
+        "2022"
+      ]
+    }
   },
   "ratios": {
     "asset_turnover": 0.470324558621,
@@ -5458,6 +5942,48 @@
     "roa": 0.237276667724,
     "roe": 0.647472882529,
     "roic": 0.500077894566
+  },
+  "reverse_dcf": {
+    "applicable": true,
+    "main": {
+      "band": "muy_exigente",
+      "base_rate": {
+        "bin": "25-50",
+        "cell": "25-50 · Other",
+        "count": 246,
+        "horizon_years": 10,
+        "industry": "Other",
+        "median": 0.035,
+        "reason": null,
+        "revenue_usd": 44488000000.0,
+        "share": 0.0741799759837,
+        "std": 0.06
+      },
+      "flow_label": "FCF − SBC",
+      "flow_per_share": 10.7033551075,
+      "g10": 0.125221464532,
+      "g_star": 0.169949730998,
+      "gap": 0.0135740748832,
+      "net_debt_per_share": 5.36179817418,
+      "own_growth": {
+        "basis": "agregado",
+        "cagr": 0.111647389649,
+        "label": "sus ingresos",
+        "source": "EDGAR",
+        "years": 10
+      },
+      "points": -4,
+      "rate": 0.0871153963367,
+      "reason": null,
+      "rule": "tasa_base",
+      "side": null,
+      "signal": -1.0,
+      "state": "ok",
+      "terminal_growth": 0.025,
+      "text": "El precio actual exige que el FCF − SBC por acción crezca un 12.5% anual durante 10 años (17.0% los 5 primeros y convergencia al 2.5%); en los últimos 10 años, sus ingresos crecieron un 11.2% anual. Lo sostuvo 10 años el 7% de las empresas comparables (ventas de 25 a 50 mil millones, otros sectores)."
+    },
+    "reason": null,
+    "ttm": null
   },
   "risk_free": {
     "as_of": null,
@@ -5719,12 +6245,12 @@
             "value": "5 múltiplos"
           },
           {
-            "adjustment": -2,
+            "adjustment": -1,
             "metric": "DCF (upside)",
-            "reason": "Cara por DCF (fiabilidad alta)",
-            "reliability": "alta",
+            "reason": "Cara por DCF (fiabilidad media): el precio está en el grid pero fuera del caso base ±1 (205.80–389.23)",
+            "reliability": "media",
             "severity": "moderate",
-            "value": "-25%"
+            "value": "-29%"
           }
         ],
         "applicable": true,
@@ -5737,10 +6263,10 @@
           "Muy caro (26.3x vs 13.2x mercado)",
           "Caro para su crecimiento (1.90)",
           "promedio de los ajustes reescalados a ±1 (P/E -1.00, Forward P/E +0.67, P/FCF -0.50, EV/EBITDA -1.00, PEG -0.67) = -0.50 × 6 (máximo con 5 miembros) = -3.0",
-          "Cara por DCF (fiabilidad alta)"
+          "Cara por DCF (fiabilidad media): el precio está en el grid pero fuera del caso base ±1 (205.80–389.23)"
         ],
         "max": 20,
-        "score": 5
+        "score": 6
       }
     },
     "excluded_categories": [],
@@ -5816,7 +6342,7 @@
   "sensitivity": {
     "base_case": {
       "discount_rate": 0.0871153963367,
-      "fair_value": 291.82,
+      "fair_value": 278.83,
       "growth_rate": 0.109212421303
     },
     "base_discount_idx": 2,
@@ -5835,52 +6361,52 @@
       0.1342,
       0.1592
     ],
-    "interpretation": "Probablemente sobrevalorada (80% de escenarios)",
+    "interpretation": "Muy probablemente sobrevalorada (84% de escenarios)",
     "is_valid": true,
     "matrix": [
       [
-        329.07,
-        263.48,
-        219.07,
-        187.03,
-        162.83
+        314.44,
+        251.72,
+        209.26,
+        178.62,
+        155.48
       ],
       [
-        382.35,
-        305.23,
-        253.06,
-        215.46,
-        187.09
+        365.39,
+        291.65,
+        241.76,
+        205.8,
+        178.67
       ],
       [
-        443.31,
-        352.92,
-        291.82,
-        247.82,
-        214.66
+        423.69,
+        337.25,
+        278.83,
+        236.75,
+        205.04
       ],
       [
-        512.91,
-        407.28,
-        335.94,
-        284.6,
-        245.95
+        490.24,
+        389.23,
+        321.01,
+        271.92,
+        234.95
       ],
       [
-        592.19,
-        469.11,
-        386.04,
-        326.31,
-        281.38
+        566.06,
+        448.36,
+        368.92,
+        311.81,
+        268.84
       ]
     ],
     "statistics": {
       "current_price": 391.429992676,
-      "max_value": 592.19,
-      "mean_value": 315.8764,
-      "median_value": 291.82,
-      "min_value": 162.83,
-      "upside_base_case": -25.4477159491
+      "max_value": 566.06,
+      "mean_value": 301.8276,
+      "median_value": 278.83,
+      "min_value": 155.48,
+      "upside_base_case": -28.7663170382
     },
     "trimmed": {
       "discount": [],
@@ -5901,10 +6427,10 @@
   "verdict": {
     "confidence": "alta",
     "confidence_text": "(confianza alta: el DCF y los múltiplos coinciden)",
-    "full": "Calidad excelente · precio muy exigente (confianza alta: el DCF y los múltiplos coinciden)",
-    "price_level": "muy exigente",
+    "full": "Calidad excelente · precio exigente (confianza alta: el DCF y los múltiplos coinciden)",
+    "price_level": "exigente",
     "quality_level": "excelente",
-    "text": "Calidad excelente · precio muy exigente"
+    "text": "Calidad excelente · precio exigente"
   },
   "wacc": {
     "applicable": true,

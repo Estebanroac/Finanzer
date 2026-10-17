@@ -24,7 +24,7 @@
 
 | Campo | Valor |
 |---|---|
-| Fase en curso | **Fases 3 a 6 ✅ cerradas en código; fase 7: estudio de calibración ✅ y revisión de parámetros ✅** (bajo la delegación del usuario, registros #31–#35); vigilancia semanal continua. Pendientes del usuario: regenerar los golden (bloqueado por permisos en la sesión), `SEC_EDGAR_USER_AGENT` en Render, el "ok, pushea", el deploy y el permiso para descargar los datos sectoriales de Damodaran (F4_PARADA §5) |
+| Fase en curso | **Fases 3 a 6 ✅ cerradas en código; fase 7: estudio de calibración ✅ y revisión de parámetros ✅** (bajo la delegación del usuario, registros #31–#35); vigilancia semanal continua. Pendientes del usuario: `SEC_EDGAR_USER_AGENT` en Render, el "ok, pushea", el deploy y el permiso para descargar los datos sectoriales de Damodaran (F4_PARADA §5) |
 | Rama de trabajo | `fiabilidad/f7-calibracion` (sale de `fiabilidad/f6-infra` ← `fiabilidad/f5-contexto` ← `fiabilidad/f4-escalas` ← `fiabilidad/f3-metodo`; worktree `../finanzer_next-f3`), sin subir |
 | Producción | `01336e2` (código `103c76f`). Rollback de código: `60f8a69` |
 | `main` local | `b2f1972` (borrador del prompt de la fase 3), un commit por delante de `origin/main`; sin subir |
@@ -1481,3 +1481,16 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
   - `SEC_EDGAR_USER_AGENT` en Render;
   - "ok, pushea" y deploy;
   - el permiso para descargar los datos de Damodaran (medianas sectoriales y prima histórica).
+
+### #37 · 2026-10-17 · operador · Golden regenerados con la aprobación del usuario
+- **Aprobación del usuario:** "Apruebo regenerar los golden del panel y local y las muestras forzadas del contrato, con el diff explicado causa por causa."
+- **Diff causa por causa** en [`GOLDEN_DIFF_F3_F7.md`](GOLDEN_DIFF_F3_F7.md):
+  - se pasó el motor por los 85 commits que tocan código desde los golden anteriores (`d0ab47c`), validado con 0 diferencias en el commit base;
+  - 51 commits cambian la salida, todos con su causa y decisión registradas;
+  - ningún cambio de veredicto queda sin causa.
+- **Regenerados:** golden de panel (37) y local (6), y las 4 muestras forzadas del contrato. Coinciden con la salida de `354e7eb`.
+- **Suite completa, con regresión:** "4113 passed, 1 skipped", 0 fallos. Es la primera vez desde la fase 3.
+- **Pendiente del usuario:**
+  - `SEC_EDGAR_USER_AGENT` en Render;
+  - "ok, pushea" y deploy;
+  - permiso para descargar los datos de Damodaran.

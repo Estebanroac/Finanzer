@@ -1,7 +1,13 @@
 {
   "alerts": {
     "red_flags": [],
-    "strengths": [],
+    "strengths": [
+      {
+        "category": "Valoración",
+        "detail": "Paga 8.5x beneficios normalizados frente a 13.0x del sector (-35%): un descuento que puede ser oportunidad si los fundamentos acompañan, o reflejar un riesgo que el mercado ya percibe.",
+        "reason": "Cotiza con descuento — P/E normalizado 8.5x"
+      }
+    ],
     "warnings": []
   },
   "altman_z": {
@@ -19,6 +25,7 @@
     "zone": "n/a"
   },
   "archetype_metrics": {
+    "at1": 17137008331.6,
     "beta_adjusted": 1.16498604731,
     "beta_raw": 1.24624783181,
     "book_value_basis": "tangible",
@@ -27,17 +34,66 @@
     "cost_of_equity": 0.101829413987,
     "efficiency_ratio": null,
     "efficiency_reason": "sin gastos no financieros desglosados en los estados",
+    "implied": {
+      "at1": 17137008331.6,
+      "band": "en_precio",
+      "gap": 0.00501436817524,
+      "implied": 0.101490055331,
+      "metric": "ROTE",
+      "multiple": 0.995582959197,
+      "own": 0.106504423506,
+      "own_avg": 0.101290610259,
+      "own_years": 4,
+      "reason": null,
+      "sensitivity": [
+        {
+          "delta": -0.02,
+          "multiple_justified": 0.800532248186,
+          "return": 0.086504423506
+        },
+        {
+          "delta": -0.01,
+          "multiple_justified": 0.93069073152,
+          "return": 0.096504423506
+        },
+        {
+          "delta": 0.0,
+          "multiple_justified": 1.06084921485,
+          "return": 0.106504423506
+        },
+        {
+          "delta": 0.01,
+          "multiple_justified": 1.19100769819,
+          "return": 0.116504423506
+        },
+        {
+          "delta": 0.02,
+          "multiple_justified": 1.32116618152,
+          "return": 0.126504423506
+        }
+      ],
+      "state": "ok",
+      "subtype": "banco"
+    },
+    "net_interest_income_cagr_3y": 0.134988029132,
+    "net_interest_income_cagr_3y_reason": null,
+    "net_interest_income_share": 0.497632120796,
     "pb": 0.72668186913,
     "pb_justified": 0.849799818245,
     "pb_ratio": 0.855121233882,
-    "ptbv": 0.813298165589,
-    "ptbv_justified": 0.989876420895,
-    "ptbv_ratio": 0.821615858729,
+    "ptbv": 0.995582959197,
+    "ptbv_justified": 1.06084921485,
+    "ptbv_ratio": 0.938477349332,
     "revenue_growth_statements": 0.110941669844,
+    "roe_avg": 0.085239479055,
     "roe_fy": 0.0902896220421,
+    "roe_reference": 0.0902896220421,
     "roe_std": 0.00874587690112,
     "roe_years": 4,
-    "rote": 0.101051625337,
+    "rote": 0.106504423506,
+    "rote_avg": 0.101290610259,
+    "rote_years": 4,
+    "tangible_book_ordinary": 76460011632.8,
     "terminal_growth": 0.025
   },
   "benchmark": {
@@ -103,29 +159,43 @@
     "source": "propia",
     "source_beta": 1.6351864
   },
+  "business_model": {
+    "altman_referential": false,
+    "current_ratio": {
+      "applies": false,
+      "history": [],
+      "industry": "Banks—Diversified",
+      "median_prior": null,
+      "structural": false,
+      "worsening": false
+    },
+    "piotroski_caveat": null
+  },
   "classification": {
     "alerts": [],
     "ambiguous": false,
     "archetype": "FINANCIAL",
     "confidence": "normal",
+    "frontier": null,
     "industry": "Banks - Diversified",
     "inputs": {
       "assets_to_revenue": 71.3643597682,
       "eps_ttm": 2.67523048561,
       "net_margin_ttm": 0.222672980326,
-      "op_margin_detrended_std": null,
       "revenue_cagr_3y": 0.0521111621406,
-      "revenue_cagr_3y_reason": null,
-      "revenue_growth_std": 0.0511167949299
+      "revenue_cagr_3y_reason": null
     },
     "label": "Banco/aseguradora",
+    "low_confidence": null,
     "reason": "Clasificada como FINANCIAL por industria Banks - Diversified (banco)",
     "reason_plain": "Banco por su industria (Banks - Diversified): el balance es el producto.",
     "rule": "industria_banco",
-    "sector": "Financial Services"
+    "sector": "Financial Services",
+    "subtype": "banco",
+    "subtype_label": "Banco"
   },
   "confidence": {
-    "capped_from": null,
+    "capped_from": "alta",
     "dimensions": {
       "convergence": {
         "level": "media",
@@ -153,7 +223,7 @@
         ]
       },
       "coverage": {
-        "coverage": 0.909090909091,
+        "coverage": 0.916666666667,
         "level": "alta",
         "reasons": []
       },
@@ -172,12 +242,9 @@
           "pio.ltd",
           "prior.ltd"
         ],
-        "issues": 2,
-        "level": "media",
-        "reasons": [
-          "validación: capitalExpenditures (periodo_incoherente)",
-          "7 campos de Finnhub en lugar de los estados"
-        ]
+        "issues": 0,
+        "level": "alta",
+        "reasons": []
       },
       "stability": {
         "level": "alta",
@@ -188,9 +255,9 @@
     "limits_score": false,
     "reasons": [
       "convergencia media: coinciden (barata) pero la distancia entre señales es 0.66 (>= 0.6)",
-      "calidad de fuente media: validación: capitalExpenditures (periodo_incoherente); 7 campos de Finnhub en lugar de los estados"
+      "techo en media: la convergencia es media: alta exige convergencia alta"
     ],
-    "score": 0.7
+    "score": 0.8
   },
   "data_provenance": {
     "as_of": {
@@ -541,19 +608,33 @@
           "unit": "GBP",
           "years": 11
         },
+        "contract_revenue": {
+          "cross_taxonomy": null,
+          "first": "2018-12-31",
+          "last": "2025-12-31",
+          "unit": "GBP",
+          "years": 8
+        },
         "diluted_eps": {
           "cross_taxonomy": null,
-          "first": "2015-12-31",
+          "first": "2017-12-31",
           "last": "2025-12-31",
           "unit": "GBP/shares",
-          "years": 11
+          "years": 9
         },
         "diluted_shares": {
           "cross_taxonomy": null,
-          "first": "2015-12-31",
+          "first": "2017-12-31",
           "last": "2025-12-31",
           "unit": "shares",
-          "years": 11
+          "years": 9
+        },
+        "discontinued": {
+          "cross_taxonomy": null,
+          "first": "2015-12-31",
+          "last": "2019-12-31",
+          "unit": "GBP",
+          "years": 5
         },
         "net_income": {
           "cross_taxonomy": null,
@@ -606,6 +687,7 @@
         ]
       },
       "reason": null,
+      "recut": null,
       "status": "ok",
       "title": "BARCLAYS PLC"
     },
@@ -1055,6 +1137,7 @@
       "rule": "periodo_incoherente"
     }
   ],
+  "dcf_growth_blend": null,
   "dcf_status": {
     "reason": "No aplica a bancos y aseguradoras: el balance es el producto (depósitos y préstamos)",
     "state": "no_aplica"
@@ -1071,10 +1154,6 @@
           "text": "coinciden (barata) pero la distancia entre señales es 0.66 (>= 0.6)"
         },
         {
-          "label": "Confianza · Calidad de fuente (media)",
-          "text": "validación: capitalExpenditures (periodo_incoherente); 7 campos de Finnhub en lugar de los estados"
-        },
-        {
           "label": "Fuente oficial",
           "text": "sí, SEC EDGAR (CIK 312069); último ejercicio en EDGAR: FY 2025."
         },
@@ -1085,12 +1164,16 @@
         {
           "label": "Respaldo de SEC EDGAR (lo que Yahoo no da del mismo corte)",
           "text": "gastos financieros (ifrs-full:InterestExpense; ejercicio 2025-01-01 a 2025-12-31 + acumulado 2026-01-01 a 2026-06-30 − acumulado 2025-01-01 a 2025-06-30); amortizaciones (ifrs-full:DepreciationAndAmortisationExpense; ejercicio 2025-01-01 a 2025-12-31 + acumulado 2026-01-01 a 2026-06-30 − acumulado 2025-01-01 a 2025-06-30); flujo de operaciones (ifrs-full:CashFlowsFromUsedInOperatingActivities; ejercicio 2025-01-01 a 2025-12-31 + acumulado 2026-01-01 a 2026-06-30 − acumulado 2025-01-01 a 2025-06-30); dividendos pagados (ifrs-full:DividendsPaid; ejercicio 2025-01-01 a 2025-12-31 + acumulado 2026-01-01 a 2026-06-30 − acumulado 2025-01-01 a 2025-06-30)."
+        },
+        {
+          "label": "Procedencia de los datos (campos del análisis por fuente)",
+          "text": "estados de Yahoo (yfinance): 21 campos; SEC EDGAR: 4 (amortizaciones, dividendos pagados, gastos financieros, flujo de operaciones); Finnhub: 4 (P/E adelantado, payout, PEG, deuda a largo plazo); Yahoo (cotización y perfil): 2 (industria, sector); calculados con otros datos del análisis: 14 campos; fijados por la regla del arquetipo: 6 (crecimiento de ingresos, deuda/patrimonio, deuda/activo, deuda neta, valor de empresa, EV/ventas); sin dato utilizable (ausente o de otro periodo): 6 (inversión (capex), EBITDA, BPA estimado, beneficio bruto, beneficio operativo, caja total)."
         }
       ],
       "title": "Detalle técnico para auditoría"
     },
     "archetype": "FINANCIAL",
-    "archetype_label": "Banco/aseguradora",
+    "archetype_label": "Banco",
     "benchmark": {
       "column": "SECTOR",
       "profile": "sector",
@@ -1100,10 +1183,40 @@
     },
     "charts": {
       "comparison": {
-        "better": 2,
+        "better": 4,
         "groups": [
           {
             "items": [
+              {
+                "bench": 13.0,
+                "bench_txt": "13.00x",
+                "fmt": "mult",
+                "gap_pct": -34.3262908332,
+                "gap_txt": "-34%",
+                "higher_is_better": false,
+                "key": "pe",
+                "label": "P/E (TTM)",
+                "reading": "Descuento",
+                "text": "P/E (TTM) de 8.5x frente a 13.0x del sector (-34%): descuento",
+                "tone": "pos",
+                "value": 8.53758219168,
+                "value_txt": "8.54x"
+              },
+              {
+                "bench": 11.0,
+                "bench_txt": "11.00x",
+                "fmt": "mult",
+                "gap_pct": -30.9485454545,
+                "gap_txt": "-31%",
+                "higher_is_better": false,
+                "key": "forward_pe",
+                "label": "Forward P/E",
+                "reading": "Descuento",
+                "text": "Forward P/E de 7.6x frente a 11.0x del sector (-31%): descuento",
+                "tone": "pos",
+                "value": 7.59566,
+                "value_txt": "7.60x"
+              },
               {
                 "bench": 1.5,
                 "bench_txt": "1.50x",
@@ -1211,7 +1324,7 @@
         "market_note": null,
         "note": "Medianas del sector: referencia PROVISIONAL, fijada a mano (no son medianas calculadas).",
         "ref": "sector",
-        "total": 6
+        "total": 8
       },
       "growth": [
         {
@@ -1236,7 +1349,7 @@
           "key": "fcf",
           "label": "FCF",
           "state": "no_aplica",
-          "text": "No aplica a Banco/aseguradora"
+          "text": "No aplica a Banco"
         }
       ],
       "historical": {
@@ -1351,19 +1464,19 @@
               "key": "gross_margin",
               "label": "Margen bruto",
               "state": "no_aplica",
-              "text": "No aplica a Banco/aseguradora"
+              "text": "No aplica a Banco"
             },
             {
               "key": "ebitda_margin",
               "label": "Margen EBITDA",
               "state": "no_aplica",
-              "text": "No aplica a Banco/aseguradora"
+              "text": "No aplica a Banco"
             },
             {
               "key": "operating_margin",
               "label": "Margen operativo",
               "state": "no_aplica",
-              "text": "No aplica a Banco/aseguradora"
+              "text": "No aplica a Banco"
             },
             {
               "amount": 9190080147.05,
@@ -1385,7 +1498,7 @@
             "key": "gross_margin",
             "label": "Margen bruto",
             "state": "no_aplica",
-            "text": "No aplica a Banco/aseguradora"
+            "text": "No aplica a Banco"
           },
           {
             "fmt": "pct",
@@ -1393,7 +1506,7 @@
             "key": "operating_margin",
             "label": "Margen operativo",
             "state": "no_aplica",
-            "text": "No aplica a Banco/aseguradora"
+            "text": "No aplica a Banco"
           },
           {
             "bench": 0.25,
@@ -1451,7 +1564,7 @@
             "key": "roic",
             "label": "ROIC",
             "state": "no_aplica",
-            "text": "No aplica a Banco/aseguradora"
+            "text": "No aplica a Banco"
           }
         ],
         "roce": {
@@ -1478,13 +1591,13 @@
           "key": "ebitda",
           "label": "EBITDA",
           "state": "no_aplica",
-          "text": "No aplica a Banco/aseguradora"
+          "text": "No aplica a Banco"
         },
         {
           "key": "operating_income",
           "label": "Resultado operativo",
           "state": "no_aplica",
-          "text": "No aplica a Banco/aseguradora"
+          "text": "No aplica a Banco"
         },
         {
           "amount": 9190080147.05,
@@ -1500,7 +1613,7 @@
           "key": "fcf",
           "label": "Flujo de caja libre",
           "state": "no_aplica",
-          "text": "No aplica a Banco/aseguradora"
+          "text": "No aplica a Banco"
         }
       ],
       "solvency": {
@@ -1550,9 +1663,9 @@
       },
       "valuation": {
         "block": {
-          "label": "Bloque P/B y P/TBV",
-          "reason": "promedio de los ajustes reescalados a ±1 (P/B frente a ROE +0.50, P/TBV frente a ROTE +0.50) = +0.50 × 4 (máximo con 2 miembros) = +2.0",
-          "sign": "+2",
+          "label": "Bloque de múltiplos",
+          "reason": "promedio de los ajustes reescalados a ±1 (P/E +1.00, Forward P/E +0.33) = +0.67 × 4 (máximo con 2 miembros) = +2.7",
+          "sign": "+3",
           "tone": "pos"
         },
         "dcf_composition": null,
@@ -1562,22 +1675,38 @@
         },
         "multiples": [
           {
+            "bench": 13.0,
+            "bench_txt": "13.00x",
             "fmt": "mult",
+            "gap_pct": -34.3262908332,
+            "gap_txt": "-34%",
             "higher_is_better": false,
             "key": "pe",
             "label": "P/E (TTM)",
-            "role": "informative",
-            "state": "no_aplica",
-            "text": "No aplica a Banco/aseguradora"
+            "reading": "Descuento",
+            "role": "block",
+            "state": "con_dato",
+            "text": "P/E (TTM) de 8.5x frente a 13.0x del sector (-34%): descuento",
+            "tone": "pos",
+            "value": 8.53758219168,
+            "value_txt": "8.54x"
           },
           {
+            "bench": 11.0,
+            "bench_txt": "11.00x",
             "fmt": "mult",
+            "gap_pct": -30.9485454545,
+            "gap_txt": "-31%",
             "higher_is_better": false,
             "key": "forward_pe",
             "label": "Forward P/E",
-            "role": "informative",
-            "state": "no_aplica",
-            "text": "No aplica a Banco/aseguradora"
+            "reading": "Descuento",
+            "role": "block",
+            "state": "con_dato",
+            "text": "Forward P/E de 7.6x frente a 11.0x del sector (-31%): descuento",
+            "tone": "pos",
+            "value": 7.59566,
+            "value_txt": "7.60x"
           },
           {
             "bench": 1.5,
@@ -1603,7 +1732,7 @@
             "label": "PEG",
             "role": "informative",
             "state": "no_aplica",
-            "text": "No aplica a Banco/aseguradora"
+            "text": "No aplica a Banco"
           },
           {
             "fmt": "mult",
@@ -1612,7 +1741,7 @@
             "label": "EV/EBITDA",
             "role": "informative",
             "state": "no_aplica",
-            "text": "No aplica a Banco/aseguradora"
+            "text": "No aplica a Banco"
           },
           {
             "fmt": "mult",
@@ -1621,7 +1750,7 @@
             "label": "P/FCF",
             "role": "informative",
             "state": "no_aplica",
-            "text": "No aplica a Banco/aseguradora"
+            "text": "No aplica a Banco"
           },
           {
             "fmt": "pct",
@@ -1630,7 +1759,7 @@
             "label": "FCF Yield",
             "role": "informative",
             "state": "no_aplica",
-            "text": "No aplica a Banco/aseguradora"
+            "text": "No aplica a Banco"
           }
         ],
         "scored": [
@@ -1648,11 +1777,11 @@
             "in_block": true,
             "key": "p_tbv_frente_a_rote",
             "label": "P/TBV frente a ROTE",
-            "reading": "Favorable",
-            "reason": "Atractivo: 0.81x frente a 0.99x justificado por su ROTE (Ke 10.2% con β ajustada 1.16, g 2.5%)",
-            "sign": "(+2)",
-            "tone": "pos",
-            "value_txt": "82% del P/TBV justificado (0.81x frente a 0.99x)"
+            "reading": "En línea",
+            "reason": "En línea: 1.00x frente a 1.06x justificado por su ROTE (Ke 10.2% con β ajustada 1.16, g 2.5%)",
+            "sign": "(0)",
+            "tone": "neu",
+            "value_txt": "94% del P/TBV justificado (1.00x frente a 1.06x)"
           }
         ]
       },
@@ -1675,8 +1804,8 @@
         {
           "key": "source",
           "label": "Calidad de fuente",
-          "level": "Media",
-          "text": "Un dato de la fuente no superó la validación y se corrigió o se descartó. Parte de los datos proviene de una fuente secundaria."
+          "level": "Alta",
+          "text": "Sin incidencias."
         },
         {
           "key": "stability",
@@ -1687,9 +1816,7 @@
       ],
       "level": "media",
       "plain": [
-        "Los métodos de valoración coinciden en la dirección, pero con intensidad distinta.",
-        "Un dato de la fuente no superó la validación y se corrigió o se descartó.",
-        "Parte de los datos proviene de una fuente secundaria."
+        "Los métodos de valoración coinciden en la dirección, pero con intensidad distinta."
       ],
       "reasons": [
         {
@@ -1698,23 +1825,18 @@
           "text": "Los métodos de valoración coinciden en la dirección, pero con intensidad distinta."
         },
         {
-          "dimension": "calidad de fuente",
+          "dimension": "techo",
           "level": "media",
-          "text": "Un dato de la fuente no superó la validación y se corrigió o se descartó."
-        },
-        {
-          "dimension": "calidad de fuente",
-          "level": "media",
-          "text": "Parte de los datos proviene de una fuente secundaria."
+          "text": null
         }
       ],
-      "summary": "Confianza del veredicto: media. Contrae el atractivo del precio hacia 50 (factor 0.75): sin ajustar 60 → ajustado a 58. La calidad del negocio no se contrae.",
+      "summary": "Confianza del veredicto: media (techo en media: la convergencia es media: alta exige convergencia alta; sin techo sería alta). Contrae el atractivo del precio hacia 50 (factor 0.75): sin ajustar 70 → ajustado a 65. La calidad del negocio no se contrae.",
       "tone": "warn",
       "verdict_text": "(confianza media: el P/B justificado y el P/B del sector coinciden en dirección pero no en magnitud)"
     },
     "cover": {
       "archetype": "FINANCIAL",
-      "archetype_label": "Banco/aseguradora",
+      "archetype_label": "Banco",
       "as_of_note": "Estados financieros a 30 de junio de 2026 (últimos doce meses).",
       "categories": [
         {
@@ -1774,8 +1896,8 @@
               "coverage": 1.0,
               "max": 20,
               "name": "Valoración",
-              "pct": 60.0,
-              "score": 12,
+              "pct": 70.0,
+              "score": 14,
               "text": null,
               "tone": "pos"
             }
@@ -1787,9 +1909,7 @@
         "Banco por su industria (Banks - Diversified): el balance es el producto."
       ],
       "confidence_reasons": [
-        "Los métodos de valoración coinciden en la dirección, pero con intensidad distinta.",
-        "Un dato de la fuente no superó la validación y se corrigió o se descartó.",
-        "Parte de los datos proviene de una fuente secundaria."
+        "Los métodos de valoración coinciden en la dirección, pero con intensidad distinta."
       ],
       "coverage_notes": [],
       "currency_note": "Estados financieros en GBP convertidos a USD, la moneda de la cotización, con el tipo de cambio de Yahoo (GBP=X): el balance al cierre de cada período y los resultados y flujos al promedio del período (TTM: 1 GBP = 1.3422 USD; balance al 2026-06-30: 1 GBP = 1.3254 USD). Cifras por acción en la clase que cotiza: cada título cotizado equivale a 4 acciones ordinarias de 25 peniques (factor del depositario, JPMorgan). Desde el balance del 2025-12-31 la empresa tiene un 3.7% menos de acciones (recompras); el valor por acción usa las de hoy.",
@@ -1800,7 +1920,7 @@
         {
           "kicker": "FORTALEZA CLAVE",
           "kind": "strength",
-          "text": "Fundamentos sólidos en la mayoría de categorías",
+          "text": "Cotiza con descuento — P/E normalizado 8.5x",
           "tone": "pos"
         },
         {
@@ -1851,7 +1971,7 @@
           "key": "ptbv",
           "label": "P/TBV",
           "state": "con_dato",
-          "value": "0.81x"
+          "value": "1.00x"
         },
         {
           "key": "dividend_yield",
@@ -1869,13 +1989,13 @@
       "official_source_badge": null,
       "price": {
         "contracted": true,
-        "level": "razonable",
-        "note": "sin ajustar 60 → ajustado a 58 por confianza media",
+        "level": "atractivo",
+        "note": "sin ajustar 70 → ajustado a 65 por confianza media; en la frontera con «razonable» (a 1 punto): un cambio pequeño en los datos o en los supuestos cambiaría el nivel",
         "question": "¿está cara hoy?",
-        "raw": 60,
-        "score": 58,
+        "raw": 70,
+        "score": 65,
         "title": "ATRACTIVO DEL PRECIO",
-        "tone": "neu"
+        "tone": "pos"
       },
       "quality": {
         "level": "sólida",
@@ -1888,8 +2008,8 @@
       "verdict": {
         "confidence_text": "(confianza media: el P/B justificado y el P/B del sector coinciden en dirección pero no en magnitud)",
         "confidence_tone": "warn",
-        "full": "Calidad sólida · precio razonable (confianza media: el P/B justificado y el P/B del sector coinciden en dirección pero no en magnitud)",
-        "text": "Calidad sólida · precio razonable"
+        "full": "Calidad sólida · precio atractivo (confianza media: el P/B justificado y el P/B del sector coinciden en dirección pero no en magnitud)",
+        "text": "Calidad sólida · precio atractivo"
       }
     },
     "methodology": {
@@ -1908,7 +2028,6 @@
       "fcf",
       "fcf_growth",
       "fcf_to_ni",
-      "forward_pe",
       "garp",
       "graham",
       "gross_margin",
@@ -1917,7 +2036,6 @@
       "ocf",
       "operating_margin",
       "p_fcf",
-      "pe",
       "peg",
       "piotroski",
       "roce",
@@ -1952,7 +2070,11 @@
         "text": "el payout de 18% deja amplio margen para sostener y aumentar el dividendo",
         "tone": "pos"
       },
-      "pe": null,
+      "pe": {
+        "label": "Descuento",
+        "text": "el mercado paga 8.5x beneficios, un -34% frente a la mediana del sector (13.0x); un descuento que amerita revisar si responde a riesgos específicos o a una oportunidad",
+        "tone": "pos"
+      },
       "pos52": {
         "label": "Zona media del rango",
         "text": "cotiza en el 38% del rango de 52 semanas, en la zona media",
@@ -1975,7 +2097,7 @@
       "alerts": {
         "counts": {
           "red_flags": 0,
-          "strengths": 0,
+          "strengths": 1,
           "warnings": 0
         },
         "groups": [
@@ -1992,7 +2114,13 @@
             "tone": "warn"
           },
           {
-            "items": [],
+            "items": [
+              {
+                "category": "Valoración",
+                "detail": "Paga 8.5x beneficios normalizados frente a 13.0x del sector (-35%): un descuento que puede ser oportunidad si los fundamentos acompañan, o reflejar un riesgo que el mercado ya percibe.",
+                "reason": "Cotiza con descuento — P/E normalizado 8.5x"
+              }
+            ],
             "key": "strengths",
             "title": "Fortalezas",
             "tone": "pos"
@@ -2065,6 +2193,17 @@
             "text": null,
             "tone": null,
             "value": "11.09%"
+          },
+          {
+            "bench": null,
+            "gap": null,
+            "key": "net_interest_income_growth",
+            "label": "Margen de intereses (CAGR 3 años)",
+            "reading": "—",
+            "state": "con_dato",
+            "text": "el margen de intereses crece un 13.5% anual en 3 años y es el 50% de los ingresos netos; informativo, no puntúa",
+            "tone": null,
+            "value": "13.50%"
           },
           {
             "bench": null,
@@ -2251,17 +2390,44 @@
                 {
                   "in_block": true,
                   "metric": "P/TBV frente a ROTE",
-                  "reason": "Atractivo: 0.81x frente a 0.99x justificado por su ROTE (Ke 10.2% con β ajustada 1.16, g 2.5%)",
-                  "sign": "(+2)",
+                  "reason": "En línea: 1.00x frente a 1.06x justificado por su ROTE (Ke 10.2% con β ajustada 1.16, g 2.5%)",
+                  "sign": "(0)",
                   "state": "con_dato",
                   "tone": "neu",
-                  "value": "82% del P/TBV justificado (0.81x frente a 0.99x)"
+                  "value": "94% del P/TBV justificado (1.00x frente a 1.06x)"
                 },
                 {
                   "in_block": false,
                   "metric": "Bloque P/B y P/TBV",
-                  "reason": "promedio de los ajustes reescalados a ±1 (P/B frente a ROE +0.50, P/TBV frente a ROTE +0.50) = +0.50 × 4 (máximo con 2 miembros) = +2.0",
-                  "sign": "+2",
+                  "reason": "promedio de los ajustes reescalados a ±1 (P/B frente a ROE +0.50, P/TBV frente a ROTE +0.00) = +0.25 × 4 (máximo con 2 miembros) = +1.0",
+                  "sign": "+1",
+                  "state": "con_dato",
+                  "tone": "pos",
+                  "value": "2 múltiplos"
+                },
+                {
+                  "in_block": true,
+                  "metric": "P/E normalizado vs Sector",
+                  "reason": "Muy barato (8.5x vs 13.0x sector)",
+                  "sign": "(+5)",
+                  "state": "con_dato",
+                  "tone": "neu",
+                  "value": "8.5x"
+                },
+                {
+                  "in_block": true,
+                  "metric": "Forward P/E",
+                  "reason": "P/E normalizado estable a mejor (9x → 8x)",
+                  "sign": "(+1)",
+                  "state": "con_dato",
+                  "tone": "neu",
+                  "value": "7.6x"
+                },
+                {
+                  "in_block": false,
+                  "metric": "Bloque de múltiplos",
+                  "reason": "promedio de los ajustes reescalados a ±1 (P/E +1.00, Forward P/E +0.33) = +0.67 × 4 (máximo con 2 miembros) = +2.7",
+                  "sign": "+3",
                   "state": "con_dato",
                   "tone": "pos",
                   "value": "2 múltiplos"
@@ -2273,13 +2439,13 @@
                   "sign": "n/a",
                   "state": "no_aplica",
                   "tone": "neu",
-                  "value": "P/E, P/FCF, EV/EBITDA, PEG, DCF"
+                  "value": "P/FCF, EV/EBITDA, PEG, DCF"
                 }
               ],
               "max": 20,
               "name": "Valoración",
-              "pct": 60.0,
-              "score": 12,
+              "pct": 70.0,
+              "score": 14,
               "text": null,
               "tone": "pos"
             },
@@ -2405,6 +2571,61 @@
         ],
         "piotroski_criteria": []
       },
+      "market": {
+        "behavioral": [],
+        "behavioral_title": "Lectura conductual del mercado",
+        "news": [],
+        "news_note": "sin titulares de Finnhub (no disponibles o sin respuesta)",
+        "note": "Contexto de mercado: no puntúa en la calidad ni en el precio. Describe cómo se ha movido la acción, no qué hará.",
+        "pead_note": "La deriva tras los resultados (PEAD) no se lee: hace falta la sorpresa del BPA frente al consenso y no hay fuente con fecha para ella.",
+        "rows": [
+          {
+            "key": "momentum",
+            "label": "Momentum 12-1",
+            "text": "en los 12 meses anteriores al último, la acción subió un 26.9%: el mercado viene premiando la acción",
+            "tone": "neu",
+            "value": "+26.9%"
+          },
+          {
+            "key": "trend",
+            "label": "Tendencia (200 sesiones)",
+            "text": "cotiza un 8.0% por debajo de su media de 200 sesiones, que sube: régimen lateral",
+            "tone": "neu",
+            "value": "Lateral"
+          },
+          {
+            "key": "volatility",
+            "label": "Volatilidad (1 año)",
+            "text": "volatilidad anual realizada del 31.2% (S&P 500 en la misma ventana: 12.7%)",
+            "tone": "neu",
+            "value": "31.2%"
+          },
+          {
+            "key": "drawdown",
+            "label": "Caída máxima",
+            "text": "en el último año llegó a caer un 26.2% desde su máximo (2026-02-03 → 2026-03-20); en los 2 años de la serie, un 26.2%",
+            "tone": "neu",
+            "value": "−26.2%"
+          },
+          {
+            "key": "relative_strength",
+            "label": "Fuerza relativa frente a XLF (12 meses)",
+            "text": "en 12 meses, la acción +14.2% frente al +5.4% del ETF de su sector (XLF): se mueve con su sector",
+            "tone": "neu",
+            "value": "+8.8 pp"
+          },
+          {
+            "key": "volume",
+            "label": "Volumen (últimas 5 sesiones)",
+            "text": "volumen en el rango habitual (z = 0.6)",
+            "tone": "neu",
+            "value": "z = 0.6"
+          }
+        ],
+        "source": "Serie diaria de Yahoo Finance (cierre ajustado por dividendos y splits, 2 años), S&P 500 y ETF del sector (XLF).",
+        "status_note": null,
+        "title": "Contexto de mercado"
+      },
       "profitability": {
         "columns": [
           "MÉTRICA",
@@ -2441,6 +2662,7 @@
           ]
         ],
         "intro": "El ROE de 10.5% es competitivo en su sector (sector: 6.0% competitivo, 12.0% rango alto).",
+        "quality_readings": [],
         "roce_reading": null,
         "rows": [
           {
@@ -2530,6 +2752,7 @@
           "LECTURA"
         ],
         "intro": "El payout de 18% deja amplio margen para sostener y aumentar el dividendo.",
+        "quality_readings": [],
         "rows": [
           {
             "bench": null,
@@ -2618,33 +2841,57 @@
             }
           ]
         },
-        "intro": "P/B frente a ROE: atractivo: 0.73x frente a 0.85x justificado por su ROE (Ke 10.2% con β ajustada 1.16, g 2.5%). P/TBV frente a ROTE: atractivo: 0.81x frente a 0.99x justificado por su ROTE (Ke 10.2% con β ajustada 1.16, g 2.5%).",
+        "intro": "El mercado paga 8.5x beneficios, un -34% frente a la mediana del sector (13.0x); un descuento que amerita revisar si responde a riesgos específicos o a una oportunidad.",
         "ke_note": "Ke 10.18% = Rf 5.29% + β ajustada 1.16 [bruta 1.25, propia, 2 años semanales frente al S&P 500, Blume] × prima implícita 4.20%. Bancos y aseguradoras no usan WACC: se valoran por P/B justificado con Ke.",
         "market_note": null,
         "normalization_note": "Beneficio TTM (4 trimestres): reportado $9.19B, normalizado $9.22B (no recurrentes 0.3% del beneficio; cargos especiales (deterioros, litigios, reestructuración) (explicita, confianza alta), recurrente (4 de los últimos 4 ejercicios): solo el exceso sobre su promedio, −$31.45M netos). El score usa el beneficio normalizado.",
+        "premortem": {
+          "items": [
+            "el ROTE sostenido bajara del 10.1% que descuenta el precio (obtiene un 10.7%)"
+          ],
+          "note": "Condiciones que invalidarían la lectura de hoy, con la cifra que las mide: no son previsiones.",
+          "title": "Esta lectura sería errónea si…"
+        },
         "provisional_note": "Medianas del sector: referencia PROVISIONAL, fijada a mano (no son medianas calculadas).",
+        "reverse_dcf": {
+          "lines": [
+            {
+              "label": "En precio",
+              "text": "El precio descuenta un ROTE sostenido del 10.1%; el banco obtiene un 10.7% en el último ejercicio (ajustado por AT1); 10.1% de media en 4 ejercicios.",
+              "tone": "neu"
+            },
+            {
+              "label": null,
+              "text": "Sensibilidad (±2 pp): se justificaría con un ROTE del 8.7%, 0.80 veces el valor contable tangible; con un ROTE del 12.7%, 1.32 veces el valor contable tangible (hoy cotiza a 1.00).",
+              "tone": "neu"
+            }
+          ],
+          "method": "Gordon: P/TBV = (ROTE − g) / (Ke − g), despejado para el ROTE (igual con P/B y ROE).",
+          "role": "Lectura del método intrínseco del banco (P/TBV frente a ROTE).",
+          "title": "ROTE que descuenta el precio"
+        },
         "rows": [
           {
             "bench": "13.00x",
-            "gap": "—",
+            "gap": "-34%",
             "key": "pe",
             "label": "P/E (TTM)",
-            "reading": "No aplica a bancos y aseguradoras",
-            "state": "no_aplica",
-            "text": null,
-            "tone": "neu",
-            "value": "—"
+            "reading": "Descuento",
+            "state": "con_dato",
+            "text": "P/E (TTM) de 8.5x frente a 13.0x del sector (-34%): descuento",
+            "tone": "pos",
+            "value": "8.54x"
           },
           {
             "bench": "11.00x",
-            "gap": "—",
+            "gap": "-31%",
             "key": "forward_pe",
             "label": "Forward P/E",
-            "reading": "No aplica a bancos y aseguradoras",
-            "state": "no_aplica",
-            "text": null,
-            "tone": "neu",
-            "value": "—"
+            "reading": "Descuento",
+            "state": "con_dato",
+            "text": "Forward P/E de 7.6x frente a 11.0x del sector (-31%): descuento",
+            "tone": "pos",
+            "value": "7.60x"
           },
           {
             "bench": "1.50x",
@@ -2717,11 +2964,11 @@
             "gap": "—",
             "key": "earnings_yield",
             "label": "Earnings Yield (E/P)",
-            "reading": "No aplica a bancos y aseguradoras",
-            "state": "no_aplica",
+            "reading": "—",
+            "state": "con_dato",
             "text": null,
-            "tone": "neu",
-            "value": "—"
+            "tone": null,
+            "value": "11.71%"
           },
           {
             "bench": "—",
@@ -2750,11 +2997,11 @@
             "gap": "—",
             "key": "p_tbv_frente_a_rote",
             "label": "P/TBV frente a ROTE",
-            "reading": "Favorable",
+            "reading": "En línea",
             "state": "con_dato",
-            "text": "Atractivo: 0.81x frente a 0.99x justificado por su ROTE (Ke 10.2% con β ajustada 1.16, g 2.5%)",
-            "tone": "pos",
-            "value": "82% del P/TBV justificado (0.81x frente a 0.99x)"
+            "text": "En línea: 1.00x frente a 1.06x justificado por su ROTE (Ke 10.2% con β ajustada 1.16, g 2.5%)",
+            "tone": "neu",
+            "value": "94% del P/TBV justificado (1.00x frente a 1.06x)"
           }
         ],
         "sensitivity": null,
@@ -2765,7 +3012,7 @@
     "summary": {
       "alert_counts": {
         "red_flags": 0,
-        "strengths": 0,
+        "strengths": 1,
         "warnings": 0
       },
       "cards": [
@@ -2822,7 +3069,7 @@
           "state": "con_dato",
           "tone": "neu",
           "unit": "x",
-          "value": "0.8"
+          "value": "1.0"
         },
         {
           "bench": "",
@@ -2839,20 +3086,26 @@
       "composition": {
         "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: Valoración (base 10/20 + bloque de múltiplos y DCF) reescalada a 100 y contraída hacia 50 según la confianza.",
         "price": {
-          "level": "razonable",
-          "note": "sin ajustar 60 → ajustado a 58 por confianza media",
+          "level": "atractivo",
+          "note": "sin ajustar 70 → ajustado a 65 por confianza media; en la frontera con «razonable» (a 1 punto): un cambio pequeño en los datos o en los supuestos cambiaría el nivel",
           "rows": [
             {
               "kind": "signed",
               "label": "Bloque P/B y P/TBV · 2 múltiplos",
               "tone": "pos",
-              "value": 2
+              "value": 1
+            },
+            {
+              "kind": "signed",
+              "label": "Bloque de múltiplos · 2 múltiplos",
+              "tone": "pos",
+              "value": 3
             }
           ],
-          "score": 58,
+          "score": 65,
           "signed_max": 6,
           "title": "ATRACTIVO DEL PRECIO",
-          "tone": "neu"
+          "tone": "pos"
         },
         "quality": {
           "level": "sólida",
@@ -2899,7 +3152,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad sólida · precio razonable (confianza media: el P/B justificado y el P/B del sector coinciden en dirección pero no en magnitud). Calidad 75/100 · precio 58/100 (sin ajustar 60 → ajustado a 58 por confianza media)."
+          "text": "Calidad sólida · precio atractivo (confianza media: el P/B justificado y el P/B del sector coinciden en dirección pero no en magnitud). Calidad 75/100 · precio 65/100 (sin ajustar 70 → ajustado a 65 por confianza media; en la frontera con «razonable» (a 1 punto): un cambio pequeño en los datos o en los supuestos cambiaría el nivel)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -2919,7 +3172,7 @@
         },
         {
           "label": "ATRACTIVO DEL PRECIO",
-          "text": "P/B frente a ROE: Atractivo: 0.73x frente a 0.85x justificado por su ROE (Ke 10.2% con β ajustada 1.16, g 2.5%)."
+          "text": "P/B frente a ROE: Atractivo: 0.73x frente a 0.85x justificado por su ROE (Ke 10.2% con β ajustada 1.16, g 2.5%). El mercado paga 8.5x beneficios, un -34% frente a la mediana del sector (13.0x); un descuento que amerita revisar si responde a riesgos específicos o a una oportunidad."
         },
         {
           "label": "CONTEXTO DE MERCADO",
@@ -2949,16 +3202,16 @@
               },
               {
                 "label": "Volátil",
-                "range": "1.20 – 1.60",
+                "range": "1.20 – 1.50",
                 "tone": "warn"
               },
               {
                 "label": "Muy volátil",
-                "range": "≥ 1.60",
+                "range": "≥ 1.50",
                 "tone": "neg"
               }
             ],
-            "title": "Bandas del informe"
+            "title": "Umbrales del sector (del sector)"
           }
         ]
       },
@@ -3069,8 +3322,39 @@
         "tables": []
       },
       "forward_pe": {
-        "note": "No aplica a bancos y aseguradoras: no se lee.",
-        "tables": []
+        "note": null,
+        "tables": [
+          {
+            "bands": [
+              {
+                "label": "Descuento profundo",
+                "range": "≤ 7.2x",
+                "tone": "pos"
+              },
+              {
+                "label": "Descuento",
+                "range": "7.2x – 9.9x",
+                "tone": "pos"
+              },
+              {
+                "label": "En línea",
+                "range": "9.9x – 12.1x",
+                "tone": "neu"
+              },
+              {
+                "label": "Prima moderada",
+                "range": "12.1x – 14.8x",
+                "tone": "warn"
+              },
+              {
+                "label": "Prima elevada",
+                "range": "≥ 14.8x",
+                "tone": "neg"
+              }
+            ],
+            "title": "Frente a la mediana del sector (11.0x)"
+          }
+        ]
       },
       "gross_margin": {
         "note": "No aplica a bancos y aseguradoras: no se lee.",
@@ -3123,26 +3407,26 @@
               },
               {
                 "label": "Baja",
-                "range": "< 1.0x",
+                "range": "< 2.0x",
                 "tone": "pos"
               },
               {
                 "label": "Moderada",
-                "range": "1.0x – 2.5x",
+                "range": "2.0x – 4.0x",
                 "tone": "neu"
               },
               {
                 "label": "Elevada",
-                "range": "2.5x – 4.0x",
+                "range": "4.0x – 6.0x",
                 "tone": "warn"
               },
               {
                 "label": "Alta",
-                "range": "≥ 4.0x",
+                "range": "≥ 6.0x",
                 "tone": "neg"
               }
             ],
-            "title": "Bandas del informe"
+            "title": "Umbrales del sector (del sector)"
           }
         ]
       },
@@ -3261,8 +3545,39 @@
         ]
       },
       "pe": {
-        "note": "No aplica a bancos y aseguradoras: no se lee.",
-        "tables": []
+        "note": null,
+        "tables": [
+          {
+            "bands": [
+              {
+                "label": "Descuento profundo",
+                "range": "≤ 8.4x",
+                "tone": "pos"
+              },
+              {
+                "label": "Descuento",
+                "range": "8.4x – 11.7x",
+                "tone": "pos"
+              },
+              {
+                "label": "En línea",
+                "range": "11.7x – 14.3x",
+                "tone": "neu"
+              },
+              {
+                "label": "Prima moderada",
+                "range": "14.3x – 17.6x",
+                "tone": "warn"
+              },
+              {
+                "label": "Prima elevada",
+                "range": "≥ 17.6x",
+                "tone": "neg"
+              }
+            ],
+            "title": "Frente a la mediana del sector (13.0x)"
+          }
+        ]
       },
       "peg": {
         "note": "No aplica a bancos y aseguradoras: no se lee.",
@@ -3602,7 +3917,9 @@
     "pe_normalized": 8.5084688347,
     "pe_reported": 8.53758219168,
     "pe_unreliable": false,
+    "quality_differs": true,
     "reported_net_income": 9190080147.05,
+    "structural_net": 0,
     "used_in_score": true
   },
   "eps_vs_revenue_growth": {
@@ -3750,6 +4067,212 @@
     "total_equity": 105180980687.0,
     "wacc": null
   },
+  "market_context": {
+    "behavioral": [],
+    "market_volatility": {
+      "as_of": "2026-10-15",
+      "observations": 252,
+      "params": {
+        "sessions_per_year": 252,
+        "window_sessions": 252
+      },
+      "status": "ok",
+      "value": 0.126746934145
+    },
+    "news": {
+      "items": [],
+      "reason": "sin titulares de Finnhub (no disponibles o sin respuesta)"
+    },
+    "note": "Contexto de mercado: no puntúa en la calidad ni en el precio. Describe cómo se ha movido la acción, no qué hará.",
+    "readings": [
+      {
+        "field": "market_context.signals.momentum_12_1.value",
+        "key": "momentum",
+        "label": "Momentum 12-1",
+        "num": 0.268682750673,
+        "text": "en los 12 meses anteriores al último, la acción subió un 26.9%: el mercado viene premiando la acción",
+        "value": "+26.9%"
+      },
+      {
+        "field": "market_context.signals.trend.value",
+        "key": "trend",
+        "label": "Tendencia (200 sesiones)",
+        "num": -0.0798684572812,
+        "text": "cotiza un 8.0% por debajo de su media de 200 sesiones, que sube: régimen lateral",
+        "value": "Lateral"
+      },
+      {
+        "field": "market_context.signals.realized_volatility.value",
+        "key": "volatility",
+        "label": "Volatilidad (1 año)",
+        "num": 0.311926459138,
+        "text": "volatilidad anual realizada del 31.2% (S&P 500 en la misma ventana: 12.7%)",
+        "value": "31.2%"
+      },
+      {
+        "field": "market_context.signals.max_drawdown.1.value",
+        "key": "drawdown",
+        "label": "Caída máxima",
+        "num": -0.261967511657,
+        "text": "en el último año llegó a caer un 26.2% desde su máximo (2026-02-03 → 2026-03-20); en los 2 años de la serie, un 26.2%",
+        "value": "−26.2%"
+      },
+      {
+        "field": "market_context.signals.relative_strength.value",
+        "key": "relative_strength",
+        "label": "Fuerza relativa frente a XLF (12 meses)",
+        "num": 0.0875152624627,
+        "text": "en 12 meses, la acción +14.2% frente al +5.4% del ETF de su sector (XLF): se mueve con su sector",
+        "value": "+8.8 pp"
+      },
+      {
+        "field": "market_context.signals.abnormal_volume.value",
+        "key": "volume",
+        "label": "Volumen (últimas 5 sesiones)",
+        "num": 0.570187898416,
+        "text": "volumen en el rango habitual (z = 0.6)",
+        "value": "z = 0.6"
+      }
+    ],
+    "sector_etf": "XLF",
+    "series_drawdown": {
+      "from_high": -0.201330535978,
+      "high_date": "2026-07-27",
+      "peak_date": "2026-02-03",
+      "trough_date": "2026-03-20",
+      "value": -0.261967511657,
+      "years": 2.0
+    },
+    "series_status": {
+      "company": "ok",
+      "market": "ok",
+      "sector": "ok"
+    },
+    "signals": {
+      "abnormal_volume": {
+        "as_of": "2026-10-15",
+        "baseline_mean": 4622622.22222,
+        "baseline_std": 1890565.8657,
+        "params": {
+          "baseline_sessions": 90,
+          "recent_sessions": 5
+        },
+        "recent_mean": 5700600.0,
+        "status": "ok",
+        "value": 0.570187898416,
+        "zero_volume_sessions": 0
+      },
+      "beta": {
+        "adjusted": 1.16498604731,
+        "as_of": "2026-10-15",
+        "first_week": "2024-10-25",
+        "last_week": "2026-10-16",
+        "observations": 104,
+        "params": {
+          "blume_prior": 0.33,
+          "blume_weight": 0.67,
+          "frequency": "W-FRI",
+          "market_symbol": "^GSPC",
+          "min_weeks": 52,
+          "window_weeks": 104
+        },
+        "r2": 0.408562622771,
+        "raw": 1.24624783181,
+        "status": "ok",
+        "value": 1.24624783181,
+        "window_start": "2024-10-18"
+      },
+      "max_drawdown": {
+        "1": {
+          "as_of": "2026-10-15",
+          "params": {
+            "sessions_per_year": 252,
+            "years": 1
+          },
+          "peak_date": "2026-02-03",
+          "peak_price": 26.8918762207,
+          "status": "ok",
+          "trough_date": "2026-03-20",
+          "trough_price": 19.8470783234,
+          "value": -0.261967511657,
+          "window_start": "2025-10-14"
+        }
+      },
+      "momentum_12_1": {
+        "as_of": "2026-10-15",
+        "end_date": "2026-09-16",
+        "params": {
+          "lookback_sessions": 252,
+          "skip_sessions": 21
+        },
+        "start_date": "2025-10-14",
+        "status": "ok",
+        "value": 0.268682750673
+      },
+      "range_52w_position": {
+        "as_of": "2026-10-15",
+        "high": 28.2427787781,
+        "high_date": "2026-07-27",
+        "low": 18.9181232452,
+        "low_date": "2025-10-17",
+        "params": {
+          "window_sessions": 252
+        },
+        "status": "ok",
+        "value": 0.417374798136
+      },
+      "realized_volatility": {
+        "as_of": "2026-10-15",
+        "observations": 252,
+        "params": {
+          "sessions_per_year": 252,
+          "window_sessions": 252
+        },
+        "status": "ok",
+        "value": 0.311926459138
+      },
+      "relative_strength": {
+        "as_of": "2026-10-15",
+        "params": {
+          "windows_sessions": [
+            126,
+            252
+          ]
+        },
+        "status": "ok",
+        "value": 0.0875152624627,
+        "windows": {
+          "126": {
+            "company": -0.0184595777434,
+            "difference": -0.0882252698982,
+            "sector": 0.0697656921548,
+            "start_date": "2026-04-16",
+            "status": "ok"
+          },
+          "252": {
+            "company": 0.142014707618,
+            "difference": 0.0875152624627,
+            "sector": 0.0544994451554,
+            "start_date": "2025-10-14",
+            "status": "ok"
+          }
+        }
+      },
+      "trend": {
+        "as_of": "2026-10-15",
+        "params": {
+          "slope_sessions": 21,
+          "sma_sessions": 200
+        },
+        "price": 22.8099994659,
+        "regime": "lateral",
+        "slope": 0.00143796863934,
+        "sma": 24.7899331856,
+        "status": "ok",
+        "value": -0.0798684572812
+      }
+    }
+  },
   "not_applicable": {
     "altman": "No aplica a bancos y aseguradoras: el balance es el producto (depósitos y préstamos)",
     "dcf": "No aplica a bancos y aseguradoras: el balance es el producto (depósitos y préstamos)",
@@ -3815,9 +4338,25 @@
     "scaled_score": null,
     "score": null
   },
+  "premortem": {
+    "items": [
+      {
+        "field": "archetype_metrics.implied.implied",
+        "kind": "precio_implicito",
+        "text": "el ROTE sostenido bajara del 10.1% que descuenta el precio (obtiene un 10.7%)",
+        "value": 0.101490055331
+      }
+    ],
+    "title": "Esta lectura sería errónea si…"
+  },
   "price": 22.8400001526,
   "price_attractiveness": {
     "basis": null,
+    "border": {
+      "neighbor": "razonable",
+      "points": 1,
+      "text": "en la frontera con «razonable» (a 1 punto): un cambio pequeño en los datos o en los supuestos cambiaría el nivel"
+    },
     "categories_included": 1,
     "categories_total": 1,
     "components": [
@@ -3825,20 +4364,20 @@
         "category": "Valoración",
         "included": true,
         "max": 20,
-        "score": 12
+        "score": 14
       }
     ],
     "confidence": "media",
     "contracted": true,
     "excluded_categories": [],
     "factor": 0.75,
-    "level": "razonable",
-    "level_raw": "razonable",
+    "level": "atractivo",
+    "level_raw": "atractivo",
     "low_coverage_categories": [],
     "not_applicable_categories": [],
     "partial": false,
-    "score": 58,
-    "score_raw": 60
+    "score": 65,
+    "score_raw": 70
   },
   "price_history": {
     "52w_high": 28.6900005341,
@@ -3857,6 +4396,7 @@
   },
   "quality": {
     "basis": null,
+    "border": null,
     "categories_included": 4,
     "categories_total": 4,
     "components": [
@@ -3892,8 +4432,66 @@
     "low_coverage_categories": [],
     "not_applicable_categories": [],
     "partial": false,
+    "persistence": {
+      "applied": false,
+      "by_category": [
+        {
+          "anchor": null,
+          "category": "Solidez Financiera",
+          "persistence": null,
+          "rule": null,
+          "surplus": 0.0,
+          "years_ok": null
+        },
+        {
+          "anchor": "margen neto",
+          "category": "Rentabilidad",
+          "persistence": 1.0,
+          "rule": "margen neto positivo y al menos el 75% del último (64.6%)",
+          "surplus": 0.0,
+          "years_ok": [
+            "2021",
+            "2022",
+            "2023",
+            "2024",
+            "2025"
+          ]
+        },
+        {
+          "anchor": "conversión en caja",
+          "category": "Calidad de Ganancias",
+          "persistence": 1.0,
+          "rule": "beneficio neto positivo (sin pérdidas)",
+          "surplus": 3.0,
+          "years_ok": [
+            "2021",
+            "2022",
+            "2023",
+            "2024",
+            "2025"
+          ]
+        },
+        {
+          "anchor": "ingresos",
+          "category": "Crecimiento",
+          "persistence": 0.8,
+          "rule": "ingresos por encima del ejercicio anterior",
+          "surplus": 0.0,
+          "years_ok": [
+            "2021",
+            "2023",
+            "2024",
+            "2025"
+          ]
+        }
+      ],
+      "denominator": 5,
+      "source": "edgar",
+      "window": 5
+    },
     "score": 75
   },
+  "quality_readings": {},
   "ratios": {
     "asset_turnover": 0.017995723435,
     "beta": 1.24624783181,
@@ -3939,6 +4537,12 @@
     "roa": 0.0040071613704,
     "roe": 0.104925983,
     "roic": null
+  },
+  "reverse_dcf": {
+    "applicable": false,
+    "main": null,
+    "reason": "no aplica a bancos y aseguradoras: su método intrínseco es el P/B justificado",
+    "ttm": null
   },
   "risk_free": {
     "as_of": null,
@@ -4148,23 +4752,54 @@
             "value": "86% del P/B justificado (0.73x frente a 0.85x)"
           },
           {
-            "adjustment": 2,
+            "adjustment": 0,
             "in_block": true,
             "metric": "P/TBV frente a ROTE",
-            "reason": "Atractivo: 0.81x frente a 0.99x justificado por su ROTE (Ke 10.2% con β ajustada 1.16, g 2.5%)",
-            "severity": "good",
-            "value": "82% del P/TBV justificado (0.81x frente a 0.99x)"
+            "reason": "En línea: 1.00x frente a 1.06x justificado por su ROTE (Ke 10.2% con β ajustada 1.16, g 2.5%)",
+            "severity": "ok",
+            "value": "94% del P/TBV justificado (1.00x frente a 1.06x)"
           },
           {
-            "adjustment": 2,
+            "adjustment": 1,
             "block_max": 4,
-            "block_mean": 0.5,
+            "block_mean": 0.25,
             "block_members": [
               "P/B frente a ROE",
               "P/TBV frente a ROTE"
             ],
             "metric": "Bloque P/B y P/TBV",
-            "reason": "promedio de los ajustes reescalados a ±1 (P/B frente a ROE +0.50, P/TBV frente a ROTE +0.50) = +0.50 × 4 (máximo con 2 miembros) = +2.0",
+            "reason": "promedio de los ajustes reescalados a ±1 (P/B frente a ROE +0.50, P/TBV frente a ROTE +0.00) = +0.25 × 4 (máximo con 2 miembros) = +1.0",
+            "severity": "good",
+            "value": "2 múltiplos"
+          },
+          {
+            "adjustment": 5,
+            "in_block": true,
+            "metric": "P/E normalizado vs Sector",
+            "normalized": true,
+            "reason": "Muy barato (8.5x vs 13.0x sector)",
+            "severity": "excellent",
+            "value": "8.5x"
+          },
+          {
+            "adjustment": 1,
+            "in_block": true,
+            "metric": "Forward P/E",
+            "normalized": true,
+            "reason": "P/E normalizado estable a mejor (9x → 8x)",
+            "severity": "good",
+            "value": "7.6x"
+          },
+          {
+            "adjustment": 3,
+            "block_max": 4,
+            "block_mean": 0.666666666667,
+            "block_members": [
+              "P/E",
+              "Forward P/E"
+            ],
+            "metric": "Bloque de múltiplos",
+            "reason": "promedio de los ajustes reescalados a ±1 (P/E +1.00, Forward P/E +0.33) = +0.67 × 4 (máximo con 2 miembros) = +2.7",
             "severity": "excellent",
             "value": "2 múltiplos"
           },
@@ -4173,7 +4808,7 @@
             "metric": "No aplica",
             "reason": "No aplica a bancos y aseguradoras: el balance es el producto (depósitos y préstamos) (no cuenta en la cobertura)",
             "severity": "neutral",
-            "value": "P/E, P/FCF, EV/EBITDA, PEG, DCF"
+            "value": "P/FCF, EV/EBITDA, PEG, DCF"
           }
         ],
         "applicable": true,
@@ -4181,12 +4816,15 @@
         "coverage": 1.0,
         "details": [
           "Atractivo: 0.73x frente a 0.85x justificado por su ROE (Ke 10.2% con β ajustada 1.16, g 2.5%)",
-          "Atractivo: 0.81x frente a 0.99x justificado por su ROTE (Ke 10.2% con β ajustada 1.16, g 2.5%)",
-          "promedio de los ajustes reescalados a ±1 (P/B frente a ROE +0.50, P/TBV frente a ROTE +0.50) = +0.50 × 4 (máximo con 2 miembros) = +2.0",
+          "En línea: 1.00x frente a 1.06x justificado por su ROTE (Ke 10.2% con β ajustada 1.16, g 2.5%)",
+          "promedio de los ajustes reescalados a ±1 (P/B frente a ROE +0.50, P/TBV frente a ROTE +0.00) = +0.25 × 4 (máximo con 2 miembros) = +1.0",
+          "Muy barato (8.5x vs 13.0x sector)",
+          "P/E normalizado estable a mejor (9x → 8x)",
+          "promedio de los ajustes reescalados a ±1 (P/E +1.00, Forward P/E +0.33) = +0.67 × 4 (máximo con 2 miembros) = +2.7",
           "No aplica a bancos y aseguradoras: el balance es el producto (depósitos y préstamos) (no cuenta en la cobertura)"
         ],
         "max": 20,
-        "score": 12
+        "score": 14
       }
     },
     "excluded_categories": [],
@@ -4259,17 +4897,16 @@
     },
     "valoracion": {
       "applicable": true,
-      "components": 2,
+      "components": 3,
       "conclusive": true,
       "coverage": 1.0,
-      "evaluated": 2,
+      "evaluated": 3,
       "low_confidence": false,
       "missing": [],
       "missing_reasons": {},
       "not_applicable": {
         "DCF": "No aplica a bancos y aseguradoras: el balance es el producto (depósitos y préstamos)",
         "EV/EBITDA": "No aplica a bancos y aseguradoras: el balance es el producto (depósitos y préstamos)",
-        "P/E": "No aplica a bancos y aseguradoras: el balance es el producto (depósitos y préstamos)",
         "P/FCF": "No aplica a bancos y aseguradoras: el balance es el producto (depósitos y préstamos)",
         "PEG": "No aplica a bancos y aseguradoras: el balance es el producto (depósitos y préstamos)"
       },
@@ -4293,10 +4930,10 @@
   "verdict": {
     "confidence": "media",
     "confidence_text": "(confianza media: el P/B justificado y el P/B del sector coinciden en dirección pero no en magnitud)",
-    "full": "Calidad sólida · precio razonable (confianza media: el P/B justificado y el P/B del sector coinciden en dirección pero no en magnitud)",
-    "price_level": "razonable",
+    "full": "Calidad sólida · precio atractivo (confianza media: el P/B justificado y el P/B del sector coinciden en dirección pero no en magnitud)",
+    "price_level": "atractivo",
     "quality_level": "sólida",
-    "text": "Calidad sólida · precio razonable"
+    "text": "Calidad sólida · precio atractivo"
   },
   "wacc": {
     "applicable": false,

@@ -40,7 +40,55 @@
     "z_score": null,
     "zone": "n/a"
   },
-  "archetype_metrics": {},
+  "archetype_metrics": {
+    "cost_of_equity": 0.07306,
+    "implied": {
+      "at1": null,
+      "band": "exigente",
+      "gap": -0.0375708033452,
+      "implied": 0.111478306569,
+      "metric": "ROE",
+      "multiple": 1.79938215915,
+      "own": 0.0739075032235,
+      "own_avg": 0.0739075032235,
+      "own_years": 4,
+      "reason": null,
+      "sensitivity": [
+        {
+          "delta": -0.02,
+          "multiple_justified": 0.601487790751,
+          "return": 0.0539075032235
+        },
+        {
+          "delta": -0.01,
+          "multiple_justified": 0.809561032532,
+          "return": 0.0639075032235
+        },
+        {
+          "delta": 0.0,
+          "multiple_justified": 1.01763427431,
+          "return": 0.0739075032235
+        },
+        {
+          "delta": 0.01,
+          "multiple_justified": 1.22570751609,
+          "return": 0.0839075032235
+        },
+        {
+          "delta": 0.02,
+          "multiple_justified": 1.43378075788,
+          "return": 0.0939075032235
+        }
+      ],
+      "state": "ok",
+      "subtype": "utility"
+    },
+    "pb": 1.79938215915,
+    "pb_justified": 1.01763427431,
+    "pb_ratio": 1.7682012139,
+    "roe_avg": 0.0739075032235,
+    "terminal_growth": 0.025
+  },
   "benchmark": {
     "profile": "sector",
     "provisional": true,
@@ -104,44 +152,71 @@
     "source": "sector",
     "source_beta": 0.33160302
   },
+  "business_model": {
+    "altman_referential": false,
+    "current_ratio": {
+      "applies": false,
+      "history": [
+        0.551765097163,
+        0.66900862737,
+        0.73881849216,
+        0.70057754464
+      ],
+      "industry": "Utilities—Regulated Electric",
+      "median_prior": 0.70057754464,
+      "structural": false,
+      "worsening": false
+    },
+    "piotroski_caveat": null
+  },
   "classification": {
     "alerts": [],
     "ambiguous": false,
     "archetype": "UTILITY",
     "confidence": "normal",
+    "frontier": null,
     "industry": "Utilities - Regulated Electric",
     "inputs": {
       "assets_to_revenue": 6.07178087291,
       "eps_ttm": 6.66,
       "net_margin_ttm": 0.156060150376,
-      "op_margin_detrended_std": 0.00986994367372,
       "revenue_cagr_3y": 0.0386797140947,
-      "revenue_cagr_3y_reason": null,
-      "revenue_growth_std": 0.0263607054033
+      "revenue_cagr_3y_reason": null
     },
     "label": "Utility regulada",
+    "low_confidence": null,
     "reason": "Clasificada como UTILITY por industria Utilities - Regulated Electric",
     "reason_plain": "Utility regulada por su industria (Utilities - Regulated Electric): el regulador fija su retorno sobre una base de activos financiada con deuda.",
     "rule": "industria_utility",
-    "sector": "Utilities"
+    "sector": "Utilities",
+    "subtype": null,
+    "subtype_label": null
   },
   "confidence": {
     "capped_from": "alta",
     "dimensions": {
       "convergence": {
-        "level": "no_evaluable",
+        "level": "media",
         "methods": [
           {
-            "components": 2,
+            "direction": "cara",
+            "evaluable": true,
+            "kind": "intrínseco",
+            "method": "P/B justificado (ROE regulado)",
+            "signal": -0.868907008843,
+            "upside": -0.434453504422
+          },
+          {
+            "components": 3,
             "direction": "en precio",
             "evaluable": true,
             "kind": "relativo",
             "method": "múltiplos frente al sector",
-            "signal": 0.166666666667
+            "signal": -0.0555555555556
           }
         ],
         "reasons": [
-          "un solo método evaluable (múltiplos frente al sector): no hay contraste"
+          "uno lo ve en precio y otro con dirección: no coinciden, sin oponerse"
         ]
       },
       "coverage": {
@@ -167,11 +242,9 @@
           "forwardPE",
           "payoutRatio"
         ],
-        "issues": 1,
-        "level": "media",
-        "reasons": [
-          "10 campos de Finnhub en lugar de los estados"
-        ]
+        "issues": 0,
+        "level": "alta",
+        "reasons": []
       },
       "stability": {
         "level": "alta",
@@ -181,11 +254,10 @@
     "level": "media",
     "limits_score": false,
     "reasons": [
-      "convergencia no evaluable: un solo método evaluable (múltiplos frente al sector): no hay contraste",
-      "calidad de fuente media: 10 campos de Finnhub en lugar de los estados",
-      "techo en media: sin contraste entre métodos de valoración"
+      "convergencia media: uno lo ve en precio y otro con dirección: no coinciden, sin oponerse",
+      "techo en media: la convergencia es media: alta exige convergencia alta"
     ],
-    "score": 0.833333333333
+    "score": 0.8
   },
   "data_provenance": {
     "as_of": {
@@ -480,6 +552,13 @@
           "unit": "USD",
           "years": 19
         },
+        "contract_revenue": {
+          "cross_taxonomy": null,
+          "first": "2018-12-31",
+          "last": "2025-12-31",
+          "unit": "USD",
+          "years": 8
+        },
         "diluted_eps": {
           "cross_taxonomy": null,
           "first": "2007-12-31",
@@ -492,6 +571,13 @@
           "first": "2007-12-31",
           "last": "2025-12-31",
           "unit": "shares",
+          "years": 19
+        },
+        "discontinued": {
+          "cross_taxonomy": null,
+          "first": "2007-12-31",
+          "last": "2025-12-31",
+          "unit": "USD",
           "years": 19
         },
         "net_income": {
@@ -599,6 +685,7 @@
         "skipped": []
       },
       "reason": null,
+      "recut": null,
       "status": "ok",
       "title": "Duke Energy CORP"
     },
@@ -1105,6 +1192,7 @@
       "rule": "periodo_incoherente"
     }
   ],
+  "dcf_growth_blend": null,
   "dcf_status": {
     "reason": "No aplica a utilities reguladas: su FCF es negativo por diseño: la inversión en la base de activos regulada supera al flujo operativo y se financia con deuda",
     "state": "no_aplica"
@@ -1117,12 +1205,8 @@
           "text": "Arquetipo UTILITY (regla industria_utility): Clasificada como UTILITY por industria Utilities - Regulated Electric"
         },
         {
-          "label": "Confianza · Convergencia entre métodos (no evaluable)",
-          "text": "un solo método evaluable (múltiplos frente al sector): no hay contraste"
-        },
-        {
-          "label": "Confianza · Calidad de fuente (media)",
-          "text": "10 campos de Finnhub en lugar de los estados"
+          "label": "Confianza · Convergencia entre métodos (media)",
+          "text": "uno lo ve en precio y otro con dirección: no coinciden, sin oponerse"
         },
         {
           "label": "Fuente oficial",
@@ -1135,6 +1219,10 @@
         {
           "label": "Respaldo de SEC EDGAR (lo que Yahoo no da del mismo corte)",
           "text": "dividendos pagados (us-gaap:PaymentsOfOrdinaryDividends; ejercicio 2025-01-01 a 2025-12-31 + acumulado 2026-01-01 a 2026-06-30 − acumulado 2025-01-01 a 2025-06-30)."
+        },
+        {
+          "label": "Procedencia de los datos (campos del análisis por fuente)",
+          "text": "estados de Yahoo (yfinance): 34 campos; SEC EDGAR: 2 (dividendos pagados, beneficio operativo); Finnhub: 8 (liquidez corriente, P/E adelantado, cobertura de intereses, rotación de existencias, payout, PEG, prueba ácida, dividendo por acción); Yahoo (cotización y perfil): 2 (industria, sector); calculados con otros datos del análisis: 15 campos; sin dato utilizable (ausente o de otro periodo): 2 (BPA estimado, caja total)."
         }
       ],
       "title": "Detalle técnico para auditoría"
@@ -1936,8 +2024,8 @@
         {
           "key": "convergence",
           "label": "Convergencia entre métodos",
-          "level": "No evaluable",
-          "text": "múltiplos frente al sector +0.17 (en precio). Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo."
+          "level": "Media",
+          "text": "P/B justificado (ROE regulado) -43% (cara) · múltiplos frente al sector -0.06 (en precio). Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
         },
         {
           "key": "coverage",
@@ -1948,8 +2036,8 @@
         {
           "key": "source",
           "label": "Calidad de fuente",
-          "level": "Media",
-          "text": "Parte de los datos proviene de una fuente secundaria."
+          "level": "Alta",
+          "text": "Sin incidencias."
         },
         {
           "key": "stability",
@@ -1960,19 +2048,13 @@
       ],
       "level": "media",
       "plain": [
-        "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo.",
-        "Parte de los datos proviene de una fuente secundaria."
+        "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
       ],
       "reasons": [
         {
           "dimension": "convergencia",
-          "level": "no_evaluable",
-          "text": "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo."
-        },
-        {
-          "dimension": "calidad de fuente",
           "level": "media",
-          "text": "Parte de los datos proviene de una fuente secundaria."
+          "text": "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
         },
         {
           "dimension": "techo",
@@ -1980,9 +2062,9 @@
           "text": null
         }
       ],
-      "summary": "Confianza del veredicto: media (techo en media sin contraste entre métodos; sin techo sería alta). Contrae el atractivo del precio hacia 50 (factor 0.75): sin ajustar 55 → ajustado a 54. La calidad del negocio no se contrae.",
+      "summary": "Confianza del veredicto: media (techo en media: la convergencia es media: alta exige convergencia alta; sin techo sería alta). Contrae el atractivo del precio hacia 50 (factor 0.75): sin ajustar 45 → ajustado a 46. La calidad del negocio no se contrae.",
       "tone": "warn",
-      "verdict_text": "(confianza media: un solo método de valoración evaluable, sin contraste)"
+      "verdict_text": "(confianza media: P/B justificado (ROE regulado) la ve cara y los múltiplos en precio)"
     },
     "cover": {
       "archetype": "UTILITY",
@@ -2046,8 +2128,8 @@
               "coverage": 1.0,
               "max": 20,
               "name": "Valoración",
-              "pct": 55.0,
-              "score": 11,
+              "pct": 45.0,
+              "score": 9,
               "text": null,
               "tone": "warn"
             }
@@ -2059,8 +2141,7 @@
         "Utility regulada por su industria (Utilities - Regulated Electric): el regulador fija su retorno sobre una base de activos financiada con deuda."
       ],
       "confidence_reasons": [
-        "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo.",
-        "Parte de los datos proviene de una fuente secundaria."
+        "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
       ],
       "coverage_notes": [],
       "currency_note": null,
@@ -2139,10 +2220,10 @@
       "price": {
         "contracted": true,
         "level": "razonable",
-        "note": "sin ajustar 55 → ajustado a 54 por confianza media",
+        "note": "sin ajustar 45 → ajustado a 46 por confianza media; en la frontera con «exigente» (a 2 puntos): un cambio pequeño en los datos o en los supuestos cambiaría el nivel",
         "question": "¿está cara hoy?",
-        "raw": 55,
-        "score": 54,
+        "raw": 45,
+        "score": 46,
         "title": "ATRACTIVO DEL PRECIO",
         "tone": "neu"
       },
@@ -2155,9 +2236,9 @@
         "tone": "pos"
       },
       "verdict": {
-        "confidence_text": "(confianza media: un solo método de valoración evaluable, sin contraste)",
+        "confidence_text": "(confianza media: P/B justificado (ROE regulado) la ve cara y los múltiplos en precio)",
         "confidence_tone": "warn",
-        "full": "Calidad sólida · precio razonable (confianza media: un solo método de valoración evaluable, sin contraste)",
+        "full": "Calidad sólida · precio razonable (confianza media: P/B justificado (ROE regulado) la ve cara y los múltiplos en precio)",
         "text": "Calidad sólida · precio razonable"
       }
     },
@@ -2595,18 +2676,27 @@
                 },
                 {
                   "in_block": false,
+                  "metric": "P/B frente al ROE regulado",
+                  "reason": "El precio descuenta un ROE sostenido del 11.1%; la utility obtuvo un 7.4% de media en 4 ejercicios.",
+                  "sign": "-2",
+                  "state": "con_dato",
+                  "tone": "warn",
+                  "value": "exigente"
+                },
+                {
+                  "in_block": false,
                   "metric": "No aplica",
-                  "reason": "EV/EBITDA: No aplica a utilities reguladas: se valora por P/E frente al sector y rentabilidad por dividendo; P/FCF, DCF: No aplica a utilities reguladas: su FCF es negativo por diseño: la inversión en la base de activos regulada supera al flujo operativo y se financia con deuda; PEG: No aplica a utilities reguladas: su crecimiento lo fija la base regulada, no el mercado: se valora por P/E y dividendo (no cuenta en la cobertura)",
+                  "reason": "EV/EBITDA: No aplica a utilities reguladas: se valora por P/E frente al sector y rentabilidad por dividendo; P/FCF: No aplica a utilities reguladas: su FCF es negativo por diseño: la inversión en la base de activos regulada supera al flujo operativo y se financia con deuda; PEG: No aplica a utilities reguladas: su crecimiento lo fija la base regulada, no el mercado: se valora por P/E y dividendo (no cuenta en la cobertura)",
                   "sign": "n/a",
                   "state": "no_aplica",
                   "tone": "neu",
-                  "value": "P/FCF, EV/EBITDA, PEG, DCF"
+                  "value": "P/FCF, EV/EBITDA, PEG"
                 }
               ],
               "max": 20,
               "name": "Valoración",
-              "pct": 55.0,
-              "score": 11,
+              "pct": 45.0,
+              "score": 9,
               "text": null,
               "tone": "warn"
             },
@@ -2778,6 +2868,61 @@
           }
         ]
       },
+      "market": {
+        "behavioral": [],
+        "behavioral_title": "Lectura conductual del mercado",
+        "news": [],
+        "news_note": "sin titulares de Finnhub (no disponibles o sin respuesta)",
+        "note": "Contexto de mercado: no puntúa en la calidad ni en el precio. Describe cómo se ha movido la acción, no qué hará.",
+        "pead_note": "La deriva tras los resultados (PEAD) no se lee: hace falta la sorpresa del BPA frente al consenso y no hay fuente con fecha para ella.",
+        "rows": [
+          {
+            "key": "momentum",
+            "label": "Momentum 12-1",
+            "text": "en los 12 meses anteriores al último, la acción cayó un 3.3%: el mercado apenas ha movido la acción",
+            "tone": "neu",
+            "value": "−3.3%"
+          },
+          {
+            "key": "trend",
+            "label": "Tendencia (200 sesiones)",
+            "text": "cotiza un 2.3% por debajo de su media de 200 sesiones, que sube: régimen lateral",
+            "tone": "neu",
+            "value": "Lateral"
+          },
+          {
+            "key": "volatility",
+            "label": "Volatilidad (1 año)",
+            "text": "volatilidad anual realizada del 15.9% (S&P 500 en la misma ventana: 12.7%)",
+            "tone": "neu",
+            "value": "15.9%"
+          },
+          {
+            "key": "drawdown",
+            "label": "Caída máxima",
+            "text": "en el último año llegó a caer un 13.7% desde su máximo (2026-03-16 → 2026-09-24); en los 2 años de la serie, un 13.7%",
+            "tone": "neu",
+            "value": "−13.7%"
+          },
+          {
+            "key": "relative_strength",
+            "label": "Fuerza relativa frente a XLU (12 meses)",
+            "text": "en 12 meses, la acción −1.8% frente al −5.6% del ETF de su sector (XLU): se mueve con su sector",
+            "tone": "neu",
+            "value": "+3.8 pp"
+          },
+          {
+            "key": "volume",
+            "label": "Volumen (últimas 5 sesiones)",
+            "text": "volumen en el rango habitual (z = −0.3)",
+            "tone": "neu",
+            "value": "z = −0.3"
+          }
+        ],
+        "source": "Serie diaria de Yahoo Finance (cierre ajustado por dividendos y splits, 2 años), S&P 500 y ETF del sector (XLU).",
+        "status_note": null,
+        "title": "Contexto de mercado"
+      },
       "profitability": {
         "columns": [
           "MÉTRICA",
@@ -2814,6 +2959,20 @@
           ]
         ],
         "intro": "El ROE de 9.6% es competitivo en su sector (sector: 5.0% competitivo, 10.0% rango alto). El ROIC (5.5%) queda ligeramente por debajo del costo de capital (6.6%).",
+        "quality_readings": [
+          {
+            "key": "dupont",
+            "label": "DuPont del ROE",
+            "text": "ROE 9.6% = margen neto 15.4% × rotación de activos 0.16 × apalancamiento 3.78; frente a FY2022 (ROE 5.2%), el cambio lo explica sobre todo el margen neto.",
+            "tone": "neu"
+          },
+          {
+            "key": "fcf_margin",
+            "label": "Margen FCF con tendencia",
+            "text": "El margen FCF (sin dato de SBC) es del −5.3% en FY2025, frente al −18.9% en FY2022: mejora (+13.7 pp).",
+            "tone": "pos"
+          }
+        ],
         "roce_reading": "ROCE 5.35% en línea con el ROIC 5.48% (-0.1 pp, dentro de 10 pp).",
         "rows": [
           {
@@ -2914,6 +3073,14 @@
           "LECTURA"
         ],
         "intro": "La deuda neta (5.4x EBITDA) está en el rango habitual de una utility con grado de inversión (hasta 5.5x). La cobertura de intereses (2.4x) está en línea con las utilities reguladas. El payout de 65% es exigente y depende de la estabilidad del beneficio.",
+        "quality_readings": [
+          {
+            "key": "coverage",
+            "label": "Cobertura de intereses",
+            "text": "Cobertura (gasto por intereses): el EBIT cubre 2.4 veces los intereses; el EBITDA, 4.5 veces; con el EBIT de cada ejercicio, de 2.7 veces en FY2022 a 2.6 en FY2025 (estable).",
+            "tone": "neu"
+          }
+        ],
         "rows": [
           {
             "bench": null,
@@ -3061,7 +3228,31 @@
         "ke_note": null,
         "market_note": null,
         "normalization_note": "Beneficio TTM (4 trimestres): reportado $5.19B, normalizado $4.80B (no recurrentes 7.4% del beneficio; partidas no recurrentes (total de Yahoo) (explicita, confianza alta), recurrente (3 de los últimos 4 ejercicios): solo el exceso sobre su promedio, $384.61M netos). El score usa el beneficio normalizado.",
+        "premortem": {
+          "items": [
+            "el ROE sostenido bajara del 11.1% que descuenta el precio (obtiene un 7.4%)"
+          ],
+          "note": "Condiciones que invalidarían la lectura de hoy, con la cifra que las mide: no son previsiones.",
+          "title": "Esta lectura sería errónea si…"
+        },
         "provisional_note": "Medianas del sector: referencia PROVISIONAL, fijada a mano (no son medianas calculadas).",
+        "reverse_dcf": {
+          "lines": [
+            {
+              "label": "Exigente",
+              "text": "El precio descuenta un ROE sostenido del 11.1%; la utility obtuvo un 7.4% de media en 4 ejercicios.",
+              "tone": "warn"
+            },
+            {
+              "label": null,
+              "text": "Sensibilidad (±2 pp): se justificaría con un ROE del 5.4%, 0.60 veces el valor contable; con un ROE del 9.4%, 1.43 veces el valor contable (hoy cotiza a 1.80).",
+              "tone": "neu"
+            }
+          ],
+          "method": "Gordon: P/TBV = (ROTE − g) / (Ke − g), despejado para el ROTE (igual con P/B y ROE).",
+          "role": "Lectura del método intrínseco (P/B frente al ROE medio del ciclo). Utility regulada: el regulador fija el retorno sobre su base de activos; su FCF es negativo por diseño (invierte en la base), así que no hay DCF.",
+          "title": "ROE que descuenta el precio"
+        },
         "rows": [
           {
             "bench": "18.00x",
@@ -3309,7 +3500,7 @@
         "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: Valoración (base 10/20 + bloque de múltiplos y DCF) reescalada a 100 y contraída hacia 50 según la confianza.",
         "price": {
           "level": "razonable",
-          "note": "sin ajustar 55 → ajustado a 54 por confianza media",
+          "note": "sin ajustar 45 → ajustado a 46 por confianza media; en la frontera con «exigente» (a 2 puntos): un cambio pequeño en los datos o en los supuestos cambiaría el nivel",
           "rows": [
             {
               "kind": "signed",
@@ -3322,9 +3513,15 @@
               "label": "Bloque de múltiplos · 2 múltiplos",
               "tone": "pos",
               "value": 1
+            },
+            {
+              "kind": "signed",
+              "label": "P/B frente al ROE regulado · exigente",
+              "tone": "neg",
+              "value": -2
             }
           ],
-          "score": 54,
+          "score": 46,
           "signed_max": 6,
           "title": "ATRACTIVO DEL PRECIO",
           "tone": "neu"
@@ -3374,7 +3571,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad sólida · precio razonable (confianza media: un solo método de valoración evaluable, sin contraste). Calidad 74/100 · precio 54/100 (sin ajustar 55 → ajustado a 54 por confianza media)."
+          "text": "Calidad sólida · precio razonable (confianza media: P/B justificado (ROE regulado) la ve cara y los múltiplos en precio). Calidad 74/100 · precio 46/100 (sin ajustar 45 → ajustado a 46 por confianza media; en la frontera con «exigente» (a 2 puntos): un cambio pequeño en los datos o en los supuestos cambiaría el nivel)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -3402,7 +3599,7 @@
         },
         {
           "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Media: solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo. Contrae el atractivo del precio hacia 50; la calidad no se contrae."
+          "text": "Media: los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no. Contrae el atractivo del precio hacia 50; la calidad no se contrae."
         }
       ]
     },
@@ -3424,16 +3621,16 @@
               },
               {
                 "label": "Volátil",
-                "range": "1.20 – 1.60",
+                "range": "1.20 – 1.50",
                 "tone": "warn"
               },
               {
                 "label": "Muy volátil",
-                "range": "≥ 1.60",
+                "range": "≥ 1.50",
                 "tone": "neg"
               }
             ],
-            "title": "Bandas del informe"
+            "title": "Umbrales del sector (del sector)"
           }
         ]
       },
@@ -4297,7 +4494,9 @@
     "pe_normalized": 19.4020298409,
     "pe_reported": 17.9639638723,
     "pe_unreliable": false,
+    "quality_differs": true,
     "reported_net_income": 5189000000.0,
+    "structural_net": 0,
     "used_in_score": true
   },
   "eps_vs_revenue_growth": {
@@ -4400,6 +4599,212 @@
     "total_equity": 54751000000.0,
     "wacc": 0.0655063562903
   },
+  "market_context": {
+    "behavioral": [],
+    "market_volatility": {
+      "as_of": "2026-10-14",
+      "observations": 252,
+      "params": {
+        "sessions_per_year": 252,
+        "window_sessions": 252
+      },
+      "status": "ok",
+      "value": 0.126737646948
+    },
+    "news": {
+      "items": [],
+      "reason": "sin titulares de Finnhub (no disponibles o sin respuesta)"
+    },
+    "note": "Contexto de mercado: no puntúa en la calidad ni en el precio. Describe cómo se ha movido la acción, no qué hará.",
+    "readings": [
+      {
+        "field": "market_context.signals.momentum_12_1.value",
+        "key": "momentum",
+        "label": "Momentum 12-1",
+        "num": -0.0332051087654,
+        "text": "en los 12 meses anteriores al último, la acción cayó un 3.3%: el mercado apenas ha movido la acción",
+        "value": "−3.3%"
+      },
+      {
+        "field": "market_context.signals.trend.value",
+        "key": "trend",
+        "label": "Tendencia (200 sesiones)",
+        "num": -0.0232102777456,
+        "text": "cotiza un 2.3% por debajo de su media de 200 sesiones, que sube: régimen lateral",
+        "value": "Lateral"
+      },
+      {
+        "field": "market_context.signals.realized_volatility.value",
+        "key": "volatility",
+        "label": "Volatilidad (1 año)",
+        "num": 0.159196782104,
+        "text": "volatilidad anual realizada del 15.9% (S&P 500 en la misma ventana: 12.7%)",
+        "value": "15.9%"
+      },
+      {
+        "field": "market_context.signals.max_drawdown.1.value",
+        "key": "drawdown",
+        "label": "Caída máxima",
+        "num": -0.136725657797,
+        "text": "en el último año llegó a caer un 13.7% desde su máximo (2026-03-16 → 2026-09-24); en los 2 años de la serie, un 13.7%",
+        "value": "−13.7%"
+      },
+      {
+        "field": "market_context.signals.relative_strength.value",
+        "key": "relative_strength",
+        "label": "Fuerza relativa frente a XLU (12 meses)",
+        "num": 0.0379296771318,
+        "text": "en 12 meses, la acción −1.8% frente al −5.6% del ETF de su sector (XLU): se mueve con su sector",
+        "value": "+3.8 pp"
+      },
+      {
+        "field": "market_context.signals.abnormal_volume.value",
+        "key": "volume",
+        "label": "Volumen (últimas 5 sesiones)",
+        "num": -0.299340266801,
+        "text": "volumen en el rango habitual (z = −0.3)",
+        "value": "z = −0.3"
+      }
+    ],
+    "sector_etf": "XLU",
+    "series_drawdown": {
+      "from_high": -0.103551675626,
+      "high_date": "2026-03-16",
+      "peak_date": "2026-03-16",
+      "trough_date": "2026-09-24",
+      "value": -0.136725657797,
+      "years": 2.0
+    },
+    "series_status": {
+      "company": "ok",
+      "market": "ok",
+      "sector": "ok"
+    },
+    "signals": {
+      "abnormal_volume": {
+        "as_of": "2026-10-14",
+        "baseline_mean": 4025733.33333,
+        "baseline_std": 1412350.35918,
+        "params": {
+          "baseline_sessions": 90,
+          "recent_sessions": 5
+        },
+        "recent_mean": 3602960.0,
+        "status": "ok",
+        "value": -0.299340266801,
+        "zero_volume_sessions": 0
+      },
+      "beta": {
+        "adjusted": 0.248189385384,
+        "as_of": "2026-10-14",
+        "first_week": "2024-10-25",
+        "last_week": "2026-10-16",
+        "observations": 104,
+        "params": {
+          "blume_prior": 0.33,
+          "blume_weight": 0.67,
+          "frequency": "W-FRI",
+          "market_symbol": "^GSPC",
+          "min_weeks": 52,
+          "window_weeks": 104
+        },
+        "r2": 0.0140900196516,
+        "raw": -0.122105394949,
+        "status": "ok",
+        "value": -0.122105394949,
+        "window_start": "2024-10-18"
+      },
+      "max_drawdown": {
+        "1": {
+          "as_of": "2026-10-14",
+          "params": {
+            "sessions_per_year": 252,
+            "years": 1
+          },
+          "peak_date": "2026-03-16",
+          "peak_price": 131.163406372,
+          "status": "ok",
+          "trough_date": "2026-09-24",
+          "trough_price": 113.230003357,
+          "value": -0.136725657797,
+          "window_start": "2025-10-13"
+        }
+      },
+      "momentum_12_1": {
+        "as_of": "2026-10-14",
+        "end_date": "2026-09-15",
+        "params": {
+          "lookback_sessions": 252,
+          "skip_sessions": 21
+        },
+        "start_date": "2025-10-13",
+        "status": "ok",
+        "value": -0.0332051087654
+      },
+      "range_52w_position": {
+        "as_of": "2026-10-14",
+        "high": 131.163406372,
+        "high_date": "2026-03-16",
+        "low": 111.092094421,
+        "low_date": "2025-12-10",
+        "params": {
+          "window_sessions": 252
+        },
+        "status": "ok",
+        "value": 0.425876743347
+      },
+      "realized_volatility": {
+        "as_of": "2026-10-14",
+        "observations": 252,
+        "params": {
+          "sessions_per_year": 252,
+          "window_sessions": 252
+        },
+        "status": "ok",
+        "value": 0.159196782104
+      },
+      "relative_strength": {
+        "as_of": "2026-10-14",
+        "params": {
+          "windows_sessions": [
+            126,
+            252
+          ]
+        },
+        "status": "ok",
+        "value": 0.0379296771318,
+        "windows": {
+          "126": {
+            "company": -0.0487980208584,
+            "difference": 0.0321423359066,
+            "sector": -0.0809403567649,
+            "start_date": "2026-04-15",
+            "status": "ok"
+          },
+          "252": {
+            "company": -0.0178539229496,
+            "difference": 0.0379296771318,
+            "sector": -0.0557836000814,
+            "start_date": "2025-10-13",
+            "status": "ok"
+          }
+        }
+      },
+      "trend": {
+        "as_of": "2026-10-14",
+        "params": {
+          "slope_sessions": 21,
+          "sma_sessions": 200
+        },
+        "price": 119.63999939,
+        "regime": "lateral",
+        "slope": 0.00115881950187,
+        "sma": 122.482860603,
+        "status": "ok",
+        "value": -0.0232102777456
+      }
+    }
+  },
   "not_applicable": {
     "altman": "No aplica a utilities reguladas: el Altman se calibró con quiebras de empresas industriales; una utility regulada opera con deuda alta y circulante negativo por diseño",
     "dcf": "No aplica a utilities reguladas: su FCF es negativo por diseño: la inversión en la base de activos regulada supera al flujo operativo y se financia con deuda"
@@ -4462,9 +4867,25 @@
     "scaled_score": 6.0,
     "score": 6
   },
+  "premortem": {
+    "items": [
+      {
+        "field": "archetype_metrics.implied.implied",
+        "kind": "precio_implicito",
+        "text": "el ROE sostenido bajara del 11.1% que descuenta el precio (obtiene un 7.4%)",
+        "value": 0.111478306569
+      }
+    ],
+    "title": "Esta lectura sería errónea si…"
+  },
   "price": 119.63999939,
   "price_attractiveness": {
     "basis": null,
+    "border": {
+      "neighbor": "exigente",
+      "points": 2,
+      "text": "en la frontera con «exigente» (a 2 puntos): un cambio pequeño en los datos o en los supuestos cambiaría el nivel"
+    },
     "categories_included": 1,
     "categories_total": 1,
     "components": [
@@ -4472,7 +4893,7 @@
         "category": "Valoración",
         "included": true,
         "max": 20,
-        "score": 11
+        "score": 9
       }
     ],
     "confidence": "media",
@@ -4484,8 +4905,8 @@
     "low_coverage_categories": [],
     "not_applicable_categories": [],
     "partial": false,
-    "score": 54,
-    "score_raw": 55
+    "score": 46,
+    "score_raw": 45
   },
   "price_history": {
     "52w_high": 134.490005493,
@@ -4504,6 +4925,7 @@
   },
   "quality": {
     "basis": null,
+    "border": null,
     "categories_included": 4,
     "categories_total": 4,
     "components": [
@@ -4539,7 +4961,118 @@
     "low_coverage_categories": [],
     "not_applicable_categories": [],
     "partial": false,
+    "persistence": {
+      "applied": false,
+      "by_category": [
+        {
+          "anchor": null,
+          "category": "Solidez Financiera",
+          "persistence": null,
+          "rule": null,
+          "surplus": 0.0,
+          "years_ok": null
+        },
+        {
+          "anchor": "margen operativo",
+          "category": "Rentabilidad",
+          "persistence": 1.0,
+          "rule": "margen operativo positivo y al menos el 75% del último (27.2%)",
+          "surplus": 0.0,
+          "years_ok": [
+            "2021",
+            "2024",
+            "2025"
+          ]
+        },
+        {
+          "anchor": "conversión en caja",
+          "category": "Calidad de Ganancias",
+          "persistence": 0.333333333333,
+          "rule": "flujo operativo ≥ beneficio neto y FCF positivo",
+          "surplus": 1.0,
+          "years_ok": [
+            "2024"
+          ]
+        },
+        {
+          "anchor": "ingresos",
+          "category": "Crecimiento",
+          "persistence": 1.0,
+          "rule": "ingresos por encima del ejercicio anterior",
+          "surplus": 0.0,
+          "years_ok": [
+            "2021",
+            "2024",
+            "2025"
+          ]
+        }
+      ],
+      "denominator": 3,
+      "source": "edgar",
+      "window": 5
+    },
     "score": 74
+  },
+  "quality_readings": {
+    "coverage": {
+      "basis": "gasto por intereses",
+      "ebit": 2.44553405778,
+      "ebitda": 4.49880731513,
+      "ffo": null,
+      "text": "Cobertura (gasto por intereses): el EBIT cubre 2.4 veces los intereses; el EBITDA, 4.5 veces; con el EBIT de cada ejercicio, de 2.7 veces en FY2022 a 2.6 en FY2025 (estable).",
+      "trend": {
+        "direction": "estable",
+        "fy_latest": "2025",
+        "fy_oldest": "2022",
+        "latest": 2.57182168409,
+        "oldest": 2.67199671997
+      }
+    },
+    "dupont": {
+      "changes": {
+        "leverage": 0.0446698302632,
+        "margin": 0.55307278255,
+        "turnover": 0.0193509700748
+      },
+      "current": {
+        "fy": "2025",
+        "i": 0,
+        "leverage": 3.77562594036,
+        "margin": 0.154108632937,
+        "roe": 0.0958296362023,
+        "turnover": 0.164696325663
+      },
+      "driver": "margin",
+      "prior": {
+        "fy": "2022",
+        "i": 3,
+        "leverage": 3.61068083208,
+        "margin": 0.0886401557286,
+        "roe": 0.0517010664612,
+        "turnover": 0.161539930146
+      },
+      "text": "ROE 9.6% = margen neto 15.4% × rotación de activos 0.16 × apalancamiento 3.78; frente a FY2022 (ROE 5.2%), el cambio lo explica sobre todo el margen neto."
+    },
+    "fcf_margin": {
+      "basis": "margen FCF (sin dato de SBC)",
+      "change": 0.136550684839,
+      "direction": "mejora",
+      "latest": -0.0525483140491,
+      "oldest": -0.189098998888,
+      "series": [
+        -0.0525483140491,
+        0.00158118391145,
+        -0.0938059187887,
+        -0.189098998888
+      ],
+      "text": "El margen FCF (sin dato de SBC) es del −5.3% en FY2025, frente al −18.9% en FY2022: mejora (+13.7 pp).",
+      "years": [
+        "2025",
+        "2024",
+        "2023",
+        "2022"
+      ]
+    }
   },
   "ratios": {
     "asset_turnover": 0.165348026515,
@@ -4586,6 +5119,12 @@
     "roa": 0.0258042378824,
     "roe": 0.0964892707055,
     "roic": 0.0548365329841
+  },
+  "reverse_dcf": {
+    "applicable": false,
+    "main": null,
+    "reason": "No aplica a utilities reguladas: su FCF es negativo por diseño: la inversión en la base de activos regulada supera al flujo operativo y se financia con deuda",
+    "ttm": null
   },
   "risk_free": {
     "as_of": null,
@@ -4803,11 +5342,18 @@
             "value": "2 múltiplos"
           },
           {
+            "adjustment": -2,
+            "metric": "P/B frente al ROE regulado",
+            "reason": "El precio descuenta un ROE sostenido del 11.1%; la utility obtuvo un 7.4% de media en 4 ejercicios.",
+            "severity": "moderate",
+            "value": "exigente"
+          },
+          {
             "adjustment": 0,
             "metric": "No aplica",
-            "reason": "EV/EBITDA: No aplica a utilities reguladas: se valora por P/E frente al sector y rentabilidad por dividendo; P/FCF, DCF: No aplica a utilities reguladas: su FCF es negativo por diseño: la inversión en la base de activos regulada supera al flujo operativo y se financia con deuda; PEG: No aplica a utilities reguladas: su crecimiento lo fija la base regulada, no el mercado: se valora por P/E y dividendo (no cuenta en la cobertura)",
+            "reason": "EV/EBITDA: No aplica a utilities reguladas: se valora por P/E frente al sector y rentabilidad por dividendo; P/FCF: No aplica a utilities reguladas: su FCF es negativo por diseño: la inversión en la base de activos regulada supera al flujo operativo y se financia con deuda; PEG: No aplica a utilities reguladas: su crecimiento lo fija la base regulada, no el mercado: se valora por P/E y dividendo (no cuenta en la cobertura)",
             "severity": "neutral",
-            "value": "P/FCF, EV/EBITDA, PEG, DCF"
+            "value": "P/FCF, EV/EBITDA, PEG"
           }
         ],
         "applicable": true,
@@ -4818,10 +5364,11 @@
           "En línea (19.4x vs 18.0x)",
           "P/E normalizado mejorando (19x → 17x forward)",
           "promedio de los ajustes reescalados a ±1 (P/E +0.00, Forward P/E +0.67) = +0.33 × 4 (máximo con 2 miembros) = +1.3",
-          "EV/EBITDA: No aplica a utilities reguladas: se valora por P/E frente al sector y rentabilidad por dividendo; P/FCF, DCF: No aplica a utilities reguladas: su FCF es negativo por diseño: la inversión en la base de activos regulada supera al flujo operativo y se financia con deuda; PEG: No aplica a utilities reguladas: su crecimiento lo fija la base regulada, no el mercado: se valora por P/E y dividendo (no cuenta en la cobertura)"
+          "El precio descuenta un ROE sostenido del 11.1%; la utility obtuvo un 7.4% de media en 4 ejercicios.",
+          "EV/EBITDA: No aplica a utilities reguladas: se valora por P/E frente al sector y rentabilidad por dividendo; P/FCF: No aplica a utilities reguladas: su FCF es negativo por diseño: la inversión en la base de activos regulada supera al flujo operativo y se financia con deuda; PEG: No aplica a utilities reguladas: su crecimiento lo fija la base regulada, no el mercado: se valora por P/E y dividendo (no cuenta en la cobertura)"
         ],
         "max": 20,
-        "score": 11
+        "score": 9
       }
     },
     "excluded_categories": [],
@@ -4887,15 +5434,14 @@
     },
     "valoracion": {
       "applicable": true,
-      "components": 2,
+      "components": 3,
       "conclusive": true,
       "coverage": 1.0,
-      "evaluated": 2,
+      "evaluated": 3,
       "low_confidence": false,
       "missing": [],
       "missing_reasons": {},
       "not_applicable": {
-        "DCF": "No aplica a utilities reguladas: su FCF es negativo por diseño: la inversión en la base de activos regulada supera al flujo operativo y se financia con deuda",
         "EV/EBITDA": "No aplica a utilities reguladas: se valora por P/E frente al sector y rentabilidad por dividendo",
         "P/FCF": "No aplica a utilities reguladas: su FCF es negativo por diseño: la inversión en la base de activos regulada supera al flujo operativo y se financia con deuda",
         "PEG": "No aplica a utilities reguladas: su crecimiento lo fija la base regulada, no el mercado: se valora por P/E y dividendo"
@@ -4919,8 +5465,8 @@
   },
   "verdict": {
     "confidence": "media",
-    "confidence_text": "(confianza media: un solo método de valoración evaluable, sin contraste)",
-    "full": "Calidad sólida · precio razonable (confianza media: un solo método de valoración evaluable, sin contraste)",
+    "confidence_text": "(confianza media: P/B justificado (ROE regulado) la ve cara y los múltiplos en precio)",
+    "full": "Calidad sólida · precio razonable (confianza media: P/B justificado (ROE regulado) la ve cara y los múltiplos en precio)",
     "price_level": "razonable",
     "quality_level": "sólida",
     "text": "Calidad sólida · precio razonable"

@@ -130,6 +130,23 @@
     "source": "sector",
     "source_beta": 1.6215211
   },
+  "business_model": {
+    "altman_referential": false,
+    "current_ratio": {
+      "applies": false,
+      "history": [
+        2.32656376929,
+        4.7014660151,
+        4.95094491355,
+        5.41666666667
+      ],
+      "industry": "Auto Manufacturers",
+      "median_prior": 4.95094491355,
+      "structural": false,
+      "worsening": true
+    },
+    "piotroski_caveat": null
+  },
   "classification": {
     "alerts": [
       {
@@ -141,6 +158,7 @@
     "ambiguous": false,
     "archetype": "GROWTH_PRE_PROFIT",
     "confidence": "baja",
+    "frontier": null,
     "industry": "Auto Manufacturers",
     "inputs": {
       "assets_to_revenue": 2.75923519584,
@@ -152,10 +170,13 @@
       "revenue_growth_std": 0.907732529937
     },
     "label": "Crecimiento sin beneficio",
+    "low_confidence": null,
     "reason": "Clasificada como GROWTH_PRE_PROFIT: BPA TTM -2.58 <= 0 y CAGR de ingresos a 3 años 44.0% > 15%",
     "reason_plain": "Crecimiento sin beneficio: beneficio por acción negativo en los últimos doce meses (−2.58) e ingresos totales que crecen un 44.0% anual en 3 años, por encima del 15%.",
     "rule": "pre_beneficio_con_crecimiento",
-    "sector": "Consumer Cyclical"
+    "sector": "Consumer Cyclical",
+    "subtype": null,
+    "subtype_label": null
   },
   "confidence": {
     "capped_from": null,
@@ -193,11 +214,10 @@
           "_yahoo_ratios.inventoryTurnover",
           "_yahoo_ratios.quickRatio"
         ],
-        "issues": 2,
+        "issues": 1,
         "level": "media",
         "reasons": [
-          "beneficio normalizado con ítems inferidos (confianza media)",
-          "4 campos de Finnhub en lugar de los estados"
+          "beneficio normalizado con ítems inferidos (confianza media)"
         ]
       },
       "stability": {
@@ -211,7 +231,7 @@
     "limits_score": false,
     "reasons": [
       "convergencia no evaluable: un solo método evaluable (múltiplos frente al sector): no hay contraste",
-      "calidad de fuente media: beneficio normalizado con ítems inferidos (confianza media); 4 campos de Finnhub en lugar de los estados",
+      "calidad de fuente media: beneficio normalizado con ítems inferidos (confianza media)",
       "estabilidad media: alerta de posible cíclica"
     ],
     "score": 0.666666666667
@@ -456,6 +476,13 @@
           "unit": "USD",
           "years": 7
         },
+        "contract_revenue": {
+          "cross_taxonomy": null,
+          "first": "2019-12-31",
+          "last": "2025-12-31",
+          "unit": "USD",
+          "years": 7
+        },
         "diluted_eps": {
           "cross_taxonomy": null,
           "first": "2019-12-31",
@@ -469,6 +496,13 @@
           "last": "2025-12-31",
           "unit": "shares",
           "years": 7
+        },
+        "discontinued": {
+          "cross_taxonomy": null,
+          "first": null,
+          "last": null,
+          "unit": "USD",
+          "years": 0
         },
         "net_income": {
           "cross_taxonomy": null,
@@ -566,6 +600,7 @@
         "skipped": []
       },
       "reason": null,
+      "recut": null,
       "status": "ok",
       "title": "Rivian Automotive, Inc. / DE"
     },
@@ -1152,6 +1187,11 @@
       "rule": "ratio_no_significativa"
     }
   ],
+  "dcf_growth_blend": {
+    "cagr_3y": 0.306816387712,
+    "used": 0.195359904117,
+    "yoy": 0.0839034205231
+  },
   "dcf_status": {
     "reason": "No aplica a empresas en crecimiento sin beneficio con FCF negativo: no hay flujo que descontar",
     "state": "no_aplica"
@@ -1173,7 +1213,7 @@
         },
         {
           "label": "Confianza · Calidad de fuente (media)",
-          "text": "beneficio normalizado con ítems inferidos (confianza media); 4 campos de Finnhub en lugar de los estados"
+          "text": "beneficio normalizado con ítems inferidos (confianza media)"
         },
         {
           "label": "Confianza · Estabilidad del arquetipo (media)",
@@ -1186,6 +1226,10 @@
         {
           "label": "Deuda coherente con el EBITDA (arrendamiento dentro solo si su coste no está en el EBITDA)",
           "text": "deuda de la regla $4.54B (la fuente daba $5.35B); préstamos y bonos $4.44B (dentro); arrendamientos que la fuente sumaba $909.00M (fuera); arrendamiento operativo $810.00M (fuera; US GAAP: su alquiler ya está restado del EBITDA); arrendamiento financiero $99.00M (dentro; ya en la fila de arrendamientos de la fuente)."
+        },
+        {
+          "label": "Procedencia de los datos (campos del análisis por fuente)",
+          "text": "estados de Yahoo (yfinance): 36 campos; SEC EDGAR: 1 (beneficio operativo); Finnhub: 4 (liquidez corriente, cobertura de intereses, rotación de existencias, prueba ácida); Yahoo (cotización y perfil): 2 (industria, sector); calculados con otros datos del análisis: 13 campos; sin dato utilizable (ausente o de otro periodo): 9 (crecimiento del beneficio, BPA estimado, EV/EBITDA, cobertura de intereses, deuda neta/EBITDA, P/FFO, P/E, payout y 1 más)."
         }
       ],
       "title": "Detalle técnico para auditoría"
@@ -1930,7 +1974,7 @@
           "key": "source",
           "label": "Calidad de fuente",
           "level": "Media",
-          "text": "El beneficio se ajustó por partidas extraordinarias identificadas de forma indirecta. Parte de los datos proviene de una fuente secundaria."
+          "text": "El beneficio se ajustó por partidas extraordinarias identificadas de forma indirecta."
         },
         {
           "key": "stability",
@@ -1943,8 +1987,7 @@
       "plain": [
         "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo.",
         "El beneficio se ajustó por partidas extraordinarias identificadas de forma indirecta.",
-        "La empresa podría ser cíclica: sus resultados actuales pueden no ser representativos.",
-        "Parte de los datos proviene de una fuente secundaria."
+        "La empresa podría ser cíclica: sus resultados actuales pueden no ser representativos."
       ],
       "reasons": [
         {
@@ -1956,11 +1999,6 @@
           "dimension": "calidad de fuente",
           "level": "media",
           "text": "El beneficio se ajustó por partidas extraordinarias identificadas de forma indirecta."
-        },
-        {
-          "dimension": "calidad de fuente",
-          "level": "media",
-          "text": "Parte de los datos proviene de una fuente secundaria."
         },
         {
           "dimension": "estabilidad",
@@ -2750,6 +2788,61 @@
           }
         ]
       },
+      "market": {
+        "behavioral": [],
+        "behavioral_title": "Lectura conductual del mercado",
+        "news": [],
+        "news_note": "sin titulares de Finnhub (no disponibles o sin respuesta)",
+        "note": "Contexto de mercado: no puntúa en la calidad ni en el precio. Describe cómo se ha movido la acción, no qué hará.",
+        "pead_note": "La deriva tras los resultados (PEAD) no se lee: hace falta la sorpresa del BPA frente al consenso y no hay fuente con fecha para ella.",
+        "rows": [
+          {
+            "key": "momentum",
+            "label": "Momentum 12-1",
+            "text": "en los 12 meses anteriores al último, la acción subió un 19.0%: el mercado viene premiando la acción",
+            "tone": "neu",
+            "value": "+19.0%"
+          },
+          {
+            "key": "trend",
+            "label": "Tendencia (200 sesiones)",
+            "text": "cotiza un 18.6% por debajo de su media de 200 sesiones, que baja: régimen bajista",
+            "tone": "neu",
+            "value": "Bajista"
+          },
+          {
+            "key": "volatility",
+            "label": "Volatilidad (1 año)",
+            "text": "volatilidad anual realizada del 68.6% (S&P 500 en la misma ventana: 12.7%)",
+            "tone": "neu",
+            "value": "68.6%"
+          },
+          {
+            "key": "drawdown",
+            "label": "Caída máxima",
+            "text": "en el último año llegó a caer un 42.5% desde su máximo (2025-12-19 → 2026-05-19); en los 2 años de la serie, un 42.5%",
+            "tone": "neu",
+            "value": "−42.5%"
+          },
+          {
+            "key": "relative_strength",
+            "label": "Fuerza relativa frente a XLY (12 meses)",
+            "text": "en 12 meses, la acción −0.8% frente al −3.9% del ETF de su sector (XLY): se mueve con su sector",
+            "tone": "neu",
+            "value": "+3.0 pp"
+          },
+          {
+            "key": "volume",
+            "label": "Volumen (últimas 5 sesiones)",
+            "text": "volumen en el rango habitual (z = −0.4)",
+            "tone": "neu",
+            "value": "z = −0.4"
+          }
+        ],
+        "source": "Serie diaria de Yahoo Finance (cierre ajustado por dividendos y splits, 2 años), S&P 500 y ETF del sector (XLY).",
+        "status_note": null,
+        "title": "Contexto de mercado"
+      },
       "profitability": {
         "columns": [
           "MÉTRICA",
@@ -2786,6 +2879,26 @@
           ]
         ],
         "intro": "Margen bruto de 7.5%: muy bajo, margen que financiará la escala. Margen operativo de -60.1%: pérdida operativa muy alta, bandas de pre-beneficio. Mejora del margen operativo de +27.8 pp: fuerte mejora. Margen FCF − SBC de -72.9%: quema alta, FCF menos compensación en acciones sobre ingresos (FCF bruto -59.3%).",
+        "quality_readings": [
+          {
+            "key": "dupont",
+            "label": "DuPont del ROE",
+            "text": "ROE −79.9% = margen neto −67.7% × rotación de activos 0.36 × apalancamiento 3.26.",
+            "tone": "neu"
+          },
+          {
+            "key": "fcf_margin",
+            "label": "Margen FCF con tendencia",
+            "text": "El margen FCF − SBC es del −60.0% en FY2025, frente al −446.8% en FY2022: mejora (+386.8 pp).",
+            "tone": "pos"
+          },
+          {
+            "key": "sbc_cost",
+            "label": "Compensación en acciones",
+            "text": "La compensación en acciones es el 13.5% de los ingresos: un coste real que se paga en dilución. Al restarla, el margen FCF baja del −59.3% al −72.9%; el DCF descuenta el FCF − SBC.",
+            "tone": "neu"
+          }
+        ],
         "roce_reading": "Divergencia ROCE–ROIC: ROCE -29.95% frente a ROIC -64.33% (+34.4 pp, más de 10 pp). Causas probables: base fiscal distinta: el ROCE es antes de impuestos y el ROIC después; capital distinto: el ROIC usa patrimonio + deuda − caja; el ROCE, activos − pasivo corriente (incluye pasivos a largo plazo no financieros e intereses minoritarios).",
         "rows": [
           {
@@ -2897,6 +3010,14 @@
           "LECTURA"
         ],
         "intro": "La caja cubre 1.5 años de quema de FCF: tendrá que financiarse. El current ratio de 2.10x cubre con holgura los pasivos corrientes. Con caja neta, el D/E (0.89x) no mide apalancamiento. Con EBITDA negativo, la deuda neta/EBITDA no es significativa; la posición de caja supera a la deuda total (caja neta). Con EBIT negativo y caja neta, la cobertura de intereses no es significativa: los intereses se pagan con caja.",
+        "quality_readings": [
+          {
+            "key": "coverage",
+            "label": "Cobertura de intereses",
+            "text": "Cobertura (gasto por intereses): el EBIT cubre -13.3 veces los intereses; el EBITDA, -10.2 veces.",
+            "tone": "neu"
+          }
+        ],
         "rows": [
           {
             "bench": null,
@@ -3033,7 +3154,9 @@
         "ke_note": null,
         "market_note": null,
         "normalization_note": "Beneficio TTM (4 trimestres): reportado −$3.23B, normalizado −$3.60B (no recurrentes 11.3% del beneficio; pico de resultado no operativo (inferida, confianza media): $366.17M netos; pico de resultado no operativo (inferida, confianza media): −$158.40M netos, bajo el umbral, no aplicada). El score usa el beneficio normalizado.",
+        "premortem": null,
         "provisional_note": "Medianas del sector: referencia PROVISIONAL, fijada a mano (no son medianas calculadas).",
+        "reverse_dcf": null,
         "rows": [
           {
             "bench": "20.00x",
@@ -3407,16 +3530,16 @@
               },
               {
                 "label": "Volátil",
-                "range": "1.20 – 1.60",
+                "range": "1.20 – 1.50",
                 "tone": "warn"
               },
               {
                 "label": "Muy volátil",
-                "range": "≥ 1.60",
+                "range": "≥ 1.50",
                 "tone": "neg"
               }
             ],
-            "title": "Bandas del informe"
+            "title": "Umbrales del sector (del sector)"
           }
         ]
       },
@@ -3673,26 +3796,26 @@
               },
               {
                 "label": "Baja",
-                "range": "< 1.0x",
+                "range": "< 2.0x",
                 "tone": "pos"
               },
               {
                 "label": "Moderada",
-                "range": "1.0x – 2.5x",
+                "range": "2.0x – 4.0x",
                 "tone": "neu"
               },
               {
                 "label": "Elevada",
-                "range": "2.5x – 4.0x",
+                "range": "4.0x – 6.0x",
                 "tone": "warn"
               },
               {
                 "label": "Alta",
-                "range": "≥ 4.0x",
+                "range": "≥ 6.0x",
                 "tone": "neg"
               }
             ],
-            "title": "Bandas del informe"
+            "title": "Umbrales del sector (del sector)"
           }
         ]
       },
@@ -4133,7 +4256,9 @@
     "pe_normalized": null,
     "pe_reported": null,
     "pe_unreliable": true,
+    "quality_differs": true,
     "reported_net_income": -3233000000.0,
+    "structural_net": 0,
     "used_in_score": true
   },
   "eps_vs_revenue_growth": null,
@@ -4233,6 +4358,212 @@
     "total_equity": 5106000000.0,
     "wacc": 0.10180382661
   },
+  "market_context": {
+    "behavioral": [],
+    "market_volatility": {
+      "as_of": "2026-10-14",
+      "observations": 252,
+      "params": {
+        "sessions_per_year": 252,
+        "window_sessions": 252
+      },
+      "status": "ok",
+      "value": 0.126737646948
+    },
+    "news": {
+      "items": [],
+      "reason": "sin titulares de Finnhub (no disponibles o sin respuesta)"
+    },
+    "note": "Contexto de mercado: no puntúa en la calidad ni en el precio. Describe cómo se ha movido la acción, no qué hará.",
+    "readings": [
+      {
+        "field": "market_context.signals.momentum_12_1.value",
+        "key": "momentum",
+        "label": "Momentum 12-1",
+        "num": 0.189892761298,
+        "text": "en los 12 meses anteriores al último, la acción subió un 19.0%: el mercado viene premiando la acción",
+        "value": "+19.0%"
+      },
+      {
+        "field": "market_context.signals.trend.value",
+        "key": "trend",
+        "label": "Tendencia (200 sesiones)",
+        "num": -0.185680563588,
+        "text": "cotiza un 18.6% por debajo de su media de 200 sesiones, que baja: régimen bajista",
+        "value": "Bajista"
+      },
+      {
+        "field": "market_context.signals.realized_volatility.value",
+        "key": "volatility",
+        "label": "Volatilidad (1 año)",
+        "num": 0.686389037596,
+        "text": "volatilidad anual realizada del 68.6% (S&P 500 en la misma ventana: 12.7%)",
+        "value": "68.6%"
+      },
+      {
+        "field": "market_context.signals.max_drawdown.1.value",
+        "key": "drawdown",
+        "label": "Caída máxima",
+        "num": -0.425389791531,
+        "text": "en el último año llegó a caer un 42.5% desde su máximo (2025-12-19 → 2026-05-19); en los 2 años de la serie, un 42.5%",
+        "value": "−42.5%"
+      },
+      {
+        "field": "market_context.signals.relative_strength.value",
+        "key": "relative_strength",
+        "label": "Fuerza relativa frente a XLY (12 meses)",
+        "num": 0.0301858200939,
+        "text": "en 12 meses, la acción −0.8% frente al −3.9% del ETF de su sector (XLY): se mueve con su sector",
+        "value": "+3.0 pp"
+      },
+      {
+        "field": "market_context.signals.abnormal_volume.value",
+        "key": "volume",
+        "label": "Volumen (últimas 5 sesiones)",
+        "num": -0.402682546241,
+        "text": "volumen en el rango habitual (z = −0.4)",
+        "value": "z = −0.4"
+      }
+    ],
+    "sector_etf": "XLY",
+    "series_drawdown": {
+      "from_high": -0.423162611618,
+      "high_date": "2025-12-19",
+      "peak_date": "2025-12-19",
+      "trough_date": "2026-05-19",
+      "value": -0.425389791531,
+      "years": 2.0
+    },
+    "series_status": {
+      "company": "ok",
+      "market": "ok",
+      "sector": "ok"
+    },
+    "signals": {
+      "abnormal_volume": {
+        "as_of": "2026-10-14",
+        "baseline_mean": 29222572.2222,
+        "baseline_std": 16852908.7877,
+        "params": {
+          "baseline_sessions": 90,
+          "recent_sessions": 5
+        },
+        "recent_mean": 22436200.0,
+        "status": "ok",
+        "value": -0.402682546241,
+        "zero_volume_sessions": 0
+      },
+      "beta": {
+        "adjusted": 1.03308232334,
+        "as_of": "2026-10-14",
+        "first_week": "2024-10-25",
+        "last_week": "2026-10-16",
+        "observations": 104,
+        "params": {
+          "blume_prior": 0.33,
+          "blume_weight": 0.67,
+          "frequency": "W-FRI",
+          "market_symbol": "^GSPC",
+          "min_weeks": 52,
+          "window_weeks": 104
+        },
+        "r2": 0.0789762290714,
+        "raw": 1.049376602,
+        "status": "ok",
+        "value": 1.049376602,
+        "window_start": "2024-10-18"
+      },
+      "max_drawdown": {
+        "1": {
+          "as_of": "2026-10-14",
+          "params": {
+            "sessions_per_year": 252,
+            "years": 1
+          },
+          "peak_date": "2025-12-19",
+          "peak_price": 22.4500007629,
+          "status": "ok",
+          "trough_date": "2026-05-19",
+          "trough_price": 12.8999996185,
+          "value": -0.425389791531,
+          "window_start": "2025-10-13"
+        }
+      },
+      "momentum_12_1": {
+        "as_of": "2026-10-14",
+        "end_date": "2026-09-15",
+        "params": {
+          "lookback_sessions": 252,
+          "skip_sessions": 21
+        },
+        "start_date": "2025-10-13",
+        "status": "ok",
+        "value": 0.189892761298
+      },
+      "range_52w_position": {
+        "as_of": "2026-10-14",
+        "high": 22.4500007629,
+        "high_date": "2025-12-19",
+        "low": 12.5,
+        "low_date": "2025-11-04",
+        "params": {
+          "window_sessions": 252
+        },
+        "status": "ok",
+        "value": 0.0452261080161
+      },
+      "realized_volatility": {
+        "as_of": "2026-10-14",
+        "observations": 252,
+        "params": {
+          "sessions_per_year": 252,
+          "window_sessions": 252
+        },
+        "status": "ok",
+        "value": 0.686389037596
+      },
+      "relative_strength": {
+        "as_of": "2026-10-14",
+        "params": {
+          "windows_sessions": [
+            126,
+            252
+          ]
+        },
+        "status": "ok",
+        "value": 0.0301858200939,
+        "windows": {
+          "126": {
+            "company": -0.21084704877,
+            "difference": -0.158285252605,
+            "sector": -0.0525617961649,
+            "start_date": "2026-04-15",
+            "status": "ok"
+          },
+          "252": {
+            "company": -0.00842271108861,
+            "difference": 0.0301858200939,
+            "sector": -0.0386085311826,
+            "start_date": "2025-10-13",
+            "status": "ok"
+          }
+        }
+      },
+      "trend": {
+        "as_of": "2026-10-14",
+        "params": {
+          "slope_sessions": 21,
+          "sma_sessions": 200
+        },
+        "price": 12.9499998093,
+        "regime": "bajista",
+        "slope": -0.0255218502472,
+        "sma": 15.9028499508,
+        "status": "ok",
+        "value": -0.185680563588
+      }
+    }
+  },
   "not_applicable": {
     "altman": "No aplica a empresas en crecimiento sin beneficio: el Altman se calibró con quiebras de empresas maduras endeudadas; su solidez se mide por el runway (caja frente a la quema de FCF)",
     "dcf": "No aplica a empresas en crecimiento sin beneficio con FCF negativo: no hay flujo que descontar",
@@ -4296,9 +4627,11 @@
     "scaled_score": 5.0,
     "score": 5
   },
+  "premortem": null,
   "price": 12.9499998093,
   "price_attractiveness": {
     "basis": null,
+    "border": null,
     "categories_included": 1,
     "categories_total": 1,
     "components": [
@@ -4338,6 +4671,7 @@
   },
   "quality": {
     "basis": null,
+    "border": null,
     "categories_included": 4,
     "categories_total": 4,
     "components": [
@@ -4373,7 +4707,108 @@
     "low_coverage_categories": [],
     "not_applicable_categories": [],
     "partial": false,
+    "persistence": {
+      "applied": false,
+      "by_category": [
+        {
+          "anchor": null,
+          "category": "Solidez Financiera",
+          "persistence": null,
+          "rule": null,
+          "surplus": 0.0,
+          "years_ok": null
+        },
+        {
+          "anchor": "margen operativo",
+          "category": "Rentabilidad",
+          "persistence": 0.0,
+          "rule": "margen operativo positivo y al menos el 75% del último (−66.5%)",
+          "surplus": 0.0,
+          "years_ok": []
+        },
+        {
+          "anchor": "conversión en caja",
+          "category": "Calidad de Ganancias",
+          "persistence": 0.0,
+          "rule": "flujo operativo ≥ beneficio neto y FCF positivo",
+          "surplus": 0.0,
+          "years_ok": []
+        },
+        {
+          "anchor": "ingresos",
+          "category": "Crecimiento",
+          "persistence": 0.8,
+          "rule": "ingresos por encima del ejercicio anterior",
+          "surplus": 0.0,
+          "years_ok": [
+            "2022",
+            "2023",
+            "2024",
+            "2025"
+          ]
+        }
+      ],
+      "denominator": 5,
+      "source": "edgar",
+      "window": 5
+    },
     "score": 32
+  },
+  "quality_readings": {
+    "coverage": {
+      "basis": "gasto por intereses",
+      "ebit": -13.2819548872,
+      "ebitda": -10.2030075188,
+      "ffo": null,
+      "text": "Cobertura (gasto por intereses): el EBIT cubre -13.3 veces los intereses; el EBITDA, -10.2 veces.",
+      "trend": null
+    },
+    "dupont": {
+      "current": {
+        "fy": "2025",
+        "i": 0,
+        "leverage": 3.25536574682,
+        "margin": -0.676814553555,
+        "roe": -0.798510731494,
+        "turnover": 0.36241926803
+      },
+      "driver": null,
+      "prior": {
+        "fy": "2022",
+        "i": 3,
+        "leverage": 1.29545619248,
+        "margin": -4.07237635706,
+        "roe": -0.489310819625,
+        "turnover": 0.0927500559409
+      },
+      "text": "ROE −79.9% = margen neto −67.7% × rotación de activos 0.36 × apalancamiento 3.26."
+    },
+    "fcf_margin": {
+      "basis": "margen FCF − SBC",
+      "change": 3.8684421662,
+      "direction": "mejora",
+      "latest": -0.59959160943,
+      "oldest": -4.46803377563,
+      "series": [
+        -0.59959160943,
+        -0.714084507042,
+        -1.51398285972,
+        -4.46803377563
+      ],
+      "text": "El margen FCF − SBC es del −60.0% en FY2025, frente al −446.8% en FY2022: mejora (+386.8 pp).",
+      "years": [
+        "2025",
+        "2024",
+        "2023",
+        "2022"
+      ]
+    },
+    "sbc_cost": {
+      "fcf_margin_adjusted": -0.728539860615,
+      "fcf_margin_raw": -0.593064762876,
+      "sbc_to_revenue": 0.135475097739,
+      "text": "La compensación en acciones es el 13.5% de los ingresos: un coste real que se paga en dilución. Al restarla, el margen FCF baja del −59.3% al −72.9%; el DCF descuenta el FCF − SBC."
+    }
   },
   "ratios": {
     "asset_turnover": 0.38857331572,
@@ -4420,6 +4855,12 @@
     "roa": -0.213540290621,
     "roe": -0.633176654916,
     "roic": -0.64325190136
+  },
+  "reverse_dcf": {
+    "applicable": false,
+    "main": null,
+    "reason": "No aplica a empresas en crecimiento sin beneficio con FCF negativo: no hay flujo que descontar",
+    "ttm": null
   },
   "risk_free": {
     "as_of": null,
