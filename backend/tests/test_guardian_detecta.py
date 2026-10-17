@@ -51,6 +51,11 @@ CASES = {
                        [claim("implied_growth", field="reverse_dcf.main.g10", value=0.125)],
                        {"reverse_dcf": {"main": {"g10": 0.125, "own_growth": {"cagr": 0.112}}}},
                        {"reverse_dcf": {"main": {"g10": 0.205, "own_growth": {"cagr": 0.112}}}}),
+    "implied_return": ("El precio descuenta un ROTE sostenido del 10.1%; el banco obtiene un 10.7% en el último "
+                       "ejercicio (ajustado por AT1).",
+                       [claim("implied_return", field="archetype_metrics.implied.implied", value=0.101)],
+                       {"archetype_metrics": {"implied": {"implied": 0.101, "own": 0.107}}},
+                       {"archetype_metrics": {"implied": {"implied": 0.151, "own": 0.107}}}),
     "dcf_upside": ("el precio incorpora una prima de 20% sobre el valor intrínseco", [claim("dcf_upside")],
                    {"dcf": {"upside": -20.0}}, {"dcf": {"upside": 20.0}}),
     "dcf_rel": ("DCF no concluyente (fiabilidad baja)", [claim("dcf_rel")],

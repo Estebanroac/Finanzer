@@ -838,6 +838,48 @@ _REVERSE_BANDS = {"barata": ("Barata", "pos"), "en_precio": ("En precio", "neu")
                   "muy_exigente": ("Muy exigente", "neg")}
 
 
+def _implied_return_block(a: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Financieras (fase 3, T4; F3_DISENO §3, §8.8): el ROTE (banco) o ROE (aseguradora, conglomerado) que descuenta
+    el precio frente al que obtiene, con la sensibilidad del múltiplo justificado a ±2 pp."""
+    x = (a.get("archetype_metrics") or {}).get("implied") or {}
+    if x.get("implied") is None or x.get("own") is None:
+        return None
+    m, sub = x["metric"], x.get("subtype")
+
+    def pct(v):
+        return f"{v * 100:.1f}%".replace("-", "−")
+    who = {"banco": "el banco obtiene", "aseguradora": "la aseguradora obtuvo",
+           "conglomerado": "el conglomerado obtuvo"}.get(sub, "la entidad obtuvo")
+    if m == "ROTE":
+        own_txt = f"{who} un {pct(x['own'])} en el último ejercicio" + (
+            " (ajustado por AT1)" if x.get("at1") else "") + (
+            f"; {pct(x['own_avg'])} de media en {x['own_years']} ejercicios" if x.get("own_years", 0) > 1 else "")
+        mult_txt = "veces el valor contable tangible"
+    else:
+        own_txt = f"{who} un {pct(x['own'])} de media en {x['own_years']} ejercicios"
+        mult_txt = "veces el valor contable"
+    text = f"El precio descuenta un {m} sostenido del {pct(x['implied'])}; {own_txt}."
+    _record(text, _claim("implied_return", field="archetype_metrics.implied.implied", value=x["implied"],
+                         own=x["own"], band=x.get("band")), source="display.implied_return")
+    lab, tone = _REVERSE_BANDS.get(x.get("band"), (None, "neu"))
+    lines = [{"text": text, "label": lab, "tone": tone}]
+    sens = [r for r in x.get("sensitivity") or [] if r.get("delta") in (min(r2["delta"] for r2 in x["sensitivity"]),
+                                                                          max(r2["delta"] for r2 in x["sensitivity"]))]
+    parts = [f"con un {m} del {pct(r['return'])}, {r['multiple_justified']:.2f} {mult_txt}"
+             for r in sens if r.get("multiple_justified") is not None]
+    if parts:
+        lines.append({"text": "Sensibilidad (±2 pp): se justificaría " + "; ".join(parts) + f" (hoy cotiza a "
+                              f"{x['multiple']:.2f}).", "label": None, "tone": "neu"})
+    extra = {"aseguradora": "Ratio combinado: sin dato (no hay una fuente estructurada que lo dé).",
+             "conglomerado": ("Conglomerado: la propia empresa usa el valor contable como referencia; la suma de "
+                              "partes no se calcula."),
+             "banco": None}.get(sub)
+    return {"title": f"{m} que descuenta el precio", "lines": lines,
+            "role": ("Lectura del método intrínseco del banco (P/TBV frente a ROTE)." if m == "ROTE" else
+                     "Lectura del método intrínseco (P/B frente al ROE medio del ciclo).") + (f" {extra}" if extra else ""),
+            "method": "Gordon: P/TBV = (ROTE − g) / (Ke − g), despejado para el ROTE (igual con P/B y ROE)."}
+
+
 def _reverse_block(a: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     """Bloque del DCF inverso (fase 3, T3): la frase de cada lectura (pasa por el guardián), su banda y el papel
     que tiene en el veredicto. None si no aplica (con el motivo en el análisis)."""
@@ -1592,7 +1634,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     elif dcf.get("reason"):
         dcf_missing = f"DCF sin dato: {dcf['reason']}."
     # Fase 3 (T3, D3): crecimiento que exige el precio (DCF inverso), con sus dos referencias.
-    reverse_block = _reverse_block(a)
+    reverse_block = _reverse_block(a) or _implied_return_block(a)
     # FINANCIAL (etapa 8): sin WACC; el P/B justificado usa Ke con la beta ajustada.
     ke_note = None
     if is_financial and xm.get("cost_of_equity") is not None:

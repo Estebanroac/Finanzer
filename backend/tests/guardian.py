@@ -98,6 +98,7 @@ KEYWORDS = [
     ("contraccion_precio", r"sin ajustar", {"price_contraction"}),
     # Fase 3 (T3): la frase del DCF inverso afirma un crecimiento exigido y lo compara con la historia.
     ("crecimiento_exigido", r"el precio actual (?:exige|se justifica)", {"implied_growth"}),
+    ("retorno_implicito", r"el precio descuenta un (?:rote|roe)", {"implied_return"}),
     ("base_temporal", r"\binteranual\b|anual en 3 años|\(3 años\)|anual de ciclo medio",
      {"growth", "basis", "eps_vs_revenue"}),
 ]
@@ -340,6 +341,17 @@ def _p_implied_growth(a, c, text):
         return f"banda declarada {c.get('band')!r} con {x.get('band')!r}"
 
 
+def _p_implied_return(a, c, text):
+    """El ROTE/ROE que descuenta el precio y el que obtiene la entidad son los del análisis."""
+    x = (a.get("archetype_metrics") or {}).get("implied") or {}
+    m = re.search(r"sostenido del (−?\d+(?:\.\d+)?)%", text)
+    if m and x.get("implied") is not None and abs(float(m.group(1).replace("−", "-")) / 100 - x["implied"]) > 0.0006:
+        return f"dice implícito {m.group(1)}% con {x['implied']:.4f}"
+    o = re.search(r"obtu?v?(?:o|iene) un (−?\d+(?:\.\d+)?)%", text)
+    if o and x.get("own") is not None and abs(float(o.group(1).replace("−", "-")) / 100 - x["own"]) > 0.0006:
+        return f"dice obtenido {o.group(1)}% con {x['own']:.4f}"
+
+
 def _p_altman(a, c, text):
     z = {"safe": "segura", "grey": "gris", "distress": "de riesgo"}.get((a.get("altman_z") or {}).get("zone"))
     m = re.search(r"zona (segura|gris|de riesgo|de peligro)", text)
@@ -404,6 +416,7 @@ PREDICATES = {
     "buyback": _p_buyback, "growth": _p_growth, "vs_bench": _p_vs_bench, "spread": _p_spread,
     "dcf_upside": _p_dcf_upside, "dcf_rel": _p_dcf_rel, "altman_zone": _p_altman, "runway": _p_runway,
     "price_contraction": _p_price_contraction, "implied_growth": _p_implied_growth,
+    "implied_return": _p_implied_return,
 }
 
 
