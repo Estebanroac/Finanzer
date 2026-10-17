@@ -46,3 +46,11 @@ def test_interest_coverage_with_ebitda_trend_and_paid_fallback():
     c = qr.interest_coverage(ST, 40.0, 50.0, 2.0, ffo_ttm=8.0)
     assert c["ffo"] == pytest.approx(5.0) and "el FFO más los intereses, 5.0 veces" in c["text"]
     assert qr.interest_coverage(ST, 40.0, 50.0, 2.0)["ffo"] is None
+
+
+def test_statements_are_crossed_by_fiscal_year_not_position():
+    """Revisión de código F3 (hallazgo 8): el estado de flujos sin una columna intermedia no desalinea el margen."""
+    st = {"revenue": [100.0, 90.0, 80.0], "inc_years": [2025, 2024, 2023],
+          "free_cash_flow": [20.0, 8.0], "cf_years": [2025, 2023]}
+    m = qr.fcf_margin_trend(st)
+    assert m["series"] == [pytest.approx(0.20), pytest.approx(0.10)] and m["years"] == [2025, 2023]
