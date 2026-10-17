@@ -27,7 +27,10 @@ DISCREPANT = "beta discrepante entre fuentes"
 
 
 def _norm(s: Optional[str]) -> str:
-    return re.sub(r"\s*[—–-]\s*", " - ", str(s or "")).strip().lower()
+    """Industria de Yahoo en la forma de las claves de config: la raya o el guion ENTRE ESPACIOS separa ("Banks—Regional",
+    "Banks - Regional" -> "banks - regional"); el guion dentro de una palabra se queda ("Non-Alcoholic"). Antes de la
+    fase 4/7 también se partía y "Beverages—Non-Alcoholic" (KO) no casaba con el mapa."""
+    return re.sub(r"\s*[—–]\s*|\s+-\s+", " - ", str(s or "")).strip().lower()
 
 
 def own_beta(frame, market: Optional[Dict[str, Any]]) -> Dict[str, Any]:

@@ -135,3 +135,11 @@ def test_session_without_close_kept_for_the_range():
     assert rg["status"] == "ok" and rg["high"] == 179.16 and rg["last_session"] == "2026-10-16"
     raw.loc[idx[-1], ["High", "Low"]] = [float("nan"), float("nan")]
     assert price_history.normalize(raw).index[-1] == pd.Timestamp("2026-10-15")   # sin datos de la sesión: fuera
+
+
+def test_sector_beta_keeps_the_hyphen_inside_a_word():
+    """Fase 4/7: "Beverages—Non-Alcoholic" (KO) casa con su industria de Damodaran; antes la normalización partía el
+    guion interno ("non - alcoholic") y caía a la media del sector."""
+    import beta
+    sb = beta.sector_beta("Consumer Defensive", "Beverages—Non-Alcoholic")
+    assert sb["basis"] == "industria" and sb["damodaran"] == "Beverage (Soft)"
