@@ -252,3 +252,17 @@ def test_per_share_cagr_uses_calendar_years_with_gaps():
     assert r["years"] == 8 and r["from"][:4] == "2017" and abs(r["cagr"] - 0.2) < 1e-12
     g = cy.growth_profitable_measures(h)
     assert abs(g["revenue_ps_cagr_3y"] - 0.2) < 1e-12 and abs(g["revenue_ps_cagr_5y"] - 0.2) < 1e-12
+
+
+def test_cagr_counts_fiscal_years_by_date_difference_with_52_53_week_years():
+    """Revisión de código F3 (hallazgo 2): cierres el sábado más cercano al 31-dic desplazan el año de la fecha."""
+    from cyclicality import fiscal_years_between, growth_profitable_measures, revenue_ps_cagr_long
+    assert fiscal_years_between("2021-01-02", "2022-01-01") == 1
+    assert fiscal_years_between("2015-01-03", "2025-12-31") == 11
+    ends = ["2015-01-03", "2016-01-02", "2016-12-31", "2017-12-30", "2018-12-29", "2019-12-28", "2021-01-02",
+            "2022-01-01", "2022-12-31", "2023-12-30", "2024-12-28", "2026-01-03"]
+    hist = {"revenue": {"values": [{"fy_end": e, "value": 100 * 1.1 ** i} for i, e in enumerate(ends)]}}
+    m = growth_profitable_measures(hist)
+    assert abs(m["revenue_ps_cagr_3y"] - 0.10) < 1e-9 and abs(m["revenue_ps_cagr_5y"] - 0.10) < 1e-9
+    r = revenue_ps_cagr_long(hist)
+    assert r["years"] == 10 and abs(r["cagr"] - 0.10) < 1e-9

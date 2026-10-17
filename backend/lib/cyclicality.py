@@ -33,6 +33,14 @@ from historical_metrics import cagr
 from settings import cfg
 
 
+def fiscal_years_between(e0: str, e1: str) -> int:
+    """Ejercicios entre dos fechas de cierre: días / 365.25, redondeado. Con ejercicios de 52/53 semanas (cierre el
+    sábado más cercano al 31-dic: FY2020 → 2021-01-02, FY2021 → 2022-01-01) el año de la fecha no es el ejercicio."""
+    from datetime import date
+    d0, d1 = date.fromisoformat(e0[:10]), date.fromisoformat(e1[:10])
+    return int(round((d1 - d0).days / 365.25))
+
+
 def _series(hist: Dict[str, Any], field: str) -> List[Tuple[str, float]]:
     """[(fin de ejercicio, valor)] del más antiguo al más reciente."""
     vals = ((hist or {}).get(field) or {}).get("values") or []
@@ -166,7 +174,7 @@ def measure(hist: Dict[str, Any]) -> Dict[str, Any]:
                            "design": {}}
     sh = _align(rev, shares)
     if len(sh) >= 2 and sh[0][2] > 0 and sh[-1][2] > 0:
-        n = int(sh[-1][0][:4]) - int(sh[0][0][:4])
+        n = fiscal_years_between(sh[0][0], sh[-1][0])
         s_cagr = cagr(sh[-1][2], sh[0][2], n) if n > 0 else None
         out["shares_cagr"] = s_cagr
         if s_cagr is not None and s_cagr > cfg("thresholds.growth.per_share_min_shares_cagr"):
@@ -224,7 +232,7 @@ def _measure_with(hist: Dict[str, Any], C: Dict[str, Any]) -> Dict[str, Any]:
     sh = _align(rev, _series(hist, "diluted_shares"))
     cuts = perimeter_years(hist, C["discontinued_material_share"])
     if len(sh) >= 2 and sh[0][2] > 0 and sh[-1][2] > 0:
-        n = int(sh[-1][0][:4]) - int(sh[0][0][:4])
+        n = fiscal_years_between(sh[0][0], sh[-1][0])
         s_cagr = cagr(sh[-1][2], sh[0][2], n) if n > 0 else None
         if s_cagr is not None and s_cagr > cfg("thresholds.growth.per_share_min_shares_cagr"):
             rev = [(e, r / s) for e, r, s in sh]
@@ -250,9 +258,9 @@ def growth_profitable_measures(hist: Dict[str, Any]) -> Dict[str, Any]:
     # T7: el ejercicio de hace exactamente N años, por la fecha de cierre (una serie con huecos no cuenta puntos).
     if pts:
         e1, v1 = pts[-1]
-        by_year = {int(e[:4]): v for e, v in pts}
+        by_n = {fiscal_years_between(e, e1): v for e, v in pts}
         for n, key in ((3, "revenue_ps_cagr_3y"), (5, "revenue_ps_cagr_5y")):
-            v0 = by_year.get(int(e1[:4]) - n)
+            v0 = by_n.get(n)
             if v0 is not None and v0 > 0 and v1 > 0:
                 out[key] = cagr(v1, v0, n)
     return out
@@ -274,12 +282,11 @@ def revenue_ps_cagr_long(hist: Dict[str, Any], max_years: int = 10, min_years: i
     # T7: los años salen de las fechas de cierre (NOW: acciones sin dato en 2014–2016; contar puntos daba 9 años
     # entre 2013 y 2025). El primer ejercicio dentro de la ventana de `max_years`, con al menos `min_years`.
     e1, v1 = pts[-1]
-    y1 = int(e1[:4])
-    cand = [(e, v) for e, v in pts[:-1] if min_years <= y1 - int(e[:4]) <= max_years]
+    cand = [(e, v) for e, v in pts[:-1] if min_years <= fiscal_years_between(e, e1) <= max_years]
     if not cand:
         return out
     e0, v0 = cand[0]
-    n = y1 - int(e0[:4])
+    n = fiscal_years_between(e0, e1)
     if v0 > 0 and v1 > 0:
         out.update(cagr=cagr(v1, v0, n), years=n, **{"from": e0, "to": e1})
     return out
@@ -306,7 +313,7 @@ def mid_cycle_growth(hist: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     if len(peaks) < 2:
         return None
     p0, p1 = peaks[0], peaks[-1]
-    n = int(p1[:4]) - int(p0[:4])
+    n = fiscal_years_between(p0, p1)
     if n < cfg("sectors.archetypes.cyclicality.min_cycle_years") or rd[p0] <= 0 or rd[p1] <= 0:
         return None
     eps = dict(_series(hist, "diluted_eps"))
