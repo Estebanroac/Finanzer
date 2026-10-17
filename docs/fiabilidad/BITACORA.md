@@ -24,7 +24,7 @@
 
 | Campo | Valor |
 |---|---|
-| Fase en curso | **Fase 3 🛑 detenida en el punto de parada 1** (2026-10-16, registro #24): definiciones de D2, historia larga, moneda del crecimiento y tasas base, en `F3_T1_PARADA1.md` |
+| Fase en curso | **Fase 3 🔧 T1b** (parada 1 aprobada, registro #25) |
 | Rama de trabajo | `fiabilidad/f3-metodo` (worktree `../finanzer_next-f3`), sin subir |
 | Producción | `01336e2` (código `103c76f`). Rollback de código: `60f8a69` |
 | `main` local | `b2f1972` (borrador del prompt de la fase 3), un commit por delante de `origin/main`; sin subir |
@@ -1100,3 +1100,15 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
   - el PDF de Morgan Stanley no se puede leer sin descargarlo (403 a lecturas automáticas): descargar es una acción
     que el usuario autoriza;
   - `main` local va por delante de `origin/main` con `b2f1972` (borrador del prompt): no se ha subido.
+
+### #25 · 2026-10-16 · operador · Fase 3 (parada 1 aprobada; T1b en curso)
+- **Objetivo de la sesión:** con la parada 1 aprobada, implementar T1b (capa de datos).
+- **Decisiones tomadas por el usuario (cita literal):** "Apruebo tus recomendaciones de la parada 1: definiciones de
+  §1.1, EDGAR principal en EBIT, ingresos de BRK-B y de bancos de EE. UU. y capex con cautiva; crecimiento en la moneda
+  de los estados; y te autorizo a descargar el PDF 2.0 de Morgan Stanley."
+  - definiciones de F3_T1_PARADA1 §1.1 (capex sin el equipo arrendado de la cautiva; EBIT reportado; EBIT de bancos
+    "no aplica"; ingresos netos totales de bancos; ingresos de BRK-B sin ganancias de inversión; caja de no
+    financieras con inversiones a corto plazo; caja de financieras fuera de la deuda neta);
+  - EDGAR principal (D2) en: EBIT, ingresos de BRK-B y de bancos de EE. UU., capex de emisores con cautiva;
+  - crecimiento y CAGR en la moneda de los estados, con el efecto divisa aparte;
+  - tasas base: descarga autorizada del PDF 2.0 (13-may-2026).
