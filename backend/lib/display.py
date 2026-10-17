@@ -855,7 +855,7 @@ def _implied_return_block(a: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     def pct(v):
         return f"{v * 100:.1f}%".replace("-", "−")
     who = {"banco": "el banco obtiene", "aseguradora": "la aseguradora obtuvo",
-           "conglomerado": "el conglomerado obtuvo"}.get(sub, "la entidad obtuvo")
+           "conglomerado": "el conglomerado obtuvo", "utility": "la utility obtuvo"}.get(sub, "la entidad obtuvo")
     if m == "ROTE":
         own_txt = f"{who} un {pct(x['own'])} en el último ejercicio" + (
             " (ajustado por AT1)" if x.get("at1") else "") + (
@@ -879,6 +879,8 @@ def _implied_return_block(a: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     extra = {"aseguradora": "Ratio combinado: sin dato (no hay una fuente estructurada que lo dé).",
              "conglomerado": ("Conglomerado: la propia empresa usa el valor contable como referencia; la suma de "
                               "partes no se calcula."),
+             "utility": ("Utility regulada: el regulador fija el retorno sobre su base de activos; su FCF es negativo "
+                         "por diseño (invierte en la base), así que no hay DCF."),
              "banco": None}.get(sub)
     return {"title": f"{m} que descuenta el precio", "lines": lines,
             "role": ("Lectura del método intrínseco del banco (P/TBV frente a ROTE)." if m == "ROTE" else
@@ -907,8 +909,11 @@ def _reverse_block(a: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     adj = next((x for x in (((a.get("score") or {}).get("breakdown") or {}).get("Valoración") or {}).get("adjustments")
                 or [] if str(x.get("metric", "")).startswith("DCF inverso")
                 or str(x.get("reason", "")).startswith("El DCF directo no concilia")), None)
+    _metric = str((adj or {}).get("metric", ""))
     role = ("Es el método intrínseco del veredicto: el DCF directo no concilia con el precio"
             if (adj is not None and str(adj.get("reason", "")).startswith("El DCF directo"))
+            else "Es el método intrínseco del veredicto: el DCF directo no es significativo (FCF − SBC ≤ 0), así que "
+                 "se valora el flujo de mantenimiento" if "mantenimiento" in _metric
             else "Es el método intrínseco del veredicto: sin DCF directo, se valora el FFO por acción"
             if adj is not None else "Contraste del DCF directo: no puntúa")
     if adj is not None:

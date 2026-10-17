@@ -400,7 +400,27 @@ def compute(archetype: str, statements_fy: Optional[Dict[str, Any]], key_metrics
         return _reit(st, key_metrics)
     if archetype == CYCLICAL:
         return _cyclical(st, key_metrics)
+    if archetype == "UTILITY":
+        return _utility(st, key_metrics, beta, rf, beta_preadjusted)
     return {}
+
+
+def _utility(st: Dict[str, Any], km: Dict[str, Any], beta: Optional[float], rf: Optional[float],
+             beta_preadjusted: bool) -> Dict[str, Any]:
+    """Utility regulada (fase 3, T7): su método intrínseco estándar es el P/B frente al ROE que el regulador le
+    permite ganar sobre su base de activos. ROE implícito = P/B × (Ke − g) + g frente al ROE medio de los ejercicios
+    (el regulado se revisa en ciclos tarifarios: la media, no un año)."""
+    ni, eq = st.get("net_income") or [], st.get("stockholders_equity") or []
+    roe_vals = [x for x in ratio_series(ni, eq) if x is not None]
+    roe_avg = mean(roe_vals) if roe_vals else None
+    mcap, eq0 = km.get("market_cap"), _first(eq)
+    pb = (mcap / eq0) if (_pos(mcap) and _pos(eq0)) else None
+    ke, g = cost_of_equity(beta, rf, beta_preadjusted), cfg("valuation.dcf.terminal_growth")
+    j_pb = justified_multiple(roe_avg, ke, g)
+    implied = _implied_reading("utility", pb, None, ke, g, roe_ref=roe_avg, roe_years=len(roe_vals), rote=None,
+                               rote_avg=None, rote_years=0, at1=None)
+    return {"cost_of_equity": ke, "terminal_growth": g, "pb": pb, "roe_avg": roe_avg, "pb_justified": j_pb,
+            "pb_ratio": (pb / j_pb) if (pb is not None and j_pb) else None, "implied": implied}
 
 
 # ═══════════════════════════ ROCE ═══════════════════════════

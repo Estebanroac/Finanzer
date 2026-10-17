@@ -1537,6 +1537,23 @@ def _compute_analysis(symbol: str) -> dict:
                         (" − SBC" if _fcf_net is not None else "")
                     _rv.update(applicable=True, main=rr.reading(flow=fcf, rate=wacc_est, net_debt=_nd_r, own=_own_r,
                                                                 flow_label=_lab, **_rv_args))
+                    if (_rv["main"] or {}).get("state") == "no_aplica" and archetype != GROWTH_PRE_PROFIT:
+                        # T7 (§2.1): con FCF − SBC <= 0 por la inversión de crecimiento (AMZN) o por la cartera de una
+                        # financiera (TM), el flujo de mantenimiento: flujo operativo − D&A (capex de mantenimiento)
+                        # − SBC, el "owner earnings" estándar, declarado.
+                        _ocf = safe_float(financials.operating_cash_flow)
+                        _da = safe_float(financials.depreciation)
+                        _sbc_t = safe_float(sbc_info.get("sbc"))
+                        if _ocf is not None and _da is not None:
+                            _own_fl = _ocf - abs(_da) - (_sbc_t or 0.0)
+                            _alt = rr.reading(flow=_own_fl, rate=wacc_est, net_debt=_nd_r, own=_own_r,
+                                              flow_label=("flujo de mantenimiento (flujo operativo − D&A − SBC)"
+                                                          if _sbc_t is not None else
+                                                          "flujo de mantenimiento (flujo operativo − D&A)"),
+                                              **_rv_args)
+                            if _alt.get("state") in ("ok", "fuera_de_rango"):
+                                _alt["replaces"] = (_rv["main"] or {}).get("reason")
+                                _rv["main"] = _alt
                     if archetype == CYCLICAL:
                         # §8.5: segunda lectura con el flujo del periodo ("si el nivel actual se mantiene").
                         _ttm_net = safe_float(sbc_info.get("value"))
@@ -1547,9 +1564,20 @@ def _compute_analysis(symbol: str) -> dict:
                             **_rv_args)
                 result["reverse_dcf"] = _rv
                 _m = _rv.get("main") or {}
+                # T7: utility regulada, su método intrínseco puntúa como el del inverso (P/B frente al ROE regulado).
+                _uimp = (archetype_values.get("implied") or {}) if archetype == "UTILITY" else {}
+                if _uimp.get("band") and isinstance(dcf_for_score, dict) and dcf_for_score.get("na"):
+                    _pts = cfg("valuation.reverse_dcf.band_points").get(_uimp["band"])
+                    dcf_for_score["reverse"] = {"band": _uimp["band"], "points": _pts,
+                                                "metric": "P/B frente al ROE regulado",
+                                                "text": (f"El precio descuenta un ROE sostenido del "
+                                                         f"{_uimp['implied'] * 100:.1f}%; la utility obtuvo un "
+                                                         f"{_uimp['own'] * 100:.1f}% de media en "
+                                                         f"{_uimp['own_years']} ejercicios.")}
                 # §2.3: el inverso puntúa en Valoración cuando el directo no se usa (fiabilidad baja; REIT sin DCF).
                 if _m.get("points") is not None and isinstance(dcf_for_score, dict) and (
-                        dcf_for_score.get("reliability") == "baja" or (archetype == REIT and dcf_for_score.get("na"))):
+                        dcf_for_score.get("reliability") == "baja" or (archetype == REIT and dcf_for_score.get("na"))
+                        or dcf_for_score.get("not_significant")):
                     dcf_for_score["reverse"] = {"band": _m["band"], "points": _m["points"], "text": _m["text"]}
             except Exception as e:
                 logger.error(f"Reverse DCF error: {e}")
@@ -1692,7 +1720,17 @@ def _compute_analysis(symbol: str) -> dict:
                 _d = result.get("dcf") or {}
                 _arch = (result.get("classification") or {}).get("archetype")
                 _methods = []
-                if _arch == FINANCIAL:
+                if _arch == "UTILITY":
+                    # T7: utility regulada, P/B justificado por el ROE medio (método intrínseco) y múltiplos.
+                    _xm = result.get("archetype_metrics") or {}
+                    if _xm.get("pb") and _xm.get("pb_justified"):
+                        _methods.append({"method": "P/B justificado (ROE regulado)", "kind": "intrínseco",
+                                         "upside": _xm["pb_justified"] / _xm["pb"] - 1})
+                    if _multiples_signal:
+                        _methods.append({"method": "múltiplos frente al sector", "kind": "relativo",
+                                         "signal": _multiples_signal["value"],
+                                         "components": _multiples_signal["components"]})
+                elif _arch == FINANCIAL:
                     # FINANCIAL: dos métodos sobre el P/B. Intrínseco: P/B justificado por
                     # Gordon ((ROE − g)/(Ke − g)); relativo: P/B frente a la mediana del sector.
                     _xm = result.get("archetype_metrics") or {}

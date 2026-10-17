@@ -2782,12 +2782,21 @@ def score_valoracion(
         adjustments.append({"metric": "DCF (upside)", "value": f"{up:+.0%}", "adjustment": adj,
                             "reason": reason + (": " + "; ".join(_dcf.get("reasons") or []) if _dcf.get("reasons") else ""),
                             "severity": sev, "reliability": rel})
+    elif _dcf.get("not_significant") and (_dcf.get("reverse") or {}).get("points") is not None:
+        # T7 (§2.1): DCF directo no significativo (FCF − SBC <= 0); el inverso sobre el flujo de mantenimiento es el
+        # método intrínseco.
+        rv = _dcf["reverse"]
+        _dcf_adj = rv["points"]
+        base_score += _dcf_adj
+        adjustments.append({"metric": "DCF inverso (flujo de mantenimiento)", "value": rv["band"].replace("_", " "),
+                            "adjustment": _dcf_adj, "reason": rv.get("text") or rv["band"],
+                            "severity": _reverse_severity(_dcf_adj, T["dcf_points_high"])})
     elif _dcf.get("na") and (_dcf.get("reverse") or {}).get("points") is not None:
         # Fase 3 (T3, §8.7): REIT sin DCF directo; el inverso sobre el FFO por acción es su método intrínseco.
         rv = _dcf["reverse"]
         _dcf_adj = rv["points"]
         base_score += _dcf_adj
-        adjustments.append({"metric": "DCF inverso (FFO)", "value": rv["band"].replace("_", " "),
+        adjustments.append({"metric": rv.get("metric") or "DCF inverso (FFO)", "value": rv["band"].replace("_", " "),
                             "adjustment": _dcf_adj, "reason": rv.get("text") or rv["band"],
                             "severity": _reverse_severity(_dcf_adj, T["dcf_points_high"])})
     elif _dcf.get("not_significant"):
@@ -2826,11 +2835,13 @@ def score_valoracion(
     _bm = _bmax_used or block_max(_n_app)
     if _n_app:
         cov.derived_comp("Bloque de múltiplos", [_bm, -_bm], _block_adj)
-    if dcf is not None and _dcf.get("not_significant"):
+    if dcf is not None and _dcf.get("not_significant") and (_dcf.get("reverse") or {}).get("points") is not None:
+        cov.comp("DCF inverso (flujo de mantenimiento)", T["dcf_points_high"], _dcf_adj, None)
+    elif dcf is not None and _dcf.get("not_significant"):
         # Etapa 11b: FCF base <= 0 o capital <= 0: no significativo (no cuenta como dato ausente).
         cov.not_sig("DCF", _dcf["not_significant"])
     elif dcf is not None and _dcf.get("na") and (_dcf.get("reverse") or {}).get("points") is not None:
-        cov.comp("DCF inverso (FFO)", T["dcf_points_high"], _dcf_adj, None)
+        cov.comp((_dcf.get("reverse") or {}).get("metric") or "DCF inverso (FFO)", T["dcf_points_high"], _dcf_adj, None)
     elif dcf is not None:
         cov.comp("DCF", T["dcf_points_high"], _dcf_adj, _dcf_reason, na=_dcf.get("na"))
     from valuation_confidence import multiples_signal
