@@ -389,7 +389,7 @@ def _p_premortem(a, c, text):
     demanding = level in ("exigente", "muy exigente")
     if "como exige el precio" in text and not demanding:
         return f"'como exige el precio' con precio {level!r}"
-    if "ya descuenta el precio" in text and demanding:
+    if ("ya descuenta el precio" in text or "el precio ya descuenta" in text) and demanding:
         return f"'ya descuenta el precio' con precio {level!r}"
     m = ((a.get("reverse_dcf") or {}).get("main")) or {}
     km = a.get("key_metrics") or {}

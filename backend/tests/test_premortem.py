@@ -37,3 +37,11 @@ def test_bank_implied_return():
            archetype_metrics={"implied": {"metric": "ROTE", "implied": 0.257, "own": 0.20}})
     t = P.build(a)["items"][0]["text"]
     assert t == "la entidad sostuviera un ROTE de al menos el 25.7% que descuenta el precio (obtiene un 20.0%)"
+
+
+def test_out_of_range_condition_follows_the_level():
+    """Revisión de código F4 (hallazgo 3): fuera de rango, el sentido también sigue al nivel de precio."""
+    rv = {"main": {"state": "fuera_de_rango", "side": "superior", "flow_label": "FCF − SBC"}}
+    assert "como exige el precio" in P.build(_a("muy exigente", reverse_dcf=rv))["items"][0]["text"]
+    t = P.build(_a("razonable", reverse_dcf=rv))["items"][0]["text"]
+    assert "creciera menos de un 60.0%" in t and "como exige" not in t

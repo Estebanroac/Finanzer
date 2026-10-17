@@ -43,12 +43,16 @@ def _price_item(a: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     hist = (f"; historia propia: {own.get('label') or 'su crecimiento'}, {_pct(own['cagr'])} anual en "
             f"{own.get('years')} años") if own.get("cagr") is not None and own.get("years") else ""
     if m.get("state") == "fuera_de_rango" and m.get("side") in ("superior", "inferior"):
+        # Revisión F4 (hallazgo 3): el sentido sigue al nivel de precio, también fuera de rango.
         lo, hi = cfg("valuation.reverse_dcf.growth_bounds")
         if m["side"] == "superior":
             t = (f"el {flow} por acción creciera más de un {_pct(hi)} anual durante los 5 primeros años, como exige el "
-                 "precio")
+                 "precio" if demanding else
+                 f"el {flow} por acción creciera menos de un {_pct(hi)} anual durante los 5 primeros años: el precio "
+                 "ya descuenta más")
             return {"kind": "precio_inverso", "text": t + hist, "field": "reverse_dcf.main.side", "value": "superior"}
-        t = f"el {flow} por acción cayera más de un {_pct(-lo)} anual, lo que ya descuenta el precio"
+        t = (f"el {flow} por acción cayera más de un {_pct(-lo)} anual, lo que ya descuenta el precio" if not demanding
+             else f"el {flow} por acción cayera menos de un {_pct(-lo)} anual: el precio descuenta una caída mayor")
         return {"kind": "precio_inverso", "text": t + hist, "field": "reverse_dcf.main.side", "value": "inferior"}
     if m.get("state") == "ok" and m.get("g10") is not None:
         g = m["g10"]
