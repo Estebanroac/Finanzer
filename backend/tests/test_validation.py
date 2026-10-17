@@ -283,6 +283,34 @@ def test_unadjusted_prior_shares_rescaled_by_split_factor():
     assert _flags(info, "base_de_split")[0]["action"] == "recalculado"
 
 
+def test_plan_b_split_factor_from_price_series():
+    """Fase 2b (T7): sin lastSplitFactor de la fuente (plan B), el último split de la serie; con él, el de la fuente."""
+    import pandas as pd
+    import yf_adapter
+    idx = pd.to_datetime(["2025-11-14", "2025-11-17", "2025-12-09"])
+    frame = pd.DataFrame({"split": [0.0, 10.0, 0.0]}, index=idx)
+    info = {}
+    yf_adapter._apply_split_events(info, {"frame": frame})
+    assert info["lastSplitFactor"] == "10:1" and info["_provenance"]["lastSplitFactor"]["source"] == "derivado"
+    assert V._split_factor(info["lastSplitFactor"]) == 10.0
+    frame.loc[idx[2], "split"] = 0.888                 # escisión de UL: split no entero
+    info = {}
+    yf_adapter._apply_split_events(info, {"frame": frame})
+    assert info["lastSplitFactor"] == "111:125"
+    info = {"lastSplitFactor": "4:1"}
+    yf_adapter._apply_split_events(info, {"frame": frame})
+    assert info["lastSplitFactor"] == "4:1"
+
+
+def test_split_factor_same_in_both_paths(outputs_by_env):
+    """NFLX (split 10:1 de 2025): el plan B (panel) declara el mismo factor que quoteSummary (local)."""
+    import conftest
+    if "panel" not in conftest.BOUND_ENVS:
+        pytest.skip("falta el panel")
+    f = outputs_by_env("panel")["NFLX"][0]["data_provenance"]["fields"]
+    assert f["lastSplitFactor"]["source"] == "derivado" and "2025-11-17" in f["lastSplitFactor"]["detail"]
+
+
 def test_reverse_split_factor_parsed():
     info = _info(lastSplitFactor="1:10")
     info["_prior_year"]["shares"] = 1e10

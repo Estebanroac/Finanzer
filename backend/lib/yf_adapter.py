@@ -417,6 +417,7 @@ def get_ticker_info(symbol: str) -> Dict[str, Any]:
         except Exception as e:
             logger.error(f"[BETA] {symbol}: {e}")
             info["_beta"] = {"source": "error", "reason": f"{type(e).__name__}: {e}"}
+        _apply_split_events(info, _hist)
 
         # ── Fase 2b (T3–T4): EDGAR: respaldo del mismo corte, fuente oficial (D7) y resultados publicados y aún no
         # incorporados (F2_PRECEDENCIA §1.1). Antes del dividendo: lo pagado del corte entra en su identidad. ──
@@ -511,6 +512,29 @@ def _apply_beta_and_range(info: Dict[str, Any], hist: Dict[str, Any]) -> None:
                         overwrite=True)
     else:
         _tag_provenance(info, "sin_dato", rg["reason"], paths=["fiftyTwoWeekHigh", "fiftyTwoWeekLow"], overwrite=True)
+
+
+def _apply_split_events(info: Dict[str, Any], hist: Dict[str, Any]) -> None:
+    """Fase 2b (T7): el plan B (sin quoteSummary) no trae `lastSplitFactor`, que la regla de base de splits de validate
+    necesita para llevar las acciones del año previo a la base actual. Sale del último evento de split de la serie de
+    precios (un evento societario, como los pagos de dividendo de T2; no una señal técnica). Solo si la fuente no lo
+    da. Una escisión aparece como split no entero (UL 0.888 el 2025-12-09) y se declara igual: la regla solo lo
+    aplica si casa con el salto de acciones."""
+    if info.get("lastSplitFactor"):
+        return
+    frame = (hist or {}).get("frame")
+    if frame is None or "split" not in frame:
+        return
+    ev = frame["split"][frame["split"] > 0]
+    if ev.empty:
+        return
+    from fractions import Fraction
+    day, v = ev.index[-1], float(ev.iloc[-1])
+    fr = Fraction(v).limit_denominator(1000)
+    info["lastSplitFactor"] = f"{fr.numerator}:{fr.denominator}"
+    info["lastSplitDate"] = int(day.timestamp())
+    _tag_provenance(info, "derivado", f"último evento de split de la serie de precios ({day.date()}, ×{v:g}; Yahoo "
+                    "history): la fuente no lo da", paths=["lastSplitFactor", "lastSplitDate"], overwrite=True)
 
 
 def _foreign_line(cur: Dict[str, Any]) -> bool:
