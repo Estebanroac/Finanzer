@@ -2050,11 +2050,16 @@ def _pdf_build(symbol: str, analysis: dict):
     )
 
 
+import keepalive as _keepalive
+_keepalive.start()      # fase 6 (D6): solo en Render (RENDER_EXTERNAL_URL); en local y en los tests no arranca
+
+
 @app.get("/api/health")
 async def health():
     # Fase 2a: el commit desplegado (Render define RENDER_GIT_COMMIT; en local, null).
     # Fase 7: si EDGAR está activo y, si no, por qué (sin el valor de la variable).
-    return {"status": "ok", "commit": os.environ.get("RENDER_GIT_COMMIT") or None, "edgar": edgar.env_check()}
+    return {"status": "ok", "commit": os.environ.get("RENDER_GIT_COMMIT") or None, "edgar": edgar.env_check(),
+            "keepalive": _keepalive.state()}
 
 
 # ── Serve frontend static files ──

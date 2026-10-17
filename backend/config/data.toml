@@ -90,3 +90,9 @@ DE = "John Deere Financial"
 # decenas más (pandas); con 512 MB en Render caben 4 con margen. Cada análisis frío hace ≈ 15 peticiones: 4 a la vez
 # son ≈ 60, por debajo de lo que Yahoo ha tolerado en las capturas. El resto espera su turno sin bloquear el bucle.
 max_concurrent_analyses = 4
+
+[keepalive]                     # lib/keepalive.py (fase 6, D6): el servicio se pide su /api/health para no dormirse en Render
+enabled = true
+interval_s = 600.0              # 10 min: por debajo de los 15 min sin tráfico tras los que Render apaga el servicio gratuito
+timeout_s = 60.0
+first_delay_s = 60.0            # primer ping un minuto después de arrancar
