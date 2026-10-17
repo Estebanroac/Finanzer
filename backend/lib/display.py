@@ -140,6 +140,8 @@ def _declare_engine_texts(a, D):
             lab = str(r.get("label") or "")
             if "(interanual)" in lab or " interanual" in str(r.get("text") or ""):
                 cl.append(_claim("basis", per="interanual", metric=r.get("key")))
+            if "(último ejercicio)" in lab:                 # fase 2b (T7): FY0 frente a FY1 de los estados
+                cl.append(_claim("basis", per="último ejercicio", metric=r.get("key")))
             if "(3 años)" in lab:
                 cl.append(_claim("basis", per="3 años", metric=r.get("key")))
             for k in ("label", "value", "reading", "text"):
@@ -1829,9 +1831,9 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
          if archetype == "REIT" else
          ("revenue_growth", f"Crecimiento de ingresos{' por acción' if _rev_ps else ''} ({_per})", g_rev, "pct",
           r_grev)),
-        ("revenue_growth_yoy", "Crecimiento de ingresos (interanual)", km.get("revenue_growth"), "pct", None),
+        ("revenue_growth_yoy", "Crecimiento de ingresos (último ejercicio)", km.get("revenue_growth"), "pct", None),
         ("earnings_growth", f"Crecimiento del BPA ({_per})", None if _eps_na else g_eps, "pct", r_gearn),
-        ("earnings_growth_yoy", "Crecimiento del BPA (interanual)", None if _eps_na else km.get("earnings_growth"),
+        ("earnings_growth_yoy", "Crecimiento del BPA (último ejercicio)", None if _eps_na else km.get("earnings_growth"),
          "pct", None),
         ("buyback_yield", "Buyback yield (recompras netas)", km.get("buyback_yield"), "pct", r_bb),
         ("shareholder_yield", "Shareholder yield (div. + recompras)", km.get("shareholder_yield"), "pct", None),

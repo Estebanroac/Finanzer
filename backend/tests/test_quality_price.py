@@ -311,8 +311,9 @@ def test_growth_scores_three_year_cagr_not_yoy(outputs_by_env):
     def crec(a, metric):
         return next((x for x in a["score"]["breakdown"]["Crecimiento"]["adjustments"] if x["metric"] == metric), None)
     prod, local = outputs_by_env("panel")["NFLX"][0], outputs_by_env("local")["NFLX"][0]
-    # el interanual de Yahoo difiere entre capturas (16.0% / 24.0%); el CAGR de los estados anuales no
-    assert prod["key_metrics"]["revenue_growth"] != local["key_metrics"]["revenue_growth"]
+    # el interanual de Yahoo difería entre capturas (16.0% / 24.0%); desde la fase 2b (T7) el interanual es el del
+    # último ejercicio de los estados, igual en las dos, como el CAGR
+    assert prod["key_metrics"]["revenue_growth"] == local["key_metrics"]["revenue_growth"]
     for m in ("Crecimiento Ingresos 3Y", "Crecimiento EPS 3Y"):
         assert crec(prod, m)["value"] == crec(local, m)["value"], m
     ci = prod["classification"]["inputs"]["revenue_cagr_3y"]

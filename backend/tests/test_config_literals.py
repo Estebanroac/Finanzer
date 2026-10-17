@@ -77,10 +77,6 @@ EXCEPTIONS = {
         "mediana: n // 2, n % 2 y media de los dos centrales",
     ("lib/validate.py", "_rule_growth", 1e-12):
         "tolerancia de comparación de floats (¿cambió el valor tras la guarda?)",
-    ("lib/validate.py", "_rule_growth", 3):
-        "definición de CAGR-3Y (3 intervalos)",
-    ("lib/validate.py", "_rule_growth", 4):
-        "CAGR con el máximo de intervalos disponibles en _statements_fy (5 ejercicios)",
     ("lib/alert_interpretations.py", "_piotroski", 9):
         "número de señales del Piotroski F-Score (por definición)",
     ("main.py", "_compute_analysis", 3):

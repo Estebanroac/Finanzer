@@ -194,7 +194,7 @@ def growth_texts_cite_the_scored_figure(a, text):
             assert cites_growth(exec_g, scored["raw"]), exec_g
     yoy = a["key_metrics"].get("revenue_growth")
     if yoy is not None:
-        assert rows["revenue_growth_yoy"]["label"].endswith("(interanual)")
+        assert rows["revenue_growth_yoy"]["label"].endswith("(último ejercicio)")   # fase 2b, T7
         assert rows["revenue_growth_yoy"]["tone"] is None
 
 

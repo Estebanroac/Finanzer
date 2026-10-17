@@ -700,8 +700,9 @@
         "source": "sec_edgar"
       },
       "earningsGrowth": {
-        "detail": "quoteSummary v10 (con crumb)",
-        "source": "yahoo_quotesummary"
+        "detail": "FY2025 frente a FY2024 de los estados anuales",
+        "rule": "periodo_incoherente",
+        "source": "derivado"
       },
       "ebitda": {
         "detail": "TTM: suma de los 4 trimestres 2026-06-30, 2026-03-31, 2025-12-31, 2025-09-30",
@@ -812,8 +813,9 @@
         "source": "yfinance_statements"
       },
       "revenueGrowth": {
-        "detail": "quoteSummary v10 (con crumb)",
-        "source": "yahoo_quotesummary"
+        "detail": "FY2025 frente a FY2024 de los estados anuales",
+        "rule": "periodo_incoherente",
+        "source": "derivado"
       },
       "sector": {
         "detail": "quoteSummary v10 (con crumb)",
@@ -985,7 +987,24 @@
       ]
     }
   },
-  "data_validation": [],
+  "data_validation": [
+    {
+      "action": "aviso",
+      "field": "revenueGrowth",
+      "new": 0.113399766186,
+      "old": 0.238323205701,
+      "reason": "el interanual de la fuente (23.8%) es de su propio periodo: se usa el de los estados, FY2025 frente a FY2024 (11.3%)",
+      "rule": "periodo_incoherente"
+    },
+    {
+      "action": "aviso",
+      "field": "earningsGrowth",
+      "new": 0.0483042137718,
+      "old": 0.134477997467,
+      "reason": "el interanual de la fuente (13.4%) es de su propio periodo: se usa el de los estados, FY2025 frente a FY2024 (4.8%)",
+      "rule": "periodo_incoherente"
+    }
+  ],
   "dcf": {
     "available": true,
     "fair_value": 290.83,
@@ -2589,12 +2608,12 @@
             "bench": null,
             "gap": null,
             "key": "revenue_growth_yoy",
-            "label": "Crecimiento de ingresos (interanual)",
+            "label": "Crecimiento de ingresos (último ejercicio)",
             "reading": "—",
             "state": "con_dato",
             "text": null,
             "tone": null,
-            "value": "23.83%"
+            "value": "11.34%"
           },
           {
             "bench": null,
@@ -2611,12 +2630,12 @@
             "bench": null,
             "gap": null,
             "key": "earnings_growth_yoy",
-            "label": "Crecimiento del BPA (interanual)",
+            "label": "Crecimiento del BPA (último ejercicio)",
             "reading": "—",
             "state": "con_dato",
             "text": null,
             "tone": null,
-            "value": "13.45%"
+            "value": "4.83%"
           },
           {
             "bench": null,
@@ -5082,7 +5101,7 @@
     "de": 0.678207970891,
     "debt_to_assets": 0.252225393805,
     "dividend_yield": 0.00695291218057,
-    "earnings_growth": 0.134477997467,
+    "earnings_growth": 0.0483042137718,
     "earnings_yield": 0.0304838500454,
     "ebitda": 29074000000.0,
     "ebitda_margin": 0.686274950548,
@@ -5124,7 +5143,7 @@
     "ps": 16.2656578084,
     "quick_ratio": 0.627,
     "revenue": 44488000000.0,
-    "revenue_growth": 0.238323205701,
+    "revenue_growth": 0.113399766186,
     "roa": 0.23884131515,
     "roce": 0.411217268772,
     "roce_reason": null,

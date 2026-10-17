@@ -17,7 +17,7 @@ def _info(**kw):
         "currentPrice": 100.0, "marketCap": 1e11, "sharesOutstanding": 1e9,
         "totalRevenue": 5e10, "netIncome": 5e9, "totalAssets": 8e10,
         "operatingCashflow": 1e10, "freeCashflow": 8e9,
-        "revenueGrowth": 0.10,
+        "revenueGrowth": 5e10 / 4.55e10 - 1,              # el de los estados: entrada limpia (fase 2b, T7)
         "_statements_fy": {
             "inc_years": ["2025", "2024", "2023", "2022"],
             "bs_years": ["2025", "2024", "2023", "2022"],
@@ -196,18 +196,46 @@ def test_growth_guard_equivalent_to_previous_finnhub_rule(args):
     assert finnhub_fallback._growth(*args) == _old_finnhub_growth(*args)
 
 
-def test_growth_artifact_replaced_by_statement_cagr():
-    info = _run(_info(revenueGrowth=1.09))             # 109% con CAGR ~10%
-    cagr3 = (5e10 / 3.7e10) ** (1 / 3) - 1
-    assert info["revenueGrowth"] == pytest.approx(cagr3)
-    assert _flags(info, "crecimiento_artefacto")[0]["action"] == "recalculado"
+# Fase 2b (T7): el interanual de la fuente es de SU periodo (Finnhub TTM; Yahoo, un trimestre) y no se casa con el
+# corte; se usa siempre el del último ejercicio de los estados. Sustituye a la guarda anti-artefacto (un 109% de la
+# fuente ya no puede entrar) y al aviso de incoherencia a 15 pp (FCX: −24.2% de Finnhub frente a +1.8%).
+def test_growth_artifact_replaced_by_statement_yoy():
+    info = _run(_info(revenueGrowth=1.09))             # 109% con un último ejercicio de +9.9%
+    assert info["revenueGrowth"] == pytest.approx(5e10 / 4.55e10 - 1)
+    f = _flags(info, "periodo_incoherente")[0]
+    assert f["action"] == "aviso" and f["old"] == 1.09
+    assert info["_provenance"]["revenueGrowth"]["source"] == "derivado"
 
 
-def test_real_hypergrowth_with_matching_cagr_kept():
+def test_real_hypergrowth_from_statements_kept():
     info = _info(revenueGrowth=0.9)
     info["_statements_fy"]["revenue"] = [1.9e10, 1e10, 5.2e9, 2.8e9]
     _run(info)
-    assert info["revenueGrowth"] == 0.9 and not _flags(info, "crecimiento_artefacto")
+    assert info["revenueGrowth"] == pytest.approx(0.9) and not _flags(info)
+
+
+def test_growth_without_statement_base_is_dropped():
+    info = _info(revenueGrowth=0.2)
+    info["_statements_fy"]["revenue"] = [5e10]
+    _run(info)
+    assert info["revenueGrowth"] is None
+    assert _flags(info, "periodo_incoherente")[0]["action"] == "sin_dato"
+
+
+def test_eps_growth_with_negative_base_is_undefined_not_missing():
+    info = _info(earningsGrowth=0.5)
+    info["_statements_fy"]["diluted_eps"] = [0.3, -0.4]
+    _run(info)
+    f = _flags(info, "periodo_incoherente")[0]
+    assert info["earningsGrowth"] is None and f["action"] == "aviso" and f["new"] is None
+
+
+def test_eps_growth_from_statements():
+    info = _info(earningsGrowth=0.5)
+    info["_statements_fy"]["diluted_eps"] = [2.2, 2.0]
+    _run(info)
+    assert info["earningsGrowth"] == pytest.approx(0.1)
+    assert _flags(info, "periodo_incoherente")[0]["field"] == "earningsGrowth"
 
 
 def test_financial_growth_incoherent_with_statements_uses_statement_yoy():
@@ -225,22 +253,24 @@ def test_financial_growth_always_from_statements_even_if_close():
 
 
 def test_payment_network_is_not_financial_for_growth():
-    """Una red de pagos (MATURE) dentro de Financial Services conserva el crecimiento de la fuente."""
+    """Una red de pagos (MATURE) dentro de Financial Services no lleva la política FINANCIAL: su interanual sale de
+    los estados por la regla general (periodo_incoherente), no por crecimiento_financiera_estados."""
     info = _info(sector="Financial Services", industry="Credit Services", revenueGrowth=0.12)
     info["_statements_fy"]["total_assets"] = [1e11]       # activos/ingresos 2x: red de pagos
     _run(info)
-    assert info["revenueGrowth"] == 0.12 and not _flags(info)
+    assert info["revenueGrowth"] == pytest.approx(5e10 / 4.55e10 - 1)
+    assert [f["rule"] for f in _flags(info)] == ["periodo_incoherente"]
 
 
-def test_non_financial_growth_incoherent_only_warns():
+def test_non_financial_growth_of_another_period_only_warns():
     info = _run(_info(revenueGrowth=0.499))
-    assert info["revenueGrowth"] == 0.499
-    assert _flags(info, "crecimiento_incoherente")[0]["action"] == "aviso"
+    assert info["revenueGrowth"] == pytest.approx(5e10 / 4.55e10 - 1)
+    assert _flags(info, "periodo_incoherente")[0]["action"] == "aviso"
 
 
 def test_growth_coherent_with_statements_untouched():
-    info = _run(_info(sector="Technology", revenueGrowth=0.12))
-    assert info["revenueGrowth"] == 0.12 and not _flags(info)
+    info = _run(_info(sector="Technology"))
+    assert info["revenueGrowth"] == 5e10 / 4.55e10 - 1 and not _flags(info)
 
 
 # ─────────────────────────── bug c: base de splits ───────────────────────────

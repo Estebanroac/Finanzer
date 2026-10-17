@@ -207,11 +207,9 @@
       },
       "source": {
         "finnhub_fields": [],
-        "issues": 1,
-        "level": "media",
-        "reasons": [
-          "validación: revenueGrowth (crecimiento_incoherente)"
-        ]
+        "issues": 0,
+        "level": "alta",
+        "reasons": []
       },
       "stability": {
         "level": "alta",
@@ -222,10 +220,9 @@
     "limits_score": false,
     "reasons": [
       "convergencia no evaluable: un solo método evaluable (múltiplos frente al sector): no hay contraste; no evaluable: DCF (fiabilidad baja)",
-      "calidad de fuente media: validación: revenueGrowth (crecimiento_incoherente)",
       "techo en media: sin contraste entre métodos de valoración"
     ],
-    "score": 0.833333333333
+    "score": 1.0
   },
   "data_provenance": {
     "as_of": {
@@ -794,8 +791,9 @@
         "source": "yfinance_statements"
       },
       "revenueGrowth": {
-        "detail": "quoteSummary v10 (con crumb)",
-        "source": "yahoo_quotesummary"
+        "detail": "FY2026 frente a FY2025 de los estados anuales",
+        "rule": "periodo_incoherente",
+        "source": "derivado"
       },
       "sector": {
         "detail": "quoteSummary v10 (con crumb)",
@@ -967,10 +965,10 @@
     {
       "action": "aviso",
       "field": "revenueGrowth",
-      "new": 0.498635846719,
+      "new": 0.291625625001,
       "old": 0.498635846719,
-      "reason": "49.9% difiere más de 15 pp del YoY de los estados FY2026 (29.2%); puede ser aceleración real del último trimestre: se mantiene",
-      "rule": "crecimiento_incoherente"
+      "reason": "el interanual de la fuente (49.9%) es de su propio periodo: se usa el de los estados, FY2026 frente a FY2025 (29.2%)",
+      "rule": "periodo_incoherente"
     },
     {
       "action": "sin_dato",
@@ -1094,10 +1092,6 @@
         {
           "label": "Confianza · Convergencia entre métodos (no evaluable)",
           "text": "un solo método evaluable (múltiplos frente al sector): no hay contraste; no evaluable: DCF (fiabilidad baja)"
-        },
-        {
-          "label": "Confianza · Calidad de fuente (media)",
-          "text": "validación: revenueGrowth (crecimiento_incoherente)"
         },
         {
           "label": "Fuente oficial",
@@ -1881,8 +1875,8 @@
         {
           "key": "source",
           "label": "Calidad de fuente",
-          "level": "Media",
-          "text": "El crecimiento que reporta la fuente difiere mucho del de los estados anuales; se mantiene, pero conviene tomarlo con cautela."
+          "level": "Alta",
+          "text": "Sin incidencias."
         },
         {
           "key": "stability",
@@ -1894,7 +1888,6 @@
       "level": "media",
       "plain": [
         "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo.",
-        "El crecimiento que reporta la fuente difiere mucho del de los estados anuales; se mantiene, pero conviene tomarlo con cautela.",
         "El DCF no concilia con el precio y no se usa para contrastar."
       ],
       "reasons": [
@@ -1907,11 +1900,6 @@
           "dimension": "convergencia",
           "level": "no_evaluable",
           "text": "El DCF no concilia con el precio y no se usa para contrastar."
-        },
-        {
-          "dimension": "calidad de fuente",
-          "level": "media",
-          "text": "El crecimiento que reporta la fuente difiere mucho del de los estados anuales; se mantiene, pero conviene tomarlo con cautela."
         },
         {
           "dimension": "techo",
@@ -1999,7 +1987,6 @@
       ],
       "confidence_reasons": [
         "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo.",
-        "El crecimiento que reporta la fuente difiere mucho del de los estados anuales; se mantiene, pero conviene tomarlo con cautela.",
         "El DCF no concilia con el precio y no se usa para contrastar."
       ],
       "coverage_notes": [],
@@ -2311,12 +2298,12 @@
             "bench": null,
             "gap": null,
             "key": "revenue_growth_yoy",
-            "label": "Crecimiento de ingresos (interanual)",
+            "label": "Crecimiento de ingresos (último ejercicio)",
             "reading": "—",
             "state": "con_dato",
             "text": null,
             "tone": null,
-            "value": "49.86%"
+            "value": "29.16%"
           },
           {
             "bench": null,
@@ -4381,7 +4368,7 @@
     "ps": 23.9471656577,
     "quick_ratio": 0.83,
     "revenue": 5434647000.0,
-    "revenue_growth": 0.498635846719,
+    "revenue_growth": 0.291625625001,
     "roa": -0.125516730474,
     "roce": -0.276728133881,
     "roce_reason": null,

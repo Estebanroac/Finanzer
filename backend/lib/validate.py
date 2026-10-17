@@ -122,13 +122,6 @@ def growth_guard(ttm_pct, cagr3_pct, cagr5_pct) -> Optional[float]:
     return None
 
 
-def _cagr(series, years) -> Optional[float]:
-    a, b = _at(series, 0), _at(series, years)
-    if a is None or b is None or a <= 0 or b <= 0:
-        return None
-    return (a / b) ** (1.0 / years) - 1.0
-
-
 # ═══════════════════════════ reglas de entrada ═══════════════════════════
 def _rule_fcf(c: _Ctx):
     """FCF <= OCF. Si se viola: FCF = OCF − |capex| del estado de flujos (mismo FY)."""
@@ -232,51 +225,55 @@ def _rule_units(c: _Ctx):
 
 
 def _rule_growth(c: _Ctx):
-    """Crecimiento de ingresos: guarda anti-artefacto (la de finnhub_fallback)
-    en TODAS las rutas, con el CAGR de los estados anuales; y coherencia con el
-    YoY de los estados (sustitución solo en financieras, RECON C6)."""
-    g = _num(c.get("revenueGrowth"))
-    if g is None:
-        return
-    rev = c.stm.get("revenue") or []
-    c3, c5 = _cagr(rev, 3), _cagr(rev, 4)  # 4 intervalos = máximo disponible (~5 ejercicios)
-    guarded = growth_guard(g * 100.0, None if c3 is None else c3 * 100.0, None if c5 is None else c5 * 100.0)
-    if guarded is None:
-        c.set("revenueGrowth", None)
-        c.flag("revenueGrowth", "crecimiento_artefacto", "sin_dato", g, None,
-               "YoY implausible y sin CAGR de los estados para sustituirlo")
-        return
-    if abs(guarded - g) > 1e-12:
-        c.set("revenueGrowth", guarded)
-        c.flag("revenueGrowth", "crecimiento_artefacto", "recalculado", g, guarded,
-               f"YoY {g:.1%} implausible frente al CAGR de los estados: se usa CAGR-3Y {guarded:.1%}")
-        g = guarded
-    r0, r1 = _at(rev, 0), _at(rev, 1)
-    if r0 is None or r1 is None or r1 <= 0:
-        return
-    stmt_yoy = r0 / r1 - 1.0
-    year = (c.stm.get("inc_years") or ["?"])[0]
-    # Arquetipo FINANCIAL (clasificador único, etapa 6): el crecimiento sale
-    # SIEMPRE de los estados, no de la fuente (RECON §7.8: el 'revenue' bancario
-    # de Finnhub/quoteSummary tiene otra definición), aunque difieran poco.
+    """Crecimiento interanual de ingresos y de BPA en la base de los estados (fase 2b, T7; F2_PRECEDENCIA §1).
+
+    El `revenueGrowth` / `earningsGrowth` de la fuente es un TTM de SU periodo (Finnhub `revenueGrowthTTMYoy`;
+    Yahoo, un trimestre frente al del año anterior), que no se puede casar con el corte: Yahoo solo trae 5
+    trimestres y el interanual del corte necesita 8. Se muestra el del último ejercicio de los estados (FY0
+    frente a FY1, rotulado) y el de la fuente no entra (periodo_incoherente, aviso: no es una incidencia del dato
+    usado). FCX: Finnhub −24.2% frente a +1.8% de los estados (RECON §7.7). FINANCIAL ya lo hacía por política
+    (RECON C6, §7.8: el 'revenue' bancario de la fuente tiene otra definición). Ninguno de los dos puntúa: la
+    categoría Crecimiento y el DCF usan el CAGR de los estados (etapa 9b)."""
     from classify import FINANCIAL, classify
     arch = classify(sector=c.info.get("sector"), industry=c.info.get("industry"), eps_ttm=None,
                     net_margin_ttm=None, statements_fy=c.stm)["archetype"]
-    if arch == FINANCIAL:
-        if abs(g - stmt_yoy) > 1e-12:
-            c.set("revenueGrowth", stmt_yoy)
-            # Etapa 9a: sustitución de POLÍTICA del arquetipo, no una corrección de un dato
-            # erróneo: queda registrada ("politica") pero no cuenta como incidencia de fuente.
-            c.flag("revenueGrowth", "crecimiento_financiera_estados", "politica", g, stmt_yoy,
+    years = c.stm.get("inc_years") or []
+    y0, y1 = (years + ["?", "?"])[:2]
+    for field, row in (("revenueGrowth", "revenue"), ("earningsGrowth", "diluted_eps")):
+        g = _num(c.get(field))
+        series = c.stm.get(row) or []
+        v0, v1 = _at(series, 0), _at(series, 1)
+        stmt = (v0 / v1 - 1.0) if (v0 is not None and v1 is not None and v1 > 0) else None
+        if stmt is None:
+            if g is not None:
+                c.set(field, None)
+                if v0 is not None and v1 is not None:
+                    # Base ≤ 0 (SNOW, BPA negativo): el interanual no está definido; no falta ningún dato.
+                    c.prov[field] = {"source": "derivado", "rule": "periodo_incoherente",
+                                     "detail": f"sin interanual: base FY{y1} ≤ 0"}
+                    c.flag(field, "periodo_incoherente", "aviso", g, None,
+                           f"el interanual de la fuente ({g:.1%}) es de su propio periodo y el de los estados no está "
+                           f"definido (base FY{y1} ≤ 0)")
+                else:
+                    c.flag(field, "periodo_incoherente", "sin_dato", g, None,
+                           f"interanual de la fuente ({g:.1%}) de su propio periodo y sin FY{y0}/FY{y1} en los "
+                           f"estados con que casarlo")
+            continue
+        if g is not None and abs(g - stmt) <= 1e-12:
+            continue
+        c.set(field, stmt)
+        if field == "revenueGrowth" and arch == FINANCIAL and g is not None:
+            # Etapa 9a: sustitución de POLÍTICA del arquetipo ("politica"): no cuenta como incidencia de fuente.
+            c.flag(field, "crecimiento_financiera_estados", "politica", g, stmt,
                    f"arquetipo FINANCIAL: 'revenue' de la fuente con definición inestable (RECON C6, §7.8); "
-                   f"se usa siempre el YoY de los estados FY{year} ({stmt_yoy:.1%}) en lugar de {g:.1%}")
-        return
-    if abs(g - stmt_yoy) <= THRESHOLDS["growth_vs_statements_pp"]:
-        return
-    else:
-        c.flag("revenueGrowth", "crecimiento_incoherente", "aviso", g, g,
-               f"{g:.1%} difiere más de 15 pp del YoY de los estados FY{year} ({stmt_yoy:.1%}); "
-               f"puede ser aceleración real del último trimestre: se mantiene")
+                   f"se usa siempre el YoY de los estados FY{y0} ({stmt:.1%}) en lugar de {g:.1%}")
+            continue
+        c.prov[field] = {"source": "derivado", "rule": "periodo_incoherente",
+                         "detail": f"FY{y0} frente a FY{y1} de los estados anuales"}
+        if g is not None:
+            c.flag(field, "periodo_incoherente", "aviso", g, stmt,
+                   f"el interanual de la fuente ({g:.1%}) es de su propio periodo: se usa el de los estados, FY{y0} "
+                   f"frente a FY{y1} ({stmt:.1%})")
 
 
 def _split_factor(raw) -> Optional[float]:

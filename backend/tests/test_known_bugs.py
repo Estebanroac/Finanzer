@@ -135,8 +135,11 @@ def test_bug_incoherent_revenue_growth_is_informative_only():
         pytest.skip("falta el panel")
     base = _run_with_revenue_growth("V", "panel", 0.0)
     flagged = _run_with_revenue_growth("V", "panel", 0.17)
-    assert any(f["rule"] == "crecimiento_incoherente" for f in flagged["data_validation"])
-    assert not any(f["rule"] == "crecimiento_incoherente" for f in base["data_validation"])
+    # Fase 2b (T7): el interanual de la fuente ya no entra (se usa el del último ejercicio de los estados); el
+    # +17 pp inyectado queda registrado como periodo_incoherente y no mueve la cifra.
+    f = next(f for f in flagged["data_validation"] if f["field"] == "revenueGrowth")
+    assert f["rule"] == "periodo_incoherente" and f["action"] == "aviso"
+    assert flagged["key_metrics"]["revenue_growth"] == base["key_metrics"]["revenue_growth"]
     # Solo informativo: ni el desglose, ni las dos puntuaciones, ni la confianza cambian.
     assert flagged["score"]["breakdown"] == base["score"]["breakdown"]
     assert flagged["quality"] == base["quality"]

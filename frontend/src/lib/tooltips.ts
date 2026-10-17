@@ -315,16 +315,16 @@ export const DEFINITIONS: Record<string, Definition> = {
     description: "Tasa anual compuesta de los ingresos en los últimos 3 años (en cíclicas, el promedio del ciclo; con dilución o recompras relevantes, por acción). Es la cifra que puntúa Crecimiento.",
   },
   revenue_growth_yoy: {
-    title: "Crecimiento de ingresos (interanual)",
-    description: "Variación de los ingresos frente al mismo periodo del año anterior, tal como la publica la fuente. Es informativa: no puntúa.",
+    title: "Crecimiento de ingresos (último ejercicio)",
+    description: "Variación de los ingresos del último ejercicio anual frente al anterior, de los estados financieros. Es informativa: no puntúa.",
   },
   earnings_growth: {
     title: "Crecimiento del beneficio por acción (BPA)",
     description: "Tasa anual compuesta del BPA en los últimos 3 años (en cíclicas, el promedio del ciclo). Es la cifra que puntúa Crecimiento.",
   },
   earnings_growth_yoy: {
-    title: "Crecimiento del BPA (interanual)",
-    description: "Variación del beneficio frente al mismo periodo del año anterior, tal como la publica la fuente. Es informativa: no puntúa.",
+    title: "Crecimiento del BPA (último ejercicio)",
+    description: "Variación del BPA diluido del último ejercicio anual frente al anterior, de los estados financieros. Es informativa: no puntúa.",
   },
   total_return: {
     title: "Retorno total por acción (REIT)",
