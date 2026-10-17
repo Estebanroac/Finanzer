@@ -54,6 +54,9 @@ RATIO_ABS_PP = 0.005
 # Fase 2b (T8): emparejar por el periodo que declara el pipeline (data_provenance.as_of). --sin-as-of reproduce la
 # medida anterior (para informar la cifra con y sin el arreglo de la herramienta).
 PAIR_AS_OF = True
+# Fase 2b (T8, decisión del usuario en la parada 2): el beneficio neto del corte se compara con el del accionista
+# ordinario, el que usa el motor (F2_PRECEDENCIA §2.1). --ni-propietarios reproduce la referencia anterior.
+NI_COMMON = True
 DAY_TOL = 14
 
 # campo del pipeline → (atributo de FinancialStatements, clave de info, campo de EDGAR, tipo, grupo)
@@ -701,6 +704,8 @@ def compare_ticker(sym: str, ext: Dict[str, Any], cap: Dict[str, Any]) -> List[D
                 sh = ed.shares_avg(period)
                 if dv is not None and sh:
                     e, econcept = abs(dv) / sh, f"{c1} / acciones medias del último FY (derivado)"
+        elif efield == "net_income" and NI_COMMON:
+            e, econcept, edet, _ = ed.value("net_income_common", period)
         else:
             e, econcept, edet, _ = ed.value(efield, period)
         if e is not None and efield in ABS_FIELDS:
@@ -763,11 +768,29 @@ def compare_ticker(sym: str, ext: Dict[str, Any], cap: Dict[str, Any]) -> List[D
     ev = {k: v[2] for k, v in pv_by_field.items()}
     dps_e = ev.get("dividend_per_share")
     ttm_rate = cur.get("ttm_rate") if converted else 1.0
+    eq_e = ev.get("total_equity")
+    if NI_COMMON and eq_e is not None:
+        # Fase 2b (T8): ROE del accionista ordinario (beneficio y patrimonio del ordinario, como el motor): patrimonio
+        # − preferentes − AT1 (otros instrumentos de patrimonio, solo si cobran cupones: beneficio de los
+        # propietarios > del ordinario).
+        eq_period = pv_by_field.get("total_equity", (None, None, None))[1]
+        pref, _, _, _ = ed.value("preferred_equity", eq_period) if eq_period else (None, None, None, None)
+        if pref is None and eq_period and eq_period[0] == "instant" and eq_period[1]:
+            # Como la deuda de T5: si el emisor solo lo etiqueta en el 10-K (BAC), el del último informe anual.
+            last = [f for c in ed.concepts("preferred_equity") for f in ed.facts(c, "stock")
+                    if not f.get("start") and f.get("form") in E.ANNUAL_FORMS
+                    and 0 <= (_d(eq_period[1]) - _d(f["end"])).days <= 400]
+            if last:
+                pref = max(last, key=lambda f: (f["end"], f.get("filed", "")))["val"]
+        oei, _, _, _ = ed.value("other_equity_interest", eq_period) if eq_period else (None, None, None, None)
+        ni_period = pv_by_field.get("net_income", (None, None, None))[1]
+        coupons = ed.at1_coupons(ni_period) if (oei and ni_period) else None
+        eq_e = eq_e - abs(pref or 0.0) - (abs(oei) if (oei and coupons) else 0.0)
     e_ratio = {
         "gross_margin": _div(ev.get("gross_profit"), ev.get("revenue")),
         "operating_margin": _div(ev.get("operating_income"), ev.get("revenue")),
         "net_margin": _div(ev.get("net_income"), ev.get("revenue")),
-        "roe": _div(ev.get("net_income"), ev.get("total_equity")),
+        "roe": _div(ev.get("net_income"), eq_e),
         "roa": _div(ev.get("net_income"), ev.get("total_assets")),
         "current_ratio": _div(ev.get("current_assets"), ev.get("current_liabilities")),
         "debt_to_equity": _div(ev.get("total_debt"), ev.get("total_equity")),
@@ -1079,9 +1102,12 @@ def main():
     ap.add_argument("--report-only", action="store_true", help="rehace resumen.md desde resultado.json")
     ap.add_argument("--sin-as-of", action="store_true",
                     help="empareja periodos como antes de la 2b (T8): sin data_provenance.as_of")
+    ap.add_argument("--ni-propietarios", action="store_true",
+                    help="beneficio neto del corte frente al de los propietarios (referencia anterior a T8)")
     args = ap.parse_args()
-    global PAIR_AS_OF
+    global PAIR_AS_OF, NI_COMMON
     PAIR_AS_OF = not args.sin_as_of
+    NI_COMMON = not args.ni_propietarios
     if args.report_only:
         o = Path(os.path.expanduser(args.out))
         res = json.loads((o / "resultado.json").read_text())

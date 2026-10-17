@@ -59,6 +59,13 @@ CONCEPTS: Dict[str, Dict[str, Any]] = {
                        us=["NetIncomeLoss", "NetIncomeLossAvailableToCommonStockholdersBasic",
                            "NetIncomeLossAvailableToCommonStockholdersDiluted"],
                        ifrs=["ProfitLossAttributableToOwnersOfParent", "ProfitLoss"]),
+    # Fase 2b (T8): beneficio del accionista ordinario, el que usa el motor desde T7 (F2_PRECEDENCIA §2.1). Sin
+    # preferentes ni AT1 el emisor no etiqueta el concepto del ordinario: el de los propietarios es el mismo.
+    "net_income_common": dict(kind="flow", sign="+", engine="FS.net_income · ttm netIncome (lib/ordinary.py)",
+                              us=["NetIncomeLossAvailableToCommonStockholdersBasic",
+                                  "NetIncomeLossAvailableToCommonStockholdersDiluted", "NetIncomeLoss"],
+                              ifrs=["ProfitLossAttributableToOrdinaryEquityHoldersOfParentEntity",
+                                    "ProfitLossAttributableToOwnersOfParent"]),
     "net_income_minorities": dict(kind="flow", sign="+", engine="(definición: ROE del accionista ordinario)",
                                   us=["NetIncomeLossAttributableToNoncontrollingInterest"],
                                   ifrs=["ProfitLossAttributableToNoncontrollingInterests"]),
@@ -127,6 +134,13 @@ CONCEPTS: Dict[str, Dict[str, Any]] = {
         "StockholdersEquity",
         "StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest"],
         ifrs=["EquityAttributableToOwnersOfParent", "Equity"]),
+    # Fase 2b (T8): para el patrimonio del accionista ordinario (ROE del ordinario, lib/ordinary.py): preferentes en
+    # EE. UU. y otros instrumentos de patrimonio (AT1) en IFRS.
+    "preferred_equity": dict(kind="stock", sign="+", engine="(patrimonio del ordinario: ROE y P/B)", us=[
+        "PreferredStockValue", "PreferredStockIncludingAdditionalPaidInCapitalNetOfDiscount",
+        "PreferredStockIncludingAdditionalPaidInCapital", "PreferredStockValueOutstanding"], ifrs=[]),
+    "other_equity_interest": dict(kind="stock", sign="+", engine="(patrimonio del ordinario: AT1 en IFRS)", us=[],
+                                  ifrs=["OtherEquityInterest"]),
     "minority_interest": dict(kind="stock", sign="+", engine="(definición: patrimonio del accionista ordinario)",
                               us=["MinorityInterest"], ifrs=["NoncontrollingInterests"]),
     "at1_equity": dict(kind="stock", sign="+", engine="(definición: ROE/ROTE ordinario de bancos con AT1)",
