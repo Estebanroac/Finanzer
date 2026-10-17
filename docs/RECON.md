@@ -1305,3 +1305,21 @@ arreglo es de fondo; la fase no deja protecciones provisionales nuevas.*
   - 0 cambios de nivel;
   - revisión externa (NOW, DE, SAN) y web.
 - **Abierto:** PEAD (sin sorpresa del BPA con fuente); latencia en Render (con el deploy).
+
+### 7.25 Fase 6 del plan de fiabilidad: infraestructura
+
+*Operador, 17-oct-2026, bajo la delegación del usuario (bitácora #34). Detalle en
+[`fiabilidad/F6_PARADA.md`](fiabilidad/F6_PARADA.md). Rama `fiabilidad/f6-infra`, sin subir. D6: sin plan de pago.*
+
+- **Cola en serie quitada** (`6fb46c3`): análisis, PDF y búsqueda en hilos con un semáforo de 4. 12 análisis en frío a la vez pasan de 26 s a 7.5 s en local, y `/api/health` deja de bloquearse.
+- **Estado compartido seguro entre hilos** (revisión, `2006379`, `dd0ca0a`, `ead7808`):
+  - caché con lock;
+  - presupuesto de EDGAR que no paga la cola, con tope;
+  - sesión y clase sin carreras.
+- **Caché de los estados de 6 h** (`1b8f5ca`) y trimestrales en paralelo (`fafdf3b`).
+- **Procedencia por fuente en el anexo técnico** (`b586299`, `a83fe4e`, `0d86c00`).
+- **Corte de doce meses de EDGAR sin trimestres de Yahoo** (`9b7bbc4`): BRK-B al 30-jun-2026, con el balance de Yahoo de esa fecha y el BPA aproximado declarado. Solo si no pierde campos (UL no).
+- **Abierto:**
+  - arranque en frío de Render (D6);
+  - medida en Render (con el deploy);
+  - beneficio operativo de aseguradoras y conglomerados (BRK-B: ganancias no realizadas en el beneficio GAAP).
