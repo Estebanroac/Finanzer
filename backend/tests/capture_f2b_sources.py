@@ -123,6 +123,12 @@ def capture_facts(symbols, base):
             ff.save_instance(cap_acc, {"facts": {}}, base,
                              {"axis": spec["axis"], "member": spec["member"],
                               "by_date": edgar._cache[f"captive:{acc}:{spec['member']}"][1]})
+        # Fase 3 (T7): la portada (R1) del último 20-F/40-F, que lee la regla B del factor ADR (lib/sec_edgar.cover_factor).
+        annual = [f for f in fl or [] if f["form"] in edgar.FOREIGN_ANNUAL_FORMS]
+        if annual:
+            acc = annual[0]["accessionNumber"].replace("-", "")
+            html = edgar._get(edgar.ARCHIVE_URL.format(cik=ent["cik"], acc=acc, name="R1.htm"), b)
+            ff.save_cover(annual[0]["accessionNumber"], html.decode("utf-8", "replace"), base)
         report[s] = {"ciks": ciks, "captive": captive, "pending": [{k: r[k] for k in ("form", "date", "accn", "read", "reason")}
                                                for r in log]}
         print(f"[{s}] CIK {ent['cik']}: {len(log)} pendientes "

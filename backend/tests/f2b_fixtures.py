@@ -64,9 +64,13 @@ def save_facts_not_found(cik, base=F2B_DIR):
 
 
 def save_facts(cik, reduced, base=F2B_DIR):
-    """companyfacts reducido, con los hechos que acaban desde FACTS_SINCE (el juego no necesita más historia)."""
+    """companyfacts reducido, con los hechos que acaban desde FACTS_SINCE. Fase 3 (T7): los conceptos de la historia
+    larga (sec_edgar.HISTORY, que clasifica y mide el ciclo con 10+ ejercicios) se guardan enteros, como los amplió
+    tests/f3_extend_history_fixtures.py en el juego del panel."""
+    import sec_edgar as edgar
+    hist = {c for v in edgar.HISTORY.values() for c in (*v[1], *v[2])}
     out = {k: reduced[k] for k in ("cik", "entityName") if k in reduced}
-    out["facts"] = {tx: {c: {"units": {u: [f for f in fs if f["end"] >= FACTS_SINCE]
+    out["facts"] = {tx: {c: {"units": {u: [f for f in fs if c in hist or f["end"] >= FACTS_SINCE]
                                        for u, fs in node["units"].items()}}
                          for c, node in cs.items()} for tx, cs in reduced.get("facts", {}).items()}
     _write(os.path.join(base, "edgar", "companyfacts", f"CIK{int(cik):010d}.json"), out)
