@@ -24,11 +24,11 @@
 
 | Campo | Valor |
 |---|---|
-| Fase en curso | **Fases 3, 4, 5 y 6 ✅ cerradas en código** (bajo la delegación del usuario, registros #31–#34) · **Fase 7 🔧** (calibración). Pendientes del usuario: regenerar los golden (bloqueado por permisos en la sesión), `SEC_EDGAR_USER_AGENT` en Render, el "ok, pushea", el deploy y el permiso para descargar los datos sectoriales de Damodaran (F4_PARADA §5) |
-| Rama de trabajo | `fiabilidad/f6-infra` (sale de `fiabilidad/f5-contexto` ← `fiabilidad/f4-escalas` ← `fiabilidad/f3-metodo`; worktree `../finanzer_next-f3`), sin subir |
+| Fase en curso | **Fases 3 a 6 ✅ cerradas en código; fase 7: estudio de calibración ✅ y revisión de parámetros ✅** (bajo la delegación del usuario, registros #31–#35); vigilancia semanal continua. Pendientes del usuario: regenerar los golden (bloqueado por permisos en la sesión), `SEC_EDGAR_USER_AGENT` en Render, el "ok, pushea", el deploy y el permiso para descargar los datos sectoriales de Damodaran (F4_PARADA §5) |
+| Rama de trabajo | `fiabilidad/f7-calibracion` (sale de `fiabilidad/f6-infra` ← `fiabilidad/f5-contexto` ← `fiabilidad/f4-escalas` ← `fiabilidad/f3-metodo`; worktree `../finanzer_next-f3`), sin subir |
 | Producción | `01336e2` (código `103c76f`). Rollback de código: `60f8a69` |
 | `main` local | `b2f1972` (borrador del prompt de la fase 3), un commit por delante de `origin/main`; sin subir |
-| Último cierre de sesión | 2026-10-17 · operador F3–F6 (ver registro #34) |
+| Último cierre de sesión | 2026-10-17 · operador F3–F7 (ver registro #35) |
 | Bloqueos | `SEC_EDGAR_USER_AGENT` en Render (la pone el usuario): sin ella no hay deploy de la fase 3. Golden de la fase 3 sin regenerar (permiso del usuario) |
 
 ## Fases
@@ -42,7 +42,7 @@
 | 4 Escalas y confianza | ✅ cerrada en código (2026-10-17, registro #32; F4_PARADA, RECON §7.23); referencias por industria y geografía en espera del permiso de descarga | `fiabilidad/f4-escalas` | `1f12e33`…`f99859a` | bajo delegación (#29, #32) | — (con la fase 3) |
 | 5 Técnica y conductual | ✅ cerrada en código (2026-10-17, registro #33; F5_PARADA, RECON §7.24); latencia desde Render, en la comprobación de producción | `fiabilidad/f5-contexto` | `e99e958`..`8e2bf07` (prep) + `9363163`, `309ed32` | §5 de la muestra aceptado (#20); lecturas conductuales revisadas bajo delegación (#33) | — (con las fases 3 y 4) |
 | 6 Infraestructura | ✅ cerrada en código (2026-10-17, registro #34; F6_PARADA, RECON §7.25); arranque en frío fuera (D6); medida en Render con el deploy | `fiabilidad/f6-infra` | diagnóstico `697eb83`..`583e685`; `94ce758`, `6fb46c3`, `1b8f5ca`…`9b7bbc4`, revisión `2006379`…`ead7808` | bajo delegación (#29, #34) | — (con las fases 3 a 5) |
-| 7 Vigilancia / calibración | 🔧 vigilancia semanal activa (tarea `finanzer-vigilancia-semanal`, sábados 09:00); calibración tras F4 | — | `697eb83`..`583e685` | tarea programada aprobada (registro F67prep) | — |
+| 7 Vigilancia / calibración | 🔧 continua: vigilancia semanal activa (tarea `finanzer-vigilancia-semanal`, sábados 09:00); revisión mensual de parámetros ✅ (`7bbfc6e`); estudio de calibración ✅ (F7_CALIBRACION, registro #35), con 2 decisiones del usuario abiertas | `fiabilidad/f7-calibracion` | `697eb83`..`583e685`; `7bbfc6e`, `3ef8c8f`… | tarea programada aprobada (registro F67prep); estudio bajo delegación (#35) | — |
 
 Leyenda: ⏳ pendiente · 🔧 en curso · 🛑 detenida esperando al usuario · ✅ cerrada · 🔒 bloqueada por puerta
 
@@ -1412,3 +1412,28 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
   - "apaga sin tráfico" y "Yahoo distinto en Render", ⏸ (D6 y deploy).
 - **Límite anotado para la fase 7 o el usuario:** el beneficio GAAP de BRK-B incluye las ganancias no realizadas de su cartera (ASC 321). Definir el beneficio operativo de aseguradoras y conglomerados es una decisión de método.
 - **Siguiente:** fase 7. Hecha la revisión mensual de parámetros (`7bbfc6e`); el estudio de calibración, con hipótesis fijadas antes de correrlo (`3ef8c8f`).
+
+### #35 · 2026-10-17 · operador · Fase 7 (revisión de parámetros y estudio de calibración, bajo la delegación del registro #29)
+- **Revisión mensual de parámetros** (`7bbfc6e`):
+  - `config/review.toml` con fuente, fecha del dato, consulta y cadencia de cada parámetro de mercado;
+  - `tests/revision_parametros.py` dice qué revisar;
+  - hoy: 8 vigentes y 2 sin fuente (medianas y umbrales sectoriales, que esperan los datos de Damodaran).
+- **Estudio de calibración** (F7_CALIBRACION):
+  - hipótesis y regla de decisión fijadas en `3ef8c8f` antes de correrlo;
+  - 968 análisis point-in-time del motor real, en replay (98 empresas fuera del panel, ejercicios 2012–2021, al día siguiente de cada 10-K);
+  - antes de ver resultados se corrigieron dos huecos de entrada (EBIT y deuda desde EDGAR).
+
+  Resultados:
+  - **H2 validada:** calidad "excelente" → caída máxima a 3 años 5 pp menor;
+  - **H3a validada:** precio "muy exigente" → −10 pp frente al S&P 500 a 1 año;
+  - **H3b no concluyente** (3 años);
+  - **H1 no concluyente**, con signo contrario por la reversión a la media. En lo exploratorio, el nivel del ROE sí persiste.
+
+  No cambia ningún umbral.
+- **Bandas de REIT y utilities** (F4_PARADA §5):
+  - **bien centradas:** las 3 de utilities, el P/FFO y la deuda neta/EBITDA de los REIT (esta, tras añadir las etiquetas de deuda de los REIT). "PROVISIONAL" fuera de sus comentarios; los valores no cambian;
+  - **satura:** FFO/patrimonio contable (82% en el tramo alto). Es decisión del usuario.
+- **Decisiones abiertas para el usuario:**
+  - REIT FFO/patrimonio: retirar, sustituir por FFO/activos (recomendado) o dejar;
+  - beneficio operativo de aseguradoras y conglomerados (BRK-B, del registro #34).
+- **Suite:** "1 failed, 3930 passed, 1 skipped". Lo que falla son las muestras forzadas del contrato, que van con los golden.

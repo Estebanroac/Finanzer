@@ -1323,3 +1323,19 @@ arreglo es de fondo; la fase no deja protecciones provisionales nuevas.*
   - arranque en frío de Render (D6);
   - medida en Render (con el deploy);
   - beneficio operativo de aseguradoras y conglomerados (BRK-B: ganancias no realizadas en el beneficio GAAP).
+
+### 7.26 Fase 7 del plan de fiabilidad: revisión de parámetros y calibración histórica
+
+*Operador, 17-oct-2026, bajo la delegación del usuario (bitácora #35). Detalle en
+[`fiabilidad/F7_CALIBRACION.md`](fiabilidad/F7_CALIBRACION.md). Rama `fiabilidad/f7-calibracion`, sin subir.*
+
+- **Parámetros con fuente y fecha legibles por programa** (`config/review.toml`, `tests/revision_parametros.py`). Cumple lo que pide §7.13.
+- **Estudio de calibración:**
+  - el motor real sobre 968 fechas pasadas, con los datos de entonces;
+  - hipótesis fijadas antes de correrlo y muestras de entrenamiento y prueba por periodo y por empresa;
+  - validadas: la calidad anticipa menor caída, y "muy exigente", peor rentabilidad a 1 año;
+  - no concluyentes: el precio a 3 años y la persistencia relativa del ROE.
+- **Bandas de REIT y utilities** contrastadas con 51 empresas. Todas bien centradas salvo FFO/patrimonio de los REIT, que satura (decisión del usuario).
+- **Abierto:**
+  - decisiones del usuario (F7_CALIBRACION §6);
+  - repetir el estudio con más empresas y con prima de riesgo point-in-time.
