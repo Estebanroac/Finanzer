@@ -149,6 +149,7 @@ HISTORY: Dict[str, Tuple[str, Tuple[str, ...], Tuple[str, ...]]] = {
 # Campos cuya definición no cambia de forma material entre US GAAP e IFRS: con el cambio de norma (TM, IFRS desde el
 # FY2021) la historia anterior se completa con la otra taxonomía y se declara.
 HISTORY_CROSS_TAXONOMY = ("revenue", "diluted_eps")
+HISTORY_SCALE_JUMP = 100   # un salto de acciones o BPA de más de 100 veces entre dos ejercicios es un error de escala
 
 _WANTED = {"us-gaap": {c for v in CONCEPTS.values() for c in v[2]} | {c for v in DEBT_PARTS["us-gaap"].values() for c in v}
            | {c for v in HISTORY.values() for c in v[1]},
@@ -763,6 +764,8 @@ def annual_history(facts: Dict[str, Any], field: str) -> Dict[str, Any]:
         return by_end
     sign = CONCEPTS["capex"][1] if field == "capex" else 1
     main = years(tax, us if tax == "us-gaap" else ifrs)
+    if kind in ("per_share", "shares") and main:
+        _adjust_splits(main, facts, tax, us if tax == "us-gaap" else ifrs, unit, kind)
     if main and field in HISTORY_CROSS_TAXONOMY:
         other = "ifrs-full" if tax == "us-gaap" else "us-gaap"
         first = min(main)
@@ -771,8 +774,75 @@ def annual_history(facts: Dict[str, Any], field: str) -> Dict[str, Any]:
             main.update(older)
             out["cross_taxonomy"] = {"taxonomy": other, "until": max(older), "years": len(older)}
     vals = [dict(v, value=sign * v["value"]) for _e, v in sorted(main.items(), reverse=True)]
+    if kind in ("per_share", "shares"):
+        # Errores de escala de los primeros XBRL (NVDA FY2008: acciones en miles, 1,000 veces menos): un valor que
+        # salta más de `HISTORY_SCALE_JUMP` veces frente al ejercicio siguiente no es un dato; se descarta y se dice.
+        kept, dropped = [], []
+        for i, v in enumerate(vals):
+            nxt = kept[-1]["value"] if kept else None
+            if nxt and v["value"] and not (1 / HISTORY_SCALE_JUMP < abs(v["value"] / nxt) < HISTORY_SCALE_JUMP):
+                dropped.append(v["fy_end"])
+                continue
+            kept.append(v)
+        vals = kept
+        out["dropped_scale_errors"] = dropped or None
     out["values"] = vals
     return out
+
+
+def _split_ratio(r: float) -> Optional[float]:
+    """Un cociente entre dos presentaciones del mismo periodo que es un split (2:1, 3:2, 4:1, 7:1, 20:1…) o un
+    contrasplit; None si no lo parece (una reexpresión normal mueve el BPA unos puntos, no lo multiplica)."""
+    for x, inv in ((r, False), (1.0 / r if r else 0.0, True)):
+        if x >= 1.4 and abs(x * 2 - round(x * 2)) <= 0.06 * x:
+            return round(x * 2) / 2 if not inv else 1.0 / (round(x * 2) / 2)
+    return None
+
+
+def _adjust_splits(main: Dict[str, Dict[str, Any]], facts: Dict[str, Any], tx: str, concepts, unit: str,
+                   kind: str) -> None:
+    """Ajusta por splits las series por acción y de acciones de la historia (fase 3, T2). companyfacts guarda cada
+    ejercicio con la cifra de su informe; tras un split, solo los ejercicios que el emisor vuelve a presentar salen
+    reexpresados (AAPL: 7:1 en 2014 y 4:1 en 2020). El factor sale de esas reexpresiones de las ACCIONES: el mismo
+    periodo presentado antes y después del split. Cada ejercicio cuya cifra vigente se presentó antes del filing que reexpresa se ajusta
+    con el producto de los splits posteriores (acciones × factor; BPA ÷ factor)."""
+    events: List[Tuple[str, float]] = []
+    # Los splits se leen SOLO en las acciones: un BPA se reexpresa también por cambios contables (AAPL reexpresó
+    # 2007–2008 en 2009 por la contabilidad del iPhone, un cociente cercano a 3:2), las acciones no.
+    share_concepts = HISTORY["diluted_shares"][1] if tx == "us-gaap" else HISTORY["diluted_shares"][2]
+    for c in share_concepts:
+        fs = (facts.get("facts") or {}).get(tx, {}).get(c, {}).get("units", {}).get("shares") or []
+        by: Dict[Tuple[Optional[str], str], List[Dict[str, Any]]] = {}
+        for f in fs:
+            by.setdefault((f.get("start"), f["end"]), []).append(f)
+        for g in by.values():
+            g = sorted(g, key=lambda f: f.get("filed") or "")
+            for a, b in zip(g, g[1:]):
+                if a["val"] and b["val"]:
+                    r = _split_ratio(b["val"] / a["val"])
+                    if r is not None:
+                        events.append((b.get("filed") or "", r))
+    if not events:
+        return
+    # Un split aparece en muchos periodos: una vez por factor, con el primer filing que lo reexpresa.
+    uniq: List[Tuple[str, float]] = []
+    for fd, r in sorted(events):
+        if not any(abs(r - r0) < 1e-9 and abs((_date(fd) - _date(f0)).days) <= 400 for f0, r0 in uniq):
+            uniq.append((fd, r))
+    filed_of: Dict[str, str] = {}
+    for c in concepts:
+        for f in (facts.get("facts") or {}).get(tx, {}).get(c, {}).get("units", {}).get(unit) or []:
+            if f["end"] in main and f"{tx}:{c}" == main[f["end"]]["concept"] and f["val"] == main[f["end"]]["value"]:
+                filed_of[f["end"]] = max(filed_of.get(f["end"], ""), f.get("filed") or "")
+    for end, v in main.items():
+        fv = filed_of.get(end, "")
+        factor = 1.0
+        for fd, r in uniq:
+            if fd > fv:
+                factor *= r
+        if factor != 1.0:
+            v["value"] = v["value"] * factor if kind == "shares" else v["value"] / factor
+            v["split_adjusted"] = factor
 
 
 def history(facts: Dict[str, Any]) -> Dict[str, Any]:
