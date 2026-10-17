@@ -102,8 +102,11 @@ KEYWORDS = [
     # Fase 4 (T1): la calidad limitada por la persistencia cita el antes y el después.
     ("persistencia_calidad", r"exige persistencia", {"quality_persistence"}),
     ("frontera_nivel", r"en la frontera con «", {"level_border"}),
+    # Fase 4 (T3): las condiciones del pre-mortem citan la cifra que las mide.
+    ("premortem", r"como exige el precio|ya descuenta el precio|que descuenta el precio \(obtiene|volviera a su "
+                  r"(?:mediana|media de ciclo)|veces el ebitda", {"premortem"}),
     ("base_temporal", r"\binteranual\b|anual en 3 años|\(3 años\)|anual de ciclo medio",
-     {"growth", "basis", "eps_vs_revenue"}),
+     {"growth", "basis", "eps_vs_revenue", "premortem"}),
 ]
 
 ENGLISH = re.compile(r"\b(STRONG|GOOD|NEUTRAL|WEAK|MODERATE|POOR|EXCELLENT|MATURE|CYCLICAL|FINANCIAL|UTILITY|"
@@ -375,6 +378,47 @@ def _p_level_border(a, c, text):
         return f"dice frontera con {m.group(1)} a {m.group(2)} con {b.get('neighbor')!r} a {b.get('points')}"
 
 
+def _pm_num(rx, text):
+    m = re.search(rx, text)
+    return float(m.group(1).replace("−", "-")) if m else None
+
+
+def _p_premortem(a, c, text):
+    """Cada cifra del pre-mortem es la del análisis y el sentido sigue al nivel de precio."""
+    level = (a.get("price_attractiveness") or {}).get("level")
+    demanding = level in ("exigente", "muy exigente")
+    if "como exige el precio" in text and not demanding:
+        return f"'como exige el precio' con precio {level!r}"
+    if "ya descuenta el precio" in text and demanding:
+        return f"'ya descuenta el precio' con precio {level!r}"
+    m = ((a.get("reverse_dcf") or {}).get("main")) or {}
+    km = a.get("key_metrics") or {}
+    imp = (a.get("archetype_metrics") or {}).get("implied") or {}
+    checks = []
+    if c.get("field") == "reverse_dcf.main.g10":
+        checks.append((_pm_num(r"(?:al menos un|menos del|más de un) (−?\d+(?:\.\d+)?)%", text),
+                       (abs(m["g10"]) if "cayera" in text else m["g10"]) if m.get("g10") is not None else None))
+    if c.get("field") == "archetype_metrics.implied.implied":
+        checks.append((_pm_num(r"(?:al menos el|bajara del) (−?\d+(?:\.\d+)?)%", text), imp.get("implied")))
+        checks.append((_pm_num(r"obtiene un (−?\d+(?:\.\d+)?)%", text), imp.get("own")))
+    if "historia propia" in text:
+        checks.append((_pm_num(r"historia propia: [^,]+, (−?\d+(?:\.\d+)?)% anual", text),
+                       (m.get("own_growth") or {}).get("cagr")))
+        n = _pm_num(r"% anual en (\d+) años", text)
+        if n is not None and n != (m.get("own_growth") or {}).get("years"):
+            return f"dice historia de {n:.0f} años con {(m.get('own_growth') or {}).get('years')}"
+    if c.get("field") == "reverse_dcf.main.side" and m.get("side") != c.get("value"):
+        return f"dice fuera de rango {c.get('value')} con {m.get('side')!r}"
+    if "volviera a su" in text:
+        checks.append((_pm_num(r"frente al (−?\d+(?:\.\d+)?)% de hoy", text), km.get("operating_margin")))
+    for said, real in checks:
+        if said is not None and (real is None or abs(said / 100 - real) > 0.0006):
+            return f"dice {said}% con {real}"
+    x = _pm_num(r"equivale a (\d+(?:\.\d+)?) veces el ebitda", text)
+    if x is not None and (km.get("net_debt_to_ebitda") is None or abs(x - km["net_debt_to_ebitda"]) > 0.051):
+        return f"dice deuda neta / EBITDA {x} con {km.get('net_debt_to_ebitda')}"
+
+
 def _p_altman(a, c, text):
     z = {"safe": "segura", "grey": "gris", "distress": "de riesgo"}.get((a.get("altman_z") or {}).get("zone"))
     m = re.search(r"zona (segura|gris|de riesgo|de peligro)", text)
@@ -442,6 +486,7 @@ PREDICATES = {
     "implied_return": _p_implied_return,
     "quality_persistence": _p_quality_persistence,
     "level_border": _p_level_border,
+    "premortem": _p_premortem,
 }
 
 

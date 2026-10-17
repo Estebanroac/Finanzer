@@ -84,6 +84,18 @@ export default function ValuationTab({ display }: { display: Display }) {
           </div>
         )}
 
+        {V.premortem && (
+          <div className="mt-4">
+            <div className="fz-kicker mb-1">{V.premortem.title}</div>
+            <ul className="list-disc pl-5 space-y-1">
+              {V.premortem.items.map((t, i) => (
+                <li key={i} className="fz-note !mt-0">{t}</li>
+              ))}
+            </ul>
+            <Note>{V.premortem.note}</Note>
+          </div>
+        )}
+
         <Collapsible summary="Valor intrínseco: cifras y supuestos">
           <DataTable columns={["CONCEPTO", "VALOR", "LECTURA"]} rows={V.intrinsic.rows} tooltips={tips} />
           <Note>{V.intrinsic.graham_note}</Note>

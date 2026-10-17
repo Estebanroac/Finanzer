@@ -847,6 +847,14 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         for ln in RV["lines"]:
             story.append(Paragraph(_esc((f"{ln['label']}. " if ln.get("label") else "") + ln["text"]), S['body']))
         story.append(Paragraph(_esc(RV["role"] + " " + RV["method"]), S['small']))
+    PM = V.get("premortem")
+    if PM:
+        # Fase 4 (T3): pre-mortem.
+        story.append(Spacer(1, 8))
+        story.append(Paragraph(_esc(PM["title"]), S['h2']))
+        for it in PM["items"]:
+            story.append(Paragraph("• " + _esc(it), S['body']))
+        story.append(Paragraph(_esc(PM["note"]), S['small']))
     if V["ke_note"]:
         story.append(Spacer(1, 3))
         story.append(Paragraph(_esc(V["ke_note"]), S['small']))

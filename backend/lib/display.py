@@ -844,6 +844,18 @@ _REVERSE_BANDS = {"barata": ("Barata", "pos"), "en_precio": ("En precio", "neu")
                   "muy_exigente": ("Muy exigente", "neg")}
 
 
+def _premortem_block(a: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Fase 4 (T3): "Esta lectura sería errónea si…" (lib/premortem.py), con la afirmación de cada condición."""
+    pm = a.get("premortem") or {}
+    if not pm.get("items"):
+        return None
+    for it in pm["items"]:
+        _record(it["text"], _claim("premortem", field=it.get("field"), value=it.get("value"), kind_pm=it.get("kind")),
+                source="display.premortem")
+    return {"title": pm["title"], "items": [it["text"] for it in pm["items"]],
+            "note": "Condiciones que invalidarían la lectura de hoy, con la cifra que las mide: no son previsiones."}
+
+
 def _shown_archetype_label(a: Dict[str, Any], archetype: Optional[str]) -> str:
     """Etiqueta del arquetipo para el usuario; en FINANCIAL, el subtipo (fase 3, T4/T7: banco, aseguradora,
     conglomerado o entidad financiera) en lugar de "Banco/aseguradora"."""
@@ -1834,6 +1846,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                  "dcf_reliability_tone": {"alta": 'pos', "media": 'warn', "baja": 'neg'}.get(_rel.get("level")),
                  "dcf_missing": dcf_missing,
                  "reverse_dcf": reverse_block,
+                 "premortem": _premortem_block(a),
                  "ke_note": ke_note, "wacc_note": wacc_note, "wacc_breakdown": wacc_breakdown,
                  "sensitivity": sens}
 

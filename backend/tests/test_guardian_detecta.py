@@ -67,6 +67,13 @@ CASES = {
                      [claim("level_border", field="price_attractiveness.border.points", value=1, part="price")],
                      {"price_attractiveness": {"border": {"neighbor": "exigente", "points": 1}}},
                      {"price_attractiveness": {"border": {"neighbor": "exigente", "points": 2}}}),
+    "premortem": ("el FCF − SBC por acción creciera al menos un 8.9% anual durante 10 años, como exige el precio; "
+                  "historia propia: sus ingresos por acción, 1.0% anual en 10 años",
+                  [claim("premortem", field="reverse_dcf.main.g10", value=0.089, kind_pm="precio_inverso")],
+                  {"price_attractiveness": {"level": "muy exigente"},
+                   "reverse_dcf": {"main": {"g10": 0.089, "own_growth": {"cagr": 0.010, "years": 10}}}},
+                  {"price_attractiveness": {"level": "razonable"},
+                   "reverse_dcf": {"main": {"g10": 0.089, "own_growth": {"cagr": 0.010, "years": 10}}}}),
     "dcf_upside": ("el precio incorpora una prima de 20% sobre el valor intrínseco", [claim("dcf_upside")],
                    {"dcf": {"upside": -20.0}}, {"dcf": {"upside": 20.0}}),
     "dcf_rel": ("DCF no concluyente (fiabilidad baja)", [claim("dcf_rel")],

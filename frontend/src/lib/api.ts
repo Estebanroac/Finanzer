@@ -249,6 +249,7 @@ export interface Sections {
       role: string;
       method: string;
     } | null;
+    premortem?: { title: string; items: string[]; note: string } | null;
     ke_note: string | null;
     wacc_note: string | null;
     wacc_breakdown: Array<{ label: string; value: string }> | null;

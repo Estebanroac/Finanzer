@@ -435,6 +435,14 @@ rule_of_40 = 0.40                   # listón de la regla de 40 (crecimiento + m
 sbc_material = 0.05                 # SBC > 5% de los ingresos: se lee como coste real (F3_DISENO §5)
 coverage_trend_rel = 0.20           # cobertura con el EBIT de cada ejercicio: ±20% entre extremos -> mejora / empeora
 
+[premortem]                         # fase 4 (T3, PLAN §4.3; lib/premortem.py): "Esta lectura sería errónea si…"
+margin_gap_rel = 0.20               # margen operativo de hoy > 120% del de referencia: la lectura depende de que se mantenga
+margin_years = 10                   # mediana del margen de los últimos 10 ejercicios de EDGAR (un ciclo largo)
+min_margin_years = 5                # con menos, sin referencia (no se afirma una media)
+nde_high = 3.0                      # deuda neta / EBITDA ≥ 3x: el umbral habitual de apalancamiento alto (grado de inversión bajo)
+nde_high_regulated = 6.5            # utility y REIT: el techo de su banda "en línea" (score.solidez, utility/reit_nde_bounds)
+max_items = 3
+
 [quality_persistence]               # fase 4 (T1, PLAN §4.1; lib/persistence.py): lo extraordinario exige persistencia
 # La calidad por encima de "excelente" (la primera banda de score.quality) cuenta en proporción a la persistencia de
 # las categorías que la llevan ahí: "excelente" no cambia y lo que está por encima (lo extraordinario) exige historia.

@@ -1839,6 +1839,13 @@ def _compute_analysis(symbol: str) -> dict:
             except Exception as e:
                 _sin_dato("veredicto", e)
 
+        # ── Fase 4 (T3): pre-mortem, "Esta lectura sería errónea si…" (lib/premortem.py) ──
+        try:
+            import premortem as _pm
+            result["premortem"] = _pm.build(result, yinfo.get("_history_fy") if _has_yahoo else None)
+        except Exception as e:
+            _sin_dato("premortem", e)
+
         # ── Etapa 9b: capa de presentación compartida (lib/display.py) ──
         # Lo que se LEE de cada métrica se calcula una vez aquí; el PDF y la web lo consumen.
         try:
