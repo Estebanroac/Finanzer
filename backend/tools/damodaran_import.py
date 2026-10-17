@@ -28,7 +28,8 @@ Columnas y por qué (todas son agregados de la industria salvo lo que se dice):
     la prueba de representatividad (lib/industry_bench.py): normalmente la media supera al agregado (empresas con
     beneficio casi nulo; mediana del cociente 0.66 en EE. UU.); un agregado POR ENCIMA de la media delata una
     industria dominada por pocas empresas de múltiplo extremo (Auto & Truck de EE. UU.: 119.6x frente a 64.3x).
-Un margen de 0 o 1 (±0.2 puntos) es un artefacto de definición (la banca no tiene coste de ventas ni beneficio operativo en
+Un ROE de signo distinto al del margen neto (con P/B positivo) es incoherente: sin dato. Un margen de 0 o 1 (±0.2 puntos)
+es un artefacto de definición (la banca no tiene coste de ventas ni beneficio operativo en
 estas tablas: margen bruto 100%, operativo 0%), no una medida: sin dato. Un múltiplo ≤ 0 tampoco es una referencia.
 """
 import argparse
@@ -106,7 +107,7 @@ def region_rows(raw, code):
     roe, _ = _table(f["roe"])
     mg, _ = _table(f["margin"])
     debt, _ = _table(f["debt"])
-    rows = {}
+    rows, dropped_roe = {}, []
     for ind, p in pe.items():
         n = _get(p, "Number of firms")
         agg = _get(p, "Aggregate Mkt Cap/ Trailing Net Income")
@@ -128,7 +129,16 @@ def region_rows(raw, code):
         for k in ("gross_margin", "operating_margin", "net_margin"):
             if math.isfinite(vals[k]) and (abs(vals[k]) < 0.002 or abs(vals[k] - 1) < 0.002):
                 vals[k] = math.nan
+        # ROE y margen neto agregados comparten el numerador (beneficio neto) y sus denominadores son positivos (con P/B
+        # positivo, el patrimonio agregado lo es): de distinto signo, el ROE publicado es incoherente (Computers/
+        # Peripherals de EE. UU.: ROE −0.17% con margen neto +17.8% y P/B 34x): sin dato.
+        if (math.isfinite(vals["roe"]) and math.isfinite(vals["net_margin"]) and vals["roe"] * vals["net_margin"] < 0
+                and math.isfinite(vals["pb"]) and vals["pb"] > 0):
+            dropped_roe.append(ind)
+            vals["roe"] = math.nan
         rows[ind] = [int(n) if math.isfinite(n) else 0] + [vals[c] for c in COLUMNS]
+    if dropped_roe:
+        print(f"  {code or 'US'}: ROE incoherente con el margen neto (sin dato): {dropped_roe}")
     return rows, upd
 
 
