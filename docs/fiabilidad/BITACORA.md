@@ -1530,3 +1530,22 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
     - está en un Environment Group que no está enlazado a este servicio;
     - tiene un nombre distinto;
     - no se llegó a guardar.
+
+### #39 · 2026-10-17 · operador · Verificación con EDGAR (código de prod en local) y corte en la ruta quoteSummary
+- **Contexto:** en Render, `SEC_EDGAR_USER_AGENT` todavía no llega al servicio (`/api/health`: `present=false`). Mientras tanto se verifica el código de `main` en local con la variable del Llavero (sin imprimirla). `/api/health` local da `enabled=true`.
+- **Emulando Render** (quoteSummary bloqueado → plan B, como en producción), con BRK-B, AAPL y O a la vez:
+  - EDGAR "ok" en las tres.
+  - BRK-B: el recorte TTM se aplica (corte 2026-06-30) y el **P/E operativo es 27.1x** (reportado 13.4x, `pe_basis = "operativo"`).
+  - Frío 4.2–4.7 s (red de casa) y caliente al instante; PDF 200.
+- **Hallazgo:** por la ruta quoteSummary (la que funciona en local; en Render da 401), BRK-B no tenía corte.
+  - `recut` solo actuaba con `_as_of.type == "fy"`. En la ruta `fuente`, EDGAR no mandaba en nada del corte y no se leían las ganancias de la cartera.
+  - No afecta a producción hoy, pero sí si Yahoo deja de bloquear a Render.
+- **Arreglo** (`a5a3b6b`, sin push):
+  - `recut` acepta también la ruta `fuente`, con el último ejercicio de los estados anuales como referencia;
+  - tras ese corte, el respaldo sustituye lo de la fuente, que es de otros doce meses;
+  - lo que EDGAR no dé del corte cuenta como perdido. Es la regla de siempre: un corte más reciente pero incompleto no es mejor.
+- **BRK-B por esa ruta:** el corte se descarta porque EDGAR no da el EBITDA, el margen bruto, el beneficio operativo ni el activo y pasivo corrientes del 2T. Queda el P/E reportado y el anexo explica por qué.
+  - No se cambia la regla para excluir por tipo de negocio los campos que el método no usa. Sería un cambio de método para una ruta que producción no usa: queda anotado como mejora posible.
+- **Golden intactos:** las claves nuevas solo existen en la ruta `fuente`.
+- **Suite:** "4117 passed, 1 skipped". Textos nuevos revisados con el guardián: solo van al anexo.
+- **Vigilancia:** queda un sondeo de `/api/health` en esta sesión (hasta 2 h). Cuando `enabled=true`, verifica BRK-B, AAPL y O en producción.
