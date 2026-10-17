@@ -1400,6 +1400,10 @@ def _enrich_prior_year_data(symbol: str, info: Dict[str, Any], ticker=None) -> D
         # Fase 3 (T4): margen de intereses de un banco (el "Total Revenue" bancario es el ingreso neto: margen de
         # intereses + otros ingresos, comisiones incluidas).
         "net_interest_income": _row(inc, "Net Interest Income"),
+        # Fase 3 (T6): cobertura de intereses por ejercicio (tendencia) y los intereses pagados del estado de flujos
+        # (respaldo cuando el gasto por intereses no se presenta).
+        "interest_expense": _row(inc, "Interest Expense"),
+        "interest_paid": _row(cf, "Interest Paid Supplemental Data"),
         "sga": _row(inc, "Selling General And Administration"),
         "occupancy": _row(inc, "Occupancy And Equipment"),
         "professional_services": _row(inc, "Professional Expense And Contract Services Expense"),

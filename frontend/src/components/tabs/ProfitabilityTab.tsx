@@ -4,6 +4,7 @@ import type { Display } from "@/lib/api";
 import { useGrow } from "@/lib/useGrow";
 import { BenchList, ChartPanel, FlowCards, MarginLadder, NotApplicable, ReadingLines } from "../charts";
 import { Collapsible, DataTable, Help, toneClass } from "../ui";
+import QualityReadings from "../QualityReadings";
 
 /** Rentabilidad: retornos frente al sector, cascada de márgenes y flujo de resultados; tablas a demanda. */
 export default function ProfitabilityTab({ display }: { display: Display }) {
@@ -67,6 +68,8 @@ export default function ProfitabilityTab({ display }: { display: Display }) {
         <FlowCards flows={display.charts.results_flow} grown={grown} />
         <ReadingLines lines={[P.intro]} />
       </ChartPanel>
+
+      <QualityReadings items={P.quality_readings} grown={grown} title="Lecturas de calidad que no puntúan" />
 
       <div className="cz-more">
         <Collapsible summary={`Márgenes frente a la referencia del ${refShort}`}>

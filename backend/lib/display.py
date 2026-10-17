@@ -1871,8 +1871,31 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                 "Flujo de caja libre", _na_txt if "fcf" in _na_keys else fv(km.get("free_cash_flow"), "money")],
                ["EPS", fv(km.get("eps"), "price"), "Valor en libros / acción", fv(km.get("book_value_per_share"), "price")]]
     _record(div_note, _claim("roce"), source="display.roce")
+    # Fase 3 (T6): lecturas de calidad que informan (no puntúan): DuPont, margen FCF con tendencia, SBC, regla de 40.
+    _qrd = a.get("quality_readings") or {}
+    _QR_FIELDS = {"dupont": ("DuPont del ROE", "current.roe"), "fcf_margin": ("Margen FCF con tendencia", "latest"),
+                  "sbc_cost": ("Compensación en acciones", "sbc_to_revenue"),
+                  "rule_of_40": ("Regla de 40", "value"), "coverage": ("Cobertura de intereses", "ebit")}
+
+    def _qr_items(keys):
+        items = []
+        for k in keys:
+            x = _qrd.get(k) or {}
+            if not x.get("text"):
+                continue
+            lab, path = _QR_FIELDS[k]
+            val = x
+            for part in path.split("."):
+                val = (val or {}).get(part) if isinstance(val, dict) else None
+            _record(x["text"], _claim("figure", field=f"quality_readings.{k}.{path}", value=val),
+                    source="display.quality_readings")
+            tone = ({"mejora": "pos", "empeora": "warn"}.get(x.get("direction"), "neu") if k == "fcf_margin"
+                    else ("pos" if x.get("meets") else "warn") if k == "rule_of_40" else "neu")
+            items.append({"key": k, "label": lab, "text": x["text"], "tone": tone})
+        return items
     profitability = {"intro": rent_txt, "columns": ["MÉTRICA", "EMPRESA", _bcol, "BRECHA", "LECTURA"],
                      "rows": prows, "divergence_note": div_note, "figures": figures,
+                     "quality_readings": _qr_items(("dupont", "fcf_margin", "sbc_cost", "rule_of_40")),
                      # fase 1 (punto 9): lectura del ROCE = comparación con el ROIC (nota de divergencia o "en línea")
                      "roce_reading": div_note or roce_reading}
 
@@ -1938,7 +1961,8 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                           text=rd[2] if rd else None))
     balance = (f"Balance — deuda total {fv(km.get('total_debt'), 'money')} · caja {fv(km.get('cash'), 'money')} · "
                f"patrimonio {fv(km.get('total_equity'), 'money')} · activos {fv(km.get('total_assets'), 'money')}")
-    solvency = {"intro": sol_txt, "columns": ["MÉTRICA", "VALOR", "LECTURA"], "rows": srows, "balance": balance}
+    solvency = {"intro": sol_txt, "columns": ["MÉTRICA", "VALOR", "LECTURA"], "rows": srows, "balance": balance,
+                "quality_readings": _qr_items(("coverage",))}
 
     # ════════════════ 04 CRECIMIENTO ════════════════
     gro_txt = join_sentences([r_grev[2] if r_grev else None, r_gearn[2] if r_gearn else None,

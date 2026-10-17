@@ -226,6 +226,9 @@ export interface AlertItem {
   detail: string;
 }
 
+/** Fase 3 (T6): lectura de calidad que informa y no puntúa (DuPont, margen FCF, regla de 40, cobertura…). */
+export interface QualityReading { key: string; label: string; text: string; tone: Tone }
+
 export interface Sections {
   valuation: {
     intro: string | null;
@@ -258,8 +261,10 @@ export interface Sections {
     divergence_note: string | null;
     roce_reading: string | null;
     figures: string[][];
+    quality_readings?: QualityReading[];
   };
-  solvency: { intro: string | null; columns: string[]; rows: Row[]; balance: string };
+  solvency: { intro: string | null; columns: string[]; rows: Row[]; balance: string;
+    quality_readings?: QualityReading[] };
   growth: {
     intro: string | null;
     columns: string[];

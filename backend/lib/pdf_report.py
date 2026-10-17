@@ -911,6 +911,9 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     if P["divergence_note"]:
         story.append(Spacer(1, 4))
         story.append(Paragraph(_esc(P["divergence_note"]), S['small']))
+    for _q in P.get("quality_readings") or []:     # fase 3 (T6): lecturas que informan, no puntúan
+        story.append(Spacer(1, 3))
+        story.append(Paragraph(_esc(f"{_q['label']}. {_q['text']}"), S['small']))
 
     story.append(Spacer(1, 8))
     story.append(Paragraph("Cifras del ejercicio", S['h2']))
@@ -932,6 +935,9 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
                                 aligns=['LEFT', 'RIGHT', 'RIGHT'], reads=reads))
     story.append(Spacer(1, 4))
     story.append(Paragraph(_esc(SO["balance"]), S['small']))
+    for _q in SO.get("quality_readings") or []:
+        story.append(Spacer(1, 3))
+        story.append(Paragraph(_esc(f"{_q['label']}. {_q['text']}"), S['small']))
 
     # ════════════════ 04 CRECIMIENTO + RETORNO AL ACCIONISTA ════════════════
     G = SEC["growth"]

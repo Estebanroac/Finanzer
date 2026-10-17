@@ -20,9 +20,9 @@ from typing import Any, Dict, List, Optional
 # del promedio del ejercicio (income_stmt y cashflow usan el mismo).
 _FLOW_ROWS = {
     "inc": ("revenue", "gross_profit", "operating_income", "ebit", "ebitda", "net_income", "net_income_common",
-            "diluted_eps", "net_income_discontinued"),
+            "diluted_eps", "net_income_discontinued", "interest_expense"),
     "cf": ("operating_cash_flow", "capital_expenditure", "free_cash_flow", "depreciation_amortization",
-           "stock_based_compensation"),
+           "stock_based_compensation", "interest_paid"),
 }
 _RATE_KEYS = {"inc": "income_stmt", "cf": "cashflow"}
 

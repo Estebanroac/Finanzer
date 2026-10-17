@@ -4,6 +4,7 @@ import type { Display } from "@/lib/api";
 import { useGrow } from "@/lib/useGrow";
 import { BalanceDonut, ChartPanel, GaugeView, NotApplicable, ReadingLines, RunwayView, groupNa } from "../charts";
 import { Collapsible, DataTable, Note } from "../ui";
+import QualityReadings from "../QualityReadings";
 
 /** Solidez: medidores con las zonas de cada lectura y la estructura del balance; tabla a demanda. */
 export default function SolvencyTab({ display }: { display: Display }) {
@@ -35,6 +36,7 @@ export default function SolvencyTab({ display }: { display: Display }) {
           <Note>{S.balance}</Note>
         </ChartPanel>
       </div>
+      <QualityReadings items={S.quality_readings} grown={grown} title="Lecturas que no puntúan" />
       <div className="cz-more">
         <Collapsible summary="Tabla de solidez financiera">
           <DataTable columns={S.columns} rows={S.rows} tooltips={tips} readings={display.readings} />

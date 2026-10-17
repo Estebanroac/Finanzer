@@ -714,6 +714,22 @@ def _compute_analysis(symbol: str) -> dict:
             rf_info = risk_free()
             # Métricas de la rama (P/B justificado, EV/Ventas, normalizados de ciclo…)
             result["sbc"] = {k: (safe_float(v) if isinstance(v, float) else v) for k, v in sbc_info.items()}
+            # Fase 3 (T6): lecturas de calidad que informan (no puntúan): DuPont, margen FCF con tendencia, regla de
+            # 40 (GROWTH_PROFITABLE), SBC como coste y cobertura de intereses ampliada (lib/quality_readings).
+            try:
+                import quality_readings as qr
+                _qr = {}
+                if archetype not in (FINANCIAL, REIT):
+                    _qr["dupont"] = qr.dupont(_stmts_g)
+                    _qr["fcf_margin"] = qr.fcf_margin_trend(_stmts_g)
+                    _qr["sbc_cost"] = qr.sbc_cost(sbc_info)
+                if archetype != FINANCIAL:
+                    _qr["coverage"] = qr.interest_coverage(
+                        _stmts_g, safe_float(financials.operating_income),
+                        safe_float(result["key_metrics"].get("ebitda")), safe_float(financials.interest_expense))
+                result["quality_readings"] = {k: v for k, v in _qr.items() if v}
+            except Exception as e:
+                _sin_dato("lecturas_calidad", e)
             # Etapa 9b: histórico anual (dato bruto, pestaña Histórico de la web).
             result["yearly_financials"] = [{k: (safe_float(v) if isinstance(v, float) else v) for k, v in r_.items()}
                                            for r_ in archetype_metrics.yearly_financials(_stmts, archetype)]
@@ -952,6 +968,13 @@ def _compute_analysis(symbol: str) -> dict:
             fin_dict["fcf_cagr_3y_sustained_negative"] = is_sustained_negative(fin_dict.get("fcf_cagr_3y_reason"))
             result["growth_basis"] = {k: (safe_float(v) if isinstance(v, float) else v)
                                       for k, v in growth_basis.items()}
+            # Fase 3 (T6, §1.3): regla de 40 de GROWTH_PROFITABLE con el crecimiento que puntúa (por acción si aplica).
+            if archetype == "GROWTH_PROFITABLE" and isinstance(result.get("quality_readings"), dict):
+                import quality_readings as qr
+                _r40 = qr.rule_of_40(safe_float(fin_dict.get("revenue_cagr_3y")),
+                                     safe_float(sbc_info.get("fcf_margin_adjusted")))
+                if _r40:
+                    result["quality_readings"]["rule_of_40"] = _r40
             # Fase 3 (T1b): crecimiento en la moneda de los estados, con el efecto divisa declarado aparte.
             if growth_currency.converted(_cur_info):
                 _rev_usd = growth_rate(_stmts.get("revenue") or [], 3, what="ingresos", strict_ends_only=True)["value"]
