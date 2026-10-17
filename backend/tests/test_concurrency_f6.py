@@ -77,3 +77,38 @@ def test_concurrent_analyses_are_capped(monkeypatch):
     assert codes == [200] * (cap * 2)
     assert peak[0] == cap                       # en paralelo hasta el tope, no más
     assert dt < 0.2 * cap * 2 * 0.75            # y claramente menos que en serie
+
+
+def test_shared_cache_is_thread_safe():
+    """Revisión de F6, hallazgo 1: SimpleCache sin lock lanzaba "dictionary changed size during iteration" con 4
+    análisis a la vez (miles de veces en una prueba de 4 hilos)."""
+    import threading
+    import data_fetcher
+    c = data_fetcher.SimpleCache(max_entries=50)
+    errors = []
+
+    def work(k):
+        try:
+            for i in range(3000):
+                c.set(f"{k}:{i % 80}", i, ttl_minutes=1)
+                c.get(f"{(k + 1) % 4}:{i % 80}")
+        except Exception as e:
+            errors.append(e)
+    ts = [threading.Thread(target=work, args=(k,)) for k in range(4)]
+    [t.start() for t in ts]
+    [t.join() for t in ts]
+    assert not errors
+
+
+def test_edgar_budget_does_not_pay_for_the_queue():
+    """Revisión de F6, hallazgo 2: la espera detrás de otro análisis no gasta el presupuesto de EDGAR."""
+    import threading
+    import time
+    import sec_edgar
+    b = sec_edgar.Budget(seconds=1.0)
+    sem = threading.BoundedSemaphore(1)
+    sem.acquire()
+    threading.Timer(0.3, sem.release).start()
+    with b.turn(sem):
+        pass
+    assert b.queued_s >= 0.25 and b.left() > 0.9

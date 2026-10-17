@@ -18,6 +18,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError as FuturesTimeoutError
 import hashlib
+import threading
 
 # =========================
 # CONSTANTES DE RETRY
@@ -119,6 +120,9 @@ class SimpleCache:
         self._default_ttl = timedelta(minutes=default_ttl_minutes)
         self._max_entries = max_entries
         self._access_order: List[str] = []  # Para LRU tracking
+        # Fase 6 (revisión de código, hallazgo 1): desde que los análisis corren en hilos (hasta 4 a la vez), el
+        # caché se comparte entre hilos; sin lock, recorrer el dict mientras otro hilo inserta lanzaba RuntimeError.
+        self._lock = threading.RLock()
     
     def _make_key(self, prefix: str, *args) -> str:
         """Genera una clave única para el caché."""
@@ -146,6 +150,22 @@ class SimpleCache:
                     del self._cache[oldest_key]
     
     def get(self, key: str) -> Optional[Any]:
+        with self._lock:
+            return self._get_unlocked(key)
+
+    def set(self, key: str, value: Any, ttl_minutes: Optional[int] = None):
+        with self._lock:
+            return self._set_unlocked(key, value, ttl_minutes)
+
+    def clear(self):
+        with self._lock:
+            return self._clear_unlocked()
+
+    def stats(self) -> Dict:
+        with self._lock:
+            return self._stats_unlocked()
+
+    def _get_unlocked(self, key: str) -> Optional[Any]:
         """Obtiene un valor del caché si existe y no ha expirado."""
         if key not in self._cache:
             return None
@@ -164,7 +184,7 @@ class SimpleCache:
         
         return entry["value"]
     
-    def set(self, key: str, value: Any, ttl_minutes: Optional[int] = None):
+    def _set_unlocked(self, key: str, value: Any, ttl_minutes: Optional[int] = None):
         """Guarda un valor en el caché."""
         # Limpiar expirados primero
         self._evict_expired()
@@ -185,12 +205,12 @@ class SimpleCache:
             self._access_order.remove(key)
         self._access_order.append(key)
     
-    def clear(self):
+    def _clear_unlocked(self):
         """Limpia todo el caché."""
         self._cache.clear()
         self._access_order.clear()
     
-    def stats(self) -> Dict:
+    def _stats_unlocked(self) -> Dict:
         """Retorna estadísticas del caché."""
         self._evict_expired()  # Limpiar antes de reportar
         return {

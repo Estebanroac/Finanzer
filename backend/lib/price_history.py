@@ -41,7 +41,9 @@ FETCHER: Fetcher = yfinance_fetcher
 
 _cache: Dict[str, tuple] = {}          # símbolo -> (ts, resultado)
 _lock = threading.Lock()
-_pool = ThreadPoolExecutor(max_workers=2, thread_name_prefix="price_history")
+# Fase 6 (revisión de código, hallazgo 2): la serie de la empresa y la del índice de cada análisis, para los análisis
+# que corren a la vez (server.max_concurrent_analyses); con 2 hilos, el 3.º y el 4.º esperaban y se quedaban sin serie.
+_pool = ThreadPoolExecutor(max_workers=2 * cfg("data.server.max_concurrent_analyses"), thread_name_prefix="price_history")
 
 
 def normalize(raw) -> Optional[pd.DataFrame]:

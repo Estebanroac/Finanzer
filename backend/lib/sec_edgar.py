@@ -25,6 +25,7 @@ conceptos que se usan (Render tiene 512 MB).
 El descargador es inyectable (`FETCHER`): en producción, urllib; en los tests, el replay de los fixtures.
 """
 import datetime as _dt
+import contextlib
 import gzip
 import json
 import logging
@@ -35,7 +36,7 @@ import time
 import urllib.error
 import urllib.request
 from collections import OrderedDict
-from concurrent.futures import Future, ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor, TimeoutError as FutureTimeout
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from settings import cfg
@@ -206,24 +207,42 @@ FETCHER: Callable[[str, float], Tuple[Optional[bytes], int]] = urllib_fetcher
 
 
 class Budget:
-    """Tiempo de EDGAR que le queda a un análisis."""
+    """Tiempo de EDGAR que le queda a un análisis. Fase 6 (revisión de código, hallazgo 2): la espera en cola detrás de
+    OTROS análisis (el turno de las lecturas grandes y el ritmo de la SEC) no gasta el presupuesto: con varios análisis
+    a la vez, el segundo perdía EDGAR y su resultado dependía de la carga (BRK-B: P/E 13.24 o 16.96)."""
 
     def __init__(self, seconds: Optional[float] = None):
         self.deadline = time.monotonic() + (cfg("data.edgar.budget_s") if seconds is None else seconds)
+        self.queued_s = 0.0
 
     def left(self) -> float:
         return self.deadline - time.monotonic()
+
+    def add_queue(self, seconds: float) -> None:
+        if seconds > 0:
+            self.deadline += seconds
+            self.queued_s += seconds
+
+    @contextlib.contextmanager
+    def turn(self, sem):
+        """Espera el turno de `sem` sin gastar presupuesto."""
+        t0 = time.monotonic()
+        with sem:
+            self.add_queue(time.monotonic() - t0)
+            yield
 
 
 def _get(url: str, budget: Budget) -> bytes:
     E = cfg("data.edgar")
     if not user_agent():
         raise Unavailable(status()["reason"])
+    t0 = time.monotonic()
     with _rate_lock:
         wait = _last[0] + E["min_interval_s"] - time.monotonic()
         if wait > 0:
             time.sleep(wait)
         _last[0] = time.monotonic()
+    budget.add_queue(time.monotonic() - t0)
     left = budget.left()
     if left <= 0:
         raise Unavailable(f"presupuesto de EDGAR agotado ({E['budget_s']:g} s)")
@@ -359,7 +378,7 @@ def merge_facts(base: Dict[str, Any], extra: Dict[str, Any]) -> Dict[str, Any]:
 def company_facts(cik: int, budget: Budget) -> Dict[str, Any]:
     """companyfacts reducido del CIK (caché diaria). NotFound si el CIK no tiene estados XBRL."""
     def make():
-        with _parsing():
+        with budget.turn(_parsing()):
             return reduce_facts(_get_json(FACTS_URL.format(cik=cik), budget))
     return _cached(f"facts:{cik}", cfg("data.edgar.facts_ttl_s"), make)
 
@@ -507,7 +526,7 @@ def instance_facts(cik: int, filing: Dict[str, Any], budget: Budget) -> Dict[str
         inst = next((n for n in names if n and n.endswith("_htm.xml")), None)
         if inst is None:
             return {"facts": {}, "accns": [], "last_filed": None, "reason": "el filing no publica la instancia XBRL"}
-        with _parsing():
+        with budget.turn(_parsing()):
             return parse_instance(_get(ARCHIVE_URL.format(cik=cik, acc=acc, name=inst), budget), filing["form"],
                                   filing["filingDate"], filing["accessionNumber"])
     return _cached(f"inst:{acc}", cfg("data.edgar.facts_ttl_s"), make)
@@ -915,7 +934,7 @@ def _predecessors(ticker: str) -> Tuple[int, ...]:
     return tuple(int(c) for c in (cfg("data.edgar.predecessors") or {}).get(ticker.upper(), []))
 
 
-def fetch(ticker: str, stage1: Optional[Future] = None) -> Dict[str, Any]:
+def fetch(ticker: str, stage1: Optional[Future] = None, budget: Optional["Budget"] = None) -> Dict[str, Any]:
     """Todo lo de EDGAR de un análisis, dentro del presupuesto. Etapa 1 (se publica en `stage1` en cuanto está):
     {status, reason, cik, title, filings, cover}. Etapa 2: `facts` (companyfacts y los pendientes leídos),
     `facts_status` (ok | sin_estados | no_disponible), `facts_reason` y `pending_filings`."""
@@ -928,7 +947,7 @@ def fetch(ticker: str, stage1: Optional[Future] = None) -> Dict[str, Any]:
     st = status()
     if not st["enabled"]:
         return publish({"status": "desactivado", "reason": st["reason"], "cik": None, "filings": None})
-    budget = Budget()
+    budget = budget or Budget()
     res: Dict[str, Any] = {"status": "no_disponible", "reason": None, "cik": None, "filings": None}
     try:
         ent = cik_for(ticker, budget)
@@ -979,7 +998,10 @@ def start(ticker: str):
     stage1: Future = Future()
     with _lock:
         _inflight[ticker.upper()] = stage1
-    return _pool.submit(fetch, ticker, stage1)
+    budget = Budget() if status()["enabled"] else None
+    fut = _pool.submit(fetch, ticker, stage1, budget)
+    fut.edgar_budget = budget            # collect espera también lo que el análisis estuvo en cola
+    return fut
 
 
 def _wait_s() -> float:
@@ -1005,7 +1027,16 @@ def collect(future, ticker: Optional[str] = None) -> Dict[str, Any]:
     if future is None:
         return {"status": "no_disponible", "reason": "no se lanzó la consulta", "cik": None, "filings": None}
     try:
-        return future.result(timeout=_wait_s())
+        b = getattr(future, "edgar_budget", None)
+        end = time.monotonic() + _wait_s()
+        while True:
+            # la espera se alarga con la cola que el presupuesto no cuenta (hallazgo 2 de la revisión de F6)
+            left = end + (b.queued_s if b else 0.0) - time.monotonic()
+            try:
+                return future.result(timeout=max(min(left, 0.5), 0.0))
+            except FutureTimeout:
+                if end + (b.queued_s if b else 0.0) - time.monotonic() <= 0:
+                    raise
     except Exception as e:  # tiempo agotado u otro fallo del hilo
         return {"status": "no_disponible", "reason": f"{type(e).__name__}: {e}", "cik": None, "filings": None}
 
