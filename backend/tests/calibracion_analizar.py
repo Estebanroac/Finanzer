@@ -220,6 +220,17 @@ def report(rows, failed):
             r3 = [r["rel_3a"] for r in sub if r.get("rel_3a") is not None]
             lines.append(f"| {scale} | {lv} | {len(sub)} | {_pct(_stat(pers, 'mean'))} | {_pct(_stat(mdd, 'median'))} | "
                          f"{_pct(_stat(r1, 'median'))} | {_pct(_stat(r3, 'median'))} |")
+    # EXPLORATORIO (añadido DESPUÉS de ver H1; no decide nada): el nivel del ROE, no su persistencia relativa. La
+    # medida de H1 (FY+3 ≥ 75% del propio) castiga a los ROE altos por la reversión a la media.
+    lines += ["\n## Exploratorio (añadido tras ver H1; no decide)\n",
+              "| Nivel de calidad | n | ROE de FY (mediana) | ROE de FY+3 (mediana) | FY+3 ≥ 15% |", "|---|---|---|---|---|"]
+    for lv in ql:
+        sub = [r for r in rows if r.get("quality_level") == lv and r.get("roe_fy") is not None
+               and r.get("roe_fy3") is not None]
+        a, b = [r["roe_fy"] for r in sub], [r["roe_fy3"] for r in sub]
+        hi = [1.0 if x >= 0.15 else 0.0 for x in b]
+        lines.append(f"| {lv} | {len(sub)} | {_pct(_stat(a, 'median'))} | {_pct(_stat(b, 'median'))} | "
+                     f"{_pct(_stat(hi, 'mean'))} |")
     return "\n".join(lines) + "\n", res
 
 
