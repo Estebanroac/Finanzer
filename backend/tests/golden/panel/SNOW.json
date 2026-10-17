@@ -2696,7 +2696,7 @@
         "news": [],
         "news_note": "sin titulares de Finnhub (no disponibles o sin respuesta)",
         "note": "Contexto de mercado: no puntúa en la calidad ni en el precio. Describe cómo se ha movido la acción, no qué hará.",
-        "pead_note": "La deriva tras los resultados (PEAD) no se lee: hace falta la sorpresa del BPA frente al consenso y no hay fuente con fecha para ella.",
+        "pead_note": "Resultados y deriva (PEAD): BPA y consenso: Finnhub; fecha: 8-K de resultados (SEC EDGAR, apartado 2.02).",
         "rows": [
           {
             "key": "momentum",
@@ -2739,6 +2739,13 @@
             "text": "volumen en el rango habitual (z = −0.2)",
             "tone": "neu",
             "value": "z = −0.2"
+          },
+          {
+            "key": "pead",
+            "label": "Resultados y deriva (PEAD)",
+            "text": "resultados del trimestre cerrado el 2026-06-30, publicados el 2026-09-02: BPA de 0.39 frente a 0.32 de consenso, una sorpresa del +20.1%. Entre la sesión anterior al anuncio y la siguiente, la acción +9.9% frente al S&P 500; en las 28 sesiones siguientes, −5.6% frente al S&P 500: la deriva va en contra de la sorpresa. Bernard y Thomas (1989) documentan que el precio sigue la sorpresa unas 60 sesiones; describe un efecto estudiado, no una previsión",
+            "tone": "neu",
+            "value": "+20.1% sorpresa"
           }
         ],
         "source": "Serie diaria de Yahoo Finance (cierre ajustado por dividendos y splits, 2 años), S&P 500 y ETF del sector (XLK).",
@@ -4226,6 +4233,20 @@
       "reason": "sin titulares de Finnhub (no disponibles o sin respuesta)"
     },
     "note": "Contexto de mercado: no puntúa en la calidad ni en el precio. Describe cómo se ha movido la acción, no qué hará.",
+    "pead": {
+      "actual": 0.39,
+      "announced": "2026-09-02",
+      "drift": -0.0562917325601,
+      "estimate": 0.3246,
+      "period": "2026-06-30",
+      "reaction": 0.0994338302285,
+      "sessions": 28,
+      "source": "BPA y consenso: Finnhub; fecha: 8-K de resultados (SEC EDGAR, apartado 2.02)",
+      "status": "ok",
+      "surprise": 0.201478743068,
+      "window": 60,
+      "window_passed": false
+    },
     "readings": [
       {
         "field": "market_context.signals.momentum_12_1.value",
@@ -4274,6 +4295,14 @@
         "num": -0.184281814282,
         "text": "volumen en el rango habitual (z = −0.2)",
         "value": "z = −0.2"
+      },
+      {
+        "field": "market_context.pead.surprise",
+        "key": "pead",
+        "label": "Resultados y deriva (PEAD)",
+        "num": 0.201478743068,
+        "text": "resultados del trimestre cerrado el 2026-06-30, publicados el 2026-09-02: BPA de 0.39 frente a 0.32 de consenso, una sorpresa del +20.1%. Entre la sesión anterior al anuncio y la siguiente, la acción +9.9% frente al S&P 500; en las 28 sesiones siguientes, −5.6% frente al S&P 500: la deriva va en contra de la sorpresa. Bernard y Thomas (1989) documentan que el precio sigue la sorpresa unas 60 sesiones; describe un efecto estudiado, no una previsión",
+        "value": "+20.1% sorpresa"
       }
     ],
     "sector_etf": "XLK",

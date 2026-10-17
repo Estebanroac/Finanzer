@@ -205,7 +205,7 @@
         "triggers": [],
         "years": 19
       },
-      "eps_ttm": 19.6135369459,
+      "eps_ttm": 22.2269866941,
       "growth_profitable": {
         "basis": "agregado",
         "fcf_sbc_margin": null,
@@ -250,11 +250,11 @@
             "evaluable": true,
             "kind": "relativo",
             "method": "múltiplos frente al sector",
-            "signal": -0.333333333333
+            "signal": -0.3125
           }
         ],
         "reasons": [
-          "coinciden (cara) con distancia 0.17 (< 0.6)"
+          "coinciden (cara) con distancia 0.19 (< 0.6)"
         ]
       },
       "coverage": {
@@ -1039,8 +1039,8 @@
         "source": "yfinance_statements"
       },
       "trailingEps": {
-        "detail": "plan B: estados anuales de yfinance (último FY)",
-        "source": "yfinance_statements"
+        "detail": "BPA TTM aproximado = BPA del ejercicio (19.61) × beneficio TTM / beneficio del ejercicio (acciones medias del ejercicio: la fuente no trae las trimestrales)",
+        "source": "derivado"
       }
     },
     "official_source": {
@@ -1137,7 +1137,7 @@
       "balance_date": "2026-06-30",
       "basis": "ttm",
       "cut": "2026-06-30",
-      "eps": "fuente",
+      "eps": "ttm",
       "errors": [],
       "last_quarter_fields": [
         "cash",
@@ -1222,7 +1222,7 @@
         },
         {
           "label": "Confianza · Convergencia entre métodos (alta)",
-          "text": "coinciden (cara) con distancia 0.17 (< 0.6)"
+          "text": "coinciden (cara) con distancia 0.19 (< 0.6)"
         },
         {
           "label": "Fuente oficial",
@@ -1234,7 +1234,7 @@
         },
         {
           "label": "Procedencia de los datos (campos del análisis por fuente)",
-          "text": "estados de Yahoo (yfinance): 39 campos; SEC EDGAR: 1 (country); Finnhub: 7 (liquidez corriente, P/E adelantado, cobertura de intereses, rotación de existencias, payout, PEG, prueba ácida); Yahoo (cotización y perfil): 2 (industria, sector); calculados con otros datos del análisis: 11 campos; sin dato utilizable (ausente o de otro periodo): 3 (arrendamiento financiero, BPA estimado, caja total)."
+          "text": "estados de Yahoo (yfinance): 38 campos; SEC EDGAR: 1 (country); Finnhub: 7 (liquidez corriente, P/E adelantado, cobertura de intereses, rotación de existencias, payout, PEG, prueba ácida); Yahoo (cotización y perfil): 2 (industria, sector); calculados con otros datos del análisis: 12 campos; sin dato utilizable (ausente o de otro periodo): 3 (arrendamiento financiero, BPA estimado, caja total)."
         }
       ],
       "title": "Detalle técnico para auditoría"
@@ -1259,16 +1259,16 @@
                 "bench": 9.2828,
                 "bench_txt": "9.28x",
                 "fmt": "mult",
-                "gap_pct": 5.42183819296,
-                "gap_txt": "+5%",
+                "gap_pct": -6.97366463772,
+                "gap_txt": "-7%",
                 "higher_is_better": false,
                 "key": "pe",
                 "label": "P/E (TTM)",
                 "reading": "En línea",
-                "text": "P/E (TTM) de 9.8x frente a 9.3x de su industria (+5%): en línea",
+                "text": "P/E (TTM) de 8.6x frente a 9.3x de su industria (-7%): en línea",
                 "tone": "neu",
-                "value": 9.78609839578,
-                "value_txt": "9.79x"
+                "value": 8.63544865901,
+                "value_txt": "8.64x"
               },
               {
                 "bench": 0.8635,
@@ -2024,7 +2024,7 @@
       "valuation": {
         "block": {
           "label": "Bloque de múltiplos",
-          "reason": "promedio de los ajustes reescalados a ±1 (P/E -0.50, Forward P/E +0.33, EV/EBITDA -0.50, PEG +0.00) = -0.17 × 6 (máximo con 4 miembros) = -1.0; sin dato: P/FCF",
+          "reason": "promedio de los ajustes reescalados a ±1 (P/E +0.00, Forward P/E +0.00, EV/EBITDA -0.50, PEG +0.00) = -0.12 × 6 (máximo con 4 miembros) = -0.8; sin dato: P/FCF",
           "sign": "-1",
           "tone": "warn"
         },
@@ -2038,18 +2038,18 @@
             "bench": 9.2828,
             "bench_txt": "9.28x",
             "fmt": "mult",
-            "gap_pct": 5.42183819296,
-            "gap_txt": "+5%",
+            "gap_pct": -6.97366463772,
+            "gap_txt": "-7%",
             "higher_is_better": false,
             "key": "pe",
             "label": "P/E (TTM)",
             "reading": "En línea",
             "role": "block",
             "state": "con_dato",
-            "text": "P/E (TTM) de 9.8x frente a 9.3x de su industria (+5%): en línea",
+            "text": "P/E (TTM) de 8.6x frente a 9.3x de su industria (-7%): en línea",
             "tone": "neu",
-            "value": 9.78609839578,
-            "value_txt": "9.79x"
+            "value": 8.63544865901,
+            "value_txt": "8.64x"
           },
           {
             "bench": null,
@@ -2164,7 +2164,7 @@
           "key": "convergence",
           "label": "Convergencia entre métodos",
           "level": "Alta",
-          "text": "DCF inverso -0.50 (cara) · múltiplos frente al sector -0.33 (cara). Los métodos de valoración coinciden."
+          "text": "DCF inverso -0.50 (cara) · múltiplos frente al sector -0.31 (cara). Los métodos de valoración coinciden."
         },
         {
           "key": "coverage",
@@ -2311,7 +2311,7 @@
           "key": "pe",
           "label": "P/E reportado (TTM)",
           "state": "con_dato",
-          "value": "9.79x"
+          "value": "8.64x"
         },
         {
           "key": "roe",
@@ -2412,7 +2412,7 @@
       },
       "graham": {
         "label": "Descuento Graham",
-        "text": "cotiza 35% por debajo del número de Graham, criterio clásico de valor",
+        "text": "cotiza 39% por debajo del número de Graham, criterio clásico de valor",
         "tone": "pos"
       },
       "interest_coverage": {
@@ -2432,7 +2432,7 @@
       },
       "pe": {
         "label": "En línea",
-        "text": "el mercado paga 9.8x beneficios, un +5% frente a la referencia de su industria (9.3x)",
+        "text": "el mercado paga 8.6x beneficios, un -7% frente a la referencia de su industria (9.3x)",
         "tone": "neu"
       },
       "pos52": {
@@ -2776,17 +2776,17 @@
                 {
                   "in_block": true,
                   "metric": "P/E normalizado vs Sector",
-                  "reason": "Premium (10.5x vs 9.3x)",
-                  "sign": "(-2)",
+                  "reason": "En línea (9.2x vs 9.3x)",
+                  "sign": "(0)",
                   "state": "con_dato",
                   "tone": "neu",
-                  "value": "10.5x"
+                  "value": "9.2x"
                 },
                 {
                   "in_block": true,
                   "metric": "Forward P/E",
-                  "reason": "P/E normalizado estable a mejor (10x → 9x)",
-                  "sign": "(+1)",
+                  "reason": "Sin compresión del P/E normalizado (9x → 9x forward)",
+                  "sign": "(0)",
                   "state": "con_dato",
                   "tone": "neu",
                   "value": "9.3x"
@@ -2812,7 +2812,7 @@
                 {
                   "in_block": false,
                   "metric": "Bloque de múltiplos",
-                  "reason": "promedio de los ajustes reescalados a ±1 (P/E -0.50, Forward P/E +0.33, EV/EBITDA -0.50, PEG +0.00) = -0.17 × 6 (máximo con 4 miembros) = -1.0; sin dato: P/FCF",
+                  "reason": "promedio de los ajustes reescalados a ±1 (P/E +0.00, Forward P/E +0.00, EV/EBITDA -0.50, PEG +0.00) = -0.12 × 6 (máximo con 4 miembros) = -0.8; sin dato: P/FCF",
                   "sign": "-1",
                   "state": "con_dato",
                   "tone": "warn",
@@ -3011,7 +3011,7 @@
         "news": [],
         "news_note": "sin titulares de Finnhub (no disponibles o sin respuesta)",
         "note": "Contexto de mercado: no puntúa en la calidad ni en el precio. Describe cómo se ha movido la acción, no qué hará.",
-        "pead_note": "La deriva tras los resultados (PEAD) no se lee: hace falta la sorpresa del BPA frente al consenso y no hay fuente con fecha para ella.",
+        "pead_note": "La deriva tras los resultados (PEAD) no se lee: el emisor no presenta 8-K de resultados en SEC EDGAR (20-F/6-K): sin fecha de anuncio con fuente.",
         "rows": [
           {
             "key": "momentum",
@@ -3090,7 +3090,7 @@
           ],
           [
             "EPS",
-            "$19.61",
+            "$22.23",
             "Valor en libros / acción",
             "$195.63"
           ]
@@ -3355,13 +3355,13 @@
               "label": "Número de Graham",
               "reading": "Descuento Graham",
               "state": "con_dato",
-              "text": "cotiza 35% por debajo del número de Graham, criterio clásico de valor",
+              "text": "cotiza 39% por debajo del número de Graham, criterio clásico de valor",
               "tone": "pos",
-              "value": "$293.82"
+              "value": "$312.79"
             }
           ]
         },
-        "intro": "El mercado paga 9.8x beneficios, un +5% frente a la referencia de su industria (9.3x). La compañía quema caja libre a nivel operativo. Cotiza 35% por debajo del número de Graham, criterio clásico de valor.",
+        "intro": "El mercado paga 8.6x beneficios, un -7% frente a la referencia de su industria (9.3x). La compañía quema caja libre a nivel operativo. Cotiza 39% por debajo del número de Graham, criterio clásico de valor.",
         "ke_note": null,
         "market_note": null,
         "normalization_note": "Beneficio TTM (4 trimestres): reportado $28.97B, normalizado $27.11B (no recurrentes 6.4% del beneficio; partidas no recurrentes (total de Yahoo) (explicita, confianza alta), recurrente (4 de los últimos 4 ejercicios): solo el exceso sobre su promedio, $1.86B netos). El score usa el beneficio normalizado.",
@@ -3389,14 +3389,14 @@
         "rows": [
           {
             "bench": "9.28x",
-            "gap": "+5%",
+            "gap": "-7%",
             "key": "pe",
             "label": "P/E (TTM)",
             "reading": "En línea",
             "state": "con_dato",
-            "text": "P/E (TTM) de 9.8x frente a 9.3x de su industria (+5%): en línea",
+            "text": "P/E (TTM) de 8.6x frente a 9.3x de su industria (-7%): en línea",
             "tone": "neu",
-            "value": "9.79x"
+            "value": "8.64x"
           },
           {
             "bench": "—",
@@ -3484,7 +3484,7 @@
             "state": "con_dato",
             "text": null,
             "tone": null,
-            "value": "10.22%"
+            "value": "11.58%"
           },
           {
             "bench": "—",
@@ -3590,14 +3590,14 @@
         },
         {
           "bench": "vs industria 9.3x",
-          "delta": "+5%",
+          "delta": "-7%",
           "key": "pe",
           "label": "P/E (TTM)",
           "pill": "En línea",
           "state": "con_dato",
           "tone": "neu",
           "unit": "x",
-          "value": "9.8"
+          "value": "8.6"
         },
         {
           "bench": "",
@@ -3711,7 +3711,7 @@
         },
         {
           "label": "ATRACTIVO DEL PRECIO",
-          "text": "El mercado paga 9.8x beneficios, un +5% frente a la referencia de su industria (9.3x)."
+          "text": "El mercado paga 8.6x beneficios, un -7% frente a la referencia de su industria (9.3x)."
         },
         {
           "label": "CONTEXTO DE MERCADO",
@@ -4687,8 +4687,8 @@
     "normalized_net_income": 27110271884.6,
     "one_off_net": 1858948451.96,
     "one_off_pct": 0.0641697784878,
-    "pe_normalized": 10.4571301191,
-    "pe_reported": 9.78609839578,
+    "pe_normalized": 9.22758045263,
+    "pe_reported": 8.63544865901,
     "pe_unreliable": false,
     "quality_differs": true,
     "reported_net_income": 28969220336.5,
@@ -4697,8 +4697,8 @@
   },
   "eps_vs_revenue_growth": null,
   "errors": [],
-  "graham_margin": 0.346746517188,
-  "graham_number": 293.821628957,
+  "graham_margin": 0.386351894153,
+  "graham_number": 312.785129804,
   "growth_basis": {
     "applied_to": [],
     "basis": "agregado",
@@ -4739,11 +4739,11 @@
     "debt_to_assets": 0.428246877998,
     "dividend_yield": 0.0329579612283,
     "earnings_growth": -0.169078123586,
-    "earnings_yield": 0.102185770013,
+    "earnings_yield": 0.11580174227,
     "ebitda": 56122880777.1,
     "ebitda_margin": 0.118285648386,
     "enterprise_value": 415062999779.0,
-    "eps": 19.6135369459,
+    "eps": 22.2269866941,
     "ev_ebitda": 10.4259073932,
     "ev_revenue": 1.23323521602,
     "fcf_yield": -0.0347727801758,
@@ -4771,8 +4771,8 @@
     "payout_basis": "beneficio_neto",
     "payout_ratio": 0.27264705747,
     "pb": 0.981152258011,
-    "pe": 9.78609839578,
-    "pe_normalized": 10.4571301191,
+    "pe": 8.63544865901,
+    "pe_normalized": 9.22758045263,
     "peg": 1.23865,
     "pfcf": -28.7581261821,
     "price_52w_high": 248.899993896,
@@ -4818,6 +4818,10 @@
       "reason": "sin titulares de Finnhub (no disponibles o sin respuesta)"
     },
     "note": "Contexto de mercado: no puntúa en la calidad ni en el precio. Describe cómo se ha movido la acción, no qué hará.",
+    "pead": {
+      "reason": "el emisor no presenta 8-K de resultados en SEC EDGAR (20-F/6-K): sin fecha de anuncio con fuente",
+      "status": "sin_dato"
+    },
     "readings": [
       {
         "field": "market_context.signals.momentum_12_1.value",
@@ -5291,11 +5295,11 @@
     "debt_to_assets": 0.428246877998,
     "debt_to_equity": 1.17809029005,
     "dividend_yield": 0.0329579612283,
-    "earnings_yield": 0.102185770013,
+    "earnings_yield": 0.11580174227,
     "ebitda": 39810731490.8,
     "ebitda_margin": 0.118285648386,
     "enterprise_value": 415062999779.0,
-    "eps": 19.6135369459,
+    "eps": 22.2269866941,
     "ev_ebitda": 10.4259073932,
     "ev_fcf": -52.800148491,
     "ev_revenue": 1.23323521602,
@@ -5306,7 +5310,7 @@
     "ffo_payout": 0.175345855079,
     "ffo_per_share": 38.2444264416,
     "forward_pe": 9.28989,
-    "graham_number": 293.821628957,
+    "graham_number": 312.785129804,
     "gross_margin": 0.167433303369,
     "interest_coverage": 11.0439618483,
     "inventory_turnover": 8.29514089078,
@@ -5321,7 +5325,7 @@
     "p_ffo": 5.01877058437,
     "payout_ratio": 0.27264705747,
     "pb": 0.981152258011,
-    "pe": 9.78609839578,
+    "pe": 8.63544865901,
     "peg": 1.23865,
     "ps": 0.671693829813,
     "quick_ratio": 1.00434165648,
@@ -5558,21 +5562,21 @@
       "Valoración": {
         "adjustments": [
           {
-            "adjustment": -2,
+            "adjustment": 0,
             "in_block": true,
             "metric": "P/E normalizado vs Sector",
             "normalized": true,
-            "reason": "Premium (10.5x vs 9.3x)",
-            "severity": "moderate",
-            "value": "10.5x"
+            "reason": "En línea (9.2x vs 9.3x)",
+            "severity": "ok",
+            "value": "9.2x"
           },
           {
-            "adjustment": 1,
+            "adjustment": 0,
             "in_block": true,
             "metric": "Forward P/E",
             "normalized": true,
-            "reason": "P/E normalizado estable a mejor (10x → 9x)",
-            "severity": "good",
+            "reason": "Sin compresión del P/E normalizado (9x → 9x forward)",
+            "severity": "ok",
             "value": "9.3x"
           },
           {
@@ -5594,7 +5598,7 @@
           {
             "adjustment": -1,
             "block_max": 6,
-            "block_mean": -0.166666666667,
+            "block_mean": -0.125,
             "block_members": [
               "P/E",
               "Forward P/E",
@@ -5602,7 +5606,7 @@
               "PEG"
             ],
             "metric": "Bloque de múltiplos",
-            "reason": "promedio de los ajustes reescalados a ±1 (P/E -0.50, Forward P/E +0.33, EV/EBITDA -0.50, PEG +0.00) = -0.17 × 6 (máximo con 4 miembros) = -1.0; sin dato: P/FCF",
+            "reason": "promedio de los ajustes reescalados a ±1 (P/E +0.00, Forward P/E +0.00, EV/EBITDA -0.50, PEG +0.00) = -0.12 × 6 (máximo con 4 miembros) = -0.8; sin dato: P/FCF",
             "severity": "moderate",
             "value": "4 múltiplos"
           },
@@ -5618,11 +5622,11 @@
         "conclusive": true,
         "coverage": 0.8,
         "details": [
-          "Premium (10.5x vs 9.3x)",
-          "P/E normalizado estable a mejor (10x → 9x)",
+          "En línea (9.2x vs 9.3x)",
+          "Sin compresión del P/E normalizado (9x → 9x forward)",
           "Premium (10.4x vs 7.3x)",
           "Razonable (1.24)",
-          "promedio de los ajustes reescalados a ±1 (P/E -0.50, Forward P/E +0.33, EV/EBITDA -0.50, PEG +0.00) = -0.17 × 6 (máximo con 4 miembros) = -1.0; sin dato: P/FCF",
+          "promedio de los ajustes reescalados a ±1 (P/E +0.00, Forward P/E +0.00, EV/EBITDA -0.50, PEG +0.00) = -0.12 × 6 (máximo con 4 miembros) = -0.8; sin dato: P/FCF",
           "El precio actual exige que el flujo de mantenimiento (flujo operativo − D&A) por acción crezca un 7.0% anual durante 10 años (9.0% los 5 primeros y convergencia al 2.5%); en los últimos 10 años, sus ingresos crecieron un 6.0% anual. Lo sostuvo 10 años el 21% de las empresas comparables (ventas de más de 100 mil millones, todas las industrias)."
         ],
         "max": 20,

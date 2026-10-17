@@ -164,7 +164,7 @@
     "industry": "REIT - Industrial",
     "inputs": {
       "assets_to_revenue": 11.2312661694,
-      "eps_ttm": 3.56,
+      "eps_ttm": 4.50126477399,
       "net_margin_ttm": 0.457295983968,
       "revenue_cagr_3y": 0.137411044374,
       "revenue_cagr_3y_reason": null
@@ -985,8 +985,8 @@
         "source": "yfinance_statements"
       },
       "trailingEps": {
-        "detail": "plan B: estados anuales de yfinance (último FY)",
-        "source": "yfinance_statements"
+        "detail": "BPA TTM aproximado = BPA del ejercicio (3.56) × beneficio TTM / beneficio del ejercicio (acciones medias del ejercicio: la fuente no trae las trimestrales)",
+        "source": "derivado"
       }
     },
     "official_source": {
@@ -1084,7 +1084,7 @@
       "balance_date": "2026-06-30",
       "basis": "ttm",
       "cut": "2026-06-30",
-      "eps": "fuente",
+      "eps": "ttm",
       "errors": [],
       "last_quarter_fields": [
         "cash",
@@ -1142,7 +1142,7 @@
       "field": "trailingEps",
       "new": null,
       "old": 4.3916,
-      "reason": "BPA TTM de Finnhub 4.3916 no casa con el del corte de los estados (3.56 a 2026-06-30): es de otro periodo y no entra",
+      "reason": "BPA TTM de Finnhub 4.3916 no casa con el del corte de los estados (4.501 a 2026-06-30): es de otro periodo y no entra",
       "rule": "periodo_incoherente"
     },
     {
@@ -1204,7 +1204,7 @@
         },
         {
           "label": "Procedencia de los datos (campos del análisis por fuente)",
-          "text": "estados de Yahoo (yfinance): 34 campos; SEC EDGAR: 2 (country, beneficio operativo); Finnhub: 7 (liquidez corriente, P/E adelantado, cobertura de intereses, payout, PEG, prueba ácida, dividendo por acción); Yahoo (cotización y perfil): 2 (industria, sector); calculados con otros datos del análisis: 14 campos; sin dato utilizable (ausente o de otro periodo): 3 (arrendamiento financiero, BPA estimado, caja total)."
+          "text": "estados de Yahoo (yfinance): 33 campos; SEC EDGAR: 2 (country, beneficio operativo); Finnhub: 7 (liquidez corriente, P/E adelantado, cobertura de intereses, payout, PEG, prueba ácida, dividendo por acción); Yahoo (cotización y perfil): 2 (industria, sector); calculados con otros datos del análisis: 15 campos; sin dato utilizable (ausente o de otro periodo): 3 (arrendamiento financiero, BPA estimado, caja total)."
         }
       ],
       "title": "Detalle técnico para auditoría"
@@ -2559,7 +2559,7 @@
         "news": [],
         "news_note": "sin titulares de Finnhub (no disponibles o sin respuesta)",
         "note": "Contexto de mercado: no puntúa en la calidad ni en el precio. Describe cómo se ha movido la acción, no qué hará.",
-        "pead_note": "La deriva tras los resultados (PEAD) no se lee: hace falta la sorpresa del BPA frente al consenso y no hay fuente con fecha para ella.",
+        "pead_note": "Resultados y deriva (PEAD): BPA y consenso: Finnhub; fecha: 8-K de resultados (SEC EDGAR, apartado 2.02).",
         "rows": [
           {
             "key": "momentum",
@@ -2602,6 +2602,13 @@
             "text": "volumen en el rango habitual (z = 0.2)",
             "tone": "neu",
             "value": "z = 0.2"
+          },
+          {
+            "key": "pead",
+            "label": "Resultados y deriva (PEAD)",
+            "text": "resultados del trimestre cerrado el 2026-06-30, publicados el 2026-07-16: BPA de 1.13 frente a 0.80 de consenso, una sorpresa del +41.6%. Entre la sesión anterior al anuncio y la siguiente, la acción +6.0% frente al S&P 500; en las 60 sesiones siguientes, −15.5% frente al S&P 500: la deriva va en contra de la sorpresa. Bernard y Thomas (1989) documentan que el precio sigue la sorpresa unas 60 sesiones (esa ventana ya pasó); describe un efecto estudiado, no una previsión",
+            "tone": "neu",
+            "value": "+41.6% sorpresa"
           }
         ],
         "source": "Serie diaria de Yahoo Finance (cierre ajustado por dividendos y splits, 2 años), S&P 500 y ETF del sector (VNQ).",
@@ -2638,7 +2645,7 @@
           ],
           [
             "EPS",
-            "$3.56",
+            "$4.50",
             "Valor en libros / acción",
             "$56.47"
           ]
@@ -3800,8 +3807,8 @@
     "normalized_net_income": 3582002758.52,
     "one_off_net": 620441241.48,
     "one_off_pct": 0.147638193746,
-    "pe_normalized": 43.0298120826,
-    "pe_reported": 36.6769683495,
+    "pe_normalized": 34.0317974404,
+    "pe_reported": 29.0074043364,
     "pe_unreliable": true,
     "quality_differs": true,
     "reported_net_income": 4202444000.0,
@@ -3839,11 +3846,11 @@
     "debt_to_assets": 0.360770316186,
     "dividend_yield": 0.0323198266316,
     "earnings_growth": -0.112219451372,
-    "earnings_yield": 0.0272650670162,
+    "earnings_yield": 0.0344739566631,
     "ebitda": 7766903000.0,
     "ebitda_margin": 0.845168561383,
     "enterprise_value": 158762077342.0,
-    "eps": 3.56,
+    "eps": 4.50126477399,
     "ev_ebitda": 20.4408471874,
     "ev_revenue": 17.2759614108,
     "fcf_yield": 0.0422369626243,
@@ -3872,8 +3879,8 @@
     "payout_ratio": 0.559849209326,
     "payout_ratio_net_income": 0.924575080596,
     "pb": 2.31235432773,
-    "pe": 36.6769683495,
-    "pe_normalized": 43.0298120826,
+    "pe": 29.0074043364,
+    "pe_normalized": 34.0317974404,
     "peg": 1.31953563841,
     "pfcf": 23.6759449039,
     "price_52w_high": 153.350006104,
@@ -3915,6 +3922,20 @@
       "reason": "sin titulares de Finnhub (no disponibles o sin respuesta)"
     },
     "note": "Contexto de mercado: no puntúa en la calidad ni en el precio. Describe cómo se ha movido la acción, no qué hará.",
+    "pead": {
+      "actual": 1.13,
+      "announced": "2026-07-16",
+      "drift": -0.155478177328,
+      "estimate": 0.7979,
+      "period": "2026-06-30",
+      "reaction": 0.0595634378906,
+      "sessions": 60,
+      "source": "BPA y consenso: Finnhub; fecha: 8-K de resultados (SEC EDGAR, apartado 2.02)",
+      "status": "ok",
+      "surprise": 0.416217571124,
+      "window": 60,
+      "window_passed": true
+    },
     "readings": [
       {
         "field": "market_context.signals.momentum_12_1.value",
@@ -3963,6 +3984,14 @@
         "num": 0.158661115765,
         "text": "volumen en el rango habitual (z = 0.2)",
         "value": "z = 0.2"
+      },
+      {
+        "field": "market_context.pead.surprise",
+        "key": "pead",
+        "label": "Resultados y deriva (PEAD)",
+        "num": 0.416217571124,
+        "text": "resultados del trimestre cerrado el 2026-06-30, publicados el 2026-07-16: BPA de 1.13 frente a 0.80 de consenso, una sorpresa del +41.6%. Entre la sesión anterior al anuncio y la siguiente, la acción +6.0% frente al S&P 500; en las 60 sesiones siguientes, −15.5% frente al S&P 500: la deriva va en contra de la sorpresa. Bernard y Thomas (1989) documentan que el precio sigue la sorpresa unas 60 sesiones (esa ventana ya pasó); describe un efecto estudiado, no una previsión",
+        "value": "+41.6% sorpresa"
       }
     ],
     "sector_etf": "VNQ",
@@ -4347,11 +4376,11 @@
     "debt_to_assets": 0.360770316186,
     "debt_to_equity": 0.67829865553,
     "dividend_yield": 0.0323198266316,
-    "earnings_yield": 0.0272650670162,
+    "earnings_yield": 0.0344739566631,
     "ebitda": 7766903000.0,
     "ebitda_margin": 0.845168561383,
     "enterprise_value": 158762077342.0,
-    "eps": 3.56,
+    "eps": 4.50126477399,
     "ev_ebitda": 20.4408471874,
     "ev_fcf": null,
     "ev_revenue": 17.2759614108,
@@ -4362,7 +4391,7 @@
     "ffo_payout": 0.559849209326,
     "ffo_per_share": 7.30292885053,
     "forward_pe": 44.26453,
-    "graham_number": 67.2528635532,
+    "graham_number": 75.6228536867,
     "gross_margin": 0.743050858302,
     "interest_coverage": 4.93611387023,
     "inventory_turnover": null,
@@ -4377,7 +4406,7 @@
     "p_ffo": 17.8791290449,
     "payout_ratio": 0.924575080596,
     "pb": 2.31235432773,
-    "pe": 36.6769683495,
+    "pe": 29.0074043364,
     "peg": 1.31953563841,
     "ps": 13.5025209932,
     "quick_ratio": null,

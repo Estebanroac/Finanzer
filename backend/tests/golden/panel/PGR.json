@@ -217,7 +217,7 @@
     "industry": "Insurance - Property & Casualty",
     "inputs": {
       "assets_to_revenue": 1.40341732158,
-      "eps_ttm": 19.23,
+      "eps_ttm": 19.8881190308,
       "net_margin_ttm": 0.128438855637,
       "non_insurance_revenue_share": null,
       "revenue_cagr_3y": 0.208999143106,
@@ -998,8 +998,8 @@
         "source": "yfinance_statements"
       },
       "trailingEps": {
-        "detail": "plan B: estados anuales de yfinance (último FY)",
-        "source": "yfinance_statements"
+        "detail": "BPA TTM aproximado = BPA del ejercicio (19.23) × beneficio TTM / beneficio del ejercicio (acciones medias del ejercicio: la fuente no trae las trimestrales)",
+        "source": "derivado"
       }
     },
     "official_source": {
@@ -1109,7 +1109,7 @@
       "balance_date": "2026-06-30",
       "basis": "ttm",
       "cut": "2026-06-30",
-      "eps": "fuente",
+      "eps": "ttm",
       "errors": [],
       "last_quarter_fields": [
         "cash",
@@ -1150,14 +1150,6 @@
     }
   },
   "data_validation": [
-    {
-      "action": "aviso",
-      "field": "trailingEps",
-      "new": null,
-      "old": 19.9328,
-      "reason": "BPA TTM de Finnhub 19.9328 no casa con el del corte de los estados (19.23 a 2026-06-30): es de otro periodo y no entra",
-      "rule": "periodo_incoherente"
-    },
     {
       "action": "politica",
       "field": "revenueGrowth",
@@ -1225,7 +1217,7 @@
         },
         {
           "label": "Procedencia de los datos (campos del análisis por fuente)",
-          "text": "estados de Yahoo (yfinance): 30 campos; SEC EDGAR: 2 (country, ingresos); Finnhub: 7 (liquidez corriente, P/E adelantado, cobertura de intereses, payout, PEG, prueba ácida, dividendo por acción); Yahoo (cotización y perfil): 2 (industria, sector); calculados con otros datos del análisis: 10 campos; fijados por la regla del arquetipo: 1 (crecimiento de ingresos); sin dato utilizable (ausente o de otro periodo): 5 (EBITDA, BPA estimado, beneficio bruto, beneficio operativo, caja total)."
+          "text": "estados de Yahoo (yfinance): 29 campos; SEC EDGAR: 2 (country, ingresos); Finnhub: 7 (liquidez corriente, P/E adelantado, cobertura de intereses, payout, PEG, prueba ácida, dividendo por acción); Yahoo (cotización y perfil): 2 (industria, sector); calculados con otros datos del análisis: 11 campos; fijados por la regla del arquetipo: 1 (crecimiento de ingresos); sin dato utilizable (ausente o de otro periodo): 5 (EBITDA, BPA estimado, beneficio bruto, beneficio operativo, caja total)."
         }
       ],
       "title": "Detalle técnico para auditoría"
@@ -2581,7 +2573,7 @@
         "news": [],
         "news_note": "sin titulares de Finnhub (no disponibles o sin respuesta)",
         "note": "Contexto de mercado: no puntúa en la calidad ni en el precio. Describe cómo se ha movido la acción, no qué hará.",
-        "pead_note": "La deriva tras los resultados (PEAD) no se lee: hace falta la sorpresa del BPA frente al consenso y no hay fuente con fecha para ella.",
+        "pead_note": "Resultados y deriva (PEAD): BPA y consenso: Finnhub; fecha: 8-K de resultados (SEC EDGAR, apartado 2.02).",
         "rows": [
           {
             "key": "momentum",
@@ -2624,6 +2616,13 @@
             "text": "volumen en el rango habitual (z = 0.3)",
             "tone": "neu",
             "value": "z = 0.3"
+          },
+          {
+            "key": "pead",
+            "label": "Resultados y deriva (PEAD)",
+            "text": "resultados del trimestre cerrado el 2026-09-30, publicados el 2026-10-14: BPA de 4.14 frente a 4.42 de consenso, una sorpresa del −6.3%. Publicados en la última sesión de la serie: la reacción y la deriva aún no se pueden medir",
+            "tone": "neu",
+            "value": "−6.3% sorpresa"
           }
         ],
         "source": "Serie diaria de Yahoo Finance (cierre ajustado por dividendos y splits, 2 años), S&P 500 y ETF del sector (XLF).",
@@ -2660,7 +2659,7 @@
           ],
           [
             "EPS",
-            "$19.23",
+            "$19.89",
             "Valor en libros / acción",
             "$59.15"
           ]
@@ -3904,7 +3903,7 @@
     "ebitda": null,
     "ebitda_margin": null,
     "enterprise_value": 118727187897.0,
-    "eps": 19.23,
+    "eps": 19.8881190308,
     "ev_ebitda": null,
     "ev_revenue": 1.30390629726,
     "fcf_yield": 0.12874903794,
@@ -3935,7 +3934,7 @@
     "pe": 11.3962331753,
     "pe_basis": "operativo",
     "pe_normalized": null,
-    "pe_reported": 11.1003643637,
+    "pe_reported": 10.7330414899,
     "peg": 41.14983,
     "pfcf": 7.76704832905,
     "price_52w_high": 239.380004883,
@@ -3977,6 +3976,20 @@
       "reason": "sin titulares de Finnhub (no disponibles o sin respuesta)"
     },
     "note": "Contexto de mercado: no puntúa en la calidad ni en el precio. Describe cómo se ha movido la acción, no qué hará.",
+    "pead": {
+      "actual": 4.14,
+      "announced": "2026-10-14",
+      "drift": null,
+      "estimate": 4.4182,
+      "period": "2026-09-30",
+      "reaction": null,
+      "sessions": 0,
+      "source": "BPA y consenso: Finnhub; fecha: 8-K de resultados (SEC EDGAR, apartado 2.02)",
+      "status": "ok",
+      "surprise": -0.0629668190666,
+      "window": 60,
+      "window_passed": false
+    },
     "readings": [
       {
         "field": "market_context.signals.momentum_12_1.value",
@@ -4025,6 +4038,14 @@
         "num": 0.294528293597,
         "text": "volumen en el rango habitual (z = 0.3)",
         "value": "z = 0.3"
+      },
+      {
+        "field": "market_context.pead.surprise",
+        "key": "pead",
+        "label": "Resultados y deriva (PEAD)",
+        "num": -0.0629668190666,
+        "text": "resultados del trimestre cerrado el 2026-09-30, publicados el 2026-10-14: BPA de 4.14 frente a 4.42 de consenso, una sorpresa del −6.3%. Publicados en la última sesión de la serie: la reacción y la deriva aún no se pueden medir",
+        "value": "−6.3% sorpresa"
       }
     ],
     "sector_etf": "XLF",
@@ -4395,7 +4416,7 @@
     "ebitda": null,
     "ebitda_margin": null,
     "enterprise_value": 118727187897.0,
-    "eps": 19.23,
+    "eps": 19.8881190308,
     "ev_ebitda": null,
     "ev_fcf": 7.44324417884,
     "ev_revenue": 1.30390629726,
@@ -4406,7 +4427,7 @@
     "ffo_payout": 0.6780126498,
     "ffo_per_share": 20.7029634735,
     "forward_pe": 12.34495,
-    "graham_number": 159.982719901,
+    "graham_number": 162.697278809,
     "gross_margin": null,
     "interest_coverage": null,
     "inventory_turnover": null,

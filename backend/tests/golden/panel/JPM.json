@@ -2490,7 +2490,7 @@
         "news": [],
         "news_note": "sin titulares de Finnhub (no disponibles o sin respuesta)",
         "note": "Contexto de mercado: no puntúa en la calidad ni en el precio. Describe cómo se ha movido la acción, no qué hará.",
-        "pead_note": "La deriva tras los resultados (PEAD) no se lee: hace falta la sorpresa del BPA frente al consenso y no hay fuente con fecha para ella.",
+        "pead_note": "Resultados y deriva (PEAD): BPA y consenso: Finnhub; fecha: 8-K de resultados (SEC EDGAR, apartado 2.02).",
         "rows": [
           {
             "key": "momentum",
@@ -2533,6 +2533,13 @@
             "text": "volumen en el rango habitual (z = 0.1)",
             "tone": "neu",
             "value": "z = 0.1"
+          },
+          {
+            "key": "pead",
+            "label": "Resultados y deriva (PEAD)",
+            "text": "resultados del trimestre cerrado el 2026-09-30, publicados el 2026-10-13: BPA de 5.57 frente a 5.96 de consenso, una sorpresa del −6.5%. Entre la sesión anterior al anuncio y la siguiente, la acción +1.4% frente al S&P 500: aún pocas sesiones tras el anuncio para hablar de deriva",
+            "tone": "neu",
+            "value": "−6.5% sorpresa"
           }
         ],
         "source": "Serie diaria de Yahoo Finance (cierre ajustado por dividendos y splits, 2 años), S&P 500 y ETF del sector (XLF).",
@@ -3882,6 +3889,20 @@
       "reason": "sin titulares de Finnhub (no disponibles o sin respuesta)"
     },
     "note": "Contexto de mercado: no puntúa en la calidad ni en el precio. Describe cómo se ha movido la acción, no qué hará.",
+    "pead": {
+      "actual": 5.57,
+      "announced": "2026-10-13",
+      "drift": null,
+      "estimate": 5.958,
+      "period": "2026-09-30",
+      "reaction": 0.0142415836171,
+      "sessions": 0,
+      "source": "BPA y consenso: Finnhub; fecha: 8-K de resultados (SEC EDGAR, apartado 2.02)",
+      "status": "ok",
+      "surprise": -0.065122524337,
+      "window": 60,
+      "window_passed": false
+    },
     "readings": [
       {
         "field": "market_context.signals.momentum_12_1.value",
@@ -3930,6 +3951,14 @@
         "num": 0.10440715653,
         "text": "volumen en el rango habitual (z = 0.1)",
         "value": "z = 0.1"
+      },
+      {
+        "field": "market_context.pead.surprise",
+        "key": "pead",
+        "label": "Resultados y deriva (PEAD)",
+        "num": -0.065122524337,
+        "text": "resultados del trimestre cerrado el 2026-09-30, publicados el 2026-10-13: BPA de 5.57 frente a 5.96 de consenso, una sorpresa del −6.5%. Entre la sesión anterior al anuncio y la siguiente, la acción +1.4% frente al S&P 500: aún pocas sesiones tras el anuncio para hablar de deriva",
+        "value": "−6.5% sorpresa"
       }
     ],
     "sector_etf": "XLF",
