@@ -1519,3 +1519,7 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
   - D7.
 
   Pendiente del usuario: revisar la variable en el panel de Render (nombre exacto, valor "Nombre correo@dominio", servicio correcto) y guardar con redeploy. Después se repite la comprobación de EDGAR, BRK-B y las latencias con EDGAR.
+- **Recomprobación** (15:04 de Nueva York, después de que el usuario dijera que había corregido la variable y redesplegado): EDGAR sigue "desactivado".
+  - Afecta a MSFT y BRK-B, y también a CINF, que no estaba en caché.
+  - Se sondeó cada 40 s durante 5 minutos.
+  - El proceso de producción todavía no ve `SEC_EDGAR_USER_AGENT` con un correo.
