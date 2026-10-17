@@ -1333,9 +1333,14 @@ arreglo es de fondo; la fase no deja protecciones provisionales nuevas.*
 - **Estudio de calibración:**
   - el motor real sobre 968 fechas pasadas, con los datos de entonces;
   - hipótesis fijadas antes de correrlo y muestras de entrenamiento y prueba por periodo y por empresa;
-  - validadas: la calidad anticipa menor caída, y "muy exigente", peor rentabilidad a 1 año;
-  - no concluyentes: el precio a 3 años y la persistencia relativa del ROE.
-- **Bandas de REIT y utilities** contrastadas con 51 empresas. Todas bien centradas salvo FFO/patrimonio de los REIT, que satura (decisión del usuario).
+  - versión 2, tras una revisión que encontró una fuga de splits futuros en los precios;
+  - solo H2 (calidad → menor caída) sale validada con la regla, y no es robusta a empresa × año ni al sector;
+  - el precio no anticipa la rentabilidad de forma demostrable (H3a y H3b, no concluyentes);
+  - la app no promete rentabilidades.
+- **Bandas de REIT y utilities** contrastadas con 51 empresas:
+  - bien centradas: utilities y P/FFO;
+  - en el límite: la deuda de los REIT, que sigue PROVISIONAL;
+  - satura: FFO/patrimonio de los REIT (decisión del usuario).
 - **Abierto:**
   - decisiones del usuario (F7_CALIBRACION §6);
   - repetir el estudio con más empresas y con prima de riesgo point-in-time.
