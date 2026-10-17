@@ -362,7 +362,7 @@ def test_reit_profitability_on_ffo_and_leverage_on_net_debt(outputs_by_env):
     for env in _envs():
         a = outputs_by_env(env)["O"][0]
         rent = _bd(a, "Rentabilidad")
-        assert {"FFO / patrimonio", "Margen FFO"} <= set(rent)
+        assert {"FFO / activos", "Margen FFO"} <= set(rent) and "FFO / patrimonio" not in rent
         assert not {"ROE", "ROA", "Margen Neto", "ROIC vs WACC", "Margen Operativo"} & set(rent)
         na = a["score_coverage"]["rentabilidad"]["not_applicable"]
         assert {"ROE", "ROA", "Margen neto", "ROIC−WACC", "Margen bruto", "Margen operativo"} <= set(na)
@@ -476,3 +476,13 @@ def test_singular_growth_reading_agrees():
     import pdf_report as pr
     assert pr.read_growth(-0.05, "el BPA", "eps", cycle=True)[2].startswith("el BPA se contrae un")
     assert pr.read_growth(-0.05, "los ingresos", cycle=True)[2].startswith("los ingresos se contraen un")
+
+
+def test_reit_ffo_on_assets_ranks_by_the_phase7_quintiles():
+    """Fase 7 (F7_CALIBRACION §6, decisión del usuario): FFO / activos totales sustituye a FFO / patrimonio contable,
+    que daba el tramo alto al 82% de los REIT. Tramos = quintiles de la muestra: la mediana (6.6%) puntúa 0."""
+    import financial_ratios as fr
+    pts = {v: dict((c["metric"], c.get("adjustment")) for c in
+                   fr.score_rentabilidad_reit({"ffo_to_assets": v, "ffo_margin": 0.45}).get("adjustments") or [])
+           ["FFO / activos"] for v in (0.16, 0.08, 0.066, 0.055, 0.035)}
+    assert pts == {0.16: 6, 0.08: 3, 0.066: 0, 0.055: -3, 0.035: -6}

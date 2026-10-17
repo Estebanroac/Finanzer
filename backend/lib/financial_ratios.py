@@ -2909,16 +2909,17 @@ def score_rentabilidad_reit(xv: Dict[str, Any]) -> Dict[str, Any]:
     T = _SC["rentabilidad"]
     comps = []
     for name, key, b, p, labels in (
-            ("FFO / patrimonio", "ffo_to_equity", T["reit_ffo_equity_bounds"], T["reit_ffo_equity_points"],
+            ("FFO / activos", "ffo_to_assets", T["reit_ffo_assets_bounds"], T["reit_ffo_assets_points"],
              ("Excelente", "Alto", "En línea", "Bajo", "Muy bajo")),
             ("Margen FFO", "ffo_margin", T["reit_ffo_margin_bounds"], T["reit_ffo_margin_points"],
              ("Excelente", "Alto", "En línea", "Bajo", "Muy bajo"))):
         v = xv.get(key)
         if v is None:
-            comps.append((name, p, None, None, None, "{}", "sin FFO, patrimonio o ingresos"))
+            comps.append((name, p, None, None, None, "{}", "sin FFO, activos o ingresos"))
             continue
         adj, _, lab = _banded(v, b, p, labels)
-        what = "retorno del FFO sobre el patrimonio contable" if key == "ffo_to_equity" else "FFO sobre ingresos"
+        what = ("FFO sobre los activos totales, frente a los REIT de EE. UU. (fase 7)" if key == "ffo_to_assets"
+                else "FFO sobre ingresos")
         comps.append((name, p, v, adj, f"{lab} ({v:.1%}) - {what}", "{:.1%}", None))
     return _rentabilidad_branch(REIT, comps, _RENT_NA_COMMON + (("gross_margin", "Margen bruto"),
                                                                ("operating_margin", "Margen operativo")))

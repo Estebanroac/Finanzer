@@ -187,7 +187,7 @@ BANK_XV = dict(pb=1.4, ptbv=1.8, pb_justified=1.5, ptbv_justified=1.9, pb_ratio=
 REIT_R = dict(TECH_R, p_ffo=14.0, roe=0.07, roa=0.03, debt_to_equity=1.2, ffo_payout=0.8, dividend_yield=0.05,
               net_debt_to_ebitda=5.5)
 # Etapa 9a: rentabilidad del REIT sobre el FFO (archetype_metrics._reit).
-REIT_XV = dict(ffo_to_equity=0.085, ffo_margin=0.55)
+REIT_XV = dict(ffo_to_assets=0.065, ffo_margin=0.55)   # fase 7: FFO / activos
 REIT_C = dict(TECH_C, sector_pe=35.0, sector_ev_ebitda=20.0)
 CASES = {
     "tech_full": (TECH_R, TECH_C, dict(z_score_value=4.0, z_score_level="SAFE", f_score_value=7,

@@ -1437,3 +1437,10 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
   - repetir el estudio con una muestra mayor, con empresas desaparecidas y la prima de cada fecha (necesita la descarga de Damodaran);
   - beneficio operativo de aseguradoras (BRK-B, del registro #34).
 - **Suite:** "1 failed, 3931 passed, 1 skipped". Lo que falla son las muestras forzadas del contrato, que van con los golden.
+- **Decisión del usuario (2026-10-17):** REIT FFO/patrimonio → **FFO/activos totales**, recalibrado con la muestra de la fase 7.
+  - Tramos por quintiles: 9 / 7 / 6 / 5%, con los mismos puntos.
+  - Panel:
+    - O, calidad 70 "sólida" → 59 "media" (FFO/activos 5.0%);
+    - PLD, 85 "excelente" → 79 "sólida", en la frontera;
+    - AMT, 79 → 75.
+  - Golden de los tres pendientes de regenerar (F7_CALIBRACION §6).

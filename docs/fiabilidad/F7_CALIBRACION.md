@@ -135,6 +135,20 @@ patrimonio. La métrica premia el apalancamiento y los activos viejos y amortiza
    - (c) dejarla.
 
    Recomendación del operador: **(b)**, recalibrada con esta muestra.
+
+   **Decidido por el usuario (2026-10-17): (b). Hecho:**
+   - FFO / activos totales puntúa en lugar de FFO / patrimonio contable, que queda informativo en `archetype_metrics`;
+   - tramos por quintiles de 24 REIT y 295 empresa-año: ≥ 9% +6, ≥ 7% +3, ≥ 6% 0, ≥ 5% −3, < 5% −6, con un reparto de 19 / 25 / 18 / 21 / 17%;
+   - mismos puntos que la métrica anterior, así que su peso no cambia.
+
+   Ordena con sentido: PSA arriba (16%); OHI, WELL y ARE abajo, con mucho activo bruto. AMT baja de un 46% engañoso a un 8.6%.
+
+   Efecto en el panel:
+   - O: calidad 70 "sólida" → 59 "media". FFO/activos del 5.0%, justo bajo el corte del 5%, frente a +3 con FFO/patrimonio;
+   - PLD: 85 "excelente" → 79 "sólida", a 1 punto de la frontera, que el informe avisa;
+   - AMT: 79 → 75, sigue "sólida".
+
+   Los golden de O, PLD y AMT cambian por esta causa: van con la regeneración pendiente.
 2. **Escala de precio:** ninguna regla cambia. El estudio no sostiene que "atractivo" o "muy exigente" anticipen la rentabilidad. La app ya no lo dice y no debe empezar a decirlo.
 3. **Escala de calidad:** ninguna regla cambia. Se presenta como descripción de la solidez y la rentabilidad del negocio, no como señal de inversión, y así se presenta hoy.
 4. **Repetir el estudio** con una muestra mayor (Russell 1000 con las empresas desaparecidas) y con la prima de riesgo de cada fecha (histórico de Damodaran, requiere su descarga), para que la escala de precio sea evaluable.

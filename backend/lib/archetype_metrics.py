@@ -190,9 +190,11 @@ def _reit(st: Dict[str, Any], km: Optional[Dict[str, Any]] = None) -> Dict[str, 
     fcf_ps_cagr, fcf_ps_why = fcf_cagr(_per_share(st.get("free_cash_flow") or [], shares))
     # Etapa 9a: rentabilidad sobre el FFO (TTM, la misma definición del P/FFO).
     km = km or {}
-    ffo_ttm, eq, rev = km.get("ffo"), km.get("total_equity"), km.get("revenue")
+    ffo_ttm, eq, rev, ta = km.get("ffo"), km.get("total_equity"), km.get("revenue"), km.get("total_assets")
     return {
         "ffo_ttm": ffo_ttm,
+        # Fase 7: la rentabilidad del FFO se mide sobre los activos (puntúa); sobre el patrimonio, solo informativa.
+        "ffo_to_assets": (ffo_ttm / ta) if (ffo_ttm is not None and _pos(ta)) else None,
         "ffo_to_equity": (ffo_ttm / eq) if (ffo_ttm is not None and _pos(eq)) else None,
         "ffo_margin": (ffo_ttm / rev) if (ffo_ttm is not None and _pos(rev)) else None,
         "ffo_series": ffo, "ffo_per_share_series": ffo_ps,

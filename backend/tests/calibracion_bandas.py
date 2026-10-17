@@ -79,6 +79,9 @@ def metrics(data, t, kind):
             ffo = (ni + da) if (ni is not None and da is not None) else None
             if ffo is not None and eq and eq > 0:
                 r["ffo_equity"] = ffo / eq
+            ta = col(bs, "Total Assets")
+            if ffo is not None and ta and ta > 0:
+                r["ffo_assets"] = ffo / ta
             if ffo is not None and rev and rev > 0:
                 r["ffo_margin"] = ffo / rev
             if ffo and ffo > 0 and div is not None:
