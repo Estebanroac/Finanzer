@@ -149,6 +149,26 @@ el tipo de cambio entra en el crecimiento.
 - **Sin él:** el §8.1 no se puede aplicar. La alternativa sería calcular tasas base propias con EDGAR, pero solo con
   las ~36 empresas del panel, que no son un universo representativo. **No la recomiendo.**
 
+### 4.1 Actualización (2026-10-16, 21:45): el PDF de febrero, leído
+
+El PDF quedó en `~/Downloads/article_bayesandbaserates_ltr.pdf` (499,108 bytes, 12 páginas) tras el diálogo de guardado. Lo leí con `pypdf` (sin ejecutar nada del archivo). **No basta para F3_DISENO §8.1:**
+
+- Solo trae **dos histogramas de crecimiento de ventas a 5 años**, de empresas de EE. UU. de 1950 a 2024 (ventas en dólares de 2024; crecimiento nominal; fuente: Counterpoint Global, Compustat y FactSet):
+  - **Exhibit 3** (p. 3), ventas iniciales de 2–5 mil millones: muestra de 18,897, media 7.0%, desviación típica 10.6%;
+  - **Exhibit 5** (p. 6), ventas iniciales de 8–12 mil millones: muestra de 4,385, media 5.7%, desviación 9.6%.
+- Las barras (tramos de crecimiento de <−30% a >60%) **solo están en el gráfico**: el PDF no da sus porcentajes como números.
+- **No hay horizonte de 10 años ni los demás tramos de tamaño.**
+- Una frase útil, verificable (p. 5): ninguna empresa con 5.6 mil millones de ventas o más creció un 75% anual durante 5 años en 75 años.
+
+**Opciones:**
+
+| Opción | Qué es | Mi lectura |
+|---|---|---|
+| (a) | El **2.0** (13-may-2026), `article_bayesandbaserates2_ltr.pdf` de morganstanley.com. Según su resumen, trata la inflación y la clase de referencia; puede traer más tablas | La pruebo primero, con tu permiso de descarga |
+| (b) | *The Base Rate Book* (2016) desde una fuente que tú tengas acreditada | Es la tabla completa (1, 3, 5 y 10 años por tramo de tamaño). Sin una copia de procedencia verificable, no |
+| (c) | Aproximar los tramos con la media y la desviación de estos dos histogramas | **No la recomiendo:** las distribuciones son asimétricas (cola a la derecha) y solo hay dos tramos de tamaño. Sería un parche |
+| (d) | Aplazar §8.1 | El DCF inverso usa la segunda referencia (histórico propio en ingresos por acción) y declara "sin tasa base"; §8.1 queda en el mapa con su motivo |
+
 ## 5. F1 proyectado
 
 Si la herramienta compara con las definiciones aprobadas (permitido por el prompt, declarado) y el motor usa EDGAR
