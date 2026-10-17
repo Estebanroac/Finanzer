@@ -179,6 +179,49 @@ def _apply_fy(info: Dict[str, Any], facts: Dict[str, Any], ctx, tol: int, log: D
         st["free_cash_flow"] = fcf
 
 
+EBIT_ESTIMATED = "estimado por la fuente"
+
+
+def ebit_check(info: Dict[str, Any], ed: Dict[str, Any], ctx=None) -> Optional[Dict[str, Any]]:
+    """F2_PRECEDENCIA §2.1, escenario B (D2): el beneficio operativo sigue siendo el de Yahoo, pero si difiere más de
+    `ebit_estimate_rel_tol` del que presenta el emisor en EDGAR (mismo corte) se marca "estimado por la fuente" y se
+    declaran los dos. Yahoo construye su "Operating Income" (KO, PLD, AMT, NEE, DUK, FCX, CRWD, UL, V en la 2a).
+    -> data_provenance.ebit; display lo rotula."""
+    from yf_adapter import _tag_provenance
+    ao = info.get("_as_of") or {}
+    cut, ebit = ao.get("date"), info.get("operatingIncome")
+    per = (ao.get("fields") or {}).get("operatingIncome") or {}
+    if ebit is None or not cut or ao.get("type") not in ("ttm", "fy") or per.get("source") == "sec_edgar":
+        return None
+    why = _excluded("operating_income", info)
+    if why:
+        return {"status": "excluido", "reason": why}
+    facts = ed.get("facts") if ed.get("status") == "ok" else None
+    if not facts:
+        return {"status": "sin_edgar", "reason": ed.get("facts_reason") or ed.get("reason") or "sin hechos de EDGAR"}
+    unit, stmt_cur = edgar.reporting_unit(facts, edgar.taxonomy(facts)), _statement_currency(info)
+    if stmt_cur and unit != stmt_cur:
+        return {"status": "sin_edgar", "reason": f"EDGAR presenta en {unit} y Yahoo en {stmt_cur}"}
+    r = edgar.field_value(facts, "operating_income", _dt.date.fromisoformat(cut),
+                          cfg("data.edgar.report_date_tolerance_days"))
+    if r is None:
+        return {"status": "sin_edgar", "reason": f"EDGAR no tiene el beneficio operativo del periodo que acaba el {cut}"}
+    ev = _convert(ctx, float(r["value"]), "flow", cut)
+    diff = (ebit - ev) / abs(ev) if ev else None
+    out = {"status": "coincide", "source_value": ebit, "edgar_value": ev, "diff": diff, "concept": r["concept"],
+           "how": r["how"], "accns": r["accns"], "period_end": cut,
+           "tolerance": cfg("data.edgar.ebit_estimate_rel_tol")}
+    if diff is None or abs(diff) > out["tolerance"]:
+        out["status"] = "estimado"
+        prev = ((info.get("_provenance") or {}).get("operatingIncome") or {})
+        _tag_provenance(info, prev.get("source") or "yfinance_statements",
+                        f"{prev.get('detail') or 'Yahoo'} · {EBIT_ESTIMATED}: difiere un {diff:+.1%} del que presenta "
+                        f"el emisor en SEC EDGAR ({r['concept']}, {ev:,.0f})" if diff is not None else
+                        f"{prev.get('detail') or 'Yahoo'} · {EBIT_ESTIMATED}: EDGAR da 0",
+                        paths=["operatingIncome"], overwrite=True)
+    return out
+
+
 def official_source(ed: Dict[str, Any], today: _dt.date) -> Dict[str, Any]:
     """D7: {registered, status, cik, reason, fy, note} -> data_provenance.official_source.
 

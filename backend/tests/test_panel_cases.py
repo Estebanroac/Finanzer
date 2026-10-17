@@ -379,3 +379,19 @@ def test_restated_series_already_homogeneous_is_not_mixed(sample):
     for sym in ("AMT", "JNJ"):
         p = sample[sym]["data_provenance"]["perimeter"]
         assert p["restated"] and not p["mixed_cagr"], sym
+
+
+# ── F2_PRECEDENCIA §2.1 (escenario B): EBIT de la fuente "estimado" si difiere > 2% del de EDGAR ──
+def test_ebit_estimated_by_source(sample):
+    """Yahoo construye su "Operating Income": KO +7.3%, PLD −29.8%, UL +12.1% frente al de EDGAR del mismo corte
+    (2a: KO, PLD, NEE, DUK, FCX, CRWD, UL, V). AAPL y MSFT coinciden; AMT, +1.7%, dentro del 2%."""
+    for sym in ("KO", "PLD", "NEE", "DUK", "FCX", "CRWD", "UL", "V"):
+        a = sample[sym]
+        e = a["data_provenance"]["ebit"]
+        assert e["status"] == "estimado" and abs(e["diff"]) > 0.02, sym
+        rows = {r["key"]: r["label"] for r in a["display"]["sections"]["profitability"]["rows"]}
+        assert rows["operating_margin"].endswith("(estimado por la fuente)"), sym
+        assert "estimado por la fuente" in a["data_provenance"]["fields"]["operatingIncome"]["detail"], sym
+    for sym in ("AAPL", "MSFT", "AMT"):
+        assert sample[sym]["data_provenance"]["ebit"]["status"] == "coincide", sym
+    assert sample["MC.PA"]["data_provenance"]["ebit"]["status"] == "sin_edgar"

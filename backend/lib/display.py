@@ -451,11 +451,27 @@ def official_source_badge(a) -> Optional[dict]:
     return None
 
 
+EBIT_ESTIMATED_SUFFIX = " (estimado por la fuente)"
+
+
+def ebit_estimated(a) -> Optional[dict]:
+    """F2_PRECEDENCIA §2.1: el beneficio operativo de la fuente difiere del que presenta el emisor en EDGAR (> 2%)."""
+    e = (a.get("data_provenance") or {}).get("ebit") or {}
+    return e if e.get("status") == "estimado" else None
+
+
 def official_source_annex(a) -> list:
     """Fase 2b (T4): filas del anexo técnico: fuente oficial (D7) y campos respaldados con SEC EDGAR."""
     dp = a.get("data_provenance") or {}
     off = dp.get("official_source") or {}
     items = []
+    eb = ebit_estimated(a)
+    if eb:
+        items.append({"label": "Beneficio operativo", "text": (
+            f"estimado por la fuente: el del proveedor de datos difiere un {eb['diff']:+.1%} del que presenta el emisor "
+            f"en SEC EDGAR ({eb['concept']}, {fv(eb['edgar_value'], 'money')} en los doce meses al "
+            f"{eb['period_end']}). Se usa el del proveedor (D2) y se marca." if eb.get("diff") is not None else
+            "estimado por la fuente: EDGAR no da una cifra comparable.")})
     if off:
         if off.get("registered") is False:
             txt = f"no. {off.get('note')} Motivo: {off.get('reason')}."
@@ -1689,8 +1705,8 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         ("roa", "ROA", km.get("roa"), sector_bench.get("roa"), True, "pct"),
         ("roic", "ROIC", km.get("roic"), sector_bench.get("roic"), True, "pct"),
         ("gross_margin", "Margen bruto", km.get("gross_margin"), sector_bench.get("gross_margin"), True, "pct"),
-        ("operating_margin", "Margen operativo", km.get("operating_margin"), sector_bench.get("operating_margin"),
-         True, "pct"),
+        ("operating_margin", "Margen operativo" + (EBIT_ESTIMATED_SUFFIX if ebit_estimated(a) else ""),
+         km.get("operating_margin"), sector_bench.get("operating_margin"), True, "pct"),
         ("net_margin", "Margen neto", km.get("net_margin"), sector_bench.get("net_margin"), True, "pct"),
     ]
     _ret_na = {"roe": "roe", "roa": "roa", "roic": "roic_wacc", "gross_margin": "gross_margin",
@@ -1744,7 +1760,8 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     def _fig(raw, comp):
         return _na_txt if (raw is None and comp in _na_keys) else fv(raw, "money")
     figures = [["Ingresos", fv(km.get("revenue"), "money"), "EBITDA", _fig(km.get("ebitda"), "ev_ebitda")],
-               ["Beneficio operativo", _fig(km.get("operating_income"), "operating_margin"), "Beneficio neto",
+               ["Beneficio operativo" + (EBIT_ESTIMATED_SUFFIX if ebit_estimated(a) else ""),
+                _fig(km.get("operating_income"), "operating_margin"), "Beneficio neto",
                 fv(km.get("net_income"), "money")],
                ["Flujo de caja operativo", _na_txt if "ocf" in _na_keys else fv(km.get("operating_cash_flow"), "money"),
                 "Flujo de caja libre", _na_txt if "fcf" in _na_keys else fv(km.get("free_cash_flow"), "money")],

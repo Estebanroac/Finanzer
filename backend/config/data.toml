@@ -51,6 +51,9 @@ max_pending_filings = 3         # filings pendientes que se leen por análisis (
 # D7 (F2_PRECEDENCIA §4): con CIK, pero el último informe anual tiene más de estos meses o EDGAR va por detrás
 # (un filing pendiente sin leer) → "verificado con el FY X" (nota informativa, sin tope de confianza).
 annual_stale_months = 15
+# F2_PRECEDENCIA §2.1 (escenario B): el beneficio operativo de Yahoo se marca "estimado por la fuente" si difiere más
+# que esto del de EDGAR en el mismo periodo (Yahoo construye el suyo: KO, PLD, AMT, NEE, DUK, FCX, CRWD, UL, V).
+ebit_estimate_rel_tol = 0.02
 fy_backup_years = 4              # ejercicios de los estados anuales que el respaldo completa (FY0–FY3: Piotroski y CAGR a 3 años)
 
 [edgar.predecessors]            # sucesión de emisor: el ticker apunta al CIK nuevo y la historia XBRL sigue en el anterior

@@ -275,6 +275,8 @@ def _build_provenance(yinfo: dict, out_flags: list, block_errors: list) -> dict:
         "ordinary": yinfo.get("_ordinary"),
         # Fase 2b (T7): cambio de perímetro (operaciones discontinuadas y ejercicios reexpresados), solo declarado.
         "perimeter": yinfo.get("_perimeter"),
+        # F2_PRECEDENCIA §2.1 (escenario B): beneficio operativo de Yahoo frente al de EDGAR; "estimado" si difiere > 2%.
+        "ebit": yinfo.get("_ebit"),
         # Fase 2b: serie diaria de precios y dividendo indicado en la moneda y la clase del precio (T2).
         "price_history": yinfo.get("_price_history"),
         "dividend": yinfo.get("_dividend"),
