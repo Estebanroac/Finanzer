@@ -1256,11 +1256,16 @@ def _apply_ttm(symbol: str, info: Dict[str, Any], plan_b: bool) -> Dict[str, Any
     from ttm import build_ttm, FLOW_KEYS
     frames, errors = {}, []
     try:
+        from concurrent.futures import ThreadPoolExecutor
         from currency import CurrencyConversionError
         ticker = _stmt_ticker(symbol)
-        for attr in ("quarterly_income_stmt", "quarterly_cashflow", "quarterly_balance_sheet"):
+        attrs = ("quarterly_income_stmt", "quarterly_cashflow", "quarterly_balance_sheet")
+        # Fase 6: los tres trimestrales a la vez (antes, uno detrás de otro: ≈ 3 idas y vueltas a Yahoo en frío).
+        with ThreadPoolExecutor(max_workers=len(attrs)) as ex:
+            futs = {attr: ex.submit(getattr, ticker, attr) for attr in attrs}
+        for attr in attrs:
             try:
-                frames[attr] = getattr(ticker, attr)
+                frames[attr] = futs[attr].result()
             except CurrencyConversionError:
                 raise
             except Exception as e:
