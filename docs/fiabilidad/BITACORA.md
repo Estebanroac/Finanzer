@@ -1197,3 +1197,29 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
   - `SEC_EDGAR_USER_AGENT` en Render: es su cuenta, y es requisito de cualquier deploy de la fase 3;
   - ningún push mientras falte esa variable.
 
+
+### #30 · 2026-10-17 · operador · Fase 3 (T3 hecha, bajo la delegación del registro #29)
+- **Hecho (un commit por causa):**
+  - `f8e5750`: una sola estructura de DCF (§8.2): 5 años constantes y convergencia lineal en los años 6–10. Se retiran
+    los decaimientos lineal y exponencial. `growth_cap` (50%) queda como guarda interna; el tope de entrada (30%) no
+    cambia: la plausibilidad la juzga el inverso con las tasas base (§8.3);
+  - `fa9a156` + `817eda4`: FCF − SBC siempre que haya SBC del mismo periodo (§8.4). SNOW y AMZN pasan a DCF no
+    significativo; V, de fiabilidad alta a media;
+  - `19def27`: DCF inverso conectado (§2, §8.1, §8.5, §8.7).
+    - Tasas base con lognormal ajustada a mediana y desviación típica. Bandas: < 10% de comparables, muy exigente;
+      < 25%, exigente; si no, la historia propia a ±5 pp.
+    - Es el método intrínseco cuando el directo tiene fiabilidad baja, y en los REIT (sobre FFO).
+  - `d71f0a2`: opción 3 de §7.17. Niveles que cambian solo por ella: 3 (DUK, NEE, SNOW: confianza media → alta);
+  - `b120c33`: frase del inverso en la web y en el PDF; guardián con predicado `implied_growth`;
+  - `787317a`: contraste independiente en KO, V, NFLX, DOW y PG: Δ = 0.000000 pp.
+- **Decisiones del operador (delegación #29), con su porqué:**
+  - lognormal: los autores advierten cola a la derecha;
+  - fila "All" con < 100 observaciones: 100+ Healthcare tiene 7 observaciones a 10 años;
+  - deflactor del IPC-U 2024/2020 = 0.825;
+  - industria de Yahoo → Fama y French 5 (tabla en config);
+  - puntos del inverso con la escala del DCF de fiabilidad alta.
+- **Medido (replay, panel):**
+  - precio: muy exigente 3 → 9, exigente 14 → 10, razonable 15 → 14, atractivo 4 → 3 (no extremo);
+  - ningún DCF de fiabilidad baja sin el inverso mostrado;
+  - `pytest tests -q --ignore=tests/test_regression.py` → "1 failed, 3605 passed, 1 skipped". Lo que falla son las
+    muestras forzadas del contrato, que se regeneran con los golden, bloqueados por permisos (#29).
