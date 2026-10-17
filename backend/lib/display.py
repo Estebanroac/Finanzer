@@ -32,7 +32,7 @@ DCF_NO_RECONCILE = ("El DCF no concilia con el precio bajo ningún supuesto razo
 STATES = ("con_dato", "sin_dato", "no_aplica", "no_significativo")
 STATE_LABELS = {"con_dato": "Con dato", "sin_dato": "Sin dato", "no_aplica": "No aplica",
                 "no_significativo": "No significativo"}
-ARCHETYPES = ("FINANCIAL", "REIT", "UTILITY", "GROWTH_PRE_PROFIT", "CYCLICAL", "MATURE")
+ARCHETYPES = ("FINANCIAL", "REIT", "UTILITY", "GROWTH_PRE_PROFIT", "CYCLICAL", "GROWTH_PROFITABLE", "MATURE")
 
 # ══════════════════════ NARRATIVA ADAPTATIVA (bandas) ══════════════════════
 # Cada lector devuelve (etiqueta_corta, tono, frase) o None si no hay dato.

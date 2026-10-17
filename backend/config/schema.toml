@@ -505,6 +505,7 @@ UTILITY = "list[str]"
 GROWTH_PRE_PROFIT = "list[str]"
 CYCLICAL = "list[str]"
 MATURE = "list[str]"
+GROWTH_PROFITABLE = "list[str]"
 
 [data.fetcher]
 max_retries = "int"
@@ -588,6 +589,22 @@ min_years = "int"
 op_margin_detrended_std = "float"
 revenue_growth_std = "float"
 
+[sectors.archetypes.cyclicality]
+min_years = "int"
+revenue_decline = "float"
+min_decline_episodes = "int"
+eps_drop = "float"
+min_eps_collapses = "int"
+discontinued_material_share = "float"
+
+[sectors.archetypes.growth_profitable]
+min_revenue_ps_cagr_3y = "float"
+min_revenue_ps_cagr_5y = "float"
+min_operating_margin = "float"
+
+[sectors.archetypes.financial_subtypes]
+conglomerate_min_non_insurance_share = "float"
+
 [sectors.archetypes.not_applicable]
 FINANCIAL = "list[str]"
 REIT = "list[str]"
@@ -595,6 +612,7 @@ GROWTH_PRE_PROFIT = "list[str]"
 CYCLICAL = "list[str]"
 UTILITY = "list[str]"
 MATURE = "list[str]"
+GROWTH_PROFITABLE = "list[str]"
 
 [valuation.archetypes]
 cycle_full_years = "int"

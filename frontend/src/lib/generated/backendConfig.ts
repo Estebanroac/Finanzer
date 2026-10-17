@@ -3,7 +3,7 @@
 // tests/test_frontend_config_sync.py falla si este archivo se desincroniza.
 
 /** Arquetipos del clasificador único (sectors.toml [archetypes.not_applicable]). */
-export type Archetype = "FINANCIAL" | "REIT" | "GROWTH_PRE_PROFIT" | "CYCLICAL" | "UTILITY" | "MATURE";
+export type Archetype = "FINANCIAL" | "REIT" | "GROWTH_PRE_PROFIT" | "CYCLICAL" | "UTILITY" | "MATURE" | "GROWTH_PROFITABLE";
 
 /** Rótulo de cada estado de una métrica (lib/display.py STATE_LABELS). */
 export const STATE_LABELS = {

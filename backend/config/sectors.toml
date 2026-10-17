@@ -336,8 +336,9 @@ payout_sustainable = 0.60
 
 # ── Arquetipos (etapa 6, lib/classify.py) ──
 # Una sola función decide el arquetipo; motor, alertas, PDF y frontend leen su
-# salida. Prioridad: FINANCIAL > MATURE (excepción financiera) > REIT >
-# GROWTH_PRE_PROFIT > CYCLICAL > MATURE (por defecto).
+# salida. Prioridad: FINANCIAL > MATURE (excepción financiera) > REIT > UTILITY >
+# GROWTH_PRE_PROFIT > CYCLICAL > GROWTH_PROFITABLE > MATURE (por defecto). Fase 3 (T2, D4): la ciclicidad se mide
+# con la historia de EDGAR (≥ min_years ejercicios) antes que el crecimiento; sin ella, por industria con confianza baja.
 # Las industrias se comparan normalizadas: minúsculas y "—", "–" o "-" entre
 # palabras unificados como " - " (prod trae "Banks—Diversified"; local, "Banks - Diversified").
 [archetypes]
@@ -391,6 +392,29 @@ min_years = 4                       # ejercicios con dato necesarios para evalua
 op_margin_detrended_std = 0.05      # desviación del margen operativo alrededor de su tendencia lineal (5 pp)
 revenue_growth_std = 0.15           # desviación del crecimiento interanual de ingresos (15 pp)
 
+[archetypes.cyclicality]          # fase 3 (T2, D4; F3_DISENO_METODO §1.2): ciclicidad medida con la historia de EDGAR
+# Propuesta de la T2 (F3_T2_PARADA2): las medidas del diseño confundían el ciclo con cargos puntuales y
+# reestructuraciones; deciden los episodios repetidos de caída de ingresos y los desplomes del BPA con caída de
+# ingresos. Cíclica si se cumple CUALQUIERA, con al menos `min_years` ejercicios (con menos, la regla de industria con
+# confianza baja). Sensibilidad ±20% en F3_T2_PARADA2.
+min_years = 8                     # ejercicios anuales en EDGAR para medir un ciclo
+revenue_decline = 0.10            # caída interanual de ingresos que cuenta como episodio (los consecutivos, uno)
+min_decline_episodes = 2          # episodios de caída: un ciclo se repite
+eps_drop = 0.5                    # una caída del BPA de más de la mitad (o a negativo) es un desplome
+min_eps_collapses = 2             # desplomes del BPA el mismo ejercicio en que caen los ingresos
+discontinued_material_share = 0.10   # discontinuadas ≥ 10% del beneficio: cambio de perímetro, corta la serie
+
+[archetypes.growth_profitable]    # fase 3 (T2, D4; F3_DISENO_METODO §1.3): crecimiento rentable (las tres a la vez)
+min_revenue_ps_cagr_3y = 0.15     # CAGR de los ingresos por acción a 3 años
+min_revenue_ps_cagr_5y = 0.10     # y a 5 años, si hay historia
+min_operating_margin = 0.10       # margen operativo TTM (o margen FCF − SBC, la alternativa del diseño)
+
+[archetypes.financial_subtypes]   # fase 3 (T2; F3_DISENO_METODO §1.4)
+# Conglomerado: aseguradora cuyos ingresos de contratos con clientes (que por norma excluyen los contratos de seguro,
+# ASC 606 / NIIF 15: son sus negocios no aseguradores) pesan al menos esto en los ingresos (BRK-B: 247 de 371 mil
+# millones de USD en 2025, 67%; PGR: 0).
+conglomerate_min_non_insurance_share = 0.5
+
 # Componentes que NO APLICAN por arquetipo (no cuentan en la cobertura). Claves:
 # piotroski, altman, ocf, fcf, fcf_to_ni, de, ev_ebitda, pe, peg, forward_pe, p_fcf,
 # garp (bonos y rescates de crecimiento sobre múltiplos), current_ratio,
@@ -418,3 +442,4 @@ CYCLICAL = ["pe", "peg", "forward_pe", "fcf_growth"]
 UTILITY = ["altman", "de", "current_ratio", "fcf", "fcf_to_ni", "p_fcf", "fcf_growth", "dcf",
            "ev_ebitda", "peg", "garp"]
 MATURE = []
+GROWTH_PROFITABLE = []   # fase 3 (T2): con las herramientas de MATURE hasta la T3/T6 (provisional)

@@ -2,7 +2,8 @@
 import pytest
 
 import fixture_backend as fb
-from classify import (CYCLICAL, FINANCIAL, GROWTH_PRE_PROFIT, MATURE, REIT, classify, display_industry,
+from classify import (CYCLICAL, FINANCIAL, GROWTH_PRE_PROFIT, GROWTH_PROFITABLE, MATURE, REIT, classify,
+                      display_industry,
                       norm_industry, not_applicable)
 from settings import cfg
 
@@ -169,8 +170,9 @@ def test_financial_mature_exceptions_confirmed():
 
 
 def test_mature_default():
+    # Fase 3 (T2): sin historia de EDGAR la ciclicidad no se ha medido: MATURE con confianza baja (D7).
     c = C("Consumer Defensive", "Household & Personal Products")
-    assert c["archetype"] == MATURE and c["rule"] == "por_defecto" and c["confidence"] == "normal"
+    assert c["archetype"] == MATURE and c["rule"] == "por_defecto" and c["confidence"] == "baja"
 
 
 def test_possible_cyclical_is_only_an_alert():
@@ -231,19 +233,21 @@ def test_six_tickers_both_envs(outputs_by_env):
 
 
 @pytest.mark.parametrize("sym,arch", [("TRV", FINANCIAL), ("FOR", CYCLICAL),
-                                      ("NVDA", MATURE), ("MU", CYCLICAL), ("LIN", MATURE), ("AMAT", CYCLICAL)])
+                                      ("NVDA", GROWTH_PROFITABLE), ("MU", CYCLICAL), ("LIN", MATURE), ("AMAT", CYCLICAL)])
 def test_extra_local_fixtures(sym, arch):
     """Fixtures locales solo para el clasificador: TRV (aseguradora), FOR (promotora),
-    MU (Semiconductors, condicional, con reversión), NVDA (Semiconductors, sin reversión:
-    MATURE con la alerta "posible cíclica"), LIN (Specialty Chemicals, estable) y AMAT
+    MU (Semiconductors, condicional, con reversión), NVDA (fase 3: su historia de EDGAR no muestra ciclo y crece
+    con beneficio: GROWTH_PROFITABLE), LIN (Specialty Chemicals, estable) y AMAT
     (Semiconductor Equipment & Materials, cíclica siempre)."""
     with fb.replay(fb.fixtures_dir("local")) as store:
         a = fb.run_analysis(sym, store)
     assert a["classification"]["archetype"] == arch, a["classification"]["reason"]
 
 
-def test_nvda_keeps_the_possible_cyclical_alert():
+def test_nvda_history_replaces_the_possible_cyclical_alert():
+    """Fase 3 (T2): con 10+ ejercicios de EDGAR la ciclicidad se mide en la historia; la alerta de la ventana corta
+    de Yahoo (posible cíclica) ya no hace falta."""
     with fb.replay(fb.fixtures_dir("local")) as store:
         c = fb.run_analysis("NVDA", store)["classification"]
-    assert c["archetype"] == MATURE and c["confidence"] == "baja"
-    assert [a["code"] for a in c["alerts"]] == ["posible_ciclica"]
+    assert c["archetype"] == GROWTH_PROFITABLE and c["rule"] == "crecimiento_rentable"
+    assert c["inputs"]["cyclicality"]["enough"] and not c["alerts"]

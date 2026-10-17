@@ -680,8 +680,20 @@ def _compute_analysis(symbol: str) -> dict:
             # valoración sigue en la del precio. Sin conversión, son las mismas filas.
             _cur_info = (yinfo.get("_currency") or {}) if _has_yahoo else {}
             _stmts_g = growth_currency.local(_stmts, _cur_info)
+            # Etapa 9a: FCF − SBC en el periodo del FCF (informativo en todos los arquetipos;
+            # en GROWTH_PRE_PROFIT es la base del margen FCF, la regla de 40 y el crecimiento del FCF).
+            # Fase 3 (T2): se calcula antes de clasificar porque el crecimiento rentable lo admite como margen.
+            _ttm_i = (yinfo.get("_ttm") or {}) if _has_yahoo else {}
+            sbc_info = archetype_metrics.sbc_adjustment(
+                fcf=safe_float(financials.free_cash_flow), revenue=safe_float(financials.revenue),
+                fcf_is_ttm="freeCashflow" in (_ttm_i.get("ttm_fields") or []),
+                sbc_ttm=safe_float(yinfo.get("stockBasedCompensation")) if _has_yahoo else None, st=_stmts)
+            # Fase 3 (T2, D4): la ciclicidad y el crecimiento rentable se miden con la historia anual de EDGAR.
             classification = classify(sector=sector, industry=profile.industry, eps_ttm=eps_val,
-                                      net_margin_ttm=r("net_margin"), statements_fy=_stmts_g)
+                                      net_margin_ttm=r("net_margin"), statements_fy=_stmts_g,
+                                      history=(yinfo.get("_history_fy") if _has_yahoo else None),
+                                      operating_margin_ttm=r("operating_margin"),
+                                      fcf_sbc_margin=sbc_info.get("fcf_margin_adjusted"))
             archetype = classification["archetype"]
             # Etapa 11b: aviso por filas clave del arquetipo ausentes en los estados.
             from validate import missing_key_rows
@@ -701,13 +713,6 @@ def _compute_analysis(symbol: str) -> dict:
             # análisis: el mismo en Ke (P/B justificado de FINANCIAL), Kd y WACC.
             rf_info = risk_free()
             # Métricas de la rama (P/B justificado, EV/Ventas, normalizados de ciclo…)
-            # Etapa 9a: FCF − SBC en el periodo del FCF (informativo en todos los arquetipos;
-            # en GROWTH_PRE_PROFIT es la base del margen FCF, la regla de 40 y el crecimiento del FCF).
-            _ttm_i = (yinfo.get("_ttm") or {}) if _has_yahoo else {}
-            sbc_info = archetype_metrics.sbc_adjustment(
-                fcf=safe_float(financials.free_cash_flow), revenue=safe_float(financials.revenue),
-                fcf_is_ttm="freeCashflow" in (_ttm_i.get("ttm_fields") or []),
-                sbc_ttm=safe_float(yinfo.get("stockBasedCompensation")) if _has_yahoo else None, st=_stmts)
             result["sbc"] = {k: (safe_float(v) if isinstance(v, float) else v) for k, v in sbc_info.items()}
             # Etapa 9b: histórico anual (dato bruto, pestaña Histórico de la web).
             result["yearly_financials"] = [{k: (safe_float(v) if isinstance(v, float) else v) for k, v in r_.items()}

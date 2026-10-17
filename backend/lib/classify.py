@@ -17,11 +17,23 @@ Arquetipos, en orden de prioridad (listas y umbrales en config/sectors.toml):
                      productores independientes y renovables no (etapa 11b).
   GROWTH_PRE_PROFIT  BPA TTM <= 0 o margen neto < 0, y CAGR real de ingresos a
                      3 años > 15% (con los 4 ejercicios anuales).
-  CYCLICAL           industria de la lista de cíclicas de Yahoo; las
-                     "condicionales" (Semiconductors, Specialty Chemicals)
-                     solo si hay reversión en la ventana: caída pico-valle del
-                     margen operativo o caída anual de ingresos.
+  CYCLICAL           fase 3 (D4): por su HISTORIA (10+ ejercicios de EDGAR,
+                     lib/cyclicality.py): caídas de ingresos repetidas o
+                     desplomes del BPA con caída de ingresos. Con historia
+                     corta (< min_years), la regla de industria anterior (lista
+                     de cíclicas de Yahoo; las "condicionales" solo con
+                     reversión en la ventana), con confianza baja.
+  GROWTH_PROFITABLE  fase 3 (D4): no cíclica, ingresos por acción que crecen
+                     ≥ 15% anual a 3 años (≥ 10% a 5 si hay historia), BPA TTM
+                     > 0 y margen operativo (o FCF − SBC) ≥ 10%.
   MATURE             por defecto.
+
+FINANCIAL lleva subtipo (fase 3, F3_DISENO_METODO §1.4): banco, aseguradora,
+conglomerado (aseguradora cuyos ingresos de contratos con clientes, que excluyen
+los seguros por norma, son la mayoría: BRK-B) o financiera.
+
+Una clasificación que cambia si un umbral se mueve ±20% se marca "frontera" y
+su confianza baja (F3_T2_PARADA2).
 
 Además, una regla cuantitativa SOLO de alerta: una empresa no cíclica con el
 margen operativo o el crecimiento muy volátiles se marca "posible cíclica" y
@@ -30,7 +42,8 @@ baja la confianza, sin cambiar el arquetipo.
 import re
 from typing import Any, Dict, List, Optional
 
-from historical_metrics import detrended_std, ratio_series, stdev, strict_cagr, yoy_growths
+import cyclicality as cy
+from historical_metrics import cagr, detrended_std, ratio_series, stdev, strict_cagr, yoy_growths
 from settings import cfg
 
 FINANCIAL = "FINANCIAL"
@@ -39,7 +52,8 @@ GROWTH_PRE_PROFIT = "GROWTH_PRE_PROFIT"
 CYCLICAL = "CYCLICAL"
 MATURE = "MATURE"
 UTILITY = "UTILITY"
-ARCHETYPES = (FINANCIAL, REIT, UTILITY, GROWTH_PRE_PROFIT, CYCLICAL, MATURE)
+GROWTH_PROFITABLE = "GROWTH_PROFITABLE"
+ARCHETYPES = (FINANCIAL, REIT, UTILITY, GROWTH_PRE_PROFIT, CYCLICAL, GROWTH_PROFITABLE, MATURE)
 
 _C = cfg("sectors.archetypes")
 
@@ -51,6 +65,7 @@ ARCHETYPE_LABELS = {
     UTILITY: "Utility regulada",
     GROWTH_PRE_PROFIT: "Crecimiento sin beneficio",
     CYCLICAL: "Cíclica",
+    GROWTH_PROFITABLE: "Crecimiento rentable",
     MATURE: "Madura",
 }
 ARCHETYPE_GROUP = {
@@ -59,8 +74,11 @@ ARCHETYPE_GROUP = {
     UTILITY: "utilities reguladas",
     GROWTH_PRE_PROFIT: "empresas en crecimiento sin beneficio",
     CYCLICAL: "empresas cíclicas",
+    GROWTH_PROFITABLE: "empresas de crecimiento rentable",
     MATURE: "empresas maduras",
 }
+FINANCIAL_SUBTYPE_LABELS = {"banco": "Banco", "aseguradora": "Aseguradora", "conglomerado": "Conglomerado",
+                            "financiera": "Entidad financiera"}
 
 
 def archetype_label(archetype: Optional[str]) -> str:
@@ -79,6 +97,7 @@ WHY_NOT_APPLICABLE = {
     UTILITY: "su FCF es negativo por diseño: la inversión en la base de activos regulada supera al flujo "
              "operativo y se financia con deuda",
     CYCLICAL: "el resultado de un solo ejercicio depende de la fase del ciclo",
+    GROWTH_PROFITABLE: "",
     MATURE: "",
 }
 
@@ -198,8 +217,77 @@ def _reversion(st: Dict[str, Any]) -> Dict[str, Any]:
             "flag": bool(reasons), "detail": "; ".join(reasons), "detail_plain": " y ".join(plain)}
 
 
+def _insurer_subtype(history: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    """Aseguradora o conglomerado: peso de los ingresos de contratos con clientes (los contratos de seguro quedan
+    fuera por norma, ASC 606 / NIIF 15) en los ingresos del último ejercicio de la historia de EDGAR."""
+    thr = _C["financial_subtypes"]["conglomerate_min_non_insurance_share"]
+    rev = dict(cy._series(history or {}, "revenue"))
+    cr = cy._series(history or {}, "contract_revenue")
+    both = [(e, c, rev[e]) for e, c in cr if rev.get(e)]
+    if not both:
+        return {"subtype": "aseguradora", "non_insurance_share": None}
+    e, c, r = both[-1]
+    share = c / r
+    return {"subtype": "conglomerado" if share >= thr else "aseguradora", "non_insurance_share": share, "fy_end": e}
+
+
+def _cyclicality(history: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """Ciclicidad por la historia (lib/cyclicality) con su sensibilidad: qué umbral, movido ±20%, cambia la decisión.
+    None sin historia."""
+    if not history:
+        return None
+    r = cy.classify_history(history)
+    C = _C["cyclicality"]
+    flips = []
+    for k in ("revenue_decline", "eps_drop", "min_decline_episodes", "min_eps_collapses", "min_years"):
+        for f in (0.8, 1.2):
+            v = C[k] * f
+            if isinstance(C[k], int):
+                v = max(1, round(v))
+                if v == C[k]:
+                    continue
+            if cy.classify_history(history, {k: v})["cyclical"] != r["cyclical"]:
+                flips.append(f"{k} {C[k]}→{v:g}")
+    r["sensitivity"] = flips
+    return r
+
+
+def _growth_profitable(eps_ttm, op_margin, fcf_sbc_margin, history, st) -> Dict[str, Any]:
+    """Crecimiento rentable (§1.3): ingresos por acción ≥ 15% anual a 3 años (≥ 10% a 5 si hay historia), BPA TTM > 0
+    y margen operativo (o FCF − SBC) ≥ 10%. Sin historia de EDGAR, los ejercicios de Yahoo por acción."""
+    G = _C["growth_profitable"]
+    m = cy.growth_profitable_measures(history) if history else {"basis": None}
+    if not history or m.get("revenue_ps_cagr_3y") is None:
+        rev, sh = st.get("revenue") or [], st.get("ordinary_shares") or []
+        ps = [(r / s) if (r is not None and s) else None for r, s in zip(rev, sh)]
+        c3 = cagr(ps[0], ps[3], 3) if len(ps) >= 4 and ps[0] and ps[3] and ps[0] > 0 and ps[3] > 0 else None
+        m = {"basis": "por_accion (Yahoo)", "revenue_ps_cagr_3y": c3, "revenue_ps_cagr_5y": None}
+    margin = op_margin if (op_margin is not None and op_margin >= G["min_operating_margin"]) else None
+    alt = fcf_sbc_margin if (margin is None and fcf_sbc_margin is not None
+                             and fcf_sbc_margin >= G["min_operating_margin"]) else None
+
+    def meets(t3, t5, tm):
+        c3, c5 = m.get("revenue_ps_cagr_3y"), m.get("revenue_ps_cagr_5y")
+        prof = (op_margin is not None and op_margin >= tm) or (fcf_sbc_margin is not None and fcf_sbc_margin >= tm)
+        return bool(c3 is not None and c3 >= t3 and (c5 is None or c5 >= t5)
+                    and eps_ttm is not None and eps_ttm > 0 and prof)
+    ok = meets(G["min_revenue_ps_cagr_3y"], G["min_revenue_ps_cagr_5y"], G["min_operating_margin"])
+    flips = []
+    for k, idx in (("min_revenue_ps_cagr_3y", 0), ("min_revenue_ps_cagr_5y", 1), ("min_operating_margin", 2)):
+        for f in (0.8, 1.2):
+            t = [G["min_revenue_ps_cagr_3y"], G["min_revenue_ps_cagr_5y"], G["min_operating_margin"]]
+            t[idx] *= f
+            if meets(*t) != ok:
+                flips.append(f"{k} {G[k]:g}→{t[idx]:g}")
+    return {**m, "meets": ok, "operating_margin": op_margin, "fcf_sbc_margin": fcf_sbc_margin,
+            "margin_used": "operativo" if margin is not None else ("FCF − SBC" if alt is not None else None),
+            "sensitivity": flips}
+
+
 def classify(*, sector: Optional[str], industry: Optional[str], eps_ttm: Optional[float],
-             net_margin_ttm: Optional[float], statements_fy: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+             net_margin_ttm: Optional[float], statements_fy: Optional[Dict[str, Any]] = None,
+             history: Optional[Dict[str, Any]] = None, operating_margin_ttm: Optional[float] = None,
+             fcf_sbc_margin: Optional[float] = None) -> Dict[str, Any]:
     """Arquetipo y motivo de la clasificación.
 
     Devuelve {archetype, reason, rule, sector, industry, ambiguous, confidence,
@@ -217,14 +305,24 @@ def classify(*, sector: Optional[str], industry: Optional[str], eps_ttm: Optiona
     inputs = {"revenue_cagr_3y": rev_cagr, "revenue_cagr_3y_reason": rev_cagr_why,
               "eps_ttm": eps_ttm, "net_margin_ttm": net_margin_ttm,
               "assets_to_revenue": assets_to_revenue}
+    # Ciclicidad por la historia: se mide aquí porque también decide si hace falta la alerta de posible cíclica.
+    cyc = _cyclicality(history)
+    hist_decides = cyc is not None and cyc["enough"]
+    cond_stable = False     # industria cíclica condicional sin reversión en la ventana (sin historia que decida)
 
-    def out(arch, reason, rule, plain, ambiguous=False):
+    def out(arch, reason, rule, plain, ambiguous=False, subtype=None, frontier=None):
         # reason: motivo técnico (detalle); reason_plain: el mismo motivo en prosa para el usuario.
         res = {"archetype": arch, "label": ARCHETYPE_LABELS[arch], "reason": reason, "reason_plain": plain,
                "rule": rule, "sector": sector or None,
                "industry": ind_txt, "ambiguous": ambiguous, "confidence": "baja" if ambiguous else "normal",
-               "alerts": [], "inputs": inputs}
-        if arch != CYCLICAL:
+               "alerts": [], "inputs": inputs, "subtype": subtype,
+               "subtype_label": FINANCIAL_SUBTYPE_LABELS.get(subtype) if subtype else None,
+               "frontier": frontier or None}
+        if frontier:
+            res["confidence"] = "baja"
+        if arch != CYCLICAL and not hist_decides:
+            # Con historia suficiente la ciclicidad ya se midió en 10+ ejercicios; la alerta de la ventana corta de
+            # Yahoo (4 ejercicios) solo queda para los emisores sin esa historia.
             pc = _possible_cyclical(st)
             inputs["op_margin_detrended_std"] = pc["op_margin_detrended_std"]
             inputs["revenue_growth_std"] = pc["revenue_growth_std"]
@@ -239,10 +337,19 @@ def classify(*, sector: Optional[str], industry: Optional[str], eps_ttm: Optiona
     # 1. FINANCIAL: bancos y aseguradoras, por industria.
     if any(ind.startswith(p) for p in _C["bank_prefixes"]):
         return out(FINANCIAL, f"Clasificada como FINANCIAL {by_ind} (banco)", "industria_banco",
-                   f"Banco por su industria ({ind_txt}): el balance es el producto.")
+                   f"Banco por su industria ({ind_txt}): el balance es el producto.", subtype="banco")
     if any(ind.startswith(p) for p in _C["insurance_prefixes"]):
+        ins = _insurer_subtype(history)
+        inputs["non_insurance_revenue_share"] = ins["non_insurance_share"]
+        if ins["subtype"] == "conglomerado":
+            sh = ins["non_insurance_share"] * 100
+            return out(FINANCIAL, f"Clasificada como FINANCIAL {by_ind} (conglomerado: los ingresos de contratos con "
+                                  f"clientes, sin seguros, son el {sh:.0f}% de los ingresos del FY{ins['fy_end'][:4]})",
+                       "industria_aseguradora",
+                       f"Conglomerado con negocio asegurador ({ind_txt}): el {sh:.0f}% de sus ingresos son de "
+                       "negocios que no son seguros.", subtype="conglomerado")
         return out(FINANCIAL, f"Clasificada como FINANCIAL {by_ind} (aseguradora)", "industria_aseguradora",
-                   f"Aseguradora por su industria ({ind_txt}): el balance es el producto.")
+                   f"Aseguradora por su industria ({ind_txt}): el balance es el producto.", subtype="aseguradora")
 
     # 2. Excepciones MATURE dentro de Financial Services; el resto, FINANCIAL ambigua.
     if sec in _C["financial_sectors"]:
@@ -266,12 +373,13 @@ def classify(*, sector: Optional[str], industry: Optional[str], eps_ttm: Optiona
                      if assets_to_revenue is not None else
                      f"Banco/aseguradora: {ind_txt} sin datos de balance para distinguirla de una red de pagos.")
             return out(FINANCIAL, f"Clasificada como FINANCIAL {by_ind} ({why})", "credito_con_balance", plain,
-                       ambiguous=assets_to_revenue is None)
+                       ambiguous=assets_to_revenue is None, subtype="financiera")
         what = f"industria financiera ambigua ({ind_txt})" if ind_txt else "industria sin dato"
         return out(FINANCIAL, f"Clasificada como FINANCIAL por sector Financial Services: {what}; "
                               "se trata como FINANCIAL", "financiera_ambigua",
                    "Banco/aseguradora: sector financiero con una industria ambigua"
-                   + (f" ({ind_txt})" if ind_txt else "") + "; se analiza como entidad financiera.", ambiguous=True)
+                   + (f" ({ind_txt})" if ind_txt else "") + "; se analiza como entidad financiera.", ambiguous=True,
+                   subtype="financiera")
 
     # 3. REIT: solo industrias "REIT - …".
     if any(ind.startswith(p) for p in _C["reit_prefixes"]):
@@ -297,30 +405,77 @@ def classify(*, sector: Optional[str], industry: Optional[str], eps_ttm: Optiona
                    f"Crecimiento sin beneficio: {what_plain} e ingresos totales que crecen un {rev_cagr * 100:.1f}% "
                    f"anual en 3 años, por encima del {g_min * 100:.0f}%.")
 
-    # 5. CYCLICAL: industria cíclica siempre, o condicional con volatilidad alta.
-    if ind in _C["cyclical_industries"]:
-        extra = " (inmobiliaria no REIT)" if sec == "real estate" else ""
-        return out(CYCLICAL, f"Clasificada como CYCLICAL {by_ind}{extra}", "industria_ciclica",
-                   f"Cíclica por su industria ({ind_txt}){extra}.")
-    if ind in _C["cyclical_conditional_industries"]:
+    # 5. CYCLICAL (fase 3, D4): por la historia de EDGAR si hay bastante; si no, por la industria con confianza baja.
+    if cyc is not None:
+        m = cyc["measures"]
+        inputs["cyclicality"] = {"years": m.get("years"), "basis": m.get("basis"),
+                                 "decline_episodes": m.get("decline_episodes"),
+                                 "eps_collapse_with_decline": m.get("eps_collapse_with_decline"),
+                                 "perimeter_years": m.get("perimeter_years"), "triggers": cyc["triggers"],
+                                 "enough": cyc["enough"], "sensitivity": cyc["sensitivity"],
+                                 "design_measures": m.get("design")}
+    if hist_decides:
+        if cyc["cyclical"]:
+            eps_ = ", ".join("–".join(y[:4] for y in (ep[0], ep[-1])) if len(ep) > 1 else ep[0][:4]
+                             for ep in m["decline_episodes"])
+            col = ", ".join(y[:4] for y in m["eps_collapse_with_decline"])
+            what = "; ".join(filter(None, [
+                f"caídas de ingresos ≥ {_C['cyclicality']['revenue_decline'] * 100:.0f}% en {eps_}" if eps_ else "",
+                f"desplomes del BPA con caída de ingresos en {col}" if col else ""]))
+            return out(CYCLICAL, f"Clasificada como CYCLICAL por su historia ({m['years']} ejercicios en EDGAR): {what}",
+                       "historia_ciclica",
+                       f"Cíclica por su historia: en {m['years']} ejercicios, {what}.",
+                       frontier=cyc["sensitivity"])
+    elif ind in _C["cyclical_industries"] or ind in _C["cyclical_conditional_industries"]:
+        short = (f" (historia corta: {cyc['measures']['years']} ejercicios en EDGAR, menos de "
+                 f"{_C['cyclicality']['min_years']})" if cyc is not None else " (sin historia de EDGAR)")
+        if ind in _C["cyclical_industries"]:
+            extra = " (inmobiliaria no REIT)" if sec == "real estate" else ""
+            return out(CYCLICAL, f"Clasificada como CYCLICAL {by_ind}{extra}{short}", "industria_ciclica",
+                       f"Cíclica por su industria ({ind_txt}){extra}; sin historia suficiente para medirlo.",
+                       ambiguous=True)
         rv = _reversion(st)
         inputs["op_margin_peak_to_trough"] = rv["op_margin_peak_to_trough"]
         inputs["worst_revenue_growth"] = rv["worst_revenue_growth"]
         if rv["flag"]:
             return out(CYCLICAL, f"Clasificada como CYCLICAL {by_ind} (cíclica condicional) con reversión en la "
-                                 f"ventana: {rv['detail']}", "industria_ciclica_condicional",
+                                 f"ventana: {rv['detail']}{short}", "industria_ciclica_condicional",
                        f"Cíclica: su industria ({ind_txt}) puede serlo y en los últimos ejercicios "
-                       f"{rv['detail_plain']}.")
-        return out(MATURE, f"Clasificada como MATURE: industria {ind_txt} (cíclica condicional) sin reversión en los "
-                           "ejercicios disponibles (ni caída pico-valle del margen ni caída anual de ingresos)",
-                   "ciclica_condicional_estable",
-                   f"Madura: su industria ({ind_txt}) puede ser cíclica, pero en los ejercicios disponibles no "
-                   "hubo caídas fuertes del margen ni de los ingresos.")
+                       f"{rv['detail_plain']}.", ambiguous=True)
+        cond_stable = True
 
-    # 6. MATURE por defecto.
+    # 6. GROWTH_PROFITABLE (fase 3, D4): no cíclica y crecimiento rentable.
+    gp = _growth_profitable(eps_ttm, operating_margin_ttm, fcf_sbc_margin, history, st)
+    inputs["growth_profitable"] = gp
+    if gp["meets"]:
+        c3, c5 = gp["revenue_ps_cagr_3y"], gp.get("revenue_ps_cagr_5y")
+        mtxt = (f"margen operativo {operating_margin_ttm * 100:.0f}%" if gp["margin_used"] == "operativo"
+                else f"margen FCF − SBC {fcf_sbc_margin * 100:.0f}%")
+        yrs = f" y {c5 * 100:.1f}% a 5" if c5 is not None else ""
+        frontier = gp["sensitivity"] + (cyc["sensitivity"] if cyc else [])
+        return out(GROWTH_PROFITABLE, f"Clasificada como GROWTH_PROFITABLE: ingresos por acción {c3 * 100:.1f}% anual "
+                                      f"a 3 años{yrs}, BPA TTM > 0 y {mtxt}"
+                                      + ("; no cíclica por su historia" if hist_decides else ""),
+                   "crecimiento_rentable",
+                   f"Crecimiento rentable: sus ingresos por acción crecen un {c3 * 100:.1f}% anual en 3 años{yrs}, "
+                   f"con beneficio y un {mtxt}.", ambiguous=not hist_decides,
+                   frontier=frontier)
+
+    # 7. MATURE por defecto.
+    if cond_stable:
+        return out(MATURE, f"Clasificada como MATURE: industria {ind_txt} (cíclica condicional) sin reversión en los "
+                           "ejercicios disponibles (ni caída pico-valle del margen ni caída anual de ingresos)"
+                           f"{short}", "ciclica_condicional_estable",
+                   f"Madura: su industria ({ind_txt}) puede ser cíclica, pero en los ejercicios disponibles no "
+                   "hubo caídas fuertes del margen ni de los ingresos.", ambiguous=True,
+                   frontier=gp["sensitivity"])
     extra = f" (industria {ind_txt}" + ("; inmobiliaria no REIT)" if sec == "real estate" else ")") if ind_txt \
         else " (industria sin dato)"
+    frontier = (cyc["sensitivity"] if cyc else []) + gp["sensitivity"]
+    hist_txt = (f"; su historia ({cyc['measures']['years']} ejercicios en EDGAR) no muestra ciclo"
+                if hist_decides else "")
     return out(MATURE, "Clasificada como MATURE por defecto: no es financiera, REIT, pre-beneficio con "
-                       f"crecimiento ni de industria cíclica{extra}", "por_defecto",
+                       f"crecimiento, cíclica ni de crecimiento rentable{extra}{hist_txt}", "por_defecto",
                "Madura: no es un banco ni una aseguradora, ni un REIT, ni una empresa en crecimiento sin beneficio, "
-               "ni de una industria cíclica" + (f" ({ind_txt})." if ind_txt else "."))
+               "ni cíclica, ni de crecimiento rentable" + (f" ({ind_txt})." if ind_txt else "."),
+               ambiguous=not hist_decides, frontier=frontier)
