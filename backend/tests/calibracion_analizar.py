@@ -292,10 +292,11 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--data", required=True)
     ap.add_argument("--out", required=True)
+    ap.add_argument("--results", default="resultados", help="carpeta de <data> con los FY*.jsonl")
     a = ap.parse_args()
     data = os.path.expanduser(a.data)
     rows, failed = [], 0
-    for p in sorted(glob.glob(os.path.join(data, "resultados", "FY*.jsonl"))):
+    for p in sorted(glob.glob(os.path.join(data, a.results, "FY*.jsonl"))):
         for line in open(p):
             r = json.loads(line)
             if "error" in r or not r.get("quality_level"):
@@ -306,7 +307,8 @@ def main():
     txt, res = report(rows, failed)
     with open(os.path.expanduser(a.out), "w") as fh:
         fh.write(txt)
-    with open(os.path.join(data, "observaciones.json"), "w") as fh:
+    obs = "observaciones.json" if a.results == "resultados" else f"observaciones_{a.results}.json"
+    with open(os.path.join(data, obs), "w") as fh:
         json.dump(rows, fh, default=str)
     print(txt)
 
