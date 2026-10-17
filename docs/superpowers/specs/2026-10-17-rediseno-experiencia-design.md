@@ -105,7 +105,7 @@ manada; la calidad y el precio del motor junto a cada una permiten distinguir ne
 
 ### 3.6 Móvil
 
-Cabecera compacta con el **precio como elemento principal** (≈ 24 px, negrita) y la variación al lado; las tres
+Cabecera compacta con el **precio como elemento principal** (32 px, negrita; ver §5) y la variación al lado; las tres
 puntuaciones en una fila; barra de capítulos deslizable; capítulos en una columna; gráficas táctiles; tarjetas en pares
 simétricos; tooltips como hoja inferior.
 
@@ -141,8 +141,16 @@ de maquetación). El plan gratuito de Render (D6) se mantiene: la primera carga 
   `#3A3D40`/`#6B6F73`; bien/marca `#16794A`, atención `#B07D1A`, mal `#B4532A`, neutro `#ECEAE4`.
 - **Color (oscuro, opcional):** fondo `#16181B`, superficie `#1E2124`, línea `#2C3035`, tinta `#E8E6E1`; bien
   `#4F9E74`, atención `#C49A45`, mal `#C8775A`. Mismos significados, tonos apagados.
-- **Tipografía:** Geist (marca); título de capítulo 24, subtítulo 17, lectura 14 / 1.6, etiquetas 10 en versalitas;
-  cifras tabulares.
+- **Tipografía y legibilidad (revisado 2026-10-17 por petición del usuario: "se me hace difícil leer… el tamaño de la
+  letra es algo a lo que hay que prestarle atención"):** Geist (marca). Escritorio: lectura **16 / 1.6**, tablas 15,
+  subtítulo 19, título de capítulo 28, cifra de puntuación 32, precio 32. Móvil: lectura **17 / 1.6** (cuerpo de iOS),
+  tablas 15, subtítulo 19, título de capítulo 24, **precio 32 en negrita** (sigue siendo el elemento principal).
+  **Mínimo absoluto 12 px** en todo (etiquetas en versalitas 12 con `letter-spacing: .08em`; ningún texto de 10 u 11).
+  Línea de lectura de 60–75 caracteres. Texto secundario solo en `--text-2`/`--text-3` con contraste ≥ 4.5:1 sobre su
+  fondo. Todos los tamaños en `rem` (base 16 px): la página respeta el tamaño de texto del sistema y el zoom del
+  navegador sin romper la rejilla. Cifras tabulares.
+- **Zoom:** el zoom con los dedos nunca se bloquea (sin `maximum-scale`, sin `user-scalable=no`, sin `touch-action` que
+  lo impida); la página sigue usable y sin desbordamiento horizontal a 200 % de zoom (WCAG 1.4.4).
 - **Rejilla:** 12 columnas; capítulos en 2 columnas iguales; tarjetas en filas de 2, 3 o 4 de **igual alto**.
 - **Espaciado:** una sola escala (4 · 8 · 12 · 16 · 24 · 32 · 48).
 - **Siempre:** color con significado; toda puntuación con escala y base; toda cifra con su periodo; contraste AA;
@@ -174,7 +182,8 @@ Cada etapa: prompt de operador en `docs/rediseno/prompts/`, worktree propio, un 
    escritorio/móvil, comparadas en cada cambio.
 3. **Test de simetría** sobre la página real: falla si una fila de tarjetas tiene alturas desiguales, si hay un espacio
    fuera de la escala o si algo se sale de la rejilla. Equivalente en el PDF con hueco máximo entre bloques.
-4. **Accesibilidad y rendimiento:** contraste AA, navegación por teclado, Lighthouse ≥ 90 (rendimiento y accesibilidad,
+4. **Accesibilidad y rendimiento:** contraste AA, ningún texto por debajo de 12 px, zoom con los dedos permitido y
+   página usable a 200 % de zoom y con el texto grande del sistema, navegación por teclado, Lighthouse ≥ 90 (rendimiento y accesibilidad,
    escritorio); carga progresiva sin saltos.
 5. **Revisión externa** al cierre: 2–3 personas que no conozcan la app; se anota dónde se pierden.
 
