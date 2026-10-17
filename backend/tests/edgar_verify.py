@@ -51,6 +51,9 @@ OFFICIAL_FACTOR = {"TSM": 5, "ASML": 1, "NVO": 1, "BCS": 4, "HSBC": 5, "SHEL": 2
 FOREIGN = {"TSM", "ASML", "NVO", "BCS", "HSBC", "SHEL", "UL", "TM"}
 TOL = {"estado": 0.01, "acciones": 0.01, "por_accion": 0.02, "ratio": 0.02}
 RATIO_ABS_PP = 0.005
+# Fase 2b (T8): emparejar por el periodo que declara el pipeline (data_provenance.as_of). --sin-as-of reproduce la
+# medida anterior (para informar la cifra con y sin el arreglo de la herramienta).
+PAIR_AS_OF = True
 DAY_TOL = 14
 
 # campo del pipeline → (atributo de FinancialStatements, clave de info, campo de EDGAR, tipo, grupo)
@@ -550,8 +553,20 @@ def _rate_year(rates: Dict[str, float], year: int) -> Optional[float]:
     return c[-1][1] if c else None
 
 
-def pipeline_period(key: str, src_stmt: str, prov: Dict[str, Any], ttm: Dict[str, Any], fy0: Optional[int]):
-    """Periodo que usa el pipeline para una clave de info: ("ttm", fin) | ("fy", año) | ("instant", fecha)."""
+def pipeline_period(key: str, src_stmt: str, prov: Dict[str, Any], ttm: Dict[str, Any], fy0: Optional[int],
+                    as_of: Optional[Dict[str, Any]] = None):
+    """Periodo que usa el pipeline para una clave de info: ("ttm", fin) | ("fy", año) | ("instant", fecha).
+
+    Fase 2b (T8, arreglo de la herramienta): primero el periodo que declara el propio pipeline por campo
+    (data_provenance.as_of, desde T3). Antes se deducía de `ttm_fields` y del texto de la procedencia, y un flujo del
+    corte respaldado por EDGAR (T4: "ejercicio + acumulado − acumulado") o rehecho por una regla (deuda, T5) se
+    comparaba con el ejercicio: TTM frente a FY, una discrepancia de periodo de la herramienta, no del dato."""
+    per = ((as_of or {}).get("fields") or {}).get(key) or {}
+    if per.get("period_end") and (as_of or {}).get("type") == "ttm":
+        if per.get("period_type") == "ttm":
+            return ("ttm", per["period_end"])
+        if per.get("period_type") == "balance":
+            return ("instant", per["period_end"])
     q = ttm.get("quarters") or {}
     end = (q.get(src_stmt) or q.get("inc") or [None])[0]
     if key in (ttm.get("ttm_fields") or []) and end:
@@ -597,6 +612,7 @@ def compare_ticker(sym: str, ext: Dict[str, Any], cap: Dict[str, Any]) -> List[D
     ed = Edgar(ext)
     dp = a.get("data_provenance") or {}
     cur, ttm, prov = dp.get("currency") or {}, dp.get("ttm") or {}, dp.get("fields") or {}
+    as_of = dp.get("as_of") if PAIR_AS_OF else None
     converted = bool(cur.get("converted"))
     rates = cur.get("rates") or {}
     sfy = info.get("_statements_fy") or {}
@@ -630,7 +646,7 @@ def compare_ticker(sym: str, ext: Dict[str, Any], cap: Dict[str, Any]) -> List[D
         src_stmt = "cf" if key in ("depreciation", "operatingCashflow", "capitalExpenditures", "freeCashflow",
                                    "dividendsPaid") else "inc"
         if kind == "stock":
-            period = pipeline_period(key, src_stmt, prov, ttm, fy0)
+            period = pipeline_period(key, src_stmt, prov, ttm, fy0, as_of)
             if period[0] == "fy":
                 # saldo del último ejercicio: la fecha de cierre del FY de EDGAR para ese año
                 end = ed.fy_end(period[1])
@@ -639,12 +655,12 @@ def compare_ticker(sym: str, ext: Dict[str, Any], cap: Dict[str, Any]) -> List[D
             period = ("dei", None)
         elif name == "eps":
             period = ("ttm", ((ttm.get("quarters") or {}).get("inc") or [None])[0]) if ttm.get("eps") == "ttm" \
-                else pipeline_period(key, "inc", prov, ttm, fy0)
+                else pipeline_period(key, "inc", prov, ttm, fy0, as_of)
         elif name == "dividend_per_share":
             q_end = ((ttm.get("quarters") or {}).get("inc") or [None])[0]
             period = ("ttm", q_end) if q_end else ("fy", fy0)
         else:
-            period = pipeline_period(key, src_stmt, prov, ttm, fy0)
+            period = pipeline_period(key, src_stmt, prov, ttm, fy0, as_of)
         rate = rate_for(period, "bs" if kind == "stock" else "inc")
         source = (prov.get(key) or {}).get("source")
         row = {"ticker": sym, "campo": name, "grupo": group, "periodo": f"{period[0]} {period[1] or ''}".strip(),
@@ -1061,7 +1077,11 @@ def main():
     ap.add_argument("--whatif", action="store_true")
     ap.add_argument("--out", required=True)
     ap.add_argument("--report-only", action="store_true", help="rehace resumen.md desde resultado.json")
+    ap.add_argument("--sin-as-of", action="store_true",
+                    help="empareja periodos como antes de la 2b (T8): sin data_provenance.as_of")
     args = ap.parse_args()
+    global PAIR_AS_OF
+    PAIR_AS_OF = not args.sin_as_of
     if args.report_only:
         o = Path(os.path.expanduser(args.out))
         res = json.loads((o / "resultado.json").read_text())
