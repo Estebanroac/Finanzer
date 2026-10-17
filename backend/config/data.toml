@@ -55,6 +55,10 @@ annual_stale_months = 15
 # que esto del de EDGAR en el mismo periodo (Yahoo construye el suyo: KO, PLD, AMT, NEE, DUK, FCX, CRWD, UL, V).
 ebit_estimate_rel_tol = 0.02
 fy_backup_years = 4              # ejercicios de los estados anuales que el respaldo completa (FY0–FY3: Piotroski y CAGR a 3 años)
+# Fase 3 (T1b; F3_T1_PARADA1 §2.2): la historia larga vive en la caché en memoria (Render: 512 MB y disco efímero).
+# Un companyfacts reducido pesa 0.3–0.45 MB; leer uno grande sube el proceso 80–116 MB un instante.
+cache_max_issuers = 64           # emisores por tipo de entrada en la caché (LRU): ≤ ~30 MB de hechos reducidos
+parse_concurrency = 1            # lecturas grandes a la vez (companyfacts e instancias): acota el pico de memoria
 
 [edgar.predecessors]            # sucesión de emisor: el ticker apunta al CIK nuevo y la historia XBRL sigue en el anterior
 # XOM: reorganización en holding (8-K12B de ExxonMobil Holdings Corp, CIK 2115436, del 2026-07-01); los estados hasta

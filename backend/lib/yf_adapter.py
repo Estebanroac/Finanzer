@@ -479,6 +479,15 @@ def _apply_edgar(symbol: str, info: Dict[str, Any], ed: Dict[str, Any], hist: Di
     info["_edgar"]["backup"] = edgar_backup.apply(info, ed, ctx)
     import edgar_primary
     info["_edgar"]["primary"] = edgar_primary.apply(info, ed, ctx, symbol)   # fase 3 (T1b): EDGAR manda, campo a campo
+    # Fase 3 (T1b): historia anual larga (10+ ejercicios, moneda de los estados) para clasificar y para el ciclo medio
+    # (T2); en data_provenance solo el resumen.
+    if ed.get("status") == "ok" and ed.get("facts"):
+        info["_history_fy"] = edgar.history(ed["facts"])
+        info["_edgar"]["history"] = {
+            f: {"years": len(h["values"]), "first": h["values"][-1]["fy_end"] if h["values"] else None,
+                "last": h["values"][0]["fy_end"] if h["values"] else None, "unit": h["unit"],
+                "cross_taxonomy": h["cross_taxonomy"]}
+            for f, h in info["_history_fy"].items()}
     info["_ebit"] = edgar_backup.ebit_check(info, ed, ctx)     # F2_PRECEDENCIA §2.1: EBIT "estimado por la fuente"
     import debt
     info["_debt"] = debt.apply(info, ed, ctx)          # T5: deuda coherente con el EBITDA

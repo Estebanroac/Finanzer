@@ -34,6 +34,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
+from collections import OrderedDict
 from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
@@ -121,16 +122,37 @@ DEBT_PARTS: Dict[str, Dict[str, Tuple[str, ...]]] = {
         "subordinated": ("SubordinatedLiabilities",),
     },
 }
-_WANTED = {"us-gaap": {c for v in CONCEPTS.values() for c in v[2]} | {c for v in DEBT_PARTS["us-gaap"].values() for c in v},
+# Fase 3 (T1b): historia anual larga (10+ ejercicios) para clasificar por la historia real (D4) y para el ciclo
+# medio. Campo → (unidad: "money" = moneda de los estados, "per_share" = moneda/acción, "shares" = acciones;
+# alternativas us-gaap; alternativas ifrs-full), en orden de preferencia. Cada ejercicio toma el primer concepto que
+# lo tenga: las etiquetas cambian con los años (ASC 606 en 2018: `SalesRevenueNet` → `RevenueFromContract…`).
+HISTORY: Dict[str, Tuple[str, Tuple[str, ...], Tuple[str, ...]]] = {
+    "revenue": ("money", CONCEPTS["revenue"][2], CONCEPTS["revenue"][3] + ("RevenueAndOperatingIncome",)),
+    "operating_income": ("money", CONCEPTS["operating_income"][2], CONCEPTS["operating_income"][3]),
+    "net_income": ("money", CONCEPTS["net_income"][2], CONCEPTS["net_income"][3]),
+    "diluted_eps": ("per_share", ("EarningsPerShareDiluted", "EarningsPerShareBasicAndDiluted"),
+                    ("DilutedEarningsLossPerShare", "BasicAndDilutedEarningsLossPerShare")),
+    "diluted_shares": ("shares", ("WeightedAverageNumberOfDilutedSharesOutstanding",),
+                       ("AdjustedWeightedAverageShares",)),
+    "operating_cash_flow": ("money", CONCEPTS["operating_cash_flow"][2], CONCEPTS["operating_cash_flow"][3]),
+    "capex": ("money", CONCEPTS["capex"][2], CONCEPTS["capex"][3]),
+}
+# Campos cuya definición no cambia de forma material entre US GAAP e IFRS: con el cambio de norma (TM, IFRS desde el
+# FY2021) la historia anterior se completa con la otra taxonomía y se declara.
+HISTORY_CROSS_TAXONOMY = ("revenue", "diluted_eps")
+
+_WANTED = {"us-gaap": {c for v in CONCEPTS.values() for c in v[2]} | {c for v in DEBT_PARTS["us-gaap"].values() for c in v}
+           | {c for v in HISTORY.values() for c in v[1]},
            "ifrs-full": {c for v in CONCEPTS.values() for c in v[3]}
-           | {c for v in DEBT_PARTS["ifrs-full"].values() for c in v}}
+           | {c for v in DEBT_PARTS["ifrs-full"].values() for c in v} | {c for v in HISTORY.values() for c in v[2]}}
 # Deuda de la financiera cautiva (T5): solo va con dimensiones en la instancia del filing.
 CAPTIVE_DEBT_CONCEPTS = ("LongTermDebtAndCapitalLeaseObligations", "LongTermDebtAndCapitalLeaseObligationsCurrent",
                          "LongTermDebtNoncurrent", "LongTermDebtCurrent", "ShortTermBorrowings", "CommercialPaper")
 _FACT_KEYS = ("start", "end", "val", "filed", "form", "accn")
 
-_cache: Dict[str, Tuple[float, Any]] = {}
+_cache: "OrderedDict[str, Tuple[float, Any]]" = OrderedDict()   # LRU: lo más reciente al final
 _lock = threading.Lock()
+_parse_lock: Optional[threading.BoundedSemaphore] = None      # lecturas grandes a la vez (pico de memoria)
 _rate_lock = threading.Lock()
 _last = [0.0]
 _pool = ThreadPoolExecutor(max_workers=4, thread_name_prefix="edgar")
@@ -211,15 +233,40 @@ def _get_json(url: str, budget: Budget) -> Any:
 
 
 def _cached(key: str, ttl: float, make: Callable[[], Any]) -> Any:
+    """Caché por proceso con caducidad y tope por tipo (`facts:`, `inst:`, `sub:`…): con más de
+    `cache_max_issuers` entradas de un tipo sale la usada hace más tiempo (fase 3, T1b: la historia larga vive en
+    memoria y Render tiene 512 MB; con disco efímero no hay caché en disco)."""
     now = time.time()
     with _lock:
         ent = _cache.get(key)
         if ent and now - ent[0] < ttl:
+            _cache.move_to_end(key)
             return ent[1]
     val = make()
     with _lock:
         _cache[key] = (now, val)
+        _cache.move_to_end(key)
+        kind = key.split(":", 1)[0]
+        if kind != "tickers":
+            same = [k for k in _cache if k.split(":", 1)[0] == kind]
+            for k in same[:max(0, len(same) - _cache_cap(kind))]:
+                del _cache[k]
     return val
+
+
+def _cache_cap(kind: str) -> int:
+    n = cfg("data.edgar.cache_max_issuers")
+    return n * cfg("data.edgar.max_pending_filings") if kind == "inst" else n
+
+
+def _parsing():
+    """Semáforo de las lecturas grandes (companyfacts de 6–8 MB e instancias de hasta 15 MB): el pico de memoria de
+    una lectura es de 80–116 MB (F3_T1_PARADA1 §2.2) y la concurrencia de producción, 3."""
+    global _parse_lock
+    with _lock:
+        if _parse_lock is None:
+            _parse_lock = threading.BoundedSemaphore(cfg("data.edgar.parse_concurrency"))
+    return _parse_lock
 
 
 def cik_for(ticker: str, budget: Budget) -> Optional[Dict[str, Any]]:
@@ -301,8 +348,10 @@ def merge_facts(base: Dict[str, Any], extra: Dict[str, Any]) -> Dict[str, Any]:
 
 def company_facts(cik: int, budget: Budget) -> Dict[str, Any]:
     """companyfacts reducido del CIK (caché diaria). NotFound si el CIK no tiene estados XBRL."""
-    return _cached(f"facts:{cik}", cfg("data.edgar.facts_ttl_s"),
-                   lambda: reduce_facts(_get_json(FACTS_URL.format(cik=cik), budget)))
+    def make():
+        with _parsing():
+            return reduce_facts(_get_json(FACTS_URL.format(cik=cik), budget))
+    return _cached(f"facts:{cik}", cfg("data.edgar.facts_ttl_s"), make)
 
 
 def _tax_of(ns: str) -> Optional[str]:
@@ -448,8 +497,9 @@ def instance_facts(cik: int, filing: Dict[str, Any], budget: Budget) -> Dict[str
         inst = next((n for n in names if n and n.endswith("_htm.xml")), None)
         if inst is None:
             return {"facts": {}, "accns": [], "last_filed": None, "reason": "el filing no publica la instancia XBRL"}
-        return parse_instance(_get(ARCHIVE_URL.format(cik=cik, acc=acc, name=inst), budget), filing["form"],
-                              filing["filingDate"], filing["accessionNumber"])
+        with _parsing():
+            return parse_instance(_get(ARCHIVE_URL.format(cik=cik, acc=acc, name=inst), budget), filing["form"],
+                                  filing["filingDate"], filing["accessionNumber"])
     return _cached(f"inst:{acc}", cfg("data.edgar.facts_ttl_s"), make)
 
 
@@ -670,6 +720,53 @@ _RATIO_RE = re.compile(
 _TITLE_RE = re.compile(r"Title of 12\(b\) Security\s+(.*?)(?=\s+(?:Trading Symbol|No Trading Symbol Flag|"
                        r"Security Exchange Name|Document|Entity|Title of 12\(b\) Security|American Depositary "
                        r"Shares \[Member\])|$)")
+
+
+def annual_history(facts: Dict[str, Any], field: str) -> Dict[str, Any]:
+    """Serie anual larga del campo (fase 3, T1b): {"values": [{fy_end, value, concept, taxonomy}, …] del ejercicio
+    más reciente al más antiguo, "unit", "cross_taxonomy"}. Solo ejercicios enteros (350–380 días) de formularios
+    anuales, el filing más reciente de cada periodo (reexpresiones) y, por ejercicio, el primer concepto de HISTORY
+    que lo tenga. En la moneda de los estados, sin convertir. Con cambio de norma (HISTORY_CROSS_TAXONOMY), los
+    ejercicios anteriores al primero de la taxonomía vigente salen de la otra y se declaran."""
+    tax = taxonomy(facts)
+    money = reporting_unit(facts, tax)
+    kind, us, ifrs = HISTORY[field]
+    out: Dict[str, Any] = {"values": [], "unit": None, "cross_taxonomy": None}
+    if tax is None or money is None:
+        return out
+    unit = {"money": money, "per_share": f"{money}/shares", "shares": "shares"}[kind]
+    out["unit"] = unit
+
+    def years(tx: str, concepts) -> Dict[str, Dict[str, Any]]:
+        by_end: Dict[str, Dict[str, Any]] = {}
+        for c in concepts:
+            fs = (facts.get("facts") or {}).get(tx, {}).get(c, {}).get("units", {}).get(unit) or []
+            cur: Dict[Tuple[str, str], Dict[str, Any]] = {}
+            for f in fs:
+                if f.get("form") in ANNUAL_FORMS and f.get("start") and 350 <= (_days(f) or 0) <= 380:
+                    k = (f["start"], f["end"])
+                    if k not in cur or (f.get("filed") or "") > (cur[k].get("filed") or ""):
+                        cur[k] = f
+            for (_s, e), f in cur.items():
+                by_end.setdefault(e, {"fy_end": e, "value": f["val"], "concept": f"{tx}:{c}", "taxonomy": tx})
+        return by_end
+    sign = CONCEPTS["capex"][1] if field == "capex" else 1
+    main = years(tax, us if tax == "us-gaap" else ifrs)
+    if main and field in HISTORY_CROSS_TAXONOMY:
+        other = "ifrs-full" if tax == "us-gaap" else "us-gaap"
+        first = min(main)
+        older = {e: v for e, v in years(other, ifrs if other == "ifrs-full" else us).items() if e < first}
+        if older:
+            main.update(older)
+            out["cross_taxonomy"] = {"taxonomy": other, "until": max(older), "years": len(older)}
+    vals = [dict(v, value=sign * v["value"]) for _e, v in sorted(main.items(), reverse=True)]
+    out["values"] = vals
+    return out
+
+
+def history(facts: Dict[str, Any]) -> Dict[str, Any]:
+    """Historia anual de todos los campos de HISTORY: {campo: annual_history}."""
+    return {f: annual_history(facts, f) for f in HISTORY}
 
 
 def parse_ratio(title: str) -> Optional[float]:
