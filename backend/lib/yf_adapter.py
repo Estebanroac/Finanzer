@@ -55,6 +55,56 @@ _TIMESERIES_URL = "https://query2.finance.yahoo.com/ws/fundamentals-timeseries/v
 _TIMESERIES_PERIOD1 = "473385600"   # 1985: todos los ejercicios disponibles (Yahoo da ~4)
 
 
+# ── Fase 6: caché de los estados (cambian cada trimestre) ──
+# Los estados de yfinance se guardan `statements_cache_ttl_s` (6 h) por símbolo, aparte de la cotización (5 min en
+# `_cache`). Sin ella, cada análisis frío repetía las 6–8 peticiones de estados (≈ la mitad de su red, F6_DIAGNOSTICO
+# §1.2) aunque nada hubiera cambiado. 6 h es la caché de la lista de filings de EDGAR: unos resultados nuevos se ven
+# como mucho con ese retraso, y Yahoo tarda más en publicar los estados. Se guarda el estado CRUDO (antes de alias y
+# conversión de moneda, que dependen del contexto del análisis) y se entrega una copia. Vacíos y errores no se guardan.
+_STMT_TTL = _D["statements_cache_ttl_s"]
+_STMT_MAX = _D["statements_cache_max_entries"]
+_stmt_cache: Dict[tuple, tuple] = {}     # (SÍMBOLO, atributo) -> (ts, DataFrame | str)
+_stmt_lock = threading.Lock()
+
+
+def _stmt_get(key):
+    with _stmt_lock:
+        hit = _stmt_cache.get(key)
+        if hit and time.time() - hit[0] < _STMT_TTL:
+            _stmt_cache[key] = _stmt_cache.pop(key)          # LRU: al final
+            return hit[1]
+    return None
+
+
+def _stmt_put(key, val):
+    with _stmt_lock:
+        _stmt_cache.pop(key, None)
+        _stmt_cache[key] = (time.time(), val)
+        while len(_stmt_cache) > _STMT_MAX:
+            _stmt_cache.pop(next(iter(_stmt_cache)))
+
+
+class _CachedStatements:
+    """yf.Ticker cuyos estados se leen de la caché de la fase 6; todo lo demás (cotización) pasa directo."""
+
+    def __init__(self, ticker, symbol: str):
+        self._t = ticker
+        self._sym = symbol.upper()
+
+    def __getattr__(self, name):
+        from currency import STATEMENT_ATTRS
+        if name not in STATEMENT_ATTRS:
+            return getattr(self._t, name)
+        key = (self._sym, name)
+        hit = _stmt_get(key)
+        if hit is not None:
+            return hit.copy()
+        val = getattr(self._t, name)
+        if val is not None and not getattr(val, "empty", True):
+            _stmt_put(key, val.copy())
+        return val
+
+
 class _StatementsTicker:
     """yf.Ticker cuyos estados llegan en la moneda y la clase de la cotización."""
 
@@ -84,7 +134,7 @@ class _StatementsTicker:
 def _stmt_ticker(symbol: str):
     """yf.Ticker de `symbol`, envuelto si su fetch tiene contexto de moneda/clase."""
     import yfinance as yf
-    t = yf.Ticker(symbol)
+    t = _CachedStatements(yf.Ticker(symbol), symbol)
     ctx = _STMT_CTX.get(symbol.upper())
     return _StatementsTicker(t, ctx) if ctx is not None else t
 
@@ -92,7 +142,12 @@ def _stmt_ticker(symbol: str):
 def _statement_currency(symbol: str):
     """Moneda de los estados según fundamentals-timeseries (currencyCode), el mismo
     endpoint del que yfinance saca los estados y que responde sin crumb (también en
-    Render, donde quoteSummary da 401). None si no hay respuesta o es ambigua."""
+    Render, donde quoteSummary da 401). None si no hay respuesta o es ambigua.
+    Fase 6: una respuesta clara se guarda como los estados (no cambia entre trimestres)."""
+    key = (symbol.upper(), "_statement_currency")
+    hit = _stmt_get(key)
+    if hit is not None:
+        return hit
     try:
         _ensure_session()
         r = _session.get(_TIMESERIES_URL.format(sym=symbol),
@@ -107,7 +162,11 @@ def _statement_currency(symbol: str):
             for v in item.values():
                 if isinstance(v, list):
                     codes |= {x.get("currencyCode") for x in v if isinstance(x, dict) and x.get("currencyCode")}
-        return codes.pop() if len(codes) == 1 else None
+        if len(codes) != 1:
+            return None
+        code = codes.pop()
+        _stmt_put(key, code)
+        return code
     except Exception as e:
         logger.warning(f"[CURRENCY] moneda de los estados de {symbol} no disponible: {e}")
         return None
@@ -1566,7 +1625,7 @@ def _fallback_yfinance(symbol: str) -> Dict[str, Any]:
     from concurrent.futures import ThreadPoolExecutor, as_completed
 
     t0 = time.time()
-    ticker = yf.Ticker(symbol)
+    ticker = _CachedStatements(yf.Ticker(symbol), symbol)
 
     try:
         fi = ticker.fast_info

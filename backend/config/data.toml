@@ -22,6 +22,10 @@ last_known_good_max_age_s = 86400
 degraded_retry_sleep_step_s = 0.8
 http_timeout_s = 15
 statements_timeout_s = 30
+# Fase 6: estados de yfinance (y su moneda) en caché por símbolo; cambian cada trimestre. 6 h = la lista de filings
+# de EDGAR (edgar.submissions_ttl_s): unos resultados nuevos se ven como mucho con ese retraso.
+statements_cache_ttl_s = 21600
+statements_cache_max_entries = 700   # 7 entradas por símbolo (6 estados + moneda): 100 símbolos, unos pocos MB
 search_timeout_s = 8
 impersonate_profiles = ["chrome", "safari15_5", "edge101"]
 completeness_fields = ["beta", "sharesOutstanding", "marketCap", "totalRevenue", "operatingCashflow", "totalCash"]

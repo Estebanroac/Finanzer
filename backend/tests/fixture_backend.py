@@ -596,6 +596,7 @@ def reset_state():
     sec_edgar.reset()
     yf_adapter._cache.clear()
     yf_adapter._best_cache.clear()
+    yf_adapter._stmt_cache.clear()      # fase 6: estados en caché 6 h
     yf_adapter._session = None
     yf_adapter._crumb = None
     yf_adapter._profile_idx = 0
