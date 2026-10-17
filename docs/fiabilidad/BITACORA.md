@@ -24,12 +24,12 @@
 
 | Campo | Valor |
 |---|---|
-| Fase en curso | **Fase 2b 🔧 en curso** (2026-10-16, registro #22): T4–T6 hechas; golden de T4–T5 regenerados (aprobados); **las dos protecciones retiradas**; golden de T6 pendientes de aprobación; sigue T7 |
-| Rama de trabajo | `fiabilidad/f2b-corregir` (worktree `../finanzer_next-f2b`), desde `main` = `60f8a69`; 29 commits `F2b:` sin push |
-| Producción | `60f8a69` (= `2d58a35` en código). Rollback de código: `a2572e0` |
-| `main` local | = `origin/main` (`60f8a69`) |
-| Último cierre de sesión | 2026-10-16 · operador F2b (ver registro #21) |
-| Bloqueos | La variable `SEC_EDGAR_USER_AGENT` en Render (antes del deploy de la 2b) |
+| Fase en curso | **Fase 2b ✅ cerrada** (2026-10-16, registros #21–#23). Siguiente: el planificador escribe el prompt de la fase 3 |
+| Rama de trabajo | `fiabilidad/f2b-corregir` fusionada en `main` (avance directo desde `60f8a69`); subida |
+| Producción | `103c76f` (código de la 2b, verificado en vivo; `/api/health`). Rollback de código: `60f8a69` |
+| `main` local | = `origin/main` (cierre de la 2b, registro #23) |
+| Último cierre de sesión | 2026-10-16 · operador F2b (ver registro #23) |
+| Bloqueos | La variable `SEC_EDGAR_USER_AGENT` en Render (la pone el usuario): sin ella, producción va sin EDGAR |
 
 ## Fases
 
@@ -37,8 +37,8 @@
 |---|---|---|---|---|---|
 | 0 Congelar y medir | ✅ cerrada (2026-10-14) | `fiabilidad/f0-panel` → `main` local | `0a8ac66`..`0ae214a` (9 commits) + cierre (registro #6) | sí, 2026-10-14 (registro #6) | no aplica (se sube con el deploy de la fase 1) |
 | 1 Lo visible hoy | ✅ cerrada | `fiabilidad/f1-visible` | `d676b22` (D8), `21c3f5f`, `0ebba81` (guardián), `d63de70`…`d7393fd` (T3, 8 commits), `7f32070`, `e3161d2`, `c369575` (T4) | — | — |
-| 2 Verdad de datos (EDGAR) | ✅ 2a cerrada (2026-10-15); 🔧 2b en curso, parada 1 aprobada (2026-10-16, registros #21 y #22; rama `fiabilidad/f2b-corregir`: `b25aed6`…`0fd5bd3`) | `fiabilidad/f2a-medir` → `main` | `8d3a5cc` (planificador), `356f49c` (T0), `0b82c13`…`8e9948b` (T2), `385e441` + `4051a5e` (T1), `f8f13df`…`06a6ec0` (herramienta T3), `6946a64` (T3), `01aec9d`…`8d7c1fb` (T4), `aed575a` (RECON §7.20) + cierre (registros #18 y #19) | parada 1 sí; parada 2 y deploy sí; D2 decidida (2026-10-15, registro #19) | `25b9d8a` (T0 + panel, 2026-10-15) |
-| 3 Método por arquetipo | 🔒 espera la 2b · preparación F3prep fusionada (`fiabilidad/f3-prep`, módulos aislados sin conectar) | — | `0f6f21b`..`da34592` | — | `a2572e0` |
+| 2 Verdad de datos (EDGAR) | ✅ cerrada: 2a (2026-10-15) y 2b (2026-10-16, registros #21–#23). F1 91.4% (objetivo 95% no alcanzado; lo que falta, en la fase 3 o por diseño: RECON §7.21) | `fiabilidad/f2a-medir` y `fiabilidad/f2b-corregir` → `main` | 2a: `8d3a5cc`…`aed575a`; 2b: `b25aed6`…`103c76f` (T1–T8) + cierre (RECON §7.21, registro #23) | 2a: sí; 2b: paradas 1 y 2 sí, "ok, pushea" (2026-10-16) | 2a `25b9d8a`; 2b `103c76f` |
+| 3 Método por arquetipo | 🔒 espera el prompt del planificador (la 2b ya cerrada) · preparación F3prep fusionada (`fiabilidad/f3-prep`, módulos aislados sin conectar) | — | `0f6f21b`..`da34592` | — | `a2572e0` |
 | 4 Escalas y confianza | 🔒 espera F3 | — | — | — | — |
 | 5 Técnica y conductual | 🔒 espera F4 · preparación F5prep fusionada (`fiabilidad/f5-prep`, módulos aislados sin conectar; D5: solo contexto) | — | `e99e958`..`8e2bf07` | §5 de la muestra aceptado (registro #20) | `a2572e0` |
 | 6 Infraestructura | 🔒 diagnóstico hecho (F6_DIAGNOSTICO.md, F67prep fusionada); implementación en espera (D6 sin plan de pago) | — | `697eb83`..`583e685` | — | `a2572e0` (solo documentos y herramientas de test) |
@@ -1022,3 +1022,38 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
     respaldo (Altman de JNJ sin dato), sin la marca del EBIT estimado y sin el aviso D7 de MC.PA. Con la variable
     puesta, repetir la comprobación.
   - **Siguiente:** T9 (RECON §7.21 y cierre de la 2b en la bitácora).
+
+### #23 · 2026-10-16 · operador · Fase 2b cerrada (T9)
+- **Objetivo de la sesión:** T9: RECON §7.21 y cierre de la 2b en la bitácora.
+- **Decisiones tomadas por el usuario (cita literal):** "Sigue con T9 y cierra la 2b."
+- **Hecho:**
+  - RECON §7.21: resumen de T1–T8 con los commits, la medida final, la producción y lo que pasa a la fase 3.
+  - Estado actual y fila de la fase 2 en "cerrada".
+  - El mapa ya estaba al día desde T7: las 29 filas de fase 2 tienen destino. La fila "sin parches" está marcada como
+    hecha: protección 1 retirada en `c9b661d`, protección 2 en `c8ae863`.
+- **Definición de terminado de la 2b (prompt §5):**
+  - ✅ factor ADR oficial;
+  - ✅ dividendo y protección 1;
+  - ✅ corte coherente;
+  - ✅ cliente de EDGAR y D7;
+  - ✅ deuda coherente con el EBITDA (O y DUK resueltos);
+  - ✅ beta y rango, con la protección 2 retirada;
+  - ✅ mapa;
+  - ⚠️ F1 91.4%, por debajo del 95%: el número real, con lo que falta y su fase, en RECON §7.21. Muestreo de 5
+    tickers preparado, golden aprobados y tiempo medido;
+  - ✅ desplegado con "ok, pushea" y verificado en producción (`103c76f`). RECON y bitácora al día.
+- **Verificación:**
+  - `curl https://finanzer.app/api/health` → `{"status":"ok","commit":"103c76f…"}`;
+  - comprobación de producción de los 11 casos (registro #22);
+  - `pytest -q` → "3663 passed, 1 skipped" (en `103c76f`).
+- **Abierto / siguiente paso:**
+  - El usuario pone `SEC_EDGAR_USER_AGENT` en Render y se repite la comprobación de producción: deuda de MSFT y AMZN,
+    Altman de JNJ, EBIT estimado y D7 en MC.PA.
+  - El planificador escribe el prompt de la fase 3. Este operador se detiene aquí.
+- **Archivos tocados:** `docs/RECON.md` (§7.21) y `docs/fiabilidad/BITACORA.md`.
+- **Avisos para el siguiente chat:**
+  - `frontend/out` se compila con `npm run build` (Turbopack + postbuild) en el checkout principal; en un worktree el
+    `node_modules` es un enlace y Turbopack falla, y con webpack `build.sh` de Render rechaza el deploy.
+  - Para medir niveles por causa: exportar cada commit con `git archive` y enlazar `tests/fixtures/edgar/raw`
+    (ignorado por git).
+  - F1: `edgar_verify.py --sin-as-of --ni-propietarios` reproduce la medida de la 2a.

@@ -1095,3 +1095,82 @@ golden causa por causa), [`fiabilidad/F1_DISENO_GUARDIAN.md`](fiabilidad/F1_DISE
   oficial, corte coherente del BPA (JNJ), falso positivo de NVDA e identidad a la baja (PGR), EDGAR como respaldo
   (utilidades retenidas de JNJ; D&A de BCS y de BRK-B), beta propia, deuda de O y DUK.
   - Para la fase 3: definiciones de deuda, capex y EBIT bancario, y AT1 en el método de FINANCIAL.
+
+### 7.21 Fase 2b del plan de fiabilidad: verdad de datos (corregir)
+
+*Operador F2b, 16-oct-2026. Detalle: [`fiabilidad/F2b_PARADA1.md`](fiabilidad/F2b_PARADA1.md),
+[`fiabilidad/F2b_PARADA2.md`](fiabilidad/F2b_PARADA2.md) (medida final, diff de golden causa por causa, tiempo) y
+[`fiabilidad/F2b_MUESTREO_MANUAL.md`](fiabilidad/F2b_MUESTREO_MANUAL.md); bitácora, registros #21 y #22. Rama
+`fiabilidad/f2b-corregir`, fusionada en `main` por avance directo desde `60f8a69`. Producción: `103c76f` (rollback de
+código: `60f8a69`). Todo arreglo es de fondo: la 2b retira las dos protecciones provisionales de la fase 1.*
+
+- **T1, factor ADR oficial** (`b25aed6`): tabla con fuente y fecha (20-F, F-6). El factor implícito queda solo como
+  comprobación. BCS 4 (el implícito daba 4.154), UL 1 y TM 10.
+- **T2, dividendo en la moneda y la clase del precio** (`c9b661d`): se calcula con los pagos del propio título de la
+  serie de precios.
+  - Identidad en los dos sentidos con magnitudes equivalentes: NVDA, subida verificada; PGR, el ordinario con la nota
+    del extraordinario.
+  - **Protección 1 retirada.**
+  - Panel: BCS 2.71%, TSM 0.90%, NVO 4.86%, UL 3.44% (habría salido 251.70%).
+- **T3, corte coherente** (`0c8d211`, `d984181`, `e6364b2`, `c0b0414`, `4c102ee`):
+  - `as_of` por campo, y la regla `periodo_incoherente`;
+  - Finnhub solo entra si casa con el corte (JNJ: P/E 30.1x, no 39.4x);
+  - BPA TTM = suma de los BPA diluidos de los cuatro trimestres;
+  - aviso de resultados publicados y aún no incorporados;
+  - base temporal declarada en el Piotroski.
+- **T4, cliente de EDGAR en `lib/`** (`104df65`..`08c97a1`):
+  - caché, presupuesto de 3 s y degradación sin EDGAR;
+  - respaldo de lo que Yahoo no da del mismo corte (JNJ vuelve a tener Altman; D&A de BCS);
+  - regla B del factor (portada del 20-F);
+  - D7: emisor sin estados en la SEC, con aviso, insignia y techo de confianza "baja".
+- **T5, deuda coherente con el EBITDA** (`4f01557`, `4fca871`, `61a964c`, `4960463`):
+  - la fila "Capital Lease Obligations" de Yahoo es el arrendamiento operativo de US GAAP y sale de la deuda;
+  - el arrendamiento financiero entra si no está ya;
+  - IFRS 16, tal cual;
+  - MSFT 56.8 → 106.9; AMZN 209.9 → 132.4;
+  - O, resuelto (la deuda de Yahoo era la correcta); DUK, financiero del 10-K con aviso de fecha;
+  - bancos fuera de las ratios de apalancamiento de empresa;
+  - cautiva de CAT (34.46 mil millones), declarada;
+  - Altman X4 sin el arrendamiento operativo.
+- **T6, beta y rango desde la serie** (`01324a3`, `c8ae863`):
+  - beta propia (2 años semanales frente al S&P 500, Blume) o, con R² < 0.1, la del sector de Damodaran;
+  - rango de 52 semanas de la serie;
+  - **Protección 2 retirada.**
+- **T7, mapa de la fase 2:** las 29 filas tienen destino.
+  - Interanual en la base de los estados, rotulado "(último ejercicio)" (`f762e03`).
+  - forwardPE declarado como consenso (`8f461cf`).
+  - Factor de split del plan B (`20fc859`).
+  - NFLX: comisión de ruptura de WBD verificada (`a2bb87a`).
+  - Beneficio y patrimonio del accionista ordinario, con AT1 y preferentes separados; ROE y P/B del ordinario
+    (`7b610a7`).
+  - Cambio de perímetro declarado: UL, BAC, AMT, JNJ, DUK (`a435698`).
+  - **Movidas:** BRK-B en base anual, a la fase 3 (definición de ingresos: Yahoo suma las ganancias de inversión);
+    Yahoo 401 y Yahoo distinto en Render, a la fase 6.
+- **T8, medida final.**
+  - **F1: 1290/1411 (91.4%)** de los campos; ratios 193/216 (89.4%). Línea base de la 2a: 90.0%.
+  - Dos arreglos de la herramienta, autorizados por el usuario: emparejamiento por el periodo que declara el
+    pipeline (`db4db68`) y referencia del accionista ordinario (`a3b4c7a`). Sin ellos: 1276/1411 (90.4%).
+  - **Objetivo del 95% no alcanzado.** De las 121 filas fuera:
+    - 31 son definiciones que cierra la fase 3 por D2 (capex, ingresos y caja de bancos y aseguradoras);
+    - 21 son el EBIT que construye Yahoo, ahora marcado "estimado por la fuente" (`4310fc8`);
+    - 15 son el dividendo indicado frente al declarado (definición por diseño);
+    - 14 son la deuda de la regla frente a `LongTermDebt` (definición por diseño);
+    - el resto, fuente o periodo, caso por caso en el informe.
+  - Golden aprobados y regenerados (`dcdda74`). Cambios de nivel solo por la beta (T6): BRK-B, JNJ, NVO, TM y NFLX.
+  - Tiempo en frío: mediana ≈ 3.2 s (T0 ≈ 4.2 s).
+- **Deploy y producción** (`/api/health` = `103c76f`, 2026-10-16, ~21:00 de Nueva York, concurrencia 3): 11 casos.
+  - Dividendos correctos en los ADR; beta propia o del sector; corte coherente; aviso de resultados pendientes.
+  - **Fallo de producción corregido en origen** (`103c76f`): Yahoo da la barra del día sin cierre y la serie la
+    descartaba. XOM salía con el rango "sin dato"; ahora 111.18–179.16, "En máximos de 52 semanas".
+  - **Gotcha de deploy:** `frontend/out` se compila con `npm run build` (Turbopack + sello del contrato) en el
+    checkout principal. Con webpack, `build.sh` de Render rechaza el deploy (`fafee5d`).
+- **Pendiente del usuario:** `SEC_EDGAR_USER_AGENT` en Render. Sin él, producción va sin EDGAR ("verificación oficial
+  no disponible"): sin respaldo, sin deuda de la regla (MSFT y AMZN con la de la fuente), sin la marca del EBIT y sin
+  el aviso D7. Con la variable puesta, hay que repetir la comprobación.
+- **Para la fase 3** (bitácora, mapa):
+  - definiciones de D2: capex, EBIT y EBIT bancario, ingresos de bancos y de BRK-B, caja de bancos y aseguradoras;
+  - EDGAR como fuente principal campo a campo;
+  - ROTE ajustado por AT1, con las filas anuales del ordinario ya en los datos;
+  - uso de la deuda de la cautiva de CAT;
+  - crecimiento sin el cambio de perímetro (UL);
+  - crecimiento de los ADR en la moneda de los estados (UL: +0.5% en USD frente a −3.8% en EUR).
