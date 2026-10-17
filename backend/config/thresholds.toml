@@ -385,6 +385,11 @@ neutral_band = 0.2                  # |señal| <= 0.2 (±10% de upside): "en pre
 convergence_spread_max = 0.6
 no_evaluable_cap = "media"          # techo de la confianza si la convergencia es media (fase 3: no evaluable ya no pone techo, opción 3 de §7.17)
 no_official_source_cap = "baja"     # fase 2b (D7): techo de la confianza de un emisor sin estados en la SEC (F2_PRECEDENCIA §4)
+weak_dimension_cap = "media"        # fase 4 (T2): techo si cobertura, fuente o estabilidad es baja (alta exige ninguna debilidad)
+# Fase 4 (T2): acciones de la validación que no son incidencias del dato usado: "aviso" (el análisis usa su propio
+# dato), "politica" (regla del arquetipo) y "sin_dato" (dato de otro periodo descartado o métrica no significativa: lo
+# mide la cobertura). Cuentan los datos rechazados o corregidos ("invalido", …).
+source_ignored_actions = ["aviso", "politica", "sin_dato"]
 coverage_bounds = [0.9, 0.7]        # componentes evaluados / aplicables: >= 0.9 alta; >= 0.7 media
 source_issue_bounds = [0, 2]        # incidencias de fuente: 0 alta; <= 2 media; más, baja
 excluded_multiple_components = ["DCF", "Regla de 40"]   # no son múltiplos frente al sector

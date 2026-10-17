@@ -18,16 +18,20 @@ CONFIANZA DEL VEREDICTO = f(convergencia, cobertura, calidad de fuente, estabili
     referencia del inversor defensivo. Señales opuestas -> baja; con un solo
     método evaluable, "no evaluable" y techo en media.
   · cobertura: componentes evaluados / aplicables del score (etapa 5).
-  · calidad de fuente: flags de validación de entrada, ítems inferidos en la
-    normalización, TTM con fallback al anual, campos de Finnhub en lugar de los
-    estados.
+  · calidad de fuente: lo que afecta al dato USADO. Datos rechazados o corregidos por la validación de entrada,
+    ítems inferidos en la normalización y TTM con fallback al anual. Fase 4 (T2, causas reales): no cuentan los
+    avisos (el análisis usa su propio dato: la beta propia frente a la del proveedor, el interanual de los estados),
+    los datos de otro periodo descartados (es cobertura: lo mide su dimensión) ni las métricas no significativas por
+    la economía de la empresa; tampoco los campos de Finnhub, que desde la 2b solo entran si casan con el corte (se
+    listan en `finnhub_fields`, sin restar).
   · estabilidad: CYCLICAL la reduce a baja; "posible cíclica" o clasificación
     ambigua, a media.
   · fuente oficial (fase 2b, D7): no pondera; un emisor sin estados en la SEC
     (EDGAR) pone techo en `no_official_source_cap` ("baja"). Sin verificación
     disponible (sin User-Agent o con EDGAR caído) no es culpa del emisor: sin techo.
 Cada dimensión es alta/media/baja; la media ponderada (pesos en config) da el
-nivel. Techo en media si la convergencia no es alta (no evaluable o media: etapa 9a). En la etapa 8 la confianza se calcula y se muestra: no limita el score
+nivel. Techo en media si la convergencia es media o baja (etapa 9a) o si cualquier otra dimensión es baja (fase 4,
+T2: "alta" no convive con una debilidad clara, p. ej. una cíclica o datos rechazados). En la etapa 8 la confianza se calcula y se muestra: no limita el score
 (el techo condicionado por la confianza es de la etapa 9).
 """
 from typing import Any, Dict, List, Optional
@@ -183,16 +187,14 @@ def source_dimension(*, input_flags: List[Dict[str, Any]], normalization: Option
     # financiera siempre desde los estados) no son incidencias de la fuente.
     # Fase 2b: un dato de otra fuente que NO entra por no ser del corte (Finnhub, periodo_incoherente "aviso") no es
     # una incidencia del dato usado: el análisis usa el del corte.
+    ignored = set(C["source_ignored_actions"])
     issues = [f"validación: {f.get('field')} ({f.get('rule')})" for f in input_flags or []
-              if f.get("action") != "politica"
-              and not (f.get("rule") == "periodo_incoherente" and f.get("action") == "aviso")]
+              if f.get("action") not in ignored]
     if (normalization or {}).get("confidence") == "media":
         issues.append("beneficio normalizado con ítems inferidos (confianza media)")
     if (ttm or {}).get("basis") == "anual":
         issues.append("sin TTM: estados anuales (hasta 12 meses de retraso)")
     fh = sorted(k for k, v in (provenance_fields or {}).items() if (v or {}).get("source") == "finnhub")
-    if fh:
-        issues.append(f"{len(fh)} campos de Finnhub en lugar de los estados")
     ok, mid = C["source_issue_bounds"]
     level = "alta" if len(issues) <= ok else ("media" if len(issues) <= mid else "baja")
     return {"level": level, "issues": len(issues), "reasons": issues, "finnhub_fields": fh}
@@ -250,6 +252,10 @@ def verdict_confidence(dimensions: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
     else:
         cap = None
     caps = [(cap, why)] if cap else []
+    weak = [labels[k] for k, d in dimensions.items()
+            if k in W and k != "convergence" and d.get("level") == "baja"]
+    if weak:
+        caps.append((C["weak_dimension_cap"], f"{', '.join(weak)} baja: alta exige que ninguna dimensión sea baja"))
     if (dimensions.get("fuente_oficial") or {}).get("level") == "baja":
         caps.append((C["no_official_source_cap"], "sin fuente oficial para verificar los datos"))
     for cap, why in caps:

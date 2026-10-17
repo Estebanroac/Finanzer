@@ -367,3 +367,22 @@ def test_valuation_contradiction_lowers_confidence(outputs_by_env):
     # Caso real con convergencia media (fase 2b, T6: NFLX, el de antes, pasó a convergencia alta con su beta propia).
     n = outputs_by_env("panel")["PG"][0]["confidence"]
     assert n["dimensions"]["convergence"]["level"] == "media" and n["level"] == "media"
+
+
+def test_f4_confidence_counts_only_real_causes():
+    """Fase 4 (T2): la fuente mide el dato usado; "alta" no convive con una dimensión baja."""
+    def d(level):
+        return {"level": level, "reasons": [level]}
+    flags = [{"field": "beta", "rule": "beta_discrepante", "action": "aviso"},
+             {"field": "interestExpense", "rule": "periodo_incoherente", "action": "sin_dato"},
+             {"field": "x", "rule": "crecimiento_financiera_estados", "action": "politica"}]
+    s = source_dimension(input_flags=flags, normalization=None, ttm={"basis": "ttm"},
+                         provenance_fields={"forwardPE": {"source": "finnhub"}})
+    assert s["level"] == "alta" and s["finnhub_fields"] == ["forwardPE"]
+    s = source_dimension(input_flags=[{"field": "trailingEps", "rule": "pe_implausible", "action": "invalido"}],
+                         normalization=None, ttm=None, provenance_fields={})
+    assert s["issues"] == 1
+    r = verdict_confidence({"convergence": d("alta"), "coverage": d("alta"), "source": d("alta"),
+                            "stability": d("baja")})
+    assert r["level"] == "media" and r["capped_from"] == "alta"
+    assert any("estabilidad baja" in x for x in r["reasons"])
