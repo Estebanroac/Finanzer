@@ -130,3 +130,42 @@ En KO, Yahoo construye un EBIT 1,087 millones más alto que el reportado, y su E
 
 La D&A de NFLX (con o sin amortización de contenidos) y la de MSFT son la misma pregunta de definición. Recomiendo
 cerrarlas a la vez, en el T3 (DCF).
+
+## 6. Tras tu aprobación (registro #27)
+
+### 6.1 Golden de T1b: regenerados
+
+Commit `2d56466`. Después, los dos `diff_golden.py` salen sin diferencias y `pytest tests -q` da "3701 passed,
+1 skipped".
+
+### 6.2 EBITDA = EBIT que presenta el emisor + D&A (`76747c8`) · **diff que te pido aprobar**
+
+- Las **ratios** (EV/EBITDA, deuda neta / EBITDA) ya se calculaban así (`financial_ratios`: EBIT + D&A) con el EBIT de
+  EDGAR. Por eso **no cambian**.
+- Lo que cambia:
+  - la **cifra de EBITDA mostrada**, que era la de Yahoo, en 20 análisis. Por ejemplo: KO 19,831 → 15,888;
+    AMZN 188,438 → 155,861 (Yahoo sumaba otros ingresos); NVDA 233,894 → 201,266; MSFT 212,433 → 198,685;
+    CRWD 437 → 200 millones;
+  - las **filas anuales**, y con ellas el EV/EBITDA de ciclo medio de las cíclicas. TM pasa de 7.8x a 9.5x (el
+    EBITDA medio de Yahoo para TM era 53.4 frente a 43.5 billones de JPY con el EBIT que presenta) y su **precio
+    baja de 69 a 65**, sin cambio de nivel. MU, FCX y ASML se mueven menos de 1x;
+  - el EBITDA de RIVN y SNOW (pre-beneficio): −2,139 → −2,714 y −813 → −984 millones;
+  - **FFO anual de los REIT** = beneficio + D&A, la misma definición que el TTM. Con el nuevo EBITDA, "EBITDA − EBIT
+    de Yahoo" dejaba de ser la D&A. En el panel coincide con lo anterior en O, PLD y AMT (sin cambios).
+- **Cambios de nivel en el panel: ninguno.** Los golden de este cambio están **sin regenerar** hasta tu aprobación
+  (`pytest tests/test_regression.py` → "50 failed"; el resto de la suite, en verde salvo las muestras forzadas del
+  contrato).
+
+### 6.3 Tasas base: tabla oficial completa (`97c8c6b`)
+
+- **Fuente:** Mauboussin y Callahan, *The Impact of Intangibles on Base Rates* (Morgan Stanley, Counterpoint Global,
+  23-jun-2021), Exhibit 3, pp. 6–8. Russell 3000, 1984–2020, crecimiento nominal.
+- **Qué trae:** mediana, media y desviación del CAGR de ventas a 1, 3, 5 y 10 años, por 7 tramos de ventas
+  (en USD de 2020) y 5 industrias de Fama-French (más el total), con el número de observaciones.
+- Extraída por programa a `config/base_rates.toml`. **Integridad comprobada:** los tramos suman el universo y las
+  industrias suman el total en cada horizonte (test).
+- Es lo que pide F3_DISENO §8.1 (tramo de tamaño, horizonte de 10 años). Los dos PDF de febrero y mayo de 2026 solo
+  traían dos histogramas.
+- **Limitación, de los propios autores:** la distribución no es normal (cola a la derecha). Las bandas del DCF
+  inverso (cuántas desviaciones son "exigente" o "excepcional") se calibran y se te presentan en la T3.
+- El paso de industria a código SIC (Fama-French, de la biblioteca de Kenneth French) también es de la T3.
