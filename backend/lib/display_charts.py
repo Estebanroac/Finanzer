@@ -215,7 +215,7 @@ def _growth_raw(a) -> Dict[str, Any]:
     adj = {x.get("metric"): x for x in ((a.get("score") or {}).get("breakdown") or {}).get("Crecimiento", {})
            .get("adjustments") or []}
     rev = (adj.get("Crecimiento Ingresos 3Y") or adj.get("Retorno total (dividendo + FFO por acción)")
-           or adj.get("Retorno total (dividendo + ingresos por acción)"))
+           or adj.get("Retorno total (dividendo + ingresos por acción)") or adj.get("Retorno total (dividendo + ingresos)"))
     eps = adj.get("Crecimiento EPS 3Y")
     fcf = (adj.get("Crecimiento FCF 3Y") or adj.get("Crecimiento FCF − SBC 3Y")
            or adj.get("Crecimiento FCF por acción 3Y"))

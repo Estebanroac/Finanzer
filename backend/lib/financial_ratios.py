@@ -3184,6 +3184,7 @@ def score_crecimiento(
     dividend_yield: Optional[float] = None,
     eps_reason: Optional[str] = None,
     eps_note: Optional[str] = None,
+    revenue_ps_growth_3y: Optional[float] = None,   # revisión F3 (hallazgo 6): retorno total por acción
 ) -> Dict[str, Any]:
     """
     Categoría 5: Crecimiento (20 pts máximo)
@@ -3218,10 +3219,15 @@ def score_crecimiento(
                    else "Retorno total (dividendo + ingresos por acción)" if _mature_tr else "Crecimiento Ingresos 3Y")
     _ffo_ps = revenue_growth_3y
     if _mature_tr and revenue_growth_3y is not None:
+        # Revisión de código F3 (hallazgo 6): el retorno total es dividendo + crecimiento POR ACCIÓN (las recompras
+        # son retorno); el agregado solo si no hay serie de acciones, y el rótulo lo dice.
+        _ps = revenue_ps_growth_3y is not None
+        _g = revenue_ps_growth_3y if _ps else revenue_growth_3y
+        _rev_metric = "Retorno total (dividendo + ingresos por acción)" if _ps else "Retorno total (dividendo + ingresos)"
         revenue_note = (f"dividendo alto (≥ {T['mature_total_return_min_yield']:.0%}): rentabilidad por dividendo "
-                        f"{dividend_yield:.1%} + ingresos {_ffo_ps:+.1%} (CAGR 3 años)"
+                        f"{dividend_yield:.1%} + ingresos{' por acción' if _ps else ''} {_g:+.1%} (CAGR 3 años)"
                         + (f"; {revenue_note}" if revenue_note else ""))
-        revenue_growth_3y = dividend_yield + growth_for_bands(revenue_growth_3y)
+        revenue_growth_3y = dividend_yield + growth_for_bands(_g)
     if _reit:
         if revenue_growth_3y is not None and dividend_yield is not None:
             revenue_growth_3y = dividend_yield + growth_for_bands(revenue_growth_3y)
@@ -3535,6 +3541,7 @@ def calculate_score_v2(
         dividend_yield=ratio_values.get("dividend_yield"),
         eps_reason=contextual_values.get("eps_growth_reason"),
         eps_note=contextual_values.get("eps_growth_note"),
+        revenue_ps_growth_3y=contextual_values.get("revenue_ps_cagr_3y"),
     )
     
     # Calcular totales. Las categorías no concluyentes (cobertura < 50%) se

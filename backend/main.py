@@ -827,6 +827,10 @@ def _compute_analysis(symbol: str) -> dict:
             _rev_r = growth_rate(_stmts_g.get("revenue") or [], 3, what="ingresos", strict_ends_only=True)
             fin_dict["revenue_cagr_3y"] = _rev_r["value"]
             fin_dict["revenue_growth_reason"] = _rev_r["reason"]
+            # Revisión F3 (hallazgo 6): ingresos por acción a 3 años para el retorno total de la madura de dividendo alto.
+            fin_dict["revenue_ps_cagr_3y"] = growth_rate(per_share(_stmts_g.get("revenue") or [],
+                                                                   _stmts_g.get("ordinary_shares") or []), 3,
+                                                         what="ingresos por acción", strict_ends_only=True)["value"]
             _eps_series = _stmts_g.get("diluted_eps") or per_share(_stmts_g.get("net_income") or [],
                                                                     _stmts_g.get("ordinary_shares") or [])
             _eps_r = growth_rate(_eps_series, 3, what="BPA")

@@ -13,8 +13,14 @@ def test_high_dividend_mature_growth_is_total_return():
     y = T["mature_total_return_min_yield"]
     r = score_crecimiento(0.01, 0.02, 0.02, archetype=MATURE, dividend_yield=y + 0.01)
     a = _rev(r)
-    assert a["metric"] == "Retorno total (dividendo + ingresos por acción)"
+    # Sin serie por acción, el agregado, rotulado como tal (revisión F3, hallazgo 6).
+    assert a["metric"] == "Retorno total (dividendo + ingresos)"
     assert abs(a["raw"] - (y + 0.02)) < 1e-12 and "rentabilidad por dividendo" in a["reason"]
+    # Con recompras, el retorno total usa los ingresos POR ACCIÓN (las recompras son retorno).
+    a = _rev(score_crecimiento(0.01, 0.02, 0.02, archetype=MATURE, dividend_yield=y + 0.01,
+                               revenue_ps_growth_3y=0.035))
+    assert a["metric"] == "Retorno total (dividendo + ingresos por acción)"
+    assert abs(a["raw"] - (y + 0.01 + 0.035)) < 1e-12 and "ingresos por acción +3.5%" in a["reason"]
     # Por debajo del umbral, o fuera de MATURE, sigue siendo crecimiento de ingresos.
     assert _rev(score_crecimiento(0.01, 0.02, 0.02, archetype=MATURE, dividend_yield=y - 0.01))["metric"] == \
         "Crecimiento Ingresos 3Y"
