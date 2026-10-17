@@ -217,7 +217,10 @@ def _dcf(ctx: Ctx):
     fv = ctx.dcf.get("fair_value")
     if up is None or fv is None:
         return None
-    T = _A["dcf"]
+    # Fase 4 (mapa, bandas paralelas): los umbrales del upside son los del score (Valoración), no una copia propia: un
+    # +12% puntúa como "barata" y la alerta lo dice.
+    _b = cfg("thresholds.score.valoracion.dcf_upside_bounds")
+    T = dict(_A["dcf"], upside_strong=_b[0] * 100, upside_moderate=_b[1] * 100)
     rel = ctx.dcf.get("reliability") or {}
     if rel.get("level") == "baja" and (up >= T["upside_moderate"] or up <= -T["upside_moderate"]):
         # Etapa 8: un DCF de fiabilidad baja no es una señal de valor: se avisa de que
@@ -406,7 +409,9 @@ def _coverage(ctx: Ctx):
     ic = ctx.g("interest_coverage")
     if ic is None or ctx.na("interest_coverage"):
         return None
-    T = _A["coverage"]
+    # Fase 4 (mapa, bandas paralelas): crítica y holgada son el último y el primer umbral de la banda del score.
+    _b = _SC_SOLIDEZ["coverage_bounds"]
+    T = dict(_A["coverage"], critical_below=_b[-1], comfortable_above=_b[0])
     # Fase 1: el estado lo decide main (EBIT y resultado financiero neto); sin él, la regla anterior.
     state = ctx.g("interest_coverage_state") or interest_coverage_state(ic, ctx.g("net_debt"))
     if state == "sin_carga":
