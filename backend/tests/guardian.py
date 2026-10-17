@@ -111,6 +111,8 @@ KEYWORDS = [
     ("senal_mercado", r"el mercado (?:viene premiando|viene castigando|apenas ha movido)|régimen (?:alcista|bajista|"
                       r"lateral)|volatilidad anual realizada|llegó a caer un|del etf de su sector|volumen de las "
                       r"últimas 5 sesiones|volumen en el rango habitual", {"market_signal"}),
+    # Fase 5 (PEAD): la sorpresa del BPA y la deriva citan la lectura que las mide.
+    ("pead", r"de consenso, una sorpresa|la deriva va en|bernard y thomas", {"market_signal"}),
     ("conductual", r"actúa como ancla|como sobrerreacción del mercado|da por hecho que el crecimiento pasado",
      {"behavioral"}),
 ]
@@ -463,6 +465,19 @@ def _p_market_signal(a, c, text):
         v = (S.get("abnormal_volume") or {}).get("value")
         if m and v is not None and abs(float(m.group(1).replace("−", "-")) - v) > 0.051:
             return f"z dicho {m.group(1)} con {v:.2f}"
+    if k == "pead":
+        P = (a.get("market_context") or {}).get("pead") or {}
+        if P.get("status") != "ok":
+            return "lectura del PEAD sin dato detrás"
+        if not (_near(pct(r"una sorpresa del ([+−-]?\d+(?:\.\d+)?)%"), P["surprise"])
+                and _near(pct(r"la acción ([+−-]?\d+(?:\.\d+)?)% frente al S&P 500"), P["reaction"])
+                and _near(pct(r"sesiones siguientes, ([+−-]?\d+(?:\.\d+)?)%"), P["drift"])
+                and (P["sessions"] >= cfg("market.context.pead_min_sessions") or "la deriva va" not in text)):
+            return "cifras del PEAD distintas de las suyas"
+        if "la deriva va" in text and (("en la dirección" in text) != ((P["drift"] >= 0) == (P["surprise"] >= 0))):
+            return "sentido de la deriva dicho al revés"
+        if f"publicados el {P['announced']}" not in text or f"cerrado el {P['period']}" not in text:
+            return "fechas del PEAD distintas"
 
 
 def _p_behavioral(a, c, text):

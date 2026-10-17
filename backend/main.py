@@ -1941,7 +1941,8 @@ def _compute_analysis(symbol: str) -> dict:
                 import price_history as _ph
                 import sector_profiles as _sp
                 _etf = _sp.get_sector_profile(sector or "").sector_etf
-                result["market_context"] = _mctx.build(symbol, _ph.peek(symbol), _ph.peek_market(), _etf, result)
+                result["market_context"] = _mctx.build(symbol, _ph.peek(symbol), _ph.peek_market(), _etf, result,
+                                                       yinfo.get("_edgar_filings"))
         except Exception as e:
             _sin_dato("contexto_mercado", e)
 

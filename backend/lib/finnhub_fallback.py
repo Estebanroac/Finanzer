@@ -121,6 +121,23 @@ def earnings_calendar(symbol: str, start: str, end: str) -> Optional[list]:
     return out
 
 
+def earnings_surprises(symbol: str) -> Optional[list]:
+    """Fase 5 (PEAD; bitácora, fila "fecha de resultados"): BPA real frente al consenso de los últimos trimestres
+    (`/stock/earnings`, plan gratuito: {period, actual, estimate, surprise, surprisePercent}). Sin fecha de anuncio: la
+    pone el 8-K de resultados de EDGAR (lib/market_context.pead). None sin clave o si falla."""
+    key = f"surp:{symbol}"
+    now = time.time()
+    with _lock:
+        ent = _cache.get(key)
+        if ent and now - ent[0] < _CACHE_TTL:
+            return ent[1]
+    data = _get("/stock/earnings", {"symbol": symbol})
+    out = data if isinstance(data, list) else None
+    with _lock:
+        _cache[key] = (now, out)
+    return out
+
+
 def company_news(symbol: str, start: str, end: str) -> Optional[list]:
     """Fase 5 (PLAN §4, fase 5): titulares de la empresa entre `start` y `end` (`/company-news`, gratuito en el plan
     actual: comprobado el 2026-10-17). None sin clave o si falla. Contexto: no puntúa ni se interpreta."""

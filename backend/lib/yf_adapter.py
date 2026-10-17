@@ -561,6 +561,7 @@ def _apply_edgar(symbol: str, info: Dict[str, Any], ed: Dict[str, Any], hist: Di
             info.clear()
             info.update(trial)
     info["_edgar"] = edgar.summary(ed)
+    info["_edgar_filings"] = ed.get("filings") if ed.get("status") == "ok" else None   # fase 5: fecha del PEAD
     if _recut and _recut["status"] == "aplicado":
         info["_edgar"]["backup"], info["_edgar"]["primary"] = t_backup, t_primary
     else:

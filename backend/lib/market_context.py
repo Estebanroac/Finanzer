@@ -19,9 +19,12 @@ Lectura conductual del mercado (frente 1 de §2.3), solo cuando los datos la sos
     deterioro de los fundamentales medidos (calidad sólida o excelente e ingresos al alza a 3 años);
   · **extrapolación** (Lakonishok, Shleifer y Vishny, 1994): el precio exige un crecimiento que menos del umbral
     "muy exigente" de las comparables sostuvo, en línea con el que la empresa logró: el precio prolonga el pasado.
-La deriva tras resultados (PEAD) no se lee: hace falta la sorpresa del BPA frente al consenso y no hay fuente con
-fecha para ella (se dice).
+Deriva tras resultados (PEAD; Bernard y Thomas, 1989): la sorpresa del BPA del último trimestre frente al consenso
+(Finnhub, /stock/earnings), con la fecha de su 8-K de resultados (SEC EDGAR, apartado 2.02), y cómo se movió la acción
+frente al S&P 500 entre la sesión anterior al anuncio y la siguiente, y después. Sin 8-K (emisores extranjeros) o sin sorpresa, no se lee y
+se dice.
 """
+import datetime as _dt
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict, List, Optional
 
@@ -86,8 +89,59 @@ def _wait(fut, default):
         return default(f"{type(e).__name__}: {e}")
 
 
+def pead(symbol: Optional[str], close: Optional[pd.Series], mclose: Optional[pd.Series],
+         filings: Optional[List[Dict[str, Any]]], surprises: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
+    """{status, reason | (period, announced, actual, estimate, surprise, reaction, drift, sessions, ...)}. El último
+    trimestre cuya publicación (8-K 2.02 dentro de `pead_announce_max_days` tras el cierre) cae dentro de la serie (en
+    replay: lo que se sabía ese día). Reacción: acción − S&P 500 desde la sesión anterior al anuncio hasta la
+    siguiente; deriva: lo mismo desde ahí hasta hoy o hasta `pead_window_sessions` sesiones después."""
+    C = cfg("market.context")
+    if close is None or mclose is None or len(close) < 5:
+        return {"status": "sin_dato", "reason": "sin serie de la acción o del índice"}
+    if surprises is None:
+        from finnhub_fallback import earnings_surprises, is_enabled
+        if not is_enabled():
+            return {"status": "sin_dato", "reason": "sin clave de Finnhub (consenso del BPA)"}
+        surprises = earnings_surprises(symbol) if symbol else None
+    if not surprises:
+        return {"status": "sin_dato", "reason": "sin el BPA frente al consenso de Finnhub"}
+    ann8k = sorted(f["filingDate"] for f in (filings or []) if f.get("form") == "8-K" and "2.02" in (f.get("items") or ""))
+    if not ann8k:
+        return {"status": "sin_dato", "reason": ("el emisor no presenta 8-K de resultados en SEC EDGAR (20-F/6-K): sin "
+                                                 "fecha de anuncio con fuente")}
+    last = close.index[-1].date()
+    for s in sorted((x for x in surprises if x.get("period")), key=lambda x: x["period"], reverse=True):
+        p = _dt.date.fromisoformat(str(s["period"])[:10])
+        dates = [d for d in ann8k if p < _dt.date.fromisoformat(d) <= p + _dt.timedelta(days=C["pead_announce_max_days"])]
+        if not dates or _dt.date.fromisoformat(dates[0]) > last:
+            continue
+        act, est = s.get("actual"), s.get("estimate")
+        if act is None or est is None or est == 0:
+            return {"status": "sin_dato", "reason": f"sin BPA o consenso del trimestre cerrado el {p}"}
+        ann = _dt.date.fromisoformat(dates[0])
+        idx = close.index
+        i0 = int(idx.searchsorted(pd.Timestamp(ann)))      # primera sesión en o tras el anuncio
+        pre, post = i0 - 1, i0 + 1
+        if pre < 0:
+            return {"status": "sin_dato", "reason": "la serie no cubre la sesión anterior al anuncio"}
+        out = {"status": "ok", "period": p.isoformat(), "announced": ann.isoformat(), "actual": float(act),
+               "estimate": float(est), "surprise": (float(act) - float(est)) / abs(float(est)), "reaction": None,
+               "drift": None, "sessions": 0, "window": C["pead_window_sessions"], "window_passed": False,
+               "source": "BPA y consenso: Finnhub; fecha: 8-K de resultados (SEC EDGAR, apartado 2.02)"}
+        if post > len(idx) - 1:          # publicado en la última sesión: la reacción aún no se puede medir
+            return out
+        end = min(post + C["pead_window_sessions"], len(idx) - 1)
+        m = mclose.reindex(idx).ffill()
+        ret = lambda s_, a_, b_: float(s_.iloc[b_] / s_.iloc[a_] - 1)  # noqa: E731
+        out.update(reaction=ret(close, pre, post) - ret(m, pre, post), sessions=end - post,
+                   drift=(ret(close, post, end) - ret(m, post, end)) if end > post else None,
+                   window_passed=(len(idx) - 1 - post) >= C["pead_window_sessions"])
+        return out
+    return {"status": "sin_dato", "reason": "ningún trimestre con BPA frente al consenso y 8-K de resultados en la serie"}
+
+
 def build(symbol: str, company: Optional[Dict[str, Any]], market: Optional[Dict[str, Any]],
-          sector_etf: Optional[str], a: Dict[str, Any]) -> Dict[str, Any]:
+          sector_etf: Optional[str], a: Dict[str, Any], filings: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
     """{signals, series_drawdown, market_volatility, sector_etf, readings, behavioral, news, note}. La serie del ETF
     del sector y los titulares se piden en paralelo y se esperan como mucho `wait_timeout_s` (revisión F5, hallazgo
     1: antes eran síncronos y, con Yahoo lento, podían sumar ~30 s al análisis)."""
@@ -123,6 +177,12 @@ def build(symbol: str, company: Optional[Dict[str, Any]], market: Optional[Dict[
                            "market_volatility": (realized_volatility(mk["frame"]["close"])
                                                  if mk.get("frame") is not None and mk["status"] == "ok" else None)}
     out["news"] = _wait(f_news, lambda why: {"items": [], "reason": f"sin titulares a tiempo ({why})"})
+    mclose = mk["frame"]["close"] if mk.get("frame") is not None and mk["status"] == "ok" else None
+    try:
+        out["pead"] = (pead(symbol, close, mclose, filings) if us else
+                       {"status": "sin_dato", "reason": f"cotiza en {price_cur}: la deriva se mide frente al S&P 500, en USD"})
+    except Exception as e:  # nunca rompe el contexto: sin lectura y se dice
+        out["pead"] = {"status": "sin_dato", "reason": f"{type(e).__name__}: {e}"}
     out["readings"] = readings(out)
     out["behavioral"] = behavioral(out, a)
     return out
@@ -209,6 +269,31 @@ def readings(ctx: Dict[str, Any]) -> List[Dict[str, Any]]:
              "interés".replace("-", "−") if z <= -C["volume_z"] else
              f"volumen en el rango habitual (z = {z:.1f})".replace("-", "−")),
             "market_context.signals.abnormal_volume.value", z)
+    pe = ctx.get("pead") or {}
+    if pe.get("status") == "ok":
+        s = pe["surprise"]
+        txt = (f"resultados del trimestre cerrado el {pe['period']}, publicados el {pe['announced']}: BPA de "
+               f"{pe['actual']:.2f} frente a {pe['estimate']:.2f} de consenso, una sorpresa del {_pct(s)}")
+        if pe["reaction"] is None:
+            txt += ". Publicados en la última sesión de la serie: la reacción y la deriva aún no se pueden medir"
+        else:
+            txt += (f". Entre la sesión anterior al anuncio y la siguiente, la acción {_pct(pe['reaction'])} frente al "
+                    "S&P 500")
+            if pe["drift"] is not None:
+                txt += f"; en las {pe['sessions']} sesiones siguientes, {_pct(pe['drift'])} frente al S&P 500"
+        if pe["reaction"] is None:
+            pass
+        elif abs(s) < C["pead_inline"]:
+            txt += ": resultado en línea con el consenso, sin sorpresa de la que se espere deriva"
+        elif pe["drift"] is None or pe["sessions"] < C["pead_min_sessions"]:
+            txt += f": aún pocas sesiones tras el anuncio para hablar de deriva"
+        else:
+            same = (pe["drift"] >= 0) == (s >= 0)
+            txt += (f": la deriva va {'en la dirección' if same else 'en contra'} de la sorpresa. Bernard y Thomas "
+                    f"(1989) documentan que el precio sigue la sorpresa unas {pe['window']} sesiones"
+                    + (f" (esa ventana ya pasó)" if pe["window_passed"] else "")
+                    + "; describe un efecto estudiado, no una previsión")
+        add("pead", "Resultados y deriva (PEAD)", f"{_pct(s)} sorpresa", txt, "market_context.pead.surprise", s)
     return out
 
 

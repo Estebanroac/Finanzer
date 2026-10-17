@@ -299,3 +299,18 @@ def test_reit_ffo_fall_cites_issuance_only_when_shares_grow():
     assert "emisión de acciones" in text(thr + 0.01)
     assert "emisión de acciones" not in text(0.0005) and "+0.05%" in text(0.0005)
     assert "se reduce un 1.50%" in text(-0.015)
+
+
+def test_pead_drift_said_backwards_fails():
+    """Fase 5 (PEAD): la deriva dicha en la dirección de la sorpresa cuando va en contra, o con otra cifra, falla."""
+    P = {"status": "ok", "period": "2026-06-30", "announced": "2026-07-29", "actual": 4.74, "estimate": 4.33,
+         "surprise": 0.0947, "reaction": 0.146, "drift": -0.05, "sessions": 53, "window": 60, "window_passed": False}
+    text = ("resultados del trimestre cerrado el 2026-06-30, publicados el 2026-07-29: BPA de 4.74 frente a 4.33 de "
+            "consenso, una sorpresa del +9.5%. Entre la sesión anterior al anuncio y la siguiente, la acción +14.6% "
+            "frente al S&P 500; en las 53 sesiones siguientes, −5.0% frente al S&P 500: la deriva va en la dirección "
+            "de la sorpresa.")
+    c = claim("market_signal", field="market_context.pead.surprise", value=0.0947, signal="pead")
+    assert g.PREDICATES["market_signal"]({"market_context": {"pead": P}}, c, g.norm(text))
+    ok = text.replace("en la dirección", "en contra")
+    assert not g.PREDICATES["market_signal"]({"market_context": {"pead": P}}, c, g.norm(ok))
+    assert g.PREDICATES["market_signal"]({"market_context": {"pead": dict(P, drift=-0.08)}}, c, g.norm(ok))

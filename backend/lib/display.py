@@ -969,8 +969,9 @@ def _market_block(a: Dict[str, Any]) -> Optional[Dict[str, Any]]:
             "news_note": ((f"Titulares de los últimos {(mc.get('news') or {}).get('days')} días (Finnhub), sin "
                            "interpretación: no puntúan." if (mc.get("news") or {}).get("items") else
                            (mc.get("news") or {}).get("reason")) if mc.get("news") else None),
-            "pead_note": ("La deriva tras los resultados (PEAD) no se lee: hace falta la sorpresa del BPA frente al "
-                          "consenso y no hay fuente con fecha para ella."),
+            "pead_note": ((f"Resultados y deriva (PEAD): {(mc.get('pead') or {}).get('source')}.")
+                          if (mc.get("pead") or {}).get("status") == "ok" else
+                          f"La deriva tras los resultados (PEAD) no se lee: {(mc.get('pead') or {}).get('reason') or 'sin datos'}."),
             "source": (f"Serie diaria de Yahoo Finance (cierre ajustado por dividendos y splits, 2 años), S&P 500 y "
                        f"ETF del sector ({mc.get('sector_etf')}).")}
 

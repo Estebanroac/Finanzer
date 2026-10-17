@@ -114,3 +114,8 @@ news_days = 7                       # PLAN §4 (fase 5): titulares de 7 días si
 news_max = 5                        # los 5 más recientes de la propia empresa, sin interpretar
 wait_timeout_s = 4.0                # espera máxima del ETF del sector y de los titulares (en paralelo; nunca bloquean el análisis)
 sector_fail_ttl_s = 600.0             # un fallo del ETF del sector se recuerda 10 min (no se reintenta en cada análisis)
+# PEAD (Bernard y Thomas, 1989): sorpresa del BPA (Finnhub) con la fecha del 8-K de resultados (SEC EDGAR, apartado 2.02)
+pead_announce_max_days = 75         # el 8-K de resultados se presenta como mucho 75 días después del cierre del trimestre
+pead_window_sessions = 60           # la deriva documentada dura unas 60 sesiones tras el anuncio
+pead_inline = 0.02                  # |sorpresa| < 2% del consenso: "en línea con el consenso" (sin sorpresa que derive)
+pead_min_sessions = 5               # con menos sesiones tras el anuncio no se juzga la deriva (aún no hay deriva que medir)
