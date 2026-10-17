@@ -54,3 +54,4 @@ def test_financial_growth_value_and_other_archetypes():
     assert archetype_metrics.growth_values(FINANCIAL, {"revenue": [110.0, 100.0]}) == \
         {"revenue_growth_statements": pytest.approx(0.10)}
     assert archetype_metrics.growth_values(MATURE, {"revenue": [110.0, 100.0]}) == {}
+

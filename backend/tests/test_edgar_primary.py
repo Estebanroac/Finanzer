@@ -49,13 +49,14 @@ def _fields(info, *keys, end="2025-12-31"):
 
 # ───────────── EBIT reportado ─────────────
 
-def test_ebit_of_the_cut_is_the_reported_one_and_ebitda_keeps_its_definition():
+def test_ebit_of_the_cut_is_the_reported_one_and_ebitda_is_ebit_plus_da():
     ed = _ed(_fy("OperatingIncomeLoss", [13762]))
-    info = _info(operatingIncome=14911.0, ebitda=16000.0)
+    info = _info(operatingIncome=14911.0, ebitda=16000.0, depreciation=-1100.0)
     _fields(info, "operatingIncome", "ebitda")
     log = edgar_primary.apply(info, ed)
     assert info["operatingIncome"] == 13762
-    assert info["ebitda"] == 16000.0, "el EBITDA no se decidió en la parada 1: sigue con la fuente"
+    assert info["ebitda"] == 13762 + 1100, "parada 1b (opción a): EBITDA = EBIT del emisor + D&A"
+    assert info["_provenance"]["ebitda"]["source"] == "derivado"
     assert info["_provenance"]["operatingIncome"]["source"] == "sec_edgar"
     assert info["_as_of"]["fields"]["operatingIncome"]["source"] == "sec_edgar"
     assert [x["field"] for x in log["cut"]] == ["operatingIncome"]
@@ -65,12 +66,13 @@ def test_ebit_of_the_cut_is_the_reported_one_and_ebitda_keeps_its_definition():
 def test_ebit_annual_rows_are_the_reported_ones():
     ed = _ed(_fy("OperatingIncomeLoss", [13762, 9992, 11311]))
     st = {"inc_ends": ["2025-12-31", "2024-12-31", "2023-12-31"], "operating_income": [14911.0, 14022.0, 13098.0],
-          "ebit": [14911.0, 14022.0, 13098.0], "ebitda": [16000.0, 15100.0, 14200.0]}
+          "ebit": [14911.0, 14022.0, 13098.0], "ebitda": [16000.0, 15100.0, 14200.0],
+          "cf_ends": ["2025-12-31", "2024-12-31"], "depreciation_amortization": [-1100.0, -1050.0]}
     info = _info(_statements_fy=st)
     edgar_primary.apply(info, ed)
     assert st["operating_income"] == [13762, 9992, 11311]
-    assert st["ebit"] == [14911.0, 14022.0, 13098.0] and st["ebitda"] == [16000.0, 15100.0, 14200.0], \
-        "la fila EBIT de Yahoo (con lo no operativo) y el EBITDA siguen con su definición: ROCE y FFO"
+    assert st["ebit"] == [14911.0, 14022.0, 13098.0], "la fila EBIT de Yahoo (con lo no operativo) no cambia: ROCE"
+    assert st["ebitda"] == [13762 + 1100, 9992 + 1050, 14200.0], "sin la D&A del ejercicio, el EBITDA no cambia"
 
 
 def test_ebit_without_the_cut_in_edgar_stays_with_the_source():
@@ -198,3 +200,11 @@ def test_industry_with_an_em_dash_is_normalised_like_the_classifier():
     _fields(info, "totalRevenue")
     edgar_primary.apply(info, ed)
     assert info["totalRevenue"] == 371444
+
+
+def test_without_da_the_ebitda_of_the_cut_stays():
+    ed = _ed(_fy("OperatingIncomeLoss", [100]))
+    info = _info(operatingIncome=120.0, ebitda=150.0)
+    _fields(info, "operatingIncome")
+    edgar_primary.apply(info, ed)
+    assert info["ebitda"] == 150.0

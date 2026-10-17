@@ -102,9 +102,16 @@ def _per_share(values: List[Optional[float]], shares: List[Optional[float]]) -> 
 
 
 def _reit(st: Dict[str, Any], km: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    # FFO = beneficio + D&A (la misma definición que el FFO TTM, financial_ratios.funds_from_operations). Fase 3
+    # (T1b): con el EBITDA = EBIT del emisor + D&A, "EBITDA − EBIT de Yahoo" ya no es la D&A; sin la fila de D&A,
+    # esa diferencia como antes.
     ni, ebitda, ebit = st.get("net_income") or [], st.get("ebitda") or [], st.get("ebit") or []
-    ffo = [(n + (a - b)) if (n is not None and a is not None and b is not None) else None
-           for n, a, b in zip(ni, ebitda, ebit)]
+    da = st.get("depreciation_amortization") or []
+    if da and len([x for x in da if x is not None]) >= len([x for x in ni if x is not None]):
+        ffo = [(n + abs(d)) if (n is not None and d is not None) else None for n, d in zip(ni, da)]
+    else:
+        ffo = [(n + (a - b)) if (n is not None and a is not None and b is not None) else None
+               for n, a, b in zip(ni, ebitda, ebit)]
     shares = st.get("ordinary_shares") or []
     ffo_ps = _per_share(ffo, shares)
     ffo_ps_cagr, ffo_ps_why = strict_cagr(ffo_ps, 3)

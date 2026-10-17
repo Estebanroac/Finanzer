@@ -7,10 +7,10 @@ del análisis (`info["_as_of"]`) y en las filas anuales (`info["_statements_fy"]
 
   · **EBIT** (todos menos los bancos): el resultado operativo que **presenta el emisor** en su cuenta de resultados
     (`OperatingIncomeLoss`; IFRS `ProfitLossFromOperatingActivities`), no el que construye Yahoo (KO excluye "otros
-    cargos operativos"; PLD resta las ganancias de promoción). Solo el resultado operativo (TTM y fila anual
-    `operating_income`): la fila anual "EBIT" de Yahoo (resultado antes de intereses e impuestos, con lo no
-    operativo) y el EBITDA siguen con su definición, que no se decidió en la parada 1 (el ROCE y el FFO de los REIT
-    los usan). En un banco el EBIT no aplica (su equivalente, el beneficio antes de provisiones, es de la T4);
+    cargos operativos"; PLD resta las ganancias de promoción). Con él, **EBITDA = EBIT que presenta el emisor + D&A**
+    (parada 1b, registro #27), en el corte y en las filas anuales. La fila anual "EBIT" de Yahoo (resultado antes de
+    intereses e impuestos, con lo no operativo) no cambia: la usa el ROCE. En un banco el EBIT no aplica (su
+    equivalente, el beneficio antes de provisiones, es de la T4);
   · **ingresos de aseguradoras y conglomerados**: los ingresos sin las ganancias de inversión (BRK-B: Yahoo suma
     `GainLossOnInvestments` a `Revenues`);
   · **ingresos de bancos de EE. UU.**: los ingresos netos totales (margen de intereses + ingresos no financieros). Los
@@ -112,8 +112,13 @@ def apply(info: Dict[str, Any], ed: Dict[str, Any], ctx=None, symbol: Optional[s
 
 
 def _follow(info: Dict[str, Any], key: str, old, val, fields, cut, ptype) -> None:
-    """Lo que depende del campo sustituido: el FCF (OCF − capex)."""
+    """Lo que depende del campo sustituido: el EBITDA (EBIT + D&A) y el FCF (OCF − capex)."""
     from yf_adapter import _tag_provenance
+    if key == "operatingIncome" and info.get("depreciation") is not None:
+        info["ebitda"] = val + abs(info["depreciation"])
+        fields["ebitda"] = {"period_end": cut, "period_type": "ttm" if ptype == "ttm" else "fy", "source": "derivado"}
+        _tag_provenance(info, "derivado", "EBIT que presenta el emisor (SEC EDGAR) + D&A del corte", paths=["ebitda"],
+                        overwrite=True)
     if key == "capitalExpenditures" and info.get("operatingCashflow") is not None:
         info["freeCashflow"] = info["operatingCashflow"] + (val if val <= 0 else -val)
         fields["freeCashflow"] = {"period_end": cut, "period_type": "ttm" if ptype == "ttm" else "fy",
@@ -148,6 +153,12 @@ def _apply_fy(info: Dict[str, Any], facts: Dict[str, Any], rules, ctx, tol: int,
             changed = True
             log["fy"].append({"field": f"FY.{row}", "fy_end": end, "concept": got["concept"], "how": got["how"],
                               "accns": got["accns"], "value": new, "replaced": old})
+            if row == "operating_income":                  # EBITDA = EBIT del emisor + D&A del mismo ejercicio
+                da, cf_ends, ebitda = (st.get("depreciation_amortization") or [], st.get("cf_ends") or [],
+                                       st.get("ebitda"))
+                j = cf_ends.index(end) if end in cf_ends else None
+                if isinstance(ebitda, list) and i < len(ebitda) and j is not None and j < len(da) and da[j] is not None:
+                    ebitda[i] = new + abs(da[j])
             if row == "capital_expenditure":
                 ocf, fcf = st.get("operating_cash_flow") or [], st.get("free_cash_flow")
                 if isinstance(fcf, list) and i < len(fcf) and i < len(ocf) and ocf[i] is not None:
