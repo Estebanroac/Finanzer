@@ -128,8 +128,15 @@ value_tolerance = 1.0e-8            # |valor reconstruido − precio| / precio a
 max_iterations = 200                # tope de iteraciones de la bisección (con la tolerancia de arriba bastan ~33)
 monotonicity_points = 41            # puntos de la malla con la que se comprueba que el valor crece con g
 band_pp = 0.05                      # ± 5 pp frente al crecimiento logrado: barata / en precio / exigente (§2.2, a calibrar)
-very_demanding_base_rate = 0.10     # PROVISIONAL: si menos de esta proporción de comparables sostuvo g* 10 años,
-                                    # "muy exigente". Las tasas base reales y este umbral los fija la fase 3
+# Fase 3 (T3, §8.1): bandas por la proporción de comparables (tasas base, lib/base_rates) que sostuvo 10 años el
+# CAGR equivalente de la trayectoria exigida. < 10%: decil superior (excepcional); < 25%: cuartil superior.
+very_demanding_base_rate = 0.10
+demanding_base_rate = 0.25
+cheap_base_rate = 0.75              # sin historia propia: barata si 3 de cada 4 comparables lo lograron
+# Señal en la convergencia y puntos en Valoración cuando el inverso es el método intrínseco (§2.3): la misma escala
+# que el DCF de fiabilidad alta (barata +2, en precio 0, cara −2, claramente cara −4).
+band_signal = { barata = 0.5, en_precio = 0.0, exigente = -0.5, muy_exigente = -1.0 }
+band_points = { barata = 2, en_precio = 0, exigente = -2, muy_exigente = -4 }
 
 [bank_implied]                      # lib/bank_implied.py: ROTE/ROE implícitos en el precio (§3)
 rote_sensitivity_deltas = [-0.02, -0.01, 0.0, 0.01, 0.02]   # ± pp de ROTE para la sensibilidad (§3: ±2 pp)

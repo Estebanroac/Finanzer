@@ -252,3 +252,23 @@ def growth_profitable_measures(hist: Dict[str, Any]) -> Dict[str, Any]:
     if len(ps) >= 6 and ps[-6] > 0 and ps[-1] > 0:
         out["revenue_ps_cagr_5y"] = cagr(ps[-1], ps[-6], 5)
     return out
+
+
+def revenue_ps_cagr_long(hist: Dict[str, Any], max_years: int = 10, min_years: int = 5) -> Dict[str, Any]:
+    """CAGR de los ingresos por acción en la ventana más larga disponible de `min_years` a `max_years` años, desde la
+    última ruptura del capital (fase 3, T3: segunda referencia del DCF inverso, §8.1). Sin acciones, agregado."""
+    rev = _series(hist or {}, "revenue")
+    sh = _align(rev, _series(hist or {}, "diluted_shares"))
+    brk = share_breaks(hist or {}, cfg("sectors.archetypes.cyclicality.share_break"))
+    if brk:
+        sh = [x for x in sh if x[0] >= brk[-1]]
+    basis = "por_accion" if len(sh) >= min_years + 1 else "agregado"
+    pts = [(e, r / s) for e, r, s in sh] if basis == "por_accion" else rev
+    out = {"cagr": None, "years": None, "basis": basis, "from": None, "to": None}
+    if len(pts) < min_years + 1:
+        return out
+    n = min(max_years, len(pts) - 1)
+    (e0, v0), (e1, v1) = pts[-1 - n], pts[-1]
+    if v0 > 0 and v1 > 0:
+        out.update(cagr=cagr(v1, v0, n), years=n, **{"from": e0, "to": e1})
+    return out

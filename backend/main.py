@@ -1388,6 +1388,51 @@ def _compute_analysis(symbol: str) -> dict:
                 logger.error(f"Valuation error: {e}")
                 _sin_dato("graham/dcf", e)
 
+            # ── Fase 3 (T3, D3): DCF inverso (lib/reverse_reading). Qué crecimiento exige el precio, frente a las
+            # tasas base y a la historia propia. Es el método intrínseco cuando el directo tiene fiabilidad baja.
+            try:
+                import reverse_reading as rr
+                _price_r = safe_float(financials.price)
+                _sh_r = safe_float(financials.shares_outstanding)
+                _nd_r = ((td_val or 0.0) - (cash_val or 0.0)) if (td_val is not None or cash_val is not None) else 0.0
+                _own_r = rr.own_growth(yinfo.get("_history_fy") if _has_yahoo else None,
+                                       safe_float(fin_dict.get("revenue_cagr_3y")))
+                _rv_args = dict(price=_price_r, shares=_sh_r, revenue_usd=safe_float(financials.revenue), sector=sector)
+                _rv = {"applicable": False, "reason": None, "main": None, "ttm": None}
+                if archetype == FINANCIAL:
+                    _rv["reason"] = "no aplica a bancos y aseguradoras: su método intrínseco es el P/B justificado"
+                elif archetype == REIT:
+                    # §8.7: sobre el FFO por acción, flujo del accionista: al coste del capital propio, sin deuda.
+                    _own_ffo = {"cagr": safe_float(archetype_values.get("ffo_per_share_cagr_3y")), "years": 3,
+                                "basis": "ffo_por_accion", "source": "estados (3 años)", "label": "su FFO por acción"}
+                    _rv.update(applicable=True, main=rr.reading(
+                        flow=safe_float(archetype_values.get("ffo_ttm")), rate=wacc_info.get("ke"), net_debt=0.0,
+                        own=_own_ffo, flow_label="FFO", **_rv_args))
+                elif result.get("not_applicable", {}).get("dcf"):
+                    _rv["reason"] = result["not_applicable"]["dcf"]
+                else:
+                    _lab = ("FCF de mantenimiento" if archetype == CYCLICAL else "FCF") + \
+                        (" − SBC" if _fcf_net is not None else "")
+                    _rv.update(applicable=True, main=rr.reading(flow=fcf, rate=wacc_est, net_debt=_nd_r, own=_own_r,
+                                                                flow_label=_lab, **_rv_args))
+                    if archetype == CYCLICAL:
+                        # §8.5: segunda lectura con el flujo del periodo ("si el nivel actual se mantiene").
+                        _ttm_net = safe_float(sbc_info.get("value"))
+                        _rv["ttm"] = rr.reading(
+                            flow=_ttm_net if _ttm_net is not None else safe_float(financials.free_cash_flow),
+                            rate=wacc_est, net_debt=_nd_r, own=_own_r,
+                            flow_label="FCF − SBC del periodo" if _ttm_net is not None else "FCF del periodo",
+                            **_rv_args)
+                result["reverse_dcf"] = _rv
+                _m = _rv.get("main") or {}
+                # §2.3: el inverso puntúa en Valoración cuando el directo no se usa (fiabilidad baja; REIT sin DCF).
+                if _m.get("points") is not None and isinstance(dcf_for_score, dict) and (
+                        dcf_for_score.get("reliability") == "baja" or (archetype == REIT and dcf_for_score.get("na"))):
+                    dcf_for_score["reverse"] = {"band": _m["band"], "points": _m["points"], "text": _m["text"]}
+            except Exception as e:
+                logger.error(f"Reverse DCF error: {e}")
+                _sin_dato("dcf_inverso", e)
+
             # Score (0-100) — normalize to standard format.
             # Computed here (after institutional metrics) so the Altman Z-Score
             # and Piotroski F-Score actually feed the solidez/calidad categories.
@@ -1541,6 +1586,14 @@ def _compute_analysis(symbol: str) -> dict:
                     if _d.get("upside") is not None:
                         _methods.append({"method": "DCF", "kind": "intrínseco", "upside": _d["upside"] / 100.0,
                                          "reliability": (_d.get("reliability") or {}).get("level")})
+                    # Fase 3 (T3, §2.3): el DCF inverso es el método intrínseco cuando el directo no es evaluable
+                    # (fiabilidad baja, no significativo o REIT sin DCF): la convergencia vuelve a tener dos métodos.
+                    _rvm = ((result.get("reverse_dcf") or {}).get("main") or {})
+                    _direct_ok = (_d.get("upside") is not None
+                                  and (_d.get("reliability") or {}).get("level") != "baja")
+                    if _rvm.get("signal") is not None and not _direct_ok:
+                        _methods.append({"method": "DCF inverso", "kind": "intrínseco", "signal": _rvm["signal"],
+                                         "band": _rvm["band"]})
                     if _multiples_signal:
                         _methods.append({"method": "múltiplos frente al sector", "kind": "relativo",
                                          "signal": _multiples_signal["value"],

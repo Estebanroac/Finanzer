@@ -22,6 +22,30 @@ period = "1984-2020"
 growth = "nominal"
 horizons_years = [1, 3, 5, 10]
 
+# Uso en el motor (fase 3, T3; lib/base_rates.py): proporción de comparables que sostuvo un crecimiento, con una
+# lognormal ajustada a la mediana y la desviación típica de la celda.
+min_count = 100                 # con menos observaciones en la celda (a ese horizonte), la fila "All" del tramo
+
+[size]
+# Ventas de hoy a dólares de 2020: IPC-U de EE. UU., media anual (BLS, serie CUUR0000SA0): 2020 = 258.811,
+# 2024 = 313.689 -> 258.811 / 313.689 = 0.825. Se actualiza con la media anual más reciente publicada.
+deflator_to_2020 = 0.825
+
+[industry_map]
+# Sector de Yahoo -> industria de Fama y French 5 (aproximación declarada; FF5 clasifica por SIC: software y
+# telecomunicaciones son HiTec; energía y utilities, Manufacturing; finanzas, transporte y construcción, Other).
+"technology" = "Technology"
+"communication services" = "Technology"
+"healthcare" = "Healthcare"
+"consumer cyclical" = "Consumer"
+"consumer defensive" = "Consumer"
+"industrials" = "Manufacturing"
+"energy" = "Manufacturing"
+"utilities" = "Manufacturing"
+"basic materials" = "Manufacturing"
+"real estate" = "Other"
+"financial services" = "Other"
+
 [bins]                          # tramo -> ventas mínimas del año inicial, en miles de millones de USD de 2020
 "0-1" = 0
 "1-5" = 1

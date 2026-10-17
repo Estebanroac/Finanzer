@@ -1103,6 +1103,15 @@ def graham_number(eps: Optional[float], book_value_ps: Optional[float]) -> Optio
     return (cfg("valuation.graham.multiplier") * eps * book_value_ps) ** 0.5
 
 
+def _reverse_severity(points: int, scale) -> str:
+    """Severidad de la fila del DCF inverso en Valoración por su signo y su extremo en la escala del DCF."""
+    if points > 0:
+        return "good"
+    if points == 0:
+        return "ok"
+    return "severe" if points <= min(scale) else "moderate"
+
+
 def dcf_multi_stage(
     fcf: Optional[float],
     shares_outstanding: Optional[float],
@@ -2732,7 +2741,13 @@ def score_valoracion(
         b = T["dcf_upside_bounds"]
         i = next((k for k, x in enumerate(b) if up >= x), len(b))
         tag = ("Claramente barata", "Barata", "En precio", "Cara", "Claramente cara")[i]
-        if rel == "baja":
+        if rel == "baja" and (_dcf.get("reverse") or {}).get("points") is not None:
+            # Fase 3 (T3, §2.3): el DCF inverso es el método intrínseco cuando el directo no concilia.
+            rv = _dcf["reverse"]
+            adj, sev = rv["points"], _reverse_severity(rv["points"], T["dcf_points_high"])
+            reason = ("El DCF directo no concilia con el precio; se usa el DCF inverso: "
+                      + (rv.get("text") or rv["band"]))
+        elif rel == "baja":
             adj, sev = 0, "neutral"
             reason = ("El DCF no concilia con el precio bajo ningún supuesto razonable; no se usa en el score"
                       if _dcf.get("grid_contains_price") is False else
@@ -2746,6 +2761,14 @@ def score_valoracion(
         adjustments.append({"metric": "DCF (upside)", "value": f"{up:+.0%}", "adjustment": adj,
                             "reason": reason + (": " + "; ".join(_dcf.get("reasons") or []) if _dcf.get("reasons") else ""),
                             "severity": sev, "reliability": rel})
+    elif _dcf.get("na") and (_dcf.get("reverse") or {}).get("points") is not None:
+        # Fase 3 (T3, §8.7): REIT sin DCF directo; el inverso sobre el FFO por acción es su método intrínseco.
+        rv = _dcf["reverse"]
+        _dcf_adj = rv["points"]
+        base_score += _dcf_adj
+        adjustments.append({"metric": "DCF inverso (FFO)", "value": rv["band"].replace("_", " "),
+                            "adjustment": _dcf_adj, "reason": rv.get("text") or rv["band"],
+                            "severity": _reverse_severity(_dcf_adj, T["dcf_points_high"])})
     elif _dcf.get("not_significant"):
         adjustments.append({"metric": "DCF (upside)", "value": "No significativo", "adjustment": 0,
                             "reason": _dcf["not_significant"], "severity": "neutral"})
@@ -2785,6 +2808,8 @@ def score_valoracion(
     if dcf is not None and _dcf.get("not_significant"):
         # Etapa 11b: FCF base <= 0 o capital <= 0: no significativo (no cuenta como dato ausente).
         cov.not_sig("DCF", _dcf["not_significant"])
+    elif dcf is not None and _dcf.get("na") and (_dcf.get("reverse") or {}).get("points") is not None:
+        cov.comp("DCF inverso (FFO)", T["dcf_points_high"], _dcf_adj, None)
     elif dcf is not None:
         cov.comp("DCF", T["dcf_points_high"], _dcf_adj, _dcf_reason, na=_dcf.get("na"))
     from valuation_confidence import multiples_signal

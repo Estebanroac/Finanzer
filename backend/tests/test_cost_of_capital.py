@@ -327,8 +327,10 @@ def test_graham_does_not_vote_and_financial_has_two_methods(outputs_by_env):
         conv = out["JPM"][0]["confidence"]["dimensions"]["convergence"]
         assert [m["method"] for m in conv["methods"]] == ["P/B justificado (Gordon)", "P/B frente al sector"]
         assert conv["level"] in ("alta", "media", "baja")
-        o = out["O"][0]["confidence"]                     # REIT: un solo método (múltiplos) -> techo
-        assert o["dimensions"]["convergence"]["level"] == "no_evaluable" and o["level"] == "media"
+        # Fase 3 (T3, §8.7): REIT con dos métodos, el DCF inverso sobre el FFO por acción y los múltiplos.
+        o = out["O"][0]["confidence"]
+        assert [m["method"] for m in o["dimensions"]["convergence"]["methods"]][0] == "DCF inverso"
+        assert o["dimensions"]["convergence"]["level"] != "no_evaluable"
 
 
 def test_verdict_confidence_weights():

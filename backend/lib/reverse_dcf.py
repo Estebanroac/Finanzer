@@ -2,7 +2,10 @@
 DCF inverso (preparación de la fase 3; F3_DISENO_METODO §2, decisión D3).
 
 Responde "¿qué crecimiento exige el precio actual?": resuelve el crecimiento anual g* del FCF por acción con el que el
-valor del DCF iguala el precio. NO está conectado al motor: ningún módulo lo importa todavía (lo conectará la fase 3).
+valor del DCF iguala el precio.
+
+Conectado al motor en la fase 3 (T3, main.py): lectura con las tasas base (lib/base_rates) como referencia principal
+y el crecimiento propio de los ingresos por acción como segunda (F3_DISENO §8.1).
 
 Misma estructura que el DCF directo (financial_ratios.dcf_multi_stage con decay_type="step"):
   · años 1..(fade_start − 1): crecimiento g*;
@@ -158,3 +161,47 @@ def classify_implied_growth(g_star: Optional[float], achieved_growth: Optional[f
     out["gap"] = g_star - achieved_growth
     out["band"] = CHEAP if out["gap"] < -band else DEMANDING if out["gap"] > band else IN_PRICE
     return out
+
+
+def ten_year_cagr(g: float, terminal_growth: Optional[float] = None, years: Optional[int] = None,
+                  fade_start: Optional[int] = None) -> float:
+    """CAGR equivalente de la trayectoria de g* (g* los años 1..fade_start − 1 y convergencia al terminal): lo que
+    se compara con las tasas base a 10 años."""
+    terminal_growth, years, fade_start, _b = _defaults(terminal_growth, years, fade_start, None)
+    f = 1.0
+    for gy in growth_path(g, terminal_growth, years, fade_start):
+        f *= 1.0 + gy
+    return f ** (1.0 / years) - 1.0
+
+
+def read_against_base_rates(g10: Optional[float], base_share: Optional[float], own_growth: Optional[float],
+                            out_of_range_side: Optional[str] = None) -> Dict[str, Any]:
+    """Lectura del crecimiento exigido (F3_DISENO §2.2 con los ajustes de §8.1 y §8.3).
+
+    1. Tasas base (referencia principal): si menos de `very_demanding_base_rate` de los comparables sostuvo g10 diez
+       años, muy exigente; si menos de `demanding_base_rate`, exigente. "Exige más de +60%" (fuera de rango
+       superior) es muy exigente; "menos de −20%", barata.
+    2. Historia propia (segunda referencia, ingresos por acción a 5–10 años): solo cuando las tasas base no lo
+       consideran excepcional; ±`band_pp` frente a lo logrado: barata / en precio / exigente.
+    3. Sin historia propia: barata si al menos `cheap_base_rate` de los comparables lo sostuvo; si no, en precio."""
+    T = cfg("valuation.reverse_dcf")
+    out = {"band": None, "rule": None, "gap": None, "base_share": base_share, "own_growth": own_growth,
+           "band_pp": T["band_pp"]}
+    if out_of_range_side == "superior":
+        return dict(out, band=VERY_DEMANDING, rule="fuera_de_rango_superior")
+    if out_of_range_side == "inferior":
+        return dict(out, band=CHEAP, rule="fuera_de_rango_inferior")
+    if g10 is None:
+        return dict(out, band=NO_DATA, rule="sin_crecimiento_exigido")
+    if own_growth is not None:
+        out["gap"] = g10 - own_growth
+    if base_share is not None and base_share < T["very_demanding_base_rate"]:
+        return dict(out, band=VERY_DEMANDING, rule="tasa_base")
+    if base_share is not None and base_share < T["demanding_base_rate"]:
+        return dict(out, band=DEMANDING, rule="tasa_base")
+    if own_growth is not None:
+        band = (CHEAP if out["gap"] < -T["band_pp"] else DEMANDING if out["gap"] > T["band_pp"] else IN_PRICE)
+        return dict(out, band=band, rule="historia_propia")
+    if base_share is None:
+        return dict(out, band=NO_CONTRAST, rule="sin_referencias")
+    return dict(out, band=CHEAP if base_share >= T["cheap_base_rate"] else IN_PRICE, rule="tasa_base")
