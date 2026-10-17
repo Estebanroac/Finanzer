@@ -24,7 +24,8 @@ def _series(store, sym, until, own_fixture=True):
     raw = hf.obj_to_history(own) if own else hf.load_frame(sym, until)
     adj = pd.to_numeric(raw["Adj Close"], errors="coerce")
     close = adj.where(adj.notna(), pd.to_numeric(raw["Close"], errors="coerce"))
-    df = pd.DataFrame({"close": close.to_numpy(), "volume": pd.to_numeric(raw["Volume"], errors="coerce").to_numpy()},
+    df = pd.DataFrame({"close": close.to_numpy(), "quote": pd.to_numeric(raw["Close"], errors="coerce").to_numpy(),
+                       "volume": pd.to_numeric(raw["Volume"], errors="coerce").to_numpy()},
                       index=pd.DatetimeIndex(raw.index).tz_localize(None).normalize())
     return df[df["close"].notna()]
 
@@ -56,7 +57,9 @@ def test_signals_match_an_independent_reference(panel, sym):
     assert S["max_drawdown"]["1"]["value"] == pytest.approx((w / np.maximum.accumulate(w) - 1).min(), abs=TOL)
     # caída de toda la serie y distancia de hoy al máximo
     assert mc["series_drawdown"]["value"] == pytest.approx((c / np.maximum.accumulate(c) - 1).min(), abs=TOL)
-    assert mc["series_drawdown"]["from_high"] == pytest.approx(c[-1] / c.max() - 1, abs=TOL)
+    # la distancia al máximo es la de la cotización (cierre sin ajustar, revisión F5 hallazgo 5)
+    q = df["quote"].dropna().to_numpy(dtype=float)
+    assert mc["series_drawdown"]["from_high"] == pytest.approx(q[-1] / q.max() - 1, abs=TOL)
     # volumen: z de la media de 5 sesiones frente a las 90 anteriores
     rec, base = v[-5:], v[-95:-5]
     assert S["abnormal_volume"]["value"] == pytest.approx((rec.mean() - base.mean()) / base.std(ddof=1), abs=1e-6)
@@ -90,3 +93,19 @@ def test_news_are_the_company_own_most_recent_headlines(monkeypatch):
     assert n["total"] == 6
     monkeypatch.setattr(fh, "company_news", lambda s, a, b: None)
     assert mc.news("AAPL")["items"] == [] and mc.news("AAPL")["reason"]
+
+
+def test_low_volume_is_not_called_habitual():
+    import market_context as mc
+    ctx = {"signals": {"abnormal_volume": {"value": -3.1, "status": "ok"}}}
+    txt = " ".join(r.get("text", "") for r in mc.readings(ctx))
+    assert "muy por debajo de lo habitual" in txt and "rango habitual" not in txt
+
+
+def test_behavioral_readings_are_not_forecasts():
+    """Revisión F5, hallazgo 6: describen un sesgo estudiado, sin anticipar el precio."""
+    import inspect
+    import market_context as mc
+    src = inspect.getsource(mc.behavioral)
+    for phrase in ("tiende a revertir", "tiende a infravalorar", "incorporarlas tarde"):
+        assert phrase not in src

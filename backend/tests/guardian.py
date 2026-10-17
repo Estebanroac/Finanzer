@@ -111,7 +111,7 @@ KEYWORDS = [
     ("senal_mercado", r"el mercado (?:viene premiando|viene castigando|apenas ha movido)|régimen (?:alcista|bajista|"
                       r"lateral)|volatilidad anual realizada|llegó a caer un|del etf de su sector|volumen de las "
                       r"últimas 5 sesiones|volumen en el rango habitual", {"market_signal"}),
-    ("conductual", r"actúa como ancla|patrón de sobrerreacción|da por hecho que el crecimiento pasado",
+    ("conductual", r"actúa como ancla|como sobrerreacción del mercado|da por hecho que el crecimiento pasado",
      {"behavioral"}),
 ]
 
@@ -474,20 +474,20 @@ def _p_behavioral(a, c, text):
         p, h = km.get("price") or a.get("price"), km.get("price_52w_high")
         if p and h and not _near(pct(r"a un (\d+(?:\.\d+)?)% de su máximo"), abs(p / h - 1)):
             return "distancia al máximo de 52 semanas distinta"
-    if "sobrerreacción" in text:
+    if "como sobrerreacción del mercado" in text:
         dd = (a.get("market_context") or {}).get("series_drawdown") or {}
         if not _near(pct(r"cotiza un (\d+(?:\.\d+)?)% por debajo"), abs(dd.get("from_high") or 0)):
             return "caída desde el máximo distinta"
         g = {x.get("metric"): x.get("raw") for x in
              (((a.get("score") or {}).get("breakdown") or {}).get("Crecimiento") or {}).get("adjustments") or []}
-        rev = next((v for k, v in g.items() if str(k).startswith(("Crecimiento Ingresos", "Retorno total"))), None)
+        rev = ((a.get("classification") or {}).get("inputs") or {}).get("revenue_cagr_3y")
         if not _near(pct(r"ingresos ([+−-]?\d+(?:\.\d+)?)%"), rev) or not _near(
                 pct(r"BPA ([+−-]?\d+(?:\.\d+)?)% anual"), g.get("Crecimiento EPS 3Y")):
             return "crecimiento citado distinto del que puntúa"
     if "da por hecho" in text:
         m = ((a.get("reverse_dcf") or {}).get("main")) or {}
         if not (_near(pct(r"exige crecer un (\d+(?:\.\d+)?)%"), m.get("g10"))
-                and _near(pct(r"logró un ([+−-]?\d+(?:\.\d+)?)%"), (m.get("own_growth") or {}).get("cagr"))):
+                and _near(pct(r": ([+−-]?\d+(?:\.\d+)?)% anual en los últimos"), (m.get("own_growth") or {}).get("cagr"))):
             return "crecimiento exigido o logrado distinto"
 
 

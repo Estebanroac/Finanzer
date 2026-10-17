@@ -40,7 +40,7 @@ La revisión que el plan reserva al usuario ("revisa 5 lecturas y comprueba que 
 |---|---|---|---|
 | AAPL | Cotiza a un 1.5% de su máximo de 52 semanas; el máximo actúa como ancla (George y Hwang, 2004) | No: describe un sesgo documentado, sin "comprar" ni "vender" | Correcta |
 | NFLX | 47.3% bajo su máximo de 2 años sin deterioro de los fundamentales medidos (ingresos +12.6%, BPA +36.5% a 3 años): patrón de sobrerreacción (De Bondt y Thaler, 1985). "No es una previsión." | No: cierra con "No es una previsión" | Correcta; el matiz "medidos" es necesario |
-| NVO | 65.2% bajo su máximo sin deterioro de los fundamentales medidos | No | Correcta en lo que mide. Un analista sabe que la caída descuenta competencia futura (GLP-1) que los datos pasados no recogen: "medidos" lo deja dicho |
+| NVO | 67.8% bajo su máximo sin deterioro de los fundamentales medidos (65.2% antes de la revisión, que medía sobre el cierre ajustado) | No | Correcta en lo que mide. Un analista sabe que la caída descuenta competencia futura (GLP-1) que los datos pasados no recogen: "medidos" lo deja dicho |
 | NVDA | El precio exige 21.1% anual 10 años (logró 44.6%); solo menos del 1% de las comparables lo sostuvo: da por hecho que el crecimiento pasado continúa (Lakonishok, Shleifer y Vishny, 1994) | No | Correcta. La primera redacción decía "en línea con el 44.6%", que era falso, y se corrigió |
 | V | Exige 12.5% (logró 11.2% en 10 años); solo un 7% de las comparables lo sostuvo | No | Correcta |
 
@@ -66,3 +66,22 @@ Pestaña "Contexto de mercado" comprobada en el navegador (NFLX, replay). La com
 - **PEAD (deriva tras resultados):** la fecha de resultados ya se lee (2b, T3), pero hace falta la sorpresa del BPA frente al consenso y no hay fuente con fecha para ella. El informe lo dice.
 - **Latencia desde Render:** el plan pedía medirla antes de construir. Sin deploy no se puede. La serie de la empresa y la del índice ya se descargaban desde la 2b; lo nuevo es el ETF del sector, cacheado 6 h y compartido por sector, más una llamada a Finnhub para los titulares, cacheada. Se mide en la comprobación de producción de esta fase.
 - **Golden, deploy y push:** pendientes del usuario, como en las fases 3 y 4.
+
+## 6. Revisión de código de la fase 5
+
+Revisión independiente del diff de F5. Arreglos en un commit (prefijo F5), verificados con el panel en replay y la suite (3907 passed; falla la de siempre, la de los golden).
+
+| Hallazgo | Arreglo |
+|---|---|
+| 1. El ETF del sector y los titulares se pedían en serie dentro del análisis, sin límite de espera | Se piden en paralelo, con un máximo de `wait_timeout_s` (4 s). Si no llegan a tiempo, la sección dice por qué y el análisis sigue |
+| 2. La sobrerreacción leía el "retorno total" (ingresos más rentabilidad por dividendo) como si fueran ingresos | Lee el CAGR de ingresos a 3 años de los estados (`classification.inputs.revenue_cagr_3y`). El guardián comprueba la misma cifra |
+| 3. La fuerza relativa comparaba MC.PA (en euros) con un ETF de EE. UU. en dólares | Solo se calcula para lo que cotiza en USD. El resto dice por qué no hay dato |
+| 4. Un volumen muy por debajo de lo habitual (z ≤ −2) se describía como "rango habitual" | Ahora dice "muy por debajo de lo habitual" |
+| 5. La distancia al máximo se medía sobre el cierre ajustado, que rebaja los precios pasados por los dividendos | Se mide sobre la cotización sin ajustar, la que ve el lector (NVO: 65.2% → 67.8%). La caída máxima sigue en ajustado, porque es rentabilidad del accionista |
+| 6. "Tiende a revertir" y "tiende a infravalorar" anticipaban el precio | Las dos lecturas describen el sesgo estudiado y cierran con "no una previsión" |
+| 7. `peek` devolvía series caducadas | Solo devuelve entradas vigentes |
+| 8. Un sector sin ETF propio usaba SPY como "sector" | Sin fuerza relativa, y se dice |
+| 9. La extrapolación decía "en los últimos 10" sin unidad ni magnitud | "(sus ingresos por acción: 19.2% anual en los últimos 10 años)" |
+| 10. Los titulares no se graban en los fixtures | **Limitación declarada:** en replay la sección sale sin titulares ("sin clave"), y el contraste independiente no los cubre. Se prueban con un doble de Finnhub (`test_news_are_the_company_own_most_recent_headlines`) y se verificaron en vivo el 2026-10-17 |
+
+Además, un fallo del ETF del sector queda en caché negativa durante `sector_fail_ttl_s` (600 s). Así un ETF caído no vuelve a costar el tiempo de espera en cada análisis del mismo sector.

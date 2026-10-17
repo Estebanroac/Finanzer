@@ -94,11 +94,12 @@ def _download(symbol: str, fetcher: Fetcher, sleep=time.sleep, clock=time.perf_c
             "reason": f"sin serie tras {attempts} intentos ({reason})"}
 
 
-def _cached(key: str, ttl: float, make: Callable[[], Dict[str, Any]]) -> Dict[str, Any]:
+def _cached(key: str, ttl: float, make: Callable[[], Dict[str, Any]], fail_ttl: float = 0.0) -> Dict[str, Any]:
+    """`fail_ttl` > 0: un fallo también se recuerda ese tiempo (no se repite la descarga en cada análisis)."""
     now = time.time()
     with _lock:
         ent = _cache.get(key)
-        if ent and now - ent[0] < ttl and ent[1]["frame"] is not None:
+        if ent and now - ent[0] < ttl and (ent[1]["frame"] is not None or now - ent[0] < fail_ttl):
             return ent[1]
     res = make()
     with _lock:
@@ -126,17 +127,20 @@ def market() -> Dict[str, Any]:
     return _cached("^MARKET", H["market_cache_ttl_s"], make)
 
 
-def peek(symbol: str) -> Optional[Dict[str, Any]]:
-    """Fase 5: la serie del título que ya descargó el análisis (caché), sin volver a descargar si falló."""
+def _peek(key: str, ttl: float) -> Optional[Dict[str, Any]]:
     with _lock:
-        ent = _cache.get(symbol.upper())
-    return ent[1] if ent else None
+        ent = _cache.get(key)
+    # Revisión F5 (hallazgo 7): solo una entrada vigente; una vieja (la descarga de hoy agotó el tiempo) no se usa.
+    return ent[1] if ent and time.time() - ent[0] < ttl else None
+
+
+def peek(symbol: str) -> Optional[Dict[str, Any]]:
+    """Fase 5: la serie del título que ya descargó el análisis (caché vigente), sin volver a descargar si falló."""
+    return _peek(symbol.upper(), cfg("market.history.cache_ttl_s"))
 
 
 def peek_market() -> Optional[Dict[str, Any]]:
-    with _lock:
-        ent = _cache.get("^MARKET")
-    return ent[1] if ent else None
+    return _peek("^MARKET", cfg("market.history.market_cache_ttl_s"))
 
 
 def sector(etf: Optional[str]) -> Dict[str, Any]:
@@ -146,7 +150,9 @@ def sector(etf: Optional[str]) -> Dict[str, Any]:
         return {"symbol": None, "frame": None, "attempts": 0, "latency_s": None, "reason": "sin ETF de sector"}
     H = cfg("market.history")
     try:
-        return _cached(f"^SECTOR:{etf.upper()}", H["market_cache_ttl_s"], lambda: _download(etf.upper(), FETCHER))
+        # Revisión F5 (hallazgo 1): un fallo se recuerda `sector_fail_ttl_s` (no se repiten ~30 s por análisis).
+        return _cached(f"^SECTOR:{etf.upper()}", H["market_cache_ttl_s"], lambda: _download(etf.upper(), FETCHER),
+                       fail_ttl=cfg("market.context.sector_fail_ttl_s"))
     except Exception as e:  # la fuente falla de muchas maneras: el contexto sigue sin fuerza relativa
         return {"symbol": etf, "frame": None, "attempts": None, "latency_s": None, "reason": f"{type(e).__name__}: {e}"}
 

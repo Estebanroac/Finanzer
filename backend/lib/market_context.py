@@ -22,6 +22,7 @@ Lectura conductual del mercado (frente 1 de §2.3), solo cuando los datos la sos
 La deriva tras resultados (PEAD) no se lee: hace falta la sorpresa del BPA frente al consenso y no hay fuente con
 fecha para ella (se dice).
 """
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict, List, Optional
 
 import pandas as pd
@@ -58,28 +59,56 @@ def _adapt(res: Optional[Dict[str, Any]], calendar=None) -> Dict[str, Any]:
     return ent
 
 
-def series_drawdown(close: pd.Series) -> Optional[Dict[str, Any]]:
-    """Caída máxima en toda la serie disponible, con sus fechas, y distancia de hoy a su máximo."""
+def series_drawdown(close: pd.Series, quote: Optional[pd.Series] = None) -> Optional[Dict[str, Any]]:
+    """Caída máxima en toda la serie (rentabilidad del accionista: cierre ajustado) y distancia de la COTIZACIÓN de hoy
+    a su máximo de la serie (cierre sin ajustar: lo que el lector ve; revisión F5, hallazgo 5: el ajustado rebaja los
+    precios pasados y daba una caída menor que la real)."""
     if close is None or len(close) < 2:
         return None
     dd = close / close.cummax() - 1
     trough = dd.idxmin()
     peak = close.loc[:trough].idxmax()
+    q = quote.dropna() if quote is not None and len(quote.dropna()) >= 2 else close
     return {"value": float(dd.loc[trough]), "peak_date": peak.strftime("%Y-%m-%d"),
-            "trough_date": trough.strftime("%Y-%m-%d"), "from_high": float(close.iloc[-1] / close.max() - 1),
-            "high_date": close.idxmax().strftime("%Y-%m-%d"),
+            "trough_date": trough.strftime("%Y-%m-%d"), "from_high": float(q.iloc[-1] / q.max() - 1),
+            "high_date": q.idxmax().strftime("%Y-%m-%d"),
             "years": round((close.index[-1] - close.index[0]).days / 365.25, 1)}
 
 
-def build(company: Optional[Dict[str, Any]], market: Optional[Dict[str, Any]], sector: Optional[Dict[str, Any]],
+_pool = ThreadPoolExecutor(max_workers=4, thread_name_prefix="market_context")
+
+
+def _wait(fut, default):
+    """Resultado de un hilo, o `default` si tarda más que `wait_timeout_s` (nunca bloquea el análisis)."""
+    try:
+        return fut.result(timeout=cfg("market.context.wait_timeout_s"))
+    except Exception as e:  # tiempo agotado u otro fallo: el contexto sigue sin esa parte y lo dice
+        return default(f"{type(e).__name__}: {e}")
+
+
+def build(symbol: str, company: Optional[Dict[str, Any]], market: Optional[Dict[str, Any]],
           sector_etf: Optional[str], a: Dict[str, Any]) -> Dict[str, Any]:
-    """{signals, series_drawdown, market_volatility, sector_etf, readings, behavioral, note}."""
+    """{signals, series_drawdown, market_volatility, sector_etf, readings, behavioral, news, note}. La serie del ETF
+    del sector y los titulares se piden en paralelo y se esperan como mucho `wait_timeout_s` (revisión F5, hallazgo
+    1: antes eran síncronos y, con Yahoo lento, podían sumar ~30 s al análisis)."""
     from market_signals import all_signals, realized_volatility
+    import price_history
     C = cfg("market.context")
+    P = cfg("market.price_series")
+    # El calendario del S&P 500 y el ETF sectorial (SPDR, en USD) solo valen para lo que cotiza en dólares (acciones y
+    # ADR): una acción de París tiene sus festivos (MC.PA) y su rentabilidad en EUR no se compara con un ETF en USD
+    # (revisión F5, hallazgo 3). Sector desconocido: el ETF de reserva es el propio mercado (SPY), no un sector
+    # (hallazgo 8): sin fuerza relativa.
+    price_cur = ((a.get("data_provenance") or {}).get("currency") or {}).get("price")
+    us = price_cur in (None, "USD")
+    sector_ok = bool(sector_etf) and us and sector_etf.upper() not in (P["market_symbol"], P["market_fallback_symbol"])
+    f_sec = _pool.submit(price_history.sector, sector_etf) if sector_ok else None
+    f_news = _pool.submit(news, symbol)
+    sector = (_wait(f_sec, lambda why: {"symbol": sector_etf, "frame": None, "reason": why}) if f_sec else
+              {"symbol": None, "frame": None,
+               "reason": (f"cotiza en {price_cur}: los ETF de sector de referencia son de EE. UU., en USD" if not us
+                          else "sector sin ETF propio (la referencia sería el mercado entero)")})
     mk = _adapt(market)
-    # El calendario del S&P 500 solo vale para lo que cotiza en EE. UU. (en dólares: acciones y ADR); una acción de
-    # París o de Tokio tiene sus festivos, y sus "huecos" frente a Nueva York no son huecos (MC.PA).
-    us = ((a.get("data_provenance") or {}).get("currency") or {}).get("price") in (None, "USD")
     cal = mk["frame"].index if (mk.get("frame") is not None and us) else None
     co, se = _adapt(company, cal), _adapt(sector, cal)
     ps = {"series": {"company": dict(co, symbol=(company or {}).get("symbol")),
@@ -87,12 +116,13 @@ def build(company: Optional[Dict[str, Any]], market: Optional[Dict[str, Any]], s
                      "sector": dict(se, symbol=sector_etf)}}
     sig = all_signals(ps, drawdown_years=C["drawdown_years"])
     close = co["frame"]["close"] if co.get("frame") is not None and co["status"] == "ok" else None
+    raw_close = (company or {})["frame"]["close"] if (company or {}).get("frame") is not None else None
     out: Dict[str, Any] = {"signals": sig, "sector_etf": sector_etf, "note": _SIGNALS_NOTE,
                            "series_status": {k: v["status"] for k, v in ps["series"].items()},
-                           "series_drawdown": series_drawdown(close) if close is not None else None,
+                           "series_drawdown": series_drawdown(close, raw_close) if close is not None else None,
                            "market_volatility": (realized_volatility(mk["frame"]["close"])
                                                  if mk.get("frame") is not None and mk["status"] == "ok" else None)}
-    out["news"] = news(company.get("symbol") if company else None)
+    out["news"] = _wait(f_news, lambda why: {"items": [], "reason": f"sin titulares a tiempo ({why})"})
     out["readings"] = readings(out)
     out["behavioral"] = behavioral(out, a)
     return out
@@ -104,8 +134,10 @@ def news(symbol: Optional[str]) -> Dict[str, Any]:
     import datetime as _dt
     from finnhub_fallback import company_news, is_enabled
     C = cfg("market.context")
-    if not symbol or not is_enabled():
+    if not is_enabled():
         return {"items": [], "reason": "sin clave de Finnhub"}
+    if not symbol:
+        return {"items": [], "reason": "sin símbolo"}
     end = _dt.date.today()
     raw = company_news(symbol, (end - _dt.timedelta(days=C["news_days"])).isoformat(), end.isoformat())
     if raw is None:
@@ -172,6 +204,9 @@ def readings(ctx: Dict[str, Any]) -> List[Dict[str, Any]]:
         add("volume", "Volumen (últimas 5 sesiones)", f"z = {z:.1f}".replace("-", "−"),
             (f"el volumen de las últimas 5 sesiones está muy por encima de lo habitual (z = {z:.1f}): atención "
              "inusual" if z >= C["volume_z"] else
+             # revisión F5, hallazgo 4: un z muy negativo no es "habitual"
+             f"el volumen de las últimas 5 sesiones está muy por debajo de lo habitual (z = {z:.1f}): poco "
+             "interés".replace("-", "−") if z <= -C["volume_z"] else
              f"volumen en el rango habitual (z = {z:.1f})".replace("-", "−")),
             "market_context.signals.abnormal_volume.value", z)
     return out
@@ -187,14 +222,17 @@ def behavioral(ctx: Dict[str, Any], a: Dict[str, Any]) -> List[Dict[str, Any]]:
         gap = price / hi - 1
         ctx["anchor_gap"] = gap
         out.append({"kind": "anclaje_52s", "field": "market_context.anchor_gap", "num": gap,
-                    "text": (f"Cotiza a un {_pct(abs(gap), False)} de su máximo de 52 semanas. Cerca del máximo, el "
-                             "mercado tiende a infravalorar las buenas noticias y a incorporarlas tarde: el máximo "
-                             "actúa como ancla (George y Hwang, 2004).")})
+                    # revisión F5, hallazgo 6: describe el sesgo, no anticipa el precio
+                    "text": (f"Cotiza a un {_pct(abs(gap), False)} de su máximo de 52 semanas. George y Hwang (2004) "
+                             "documentan que, cerca de ese máximo, los inversores lo toman como referencia y reaccionan "
+                             "con retraso a las noticias: el máximo actúa como ancla. Describe un sesgo estudiado, no "
+                             "una previsión.")})
     dd = ctx.get("series_drawdown") or {}
     q = (a.get("quality") or {}).get("level")
     g = (a.get("score") or {}).get("breakdown", {}).get("Crecimiento", {})
-    rev = next((x.get("raw") for x in g.get("adjustments") or [] if str(x.get("metric", "")).startswith(
-        ("Crecimiento Ingresos", "Retorno total"))), None)
+    # Revisión F5 (hallazgo 2): los ingresos de verdad (CAGR a 3 años de los estados), no el "retorno total" de la
+    # madura de dividendo alto, que suma la rentabilidad por dividendo.
+    rev = ((a.get("classification") or {}).get("inputs") or {}).get("revenue_cagr_3y")
     eps = next((x.get("raw") for x in g.get("adjustments") or [] if x.get("metric") == "Crecimiento EPS 3Y"), None)
     # Sin deterioro: calidad sólida o excelente, ingresos al alza y el BPA sin caer (MC.PA: ingresos +0.7% con el
     # BPA a la baja no es "sin deterioro").
@@ -207,18 +245,18 @@ def behavioral(ctx: Dict[str, Any], a: Dict[str, Any]) -> List[Dict[str, Any]]:
                     "num": dd["from_high"],
                     "text": (f"Cotiza un {_pct(abs(dd['from_high']), False)} por debajo de su máximo de "
                              f"{dd['years']:.0f} años ({dd['high_date']}) sin deterioro de los fundamentales medidos "
-                             f"(calidad {q}, ingresos {_pct(rev)} y BPA {_pct(eps)} anual en 3 años): es el patrón de "
-                             "sobrerreacción "
-                             "que estudian De Bondt y Thaler (1985), que a 3–5 años tiende a revertir en parte. No es "
-                             "una previsión.")})
+                             f"(calidad {q}, ingresos {_pct(rev)} y BPA {_pct(eps)} anual en 3 años): es el patrón que "
+                             "De Bondt y Thaler (1985) estudian como sobrerreacción del mercado a las malas noticias. "
+                             "Describe un sesgo estudiado, no una previsión.")})
     m = ((a.get("reverse_dcf") or {}).get("main")) or {}
     br, own = (m.get("base_rate") or {}), (m.get("own_growth") or {})
     if (m.get("state") == "ok" and m.get("band") == "muy_exigente" and br.get("share") is not None
             and br["share"] < cfg("valuation.reverse_dcf.demanding_base_rate") and own.get("cagr") is not None
             and m.get("g10") is not None and own["cagr"] >= m["g10"] * C["extrapolation_own_ratio"]):
         out.append({"kind": "extrapolacion", "field": "reverse_dcf.main.g10", "num": m["g10"],
-                    "text": (f"El precio exige crecer un {_pct(m['g10'], False)} anual durante 10 años (la empresa "
-                             f"logró un {_pct(own['cagr'], False)} en los últimos {own.get('years')}), un ritmo que solo "
+                    "text": (f"El precio exige crecer un {_pct(m['g10'], False)} anual durante 10 años ("
+                             f"{own.get('label') or 'su crecimiento'}: {_pct(own['cagr'], False)} anual en los últimos "
+                             f"{own.get('years')} años), un ritmo que solo "
                              + ("menos del 1%" if br["share"] < 0.01 else f"un {br['share'] * 100:.0f}%")
                              + " de las comparables sostuvo: el precio da por hecho que el crecimiento pasado continúa, "
                              "y las tasas base dicen que pocas empresas lo repiten (Lakonishok, Shleifer y Vishny, "
