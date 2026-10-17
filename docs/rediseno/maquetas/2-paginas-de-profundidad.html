@@ -1,0 +1,97 @@
+<h2>Diseño · Parte 2: las páginas de profundidad</h2>
+<p class="subtitle">Al entrar en un capítulo se mantienen la cabecera y la barra de capítulos; debajo, un índice interno del capítulo y todo el contenido visible, en rejilla simétrica. Dos ejemplos: <b>Cuánto vale</b> (escenarios interactivos) y <b>Calidad</b> (Piotroski en 9 tarjetas). Cifras de Apple; <b>«muestra»</b> = aún no existe.</p>
+
+<style>
+  .pg{background:#f7f6f2;color:#1b1d1f;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;font-size:12px;border-radius:10px;overflow:hidden;border:1px solid #e2e0da;margin-bottom:22px}
+  .pg .hdr{background:#fff;border-bottom:1px solid #e2e0da;padding:10px 18px;display:grid;grid-template-columns:1fr auto;align-items:center}
+  .pg .chip{border-radius:8px;padding:4px 9px;font-weight:600;margin-left:6px}
+  .pg .bar{background:#fff;border-bottom:1px solid #e2e0da;padding:0 18px;display:grid;grid-template-columns:repeat(9,1fr);text-align:center}
+  .pg .bar span{padding:7px 0;color:#6b6f73}
+  .pg .bar .on{color:#1b1d1f;font-weight:650;box-shadow:inset 0 -2px 0 #16794a}
+  .pg .sub{padding:10px 18px;display:flex;gap:8px;border-bottom:1px solid #e2e0da;background:#fbfaf7}
+  .pg .sub span{border:1px solid #e2e0da;border-radius:999px;padding:3px 10px;background:#fff;color:#3a3d40}
+  .pg .sub .on{background:#16794a;color:#fff;border-color:#16794a}
+  .pg .body{padding:16px 18px}
+  .pg .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .pg .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .pg .card{background:#fff;border:1px solid #e2e0da;border-radius:10px;padding:12px}
+  .pg .eyebrow{font-size:10px;letter-spacing:.12em;color:#6b6f73;text-transform:uppercase;margin-bottom:4px}
+  .pg h4{font-size:17px;font-weight:650;margin:0 0 4px}
+  .pg p{line-height:1.55;color:#3a3d40;margin:0 0 8px}
+  .pg .slider{margin:8px 0}
+  .pg .track{height:4px;background:#e2e0da;border-radius:2px;position:relative;margin-top:6px}
+  .pg .fill{position:absolute;left:0;top:0;height:4px;background:#16794a;border-radius:2px}
+  .pg .knob{position:absolute;top:-5px;width:14px;height:14px;border-radius:50%;background:#fff;border:2px solid #16794a}
+  .pg .row{display:flex;justify-content:space-between}
+  .pg .big{font-size:26px;font-weight:650}
+  .pg .tag{font-size:10px;background:#fbe9c9;padding:1px 5px;border-radius:4px;color:#7a5a12}
+  .pg .ok{color:#16794a;font-weight:650}
+  .pg .no{color:#b4532a;font-weight:650}
+  .pg table{width:100%;border-collapse:collapse}
+  .pg td,.pg th{padding:4px 6px;border-bottom:1px solid #eeece6;text-align:right;font-variant-numeric:tabular-nums}
+  .pg td:first-child,.pg th:first-child{text-align:left}
+  .pg th{color:#6b6f73;font-weight:500}
+</style>
+
+<!-- ============ VALOR ============ -->
+<div class="pg">
+  <div class="hdr"><div><b style="font-size:16px">Apple Inc.</b> <span style="color:#6b6f73">$343.46</span> <span style="color:#16794a">+0.8%</span></div><div><span class="chip" style="background:#e8f2ec;color:#16794a">Calidad 79</span><span class="chip" style="background:#f7e6dd;color:#b4532a">Precio 10</span><span class="chip" style="background:#eceae4">Confianza alta</span></div></div>
+  <div class="bar"><span>La empresa</span><span>Cómo gana dinero</span><span>La acción</span><span>Calidad</span><span class="on">Cuánto vale</span><span>Rivales</span><span>Riesgos</span><span>Actualidad</span><span>Conclusión</span></div>
+  <div class="sub"><span class="on">Escenarios</span><span>Qué exige el precio</span><span>Múltiplos</span><span>DCF y sensibilidad</span><span>Graham</span><span>Metodología</span></div>
+  <div class="body">
+    <div class="grid2">
+      <div class="card">
+        <div class="eyebrow">Escenarios · lo calcula el propio motor</div>
+        <h4>Mueve los supuestos y mira el valor</h4>
+        <div class="row" style="gap:6px;margin:6px 0 10px"><span style="border:1px solid #e2e0da;border-radius:6px;padding:3px 8px">Pesimista</span><span style="border:1px solid #16794a;color:#16794a;border-radius:6px;padding:3px 8px;font-weight:600">Base</span><span style="border:1px solid #e2e0da;border-radius:6px;padding:3px 8px">Optimista</span><span style="flex:1"></span></div>
+        <div class="slider"><div class="row"><span>Crecimiento del flujo de caja (años 1–5)</span><b>8.0%</b></div><div class="track"><div class="fill" style="width:40%"></div><div class="knob" style="left:38%"></div></div></div>
+        <div class="slider"><div class="row"><span>Crecimiento a largo plazo</span><b>2.5%</b></div><div class="track"><div class="fill" style="width:50%"></div><div class="knob" style="left:48%"></div></div></div>
+        <div class="slider"><div class="row"><span>Coste del capital (WACC)</span><b>9.3%</b></div><div class="track"><div class="fill" style="width:55%"></div><div class="knob" style="left:53%"></div></div></div>
+        <div class="slider"><div class="row"><span>Margen de flujo de caja</span><b>29.3%</b></div><div class="track"><div class="fill" style="width:60%"></div><div class="knob" style="left:58%"></div></div></div>
+        <p style="color:#6b6f73;margin-top:8px">Valores iniciales = los del informe. Rangos acotados a lo razonable para el tipo de empresa.</p>
+      </div>
+      <div class="card" style="display:flex;flex-direction:column">
+        <div class="eyebrow">Resultado del escenario <span class="tag">muestra</span></div>
+        <div class="grid2" style="gap:10px">
+          <div><div style="color:#6b6f73">Valor por acción</div><div class="big">$212</div></div>
+          <div><div style="color:#6b6f73">Frente al precio ($343.46)</div><div class="big no">−38%</div></div>
+        </div>
+        <svg viewBox="0 0 300 60" style="width:100%;height:70px;margin:8px 0"><rect x="0" y="22" width="300" height="16" rx="3" fill="#eceae4"/><rect x="0" y="22" width="185" height="16" rx="3" fill="#a9c7b4"/><line x1="185" y1="14" x2="185" y2="46" stroke="#16794a" stroke-width="2"/><line x1="300" y1="14" x2="300" y2="46" stroke="#b4532a" stroke-width="2"/><text x="185" y="10" font-size="9" text-anchor="middle" fill="#16794a">valor $212</text><text x="296" y="58" font-size="9" text-anchor="end" fill="#b4532a">precio $343</text></svg>
+        <p><b>Qué exige el precio:</b> un crecimiento del flujo de caja de ~20% anual durante 10 años, con estos mismos supuestos de capital y largo plazo.</p>
+        <p style="color:#6b6f73;margin-top:auto">El informe usa el escenario base; los escenarios son para explorar, no cambian el veredicto.</p>
+      </div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <div class="eyebrow">Sensibilidad · valor por acción según crecimiento (filas) y coste del capital (columnas)</div>
+      <table>
+        <tr><th></th><th>8.3%</th><th>8.8%</th><th>9.3%</th><th>9.8%</th><th>10.3%</th></tr>
+        <tr><td>12%</td><td>296</td><td>279</td><td>265</td><td>246</td><td>229</td></tr>
+        <tr><td>10%</td><td>264</td><td>249</td><td>237</td><td>220</td><td>205</td></tr>
+        <tr style="background:#f2f7f4"><td><b>8%</b></td><td>236</td><td>223</td><td><b>212</b></td><td>197</td><td>184</td></tr>
+        <tr><td>6%</td><td>211</td><td>198</td><td>187</td><td>174</td><td>162</td></tr>
+      </table>
+      <p style="color:#6b6f73;margin:6px 0 0">Cifras de la tabla <span class="tag">muestra</span> · se colorean según superen o no el precio actual.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============ CALIDAD ============ -->
+<div class="pg">
+  <div class="hdr"><div><b style="font-size:16px">Apple Inc.</b> <span style="color:#6b6f73">$343.46</span> <span style="color:#16794a">+0.8%</span></div><div><span class="chip" style="background:#e8f2ec;color:#16794a">Calidad 79</span><span class="chip" style="background:#f7e6dd;color:#b4532a">Precio 10</span><span class="chip" style="background:#eceae4">Confianza alta</span></div></div>
+  <div class="bar"><span>La empresa</span><span>Cómo gana dinero</span><span>La acción</span><span class="on">Calidad</span><span>Cuánto vale</span><span>Rivales</span><span>Riesgos</span><span>Actualidad</span><span>Conclusión</span></div>
+  <div class="sub"><span>Rentabilidad</span><span>Solidez</span><span>Crecimiento</span><span>Calidad de ganancias</span><span class="on">Piotroski</span><span>Altman</span><span>Historia de 10 años</span></div>
+  <div class="body">
+    <div class="row" style="align-items:baseline;margin-bottom:10px"><div><div class="eyebrow">Piotroski F-Score · 9 pruebas de salud financiera año contra año</div><h4>8 de 9: fortaleza financiera excelente</h4></div><div style="color:#6b6f73">FY2025 frente a FY2024 · valores <span class="tag">muestra</span></div></div>
+    <div class="grid3">
+      <div class="card"><div class="row"><b>ROA positivo</b><span class="ok">Cumple</span></div><div class="row" style="margin:6px 0"><span>FY2025</span><b>33.6%</b></div><p style="color:#6b6f73;margin:0">Gana dinero sobre lo que tiene.</p></div>
+      <div class="card"><div class="row"><b>Flujo operativo positivo</b><span class="ok">Cumple</span></div><div class="row" style="margin:6px 0"><span>FY2025</span><b>$111.5 mil M</b></div><p style="color:#6b6f73;margin:0">El negocio genera caja de verdad.</p></div>
+      <div class="card"><div class="row"><b>ROA en mejora</b><span class="ok">Cumple</span></div><div class="row" style="margin:6px 0"><span>24 → 25</span><b>28.4% → 33.6%</b></div><p style="color:#6b6f73;margin:0">Cada año saca más de sus activos.</p></div>
+      <div class="card"><div class="row"><b>Caja ≥ beneficio</b><span class="no">No cumple</span></div><div class="row" style="margin:6px 0"><span>FY2025</span><b>$111.5 vs $112.0 mil M</b></div><p style="color:#6b6f73;margin:0">El flujo no llega al beneficio contable.</p></div>
+      <div class="card"><div class="row"><b>Deuda a largo plazo</b><span class="ok">Cumple</span></div><div class="row" style="margin:6px 0"><span>24 → 25</span><b>se mantiene o baja</b></div><p style="color:#6b6f73;margin:0">No se apalanca más.</p></div>
+      <div class="card"><div class="row"><b>Liquidez en mejora</b><span class="ok">Cumple</span></div><div class="row" style="margin:6px 0"><span>24 → 25</span><b>0.87 → 1.00</b></div><p style="color:#6b6f73;margin:0">Más margen para pagar a corto plazo.</p></div>
+      <div class="card"><div class="row"><b>Sin dilución</b><span class="ok">Cumple</span></div><div class="row" style="margin:6px 0"><span>24 → 25</span><b>−2.5% acciones</b></div><p style="color:#6b6f73;margin:0">No emite acciones: recompra.</p></div>
+      <div class="card"><div class="row"><b>Margen bruto en mejora</b><span class="ok">Cumple</span></div><div class="row" style="margin:6px 0"><span>24 → 25</span><b>46.2% → 48.7%</b></div><p style="color:#6b6f73;margin:0">Vende con más margen.</p></div>
+      <div class="card"><div class="row"><b>Rotación de activos</b><span class="ok">Cumple</span></div><div class="row" style="margin:6px 0"><span>24 → 25</span><b>1.07 → 1.22</b></div><p style="color:#6b6f73;margin:0">Usa mejor sus activos para vender.</p></div>
+    </div>
+  </div>
+</div>

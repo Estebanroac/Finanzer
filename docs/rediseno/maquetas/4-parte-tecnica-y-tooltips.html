@@ -1,0 +1,73 @@
+<h2>Diseño · La parte técnica: nombres técnicos, tabla completa y tooltips</h2>
+<p class="subtitle">Capítulo Calidad › Rentabilidad. Cada métrica con su <b>nombre técnico</b> y su <b>lectura en lenguaje llano</b>. El signo <b>?</b> abre el tooltip: qué mide, fórmula, rangos de referencia y dónde cae la acción («Tu valor»). Cifras y bandas reales del motor (Apple, hoy).</p>
+
+<style>
+  .w{background:#f7f6f2;color:#1b1d1f;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;font-size:12px;border:1px solid #e2e0da;border-radius:10px;padding:16px 18px}
+  .w .eyebrow{font-size:10px;letter-spacing:.12em;color:#6b6f73;text-transform:uppercase}
+  .w h4{font-size:17px;font-weight:650;margin:2px 0 10px}
+  .lay{display:grid;grid-template-columns:3fr 2fr;gap:16px;align-items:start}
+  .tbl{width:100%;border-collapse:collapse;background:#fff;border:1px solid #e2e0da;border-radius:10px;overflow:hidden;font-variant-numeric:tabular-nums}
+  .tbl th{font-weight:500;color:#6b6f73;text-align:right;padding:8px 10px;border-bottom:1px solid #e2e0da;font-size:11px}
+  .tbl th:first-child,.tbl td:first-child{text-align:left}
+  .tbl td{padding:8px 10px;border-bottom:1px solid #eeece6;text-align:right}
+  .tbl tr.sel{background:#f2f7f4}
+  .nm b{display:block}
+  .nm span{color:#6b6f73;font-size:11px}
+  .q{display:inline-flex;width:15px;height:15px;border-radius:50%;border:1px solid #c9c6bd;color:#6b6f73;font-size:10px;align-items:center;justify-content:center;margin-left:4px;vertical-align:1px}
+  .q.on{background:#16794a;border-color:#16794a;color:#fff}
+  .pill{border-radius:999px;padding:2px 8px;font-size:10px;font-weight:600;white-space:nowrap}
+  .pos{background:#e8f2ec;color:#16794a}.warn{background:#f6edd7;color:#8a6414}.neg{background:#f7e6dd;color:#b4532a}.neu{background:#eceae4;color:#3a3d40}
+  .tip{background:#fff;border:1px solid #e2e0da;border-radius:12px;padding:14px 16px;box-shadow:0 8px 24px rgba(27,29,31,.10)}
+  .tip h5{font-size:14px;margin:0 0 4px}
+  .tip p{line-height:1.55;color:#3a3d40;margin:0 0 8px}
+  .fx{font-family:ui-monospace,'Geist Mono',monospace;background:#f2f1ec;border-radius:6px;padding:4px 8px;display:inline-block;margin-bottom:10px}
+  .bands{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+  .bands td{padding:5px 8px;border-bottom:1px solid #eeece6}
+  .bands tr.me{background:#f2f7f4;outline:1px solid #16794a;outline-offset:-1px}
+  .you{display:inline-block;background:#16794a;color:#fff;border-radius:6px;padding:1px 6px;font-size:10px;font-weight:600;margin-left:6px}
+</style>
+
+<div class="w">
+  <div class="eyebrow">4 · Calidad › Rentabilidad</div>
+  <h4>Tabla de rentabilidad y eficiencia · frente a la mediana del sector (Tecnología)</h4>
+  <div class="lay">
+    <table class="tbl">
+      <tr><th>Métrica</th><th>Apple</th><th>Sector</th><th>Brecha</th><th>Lectura</th></tr>
+      <tr><td class="nm"><b>ROE<span class="q">?</span></b><span>Rentabilidad sobre el patrimonio</span></td><td>119.9%</td><td>25.0%</td><td>+380%</td><td><span class="pill pos">Muy superior</span></td></tr>
+      <tr><td class="nm"><b>ROA<span class="q">?</span></b><span>Rentabilidad sobre los activos</span></td><td>33.6%</td><td>10.0%</td><td>+236%</td><td><span class="pill pos">Muy superior</span></td></tr>
+      <tr class="sel"><td class="nm"><b>ROIC<span class="q on">?</span></b><span>Rentabilidad sobre el capital invertido</span></td><td><b>98.0%</b></td><td>18.0%</td><td>+444%</td><td><span class="pill pos">Muy superior</span></td></tr>
+      <tr><td class="nm"><b>ROIC − WACC<span class="q">?</span></b><span>Creación de valor</span></td><td>+88.7 pp</td><td>&gt; 0</td><td>—</td><td><span class="pill pos">Crea mucho valor</span></td></tr>
+      <tr><td class="nm"><b>ROCE<span class="q">?</span></b><span>Rentabilidad sobre el capital empleado</span></td><td>68.7%</td><td>—</td><td>—</td><td><span class="pill neu">Antes de impuestos</span></td></tr>
+      <tr><td class="nm"><b>Margen bruto<span class="q">?</span></b><span>Lo que queda tras el coste de lo vendido</span></td><td>48.7%</td><td>60.0%</td><td>−19%</td><td><span class="pill warn">Inferior</span></td></tr>
+      <tr><td class="nm"><b>Margen neto<span class="q">?</span></b><span>Beneficio por cada dólar vendido</span></td><td>27.6%</td><td>20.0%</td><td>+38%</td><td><span class="pill pos">Superior</span></td></tr>
+    </table>
+
+    <div class="tip">
+      <h5>ROIC · rentabilidad sobre el capital invertido</h5>
+      <p>Rentabilidad después de impuestos de todo el capital invertido en el negocio (patrimonio y deuda). Es la mejor medida de si el negocio usa bien el dinero.</p>
+      <div class="fx">NOPAT / capital invertido</div>
+      <div class="eyebrow" style="margin-bottom:4px">Rangos de referencia · frente a la mediana del sector (18%)</div>
+      <table class="bands">
+        <tr class="me"><td>≥ 24.3%</td><td><span class="pill pos">Muy superior</span></td><td style="text-align:right">Tu valor<span class="you">98.0%</span></td></tr>
+        <tr><td>19.8% – 24.3%</td><td><span class="pill pos">Superior</span></td><td></td></tr>
+        <tr><td>16.2% – 19.8%</td><td><span class="pill neu">En línea</span></td><td></td></tr>
+        <tr><td>11.7% – 16.2%</td><td><span class="pill warn">Inferior</span></td><td></td></tr>
+        <tr><td>&lt; 11.7%</td><td><span class="pill neg">Muy inferior</span></td><td></td></tr>
+      </table>
+      <p style="color:#6b6f73;margin:10px 0 0">Ojo: cuando el capital invertido es muy pequeño (recompras, patrimonio reducido), el ROIC se dispara y deja de ser comparable. En Apple, compáralo con el ROCE (68.7%).</p>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px">
+    <div style="background:#fff;border:1px solid #e2e0da;border-radius:10px;padding:12px">
+      <div class="eyebrow">Al final de cada página de profundidad</div>
+      <b>Metodología</b>
+      <p style="line-height:1.55;color:#3a3d40;margin:4px 0 0">Fuentes (EDGAR, Yahoo, Finnhub), periodo de cada cifra (12 meses o último ejercicio), cómo se calcula cada métrica y de dónde salen las medianas del sector. Siempre visible, en letra más pequeña.</p>
+    </div>
+    <div style="background:#fff;border:1px solid #e2e0da;border-radius:10px;padding:12px">
+      <div class="eyebrow">Único desplegable de toda la web</div>
+      <b>Detalle técnico para auditoría</b>
+      <p style="line-height:1.55;color:#3a3d40;margin:4px 0 0">Códigos internos del motor (tipo de empresa, reglas aplicadas, validaciones, procedencia de cada dato). Para quien quiera auditar el cálculo.</p>
+    </div>
+  </div>
+</div>

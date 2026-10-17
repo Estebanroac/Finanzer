@@ -1,0 +1,134 @@
+<h2>Diseño · Parte 3: el sistema visual</h2>
+<p class="subtitle">Un único sistema para web, móvil y PDF. Mismos componentes en claro y en oscuro (grafito sobrio, sin neón ni brillos). El color siempre significa algo; los números siempre en cifras tabulares (alineadas).</p>
+
+<style>
+  .sv{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .th{border-radius:12px;padding:18px;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;font-size:12px}
+  .th .t{font-size:10px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px}
+  .sw{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:14px}
+  .sw div{border-radius:8px;height:44px;display:flex;align-items:flex-end;padding:4px 6px;font-size:9px}
+  .ty div{margin:2px 0}
+  .cmp{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+  .cd{border-radius:10px;padding:10px 12px}
+  .tb{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+  .tb td{padding:5px 0}
+  .tb td.r{text-align:right}
+  .pill{border-radius:999px;padding:2px 8px;font-size:10px;font-weight:600}
+</style>
+
+<div class="sv">
+  <!-- CLARO -->
+  <div class="th" style="background:#f7f6f2;color:#1b1d1f;border:1px solid #e2e0da">
+    <div class="t" style="color:#6b6f73">Claro (por defecto)</div>
+    <div class="sw">
+      <div style="background:#f7f6f2;border:1px solid #e2e0da;color:#6b6f73">papel</div>
+      <div style="background:#ffffff;border:1px solid #e2e0da;color:#6b6f73">superficie</div>
+      <div style="background:#1b1d1f;color:#fff">tinta</div>
+      <div style="background:#16794a;color:#fff">marca · bien</div>
+      <div style="background:#b07d1a;color:#fff">atención</div>
+      <div style="background:#b4532a;color:#fff">mal</div>
+    </div>
+    <div class="ty">
+      <div style="font-size:24px;font-weight:650;letter-spacing:-.01em">Título de capítulo 24</div>
+      <div style="font-size:17px;font-weight:600">Subtítulo 17</div>
+      <div style="font-size:14px;line-height:1.6;color:#3a3d40">Texto de lectura 14/1.6: con un ROIC del 98.9% frente a un coste de capital del 9.3%, cada dólar reinvertido crea valor.</div>
+      <div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#6b6f73">Etiqueta 10 en versalitas</div>
+    </div>
+    <div class="cmp">
+      <div class="cd" style="background:#fff;border:1px solid #e2e0da">
+        <div style="font-size:10px;color:#6b6f73">ROIC</div><div style="font-size:20px;font-weight:650">98.9%</div>
+        <span class="pill" style="background:#e8f2ec;color:#16794a">muy superior al sector</span>
+      </div>
+      <div class="cd" style="background:#fff;border:1px solid #e2e0da">
+        <div style="font-size:10px;color:#6b6f73">EV/EBITDA</div><div style="font-size:20px;font-weight:650">30.2x</div>
+        <span class="pill" style="background:#f7e6dd;color:#b4532a">prima elevada</span>
+      </div>
+    </div>
+    <div class="cd" style="background:#fff;border:1px solid #e2e0da;margin-top:10px">
+      <div style="display:flex;gap:10px;font-size:11px;color:#6b6f73;margin-bottom:4px"><span>1S</span><span>1M</span><span>3M</span><span>6M</span><span style="color:#1b1d1f;font-weight:650;border-bottom:2px solid #16794a">1A</span><span>3A</span><span>5A</span><span style="margin-left:auto">— Apple  ┄ S&amp;P 500  ┄ XLK</span></div>
+      <svg viewBox="0 0 300 90" style="width:100%;height:100px">
+        <line x1="0" y1="20" x2="300" y2="20" stroke="#eeece6"/><line x1="0" y1="45" x2="300" y2="45" stroke="#eeece6"/><line x1="0" y1="70" x2="300" y2="70" stroke="#eeece6"/>
+        <polygon fill="#16794a" fill-opacity=".07" points="0,70 25,66 50,74 75,60 100,63 125,52 150,56 175,42 200,46 225,34 250,38 275,24 300,22 300,89 0,89"/>
+        <polyline fill="none" stroke="#16794a" stroke-width="1.8" points="0,70 25,66 50,74 75,60 100,63 125,52 150,56 175,42 200,46 225,34 250,38 275,24 300,22"/>
+        <polyline fill="none" stroke="#8a8e92" stroke-width="1" stroke-dasharray="3 3" points="0,72 50,69 100,65 150,60 200,56 250,52 300,48"/>
+        <polyline fill="none" stroke="#c4a86a" stroke-width="1" stroke-dasharray="1 3" points="0,71 50,67 100,61 150,55 200,50 250,44 300,39"/>
+        <line x1="225" y1="10" x2="225" y2="89" stroke="#1b1d1f" stroke-width=".6"/><circle cx="225" cy="34" r="3" fill="#16794a"/>
+        <rect x="231" y="8" width="62" height="22" rx="4" fill="#1b1d1f"/><text x="236" y="17" font-size="7" fill="#fff">14 ago 2026</text><text x="236" y="26" font-size="8" fill="#fff" font-weight="700">$318.40</text>
+      </svg>
+    </div>
+    <table class="tb" style="margin-top:10px">
+      <tr style="color:#6b6f73"><td>Rentabilidad</td><td class="r">1 mes</td><td class="r">1 año</td><td class="r">5 años</td></tr>
+      <tr style="border-top:1px solid #eeece6"><td><b>Apple</b></td><td class="r" style="color:#16794a">+4.1%</td><td class="r" style="color:#16794a">+35.7%</td><td class="r" style="color:#16794a">+142%</td></tr>
+      <tr style="border-top:1px solid #eeece6"><td>S&amp;P 500</td><td class="r">+1.8%</td><td class="r">+18.0%</td><td class="r">+88%</td></tr>
+    </table>
+    <div style="font-size:10px;color:#6b6f73;margin-top:6px">Rentabilidades de la tabla: forma de muestra.</div>
+  </div>
+
+  <!-- OSCURO -->
+  <div class="th" style="background:#16181b;color:#e8e6e1;border:1px solid #2c3035">
+    <div class="t" style="color:#8f949a">Oscuro (opcional) · grafito sobrio</div>
+    <div class="sw">
+      <div style="background:#16181b;border:1px solid #2c3035;color:#8f949a">fondo</div>
+      <div style="background:#1e2124;border:1px solid #2c3035;color:#8f949a">superficie</div>
+      <div style="background:#e8e6e1;color:#16181b">tinta</div>
+      <div style="background:#4f9e74;color:#fff">marca · bien</div>
+      <div style="background:#c49a45;color:#16181b">atención</div>
+      <div style="background:#c8775a;color:#fff">mal</div>
+    </div>
+    <div class="ty">
+      <div style="font-size:24px;font-weight:650;letter-spacing:-.01em">Título de capítulo 24</div>
+      <div style="font-size:17px;font-weight:600">Subtítulo 17</div>
+      <div style="font-size:14px;line-height:1.6;color:#c9c7c1">Texto de lectura 14/1.6: con un ROIC del 98.9% frente a un coste de capital del 9.3%, cada dólar reinvertido crea valor.</div>
+      <div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#8f949a">Etiqueta 10 en versalitas</div>
+    </div>
+    <div class="cmp">
+      <div class="cd" style="background:#1e2124;border:1px solid #2c3035">
+        <div style="font-size:10px;color:#8f949a">ROIC</div><div style="font-size:20px;font-weight:650">98.9%</div>
+        <span class="pill" style="background:#22332a;color:#7fbf9c">muy superior al sector</span>
+      </div>
+      <div class="cd" style="background:#1e2124;border:1px solid #2c3035">
+        <div style="font-size:10px;color:#8f949a">EV/EBITDA</div><div style="font-size:20px;font-weight:650">30.2x</div>
+        <span class="pill" style="background:#3a2820;color:#dd9a80">prima elevada</span>
+      </div>
+    </div>
+    <div class="cd" style="background:#1e2124;border:1px solid #2c3035;margin-top:10px">
+      <div style="display:flex;gap:10px;font-size:11px;color:#8f949a;margin-bottom:4px"><span>1S</span><span>1M</span><span>3M</span><span>6M</span><span style="color:#e8e6e1;font-weight:650;border-bottom:2px solid #4f9e74">1A</span><span>3A</span><span>5A</span><span style="margin-left:auto">— Apple  ┄ S&amp;P 500  ┄ XLK</span></div>
+      <svg viewBox="0 0 300 90" style="width:100%;height:100px">
+        <line x1="0" y1="20" x2="300" y2="20" stroke="#262a2e"/><line x1="0" y1="45" x2="300" y2="45" stroke="#262a2e"/><line x1="0" y1="70" x2="300" y2="70" stroke="#262a2e"/>
+        <polygon fill="#4f9e74" fill-opacity=".08" points="0,70 25,66 50,74 75,60 100,63 125,52 150,56 175,42 200,46 225,34 250,38 275,24 300,22 300,89 0,89"/>
+        <polyline fill="none" stroke="#6fb08a" stroke-width="1.8" points="0,70 25,66 50,74 75,60 100,63 125,52 150,56 175,42 200,46 225,34 250,38 275,24 300,22"/>
+        <polyline fill="none" stroke="#7d838a" stroke-width="1" stroke-dasharray="3 3" points="0,72 50,69 100,65 150,60 200,56 250,52 300,48"/>
+        <polyline fill="none" stroke="#b39a62" stroke-width="1" stroke-dasharray="1 3" points="0,71 50,67 100,61 150,55 200,50 250,44 300,39"/>
+        <line x1="225" y1="10" x2="225" y2="89" stroke="#e8e6e1" stroke-width=".6"/><circle cx="225" cy="34" r="3" fill="#6fb08a"/>
+        <rect x="231" y="8" width="62" height="22" rx="4" fill="#e8e6e1"/><text x="236" y="17" font-size="7" fill="#16181b">14 ago 2026</text><text x="236" y="26" font-size="8" fill="#16181b" font-weight="700">$318.40</text>
+      </svg>
+    </div>
+    <table class="tb" style="margin-top:10px">
+      <tr style="color:#8f949a"><td>Rentabilidad</td><td class="r">1 mes</td><td class="r">1 año</td><td class="r">5 años</td></tr>
+      <tr style="border-top:1px solid #262a2e"><td><b>Apple</b></td><td class="r" style="color:#7fbf9c">+4.1%</td><td class="r" style="color:#7fbf9c">+35.7%</td><td class="r" style="color:#7fbf9c">+142%</td></tr>
+      <tr style="border-top:1px solid #262a2e"><td>S&amp;P 500</td><td class="r">+1.8%</td><td class="r">+18.0%</td><td class="r">+88%</td></tr>
+    </table>
+    <div style="font-size:10px;color:#8f949a;margin-top:6px">Rentabilidades de la tabla: forma de muestra.</div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:18px">
+  <h3>Reglas del sistema</h3>
+  <div class="pros-cons">
+    <div class="pros"><h4>Siempre</h4><ul>
+      <li>Rejilla de 12 columnas; los capítulos en 2 columnas iguales; tarjetas en filas de 2, 3 o 4 de igual alto</li>
+      <li>Una sola escala de espaciado (4 · 8 · 12 · 16 · 24 · 32 · 48): ningún hueco fuera de la escala</li>
+      <li>Color con significado: verde = bien, ámbar = atención, terracota = mal, gris = neutro o sin dato</li>
+      <li>Toda puntuación con su escala y su base; toda cifra con su periodo (12 meses, último ejercicio)</li>
+      <li>Cifras tabulares alineadas a la derecha en tablas; tipografía Geist (la de la marca)</li>
+      <li>Contraste AA en claro y en oscuro; movimiento sutil y respetando «reducir movimiento»</li>
+    </ul></div>
+    <div class="cons"><h4>Nunca</h4><ul>
+      <li>Brillos, resplandores o colores saturados tipo neón</li>
+      <li>Contenido de valor dentro de desplegables (solo el anexo técnico)</li>
+      <li>Bloques que dejen huecos o filas desparejas</li>
+      <li>Color decorativo sin significado</li>
+      <li>Puntuaciones o cifras sueltas sin escala, base o periodo</li>
+    </ul></div>
+  </div>
+</div>
