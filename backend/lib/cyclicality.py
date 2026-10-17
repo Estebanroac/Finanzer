@@ -13,6 +13,9 @@ cargos puntuales, reestructuraciones y márgenes que se expanden al crecer):
   · **episodios de caída de ingresos**: ejercicios con los ingresos al menos un `revenue_decline` por debajo del
     anterior; los consecutivos son un solo episodio. Un ciclo se repite: XOM 2009, 2015–16 y 2020; CAT 2009,
     2015–16 y 2020. Una reestructuración es un episodio (KO, refranquicia 2016–18);
+  · **apalancamiento operativo**: un episodio solo es ciclo si el margen operativo cae al menos `margin_drop` (2
+    puntos) frente al ejercicio anterior. Una caída de ventas con el margen estable o al alza es perímetro (KO 2017,
+    refranquicia: el margen sube) o un choque sin apalancamiento (KO 2020). Sin margen en la historia, cuenta;
   · **desplomes del BPA con caída de ingresos**: el BPA cae más de la mitad (o a negativo) el mismo ejercicio en que
     caen los ingresos. Un cargo puntual (PG 2019, JNJ 2017 y 2024) no viene con caída de ventas.
 
@@ -120,6 +123,36 @@ def decline_episodes(series: List[Tuple[str, float]], cuts: List[str], thr: floa
     return eps_
 
 
+def confirm_episodes(hist: Dict[str, Any], episodes: List[List[str]], thr: float) -> Tuple[List[List[str]],
+                                                                                    List[Dict[str, Any]]]:
+    """Episodios que son ciclo: el margen operativo del peor ejercicio del episodio cae al menos `thr` frente al
+    ejercicio anterior (apalancamiento operativo). Sin margen, el episodio cuenta (se declara). Devuelve (episodios
+    confirmados, detalle de cada episodio con sus márgenes)."""
+    rev = _series(hist, "revenue")
+    ends = [e for e, _v in rev]
+    rd = dict(rev)
+    oi = dict(_series(hist, "operating_income"))
+
+    def mg(e):
+        return oi[e] / rd[e] if e in oi and rd.get(e) else None
+    kept, detail = [], []
+    for ep in episodes:
+        i = ends.index(ep[0]) if ep[0] in ends else 0
+        pre = ends[i - 1] if i > 0 else None
+        m0 = mg(pre) if pre else None
+        lows = [x for x in (mg(e) for e in ep) if x is not None]
+        m1 = min(lows) if lows else None
+        if m0 is None or m1 is None:
+            ok, why = True, "sin margen operativo en la historia"
+        else:
+            ok = (m0 - m1) >= thr
+            why = None if ok else "margen estable o al alza"
+        detail.append({"years": ep, "margin_before": m0, "margin_trough": m1, "counts": ok, "why": why})
+        if ok:
+            kept.append(ep)
+    return kept, detail
+
+
 def measure(hist: Dict[str, Any]) -> Dict[str, Any]:
     """Medidas de ciclicidad de la historia anual (sin decidir): años, base (agregado o por acción), episodios de caída
     de ingresos, desplomes del BPA con caída de ingresos, ejercicios de perímetro y las medidas del diseño original."""
@@ -129,7 +162,7 @@ def measure(hist: Dict[str, Any]) -> Dict[str, Any]:
     cuts = perimeter_years(hist, C["discontinued_material_share"])
     out: Dict[str, Any] = {"years": len(rev), "first": rev[0][0] if rev else None, "last": rev[-1][0] if rev else None,
                            "basis": "agregado", "shares_cagr": None, "perimeter_years": cuts,
-                           "share_breaks": [], "decline_episodes": [], "eps_collapse_with_decline": [], "eps_years": 0,
+                           "share_breaks": [], "decline_episodes": [], "episode_margins": [], "eps_collapse_with_decline": [], "eps_years": 0,
                            "design": {}}
     sh = _align(rev, shares)
     if len(sh) >= 2 and sh[0][2] > 0 and sh[-1][2] > 0:
@@ -141,7 +174,8 @@ def measure(hist: Dict[str, Any]) -> Dict[str, Any]:
             out["basis"] = "por_accion"
             out["share_breaks"] = share_breaks(hist, C["share_break"])
             cuts = sorted(set(cuts) | set(out["share_breaks"]))
-    out["decline_episodes"] = decline_episodes(rev, cuts, C["revenue_decline"])
+    out["decline_episodes"], out["episode_margins"] = confirm_episodes(
+        hist, decline_episodes(rev, cuts, C["revenue_decline"]), C["margin_drop"])
     down = {y for ep in out["decline_episodes"] for y in ep}
     eps = _series(hist, "diluted_eps")
     out["eps_years"] = len(eps)
@@ -175,7 +209,8 @@ def decide(m: Dict[str, Any], thresholds: Optional[Dict[str, float]] = None) -> 
 def classify_history(hist: Dict[str, Any], thresholds: Optional[Dict[str, float]] = None) -> Dict[str, Any]:
     """measure + decide con umbrales distintos de los de config (sensibilidad): el umbral de caída de ingresos y el de
     desplome del BPA cambian lo medido."""
-    if thresholds and any(k in thresholds for k in ("revenue_decline", "eps_drop", "discontinued_material_share", "share_break")):
+    if thresholds and any(k in thresholds for k in ("revenue_decline", "eps_drop", "discontinued_material_share", "share_break",
+                                          "margin_drop")):
         C = dict(cfg("sectors.archetypes.cyclicality"))
         C.update(thresholds)
         m = _measure_with(hist, C)
@@ -194,7 +229,7 @@ def _measure_with(hist: Dict[str, Any], C: Dict[str, Any]) -> Dict[str, Any]:
         if s_cagr is not None and s_cagr > cfg("thresholds.growth.per_share_min_shares_cagr"):
             rev = [(e, r / s) for e, r, s in sh]
             cuts = sorted(set(cuts) | set(share_breaks(hist, C["share_break"])))
-    eps_ = decline_episodes(rev, cuts, C["revenue_decline"])
+    eps_, _d = confirm_episodes(hist, decline_episodes(rev, cuts, C["revenue_decline"]), C["margin_drop"])
     down = {y for ep in eps_ for y in ep}
     eps = _series(hist, "diluted_eps")
     return {"years": len(_series(hist, "revenue")), "decline_episodes": eps_, "eps_years": len(eps),

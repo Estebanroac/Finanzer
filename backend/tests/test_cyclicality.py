@@ -216,3 +216,15 @@ def test_split_across_taxonomies():
     h = sec_edgar.annual_history(facts, "diluted_eps")
     ep = {v["fy_end"][:4]: round(v["value"], 2) for v in h["values"]}
     assert ep == {"2019": 129.0, "2020": 144.06, "2021": 160.0, "2022": 205.0} and h["cross_taxonomy_split"] == 5.0
+
+
+def test_decline_without_margin_compression_is_not_a_cycle():
+    # Tipo KO: dos caídas de ventas ≥ 10% (refranquicia y pandemia) con el margen operativo estable o al alza.
+    rev = [100, 102, 104, 106, 108, 92, 82, 84, 88, 78, 90, 95]
+    oi = [r * m for r, m in zip(rev, [.20, .20, .20, .21, .21, .22, .25, .26, .27, .27, .28, .28])]
+    r = cy.classify_history(H(rev, eps=[2] * 12, oi=oi))
+    assert not r["cyclical"] and r["measures"]["decline_episodes"] == []
+    assert [d["why"] for d in r["measures"]["episode_margins"]] == ["margen estable o al alza"] * 2
+    # El mismo perfil de ventas con el margen hundido en las caídas sí es ciclo.
+    oi = [r * m for r, m in zip(rev, [.20, .20, .20, .21, .21, .15, .12, .20, .21, .10, .20, .21])]
+    assert cy.classify_history(H(rev, eps=[2] * 12, oi=oi))["cyclical"]

@@ -244,7 +244,8 @@ def _cyclicality(history: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
     r = cy.classify_history(history)
     C = _C["cyclicality"]
     flips = []
-    for k in ("revenue_decline", "eps_drop", "min_decline_episodes", "min_eps_collapses", "min_years", "share_break"):
+    for k in ("revenue_decline", "eps_drop", "min_decline_episodes", "min_eps_collapses", "min_years", "share_break",
+              "margin_drop"):
         for f in (0.8, 1.2):
             v = C[k] * f
             if isinstance(C[k], int):
