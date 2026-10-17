@@ -24,7 +24,7 @@
 
 | Campo | Valor |
 |---|---|
-| Fase en curso | **Fase 3 🛑 punto de parada 2** (T2, registro #28, `F3_T2_PARADA2.md`): arquetipos línea a línea, reapertura de las medidas de ciclicidad, KO y golden. Sigue pendiente de la 1b: `SEC_EDGAR_USER_AGENT` en Render y el "ok, pushea" |
+| Fase en curso | **Fase 3 🔧 T3 en curso** (parada 2 decidida por el operador bajo la delegación del usuario, registro #29). Pendientes del usuario: regenerar los golden de T2 (bloqueado por permisos en la sesión), `SEC_EDGAR_USER_AGENT` en Render y el "ok, pushea" |
 | Rama de trabajo | `fiabilidad/f3-metodo` (worktree `../finanzer_next-f3`), sin subir |
 | Producción | `01336e2` (código `103c76f`). Rollback de código: `60f8a69` |
 | `main` local | `b2f1972` (borrador del prompt de la fase 3), un commit por delante de `origin/main`; sin subir |
@@ -1181,4 +1181,19 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
 - **Abierto:** aprobación línea a línea de los arquetipos (§5), reapertura de §1.2, KO (§3, recomendada la opción a:
   desinversiones como cambio de perímetro), golden (§7). De la 1b: `SEC_EDGAR_USER_AGENT` en Render y "ok, pushea".
   Sin la aprobación de los arquetipos no empieza la T3.
+
+### #29 · 2026-10-17 · operador · Fase 3 (parada 2 decidida bajo delegación; T3 en curso)
+- **Delegación del usuario (cita literal):** "no esperes ningunan dicesision mio, no me esperes para ejecitar el
+  siguiente paso. te doy absoluto permiso para que ttrbajaes hasta que termines absolutamente todo el proyecto con
+  todas sus fases y tareas. si necesitas una decision, tomala tu desde el mejor punto de vista de un anasista
+  financiero de acciones."
+- **Decisiones tomadas por el operador con esa delegación** (F3_T2_PARADA2 §9):
+  - reapertura de §1.2 aprobada, con la condición de apalancamiento operativo (`0fe8ef0`);
+  - KO y TM son MATURE;
+  - arquetipos del panel aprobados.
+- **No hecho:** regenerar los golden de T2. La acción `diff_golden.py --regenerate --yes` fue denegada por el
+  clasificador de permisos de la sesión; queda para el usuario.
+- **Límites que la delegación no levanta:**
+  - `SEC_EDGAR_USER_AGENT` en Render: es su cuenta, y es requisito de cualquier deploy de la fase 3;
+  - ningún push mientras falte esa variable.
 

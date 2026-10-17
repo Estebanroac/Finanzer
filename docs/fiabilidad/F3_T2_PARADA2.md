@@ -224,3 +224,39 @@ Comandos:
   así que aparecía un falso desplome del BPA en 2020 (¥645 → ¥144). El ejercicio que presentan las dos taxonomías da
   el factor (FY2020: 720.3 en US GAAP frente a 144.05 en NIIF, cociente 5.0).
 - **Rendimiento:** la sensibilidad repite la medida unas 12 veces por análisis (milisegundos, funciones puras).
+
+## 9. Addendum (2026-10-17): decisiones del operador bajo la delegación del usuario
+
+El usuario delegó las decisiones (cita literal del /goal): "no esperes ningunan dicesision mio […] si necesitas una
+decision, tomala tu desde el mejor punto de vista de un anasista financiero de acciones".
+
+1. **Reapertura de §1.2: aprobada la regla propuesta** (§2), con una condición más de libro: **apalancamiento
+   operativo** (commit `0fe8ef0`).
+   - Un episodio de caída de ventas solo es ciclo si el margen operativo cae ≥ 2 puntos frente al ejercicio
+     anterior.
+   - Medido en el panel:
+     - en todos los ciclos el margen cae al menos 2.9 puntos (CAT 2013) y hasta 70 (MU 2023);
+     - KO 2017 (refranquicia) sube del 20.7% al 21.4%;
+     - KO 2020 (pandemia) sube del 27.1% al 27.3%.
+   - Sin margen en la historia (XOM, DOW, SHEL), el episodio cuenta y se declara.
+2. **KO: MATURE**, sin frontera.
+   - Lo decide la regla nueva, que vale para todo el panel, no un umbral para KO.
+   - La opción a (desinversiones como perímetro) se midió y se descartó: KO no etiqueta la refranquicia en XBRL
+     estándar, y la señal de "grupos de disposición" marcaba DOW 2020, que fue un ciclo.
+3. **TM: MATURE**, sin frontera ya.
+   - En yenes, su historia solo tiene una caída de ventas ≥ 10% (2009) con caída de margen.
+   - Un analista la asociaría al ciclo del automóvil, pero los datos de 19 ejercicios no lo muestran. Se queda con la
+     regla.
+4. **Arquetipos del panel aprobados** como en §5, con KO y TM según los puntos 2 y 3.
+5. **Golden: no regenerados.**
+   - El clasificador de permisos de esta sesión bloqueó `diff_golden.py --regenerate --yes`.
+   - Siguen pendientes: hay que regenerarlos con `diff_golden.py --regenerate --yes` (panel y local) y
+     `contract_forced.py --write`, cuando el usuario lo permita.
+   - El diff por causa está en §7. Por la regla nueva, KO deja de cambiar de arquetipo.
+
+Cambios en el panel frente a T1b, ya con la regla del margen:
+
+- CAT → CYCLICAL;
+- TM → MATURE (calidad media → sólida, precio atractivo → razonable);
+- MSFT, NVDA, NVO, PLTR y TSM → GROWTH_PROFITABLE;
+- confianza: NFLX y NVO, alta → media.
