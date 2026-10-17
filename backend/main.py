@@ -25,7 +25,7 @@ from stock_database import search_stocks, POPULAR_STOCKS, TOP_STOCKS
 from sector_profiles import get_sector_profile, YAHOO_SECTOR_MAPPING
 from alert_interpretations import build_signals
 from settings import cfg
-from historical_metrics import fcf_cagr, growth_rate, is_sustained_negative, per_share, per_share_basis
+from historical_metrics import mean as hm_mean, fcf_cagr, growth_rate, is_sustained_negative, per_share, per_share_basis
 from classify import (ARCHETYPE_GROUP, CYCLICAL, FINANCIAL, GROWTH_PRE_PROFIT, REIT, archetype_label, classify,
                       not_applicable, not_applicable_text)
 from normalize import normalize as normalize_earnings
@@ -1308,10 +1308,12 @@ def _compute_analysis(symbol: str) -> dict:
                 if (growth is not None and _yoy_g is not None and archetype != CYCLICAL
                         and not (result.get("growth_perimeter") or {}).get("applied")
                         and abs(_yoy_g - growth) > cfg("valuation.dcf.yoy_vs_3y_pp")):
-                    result["dcf_growth_blend"] = {"yoy": _yoy_g, "cagr_3y": growth, "used": (_yoy_g + growth) / 2}
+                    _blend = hm_mean([_yoy_g, growth])
+                    result["dcf_growth_blend"] = {"yoy": _yoy_g, "cagr_3y": growth, "used": _blend}
+                    _pp = f"{cfg('valuation.dcf.yoy_vs_3y_pp'):.0%}".replace("%", " pp")
                     _growth_basis = (f"media del interanual ({_yoy_g:+.1%}) y del {_growth_basis} ({growth:+.1%}): "
-                                     f"difieren más de {cfg('valuation.dcf.yoy_vs_3y_pp') * 100:.0f} pp")
-                    growth = (_yoy_g + growth) / 2
+                                     f"difieren más de {_pp}")
+                    growth = _blend
                 if growth is None:
                     growth, _growth_basis = cfg("valuation.dcf.default_growth"), "valor por defecto (sin CAGR de los estados)"
                 _dcf_na = not_applicable(archetype, "dcf")
