@@ -52,6 +52,14 @@ def perimeter_years(hist: Dict[str, Any], material_share: float) -> List[str]:
     return out
 
 
+def share_breaks(hist: Dict[str, Any], thr: float) -> List[str]:
+    """Ejercicios en que las acciones diluidas medias crecen al menos `thr` frente al anterior: ruptura del capital
+    (conversión de preferentes en la salida a bolsa, fusión pagada en acciones). Antes de ella, el BPA y los ingresos
+    por acción no son comparables con los de después."""
+    sh = _series(hist, "diluted_shares")
+    return [e for (_e0, a), (e, b) in zip(sh, sh[1:]) if a > 0 and b >= (1.0 + thr) * a]
+
+
 def _segments(series: List[Tuple[str, float]], cuts: List[str]) -> List[List[Tuple[str, float]]]:
     """Tramos de la serie separados en los ejercicios de cambio de perímetro (el ejercicio del cambio abre tramo)."""
     segs, cur = [], []
@@ -121,7 +129,7 @@ def measure(hist: Dict[str, Any]) -> Dict[str, Any]:
     cuts = perimeter_years(hist, C["discontinued_material_share"])
     out: Dict[str, Any] = {"years": len(rev), "first": rev[0][0] if rev else None, "last": rev[-1][0] if rev else None,
                            "basis": "agregado", "shares_cagr": None, "perimeter_years": cuts,
-                           "decline_episodes": [], "eps_collapse_with_decline": [], "eps_years": 0,
+                           "share_breaks": [], "decline_episodes": [], "eps_collapse_with_decline": [], "eps_years": 0,
                            "design": {}}
     sh = _align(rev, shares)
     if len(sh) >= 2 and sh[0][2] > 0 and sh[-1][2] > 0:
@@ -131,6 +139,8 @@ def measure(hist: Dict[str, Any]) -> Dict[str, Any]:
         if s_cagr is not None and s_cagr > cfg("thresholds.growth.per_share_min_shares_cagr"):
             rev = [(e, r / s) for e, r, s in sh]
             out["basis"] = "por_accion"
+            out["share_breaks"] = share_breaks(hist, C["share_break"])
+            cuts = sorted(set(cuts) | set(out["share_breaks"]))
     out["decline_episodes"] = decline_episodes(rev, cuts, C["revenue_decline"])
     down = {y for ep in out["decline_episodes"] for y in ep}
     eps = _series(hist, "diluted_eps")
@@ -165,7 +175,7 @@ def decide(m: Dict[str, Any], thresholds: Optional[Dict[str, float]] = None) -> 
 def classify_history(hist: Dict[str, Any], thresholds: Optional[Dict[str, float]] = None) -> Dict[str, Any]:
     """measure + decide con umbrales distintos de los de config (sensibilidad): el umbral de caída de ingresos y el de
     desplome del BPA cambian lo medido."""
-    if thresholds and any(k in thresholds for k in ("revenue_decline", "eps_drop", "discontinued_material_share")):
+    if thresholds and any(k in thresholds for k in ("revenue_decline", "eps_drop", "discontinued_material_share", "share_break")):
         C = dict(cfg("sectors.archetypes.cyclicality"))
         C.update(thresholds)
         m = _measure_with(hist, C)
@@ -183,6 +193,7 @@ def _measure_with(hist: Dict[str, Any], C: Dict[str, Any]) -> Dict[str, Any]:
         s_cagr = cagr(sh[-1][2], sh[0][2], n) if n > 0 else None
         if s_cagr is not None and s_cagr > cfg("thresholds.growth.per_share_min_shares_cagr"):
             rev = [(e, r / s) for e, r, s in sh]
+            cuts = sorted(set(cuts) | set(share_breaks(hist, C["share_break"])))
     eps_ = decline_episodes(rev, cuts, C["revenue_decline"])
     down = {y for ep in eps_ for y in ep}
     eps = _series(hist, "diluted_eps")
@@ -191,12 +202,16 @@ def _measure_with(hist: Dict[str, Any], C: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def growth_profitable_measures(hist: Dict[str, Any]) -> Dict[str, Any]:
-    """CAGR de los ingresos POR ACCIÓN a 3 y 5 años (acciones diluidas medias) de la historia; sin acciones, agregado."""
+    """CAGR de los ingresos POR ACCIÓN a 3 y 5 años (acciones diluidas medias) de la historia; sin acciones, agregado.
+    Solo desde la última ruptura del capital (share_breaks): a través de ella el cociente no es comparable."""
     rev = _series(hist, "revenue")
     sh = _align(rev, _series(hist, "diluted_shares"))
+    brk = share_breaks(hist, cfg("sectors.archetypes.cyclicality.share_break"))
+    if brk:
+        sh = [x for x in sh if x[0] >= brk[-1]]
     basis = "por_accion" if len(sh) >= 4 else "agregado"
     ps = [r / s for _e, r, s in sh] if basis == "por_accion" else [v for _e, v in rev]
-    out = {"basis": basis, "revenue_ps_cagr_3y": None, "revenue_ps_cagr_5y": None}
+    out = {"basis": basis, "revenue_ps_cagr_3y": None, "revenue_ps_cagr_5y": None, "share_break": brk[-1] if brk else None}
     if len(ps) >= 4 and ps[-4] > 0 and ps[-1] > 0:
         out["revenue_ps_cagr_3y"] = cagr(ps[-1], ps[-4], 3)
     if len(ps) >= 6 and ps[-6] > 0 and ps[-1] > 0:

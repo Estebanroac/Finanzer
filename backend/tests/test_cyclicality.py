@@ -176,3 +176,17 @@ def test_cyclical_with_structural_growth_keeps_cyclical():
     h = H(rev, eps=[2, 4, 0.5, 4, 7, 3, -1, 6, 10, 2, 12, 20], shares=[10.0] * 12)
     c = _cls("Semiconductors", h, om=0.35)
     assert c["archetype"] == CYCLICAL and c["structural_growth"] and "crecimiento estructural" in c["reason"]
+
+
+def test_share_break_cuts_the_per_share_series():
+    # Salida a bolsa con conversión de preferentes (tipo PLTR): las acciones medias saltan ×1.7 y ×2; los ingresos
+    # por acción a través del salto no son comparables. La serie por acción empieza en la última ruptura.
+    rev = [595, 743, 1093, 1542, 1906, 2225, 2866, 4475]
+    sh = [544, 577, 979, 1924, 2064, 2298, 2451, 2565]
+    h = H(rev, eps=[-1, -1, -1, -0.3, -0.2, 0.1, 0.2, 0.6], shares=sh, first=2018)
+    assert cy.share_breaks(h, 0.5) == ["2020-12-31", "2021-12-31"]
+    g = cy.growth_profitable_measures(h)
+    assert g["share_break"] == "2021-12-31" and g["revenue_ps_cagr_5y"] is None
+    assert abs(g["revenue_ps_cagr_3y"] - ((4475 / 2565) / (1906 / 2064)) ** (1 / 3) + 1) < 1e-9
+    m = cy.measure(h)
+    assert m["basis"] == "por_accion" and m["decline_episodes"] == []      # sin la falsa caída de 2020–21

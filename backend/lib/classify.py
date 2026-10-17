@@ -244,7 +244,7 @@ def _cyclicality(history: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
     r = cy.classify_history(history)
     C = _C["cyclicality"]
     flips = []
-    for k in ("revenue_decline", "eps_drop", "min_decline_episodes", "min_eps_collapses", "min_years"):
+    for k in ("revenue_decline", "eps_drop", "min_decline_episodes", "min_eps_collapses", "min_years", "share_break"):
         for f in (0.8, 1.2):
             v = C[k] * f
             if isinstance(C[k], int):
@@ -484,6 +484,8 @@ def classify(*, sector: Optional[str], industry: Optional[str], eps_ttm: Optiona
         mtxt = (f"margen operativo {operating_margin_ttm * 100:.0f}%" if gp["margin_used"] == "operativo"
                 else f"margen FCF − SBC {fcf_sbc_margin * 100:.0f}%")
         yrs = f" y {c5 * 100:.1f}% a 5" if c5 is not None else ""
+        if gp.get("share_break"):
+            yrs += f" (desde la ruptura del capital de FY{gp['share_break'][:4]})"
         frontier = gp["sensitivity"] + (cyc["sensitivity"] if cyc else [])
         return out(GROWTH_PROFITABLE, f"Clasificada como GROWTH_PROFITABLE: ingresos por acción {c3 * 100:.1f}% anual "
                                       f"a 3 años{yrs}, BPA TTM > 0 y {mtxt}"
