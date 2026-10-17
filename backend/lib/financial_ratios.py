@@ -3304,8 +3304,18 @@ def score_crecimiento(
         cov.comp("Retorno total", T["reit_total_return_points"], _a.get("rev"), revenue_reason)
     else:
         cov.comp("Crecimiento de ingresos", T["revenue_points"], _a.get("rev"), revenue_reason)
-    cov.comp("Crecimiento del BPA", T["eps_points"], _a.get("eps"), eps_reason, na=_na_eps)
-    cov.comp("Crecimiento del FCF", T["fcf_points"], _a.get("fcf"), fcf_growth_reason, na=_na_fcf)
+    # Fase 3 (T5, F3_DISENO §4): con el BPA o el FCF del año base <= 0 (AMZN), su CAGR no está definido: no es un dato
+    # ausente sino no significativo, y la categoría se mide con el crecimiento de los ingresos (declarado), no se
+    # excluye entera.
+    def _base_le_zero(reason):
+        return bool(reason) and "inicial <= 0" in reason and _a.get("rev") is not None
+    _rev_word = "ingresos por acción" if "por acción" in (revenue_note or "") else "ingresos"
+    for _nm, _key, _pts, _rsn, _na in (("Crecimiento del BPA", "eps", T["eps_points"], eps_reason, _na_eps),
+                                        ("Crecimiento del FCF", "fcf", T["fcf_points"], fcf_growth_reason, _na_fcf)):
+        if not _na and _a.get(_key) is None and _base_le_zero(_rsn):
+            cov.not_sig(_nm, f"{_rsn}: no significativo; el crecimiento se mide con los {_rev_word}")
+        else:
+            cov.comp(_nm, _pts, _a.get(_key), _rsn, na=_na)
     base_score = cov.apply(base_score, adjustments)
     final_score = max(_CAT["min"], min(_CAT["max"], base_score))
     
