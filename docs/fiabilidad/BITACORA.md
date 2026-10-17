@@ -90,6 +90,7 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
 | Precio con un solo método evaluable | RECON §7.17 | 3 (D3) |
 | **Nuevo (panel):** 18/30 con un solo método de precio evaluable → **D3 con prioridad alta en la fase 3** | F0 (registros #5, #6) | 3 (D3) |
 | Cobertura de intereses en utilities | memoria 11b | 3 |
+| **Nuevo (usuario, 2026-10-17):** cobertura de intereses: (1) empresas que no publican el gasto por intereses (AAPL desde 2023): intereses pagados del estado de flujos (`InterestPaidNet`), declarado "intereses pagados (caja)"; (2) cobertura con EBITDA (y con FFO en REIT) como segunda medida; (3) tendencia con la historia larga. Usuario: "lo cubrimos cuando requiera" | usuario, registro #27 | 3 (T6) |
 | BRK-B posible cíclica / conglomerado | RECON §7.16 | 3 |
 | AMZN sin categoría Crecimiento (base ≤ 0) | corrida 2026-10-14 | 3 |
 | Calidad saturada en 100 (PLTR, TSM, NFLX, V) | corrida + RECON 7.14 | 4 |
