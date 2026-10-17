@@ -228,3 +228,14 @@ def test_decline_without_margin_compression_is_not_a_cycle():
     # El mismo perfil de ventas con el margen hundido en las caídas sí es ciclo.
     oi = [r * m for r, m in zip(rev, [.20, .20, .20, .21, .21, .15, .12, .20, .21, .10, .20, .21])]
     assert cy.classify_history(H(rev, eps=[2] * 12, oi=oi))["cyclical"]
+
+
+def test_mid_cycle_growth_peak_to_peak():
+    # Picos: el ejercicio anterior a cada episodio confirmado (2014, 2018, 2022 en este ciclo sintético).
+    rev = [100, 105, 110, 115, 120, 90, 95, 100, 130, 100, 110, 125, 150, 120, 125]
+    h = H(rev, eps=[1] * 15, first=2010)
+    r = cy.mid_cycle_growth(h)
+    assert [p[:4] for p in r["peaks"]] == ["2014", "2018", "2022"] and r["years"] == 8
+    assert abs(r["cagr"] - ((150 / 120) ** (1 / 8) - 1)) < 1e-12
+    # Historia corta: sin ciclo medio de pico a pico (queda la cota, declarada).
+    assert cy.mid_cycle_growth(H(rev[:7], first=2010)) is None

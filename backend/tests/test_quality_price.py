@@ -342,9 +342,13 @@ def test_cyclical_eps_growth_uses_cycle_average(outputs_by_env):
     for env in _envs():
         a = outputs_by_env(env)["FCX"][0]
         eps = _bd(a, "Crecimiento")["Crecimiento EPS 3Y"]
-        assert "normalizado de ciclo medio" in eps["reason"]
-        g = a["archetype_metrics"]["eps_growth_normalized"]
-        assert eps["value"] == f"{g:.1%}"
+        mc = a.get("mid_cycle")
+        if mc:      # fase 3 (T5): BPA de ciclo medio de pico a pico
+            assert "de pico a pico" in eps["reason"] and eps["value"] == f"{mc['eps_cagr']:.1%}"
+        else:
+            assert "normalizado de ciclo medio" in eps["reason"]
+            g = a["archetype_metrics"]["eps_growth_normalized"]
+            assert eps["value"] == f"{g:.1%}"
 
 
 def test_cyclical_pfcf_normalized_uses_maintenance_fcf(outputs_by_env):

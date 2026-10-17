@@ -833,17 +833,37 @@ def _compute_analysis(symbol: str) -> dict:
                 fin_dict["fcf_cagr_3y_method"] = {k: _fcf_r.get(k) for k in ("method", "anomalous_base", "note")}
 
             # Crecimiento por rama (etapa 6).
-            if archetype == CYCLICAL:
+            # Fase 3 (T5, F3_DISENO §4): con 10+ ejercicios de EDGAR, ciclo medio de pico a pico (sustituye a la cota).
+            _mc = None
+            if archetype == CYCLICAL and _has_yahoo and yinfo.get("_history_fy"):
+                import cyclicality as _cyc
+                _mc = _cyc.mid_cycle_growth(yinfo["_history_fy"])
+                result["mid_cycle"] = _mc
+            if archetype == CYCLICAL and _mc is not None:
+                _span = f"{_mc['from'][:4]}–{_mc['to'][:4]}, {_mc['years']} años"
+                fin_dict["revenue_cagr_3y"] = _mc["cagr"]
+                fin_dict["revenue_growth_note"] = (
+                    f"ciclo medio de pico a pico ({_span}; historia de EDGAR"
+                    + (", por acción" if _mc["basis"] == "por_accion" else "") + "): la tendencia del ciclo completo")
+                fin_dict["eps_cagr_3y"] = _mc["eps_cagr"]
+                fin_dict["eps_growth_reason"] = (None if _mc["eps_cagr"] is not None else
+                                                 "sin BPA positivo en los dos picos del ciclo")
+                if _mc["eps_cagr"] is not None:
+                    fin_dict["eps_growth_note"] = f"BPA de ciclo medio de pico a pico ({_span})"
+                fin_dict["fcf_cagr_3y"] = None
+            elif archetype == CYCLICAL:
                 # Crecimiento normalizado de ciclo medio (promedio interanual de los
                 # ejercicios disponibles, acotado) en lugar del interanual de un solo
                 # tramo; la tendencia del FCF de un tramo no aplica (RECON §7.9, §7.10).
+                # Fase 3 (T5): solo con historia corta (sin dos picos del ciclo en EDGAR), y dicho.
                 _gn = archetype_values.get("revenue_growth_normalized")
                 if _gn is not None:
                     fin_dict["revenue_cagr_3y"] = _gn
                     _lo, _hi = cfg("valuation.archetypes.cyclical_growth_bounds")
                     fin_dict["revenue_growth_note"] = (
                         f"normalizado de ciclo medio: promedio interanual de {archetype_values['cycle_years']} "
-                        f"ejercicios, acotado a [{_lo:.0%}, {_hi:.0%}]"
+                        f"ejercicios, acotado a [{_lo:.0%}, {_hi:.0%}] (salvaguarda de historia corta: sin dos picos "
+                        "del ciclo en EDGAR)"
                         + ("; ciclo incompleto" if archetype_values.get("cycle_incomplete") else ""))
                 # Etapa 9a: el BPA con la misma regla de ciclo medio que los ingresos.
                 _ge = archetype_values.get("eps_growth_normalized")
@@ -1271,7 +1291,9 @@ def _compute_analysis(symbol: str) -> dict:
                 # años con la regla de base anómala, por acción si aplica la regla de dilución, ciclo
                 # medio en CYCLICAL. El revenueGrowth de la fuente (interanual) ya no entra en el DCF.
                 growth = safe_float(fin_dict.get("revenue_cagr_3y"))
-                _growth_basis = ("ciclo medio de los ingresos" if archetype == CYCLICAL
+                _growth_basis = (("ciclo medio de los ingresos de pico a pico" if result.get("mid_cycle")
+                                  else "ciclo medio de los ingresos (acotado: historia corta)")
+                                 if archetype == CYCLICAL
                                  else "CAGR de ingresos por acción a 3 años"
                                  if "ingresos" in (growth_basis.get("applied_to") or [])
                                  else "CAGR de ingresos a 3 años")

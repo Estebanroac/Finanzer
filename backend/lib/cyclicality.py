@@ -272,3 +272,38 @@ def revenue_ps_cagr_long(hist: Dict[str, Any], max_years: int = 10, min_years: i
     if v0 > 0 and v1 > 0:
         out.update(cagr=cagr(v1, v0, n), years=n, **{"from": e0, "to": e1})
     return out
+
+
+def mid_cycle_growth(hist: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Crecimiento de ciclo medio con 10+ ejercicios (fase 3, T5; F3_DISENO §4): la tendencia entre los PICOS del
+    ciclo, el ejercicio anterior a cada episodio de caída confirmado (sustituye a la cota −5%/+10%, que queda para la
+    historia corta). Entre el primer y el último pico (al menos `min_cycle_years` años): un ciclo completo o más.
+    Misma base que la medida (por acción si las acciones crecieron). BPA: entre los mismos picos, si los dos son
+    positivos. Margen operativo de ciclo medio: la media de los ejercicios del ciclo. None sin dos picos."""
+    m = measure(hist)
+    if (m.get("years") or 0) < cfg("sectors.archetypes.cyclicality.min_years"):
+        return None
+    rev = _series(hist, "revenue")
+    if m["basis"] == "por_accion":
+        rev = [(e, r / s) for e, r, s in _align(rev, _series(hist, "diluted_shares"))]
+    rd = dict(rev)
+    ends = [e for e, _v in rev]
+    peaks = []
+    for ep in m["decline_episodes"]:
+        if ep[0] in ends and ends.index(ep[0]) > 0:
+            peaks.append(ends[ends.index(ep[0]) - 1])
+    if len(peaks) < 2:
+        return None
+    p0, p1 = peaks[0], peaks[-1]
+    n = int(p1[:4]) - int(p0[:4])
+    if n < cfg("sectors.archetypes.cyclicality.min_cycle_years") or rd[p0] <= 0 or rd[p1] <= 0:
+        return None
+    eps = dict(_series(hist, "diluted_eps"))
+    e0, e1 = eps.get(p0), eps.get(p1)
+    oi, rv = dict(_series(hist, "operating_income")), dict(_series(hist, "revenue"))
+    window = [e for e in ends if p0 <= e <= p1]
+    margins = [oi[e] / rv[e] for e in window if e in oi and rv.get(e)]
+    return {"cagr": cagr(rd[p1], rd[p0], n), "from": p0, "to": p1, "years": n, "peaks": peaks, "basis": m["basis"],
+            "eps_cagr": cagr(e1, e0, n) if (e0 and e1 and e0 > 0 and e1 > 0) else None,
+            "op_margin_mid_cycle": (sum(margins) / len(margins)) if margins else None,
+            "margin_years": len(margins), "method": "pico_a_pico"}

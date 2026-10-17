@@ -125,9 +125,15 @@ def test_cyclical_growth_is_normalized_not_the_single_year(outputs_by_env):
         assert xm["cycle_years"] == 4 and xm["cycle_incomplete"] is True
         cre = next(x for x in a["score"]["breakdown"]["Crecimiento"]["adjustments"]
                    if x["metric"] == "Crecimiento Ingresos 3Y")
-        assert "normalizado de ciclo medio" in cre["reason"] and "ciclo incompleto" in cre["reason"]
         assert "Crecimiento del FCF" in a["score_coverage"]["crecimiento"]["not_applicable"]
-        assert a["dcf"]["growth_rate"] == pytest.approx(xm["revenue_growth_normalized"])
+        mc = a.get("mid_cycle")
+        if mc:      # fase 3 (T5): con 10+ ejercicios de EDGAR, ciclo medio de pico a pico (sin cota)
+            assert "ciclo medio de pico a pico" in cre["reason"]
+            assert a["dcf"]["growth_rate"] == pytest.approx(min(mc["cagr"], cfg("valuation.dcf.source_cap_revenue")))
+        else:       # historia corta: la cota, declarada como salvaguarda
+            assert "normalizado de ciclo medio" in cre["reason"] and "ciclo incompleto" in cre["reason"]
+            assert "salvaguarda de historia corta" in cre["reason"]
+            assert a["dcf"]["growth_rate"] == pytest.approx(xm["revenue_growth_normalized"])
         assert a["dcf"]["normalized"]["fcf"] == pytest.approx(xm["fcf_normalized"])
         assert any(m.startswith("EV/EBITDA normalizado") for m in _metrics(a, "Valoración"))
 
