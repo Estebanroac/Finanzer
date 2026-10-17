@@ -118,3 +118,28 @@ De esos cambios de precio, los que mueve la clasificación por empresa (645 → 
 - **Los umbrales del score por sector siguen PROVISIONALES.** Damodaran da niveles, no distribuciones.
 - **Fecha.** Damodaran actualiza en enero: la revisión de parámetros (`config/review.toml`) avisa a partir del
   5-ene-2027.
+
+## 5. Adenda tras la verificación en producción: C5 (`a024b7b`)
+
+Ya regenerados los golden y desplegado (`d3de317`), la web de AAPL mostraba "ROE de 119.9% frente a −0.2% de su
+industria (+70637%)".
+
+Damodaran publica para Computers/Peripherals de EE. UU. un ROE agregado de −0.17% (igual en roe.xls y en pbvdata.xls).
+El dato contradice su propia tabla:
+
+- el margen neto agregado es de +17.8%;
+- el P/B es de 34x.
+
+Con el mismo numerador y denominadores positivos, el signo no puede diferir. Es un error del dato de origen.
+
+**Regla:** si el ROE y el margen neto agregados tienen distinto signo y el P/B es positivo, el ROE queda sin dato.
+Solo cruza la regla esa fila, de las 480.
+
+**Diff:** solo AAPL del panel, y solo en la presentación:
+
+- el ROE deja de tener referencia;
+- el gráfico comparativo pasa de 6 a 5 métricas favorables (sale la fila del ROE);
+- cambia el texto del PDF.
+
+No cambian el score, las alertas, los niveles ni la confianza. El golden de AAPL (análisis y PDF) espera la
+aprobación del usuario.
