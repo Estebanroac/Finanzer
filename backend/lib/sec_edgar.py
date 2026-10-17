@@ -187,6 +187,16 @@ def user_agent() -> Optional[str]:
     return ua if "@" in ua else None
 
 
+def env_check() -> Dict[str, bool]:
+    """Diagnóstico de la variable del User-Agent para /api/health, sin exponer su valor ni otros nombres: si existe
+    con el nombre exacto, si lleva un correo y si hay otra variable de nombre casi igual (espacios o mayúsculas)."""
+    name = cfg("data.edgar.user_agent_env")
+    raw = os.environ.get(name)
+    near = any(k != name and k.strip().upper() == name.upper() for k in os.environ)
+    return {"enabled": user_agent() is not None, "present": raw is not None and bool(raw.strip()),
+            "has_contact": "@" in (raw or ""), "near_miss": near}
+
+
 def status() -> Dict[str, Any]:
     if user_agent():
         return {"enabled": True, "reason": None}

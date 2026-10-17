@@ -10,9 +10,27 @@ import main
 
 def test_health_reports_the_deployed_commit(monkeypatch):
     monkeypatch.setenv("RENDER_GIT_COMMIT", "8ed57a0f00")
-    assert asyncio.run(main.health()) == {"status": "ok", "commit": "8ed57a0f00"}
+    h = asyncio.run(main.health())
+    assert (h["status"], h["commit"]) == ("ok", "8ed57a0f00")
 
 
 def test_health_commit_is_null_outside_render(monkeypatch):
     monkeypatch.delenv("RENDER_GIT_COMMIT", raising=False)
-    assert asyncio.run(main.health()) == {"status": "ok", "commit": None}
+    h = asyncio.run(main.health())
+    assert (h["status"], h["commit"]) == ("ok", None)
+
+
+def test_health_reports_edgar_env_without_the_value(monkeypatch):
+    """Fase 7: /api/health dice si EDGAR está activo y por qué no, sin el valor de la variable."""
+    name = main.cfg("data.edgar.user_agent_env")
+    monkeypatch.delenv(name, raising=False)
+    assert asyncio.run(main.health())["edgar"] == {"enabled": False, "present": False, "has_contact": False,
+                                                   "near_miss": False}
+    monkeypatch.setenv(name, "Nombre sin correo")
+    monkeypatch.setenv(name + " ", "x")
+    h = asyncio.run(main.health())["edgar"]
+    assert h == {"enabled": False, "present": True, "has_contact": False, "near_miss": True}
+    monkeypatch.setenv(name, "Nombre nombre@example.com")
+    h = asyncio.run(main.health())
+    assert h["edgar"]["enabled"] and h["edgar"]["has_contact"]
+    assert "example.com" not in str(h)

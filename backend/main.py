@@ -39,6 +39,7 @@ from cost_of_capital import adjusted_beta, effective_tax_rate, risk_free, wacc a
 from valuation_confidence import (convergence, coverage_dimension, dcf_reliability, signal_from_upside, official_dimension,
                                   source_dimension, stability_dimension, verdict_confidence)
 import archetype_metrics
+import sec_edgar as edgar
 import growth_currency
 import numfmt
 from currency import CurrencyConversionError
@@ -2014,7 +2015,8 @@ def _pdf_build(symbol: str, analysis: dict):
 @app.get("/api/health")
 async def health():
     # Fase 2a: el commit desplegado (Render define RENDER_GIT_COMMIT; en local, null).
-    return {"status": "ok", "commit": os.environ.get("RENDER_GIT_COMMIT") or None}
+    # Fase 7: si EDGAR está activo y, si no, por qué (sin el valor de la variable).
+    return {"status": "ok", "commit": os.environ.get("RENDER_GIT_COMMIT") or None, "edgar": edgar.env_check()}
 
 
 # ── Serve frontend static files ──
