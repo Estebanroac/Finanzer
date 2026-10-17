@@ -968,6 +968,22 @@ def _compute_analysis(symbol: str) -> dict:
             fin_dict["fcf_cagr_3y_sustained_negative"] = is_sustained_negative(fin_dict.get("fcf_cagr_3y_reason"))
             result["growth_basis"] = {k: (safe_float(v) if isinstance(v, float) else v)
                                       for k, v in growth_basis.items()}
+            # Fase 3 (T6, §1.3): PEG de GROWTH_PROFITABLE a varios años: P/E ÷ CAGR del BPA a 3 años (por acción), no
+            # el crecimiento de un año ni el de consenso. Lo leen el score, la tabla y el informe.
+            if archetype == "GROWTH_PROFITABLE":
+                _pe_g = safe_float(ratios.get("pe"))
+                _e3 = safe_float(fin_dict.get("eps_cagr_3y"))
+                if _pe_g is not None and _pe_g > 0 and _e3 is not None and _e3 > 0:
+                    ratios["peg"] = _pe_g / (_e3 * cfg("valuation.peg.growth_pct_scale"))
+                    result["key_metrics"]["peg"] = safe_float(ratios["peg"])
+                    result["peg_basis"] = {"pe": _pe_g, "eps_cagr_3y": _e3,
+                                           "note": "PEG a 3 años: P/E ÷ CAGR del BPA por acción a 3 años"}
+                else:
+                    result["peg_basis"] = {"pe": _pe_g, "eps_cagr_3y": _e3,
+                                           "note": ("PEG de mercado (crecimiento de consenso): el CAGR del BPA a 3 "
+                                                    "años no está definido (BPA base ≤ 0 o sin dato)"
+                                                    if result["key_metrics"].get("peg") is not None else
+                                                    "PEG sin dato: P/E o CAGR del BPA a 3 años ≤ 0 o sin dato")}
             # Fase 3 (T6, §1.3): regla de 40 de GROWTH_PROFITABLE con el crecimiento que puntúa (por acción si aplica).
             if archetype == "GROWTH_PROFITABLE" and isinstance(result.get("quality_readings"), dict):
                 import quality_readings as qr

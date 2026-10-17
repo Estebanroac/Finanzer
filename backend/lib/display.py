@@ -1502,7 +1502,9 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         ("forward_pe", "Forward P/E", km.get("forward_pe"), sector_bench.get("forward_pe"), False, "mult"),
         ("pb", "P/B", km.get("pb"), sector_bench.get("pb"), False, "mult"),
         ("ps", "P/S", km.get("ps"), None, False, "mult"),
-        ("peg", "PEG", km.get("peg"), sector_bench.get("peg"), False, "mult"),
+        ("peg", ("PEG (BPA a 3 años)" if (a.get("peg_basis") or {}).get("note", "").startswith("PEG a 3 años")
+                 else "PEG (de mercado)" if a.get("peg_basis") else "PEG"),
+         km.get("peg"), sector_bench.get("peg"), False, "mult"),
         ("ev_ebitda", "EV/EBITDA", km.get("ev_ebitda"), sector_bench.get("ev_ebitda"), False, "mult"),
         ("pfcf", "P/FCF", km.get("pfcf"), sector_bench.get("pfcf"), False, "mult"),
         ("fcf_yield", "FCF Yield", km.get("fcf_yield"), sector_bench.get("fcf_yield"), True, "pct"),
