@@ -842,9 +842,13 @@ def _compute_analysis(symbol: str) -> dict:
             # homogéneos, "no comparable" y no puntúa.
             _per = (yinfo.get("_perimeter") or {}) if _has_yahoo else {}
             if _per.get("mixed_cagr"):
-                _ser = _per.get("series") or []
+                # Revisión de código F3 (hallazgo 7): se casa por la fecha de cierre, no por la posición: la serie del
+                # perímetro se salta los ejercicios sin grupo en EDGAR. Un ejercicio sin casar no prueba el perímetro
+                # vigente y cierra el tramo homogéneo.
+                _basis_by_end = {x.get("fy_end"): x.get("basis") for x in _per.get("series") or []}
+                _ends = _stmts_g.get("inc_ends") or []
                 _n = 0
-                while _n < len(_ser) and _ser[_n].get("basis") == "vigente":
+                while _n < len(_ends) and _basis_by_end.get(_ends[_n]) == "vigente":
                     _n += 1
                 _yrs = _n - 1
                 if _yrs >= cfg("thresholds.growth.perimeter_min_years"):
