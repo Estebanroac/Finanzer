@@ -1300,6 +1300,18 @@ def _compute_analysis(symbol: str) -> dict:
                 if (result.get("growth_perimeter") or {}).get("applied") and archetype != CYCLICAL:
                     _growth_basis = (f"CAGR de ingresos de {result['growth_perimeter']['homogeneous_years']} años en "
                                      "el perímetro homogéneo")
+                # Fase 3 (T5, F3_DISENO §4): si el interanual y el CAGR a 3 años difieren más de `yoy_vs_3y_pp`, el DCF
+                # usa una mezcla declarada (media de los dos), nunca uno de ellos en silencio. No en CYCLICAL (ciclo
+                # medio) ni con el perímetro corregido (el interanual también cruza el cambio).
+                _yoy_g = safe_float(result["key_metrics"].get("revenue_growth"))
+                result["dcf_growth_blend"] = None
+                if (growth is not None and _yoy_g is not None and archetype != CYCLICAL
+                        and not (result.get("growth_perimeter") or {}).get("applied")
+                        and abs(_yoy_g - growth) > cfg("valuation.dcf.yoy_vs_3y_pp")):
+                    result["dcf_growth_blend"] = {"yoy": _yoy_g, "cagr_3y": growth, "used": (_yoy_g + growth) / 2}
+                    _growth_basis = (f"media del interanual ({_yoy_g:+.1%}) y del {_growth_basis} ({growth:+.1%}): "
+                                     f"difieren más de {cfg('valuation.dcf.yoy_vs_3y_pp') * 100:.0f} pp")
+                    growth = (_yoy_g + growth) / 2
                 if growth is None:
                     growth, _growth_basis = cfg("valuation.dcf.default_growth"), "valor por defecto (sin CAGR de los estados)"
                 _dcf_na = not_applicable(archetype, "dcf")

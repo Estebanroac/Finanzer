@@ -1596,6 +1596,11 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                       f"crecimiento {fv(dcf.get('growth_rate'), 'pct')}"
                       + (f" ({dcf['growth_basis']})" if dcf.get("growth_basis") else "") + " · "
                       f"terminal {fv(dcf.get('terminal_growth'), 'pct')}")
+        if a.get("dcf_growth_blend"):
+            # Fase 3 (T5): la mezcla declarada del interanual y del CAGR a 3 años (afirma su base temporal).
+            _record(dcf_params, _claim("basis", metric="dcf.growth_rate", per="mezcla interanual y 3 años"),
+                    _claim("growth", field="dcf.growth_rate", value=dcf.get("growth_rate")),
+                    source="display.dcf_params")
         vc = dcf.get("value_composition") or {}
         if vc.get("terminal_pct") is not None:
             dcf_params += f" · el valor terminal aporta el {vc['terminal_pct']:.0f}% del valor total"
