@@ -1454,6 +1454,11 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     if _r_val is None and _branch_val:
         _r_val = (None, None, f"{_clean_metric(_branch_val['metric'])}: {_branch_val['reason']}")
     _val = (cap(_r_val[2]) + (" " + cap(r_up[2]) if r_up else "")) if _r_val else (cap(r_up[2]) if r_up else "")
+    if archetype == "FINANCIAL" and _branch_val:
+        # Fase 3 (T4): en un banco o una aseguradora manda el P/B frente a su retorno (método intrínseco); el P/E,
+        # que sí le aplica (registro #14), va detrás.
+        _val = join_sentences([cap(f"{_clean_metric(_branch_val['metric'])}: {_branch_val['reason']}"),
+                               cap(r_pe[2]) if (r_pe and "pe" not in _na_keys) else None])
     if _val.strip():
         exec_items.append(("ATRACTIVO DEL PRECIO", _val))
     _ctx = " ".join(filter(None, [cap(r_52[2]) if r_52 else None, cap(r_beta[2]) if r_beta else None]))

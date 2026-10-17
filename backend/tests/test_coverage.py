@@ -294,7 +294,7 @@ def test_full_data_gives_exactly_the_previous_score(case):
 @pytest.mark.parametrize("case,na", [
     ("bank_full", {"solidez": {"D/E bancario"},
                    "rentabilidad": {"Margen operativo", "ROIC−WACC"},
-                   "valoracion": {"P/E", "P/FCF", "EV/EBITDA", "PEG"},
+                   "valoracion": {"P/FCF", "EV/EBITDA", "PEG"},   # fase 3 (registro #14): el P/E sí aplica
                    "calidad": {"Piotroski F", "Flujo operativo", "FCF", "FCF / beneficio neto"},
                    "crecimiento": {"Crecimiento del FCF"}}),
     ("reit_full", {"solidez": {"Altman Z", "Current ratio"},

@@ -246,12 +246,16 @@ def multiples_block_averages_members_and_caps_at_max(a, text):
     if not members:
         assert not blk
         return
-    assert len(blk) == 1 and len(blk[0]["block_members"]) == len(members)
-    M = by_n[min(len(members), len(by_n)) - 1]
-    assert blk[0]["block_max"] == M
-    raw = blk[0]["block_mean"] * M
-    assert abs(blk[0]["adjustment"]) <= M
-    assert blk[0]["adjustment"] == int(abs(raw) + 0.5) * (1 if raw >= 0 else -1)
+    # Fase 3 (T4): un banco tiene dos bloques (P/B y P/TBV frente a sus justificados; múltiplos frente al sector,
+    # con el P/E que sí le aplica): cada miembro pertenece a uno y cada bloque se comprueba con los suyos.
+    assert blk and sum(len(b["block_members"]) for b in blk) == len(members)
+    for b in blk:
+        n = len(b["block_members"])
+        M = by_n[min(n, len(by_n)) - 1]
+        assert b["block_max"] == M
+        raw = b["block_mean"] * M
+        assert abs(b["adjustment"]) <= M
+        assert b["adjustment"] == int(abs(raw) + 0.5) * (1 if raw >= 0 else -1)
     counted = sum(x["adjustment"] for x in val["adjustments"] if not x.get("in_block"))
     assert val["score"] == max(0, min(20, 10 + counted))
 

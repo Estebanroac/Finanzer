@@ -4,7 +4,9 @@ import pytest
 import fixture_backend as fb
 from settings import cfg
 
-PRIMARY_FCF_PE = ("P/E", "P/FCF", "Free Cash Flow", "FCF / Net Income", "Cash Flow Operativo", "Piotroski")
+# Fase 3 (T4, registro #14 y F3_DISENO §1.4): el P/E y el dividend yield SÍ aplican a un banco; el FCF y lo que
+# depende de él, no.
+PRIMARY_FCF_PE = ("P/FCF", "Free Cash Flow", "FCF / Net Income", "Cash Flow Operativo", "Piotroski")
 
 
 def _envs():
@@ -29,18 +31,18 @@ def _bank_outputs(outputs_by_env):
 
 # ─────────────────────────── criterio de aceptación del cambio 1 ───────────────────────────
 def test_bank_never_gets_fcf_or_pe_as_primary_reading(outputs_by_env):
-    """Spec cambio 1: un banco nunca recibe lectura de FCF ni P/E como métrica primaria."""
+    """Spec cambio 1: un banco nunca recibe lectura de FCF como métrica primaria. Fase 3: el P/E sí aplica."""
     for env, a in _bank_outputs(outputs_by_env):
         assert a["classification"]["archetype"] == "FINANCIAL", (env, a["symbol"])
         for cat in a["score"]["breakdown"]:
             for m in _metrics(a, cat):
                 assert not any(m.startswith(p) for p in PRIMARY_FCF_PE), (env, a["symbol"], cat, m)
         val = a["score_coverage"]["valoracion"]
-        assert {"P/E", "P/FCF", "EV/EBITDA", "PEG"} <= set(val["not_applicable"])
+        assert {"P/FCF", "EV/EBITDA", "PEG"} <= set(val["not_applicable"]) and "P/E" not in val["not_applicable"]
         assert any(m.startswith("P/B frente a ROE") for m in _metrics(a, "Valoración")) or \
             "P/B frente a ROE" in val["missing"]
         for r in _alert_reasons(a):
-            assert "P/E" not in r and "FCF" not in r and "flujo de caja" not in r.lower(), (env, a["symbol"], r)
+            assert "FCF" not in r and "flujo de caja" not in r.lower(), (env, a["symbol"], r)
         assert a.get("dcf") is None and "dcf" in a["not_applicable"]
         assert a.get("graham_number") is None and "graham" in a["not_applicable"]
         assert a["piotroski_f"]["applicable"] is False and a["altman_z"]["applicable"] is False
@@ -174,7 +176,7 @@ def test_bank_pdf_never_reads_pe_or_fcf_as_primary(outputs_by_env):
     for env, pdf in pdfs:
         lines = _pdf_text(pdf).splitlines()
         for i, ln in enumerate(lines):
-            if ln.strip() in ("P/E (TTM)", "Forward P/E", "P/FCF", "FCF Yield", "PEG", "EV/EBITDA"):
+            if ln.strip() in ("P/FCF", "FCF Yield", "PEG", "EV/EBITDA"):     # fase 3: el P/E sí aplica
                 # fase 1 (T4): la lectura larga se parte en líneas dentro de su columna
                 assert "No aplica a bancos y aseguradoras" in " ".join(" ".join(lines[i + 1:i + 6]).split()), \
                     (env, ln, lines[i:i + 6])
