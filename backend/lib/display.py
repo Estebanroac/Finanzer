@@ -2027,6 +2027,20 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         if key == "dividend_yield":
             txt = dividend_text(_div) or txt
         grows.append(_row(key, lab, fv(val, fm), rd[0] if rd else "—", rd[1] if rd else None, text=txt))
+    # Fase 3 (T4, §1.4): en un banco, el margen de intereses aparte de los ingresos netos que puntúan (informativo).
+    _nii_g = xm.get("net_interest_income_cagr_3y") if classification.get("subtype") == "banco" else None
+    if _nii_g is not None:
+        _nii_sh = xm.get("net_interest_income_share")
+        _nii_txt = (f"el margen de intereses {'crece' if _nii_g >= 0 else 'se contrae'} un {_pct(abs(_nii_g))} anual "
+                    "en 3 años" + (f" y es el {_pct(_nii_sh, 0)} de los ingresos netos" if _nii_sh else "")
+                    + "; informativo, no puntúa")
+        r_nii = ("Informativo", 'neu', _nii_txt)
+        if _claims_active():
+            _rec(r_nii, _claim("growth", field="archetype_metrics.net_interest_income_cagr_3y", value=_nii_g,
+                               what="margen_intereses", cagr=True, archetype=archetype))
+        _at = next((i + 1 for i, r in enumerate(grows) if r.get("key") == "revenue_growth_yoy"), len(grows))
+        grows.insert(_at, _row("net_interest_income_growth", "Margen de intereses (CAGR 3 años)", fv(_nii_g, "pct"),
+                               "—", None, text=_nii_txt))
     # Etapa 9a: BPA frente a ingresos, informativo (no puntúa: Crecimiento ya puntúa ambos).
     _evr = a.get("eps_vs_revenue_growth")
     evr_note = None

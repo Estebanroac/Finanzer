@@ -318,6 +318,10 @@ export const DEFINITIONS: Record<string, Definition> = {
     title: "Crecimiento de ingresos (último ejercicio)",
     description: "Variación de los ingresos del último ejercicio anual frente al anterior, de los estados financieros. Es informativa: no puntúa.",
   },
+  net_interest_income_growth: {
+    title: "Margen de intereses (CAGR 3 años)",
+    description: "En un banco, lo que cobra por sus préstamos menos lo que paga por sus depósitos y su deuda: tasa anual compuesta de los últimos 3 años y su peso en los ingresos netos. Es informativo: Crecimiento puntúa los ingresos netos (margen de intereses más comisiones).",
+  },
   earnings_growth: {
     title: "Crecimiento del beneficio por acción (BPA)",
     description: "Tasa anual compuesta del BPA en los últimos 3 años (en cíclicas, el promedio del ciclo). Es la cifra que puntúa Crecimiento.",
