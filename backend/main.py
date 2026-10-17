@@ -10,7 +10,7 @@ from typing import Optional, Dict, Any
 from starlette.concurrency import run_in_threadpool
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse, FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 # Add lib to path so imports work
@@ -195,8 +195,7 @@ def _yahoo_search(query: str, limit: int = 5) -> list:
         # El módulo, no el nombre: `from yf_adapter import _session` copiaba el valor de antes de crear la sesión (None
         # en un proceso recién arrancado) y la búsqueda en Yahoo fallaba en silencio hasta el primer análisis.
         import yf_adapter as _ya
-        _ya._ensure_session()
-        _session = _ya._session
+        _session = _ya._live_session()
         url = "https://query2.finance.yahoo.com/v1/finance/search"
         params = {
             "q": query,
@@ -1935,49 +1934,52 @@ async def download_pdf(symbol: str):
 
 
 def _pdf_response(symbol: str):
-    from datetime import datetime
-
     symbol = symbol.upper().strip()
 
     try:
-        # Re-use the same analysis logic as the API endpoint
-        analysis = _compute_limited(symbol)
-
-        # El informe completo (identidad Finanzer, narrativa adaptativa por
-        # bandas, logo, layout editorial) vive en lib/pdf_report.py.
-        from pdf_report import build_report
-
-        logo_path = None
-        _base = os.path.dirname(os.path.abspath(__file__))
-        for _cand in (
-            os.path.join(_base, "..", "frontend", "public", "logo.png"),
-            os.path.join(_base, "..", "frontend", "out", "logo.png"),
-        ):
-            if os.path.isfile(_cand):
-                logo_path = os.path.abspath(_cand)
-                break
-
-        buf = io.BytesIO()
-        build_report(
-            buf, analysis,
-            sector_bench=_pdf_benchmark(analysis),
-            logo_path=logo_path,
-        )
-        buf.seek(0)
-
-        return StreamingResponse(
-            buf,
-            media_type="application/pdf",
-            # Nombre con espacios -> entre comillas (RFC 6266) para que el
-            # navegador no lo trunque en el primer espacio.
-            headers={"Content-Disposition": f'attachment; filename="Informe Finanzer {symbol} {datetime.now().strftime("%Y-%m-%d")}.pdf"'}
-        )
-
+        # Revisión de F6 (hallazgo 7): el análisis Y el PDF (CPU de reportlab) dentro del mismo turno del semáforo; un
+        # solo turno por petición (anidarlos agotaría los turnos con 4 PDF a la vez).
+        with _ANALYSIS_SLOTS:
+            return _pdf_build(symbol, _compute_analysis(symbol))
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"PDF generation error for {symbol}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+def _pdf_build(symbol: str, analysis: dict):
+    """El PDF del análisis ya hecho (dentro del turno del semáforo de _pdf_response)."""
+    from datetime import datetime
+
+    # El informe completo (identidad Finanzer, narrativa adaptativa por
+    # bandas, logo, layout editorial) vive en lib/pdf_report.py.
+    from pdf_report import build_report
+
+    logo_path = None
+    _base = os.path.dirname(os.path.abspath(__file__))
+    for _cand in (
+        os.path.join(_base, "..", "frontend", "public", "logo.png"),
+        os.path.join(_base, "..", "frontend", "out", "logo.png"),
+    ):
+        if os.path.isfile(_cand):
+            logo_path = os.path.abspath(_cand)
+            break
+
+    buf = io.BytesIO()
+    build_report(
+        buf, analysis,
+        sector_bench=_pdf_benchmark(analysis),
+        logo_path=logo_path,
+    )
+    # Bytes ya hechos: el envío no ocupa un hilo del pool (la respuesta en streaming iteraba el buffer en uno).
+    return Response(
+        content=buf.getvalue(),
+        media_type="application/pdf",
+        # Nombre con espacios -> entre comillas (RFC 6266) para que el
+        # navegador no lo trunque en el primer espacio.
+        headers={"Content-Disposition": f'attachment; filename="Informe Finanzer {symbol} {datetime.now().strftime("%Y-%m-%d")}.pdf"'}
+    )
 
 
 @app.get("/api/health")

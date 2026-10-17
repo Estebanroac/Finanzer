@@ -332,6 +332,12 @@ class StatementContext:
     # ── conversión de un estado ──
     def convert(self, attr: str, df):
         """El estado `attr` en la moneda y la clase de la cotización (copia)."""
+        if self._class_done:
+            # Revisión de F6 (hallazgo 5): con los trimestrales en paralelo, otro hilo puede estar aún dentro de
+            # prepare_class (que marca _class_done al empezar y puede esperar a EDGAR): se espera a que termine para
+            # no leer class_applied a medias.
+            with self._lock:
+                pass
         if df is None or getattr(df, "empty", True) or attr not in STATEMENT_ATTRS or not self.active:
             return df
         with self._lock:

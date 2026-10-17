@@ -149,8 +149,7 @@ def _statement_currency(symbol: str):
     if hit is not None:
         return hit
     try:
-        _ensure_session()
-        r = _session.get(_TIMESERIES_URL.format(sym=symbol),
+        r = _live_session().get(_TIMESERIES_URL.format(sym=symbol),
                          params={"symbol": symbol, "type": "annualTotalRevenue,annualNetIncome",
                                  # period2 en el futuro devuelve un resultado vacío: hasta hoy.
                                  "period1": _TIMESERIES_PERIOD1, "period2": str(int(time.time()))},
@@ -352,6 +351,17 @@ def _ensure_session():
         r = _session.get("https://query2.finance.yahoo.com/v1/test/getcrumb")
         _crumb = r.text
         logger.info(f"[AUTH] Yahoo session initialized ({profile}), crumb={_crumb[:8]}...")
+
+
+def _live_session():
+    """La sesión, garantizada y leída en una sola variable local (revisión de F6, hallazgo 6): con análisis en hilos,
+    un `_reset_session` de otro hilo podía dejar `_session` en None entre `_ensure_session()` y su uso."""
+    for _ in range(3):
+        _ensure_session()
+        s = _session
+        if s is not None:
+            return s
+    return _session
 
 
 def _reset_session(rotate_profile: bool = False):
