@@ -424,3 +424,9 @@ rule_of_40 = 0.40                   # listón de la regla de 40 (crecimiento + m
 sbc_material = 0.05                 # SBC > 5% de los ingresos: se lee como coste real (F3_DISENO §5)
 coverage_trend_rel = 0.20           # cobertura con el EBIT de cada ejercicio: ±20% entre extremos -> mejora / empeora
 
+[quality_persistence]               # fase 4 (T1, PLAN §4.1; lib/persistence.py): lo extraordinario exige persistencia
+# La calidad por encima de "excelente" (la primera banda de score.quality) cuenta en proporción a la persistencia de
+# las categorías que la llevan ahí: "excelente" no cambia y lo que está por encima (lo extraordinario) exige historia.
+window = 5                          # ejercicios: un ciclo económico corto y el horizonte habitual del análisis de calidad
+margin_ratio = 0.75                 # el margen de cada ejercicio, al menos el 75% del actual (el de hoy no es un pico)
+

@@ -1595,6 +1595,15 @@ def _compute_analysis(symbol: str) -> dict:
                 # Piotroski no concluyente (cobertura < min_evaluated) -> None:
                 # no aporta a Calidad, que se reescala sobre el resto (etapa 5).
                 _f_for_score = f_score
+                # Fase 4 (T1): persistencia del tramo alto con la historia de EDGAR (o, sin ella, la de los estados).
+                _persist = None
+                try:
+                    import persistence as _pers
+                    _hfy = yinfo.get("_history_fy") if _has_yahoo else None
+                    _persist = (_pers.measure(_hfy, archetype, "edgar") if _hfy
+                                else _pers.measure(_pers.history_from_statements(_stmts_g), archetype, "estados"))
+                except Exception as e:
+                    _sin_dato("persistencia", e)
                 score_result = calculate_score_v2(
                     ratios_score, fin_dict,
                     z_score_value=z_val,
@@ -1606,6 +1615,7 @@ def _compute_analysis(symbol: str) -> dict:
                     archetype=archetype,
                     archetype_values=archetype_values,
                     dcf=dcf_for_score,
+                    persistence=_persist,
                 )
 
                 # Build category breakdown from categories array or category_scores dict

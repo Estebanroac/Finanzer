@@ -3375,6 +3375,7 @@ def calculate_score_v2(
     archetype: str = MATURE,       # etapa 6: salida de classify.classify
     archetype_values: Optional[Dict[str, Any]] = None,  # lib/archetype_metrics.compute
     dcf: Optional[Dict[str, Any]] = None,  # etapa 8: {upside, reliability, na, missing_reason}
+    persistence: Optional[Dict[str, Any]] = None,  # fase 4 (T1): lib/persistence.measure
 ) -> Dict[str, Any]:
     """
     Sistema de Scoring v2.3 - Adaptativo Growth/Value + Sector Financiero
@@ -3556,6 +3557,13 @@ def calculate_score_v2(
     # confianza se aplica en main.py, cuando la confianza ya está calculada.
     from verdict import part_score, quality as _quality
     quality_part = _quality(categories)
+    # Fase 4 (T1): por encima de "excelente", la calidad exige persistencia (lib/persistence.py).
+    import persistence as _persistence
+    _persistence.adjust_quality(quality_part, categories, persistence)
+    if quality_part.get("persistence", {}).get("applied"):
+        from verdict import _level
+        _Q = cfg("thresholds.score.quality")
+        quality_part["level"] = _level(quality_part["score"], _Q["bands"], _Q["labels"])
     price_part = part_score(categories, cfg("thresholds.score.price.categories"))
 
     result = {

@@ -99,6 +99,8 @@ KEYWORDS = [
     # Fase 3 (T3): la frase del DCF inverso afirma un crecimiento exigido y lo compara con la historia.
     ("crecimiento_exigido", r"el precio actual (?:exige|se justifica)", {"implied_growth"}),
     ("retorno_implicito", r"el precio descuenta un (?:rote|roe)", {"implied_return"}),
+    # Fase 4 (T1): la calidad limitada por la persistencia cita el antes y el después.
+    ("persistencia_calidad", r"exige persistencia", {"quality_persistence"}),
     ("base_temporal", r"\binteranual\b|anual en 3 años|\(3 años\)|anual de ciclo medio",
      {"growth", "basis", "eps_vs_revenue"}),
 ]
@@ -352,6 +354,17 @@ def _p_implied_return(a, c, text):
         return f"dice obtenido {o.group(1)}% con {x['own']:.4f}"
 
 
+def _p_quality_persistence(a, c, text):
+    """"X → Y" es la calidad antes de la persistencia y la mostrada, y solo se dice si se aplicó."""
+    q = a.get("quality") or {}
+    pq = q.get("persistence") or {}
+    m = re.search(r"persistencia: (\d+) → (\d+)", text)
+    if not pq.get("applied"):
+        return "dice que la persistencia limita la calidad y no se aplicó"
+    if m and (int(m.group(1)) != pq.get("score_before") or int(m.group(2)) != q.get("score")):
+        return f"dice {m.group(1)} → {m.group(2)} con {pq.get('score_before')} → {q.get('score')}"
+
+
 def _p_altman(a, c, text):
     z = {"safe": "segura", "grey": "gris", "distress": "de riesgo"}.get((a.get("altman_z") or {}).get("zone"))
     m = re.search(r"zona (segura|gris|de riesgo|de peligro)", text)
@@ -417,6 +430,7 @@ PREDICATES = {
     "dcf_upside": _p_dcf_upside, "dcf_rel": _p_dcf_rel, "altman_zone": _p_altman, "runway": _p_runway,
     "price_contraction": _p_price_contraction, "implied_growth": _p_implied_growth,
     "implied_return": _p_implied_return,
+    "quality_persistence": _p_quality_persistence,
 }
 
 

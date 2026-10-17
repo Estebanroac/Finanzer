@@ -1267,6 +1267,14 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         {"kind": "context", "kicker": _hl3[0], "text": _hl3[1], "tone": _hl3[2]},
     ]
 
+    # Fase 4 (T1): por encima de "excelente", la calidad limitada por la persistencia (lib/persistence.py).
+    _pq = _q.get("persistence") or {}
+    _persist_txt = _pq.get("text") if _pq.get("applied") else None
+    _persist_short = _pq.get("short") if _pq.get("applied") else None
+    for _t in (_persist_txt, _persist_short):
+        if _t:
+            _record(_t, _claim("quality_persistence", field="quality.persistence.weighted", value=_pq.get("weighted")),
+                    source="display.quality")
     cover = {
         # Etapa 11b: conversión de moneda y clase de acciones aplicada a los estados (o None).
         "currency_note": currency_note((a.get("data_provenance") or {}).get("currency")),
@@ -1281,7 +1289,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         "quality": {"title": "CALIDAD DEL NEGOCIO", "question": "¿es buena la empresa?", "score": q_score,
                     "level": q_level, "tone": q_tone,
                     "note": ("baja confianza: " + "; ".join(_q.get("low_confidence_reasons") or [])
-                             if _q.get("low_confidence") else None)},
+                             if _q.get("low_confidence") else _persist_txt)},
         "price": {"title": "ATRACTIVO DEL PRECIO", "question": "¿está cara hoy?", "score": p_score, "raw": p_raw,
                   "contracted": bool(_pa.get("contracted")), "level": p_level, "tone": p_tone, "note": price_note},
         "categories": cat_groups,
@@ -1494,7 +1502,8 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                        "value": v, "tone": 'pos' if v > 0 else 'neg' if v < 0 else 'neu'})
     composition = {
         "quality": {"title": "CALIDAD DEL NEGOCIO", "score": q_score, "level": q_level, "tone": q_tone,
-                    "note": _q.get("basis") or ("baja confianza por cobertura" if _q.get("low_confidence") else None),
+                    "note": _q.get("basis") or ("baja confianza por cobertura" if _q.get("low_confidence")
+                                                else _persist_short),
                     "rows": _qrows},
         "price": {"title": "ATRACTIVO DEL PRECIO", "score": p_score, "level": p_level, "tone": p_tone,
                   "note": price_note, "rows": _prows,

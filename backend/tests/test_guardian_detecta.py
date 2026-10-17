@@ -56,6 +56,12 @@ CASES = {
                        [claim("implied_return", field="archetype_metrics.implied.implied", value=0.101)],
                        {"archetype_metrics": {"implied": {"implied": 0.101, "own": 0.107}}},
                        {"archetype_metrics": {"implied": {"implied": 0.151, "own": 0.107}}}),
+    "quality_persistence": ("Por encima de 80, la calidad exige persistencia: 100 → 93. rentabilidad: margen "
+                            "operativo positivo y al menos el 75% del último (29.5%) en 2 de 5 ejercicios.",
+                            [claim("quality_persistence", field="quality.persistence.weighted", value=0.65)],
+                            {"quality": {"score": 93, "persistence": {"applied": True, "score_before": 100, "weighted": 0.65}}},
+                            {"quality": {"score": 96, "persistence": {"applied": True, "score_before": 100,
+                                                                      "weighted": 0.65}}}),
     "dcf_upside": ("el precio incorpora una prima de 20% sobre el valor intrínseco", [claim("dcf_upside")],
                    {"dcf": {"upside": -20.0}}, {"dcf": {"upside": 20.0}}),
     "dcf_rel": ("DCF no concluyente (fiabilidad baja)", [claim("dcf_rel")],
