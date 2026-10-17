@@ -431,6 +431,13 @@ def get_ticker_info(symbol: str) -> Dict[str, Any]:
                                         "note": "verificación oficial no disponible"}
 
         try:
+            import ordinary
+            ordinary.apply(info)
+        except Exception as e:
+            logger.error(f"[ORDINARY] {symbol}: {e}")
+            info["_ordinary"] = {"notes": [f"error: {type(e).__name__}: {e}"]}
+
+        try:
             _apply_dividend(info, _hist)
         except Exception as e:
             logger.error(f"[DIVIDEND] {symbol}: {e}")
@@ -1192,6 +1199,8 @@ def _apply_ttm(symbol: str, info: Dict[str, Any], plan_b: bool) -> Dict[str, Any
     t = build_ttm(frames.get("quarterly_income_stmt"), frames.get("quarterly_cashflow"),
                   frames.get("quarterly_balance_sheet"))
     info["_as_of"] = _as_of(info, t, plan_b)
+    if t.get("ordinary"):
+        info["_ordinary_src"] = {**t["ordinary"], "period_type": "ttm"}   # fase 2b (T7): lib/ordinary.py
     flows = [k for k in t["values"] if k in FLOW_KEYS]
     balance = [k for k in t["values"] if k not in FLOW_KEYS]
     for k, v in t["values"].items():
@@ -1365,6 +1374,10 @@ def _enrich_prior_year_data(symbol: str, info: Dict[str, Any], ticker=None) -> D
         "current_liabilities": _row(bs, "Current Liabilities"),
         "stockholders_equity": _row(bs, "Stockholders Equity"),
         "tangible_book_value": _row(bs, "Tangible Book Value"),
+        # Fase 2b (T7): desglose del accionista ordinario por ejercicio (ROTE ajustado por AT1, fase 3).
+        "net_income_common": _row(inc, "Net Income Common Stockholders"),
+        "common_stock_equity": _row(bs, "Common Stock Equity"),
+        "other_equity_interest": _row(bs, "Other Equity Interest"),
         # gastos no financieros de un banco (ratio de eficiencia aproximado)
         "non_interest_expense": _row(inc, "Non Interest Expense"),
         "sga": _row(inc, "Selling General And Administration"),
@@ -1614,7 +1627,8 @@ def _fallback_yfinance(symbol: str) -> Dict[str, Any]:
             return {k: _sg(latest, k) for k in [
                 "Total Revenue", "Gross Profit", "Operating Income",
                 "Net Income", "EBITDA", "Diluted EPS", "Interest Expense",
-                "Depreciation And Amortization", "Net Non Operating Interest Income Expense"
+                "Depreciation And Amortization", "Net Non Operating Interest Income Expense",
+                "Net Income Common Stockholders"
             ]}
         return {}
 
@@ -1625,6 +1639,7 @@ def _fallback_yfinance(symbol: str) -> Dict[str, Any]:
             result = {k: _sg(latest, k) for k in [
                 "Total Assets", "Current Assets", "Current Liabilities",
                 "Total Debt", "Long Term Debt", "Stockholders Equity", "Capital Lease Obligations", "Commercial Paper",
+                "Common Stock Equity", "Other Equity Interest",
                 "Total Liabilities Net Minority Interest",
                 "Cash Cash Equivalents And Short Term Investments",
                 "Cash And Cash Equivalents",
@@ -1689,6 +1704,10 @@ def _fallback_yfinance(symbol: str) -> Dict[str, Any]:
     info["cash"] = bs.get("Cash And Cash Equivalents")
     info["retainedEarnings"] = bs.get("Retained Earnings")
     info["inventory"] = bs.get("Inventory")  # _get_bs ya lo recolecta (inventory_turnover)
+    # Fase 2b (T7): desglose del accionista ordinario del ejercicio (lib/ordinary.py); el TTM lo sustituye si hay corte.
+    info["_ordinary_src"] = {"period_type": "fy", "netIncomeToCommon": inc.get("Net Income Common Stockholders"),
+                             "commonStockEquity": bs.get("Common Stock Equity"),
+                             "otherEquityInterest": bs.get("Other Equity Interest")}
 
     cf = results.get("cashflow", {})
     info["operatingCashflow"] = cf.get("Operating Cash Flow")

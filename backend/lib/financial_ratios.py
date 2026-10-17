@@ -1442,7 +1442,10 @@ def calculate_all_ratios(financial_data: Dict) -> Dict[str, Optional[float]]:
         eps_val = float(_rep_eps)
     else:
         eps_val = earnings_per_share(d.get("net_income"), d.get("shares_outstanding"))
-    bvps = book_value_per_share(d.get("total_equity"), d.get("shares_outstanding"))
+    # Fase 2b (T7): ROE y valor contable del accionista ordinario (sin AT1 ni preferentes; lib/ordinary.py). El D/E,
+    # el capital invertido y el Altman siguen con el patrimonio total.
+    common_eq = d.get("common_equity") if d.get("common_equity") is not None else d.get("total_equity")
+    bvps = book_value_per_share(common_eq, d.get("shares_outstanding"))
     fcf_ps = free_cash_flow_per_share(fcf_val, d.get("shares_outstanding"))
 
     # COGS para inventory_turnover: Yahoo no siempre expone "Cost Of Revenue" y el
@@ -1490,7 +1493,7 @@ def calculate_all_ratios(financial_data: Dict) -> Dict[str, Optional[float]]:
 
     return {
         # Rentabilidad
-        "roe": roe(d.get("net_income"), d.get("total_equity")),
+        "roe": roe(d.get("net_income"), common_eq),
         "roa": roa(d.get("net_income"), d.get("total_assets")),
         "roic": roic(nopat_val, invested_cap),
         "gross_margin": gross_margin(d.get("gross_profit"), d.get("revenue")),

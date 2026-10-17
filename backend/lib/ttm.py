@@ -56,6 +56,10 @@ BALANCE_KEYS = {
     "inventory": "Inventory",
 }
 CASH_ROWS = ("Cash Cash Equivalents And Short Term Investments", "Cash And Cash Equivalents")
+# Fase 2b (T7): desglose del accionista ordinario (lib/ordinary.py). Fuera de FLOW_KEYS/BALANCE_KEYS: no son campos del
+# análisis sino las piezas con que se rehacen el beneficio neto y el patrimonio del ordinario del mismo corte.
+ORDINARY_FLOW_ROW = "Net Income Common Stockholders"
+ORDINARY_BALANCE_ROWS = {"commonStockEquity": "Common Stock Equity", "otherEquityInterest": "Other Equity Interest"}
 
 # Filas trimestrales que necesita la normalización (lib/normalize.py).
 QUARTERLY_ROWS = (
@@ -201,6 +205,14 @@ def build_ttm(q_inc, q_cf, q_bs) -> Dict[str, Any]:
         why = "sin balance trimestral" if not bdates else "sin corte trimestral: el balance es el del ejercicio"
         for key in (*BALANCE_KEYS, "cash"):
             out["missing"][key] = why
+    if cut:
+        inc_dates = frame_dates(q_inc)
+        nic = _window(q_inc, inc_dates, cut, ORDINARY_FLOW_ROW)
+        ordn = {"period_end": cut, "netIncomeToCommon": sum(nic) if nic is not None else None}
+        for key, row in ORDINARY_BALANCE_ROWS.items():
+            ordn[key] = ((frame_series(q_bs, row, n=len(bdates))[bdates.index(cut):bdates.index(cut) + 1] or [None])[0]
+                         if cut in bdates else None)
+        out["ordinary"] = ordn
     out["eps"] = _ttm_eps(q_inc, cut, out["values"].get("netIncome"))
     inc_dates = frame_dates(q_inc)
     k = inc_dates.index(cut) if cut and cut in inc_dates else len(inc_dates)

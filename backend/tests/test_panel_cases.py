@@ -303,3 +303,60 @@ def test_nflx_termination_fee_isolated_as_non_operating(sample):
     assert "2026-03-31" in it["origin"] and 2.5e9 < it["gross"] < 2.9e9
     assert a["earnings_normalization"]["differs"] is True
     assert 15 < a["key_metrics"]["interest_coverage"] < 19        # EBIT / gasto financiero, sin la comisión
+
+
+# ── Fase 2b (T7): beneficio y patrimonio del accionista ordinario (lib/ordinary.py) ──
+def _ordinary(info):
+    import ordinary
+    info.setdefault("_as_of", {"type": "ttm", "date": "2026-06-30",
+                               "fields": {"netIncome": {"period_end": "2026-06-30"},
+                                          "totalStockholderEquity": {"period_end": "2026-06-30"}}})
+    info["_data_path"] = "plan_b_yfinance"
+    return ordinary.apply(info)
+
+
+def test_ordinary_at1_bank():
+    """BCS (millones de GBP, FY2025; EDGAR: ProfitLossAttributableToOrdinaryEquityHoldersOfParentEntity 6,175 y
+    OtherEquityInterest 12,725): los cupones AT1 salen del beneficio y el AT1 del patrimonio."""
+    info = {"netIncome": 7172.0, "totalStockholderEquity": 77784.0, "bookValue": 10.0,
+            "_ordinary_src": {"period_type": "ttm", "netIncomeToCommon": 6175.0, "commonStockEquity": 77784.0,
+                              "otherEquityInterest": 12725.0}}
+    o = _ordinary(info)
+    assert info["netIncome"] == 6175.0 and o["distributions"] == 997.0
+    assert o["at1"] == 12725.0 and o["preferred"] == 0.0 and info["commonEquity"] == 77784.0 - 12725.0
+    assert info["bookValue"] == pytest.approx(10.0 * 65059 / 77784)
+
+
+def test_ordinary_us_preferred():
+    """JPM: Yahoo ya resta los preferentes en Common Stock Equity; sin AT1."""
+    info = {"netIncome": 57048.0, "totalStockholderEquity": 362438.0,
+            "_ordinary_src": {"period_type": "ttm", "netIncomeToCommon": 55681.0, "commonStockEquity": 342393.0,
+                              "otherEquityInterest": None}}
+    o = _ordinary(info)
+    assert o["preferred"] == 362438.0 - 342393.0 and o["at1"] == 0.0 and info["commonEquity"] == 342393.0
+
+
+def test_other_equity_interest_is_not_at1_without_coupons():
+    """TM: "Other Equity Interest" es otra partida del patrimonio (sin cupones, el beneficio es el mismo)."""
+    info = {"netIncome": 3848098.0, "totalStockholderEquity": 39918854.0,
+            "_ordinary_src": {"period_type": "ttm", "netIncomeToCommon": 3848098.0, "commonStockEquity": 39918854.0,
+                              "otherEquityInterest": 4544018.0}}
+    o = _ordinary(info)
+    assert o["at1"] == 0.0 and "commonEquity" not in info and info["netIncome"] == 3848098.0
+
+
+def test_ordinary_needs_the_same_cut():
+    info = {"netIncome": 7172.0, "totalStockholderEquity": 77784.0,
+            "_ordinary_src": {"period_type": "fy", "netIncomeToCommon": 6175.0, "commonStockEquity": 77784.0,
+                              "otherEquityInterest": 12725.0}}
+    assert _ordinary(info) is None and info["netIncome"] == 7172.0
+
+
+def test_ordinary_in_the_panel(sample):
+    o = sample["BCS"]["data_provenance"]["ordinary"]
+    assert o["at1"] > 0 and o["preferred"] == 0 and o["distributions"] > 0
+    assert sample["JPM"]["data_provenance"]["ordinary"]["preferred"] > 0
+    assert sample["TM"]["data_provenance"]["ordinary"]["at1"] == 0
+    # el beneficio neto y el patrimonio del ordinario quedan declarados en la procedencia
+    st = sample["BCS"]["data_provenance"]["fields"]
+    assert "commonEquity" in st and st["netIncome"]["source"] == "derivado"

@@ -271,6 +271,8 @@ def _build_provenance(yinfo: dict, out_flags: list, block_errors: list) -> dict:
         "official_source": yinfo.get("_official_source"),
         # Fase 2b (T5): deuda coherente con el EBITDA y sus componentes (F2_PRECEDENCIA §2.3).
         "debt": yinfo.get("_debt"),
+        # Fase 2b (T7): beneficio y patrimonio del accionista ordinario (AT1 y preferentes separados).
+        "ordinary": yinfo.get("_ordinary"),
         # Fase 2b: serie diaria de precios y dividendo indicado en la moneda y la clase del precio (T2).
         "price_history": yinfo.get("_price_history"),
         "dividend": yinfo.get("_dividend"),

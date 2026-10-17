@@ -242,6 +242,7 @@ class FinancialStatements:
     total_debt: Optional[float] = None
     long_term_debt: Optional[float] = None  # NUEVO: Para F-Score
     total_equity: Optional[float] = None
+    common_equity: Optional[float] = None      # fase 2b (T7): del accionista ordinario (ROE y P/B)
     retained_earnings: Optional[float] = None  # NUEVO: Para Z-Score
     
     # Cash Flow Statement
@@ -433,6 +434,7 @@ class YahooFinanceFetcher:
                     total_debt=total_debt,
                     long_term_debt=long_term_debt,
                     total_equity=total_equity,
+                    common_equity=info.get("commonEquity"),
                     retained_earnings=retained_earnings,
                     
                     # Cash Flow
@@ -750,6 +752,7 @@ class FinancialDataService:
             "total_debt": financials.total_debt,
             "long_term_debt": financials.long_term_debt,
             "total_equity": financials.total_equity,
+            "common_equity": financials.common_equity,
             "retained_earnings": financials.retained_earnings,
             "total_liabilities": financials.total_liabilities,
             "operating_cash_flow": financials.operating_cash_flow,
