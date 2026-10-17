@@ -24,7 +24,7 @@
 
 | Campo | Valor |
 |---|---|
-| Fase en curso | **Fase 3 🔧 T1b** (parada 1 aprobada, registro #25) |
+| Fase en curso | **Fase 3 🛑 punto de parada 1b** (T1b hecho, registro #26): golden, EBITDA, variable de Render y "ok, pushea" |
 | Rama de trabajo | `fiabilidad/f3-metodo` (worktree `../finanzer_next-f3`), sin subir |
 | Producción | `01336e2` (código `103c76f`). Rollback de código: `60f8a69` |
 | `main` local | `b2f1972` (borrador del prompt de la fase 3), un commit por delante de `origin/main`; sin subir |
@@ -1112,3 +1112,29 @@ Siembra inicial (2026-10-14). **La fase 0 completa este mapa** recorriendo todos
   - EDGAR principal (D2) en: EBIT, ingresos de BRK-B y de bancos de EE. UU., capex de emisores con cautiva;
   - crecimiento y CAGR en la moneda de los estados, con el efecto divisa aparte;
   - tasas base: descarga autorizada del PDF 2.0 (13-may-2026).
+
+### #26 · 2026-10-16 · operador · Fase 3 (T1b hecho; detenida en el punto de parada 1b)
+- **Objetivo de la sesión:** implementar las decisiones de la parada 1 (capa de datos) y medir.
+- **Decisiones tomadas por el usuario:** las del registro #25. Ninguna nueva en esta parte.
+- **Hecho** (informe: `docs/fiabilidad/F3_T1B_PARADA1B.md`):
+  - EDGAR como fuente principal: EBIT (`d34c858`), ingresos de aseguradoras, conglomerados y bancos de EE. UU.
+    (`7685a1b`, `a997ee2`), capex con cautiva (`5043eca`);
+  - historia anual larga con caché LRU y semáforo (`84fc641`; juego f2b ampliado desde la caché local de la 2a);
+  - dos defectos latentes en producción que la historia destapó: perímetro con reexpresiones antiguas (`0d48d11`) y
+    "último informe anual" de la deuda sin límite (`090f38b`);
+  - crecimiento en la moneda de los estados (`3b16823`);
+  - herramienta F1 con las definiciones aprobadas (`78fa695`, `0f85a69`).
+- **Verificación:**
+  - `edgar_verify.py --whatif` → "1339/1411 (94.9%)"; `--sin-definiciones-f3` → "1319/1411 (93.5%)" (T0: 91.4%);
+  - `panel_run.py --compare <T0>` → un cambio de nivel: BRK-B calidad excelente → sólida;
+  - `pytest tests -q --ignore=tests/test_regression.py` → todo en verde salvo `test_forced_samples_are_up_to_date`
+    (muestras del contrato, se regeneran con los golden); `test_regression.py` → "66 failed" (golden pendientes).
+- **Abierto / siguiente paso:** aprobación de los golden (F3_T1B_PARADA1B §3), decisión del EBITDA (§5, abierta),
+  `SEC_EDGAR_USER_AGENT` en Render (sin ella no hay deploy) y "ok, pushea".
+- **Archivos tocados:** `lib/edgar_primary.py` (nuevo), `lib/growth_currency.py` (nuevo), `lib/sec_edgar.py`,
+  `lib/perimeter.py`, `lib/archetype_metrics.py`, `lib/yf_adapter.py`, `main.py`, `config/data.toml`,
+  `config/schema.toml`, `tests/edgar_verify.py`, tests nuevos y el juego `tests/fixtures/f2b/edgar/companyfacts`.
+- **Avisos para el siguiente chat:**
+  - el juego f2b ya trae la historia larga: se amplía con `tests/f3_extend_history_fixtures.py` desde la caché local
+    de la 2a (no captura en vivo; los CIK sin caché local se listan);
+  - la regla de industria debe normalizarse con `classify.norm_industry` (Yahoo usa raya: "Insurance—Diversified").
