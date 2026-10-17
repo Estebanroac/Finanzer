@@ -920,7 +920,10 @@ def _reverse_block(a: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     role = ("Es el método intrínseco del veredicto: el DCF directo no concilia con el precio"
             if (adj is not None and str(adj.get("reason", "")).startswith("El DCF directo"))
             else "Es el método intrínseco del veredicto: el DCF directo no es significativo (FCF − SBC ≤ 0), así que "
-                 "se valora el flujo de mantenimiento" if "mantenimiento" in _metric
+                 "se valora el flujo de mantenimiento" if "flujo de mantenimiento" in _metric
+            else ("Es el método intrínseco del veredicto: el DCF directo no es significativo ("
+                  + str((a.get("dcf") or {}).get("reason") or "sin valor por acción positivo") + ")")
+            if (a.get("dcf") or {}).get("not_significant") and adj is not None
             else "Es el método intrínseco del veredicto: sin DCF directo, se valora el FFO por acción"
             if adj is not None else "Contraste del DCF directo: no puntúa")
     if adj is not None:

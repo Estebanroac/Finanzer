@@ -2788,7 +2788,8 @@ def score_valoracion(
         rv = _dcf["reverse"]
         _dcf_adj = rv["points"]
         base_score += _dcf_adj
-        adjustments.append({"metric": "DCF inverso (flujo de mantenimiento)", "value": rv["band"].replace("_", " "),
+        adjustments.append({"metric": rv.get("metric") or "DCF inverso (flujo de mantenimiento)",
+                            "value": rv["band"].replace("_", " "),
                             "adjustment": _dcf_adj, "reason": rv.get("text") or rv["band"],
                             "severity": _reverse_severity(_dcf_adj, T["dcf_points_high"])})
     elif _dcf.get("na") and (_dcf.get("reverse") or {}).get("points") is not None:
@@ -2836,7 +2837,8 @@ def score_valoracion(
     if _n_app:
         cov.derived_comp("Bloque de múltiplos", [_bm, -_bm], _block_adj)
     if dcf is not None and _dcf.get("not_significant") and (_dcf.get("reverse") or {}).get("points") is not None:
-        cov.comp("DCF inverso (flujo de mantenimiento)", T["dcf_points_high"], _dcf_adj, None)
+        cov.comp((_dcf.get("reverse") or {}).get("metric") or "DCF inverso (flujo de mantenimiento)",
+                 T["dcf_points_high"], _dcf_adj, None)
     elif dcf is not None and _dcf.get("not_significant"):
         # Etapa 11b: FCF base <= 0 o capital <= 0: no significativo (no cuenta como dato ausente).
         cov.not_sig("DCF", _dcf["not_significant"])

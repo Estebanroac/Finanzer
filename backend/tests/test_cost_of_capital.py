@@ -386,3 +386,12 @@ def test_f4_confidence_counts_only_real_causes():
                             "stability": d("baja")})
     assert r["level"] == "media" and r["capped_from"] == "alta"
     assert any("estabilidad baja" in x for x in r["reasons"])
+
+
+def test_reverse_label_names_the_flow_it_solves():
+    """Revisión de código F3 (hallazgo 5): con el directo no significativo por la deuda, el inverso sobre FCF − SBC
+    no se rotula como flujo de mantenimiento."""
+    rv = {"band": "exigente", "points": -2, "text": "El precio actual exige…", "metric": "DCF inverso (FCF − SBC)"}
+    r = _val({"not_significant": "valor por acción ≤ 0 (la deuda neta supera el valor de la empresa)", "reverse": rv})
+    m = [a["metric"] for a in r["adjustments"] if "inverso" in a["metric"]]
+    assert m == ["DCF inverso (FCF − SBC)"]

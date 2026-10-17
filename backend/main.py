@@ -1603,7 +1603,13 @@ def _compute_analysis(symbol: str) -> dict:
                 if _m.get("points") is not None and isinstance(dcf_for_score, dict) and (
                         dcf_for_score.get("reliability") == "baja" or (archetype == REIT and dcf_for_score.get("na"))
                         or dcf_for_score.get("not_significant")):
-                    dcf_for_score["reverse"] = {"band": _m["band"], "points": _m["points"], "text": _m["text"]}
+                    # Revisión de código F3 (hallazgo 5): el rótulo dice sobre qué flujo resuelve el inverso; el de
+                    # mantenimiento solo cuando lo sustituye (FCF − SBC <= 0), no cuando el directo deja de ser
+                    # significativo por la deuda.
+                    dcf_for_score["reverse"] = {
+                        "band": _m["band"], "points": _m["points"], "text": _m["text"],
+                        "metric": ("DCF inverso (flujo de mantenimiento)" if _m.get("replaces")
+                                   else f"DCF inverso ({_m.get('flow_label') or 'FCF − SBC'})")}
             except Exception as e:
                 logger.error(f"Reverse DCF error: {e}")
                 _sin_dato("dcf_inverso", e)
