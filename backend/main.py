@@ -786,6 +786,40 @@ def _compute_analysis(symbol: str) -> dict:
             _eps_r = growth_rate(_eps_series, 3, what="BPA")
             fin_dict["eps_cagr_3y"] = _eps_r["value"]
             fin_dict["eps_growth_reason"] = _eps_r["reason"]
+            # Fase 3 (T5, F3_DISENO §4): cambio de perímetro dentro de la ventana del CAGR (UL: escisión de los
+            # helados). El crecimiento se mide sobre el perímetro homogéneo: los ejercicios del perímetro vigente
+            # (reexpresados) y, en el BPA, el beneficio de las operaciones continuadas. Con menos de 2 años
+            # homogéneos, "no comparable" y no puntúa.
+            _per = (yinfo.get("_perimeter") or {}) if _has_yahoo else {}
+            if _per.get("mixed_cagr"):
+                _ser = _per.get("series") or []
+                _n = 0
+                while _n < len(_ser) and _ser[_n].get("basis") == "vigente":
+                    _n += 1
+                _yrs = _n - 1
+                if _yrs >= cfg("thresholds.growth.perimeter_min_years"):
+                    _rev_r = growth_rate((_stmts_g.get("revenue") or [])[:_n], _yrs, what="ingresos",
+                                         strict_ends_only=True)
+                    _ni = _stmts_g.get("net_income") or []
+                    _disc = _stmts_g.get("net_income_discontinued") or []
+                    _cont = [(n - (_disc[i] if i < len(_disc) and _disc[i] else 0.0)) if n is not None else None
+                             for i, n in enumerate(_ni[:_n])]
+                    _eps_r = growth_rate(per_share(_cont, (_stmts_g.get("ordinary_shares") or [])[:_n]), _yrs,
+                                         what="BPA de operaciones continuadas")
+                    _why = (f"perímetro homogéneo: {_yrs} años en el perímetro vigente (ejercicios reexpresados tras "
+                            "el cambio de perímetro), no el CAGR a 3 años que cruza el cambio")
+                    fin_dict["revenue_growth_note"] = _why
+                    fin_dict["eps_growth_note"] = _why + "; BPA de operaciones continuadas"
+                else:
+                    _rev_r = {"value": None, "reason": "no comparable: el cambio de perímetro deja menos de 2 años "
+                                                         "homogéneos; no puntúa"}
+                    _eps_r = {"value": None, "reason": _rev_r["reason"]}
+                fin_dict["revenue_cagr_3y"] = _rev_r["value"]
+                fin_dict["revenue_growth_reason"] = _rev_r["reason"]
+                fin_dict["eps_cagr_3y"] = _eps_r["value"]
+                fin_dict["eps_growth_reason"] = _eps_r["reason"]
+                result["growth_perimeter"] = {"homogeneous_years": max(_yrs, 0), "applied": True,
+                                              "note": fin_dict.get("revenue_growth_note") or _rev_r["reason"]}
             if _rev_r.get("note") or _eps_r.get("note"):
                 fin_dict["growth_cagr_notes"] = {k: r["note"] for k, r in (("ingresos", _rev_r), ("BPA", _eps_r))
                                                  if r.get("note")}
@@ -1241,6 +1275,9 @@ def _compute_analysis(symbol: str) -> dict:
                                  else "CAGR de ingresos por acción a 3 años"
                                  if "ingresos" in (growth_basis.get("applied_to") or [])
                                  else "CAGR de ingresos a 3 años")
+                if (result.get("growth_perimeter") or {}).get("applied") and archetype != CYCLICAL:
+                    _growth_basis = (f"CAGR de ingresos de {result['growth_perimeter']['homogeneous_years']} años en "
+                                     "el perímetro homogéneo")
                 if growth is None:
                     growth, _growth_basis = cfg("valuation.dcf.default_growth"), "valor por defecto (sin CAGR de los estados)"
                 _dcf_na = not_applicable(archetype, "dcf")
