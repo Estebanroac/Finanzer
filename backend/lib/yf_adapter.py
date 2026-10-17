@@ -477,6 +477,8 @@ def _apply_edgar(symbol: str, info: Dict[str, Any], ed: Dict[str, Any], hist: Di
     today = frame.index[-1].date() if frame is not None else _dt.date.today()
     info["_edgar"] = edgar.summary(ed)
     info["_edgar"]["backup"] = edgar_backup.apply(info, ed, ctx)
+    import edgar_primary
+    info["_edgar"]["primary"] = edgar_primary.apply(info, ed, ctx, symbol)   # fase 3 (T1b): EDGAR manda, campo a campo
     info["_ebit"] = edgar_backup.ebit_check(info, ed, ctx)     # F2_PRECEDENCIA §2.1: EBIT "estimado por la fuente"
     import debt
     info["_debt"] = debt.apply(info, ed, ctx)          # T5: deuda coherente con el EBITDA

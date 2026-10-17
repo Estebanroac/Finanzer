@@ -382,16 +382,19 @@ def test_restated_series_already_homogeneous_is_not_mixed(sample):
 
 
 # ── F2_PRECEDENCIA §2.1 (escenario B): EBIT de la fuente "estimado" si difiere > 2% del de EDGAR ──
-def test_ebit_estimated_by_source(sample):
+def test_ebit_is_the_reported_one_from_edgar(sample):
     """Yahoo construye su "Operating Income": KO +7.3%, PLD −29.8%, UL +12.1% frente al de EDGAR del mismo corte
-    (2a: KO, PLD, NEE, DUK, FCX, CRWD, UL, V). AAPL y MSFT coinciden; AMT, +1.7%, dentro del 2%."""
-    for sym in ("KO", "PLD", "NEE", "DUK", "FCX", "CRWD", "UL", "V"):
+    (2a). Fase 3 (T1b, D2): manda el que presenta el emisor en EDGAR, con la cifra de Yahoo sustituida a la vista en
+    data_provenance.edgar.primary. Sin el periodo en EDGAR (20-F sin trimestres) queda el de la fuente, sin verificar
+    (`ebit.status = "sin_edgar"`); sin EDGAR (MC.PA, D7), igual."""
+    for sym in ("KO", "PLD", "NEE", "DUK", "FCX", "CRWD", "UL", "V", "AAPL", "MSFT", "AMT"):
         a = sample[sym]
-        e = a["data_provenance"]["ebit"]
-        assert e["status"] == "estimado" and abs(e["diff"]) > 0.02, sym
-        rows = {r["key"]: r["label"] for r in a["display"]["sections"]["profitability"]["rows"]}
-        assert rows["operating_margin"].endswith("(estimado por la fuente)"), sym
-        assert "estimado por la fuente" in a["data_provenance"]["fields"]["operatingIncome"]["detail"], sym
-    for sym in ("AAPL", "MSFT", "AMT"):
-        assert sample[sym]["data_provenance"]["ebit"]["status"] == "coincide", sym
-    assert sample["MC.PA"]["data_provenance"]["ebit"]["status"] == "sin_edgar"
+        assert a["data_provenance"]["fields"]["operatingIncome"]["source"] == "sec_edgar", sym
+        cut = [x for x in a["data_provenance"]["edgar"]["primary"]["cut"] if x["field"] == "operatingIncome"]
+        assert cut and cut[0]["concept"] in ("us-gaap:OperatingIncomeLoss",
+                                             "ifrs-full:ProfitLossFromOperatingActivities"), sym
+        assert a["data_provenance"]["ebit"] is None, sym
+    ko = [x for x in sample["KO"]["data_provenance"]["edgar"]["primary"]["cut"] if x["field"] == "operatingIncome"][0]
+    assert ko["value"] == pytest.approx(14.854e9, rel=1e-3) and ko["replaced"] == pytest.approx(15.941e9, rel=1e-3)
+    for sym in ("TSM", "NVO", "ASML", "TM", "SHEL", "MC.PA"):
+        assert sample[sym]["data_provenance"]["ebit"]["status"] == "sin_edgar", sym
