@@ -58,6 +58,8 @@
 | T7 | `c8ab2fe` | CAGR por años de calendario (destapado en NOW) |
 | T7 | `52403a2` | Fixtures externos |
 | T7 | `8a58618` | Cautiva sin desglose (DE) |
+| T8 (mapa) | `9155044` | Margen de intereses del banco, visible aparte |
+| T8 (mapa) | `784b7eb` | Cobertura de intereses con FFO en REIT |
 
 GROWTH_PROFITABLE deja de ser provisional. Ya tiene herramientas propias:
 

@@ -1174,3 +1174,77 @@ código: `60f8a69`). Todo arreglo es de fondo: la 2b retira las dos protecciones
   - uso de la deuda de la cautiva de CAT;
   - crecimiento sin el cambio de perímetro (UL);
   - crecimiento de los ADR en la moneda de los estados (UL: +0.5% en USD frente a −3.8% en EUR).
+
+### 7.22 Fase 3 del plan de fiabilidad: método por tipo de negocio
+
+*Operador F3, 16–17-oct-2026. Detalle: [`fiabilidad/F3_T1_PARADA1.md`](fiabilidad/F3_T1_PARADA1.md),
+[`fiabilidad/F3_T2_PARADA2.md`](fiabilidad/F3_T2_PARADA2.md) y
+[`fiabilidad/F3_T7_PARADA3.md`](fiabilidad/F3_T7_PARADA3.md); bitácora, registros #24–#31. Rama
+`fiabilidad/f3-metodo`, **sin subir**. Desde el registro #29 el operador decide bajo la delegación del usuario. Todo
+arreglo es de fondo; la fase no deja protecciones provisionales nuevas.*
+
+- **T1/T1b, definiciones y capa de datos** (`3d52202`…`3966a43`): las definiciones de D2 que dejó la 2b.
+  - Capex sin el equipo arrendado de la cautiva; EBIT reportado; EBIT de bancos "no aplica".
+  - Ingresos netos totales en bancos; ingresos de BRK-B sin ganancias de inversión.
+  - Caja con las inversiones a corto plazo.
+  - EDGAR principal en esos campos.
+  - EBITDA = EBIT + D&A.
+  - Crecimiento en la moneda de los estados.
+  - F1: 94.9% (93.5% sin las definiciones de la fase 3; 91.4% al cierre de la 2b).
+- **T2, clasificador con la historia de EDGAR** (`dc62a83`…`9e76d50`, `0fe8ef0`).
+  - Ciclicidad: 8+ ejercicios con episodios repetidos, que son caídas de ingresos ≥ 10% confirmadas por ≥ 2 pp de
+    margen operativo, o desplomes del BPA que coinciden con una caída de ingresos.
+  - Recortes de perímetro y roturas de estructura de capital.
+  - GROWTH_PROFITABLE y subtipos de FINANCIAL.
+  - Sensibilidad ±20% ("frontera").
+  - 8 cambios de arquetipo. KO, que salía cíclica por la refranquicia, se queda MATURE con la condición de
+    apalancamiento operativo.
+- **T3, DCF** (`f8e5750`…`787317a`):
+  - una sola estructura: 5 años constantes y convergencia lineal en los años 6–10;
+  - FCF − SBC;
+  - DCF inverso contra tasas base: lognormal de Mauboussin y Callahan (2021), por tamaño e industria, comparado con
+    la historia propia;
+  - opción 3 de §7.17;
+  - contraste independiente Δ = 0.000000 pp.
+- **T4, financieras** (`e2b4c3b`, `afae76a`, `1c3dbad`, `6912ded`, `9155044`):
+  - ROTE ordinario (sin AT1);
+  - ROTE/ROE implícito = P/TBV × (Ke − g) + g, con bandas y sensibilidad;
+  - ROE medio en aseguradoras;
+  - P/E aplicable a bancos y aseguradoras (registro #14);
+  - subtipo visible;
+  - margen de intereses mostrado aparte.
+- **T5, crecimiento** (`c12ad29`, `381c863`, `e353392`, `57e8d46`, `afdd1d8`, `26aa866`):
+  - retorno total en MATURE con dividendo ≥ 4%;
+  - perímetro homogéneo (UL);
+  - ciclo medio de pico a pico (la cota −5%/+10% queda solo con historia corta);
+  - base ≤ 0, no significativo (AMZN);
+  - mezcla declarada del interanual y del CAGR a 3 años.
+- **T6, lecturas por modelo de negocio** (`ceac134`, `4ae7705`, `51201e2`, `d2a6adc`, `784b7eb`):
+  - circulante negativo estructural, Altman referencial y avisos del Piotroski;
+  - cautiva fuera de la deuda industrial (CAT 34.5 mil millones);
+  - DuPont, margen FCF con tendencia, regla de 40 y SBC como coste;
+  - cobertura de intereses con EBITDA, tendencia, intereses pagados y FFO en REIT;
+  - PEG a 3 años.
+- **T7, verificación** (`3f4be83`, `c8ab2fe`, `52403a2`, `8a58618`, `2e4d6ad`).
+  - Método intrínseco con FCF − SBC ≤ 0 (flujo de mantenimiento) y en utilities (P/B frente al ROE regulado).
+  - Panel: un solo método evaluable 18 → 2 de 37. Precio muy exigente/exigente/razonable/atractivo pasa de
+    3/14/15/4 a 10/7/16/3. Confianza alta/media/baja pasa de 5/28/3 a 10/23/3.
+  - Revisión externa: NOW destapó el CAGR que contaba puntos como años, arreglado; DE, cautiva sin desglose,
+    declarada; SAN, sin hallazgos.
+  - Web comprobada en replay. Tiempo del panel 7.7 → 7.9 s.
+- **Mapa:** 25 filas cerradas. 2 movidas a la fase 6: BRK-B en base anual y su P/E (TTM), que necesitan el corte LTM
+  con los 10-Q de EDGAR. Compromisos fuera de balance, descartados: XBRL no trae el importe. La inflación de TXRH,
+  descartada: no hay fuente.
+- **Pendiente del usuario:**
+  - regenerar los golden (`diff_golden.py --regenerate --yes` en `panel` y `local`, y `contract_forced.py --write`);
+    el clasificador de permisos de la sesión lo bloqueó, y la suite falla solo en esas muestras;
+  - `SEC_EDGAR_USER_AGENT` en Render;
+  - "ok, pushea";
+  - deploy y comprobación en producción;
+  - `npm run build` del frontend en el checkout principal.
+- **Para la fase 4:**
+  - referencias por industria y geografía (TXRH, BCS);
+  - bandas paralelas;
+  - techo de calidad;
+  - confianza "alta" con convergencia media;
+  - efecto frontera (NVO).
