@@ -1356,6 +1356,27 @@ def _apply_ttm(symbol: str, info: Dict[str, Any], plan_b: bool) -> Dict[str, Any
                         if _eps["basis"] == "suma_bpa_trimestral" else
                         "BPA TTM = beneficio neto TTM / media de las acciones diluidas de los 4 trimestres del corte",
                         paths=["trailingEps"], overwrite=True)
+    elif plan_b and "netIncome" in t["values"]:
+        # Fase 6 (medición Render frente a local, CAT): a Render, Yahoo no le da ni el BPA ni las acciones diluidas
+        # trimestrales, y el BPA se quedaba en el del ejercicio con el beneficio de doce meses (P/E 38.9x frente a
+        # 31.4x). Mismo método que el corte de EDGAR (edgar_backup.recut_eps): el BPA del ejercicio escalado por el
+        # beneficio; si no se puede, sin BPA (nunca de otro periodo).
+        fy_eps = info.get("trailingEps")
+        fy_ni = ((info.get("_statements_fy") or {}).get("net_income") or [None])[0]
+        ni = t["values"]["netIncome"]
+        if fy_eps and fy_ni and fy_eps > 0 and fy_ni > 0 and ni is not None:
+            info["trailingEps"] = fy_eps * ni / fy_ni
+            info["_eps_net_income"] = ni
+            eps_basis = "ttm"
+            _tag_provenance(info, "derivado",
+                            f"BPA TTM aproximado = BPA del ejercicio ({fy_eps:.2f}) × beneficio TTM / beneficio del "
+                            "ejercicio (acciones medias del ejercicio: la fuente no trae las trimestrales)",
+                            paths=["trailingEps"], overwrite=True)
+        else:
+            info["trailingEps"] = None
+            _tag_provenance(info, "sin_dato", "sin BPA TTM: la fuente no trae el BPA ni las acciones diluidas "
+                                              "trimestrales y el del ejercicio es de otro periodo",
+                            paths=["trailingEps"], overwrite=True)
     shares = info.get("sharesOutstanding")
     if plan_b and "totalStockholderEquity" in t["values"] and shares:
         info["bookValue"] = t["values"]["totalStockholderEquity"] / shares
