@@ -35,6 +35,10 @@ periodo de observación, sin pérdida de datos ni de enlaces, y con vuelta atrá
    evidencia: `/api/health`, portada, `/v2/AAPL` y sus 9 páginas, PDF nuevo, `/stock/AAPL` (respaldo), tendencias,
    rivales de AAPL hasta completar; **memoria real en Render** durante 30 min con tráfico ligero (el objetivo medido en
    local era ≤ 380 MB; si en Render se acerca a 480 MB, aplicar la opción medida «EDGAR 16 emisores» y redesplegar).
+   **Recalibrar la pantalla de carga en Render:** `data.toml [web] loading_expected_s` (3,22 s) y
+   `loading_typical_s` ([2,44, 4,12]) se midieron en local; con la CPU de Render el análisis sin caché tarda más. Medir el
+   p50/p75/p95 de `/api/analysis` sin caché en producción (10 tickers fuera de la caché) y actualizar las dos cifras, o el
+   pie «Suele tardar entre X y Y segundos» mentiría.
 6. **Observación (7 días):** errores 5xx, memoria, tiempos; el usuario usa la v4 en su teléfono y su portátil.
 7. **Cierre:** `/stock/{T}` redirige a `/v2/{T}` (o se mantiene `/clasica` indefinidamente si el usuario lo prefiere);
    bitácora y memoria al día.
