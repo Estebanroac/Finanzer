@@ -18,3 +18,4 @@ revisión de capturas o del diff).
 | 2026-10-18 | Golden de texto `panel_pdf_v2` con los datos de E2 | `rediseno/v4` 328d3b3 | revisión del operador: solo bloques con dato |
 | 2026-10-18 | E4 (portada, cola compartida, servido de /v2, móvil, oscuro) | `rediseno/e4-portada` 4dd7512, 84c877d · `rediseno/v4` 3c8a3a7 | capturas y Lighthouse revisados |
 | 2026-10-18 | P8 (encargo): portada con cintillo rotativo y mini-gráficas 1D/1S/1M/6M, pedida por el usuario («hasta el momento me gusta mucho… seria increible si nos traemos las graficas…») | `rediseno/e4-portada` (pendiente) | maqueta del PM; se revisará con capturas, e2e y Lighthouse antes de fusionar |
+| 2026-10-18 | V7 · P2–P6 (presentación: glosario, concentración, rivales en capítulo 6, segmentos en capítulo 2, Enter/PDF/cabecera compacta) | `rediseno/v4` 5779ae5 | 4819 tests, e2e:v2 662/0, diff_golden sin cambios; aprobado con condición: nota de calidad de KO arreglada en origen, no relajando el test |
