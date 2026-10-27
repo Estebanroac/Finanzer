@@ -94,3 +94,27 @@ simplifica en lugar de refinar.
 - **Uso de un LLM para M11** (extracción de suplementos y 8-K): coste por llamada y verificación literal obligatoria.
 - **Prioridad:** la hoja de ruta advierte que, si la herramienta es para decisiones propias, M1 y M3 concentran casi todo
   el valor práctico y M10–M12 suben la nota con poco efecto en la decisión.
+
+### Decisión del usuario sobre la Fase C (26-oct-2026): presupuesto 0
+
+Literal: *"el presupuesto es 0. no hay plata. entonces, no inventemos data ni usemos data poco creíble. simplemente no
+usemos esos datos de paga ni creemos indicadores con datos poco creíbles por no tener la versión paga. no importa
+llegar a 96 entonces"*.
+
+Regla: **solo fuentes gratuitas y fiables** (EDGAR/XBRL, Damodaran, FDIC BankFind, Finnhub gratuito, Yahoo como
+respaldo conciliado, tasas base publicadas). Ningún indicador que necesite datos de pago para ser válido, y ningún
+sustituto «aproximado» que lo imite.
+
+| Medida | Decisión | Motivo |
+|---|---|---|
+| M7 instantáneas, M5 EDGAR principal + conciliación, M6 IFRS para 20-F, M12 fuente por cifra | **Se mantienen** | Gratuitas y oficiales |
+| M4 ciclo completo en cíclicas | **Se mantiene** | Historia de EDGAR (7–10 años); precios de mitad de ciclo solo con series públicas fiables, si no, márgenes normalizados sin precio de commodity |
+| M3 valor justo como rango (Monte Carlo) | **Se mantiene** (tras E7) | Supuestos de fuentes gratuitas publicadas (tasas base de Mauboussin, márgenes de Damodaran); la calibración «80 % dentro del rango» no se puede validar sin M1 y se declara así |
+| M9 riesgos | **Solo la parte cuantitativa**: tornado de impulsores a partir de M3 | Asignar riesgos del 10-K a impulsores exige un LLM de pago o reglas poco fiables |
+| M10 asignación de capital | **Se mantiene** | EDGAR + instantáneas propias (M7) |
+| M11 métricas sectoriales | **Solo FDIC BankFind (bancos)**; ocupación de REITs y ratio combinado sin XBRL quedan «sin dato» declarado | La extracción con LLM tiene coste |
+| M1 backtest | **Fuera** | Sin precios de empresas deslistadas el resultado tiene sesgo de supervivencia: no es válido |
+| M2 pesos estimados | **Fuera la estimación** (depende de M1); la lectura por percentil dentro de la industria (Damodaran y nuestro universo) sí puede hacerse | — |
+| M8 pipeline de biotech | **Fuera** | Sin ventas máximas de consenso no tiene contenido; se mantiene «sin valoración del pipeline» declarado |
+
+La nota objetivo deja de ser 96: lo que importa es que cada cifra sea creíble.
