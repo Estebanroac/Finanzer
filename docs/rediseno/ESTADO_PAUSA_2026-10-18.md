@@ -64,3 +64,7 @@ El usuario entregó una auditoría de 26 informes (nota 68/100; **7 de 26 veredi
 NEE, PLD, UNH, XOM, CB). Plan: `docs/superpowers/plans/2026-10-26-fiabilidad-auditoria-externa.md` (PDF y texto en
 `docs/fiabilidad/auditoria-externa-2026-10-26.*`). **La Fase A (E1–E6, E8–E11, P3) bloquea la entrega de la v4 al
 usuario**; la Fase B (DCF de tres impulsores E7, métricas por sector P2, backtest) va después como proyecto F8.
+
+## Avance desde que se retomó (26-oct)
+- V4b bloque 1 · análisis seccionado: HECHO (`rediseno/v4` 7428f8f), aprobado. Capturas enviadas al usuario.
+- Pendiente menor para E4 (tras la Fase A de la auditoría): el país del emisor sale en inglés («United States»).
