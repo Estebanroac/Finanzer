@@ -1,0 +1,397 @@
+paginas 11
+=== p 1
+Auditoría de los informes de Finanzer
+Errores, soluciones y fortalezas desde el punto de vista del análisis financiero
+Muestra 26 informes · 572 páginas · 11 sectores
+Fecha de los datos 26 de octubre de 2026
+Marco de evaluación Rúbrica de cuatro niveles: P0 bloqueantes · P1 mecánica de valoración · P2 contenido · P3 transparencia
+Puntuación global 68 / 100 · nivel profesional, no institucional · 7 veredictos de precio no utilizables
+Empresas evaluadas: MSFT, NVDA, LLY, UNH, JPM, CB, AMZN, MCD, GOOGL, VZ, CAT, UNP, KO, WMT, XOM, KMI, NEE, AWK, PLD, O, LIN,
+FCX, ASML, SAP, MRNA, BA.
+=== p 2
+Auditoría de los informes de Finanzer 26 de octubre de 2026
+Página 2
+1. Resumen ejecutivo
+Bloque Peso Cumplimiento Aporta
+P0 · Integridad de datos y adecuación del modelo 40% 70% 28,0
+P1 · Mecánica de valoración y puntuaciones 35% 65% 22,8
+P2 · Contenido analítico 18% 62% 11,2
+P3 · Transparencia 7% 88% 6,2
+Total 68
+Qué hace bien: la arquitectura. Elige el método de valoración según el tipo de empresa, convierte monedas,
+normaliza los no recurrentes, declara cada supuesto y reduce el veredicto cuando hay incertidumbre. Pocas
+herramientas no institucionales llegan a este diseño.
+Qué hace mal: casi ningún dato falta. Los problemas son datos plausibles pero erróneos que ningún control detiene,
+sobre todo betas absurdas, picos de beneficio y fórmulas de FFO. A eso se suma un DCF cuyo motor de crecimiento
+está mal especificado y cuya fiabilidad se juzga comparándolo con el precio de mercado.
+Consecuencia práctica: 7 de los 26 veredictos de precio no son utilizables. El único informe calificado como
+«atractivo» de toda la muestra (Verizon, 80/100) es uno de ellos.
+Supuesto que más decide: que el crecimiento de los ingresos a 3 años sirve como crecimiento del flujo de caja libre.
+Corregir ese punto mueve más veredictos que cualquier otra corrección.
+Sobre los «sin dato»: aparecen entre 1 y 6 veces por informe, salvo Moderna (13) y Boeing (14). La cobertura de
+datos no es el problema.
+2. Lo que está bien, y por qué
+Esto conviene no tocarlo al corregir lo demás.
+2.1 Elige el método correcto según el tipo de empresa
+Es el bloqueante más importante de la rúbrica, y lo pasa.
+• Bancos y aseguradoras (JPM, CB). Usa P/B y P/TBV frente a ROE y ROTE con el Gordon despejado: «el precio
+descuenta un ROTE sostenido del 24,6%; el banco obtiene 20,0%». Añade sensibilidad de ±2 pp. Damodaran
+prescribe exactamente esto para financieras, donde la deuda es materia prima y el FCFF no tiene sentido.
+• REITs (PLD, O). Valora por P/FFO y un DCF inverso sobre FFO. Desactiva Altman, Piotroski y el current ratio, con su
+motivo.
+• Utilities (NEE, AWK). Usa P/B frente al ROE regulado y desactiva el DCF «porque su FCF es negativo por diseño». Es
+correcto: la base regulada se financia con deuda.
+• Empresas sin flujo positivo (AMZN, MRNA, BA). Declara «DCF no significativo» en lugar de extrapolar flujos
+negativos. Moderna y Boeing quedan con «precio sin dato»: la decisión honesta, que la mayoría de herramientas
+no toma.
+2.2 Datos bien alineados
+La rúbrica identificó tres modos de fallo conocidos de yfinance, y los tres están resueltos:
+• Moneda: ASML y SAP convierten EUR a USD con tipo medio para flujos (1,1620) y de cierre para balance (1,1341),
+y lo declaran.
+• Acciones en circulación: en los 26 informes, la capitalización coincide con precio × acciones.
+=== p 3
+Auditoría de los informes de Finanzer 26 de octubre de 2026
+Página 3
+• Período: cada informe fecha por separado el precio, los estados y la referencia de Damodaran.
+2.3 Normalización de beneficios
+Detecta los no recurrentes y comprueba si se repiten. Alphabet pasa de $244,1B reportados a $123,8B normalizados
+(49% no recurrente) y Amazon de $90,8B a $69,2B. Las puntuaciones usan la cifra normalizada. Sin esto, GOOGL
+aparecería como ganga a 15,9x.
+2.4 Tratamiento de la deuda
+• Arrendamientos: los operativos van fuera y los financieros dentro, coherente con el EBITDA bajo US GAAP. Evita el
+doble conteo típico.
+• Financiera cautiva: Caterpillar excluye los $34,5B de deuda de Cat Financial del apalancamiento industrial. Casi
+ninguna herramienta automatizada hace este ajuste.
+2.5 Lo que exige la rúbrica en el DCF
+• Compensación en acciones: usa FCF − SBC, es decir, la trata como gasto real, como pide Damodaran.
+• Crecimiento terminal: 2,5%, por debajo de la tasa libre de riesgo.
+• Valor terminal: declara su peso (40–70%).
+• Sensibilidad: incluye tabla de crecimiento × WACC.
+• Tasa libre de riesgo: está al día. Usa 4,99%; YCharts registra 5,00% el 23 de octubre.
+2.6 Comunicación de la incertidumbre
+Es su mayor virtud desde las finanzas conductuales.
+• Contracción hacia 50: la puntuación de precio se reduce según la confianza del veredicto (×0,75 con confianza
+media, ×0,5 con baja). Es la lógica de la calificación de incertidumbre de Morningstar.
+• Avisos de frontera: «en la frontera con exigente, a 1 punto». Neutraliza los saltos de categoría que mueven
+decisiones, como documentan Del Guercio y Tkac con las estrellas.
+• Cláusula de falsación: «Esta lectura sería errónea si…» fija una condición medible bajo la cual el veredicto deja de
+valer. Es buena práctica institucional.
+• DCF inverso con tasas base: «lo sostuvo el 0% de comparables», de Mauboussin y Callahan. Ataca la falsa precisión
+del precio objetivo.
+2.7 Separa los hechos de la interpretación conductual
+El contexto de mercado (momentum, deriva post-resultados, ancla en el máximo de 52 semanas) no puntúa. Lo
+acompaña la frase «describe un sesgo estudiado, no una previsión».
+2.8 Trata los múltiplos correlacionados como un solo bloque
+P/E, forward P/E, P/FCF, EV/EBITDA y PEG puntúan juntos, con un tope de ±6. Evita la redundancia que la evidencia
+señala como el error más común de los scores compuestos.
+=== p 4
+Auditoría de los informes de Finanzer 26 de octubre de 2026
+Página 4
+3. Errores y soluciones
+Ordenados por impacto en la decisión. Cada uno indica la evidencia, por qué es un error desde el punto de vista
+financiero, la solución y su coste o compensación.
+P0 · Errores que cambian el veredicto
+E1 · Coste del patrimonio sin controles de cordura
+EVIDENCIA
+Además hay inconsistencia de fuente: 13 informes usan la beta propia (2 años, semanal) y 13 la sectorial de
+Damodaran, sin una regla visible.
+Empresa Beta usada Ke Consecuencia
+AWK −0,44 propia (Blume 0,04) 5,14%, menor que su Kd de
+5,88%
+P/B justificado: «barata +12%». La beta negativa aparece
+como fortaleza («perfil defensivo»).
+XOM 0,30 6,25% (Rf + 1,3 pp) WACC 6,13% y DCF +21%
+CB 0,48 7,0% P/TBV justificado 4,61x frente a 3,10x: «barato +4»
+POR QUÉ ES UN ERROR
+Un Ke inferior al coste de la deuda viola la jerarquía de riesgo, porque el accionista es residual. En AWK, con un Ke
+razonable de alrededor de 7,5%, el precio descontaría un ROE de 15–16% frente al 10,2% que obtiene: pasa de
+«barata» a cara. En CB, con Ke de 9%, el P/TBV justificado baja a unos 3,2x y la acción queda en precio. El veredicto
+depende de un solo dato de beta.
+SOLUCIÓN
+• Beta por defecto: la de abajo hacia arriba. Beta desapalancada de la industria en Damodaran, reapalancada con la
+D/E de la empresa: βL = βU × [1 + (1 − t) × D/E].
+• Beta propia, solo si pasa filtros: R² ≥ 0,20, error estándar bajo y valor dentro de [0,4; 2,5]. Si no los cumple, se
+descarta y el informe lo declara.
+• Pisos duros: Ke ≥ Kd + 1 pp y Ke ≥ Rf + 0,5 × ERP. Hoy hay piso solo en el WACC (6%), que es el lugar equivocado.
+• Rf y ERP de la misma fecha: los valores de Damodaran de enero (Rf 4,18%, ERP 4,23%) o el Rf actual con la ERP
+implícita mensual. Hoy se mezcla el Rf de octubre con la ERP de enero.
+• Prueba de sensibilidad del veredicto: si el nivel de precio cambia con ±1 pp de Ke, se marca «dependiente de Ke»
+y la confianza baja un escalón.
+COMPENSACIÓN
+La beta sectorial pierde especificidad de cada empresa, pero gana estabilidad. Para un informe que sirve para decidir,
+la estabilidad pesa más.
+=== p 5
+Auditoría de los informes de Finanzer 26 de octubre de 2026
+Página 5
+E2 · Picos de beneficio no detectados (NEE)
+EVIDENCIA
+El beneficio TTM es de $11,64B frente a $6,83B en FY2025, un 70% más, y se trata como recurrente: solo ajusta
+$55,9M. Con eso, el P/E de 14,9x sale «atractivo» (+3) frente a 21x del sector. Su propio forward P/E de 18,7x, mayor
+que el TTM, delata el pico. El resultado GAAP de NextEra es volátil por la valoración a mercado de sus coberturas.
+SOLUCIÓN
+• La detección de no recurrentes hoy depende de la etiqueta de Yahoo. Añadir una prueba estadística.
+• Bandera de pico, si se cumplen las dos condiciones: (a) el beneficio TTM supera en más de 40% la mediana de los 3
+últimos ejercicios; (b) el BPA de consenso a 12 meses es más de 20% inferior al TTM, o el forward P/E es más de
+20% superior al TTM.
+• Con la bandera activa: el P/E del score usa el promedio entre la mediana de 3 años y el consenso, y el texto lo
+declara («beneficio TTM atípico»).
+COMPENSACIÓN
+Puede marcar crecimientos genuinos, como el de NVDA. Por eso la segunda condición exige que el mercado tampoco
+crea en ese nivel.
+E3 · FFO mal definido en REITs (PLD)
+EVIDENCIA
+La fórmula declarada es FFO = beneficio neto + D&A. Implica un FFO de $7,14 por acción, cuando Prologis reporta un
+Core FFO del orden de $6. Si se confirma, el P/FFO real ronda 21x, no los 17,7x «en línea». Conviene verificarlo en el
+suplemento trimestral.
+POR QUÉ ES UN ERROR
+Según la definición de Nareit, FFO = beneficio neto + D&A inmobiliaria + deterioros de inmuebles depreciables −
+ganancias por venta de inmuebles. PLD vende y aporta propiedades a sus fondos todos los años, y esas ganancias
+inflan el FFO de la herramienta.
+SOLUCIÓN
+• Restar las ganancias por venta con las etiquetas XBRL correspondientes (GainLossOnSaleOfRealEstate…,
+GainsLossesOnSalesOfInvestmentRealEstate) y sumar los deterioros (ImpairmentOfRealEstate).
+• AFFO: FFO − capex recurrente − ajuste de rentas lineales, con la fórmula visible, porque el AFFO no tiene definición
+estándar.
+• FFO reportado como referencia: si existe el del emisor (Finnhub o el 8-K), mostrarlo junto al calculado y alertar si
+difieren más de 10%.
+E4 · Errores de etiqueta e incoherencias en Verizon, el único «atractivo»
+EVIDENCIA
+• Crecimiento: el titular «ingresos crecen 6,8% anual» es en realidad el retorno total (dividendo + crecimiento). Su
+propia tabla da 0,33% ($136,84B a $138,19B), la cifra que usa el DCF.
+• PEG: 0,80, «muy atractivo» (+4), mientras el mismo informe dice «el BPA se contrae 7,1% anual».
+• Convergencia: «confianza alta: el DCF y los múltiplos coinciden (barata)» aunque su P/E es «muy caro» (+40%
+sobre el sector).
+• Espectro: el FCF excluye las compras de licencias de espectro, que van en actividades de inversión.
+SOLUCIÓN
+• Corregir la variable que alimenta el titular. Es un error de mapeo, no de modelo.
+=== p 6
+Auditoría de los informes de Finanzer 26 de octubre de 2026
+Página 6
+• PEG = n.s. cuando el crecimiento del BPA es ≤ 0 o el PEG de la fuente no coincide con el crecimiento que el propio
+informe muestra.
+• Telecom: FCF ajustado = FCF − promedio de 5 años de compras de espectro.
+• Convergencia: exigir que coincida la dirección y que ningún múltiplo individual contradiga con lectura extrema
+(±1).
+E5 · La portada y el resumen anclan en el P/E que el propio motor descarta (GOOGL, AMZN)
+EVIDENCIA
+El resumen de GOOGL dice «15,9x beneficios, −46% frente a la industria; un descuento que amerita revisar si es
+oportunidad», aunque el anexo dice «P/E reportado no fiable; normalizado 31,4x». Con el normalizado, la acción
+tiene una prima del 6%. AMZN aparece a 20,0x (−40%) cuando el normalizado es 26,3x.
+POR QUÉ ES UN ERROR
+La puntuación es correcta, pero la cifra que el lector ve primero es la equivocada. Es justo el mecanismo de anclaje
+que el diseño intenta evitar.
+SOLUCIÓN
+Regla de presentación: cuando el motor marca una métrica como «no fiable», la portada y el resumen usan la
+normalizada, y la reportada pasa a la nota con su etiqueta.
+E6 · Estados desfasados sin aviso (AMZN, BA)
+EVIDENCIA
+Los dos informes usan estados al 31 de marzo de 2026, con cobertura de datos «alta». Por el calendario habitual,
+ambos 10-Q del segundo trimestre ya estaban en EDGAR desde finales de julio; conviene confirmarlo.
+SOLUCIÓN
+• Cruzar el último período del 10-Q en EDGAR con el período de los estados de Yahoo.
+• Si EDGAR es más reciente: usar EDGAR o marcar «desfasado».
+• Si los estados tienen más de 100 días desde el cierre y existe un 10-Q posterior: la cobertura baja a «media».
+P1 · Fallos de diseño sistemáticos
+E7 · El motor de crecimiento del DCF está mal especificado (el supuesto que más decide)
+EVIDENCIA
+• El crecimiento del FCF es el CAGR de ingresos a 3 años.
+• Linde: 0,62%, porque los ingresos están planos por el traslado de costes energéticos mientras el beneficio crece.
+Resultado: −78%.
+• Union Pacific: −0,49%. Resultado: −47%.
+• UnitedHealth: 11,35% mientras el margen neto cae de 6,2% a 2,7%. Resultado: +78%, «muy infravalorada».
+• Agregado: 13 de los 19 DCF dan «sobrevalorada». Los únicos dos «muy infravalorada» son VZ y UNH, ambas con
+márgenes o flujos deteriorados.
+• Agravante: el FCF base va después del capex de crecimiento. En Microsoft es de $67B frente a $183B de flujo
+operativo. Por eso el DCF inverso de Alphabet «exige» crecer 33,4% anual.
+POR QUÉ ES UN ERROR
+El crecimiento de los ingresos no es el crecimiento del flujo. El valor depende de tres palancas separadas: ingresos,
+margen y reinversión. Damodaran lo formaliza como g = tasa de reinversión × ROIC. Un DCF que no las separa
+subvalora a las empresas que expanden margen o reinvierten mucho hoy, y sobrevalora a las que crecen en ventas
+=== p 7
+Auditoría de los informes de Finanzer 26 de octubre de 2026
+Página 7
+mientras comprimen margen.
+SOLUCIÓN
+• Modelo de tres impulsores: FCFF = EBIT × (1 − t) − reinversión.
+• Ingresos: mezcla del CAGR histórico, el consenso de ingresos a 1–2 años (Finnhub) y la tasa base de Mauboussin
+según tamaño, con convergencia lineal a g terminal.
+• Margen operativo: converge desde el actual hacia el promedio entre el margen propio de 5 años y el de su
+industria en Damodaran.
+• Reinversión: Δingresos ÷ ratio ventas/capital (propio o de la industria).
+• Terminal: reinversión = g ÷ RONIC, con un RONIC que converge a WACC + un diferencial pequeño. Hoy el FCF crece
+2,5% a perpetuidad sin reinvertir, lo que crea valor de la nada en empresas maduras.
+• Empresas con traslado de costes (LIN, UNP): el crecimiento se toma del beneficio operativo, no de los ingresos.
+• DCF inverso: expresar el crecimiento exigido en la misma magnitud que el histórico (FCF por acción frente a FCF
+por acción) y partir de un FCF de mantenimiento (flujo operativo − D&A − SBC). Ya lo usa en las cíclicas; conviene
+extenderlo a las empresas en pico de capex.
+COMPENSACIÓN
+El modelo tiene más supuestos, y cada uno debe declararse. Es el estándar de Damodaran, y el informe ya tiene la
+infraestructura de transparencia para mostrarlo.
+E8 · La fiabilidad del DCF se juzga por si coincide con el precio
+EVIDENCIA
+• La fiabilidad es «baja» cuando la tabla de sensibilidad no contiene el precio. El efecto es asimétrico:
+• Errores hacia caro: MSFT, GOOGL, LIN, WMT, CAT, FCX y ASML quedan fuera de la tabla y se descartan.
+• Errores hacia barato: si caen dentro de la tabla, reciben «fiabilidad alta» y +4. Le pasa a VZ, con un rango de $19 a
+$123 frente a un precio de $43.
+POR QUÉ ES UN ERROR
+La fiabilidad de un modelo debe depender de la calidad de sus insumos, no de si coincide con el mercado. Si no, el
+DCF solo «vale» cuando confirma el precio y pierde su función de contraste.
+SOLUCIÓN
+• Medir la fiabilidad sin mirar el precio, con cuatro criterios:
+• (1) peso del valor terminal (más de 75% resta); (2) dispersión de la tabla de sensibilidad (máximo ÷ mínimo mayor
+que 2,5 resta); (3) estabilidad del margen FCF de 5 años (un coeficiente de variación alto resta); (4) banderas de
+datos (betas fuera de filtro, picos, estados desfasados).
+• Si el DCF difiere mucho del precio, eso afecta a la convergencia entre métodos, que es el lugar correcto, no a la
+fiabilidad.
+=== p 8
+Auditoría de los informes de Finanzer 26 de octubre de 2026
+Página 8
+E9 · La rentabilidad ignora el capital invertido
+EVIDENCIA
+La misma página dice «destruye valor» y «rentabilidad excelente». Dominan los márgenes, que son altos por
+naturaleza en negocios intensivos en capital, y el ROE, inflado por el apalancamiento.
+Empresa ROIC WACC Rentabilidad
+NEE 4,6% 7,0% 20/20
+AWK 5,6% 6,0% 19/20
+KMI 6,4% 6,8% 16/20
+VZ 8,2% 6,1% 20/20
+SOLUCIÓN
+• El diferencial ROIC − WACC manda: si es menor que 0, la categoría tiene un tope de 10/20; si es menor que −3 pp,
+de 6/20.
+• Márgenes por percentil dentro de su industria en Damodaran, no con umbrales absolutos.
+• ROE con apalancamiento alto: si D/E supera el umbral del sector, puntúa el ROA o el ROIC en su lugar.
+COMPENSACIÓN
+Las utilities saldrán con peor rentabilidad. Es correcto: su atractivo está en la estabilidad regulada, que ya se mide por
+otra vía.
+E10 · Altman aplicado de forma incoherente
+EVIDENCIA
+KMI (oleoducto) y UNP (ferrocarril) usan el Z de manufactura; ASML, que fabrica máquinas, usa el Z''. A KMI, con
+grado de inversión y flujos estables, le pone «zona de peligro, alto riesgo de bancarrota». Las utilities se excluyen,
+pero el midstream, de estructura parecida, no.
+SOLUCIÓN
+• Elegir la variante por código SIC: de 2000 a 3999, Z original; el resto, Z''.
+• Excluir los mismos tipos de negocio: utilities, midstream (SIC 4612, 4922–4924), REITs y financieras.
+• Donde se excluya: sustituirlo por rating sintético, deuda neta/EBITDA y cobertura.
+• Peso en el score: bajar el +6 de Altman, porque su validez predictiva cae fuera de la muestra original (precisión de
+alrededor de 0,75 según Altman y otros, 2017).
+E11 · La confianza del veredicto incumple su propia regla y no afecta a la calidad
+EVIDENCIA
+• Moderna: «cobertura de datos: baja» y confianza «media», aunque la metodología dice «la más baja manda».
+• ExxonMobil: confianza baja con calidad 82, «excelente», sin contraer.
+• Saturación: 14 de 26 informes tienen calidad de 80 o más, y GOOGL llega a 100.
+SOLUCIÓN
+• Aplicar la regla tal como está escrita.
+• Contraer también la calidad cuando la confianza es baja (×0,85).
+• Contra la saturación: expresar la calidad como percentil dentro de un universo de referencia, o subir el umbral de
+«excelente» en lugar de partir de 10/20 y sumar hasta el techo.
+=== p 9
+Auditoría de los informes de Finanzer 26 de octubre de 2026
+Página 9
+P2 · Huecos de contenido por sector
+Sector Qué falta Solución
+Bancos (JPM) CET1, NIM, calidad crediticia (castigos netos,
+provisiones/préstamos), préstamos/depósitos. La «solidez
+bancaria 10/10» es una caja negra, y se cuela la plantilla:
+«cobertura de intereses 0,83x, críticamente baja».
+La API BankFind de la FDIC o los informes a los
+reguladores dan CET1 y morosidad. Mostrar los
+componentes del 10/10. Suprimir el texto de
+cobertura en financieras.
+Aseguradoras (CB) Ratio combinado («sin dato») y desarrollo de reservas. La
+etiqueta dice «salud financiera bancaria».
+Ratio combinado = (siniestros + gastos de
+suscripción) ÷ primas devengadas, con etiquetas
+XBRL de siniestros y primas. Etiqueta propia.
+REITs (PLD, O) AFFO, NAV, ocupación, cap rate, vencimientos de deuda. AFFO según E3. NAV ≈ NOI ÷ cap rate de la industria
+− deuda neta. La ocupación no está en XBRL:
+marcarla «sin dato» explícitamente.
+Biotech (MRNA) Clasificada como «Madura» por defecto. Solidez 20/20 sin
+medir la caja disponible.
+Arquetipo de empresa en pérdidas con ingresos en
+contracción. Meses de caja = (caja + inversiones) ÷
+consumo de caja operativo. Declarar «sin valoración
+del pipeline».
+Telecom (VZ) El espectro queda fuera del FCF. Ver E4.
+Pares GOOGL frente a RDDT, CARG, GRND y DJT; VZ frente a
+ASTS, IDT e IRDM; PLD frente a EQIX, DLR y AMT (ningún
+REIT industrial); LIN frente a SHW y PPG; CAT frente a CRH
+y MLM.
+Filtrar por SIC de 4 dígitos + industria de Damodaran
++ capitalización entre 0,2x y 5x, con lista curada para
+las 100 principales.
+FCF histórico
+(EDGAR)
+Vacío 10 de 10 años en LLY y NEE, y 7 de 10 en VZ. Mapear varias etiquetas de capex en cascada
+(PaymentsToAcquirePropertyPlantAndEquipment,
+PaymentsToAcquireProductiveAssets…). Si falta el
+dato, no ejecutar pruebas de persistencia sobre él.
+Balance Vencimientos de deuda. Nota de deuda del 10-K (LongTermDebtMaturitiesRe
+paymentsOfPrincipalInNextTwelveMonths y
+siguientes).
+P3 · Presentación
+• ROE con patrimonio negativo (MCD): −859,78% en portada y una brecha de −859.885% en la tabla de pares. Debe
+mostrarse «n.s.». La puntuación ya lo neutraliza; solo falla la presentación.
+• Margen de seguridad: −134,76%, con dos decimales, sobre un DCF que el mismo informe declara no fiable. Si la
+fiabilidad es baja, ocultarlo. En general, redondear el valor justo y mostrar un rango p10–p90: la evidencia (van der
+Bles y otros, 2020) indica que los rangos numéricos apenas reducen la confianza del lector.
+• Fuerza relativa (MSFT): dos cifras distintas a «12 meses» (+3,2% frente al +29,6% del ETF, y +1,0% frente a
++25,3%). Unificar la ventana.
+• Texto de plantilla en Piotroski: «capital circulante negativo propio del modelo» aparece en 6 empresas, incluida
+MSFT, con current ratio de 1,23. Condicionarlo al dato de cada empresa, no a la industria.
+• Contradicciones de etiqueta: en CB, el resumen dice «β ajustada» y la tabla «β del sector sin Blume»; en MRNA, la
+portada muestra Crecimiento 6/20 y luego lo excluye por no concluyente.
+=== p 10
+Auditoría de los informes de Finanzer 26 de octubre de 2026
+Página 10
+4. Estado de cada informe
+Estado Informes Motivo principal
+Veredicto de precio no utilizable VZ, AWK, NEE, PLD, UNH, XOM, CB E1, E2, E3, E4 y E7
+Utilizable leyendo solo múltiplos y DCF
+inverso
+MSFT, GOOGL, AMZN, LIN, UNP, WMT, CAT,
+FCX, ASML, KMI, O
+DCF sesgado (E7 y E8), Altman en KMI,
+titular de P/E en GOOGL y AMZN
+Razonablemente sólidos NVDA, LLY, JPM, MCD, KO, SAP Problemas solo de presentación o de
+contenido
+Sin precio, correctamente MRNA, BA BA, además, con estados desfasados
+5. Orden de corrección por impacto y esfuerzo
+# Corrección Impacto Esfuerzo
+1 Pisos y filtros de Ke y beta (E1) Alto: 3 veredictos Bajo: reglas
+2 Titulares con la cifra normalizada, PEG n.s. y etiqueta de VZ (E4, E5) Alto: anclaje Bajo
+3 Bandera de pico de beneficio (E2) Alto Bajo
+4 FFO según Nareit (E3) Alto en REITs Medio
+5 Fiabilidad del DCF sin mirar el precio (E8) Alto, sistémico Medio
+6 Rentabilidad condicionada al diferencial ROIC − WACC (E9) Medio, sistémico Bajo
+7 Control de frescura de los estados (E6) Medio Bajo
+8 DCF de tres impulsores (E7) El mayor Alto
+9 Altman por SIC y regla de confianza (E10, E11) Medio Bajo
+10 Métricas por sector y pares (P2) Medio Alto
+Prioridades 1 a 3: son reglas de pocas líneas que corrigen los veredictos más visiblemente erróneos.
+La 8: es la que más cambia el sistema, pero conviene hacerla después de la 5, porque con la fiabilidad atada al precio,
+un DCF mejor seguiría juzgándose mal.
+6. Cómo validar las correcciones
+• Conjunto de referencia: estos 26 informes, con afirmaciones automáticas que deben cumplirse: AWK, Ke ≥ Kd; VZ,
+crecimiento del titular = 0,33%; NEE, bandera de pico activa; PLD, FFO a ±10% del reportado; GOOGL, P/E de
+portada = 31,4x; MCD, ROE = n.s.; AMZN y BA, estados a 30 de junio.
+• Controles en el pipeline: Ke ≥ Kd; β dentro de [0,4; 2,5] o sectorial; g ≤ Rf; capitalización = precio × acciones con
+±2%; ROE n.s. si el patrimonio es ≤ 0; PEG n.s. si el crecimiento es ≤ 0; estados con menos de 100 días o bandera.
+• Validación de las puntuaciones: antes de confiar en ellas para decidir, hacer un backtest usando solo la
+información disponible en cada fecha (la fecha filed de EDGAR). Medir la correlación de rangos entre las
+puntuaciones y la rentabilidad a 12 meses, por sector. Si la de precio no supera a un factor simple, como el FCF
+yield, añade ruido.
+• Prueba de sesgo sectorial: puntuar juntas una utility y una empresa de software de calidad parecida. Si la
+diferencia de calidad se explica solo por el sector, la normalización falla.
+Supuesto no cuestionado: la muestra son megacaps con buena cobertura de datos. En small caps, sin agregado de
+Damodaran fiable y con yfinance más frágil, E1 y E2 deberían aparecer con más frecuencia, así que la prioridad de los
+=== p 11
+Auditoría de los informes de Finanzer 26 de octubre de 2026
+Página 11
+controles automáticos sube.
+Fuentes
+Damodaran, A. Valoración de empresas de servicios financieros. pages.stern.nyu.edu/~adamodar/pdfiles/eqnotes/finsvc.pdf
+Damodaran, A. Valor terminal. pages.stern.nyu.edu/adamodar/New_Home_Page/littlebook/terminalvalue.htm
+Nareit. Definición de FFO. reit.com/nareit/advocacy/policy/ffo-discussion-paper
+Morningstar. Calificación de incertidumbre. morningstar.com/investing-terms/uncertainty-rating
+van der Bles, A. M. y otros (2020). PNAS, 117, 7672.
+YCharts. Rendimiento del Tesoro a 10 años. ycharts.com/indicators/10_year_treasury_rate

@@ -57,3 +57,10 @@ Plan detallado: `docs/superpowers/plans/2026-10-18-rediseno-v4b-ajustes-usuario.
    `rediseno/v4b-datos`».
 2. Demo: los servidores de replay se levantan con `.claude/launch.json` (`v4-replay-8768` + `v4-next-3001`) o el build
    servido por `tests/replay_server.py --env panel --port 8769`.
+
+## ALERTA ROJA (26-oct-2026): auditoría externa del motor
+
+El usuario entregó una auditoría de 26 informes (nota 68/100; **7 de 26 veredictos de precio no utilizables**: VZ, AWK,
+NEE, PLD, UNH, XOM, CB). Plan: `docs/superpowers/plans/2026-10-26-fiabilidad-auditoria-externa.md` (PDF y texto en
+`docs/fiabilidad/auditoria-externa-2026-10-26.*`). **La Fase A (E1–E6, E8–E11, P3) bloquea la entrega de la v4 al
+usuario**; la Fase B (DCF de tres impulsores E7, métricas por sector P2, backtest) va después como proyecto F8.
