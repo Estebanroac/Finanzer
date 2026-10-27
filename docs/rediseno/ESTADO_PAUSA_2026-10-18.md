@@ -80,3 +80,8 @@ usuario**; la Fase B (DCF de tres impulsores E7, métricas por sector P2, backte
 Después: fusionar las dos ramas F8 en la v4 (golden juntos, cada GOLDEN_DIFF con su causa) → pasada final completa →
 `V4_CIERRE.md` → avisar al usuario (prueba con datos reales en local) → E6 con su «ok, pushea». Pendiente menor: país
 del emisor en inglés.
+
+## Reanudación (27-oct-2026)
+El usuario dijo «comanda que todo arranque de nuevo». E2a retoma F8 desde 23b479cc; F8 independientes, desde 2e6a9031
+(regla SPG → E6 → E10 → historia 10 años); E2b adelanta en `rediseno/v4` el país en español y una pre-pasada final
+(`docs/rediseno/V4_PREPASADA.md`) que se repite tras fusionar F8.
