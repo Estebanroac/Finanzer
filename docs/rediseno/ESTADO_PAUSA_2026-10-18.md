@@ -68,3 +68,15 @@ usuario**; la Fase B (DCF de tres impulsores E7, métricas por sector P2, backte
 ## Avance desde que se retomó (26-oct)
 - V4b bloque 1 · análisis seccionado: HECHO (`rediseno/v4` 7428f8f), aprobado. Capturas enviadas al usuario.
 - Pendiente menor para E4 (tras la Fase A de la auditoría): el país del emisor sale en inglés («United States»).
+
+## PAUSA 2 (27-oct-2026 ~03:45 UTC) — dónde queda cada cosa
+
+| Rama | Punta | Estado |
+|---|---|---|
+| `rediseno/v4` | `feb7de5b` | **V4b completo**: secciones (7428f8f), nada oculto (e959f76), cabecera corta en móvil (daaa98a), lag medido (6d29c93), datos faltantes + rivales del replay (fusiones 0ab9d56, feb7de5), colores y ausencias (0e79b282). e2e:v2 ×4: 792/793 (1 fallo de tiempo en tableta, pasa solo). Falta: pasada final V1–V5 y `V4_CIERRE.md`. |
+| `fiabilidad/f8-auditoria` | `5d219d84` | Auditoría Fase A, cadena de valoración (sesión «Rediseño E2a»): **E1 hecho** (Ke y beta; 15/43 golden cambian, 1 nivel de precio, NFLX). Falta: E4+E5 → E2 → E8 → E9 → E11 (+ peso de Altman) → P3. Luego, en `rediseno/v4b-datos`: referencias extra de Damodaran (solo lectura) y rivales de V. |
+| `fiabilidad/f8-independientes` | `2e6a9031` | Sesión «Auditoría F8: correcciones independientes»: **E3 hecho** (FFO Nareit; PLD → exigente, O → atractivo). BRK-B sin cambios. Falta: repetir la suite completa; REIT con participadas materiales → «sin dato» (decisión del PM, SPG); E6, E10 (variante/exclusiones) e historia 10 años EDGAR (diseño ya escrito en `F8_INDEPENDIENTES_REGISTRO.md`). |
+
+Después: fusionar las dos ramas F8 en la v4 (golden juntos, cada GOLDEN_DIFF con su causa) → pasada final completa →
+`V4_CIERRE.md` → avisar al usuario (prueba con datos reales en local) → E6 con su «ok, pushea». Pendiente menor: país
+del emisor en inglés.
