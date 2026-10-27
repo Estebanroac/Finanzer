@@ -1,0 +1,239 @@
+paginas 8
+=== p 1
+Finanzer: de 86 a 96
+Hoja de ruta para llevar los informes de nivel profesional a nivel institucional
+Punto de partida 86 / 100: auditoría de 26 informes con las correcciones E1–E11 y los huecos sectoriales ya aplicados
+Objetivo 96 / 100
+Puntos disponibles ~14,2 sobre la rúbrica; el objetivo exige capturar ~10 (el 70%)
+Medidas 12, agrupadas por bloque de la rúbrica
+Advertencia 96 está por encima del techo realista estimado (93–95). Solo se alcanza con todas las medidas
+ejecutadas casi por completo.
+=== p 2
+Finanzer: de 86 a 96 26 de octubre de 2026
+Página 2
+1. Dónde están los 10 puntos
+A 86 puntos, cada bloque de la rúbrica conserva una brecha. Para llegar a 96 hay que cerrar casi toda la de P1 y P0 y la
+mayor parte de la de P2.
+Bloque Peso A 86 Meta Puntos disponibles Puntos meta Medidas
+P1 · Valoración y puntuaciones 35% 85% ~97% 5,25 +4,2 M1–M4
+P0 · Datos y modelo 40% 90% ~98% 4,0 +3,2 M5–M8
+P2 · Contenido 18% 80% ~93% 3,6 +2,3 M9–M11
+P3 · Transparencia 7% 95% 100% 0,35 +0,35 M12
+Total 86 96 ~14,2 +10
+Lo que decide: M1, el backtest. Aporta la mayor cantidad de puntos por sí solo, y además determina si el resto del
+bloque P1 vale la pena. Si las puntuaciones no predicen mejor que un factor simple, perfeccionar el DCF no mejora las
+decisiones aunque mejore la nota.
+=== p 3
+Finanzer: de 86 a 96 26 de octubre de 2026
+Página 3
+2. Las 12 medidas
+P1 · Valoración y puntuaciones (+4,2 meta)
+M1 · Backtest de las dos puntuaciones (+2,0 puntos)
+QUÉ RESUELVE
+Hoy nadie sabe si una calidad de 90 o un precio de 70 predicen algo. Es el criterio de validez que la rúbrica no puede
+dar por cumplido sin evidencia.
+CÓMO SE HACE
+• Universo: S&P 1500 o Russell 1000 históricos, incluidas las empresas deslistadas. Sin ellas, el resultado tiene sesgo
+de supervivencia. yfinance no da precios de deslistadas: hace falta una fuente de pago (Sharadar, Norgate o
+similar).
+• Información disponible en cada fecha: reconstruir cada puntuación mensual usando solo estados con fecha filed
+de EDGAR anterior a la fecha de cálculo, y la referencia de Damodaran vigente en ese momento.
+• Métricas: coeficiente de información (correlación de rangos entre la puntuación y la rentabilidad a 12 meses), su
+media y su estadístico t; diferencial entre deciles extremos; todo por sector y por subperíodo.
+• Contraste: comparar contra factores simples con evidencia publicada (FCF yield para precio; rentabilidad bruta
+sobre activos para calidad).
+• Partición: entrenar hasta 2017, validar 2018–2026 sin tocar los parámetros.
+CRITERIO DE ACEPTACIÓN
+Coeficiente de información de la puntuación de precio mayor que el del FCF yield, con estadístico t mayor que 2 en el
+período de validación, y estable en al menos 8 de los 11 sectores. Si no se cumple, se simplifica la puntuación hasta
+que lo cumpla.
+Coste: Alto (datos de pago, 3–6 semanas de trabajo) · Depende de: M7
+M2 · Pesos estimados con datos y lectura por percentil (+1,0 punto)
+QUÉ RESUELVE
+Los ajustes actuales (+6 a Altman, +5 a D/E, ±6 al bloque de múltiplos) son fijos y arbitrarios. Las bandas absolutas
+sesgan por sector.
+CÓMO SE HACE
+• Estimar los pesos de cada indicador con el período de entrenamiento de M1 (regresión de rangos o pesos
+proporcionales a su coeficiente de información), con un tope para que ninguno domine.
+• Leer cada indicador como percentil dentro de su industria y su arquetipo, no con umbrales absolutos.
+• Eliminar los indicadores que no aporten información incremental (Altman, si su aporte resulta nulo fuera de
+muestra, es candidato).
+CRITERIO DE ACEPTACIÓN
+Con los pesos estimados, el coeficiente de información de validación no empeora respecto a los fijos y la correlación
+entre sector y puntuación de calidad cae por debajo de 0,2.
+Coste: Medio · Depende de: M1
+=== p 4
+Finanzer: de 86 a 96 26 de octubre de 2026
+Página 4
+M3 · Valor justo como rango: Monte Carlo sobre los impulsores (+1,25 puntos)
+QUÉ RESUELVE
+El valor justo puntual ignora que el error típico de un precio objetivo ronda el 45% (Bradshaw, Brown y Huang). La
+tabla de sensibilidad actual solo mueve dos variables.
+CÓMO SE HACE
+• Distribuciones: crecimiento de ingresos según las tasas base de Mauboussin por tamaño; margen objetivo entre el
+propio de 5 años y el de su industria; ratio ventas/capital; WACC con el error estándar de la beta.
+• Simulación: 10.000 escenarios por empresa con correlación entre crecimiento y margen.
+• Salida: valor p10, p50 y p90; probabilidad de que el valor supere al precio; calificación de incertidumbre según el
+ancho del rango (p90 − p10) ÷ p50, al estilo de Morningstar.
+• Presentación: el número central redondeado, nunca con decimales, y el rango siempre visible.
+CRITERIO DE ACEPTACIÓN
+Cada informe muestra rango, probabilidad y calificación de incertidumbre. En el backtest, el precio cae dentro del
+rango p10–p90 a 12 meses en alrededor del 80% de los casos (calibración).
+Coste: Medio · Depende de: DCF de tres impulsores (E7)
+M4 · Ciclo completo en cíclicas y commodities (+0,5 puntos)
+QUÉ RESUELVE
+Hoy el ciclo de las cíclicas abarca 4 ejercicios y el propio informe lo marca como incompleto. FCX sale con crecimiento
+de −7,4% anual a perpetuidad.
+CÓMO SE HACE
+• Márgenes normalizados con 7–10 años de historia de EDGAR.
+• Para productoras de commodities (FCX, XOM): precio a mitad de ciclo (promedio real de 10 años o curva de
+futuros a 3–5 años) aplicado a su producción.
+CRITERIO DE ACEPTACIÓN
+Ningún DCF de cíclica usa crecimiento terminal negativo ni márgenes de un solo extremo del ciclo.
+Coste: Bajo
+=== p 5
+Finanzer: de 86 a 96 26 de octubre de 2026
+Página 5
+P0 · Datos y modelo (+3,2 meta)
+M5 · EDGAR como fuente principal con capa de conciliación (+1,5 puntos)
+QUÉ RESUELVE
+Hoy EDGAR aporta 1 o 2 campos por informe frente a unos 30 de yfinance, una fuente no oficial con errores
+documentados.
+CÓMO SE HACE
+• Estados desde companyfacts de EDGAR: filtro de duración (350–380 días para anuales), deduplicación por fecha
+filed para captar reexpresiones, cuarto trimestre derivado (anual − 9 meses acumulados).
+• Mapeo de conceptos en cascada por campo, para cubrir los cambios de etiqueta entre años.
+• yfinance solo como respaldo. Conciliar 8 campos clave (ingresos, beneficio operativo y neto, flujo operativo, capex,
+deuda, caja, acciones) y alertar si difieren más de 2%.
+CRITERIO DE ACEPTACIÓN
+En los 26 informes de referencia, el 100% de los campos clave proviene de EDGAR o está conciliado, y ningún historial
+de FCF queda vacío.
+Coste: Medio
+M6 · Taxonomía IFRS para emisores con 20-F (+0,5 puntos)
+QUÉ RESUELVE
+ASML y SAP dependen de yfinance para casi todo. En ASML, el desglose por segmento cubre solo el 68% de los
+ingresos y omite la línea EUV NXE.
+CÓMO SE HACE
+• Mapeo de la taxonomía ifrs-full equivalente al de us-gaap.
+• Desglose por segmento obligatorio con cobertura de al menos 95% de los ingresos; si no se alcanza, aviso en el
+informe.
+CRITERIO DE ACEPTACIÓN
+ASML y SAP con estados íntegros de EDGAR y segmentos con cobertura de al menos 95%.
+Coste: Medio · Depende de: M5
+M7 · Instantáneas de datos con fecha (+0,5 puntos)
+QUÉ RESUELVE
+Sin guardar los insumos de cada informe no se puede auditar después ni hacer el backtest de M1.
+CÓMO SE HACE
+• Guardar los insumos crudos de cada informe (valores, fuentes, fechas de extracción) en formato columnar
+(Parquet) con sello de tiempo.
+• Versionar los parámetros del motor junto a cada instantánea.
+CRITERIO DE ACEPTACIÓN
+Cualquier informe pasado puede reproducirse exactamente a partir de su instantánea.
+Coste: Bajo
+=== p 6
+Finanzer: de 86 a 96 26 de octubre de 2026
+Página 6
+M8 · Valoración del pipeline en biotech (+0,75 puntos)
+QUÉ RESUELVE
+Moderna sale hoy «sin precio», lo que es honesto pero no informa. Para una biotech, su valor está en el pipeline.
+CÓMO SE HACE
+• Fases de cada activo desde la API pública de ClinicalTrials.gov.
+• Probabilidad de éxito por fase según estudios publicados de BIO/Informa.
+• Valor de cada activo = ventas máximas × margen × probabilidad acumulada, descontado. Sumar caja y restar
+deuda.
+• Punto débil: las ventas máximas no salen de datos gratuitos. Requieren consenso de pago o un supuesto
+declarado y con rango amplio.
+CRITERIO DE ACEPTACIÓN
+Toda biotech en pérdidas tiene un rango de valor con la probabilidad por fase visible, y la incertidumbre se califica
+como alta o extrema.
+Coste: Alto
+P2 · Contenido (+2,3 meta)
+M9 · Riesgos ligados a los supuestos del modelo (+1,0 punto)
+QUÉ RESUELVE
+Hoy los riesgos son genéricos. Un riesgo útil dice qué supuesto mueve y cuánto valor destruye.
+CÓMO SE HACE
+• Extraer los riesgos principales del Item 1A del 10-K.
+• Asignar cada riesgo a un impulsor del modelo (crecimiento, margen, reinversión, WACC).
+• Gráfico de tornado a partir de M3: variación del valor ante ±1 desviación típica de cada impulsor, ordenado por
+impacto.
+CRITERIO DE ACEPTACIÓN
+Cada informe muestra los 3–5 riesgos principales con el impulsor afectado y su impacto en dólares por acción.
+Coste: Medio · Depende de: M3
+M10 · Historial de asignación de capital (+0,75 puntos)
+QUÉ RESUELVE
+Que una empresa recompre acciones no dice si crea valor: depende del precio al que lo hace.
+CÓMO SE HACE
+• Recompras: precio medio de recompra por año frente al valor intrínseco estimado en ese momento (requiere el
+historial de M7).
+• Adquisiciones: crecimiento del fondo de comercio frente a la evolución del ROIC en los años siguientes.
+• Guía de la dirección: cumplimiento histórico de su previsión de beneficio o ingresos.
+CRITERIO DE ACEPTACIÓN
+Cada informe califica la asignación de capital de los últimos 5 años con evidencia numérica.
+Coste: Medio · Depende de: M7
+=== p 7
+Finanzer: de 86 a 96 26 de octubre de 2026
+Página 7
+M11 · Métricas sectoriales que no están en XBRL (+0,75 puntos)
+QUÉ RESUELVE
+Ocupación de REITs, CET1 y morosidad de bancos y ratio combinado de aseguradoras siguen «sin dato».
+CÓMO SE HACE
+• Extraer las cifras de los suplementos trimestrales y del anexo 99 de los 8-K con un LLM.
+• Control obligatorio: la cifra extraída debe aparecer textualmente en el documento fuente, y se guarda la página de
+referencia. Sin coincidencia, no se publica.
+• Para bancos, alternativa estructurada: la API BankFind de la FDIC.
+CRITERIO DE ACEPTACIÓN
+Cobertura de al menos 90% de las métricas sectoriales en bancos, aseguradoras y REITs, con un error de extracción
+inferior a 1% en una auditoría manual de muestra.
+Coste: Alto
+P3 · Transparencia (+0,35 meta)
+M12 · Fuente por cifra y registro de cambios de la metodología (+0,35 puntos)
+QUÉ RESUELVE
+Hoy la procedencia se resume por fuente, no por cifra.
+CÓMO SE HACE
+• Cada cifra enlaza al número de registro de EDGAR y a la etiqueta XBRL de origen.
+• Pie de página con la versión de la metodología y un registro de cambios accesible.
+CRITERIO DE ACEPTACIÓN
+Cualquier cifra del informe se rastrea hasta su origen en un clic.
+Coste: Bajo · Depende de: M5
+3. Orden de ejecución
+Las dependencias fijan buena parte del orden: sin instantáneas no hay backtest, y sin backtest no hay pesos
+estimados.
+Fase Medidas Por qué en este orden Puntos acumulados
+1 · Base de datos M7, M5, M6, M12 Todo lo demás se apoya en datos oficiales, conciliados y
+reproducibles
+~89
+2 · Validación M1, M2 Dice si las puntuaciones sirven antes de invertir en
+refinarlas
+~92
+3 · Incertidumbre M3, M4, M9 Rango de valor, ciclos completos y riesgos cuantificados
+salen del mismo motor
+~94
+4 · Profundidad M10, M11, M8 Las de mayor coste y menor puntuación por esfuerzo ~96
+Punto de decisión tras la fase 2: si el backtest muestra que la puntuación de precio no supera al FCF yield, la fase 3
+debería centrarse en simplificar, no en refinar. En ese escenario, la nota puede seguir subiendo, pero la herramienta
+no mejora las decisiones.
+4. Por qué 96 es un objetivo exigente
+=== p 8
+Finanzer: de 86 a 96 26 de octubre de 2026
+Página 8
+• Requiere ejecución casi completa. La suma de las 12 medidas da alrededor de 10,9 puntos si todas se ejecutan al
+100%. Con un cumplimiento típico del 70–80% en las de coste alto (M1, M8, M11), el resultado realista queda en
+93–95.
+• Coste en datos. M1 sin precios de empresas deslistadas no es válido, y M8 sin ventas máximas de consenso tiene
+poco contenido. Ambos requieren fuentes de pago.
+• Techo de validez. Ninguna puntuación fundamental predice con fuerza: las señales publicadas pierden alrededor
+de 58% de su rentabilidad tras publicarse (McLean y Pontiff, 2016). M1 puede fallar aunque esté bien hecho.
+• La rúbrica mide diseño, no acierto. Llegar a 96 significa que la herramienta está bien construida según criterios
+institucionales; no garantiza que sus veredictos ganen dinero. Eso solo lo dice M1.
+Supuesto no cuestionado: que los puntos de la rúbrica valen lo mismo para tu uso. Si la herramienta es para decidir
+tus propias compras, M1 y M3 concentran casi todo el valor práctico; M10–M12 suben la nota con poco efecto en la
+decisión.
+Fuentes
+Bradshaw, M., Brown, L. y Huang, K. (2013). Do sell-side analysts exhibit differential target price forecasting ability? Review of
+Accounting Studies.
+McLean, R. D. y Pontiff, J. (2016). Does academic research destroy stock return predictability? Journal of Finance, 71(1).
+Mauboussin, M. y Callahan, D. (2021). The Base Rate Book (actualización). Morgan Stanley Counterpoint Global.
+Morningstar. Calificación de incertidumbre. morningstar.com/investing-terms/uncertainty-rating
+BIO, Informa y QLS (2021). Clinical Development Success Rates 2011–2020.
+SEC. EDGAR XBRL API (companyfacts). sec.gov/edgar/sec-api-documentation
+ClinicalTrials.gov API. clinicaltrials.gov/data-api/api

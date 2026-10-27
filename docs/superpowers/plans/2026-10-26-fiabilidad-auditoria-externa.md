@@ -71,3 +71,26 @@ Orden de la auditoría (§5), impacto alto y esfuerzo bajo/medio:
   `docs/fiabilidad/F8_AUDITORIA_REGISTRO.md` con evidencia propia por hallazgo.
 - E3 (sesión «Rediseño E2b») solo para lo que sea de pintar en la web nueva (p. ej. rango p10–p90).
 - El PM revisa cada error con los 26 tickers antes de aprobar.
+
+## Fase C — de 86 a 96 (hoja de ruta del usuario, 26-oct-2026)
+
+Segundo documento del usuario: `docs/fiabilidad/hoja-de-ruta-86-a-96-2026-10-26.{pdf,txt}`. Parte de **86/100** (la
+nota esperada tras E1–E11 y los huecos sectoriales, es decir, Fases A y B) y propone 12 medidas para llegar a **96**
+(techo realista 93–95). Ninguna bloquea la v4; es el proyecto de después.
+
+| Fase | Medidas | Qué | Nota |
+|---|---|---|---|
+| C1 · Base de datos | M7, M5, M6, M12 | Instantáneas con fecha (Parquet + versión de parámetros); EDGAR companyfacts como fuente principal con conciliación de 8 campos ±2 %; taxonomía IFRS para 20-F (ASML, SAP, segmentos ≥ 95 %); fuente por cifra y registro de cambios de la metodología | ~89 |
+| C2 · Validación | M1, M2 | Backtest point-in-time (IC frente a FCF yield, t > 2 en 2018–2026, estable en ≥ 8 de 11 sectores); pesos estimados y lectura por percentil de industria | ~92 |
+| C3 · Incertidumbre | M3, M4, M9 | Valor justo p10/p50/p90 por Monte Carlo sobre los tres impulsores (requiere E7); ciclo completo en cíclicas y commodities; riesgos del 10-K ligados a impulsores con tornado | ~94 |
+| C4 · Profundidad | M10, M11, M8 | Asignación de capital; métricas sectoriales fuera de XBRL (FDIC BankFind; extracción con LLM con verificación literal en la fuente); valoración del pipeline en biotech | ~96 |
+
+**Punto de decisión tras C2 (de la propia hoja de ruta):** si la puntuación de precio no supera al FCF yield, C3
+simplifica en lugar de refinar.
+
+**Decisiones que serán del usuario (no del PM), cuando lleguemos:**
+- **Datos de pago:** M1 necesita precios de empresas deslistadas (Sharadar, Norgate o similar) y M8 ventas máximas de
+  consenso. Sin ellos, M1 no es válido y M8 tiene poco contenido. Coste y proveedor, a decidir por el usuario.
+- **Uso de un LLM para M11** (extracción de suplementos y 8-K): coste por llamada y verificación literal obligatoria.
+- **Prioridad:** la hoja de ruta advierte que, si la herramienta es para decisiones propias, M1 y M3 concentran casi todo
+  el valor práctico y M10–M12 suben la nota con poco efecto en la decisión.
