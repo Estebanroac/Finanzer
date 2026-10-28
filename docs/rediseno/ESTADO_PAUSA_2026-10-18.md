@@ -98,3 +98,9 @@ servidor `v4-prueba-real` en el puerto 8790, web nueva en `/v2`.
   con coherencia 0/0. **Ojo:** la carga de 5 min dio memoria +42,6 MB (falla el criterio) y pico de 409 MB; Render tiene
   512 MB. Al retomar, lo primero es la carga de 12 min para distinguir fuga de excursión, y si es fuga, diagnosticarla
   antes de E6. Falta también V1 y Firefox.
+
+## V4 TERMINADA (28-oct-2026)
+`rediseno/v4-f8` en e20de9f8: v4 + F8 + F9 + rendimiento + pasada final oficial (V4_CIERRE.md). Memoria definitiva en la
+carga de 12 min: pico 388 MB (margen 124 MB frente a Render). Copia del usuario en `../finanzer_next-prueba` (e20de9f8),
+servidor `v4-prueba-real`, http://localhost:8790/v2. Siguiente: el usuario prueba; E6 (migración) solo con su «ok, pushea»
+(plan `2026-10-18-rediseno-e6-migracion.md`: recalibrar la pantalla de carga en Render, probar MALLOC_ARENA_MAX=2).
