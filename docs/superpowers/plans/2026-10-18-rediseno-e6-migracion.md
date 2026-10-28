@@ -46,3 +46,12 @@ periodo de observación, sin pérdida de datos ni de enlaces, y con vuelta atrá
 ## Vuelta atrás
 - Rutas: revertir el commit del paso 2 → la web actual vuelve a `/` en un despliegue (~3–5 min en Render).
 - Total: `git revert` del squash; el backend v4 es aditivo, así que la web actual funciona con él o sin él.
+
+## Añadidos del 28-oct-2026 (cierre de la v4)
+- Tras cada despliegue, el PM abre `/v2` y espera las tarjetas (~30 s en frío: Yahoo, una petición por valor del
+  universo) antes de avisar al usuario. El disco de Render gratuito se borra al arrancar; la portada guardada en
+  `backend/.cache/portada.json` no sobrevive y el disco persistente es de pago (presupuesto 0). Ver V4_CIERRE §2.4.
+- Probar `MALLOC_ARENA_MAX=2` en Render (glibc, una arena por hilo) y medir el pico frente a los 512 MB (local: 388 MB
+  en la carga de 12 min, V4_CIERRE §2.3).
+- Recalibrar `loading_expected_s` / `loading_typical_s` con el p50/p75/p95 de `/api/analysis` sin caché en Render (en
+  local, análisis en frío p50 ≈ 3 s tras `rendimiento/v4f8-memoria`).
