@@ -93,3 +93,8 @@ final oficial de E2b: hechas suites, carga, V3, V5 y V2 con fuentes reales; pend
 Firefox (lo corre el PM fuera del sandbox), y cerrar `docs/rediseno/V4_CIERRE.md` (borrador escrito). Después: avisar
 al usuario y E6 con su «ok, pushea». Copia de prueba con datos reales: worktree `../finanzer_next-prueba` (ba47b009),
 servidor `v4-prueba-real` en el puerto 8790, web nueva en `/v2`.
+- Estado exacto de E2b al pausar: WIP e16e786b en `rediseno/v4-f8`. Hecho: backend 6.028/0, vitest 142, e2e:v2 871/0,
+  perf 3/3, V3 (2 fallos arreglados en 3160c4c5), carga 72/72, V5, Lighthouse escritorio 100 (CLS 6c26eab4), V2 real 7/7
+  con coherencia 0/0. **Ojo:** la carga de 5 min dio memoria +42,6 MB (falla el criterio) y pico de 409 MB; Render tiene
+  512 MB. Al retomar, lo primero es la carga de 12 min para distinguir fuga de excursión, y si es fuga, diagnosticarla
+  antes de E6. Falta también V1 y Firefox.
