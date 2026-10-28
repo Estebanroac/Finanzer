@@ -104,3 +104,20 @@ servidor `v4-prueba-real` en el puerto 8790, web nueva en `/v2`.
 carga de 12 min: pico 388 MB (margen 124 MB frente a Render). Copia del usuario en `../finanzer_next-prueba` (e20de9f8),
 servidor `v4-prueba-real`, http://localhost:8790/v2. Siguiente: el usuario prueba; E6 (migración) solo con su «ok, pushea»
 (plan `2026-10-18-rediseno-e6-migracion.md`: recalibrar la pantalla de carga en Render, probar MALLOC_ARENA_MAX=2).
+
+## PAUSA 4 (28-oct-2026, tarde-noche)
+Integración `rediseno/v4-f8` en ccacd828: v4 completa + F8 + F9 + rendimiento + portada rápida (bfb17aa0) + F10
+presentación (N5 rivales en el PDF, N6 menores). Pendiente, en este orden:
+1. **E2a · `fiabilidad/f10-motor`** (worktree ../finanzer_next-f10): N1 (no operativo), N3 (PEG), N4 (familia BPA + tasas
+   base solo en la confianza visible) hechos; N2 (referencia sin la propia empresa, continua) en commit al pausar.
+   Falta: **N2b** — región de la industria por dónde opera (como F9·R1) y ROE estable del P/B en dos etapas hacia la
+   industria global sin la empresa (caso CB: «atractivo» por comparar con aseguradoras europeas); **B3** — alertas con
+   la misma referencia que fila y puntuación; fusionar en v4-f8.
+2. **Independientes · `fiabilidad/f10-bloqueantes`** (desde ccacd828): B1 vacíos sin motivo → «n.s.» con motivo; B2
+   cifras dobles (EIX, IVZ, APA, TKO, LHX, KDP, NTAP, IDXX) con serie FY única; fusionar.
+3. **Modelo general · `modelo/general-inventario`** (06b7d51a, 4013f9cc, f93aa3d7): fusionar en v4-f8 (tools/reglas/docs,
+   sin cambiar puntuaciones) y escaneo de control de las 543; otro escaneo tras B1–B3 = puerta de la v4.
+   Propuesta `docs/modelo/ESPEC_MODELO_GENERAL.md` (47 → 12 variables) para presentar al usuario tras la v4 (4 preguntas).
+4. **E2b**: pasada mínima tras todo lo anterior (suites, V2 real NVDA + 7, coherencia, carga de 12 min **con** rivales
+   de fondo activos desde N5; avisar si > 450 MB). Luego actualizar la copia del usuario (:8790/v2) y avisarle.
+5. E6 solo con «ok, pushea».
