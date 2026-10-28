@@ -85,3 +85,11 @@ del emisor en inglés.
 El usuario dijo «comanda que todo arranque de nuevo». E2a retoma F8 desde 23b479cc; F8 independientes, desde 2e6a9031
 (regla SPG → E6 → E10 → historia 10 años); E2b adelanta en `rediseno/v4` el país en español y una pre-pasada final
 (`docs/rediseno/V4_PREPASADA.md`) que se repite tras fusionar F8.
+
+## PAUSA 3 (27-oct-2026, noche)
+Todo el desarrollo está hecho y fusionado en `rediseno/v4-f8` (punta ≥ 2c39b9cd): V4b, F8 Fase A completa (E1–E11, P3),
+F9 (revisión de NU: R1–R7, R1b, R1c continuo, R2b, R3, R6) y el arreglo del test del carrusel. Faltaba solo la pasada
+final oficial de E2b: hechas suites, carga, V3, V5 y V2 con fuentes reales; pendientes la prueba de carga larga, V1 y
+Firefox (lo corre el PM fuera del sandbox), y cerrar `docs/rediseno/V4_CIERRE.md` (borrador escrito). Después: avisar
+al usuario y E6 con su «ok, pushea». Copia de prueba con datos reales: worktree `../finanzer_next-prueba` (ba47b009),
+servidor `v4-prueba-real` en el puerto 8790, web nueva en `/v2`.
