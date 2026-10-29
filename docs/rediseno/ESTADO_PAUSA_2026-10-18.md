@@ -121,3 +121,13 @@ presentación (N5 rivales en el PDF, N6 menores). Pendiente, en este orden:
 4. **E2b**: pasada mínima tras todo lo anterior (suites, V2 real NVDA + 7, coherencia, carga de 12 min **con** rivales
    de fondo activos desde N5; avisar si > 450 MB). Luego actualizar la copia del usuario (:8790/v2) y avisarle.
 5. E6 solo con «ok, pushea».
+
+## PAUSA 5 (29-oct-2026)
+- `fiabilidad/f10-motor`: N1, N2, N3, N4 y **N2b** (solo la regla del ROE estable hacia la industria global sin la
+  empresa; la regla de región por geografía de ingresos se retiró: la referencia de múltiplos es la región en la que
+  Damodaran clasifica a la empresa). **B3** (alertas con la misma referencia y función que su fila) en commit o WIP al
+  pausar. Falta: fusionar en `rediseno/v4-f8` (ccacd828) y avisar.
+- `fiabilidad/f10-bloqueantes` (c361a26b): B1 y B2 cerrados, suites en verde; se fusiona **después** de f10-motor.
+- `modelo/general-inventario` (f93aa3d7): se fusiona tras F10 y corre el escaneo de control; otro tras todo = puerta.
+- Luego E2b: pasada mínima (suites, V2 real NVDA + 7, coherencia, carga 12 min con rivales de fondo).
+- Copia del usuario: `../finanzer_next-prueba` (e20de9f8, aún sin F10), servidor `v4-prueba-real` :8790.
