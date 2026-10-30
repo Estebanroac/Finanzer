@@ -145,3 +145,13 @@ presentación (N5 rivales en el PDF, N6 menores). Pendiente, en este orden:
   `retried` en la procedencia; rivales más lentos con N5 (p50 112 s); Damodaran antes/después de preferentes (BAC);
   4 preguntas de la especificación del modelo general.
 - Siguiente: el usuario prueba; E6 solo con «ok, pushea» (calentar /v2, MALLOC_ARENA_MAX=2).
+
+## V4 LISTA PARA E6 (30-oct-2026, noche)
+- `rediseno/v4-f8` = **e550fe37**, sin push. Desde ad178cb9 entraron: PDF rápido (31 → ~10 s, rivales con
+  capitalización en USD), revisión de COST (BPA desde EDGAR, PEG con el crecimiento mostrado, regla de contracción, una
+  cifra del DCF), ayudas «?» desplazables, cola de fondo a un turno con usuarios, pase móvil (rejilla, .numtable,
+  escalera con subgrid, safe-area, notas sin jerga) y EBITDA sin amortización operativa recurrente (NFLX, TTWO, KDP).
+- Tanda final (V4_CIERRE §2.7): suites verdes, V2 real 9/9 con coherencia 0, picos de carga 448/444/412 MB (mediana 444).
+- Copia del usuario en e550fe37 (:8790) y simulador iPhone 17 Pro Max (7B0944BA…).
+- Post-v4 añadido: hallazgos 1, 3 y 5 de COST (márgenes en alta rotación, arrendamientos frente a Damodaran), ventana 0
+  de la cola, BPA de TM/CSCO/HDB/MUFG/SMFG, `retried` en la procedencia.
