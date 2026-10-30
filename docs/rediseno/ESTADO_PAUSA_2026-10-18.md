@@ -131,3 +131,17 @@ presentación (N5 rivales en el PDF, N6 menores). Pendiente, en este orden:
 - `modelo/general-inventario` (f93aa3d7): se fusiona tras F10 y corre el escaneo de control; otro tras todo = puerta.
 - Luego E2b: pasada mínima (suites, V2 real NVDA + 7, coherencia, carga 12 min con rivales de fondo).
 - Copia del usuario: `../finanzer_next-prueba` (e20de9f8, aún sin F10), servidor `v4-prueba-real` :8790.
+
+## V4 FINAL CON F10 (30-oct-2026)
+- `rediseno/v4-f8` = **ad178cb9**, sin push. Dentro: F10 completo (N1–N4, N1b, N2/N2b, B1–B3), modelo general
+  (invariantes + escaneo), crecimiento desde base anómala (con cota), margen operativo con una sola verdad (TTM de
+  EDGAR reexpresado, cargos con etiquetas estándar, solo se recorta lo nombrable), beta con semanas completas,
+  reintento de EDGAR con caché.
+- Puerta: 543 empresas, todas las reglas a 0 salvo beta < 0,4 (9, post-v4). Pasada final (V4_CIERRE §2.5): suites
+  verdes, V2 real 8/8 y coherencia 0, loading_expected_s 4,81, carga 12 min con pico 419 MB (Render 512).
+- Copia del usuario `../finanzer_next-prueba` en ad178cb9, servidor `v4-prueba-real` :8790 (/v2/<TICKER>).
+- Post-v4 (cola): M2 (ROE agregado, ROA, ROE→ROIC); excesos sin nombre (F, NOC, utilities); etiquetas propias de
+  cargos (ON, MO, ALB, EL, SJM, ECHO); beta < 0,4 y filtro continuo de R²; P/E con BPA de EDGAR (WEC); SKYD;
+  `retried` en la procedencia; rivales más lentos con N5 (p50 112 s); Damodaran antes/después de preferentes (BAC);
+  4 preguntas de la especificación del modelo general.
+- Siguiente: el usuario prueba; E6 solo con «ok, pushea» (calentar /v2, MALLOC_ARENA_MAX=2).
