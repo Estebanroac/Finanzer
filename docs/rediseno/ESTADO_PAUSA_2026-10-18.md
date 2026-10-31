@@ -155,3 +155,8 @@ presentación (N5 rivales en el PDF, N6 menores). Pendiente, en este orden:
 - Copia del usuario en e550fe37 (:8790) y simulador iPhone 17 Pro Max (7B0944BA…).
 - Post-v4 añadido: hallazgos 1, 3 y 5 de COST (márgenes en alta rotación, arrendamientos frente a Damodaran), ventana 0
   de la cola, BPA de TM/CSCO/HDB/MUFG/SMFG, `retried` en la procedencia.
+
+## V4 FINAL (31-oct-2026, madrugada)
+- `rediseno/v4-f8` = **79810091**, sin push: + color en las barras de posición (web y PDF; regla A–E de E1, aprobada
+  por el usuario) y tarjetas del carrusel compactas en móvil (solo las tarjetas). §2.8: suites verdes, V2 real 9/9,
+  coherencia 0, pico 437 MB. Copia del usuario y simulador en 79810091. Falta solo «ok, pushea» para E6.
