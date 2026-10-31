@@ -22,6 +22,14 @@
 .fz2 .per { display: flex; gap: 2px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 3px; }
 .fz2 .per button { border: 0; background: transparent; color: var(--text-3); border-radius: 999px; padding: .1875rem .875rem; font: inherit; font-size: var(--fs-small); cursor: pointer; white-space: nowrap; }
 .fz2 .per button.on { background: var(--good-bg); color: var(--good-ink); font-weight: 650; }
+/* v4.1 (movimiento): el fondo del periodo activo se desliza al nuevo (SegmentInk); los botones, por encima y sin fondo */
+.fz2 .per { position: relative; }
+.fz2 .per button { position: relative; z-index: 1; color: var(--text-2); }   /* AA también sobre el fondo deslizante */
+.fz2 .per button.on { background: transparent; }
+.fz2 .seg-ink { position: absolute; inset: 0; border-radius: 999px; background: var(--good-bg); pointer-events: none;
+  transition: clip-path var(--dur-2) var(--ease-out); }
+.fz2 .seg-ink[data-still="1"] { transition: none; }
+@media (prefers-reduced-motion: reduce) { .fz2 .seg-ink { transition: none; } }
 .fz2 .more-wrap { position: relative; }
 .fz2 .chip.more:not(.on) { color: var(--text-3); }
 .fz2 .more-menu { position: absolute; z-index: 5; top: calc(100% + 4px); right: 0; list-style: none; margin: 0; padding: var(--s1); display: flex; flex-direction: column; gap: var(--s1); box-shadow: 0 6px 18px rgba(0, 0, 0, .08); }
@@ -65,7 +73,10 @@
 .fz2 .spark-dot { fill: currentColor; stroke: var(--surface); stroke-width: 1; }
 .fz2 .tk-item:hover .spark-dot { stroke: var(--paper); }
 .fz2 .spark.empty { background: linear-gradient(var(--line-soft), var(--line-soft)) center / 100% 1px no-repeat; }
-.fz2 .tape.skeleton .tk-item { row-gap: var(--s1); }
+.fz2 .skel-sym { width: 3em; }
+.fz2 .skel-chip { display: inline-block; color: transparent; border-style: dashed; cursor: default; }
+/* el pie del cintillo mientras se calcula: el alto de su línea (dos en el móvil, donde se parte) */
+.fz2 .skel-foot p { min-height: 1.5em; }
 .fz2 .ticker-foot { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: var(--s2) var(--s3); text-align: center; font-size: var(--fs-label); line-height: 1.5; padding: 0 var(--s3); }
 .fz2 .ticker-foot p { margin: 0; }
 .fz2 .ticker .state { text-align: center; margin: var(--s4) 0; }
@@ -116,6 +127,7 @@
   .fz2 .more-menu { position: fixed; left: var(--gutter); right: var(--gutter); top: auto; bottom: calc(var(--s3) + env(safe-area-inset-bottom)); }
   .fz2 .tk-item { min-width: 18.5rem; padding: .875rem var(--s4); }
   .fz2 .ticker-foot { padding: 0 var(--gutter); }
+  .fz2 .skel-foot p { min-height: 3em; }
 }
 /* v4 móvil (PM): el cintillo empieza en el margen y la siguiente tarjeta asoma; sin máscara que se coma la primera.
    v4 cintillo: avanza en continuo (useCarousel); el imán, solo quieto («reducir movimiento»). */

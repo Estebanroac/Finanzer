@@ -111,7 +111,13 @@
 /* Botón de tema (revisión V6, F25): la etiqueta la decide el tema de <html>, puesto antes de pintar */
 html[data-v2theme="dark"] .fz2 .theme-to-dark, html:not([data-v2theme="dark"]) .fz2 .theme-to-light { display: none; }
 .fz2 .search { width: 22.5rem; max-width: 100%; background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: var(--s1) var(--s3); color: var(--ink); font: inherit; }
-@media (prefers-reduced-motion: reduce) { .fz2 * { transition: none !important; animation: none !important; } }
+/* v4.1 (movimiento): con «reducir movimiento», nada se desplaza ni escala; quedan, como mucho, fundidos breves (ver el
+   lenguaje de movimiento al final del archivo) */
+@media (prefers-reduced-motion: reduce) {
+  .fz2 * { animation-duration: 1ms !important; animation-iteration-count: 1 !important; }
+  /* los fundidos que ayudan a entender (la pantalla de carga y sus títulos): breves */
+  .fz2 .analyze-loading, .fz2 .al-fade { animation-duration: 150ms !important; }
+}
 @media (max-width: 47.9375em) {
   .fz2 { --fs-body: 1.0625rem; --fs-title: 1.5rem;
     --gutter: max(clamp(1rem, 4.5vw, 1.25rem), env(safe-area-inset-left), env(safe-area-inset-right)); }
@@ -274,7 +280,12 @@ html[data-v2theme="dark"] .fz2 .theme-to-dark, html:not([data-v2theme="dark"]) .
 .fz2 .chapterbar { position: sticky; top: var(--stack-top); z-index: 10; background: var(--surface); border-bottom: 1px solid var(--line); border-top: 1px solid var(--line); }
 .fz2 .chapterbar-grid { display: grid; grid-template-columns: repeat(9, 1fr); text-align: center; }
 .fz2 .chapterbar a { padding: var(--s3) 0; color: var(--text-3); text-decoration: none; font-size: var(--fs-ui); white-space: nowrap; }
-.fz2 .chapterbar a[aria-current="true"], .fz2 .chapterbar a[aria-current="page"] { color: var(--ink); font-weight: 650; box-shadow: inset 0 -2px 0 var(--good); }
+.fz2 .chapterbar a[aria-current="true"], .fz2 .chapterbar a[aria-current="page"] { color: var(--ink); font-weight: 650; }
+/* v4.1: la marca de la activa es una pieza que se desliza (ChapterBar): 100 px de ancho escalados a la pestaña */
+.fz2 .chapterbar-grid { position: relative; }
+.fz2 .chapter-ink { position: absolute; left: 0; bottom: 0; width: 100px; height: 2px; background: var(--good); transform-origin: 0 0;
+  pointer-events: none; transition: transform var(--dur-2) var(--ease-out); }
+.fz2 .chapter-ink[data-still="1"] { transition: none; }
 /* Cifras clave como filas (etiqueta | valor): cada fila mide lo que su contenido, así que no hay huecos internos
    aunque las etiquetas o los valores del motor ocupen distinto número de líneas. */
 .fz2 .figures { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s1); }
@@ -882,7 +893,7 @@ html[data-v2theme="dark"] .fz2 .theme-to-dark, html:not([data-v2theme="dark"]) .
    tramos, y el pie. Bajo la barra superior (3,5 rem y su borde), a toda la pantalla; la página se monta al terminar. */
 .fz2 .analyze-loading { position: fixed; top: calc(3.5rem + 1px); left: 0; right: 0; bottom: 0; z-index: 30;
   display: grid; place-items: center; background: var(--paper); overflow-y: auto; animation: al-in .25s ease-out both; }
-.fz2 .analyze-loading.out { animation: al-out .62s cubic-bezier(.45, 0, .15, 1) forwards; pointer-events: none; }
+.fz2 .analyze-loading.out { animation: al-out .26s var(--ease-out) forwards; pointer-events: none; }
 @keyframes al-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes al-out { from { opacity: 1; } to { opacity: 0; transform: scale(1.01); } }
 .fz2 .al-inner { width: 100%; max-width: calc(32.5rem + 2 * var(--s4)); padding: var(--s5) var(--s4); text-align: center; }
@@ -967,4 +978,73 @@ html[data-v2theme="dark"] .fz2 .theme-to-dark, html:not([data-v2theme="dark"]) .
   .fz2 .stuck-head .scores-line { display: flex; flex-wrap: nowrap; gap: var(--s3); }
   .fz2 .stuck-head .scores-line > div { flex-direction: row; gap: var(--s1); }
   .fz2 .stuck-head .scores-line .muted { display: none; }
+}
+
+/* ══ v4.1 · Lenguaje de movimiento ══
+   El usuario: «algo suave, sutil, que el cambio de pestañas y opciones dé una sensación de iPhone y no que todo sea de
+   golpe». Reglas: curvas de resorte sin rebote; duraciones cortas según la distancia (150 lo pequeño, 220 lo que cambia
+   en su sitio, 320 lo que entra desde fuera); solo transform y opacity; nada retrasa la lectura (lo que entra es legible
+   desde el primer fotograma: opacidad desde .0x, desplazamientos de pocos px); «reducir movimiento»: fundidos breves o
+   nada. */
+:root {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);        /* resorte sin rebote: arranca rápido y se posa */
+  --ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);      /* hojas: la curva de las de iOS */
+  --dur-1: 150ms; --dur-2: 220ms; --dur-3: 320ms;
+  --shift: 16px;                                    /* desplazamiento de una página que entra */
+}
+html[data-page-dir="back"] { --page-sign: -1; }
+@media (prefers-reduced-motion: no-preference) {
+  /* Cambio de sección: solo el contenido entra (fundido y unos px desde el lado del cambio); cabecera y barras, quietas */
+  html[data-page-dir] .fz2 .depth { animation: fz2-page-in var(--dur-3) var(--ease-out) both; }
+  /* lo que entra de lado nunca ensancha la página (en el móvil, eso movía dónde se queda la sección); clip, no hidden:
+     no crea un contenedor de desplazamiento y las barras fijas siguen pegándose */
+  .fz2 main { overflow-x: clip; }
+  /* La pantalla de carga da paso a la página, y la portada a una acción (navegación entre documentos): fundido
+     cruzado, y lo nuevo sube unos px; la barra superior no se mueve. La capa de la transición nunca se come un toque. */
+  @view-transition { navigation: auto; }
+  .fz2 .topbar { view-transition-name: fz2-topbar; }
+  ::view-transition { pointer-events: none; }
+  ::view-transition-old(root) { animation: fz2-fade-out var(--dur-1) var(--ease-out) both; }
+  ::view-transition-new(root) { animation: fz2-doc-in var(--dur-3) var(--ease-out) both; }
+  /* modo claro/oscuro: solo el color, el nuevo se funde sobre el anterior */
+  html[data-vt="theme"]::view-transition-old(root) { animation: none; }
+  html[data-vt="theme"]::view-transition-new(root) { animation: fz2-fade-in var(--dur-2) var(--ease-out) both; }
+}
+@keyframes fz2-fade-out { to { opacity: 0; } }
+@keyframes fz2-fade-in { from { opacity: 0; } }
+@keyframes fz2-doc-in { from { opacity: 0; transform: translateY(8px); } }
+@keyframes fz2-page-in { from { opacity: 0; transform: translateX(calc(var(--page-sign, 1) * var(--shift))); } }
+
+/* El aviso del PDF sube unos px con un fundido y se va igual (PdfButton: .leaving) */
+.fz2 .pdf-status.on { transition: opacity var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out); }
+@starting-style { .fz2 .pdf-status.on { opacity: 0; transform: translate(-50%, 8px); } }
+.fz2 .pdf-status.on.leaving { opacity: 0; transform: translate(-50%, 8px); transition-duration: var(--dur-1); }
+@media (prefers-reduced-motion: reduce) {
+  @starting-style { .fz2 .pdf-status.on { opacity: 0; transform: translateX(-50%); } }
+  .fz2 .pdf-status.on.leaving { transform: translateX(-50%); }
+}
+
+/* Respuesta al toque: lo que se pulsa cede un poco, al instante (sin esperar al clic) */
+@media (prefers-reduced-motion: no-preference) {
+  .fz2 .btn, .fz2 .tip-btn, .fz2 .pillnav, .fz2 .chip, .fz2 .per button { transition: transform var(--dur-1) var(--ease-out), background-color var(--dur-1) ease, color var(--dur-1) ease, border-color var(--dur-1) ease; }
+  .fz2 .btn:active, .fz2 .tip-btn:active, .fz2 .pillnav:active, .fz2 .chip:active, .fz2 .per button:active { transform: scale(0.97); }
+}
+
+/* Ayudas: el popover nace de su «?» (escala y fundido); la hoja sube desde abajo y el velo se funde. Al cerrar, el mismo
+   camino de vuelta (Floating mantiene la pieza mientras sale: data-state="closed") */
+.fz2 .tip-box.floating { transform-origin: var(--float-origin, top left); transition: opacity var(--dur-1) var(--ease-out), transform var(--dur-2) var(--ease-out); }
+.fz2 .tip-box.floating[data-state="closed"] { opacity: 0; transform: scale(0.96); }
+@starting-style { .fz2 .tip-box.floating { opacity: 0; transform: scale(0.96); } }
+.fz2 .tip-box.sheet { transition: transform var(--dur-3) var(--ease-sheet); }
+.fz2 .tip-box.sheet[data-state="closed"] { transform: translateY(100%); }
+.fz2 .tip-box.sheet[data-drag] { transition: none; }
+@starting-style { .fz2 .tip-box.sheet { transform: translateY(100%); } }
+.fz2 .tip-backdrop { transition: opacity var(--dur-3) var(--ease-out); }
+.fz2 .tip-backdrop[data-state="closed"] { opacity: 0; }
+@starting-style { .fz2 .tip-backdrop { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .fz2 .tip-box.floating, .fz2 .tip-box.sheet { transition: opacity var(--dur-1) ease; transform: none !important; }
+  .fz2 .tip-box.sheet[data-state="closed"] { opacity: 0; }
+  @starting-style { .fz2 .tip-box.floating, .fz2 .tip-box.sheet { opacity: 0; transform: none; } }
+  .fz2 .chapter-ink { transition: none; }
 }
