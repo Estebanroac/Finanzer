@@ -37,6 +37,13 @@ export function mergeTrending(prev: TrendingData | null, next: TrendingData): Tr
   return out;
 }
 
+/** v4.1: ¿ya llegaron los datos de la lista o el sector elegidos en ese periodo? (mientras no, el cintillo conserva lo
+ *  que enseñaba: no se vacía ni hace saltar la página). */
+export function hasSelection(d: TrendingData | null, sel: Selection, period: SparkPeriod): boolean {
+  if (!d) return false;
+  return sel.kind === "list" ? !!d.lists[period] : !!d.sectors?.[period];
+}
+
 /** P8b: las tarjetas de la lista o del sector elegidos, calculadas en el periodo elegido (el de las gráficas). */
 export function selectedItems(d: TrendingData | null, sel: Selection, period: SparkPeriod): TrendingItem[] {
   if (!d) return [];
