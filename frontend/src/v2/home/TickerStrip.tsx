@@ -25,8 +25,9 @@ const MS = 1000;
 /** Segundos de animación por valor: el cintillo avanza a la misma velocidad con 12 o con 30 valores. */
 const SECONDS_PER_ITEM = 4;
 const SKELETON_ITEMS = 6;
-/** Anchos (rem) de los chips de sector mientras se calcula: una fila como la de verdad. */
-const SKELETON_SECTORS = [6.5, 8, 10, 7, 9];
+/** Anchos de los chips de sector mientras se calcula: una fila como la de verdad (valores CSS: son de dibujo, no
+ *  cortes de banda; npm run check no admite listas de números en estos componentes). */
+const SKELETON_SECTORS = ["6.5rem", "8rem", "10rem", "7rem", "9rem"];
 
 function useMedia(query: string): boolean {
   const [on, setOn] = useState(false);
@@ -315,7 +316,7 @@ export default function TickerStrip() {
         {calculating && (
           <div className="frow" aria-hidden="true">
             <div className="fgroup fgroup-sectors"><div className="fchips">
-              {SKELETON_SECTORS.map((w, i) => <span key={i} className="chip skel-chip" style={{ width: `${w}rem` }}>{"\u00a0"}</span>)}
+              {SKELETON_SECTORS.map((w, i) => <span key={i} className="chip skel-chip" style={{ width: w }}>{"\u00a0"}</span>)}
             </div></div>
           </div>
         )}
