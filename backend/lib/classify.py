@@ -43,8 +43,10 @@ import re
 from typing import Any, Dict, List, Optional
 
 import cyclicality as cy
-from historical_metrics import cagr, detrended_std, ratio_series, stdev, strict_cagr, yoy_growths
+from historical_metrics import (detrended_std, is_anomalous_not_significant, ratio_series, robust_growth, stdev,
+                                yoy_growths)
 from settings import cfg
+import names
 
 FINANCIAL = "FINANCIAL"
 REIT = "REIT"
@@ -85,6 +87,19 @@ def archetype_label(archetype: Optional[str]) -> str:
     return ARCHETYPE_LABELS.get(archetype or "", archetype or "")
 
 
+# F9 · R4: lo que no aplica a un subtipo de FINANCIAL (sectors.archetypes.not_applicable_subtype) y su porqué.
+SUBTYPE_GROUP = {"banco": "bancos"}
+WHY_NOT_APPLICABLE_SUBTYPE = {
+    ("banco", "net_margin"): "sus ingresos no tienen una definición común (con los intereses cobrados o netos de los "
+                             "pagados), así que el margen neto sobre ingresos no es comparable con el de su industria; "
+                             "su rentabilidad se mide con el ROE, el ROA y el ROTE",
+}
+
+
+def subtype_not_applicable(subtype: Optional[str]) -> tuple:
+    return tuple(cfg("sectors.archetypes.not_applicable_subtype").get(subtype or "", ()))
+
+
 def not_applicable_text(archetype: Optional[str]) -> str:
     """"No aplica a bancos y aseguradoras", "No aplica a empresas cíclicas"…"""
     return f"No aplica a {ARCHETYPE_GROUP.get(archetype or '', archetype or 'este tipo de empresa')}"
@@ -103,6 +118,12 @@ WHY_NOT_APPLICABLE = {
 
 # Motivo propio de un componente cuando el del arquetipo no lo explica.
 WHY_NOT_APPLICABLE_KEY = {
+    # F9 · R5 (revisión externa de NU): «cobertura de intereses 0,77x críticamente baja» en un banco.
+    (FINANCIAL, "interest_coverage"): "el gasto por intereses es parte del negocio (el coste de los depósitos o de la "
+                                      "financiación de su cartera), no el servicio de una deuda; su solidez se mide "
+                                      "por el capital",
+    (FINANCIAL, "net_debt_ebitda"): "su caja y su deuda son parte del negocio (depósitos, reservas técnicas, "
+                                       "cartera) y no tiene EBITDA; su solidez se mide por el capital",
     (REIT, "current_ratio"): "activos inmobiliarios de largo plazo financiados con deuda a largo plazo; "
                              "el circulante no mide su liquidez",
     (UTILITY, "altman"): "el Altman se calibró con quiebras de empresas industriales; una utility regulada opera con "
@@ -145,13 +166,22 @@ def norm_industry(text: Optional[str]) -> str:
     return re.sub(r"\s*[—–]\s*|\s+-\s+", " - ", s)
 
 
+def reit_industry(industry: Optional[str]) -> bool:
+    """Industria "REIT - …" (la regla del arquetipo REIT; promotoras y servicios inmobiliarios no)."""
+    ind = norm_industry(industry)
+    return any(ind.startswith(p) for p in _C["reit_prefixes"])
+
+
 def display_industry(text: Optional[str]) -> str:
     """Industria para el informe con el guion unificado ("REIT—Retail" -> "REIT - Retail")."""
     return re.sub(r"\s*[—–]\s*|\s+-\s+", " - ", (text or "").strip())
 
 
-def not_applicable(archetype: Optional[str], key: str) -> Optional[str]:
-    """Motivo "No aplica a ARQUETIPO: …" si el componente `key` no aplica; None si aplica."""
+def not_applicable(archetype: Optional[str], key: str, subtype: Optional[str] = None) -> Optional[str]:
+    """Motivo "No aplica a ARQUETIPO: …" si el componente `key` no aplica; None si aplica. F9 · R4: con `subtype`, también
+    lo que no aplica a ese subtipo de FINANCIAL ("No aplica a bancos: …")."""
+    if archetype == FINANCIAL and subtype and key in subtype_not_applicable(subtype):
+        return f"No aplica a {SUBTYPE_GROUP.get(subtype, subtype)}: {WHY_NOT_APPLICABLE_SUBTYPE[(subtype, key)]}"
     if not archetype or key not in cfg(f"sectors.archetypes.not_applicable.{archetype}"):
         return None
     why = WHY_NOT_APPLICABLE_KEY.get((archetype, key)) or WHY_NOT_APPLICABLE.get(archetype) or ""
@@ -180,7 +210,9 @@ def _possible_cyclical(st: Dict[str, Any]) -> Optional[Dict[str, Any]]:
                      f"{P['op_margin_detrended_std'] * 100:.0f})")
         reasons.append(f"margen operativo volátil ({m_std * 100:.1f} pp alrededor de su tendencia > "
                        f"{P['op_margin_detrended_std'] * 100:.0f} pp)")
-    if g_std is not None and g_std > P["revenue_growth_std"]:
+    # F9 · R7 (revisión externa de NU): un ciclo tiene caídas. La desaceleración de un hipercrecimiento (NU: de +182 % a
+    # +37 %, siempre al alza) oscila mucho sin ser un ciclo: el criterio del crecimiento exige algún año con caída.
+    if g_std is not None and g_std > P["revenue_growth_std"] and any(g < 0 for g in growth):
         plain.append(f"su crecimiento de ingresos oscila {g_std * 100:.1f} puntos de un año a otro (el umbral es "
                      f"{P['revenue_growth_std'] * 100:.0f})")
         reasons.append(f"crecimiento de ingresos volátil ({g_std * 100:.1f} pp > {P['revenue_growth_std'] * 100:.0f} pp)")
@@ -263,11 +295,20 @@ def _growth_profitable(eps_ttm, op_margin, fcf_sbc_margin, history, st) -> Dict[
     y margen operativo (o FCF − SBC) ≥ 10%. Sin historia de EDGAR, los ejercicios de Yahoo por acción."""
     G = _C["growth_profitable"]
     m = cy.growth_profitable_measures(history) if history else {"basis": None}
-    if not history or m.get("revenue_ps_cagr_3y") is None:
+    # F10: una tasa de la historia no significativa es un resultado, no un vacío: no se sustituye por la de Yahoo.
+    if not history or (m.get("revenue_ps_cagr_3y") is None and not m.get("method_3y")):
         rev, sh = st.get("revenue") or [], st.get("ordinary_shares") or []
         ps = [(r / s) if (r is not None and s) else None for r, s in zip(rev, sh)]
-        c3 = cagr(ps[0], ps[3], 3) if len(ps) >= 4 and ps[0] and ps[3] and ps[0] > 0 and ps[3] > 0 else None
-        m = {"basis": "por_accion (Yahoo)", "revenue_ps_cagr_3y": c3, "revenue_ps_cagr_5y": None}
+        # F10 · crecimiento desde una base anómala: la misma regla que el resto de crecimientos (sin serie larga aquí)
+        _r3 = robust_growth(ps, 3, what="ingresos por acción", strict_ends_only=True)
+        m = {"basis": "por_accion (Yahoo)", "revenue_ps_cagr_3y": _r3["value"], "revenue_ps_cagr_5y": None,
+             **({"method_3y": {"method": _r3.get("method"), "robust": False, "reason": _r3["reason"]}}
+                if _r3.get("not_significant") else {})}
+    # F10 (PM, 29-oct): una tasa no significativa (año base anómalo) es «desconocida», no «sin crecimiento»: no cuenta ni
+    # a favor ni en contra, y el tipo se decide con el resto de la evidencia (la otra tasa, el beneficio y el margen).
+    ns = {n: (m.get(f"method_{n}y") or {}).get("reason") for n in (3, 5)
+          if m.get(f"revenue_ps_cagr_{n}y") is None
+          and is_anomalous_not_significant((m.get(f"method_{n}y") or {}).get("reason"))}
     margin = op_margin if (op_margin is not None and op_margin >= G["min_operating_margin"]) else None
     alt = fcf_sbc_margin if (margin is None and fcf_sbc_margin is not None
                              and fcf_sbc_margin >= G["min_operating_margin"]) else None
@@ -275,7 +316,7 @@ def _growth_profitable(eps_ttm, op_margin, fcf_sbc_margin, history, st) -> Dict[
     def meets(t3, t5, tm):
         c3, c5 = m.get("revenue_ps_cagr_3y"), m.get("revenue_ps_cagr_5y")
         prof = (op_margin is not None and op_margin >= tm) or (fcf_sbc_margin is not None and fcf_sbc_margin >= tm)
-        return bool(c3 is not None and c3 >= t3 and (c5 is None or c5 >= t5)
+        return bool(((c3 is not None and c3 >= t3) or 3 in ns) and (c5 is None or c5 >= t5)
                     and eps_ttm is not None and eps_ttm > 0 and prof)
     ok = meets(G["min_revenue_ps_cagr_3y"], G["min_revenue_ps_cagr_5y"], G["min_operating_margin"])
     flips = []
@@ -285,9 +326,35 @@ def _growth_profitable(eps_ttm, op_margin, fcf_sbc_margin, history, st) -> Dict[
             t[idx] *= f
             if meets(*t) != ok:
                 flips.append(f"{k} {G[k]:g}→{t[idx]:g}")
-    return {**m, "meets": ok, "operating_margin": op_margin, "fcf_sbc_margin": fcf_sbc_margin,
+    return {**m, "meets": ok, "not_significant": ns, "operating_margin": op_margin, "fcf_sbc_margin": fcf_sbc_margin,
             "margin_used": "operativo" if margin is not None else ("FCF − SBC" if alt is not None else None),
             "sensitivity": flips}
+
+
+def growth_span(gp: Dict[str, Any], n: int) -> str:
+    """El periodo de la tasa a `n` años de growth_profitable_measures: «en 3 años (FY2023–FY2026)»; con la serie larga
+    (F10 · crecimiento desde una base anómala), los ejercicios de la regresión y por qué."""
+    w, yrs = gp.get(f"window_{n}y"), gp.get(f"years_{n}y")
+    if yrs:
+        return (f"en {yrs} ejercicios ({w}, por regresión log-lineal: el año inicial de la ventana de {n} años es "
+                "anómalo)")
+    return f"en {n} años" + (f" ({w})" if w else "")
+
+
+def _mature_plain(gp: Dict[str, Any], cyc: Optional[Dict[str, Any]], ind_txt: Optional[str]) -> str:
+    """V7 (M6): la madura en positivo (qué es y sus datos), no por lo que no es ("no es un banco ni…")."""
+    G = _C["growth_profitable"]
+    c3 = gp.get("revenue_ps_cagr_3y")
+    parts = [f"Madura: {_C['definitions'][MATURE]}"]
+    if c3 is not None:
+        what = "ingresos por acción" if gp.get("basis") == "por_accion" else "ingresos"
+        g = f"sus {what} {'crecen' if c3 >= 0 else 'caen'} un {abs(c3) * 100:.1f}% anual {growth_span(gp, 3)}"
+        parts.append(g + (f", por debajo del {G['min_revenue_ps_cagr_3y'] * 100:.0f}% del crecimiento rentable"
+                          if c3 < G["min_revenue_ps_cagr_3y"] else
+                          ", pero sin el beneficio o el margen que pide el crecimiento rentable"))
+    if cyc:
+        parts.append(f"en {cyc['measures']['years']} ejercicios su historia no muestra ciclo")
+    return "; ".join(parts) + (f" ({ind_txt})." if ind_txt else ".")
 
 
 def classify(*, sector: Optional[str], industry: Optional[str], eps_ttm: Optional[float],
@@ -303,12 +370,19 @@ def classify(*, sector: Optional[str], industry: Optional[str], eps_ttm: Optiona
     ind_raw = industry if industry and industry.strip().lower() not in ("unknown", "n/a") else None
     ind = norm_industry(ind_raw)
     ind_txt = display_industry(ind_raw) if ind_raw else None
+    # V7 (nombres en español): la prosa usa la industria en español; el original queda en "industry" y en el anexo.
+    ind_es = names.industry(ind_raw) if ind_raw else None
     sec = (sector or "").strip().lower()
 
-    rev_cagr, rev_cagr_why = strict_cagr(st.get("revenue") or [], 3)
+    # F10 · crecimiento desde una base anómala: con la serie larga de EDGAR si la regresión de la ventana no es robusta
+    _rr = robust_growth(st.get("revenue") or [], 3, what="ingresos", strict_ends_only=True,
+                        long=(history or {}).get("revenue"), end=(st.get("inc_ends") or [None])[0])
+    rev_cagr, rev_cagr_why = _rr["value"], _rr["reason"]
     rev0, ta0 = _first(st.get("revenue")), _first(st.get("total_assets"))
     assets_to_revenue = (ta0 / rev0) if (ta0 is not None and rev0 and rev0 > 0) else None
     inputs = {"revenue_cagr_3y": rev_cagr, "revenue_cagr_3y_reason": rev_cagr_why,
+              # F10 (PM, 29-oct): la cota de la tasa no significativa (la usa la regla de 40 si ya decide su tramo)
+              "revenue_cagr_3y_bound": _rr.get("bound") if _rr.get("not_significant") else None,
               "eps_ttm": eps_ttm, "net_margin_ttm": net_margin_ttm,
               "assets_to_revenue": assets_to_revenue}
     # Ciclicidad por la historia: se mide aquí porque también decide si hace falta la alerta de posible cíclica.
@@ -319,6 +393,7 @@ def classify(*, sector: Optional[str], industry: Optional[str], eps_ttm: Optiona
     def out(arch, reason, rule, plain, ambiguous=False, subtype=None, frontier=None):
         # reason: motivo técnico (detalle); reason_plain: el mismo motivo en prosa para el usuario.
         res = {"archetype": arch, "label": ARCHETYPE_LABELS[arch], "reason": reason, "reason_plain": plain,
+               "definition": _C["definitions"][arch],   # V7 (M6): qué es el arquetipo, en positivo
                "rule": rule, "sector": sector or None,
                "industry": ind_txt, "ambiguous": ambiguous, "confidence": "baja" if ambiguous else "normal",
                "alerts": [], "inputs": inputs, "subtype": subtype,
@@ -369,12 +444,12 @@ def classify(*, sector: Optional[str], industry: Optional[str], eps_ttm: Optiona
                 res["confidence"] = "baja"
         return res
 
-    by_ind = f"por industria {ind_txt}" if ind_txt else ""
+    by_ind = f"por industria {ind_es}" if ind_txt else ""
 
     # 1. FINANCIAL: bancos y aseguradoras, por industria.
     if any(ind.startswith(p) for p in _C["bank_prefixes"]):
         return out(FINANCIAL, f"Clasificada como FINANCIAL {by_ind} (banco)", "industria_banco",
-                   f"Banco por su industria ({ind_txt}): el balance es el producto.", subtype="banco")
+                   f"Banco por su industria ({ind_es}): el balance es el producto.", subtype="banco")
     if any(ind.startswith(p) for p in _C["insurance_prefixes"]):
         ins = _insurer_subtype(history)
         inputs["non_insurance_revenue_share"] = ins["non_insurance_share"]
@@ -383,17 +458,17 @@ def classify(*, sector: Optional[str], industry: Optional[str], eps_ttm: Optiona
             return out(FINANCIAL, f"Clasificada como FINANCIAL {by_ind} (conglomerado: los ingresos de contratos con "
                                   f"clientes, sin seguros, son el {sh:.0f}% de los ingresos del FY{ins['fy_end'][:4]})",
                        "industria_aseguradora",
-                       f"Conglomerado con negocio asegurador ({ind_txt}): el {sh:.0f}% de sus ingresos son de "
+                       f"Conglomerado con negocio asegurador ({ind_es}): el {sh:.0f}% de sus ingresos son de "
                        "negocios que no son seguros.", subtype="conglomerado")
         return out(FINANCIAL, f"Clasificada como FINANCIAL {by_ind} (aseguradora)", "industria_aseguradora",
-                   f"Aseguradora por su industria ({ind_txt}): el balance es el producto.", subtype="aseguradora")
+                   f"Aseguradora por su industria ({ind_es}): el balance es el producto.", subtype="aseguradora")
 
     # 2. Excepciones MATURE dentro de Financial Services; el resto, FINANCIAL ambigua.
     if sec in _C["financial_sectors"]:
         if ind in _C["financial_mature_industries"]:
             return out(MATURE, f"Clasificada como MATURE {by_ind}: excepción dentro de Financial Services "
                                "(sin cartera de préstamos en el balance)", "excepcion_financiera",
-                       f"Madura: dentro de los servicios financieros, su industria ({ind_txt}) no tiene cartera "
+                       f"Madura: dentro de los servicios financieros, su industria ({ind_es}) no tiene cartera "
                        "de préstamos en el balance.")
         if ind in _C["payment_network_industries"]:
             lim = _C["payment_network_max_assets_to_revenue"]
@@ -401,42 +476,53 @@ def classify(*, sector: Optional[str], industry: Optional[str], eps_ttm: Optiona
                 return out(MATURE, f"Clasificada como MATURE {by_ind} de tipo red de pagos (activos/ingresos "
                                    f"{assets_to_revenue:.1f}x <= {lim:.1f}x): excepción dentro de Financial Services",
                            "red_de_pagos",
-                           f"Madura: red de pagos ({ind_txt}) con {assets_to_revenue:.1f} veces sus ingresos en "
+                           f"Madura: red de pagos ({ind_es}) con {assets_to_revenue:.1f} veces sus ingresos en "
                            f"activos (hasta {lim:.1f} veces), sin cartera de préstamos en el balance.")
             why = (f"activos/ingresos {assets_to_revenue:.1f}x > {lim:.1f}x: cartera de préstamos en el balance"
                    if assets_to_revenue is not None else "sin datos de balance para distinguir una red de pagos")
-            plain = (f"Banco/aseguradora: {ind_txt} con {assets_to_revenue:.1f} veces sus ingresos en activos "
+            plain = (f"Banco/aseguradora: {ind_es} con {assets_to_revenue:.1f} veces sus ingresos en activos "
                      f"(más de {lim:.1f} veces): tiene cartera de préstamos en el balance."
                      if assets_to_revenue is not None else
-                     f"Banco/aseguradora: {ind_txt} sin datos de balance para distinguirla de una red de pagos.")
+                     f"Banco/aseguradora: {ind_es} sin datos de balance para distinguirla de una red de pagos.")
             return out(FINANCIAL, f"Clasificada como FINANCIAL {by_ind} ({why})", "credito_con_balance", plain,
                        ambiguous=assets_to_revenue is None, subtype="financiera")
-        what = f"industria financiera ambigua ({ind_txt})" if ind_txt else "industria sin dato"
+        what = f"industria financiera ambigua ({ind_es})" if ind_txt else "industria sin dato"
         return out(FINANCIAL, f"Clasificada como FINANCIAL por sector Financial Services: {what}; "
                               "se trata como FINANCIAL", "financiera_ambigua",
                    "Banco/aseguradora: sector financiero con una industria ambigua"
-                   + (f" ({ind_txt})" if ind_txt else "") + "; se analiza como entidad financiera.", ambiguous=True,
+                   + (f" ({ind_es})" if ind_txt else "") + "; se analiza como entidad financiera.", ambiguous=True,
                    subtype="financiera")
 
     # 3. REIT: solo industrias "REIT - …".
-    if any(ind.startswith(p) for p in _C["reit_prefixes"]):
-        return out(REIT, f"Clasificada como REIT {by_ind}", "industria_reit", f"REIT por su industria ({ind_txt}).")
+    if reit_industry(ind):
+        return out(REIT, f"Clasificada como REIT {by_ind}", "industria_reit",
+                   f"REIT: {_C['definitions'][REIT]}; industria {ind_es}.")
 
     # 3b. UTILITY (etapa 11b): solo las reguladas, por industria.
     if ind in _C["utility_industries"]:
         return out(UTILITY, f"Clasificada como UTILITY {by_ind}", "industria_utility",
-                   f"Utility regulada por su industria ({ind_txt}): el regulador fija su retorno sobre una base de "
+                   f"Utility regulada por su industria ({ind_es}): el regulador fija su retorno sobre una base de "
                    "activos financiada con deuda.")
 
     # 4. GROWTH_PRE_PROFIT: sin beneficio y crecimiento real alto.
     no_profit = (eps_ttm is not None and eps_ttm <= 0) or (net_margin_ttm is not None and net_margin_ttm < 0)
     g_min = _C["growth_pre_profit_min_revenue_cagr"]
-    if no_profit and rev_cagr is not None and rev_cagr > g_min:
+    # F10 (PM, 29-oct): un crecimiento no significativo (año base anómalo) es «desconocido», no «sin crecimiento»: no
+    # cuenta ni a favor ni en contra, y decide el resto de la evidencia (la falta de beneficio). RIVN: el FY2022 de sus
+    # ingresos es el 33 % de la mediana; sigue siendo pre-beneficio.
+    rev_unknown = rev_cagr is None and is_anomalous_not_significant(rev_cagr_why)
+    if no_profit and (rev_unknown or (rev_cagr is not None and rev_cagr > g_min)):
         what = (f"BPA TTM {eps_ttm:.2f} <= 0" if (eps_ttm is not None and eps_ttm <= 0)
                 else f"margen neto {net_margin_ttm * 100:.1f}% < 0")
         what_plain = (f"beneficio por acción negativo en los últimos doce meses ({eps_ttm:.2f})".replace("-", "−")
                       if (eps_ttm is not None and eps_ttm <= 0)
                       else f"margen neto negativo ({net_margin_ttm * 100:.1f}%)".replace("-", "−"))
+        if rev_unknown:
+            return out(GROWTH_PRE_PROFIT, f"Clasificada como GROWTH_PRE_PROFIT: {what}; CAGR de ingresos a 3 años "
+                                          f"{rev_cagr_why}, que no cuenta ni a favor ni en contra",
+                       "pre_beneficio_con_crecimiento",
+                       f"Crecimiento sin beneficio: {what_plain}; el crecimiento de sus ingresos a 3 años no es "
+                       "significativo (parte de un año base anómalo) y no cuenta ni a favor ni en contra.")
         return out(GROWTH_PRE_PROFIT, f"Clasificada como GROWTH_PRE_PROFIT: {what} y CAGR de ingresos a 3 años "
                                       f"{rev_cagr * 100:.1f}% > {g_min * 100:.0f}%", "pre_beneficio_con_crecimiento",
                    f"Crecimiento sin beneficio: {what_plain} e ingresos totales que crecen un {rev_cagr * 100:.1f}% "
@@ -463,13 +549,15 @@ def classify(*, sector: Optional[str], industry: Optional[str], eps_ttm: Optiona
             # cambiar de herramienta: la que más crece en la parte alta del ciclo es la que más necesita el ciclo medio.
             gp = _growth_profitable(eps_ttm, operating_margin_ttm, fcf_sbc_margin, history, st)
             inputs["growth_profitable"] = gp
+            # F10: sin una tasa a 3 años significativa no se afirma que crezca (la nota es una cifra, no un tipo).
+            _sg = gp["meets"] and gp["revenue_ps_cagr_3y"] is not None
             note = (f"; además crece con beneficio (crecimiento estructural: ingresos por acción "
-                    f"{gp['revenue_ps_cagr_3y'] * 100:.1f}% anual a 3 años)" if gp["meets"] else "")
+                    f"{gp['revenue_ps_cagr_3y'] * 100:.1f}% anual a 3 años)" if _sg else "")
             res = out(CYCLICAL, f"Clasificada como CYCLICAL por su historia ({m['years']} ejercicios en EDGAR): "
                                 f"{what}{note}", "historia_ciclica",
                       f"Cíclica por su historia: en {m['years']} ejercicios, {what}{note}.",
                       frontier=cyc["sensitivity"])
-            res["structural_growth"] = gp["meets"]
+            res["structural_growth"] = _sg
             return res
     elif ind in _C["cyclical_industries"] or ind in _C["cyclical_conditional_industries"]:
         short = (f" (historia corta: {cyc['measures']['years']} ejercicios en EDGAR, menos de "
@@ -477,7 +565,7 @@ def classify(*, sector: Optional[str], industry: Optional[str], eps_ttm: Optiona
         if ind in _C["cyclical_industries"]:
             extra = " (inmobiliaria no REIT)" if sec == "real estate" else ""
             return out(CYCLICAL, f"Clasificada como CYCLICAL {by_ind}{extra}{short}", "industria_ciclica",
-                       f"Cíclica por su industria ({ind_txt}){extra}; sin historia suficiente para medirlo.",
+                       f"Cíclica por su industria ({ind_es}){extra}; sin historia suficiente para medirlo.",
                        ambiguous=True)
         rv = _reversion(st)
         inputs["op_margin_peak_to_trough"] = rv["op_margin_peak_to_trough"]
@@ -485,7 +573,7 @@ def classify(*, sector: Optional[str], industry: Optional[str], eps_ttm: Optiona
         if rv["flag"]:
             return out(CYCLICAL, f"Clasificada como CYCLICAL {by_ind} (cíclica condicional) con reversión en la "
                                  f"ventana: {rv['detail']}{short}", "industria_ciclica_condicional",
-                       f"Cíclica: su industria ({ind_txt}) puede serlo y en los últimos ejercicios "
+                       f"Cíclica: su industria ({ind_es}) puede serlo y en los últimos ejercicios "
                        f"{rv['detail_plain']}.", ambiguous=True)
         cond_stable = True
 
@@ -496,33 +584,50 @@ def classify(*, sector: Optional[str], industry: Optional[str], eps_ttm: Optiona
         c3, c5 = gp["revenue_ps_cagr_3y"], gp.get("revenue_ps_cagr_5y")
         mtxt = (f"margen operativo {operating_margin_ttm * 100:.0f}%" if gp["margin_used"] == "operativo"
                 else f"margen FCF − SBC {fcf_sbc_margin * 100:.0f}%")
-        yrs = f" y {c5 * 100:.1f}% a 5" if c5 is not None else ""
-        if gp.get("share_break"):
-            yrs += f" (desde la ruptura del capital de FY{gp['share_break'][:4]})"
+        # V7 (M2/M6): cada CAGR con su ventana al lado, y la base (acciones diluidas medias de EDGAR) después.
+        # F10: con la serie larga, la tasa a 5 años puede ser la misma regresión que la de 3; entonces no se repite.
+        _same = gp.get("years_5y") and gp.get("window_5y") == gp.get("window_3y")
+        yrs = " " + growth_span(gp, 3) + (
+            (f" y {c5 * 100:.1f}% " + (growth_span(gp, 5) if gp.get("years_5y") else
+                                       "a 5" + (f" ({gp['window_5y']})" if gp.get("window_5y") else "")))
+            if c5 is not None and not _same else "")
+        par = [x for x in ("sobre acciones diluidas medias" if gp.get("basis") == "por_accion" else None,
+                           f"desde la ruptura del capital de {cy.fy_label(gp['share_break'])}" if gp.get("share_break")
+                           else None) if x]
+        _par = f", {' y '.join(par)}" if par else ""
+        yrs += _par
         frontier = gp["sensitivity"] + (cyc["sensitivity"] if cyc else [])
-        return out(GROWTH_PROFITABLE, f"Clasificada como GROWTH_PROFITABLE: ingresos por acción {c3 * 100:.1f}% anual "
-                                      f"a 3 años{yrs}, BPA TTM > 0 y {mtxt}"
+        if c3 is not None:
+            tech = f"ingresos por acción {c3 * 100:.1f}% anual{yrs}"
+            plain = f"sus ingresos por acción crecen un {c3 * 100:.1f}% anual{yrs}"
+        else:   # F10: la tasa a 3 años no es significativa y no cuenta; deciden la de 5 años (si la hay) y el beneficio
+            _ns3 = gp["not_significant"][3]
+            _y5 = (f" {growth_span(gp, 5)}{_par}" if c5 is not None else _par)
+            tech = (f"ingresos por acción a 3 años {_ns3}, que no cuenta ni a favor ni en contra"
+                    + (f"; a 5 años {c5 * 100:.1f}% anual{_y5}" if c5 is not None else _y5))
+            plain = ("el crecimiento de sus ingresos por acción a 3 años no es significativo (año base anómalo) y no "
+                     "cuenta ni a favor ni en contra"
+                     + (f"; a 5 años crecen un {c5 * 100:.1f}% anual{_y5}" if c5 is not None else _y5))
+        return out(GROWTH_PROFITABLE, f"Clasificada como GROWTH_PROFITABLE: {tech}, BPA TTM > 0 y {mtxt}"
                                       + ("; no cíclica por su historia" if hist_decides else ""),
                    "crecimiento_rentable",
-                   f"Crecimiento rentable: sus ingresos por acción crecen un {c3 * 100:.1f}% anual en 3 años{yrs}, "
-                   f"con beneficio y un {mtxt}.", ambiguous=not hist_decides,
+                   f"Crecimiento rentable: {plain}, con beneficio y un {mtxt}.", ambiguous=not hist_decides,
                    frontier=frontier)
 
     # 7. MATURE por defecto.
     if cond_stable:
-        return out(MATURE, f"Clasificada como MATURE: industria {ind_txt} (cíclica condicional) sin reversión en los "
+        return out(MATURE, f"Clasificada como MATURE: industria {ind_es} (cíclica condicional) sin reversión en los "
                            "ejercicios disponibles (ni caída pico-valle del margen ni caída anual de ingresos)"
                            f"{short}", "ciclica_condicional_estable",
-                   f"Madura: su industria ({ind_txt}) puede ser cíclica, pero en los ejercicios disponibles no "
+                   f"Madura: su industria ({ind_es}) puede ser cíclica, pero en los ejercicios disponibles no "
                    "hubo caídas fuertes del margen ni de los ingresos.", ambiguous=True,
                    frontier=gp["sensitivity"])
-    extra = f" (industria {ind_txt}" + ("; inmobiliaria no REIT)" if sec == "real estate" else ")") if ind_txt \
+    extra = f" (industria {ind_es}" + ("; inmobiliaria no REIT)" if sec == "real estate" else ")") if ind_txt \
         else " (industria sin dato)"
     frontier = (cyc["sensitivity"] if cyc else []) + gp["sensitivity"]
     hist_txt = (f"; su historia ({cyc['measures']['years']} ejercicios en EDGAR) no muestra ciclo"
                 if hist_decides else "")
     return out(MATURE, "Clasificada como MATURE por defecto: no es financiera, REIT, pre-beneficio con "
                        f"crecimiento, cíclica ni de crecimiento rentable{extra}{hist_txt}", "por_defecto",
-               "Madura: no es un banco ni una aseguradora, ni un REIT, ni una empresa en crecimiento sin beneficio, "
-               "ni cíclica, ni de crecimiento rentable" + (f" ({ind_txt})." if ind_txt else "."),
+               _mature_plain(gp, cyc if hist_decides else None, ind_es),
                ambiguous=not hist_decides, frontier=frontier)

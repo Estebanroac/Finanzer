@@ -27,6 +27,8 @@ for _p in (BACKEND_DIR, os.path.join(BACKEND_DIR, "lib"), TESTS_DIR):
 
 F2B_DIR = os.path.join(TESTS_DIR, "fixtures", "f2b")
 SINCE = "2024-01-01"
+# rediseño E2a (T3): campos de la ficha del emisor (sec_edgar.submission_profile)
+PROFILE_KEYS = ("sic", "sicDescription", "stateOfIncorporation", "stateOfIncorporationDescription", "category", "website")
 KEEP = ("accessionNumber", "filingDate", "reportDate", "form", "items", "isXBRL", "primaryDocument")
 
 
@@ -50,9 +52,11 @@ def save_submissions(cik, raw, base=F2B_DIR):
     r = (raw.get("filings") or {}).get("recent") or {}
     keep = [i for i, d in enumerate(r.get("filingDate") or []) if d >= SINCE]
     # fase 4/7: la dirección del emisor (país para la región de su referencia, sec_edgar.issuer_country)
-    addresses = {k: {x: v.get(x) for x in ("stateOrCountry", "stateOrCountryDescription", "country", "countryCode",
+    # rediseño E2a (T3): la ciudad de la sede para la ficha (sec_edgar.submission_profile)
+    addresses = {k: {x: v.get(x) for x in ("city", "stateOrCountry", "stateOrCountryDescription", "country", "countryCode",
                                            "isForeignLocation")} for k, v in (raw.get("addresses") or {}).items()}
     out = {"cik": raw.get("cik"), "name": raw.get("name"), "fiscalYearEnd": raw.get("fiscalYearEnd"),
+           **{k: raw.get(k) for k in PROFILE_KEYS},
            "addresses": addresses,
            "filings": {"recent": {k: [r[k][i] for i in keep] for k in KEEP if k in r}}}
     _write(os.path.join(base, "edgar", "submissions", f"CIK{int(cik):010d}.json"), out)
@@ -142,8 +146,26 @@ def save_calendar(symbol, entries, base=F2B_DIR):
 
 
 def _load(path):
+    if not os.path.isfile(path) and os.path.isfile(path + ".gz"):      # V4b: los rivales del replay, comprimidos
+        import gzip
+        with gzip.open(path + ".gz", "rt", encoding="utf-8") as fh:
+            return json.load(fh)
     with open(path, encoding="utf-8") as fh:
         return json.load(fh)
+
+
+def _exists(path):
+    return os.path.isfile(path) or os.path.isfile(path + ".gz")
+
+
+def _find(bases, *parts):
+    """V4b: la ruta en la primera carpeta que la tenga (el juego y, detrás, la de los rivales del replay); si ninguna,
+    la de la primera."""
+    for b in bases:
+        p = os.path.join(b, *parts)
+        if _exists(p):
+            return p
+    return os.path.join(bases[0], *parts)
 
 
 def _until(store):
@@ -151,14 +173,19 @@ def _until(store):
     return str((store.meta.get(cur) or {}).get("captured_at_local") or "")[:10] or None
 
 
-def edgar_fetcher(store, base=F2B_DIR):
-    """FETCHER de lib/sec_edgar.py para el replay."""
+def edgar_fetcher(store, base=F2B_DIR, extra=()):
+    """FETCHER de lib/sec_edgar.py para el replay. `extra`: carpetas de respaldo (V4b: tests/fixtures/peers/f2b)."""
     import sec_edgar as edgar
+    bases = (base,) + tuple(e for e in extra if os.path.isdir(e))
 
     def fetch(url, _timeout):
         until = _until(store)
         if url == edgar.TICKERS_URL:
-            table = _load(os.path.join(base, "edgar", "company_tickers.json"))
+            table = {}
+            for b in reversed(bases):           # el juego manda sobre la carpeta de respaldo
+                p = os.path.join(b, "edgar", "company_tickers.json")
+                if _exists(p):
+                    table.update(_load(p))
             body = {str(i): {"ticker": t, "cik_str": v["cik"], "title": v.get("title")}
                     for i, (t, v) in enumerate(sorted(table.items()))}
             return json.dumps(body).encode(), 200
@@ -166,14 +193,14 @@ def edgar_fetcher(store, base=F2B_DIR):
         if "/Archives/edgar/data/" in url:
             acc = url.rstrip("/").rsplit("/", 2)[-2]
             accn = f"{acc[:10]}-{acc[10:12]}-{acc[12:]}"
-            inst = os.path.join(base, "edgar", "instances", f"{accn}.xml")
+            inst = _find(bases, "edgar", "instances", f"{accn}.xml")
             if name == "index.json":
                 if not os.path.isfile(inst):
                     store.misses.append(f"edgar índice {accn}")
                     return None, 404
                 return json.dumps({"directory": {"item": [{"name": f"{acc}_htm.xml"}]}}).encode(), 200
             if name == "R1.htm":
-                path = os.path.join(base, "edgar", "covers", f"{accn}.htm")
+                path = _find(bases, "edgar", "covers", f"{accn}.htm")
             else:
                 path = inst
             if not os.path.isfile(path):
@@ -182,10 +209,10 @@ def edgar_fetcher(store, base=F2B_DIR):
             with open(path, "rb") as fh:
                 return fh.read(), 200
         if "/api/xbrl/companyfacts/" in url:
-            path = os.path.join(base, "edgar", "companyfacts", name)
-            if os.path.isfile(path.replace(".json", ".404")):
+            path = _find(bases, "edgar", "companyfacts", name)
+            if any(os.path.isfile(os.path.join(b, "edgar", "companyfacts", name.replace(".json", ".404"))) for b in bases):
                 return None, 404            # la SEC respondió 404 en la captura (CIK sin estados XBRL: SPY)
-            if not os.path.isfile(path):
+            if not _exists(path):
                 store.misses.append(f"edgar companyfacts {name}")
                 return None, 404
             obj = _load(path)
@@ -194,8 +221,8 @@ def edgar_fetcher(store, base=F2B_DIR):
                     node["units"] = {u: [f for f in fs if until is None or f.get("filed", "") <= until]
                                      for u, fs in node["units"].items()}
             return json.dumps(obj).encode(), 200
-        path = os.path.join(base, "edgar", "submissions", name)
-        if not os.path.isfile(path):
+        path = _find(bases, "edgar", "submissions", name)
+        if not _exists(path):
             store.misses.append(f"edgar {name}")
             return None, 404
         obj = _load(path)
@@ -206,16 +233,30 @@ def edgar_fetcher(store, base=F2B_DIR):
     return fetch
 
 
-def calendar(store, base=F2B_DIR):
+def calendar(store, base=F2B_DIR, extra=()):
     """Sustituto de finnhub_fallback.earnings_calendar para el replay."""
+    bases = (base,) + tuple(e for e in extra if os.path.isdir(e))
+
     def cal(symbol, start, end):
-        path = os.path.join(base, "finnhub_calendar", f"{symbol.upper()}.json")
-        if not os.path.isfile(path):
+        until = _until(store)
+        # Rediseño E2a (T8): una consulta que mira más allá del día de la captura (próximos resultados) usa además el
+        # calendario a futuro grabado con el ticker (tests/capture_finnhub_e2a.py), si lo hay. Las demás (aviso de
+        # resultados publicados) terminan en la sesión de la serie y no cambian.
+        ahead = []
+        if until and end > until and store.current:
+            rec = store.recorded_finnhub(store.current, "/calendar/earnings")
+            if rec is not None:
+                ahead = [e for e in (rec.get("response") or {}).get("earningsCalendar") or []
+                         if start <= str(e.get("date")) <= end]
+        path = _find(bases, "finnhub_calendar", f"{symbol.upper()}.json")
+        if not _exists(path):
+            if ahead:
+                return ahead
             store.misses.append(f"calendario {symbol}")
             return None
-        until = _until(store)
         entries = _load(path)
         if entries is None:
-            return None
-        return [e for e in entries if start <= str(e.get("date")) <= end and (until is None or str(e.get("date")) <= until)]
+            return ahead or None
+        past = [e for e in entries if start <= str(e.get("date")) <= end and (until is None or str(e.get("date")) <= until)]
+        return past + [e for e in ahead if str(e.get("date")) not in {str(x.get("date")) for x in past}]
     return cal

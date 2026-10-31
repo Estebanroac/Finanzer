@@ -55,7 +55,7 @@ def test_pltr_solidez_coverage_is_top_band(pltr):
     from settings import cfg
     a, _ = pltr
     row = next(x for x in a["score"]["breakdown"]["Solidez Financiera"]["adjustments"]
-               if x["metric"] == "Cobertura Intereses")
+               if x["metric"] == "Cobertura de intereses")
     assert row["adjustment"] == cfg("thresholds.score.solidez.coverage_points")[0]
     assert row["value"] == "Sin carga financiera neta"
 

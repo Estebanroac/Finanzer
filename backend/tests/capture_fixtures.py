@@ -45,7 +45,7 @@ def _run(sym, store):
         return {"__http_error__": e.status_code, "detail": e.detail}
 
 
-def capture(sym, fixtures_dir, force, env="local", render_sim=False):
+def capture(sym, fixtures_dir, force, env="local", render_sim=False, gz=False):
     import yf_adapter
     d = os.path.join(fixtures_dir, sym)
     if os.path.isdir(d) and not force:
@@ -99,7 +99,8 @@ def capture(sym, fixtures_dir, force, env="local", render_sim=False):
     store.save(sym, meta)
 
     # Verificación: replay desde .tmp == corrida en vivo
-    with fb.replay(fixtures_dir) as rstore:
+    # V4b: una carpeta propia (los rivales del replay) trae su EDGAR en <carpeta>/f2b
+    with fb.replay(fixtures_dir, extra_dirs=(fixtures_dir,)) as rstore:
         rstore.dir_for = lambda _s: tmp
         replayed = _run(sym, rstore)
         misses = list(rstore.misses)
@@ -111,6 +112,8 @@ def capture(sym, fixtures_dir, force, env="local", render_sim=False):
 
     shutil.rmtree(d, ignore_errors=True)
     os.replace(tmp, d)
+    if gz:
+        fb.gzip_fixture_dir(d)          # V4b: los rivales del replay (tests/fixtures/peers), comprimidos
     path = live.get("data_provenance", {}).get("path") if "__http_error__" not in live else live["__http_error__"]
     print(f"[{sym}] OK  http={meta['yahoo']['http_statuses']} yf={meta['yahoo']['yfinance_attributes']} "
           f"path={path} degraded={degraded} finnhub={meta['finnhub']['participated']} -> {d}")
@@ -128,6 +131,8 @@ def main():
     ap.add_argument("--sin-finnhub", action="store_true",
                     help="con --render-sim, capturar aunque no haya FINNHUB_API_KEY (no reproduce prod)")
     ap.add_argument("--dir", help="carpeta de destino en vez de tests/fixtures/<env> (validaciones)")
+    ap.add_argument("--gzip", action="store_true",
+                    help="V4b: guardar comprimidos (.json.gz), como los rivales del replay en tests/fixtures/peers")
     args = ap.parse_args()
     if args.env == fb.PANEL_ENV and not args.render_sim:
         ap.error("el juego panel solo se captura con --render-sim")
@@ -141,7 +146,7 @@ def main():
     logging.disable(logging.WARNING)
     fdir = os.path.abspath(args.dir) if args.dir else fb.fixtures_dir(args.env)
     os.makedirs(fdir, exist_ok=True)
-    results = [capture(t.upper(), fdir, args.force, args.env, args.render_sim) for t in tickers]
+    results = [capture(t.upper(), fdir, args.force, args.env, args.render_sim, args.gzip) for t in tickers]
     sys.exit(0 if all(results) else 1)
 
 

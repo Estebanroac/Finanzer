@@ -2,13 +2,14 @@
 Persistencia del tramo alto de la calidad (fase 4, T1; PLAN_FIABILIDAD §4.1: "100 debe ser raro").
 
 Una categoría llega hoy a 20/20 con las cifras del último ejercicio. Lo extraordinario no es un buen año: es un buen
-negocio sostenido (Mauboussin, persistencia del ROIC). La calidad por encima del umbral de "excelente" (80, la primera
-banda de score.quality) solo cuenta en proporción a la persistencia de las categorías que la llevan ahí:
+negocio sostenido (Mauboussin, persistencia del ROIC). La calidad por encima del codo (80, `quality_persistence.knee`;
+hasta F8 · E11 era el umbral de "excelente", que ahora es 85) solo cuenta en proporción a la persistencia de las
+categorías que la llevan ahí:
 
     calidad = 80 + (calidad − 80) × persistencia
 
 donde la persistencia es la media de la de cada categoría ponderada por sus puntos por encima de 16/20 (su parte del
-tramo alto). "Excelente" no cambia; lo que está por encima (lo extraordinario) exige historia. Cada categoría mide su
+tramo alto). Hasta el codo no cambia; lo que está por encima (lo extraordinario) exige historia. Cada categoría mide su
 ancla en los últimos `window` ejercicios:
 
   · **Rentabilidad**: el margen operativo de cada ejercicio es positivo y al menos `margin_ratio` del actual (¿es el
@@ -55,13 +56,22 @@ def history_from_statements(st: Dict[str, Any]) -> Dict[str, Any]:
     return out
 
 
+# F8 (historia de 10 años): campos cuya definición depende del emisor (el resultado operativo que presenta, su capex).
+# Si EDGAR no los trae, no se completan con los de Yahoo (que los calcula a su manera): la persistencia no se mide
+# sobre ellos y lo dice (Rentabilidad: margen neto; Calidad de ganancias: sin la prueba del FCF).
+EDGAR_ONLY = ("operating_income", "capex")
+
+
 def merge_history(hist: Optional[Dict[str, Any]], st: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     """La historia de EDGAR completada con los estados en los ejercicios que no trae (un concepto que deja de
     usarse, como los ingresos IFRS de un banco desde 2018: SAN). Un ejercicio de los estados se añade si ninguno de
-    EDGAR cierra a menos de medio año de él."""
+    EDGAR cierra a menos de medio año de él. Los campos de EDGAR_ONLY no se completan."""
     from cyclicality import fiscal_years_between
-    out = {k: {"values": list((v or {}).get("values") or [])} for k, v in (hist or {}).items()}
+    out = {k: {"values": list((v or {}).get("values") or []), "reason": (v or {}).get("reason")}
+           for k, v in (hist or {}).items()}
     for field, items in history_from_statements(st).items():
+        if field in EDGAR_ONLY and hist:
+            continue
         cur = out.setdefault(field, {"values": []})["values"]
         have = [x["fy_end"] for x in cur]
         for x in items["values"]:
@@ -118,8 +128,10 @@ def measure(hist: Optional[Dict[str, Any]], archetype: str, source: str) -> Dict
 
     # Rentabilidad: margen de cada ejercicio frente al del último.
     num = fy("net_income" if fin else "operating_income")
+    no_op = None
     if not fin and len([e for e in evaluable if e in num]) < 2:          # sin operativo en la historia: margen neto
         num, fin_margin = fy("net_income"), True
+        no_op = "sin resultado operativo en la SEC"
     else:
         fin_margin = fin
     # El margen de referencia es el del último ejercicio con dato, aunque sea de cambio de perímetro: es el negocio de
@@ -132,8 +144,8 @@ def measure(hist: Optional[Dict[str, Any]], archetype: str, source: str) -> Dict
     out["Rentabilidad"] = {
         "persistence": len(ok) / den, "years_ok": [_year(e) for e in sorted(ok)],
         "years": [_year(e) for e in evaluable], "anchor": lab,
-        "rule": (f"{lab} positivo y al menos el {ratio:.0%} del último ({_pct(last)})" if last is not None
-                 else f"{lab} (sin dato en la ventana)")}
+        "rule": ((f"{lab} positivo y al menos el {ratio:.0%} del último ({_pct(last)})" if last is not None
+                  else f"{lab} (sin dato en la ventana)") + (f" ({no_op})" if no_op else ""))}
 
     # Crecimiento: ingresos por encima del ejercicio anterior.
     # El ejercicio anterior, solo si es el inmediato (revisión F4, hallazgo 7: con un año sin dato no se compara con
@@ -151,9 +163,15 @@ def measure(hist: Optional[Dict[str, Any]], archetype: str, source: str) -> Dict
         rule = "beneficio neto positivo (sin pérdidas)"
     else:
         ocf, capex = fy("operating_cash_flow"), fy("capex")
-        ok = [e for e in evaluable if ocf.get(e) is not None and ni.get(e) is not None and capex.get(e) is not None
-              and ocf[e] >= ni[e] and ocf[e] - abs(capex[e]) > 0]
-        rule = "flujo operativo ≥ beneficio neto y FCF positivo"
+        if evaluable and not any(e in capex for e in evaluable):
+            # F8: sin capex en la SEC en toda la ventana (conceptos propios del emisor), la prueba del FCF no se hace:
+            # sin dato no es «no cumple».
+            ok = [e for e in evaluable if ocf.get(e) is not None and ni.get(e) is not None and ocf[e] >= ni[e]]
+            rule = "flujo operativo ≥ beneficio neto (FCF sin dato: el capex no está en la SEC con un concepto estándar)"
+        else:
+            ok = [e for e in evaluable if ocf.get(e) is not None and ni.get(e) is not None and capex.get(e) is not None
+                  and ocf[e] >= ni[e] and ocf[e] - abs(capex[e]) > 0]
+            rule = "flujo operativo ≥ beneficio neto y FCF positivo"
     out["Calidad de Ganancias"] = {"persistence": len(ok) / den, "years_ok": [_year(e) for e in sorted(ok)],
                                    "years": [_year(e) for e in evaluable], "anchor": "conversión en caja",
                                    "rule": rule}
@@ -166,11 +184,12 @@ def _pct(x: Optional[float]) -> str:
 
 
 def adjust_quality(q: Dict[str, Any], categories: List[Dict[str, Any]], meas: Optional[Dict[str, Any]]) -> None:
-    """Limita la calidad por encima de "excelente" a la persistencia (in situ en `q`): `score_before`, `persistence`
+    """Limita la calidad por encima del codo (`quality_persistence.knee`) a la persistencia (in situ en `q`): `score_before`, `persistence`
     (ponderada), `by_category` y la frase `text`."""
     if not meas or q.get("score") is None:
         return
-    top = cfg("thresholds.score.quality.bands")[0]
+    # F8 · E11: el codo es suyo (80), no el umbral de «excelente»: subir la etiqueta no afloja la persistencia.
+    top = cfg("thresholds.quality_persistence.knee")
     knee = top * cfg("thresholds.score.category.max") / cfg("thresholds.score.total.max")
     inc = [c for c in categories if c.get("category") in cfg("thresholds.score.quality.categories")
            and c.get("conclusive", True) and c.get("applicable", True)]
@@ -197,7 +216,10 @@ def adjust_quality(q: Dict[str, Any], categories: List[Dict[str, Any]], meas: Op
         n = meas.get("denominator")
         parts = [f"{r['category'].lower()}: {r['rule']} en {len(r['years_ok'] or [])} de {n} ejercicios"
                  for r in rows if r["surplus"] > 0 and r["persistence"] is not None and r["persistence"] < 1]
-        q["persistence"]["short"] = f"Por encima de {top:.0f}, la calidad exige persistencia: {s} → {new}."
+        # F10 · N6 (revisión de NVDA): el codo nombra su umbral, que no es el de «excelente» (desde F8 · E11).
+        exc = cfg("thresholds.score.quality.bands")[0]
+        q["persistence"]["short"] = (f"Por encima de {top:.0f} (umbral de persistencia; «excelente» empieza en "
+                                     f"{exc:.0f}), la calidad exige persistencia: {s} → {new}.")
         body = "; ".join(parts)
         t = q["persistence"]["short"] + " " + body[:1].upper() + body[1:] + "."
         if meas.get("source") == "estados":

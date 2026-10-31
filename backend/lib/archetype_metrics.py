@@ -23,8 +23,9 @@ de key_metrics; un dato ausente queda en None con su motivo, nunca en 0.
 from typing import Any, Dict, List, Optional
 
 from classify import CYCLICAL, FINANCIAL, GROWTH_PRE_PROFIT, REIT, not_applicable
-from historical_metrics import fcf_cagr, mean, ratio_series, stdev, strict_cagr, yoy_growths
-from cost_of_capital import adjusted_beta as _blume, cost_of_equity as _ke
+from historical_metrics import bound_decides, fcf_cagr, is_anomalous_not_significant, mean, ratio_series, stdev, strict_cagr, yoy_growths
+from cost_of_capital import adjusted_beta as _blume, equity_cost as _ke
+from history_10y import _by_end
 from settings import cfg
 
 _V = cfg("valuation.archetypes")
@@ -38,9 +39,17 @@ def _pos(v: Optional[float]) -> bool:
     return v is not None and v > 0
 
 
-def cost_of_equity(beta: Optional[float], rf: Optional[float] = None, preadjusted: bool = False) -> float:
-    """Ke por CAPM (Rf + β·MRP): el mismo Rf que el WACC (etapa 8, cost_of_capital)."""
-    return _ke(beta, cfg("valuation.capm.risk_free_rate") if rf is None else rf, preadjusted)
+def _num(v: Any) -> Optional[float]:
+    return float(v) if isinstance(v, (int, float)) and v == v else None
+
+
+def cost_of_equity(beta: Optional[float], rf: Optional[float] = None, preadjusted: bool = False,
+                   ke: Optional[float] = None) -> float:
+    """Ke por CAPM (Rf + β·MRP) con sus pisos: el mismo Rf que el WACC (etapa 8, cost_of_capital). F8 · E1: `ke`, el
+    único del análisis (con el piso de Kd si hay deuda), manda cuando llega."""
+    if ke is not None:
+        return ke
+    return _ke(beta, cfg("valuation.capm.risk_free_rate") if rf is None else rf, None, preadjusted)["value"]
 
 
 def justified_multiple(ret: Optional[float], ke: float, g: float) -> Optional[float]:
@@ -50,11 +59,85 @@ def justified_multiple(ret: Optional[float], ke: float, g: float) -> Optional[fl
     return (ret - g) / (ke - g)
 
 
+def two_stage_multiple(ret: float, g_high: float, years: int, ret_stable: float, g: float,
+                       ke: float) -> Optional[float]:
+    """F9 · R1b: múltiplo de libros justificado en dos etapas (Damodaran, P/BV de dos etapas), con la convención del de
+    una etapa, (R − g) / (Ke − g): el beneficio de cada año es el retorno sobre el valor en libros del año anterior.
+    Durante `years` el valor en libros crece a `g_high` con el retorno `ret` (reparto 1 − g_high / ret); después,
+    crecimiento `g` con el retorno estable `ret_stable` (reparto 1 − g / ret_stable):
+
+        P/B = ret·po₁·[1 − ((1+g₁)/(1+Ke))ⁿ] / (Ke − g₁) + ret_s·po₂·(1+g₁)ⁿ / [(Ke − g)·(1+Ke)ⁿ]
+
+    Con g₁ = g y ret_s = ret es exactamente el de una etapa."""
+    if ret <= 0 or ret_stable <= g or ke <= g or g_high > ret:
+        return None
+    po1, po2 = 1 - g_high / ret, 1 - g / ret_stable
+    q = (1 + g_high) / (1 + ke)
+    first = ret * po1 * (years / (1 + ke) if abs(ke - g_high) < 1e-12 else (1 - q ** years) / (ke - g_high))
+    second = ret_stable * po2 * (1 + g_high) ** years / ((ke - g) * (1 + ke) ** years)
+    return first + second
+
+
+def apply_two_stage(xm: Dict[str, Any], industry_roe: Optional[float], payout: Optional[float],
+                    dividend_yield: Optional[float], roe_source: Optional[str] = None) -> Dict[str, Any]:
+    """F9 · R1b (revisión externa de NU; supuestos del PM del 27-oct): con el valor en libros creciendo por encima de
+    `bv_growth_threshold`, el P/B (y el P/TBV) justificado pasa a dos etapas. Etapa alta de `years` años con
+    g₁ = mín(crecimiento observado del valor en libros, ROE × retención); después g (el terminal de siempre) con el ROE
+    de la industria regional de Damodaran, que converge (mantener un ROE alto para siempre es el supuesto que la
+    auditoría criticó en el DCF). Sin ROE de la industria: una etapa, declarado. Devuelve `two_stage` (o None si no
+    se activa) y actualiza los justificados y sus cocientes de `xm`. F10 · N2b: el ROE estable es el de la industria
+    global sin la empresa (`roe_source` lo nombra)."""
+    C = cfg("valuation.pb_two_stage")
+    bv, roe, ke, g = (xm.get("book_value_cagr_3y"), xm.get("roe_reference"), xm.get("cost_of_equity"),
+                      xm.get("terminal_growth"))
+    _bvr = xm.get("book_value_cagr_3y_reason")
+    if bv is None and is_anomalous_not_significant(_bvr):
+        # F10 · crecimiento desde una base anómala: sin un crecimiento del valor en libros significativo no hay etapa
+        # alta que medir; una sola etapa, declarado (antes, la tasa desde el año anómalo podía activar las dos).
+        return {"two_stage": {"applied": False, "book_value_growth": None,
+                              "reason": f"el crecimiento del valor en libros es {_bvr}: una sola etapa"}}
+    if bv is None or bv <= C["bv_growth_threshold"] or roe is None or ke is None or g is None:
+        return {}
+    out: Dict[str, Any] = {"applied": False, "book_value_growth": bv, "years": C["years"],
+                           "threshold": C["bv_growth_threshold"], "industry_roe": industry_roe,
+                           "industry_roe_source": roe_source}
+    if not industry_roe or industry_roe <= g:
+        out["reason"] = ("el valor en libros crece un {:.0%} anual, pero sin ROE de la industria no hay etapa "
+                         "estable a la que converger: una sola etapa").format(bv)
+        return {"two_stage": out}
+    if payout is not None:
+        retention, ret_basis = max(0.0, 1 - payout), f"retención {max(0.0, 1 - payout):.0%}"
+    elif dividend_yield == 0:
+        retention, ret_basis = 1.0, "sin dividendo: retención 100 %"
+    else:
+        retention, ret_basis = 1.0, "sin reparto conocido: tope en el ROE"
+    g1 = min(bv, roe * retention)
+    pb2 = two_stage_multiple(roe, g1, C["years"], industry_roe, g, ke)
+    if pb2 is None:
+        out["reason"] = "el modelo de dos etapas no es aplicable con estos supuestos: una sola etapa"
+        return {"two_stage": out}
+    out.update(applied=True, g_high=g1, retention=retention, retention_basis=ret_basis,
+               pb_single=xm.get("pb_justified"), pb_justified=pb2,
+               text=(f"dos etapas: {C['years']} años con crecimiento del {g1:.1%} ({ret_basis}), después ROE de la "
+                     f"industria ({industry_roe:.1%}"
+                     + (f", {roe_source}" if roe_source else "") + f") y g {g:.1%}"))
+    upd: Dict[str, Any] = {"two_stage": out, "pb_justified": pb2,
+                           "pb_ratio": (xm["pb"] / pb2) if xm.get("pb") else None}
+    rote = xm.get("rote")
+    if rote is not None and rote > 0:
+        pt2 = two_stage_multiple(rote, min(bv, rote * retention), C["years"], industry_roe, g, ke)
+        if pt2 is not None:
+            out["ptbv_single"] = xm.get("ptbv_justified")
+            upd.update(ptbv_justified=pt2, ptbv_ratio=(xm["ptbv"] / pt2) if xm.get("ptbv") else None)
+    return upd
+
+
 def at1_by_year(st: Dict[str, Any]) -> List[Optional[float]]:
     """AT1 dentro del patrimonio de cada ejercicio (fase 3, T4; lib/ordinary.py): en un emisor IFRS, Yahoo deja el
     "Common Stock Equity" igual al patrimonio y da el AT1 en "Other Equity Interest". Es AT1 solo si el emisor paga
     cupones a esos instrumentos (beneficio de los propietarios > beneficio del ordinario); si no, 0."""
-    ni, nic = st.get("net_income") or [], st.get("net_income_common") or []
+    # F10 · B2: los propietarios de la fuente (la serie `net_income` ya es la del común)
+    ni, nic = st.get("net_income_owners") or st.get("net_income") or [], st.get("net_income_common") or []
     eq, cse, oei = st.get("stockholders_equity") or [], st.get("common_stock_equity") or [], \
         st.get("other_equity_interest") or []
     tol = cfg("valuation.bank_implied.at1_relative_tolerance")
@@ -68,9 +151,32 @@ def at1_by_year(st: Dict[str, Any]) -> List[Optional[float]]:
     return out
 
 
+def book_multiples(km: Dict[str, Any], ordinary: Optional[Dict[str, Any]], eq_fy: Optional[float],
+                   tbv_fy: Optional[float], fy_end: Optional[str]) -> Dict[str, Any]:
+    """F9 · R3 (una sola verdad por cifra): el P/B del modelo es el de la tabla de múltiplos (key_metrics.pb: precio
+    entre el valor en libros del ordinario del balance del corte). NU: 5.33x con el patrimonio del FY2025 en la portada
+    frente a 4.54x con el del 30-jun en la tabla. El P/TBV, con el tangible del mismo balance. Sin el balance del
+    corte, el del último ejercicio, y se dice."""
+    mcap, o = km.get("market_cap"), ordinary or {}
+    pb_now, eq_now, tbv_now = _num(km.get("pb")), o.get("equity_common"), o.get("tangible_common")
+    if pb_now is not None and pb_now > 0:
+        pb, basis = pb_now, {"type": "corte", "date": o.get("period_end")}
+    else:
+        pb = (mcap / eq_fy) if (_pos(mcap) and _pos(eq_fy)) else None
+        basis = {"type": "ejercicio", "date": fy_end} if pb is not None else None
+    if pb is not None and basis["type"] == "corte" and _pos(eq_now) and _pos(tbv_now):
+        ptbv, tbasis = pb * eq_now / tbv_now, {"type": "corte", "date": o.get("period_end")}
+    else:
+        ptbv = (mcap / tbv_fy) if (_pos(mcap) and _pos(tbv_fy)) else None
+        tbasis = {"type": "ejercicio", "date": fy_end} if ptbv is not None else None
+    return {"pb": pb, "ptbv": ptbv, "pb_basis": basis, "ptbv_basis": tbasis}
+
+
 def _financial(st: Dict[str, Any], km: Dict[str, Any], beta: Optional[float],
                rf: Optional[float] = None, beta_preadjusted: bool = False,
-               subtype: Optional[str] = None) -> Dict[str, Any]:
+               subtype: Optional[str] = None, ke: Optional[float] = None,
+               ordinary: Optional[Dict[str, Any]] = None,
+               history_fy: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     ni, eq, tbv = st.get("net_income") or [], st.get("stockholders_equity") or [], st.get("tangible_book_value") or []
     rev = st.get("revenue") or []
     mcap = km.get("market_cap")
@@ -86,9 +192,9 @@ def _financial(st: Dict[str, Any], km: Dict[str, Any], beta: Optional[float],
     rote_series = ratio_series(ni_ord, tbv_ord)
     rote = _first(rote_series)
     tbv_ord0 = _first(tbv_ord)
-    ke, g = cost_of_equity(beta, rf, beta_preadjusted), cfg("valuation.dcf.terminal_growth")   # β ajustada
-    pb = (mcap / eq0) if (_pos(mcap) and _pos(eq0)) else None
-    ptbv = (mcap / tbv_ord0) if (_pos(mcap) and _pos(tbv_ord0)) else None
+    ke, g = cost_of_equity(beta, rf, beta_preadjusted, ke), cfg("valuation.dcf.terminal_growth")   # β ajustada
+    _bm = book_multiples(km, ordinary, eq0, tbv_ord0, _first(st.get("bs_ends") or []))
+    pb, ptbv = _bm["pb"], _bm["ptbv"]
     # §8.8: aseguradora y conglomerado, ROE medio del ciclo de suscripción (los ejercicios disponibles), no el de un
     # año; banco, el ROTE del último ejercicio (§3) con la media como contexto.
     roe_vals = [x for x in roe_series if x is not None]
@@ -126,13 +232,13 @@ def _financial(st: Dict[str, Any], km: Dict[str, Any], beta: Optional[float],
             beta if beta is not None else cfg("valuation.capm.default_beta")),
         "beta_adjusted": _blume(beta, beta_preadjusted),
         "roe_fy": roe_fy, "rote": rote, "pb": pb, "ptbv": ptbv,
+        "pb_basis": _bm["pb_basis"], "ptbv_basis": _bm["ptbv_basis"],
         "roe_avg": roe_avg, "roe_reference": roe_ref, "rote_avg": rote_avg, "rote_years": len(rote_vals),
         "at1": _first(at1), "tangible_book_ordinary": tbv_ord0, "implied": implied,
         "pb_justified": j_pb, "ptbv_justified": j_ptbv,
         "pb_ratio": (pb / j_pb) if (pb is not None and j_pb) else None,
         "ptbv_ratio": (ptbv / j_ptbv) if (ptbv is not None and j_ptbv) else None,
-        "roe_std": stdev(roe_series) if len([x for x in roe_series if x is not None]) >= 3 else None,
-        "roe_years": len([x for x in roe_series if x is not None]),
+        **_roe_stability(roe_series, _by_end(history_fy or {}, "net_income")),
         "efficiency_ratio": efficiency, "efficiency_reason": nie_why,
         "book_value_cagr_3y": bv_growth, "book_value_cagr_3y_reason": bv_why,
         "book_value_basis": "tangible" if bv_series is tbv else "contable",
@@ -140,6 +246,31 @@ def _financial(st: Dict[str, Any], km: Dict[str, Any], beta: Optional[float],
         "net_interest_income_cagr_3y": nii_cagr, "net_interest_income_cagr_3y_reason": nii_why,
         "net_interest_income_share": nii_share,
     }
+
+
+def _roe_stability(roe_series, ni_history: Optional[Dict[str, float]] = None) -> Dict[str, Any]:
+    """σ del ROE (más reciente primero). F9 · R7 (revisión externa de NU): el paso de pérdidas a ganancias no es
+    volatilidad del beneficio. Es un paso solo si la historia anual de EDGAR (`ni_history`, {cierre: beneficio neto})
+    no tiene ningún ejercicio con beneficio antes de la última pérdida (NU: pérdidas en 2019–2022, beneficio desde 2023).
+    Entonces la estabilidad se mide desde el paso a beneficios, y se dice; con menos de 3 ejercicios con beneficio no se
+    evalúa (no significativa, no resta). Una pérdida entre ejercicios con beneficio es volatilidad y cuenta (BRK-B:
+    beneficio en 2021, pérdida contable en 2022); sin la historia larga, la ventana corta no lo distingue y cuenta."""
+    chron = [x for x in reversed(roe_series) if x is not None]
+    whole = {"roe_std": stdev(chron) if len(chron) >= 3 else None, "roe_years": len(chron), "roe_std_basis": None,
+             "roe_std_reason": None}
+    long = [v for _, v in sorted((ni_history or {}).items())]
+    last_long = max((i for i, v in enumerate(long) if v <= 0), default=None)
+    last_loss = max((i for i, x in enumerate(chron) if x <= 0), default=None)
+    if (last_loss is None or last_long is None or any(v > 0 for v in long[:last_long])
+            or any(x > 0 for x in chron[:last_loss])):
+        return whole
+    run = chron[last_loss + 1:]
+    if len(run) >= 3:
+        return {"roe_std": stdev(run), "roe_years": len(run), "roe_std_basis": "desde el paso a beneficios",
+                "roe_std_reason": None}
+    return {"roe_std": None, "roe_years": len(run), "roe_std_basis": "desde el paso a beneficios",
+            "roe_std_reason": (f"pasó de pérdidas a beneficios hace {len(run)} ejercicio{'s' if len(run) != 1 else ''}: "
+                               "el cambio no es volatilidad del beneficio y la estabilidad necesita 3 con beneficio")}
 
 
 def _implied_reading(subtype, pb, ptbv, ke, g, *, roe_ref, roe_years, rote, rote_avg, rote_years, at1):
@@ -173,20 +304,30 @@ def _per_share(values: List[Optional[float]], shares: List[Optional[float]]) -> 
     return [(v / s) if (v is not None and _pos(s)) else None for v, s in zip(values or [], shares or [])]
 
 
-def _reit(st: Dict[str, Any], km: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-    # FFO = beneficio + D&A (la misma definición que el FFO TTM, financial_ratios.funds_from_operations). Fase 3
-    # (T1b): con el EBITDA = EBIT del emisor + D&A, "EBITDA − EBIT de Yahoo" ya no es la D&A; sin la fila de D&A,
-    # esa diferencia como antes.
+def _reit(st: Dict[str, Any], km: Optional[Dict[str, Any]] = None,
+          reit_ffo: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    # F8 · E3: FFO según Nareit, la misma definición que el TTM (lib/reit_ffo): beneficio + D&A − ventas de inmuebles +
+    # deterioros de cada ejercicio, del estado de flujos que presentó el emisor; sin esos ajustes, el ejercicio queda sin
+    # dato. Fase 3 (T1b): con el EBITDA = EBIT del emisor + D&A, "EBITDA − EBIT de Yahoo" ya no es la D&A; sin la fila
+    # de D&A, esa diferencia como antes.
+    import reit_ffo as _rf
     ni, ebitda, ebit = st.get("net_income") or [], st.get("ebitda") or [], st.get("ebit") or []
     da = st.get("depreciation_amortization") or []
     if da and len([x for x in da if x is not None]) >= len([x for x in ni if x is not None]):
-        ffo = [(n + abs(d)) if (n is not None and d is not None) else None for n, d in zip(ni, da)]
+        base = [(n + abs(d)) if (n is not None and d is not None) else None for n, d in zip(ni, da)]
     else:
-        ffo = [(n + (a - b)) if (n is not None and a is not None and b is not None) else None
-               for n, a, b in zip(ni, ebitda, ebit)]
+        base = [(n + (a - b)) if (n is not None and a is not None and b is not None) else None
+                for n, a, b in zip(ni, ebitda, ebit)]
+    ends = st.get("inc_ends") or []
+    got = [_rf.fy_ffo(reit_ffo, ends[i] if i < len(ends) else None, b) for i, b in enumerate(base)]
+    ffo = [v for v, _why in got]
     shares = st.get("ordinary_shares") or []
     ffo_ps = _per_share(ffo, shares)
     ffo_ps_cagr, ffo_ps_why = strict_cagr(ffo_ps, 3)
+    if ffo_ps_cagr is None and (reit_ffo or {}).get("status") != "ok":
+        ffo_ps_why = f"FFO según Nareit sin dato: {(reit_ffo or {}).get('reason') or 'sin los ajustes del emisor'}"
+    elif ffo_ps_cagr is None and any(why for _v, why in got[:4]):
+        ffo_ps_why = next(why for _v, why in got[:4] if why)
     fcf_ps_cagr, fcf_ps_why = fcf_cagr(_per_share(st.get("free_cash_flow") or [], shares))
     # Etapa 9a: rentabilidad sobre el FFO (TTM, la misma definición del P/FFO).
     km = km or {}
@@ -278,7 +419,9 @@ def sbc_adjustment(*, fcf: Optional[float], revenue: Optional[float], fcf_is_ttm
 
 
 def _growth_pre_profit(km: Dict[str, Any], revenue_cagr_3y: Optional[float],
-                       st: Optional[Dict[str, Any]] = None, sbc: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+                       st: Optional[Dict[str, Any]] = None, sbc: Optional[Dict[str, Any]] = None,
+                       revenue_cagr_3y_reason: Optional[str] = None,
+                       revenue_cagr_3y_bound: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     fcf, rev = km.get("free_cash_flow"), km.get("revenue")
     # Etapa 9a: margen FCF y regla de 40 sobre FCF − SBC (sin SBC: sin dato con motivo).
     # El runway sigue en caja pura (FCF sin ajustar): mide liquidez.
@@ -292,6 +435,14 @@ def _growth_pre_profit(km: Dict[str, Any], revenue_cagr_3y: Optional[float],
     om = ratio_series((st or {}).get("operating_income") or [], (st or {}).get("revenue") or [])
     om0, om1 = (om[0] if len(om) > 0 else None), (om[1] if len(om) > 1 else None)
     r40 = (revenue_cagr_3y + fcf_margin) if (revenue_cagr_3y is not None and fcf_margin is not None) else None
+    # F10 (PM, 29-oct): con el crecimiento no significativo, su cota (desde una base baja, superior) + el margen es una
+    # cota de la regla de 40; puntúa solo si ya decide el tramo (el peor), y lo declara.
+    r40_bound = None
+    if r40 is None and fcf_margin is not None and is_anomalous_not_significant(revenue_cagr_3y_reason) \
+            and (revenue_cagr_3y_bound or {}).get("value") is not None:
+        _b = {**revenue_cagr_3y_bound, "value": revenue_cagr_3y_bound["value"] + fcf_margin}
+        if bound_decides(_b, cfg("thresholds.score.valoracion.rule_of_40_bounds")) is not None:
+            r40, r40_bound = _b["value"], {**_b, "growth": revenue_cagr_3y_bound["value"]}
     ev_sales = km.get("ev_revenue")
     # key_metrics.cash = fila "Cash Cash Equivalents And Short Term Investments"
     # (caja + inversiones a corto plazo) del último balance.
@@ -299,6 +450,10 @@ def _growth_pre_profit(km: Dict[str, Any], revenue_cagr_3y: Optional[float],
             "fcf_margin_basis": "FCF − SBC", "fcf_margin_reason": sbc.get("reason"),
             "fcf_margin_raw": (fcf / rev) if (fcf is not None and _pos(rev)) else None,
             "revenue_cagr_3y": revenue_cagr_3y, "rule_of_40": r40, "ebitda": km.get("ebitda"),
+            # F10: con el crecimiento no significativo (año base anómalo), la regla de 40 tampoco lo es, con su motivo
+            "rule_of_40_bound": r40_bound,
+            "rule_of_40_reason": (revenue_cagr_3y_reason
+                                  if r40 is None and is_anomalous_not_significant(revenue_cagr_3y_reason) else None),
             "runway": rw, "gross_margin": km.get("gross_margin"),
             "fcf_minus_sbc": sbc.get("value"), "sbc": sbc.get("sbc"), "sbc_to_revenue": sbc.get("sbc_to_revenue"),
             "operating_margin_fy": om0, "operating_margin_fy_prior": om1,
@@ -390,38 +545,48 @@ def growth_values(archetype: str, st_local: Dict[str, Any]) -> Dict[str, Any]:
 
 def compute(archetype: str, statements_fy: Optional[Dict[str, Any]], key_metrics: Dict[str, Any], *,
             beta: Optional[float] = None, revenue_cagr_3y: Optional[float] = None,
+            revenue_cagr_3y_reason: Optional[str] = None, revenue_cagr_3y_bound: Optional[Dict[str, Any]] = None,
             rf: Optional[float] = None, sbc: Optional[Dict[str, Any]] = None,
-            beta_preadjusted: bool = False, subtype: Optional[str] = None) -> Dict[str, Any]:
-    """Métricas de la rama del arquetipo ({} si la rama no necesita ninguna)."""
+            beta_preadjusted: bool = False, subtype: Optional[str] = None,
+            reit_ffo: Optional[Dict[str, Any]] = None, ke: Optional[float] = None,
+            ordinary: Optional[Dict[str, Any]] = None,
+            history_fy: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """Métricas de la rama del arquetipo ({} si la rama no necesita ninguna). `reit_ffo`: los ajustes Nareit de cada
+    ejercicio (lib/reit_ffo.resolve), para el FFO anual del REIT. `ke`: el Ke único del análisis. `history_fy`: la
+    historia anual de EDGAR (F9 · R7: si el paso de pérdidas a ganancias lo es de verdad)."""
     st = statements_fy or {}
     if archetype == FINANCIAL:
-        return _financial(st, key_metrics, beta, rf, beta_preadjusted, subtype=subtype)
+        return _financial(st, key_metrics, beta, rf, beta_preadjusted, subtype=subtype, ke=ke, ordinary=ordinary,
+                          history_fy=history_fy)
     if archetype == GROWTH_PRE_PROFIT:
-        return _growth_pre_profit(key_metrics, revenue_cagr_3y, st, sbc)
+        return _growth_pre_profit(key_metrics, revenue_cagr_3y, st, sbc, revenue_cagr_3y_reason,
+                                  revenue_cagr_3y_bound)
     if archetype == REIT:
-        return _reit(st, key_metrics)
+        return _reit(st, key_metrics, reit_ffo)
     if archetype == CYCLICAL:
         return _cyclical(st, key_metrics)
     if archetype == "UTILITY":
-        return _utility(st, key_metrics, beta, rf, beta_preadjusted)
+        return _utility(st, key_metrics, beta, rf, beta_preadjusted, ke=ke, ordinary=ordinary)
     return {}
 
 
 def _utility(st: Dict[str, Any], km: Dict[str, Any], beta: Optional[float], rf: Optional[float],
-             beta_preadjusted: bool) -> Dict[str, Any]:
+             beta_preadjusted: bool, ke: Optional[float] = None,
+             ordinary: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """Utility regulada (fase 3, T7): su método intrínseco estándar es el P/B frente al ROE que el regulador le
     permite ganar sobre su base de activos. ROE implícito = P/B × (Ke − g) + g frente al ROE medio de los ejercicios
     (el regulado se revisa en ciclos tarifarios: la media, no un año)."""
     ni, eq = st.get("net_income") or [], st.get("stockholders_equity") or []
     roe_vals = [x for x in ratio_series(ni, eq) if x is not None]
     roe_avg = mean(roe_vals) if roe_vals else None
-    mcap, eq0 = km.get("market_cap"), _first(eq)
-    pb = (mcap / eq0) if (_pos(mcap) and _pos(eq0)) else None
-    ke, g = cost_of_equity(beta, rf, beta_preadjusted), cfg("valuation.dcf.terminal_growth")
+    _bm = book_multiples(km, ordinary, _first(eq), None, _first(st.get("bs_ends") or []))
+    pb = _bm["pb"]
+    ke, g = cost_of_equity(beta, rf, beta_preadjusted, ke), cfg("valuation.dcf.terminal_growth")
     j_pb = justified_multiple(roe_avg, ke, g)
     implied = _implied_reading("utility", pb, None, ke, g, roe_ref=roe_avg, roe_years=len(roe_vals), rote=None,
                                rote_avg=None, rote_years=0, at1=None)
-    return {"cost_of_equity": ke, "terminal_growth": g, "pb": pb, "roe_avg": roe_avg, "pb_justified": j_pb,
+    return {"cost_of_equity": ke, "terminal_growth": g, "pb": pb, "pb_basis": _bm["pb_basis"], "roe_avg": roe_avg,
+            "pb_justified": j_pb,
             "pb_ratio": (pb / j_pb) if (pb is not None and j_pb) else None, "implied": implied}
 
 

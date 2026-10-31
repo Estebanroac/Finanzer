@@ -1,0 +1,1 @@
+self.__SSG_MANIFEST=new Set(["\u002Fstock\u002F[[...symbol]]","\u002Fv2\u002F[[...symbol]]"]);self.__SSG_MANIFEST_CB&&self.__SSG_MANIFEST_CB()

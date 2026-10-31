@@ -26,8 +26,8 @@ def test_sector_beta_falls_back_to_the_firm_weighted_sector():
     assert B.sector_beta("Sin sector", "Sin industria") is None
 
 
-def _own(raw, r2, status="ok", n=104):
-    return {"status": status, "raw": raw, "adjusted": 0.67 * raw + 0.33, "r2": r2, "observations": n}
+def _own(raw, r2, status="ok", n=104, se=0.15):
+    return {"status": status, "raw": raw, "adjusted": 0.67 * raw + 0.33, "r2": r2, "se": se, "observations": n}
 
 
 def test_reliable_own_beta_is_used_with_blume():
@@ -35,14 +35,24 @@ def test_reliable_own_beta_is_used_with_blume():
     assert (c["source"], c["value"], c["adjusted"], c["discrepancy"]) == ("propia", 1.1, False, None)
 
 
-def test_low_r2_uses_the_sector_beta_already_adjusted():
+def test_low_r2_uses_the_bottom_up_beta_already_adjusted():
+    """F8 · E1: con R² bajo, la de abajo hacia arriba (βU de la industria; `value` provisional = media apalancada hasta
+    que `relever` la reapalanca con la empresa)."""
     c = B.choose(_own(-0.12, 0.01), 0.33, "finnhub", "Utilities", "Utilities—Regulated Electric")
     assert c["source"] == "sector" and c["adjusted"] and c["value"] == pytest.approx(0.48)
+    assert c["bottom_up"]["value"] == pytest.approx(0.31) and c["bottom_up"]["damodaran"] == "Power"
     assert "R²" in c["reason"]
 
 
-def test_without_series_the_source_beta_comes_with_a_warning():
-    c = B.choose({"status": "sin_dato", "reason": "sin serie de la empresa"}, 1.3, "finnhub", "Technology", None)
+def test_without_series_the_bottom_up_beta_wins_over_the_source():
+    """F8 · E1: la de abajo hacia arriba es la beta por defecto; la de la fuente (sin verificar) solo sin industria."""
+    c = B.choose({"status": "sin_dato", "reason": "sin serie de la empresa"}, 1.3, "finnhub", "Technology",
+                 "Semiconductors")
+    assert c["source"] == "sector" and c["bottom_up"]["damodaran"] == "Semiconductor"
+
+
+def test_without_series_nor_industry_the_source_beta_comes_with_a_warning():
+    c = B.choose({"status": "sin_dato", "reason": "sin serie de la empresa"}, 1.3, "finnhub", "Sin sector", None)
     assert c["source"] == "fuente" and c["value"] == 1.3 and B.SOURCE_UNVERIFIED in c["reason"]
 
 
@@ -84,15 +94,19 @@ def _run(sym):
 
 
 @needs_panel
-def test_duk_uses_the_sector_beta():
+def test_duk_uses_the_bottom_up_beta_relevered():
+    """F8 · E1: βU de Power (0,31) reapalancada con la D/E de mercado de DUK y su t."""
     a = _run("DUK")
-    assert a["beta"]["source"] == "sector" and a["wacc"]["beta"] == pytest.approx(0.48)
-    assert a["wacc"]["beta_method"] == "beta del sector (sin Blume)"
+    rl = a["beta"]["relevered"]
+    assert a["beta"]["source"] == "sector" and rl["unlevered"] == pytest.approx(0.31)
+    assert a["wacc"]["beta"] == pytest.approx(0.31 * (1 + (1 - rl["tax"]) * rl["de"]))
+    assert a["wacc"]["beta_method"] == "beta de abajo hacia arriba (sin Blume)"
 
 
 @needs_panel
-def test_pltr_discrepancy_is_registered():
-    a = _run("PLTR")
+def test_asml_discrepancy_is_registered():
+    """F8 · E1: PLTR (error estándar 0,42) ya no usa la propia; ASML sí (1,24 frente a 2,09 de la fuente)."""
+    a = _run("ASML")
     assert a["beta"]["source"] == "propia"
     assert any(f["rule"] == "beta_discrepante" for f in a["data_validation"])
 
@@ -106,7 +120,7 @@ def test_xom_range_comes_from_the_series_and_contains_the_price():
 
 
 @needs_panel
-def test_without_price_series_beta_from_source_and_range_without_data():
+def test_without_price_series_bottom_up_beta_and_range_without_data():
     import price_history
 
     def broken(*_a, **_k):
@@ -115,7 +129,8 @@ def test_without_price_series_beta_from_source_and_range_without_data():
     with fb.replay(fb.fixtures_dir("panel")) as store:
         price_history.FETCHER = broken
         a = fb.run_analysis("MSFT", store)
-    assert a["beta"]["source"] == "fuente" and B.SOURCE_UNVERIFIED in a["beta"]["reason"]
+    # F8 · E1: sin serie no hay beta propia; entra la de abajo hacia arriba (la de la fuente, solo sin industria).
+    assert a["beta"]["source"] == "sector" and a["beta"]["relevered"] is not None
     assert a["key_metrics"]["price_52w_high"] is None and a["data_provenance"]["range52"]["status"] == "sin_dato"
 
 

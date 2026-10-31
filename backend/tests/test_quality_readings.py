@@ -17,7 +17,7 @@ def test_dupont_identity_and_driver():
     d = qr.dupont(ST)
     c = d["current"]
     assert c["roe"] == pytest.approx(c["margin"] * c["turnover"] * c["leverage"])
-    assert d["driver"] == "margin" and "ROE 30.0% = margen neto 30.0%" in d["text"]
+    assert d["driver"] == "margin" and "ROE de FY2025: 30.0% = margen neto 30.0%" in d["text"]
 
 
 def test_fcf_margin_trend_uses_fcf_minus_sbc():
@@ -32,6 +32,17 @@ def test_rule_of_40_and_sbc_cost():
     assert qr.sbc_cost({"sbc_to_revenue": 0.02, "fcf_margin_raw": 0.3, "fcf_margin_adjusted": 0.28}) is None
     s = qr.sbc_cost({"sbc_to_revenue": 0.08, "fcf_margin_raw": 0.30, "fcf_margin_adjusted": 0.22})
     assert "del 30.0% al 22.0%" in s["text"]
+
+
+def test_rule_of_40_and_sbc_cost_say_their_period():
+    """V7 (M2): cada sumando con su periodo; el lector veía 41.0% junto a un 31.7% de FY2025 sin saber que uno es
+    TTM, y un 27.3% de ingresos que en realidad es por acción."""
+    r = qr.rule_of_40(0.273, 0.41, per_share=True, window="FY2022–FY2025", margin_basis="TTM")
+    assert ("crecimiento de ingresos por acción 27.3% (anual, FY2022–FY2025) + margen FCF − SBC 41.0% (TTM)"
+            in r["text"])
+    assert "(anual, 3 años)" in qr.rule_of_40(0.25, 0.20)["text"]
+    s = qr.sbc_cost({"sbc_to_revenue": 0.136, "fcf_margin_raw": 0.546, "fcf_margin_adjusted": 0.41, "basis": "TTM"})
+    assert "13.6% de los ingresos (TTM)" in s["text"] and "el margen FCF (TTM) baja del 54.6% al 41.0%" in s["text"]
 
 
 def test_interest_coverage_with_ebitda_trend_and_paid_fallback():

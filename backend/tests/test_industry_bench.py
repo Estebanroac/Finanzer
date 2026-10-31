@@ -193,3 +193,31 @@ def test_yahoo_symbol_translation():
     assert T.yahoo_symbol("ENXTPA:MC") == "MC.PA" and T.yahoo_symbol("SEHK:700") == "0700.HK"
     assert T.yahoo_symbol("KOSE:A005930") == "005930.KS" and T.yahoo_symbol("CPSE:MAERSK B") == "MAERSK-B.CO"
     assert T.yahoo_symbol("OTCPK:ABCD") is None
+
+
+# ─────────────── rediseño E2b (aprobado por el PM): emparejamiento tolerante de ADR, solo único ───────────────
+def test_lenient_name_and_country_key():
+    assert IB.lenient_name("BP p.l.c.") == IB.lenient_name("BP PLC") == "bp"
+    assert IB.lenient_name("BROOKFIELD Corp /ON/") == IB.lenient_name("Brookfield Corporation") == "brookfield"
+    assert IB.country_key("Ontario, Canada") == "Canada" and IB.country_key("United Kingdom") == "United Kingdom"
+
+
+def test_adr_by_lenient_legal_name():
+    f = IB.firm("BP", "BP PLC", "United Kingdom")            # Damodaran: "BP p.l.c." (Londres)
+    assert f == {"industry": "Oil/Gas (Integrated)", "region": "europe", "how": "nombre legal tolerante (ADR)"}
+    assert IB.firm("RY", "ROYAL BANK OF CANADA", "Ontario, Canada")["industry"] == "Bank (Money Center)"
+    assert IB.firm("ARM", "ARM HOLDINGS PLC /UK", "United Kingdom") is None    # no figura en la lista de Damodaran
+    # el camino exacto sigue igual (BCS: nombre legal)
+    assert IB.firm("BCS", "BARCLAYS PLC", "United Kingdom")["how"] == "nombre legal (ADR)"
+    assert IB.firm("ZZZQX", "BP PLC", "United States") is None                   # empresa de EE. UU.: solo por símbolo
+
+
+def test_lenient_match_must_be_unique(monkeypatch):
+    """Dos empresas del mismo país con el mismo nombre tolerante y distinta industria: no se empareja (conjetura)."""
+    fake = {"symbol": {}, "name": {"acme p l c|United Kingdom": ("Chemical (Basic)", "europe"),
+                                   "acme plc|United Kingdom": ("Retail (General)", "europe"),
+                                   "solo p l c|United Kingdom": ("Tobacco", "europe")}}
+    monkeypatch.setattr(IB, "_load_firms", lambda: fake)
+    monkeypatch.setattr(IB, "_lenient", {})
+    assert IB.firm("ACME", "ACME holdings P.L.C. /UK", "United Kingdom") is None
+    assert IB.firm("SOLO", "Solo PLC", "United Kingdom")["industry"] == "Tobacco"

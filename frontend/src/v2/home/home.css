@@ -1,0 +1,134 @@
+/* Rediseño E4: portada de /v2 (maqueta 5). */
+.fz2.home main { padding-bottom: calc(var(--s7) + env(safe-area-inset-bottom)); }
+.fz2 .home-hero { text-align: center; padding: var(--s7) 0 var(--s6); display: flex; flex-direction: column; gap: var(--s3); }
+.fz2 .home-hero h1 { margin: 0; font-size: var(--fs-figure); font-weight: 650; letter-spacing: -.01em; line-height: 1.2; }
+.fz2 .home-hero .lead { margin: 0 0 var(--s3); color: var(--text-2); }
+/* P8: filtros centrados (listas de la sesión, periodo de las gráficas y sectores), cintillo y línea de contexto. */
+.fz2 .ticker { margin-top: var(--s2); }
+.fz2 .filters { display: flex; flex-direction: column; align-items: center; gap: var(--s3); }
+.fz2 .frow { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: var(--s2); max-width: 100%; }
+.fz2 .fgroup { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: var(--s2); }
+.fz2 .glabel { font-size: var(--fs-label); letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); font-weight: 650; }
+/* las fichas de un grupo: en escritorio, en la misma línea que su etiqueta; en móvil, debajo (abajo) */
+.fz2 .fchips { display: contents; }
+.fz2 .fsep { width: 1px; height: 1.375rem; background: var(--line); margin: 0 var(--s2); }
+.fz2 .chip { border: 1px solid var(--line); background: var(--surface); color: var(--text-2); border-radius: 999px; padding: .3125rem .875rem; font: inherit; font-size: var(--fs-ui); line-height: 1.4; cursor: pointer; white-space: nowrap; }
+.fz2 .chip:hover { border-color: var(--text-3); }
+.fz2 .chip.on { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.fz2 .chip[aria-disabled="true"] { color: var(--text-3); border-style: dashed; cursor: not-allowed; }
+.fz2 .chip-arrow { font-size: var(--fs-label); }
+.fz2 .chip.on .chip-arrow { color: inherit; }
+.fz2 .chip:focus-visible, .fz2 .per button:focus-visible, .fz2 .tk-item:focus-visible { outline: 2px solid var(--good); outline-offset: 2px; }
+.fz2 .per { display: flex; gap: 2px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 3px; }
+.fz2 .per button { border: 0; background: transparent; color: var(--text-3); border-radius: 999px; padding: .1875rem .875rem; font: inherit; font-size: var(--fs-small); cursor: pointer; white-space: nowrap; }
+.fz2 .per button.on { background: var(--good-bg); color: var(--good-ink); font-weight: 650; }
+.fz2 .more-wrap { position: relative; }
+.fz2 .chip.more:not(.on) { color: var(--text-3); }
+.fz2 .more-menu { position: absolute; z-index: 5; top: calc(100% + 4px); right: 0; list-style: none; margin: 0; padding: var(--s1); display: flex; flex-direction: column; gap: var(--s1); box-shadow: 0 6px 18px rgba(0, 0, 0, .08); }
+.fz2 .more-menu .chip { width: 100%; text-align: left; }
+/* Cintillo: una fila a todo el ancho. Animado, transform CSS sobre dos copias (la segunda, oculta a la accesibilidad);
+   se pausa con el ratón, el foco o el botón. Sin animación (reducir movimiento, o tras tocarlo), fila deslizable. */
+.fz2 .tape { margin: var(--s4) 0 var(--s2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--surface); overflow: hidden; }
+/* P8b: contenedor desplazable de verdad (trackpad, dedo, flechas, arrastre); el avance automático mueve su scrollLeft
+   (useCarousel). Sin barra visible; bordes con un degradado suave: las tarjetas cortadas se leen como «hay más». */
+.fz2 .tape.scroller { overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: none;
+  -webkit-overflow-scrolling: touch; cursor: grab;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--s6), #000 calc(100% - var(--s6)), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 var(--s6), #000 calc(100% - var(--s6)), transparent); }
+.fz2 .tape.scroller::-webkit-scrollbar { display: none; }
+.fz2 .tape.scroller.dragging { cursor: grabbing; user-select: none; }
+.fz2 .tape.scroller.dragging .tk-item { pointer-events: none; }
+/* v4 cintillo: en pantallas táctiles avanza en continuo con transform sobre la pista (useCarousel), sin desplazamiento
+   nativo ni imán; el dedo la arrastra en horizontal y lo vertical sigue moviendo la página. */
+.fz2 .tape.scroller.tx { overflow-x: hidden; scroll-snap-type: none; touch-action: pan-y; }
+.fz2 .tape.scroller.tx .track { will-change: transform; }
+/* Con «reducir movimiento» no hay avance ni copia: imán en cada tarjeta. */
+.fz2 .tape.scroller:not(.looping) { scroll-snap-type: x mandatory; }
+.fz2 .tape.scroller:not(.looping) .tk-cell { scroll-snap-align: start; }
+.fz2 .track { display: flex; width: max-content; }
+.fz2 .run { list-style: none; margin: 0; padding: 0; display: flex; }
+.fz2 .tk-cell { display: flex; border-right: 1px solid var(--line-soft); }
+/* Tarjeta: a la izquierda ticker, precio, variación y nombre; a la derecha la gráfica; abajo, el motor (si está). */
+.fz2 .tk-item { display: grid; grid-template-columns: auto auto 1fr; grid-template-rows: auto auto auto auto; column-gap: .625rem; row-gap: 2px; align-items: baseline; min-width: 19.375rem; padding: .875rem var(--s5); color: var(--ink); text-decoration: none; }
+.fz2 .tk-item:hover { background: var(--paper); }
+.fz2 .tk-sym { grid-column: 1; font-weight: 700; font-size: var(--fs-table); }
+.fz2 .tk-px { grid-column: 2; font-size: var(--fs-table); font-variant-numeric: tabular-nums; }
+.fz2 .tk-chg { grid-column: 1 / span 2; grid-row: 2; font-size: var(--fs-small); font-weight: 650; font-variant-numeric: tabular-nums; }
+.fz2 .tk-name { grid-column: 1 / span 2; grid-row: 3; color: var(--text-3); font-size: var(--fs-label); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 9.5rem; }
+.fz2 .tk-eng { grid-column: 1 / span 3; grid-row: 4; font-size: var(--fs-label); color: var(--text-3); margin-top: var(--s1); padding-top: var(--s1); border-top: 1px dashed var(--line); }
+.fz2 .tk-eng b { color: var(--text-2); font-variant-numeric: tabular-nums; }
+.fz2 .tk-eng.tk-go { color: var(--good); font-weight: 600; }   /* color de enlace de la v2 (como «.more») */
+.fz2 .spark { grid-column: 3; grid-row: 1 / span 3; width: 8.5rem; height: 3.25rem; justify-self: end; align-self: center; color: var(--text-3); overflow: visible; }
+.fz2 .spark.good { color: var(--good); } .fz2 .spark.bad { color: var(--bad); }
+.fz2 .spark-line { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
+.fz2 .spark-ref { stroke: var(--text-3); stroke-opacity: .7; stroke-width: .75; stroke-dasharray: 1.5 2.5; }
+.fz2 .spark-dot { fill: currentColor; stroke: var(--surface); stroke-width: 1; }
+.fz2 .tk-item:hover .spark-dot { stroke: var(--paper); }
+.fz2 .spark.empty { background: linear-gradient(var(--line-soft), var(--line-soft)) center / 100% 1px no-repeat; }
+.fz2 .tape.skeleton .tk-item { row-gap: var(--s1); }
+.fz2 .ticker-foot { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: var(--s2) var(--s3); text-align: center; font-size: var(--fs-label); line-height: 1.5; padding: 0 var(--s3); }
+.fz2 .ticker-foot p { margin: 0; }
+.fz2 .ticker .state { text-align: center; margin: var(--s4) 0; }
+/* Esqueletos */
+.fz2 .skel { display: inline-block; background: var(--neutral); border-radius: 4px; }
+.fz2 .skel-name { width: 70%; height: 1em; }
+.fz2 .skel-value { width: 4rem; height: 1em; }
+/* Tarjetas de confianza */
+.fz2 .trust { list-style: none; margin: var(--s6) 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s3); }
+.fz2 .trust-card { padding: var(--s4); display: flex; flex-direction: column; gap: var(--s1); }
+.fz2 .trust-card h2 { margin: 0; font-size: var(--fs-body); font-weight: 650; }
+.fz2 .trust-card p { margin: 0; font-size: var(--fs-table); line-height: 1.5; flex: 1 1 auto; }
+.fz2 .disclaimer { margin: var(--s5) 0 0; font-size: var(--fs-small); text-align: center; }
+@media (max-width: 47.9375em) {
+  /* v4 (usuario: «esas dos cosas quítalas, que no estén»): sin los rótulos «Listas» y «Sectores» en el móvil; los
+     grupos conservan su nombre para el lector de pantalla (aria-label en TickerStrip) */
+  .fz2 .glabel, .fz2 .fsep { display: none; }      /* y el separador, que quedaba suelto al bajar el periodo de línea */
+  /* y el mismo aire en toda la columna: buscador, listas, periodo, sectores y cintillo, a 16 px (--s2 aquí + el
+     margen superior del cintillo) */
+  .fz2 .home-hero { padding: var(--s6) 0 var(--s2); }
+  .fz2 .home-hero h1 { font-size: var(--fs-title); }
+  .fz2 .trust { grid-template-columns: 1fr; }
+}
+/* P8, móvil: las filas de chips se deslizan en horizontal y el periodo va en su propia fila, centrado y siempre a la
+   vista; objetivos táctiles de 44 px. */
+@media (max-width: 40em) {
+  .fz2 .filters { align-items: stretch; gap: var(--s4); }
+  .fz2 .frow { flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: var(--s4); width: 100%; min-width: 0; }
+  .fz2 .frow > .fgroup { min-width: 0; max-width: 100%; }
+  .fz2 .fsep { display: none; }
+  /* v4 móvil (PM): la etiqueta encima, en el margen; las listas se envuelven y los sectores se deslizan de borde a
+     borde con el primero en el margen y el siguiente asomando (imán en cada ficha) */
+  /* en columna y sin envolver: una columna que envuelve mide sus líneas por el contenido, no por la pantalla */
+  .fz2 .fgroup-day, .fz2 .fgroup-sectors { flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: var(--s2); }
+  .fz2 .fchips { display: flex; gap: var(--s2); min-width: 0; }
+  .fz2 .fgroup-day .fchips { flex-wrap: wrap; }
+  .fz2 .fgroup-sectors .fchips { flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none;
+    margin-inline: calc(-1 * var(--gutter)); padding: 2px var(--gutter); scroll-padding-inline: var(--gutter); scroll-snap-type: x proximity; }
+  /* sin máscara de bordes aquí: recortaría el menú «Más» (fijo abajo, pero hijo de esta fila) */
+  .fz2 .fgroup-sectors .fchips::-webkit-scrollbar { display: none; }
+  .fz2 .fgroup-sectors .fchips > * { flex: none; scroll-snap-align: start; }
+  .fz2 .fgroup-period { justify-content: center; }
+  .fz2 .fgroup-period .glabel { display: none; }
+  .fz2 .chip, .fz2 .per button { min-height: 2.75rem; }
+  .fz2 .glabel { white-space: nowrap; }
+  .fz2 .fgroup-period, .fz2 .per { width: 100%; min-width: 0; }
+  .fz2 .per button { flex: 1 1 0; min-width: 0; padding: 0 .25rem; }
+  .fz2 .more-menu { position: fixed; left: var(--gutter); right: var(--gutter); top: auto; bottom: calc(var(--s3) + env(safe-area-inset-bottom)); }
+  .fz2 .tk-item { min-width: 18.5rem; padding: .875rem var(--s4); }
+  .fz2 .ticker-foot { padding: 0 var(--gutter); }
+}
+/* v4 móvil (PM): el cintillo empieza en el margen y la siguiente tarjeta asoma; sin máscara que se coma la primera.
+   v4 cintillo: avanza en continuo (useCarousel); el imán, solo quieto («reducir movimiento»). */
+@media (max-width: 47.9375em) {
+  .fz2 .tape.scroller { cursor: auto; padding-inline: var(--gutter);
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--gutter)); mask-image: linear-gradient(to right, transparent, #000 var(--gutter));
+    scroll-padding-inline: var(--gutter); }
+  .fz2 .tape .run:first-child .tk-cell:first-child { border-left: 1px solid var(--line-soft); }
+  .fz2 .tape .tk-item { min-width: 0; width: calc(100vw - 2 * var(--gutter) - 2.5rem); }
+  /* v4 móvil (usuario: «solo quiero más pequeños los cuadros donde salen las gráficas de las acciones»): tarjetas
+     del cintillo ~27 % más bajas y más estrechas: cabe una y media (asoma media siguiente) */
+  .fz2 .tape .tk-item { width: clamp(15rem, 62vw, 17.5rem); padding: .625rem var(--s3); column-gap: var(--s2); row-gap: 0; line-height: 1.3; }
+  .fz2 .tape .spark { width: 100%; max-width: 6.5rem; height: 2.25rem; }
+  .fz2 .tape .tk-eng { margin-top: 2px; padding-top: 2px; }
+  .fz2 .tk-sym, .fz2 .tk-px { font-size: var(--fs-ui); }
+}

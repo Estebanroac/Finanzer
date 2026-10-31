@@ -82,3 +82,36 @@ def test_never_scores():
     import inspect
     import financial_ratios
     assert "pead" not in inspect.getsource(financial_ratios)
+
+
+# ── F10 · N6 (revisión de NVDA): el trimestre fiscal real, no el natural de Finnhub ──
+NVDA_FIL = [{"form": "8-K", "filingDate": "2026-08-26", "items": "2.02,9.01"},
+            {"form": "10-Q", "filingDate": "2026-08-27", "reportDate": "2026-07-26", "items": ""},
+            {"form": "10-Q", "filingDate": "2026-05-28", "reportDate": "2026-04-26", "items": ""}]
+
+
+def test_fiscal_quarter_end_from_the_10q():
+    """NVDA: Finnhub fecha el trimestre el 2026-06-30; el 10-Q dice que cerró el 2026-07-26."""
+    d = pd.Timestamp("2026-06-30").date()
+    assert MC.fiscal_quarter_end(d, NVDA_FIL).isoformat() == "2026-07-26"
+    assert MC.fiscal_quarter_end(d, NVDA_FIL[:1]) is None                        # sin 10-Q: no se inventa
+    far = [{"form": "10-Q", "filingDate": "2026-12-01", "reportDate": "2026-10-25"}]
+    assert MC.fiscal_quarter_end(d, far) is None                                 # a más de medio trimestre
+
+
+def test_pead_says_the_fiscal_quarter():
+    p = MC.pead("NVDA", _series("2026-08-26", 0.03, 0.001), _series(), NVDA_FIL,
+                [{"period": "2026-06-30", "actual": 1.87, "estimate": 1.79}])
+    assert (p["period"], p["period_basis"], p["provider_period"], p["announced"]) == (
+        "2026-07-26", "fiscal", "2026-06-30", "2026-08-26")
+    row = next(r for r in MC.readings({"signals": {}, "pead": p}) if r["key"] == "pead")
+    assert row["text"].startswith("Resultados del trimestre fiscal cerrado el 2026-07-26") or \
+        "del trimestre fiscal cerrado el 2026-07-26" in row["text"]
+
+
+def test_without_its_10q_the_provider_date_is_declared():
+    p = MC.pead("NVDA", _series("2026-08-26", 0.03, 0.001), _series(), NVDA_FIL[:1],
+                [{"period": "2026-06-30", "actual": 1.87, "estimate": 1.79}])
+    assert p["period"] == "2026-06-30" and p["period_basis"] == "proveedor"
+    row = next(r for r in MC.readings({"signals": {}, "pead": p}) if r["key"] == "pead")
+    assert "del trimestre cerrado el 2026-06-30 según Finnhub (su 10-Q aún no está en la SEC)" in row["text"]

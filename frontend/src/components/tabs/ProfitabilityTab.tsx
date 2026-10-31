@@ -78,7 +78,7 @@ export default function ProfitabilityTab({ display }: { display: Display }) {
         <Collapsible summary="Tabla de rentabilidad y eficiencia">
           <DataTable columns={P.columns} rows={P.rows} tooltips={tips} readings={display.readings} withBenchmark />
         </Collapsible>
-        <Collapsible summary="Cifras del ejercicio">
+        <Collapsible summary={P.figures_title ?? "Cifras de los estados financieros"}>
           <dl className="fz-kv">
             {P.figures.flatMap((row) => [[row[0], row[1]], [row[2], row[3]]]).map(([k, v]) => (
               <div key={k}><dt>{k}</dt><dd>{v}</dd></div>

@@ -1,0 +1,35 @@
+# Informe PDF nuevo (rediseño E5, lib/pdf_v2). Límites de composición que comprueba la geometría
+# (tests/pdf_geometry.py) en todo el panel. Medidas en puntos (1/72"). El marco útil de la página carta mide
+# 504 × ~683 pt (lib/pdf_v2/theme.py).
+
+[layout]
+# Hueco máximo al pie de una página: de lo último pintado al borde inferior del marco. No se aplica a la última página
+# del documento ni a la anterior a un capítulo que empieza página por diseño (V7: el glosario; regla general, la
+# declara ChapterHeading(new_page=True) y la lee tests/pdf_geometry.gaps). Lo más que puede dejar la composición es un título de capítulo que no cabe con sus líneas de lectura y
+# pasa entero a la página siguiente: 24 pt de espacio previo + eyebrow y título (35.5) + 8 pt posteriores + 2 líneas de
+# lectura (2 × 15.23) = 98 pt, más el espacio que deja tras de sí lo último pintado (interlineado y espacio posterior
+# del último párrafo, ≤ 8 pt). Los bloques visuales no dejan su hueco: el texto que les sigue llena la página
+# (lib/pdf_v2/doc.py FloatGroup), y un bloque sin dato es una línea, no una caja. ~1/6.5 del alto del marco.
+# (Hasta la revisión del PM de E5 decía 100 con una cuenta aproximada, ≈ 94 pt; medido después: 102 en un caso.)
+max_tail_gap_pt = 106.0
+# Hueco máximo entre dos bloques consecutivos de una página: el mayor tramo vertical del marco sin nada pintado
+# (texto, trazo o recuadro). La escala de espaciado llega a 24 pt antes de un capítulo; 48 pt deja margen sin admitir
+# un hueco visible (medido en el panel: 36 pt como mucho).
+max_block_gap_pt = 48.0
+# Alto de la gráfica de la portada: toma el que dejan los demás bloques, entre estos dos límites.
+cover_chart_min_pt = 100.0
+cover_chart_max_pt = 170.0
+# Líneas de lectura que un título se lleva consigo a la página siguiente (nunca queda solo al pie): la regla
+# tipográfica habitual contra viudas y huérfanas.
+keep_lines_after_title = 2
+
+[glossary]
+# V7 · P3: glosario de una página al final del informe con la jerga de las métricas que usa (definiciones de la web,
+# backend/assets/metric_definitions.json: título y primera frase), en este orden; una clave sin definición no sale. Las
+# dos puntuaciones, la confianza y las categorías se explican en «Metodología». tests/test_pdf_v2_glossary.py comprueba
+# que cabe en una página.
+title = "Glosario"
+keys = ["multiples_block", "dcf_upside", "reverse_dcf", "wacc", "roic", "roic_wacc_spread", "roe", "rote",
+        "free_cash_flow", "fcf_minus_sbc", "fcf_yield", "pe", "forward_pe", "ev_ebitda", "peg", "ptbv",
+        "net_debt_to_ebitda", "interest_coverage", "altman", "piotroski", "momentum", "trend", "pos52",
+        "relative_strength", "sector_etf", "pead"]

@@ -40,12 +40,12 @@ function loadSamples(dirs) {
   return out;
 }
 
-export function check(dirs, { strictUnions = false } = {}) {
+export function check(dirs, { strictUnions = false, root = ROOT_TYPE } = {}) {
   const program = ts.createProgram([API], { strict: true, target: ts.ScriptTarget.ES2020, noEmit: true });
   const checker = program.getTypeChecker();
   const sf = program.getSourceFile(API);
-  const decl = sf.statements.find((s) => ts.isInterfaceDeclaration(s) && s.name.text === ROOT_TYPE);
-  if (!decl) throw new Error(`no encuentro ${ROOT_TYPE} en ${API}`);
+  const decl = sf.statements.find((s) => ts.isInterfaceDeclaration(s) && s.name.text === root);
+  if (!decl) throw new Error(`no encuentro ${root} en ${API}`);
   const rootType = checker.getTypeAtLocation(decl.name);
   const samples = loadSamples(dirs);
   if (!samples.length) throw new Error(`sin muestras JSON en ${dirs.join(", ")}`);
@@ -149,21 +149,23 @@ export function check(dirs, { strictUnions = false } = {}) {
     }
   }
 
-  walk(rootType, samples.map((s) => ({ v: s.value, from: s.name })), ROOT_TYPE);
+  walk(rootType, samples.map((s) => ({ v: s.value, from: s.name })), root);
   return { errors: [...new Set(errors)], notes: [...new Set(notes)], samples: samples.length };
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const strictUnions = process.argv.includes("--strict-unions");
+  // Rediseño E2b: --root=Tipo contrasta otro tipo de api.ts (SegmentsResponse, PeersResponse, TrendingResponse).
+  const root = (process.argv.find((a) => a.startsWith("--root=")) || `--root=${ROOT_TYPE}`).slice("--root=".length);
   const args = process.argv.slice(2).filter((a) => !a.startsWith("--"));
   // Fase 2b: con los golden van las muestras forzadas de los casos que ningún ticker cubre (tests/contract_forced.py).
   const dirs = args.length ? args : ["local", "panel", "forzados"].map((e) => path.join(ROOT, "..", "backend", "tests", "golden", e));
-  const { errors, notes, samples } = check(dirs, { strictUnions });
+  const { errors, notes, samples } = check(dirs, { strictUnions, root });
   for (const n of notes) console.warn("aviso: " + n);
   if (errors.length) {
     console.error(`Contrato roto (${errors.length}) — el frontend declara campos que el backend no expone así:`);
     for (const e of errors.slice(0, 80)) console.error("  " + e);
     process.exit(1);
   }
-  console.log(`check-contract: ${ROOT_TYPE} encaja con ${samples} salidas del backend`);
+  console.log(`check-contract: ${root} encaja con ${samples} salidas del backend`);
 }

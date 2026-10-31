@@ -24,13 +24,36 @@ Deriva tras resultados (PEAD; Bernard y Thomas, 1989): la sorpresa del BPA del �
 frente al S&P 500 entre la sesión anterior al anuncio y la siguiente, y después. Sin 8-K (emisores extranjeros) o sin sorpresa, no se lee y
 se dice.
 """
+import re
 import datetime as _dt
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 
 from settings import cfg
+
+NY = ZoneInfo("America/New_York")
+
+
+def safe_url(url: Any) -> Optional[str]:
+    """V6 (revisión de seguridad, B17): un enlace de titular solo si es http(s); `javascript:`, `data:` o cualquier otro
+    esquema que llegue de la fuente sale como None (la web no lo enlaza)."""
+    u = str(url or "").strip()
+    return u if u.lower().startswith(("https://", "http://")) and len(u) <= 2048 else None
+
+
+def ny_today(_frame: Any = None, now: Optional[_dt.datetime] = None) -> _dt.date:
+    """V6 (revisión de seguridad, B12): "hoy" es la fecha de Nueva York (la del mercado), no la del reloj del servidor
+    (UTC en Render: de 20:00 a 24:00 de Nueva York ya era mañana) ni la última sesión de la serie (un lunes, el
+    viernes)."""
+    return (now.astimezone(NY) if now is not None else _dt.datetime.now(NY)).date()
+
+
+# Reloj inyectable: recibe la serie de la empresa (el replay lo cambia por el día de su captura, la última sesión de
+# la serie, para que el golden no dependa del día en que se corre).
+TODAY: Callable[[Any], _dt.date] = ny_today
 
 _SIGNALS_NOTE = ("Contexto de mercado: no puntúa en la calidad ni en el precio. Describe cómo se ha movido la acción, "
                  "no qué hará.")
@@ -89,11 +112,22 @@ def _wait(fut, default):
         return default(f"{type(e).__name__}: {e}")
 
 
+def fiscal_quarter_end(period: _dt.date, filings: Optional[List[Dict[str, Any]]]) -> Optional[_dt.date]:
+    """F10 · N6: el cierre fiscal del trimestre que Finnhub fecha en `period` (el cierre natural más cercano): el periodo
+    del 10-Q o 10-K de EDGAR más cercano, a `pead_fiscal_match_days` como mucho. None si aún no está presentado."""
+    import sec_edgar
+    ends = {_dt.date.fromisoformat(f["reportDate"][:10]) for f in filings or []
+            if f.get("form") in sec_edgar.ANNUAL_OR_QUARTERLY and f.get("reportDate")}
+    near = [e for e in ends if abs((e - period).days) <= cfg("market.context.pead_fiscal_match_days")]
+    return min(near, key=lambda e: (abs((e - period).days), e)) if near else None
+
+
 def pead(symbol: Optional[str], close: Optional[pd.Series], mclose: Optional[pd.Series],
          filings: Optional[List[Dict[str, Any]]], surprises: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
     """{status, reason | (period, announced, actual, estimate, surprise, reaction, drift, sessions, ...)}. El último
     trimestre cuya publicación (8-K 2.02 dentro de `pead_announce_max_days` tras el cierre) cae dentro de la serie (en
-    replay: lo que se sabía ese día). Reacción: acción − S&P 500 desde la sesión anterior al anuncio hasta la
+    replay: lo que se sabía ese día). F10 · N6: el cierre es el fiscal (fiscal_quarter_end; `period_basis` "fiscal"),
+    o el que da Finnhub si su 10-Q aún no está en EDGAR (`period_basis` "proveedor"). Reacción: acción − S&P 500 desde la sesión anterior al anuncio hasta la
     siguiente; deriva: lo mismo desde ahí hasta hoy o hasta `pead_window_sessions` sesiones después."""
     C = cfg("market.context")
     if close is None or mclose is None or len(close) < 5:
@@ -111,7 +145,9 @@ def pead(symbol: Optional[str], close: Optional[pd.Series], mclose: Optional[pd.
                                                  "fecha de anuncio con fuente")}
     last = close.index[-1].date()
     for s in sorted((x for x in surprises if x.get("period")), key=lambda x: x["period"], reverse=True):
-        p = _dt.date.fromisoformat(str(s["period"])[:10])
+        fp = _dt.date.fromisoformat(str(s["period"])[:10])
+        fe = fiscal_quarter_end(fp, filings)
+        p = fe or fp
         dates = [d for d in ann8k if p < _dt.date.fromisoformat(d) <= p + _dt.timedelta(days=C["pead_announce_max_days"])]
         if not dates or _dt.date.fromisoformat(dates[0]) > last:
             continue
@@ -124,7 +160,8 @@ def pead(symbol: Optional[str], close: Optional[pd.Series], mclose: Optional[pd.
         pre, post = i0 - 1, i0 + 1
         if pre < 0:
             return {"status": "sin_dato", "reason": "la serie no cubre la sesión anterior al anuncio"}
-        out = {"status": "ok", "period": p.isoformat(), "announced": ann.isoformat(), "actual": float(act),
+        out = {"status": "ok", "period": p.isoformat(), "period_basis": "fiscal" if fe else "proveedor",
+               "provider_period": fp.isoformat(), "announced": ann.isoformat(), "actual": float(act),
                "estimate": float(est), "surprise": (float(act) - float(est)) / abs(float(est)), "reaction": None,
                "drift": None, "sessions": 0, "window": C["pead_window_sessions"], "window_passed": False,
                "source": "BPA y consenso: Finnhub; fecha: 8-K de resultados (SEC EDGAR, apartado 2.02)"}
@@ -157,7 +194,15 @@ def build(symbol: str, company: Optional[Dict[str, Any]], market: Optional[Dict[
     us = price_cur in (None, "USD")
     sector_ok = bool(sector_etf) and us and sector_etf.upper() not in (P["market_symbol"], P["market_fallback_symbol"])
     f_sec = _pool.submit(price_history.sector, sector_etf) if sector_ok else None
-    f_news = _pool.submit(news, symbol)
+    f_news = _pool.submit(news, symbol, (a.get("profile") or {}).get("name"))
+    # Rediseño E2a (T8): próximos resultados en paralelo con los titulares. "Hoy": TODAY (V6, B12: la fecha de Nueva
+    # York; en el replay, el día de la captura).
+    _today = TODAY((company or {}).get("frame"))
+    f_next = _pool.submit(next_earnings, symbol, filings, _today)
+    # Rendimiento (v4f8): el BPA frente al consenso (Finnhub) que pide pead, en paralelo con lo anterior; pead lo lee
+    # de la caché de finnhub_fallback (la misma respuesta).
+    from finnhub_fallback import earnings_surprises, is_enabled
+    f_surp = _pool.submit(earnings_surprises, symbol) if (us and symbol and is_enabled()) else None
     sector = (_wait(f_sec, lambda why: {"symbol": sector_etf, "frame": None, "reason": why}) if f_sec else
               {"symbol": None, "frame": None,
                "reason": (f"cotiza en {price_cur}: los ETF de sector de referencia son de EE. UU., en USD" if not us
@@ -173,11 +218,22 @@ def build(symbol: str, company: Optional[Dict[str, Any]], market: Optional[Dict[
     raw_close = (company or {})["frame"]["close"] if (company or {}).get("frame") is not None else None
     out: Dict[str, Any] = {"signals": sig, "sector_etf": sector_etf, "note": _SIGNALS_NOTE,
                            "series_status": {k: v["status"] for k, v in ps["series"].items()},
+                           # V4b (auditoría de datos): el porqué de una serie que no está (MC.PA: cotiza en EUR)
+                           "series_reasons": {k: (v.get("reasons") or [None])[0] for k, v in ps["series"].items()
+                                              if v["status"] != "ok" and (v.get("reasons") or [None])[0]},
                            "series_drawdown": series_drawdown(close, raw_close) if close is not None else None,
                            "market_volatility": (realized_volatility(mk["frame"]["close"])
                                                  if mk.get("frame") is not None and mk["status"] == "ok" else None)}
     out["news"] = _wait(f_news, lambda why: {"items": [], "reason": f"sin titulares a tiempo ({why})"})
+    out["next_earnings"] = _wait(f_next, lambda why: {"status": "sin_dato", "date": None, "kind": None, "hour": None,
+                                                      "source": None, "basis": None,
+                                                      "reason": f"sin calendario a tiempo ({why})"})
     mclose = mk["frame"]["close"] if mk.get("frame") is not None and mk["status"] == "ok" else None
+    if f_surp is not None:
+        try:
+            f_surp.result()
+        except Exception:  # noqa: BLE001 — pead la pide otra vez y su fallo se trata allí, como antes
+            pass
     try:
         out["pead"] = (pead(symbol, close, mclose, filings) if us else
                        {"status": "sin_dato", "reason": f"cotiza en {price_cur}: la deriva se mide frente al S&P 500, en USD"})
@@ -188,27 +244,144 @@ def build(symbol: str, company: Optional[Dict[str, Any]], market: Optional[Dict[
     return out
 
 
-def news(symbol: Optional[str]) -> Dict[str, Any]:
+def mention_terms(symbol: Optional[str], name: Optional[str]) -> set:
+    """Rediseño E2a (revisión del PM): cómo se nombra a la empresa en un titular, en minúsculas: el nombre corto (el
+    legal sin sufijos societarios: "Exxon Mobil Corporation" → "exxon mobil"), el mismo sin espacios ("exxonmobil") y
+    su primera palabra si no es una palabra común ("exxon"; "Realty Income" exige las dos)."""
+    C = cfg("market.context")
+    suffixes = {x.lower() for x in C["news_name_suffixes"]}
+    common = {x.lower() for x in C["news_common_words"]}
+    words = [w.strip(".,") for w in str(name or "").split()]
+    words = [w for w in words if w]
+    while words and words[-1].lower().replace(".", "") in suffixes:
+        words.pop()
+    while words and words[0].lower() in suffixes:
+        words.pop(0)
+    if not words:
+        return set()
+    short = " ".join(words).lower()
+    terms = {short}
+    if len(words) > 1:
+        terms.add(short.replace(" ", ""))
+        first = words[0].lower()
+        if first not in common and len(first) >= 3:
+            terms.add(first)
+    return terms
+
+
+def _mentions(text: str, symbol: str, terms: set) -> bool:
+    """¿El texto nombra a la empresa? Ticker como palabra (2+ letras) o entre paréntesis / tras la bolsa; o un término
+    de mention_terms como palabra completa, sin distinguir mayúsculas."""
+    import re
+    sym = re.escape(symbol.upper())
+    if (len(symbol) > 1 and re.search(rf"(?<![A-Za-z0-9.]){sym}(?![A-Za-z0-9])", text)) or \
+            re.search(rf"\({sym}\)|\b(?:NYSE|NASDAQ|Nasdaq|NYSEARCA|AMEX)\s*:\s*{sym}(?![A-Za-z0-9])", text):
+        return True
+    low = text.lower()
+    return any(re.search(rf"(?<![a-z0-9]){re.escape(t)}(?![a-z0-9])", low) for t in terms)
+
+
+_C1 = re.compile(r"[\x80-\x9f]")
+
+
+def clean_external(s: Optional[str]) -> Optional[str]:
+    """V4b: texto de un tercero sin controles C1 (sin glifo en el PDF). Suele ser UTF-8 leído como latin-1 («â\x80\x93»
+    por «–»): se recompone; si no se puede, se quitan."""
+    if not s or not _C1.search(s):
+        return s
+    try:
+        fixed = s.encode("latin-1").decode("utf-8")
+        if not _C1.search(fixed):
+            return fixed
+    except (UnicodeEncodeError, UnicodeDecodeError):
+        pass
+    return _C1.sub("", s)
+
+
+def news(symbol: Optional[str], name: Optional[str] = None) -> Dict[str, Any]:
     """Titulares de los últimos `news_days` días de Finnhub (los de la propia empresa, los más recientes primero), sin
     resumen ni interpretación: contexto de qué se ha publicado, no una lectura."""
     import datetime as _dt
-    from finnhub_fallback import company_news, is_enabled
+    from finnhub_fallback import company_news, is_enabled, provider_symbol
     C = cfg("market.context")
     if not is_enabled():
         return {"items": [], "reason": "sin clave de Finnhub"}
     if not symbol:
         return {"items": [], "reason": "sin símbolo"}
-    end = _dt.date.today()
+    end = ny_today()
     raw = company_news(symbol, (end - _dt.timedelta(days=C["news_days"])).isoformat(), end.isoformat())
     if raw is None:
         return {"items": [], "reason": "sin titulares de Finnhub (no disponibles o sin respuesta)"}
-    own = [x for x in raw if symbol.upper() in str(x.get("related") or "").upper().split(",") and x.get("headline")]
+    # V4b: `related` lleva el símbolo de Finnhub (BRK.B para BRK-B)
+    mine = {symbol.upper(), provider_symbol(symbol)}
+    own = [x for x in raw if mine & set(str(x.get("related") or "").upper().split(",")) and x.get("headline")]
+    # Revisión del PM: solo los que nombran a la empresa (Finnhub la pone en `related` de noticias generales).
+    terms = mention_terms(symbol, name)
+    own = [x for x in own if _mentions(f"{x['headline']} {x.get('summary') or ''}", symbol, terms)]
     own.sort(key=lambda x: x.get("datetime") or 0, reverse=True)
-    items = [{"date": (_dt.datetime.fromtimestamp(int(x["datetime"]), tz=_dt.timezone.utc).strftime("%Y-%m-%d")
-                       if x.get("datetime") else None),
-              "source": x.get("source"), "headline": str(x["headline"]).strip(), "url": x.get("url")}
-             for x in own[:C["news_max"]]]
-    return {"items": items, "total": len(own), "days": C["news_days"], "reason": None}
+
+    def when(x):
+        return _dt.datetime.fromtimestamp(int(x["datetime"]), tz=_dt.timezone.utc) if x.get("datetime") else None
+    # Una imagen que se repite en titulares distintos es el logotipo del medio (Yahoo), no una foto de la noticia.
+    seen: Dict[str, int] = {}
+    for x in own:
+        if x.get("image"):
+            seen[x["image"]] = seen.get(x["image"], 0) + 1
+
+    def image(x):
+        im = str(x.get("image") or "")
+        return im if im.startswith("https://") and seen.get(im) == 1 else None
+    # Rediseño E2a (T8): hasta news_max_v2 titulares con resumen, imagen (solo https y propia), categoría, fecha y
+    # hora (UTC) e idioma original; la web actual sigue con news_max (display._market_block).
+    items = [{"date": when(x).strftime("%Y-%m-%d") if when(x) else None,
+              "source": x.get("source"), "headline": clean_external(str(x["headline"]).strip()),
+              "url": safe_url(x.get("url")),
+              "summary": _summary(clean_external(x.get("summary")), C["news_summary_chars"]),
+              "image": image(x),
+              "category": x.get("category") or None,
+              "datetime": when(x).strftime("%Y-%m-%dT%H:%M:%SZ") if when(x) else None,
+              "lang": C["news_lang"]}
+             for x in own[:max(C["news_max"], C["news_max_v2"])]]
+    return {"items": items, "total": len(own), "days": C["news_days"],
+            "reason": None if own else f"ningún titular de los últimos {C['news_days']} días menciona a la empresa"}
+
+
+def _summary(text: Optional[str], limit: int) -> Optional[str]:
+    """Resumen de Finnhub recortado a `limit` caracteres en límite de palabra, con "…" si se recortó."""
+    t = " ".join(str(text or "").split())
+    if not t:
+        return None
+    if len(t) <= limit:
+        return t
+    cut = t[:limit].rsplit(" ", 1)[0].rstrip(" ,;:.-—")
+    return cut + "…"
+
+
+def next_earnings(symbol: Optional[str], filings: Optional[List[Dict[str, Any]]], today: _dt.date) -> Dict[str, Any]:
+    """Rediseño E2a (T8): próxima publicación de resultados. Anunciada: la primera fecha ≥ hoy del calendario de
+    Finnhub (con la hora, antes o después de la sesión, si viene). Si no hay, estimada: el último 8-K de resultados de
+    EDGAR (apartado 2.02) más `estimate_cadence_days`, solo si esa fecha aún no ha pasado. Si no, sin dato."""
+    from finnhub_fallback import earnings_calendar, is_enabled
+    C = cfg("market.context")
+    if symbol and is_enabled():
+        cal = earnings_calendar(symbol, today.isoformat(), (today + _dt.timedelta(days=C["next_earnings_days"])).isoformat())
+        ahead = sorted((e for e in (cal or []) if str(e.get("date") or "") >= today.isoformat()),
+                       key=lambda e: str(e["date"]))
+        if ahead:
+            e = ahead[0]
+            return {"status": "ok", "date": str(e["date"])[:10], "kind": "anunciada",
+                    "hour": e.get("hour") if e.get("hour") in ("bmo", "amc") else None,
+                    "source": "calendario de resultados de Finnhub", "basis": None, "reason": None}
+    ann = sorted(f["filingDate"] for f in (filings or []) if f.get("form") == "8-K" and "2.02" in (f.get("items") or ""))
+    if ann:
+        est = _dt.date.fromisoformat(ann[-1]) + _dt.timedelta(days=C["estimate_cadence_days"])
+        if est >= today:
+            return {"status": "ok", "date": est.isoformat(), "kind": "estimada", "hour": None,
+                    "source": "SEC EDGAR (8-K de resultados, apartado 2.02)",
+                    "basis": {"last_results_8k": ann[-1], "cadence_days": C["estimate_cadence_days"]},
+                    "reason": None}
+    return {"status": "sin_dato", "date": None, "kind": None, "hour": None, "source": None, "basis": None,
+            "reason": "Sin fecha anunciada"}
 
 
 def readings(ctx: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -249,12 +422,15 @@ def readings(ctx: Dict[str, Any]) -> List[Dict[str, Any]]:
         add("drawdown", "Caída máxima", _pct(d1["value"]), txt, "market_context.signals.max_drawdown.1.value",
             d1["value"])
     rs = S.get("relative_strength") or {}
-    w = (rs.get("windows") or {}).get(str(max(cfg("market.signals.relative_strength.windows_sessions")))) or {}
+    _rs_key = cfg("market.signals.relative_strength.windows")[-1]
+    w = (rs.get("windows") or {}).get(_rs_key) or {}
+    # F8 · P3: el periodo con el mismo rótulo que la tabla de rentabilidades de la web y del PDF («1 año»)
+    _rs_lab = dict(zip(cfg("market.price_returns.range_keys"), cfg("market.price_returns.range_labels")))[_rs_key]
     if rs.get("status") == "ok" and w.get("status") == "ok":
         own = abs(w["difference"]) >= C["relative_band"]
-        add("relative_strength", f"Fuerza relativa frente a {ctx.get('sector_etf')} (12 meses)",
+        add("relative_strength", f"Fuerza relativa frente a {ctx.get('sector_etf')} ({_rs_lab})",
             f"{w['difference'] * 100:+.1f} pp".replace("-", "−"),
-            f"en 12 meses, la acción {_pct(w['company'])} frente al {_pct(w['sector'])} del ETF de su sector "
+            f"en {_rs_lab}, la acción {_pct(w['company'])} frente al {_pct(w['sector'])} del ETF de su sector "
             f"({ctx.get('sector_etf')}): " + ("el movimiento es propio de la empresa" if own
                                               else "se mueve con su sector"),
             "market_context.signals.relative_strength.value", w["difference"])
@@ -272,7 +448,9 @@ def readings(ctx: Dict[str, Any]) -> List[Dict[str, Any]]:
     pe = ctx.get("pead") or {}
     if pe.get("status") == "ok":
         s = pe["surprise"]
-        txt = (f"resultados del trimestre cerrado el {pe['period']}, publicados el {pe['announced']}: BPA de "
+        per = (f"del trimestre fiscal cerrado el {pe['period']}" if pe.get("period_basis") != "proveedor" else
+               f"del trimestre cerrado el {pe['period']} según Finnhub (su 10-Q aún no está en la SEC)")
+        txt = (f"resultados {per}, publicados el {pe['announced']}: BPA de "
                f"{pe['actual']:.2f} frente a {pe['estimate']:.2f} de consenso, una sorpresa del {_pct(s)}")
         if pe["reaction"] is None:
             txt += ". Publicados en la última sesión de la serie: la reacción y la deriva aún no se pueden medir"
@@ -318,7 +496,7 @@ def behavioral(ctx: Dict[str, Any], a: Dict[str, Any]) -> List[Dict[str, Any]]:
     # Revisión F5 (hallazgo 2): los ingresos de verdad (CAGR a 3 años de los estados), no el "retorno total" de la
     # madura de dividendo alto, que suma la rentabilidad por dividendo.
     rev = ((a.get("classification") or {}).get("inputs") or {}).get("revenue_cagr_3y")
-    eps = next((x.get("raw") for x in g.get("adjustments") or [] if x.get("metric") == "Crecimiento EPS 3Y"), None)
+    eps = next((x.get("raw") for x in g.get("adjustments") or [] if str(x.get("metric") or "").startswith("Crecimiento del BPA ")), None)
     # Sin deterioro: calidad sólida o excelente, ingresos al alza y el BPA sin caer (MC.PA: ingresos +0.7% con el
     # BPA a la baja no es "sin deterioro").
     arch = (a.get("classification") or {}).get("archetype")
@@ -341,7 +519,8 @@ def behavioral(ctx: Dict[str, Any], a: Dict[str, Any]) -> List[Dict[str, Any]]:
         out.append({"kind": "extrapolacion", "field": "reverse_dcf.main.g10", "num": m["g10"],
                     "text": (f"El precio exige crecer un {_pct(m['g10'], False)} anual durante 10 años ("
                              f"{own.get('label') or 'su crecimiento'}: {_pct(own['cagr'], False)} anual en los últimos "
-                             f"{own.get('years')} años), un ritmo que solo "
+                             f"{own.get('years')} años" + (f", {own['window']}" if own.get("window") else "")
+                             + "), un ritmo que solo "
                              + ("menos del 1%" if br["share"] < 0.01 else f"un {br['share'] * 100:.0f}%")
                              + " de las comparables sostuvo: el precio da por hecho que el crecimiento pasado continúa, "
                              "y las tasas base dicen que pocas empresas lo repiten (Lakonishok, Shleifer y Vishny, "

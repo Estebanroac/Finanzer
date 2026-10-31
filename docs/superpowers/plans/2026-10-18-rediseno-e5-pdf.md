@@ -29,7 +29,7 @@
 
 ### Task 2: Componentes de dibujo
 - [ ] `lib/pdf_v2/parts.py`: escala de puntuación (tramos con rangos, marca y valor; igual que la cabecera web), tarjeta de cifra, tabla técnica (Métrica en negrita + significado · Empresa · Referencia · Brecha · Lectura en pastilla), barras de categorías, rango de 52 semanas, Piotroski 3 × 3, gráfica de precio (línea base 100 empresa vs S&P 500 vs ETF, 1 año y 5 años, con `reportlab.graphics`), barras de segmentos, mini-historia de 10 años.
-- [ ] Tests de cada parte (se dibujan sin error con datos de AAPL y con datos ausentes; la ausente dice su motivo y mide lo mismo).
+- [ ] Tests de cada parte (se dibujan sin error con datos de AAPL y con datos ausentes; la ausente dice su motivo en una línea —título del bloque y motivo en texto secundario— y no reserva su caja: lo que sigue sube a ocupar el sitio; corregido en la revisión del PM de E5, antes decía «mide lo mismo»).
 
 ### Task 3: Portada y resumen
 - [ ] Portada: identidad, precio y variación, las tres escalas con su base, conclusión, gráfica de precio de 1 año y 6 cifras clave; todo en una página sin encoger por debajo de `MIN_SCALE`.
@@ -52,3 +52,5 @@
 ### Task 7: Endpoint y cableado
 - [ ] `GET /api/v2/pdf/{symbol}` (mismo semáforo y nombre de archivo "Informe Finanzer {T} {fecha}.pdf"); el botón "Descargar PDF" de `/v2` apunta a él. El PDF actual (`/api/pdf`) no cambia.
 - [ ] Capturas de cada página (PNG con pypdfium2) de AAPL, JPM, O y BCS en `docs/rediseno/capturas-e5/`; `docs/rediseno/E5_REGISTRO.md`; informe al PM.
+
+> **Evidencia fuera de `main` (E6, 31-oct):** las capturas (`docs/rediseno/capturas-*`), `docs/fiabilidad/f8_evidencia/` y los volcados JSON de escaneo y medida de `docs/` no están en `main`. Siguen en las ramas locales del rediseño y de la fiabilidad (`rediseno/v4-f8`) y en el archivo `v4_evidencia_8e4f3952.tar.gz` de `/Users/joseestebanroa/Downloads/finanzer_next-archivo`, fuera del repositorio.

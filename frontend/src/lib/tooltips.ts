@@ -36,13 +36,87 @@ export const DEFINITIONS: Record<string, Definition> = {
     title: "Categorías de la puntuación",
     description:
       "Cada categoría parte de una base neutral de 10/20 y suma o resta según la banda en la que cae cada indicador. Solidez, Rentabilidad, Calidad de ganancias y Crecimiento forman la calidad del negocio; Valoración, el atractivo del precio.",
-    tip: "Una categoría «no concluyente» no tiene datos suficientes: se excluye y la puntuación se reescala sobre las demás.",
+    tip: "Una categoría «no concluyente» no tiene datos suficientes: se excluye y la puntuación se calcula con las demás.",
   },
   confidence: {
     title: "Confianza del veredicto",
     description:
       "Mide cuánto fiarse del veredicto de precio: si los métodos de valoración coinciden, si hay datos suficientes, la calidad de la fuente y la estabilidad del tipo de empresa.",
-    tip: "La confianza contrae el atractivo del precio hacia 50; la calidad del negocio no se contrae.",
+    tip: "La confianza contrae el atractivo del precio hacia 50; la calidad del negocio, solo si la confianza es baja.",
+  },
+
+  confidence_adjustment: {
+    title: "Ajuste por confianza",
+    description:
+      "Cuando la confianza del veredicto no es alta, el atractivo del precio se acerca a 50 (neutral): la primera cifra es la que dan los métodos y la segunda, la ajustada.",
+    tip: "Solo se ajusta el precio; la calidad del negocio no se toca.",
+  },
+
+  // ── Categorías de la puntuación (V7 · P3) ──
+  cat_solidez: {
+    title: "Solidez financiera",
+    description:
+      "Categoría de la calidad del negocio que mide si la empresa puede pagar lo que debe y aguantar un mal año: liquidez a corto plazo, endeudamiento frente a su sector, cobertura de intereses y riesgo de insolvencia (Altman).",
+    tip: "En bancos y aseguradoras se mide con su salud financiera; en empresas que aún no ganan dinero, con los meses de caja.",
+  },
+  cat_rentabilidad: {
+    title: "Rentabilidad",
+    description:
+      "Categoría de la calidad del negocio que mide cuánto gana la empresa con lo que tiene: ROE, ROA, márgenes y rentabilidad del capital invertido (ROIC) frente a su coste (WACC), cada uno frente a su sector.",
+  },
+  cat_calidad_ganancias: {
+    title: "Calidad de ganancias",
+    description:
+      "Categoría de la calidad del negocio que mide si el beneficio contable se convierte en caja: Piotroski F-Score, flujo operativo y flujo de caja libre positivos, y flujo de caja libre frente al beneficio neto.",
+    tip: "En bancos se mide con la estabilidad del ROE, la eficiencia y el crecimiento del valor en libros; en REIT, con el dividendo cubierto por el FFO.",
+  },
+  cat_crecimiento: {
+    title: "Crecimiento",
+    description:
+      "Categoría de la calidad del negocio que mide cuánto han crecido los ingresos, el beneficio por acción y el flujo de caja libre en los últimos tres años.",
+  },
+  cat_valoracion: {
+    title: "Valoración",
+    description:
+      "Categoría que da el atractivo del precio: los múltiplos frente a su referencia y el DCF suman o restan puntos sobre una base neutral.",
+  },
+  pb_block: {
+    title: "Bloque P/B y P/TBV",
+    description:
+      "Precio sobre valor en libros y sobre valor en libros tangible, que puntúan juntos: en bancos y aseguradoras sustituyen a los múltiplos de beneficio y de caja.",
+  },
+  pb_roe: {
+    title: "P/B frente al ROE regulado",
+    description:
+      "En una utility, el precio sobre valor en libros se lee frente a la rentabilidad que el regulador le permite: pagar más que el valor en libros solo se justifica con un ROE alto.",
+  },
+  reverse_dcf: {
+    title: "DCF inverso",
+    description:
+      "En lugar de estimar un valor, calcula qué crecimiento descuenta el precio actual y lo compara con el que la empresa ha logrado y con el de empresas comparables.",
+    tip: "Es el DCF que puntúa cuando el directo no es fiable para el tipo de empresa.",
+  },
+
+  // ── Confianza del veredicto: en qué se apoya (V7 · P3) ──
+  conf_convergence: {
+    title: "Convergencia entre métodos",
+    description: "Si los métodos de valoración (múltiplos, DCF y los demás que apliquen) apuntan en la misma dirección y con una magnitud parecida.",
+  },
+  conf_coverage: {
+    title: "Cobertura de datos",
+    description: "Qué parte de los indicadores que aplican a la empresa tiene dato. Con huecos, el veredicto se apoya en menos.",
+  },
+  conf_source: {
+    title: "Calidad de fuente",
+    description: "Si los datos usados pasaron la validación sin incidencias: cifras imposibles, unidades mal puestas o saltos que no cuadran.",
+  },
+  conf_stability: {
+    title: "Estabilidad del arquetipo",
+    description: "Si el tipo de empresa (madura, crecimiento, banco…) es claro y sus resultados estables. Baja en una cíclica, cuyos resultados dependen de la fase del ciclo; media si la clasificación está en el límite entre dos tipos.",
+  },
+  conf_fuente_oficial: {
+    title: "Fuente oficial (SEC)",
+    description: "Si los estados financieros vienen de la SEC (EDGAR). Sin ellos, el análisis usa cifras de proveedores sin contrastar y la confianza queda en baja.",
   },
 
   // ── Mercado ──
@@ -62,6 +136,60 @@ export const DEFINITIONS: Record<string, Definition> = {
       "Cuánto se mueve la acción cuando se mueve el mercado (S&P 500), tal como la publica la fuente. Una beta igual a la unidad se mueve como el mercado. El coste de capital usa la beta ajustada (Blume), que verás en el desglose del WACC.",
     formula: "Covarianza(acción, mercado) / varianza(mercado)",
     tip: "Mide riesgo de mercado, no riesgo del negocio: una empresa débil puede tener beta baja.",
+  },
+  // v4 (PM): la tarjeta de /v2 enseña la beta del coste de capital; su «?» explica esa, no la bruta
+  beta_blume: {
+    title: "Beta ajustada (Blume)",
+    description:
+      "Cuánto se mueve la acción cuando se mueve el mercado, medida con dos años de rendimientos semanales frente al S&P 500 y acercada a la del mercado con el ajuste de Blume, porque las betas tienden a volver hacia la unidad con el tiempo. Es la que usa el coste de capital; la beta bruta está en el desglose del WACC.",
+    formula: "Beta ajustada = ⅔ × beta bruta + ⅓ × 1",
+    tip: "Mide riesgo de mercado, no riesgo del negocio: una empresa débil puede tener beta baja.",
+  },
+  beta_industry: {
+    title: "Beta de la industria",
+    description:
+      "La beta propia de la acción no pasa los filtros de la regresión, así que el coste de capital usa la de su industria (Damodaran), reapalancada con la deuda de la empresa cuando hay datos para hacerlo y sin ajuste de Blume. El detalle está en el desglose del WACC.",
+    tip: "Mide riesgo de mercado, no riesgo del negocio: una empresa débil puede tener beta baja.",
+  },
+  momentum: {
+    title: "Momentum 12-1",
+    description:
+      "Rentabilidad de la acción en los doce meses anteriores, sin contar el último mes. Mide si el mercado la viene premiando o castigando; el último mes se excluye porque suele darse la vuelta.",
+    tip: "Es contexto de mercado: no puntúa en la calidad ni en el precio.",
+  },
+  trend: {
+    title: "Tendencia (200 sesiones)",
+    description:
+      "Si el precio cotiza por encima o por debajo de su media de las últimas 200 sesiones (unos diez meses) y si esa media sube o baja.",
+    tip: "Es contexto de mercado: no puntúa en la calidad ni en el precio.",
+  },
+  volatility: {
+    title: "Volatilidad (1 año)",
+    description: "Cuánto oscila el precio de un día a otro, en tasa anual, comparado con el S&P 500 en el mismo año.",
+  },
+  drawdown: {
+    title: "Caída máxima",
+    description: "La mayor caída desde un máximo hasta el mínimo siguiente en el último año (y en la serie entera).",
+  },
+  volume: {
+    title: "Volumen (últimas 5 sesiones)",
+    description: "Si en la última semana se negociaron más o menos acciones de lo habitual, medido en desviaciones frente a las 90 sesiones anteriores (z).",
+  },
+  pead: {
+    title: "Resultados y deriva (PEAD)",
+    description:
+      "Cómo se movió la acción frente al S&P 500 alrededor de los últimos resultados trimestrales y en los días siguientes, y si el beneficio sorprendió frente al consenso.",
+    tip: "PEAD: deriva tras el anuncio de resultados, la tendencia del precio a seguir moviéndose en la dirección de la sorpresa.",
+  },
+  relative_strength: {
+    title: "Fuerza relativa frente al sector",
+    description:
+      "Rentabilidad de la acción menos la del ETF de su sector en el mismo periodo: dice si el movimiento es propio de la empresa o de todo su sector.",
+  },
+  sector_etf: {
+    title: "ETF del sector",
+    description:
+      "Fondo cotizado que reúne a las empresas grandes de un sector (XLK, tecnología; XLF, financiero; XLV, salud; y así con cada sector). Sirve de referencia para comparar la acción con su sector.",
   },
   pos52: {
     title: "Posición en el rango de 52 semanas",
@@ -210,6 +338,12 @@ export const DEFINITIONS: Record<string, Definition> = {
     description: "Cuánto beneficio genera la empresa por cada dólar de los accionistas.",
     formula: "Beneficio neto / patrimonio",
     bad: "Un ROE alto sostenido con mucha deuda es frágil: revisa el apalancamiento.",
+  },
+  rote: {
+    title: "ROTE (rentabilidad sobre el patrimonio tangible)",
+    description:
+      "Beneficio por cada dólar de patrimonio sin contar el fondo de comercio ni otros intangibles. En bancos es la rentabilidad con la que se lee el precio sobre el valor en libros tangible (P/TBV).",
+    formula: "Beneficio neto / patrimonio tangible",
   },
   roa: {
     title: "ROA (rentabilidad sobre activos)",

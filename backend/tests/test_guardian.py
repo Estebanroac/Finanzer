@@ -15,7 +15,11 @@ CASES = ([("panel", t) for t in fb.PANEL_TICKERS if t != "SPY"] if fb.panel_avai
 RULES = sorted(set(g.PREDICATES) | {"sin_respaldo", "ingles", "codigo_interno", "referencia_mercado", "veredicto",
                                      "base_ttm", "moneda", "no_aplica_con_cifra",
                                      "ratio_negativo_en_tarjeta", "identidad_dividendo",
-                                     "identidad_shareholder", "identidad_no_puntua"})
+                                     "identidad_shareholder", "identidad_no_puntua",
+                                     "periodo_roe", "ventana_crecimiento", "etiqueta_signo",
+                                     "kpi_sin_referencia", "mecanica_interna",
+                                     "nombre_puntua", "anglicismo", "una_verdad",
+                                     "puntuacion_doble", "frase_sin_cierre", "industria_en_ingles"})
 
 # Vacía desde la fase 1 (T3.1–T3.6): los 85 fallos con los que entró el guardián en rojo (T2) están arreglados.
 PANEL_KNOWN_FAILURES = {}

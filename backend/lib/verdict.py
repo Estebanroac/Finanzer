@@ -9,11 +9,11 @@ mecanismo de cobertura y "no aplica" de las etapas 5–6). Sin ninguna, sin dato
 
 El precio se CONTRAE hacia el neutro según la confianza del veredicto de
 valoración: mostrado = 50 + (crudo − 50) × factor (1.0 alta, 0.75 media, 0.5
-baja). La calidad no se contrae por la convergencia de métodos: solo se marca de
-baja confianza si su cobertura es baja (etapa 5).
+baja). F8 · E11: la calidad se contrae solo con confianza baja (factor 0.85); antes
+no se contraía nunca.
 
 Veredicto verbal: "Calidad [nivel] · precio [nivel]" + la confianza con su motivo
-principal, p. ej. "(confianza media: el DCF y los múltiplos discrepan)".
+principal, p. ej. "(confianza media: el DCF directo y los múltiplos discrepan)".
 """
 from typing import Any, Dict, List, Optional
 
@@ -44,7 +44,7 @@ def border(value: Optional[float], bands, labels) -> Optional[Dict[str, Any]]:
         return None
     pts, nb = best
     return {"neighbor": nb, "points": pts,
-            "text": f"en la frontera con «{nb}» (a {pts} punto{'s' if pts != 1 else ''}): "
+            "text": f"En la frontera con «{nb}» (a {pts} punto{'s' if pts != 1 else ''}): "
                     "un cambio pequeño en los datos o en los supuestos cambiaría el nivel"}
 
 
@@ -85,6 +85,34 @@ def quality(categories: List[Dict[str, Any]]) -> Dict[str, Any]:
     return q
 
 
+def contract_quality(q: Dict[str, Any], confidence_level: Optional[str]) -> Dict[str, Any]:
+    """F8 · E11 (auditoría del 26-oct, XOM: confianza baja con calidad 82 «excelente» sin contraer): con confianza
+    baja la calidad también se contrae hacia el neutro, mostrada = 50 + (cruda − 50) × factor
+    (`thresholds.score.quality.confidence_factor`; solo baja). Idempotente: parte siempre de la cruda."""
+    Q = cfg("thresholds.score.quality")
+    raw = q.get("score_raw", q.get("score"))
+    factor = Q["confidence_factor"].get(confidence_level) if confidence_level else None
+    shown = None if raw is None else (raw if factor is None else round(Q["neutral"] + (raw - Q["neutral"]) * factor))
+    return {**q, "score_raw": raw, "score": shown, "factor": factor, "contracted": raw is not None and shown != raw,
+            "level": _level(shown, Q["bands"], Q["labels"]), "level_raw": _level(raw, Q["bands"], Q["labels"]),
+            "border": border(shown, Q["bands"], Q["labels"])}
+
+
+def price_contraction_basis(conf: Optional[Dict[str, Any]], categories: List[Dict[str, Any]]) -> Optional[str]:
+    """Revisión de COST (hallazgo 4): la confianza con la que se contraen el precio y la calidad hacia 50. Solo contraen
+    los limitadores que contradicen el veredicto o lo vuelven incierto (discrepancia entre métodos, datos débiles,
+    dependencia de Ke); uno que apunta en su misma dirección no. El escalón de las tasas base (F10 · N4) apunta a «caro»:
+    no contrae un precio crudo por debajo del neutro (lo acercaría a 50: más atractivo) y sí uno por encima, al que
+    contradice."""
+    c = conf or {}
+    basis = c.get("contraction_basis") or c.get("level")
+    if not c.get("base_rate_step") or basis == c.get("level"):
+        return basis
+    P = cfg("thresholds.score.price")
+    raw = part_score(categories, P["categories"]).get("score")
+    return c["level"] if raw is not None and raw > P["neutral"] else basis
+
+
 def price(categories: List[Dict[str, Any]], confidence_level: Optional[str]) -> Dict[str, Any]:
     """Precio crudo, factor de la confianza y precio mostrado (contraído hacia el neutro)."""
     P = cfg("thresholds.score.price")
@@ -99,6 +127,17 @@ def price(categories: List[Dict[str, Any]], confidence_level: Optional[str]) -> 
     return p
 
 
+def reprice(p: Dict[str, Any], confidence_level: Optional[str]) -> Dict[str, Any]:
+    """F8 · E1: el mismo precio crudo con otra confianza (la prueba de sensibilidad de Ke la baja un escalón)."""
+    P = cfg("thresholds.score.price")
+    raw = p.get("score_raw")
+    factor = P["confidence_factor"].get(confidence_level) if confidence_level else None
+    shown = None if raw is None else (raw if factor is None else round(P["neutral"] + (raw - P["neutral"]) * factor))
+    return {**p, "score": shown, "factor": factor, "confidence": confidence_level,
+            "contracted": (raw is not None and shown != raw), "level": _level(shown, P["bands"], P["labels"]),
+            "border": border(shown, P["bands"], P["labels"])}
+
+
 def confidence_phrase(conf: Optional[Dict[str, Any]]) -> Optional[str]:
     """Motivo principal de la confianza en lenguaje llano (para el veredicto)."""
     if not conf or not conf.get("level"):
@@ -107,13 +146,19 @@ def confidence_phrase(conf: Optional[Dict[str, Any]]) -> Optional[str]:
     conv = dims.get("convergence") or {}
     ev = [m for m in conv.get("methods") or [] if m.get("evaluable")]
     methods = [m["method"] for m in ev]
-    names = {"DCF": "el DCF", "múltiplos frente al sector": "los múltiplos",
+    # PM (V7): siempre de qué DCF se habla («el DCF directo», como la fila de la tarjeta; el inverso ya se nombra así)
+    names = {"DCF": "el DCF directo", "múltiplos frente al sector": "los múltiplos",
              "P/B justificado (Gordon)": "el P/B justificado", "P/B frente al sector": "el P/B del sector"}
     pair = " y ".join(names.get(m, m) for m in methods)
     dirs = [m.get("direction") for m in ev]
     lvl = conv.get("level")
     if conf["level"] == "alta":
         return f"{pair} coinciden" if pair else "los métodos coinciden"
+    if conf.get("ke_dependent"):
+        return "el nivel de precio cambia con ±1 pp de coste del capital"
+    if conf.get("base_rate_step") and conf.get("contraction_basis") != conf["level"]:
+        # F10 · N4: el escalón de las tasas base es lo que la bajó
+        return "casi ninguna comparable sostuvo el crecimiento que exige el precio"
     if lvl == "baja":
         return f"{pair} discrepan"
     if lvl == "no_evaluable":

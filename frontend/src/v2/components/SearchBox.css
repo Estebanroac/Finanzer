@@ -1,0 +1,21 @@
+/* Rediseño E4: buscador de /v2 (barra general y portada). */
+.fz2 .searchbox { position: relative; width: 22.5rem; max-width: 100%; }
+.fz2 .searchbox .search { width: 100%; }
+.fz2 .searchbox .search::-webkit-search-cancel-button { cursor: pointer; }
+.fz2 .searchbox .search:focus-visible { outline: 2px solid var(--good); outline-offset: 1px; }
+.fz2 .searchbox .results, .fz2 .searchbox .no-results { position: absolute; z-index: 20; top: calc(100% + var(--s1)); left: 0; right: 0; }
+.fz2 .searchbox .results { list-style: none; margin: 0; padding: var(--s1) 0; max-height: 24rem; overflow-y: auto; text-align: left; }
+.fz2 .searchbox .results[hidden] { display: none; }
+.fz2 .searchbox li { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s3); padding: var(--s2) var(--s3); cursor: pointer; }
+.fz2 .searchbox li.on { background: var(--neutral); }
+.fz2 .searchbox .r-name { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fz2 .searchbox .r-meta { white-space: nowrap; font-size: var(--fs-ui); }
+.fz2 .searchbox .no-results { margin: 0; padding: var(--s2) var(--s3); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); font-size: var(--fs-ui); text-align: left; }
+/* Portada: el buscador grande. */
+.fz2 .searchbox.hero { width: 100%; max-width: 36rem; margin: 0 auto; }
+.fz2 .searchbox.hero .search { background: var(--surface); border-color: var(--line); border-radius: 12px; padding: var(--s3) var(--s4); font-size: var(--fs-body); }
+@media (max-width: 47.9375em) {
+  /* En la barra general del móvil no hay sitio: el buscador vive en la portada (lo enlaza la marca). */
+  .fz2 .topbar .searchbox, .fz2 .topbar .search-slot { display: none; }
+  .fz2 .searchbox.hero .search { display: block; }   /* v2.css oculta .search en el móvil: el de la portada, no */
+}

@@ -429,7 +429,8 @@ class StatementContext:
             out.update({"fx_symbols": syms,
                         "method": "balance al cierre de la fecha del período; resultados y flujos al promedio de "
                                   "los cierres diarios del período",
-                        "rates": self.rates})
+                        # por estado, en orden fijo: se convierten en descargas paralelas y el orden de llegada varía
+                        "rates": dict(sorted(self.rates.items()))})
             q = self.rates.get("quarterly_income_stmt") or {}
             if q:
                 last4 = sorted(q)[-4:]

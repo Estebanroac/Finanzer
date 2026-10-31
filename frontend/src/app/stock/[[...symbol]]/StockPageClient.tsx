@@ -73,7 +73,13 @@ function AnalysisContent({ data }: { data: StockAnalysis }) {
       <div className="fixed inset-0 -z-10 bg-[#050507]/70 pointer-events-none" />
       <Navbar symbol={data.symbol} />
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 pt-8 pb-16">
+      <main className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-8 pb-16">
+        {/* E6 · paso 2: durante la observación, la web actual sigue en /stock/{T} con este aviso discreto hacia la v4.
+            Va en el margen superior (absoluto): no mueve nada de la página. */}
+        <a href={`/v2/${encodeURIComponent(data.symbol)}`} data-testid="try-v4"
+          className="absolute right-4 sm:right-6 top-2 text-xs text-sky-300/80 hover:text-sky-200 hover:underline underline-offset-2">
+          Prueba la nueva versión →
+        </a>
         <StockHeader data={data} />
         <h2 className="fz-section-title fade-up delay-3">Resumen ejecutivo</h2>
         <SummarySection display={D} />

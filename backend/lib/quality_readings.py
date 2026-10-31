@@ -64,7 +64,9 @@ _DRIVER = {"margin": "el margen neto", "turnover": "la rotación de activos", "l
 
 def dupont_text(d: Dict[str, Any]) -> str:
     c = d["current"]
-    t = (f"ROE {_pct(c['roe'])} = margen neto {_pct(c['margin'])} × rotación de activos {c['turnover']:.2f} × "
+    # V7 (M2): el DuPont es del último ejercicio de los estados, no TTM: lo dice junto a la cifra.
+    fy = f" de FY{c['fy']}" if c.get("fy") else ""
+    t = (f"ROE{fy}: {_pct(c['roe'])} = margen neto {_pct(c['margin'])} × rotación de activos {c['turnover']:.2f} × "
          f"apalancamiento {c['leverage']:.2f}")
     if d.get("prior") and d.get("driver"):
         p = d["prior"]
@@ -98,14 +100,19 @@ def fcf_margin_trend(st: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     return out
 
 
-def rule_of_40(revenue_cagr_3y: Optional[float], fcf_sbc_margin: Optional[float]) -> Optional[Dict[str, Any]]:
+def rule_of_40(revenue_cagr_3y: Optional[float], fcf_sbc_margin: Optional[float], *, per_share: bool = False,
+               window: Optional[str] = None, margin_basis: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    """V7 (M2): cada sumando con su periodo (crecimiento anual de la ventana de 3 años; margen TTM o del ejercicio)."""
     if not _ok(revenue_cagr_3y, fcf_sbc_margin):
         return None
+    g_lab = "crecimiento de ingresos por acción" if per_share else "crecimiento de ingresos"
+    g_per = f" (anual, {window})" if window else " (anual, 3 años)"
+    m_per = f" ({margin_basis})" if margin_basis else ""
     v = revenue_cagr_3y + fcf_sbc_margin
     bar = cfg("thresholds.quality_readings.rule_of_40")
     return {"value": v, "growth": revenue_cagr_3y, "margin": fcf_sbc_margin, "meets": v >= bar,
-            "text": (f"Regla de 40: crecimiento de ingresos {_pct(revenue_cagr_3y)} + margen FCF − SBC "
-                     f"{_pct(fcf_sbc_margin)} = {v * 100:.0f} ("
+            "text": (f"Regla de 40: {g_lab} {_pct(revenue_cagr_3y)}{g_per} + margen FCF − SBC "
+                     f"{_pct(fcf_sbc_margin)}{m_per} = {v * 100:.0f} ("
                      + ("por encima" if v >= bar else "por debajo") + f" del listón de {bar * 100:.0f}).")}
 
 
@@ -116,14 +123,16 @@ def sbc_cost(sbc: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     raw, adj = sbc.get("fcf_margin_raw"), sbc.get("fcf_margin_adjusted")
     if not _ok(raw, adj):
         return None
+    per = f" ({sbc['basis']})" if sbc.get("basis") else ""   # V7 (M2): TTM o FY del ejercicio
     return {"sbc_to_revenue": r, "fcf_margin_raw": raw, "fcf_margin_adjusted": adj,
-            "text": (f"La compensación en acciones es el {_pct(r)} de los ingresos: un coste real que se paga en "
-                     f"dilución. Al restarla, el margen FCF baja del {_pct(raw)} al {_pct(adj)}; el DCF descuenta "
-                     "el FCF − SBC.")}
+            "text": (f"La compensación en acciones es el {_pct(r)} de los ingresos{per}: un coste real que se paga "
+                     f"en dilución. Al restarla, el margen FCF{per} baja del {_pct(raw)} al {_pct(adj)}; el DCF "
+                     "descuenta el FCF − SBC.")}
 
 
 def interest_coverage(st: Dict[str, Any], ebit_ttm: Optional[float], ebitda_ttm: Optional[float],
-                      interest_ttm: Optional[float], ffo_ttm: Optional[float] = None) -> Optional[Dict[str, Any]]:
+                      interest_ttm: Optional[float], ffo_ttm: Optional[float] = None,
+                      period: Optional[str] = None) -> Optional[Dict[str, Any]]:
     """Cobertura con EBIT y con EBITDA (TTM), con FFO en REIT, su tendencia por ejercicio y el respaldo de los
     intereses pagados."""
     yrs = st.get("inc_years") or []
@@ -132,10 +141,14 @@ def interest_coverage(st: Dict[str, Any], ebit_ttm: Optional[float], ebitda_ttm:
     ebit = st.get("ebit") or st.get("operating_income") or []
     basis = "gasto por intereses"
     i_ttm = abs(interest_ttm) if interest_ttm else None
+    paid_fy = None
     if not i_ttm:
-        p0 = next((abs(x) for x in paid if x), None)
-        if p0:
-            i_ttm, basis = p0, "intereses pagados (estado de flujos del último ejercicio): sin gasto por intereses"
+        k0 = next((k for k, x in enumerate(paid) if x), None)
+        if k0 is not None:
+            # V7 (M3): con los intereses pagados la cifra informa, pero el score (que usa el gasto por intereses de
+            # la cuenta de resultados) deja la cobertura sin dato: el texto lo reconcilia.
+            paid_fy = yrs[k0] if k0 < len(yrs) else None
+            i_ttm, basis = abs(paid[k0]), "intereses pagados (estado de flujos del último ejercicio): sin gasto por intereses"
     if not i_ttm:
         return None
     out = {"basis": basis, "ebit": (ebit_ttm / i_ttm) if ebit_ttm is not None else None,
@@ -153,16 +166,29 @@ def interest_coverage(st: Dict[str, Any], ebit_ttm: Optional[float], ebitda_ttm:
                         "fy_oldest": yrs[b] if b < len(yrs) else None,
                         "direction": "mejora" if r > 1 + thr else "empeora" if r < 1 - thr else "estable"}
     parts = []
+    top = cfg("thresholds.quality_readings.coverage_display_max")
+    per = f" ({period})" if period else ""   # V7 (M2): "TTM" o "último ejercicio"
+
+    def _x(v):   # V7 (M3): "más de 100 veces", no "526930.4 veces"
+        return f"más de {top:.0f}" if v > top else f"{v:.1f}"
+    # V7 (M3): un EBIT negativo no "cubre −5.0 veces" los intereses: no los cubre.
     if out["ebit"] is not None:
-        parts.append(f"el EBIT cubre {out['ebit']:.1f} veces los intereses")
+        parts.append(f"el EBIT{per} cubre {_x(out['ebit'])} veces los intereses" if out["ebit"] >= 0 else
+                     f"el EBIT{per} es negativo y no cubre los intereses")
     if out["ebitda"] is not None:
-        parts.append(f"el EBITDA, {out['ebitda']:.1f} veces")
+        parts.append(f"el EBITDA{per}, {_x(out['ebitda'])} veces" if out["ebitda"] >= 0 else
+                     f"el EBITDA{per} también es negativo")
     if out["ffo"] is not None:
-        parts.append(f"el FFO más los intereses, {out['ffo']:.1f} veces")
-    t = ("Cobertura (" + basis + "): " + "; ".join(parts)) if parts else None
+        parts.append(f"el FFO más los intereses, {_x(out['ffo'])} veces")
+    if paid_fy is None:
+        t = ("Cobertura (" + basis + "): " + "; ".join(parts)) if parts else None
+    else:
+        t = (f"Cobertura con los intereses pagados en FY{paid_fy} (estado de flujos): la cuenta de resultados no "
+             "separa el gasto por intereses, así que el score deja la cobertura sin dato y esta cifra solo informa: "
+             + "; ".join(parts)) if parts else None
     tr = out["trend"]
     if t and tr:
-        t += (f"; con el EBIT de cada ejercicio, de {tr['oldest']:.1f} veces en FY{tr['fy_oldest']} a "
-              f"{tr['latest']:.1f} en FY{tr['fy_latest']} ({tr['direction']})")
+        t += (f"; con el EBIT de cada ejercicio, de {_x(tr['oldest'])} veces en FY{tr['fy_oldest']} a "
+              f"{_x(tr['latest'])} en FY{tr['fy_latest']} ({tr['direction']})")
     out["text"] = (t + ".") if t else None
     return out

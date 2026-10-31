@@ -43,11 +43,54 @@ def altman_referential(industry: Optional[str]) -> bool:
     return norm_industry(industry) in cfg("sectors.business_model.altman_referential_industries")
 
 
-def piotroski_caveat(industry: Optional[str]) -> Optional[str]:
-    if not structural_negative_wc(industry):
+ALTMAN_REF_INDUSTRY = ("Referencial: el modelo de Altman no se diseñó para esta industria (pasivos por arrendamiento y "
+                      "circulante negativo estructurales); no puntúa")
+ALTMAN_REF_CAPTIVE = ("El Z de Altman no es comparable en empresas que consolidan una financiera cautiva (su deuda de "
+                      "financiación entra en el pasivo)")
+CAPTIVE_UNVERIFIED = ("sin los segmentos del emisor no se puede comprobar si consolida una financiera cautiva, en cuyo caso "
+                      "el Z no sería comparable")
+
+
+def captive_finance(segs: Optional[Dict[str, Any]], edgar_captive: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    """F8 · E10: ¿consolida el emisor una financiera cautiva? Una sola detección con las dos fuentes primarias:
+
+      · la deuda de la cautiva que ya separa lib/debt.py en la instancia XBRL (US GAAP; CAT: Cat Financial);
+      · los segmentos de negocio de su último informe anual (lib/segments.build; US GAAP e IFRS): uno de servicios
+        financieros (`captive_finance_segment_patterns` en su nombre) con al menos `captive_finance_segment_min_pct`
+        de los ingresos del último ejercicio.
+
+    {detected: True | False | None (sin segmentos: no se sabe), source, segment, share, reason}. Nada de proxies por
+    industria ni por nombre de empresa."""
+    B = cfg("sectors.business_model")
+    if (edgar_captive or {}).get("status") == "ok":
+        return {"detected": True, "source": "deuda de la financiera cautiva en el XBRL del emisor (SEC EDGAR)",
+                "segment": edgar_captive.get("name"), "share": None, "reason": None}
+    if not segs or segs.get("status") != "ok":
+        return {"detected": None, "source": None, "segment": None, "share": None,
+                "reason": (segs or {}).get("reason") or "sin los segmentos del emisor"}
+    axes = [{"axis": segs.get("axis"), "segments": segs.get("segments")}] + \
+        ([segs["secondary"]] if segs.get("secondary") else []) + list(segs.get("others") or [])
+    hits = [(s.get("label"), s.get("share_last")) for ax in axes if ax.get("axis") in B["captive_finance_segment_axes"]
+            for s in ax.get("segments") or []
+            if s.get("share_last") is not None and s["share_last"] >= B["captive_finance_segment_min_pct"]
+            and any(p in str(s.get("label") or "").lower() for p in B["captive_finance_segment_patterns"])]
+    if not hits:
+        return {"detected": False, "source": "segmentos de negocio del último informe anual (SEC EDGAR)",
+                "segment": None, "share": None, "reason": None}
+    label, share = max(hits, key=lambda h: h[1])
+    return {"detected": True, "source": "segmentos de negocio del último informe anual (SEC EDGAR)",
+            "segment": label, "share": share, "reason": None}
+
+
+def piotroski_caveat(cr_ctx: Optional[Dict[str, Any]], current_ratio: Optional[float]) -> Optional[str]:
+    """F8 · P3: la nota del Piotroski sale solo si el dato de la empresa la justifica: current ratio < 1 en una industria
+    de circulante negativo estructural y sin empeorar frente a su historia (`current_ratio_context.applies`). Antes
+    dependía solo de la industria y salía también con current ratio 1,23 (MSFT) o 7,2 (PLTR)."""
+    if not (cr_ctx or {}).get("applies") or current_ratio is None:
         return None
-    return ("En esta industria los criterios de liquidez (current ratio) y de margen bruto informan poco: el capital "
-            "circulante negativo y su estructura de márgenes son propios del modelo de negocio.")
+    return (f"Su current ratio es {current_ratio:.2f}x: por debajo de 1, como es propio del modelo de negocio de su "
+            "industria (capital circulante negativo), así que el criterio de mejora de la liquidez informa poco en "
+            "esta empresa.")
 
 
 def cr_history_text(ctx: Dict[str, Any]) -> Optional[str]:

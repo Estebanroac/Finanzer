@@ -55,13 +55,14 @@ def test_live_diffs_separate_rf_price_and_real():
     """Un 'live' fabricado con otra Rf, otro precio y un cambio real: cada grupo recoge lo suyo."""
     base = pr._replay_with("NFLX", "local")
     live = pr._replay_with("NFLX", "local", rf={"value": 0.04, "as_of": "2026-10-14"}, price=base["price"] * 1.01)
-    assert live["risk_free"]["value"] == 0.04
+    # F8 · E1: el ^TNX del día queda de referencia; el Rf del análisis es el del par Rf–ERP.
+    assert live["risk_free"]["market"]["value"] == 0.04 and live["risk_free"]["value"] == base["risk_free"]["value"]
     live = copy.deepcopy(live)
     live["quality"]["score"] += 1                       # diferencia real inyectada
     d = pr.classify_live_diffs("NFLX", live, env="local")
     assert d["solo_rf"] and d["solo_precio"]
     assert list(d["reales"]) == ["quality.score"]
-    assert d["rf_replay"] != d["rf_live"] == 0.04
+    assert d["rf_replay"] == d["rf_live"]
 
 
 def test_live_section_in_summary(tmp_path):

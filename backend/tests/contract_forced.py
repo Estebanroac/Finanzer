@@ -43,6 +43,17 @@ def build(outputs):
     q["display"] = display.build_display(q)
     assert any(g.get("negative") for g in q["display"]["charts"]["solvency"]["gauges"])
     out["SNOW_cobertura_negativa"] = q
+    # F10 · B2 (TKO, en vivo): un ejercicio anterior al primer informe anual del emisor, sin cifra y con su motivo.
+    t = copy.deepcopy(outputs["V"])
+    first = min(t["yearly_financials"], key=lambda r: r["year"])
+    first["net_income"] = None
+    t["data_provenance"].setdefault("edgar", {}).setdefault("primary", {})["before_first_filing"] = [
+        {"field": "net_income", "years": [f"{first['year']}-12-31"], "first": f"{first['year'] + 1}-12-31",
+         "reason": f"la empresa presenta sus cuentas en la SEC desde {first['year'] + 1}"}]
+    t["display"] = display.build_display(t)
+    pts = next(s for s in t["display"]["charts"]["historical"]["series"] if s["key"] == "net_income")["points"]
+    assert any(p.get("reason") for p in pts)
+    out["V_antes_del_primer_informe"] = t
     return out
 
 

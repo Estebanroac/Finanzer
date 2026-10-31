@@ -359,3 +359,47 @@ def test_results_8k_of_the_cut_itself_is_not_pending():
                "accessionNumber": "q3", "isXBRL": False})
     assert edgar.pending_results(fl, "2026-06-30")["accn"] == "q3"
 
+
+
+# ───────────── V2 (decisión del PM): portada del 20-F original frente a una enmienda ─────────────
+def _filing(form, filed, acc, period="2025-12-31"):
+    return {"form": form, "filingDate": filed, "reportDate": period, "accessionNumber": acc}
+
+
+def _covers(monkeypatch, pages):
+    """R1 de cada filing (por accn sin guiones); anota cuáles se piden."""
+    asked = []
+
+    def get(url, budget, fetcher=None):
+        acc = url.split("/")[-2]
+        asked.append(acc)
+        return pages[acc].encode()
+    monkeypatch.setattr(edgar, "_get", get)
+    edgar.reset()
+    return asked
+
+
+def test_cover_comes_from_the_original_when_the_amendment_is_part_iii_only(monkeypatch):
+    """Un 20-F/A de solo la Parte III (sin los títulos del 12(b)) no tapa la portada del 20-F del mismo ejercicio."""
+    orig = _cover("American Depositary Shares, each representing five ordinary shares")
+    part3 = "<html><body>Amendment No. 1 — Part III (Items 6, 7 and 10)</body></html>"
+    asked = _covers(monkeypatch, {"0001": orig, "0002": part3})
+    fl = [_filing("20-F/A", "2026-07-01", "0002"), _filing("6-K", "2026-06-01", "0009"), _filing("20-F", "2026-04-01", "0001")]
+    c = edgar.cover_factor(1, [f for f in fl if f["form"] != "6-K"], edgar.Budget(10.0))
+    assert c["factor"] == 5.0 and c["form"] == "20-F" and c["accn"] == "0001" and asked == ["0002", "0001"]
+
+
+def test_cover_comes_from_the_amendment_when_it_brings_the_full_cover(monkeypatch):
+    full = _cover("American Depositary Shares, each representing ten ordinary shares")
+    _covers(monkeypatch, {"0001": _cover("American Depositary Shares, each representing five ordinary shares"),
+                          "0002": full})
+    fl = [_filing("20-F/A", "2026-07-01", "0002"), _filing("20-F", "2026-04-01", "0001")]
+    c = edgar.cover_factor(1, fl, edgar.Budget(10.0))
+    assert c["factor"] == 10.0 and c["form"] == "20-F/A"
+
+
+def test_cover_without_amendment_is_unchanged(monkeypatch):
+    asked = _covers(monkeypatch, {"0003": _cover("American Depositary Shares, each representing two shares"),
+                                  "0001": _cover("American Depositary Shares, each representing five shares")})
+    fl = [_filing("20-F", "2027-04-01", "0003", "2026-12-31"), _filing("20-F", "2026-04-01", "0001")]
+    assert edgar.cover_factor(1, fl, edgar.Budget(10.0))["factor"] == 2.0 and asked == ["0003"]

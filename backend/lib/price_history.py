@@ -19,12 +19,14 @@ El descargador es inyectable (`FETCHER`): en producción, yfinance; en los tests
 import logging
 import threading
 import time
+from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Callable, Dict, List, Optional
 
 import pandas as pd
 
 from settings import cfg
+import bounded
 
 Fetcher = Callable[[str, str, str], Any]
 logger = logging.getLogger(__name__)
@@ -75,25 +77,31 @@ def normalize(raw) -> Optional[pd.DataFrame]:
     return None if df.empty or df["close"].notna().sum() == 0 else df
 
 
-def _download(symbol: str, fetcher: Fetcher, sleep=time.sleep, clock=time.perf_counter) -> Dict[str, Any]:
+def _download(symbol: str, fetcher: Fetcher, sleep=time.sleep, clock=time.perf_counter,
+              period: Optional[str] = None) -> Dict[str, Any]:
+    """`period`: el de la serie del motor (`market.history.period`) salvo que se pida otro (la gráfica de /v2)."""
     H = cfg("market.history")
+    period = period or H["period"]
     t0, reason, attempts = clock(), None, 0
     for attempt in range(H["max_attempts"]):
         if attempt:
             sleep(H["retry_pause_s"] * attempt)
         attempts += 1
         try:
-            frame = normalize(fetcher(symbol, H["period"], H["interval"]))
+            frame = normalize(fetcher(symbol, period, H["interval"]))
         except Exception as e:  # la fuente falla de muchas maneras: se registra el tipo y el mensaje
-            reason = f"{type(e).__name__}: {e}"
+            logger.warning(f"[PRICE_HISTORY] {symbol}: intento {attempts}: {type(e).__name__}: {e}")
+            reason = "Yahoo no respondió"
             continue
         if frame is not None:
             lat = clock() - t0
             logger.info(f"[PRICE_HISTORY] {symbol}: {len(frame)} sesiones en {lat:.2f}s ({attempts} intento/s)")
             return {"symbol": symbol, "frame": frame, "attempts": attempts, "latency_s": lat, "reason": None}
-        reason = "respuesta vacía"
+        reason = "Yahoo no devolvió la serie de precios"
+    # Verificación de la v4 (V3): el motivo se muestra en la página ("Sin gráfica de precio: …"): en lenguaje claro, sin
+    # el nombre de la excepción (va al log).
     return {"symbol": symbol, "frame": None, "attempts": attempts, "latency_s": clock() - t0,
-            "reason": f"sin serie tras {attempts} intentos ({reason})"}
+            "reason": f"{reason} ({attempts} intentos)"}
 
 
 def _cached(key: str, ttl: float, make: Callable[[], Dict[str, Any]], fail_ttl: float = 0.0) -> Dict[str, Any]:
@@ -105,7 +113,7 @@ def _cached(key: str, ttl: float, make: Callable[[], Dict[str, Any]], fail_ttl: 
             return ent[1]
     res = make()
     with _lock:
-        _cache[key] = (now, res)
+        bounded.put(_cache, key, (now, res), cfg("market.history.cache_max"))
     return res
 
 
@@ -193,6 +201,24 @@ def dividend_events(frame: Optional[pd.DataFrame]) -> List[tuple]:
     return [(ts.date(), float(v)) for ts, v in d[d > 0].items()]
 
 
+def day_change(frame: Optional[pd.DataFrame], price: Optional[float]) -> Dict[str, Any]:
+    """Rediseño E2a: variación del precio frente al cierre (sin ajustar) de la sesión anterior. La última fila es la
+    sesión del precio, aunque venga sin cierre (normalize la conserva a propósito: XOM)."""
+    def none(reason):
+        return {"status": "sin_dato", "prev_close": None, "change": None, "change_pct": None, "session": None,
+                "reason": reason}
+    if frame is None or price is None:
+        return none("sin serie de precios o sin precio")
+    if len(frame) < 2:
+        return none("una sola sesión en la serie")
+    prev = frame["close"].iloc[:-1].dropna()
+    if prev.empty or not prev.iloc[-1] > 0:
+        return none("sin cierre de la sesión anterior")
+    pc = float(prev.iloc[-1])
+    return {"status": "ok", "prev_close": pc, "change": price - pc, "change_pct": price / pc - 1,
+            "session": frame.index[-1].strftime("%Y-%m-%d"), "reason": None}
+
+
 def summary(res: Dict[str, Any]) -> Dict[str, Any]:
     """Registro para data_provenance.price_history (sin la serie)."""
     f = res.get("frame")
@@ -212,7 +238,68 @@ def summary(res: Dict[str, Any]) -> Dict[str, Any]:
     return out
 
 
+# ── Rediseño E2a (T9): serie larga para la gráfica de /v2 ──
+# Aparte de la del motor (2 años: beta, rango de 52 semanas, señales), que no cambia. Caché propia, acotada en número
+# de símbolos (`chart_cache_max`, Render tiene 512 MB) y en tiempo (`chart_cache_ttl_s`): la menos usada sale primero.
+_chart_cache: "OrderedDict[str, tuple]" = OrderedDict()
+
+
+def chart(symbol: str) -> Dict[str, Any]:
+    """Serie diaria de `chart_period` (5 años) del símbolo para la gráfica de /v2. Nunca lanza: sin serie, lo dice."""
+    H = cfg("market.history")
+    key = symbol.upper().strip()
+    now = time.time()
+    with _lock:
+        ent = _chart_cache.get(key)
+        if ent and now - ent[0] < H["chart_cache_ttl_s"] and ent[1]["frame"] is not None:
+            _chart_cache.move_to_end(key)
+            return ent[1]
+    return _chart_gate().run(key, lambda: _chart_download(key, H), lambda r: r["frame"] is None)
+
+
+def _chart_download(key: str, H: Dict[str, Any]) -> Dict[str, Any]:
+    now = time.time()
+    try:
+        res = _download(key, FETCHER, period=H["chart_period"])
+    except Exception as e:  # la fuente falla de muchas maneras: sin serie y se dice
+        res = {"symbol": key, "frame": None, "attempts": None, "latency_s": None, "reason": f"{type(e).__name__}: {e}"}
+    if res["frame"] is not None:
+        with _lock:
+            _chart_cache[key] = (now, res)
+            _chart_cache.move_to_end(key)
+            while len(_chart_cache) > H["chart_cache_max"]:
+                _chart_cache.popitem(last=False)
+    return res
+
+
+_gate: List[Any] = []
+
+
+def _chart_gate():
+    """V6 (B8): como mucho `chart_concurrency` descargas de la gráfica a la vez, una por símbolo, y un símbolo sin
+    serie se recuerda `chart_fail_ttl_s` (antes se volvía a descargar en cada consulta)."""
+    import lazy_gate
+    with _lock:
+        if not _gate:
+            H = cfg("market.history")
+            _gate.append(lazy_gate.Gate(H["chart_concurrency"], H["chart_fail_ttl_s"], H["chart_cache_max"]))
+        return _gate[0]
+
+
+def chart_market() -> Dict[str, Any]:
+    """La serie larga del S&P 500 (con el ETF que lo replica si el índice falla), como market()."""
+    P = cfg("market.price_series")
+    res = chart(P["market_symbol"])
+    if res["frame"] is None:
+        alt = dict(chart(P["market_fallback_symbol"]))
+        alt["fallback_of"] = {"symbol": P["market_symbol"], "reason": res["reason"]}
+        return alt
+    return res
+
+
 def reset() -> None:
     """Vacía la caché (tests)."""
     with _lock:
         _cache.clear()
+        _chart_cache.clear()
+        _gate.clear()

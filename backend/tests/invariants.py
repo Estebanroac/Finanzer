@@ -181,13 +181,15 @@ def cites_growth(block, raw):
 def growth_texts_cite_the_scored_figure(a, text):
     d = a["display"]
     adj = {x["metric"]: x for x in a["score"]["breakdown"]["Crecimiento"]["adjustments"]}
-    scored = (adj.get("Crecimiento Ingresos 3Y") or adj.get("Retorno total (dividendo + FFO por acción)") or {})
+    scored = (next((v for k, v in adj.items() if k.startswith("Crecimiento de ingresos ")), None)
+              or adj.get("Retorno total (dividendo + FFO por acción)") or {})
     rows = {r["key"]: r for r in d["sections"]["growth"]["rows"]}
     if scored.get("raw") is not None:
         key = "total_return" if d["archetype"] == "REIT" else "revenue_growth"
         assert rows[key]["value"] == dp.fv(scored["raw"], "pct")
         card = next(c for c in d["summary"]["cards"] if c["key"] == "revenue_growth")
-        assert card["value"] == f"{scored['raw'] * 100:.1f}"
+        # F9 · R3: la tarjeta, con la precisión de la fila (una cifra, una precisión en la web y en el PDF)
+        assert f"{card['value']}{card['unit']}" == dp.fv(scored["raw"], "pct")
         if d["archetype"] != "REIT":
             assert cites_growth(d["sections"]["growth"]["intro"], scored["raw"]), d["sections"]["growth"]["intro"]
             exec_g = next(e["text"] for e in d["summary"]["exec_items"] if e["label"] == "CRECIMIENTO Y RETORNO")
@@ -211,8 +213,16 @@ def price_wording_without_jargon(a, text):
     if a["price_attractiveness"].get("contracted"):
         pa = a["price_attractiveness"]
         # Fase 4 (T2): tras la contracción puede ir el aviso de frontera ("; en la frontera con «…»").
-        assert note.startswith(f"sin ajustar {pa['score_raw']} → ajustado a {pa['score']} "
-                               f"por confianza {pa['confidence']}")
+        if pa["score_raw"] != pa["score"]:   # V7 (M4): sin nota cuando el ajuste no mueve la cifra
+            c = a.get("confidence") or {}
+            if c.get("base_rate_step") and c.get("contraction_basis") != c.get("level"):
+                # F10 · N4: con el escalón de las tasas base, una sola confianza a la vista: la nota no nombra la
+                # base de contracción (que no es la que se muestra; está en confidence.contraction_basis)
+                assert note.startswith(f"ajustado de {pa['score_raw']} a {pa['score']} hacia 50")
+                assert f"por confianza {pa['confidence']}" not in note
+            else:
+                assert note.startswith(f"ajustado de {pa['score_raw']} a {pa['score']} "
+                                       f"por confianza {pa['confidence']}")
 
 
 # ═══════════════════════ test_quality_price ═══════════════════════
@@ -251,9 +261,13 @@ def multiples_block_averages_members_and_caps_at_max(a, text):
     # con el P/E que sí le aplica): cada miembro pertenece a uno y cada bloque se comprueba con los suyos.
     assert blk and sum(len(b["block_members"]) for b in blk) == len(members)
     for b in blk:
-        n = len(b["block_members"])
+        # F10 · N4: el máximo sale de las lecturas (P/E, Forward P/E y PEG son una, su media), no de los múltiplos
+        votes = b.get("block_votes") or {}
+        n = len(votes) if votes else len(b["block_members"])
         M = by_n[min(n, len(by_n)) - 1]
         assert b["block_max"] == M
+        if votes:
+            assert abs(b["block_mean"] - sum(votes.values()) / len(votes)) < 1e-9
         raw = b["block_mean"] * M
         assert abs(b["adjustment"]) <= M
         assert b["adjustment"] == int(abs(raw) + 0.5) * (1 if raw >= 0 else -1)
@@ -274,7 +288,7 @@ def normalized_figures_are_labelled(a, text):
         assert "P/E operativo" in text
         assert ("ROE normalizado" in metrics) == bool(en.get("quality_differs") and a["key_metrics"].get("roe") is not None)
         return
-    assert "ROE" not in metrics and "Margen Neto" not in metrics
+    assert "ROE" not in metrics and "Margen neto" not in metrics
     if "ROE normalizado" in metrics:
         assert all("ROE" not in x["reason"].split(" — ")[0] or "normalizado" in x["reason"]
                    for k in ("red_flags", "warnings", "strengths") for x in a["alerts"][k]
@@ -387,7 +401,10 @@ def chart_comparison_only_applicable_metrics(a, text):
     for g in c["groups"]:
         for i in g["items"]:
             assert (i["tone"] == "pos") == (i["reading"] in ("Muy superior", "Superior", "Descuento profundo",
-                                                              "Descuento")), i
+                                                              "Descuento", "Muy por debajo", "Por debajo")), i
+            # V7 (M3): la deuda se lee con vocabulario de nivel, no de precio ("descuento profundo")
+            if i["key"] == "de":
+                assert not re.search(r"descuento|prima", i["reading"], re.I), i
 
 
 def chart_multiples_role_matches_breakdown(a, text):

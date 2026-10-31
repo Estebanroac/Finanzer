@@ -5,7 +5,7 @@ from settings import cfg
 
 
 def _rev(r):
-    return next(a for a in r["adjustments"] if a["metric"].startswith(("Crecimiento Ingresos", "Retorno total")))
+    return next(a for a in r["adjustments"] if a["metric"].startswith(("Crecimiento de ingresos", "Retorno total")))
 
 
 def test_high_dividend_mature_growth_is_total_return():
@@ -23,9 +23,9 @@ def test_high_dividend_mature_growth_is_total_return():
     assert abs(a["raw"] - (y + 0.01 + 0.035)) < 1e-12 and "ingresos por acción +3.5%" in a["reason"]
     # Por debajo del umbral, o fuera de MATURE, sigue siendo crecimiento de ingresos.
     assert _rev(score_crecimiento(0.01, 0.02, 0.02, archetype=MATURE, dividend_yield=y - 0.01))["metric"] == \
-        "Crecimiento Ingresos 3Y"
+        "Crecimiento de ingresos a 3 años"
     assert _rev(score_crecimiento(0.01, 0.02, 0.02, archetype=GROWTH_PROFITABLE, dividend_yield=y + 0.01))[
-        "metric"] == "Crecimiento Ingresos 3Y"
+        "metric"] == "Crecimiento de ingresos a 3 años"
 
 
 def test_base_le_zero_is_not_significant_and_category_stays():

@@ -25,7 +25,9 @@ def C(sector, industry, eps=1.0, nm=0.1, st=STEADY):
 def test_bank():
     c = C("Financial Services", "Banks - Regional")
     assert c["archetype"] == FINANCIAL and c["rule"] == "industria_banco"
-    assert c["reason"] == "Clasificada como FINANCIAL por industria Banks - Regional (banco)"
+    # V7 (nombres en español): la industria en español; el original sigue en c["industry"]
+    assert c["reason"] == "Clasificada como FINANCIAL por industria Bancos regionales (banco)"
+    assert c["industry"] == "Banks - Regional"
 
 
 def test_bank_with_prod_em_dash():
@@ -73,7 +75,7 @@ def test_ambiguous_financial_industry_is_financial_and_flagged(industry):
 
 def test_reit():
     c = C("Real Estate", "REIT - Retail")
-    assert c["archetype"] == REIT and c["reason"] == "Clasificada como REIT por industria REIT - Retail"
+    assert c["archetype"] == REIT and c["reason"] == "Clasificada como REIT por industria REIT de locales comerciales"
     assert C("Real Estate", "REIT—Healthcare Facilities")["archetype"] == REIT
 
 
@@ -229,7 +231,7 @@ def test_six_tickers_both_envs(outputs_by_env):
             c = a["classification"]
             assert c["archetype"] == EXPECTED[sym], (env, sym, c["reason"])
     assert outputs_by_env(conftest.ENVS[0])["O"][0]["classification"]["reason"] == \
-        "Clasificada como REIT por industria REIT - Retail"
+        "Clasificada como REIT por industria REIT de locales comerciales"
 
 
 @pytest.mark.parametrize("sym,arch", [("TRV", FINANCIAL), ("FOR", CYCLICAL),

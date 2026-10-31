@@ -39,13 +39,13 @@ MIGRATED = {
         "read_vs_sector", "read_pe", "read_roe", "read_spread", "read_current", "read_de",
         "read_coverage", "read_nde", "read_payout", "read_growth", "read_upside", "read_graham",
         "read_beta", "read_pos52", "read_buyback", "read_fcf_yield", "category_tone",
-        "build_display", "vs_bench_bands", "score_bands", "band_tooltips",
+        "build_display", "vs_bench_bands", "score_bands", "band_tooltips", "sensitivity_band",
     ],
     "lib/validate.py": [
         "growth_guard", "_rule_fcf", "_rule_impossible", "_rule_margins", "_rule_units",
         "_rule_growth", "_rule_split_basis", "_rule_jumps", "validate_outputs",
     ],
-    "main.py": ["_get_sector_benchmarks", "_compute_analysis"],
+    "main.py": ["_get_sector_benchmarks", "_compute_analysis_body"],
     # Etapa 8: coste de capital, fiabilidad del DCF y confianza del veredicto.
     "lib/cost_of_capital.py": ["risk_free", "effective_tax_rate", "synthetic_rating", "cost_of_equity", "wacc"],
     "lib/valuation_confidence.py": [
@@ -79,23 +79,27 @@ EXCEPTIONS = {
         "tolerancia de comparación de floats (¿cambió el valor tras la guarda?)",
     ("lib/alert_interpretations.py", "_piotroski", 9):
         "número de señales del Piotroski F-Score (por definición)",
-    ("main.py", "_compute_analysis", 3):
+    ("main.py", "_compute_analysis_body", 3):
         "ventana de los CAGR a 3 años (definición; etapa 7: FCF y crecimiento por acción)",
-    ("main.py", "_compute_analysis", 15):
+    ("main.py", "_compute_analysis_body", 15):
         "longitud máxima de un ticker en la validación de entrada de la API",
     ("lib/cost_of_capital.py", "risk_free", 3600): "segundos por hora (caché de 24 h en config)",
+    ("lib/market_signals.py", "beta", 2):
+        "F8 · E1: grados de libertad de la regresión simple (n − 2) en el error estándar de la pendiente",
     ("lib/valuation_confidence.py", "convergence", 2):
         "convergencia: hacen falta al menos dos métodos para contrastar (definición)",
     ("lib/display.py", "build_display", 20):
         "máximo por defecto de una categoría (escala 0–20 del score, por definición)",
     ("lib/display.py", "build_display", 9): "número de señales del Piotroski F-Score (por definición)",
-    ("lib/display.py", "build_display", 2): "índice de la 3.ª de las 5 bandas de color del grid (posición, no umbral)",
-    ("lib/display.py", "build_display", 3): "índice de la 4.ª de las 5 bandas de color del grid (posición, no umbral)",
-    ("lib/display.py", "build_display", 4): "índice de la 5.ª de las 5 bandas de color del grid (posición, no umbral)",
-    ("main.py", "_compute_analysis", 400): "código HTTP",
-    ("main.py", "_compute_analysis", 404): "código HTTP",
-    ("main.py", "_compute_analysis", 500): "código HTTP",
-    ("main.py", "_compute_analysis", 422): "código HTTP (etapa 11b: ETF o fondo; estados sin tipo de cambio)",
+    # Revisión V6 (F17): la banda de cada celda de sensibilidad sale de build_display a una función compartida con el
+    # escenario de /v2 (sensitivity_band); los índices siguen siendo posiciones, no umbrales.
+    ("lib/display.py", "sensitivity_band", 2): "índice de la 3.ª de las 5 bandas de color del grid (posición, no umbral)",
+    ("lib/display.py", "sensitivity_band", 3): "índice de la 4.ª de las 5 bandas de color del grid (posición, no umbral)",
+    ("lib/display.py", "sensitivity_band", 4): "índice de la 5.ª de las 5 bandas de color del grid (posición, no umbral)",
+    ("main.py", "_compute_analysis_body", 400): "código HTTP",
+    ("main.py", "_compute_analysis_body", 404): "código HTTP",
+    ("main.py", "_compute_analysis_body", 500): "código HTTP",
+    ("main.py", "_compute_analysis_body", 422): "código HTTP (etapa 11b: ETF o fondo; estados sin tipo de cambio)",
     ("lib/reverse_dcf.py", "implied_growth", 2): "punto medio de la bisección (definición)",
 }
 

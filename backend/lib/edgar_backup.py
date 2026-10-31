@@ -25,6 +25,8 @@ from typing import Any, Dict, List, Optional
 
 from settings import cfg
 
+import numfmt
+
 import sec_edgar as edgar
 
 # Campo del corte (info) -> campo de EDGAR (sec_edgar.CONCEPTS)
@@ -193,7 +195,9 @@ def recut(info: Dict[str, Any], ed: Dict[str, Any], ctx=None) -> Optional[Dict[s
             info["_ordinary_src"] = {"period_type": "ttm", "netIncomeToCommon": None, **(lb.get("ordinary") or {})}
 
         tt = info.setdefault("_ttm", {})
-        tt.update(basis="ttm_edgar", cut=end, annual_fields={}, recut=f"SEC EDGAR: {rec['how']}")
+        tt.update(basis="ttm_edgar", cut=end, annual_fields={}, recut=f"SEC EDGAR: {rec['how']}",
+                  # F10 · N1b: las discontinuadas del mismo corte (el normalizado parte del continuado)
+                  discontinued=edgar.discontinued_ttm(facts, at, tol))
         return rec
     return None
 
@@ -277,6 +281,7 @@ def _apply_fy(info: Dict[str, Any], facts: Dict[str, Any], ctx, tol: int, log: D
                               "accns": r["accns"], "value": vals[i]})
         if changed:
             st[row] = vals
+    _apply_fy_eps(st, facts, ctx, tol, covered["inc"], log)
     # FCF anual = OCF − capex donde el respaldo completó uno de los dos y la fila no lo trae
     if any(x["field"] in ("FY.operating_cash_flow", "FY.capital_expenditure") for x in log["fy"]):
         ocf, capex = st.get("operating_cash_flow") or [], st.get("capital_expenditure") or []
@@ -289,6 +294,55 @@ def _apply_fy(info: Dict[str, Any], facts: Dict[str, Any], ctx, tol: int, log: D
             if fcf[i] is None and o is not None and c is not None:
                 fcf[i] = o + c if c <= 0 else o - c
         st["free_cash_flow"] = fcf
+
+
+def _apply_fy_eps(st: Dict[str, Any], facts: Dict[str, Any], ctx, tol: int, covered, log: Dict[str, Any]) -> None:
+    """Revisión de COST (hallazgo 2, regla general): un ejercicio sin BPA diluido toma el de EDGAR y, si el emisor no lo
+    etiqueta, beneficio neto ÷ acciones diluidas medias de EDGAR. COST: Yahoo traía el beneficio de FY2026 sin su BPA ni
+    sus acciones diluidas, y el crecimiento del BPA salía «sin dato» con 10 años de beneficio. De la historia de EDGAR
+    (sec_edgar.annual_history: ejercicios enteros de formularios anuales, ajustados por splits)."""
+    ends = st.get("inc_ends") or []
+    vals = list(st.get("diluted_eps") or [])
+    vals += [None] * (len(ends) - len(vals))
+    gaps = [i for i, end in enumerate(ends) if end and vals[i] is None and i in covered]
+    if not gaps:
+        return
+    hist = {f: edgar.annual_history(facts, f)["values"] for f in ("diluted_eps", "net_income", "diluted_shares")}
+
+    def at(field, end):
+        return next((v for v in hist[field] if edgar._near(v["fy_end"], _dt.date.fromisoformat(end), tol)), None)
+
+    def edgar_eps(end):
+        eps, ni, sh = at("diluted_eps", end), at("net_income", end), at("diluted_shares", end)
+        if eps is not None:
+            return eps["value"], eps["concept"], "BPA diluido del ejercicio en EDGAR"
+        if ni is not None and sh is not None and sh["value"]:
+            return (ni["value"] / sh["value"], f"{ni['concept']} ÷ {sh['concept']}",
+                    "beneficio neto ÷ acciones diluidas medias del ejercicio en EDGAR (el emisor no etiqueta el BPA)")
+        return None
+    # La serie no mezcla bases: en el ejercicio común más reciente, el BPA de EDGAR tiene que cuadrar con el de Yahoo
+    # (un ADR por acción ordinaria o un split sin ajustar no cuadran).
+    common = next(((j, e) for j, e in enumerate(ends) if e and vals[j] is not None and edgar_eps(e)), None)
+    if common is not None:
+        j, e = common
+        ours = _convert(ctx, float(edgar_eps(e)[0]), "flow", e)
+        if not edgar._close(ours, vals[j], cfg("data.edgar.history_eps_abs_tol")):
+            log["skipped"].append({"field": "FY.diluted_eps",
+                                   "reason": (f"el BPA de EDGAR del ejercicio cerrado el {e} ({ours:.2f}) no cuadra con "
+                                              f"el de la fuente ({vals[j]:.2f}): otra base, no se mezclan")})
+            return
+    changed = False
+    for i in gaps:
+        got = edgar_eps(ends[i])
+        if got is None:
+            continue
+        value, concept, how = got
+        vals[i] = _convert(ctx, float(value), "flow", ends[i])
+        changed = True
+        log["fy"].append({"field": "FY.diluted_eps", "fy_end": ends[i], "concept": concept, "how": how,
+                          "value": vals[i]})
+    if changed:
+        st["diluted_eps"] = vals
 
 
 EBIT_ESTIMATED = "estimado por la fuente"
@@ -314,6 +368,9 @@ def ebit_check(info: Dict[str, Any], ed: Dict[str, Any], ctx=None) -> Optional[D
     unit, stmt_cur = edgar.reporting_unit(facts, edgar.taxonomy(facts)), _statement_currency(info)
     if stmt_cur and unit != stmt_cur:
         return {"status": "sin_edgar", "reason": f"EDGAR presenta en {unit} y Yahoo en {stmt_cur}"}
+    if info.get("_ebit_not_homogeneous"):
+        # F10 · perímetro: el TTM de EDGAR no es homogéneo (edgar_primary); no hay con qué contrastar la fuente
+        return {"status": "no_homogeneo", "reason": info["_ebit_not_homogeneous"]}
     r = edgar.field_value(facts, "operating_income", _dt.date.fromisoformat(cut),
                           cfg("data.edgar.report_date_tolerance_days"))
     if r is None:
@@ -367,3 +424,29 @@ def official_source(ed: Dict[str, Any], today: _dt.date) -> Dict[str, Any]:
         out.update(status="verificado_fy", reason=why,
                    note=f"Verificado con el FY {fy}: {why}." if fy else f"Verificación oficial parcial: {why}.")
     return out
+
+
+def staleness(cut: Optional[str], filings: Optional[List[Dict[str, Any]]], today: _dt.date) -> Dict[str, Any]:
+    """F8 · E6: frescura de los estados del corte frente a EDGAR -> data_provenance.staleness.
+
+    status: "desfasado" (EDGAR tiene un 10-Q/10-K, o un 6-K con XBRL, de un periodo posterior al corte) · "al_dia" ·
+    "sin_dato" (sin corte o sin los filings de EDGAR). `coverage_capped`: desfasado y con más de
+    `data.edgar.stale_coverage_days` días desde el cierre del corte; la cobertura de la confianza no pasa de «media».
+    Un 8-K de resultados no desfasa (no trae estados): lo avisa `pending_results`."""
+    out = {"status": "sin_dato", "cut": cut, "days_since_cut": None, "edgar_latest": None, "coverage_capped": False,
+           "text": None}
+    if not cut or filings is None:
+        return out
+    days = (today - _dt.date.fromisoformat(cut)).days
+    out.update(status="al_dia", days_since_cut=days)
+    newer = edgar.newer_statements(filings, cut)
+    if not newer:
+        return out
+    f = max(newer, key=lambda x: (x.get("reportDate") or "", x["filingDate"]))
+    out.update(status="desfasado", coverage_capped=days > cfg("data.edgar.stale_coverage_days"),
+               edgar_latest={"form": f["form"], "report_date": f.get("reportDate"), "filed": f["filingDate"],
+                             "accn": f["accessionNumber"], "source": "SEC EDGAR"},
+               text=(f"Estados desfasados: cifras al {numfmt.date_long(cut)} ({days} días); la SEC ya tiene el "
+                     f"{f['form']} al {numfmt.date_long(f.get('reportDate'))}"))
+    return out
+

@@ -66,12 +66,18 @@ def ind_drawdown(dates, c, years):
     return worst, out
 
 
-def ind_rel(dates, c, edates, e, window):
-    common = sorted(set(dates) & set(edates))
-    pc = dict(zip(dates, c))
-    pe = dict(zip(edates, e))
-    a, b = common[-1 - window], common[-1]
-    return (pc[b] / pc[a] - 1) - (pe[b] / pe[a] - 1)
+def ind_rel(dates, c, edates, e, days):
+    """F8 · P3: la regla de la tabla de rentabilidades (lib/price_returns), escrita aparte: el periodo acaba en la
+    última sesión de la empresa y empieza `days` días naturales antes; cada serie, de su primer cierre en o después
+    del inicio a su último cierre hasta el final."""
+    end = dates[-1]
+    start = end - _dt.timedelta(days=days)
+
+    def ret(ds, xs):
+        pts = [(d, x) for d, x in zip(ds, xs) if d <= end and not np.isnan(x)]
+        first = next(x for d, x in pts if d >= start)
+        return pts[-1][1] / first - 1
+    return ret(dates, c) - ret(edates, e)
 
 
 def ind_volume(v):
@@ -99,7 +105,9 @@ def _weekly(dates, c):
 
 def ind_beta(dates, c, mdates, m):
     r, rm = _weekly(dates, c), _weekly(mdates, m)
-    weeks = sorted(set(r) & set(rm))[-104:]
+    # F10: sin la semana de la última sesión (de cualquiera de las dos series): solo semanas completas
+    open_week = max(_week_end(dates[-1]), _week_end(mdates[-1]))
+    weeks = sorted(w for w in set(r) & set(rm) if w < open_week)[-104:]
     x = np.array([rm[w] for w in weeks])
     y = np.array([r[w] for w in weeks])
     slope = np.polyfit(x, y, 1)[0]
@@ -125,9 +133,9 @@ def test_independent_contrast(ticker):
         got = sig["max_drawdown"][str(y)]
         assert got["value"] == pytest.approx(worst, rel=TOL, abs=TOL)
         assert (got["peak_date"], got["trough_date"]) == (peak.isoformat(), trough.isoformat())
-    for w in (126, 252):
-        assert sig["relative_strength"]["windows"][str(w)]["difference"] == pytest.approx(
-            ind_rel(dates, c, edates, e, w), rel=TOL, abs=TOL)
+    for key, days in (("6M", 182), ("1A", 365)):
+        assert sig["relative_strength"]["windows"][key]["difference"] == pytest.approx(
+            ind_rel(dates, c, edates, e, days), rel=TOL, abs=TOL)
     assert sig["abnormal_volume"]["value"] == pytest.approx(ind_volume(v), rel=TOL, abs=TOL)
     assert sig["range_52w_position"]["value"] == pytest.approx(ind_range(c), rel=TOL, abs=TOL)
     b, r2, n = ind_beta(dates, c, mdates, m)
@@ -145,7 +153,9 @@ def test_independent_contrast_uses_the_configured_windows():
     assert (S["momentum"]["lookback_sessions"], S["momentum"]["skip_sessions"]) == (252, 21)
     assert (S["trend"]["sma_sessions"], S["trend"]["slope_sessions"]) == (200, 21)
     assert S["volatility"]["window_sessions"] == 252 and S["sessions_per_year"] == 252
-    assert tuple(S["relative_strength"]["windows_sessions"]) == (126, 252)
+    assert tuple(S["relative_strength"]["windows"]) == ("6M", "1A")      # F8 · P3: los periodos de la tabla
+    days = dict(zip(cfg("market.price_returns.range_keys"), cfg("market.price_returns.range_days")))
+    assert (days["6M"], days["1A"]) == (182, 365)
     assert (S["volume"]["recent_sessions"], S["volume"]["baseline_sessions"]) == (5, 90)
     assert S["range52"]["window_sessions"] == 252 and tuple(S["drawdown"]["windows_years"]) == (1, 3)
     assert (S["beta"]["frequency"], S["beta"]["window_weeks"]) == ("W-FRI", 104)
@@ -159,9 +169,13 @@ def beta_2a_weekly_returns(series):
     return s.pct_change().dropna()
 
 
-def beta_2a(r, rm):
-    """Copia literal de tests/beta_ref.py, rama fiabilidad/f2a-medir, commit f8f13df."""
-    df = pd.concat([r, rm], axis=1, join="inner").dropna().tail(104)
+def beta_2a(r, rm, open_week=None):
+    """Copia literal de tests/beta_ref.py, rama fiabilidad/f2a-medir, commit f8f13df. F10: con `open_week`, sin la
+    semana de la última sesión (solo semanas completas)."""
+    df = pd.concat([r, rm], axis=1, join="inner").dropna()
+    if open_week is not None:
+        df = df[df.index.normalize() < open_week]
+    df = df.tail(104)
     if len(df) < 52:
         return None, len(df)
     cov = df.iloc[:, 0].cov(df.iloc[:, 1])
@@ -178,7 +192,8 @@ def _ref_2a():
 def test_beta_equals_the_2a_method_on_the_same_series(ticker):
     s = _series(ticker)
     co, mk = s["series"]["company"]["frame"]["close"], s["series"]["market"]["frame"]["close"]
-    ref, n = beta_2a(beta_2a_weekly_returns(co), beta_2a_weekly_returns(mk))
+    ow = pd.Timestamp(max(co.dropna().index[-1], mk.dropna().index[-1])).to_period("W-FRI").end_time.normalize()
+    ref, n = beta_2a(beta_2a_weekly_returns(co), beta_2a_weekly_returns(mk), ow)
     got = ms.beta(co, mk, s["market_symbol"])
     assert got["raw"] == pytest.approx(ref, rel=1e-12, abs=1e-12) and got["observations"] == n
 
@@ -192,8 +207,16 @@ TOL_VS_2A_NUMBERS = 0.02
 @needs_fixtures
 @pytest.mark.parametrize("ticker", sorted(_ref_2a()["betas"]) if pf.available() else [])
 def test_beta_matches_the_numbers_left_by_the_2a(ticker):
+    """F10: la 2a midió con su última semana aún abierta, que ahora se descarta. Con una sesión de la semana siguiente
+    (mismo cierre), esa semana queda completa y la ventana vuelve a ser la de la 2a."""
     ref = _ref_2a()["betas"][ticker]
-    got = ms.all_signals(_series(ticker))["beta"]
+    s = _series(ticker)
+    for k in ("company", "market"):
+        f = s["series"][k]["frame"]
+        nxt = f.iloc[[-1]].copy()
+        nxt.index = [f.index[-1] + pd.offsets.Week(weekday=0)]          # el lunes siguiente
+        s["series"][k]["frame"] = pd.concat([f, nxt])
+    got = ms.all_signals(s)["beta"]
     assert got["observations"] == ref["semanas"]
     assert abs(got["raw"] - ref["beta_ref"]) <= TOL_VS_2A_NUMBERS, (got["raw"], ref["beta_ref"])
 
@@ -244,9 +267,10 @@ def test_short_history_ipo_is_historia_insuficiente(n, expected):
 def test_relative_strength_short_common_history():
     close, _ = _synthetic(600)
     etf, _ = _synthetic(200, seed=5)
+    etf.index = close.index[-200:]          # el ETF cubre las últimas 200 sesiones de la empresa (~9 meses)
     r = ms.relative_strength(close, etf)
     assert r["status"] == "historia_insuficiente"
-    assert r["windows"]["126"]["status"] == "ok" and r["windows"]["252"]["status"] == "historia_insuficiente"
+    assert r["windows"]["6M"]["status"] == "ok" and r["windows"]["1A"]["status"] == "historia_insuficiente"
 
 
 def test_missing_inputs_are_sin_dato():
@@ -413,3 +437,42 @@ def test_market_context_never_feeds_the_scores():
         if name.endswith(".py") and name not in ("market_context.py", "display.py", "pdf_report.py"):
             src = open(os.path.join(backend, "lib", name), encoding="utf-8").read()
             assert '"market_context"' not in src, f"{name} lee el contexto de mercado"
+
+
+# ── F10 (PM, 29-oct; MSCI): la beta solo con semanas completas ──
+# MSCI pasó de R² 0,202 a 0,199 entre dos pasadas del mismo día: la última semana (aún abierta) cambiaba con el precio
+# intradía y la beta cruzaba el filtro de R² 0,20 (beta propia 0,87 o la del sector 0,49). La semana de la última
+# sesión se descarta siempre: el resultado no depende de la hora del día.
+
+def _pair(n=700, seed=11):
+    rng = np.random.default_rng(seed)
+    idx = pd.bdate_range("2024-01-01", periods=n)
+    m = pd.Series(100 * np.exp(np.cumsum(rng.normal(0, 0.01, n))), index=idx)
+    c = pd.Series(50 * np.exp(np.cumsum(0.9 * np.log(m / m.shift(1)).fillna(0) + rng.normal(0, 0.02, n))), index=idx)
+    return c, m
+
+
+def test_la_beta_descarta_la_semana_de_la_ultima_sesion():
+    c, m = _pair()
+    got = ms.beta(c, m, "^GSPC")
+    last_full = (c.index[-1] - pd.offsets.Week(weekday=4)).normalize()      # el viernes anterior a la última sesión
+    assert pd.Timestamp(got["last_week"]) <= last_full
+    assert pd.Timestamp(got["last_week"]) < c.index[-1].normalize() or c.index[-1].weekday() != 4
+
+
+def test_la_beta_no_cambia_con_el_precio_intradia_de_hoy():
+    c, m = _pair()
+    base = ms.beta(c, m, "^GSPC")
+    c2, m2 = c.copy(), m.copy()
+    c2.iloc[-1] *= 1.07                                              # el precio de la sesión en curso se mueve
+    m2.iloc[-1] *= 0.97
+    moved = ms.beta(c2, m2, "^GSPC")
+    assert (moved["raw"], moved["r2"], moved["observations"]) == (base["raw"], base["r2"], base["observations"])
+
+
+def test_una_sesion_mas_de_la_misma_semana_no_cambia_la_beta():
+    c, m = _pair(n=702)
+    # 702 sesiones laborables desde un lunes: la última es miércoles; quitar la última deja la misma semana abierta
+    assert c.index[-1].weekday() in (1, 2, 3, 4) and c.index[-2].isocalendar()[1] == c.index[-1].isocalendar()[1]
+    a, b = ms.beta(c, m, "^GSPC"), ms.beta(c.iloc[:-1], m.iloc[:-1], "^GSPC")
+    assert (a["raw"], a["observations"], a["last_week"]) == (b["raw"], b["observations"], b["last_week"])

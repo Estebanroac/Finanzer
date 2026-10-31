@@ -86,7 +86,7 @@ export default function AnalyzeOverlay({
           <div className="ao-sweep" />
           <div className="ao-orbit"><span className="p" /></div>
           <div className="ao-orbit o2"><span className="p" /></div>
-          <img className="ao-logo" src="/logo.png" alt="" />
+          <img className="ao-logo" src="/brand/finanzer-logo.svg" alt="" />
         </div>
         <div className="ao-label">
           Analizando <b>{symbol}</b> · fundamentales

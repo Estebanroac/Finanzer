@@ -401,8 +401,9 @@ def test_prod_provenance_marks_finnhub_and_statements(outputs_by_env):
     if "panel" not in conftest.BOUND_ENVS:
         pytest.skip("falta el panel")
     f = outputs_by_env("panel")["NFLX"][0]["data_provenance"]["fields"]
-    # Fase 2b (T6): la beta sale de la serie de precios (propia); Finnhub queda en lo que solo él da.
-    assert f["beta"]["source"] == "derivado" and "2 años semanales" in f["beta"]["detail"]
+    # Fase 2b (T6): la beta sale de la serie de precios; Finnhub queda en lo que solo él da. F8 · E1: la propia de NFLX
+    # (R² 0,15) no pasa los filtros y entra la de abajo hacia arriba, derivada igual.
+    assert f["beta"]["source"] == "derivado" and "de abajo hacia arriba" in f["beta"]["detail"]
     assert f["_yahoo_ratios.forwardPE"]["source"] == "finnhub"
     # Fase 2b (T7): el forwardPE de Finnhub declara que es una estimación de consenso de horizonte no documentado.
     assert "horizonte no documentado" in f["_yahoo_ratios.forwardPE"]["detail"]

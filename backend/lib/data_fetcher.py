@@ -588,11 +588,15 @@ class FinancialDataService:
             "sector_averages": None,
             "contextual": {},
             "errors": [],
+            # Verificación de la v4 (V3): la fuente no respondió (conexión o tiempo agotado). Sin perfil, el análisis
+            # lo dice así en lugar de "No data found" (como si el símbolo no existiera).
+            "source_unavailable": False,
             "_timing": {}  # Para debug de performance
         }
         
         if not self.yahoo_available:
             result["errors"].append("Yahoo Finance no disponible")
+            result["source_unavailable"] = True
             logger.error("Yahoo Finance no está disponible")
             return result
         
@@ -649,12 +653,14 @@ class FinancialDataService:
 
                     except FuturesTimeoutError:
                         results_parallel[task_name] = None
+                        result["source_unavailable"] = True
                         error_msg = f"Timeout ({PARALLEL_TASK_TIMEOUT}s) en {task_name}"
                         result["errors"].append(error_msg)
                         logger.warning(f"⏱ {error_msg} para {symbol}")
 
                     except ConnectionError as e:
                         results_parallel[task_name] = None
+                        result["source_unavailable"] = True
                         error_msg = f"Error de conexión en {task_name}: {str(e)[:100]}"
                         result["errors"].append(error_msg)
                         logger.error(f"🔌 {error_msg} para {symbol}")
@@ -667,6 +673,8 @@ class FinancialDataService:
 
                     except Exception as e:
                         results_parallel[task_name] = None
+                        if isinstance(e, APITimeoutError):      # conexión o tiempo agotado, ya traducido
+                            result["source_unavailable"] = True
                         error_msg = f"Error inesperado en {task_name}: {type(e).__name__}: {str(e)[:100]}"
                         result["errors"].append(error_msg)
                         logger.error(f"❌ {error_msg} para {symbol}", exc_info=True)
@@ -680,6 +688,7 @@ class FinancialDataService:
                 for pending_future, pending_name in future_to_task.items():
                     if pending_name not in results_parallel:
                         results_parallel[pending_name] = None
+                        result["source_unavailable"] = True
                         result["errors"].append(f"Timeout global esperando {pending_name}")
                         pending_future.cancel()
                 logger.warning(f"⏱ Timeout global de fetch para {symbol}")
@@ -704,6 +713,12 @@ class FinancialDataService:
             result["profile"] = profile
         else:
             result["errors"].append("No se pudo obtener el perfil")
+            try:
+                from yf_adapter import unreachable
+                if unreachable(symbol):
+                    result["source_unavailable"] = True
+            except ImportError:
+                pass
         
         # Datos financieros
         if financials:

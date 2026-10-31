@@ -159,13 +159,19 @@ def test_beta_raw_and_adjusted_exposed_and_used_by_financial(outputs_by_env):
         jpm, pdf = outputs_by_env(env)["JPM"]
         xm = jpm["archetype_metrics"]
         assert xm["beta_adjusted"] == pytest.approx(cc.adjusted_beta(jpm["beta"]["raw"]))
-        assert xm["cost_of_equity"] == pytest.approx(cfg("valuation.capm.risk_free_rate") + xm["beta_adjusted"] * MRP)
+        # F9 · R1: más la prima de riesgo país (JPM: su geografía de ingresos)
+        assert xm["cost_of_equity"] == pytest.approx(cfg("valuation.capm.risk_free_rate") + xm["beta_adjusted"] * MRP
+                                                     + (jpm["cost_of_equity"].get("crp") or 0))
         assert "β ajustada" in fb.pdf_text(pdf)
 
 
-def test_rf_fallback_marked_in_replay(outputs_by_env):
+def test_rf_is_the_dated_pair_in_replay(outputs_by_env):
+    """F8 · E1: el Rf del análisis es el del par Rf–ERP (misma fecha); sin ^TNX en el replay, sin referencia de
+    mercado (antes: el de config marcado como respaldo)."""
     a = outputs_by_env("panel")["NFLX"][0]
-    assert a["risk_free"]["fallback"] and a["wacc"]["rf"] == cfg("valuation.capm.risk_free_rate")
+    rf = a["risk_free"]
+    assert not rf["fallback"] and rf["market"] is None and rf["as_of"] == cfg("valuation.capm.pair_as_of")
+    assert a["wacc"]["rf"] == rf["value"] == cfg("valuation.capm.risk_free_rate")
 
 
 # ─────────────────────────── DCF: inputs ───────────────────────────
@@ -229,18 +235,19 @@ def _rel(price, sens=None, tv=50.0, arch="MATURE", pc=False, flags=(), src="yfin
 
 
 def test_reliability_rules():
+    """F8 · E8: la fiabilidad no mira el precio (fuera de la tabla o fuera del bloque central: solo informa)."""
     base = _grid()["base_case"]["fair_value"]
     assert _rel(base)["level"] == "alta"
     r = _rel(base * 10)
-    assert r["level"] == "baja" and r["grid_contains_price"] is False and "no contiene el precio" in r["reasons"][0]
+    assert r["level"] == "alta" and r["grid_contains_price"] is False and r["reasons"] == []
     assert _rel(base, tv=86.0)["level"] == "baja"
+    assert _rel(base, tv=80.0)["level"] == "media"
     assert _rel(base, flags=["freeCashflow: fcf_supera_ocf"])["level"] == "baja"
     assert _rel(base, src="finnhub")["level"] == "baja"
     m = _grid()["matrix"]
     corner = m[0][-1]       # mínimo del grid (menor crecimiento, mayor WACC): fuera del bloque central ±1
-    assert corner < min(v for row in m[1:4] for v in row[1:4])
     r = _rel(corner)
-    assert r["level"] == "media" and "fuera del caso base" in r["reasons"][0]
+    assert r["level"] == "alta" and r["central_contains_price"] is False
     assert _rel(base, arch="CYCLICAL")["level"] == "media"
     assert _rel(base, pc=True)["level"] == "media"
     assert dcf_reliability(dcf=None, sensitivity=None, price=1.0, archetype=None, possible_cyclical=False,
@@ -253,7 +260,7 @@ def _val(dcf):
 
 
 def _dcf_row(v):
-    return next((a for a in v["adjustments"] if a["metric"] == "DCF (upside)"), None)
+    return next((a for a in v["adjustments"] if a.get("key") == "dcf"), None)
 
 
 def test_dcf_component_bounded_by_reliability():
@@ -264,8 +271,7 @@ def test_dcf_component_bounded_by_reliability():
     assert _dcf_row(_val({"upside": 0.05, "reliability": "alta"}))["adjustment"] == 0
     low = _dcf_row(_val({"upside": -0.50, "reliability": "baja", "grid_contains_price": False}))
     assert low["adjustment"] == 0
-    assert low["reason"].startswith("El DCF no concilia con el precio bajo ningún supuesto razonable; "
-                                    "no se usa en el score")
+    assert low["reason"].startswith("DCF de fiabilidad baja: no se usa en el score")   # F8 · E8: no por el precio
     v = _val({"na": "No aplica a REIT"})
     assert _dcf_row(v) is None and "DCF" in v["coverage"]["not_applicable"]
     v = _val({"missing_reason": "FCF <= 0"})
@@ -273,22 +279,24 @@ def test_dcf_component_bounded_by_reliability():
 
 
 def test_dcf_subtracts_in_valuation(outputs_by_env):
-    """Fallo 1 del spec: el DCF resta. V del panel (−29% con FCF − SBC desde la fase 3; fiabilidad media) resta, y
+    """Fallo 1 del spec: el DCF resta. V del panel (−29% con FCF − SBC desde la fase 3; fiabilidad alta) resta, y
     Valoración es la suma de sus ajustes. Antes NFLX del panel (−22%); desde la fase 2b (T6) su beta propia (0.96,
     frente a 1.61 de Finnhub) baja el WACC y su DCF queda en precio."""
     a = outputs_by_env("panel")["V"][0]
     val = a["score"]["breakdown"]["Valoración"]
     row = _dcf_row(val)
-    assert a["dcf"]["reliability"]["level"] == "media" and a["dcf"]["upside"] < -10 and row["adjustment"] < 0
+    # F8 · E8: con la fiabilidad por los insumos, la de V es alta (antes media por la distancia al precio).
+    assert a["dcf"]["reliability"]["level"] == "alta" and a["dcf"]["upside"] < -10 and row["adjustment"] < 0
     # Etapa 9a: los miembros del bloque de múltiplos puntúan a través del bloque.
     assert val["score"] == min(20, 10 + sum(x["adjustment"] for x in val["adjustments"] if not x.get("in_block")))
 
 
 def test_low_reliability_dcf_explicit_in_report(outputs_by_env):
-    a, pdf = outputs_by_env("panel")["MU"]       # fase 3: SNOW ya no tiene DCF (FCF − SBC ≤ 0)
-    assert a["dcf"]["reliability"]["level"] == "baja" and a["dcf"]["reliability"]["grid_contains_price"] is False
+    # F8 · E8: DOW, baja por sus insumos (bloque central de 0,32 a 17,69 y margen FCF inestable), no por el precio.
+    a, pdf = outputs_by_env("panel")["DOW"]
+    assert a["dcf"]["reliability"]["level"] == "baja"
     text = fb.pdf_text(pdf).replace("\n", " ")
-    assert "El DCF no concilia con el precio bajo ningún supuesto razonable; no se usa en el score" in text
+    assert "DCF de fiabilidad baja: no se usa en el score" in text
 
 
 # ─────────────────────────── confianza del veredicto ───────────────────────────
@@ -331,7 +339,10 @@ def test_graham_does_not_vote_and_financial_has_two_methods(outputs_by_env):
         conv = out["JPM"][0]["confidence"]["dimensions"]["convergence"]
         assert [m["method"] for m in conv["methods"]] == ["P/B justificado (Gordon)", "P/B frente al sector"]
         assert conv["level"] in ("alta", "media", "baja")
-        # Fase 3 (T3, §8.7): REIT con dos métodos, el DCF inverso sobre el FFO por acción y los múltiplos.
+        # Fase 3 (T3, §8.7): REIT con dos métodos, el DCF inverso sobre el FFO por acción y los múltiplos (con FFO
+        # según Nareit, F8 · E3: sin él, en el juego sin Finnhub, no hay DCF inverso sobre el FFO).
+        if out["O"][0]["reit_ffo"]["ffo"] is None:
+            continue
         o = out["O"][0]["confidence"]
         assert [m["method"] for m in o["dimensions"]["convergence"]["methods"]][0] == "DCF inverso"
         assert o["dimensions"]["convergence"]["level"] != "no_evaluable"
@@ -344,7 +355,11 @@ def test_verdict_confidence_weights():
                                "stability": d("alta")})["level"] == "alta"
     r = verdict_confidence({"convergence": d("baja"), "coverage": d("alta"), "source": d("media"),
                             "stability": d("alta")})
-    assert r["level"] == "media" and r["limits_score"] is False and r["reasons"][0].startswith("convergencia baja")
+    # F8 · E11: la más baja manda (antes, la media ponderada daba «media»)
+    assert r["level"] == "baja" and r["limits_score"] is False and r["reasons"][0].startswith("convergencia baja")
+    r = verdict_confidence({"convergence": d("alta"), "coverage": d("alta"), "source": d("media"),
+                            "stability": d("alta")})
+    assert r["level"] == "media" and r["reasons"][0].startswith("calidad de fuente media")
     assert verdict_confidence({"convergence": d("baja"), "coverage": d("media"), "source": d("baja"),
                                "stability": d("baja")})["level"] == "baja"
     assert stability_dimension("CYCLICAL", {})["level"] == "baja"
@@ -367,7 +382,8 @@ def test_valuation_contradiction_lowers_confidence(outputs_by_env):
     # Caso real con convergencia media (fase 4/7: PG, el de antes, pasó a convergencia alta con su industria, Household
     # Products de Damodaran).
     n = outputs_by_env("panel")["MSFT"][0]["confidence"]
-    assert n["dimensions"]["convergence"]["level"] == "media" and n["level"] == "media"
+    # F10 · N4: la que contrae es la media; la que se muestra baja un escalón más por las tasas base
+    assert n["dimensions"]["convergence"]["level"] == "media" and n["contraction_basis"] == "media"
 
 
 def test_f4_confidence_counts_only_real_causes():
@@ -389,7 +405,8 @@ def test_f4_confidence_counts_only_real_causes():
     assert s["issues"] == 1
     r = verdict_confidence({"convergence": d("alta"), "coverage": d("alta"), "source": d("alta"),
                             "stability": d("baja")})
-    assert r["level"] == "media" and r["capped_from"] == "alta"
+    # F8 · E11: la más baja manda (antes, el tope `weak_dimension_cap` dejaba «media»)
+    assert r["level"] == "baja" and r["capped_from"] == "alta"
     assert any("estabilidad baja" in x for x in r["reasons"])
 
 

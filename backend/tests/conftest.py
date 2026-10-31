@@ -22,6 +22,21 @@ REG_ENV_TICKERS = [(e, t) for e in REG_ENVS for t in fb.env_tickers(e)]
 BOUND_ENVS = ["local"] + ([fb.PANEL_ENV] if fb.panel_available() else [])
 
 
+def reit_ffo_envs(outputs_by_env, envs=None, sym="O"):
+    """F8 · E3: juegos en los que el REIT `sym` tiene FFO según Nareit (sus ajustes salen del estado de flujos que
+    presentó el emisor, vía Finnhub). El juego capturado sin Finnhub ("local") lo da sin dato, con su motivo: se
+    comprueba aquí y queda fuera. Al menos un juego debe tenerlo."""
+    out = []
+    for env in envs or BOUND_ENVS:
+        rf = outputs_by_env(env)[sym][0]["reit_ffo"]
+        if rf["ffo"] is None:
+            assert env == "local" and "sin clave de Finnhub" in rf["ffo_reason"], (env, rf["ffo_reason"])
+        else:
+            out.append(env)
+    assert out, f"ningún juego con el FFO según Nareit de {sym}"
+    return out
+
+
 def env_id(param):
     return f"{param[0]}-{param[1]}" if isinstance(param, tuple) else str(param)
 
@@ -56,3 +71,15 @@ def fixture_store():
     for sym in fb.TICKERS:
         store.load(sym)
     return store
+
+# Portada rápida: el servidor calcula las tendencias al arrancar (main, evento startup). En los tests (y en el uvicorn
+# real de test_v2_serving) no: sin descargas de Yahoo ni archivo de la última lista buena.
+os.environ.setdefault("FINANZER_TRENDING_WARM", "0")
+
+
+@pytest.fixture(autouse=True)
+def _no_yahoo_caps_batch(monkeypatch):
+    """PDF rápido: las capitalizaciones de los rivales van en una petición a Yahoo (peers.CAPS_BATCH). En los tests,
+    sin red: solo CAPS_FETCHER (el que cada test inyecta); los que prueban el lote lo sustituyen."""
+    import peers
+    monkeypatch.setattr(peers, "CAPS_BATCH", None, raising=False)

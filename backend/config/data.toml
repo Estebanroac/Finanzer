@@ -13,6 +13,11 @@ profile_ttl_min = 30
 financials_ttl_min = 60
 
 [yahoo]                         # lib/yf_adapter.py
+# Verificación de la v4 (V4): símbolos como mucho en las cachés de info y del último snapshot bueno (lib/bounded.py).
+# Sin tope crecían para siempre (una entrada por empresa analizada; ~30 kB serializada cada una).
+# Presupuesto de memoria medido en la verificación de la v4 (V4, docs/rediseno/V4_VERIFICACION.md): ~0.8 MB por empresa
+# en memoria (info + último snapshot bueno); 48 empresas caben con el resto de cachés bajo 450 MB.
+info_cache_max_symbols = 48
 cache_ttl_s = 300
 cache_ttl_degraded_s = 60
 # Etapa 11b: tras un 401 de quoteSummary (crumb inválido desde IPs de datacenter, Render) se
@@ -25,18 +30,60 @@ statements_timeout_s = 30
 # Fase 6: estados de yfinance (y su moneda) en caché por símbolo; cambian cada trimestre. 6 h = la lista de filings
 # de EDGAR (edgar.submissions_ttl_s): unos resultados nuevos se ven como mucho con ese retraso.
 statements_cache_ttl_s = 21600
-statements_cache_max_entries = 700   # 7 entradas por símbolo (6 estados + moneda): 100 símbolos, unos pocos MB
+statements_cache_max_entries = 336   # 7 entradas por símbolo (6 estados + moneda): 48 símbolos (verificación de la v4: antes 700)
 search_timeout_s = 8
 impersonate_profiles = ["chrome", "safari15_5", "edge101"]
 completeness_fields = ["beta", "sharesOutstanding", "marketCap", "totalRevenue", "operatingCashflow", "totalCash"]
 
 [finnhub]                       # lib/finnhub_fallback.py
+cache_max_entries = 96         # verificación de la v4 (V4): entradas como mucho (métricas, noticias, calendario: 48 empresas)
 timeout_s = 8
 cache_ttl_s = 300
 gap_fields = ["beta", "forwardPE", "revenueGrowth"]
 cut_match_rel_tol = 0.02        # fase 2b: una métrica TTM de Finnhub entra solo si casa con el corte a ±2%
+# V4b: Finnhub escribe las acciones de clase con punto (BRK.B); el resto de la app, como Yahoo, con guion (BRK-B).
+# Solo los titulares lo usan (no puntúan): en métricas, calendario y sorpresas cambiaría cifras (decisión del PM).
+class_share_separator = "."
 
-[edgar]                         # lib/sec_edgar.py (fase 2b): SEC EDGAR en el camino del análisis (D2: verificación y respaldo)
+[reit_ffo]                      # lib/reit_ffo.py (F8 · E3, auditoría externa del 26-oct-2026): FFO de los REIT según Nareit
+# Los ajustes salen del estado de flujos que presentó el emisor en su 10-K/10-Q (Finnhub /stock/financials-reported,
+# gratuito): sus partidas no monetarias, con el concepto estándar o el propio del emisor. Se reconocen por el nombre del
+# concepto (sin el prefijo), con expresiones regulares sin distinguir mayúsculas: una partida entra en un ajuste si casa
+# con alguna de `*_include` y con ninguna de `*_exclude`. Vistas en 35 REIT de EE. UU. (registro F8_INDEPENDIENTES §E3).
+# Ganancias (o pérdidas) por venta de inmuebles o de activos: se restan (positivo = ganancia). Las de participaciones en
+# negocios que no son inmuebles no (SPG: `spg_GainLossOnDisposalExchangeOrEvaluationOfEquityInterests`, inversiones en
+# minoristas, fuera de su FFO Nareit).
+gains_include = ["(gain|loss).*(sale|sold|dispos).*(realestate|propert|asset)",
+                 "(sale|sold|dispos).*(realestate|propert|asset).*(gain|loss)"]
+# Nareit (2018) deja al emisor dentro o fuera las ventas de activos accesorios a su negocio: promociones y terrenos
+# (PLD las deja dentro de su FFO Nareit y fuera solo del «Core»). Aquí se quedan dentro, como en el FFO Nareit del emisor.
+# Lo demás que casaría por el nombre no es una venta de inmuebles.
+gains_exclude = ["development", "land", "extinguishment", "debt", "derivative", "hedg", "foreigncurrency",
+                 "securit", "discontinued", "deferred"]
+# Deterioros de inmuebles: se suman (positivo = cargo). Fuera los de fondo de comercio, créditos y valores.
+impairment_include = ["impairment"]
+impairment_exclude = ["goodwill", "intangible", "loan", "credit", "securit", "receivable", "financ", "equitymethod",
+                      "(gain|loss).*(sale|sold|dispos)"]
+# AFFO (sin definición estándar; fórmula visible): − rentas lineales − capex recurrente (mejoras de los inmuebles en
+# explotación, comisiones de alquiler y obras de los inquilinos).
+straight_line_include = ["straightline"]
+straight_line_exclude = ["receivable", "writeoff"]
+recurring_capex_include = ["capitalimprovement", "propertyimprovement", "improvementstorealestate", "tenantimprovement",
+                           "leasingcost", "leasingcommission"]
+recurring_capex_exclude = ["incurredbutnotyetpaid", "accrued", "payable", "development", "acquire"]
+# Participadas y minoritarios: Nareit suma la parte de la D&A de las participadas y resta la de los minoritarios, que el
+# XBRL no separa (SPG: 811,7 millones de participadas en 2025; AMT: −450,7 de minoritarios). El FFO lo declara si el
+# resultado de participadas o la parte de los minoritarios en el beneficio pesan al menos `equity_method_material_share`
+# del FFO (O: 0,3 %; PLD: participadas 7,8 %).
+equity_method_include = ["incomelossfromequitymethodinvestments", "equityinearnings"]
+equity_method_material_share = 0.05
+# Participadas materiales (decisión del 27-oct-2026): si su resultado pesa al menos esto del FFO calculado, el FFO es
+# «sin dato» (no un FFO con aviso) y el P/FFO no puntúa (SPG: 12,7 % en el TTM al 2T-2026; PLD: 7,8 %, se queda).
+ffo_jv_material_pct = 0.10
+# Conciliación con EDGAR: el flujo de operaciones de cada estado leído frente al de companyfacts del mismo periodo.
+reconcile_rel_tol = 0.02
+
+[edgar]                        # lib/sec_edgar.py (fase 2b): SEC EDGAR en el camino del análisis (D2: verificación y respaldo)
 user_agent_env = "SEC_EDGAR_USER_AGENT"   # nombre y correo de contacto; lo pone el usuario en Render. Sin él, desactivado
 budget_s = 3.0                  # tiempo máximo de EDGAR por análisis (propuesta de la 2a); si se agota, se sigue sin EDGAR
 # Fase 6 (revisión de código, hallazgo 2): la espera en cola detrás de otros análisis (turno de parseo y ritmo de la
@@ -44,9 +91,21 @@ budget_s = 3.0                  # tiempo máximo de EDGAR por análisis (propues
 queue_max_s = 4.0
 min_interval_s = 0.12           # ≤ 8.3 peticiones/s (la SEC admite 10/s)
 timeout_s = 2.5                 # por petición (nunca más que lo que queda del presupuesto)
+# F10 (PM, 29-oct; ENB y RL): si EDGAR no respondió (tiempo agotado, no «sin estados»), un reintento con este
+# presupuesto propio antes de seguir sin EDGAR: un tiempo agotado no debe cambiar en silencio la referencia de la
+# industria (N2) ni el tipo (la historia de la ciclicidad). Si el reintento también falla, N2 usa sus últimas cifras
+# válidas o declara la referencia degradada (lib/self_exclusion.figures_resilient).
+retry_s = 6.0
 tickers_ttl_s = 86400           # company_tickers.json: caché diaria
 submissions_ttl_s = 21600       # lista de filings por CIK: 6 h (un 8-K de resultados aparece el mismo día)
 report_date_tolerance_days = 14 # Yahoo fecha el trimestre a fin de mes; EDGAR, al cierre real (JNJ 06-28)
+# F10 · perímetro (Plan, 29-oct): el TTM de EDGAR del resultado operativo tiene que cuadrar con la suma de sus 4
+# trimestres a ± 1 pp de los ingresos; si no, otra base o, si ninguna, no homogéneo (sec_edgar.checked_flow_ttm).
+ttm_quarters_tolerance = 0.01
+# F9 · R3 (decisión del PM, regla M5): EDGAR es la serie FY única de ingresos y beneficio neto si cubre todos los
+# ejercicios de los estados; Yahoo, respaldo. Una diferencia de más de este margen en un ejercicio queda registrada.
+fy_series_fields = ["revenue", "net_income"]
+fy_series_reconcile_rel = 0.02
 since = "2024-01-01"            # filings que se miran
 # Emisores sin 8-K (20-F/40-F): calendario de resultados del proveedor (Finnhub). Una publicación más de
 # `calendar_min_lag_days` días después del corte es de un periodo posterior (la del propio corte llega antes: TSM
@@ -62,14 +121,26 @@ max_pending_filings = 3         # filings pendientes que se leen por análisis (
 # D7 (F2_PRECEDENCIA §4): con CIK, pero el último informe anual tiene más de estos meses o EDGAR va por detrás
 # (un filing pendiente sin leer) → "verificado con el FY X" (nota informativa, sin tope de confianza).
 annual_stale_months = 15
+# F8 · E6: estados desfasados (EDGAR tiene un 10-Q/10-K de un periodo posterior al corte). Con más de estos días desde
+# el cierre del corte, la cobertura de la confianza no pasa de «media» (AMZN y BA: corte al 31-mar-2026, 209 días el
+# 26-oct-2026, con el 10-Q del 30-jun en EDGAR). Un trimestre (~91 días) más el plazo habitual de un 10-Q no llega.
+stale_coverage_days = 100
+# F8 (historia de 10 años en cascada): un concepto de relevo, o la otra taxonomía tras un cambio de norma, solo toma
+# ejercicios si coincide con la serie en un ejercicio común dentro de esta tolerancia relativa (TM, FY2020: resultado
+# operativo −1,8 %, beneficio −1,9 %; flujo operativo −33 %, fuera). El BPA de continuadas, frente a beneficio /
+# acciones, también con esta tolerancia absoluta (medio céntimo).
+history_relay_rel_tol = 0.02
+history_eps_abs_tol = 0.005
 # F2_PRECEDENCIA §2.1 (escenario B): el beneficio operativo de Yahoo se marca "estimado por la fuente" si difiere más
 # que esto del de EDGAR en el mismo periodo (Yahoo construye el suyo: KO, PLD, AMT, NEE, DUK, FCX, CRWD, UL, V).
 ebit_estimate_rel_tol = 0.02
 fy_backup_years = 4              # ejercicios de los estados anuales que el respaldo completa (FY0–FY3: Piotroski y CAGR a 3 años)
 # Fase 3 (T1b; F3_T1_PARADA1 §2.2): la historia larga vive en la caché en memoria (Render: 512 MB y disco efímero).
 # Un companyfacts reducido pesa 0.3–0.45 MB; leer uno grande sube el proceso 80–116 MB un instante.
-cache_max_issuers = 64           # emisores por tipo de entrada en la caché (LRU): ≤ ~30 MB de hechos reducidos
+cache_max_issuers = 32           # emisores por tipo de entrada en la caché (LRU). Verificación de la v4 (V4): ~1.35 MB de hechos reducidos por emisor medidos (no ~0.5): con 64, ~86 MB; con 32, ~43 MB
 parse_concurrency = 1            # lecturas grandes a la vez (companyfacts e instancias): acota el pico de memoria
+segments_parse_concurrency = 1   # V6 (B2): lecturas de segmentos a la vez, con su propio turno (van en flujo)
+turn_poll_s = 0.25               # V6 (B2): la espera de un turno se suma a la cola perdonada a tramos de este tamaño
 
 [edgar.predecessors]            # sucesión de emisor: el ticker apunta al CIK nuevo y la historia XBRL sigue en el anterior
 # XOM: reorganización en holding (8-K12B de ExxonMobil Holdings Corp, CIK 2115436, del 2026-07-01); los estados hasta
@@ -90,6 +161,81 @@ DE = "John Deere Financial"
 # decenas más (pandas); con 512 MB en Render caben 4 con margen. Cada análisis frío hace ≈ 15 peticiones: 4 a la vez
 # son ≈ 60, por debajo de lo que Yahoo ha tolerado en las capturas. El resto espera su turno sin bloquear el bucle.
 max_concurrent_analyses = 4
+# V6 (revisión de seguridad, B1): escenarios del usuario calculándose a la vez (cada uno, milisegundos de CPU); el resto
+# espera. Turno propio: no esperan detrás de los análisis.
+scenario_concurrency = 2
+# V6 (B5): cuerpo máximo de una petición (el de /api/v2/scenario ocupa ~2 kB); más: 413 sin leer el resto.
+max_body_bytes = 32768
+# V6 (B7): cabeceras con la IP del cliente que pone el proxy de producción (Cloudflare delante de Render); la primera
+# que venga manda. Sin ninguna (local), la IP del socket. Sirve para el cupo de cada cliente en la cola de fondo.
+client_ip_headers = ["cf-connecting-ip", "true-client-ip"]
+# V6 (hallazgo F23, en el backend): política de contenido de cada respuesta. `script-src` lleva además, en cada HTML, el
+# sha256 de sus scripts en línea (lib/web_guard.py): el de tema de /v2 y los de carga que exporta Next. Estilos en
+# línea sí (React los pone en atributos `style`); imágenes de https (las de los titulares) y data:.
+csp = ["default-src 'self'", "script-src 'self'", "style-src 'self' 'unsafe-inline'", "img-src 'self' https: data:",
+       "font-src 'self' data:", "connect-src 'self'", "object-src 'none'", "base-uri 'self'", "form-action 'self'",
+       "frame-ancestors 'none'"]
+referrer_policy = "strict-origin-when-cross-origin"
+# V4 (encargo del PM): compresión gzip de la API y de los estáticos. Por debajo de 1 KB no compensa; nivel 5 (el análisis
+# de AAPL, 214 KB → 41 KB en 1,5 ms; el 9 da 40 KB en 7,3 ms). Los PDF van tal cual (ya vienen comprimidos).
+gzip_minimum_bytes = 1024
+gzip_level = 5
+gzip_exclude_paths = ["/api/pdf/", "/api/v2/pdf/"]
+
+[web]                           # la web /v2 (frontend/src/lib/generated/backendConfig.ts, generado)
+# V4 (PM): cuánto espera la página al análisis antes de dar el error «tarda más de lo normal». Un análisis frío espera
+# su turno ([server] max_concurrent_analyses) y hace ≈ 15 peticiones a las fuentes (≤ 8,5 s en la verificación V2 con
+# fuentes reales); 2 minutos cubren la cola llena sin dejar la página esperando para siempre.
+analysis_timeout_s = 120.0
+# V6b (E7): cuánto sigue preguntando la web por los rivales mientras se calculan. En V2 (fuentes reales) completarlos
+# tardó p50 76 s y p95 128 s; con 10 minutos el sondeo no se queda abierto para siempre (ni con la pestaña oculta, en la
+# que además se pausa).
+peers_poll_max_s = 600
+# V4 (PM): la pantalla de carga del análisis (AnalyzeLoading, con el ritmo de frontend/src/v2/lib/loadingPace.ts). Si el
+# análisis llega antes de `loading_delay_ms` (de la caché), no aparece.
+loading_delay_ms = 300
+# Cinco estaciones iguales: cada una dura `loading_expected_s` / 5 y su tramo se llena de forma lineal. La cifra es el p95
+# de un análisis sin caché medido con fuentes reales. Pasada final de la v4 (30-oct, con F10, N5 y el reintento de
+# EDGAR): dos recorridos de tools/real_sources.py (verificacion/V2_frio_final y V2_frio_final_2: servidor nuevo, 3 a la
+# vez, los análisis 200 que no salieron de la caché), 90 en total: p50 1,77 s, p75 2,20 s, p95 4,81 s. El primero tuvo
+# una espera común de ~6 s en sus tres primeros análisis (7,5 s), coherente con el reintento de EDGAR (retry_s); el
+# segundo, no (p95 4,21 s): juntos, ese caso pesa lo que pesó. Con un reintento, un análisis puede llegar a ~10 s: la
+# quinta estación espera en el 95 % («Últimos ajustes…»), muy lejos de analysis_timeout_s. Antes (18-oct, 43
+# análisis): p50 2,44 s, p95 4,12 s. Con el p95, casi siempre llegan los datos antes y lo que queda pasa rápido y
+# parejo; la espera en el 95 % es solo del 5 % más lento. Se recalibra con la medida en Render (E6).
+loading_expected_s = 4.81
+# Si el análisis llega antes, cada estación que falta dura `loading_fast_ms`; al final de la última sin datos, su tramo
+# se queda en `loading_stall_fill` («Últimos ajustes…»).
+loading_fast_ms = 180
+loading_stall_fill = 0.95
+# El pie («Suele tardar entre 2 y 5 segundos la primera vez…»): p50 y p95 de la misma medida, redondeados hacia fuera.
+loading_typical_s = [1.77, 4.81]
+# Al terminar: una pausa con todo hecho y la disolución.
+loading_exit_hold_ms = 320
+loading_exit_ms = 620
+# Las cinco estaciones: título, etiqueta corta bajo su tramo y qué se hace, en lenguaje llano y genérico (la industria no
+# se conoce hasta que llega el análisis).
+loading_titles = ["Estados financieros de la SEC", "Precios y mercado", "Ratios frente a su industria",
+                  "Valoración: DCF y múltiplos", "Puntuaciones y veredicto"]
+loading_labels = ["Estados SEC", "Mercado", "Ratios", "Valoración", "Veredicto"]
+loading_phrases = [
+  "Reuniendo los ingresos, beneficios, caja y deuda de los últimos años, contrastados con los informes oficiales.",
+  "Trayendo la cotización y su historia, y la del mercado, para situar a la empresa.",
+  "Comparando márgenes, rentabilidad y deuda con las empresas de su industria.",
+  "Calculando cuánto vale el negocio por su caja futura y comparándolo con lo que paga el mercado por empresas parecidas.",
+  "Sumando la calidad del negocio y el atractivo del precio, y midiendo cuánto fiarse del resultado.",
+]
+loading_stall_title = "Últimos ajustes…"
+# V4b · 3 (sin lag, medido; objetivos del PM): umbrales de la prueba de rendimiento (frontend/e2e/perf, contra el build de
+# producción). Chromium con la CPU `perf_cpu_throttle` veces más lenta (portátil modesto) y WebKit. Cambio de sección con
+# el análisis ya cargado hasta el contenido pintado; INP p75 de las interacciones (pestañas, «?», periodo de la gráfica,
+# escenario, carrusel); tarea larga como mucho durante una interacción; al desplazar, ninguna tarea larga (50 ms es la
+# definición de tarea larga del navegador).
+perf_cpu_throttle = 4
+perf_section_change_ms = 150
+perf_inp_p75_ms = 200
+perf_long_task_ms = 100
+perf_scroll_long_task_ms = 50
 
 [keepalive]                     # lib/keepalive.py (fase 6, D6): el servicio se pide su /api/health para no dormirse en Render
 enabled = true

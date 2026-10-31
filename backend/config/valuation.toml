@@ -24,6 +24,21 @@ risk_free_rate = 0.0529
 #   Antes (hasta la etapa 8): 5.5%, prima heredada de la v1 sin fuente.
 #   Par con risk_free_rate (arriba): actualizar los dos a la vez.
 market_risk_premium = 0.042
+# F8 · E1 (auditoría externa del 26-oct-2026): Rf y ERP DE LA MISMA FECHA. El Ke, el Kd y el WACC usan el par de
+# arriba (Damodaran, misma fecha: `pair_as_of`); el ^TNX del día queda solo como referencia y, si se aleja del par más
+# de `pair_drift_warning`, el análisis lo avisa (hay que actualizar el par). Antes se mezclaba el Rf del día con una ERP
+# calculada con otro Rf.
+pair_as_of = "2026-10-01"
+pair_drift_warning = 0.005          # |^TNX − Rf del par| mayor: aviso "revisar el par Rf–ERP"
+# F8 · E1: pisos duros del Ke (el accionista es residual: su coste no puede quedar por debajo del de la deuda ni de
+# medio mercado). Ke = máx(CAPM, Rf + ke_floor_erp_multiple × ERP, Kd + ke_floor_over_kd); el de Kd, si hay deuda.
+# Antes solo había piso en el WACC (6 %), que no protege el Ke del P/B justificado (AWK: Ke 5,14 % < Kd 5,88 %).
+ke_floor_erp_multiple = 0.5
+ke_floor_over_kd = 0.01
+# F8 · E1: prueba de sensibilidad del veredicto. Se repite la valoración con Ke ± `ke_sensitivity_pp`: si el nivel de
+# precio cambia, el veredicto es "dependiente de Ke" y la confianza baja un escalón.
+ke_sensitivity = true
+ke_sensitivity_pp = 0.01
 default_beta = 1.0                  # beta ausente (la ajustada de 1.0 es 1.0)
 # Beta ajustada de Blume (1971): β = 0.67 × β bruta + 0.33 (reversión hacia 1). Se usa
 # en el Ke del WACC y en el Ke de FINANCIAL; la beta bruta se sigue mostrando.
@@ -82,6 +97,26 @@ interpretation_pct = [80, 60, 40, 20]   # % de escenarios por encima del precio
 [peg]
 growth_pct_scale = 100              # el PEG divide el P/E por el crecimiento en PORCENTAJE (15 = 15%)
 
+[earnings_peak]
+# F8 · E2 (auditoría del 26-oct, NEE): bandera de pico de beneficio (lib/earnings_peak.py). (a) beneficio TTM más de un
+# 40 % por encima de la mediana de 3 ejercicios y (b) forward P/E más de un 20 % por encima del TTM. El forward de Yahoo
+# solo si el beneficio que implica no queda por debajo de mín(TTM, mediana) / 3 (atrapa errores de escala que
+# activarían (b)); si no, solo (a), declarado.
+ttm_over_median = 0.40
+median_years = 3
+forward_premium = 0.20
+forward_coherence_factor = 3.0
+
+[telecom_spectrum]
+# F8 · E4 (auditoría del 26-oct, VZ): FCF de telecom − media de las compras de espectro de los últimos `years`
+# ejercicios (EDGAR, PaymentsToAcquireIntangibleAssets: «Acquisitions of wireless licenses» en VZ, «Purchases of
+# spectrum licenses and other intangible assets» en TMUS). PM, 27-oct: 10 años, el ciclo completo de subastas (con 5,
+# la banda C de 2021 dominaba la media). Con menos años en EDGAR, los que haya con un mínimo de `min_years`; por
+# debajo, sin dato, declarado.
+industries = ["Telecom Services"]   # industria de Yahoo (profile.industry: VZ, T, TMUS)
+years = 10
+min_years = 5
+
 [graham]
 multiplier = 22.5                   # sqrt(22.5 × EPS × BVPS)
 
@@ -100,6 +135,25 @@ non_manufacturing_grey = 1.10
 # estos -> Z original; el resto -> Z''. FINANCIAL y REIT: no aplica (arquetipo).
 manufacturing_sectors = ["basic materials", "industrials", "energy"]
 manufacturing_industries = []       # industrias manufactureras fuera de esos sectores (vacío por ahora)
+# F8 · E10 (auditoría externa del 26-oct-2026): el modelo sale del SIC del emisor en SEC EDGAR, la clasificación con la
+# que Altman separó las manufactureras: SIC 2000–3999 (manufacturas) → Z original; el resto → Z''. Sin SIC (emisor sin
+# EDGAR), por sector e industria como arriba, y se declara.
+original_sic = [[2000, 3999]]
+# Excluidos (no aplica, con un sustituto informativo sin puntos: deuda neta/EBITDA y cobertura de intereses): negocios
+# regulados o de peaje con apalancamiento estructural y circulante negativo, y financieras, para los que el modelo no
+# se calibró. Cada rango con su motivo (misma posición).
+excluded_sic = [[4610, 4619], [4911, 4911], [4922, 4924], [4931, 4932], [4939, 4941], [4961, 4961], [4991, 4991],
+                [6000, 6799]]
+excluded_sic_reasons = [
+    "oleoductos (midstream): ingresos de peaje y apalancamiento estructural",
+    "utility eléctrica regulada: inversión financiada con deuda y circulante negativo por diseño",
+    "transporte y distribución de gas (midstream): ingresos de peaje y apalancamiento estructural",
+    "utility combinada regulada: inversión financiada con deuda y circulante negativo por diseño",
+    "utility regulada (agua y otros): inversión financiada con deuda y circulante negativo por diseño",
+    "suministro de vapor regulado: inversión financiada con deuda",
+    "cogeneración regulada: inversión financiada con deuda",
+    "financiera o aseguradora: el balance es el producto (depósitos, reservas y préstamos son pasivos operativos)",
+]
 
 [models.piotroski]
 bands = [8, 6, 4, 2]                    # ÚNICA escala: interpretación, insignia (Fuerte/Bueno/Neutral/Débil/Crítico),
@@ -150,3 +204,101 @@ rote_sensitivity_deltas = [-0.02, -0.01, 0.0, 0.01, 0.02]   # ± pp de ROTE para
 band_pp = 0.02
 very_demanding_pp = 0.05
 at1_relative_tolerance = 0.001      # diferencia relativa mínima para ver cupones AT1 o AT1 fuera del ordinario
+
+[scenario]   # Rediseño E2a (T7): límites de los supuestos que el usuario puede mover en /v2 (no cambian el veredicto)
+growth_min = -0.10
+growth_max = 0.50            # el mismo tope que aplica el DCF del motor ([dcf] growth_cap)
+discount_min = 0.05
+discount_max = 0.16
+terminal_min = 0.0
+terminal_max = 0.03
+terminal_gap_min = 0.02      # el terminal queda al menos 2 pp por debajo de la tasa de descuento
+years_min = 3
+years_max = 15
+# Rediseño E3 (Task 7): margen de flujo de caja (FCF base del DCF / ingresos). Rango de EXPLORACIÓN, no una estimación:
+# entre la mitad y vez y media del margen propio de la empresa (no hay regla del motor ni fuente para un rango).
+margin_rel_min = 0.5
+margin_rel_max = 1.5
+# V6 (revisión de seguridad, B1/B4): lo que el cliente puede mandar a /api/v2/scenario. Fuera de estos límites, o con
+# claves de más, tipos que no son números o valores no finitos: 422 antes de calcular nada. Los supuestos base que lleguen
+# dentro de ellos se recortan después a los límites de arriba, como los del usuario (los del motor ya están dentro).
+input_amount_max = 1.0e15       # |FCF|, |deuda neta| e ingresos, en la moneda de los estados
+input_per_share_max = 1.0e7     # precio y cifras por acción (también FCF, deuda neta e ingresos entre las acciones)
+input_rate_max = 1.0            # |tasas| (crecimiento, descuento, terminal) antes del recorte
+input_margin_max = 10.0         # |margen de flujo de caja|
+input_shares_max = 1.0e13       # acciones en circulación (> 0); unas acciones minúsculas las frena el tope por acción
+input_text_max = 200            # motivo, moneda y arquetipo (caracteres)
+# La tabla de sensibilidad del escenario usa los pasos de la del informe ([grid]): con los supuestos base, son la misma.
+
+# Preajustes Pesimista / Optimista: desplazamientos sobre los supuestos base del motor. Crecimiento y WACC = los extremos
+# de la tabla de sensibilidad del informe ([grid]: ±5 pp de crecimiento, ±2 pp de WACC; lo comprueba un test). Terminal:
+# ±0.5 pp alrededor del 2.5% del motor, dentro de [terminal_min, terminal_max]. El margen no se preajusta (sin regla ni
+# fuente para su rango). Un arquetipo puede tener su propia tabla [scenario.presets.<ARQUETIPO>] cuando haya fuente; hoy
+# todos usan `default`.
+[scenario.presets.default.pessimistic]
+growth = -0.05
+discount = 0.02
+terminal = -0.005
+[scenario.presets.default.optimistic]
+growth = 0.05
+discount = -0.02
+terminal = 0.005
+
+[country_risk]                      # F9 · R1 (revisión externa de NU, 27-oct-2026): lib/country_risk.py
+# Ke = Rf + β·ERP + λ·CRP; los pisos de F8 · E1 se aplican después, sobre el Ke con la prima país. La CRP sale de
+# config/country_risk.toml (Damodaran, ctryprem.xlsx, con su fecha), ponderada por dónde opera la empresa.
+# λ = 1: la ponderación por la geografía de los ingresos ya mide la exposición (enfoque de Damodaran por países de
+# operación); un λ por empresa necesitaría la exposición media de las empresas de cada país (no hay fuente gratis) y la
+# contaría dos veces.
+lambda = 1.0
+# Geografía de los ingresos (XBRL del último anual), decisión del PM del 27-oct («(b) ampliada»): un país identificado
+# usa su prima; una región con nombre, la media de Damodaran de esa región; un cubo vago («Non-US», «Other countries»)
+# queda sin atribuir (aporta 0 y se declara: no se aproxima). Si países y regiones con nombre cubren menos de esta
+# parte de los ingresos, se usa la sede operativa (el aviso del no atribuido se mantiene).
+geo_min_coverage = 0.80
+# Palabras clave (minúsculas, en orden) de una región con nombre -> región de [region_erp] de country_risk.toml. Sin
+# coincidencia, no atribuido.
+region_keywords = [
+  ["emerging market", "Emerging Markets"],
+  ["latin america", "Latin America & Caribbean"], ["south america", "Central and South America"],
+  ["central america", "Central and South America"], ["caribbean", "Caribbean"],
+  ["europe and middle east", "EMEA"], ["europe, middle east", "EMEA"], ["europe middle east", "EMEA"], ["emea", "EMEA"],
+  ["eastern europe", "Eastern Europe"], ["western europe", "Western Europe"], ["europe", "Europe"],
+  ["middle east", "Middle East"], ["africa", "Africa"],
+  ["asia", "Asia"], ["pacific", "Asia"], ["apj", "Asia"], ["apac", "Asia"],
+  ["north america", "North America"], ["australia", "Australia & New Zealand"], ["canada", "Australia, NZ & Canada"],
+]
+# Agrupaciones de varias regiones que Damodaran publica con su media: si un miembro nombra una, manda aunque nombre
+# otras regiones («Europe, Middle East and Africa» → EMEA). Un miembro con varias regiones sin media publicada («Asia
+# Pacific and Africa») queda sin atribuir.
+region_groups = ["Emerging Markets", "EMEA", "Latin America & Caribbean"]
+
+[country_risk.aliases]              # nombre de EDGAR o del XBRL -> nombre de la tabla de Damodaran
+"Korea, Republic of" = "Korea"
+"Republic of Korea" = "Korea"
+"South Korea" = "Korea"
+"Taiwan, Province of China" = "Taiwan"
+"Russian Federation" = "Russia"
+"Viet Nam" = "Vietnam"
+"Czechia" = "Czech Republic"
+"Türkiye" = "Turkey"
+"United Kingdom Of Great Britain And Northern Ireland" = "United Kingdom"
+"Great Britain" = "United Kingdom"
+"England" = "United Kingdom"
+"Netherlands, Kingdom of the" = "Netherlands"
+"US" = "United States"
+"U.S." = "United States"
+"USA" = "United States"
+"United States of America" = "United States"
+"Domestic" = "United States"
+"China Including Hong Kong" = "China"      # NVDA: nombra el país (Hong Kong, de prima parecida, va dentro)
+
+[pb_two_stage]                      # F9 · R1b (revisión externa de NU, 27-oct): lib/archetype_metrics.apply_two_stage
+# Un banco cuyo valor en libros crece muy por encima de g (NU: 33,6 % anual) queda subvalorado por el Gordon de una
+# etapa. Por encima de este crecimiento (CAGR de 3 años del valor en libros), el P/B justificado pasa a dos etapas:
+# `years` años con g₁ = mín(crecimiento observado, ROE × retención) y después g con el ROE de la industria regional de
+# Damodaran (convergencia: decisión del PM; mantener un ROE alto para siempre es el supuesto que la auditoría criticó
+# en el DCF). Sin ROE de la industria, una etapa, declarado. Los bancos maduros (JPM 10,8 %) no lo activan.
+bv_growth_threshold = 0.20
+years = 5
+

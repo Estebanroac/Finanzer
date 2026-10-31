@@ -54,6 +54,9 @@ net_margin_bounds = "list[float]"
 net_margin_points = "list[int]"
 spread_bounds = "list[float]"
 spread_points = "list[int]"
+spread_caps = "list[list[float]]"
+operating_margin_vs_industry_pp = "list[float]"
+net_margin_vs_industry_pp = "list[float]"
 roic_min_invested_capital_share = "float"
 reit_ffo_assets_bounds = "list[float]"
 reit_ffo_assets_points = "list[int]"
@@ -81,6 +84,7 @@ pe_value_points = "list[int]"
 multiples_block = "list[str]"
 multiples_block_max_by_members = "list[int]"
 multiples_block_strong = "float"
+multiples_earnings_family = "list[str]"
 forward_compression_bounds = "list[float]"
 forward_compression_points = "list[int]"
 pfcf_value_bounds = "list[int]"
@@ -126,10 +130,17 @@ mature_total_return_min_yield = "float"
 [thresholds.score.total]
 max = "int"
 
+[thresholds.score.category_labels]   # V7 (PM): clave de categoría del motor → cómo se escribe (lib/display.py)
+"*" = "str"
+
 [thresholds.score.quality]
 categories = "list[str]"
 bands = "list[int]"
 labels = "list[str]"
+neutral = "int"
+
+[thresholds.score.quality.confidence_factor]
+baja = "float"
 
 [thresholds.score.price]
 categories = "list[str]"
@@ -147,13 +158,10 @@ max_per_group = "int"
 years_ebitda_plural_from = "float"
 
 [thresholds.alerts.pe]
-premium_dev = "float"
 premium_abs = "int"
 justify_peg_max = "float"
 justify_spread_min = "float"
 strong_abs = "int"
-strong_dev = "float"
-discount_dev = "float"
 w_loss = "int"
 w_demanding = "int"
 w_overvalued = "int"
@@ -162,8 +170,6 @@ w_discount = "int"
 
 [thresholds.alerts.ev_ebitda]
 high_abs = "int"
-premium_mult = "float"
-discount_mult = "float"
 w_high = "int"
 w_premium = "int"
 w_discount = "int"
@@ -185,10 +191,14 @@ w_below_fair = "int"
 w_overvalued = "int"
 w_premium = "int"
 
+[thresholds.alerts.credit_risk]
+w_not_measured = "int"
+
 [thresholds.alerts.roe]
 negative_equity_min_roa = "float"
 exceptional = "float"
 w_buyback_negative = "int"
+amplified_leverage_min = "float"
 w_negative = "int"
 w_exceptional = "int"
 w_high = "int"
@@ -202,8 +212,6 @@ w_positive = "int"
 w_negative = "int"
 
 [thresholds.alerts.margins]
-net_solid_mult = "float"
-gross_high = "float"
 w_net_negative = "int"
 w_net_solid = "int"
 w_net_thin = "int"
@@ -334,6 +342,7 @@ emerging = "list[str]"
 [sectors.benchmarks.industry]
 min_firms = "int"
 dominance_ratio = "float"
+self_max_weight = "float"
 
 [sectors.benchmarks.country_aliases]
 "*" = "str"
@@ -407,6 +416,12 @@ risk_free_cache_hours = "int"
 risk_free_bounds = "list[float]"
 risk_free_rate = "float"
 market_risk_premium = "float"
+pair_as_of = "str"
+pair_drift_warning = "float"
+ke_floor_erp_multiple = "float"
+ke_floor_over_kd = "float"
+ke_sensitivity = "bool"
+ke_sensitivity_pp = "float"
 default_beta = "float"
 blume_weight = "float"
 blume_prior = "float"
@@ -452,6 +467,17 @@ interpretation_pct = "list[int]"
 [valuation.peg]
 growth_pct_scale = "int"
 
+[valuation.earnings_peak]
+ttm_over_median = "float"
+median_years = "int"
+forward_premium = "float"
+forward_coherence_factor = "float"
+
+[valuation.telecom_spectrum]
+industries = "list[str]"
+years = "int"
+min_years = "int"
+
 [valuation.graham]
 multiplier = "float"
 
@@ -467,6 +493,9 @@ non_manufacturing_safe = "float"
 non_manufacturing_grey = "float"
 manufacturing_sectors = "list[str]"
 manufacturing_industries = "list[str]"
+original_sic = "list[list[number]]"
+excluded_sic = "list[list[number]]"
+excluded_sic_reasons = "list[str]"
 
 [valuation.models.piotroski]
 bands = "list[int]"
@@ -536,6 +565,7 @@ profile_ttl_min = "int"
 financials_ttl_min = "int"
 
 [data.yahoo]
+info_cache_max_symbols = "int"
 cache_ttl_s = "int"
 cache_ttl_degraded_s = "int"
 quotesummary_block_ttl_s = "int"
@@ -550,12 +580,29 @@ impersonate_profiles = "list[str]"
 completeness_fields = "list[str]"
 
 [data.finnhub]
+cache_max_entries = "int"
 timeout_s = "int"
 cache_ttl_s = "int"
 gap_fields = "list[str]"
 cut_match_rel_tol = "float"
+class_share_separator = "str"
+
+[data.reit_ffo]
+gains_include = "list[str]"
+gains_exclude = "list[str]"
+impairment_include = "list[str]"
+impairment_exclude = "list[str]"
+straight_line_include = "list[str]"
+straight_line_exclude = "list[str]"
+recurring_capex_include = "list[str]"
+recurring_capex_exclude = "list[str]"
+equity_method_include = "list[str]"
+equity_method_material_share = "float"
+ffo_jv_material_pct = "float"
+reconcile_rel_tol = "float"
 
 [data.edgar]
+retry_s = "float"
 user_agent_env = "str"
 queue_max_s = "float"
 budget_s = "float"
@@ -564,16 +611,24 @@ timeout_s = "float"
 tickers_ttl_s = "int"
 submissions_ttl_s = "int"
 report_date_tolerance_days = "int"
+ttm_quarters_tolerance = "float"
+fy_series_fields = "list[str]"
+fy_series_reconcile_rel = "float"
 since = "str"
 calendar_min_lag_days = "int"
 recut_droppable = "list[str]"
 facts_ttl_s = "int"
 max_pending_filings = "int"
 annual_stale_months = "int"
+stale_coverage_days = "int"
+history_relay_rel_tol = "float"
+history_eps_abs_tol = "float"
 ebit_estimate_rel_tol = "float"
 fy_backup_years = "int"
 cache_max_issuers = "int"
 parse_concurrency = "int"
+segments_parse_concurrency = "int"
+turn_poll_s = "float"
 
 [data.edgar.predecessors]
 "*" = "list[int]"
@@ -622,11 +677,21 @@ discontinued_material_share = "float"
 share_break = "float"
 margin_drop = "float"
 min_cycle_years = "int"
+eps_half_min_years = "int"
 
 [sectors.archetypes.growth_profitable]
 min_revenue_ps_cagr_3y = "float"
 min_revenue_ps_cagr_5y = "float"
 min_operating_margin = "float"
+
+[sectors.archetypes.definitions]
+MATURE = "str"
+FINANCIAL = "str"
+REIT = "str"
+UTILITY = "str"
+CYCLICAL = "str"
+GROWTH_PROFITABLE = "str"
+GROWTH_PRE_PROFIT = "str"
 
 [sectors.archetypes.financial_subtypes]
 conglomerate_min_non_insurance_share = "float"
@@ -639,6 +704,9 @@ CYCLICAL = "list[str]"
 UTILITY = "list[str]"
 MATURE = "list[str]"
 GROWTH_PROFITABLE = "list[str]"
+
+[sectors.archetypes.not_applicable_subtype]
+banco = "list[str]"
 
 [valuation.archetypes]
 cycle_full_years = "int"
@@ -673,8 +741,41 @@ band_pp = "float"
 very_demanding_pp = "float"
 at1_relative_tolerance = "float"
 
+[valuation.scenario]            # Rediseño E2a (T7): límites de los supuestos del escenario del usuario (lib/scenario.py)
+growth_min = "float"
+growth_max = "float"
+discount_min = "float"
+discount_max = "float"
+terminal_min = "float"
+terminal_max = "float"
+terminal_gap_min = "float"
+years_min = "int"
+years_max = "int"
+margin_rel_min = "float"
+margin_rel_max = "float"
+input_amount_max = "float"
+input_per_share_max = "float"
+input_rate_max = "float"
+input_margin_max = "float"
+input_shares_max = "float"
+input_text_max = "int"
+
+[valuation.scenario.presets."*".pessimistic]
+growth = "float"
+discount = "float"
+terminal = "float"
+
+[valuation.scenario.presets."*".optimistic]
+growth = "float"
+discount = "float"
+terminal = "float"
+
 [thresholds.normalization]
 one_off_pct = "float"
+nonoperating_tolerance_revenue = "float"
+tax_median_years = "int"
+tax_median_min = "int"
+operating_item_types = "list[str]"
 robust_z = "float"
 min_quarters = "int"
 min_share_of_pretax = "float"
@@ -691,12 +792,27 @@ label_min_diff = "float"
 per_share_min_shares_cagr = "float"
 anomalous_base_ratio = "float"
 perimeter_min_years = "int"
+long_years = "int"
 
 [thresholds.dcf_reliability]
 terminal_max_pct = "int"
+terminal_minus_pct = "int"
+central_dispersion_max = "float"
+fcf_margin_years = "int"
+fcf_margin_cv_max = "float"
+margin_trend_years = "int"
+margin_drop_min = "float"
+margin_drop_downs = "int"
+margin_drop_low_mult = "float"
 central_block = "int"
 fcf_fields = "list[str]"
 inferred_sources = "list[str]"
+
+[thresholds.multiples_display]
+ev_ebitda_shown_max = "float"
+
+[thresholds.dcf_display]
+margin_of_safety_shown_bounds = "list[float]"
 
 [thresholds.confidence]
 level_values = "list[float]"
@@ -704,9 +820,10 @@ overall_bounds = "list[float]"
 upside_scale = "float"
 neutral_band = "float"
 convergence_spread_max = "float"
+convergence_extreme_reading = "float"
+base_rate_min_share = "float"
 no_evaluable_cap = "str"
 no_official_source_cap = "str"
-weak_dimension_cap = "str"
 source_ignored_rules = "list[str]"
 coverage_bounds = "list[float]"
 source_issue_bounds = "list[int]"
@@ -749,7 +866,7 @@ window_sessions = "int"
 windows_years = "list[int]"
 
 [market.signals.relative_strength]
-windows_sessions = "list[int]"
+windows = "list[str]"
 
 [market.signals.volume]
 recent_sessions = "int"
@@ -766,10 +883,18 @@ min_weeks = "int"
 
 [market.beta_choice]
 min_r2 = "float"
+max_se = "float"
+own_range = "list[float]"
+relever_max_de_ratio = "float"
 discrepancy = "float"
 range52_window_days = "int"
+region_majority = "float"
+europe_regions = "list[str]"
+emerging_regions = "list[str]"
+emerging_asia = "list[str]"
 
 [market.history]
+cache_max = "int"
 period = "str"
 interval = "str"
 max_attempts = "int"
@@ -777,6 +902,24 @@ retry_pause_s = "float"
 cache_ttl_s = "int"
 market_cache_ttl_s = "int"
 wait_timeout_s = "float"
+years_v2 = "int"
+fy_gap_tolerance_days = "int"
+fy_year_shift_days = "int"
+chart_period = "str"
+chart_cache_ttl_s = "int"
+chart_cache_max = "int"
+chart_concurrency = "int"
+market_total_return_symbol = "str"
+chart_fail_ttl_s = "int"
+
+[market.exchanges]              # Rediseño E2a (T2): código de bolsa del proveedor → nombre (lib/exchanges.py)
+"*" = "str"
+
+[market.filer_categories]       # Rediseño E2a (T3): categoría de emisor de la SEC → texto (lib/company_profile.py)
+"*" = "str"
+
+[market.us_states]              # Rediseño E2a: estado de EE. UU. (código de EDGAR) → nombre (lib/company_profile.py)
+"*" = "str"
 
 [market.dividends]
 monthly_max_gap_days = "int"
@@ -811,6 +954,10 @@ source = "str"
 url = "str"
 as_of = "str"
 columns = "list[str]"
+dollar_source = "str"
+dollar_url = "str"
+dollar_as_of = "str"
+dollar_columns = "list[str]"
 
 [industries.regions."*"]
 label = "str"
@@ -819,12 +966,19 @@ file_suffix = "str"
 [industries.regions."*".industries]
 "*" = "list[number]"
 
+[industries.regions."*".dollars]
+"*" = "list[number]"
+
 [betas]
 source = "str"
 url = "str"
 as_of = "str"
+unlevered_source = "str"
 
 [betas.industries]
+"*" = "list[number]"
+
+[betas.unlevered]
 "*" = "list[number]"
 
 [betas.yahoo_industries]
@@ -861,12 +1015,16 @@ count = "list[int]"
 negative_working_capital_industries = "list[str]"
 worsening_rel = "float"
 altman_referential_industries = "list[str]"
+captive_finance_segment_min_pct = "float"
+captive_finance_segment_axes = "list[str]"
+captive_finance_segment_patterns = "list[str]"
 
 [thresholds.quality_readings]
 fcf_margin_trend_pp = "float"
 rule_of_40 = "float"
 sbc_material = "float"
 coverage_trend_rel = "float"
+coverage_display_max = "float"
 
 [thresholds.premortem]
 margin_gap_rel = "float"
@@ -877,6 +1035,7 @@ max_items = "int"
 [thresholds.quality_persistence]
 window = "int"
 margin_ratio = "float"
+knee = "int"
 
 
 [market.context]
@@ -890,12 +1049,40 @@ overreaction_drop = "float"
 extrapolation_own_ratio = "float"
 news_days = "int"
 news_max = "int"
+news_max_v2 = "int"
+news_summary_chars = "int"
+news_lang = "str"
+news_name_suffixes = "list[str]"
+news_common_words = "list[str]"
+next_earnings_days = "int"
+estimate_cadence_days = "int"
 wait_timeout_s = "float"
 sector_fail_ttl_s = "float"
 pead_announce_max_days = "int"
 pead_window_sessions = "int"
 pead_inline = "float"
 pead_min_sessions = "int"
+pead_fiscal_match_days = "int"
+
+[data.web]
+analysis_timeout_s = "float"
+peers_poll_max_s = "int"
+loading_delay_ms = "int"
+loading_expected_s = "float"
+loading_fast_ms = "int"
+loading_stall_fill = "float"
+loading_typical_s = "list[float]"
+loading_exit_hold_ms = "int"
+loading_exit_ms = "int"
+loading_titles = "list[str]"
+loading_labels = "list[str]"
+loading_phrases = "list[str]"
+loading_stall_title = "str"
+perf_cpu_throttle = "int"
+perf_section_change_ms = "int"
+perf_inp_p75_ms = "int"
+perf_long_task_ms = "int"
+perf_scroll_long_task_ms = "int"
 
 [data.keepalive]
 enabled = "bool"
@@ -905,6 +1092,14 @@ first_delay_s = "float"
 
 [data.server]
 max_concurrent_analyses = "int"
+scenario_concurrency = "int"
+max_body_bytes = "int"
+client_ip_headers = "list[str]"
+csp = "list[str]"
+referrer_policy = "str"
+gzip_minimum_bytes = "int"
+gzip_level = "int"
+gzip_exclude_paths = "list[str]"
 
 [review.parameters."*"]            # config/review.toml (fase 7): revisión mensual de parámetros
 key = "str"
@@ -915,3 +1110,301 @@ consulted = "str"
 cadence_days = "int"
 pair = "str"
 note = "str"
+
+[market.universe]
+sp500_source = "str"
+max_age_days = "int"
+share_classes = "list[str]"
+adrs = "list[str]"
+
+[market.universe.adr_sectors]
+"*" = "str"
+
+[market.segments]
+upper_words = "list[str]"
+lower_words = "list[str]"
+acronym_max_len = "int"
+axes = "list[str]"
+geographic_axes = "list[str]"
+neutral_members = "list[str]"
+elimination_members = "list[str]"
+redundant_axes = "list[str]"
+revenue_concepts = "list[str]"
+total_revenue_concepts = "list[str]"
+extension_total_concepts = "list[str]"
+min_period_days = "int"
+reconcile_tolerance = "float"
+aggregate_tolerance = "float"
+max_subset_members = "int"
+max_single_share = "float"
+segments_budget_s = "float"
+segments_ttl_s = "int"
+segments_cache_max = "int"
+premium_concepts = "list[str]"
+segments_concurrency = "int"
+segments_fail_ttl_s = "int"
+max_instance_mb = "int"
+prefetch_ttl_s = "int"
+prefetch_max = "int"
+prefetch_concurrency = "int"
+
+product_axes = "list[str]"
+summary_items_max = "int"
+[market.peers]
+peers_count = "int"
+min_peers = "int"
+caps_ttl_s = "int"
+poll_s = "int"
+max_cap_lookups = "int"
+finnhub_min_interval_s = "float"
+yahoo_quote_url = "str"
+yahoo_quote_timeout_s = "float"
+size_band_low = "float"
+size_band_high = "float"
+pe_meaningful_max = "float"
+summary_columns = "list[str]"
+fail_ttl_s = "int"
+caps_cache_max = "int"
+rankings_cache_max = "int"
+max_substitutions = "int"
+no_data_markers = "list[str]"
+start_with_analysis = "bool"
+pdf_wait_s = "int"
+pdf_poll_s = "float"
+
+[market.analysis_queue]
+workers = "int"
+summary_ttl_s = "int"
+summary_cache_max = "int"
+max_queue = "int"
+max_prewarm_queue = "int"
+max_per_client = "int"
+fail_ttl_s = "int"
+busy_wait_s = "float"
+
+[market.search]
+limit = "int"
+yahoo_count = "int"
+timeout_s = "float"
+
+[market.trending]
+top_n = "int"
+batch_size = "int"
+min_price = "float"
+refresh_after_close_min = "int"
+close_hour_et = "int"
+retry_after_s = "int"
+prewarm_max = "int"
+poll_s = "int"
+min_sector_items = "int"
+periods = "list[str]"
+history_days = "int"
+snapshot_file = "str"
+sectors = "list[str]"
+
+[market.trending.period_sessions]
+"*" = "int"
+
+[market.trending.sector_labels]
+"*" = "str"
+
+[market.sparklines]
+max_symbols = "int"
+max_points = "int"
+cache_max = "int"
+batch_size = "int"
+
+[market.sparklines.periods."*"]
+interval = "str"
+range = "str"
+ttl_s = "int"
+label = "str"
+
+[market.price_returns]
+range_keys = "list[str]"
+range_labels = "list[str]"
+range_days = "list[int]"
+cover_slack_days = "int"
+chart_slack_days = "int"
+chart_decimals = "int"
+
+[market.segments.concept_labels]
+"*" = "str"
+
+[market.segments.partial_concept_labels]
+"*" = "str"
+
+# Rediseño E5: informe PDF nuevo (lib/pdf_v2)
+[pdf.layout]
+max_tail_gap_pt = "float"
+max_block_gap_pt = "float"
+cover_chart_min_pt = "float"
+cover_chart_max_pt = "float"
+keep_lines_after_title = "int"
+[pdf.glossary]
+title = "str"
+keys = "list[str]"
+
+# V7 (nombres en español): industrias y sectores de las fuentes → español (config/names.toml, lib/names.py)
+[names.damodaran]
+"*" = "str"
+
+[names.yahoo_sectors]
+"*" = "str"
+
+[names.gics_sectors]
+"*" = "str"
+
+[names.yahoo_industries]
+"*" = "str"
+
+[names.countries]
+"*" = "str"
+
+[names.company]
+suffixes_ci = "list[str]"
+suffixes = "list[str]"
+after_comma = "list[str]"
+edgar_state = "str"
+
+[names.company.exceptions]
+"*" = "str"
+
+[valuation.country_risk]
+lambda = "float"
+geo_min_coverage = "float"
+region_keywords = "list[list[str]]"
+region_groups = "list[str]"
+
+[valuation.country_risk.aliases]
+"*" = "str"
+
+[country_risk]
+source = "str"
+url = "str"
+updated = "str"
+consulted = "str"
+mature_market_erp = "float"
+us_erp = "float"
+
+[country_risk.erp]
+"*" = "float"
+
+[country_risk.country_region]
+"*" = "str"
+
+[country_risk.region_erp]
+"*" = "float"
+
+[betas_regional]
+as_of = "str"
+consulted = "str"
+
+[betas_regional.europe]
+source = "str"
+url = "str"
+
+[betas_regional.europe.industries]
+"*" = "list[number]"
+
+[betas_regional.europe.unlevered]
+"*" = "list[number]"
+
+[betas_regional.emerging]
+source = "str"
+url = "str"
+
+[betas_regional.emerging.industries]
+"*" = "list[number]"
+
+[betas_regional.emerging.unlevered]
+"*" = "list[number]"
+
+[valuation.pb_two_stage]
+bv_growth_threshold = "float"
+years = "int"
+
+
+# Reglas de cordura del modelo general (lib/model_invariants.py, tools/universe_scan.py): miden, no puntúan.
+[invariants]
+max_magnitude = "float"
+
+[invariants.margen_neto_techo]
+weight = "int"
+tolerance_pp = "float"
+
+[invariants.margen_operativo_unico]
+weight = "int"
+tolerance_pp = "float"
+
+[invariants.ebitda_sin_amortizacion_operativa]
+weight = "int"
+
+[invariants.ke_sobre_kd]
+weight = "int"
+min_gap = "float"
+
+[invariants.beta_en_rango]
+weight = "int"
+used_range = "list[float]"
+
+[invariants.g_terminal_bajo_rf]
+weight = "int"
+tolerance = "float"
+
+[invariants.capitalizacion]
+weight = "int"
+tolerance = "float"
+
+[invariants.roe_patrimonio_negativo]
+weight = "int"
+
+[invariants.peg_crecimiento_no_positivo]
+weight = "int"
+
+[invariants.cifra_unica]
+weight = "int"
+max_listed = "int"
+
+[invariants.peso_en_referencia]
+weight = "int"
+max_share = "float"
+min_universe_peers = "int"
+
+[invariants.crecimiento_robusto]
+weight = "int"
+robust_markers = "list[str]"
+
+[invariants.alertas_coherentes]
+weight = "int"
+other_basis_markers = "list[str]"
+labels = "list[list[str]]"
+
+[invariants.beta_unica]
+weight = "int"
+tolerance = "float"
+
+[invariants.estados_al_dia]
+weight = "int"
+max_days_ttm = "int"
+max_days_fy = "int"
+
+[invariants.confianza_cobertura]
+weight = "int"
+
+[invariants.motivo_de_vacio]
+weight = "int"
+min_reason_chars = "int"
+max_listed = "int"
+
+[invariants.escaneo]
+batch_size = "int"
+pause_between_batches_s = "float"
+workers = "int"
+top_n = "int"
+edgar_max_rps = "float"
+finnhub_max_per_min = "int"
+finnhub_skip_paths = "list[str]"
+check_after_min = "float"
+max_minutes = "float"
+max_rss_mb = "float"

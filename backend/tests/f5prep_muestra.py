@@ -54,8 +54,8 @@ def main():
             f"| {t} | {s['status']} | {pct(v(sig['momentum_12_1']))} | {pct(v(tr))} | {pct(v(tr, 'slope'))} | "
             f"{v(tr, 'regime') or '—'} | {pct(v(sig['realized_volatility']), 0)} | "
             f"{pct(v(dd1), 0)} ({dd1.get('peak_date', '—')} → {dd1.get('trough_date', '—')}) | {pct(v(dd3), 0)} | "
-            f"{s['sector_etf']} | {pct((w.get('126') or {}).get('difference'))} | "
-            f"{pct((w.get('252') or {}).get('difference'))} | {num(v(sig['abnormal_volume']))} | "
+            f"{s['sector_etf']} | {pct((w.get('6M') or {}).get('difference'))} | "
+            f"{pct((w.get('1A') or {}).get('difference'))} | {num(v(sig['abnormal_volume']))} | "
             f"{num(v(sig['range_52w_position']) * 100 if v(sig['range_52w_position']) is not None else None, 0)}% |")
         b = sig["beta"]
         fh_beta, fh_src = golden_beta(t)

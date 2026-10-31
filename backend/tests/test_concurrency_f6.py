@@ -112,3 +112,79 @@ def test_edgar_budget_does_not_pay_for_the_queue():
     with b.turn(sem):
         pass
     assert b.queued_s >= 0.25 and b.left() > 0.9
+
+
+def test_queue_wait_is_counted_while_waiting():
+    """V6 (B2): la espera del turno cuenta en `queued_s` mientras se espera (no al conseguirlo): quien espera el
+    resultado (collect) alarga su plazo a la vez."""
+    import threading
+    import time
+    import sec_edgar
+    from settings import cfg
+    b = sec_edgar.Budget(seconds=1.0)
+    sem = threading.BoundedSemaphore(1)
+    sem.acquire()
+    seen = []
+
+    def waiter():
+        with b.turn(sem):
+            pass
+    t = threading.Thread(target=waiter)
+    t.start()
+    time.sleep(0.4 + 2 * cfg("data.edgar.turn_poll_s"))
+    seen.append(b.queued_s)                      # aún esperando
+    sem.release()
+    t.join(5)
+    assert seen[0] >= 0.4 and b.queued_s >= seen[0]
+
+
+def test_queue_wait_beyond_the_forgiven_queue_gives_up(monkeypatch):
+    """V6 (B2): si la cola perdonada (`queue_max_s`) se agota antes del turno, EDGAR no está para este análisis y se
+    dice, en vez de seguir esperando a un resultado que ya nadie recoge."""
+    import threading
+    import pytest
+    import sec_edgar
+    import settings
+    real = settings.cfg
+    monkeypatch.setattr(sec_edgar, "cfg", lambda k: 0.3 if k == "data.edgar.queue_max_s" else
+                        (0.05 if k == "data.edgar.turn_poll_s" else real(k)))
+    b = sec_edgar.Budget(seconds=1.0)
+    sem = threading.BoundedSemaphore(1)
+    sem.acquire()
+    with pytest.raises(sec_edgar.Unavailable, match="EDGAR ocupado"):
+        with b.turn(sem):
+            pass
+    sem.release()
+
+
+def test_segments_do_not_take_the_analysis_parse_turn(monkeypatch):
+    """V6 (B2): con una lectura de segmentos lenta en curso, el análisis consigue su turno de lecturas grandes sin
+    esperar (antes compartían el único turno de _parsing() y el análisis perdía EDGAR)."""
+    import threading
+    import time
+    import sec_edgar
+    monkeypatch.setattr(sec_edgar, "_parse_lock", None)
+    monkeypatch.setattr(sec_edgar, "_segments_lock", None)
+    inside, release = threading.Event(), threading.Event()
+
+    def slow_segments_parse():
+        with sec_edgar.Budget(10.0).turn(sec_edgar._segments_parsing()):
+            inside.set()
+            release.wait(5)
+    t = threading.Thread(target=slow_segments_parse)
+    t.start()
+    assert inside.wait(5)
+    b = sec_edgar.Budget(seconds=1.0)
+    t0 = time.monotonic()
+    with b.turn(sec_edgar._parsing()):
+        waited = time.monotonic() - t0
+    release.set()
+    t.join(5)
+    assert waited < 0.1 and b.queued_s < 0.1
+
+
+def test_segments_parse_uses_its_own_turn():
+    import inspect
+    import segments
+    src = inspect.getsource(segments)
+    assert "edgar._segments_parsing()" in src and "edgar._parsing()" not in src

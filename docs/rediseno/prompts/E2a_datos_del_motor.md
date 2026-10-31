@@ -62,3 +62,5 @@ motor los datos nuevos que salen de fuentes ya conectadas, corrige en origen tre
 - [ ] `/v2` muestra: variación del día, ficha de EDGAR, gráfica de 5 años con eventos y rentabilidad total, noticias en
       tarjetas y próximos resultados; todas las pruebas de diseño de E1 en verde.
 - [ ] Ningún secreto en el repo; rama sin push ni merge; registro escrito.
+
+> **Evidencia fuera de `main` (E6, 31-oct):** las capturas (`docs/rediseno/capturas-*`), `docs/fiabilidad/f8_evidencia/` y los volcados JSON de escaneo y medida de `docs/` no están en `main`. Siguen en las ramas locales del rediseño y de la fiabilidad (`rediseno/v4-f8`) y en el archivo `v4_evidencia_8e4f3952.tar.gz` de `/Users/joseestebanroa/Downloads/finanzer_next-archivo`, fuera del repositorio.

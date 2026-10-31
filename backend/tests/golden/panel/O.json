@@ -3,9 +3,9 @@
     "red_flags": [],
     "strengths": [
       {
-        "category": "Riesgo de mercado",
-        "detail": "Con beta 0.62, la acción se mueve menos que el mercado y tiende a amortiguar las caídas: un perfil más estable, útil para reducir la volatilidad de una cartera.",
-        "reason": "Perfil defensivo — Beta 0.62"
+        "category": "Valoración",
+        "detail": "Cotiza a 15.6x EBITDA frente a 18.0x de su industria sin ella: valoración atractiva sobre flujo operativo, a validar que no responda a un deterioro del negocio.",
+        "reason": "EV/EBITDA barato — 15.6x"
       }
     ],
     "warnings": [
@@ -24,34 +24,37 @@
       "reason": "no_aplica",
       "sector": "Real Estate"
     },
+    "excluded_by_sic": "No aplica por su actividad (SIC 6798): financiera o aseguradora: el balance es el producto (depósitos, reservas y préstamos son pasivos operativos); el Altman se calibró con manufactureras",
     "interpretation": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria",
     "model": "No Aplicable",
+    "model_basis": "por el SIC del emisor en SEC EDGAR: 6798, fuera de manufacturas",
     "operating_leases_excluded": 429675000.0,
+    "substitute": null,
     "z_score": null,
     "zone": "n/a"
   },
   "archetype_metrics": {
     "fcf_per_share_cagr_3y": 0.032763454919,
     "fcf_per_share_cagr_3y_reason": null,
-    "ffo_cagr_3y": 0.121521101218,
-    "ffo_margin": 0.638168486953,
-    "ffo_per_share_cagr_3y": -0.000898738835226,
+    "ffo_cagr_3y": 0.163250321339,
+    "ffo_margin": 0.665855349068,
+    "ffo_per_share_cagr_3y": 0.0362755206644,
     "ffo_per_share_cagr_3y_reason": null,
     "ffo_per_share_series": [
-      3.83606627586,
-      3.6526930122,
-      3.67791776307,
-      3.84642776003
+      4.15052330094,
+      3.98435353013,
+      3.75953671956,
+      3.72972780964
     ],
     "ffo_series": [
-      3582790000.0,
-      3256416000.0,
-      2767486000.0,
-      2539797000.0
+      3876485000.0,
+      3552095000.0,
+      2828901000.0,
+      2462740000.0
     ],
-    "ffo_to_assets": 0.0498413328628,
-    "ffo_to_equity": 0.0963334431281,
-    "ffo_ttm": 3809945000.0,
+    "ffo_to_assets": 0.0520036930214,
+    "ffo_to_equity": 0.10051285783,
+    "ffo_ttm": 3975239000.0,
     "shares_cagr_3y": 0.122529962489
   },
   "benchmark": {
@@ -61,28 +64,117 @@
       "classified": "Damodaran clasifica a la empresa en esa industria (símbolo)",
       "damodaran": "Retail (REITs)",
       "firms": 26,
+      "profile_differs": false,
+      "published": {
+        "de": 1.16,
+        "ev_ebitda": 16.7229,
+        "gross_margin": 0.7861,
+        "interest_coverage": 2.2487,
+        "net_margin": 0.23,
+        "operating_margin": 0.4025,
+        "pb": 2.0757,
+        "pe": 31.0975,
+        "roe": 0.0636,
+        "roic": 0.0516
+      },
       "region": "us",
       "region_label": "EE. UU.",
+      "self_exclusion": {
+        "columns": {
+          "de": {
+            "after": 1.44794347602,
+            "before": 1.16,
+            "how": "sin_empresa"
+          },
+          "ev_ebitda": {
+            "after": 17.965,
+            "before": 16.7229,
+            "how": "mediana_pares",
+            "n": 4
+          },
+          "gross_margin": {
+            "after": 0.70235,
+            "before": 0.7861,
+            "how": "mediana_pares",
+            "n": 4
+          },
+          "interest_coverage": {
+            "after": null,
+            "before": 2.2487,
+            "how": "sin_dato",
+            "n": 0
+          },
+          "net_margin": {
+            "after": 0.245560892454,
+            "before": 0.23,
+            "how": "sin_empresa"
+          },
+          "operating_margin": {
+            "after": 0.381,
+            "before": 0.4025,
+            "how": "mediana_pares",
+            "n": 4
+          },
+          "pb": {
+            "after": 2.53221345056,
+            "before": 2.0757,
+            "how": "sin_empresa"
+          },
+          "pe": {
+            "after": 27.0210522494,
+            "before": 31.0975,
+            "how": "sin_empresa"
+          },
+          "roe": {
+            "after": 0.0903122589984,
+            "before": 0.0636,
+            "how": "sin_empresa"
+          },
+          "roic": {
+            "after": null,
+            "before": 0.0516,
+            "how": "sin_dato",
+            "n": 0
+          }
+        },
+        "cut": "2025-09-30",
+        "date": "2026-01-05",
+        "declaration": "referencia de la industria sin Realty Income, que pesa el 26 %",
+        "figures": {
+          "book_equity": 39050.597,
+          "cash": 417.173,
+          "depreciation": 2495.436,
+          "ev": 81697.2853661,
+          "invested_capital": 67531.172,
+          "mcap": 53216.7103661,
+          "net_income": 962.117,
+          "revenue": 5601.734,
+          "total_debt": 28897.748
+        },
+        "method": "sin_empresa",
+        "peers_date": "2026-10-28",
+        "session": "2026-01-05",
+        "source": "A. Damodaran, Dollar value measures by industry (Dollar{US, Europe, Japan, emerg, Global}.xls), NYU Stern",
+        "weight": 0.256287562047
+      },
       "source": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern",
       "url": "https://pages.stern.nyu.edu/~adamodar/New_Home_Page/datacurrent.html"
     },
     "profile": "sector",
     "provisional": false,
     "reason": null,
-    "ref": "de su industria",
+    "ref": "de su industria sin ella",
     "sector": "real_estate",
     "short": "industria",
     "sources": {
-      "de": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Retail (REITs)», EE. UU., 26 empresas",
-      "ev_ebitda": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Retail (REITs)», EE. UU., 26 empresas",
-      "gross_margin": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Retail (REITs)», EE. UU., 26 empresas",
-      "interest_coverage": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Retail (REITs)», EE. UU., 26 empresas",
-      "net_margin": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Retail (REITs)», EE. UU., 26 empresas",
-      "operating_margin": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Retail (REITs)», EE. UU., 26 empresas",
-      "pb": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Retail (REITs)», EE. UU., 26 empresas",
-      "pe": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Retail (REITs)», EE. UU., 26 empresas",
-      "roe": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Retail (REITs)», EE. UU., 26 empresas",
-      "roic": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Retail (REITs)», EE. UU., 26 empresas"
+      "de": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «REIT de locales comerciales», EE. UU., 26 empresas; referencia de la industria sin Realty Income, que pesa el 26 %",
+      "ev_ebitda": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «REIT de locales comerciales», EE. UU., 26 empresas; mediana de 4 pares del universo (sin las cifras de la empresa para esta columna)",
+      "gross_margin": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «REIT de locales comerciales», EE. UU., 26 empresas; mediana de 4 pares del universo (sin las cifras de la empresa para esta columna)",
+      "net_margin": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «REIT de locales comerciales», EE. UU., 26 empresas; referencia de la industria sin Realty Income, que pesa el 26 %",
+      "operating_margin": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «REIT de locales comerciales», EE. UU., 26 empresas; mediana de 4 pares del universo (sin las cifras de la empresa para esta columna)",
+      "pb": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «REIT de locales comerciales», EE. UU., 26 empresas; referencia de la industria sin Realty Income, que pesa el 26 %",
+      "pe": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «REIT de locales comerciales», EE. UU., 26 empresas; referencia de la industria sin Realty Income, que pesa el 26 %",
+      "roe": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «REIT de locales comerciales», EE. UU., 26 empresas; referencia de la industria sin Realty Income, que pesa el 26 %"
     },
     "thresholds": {
       "current_ratio_low": 1.0,
@@ -97,44 +189,70 @@
     },
     "thresholds_key": "real_estate",
     "values": {
-      "de": 1.16,
-      "ev_ebitda": 16.7229,
-      "gross_margin": 0.7861,
-      "interest_coverage": 2.2487,
-      "net_margin": 0.23,
-      "operating_margin": 0.4025,
-      "pb": 2.0757,
-      "pe": 31.0975,
-      "roe": 0.0636,
-      "roic": 0.0516
+      "de": 1.44794347602,
+      "ev_ebitda": 17.965,
+      "gross_margin": 0.70235,
+      "net_margin": 0.245560892454,
+      "operating_margin": 0.381,
+      "pb": 2.53221345056,
+      "pe": 27.0210522494,
+      "roe": 0.0903122589984
     }
   },
   "beta": {
-    "adjusted": 0.62,
+    "adjusted": 0.673384200855,
+    "bottom_up": {
+      "basis": "industria",
+      "damodaran": "Retail (REITs)",
+      "firms": 26,
+      "industry_de": 0.5642,
+      "industry_tax": 0.016,
+      "region": "us",
+      "source": "A. Damodaran, Betas by Sector (US), NYU Stern, enero de 2026 (columna Unlevered beta corrected for cash)",
+      "url": "https://pages.stern.nyu.edu/~adamodar/New_Home_Page/datafile/Betas.html",
+      "value": 0.44
+    },
     "coefficients": [
       0.67,
       0.33
     ],
     "default": false,
+    "discarded": "R² 0.02 < 0.20: la regresión no explica el título; beta 0.18 fuera de [0.4; 2.5]",
     "discrepancy": null,
-    "method": "beta del sector (sin Blume)",
+    "method": "beta de abajo hacia arriba (sin Blume)",
     "own": {
-      "adjusted": 0.44370556853,
+      "adjusted": 0.448423176983,
+      "fails": [
+        "R² 0.02 < 0.20: la regresión no explica el título",
+        "beta 0.18 fuera de [0.4; 2.5]"
+      ],
       "first_week": "2024-10-25",
-      "last_week": "2026-10-16",
-      "observations": 104,
-      "r2": 0.0219899080684,
-      "raw": 0.169709803776,
+      "last_week": "2026-10-09",
+      "observations": 103,
+      "r2": 0.0238764380548,
+      "raw": 0.176751010423,
       "reason": null,
+      "se": 0.112452430676,
       "status": "ok"
     },
     "raw": null,
-    "reason": "beta propia no fiable (R² 0.02 < 0.1: la regresión no explica el título); beta del sector (Retail (REITs), A. Damodaran, Betas by Sector (US), NYU Stern, enero de 2026 (columna Beta)), sin Blume",
+    "reason": "beta propia descartada (R² 0.02 < 0.20: la regresión no explica el título; beta 0.18 fuera de [0.4; 2.5]); de abajo hacia arriba: industria Retail (REITs) (Damodaran, enero de 2026): βU 0.44 reapalancada con D/E de mercado de la empresa 0.59 y t 10% → 0.67",
+    "region": null,
+    "relevered": {
+      "de": 0.589354042563,
+      "de_basis": "de mercado de la empresa",
+      "tax": 0.1,
+      "unlevered": 0.44
+    },
+    "rule": "propia si pasa los filtros (R² ≥ 0.20, error estándar ≤ 0.25, beta entre 0.4 y 2.5); si no, la de abajo hacia arriba de su industria (Damodaran)",
     "source": "sector",
     "source_beta": 0.6639054
   },
   "business_model": {
+    "altman_excluded": "No aplica por su actividad (SIC 6798): financiera o aseguradora: el balance es el producto (depósitos, reservas y préstamos son pasivos operativos); el Altman se calibró con manufactureras",
     "altman_referential": false,
+    "altman_referential_reason": null,
+    "captive_finance": null,
     "current_ratio": {
       "applies": false,
       "history": [
@@ -148,13 +266,15 @@
       "structural": false,
       "worsening": true
     },
-    "piotroski_caveat": null
+    "piotroski_caveat": null,
+    "sic": "6798"
   },
   "classification": {
     "alerts": [],
     "ambiguous": false,
     "archetype": "REIT",
     "confidence": "normal",
+    "definition": "sociedad inmobiliaria cotizada que reparte casi todo su beneficio y se mide por sus fondos de operación (FFO)",
     "frontier": null,
     "industry": "REIT - Retail",
     "inputs": {
@@ -162,30 +282,65 @@
       "eps_ttm": 1.37,
       "net_margin_ttm": 0.212320045614,
       "revenue_cagr_3y": 0.198023443531,
+      "revenue_cagr_3y_bound": null,
       "revenue_cagr_3y_reason": null
     },
     "label": "REIT",
     "low_confidence": null,
-    "reason": "Clasificada como REIT por industria REIT - Retail",
-    "reason_plain": "REIT por su industria (REIT - Retail).",
+    "reason": "Clasificada como REIT por industria REIT de locales comerciales",
+    "reason_plain": "REIT: sociedad inmobiliaria cotizada que reparte casi todo su beneficio y se mide por sus fondos de operación (FFO); industria REIT de locales comerciales.",
     "rule": "industria_reit",
     "sector": "Real Estate",
     "subtype": null,
     "subtype_label": null
   },
+  "company_profile": {
+    "reason": null,
+    "rows": [
+      {
+        "key": "sic",
+        "label": "Industria (código SIC)",
+        "value": "6798 · Real Estate Investment Trusts"
+      },
+      {
+        "key": "hq",
+        "label": "Sede",
+        "value": "San Diego, California"
+      },
+      {
+        "key": "incorporation",
+        "label": "Constituida en",
+        "value": "Maryland"
+      },
+      {
+        "key": "fiscal_year_end",
+        "label": "Cierre del ejercicio",
+        "value": "31 de diciembre"
+      },
+      {
+        "key": "category",
+        "label": "Tipo de emisor",
+        "value": "Gran emisor (large accelerated filer)"
+      }
+    ],
+    "source": "SEC EDGAR (submissions del emisor)",
+    "status": "ok"
+  },
   "confidence": {
-    "capped_from": "alta",
+    "base_rate_step": null,
+    "capped_from": null,
+    "contraction_basis": "media",
     "dimensions": {
       "convergence": {
-        "level": "media",
+        "level": "alta",
         "methods": [
           {
-            "band": "en_precio",
-            "direction": "en precio",
+            "band": "barata",
+            "direction": "barata",
             "evaluable": true,
             "kind": "intrínseco",
             "method": "DCF inverso",
-            "signal": 0.0
+            "signal": 0.5
           },
           {
             "components": 3,
@@ -193,11 +348,16 @@
             "evaluable": true,
             "kind": "relativo",
             "method": "múltiplos frente al sector",
-            "signal": 0.333333333333
+            "readings": {
+              "DCF inverso (FFO)": 0.5,
+              "EV/EBITDA": 0.5,
+              "P/FFO": 0.5
+            },
+            "signal": 0.5
           }
         ],
         "reasons": [
-          "uno lo ve en precio y otro con dirección: no coinciden, sin oponerse"
+          "coinciden (barata) con distancia 0.00 (< 0.6)"
         ]
       },
       "coverage": {
@@ -232,13 +392,53 @@
         "reasons": []
       }
     },
+    "ke_dependent": {
+      "from": "alta",
+      "reason": "veredicto dependiente de Ke: el nivel de precio pasa de «atractivo» a «razonable» con Ke + 1 pp",
+      "to": "media"
+    },
     "level": "media",
     "limits_score": false,
     "reasons": [
-      "convergencia media: uno lo ve en precio y otro con dirección: no coinciden, sin oponerse",
-      "techo en media: la convergencia es media: alta exige convergencia alta"
+      "veredicto dependiente de Ke: el nivel de precio pasa de «atractivo» a «razonable» con Ke + 1 pp: confianza alta → media"
     ],
-    "score": 0.8
+    "score": 1.0
+  },
+  "cost_of_equity": {
+    "as_of": "2026-10-01",
+    "capm": 0.0811821364359,
+    "crp": null,
+    "erp": 0.042,
+    "floor": null,
+    "floors": {
+      "Kd + 1 pp": 0.0767,
+      "Rf + 0.5 × ERP": 0.0739
+    },
+    "kd": 0.0667,
+    "rf": 0.0529,
+    "shift": null,
+    "value": 0.0811821364359
+  },
+  "country_risk": {
+    "as_of": "2026-01-05",
+    "basis": "sede",
+    "country": "United States",
+    "crp": 0.0,
+    "identified": null,
+    "lambda": 1.0,
+    "reason": "sin geografía de los ingresos en XBRL: país de la sede operativa",
+    "source": "A. Damodaran, Country Default Spreads and Risk Premiums (ctryprem.xlsx), NYU Stern",
+    "unattributed": null,
+    "weights": [
+      {
+        "add": 0.0,
+        "erp": 0.0446,
+        "kind": "sede",
+        "label": "United States",
+        "name": "United States",
+        "share": 1.0
+      }
+    ]
   },
   "data_provenance": {
     "as_of": {
@@ -337,22 +537,41 @@
     },
     "beta": {
       "adjusted": true,
+      "bottom_up": {
+        "basis": "industria",
+        "damodaran": "Retail (REITs)",
+        "firms": 26,
+        "industry_de": 0.5642,
+        "industry_tax": 0.016,
+        "region": "us",
+        "source": "A. Damodaran, Betas by Sector (US), NYU Stern, enero de 2026 (columna Unlevered beta corrected for cash)",
+        "url": "https://pages.stern.nyu.edu/~adamodar/New_Home_Page/datafile/Betas.html",
+        "value": 0.44
+      },
+      "discarded": "R² 0.02 < 0.20: la regresión no explica el título; beta 0.18 fuera de [0.4; 2.5]",
       "discrepancy": null,
       "own": {
-        "adjusted": 0.44370556853,
+        "adjusted": 0.448423176983,
+        "fails": [
+          "R² 0.02 < 0.20: la regresión no explica el título",
+          "beta 0.18 fuera de [0.4; 2.5]"
+        ],
         "first_week": "2024-10-25",
-        "last_week": "2026-10-16",
-        "observations": 104,
-        "r2": 0.0219899080684,
-        "raw": 0.169709803776,
+        "last_week": "2026-10-09",
+        "observations": 103,
+        "r2": 0.0238764380548,
+        "raw": 0.176751010423,
         "reason": null,
+        "se": 0.112452430676,
         "status": "ok"
       },
-      "reason": "beta propia no fiable (R² 0.02 < 0.1: la regresión no explica el título); beta del sector (Retail (REITs), A. Damodaran, Betas by Sector (US), NYU Stern, enero de 2026 (columna Beta)), sin Blume",
+      "reason": "beta propia descartada (R² 0.02 < 0.20: la regresión no explica el título; beta 0.18 fuera de [0.4; 2.5]); de abajo hacia arriba: industria Retail (REITs) (Damodaran, enero de 2026)",
+      "rule": "propia si pasa los filtros (R² ≥ 0.20, error estándar ≤ 0.25, beta entre 0.4 y 2.5); si no, la de abajo hacia arriba de su industria (Damodaran)",
       "sector": {
         "basis": "industria",
         "damodaran": "Retail (REITs)",
         "firms": 26,
+        "region": "us",
         "source": "A. Damodaran, Betas by Sector (US), NYU Stern, enero de 2026 (columna Beta)",
         "url": "https://pages.stern.nyu.edu/~adamodar/New_Home_Page/datafile/Betas.html",
         "value": 0.62
@@ -650,19 +869,61 @@
           "last": "2025-12-31",
           "unit": "USD",
           "years": 18
+        },
+        "spectrum_purchases": {
+          "cross_taxonomy": null,
+          "first": null,
+          "last": null,
+          "unit": "USD",
+          "years": 0
         }
       },
       "pending_filings": [],
       "primary": {
+        "charges": {
+          "detail": {
+            "GoodwillImpairmentLoss": 0.0
+          },
+          "period_end": "2026-06-30"
+        },
         "cut": [],
         "fy": [],
         "reason": null,
+        "reconciliation": [],
+        "series": [
+          {
+            "concepts": [
+              "us-gaap:Revenues"
+            ],
+            "field": "revenue",
+            "source": "sec_edgar",
+            "years": 4
+          },
+          {
+            "concepts": [
+              "us-gaap:NetIncomeLossAvailableToCommonStockholdersBasic"
+            ],
+            "field": "net_income",
+            "source": "sec_edgar",
+            "years": 4
+          }
+        ],
         "skipped": [
           {
             "field": "operatingIncome",
             "reason": "EDGAR no lo tiene del periodo que acaba el 2026-06-30"
           }
         ]
+      },
+      "profile": {
+        "category": "Large accelerated filer",
+        "city": "SAN DIEGO",
+        "fiscal_year_end": "1231",
+        "sic": "6798",
+        "sic_description": "Real Estate Investment Trusts",
+        "state_of_incorporation": "MD",
+        "state_or_country": "CA",
+        "website": null
       },
       "reason": null,
       "recut": null,
@@ -792,7 +1053,7 @@
         "source": "finnhub"
       },
       "beta": {
-        "detail": "beta propia no fiable (R² 0.02 < 0.1: la regresión no explica el título); beta del sector (Retail (REITs), A. Damodaran, Betas by Sector (US), NYU Stern, enero de 2026 (columna Beta)), sin Blume",
+        "detail": "beta propia descartada (R² 0.02 < 0.20: la regresión no explica el título; beta 0.18 fuera de [0.4; 2.5]); de abajo hacia arriba: industria Retail (REITs) (Damodaran, enero de 2026)",
         "source": "derivado"
       },
       "bookValue": {
@@ -1011,7 +1272,8 @@
       "period_end": "2026-06-30",
       "period_type": "ttm",
       "preferred": 0.0,
-      "source": "Yahoo (estados de yfinance)"
+      "source": "Yahoo (estados de yfinance)",
+      "tangible_common": 29000652000.0
     },
     "path": "plan_b_yfinance",
     "pending_results": null,
@@ -1074,6 +1336,14 @@
       "reason": null,
       "sessions": 251,
       "status": "ok"
+    },
+    "staleness": {
+      "coverage_capped": false,
+      "cut": "2026-06-30",
+      "days_since_cut": 106,
+      "edgar_latest": null,
+      "status": "al_dia",
+      "text": null
     },
     "ttm": {
       "annual_fields": {
@@ -1161,6 +1431,14 @@
       "old": 0.6594,
       "reason": "inventory_turnover de Finnhub (0.6594) sin dato del corte de los estados con que casarlo: es de otro periodo y no entra",
       "rule": "periodo_incoherente"
+    },
+    {
+      "action": "sin_dato",
+      "field": "key_metrics.peg",
+      "new": null,
+      "old": 1.85835,
+      "reason": "PEG de 1.86: el crecimiento del BPA del informe es ≤ 0 (−6.3% anual a 3 años): el PEG no tiene sentido",
+      "rule": "multiplo_no_significativo"
     }
   ],
   "dcf_growth_blend": null,
@@ -1173,11 +1451,11 @@
       "items": [
         {
           "label": "Clasificación",
-          "text": "Arquetipo REIT (regla industria_reit): Clasificada como REIT por industria REIT - Retail"
+          "text": "Arquetipo REIT (regla industria_reit): Clasificada como REIT por industria REIT de locales comerciales."
         },
         {
-          "label": "Confianza · Convergencia entre métodos (media)",
-          "text": "uno lo ve en precio y otro con dirección: no coinciden, sin oponerse"
+          "label": "Confianza · Convergencia entre métodos (alta)",
+          "text": "coinciden (barata) con distancia 0.00 (< 0.6)"
         },
         {
           "label": "Fuente oficial",
@@ -1190,6 +1468,14 @@
         {
           "label": "Procedencia de los datos (campos del análisis por fuente)",
           "text": "estados de Yahoo (yfinance): 37 campos; SEC EDGAR: 1 (country); Finnhub: 8 (liquidez corriente, P/E adelantado, cobertura de intereses, rotación de existencias, payout, PEG, prueba ácida, dividendo por acción); Yahoo (cotización y perfil): 2 (industria, sector); calculados con otros datos del análisis: 12 campos; sin dato utilizable (ausente o de otro periodo): 2 (BPA estimado, caja total)."
+        },
+        {
+          "label": "Fórmula del bloque",
+          "text": "Bloque de múltiplos: promedio de 1 lectura reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = +0.50 × 2 (máximo con 1) = +1.0, redondeado a +1."
+        },
+        {
+          "label": "Nombres originales de las fuentes",
+          "text": "Industria de referencia: Retail (REITs), Damodaran; perfil de Yahoo Finance: industria REIT—Retail, sector Real Estate."
         }
       ],
       "title": "Detalle técnico para auditoría"
@@ -1199,44 +1485,44 @@
     "benchmark": {
       "column": "INDUSTRIA",
       "profile": "sector",
-      "ref": "de su industria",
+      "ref": "de su industria sin ella",
       "short": "industria",
       "thresholds_key": "real_estate",
       "vs": "vs industria"
     },
     "charts": {
       "comparison": {
-        "better": 2,
+        "better": 3,
         "groups": [
           {
             "items": [
               {
-                "bench": 2.0757,
-                "bench_txt": "2.08x",
+                "bench": 2.53221345056,
+                "bench_txt": "2.53x",
                 "fmt": "mult",
-                "gap_pct": -36.4101235015,
-                "gap_txt": "-36%",
+                "gap_pct": -47.8742573543,
+                "gap_txt": "-48%",
                 "higher_is_better": false,
                 "key": "pb",
                 "label": "P/B",
                 "reading": "Descuento profundo",
-                "text": "P/B de 1.3x frente a 2.1x de su industria (-36%): descuento profundo",
+                "text": "P/B de 1.3x frente a 2.5x de su industria sin ella (-48%): descuento profundo.",
                 "tone": "pos",
                 "value": 1.31993506648,
                 "value_txt": "1.32x"
               },
               {
-                "bench": 16.7229,
-                "bench_txt": "16.72x",
+                "bench": 17.965,
+                "bench_txt": "17.96x",
                 "fmt": "mult",
-                "gap_pct": -6.5609774347,
-                "gap_txt": "-7%",
+                "gap_pct": -13.0213509348,
+                "gap_txt": "-13%",
                 "higher_is_better": false,
                 "key": "ev_ebitda",
                 "label": "EV/EBITDA",
-                "reading": "En línea",
-                "text": "EV/EBITDA de 15.6x frente a 16.7x de su industria (-7%): en línea",
-                "tone": "neu",
+                "reading": "Descuento",
+                "text": "EV/EBITDA de 15.6x frente a 18.0x de su industria sin ella (-13%): descuento.",
+                "tone": "pos",
                 "value": 15.6257143046,
                 "value_txt": "15.63x"
               }
@@ -1246,59 +1532,44 @@
           {
             "items": [
               {
-                "bench": 1.16,
-                "bench_txt": "1.16x",
+                "bench": 1.44794347602,
+                "bench_txt": "1.45x",
                 "fmt": "mult",
-                "gap_pct": -32.9388735043,
-                "gap_txt": "-33%",
+                "gap_pct": -46.2749009036,
+                "gap_txt": "-46%",
                 "higher_is_better": false,
                 "key": "de",
                 "label": "Deuda / Equity",
-                "reading": "Descuento",
-                "text": "Deuda / Equity de 0.8x frente a 1.2x de su industria (-33%): descuento",
+                "reading": "Muy por debajo",
+                "text": "Deuda / Equity de 0.8x frente a 1.4x de su industria sin ella (-46%): muy por debajo.",
                 "tone": "pos",
                 "value": 0.777909067351,
                 "value_txt": "0.78x"
-              },
-              {
-                "bench": 2.2487,
-                "bench_txt": "2.25x",
-                "fmt": "mult",
-                "gap_pct": 5.37623452437,
-                "gap_txt": "+5%",
-                "higher_is_better": true,
-                "key": "interest_coverage",
-                "label": "Cobertura de intereses",
-                "reading": "En línea",
-                "text": "Cobertura de intereses de 2.4x frente a 2.2x de su industria (+5%): en línea",
-                "tone": "neu",
-                "value": 2.36959538575,
-                "value_txt": "2.37x"
               }
             ],
             "title": "Solidez"
           }
         ],
         "market_note": null,
-        "note": "Referencia: industria «Retail (REITs)»; Damodaran clasifica a la empresa en esa industria (símbolo), EE. UU., 26 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
-        "ref": "de su industria",
-        "total": 4
+        "note": "Referencia: industria «REIT de locales comerciales»; Damodaran clasifica a la empresa en esa industria (símbolo), EE. UU., 26 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Referencia de la industria sin Realty Income, que pesa el 26 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 30 de septiembre de 2025). Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
+        "ref": "de su industria sin ella",
+        "total": 3
       },
       "growth": [
         {
           "key": "revenue",
           "label": "Retorno total por acción",
-          "reading": "Crecimiento moderado (5.9%) — rentabilidad por dividendo 5.9% + FFO por acción -0.1% (CAGR 3 años); FFO por acción (FFO = beneficio neto + D&A; acciones en circulación de cada ejercicio); FFO agregado +12.2%, acciones +12.3% anual",
+          "reading": "Crecimiento sólido (9.5%) — rentabilidad por dividendo 5.9% + FFO por acción +3.6% (CAGR 3 años); FFO por acción (FFO según Nareit = beneficio neto + D&A − ventas de inmuebles + deterioros; acciones en circulación de cada ejercicio); FFO agregado +16.3%, acciones +12.3% anual.",
           "state": "con_dato",
-          "tone": "neu",
-          "value": 0.0588182002483,
-          "value_txt": "5.9%"
+          "tone": "pos",
+          "value": 0.0950937209127,
+          "value_txt": "9.5%"
         },
         {
           "key": "eps",
           "label": "BPA",
           "state": "no_aplica",
-          "text": "No aplica a REIT"
+          "text": "No aplica a REIT."
         },
         {
           "key": "fcf",
@@ -1311,9 +1582,11 @@
         }
       ],
       "historical": {
+        "growth_currency_note": null,
         "series": [
           {
             "cagr": 0.198023443531,
+            "cagr_note": null,
             "cagr_txt": "19.8%",
             "key": "revenue",
             "label": "Ingresos",
@@ -1351,6 +1624,7 @@
           },
           {
             "cagr": 0.0678281979193,
+            "cagr_note": null,
             "cagr_txt": "6.8%",
             "key": "net_income",
             "label": "Beneficio neto",
@@ -1370,24 +1644,25 @@
                 "yoy_txt": "+0.3%"
               },
               {
-                "value": 860772000.0,
-                "value_txt": "$860.77M",
+                "value": 847893000.0,
+                "value_txt": "$847.89M",
                 "year": 2024,
-                "yoy_pct": -1.32258179154,
-                "yoy_txt": "−1.3%"
+                "yoy_pct": -2.79900814964,
+                "yoy_txt": "−2.8%"
               },
               {
                 "value": 1058590000.0,
                 "value_txt": "$1.06B",
                 "year": 2025,
-                "yoy_pct": 22.9814631517,
-                "yoy_txt": "+23.0%"
+                "yoy_pct": 24.8494798282,
+                "yoy_txt": "+24.8%"
               }
             ],
             "state": "con_dato"
           },
           {
             "cagr": 0.15930792231,
+            "cagr_note": null,
             "cagr_txt": "15.9%",
             "key": "free_cash_flow",
             "label": "Flujo de caja libre",
@@ -1429,12 +1704,12 @@
       "institutional": {
         "altman": {
           "state": "no_aplica",
-          "text": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria"
+          "text": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria."
         }
       },
       "price_card": {
         "currency": "USD",
-        "exchange": "NYQ",
+        "exchange": "NYSE",
         "from_high_pct": -18.7960020806,
         "from_high_txt": "−18.8%",
         "high": 67.9400024414,
@@ -1446,6 +1721,10 @@
       },
       "profitability": {
         "margin_ladder": {
+          "period": {
+            "code": "TTM",
+            "of": "de los últimos doce meses (TTM, a 30 de junio de 2026)"
+          },
           "revenue": 5970124000.0,
           "revenue_txt": "$5.97B",
           "steps": [
@@ -1453,7 +1732,7 @@
               "key": "gross_margin",
               "label": "Margen bruto",
               "state": "no_aplica",
-              "text": "No aplica a REIT"
+              "text": "No aplica a REIT: estructura de arrendamiento neto: el inquilino paga los costes del inmueble, así que los márgenes bruto y operativo no son comparables; la rentabilidad se mide sobre el FFO."
             },
             {
               "amount": 5274393000.0,
@@ -1470,13 +1749,13 @@
               "key": "operating_margin",
               "label": "Margen operativo",
               "state": "no_aplica",
-              "text": "No aplica a REIT"
+              "text": "No aplica a REIT: estructura de arrendamiento neto: el inquilino paga los costes del inmueble, así que los márgenes bruto y operativo no son comparables; la rentabilidad se mide sobre el FFO."
             },
             {
               "key": "net_margin",
               "label": "Margen neto",
               "state": "no_aplica",
-              "text": "No aplica a REIT"
+              "text": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria."
             }
           ]
         },
@@ -1487,7 +1766,7 @@
             "key": "gross_margin",
             "label": "Margen bruto",
             "state": "no_aplica",
-            "text": "No aplica a REIT"
+            "text": "No aplica a REIT: estructura de arrendamiento neto: el inquilino paga los costes del inmueble, así que los márgenes bruto y operativo no son comparables; la rentabilidad se mide sobre el FFO."
           },
           {
             "fmt": "pct",
@@ -1495,7 +1774,7 @@
             "key": "operating_margin",
             "label": "Margen operativo",
             "state": "no_aplica",
-            "text": "No aplica a REIT"
+            "text": "No aplica a REIT: estructura de arrendamiento neto: el inquilino paga los costes del inmueble, así que los márgenes bruto y operativo no son comparables; la rentabilidad se mide sobre el FFO."
           },
           {
             "fmt": "pct",
@@ -1503,7 +1782,7 @@
             "key": "net_margin",
             "label": "Margen neto",
             "state": "no_aplica",
-            "text": "No aplica a REIT"
+            "text": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria."
           }
         ],
         "returns": [
@@ -1513,7 +1792,7 @@
             "key": "roe",
             "label": "ROE",
             "state": "no_aplica",
-            "text": "No aplica a REIT"
+            "text": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria."
           },
           {
             "fmt": "pct",
@@ -1521,7 +1800,7 @@
             "key": "roa",
             "label": "ROA",
             "state": "no_aplica",
-            "text": "No aplica a REIT"
+            "text": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria."
           },
           {
             "fmt": "pct",
@@ -1529,16 +1808,16 @@
             "key": "roic",
             "label": "ROIC",
             "state": "no_aplica",
-            "text": "No aplica a REIT"
+            "text": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria."
           }
         ],
         "roce": {
           "state": "no_aplica",
-          "text": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria"
+          "text": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria."
         },
         "spread": {
           "state": "no_aplica",
-          "text": null
+          "text": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria."
         }
       },
       "results_flow": [
@@ -1599,7 +1878,7 @@
             "key": "current_ratio",
             "label": "Current ratio",
             "state": "no_aplica",
-            "text": "No aplica a REIT: activos inmobiliarios de largo plazo financiados con deuda a largo plazo; el circulante no mide su liquidez"
+            "text": "No aplica a REIT: activos inmobiliarios de largo plazo financiados con deuda a largo plazo; el circulante no mide su liquidez."
           },
           {
             "axis_max": 15.0,
@@ -1608,7 +1887,7 @@
             "label": "Cobertura de intereses",
             "reading": "Justa",
             "state": "con_dato",
-            "text": "la cobertura de intereses (2.4x) deja poco margen ante caídas del beneficio operativo",
+            "text": "la cobertura de intereses (2.4x) deja poco margen ante caídas del beneficio operativo.",
             "tone": "warn",
             "unit": "x",
             "value": 2.36959538575,
@@ -1697,7 +1976,7 @@
             "label": "Deuda / Equity",
             "reading": "Informativo",
             "state": "con_dato",
-            "text": "el D/E de 0.78x es informativo: en un REIT el apalancamiento se mide por la deuda neta/EBITDA",
+            "text": "el D/E de 0.78x es informativo: en un REIT el apalancamiento se mide por la deuda neta/EBITDA.",
             "tone": "neu",
             "value": 0.777909067351,
             "value_txt": "0.78x"
@@ -1724,14 +2003,14 @@
       "valuation": {
         "block": {
           "label": "Bloque de múltiplos",
-          "reason": "promedio de los ajustes reescalados a ±1 (EV/EBITDA +0.50) = +0.50 × 2 (máximo con 1 miembro) = +1.0",
+          "reason": "media de 1 lectura en una escala de −1 a +1 (EV/EBITDA +0.50): +0.50, que suma +1.0 puntos de un máximo de ±2.",
           "sign": "+1",
           "tone": "pos"
         },
         "dcf_composition": null,
         "fair_value": {
           "state": "no_aplica",
-          "text": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria"
+          "text": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria."
         },
         "multiples": [
           {
@@ -1741,7 +2020,7 @@
             "label": "P/E (TTM)",
             "role": "informative",
             "state": "no_aplica",
-            "text": "No aplica a REIT"
+            "text": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria."
           },
           {
             "fmt": "mult",
@@ -1750,21 +2029,21 @@
             "label": "Forward P/E",
             "role": "informative",
             "state": "no_aplica",
-            "text": "No aplica a REIT"
+            "text": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria."
           },
           {
-            "bench": 2.0757,
-            "bench_txt": "2.08x",
+            "bench": 2.53221345056,
+            "bench_txt": "2.53x",
             "fmt": "mult",
-            "gap_pct": -36.4101235015,
-            "gap_txt": "-36%",
+            "gap_pct": -47.8742573543,
+            "gap_txt": "-48%",
             "higher_is_better": false,
             "key": "pb",
             "label": "P/B",
             "reading": "Descuento profundo",
             "role": "informative",
             "state": "con_dato",
-            "text": "P/B de 1.3x frente a 2.1x de su industria (-36%): descuento profundo",
+            "text": "P/B de 1.3x frente a 2.5x de su industria sin ella (-48%): descuento profundo.",
             "tone": "pos",
             "value": 1.31993506648,
             "value_txt": "1.32x"
@@ -1776,22 +2055,22 @@
             "label": "PEG",
             "role": "informative",
             "state": "no_aplica",
-            "text": "No aplica a REIT"
+            "text": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria."
           },
           {
-            "bench": 16.7229,
-            "bench_txt": "16.72x",
+            "bench": 17.965,
+            "bench_txt": "17.96x",
             "fmt": "mult",
-            "gap_pct": -6.5609774347,
-            "gap_txt": "-7%",
+            "gap_pct": -13.0213509348,
+            "gap_txt": "-13%",
             "higher_is_better": false,
             "key": "ev_ebitda",
             "label": "EV/EBITDA",
-            "reading": "En línea",
+            "reading": "Descuento",
             "role": "block",
             "state": "con_dato",
-            "text": "EV/EBITDA de 15.6x frente a 16.7x de su industria (-7%): en línea",
-            "tone": "neu",
+            "text": "EV/EBITDA de 15.6x frente a 18.0x de su industria sin ella (-13%): descuento.",
+            "tone": "pos",
             "value": 15.6257143046,
             "value_txt": "15.63x"
           },
@@ -1802,7 +2081,7 @@
             "label": "P/FCF",
             "role": "informative",
             "state": "no_aplica",
-            "text": "No aplica a REIT"
+            "text": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria."
           },
           {
             "fmt": "pct",
@@ -1811,7 +2090,7 @@
             "label": "FCF Yield",
             "role": "informative",
             "state": "no_aplica",
-            "text": "No aplica a REIT"
+            "text": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria."
           }
         ],
         "scored": [
@@ -1820,10 +2099,10 @@
             "key": "p_ffo_reit",
             "label": "P/FFO (REIT)",
             "reading": "Favorable",
-            "reason": "Atractivo por FFO (13.7x)",
+            "reason": "Atractivo por FFO (13.1x)",
             "sign": "+2",
             "tone": "pos",
-            "value_txt": "13.7x"
+            "value_txt": "13.13x"
           }
         ]
       },
@@ -1834,8 +2113,8 @@
         {
           "key": "convergence",
           "label": "Convergencia entre métodos",
-          "level": "Media",
-          "text": "DCF inverso +0.00 (en precio) · múltiplos frente al sector +0.33 (barata). Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
+          "level": "Alta",
+          "text": "DCF inverso +0.50 (barata) · múltiplos frente al sector +0.50 (barata). Los métodos de valoración coinciden."
         },
         {
           "key": "coverage",
@@ -1857,24 +2136,11 @@
         }
       ],
       "level": "media",
-      "plain": [
-        "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
-      ],
-      "reasons": [
-        {
-          "dimension": "convergencia",
-          "level": "media",
-          "text": "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
-        },
-        {
-          "dimension": "techo",
-          "level": "media",
-          "text": null
-        }
-      ],
-      "summary": "Confianza del veredicto: media (techo en media: la convergencia es media: alta exige convergencia alta; sin techo sería alta). Contrae el atractivo del precio hacia 50 (factor 0.75): sin ajustar 65 → ajustado a 61. La calidad del negocio no se contrae.",
+      "plain": [],
+      "reasons": [],
+      "summary": "Confianza del veredicto: media (por sus dimensiones sería alta; la limita: el veredicto depende de Ke —el nivel de precio pasa de «atractivo» a «razonable» con Ke + 1 pp—). Contrae el atractivo del precio hacia 50: de 75 a 69. La calidad del negocio no se contrae.",
       "tone": "warn",
-      "verdict_text": "(confianza media: DCF inverso la ve en precio y los múltiplos barata)"
+      "verdict_text": "(confianza media: el nivel de precio cambia con ±1 pp de coste del capital)"
     },
     "cover": {
       "archetype": "REIT",
@@ -1887,10 +2153,12 @@
               "applicable": true,
               "conclusive": true,
               "coverage": 1.0,
+              "key": "Solidez Financiera",
               "max": 20,
-              "name": "Solidez Financiera",
+              "name": "Solidez financiera",
               "pct": 50.0,
               "score": 10,
+              "score_txt": "10 / 20",
               "text": null,
               "tone": "warn"
             },
@@ -1898,21 +2166,12 @@
               "applicable": true,
               "conclusive": true,
               "coverage": 1.0,
+              "key": "Rentabilidad",
               "max": 20,
               "name": "Rentabilidad",
-              "pct": 45.0,
-              "score": 9,
-              "text": null,
-              "tone": "warn"
-            },
-            {
-              "applicable": true,
-              "conclusive": true,
-              "coverage": 1.0,
-              "max": 20,
-              "name": "Calidad de Ganancias",
-              "pct": 85.0,
-              "score": 17,
+              "pct": 60.0,
+              "score": 12,
+              "score_txt": "12 / 20",
               "text": null,
               "tone": "pos"
             },
@@ -1920,12 +2179,27 @@
               "applicable": true,
               "conclusive": true,
               "coverage": 1.0,
+              "key": "Calidad de Ganancias",
+              "max": 20,
+              "name": "Calidad de ganancias",
+              "pct": 85.0,
+              "score": 17,
+              "score_txt": "17 / 20",
+              "text": null,
+              "tone": "pos"
+            },
+            {
+              "applicable": true,
+              "conclusive": true,
+              "coverage": 1.0,
+              "key": "Crecimiento",
               "max": 20,
               "name": "Crecimiento",
-              "pct": 55.0,
-              "score": 11,
+              "pct": 65.0,
+              "score": 13,
+              "score_txt": "13 / 20",
               "text": null,
-              "tone": "warn"
+              "tone": "pos"
             }
           ],
           "title": "CALIDAD DEL NEGOCIO"
@@ -1936,10 +2210,12 @@
               "applicable": true,
               "conclusive": true,
               "coverage": 1.0,
+              "key": "Valoración",
               "max": 20,
               "name": "Valoración",
-              "pct": 65.0,
-              "score": 13,
+              "pct": 75.0,
+              "score": 15,
+              "score_txt": "15 / 20",
               "text": null,
               "tone": "pos"
             }
@@ -1948,11 +2224,9 @@
         }
       ],
       "classification_notes": [
-        "REIT por su industria (REIT - Retail)."
+        "Sociedad inmobiliaria cotizada que reparte casi todo su beneficio y se mide por sus fondos de operación (FFO); industria REIT de locales comerciales."
       ],
-      "confidence_reasons": [
-        "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
-      ],
+      "confidence_reasons": [],
       "coverage_notes": [],
       "currency_note": null,
       "data_notices": [],
@@ -1960,7 +2234,7 @@
         {
           "kicker": "FORTALEZA CLAVE",
           "kind": "strength",
-          "text": "Perfil defensivo — Beta 0.62",
+          "text": "EV/EBITDA barato — 15.6x",
           "tone": "pos"
         },
         {
@@ -1993,7 +2267,7 @@
           "key": "p_ffo",
           "label": "P/FFO",
           "state": "con_dato",
-          "value": "13.70x"
+          "value": "13.13x"
         },
         {
           "key": "dividend_yield",
@@ -2005,7 +2279,7 @@
           "key": "payout_ratio",
           "label": "Payout sobre FFO",
           "state": "con_dato",
-          "value": "78.65%"
+          "value": "75.38%"
         },
         {
           "key": "de",
@@ -2021,38 +2295,345 @@
         },
         {
           "key": "beta",
-          "label": "Beta del sector",
+          "label": "Beta de la industria",
           "state": "con_dato",
-          "value": "0.62"
+          "value": "0.67"
         }
       ],
       "official_source_badge": null,
       "price": {
         "contracted": true,
-        "level": "razonable",
-        "note": "sin ajustar 65 → ajustado a 61 por confianza media",
+        "level": "atractivo",
+        "note": "ajustado de 75 a 69 por confianza media.",
+        "note_short": "Ajustado de 75 a 69 por confianza media",
         "question": "¿está cara hoy?",
-        "raw": 65,
-        "score": 61,
+        "raw": 75,
+        "score": 69,
         "title": "ATRACTIVO DEL PRECIO",
-        "tone": "neu"
+        "tone": "pos"
       },
       "quality": {
-        "level": "media",
-        "note": null,
+        "level": "sólida",
+        "note": "En la frontera con «media» (a 1 punto): un cambio pequeño en los datos o en los supuestos cambiaría el nivel.",
+        "note_short": "En la frontera con «media» (a 1 punto)",
         "question": "¿es buena la empresa?",
-        "score": 59,
+        "score": 65,
         "title": "CALIDAD DEL NEGOCIO",
-        "tone": "warn"
+        "tone": "pos"
       },
       "verdict": {
-        "confidence_text": "(confianza media: DCF inverso la ve en precio y los múltiplos barata)",
+        "confidence_text": "(confianza media: el nivel de precio cambia con ±1 pp de coste del capital)",
         "confidence_tone": "warn",
-        "full": "Calidad media · precio razonable (confianza media: DCF inverso la ve en precio y los múltiplos barata)",
-        "text": "Calidad media · precio razonable"
+        "full": "Calidad sólida · precio atractivo (confianza media: el nivel de precio cambia con ±1 pp de coste del capital)",
+        "text": "Calidad sólida · precio atractivo"
+      }
+    },
+    "extended": {
+      "company_profile": {
+        "reason": null,
+        "rows": [
+          {
+            "key": "sic",
+            "label": "Industria (código SIC)",
+            "value": "6798 · Real Estate Investment Trusts"
+          },
+          {
+            "key": "hq",
+            "label": "Sede",
+            "value": "San Diego, California"
+          },
+          {
+            "key": "incorporation",
+            "label": "Constituida en",
+            "value": "Maryland"
+          },
+          {
+            "key": "fiscal_year_end",
+            "label": "Cierre del ejercicio",
+            "value": "31 de diciembre"
+          },
+          {
+            "key": "category",
+            "label": "Tipo de emisor",
+            "value": "Gran emisor (large accelerated filer)"
+          }
+        ],
+        "source": "SEC EDGAR (submissions del emisor)",
+        "status": "ok"
+      },
+      "history_10y": {
+        "currency": "USD",
+        "reason": null,
+        "rows": [
+          {
+            "fcf_txt": "$786.44M",
+            "gap_before": false,
+            "net_income_txt": "$288.49M",
+            "net_margin_txt": "26.2%",
+            "operating_margin_txt": "—",
+            "reasons": {
+              "operating_margin": "EDGAR no trae el beneficio operativo de este ejercicio: el emisor no presenta un resultado operativo con el concepto XBRL estándar"
+            },
+            "revenue_growth_txt": "+12.9%",
+            "revenue_txt": "$1.10B",
+            "year": 2016
+          },
+          {
+            "fcf_txt": "$860.60M",
+            "gap_before": false,
+            "net_income_txt": "$301.51M",
+            "net_margin_txt": "24.8%",
+            "operating_margin_txt": "—",
+            "reasons": {
+              "operating_margin": "EDGAR no trae el beneficio operativo de este ejercicio: el emisor no presenta un resultado operativo con el concepto XBRL estándar"
+            },
+            "revenue_growth_txt": "+10.2%",
+            "revenue_txt": "$1.22B",
+            "year": 2017
+          },
+          {
+            "fcf_txt": "$915.39M",
+            "gap_before": false,
+            "net_income_txt": "$363.61M",
+            "net_margin_txt": "27.4%",
+            "operating_margin_txt": "—",
+            "reasons": {
+              "operating_margin": "EDGAR no trae el beneficio operativo de este ejercicio: el emisor no presenta un resultado operativo con el concepto XBRL estándar"
+            },
+            "revenue_growth_txt": "+9.2%",
+            "revenue_txt": "$1.33B",
+            "year": 2018
+          },
+          {
+            "fcf_txt": "$1.05B",
+            "gap_before": false,
+            "net_income_txt": "$436.48M",
+            "net_margin_txt": "29.3%",
+            "operating_margin_txt": "—",
+            "reasons": {
+              "operating_margin": "EDGAR no trae el beneficio operativo de este ejercicio: el emisor no presenta un resultado operativo con el concepto XBRL estándar"
+            },
+            "revenue_growth_txt": "+12.1%",
+            "revenue_txt": "$1.49B",
+            "year": 2019
+          },
+          {
+            "fcf_txt": "$1.11B",
+            "gap_before": false,
+            "net_income_txt": "$395.49M",
+            "net_margin_txt": "24.0%",
+            "operating_margin_txt": "—",
+            "reasons": {
+              "operating_margin": "EDGAR no trae el beneficio operativo de este ejercicio: el emisor no presenta un resultado operativo con el concepto XBRL estándar"
+            },
+            "revenue_growth_txt": "+10.7%",
+            "revenue_txt": "$1.65B",
+            "year": 2020
+          },
+          {
+            "fcf_txt": "$1.30B",
+            "gap_before": false,
+            "net_income_txt": "$359.46M",
+            "net_margin_txt": "17.3%",
+            "operating_margin_txt": "—",
+            "reasons": {
+              "operating_margin": "EDGAR no trae el beneficio operativo de este ejercicio: el emisor no presenta un resultado operativo con el concepto XBRL estándar"
+            },
+            "revenue_growth_txt": "+26.3%",
+            "revenue_txt": "$2.08B",
+            "year": 2021
+          },
+          {
+            "fcf_txt": "$2.47B",
+            "gap_before": false,
+            "net_income_txt": "$869.41M",
+            "net_margin_txt": "26.0%",
+            "operating_margin_txt": "—",
+            "reasons": {
+              "operating_margin": "EDGAR no trae el beneficio operativo de este ejercicio: el emisor no presenta un resultado operativo con el concepto XBRL estándar"
+            },
+            "revenue_growth_txt": "+60.7%",
+            "revenue_txt": "$3.34B",
+            "year": 2022
+          },
+          {
+            "fcf_txt": "$2.89B",
+            "gap_before": false,
+            "net_income_txt": "$872.31M",
+            "net_margin_txt": "21.4%",
+            "operating_margin_txt": "—",
+            "reasons": {
+              "operating_margin": "EDGAR no trae el beneficio operativo de este ejercicio: el emisor no presenta un resultado operativo con el concepto XBRL estándar"
+            },
+            "revenue_growth_txt": "+22.0%",
+            "revenue_txt": "$4.08B",
+            "year": 2023
+          },
+          {
+            "fcf_txt": "$3.45B",
+            "gap_before": false,
+            "net_income_txt": "$847.89M",
+            "net_margin_txt": "16.1%",
+            "operating_margin_txt": "—",
+            "reasons": {
+              "operating_margin": "EDGAR no trae el beneficio operativo de este ejercicio: el emisor no presenta un resultado operativo con el concepto XBRL estándar"
+            },
+            "revenue_growth_txt": "+29.2%",
+            "revenue_txt": "$5.27B",
+            "year": 2024
+          },
+          {
+            "fcf_txt": "$3.86B",
+            "gap_before": false,
+            "net_income_txt": "$1.06B",
+            "net_margin_txt": "18.4%",
+            "operating_margin_txt": "—",
+            "reasons": {
+              "operating_margin": "EDGAR no trae el beneficio operativo de este ejercicio: el emisor no presenta un resultado operativo con el concepto XBRL estándar"
+            },
+            "revenue_growth_txt": "+9.1%",
+            "revenue_txt": "$5.75B",
+            "year": 2025
+          }
+        ],
+        "source": "SEC EDGAR (companyfacts: ejercicios completos de los informes anuales)",
+        "status": "ok"
+      },
+      "news": [
+        {
+          "date": "2026-10-14",
+          "datetime": "2026-10-14T18:20:46Z",
+          "headline": "Better High-Yield Dividend Stock: Realty Income vs. Healthpeak",
+          "image": null,
+          "lang": "en",
+          "source": "Yahoo",
+          "summary": "Key TakeawaysHealthpeak Properties yields 6. 7% against Realty Income’s 6.",
+          "url": "https://finnhub.io/api/news?id=b8387353a0586496dff9f8ec956c975dd9808157887c3250b68aabe0fa6f3c00"
+        },
+        {
+          "date": "2026-10-14",
+          "datetime": "2026-10-14T18:12:03Z",
+          "headline": "Better High-Yield Dividend Stock: Realty Income vs. Crown Castle",
+          "image": null,
+          "lang": "en",
+          "source": "Yahoo",
+          "summary": "Key TakeawaysRealty Income yields 6. 1% and Crown Castle yields 5.",
+          "url": "https://finnhub.io/api/news?id=00f8fd6f6759c27840ae9315e1529a58732fface580f81cd877d6fb02bf6bb47"
+        },
+        {
+          "date": "2026-10-14",
+          "datetime": "2026-10-14T17:54:21Z",
+          "headline": "Better High-Yield Dividend Stock: Realty Income vs. Energy Transfer",
+          "image": null,
+          "lang": "en",
+          "source": "Yahoo",
+          "summary": "Key TakeawaysRealty Income yields 6. 1% and Energy Transfer 6.",
+          "url": "https://finnhub.io/api/news?id=0b568d2fb10105a2429fd833366d6b594e13511d3b03963b83e6dbf0898940ee"
+        },
+        {
+          "date": "2026-10-14",
+          "datetime": "2026-10-14T17:15:10Z",
+          "headline": "Better High-Yield Dividend Stock: Realty Income vs. MPLX",
+          "image": null,
+          "lang": "en",
+          "source": "Yahoo",
+          "summary": "Key TakeawaysMPLX expects to raise its distribution 12. 5% in both 2026 and 2027, while Realty Income has raised its dividend for over 31 consecutive years.",
+          "url": "https://finnhub.io/api/news?id=6bb52cbee3030ee54dcaf89d7f8d5b9277082ae67101f7ae3cbb56e8616e8df1"
+        },
+        {
+          "date": "2026-10-14",
+          "datetime": "2026-10-14T16:49:05Z",
+          "headline": "Better High-Yield Dividend Stock: Realty Income vs. Kraft Heinz",
+          "image": null,
+          "lang": "en",
+          "source": "Yahoo",
+          "summary": "Key TakeawaysKraft Heinz yields 7. 2% and Realty Income 6.",
+          "url": "https://finnhub.io/api/news?id=ae8e8d1c58c9fbd74c961f567d6af4bd6a606b58114bc2d0e2c474a004b2cb82"
+        },
+        {
+          "date": "2026-10-14",
+          "datetime": "2026-10-14T16:39:05Z",
+          "headline": "Better High-Yield Dividend Stock: Realty Income vs. Clorox",
+          "image": null,
+          "lang": "en",
+          "source": "Yahoo",
+          "summary": "Key TakeawaysRealty Income and Clorox both yield 6. 1%, so $10,000 in either pays $610 a year today.",
+          "url": "https://finnhub.io/api/news?id=9ebdd98770909822d01828e2b435cac77a0eb78d871149572231b517cdd48daa"
+        }
+      ],
+      "next_earnings": {
+        "basis": "Fecha anunciada (2 de noviembre de 2026, tras el cierre) en el calendario de resultados de Finnhub.",
+        "date_txt": "2 de noviembre de 2026",
+        "kind": "anunciada",
+        "reason": null,
+        "status": "ok"
+      },
+      "piotroski_values": [
+        {
+          "compare": "zero",
+          "cur_txt": "1.5%",
+          "key": "roa_positive",
+          "prev_txt": null
+        },
+        {
+          "compare": "zero",
+          "cur_txt": "$3.99B",
+          "key": "cfo_positive",
+          "prev_txt": null
+        },
+        {
+          "compare": "prior_year",
+          "cur_txt": "1.5%",
+          "key": "roa_improved",
+          "prev_txt": "1.3%"
+        },
+        {
+          "compare": "ni",
+          "cur_txt": "$3.99B",
+          "key": "earnings_quality",
+          "prev_txt": "$1.06B"
+        },
+        {
+          "compare": "prior_year",
+          "cur_txt": "$26.77B",
+          "key": "debt_reduced",
+          "prev_txt": "$25.10B"
+        },
+        {
+          "compare": "prior_year",
+          "cur_txt": "1.42",
+          "key": "current_ratio_improved",
+          "prev_txt": "1.68"
+        },
+        {
+          "compare": "prior_year",
+          "cur_txt": "933.98M acciones",
+          "key": "no_dilution",
+          "prev_txt": "891.51M acciones"
+        },
+        {
+          "compare": "prior_year",
+          "cur_txt": "92.5%",
+          "key": "gross_margin_improved",
+          "prev_txt": "92.8%"
+        },
+        {
+          "compare": "prior_year",
+          "cur_txt": "0.08",
+          "key": "asset_turnover_improved",
+          "prev_txt": "0.08"
+        }
+      ],
+      "price_change": {
+        "pct_txt": "+0.33%",
+        "session": "2026-10-14",
+        "status": "ok",
+        "tone": "pos",
+        "value_txt": "+$0.18"
       }
     },
     "methodology": {
+      "contraction_text": "contraída hacia 50 según la confianza del veredicto: solo los limitadores que lo contradicen o lo vuelven incierto, no los que apuntan en su dirección",
       "models": [
         "P/FFO y rentabilidad sobre el FFO"
       ],
@@ -2081,22 +2662,27 @@
       "roic_wacc"
     ],
     "pe_label": "P/E (TTM)",
+    "profile": {
+      "country": "Estados Unidos",
+      "industry": "REIT de locales comerciales",
+      "sector": "Inmobiliario"
+    },
     "readings": {
       "beta": {
-        "label": "Defensiva",
-        "text": "con beta 0.62, la acción amortigua los movimientos del mercado",
-        "tone": "pos"
+        "label": "Beta baja",
+        "text": "beta 0.67 de su industria: la propia de la acción no pasa los filtros de la regresión, así que no mide su sensibilidad al mercado.",
+        "tone": "neu"
       },
       "buyback_yield": {
         "label": "Dilución",
-        "text": "la emisión de acciones diluyó a los accionistas un 4.8% en el año",
+        "text": "la emisión de acciones diluyó a los accionistas un 4.8% en el año.",
         "tone": "neg"
       },
       "current_ratio": null,
       "dcf_upside": null,
       "de": {
         "label": "Informativo",
-        "text": "el D/E de 0.78x es informativo: en un REIT el apalancamiento se mide por la deuda neta/EBITDA",
+        "text": "el D/E de 0.78x es informativo: en un REIT el apalancamiento se mide por la deuda neta/EBITDA.",
         "tone": "neu"
       },
       "earnings_growth": null,
@@ -2104,7 +2690,7 @@
       "graham": null,
       "interest_coverage": {
         "label": "Justa",
-        "text": "la cobertura de intereses (2.4x) deja poco margen ante caídas del beneficio operativo",
+        "text": "la cobertura de intereses (2.4x) deja poco margen ante caídas del beneficio operativo.",
         "tone": "warn"
       },
       "net_debt_to_ebitda": {
@@ -2114,19 +2700,19 @@
       },
       "payout_ratio": {
         "label": "Cubierto",
-        "text": "el payout sobre FFO de 79% está cubierto por el FFO",
+        "text": "el payout sobre FFO de 75% está cubierto por el FFO.",
         "tone": "pos"
       },
       "pe": null,
       "pos52": {
         "label": "Parte baja del rango",
-        "text": "cotiza en el 14% del rango de 52 semanas, en la parte baja",
+        "text": "cotiza en el 14% del rango de 52 semanas, en la parte baja.",
         "tone": "neu"
       },
       "revenue_growth": {
-        "label": "En línea",
-        "text": "el retorno total por acción (dividendo más crecimiento del FFO por acción en 3 años) es del 5.9%",
-        "tone": "neu"
+        "label": "Favorable",
+        "text": "el retorno total por acción (dividendo más crecimiento del FFO por acción en 3 años) es del 9.5%.",
+        "tone": "pos"
       },
       "roe": null,
       "roic_wacc_spread": null,
@@ -2137,6 +2723,7 @@
         "counts": {
           "red_flags": 0,
           "strengths": 1,
+          "unmeasured": null,
           "warnings": 1
         },
         "groups": [
@@ -2161,9 +2748,9 @@
           {
             "items": [
               {
-                "category": "Riesgo de mercado",
-                "detail": "Con beta 0.62, la acción se mueve menos que el mercado y tiende a amortiguar las caídas: un perfil más estable, útil para reducir la volatilidad de una cartera.",
-                "reason": "Perfil defensivo — Beta 0.62"
+                "category": "Valoración",
+                "detail": "Cotiza a 15.6x EBITDA frente a 18.0x de su industria sin ella: valoración atractiva sobre flujo operativo, a validar que no responda a un deterioro del negocio.",
+                "reason": "EV/EBITDA barato — 15.6x"
               }
             ],
             "key": "strengths",
@@ -2179,17 +2766,17 @@
           "LECTURA"
         ],
         "eps_vs_revenue_note": null,
-        "intro": "El retorno total por acción (dividendo más crecimiento del FFO por acción en 3 años) es del 5.9%. La emisión de acciones diluyó a los accionistas un 4.8% en el año.",
+        "intro": "El retorno total por acción (dividendo más crecimiento del FFO por acción en 3 años) es del 9.5%. La emisión de acciones diluyó a los accionistas un 4.8% en el año.",
         "range52": {
           "axis": "Muestra dónde cotiza el precio dentro de su rango anual. Es contexto de mercado: no es una señal de valoración ni mide la calidad del negocio.",
-          "caption": "Precio actual $55.17 — posición 14% del rango.",
+          "caption": "Precio actual $55.17.",
           "high": "$67.94",
           "low": "$53.15",
           "pos": 13.6578534011,
           "price": "$55.17",
           "reading": {
             "label": "Parte baja del rango",
-            "text": "cotiza en el 14% del rango de 52 semanas, en la parte baja",
+            "text": "cotiza en el 14% del rango de 52 semanas, en la parte baja.",
             "tone": "neu"
           },
           "zones": [
@@ -2214,7 +2801,7 @@
               "to": 100
             }
           ],
-          "zones_note": "Tramos: mínimos, parte baja, zona media, parte alta y máximos. Es contexto de mercado: la posición en el rango no es una señal de valoración."
+          "zones_note": "Tramos: mínimos, parte baja, zona media, parte alta y máximos."
         },
         "rows": [
           {
@@ -2222,11 +2809,11 @@
             "gap": null,
             "key": "total_return",
             "label": "Retorno total por acción (dividendo + FFO por acción, 3 años)",
-            "reading": "En línea",
+            "reading": "Favorable",
             "state": "con_dato",
-            "text": "el retorno total por acción (dividendo más crecimiento del FFO por acción en 3 años) es del 5.9%",
-            "tone": "neu",
-            "value": "5.88%"
+            "text": "el retorno total por acción (dividendo más crecimiento del FFO por acción en 3 años) es del 9.5%.",
+            "tone": "pos",
+            "value": "9.51%"
           },
           {
             "bench": null,
@@ -2246,7 +2833,7 @@
             "label": "Buyback yield (recompras netas)",
             "reading": "Dilución",
             "state": "con_dato",
-            "text": "la emisión de acciones diluyó a los accionistas un 4.8% en el año",
+            "text": "la emisión de acciones diluyó a los accionistas un 4.8% en el año.",
             "tone": "neg",
             "value": "-4.76%"
           },
@@ -2276,13 +2863,13 @@
         "score_components": [
           {
             "metric": "Retorno total (dividendo + FFO por acción)",
-            "reason": "Crecimiento moderado (5.9%) — rentabilidad por dividendo 5.9% + FFO por acción -0.1% (CAGR 3 años); FFO por acción (FFO = beneficio neto + D&A; acciones en circulación de cada ejercicio); FFO agregado +12.2%, acciones +12.3% anual",
-            "value": "5.9%"
+            "reason": "Crecimiento sólido (9.5%) — rentabilidad por dividendo 5.9% + FFO por acción +3.6% (CAGR 3 años); FFO por acción (FFO según Nareit = beneficio neto + D&A − ventas de inmuebles + deterioros; acciones en circulación de cada ejercicio); FFO agregado +16.3%, acciones +12.3% anual.",
+            "value": "9.51%"
           },
           {
-            "metric": "Crecimiento FCF por acción 3Y",
+            "metric": "Crecimiento del FCF por acción a 3 años",
             "reason": "FCF estable (3.3%)",
-            "value": "3.3%"
+            "value": "3.28%"
           }
         ]
       },
@@ -2302,7 +2889,7 @@
                 {
                   "in_block": false,
                   "metric": "Deuda/Equity",
-                  "reason": "Informativo: en REIT el apalancamiento se mide por deuda neta/EBITDA",
+                  "reason": "Informativo: en REIT el apalancamiento se mide por deuda neta/EBITDA.",
                   "sign": "0",
                   "state": "con_dato",
                   "tone": "neu",
@@ -2310,12 +2897,12 @@
                 },
                 {
                   "in_block": false,
-                  "metric": "Cobertura Intereses",
+                  "metric": "Cobertura de intereses",
                   "reason": "Cobertura ajustada",
                   "sign": "-2",
                   "state": "con_dato",
                   "tone": "warn",
-                  "value": "2.4x"
+                  "value": "2.37x"
                 },
                 {
                   "in_block": false,
@@ -2324,7 +2911,7 @@
                   "sign": "+2",
                   "state": "con_dato",
                   "tone": "pos",
-                  "value": "5.7x"
+                  "value": "5.73x"
                 },
                 {
                   "in_block": false,
@@ -2336,10 +2923,12 @@
                   "value": "Altman Z, Current ratio"
                 }
               ],
+              "key": "Solidez Financiera",
               "max": 20,
-              "name": "Solidez Financiera",
+              "name": "Solidez financiera",
               "pct": 50.0,
               "score": 10,
+              "score_txt": "10 / 20",
               "text": null,
               "tone": "warn"
             },
@@ -2350,20 +2939,20 @@
                 {
                   "in_block": false,
                   "metric": "FFO / activos",
-                  "reason": "Muy bajo (4.98%) - FFO sobre los activos totales, frente a los REIT de EE. UU.",
-                  "sign": "-6",
+                  "reason": "Bajo (5.20%) - FFO sobre los activos totales, frente a los REIT de EE. UU.",
+                  "sign": "-3",
                   "state": "con_dato",
-                  "tone": "neg",
-                  "value": "4.98%"
+                  "tone": "warn",
+                  "value": "5.20%"
                 },
                 {
                   "in_block": false,
                   "metric": "Margen FFO",
-                  "reason": "Excelente (63.8%) - FFO sobre ingresos",
+                  "reason": "Excelente (66.59%) - FFO sobre ingresos.",
                   "sign": "+5",
                   "state": "con_dato",
                   "tone": "pos",
-                  "value": "63.8%"
+                  "value": "66.59%"
                 },
                 {
                   "in_block": false,
@@ -2375,12 +2964,14 @@
                   "value": "ROE, ROA, Margen neto, ROIC−WACC, Margen bruto, Margen operativo"
                 }
               ],
+              "key": "Rentabilidad",
               "max": 20,
               "name": "Rentabilidad",
-              "pct": 45.0,
-              "score": 9,
+              "pct": 60.0,
+              "score": 12,
+              "score_txt": "12 / 20",
               "text": null,
-              "tone": "warn"
+              "tone": "pos"
             },
             {
               "conclusive": true,
@@ -2389,25 +2980,25 @@
                 {
                   "in_block": false,
                   "metric": "P/FFO (REIT)",
-                  "reason": "Atractivo por FFO (13.7x)",
+                  "reason": "Atractivo por FFO (13.1x)",
                   "sign": "+2",
                   "state": "con_dato",
                   "tone": "pos",
-                  "value": "13.7x"
+                  "value": "13.13x"
                 },
                 {
                   "in_block": true,
-                  "metric": "EV/EBITDA vs Sector",
+                  "metric": "EV/EBITDA frente al sector",
                   "reason": "Atractivo (15.6x)",
                   "sign": "(+2)",
                   "state": "con_dato",
                   "tone": "neu",
-                  "value": "15.6x"
+                  "value": "15.63x"
                 },
                 {
                   "in_block": false,
                   "metric": "Bloque de múltiplos",
-                  "reason": "promedio de los ajustes reescalados a ±1 (EV/EBITDA +0.50) = +0.50 × 2 (máximo con 1 miembro) = +1.0",
+                  "reason": "media de 1 lectura en una escala de −1 a +1 (EV/EBITDA +0.50): +0.50, que suma +1.0 puntos de un máximo de ±2.",
                   "sign": "+1",
                   "state": "con_dato",
                   "tone": "pos",
@@ -2416,11 +3007,11 @@
                 {
                   "in_block": false,
                   "metric": "DCF inverso (FFO)",
-                  "reason": "El precio actual se justifica aunque el FFO por acción caiga un 1.4% anual durante 10 años (−3.0% los 5 primeros y convergencia al 2.5%); en los últimos 3 años, su FFO por acción cayó un 0.1% anual. Lo sostuvo 10 años el 76% de las empresas comparables (ventas de 1 a 5 mil millones, otros sectores).",
-                  "sign": "0",
+                  "reason": "El precio actual se justifica aunque el FFO por acción caiga un 1.4% anual durante 10 años (−3.1% los 5 primeros y convergencia al 2.5%); en los últimos 3 años, su FFO por acción creció un 3.6% anual. Lo sostuvo 10 años el 77% de las empresas comparables (ventas de 1 a 5 mil millones, otros sectores).",
+                  "sign": "+2",
                   "state": "con_dato",
-                  "tone": "neu",
-                  "value": "en precio"
+                  "tone": "pos",
+                  "value": "barata"
                 },
                 {
                   "in_block": false,
@@ -2432,10 +3023,12 @@
                   "value": "P/E, P/FCF, PEG"
                 }
               ],
+              "key": "Valoración",
               "max": 20,
               "name": "Valoración",
-              "pct": 65.0,
-              "score": 13,
+              "pct": 75.0,
+              "score": 15,
+              "score_txt": "15 / 20",
               "text": null,
               "tone": "pos"
             },
@@ -2446,15 +3039,15 @@
                 {
                   "in_block": false,
                   "metric": "Payout sobre FFO",
-                  "reason": "Dividendo cubierto por el FFO",
+                  "reason": "Dividendo cubierto por el FFO.",
                   "sign": "+1",
                   "state": "con_dato",
                   "tone": "pos",
-                  "value": "79%"
+                  "value": "75%"
                 },
                 {
                   "in_block": false,
-                  "metric": "Cash Flow Operativo",
+                  "metric": "Flujo de caja operativo",
                   "reason": "Genera efectivo operativo",
                   "sign": "+3",
                   "state": "con_dato",
@@ -2463,7 +3056,7 @@
                 },
                 {
                   "in_block": false,
-                  "metric": "Free Cash Flow",
+                  "metric": "Flujo de caja libre",
                   "reason": "FCF positivo",
                   "sign": "+3",
                   "state": "con_dato",
@@ -2480,10 +3073,12 @@
                   "value": "Piotroski F, FCF / beneficio neto"
                 }
               ],
+              "key": "Calidad de Ganancias",
               "max": 20,
-              "name": "Calidad de Ganancias",
+              "name": "Calidad de ganancias",
               "pct": 85.0,
               "score": 17,
+              "score_txt": "17 / 20",
               "text": null,
               "tone": "pos"
             },
@@ -2494,20 +3089,20 @@
                 {
                   "in_block": false,
                   "metric": "Retorno total (dividendo + FFO por acción)",
-                  "reason": "Crecimiento moderado (5.9%) — rentabilidad por dividendo 5.9% + FFO por acción -0.1% (CAGR 3 años); FFO por acción (FFO = beneficio neto + D&A; acciones en circulación de cada ejercicio); FFO agregado +12.2%, acciones +12.3% anual",
-                  "sign": "+1",
+                  "reason": "Crecimiento sólido (9.5%) — rentabilidad por dividendo 5.9% + FFO por acción +3.6% (CAGR 3 años); FFO por acción (FFO según Nareit = beneficio neto + D&A − ventas de inmuebles + deterioros; acciones en circulación de cada ejercicio); FFO agregado +16.3%, acciones +12.3% anual.",
+                  "sign": "+3",
                   "state": "con_dato",
                   "tone": "pos",
-                  "value": "5.9%"
+                  "value": "9.51%"
                 },
                 {
                   "in_block": false,
-                  "metric": "Crecimiento FCF por acción 3Y",
+                  "metric": "Crecimiento del FCF por acción a 3 años",
                   "reason": "FCF estable (3.3%)",
                   "sign": "0",
                   "state": "con_dato",
                   "tone": "neu",
-                  "value": "3.3%"
+                  "value": "3.28%"
                 },
                 {
                   "in_block": false,
@@ -2519,12 +3114,14 @@
                   "value": "Crecimiento del BPA"
                 }
               ],
+              "key": "Crecimiento",
               "max": 20,
               "name": "Crecimiento",
-              "pct": 55.0,
-              "score": 11,
+              "pct": 65.0,
+              "score": 13,
+              "score_txt": "13 / 20",
               "text": null,
-              "tone": "warn"
+              "tone": "pos"
             }
           ],
           "coverage_notes": [],
@@ -2532,7 +3129,7 @@
         },
         "cards": [
           {
-            "body": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria",
+            "body": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria.",
             "key": "altman",
             "state": "no_aplica",
             "subtitle": "No aplica",
@@ -2555,22 +3152,53 @@
       "market": {
         "behavioral": [],
         "behavioral_title": "Lectura conductual del mercado",
-        "news": [],
-        "news_note": "sin titulares de Finnhub (no disponibles o sin respuesta)",
+        "news": [
+          {
+            "date": "2026-10-14",
+            "headline": "Better High-Yield Dividend Stock: Realty Income vs. Healthpeak",
+            "source": "Yahoo",
+            "url": "https://finnhub.io/api/news?id=b8387353a0586496dff9f8ec956c975dd9808157887c3250b68aabe0fa6f3c00"
+          },
+          {
+            "date": "2026-10-14",
+            "headline": "Better High-Yield Dividend Stock: Realty Income vs. Crown Castle",
+            "source": "Yahoo",
+            "url": "https://finnhub.io/api/news?id=00f8fd6f6759c27840ae9315e1529a58732fface580f81cd877d6fb02bf6bb47"
+          },
+          {
+            "date": "2026-10-14",
+            "headline": "Better High-Yield Dividend Stock: Realty Income vs. Energy Transfer",
+            "source": "Yahoo",
+            "url": "https://finnhub.io/api/news?id=0b568d2fb10105a2429fd833366d6b594e13511d3b03963b83e6dbf0898940ee"
+          },
+          {
+            "date": "2026-10-14",
+            "headline": "Better High-Yield Dividend Stock: Realty Income vs. MPLX",
+            "source": "Yahoo",
+            "url": "https://finnhub.io/api/news?id=6bb52cbee3030ee54dcaf89d7f8d5b9277082ae67101f7ae3cbb56e8616e8df1"
+          },
+          {
+            "date": "2026-10-14",
+            "headline": "Better High-Yield Dividend Stock: Realty Income vs. Kraft Heinz",
+            "source": "Yahoo",
+            "url": "https://finnhub.io/api/news?id=ae8e8d1c58c9fbd74c961f567d6af4bd6a606b58114bc2d0e2c474a004b2cb82"
+          }
+        ],
+        "news_note": "Titulares de los últimos 7 días (Finnhub) que mencionan a la empresa, sin interpretación: no puntúan.",
         "note": "Contexto de mercado: no puntúa en la calidad ni en el precio. Describe cómo se ha movido la acción, no qué hará.",
         "pead_note": "Resultados y deriva (PEAD): BPA y consenso: Finnhub; fecha: 8-K de resultados (SEC EDGAR, apartado 2.02).",
         "rows": [
           {
             "key": "momentum",
             "label": "Momentum 12-1",
-            "text": "en los 12 meses anteriores al último, la acción subió un 5.0%: el mercado apenas ha movido la acción",
+            "text": "en los 12 meses anteriores al último, la acción subió un 5.0%: el mercado apenas ha movido la acción.",
             "tone": "neu",
             "value": "+5.0%"
           },
           {
             "key": "trend",
             "label": "Tendencia (200 sesiones)",
-            "text": "cotiza un 8.7% por debajo de su media de 200 sesiones, que sube: régimen lateral",
+            "text": "cotiza un 8.7% por debajo de su media de 200 sesiones, que sube: régimen lateral.",
             "tone": "neu",
             "value": "Lateral"
           },
@@ -2584,16 +3212,16 @@
           {
             "key": "drawdown",
             "label": "Caída máxima",
-            "text": "en el último año llegó a caer un 18.5% desde su máximo (2026-03-02 → 2026-10-07); en los 2 años de la serie, un 19.3%",
+            "text": "en el último año llegó a caer un 18.5% desde su máximo (2026-03-02 → 2026-10-07); en los 2 años de la serie, un 19.3%.",
             "tone": "neu",
             "value": "−18.5%"
           },
           {
             "key": "relative_strength",
-            "label": "Fuerza relativa frente a VNQ (12 meses)",
-            "text": "en 12 meses, la acción −0.9% frente al +5.7% del ETF de su sector (VNQ): se mueve con su sector",
+            "label": "Fuerza relativa frente a VNQ (1 año)",
+            "text": "en 1 año, la acción −1.1% frente al +4.7% del ETF de su sector (VNQ): se mueve con su sector.",
             "tone": "neu",
-            "value": "−6.6 pp"
+            "value": "−5.7 pp"
           },
           {
             "key": "volume",
@@ -2605,7 +3233,7 @@
           {
             "key": "pead",
             "label": "Resultados y deriva (PEAD)",
-            "text": "resultados del trimestre cerrado el 2026-06-30, publicados el 2026-08-05: BPA de 0.37 frente a 0.42 de consenso, una sorpresa del −11.0%. Entre la sesión anterior al anuncio y la siguiente, la acción −0.5% frente al S&P 500; en las 48 sesiones siguientes, −10.8% frente al S&P 500: la deriva va en la dirección de la sorpresa. Bernard y Thomas (1989) documentan que el precio sigue la sorpresa unas 60 sesiones; describe un efecto estudiado, no una previsión",
+            "text": "resultados del trimestre fiscal cerrado el 2026-06-30, publicados el 2026-08-05: BPA de 0.37 frente a 0.42 de consenso, una sorpresa del −11.0%. Entre la sesión anterior al anuncio y la siguiente, la acción −0.5% frente al S&P 500; en las 48 sesiones siguientes, −10.8% frente al S&P 500: la deriva va en la dirección de la sorpresa. Bernard y Thomas (1989) documentan que el precio sigue la sorpresa unas 60 sesiones; describe un efecto estudiado, no una previsión.",
             "tone": "neu",
             "value": "−11.0% sorpresa"
           }
@@ -2643,13 +3271,14 @@
             "$4.17B"
           ],
           [
-            "EPS",
+            "BPA",
             "$1.37",
             "Valor en libros / acción",
             "$41.80"
           ]
         ],
-        "intro": "FFO / activos de 4.98%: muy bajo, FFO sobre los activos totales, frente a los REIT de EE. UU. Margen FFO de 63.8%: excelente, FFO sobre ingresos.",
+        "figures_title": "Cifras de los últimos doce meses (TTM, a 30 de junio de 2026)",
+        "intro": "FFO / activos de 5.20%: bajo, FFO sobre los activos totales, frente a los REIT de EE. UU. Margen FFO de 66.59%: excelente, FFO sobre ingresos.",
         "quality_readings": [],
         "roce_reading": null,
         "rows": [
@@ -2660,7 +3289,7 @@
             "label": "ROE",
             "reading": "No aplica a REIT",
             "state": "no_aplica",
-            "text": null,
+            "text": "el beneficio contable está distorsionado por la depreciación inmobiliaria.",
             "tone": "neu",
             "value": "—"
           },
@@ -2671,7 +3300,7 @@
             "label": "ROA",
             "reading": "No aplica a REIT",
             "state": "no_aplica",
-            "text": null,
+            "text": "el beneficio contable está distorsionado por la depreciación inmobiliaria.",
             "tone": "neu",
             "value": "—"
           },
@@ -2682,7 +3311,7 @@
             "label": "ROIC",
             "reading": "No aplica a REIT",
             "state": "no_aplica",
-            "text": null,
+            "text": "el beneficio contable está distorsionado por la depreciación inmobiliaria.",
             "tone": "neu",
             "value": "—"
           },
@@ -2693,7 +3322,7 @@
             "label": "Margen bruto",
             "reading": "No aplica a REIT",
             "state": "no_aplica",
-            "text": null,
+            "text": "estructura de arrendamiento neto: el inquilino paga los costes del inmueble, así que los márgenes bruto y operativo no son comparables; la rentabilidad se mide sobre el FFO.",
             "tone": "neu",
             "value": "—"
           },
@@ -2704,7 +3333,7 @@
             "label": "Margen operativo",
             "reading": "No aplica a REIT",
             "state": "no_aplica",
-            "text": null,
+            "text": "estructura de arrendamiento neto: el inquilino paga los costes del inmueble, así que los márgenes bruto y operativo no son comparables; la rentabilidad se mide sobre el FFO.",
             "tone": "neu",
             "value": "—"
           },
@@ -2715,7 +3344,7 @@
             "label": "Margen neto",
             "reading": "No aplica a REIT",
             "state": "no_aplica",
-            "text": null,
+            "text": "el beneficio contable está distorsionado por la depreciación inmobiliaria.",
             "tone": "neu",
             "value": "—"
           },
@@ -2724,11 +3353,11 @@
             "gap": "—",
             "key": "ffo_activos",
             "label": "FFO / activos",
-            "reading": "Muy débil",
+            "reading": "Débil",
             "state": "con_dato",
-            "text": "Muy bajo (4.98%) - FFO sobre los activos totales, frente a los REIT de EE. UU.",
-            "tone": "neg",
-            "value": "4.98%"
+            "text": "Bajo (5.20%) - FFO sobre los activos totales, frente a los REIT de EE. UU.",
+            "tone": "warn",
+            "value": "5.20%"
           },
           {
             "bench": "—",
@@ -2737,9 +3366,9 @@
             "label": "Margen FFO",
             "reading": "Excelente",
             "state": "con_dato",
-            "text": "Excelente (63.8%) - FFO sobre ingresos",
+            "text": "Excelente (66.59%) - FFO sobre ingresos.",
             "tone": "pos",
-            "value": "63.8%"
+            "value": "66.59%"
           },
           {
             "bench": "—",
@@ -2748,9 +3377,9 @@
             "label": "FFO / patrimonio contable (informativo)",
             "reading": "Informativo",
             "state": "con_dato",
-            "text": "no puntúa: depende de cómo se financia el REIT y de lo ya amortizado",
+            "text": "no puntúa: depende de cómo se financia el REIT y de lo ya amortizado.",
             "tone": "neu",
-            "value": "9.63%"
+            "value": "10.05%"
           },
           {
             "bench": "—",
@@ -2759,7 +3388,7 @@
             "label": "ROCE",
             "reading": "No aplica a REIT",
             "state": "no_aplica",
-            "text": null,
+            "text": "el beneficio contable está distorsionado por la depreciación inmobiliaria.",
             "tone": "neu",
             "value": "—"
           }
@@ -2772,12 +3401,12 @@
           "VALOR",
           "LECTURA"
         ],
-        "intro": "La deuda neta (5.7x EBITDA) está en el rango habitual de un REIT con grado de inversión (hasta 6.5x). El D/E de 0.78x es informativo: en un REIT el apalancamiento se mide por la deuda neta/EBITDA. La cobertura de intereses (2.4x) deja poco margen ante caídas del beneficio operativo. El payout sobre FFO de 79% está cubierto por el FFO.",
+        "intro": "La deuda neta (5.7x EBITDA) está en el rango habitual de un REIT con grado de inversión (hasta 6.5x). El D/E de 0.78x es informativo: en un REIT el apalancamiento se mide por la deuda neta/EBITDA. La cobertura de intereses (2.4x) deja poco margen ante caídas del beneficio operativo. El payout sobre FFO de 75% está cubierto por el FFO.",
         "quality_readings": [
           {
             "key": "coverage",
             "label": "Cobertura de intereses",
-            "text": "Cobertura (gasto por intereses): el EBIT cubre 2.4 veces los intereses; el EBITDA, 4.4 veces; el FFO más los intereses, 4.3 veces; con el EBIT de cada ejercicio, de 2.9 veces en FY2022 a 2.0 en FY2025 (empeora).",
+            "text": "Cobertura (gasto por intereses): el EBIT (TTM) cubre 2.4 veces los intereses; el EBITDA (TTM), 4.4 veces; el FFO más los intereses, 4.4 veces; con el EBIT de cada ejercicio, de 2.9 veces en FY2022 a 2.0 en FY2025 (empeora).",
             "tone": "neu"
           }
         ],
@@ -2789,7 +3418,7 @@
             "label": "Current ratio",
             "reading": "No aplica",
             "state": "no_aplica",
-            "text": null,
+            "text": "activos inmobiliarios de largo plazo financiados con deuda a largo plazo; el circulante no mide su liquidez.",
             "tone": null,
             "value": "—"
           },
@@ -2805,13 +3434,13 @@
             "value": "0.13x"
           },
           {
-            "bench": null,
-            "gap": null,
+            "bench": "1.45x",
+            "gap": "-46%",
             "key": "de",
             "label": "Deuda / Equity",
             "reading": "Informativo",
             "state": "con_dato",
-            "text": "el D/E de 0.78x es informativo: en un REIT el apalancamiento se mide por la deuda neta/EBITDA",
+            "text": "el D/E de 0.78x es informativo: en un REIT el apalancamiento se mide por la deuda neta/EBITDA.",
             "tone": "neu",
             "value": "0.78x"
           },
@@ -2844,7 +3473,7 @@
             "label": "Cobertura de intereses",
             "reading": "Justa",
             "state": "con_dato",
-            "text": "la cobertura de intereses (2.4x) deja poco margen ante caídas del beneficio operativo",
+            "text": "la cobertura de intereses (2.4x) deja poco margen ante caídas del beneficio operativo.",
             "tone": "warn",
             "value": "2.37x"
           },
@@ -2855,9 +3484,9 @@
             "label": "Payout sobre FFO",
             "reading": "Cubierto",
             "state": "con_dato",
-            "text": "el payout sobre FFO de 79% está cubierto por el FFO",
+            "text": "el payout sobre FFO de 75% está cubierto por el FFO.",
             "tone": "pos",
-            "value": "78.65%"
+            "value": "75.38%"
           }
         ]
       },
@@ -2896,45 +3525,45 @@
               "label": "Valor justo DCF",
               "reading": "No aplica a REIT",
               "state": "no_aplica",
-              "text": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria",
+              "text": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria.",
               "tone": null,
               "value": "—"
             }
           ]
         },
-        "intro": "P/FFO (REIT): atractivo por FFO (13.7x).",
+        "intro": "P/FFO (REIT): atractivo por FFO (13.1x).",
         "ke_note": null,
         "market_note": null,
         "normalization_note": "Beneficio TTM (4 trimestres): reportado $1.27B, normalizado $1.33B (no recurrentes 5.1% del beneficio; cargos especiales (deterioros, litigios, reestructuración) (explicita, confianza alta), recurrente (4 de los últimos 4 ejercicios): solo el exceso sobre su promedio, −$114.21M netos; ganancias por venta de valores (explicita, confianza alta), recurrente (4 de los últimos 4 ejercicios): solo el exceso sobre su promedio, $49.85M netos). El score usa el beneficio normalizado.",
         "premortem": {
           "items": [
-            "el FFO por acción cayera más de un 1.4% anual durante 10 años, lo que ya descuenta el precio; historia propia: su FFO por acción, −0.1% anual en 3 años"
+            "el FFO por acción cayera más de un 1.4% anual durante 10 años, lo que ya descuenta el precio; historia propia: su FFO por acción, 3.6% anual en 3 años"
           ],
           "note": "Condiciones que invalidarían la lectura de hoy, con la cifra que las mide: no son previsiones.",
           "title": "Esta lectura sería errónea si…"
         },
-        "reference_note": "Referencia: industria «Retail (REITs)»; Damodaran clasifica a la empresa en esa industria (símbolo), EE. UU., 26 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
+        "reference_note": "Referencia: industria «REIT de locales comerciales»; Damodaran clasifica a la empresa en esa industria (símbolo), EE. UU., 26 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Referencia de la industria sin Realty Income, que pesa el 26 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 30 de septiembre de 2025). Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
         "reverse_dcf": {
           "lines": [
             {
-              "label": "En precio",
-              "text": "El precio actual se justifica aunque el FFO por acción caiga un 1.4% anual durante 10 años (−3.0% los 5 primeros y convergencia al 2.5%); en los últimos 3 años, su FFO por acción cayó un 0.1% anual. Lo sostuvo 10 años el 76% de las empresas comparables (ventas de 1 a 5 mil millones, otros sectores).",
-              "tone": "neu"
+              "label": "Barata",
+              "text": "El precio actual se justifica aunque el FFO por acción caiga un 1.4% anual durante 10 años (−3.1% los 5 primeros y convergencia al 2.5%); en los últimos 3 años, su FFO por acción creció un 3.6% anual. Lo sostuvo 10 años el 77% de las empresas comparables (ventas de 1 a 5 mil millones, otros sectores).",
+              "tone": "pos"
             }
           ],
           "method": "Misma estructura que el DCF directo (crecimiento constante 5 años y convergencia al terminal en los 5 siguientes). Referencia principal: tasas base de Mauboussin y Callahan (2021) por tamaño e industria; segunda: la historia propia.",
-          "role": "Es el método intrínseco del veredicto: sin DCF directo, se valora el FFO por acción (aporta +0 puntos a Valoración).",
+          "role": "Es el método intrínseco del veredicto: sin DCF directo, se valora el FFO por acción (aporta +2 puntos a Valoración).",
           "title": "Crecimiento que exige el precio (DCF inverso)"
         },
         "rows": [
           {
-            "bench": "31.10x",
+            "bench": "—",
             "gap": "—",
             "key": "pe",
             "label": "P/E (TTM)",
             "reading": "No aplica a REIT",
             "state": "no_aplica",
-            "text": null,
+            "text": "el beneficio contable está distorsionado por la depreciación inmobiliaria.",
             "tone": "neu",
             "value": "—"
           },
@@ -2945,18 +3574,18 @@
             "label": "Forward P/E",
             "reading": "No aplica a REIT",
             "state": "no_aplica",
-            "text": null,
+            "text": "el beneficio contable está distorsionado por la depreciación inmobiliaria.",
             "tone": "neu",
             "value": "—"
           },
           {
-            "bench": "2.08x",
-            "gap": "-36%",
+            "bench": "2.53x",
+            "gap": "-48%",
             "key": "pb",
             "label": "P/B",
             "reading": "Descuento profundo",
             "state": "con_dato",
-            "text": "P/B de 1.3x frente a 2.1x de su industria (-36%): descuento profundo",
+            "text": "P/B de 1.3x frente a 2.5x de su industria sin ella (-48%): descuento profundo.",
             "tone": "pos",
             "value": "1.32x"
           },
@@ -2978,19 +3607,19 @@
             "label": "PEG",
             "reading": "No aplica a REIT",
             "state": "no_aplica",
-            "text": null,
+            "text": "el beneficio contable está distorsionado por la depreciación inmobiliaria.",
             "tone": "neu",
             "value": "—"
           },
           {
-            "bench": "16.72x",
-            "gap": "-7%",
+            "bench": "17.96x",
+            "gap": "-13%",
             "key": "ev_ebitda",
             "label": "EV/EBITDA",
-            "reading": "En línea",
+            "reading": "Descuento",
             "state": "con_dato",
-            "text": "EV/EBITDA de 15.6x frente a 16.7x de su industria (-7%): en línea",
-            "tone": "neu",
+            "text": "EV/EBITDA de 15.6x frente a 18.0x de su industria sin ella (-13%): descuento.",
+            "tone": "pos",
             "value": "15.63x"
           },
           {
@@ -3000,7 +3629,7 @@
             "label": "P/FCF",
             "reading": "No aplica a REIT",
             "state": "no_aplica",
-            "text": null,
+            "text": "el beneficio contable está distorsionado por la depreciación inmobiliaria.",
             "tone": "neu",
             "value": "—"
           },
@@ -3011,7 +3640,7 @@
             "label": "FCF Yield",
             "reading": "No aplica a REIT",
             "state": "no_aplica",
-            "text": null,
+            "text": "el beneficio contable está distorsionado por la depreciación inmobiliaria.",
             "tone": "neu",
             "value": "—"
           },
@@ -3022,7 +3651,7 @@
             "label": "Earnings Yield (E/P)",
             "reading": "No aplica a REIT",
             "state": "no_aplica",
-            "text": null,
+            "text": "el beneficio contable está distorsionado por la depreciación inmobiliaria.",
             "tone": "neu",
             "value": "—"
           },
@@ -3044,16 +3673,38 @@
             "label": "P/FFO (REIT)",
             "reading": "Favorable",
             "state": "con_dato",
-            "text": "Atractivo por FFO (13.7x)",
+            "text": "Atractivo por FFO (13.1x)",
             "tone": "pos",
-            "value": "13.7x"
+            "value": "13.13x"
+          },
+          {
+            "bench": "—",
+            "gap": "—",
+            "key": "ffo_nareit",
+            "label": "FFO según Nareit (por acción)",
+            "reading": "Informativo",
+            "state": "con_dato",
+            "text": "FFO (Nareit) = beneficio neto + D&A − ventas de inmuebles + deterioros de inmuebles: $1.27B + $2.54B − ($190.44M) + $355.73M = $3.98B; no incluye lo que Nareit también ajusta y el XBRL no separa: la D&A no inmobiliaria y la parte de participadas y minoritarios; FFO publicado por el emisor: sin fuente gratuita y estructurada (Finnhub gratuito no lo da y el 8-K de resultados lo publica sin XBRL); no se compara. Periodo: ejercicio 2025-01-01 a 2025-12-31 (10-K 0000726728-26-000011) + acumulado 2026-01-01 a 2026-06-30 (10-Q 0000726728-26-000048) − acumulado 2025-01-01 a 2025-06-30 (10-Q 0000726728-25-000131).",
+            "tone": "neu",
+            "value": "$4.20"
+          },
+          {
+            "bench": "—",
+            "gap": "—",
+            "key": "affo",
+            "label": "AFFO (por acción)",
+            "reading": "Informativo",
+            "state": "con_dato",
+            "text": "AFFO = FFO − rentas lineales − capex recurrente: $3.98B − ($0) − ($166.13M) = $3.81B (el AFFO no tiene definición estándar)",
+            "tone": "neu",
+            "value": "$4.03"
           }
         ],
         "sensitivity": null,
         "wacc_breakdown": [
           {
             "label": "WACC",
-            "value": "7.19%"
+            "value": "7.33%"
           },
           {
             "label": "Peso del patrimonio",
@@ -3061,15 +3712,15 @@
           },
           {
             "label": "Coste del patrimonio (Ke)",
-            "value": "7.89%"
+            "value": "8.12%"
           },
           {
             "label": "Tasa libre de riesgo (Rf)",
             "value": "5.29%"
           },
           {
-            "label": "Beta del sector (Damodaran, sin Blume)",
-            "value": "0.62"
+            "label": "Beta de abajo hacia arriba (Damodaran, sin Blume)",
+            "value": "0.67"
           },
           {
             "label": "Prima de mercado implícita",
@@ -3092,13 +3743,14 @@
             "value": "10.00%"
           }
         ],
-        "wacc_note": "WACC 7.19% = 62.92% × Ke 7.89% (Rf 5.29% + β del sector 0.62 [Damodaran, enero de 2026; sin Blume: es una media de industria] × prima implícita 4.20%) + 37.08% × Kd 6.67% × (1 − t 10.00%). Kd = Rf + spread del rating sintético BB+ (tabla de empresas grandes, cobertura 2.4x). t: tasa efectiva TTM (tasa efectiva 6.9% acotada a [10%, 35%]). Rf: ^TNX no disponible (sin cotización): valor de config."
+        "wacc_note": "WACC 7.33% = 62.92% × Ke 8.12% (Rf 5.29% [Tesoro de EE. UU. a 10 años del par Rf–ERP de Damodaran, 1 de octubre de 2026] + β de abajo hacia arriba 0.67 [βU 0.44 de la industria (Damodaran, enero de 2026) reapalancada con D/E 0.59 y t 10%; sin Blume] × prima implícita 4.20%) + 37.08% × Kd 6.67% × (1 − t 10.00%). Kd = Rf + spread del rating sintético BB+ (tabla de empresas grandes, cobertura 2.4x). t: tasa efectiva TTM (tasa efectiva 6.9% acotada a [10%, 35%]). Rf y prima implícita del mismo día: bono del Tesoro de EE. UU. a 10 años y prima implícita de Damodaran del 1 de octubre de 2026."
       }
     },
     "summary": {
       "alert_counts": {
         "red_flags": 0,
         "strengths": 1,
+        "unmeasured": null,
         "warnings": 1
       },
       "cards": [
@@ -3107,11 +3759,11 @@
           "delta": "",
           "key": "revenue_growth",
           "label": "Retorno total (3 años)",
-          "pill": "En rango",
+          "pill": "Sin referencia",
           "state": "con_dato",
           "tone": "neu",
           "unit": "%",
-          "value": "5.9"
+          "value": "9.51"
         },
         {
           "bench": "No aplica a REIT",
@@ -3140,44 +3792,44 @@
           "delta": "",
           "key": "p_ffo",
           "label": "P/FFO",
-          "pill": "En rango",
+          "pill": "Sin referencia",
           "state": "con_dato",
           "tone": "neu",
           "unit": "x",
-          "value": "13.7"
+          "value": "13.13"
         },
         {
           "bench": "",
           "delta": "",
           "key": "dividend_yield",
           "label": "Dividend yield",
-          "pill": "En rango",
+          "pill": "Sin referencia",
           "state": "con_dato",
           "tone": "neu",
           "unit": "%",
-          "value": "5.9"
+          "value": "5.88"
         },
         {
-          "bench": "vs industria 16.7x",
-          "delta": "-7%",
+          "bench": "vs industria 17.96x",
+          "delta": "-13%",
           "key": "ev_ebitda",
           "label": "EV/EBITDA",
-          "pill": "En línea",
+          "pill": "Descuento",
           "state": "con_dato",
-          "tone": "neu",
+          "tone": "pos",
           "unit": "x",
-          "value": "15.6"
+          "value": "15.63"
         }
       ],
       "composition": {
-        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: Valoración (base 10/20 + bloque de múltiplos y DCF) reescalada a 100 y contraída hacia 50 según la confianza.",
+        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: Valoración (base 10/20 + bloque de múltiplos y DCF) reescalada a 100 y contraída hacia 50 según la confianza del veredicto: solo los limitadores que lo contradicen o lo vuelven incierto, no los que apuntan en su dirección.",
         "price": {
-          "level": "razonable",
-          "note": "sin ajustar 65 → ajustado a 61 por confianza media",
+          "level": "atractivo",
+          "note": "ajustado de 75 a 69 por confianza media.",
           "rows": [
             {
               "kind": "signed",
-              "label": "P/FFO (REIT) · 13.7x",
+              "label": "P/FFO (REIT) · 13.13x",
               "tone": "pos",
               "value": 2
             },
@@ -3189,23 +3841,23 @@
             },
             {
               "kind": "signed",
-              "label": "DCF inverso (FFO) · en precio",
-              "tone": "neu",
-              "value": 0
+              "label": "DCF inverso (FFO) · barata",
+              "tone": "pos",
+              "value": 2
             }
           ],
-          "score": 61,
+          "score": 69,
           "signed_max": 6,
           "title": "ATRACTIVO DEL PRECIO",
-          "tone": "neu"
+          "tone": "pos"
         },
         "quality": {
-          "level": "media",
+          "level": "sólida",
           "note": null,
           "rows": [
             {
               "kind": "bar",
-              "label": "Solidez Financiera",
+              "label": "Solidez financiera",
               "max": 20,
               "pct": 50.0,
               "tone": "warn",
@@ -3215,13 +3867,13 @@
               "kind": "bar",
               "label": "Rentabilidad",
               "max": 20,
-              "pct": 45.0,
-              "tone": "warn",
-              "value": 9
+              "pct": 60.0,
+              "tone": "pos",
+              "value": 12
             },
             {
               "kind": "bar",
-              "label": "Calidad de Ganancias",
+              "label": "Calidad de ganancias",
               "max": 20,
               "pct": 85.0,
               "tone": "pos",
@@ -3231,28 +3883,28 @@
               "kind": "bar",
               "label": "Crecimiento",
               "max": 20,
-              "pct": 55.0,
-              "tone": "warn",
-              "value": 11
+              "pct": 65.0,
+              "tone": "pos",
+              "value": 13
             }
           ],
-          "score": 59,
+          "score": 65,
           "title": "CALIDAD DEL NEGOCIO",
-          "tone": "warn"
+          "tone": "pos"
         }
       },
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad media · precio razonable (confianza media: DCF inverso la ve en precio y los múltiplos barata). Calidad 59/100 · precio 61/100 (sin ajustar 65 → ajustado a 61 por confianza media)."
+          "text": "Calidad sólida · precio atractivo (confianza media: el nivel de precio cambia con ±1 pp de coste del capital). Calidad 65/100 · precio 69/100 (ajustado de 75 a 69 por confianza media)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
-          "text": "Destaca en Calidad de Ganancias (17/20); el punto débil es Rentabilidad (9/20)."
+          "text": "Destaca en Calidad de ganancias (17/20) y Crecimiento (13/20)."
         },
         {
           "label": "RENTABILIDAD",
-          "text": "FFO / activos 4.98%: muy bajo (4.98%); Margen FFO 63.8%: excelente (63.8%)."
+          "text": "FFO / activos 5.20%: bajo (5.20%); Margen FFO 66.59%: excelente (66.59%)."
         },
         {
           "label": "SOLIDEZ",
@@ -3260,25 +3912,25 @@
         },
         {
           "label": "CRECIMIENTO Y RETORNO",
-          "text": "El retorno total por acción (dividendo más crecimiento del FFO por acción en 3 años) es del 5.9%. La emisión de acciones diluyó a los accionistas un 4.8% en el año."
+          "text": "El retorno total por acción (dividendo más crecimiento del FFO por acción en 3 años) es del 9.5%. La emisión de acciones diluyó a los accionistas un 4.8% en el año."
         },
         {
           "label": "ATRACTIVO DEL PRECIO",
-          "text": "P/FFO (REIT): Atractivo por FFO (13.7x)."
+          "text": "P/FFO (REIT): Atractivo por FFO (13.1x)."
         },
         {
           "label": "CONTEXTO DE MERCADO",
-          "text": "Cotiza en el 14% del rango de 52 semanas, en la parte baja. Con beta 0.62, la acción amortigua los movimientos del mercado."
+          "text": "Cotiza en el 14% del rango de 52 semanas, en la parte baja. Beta 0.67 de su industria: la propia de la acción no pasa los filtros de la regresión, así que no mide su sensibilidad al mercado."
         },
         {
           "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Media: los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no. Contrae el atractivo del precio hacia 50; la calidad no se contrae."
+          "text": "Media: los métodos y los datos coinciden. Contrae el atractivo del precio hacia 50 (de 75 a 69); la calidad no se contrae."
         }
       ]
     },
     "tooltips": {
       "beta": {
-        "note": null,
+        "note": "«Defensiva» exige la beta propia de la acción, la que pasa los filtros de la regresión; con la de su industria, la lectura es «Beta baja».",
         "tables": [
           {
             "bands": [
@@ -3303,7 +3955,7 @@
                 "tone": "neg"
               }
             ],
-            "title": "Umbrales del sector (del sector)"
+            "title": "Umbrales del sector"
           }
         ]
       },
@@ -3381,31 +4033,31 @@
             "bands": [
               {
                 "label": "Descuento profundo",
-                "range": "≤ 10.9x",
+                "range": "≤ 11.7x",
                 "tone": "pos"
               },
               {
                 "label": "Descuento",
-                "range": "10.9x – 15.1x",
+                "range": "11.7x – 16.2x",
                 "tone": "pos"
               },
               {
                 "label": "En línea",
-                "range": "15.1x – 18.4x",
+                "range": "16.2x – 19.8x",
                 "tone": "neu"
               },
               {
                 "label": "Prima moderada",
-                "range": "18.4x – 22.6x",
+                "range": "19.8x – 24.3x",
                 "tone": "warn"
               },
               {
                 "label": "Prima elevada",
-                "range": "≥ 22.6x",
+                "range": "≥ 24.3x",
                 "tone": "neg"
               }
             ],
-            "title": "Frente a la referencia de su industria (16.7x)"
+            "title": "Frente a la referencia de su industria sin ella (18.0x)"
           }
         ]
       },
@@ -3546,31 +4198,31 @@
             "bands": [
               {
                 "label": "Descuento profundo",
-                "range": "≤ 1.3x",
+                "range": "≤ 1.6x",
                 "tone": "pos"
               },
               {
                 "label": "Descuento",
-                "range": "1.3x – 1.9x",
+                "range": "1.6x – 2.3x",
                 "tone": "pos"
               },
               {
                 "label": "En línea",
-                "range": "1.9x – 2.3x",
+                "range": "2.3x – 2.8x",
                 "tone": "neu"
               },
               {
                 "label": "Prima moderada",
-                "range": "2.3x – 2.8x",
+                "range": "2.8x – 3.4x",
                 "tone": "warn"
               },
               {
                 "label": "Prima elevada",
-                "range": "≥ 2.8x",
+                "range": "≥ 3.4x",
                 "tone": "neg"
               }
             ],
-            "title": "Frente a la referencia de su industria (2.1x)"
+            "title": "Frente a la referencia de su industria sin ella (2.5x)"
           }
         ]
       },
@@ -3683,12 +4335,12 @@
             "bands": [
               {
                 "label": "excelente",
-                "range": "≥ 80",
+                "range": "≥ 85",
                 "tone": "pos"
               },
               {
                 "label": "sólida",
-                "range": "65 – 80",
+                "range": "65 – 85",
                 "tone": "pos"
               },
               {
@@ -3757,8 +4409,10 @@
     "version": 1
   },
   "earnings_normalization": {
+    "after_tax": null,
     "applied": true,
     "basis": "TTM (4 trimestres)",
+    "coherence": null,
     "confidence": "alta",
     "differs": true,
     "inference": {
@@ -3808,8 +4462,13 @@
     "quality_differs": true,
     "reported_net_income": 1267577000.0,
     "structural_net": 0,
+    "unexplained": {
+      "after_tax": 0.0,
+      "pre_tax": 0.0
+    },
     "used_in_score": true
   },
+  "earnings_peak": null,
   "eps_vs_revenue_growth": null,
   "errors": [],
   "graham_number": null,
@@ -3820,18 +4479,233 @@
     ],
     "basis": "por_accion",
     "eps": "el BPA ya es por acción",
+    "eps_cagr": {
+      "anomalous_base": false,
+      "bound": null,
+      "method": "cagr",
+      "not_significant": null,
+      "note": null,
+      "robust": true,
+      "source": null,
+      "window": null,
+      "years_used": 4
+    },
     "fcf_cagr": {
       "anomalous_base": false,
+      "bound": null,
       "method": "cagr",
-      "note": null
+      "not_significant": null,
+      "note": null,
+      "robust": true,
+      "source": null,
+      "window": null,
+      "years_used": 4
     },
     "reason": "REIT: crecimiento por acción siempre (FFO y FCF por acción); las acciones crecen +12.3% anual en la ventana (> 2%): la emisión inflaría el crecimiento agregado",
+    "revenue_cagr": {
+      "anomalous_base": false,
+      "bound": null,
+      "method": "cagr",
+      "not_significant": null,
+      "note": null,
+      "robust": true,
+      "source": null,
+      "window": null,
+      "years_used": 4
+    },
     "shares_cagr_3y": 0.122529962489,
     "threshold": 0.02
   },
+  "history_10y": {
+    "currency": "USD",
+    "field_reasons": {
+      "operating_income": "el emisor no presenta un resultado operativo con el concepto XBRL estándar"
+    },
+    "reason": null,
+    "relays": [],
+    "rows": [
+      {
+        "capex": -13426000,
+        "diluted_eps": 1.13,
+        "free_cash_flow": 786437000,
+        "fy_end": "2016-12-31",
+        "gap_before": false,
+        "net_income": 288491000,
+        "net_margin": 0.261510444428,
+        "operating_cash_flow": 799863000,
+        "operating_income": null,
+        "operating_margin": null,
+        "revenue": 1103172000,
+        "revenue_growth": 0.129298316553,
+        "year": 2016
+      },
+      {
+        "capex": -15247000,
+        "diluted_eps": 1.1,
+        "free_cash_flow": 860603000,
+        "fy_end": "2017-12-31",
+        "gap_before": false,
+        "net_income": 301514000,
+        "net_margin": 0.24800290845,
+        "operating_cash_flow": 875850000,
+        "operating_income": null,
+        "operating_margin": null,
+        "revenue": 1215768000,
+        "revenue_growth": 0.102065679695,
+        "year": 2017
+      },
+      {
+        "capex": -25350000,
+        "diluted_eps": 1.26,
+        "free_cash_flow": 915392000,
+        "fy_end": "2018-12-31",
+        "gap_before": false,
+        "net_income": 363614000,
+        "net_margin": 0.273839127966,
+        "operating_cash_flow": 940742000,
+        "operating_income": null,
+        "operating_margin": null,
+        "revenue": 1327838000,
+        "revenue_growth": 0.0921804160004,
+        "year": 2018
+      },
+      {
+        "capex": -23536000,
+        "diluted_eps": 1.38,
+        "free_cash_flow": 1045401000,
+        "fy_end": "2019-12-31",
+        "gap_before": false,
+        "net_income": 436482000,
+        "net_margin": 0.293302548175,
+        "operating_cash_flow": 1068937000,
+        "operating_income": null,
+        "operating_margin": null,
+        "revenue": 1488163000,
+        "revenue_growth": 0.120741385621,
+        "year": 2019
+      },
+      {
+        "capex": -8708000,
+        "diluted_eps": 1.14,
+        "free_cash_flow": 1106835000,
+        "fy_end": "2020-12-31",
+        "gap_before": false,
+        "net_income": 395486000,
+        "net_margin": 0.240112392363,
+        "operating_cash_flow": 1115543000,
+        "operating_income": null,
+        "operating_margin": null,
+        "revenue": 1647087000,
+        "revenue_growth": 0.106792065117,
+        "year": 2020
+      },
+      {
+        "capex": -19080000,
+        "diluted_eps": 0.87,
+        "free_cash_flow": 1303109000,
+        "fy_end": "2021-12-31",
+        "gap_before": false,
+        "net_income": 359456000,
+        "net_margin": 0.172776925136,
+        "operating_cash_flow": 1322189000,
+        "operating_income": null,
+        "operating_margin": null,
+        "revenue": 2080463000,
+        "revenue_growth": 0.263116641683,
+        "year": 2021
+      },
+      {
+        "capex": -95514000,
+        "diluted_eps": 1.42,
+        "free_cash_flow": 2468342000,
+        "fy_end": "2022-12-31",
+        "gap_before": false,
+        "net_income": 869408000,
+        "net_margin": 0.260015234707,
+        "operating_cash_flow": 2563856000,
+        "operating_income": null,
+        "operating_margin": null,
+        "revenue": 3343681000,
+        "revenue_growth": 0.607181189956,
+        "year": 2022
+      },
+      {
+        "capex": -68692000,
+        "diluted_eps": 1.26,
+        "free_cash_flow": 2890077000,
+        "fy_end": "2023-12-31",
+        "gap_before": false,
+        "net_income": 872309000,
+        "net_margin": 0.213854007595,
+        "operating_cash_flow": 2958769000,
+        "operating_income": null,
+        "operating_margin": null,
+        "revenue": 4078993000,
+        "revenue_growth": 0.219910930498,
+        "year": 2023
+      },
+      {
+        "capex": -121411000,
+        "diluted_eps": 0.98,
+        "free_cash_flow": 3451865000,
+        "fy_end": "2024-12-31",
+        "gap_before": false,
+        "net_income": 847893000,
+        "net_margin": 0.160855655188,
+        "operating_cash_flow": 3573276000,
+        "operating_income": null,
+        "operating_margin": null,
+        "revenue": 5271142000,
+        "revenue_growth": 0.292265517494,
+        "year": 2024
+      },
+      {
+        "capex": -131800000,
+        "diluted_eps": 1.17,
+        "free_cash_flow": 3862954000,
+        "fy_end": "2025-12-31",
+        "gap_before": false,
+        "net_income": 1058590000,
+        "net_margin": 0.184122557975,
+        "operating_cash_flow": 3994754000,
+        "operating_income": null,
+        "operating_margin": null,
+        "revenue": 5749377000,
+        "revenue_growth": 0.0907270189268,
+        "year": 2025
+      }
+    ],
+    "source": "SEC EDGAR (companyfacts: ejercicios completos de los informes anuales)",
+    "status": "ok"
+  },
+  "ke_sensitivity": {
+    "base": {
+      "ke": 0.0811821364359,
+      "level": "atractivo",
+      "score": 75
+    },
+    "dependent": true,
+    "minus": {
+      "ke": 0.0711821364359,
+      "level": "atractivo",
+      "score": 75
+    },
+    "plus": {
+      "ke": 0.0911821364359,
+      "level": "razonable",
+      "score": 61
+    },
+    "pp": 0.01,
+    "reason": "veredicto dependiente de Ke: el nivel de precio pasa de «atractivo» a «razonable» con Ke + 1 pp",
+    "status": "ok"
+  },
   "key_metrics": {
+    "affo": 3809109000.0,
     "asset_turnover": 0.078100586102,
-    "beta": 0.62,
+    "beta": 0.673384200855,
+    "beta_ke": 0.673384200855,
+    "beta_r2": null,
+    "beta_source": "sector",
     "book_value_per_share": 41.7975092639,
     "buyback_yield": -0.0476314930494,
     "cash": 552648000.0,
@@ -3849,8 +4723,8 @@
     "ev_ebitda": 15.6257143046,
     "ev_revenue": 13.804764884,
     "fcf_yield": 0.0798070263905,
-    "ffo": 3809945000.0,
-    "ffo_payout": 0.786476445198,
+    "ffo": 3975239000.0,
+    "ffo_payout": 0.753774049812,
     "forward_pe": 32.76273,
     "free_cash_flow": 4166154000.0,
     "gross_margin": 0.925633202928,
@@ -3869,14 +4743,15 @@
     "operating_cash_flow": 4166154000.0,
     "operating_income": 2732025000.0,
     "operating_margin": 0.457616123216,
-    "p_ffo": 13.7017324786,
+    "p_affo": 13.7047396512,
+    "p_ffo": 13.1320021634,
     "payout_basis": "ffo",
-    "payout_ratio": 0.786476445198,
+    "payout_ratio": 0.753774049812,
     "payout_ratio_net_income": 2.36390530911,
     "pb": 1.31993506648,
     "pe": 40.2700716562,
     "pe_normalized": 38.3241363904,
-    "peg": 1.85835,
+    "peg": null,
     "pfcf": 12.5302250344,
     "price_52w_high": 67.9400024414,
     "price_52w_low": 53.1500015259,
@@ -3898,7 +4773,7 @@
     "total_assets": 76441475000.0,
     "total_debt": 30765959000.0,
     "total_equity": 39549557000.0,
-    "wacc": 0.0719279154383
+    "wacc": 0.0733386372636
   },
   "market_context": {
     "behavioral": [],
@@ -3913,8 +4788,86 @@
       "value": 0.126737646948
     },
     "news": {
-      "items": [],
-      "reason": "sin titulares de Finnhub (no disponibles o sin respuesta)"
+      "days": 7,
+      "items": [
+        {
+          "category": "company",
+          "date": "2026-10-14",
+          "datetime": "2026-10-14T18:20:46Z",
+          "headline": "Better High-Yield Dividend Stock: Realty Income vs. Healthpeak",
+          "image": null,
+          "lang": "en",
+          "source": "Yahoo",
+          "summary": "Key TakeawaysHealthpeak Properties yields 6. 7% against Realty Income’s 6.",
+          "url": "https://finnhub.io/api/news?id=b8387353a0586496dff9f8ec956c975dd9808157887c3250b68aabe0fa6f3c00"
+        },
+        {
+          "category": "company",
+          "date": "2026-10-14",
+          "datetime": "2026-10-14T18:12:03Z",
+          "headline": "Better High-Yield Dividend Stock: Realty Income vs. Crown Castle",
+          "image": null,
+          "lang": "en",
+          "source": "Yahoo",
+          "summary": "Key TakeawaysRealty Income yields 6. 1% and Crown Castle yields 5.",
+          "url": "https://finnhub.io/api/news?id=00f8fd6f6759c27840ae9315e1529a58732fface580f81cd877d6fb02bf6bb47"
+        },
+        {
+          "category": "company",
+          "date": "2026-10-14",
+          "datetime": "2026-10-14T17:54:21Z",
+          "headline": "Better High-Yield Dividend Stock: Realty Income vs. Energy Transfer",
+          "image": null,
+          "lang": "en",
+          "source": "Yahoo",
+          "summary": "Key TakeawaysRealty Income yields 6. 1% and Energy Transfer 6.",
+          "url": "https://finnhub.io/api/news?id=0b568d2fb10105a2429fd833366d6b594e13511d3b03963b83e6dbf0898940ee"
+        },
+        {
+          "category": "company",
+          "date": "2026-10-14",
+          "datetime": "2026-10-14T17:15:10Z",
+          "headline": "Better High-Yield Dividend Stock: Realty Income vs. MPLX",
+          "image": null,
+          "lang": "en",
+          "source": "Yahoo",
+          "summary": "Key TakeawaysMPLX expects to raise its distribution 12. 5% in both 2026 and 2027, while Realty Income has raised its dividend for over 31 consecutive years.",
+          "url": "https://finnhub.io/api/news?id=6bb52cbee3030ee54dcaf89d7f8d5b9277082ae67101f7ae3cbb56e8616e8df1"
+        },
+        {
+          "category": "company",
+          "date": "2026-10-14",
+          "datetime": "2026-10-14T16:49:05Z",
+          "headline": "Better High-Yield Dividend Stock: Realty Income vs. Kraft Heinz",
+          "image": null,
+          "lang": "en",
+          "source": "Yahoo",
+          "summary": "Key TakeawaysKraft Heinz yields 7. 2% and Realty Income 6.",
+          "url": "https://finnhub.io/api/news?id=ae8e8d1c58c9fbd74c961f567d6af4bd6a606b58114bc2d0e2c474a004b2cb82"
+        },
+        {
+          "category": "company",
+          "date": "2026-10-14",
+          "datetime": "2026-10-14T16:39:05Z",
+          "headline": "Better High-Yield Dividend Stock: Realty Income vs. Clorox",
+          "image": null,
+          "lang": "en",
+          "source": "Yahoo",
+          "summary": "Key TakeawaysRealty Income and Clorox both yield 6. 1%, so $10,000 in either pays $610 a year today.",
+          "url": "https://finnhub.io/api/news?id=9ebdd98770909822d01828e2b435cac77a0eb78d871149572231b517cdd48daa"
+        }
+      ],
+      "reason": null,
+      "total": 33
+    },
+    "next_earnings": {
+      "basis": null,
+      "date": "2026-11-02",
+      "hour": "amc",
+      "kind": "anunciada",
+      "reason": null,
+      "source": "calendario de resultados de Finnhub",
+      "status": "ok"
     },
     "note": "Contexto de mercado: no puntúa en la calidad ni en el precio. Describe cómo se ha movido la acción, no qué hará.",
     "pead": {
@@ -3923,6 +4876,8 @@
       "drift": -0.108172784964,
       "estimate": 0.4157,
       "period": "2026-06-30",
+      "period_basis": "fiscal",
+      "provider_period": "2026-06-30",
       "reaction": -0.00515200514847,
       "sessions": 48,
       "source": "BPA y consenso: Finnhub; fecha: 8-K de resultados (SEC EDGAR, apartado 2.02)",
@@ -3967,10 +4922,10 @@
       {
         "field": "market_context.signals.relative_strength.value",
         "key": "relative_strength",
-        "label": "Fuerza relativa frente a VNQ (12 meses)",
-        "num": -0.0660867291688,
-        "text": "en 12 meses, la acción −0.9% frente al +5.7% del ETF de su sector (VNQ): se mueve con su sector",
-        "value": "−6.6 pp"
+        "label": "Fuerza relativa frente a VNQ (1 año)",
+        "num": -0.0572020648078,
+        "text": "en 1 año, la acción −1.1% frente al +4.7% del ETF de su sector (VNQ): se mueve con su sector",
+        "value": "−5.7 pp"
       },
       {
         "field": "market_context.signals.abnormal_volume.value",
@@ -3985,7 +4940,7 @@
         "key": "pead",
         "label": "Resultados y deriva (PEAD)",
         "num": -0.109935049314,
-        "text": "resultados del trimestre cerrado el 2026-06-30, publicados el 2026-08-05: BPA de 0.37 frente a 0.42 de consenso, una sorpresa del −11.0%. Entre la sesión anterior al anuncio y la siguiente, la acción −0.5% frente al S&P 500; en las 48 sesiones siguientes, −10.8% frente al S&P 500: la deriva va en la dirección de la sorpresa. Bernard y Thomas (1989) documentan que el precio sigue la sorpresa unas 60 sesiones; describe un efecto estudiado, no una previsión",
+        "text": "resultados del trimestre fiscal cerrado el 2026-06-30, publicados el 2026-08-05: BPA de 0.37 frente a 0.42 de consenso, una sorpresa del −11.0%. Entre la sesión anterior al anuncio y la siguiente, la acción −0.5% frente al S&P 500; en las 48 sesiones siguientes, −10.8% frente al S&P 500: la deriva va en la dirección de la sorpresa. Bernard y Thomas (1989) documentan que el precio sigue la sorpresa unas 60 sesiones; describe un efecto estudiado, no una previsión",
         "value": "−11.0% sorpresa"
       }
     ],
@@ -3998,6 +4953,7 @@
       "value": -0.192870270557,
       "years": 2.0
     },
+    "series_reasons": {},
     "series_status": {
       "company": "ok",
       "market": "ok",
@@ -4018,11 +4974,11 @@
         "zero_volume_sessions": 0
       },
       "beta": {
-        "adjusted": 0.44370556853,
+        "adjusted": 0.448423176983,
         "as_of": "2026-10-14",
         "first_week": "2024-10-25",
-        "last_week": "2026-10-16",
-        "observations": 104,
+        "last_week": "2026-10-09",
+        "observations": 103,
         "params": {
           "blume_prior": 0.33,
           "blume_weight": 0.67,
@@ -4031,10 +4987,11 @@
           "min_weeks": 52,
           "window_weeks": 104
         },
-        "r2": 0.0219899080684,
-        "raw": 0.169709803776,
+        "r2": 0.0238764380548,
+        "raw": 0.176751010423,
+        "se": 0.112452430676,
         "status": "ok",
-        "value": 0.169709803776,
+        "value": 0.176751010423,
         "window_start": "2024-10-18"
       },
       "max_drawdown": {
@@ -4089,26 +5046,26 @@
       "relative_strength": {
         "as_of": "2026-10-14",
         "params": {
-          "windows_sessions": [
-            126,
-            252
+          "windows": [
+            "6M",
+            "1A"
           ]
         },
         "status": "ok",
-        "value": -0.0660867291688,
+        "value": -0.0572020648078,
         "windows": {
-          "126": {
+          "1A": {
+            "company": -0.0106899642227,
+            "difference": -0.0572020648078,
+            "sector": 0.0465121005852,
+            "start_date": "2025-10-14",
+            "status": "ok"
+          },
+          "6M": {
             "company": -0.114227183876,
             "difference": -0.0892708648031,
             "sector": -0.0249563190726,
             "start_date": "2026-04-15",
-            "status": "ok"
-          },
-          "252": {
-            "company": -0.00883696921233,
-            "difference": -0.0660867291688,
-            "sector": 0.0572497599565,
-            "start_date": "2025-10-13",
             "status": "ok"
           }
         }
@@ -4140,49 +5097,85 @@
     "conclusive": true,
     "details": {
       "asset_turnover_improved": {
+        "compare": "prior_year",
+        "cur": 0.0789797192721,
         "detail": "La rotación de activos mejoró",
         "passed": true,
-        "state": "cumple"
+        "prev": 0.0765764366023,
+        "state": "cumple",
+        "unit": "ratio"
       },
       "cfo_positive": {
+        "compare": "zero",
+        "cur": 3994754000.0,
         "detail": "Flujo de caja operativo positivo",
         "passed": true,
-        "state": "cumple"
+        "prev": null,
+        "state": "cumple",
+        "unit": "money"
       },
       "current_ratio_improved": {
+        "compare": "prior_year",
+        "cur": 1.4209782557,
         "detail": "La liquidez no mejoró",
         "passed": false,
-        "state": "no_cumple"
+        "prev": 1.67579567325,
+        "state": "no_cumple",
+        "unit": "ratio"
       },
       "debt_reduced": {
+        "compare": "prior_year",
+        "cur": 26771323000.0,
         "detail": "La deuda a largo plazo aumentó",
         "passed": false,
-        "state": "no_cumple"
+        "prev": 25096793000.0,
+        "state": "no_cumple",
+        "unit": "money"
       },
       "earnings_quality": {
+        "compare": "ni",
+        "cur": 3994754000.0,
         "detail": "El flujo operativo supera al beneficio neto (beneficio de calidad)",
         "passed": true,
-        "state": "cumple"
+        "prev": 1058590000.0,
+        "state": "cumple",
+        "unit": "money"
       },
       "gross_margin_improved": {
+        "compare": "prior_year",
+        "cur": 0.92541800616,
         "detail": "El margen bruto no mejoró",
         "passed": false,
-        "state": "no_cumple"
+        "prev": 0.928350440948,
+        "state": "no_cumple",
+        "unit": "pct"
       },
       "no_dilution": {
+        "compare": "prior_year",
+        "cur": 933975000.0,
         "detail": "Emitió nuevas acciones (dilución)",
         "passed": false,
-        "state": "no_cumple"
+        "prev": 891511000.0,
+        "state": "no_cumple",
+        "unit": "shares"
       },
       "roa_improved": {
+        "compare": "prior_year",
+        "cur": 0.0145419479405,
         "detail": "El ROA mejoró frente al año anterior",
         "passed": true,
-        "state": "cumple"
+        "prev": 0.0125048523616,
+        "state": "cumple",
+        "unit": "pct"
       },
       "roa_positive": {
+        "compare": "zero",
+        "cur": 0.0145419479405,
         "detail": "ROA positivo",
         "passed": true,
-        "state": "cumple"
+        "prev": null,
+        "state": "cumple",
+        "unit": "pct"
       }
     },
     "evaluated": 9,
@@ -4198,8 +5191,8 @@
       {
         "field": "reverse_dcf.main.g10",
         "kind": "precio_inverso",
-        "text": "el FFO por acción cayera más de un 1.4% anual durante 10 años, lo que ya descuenta el precio; historia propia: su FFO por acción, −0.1% anual en 3 años",
-        "value": -0.0139939909929
+        "text": "el FFO por acción cayera más de un 1.4% anual durante 10 años, lo que ya descuenta el precio; historia propia: su FFO por acción, 3.6% anual en 3 años",
+        "value": -0.0144560465484
       }
     ],
     "title": "Esta lectura sería errónea si…"
@@ -4215,31 +5208,40 @@
         "category": "Valoración",
         "included": true,
         "max": 20,
-        "score": 13
+        "score": 15
       }
     ],
     "confidence": "media",
     "contracted": true,
     "excluded_categories": [],
     "factor": 0.75,
-    "level": "razonable",
+    "level": "atractivo",
     "level_raw": "atractivo",
     "low_coverage_categories": [],
     "not_applicable_categories": [],
     "partial": false,
-    "score": 61,
-    "score_raw": 65
+    "score": 69,
+    "score_raw": 75
+  },
+  "price_change": {
+    "change": 0.179996490479,
+    "change_pct": 0.00327325850126,
+    "prev_close": 54.9900016785,
+    "reason": null,
+    "session": "2026-10-14",
+    "status": "ok"
   },
   "price_history": {
     "52w_high": 67.9400024414,
     "52w_low": 53.1500015259,
-    "beta": 0.62
+    "beta": 0.673384200855
   },
   "profile": {
     "country": "United States",
     "currency": "USD",
     "description": "",
-    "exchange": "NYQ",
+    "exchange": "NYSE",
+    "exchange_code": "NYQ",
     "industry": "REIT—Retail",
     "market_cap": 52202847148.0,
     "name": "Realty Income Corporation",
@@ -4247,7 +5249,11 @@
   },
   "quality": {
     "basis": null,
-    "border": null,
+    "border": {
+      "neighbor": "media",
+      "points": 1,
+      "text": "En la frontera con «media» (a 1 punto): un cambio pequeño en los datos o en los supuestos cambiaría el nivel"
+    },
     "categories_included": 4,
     "categories_total": 4,
     "components": [
@@ -4261,7 +5267,7 @@
         "category": "Rentabilidad",
         "included": true,
         "max": 20,
-        "score": 9
+        "score": 12
       },
       {
         "category": "Calidad de Ganancias",
@@ -4273,11 +5279,14 @@
         "category": "Crecimiento",
         "included": true,
         "max": 20,
-        "score": 11
+        "score": 13
       }
     ],
+    "contracted": false,
     "excluded_categories": [],
-    "level": "media",
+    "factor": null,
+    "level": "sólida",
+    "level_raw": "sólida",
     "low_confidence": false,
     "low_confidence_reasons": [],
     "low_coverage_categories": [],
@@ -4295,12 +5304,13 @@
           "years_ok": null
         },
         {
-          "anchor": "margen operativo",
+          "anchor": "margen neto",
           "category": "Rentabilidad",
-          "persistence": 0.8,
-          "rule": "margen operativo positivo y al menos el 75% del último (45.1%)",
+          "persistence": 1.0,
+          "rule": "margen neto positivo y al menos el 75% del último (18.4%) (sin resultado operativo en la SEC)",
           "surplus": 0.0,
           "years_ok": [
+            "2021",
             "2022",
             "2023",
             "2024",
@@ -4340,15 +5350,16 @@
       "source": "edgar",
       "window": 5
     },
-    "score": 59
+    "score": 65,
+    "score_raw": 65
   },
   "quality_readings": {
     "coverage": {
       "basis": "gasto por intereses",
       "ebit": 2.36959538575,
       "ebitda": 4.42664729607,
-      "ffo": 4.30451884297,
-      "text": "Cobertura (gasto por intereses): el EBIT cubre 2.4 veces los intereses; el EBITDA, 4.4 veces; el FFO más los intereses, 4.3 veces; con el EBIT de cada ejercicio, de 2.9 veces en FY2022 a 2.0 en FY2025 (empeora).",
+      "ffo": 4.44788499068,
+      "text": "Cobertura (gasto por intereses): el EBIT (TTM) cubre 2.4 veces los intereses; el EBITDA (TTM), 4.4 veces; el FFO más los intereses, 4.4 veces; con el EBIT de cada ejercicio, de 2.9 veces en FY2022 a 2.0 en FY2025 (empeora).",
       "trend": {
         "direction": "empeora",
         "fy_latest": "2025",
@@ -4360,7 +5371,7 @@
   },
   "ratios": {
     "asset_turnover": 0.078100586102,
-    "beta": 0.62,
+    "beta": 0.673384200855,
     "cash_ratio": 0.125693517316,
     "current_ratio": 0.493526186149,
     "debt_to_assets": 0.402477306986,
@@ -4404,10 +5415,138 @@
     "roe": 0.0320503463541,
     "roic": 0.0352454331436
   },
+  "reit_ffo": {
+    "affo": 3809109000.0,
+    "affo_formula": "AFFO = FFO − rentas lineales − capex recurrente",
+    "affo_formula_values": "$3.98B − ($0) − ($166.13M) = $3.81B",
+    "affo_per_share": 4.02561446427,
+    "affo_reason": null,
+    "components": {
+      "da": 2542368000.0,
+      "gains": 190439000.0,
+      "impairment": 355733000.0,
+      "lines": {
+        "gains": [
+          {
+            "accn": "0000726728-26-000011",
+            "concept": "us-gaap_GainLossOnSaleOfProperties",
+            "label": "Gain on sales of real estate",
+            "sign": 1,
+            "value": 177640000.0
+          },
+          {
+            "accn": "0000726728-26-000048",
+            "concept": "us-gaap_GainLossOnSaleOfProperties",
+            "label": "Gain on sales of real estate",
+            "sign": 1,
+            "value": 73902000.0
+          },
+          {
+            "accn": "0000726728-25-000131",
+            "concept": "us-gaap_GainLossOnSaleOfProperties",
+            "label": "Gain on sales of real estate",
+            "sign": -1,
+            "value": 61103000.0
+          }
+        ],
+        "impairment": [
+          {
+            "accn": "0000726728-26-000011",
+            "concept": "us-gaap_ImpairmentOfRealEstate",
+            "label": "Provisions for impairment",
+            "sign": 1,
+            "value": 471335000.0
+          },
+          {
+            "accn": "0000726728-26-000048",
+            "concept": "us-gaap_ImpairmentOfRealEstate",
+            "label": "Provisions for impairment of real estate",
+            "sign": 1,
+            "value": 144350000.0
+          },
+          {
+            "accn": "0000726728-25-000131",
+            "concept": "us-gaap_ImpairmentOfRealEstate",
+            "label": "Provisions for impairment",
+            "sign": -1,
+            "value": 259952000.0
+          }
+        ],
+        "recurring_capex": [
+          {
+            "accn": "0000726728-26-000011",
+            "concept": "us-gaap_PaymentsForCapitalImprovements",
+            "label": "Improvements to real estate, including leasing costs",
+            "sign": 1,
+            "value": 131800000.0
+          },
+          {
+            "accn": "0000726728-26-000048",
+            "concept": "us-gaap_PaymentsForCapitalImprovements",
+            "label": "Improvements to real estate, including leasing costs",
+            "sign": 1,
+            "value": 83506000.0
+          },
+          {
+            "accn": "0000726728-25-000131",
+            "concept": "us-gaap_PaymentsForCapitalImprovements",
+            "label": "Improvements to real estate, including leasing costs",
+            "sign": -1,
+            "value": 49176000.0
+          }
+        ],
+        "straight_line": []
+      },
+      "net_income": 1267577000.0,
+      "recurring_capex": 166130000.0,
+      "straight_line": 0.0
+    },
+    "equity_method_income": 10577000.0,
+    "equity_method_warning": null,
+    "ffo": 3975239000.0,
+    "ffo_per_share": 4.20118710631,
+    "ffo_reason": null,
+    "formula": "FFO (Nareit) = beneficio neto + D&A − ventas de inmuebles + deterioros de inmuebles",
+    "formula_values": "$1.27B + $2.54B − ($190.44M) + $355.73M = $3.98B",
+    "minority_income": 43181000.0,
+    "not_included": "no incluye lo que Nareit también ajusta y el XBRL no separa: la D&A no inmobiliaria y la parte de participadas y minoritarios",
+    "period": {
+      "cut": "2026-06-30",
+      "how": "ejercicio 2025-01-01 a 2025-12-31 (10-K 0000726728-26-000011) + acumulado 2026-01-01 a 2026-06-30 (10-Q 0000726728-26-000048) − acumulado 2025-01-01 a 2025-06-30 (10-Q 0000726728-25-000131)"
+    },
+    "reconciliation": {
+      "detail": [
+        {
+          "accn": "0000726728-26-000011",
+          "ocf_edgar": 3994754000.0,
+          "ocf_presented": 3994754000.0,
+          "ok": true,
+          "period": "2025-01-01 a 2025-12-31"
+        },
+        {
+          "accn": "0000726728-26-000048",
+          "ocf_edgar": 2019585000.0,
+          "ocf_presented": 2019585000.0,
+          "ok": true,
+          "period": "2026-01-01 a 2026-06-30"
+        },
+        {
+          "accn": "0000726728-25-000131",
+          "ocf_edgar": 1848185000.0,
+          "ocf_presented": 1848185000.0,
+          "ok": true,
+          "period": "2025-01-01 a 2025-06-30"
+        }
+      ],
+      "status": "conciliado"
+    },
+    "reference": "FFO publicado por el emisor: sin fuente gratuita y estructurada (Finnhub gratuito no lo da y el 8-K de resultados lo publica sin XBRL); no se compara",
+    "source": "estado de flujos presentado por el emisor (10-K/10-Q, SEC; Finnhub /stock/financials-reported)"
+  },
   "reverse_dcf": {
     "applicable": true,
     "main": {
-      "band": "en_precio",
+      "band": "barata",
       "base_rate": {
         "bin": "1-5",
         "cell": "1-5 · Other",
@@ -4417,40 +5556,42 @@
         "median": 0.056,
         "reason": null,
         "revenue_usd": 5970124000.0,
-        "share": 0.76482697316,
+        "share": 0.766341110353,
         "std": 0.101
       },
       "flow_label": "FFO",
-      "flow_per_share": 4.02649798157,
-      "g10": -0.0139939909929,
-      "g_star": -0.0304194278549,
-      "gap": -0.0130952521577,
+      "flow_per_share": 4.20118710631,
+      "g10": -0.0144560465484,
+      "g_star": -0.0310726186726,
+      "gap": -0.0507315672128,
       "net_debt_per_share": 0.0,
       "own_growth": {
         "basis": "ffo_por_accion",
-        "cagr": -0.000898738835226,
+        "cagr": 0.0362755206644,
         "label": "su FFO por acción",
         "source": "estados (3 años)",
         "years": 3
       },
-      "points": 0,
-      "rate": 0.07894,
+      "points": 2,
+      "rate": 0.0811821364359,
       "reason": null,
       "rule": "historia_propia",
       "side": null,
-      "signal": 0.0,
+      "signal": 0.5,
       "state": "ok",
       "terminal_growth": 0.025,
-      "text": "El precio actual se justifica aunque el FFO por acción caiga un 1.4% anual durante 10 años (−3.0% los 5 primeros y convergencia al 2.5%); en los últimos 3 años, su FFO por acción cayó un 0.1% anual. Lo sostuvo 10 años el 76% de las empresas comparables (ventas de 1 a 5 mil millones, otros sectores)."
+      "text": "El precio actual se justifica aunque el FFO por acción caiga un 1.4% anual durante 10 años (−3.1% los 5 primeros y convergencia al 2.5%); en los últimos 3 años, su FFO por acción creció un 3.6% anual. Lo sostuvo 10 años el 77% de las empresas comparables (ventas de 1 a 5 mil millones, otros sectores)."
     },
     "reason": null,
     "ttm": null
   },
   "risk_free": {
-    "as_of": null,
-    "fallback": true,
-    "reason": "^TNX no disponible (sin cotización): valor de config",
-    "source": "config",
+    "as_of": "2026-10-01",
+    "erp": 0.042,
+    "fallback": false,
+    "market": null,
+    "reason": null,
+    "source": "par Rf–ERP de Damodaran",
     "value": 0.0529
   },
   "sbc": {
@@ -4464,6 +5605,10 @@
     "sbc_to_revenue": 0.00626653650745,
     "value": 4128742000.0
   },
+  "scenario_inputs": {
+    "reason": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria",
+    "status": "sin_dato"
+  },
   "score": {
     "breakdown": {
       "Calidad de Ganancias": {
@@ -4473,18 +5618,18 @@
             "metric": "Payout sobre FFO",
             "reason": "Dividendo cubierto por el FFO",
             "severity": "good",
-            "value": "79%"
+            "value": "75%"
           },
           {
             "adjustment": 3,
-            "metric": "Cash Flow Operativo",
+            "metric": "Flujo de caja operativo",
             "reason": "Genera efectivo operativo",
             "severity": "good",
             "value": "Positivo"
           },
           {
             "adjustment": 3,
-            "metric": "Free Cash Flow",
+            "metric": "Flujo de caja libre",
             "reason": "FCF positivo",
             "severity": "good",
             "value": "Positivo"
@@ -4512,20 +5657,20 @@
       "Crecimiento": {
         "adjustments": [
           {
-            "adjustment": 1,
+            "adjustment": 3,
             "metric": "Retorno total (dividendo + FFO por acción)",
-            "raw": 0.0588182002483,
-            "reason": "Crecimiento moderado (5.9%) — rentabilidad por dividendo 5.9% + FFO por acción -0.1% (CAGR 3 años); FFO por acción (FFO = beneficio neto + D&A; acciones en circulación de cada ejercicio); FFO agregado +12.2%, acciones +12.3% anual",
-            "severity": "ok",
-            "value": "5.9%"
+            "raw": 0.0950937209127,
+            "reason": "Crecimiento sólido (9.5%) — rentabilidad por dividendo 5.9% + FFO por acción +3.6% (CAGR 3 años); FFO por acción (FFO según Nareit = beneficio neto + D&A − ventas de inmuebles + deterioros; acciones en circulación de cada ejercicio); FFO agregado +16.3%, acciones +12.3% anual",
+            "severity": "good",
+            "value": "9.51%"
           },
           {
             "adjustment": 0,
-            "metric": "Crecimiento FCF por acción 3Y",
+            "metric": "Crecimiento del FCF por acción a 3 años",
             "raw": 0.032763454919,
             "reason": "FCF estable (3.3%)",
             "severity": "ok",
-            "value": "3.3%"
+            "value": "3.28%"
           },
           {
             "adjustment": 0,
@@ -4539,28 +5684,28 @@
         "conclusive": true,
         "coverage": 1.0,
         "details": [
-          "Crecimiento moderado (5.9%) — rentabilidad por dividendo 5.9% + FFO por acción -0.1% (CAGR 3 años); FFO por acción (FFO = beneficio neto + D&A; acciones en circulación de cada ejercicio); FFO agregado +12.2%, acciones +12.3% anual",
+          "Crecimiento sólido (9.5%) — rentabilidad por dividendo 5.9% + FFO por acción +3.6% (CAGR 3 años); FFO por acción (FFO según Nareit = beneficio neto + D&A − ventas de inmuebles + deterioros; acciones en circulación de cada ejercicio); FFO agregado +16.3%, acciones +12.3% anual",
           "FCF estable (3.3%)",
           "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria (no cuenta en la cobertura)"
         ],
         "max": 20,
-        "score": 11
+        "score": 13
       },
       "Rentabilidad": {
         "adjustments": [
           {
-            "adjustment": -6,
+            "adjustment": -3,
             "metric": "FFO / activos",
-            "reason": "Muy bajo (4.98%) - FFO sobre los activos totales, frente a los REIT de EE. UU.",
-            "severity": "severe",
-            "value": "4.98%"
+            "reason": "Bajo (5.20%) - FFO sobre los activos totales, frente a los REIT de EE. UU.",
+            "severity": "moderate",
+            "value": "5.20%"
           },
           {
             "adjustment": 5,
             "metric": "Margen FFO",
-            "reason": "Excelente (63.8%) - FFO sobre ingresos",
+            "reason": "Excelente (66.59%) - FFO sobre ingresos",
             "severity": "excellent",
-            "value": "63.8%"
+            "value": "66.59%"
           },
           {
             "adjustment": 0,
@@ -4574,12 +5719,12 @@
         "conclusive": true,
         "coverage": 1.0,
         "details": [
-          "Muy bajo (4.98%) - FFO sobre los activos totales, frente a los REIT de EE. UU.",
-          "Excelente (63.8%) - FFO sobre ingresos",
+          "Bajo (5.20%) - FFO sobre los activos totales, frente a los REIT de EE. UU.",
+          "Excelente (66.59%) - FFO sobre ingresos",
           "ROE, ROA, Margen neto, ROIC−WACC: No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria; Margen bruto, Margen operativo: No aplica a REIT: estructura de arrendamiento neto: el inquilino paga los costes del inmueble, así que los márgenes bruto y operativo no son comparables; la rentabilidad se mide sobre el FFO (no cuenta en la cobertura)"
         ],
         "max": 20,
-        "score": 9
+        "score": 12
       },
       "Solidez Financiera": {
         "adjustments": [
@@ -4593,17 +5738,17 @@
           },
           {
             "adjustment": -2,
-            "metric": "Cobertura Intereses",
+            "metric": "Cobertura de intereses",
             "reason": "Cobertura ajustada",
             "severity": "moderate",
-            "value": "2.4x"
+            "value": "2.37x"
           },
           {
             "adjustment": 2,
             "metric": "Deuda neta/EBITDA",
             "reason": "Adecuado para un REIT (5.7x; bandas REIT ≤5.0x / ≤6.5x / ≤7.5x / ≤9.0x)",
             "severity": "good",
-            "value": "5.7x"
+            "value": "5.73x"
           },
           {
             "adjustment": 0,
@@ -4630,17 +5775,17 @@
           {
             "adjustment": 2,
             "metric": "P/FFO (REIT)",
-            "reason": "Atractivo por FFO (13.7x)",
+            "reason": "Atractivo por FFO (13.1x)",
             "severity": "good",
-            "value": "13.7x"
+            "value": "13.13x"
           },
           {
             "adjustment": 2,
             "in_block": true,
-            "metric": "EV/EBITDA vs Sector",
+            "metric": "EV/EBITDA frente al sector",
             "reason": "Atractivo (15.6x)",
             "severity": "good",
-            "value": "15.6x"
+            "value": "15.63x"
           },
           {
             "adjustment": 1,
@@ -4649,17 +5794,21 @@
             "block_members": [
               "EV/EBITDA"
             ],
+            "block_votes": {
+              "EV/EBITDA": 0.5
+            },
+            "formula": "Bloque de múltiplos: promedio de 1 lectura reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = +0.50 × 2 (máximo con 1) = +1.0, redondeado a +1",
             "metric": "Bloque de múltiplos",
-            "reason": "promedio de los ajustes reescalados a ±1 (EV/EBITDA +0.50) = +0.50 × 2 (máximo con 1 miembro) = +1.0",
+            "reason": "media de 1 lectura en una escala de −1 a +1 (EV/EBITDA +0.50): +0.50, que suma +1.0 puntos de un máximo de ±2",
             "severity": "excellent",
             "value": "1 múltiplo"
           },
           {
-            "adjustment": 0,
+            "adjustment": 2,
             "metric": "DCF inverso (FFO)",
-            "reason": "El precio actual se justifica aunque el FFO por acción caiga un 1.4% anual durante 10 años (−3.0% los 5 primeros y convergencia al 2.5%); en los últimos 3 años, su FFO por acción cayó un 0.1% anual. Lo sostuvo 10 años el 76% de las empresas comparables (ventas de 1 a 5 mil millones, otros sectores).",
-            "severity": "ok",
-            "value": "en precio"
+            "reason": "El precio actual se justifica aunque el FFO por acción caiga un 1.4% anual durante 10 años (−3.1% los 5 primeros y convergencia al 2.5%); en los últimos 3 años, su FFO por acción creció un 3.6% anual. Lo sostuvo 10 años el 77% de las empresas comparables (ventas de 1 a 5 mil millones, otros sectores).",
+            "severity": "good",
+            "value": "barata"
           },
           {
             "adjustment": 0,
@@ -4673,14 +5822,14 @@
         "conclusive": true,
         "coverage": 1.0,
         "details": [
-          "Atractivo por FFO (13.7x)",
+          "Atractivo por FFO (13.1x)",
           "Atractivo (15.6x)",
-          "promedio de los ajustes reescalados a ±1 (EV/EBITDA +0.50) = +0.50 × 2 (máximo con 1 miembro) = +1.0",
-          "El precio actual se justifica aunque el FFO por acción caiga un 1.4% anual durante 10 años (−3.0% los 5 primeros y convergencia al 2.5%); en los últimos 3 años, su FFO por acción cayó un 0.1% anual. Lo sostuvo 10 años el 76% de las empresas comparables (ventas de 1 a 5 mil millones, otros sectores).",
+          "media de 1 lectura en una escala de −1 a +1 (EV/EBITDA +0.50): +0.50, que suma +1.0 puntos de un máximo de ±2",
+          "El precio actual se justifica aunque el FFO por acción caiga un 1.4% anual durante 10 años (−3.1% los 5 primeros y convergencia al 2.5%); en los últimos 3 años, su FFO por acción creció un 3.6% anual. Lo sostuvo 10 años el 77% de las empresas comparables (ventas de 1 a 5 mil millones, otros sectores).",
           "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria (no cuenta en la cobertura)"
         ],
         "max": 20,
-        "score": 13
+        "score": 15
       }
     },
     "excluded_categories": [],
@@ -4772,6 +5921,7 @@
     "sector": "Real Estate",
     "sector_etf": "VNQ"
   },
+  "spectrum_adjustment": null,
   "symbol": "O",
   "tax_rate": {
     "bounded": true,
@@ -4783,17 +5933,17 @@
   },
   "verdict": {
     "confidence": "media",
-    "confidence_text": "(confianza media: DCF inverso la ve en precio y los múltiplos barata)",
-    "full": "Calidad media · precio razonable (confianza media: DCF inverso la ve en precio y los múltiplos barata)",
-    "price_level": "razonable",
-    "quality_level": "media",
-    "text": "Calidad media · precio razonable"
+    "confidence_text": "(confianza media: el nivel de precio cambia con ±1 pp de coste del capital)",
+    "full": "Calidad sólida · precio atractivo (confianza media: el nivel de precio cambia con ±1 pp de coste del capital)",
+    "price_level": "atractivo",
+    "quality_level": "sólida",
+    "text": "Calidad sólida · precio atractivo"
   },
   "wacc": {
     "applicable": true,
-    "beta": 0.62,
+    "beta": 0.673384200855,
     "beta_default": false,
-    "beta_method": "beta del sector (sin Blume)",
+    "beta_method": "beta de abajo hacia arriba (sin Blume)",
     "beta_raw": null,
     "bounds": [
       0.06,
@@ -4804,7 +5954,11 @@
     "equity": 52202847148.0,
     "kd": 0.0667,
     "kd_after_tax": 0.06003,
-    "ke": 0.07894,
+    "ke": 0.0811821364359,
+    "ke_capm": 0.0811821364359,
+    "ke_crp": null,
+    "ke_floor": null,
+    "ke_shift": null,
     "mrp": 0.042,
     "rating": {
       "coverage": 2.36959538575,
@@ -4813,17 +5967,18 @@
       "spread": 0.0138,
       "table": "grandes"
     },
-    "raw": 0.0719279154383,
+    "raw": 0.0733386372636,
     "reason": null,
     "rf": 0.0529,
-    "rf_as_of": null,
-    "rf_fallback": true,
-    "rf_reason": "^TNX no disponible (sin cotización): valor de config",
-    "rf_source": "config",
+    "rf_as_of": "2026-10-01",
+    "rf_fallback": false,
+    "rf_market": null,
+    "rf_reason": null,
+    "rf_source": "par Rf–ERP de Damodaran",
     "tax_rate": 0.1,
     "tax_reason": "tasa efectiva 6.9% acotada a [10%, 35%]",
     "tax_source": "efectiva",
-    "value": 0.0719279154383,
+    "value": 0.0733386372636,
     "weights": {
       "debt": 0.370813567512,
       "equity": 0.629186432488
@@ -4854,8 +6009,8 @@
       "fcf_margin": 0.677894088226,
       "free_cash_flow": 3573276000.0,
       "gross_margin": 0.928350440948,
-      "net_income": 860772000.0,
-      "net_margin": 0.163298958746,
+      "net_income": 847893000.0,
+      "net_margin": 0.160855655188,
       "operating_margin": 0.440308380992,
       "revenue": 5271142000.0,
       "year": 2024

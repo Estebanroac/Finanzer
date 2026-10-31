@@ -1,0 +1,117 @@
+# Reglas de cordura del modelo general (lib/model_invariants.py; tools/universe_scan.py las corre sobre el universo).
+# Miden la salida del análisis de cualquier empresa: no cambian ninguna puntuación. Cada regla tiene aquí su umbral y
+# su peso para ordenar las violaciones más graves (peso × magnitud, la magnitud acotada a `max_magnitude`).
+# Pesos: 3 = la cifra puntúa o mueve el veredicto; 2 = entra en el coste de capital o en una cifra de cabecera;
+# 1 = presentación (la cifra se enseña mal o sin motivo).
+
+max_magnitude = 5.0
+
+[margen_neto_techo]                 # margen neto ≤ (margen operativo + financieros netos / ingresos) × (1 − t) + tol
+weight = 3
+tolerance_pp = 0.02                 # la propuesta de la revisión de NVIDIA (2 pp)
+
+[margen_operativo_unico]             # el margen operativo enseñado (EDGAR TTM; sin TTM, quoteSummary) frente al de las
+weight = 3                          # piezas de la normalización (Yahoo, 4 trimestres); puntúa en Rentabilidad
+tolerance_pp = 0.03                 # PM, 29-oct (FIX: 7,9 % de EDGAR frente a 16,7 % de Yahoo)
+
+[ebitda_sin_amortizacion_operativa] # el D&A del EBITDA sin amortizaciones de activos operativos recurrentes (NFLX:
+weight = 3                          # contenido); materialidad: thresholds.normalization.nonoperating_tolerance_revenue
+
+[ke_sobre_kd]                       # Ke ≥ Kd + 1 pp (el suelo del propio motor: valuation.wacc.ke_floor_over_kd)
+weight = 2
+min_gap = 0.01
+
+[beta_en_rango]                     # la beta propia pasa los filtros del motor (market.beta_choice) o se sustituye;
+weight = 2                          # y la beta que entra en el Ke queda dentro de este rango
+used_range = [0.4, 2.5]             # el mismo que market.beta_choice.own_range
+
+[g_terminal_bajo_rf]                # el crecimiento terminal del DCF no supera la tasa libre de riesgo
+weight = 2
+tolerance = 0.0
+
+[capitalizacion]                    # capitalización = precio × acciones
+weight = 2
+tolerance = 0.02
+
+[roe_patrimonio_negativo]           # ROE no significativo si el patrimonio ≤ 0 (ni puntúa ni se enseña como cifra)
+weight = 3
+
+[peg_crecimiento_no_positivo]       # PEG no significativo si el crecimiento del BPA del informe ≤ 0
+weight = 3
+
+[cifra_unica]                       # una sola cifra por métrica y periodo en el display y en el PDF (tests/coherence.py)
+weight = 1
+max_listed = 10                     # violaciones listadas por empresa (el recuento es el total)
+
+[peso_en_referencia]                # la empresa no pesa más que esto en el agregado de su propia industria
+weight = 3
+max_share = 0.20                    # la propuesta de la revisión de NVIDIA (20 %)
+# Con menos empresas del universo en la industria, la cota (su suma) no informa: sola en el universo pesa el 100 %.
+min_universe_peers = 3
+
+[crecimiento_robusto]               # el crecimiento que puntúa no es un CAGR desde un año base anómalo
+weight = 3
+# Un año base anómalo es el del propio motor (thresholds.growth.anomalous_base_ratio). Un motivo con alguna de estas
+# palabras declara un método robusto (regresión log-lineal, mitades del ciclo, ciclo medio): no es violación.
+robust_markers = ["log-lineal", "regresión", "mitad", "ciclo medio", "pico a pico"]
+
+[alertas_coherentes]                # ninguna fortaleza o alerta contradice una cifra mostrada
+weight = 2
+# Rótulo de una alerta (expresión regular, sin distinguir mayúsculas) -> clave de la cifra en el display. La primera
+# que casa decide. Un rótulo con alguna de `other_basis_markers` cita otra base de la cifra (normalizada, sin el pico
+# del beneficio, a ciclo medio) y no se compara con la cifra reportada.
+other_basis_markers = ["normalizad", "sin el pico", "ciclo medio", "creíble"]
+labels = [
+    ["\\bforward p/e\\b", "forward_pe"],
+    ["\\bp/e\\b", "pe"],
+    ["\\bev/ebitda\\b", "ev_ebitda"],
+    ["\\bp/fcf\\b", "pfcf"],
+    ["\\bpeg\\b", "peg"],
+    ["\\bp/b\\b", "pb"],
+    ["fcf yield", "fcf_yield"],
+    ["\\broe\\b", "roe"],
+    ["\\broa\\b", "roa"],
+    ["margen neto", "net_margin"],
+    ["margen operativo", "operating_margin"],
+    ["margen bruto", "gross_margin"],
+    ["\\bbeta\\b", "beta"],
+    ["piotroski", "piotroski"],
+    ["altman", "altman"],
+    ["deuda neta/ebitda", "net_debt_to_ebitda"],
+    ["cobertura", "interest_coverage"],
+    ["liquidez", "current_ratio"],
+]
+
+[beta_unica]                        # una misma beta en el Ke, el WACC, el P/B justificado, el display y las alertas
+weight = 2
+tolerance = 0.005
+
+[estados_al_dia]                    # estados desfasados (o muy antiguos) siempre con su marca visible
+weight = 1
+max_days_ttm = 150                  # un 10-Q se presenta a los 40–45 días del cierre: 1 trimestre + plazo + holgura
+max_days_fy = 480                   # un 20-F, hasta 4 meses después de un ejercicio de 12
+
+[confianza_cobertura]               # la confianza del veredicto no supera el nivel de su cobertura
+weight = 1
+
+[motivo_de_vacio]                   # cada «no aplica», «sin dato» o «no significativo» lleva su motivo
+weight = 1
+min_reason_chars = 8
+max_listed = 10
+
+[escaneo]                           # tools/universe_scan.py
+batch_size = 20                     # empresas por lote; entre lotes, una pausa
+pause_between_batches_s = 10.0
+workers = 2                         # análisis a la vez (EDGAR ya se limita a 8 peticiones/s en lib/sec_edgar.py)
+top_n = 20
+# Límites compartidos con las demás sesiones (PM, 28-oct): el cerrojo de EDGAR de lib/sec_edgar.py es por proceso y la
+# clave gratuita de Finnhub es la misma para todos. Dentro del escaneo, por encima de los de la app:
+edgar_max_rps = 5.0
+finnhub_max_per_min = 30
+# Lo que el análisis pide a Finnhub y las reglas no usan (titulares, sorpresas, calendario de resultados): no se pide.
+finnhub_skip_paths = ["/company-news", "/stock/earnings", "/calendar/earnings"]
+# Vigilancia (PM): pasados `check_after_min`, si el ritmo proyecta más de `max_minutes` o la memoria pasa de
+# `max_rss_mb`, el escaneo se para (lo hecho queda en la caché y en el informe).
+check_after_min = 10.0
+max_minutes = 60.0
+max_rss_mb = 450.0

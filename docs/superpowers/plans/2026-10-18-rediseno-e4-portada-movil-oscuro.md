@@ -52,3 +52,5 @@
 ### Task 6: Registro
 
 - [ ] `docs/rediseno/E4_REGISTRO.md`, capturas en `docs/rediseno/capturas-e4/` (portada en los 3 tamaños × claro/oscuro; 3 páginas en WebKit iPhone), Lighthouse en JSON; informe al PM.
+
+> **Evidencia fuera de `main` (E6, 31-oct):** las capturas (`docs/rediseno/capturas-*`), `docs/fiabilidad/f8_evidencia/` y los volcados JSON de escaneo y medida de `docs/` no están en `main`. Siguen en las ramas locales del rediseño y de la fiabilidad (`rediseno/v4-f8`) y en el archivo `v4_evidencia_8e4f3952.tar.gz` de `/Users/joseestebanroa/Downloads/finanzer_next-archivo`, fuera del repositorio.

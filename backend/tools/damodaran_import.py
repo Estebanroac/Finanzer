@@ -11,7 +11,9 @@ Lee los conjuntos de datos de A. Damodaran (NYU Stern) descargados en una carpet
 Ficheros (https://pages.stern.nyu.edu/~adamodar/pc/datasets/): por región R en {"" (EE. UU.), Europe, Japan, emerg,
 Global}: pedata.xls | pe{R}.xls, pbvdata.xls | pbv{R}.xls, vebitda{R}.xls, roe{R}.xls, margin{R}.xls, dbtfund{R}.xls;
 e indname.xls ("Companies in each industry": la industria, el país y el grupo regional de cada empresa), que sale a
-config/damodaran_firms.tsv.gz.
+config/damodaran_firms.tsv.gz. F10 · N2: y Dollar{US, Europe, Japan, emerg, Global}.xls ("Dollar value measures by
+industry"): los totales en millones de USD de cada industria (columnas `dollar_columns`, tabla `[regions.R.dollars]`),
+con los que lib/industry_bench quita a la propia empresa de su referencia.
 xlrd solo hace falta para esta herramienta (no es una dependencia de la app).
 
 Columnas y por qué (todas son agregados de la industria salvo lo que se dice):
@@ -50,6 +52,15 @@ TOTALS = {"Total Market": "Total Market", "Grand Total": "Total Market",
           "Total Market (without financials)": "Total Market (without financials)"}
 
 
+# F10 · N2: totales de la industria en millones de USD (hoja "Industry Averages" de Dollar{R}.xls), en este orden.
+DOLLAR_COLUMNS = {"firms": "Number of firms", "mcap": "Market Cap", "book_equity": "Book Equity",
+                  "ev": "Enteprise Value", "invested_capital": "Invested Capital", "total_debt": "Total Debt",
+                  "revenue": "Revenues", "gross_profit": "Gross Profit", "ebitda": "EBITDA", "ebit": "EBIT (",
+                  "net_income": "Net Income"}
+DOLLAR_FILES = {"us": "DollarUS.xls", "europe": "DollarEurope.xls", "japan": "DollarJapan.xls",
+                "emerging": "Dollaremerg.xls", "global": "DollarGlobal.xls"}
+
+
 def _files(code):
     return {"pe": "pedata.xls" if not code else f"pe{code}.xls", "pbv": "pbvdata.xls" if not code else f"pbv{code}.xls",
             "ev": f"vebitda{code}.xls", "roe": f"roe{code}.xls", "margin": f"margin{code}.xls",
@@ -74,6 +85,23 @@ def _table(path):
             continue
         name = TOTALS.get(name, name)
         out[name] = {cols[i]: s.cell_value(r, i) for i in range(1, len(cols))}
+    serial = s.cell_value(0, 1)
+    updated = (dt.date(1899, 12, 30) + dt.timedelta(days=int(serial))).isoformat() if isinstance(serial, float) else None
+    return out, updated
+
+
+def dollar_rows(raw, key):
+    """{industria: [empresas, capitalización, …]} de Dollar{R}.xls (millones de USD) y su fecha."""
+    import xlrd
+    s = xlrd.open_workbook(os.path.join(raw, DOLLAR_FILES[key])).sheet_by_name("Industry Averages")
+    head = next(r for r in range(s.nrows) if str(s.cell_value(r, 0)).replace("  ", " ").strip() == "Industry Name")
+    names = [str(c.value).strip() for c in s.row(head)]
+    idx = {k: next(i for i, n in enumerate(names) if n.startswith(v)) for k, v in DOLLAR_COLUMNS.items()}
+    out = {}
+    for r in range(head + 1, s.nrows):
+        name = str(s.cell_value(r, 0)).strip()
+        if name:
+            out[TOTALS.get(name, name)] = [_num(s.cell_value(r, idx[k])) for k in DOLLAR_COLUMNS]
     serial = s.cell_value(0, 1)
     updated = (dt.date(1899, 12, 30) + dt.timedelta(days=int(serial))).isoformat() if isinstance(serial, float) else None
     return out, updated
@@ -239,11 +267,14 @@ def _fmt(x):
 
 
 def write(raw, out):
-    regions, dates = {}, set()
+    regions, dates, dollars, dollar_dates = {}, set(), {}, set()
     for key, (code, _label) in REGIONS.items():
         regions[key], upd = region_rows(raw, code)
         dates.add(upd)
+        dollars[key], dupd = dollar_rows(raw, key)
+        dollar_dates.add(dupd)
     as_of = max(d for d in dates if d)
+    dollar_as_of = max(d for d in dollar_dates if d)
     lines = [
         "# GENERADO por backend/tools/damodaran_import.py desde los conjuntos de datos de A. Damodaran (NYU Stern).",
         "# NO EDITAR A MANO: vuelve a descargar los Excel (se actualizan cada enero) y ejecuta la herramienta.",
@@ -255,6 +286,12 @@ def write(raw, out):
         'url = "https://pages.stern.nyu.edu/~adamodar/New_Home_Page/datacurrent.html"',
         f'as_of = "{as_of}"',
         "columns = [" + ", ".join(f'"{c}"' for c in ["firms"] + COLUMNS) + "]",
+        "# F10 · N2: totales de cada industria en millones de USD (Dollar{R}.xls), para quitar a la empresa de su referencia",
+        'dollar_source = "A. Damodaran, Dollar value measures by industry (Dollar{US, Europe, Japan, emerg, Global}.xls), '
+        'NYU Stern"',
+        'dollar_url = "https://pages.stern.nyu.edu/~adamodar/pc/datasets/"',
+        f'dollar_as_of = "{dollar_as_of}"',
+        "dollar_columns = [" + ", ".join(f'"{c}"' for c in DOLLAR_COLUMNS) + "]",
         "",
     ]
     for key, (code, label) in REGIONS.items():
@@ -265,6 +302,12 @@ def write(raw, out):
         lines.append(f"[regions.{key}.industries]")
         for ind in sorted(regions[key]):
             lines.append(f'"{ind}" = [' + ", ".join(_fmt(x) for x in regions[key][ind]) + "]")
+        lines.append("")
+        lines.append(f"[regions.{key}.dollars]")
+        for ind in sorted(dollars[key]):
+            vals = dollars[key][ind]
+            lines.append(f'"{ind}" = [' + ", ".join([_fmt(int(vals[0]) if math.isfinite(vals[0]) else 0)]
+                                                    + [_fmt(x) for x in vals[1:]]) + "]")
         lines.append("")
     with open(out, "w", encoding="utf-8") as fh:
         fh.write("\n".join(lines))

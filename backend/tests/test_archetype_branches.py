@@ -6,7 +6,7 @@ from settings import cfg
 
 # Fase 3 (T4, registro #14 y F3_DISENO §1.4): el P/E y el dividend yield SÍ aplican a un banco; el FCF y lo que
 # depende de él, no.
-PRIMARY_FCF_PE = ("P/FCF", "Free Cash Flow", "FCF / Net Income", "Cash Flow Operativo", "Piotroski")
+PRIMARY_FCF_PE = ("P/FCF", "Free Cash Flow", "FCF / beneficio neto", "Flujo de caja operativo", "Piotroski")
 
 
 def _envs():
@@ -72,7 +72,13 @@ def test_reit_branch(outputs_by_env):
         a = outputs_by_env(env)["O"][0]
         val = a["score_coverage"]["valoracion"]
         assert {"P/E", "P/FCF", "PEG"} <= set(val["not_applicable"])
-        assert "P/FFO (REIT)" in _metrics(a, "Valoración")
+        # F8 · E3: el FFO es el de Nareit, con los ajustes del estado de flujos que presentó el emisor (Finnhub). En un
+        # juego capturado sin Finnhub ("local") no hay FFO Nareit: sin dato, con su motivo, y no puntúa.
+        if a["reit_ffo"]["ffo"] is not None:
+            assert "P/FFO (REIT)" in _metrics(a, "Valoración")
+        else:
+            assert env == "local" and "sin clave de Finnhub" in a["reit_ffo"]["ffo_reason"]
+            assert "P/FFO (REIT)" not in _metrics(a, "Valoración") and a["key_metrics"]["p_ffo"] is None
         # Etapa 9a: la rentabilidad por dividendo puntúa en Crecimiento (retorno total), no aquí.
         assert "Rentabilidad por dividendo (REIT)" not in _metrics(a, "Valoración")
         assert "Perfil GARP" not in _metrics(a, "Valoración")
@@ -90,7 +96,7 @@ def test_reit_current_ratio_not_applicable(outputs_by_env):
         a, pdf = outputs_by_env(env)["O"]
         sol = a["score_coverage"]["solidez"]
         assert "Current ratio" in sol["not_applicable"] and "Current ratio" not in sol.get("missing", [])
-        assert "Current Ratio" not in _metrics(a, "Solidez Financiera")
+        assert "Liquidez corriente" not in _metrics(a, "Solidez Financiera")
         na = next(x for x in a["score"]["breakdown"]["Solidez Financiera"]["adjustments"] if x["metric"] == "No aplica")
         assert "Current ratio: No aplica a REIT: activos inmobiliarios" in na["reason"]
         text = fb.pdf_text(pdf)
@@ -126,7 +132,7 @@ def test_cyclical_growth_is_normalized_not_the_single_year(outputs_by_env):
         assert xm["revenue_growth_normalized"] == pytest.approx(min(hi, max(lo, avg)), abs=1e-3)
         assert xm["cycle_years"] == 4 and xm["cycle_incomplete"] is True
         cre = next(x for x in a["score"]["breakdown"]["Crecimiento"]["adjustments"]
-                   if x["metric"] == "Crecimiento Ingresos 3Y")
+                   if x["metric"] == "Crecimiento de ingresos de ciclo medio")
         assert "Crecimiento del FCF" in a["score_coverage"]["crecimiento"]["not_applicable"]
         mc = a.get("mid_cycle")
         if mc:      # fase 3 (T5): con 10+ ejercicios de EDGAR, ciclo medio de pico a pico (sin cota)
@@ -143,7 +149,7 @@ def test_cyclical_growth_is_normalized_not_the_single_year(outputs_by_env):
 def test_cyclical_negative_fcf_trend_does_not_penalize(outputs_by_env):
     for env in _envs():
         adj = _metrics(outputs_by_env(env)["FCX"][0], "Crecimiento")
-        assert "Crecimiento FCF 3Y" not in adj
+        assert "Crecimiento del FCF a 3 años" not in adj
 
 
 # ─────────────────────────── MATURE dentro de Financial Services ───────────────────────────
@@ -152,7 +158,7 @@ def test_payment_network_is_valued_as_mature(outputs_by_env):
         a = outputs_by_env(env)["V"][0]
         assert a["classification"]["archetype"] == "MATURE"
         assert a["altman_z"]["applicable"] is True and a["dcf"] is not None
-        assert a["score"]["breakdown"]["Solidez Financiera"].get("adjustments")[0]["metric"] != "Solidez Bancaria"
+        assert a["score"]["breakdown"]["Solidez Financiera"].get("adjustments")[0]["metric"] != "Solidez bancaria"
 
 
 # ─────────────────────────── PDF ───────────────────────────
@@ -163,7 +169,7 @@ def _pdf_text(pdf):
 def test_pdf_shows_archetype_and_reason(outputs_by_env):
     for env in _envs():
         txt = _pdf_text(outputs_by_env(env)["O"][1])
-        assert "REIT  ·  REIT por su industria (REIT - Retail)." in txt   # etapa 9b: etiqueta y motivo en prosa
+        assert "REIT  ·  Sociedad inmobiliaria cotizada" in txt   # etapa 9b: etiqueta y motivo en prosa (V7: en positivo)
 
 
 def test_bank_pdf_never_reads_pe_or_fcf_as_primary(outputs_by_env):
@@ -200,16 +206,18 @@ def test_pdf_roce_rows(outputs_by_env):
 
 # ─────────────────────────── correcciones de la etapa 6 ───────────────────────────
 def test_reit_growth_is_per_share(outputs_by_env):
-    """O: FFO agregado +12.2% anual, pero por acción −0.1% (acciones +12.3% anual)."""
-    for env in _envs():
+    """O: el FFO (según Nareit, F8 · E3) crece +16.3% anual en agregado, pero por acción +3.6% (acciones +12.3% anual).
+    Con el FFO antiguo (beneficio + D&A, sin sumar los deterioros de 2024–2025) eran +12.2% y −0.1%."""
+    import conftest
+    for env in conftest.reit_ffo_envs(outputs_by_env, _envs()):
         a = outputs_by_env(env)["O"][0]
         xm = a["archetype_metrics"]
-        assert xm["ffo_cagr_3y"] == pytest.approx(0.1215, abs=1e-3)
+        assert xm["ffo_cagr_3y"] == pytest.approx(0.1633, abs=1e-3)
         assert xm["shares_cagr_3y"] == pytest.approx(0.1225, abs=1e-3)
-        assert xm["ffo_per_share_cagr_3y"] == pytest.approx(-0.0009, abs=1e-3)
+        assert xm["ffo_per_share_cagr_3y"] == pytest.approx(0.0363, abs=1e-3)
         m = _metrics(a, "Crecimiento")
-        assert "Retorno total (dividendo + FFO por acción)" in m and "Crecimiento Ingresos 3Y" not in m
-        assert "Crecimiento FCF por acción 3Y" in m
+        assert "Retorno total (dividendo + FFO por acción)" in m and "Crecimiento de ingresos a 3 años" not in m
+        assert "Crecimiento del FCF por acción a 3 años" in m
         assert "Crecimiento del BPA" in a["score_coverage"]["crecimiento"]["not_applicable"]
 
 
@@ -264,7 +272,9 @@ def test_growth_pre_profit_solidez_uses_runway_not_altman(outputs_by_env):
 
 def test_reit_payout_on_ffo(outputs_by_env):
     """Etapa 7 (omisión de la 6): en REIT el payout es dividendos / FFO; la lectura usa sus tramos."""
-    for env in _envs():
+    import conftest
+    assert outputs_by_env("local")["O"][0]["key_metrics"]["payout_ratio"] is None    # sin FFO según Nareit (F8 · E3)
+    for env in conftest.reit_ffo_envs(outputs_by_env, _envs()):
         a, pdf = outputs_by_env(env)["O"]
         km = a["key_metrics"]
         assert km["payout_basis"] == "ffo" and km["payout_ratio"] == km["ffo_payout"] < 1

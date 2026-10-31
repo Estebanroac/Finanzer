@@ -4,6 +4,7 @@ import type { Display } from "@/lib/api";
 import { useGrow } from "@/lib/useGrow";
 import { ChartPanel, GrowthBars, Range52Bar, ReadingLines } from "../charts";
 import { Collapsible, DataTable, Help, Note } from "../ui";
+import { closeSentence } from "@/lib/prose";
 
 /** Crecimiento: CAGR que puntúan y el rango de 52 semanas (contexto); tabla y componentes a demanda. */
 export default function GrowthTab({ display }: { display: Display }) {
@@ -26,7 +27,7 @@ export default function GrowthTab({ display }: { display: Display }) {
           aside={r.reading ? <span className="cz-price-chip">{r.reading.label}</span> : undefined}>
           <Range52Bar r={r} grown={grown} />
           <p className="mt-3 text-[13px] text-zinc-400">{r.caption}</p>
-          <ReadingLines lines={[r.reading ? `${r.reading.text}.` : null, `Contexto: ${r.axis}`]} />
+          <ReadingLines lines={[r.reading ? closeSentence(r.reading.text) : null, `Contexto: ${r.axis}`]} />
           <p className="fz-note">{r.zones_note}</p>
         </ChartPanel>
       )}

@@ -63,7 +63,8 @@ def test_price_contracts_towards_50_by_confidence(level, factor, shown):
 def test_quality_is_not_contracted_by_convergence(outputs_by_env):
     a = outputs_by_env("panel")["MSFT"][0]                  # convergencia media, confianza media (fase 4/7: PG, el de
     #                                                         antes, pasó a convergencia alta con su industria)
-    assert a["confidence"]["level"] == "media"
+    # F10 · N4: MSFT baja un escalón de confianza por las tasas base (se muestra «baja»), pero contrae con la previa
+    assert a["confidence"]["contraction_basis"] == "media"
     q = a["quality"]
     by = {k: v["score"] for k, v in a["score"]["breakdown"].items()}
     assert q["score"] == round(sum(by[k] for k in cfg("thresholds.score.quality.categories")) * 100 / 80)
@@ -73,7 +74,7 @@ def test_quality_is_not_contracted_by_convergence(outputs_by_env):
 
 
 # ─────────────────────────── veredicto verbal ───────────────────────────
-@pytest.mark.parametrize("value,level", [(80, "excelente"), (79, "sólida"), (65, "sólida"), (64, "media"),
+@pytest.mark.parametrize("value,level", [(85, "excelente"), (84, "sólida"), (65, "sólida"), (64, "media"),
                                          (45, "media"), (44, "débil"), (0, "débil")])
 def test_quality_level_band_edges(value, level):
     cats = [_cat(n, value / 5) for n in cfg("thresholds.score.quality.categories")]
@@ -95,17 +96,17 @@ def test_verdict_sentence_and_confidence_phrase():
                 {"method": "DCF", "evaluable": True}, {"method": "múltiplos frente al sector", "evaluable": True}]}}}
     v = verdict({"level": "sólida"}, {"level": "exigente"}, conf)
     assert v["text"] == "Calidad sólida · precio exigente"
-    assert v["confidence_text"] == "(confianza media: el DCF y los múltiplos discrepan)"
-    assert v["full"] == "Calidad sólida · precio exigente (confianza media: el DCF y los múltiplos discrepan)"
+    assert v["confidence_text"] == "(confianza media: el DCF directo y los múltiplos discrepan)"
+    assert v["full"] == "Calidad sólida · precio exigente (confianza media: el DCF directo y los múltiplos discrepan)"
     assert confidence_phrase({"level": "media", "dimensions": {"convergence": {"level": "no_evaluable"}}}) \
         == "un solo método de valoración evaluable, sin contraste"
     # convergencia media por "uno en precio y otro con dirección": no se dice que coincidan en dirección
     mixed = {"level": "media", "dimensions": {"convergence": {"level": "media", "methods": [
         {"method": "DCF", "evaluable": True, "direction": "cara"},
         {"method": "múltiplos frente al sector", "evaluable": True, "direction": "en precio"}]}}}
-    assert confidence_phrase(mixed) == "el DCF la ve cara y los múltiplos en precio"
+    assert confidence_phrase(mixed) == "el DCF directo la ve cara y los múltiplos en precio"
     mixed["dimensions"]["convergence"]["methods"][1]["direction"] = "cara"
-    assert confidence_phrase(mixed) == "el DCF y los múltiplos coinciden en dirección pero no en magnitud"
+    assert confidence_phrase(mixed) == "el DCF directo y los múltiplos coinciden en dirección pero no en magnitud"
 
 
 def test_verdicts_in_fixtures(outputs_by_env):
@@ -153,14 +154,15 @@ def test_reit_total_return_bands():
 
 
 def test_reit_dividend_yield_counted_once(outputs_by_env):
-    for env in _envs():
+    import conftest
+    for env in conftest.reit_ffo_envs(outputs_by_env, _envs()):
         a = outputs_by_env(env)["O"][0]
         val = [x["metric"] for x in a["score"]["breakdown"]["Valoración"]["adjustments"]]
         cre = next(x for x in a["score"]["breakdown"]["Crecimiento"]["adjustments"]
                    if x["metric"].startswith("Retorno total"))
         assert not any("dividendo" in m.lower() for m in val)
         dy, ffo = a["key_metrics"]["dividend_yield"], a["archetype_metrics"]["ffo_per_share_cagr_3y"]
-        assert cre["value"] == f"{dy + (0.0 if -0.02 <= ffo < 0 else ffo):.1%}"
+        assert cre["value"] == f"{dy + (0.0 if -0.02 <= ffo < 0 else ffo):.2%}"
 
 
 # ─────────────────────────── precio sin calidad (etapa 9a) ───────────────────────────
@@ -172,9 +174,11 @@ def test_price_excludes_quality_built_bonuses_and_growth_bands(outputs_by_env):
     for env in _generic_envs():
         for sym, (a, _) in outputs_by_env(env).items():
             inv.price_excludes_quality_built_bonuses(a, None)
-    # Forward P/E y PEG se mantienen (son múltiplos)
-    nflx = {x["metric"] for x in outputs_by_env("panel")["NFLX"][0]["score"]["breakdown"]["Valoración"]["adjustments"]}
-    assert {"Forward P/E", "PEG Ratio"} <= nflx
+    # Forward P/E y PEG se mantienen (son múltiplos). F8 · E4: el PEG de NFLX no cuadra con el crecimiento del BPA del
+    # informe (otro tramo) y queda no significativo, con su motivo: sigue siendo un componente de Valoración.
+    a = outputs_by_env("panel")["NFLX"][0]
+    nflx = {x["metric"] for x in a["score"]["breakdown"]["Valoración"]["adjustments"]}
+    assert "Forward P/E" in nflx and ("PEG" in nflx or "PEG" in a["score_coverage"]["valoracion"]["not_significant"])
 
 
 # ─────────────────────────── bandas: una sola fuente ───────────────────────────
@@ -231,8 +235,8 @@ def test_v_uses_market_benchmark_and_records_it(outputs_by_env):
         b = a["benchmark"]
         assert b["profile"] == "market" and b["sector"] == "financials"
         pe = next(x for x in a["score"]["breakdown"]["Valoración"]["adjustments"]
-                  if x["metric"].startswith("P/E") and x["metric"].endswith("vs mercado"))
-        assert f"vs {cfg('sectors.benchmarks.market.pe'):.1f}x mercado" in pe["reason"]
+                  if x["metric"].startswith("P/E") and x["metric"].endswith("frente al mercado"))
+        assert f"frente a {cfg('sectors.benchmarks.market.pe'):.1f}x mercado" in pe["reason"]
         text = fb.pdf_text(pdf).replace("\n", " ")
         assert "MERCADO" in text and "Referencia: el mercado amplio, no el sector" in text
         for sym in ("NFLX", "JPM", "O", "FCX", "SNOW"):
@@ -272,7 +276,7 @@ def test_market_profile_overrides_thresholds_and_alert_texts(outputs_by_env):
         # D/E 0.66x frente a 1.0x del mercado: "controlada" (+2), no "muy baja" frente a los 10x de un banco
         assert sol["Deuda/Equity"]["adjustment"] == cfg("thresholds.score.solidez.de_points")[1]
         roe = next(x for x in a["score"]["breakdown"]["Rentabilidad"]["adjustments"] if x["metric"].startswith("ROE"))
-        assert f"vs {D['roe_high']:.0%} rango alto del mercado" in roe["reason"] and "sector" not in roe["reason"]
+        assert f"frente a {D['roe_high']:.0%} rango alto del mercado" in roe["reason"] and "sector" not in roe["reason"]
         assert "del sector" not in _alert_text(a) and "del mercado" in _alert_text(a)
         assert res["JPM"][0]["benchmark"]["thresholds_key"] == "financials"
 
@@ -285,11 +289,13 @@ def test_multiples_block_averages_members_and_caps_at_max(outputs_by_env):
     v = outputs_by_env("panel")["V"][0]["score"]["breakdown"]["Valoración"]["adjustments"]
     blk = next(x for x in v if x["metric"] == "Bloque de múltiplos")
     # Etapa 11b: la compresión del Forward P/E no suma si el Forward P/E está en la peor banda. Con la mediana
-    # forward explícita del perfil market (18.9x), 24.2x queda bajo el corte de la peor banda (18.9 × 1.3 = 24.6x):
-    # la compresión suma (+2 → +0.67 en el bloque) y el bloque queda en −3 (−4 con el 18x heredado de default).
-    assert blk["block_members"] == ["P/E", "Forward P/E", "P/FCF", "EV/EBITDA", "PEG"] and blk["adjustment"] == -3
+    # forward explícita del perfil market (18.9x), 24.2x queda bajo el corte de la peor banda (18.9 × 1.3 = 24.6x).
+    # F9 · R1c (forma continua): pero la compresión (32x → 24x) implica un BPA +33 % frente al 13 % anual observado a
+    # 3 años; el forward creíble (32 / 1,13 = 28,3x) sí queda en la peor banda: sin efecto, y el bloque en −4 (antes −3).
+    assert blk["block_members"] == ["P/E", "Forward P/E", "P/FCF", "EV/EBITDA", "PEG"] and blk["adjustment"] == -4
     fpe = next(x for x in v if x["metric"] == "Forward P/E")
-    assert fpe["adjustment"] == 2 and "sin efecto" not in fpe["reason"]
+    assert fpe["adjustment"] == 0 and "sin efecto: el Forward P/E creíble" in fpe["reason"]
+    assert fpe["credible_forward_pe"] > 24.6 and "not_scored" not in fpe
 
 
 def test_block_pdf_shows_each_multiple_and_the_block_line(outputs_by_env):
@@ -317,11 +323,11 @@ def test_growth_scores_three_year_cagr_not_yoy(outputs_by_env):
     # el interanual de Yahoo difería entre capturas (16.0% / 24.0%); desde la fase 2b (T7) el interanual es el del
     # último ejercicio de los estados, igual en las dos, como el CAGR
     assert prod["key_metrics"]["revenue_growth"] == local["key_metrics"]["revenue_growth"]
-    for m in ("Crecimiento Ingresos 3Y", "Crecimiento EPS 3Y"):
+    for m in ("Crecimiento de ingresos a 3 años", "Crecimiento del BPA a 3 años"):
         assert crec(prod, m)["value"] == crec(local, m)["value"], m
     ci = prod["classification"]["inputs"]["revenue_cagr_3y"]
     if "ingresos" not in prod["growth_basis"]["applied_to"]:
-        assert crec(prod, "Crecimiento Ingresos 3Y")["value"] == f"{ci:.1%}"
+        assert crec(prod, "Crecimiento de ingresos a 3 años")["value"] == f"{ci:.2%}"
 
 
 # ─────────────────────────── rango de 52 semanas: solo posición ───────────────────────────
@@ -344,14 +350,18 @@ def _bd(a, cat):
 def test_cyclical_eps_growth_uses_cycle_average(outputs_by_env):
     for env in _envs():
         a = outputs_by_env(env)["FCX"][0]
-        eps = _bd(a, "Crecimiento")["Crecimiento EPS 3Y"]
         mc = a.get("mid_cycle")
-        if mc:      # fase 3 (T5): BPA de ciclo medio de pico a pico
-            assert "de pico a pico" in eps["reason"] and eps["value"] == f"{mc['eps_cagr']:.1%}"
+        if mc and mc.get("eps_cagr") is None:      # F8: BPA medio negativo en una mitad del ciclo (FCX): sin tasa
+            assert "Crecimiento del BPA de ciclo medio" not in _bd(a, "Crecimiento")
+            assert "no es positivo" in a["score_coverage"]["crecimiento"]["missing_reasons"]["Crecimiento del BPA"]
+            continue
+        eps = _bd(a, "Crecimiento")["Crecimiento del BPA de ciclo medio"]
+        if mc:                                     # F8: entre las medias de las dos mitades del ciclo
+            assert "pérdidas incluidas" in eps["reason"] and eps["value"] == f"{mc['eps_cagr']:.2%}"
         else:
             assert "normalizado de ciclo medio" in eps["reason"]
             g = a["archetype_metrics"]["eps_growth_normalized"]
-            assert eps["value"] == f"{g:.1%}"
+            assert eps["value"] == f"{g:.2%}"
 
 
 def test_cyclical_pfcf_normalized_uses_maintenance_fcf(outputs_by_env):
@@ -362,11 +372,12 @@ def test_cyclical_pfcf_normalized_uses_maintenance_fcf(outputs_by_env):
 
 
 def test_reit_profitability_on_ffo_and_leverage_on_net_debt(outputs_by_env):
-    for env in _envs():
+    import conftest
+    for env in conftest.reit_ffo_envs(outputs_by_env, _envs()):
         a = outputs_by_env(env)["O"][0]
         rent = _bd(a, "Rentabilidad")
         assert {"FFO / activos", "Margen FFO"} <= set(rent) and "FFO / patrimonio" not in rent
-        assert not {"ROE", "ROA", "Margen Neto", "ROIC vs WACC", "Margen Operativo"} & set(rent)
+        assert not {"ROE", "ROA", "Margen neto", "ROIC frente al WACC", "Margen operativo"} & set(rent)
         na = a["score_coverage"]["rentabilidad"]["not_applicable"]
         assert {"ROE", "ROA", "Margen neto", "ROIC−WACC", "Margen bruto", "Margen operativo"} <= set(na)
         sol = _bd(a, "Solidez Financiera")
@@ -381,7 +392,7 @@ def test_growth_pre_profit_profitability_and_regla_m(outputs_by_env):
         a = outputs_by_env(env)["SNOW"][0]
         rent = _bd(a, "Rentabilidad")
         assert {"Margen bruto", "Margen operativo", "Mejora del margen operativo", "Margen FCF − SBC"} <= set(rent)
-        assert not {"ROE", "ROA", "Margen Neto", "ROIC vs WACC"} & set(rent)
+        assert not {"ROE", "ROA", "Margen neto", "ROIC frente al WACC"} & set(rent)
         assert "Growth Company" not in _bd(a, "Crecimiento")
         if (a["key_metrics"].get("net_debt") or 0) < 0:                          # caja neta: el D/E no puntúa
             assert _bd(a, "Solidez Financiera")["Deuda/Equity"]["adjustment"] == 0
@@ -421,9 +432,9 @@ def test_growth_pre_profit_uses_fcf_minus_sbc_but_runway_uses_cash(outputs_by_en
         assert xm["rule_of_40"] == pytest.approx(xm["revenue_cagr_3y"] + xm["fcf_margin"])
         assert xm["runway"]["state"] == "autofinanciada" and xm["runway"]["fcf"] > 0      # caja pura
         rent = _bd(a, "Rentabilidad")["Margen FCF − SBC"]
-        assert rent["value"] == f"{sb['fcf_margin_adjusted']:.1%}"
+        assert rent["value"] == f"{sb['fcf_margin_adjusted']:.2%}"
         # el crecimiento del FCF se mide sobre FCF − SBC; negativo en los 4 ejercicios = señal, peor tramo
-        g = _bd(a, "Crecimiento")["Crecimiento FCF − SBC 3Y"]
+        g = _bd(a, "Crecimiento")["Crecimiento del FCF − SBC a 3 años"]
         assert g["value"] == "Negativo sostenido" and g["adjustment"] == cfg("thresholds.score.crecimiento.fcf_points")[-1]
         assert not a["score_coverage"]["crecimiento"]["missing"]
         cal = _bd(a, "Calidad de Ganancias")["FCF − SBC"]
@@ -458,7 +469,11 @@ def test_cyclical_growth_narrative_uses_cycle_average(outputs_by_env):
         text = fb.pdf_text(pdf).replace("\n", " ")
         assert "propio de compañías growth" not in text
         assert "Crecimiento del BPA (ciclo medio)" in text and "Crecimiento de beneficios (YoY)" not in text
-        assert f"{a['archetype_metrics']['eps_growth_normalized'] * 100:.1f}%".lstrip("-") in text
+        if (a.get("mid_cycle") or {}).get("eps_halves"):   # F8: FCX, sin tasa y con su motivo en la fila
+            row = next(r for r in a["display"]["sections"]["growth"]["rows"] if r["key"] == "earnings_growth")
+            assert row["state"] == "sin_dato" and "BPA medio de una mitad del ciclo no es positivo" in row["text"]
+        else:
+            assert f"{a['archetype_metrics']['eps_growth_normalized'] * 100:.1f}%".lstrip("-") in text
 
 
 def test_sustained_negative_is_a_signal_not_missing():

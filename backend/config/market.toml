@@ -45,7 +45,11 @@ window_sessions = 252           # 1 año de rentabilidades diarias (logarítmica
 windows_years = [1, 3]
 
 [signals.relative_strength]     # frente al ETF del sector: 6 y 12 meses
-windows_sessions = [126, 252]
+# F8 · P3 (auditoría externa): una sola ventana para la web, el PDF y esta señal. Los periodos son los de la tabla de
+# rentabilidades ([price_returns], lib/price_returns): días naturales desde la última sesión de la empresa y cierre
+# ajustado (con dividendos). Antes, 126 y 252 sesiones comunes: MSFT daba +2,9 % frente al +30,0 % de XLK en la señal y
+# +1,0 % frente al +27,4 % en la tabla, las dos a «12 meses».
+windows = ["6M", "1A"]
 
 [signals.volume]                # Gervais, Kaniel y Mingelgrin (2001)
 recent_sessions = 5
@@ -65,13 +69,42 @@ min_weeks = 52
 # propia (T6). 2 años bastan para la beta (104 semanas) y el rango (252 sesiones) y cubren dos ciclos de dividendo.
 
 [beta_choice]                   # lib/beta.py (fase 2b, T6; F2_PRECEDENCIA §5): qué beta usa el motor
-min_r2 = 0.1                    # beta propia con R² menor (o < min_weeks): la del sector (config/betas.toml)
+# F8 · E1 (auditoría externa del 26-oct-2026): la beta propia solo entra si pasa los TRES filtros; si no, se descarta
+# (el informe lo declara) y se usa la de abajo hacia arriba (lib/beta.py). Antes: R² ≥ 0,10 y sin más filtros (AWK
+# entraba con β −0,44 y R² 0,11).
+min_r2 = 0.20                   # R² menor: la regresión no explica el título
+# Error estándar de la pendiente: con 2 × EE ≤ 0,5, el intervalo del 95 % no es más ancho que el umbral de
+# discrepancia entre fuentes (abajo); un EE mayor deja la beta indeterminada para el Ke.
+max_se = 0.25
+own_range = [0.4, 2.5]          # beta propia (bruta) fuera de este rango: no se usa
+# Reapalancar exige una estructura de capital comparable a la de la industria: con una D/E de mercado más de
+# `relever_max_de_ratio` veces la media de su industria (Damodaran), la deuda no es la del negocio (TM: 1,20 frente a
+# 0,20, con la de su financiera cautiva) y se usa la beta media apalancada de la industria, declarado. En el panel, el
+# resto de empresas queda por debajo de 1,8 veces.
+relever_max_de_ratio = 3.0
 discrepancy = 0.5               # |propia − fuente| mayor: aviso "beta discrepante entre fuentes" (la confianza lo registra)
 # Rango de 52 semanas del motor (lib/beta.py): sesiones de los últimos `range52_window_days` días, sin el mismo día de
 # hace un año (la definición de Yahoo: coincide con su mínimo en 35 de 35 tickers del panel; 252 sesiones, en 30).
 range52_window_days = 365
+# F9 · R2b (decisión del PM del 27-oct): la beta de abajo hacia arriba sale de la tabla de Damodaran de la región donde
+# opera la empresa (config/betas_regional.toml), con la misma exposición que la prima de riesgo país
+# (lib/country_risk.py): emergentes si la sede operativa o más de `region_majority` de los ingresos identificados
+# (países y regiones con nombre) están en emergentes; si no, Europa con la misma regla; si no, EE. UU. (betas.toml).
+# Antes: siempre la de EE. UU. (NU, banco brasileño: Banks (Regional) de EE. UU., 0,40; la de emergentes es 0,60).
+region_majority = 0.50
+# Región de Damodaran del país (country_risk.toml [country_region]) o región con nombre de la geografía -> grupo.
+# «Asia» y «EMEA» mezclan desarrollados y emergentes: no cuentan para ningún grupo.
+europe_regions = ["Western Europe", "Europe"]
+emerging_regions = ["Africa", "Caribbean", "Central and South America", "Eastern Europe & Russia", "Eastern Europe",
+                    "Middle East", "Africa & Mid East", "Latin America & Caribbean", "Emerging Markets",
+                    "Small Asia (No India, China & Japan)"]
+# Países de la región «Asia» de Damodaran que son emergentes (el resto de esa región, Japón, Singapur, Hong Kong,
+# Australia…, no cuenta como emergente).
+emerging_asia = ["China", "India", "Indonesia", "Malaysia", "Philippines", "Thailand", "Vietnam", "Pakistan",
+                 "Bangladesh", "Sri Lanka", "Korea", "Taiwan"]
 
 [history]
+cache_max = 64                  # verificación de la v4 (V4): series del motor en caché como mucho (48 empresas, índices y ETF; antes sin tope)
 period = "2y"
 interval = "1d"
 max_attempts = 2                # en el camino del análisis: un reintento corto, nunca bloquea el análisis
@@ -79,6 +112,16 @@ retry_pause_s = 0.5
 cache_ttl_s = 300               # empresa: el mismo TTL que los datos del ticker (data.yahoo.cache_ttl_s)
 market_cache_ttl_s = 21600      # S&P 500: 6 h por proceso (la beta usa semanas cerradas)
 wait_timeout_s = 20.0           # espera máxima al hilo de la descarga antes de seguir sin la serie
+years_v2 = 10                   # rediseño E2a (T5): ejercicios de la historia financiera de /v2 (lib/history_10y.py; EDGAR)
+fy_gap_tolerance_days = 30      # E2a: el ejercicio anterior cierra a 1 año ± 30 días; si no, hay un hueco (sin crecimiento)
+fy_year_shift_days = 7          # V4b: un ejercicio de 52/53 semanas que cierra en los primeros 7 días de enero es del año anterior (JNJ)
+chart_period = "5y"              # rediseño E2a (T9): serie de la gráfica de /v2 (price_history.chart); el motor sigue con `period`
+chart_cache_ttl_s = 21600       # 6 h por símbolo (la gráfica es diaria)
+chart_cache_max = 32            # símbolos en la caché de la gráfica (Render: 512 MB; una serie de 5 años son ~1 250 filas)
+chart_concurrency = 2           # V6 (B8): descargas de la gráfica a la vez (una por símbolo; las demás esperan)
+chart_fail_ttl_s = 60           # V6 (B8): un símbolo sin serie no se vuelve a pedir en 60 s
+market_total_return_symbol = "SPY"   # V7 (M7): el S&P 500 (^GSPC) no reparte dividendos; su rentabilidad total sale del
+                                     # cierre ajustado del ETF que lo replica (o "^SP500TR", el índice de rentabilidad total)
 
 # Fase 2b (T2): dividendo indicado en la moneda y la clase del precio, desde los pagos del propio título
 # (F2_PRECEDENCIA §2.2). Frecuencia por la mediana de los intervalos entre pagos (días).
@@ -112,6 +155,22 @@ overreaction_drop = 0.40            # ≥ 40% bajo el máximo de 2 años sin det
 extrapolation_own_ratio = 0.8       # lo que exige el precio está en línea con lo logrado (≥ 80% del crecimiento propio)
 news_days = 7                       # PLAN §4 (fase 5): titulares de 7 días si Finnhub company-news es gratuito (lo es)
 news_max = 5                        # los 5 más recientes de la propia empresa, sin interpretar
+news_max_v2 = 6                     # rediseño /v2 (E2a): 6 titulares (rejilla simétrica de 2 × 3); la web actual sigue con news_max
+news_summary_chars = 280            # resumen de Finnhub recortado (en límite de palabra, con "…")
+news_lang = "en"                    # /company-news de Finnhub publica medios en inglés: se indica el idioma original
+# E2a (revisión del PM): un titular entra solo si el titular o el resumen nombran a la empresa: el ticker como palabra
+# (de 2+ letras; uno de una letra solo como "(O)" o "NYSE: O") o su nombre corto (el legal sin los sufijos societarios
+# de abajo), sin distinguir mayúsculas y por palabra completa. Finnhub pone el ticker en `related` de noticias generales.
+news_name_suffixes = ["inc", "incorporated", "corp", "corporation", "co", "company", "plc", "nv", "sa", "se", "ag",
+                      "ltd", "limited", "holdings", "holding", "group", "lp", "llc", "&", "the"]
+# Palabras que, solas, darían falsos positivos: si la primera palabra del nombre corto es una de ellas, se exige el
+# nombre corto completo ("Realty Income", no "Realty").
+news_common_words = ["realty", "income", "energy", "general", "american", "united", "first", "national", "international",
+                     "global", "capital", "financial", "bank", "health", "systems", "technologies", "industries",
+                     "resources", "trust", "properties", "motors", "new", "royal", "great", "southern", "western",
+                     "eastern", "northern", "central", "public", "digital", "applied", "advanced", "data"]
+next_earnings_days = 120            # E2a: calendario de resultados de Finnhub hacia delante
+estimate_cadence_days = 91          # E2a: sin fecha anunciada, último 8-K de resultados (2.02) + un trimestre, "estimada"
 wait_timeout_s = 4.0                # espera máxima del ETF del sector y de los titulares (en paralelo; nunca bloquean el análisis)
 sector_fail_ttl_s = 600.0             # un fallo del ETF del sector se recuerda 10 min (no se reintenta en cada análisis)
 # PEAD (Bernard y Thomas, 1989): sorpresa del BPA (Finnhub) con la fecha del 8-K de resultados (SEC EDGAR, apartado 2.02)
@@ -119,3 +178,413 @@ pead_announce_max_days = 75         # el 8-K de resultados se presenta como much
 pead_window_sessions = 60           # la deriva documentada dura unas 60 sesiones tras el anuncio
 pead_inline = 0.02                  # |sorpresa| < 2% del consenso: "en línea con el consenso" (sin sorpresa que derive)
 pead_min_sessions = 5               # con menos sesiones tras el anuncio no se juzga la deriva (aún no hay deriva que medir)
+# F10 · N6 (revisión de NVDA): Finnhub fecha cada trimestre en el cierre del trimestre natural más cercano (NVDA:
+# 2026-06-30 para el fiscal que cerró el 2026-07-26). El cierre real es el periodo del 10-Q o 10-K de EDGAR más cercano a
+# esa fecha, como mucho a medio trimestre (46 días: ningún cierre fiscal queda más lejos de un cierre natural).
+pead_fiscal_match_days = 46
+
+# ── Rediseño E2a (T2): nombre de la bolsa para el lector, en lugar del código del proveedor ──
+[exchanges]
+# Código de bolsa de Yahoo (fast_info.exchange / exchangeName) → nombre para el lector. Fuente: códigos MIC/Yahoo.
+# Un código que no está aquí se muestra tal cual y se registra en el log (para añadirlo).
+NMS = "Nasdaq"
+NGM = "Nasdaq"
+NCM = "Nasdaq"
+NAS = "Nasdaq"
+NasdaqGS = "Nasdaq"
+NasdaqGM = "Nasdaq"
+NasdaqCM = "Nasdaq"
+NYQ = "NYSE"
+NYSE = "NYSE"
+ASE = "NYSE American"
+PCX = "NYSE Arca"
+BTS = "Cboe BZX"
+PAR = "Euronext París"
+AMS = "Euronext Ámsterdam"
+LSE = "Bolsa de Londres"
+GER = "Xetra"
+FRA = "Bolsa de Fráncfort"
+MCE = "BME (Madrid)"
+TOR = "Bolsa de Toronto"
+TYO = "Bolsa de Tokio"
+HKG = "Bolsa de Hong Kong"
+MEX = "Bolsa de México"
+EBS = "SIX Swiss Exchange"
+PNK = "OTC (fuera de bolsa)"
+
+# ── Rediseño E2a (T3): ficha de la empresa desde EDGAR (lib/company_profile.py) ──
+[filer_categories]   # categoría de emisor de la SEC → texto (submissions.category, en minúsculas; puede venir combinada con <br>)
+"large accelerated filer" = "Gran emisor (large accelerated filer)"
+"accelerated filer" = "Emisor acelerado (accelerated filer)"
+"non-accelerated filer" = "Emisor no acelerado (non-accelerated filer)"
+"smaller reporting company" = "Pequeña empresa declarante (smaller reporting company)"
+"emerging growth company" = "Empresa en crecimiento emergente (emerging growth company)"
+
+# ── Rediseño E2a (revisión del PM): estado de EE. UU. de EDGAR (código de 2 letras) → nombre para el lector ──
+[us_states]   # ficha de la empresa (sede y estado de constitución); lo que no esté aquí se muestra tal cual
+AL = "Alabama"
+AK = "Alaska"
+AZ = "Arizona"
+AR = "Arkansas"
+CA = "California"
+CO = "Colorado"
+CT = "Connecticut"
+DE = "Delaware"
+FL = "Florida"
+GA = "Georgia"
+HI = "Hawái"
+ID = "Idaho"
+IL = "Illinois"
+IN = "Indiana"
+IA = "Iowa"
+KS = "Kansas"
+KY = "Kentucky"
+LA = "Luisiana"
+ME = "Maine"
+MD = "Maryland"
+MA = "Massachusetts"
+MI = "Míchigan"
+MN = "Minnesota"
+MS = "Misisipi"
+MO = "Misuri"
+MT = "Montana"
+NE = "Nebraska"
+NV = "Nevada"
+NH = "Nuevo Hampshire"
+NJ = "Nueva Jersey"
+NM = "Nuevo México"
+NY = "Nueva York"
+NC = "Carolina del Norte"
+ND = "Dakota del Norte"
+OH = "Ohio"
+OK = "Oklahoma"
+OR = "Oregón"
+PA = "Pensilvania"
+RI = "Rhode Island"
+SC = "Carolina del Sur"
+SD = "Dakota del Sur"
+TN = "Tennessee"
+TX = "Texas"
+UT = "Utah"
+VT = "Vermont"
+VA = "Virginia"
+WA = "Washington"
+WV = "Virginia Occidental"
+WI = "Wisconsin"
+WY = "Wyoming"
+DC = "Distrito de Columbia"
+PR = "Puerto Rico"
+GU = "Guam"
+VI = "Islas Vírgenes de EE. UU."
+AS = "Samoa Americana"
+MP = "Islas Marianas del Norte"
+
+# ── Rediseño E2b: datos nuevos fuera del camino del análisis (endpoints perezosos /api/v2/…) ──
+[universe]                      # lib/universe.py, config/universe.tsv (generado por tools/build_universe.py)
+# S&P 500 (tabla pública de constituyentes, instantánea fechada) + ADR principales: base de la portada (tendencias) y
+# de los rivales preferentes. Se regenera con tools/build_universe.py; el archivo dice su fecha.
+sp500_source = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
+max_age_days = 120          # más viejo: /api/v2/trending lo dice en su nota ("universo del AAAA-MM-DD")
+# V6 (revisión de seguridad, B6): clases de acción que pasan del punto al guion de Yahoo (BRK.B → BRK-B). Cualquier
+# otro sufijo es una bolsa (BARC.L, MC.PA, 7203.T) y se deja con su punto.
+share_classes = ["A", "B", "C"]
+adrs = ["TSM", "ASML", "NVO", "SAP", "TM", "SONY", "BABA", "PDD", "SHEL", "BP", "TTE", "HSBC", "BCS", "UL", "AZN",
+        "GSK", "NVS", "RIO", "BHP", "SAN", "BBVA", "ING", "DEO", "BTI", "MUFG", "SMFG", "HDB", "IBN", "INFY", "SHOP",
+        "RY", "TD", "ENB", "CNQ", "BN", "ARM", "SPOT", "NU", "MELI", "SE"]
+
+# P8: sector GICS de cada ADR. La tabla pública del S&P 500 da el sector de sus empresas; la de los ADR no existe, así
+# que se declara aquí, uno a uno, con la clasificación GICS que publica MSCI/S&P para la empresa (la del sector de la
+# tabla del S&P 500: las mismas 11 claves). tools/build_universe.py la aplica al generar config/universe.tsv; un ADR
+# sin entrada hace fallar la herramienta y tests/test_universe.py (ningún valor del universo queda sin sector).
+[universe.adr_sectors]
+TSM = "Information Technology"
+ASML = "Information Technology"
+NVO = "Health Care"
+SAP = "Information Technology"
+TM = "Consumer Discretionary"
+SONY = "Consumer Discretionary"
+BABA = "Consumer Discretionary"
+PDD = "Consumer Discretionary"
+SHEL = "Energy"
+BP = "Energy"
+TTE = "Energy"
+HSBC = "Financials"
+BCS = "Financials"
+UL = "Consumer Staples"
+AZN = "Health Care"
+GSK = "Health Care"
+NVS = "Health Care"
+RIO = "Materials"
+BHP = "Materials"
+SAN = "Financials"
+BBVA = "Financials"
+ING = "Financials"
+DEO = "Consumer Staples"
+BTI = "Consumer Staples"
+MUFG = "Financials"
+SMFG = "Financials"
+HDB = "Financials"
+IBN = "Financials"
+INFY = "Information Technology"
+SHOP = "Information Technology"
+RY = "Financials"
+TD = "Financials"
+ENB = "Energy"
+CNQ = "Energy"
+BN = "Financials"
+ARM = "Information Technology"
+SPOT = "Communication Services"
+NU = "Financials"
+MELI = "Consumer Discretionary"
+SE = "Consumer Discretionary"
+
+[segments]                      # lib/segments.py: ingresos por segmento de la instancia XBRL del último 10-K/20-F/40-F
+# Ejes por prioridad (nombre local; US GAAP e IFRS). El primero utilizable es el principal; el geográfico va a
+# `secondary` si hay uno de los anteriores; el resto de ejes utilizables, a `others` (Apple: productos).
+axes = ["StatementBusinessSegmentsAxis", "SegmentsAxis", "ProductOrServiceAxis", "ProductsAndServicesAxis"]
+geographic_axes = ["StatementGeographicalAxis", "GeographicalAreasAxis"]
+# V7 · P2 y P4 (segments.summary): el desglose por producto, si el emisor lo publica, abre el capítulo 2; la geografía
+# (o el eje principal) va como segunda línea; como mucho estos segmentos por línea (el resto, en la página Negocio).
+product_axes = ["ProductOrServiceAxis", "ProductsAndServicesAxis"]
+summary_items_max = 5
+# Desde ASU 2023-07 el ingreso de cada segmento operativo lleva además ConsolidationItemsAxis = OperatingSegmentsMember
+# (AAPL, JPM): ese miembro no cuenta como segunda dimensión. Cualquier otra combinación de dos ejes se ignora.
+neutral_members = ["ConsolidationItemsAxis=OperatingSegmentsMember", "ConsolidationItemsAxis=ReportableSegmentsMember"]
+# Eliminaciones entre segmentos de cada segmento (XOM): si el ingreso bruto de los segmentos no concilia con el
+# consolidado, se prueba neto de ellas (ingreso de clientes externos) y se dice en `notes`.
+elimination_members = ["ConsolidationItemsAxis=IntersegmentEliminationMember"]
+# Un miembro de estos ejes que repite el miembro de otra dimensión del contexto no cuenta (NEE: el segmento FPL lleva
+# además LegalEntityAxis = FPL, la misma empresa).
+redundant_axes = ["LegalEntityAxis"]
+# RegulatedAndUnregulatedOperatingRevenue: el ingreso de las eléctricas reguladas (NEE: FPL y NEER).
+revenue_concepts = ["RevenueFromContractWithCustomerExcludingAssessedTax", "Revenues", "SalesRevenueNet",
+                    "RevenuesNetOfInterestExpense", "RevenueFromContractWithCustomerIncludingAssessedTax",
+                    "RegulatedAndUnregulatedOperatingRevenue",
+                    "Revenue", "RevenueFromContractsWithCustomers"]   # los dos últimos: ifrs-full
+# Cobertura: la suma de los segmentos del último ejercicio frente a los ingresos consolidados del emisor. El total, por
+# orden: el primero de total_revenue_concepts sin dimensión en la instancia; si no, un total PROPIO del emisor de
+# extension_total_concepts (los bancos NIIF no tienen elemento estándar de "total income": BCS lo publica como
+# bcs:OperatingIncome, £29,1 bn) siempre que no sea menor que la suma de los segmentos (así no se toma el beneficio
+# operativo de una empresa no financiera); si no, el `revenue` de companyfacts del mismo periodo.
+total_revenue_concepts = ["Revenues", "RevenuesNetOfInterestExpense", "Revenue", "RegulatedAndUnregulatedOperatingRevenue",
+                          "SalesRevenueNet", "RevenueFromContractWithCustomerExcludingAssessedTax",
+                          "RevenueFromContractWithCustomerIncludingAssessedTax"]
+extension_total_concepts = ["OperatingIncome", "TotalIncome", "TotalOperatingIncome", "TotalNetRevenue"]
+# V2 (decisión del PM): una aseguradora (la rama de aseguradoras de FINANCIAL: industria «Insurance - …») que no desglosa
+# ingresos por segmento desglosa primas (CB). Solo para ellas y solo si ningún concepto de revenue_concepts da segmentos;
+# la cobertura se mide frente a los ingresos consolidados, como en BCS.
+premium_concepts = ["PremiumsEarnedNet", "PremiumsEarnedNetPropertyAndCasualty", "PremiumsEarnedNetLife",
+                    "PremiumsEarnedNetAccidentAndHealth", "InsuranceRevenue"]   # el último: ifrs-full (NIIF 17)
+min_period_days = 350
+reconcile_tolerance = 0.02
+# Etiquetas que el emisor publica en mayúsculas ("UNITED STATES", "REST OF ASIA PACIFIC"): pasan a mayúscula inicial
+# por palabra, salvo estas siglas (que se conservan) y estas palabras de enlace (en minúscula si no van primero).
+upper_words = ["US", "USA", "UK", "EU", "EMEA", "APAC", "LATAM", "IT", "AI"]
+lower_words = ["of", "and", "the", "de", "y", "del"]
+acronym_max_len = 4          # una etiqueta de una sola palabra en mayúsculas y de hasta 4 letras se deja (FPL, NEER)
+# Un miembro que es la suma de otros dos o más del mismo eje (Product = iPhone + Mac + iPad + Wearables) es un
+# agregado y sale (si no, se contaría dos veces). La suma de un agregado es exacta salvo redondeo: tolerancia estrecha.
+aggregate_tolerance = 0.001
+# Miembros solapados (RIVN: Automotive = Vehicles + Regulatory Credits, y "Software and Services" dos veces): si la suma
+# del eje supera el total consolidado más que reconcile_tolerance, se busca el subconjunto que concilia (exhaustivo
+# hasta max_subset_members miembros): el de más miembros y, a igualdad, el de menos etiquetas casi duplicadas.
+max_subset_members = 12
+# Un eje con un miembro de más del 95 % no son segmentos sino componentes del ingreso (XOM: "Sales and other operating
+# revenue" 97,5 %): se descarta y se dice en dropped_axes.
+max_single_share = 0.95
+segments_budget_s = 8.0      # endpoint perezoso: más margen que el análisis (3 s), sigue acotado
+segments_ttl_s = 604800      # 7 días por filing (no cambia hasta el siguiente 10-K)
+segments_cache_max = 64
+segments_concurrency = 2     # V6 (B8): consultas de segmentos a la vez (una por símbolo; las demás esperan)
+segments_fail_ttl_s = 60     # V6 (B8): sin dato (EDGAR caído, sin informe…), no se vuelve a consultar en 60 s
+# La instancia se descarga en streaming a un archivo temporal y se lee en flujo: la memoria no depende de su tamaño
+# (BCS: 44 MB). El tope solo protege el disco y el tiempo; el tamaño sale del índice (mayor: sin_dato sin descargar).
+max_instance_mb = 150
+# Rendimiento (v4f8): en cuanto el análisis tiene EDGAR (etapa 2), el último informe anual se descarga en segundo plano
+# (índice, instancia a un archivo temporal y etiquetas, sin leerlos) mientras siguen Yahoo y Finnhub; la prima de riesgo
+# país lo toma en vez de descargarlo. Mismos archivos de la SEC: mismo resultado. Una descarga que nadie toma se borra
+# a los `prefetch_ttl_s`; como mucho `prefetch_max` guardadas a la vez.
+prefetch_ttl_s = 120
+prefetch_max = 8
+prefetch_concurrency = 4     # una por análisis a la vez ([server] max_concurrent_analyses): solo red, sin lectura
+
+[peers]                         # lib/peers.py: rivales analizados con el motor completo, en segundo plano
+peers_count = 5
+min_peers = 3
+caps_ttl_s = 604800         # capitalizaciones de Finnhub: 7 días (solo ordenan por tamaño)
+poll_s = 4                  # el cliente vuelve a preguntar cada 4 s mientras haya rivales en cola
+# Capitalizaciones que se piden por empresa (los candidatos del universo primero): Finnhub gratuito admite 60/min y el
+# análisis también lo usa, así que se piden con una pausa entre ellas. 20 × 1.5 s = 30 s la primera vez (7 días en caché).
+max_cap_lookups = 20
+finnhub_min_interval_s = 1.5
+# PDF rápido: antes, las capitalizaciones de los candidatos, de Finnhub y de una en una (con la pausa de arriba): 16,7 s
+# para HD (12) y 31 s para NVDA (20). Ahora, todas en una sola petición a Yahoo (v7/finance/quote: 0,1–0,5 s); Finnhub
+# solo para las que Yahoo no trae en dólares.
+yahoo_quote_url = "https://query1.finance.yahoo.com/v7/finance/quote"
+yahoo_quote_timeout_s = 5.0
+# Dentro de esta banda de tamaño (capitalización del rival entre 1/3 y 3 veces la de la empresa), primero los de su
+# región de Damodaran y después el resto, por cercanía de tamaño (BCS: bancos europeos antes que NU o FITB).
+size_band_low = 0.3333
+size_band_high = 3.0
+# V7 · P5: un P/E por encima de este valor (beneficio casi nulo: CRWD 4366x) no es significativo en la tabla de rivales
+# ni en su resumen: sale «n. s.» con la cifra en la nota. 200x = rentabilidad por beneficio del 0,5 %.
+pe_meaningful_max = 200.0
+# V4b (auditoría de datos): columnas de la tabla de rivales que el resumen de cada empresa (analysis_queue.summary)
+# rellena siempre: con la cifra de la página o, sin ella, con el motivo («No aplica», «n. s.») en la nota.
+summary_columns = ["pe", "ev_ebitda", "roic", "net_margin", "revenue_growth", "de"]
+# V6 (revisión de seguridad, B3/B10): un fallo pasajero (el análisis de la empresa no salió, o Finnhub no dio su
+# capitalización) se recuerda solo `fail_ttl_s`, no los 7 días de un ranking o una capitalización buenos; y las cachés
+# tienen tope (las de escritura más antigua salen primero).
+fail_ttl_s = 600
+caps_cache_max = 512        # capitalizaciones (20 candidatos por empresa)
+rankings_cache_max = 64     # rankings automáticos (uno por empresa consultada)
+# V2 (decisión del PM): en la lista automática, un rival cuyo análisis falla porque la fuente ya no tiene el símbolo
+# (ACLX) se sustituye por el siguiente del ranking, como mucho estas veces; la nota lo dice. La lista elegida a mano no.
+max_substitutions = 2
+no_data_markers = ["No data found", "No hay datos"]
+# F10 · N5 (revisión de NVDA, 28-oct-2026): el PDF salía sin rivales («aún no estaba listo»): solo se calculaban al
+# abrir la página Rivales y tardan ≈ 30 s de capitalizaciones (20 × 1,5 s, la primera vez en 7 días) más un análisis
+# por rival, de uno en uno (p50 110–135 s). Ahora empiezan cuando se sirve el análisis de la empresa a un usuario
+# (prioridad `user`: antes que el precalentado de tendencias), sin subir el ritmo de Finnhub; y el PDF espera como mucho
+# `pdf_wait_s` a los que estén en marcha (fuera de su turno de análisis: la cola sigue avanzando), mirando cada
+# `pdf_poll_s`, y dice los que faltan y por qué. 30 s: el PDF no pasa del minuto aun con el análisis sin caché (el
+# proxy corta a los 100 s).
+start_with_analysis = true
+pdf_wait_s = 30
+pdf_poll_s = 1.0
+
+[analysis_queue]                # lib/analysis_queue.py: cola de análisis en segundo plano (rivales y tendencias)
+summary_ttl_s = 86400       # resumen de un análisis (rival o tarjeta de tendencias): 1 día
+summary_cache_max = 64      # rivales de unas pocas empresas y las 30 tarjetas de tendencias (cada resumen ocupa pocos kB)
+max_queue = 20              # trabajos de usuarios en cola como máximo (protege Render); por encima: "cola llena"
+# PDF rápido: hilos de la cola. El primero toma todo; los demás, solo `user` (rivales): 5 rivales de HD, de uno en uno,
+# eran 8,6 s. El precalentado de tendencias sigue de uno en uno. La memoria la acota el turno de análisis compartido con
+# los usuarios (data.server.max_concurrent_analyses), no el número de hilos.
+workers = 2
+max_prewarm_queue = 30      # precalentado en cola como máximo (= [trending] prewarm_max)
+fail_ttl_s = 600            # un análisis que falló se recuerda 10 min (no se reintenta en cada consulta)
+busy_wait_s = 2.0           # con usuarios esperando turno de análisis, el hilo vuelve a mirar cada 2 s
+max_per_client = 10         # V6 (B7): trabajos de un mismo cliente (IP) en cola: los rivales de dos empresas
+
+[search]                        # lib/search_v2.py: buscador de /v2 (portada y barra general)
+limit = 8                   # resultados como mucho (los mismos que /api/search)
+yahoo_count = 10            # resultados que se piden a Yahoo (más que `limit`: dan la bolsa de los de la base local)
+timeout_s = 5.0
+
+[trending]                      # lib/trending.py: tendencias del día de la portada sobre el universo
+top_n = 30                      # P8: el cintillo rota unos 30 valores por lista
+batch_size = 100           # símbolos por descarga de Yahoo (lotes: menos peticiones)
+min_price = 1.0            # excluye cotizaciones residuales
+refresh_after_close_min = 30   # la sesión se da por cerrada 30 min después del cierre de NY (16:00 ET)
+close_hour_et = 16             # cierre de la sesión regular de NY (hora de Nueva York)
+retry_after_s = 600            # tras un cálculo fallido, no se reintenta antes de 10 min (respeto a Yahoo)
+# Rediseño E4: tras calcular las listas, sus símbolos sin resumen en caché se analizan en la cola compartida con
+# prioridad `prewarm` (de uno en uno y solo sin usuarios esperando), como mucho estos al día (Render gratuito).
+prewarm_max = 30
+# Cierre de la v4: por debajo del keep-alive de uvicorn (5 s). Con 5, la conexión se cerraba justo cuando el sondeo la
+# reutilizaba y WebKit, que no reintenta, perdía la petición («The network connection was lost»; V3, yahoo_down).
+poll_s = 4                     # la portada vuelve a preguntar cada 4 s mientras calcula o analiza tarjetas
+# P8 (cintillo): listas por sector GICS de la misma descarga del universo (sin llamadas nuevas a Yahoo), con los
+# `top_n` valores de más volumen en dólares; con menos de `min_sector_items` valores con cotización, el chip del sector
+# sale deshabilitado con su motivo. Claves estables en inglés (GICS); la etiqueta en español, en sector_labels.
+min_sector_items = 6
+# P8b: las listas se calculan en el periodo elegido (el mismo de las mini-gráficas): variación con el cierre ajustado de
+# hace N sesiones (lib/period_change.py) y volumen medio diario en dólares de esas N sesiones. La descarga diaria del
+# universo cubre `history_days` días naturales: con period="6mo" Yahoo trae 126 o 127 sesiones según el valor, y la
+# variación de 6M necesita 127 (la última y 126 antes).
+periods = ["1D", "1S", "1M", "6M"]
+history_days = 190
+# Portada rápida: la última lista buena (y las mini-gráficas de la vista inicial) en disco, relativa a backend/. Tras un
+# reinicio se sirve al momento mientras se recalcula. FINANZER_PORTADA_SNAPSHOT=0 la apaga; con otra ruta, esa (un
+# disco persistente). En Render gratuito el disco se borra en cada arranque: allí solo ayuda dentro de un mismo arranque.
+snapshot_file = ".cache/portada.json"
+sectors = ["Information Technology", "Communication Services", "Consumer Discretionary", "Consumer Staples",
+           "Health Care", "Financials", "Energy", "Industrials", "Materials", "Utilities", "Real Estate"]
+
+[trending.period_sessions]       # sesiones hacia atrás de cada periodo (1D: la sesión anterior)
+1D = 1
+1S = 5
+1M = 21
+6M = 126
+
+[trending.sector_labels]
+"Information Technology" = "Tecnología"
+"Communication Services" = "Comunicación"
+"Consumer Discretionary" = "Consumo discrecional"   # v4 (PM): «Consumo» a secas no se distinguía de «Consumo básico»
+"Consumer Staples" = "Consumo básico"
+"Health Care" = "Salud"
+"Financials" = "Finanzas"
+"Energy" = "Energía"
+"Industrials" = "Industria"
+"Materials" = "Materiales"
+"Utilities" = "Servicios públicos"
+"Real Estate" = "Inmobiliario"
+
+# P8: mini-gráficas del cintillo de la portada (lib/sparklines.py, GET /api/v2/sparklines). Barras de Yahoo (chart) por
+# periodo: intervalo, rango y vida en caché. 1D: barras de 5 min de la última sesión y, como referencia, el cierre
+# anterior (descarga diaria de 5 días); 1S/1M/6M: referencia, el primer cierre del periodo.
+[sparklines]
+max_symbols = 40               # símbolos por petición (más: 422)
+max_points = 60                # puntos por serie tras la reducción LTTB (en el backend, no en el cliente)
+cache_max = 600                # entradas (símbolo, periodo) en caché; la más antigua sale primero (lib/bounded.py)
+batch_size = 40                # símbolos por descarga de Yahoo
+
+[sparklines.periods.1D]
+interval = "5m"
+range = "1d"
+ttl_s = 300                    # 5 min: la sesión avanza
+label = "1 día"
+
+[sparklines.periods.1S]
+interval = "30m"
+range = "5d"
+ttl_s = 3600
+label = "1 semana"
+
+[sparklines.periods.1M]
+interval = "1d"
+range = "1mo"
+ttl_s = 3600
+label = "1 mes"
+
+[sparklines.periods.6M]
+interval = "1d"
+range = "6mo"
+ttl_s = 3600
+label = "6 meses"
+
+[price_returns]                  # lib/price_returns.py: rentabilidad por periodo y base 100 de /api/v2/prices (web y PDF)
+# Periodos de la web (y del PDF): clave, rótulo y días naturales hacia atrás desde la última sesión de la empresa
+# (0 = desde el 1 de enero: en lo que va de año). Revisión V6 (F1): los calcula el backend, no el navegador.
+range_keys = ["1S", "1M", "3M", "6M", "YTD", "1A", "3A", "5A"]
+range_labels = ["1 semana", "1 mes", "3 meses", "6 meses", "En lo que va de año", "1 año", "3 años", "5 años"]
+range_days = [7, 30, 91, 182, 0, 365, 1095, 1825]
+# Una serie cubre el periodo si empieza, como tarde, estos días después de su inicio; si no, sin dato ("—"),
+# nunca la cifra de un periodo más corto.
+cover_slack_days = 7
+# Gráfica en base 100: el periodo se da por cubierto si la ventana común de las series dura al menos sus días
+# menos estos (si no, la gráfica dice desde cuándo empieza).
+chart_slack_days = 10
+# Decimales de la base 100 en la respuesta (la gráfica no necesita más).
+chart_decimals = 2
+
+[segments.concept_labels]       # el concepto XBRL de los segmentos, en español (`concept_label`)
+RevenueFromContractWithCustomerExcludingAssessedTax = "Ingresos"
+RevenueFromContractWithCustomerIncludingAssessedTax = "Ingresos (con impuestos repercutidos)"
+Revenues = "Ingresos"
+SalesRevenueNet = "Ventas"
+RevenuesNetOfInterestExpense = "Ingresos netos de gastos por intereses"
+RegulatedAndUnregulatedOperatingRevenue = "Ingresos de eléctricas reguladas y no reguladas"
+Revenue = "Ingresos"
+RevenueFromContractsWithCustomers = "Ingresos de contratos con clientes"
+PremiumsEarnedNet = "Primas"
+PremiumsEarnedNetPropertyAndCasualty = "Primas"
+PremiumsEarnedNetLife = "Primas"
+PremiumsEarnedNetAccidentAndHealth = "Primas"
+InsuranceRevenue = "Ingresos de seguros"
+
+# Si los segmentos NO cubren los ingresos consolidados: en banca, los ingresos de contratos con clientes (NIIF 15 /
+# ASC 606) son las comisiones (sin intereses ni resultados de negociación).
+[segments.partial_concept_labels]
+RevenueFromContractsWithCustomers = "Comisiones"
+RevenueFromContractWithCustomerExcludingAssessedTax = "Ingresos de contratos con clientes"

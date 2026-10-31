@@ -51,6 +51,8 @@ export interface ScoreBlock {
   level: string | null;
   tone: Tone;
   note: string | null;
+  /** V4-F8: la nota en forma corta para la cabecera; la frase completa (`note`) va en el desglose de «La empresa». */
+  note_short?: string | null;
 }
 
 export interface PriceBlock extends ScoreBlock {
@@ -59,6 +61,8 @@ export interface PriceBlock extends ScoreBlock {
 }
 
 export interface CategoryItem {
+  /** Clave del motor ("Solidez Financiera"); `name`, cómo se escribe ([score.category_labels]). */
+  key?: string;
   name: string;
   score: number;
   max: number;
@@ -66,6 +70,8 @@ export interface CategoryItem {
   tone: Tone;
   conclusive: boolean;
   coverage: number | null;
+  /** F8 · P3: la puntuación como se muestra («12 / 20» o «no concluyente», que no enseña puntos). */
+  score_txt: string;
   applicable: boolean;
   text: string | null;
 }
@@ -75,6 +81,8 @@ export interface Kpi {
   label: string;
   value: string;
   state: RowState;
+  /** V4b: sin dato o no significativa, el porqué (si el análisis lo tiene). */
+  text?: string;
 }
 
 export interface Highlight {
@@ -116,6 +124,8 @@ export interface MetricCard {
   delta: string;
   bench: string;
   state: RowState;
+  /** F10 · B1: sin cifra, su motivo (lib/empty_reasons.py) */
+  text?: string | null;
 }
 
 /** Fila de la composición: barra de categoría, categoría no concluyente o ajuste ± de Valoración. */
@@ -140,7 +150,7 @@ export interface Summary {
     price: CompositionBlock & { rows: Array<Extract<CompositionRow, { kind: "signed" }>>; signed_max: number };
     caption: string;
   };
-  alert_counts: { red_flags: number; warnings: number; strengths: number };
+  alert_counts: { red_flags: number; warnings: number; strengths: number; /** F9 · R6: «el riesgo de crédito no está medido» (banco). */ unmeasured?: string | null };
 }
 
 export interface ConfidenceReason {
@@ -209,12 +219,16 @@ export interface BreakdownItem {
 }
 
 export interface BreakdownCategory {
+  /** Clave del motor; `name`, cómo se escribe ([score.category_labels]). */
+  key?: string;
   name: string;
   score: number;
   max: number;
   pct: number;
   tone: Tone;
   conclusive: boolean;
+  /** F8 · P3: la puntuación como se muestra («12 / 20» o «no concluyente», que no enseña puntos). */
+  score_txt: string;
   group: "quality" | "price" | null;
   text: string | null;
   items: BreakdownItem[];
@@ -262,6 +276,8 @@ export interface Sections {
     divergence_note: string | null;
     roce_reading: string | null;
     figures: string[][];
+    /** F9 · R3: «Cifras de los últimos doce meses (TTM, a …)» o «Cifras del ejercicio cerrado el … (FY)». */
+    figures_title?: string;
     quality_readings?: QualityReading[];
   };
   solvency: { intro: string | null; columns: string[]; rows: Row[]; balance: string;
@@ -295,7 +311,7 @@ export interface Sections {
   /** Histórico (dato bruto): columnas que no aplican al arquetipo y su texto. */
   historical: { not_applicable: Record<string, string> };
   alerts: {
-    counts: { red_flags: number; warnings: number; strengths: number };
+    counts: { red_flags: number; warnings: number; strengths: number; /** F9 · R6: «el riesgo de crédito no está medido» (banco). */ unmeasured?: string | null };
     groups: Array<{ key: string; title: string; tone: Tone; items: AlertItem[] }>;
   };
 }
@@ -370,6 +386,9 @@ export interface FairValueChart {
   price_txt?: string;
   fair_value_txt?: string;
   grid_low_txt?: string | null;
+  /** F8 · P3: rango del bloque central de la tabla de sensibilidad (mínimo y máximo, declarado; no un p10–p90). */
+  central_low?: number | null; central_high?: number | null; central_text?: string | null;
+  central_low_txt?: string | null; central_high_txt?: string | null;
   grid_high_txt?: string | null;
   axis?: number[];
   zones?: Zone[];
@@ -474,7 +493,10 @@ export interface HistSeries {
   text?: string | null;
   cagr?: number | null;
   cagr_txt?: string | null;
-  points?: Array<{ year: number; value: number | null; value_txt: string; yoy_pct: number | null; yoy_txt: string | null }>;
+  /** F9 · R3: «regresión log-lineal: el año inicial es anómalo» cuando la cifra no es el CAGR de punta a punta. */
+  cagr_note?: string | null;
+  points?: Array<{ year: number; value: number | null; value_txt: string; yoy_pct: number | null; yoy_txt: string | null;
+    /** F10 · B1: sin cifra, por qué */ reason?: string | null }>;
 }
 
 export interface AltmanChart {
@@ -535,12 +557,14 @@ export interface Charts {
       state: RowState; text: string | null; value_txt?: string; label?: string; basis?: string;
       avg?: { label: string; value_txt: string; years: number; incomplete: boolean } | null;
     };
-    margin_ladder: { revenue: number | null; revenue_txt: string | null; steps: LadderStep[] };
+    /** F9 · R3: `period`, de qué periodo son los ingresos (TTM o FY). */
+    margin_ladder: { revenue: number | null; revenue_txt: string | null; period?: { code: "TTM" | "FY"; of: string } | null; steps: LadderStep[] };
   };
   solvency: { gauges: GaugeChart[]; runway: RunwayChart | null; structure: StructureChart };
   growth: GrowthBar[];
   results_flow: FlowItem[];
-  historical: { years: number; series: HistSeries[] };
+  /** F9 · R3: `growth_currency_note`, si los crecimientos se miden en la moneda de los estados (ADR). */
+  historical: { years: number; series: HistSeries[]; growth_currency_note?: string | null };
   institutional: { altman: AltmanChart };
   comparison: {
     groups: Array<{ title: string; items: ComparisonItem[] }>;
@@ -564,12 +588,81 @@ export interface Display {
   confidence: Confidence | null;
   /** Fase 1 (D1): códigos y motivos técnicos para el anexo del PDF; la web no lo muestra. */
   annex: { title: string; items: Array<{ label: string; text: string }> };
+  /** V7: sector e industria del perfil en español (el original, en el anexo). */
+  profile?: { sector: string | null; industry: string | null; country?: string | null };
   sections: Sections;
-  methodology: { models: string[]; models_text: string };
+  methodology: { models: string[]; models_text: string; ratios_text: string };
   tooltips: Record<string, MetricBands>;
   charts: Charts;
+  /** Rediseño E2a: datos nuevos del motor, ya formateados, para /v2 (opcional: la web actual no lo lee). */
+  extended?: Extended;
 }
 
+/** Rediseño E2a: display.extended (backend/lib/display.py, _extended_block). Datos, no lecturas. */
+export interface Extended {
+  price_change: { status: string; value_txt: string | null; pct_txt: string | null; tone: Tone; session: string | null };
+  company_profile: { status: string; rows: Array<{ key: string; label: string; value: string }>; source: string | null; reason: string | null };
+  history_10y: {
+    status: string; currency: string | null; source: string | null; reason: string | null;
+    rows: Array<{ year: number; revenue_txt: string; net_income_txt: string; fcf_txt: string;
+                  operating_margin_txt: string; net_margin_txt: string; revenue_growth_txt: string;
+                  /** El ejercicio anterior falta en EDGAR: sin crecimiento (no se compara contra dos años atrás). */
+                  gap_before: boolean;
+                  /** V4b: por qué falta una cifra del ejercicio (claves: operating_margin, diluted_eps, capex, fcf). */
+                  reasons: Record<string, string> }>;
+  };
+  piotroski_values: Array<{ key: string; cur_txt: string | null; prev_txt: string | null; compare: "zero" | "ni" | "prior_year" }>;
+  next_earnings: { status: string; date_txt: string | null; kind: "anunciada" | "estimada" | null; basis: string | null; reason: string | null };
+  news: Array<{ date: string | null; datetime: string | null; source: string | null; headline: string; url: string | null;
+                summary: string | null; image: string | null; lang: string | null }>;
+}
+
+/** Rediseño E2a: supuestos con los que el motor calculó su DCF (escenarios del usuario, POST /api/v2/scenario). */
+export interface ScenarioAssumptions {
+  high_growth_rate: number; high_growth_years: number; transition_years: number; terminal_growth: number;
+  discount_rate: number;
+}
+/** Supuestos que mueve el usuario en /v2 (E3 añade el margen de flujo de caja). */
+export interface ScenarioUserAssumptions {
+  high_growth_rate: number; discount_rate: number; terminal_growth: number; fcf_margin: number | null;
+}
+export interface ScenarioInputs {
+  status: string; reason: string | null;
+  fcf?: number | null; shares_outstanding?: number | null; net_debt?: number | null; price?: number | null;
+  currency?: string | null; base?: ScenarioAssumptions & { decay_type: string | null };
+  /** E3: ingresos base del FCF, margen de flujo de caja (FCF / ingresos), arquetipo, límites de cada control y
+   *  preajustes (absolutos, dentro de los límites). */
+  revenue?: number | null; fcf_margin?: number | null; archetype?: string | null;
+  bounds?: { growth: number[]; discount: number[]; terminal: number[]; fcf_margin: number[] | null };
+  presets?: { pessimistic: ScenarioUserAssumptions; optimistic: ScenarioUserAssumptions };
+  reverse?: { flow_per_share: number; net_debt_per_share: number; rate: number; terminal_growth: number };
+}
+export interface ScenarioRequest { inputs: ScenarioInputs; assumptions: Partial<ScenarioUserAssumptions & ScenarioAssumptions> }
+export interface ScenarioResponse {
+  status: string; fair_value: number | null; upside: number | null;
+  assumptions_used: (ScenarioAssumptions & { fcf_margin?: number }) | null;
+  clamped: string[]; reason: string | null;
+  /** E3: qué crecimiento exige el precio con estos supuestos (el DCF inverso del motor). */
+  implied_growth: { state: string; g_star: number | null; g10: number | null; side: string | null; reason: string | null } | null;
+  /** E3: valor por acción con crecimiento (filas, de menos a más) y WACC (columnas) alrededor de estos supuestos. */
+  sensitivity: { growth: number[]; discount: number[]; values: Array<Array<number | null>>; price: number | null;
+    /** Revisión V6 (F17): banda de cada celda frente al precio (0 muy por encima … 4 muy por debajo) y su leyenda,
+     *  del motor: la misma regla que la sensibilidad del informe. */
+    bands?: Array<Array<number | null>>; band_labels?: string[];
+    /** V4b · 4: por qué una celda no tiene valor («fuera» de los límites del análisis o «≤ 0»); None si lo tiene. */
+    why?: Array<Array<string | null>> } | null;
+  /** Revisión V6 (F17): tono del resultado frente al precio, del motor. */
+  upside_tone?: Tone | null;
+  /** v4: la lectura del escenario con las bandas del DCF del informe (etiqueta y tono del tramo). */
+  upside_reading?: { label: string; tone: Tone } | null;
+}
+
+/** Rediseño E2a: un ejercicio de la historia de 10 años (dato bruto de EDGAR). */
+export interface HistoryRow10 {
+  year: number; fy_end: string | null; revenue: number | null; net_income: number | null; free_cash_flow: number | null;
+  operating_income: number | null; operating_cash_flow: number | null; capex: number | null; diluted_eps: number | null;
+  operating_margin: number | null; net_margin: number | null; revenue_growth: number | null; gap_before: boolean;
+}
 /** Fila del histórico anual: dato bruto de los estados (sin lecturas ni colores). */
 export interface YearRow {
   year: number;
@@ -593,13 +686,19 @@ export interface StockAnalysis {
     industry: string;
     country: string;
     currency: string;
-    exchange: string;
+    exchange: string;        // E2a: nombre de la bolsa ("Nasdaq"), no el código del proveedor
+    exchange_code: string;   // E2a: código original del proveedor ("NMS")
   };
   price: number | null;
   classification: { archetype: Archetype; reason: string };
   display: Display;
   yearly_financials: YearRow[];
   errors: string[];
+  /** Rediseño E2a: opcional; la web actual no lo lee (E3: escenarios). */
+  scenario_inputs?: ScenarioInputs;
+  /** Rediseño E2a: historia de 10 ejercicios de EDGAR (dato bruto, como yearly_financials); E3 la dibuja. */
+  history_10y?: { status: string; currency: string | null; source: string | null; reason: string | null;
+                  rows: HistoryRow10[] };
 }
 
 export async function searchStocks(query: string): Promise<SearchResult[]> {
@@ -633,6 +732,11 @@ export function pdfUrl(symbol: string): string {
   return `${API_BASE}/api/pdf/${encodeURIComponent(symbol)}`;
 }
 
+/** Rediseño E5: el informe PDF nuevo (lib/pdf_v2). Lo usa /v2; la web actual sigue con `pdfUrl`. */
+export function pdfV2Url(symbol: string): string {
+  return `${API_BASE}/api/v2/pdf/${encodeURIComponent(symbol)}`;
+}
+
 // ── Formato de dato bruto (histórico): sin juicio, solo unidades ──
 const UNITS: Array<[number, string]> = [[1e12, "T"], [1e9, "B"], [1e6, "M"], [1e3, "K"]];
 
@@ -654,4 +758,194 @@ export function formatPct(val: number | null | undefined): string {
 export function formatPrice(val: number | null | undefined): string {
   if (val == null || !Number.isFinite(val)) return "—";
   return `$${val.toFixed(2)}`;
+}
+
+// ── Rediseño E2b: datos nuevos de /api/v2 (aditivos; sin UI hasta E3/E4). Formas exactas de los endpoints. ──
+
+/** Un segmento: ingresos por ejercicio fiscal ("2025" = año del fin del ejercicio) y su peso en el último. */
+export interface SegmentItem {
+  member: string;
+  label: string;
+  values: Record<string, number>;
+  share_last: number;
+}
+
+export interface SegmentAxis {
+  axis: string;
+  axis_label: string;
+  concept: string;
+  segments: SegmentItem[];
+  reconciles: boolean;
+  gap_pct: number | null;
+  notes: string[];
+}
+
+/** GET /api/v2/segments/{symbol} (backend/lib/segments.py). Sin desglose: status "sin_dato" y `reason`. */
+/** V7 · P2, P4: hechos de los segmentos ya formateados por el backend (segments.summary). */
+export interface SegmentsSummaryLine { axis: string | null; axis_label: string | null; items: Array<{ label: string; share: number; share_txt: string }>; more: number }
+export interface SegmentsSummary {
+  fy: string; prev_fy: string | null; concept_label: string | null; covers_total: boolean | null; coverage_note: string | null;
+  first: SegmentsSummaryLine; second: SegmentsSummaryLine | null;
+  /** La frase del capítulo 2 (y del PDF) y la segunda línea (geografía), del backend. */
+  text: string | null; second_text: string | null;
+  top: { label: string; share: number; share_txt: string; axis_label: string | null } | null;
+  falling: Array<{ label: string; change: number; change_txt: string; axis_label: string | null }>;
+  source: { form: string; filed: string; accn: string; period_end: string | null } | null;
+}
+export interface SegmentsResponse {
+  summary?: SegmentsSummary | null;
+  status: "ok" | "sin_dato";
+  fiscal_years: string[];
+  axis: string | null;
+  axis_label: string | null;
+  concept: string | null;
+  /** El concepto en español ("Ingresos", "Comisiones"…). */
+  concept_label: string | null;
+  /** Suma de los segmentos del último ejercicio / ingresos consolidados del emisor (BCS: comisiones, 0.38). */
+  coverage: number | null;
+  covers_total: boolean;
+  coverage_source: { concept: string; from: string; value: number } | null;
+  /** Frase para el lector si no cubren los ingresos consolidados ("Comisiones · cubren el 38% de …"). */
+  coverage_note: string | null;
+  segments: SegmentItem[];
+  total_reported: Record<string, number>;
+  /** Si no concilia con el ingreso consolidado se publica igual: `gap_pct` = suma / total − 1. */
+  reconciles: boolean;
+  gap_pct: number | null;
+  notes: string[];
+  secondary: SegmentAxis | null;
+  others: SegmentAxis[];
+  /** Ejes descartados con su motivo (un miembro de más del 95 %: componentes del ingreso, no segmentos). */
+  dropped_axes: Array<{ axis: string; axis_label: string; reason: string }>;
+  currency: string | null;
+  source: { form: string; filed: string; accn: string; period_end: string | null } | null;
+  reason: string | null;
+}
+
+export interface PeerMetric {
+  value: number | null;
+  value_txt: string;
+  /** V7 · P5: por qué la cifra no es significativa («n. s.»: P/E por encima de [peers] pe_meaningful_max). */
+  note?: string;
+}
+
+/** Resumen compacto del análisis de un rival: mismas cifras y textos que su página. */
+export interface PeerSummary {
+  symbol: string;
+  name: string | null;
+  price: number | null;
+  currency: string | null;
+  quality: { score: number | null; level: string | null };
+  price_score: { score: number | null; level: string | null };
+  confidence: string | null;
+  metrics: Record<string, PeerMetric>;
+  /** Industria de Damodaran que resolvió su análisis (la de la referencia sectorial); null si no es una industria. */
+  reference: { industry: string; region: string | null; basis: string } | null;
+  /** V6 (B13): hora UTC del análisis del resumen (ISO 8601). */
+  as_of?: string;
+}
+
+export type PeerStatus = "en_cola" | "analizando" | "listo" | "fallo";
+
+export interface PeerRival {
+  symbol: string;
+  status: PeerStatus;
+  summary?: PeerSummary;
+  reason?: string;
+  /** V6 (B7): con "en_cola", la cola estaba llena y la próxima consulta lo vuelve a intentar. */
+  retry?: boolean;
+}
+
+/** GET /api/v2/peers/{symbol}[?symbols=A,B] (backend/lib/peers.py): repetir cada `poll_s` mientras "calculando". */
+export interface PeersResponse {
+  status: "listo" | "calculando" | "sin_dato";
+  symbol: string;
+  industry: string | null;
+  source: "automaticos" | "elegidos";
+  rivals: PeerRival[];
+  note: string | null;
+  poll_s: number;
+  /** Rivales que admite `?symbols=` (market.peers.peers_count). */
+  max_symbols: number;
+  /** Resumen de la propia empresa (fila de arriba de la tabla) en cuanto está analizada; null mientras tanto. */
+  company: PeerSummary | null;
+}
+
+/** Un resultado del buscador de /v2 (rediseño E4): `exchange`, nombre legible de la bolsa; null si no se conoce. */
+export interface SearchHit {
+  ticker: string;
+  name: string;
+  exchange: string | null;
+}
+
+/** GET /api/v2/search?q= (backend/lib/search_v2.py): solo acciones, como mucho 8. */
+export interface SearchResponse {
+  results: SearchHit[];
+}
+
+/** Calidad y precio del motor de una tarjeta de tendencias (rediseño E4: cola compartida con los rivales, prioridad
+ *  `prewarm`). `quality` y `price_score` solo con `status` "listo". */
+export interface TrendingEngine {
+  status: PeerStatus;
+  quality: { score: number | null; level: string | null } | null;
+  price_score: { score: number | null; level: string | null } | null;
+  /** V6 (B13): hora UTC del análisis de la tarjeta (ISO 8601); null sin resumen. */
+  as_of?: string | null;
+  /** Motivo del fallo (solo con `status` "fallo"). */
+  reason: string | null;
+}
+
+export interface TrendingItem {
+  symbol: string;
+  name: string | null;
+  price: number;
+  change_pct: number;
+  dollar_volume: number | null;
+  /** P8: sector GICS (clave en inglés; la etiqueta en español va en `sector_status`). */
+  sector?: string | null;
+  /** null: ni analizada ni en marcha (cupo diario de precalentado agotado, cola llena o análisis caducado). */
+  engine: TrendingEngine | null;
+}
+
+/** P8: estado de la lista de un sector: con menos valores de los que pide el backend, no disponible y por qué. */
+export interface TrendingSectorStatus {
+  label: string;
+  count: number;
+  available: boolean;
+  reason: string | null;
+}
+
+/** P8b: periodos de la portada (los de las listas y los de las mini-gráficas: backend [trending] periods). */
+export type TrendingPeriod = "1D" | "1S" | "1M" | "6M";
+
+export interface TrendingLists { most_traded: TrendingItem[]; gainers: TrendingItem[]; losers: TrendingItem[] }
+
+/** P8b: un periodo de las listas: sesiones hacia atrás y fechas de partida y final (ISO). */
+export interface TrendingPeriodInfo { label: string; sessions: number; from: string | null; to: string; count: number }
+
+export interface TrendingData {
+  session: string;
+  as_of: string;
+  /** P8b: las listas se calculan en cada periodo (variación con el cierre ajustado de hace N sesiones). */
+  periods: Record<TrendingPeriod, TrendingPeriodInfo>;
+  lists: Record<TrendingPeriod, TrendingLists>;
+  /** «Suben más» solo trae valores que suben (y «Bajan más» los que bajan): si no llegan, el motivo. */
+  list_notes: Record<TrendingPeriod, { gainers: string | null; losers: string | null }>;
+  /** P8: por sector GICS, los de más volumen en dólares (en el orden de config) y su estado, por periodo. */
+  sectors?: Record<TrendingPeriod, Record<string, TrendingItem[]>>;
+  sector_status?: Record<TrendingPeriod, Record<string, TrendingSectorStatus>>;
+  universe_date: string | null;
+  count: number;
+  failed_batches: number;
+  note: string | null;
+}
+
+/** GET /api/v2/trending (backend/lib/trending.py): la última lista buena; "calculando" tras un reinicio. Repetir cada
+ *  `poll_s` mientras "calculando" o mientras alguna tarjeta tenga el motor en cola o analizando. */
+export interface TrendingResponse {
+  status: "listo" | "calculando" | "sin_dato";
+  data: TrendingData | null;
+  refreshing: boolean;
+  reason: string | null;
+  poll_s: number;
 }

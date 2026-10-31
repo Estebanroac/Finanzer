@@ -157,7 +157,7 @@ def test_utility_branch(sample, sym):
     sol = {x["metric"]: x for x in a["score"]["breakdown"]["Solidez Financiera"]["adjustments"]}
     assert "utility" in sol["Deuda neta/EBITDA"]["reason"] and "Altman Z-Score" not in sol and "Deuda/Equity" not in sol
     val = {x["metric"] for x in a["score"]["breakdown"]["Valoración"]["adjustments"]}
-    assert "Rentabilidad por dividendo (utility)" in val and "P/FCF" not in val and "DCF (upside)" not in val
+    assert "Rentabilidad por dividendo (utility)" in val and "P/FCF" not in val and not any(k.startswith("DCF directo") for k in val)
 
 
 # ── 3. DCF ──
@@ -207,7 +207,8 @@ def test_sensitivity_grid_sign_before_symbol(sample):
     a["sensitivity"]["matrix"][0][0] = -8.0
     cells = [c["value"] for r in build_display(a, main._pdf_benchmark(a))["sections"]["valuation"]["sensitivity"]["rows"]
              for c in r["cells"]]
-    assert "−$8" in cells and not any(BAD_SIGN.search(c) for c in cells)
+    # Revisión de COST (hallazgo 6): las casillas con el redondeo del valor justo (numfmt.estimate: dos cifras)
+    assert "−$8.0" in cells and not any(BAD_SIGN.search(c) for c in cells)
 
 
 def test_source_failure_in_instrument_check_is_not_a_500(monkeypatch):
@@ -229,7 +230,7 @@ def test_source_failure_in_instrument_check_is_not_a_500(monkeypatch):
 @pytest.mark.parametrize("sym", ["NEE", "DUK"])
 def test_utility_interest_coverage_bands(sample, sym):
     sol = {x["metric"]: x for x in sample[sym]["score"]["breakdown"]["Solidez Financiera"]["adjustments"]}
-    ic = sol["Cobertura Intereses"]
+    ic = sol["Cobertura de intereses"]
     assert "para una utility" in ic["reason"] and ic["adjustment"] == 0   # 2.3x: en línea (≥ 2.0x)
 
 
@@ -398,3 +399,17 @@ def test_ebit_is_the_reported_one_from_edgar(sample):
     assert ko["value"] == pytest.approx(14.854e9, rel=1e-3) and ko["replaced"] == pytest.approx(15.941e9, rel=1e-3)
     for sym in ("TSM", "NVO", "ASML", "TM", "SHEL", "MC.PA"):
         assert sample[sym]["data_provenance"]["ebit"]["status"] == "sin_edgar", sym
+
+
+def test_display_profile_in_spanish(sample):
+    """V7 y rediseño v4 (PM): sector, industria y país del emisor en español en display.profile (la ficha de la web y
+    del PDF); el original queda en `profile`. TSM: Taiwan → Taiwán; AAPL: United States → Estados Unidos."""
+    assert sample["AAPL"]["profile"]["country"] == "United States"
+    assert sample["AAPL"]["display"]["profile"]["country"] == "Estados Unidos"
+    assert sample["TSM"]["display"]["profile"]["country"] == "Taiwán"
+    import names
+    for t, a in _ok(sample).items():
+        c = (a.get("profile") or {}).get("country")
+        if c:
+            assert names.translated("country", c), f"{t}: país «{c}» sin traducción"
+            assert a["display"]["profile"]["country"] == names.country(c), t

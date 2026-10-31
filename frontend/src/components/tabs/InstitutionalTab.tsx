@@ -4,6 +4,7 @@ import type { Display } from "@/lib/api";
 import { useGrow } from "@/lib/useGrow";
 import { AltmanScale, ChartPanel } from "../charts";
 import { Collapsible, Help, Note, Pill, StateTag, ToneBar, toneClass } from "../ui";
+import { closeSentence } from "@/lib/prose";
 
 /** Evaluación institucional: Altman en su escala, Piotroski criterio a criterio y el desglose por categoría. */
 export default function InstitutionalTab({ display }: { display: Display }) {
@@ -17,7 +18,7 @@ export default function InstitutionalTab({ display }: { display: Display }) {
     <div className="space-y-4">
       <ChartPanel grown={grown} tone={al.state === "con_dato" ? al.zones?.find((z) => z.label === al.zone)?.tone : null}>
         <AltmanScale al={al} grown={grown} tips={tips} />
-        {al.state === "con_dato" && al.text && <p className="cz-lead mt-4">{al.text}.</p>}
+        {al.state === "con_dato" && al.text && <p className="cz-lead mt-4">{closeSentence(al.text)}</p>}
       </ChartPanel>
 
       {others.map((c) => (

@@ -20,7 +20,7 @@ def test_solidity_score_with_business_model():
     ctx = {"current_ratio": {"applies": True}, "altman_referential": True}
     r = score_solidez_financiera(3.5, "SAFE", 0.7, 0.5, 10.0, business_model=ctx)
     rows = {a["metric"]: a for a in r["adjustments"]}
-    assert rows["Current Ratio"]["adjustment"] == 0 and "estructural" in rows["Current Ratio"]["reason"]
+    assert rows["Liquidez corriente"]["adjustment"] == 0 and "estructural" in rows["Liquidez corriente"]["reason"]
     assert rows["Altman Z-Score"]["adjustment"] == 0 and rows["Altman Z-Score"]["reason"].startswith("Referencial")
     assert {"Altman Z", "Current ratio"} <= set(r["coverage"]["not_significant"])
 
@@ -28,4 +28,7 @@ def test_solidity_score_with_business_model():
 def test_altman_referential_only_where_the_model_was_not_designed():
     assert bm.altman_referential("Restaurants") and bm.altman_referential("Internet Retail")
     assert not bm.altman_referential("Household & Personal Products")     # consumo básico que fabrica
-    assert bm.piotroski_caveat("Restaurants") and bm.piotroski_caveat("Steel") is None
+    # F8 · P3: la nota del Piotroski depende del dato de la empresa, no solo de la industria
+    st = {"current_assets": [70, 70, 70], "current_liabilities": [100, 100, 100]}
+    assert bm.piotroski_caveat(bm.current_ratio_context("Restaurants", st, 0.7), 0.7)
+    assert bm.piotroski_caveat(bm.current_ratio_context("Steel", st, 0.7), 0.7) is None

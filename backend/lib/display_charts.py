@@ -13,6 +13,8 @@ si no hay dato, `text` con el motivo: la web pinta un estado propio, nunca un hu
 """
 from typing import Any, Dict, List, Optional
 
+from classify import not_applicable
+from historical_metrics import growth_rate
 import numfmt
 from settings import cfg
 
@@ -99,6 +101,32 @@ _GAUGE_NA = {"current_ratio": "current_ratio", "interest_coverage": "interest_co
              "net_debt_to_ebitda": "net_debt_ebitda", "de": "de"}
 
 
+def _row_why(row: Optional[Dict[str, Any]], fallback: Optional[str] = None) -> Optional[str]:
+    """V4b: el texto de una fila para un gráfico. En una fila que no aplica, la fila trae la lectura («No aplica a
+    REIT») y el porqué por separado (display._na_why); el gráfico los junta: «No aplica a REIT: el porqué»."""
+    r = row or {}
+    text, reading = r.get("text"), str(r.get("reading") or "")
+    if r.get("state") == "no_aplica" and text and not str(text).startswith("No aplica"):
+        head = reading if reading.startswith("No aplica") else (fallback or "No aplica")
+        return f"{head}: {text[:1].lower()}{text[1:]}"
+    return text or fallback
+
+
+def _coverage_missing(a) -> Optional[Dict[str, Any]]:
+    """V4b (auditoría de datos): sin cobertura de intereses, el porqué que el análisis guardó (data_validation): los
+    gastos financieros del corte no están y los de otro periodo (o la cobertura de Finnhub de otro periodo) no entran.
+    None si no hay porqué."""
+    found = [d for d in a.get("data_validation") or [] if d.get("rule") == "periodo_incoherente"
+             and d.get("field") in ("interestExpense", "ratios.interest_coverage")]
+    if not found:
+        return None
+    other = next((d for d in found if d["field"] == "ratios.interest_coverage" and d.get("old") is not None), None)
+    txt = "sin gastos financieros del corte en los estados: los de otro periodo se descartan"
+    if other:
+        txt += f" (también la cobertura de Finnhub, {other['old']:.1f}x)"
+    return {"state": "sin_dato", "text": txt}
+
+
 def _gauge(key, label, value, value_txt, zones, row, axis_max, *, unit="x", archetype=None) -> Dict[str, Any]:
     """Medidor con zonas: valor, eje, zonas y la lectura de la tabla (etiqueta, tono, texto)."""
     from classify import not_applicable
@@ -112,7 +140,7 @@ def _gauge(key, label, value, value_txt, zones, row, axis_max, *, unit="x", arch
     if row is None or row.get("state") != "con_dato" or value is None:
         st = (row or {}).get("state") or "sin_dato"
         return {"key": key, "label": label, "state": "sin_dato" if st == "con_dato" else st,
-                "text": (row or {}).get("text") or (row or {}).get("reading")}
+                "text": _row_why(row, (row or {}).get("reading"))}
     if key == "interest_coverage" and value < 0:
         # EBIT < 0 con deuda neta: la cobertura no se sitúa en la escala; la lectura es "Riesgo".
         return {"key": key, "label": label, "state": "con_dato", "negative": True, "value_txt": value_txt,
@@ -146,9 +174,15 @@ def _fair_value(a, D, price) -> Dict[str, Any]:
     zones = [{"from": edges[i], "to": edges[i + 1], "label": _UPSIDE[0][i], "tone": _UPSIDE[1][i]}
              for i in range(len(edges) - 1)]
     rel = D["sections"]["valuation"]
+    from display import dcf_central_range
+    _c = dcf_central_range(a.get("sensitivity")) or {}
     return {"state": "con_dato", "method": "DCF", "price": price, "fair_value": fv, "grid_low": lo_g, "grid_high": hi_g,
-            "price_txt": numfmt.price(price), "fair_value_txt": numfmt.price(fv),
-            "grid_low_txt": numfmt.whole(lo_g) if lo_g else None, "grid_high_txt": numfmt.whole(hi_g) if hi_g else None,
+            # F8 · P3: el valor justo redondeado y el rango del bloque central de la tabla (declarado)
+            "central_low": _c.get("low"), "central_high": _c.get("high"), "central_text": _c.get("text"),
+            "central_low_txt": numfmt.estimate(_c["low"]) if _c else None,
+            "central_high_txt": numfmt.estimate(_c["high"]) if _c else None,
+            "price_txt": numfmt.price(price), "fair_value_txt": numfmt.estimate(fv),
+            "grid_low_txt": numfmt.estimate(lo_g) if lo_g else None, "grid_high_txt": numfmt.estimate(hi_g) if hi_g else None,
             "axis": [lo, hi], "zones": zones,
             "badge": {"label": (up_row or {}).get("reading"), "tone": (up_row or {}).get("tone")},
             "upside_txt": (up_row or {}).get("value"), "reliability": rel.get("dcf_reliability_level"),
@@ -173,7 +207,7 @@ def _vs_bench(keys, rows, km, bench, na_text=None) -> List[Dict[str, Any]]:
             continue
         item = {"key": key, "label": r.get("label") or label, "higher_is_better": higher, "fmt": fmt,
                 "state": r.get("state"),
-                "text": r.get("text") or (na_text if r.get("state") == "no_aplica" else None)}
+                "text": _row_why(r, na_text if r.get("state") == "no_aplica" else None)}
         v, b = _num(km.get(key)), _num(bench.get(key))
         if r.get("state") == "con_dato" and v is not None:
             item.update({"value": v, "value_txt": r.get("value"), "bench": b, "bench_txt": r.get("bench"),
@@ -214,22 +248,21 @@ def _price_scoring(D) -> tuple:
 def _growth_raw(a) -> Dict[str, Any]:
     adj = {x.get("metric"): x for x in ((a.get("score") or {}).get("breakdown") or {}).get("Crecimiento", {})
            .get("adjustments") or []}
-    rev = (adj.get("Crecimiento Ingresos 3Y") or adj.get("Retorno total (dividendo + FFO por acción)")
+    from financial_ratios import GROWTH_EPS, GROWTH_FCF, GROWTH_REV, by_prefix
+    rev = (by_prefix(adj, GROWTH_REV) or adj.get("Retorno total (dividendo + FFO por acción)")
            or adj.get("Retorno total (dividendo + ingresos por acción)") or adj.get("Retorno total (dividendo + ingresos)"))
-    eps = adj.get("Crecimiento EPS 3Y")
-    fcf = (adj.get("Crecimiento FCF 3Y") or adj.get("Crecimiento FCF − SBC 3Y")
-           or adj.get("Crecimiento FCF por acción 3Y"))
+    eps = by_prefix(adj, GROWTH_EPS)
+    fcf = by_prefix(adj, GROWTH_FCF)
     return {"revenue": rev, "eps": eps, "fcf": fcf}
 
 
-def _cagr_series(values: List[Optional[float]]) -> Optional[float]:
-    """CAGR entre el primer y el último ejercicio de la serie (orden cronológico), solo con
-    extremos positivos: la anotación sobre las barras del histórico."""
-    vals = [v for v in values if v is not None]
-    if len(vals) < 2 or vals[0] <= 0 or vals[-1] <= 0:
+def revenue_cagr(adj: Optional[Dict[str, Any]]) -> Optional[float]:
+    """F8 · E4: el crecimiento de los INGRESOS del ajuste de Crecimiento. En una madura de dividendo alto el ajuste
+    puntúa el retorno total (`raw`) y guarda aparte el de los ingresos (`revenue_growth`): una comparación de
+    crecimiento de ingresos cita este."""
+    if not adj:
         return None
-    n = len(values) - 1
-    return (vals[-1] / vals[0]) ** (1 / n) - 1 if n > 0 else None
+    return adj["revenue_growth"] if "revenue_growth" in adj else adj.get("raw")
 
 
 def build_charts(a: Dict[str, Any], D: Dict[str, Any], sector_bench: Dict[str, Any], *, th, market: bool,
@@ -264,6 +297,10 @@ def build_charts(a: Dict[str, Any], D: Dict[str, Any], sector_bench: Dict[str, A
     multiples = _vs_bench(_VAL_KEYS, vrows, km, bench, na_text=f"No aplica a {D.get('archetype_label')}")
     for it in multiples:
         it["role"] = "block" if it["key"] in members else "scored" if it["key"] in others else "informative"
+        # V7 (M5): en un banco puntúa el P/B frente a su ROE (bloque P/B y P/TBV); el P/B frente a la industria solo
+        # informa, y su nombre lo distingue ("P/B informativo" junto a "Bloque P/B y P/TBV −2" confundía).
+        if D.get("archetype") == "FINANCIAL" and it["key"] == "pb" and it["role"] == "informative":
+            it["label"] = "P/B frente a la industria"
     barred = {it["key"] for it in multiples if it["state"] == "con_dato"}
     scored = []
     for in_block, group in ((True, members), (False, others)):
@@ -284,8 +321,15 @@ def build_charts(a: Dict[str, Any], D: Dict[str, Any], sector_bench: Dict[str, A
     spread = ({"state": "con_dato", "value": _num(km.get("roic_wacc_spread")), "value_txt": sp_row.get("value"),
                "tone": sp_row.get("tone"), "reading": sp_row.get("reading"), "text": sp_row.get("text")}
               if sp_row and sp_row.get("state") == "con_dato" and _num(km.get("roic_wacc_spread")) is not None
-              else _na((sp_row or {}).get("state") or ("no_aplica" if "roic_wacc" in na else "sin_dato"),
-                       (sp_row or {}).get("text")))
+              else _na((sp_row or {}).get("state") or ("no_aplica" if "roic_wacc" in na else
+                                                         # V4b: sin ROIC significativo, el spread tampoco lo es
+                                                         "no_significativo" if km.get("roic_reason") else "sin_dato"),
+                       (sp_row or {}).get("text")
+                       # V4b (auditoría de datos): sin fila, el porqué de que no aplique al arquetipo (classify) o de
+                       # que el ROIC no sea significativo
+                       or (not_applicable(archetype, "roic_wacc") if "roic_wacc" in na else None)
+                       or (f"{km['roic_reason'][:1].upper()}{km['roic_reason'][1:]}: sin ROIC, el spread tampoco"
+                           if km.get("roic_reason") else None)))
     # Fase 1 (punto 9): ROCE en el bloque visible, junto a ROIC − WACC (y el promedio del ciclo en CYCLICAL). Sin
     # bandas: la lectura es la comparación con el ROIC.
     ro_row, ra_row = prows.get("roce"), prows.get("roce_avg")
@@ -299,6 +343,8 @@ def build_charts(a: Dict[str, Any], D: Dict[str, Any], sector_bench: Dict[str, A
     else:
         roce = _na(km.get("roce_state") or "sin_dato", km.get("roce_reason"))
     rev = _num(km.get("revenue"))
+    from display import period_basis
+    _period = period_basis((a.get("data_provenance") or {}).get("as_of"))
     steps = []
     for key, label in (("gross_margin", "Margen bruto"), ("ebitda_margin", "Margen EBITDA"),
                        ("operating_margin", "Margen operativo"), ("net_margin", "Margen neto")):
@@ -308,7 +354,7 @@ def build_charts(a: Dict[str, Any], D: Dict[str, Any], sector_bench: Dict[str, A
         m = _num(km.get(key))
         if na_step:
             steps.append({"key": key, "label": label, "state": "no_aplica",
-                          "text": (r or {}).get("text") or f"No aplica a {D.get('archetype_label')}"})
+                          "text": _row_why(r, f"No aplica a {D.get('archetype_label')}")})
         elif m is None:
             steps.append({"key": key, "label": label, "state": "sin_dato", "text": None})
         else:
@@ -319,8 +365,9 @@ def build_charts(a: Dict[str, Any], D: Dict[str, Any], sector_bench: Dict[str, A
     profitability = {"returns": _vs_bench(_RET_KEYS, prows, km, bench, na_text=f"No aplica a {D.get('archetype_label')}"),
                      "margins": _vs_bench(_MARGIN_KEYS, prows, km, bench, na_text=f"No aplica a {D.get('archetype_label')}"), "spread": spread,
                      "roce": roce,
+                     # F9 · R3: el periodo de los ingresos de la escalera (TTM o FY), visible donde se muestra
                      "margin_ladder": {"revenue": rev, "revenue_txt": numfmt.money(rev) if rev else None,
-                                       "steps": steps}}
+                                       "period": _period, "steps": steps}}
 
     # ── Solidez: medidores con las zonas de los lectores ──
     srows = _rows(D, "solvency")
@@ -339,7 +386,7 @@ def build_charts(a: Dict[str, Any], D: Dict[str, Any], sector_bench: Dict[str, A
     gauges.append(_gauge("interest_coverage", "Cobertura de intereses", ic,
                          srows.get("interest_coverage", {}).get("value"),
                          zones_desc(icb, *(_COVERAGE_UTILITY if utility else _COVERAGE), top=icb[0] * 1.5),
-                         srows.get("interest_coverage"), icb[0] * 1.5, archetype=archetype))
+                         srows.get("interest_coverage") or _coverage_missing(a), icb[0] * 1.5, archetype=archetype))
     nde = _num(km.get("net_debt_to_ebitda"))
     # Fase 4 (mapa, bandas paralelas): fuera de utility y REIT, los umbrales de las alertas del sector.
     ndb = (_SOL["utility_nde_bounds"] if utility else _SOL["reit_nde_bounds"] if reit else
@@ -361,7 +408,7 @@ def build_charts(a: Dict[str, Any], D: Dict[str, Any], sector_bench: Dict[str, A
         r = srows.get("de") or {}
         gauges.append({"key": "de", "label": "Deuda / Equity",
                        "state": {"informativo": "con_dato"}.get(de_mode, r.get("state") or "no_aplica"),
-                       "text": r.get("text") or r.get("reading"),
+                       "text": _row_why(r, r.get("reading")),
                        **({"value": de, "value_txt": r.get("value"), "informative": True, "tone": 'neu',
                            "reading": r.get("reading")} if de_mode == "informativo" and de is not None else {})})
     rw = a.get("archetype_metrics", {}).get("runway") if archetype == "GROWTH_PRE_PROFIT" else None
@@ -395,8 +442,9 @@ def build_charts(a: Dict[str, Any], D: Dict[str, Any], sector_bench: Dict[str, A
     # ── Crecimiento: CAGR que puntúan (con su tono del desglose) ──
     graw = _growth_raw(a)
     growth = []
-    for key, label, adj, nak in (("revenue", "Ingresos" if archetype != "REIT" else "Retorno total por acción",
-                                  graw["revenue"], None),
+    # F8 · E4: en una madura de dividendo alto la cifra que puntúa es el retorno total, rotulado como tal.
+    _tr = archetype == "REIT" or "revenue_growth" in (graw["revenue"] or {})
+    for key, label, adj, nak in (("revenue", "Retorno total por acción" if _tr else "Ingresos", graw["revenue"], None),
                                  ("eps", "BPA", graw["eps"], "eps_growth"), ("fcf", "FCF", graw["fcf"], "fcf_growth")):
         if nak and nak in na:
             growth.append({"key": key, "label": label, "state": "no_aplica",
@@ -406,7 +454,14 @@ def build_charts(a: Dict[str, Any], D: Dict[str, Any], sector_bench: Dict[str, A
             growth.append({"key": key, "label": label, "state": "con_dato", "sustained_negative": True,
                            "value_txt": adj.get("value"), "tone": _SEV_TONE["severe"], "reading": adj.get("reason")})
         elif adj is None or adj.get("raw") is None:
-            growth.append({"key": key, "label": label, "state": "sin_dato", "text": (adj or {}).get("reason")})
+            # V4b (auditoría de datos): sin ajuste, el porqué está en la cobertura del score (base ≤ 0: no significativo)
+            _cv = ((a.get("score_coverage") or {}).get("crecimiento") or {})
+            _nm = {"revenue": "Crecimiento de ingresos", "eps": "Crecimiento del BPA", "fcf": "Crecimiento del FCF"}[key]
+            _ns = (_cv.get("not_significant") or {}).get(_nm)
+            _why = (adj or {}).get("reason") or _ns or (_cv.get("missing_reasons") or {}).get(_nm)
+            _why = _why.replace("<=", "≤") if _why else None
+            growth.append({"key": key, "label": label, "state": "no_significativo" if _ns and not adj else "sin_dato",
+                           "text": (_why[:1].upper() + _why[1:]) if _why else None})
         else:
             growth.append({"key": key, "label": label, "state": "con_dato", "value": adj["raw"],
                            "value_txt": _pct(adj["raw"]),
@@ -433,7 +488,12 @@ def build_charts(a: Dict[str, Any], D: Dict[str, Any], sector_bench: Dict[str, A
 
     # ── Histórico: CAGR de cada serie para anotarlo sobre sus barras (cronológico) ──
     yrs = sorted(a.get("yearly_financials") or [], key=lambda r: r.get("year") or 0)
+    _gc = a.get("growth_currency") or {}
     hist_na = D["sections"]["historical"].get("not_applicable") or {}
+    # F10 · B1/B2 (TKO): un ejercicio sin cifra dice por qué (anterior al primer informe anual del emisor en la SEC)
+    _pre = {(b["field"], int(e[:4])): b["reason"]
+            for b in (((a.get("data_provenance") or {}).get("edgar") or {}).get("primary") or {}).get(
+                "before_first_filing") or [] for e in b.get("years") or []}
     sbc = any("fcf_minus_sbc" in r for r in yrs)
     series = []
     for key, label in (("revenue", "Ingresos"), ("net_income", "Beneficio neto"),
@@ -442,17 +502,32 @@ def build_charts(a: Dict[str, Any], D: Dict[str, Any], sector_bench: Dict[str, A
         if hist_na.get(key) and all(v is None for v in vals):
             series.append({"key": key, "label": label, "state": "no_aplica", "text": hist_na[key]})
             continue
+        # F9 · R3: el crecimiento (interanual y CAGR) en la moneda de los estados, como el resto del informe; las
+        # barras siguen en la moneda del precio.
+        loc = {r.get("year"): _num(r.get(key)) for r in _gc.get("yearly") or []}
+        gvals = [loc.get(r.get("year")) for r in yrs] if loc else vals
         pts, prev = [], None
-        for r, v in zip(yrs, vals):
-            yoy = ((v - prev) / abs(prev) * 100) if (v is not None and prev) else None
+        for r, v, gv in zip(yrs, vals, gvals):
+            yoy = ((gv - prev) / abs(prev) * 100) if (gv is not None and prev) else None
             pts.append({"year": r.get("year"), "value": v, "value_txt": numfmt.money(v) if v is not None else "—",
-                        "yoy_pct": yoy, "yoy_txt": numfmt.signed_pct(yoy, 1) if yoy is not None else None})
-            prev = v
-        cg = _cagr_series(vals)
+                        "yoy_pct": yoy, "yoy_txt": numfmt.signed_pct(yoy, 1) if yoy is not None else None,
+                        **({"reason": _pre.get((key, r.get("year"))) or "la fuente no da la cifra de ese ejercicio"}
+                           if v is None else {})})
+            prev = gv
+        # F9 · R3: la misma regla que el motor (historical_metrics.growth_rate, con la de base anómala). NU: 52.9% de
+        # punta a punta en el gráfico frente al 52.3% log-lineal del resto del informe.
+        _gr = (growth_rate(list(reversed(gvals)), len(gvals) - 1, strict_ends_only=key != "free_cash_flow")
+               if len(gvals) >= 2 else {})
+        cg = _gr.get("value")
         series.append({"key": key, "label": label,
                        "state": "con_dato" if any(v is not None for v in vals) else "sin_dato",
-                       "cagr": cg, "cagr_txt": _pct(cg), "points": pts})
-    historical = {"years": len(yrs), "series": series}
+                       "cagr": cg, "cagr_txt": _pct(cg), "points": pts,
+                       "cagr_note": ("regresión log-lineal: el año inicial es anómalo"
+                                     if cg is not None and _gr.get("method") == "log_lineal" else None)})
+    historical = {"years": len(yrs), "series": series,
+                  "growth_currency_note": (f"Crecimientos en {_gc['statements']}, la moneda de los estados, sin el efecto "
+                                           f"del tipo de cambio; importes en {_gc.get('price') or 'USD'}")
+                  if _gc.get("yearly") else None}
 
     # ── Evaluación institucional: Altman con las zonas de su modelo ──
     al = a.get("altman_z") or {}
@@ -508,7 +583,7 @@ def comparison(a, D, bench, market) -> Dict[str, Any]:
     for sec in ("valuation", "profitability", "solvency", "growth"):
         rows_all.update(_rows(D, sec))
     graw = _growth_raw(a)
-    gvals = {"revenue_growth": (graw["revenue"] or {}).get("raw") if D.get("archetype") != "REIT" else None,
+    gvals = {"revenue_growth": revenue_cagr(graw["revenue"]) if D.get("archetype") != "REIT" else None,
              "earnings_growth": (graw["eps"] or {}).get("raw")}
     ref = "del mercado" if market else (D.get("benchmark") or {}).get("ref", "del sector")
     # Fase 1 (#20): en CYCLICAL la cifra que puntúa es de ciclo medio, no una CAGR a 3 años.
@@ -524,12 +599,13 @@ def comparison(a, D, bench, market) -> Dict[str, Any]:
             b = _num(bench.get(key))
             if v is None or not b:
                 continue
-            r = read_vs_sector(label, v, b, higher, fmt, ref=ref)
+            r = read_vs_sector(label, v, b, higher, fmt, ref=ref, level=(key == "de"))   # V7 (M3): deuda, no precio
             if not r:
                 continue
             lab, tone, text, gap = r
             items.append({"key": key, "label": label, "fmt": fmt, "value": v, "bench": b,
-                          "value_txt": _fmt(v, fmt), "bench_txt": _fmt(b, fmt),
+                          "value_txt": numfmt.ev_ebitda(v) if key == "ev_ebitda" else _fmt(v, fmt),
+                          "bench_txt": _fmt(b, fmt),
                           "gap_pct": (v - b) / abs(b) * 100, "gap_txt": gap, "higher_is_better": higher,
                           "reading": lab, "tone": tone, "text": text})
             total += 1

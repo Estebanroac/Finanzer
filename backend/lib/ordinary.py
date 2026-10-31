@@ -33,7 +33,8 @@ def apply(info: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     fields = ao.get("fields") or {}
     out: Dict[str, Any] = {"period_end": cut, "period_type": ao["type"], "source": "Yahoo (estados de yfinance)",
                            "net_income_owners": None, "net_income_common": None, "distributions": None,
-                           "equity_owners": None, "preferred": None, "at1": None, "equity_common": None, "notes": []}
+                           "equity_owners": None, "preferred": None, "at1": None, "equity_common": None,
+                           "tangible_common": None, "notes": []}
 
     def same_cut(key):
         f = fields.get(key) or {}
@@ -66,6 +67,9 @@ def apply(info: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     at1 = oei if (oei is not None and oei > 0 and dist > 0 and not preferred) else 0.0
     common = cse - at1
     out.update(equity_owners=se, preferred=preferred, at1=at1, equity_common=common)
+    # F9 · R3: valor contable tangible del ordinario del mismo balance (sin AT1, como el ROTE de archetype_metrics).
+    if src.get("tangibleBookValue") is not None:
+        out["tangible_common"] = src["tangibleBookValue"] - at1
     if abs(common - se) > _REL_TOL * abs(se):
         info["commonEquity"] = common
         parts = " y ".join(x for x in (f"preferentes {preferred:,.0f}" if preferred else None,

@@ -8,6 +8,7 @@ import type {
 import { STATE_LABELS } from "@/lib/generated/backendConfig";
 import { useCountUp, useGrow } from "@/lib/useGrow";
 import { Help, toneClass } from "./ui";
+import { closeSentence } from "@/lib/prose";
 
 /*
  * Kit de gráficos de la web (etapa 9c): SVG y CSS a mano, sin librería.
@@ -507,7 +508,7 @@ export function GaugeView({ g, grown, tips }: { g: GaugeChart; grown: boolean; t
       <div className={`cz-g ${toneClass(g.tone)}`}>
         {head}
         {why && <div className="cz-g-note">{why}</div>}
-        {g.text && <p className="cz-g-text">{g.text[0].toUpperCase() + g.text.slice(1)}.</p>}
+        {g.text && <p className="cz-g-text">{closeSentence(g.text[0].toUpperCase() + g.text.slice(1))}</p>}
       </div>
     );
   }

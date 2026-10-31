@@ -41,24 +41,32 @@ TABLE = [
      "Parte de los datos proviene de una fuente secundaria."),
     (r"^beneficio normalizado con ítems inferidos",
      "El beneficio se ajustó por partidas extraordinarias identificadas de forma indirecta."),
-    (r"\^TNX no disponible", None),          # Rf de config: detalle técnico, no se muestra
+    (r"^beneficio por encima de lo que explica la operación sin partida que lo nombre",
+     "Parte del beneficio no la explica el negocio y no se ha podido identificar de dónde sale: no se descuenta, pero "
+     "resta certeza."),
+    (r"bono del Tesoro de EE\. UU\. a 10 años no está disponible", None),   # Rf de referencia: detalle técnico
     # ── convergencia entre métodos ──
     (r"^un solo método evaluable",
      "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo."),
     (r"^ningún método evaluable", "Ningún método de valoración da una señal utilizable."),
     (r"^no evaluable: DCF \(fiabilidad baja\)",
-     "El DCF no concilia con el precio y no se usa para contrastar."),
+     "Los datos del DCF directo no lo sostienen y no se usa para contrastar."),
     (r"^no evaluable: ", "Uno de los métodos de valoración tiene fiabilidad baja y no se usa para contrastar."),
     (r"^direcciones opuestas",
      "Los métodos de valoración se contradicen: uno ve la acción barata y otro cara."),
     (r"^uno lo ve en precio y otro con dirección",
      "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."),
+    (r"^coinciden \([^)]*\), pero lo contradicen? con lectura extrema",
+     "Los métodos de valoración coinciden en la dirección, pero algún múltiplo dice con fuerza lo contrario."),
     (r"^coinciden \([^)]*\) pero la distancia",
      "Los métodos de valoración coinciden en la dirección, pero con intensidad distinta."),
     (r"^coinciden \([^)]*\) con distancia", "Los métodos de valoración coinciden."),
     # ── cobertura ──
     (r"^categorías excluidas por cobertura: (.+)$", "Faltan datos para evaluar: {0}."),
     (r"^sin componentes evaluables", "No hay datos suficientes para evaluar el negocio."),
+    # F8 · E6: estados desfasados frente a EDGAR (lib/edgar_backup.staleness)
+    (r"^estados desfasados: corte del (.+?) \((\d+) días\) y EDGAR ya tiene el (\S+) del periodo cerrado el (.+)$",
+     "Hay estados más recientes en la SEC ({2} al {3})."),
     (r"^(\d+) de (\d+) componentes del score con dato",
      "Faltan datos en parte del análisis ({0} de {1} indicadores con dato)."),
     # ── estabilidad ──
@@ -119,6 +127,43 @@ def confidence_reasons(confidence: Optional[Dict[str, Any]]) -> List[Dict[str, A
         if r.startswith("techo en "):
             out.append({"dimension": "techo", "level": c.get("level"), "text": translate(r), "detail": r})
     return out
+
+
+_CEILING_RE = re.compile(r"^techo en ([a-z_]+): (.+)$")
+
+
+def confidence_limits(confidence: Optional[Dict[str, Any]]) -> Optional[str]:
+    """F10 · N6 (revisión de NVDA: «techo en baja: techo de la confianza» no explicaba nada): qué limita la confianza,
+    para el lector. El nivel que tendría por la media de sus dimensiones y cada límite, en el orden en que se aplicó, con
+    el nivel hasta el que la baja (el del último es el final): los techos (lib/valuation_confidence.py), el escalón de las
+    tasas base (F10 · N4) y la dependencia de Ke (lib/ke_sensitivity.py). Va entre paréntesis tras el nivel, en la primera frase del resumen (la portada la omite:
+    repite el nivel de la tarjeta), así que los incisos van entre rayas. None si nada la limita."""
+    c = confidence or {}
+    steps = []
+    for r in c.get("reasons") or []:
+        m = _CEILING_RE.match(r)
+        if m:
+            head, _, why = m.group(2).partition(": ")
+            steps.append((f"{head} —{why}—" if why else head, m.group(1)))
+    # F10 · N4: el escalón de las tasas base va tras los techos (lib/valuation_confidence.py lo aplica después); baja
+    # la confianza, no el precio, y se dice
+    br = c.get("base_rate_step") or {}
+    if br.get("to") and br["to"] != br.get("from"):
+        steps.append((f"las tasas base —solo el {br.get('share') or 0:.2%} de las comparables sostuvo el crecimiento "
+                      "que exige el precio; "
+                      # revisión de COST: contrae solo si contradice el veredicto (verdict.price_contraction_basis)
+                      + ("contradice un precio atractivo y lo contrae—" if br.get("contracts") else
+                         "no contrae el precio—"), br["to"]))
+    kd = c.get("ke_dependent") or {}
+    if kd.get("to") and kd["to"] != kd.get("from"):
+        why = str(kd.get("reason") or "").partition(": ")[2]
+        steps.append(("el veredicto depende de Ke" + (f" —{why}—" if why else ""), kd["to"]))
+    start = c.get("capped_from") or br.get("from") or kd.get("from")
+    if not steps or not start:
+        return None
+    # el último paso deja el nivel que ya dice la frase: sin «hasta»
+    return (f"por sus dimensiones sería {start}; la {'limitan' if len(steps) > 1 else 'limita'}: "
+            + "; ".join(w if i == len(steps) - 1 else f"{w}, hasta {lvl}" for i, (w, lvl) in enumerate(steps)))
 
 
 def plain_reasons(confidence: Optional[Dict[str, Any]]) -> List[str]:

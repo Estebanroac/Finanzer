@@ -14,7 +14,11 @@ from dataclasses import dataclass
 from enum import Enum
 
 # Configuración única (backend/config/*.toml, validada al importar settings).
+import numfmt
+from numfmt import period, pp as _pp   # E2a (T1): el spread ROIC − WACC, en puntos porcentuales
+from historical_metrics import bound_decides, is_anomalous_not_significant
 from settings import cfg
+import empty_reasons
 from classify import (FINANCIAL, REIT, UTILITY, GROWTH_PRE_PROFIT, CYCLICAL, MATURE, not_applicable, not_applicable_text,
                       norm_industry)
 
@@ -82,15 +86,57 @@ def is_financial_sector(sector: str) -> bool:
     financial_keywords = cfg("sectors.financials.keywords")
     return any(kw in sector_lower for kw in financial_keywords)
 
-def altman_model(sector: Optional[str], industry: Optional[str] = None) -> str:
-    """Modelo de Altman por sector/industria (etapa 7): "original" (Z, 1968) para
-    los sectores e industrias manufactureros de la config; "z_double_prime" (Z'')
-    para el resto. Coincidencia EXACTA (antes por subcadena: "financial services"
-    entraba por "services"). Sin sector: Z'' (no exige ventas)."""
+def _sic(sic: Any) -> Optional[int]:
+    try:
+        return int(str(sic).strip())
+    except (TypeError, ValueError):
+        return None
+
+
+def _in_ranges(code: int, ranges) -> Optional[int]:
+    return next((i for i, (lo, hi) in enumerate(ranges) if lo <= code <= hi), None)
+
+
+def altman_model(sector: Optional[str], industry: Optional[str] = None, sic: Any = None) -> str:
+    """Modelo de Altman: "original" (Z, 1968) o "z_double_prime" (Z'').
+
+    F8 · E10: por el SIC del emisor en SEC EDGAR, la clasificación con la que Altman separó las manufactureras:
+    `original_sic` (2000–3999) → Z original; el resto → Z''. Sin SIC, por sector/industria de la clasificación
+    (etapa 7, coincidencia exacta); sin sector, Z'' (no exige ventas)."""
+    code = _sic(sic)
+    if code is not None:
+        return "original" if _in_ranges(code, _ALTMAN["original_sic"]) is not None else "z_double_prime"
     if norm_industry(industry) in _ALTMAN["manufacturing_industries"] or \
             (sector or "").strip().lower() in _ALTMAN["manufacturing_sectors"]:
         return "original"
     return "z_double_prime"
+
+
+def altman_model_basis(sic: Any) -> str:
+    """De dónde sale el modelo, para el informe (sin la descripción del SIC: está en inglés)."""
+    code = _sic(sic)
+    if code is None:
+        return "por sector de la clasificación (sin SIC del emisor en SEC EDGAR)"
+    sec = "manufacturas" if _in_ranges(code, _ALTMAN["original_sic"]) is not None else "fuera de manufacturas"
+    return f"por el SIC del emisor en SEC EDGAR: {code}, {sec}"
+
+
+def _altman_ref_why(bm: Dict[str, Any]) -> str:
+    """Por qué el Altman es referencial (no puntúa): la industria (fase 3) o la financiera cautiva (F8 · E10)."""
+    why = bm.get("altman_referential_reason") or ("Referencial: el modelo de Altman no se diseñó para esta industria "
+                                                  "(pasivos por arrendamiento y circulante negativo estructurales); "
+                                                  "no puntúa")
+    return why if "no puntúa" in why else f"{why}; referencial, no puntúa"
+
+
+def altman_excluded(sic: Any) -> Optional[str]:
+    """F8 · E10: motivo de que el Altman no aplique por el SIC del emisor (`excluded_sic`), o None."""
+    code = _sic(sic)
+    i = _in_ranges(code, _ALTMAN["excluded_sic"]) if code is not None else None
+    if i is None:
+        return None
+    return (f"No aplica por su actividad (SIC {code}): {_ALTMAN['excluded_sic_reasons'][i]}; el Altman se calibró con "
+            "manufactureras")
 
 
 def altman_z_score(
@@ -105,6 +151,7 @@ def altman_z_score(
     book_value_equity: Optional[float] = None,
     not_applicable_reason: Optional[str] = None,
     industry: str = "",
+    sic: Any = None,
 ) -> Tuple[Optional[float], str, str, dict]:
     """
     Altman Z-Score. El MODELO depende solo del arquetipo (FINANCIAL y REIT: no
@@ -145,7 +192,7 @@ def altman_z_score(
             {"model": "No Aplicable", "reason": "no_aplica", "sector": sector or ""},
         )
 
-    is_non_manufacturing = altman_model(sector, industry) == "z_double_prime"
+    is_non_manufacturing = altman_model(sector, industry, sic) == "z_double_prime"
 
     # ── Validate minimum required inputs ──
     if total_assets is None or total_assets == 0:
@@ -234,7 +281,8 @@ def financial_health_score(
     book_value_prior: Optional[float] = None,
     dividend_yield: Optional[float] = None,
     payout_ratio: Optional[float] = None,
-    debt_to_equity: Optional[float] = None  # Nuevo: D/E para bancos
+    debt_to_equity: Optional[float] = None,  # Nuevo: D/E para bancos
+    ratio_tags: Optional[Dict[str, str]] = None,   # V7 (M2): {"roa": " normalizado (TTM)", "roe": …}
 ) -> Tuple[Optional[int], str, str, List[Dict[str, Any]]]:
     """
     Financial Health Score - Indicador de solidez para sector financiero (0-10).
@@ -260,6 +308,7 @@ def financial_health_score(
     Returns:
         Tuple[score, risk_level, interpretation, details]
     """
+    _tg = {"roa": "", "roe": "", **(ratio_tags or {})}
     score = 0
     max_possible = 0  # Track máximo posible según datos disponibles
     details = []
@@ -272,19 +321,19 @@ def financial_health_score(
         roa_pct = roa if roa < 1 else roa / 100  # Normalizar si viene como porcentaje
         if roa_pct >= b["roa_excellent"]:
             pts = H["roa_points"][0]
-            detail = f"ROA excelente ({roa_pct*100:.2f}% ≥ 0.5%)"
+            detail = f"ROA{_tg['roa']} excelente ({roa_pct*100:.2f}% ≥ 0.5%)"
             severity = "excellent"
         elif roa_pct >= b["roa_good"]:
             pts = H["roa_points"][1]
-            detail = f"ROA bueno ({roa_pct*100:.2f}% ≥ 0.3%)"
+            detail = f"ROA{_tg['roa']} bueno ({roa_pct*100:.2f}% ≥ 0.3%)"
             severity = "good"
         elif roa_pct >= b["roa_acceptable"]:
             pts = H["roa_points"][2]
-            detail = f"ROA aceptable ({roa_pct*100:.2f}% ≥ 0.2%)"
+            detail = f"ROA{_tg['roa']} aceptable ({roa_pct*100:.2f}% ≥ 0.2%)"
             severity = "ok"
         else:
             pts = 0
-            detail = f"ROA bajo ({roa_pct*100:.2f}% < 0.2%)"
+            detail = f"ROA{_tg['roa']} bajo ({roa_pct*100:.2f}% < 0.2%)"
             severity = "weak"
         score += pts
         details.append({"metric": "ROA Bancario", "points": pts, "max": H["roa_points"][0], "detail": detail, "severity": severity})
@@ -295,19 +344,19 @@ def financial_health_score(
         roe_pct = roe if roe < 1 else roe / 100
         if roe_pct >= b["roe_excellent"]:
             pts = H["roe_points"][0]
-            detail = f"ROE excelente ({roe_pct*100:.1f}% ≥ 12%)"
+            detail = f"ROE{_tg['roe']} excelente ({roe_pct*100:.1f}% ≥ 12%)"
             severity = "excellent"
         elif roe_pct >= b["roe_good"]:
             pts = H["roe_points"][1]
-            detail = f"ROE bueno ({roe_pct*100:.1f}% ≥ 8%)"
+            detail = f"ROE{_tg['roe']} bueno ({roe_pct*100:.1f}% ≥ 8%)"
             severity = "good"
         elif roe_pct >= b["roe_acceptable"]:
             pts = H["roe_points"][2]
-            detail = f"ROE aceptable ({roe_pct*100:.1f}% ≥ 6%)"
+            detail = f"ROE{_tg['roe']} aceptable ({roe_pct*100:.1f}% ≥ 6%)"
             severity = "ok"
         else:
             pts = 0
-            detail = f"ROE bajo ({roe_pct*100:.1f}% < 6%)"
+            detail = f"ROE{_tg['roe']} bajo ({roe_pct*100:.1f}% < 6%)"
             severity = "weak"
         score += pts
         details.append({"metric": "ROE", "points": pts, "max": H["roe_points"][0], "detail": detail, "severity": severity})
@@ -340,15 +389,17 @@ def financial_health_score(
         equity_ratio = total_equity / total_assets
         if equity_ratio >= b["equity_to_assets_solid"]:
             pts = H["equity_to_assets_points"][0]
-            detail = f"Capitalización sólida ({equity_ratio*100:.1f}% ≥ 6%)"
+            # F9 · R6: es patrimonio / activos, no el capital regulatorio (Basilea): el texto lo dice.
+            detail = (f"Patrimonio / activos sólido ({equity_ratio*100:.1f}% ≥ {b['equity_to_assets_solid']:.0%}; "
+                      "no es capital regulatorio)")
             severity = "excellent"
         elif equity_ratio >= b["equity_to_assets_good"]:
             pts = H["equity_to_assets_points"][1]
-            detail = f"Capitalización aceptable ({equity_ratio*100:.1f}%)"
+            detail = f"Patrimonio / activos aceptable ({equity_ratio*100:.1f}%; no es capital regulatorio)"
             severity = "ok"
         else:
             pts = 0
-            detail = f"Capitalización baja ({equity_ratio*100:.1f}%)"
+            detail = f"Patrimonio / activos bajo ({equity_ratio*100:.1f}%; no es capital regulatorio)"
             severity = "weak"
         score += pts
         details.append({"metric": "Equity/Assets", "points": pts, "max": H["equity_to_assets_points"][0], "detail": detail, "severity": severity})
@@ -476,53 +527,56 @@ def piotroski_evaluate(
     """
     crit = []
 
-    def add(key, state, detail):
-        crit.append({"key": key, "state": state, "detail": detail})
+    # Rediseño E2a (T6): cada criterio guarda además el valor actual (`cur`), el de comparación (`prev`), su unidad
+    # (pct, money, ratio, shares) y contra qué se compara (zero: el signo; ni: el beneficio neto; prior_year).
+    def add(key, state, detail, cur=None, prev=None, unit=None, compare="prior_year"):
+        crit.append({"key": key, "state": state, "detail": detail, "cur": cur, "prev": prev, "unit": unit,
+                     "compare": compare})
 
-    def cmp(key, cur, prev, ok, ok_txt, ko_txt, nodata_txt):
+    def cmp(key, cur, prev, ok, ok_txt, ko_txt, nodata_txt, unit, compare="prior_year"):
         if cur is None or prev is None:
-            add(key, "sin_dato", nodata_txt)
+            add(key, "sin_dato", nodata_txt, cur, prev, unit, compare)
         elif ok(cur, prev):
-            add(key, "cumple", ok_txt)
+            add(key, "cumple", ok_txt, cur, prev, unit, compare)
         else:
-            add(key, "no_cumple", ko_txt)
+            add(key, "no_cumple", ko_txt, cur, prev, unit, compare)
 
     # 1. ROA positivo
     if roa_current is None:
-        add("roa_positive", "sin_dato", "Sin datos del ROA")
+        add("roa_positive", "sin_dato", "Sin datos del ROA", unit="pct", compare="zero")
     elif roa_current > 0:
-        add("roa_positive", "cumple", "ROA positivo")
+        add("roa_positive", "cumple", "ROA positivo", roa_current, None, "pct", "zero")
     else:
-        add("roa_positive", "no_cumple", "ROA negativo")
+        add("roa_positive", "no_cumple", "ROA negativo", roa_current, None, "pct", "zero")
     # 2. CFO positivo
     if operating_cash_flow is None:
-        add("cfo_positive", "sin_dato", "Sin datos del flujo de caja operativo")
+        add("cfo_positive", "sin_dato", "Sin datos del flujo de caja operativo", unit="money", compare="zero")
     elif operating_cash_flow > 0:
-        add("cfo_positive", "cumple", "Flujo de caja operativo positivo")
+        add("cfo_positive", "cumple", "Flujo de caja operativo positivo", operating_cash_flow, None, "money", "zero")
     else:
-        add("cfo_positive", "no_cumple", "Flujo de caja operativo negativo")
+        add("cfo_positive", "no_cumple", "Flujo de caja operativo negativo", operating_cash_flow, None, "money", "zero")
     # 3. ROA mejoró
     cmp("roa_improved", roa_current, roa_prior, lambda c, p: c > p,
-        "El ROA mejoró frente al año anterior", "El ROA no mejoró", "Sin ROA del año anterior")
+        "El ROA mejoró frente al año anterior", "El ROA no mejoró", "Sin ROA del año anterior", "pct")
     # 4. Calidad de earnings (CFO > Net Income)
     cmp("earnings_quality", operating_cash_flow, net_income, lambda c, p: c > p,
         "El flujo operativo supera al beneficio neto (beneficio de calidad)", "El flujo operativo no llega al beneficio neto (alerta de calidad)",
-        "Sin datos para la calidad del beneficio")
+        "Sin datos para la calidad del beneficio", "money", "ni")
     # 5. Deuda LP disminuyó o igual
     cmp("debt_reduced", long_term_debt_current, long_term_debt_prior, lambda c, p: c <= p,
-        "La deuda a largo plazo se mantuvo o bajó", "La deuda a largo plazo aumentó", "Sin deuda a largo plazo del año anterior")
+        "La deuda a largo plazo se mantuvo o bajó", "La deuda a largo plazo aumentó", "Sin deuda a largo plazo del año anterior", "money")
     # 6. Current Ratio mejoró
     cmp("current_ratio_improved", current_ratio_current, current_ratio_prior, lambda c, p: c > p,
-        "La liquidez (current ratio) mejoró", "La liquidez no mejoró", "Sin liquidez del año anterior")
+        "La liquidez (current ratio) mejoró", "La liquidez no mejoró", "Sin liquidez del año anterior", "ratio")
     # 7. Sin dilución
     cmp("no_dilution", shares_current, shares_prior, lambda c, p: c <= p,
-        "Sin dilución de acciones", "Emitió nuevas acciones (dilución)", "Sin acciones del año anterior")
+        "Sin dilución de acciones", "Emitió nuevas acciones (dilución)", "Sin acciones del año anterior", "shares")
     # 8. Margen bruto mejoró
     cmp("gross_margin_improved", gross_margin_current, gross_margin_prior, lambda c, p: c > p,
-        "El margen bruto mejoró", "El margen bruto no mejoró", "Sin margen bruto del año anterior")
+        "El margen bruto mejoró", "El margen bruto no mejoró", "Sin margen bruto del año anterior", "pct")
     # 9. Rotación de activos mejoró
     cmp("asset_turnover_improved", asset_turnover_current, asset_turnover_prior, lambda c, p: c > p,
-        "La rotación de activos mejoró", "La rotación de activos no mejoró", "Sin rotación de activos del año anterior")
+        "La rotación de activos mejoró", "La rotación de activos no mejoró", "Sin rotación de activos del año anterior", "ratio")
 
     total = len(PIOTROSKI_CRITERIA)
     passed = sum(1 for c in crit if c["state"] == "cumple")
@@ -580,9 +634,11 @@ def piotroski_f_score(*args, **kwargs) -> Tuple[int, List[str], str]:
 
 # Etapa 9a: métricas del desglose calculadas con el beneficio normalizado (etapa 7).
 _NORMALIZED_LABELS = {"ROE": ("roe", "ROE normalizado"), "ROA": ("roa", "ROA normalizado"),
-                      "Margen Neto": ("net_margin", "Margen neto normalizado"),
-                      "FCF / Net Income": ("fcf_to_net_income", "FCF / beneficio neto normalizado"),
-                      "P/E vs Sector": ("pe", "P/E normalizado vs Sector")}
+                      "Margen neto": ("net_margin", "Margen neto normalizado"),
+                      # F10 · margen operativo con una sola verdad: sin los cargos operativos que ya quita la normalización
+                      "Margen operativo": ("operating_margin", "Margen operativo normalizado"),
+                      "FCF / beneficio neto": ("fcf_to_net_income", "FCF / beneficio neto normalizado"),
+                      "P/E frente al sector": ("pe", "P/E normalizado frente al sector")}
 
 
 def label_normalized(categories: List[Dict[str, Any]], keys) -> None:
@@ -595,7 +651,11 @@ def label_normalized(categories: List[Dict[str, Any]], keys) -> None:
     for cat in categories:
         for a in cat.get("adjustments") or []:
             m = a.get("metric")
-            if m in _NORMALIZED_LABELS and _NORMALIZED_LABELS[m][0] in keys:
+            # V7 (M6): la fila sin cifra ("No significativo") ya se llamaba "FCF / beneficio neto" y no se rotulaba;
+            # con el nombre traducido de la que puntúa, sigue sin rotularse.
+            # F8 · E2: con la bandera de pico, el P/E que puntúa no es el normalizado (su motivo dice cuál es).
+            if m in _NORMALIZED_LABELS and _NORMALIZED_LABELS[m][0] in keys and a.get("value") != "No significativo" \
+                    and not a.get("earnings_peak"):
                 a["metric"], a["normalized"] = _NORMALIZED_LABELS[m][1], True
             elif m == "Forward P/E" and "pe" in keys and a.get("reason"):
                 a["reason"] = a["reason"].replace("P/E", "P/E normalizado", 1)
@@ -626,6 +686,20 @@ def eps_vs_revenue_growth(revenue_growth: Optional[float], eps_growth: Optional[
     return {"revenue_growth": revenue_growth, "eps_growth": eps_growth, "gap": gap, "state": state,
             "label": label, "reading": reading, "scored": False,
             "note": "dato informativo: no puntúa (Crecimiento ya puntúa BPA e ingresos por separado)"}
+
+
+def growth_metric(base: str, archetype: Optional[str]) -> str:
+    """V7 (M6): "Crecimiento de ingresos a 3 años" (antes "Crecimiento Ingresos 3Y"); en CYCLICAL la cifra que puntúa
+    es de ciclo medio y el nombre lo dice. Se buscan por su comienzo (GROWTH_REV, GROWTH_EPS, GROWTH_FCF)."""
+    return f"{base} {'de ciclo medio' if archetype == CYCLICAL else 'a 3 años'}"
+
+
+GROWTH_REV, GROWTH_EPS, GROWTH_FCF = "Crecimiento de ingresos ", "Crecimiento del BPA ", "Crecimiento del FCF"
+
+
+def by_prefix(adj: Dict[str, Any], prefix: str) -> Any:
+    """La fila del desglose cuyo nombre empieza por `prefix` ({nombre: fila})."""
+    return next((v for k, v in (adj or {}).items() if str(k).startswith(prefix)), None)
 
 
 def growth_for_bands(g: Optional[float]) -> Optional[float]:
@@ -881,6 +955,36 @@ def peg_ratio(pe: Optional[float], earnings_growth_rate_pct: Optional[float]) ->
     return safe_div(pe, earnings_growth_rate_pct)
 
 
+def peg_band(peg: float) -> int:
+    """Tramo del PEG en `thresholds.score.valoracion.peg_bounds` (0 = muy atractivo … 4 = muy caro)."""
+    bounds = cfg("thresholds.score.valoracion.peg_bounds")
+    return next((i for i, b in enumerate(bounds) if peg <= b), len(bounds))
+
+
+def peg_not_significant(pe: Optional[float], peg: Optional[float], eps_growth: Optional[float],
+                        from_source: bool) -> Optional[str]:
+    """F8 · E4 (auditoría del 26-oct, VZ): motivo por el que el PEG no es significativo, o None.
+
+    El PEG relaciona el P/E con el crecimiento del BPA, así que tiene que cuadrar con el crecimiento que muestra el
+    propio informe (CAGR del BPA a 3 años):
+    - con ese crecimiento ≤ 0, un PEG no tiene sentido (VZ: PEG de la fuente 0,80 «muy atractivo» con el BPA −7,1 %);
+    - el PEG de la fuente (crecimiento de consenso) no cuadra si, con el crecimiento del informe, su lectura cambia de
+      tramo. Sin crecimiento del informe no hay contraste y el PEG de la fuente se queda."""
+    if peg is None or eps_growth is None:
+        return None
+    if eps_growth <= 0:
+        return (f"el crecimiento del BPA del informe es ≤ 0 ({eps_growth:.1%} anual a 3 años): el PEG no tiene "
+                "sentido").replace("-", "−")
+    if not from_source or pe is None or pe <= 0 or peg <= 0:
+        return None
+    scale = cfg("valuation.peg.growth_pct_scale")
+    own = pe / (eps_growth * scale)
+    if peg_band(own) == peg_band(peg):
+        return None
+    return (f"el PEG de la fuente ({peg:.2f}) supone un crecimiento del BPA del {pe / peg / scale:.1%} y el del "
+            f"informe es del {eps_growth:.1%}: con este, el PEG sería {own:.2f} y su lectura cambia")
+
+
 def free_cash_flow_yield(fcf: Optional[float], market_capitalization: Optional[float]) -> Optional[float]:
     """FCF Yield = Free Cash Flow / Market Capitalization."""
     return safe_div(fcf, market_capitalization)
@@ -928,6 +1032,15 @@ def funds_from_operations(
     gains = gains_on_sale or 0
     return net_income + depreciation - gains
 
+
+
+def ffo_depreciation(d: Dict[str, Any], ebitda_val: Optional[float]) -> Optional[float]:
+    """D&A del FFO. Yahoo no suele desglosar la depreciación, lo que dejaba el FFO en None para casi todo REIT; se
+    deriva D&A = EBITDA - EBIT cuando falta (ambos ya disponibles con el fallback de EBITDA)."""
+    dep, oi = d.get("depreciation"), d.get("operating_income")
+    if dep is None and ebitda_val is not None and oi is not None:
+        dep = ebitda_val - oi
+    return dep
 
 
 def ffo_payout_ratio(dividends: Optional[float], ffo: Optional[float]) -> Optional[float]:
@@ -1463,12 +1576,8 @@ def calculate_all_ratios(financial_data: Dict) -> Dict[str, Optional[float]]:
         if invested_cap <= 0 or not roic_significant(invested_cap, d.get("total_assets")):
             invested_cap = None
 
-    # FFO para REITs. Yahoo no suele desglosar la depreciación, lo que dejaba
-    # el FFO en None para casi todo REIT; se deriva D&A = EBITDA - EBIT cuando
-    # falta (ambos ya disponibles con el fallback de EBITDA).
-    _dep = d.get("depreciation")
-    if _dep is None and ebitda_val is not None and operating_inc is not None:
-        _dep = ebitda_val - operating_inc
+    # FFO para REITs. F8 · E3: en un REIT, main.py lo sustituye por el FFO según Nareit (lib/reit_ffo.py).
+    _dep = ffo_depreciation(d, ebitda_val)
     ffo_val = funds_from_operations(d.get("net_income"), _dep, d.get("gains_on_sale"))
     ffo_ps = safe_div(ffo_val, d.get("shares_outstanding")) if ffo_val else None
 
@@ -1568,6 +1677,8 @@ class CategoryCoverage:
     def __init__(self):
         self.items = []
         self.reasons: Dict[str, str] = {}
+        # F10 · B1: las entradas de la puntuación (calculate_score_v2), para el motivo de un componente vacío
+        self.inputs: Dict[str, Any] = empty_reasons.INPUTS.get()
         self.not_applicable: Dict[str, str] = {}
         # Etapa 9a (bloque de múltiplos): los miembros de un bloque cuentan en la
         # cobertura pero no se reescalan uno a uno; se reescala el bloque (derived).
@@ -1585,6 +1696,13 @@ class CategoryCoverage:
         if na:
             self.not_applicable[name] = na
             return
+        if adj is None and not reason:
+            # F10 · B1 (escaneo: 289 vacíos sin motivo): un denominador ≤ 0 hace la métrica no significativa (no cuenta
+            # en la cobertura, como la regla M); si no, «sin dato» con lo que falta (lib/empty_reasons.py).
+            state, reason = empty_reasons.for_component(name, self.inputs)
+            if state == empty_reasons.NOT_SIGNIFICANT:
+                self.not_sig(name, reason)
+                return
         pts = [p for p in points]
         self.items.append((name, max(pts), min(pts), adj))
         if not rescale:
@@ -1700,6 +1818,8 @@ def score_solidez_financiera(
     adjustments = []
     # Etapa 6: componentes que no aplican al arquetipo (REIT: Altman).
     _na = {k: not_applicable(archetype, k) for k in ("altman", "current_ratio", "de", "interest_coverage")}
+    # F8 · E10: excluido por el SIC (midstream, utilities, financieras): no aplica, sin reequilibrar pesos.
+    _na["altman"] = _na["altman"] or (business_model or {}).get("altman_excluded")
     if _na["altman"]:
         z_score = None
     if _na["current_ratio"]:
@@ -1717,8 +1837,7 @@ def score_solidez_financiera(
     if _altman_ref:
         adjustments.append({"metric": "Altman Z-Score", "value": f"{z_score:.2f}", "adjustment": 0,
                             "severity": "neutral",
-                            "reason": ("Referencial: el modelo de Altman no se diseñó para esta industria (pasivos por "
-                                       "arrendamiento y circulante negativo estructurales); no puntúa")})
+                            "reason": _altman_ref_why(_bm)})
     elif z_score is not None:
         if z_score_level == "SAFE":
             adj = T["altman_points"][0]
@@ -1736,7 +1855,7 @@ def score_solidez_financiera(
     
     # Current Ratio (hasta ±4 pts)
     if current_ratio is not None and _cr_struct:
-        adjustments.append({"metric": "Current Ratio", "value": f"{current_ratio:.2f}x", "adjustment": 0,
+        adjustments.append({"metric": "Liquidez corriente", "value": f"{current_ratio:.2f}x", "adjustment": 0,
                             "severity": "neutral",
                             "reason": ("Capital circulante negativo estructural: normal en un negocio que cobra antes "
                                        "de pagar; no empeora frente a su historia, así que no puntúa")})
@@ -1765,7 +1884,7 @@ def score_solidez_financiera(
         
         base_score += adj
         _a["current"] = adj
-        adjustments.append({"metric": "Current Ratio", "value": f"{current_ratio:.2f}x", "adjustment": adj, "reason": reason, "severity": sev})
+        adjustments.append({"metric": "Liquidez corriente", "value": f"{current_ratio:.2f}x", "adjustment": adj, "reason": reason, "severity": sev})
     
     # Etapa 9a: el D/E no puntúa (queda informativo) en REIT, cuyo apalancamiento se
     # mide por deuda neta/EBITDA, ni con caja neta (regla M: no mide apalancamiento).
@@ -1805,7 +1924,7 @@ def score_solidez_financiera(
             adj = p[3]
             sev = "moderate"
             reason = (f"Deuda elevada - Por encima {'del mercado' if market else 'del sector'} "
-                      f"({debt_to_equity:.2f}x vs {threshold:.1f}x)")
+                      f"({debt_to_equity:.2f}x frente a {threshold:.1f}x)")
         elif interest_coverage is not None and interest_coverage >= T["de_mitigation_coverage"]:
             # Mitigación: D/E alto pero el beneficio operativo cubre los
             # intereses con mucha holgura — típico de mega-caps con patrimonio
@@ -1834,11 +1953,11 @@ def score_solidez_financiera(
         adj = T["coverage_points"][0]
         base_score += adj
         _a["coverage"] = adj
-        adjustments.append({"metric": "Cobertura Intereses", "value": "Sin carga financiera neta", "adjustment": adj,
+        adjustments.append({"metric": "Cobertura de intereses", "value": "Sin carga financiera neta", "adjustment": adj,
                             "reason": IC_NO_BURDEN, "severity": "excellent"})
     elif _ic_state == "no_significativo":
         _ic_reason = IC_NOT_SIGNIFICANT
-        adjustments.append({"metric": "Cobertura Intereses", "value": "No significativo", "adjustment": 0,
+        adjustments.append({"metric": "Cobertura de intereses", "value": "No significativo", "adjustment": 0,
                             "reason": _ic_reason, "severity": "neutral"})
     elif interest_coverage is not None:
         b, p = T["coverage_bounds"], T["coverage_points"]
@@ -1873,8 +1992,8 @@ def score_solidez_financiera(
         _a["coverage"] = adj
         if _ic_state == "negativa":
             reason = f"{reason} - EBIT negativo con deuda neta"
-        adjustments.append({"metric": "Cobertura Intereses",
-                            "value": "EBIT < 0" if _ic_state == "negativa" else f"{interest_coverage:.1f}x",
+        adjustments.append({"metric": "Cobertura de intereses",
+                            "value": "EBIT < 0" if _ic_state == "negativa" else f"{interest_coverage:.2f}x",
                             "adjustment": adj, "reason": reason, "severity": sev})
     
     # Runway (GROWTH_PRE_PROFIT, hasta ±6 pts como el Altman al que sustituye)
@@ -1911,7 +2030,9 @@ def score_solidez_financiera(
 
     cov = CategoryCoverage()
     if _altman_ref:
-        cov.not_sig("Altman Z", "referencial: el modelo no se diseñó para esta industria")
+        cov.not_sig("Altman Z", ("referencial: consolida una financiera cautiva"
+                                 if (_bm.get("captive_finance") or {}).get("detected")
+                                 else "referencial: el modelo no se diseñó para esta industria"))
     else:
         cov.comp("Altman Z", T["altman_points"], _a.get("altman"), na=_na["altman"])
     if archetype == GROWTH_PRE_PROFIT:
@@ -1939,7 +2060,7 @@ def score_solidez_financiera(
                                          f"Elevado para {_who}", f"Alto para {_who}"), higher=False)
             base_score += adj
             _a["nde"] = adj
-            adjustments.append({"metric": "Deuda neta/EBITDA", "value": f"{net_debt_to_ebitda:.1f}x", "adjustment": adj,
+            adjustments.append({"metric": "Deuda neta/EBITDA", "value": f"{net_debt_to_ebitda:.2f}x", "adjustment": adj,
                                 "reason": f"{lab} ({net_debt_to_ebitda:.1f}x; bandas {_tag} ≤{b[0]:.1f}x / ≤{b[1]:.1f}x / "
                                           f"≤{b[2]:.1f}x / ≤{b[3]:.1f}x)", "severity": sev})
         cov.comp("Deuda neta/EBITDA", p, _a.get("nde"), _nde_reason)
@@ -2033,7 +2154,7 @@ def score_solidez_financiera_financial(
             reason = f"Por debajo del promedio ({financial_health}/10)"
         
         adjustments.append({
-            "metric": "Solidez Bancaria", 
+            "metric": "Solidez bancaria", 
             "value": f"{financial_health}/10", 
             "adjustment": round(base_score - _CAT["base"]),  # Relativo a base 10
             "reason": reason, 
@@ -2079,7 +2200,7 @@ def score_solidez_financiera_financial(
         _a["de"] = bonus
         adjustments.append({
             "metric": "D/E Bancario",
-            "value": f"{debt_to_equity:.1f}x",
+            "value": f"{debt_to_equity:.2f}x",
             "adjustment": bonus,
             "reason": reason,
             "severity": sev
@@ -2162,6 +2283,13 @@ def score_rentabilidad(
     archetype: Optional[str] = None,
     market: bool = False,
     roic_reason: Optional[str] = None,
+    # F8 · E9: márgenes frente a su industria de Damodaran y ROE con apalancamiento alto
+    industry_operating_margin: Optional[float] = None,
+    industry_net_margin: Optional[float] = None,
+    bench_ref: str = "de su industria",
+    debt_to_equity: Optional[float] = None,
+    sector_de_threshold: Optional[float] = None,
+    subtype: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Categoría 2: Rentabilidad (20 pts máximo)
@@ -2187,6 +2315,20 @@ def score_rentabilidad(
         operating_margin = None
     if _na_spread:
         wacc = None
+    # F9 · R4: el margen neto de un banco no puntúa (ingresos con definiciones distintas; classify.not_applicable).
+    _na_nm = not_applicable(archetype, "net_margin", subtype)
+    if _na_nm:
+        net_margin = None
+
+    # F8 · E9 (auditoría del 26-oct): con un D/E por encima del umbral del sector, el ROE lo infla el apalancamiento;
+    # en su lugar puntúa el ROIC (el retorno sin apalancamiento), con las mismas bandas.
+    _roe_label, _roe_lev = "ROE", None
+    if (roic is not None and debt_to_equity is not None and sector_de_threshold
+            and debt_to_equity > sector_de_threshold and not _na_spread):
+        _f = ".2f" if round(debt_to_equity, 2) != round(sector_de_threshold, 2) else ".3f"
+        _roe_lev = (f"con un D/E de {debt_to_equity:{_f}} (> {sector_de_threshold:{_f}}, el umbral de "
+                    f"{'el mercado' if market else 'su sector'}) el ROE lo infla el apalancamiento: puntúa el ROIC")
+        roe, _roe_label = roic, "ROIC (en lugar del ROE: apalancamiento alto)"
 
     # ROE (peso alto: hasta ±6 pts) — bandas relativas al roe_high sectorial
     if roe is not None:
@@ -2202,7 +2344,7 @@ def score_rentabilidad(
         elif roe >= sector_roe_high * T["roe_high_mult"]:
             adj = p[0]
             sev = "excellent"
-            reason = f"Excepcional {para} ({roe:.1%} vs {sector_roe_high:.0%} rango alto {adj_ref})"
+            reason = f"Excepcional {para} ({roe:.1%} frente a {sector_roe_high:.0%} rango alto {adj_ref})"
         elif roe >= sector_roe_high:
             adj = p[1]
             sev = "good"
@@ -2227,7 +2369,13 @@ def score_rentabilidad(
         base_score += adj
         # ROE < 0 por patrimonio negativo (recompras): no significativo
         _a["roe"] = None if (roe < 0 and roa is not None and roa > T["negative_equity_min_roa"]) else adj
-        adjustments.append({"metric": "ROE", "value": f"{roe:.1%}", "adjustment": adj, "reason": reason, "severity": sev})
+        if _roe_lev:
+            reason = f"{reason}; {_roe_lev}"
+        # F8 · P3: con patrimonio negativo el ROE no es una cifra que leer: «n.s.» (los puntos no cambian: 0)
+        _roe_ns = roe < 0 and roa is not None and roa > T["negative_equity_min_roa"]
+        adjustments.append({"metric": _roe_label, "value": "n.s." if _roe_ns else f"{roe:.2%}", "adjustment": adj,
+                            "reason": reason,
+                            "severity": sev, **({"leverage_swap": True} if _roe_lev else {})})
     
     # ROA (hasta ±4 pts) — bandas relativas al roa_high sectorial
     if roa is not None:
@@ -2255,67 +2403,43 @@ def score_rentabilidad(
         
         base_score += adj
         _a["roa"] = adj
-        adjustments.append({"metric": "ROA", "value": f"{roa:.1%}", "adjustment": adj, "reason": reason, "severity": sev})
+        adjustments.append({"metric": "ROA", "value": f"{roa:.2%}", "adjustment": adj, "reason": reason, "severity": sev})
     
+    # F8 · E9 (auditoría del 26-oct; ajuste del PM): los márgenes se leen frente a los de su industria de Damodaran, en
+    # PUNTOS PORCENTUALES (margen de la empresa − agregado de la industria), no con umbrales absolutos ni con una ratio:
+    # con una industria de margen pequeño la ratio se amplifica (UNH: 4,8 % frente a 3,0 % daba 1,6 veces, «excepcional»,
+    # con el margen hundido un 42 %), y una empresa de margen bajo en una industria de margen bajo no puede leer mejor
+    # que una de margen alto en una de margen alto con la misma diferencia relativa. Los datos gratuitos traen el
+    # agregado de la industria, no la distribución: no hay percentil. Sin margen de la industria, bandas absolutas.
+    def _margin(value, ind, bounds_abs, pp_bounds, points, labels):
+        if value < 0:
+            return points[-1], "severe", f"Negativo ({value:.1%})"
+        if ind is not None:
+            d = value - ind
+            i = next((k for k, b in enumerate(pp_bounds) if d >= b), len(pp_bounds))
+            return (points[i], ("excellent", "good", "ok", "moderate", "moderate")[i],
+                    f"{labels[i]} ({value:.1%}, {_pp(d)} frente al margen {bench_ref}: {ind:.1%})")
+        i = next((k for k, b in enumerate(bounds_abs) if value >= b), len(bounds_abs))
+        return (points[i], ("excellent", "good", "ok", "moderate", "moderate")[i],
+                f"{labels[i]} ({value:.1%}; sin margen de la industria, bandas absolutas)")
+
     # Operating Margin (hasta ±5 pts)
     if operating_margin is not None:
-        b, p = T["operating_margin_bounds"], T["operating_margin_points"]
-        if operating_margin >= b[0]:
-            adj = p[0]
-            sev = "excellent"
-            reason = f"Excepcional ({operating_margin:.1%}) - Alto poder de fijación de precios"
-        elif operating_margin >= b[1]:
-            adj = p[1]
-            sev = "good"
-            reason = f"Muy bueno ({operating_margin:.1%}) - Operaciones eficientes"
-        elif operating_margin >= b[2]:
-            adj = p[2]
-            sev = "ok"
-            reason = f"Bueno ({operating_margin:.1%}) - Márgenes saludables"
-        elif operating_margin >= b[3]:
-            adj = p[3]
-            sev = "moderate"
-            reason = f"Ajustado ({operating_margin:.1%}) - Márgenes bajo presión"
-        elif operating_margin >= 0:
-            adj = p[4]
-            sev = "moderate"
-            reason = f"Bajo ({operating_margin:.1%}) - Costos erosionan ganancias"
-        else:
-            adj = p[5]
-            sev = "severe"
-            reason = f"Negativo ({operating_margin:.1%}) - Operaciones no rentables"
-        
+        adj, sev, reason = _margin(operating_margin, industry_operating_margin, [*T["operating_margin_bounds"], 0.0],
+                                   T["operating_margin_vs_industry_pp"], T["operating_margin_points"],
+                                   ("Excepcional", "Muy bueno", "En línea", "Por debajo", "Bajo"))
         base_score += adj
         _a["opm"] = adj
-        adjustments.append({"metric": "Margen Operativo", "value": f"{operating_margin:.1%}", "adjustment": adj, "reason": reason, "severity": sev})
-    
+        adjustments.append({"metric": "Margen operativo", "value": f"{operating_margin:.2%}", "adjustment": adj, "reason": reason, "severity": sev})
+
     # Net Margin (hasta ±3 pts)
     if net_margin is not None:
-        b, p = T["net_margin_bounds"], T["net_margin_points"]
-        if net_margin >= b[0]:
-            adj = p[0]
-            sev = "excellent"
-            reason = f"Excelente ({net_margin:.1%}) - Alta rentabilidad final"
-        elif net_margin >= b[1]:
-            adj = p[1]
-            sev = "good"
-            reason = f"Bueno ({net_margin:.1%}) - Ganancias sólidas"
-        elif net_margin >= b[2]:
-            adj = p[2]
-            sev = "ok"
-            reason = f"Aceptable ({net_margin:.1%}) - Márgenes estándar"
-        elif net_margin >= 0:
-            adj = p[3]
-            sev = "moderate"
-            reason = f"Bajo ({net_margin:.1%}) - Poca ganancia por venta"
-        else:
-            adj = p[4]
-            sev = "severe"
-            reason = f"Negativo ({net_margin:.1%})"
-        
+        adj, sev, reason = _margin(net_margin, industry_net_margin, [*T["net_margin_bounds"], 0.0],
+                                   T["net_margin_vs_industry_pp"], T["net_margin_points"],
+                                   ("Excelente", "Por encima", "En línea", "Bajo"))
         base_score += adj
         _a["nm"] = adj
-        adjustments.append({"metric": "Margen Neto", "value": f"{net_margin:.1%}", "adjustment": adj, "reason": reason, "severity": sev})
+        adjustments.append({"metric": "Margen neto", "value": f"{net_margin:.2%}", "adjustment": adj, "reason": reason, "severity": sev})
 
     # ROIC - WACC spread (hasta ±3): ¿la empresa genera retornos por encima de su
     # costo de capital? Es el filtro de CREACIÓN DE VALOR económico que faltaba: el
@@ -2327,39 +2451,51 @@ def score_rentabilidad(
         b, p = T["spread_bounds"], T["spread_points"]
         if spread >= b[0]:
             adj = p[0]; sev = "excellent"
-            reason = f"Crea mucho valor (ROIC {roic:.1%} vs WACC {wacc:.1%}, spread +{spread:.1%})"
+            reason = f"Crea mucho valor (ROIC {roic:.1%} frente a WACC {wacc:.1%}, spread {_pp(spread)})"
         elif spread >= b[1]:
             adj = p[1]; sev = "good"
-            reason = f"Crea valor (ROIC {roic:.1%} > WACC {wacc:.1%}, spread +{spread:.1%})"
+            reason = f"Crea valor (ROIC {roic:.1%} > WACC {wacc:.1%}, spread {_pp(spread)})"
         elif spread >= b[2]:
             adj = p[2]; sev = "ok"
-            reason = f"Retorno por encima del costo de capital (spread +{spread:.1%})"
+            reason = f"Retorno por encima del costo de capital (spread {_pp(spread)})"
         elif spread >= b[3]:
             adj = p[3]; sev = "moderate"
-            reason = f"Retorno apenas por debajo del costo de capital (spread {spread:.1%})"
+            reason = f"Retorno apenas por debajo del costo de capital (spread {_pp(spread)})"
         else:
             adj = p[4]; sev = "severe"
-            reason = f"Destruye valor (ROIC {roic:.1%} < WACC {wacc:.1%}, spread {spread:.1%})"
+            reason = f"Destruye valor (ROIC {roic:.1%} < WACC {wacc:.1%}, spread {_pp(spread)})"
         base_score += adj
         _a["spread"] = adj
-        adjustments.append({"metric": "ROIC vs WACC", "value": f"{spread:+.1%}", "adjustment": adj, "reason": reason, "severity": sev})
+        adjustments.append({"metric": "ROIC frente al WACC", "value": _pp(spread), "adjustment": adj, "reason": reason, "severity": sev})
 
     cov = CategoryCoverage()
     cov.comp("ROE", T["roe_points"], _a.get("roe"))
     cov.comp("ROA", T["roa_points"], _a.get("roa"))
     cov.comp("Margen operativo", T["operating_margin_points"], _a.get("opm"), na=_na_opm)
-    cov.comp("Margen neto", T["net_margin_points"], _a.get("nm"))
+    cov.comp("Margen neto", T["net_margin_points"], _a.get("nm"), na=_na_nm)
     if _na_spread:
         cov.comp("ROIC−WACC", T["spread_points"], None, na=_na_spread)
     elif wacc is not None and roic is None and roic_reason:
         # Regla M (etapa 9a): ROIC no significativo -> como "no aplica" en la cobertura.
         cov.not_sig("ROIC−WACC", roic_reason)
-        adjustments.append({"metric": "ROIC vs WACC", "value": "No significativo", "adjustment": 0,
+        adjustments.append({"metric": "ROIC frente al WACC", "value": "No significativo", "adjustment": 0,
                             "reason": roic_reason[0].upper() + roic_reason[1:], "severity": "neutral"})
     elif wacc is not None:  # sin WACC estimado no hay spread que evaluar
         cov.comp("ROIC−WACC", T["spread_points"], _a.get("spread"))
     base_score = cov.apply(base_score, adjustments)
     final_score = max(_CAT["min"], min(_CAT["max"], base_score))
+    # F8 · E9 (auditoría del 26-oct): el diferencial ROIC − WACC manda. Una empresa que no cubre su coste de capital no
+    # tiene una rentabilidad «excelente» por sus márgenes o su ROE: tope de 10/20 con diferencial < 0 y de 6/20 por
+    # debajo de −3 pp (thresholds.score.rentabilidad.spread_caps).
+    if roic is not None and wacc is not None:
+        _sp = roic - wacc
+        _cap = next((int(c) for lim, c in sorted(T["spread_caps"]) if _sp < lim), None)
+        if _cap is not None and final_score > _cap:
+            adjustments.append({"metric": "Tope por ROIC − WACC", "value": f"{_cap}/20",
+                                "adjustment": _cap - final_score, "severity": "severe" if _sp < 0 else "moderate",
+                                "reason": (f"el ROIC ({roic:.1%}) no cubre el WACC ({wacc:.1%}), diferencial {_pp(_sp)}: "
+                                           f"la rentabilidad no pasa de {_cap}/20"), "cap": True})
+            final_score = _cap
 
     return {
         "category": "Rentabilidad",
@@ -2388,20 +2524,38 @@ def multiples_block(members: Dict[str, Any], label: str, missing: Optional[List[
         return None
     T = _SC["valoracion"]
     norm = {k: (a / max(pts) if a > 0 else (a / abs(min(pts)) if a < 0 else 0.0)) for k, (a, pts) in members.items()}
-    mean_ = sum(norm.values()) / len(norm)
-    bmax = block_max(len(norm))
+    # F10 · N4: los múltiplos del BPA (P/E, Forward P/E, PEG) son un solo voto, su media.
+    fam = [k for k in T["multiples_earnings_family"] if k in norm]
+    votes = {k: v for k, v in norm.items() if k not in fam}
+    fam_label = None
+    if fam:
+        fam_label = "BPA (" + ", ".join(fam) + ")" if len(fam) > 1 else fam[0]
+        votes = {fam_label: sum(norm[k] for k in fam) / len(fam), **votes}
+    mean_ = sum(votes.values()) / len(votes)
+    bmax = block_max(len(votes))
     raw = mean_ * bmax
     block = int(math.floor(abs(raw) + 0.5)) * (1 if raw >= 0 else -1)
     bs = T["multiples_block_strong"]
     sev = ("excellent" if mean_ >= bs else "good" if mean_ > 0 else "ok" if mean_ == 0
            else "severe" if mean_ <= -bs else "moderate")
-    n = len(norm)
+    n, nv = len(norm), len(votes)
+
+    def _read(k, v):
+        if k == fam_label and len(fam) > 1:
+            return f"{k}: {', '.join(f'{m} {norm[m]:+.2f}' for m in fam)} → {v:+.2f}"
+        return f"{k} {v:+.2f}"
     adj = {"metric": label, "value": f"{n} múltiplo{'s' if n != 1 else ''}", "adjustment": block, "severity": sev,
-           "block_mean": mean_, "block_members": list(norm), "block_max": bmax,
-           "reason": (f"promedio de los ajustes reescalados a ±1 ({', '.join(f'{k} {v:+.2f}' for k, v in norm.items())}) "
-                      f"= {mean_:+.2f} × {bmax} (máximo con {n} miembro{'s' if n != 1 else ''}) = {raw:+.1f}"
-                      + (f"; sin dato: {', '.join(missing)}" if missing else ""))}
-    return {"block": block, "raw": raw, "mean": mean_, "max": bmax, "adjustment": adj}
+           "block_mean": mean_, "block_members": list(norm), "block_max": bmax, "block_votes": votes,
+           # V7 (M4): para el lector, qué dice cada múltiplo y cuánto suma el bloque; la fórmula (× máximo con N
+           # miembros), al anexo técnico (`formula`).
+           "reason": (f"media de {nv} lectura{'s' if nv != 1 else ''} en una escala de −1 a +1 "
+                      f"({'; '.join(_read(k, v) for k, v in votes.items())}): {mean_:+.2f}, que suma "
+                      f"{raw:+.1f} puntos de un máximo de ±{bmax}"
+                      + (f"; sin dato: {', '.join(missing)}" if missing else "")),
+           "formula": (f"{label}: promedio de {nv} lectura{'s' if nv != 1 else ''} reescaladas a ±1 "
+                       f"(los múltiplos del BPA, su media: los mueve el mismo BPA) = {mean_:+.2f} × {bmax} (máximo "
+                       f"con {nv}) = {raw:+.1f}, redondeado a {block:+d}")}
+    return {"block": block, "raw": raw, "mean": mean_, "max": bmax, "adjustment": adj, "readings": norm}
 
 
 def score_valoracion(
@@ -2433,6 +2587,12 @@ def score_valoracion(
     xv: Optional[Dict[str, Any]] = None,
     # Etapa 8: el DCF como componente acotado por su fiabilidad
     dcf: Optional[Dict[str, Any]] = None,
+    # F8 · E4: motivo por el que el PEG no es significativo (no cuadra con el crecimiento del BPA del informe)
+    peg_not_significant: Optional[str] = None,
+    # F8 · E2: bandera de pico de beneficio (lib/earnings_peak.py); `pe` ya es el P/E que puntúa con ella
+    earnings_peak: Optional[Dict[str, Any]] = None,
+    # F9 · R1c: por qué no hay CAGR del BPA a 3 años (el de growth_rate), para el texto de la compresión del forward
+    eps_growth_reason: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Categoría 3: Valoración (20 pts máximo)
@@ -2508,7 +2668,7 @@ def score_valoracion(
                 reason = f"Muy caro por FFO ({p_ffo:.1f}x)"
             base_score += adj
             _a["pffo"] = adj
-            adjustments.append({"metric": "P/FFO (REIT)", "value": f"{p_ffo:.1f}x", "adjustment": adj, "reason": reason, "severity": sev})
+            adjustments.append({"metric": "P/FFO (REIT)", "value": f"{p_ffo:.2f}x", "adjustment": adj, "reason": reason, "severity": sev})
         # Etapa 9a: la rentabilidad por dividendo del REIT puntúa en Crecimiento, dentro
         # del retorno total (dividendo + FFO por acción), no aquí: no se cuenta dos veces.
 
@@ -2530,9 +2690,15 @@ def score_valoracion(
                 adj, sev, tag = p[3], "moderate", "Prima"
             else:
                 adj, sev, tag = p[4], "severe", "Caro"
+            # F8 · P3 (CB): la etiqueta dice qué beta entra. La de la industria ya entra ajustada (sin Blume), así que no
+            # es una «β ajustada» (archetype_metrics deja beta_raw en None cuando la beta viene ajustada).
+            _beta_lbl = (f"β ajustada {xv.get('beta_adjusted', 0):.2f}" if xv.get("beta_raw") is not None
+                         else f"β de la industria {xv.get('beta_adjusted', 0):.2f}, sin Blume")
+            _ts = xv.get("two_stage") or {}
             reason = (f"{tag}: {mult:.2f}x frente a {just:.2f}x justificado por su {ret_lbl} "
-                      f"(Ke {xv.get('cost_of_equity', 0):.1%} con β ajustada {xv.get('beta_adjusted', 0):.2f}, "
-                      f"g {xv.get('terminal_growth', 0):.1%})")
+                      f"(Ke {xv.get('cost_of_equity', 0):.1%} con {_beta_lbl}, "
+                      + (f"{_ts['text']})" if _ts.get("applied")     # F9 · R1b
+                         else f"g {xv.get('terminal_growth', 0):.1%})"))
             _a[key] = adj
             _pb_blk[label] = (adj, p)
             # Fase 1 (BCS): "0.95× justificado" se leía como si 0.95x fuera el múltiplo justificado; es la parte
@@ -2559,19 +2725,30 @@ def score_valoracion(
             reason = ("Barato", "Atractivo", "En línea", "Exigente", "Muy caro")[i] + f" por ventas ({evs:.1f}x)"
             base_score += adj
             _a["evs"] = adj
-            adjustments.append({"metric": "EV/Ventas", "value": f"{evs:.1f}x", "adjustment": adj,
+            adjustments.append({"metric": "EV/Ventas", "value": f"{evs:.2f}x", "adjustment": adj,
                                 "reason": reason, "severity": sev})
         if r40 is not None:
             b, p = T["rule_of_40_bounds"], T["rule_of_40_points"]
             i = next((k for k, x in enumerate(b) if r40 >= x), len(b))
             adj = p[i]
             sev = ("excellent", "good", "ok", "moderate", "severe")[i]
+            _r40b = xv.get("rule_of_40_bound")
             reason = (f"Crecimiento {xv.get('revenue_cagr_3y', 0):.1%} (CAGR 3 años) + margen FCF − SBC "
-                      f"{xv.get('fcf_margin', 0):.1%} = {r40 * 100:.0f}")
+                      f"{xv.get('fcf_margin', 0):.1%} = {r40 * 100:.0f}" if not _r40b else
+                      # F10: el crecimiento no es significativo; con su cota superior la regla ya está en el peor tramo
+                      f"Crecimiento no significativo (año base anómalo); con su techo ({_r40b['growth']:.1%}, "
+                      f"la tasa desde el año anómalo, que lo sobrestima) + margen FCF − SBC "
+                      f"{xv.get('fcf_margin', 0):.1%} = {r40 * 100:.0f}, ya en el tramo más bajo")
             base_score += adj
             _a["r40"] = adj
-            adjustments.append({"metric": "Regla de 40", "value": f"{r40 * 100:.0f}", "adjustment": adj,
-                                "reason": reason, "severity": sev})
+            adjustments.append({"metric": "Regla de 40", "value": ("≤ " if _r40b else "") + f"{r40 * 100:.0f}",
+                                "adjustment": adj, "reason": reason, "severity": sev,
+                                **({"bound": _r40b} if _r40b else {})})
+        elif is_anomalous_not_significant(xv.get("rule_of_40_reason")):
+            # F10: el crecimiento que suma no es significativo (año base anómalo): la regla de 40 tampoco
+            adjustments.append({"metric": "Regla de 40", "value": "No significativo", "adjustment": 0,
+                                "severity": "neutral",
+                                "reason": f"El crecimiento de los ingresos a 3 años es {xv['rule_of_40_reason']}"})
 
     # ─── UTILITY (etapa 11b): rentabilidad por dividendo (junto al P/E frente al sector) ────
     if archetype == UTILITY:
@@ -2585,7 +2762,7 @@ def score_valoracion(
                         f"≥{b[3]:.0%})")
             base_score += adj
             _a["dy"] = adj
-            adjustments.append({"metric": "Rentabilidad por dividendo (utility)", "value": f"{dividend_yield:.1%}",
+            adjustments.append({"metric": "Rentabilidad por dividendo (utility)", "value": f"{dividend_yield:.2%}",
                                 "adjustment": adj, "reason": reason, "severity": sev})
 
     # ─── P/E vs Sector (hasta ±5 pts) — si aplica al arquetipo ─────
@@ -2600,54 +2777,82 @@ def score_valoracion(
         m, p = T["pe_value_mults"], T["pe_value_points"]
         if pe <= pe_threshold * m[0]:
             adj = p[0]; sev = "excellent"
-            reason = f"Muy barato ({pe:.1f}x vs {pe_threshold:.1f}x{_vs or ' sector'})"
+            reason = f"Muy barato ({pe:.1f}x frente a {pe_threshold:.1f}x{_vs or ' sector'})"
         elif pe <= pe_threshold * m[1]:
             adj = p[1]; sev = "good"
             reason = f"Atractivo ({pe:.1f}x)"
         elif pe <= pe_threshold * m[2]:
             adj = p[2]; sev = "ok"
-            reason = f"En línea ({pe:.1f}x vs {pe_threshold:.1f}x{_vs})"
+            reason = f"En línea ({pe:.1f}x frente a {pe_threshold:.1f}x{_vs})"
         elif pe <= pe_threshold * m[3]:
             adj = p[3]; sev = "moderate"
-            reason = f"Premium ({pe:.1f}x vs {pe_threshold:.1f}x{_vs})"
+            reason = f"Prima ({pe:.1f}x frente a {pe_threshold:.1f}x{_vs})"
         else:
             adj = p[4]; sev = "severe"
-            reason = f"Muy caro ({pe:.1f}x vs {pe_threshold:.1f}x{_vs})"
+            reason = f"Muy caro ({pe:.1f}x frente a {pe_threshold:.1f}x{_vs})"
 
+        _peak = earnings_peak if (earnings_peak or {}).get("flag") else None
+        if _peak:
+            reason = f"{reason}; {_peak['reason']}"
         _a["pe"] = adj
         _blk["P/E"] = (adj, T["pe_value_points"])
-        adjustments.append({"metric": "P/E vs Sector", "value": f"{pe:.1f}x", "adjustment": adj, "reason": reason,
-                            "severity": sev, "in_block": True})
+        adjustments.append({"metric": "P/E frente al sector", "value": f"{pe:.2f}x", "adjustment": adj, "reason": reason,
+                            "severity": sev, "in_block": True, **({"earnings_peak": True} if _peak else {})})
 
     # ─── Forward P/E (miembro del bloque de múltiplos) ────────────────
-    if not _na["forward_pe"] and forward_pe is not None and forward_pe > 0 and pe is not None and pe > 0:
-        pe_compression = (pe - forward_pe) / pe  # % de "mejora" esperada
+    # F8 · E2: con la bandera de pico, el forward ya entra en el P/E que puntúa; la compresión se mide frente al TTM.
+    _pe_fwd = (earnings_peak or {}).get("pe_ttm") if (earnings_peak or {}).get("flag") else pe
+    if not _na["forward_pe"] and forward_pe is not None and forward_pe > 0 and _pe_fwd is not None and _pe_fwd > 0:
+        # F9 · R1c (decisión del PM del 27-oct, forma continua): el BPA forward se acota al que respalda el histórico,
+        # BPA_fwd creíble = BPA_TTM × (1 + mín(g implícito, CAGR observado del BPA a 3 años)); la compresión puntúa
+        # con el P/E forward creíble. Con el consenso en línea con la historia nada cambia; por encima, solo cuenta la
+        # parte respaldada. Sin parámetros nuevos ni tope fijo: el histórico de la empresa.
+        _fwd_implied = _pe_fwd / forward_pe - 1
+        _fwd_cred = (_pe_fwd / (1 + eps_growth_3y) if eps_growth_3y is not None and _fwd_implied > eps_growth_3y
+                     else forward_pe)
+        _capped = _fwd_cred != forward_pe
+        _fl = "forward creíble" if _capped else "forward"
+        pe_compression = (_pe_fwd - _fwd_cred) / _pe_fwd  # % de "mejora" esperada
         b, p = T["forward_compression_bounds"], T["forward_compression_points"]
         if pe_compression >= b[0]:  # Forward P/E 25%+ menor que trailing
             adj, sev = p[0], "excellent"
-            reason = f"Fuerte compresión P/E ({pe:.0f}x → {forward_pe:.0f}x forward)"
+            reason = f"Fuerte compresión P/E ({_pe_fwd:.0f}x → {_fwd_cred:.0f}x {_fl})"
         elif pe_compression >= b[1]:
             adj, sev = p[1], "good"
-            reason = f"P/E mejorando ({pe:.0f}x → {forward_pe:.0f}x forward)"
+            reason = f"P/E mejorando ({_pe_fwd:.0f}x → {_fwd_cred:.0f}x {_fl})"
         elif pe_compression >= b[2]:
             adj, sev = p[2], "good"
-            reason = f"P/E estable a mejor ({pe:.0f}x → {forward_pe:.0f}x)"
+            reason = f"P/E estable a mejor ({_pe_fwd:.0f}x → {_fwd_cred:.0f}x{' ' + _fl if _capped else ''})"
         else:
             # Etapa 9a: con dato y sin compresión cuenta como 0 en el promedio del bloque.
             adj, sev = 0, "ok"
-            reason = f"Sin compresión del P/E ({pe:.0f}x → {forward_pe:.0f}x forward)"
+            reason = f"Sin compresión del P/E ({_pe_fwd:.0f}x → {_fwd_cred:.0f}x {_fl})"
+        if _capped:
+            reason = (f"{reason}; forward {forward_pe:.1f}x (implica {_fwd_implied:+.0%} de BPA); con el crecimiento "
+                      f"que respalda su histórico ({eps_growth_3y:+.0%} anual del BPA a 3 años), {_fwd_cred:.1f}x")
         # Etapa 11b: la compresión no suma si el Forward P/E sigue en la peor banda frente a su
         # referencia (PLTR: 177x -> 89x es "fuerte compresión", pero 89x sigue muy caro).
         _fref = sector_forward_pe if sector_forward_pe and sector_forward_pe > 0 else (
             sector_pe if sector_pe and sector_pe > 0 else _BENCH_FALLBACK["pe"])
         _worst = _fref * T["pe_value_mults"][-1]
-        if adj > 0 and forward_pe > _worst:
-            reason = (f"{reason}, sin efecto: el Forward P/E ({forward_pe:.1f}x) sigue en la peor banda "
+        if adj > 0 and _fwd_cred > _worst:
+            reason = (f"{reason}, sin efecto: el Forward P/E{' creíble' if _capped else ''} ({_fwd_cred:.1f}x) sigue en la peor banda "
                       f"(> {_worst:.1f}x = {_fref:.1f}x de referencia × {T['pe_value_mults'][-1]:g})")
             adj, sev = 0, "ok"
+        # F9 · R1c: sin CAGR observable (pérdidas, historia corta) no hay crecimiento respaldado: se muestra y no puntúa.
+        _fwd_gate = None
+        if adj > 0 and eps_growth_3y is None:
+            _fwd_gate = (f"el forward implica {_fwd_implied:+.0%}, pero no hay histórico de BPA de 3 años comparable"
+                         + (f" ({eps_growth_reason.rstrip('.')})" if eps_growth_reason else "")
+                         + "; la compresión no puntúa")
+        if _fwd_gate:
+            reason, adj, sev = f"{reason}; {_fwd_gate}", 0, "ok"
         _blk["Forward P/E"] = (adj, [*p, 0])
-        adjustments.append({"metric": "Forward P/E", "value": f"{forward_pe:.1f}x", "adjustment": adj,
-                            "reason": reason, "severity": sev, "in_block": True})
+        adjustments.append({"metric": "Forward P/E", "value": f"{forward_pe:.2f}x", "adjustment": adj,
+                            "reason": reason, "severity": sev, "in_block": True,
+                            "implied_eps_growth": _fwd_implied, "eps_growth_3y": eps_growth_3y,
+                            **({"credible_forward_pe": _fwd_cred} if _capped else {}),
+                            **({"not_scored": _fwd_gate} if _fwd_gate else {})})
 
     # ─── P/FCF (hasta ±4 pts) — omitido para REITs (capex de cartera) ──
     if not _na["p_fcf"] and not is_reit and p_fcf is not None and p_fcf > 0:
@@ -2671,36 +2876,40 @@ def score_valoracion(
 
         _a["pfcf"] = adj
         _blk["P/FCF"] = (adj, T["pfcf_value_points"])
-        adjustments.append({"metric": "P/FCF normalizado" if _cyc else "P/FCF", "value": f"{p_fcf:.1f}x",
+        adjustments.append({"metric": "P/FCF normalizado" if _cyc else "P/FCF", "value": f"{p_fcf:.2f}x",
                             "adjustment": adj, "reason": reason + _cyc_note, "severity": sev, "in_block": True})
 
     # ─── EV/EBITDA vs Sector (hasta ±4 pts) ────────────
     if not _na["ev_ebitda"] and ev_ebitda is not None and ev_ebitda > 0:
         ev_threshold = sector_ev_ebitda if sector_ev_ebitda and sector_ev_ebitda > 0 else _BENCH_FALLBACK["ev_ebitda"]
         _vs = " mercado" if benchmark_profile == "market" else ""
+        _evx = numfmt.ev_ebitda(ev_ebitda, 1)      # EBITDA casi nulo: la cota; la cifra exacta, en el motivo
 
         # Etapa 9a: bandas de valor únicamente (ver P/E).
         m, p = T["ev_ebitda_value_mults"], T["ev_ebitda_value_points"]
         if ev_ebitda <= ev_threshold * m[0]:
             adj = p[0]; sev = "excellent"
-            reason = f"Muy barato ({ev_ebitda:.1f}x vs {ev_threshold:.1f}x{_vs})"
+            reason = f"Muy barato ({_evx} frente a {ev_threshold:.1f}x{_vs})"
         elif ev_ebitda <= ev_threshold:
             adj = p[1]; sev = "good"
-            reason = f"Atractivo ({ev_ebitda:.1f}x)"
+            reason = f"Atractivo ({_evx})"
         elif ev_ebitda <= ev_threshold * m[1]:
             adj = p[2]; sev = "ok"
-            reason = f"En línea ({ev_ebitda:.1f}x)"
+            reason = f"En línea ({_evx})"
         elif ev_ebitda <= ev_threshold * m[2]:
             adj = p[3]; sev = "moderate"
-            reason = f"Premium ({ev_ebitda:.1f}x vs {ev_threshold:.1f}x{_vs})"
+            reason = f"Prima ({_evx} frente a {ev_threshold:.1f}x{_vs})"
         else:
             adj = p[4]; sev = "severe"
-            reason = f"Muy caro ({ev_ebitda:.1f}x vs {ev_threshold:.1f}x{_vs})"
+            reason = f"Muy caro ({_evx} frente a {ev_threshold:.1f}x{_vs})"
 
         _a["ev"] = adj
         _blk["EV/EBITDA"] = (adj, T["ev_ebitda_value_points"])
-        adjustments.append({"metric": "EV/EBITDA normalizado vs Sector" if _cyc else "EV/EBITDA vs Sector",
-                            "value": f"{ev_ebitda:.1f}x", "adjustment": adj, "reason": reason + _cyc_note,
+        adjustments.append({"metric": "EV/EBITDA normalizado frente al sector" if _cyc else "EV/EBITDA frente al sector",
+                            "value": numfmt.ev_ebitda(ev_ebitda), "adjustment": adj,
+                            "reason": reason + _cyc_note + (
+                                f"; {numfmt.ev_ebitda_detail(ev_ebitda, use_context=not _cyc)}"
+                                if numfmt.ev_ebitda_detail(ev_ebitda, use_context=not _cyc) else ""),
                             "severity": sev, "in_block": True})
 
     # ─── PEG Ratio (hasta ±4 pts) ─────────────────────
@@ -2724,7 +2933,7 @@ def score_valoracion(
 
         _a["peg"] = adj
         _blk["PEG"] = (adj, T["peg_points"])
-        adjustments.append({"metric": "PEG Ratio", "value": f"{peg:.2f}", "adjustment": adj, "reason": reason,
+        adjustments.append({"metric": "PEG", "value": f"{peg:.2f}", "adjustment": adj, "reason": reason,
                             "severity": sev, "in_block": True})
 
     # ─── Bloque de múltiplos correlacionados (etapa 9a) ─────
@@ -2732,9 +2941,11 @@ def score_valoracion(
     # beneficio o caja): sumarlos contaba varias veces una sola señal.
     _missing_blk = [k for k in T["multiples_block"] if k not in _blk
                     and not _na.get({"P/E": "pe", "Forward P/E": "forward_pe", "P/FCF": "p_fcf",
-                                     "EV/EBITDA": "ev_ebitda", "PEG": "peg"}[k])]
+                                     "EV/EBITDA": "ev_ebitda", "PEG": "peg"}[k])
+                    and not (k == "PEG" and peg_not_significant)]
     _bres = multiples_block(_blk, "Bloque de múltiplos", _missing_blk)
     _block_raw = _block_adj = _bmax_used = None
+    _block_readings: Dict[str, float] = (_bres or {}).get("readings") or {}
     if _bres:
         adjustments.append(_bres["adjustment"])
         base_score += _bres["block"]
@@ -2762,24 +2973,28 @@ def score_valoracion(
         b = T["dcf_upside_bounds"]
         i = next((k for k, x in enumerate(b) if up >= x), len(b))
         tag = ("Claramente barata", "Barata", "En precio", "Cara", "Claramente cara")[i]
+        # V7 (M5): el nombre dice qué puntúa de verdad. Con el directo descartado puntúa el inverso, y la fila no se
+        # llama "DCF (upside) −66 %" mientras otro bloque dice que el DCF directo no se usa.
+        name, val = "DCF directo (valor frente al precio)", f"{up:+.0%}"
         if rel == "baja" and (_dcf.get("reverse") or {}).get("points") is not None:
-            # Fase 3 (T3, §2.3): el DCF inverso es el método intrínseco cuando el directo no concilia.
+            # Fase 3 (T3, §2.3): el DCF inverso es el método intrínseco cuando el directo tiene fiabilidad baja.
             rv = _dcf["reverse"]
             adj, sev = rv["points"], _reverse_severity(rv["points"], T["dcf_points_high"])
-            reason = ("El DCF directo no concilia con el precio; se usa el DCF inverso: "
+            reason = ("El DCF directo tiene fiabilidad baja; se usa el DCF inverso: "
                       + (rv.get("text") or rv["band"]))
+            name, val = "DCF inverso (lo que exige el precio)", rv["band"].replace("_", " ")
         elif rel == "baja":
             adj, sev = 0, "neutral"
-            reason = ("El DCF no concilia con el precio bajo ningún supuesto razonable; no se usa en el score"
-                      if _dcf.get("grid_contains_price") is False else
-                      "DCF de fiabilidad baja: no se usa en el score")
+            # F8 · E8: la fiabilidad baja viene de los insumos, no de la distancia al precio.
+            reason = "DCF de fiabilidad baja: no se usa en el score"
+            name = "DCF directo: descartado, no puntúa"
         else:
             adj = (T["dcf_points_high"] if rel == "alta" else T["dcf_points_medium"])[i]
             sev = ("excellent", "good", "ok", "moderate", "severe")[i]
             reason = f"{tag} por DCF (fiabilidad {rel})"
         base_score += adj
         _dcf_adj = adj
-        adjustments.append({"metric": "DCF (upside)", "value": f"{up:+.0%}", "adjustment": adj,
+        adjustments.append({"metric": name, "key": "dcf", "value": val, "adjustment": adj,
                             "reason": reason + (": " + "; ".join(_dcf.get("reasons") or []) if _dcf.get("reasons") else ""),
                             "severity": sev, "reliability": rel})
     elif _dcf.get("not_significant") and (_dcf.get("reverse") or {}).get("points") is not None:
@@ -2801,7 +3016,8 @@ def score_valoracion(
                             "adjustment": _dcf_adj, "reason": rv.get("text") or rv["band"],
                             "severity": _reverse_severity(_dcf_adj, T["dcf_points_high"])})
     elif _dcf.get("not_significant"):
-        adjustments.append({"metric": "DCF (upside)", "value": "No significativo", "adjustment": 0,
+        adjustments.append({"metric": "DCF directo: no puntúa", "key": "dcf",
+                            "value": "No significativo", "adjustment": 0,
                             "reason": _dcf["not_significant"], "severity": "neutral"})
     elif not _dcf.get("na"):
         _dcf_reason = _dcf.get("missing_reason") or "sin DCF"
@@ -2820,7 +3036,10 @@ def score_valoracion(
                  None if dividend_yield else "sin dividendo")
     if archetype == GROWTH_PRE_PROFIT:
         cov.comp("EV/Ventas", T["ev_sales_points"], _a.get("evs"))
-        cov.comp("Regla de 40", T["rule_of_40_points"], _a.get("r40"))
+        if _a.get("r40") is None and is_anomalous_not_significant(xv.get("rule_of_40_reason")):
+            cov.not_sig("Regla de 40", xv["rule_of_40_reason"])
+        else:
+            cov.comp("Regla de 40", T["rule_of_40_points"], _a.get("r40"))
     # Miembros del bloque: cuentan en la cobertura, pero se reescala el bloque, no cada uno.
     if is_reit and archetype is None:
         pass  # llamada antigua sin arquetipo: P/E y P/FCF omitidos para REIT
@@ -2829,7 +3048,10 @@ def score_valoracion(
         cov.comp("P/FCF", T["pfcf_value_points"], _a.get("pfcf"), na=_na["p_fcf"], rescale=False)
     cov.comp("EV/EBITDA", T["ev_ebitda_value_points"], _a.get("ev"),
              na=_na["ev_ebitda"], rescale=False)
-    cov.comp("PEG", T["peg_points"], _a.get("peg"), na=_na["peg"], rescale=False)
+    if peg_not_significant and not _na["peg"]:
+        cov.not_sig("PEG", peg_not_significant)
+    else:
+        cov.comp("PEG", T["peg_points"], _a.get("peg"), na=_na["peg"], rescale=False)
     # Rango del bloque en el reescalado: el de sus miembros con dato (o el de los
     # aplicables si ninguno tiene dato).
     _n_app = len([n for n, *_ in cov.items if n in ("P/E", "P/FCF", "EV/EBITDA", "PEG")])
@@ -2851,7 +3073,8 @@ def score_valoracion(
     # como un solo múltiplo, junto a los de la rama (P/FFO, EV/Ventas, P/B…).
     _mult_signal = multiples_signal(
         [it for it in cov.items if it[0] not in cov.unscaled]
-        + ([("Bloque de múltiplos", _bm, -_bm, _block_raw)] if _block_raw is not None else []))
+        + ([("Bloque de múltiplos", _bm, -_bm, _block_raw)] if _block_raw is not None else []),
+        members=_block_readings)
     base_score = cov.apply(base_score, adjustments)
     final_score = max(_CAT["min"], min(_CAT["max"], base_score))
 
@@ -2920,7 +3143,7 @@ def score_rentabilidad_reit(xv: Dict[str, Any]) -> Dict[str, Any]:
         adj, _, lab = _banded(v, b, p, labels)
         what = ("FFO sobre los activos totales, frente a los REIT de EE. UU." if key == "ffo_to_assets"
                 else "FFO sobre ingresos")
-        fm = "{:.2%}" if key == "ffo_to_assets" else "{:.1%}"   # 4.98% no es 5.0%: el tramo cambia en el 5%
+        fm = "{:.2%}"   # 4.98% no es 5.0% (el tramo cambia en el 5%); F10 · B2: la precisión de la tabla
         comps.append((name, p, v, adj, f"{lab} ({fm.format(v)}) - {what}", fm, None))
     return _rentabilidad_branch(REIT, comps, _RENT_NA_COMMON + (("gross_margin", "Margen bruto"),
                                                                ("operating_margin", "Margen operativo")))
@@ -2940,7 +3163,7 @@ def score_rentabilidad_growth(xv: Dict[str, Any], gross_margin: Optional[float],
         adj, _, lab = _banded(gm, T["gpp_gross_margin_bounds"], T["gpp_gross_margin_points"],
                               ("Excelente", "Alto", "En línea", "Bajo", "Muy bajo"))
         comps.append(("Margen bruto", T["gpp_gross_margin_points"], gm, adj,
-                      f"{lab} ({gm:.1%}) - margen que financiará la escala", "{:.1%}", None))
+                      f"{lab} ({gm:.1%}) - margen que financiará la escala", "{:.2%}", None))
     om = xv.get("operating_margin_fy") if operating_margin is None else operating_margin
     if om is None:
         comps.append(("Margen operativo", T["gpp_operating_margin_points"], None, None, None, "{}",
@@ -2950,7 +3173,7 @@ def score_rentabilidad_growth(xv: Dict[str, Any], gross_margin: Optional[float],
                               ("En equilibrio o positivo", "Cerca del equilibrio", "Pérdida operativa moderada",
                                "Pérdida operativa alta", "Pérdida operativa muy alta"))
         comps.append(("Margen operativo", T["gpp_operating_margin_points"], om, adj,
-                      f"{lab} ({om:.1%}) - bandas de pre-beneficio", "{:.1%}", None))
+                      f"{lab} ({om:.1%}) - bandas de pre-beneficio", "{:.2%}", None))
     ch = xv.get("operating_margin_change")
     if ch is None:
         comps.append(("Mejora del margen operativo", T["gpp_opm_change_points"], None, None, None, "{}",
@@ -2971,7 +3194,7 @@ def score_rentabilidad_growth(xv: Dict[str, Any], gross_margin: Optional[float],
         _raw = xv.get("fcf_margin_raw")
         comps.append(("Margen FCF − SBC", T["gpp_fcf_margin_points"], fm, adj,
                       f"{lab} ({fm:.1%}) - FCF menos compensación en acciones sobre ingresos"
-                      + (f" (FCF bruto {_raw:.1%})" if _raw is not None else ""), "{:.1%}", None))
+                      + (f" (FCF bruto {_raw:.1%})" if _raw is not None else ""), "{:.2%}", None))
     return _rentabilidad_branch(GROWTH_PRE_PROFIT, comps, _RENT_NA_COMMON)
 
 
@@ -3022,10 +3245,15 @@ def score_calidad_ganancias(
 
     if archetype == FINANCIAL:
         sd = xv.get("roe_std")
+        # F9 · R7: con el paso de pérdidas a ganancias, la estabilidad se mide desde entonces y se dice.
+        _since = f" ({xv.get('roe_years')} ejercicios {xv['roe_std_basis']})" if xv.get("roe_std_basis") else ""
         _band("roe_std", "Estabilidad del ROE", sd, None if sd is None else f"σ {sd * 100:.1f} pp",
               T["financial_roe_std_bounds"], T["financial_roe_std_points"], False,
-              [f"ROE muy estable ({xv.get('roe_years')} ejercicios)", "ROE estable", "ROE algo volátil",
-               "ROE volátil: beneficio poco recurrente"])
+              [f"ROE muy estable ({xv.get('roe_years')} ejercicios{' ' + xv['roe_std_basis'] if _since else ''})",
+               f"ROE estable{_since}", f"ROE algo volátil{_since}", f"ROE volátil: beneficio poco recurrente{_since}"])
+        if sd is None and xv.get("roe_std_reason"):
+            adjustments.append({"metric": "Estabilidad del ROE", "value": "No significativo", "adjustment": 0,
+                                "reason": f"No significativa: {xv['roe_std_reason']}", "severity": "ok"})
         ef = xv.get("efficiency_ratio")
         _band("efficiency", "Eficiencia (aprox.)", ef, None if ef is None else f"{ef:.1%}",
               T["financial_efficiency_bounds"], T["financial_efficiency_points"], False,
@@ -3086,7 +3314,7 @@ def score_calidad_ganancias(
         
         base_score += adj
         _a["ocf"] = adj
-        adjustments.append({"metric": "Cash Flow Operativo", "value": "Positivo" if ocf > 0 else "Negativo", "adjustment": adj, "reason": reason, "severity": sev})
+        adjustments.append({"metric": "Flujo de caja operativo", "value": "Positivo" if ocf > 0 else "Negativo", "adjustment": adj, "reason": reason, "severity": sev})
     
     # FCF (hasta ±4 pts). Etapa 9a: en GROWTH_PRE_PROFIT, FCF − SBC (la misma definición
     # que el margen FCF, la regla de 40 y el crecimiento del FCF); sin SBC, sin dato.
@@ -3108,7 +3336,7 @@ def score_calidad_ganancias(
         
         base_score += adj
         _a["fcf"] = adj
-        adjustments.append({"metric": "FCF − SBC" if _gpp else "Free Cash Flow",
+        adjustments.append({"metric": "FCF − SBC" if _gpp else "Flujo de caja libre",
                             "value": "Positivo" if fcf > 0 else "Negativo", "adjustment": adj, "reason": reason,
                             "severity": sev})
     
@@ -3118,11 +3346,11 @@ def score_calidad_ganancias(
         if fcf_to_net_income >= b[0]:
             adj = p[0]
             sev = "excellent"
-            reason = f"FCF > Net Income ({fcf_to_net_income:.1%})"
+            reason = f"FCF mayor que el beneficio neto ({fcf_to_net_income:.1%})"
         elif fcf_to_net_income >= b[1]:
             adj = p[1]
             sev = "good"
-            reason = f"FCF sólido vs ganancias ({fcf_to_net_income:.1%})"
+            reason = f"FCF sólido frente al beneficio ({fcf_to_net_income:.1%})"
         elif fcf_to_net_income >= b[2]:
             adj = p[2]
             sev = "ok"
@@ -3134,15 +3362,24 @@ def score_calidad_ganancias(
         
         base_score += adj
         _a["fcf_ni"] = adj
-        adjustments.append({"metric": "FCF / Net Income", "value": f"{fcf_to_net_income:.0%}", "adjustment": adj, "reason": reason, "severity": sev})
+        adjustments.append({"metric": "FCF / beneficio neto", "value": f"{fcf_to_net_income:.0%}", "adjustment": adj, "reason": reason, "severity": sev})
     
     cov = CategoryCoverage()
     if archetype == FINANCIAL:
-        cov.comp("Estabilidad del ROE", T["financial_roe_std_points"], _a.get("roe_std"))
+        if xv.get("roe_std") is None and xv.get("roe_std_reason"):
+            cov.not_sig("Estabilidad del ROE", xv["roe_std_reason"])   # F9 · R7: no resta cobertura
+        else:
+            cov.comp("Estabilidad del ROE", T["financial_roe_std_points"], _a.get("roe_std"))
         cov.comp("Eficiencia (aprox.)", T["financial_efficiency_points"], _a.get("efficiency"),
                  xv.get("efficiency_reason"))
-        cov.comp("Crecimiento del valor en libros", T["financial_bv_growth_points"], _a.get("bv_growth"),
-                 xv.get("book_value_cagr_3y_reason"))
+        _bvr = xv.get("book_value_cagr_3y_reason")
+        if _a.get("bv_growth") is None and is_anomalous_not_significant(_bvr):
+            # F10 · crecimiento desde una base anómala: no significativo, no resta cobertura, con su línea
+            cov.not_sig("Crecimiento del valor en libros", _bvr)
+            adjustments.append({"metric": "Crecimiento del valor en libros", "value": "No significativo",
+                                "adjustment": 0, "severity": "neutral", "reason": _bvr[0].upper() + _bvr[1:]})
+        else:
+            cov.comp("Crecimiento del valor en libros", T["financial_bv_growth_points"], _a.get("bv_growth"), _bvr)
     if archetype == REIT:
         cov.comp("Payout sobre FFO", T["reit_ffo_payout_points"], _a.get("ffo_payout"))
     # Piotroski None = no concluyente (o sin dato): no aporta y Calidad se reescala.
@@ -3188,6 +3425,7 @@ def score_crecimiento(
     eps_note: Optional[str] = None,
     revenue_ps_growth_3y: Optional[float] = None,   # revisión F3 (hallazgo 6): retorno total por acción
     revenue_ps_years: Optional[int] = None,         # revisión F4 (hallazgo 2): ventana del perímetro homogéneo
+    bounds: Optional[Dict[str, Any]] = None,        # F10: cotas de las tasas no significativas ({rev, eps, fcf})
 ) -> Dict[str, Any]:
     """
     Categoría 5: Crecimiento (20 pts máximo)
@@ -3219,8 +3457,12 @@ def score_crecimiento(
     _mature_tr = (archetype == MATURE and dividend_yield is not None
                   and dividend_yield >= T["mature_total_return_min_yield"])
     _rev_metric = ("Retorno total (dividendo + FFO por acción)" if _reit
-                   else "Retorno total (dividendo + ingresos por acción)" if _mature_tr else "Crecimiento Ingresos 3Y")
+                   else "Retorno total (dividendo + ingresos por acción)" if _mature_tr
+                   else growth_metric("Crecimiento de ingresos", archetype))
     _ffo_ps = revenue_growth_3y
+    # F8 · E4 (auditoría del 26-oct, VZ): el crecimiento de los ingresos de la base del informe (el del DCF), aparte del
+    # retorno total que puntúa; el titular cita este, no la suma con el dividendo.
+    _rev_underlying = revenue_growth_3y
     if _mature_tr and revenue_growth_3y is not None:
         # Revisión de código F3 (hallazgo 6): el retorno total es dividendo + crecimiento POR ACCIÓN (las recompras
         # son retorno); el agregado solo si no hay serie de acciones, y el rótulo lo dice.
@@ -3240,6 +3482,35 @@ def score_crecimiento(
         elif revenue_growth_3y is not None:
             revenue_reason = "sin rentabilidad por dividendo: no hay retorno total"
             revenue_growth_3y = None
+    # F10 (PM, 29-oct): una tasa no significativa (año base anómalo) puntúa con su cota solo si la cota ya decide el
+    # tramo (desde una base baja, cota superior: decide el peor). La fila lo dice («≤ x») y el motivo lo explica. El
+    # retorno total (REIT, madura de dividendo alto) no la usa: suma el dividendo y la cota del FFO no se expone.
+    _bnd, _bused = bounds or {}, set()
+
+    def _from_bound(key, value, reason, bands):
+        if value is not None or not is_anomalous_not_significant(reason) or not (_bnd.get(key) or {}).get("value"):
+            return value
+        bd = _bnd[key]
+        v = bound_decides({**bd, "value": growth_for_bands(bd["value"])}, bands)
+        if v is None:
+            return None
+        _bused.add(key)
+        return v
+
+    def _bound_row(key, note):
+        if key in _bused:
+            row = adjustments[-1]
+            bd = _bnd[key]
+            row["value"] = ("≤ " if bd.get("direction") == "superior" else "≥ ") + row["value"]
+            row["bound"] = bd
+            row["reason"] += (f" — {note}: el crecimiento no es significativo (año base anómalo), pero su "
+                              f"{'techo' if bd.get('direction') == 'superior' else 'suelo'} (la tasa desde el año "
+                              "anómalo) ya está en este tramo")
+
+    if not (_reit or _mature_tr):
+        revenue_growth_3y = _from_bound("rev", revenue_growth_3y, revenue_reason, [*T["revenue_bounds"], 0.0])
+    eps_growth_3y = _from_bound("eps", eps_growth_3y, eps_reason, [*T["eps_bounds"], 0.0])
+    fcf_growth_3y = _from_bound("fcf", fcf_growth_3y, fcf_growth_reason, T["fcf_bounds"])
     if revenue_growth_3y is not None:
         b, p = (T["reit_total_return_bounds"], T["reit_total_return_points"]) if (_reit or _mature_tr) \
             else (T["revenue_bounds"], T["revenue_points"])
@@ -3267,40 +3538,45 @@ def score_crecimiento(
         base_score += adj
         _a["rev"] = adj
         # raw (etapa 9b): la cifra que puntúa; los textos del PDF y de la web citan esta.
-        adjustments.append({"metric": _rev_metric, "value": f"{revenue_growth_3y:.1%}", "adjustment": adj,
+        adjustments.append({"metric": _rev_metric, "value": f"{revenue_growth_3y:.2%}", "adjustment": adj,
                             "reason": reason + (f" — {revenue_note}" if revenue_note else ""), "severity": sev,
-                            "raw": revenue_growth_3y})
+                            "raw": revenue_growth_3y,
+                            **({"revenue_growth": _rev_underlying, "dividend_yield": dividend_yield}
+                               if _mature_tr else {})})
     
+    _bound_row("rev", "cota")
     # EPS Growth 3Y (hasta ±5 pts)
     if eps_growth_3y is not None:
         b, p = T["eps_bounds"], T["eps_points"]
         if eps_growth_3y >= b[0]:
             adj = p[0]
             sev = "excellent"
-            reason = f"EPS excepcional ({eps_growth_3y:.1%})"
+            reason = f"BPA excepcional ({eps_growth_3y:.1%})"
         elif eps_growth_3y >= b[1]:
             adj = p[1]
             sev = "good"
-            reason = f"EPS sólido ({eps_growth_3y:.1%})"
+            reason = f"BPA sólido ({eps_growth_3y:.1%})"
         elif eps_growth_3y >= b[2]:
             adj = p[2]
             sev = "ok"
-            reason = f"EPS moderado ({eps_growth_3y:.1%})"
+            reason = f"BPA moderado ({eps_growth_3y:.1%})"
         elif growth_for_bands(eps_growth_3y) >= 0:
             adj = p[3]
             sev = "moderate"
-            reason = f"EPS plano ({eps_growth_3y:.1%})"
+            reason = f"BPA plano ({eps_growth_3y:.1%})"
         else:
             adj = p[4]
             sev = "severe"
-            reason = f"EPS en declive ({eps_growth_3y:.1%})"
+            reason = f"BPA en declive ({eps_growth_3y:.1%})"
         
         base_score += adj
         _a["eps"] = adj
-        adjustments.append({"metric": "Crecimiento EPS 3Y", "value": f"{eps_growth_3y:.1%}", "adjustment": adj,
+        adjustments.append({"metric": growth_metric("Crecimiento del BPA", archetype), "value": f"{eps_growth_3y:.2%}",
+                            "adjustment": adj,
                             "reason": reason + (f" — {eps_note}" if eps_note else ""), "severity": sev,
                             "raw": eps_growth_3y})
     
+    _bound_row("eps", "cota")
     # FCF Growth (hasta ±4 pts)
     if fcf_growth_3y is not None:
         b, p = T["fcf_bounds"], T["fcf_points"]
@@ -3315,7 +3591,9 @@ def score_crecimiento(
         elif fcf_growth_3y >= b[2]:
             adj = p[2]
             sev = "ok"
-            reason = f"FCF estable ({fcf_growth_3y:.1%})"
+            # V7 (M3): la palabra sigue al signo (−3.9% no es "estable"); los puntos del tramo no cambian.
+            reason = (f"FCF estable ({fcf_growth_3y:.1%})" if growth_for_bands(fcf_growth_3y) >= 0
+                      else f"FCF en ligero descenso ({fcf_growth_3y:.1%})")
         else:
             adj = p[3]
             sev = "moderate"
@@ -3323,29 +3601,41 @@ def score_crecimiento(
         
         base_score += adj
         _a["fcf"] = adj
-        adjustments.append({"metric": ("Crecimiento FCF por acción 3Y" if _reit else
-                                       "Crecimiento FCF − SBC 3Y" if archetype == GROWTH_PRE_PROFIT else
-                                       "Crecimiento FCF 3Y"),
-                            "value": f"{fcf_growth_3y:.1%}", "adjustment": adj, "reason": reason, "severity": sev,
+        adjustments.append({"metric": ("Crecimiento del FCF por acción a 3 años" if _reit else
+                                       "Crecimiento del FCF − SBC a 3 años" if archetype == GROWTH_PRE_PROFIT else
+                                       "Crecimiento del FCF a 3 años"),
+                            "value": f"{fcf_growth_3y:.2%}", "adjustment": adj, "reason": reason, "severity": sev,
                             "raw": fcf_growth_3y})
     elif fcf_sustained_negative and not _na_fcf:
         # Etapa 9a (regla general): negativo en todos los ejercicios -> peor tramo, no "sin dato".
         adj = T["fcf_points"][-1]
         _a["fcf"] = adj
         base_score += adj
-        adjustments.append({"metric": ("Crecimiento FCF por acción 3Y" if _reit else
-                                       "Crecimiento FCF − SBC 3Y" if archetype == GROWTH_PRE_PROFIT else
-                                       "Crecimiento FCF 3Y"),
+        adjustments.append({"metric": ("Crecimiento del FCF por acción a 3 años" if _reit else
+                                       "Crecimiento del FCF − SBC a 3 años" if archetype == GROWTH_PRE_PROFIT else
+                                       "Crecimiento del FCF a 3 años"),
                             "value": "Negativo sostenido", "adjustment": adj, "severity": "severe",
                             "reason": (fcf_growth_reason or "negativo en todos los ejercicios").capitalize()
                                       + " — peor tramo"})
     
+    if fcf_growth_3y is not None:
+        _bound_row("fcf", "cota")
     # Etapa 9a: sin bono "Growth Company": las bandas de crecimiento ya lo puntúan
     # (contarlo aparte puntuaba dos veces el mismo crecimiento de ingresos).
     
     cov = CategoryCoverage()
-    if _reit:
+    # F10 · crecimiento desde una base anómala (historical_metrics.robust_growth): una tasa que dependería del año anómalo
+    # es no significativa: no puntúa, no resta cobertura y su línea, con el rótulo de la fila que puntuaría, dice por qué.
+    _ns_rows = []
+    _rev_ns = _a.get("rev") is None and is_anomalous_not_significant(revenue_reason)
+    if _rev_ns:
+        _ns_rows.append((_rev_metric, revenue_reason))
+    if _reit and _rev_ns:
+        cov.not_sig("Retorno total", revenue_reason)
+    elif _reit:
         cov.comp("Retorno total", T["reit_total_return_points"], _a.get("rev"), revenue_reason)
+    elif _rev_ns:
+        cov.not_sig("Crecimiento de ingresos", revenue_reason)
     else:
         cov.comp("Crecimiento de ingresos", T["revenue_points"], _a.get("rev"), revenue_reason)
     # Fase 3 (T5, F3_DISENO §4): con el BPA o el FCF del año base <= 0 (AMZN), su CAGR no está definido: no es un dato
@@ -3354,12 +3644,23 @@ def score_crecimiento(
     def _base_le_zero(reason):
         return bool(reason) and "inicial <= 0" in reason and _a.get("rev") is not None
     _rev_word = "ingresos por acción" if "por acción" in (revenue_note or "") else "ingresos"
-    for _nm, _key, _pts, _rsn, _na in (("Crecimiento del BPA", "eps", T["eps_points"], eps_reason, _na_eps),
-                                        ("Crecimiento del FCF", "fcf", T["fcf_points"], fcf_growth_reason, _na_fcf)):
-        if not _na and _a.get(_key) is None and _base_le_zero(_rsn):
+    _fcf_metric = ("Crecimiento del FCF por acción a 3 años" if _reit else
+                   "Crecimiento del FCF − SBC a 3 años" if archetype == GROWTH_PRE_PROFIT else
+                   "Crecimiento del FCF a 3 años")
+    for _nm, _key, _pts, _rsn, _na, _row in (
+            ("Crecimiento del BPA", "eps", T["eps_points"], eps_reason, _na_eps,
+             growth_metric("Crecimiento del BPA", archetype)),
+            ("Crecimiento del FCF", "fcf", T["fcf_points"], fcf_growth_reason, _na_fcf, _fcf_metric)):
+        if not _na and _a.get(_key) is None and is_anomalous_not_significant(_rsn):
+            cov.not_sig(_nm, _rsn)
+            _ns_rows.append((_row, _rsn))
+        elif not _na and _a.get(_key) is None and _base_le_zero(_rsn):
             cov.not_sig(_nm, f"{_rsn}: no significativo; el crecimiento se mide con los {_rev_word}")
         else:
             cov.comp(_nm, _pts, _a.get(_key), _rsn, na=_na)
+    for _row, _rsn in _ns_rows:
+        adjustments.append({"metric": _row, "value": "No significativo", "adjustment": 0, "severity": "neutral",
+                            "reason": _rsn[0].upper() + _rsn[1:]})
     base_score = cov.apply(base_score, adjustments)
     final_score = max(_CAT["min"], min(_CAT["max"], base_score))
     
@@ -3403,6 +3704,8 @@ def calculate_score_v2(
     Returns:
         Dict con score total, desglose por categoría, y explicaciones
     """
+    # F10 · B1: las entradas de la puntuación, para el motivo de un componente vacío (lib/empty_reasons.py)
+    _er_token = empty_reasons.INPUTS.set({**(contextual_values or {}), **(ratio_values or {})})
     # Obtener umbrales sectoriales (o los del mercado: sector_key "market", main._select_benchmark)
     thresholds = SECTOR_THRESHOLDS.get(sector_key, ThresholdConfig())
     _market = sector_key == "market"
@@ -3429,6 +3732,8 @@ def calculate_score_v2(
             payout_ratio=ratio_values.get("payout_ratio"),
             # Etapa 6: el D/E contable no aplica a FINANCIAL (depósitos = pasivo).
             debt_to_equity=None if not_applicable(archetype, "de") else ratio_values.get("debt_to_equity"),
+            ratio_tags={k: (" normalizado" if k in (contextual_values.get("normalized_metrics") or []) else "")
+                        + f" ({period(contextual_values.get('ttm_basis'))})" for k in ("roa", "roe")},
         )
         
         financial_health_data = {
@@ -3491,6 +3796,12 @@ def calculate_score_v2(
         archetype=archetype,
         market=_market,
         roic_reason=contextual_values.get("roic_reason"),
+        industry_operating_margin=contextual_values.get("industry_operating_margin"),
+        industry_net_margin=contextual_values.get("industry_net_margin"),
+        bench_ref=contextual_values.get("benchmark_ref") or "de su industria",
+        debt_to_equity=ratio_values.get("debt_to_equity"),
+        sector_de_threshold=thresholds.debt_equity_high,
+        subtype=contextual_values.get("subtype"),
     )
     
     # v2.4: Pasar datos de crecimiento + forward metrics a valoración
@@ -3499,6 +3810,9 @@ def calculate_score_v2(
         p_fcf=ratio_values.get("p_fcf"),
         ev_ebitda=ratio_values.get("ev_ebitda"),
         peg=ratio_values.get("peg"),
+        peg_not_significant=contextual_values.get("peg_not_significant"),
+        earnings_peak=contextual_values.get("earnings_peak"),
+        eps_growth_reason=contextual_values.get("eps_growth_reason"),
         sector_pe=contextual_values.get("sector_pe"),
         sector_forward_pe=contextual_values.get("sector_forward_pe"),
         sector_ev_ebitda=contextual_values.get("sector_ev_ebitda"),
@@ -3547,6 +3861,8 @@ def calculate_score_v2(
         eps_note=contextual_values.get("eps_growth_note"),
         revenue_ps_growth_3y=contextual_values.get("revenue_ps_cagr_3y"),
         revenue_ps_years=contextual_values.get("revenue_ps_cagr_years"),
+        bounds={k: contextual_values.get(f"{f}_bound") for k, f in
+                (("rev", "revenue_cagr_3y"), ("eps", "eps_cagr_3y"), ("fcf", "fcf_cagr_3y"))},
     )
     
     # Calcular totales. Las categorías no concluyentes (cobertura < 50%) se
@@ -3556,8 +3872,8 @@ def calculate_score_v2(
     if _market:   # perfil market: el nombre dice contra qué se compara
         for cat in categories:
             for a in cat.get("adjustments") or []:
-                if (a.get("metric") or "").endswith(" vs Sector"):
-                    a["metric"] = a["metric"][:-len(" vs Sector")] + " vs mercado"
+                if (a.get("metric") or "").endswith(" frente al sector"):
+                    a["metric"] = a["metric"][:-len(" frente al sector")] + " frente al mercado"
     for cat in categories:
         cat["conclusive"] = (cat.get("coverage") or {}).get("conclusive", True)
         # Etapa 6: una categoría sin ningún componente aplicable al arquetipo
@@ -3614,6 +3930,7 @@ def calculate_score_v2(
         },
     }
     
+    empty_reasons.INPUTS.reset(_er_token)
     return result
 
 

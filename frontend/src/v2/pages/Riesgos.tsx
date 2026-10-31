@@ -1,0 +1,89 @@
+"use client";
+import type { PageProps } from "./DepthPage";
+import { toVTone } from "@/v2/lib/tone";
+import PillIndex from "@/v2/components/depth/PillIndex";
+import Section, { Missing } from "@/v2/components/depth/Section";
+import Methodology from "@/v2/components/depth/Methodology";
+import Concentration from "@/v2/components/Concentration";
+import { alertGroupLabel, RED_FLAGS_LABEL } from "@/v2/lib/story";
+
+const PILLS = [{ id: "premortem", label: "Pre-mortem" }, { id: "alertas", label: "Alertas" }, { id: "concentracion", label: "Concentración" },
+  { id: "no-sabemos", label: "Lo que no sabemos" }, { id: "metodologia", label: "Metodología" }];
+const EMPTY: Record<string, string> = { red_flags: "el modelo no marca ninguna; no quiere decir que no haya riesgos: abajo, la concentración de los ingresos y lo que el análisis no sabe", warnings: "el análisis no detecta ninguna",
+  strengths: "el análisis no detecta ninguna" };
+
+/** Task 9 · Riesgos: pre-mortem, alertas por grupo y lo que el análisis no sabe (confianza y cobertura). */
+export default function Riesgos({ analysis: a }: PageProps) {
+  const d = a.display, pm = d.sections.valuation.premortem, al = d.sections.alerts, conf = d.confidence;
+  const full = al.groups.filter((g) => g.items.length > 0), empty = al.groups.filter((g) => g.items.length === 0);
+  const count = (k: string) => (al.counts as unknown as Record<string, number>)[k];
+  // Los motivos que ya cuentan las tarjetas de las dimensiones no se repiten
+  const said = (t: string | null) => !!t && (conf?.dimensions ?? []).some((x) => x.text.includes(t));
+  const reasons = (conf?.reasons ?? []).filter((r) => !said(r.text));
+  const reasonTexts = new Set((conf?.reasons ?? []).map((r) => r.text));
+  const extra = [...new Set([...(conf?.plain ?? []), ...d.cover.confidence_reasons])].filter((t) => !reasonTexts.has(t) && !said(t));
+  return (<>
+    <PillIndex items={PILLS} />
+    <div className="wrap depth-body">
+      <Section id="premortem" eyebrow="Riesgos" title={pm?.title ?? "Pre-mortem"}>
+        {pm && pm.items.length ? (
+          <div className="card surface" data-testid="premortem">
+            <ul className="stack">{pm.items.map((t) => <li key={t}>{t}</li>)}</ul>
+            <p className="muted small">{pm.note}</p>
+          </div>
+        ) : <Missing title="Pre-mortem" reason="no aplica ninguna de sus tres condiciones (un método intrínseco del precio, una calidad sólida o excelente con el margen por encima de su mediana, una deuda en el tramo elevado)" />}
+      </Section>
+
+      <Section id="alertas" eyebrow="Riesgos" title={`Alertas: ${RED_FLAGS_LABEL.toLowerCase()}, ${al.counts.red_flags}${al.counts.unmeasured ? ` (${al.counts.unmeasured})` : ""}; ${al.counts.warnings} advertencias y ${al.counts.strengths} fortalezas`}>
+        {full.length > 0 && (
+          // Un grupo debajo de otro: con una alerta en un grupo y seis en otro, en fila quedaría un hueco al pie
+          <div className="dgrid one" data-sym-row>
+            {full.map((g) => (
+              <div key={g.key} className="card surface" data-group={g.key}>
+                <h4><span className={`pill ${toVTone(g.tone)}`}>{alertGroupLabel(g.key, g.title)}</span> <span className="num">{count(g.key)}</span></h4>
+                <ul className="alerts fill">{g.items.map((it) => (
+                  <li key={it.reason}><span className="muted small">{it.category}</span>
+                    <strong>{it.reason}</strong><span>{it.detail}</span></li>
+                ))}</ul>
+              </div>
+            ))}
+          </div>
+        )}
+        {empty.map((g) => <Missing key={g.key} title={`${alertGroupLabel(g.key, g.title)}: 0`} reason={EMPTY[g.key] ?? "sin elementos"} />)}
+      </Section>
+
+      {/* V7 · P2: de dónde depende la empresa (hechos del informe anual, enlazados a la página Negocio) */}
+      <Section id="concentracion" eyebrow="Riesgos" title="Concentración de los ingresos">
+        <Concentration symbol={a.symbol} />
+      </Section>
+
+      <Section id="no-sabemos" eyebrow="Riesgos" title="Lo que no sabemos">
+        {conf ? (<>
+          <p className="segs-head">{conf.summary}</p>
+          <div className="dgrid" data-sym-row>
+            {conf.dimensions.map((x) => (
+              <div key={x.key} className="card surface">
+                <h4>{x.label} <span className="pill neutral">{x.level}</span></h4>
+                <p className="fill">{x.text}</p>
+              </div>
+            ))}
+          </div>
+          {reasons.length > 0 && (
+            <div className="card surface"><h4>Por qué la confianza no es mayor</h4>
+              <ul className="stack">{reasons.map((r) => <li key={r.dimension + r.text}><strong>{r.dimension}</strong> ({r.level.replace("_", " ")}): {r.text}</li>)}</ul></div>
+          )}
+          {extra.length > 0 && <ul className="stack">{extra.map((t) => <li key={t}>{t}</li>)}</ul>}
+        </>) : <Missing title="Confianza" reason="el análisis no evaluó la confianza del veredicto" />}
+        {d.cover.coverage_notes.length > 0
+          ? <div className="card surface"><h4>Cobertura de los datos</h4><ul className="stack">{d.cover.coverage_notes.map((t) => <li key={t}>{t}</li>)}</ul></div>
+          : <Missing title="Cobertura de los datos" reason="el análisis no deja notas de cobertura para esta empresa" />}
+      </Section>
+
+      <Methodology items={[
+        { label: "Pre-mortem", text: pm?.note },
+        { label: "Alertas", text: "Las alertas salen de las mismas reglas que puntúan el análisis: riesgos (banderas rojas), advertencias y fortalezas, cada una con la cifra que la dispara." },
+        { label: "Confianza", text: conf?.summary },
+      ]} />
+    </div>
+  </>);
+}

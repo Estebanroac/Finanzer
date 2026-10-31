@@ -48,8 +48,9 @@ def test_bug_wacc_is_only_cost_of_equity_nflx(analysis):
     from settings import cfg
     C = cfg("valuation.capm")
     ke = analysis("NFLX")["wacc"]["ke"]
-    beta_adj = C["blume_weight"] * km["beta"] + C["blume_prior"]
-    assert ke == pytest.approx(C["risk_free_rate"] + beta_adj * C["market_risk_premium"])
+    # F8 · E1: el Ke es el único del análisis (CAPM con sus pisos; beta propia o de abajo hacia arriba).
+    ce = analysis("NFLX")["cost_of_equity"]
+    assert ke == ce["value"] and ke >= ce["capm"] and ce["rf"] == C["risk_free_rate"]
     assert abs(km["wacc"] - ke) > 1e-4
 
 

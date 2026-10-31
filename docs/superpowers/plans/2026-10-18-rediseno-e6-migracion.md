@@ -55,3 +55,5 @@ periodo de observación, sin pérdida de datos ni de enlaces, y con vuelta atrá
   en la carga de 12 min, V4_CIERRE §2.3).
 - Recalibrar `loading_expected_s` / `loading_typical_s` con el p50/p75/p95 de `/api/analysis` sin caché en Render (en
   local, análisis en frío p50 ≈ 3 s tras `rendimiento/v4f8-memoria`).
+
+> **Evidencia fuera de `main` (E6, 31-oct):** las capturas (`docs/rediseno/capturas-*`), `docs/fiabilidad/f8_evidencia/` y los volcados JSON de escaneo y medida de `docs/` no están en `main`. Siguen en las ramas locales del rediseño y de la fiabilidad (`rediseno/v4-f8`) y en el archivo `v4_evidencia_8e4f3952.tar.gz` de `/Users/joseestebanroa/Downloads/finanzer_next-archivo`, fuera del repositorio.

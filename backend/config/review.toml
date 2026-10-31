@@ -107,3 +107,24 @@ consulted = ""
 cadence_days = 366
 pair = ""
 note = "los tramos de REIT y utilities (thresholds.toml) se contrastaron en la fase 7 (F7_CALIBRACION §4); los umbrales por sector siguen sin fuente"
+
+[parameters.country_risk]
+key = "country_risk.erp"
+source = "A. Damodaran, Country Default Spreads and Risk Premiums (ctryprem.xlsx), NYU Stern"
+url = "https://pages.stern.nyu.edu/~adamodar/pc/datasets/ctryprem.xlsx"
+published = "2026-01-05"
+consulted = "2026-10-27"
+cadence_days = 366
+pair = ""
+note = "F9 · R1: con las demás tablas de Damodaran (revisión el 5-ene-2027; la de julio de 2026 no se publicó: la página sigue en la del 5-ene-2026). Regenerar con backend/tools/gen_country_risk.py"
+
+[parameters.betas_regional]
+key = "betas_regional.emerging.industries"
+source = "A. Damodaran, Betas by Sector (Europa y mercados emergentes: betaEurope.xls, betaemerg.xls), NYU Stern"
+url = "https://pages.stern.nyu.edu/~adamodar/pc/datasets/betaemerg.xls"
+published = "2026-01-01"
+consulted = "2026-10-27"
+cadence_days = 366
+pair = ""
+note = "F9 · R2b: con las demás tablas de Damodaran (5-ene-2027). Regenerar con backend/tools/gen_regional_betas.py"
+

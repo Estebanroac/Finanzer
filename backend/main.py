@@ -2,15 +2,19 @@
 Finanzer API - FastAPI backend that exposes the financial brain
 """
 import sys
+import mimetypes
 import os
+import contextlib
 import io
 import logging
+import re
 import threading
-from typing import Optional, Dict, Any
+import time
+from typing import Annotated, Optional, Dict, Any
 from starlette.concurrency import run_in_threadpool
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import Body, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 # Add lib to path so imports work
@@ -19,29 +23,32 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "lib"))
 from data_fetcher import FinancialDataService, InvalidSymbolError
 from financial_ratios import (
     calculate_all_ratios, calculate_score_v2,
-    altman_z_score, piotroski_evaluate, piotroski_level, interest_coverage_state, net_debt_ebitda_state,
+    altman_z_score, altman_excluded, altman_model_basis, piotroski_evaluate, piotroski_level, interest_coverage_state, net_debt_ebitda_state,
     graham_number, margin_of_safety, dcf_multi_stage_dynamic, roic_significant,
-    dcf_sensitivity_analysis
+    dcf_sensitivity_analysis, peg_not_significant
 )
 from stock_database import search_stocks, POPULAR_STOCKS, TOP_STOCKS
 from sector_profiles import get_sector_profile, YAHOO_SECTOR_MAPPING
 from alert_interpretations import build_signals
 from settings import cfg
 from historical_metrics import (mean as hm_mean, fcf_cagr, growth_rate, is_sustained_negative, on_statement, per_share,
-                                per_share_basis)
+                                per_share_basis, robust_growth, edgar_fcf, is_anomalous_not_significant,
+                                bound_decides)
 from classify import (ARCHETYPE_GROUP, CYCLICAL, FINANCIAL, GROWTH_PRE_PROFIT, REIT, archetype_label, classify,
                       not_applicable, not_applicable_text)
-from normalize import normalize as normalize_earnings
+from normalize import normalize as normalize_earnings, pieces_operating_income
 from yf_adapter import _UNUSUAL_ROWS
 from ttm import TTM_QUARTERS
 from verdict import price as verdict_price, verdict as build_verdict
-from cost_of_capital import adjusted_beta, effective_tax_rate, risk_free, wacc as compute_wacc
+from cost_of_capital import (adjusted_beta, capm_rates, cost_of_debt, effective_tax_rate, equity_cost,
+                             wacc as compute_wacc)
 from valuation_confidence import (convergence, coverage_dimension, dcf_reliability, signal_from_upside, official_dimension,
                                   source_dimension, stability_dimension, verdict_confidence)
 import archetype_metrics
 import sec_edgar as edgar
 import growth_currency
 import numfmt
+import exchanges
 from currency import CurrencyConversionError
 
 logging.basicConfig(level=logging.INFO)
@@ -49,13 +56,35 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Finanzer API", version="2.0")
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# V6 (revisión de seguridad, B16): un 500 dice esto; el detalle (excepción y traza) va solo al registro.
+INTERNAL_ERROR = "Error interno del servidor. Inténtalo de nuevo en unos minutos."
+
+
+def _on_render(env=os.environ) -> bool:
+    return bool((env.get("RENDER_EXTERNAL_URL") or "").strip())
+
+
+if not _on_render():
+    # `next dev` en local, en cualquier puerto (rediseño: dos sesiones prueban a la vez en 3000 y 3001). V6 (B15): solo
+    # fuera de Render; en producción la web y la API son del mismo origen y no hace falta CORS.
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origin_regex=r"http://(localhost|127\.0\.0\.1):\d+",
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+# V6 (revisión de seguridad, B5): ningún cuerpo de petición de más de `max_body_bytes` (413 sin leer el resto).
+import web_guard as _web_guard  # noqa: E402
+app.add_middleware(_web_guard.BodyLimit, max_bytes=cfg("data.server.max_body_bytes"))
+# V6 (hallazgo F23): política de contenido, nosniff y Referrer-Policy en cada respuesta; en el HTML, los hashes de sus
+# scripts en línea.
+app.add_middleware(_web_guard.SecurityHeaders, directives=cfg("data.server.csp"),
+                   referrer_policy=cfg("data.server.referrer_policy"))
+# V4 (encargo del PM): compresión gzip de las respuestas, la capa más externa (después de calcular la CSP).
+app.add_middleware(_web_guard.Compress, minimum_size=cfg("data.server.gzip_minimum_bytes"),
+                   level=cfg("data.server.gzip_level"), exclude_paths=cfg("data.server.gzip_exclude_paths"))
 
 # Shared service instance (has caching built in)
 data_service = FinancialDataService()
@@ -128,15 +157,18 @@ def _get_sector_benchmarks(sector: str) -> dict:
 
 def _select_benchmark(mapped_sector: str, archetype: Optional[str], sector: Optional[str] = None,
                       industry: Optional[str] = None, country: Optional[str] = None, symbol: Optional[str] = None,
-                      title: Optional[str] = None) -> dict:
+                      title: Optional[str] = None, company: Optional[dict] = None, name: Optional[str] = None) -> dict:
     """Benchmark de valoración relativa: la industria de la empresa en su región (Damodaran, lib/industry_bench.py)
     o, si el arquetipo contradice al sector de Yahoo, el mercado amplio (perfil market).
 
     Devuelve {profile, sector, values, reason, sources, industry, provisional, ...}: `values` alimenta el score (P/E y
     EV/EBITDA frente a la referencia) y las tablas comparativas. Fase 4/7 (F4_PARADA §5): solo entra en `values` lo que
-    tiene fuente; una métrica sin referencia con fuente se muestra sin referencia (no con una cifra fijada a mano)."""
+    tiene fuente; una métrica sin referencia con fuente se muestra sin referencia (no con una cifra fijada a mano).
+    F10 · N2: la referencia nunca incluye a la propia empresa (`company`: sus cifras a la fecha del conjunto,
+    lib/self_exclusion.py); cada fuente lo declara."""
     import re
     import industry_bench
+    import names
     key = re.sub(r'[\s-]+', '_', (mapped_sector or "default").lower())
     expected = cfg("sectors.benchmarks.sector_archetype").get(key)
     from financial_ratios import SECTOR_THRESHOLDS, ThresholdConfig
@@ -147,15 +179,28 @@ def _select_benchmark(mapped_sector: str, archetype: Optional[str], sector: Opti
         t = SECTOR_THRESHOLDS.get(k, ThresholdConfig())
         return {n: getattr(t, n) for n in _th_keys}
 
-    def _src(ib):
-        where = (f"industria «{ib['damodaran']}»" if isinstance(ib["damodaran"], str) else
+    def _src(ib, col=None):
+        # V7 (nombres en español): la industria en español; el original, en el anexo del informe
+        where = (f"industria «{names.damodaran(ib['damodaran'])}»" if isinstance(ib["damodaran"], str) else
                  "industrias de su sector (media ponderada por empresas)")
-        return f"{ib['source']}, {ib['as_of']}: {where}, {ib['region_label']}, {ib['firms']} empresas"
+        base = f"{ib['source']}, {ib['as_of']}: {where}, {ib['region_label']}, {ib['firms']} empresas"
+        se = ib.get("self_exclusion")
+        if not se:
+            return base
+        how = ((se.get("columns") or {}).get(col) or {}).get("how")
+        if how == "mediana_pares" and se["method"] == "sin_empresa":
+            n = se["columns"][col].get("n")
+            return f"{base}; mediana de {n} pares del universo (sin las cifras de la empresa para esta columna)"
+        if how == "no_entra":
+            return f"{base} (la empresa no entra en este agregado: Damodaran lo calcula sin las empresas en pérdidas)"
+        if se["method"] == "mediana_pares":
+            return f"{se['declaration']} (Yahoo Finance, {se.get('peers_date')})"
+        return f"{base}; {se['declaration']}"
 
-    mk = industry_bench.market(country)
+    mk = industry_bench.market(country, symbol, title, company, name)
     if expected and archetype and archetype != expected:
         values = dict(mk["values"])
-        sources = {k: _src(mk) for k in values}
+        sources = {k: _src(mk, k) for k in values}
         if mk["region"] == "us":
             # P/E, Forward P/E y EV/EBITDA del S&P 500 (medianas y agregado del índice con su fuente)
             market = dict(cfg("sectors.benchmarks.market"))
@@ -170,22 +215,29 @@ def _select_benchmark(mapped_sector: str, archetype: Optional[str], sector: Opti
                 "sources": sources, "industry": {k: v for k, v in mk.items() if k != "values"},
                 "ref": "del mercado (S&P 500)" if mk["region"] == "us" else f"del mercado ({mk['region_label']})",
                 "short": "mercado", "provisional": False}
-    ib = industry_bench.industry(sector, industry, country, symbol, title)
+    ib = industry_bench.industry(sector, industry, country, symbol, title, company, name)
     if ib is None:
         # sin industria ni sector en el mapa: la referencia PROVISIONAL de siempre, dicho
         return {"profile": "sector", "sector": key, "thresholds_key": mapped_sector, "thresholds": _th(mapped_sector),
                 "values": _get_sector_benchmarks(mapped_sector), "reason": None, "sources": None, "industry": None,
                 "ref": "del sector", "short": "sector", "provisional": True}
     values = dict(ib["values"])
-    sources = {k: _src(ib) for k in values}
+    sources = {k: _src(ib, k) for k in values}
     for k in ("pe", "ev_ebitda"):     # los dos que puntúan: sin dato de la industria, el mercado de su región
         if k not in values and k in mk["values"]:
             values[k] = mk["values"][k]
-            sources[k] = _src(mk) + " (la industria no tiene dato)"
+            sources[k] = _src(mk, k) + " (la industria no tiene dato)"
+    # F10 · N2: la lectura dice qué referencia es («frente a 53x de su industria sin ella»; el nombre y el peso, en la
+    # nota de la referencia)
+    _se = ib.get("self_exclusion") or {}
+    ref = {"sin_empresa": "de su industria sin ella",
+           "mediana_pares": "de sus pares del universo"}.get(_se.get("method"), "de su industria")
+    if _se.get("degraded"):     # F10 (PM, 29-oct): la fila dice que la referencia está degradada
+        ref += " (referencia degradada: EDGAR no respondió)"
     return {"profile": "sector", "sector": key, "thresholds_key": mapped_sector, "thresholds": _th(mapped_sector),
             "values": values, "reason": None, "sources": sources,
-            "industry": {k: v for k, v in ib.items() if k != "values"}, "ref": "de su industria", "short": "industria",
-            "provisional": False}
+            "industry": {k: v for k, v in ib.items() if k != "values"}, "ref": ref,
+            "short": "pares" if _se.get("method") == "mediana_pares" else "industria", "provisional": False}
 
 
 def _pdf_benchmark(analysis: dict) -> dict:
@@ -306,6 +358,8 @@ def _build_provenance(yinfo: dict, out_flags: list, block_errors: list) -> dict:
         # Fase 2b (T3): corte coherente: fecha y tipo del corte y periodo de cada campo de los estados.
         "as_of": yinfo.get("_as_of"),
         "pending_results": yinfo.get("_pending_results"),
+        # F8 · E6: frescura de los estados frente a EDGAR.
+        "staleness": yinfo.get("_staleness"),
         "edgar": yinfo.get("_edgar"),
         # Fase 2b (T4, D7): emisor con estados en la SEC, sin ellos (aviso y techo "baja") o sin verificación.
         "official_source": yinfo.get("_official_source"),
@@ -351,18 +405,44 @@ def _revenue_usd(revenue: Optional[float], price_currency: Optional[str]) -> Opt
         return None
 
 
+def source_unavailable_message(symbol: str) -> str:
+    """Sin perfil porque la fuente de datos de mercado no respondió (conexión o tiempo agotado)."""
+    return (f"No se pudieron obtener los datos de {symbol}: la fuente de datos de mercado no responde ahora mismo. "
+            "Vuelve a intentarlo en unos minutos.")
+
+
 def not_a_stock_message(symbol: str, quote_type: str) -> str:
     what = _INSTRUMENT_NAMES.get(str(quote_type).upper(), "un instrumento que no es una acción")
     return (f"Finanzer analiza acciones individuales: {symbol} es {what}, así que no se analiza "
             "(sus estados, ratios y valoración no tienen sentido como los de una empresa).")
 
 
+def _base_rate_for_confidence(rev: Optional[dict]) -> Optional[dict]:
+    """F10 · N4: la tasa base del DCF inverso principal (la que cita el informe), si la regla es la de las tasas base y
+    la lectura es válida; None si no la hay."""
+    m = (rev or {}).get("main") or {}
+    br = m.get("base_rate") or {}
+    if m.get("state") != "ok" or m.get("rule") != "tasa_base" or br.get("share") is None or br.get("reason"):
+        return None
+    return {"share": br["share"], "g10": m.get("g10"), "horizon_years": br.get("horizon_years")}
+
+
 def _compute_analysis(symbol: str) -> dict:
     """
     Shared analysis computation used by both API endpoint and PDF generator.
     Returns the full analysis dict or raises HTTPException.
+    Fiabilidad (V4 · moneda): los importes de los textos van en la moneda del precio (numfmt.currency); al salir, la
+    moneda vuelve a la de antes (el hilo de la cola de fondo formatea después otros resúmenes).
     """
-    symbol = symbol.upper().strip()
+    with numfmt.currency(None):
+        return _compute_analysis_body(symbol)
+
+
+def _compute_analysis_body(symbol: str) -> dict:
+    # V2 (fuentes reales): la clase con punto (BRK.B, BF.B) es la de Yahoo con guion; antes daba 404 "No data found".
+    # Solo las clases de market.universe.share_classes: BARC.L o MC.PA son bolsas y no se tocan.
+    import universe as _universe
+    symbol = _universe.norm_symbol(symbol)
     ic_state_inferred = False   # fase 1: estado de la cobertura inferido (sin resultado financiero en los estados)
     _id_flags: list = []        # fase 1: identidades de datos que no cuadran (data_validation)
     dy_invalid = False
@@ -398,6 +478,10 @@ def _compute_analysis(symbol: str) -> dict:
         data = data_service.get_complete_analysis_data(symbol)
 
         if not data or not data.get("profile"):
+            if (data or {}).get("source_unavailable"):
+                # Verificación de la v4 (V3): la fuente no respondió; no es que el símbolo no exista. Mismo código (404)
+                # para que la web actual no cambie; el motivo lo dice.
+                raise HTTPException(status_code=404, detail=source_unavailable_message(symbol))
             raise HTTPException(status_code=404, detail=f"No data found for {symbol}")
 
         profile = data["profile"]
@@ -414,13 +498,15 @@ def _compute_analysis(symbol: str) -> dict:
                 "industry": profile.industry,
                 "country": profile.country,
                 "currency": profile.currency,
-                "exchange": profile.exchange,
+                "exchange": exchanges.name(profile.exchange),     # E2a (T2): "Nasdaq", no "NMS"
+                "exchange_code": profile.exchange,
                 "market_cap": safe_float(profile.market_cap),
                 "description": profile.description,
             },
             "price": safe_float(financials.price) if financials else None,
             "errors": data.get("errors", []),
         }
+        numfmt.set_currency(profile.currency)      # V4 · moneda: los importes de los textos, en la del precio
         # Trazabilidad (etapa 3): bloques que un except amplio dejó sin calcular.
         # No cambia el flujo de control: solo registra y marca "sin_dato".
         _block_errors = []
@@ -446,6 +532,8 @@ def _compute_analysis(symbol: str) -> dict:
                 from yf_adapter import get_ticker_info
                 # Fase 7: el mismo snapshot del que salen los estados (otro, si caducó entre medias, mezclaría periodos)
                 yinfo = getattr(financials, "snapshot", None) or get_ticker_info(symbol)
+                # V7 (M2): los ratios son TTM o del último ejercicio; los textos lo dicen con la cifra.
+                fin_dict["ttm_basis"] = (yinfo.get("_ttm") or {}).get("basis")
                 yr = yinfo.get("_yahoo_ratios", {})
                 _has_yahoo = True
 
@@ -552,6 +640,21 @@ def _compute_analysis(symbol: str) -> dict:
             pfcf = r("pfcf", "price_to_fcf", "p_fcf")
             if pfcf is None and fcf_val and fcf_val > 0 and mcap:
                 pfcf = mcap / fcf_val
+            # F8 · E4 (auditoría del 26-oct, VZ): en una telecom, el FCF de la valoración (P/FCF, FCF yield y DCF)
+            # resta la media de 5 años de las compras de espectro (EDGAR); sin ese dato, sin ajuste y declarado.
+            _spectrum = None
+            try:
+                import telecom_spectrum as _tsp
+                _spectrum = _tsp.adjustment(yinfo.get("_history_fy") if _has_yahoo else None, profile.industry)
+            except Exception as e:
+                _sin_dato("espectro_telecom", e)
+            result["spectrum_adjustment"] = _spectrum
+            _spec_avg = _spectrum["average"] if (_spectrum or {}).get("status") == "ok" else None
+            if _spec_avg is not None and fcf_val is not None:
+                _fcf_val_adj = fcf_val - _spec_avg
+                _spectrum.update({"fcf": fcf_val, "fcf_adjusted": _fcf_val_adj})
+                fcf_yield = _fcf_val_adj / mcap if mcap and mcap > 0 else None
+                pfcf = mcap / _fcf_val_adj if mcap and _fcf_val_adj > 0 else None
 
             # ROIC = NOPAT / Invested Capital
             roic = r("roic")
@@ -650,6 +753,25 @@ def _compute_analysis(symbol: str) -> dict:
                 if feps and feps > 0:
                     fwd_pe = price_val / feps
 
+            # F10 · margen operativo con una sola verdad (verificación de «Modelo general», regla 4): sin corte
+            # trimestral (ruta quoteSummary), el margen operativo que se enseña y puntúa es el del último ejercicio de
+            # los estados (el EBIT que presenta el emisor si EDGAR lo tiene), el mismo de las piezas de la
+            # normalización; el operatingIncome de quoteSummary es otra definición o periodo (CRL, FDXF).
+            _om_fy = None
+            if _has_yahoo and ((yinfo.get("_as_of") or {}).get("type")) == "fuente":
+                from normalize import fy_operating
+                _om_fy = fy_operating(yinfo.get("_statements_fy"))
+                if _om_fy is not None:
+                    _om_fy["replaced"] = safe_float(ratios.get("operating_margin"))
+                    ratios["operating_margin"] = _om_fy["value"]
+                    from yf_adapter import _tag_provenance
+                    _tag_provenance(yinfo, "estados_fy", (
+                        f"margen operativo del ejercicio FY{_om_fy['year']} de los estados (EBIT del emisor / ingresos "
+                        f"del ejercicio): sin corte trimestral; quoteSummary daba "
+                        + (f"{_om_fy['replaced']:.1%}" if _om_fy["replaced"] is not None else "otra cifra")
+                        + ", otra definición o periodo"), paths=["key_metrics.operating_margin", "key_metrics.operating_income"], overwrite=True)
+
+            numfmt.set_ebitda_margin(safe_float(r("ebitda_margin")))   # el motivo de un EV/EBITDA acotado
             result["key_metrics"] = {
                 "market_cap": mcap,
                 "pe": r("pe"),
@@ -712,7 +834,7 @@ def _compute_analysis(symbol: str) -> dict:
                 "price_52w_high": safe_float(financials.price_52w_high),
                 "price_52w_low": safe_float(financials.price_52w_low),
                 "operating_cash_flow": safe_float(financials.operating_cash_flow),
-                "operating_income": oi_val,
+                "operating_income": _om_fy["operating_income"] if _om_fy is not None else oi_val,   # regla 4
                 "interest_expense": ie_val,
                 "total_assets": ta_val,
                 "asset_turnover": safe_float(asset_turn),
@@ -754,10 +876,19 @@ def _compute_analysis(symbol: str) -> dict:
                                       operating_margin_ttm=r("operating_margin"),
                                       fcf_sbc_margin=sbc_info.get("fcf_margin_adjusted"))
             archetype = classification["archetype"]
+            fin_dict["subtype"] = classification.get("subtype")   # F9 · R4: score y alertas (margen neto de un banco)
             # Etapa 11b: aviso por filas clave del arquetipo ausentes en los estados.
             from validate import missing_key_rows
             _row_flags = missing_key_rows(_stmts, archetype) if _has_yahoo else []
             result["classification"] = classification
+            # F8 · E3: el FFO de un REIT es el de Nareit (− ventas de inmuebles + deterioros, del estado de flujos que
+            # presentó el emisor), no beneficio neto + D&A. Antes de todo lo que lo lee (cobertura, payout, score).
+            _reit_ffo_res = None
+            if archetype == REIT:
+                import reit_ffo
+                _reit_ffo_res = (yinfo.get("_reit_ffo") if _has_yahoo else None) or reit_ffo.no_data(
+                    "no se leyeron los ajustes del emisor")
+                result["reit_ffo"] = reit_ffo.apply(ratios, result["key_metrics"], fin_dict, _reit_ffo_res)
             # Fase 2b (T5, F2_PRECEDENCIA §2.3): en un banco la deuda (subordinada, depósitos y emisiones de la
             # actividad bancaria) no entra en ninguna ratio de apalancamiento de empresa: su apalancamiento se mide
             # con capital (fase 3). Antes salían D/E, deuda neta y EV con toda la deuda emitida (BCS: EV negativo).
@@ -768,9 +899,57 @@ def _compute_analysis(symbol: str) -> dict:
                     if result["key_metrics"].get(_k) is not None:
                         result["key_metrics"][_k] = None
                         _bank_leverage_na.append(_k)
-            # Rf (etapa 8): ^TNX con caché de 24 h o el de config, marcado. Uno por
-            # análisis: el mismo en Ke (P/B justificado de FINANCIAL), Kd y WACC.
-            rf_info = risk_free()
+            # Rf (etapa 8; F8 · E1): el del par Rf–ERP de la misma fecha (Damodaran); el ^TNX del día, de referencia.
+            # Uno por análisis: el mismo en Ke (P/B justificado de FINANCIAL), Kd y WACC.
+            rf_info = capm_rates()
+            # F8 · E1: beta (propia si pasa los filtros; si no, de abajo hacia arriba reapalancada con la D/E de mercado y
+            # la t de la empresa; lib/beta.py) y UN solo Ke con sus pisos (Rf + 0,5 × ERP; Kd + 1 pp con deuda): el del
+            # WACC, el del P/B justificado (FINANCIAL, UTILITY) y el del DCF del REIT.
+            # F9 · R1: prima de riesgo país por dónde opera (geografía de los ingresos del XBRL; si no, la sede operativa
+            # de EDGAR o de la ficha; nunca el domicilio legal). Los segmentos quedan en caché por filing (la cautiva
+            # de E10 los reutiliza).
+            import country_risk as _crisk
+            _geo_segs = None
+            if _has_yahoo and (yinfo.get("_edgar") or {}).get("country"):
+                try:
+                    import segments as _segments
+                    _geo_segs = _segments.build(symbol)
+                except Exception as e:  # noqa: BLE001 — sin geografía: la sede, declarado
+                    logger.warning(f"{symbol}: segmentos para la prima de riesgo país: {e}")
+            _hq = ((yinfo.get("_edgar") or {}).get("country") if _has_yahoo else None) or profile.country
+            crp_info = _crisk.exposure(_geo_segs, _hq)
+            result["country_risk"] = crp_info
+            # F9 · R2b: con la beta de abajo hacia arriba, la tabla de Damodaran de la región donde opera (la misma
+            # exposición).
+            import beta as _beta_mod
+            _beta_info = (yinfo.get("_beta") or {}) if _has_yahoo else {}
+            _beta_info = _beta_mod.regionalize(_beta_info, _crisk.beta_region(crp_info),
+                                               yinfo.get("sector") if _has_yahoo else None,
+                                               yinfo.get("industry") if _has_yahoo else None)
+            _beta_info = _beta_mod.relever(_beta_info, td_val, mcap, tax_info["rate"], archetype == FINANCIAL)
+            _beta_pre = bool(_beta_info.get("adjusted"))
+            _beta_val = safe_float(_beta_info["value"]) if _beta_info.get("bottom_up") else safe_float(financials.beta)
+            result["key_metrics"]["beta"] = _beta_val
+            # F9 · R2 (revisión externa de NU): una sola beta en todas las capas, la que entra en el Ke (la propia con
+            # Blume; la de la industria tal cual). Antes las alertas leían la de Yahoo de `ratios`, anterior a la tabla
+            # regional y al reapalancamiento (NU «Perfil defensivo — Beta 0.40» con un Ke de β 0,60). `beta` sigue
+            # siendo la entrada del CAPM (bruta si es la propia).
+            _beta_ke = safe_float(adjusted_beta(_beta_val, _beta_pre)) if _beta_val is not None else None
+            result["key_metrics"]["beta_ke"] = ratios["beta"] = result["ratios"]["beta"] = fin_dict["beta"] = _beta_ke
+            fin_dict["beta_source"] = result["key_metrics"]["beta_source"] = _beta_info.get("source")
+            fin_dict["beta_r2"] = result["key_metrics"]["beta_r2"] = (
+                safe_float((_beta_info.get("own") or {}).get("r2")) if _beta_info.get("source") == "propia" else None)
+            _kd_info = None if archetype == FINANCIAL else cost_of_debt(
+                rf_info["value"], mcap, td_val, safe_float(interest_cov), ic_state)
+            ke_info = equity_cost(_beta_val if _beta_val is not None else cfg("valuation.capm.default_beta"),
+                                  rf_info["value"], _kd_info and _kd_info["value"], _beta_pre and _beta_val is not None,
+                                  crp=crp_info["crp"])
+            result["cost_of_equity"] = {"value": safe_float(ke_info["value"]), "capm": safe_float(ke_info["capm"]),
+                                        "crp": safe_float(ke_info.get("crp")),
+                                        "floor": ke_info["floor"], "floors": ke_info["floors"],
+                                        "kd": safe_float(_kd_info["value"]) if _kd_info else None,
+                                        "rf": rf_info["value"], "erp": rf_info["erp"], "as_of": rf_info["as_of"],
+                                        "shift": ke_info.get("shift")}
             # Métricas de la rama (P/B justificado, EV/Ventas, normalizados de ciclo…)
             result["sbc"] = {k: (safe_float(v) if isinstance(v, float) else v) for k, v in sbc_info.items()}
             # Fase 3 (T6): lecturas de calidad que informan (no puntúan): DuPont, margen FCF con tendencia, regla de
@@ -786,20 +965,25 @@ def _compute_analysis(symbol: str) -> dict:
                     _qr["coverage"] = qr.interest_coverage(
                         _stmts_g, safe_float(financials.operating_income),
                         safe_float(result["key_metrics"].get("ebitda")), safe_float(financials.interest_expense),
-                        ffo_ttm=safe_float(result["key_metrics"].get("ffo")) if archetype == REIT else None)
+                        ffo_ttm=safe_float(result["key_metrics"].get("ffo")) if archetype == REIT else None,
+                        period=numfmt.period(fin_dict.get("ttm_basis")))
                 result["quality_readings"] = {k: v for k, v in _qr.items() if v}
+                fin_dict["dupont"] = _qr.get("dupont")      # F10 · N6: de dónde sale el ROE (alertas)
             except Exception as e:
                 _sin_dato("lecturas_calidad", e)
             # Etapa 9b: histórico anual (dato bruto, pestaña Histórico de la web).
             result["yearly_financials"] = [{k: (safe_float(v) if isinstance(v, float) else v) for k, v in r_.items()}
                                            for r_ in archetype_metrics.yearly_financials(_stmts, archetype)]
             # Fase 2b (T6): la beta del sector (Damodaran) entra ya ajustada; la propia y la de la fuente, con Blume.
-            _beta_info = (yinfo.get("_beta") or {}) if _has_yahoo else {}
-            _beta_pre = bool(_beta_info.get("adjusted"))
             archetype_values = archetype_metrics.compute(
-                archetype, _stmts, result["key_metrics"], beta=safe_float(financials.beta),
+                archetype, _stmts, result["key_metrics"], beta=_beta_val,
                 revenue_cagr_3y=classification["inputs"].get("revenue_cagr_3y"), rf=rf_info["value"],
-                sbc=sbc_info, beta_preadjusted=_beta_pre, subtype=classification.get("subtype"))
+                revenue_cagr_3y_reason=classification["inputs"].get("revenue_cagr_3y_reason"),
+                revenue_cagr_3y_bound=classification["inputs"].get("revenue_cagr_3y_bound"),
+                sbc=sbc_info, beta_preadjusted=_beta_pre, subtype=classification.get("subtype"),
+                history_fy=(yinfo.get("_history_fy") if _has_yahoo else None),
+                reit_ffo=_reit_ffo_res, ke=ke_info["value"],
+                ordinary=yinfo.get("_ordinary") if _has_yahoo else None)   # F9 · R3: balance del corte (P/B y P/TBV)
             if growth_currency.converted(_cur_info):
                 archetype_values.update(archetype_metrics.growth_values(archetype, _stmts_g))
             result["archetype_metrics"] = {k: (safe_float(v) if isinstance(v, float) else v)
@@ -836,18 +1020,44 @@ def _compute_analysis(symbol: str) -> dict:
             # EV/EBITDA against the stock's SECTOR (e.g. ~30x for tech, ~12x for
             # banks) instead of a fixed ~20x. Without this, high-P/E sectors look
             # overvalued and low-P/E sectors look cheap regardless of fundamentals.
+            import names as _names
+            import industry_bench as _ibench
             _bench_sel = _select_benchmark(mapped_sector, archetype, profile.sector, profile.industry,
                                            profile.country, symbol,
-                                           ((yinfo.get("_edgar") or {}).get("title") if _has_yahoo else None))
+                                           ((yinfo.get("_edgar") or {}).get("title") if _has_yahoo else None),
+                                           # F10 · N2: sus cifras a la fecha del conjunto, para quitarla de su referencia
+                                           yinfo.get("_at_dataset_date") if _has_yahoo else None,
+                                           _names.company(profile.name) or symbol)
             # Un solo benchmark por análisis (etapa 9a): medianas de múltiplos, umbrales del
             # score (ROE, ROA, D/E, márgenes), alertas y PDF leen la misma clave.
             result["benchmark"] = _bench_sel
             score_sector = _bench_sel["thresholds_key"]
             _sector_bench = _bench_sel["values"]
+            # F9 · R1b: P/B justificado en dos etapas si el valor en libros crece muy por encima de g. F10 · N2b
+            # (decisión del PM): el ROE estable converge a la industria GLOBAL sin la empresa; sin ella, al de su
+            # referencia regional, declarado.
+            if archetype == FINANCIAL and result.get("archetype_metrics"):
+                _ind_name = ((_bench_sel.get("industry") or {}).get("damodaran"))
+                _groe = _ibench.global_roe(_ind_name, symbol,
+                                           ((yinfo.get("_edgar") or {}).get("title") if _has_yahoo else None),
+                                           profile.country, yinfo.get("_at_dataset_date") if _has_yahoo else None,
+                                           _names.company(profile.name) or symbol)
+                _ts = archetype_metrics.apply_two_stage(
+                    result["archetype_metrics"], _groe["value"] if _groe else _sector_bench.get("roe"),
+                    safe_float(_km.get("payout_ratio")), safe_float(_km.get("dividend_yield")),
+                    roe_source=_groe["text"] if _groe else "su industria de referencia regional (sin la global)")
+                result["archetype_metrics"].update(_ts)
+                archetype_values.update(_ts)          # el score lee archetype_values: el mismo justificado
             fin_dict["sector_pe"] = _sector_bench.get("pe")
             # Etapa 11b: referencia del Forward P/E (la del sector; si no hay, la del P/E).
             fin_dict["sector_forward_pe"] = _sector_bench.get("forward_pe") or _sector_bench.get("pe")
             fin_dict["sector_ev_ebitda"] = _sector_bench.get("ev_ebitda")
+            # F8 · E9: márgenes de la referencia (la industria de Damodaran) para leer los de la empresa frente a ellos.
+            fin_dict["industry_operating_margin"] = _sector_bench.get("operating_margin")
+            fin_dict["industry_net_margin"] = _sector_bench.get("net_margin")
+            # F10 · B3: las alertas de ROE y margen bruto leen la misma referencia que su fila
+            fin_dict["industry_roe"] = _sector_bench.get("roe")
+            fin_dict["industry_gross_margin"] = _sector_bench.get("gross_margin")
             fin_dict["benchmark_profile"] = _bench_sel["profile"]
             fin_dict["benchmark_ref"] = _bench_sel["ref"]     # fase 4/7: "de su industria", "del mercado (…)"…
             fin_dict["benchmark_short"] = _bench_sel["short"]
@@ -855,12 +1065,43 @@ def _compute_analysis(symbol: str) -> dict:
             # Fase 3 (T6, F3_DISENO §5): lecturas por modelo de negocio (circulante estructural, Altman referencial,
             # avisos del Piotroski); las leen el score, las alertas y el informe.
             import business_model as _bmod
-            _bm_ctx = {"current_ratio": _bmod.current_ratio_context(profile.industry, _stmts,
-                                                                    safe_float(result["key_metrics"].get("current_ratio"))),
-                       "altman_referential": _bmod.altman_referential(profile.industry),
-                       "piotroski_caveat": _bmod.piotroski_caveat(profile.industry)}
+            # F8 · E10: SIC del emisor en SEC EDGAR (modelo de Altman y exclusiones).
+            _edgar_profile = (((yinfo.get("_edgar") or {}).get("profile") or {}) if _has_yahoo else {})
+            _alt_excl = altman_excluded(_edgar_profile.get("sic"))
+            # F8 · E10 (decisión del PM): financiera cautiva consolidada → Altman referencial. Una sola detección con la
+            # deuda de la cautiva del XBRL (lib/debt.py) y, si no la hay, los segmentos de negocio del último informe
+            # anual (lib/segments.build, en caché por filing). Solo si el Altman aplica.
+            _captive = None
+            if _has_yahoo and not (not_applicable(archetype, "altman") or _alt_excl):
+                _ed_cap = (yinfo.get("_edgar") or {}).get("captive")
+                _segs = None
+                if (_ed_cap or {}).get("status") != "ok":
+                    try:
+                        import segments as _segments
+                        _segs = _segments.build(symbol)
+                    except Exception as e:  # noqa: BLE001 — sin segmentos: opción (a), con el límite declarado
+                        logger.warning(f"{symbol}: segmentos para la cautiva: {e}")
+                _captive = _bmod.captive_finance(_segs, _ed_cap)
+            _ind_ref = _bmod.altman_referential(profile.industry)
+            _cap_ref = bool(_captive and _captive["detected"])
+            _cr_now = safe_float(result["key_metrics"].get("current_ratio"))
+            _cr_ctx = _bmod.current_ratio_context(profile.industry, _stmts, _cr_now)
+            _bm_ctx = {"current_ratio": _cr_ctx,
+                       "altman_referential": _ind_ref or _cap_ref,
+                       "altman_referential_reason": (_bmod.ALTMAN_REF_CAPTIVE if _cap_ref else
+                                                     _bmod.ALTMAN_REF_INDUSTRY if _ind_ref else None),
+                       "captive_finance": _captive,
+                       "piotroski_caveat": _bmod.piotroski_caveat(_cr_ctx, _cr_now),
+                       "sic": _edgar_profile.get("sic"),
+                       "altman_excluded": _alt_excl}
             fin_dict["business_model"] = _bm_ctx
             result["business_model"] = _bm_ctx
+            # F9 · R6: riesgo de crédito de un banco (lib/credit_risk.py, del XBRL de la SEC). Informa; no puntúa.
+            if archetype == FINANCIAL and classification.get("subtype") == "banco":
+                import credit_risk as _credit
+                result["credit_risk"] = ((yinfo.get("_credit") if _has_yahoo else None)
+                                         or _credit.measure(None))
+                fin_dict["credit_risk"] = result["credit_risk"]       # la alerta de crédito no medido
 
             # Crecimiento a 3 años para Crecimiento (etapa 9a): CAGR real de los 4
             # ejercicios anuales de los estados (historical_metrics.growth_rate, con la
@@ -868,19 +1109,54 @@ def _compute_analysis(symbol: str) -> dict:
             # earningsGrowth, que comparan un trimestre con el del año anterior). Sin 4
             # ejercicios o con valores <= 0 en los extremos: sin dato con motivo, nunca
             # el interanual con la etiqueta de 3 años.
-            _rev_r = growth_rate(_stmts_g.get("revenue") or [], 3, what="ingresos", strict_ends_only=True)
+            # F10 · crecimiento desde una base anómala (regla general, historical_metrics.robust_growth): con año base
+            # anómalo y una regresión que solo tiene los ejercicios de la ventana, la serie larga de EDGAR (≥
+            # thresholds.growth.long_years ejercicios hasta el último) o, sin ella, no significativo con su motivo.
+            _hfy = (yinfo.get("_history_fy") if _has_yahoo else None) or {}
+            # F10 (PM, 29-oct): la cota de cada tasa no significativa (growth_rate: desde una base anómala baja, cota
+            # superior), por su motivo: la usa una puntuación solo si el motivo que le llega es el de esa tasa.
+            _bounds: dict = {}
+
+            def _rg(*a, **k):
+                r = robust_growth(*a, **k)
+                if r.get("not_significant") and r.get("bound"):
+                    _bounds[r["reason"]] = r["bound"]
+                return r
+            _g_end = (_stmts_g.get("inc_ends") or [None])[0]
+            _GM = ("method", "anomalous_base", "note", "robust", "not_significant", "source", "window", "years_used",
+                   "bound")
+            _rev_r = _rg(_stmts_g.get("revenue") or [], 3, what="ingresos", strict_ends_only=True,
+                         long=_hfy.get("revenue"), end=_g_end)
             fin_dict["revenue_cagr_3y"] = _rev_r["value"]
             fin_dict["revenue_growth_reason"] = _rev_r["reason"]
+            # F9 · R3: con año base anómalo es la regresión log-lineal, no el CAGR de punta a punta: el informe lo dice
+            fin_dict["revenue_cagr_3y_method"] = {k: _rev_r.get(k) for k in _GM}
             # Revisión F3 (hallazgo 6): ingresos por acción a 3 años para el retorno total de la madura de dividendo alto.
             # Acciones del balance casadas con los ejercicios de resultados por fecha (revisión F4, hallazgo 5).
             _sh_inc = on_statement(_stmts_g, "ordinary_shares", "bs", "inc")
-            fin_dict["revenue_ps_cagr_3y"] = growth_rate(per_share(_stmts_g.get("revenue") or [], _sh_inc), 3,
-                                                         what="ingresos por acción", strict_ends_only=True)["value"]
+            fin_dict["revenue_ps_cagr_3y"] = _rg(per_share(_stmts_g.get("revenue") or [], _sh_inc), 3,
+                                                 what="ingresos por acción", strict_ends_only=True)["value"]
             _eps_series = _stmts_g.get("diluted_eps") or per_share(_stmts_g.get("net_income") or [],
                                                                     _stmts_g.get("ordinary_shares") or [])
-            _eps_r = growth_rate(_eps_series, 3, what="BPA")
+            # La serie larga del BPA es la del beneficio neto de EDGAR, solo con las acciones estables (el BPA crece como
+            # el beneficio): el BPA de EDGAR de ejercicios antiguos no está ajustado por los splits posteriores.
+            _eps_long_ok = per_share_basis(_stmts.get("ordinary_shares") or [])["basis"] == "agregado"
+            _eps_r = _rg(_eps_series, 3, what="BPA", long=_hfy.get("net_income") if _eps_long_ok else None,
+                         end=_g_end)
+            if _eps_r.get("method") == "log_lineal_edgar":
+                _eps_r["note"] += " (beneficio neto, con las acciones estables: el BPA crece como el beneficio)"
+            elif _eps_r.get("not_significant") and not _eps_long_ok:
+                _eps_r["reason"] = _eps_r["reason"].replace(
+                    "sin serie larga de EDGAR", "las acciones cambian y EDGAR no trae un BPA comparable de más ejercicios")
             fin_dict["eps_cagr_3y"] = _eps_r["value"]
             fin_dict["eps_growth_reason"] = _eps_r["reason"]
+            fin_dict["eps_cagr_3y_method"] = {k: _eps_r.get(k) for k in _GM}
+            # F10: con la serie larga de EDGAR, la cifra dice de qué ejercicios sale (no son los 3 años de la ventana)
+            if _rev_r.get("method") == "log_lineal_edgar":
+                fin_dict["revenue_growth_note"] = _rev_r["note"]
+            if _eps_r.get("method") == "log_lineal_edgar":
+                fin_dict["eps_growth_note"] = _eps_r["note"]
+                fin_dict["eps_cagr_window"] = _eps_r["window"]
             # Fase 3 (T5, F3_DISENO §4): cambio de perímetro dentro de la ventana del CAGR (UL: escisión de los
             # helados). El crecimiento se mide sobre el perímetro homogéneo: los ejercicios del perímetro vigente
             # (reexpresados) y, en el BPA, el beneficio de las operaciones continuadas. Con menos de 2 años
@@ -897,10 +1173,10 @@ def _compute_analysis(symbol: str) -> dict:
                     _n += 1
                 _yrs = _n - 1
                 if _yrs >= cfg("thresholds.growth.perimeter_min_years"):
-                    _rev_r = growth_rate((_stmts_g.get("revenue") or [])[:_n], _yrs, what="ingresos",
-                                         strict_ends_only=True)
+                    _rev_r = _rg((_stmts_g.get("revenue") or [])[:_n], _yrs, what="ingresos",
+                               strict_ends_only=True)
                     # Revisión F4 (hallazgo 2): el retorno total por acción, en el mismo perímetro homogéneo.
-                    fin_dict["revenue_ps_cagr_3y"] = growth_rate(
+                    fin_dict["revenue_ps_cagr_3y"] = _rg(
                         per_share((_stmts_g.get("revenue") or [])[:_n], _sh_inc[:_n]), _yrs,
                         what="ingresos por acción", strict_ends_only=True)["value"]
                     fin_dict["revenue_ps_cagr_years"] = _yrs
@@ -908,8 +1184,8 @@ def _compute_analysis(symbol: str) -> dict:
                     _disc = _stmts_g.get("net_income_discontinued") or []
                     _cont = [(n - (_disc[i] if i < len(_disc) and _disc[i] else 0.0)) if n is not None else None
                              for i, n in enumerate(_ni[:_n])]
-                    _eps_r = growth_rate(per_share(_cont, (_stmts_g.get("ordinary_shares") or [])[:_n]), _yrs,
-                                         what="BPA de operaciones continuadas")
+                    _eps_r = _rg(per_share(_cont, (_stmts_g.get("ordinary_shares") or [])[:_n]), _yrs,
+                               what="BPA de operaciones continuadas")
                     _why = (f"perímetro homogéneo: {_yrs} años en el perímetro vigente (ejercicios reexpresados tras "
                             "el cambio de perímetro), no el CAGR a 3 años que cruza el cambio")
                     fin_dict["revenue_growth_note"] = _why
@@ -925,6 +1201,13 @@ def _compute_analysis(symbol: str) -> dict:
                 fin_dict["eps_growth_reason"] = _eps_r["reason"]
                 result["growth_perimeter"] = {"homogeneous_years": max(_yrs, 0), "applied": True,
                                               "note": fin_dict.get("revenue_growth_note") or _rev_r["reason"]}
+            # V7 (M2): la ventana de los CAGR a 3 años, para que cada texto diga su periodo ("FY2022–FY2025").
+            _gy = _stmts_g.get("inc_years") or []
+            _gn_y = fin_dict.get("revenue_ps_cagr_years") or 3
+            fin_dict["revenue_cagr_window"] = (_rev_r.get("window") if _rev_r.get("method") == "log_lineal_edgar" else
+                                               f"FY{_gy[_gn_y]}–FY{_gy[0]}"
+                                               if len(_gy) > _gn_y and fin_dict.get("revenue_cagr_3y") is not None
+                                               else None)
             if _rev_r.get("note") or _eps_r.get("note"):
                 fin_dict["growth_cagr_notes"] = {k: r["note"] for k, r in (("ingresos", _rev_r), ("BPA", _eps_r))
                                                  if r.get("note")}
@@ -932,10 +1215,10 @@ def _compute_analysis(symbol: str) -> dict:
             # (etapa 5). Indefinido -> sin dato con motivo, nunca un número.
             if fin_dict.get("fcf_cagr_3y") is None:
                 _fcf_series = _stmts_g.get("free_cash_flow") if _has_yahoo else None
-                _fcf_r = growth_rate(_fcf_series, 3, what="FCF")   # con la regla de base anómala (etapa 7)
+                _fcf_r = _rg(_fcf_series, 3, what="FCF", long=edgar_fcf(_hfy), end=_g_end)   # F10
                 fin_dict["fcf_cagr_3y"] = _fcf_r["value"]
                 fin_dict["fcf_cagr_3y_reason"] = _fcf_r["reason"]
-                fin_dict["fcf_cagr_3y_method"] = {k: _fcf_r.get(k) for k in ("method", "anomalous_base", "note")}
+                fin_dict["fcf_cagr_3y_method"] = {k: _fcf_r.get(k) for k in _GM}
 
             # Crecimiento por rama (etapa 6).
             # Fase 3 (T5, F3_DISENO §4): con 10+ ejercicios de EDGAR, ciclo medio de pico a pico (sustituye a la cota).
@@ -951,10 +1234,13 @@ def _compute_analysis(symbol: str) -> dict:
                     f"ciclo medio de pico a pico ({_span}; historia de EDGAR"
                     + (", por acción" if _mc["basis"] == "por_accion" else "") + "): la tendencia del ciclo completo")
                 fin_dict["eps_cagr_3y"] = _mc["eps_cagr"]
-                fin_dict["eps_growth_reason"] = (None if _mc["eps_cagr"] is not None else
-                                                 "sin BPA positivo en los dos picos del ciclo")
+                fin_dict["eps_growth_reason"] = _mc["eps_reason"] if _mc["eps_cagr"] is None else None
                 if _mc["eps_cagr"] is not None:
-                    fin_dict["eps_growth_note"] = f"BPA de ciclo medio de pico a pico ({_span})"
+                    # F8: entre las medias de las dos mitades del ciclo, no en los picos de ingresos
+                    _hv = _mc["eps_halves"]
+                    fin_dict["eps_growth_note"] = (f"BPA de ciclo medio: media de {_hv['first'][0][:4]}–"
+                                                   f"{_hv['first'][1][:4]} frente a la de {_hv['second'][0][:4]}–"
+                                                   f"{_hv['second'][1][:4]}, pérdidas incluidas")
                 fin_dict["fcf_cagr_3y"] = None
             elif archetype == CYCLICAL:
                 # Crecimiento normalizado de ciclo medio (promedio interanual de los
@@ -990,7 +1276,8 @@ def _compute_analysis(symbol: str) -> dict:
                 _sh = archetype_values.get("shares_cagr_3y")
                 _ffo = archetype_values.get("ffo_cagr_3y")
                 fin_dict["revenue_growth_note"] = (
-                    "FFO por acción (FFO = beneficio neto + D&A; acciones en circulación de cada ejercicio)"
+                    "FFO por acción (FFO según Nareit = beneficio neto + D&A − ventas de inmuebles + deterioros; acciones en "
+                    "circulación de cada ejercicio)"
                     + (f"; FFO agregado {_ffo:+.1%}" if _ffo is not None else "")
                     + (f", acciones {_sh:+.1%} anual" if _sh is not None else ""))
                 fin_dict["fcf_cagr_3y"] = archetype_values.get("fcf_per_share_cagr_3y")
@@ -1002,11 +1289,13 @@ def _compute_analysis(symbol: str) -> dict:
             # El BPA ya es por acción. El REIT lo hace siempre (FFO y FCF por acción).
             _gb = per_share_basis(_stmts.get("ordinary_shares") or [])
             growth_basis = dict(_gb, applied_to=[], eps="el BPA ya es por acción",
-                                fcf_cagr=fin_dict.get("fcf_cagr_3y_method"))
+                                fcf_cagr=fin_dict.get("fcf_cagr_3y_method"),
+                                revenue_cagr=fin_dict.get("revenue_cagr_3y_method"),
+                                eps_cagr=fin_dict.get("eps_cagr_3y_method"))   # F10: el método del BPA, a la vista
             if archetype == REIT:
-                _fps = growth_rate(per_share(_stmts_g.get("free_cash_flow") or [],
-                                             _stmts_g.get("ordinary_shares") or []), 3, what="FCF por acción")
-                growth_basis["fcf_cagr"] = {k: _fps.get(k) for k in ("method", "anomalous_base", "note")}
+                _fps = _rg(per_share(_stmts_g.get("free_cash_flow") or [],
+                                     _stmts_g.get("ordinary_shares") or []), 3, what="FCF por acción")
+                growth_basis["fcf_cagr"] = {k: _fps.get(k) for k in _GM}
                 growth_basis.update(basis="por_accion", applied_to=["FFO", "FCF"],
                                     reason="REIT: crecimiento por acción siempre (FFO y FCF por acción); "
                                            + _gb["reason"])
@@ -1017,16 +1306,17 @@ def _compute_analysis(symbol: str) -> dict:
                 # (lib/cyclicality.mid_cycle_growth): no se vuelve a dividir por las de Yahoo a 3 años.
                 if _g is not None and _mc is None:
                     fin_dict["revenue_cagr_3y"] = (1 + _g) / (1 + _s) - 1
+                    fin_dict["revenue_cagr_per_share"] = True
                     fin_dict["revenue_growth_note"] = "; ".join(filter(None, [
                         fin_dict.get("revenue_growth_note"),
                         f"por acción: {_g:+.1%} agregado ajustado por las acciones ({_s:+.1%} anual)"]))
                     growth_basis["applied_to"].append("ingresos")
                 if fin_dict.get("fcf_cagr_3y") is not None or fin_dict.get("fcf_cagr_3y_reason"):
-                    _fps = growth_rate(per_share(_stmts_g.get("free_cash_flow") or [],
-                                                 _stmts_g.get("ordinary_shares") or []), 3, what="FCF por acción")
+                    _fps = _rg(per_share(_stmts_g.get("free_cash_flow") or [],
+                                         _stmts_g.get("ordinary_shares") or []), 3, what="FCF por acción")
                     fin_dict["fcf_cagr_3y"] = _fps["value"]
                     fin_dict["fcf_cagr_3y_reason"] = _fps["reason"]
-                    growth_basis["fcf_cagr"] = {k: _fps.get(k) for k in ("method", "anomalous_base", "note")}
+                    growth_basis["fcf_cagr"] = {k: _fps.get(k) for k in _GM}
                     growth_basis["applied_to"].append("FCF")
             if _mc is not None and _mc["basis"] == "por_accion" and "ingresos" not in growth_basis["applied_to"]:
                 growth_basis["applied_to"].append("ingresos")
@@ -1042,41 +1332,140 @@ def _compute_analysis(symbol: str) -> dict:
                     _adj = [(a - b) if (a is not None and b is not None) else None for a, b in zip(_f, _s)]
                     if "FCF" in growth_basis["applied_to"]:
                         _adj = per_share(_adj, _stmts_g.get("ordinary_shares") or [])
-                    _ar = growth_rate(_adj, 3, what="FCF − SBC")
+                    _ar = _rg(_adj, 3, what="FCF − SBC")
                     fin_dict["fcf_cagr_3y"] = _ar["value"]
                     fin_dict["fcf_cagr_3y_reason"] = _ar["reason"]
-                    growth_basis["fcf_cagr"] = dict({k: _ar.get(k) for k in ("method", "anomalous_base", "note")},
+                    growth_basis["fcf_cagr"] = dict({k: _ar.get(k) for k in _GM},
                                                     basis="FCF − SBC")
             # Etapa 9a (regla general): negativo sostenido -> peor tramo, no "sin dato".
             fin_dict["fcf_cagr_3y_sustained_negative"] = is_sustained_negative(fin_dict.get("fcf_cagr_3y_reason"))
+            # V7 (M2): ciclo medio, normalizada o FFO del REIT no son la ventana de los estados a 3 años.
+            if _mc is not None or archetype == REIT or (
+                    archetype == CYCLICAL and archetype_values.get("revenue_growth_normalized") is not None):
+                fin_dict["revenue_cagr_window"] = None
+                fin_dict["eps_cagr_window"] = None
+            if archetype == CYCLICAL:     # el BPA de ciclo medio no es el de la serie larga
+                fin_dict["eps_cagr_window"] = None
+            if fin_dict.get("revenue_cagr_window"):
+                growth_basis["revenue_window"] = fin_dict["revenue_cagr_window"]
+            if fin_dict.get("eps_cagr_window"):
+                growth_basis["eps_window"] = fin_dict["eps_cagr_window"]     # F10: la serie larga del BPA
             result["growth_basis"] = {k: (safe_float(v) if isinstance(v, float) else v)
                                       for k, v in growth_basis.items()}
+            for _k, _rk in (("revenue_cagr_3y", "revenue_growth_reason"), ("eps_cagr_3y", "eps_growth_reason"),
+                            ("fcf_cagr_3y", "fcf_cagr_3y_reason")):
+                fin_dict[f"{_k}_bound"] = (_bounds.get(fin_dict.get(_rk)) if fin_dict.get(_k) is None else None)
             # Fase 3 (T6, §1.3): PEG de GROWTH_PROFITABLE a varios años: P/E ÷ CAGR del BPA a 3 años (por acción), no
             # el crecimiento de un año ni el de consenso. Lo leen el score, la tabla y el informe.
-            if archetype == "GROWTH_PROFITABLE":
+            # Revisión de COST (hallazgo 2, regla general): en todos los arquetipos en que aplica, el PEG usa el crecimiento
+            # del BPA que el informe muestra y nombra (su fila de Crecimiento); sin él, no significativo con su motivo.
+            # COST: el PEG de Yahoo (4,99) suponía un crecimiento de consenso que el informe no mostraba.
+            if not not_applicable(archetype, "peg"):
                 _pe_g = safe_float(ratios.get("pe"))
                 _e3 = safe_float(fin_dict.get("eps_cagr_3y"))
-                if _pe_g is not None and _pe_g > 0 and _e3 is not None and _e3 > 0:
+                # el ciclo medio o el normalizado del cíclico no son la serie a 3 años del método
+                _em = (fin_dict.get("eps_cagr_3y_method") or {}) if archetype != CYCLICAL else {}
+                # F10 · N3 (revisión del informe de NVIDIA): el PEG usa el crecimiento del BPA con el mismo método que los
+                # ingresos (historical_metrics.growth_rate: regresión log-lineal con año base anómalo). Si el año base es
+                # anómalo y la regresión no tiene ejercicios fuera de la ventana con los que diluirlo, no hay una
+                # alternativa robusta: PEG no significativo, con su motivo (NVDA: 198 % desde FY2023, PEG 0,14).
+                if _em.get("anomalous_base") and not _em.get("robust"):
+                    # F10 (regla general, historical_metrics.robust_growth): sin regresión robusta ni serie larga, el BPA
+                    # ya es no significativo; el PEG, con él y con el mismo motivo.
+                    _peg_ns_base = ("el crecimiento del BPA parte de un año base anómalo ("
+                                    + str(_em.get("note") or "").split(";")[0].split(")")[0].split(": ", 1)[-1]
+                                    .removeprefix("base anómala (")
+                                    + ") y no hay ejercicios fuera de la ventana ni una serie larga con los que "
+                                      "estimarlo de forma robusta")
+                    ratios["peg"] = result["key_metrics"]["peg"] = None
+                    fin_dict["peg_not_significant"] = _peg_ns_base
+                    result["peg_basis"] = {"pe": _pe_g, "eps_cagr_3y": _e3,
+                                           "note": f"PEG a 3 años no significativo: {_peg_ns_base}"}
+                    _peg_would = (_pe_g / (_e3 * cfg("valuation.peg.growth_pct_scale"))
+                                  if (_pe_g is not None and _pe_g > 0 and _e3 is not None and _e3 > 0) else None)
+                    _id_flags.append({"field": "key_metrics.peg", "rule": "multiplo_no_significativo",
+                                      "action": "sin_dato", "old": safe_float(_peg_would), "new": None,
+                                      "reason": f"PEG: {_peg_ns_base}"})
+                    # F10 (PM, 29-oct): la cota superior del crecimiento da una cota inferior del PEG; puntúa solo si
+                    # ya está en el peor tramo, y lo declara.
+                    _gb_ = (_em.get("bound") or {}).get("value")
+                    if _pe_g is not None and _pe_g > 0 and _gb_ is not None and _gb_ > 0:
+                        _pl = _pe_g / (_gb_ * cfg("valuation.peg.growth_pct_scale"))
+                        if bound_decides({"value": _pl, "direction": "inferior"},
+                                         cfg("thresholds.score.valoracion.peg_bounds"), higher_is_better=False):
+                            ratios["peg"] = result["key_metrics"]["peg"] = _pl
+                            fin_dict.pop("peg_not_significant", None)
+                            result["peg_basis"] = {"pe": _pe_g, "eps_cagr_3y": None, "own": True,
+                                                   "bound": {"value": _pl, "direction": "inferior"},
+                                                   "note": (f"PEG ≥ {_pl:.2f}: el crecimiento del BPA no es "
+                                                            f"significativo, pero su techo ({_gb_:.0%}, la tasa desde "
+                                                            "el año anómalo) ya deja el PEG en el tramo más caro")}
+                elif _pe_g is not None and _pe_g > 0 and _e3 is not None and _e3 > 0:
                     ratios["peg"] = _pe_g / (_e3 * cfg("valuation.peg.growth_pct_scale"))
                     result["key_metrics"]["peg"] = safe_float(ratios["peg"])
-                    result["peg_basis"] = {"pe": _pe_g, "eps_cagr_3y": _e3,
-                                           "note": "PEG a 3 años: P/E ÷ CAGR del BPA por acción a 3 años"}
+                    result["peg_basis"] = {"pe": _pe_g, "eps_cagr_3y": _e3, "own": True,
+                                           "years": (_em.get("years_used") if _em.get("method") == "log_lineal_edgar"
+                                                     else None),
+                                           "note": (f"PEG: P/E ÷ crecimiento del BPA por regresión log-lineal sobre "
+                                                    f"los {_em.get('years_used')} últimos ejercicios de EDGAR "
+                                                    f"({_em.get('window')}; el año inicial de la ventana de 3 años es "
+                                                    "anómalo)" if _em.get("method") == "log_lineal_edgar" else
+                                                    f"PEG: P/E ÷ crecimiento del BPA del informe "
+                                                    f"({fin_dict['eps_growth_note']})"
+                                                    if archetype == CYCLICAL and fin_dict.get("eps_growth_note") else
+                                                    "PEG a 3 años: P/E ÷ CAGR del BPA por acción a 3 años")}
+                    if archetype == CYCLICAL:
+                        result["peg_basis"]["label"] = "PEG (BPA de ciclo medio)"
                 else:
-                    result["peg_basis"] = {"pe": _pe_g, "eps_cagr_3y": _e3,
-                                           "note": ("PEG de mercado (crecimiento de consenso): el CAGR del BPA a 3 "
-                                                    "años no está definido (BPA base ≤ 0 o sin dato)"
-                                                    if result["key_metrics"].get("peg") is not None else
-                                                    "PEG sin dato: P/E o CAGR del BPA a 3 años ≤ 0 o sin dato")}
+                    _peg_src = safe_float(result["key_metrics"].get("peg"))
+                    ratios["peg"] = result["key_metrics"]["peg"] = None
+                    if _pe_g is None:
+                        result["peg_basis"] = {"pe": _pe_g, "eps_cagr_3y": _e3, "note": "PEG sin dato: sin P/E"}
+                    else:
+                        # un P/E ≤ 0 (pérdidas) o un crecimiento ≤ 0 o sin dato: no significativo, no «sin dato» (no
+                        # cuenta como componente ausente; ECHO perdía el precio por cobertura)
+                        _peg_ns_g = ("el P/E es ≤ 0 (pérdidas): el PEG no tiene sentido" if _pe_g <= 0 else
+                                     (f"el crecimiento del BPA del informe es ≤ 0 ({_e3:.1%} anual): el PEG no tiene "
+                                      "sentido").replace("-", "−") if _e3 is not None else
+                                     "el informe no muestra un crecimiento del BPA con el que calcularlo ("
+                                     + (fin_dict.get("eps_growth_reason") or "sin dato") + ")")
+                        fin_dict["peg_not_significant"] = _peg_ns_g
+                        result["peg_basis"] = {"pe": _pe_g, "eps_cagr_3y": _e3,
+                                               "note": f"PEG no significativo: {_peg_ns_g}"}
+                        _id_flags.append({"field": "key_metrics.peg", "rule": "multiplo_no_significativo",
+                                          "action": "sin_dato", "old": _peg_src, "new": None,
+                                          "reason": f"PEG: {_peg_ns_g}"})
+            # F8 · E4 (auditoría del 26-oct, VZ): el PEG tiene que cuadrar con el crecimiento del BPA que muestra el
+            # informe; si no, no es significativo (no puntúa ni se lee) y el motivo queda en la validación de salida.
+            _peg_v = safe_float(ratios.get("peg"))
+            _peg_bound = bool((result.get("peg_basis") or {}).get("bound"))   # F10: la cota ya decide el tramo
+            _peg_ns = None if _peg_bound else peg_not_significant(
+                safe_float(ratios.get("pe")), _peg_v, safe_float(fin_dict.get("eps_cagr_3y")),
+                from_source=not ((result.get("peg_basis") or {}).get("own")
+                                 or (result.get("peg_basis") or {}).get("note", "").startswith("PEG a 3 años")))
+            if not _peg_ns and not _peg_bound and _peg_v is not None \
+                    and is_anomalous_not_significant(fin_dict.get("eps_growth_reason")):
+                # F10: sin un crecimiento del BPA significativo no hay con qué contrastar el PEG de la fuente
+                _peg_ns = f"el crecimiento del BPA del informe es {fin_dict['eps_growth_reason']}"
+            if _peg_ns:
+                ratios["peg"] = result["key_metrics"]["peg"] = None
+                fin_dict["peg_not_significant"] = _peg_ns
+                _id_flags.append({"field": "key_metrics.peg", "rule": "multiplo_no_significativo",
+                                  "action": "sin_dato", "old": _peg_v, "new": None,
+                                  "reason": f"PEG de {_peg_v:.2f}: {_peg_ns}"})
             # Fase 3 (T6, §1.3): regla de 40 de GROWTH_PROFITABLE con el crecimiento que puntúa (por acción si aplica).
             if archetype == "GROWTH_PROFITABLE" and isinstance(result.get("quality_readings"), dict):
                 import quality_readings as qr
                 _r40 = qr.rule_of_40(safe_float(fin_dict.get("revenue_cagr_3y")),
-                                     safe_float(sbc_info.get("fcf_margin_adjusted")))
+                                     safe_float(sbc_info.get("fcf_margin_adjusted")),
+                                     per_share=bool(fin_dict.get("revenue_cagr_per_share")),
+                                     window=fin_dict.get("revenue_cagr_window"), margin_basis=sbc_info.get("basis"))
                 if _r40:
                     result["quality_readings"]["rule_of_40"] = _r40
             # Fase 3 (T1b): crecimiento en la moneda de los estados, con el efecto divisa declarado aparte.
             if growth_currency.converted(_cur_info):
-                _rev_usd = growth_rate(_stmts.get("revenue") or [], 3, what="ingresos", strict_ends_only=True)["value"]
+                _rev_usd = _rg(_stmts.get("revenue") or [], 3, what="ingresos", strict_ends_only=True,
+                               long=_hfy.get("revenue"), end=_g_end)["value"]
                 _yoy = growth_currency.yoy(_stmts_g.get("revenue"))
                 _yoy_usd = growth_currency.yoy(_stmts.get("revenue"))
                 if _yoy is not None:
@@ -1087,7 +1476,12 @@ def _compute_analysis(symbol: str) -> dict:
                                            "fx_effect": growth_currency.fx_effect(_yoy_usd, _yoy)},
                     "revenue_cagr_3y": {"statements": _rev_r["value"], "price": _rev_usd,
                                         "fx_effect": growth_currency.fx_effect(_rev_usd, _rev_r["value"])},
-                    "note": "crecimiento medido en la moneda de los estados; el efecto del tipo de cambio va aparte"}
+                    "note": "crecimiento medido en la moneda de los estados; el efecto del tipo de cambio va aparte",
+                    # F9 · R3: los mismos ejercicios en la moneda de los estados, para que el gráfico histórico mida su
+                    # crecimiento como el resto del informe (TM: 7.0% en USD en el gráfico frente al 10.9% en JPY)
+                    "yearly": [{k: (safe_float(v) if isinstance(v, float) else v) for k, v in r_.items()
+                                if k in ("year", "revenue", "net_income", "free_cash_flow", "fcf_minus_sbc")}
+                               for r_ in archetype_metrics.yearly_financials(_stmts_g, archetype)]}
 
             # ── Fase C: creación de valor (ROIC-WACC) y retorno al accionista ──
             # ── Etapa 8: un solo WACC (DCF, grid, spread y lo que se muestra) ──
@@ -1097,22 +1491,26 @@ def _compute_analysis(symbol: str) -> dict:
                              "reason": not_applicable(archetype, "roic_wacc") or not_applicable_text(FINANCIAL)}
             else:
                 wacc_info = compute_wacc(
-                    beta=safe_float(financials.beta), beta_preadjusted=_beta_pre, rf=rf_info, market_cap=mcap,
+                    beta=_beta_val, beta_preadjusted=_beta_pre, rf=rf_info, market_cap=mcap,
                     total_debt=td_val,
                     interest_coverage=safe_float(interest_cov),
                     coverage_state=ic_state,
-                    tax=tax_info)
+                    tax=tax_info, ke=ke_info)
                 wacc_info["applicable"] = True
             wacc_est = wacc_info["value"]
             # Beta (fase 2b, T6: propia, del sector o de la fuente; lib/beta.py) y la ajustada que usa el Ke (también
             # en FINANCIAL): Blume sobre la propia y la de la fuente; la del sector ya es una media de industria.
-            _braw = safe_float(financials.beta)
+            _braw = _beta_val
             result["beta"] = {"raw": None if _beta_pre else _braw, "adjusted": safe_float(adjusted_beta(_braw, _beta_pre)),
-                              "method": "beta del sector (sin Blume)" if _beta_pre else "Blume",
+                              "method": "beta de abajo hacia arriba (sin Blume)" if _beta_pre else "Blume",
                               "default": _braw is None, "source": _beta_info.get("source"),
                               "reason": _beta_info.get("reason"), "own": _beta_info.get("own"),
+                              "rule": _beta_info.get("rule"), "bottom_up": _beta_info.get("bottom_up"),
+                              "relevered": _beta_info.get("relevered"), "discarded": _beta_info.get("discarded"),
                               "source_beta": _beta_info.get("source_beta"),
                               "discrepancy": _beta_info.get("discrepancy"),
+                              # F9 · R2b: la tabla regional de la de abajo hacia arriba (None: la de EE. UU.)
+                              "region": _beta_info.get("region"),
                               "coefficients": [cfg("valuation.capm.blume_weight"), cfg("valuation.capm.blume_prior")]}
             result["wacc"] = {k: (safe_float(v) if isinstance(v, float) else v) for k, v in wacc_info.items()}
             result["tax_rate"] = {k: (safe_float(v) if isinstance(v, float) else v) for k, v in tax_info.items()}
@@ -1159,6 +1557,9 @@ def _compute_analysis(symbol: str) -> dict:
                 ratios["p_fcf"] = pfcf
             if fcf_yield is not None and ratios.get("fcf_yield") is None:
                 ratios["fcf_yield"] = fcf_yield
+            if (_spectrum or {}).get("fcf_adjusted") is not None:
+                # F8 · E4: el score lee el P/FCF y el FCF yield con el espectro restado, los mismos que la tabla.
+                ratios["p_fcf"], ratios["fcf_yield"] = pfcf, fcf_yield
             if roic is not None and ratios.get("roic") is None:
                 ratios["roic"] = roic
             if div_yield is not None and ratios.get("dividend_yield") is None:
@@ -1221,6 +1622,8 @@ def _compute_analysis(symbol: str) -> dict:
                 cl_val = _fy("current_liabilities", safe_float(financials.current_liabilities))
                 wc = (ca_val - cl_val) if (ca_val is not None and cl_val is not None) else None
 
+                _bmx = result.get("business_model") or {}
+                _alt_na = not_applicable(archetype, "altman") or _bmx.get("altman_excluded")
                 z_val, z_zone, z_interp, z_details = altman_z_score(
                     working_capital=wc,
                     total_assets=z_ta,
@@ -1231,18 +1634,28 @@ def _compute_analysis(symbol: str) -> dict:
                     sales=z_rev,
                     sector=sector, industry=profile.industry or "",
                     book_value_equity=z_te,
-                    not_applicable_reason=not_applicable(archetype, "altman"),
+                    not_applicable_reason=_alt_na, sic=_bmx.get("sic"),
                 )
                 result["altman_z"] = {
                     # Etapa 9b: null sin dato o cuando no aplica (nunca un z = 0).
-                    "z_score": z_val if (z_val is not None and not not_applicable(archetype, "altman")) else None,
+                    "z_score": z_val if (z_val is not None and not _alt_na) else None,
                     "zone": z_zone.lower() if z_zone else "grey",
                     "interpretation": z_interp,
                     "model": z_details.get("model", ""),
                     "details": z_details,
                     # available=False indica "sin dato" (motivo en details.missing).
                     "available": z_val is not None,
-                    "applicable": not not_applicable(archetype, "altman"),
+                    "applicable": not _alt_na,
+                    # F8 · E10: de dónde sale el modelo (SIC de EDGAR o sector) y, si se excluye por el SIC, el
+                    # sustituto informativo (sin puntos): deuda neta/EBITDA y cobertura de intereses.
+                    "model_basis": altman_model_basis(_bmx.get("sic")),
+                    "excluded_by_sic": _bmx.get("altman_excluded"),
+                    "substitute": ({"net_debt_to_ebitda": result["key_metrics"].get("net_debt_to_ebitda"),
+                                    "net_debt_to_ebitda_state": result["key_metrics"].get("net_debt_to_ebitda_state"),
+                                    "interest_coverage": result["key_metrics"].get("interest_coverage"),
+                                    "interest_coverage_state": result["key_metrics"].get("interest_coverage_state")}
+                                   if (_bmx.get("altman_excluded") and not not_applicable(archetype, "altman"))
+                                   or (_bmx.get("captive_finance") or {}).get("detected") else None),
                     # Fase 2b (T5): pasivo de X4 sin el arrendamiento operativo (US GAAP), o None.
                     "operating_leases_excluded": _ol_fy if _ol_fy else None,
                 }
@@ -1285,7 +1698,10 @@ def _compute_analysis(symbol: str) -> dict:
                 # Estado ESTRUCTURADO de cada criterio (cumple/no_cumple/sin_dato):
                 # ya no se adivina por el símbolo ✓/✗ del texto (etapa 5).
                 f_criteria = {c["key"]: {"passed": c["state"] == "cumple", "state": c["state"],
-                                         "detail": c["detail"]}
+                                         "detail": c["detail"],
+                                         # rediseño E2a (T6): los valores comparados (aditivo)
+                                         "cur": c.get("cur"), "prev": c.get("prev"), "unit": c.get("unit"),
+                                         "compare": c.get("compare")}
                               for c in _pio["criteria"]}
                 f_interp = _pio["interpretation"]
                 f_level = piotroski_level(_pio["scaled_score"], _pio["conclusive"])
@@ -1362,9 +1778,75 @@ def _compute_analysis(symbol: str) -> dict:
                     _qn = None
                 _pt, _tx = (_stmts.get("pretax_income") or [None])[0], (_stmts.get("tax_provision") or [None])[0]
                 _t_fy = (_tx / _pt) if (_pt and _tx is not None and _pt > 0) else None
+                # F10 · N1: piezas de la coherencia del beneficio con la operación, del mismo periodo que el beneficio
+                # (TTM: los 4 trimestres; si no, el último ejercicio). Sin ellas (TTM de EDGAR sin desglose) o donde el
+                # margen operativo no aplica (bancos, aseguradoras, REIT), no se mira.
+                _coh = None
+                if not not_applicable(archetype, "operating_margin"):
+                    if _qn is not None:
+                        def _q4(row, required=True):
+                            v = (_q.get(row) or [])[:TTM_QUARTERS]
+                            if len(v) == TTM_QUARTERS and all(x is not None for x in v):
+                                return sum(v)
+                            return None if required else (sum(x for x in v if x is not None) if any(
+                                x is not None for x in v) else None)
+                        # F10 · margen operativo con una sola verdad: el operativo de las piezas es el del corte (el
+                        # que se enseña y puntúa: el EBIT que presenta el emisor en EDGAR); la fila trimestral de Yahoo,
+                        # solo de respaldo declarado (FIX: 0,99 B$ de EDGAR frente a 2,09 B$ de Yahoo)
+                        _opp = pieces_operating_income(
+                            oi_val, ((yinfo.get("_as_of") or {}).get("fields") or {}).get("operatingIncome"),
+                            (_q.get("dates") or [None])[0], _q4("Operating Income"))
+                        _coh = {"operating_income": _opp["value"], "revenue": _q4("Total Revenue"),
+                                "pretax": _q4("Pretax Income"), "tax": _q4("Tax Provision"),
+                                "net_interest": _q4("Net Non Operating Interest Income Expense", False),
+                                "equity_income": _q4("Earnings From Equity Interest", False),
+                                "equity_income_net_of_tax": _q4("Earnings From Equity Interest Net Of Tax", False),
+                                "minority_interests": _q4("Minority Interests", False),
+                                "operating_income_source": _opp["source"],
+                                "named_gains": safe_float((yinfo.get("_named_gains") or {}).get("value")),
+                                "operating_income_yahoo_quarterly": _opp["yahoo_quarterly"]}
+                    elif _tinfo.get("basis") != "ttm_edgar":
+                        def _fy0(key):
+                            return safe_float((_stmts.get(key) or [None])[0])
+                        _coh = {"operating_income": _fy0("operating_income"), "revenue": _fy0("revenue"),
+                                "pretax": _fy0("pretax_income"), "tax": _fy0("tax_provision"),
+                                "net_interest": _fy0("nonop_interest"), "equity_income": _fy0("equity_interest"),
+                                "equity_income_net_of_tax": _fy0("equity_interest_net_of_tax"),
+                                "minority_interests": _fy0("minority_interests"),
+                                "operating_income_source": "último ejercicio (el EBIT que presenta el emisor si EDGAR "
+                                                           "lo tiene)",
+                                "named_gains": safe_float((yinfo.get("_named_gains") or {}).get("value"))}
+                    # F10 · N1b: el tipo normalizado mira también los últimos ejercicios (los del periodo, si es el
+                    # ejercicio, no se repiten)
+                    if _coh is not None:
+                        _hist = list(zip(_stmts.get("pretax_income") or [], _stmts.get("tax_provision") or []))
+                        _coh["tax_history"] = _hist if _qn is not None else _hist[1:]
+                # F10 · N1b: discontinuadas del mismo periodo que el beneficio (el normalizado parte del continuado),
+                # con el total del periodo (beneficio con discontinuadas) para saber si el beneficio usado las lleva: el
+                # de Yahoo no siempre es el del estado del periodo (UL en vivo: 6,48 B frente a 9,47 B del FY2025, de
+                # los que 3,80 B son discontinuadas): restarlas otra vez las contaría dos veces.
+                if _qn is not None:
+                    _dq = [x for x in (_q.get("Net Income Discontinuous Operations") or [])[:TTM_QUARTERS]
+                           if x is not None]
+                    _tq = (_q.get("Net Income") or [])[:TTM_QUARTERS]
+                    _disc = {"value": sum(_dq), "source": "Yahoo: Net Income Discontinuous Operations (4 trimestres)",
+                             "period_total": (sum(_tq) if len(_tq) == TTM_QUARTERS and None not in _tq else None)} \
+                        if _dq else None
+                elif _tinfo.get("basis") == "ttm_edgar":
+                    _de = _tinfo.get("discontinued")
+                    # el beneficio del corte es el de EDGAR (NetIncomeLoss y equivalentes): lleva las discontinuadas
+                    _disc = {"value": _de["value"], "source": f"SEC EDGAR ({_de['concept']}): {_de['how']}",
+                             "period_total": _ni} if _de else None
+                else:
+                    _dfy = safe_float((_stmts.get("net_income_discontinued") or [None])[0])
+                    _disc = {"value": _dfy, "source": "Yahoo: Net Income Discontinuous Operations (ejercicio)",
+                             "period_total": safe_float((_stmts.get("net_income_common") or [None])[0])} \
+                        if _dfy else None
                 _norm = normalize_earnings(net_income=_ni, explicit_rows=_rows, quarterly=_qn, basis=_basis,
                                            tax_rate_fallback=_t_fy, annual_rows=_stmts.get("unusual_fy") or {},
-                                           investment_gains=(yinfo.get("_investment_gains") if _has_yahoo else None))
+                                           investment_gains=(yinfo.get("_investment_gains") if _has_yahoo else None),
+                                           coherence_parts=_coh, discontinued=_disc,
+                                           edgar_charges=(yinfo.get("_edgar_charges") if _has_yahoo else None))
                 # Fase 7 (registro #36; revisión, hallazgos A y D): una aseguradora o un conglomerado se valora sobre su
                 # beneficio OPERATIVO. Su P/E (y el E/P) pasa a ser capitalización / beneficio operativo en todo el
                 # análisis (tabla, portada, alertas, score), con el reportado aparte. Beneficio operativo ≤ 0: sin P/E
@@ -1390,6 +1872,14 @@ def _compute_analysis(symbol: str) -> dict:
                           else None)
                 _norm["pe_reported"] = safe_float(_pe_rep)
                 _norm["pe_normalized"] = safe_float(_pe_rep * _scale) if (_pe_rep and _scale) else None
+                # F10 · N1b: con discontinuadas, el BPA de Yahoo del P/E reportado no tiene una base fija (MLM: ya es el
+                # continuado; JCI: ni el total ni el continuado): escalarlo las restaría dos veces o ninguna. El P/E
+                # normalizado es entonces capitalización / beneficio normalizado (continuado), sin el BPA de Yahoo.
+                _mc = safe_float(result["key_metrics"].get("market_cap"))
+                if (any(i["applied"] and i["type"] == "discontinuadas" for i in _norm["items"]) and _mc
+                        and _nin and _nin > 0 and not _struct):
+                    _norm["pe_normalized"] = safe_float(_mc / _nin)
+                    _norm["pe_normalized_basis"] = "capitalización / beneficio normalizado de operaciones continuadas"
                 _norm["used_in_score"] = bool(_norm["applied"] and _nin is not None)
                 # Etapa 9a: la etiqueta "normalizado" solo si difiere del reportado (> label_min_diff).
                 _norm["differs"] = bool(_norm["used_in_score"] and _ni and _nin is not None
@@ -1406,16 +1896,21 @@ def _compute_analysis(symbol: str) -> dict:
                     _nin_q = _nin + _struct
                     _k = _nin_q / _ni
                     ratios_score = dict(ratios)
-                    if _scale:
+                    if _scale and _norm["differs"]:      # F10 · B2: ídem para el P/E sin etiqueta
                         ratios_score["pe"] = _norm["pe_normalized"]
                         ratios_score["earnings_yield"] = (1 / _norm["pe_normalized"]) if _norm["pe_normalized"] else None
+                    # F10 · B2 (IDXX: ROE 70.6% en la puntuación frente a 70.67% en la página): por debajo de
+                    # `label_min_diff` el normalizado no se distingue del reportado y la página no lo etiqueta: la
+                    # puntuación usa el reportado, una sola cifra.
+                    _q_differs = abs(_k - 1) > cfg("thresholds.normalization.label_min_diff")
+                    if not _q_differs:
+                        _k, _nin_q = 1.0, _ni
                     for _key in ("net_margin", "roe", "roa"):
                         if ratios.get(_key) is not None:
                             ratios_score[_key] = ratios[_key] * _k
                     ratios_score["net_income"] = _nin_q
                     if ratios.get("fcf") is not None and _nin_q:
                         ratios_score["fcf_to_net_income"] = ratios["fcf"] / _nin_q
-                    _q_differs = abs(_k - 1) > cfg("thresholds.normalization.label_min_diff")
                     _norm["quality_differs"] = _q_differs
                     result["earnings_normalization"]["quality_differs"] = _q_differs
                     # Etapa 9a: qué ratios del score y de las alertas salen del beneficio
@@ -1425,14 +1920,61 @@ def _compute_analysis(symbol: str) -> dict:
                           + (["fcf_to_net_income"] if ratios.get("fcf") is not None else [])) if _q_differs else [])
                         + (["pe", "earnings_yield"] if _scale else [])
                         if _norm["differs"] else [])
+                # F10 · margen operativo con una sola verdad: puntúa sin los cargos operativos que la normalización ya
+                # quita del beneficio (como el margen neto); se enseñan las dos cifras (key_metrics y la nota).
+                # Sobre las cifras del corte (las que se enseñan), con las mismas partidas que el beneficio normalizado.
+                _opn = {}
+                # (sin corte trimestral: las del ejercicio, las mismas del margen enseñado; regla 4)
+                _oi_c, _rev_c = ((_om_fy["operating_income"], _om_fy["revenue"]) if _om_fy is not None
+                                 else (oi_val, safe_float(rev_val)))
+                if _coh is not None and not _struct and _oi_c is not None:
+                    from normalize import operating as _operating
+                    _opn = {**_operating(_oi_c, _rev_c, _norm["items"], pretax=_coh.get("pretax"),
+                                         net_interest=_coh.get("net_interest"),
+                                         equity_income=_coh.get("equity_income"),
+                                         known_inside=((yinfo.get("_edgar_charges") or {}).get("charges") or 0.0)
+                                         if _has_yahoo else 0.0),
+                            "pieces_source": _coh.get("operating_income_source"),
+                            "yahoo_quarterly": _coh.get("operating_income_yahoo_quarterly")}
+                    result["earnings_normalization"]["operating"] = {
+                        k: (safe_float(v) if isinstance(v, float) else v) for k, v in _opn.items()}
+                if _opn.get("differs") and _opn.get("margin_normalized") is not None \
+                        and ratios.get("operating_margin") is not None:
+                    ratios_score = dict(ratios_score)
+                    ratios_score["operating_margin"] = _opn["margin_normalized"]
+                    result["key_metrics"]["operating_margin_normalized"] = safe_float(_opn["margin_normalized"])
+                    result["key_metrics"]["operating_income_normalized"] = safe_float(_opn["normalized"])
+                    fin_dict["normalized_metrics"] = list(fin_dict.get("normalized_metrics") or []) + ["operating_margin"]
             except Exception as e:
                 _sin_dato("normalizacion_ganancias", e)
+
+            # F8 · E2 (auditoría del 26-oct, NEE): bandera de pico de beneficio. Con ella, el P/E del score sale de la
+            # mediana de 3 ejercicios (y del forward, si es coherente), no del TTM atípico.
+            result["earnings_peak"] = None
+            try:
+                import earnings_peak as _epk
+                _en = result.get("earnings_normalization") or {}
+                _ni_rep = safe_float(financials.net_income)
+                _peak = None if not_applicable(archetype, "pe") else _epk.detect(
+                    ni_ttm=(safe_float(_en.get("normalized_net_income")) if _en.get("used_in_score") else _ni_rep),
+                    ni_reported=_ni_rep, fy_net_income=[safe_float(v) for v in (_stmts.get("net_income") or [])],
+                    pe_score=safe_float(ratios_score.get("pe")), pe_reported=safe_float(ratios.get("pe")),
+                    forward_pe=safe_float(ratios.get("forward_pe")), period=numfmt.period(fin_dict.get("ttm_basis")))
+                result["earnings_peak"] = _peak
+                if _peak and _peak["flag"]:
+                    ratios_score = dict(ratios_score)
+                    ratios_score["pe"] = _peak["pe_score"]
+                    ratios_score["earnings_yield"] = 1 / _peak["pe_score"]
+                    fin_dict["earnings_peak"] = _peak
+            except Exception as e:
+                _sin_dato("pico_beneficio", e)
 
             # Valuation (Graham + DCF) — etapa 8: ANTES del score, porque el DCF es un
             # componente de Valoración con aporte acotado por su fiabilidad.
             dcf_for_score = None
             _multiples_signal = None
             _quality_part = _price_part = None
+            _scenario_inputs = None   # rediseño E2a (T7)
             try:
                 price = financials.price
                 eps = financials.eps
@@ -1464,6 +2006,13 @@ def _compute_analysis(symbol: str) -> dict:
                                  else "CAGR de ingresos por acción a 3 años"
                                  if "ingresos" in (growth_basis.get("applied_to") or [])
                                  else "CAGR de ingresos a 3 años")
+                _rgm = fin_dict.get("revenue_cagr_3y_method") or {}
+                if archetype != CYCLICAL and _rgm.get("method") == "log_lineal_edgar":   # F10: serie larga de EDGAR
+                    _ps_txt = " por acción" if "ingresos" in (growth_basis.get("applied_to") or []) else ""
+                    _growth_basis = (f"crecimiento de ingresos{_ps_txt} "
+                                     f"por regresión log-lineal sobre los {_rgm.get('years_used')} últimos ejercicios "
+                                     f"de EDGAR ({_rgm.get('window')}; el año inicial de la ventana de 3 años es "
+                                     "anómalo)")
                 if (result.get("growth_perimeter") or {}).get("applied") and archetype != CYCLICAL:
                     _growth_basis = (f"CAGR de ingresos de {result['growth_perimeter']['homogeneous_years']} años en "
                                      "el perímetro homogéneo")
@@ -1482,7 +2031,10 @@ def _compute_analysis(symbol: str) -> dict:
                                      f"difieren más de {_pp}")
                     growth = _blend
                 if growth is None:
-                    growth, _growth_basis = cfg("valuation.dcf.default_growth"), "valor por defecto (sin CAGR de los estados)"
+                    _rns = fin_dict.get("revenue_growth_reason")
+                    growth, _growth_basis = cfg("valuation.dcf.default_growth"), (
+                        f"valor por defecto: el crecimiento de los ingresos es {_rns}"      # F10: no se inventa una tasa
+                        if is_anomalous_not_significant(_rns) else "valor por defecto (sin CAGR de los estados)")
                 _dcf_na = not_applicable(archetype, "dcf")
                 if not _dcf_na and archetype == GROWTH_PRE_PROFIT and not (fcf and fcf > 0):
                     _dcf_na = (f"{not_applicable_text(GROWTH_PRE_PROFIT)} con FCF negativo: no hay flujo que "
@@ -1508,6 +2060,11 @@ def _compute_analysis(symbol: str) -> dict:
                 fcf = _fcf_net if _fcf_net is not None else _fcf_gross
                 _fcf_basis = ("FCF − SBC" if _fcf_net is not None
                               else "FCF sin restar la SBC (sin SBC del mismo periodo)")
+                if _spec_avg is not None and fcf is not None:
+                    # F8 · E4: telecom, menos la media de 5 años de las compras de espectro (EDGAR).
+                    fcf, _fcf_gross = fcf - _spec_avg, (_fcf_gross - _spec_avg if _fcf_gross is not None else None)
+                    _fcf_basis += (f" − media de {len(_spectrum['years'])} años de las compras de espectro "
+                                   f"({numfmt.money(_spec_avg)})")
                 _dcf_missing = None
                 # Etapa 11b: FCF base <= 0 (ya normalizado por el arquetipo: el de mantenimiento en
                 # CYCLICAL) no es un dato ausente: el DCF "no es significativo" y no da valor razonable.
@@ -1550,6 +2107,23 @@ def _compute_analysis(symbol: str) -> dict:
                     _dcf_upside = ((_fv - price) / price * 100.0) if (_fv is not None and price and price > 0) else None
                     _dcf_mos = ((_fv - price) / _fv) if (_fv not in (None, 0)) else None
                     _dcf_model = dcf_result.get("model_result") or {}
+                    # Rediseño E2a (T7): los argumentos exactos con los que el motor llamó a dcf_multi_stage, para el
+                    # escenario del usuario (lib/scenario.py; con ellos reproduce `fair_value`). Aditivo.
+                    if _fv is not None and not _dcf_not_sig:
+                        _mi, _mst = _dcf_model.get("inputs") or {}, _dcf_model.get("stages") or {}
+                        _scenario_inputs = {
+                            "status": "ok", "reason": None, "fcf": _mi.get("fcf"),
+                            "shares_outstanding": financials.shares_outstanding,
+                            "net_debt": dcf_result.get("net_debt"),
+                            "base": {"high_growth_rate": _mi.get("high_growth_rate"),
+                                     "high_growth_years": (_mst.get("high_growth") or {}).get("years"),
+                                     "transition_years": (_mst.get("transition") or {}).get("years"),
+                                     "terminal_growth": _mi.get("terminal_growth"),
+                                     "discount_rate": _mi.get("discount_rate"), "decay_type": _mi.get("decay_type")},
+                            "price": price, "currency": result["profile"].get("currency")}
+                        # Rediseño E3 (Task 7): ingresos base, margen de caja, arquetipo, límites y preajustes. Aditivo.
+                        import scenario as _scn
+                        _scenario_inputs = _scn.extend(_scenario_inputs, safe_float(financials.revenue), archetype)
                     result["dcf"] = {
                         "fair_value": _fv,
                         "wacc": safe_float(wacc_est),   # el mismo que key_metrics.wacc y el grid
@@ -1605,7 +2179,18 @@ def _compute_analysis(symbol: str) -> dict:
                         dcf=result["dcf"], sensitivity=sens, price=price, archetype=archetype,
                         possible_cyclical=any(a.get("code") == "posible_ciclica"
                                               for a in classification.get("alerts") or []),
-                        fcf_flags=_fcf_flags, fcf_source=_fcf_source)
+                        fcf_flags=_fcf_flags, fcf_source=_fcf_source,
+                        history_fy=(yinfo.get("_history_fy") if _has_yahoo else None),
+                        # F8 · E8 (4): banderas de datos que restan fiabilidad a los insumos del DCF.
+                        data_flags=[f for f in (
+                            ("beta sin verificar (la de la fuente, sin regresión propia ni industria)"
+                             if (result.get("beta") or {}).get("source") == "fuente" else None),
+                            ("sin beta propia, de industria ni de la fuente"
+                             if (result.get("beta") or {}).get("source") == "sin_dato" else None),
+                            ("beneficio con pico (bandera de pico de beneficio)"
+                             if (result.get("earnings_peak") or {}).get("flag") else None)) if f],
+                        current_margins={k: safe_float(result["key_metrics"].get(k))
+                                         for k in ("operating_margin", "net_margin")})
                     result["dcf"]["reliability"] = _rel
                     if _dcf_not_sig:
                         pass
@@ -1624,6 +2209,8 @@ def _compute_analysis(symbol: str) -> dict:
                 result["dcf_status"] = {"state": "no_aplica" if _dcf_na else "no_significativo" if _dcf_not_sig
                                         else ("ok" if dcf_for_score.get("reliability") else "sin_dato"),
                                         "reason": _dcf_na or _dcf_not_sig or dcf_for_score.get("missing_reason")}
+                result["scenario_inputs"] = _scenario_inputs or {
+                    "status": "sin_dato", "reason": result["dcf_status"]["reason"] or "el DCF no da valor razonable"}
             except Exception as e:
                 logger.error(f"Valuation error: {e}")
                 _sin_dato("graham/dcf", e)
@@ -1683,6 +2270,12 @@ def _compute_analysis(symbol: str) -> dict:
                             **_rv_args)
                 result["reverse_dcf"] = _rv
                 _m = _rv.get("main") or {}
+                # Rediseño E3 (Task 7): el flujo, la deuda y la tasa del inverso, para "qué exige el precio" con los
+                # supuestos del usuario en el escenario (lib/scenario.py). Aditivo.
+                _si = result.get("scenario_inputs") or {}
+                if _si.get("status") == "ok" and _m.get("flow_per_share") is not None:
+                    _si["reverse"] = {k: _m.get(k) for k in ("flow_per_share", "net_debt_per_share", "rate",
+                                                             "terminal_growth")}
                 # T7: utility regulada, su método intrínseco puntúa como el del inverso (P/B frente al ROE regulado).
                 _uimp = (archetype_values.get("implied") or {}) if archetype == "UTILITY" else {}
                 if _uimp.get("band") and isinstance(dcf_for_score, dict) and dcf_for_score.get("na"):
@@ -1817,7 +2410,7 @@ def _compute_analysis(symbol: str) -> dict:
                 result["price_history"] = {
                     "52w_high": safe_float(financials.price_52w_high),
                     "52w_low": safe_float(financials.price_52w_low),
-                    "beta": safe_float(financials.beta),
+                    "beta": _beta_ke,
                 }
             except Exception as e:
                 _sin_dato("price_history", e)
@@ -1864,7 +2457,8 @@ def _compute_analysis(symbol: str) -> dict:
                     if _multiples_signal:
                         _methods.append({"method": "múltiplos frente al sector", "kind": "relativo",
                                          "signal": _multiples_signal["value"],
-                                         "components": _multiples_signal["components"]})
+                                         "components": _multiples_signal["components"],
+                                         "readings": _multiples_signal.get("readings")})
                 elif _arch == FINANCIAL:
                     # FINANCIAL: dos métodos sobre el P/B. Intrínseco: P/B justificado por
                     # Gordon ((ROE − g)/(Ke − g)); relativo: P/B frente a la mediana del sector.
@@ -1892,7 +2486,8 @@ def _compute_analysis(symbol: str) -> dict:
                     if _multiples_signal:
                         _methods.append({"method": "múltiplos frente al sector", "kind": "relativo",
                                          "signal": _multiples_signal["value"],
-                                         "components": _multiples_signal["components"]})
+                                         "components": _multiples_signal["components"],
+                                         "readings": _multiples_signal.get("readings")})
                 # Graham no vota: es la referencia del inversor defensivo (P/E 15 × P/B 1.5).
                 for _m in _methods:
                     if "upside" in _m:
@@ -1901,29 +2496,50 @@ def _compute_analysis(symbol: str) -> dict:
                 result["confidence"] = verdict_confidence({
                     "convergence": convergence(_methods),
                     "coverage": coverage_dimension(result.get("score_coverage"),
-                                                   (result["score"] or {}).get("excluded_categories") or []),
+                                                   (result["score"] or {}).get("excluded_categories") or [],
+                                                   staleness=yinfo.get("_staleness")),
                     "source": source_dimension(
                         input_flags=list(yinfo.get("_validation") or []) + _row_flags,
                         normalization=result.get("earnings_normalization"),
-                        ttm=yinfo.get("_ttm"), provenance_fields=(yinfo.get("_provenance") or {})),
+                        ttm=yinfo.get("_ttm"), provenance_fields=(yinfo.get("_provenance") or {}),
+                        self_exclusion=((result.get("benchmark") or {}).get("industry") or {}).get("self_exclusion")),
                     "stability": stability_dimension(_cls.get("archetype"), _cls),
                     # Fase 2b (D7): emisor sin estados en la SEC -> techo "baja"
                     "fuente_oficial": official_dimension(yinfo.get("_official_source") if _has_yahoo else None),
-                })
+                }, base_rate=_base_rate_for_confidence(result.get("reverse_dcf")))
             except Exception as e:
                 _sin_dato("confianza", e)
             # ── Etapa 9a: calidad del negocio y atractivo del precio (lib/verdict.py) ──
             # El precio se contrae hacia 50 según la confianza del veredicto de valoración.
             try:
                 if _quality_part is not None:
-                    result["quality"] = _quality_part
+                    # F8 · E11: con confianza baja la calidad también se contrae hacia 50.
+                    from verdict import contract_quality
+                    # F10 · N4: la contracción usa la confianza previa al escalón de las tasas base (contraction_basis),
+                    # salvo si el escalón contradice el veredicto (revisión de COST: verdict.price_contraction_basis).
+                    from verdict import price_contraction_basis
                     _cats = score_result.get("categories") or []
+                    _cbasis = price_contraction_basis(result.get("confidence"), _cats)
+                    if result.get("confidence") and _cbasis != result["confidence"].get("contraction_basis"):
+                        result["confidence"]["contraction_basis"] = _cbasis
+                        result["confidence"]["base_rate_step"]["contracts"] = True
+                    result["quality"] = contract_quality(_quality_part, _cbasis)
                     # `price` ya es el precio de la acción: la puntuación va en price_attractiveness.
-                    result["price_attractiveness"] = verdict_price(_cats, (result.get("confidence") or {}).get("level"))
+                    result["price_attractiveness"] = verdict_price(_cats, _cbasis)
                     result["verdict"] = build_verdict(result["quality"], result["price_attractiveness"],
                                                       result.get("confidence"))
             except Exception as e:
                 _sin_dato("veredicto", e)
+            # F8 · E1: prueba de sensibilidad del veredicto a Ke ± 1 pp (lib/ke_sensitivity.py). Las repeticiones solo
+            # llegan hasta aquí (los datos ya están en caché): de ellas sale el nivel de precio.
+            import cost_of_capital as _coc
+            if _coc.KE_SHIFT.get():
+                return result
+            try:
+                import ke_sensitivity as _kes
+                _kes.apply(result, lambda: _compute_analysis_body(symbol))
+            except Exception as e:
+                _sin_dato("sensibilidad_ke", e)
 
         # ── Fase 4 (T3): pre-mortem, "Esta lectura sería errónea si…" (lib/premortem.py) ──
         try:
@@ -1945,6 +2561,28 @@ def _compute_analysis(symbol: str) -> dict:
                                                        yinfo.get("_edgar_filings"))
         except Exception as e:
             _sin_dato("contexto_mercado", e)
+
+        # ── Rediseño E2a: datos nuevos aditivos (no cambian ninguna cifra ni veredicto) ──
+        try:   # T3: ficha de la empresa desde EDGAR submissions (sin red adicional)
+            import company_profile as _cprof
+            _edp = yinfo.get("_edgar") or {}
+            result["company_profile"] = _cprof.build(_edp.get("profile"), result["profile"], _edp.get("status"),
+                                                     _edp.get("reason"))
+        except Exception as e:
+            _sin_dato("company_profile", e)
+        try:   # T4: variación del día frente al cierre anterior (la serie de la misma sesión que el precio)
+            import price_history as _ph
+            result["price_change"] = _ph.day_change((_ph.peek(symbol) or {}).get("frame"), result.get("price"))
+        except Exception as e:
+            _sin_dato("price_change", e)
+        try:   # T5: historia de 10 ejercicios desde la historia anual de EDGAR que ya trae el análisis
+            import history_10y as _h10
+            _edp = yinfo.get("_edgar") or {}
+            _hmiss = ("el emisor no presenta en la SEC" if _edp.get("status") in (None, "sin_cik")
+                      else _edp.get("facts_reason") or _edp.get("reason"))
+            result["history_10y"] = _h10.build(yinfo.get("_history_fy"), cfg("market.history.years_v2"), _hmiss)
+        except Exception as e:
+            _sin_dato("history_10y", e)
 
         # ── Etapa 9b: capa de presentación compartida (lib/display.py) ──
         # Lo que se LEE de cada métrica se calcula una vez aquí; el PDF y la web lo consumen.
@@ -1972,7 +2610,7 @@ def _compute_analysis(symbol: str) -> dict:
         raise HTTPException(status_code=400, detail="Invalid symbol")
     except Exception as e:
         logger.error(f"Analysis error for {symbol}: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=INTERNAL_ERROR)
 
 
 # Fase 6 (F6_DIAGNOSTICO §2, D6 sin plan de pago): el análisis y el PDF son bloqueantes (red de Yahoo, SEC y Finnhub;
@@ -1982,17 +2620,118 @@ def _compute_analysis(symbol: str) -> dict:
 # bloquear el bucle. El estado compartido ya era seguro entre hilos: sesión de Yahoo y cachés con locks, afirmaciones
 # del guardián en un ContextVar.
 _ANALYSIS_SLOTS = threading.BoundedSemaphore(cfg("data.server.max_concurrent_analyses"))
+# Rediseño E2b: usuarios esperando turno (análisis o PDF). Los rivales (lib/peers.py) comparten los turnos con prioridad
+# baja: su hilo no pide turno mientras haya usuarios esperando.
+_waiting = [0]
+_waiting_lock = threading.Lock()
+# Cola v4 (decisión del PM, 30-oct): mientras haya usuarios esperando o activos, el trabajo de fondo (rivales,
+# precalentado y la descarga de las tendencias) toma como mucho un turno a la vez, sin cambiar su prioridad. Con la
+# máquina tranquila, hasta los hilos de la cola (los rivales, de dos en dos: PDF rápido). La carga corta de la
+# integración (V4_CIERRE §2.6) dio un pico de 440 MB y una espera de usuario de 6,0 s, las dos en el minuto con más turnos
+# de fondo. Un usuario «activo» tiene turno o lo soltó hace menos de `_user_active_s()`.
+_turns = threading.Condition(_waiting_lock)
+_user_turns = [0]                        # turnos de usuario en uso
+_bg_turns = [0]                          # turnos de fondo en uso
+_last_user = [float("-inf")]             # cuándo soltó su turno el último usuario (time.monotonic)
 
 
-def _compute_limited(symbol: str) -> dict:
-    with _ANALYSIS_SLOTS:
+def _users_waiting() -> int:
+    with _waiting_lock:
+        return _waiting[0]
+
+
+def _user_active_s() -> float:
+    """La ventana de «usuario activo»: el p95 medido de un análisis sin caché (la pantalla de carga, data.web
+    loading_expected_s). Un análisis de fondo que empezara dentro de ella seguiría con su turno cuando llega el
+    siguiente usuario."""
+    return float(cfg("data.web.loading_expected_s"))
+
+
+def _users_active() -> bool:
+    """Con el lock tomado."""
+    return (_waiting[0] > 0 or _user_turns[0] > 0
+            or time.monotonic() - _last_user[0] < _user_active_s())
+
+
+def _reset_turns() -> None:
+    """Tests."""
+    with _turns:
+        _waiting[0] = _user_turns[0] = _bg_turns[0] = 0
+        _last_user[0] = float("-inf")
+
+
+@contextlib.contextmanager
+def _slot(user: bool = True):
+    """Un turno de _ANALYSIS_SLOTS; si es de un usuario, cuenta como "esperando" hasta conseguirlo. Uno de fondo, con
+    usuarios esperando o activos, espera a que no haya otro de fondo en marcha (mira otra vez cada `busy_wait_s`: la
+    ventana de «activo» caduca sin aviso)."""
+    if user:
+        with _turns:
+            _waiting[0] += 1
+    else:
+        with _turns:
+            while _bg_turns[0] >= 1 and _users_active():
+                _turns.wait(cfg("market.analysis_queue.busy_wait_s"))
+            _bg_turns[0] += 1
+    try:
+        _ANALYSIS_SLOTS.acquire()
+    except BaseException:
+        if not user:
+            with _turns:
+                _bg_turns[0] -= 1
+                _turns.notify_all()
+        raise
+    finally:
+        if user:
+            with _turns:
+                _waiting[0] -= 1
+    if user:
+        with _turns:
+            _user_turns[0] += 1
+    try:
+        yield
+    finally:
+        _ANALYSIS_SLOTS.release()
+        with _turns:
+            if user:
+                _user_turns[0] -= 1
+                _last_user[0] = time.monotonic()
+            else:
+                _bg_turns[0] -= 1
+            _turns.notify_all()
+
+
+@contextlib.contextmanager
+def _background_slot():
+    """Turno de fondo para trabajo que no es un análisis (descarga de las tendencias): como la cola de fondo, no lo
+    pide mientras haya usuarios esperando turno."""
+    while _users_waiting() > 0:
+        time.sleep(cfg("market.analysis_queue.busy_wait_s"))
+    with _slot(user=False):
+        yield
+
+
+def _compute_limited(symbol: str, user: bool = True) -> dict:
+    with _slot(user):
         return _compute_analysis(symbol)
 
 
 @app.get("/api/analysis/{symbol}")
-async def analyze_stock(symbol: str):
+async def analyze_stock(symbol: str, request: Request = None):
     """Complete stock analysis - the main endpoint."""
-    return await run_in_threadpool(_compute_limited, symbol)
+    res = await run_in_threadpool(_compute_limited, symbol)
+    await run_in_threadpool(_start_peers, symbol, res, _client_id(request))
+    return res
+
+
+def _start_peers(symbol: str, analysis: dict, client: Optional[str]) -> None:
+    """F10 · N5: los rivales de la empresa que el usuario está viendo se ponen en marcha con su análisis (lib/peers.py,
+    `start_with_analysis`); nunca rompen el análisis."""
+    try:
+        import peers as _p
+        _p.start(symbol, analysis, client)
+    except Exception as e:
+        logger.warning(f"rivales de {symbol} no puestos en marcha: {type(e).__name__}")
 
 
 @app.get("/api/pdf/{symbol}")
@@ -2002,18 +2741,19 @@ async def download_pdf(symbol: str):
 
 
 def _pdf_response(symbol: str):
-    symbol = symbol.upper().strip()
+    import universe as _universe
+    symbol = _universe.norm_symbol(symbol)        # V2: BF.B → BF-B, como el análisis
 
     try:
         # Revisión de F6 (hallazgo 7): el análisis Y el PDF (CPU de reportlab) dentro del mismo turno del semáforo; un
         # solo turno por petición (anidarlos agotaría los turnos con 4 PDF a la vez).
-        with _ANALYSIS_SLOTS:
+        with _slot():
             return _pdf_build(symbol, _compute_analysis(symbol))
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"PDF generation error for {symbol}: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=INTERNAL_ERROR)
 
 
 def _pdf_build(symbol: str, analysis: dict):
@@ -2027,8 +2767,9 @@ def _pdf_build(symbol: str, analysis: dict):
     logo_path = None
     _base = os.path.dirname(os.path.abspath(__file__))
     for _cand in (
-        os.path.join(_base, "..", "frontend", "public", "logo.png"),
-        os.path.join(_base, "..", "frontend", "out", "logo.png"),
+        # la marca: el logo en PNG que genera marca/exportar.mjs (reportlab no dibuja SVG)
+        os.path.join(_base, "..", "frontend", "public", "brand", "finanzer-logo.png"),
+        os.path.join(_base, "..", "frontend", "out", "brand", "finanzer-logo.png"),
     ):
         if os.path.isfile(_cand):
             logo_path = os.path.abspath(_cand)
@@ -2050,6 +2791,239 @@ def _pdf_build(symbol: str, analysis: dict):
     )
 
 
+@app.get("/api/v2/prices/{symbol}")
+def prices_v2_endpoint(symbol: str, sector: Annotated[Optional[str], Query(max_length=64)] = None):
+    """Rediseño /v2: serie diaria de la empresa, del S&P 500 y del ETF de su sector para la gráfica. Aditivo: la web
+    actual no lo usa. El sector llega del análisis (profile.sector) para no repetir el análisis aquí; el ETF sale del
+    registro de sectores (lib/sector_profiles.py), así que nunca se descarga un símbolo arbitrario.
+    E2a (T9): `chart_period` (5 años, caché propia; la serie de 2 años del motor no cambia), cierre sin ajustar y
+    ajustado, y los eventos de la empresa: dividendos y splits de la serie y resultados (8-K 2.02 de EDGAR, con su
+    propio presupuesto; si EDGAR no responde, sin esas marcas y `events_reason`)."""
+    return _prices_v2_payload(_v2_symbol(symbol), sector)      # V6 (B8): símbolo validado como el resto de /v2
+
+
+def _prices_v2_payload(sym: str, sector: Optional[str]):
+    """Cuerpo de /api/v2/prices (lo reutiliza el PDF nuevo de /api/v2/pdf)."""
+    import price_history
+    import prices_v2
+    comp = price_history.chart(sym)
+    mkt = price_history.chart_market()
+    etf = get_sector_profile(sector or "").sector_etf if sector else None
+    market_syms = {cfg("market.price_series.market_symbol"), cfg("market.price_series.market_fallback_symbol")}
+    if etf and etf.upper() not in market_syms:
+        sec = price_history.chart(etf)
+    else:   # sector desconocido: el perfil neutro es el propio mercado (SPY), que ya va como referencia
+        etf, sec = None, {"symbol": None, "frame": None, "reason": "sin ETF de sector"}
+    company = prices_v2.serialize(comp, sym)
+    as_of = company["points"][-1]["t"] if company["points"] else None
+    if company["points"]:
+        ev, why = prices_v2.earnings_events(sym, company["points"][0]["t"])
+        company["events"] = sorted(company["events"] + ev, key=lambda e: e["t"])
+        company["events_reason"] = why
+    # V7 (M7): la rentabilidad con dividendos del mercado, de una serie que los incluye (config), y dicho.
+    _trs = cfg("market.history.market_total_return_symbol")
+    market = prices_v2.serialize(mkt, (mkt or {}).get("symbol"))
+    if market["status"] == "ok" and (market["symbol"] or "").upper() != _trs.upper():
+        market = prices_v2.with_total_return(market, prices_v2.serialize(price_history.chart(_trs), _trs), _trs)
+    else:
+        market = prices_v2.with_total_return(market, {}, _trs)
+    # Revisión V6 (F1): rentabilidades por periodo, base 100 y marcas, aquí (lib/price_returns): la web solo pinta.
+    import price_returns
+    return price_returns.for_web({"symbol": sym, "as_of": as_of, "company": company, "market": market,
+                                  "sector": prices_v2.serialize(sec, etf),
+                                  "source": prices_v2.source_text(company, cfg("market.history.chart_period"))})
+
+
+# V6 (revisión de seguridad, B1): turno propio de los escenarios (milisegundos de CPU cada uno; no esperan detrás de
+# los análisis, pero tampoco se acumulan sin límite).
+_SCENARIO_SLOTS = threading.BoundedSemaphore(cfg("data.server.scenario_concurrency"))
+
+
+@app.post("/api/v2/scenario")
+def scenario_v2(body: Any = Body(...)):
+    """Rediseño E2a: escenario del usuario (sin estado; no toca el análisis ni el veredicto). Cuerpo:
+    {"inputs": <scenario_inputs del análisis>, "assumptions": {supuestos que el usuario cambia}}.
+    V6 (B1/B4): el cuerpo se valida antes de calcular (lib/scenario.parse_request): claves de más, tipos, valores no
+    finitos o fuera de [scenario] input_* → 422."""
+    import scenario as _sc
+    try:
+        si, assumptions = _sc.parse_request(body)
+    except _sc.InvalidRequest as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    with _SCENARIO_SLOTS:
+        return _sc.run(si, assumptions)
+
+
+# ── Rediseño E2b: datos nuevos en endpoints perezosos, fuera del camino de /api/analysis (no gastan su presupuesto ni
+# sus turnos de _ANALYSIS_SLOTS, salvo los análisis de los rivales, que compiten como uno más con prioridad baja) ──
+_V2_SYMBOL = re.compile(r"^[A-Z0-9.\-]{1,10}$")
+
+
+def _v2_symbol(symbol: str) -> str:
+    import universe as _universe
+    sym = symbol.upper().strip()
+    if not _V2_SYMBOL.match(sym):
+        raise HTTPException(status_code=422, detail="símbolo no válido")
+    return _universe.norm_symbol(sym)        # V2: BF.B → BF-B, como el análisis
+
+
+@app.get("/api/v2/segments/{symbol}")
+async def segments_v2_endpoint(symbol: str):
+    """Ingresos por segmento del último 10-K/20-F/40-F (lib/segments.py): {status, segments, reconciles, …}."""
+    import segments as _segments
+    res = await run_in_threadpool(_segments.build, _v2_symbol(symbol))
+    # V7 · P2, P4: los hechos que pintan la historia y Riesgos (sin calcular en el navegador)
+    return {**res, "summary": _segments.summary(res)}
+
+
+import analysis_queue as _analysis_queue
+import peers as _peers
+# Rediseño E4: rivales (prioridad user) y tarjetas de tendencias (prewarm) comparten la cola de lib/analysis_queue.py.
+_analysis_queue.ANALYZE = lambda s: _compute_limited(s, user=False)
+_analysis_queue.BUSY = lambda: _users_waiting() > 0
+
+
+def _client_id(request: Optional[Request]) -> Optional[str]:
+    """V6 (B7): quién pide, para su cupo de la cola de fondo: la IP del cliente que pone el proxy de producción en una
+    de `client_ip_headers` (Cloudflare la sobrescribe: el cliente no la elige) o, sin ella, la del socket."""
+    if request is None:
+        return None
+    for h in cfg("data.server.client_ip_headers"):
+        v = (request.headers.get(h) or "").strip()
+        if v:
+            return v[:64]
+    return request.client.host if request.client else None
+
+
+@app.get("/api/v2/peers/{symbol}")
+async def peers_v2_endpoint(symbol: str, symbols: Optional[str] = None, request: Request = None):
+    """Rivales analizados con el motor completo (lib/peers.py). `?symbols=A,B,C` (como mucho market.peers.peers_count)
+    sustituye a los automáticos. Responde enseguida con el estado de cada rival; el cliente repite cada `poll_s`."""
+    sym = _v2_symbol(symbol)
+    chosen = None
+    if symbols is not None:
+        chosen = list(dict.fromkeys(s.strip().upper() for s in symbols.split(",")))
+        if (not chosen or len(chosen) > cfg("market.peers.peers_count")
+                or any(not _V2_SYMBOL.match(s) for s in chosen)):
+            raise HTTPException(status_code=422, detail="lista de rivales no válida")
+    return await run_in_threadpool(_peers.peers_for, sym, chosen, _client_id(request))
+
+
+@app.get("/api/v2/search")
+async def search_v2_endpoint(q: str = Query("", min_length=1, max_length=100)):
+    """Buscador de /v2 (lib/search_v2.py): {results: [{ticker, name, exchange}]}, solo acciones y con su bolsa."""
+    import search_v2 as _search_v2
+    return await run_in_threadpool(_search_v2.search, q)
+
+
+import trending as _trending
+# Verificación de la v4 (V4 · memoria): la descarga del universo de las tendencias, lote a lote, en un turno de fondo.
+_trending.SLOT = lambda: _background_slot()
+
+
+def _trending_at_boot() -> None:
+    """Portada rápida: al arrancar el servidor (también en local), la última lista buena del archivo y el cálculo de
+    las tendencias, en su hilo (lib/trending.py, `warm`). Evento startup, no al importar: el replay instala antes sus
+    descargas. FINANZER_TRENDING_WARM=0 lo apaga (tests); FINANZER_PORTADA_SNAPSHOT=0, el archivo (o da otra ruta)."""
+    env = os.environ.get("FINANZER_PORTADA_SNAPSHOT")
+    snapshot = None if env == "0" else (env or os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                                            cfg("market.trending.snapshot_file")))
+    _trending.warm(os.environ, snapshot)
+
+
+app.add_event_handler("startup", _trending_at_boot)
+
+
+@app.get("/api/v2/sparklines")
+def sparklines_v2_endpoint(symbols: Annotated[Optional[str], Query(max_length=600)] = None,
+                           period: Annotated[Optional[str], Query(max_length=8)] = "1D"):
+    """P8: mini-gráficas del cintillo de la portada (lib/sparklines.py): por símbolo, los puntos reducidos (LTTB, como
+    mucho `max_points`), la referencia, la variación del periodo y sus fechas, o `sin_dato` con su motivo. Como mucho
+    `max_symbols` símbolos válidos y un periodo de config: si no, 422. Si Yahoo no responde, cada valor sale sin
+    gráfica y con el motivo: nunca un 5xx."""
+    import sparklines as _sp
+    try:
+        syms, p = _sp.parse(symbols, period)
+    except _sp.InvalidRequest as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    return _sp.get(syms, p)
+
+
+@app.get("/api/v2/trending")
+async def trending_v2_endpoint(period: Annotated[Optional[str], Query(max_length=8)] = None):
+    """Tendencias del día sobre el universo (lib/trending.py): la última lista buena o "calculando". Cada tarjeta trae
+    el estado del análisis del motor (`engine`: listo, analizando, en_cola o fallo; null si no hay ni está en marcha).
+    V6b: con `period` (1D, 1S, 1M o 6M), solo las listas de ese periodo; otro valor, 422."""
+    if period is not None and period not in cfg("market.trending.periods"):
+        raise HTTPException(status_code=422, detail=f"periodo no válido (admitidos: {', '.join(cfg('market.trending.periods'))})")
+    return _trending.get(period)
+
+
+@app.get("/api/v2/pdf/{symbol}")
+async def download_pdf_v2(symbol: str, request: Request = None):
+    """Rediseño E5: el informe PDF nuevo (lib/pdf_v2), con el mismo semáforo y el mismo nombre de archivo que
+    /api/pdf. Aditivo: /api/pdf y su informe no cambian."""
+    return await run_in_threadpool(_pdf_v2_response, symbol, _client_id(request))
+
+
+def _pdf_v2_response(symbol: str, client: Optional[str] = None):
+    import universe as _universe
+    symbol = _universe.norm_symbol(symbol)        # V2: BF.B → BF-B, como el análisis
+    try:
+        # Como /api/pdf: el análisis y el PDF en turnos del semáforo, y como turnos de un usuario (_slot): mientras
+        # espera, la cola de fondo (rivales y precalentado) no toma turnos (verificación de la v4, V4).
+        with _slot():
+            analysis = _compute_analysis(symbol)
+        # F10 · N5: entre los dos turnos, sus rivales (en marcha o los que falten) con la espera acotada de
+        # market.peers.pdf_wait_s: fuera del semáforo, para que la cola los pueda analizar mientras tanto.
+        _start_peers(symbol, analysis, client)
+        rivals = _pdf_v2_rivals(symbol, client)
+        with _slot():
+            return _pdf_v2_build(symbol, analysis, rivals)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"PDF v2 generation error for {symbol}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=INTERNAL_ERROR)
+
+
+def _pdf_v2_rivals(symbol: str, client: Optional[str] = None):
+    try:
+        import peers as _peers
+        return _peers.for_pdf(symbol, client)
+    except Exception as e:
+        logger.warning(f"PDF v2: sin rivales para {symbol}: {e}")
+        return None
+
+
+def _pdf_v2_build(symbol: str, analysis: dict, rivals: Optional[dict] = None):
+    """El PDF nuevo del análisis ya hecho: la serie de precios es la de /api/v2/prices (la misma descarga que hizo el
+    análisis, en caché); si falla, el informe sale sin gráfica y lo dice. Los segmentos son los de /api/v2/segments;
+    los rivales, los que trae `rivals` (_pdf_v2_rivals)."""
+    from datetime import datetime
+    import pdf_v2
+    try:
+        prices = _prices_v2_payload(symbol, (analysis.get("profile") or {}).get("sector"))
+    except Exception as e:      # el informe nunca cae por la serie: la portada dice el motivo en su hueco
+        logger.warning(f"PDF v2: sin serie de precios para {symbol}: {e}")
+        prices = {"company": {"symbol": symbol, "status": "sin_dato", "points": [],
+                              "reason": "la serie de precios no respondió"}}
+    try:    # V6 (B9): los segmentos de /api/v2/segments solo si ya están en caché: dentro del turno no se descarga
+        import segments as _segments
+        segs = _segments.cached(symbol)
+    except Exception as e:
+        logger.warning(f"PDF v2: sin segmentos para {symbol}: {e}")
+        segs = None
+    # Rivales (F10 · N5): los que dejó _pdf_v2_rivals tras su espera acotada, cada uno con su estado; el informe pinta
+    # los listos y dice los que faltan y por qué.
+    pdf = pdf_v2.build_pdf(analysis, prices, segments=segs, peers=rivals)
+    return Response(
+        content=pdf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="Informe Finanzer {symbol} {datetime.now().strftime("%Y-%m-%d")}.pdf"'}
+    )
+
+
 import keepalive as _keepalive
 _keepalive.start()      # fase 6 (D6): solo en Render (RENDER_EXTERNAL_URL); en local y en los tests no arranca
 
@@ -2066,6 +3040,51 @@ async def health():
 # The frontend is built as a static export in ../frontend/out
 _frontend_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "frontend", "out")
 _frontend_dir = os.path.abspath(_frontend_dir)
+# Marca: el manifiesto de la web (iconos al instalarla). mimetypes no conoce .webmanifest y, con nosniff, el tipo
+# tiene que ser el bueno.
+mimetypes.add_type("application/manifest+json", ".webmanifest")
+
+# Rediseño E4 (Task 5): la v4 en /v2, servida como la exporta Next (frontend/src/app/v2/[[...symbol]]/page.tsx):
+# out/v2/index.html es la portada y out/v2/{_V2_SHELL}/index.html, la historia y las páginas de profundidad (leen el
+# símbolo de la URL). Los archivos reales bajo out/v2 (las cargas RSC .txt de la navegación de Next) se sirven tal
+# cual; cualquier otra ruta /v2/{T}[/{capítulo}] recibe la historia. Se registra siempre (antes del comodín de abajo)
+# y lee _frontend_dir al responder.
+_V2_SHELL = "_"
+# E6 · paso 2: un símbolo en la raíz (/AAPL, /BRK-B, /MC.PA) se redirige a /v2/{T}; la misma regla que el resto de /v2
+# (main._V2_SYMBOL: letras, cifras, punto y guion, hasta 10), sin barras: /algo/raro no es un símbolo.
+_ROOT_TICKER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9.\-]{0,9}$")
+
+
+def _v2_file(front_dir: str, path: str) -> Optional[str]:
+    """El archivo que responde a /v2/{path}: un archivo real dentro de out/v2, la portada para /v2 y /v2/, y la
+    historia para todo lo demás. None (404) sin build y ante cualquier intento de salir de out/v2 (verificación de la
+    v4, V5: `..`, también codificado como %2e%2e o ..%2f, que uvicorn decodifica): ni un archivo ni la historia."""
+    base = os.path.join(front_dir, "v2")
+    home = os.path.join(base, "index.html")
+    shell = os.path.join(base, _V2_SHELL, "index.html")
+    path = (path or "").strip("/")
+    if not path:
+        return home if os.path.isfile(home) else None
+    full = os.path.abspath(os.path.join(base, path))
+    if ".." in path.replace("\\", "/").split("/") or not full.startswith(base + os.sep):
+        return None
+    if os.path.isfile(full):
+        return full
+    for f in (shell, home):
+        if os.path.isfile(f):
+            return f
+    return None
+
+
+@app.api_route("/v2", methods=["GET", "HEAD"])
+@app.api_route("/v2/{path:path}", methods=["GET", "HEAD"])
+async def serve_v2(path: str = ""):
+    # HEAD: el enrutador de Next comprueba la URL canónica (/v2/) con un HEAD antes de navegar.
+    f = _v2_file(_frontend_dir, path)
+    if f is None:
+        raise HTTPException(status_code=404, detail="Not found")
+    return FileResponse(f, media_type="text/html" if f.endswith(".html") else None)
+
 
 if os.path.isdir(_frontend_dir):
     # Serve _next static assets
@@ -2073,8 +3092,24 @@ if os.path.isdir(_frontend_dir):
     if os.path.isdir(_next_dir):
         app.mount("/_next", StaticFiles(directory=_next_dir), name="next_static")
 
-    @app.get("/")
+    # E6 · paso 2 (rutas de transición, docs/superpowers/plans/2026-10-18-rediseno-e6-migracion.md): la v4 es la web
+    # principal y la actual queda de respaldo durante la observación. `/` sirve la portada de la v4 en la misma URL
+    # (la portada no lleva símbolo); `/{T}` redirige (307: temporal) a `/v2/{T}`, porque la historia lee el símbolo de
+    # esa ruta; `/clasica` es la portada actual y `/stock/{T}`, la web actual (con el aviso «Prueba la nueva versión
+    # →»); `/api/pdf/{T}` se mantiene. Vuelta atrás: revertir este commit.
+    def _v4_home() -> FileResponse:
+        f = _v2_file(_frontend_dir, "")
+        if f is None:
+            raise HTTPException(status_code=404, detail="Not found")
+        return FileResponse(f, media_type="text/html")
+
+    @app.api_route("/", methods=["GET", "HEAD"])
     async def serve_index():
+        return _v4_home()
+
+    @app.get("/clasica")
+    @app.get("/clasica/")
+    async def serve_classic():
         index_path = os.path.join(_frontend_dir, "index.html")
         if os.path.isfile(index_path):
             return FileResponse(index_path, media_type="text/html")
@@ -2117,11 +3152,11 @@ if os.path.isdir(_frontend_dir):
             index_path = os.path.join(full_path, "index.html")
             if os.path.isfile(index_path):
                 return FileResponse(index_path, media_type="text/html")
-        # Fallback to root index (SPA) — also the response for traversal attempts
-        root_index = os.path.join(_frontend_dir, "index.html")
-        if os.path.isfile(root_index):
-            return FileResponse(root_index, media_type="text/html")
-        raise HTTPException(status_code=404, detail="Not found")
+            # E6 · paso 2: un símbolo en la raíz (/AAPL) va a su historia de la v4
+            if _ROOT_TICKER.match(filepath):
+                return RedirectResponse(f"/v2/{filepath}", status_code=307)
+        # Lo demás (y los intentos de recorrido): la portada de la v4, que ya es la principal
+        return _v4_home()
 
 
 if __name__ == "__main__":

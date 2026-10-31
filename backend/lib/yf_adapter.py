@@ -9,6 +9,7 @@ import threading
 from typing import Dict, Any
 
 from settings import cfg
+import bounded
 
 _D = cfg("data.yahoo")
 
@@ -227,6 +228,28 @@ def _completeness(info) -> int:
     return sum(1 for f in _COMPLETENESS_FIELDS if info.get(f) is not None)
 
 
+# Verificación de la v4 (V3): símbolos cuya última consulta no llegó a Yahoo (conexión o tiempo agotado). Sin esto, un
+# Yahoo caído se veía igual que un símbolo inexistente ("No data found"). Solo lo lee data_fetcher cuando no hay perfil.
+_unreachable: Dict[str, float] = {}
+
+
+def _is_connection_error(e: BaseException) -> bool:
+    name = type(e).__name__
+    return isinstance(e, (ConnectionError, TimeoutError)) or "Connection" in name or "Timeout" in name
+
+
+def _note_unreachable(symbol: str, e: BaseException) -> None:
+    if _is_connection_error(e):
+        # V6 (B10): con tope, como las demás cachés por símbolo (solo importa el último minuto)
+        bounded.put(_unreachable, symbol.upper(), time.time(), _D["info_cache_max_symbols"])
+
+
+def unreachable(symbol: str) -> bool:
+    """La última consulta de `symbol` no llegó a Yahoo (en el último minuto)."""
+    ts = _unreachable.get(symbol.upper())
+    return ts is not None and time.time() - ts < 60
+
+
 def _is_degraded(info) -> bool:
     if not isinstance(info, dict) or not info:
         return True
@@ -323,6 +346,17 @@ def _get_symbol_lock(symbol: str) -> threading.Lock:
         if symbol not in _locks:
             _locks[symbol] = threading.Lock()
         return _locks[symbol]
+
+
+def _prefetch_segments(symbol: str, fut) -> None:
+    """Descarga anticipada de los segmentos si el emisor presenta en la SEC (la misma condición que la prima de riesgo
+    país en main.py: EDGAR con el país del emisor)."""
+    try:
+        if not fut.cancelled() and fut.exception() is None and (fut.result() or {}).get("country"):
+            import segments
+            segments.prefetch(symbol)
+    except Exception as e:  # noqa: BLE001 — sin descarga anticipada: la prima de riesgo país descarga como siempre
+        logger.warning(f"[SEGMENTS] {symbol}: descarga anticipada no lanzada: {e}")
 
 
 def _ensure_session():
@@ -426,6 +460,10 @@ def get_ticker_info(symbol: str) -> Dict[str, Any]:
         import price_history
         _hist_future = price_history.start(symbol)
         _edgar_future = edgar.start(symbol)
+        # Rendimiento (v4f8): con EDGAR listo, el informe anual de los segmentos (prima de riesgo país) se descarga en
+        # segundo plano mientras siguen Yahoo y Finnhub.
+        _edgar_future.add_done_callback(lambda f, s=symbol: _prefetch_segments(s, f))
+        _unreachable.pop(symbol.upper(), None)
         try:
             info = _do_fetch(symbol)
             _ctx = _STMT_CTX.get(symbol)
@@ -490,8 +528,10 @@ def get_ticker_info(symbol: str) -> Dict[str, Any]:
 
         # ── Fase 2b (T3–T4): EDGAR: respaldo del mismo corte, fuente oficial (D7) y resultados publicados y aún no
         # incorporados (F2_PRECEDENCIA §1.1). Antes del dividendo: lo pagado del corte entra en su identidad. ──
+        _ed: Dict[str, Any] = {}
         try:
-            _apply_edgar(symbol, info, edgar.collect(_edgar_future, symbol), _hist, _info_ctx)
+            _ed = edgar.collect(_edgar_future, symbol)
+            _apply_edgar(symbol, info, _ed, _hist, _info_ctx)
         except Exception as e:
             logger.error(f"[EDGAR] {symbol}: {e}")
             info["_edgar"] = {"status": "no_disponible", "reason": f"{type(e).__name__}: {e}"}
@@ -500,6 +540,17 @@ def get_ticker_info(symbol: str) -> Dict[str, Any]:
                                         "note": "verificación oficial no disponible"}
 
         _apply_country(symbol, info)
+
+        # ── F8 · E3: ajustes del FFO según Nareit (REIT), del estado de flujos que presentó el emisor, conciliado con
+        # el flujo de operaciones de EDGAR. Después de EDGAR: el corte ya es el definitivo. ──
+        try:
+            import reit_ffo
+            if reit_ffo.applies(info.get("industry")):
+                info["_reit_ffo"] = reit_ffo.resolve(
+                    symbol, info, _ed.get("facts") if _ed.get("status") == "ok" else None, _info_ctx)
+        except Exception as e:
+            logger.error(f"[REIT_FFO] {symbol}: {e}")
+            info["_reit_ffo"] = {"status": "sin_dato", "reason": f"error al leer los ajustes: {type(e).__name__}: {e}"}
 
         try:
             import ordinary
@@ -529,7 +580,7 @@ def get_ticker_info(symbol: str) -> Dict[str, Any]:
                                     "reason": f"la validación de entrada no se ejecutó: {e}"}]
 
         # ── Defensa 2: los snapshots degradados caducan rápido ──
-        _cache[symbol] = (time.time(), info, degraded)
+        bounded.put(_cache, symbol, (time.time(), info, degraded), _D["info_cache_max_symbols"])
         return info
 
 
@@ -572,11 +623,15 @@ def _apply_edgar(symbol: str, info: Dict[str, Any], ed: Dict[str, Any], hist: Di
     # (T2); en data_provenance solo el resumen.
     if ed.get("status") == "ok" and ed.get("facts"):
         info["_history_fy"] = edgar.history(ed["facts"])
+        edgar_primary.bank_history(info, info["_history_fy"])      # F9 · R3: banco IFRS, sin las comisiones como ingresos
         info["_edgar"]["history"] = {
             f: {"years": len(h["values"]), "first": h["values"][-1]["fy_end"] if h["values"] else None,
                 "last": h["values"][0]["fy_end"] if h["values"] else None, "unit": h["unit"],
                 "cross_taxonomy": h["cross_taxonomy"]}
             for f, h in info["_history_fy"].items()}
+    # F9 · R6: riesgo de crédito (bancos) con los mismos companyfacts; sin ellos, «no medido» con su motivo.
+    import credit_risk
+    info["_credit"] = credit_risk.measure(ed.get("facts") if ed.get("status") == "ok" else None)
     info["_ebit"] = edgar_backup.ebit_check(info, ed, ctx)     # F2_PRECEDENCIA §2.1: EBIT "estimado por la fuente"
     import debt
     info["_debt"] = debt.apply(info, ed, ctx, symbol=symbol)   # T5: deuda coherente con el EBITDA
@@ -592,6 +647,17 @@ def _apply_edgar(symbol: str, info: Dict[str, Any], ed: Dict[str, Any], hist: Di
             start = (_dt.date.fromisoformat(cut) + _dt.timedelta(days=1)).isoformat()
             pend = edgar.pending_from_calendar(earnings_calendar(symbol, start, today.isoformat()), cut, today)
     info["_pending_results"] = pend
+    # F8 · E6: estados desfasados frente al último 10-Q/10-K de EDGAR (aviso y cobertura «media»).
+    info["_staleness"] = edgar_backup.staleness(cut, ed.get("filings") if ed.get("status") == "ok" else None, today)
+    # F10 · N2: cifras de la empresa a la fecha del conjunto de Damodaran, para quitarla de su referencia
+    # (lib/self_exclusion.py; las usa industry_bench a través de main._select_benchmark).
+    import self_exclusion
+    try:
+        # F10 (PM, 29-oct): un tiempo agotado de EDGAR no cambia la referencia en silencio (reintento, caché o degradada)
+        info["_at_dataset_date"] = self_exclusion.figures_resilient(symbol, info, ed, frame, ctx)
+    except Exception as e:                       # nunca bloquea el análisis: la referencia pasa al respaldo, dicho
+        logger.error(f"[SELF_EXCLUSION] {symbol}: {e}")
+        info["_at_dataset_date"] = {"status": "sin_dato", "reason": f"error: {type(e).__name__}: {e}"}
 
 
 def _apply_country(symbol: str, info: Dict[str, Any]) -> None:
@@ -776,12 +842,13 @@ def _merge_last_known_good(symbol: str, fresh: Dict[str, Any], fresh_degraded: b
                             overwrite=True)
             logger.info(f"[LKG] {symbol}: {len(filled)} campos rellenados del último snapshot bueno")
 
+    cap = _D["info_cache_max_symbols"]
     if not fresh_degraded:
-        _best_cache[symbol] = (now, merged)
+        bounded.put(_best_cache, symbol, (now, merged), cap)
     elif best is not None:
-        _best_cache[symbol] = (ts_best, merged)
+        bounded.put(_best_cache, symbol, (ts_best, merged), cap)
     else:
-        _best_cache[symbol] = (now, merged)
+        bounded.put(_best_cache, symbol, (now, merged), cap)
     return merged
 
 
@@ -1335,6 +1402,8 @@ def _apply_ttm(symbol: str, info: Dict[str, Any], plan_b: bool) -> Dict[str, Any
     balance = [k for k in t["values"] if k not in FLOW_KEYS]
     for k, v in t["values"].items():
         info[k] = v
+    if t.get("da_split"):
+        info["_da_split"] = t["da_split"]       # escalera de NFLX: desglose del D&A del corte (lib/edgar_primary)
     if "netInterestIncome" in t.get("quarter_min", {}):   # fase 1: signo estable del resultado financiero
         info["_netInterestIncomeMinQ"] = t["quarter_min"]["netInterestIncome"]
     if flows:
@@ -1381,6 +1450,7 @@ def _apply_ttm(symbol: str, info: Dict[str, Any], plan_b: bool) -> Dict[str, Any
     if plan_b and "totalStockholderEquity" in t["values"] and shares:
         info["bookValue"] = t["values"]["totalStockholderEquity"] / shares
     info["_quarterly"] = q
+    info["_q_balances"] = t.get("balances") or {}         # F10 · N2: balance de cada trimestre (lib/self_exclusion.py)
     if not flows and t.get("latest_balance"):
         info["_latest_q_balance"] = t["latest_balance"]       # fase 6: para edgar_backup.recut (plan B y fuente)
     info["_ttm"] = {
@@ -1471,6 +1541,13 @@ def _enrich_prior_year_data(symbol: str, info: Dict[str, Any], ticker=None) -> D
         except Exception:
             return None
     info["_fy_dates"] = {"inc": _last_date(inc), "bs": _last_date(bs), "cf": _last_date(cf)}
+    # F10 · N2: balance de cada ejercicio (deuda, caja, patrimonio, acciones) para pesar a la empresa en su industria a la
+    # fecha del conjunto de Damodaran cuando su último periodo presentado es un ejercicio (emisores con 20-F).
+    from ttm import DATED_BALANCE_ROWS, frame_dates, frame_series
+    _bd = frame_dates(bs)
+    info["_fy_balances"] = {d: {k: next((v for v in ((frame_series(bs, r, n=len(_bd))[i:i + 1] or [None])[0]
+                                                     for r in rows) if v is not None), None)
+                                for k, rows in DATED_BALANCE_ROWS.items()} for i, d in enumerate(_bd)}
 
     if not (has_inc or has_bs or has_cf):
         return info
@@ -1508,7 +1585,13 @@ def _enrich_prior_year_data(symbol: str, info: Dict[str, Any], ticker=None) -> D
         "inc_ends": _ends(inc), "bs_ends": _ends(bs), "cf_ends": _ends(cf),
         "revenue": _row(inc, "Total Revenue"),
         "gross_profit": _row(inc, "Gross Profit"),   # etapa 9b: margen bruto en el histórico
-        "net_income": _row(inc, "Net Income"),
+        # F10 · B2 (decisión del PM): el beneficio del accionista común en todas partes, como el del corte
+        # (lib/ordinary.py) y el de EDGAR (sec_edgar.CONCEPTS); el de los propietarios queda en `net_income_owners`
+        # (lo que cobran preferentes y AT1: archetype_metrics.at1_by_year).
+        "net_income": [c if c is not None else o for c, o in zip(
+            _row(inc, "Net Income Common Stockholders") + [None] * len(_row(inc, "Net Income")),
+            _row(inc, "Net Income"))],
+        "net_income_owners": _row(inc, "Net Income"),
         "diluted_eps": _row(inc, "Diluted EPS"),   # etapa 9a: CAGR 3 años del BPA
         "ordinary_shares": _row(bs, "Ordinary Shares Number"),
         "total_assets": _row(bs, "Total Assets"),
@@ -1518,10 +1601,17 @@ def _enrich_prior_year_data(symbol: str, info: Dict[str, Any], ticker=None) -> D
         "depreciation_amortization": next((x for x in (_row(cf, r) for r in (
             "Depreciation And Amortization", "Depreciation Amortization Depletion", "Depreciation")) if x), []),
         "free_cash_flow": _row(cf, "Free Cash Flow"),
+        # Escalera de NFLX: desglose del D&A del ejercicio (corte sin trimestres; lib/edgar_primary._da_reconcile)
+        "da_depreciation": _row(cf, "Depreciation"), "da_amortization": _row(cf, "Amortization Of Intangibles"),
         "stock_based_compensation": _row(cf, "Stock Based Compensation"),   # etapa 9a: FCF − SBC
         # Etapa 6 (clasificador, ramas por arquetipo y ROCE): series anuales
         # adicionales; una fila ausente queda como lista vacía (sin dato).
         "operating_income": _row(inc, "Operating Income"),
+        # F10 · N1: coherencia del beneficio con la operación (sin TTM: la del ejercicio)
+        "nonop_interest": _row(inc, "Net Non Operating Interest Income Expense"),
+        "equity_interest": _row(inc, "Earnings From Equity Interest"),
+        "equity_interest_net_of_tax": _row(inc, "Earnings From Equity Interest Net Of Tax"),   # F10 · N1b
+        "minority_interests": _row(inc, "Minority Interests"),
         "ebit": _row(inc, "EBIT"),
         "ebitda": _row(inc, "EBITDA"),
         "current_liabilities": _row(bs, "Current Liabilities"),
@@ -1708,7 +1798,8 @@ def _fallback_yfinance(symbol: str) -> Dict[str, Any]:
 
     try:
         fi = ticker.fast_info
-    except Exception:
+    except Exception as e:
+        _note_unreachable(symbol, e)
         return {}
 
     # Etapa 11b: moneda de los estados (fundamentals-timeseries; quoteSummary da 401 en

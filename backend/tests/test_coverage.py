@@ -254,9 +254,9 @@ EXPECTED_FULL = {
  "mid_full": {
   "score": 61,
   "cats": {
-   "Solidez Financiera": 8,
+   "Solidez Financiera": 9,
    "Rentabilidad": 14,
-   "Valoración": 10,
+   "Valoración": 11,
    "Calidad de Ganancias": 17,
    "Crecimiento": 12
   }
@@ -277,7 +277,8 @@ def test_full_data_gives_exactly_the_previous_score(case):
     Etapa 9a: sin total único; calidad = 4 categorías y precio = Valoración, a 100.
     tech_full: Valoración 20 -> 14 a propósito (sin bandas growth ni bono GARP) y 14 -> 11 con el
     bloque de múltiplos; weak_full: 0 -> 5 (el bloque acota a -6 los múltiplos correlacionados, que antes
-    se sumaban)."""
+    se sumaban). F8 · E10: mid_full, Solidez 8 -> 9 (Altman en zona gris pasa de -2 a -1). F10 · N4: mid_full,
+    Valoración 10 -> 11 (P/E, Forward P/E y PEG cuentan como una lectura, su media)."""
     r, c, kw = CASES[case]
     res = calculate_score_v2(r, c, **kw)
     assert res["archetype"] == "MATURE"
@@ -437,7 +438,7 @@ def test_negative_coverage_with_net_cash_is_not_significant():
     sol, cov = _sol(res), res["coverage"]["solidez"]
     # Etapa 9a: "no significativo" se trata como "no aplica": fuera del denominador y sin reescalado.
     assert cov["missing"] == [] and "caja neta" in cov["not_significant"]["Cobertura de intereses"]
-    row = next(a for a in sol["adjustments"] if a["metric"] == "Cobertura Intereses")
+    row = next(a for a in sol["adjustments"] if a["metric"] == "Cobertura de intereses")
     assert row["adjustment"] == 0 and row["value"] == "No significativo"
     assert not any(a["metric"] == "Cobertura" for a in sol["adjustments"])
 
@@ -447,7 +448,7 @@ def test_negative_coverage_with_net_debt_keeps_the_penalty():
     res = calculate_score_v2(dict(r, interest_coverage=-8.4, net_debt=4e8), c, **kw)
     sol = _sol(res)
     assert "Cobertura de intereses" not in res["coverage"]["solidez"]["missing"]
-    row = next(a for a in sol["adjustments"] if a["metric"] == "Cobertura Intereses")
+    row = next(a for a in sol["adjustments"] if a["metric"] == "Cobertura de intereses")
     worst = cfg("thresholds.score.solidez.coverage_points")[-1]
     assert row["adjustment"] == worst and row["value"] == "EBIT < 0" and "deuda neta" in row["reason"]
 
@@ -472,7 +473,7 @@ def test_negative_coverage_end_to_end(outputs_by_env):
     txt = fixture_backend.pdf_text(pdf) if isinstance(pdf, bytes) else pdf
     assert a["key_metrics"]["net_debt"] < 0 and a["key_metrics"]["interest_coverage_state"] == "no_significativo"
     _ic = next(x for x in a["score"]["breakdown"]["Solidez Financiera"]["adjustments"]
-               if x["metric"] == "Cobertura Intereses")
+               if x["metric"] == "Cobertura de intereses")
     assert _ic["adjustment"] == 0 and _ic["value"] == "No significativo"          # como CRWD: no penaliza
     assert "Cobertura de intereses" in a["score_coverage"]["solidez"]["not_significant"]
     assert "-8.4x" not in txt
@@ -711,7 +712,7 @@ def test_stagnation_tolerance_from_config():
     assert growth_for_bands(0.01) == 0.01 and growth_for_bands(None) is None
 
 
-@pytest.mark.parametrize("arch,key", [(None, "Crecimiento Ingresos 3Y"),
+@pytest.mark.parametrize("arch,key", [(None, "Crecimiento de ingresos a 3 años"),
                                       ("REIT", "Retorno total (dividendo + FFO por acción)")])
 def test_stagnation_scores_like_the_flat_band(arch, key):
     def adj(g):

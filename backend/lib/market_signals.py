@@ -124,27 +124,39 @@ def max_drawdown(close: pd.Series, years: int) -> Dict[str, Any]:
 
 
 def relative_strength(close: pd.Series, sector_close: Optional[pd.Series]) -> Dict[str, Any]:
-    """Fuerza relativa frente al ETF del sector: rentabilidad de la empresa menos la del ETF en 6 y 12 meses
-    (126 y 252 sesiones comunes). value = diferencia de la ventana más larga; `windows` trae cada una.
-    Referencia: extensión del momentum (Jegadeesh y Titman, 1993) a la comparación con el sector."""
+    """Fuerza relativa frente al ETF del sector: rentabilidad de la empresa menos la del ETF en 6 y 12 meses. value =
+    diferencia de la ventana más larga; `windows` trae cada una (por la clave del periodo: «6M», «1A»).
+    Referencia: extensión del momentum (Jegadeesh y Titman, 1993) a la comparación con el sector.
+
+    F8 · P3 (auditoría externa): la misma regla que la tabla de rentabilidades de la web y del PDF (lib/price_returns):
+    el periodo acaba en la última sesión de la empresa y empieza los días naturales del periodo antes; cada serie, de
+    su primer cierre (ajustado, con dividendos) en o después del inicio al último; si una serie no cubre el periodo, sin
+    dato. Antes eran 126 y 252 sesiones comunes, y la web y el PDF enseñaban otra cifra a «12 meses»."""
+    import price_returns as pr
     P = cfg("market.signals.relative_strength")
     if _empty(close):
         return _result("sin_dato", P, close, reason="sin serie de la empresa")
     if _empty(sector_close):
         return _result("sin_dato", P, close, reason="sin serie del ETF del sector")
-    both = pd.concat([close, sector_close], axis=1, join="inner").dropna()
+    days = dict(zip(cfg("market.price_returns.range_keys"), cfg("market.price_returns.range_days")))
+    co = [(d.date(), float(v)) for d, v in close.dropna().items()]
+    se = [(d.date(), float(v)) for d, v in sector_close.dropna().items()]
+    end = co[-1][0]
     windows = {}
-    for w in P["windows_sessions"]:
-        if len(both) < w + 1:
-            windows[str(w)] = {"status": "historia_insuficiente", "needed": w + 1, "available": len(both)}
+    for key in P["windows"]:
+        start = pr.start_of(end, int(days[key]))
+        r_co, r_etf = pr.period_return(co, start, end), pr.period_return(se, start, end)
+        if r_co is None or r_etf is None:
+            windows[key] = {"status": "historia_insuficiente", "start_date": start.isoformat(),
+                            "reason": "una de las dos series no cubre el periodo"}
             continue
-        r_co = float(both.iloc[-1, 0] / both.iloc[-1 - w, 0] - 1)
-        r_etf = float(both.iloc[-1, 1] / both.iloc[-1 - w, 1] - 1)
-        windows[str(w)] = {"status": "ok", "company": r_co, "sector": r_etf, "difference": r_co - r_etf,
-                           "start_date": _date(both.index[-1 - w])}
-    longest = windows[str(max(P["windows_sessions"]))]
+        windows[key] = {"status": "ok", "company": r_co, "sector": r_etf, "difference": r_co - r_etf,
+                        "start_date": start.isoformat()}
+    longest = windows[P["windows"][-1]]
+    both = pd.concat([close, sector_close], axis=1, join="inner").dropna()
     if longest["status"] != "ok":
-        return _result("historia_insuficiente", P, both, reason="sesiones comunes insuficientes", windows=windows)
+        return _result("historia_insuficiente", P, both, reason="una de las dos series no cubre el periodo",
+                       windows=windows)
     return _result("ok", P, both, value=longest["difference"], windows=windows)
 
 
@@ -211,8 +223,14 @@ def beta(close: pd.Series, market_close: Optional[pd.Series], market_symbol: Opt
         return _result("sin_dato", P, close, reason="sin serie de la empresa")
     if _empty(market_close):
         return _result("sin_dato", P, close, reason="sin serie del mercado")
+    # F10 (PM, 29-oct; MSCI: R² 0,202 o 0,199 según la hora del mismo día): solo semanas completas. La semana de la
+    # última sesión (de cualquiera de las dos series) se descarta siempre: con el mercado abierto su cierre es el
+    # precio intradía, y aunque esté cerrada, descartarla hace que el resultado no dependa de la hora.
+    last = max(close.dropna().index[-1], market_close.dropna().index[-1])
+    open_week = pd.Timestamp(last).to_period(B["frequency"]).end_time.normalize()
     df = pd.concat([weekly_returns(close, B["frequency"]), weekly_returns(market_close, B["frequency"])],
-                   axis=1, join="inner").dropna().tail(B["window_weeks"])
+                   axis=1, join="inner").dropna()
+    df = df[df.index.normalize() < open_week].tail(B["window_weeks"])
     if len(df) < B["min_weeks"]:
         return _result("historia_insuficiente", P, close, reason=f"{len(df)} semanas; hacen falta {B['min_weeks']}",
                        needed=B["min_weeks"], available=len(df), observations=len(df))
@@ -222,8 +240,11 @@ def beta(close: pd.Series, market_close: Optional[pd.Series], market_symbol: Opt
         return _result("sin_dato", P, close, reason="varianza del mercado nula")
     raw = float(r.cov(rm)) / var_m
     corr = float(r.corr(rm))
+    # F8 · E1: error estándar de la pendiente, √(Σ residuos² / (n − 2) / Σ (r_m − media)²): filtro de la beta propia.
+    resid = (r - r.mean()) - raw * (rm - rm.mean())
+    se = math.sqrt(float((resid ** 2).sum()) / (len(df) - 2) / (var_m * (len(df) - 1)))
     return _result("ok", P, close, value=raw, raw=raw, adjusted=C["blume_weight"] * raw + C["blume_prior"],
-                   r2=corr * corr, observations=len(df), first_week=_date(df.index[0]), last_week=_date(df.index[-1]),
+                   r2=corr * corr, se=se, observations=len(df), first_week=_date(df.index[0]), last_week=_date(df.index[-1]),
                    window_start=_date(df.index[0] - pd.tseries.frequencies.to_offset(B["frequency"])))
 
 

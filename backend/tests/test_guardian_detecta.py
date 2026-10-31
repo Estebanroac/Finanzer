@@ -56,7 +56,7 @@ CASES = {
                        [claim("implied_return", field="archetype_metrics.implied.implied", value=0.101)],
                        {"archetype_metrics": {"implied": {"implied": 0.101, "own": 0.107}}},
                        {"archetype_metrics": {"implied": {"implied": 0.151, "own": 0.107}}}),
-    "quality_persistence": ("Por encima de 80, la calidad exige persistencia: 100 → 93. rentabilidad: margen "
+    "quality_persistence": ("Por encima de 80 (umbral de persistencia; «excelente» empieza en 85), la calidad exige persistencia: 100 → 93. rentabilidad: margen "
                             "operativo positivo y al menos el 75% del último (29.5%) en 2 de 5 ejercicios.",
                             [claim("quality_persistence", field="quality.persistence.weighted", value=0.65)],
                             {"quality": {"score": 93, "persistence": {"applied": True, "score_before": 100, "weighted": 0.65}}},
@@ -84,7 +84,7 @@ CASES = {
                    [claim("behavioral", field="market_context.anchor_gap", value=-0.015, kind_b="anclaje_52s")],
                    {"key_metrics": {"price": 98.5, "price_52w_high": 100.0}, "market_context": {"anchor_gap": -0.015}},
                    {"key_metrics": {"price": 90.0, "price_52w_high": 100.0}, "market_context": {"anchor_gap": -0.015}}),
-    "dcf_upside": ("el precio incorpora una prima de 20% sobre el valor intrínseco", [claim("dcf_upside")],
+    "dcf_upside": ("el valor intrínseco estimado está un 20% por debajo del precio", [claim("dcf_upside")],
                    {"dcf": {"upside": -20.0}}, {"dcf": {"upside": 20.0}}),
     "dcf_rel": ("DCF no concluyente (fiabilidad baja)", [claim("dcf_rel")],
                 {"dcf": {"reliability": {"level": "baja"}}}, {"dcf": {"reliability": {"level": "alta"}}}),
@@ -93,7 +93,7 @@ CASES = {
     "runway": ("la empresa está autofinanciada", [claim("runway")],
                {"archetype_metrics": {"runway": {"state": "autofinanciada"}}},
                {"archetype_metrics": {"runway": {"state": "runway"}}}),
-    "price_contraction": ("sin ajustar 30 → ajustado a 35 por confianza media",
+    "price_contraction": ("ajustado de 30 a 35 por confianza media",
                           [claim("price_contraction", raw=30, score=35, confidence="media")],
                           {"price_attractiveness": {"score_raw": 30, "score": 35, "confidence": "media"},
                            "confidence": {"level": "media"}},
@@ -103,6 +103,12 @@ CASES = {
               {"classification": {"archetype": "MATURE"}}, {"classification": {"archetype": "CYCLICAL"}}),
     "eps_vs_revenue": ("el BPA crece más rápido que los ingresos",
                        [claim("eps_vs_revenue", eps=0.10, revenue=0.05)], {}, None),
+    "next_earnings": ("Fecha anunciada (2 de noviembre de 2026, tras el cierre) en el calendario de resultados de "
+                      "Finnhub.",
+                      [claim("next_earnings", field="market_context.next_earnings.date", value="2026-11-02",
+                             kind_ne="anunciada")],
+                      {"market_context": {"next_earnings": {"date": "2026-11-02", "kind": "anunciada"}}},
+                      {"market_context": {"next_earnings": {"date": "2026-11-02", "kind": "estimada"}}}),
     "share_dilution_3y": ("la emisión de acciones crece más deprisa que el FFO, y diluye al accionista",
                           [claim("share_dilution_3y")],
                           {"growth_basis": {"shares_cagr_3y": 0.05}}, {"growth_basis": {"shares_cagr_3y": 0.0005}}),
@@ -314,3 +320,130 @@ def test_pead_drift_said_backwards_fails():
     ok = text.replace("en la dirección", "en contra")
     assert not g.PREDICATES["market_signal"]({"market_context": {"pead": P}}, c, g.norm(ok))
     assert g.PREDICATES["market_signal"]({"market_context": {"pead": dict(P, drift=-0.08)}}, c, g.norm(ok))
+
+
+
+def test_dcf_percentages_say_what_the_sentence_says():
+    """V7 (M1): «el precio excede en 66%» con $343 frente a $116 es falso (excede un 195%); «el valor está un 66% por
+    debajo del precio» es lo correcto. El guardián lo detecta en las dos direcciones."""
+    aapl = {"price": 343.0, "dcf": {"upside": -66.2, "fair_value": 116.0}}
+    claims = [claim("dcf_upside")]
+    assert "dcf_upside" in _rules("el precio excede en 66% el valor intrínseco estimado", claims, aapl)
+    assert "dcf_upside" in _rules("el precio está un 66% por encima del valor intrínseco estimado", claims, aapl)
+    assert "dcf_upside" not in _rules("el precio excede en 196% el valor intrínseco estimado", claims, aapl)
+    assert "dcf_upside" not in _rules("el valor intrínseco estimado ($116) está un 66% por debajo del precio ($343)",
+                                      claims, aapl)
+    assert "dcf_upside" in _rules("el valor intrínseco estimado está un 40% por debajo del precio", claims, aapl)
+
+
+def test_roe_and_growth_say_their_period():
+    """V7 (M2): el ROE de la prosa lleva su periodo (TTM, último ejercicio o FY del DuPont) y la ventana de un
+    crecimiento a 3 años es la de los estados."""
+    a = {"growth_basis": {"revenue_window": "FY2022–FY2025"}}
+    assert "periodo_roe" in _rules("el ROE de 119.9% es excepcional para su sector", None, a)
+    assert "periodo_roe" in _rules("ROE excepcional — 119.9%", None, a)
+    assert "periodo_roe" not in _rules("el ROE (TTM) de 119.9% es excepcional para su sector", None, a)
+    assert "periodo_roe" not in _rules("ROE de FY2025: 151.9% = margen neto 26.9%", None, a)
+    assert "periodo_roe" not in _rules("se justificaría con un ROE del 21.6%, 3.96 veces el valor contable", None, a)
+    assert "ventana_crecimiento" in _rules("el BPA crece 6.9% anual en 3 años (FY2021–FY2024)", None, a)
+    assert "ventana_crecimiento" not in _rules("el BPA crece 6.9% anual en 3 años (FY2022–FY2025)", None, a)
+
+
+def test_labels_follow_the_number():
+    """V7 (M3): «FCF estable (-3.9%)» y un KPI «En rango» sin referencia son etiquetas que el número no sostiene."""
+    assert "etiqueta_signo" in _rules("FCF estable (-3.9%)", None, {})
+    assert "etiqueta_signo" not in _rules("FCF estable (-1.5%)", None, {})
+    assert "etiqueta_signo" not in _rules("FCF en ligero descenso (-3.9%)", None, {})
+    card = {"label": "ROE", "value": "119.9", "pill": "En rango", "bench": ""}
+    a = {"display": {"summary": {"cards": [card]}}}
+    assert "kpi_sin_referencia" in {f["rule"] for f in g.check(a, "", [])}
+    a["display"]["summary"]["cards"][0] = dict(card, pill="Sin referencia")
+    assert "kpi_sin_referencia" not in {f["rule"] for f in g.check(a, "", [])}
+
+
+def test_reader_texts_without_internal_mechanics():
+    """V7 (M4): «−0.53 × 6 (máximo con 5 miembros)», «^TNX no disponible… valor de config», «grid completo» y
+    «(factor 1.0): sin ajustar 15» son mecánica del motor: fuera de la prosa (la fórmula va al anexo)."""
+    for t in ("= -0.53 × 6 (máximo con 5 miembros) = -3.2", "Rf: ^TNX no disponible (sin cotización): valor de config",
+              "el grid completo (68.77–218.01) no contiene el precio", "(factor 1.0): sin ajustar 15 → ajustado a 15"):
+        assert "mecanica_interna" in _rules(t, None, {}), t
+    assert "mecanica_interna" not in _rules("la tabla de sensibilidad del DCF (de $68.77 a $218.01) no contiene el "
+                                            "precio ($342.96)", None, {})
+
+
+def test_scoring_names_say_what_scores():
+    """V7 (M5): «DCF (upside) −4» junto a «el DCF directo no concilia… se usa el DCF inverso» se contradecían (F8 · E8: «tiene fiabilidad baja»)."""
+    def a_with(metric, reason, value="-66%"):
+        return {"score": {"breakdown": {"Valoración": {"adjustments": [
+            {"metric": metric, "reason": reason, "value": value, "adjustment": -4}]}}}}
+    inv = "El DCF directo tiene fiabilidad baja; se usa el DCF inverso: …"
+    assert "nombre_puntua" in {f["rule"] for f in g.check(a_with("DCF (upside)", inv), "", [])}
+    assert "nombre_puntua" not in {f["rule"] for f in g.check(a_with("DCF inverso (lo que exige el precio)", inv), "", [])}
+    off = "DCF de fiabilidad baja: no se usa en el score"
+    assert "nombre_puntua" in {f["rule"] for f in g.check(a_with("DCF (upside)", off), "", [])}
+    assert "nombre_puntua" not in {f["rule"] for f in g.check(a_with("DCF directo: descartado, no puntúa", off), "", [])}
+
+
+
+def test_one_truth_about_the_dcf():
+    """V7 (M5, una sola verdad): AAPL. La tarjeta del precio, la línea de «Confianza del veredicto» y la convergencia
+    cuentan lo mismo: el DCF directo (fiabilidad baja) no puntúa; el −4 es del DCF inverso y la confianza lo dice."""
+    def a_with(row, summary):
+        return {"dcf": {"reliability": {"level": "baja"}},
+                "display": {"confidence": {"summary": summary},
+                            "summary": {"composition": {"price": {"rows": [dict(row, kind="signed")]}}}}}
+    ok = ("Confianza del veredicto: alta. El DCF directo, de fiabilidad baja, no puntúa ni cuenta para la "
+          "convergencia; en Valoración puntúa el DCF inverso (−4 puntos).")
+    inv = {"label": "DCF inverso (lo que exige el precio) · muy exigente", "value": -4}
+    rules = lambda a: {f["rule"] for f in g.check(a, "", [])}
+    assert "una_verdad" not in rules(a_with(inv, ok))
+    assert "una_verdad" in rules(a_with({"label": "DCF (upside) · -66%", "value": -4}, ok))
+    assert "una_verdad" in rules(a_with(inv, "Confianza del veredicto: alta. La calidad del negocio no se contrae."))
+    assert "una_verdad" in rules(a_with(inv, ok.replace("−4", "−3")))
+
+
+def test_punctuation_of_the_whole_panel():
+    """V7 (puntuación): KO decía «…en 3 de 5 ejercicios.; en la frontera con «sólida»… cambiaría el nivel», con «.;»
+    y sin punto final. El guardián mira el texto completo (web y PDF) y exige el cierre de cada frase declarada."""
+    def fails(note, pdf=""):
+        a = {"display": {"cover": {"quality": {"note": note, "title": "CALIDAD DEL NEGOCIO"}}}}
+        return {f["rule"] for f in g.check(a, pdf, [])}
+    ko = ("Por encima de 80 (umbral de persistencia; «excelente» empieza en 85), la calidad exige persistencia: 82 → 81. Calidad de ganancias: FCF positivo en 3 de 5 "
+          "ejercicios.; en la frontera con «sólida» (a 2 puntos): un cambio pequeño cambiaría el nivel")
+    assert {"puntuacion_doble", "frase_sin_cierre"} <= fails(ko)
+    assert not {"puntuacion_doble", "frase_sin_cierre"} & fails(ko.replace(".;", ";") + ".")
+    for bad in ("Cotiza en la zona media..", "una frase;. otra", "Rentabilidad.\n; sigue"):
+        assert "puntuacion_doble" in fails("Nota correcta y cerrada.", pdf=bad), bad
+    assert "puntuacion_doble" not in fails("Nota correcta y cerrada.", pdf="Esta lectura sería errónea si…")
+    a = {"display": {"nuevo": {"campo": "un texto largo que nadie ha declarado"}}}
+    assert "frase_sin_cierre" in {f["rule"] for f in g.check(a, "", [])}
+
+
+def test_industry_names_in_spanish():
+    """V7 (nombres en español): «opera en Beverages—Non-Alcoholic (Consumer Defensive)», «industria REIT - Retail»
+    o «(Consumer Electronics)» en la prosa o las fichas; el original solo en la metodología y el anexo."""
+    def rules(text, path=("cover", "classification_notes"), pdf=""):
+        d = {path[0]: {path[1]: [text]}}
+        return {f["rule"] for f in g.check({"display": d}, pdf, [])}
+    for t in ("The Coca-Cola Company opera en Beverages—Non-Alcoholic (Consumer Defensive).",
+              "Sociedad inmobiliaria cotizada; industria REIT - Retail.", "no muestra ciclo (Consumer Electronics).",
+              "Referencia: industria «Computers/Peripherals»; Damodaran clasifica a la empresa en esa industria."):
+        assert "industria_en_ingles" in rules(t), t
+    assert "industria_en_ingles" in rules("Ficha.", pdf="AAPL · Technology · Consumer Electronics · Nasdaq")
+    for t in ("The Coca-Cola Company opera en bebidas sin alcohol (consumo defensivo).",
+              "NextEra Energy y Taiwan Semiconductor cotizan en EE. UU.", "Energy Transfer reparte su caja."):
+        assert "industria_en_ingles" not in rules(t), t
+    # el original sí puede ir en el anexo, en la metodología y en la ficha SIC de la SEC
+    assert "industria_en_ingles" not in rules("Industria de referencia: Computers/Peripherals, Damodaran.",
+                                               path=("annex", "items"))
+    assert "industria_en_ingles" not in rules("Ficha.", pdf="Industria (código SIC) 3674 · Semiconductors & Related")
+    assert "industria_en_ingles" not in rules("Ficha.", pdf="Texto.\nMETODOLOGÍA\nindustria «Computers/Peripherals»")
+
+def test_engine_labels_in_spanish():
+    """V7 (M6): «Cash Flow Operativo», «EPS moderado», «Crecimiento Ingresos 3Y», «compañías growth» son etiquetas
+    del motor sin traducir."""
+    for t in ("Cash Flow Operativo", "EPS moderado (6.9%)", "Crecimiento Ingresos 3Y", "un ritmo propio de compañías growth",
+              "FCF > Net Income (106.0%)", "Premium (39.3x vs 34.3x)", "PEG Ratio"):
+        assert "anglicismo" in _rules(t, None, {}), t
+    for t in ("Flujo de caja operativo", "BPA moderado (6.9%)", "Crecimiento de ingresos a 3 años", "Piotroski F-Score"):
+        assert "anglicismo" not in _rules(t, None, {}), t

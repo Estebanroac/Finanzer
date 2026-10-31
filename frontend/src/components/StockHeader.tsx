@@ -5,6 +5,7 @@ import { pdfUrl } from "@/lib/api";
 import { useGrow } from "@/lib/useGrow";
 import { Range52Bar, Ring } from "./charts";
 import { Help, Pill, StateTag, ToneBar, toneClass } from "./ui";
+import { profileNames } from "@/lib/names";
 
 // KPI que pasan a la tarjeta de precio (etapa 9c): no se repiten en la rejilla.
 const IN_PRICE_CARD = new Set(["price", "market_cap"]);
@@ -38,7 +39,7 @@ export default function StockHeader({ data }: { data: StockAnalysis }) {
               </span>
             </div>
             <p className="text-sm text-zinc-500 truncate">
-              {[data.profile.sector, data.profile.industry, data.profile.exchange].filter(Boolean).join(" · ")}
+              {[profileNames(data).sector, profileNames(data).industry, data.profile.exchange].filter(Boolean).join(" · ")}
             </p>
           </div>
           <a href={pdfUrl(data.symbol)} target="_blank" rel="noopener noreferrer" className="fz-btn press shrink-0"

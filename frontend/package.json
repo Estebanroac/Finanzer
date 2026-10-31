@@ -9,21 +9,40 @@
     "postbuild": "node scripts/stamp-build.mjs",
     "start": "next start",
     "lint": "eslint",
-    "check": "node scripts/check-analysis-literals.mjs && node scripts/check-contract.mjs"
+    "check": "node scripts/check-analysis-literals.mjs && node scripts/check-contract.mjs && node scripts/check-v2-wording.mjs",
+    "test:v2": "vitest run src/v2",
+    "e2e:v2": "playwright test e2e/v2",
+    "capturas:comprimir": "node scripts/comprimir-capturas.mjs",
+    "capturas:etapa": "node scripts/capturas-etapa.mjs",
+    "e2e:fallos": "playwright test -c playwright.fallos.config.ts",
+    "e2e:perf": "playwright test -c playwright.perf.config.ts",
+    "legado:base": "playwright test -c playwright.legado.config.ts --update-snapshots",
+    "legado:comparar": "playwright test -c playwright.legado.config.ts",
+    "e2e:v1": "playwright test -c playwright.v1.config.ts",
+    "v1:matriz": "node scripts/v1-matriz.mjs"
   },
   "dependencies": {
+    "@floating-ui/react-dom": "2.1.9",
+    "lightweight-charts": "5.2.1",
     "next": "16.1.7",
     "react": "19.2.3",
     "react-dom": "19.2.3"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
+    "@playwright/test": "1.64.1",
     "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "7.0.1",
+    "@testing-library/react": "16.3.3",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "6.1.2",
     "eslint": "^9",
     "eslint-config-next": "16.1.7",
+    "jsdom": "29.1.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "4.1.12"
   }
 }

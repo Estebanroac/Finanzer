@@ -502,6 +502,20 @@ def validate_outputs(result: Dict[str, Any]) -> List[Dict[str, Any]]:
                               "action": "sin_dato", "old": v, "new": None,
                               "reason": f"Cobertura de intereses = {v:.1f}x: EBIT < 0 con caja neta, "
                                         "la ratio no es significativa"})
+    # F8 · P3 (auditoría externa): regla M aplicada al ROE. Con patrimonio ≤ 0 (recompras por encima del patrimonio:
+    # MCD, −1.022 millones) el ROE no mide nada (MCD: −859,8 % y una brecha de −859.885 % frente a la industria). La
+    # puntuación ya lo neutralizaba («no penalizado; ROA …»); aquí, después del score, deja de pintarse como cifra.
+    eq = _num(km.get("total_equity"))
+    if eq is not None and eq <= 0:
+        for block in ("key_metrics", "ratios"):
+            d = result.get(block) or {}
+            v = _num(d.get("roe"))
+            if v is not None:
+                d["roe"] = None
+                flags.append({"field": f"{block}.roe", "rule": "ratio_no_significativa",
+                              "action": "sin_dato", "old": v, "new": None,
+                              "reason": "ROE no significativo: el patrimonio es negativo (las recompras superan al "
+                                        "patrimonio contable), así que el beneficio sobre él no mide la rentabilidad"})
     # Regla M aplicada a deuda neta/EBITDA: con EBITDA <= 0 no es significativa.
     if km.get("net_debt_to_ebitda_state") == "no_significativo":
         for block in ("key_metrics", "ratios"):

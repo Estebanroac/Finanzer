@@ -41,7 +41,8 @@ def _price_item(a: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     own = m.get("own_growth") or {}
     flow = m.get("flow_label") or "flujo"
     hist = (f"; historia propia: {own.get('label') or 'su crecimiento'}, {_pct(own['cagr'])} anual en "
-            f"{own.get('years')} años") if own.get("cagr") is not None and own.get("years") else ""
+            f"{own.get('years')} años" + (f" ({own['window']})" if own.get("window") else "")
+            ) if own.get("cagr") is not None and own.get("years") else ""
     if m.get("state") == "fuera_de_rango" and m.get("side") in ("superior", "inferior"):
         # Revisión F4 (hallazgo 3): el sentido sigue al nivel de precio, también fuera de rango.
         lo, hi = cfg("valuation.reverse_dcf.growth_bounds")

@@ -40,7 +40,8 @@ def test_plain_language_examples():
     assert t("sin TTM: estados anuales (hasta 12 meses de retraso)") == (
         "Se usan los estados del último ejercicio anual (pueden tener hasta 12 meses de antigüedad).")
     assert t("12 campos de Finnhub en lugar de los estados") == "Parte de los datos proviene de una fuente secundaria."
-    assert t("^TNX no disponible: valor de config") is None
+    assert t("el rendimiento del bono del Tesoro de EE. UU. a 10 años no está disponible (sin cotización): se usa el "
+             "valor de referencia del modelo, 5.29%") is None
     assert t("validación: revenueGrowth (crecimiento_artefacto)").startswith(
         "El crecimiento reportado por la fuente era incoherente y se recalculó con los estados")
     assert t("12 de 20 componentes del score con dato (60%)") == (
@@ -205,3 +206,26 @@ def test_price_wording_without_jargon(outputs_by_env):
     for env in __import__("conftest").ENVS:
         for sym, (a, _) in outputs_by_env(env).items():
             inv.price_wording_without_jargon(a, None)
+
+@pytest.mark.parametrize("env_sym", ENV_TICKERS, ids=env_id)
+def test_category_labels_only_change_how_categories_are_written(env_sym, outputs_by_env):
+    """V7 (PM): «Solidez financiera», «Calidad de ganancias» ([score.category_labels]). Cambia solo cómo se escriben: la
+    clave del motor sigue en `key`, en las categorías de la puntuación y en su componente."""
+    env, sym = env_sym
+    a = outputs_by_env(env)[sym][0]
+    D = a["display"]
+    labels = cfg("thresholds.score.category_labels")
+    assert dict(labels) == {"Solidez Financiera": "Solidez financiera", "Calidad de Ganancias": "Calidad de ganancias"}
+    keys = set(cfg("thresholds.score.quality.categories")) | set(cfg("thresholds.score.price.categories"))
+    items = [i for g in D["cover"]["categories"] for i in g["items"]]
+    items += (D["sections"]["institutional"].get("breakdown") or {}).get("categories") or []
+    assert items
+    for i in items:
+        assert i["key"] in keys and i["name"] == labels.get(i["key"], i["key"])
+    rows = [r["label"] for r in D["summary"]["composition"]["quality"]["rows"]]
+    assert not set(rows) & set(labels), rows
+    text = json.dumps(D, ensure_ascii=False)
+    assert "Solidez Financiera" not in text.replace('"key": "Solidez Financiera"', "")
+    assert "Calidad de Ganancias" not in text.replace('"key": "Calidad de Ganancias"', "")
+    # el motor no cambia: sus categorías siguen con su clave
+    assert {c["category"] for c in a["quality"]["components"]} <= keys

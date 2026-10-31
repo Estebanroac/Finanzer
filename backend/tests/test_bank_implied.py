@@ -36,8 +36,10 @@ def test_round_trip_with_engine_justified_multiples(t):
     """implied_rote(P/TBV justificado del motor) = ROTE que usó el motor; igual con P/B y ROE."""
     am = _am(t)
     ke, g = am["cost_of_equity"], am["terminal_growth"]
-    assert implied_rote(am["ptbv_justified"], ke, g)["value"] == pytest.approx(am["rote"], abs=1e-12)
-    assert implied_roe(am["pb_justified"], ke, g)["value"] == pytest.approx(am["roe_fy"], abs=1e-12)
+    # 1e-10: el golden guarda 12 cifras significativas (stable_json) y la ida y vuelta las pierde (F9 · R1: JPM con su
+    # Ke con prima país, 1,5e-12)
+    assert implied_rote(am["ptbv_justified"], ke, g)["value"] == pytest.approx(am["rote"], abs=1e-10)
+    assert implied_roe(am["pb_justified"], ke, g)["value"] == pytest.approx(am["roe_fy"], abs=1e-10)
 
 
 @pytest.mark.parametrize("t", BANKS)

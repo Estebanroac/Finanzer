@@ -266,3 +266,14 @@ def test_cagr_counts_fiscal_years_by_date_difference_with_52_53_week_years():
     assert abs(m["revenue_ps_cagr_3y"] - 0.10) < 1e-9 and abs(m["revenue_ps_cagr_5y"] - 0.10) < 1e-9
     r = revenue_ps_cagr_long(hist)
     assert r["years"] == 10 and abs(r["cagr"] - 0.10) < 1e-9
+
+
+def test_zero_shares_year_is_empty_not_a_divisor():
+    """V2 (fuentes reales): CEG trae 0 acciones el ejercicio antes de su escisión; dividía por cero y el análisis daba
+    500. Una cuenta de acciones ≤ 0 es un dato vacío: las medidas salen con las demás."""
+    h = H([100, 110, 120, 130, 140, 150], shares=[0, 10, 10, 10, 10, 10])
+    m = cy.growth_profitable_measures(h)
+    assert m["basis"] == "por_accion" and m["revenue_ps_cagr_3y"] is not None
+    assert cy.measure(H([100, 90, 120, 80, 140, 150], shares=[10, 10, 0, 10, 10, 10]))["years"] == 6
+    cy.revenue_ps_cagr_long(h)
+    cy.share_breaks(h, 0.2)

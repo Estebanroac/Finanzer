@@ -249,11 +249,35 @@ def sha256(data):
 
 # ═══════════════════════════ almacén de fixtures ═══════════════════════════
 
+def read_json(path):
+    """V4b: un fixture en `path` o, si no está, comprimido en `path`.gz (los rivales del replay)."""
+    if not os.path.isfile(path) and os.path.isfile(path + ".gz"):
+        import gzip
+        with gzip.open(path + ".gz", "rt", encoding="utf-8") as fh:
+            return json.load(fh)
+    with open(path, encoding="utf-8") as fh:
+        return json.load(fh)
+
+
+def gzip_fixture_dir(d):
+    """V4b: comprime los .json de una carpeta de fixtures (y borra los originales). Determinista: sin fecha ni nombre."""
+    import gzip
+    for name in sorted(os.listdir(d)):
+        if name.endswith(".json"):
+            src = os.path.join(d, name)
+            with open(src, "rb") as fh, open(src + ".gz", "wb") as raw:
+                with gzip.GzipFile(filename="", mode="wb", fileobj=raw, mtime=0) as gz:
+                    gz.write(fh.read())
+            os.remove(src)
+
+
 class FixtureStore:
     """Respuestas crudas por ticker. En record se llena; en replay se lee."""
 
-    def __init__(self, base_dir=FIXTURES_DIR, mode="replay"):
+    def __init__(self, base_dir=FIXTURES_DIR, mode="replay", extra_dirs=()):
         self.base_dir = base_dir
+        # V4b: carpetas de respaldo para leer (los rivales del replay, tests/fixtures/peers); se escribe en base_dir
+        self.extra_dirs = tuple(extra_dirs)
         self.mode = mode
         self.http = {}      # sym -> [ {url, params, status, body_json|body_text} ]
         self.yf = {}        # sym -> {attr: obj}
@@ -268,7 +292,17 @@ class FixtureStore:
 
     # ---- disco ----
     def dir_for(self, sym):
-        return os.path.join(self.base_dir, sym.upper())
+        d = os.path.join(self.base_dir, sym.upper())
+        if self.mode == "replay" and not os.path.isdir(d):
+            for extra in self.extra_dirs:
+                e = os.path.join(extra, sym.upper())
+                if os.path.isdir(e):
+                    return e
+        return d
+
+    def has(self, sym):
+        """Hay fixtures del ticker (en base_dir o en una carpeta de respaldo)."""
+        return os.path.isdir(self.dir_for(sym))
 
     def load(self, sym):
         sym = sym.upper()
@@ -277,14 +311,10 @@ class FixtureStore:
         d = self.dir_for(sym)
         if not os.path.isdir(d):
             raise FixtureMiss(f"No hay fixtures para {sym} en {d}")
-        with open(os.path.join(d, "metadata.json"), encoding="utf-8") as fh:
-            self.meta[sym] = json.load(fh)
-        with open(os.path.join(d, "yahoo_http.json"), encoding="utf-8") as fh:
-            self.http[sym] = json.load(fh)
-        with open(os.path.join(d, "yfinance.json"), encoding="utf-8") as fh:
-            self.yf[sym] = json.load(fh)
-        with open(os.path.join(d, "finnhub.json"), encoding="utf-8") as fh:
-            self.finnhub[sym] = json.load(fh)
+        self.meta[sym] = read_json(os.path.join(d, "metadata.json"))
+        self.http[sym] = read_json(os.path.join(d, "yahoo_http.json"))
+        self.yf[sym] = read_json(os.path.join(d, "yfinance.json"))
+        self.finnhub[sym] = read_json(os.path.join(d, "finnhub.json"))
 
     def save(self, sym, meta):
         sym = sym.upper()
@@ -383,13 +413,50 @@ class FixtureStore:
 
     def replay_finnhub(self, sym, path, params):
         self.load(sym)
+        if path == _FINNHUB_REPORTED:
+            # F8 · E3: estados presentados por el emisor, por ruta y frecuencia; solo lo presentado hasta la captura
+            # (tests/capture_finnhub_f8.py). Opcionales: sin grabación, la fuente no responde (el FFO queda sin dato).
+            found = [x for x in self.finnhub.get(sym, []) if x["path"] == path
+                     and (x.get("params") or {}).get("freq") == (params or {}).get("freq")]
+            if not found:
+                return None
+            resp = copy.deepcopy(found[-1]["response"])
+            day = str((self.meta.get(sym) or {}).get("captured_at_local") or "")[:10]
+            if day and isinstance(resp, dict):
+                resp["data"] = [r for r in resp.get("data") or [] if str(r.get("filedDate") or "")[:10] <= day]
+            return resp
+        if path in _FINNHUB_BY_PATH:
+            # Rediseño E2a (T8): titulares y calendario se buscan por símbolo y ruta, sin las fechas `from`/`to` (cambian
+            # cada día; el fixture se grabó en su fecha). Los titulares, solo los publicados hasta la captura del
+            # ticker (lo que se sabía ese día). Opcionales: los fixtures anteriores no los traen.
+            e = self.recorded_finnhub(sym, path)
+            if e is None:
+                return None
+            resp = copy.deepcopy(e["response"])
+            if path == "/company-news" and isinstance(resp, list):
+                cut = self.capture_ts(sym)
+                resp = [x for x in resp if cut is None or int(x.get("datetime") or 0) <= cut]
+            return resp
         e = self._next(self.finnhub, sym, _key(path, params), lambda x: _key(x["path"], x["params"]))
         if e is None:
-            if path == "/company-news":   # fase 5: titulares opcionales; los fixtures anteriores no los traen
-                return None
             self.misses.append(f"finnhub {sym} {_key(path, params)}")
             return None
         return copy.deepcopy(e["response"])
+
+    def recorded_finnhub(self, sym, path):
+        """La última respuesta grabada de `path` para `sym` (cualquier parámetro), o None."""
+        self.load(sym)
+        found = [e for e in self.finnhub.get(sym, []) if e["path"] == path]
+        return found[-1] if found else None
+
+    def capture_ts(self, sym):
+        """Instante de la captura del ticker (epoch UTC), o None."""
+        at = (self.meta.get(sym) or {}).get("captured_at_utc")
+        return int(_dt.datetime.fromisoformat(at).timestamp()) if at else None
+
+
+_FINNHUB_BY_PATH = ("/company-news", "/calendar/earnings")
+_FINNHUB_REPORTED = "/stock/financials-reported"
 
 
 def _symbol_from_url(url, params=None):
@@ -551,13 +618,21 @@ def _history_replay_fetcher(store):
     def fetch(symbol, period, interval):
         sym = str(symbol).upper()
         cur = store.current
+        until = str((store.meta.get(cur) or {}).get("captured_at_local") or "")[:10] or None
+        from settings import cfg
+        if period == cfg("market.history.chart_period"):
+            # Rediseño E2a (T9): la serie larga de la gráfica de /v2 (tests/fixtures/history/chart), cortada como la otra
+            try:
+                return hf.load_frame(sym, until, sub="chart")
+            except KeyError:
+                store.misses.append(f"chart {sym}")
+                raise FixtureMiss(f"serie larga no grabada: {sym}")
         own = (store.yf.get(cur) or {}) if cur else {}
         if sym == cur and "price_history" in own:
             return hf.obj_to_history(own["price_history"])
         for key in ("market_history", "sector_history"):     # fase 5: el ETF del sector, aparte del índice
             if (own.get(key) or {}).get("symbol") == sym:
                 return hf.obj_to_history(own[key])
-        until = str((store.meta.get(cur) or {}).get("captured_at_local") or "")[:10] or None
         try:
             return hf.load_frame(sym, until)
         except KeyError:
@@ -609,14 +684,20 @@ def _block_network(*_a, **_kw):
     raise RuntimeError("Red bloqueada en modo replay: el pipeline intentó una llamada no grabada")
 
 
+def _capture_day(frame):
+    import datetime as _dt
+    return frame.index[-1].date() if frame is not None and len(frame) else _dt.date.today()
+
+
 @contextlib.contextmanager
-def replay(base_dir=FIXTURES_DIR):
-    """Modo test: el pipeline lee de los fixtures y no puede salir a la red."""
+def replay(base_dir=FIXTURES_DIR, extra_dirs=()):
+    """Modo test: el pipeline lee de los fixtures y no puede salir a la red. `extra_dirs`: carpetas de respaldo (los
+    rivales del replay)."""
     import finnhub_fallback
     import yf_adapter
     import yfinance
 
-    store = FixtureStore(base_dir)
+    store = FixtureStore(base_dir, extra_dirs=extra_dirs)
     p = _Patcher()
 
     def _fake_ensure_session():
@@ -626,6 +707,9 @@ def replay(base_dir=FIXTURES_DIR):
 
     def _fake_finnhub_get(path, params):
         sym = str((params or {}).get("symbol", "")).upper()
+        # V4b: los titulares se piden con el símbolo de Finnhub (BRK.B); el fixture es el del ticker en análisis (BRK-B)
+        if store.current and finnhub_fallback.provider_symbol(store.current) == sym:
+            sym = store.current
         return store.replay_finnhub(sym, path, params)
 
     p.set(yf_adapter, "_ensure_session", _fake_ensure_session)
@@ -637,13 +721,23 @@ def replay(base_dir=FIXTURES_DIR):
     # en la fecha de captura del ticker analizado. El User-Agent es ficticio: nada sale a la red.
     import f2b_fixtures
     import sec_edgar
-    p.set(sec_edgar, "FETCHER", f2b_fixtures.edgar_fetcher(store))
-    p.set(finnhub_fallback, "earnings_calendar", f2b_fixtures.calendar(store))
+    _f2b_extra = [os.path.join(d, "f2b") for d in extra_dirs]      # V4b: EDGAR de los rivales del replay
+    p.set(sec_edgar, "FETCHER", f2b_fixtures.edgar_fetcher(store, extra=_f2b_extra))
+    p.set(finnhub_fallback, "earnings_calendar", f2b_fixtures.calendar(store, extra=_f2b_extra))
+    # F8 · E10: los segmentos de negocio (financiera cautiva) desde su captura (tests/fixtures/segments); un ticker sin
+    # captura queda sin segmentos (el Altman declara el límite).
+    import capture_segments
+    import segments
+    p.set(segments, "FETCHER", capture_segments.replay_fetcher())
+    segments.reset()
     p.env("SEC_EDGAR_USER_AGENT", "finanzer-replay replay@example.invalid")
     # Etapa 8: los fixtures no tienen ^TNX; en replay el Rf es siempre el de config
     # (marcado como fallback), así los golden no dependen del día de la captura.
     import cost_of_capital
     p.set(cost_of_capital, "_fetch_risk_free", lambda: None)
+    # V6 (B12): "hoy" de los próximos resultados = el día de la captura (la última sesión de la serie), como antes.
+    import market_context
+    p.set(market_context, "TODAY", _capture_day)
     p.set(time, "sleep", lambda *_a, **_kw: None)
     p.set(socket.socket, "connect", _block_network)
     p.set(socket.socket, "connect_ex", _block_network)
@@ -814,8 +908,8 @@ def _frozen_datetime(frozen):
 
 def _logo_path():
     # Misma búsqueda que main.download_pdf (main.py:899-905).
-    for cand in (os.path.join(REPO_DIR, "frontend", "public", "logo.png"),
-                 os.path.join(REPO_DIR, "frontend", "out", "logo.png")):
+    for cand in (os.path.join(REPO_DIR, "frontend", "public", "brand", "finanzer-logo.png"),
+                 os.path.join(REPO_DIR, "frontend", "out", "brand", "finanzer-logo.png")):
         if os.path.isfile(cand):
             return cand
     return None
@@ -839,6 +933,21 @@ def build_pdf_bytes(analysis, frozen_now, table_style_cls=None):
         pdf_report.build_report(buf, analysis, sector_bench=main._pdf_benchmark(analysis),
                                 logo_path=_logo_path())
         return buf.getvalue()
+    finally:
+        p.undo()
+
+
+def build_pdf_v2_bytes(analysis, frozen_now):
+    """PDF nuevo (rediseño E5, lib/pdf_v2) determinista: reportlab `invariant`, fecha del informe = la de captura y
+    las series de precios grabadas (tests/fixtures/prices), sin red."""
+    from reportlab import rl_config
+    import pdf_v2
+    import pdf_v2_samples
+    p = _Patcher()
+    p.set(rl_config, "invariant", 1)
+    try:
+        sym = (analysis.get("symbol") or "").upper()
+        return pdf_v2.build_pdf(analysis, pdf_v2_samples.prices(sym), today=frozen_now.date())
     finally:
         p.undo()
 

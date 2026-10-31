@@ -61,6 +61,9 @@ def test_excellent_is_untouched_and_extraordinary_needs_history():
     # Ponderada por los puntos sobre 16: (4·1 + 4·0.2 + 4·1 + 4·1) / 16 = 0.8 -> 80 + 20 × 0.8 = 96.
     assert q["score"] == 96 and q["persistence"]["applied"]
     assert "100 → 96" in q["persistence"]["text"] and "1 de 5 ejercicios" in q["persistence"]["text"]
+    # F10 · N6 (revisión de NVDA): la nota nombra su umbral, distinto del de «excelente» (desde F8 · E11)
+    assert q["persistence"]["short"] == ("Por encima de 80 (umbral de persistencia; «excelente» empieza en 85), la "
+                                         "calidad exige persistencia: 100 → 96.")
 
 
 def test_without_measure_nothing_changes():

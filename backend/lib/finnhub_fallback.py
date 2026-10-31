@@ -27,6 +27,7 @@ rotación de activos). La deuda LP se pasa como ratio LTD/Activos SOLO cuando
 Yahoo no trajo el valor absoluto, para no mezclar unidades en la comparación.
 """
 import os
+import re
 import json
 import time
 import logging
@@ -36,6 +37,7 @@ from urllib.parse import urlencode
 from typing import Dict, Any, Optional
 
 from settings import cfg
+import bounded
 
 logger = logging.getLogger(__name__)
 
@@ -93,15 +95,31 @@ def _get(path: str, params: Dict[str, Any]) -> Optional[dict]:
         return None
 
 
+# Series anuales de /stock/metric que lee _fill_piotroski, y cuántos años de cada una (0 = el último, 1 = el anterior).
+_PIOTROSKI_SERIES = ("roa", "netMargin", "currentRatio", "grossMargin", "longtermDebtTotalAsset")
+_PIOTROSKI_YEARS = 2
+
+
+def _compact_metrics(data: Optional[dict]) -> Optional[dict]:
+    """Lo que enrich_info lee de /stock/metric: `metric` y, de `series.annual`, las series de Piotroski en sus dos
+    últimos años. La respuesta entera (~1,7 MB en memoria por empresa: todas las series trimestrales y anuales) se
+    quedaba en la caché; las cifras no cambian (verificación de la v4, V4 · memoria)."""
+    if not isinstance(data, dict):
+        return data
+    annual = (data.get("series") or {}).get("annual") or {}
+    keep = {k: list(annual[k][:_PIOTROSKI_YEARS]) for k in _PIOTROSKI_SERIES if isinstance(annual.get(k), list)}
+    return {"metric": data.get("metric"), "series": {"annual": keep}}
+
+
 def _basic_financials(symbol: str) -> Optional[dict]:
     now = time.time()
     with _lock:
         ent = _cache.get(symbol)
         if ent and now - ent[0] < _CACHE_TTL:
             return ent[1]
-    data = _get("/stock/metric", {"symbol": symbol, "metric": "all"})
+    data = _compact_metrics(_get("/stock/metric", {"symbol": symbol, "metric": "all"}))
     with _lock:
-        _cache[symbol] = (now, data)
+        bounded.put(_cache, symbol, (now, data), cfg("data.finnhub.cache_max_entries"))
     return data
 
 
@@ -117,7 +135,7 @@ def earnings_calendar(symbol: str, start: str, end: str) -> Optional[list]:
     data = _get("/calendar/earnings", {"symbol": symbol, "from": start, "to": end})
     out = (data or {}).get("earningsCalendar") if isinstance(data, dict) else None
     with _lock:
-        _cache[key] = (now, out)
+        bounded.put(_cache, key, (now, out), cfg("data.finnhub.cache_max_entries"))
     return out
 
 
@@ -134,8 +152,43 @@ def earnings_surprises(symbol: str) -> Optional[list]:
     data = _get("/stock/earnings", {"symbol": symbol})
     out = data if isinstance(data, list) else None
     with _lock:
-        _cache[key] = (now, out)
+        bounded.put(_cache, key, (now, out), cfg("data.finnhub.cache_max_entries"))
     return out
+
+
+def financials_reported(symbol: str, freq: str, keep) -> Optional[list]:
+    """F8 · E3: estados tal como los presentó el emisor en sus 10-K (`freq="annual"`) o 10-Q (`"quarterly"`)
+    (`/stock/financials-reported`, plan gratuito). De cada filing, solo las líneas del estado de flujos con `keep(concepto)`
+    (la respuesta entera pesa ~1 MB): [{form, accn, start, end, filed, lines: [{concept, label, value, unit}]}].
+    None sin clave o si falla."""
+    key = f"fr:{freq}:{symbol}"
+    now = time.time()
+    with _lock:
+        ent = _cache.get(key)
+        if ent and now - ent[0] < _CACHE_TTL:
+            return ent[1]
+    data = _get("/stock/financials-reported", {"symbol": provider_symbol(symbol), "freq": freq})
+    rows = (data or {}).get("data") if isinstance(data, dict) else None
+    out = None
+    if isinstance(rows, list):
+        out = [{"form": r.get("form"), "accn": r.get("accessNumber"), "start": str(r.get("startDate") or "")[:10],
+                "end": str(r.get("endDate") or "")[:10], "filed": str(r.get("filedDate") or "")[:10],
+                "lines": [{k: it.get(k) for k in ("concept", "label", "value", "unit")}
+                          for it in ((r.get("report") or {}).get("cf") or []) if keep(str(it.get("concept") or ""))]}
+               for r in rows if isinstance(r, dict)]
+    with _lock:
+        bounded.put(_cache, key, (now, out), cfg("data.finnhub.cache_max_entries"))
+    return out
+
+
+_CLASS_SHARE = re.compile(r"[A-Z]+-[A-Z]")
+
+
+def provider_symbol(symbol: str) -> str:
+    """V4b: el símbolo como lo escribe Finnhub. Las acciones de clase llevan punto (BRK.B, BF.B), no el guion de Yahoo
+    (con BRK-B Finnhub no devuelve titulares); los demás, igual."""
+    s = str(symbol or "").upper().strip()
+    return s.replace("-", cfg("data.finnhub.class_share_separator")) if _CLASS_SHARE.fullmatch(s) else s
 
 
 def company_news(symbol: str, start: str, end: str) -> Optional[list]:
@@ -147,10 +200,10 @@ def company_news(symbol: str, start: str, end: str) -> Optional[list]:
         ent = _cache.get(key)
         if ent and now - ent[0] < _CACHE_TTL:
             return ent[1]
-    data = _get("/company-news", {"symbol": symbol, "from": start, "to": end})
+    data = _get("/company-news", {"symbol": provider_symbol(symbol), "from": start, "to": end})
     out = data if isinstance(data, list) else None
     with _lock:
-        _cache[key] = (now, out)
+        bounded.put(_cache, key, (now, out), cfg("data.finnhub.cache_max_entries"))
     return out
 
 
@@ -316,6 +369,7 @@ def _fill_piotroski(info: Dict[str, Any], series: dict, filled: list) -> None:
     if not series:
         return
 
+    # Solo estas series y años (_PIOTROSKI_SERIES, _PIOTROSKI_YEARS) quedan en la caché: _compact_metrics.
     roa0 = _series_val(series, "roa", 0)
     roa1 = _series_val(series, "roa", 1)
     nm0 = _series_val(series, "netMargin", 0)

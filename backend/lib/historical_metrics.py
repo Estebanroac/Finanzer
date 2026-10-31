@@ -57,8 +57,8 @@ def fcf_cagr(values_newest_first: List[Optional[float]], years: int = 3) -> Tupl
     Devuelve (cagr, None) o (None, motivo). El CAGR no está definido —y se
     devuelve "sin dato", nunca un número— si faltan ejercicios, si el FCF
     inicial es <= 0 o si el FCF cambia de signo dentro del periodo. Con año
-    base anómalo (etapa 7) usa la regresión log-lineal (growth_rate)."""
-    r = growth_rate(values_newest_first, years, what="FCF")
+    base anómalo (etapa 7) usa la regresión log-lineal; si no es robusta, no significativo (F10, robust_growth)."""
+    r = robust_growth(values_newest_first, years, what="FCF")
     return r["value"], r["reason"]
 
 
@@ -69,8 +69,8 @@ def fcf_cagr(values_newest_first: List[Optional[float]], years: int = 3) -> Tupl
 def strict_cagr(values_newest_first: List[Optional[float]], years: int = 3) -> Tuple[Optional[float], Optional[str]]:
     """CAGR real sobre exactamente `years` intervalos (years + 1 ejercicios).
     (cagr, None) o (None, motivo); no usa menos periodos ni el proxy interanual.
-    Con año base anómalo (etapa 7) usa la regresión log-lineal (growth_rate)."""
-    r = growth_rate(values_newest_first, years, strict_ends_only=True)
+    Con año base anómalo (etapa 7) usa la regresión log-lineal; si no es robusta, no significativo (F10, robust_growth)."""
+    r = robust_growth(values_newest_first, years, strict_ends_only=True)
     return r["value"], r["reason"]
 
 
@@ -106,7 +106,9 @@ def growth_rate(values_newest_first: List[Optional[float]], years: int = 3, *, w
     mediana de los demás años de la ventana—, en cuyo caso usa la regresión
     log-lineal sobre todos los años disponibles y se marca "base anómala".
 
-    {value, reason, method: "cagr"|"log_lineal", anomalous_base, years_used}.
+    {value, reason, method: "cagr"|"log_lineal", anomalous_base, years_used, robust}. F10 · N3: `robust` dice si la
+    regresión tuvo ejercicios más allá de la ventana con los que diluir el año anómalo; sin ellos (NVDA, BPA de FY2023 a
+    FY2026: 4 puntos, uno anómalo) la regresión sigue dependiendo de él (198 % frente a 204 % del CAGR).
     strict_ends_only: solo exige positivos el inicio y el final (CAGR de ingresos
     y similares); si no, cualquier valor <= 0 en la ventana deja el CAGR sin dato
     (FCF: cambio de signo)."""
@@ -137,15 +139,125 @@ def growth_rate(values_newest_first: List[Optional[float]], years: int = 3, *, w
     others = sorted(v for v in vals[:years] if v is not None)
     med = others[len(others) // 2] if len(others) % 2 else (others[len(others) // 2 - 1] + others[len(others) // 2]) / 2
     ratio = cfg("thresholds.growth.anomalous_base_ratio")
+    out["robust"] = True              # F10: el CAGR de punta a punta, sin base anómala, es la medida de siempre
     if start < ratio * med:
+        out["base_ratio"] = start / med
         g, why, n = loglinear_growth(values_newest_first)
-        out.update(method="log_lineal", anomalous_base=True, years_used=n, value=g,
+        out.update(method="log_lineal", anomalous_base=True, years_used=n, value=g, robust=n > years + 1,
                    reason=(f"base anómala ({start / med:.0%} de la mediana del resto); " + why) if why else None)
         out["note"] = (f"base anómala: el año inicial es el {start / med:.0%} de la mediana de los demás "
                        f"(< {ratio:.0%}); crecimiento por regresión log-lineal sobre {n} ejercicios")
+        # F10 (PM, 29-oct): la tasa de punta a punta desde una base anómala BAJA sobrestima el crecimiento: es una cota
+        # superior (desde una base anómala alta sería inferior; el detector solo marca las bajas). Una puntuación
+        # monótona en el crecimiento la usa solo si ya decide el tramo (bound_decides).
+        out["bound"] = {"value": cagr(end, start, years), "direction": "superior"}
         return out
     out["value"] = cagr(end, start, years)
     return out
+
+
+# F10 · crecimiento desde una base anómala: el motivo empieza así cuando la tasa no es significativa (la puntuación lo
+# registra como «no significativo», no como «sin dato»).
+ANOMALOUS_NOT_SIGNIFICANT = "no significativo: año base anómalo"
+
+
+def is_anomalous_not_significant(reason: Optional[str]) -> bool:
+    return bool(reason) and reason.startswith(ANOMALOUS_NOT_SIGNIFICANT)
+
+
+def edgar_series(field: Optional[Dict[str, Any]], end: Optional[str] = None) -> Tuple[List[Tuple[str, float]], Optional[str]]:
+    """[(cierre, valor)] anuales de un campo de la historia de EDGAR (`{values: [{fy_end, value}]}`), del más reciente al
+    más antiguo, CONTIGUOS (un ejercicio por año, ± market.history.fy_gap_tolerance_days) desde el último hacia atrás.
+    Con `end` (cierre del último ejercicio de los estados), el último de EDGAR debe ser ese. ([], motivo) si no sirve."""
+    import datetime as _dt
+    from settings import cfg
+    vals = sorted(((v["fy_end"], v["value"]) for v in ((field or {}).get("values") or [])
+                   if v.get("fy_end") and v.get("value") is not None), reverse=True)
+    if not vals:
+        return [], "EDGAR no trae la serie"
+    tol = cfg("market.history.fy_gap_tolerance_days")
+    d = [_dt.date.fromisoformat(e[:10]) for e, _ in vals]
+    if end and abs((d[0] - _dt.date.fromisoformat(str(end)[:10])).days) > tol:
+        return [], f"la serie de EDGAR no llega al último ejercicio (termina el {vals[0][0][:10]})"
+    out = [vals[0]]
+    for i in range(1, len(vals)):
+        if abs((d[i - 1] - d[i]).days - 365) > tol:
+            break
+        out.append(vals[i])
+    return out, None
+
+
+def edgar_fcf(history_fy: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    """FCF = flujo operativo − |capex| de cada ejercicio de la historia de EDGAR, como un campo más ({values})."""
+    h = history_fy or {}
+    capex = {v["fy_end"]: v["value"] for v in ((h.get("capex") or {}).get("values") or []) if v.get("value") is not None}
+    return {"values": [{"fy_end": v["fy_end"], "value": v["value"] - abs(capex[v["fy_end"]])}
+                       for v in ((h.get("operating_cash_flow") or {}).get("values") or [])
+                       if v.get("value") is not None and v.get("fy_end") in capex]}
+
+
+def robust_growth(values_newest_first: List[Optional[float]], years: int = 3, *, what: str = "valor",
+                  strict_ends_only: bool = False, long: Optional[Dict[str, Any]] = None,
+                  end: Optional[str] = None) -> Dict[str, Any]:
+    """F10 · crecimiento desde una base anómala (regla general de todo crecimiento a `years` años). `growth_rate` y:
+
+    - sin base anómala, o con regresión robusta (ejercicios fuera de la ventana), su resultado (robust = True);
+    - con base anómala y regresión no robusta, la serie larga de EDGAR `long` si tiene ≥ thresholds.growth.long_years
+      ejercicios contiguos que lleguen al último (`end`): regresión log-lineal sobre los últimos long_years
+      (method = "log_lineal_edgar");
+    - si no, no significativo: value None, `not_significant`, y el motivo (empieza por ANOMALOUS_NOT_SIGNIFICANT).
+    Nunca una cifra que dependa solo del año anómalo."""
+    from settings import cfg
+    r = growth_rate(values_newest_first, years, what=what, strict_ends_only=strict_ends_only)
+    r.setdefault("robust", False)
+    if not r.get("anomalous_base") or r["robust"]:
+        return r
+    n_long = cfg("thresholds.growth.long_years")
+    base = f"el año inicial es el {r.get('base_ratio', 0):.0%} de la mediana de los demás"
+    series, why = edgar_series(long, end) if long else ([], "sin serie larga de EDGAR")
+    if not why and len(series) < n_long:
+        why = f"EDGAR trae {len(series)} ejercicios contiguos (hacen falta {n_long})"
+    if not why:
+        used = series[:n_long]
+        g, lwhy, n = loglinear_growth([v for _, v in used])
+        if g is None:
+            why = f"la serie larga de EDGAR no sirve: {lwhy}"
+        else:
+            from cyclicality import fy_label
+            win = f"{fy_label(used[-1][0])}–{fy_label(used[0][0])}"
+            r.update(value=g, method="log_lineal_edgar", robust=True, years_used=n, reason=None, source="EDGAR",
+                     window=win, note=f"base anómala ({base}); crecimiento por regresión log-lineal sobre los {n} "
+                                      f"últimos ejercicios de EDGAR ({win})")
+            return r
+    r.update(value=None, not_significant=True,
+             reason=f"{ANOMALOUS_NOT_SIGNIFICANT} ({base}) y sin serie larga robusta: {why}",
+             note=f"base anómala ({base}) sin serie larga robusta: {what} no significativo")
+    return r
+
+
+def bound_decides(bound: Optional[Dict[str, Any]], bounds: List[float], higher_is_better: bool = True
+                  ) -> Optional[float]:
+    """F10 (PM, 29-oct): si la cota de una tasa no significativa (`growth_rate(...)["bound"]`) ya decide el tramo de una
+    puntuación monótona, el valor con el que puntuar (la cota); si no, None (sigue no significativo).
+
+    `bounds`: los límites de los tramos de la puntuación, del mejor al peor. Con mejor = más alto (crecimiento, regla
+    de 40), `bounds` es descendente y el tramo es el primero con valor ≥ límite; con mejor = más bajo (PEG), ascendente
+    y el primero con valor ≤ límite. Una cota superior solo decide el peor tramo si mejor = más alto (el valor real es
+    aún menor), y el mejor si mejor = más bajo; una cota inferior, al revés."""
+    if not bound or bound.get("value") is None or not bounds:
+        return None
+    v, up = bound["value"], bound.get("direction") == "superior"
+    if higher_is_better:
+        if up and v < bounds[-1]:
+            return v            # aun en la cota, por debajo del último límite: el peor tramo
+        if not up and v >= bounds[0]:
+            return v            # ya en la cota, por encima del primero: el mejor tramo
+    else:
+        if up and v <= bounds[0]:
+            return v
+        if not up and v > bounds[-1]:
+            return v
+    return None
 
 
 def per_share(values: List[Optional[float]], shares: List[Optional[float]]) -> List[Optional[float]]:

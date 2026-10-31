@@ -1645,3 +1645,5 @@ git commit -m "E1: registro de la etapa y verificación de la web actual intacta
 | **E4 · Portada, móvil y oscuro** | Spec §3.5–3.6: portada con buscador y tendencias en pestañas, móvil al mismo nivel, oscuro completo | Revisión en el teléfono del usuario (`/v2` publicado oculto solo si lo pide) |
 | **E5 · PDF** | Spec §3.7: reportlab rediseñado con índice enlazado, marcadores, escalas, gráfica, hueco máximo comprobado | Revisión de 4 PDF |
 | **E6 · Cambio** | `/v2` → principal; antigua de respaldo; `frontend/out` recompilado con `npm run build` en el checkout principal; Lighthouse sobre el build | "ok, pushea" |
+
+> **Evidencia fuera de `main` (E6, 31-oct):** las capturas (`docs/rediseno/capturas-*`), `docs/fiabilidad/f8_evidencia/` y los volcados JSON de escaneo y medida de `docs/` no están en `main`. Siguen en las ramas locales del rediseño y de la fiabilidad (`rediseno/v4-f8`) y en el archivo `v4_evidencia_8e4f3952.tar.gz` de `/Users/joseestebanroa/Downloads/finanzer_next-archivo`, fuera del repositorio.

@@ -6,6 +6,8 @@ York y en una sola sesión:
     cd finanzer_next/backend
     ../.venv313/bin/python tests/capture_history.py                # panel + local + ^GSPC y SPY → tests/fixtures/history/
     ../.venv313/bin/python tests/capture_history.py --dir /tmp/x AAPL
+    ../.venv313/bin/python tests/capture_history.py --chart AAPL JPM O NEE XOM PLTR RIVN BCS ^GSPC SPY \
+        XLK XLF VNQ XLU XLE XLY        # rediseño E2a: 5 años para la gráfica de /v2 → tests/fixtures/history/chart/
 
 Los fixtures del panel (14 y 15-oct) y del juego local (11 y 12-oct) son anteriores a la 2b y no traen esta serie.
 Se capturan aparte, con la misma llamada que hace producción (price_history.yfinance_fetcher: precios SIN ajustar
@@ -42,20 +44,32 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("symbols", nargs="*")
     ap.add_argument("--dir", default=hf.HISTORY_DIR)
+    ap.add_argument("--chart", action="store_true",
+                    help="rediseño E2a: la serie larga de la gráfica de /v2 (chart_period) en <dir>/chart")
+    ap.add_argument("--since", type=_dt.date.fromisoformat,
+                    help="V4b: desde esta fecha (AAAA-MM-DD; se descargan 10 años y se recorta). Para capturar días "
+                         "después del juego: el replay corta en la fecha de captura de cada ticker y la serie tiene que "
+                         "cubrir el periodo completo antes de ella (rentabilidad a 5 años)")
     args = ap.parse_args(argv)
+    if args.chart and not args.symbols:
+        ap.error("--chart necesita los símbolos (los 8 de verificación, ^GSPC, SPY y los ETF de sus sectores)")
     syms = [s.upper() for s in args.symbols] or default_symbols()
-    os.makedirs(os.path.join(args.dir, "series"), exist_ok=True)
+    sub = "chart" if args.chart else "series"
+    os.makedirs(os.path.join(args.dir, sub), exist_ok=True)
     H = cfg("market.history")
+    period = "10y" if args.since else H["chart_period"] if args.chart else H["period"]
     t0 = _dt.datetime.now(_dt.timezone.utc)
     report = {}
     for s in syms:
-        res = price_history._download(s, price_history.yfinance_fetcher)
+        res = price_history._download(s, price_history.yfinance_fetcher, period=period)
         f = res["frame"]
+        if f is not None and args.since:
+            f = f[[d.date() >= args.since for d in f.index]]
         if f is None:
             report[s] = {"status": "sin_dato", "reason": res["reason"]}
             print(f"[{s}] SIN DATO: {res['reason']}")
             continue
-        hf.save(s, f, args.dir)
+        hf.save(s, f, args.dir, sub)
         divs = int((f["dividend"] > 0).sum())
         splits = {d.strftime("%Y-%m-%d"): float(x) for d, x in f["split"].items() if x}
         report[s] = {"status": "ok", "rows": len(f), "first": f.index[0].strftime("%Y-%m-%d"),
@@ -70,12 +84,12 @@ def main(argv=None):
             "captured_until_utc": _dt.datetime.now(_dt.timezone.utc).isoformat(timespec="seconds"),
             "source": "Yahoo Finance vía yfinance Ticker.history(auto_adjust=False, actions=True): precios sin ajustar "
                       "por dividendos, cierre ajustado, dividendos y splits (price_history.yfinance_fetcher)",
-            "period": H["period"], "interval": H["interval"],
+            "period": period, "since": args.since.isoformat() if args.since else None, "interval": H["interval"],
             "versions": {"python": platform.python_version(), "yfinance": yfinance.__version__,
                          "pandas": pandas.__version__},
             "replay": "cada serie se corta en la fecha de captura del ticker analizado (fixture_backend)",
             "symbols": report}
-    path = os.path.join(args.dir, "metadata.json")
+    path = os.path.join(args.dir, "chart", "metadata.json") if args.chart else os.path.join(args.dir, "metadata.json")
     if os.path.isfile(path) and args.symbols:
         with open(path, encoding="utf-8") as fh:
             old = json.load(fh)

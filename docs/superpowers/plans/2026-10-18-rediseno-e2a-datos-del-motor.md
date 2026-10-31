@@ -761,3 +761,5 @@ interface Extended {
 - [ ] **Step 2:** suite completa del backend, `npm run check`, `test:v2`, `e2e:v2` (escritorio y móvil), axe, y las 32 capturas regeneradas en `docs/rediseno/capturas-e2a/`.
 - [ ] **Step 3:** `docs/rediseno/E2A_REGISTRO.md`: commits, salidas literales de verificación, desviaciones con su motivo, lo que se ve nuevo en `/v2` por ticker, y pendientes para E2b/E3.
 - [ ] **Step 4: PARADA final.** Presenta al PM (el planificador) el registro y las capturas; el PM revisa y lo lleva al usuario. Sin push ni merge.
+
+> **Evidencia fuera de `main` (E6, 31-oct):** las capturas (`docs/rediseno/capturas-*`), `docs/fiabilidad/f8_evidencia/` y los volcados JSON de escaneo y medida de `docs/` no están en `main`. Siguen en las ramas locales del rediseño y de la fiabilidad (`rediseno/v4-f8`) y en el archivo `v4_evidencia_8e4f3952.tar.gz` de `/Users/joseestebanroa/Downloads/finanzer_next-archivo`, fuera del repositorio.

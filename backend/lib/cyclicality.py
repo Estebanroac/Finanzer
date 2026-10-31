@@ -27,6 +27,7 @@ Un cambio de perímetro no es un ciclo: la serie se corta en los ejercicios con 
 
 Funciones puras: el clasificador (lib/classify.py) decide con ellas y los umbrales de config (sectors.archetypes).
 """
+import datetime as _dt
 from typing import Any, Dict, List, Optional, Tuple
 
 from historical_metrics import cagr
@@ -41,10 +42,24 @@ def fiscal_years_between(e0: str, e1: str) -> int:
     return int(round((d1 - d0).days / 365.25))
 
 
+def fy_label(end: str) -> str:
+    """V7 (M2/M6): "FY2022" a partir de la fecha de cierre. Un ejercicio de 52/53 semanas que cierra en la primera
+    semana de enero es del año anterior (JNJ: FY2022 → 2023-01-01)."""
+    from datetime import date
+    d = date.fromisoformat(str(end)[:10])
+    return f"FY{d.year - 1 if (d.month == 1 and d.day <= 7) else d.year}"
+
+
 def _series(hist: Dict[str, Any], field: str) -> List[Tuple[str, float]]:
     """[(fin de ejercicio, valor)] del más antiguo al más reciente."""
     vals = ((hist or {}).get(field) or {}).get("values") or []
     return sorted(((v["fy_end"], float(v["value"])) for v in vals if v.get("value") is not None), key=lambda x: x[0])
+
+
+def _shares(hist: Dict[str, Any]) -> List[Tuple[str, float]]:
+    """Acciones diluidas medias: solo las positivas. V2 (fuentes reales): una cuenta de 0 acciones (CEG, el ejercicio
+    antes de su escisión en 2022) es un dato vacío, no un divisor: dividía por cero y tumbaba el análisis."""
+    return [(e, v) for e, v in _series(hist, "diluted_shares") if v > 0]
 
 
 def _align(a: List[Tuple[str, float]], b: List[Tuple[str, float]]) -> List[Tuple[str, float, float]]:
@@ -67,7 +82,7 @@ def share_breaks(hist: Dict[str, Any], thr: float) -> List[str]:
     """Ejercicios en que las acciones diluidas medias crecen al menos `thr` frente al anterior: ruptura del capital
     (conversión de preferentes en la salida a bolsa, fusión pagada en acciones). Antes de ella, el BPA y los ingresos
     por acción no son comparables con los de después."""
-    sh = _series(hist, "diluted_shares")
+    sh = _shares(hist)
     return [e for (_e0, a), (e, b) in zip(sh, sh[1:]) if a > 0 and b >= (1.0 + thr) * a]
 
 
@@ -166,7 +181,7 @@ def measure(hist: Dict[str, Any]) -> Dict[str, Any]:
     de ingresos, desplomes del BPA con caída de ingresos, ejercicios de perímetro y las medidas del diseño original."""
     C = cfg("sectors.archetypes.cyclicality")
     rev = _series(hist, "revenue")
-    shares = _series(hist, "diluted_shares")
+    shares = _shares(hist)
     cuts = perimeter_years(hist, C["discontinued_material_share"])
     out: Dict[str, Any] = {"years": len(rev), "first": rev[0][0] if rev else None, "last": rev[-1][0] if rev else None,
                            "basis": "agregado", "shares_cagr": None, "perimeter_years": cuts,
@@ -229,7 +244,7 @@ def classify_history(hist: Dict[str, Any], thresholds: Optional[Dict[str, float]
 
 def _measure_with(hist: Dict[str, Any], C: Dict[str, Any]) -> Dict[str, Any]:
     rev = _series(hist, "revenue")
-    sh = _align(rev, _series(hist, "diluted_shares"))
+    sh = _align(rev, _shares(hist))
     cuts = perimeter_years(hist, C["discontinued_material_share"])
     if len(sh) >= 2 and sh[0][2] > 0 and sh[-1][2] > 0:
         n = fiscal_years_between(sh[0][0], sh[-1][0])
@@ -248,7 +263,7 @@ def growth_profitable_measures(hist: Dict[str, Any]) -> Dict[str, Any]:
     """CAGR de los ingresos POR ACCIÓN a 3 y 5 años (acciones diluidas medias) de la historia; sin acciones, agregado.
     Solo desde la última ruptura del capital (share_breaks): a través de ella el cociente no es comparable."""
     rev = _series(hist, "revenue")
-    sh = _align(rev, _series(hist, "diluted_shares"))
+    sh = _align(rev, _shares(hist))
     brk = share_breaks(hist, cfg("sectors.archetypes.cyclicality.share_break"))
     if brk:
         sh = [x for x in sh if x[0] >= brk[-1]]
@@ -257,12 +272,31 @@ def growth_profitable_measures(hist: Dict[str, Any]) -> Dict[str, Any]:
     out = {"basis": basis, "revenue_ps_cagr_3y": None, "revenue_ps_cagr_5y": None, "share_break": brk[-1] if brk else None}
     # T7: el ejercicio de hace exactamente N años, por la fecha de cierre (una serie con huecos no cuenta puntos).
     if pts:
+        from historical_metrics import robust_growth
         e1, v1 = pts[-1]
         by_n = {fiscal_years_between(e, e1): v for e, v in pts}
+        long = {"values": [{"fy_end": e, "value": v} for e, v in pts]}
         for n, key in ((3, "revenue_ps_cagr_3y"), (5, "revenue_ps_cagr_5y")):
             v0 = by_n.get(n)
             if v0 is not None and v0 > 0 and v1 > 0:
-                out[key] = cagr(v1, v0, n)
+                # F10 · crecimiento desde una base anómala: el tipo no se decide con una tasa que dependa del año
+                # anómalo (regresión con la serie larga de la propia historia, o sin tasa).
+                r = robust_growth([by_n.get(k) for k in range(n + 1)], n, what="ingresos por acción",
+                                  strict_ends_only=True, long=long, end=e1)
+                out[key] = r["value"]
+                if r.get("anomalous_base"):
+                    out[key.replace("revenue_ps_cagr", "method")] = {k: r.get(k)
+                                                                     for k in ("method", "robust", "note", "reason")}
+                if out[key] is None:
+                    continue
+                # V7 (M2): los ejercicios de la ventana, para que el texto diga su periodo ("FY2022–FY2025"); con la
+                # serie larga, los de la regresión y cuántos son (classify.growth_span lo dice).
+                if r.get("method") == "log_lineal_edgar":
+                    out[key.replace("revenue_ps_cagr", "window")] = r.get("window")
+                    out[key.replace("revenue_ps_cagr", "years")] = r.get("years_used")
+                    continue
+                e0 = next(e for e, v in pts if fiscal_years_between(e, e1) == n)
+                out[key.replace("revenue_ps_cagr", "window")] = f"{fy_label(e0)}–{fy_label(e1)}"
     return out
 
 
@@ -270,7 +304,7 @@ def revenue_ps_cagr_long(hist: Dict[str, Any], max_years: int = 10, min_years: i
     """CAGR de los ingresos por acción en la ventana más larga disponible de `min_years` a `max_years` años, desde la
     última ruptura del capital (fase 3, T3: segunda referencia del DCF inverso, §8.1). Sin acciones, agregado."""
     rev = _series(hist or {}, "revenue")
-    sh = _align(rev, _series(hist or {}, "diluted_shares"))
+    sh = _align(rev, _shares(hist or {}))
     brk = share_breaks(hist or {}, cfg("sectors.archetypes.cyclicality.share_break"))
     if brk:
         sh = [x for x in sh if x[0] >= brk[-1]]
@@ -292,18 +326,47 @@ def revenue_ps_cagr_long(hist: Dict[str, Any], max_years: int = 10, min_years: i
     return out
 
 
+def eps_mid_cycle(hist: Dict[str, Any], p0: str, p1: str) -> Dict[str, Any]:
+    """F8 (auditoría externa; PM, 27-oct-2026): crecimiento del BPA de ciclo medio entre los picos `p0` y `p1`.
+
+    Antes era el BPA de los dos picos de INGRESOS, y un pico de ventas puede ser un valle del BPA: SHEL 2015 (0,30 $,
+    caída del petróleo) daba +52 % anual. Ahora es el BPA medio de la primera mitad de los ejercicios del ciclo frente al
+    de la segunda (con un número impar, el central queda fuera), anualizado entre los centros de cada mitad. Las pérdidas
+    entran en la media, porque son parte del ciclo; ningún ejercicio aislado decide. Sin tasa si una mitad tiene menos
+    de `eps_half_min_years` ejercicios con BPA o si su media no es positiva."""
+    pts = [(e, v) for e, v in _series(hist, "diluted_eps") if p0 <= e <= p1]
+    k = len(pts) // 2
+    out: Dict[str, Any] = {"cagr": None, "reason": None, "halves": None}
+    if k < cfg("sectors.archetypes.cyclicality.eps_half_min_years"):
+        out["reason"] = "sin BPA en suficientes ejercicios de cada mitad del ciclo"
+        return out
+    a, b = pts[:k], pts[-k:]
+    ma, mb = sum(v for _e, v in a) / k, sum(v for _e, v in b) / k
+    ca = sum(_dt.date.fromisoformat(e).toordinal() for e, _v in a) / k
+    cb = sum(_dt.date.fromisoformat(e).toordinal() for e, _v in b) / k
+    years = (cb - ca) / 365.25
+    out["halves"] = {"first": [a[0][0], a[-1][0]], "second": [b[0][0], b[-1][0]], "mean_first": ma,
+                     "mean_second": mb, "years": years}
+    if ma <= 0 or mb <= 0:
+        out["reason"] = "el BPA medio de una mitad del ciclo no es positivo (pérdidas): no hay tasa de crecimiento"
+        return out
+    out["cagr"] = (mb / ma) ** (1 / years) - 1
+    return out
+
+
 def mid_cycle_growth(hist: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     """Crecimiento de ciclo medio con 10+ ejercicios (fase 3, T5; F3_DISENO §4): la tendencia entre los PICOS del
     ciclo, el ejercicio anterior a cada episodio de caída confirmado (sustituye a la cota −5%/+10%, que queda para la
     historia corta). Entre el primer y el último pico (al menos `min_cycle_years` años): un ciclo completo o más.
-    Misma base que la medida (por acción si las acciones crecieron). BPA: entre los mismos picos, si los dos son
-    positivos. Margen operativo de ciclo medio: la media de los ejercicios del ciclo. None sin dos picos."""
+    Misma base que la medida (por acción si las acciones crecieron). BPA: entre las medias de las dos mitades del
+    ciclo (F8, eps_mid_cycle; antes, en los dos picos de ingresos). Margen operativo de ciclo medio: la media de los
+    ejercicios del ciclo. None sin dos picos."""
     m = measure(hist)
     if (m.get("years") or 0) < cfg("sectors.archetypes.cyclicality.min_years"):
         return None
     rev = _series(hist, "revenue")
     if m["basis"] == "por_accion":
-        rev = [(e, r / s) for e, r, s in _align(rev, _series(hist, "diluted_shares"))]
+        rev = [(e, r / s) for e, r, s in _align(rev, _shares(hist))]
     rd = dict(rev)
     ends = [e for e, _v in rev]
     peaks = []
@@ -316,12 +379,12 @@ def mid_cycle_growth(hist: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     n = fiscal_years_between(p0, p1)
     if n < cfg("sectors.archetypes.cyclicality.min_cycle_years") or rd[p0] <= 0 or rd[p1] <= 0:
         return None
-    eps = dict(_series(hist, "diluted_eps"))
-    e0, e1 = eps.get(p0), eps.get(p1)
+    eps = eps_mid_cycle(hist, p0, p1)
     oi, rv = dict(_series(hist, "operating_income")), dict(_series(hist, "revenue"))
     window = [e for e in ends if p0 <= e <= p1]
     margins = [oi[e] / rv[e] for e in window if e in oi and rv.get(e)]
     return {"cagr": cagr(rd[p1], rd[p0], n), "from": p0, "to": p1, "years": n, "peaks": peaks, "basis": m["basis"],
-            "eps_cagr": cagr(e1, e0, n) if (e0 and e1 and e0 > 0 and e1 > 0) else None,
+            "eps_cagr": eps["cagr"], "eps_reason": eps["reason"], "eps_halves": eps["halves"],
+            "eps_method": "medias_de_mitades",
             "op_margin_mid_cycle": (sum(margins) / len(margins)) if margins else None,
             "margin_years": len(margins), "method": "pico_a_pico"}

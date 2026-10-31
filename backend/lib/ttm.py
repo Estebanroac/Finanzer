@@ -56,10 +56,17 @@ BALANCE_KEYS = {
     "inventory": "Inventory",
 }
 CASH_ROWS = ("Cash Cash Equivalents And Short Term Investments", "Cash And Cash Equivalents")
+# Escalera de márgenes de NFLX (30-oct): desglose del D&A del corte, para separar la amortización de intangibles que EDGAR
+# no respalda como intangibles adquiridos (lib/edgar_primary._da_reconcile). Fuera de FLOW_KEYS: no son campos del
+# análisis.
+DA_SPLIT_ROWS = {"total": "Depreciation And Amortization", "depreciation": "Depreciation",
+                 "amortization": "Amortization Of Intangibles"}
 # Fase 2b (T7): desglose del accionista ordinario (lib/ordinary.py). Fuera de FLOW_KEYS/BALANCE_KEYS: no son campos del
 # análisis sino las piezas con que se rehacen el beneficio neto y el patrimonio del ordinario del mismo corte.
 ORDINARY_FLOW_ROW = "Net Income Common Stockholders"
-ORDINARY_BALANCE_ROWS = {"commonStockEquity": "Common Stock Equity", "otherEquityInterest": "Other Equity Interest"}
+ORDINARY_BALANCE_ROWS = {"commonStockEquity": "Common Stock Equity", "otherEquityInterest": "Other Equity Interest",
+                         # F9 · R3: el tangible del mismo balance (P/TBV del banco con el balance del corte, como el P/B)
+                         "tangibleBookValue": "Tangible Book Value"}
 
 # Filas trimestrales que necesita la normalización (lib/normalize.py).
 QUARTERLY_ROWS = (
@@ -68,7 +75,16 @@ QUARTERLY_ROWS = (
     "Special Income Charges", "Other Special Charges", "Restructuring And Mergern Acquisition",
     "Gain On Sale Of Security", "Gain On Sale Of Ppe", "Gain On Sale Of Business", "Write Off",
     "Asset Impairment Charge", "Impairment Of Capital Assets", "Tax Effect Of Unusual Items",
+    # F10 · N1: la coherencia del beneficio con la operación (lib/normalize.coherence)
+    "Net Non Operating Interest Income Expense", "Earnings From Equity Interest",
+    # F10 · N1b: discontinuadas y participadas netas de impuestos (después del beneficio antes de impuestos)
+    "Net Income Discontinuous Operations", "Earnings From Equity Interest Net Of Tax", "Minority Interests",
 )
+
+# F10 · N2: del balance de cada trimestre, lo que pide la referencia de la industria sin la propia empresa a la fecha del
+# conjunto de Damodaran (lib/self_exclusion.py): deuda, caja, patrimonio y acciones.
+DATED_BALANCE_ROWS = {"totalDebt": ("Total Debt",), "cash": CASH_ROWS, "equity": ("Stockholders Equity",),
+                      "shares": ("Ordinary Shares Number", "Share Issued")}
 
 MIN_GAP_DAYS, MAX_GAP_DAYS = 80, 100     # un trimestre entre fechas consecutivas
 TTM_QUARTERS = 4                          # doce meses = cuatro trimestres (definición)
@@ -187,6 +203,11 @@ def build_ttm(q_inc, q_cf, q_bs) -> Dict[str, Any]:
                 continue
             out["values"][key] = sum(vals)
             out["quarter_min"][key] = min(vals)   # fase 1: el signo de un flujo no lo decide un trimestre atípico
+    cf_dates = frame_dates(q_cf)
+    if cut and cut in cf_dates:
+        sp = {k: _window(q_cf, cf_dates, cut, row) for k, row in DA_SPLIT_ROWS.items()}
+        if all(v is not None for v in sp.values()):
+            out["da_split"] = {k: sum(v) for k, v in sp.items()}
     bdates = frame_dates(q_bs)
     if cut and cut in bdates:
         i = bdates.index(cut)
@@ -229,6 +250,9 @@ def build_ttm(q_inc, q_cf, q_bs) -> Dict[str, Any]:
             ordn[key] = ((frame_series(q_bs, row, n=len(bdates))[bdates.index(cut):bdates.index(cut) + 1] or [None])[0]
                          if cut in bdates else None)
         out["ordinary"] = ordn
+    out["balances"] = {d: {k: next((v for v in ((frame_series(q_bs, r, n=len(bdates))[i:i + 1] or [None])[0]
+                                                for r in rows) if v is not None), None)
+                           for k, rows in DATED_BALANCE_ROWS.items()} for i, d in enumerate(bdates)}
     out["eps"] = _ttm_eps(q_inc, cut, out["values"].get("netIncome"))
     inc_dates = frame_dates(q_inc)
     k = inc_dates.index(cut) if cut and cut in inc_dates else len(inc_dates)

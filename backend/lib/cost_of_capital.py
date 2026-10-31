@@ -12,7 +12,11 @@ el que se muestra.
       FCX 8.91 + 0.47 + 1.11 = 10.49B). Los arrendamientos operativos no
       aparecen en esa fila (NFLX, V) y no se añaden.
   Ke  CAPM: Rf + β ajustada (Blume: 0.67·β bruta + 0.33) × prima implícita de
-      Damodaran (config, con fuente y fecha).
+      Damodaran (config, con fuente y fecha), con PISOS (F8 · E1): Ke ≥ Rf + 0,5 × ERP
+      y, con deuda, Ke ≥ Kd + 1 pp (`equity_cost`). Un solo Ke por análisis: el del
+      WACC, el del P/B justificado (FINANCIAL, UTILITY) y el del DCF del REIT.
+      F9 · R1: más la prima de riesgo país ponderada por dónde opera la empresa
+      (lib/country_risk.py), antes de los pisos.
   Kd  Rf + spread del rating sintético por cobertura de intereses (tabla de
       Damodaran, grandes y pequeñas por capitalización). Regla M: cobertura no
       significativa (EBIT < 0 con caja neta) -> tramo de caja neta; EBIT < 0 con
@@ -20,13 +24,15 @@ el que se muestra.
   t   tasa efectiva = provisión de impuestos / beneficio antes de impuestos,
       acotada; con BAI <= 0 o sin dato, el tipo legal. La misma t entra en el
       NOPAT del ROIC.
-  Rf  rendimiento del Tesoro a 10 años (^TNX) con caché de 24 h; si no hay
-      lectura válida, el valor de config, marcado.
+  Rf  F8 · E1: el del par Rf–ERP de config (Damodaran, la misma fecha que la
+      prima: `capm_rates`). El ^TNX del día (caché de 24 h) queda como referencia
+      y avisa si se aleja del par (hay que actualizarlo).
 
 El WACC se acota a un ÚNICO rango (valuation.wacc.clamp_min/max). FINANCIAL no
 usa WACC (se valora por P/B justificado con Ke); REIT tiene WACC (spread) pero
 no DCF.
 """
+import contextvars
 import datetime as _dt
 import time
 from typing import Any, Dict, Optional
@@ -34,6 +40,8 @@ from typing import Any, Dict, Optional
 from settings import cfg
 
 _RF_CACHE: Dict[str, Any] = {}
+# F8 · E1: desplazamiento del Ke de la prueba de sensibilidad (lib/ke_sensitivity.py); 0 en el análisis normal.
+KE_SHIFT: contextvars.ContextVar = contextvars.ContextVar("ke_shift", default=0.0)
 
 
 def reset_cache() -> None:
@@ -74,7 +82,26 @@ def risk_free(now: Optional[float] = None) -> Dict[str, Any]:
     if got and why is None:
         why = f"lectura fuera de rango ({got['value']:.2%})"
     return {"value": C["risk_free_rate"], "source": "config", "as_of": None, "fallback": True,
-            "reason": f"{C['risk_free_ticker']} no disponible ({why}): valor de config"}
+            # V7 (M4): para el lector, qué falta y qué se usa (no el símbolo de Yahoo ni "config").
+            "reason": (f"el rendimiento del bono del Tesoro de EE. UU. a 10 años no está disponible ({why}): se usa "
+                       f"el valor de referencia del modelo, {C['risk_free_rate']:.2%}")}
+
+
+def capm_rates(now: Optional[float] = None) -> Dict[str, Any]:
+    """F8 · E1: Rf y ERP de la MISMA fecha (el par de config, Damodaran) para el Ke, el Kd y el WACC. El ^TNX del día
+    (`risk_free`) va en `market` como referencia; si se aleja del par más de `pair_drift_warning`, `reason` lo dice.
+    Antes: el Rf del día (4,99 % el 26-oct) con una ERP calculada con otro Rf (5,29 % el 1-oct)."""
+    C = cfg("valuation.capm")
+    live = risk_free(now)
+    market = None if live.get("fallback") else {"value": live["value"], "source": live["source"],
+                                                  "as_of": live.get("as_of")}
+    out = {"value": C["risk_free_rate"], "erp": C["market_risk_premium"], "source": "par Rf–ERP de Damodaran",
+           "as_of": C["pair_as_of"], "fallback": False, "reason": None, "market": market}
+    if market is not None and abs(market["value"] - C["risk_free_rate"]) > C["pair_drift_warning"]:
+        out["reason"] = (f"el bono a 10 años cotiza hoy al {market['value']:.2%}, a más de "
+                         f"{C['pair_drift_warning'] * 100:.1f} pp del Rf del par ({C['risk_free_rate']:.2%} a "
+                         f"{C['pair_as_of']}): el par Rf–ERP debe actualizarse")
+    return out
 
 
 def effective_tax_rate(pretax: Optional[float], tax: Optional[float], period: str = "") -> Dict[str, Any]:
@@ -135,21 +162,58 @@ def cost_of_equity(beta: Optional[float], rf: float, preadjusted: bool = False) 
     return rf + adjusted_beta(beta, preadjusted) * cfg("valuation.capm.market_risk_premium")
 
 
+def cost_of_debt(rf: float, market_cap: Optional[float], total_debt: Optional[float],
+                 interest_coverage: Optional[float], coverage_state: Optional[str]) -> Optional[Dict[str, Any]]:
+    """Kd = Rf + spread del rating sintético; None sin deuda (o sin capitalización para la tabla)."""
+    if not market_cap or market_cap <= 0 or not (total_debt is not None and total_debt > 0):
+        return None
+    rt = synthetic_rating(interest_coverage, market_cap, coverage_state)
+    return {"value": rf + rt["spread"], "rating": rt}
+
+
+def equity_cost(beta: Optional[float], rf: float, kd: Optional[float] = None,
+                preadjusted: bool = False, crp: float = 0.0) -> Dict[str, Any]:
+    """F8 · E1: Ke = máx(CAPM + CRP, Rf + ke_floor_erp_multiple × ERP, Kd + ke_floor_over_kd). El accionista es
+    residual: su coste no queda por debajo del de la deuda ni de medio mercado (Damodaran; la auditoría del 26-oct: AWK
+    Ke 5,14 % < Kd 5,88 %). `floor` dice qué piso manda, si alguno. En la prueba de sensibilidad se suma KE_SHIFT.
+    F9 · R1: `crp` es la prima de riesgo país ya ponderada y con su λ (lib/country_risk.py); los pisos van después,
+    sobre el Ke con la prima. `capm` sigue siendo el CAPM sin ella."""
+    C = cfg("valuation.capm")
+    capm = cost_of_equity(beta, rf, preadjusted)
+    base = capm + crp
+    floors = [("Rf + {:g} × ERP".format(C["ke_floor_erp_multiple"]), rf + C["ke_floor_erp_multiple"] *
+               C["market_risk_premium"])]
+    if kd is not None:
+        floors.append(("Kd + {:g} pp".format(C["ke_floor_over_kd"] * 100), kd + C["ke_floor_over_kd"]))
+    name, top = max(floors, key=lambda f: f[1])
+    value = max(base, top)
+    shift = KE_SHIFT.get()
+    return {"value": value + shift, "capm": capm, "crp": crp or None, "shift": shift or None,
+            "floor": {"rule": name, "value": top, "capm": capm, "crp": crp or None} if top > base else None,
+            "floors": {n: v for n, v in floors}}
+
+
 def wacc(*, beta: Optional[float], rf: Dict[str, Any], market_cap: Optional[float],
          total_debt: Optional[float], interest_coverage: Optional[float],
-         coverage_state: Optional[str], tax: Dict[str, Any], beta_preadjusted: bool = False) -> Dict[str, Any]:
-    """WACC ponderado con todos sus componentes (lo mostrado es lo usado: `value`)."""
+         coverage_state: Optional[str], tax: Dict[str, Any], beta_preadjusted: bool = False,
+         ke: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """WACC ponderado con todos sus componentes (lo mostrado es lo usado: `value`). `ke`: el de `equity_cost` del
+    análisis (uno solo); sin él, se calcula aquí con los mismos pisos."""
     C, W = cfg("valuation.capm"), cfg("valuation.wacc")
     b = beta if beta is not None else C["default_beta"]
     pre = beta_preadjusted and beta is not None
-    ke = cost_of_equity(b, rf["value"], pre)
+    kd_info = cost_of_debt(rf["value"], market_cap, total_debt, interest_coverage, coverage_state)
+    if ke is None:
+        ke = equity_cost(b, rf["value"], kd_info and kd_info["value"], pre)
     out: Dict[str, Any] = {
         "value": None, "raw": None, "clamped": False, "bounds": [W["clamp_min"], W["clamp_max"]],
-        "ke": ke, "beta": adjusted_beta(b, pre), "beta_raw": None if pre else b,
-        "beta_method": "beta del sector (sin Blume)" if pre else "Blume",
+        "ke": ke["value"], "ke_capm": ke["capm"], "ke_crp": ke.get("crp"), "ke_floor": ke["floor"],
+        "ke_shift": ke.get("shift"),
+        "beta": adjusted_beta(b, pre), "beta_raw": None if pre else b,
+        "beta_method": "beta de abajo hacia arriba (sin Blume)" if pre else "Blume",
         "beta_default": beta is None, "rf": rf["value"], "rf_source": rf["source"],
         "rf_fallback": rf["fallback"], "rf_reason": rf.get("reason"), "rf_as_of": rf.get("as_of"),
-        "mrp": C["market_risk_premium"], "kd": None, "kd_after_tax": None, "rating": None,
+        "rf_market": rf.get("market"), "mrp": C["market_risk_premium"], "kd": None, "kd_after_tax": None, "rating": None,
         "tax_rate": tax["rate"], "tax_source": tax["source"], "tax_reason": tax.get("reason"),
         "equity": market_cap, "debt": total_debt, "weights": None, "reason": None,
     }
@@ -158,11 +222,10 @@ def wacc(*, beta: Optional[float], rf: Dict[str, Any], market_cap: Optional[floa
         return out
     d = total_debt if (total_debt is not None and total_debt > 0) else 0.0
     we, wd = market_cap / (market_cap + d), d / (market_cap + d)
-    raw = we * ke
-    if d > 0:
-        rt = synthetic_rating(interest_coverage, market_cap, coverage_state)
-        kd = rf["value"] + rt["spread"]
-        out.update(rating=rt, kd=kd, kd_after_tax=kd * (1 - tax["rate"]))
+    raw = we * ke["value"]
+    if kd_info is not None:
+        kd = kd_info["value"]
+        out.update(rating=kd_info["rating"], kd=kd, kd_after_tax=kd * (1 - tax["rate"]))
         raw += wd * out["kd_after_tax"]
     value = min(W["clamp_max"], max(W["clamp_min"], raw))
     out.update(value=value, raw=raw, clamped=value != raw, weights={"equity": we, "debt": wd})

@@ -88,7 +88,8 @@ def _styles():
 # Etapa 9b: los lectores y todo lo que se lee de cada métrica viven en lib/display.py
 # (capa de presentación compartida con la web). Se reexportan aquí por compatibilidad.
 from display import (  # noqa: E402,F401
-    DE_NOT_APPLICABLE, build_display, fv, join_sentences, price_tone, quality_tone, read_beta, read_buyback,
+    DE_NOT_APPLICABLE, build_display, contraction_text, fv, join_sentences, price_tone, quality_tone, read_beta,
+    read_buyback,
     read_coverage, read_current, read_de, read_fcf_yield, read_graham, read_growth, read_nde, read_payout,
     read_pe, read_pos52, read_roe, read_runway, read_spread, read_upside, read_vs_sector,
 )
@@ -196,6 +197,15 @@ class _ScaleMark(Flowable):
 
     def draw(self):
         _declare_scale(self.canv, self._tag, 1.0)
+
+
+_BORDER_TAIL = ": un cambio pequeño en los datos o en los supuestos cambiaría el nivel"
+
+
+def _short_border(text):
+    """F8 · E2: la frase de frontera sin su explicación genérica (igual en todos los informes y completa en el resto
+    del informe), para la portada y el resumen, donde no cabe con dos fronteras."""
+    return text.replace(_BORDER_TAIL, "") if text else text
 
 
 class _ShrinkFrame(KeepInFrame):
@@ -399,7 +409,9 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     profile = analysis.get("profile", {}) or {}
     symbol = analysis.get("symbol", "")
     name = profile.get("name") or symbol
-    sector = profile.get("sector") or "—"
+    _es = D.get("profile") or {}            # V7: sector e industria en español
+    sector = _es.get("sector") or profile.get("sector") or "—"
+    industry = _es.get("industry") or profile.get("industry") or "—"
     archetype = D["archetype"]
 
     doc = BaseDocTemplate(buf, pagesize=letter,
@@ -488,7 +500,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         Spacer(1, 8),
         Paragraph(
             f"<b>{_esc(symbol)}</b>&nbsp;&nbsp;·&nbsp;&nbsp;{_esc(sector)}&nbsp;&nbsp;·&nbsp;&nbsp;"
-            f"{_esc(profile.get('industry') or '—')}&nbsp;&nbsp;·&nbsp;&nbsp;{_esc(profile.get('exchange') or '')}"
+            f"{_esc(industry)}&nbsp;&nbsp;·&nbsp;&nbsp;{_esc(profile.get('exchange') or '')}"
             f"&nbsp;&nbsp;·&nbsp;&nbsp;Corte al {_fecha_es()}",
             ParagraphStyle('csub', fontName='Helvetica', fontSize=9.5, leading=13, textColor=MUTED)),
     ]
@@ -524,7 +536,10 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
                            ParagraphStyle('heronum', fontName='Helvetica-Bold', leading=36, alignment=TA_CENTER))],
                 [chip(sb['level'] or "sin dato", sb['tone'], size=8.4)]]
         if sb['note']:
-            rows.append([Paragraph(f"<font size='6.4' color='{AMBER.hexval()}'><b>{_esc(sb['note'])}</b></font>",
+            # F8 · E2: en la tarjeta de la portada, la frontera sin su explicación genérica (igual en todos los
+            # informes y completa en el resto del informe): con las dos notas de frontera la portada no cabía.
+            _sn = _short_border(sb['note'])
+            rows.append([Paragraph(f"<font size='6.4' color='{AMBER.hexval()}'><b>{_esc(_sn)}</b></font>",
                                    ParagraphStyle('sln', leading=8.2, alignment=TA_CENTER, spaceBefore=3))])
         t = Table(rows, colWidths=[_sl_w])
         t.setStyle(TableStyle([('ALIGN', (0, 0), (-1, -1), 'CENTER'),
@@ -690,7 +705,8 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     n_red, n_warn, n_str = _ac["red_flags"], _ac["warnings"], _ac["strengths"]
     _bal_line = (f"<font color='{BRAND_TXT.hexval()}'><b>{n_str}</b> fortaleza{'s' if n_str != 1 else ''}</font>"
                  f"&nbsp;&nbsp;·&nbsp;&nbsp;<font color='{AMBER.hexval()}'><b>{n_warn}</b> advertencia{'s' if n_warn != 1 else ''}</font>"
-                 f"&nbsp;&nbsp;·&nbsp;&nbsp;<font color='{RED.hexval()}'><b>{n_red}</b> riesgo{'s' if n_red != 1 else ''}</font>")
+                 f"&nbsp;&nbsp;·&nbsp;&nbsp;<font color='{RED.hexval()}'><b>{n_red}</b> riesgo{'s' if n_red != 1 else ''}</font>"
+                 + (f" ({_esc(_ac['unmeasured'])})" if _ac.get("unmeasured") else ""))
     # Fase 1 (T4): cada mitad ocupa CW/2; su ancho interior descuenta el relleno de la celda (12 + 9), y la tabla
     # de barras cabe exacta en él (antes era 12 pt más ancha que su celda y recortaba las cifras de la derecha).
     _cpad_l, _cpad_r = 12, 9
@@ -701,13 +717,17 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
 
     def _head(blk):
         tone = blk["tone"]
-        return [Paragraph(f"<font size='6.8' color='#77777f'><b>{blk['title']}</b></font><br/>"
-                          f"<font size='17' color='{TONE_COLOR[tone].hexval()}'><b>"
-                          f"{blk['score'] if blk['score'] is not None else '—'}</b></font><font size='9' color='#a5a5ac'>/100</font>"
-                          f"&nbsp;&nbsp;<font size='8.4' color='{TONE_COLOR[tone].hexval()}'><b>{_esc(blk['level'] or 'sin dato')}</b></font>"
-                          + (f"<br/><font size='6.8' color='{AMBER.hexval()}'>{_esc(blk['note'])}</font>"
-                             if blk['note'] else ""),
-                          ParagraphStyle('cph', leading=13)), "", ""]
+        head = Paragraph(f"<font size='6.8' color='#77777f'><b>{blk['title']}</b></font><br/>"
+                         f"<font size='17' color='{TONE_COLOR[tone].hexval()}'><b>"
+                         f"{blk['score'] if blk['score'] is not None else '—'}</b></font><font size='9' color='#a5a5ac'>/100</font>"
+                         f"&nbsp;&nbsp;<font size='8.4' color='{TONE_COLOR[tone].hexval()}'><b>{_esc(blk['level'] or 'sin dato')}</b></font>",
+                         ParagraphStyle('cph', leading=13))
+        if not blk['note']:
+            return [head, "", ""]
+        # F10 · N6: la nota con el interlineado de su cuerpo (no el de la cifra grande): la de persistencia ocupa dos
+        # líneas desde que nombra sus dos umbrales, y con 13 pt la página 2 de NFLX se encogía por debajo de 0.85.
+        return [[head, Paragraph(f"<font size='6.8' color='{AMBER.hexval()}'>{_esc(blk['note'])}</font>",
+                                 ParagraphStyle('cpn', leading=8.6))], "", ""]
 
     def _bar_row(r):
         if r["kind"] == "nc":
@@ -759,7 +779,8 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     def _exec_cell(label, text):
         return Paragraph(
             f"<font size='6.6' color='{BRAND_TXT.hexval()}'><b>{_esc(label)}</b></font><br/>{_esc(text)}", _exc_st)
-    exec_items = [(e["label"], e["text"]) for e in SM["exec_items"]]
+    # F8 · E2/E8: el resumen de la página 2 también lleva la frontera en forma corta (con ella entera no cabía).
+    exec_items = [(e["label"], _short_border(e["text"])) for e in SM["exec_items"]]
     _pairs = [exec_items[i:i + 2] for i in range(0, len(exec_items), 2)]
     _grid = []
     for pr in _pairs:
@@ -924,7 +945,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         story.append(Paragraph(_esc(f"{_q['label']}. {_q['text']}"), S['small']))
 
     story.append(Spacer(1, 8))
-    story.append(Paragraph("Cifras del ejercicio", S['h2']))
+    story.append(Paragraph(_esc(P.get("figures_title") or "Cifras de los estados financieros"), S['h2']))
     story.append(data_table(
         ["CONCEPTO", "VALOR", "CONCEPTO", "VALOR"], P["figures"],
         [2.05 * inch, 1.55 * inch, 2.05 * inch, CW - 5.65 * inch],
@@ -1120,7 +1141,8 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     story.append(Spacer(1, 12))
     story.extend(section_header("06", "Alertas y señales", S))
     story.append(Paragraph(
-        f"<font color='{RED.hexval()}'><b>{n_red}</b> riesgo{'s' if n_red != 1 else ''}</font>&nbsp;&nbsp;·&nbsp;&nbsp;"
+        f"<font color='{RED.hexval()}'><b>{n_red}</b> riesgo{'s' if n_red != 1 else ''}</font>"
+        + (f" ({_esc(_ac['unmeasured'])})" if _ac.get("unmeasured") else "") + "&nbsp;&nbsp;·&nbsp;&nbsp;"
         f"<font color='{AMBER.hexval()}'><b>{n_warn}</b> advertencia{'s' if n_warn != 1 else ''}</font>&nbsp;&nbsp;·&nbsp;&nbsp;"
         f"<font color='{BRAND_TXT.hexval()}'><b>{n_str}</b> fortaleza{'s' if n_str != 1 else ''}</font>",
         ParagraphStyle('alsum', fontName='Helvetica', fontSize=9.5, leading=13, spaceAfter=6)))
@@ -1184,8 +1206,8 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         "<b>Metodología.</b> Este informe combina " + D["methodology"]["ratios_text"] + " (fuente: Yahoo Finance) con "
         + D["methodology"]["models_text"] + " y "
         "dos puntuaciones Finanzer de 0 a 100: calidad del negocio (solidez, rentabilidad, calidad de ganancias y "
-        "crecimiento) y atractivo del precio (valoración por múltiplos y DCF, contraída hacia 50 según la confianza "
-        "del veredicto). Las lecturas se generan automáticamente según "
+        "crecimiento) y atractivo del precio (valoración por múltiplos y DCF, " + contraction_text()
+        + "). Las lecturas se generan automáticamente según "
         "la banda en la que cae cada indicador frente a umbrales canónicos y a la referencia de su industria en su "
         "región (agregados de A. Damodaran, NYU Stern), o la del mercado amplio cuando el arquetipo de la empresa "
         "contradice a su sector.",

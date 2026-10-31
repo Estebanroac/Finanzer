@@ -98,7 +98,7 @@ export default function Navbar({ symbol }: { symbol?: string }) {
 
         {/* Logo */}
         <Link href="/" prefetch={false} className="shrink-0 group flex items-center gap-2">
-          <img src="/logo.png" alt="Finanzer" className="h-7 w-auto" />
+          <img src="/brand/finanzer-logo.svg" alt="Finanzer" className="h-7 w-auto" />
           <span className="text-[15px] font-bold text-white tracking-tight group-hover:text-[#0cc06c] transition-colors">
             Finanzer
           </span>

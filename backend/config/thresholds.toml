@@ -8,6 +8,12 @@ base = 10
 min = 0
 max = 20
 
+[score.category_labels]             # V7 (PM): cómo se escribe cada categoría al enseñarla (web e informe). Las claves son
+# las del motor (financial_ratios, [score.quality]/[score.price] categories, persistence): no cambian. Sin entrada, la
+# categoría se enseña con su clave.
+"Solidez Financiera" = "Solidez financiera"
+"Calidad de Ganancias" = "Calidad de ganancias"
+
 [score.coverage]                    # etapa 5: cobertura por categoría
 # Una categoría con menos del 60% de sus componentes con dato se marca de baja
 # confianza (no cambia el score; lo usará la etapa 8). Criterio: con 3-5
@@ -18,7 +24,14 @@ low_confidence_below = 0.6
 min_conclusive = 0.5
 
 [score.solidez]                     # score_solidez_financiera
-altman_points = [6, -2, -6]         # SAFE / GREY / DISTRESS
+# SAFE / GREY / DISTRESS. F8 · E10 (auditoría del 26-oct, peso en el score; aprobado por el PM el 27-oct): antes
+# [6, -2, -6], el mayor componente de Solidez. Fuera de la muestra original su poder discriminante cae: AUC ≈ 0,75
+# (Altman, Iwanicz-Drozdowska, Laitinen y Suvas, 2017, «Financial Distress Prediction in an International Context: A
+# Review and Empirical Analysis of Altman's Z-Score Model», J. of International Financial Management & Accounting
+# 28(2); la auditoría la cita como «precisión de alrededor de 0,75»). La información por encima del azar es
+# 2·AUC − 1 = 0,5, así que el peso se reduce a la mitad: el mismo que la cobertura de intereses. «Referencial» (fuera
+# del denominador, F8 · E10 de las independientes), «no aplica» y «sin dato» siguen neutros.
+altman_points = [3, -1, -3]
 current_bounds = [2.0, 1.5, 1.0, 0.8]
 current_points = [4, 2, 0, -2, -4]
 de_mults = [0.5, 1.3, 1.6]          # × umbral D/E del sector (tramos: ≤0.5×, ≤1×, ≤1.3×, ≤1.6×)
@@ -28,7 +41,8 @@ de_mitigated_points = -2
 de_severe_points = -5
 coverage_bounds = [10, 5, 3, 1.5]
 coverage_points = [3, 1, 0, -2, -3]
-# Runway (GROWTH_PRE_PROFIT, sustituye a Altman con su mismo peso): años de
+# Runway (GROWTH_PRE_PROFIT, sustituye a Altman; nació con su mismo peso y lo conserva tras F8 · E10, porque la
+# rebaja de Altman es por su validez estadística fuera de muestra y el runway es caja medida, no un modelo): años de
 # (caja + inversiones a corto plazo) / quema anual de FCF. FCF TTM >= 0 =
 # autofinanciada = mejor tramo. >= 3 años aguanta un cierre de mercado de
 # capitales de unos 2 años (2022-23) con margen; 2-3, cómodo; 1-2, tendrá que
@@ -74,6 +88,15 @@ net_margin_bounds = [0.20, 0.10, 0.05]               # y luego ≥0 / <0
 net_margin_points = [3, 2, 0, -2, -3]
 spread_bounds = [0.10, 0.03, 0.0, -0.03]             # ROIC − WACC
 spread_points = [3, 2, 1, -1, -3]
+# F8 · E9 (auditoría del 26-oct): el diferencial ROIC − WACC manda: [límite, tope]. Por debajo de 0, Rentabilidad no pasa
+# de 10/20; por debajo de −3 pp, de 6/20.
+spread_caps = [[0.0, 10.0], [-0.03, 6.0]]
+# Márgenes frente a su industria de Damodaran, en puntos porcentuales (margen − agregado de la industria; ajuste del
+# PM: una ratio se amplifica con márgenes de industria pequeños). Tramos de los cuantiles de 69 casos (26 en vivo y
+# 43 golden): operativo p80 +19 pp, p60 +8, p40 +3, p20 −1; neto p80 +20, p60 +7, p40 +3, p20 −1. El último tramo
+# (por debajo del último límite, margen ≥ 0) y luego < 0. Sin el de la industria, las bandas absolutas.
+operating_margin_vs_industry_pp = [0.15, 0.05, -0.02, -0.08]
+net_margin_vs_industry_pp = [0.12, 0.04, -0.03]
 # Regla M (etapa 9a): ROIC no significativo si el capital invertido (patrimonio +
 # deuda − caja) es menor que esta fracción de los activos (la caja lo encoge).
 roic_min_invested_capital_share = 0.10
@@ -122,6 +145,10 @@ pe_value_points = [5, 3, 0, -2, -4]
 multiples_block = ["P/E", "Forward P/E", "P/FCF", "EV/EBITDA", "PEG"]
 multiples_block_max_by_members = [2, 4, 6]
 multiples_block_strong = 0.5        # |promedio normalizado| >= 0.5: severidad excellent / severe
+# F10 · N4 (revisión del informe de NVIDIA): P/E, Forward P/E y PEG dividen el mismo precio por el mismo BPA (el de doce
+# meses, el esperado o su crecimiento): un salto del BPA los mueve a la vez (NVDA: +1, +1, +1). En el bloque cuentan
+# como UN voto, la media de los que tengan dato; el máximo del bloque sale de los votos, no de los múltiplos.
+multiples_earnings_family = ["P/E", "Forward P/E", "PEG"]
 forward_compression_bounds = [0.25, 0.12, 0.05]   # (P/E − forward P/E) / P/E ≥
 forward_compression_points = [3, 2, 1]
 pfcf_value_bounds = [12, 18, 25, 35]
@@ -197,11 +224,19 @@ border_points = 2
 # de 10/20 (= 50: sin señales), así que 50 es el punto neutro de las dos escalas.
 [score.quality]                     # Calidad del negocio
 categories = ["Solidez Financiera", "Rentabilidad", "Calidad de Ganancias", "Crecimiento"]
-# Bandas (≥): excelente >= 80 (16/20 de media: casi todo en los tramos altos);
-# sólida 65–80 (claramente por encima del neutro); media 45–65 (alrededor del
-# neutro, con fortalezas y debilidades); débil < 45 (por debajo del neutro).
-bands = [80, 65, 45]
+# Bandas (≥): excelente >= 85; sólida 65–85 (claramente por encima del neutro); media 45–65 (alrededor del neutro,
+# con fortalezas y debilidades); débil < 45 (por debajo del neutro).
+# F8 · E11 (auditoría del 26-oct: 14 de 26 con 80 o más, «saturación»): «excelente» desde 85, el p75 de 68 casos
+# (las 26 de la auditoría en vivo y los 42 golden con calidad, ya con E9 en pp y la contracción por confianza baja; ver
+# tools/f8_quality_bands.py). Con 80, E9 y la contracción dejaban «excelente» en el 43 % (antes, 47 %): la banda alta
+# seguía siendo la más poblada. Con 85, el 25 %. Solo cambia la etiqueta: el codo de la persistencia sigue en 80
+# ([quality_persistence] knee).
+bands = [85, 65, 45]
 labels = ["excelente", "sólida", "media", "débil"]
+# F8 · E11 (auditoría del 26-oct): con confianza baja la calidad se contrae hacia el neutro (×0.85); con media o alta,
+# no (la convergencia de métodos es del precio).
+neutral = 50
+confidence_factor = { baja = 0.85 }
 
 [score.price]                       # Atractivo del precio (Valoración: múltiplos + DCF)
 categories = ["Valoración"]
@@ -222,13 +257,12 @@ max_per_group = 6
 years_ebitda_plural_from = 1.5      # "~2 años" vs "~1 año"
 
 [alerts.pe]
-premium_dev = 0.30                  # P/E > sector +30% ...
-premium_abs = 35                    # ... o P/E > 35x
+# F10 · B3: con referencia, la lectura del P/E, del EV/EBITDA, del ROE y de los márgenes es la de su fila (bandas de
+# thresholds.pdf.vs_sector_bounds, lib/vs_reference.py); sin referencia, solo los umbrales absolutos de abajo.
+premium_abs = 35                    # sin referencia: P/E > 35x
 justify_peg_max = 1.5               # prima justificada si PEG < 1.5 o spread > 5%
 justify_spread_min = 0.05
-strong_abs = 50                     # sobrevaloración fuerte: P/E > 50x o > sector +60%
-strong_dev = 0.6
-discount_dev = -0.20
+strong_abs = 50                     # sin referencia: sobrevaloración fuerte, P/E > 50x
 w_loss = 60
 w_demanding = 62
 w_overvalued = 68
@@ -237,8 +271,6 @@ w_discount = 40
 
 [alerts.ev_ebitda]
 high_abs = 25
-premium_mult = 1.3                  # × EV/EBITDA del sector
-discount_mult = 0.7
 w_high = 44
 w_premium = 38
 w_discount = 34
@@ -260,6 +292,9 @@ w_below_fair = 40
 w_overvalued = 58
 w_premium = 40
 
+[alerts.credit_risk]                # F9 · R6: banco sin el riesgo de crédito medido (lib/credit_risk.py)
+w_not_measured = 50
+
 [alerts.roe]
 negative_equity_min_roa = 0.03
 exceptional = 0.40
@@ -268,6 +303,12 @@ w_negative = 55
 w_exceptional = 44
 w_high = 44
 w_low = 40
+# F10 · N6 (revisión de NVDA: «amplificado por recompras» con un apalancamiento DuPont de 1.31): el ROE solo se dice
+# amplificado por un patrimonio reducido si el apalancamiento DuPont (activos / patrimonio, último ejercicio) llega a
+# este valor (patrimonio por debajo del 29 % de los activos). Mediana de los golden 2.6; los ROE excepcionales por
+# margen (NVDA 1.31, MU 1.53, ASML 2.58, V 2.63, NVO 2.80) quedan por debajo y los apalancados (AAPL 4.87, CAT 4.62,
+# UL 4.54) por encima. Sin DuPont, la frase no atribuye causa.
+amplified_leverage_min = 3.5
 
 [alerts.spread]
 strong = 0.10
@@ -277,8 +318,6 @@ w_positive = 42
 w_negative = 56
 
 [alerts.margins]
-net_solid_mult = 1.5                # margen neto ≥ 1.5 × net_margin_low del sector
-gross_high = 0.60
 w_net_negative = 54
 w_net_solid = 38
 w_net_thin = 36
@@ -379,9 +418,28 @@ excess_cash_share = 0.15            # caja / activos totales ≥ 15% -> "caja ex
 # ── Normalización de ganancias (etapa 7, lib/normalize.py) ──
 [dcf_reliability]                   # fiabilidad del DCF (lib/valuation_confidence.py, etapa 8)
 terminal_max_pct = 85               # valor terminal > 85% del valor -> baja (el aviso sigue en 75%)
+# F8 · E8 (auditoría del 26-oct): la fiabilidad no mira el precio; cada criterio que falla resta un escalón.
+terminal_minus_pct = 75             # (1) valor terminal > 75% del valor: −1
+central_dispersion_max = 2.5        # (2) bloque central (g ± 2,5 pp, WACC ± 1 pp): máximo ÷ mínimo > 2,5: −1
+fcf_margin_years = 5                # (3) margen FCF de los 5 últimos ejercicios (EDGAR)...
+fcf_margin_cv_max = 0.33            #     ...con una desviación típica mayor que un tercio de su media: −1
+# (5) PM, 27-oct: crecimiento proyectado (g ≥ 0) con el margen en caída. Margen TTM por debajo de la mediana de 5
+# ejercicios en ≥ 20 % y ≥ 3 bajadas en los 4 últimos cambios: −1; caída ≥ 40 % (el doble): baja. Calibrado con las 26
+# de la auditoría y los 43 golden: solo salta UNH (−42 %); el siguiente con 3 bajadas y g ≥ 0 cae un 6 % (XOM).
+margin_trend_years = 5
+margin_drop_min = 0.20
+margin_drop_downs = 3
+margin_drop_low_mult = 2.0       # caída ≥ 2 × margin_drop_min: baja directamente
 central_block = 1                   # "celda central ±1": bloque 3×3 alrededor del caso base
 fcf_fields = ["freeCashflow", "free_cash_flow", "key_metrics.free_cash_flow"]
 inferred_sources = ["finnhub", "derivado"]      # FCF que no viene de los estados -> inferido
+
+[multiples_display]                 # escalera de NFLX (30-oct): cómo se muestran los múltiplos (no puntúa)
+ev_ebitda_shown_max = 100.0         # por encima, «> 100x» y la cifra exacta en el detalle (EBITDA casi nulo: TTWO 1035,7x)
+
+[dcf_display]                       # revisión de COST (hallazgo 6): precisión razonable de las cifras del DCF
+# Margen de seguridad fuera de [−100 %, +100 %]: «< −100%» / «> +100%» y la cifra exacta en el detalle (COST −116 %).
+margin_of_safety_shown_bounds = [-1.0, 1.0]
 
 [confidence]                        # confianza del veredicto (spec Sección 3; etapa 8: se muestra, no limita)
 level_values = [1.0, 0.5, 0.0]      # alta / media / baja
@@ -393,9 +451,13 @@ neutral_band = 0.2                  # |señal| <= 0.2 (±10% de upside): "en pre
 # en dirección pero no en magnitud (media). Los múltiplos dan una señal de bandas, no un upside:
 # la escala es común solo de forma aproximada.
 convergence_spread_max = 0.6
+convergence_extreme_reading = 1.0   # F8 · E4: un múltiplo con lectura ±1 contraria a la dirección común impide «alta»
 no_evaluable_cap = "media"          # techo de la confianza si la convergencia es media (fase 3: no evaluable ya no pone techo, opción 3 de §7.17)
 no_official_source_cap = "baja"     # fase 2b (D7): techo de la confianza de un emisor sin estados en la SEC (F2_PRECEDENCIA §4)
-weak_dimension_cap = "media"        # fase 4 (T2): techo si cobertura, fuente o estabilidad es baja (alta exige ninguna debilidad)
+# F10 · N4 (revisión del informe de NVIDIA): si el DCF inverso exige un crecimiento que, según las tasas base
+# (Mauboussin y Callahan), sostuvo menos de esta fracción de las comparables, la confianza baja un escalón. El precio no
+# se toca (la auditoría, §2: las tasas base son contexto que no puntúa); solo cuánto fiarse del veredicto.
+base_rate_min_share = 0.05
 # Fase 4 (T2): reglas de la validación que no son incidencias del dato usado: el dato de otro periodo que no entra
 # (el análisis usa el del corte), la beta del proveedor cuando se usa la propia y las métricas no significativas por la
 # economía de la empresa (EBIT < 0, múltiplo negativo). Las reglas de "politica" tampoco cuentan. El resto, sí: datos
@@ -426,12 +488,40 @@ recurrence_window = 4
 # Los componentes (cargos especiales + ganancias por venta) se usan como tipos si cuadran con el total.
 components_tolerance = 0.05         # relativo al total
 components_tolerance_abs = 1000000.0
+# F10 · N1 (revisión del informe de NVIDIA, 28-oct-2026): coherencia del beneficio con la operación. Tras las partidas
+# anteriores, el beneficio no puede superar lo que explican la operación y la caja: (resultado operativo + financieros
+# netos + participadas por puesta en equivalencia) × (1 − tipo efectivo). Lo que lo supera en más de esta fracción de
+# los ingresos son ganancias no operativas (NVDA: ganancias de sus inversiones en acciones, GainLossOnInvestments,
+# 15,9 B$ en el trimestre de abril de 2026 que Yahoo no marca como inusuales): salen del beneficio que puntúa (P/E
+# normalizado, ROE, margen neto) y se dicen con su cifra. 2 pp de margen: la tolerancia que propuso el revisor
+# (impuestos diferidos, redondeos, otros ingresos pequeños). Continua: sale solo lo que pasa de la tolerancia.
+nonoperating_tolerance_revenue = 0.02
+# F10 · N1b (escaneo de control del 29-oct): también después de impuestos, con el tipo normalizado: la mediana de los
+# tipos efectivos no negativos del periodo y de los últimos `tax_median_years` (un beneficio fiscal puntual queda fuera;
+# uno recurrente es su tipo). Con menos de `tax_median_min` válidos, el tipo legal (valuation.tax.statutory_rate).
+tax_median_years = 5
+tax_median_min = 3
+# F10 · margen operativo con una sola verdad (puerta de la v4, 29-oct): los tipos de partida que pueden ir DENTRO del
+# resultado operativo: cargos especiales (deterioros, litigios, reestructuración, amortizaciones extraordinarias), ventas
+# de negocios o de activos fijos (SOLV, BA) y el total de Yahoo cuando sus componentes no cuadran. Sus importes ya
+# normalizados (solo el exceso no recurrente, aplicados) salen también del margen operativo que puntúa, como del margen
+# neto, en las dos direcciones. Cuánto va dentro lo decide la identidad del estado (normalize.operating); las ganancias
+# por venta de valores y los picos no operativos inferidos van debajo.
+operating_item_types = ["Special Income Charges", "Restructuring And Mergern Acquisition", "Write Off",
+                        "Asset Impairment Charge", "Impairment Of Capital Assets", "Other Special Charges",
+                        "Gain On Sale Of Business", "Gain On Sale Of Ppe", "Total Unusual Items",
+                        "Total Unusual Items Excluding Goodwill", "EDGAR: cargos", "EDGAR: ventas"]
 
 # ── Crecimiento (etapa 7) ──
 [growth]
 per_share_min_shares_cagr = 0.02   # acciones +2% anual compuesto en la ventana -> crecimiento por acción
 anomalous_base_ratio = 0.5          # año inicial < 0.5 × mediana de los demás -> regresión log-lineal
 perimeter_min_years = 2             # fase 3 (T5): años homogéneos mínimos tras un cambio de perímetro; menos: no comparable
+# F10 · crecimiento desde una base anómala (escaneo de control del 29-oct, 46 empresas): con año base anómalo, la
+# regresión sobre solo los 4 ejercicios de la ventana sigue dependiendo de él (NVDA: 198 % frente al 204 % del CAGR). Si
+# no hay más ejercicios en los estados, la serie larga de EDGAR: al menos estos ejercicios contiguos hasta el último (la
+# regresión tiene así ejercicios fuera de la ventana con los que diluir el anómalo). Sin ella, no significativo.
+long_years = 6
 
 # ── Fase 3 (T6): lecturas de calidad que informan y no puntúan (lib/quality_readings.py) ──
 [quality_readings]
@@ -439,6 +529,7 @@ fcf_margin_trend_pp = 0.02          # cambio del margen FCF − SBC entre el pri
 rule_of_40 = 0.40                   # listón de la regla de 40 (crecimiento + margen FCF − SBC)
 sbc_material = 0.05                 # SBC > 5% de los ingresos: se lee como coste real (F3_DISENO §5)
 coverage_trend_rel = 0.20           # cobertura con el EBIT de cada ejercicio: ±20% entre extremos -> mejora / empeora
+coverage_display_max = 100.0        # V7 (M3): por encima, "más de 100 veces" (PLTR: 526930.4 veces no informa más)
 
 [premortem]                         # fase 4 (T3, PLAN §4.3; lib/premortem.py): "Esta lectura sería errónea si…"
 margin_gap_rel = 0.20               # margen operativo de hoy > 120% del de referencia: la lectura depende de que se mantenga
@@ -447,8 +538,11 @@ min_margin_years = 5                # con menos, sin referencia (no se afirma un
 max_items = 3
 
 [quality_persistence]               # fase 4 (T1, PLAN §4.1; lib/persistence.py): lo extraordinario exige persistencia
-# La calidad por encima de "excelente" (la primera banda de score.quality) cuenta en proporción a la persistencia de
-# las categorías que la llevan ahí: "excelente" no cambia y lo que está por encima (lo extraordinario) exige historia.
+# La calidad por encima del codo (`knee`) cuenta en proporción a la persistencia de las categorías que la llevan ahí:
+# hasta el codo no cambia y lo que está por encima (lo extraordinario) exige historia.
 window = 5                          # ejercicios: un ciclo económico corto y el horizonte habitual del análisis de calidad
 margin_ratio = 0.75                 # el margen de cada ejercicio, al menos el 75% del actual (el de hoy no es un pico)
+# F8 · E11: el codo a partir del cual cuenta la persistencia. Era el umbral de «excelente» (80); al subir esa etiqueta a
+# 85 se separa para que el cambio sea solo de etiqueta: la puntuación no varía y la persistencia no se afloja.
+knee = 80
 

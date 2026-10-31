@@ -134,3 +134,5 @@ Cada página: `PillIndex` con sus secciones → `Section`s en rejilla simétrica
 - [ ] Capturas en `docs/rediseno/capturas-e3/` (por página: AAPL, JPM, O y BCS en claro escritorio y oscuro móvil; los 8 en la de Valor y la de Rivales).
 - [ ] Rendimiento: Lighthouse de `/v2/AAPL/calidad` y `/v2/AAPL/valor` (escritorio, `next dev`: orientativo).
 - [ ] `docs/rediseno/E3_REGISTRO.md` y `GOLDEN_DIFF_E3.md`; informe al PM. Sin push ni merge.
+
+> **Evidencia fuera de `main` (E6, 31-oct):** las capturas (`docs/rediseno/capturas-*`), `docs/fiabilidad/f8_evidencia/` y los volcados JSON de escaneo y medida de `docs/` no están en `main`. Siguen en las ramas locales del rediseño y de la fiabilidad (`rediseno/v4-f8`) y en el archivo `v4_evidencia_8e4f3952.tar.gz` de `/Users/joseestebanroa/Downloads/finanzer_next-archivo`, fuera del repositorio.

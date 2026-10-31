@@ -237,7 +237,8 @@ def test_recurrent_items_by_ticker(outputs_by_env):
 def test_reit_ffo_uses_reported_income_not_normalized(outputs_by_env):
     """REIT: el FFO va sobre el beneficio REPORTADO; el normalizado no entra en él,
     así que las ganancias por venta no se restan dos veces."""
-    for env in ("local", "panel"):
+    import conftest
+    for env in conftest.reit_ffo_envs(outputs_by_env, ("local", "panel")):
         a = outputs_by_env(env)["O"][0]
         n, km = a["earnings_normalization"], a["key_metrics"]
         assert n["applied"] and n["normalized_net_income"] != n["reported_net_income"]
@@ -261,7 +262,7 @@ def test_per_share_applied_to_revenue_and_fcf(outputs_by_env):
         g = a["growth_basis"]
         assert g["basis"] == "por_accion" and g["applied_to"] == ["ingresos", "FCF"] and g["shares_cagr_3y"] > 0.02
         rev = next(x for x in a["score"]["breakdown"]["Crecimiento"]["adjustments"]
-                   if x["metric"] == "Crecimiento Ingresos 3Y")
+                   if x["metric"] == "Crecimiento de ingresos a 3 años")
         assert "por acción" in rev["reason"]
     assert outputs_by_env("local")["NFLX"][0]["growth_basis"]["basis"] == "agregado"
 
@@ -285,9 +286,12 @@ def test_nflx_fcf_growth_marked_anomalous(outputs_by_env):
     for env in conftest.ENVS:
         a = outputs_by_env(env)["NFLX"][0]
         assert a["growth_basis"]["fcf_cagr"]["anomalous_base"] is True
+        # F10 · crecimiento desde una base anómala: la regresión de 4 ejercicios no es robusta y la serie larga de
+        # EDGAR tiene FCF negativos (antes de 2020): no significativo con su motivo (antes puntuaba 69,83 %).
+        assert a["growth_basis"]["fcf_cagr"]["robust"] is False
         fcf = next(x for x in a["score"]["breakdown"]["Crecimiento"]["adjustments"]
-                   if x["metric"] == "Crecimiento FCF 3Y")
-        assert fcf["value"] == "69.8%"
+                   if x["metric"] == "Crecimiento del FCF a 3 años")
+        assert fcf["value"] == "No significativo" and fcf["adjustment"] == 0 and "año base anómalo" in fcf["reason"]
 
 
 def test_insurer_investment_gains_are_a_structural_item():

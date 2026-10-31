@@ -39,6 +39,7 @@ def own_growth(history: Optional[Dict[str, Any]], fallback_3y: Optional[float]) 
         r = cy.revenue_ps_cagr_long(history)
         if r["cagr"] is not None:
             return {"cagr": r["cagr"], "years": r["years"], "basis": r["basis"], "source": "EDGAR",
+                    "window": f"{cy.fy_label(r['from'])}–{cy.fy_label(r['to'])}" if r.get("from") else None,
                     "label": "sus ingresos por acción" if r["basis"] == "por_accion" else "sus ingresos"}
     if fallback_3y is not None:
         return {"cagr": fallback_3y, "years": 3, "basis": "estados", "source": "estados (3 años)",
@@ -95,7 +96,8 @@ def sentence(x: Dict[str, Any]) -> Optional[str]:
         pl = what.startswith("sus ")
         verb = (f"{'crecieron' if pl else 'creció'} un {_pct(o['cagr'])}" if o["cagr"] >= 0
                 else f"{'cayeron' if pl else 'cayó'} un {_pct(-o['cagr'])}")
-        t += f"; en los últimos {o['years']} años, {what} {verb} anual"
+        t += (f"; en los últimos {o['years']} años" + (f" ({o['window']})" if o.get("window") else "")
+              + f", {what} {verb} anual")
     t += "."
     b = x.get("base_rate") or {}
     if b.get("share") is not None:

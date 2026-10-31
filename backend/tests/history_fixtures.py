@@ -24,8 +24,9 @@ COLS = (("Open", "open"), ("High", "high"), ("Low", "low"), ("Close", "close"), 
         ("Volume", "volume"), ("Dividends", "dividend"), ("Stock Splits", "split"))
 
 
-def series_file(symbol, base=HISTORY_DIR):
-    return os.path.join(base, "series", symbol.upper().replace("^", "IDX_") + ".json")
+def series_file(symbol, base=HISTORY_DIR, sub="series"):
+    """`sub`: "series" (la serie del motor, 2 años) o "chart" (la de la gráfica de /v2, 5 años; rediseño E2a)."""
+    return os.path.join(base, sub, symbol.upper().replace("^", "IDX_") + ".json")
 
 
 def available(base=HISTORY_DIR):
@@ -43,18 +44,18 @@ def frame_to_obj(symbol, frame):
     return obj
 
 
-def save(symbol, frame, base=HISTORY_DIR):
+def save(symbol, frame, base=HISTORY_DIR, sub="series"):
     obj = frame_to_obj(symbol, frame)
-    os.makedirs(os.path.dirname(series_file(symbol, base)), exist_ok=True)
-    with open(series_file(symbol, base), "w", encoding="utf-8") as fh:
+    os.makedirs(os.path.dirname(series_file(symbol, base, sub)), exist_ok=True)
+    with open(series_file(symbol, base, sub), "w", encoding="utf-8") as fh:
         json.dump(obj, fh, separators=(",", ":"))
         fh.write("\n")
 
 
-def load_frame(symbol, until=None, base=HISTORY_DIR):
+def load_frame(symbol, until=None, base=HISTORY_DIR, sub="series"):
     """La serie con la forma de yfinance `history` (columnas de COLS, índice con la zona de la bolsa), cortada en
     `until` (fecha ISO, incluida)."""
-    path = series_file(symbol, base)
+    path = series_file(symbol, base, sub)
     if not os.path.isfile(path):
         raise KeyError(f"símbolo no grabado en los fixtures del historial: {symbol}")
     with open(path, encoding="utf-8") as fh:

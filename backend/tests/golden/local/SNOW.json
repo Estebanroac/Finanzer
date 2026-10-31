@@ -4,18 +4,13 @@
     "strengths": [
       {
         "category": "Crecimiento",
-        "detail": "Los ingresos crecen 28.7% anual en tres años (CAGR): ritmo de expansión elevado que, si mantiene márgenes, es el principal motor de creación de valor a largo plazo.",
-        "reason": "Crecimiento fuerte — ingresos +28.7% anual (3 años)"
+        "detail": "Los ingresos por acción crecen 28.7% anual en tres años (FY2023–FY2026, CAGR): ritmo de expansión elevado que, si mantiene márgenes, es el principal motor de creación de valor a largo plazo.",
+        "reason": "Crecimiento fuerte — ingresos por acción +28.7% anual (3 años)"
       },
       {
         "category": "Solidez financiera",
         "detail": "La empresa tiene más efectivo que deuda: posición de caja neta que le da flexibilidad para invertir, resistir ciclos o retribuir al accionista sin depender de la financiación externa.",
         "reason": "Caja neta — sin deuda financiera neta"
-      },
-      {
-        "category": "Rentabilidad",
-        "detail": "Retiene 67% de cada venta tras el costo directo del producto: un margen bruto así suele reflejar marca fuerte, tecnología propia o poder de precios difícil de replicar.",
-        "reason": "Margen bruto muy alto — 67.0%"
       },
       {
         "category": "Solidez financiera",
@@ -44,9 +39,12 @@
       "reason": "no_aplica",
       "sector": "Technology"
     },
+    "excluded_by_sic": null,
     "interpretation": "No aplica a empresas en crecimiento sin beneficio: el Altman se calibró con quiebras de empresas maduras endeudadas; su solidez se mide por el runway (caja frente a la quema de FCF)",
     "model": "No Aplicable",
+    "model_basis": "por el SIC del emisor en SEC EDGAR: 7372, fuera de manufacturas",
     "operating_leases_excluded": 461287000.0,
+    "substitute": null,
     "z_score": null,
     "zone": "n/a"
   },
@@ -65,6 +63,8 @@
     "operating_margin_fy_prior": -0.401503310725,
     "revenue_cagr_3y": 0.313765188615,
     "rule_of_40": 0.23125053771,
+    "rule_of_40_bound": null,
+    "rule_of_40_reason": null,
     "runway": {
       "fcf": 1193484000.0,
       "liquidity": 2344695000.0,
@@ -84,28 +84,117 @@
       "classified": "Damodaran clasifica a la empresa en esa industria (símbolo)",
       "damodaran": "Software (Internet)",
       "firms": 29,
+      "profile_differs": true,
+      "published": {
+        "de": 1.492,
+        "ev_ebitda": 15.7256,
+        "gross_margin": 0.6258,
+        "interest_coverage": 0.9465,
+        "net_margin": -0.0093,
+        "operating_margin": 0.0369,
+        "pb": 10.8557,
+        "pe": 34.8241,
+        "roe": -0.0147,
+        "roic": 0.0343
+      },
       "region": "us",
       "region_label": "EE. UU.",
+      "self_exclusion": {
+        "columns": {
+          "de": {
+            "after": 1.51572905122,
+            "before": 1.492,
+            "how": "sin_empresa"
+          },
+          "ev_ebitda": {
+            "after": 15.7256,
+            "before": 15.7256,
+            "how": "no_entra"
+          },
+          "gross_margin": {
+            "after": 0.619642468603,
+            "before": 0.6258,
+            "how": "sin_empresa"
+          },
+          "interest_coverage": {
+            "after": 2.00510938989,
+            "before": 0.9465,
+            "how": "sin_empresa"
+          },
+          "net_margin": {
+            "after": 0.0316372163831,
+            "before": -0.0093,
+            "how": "sin_empresa"
+          },
+          "operating_margin": {
+            "after": 0.0889981742927,
+            "before": 0.0369,
+            "how": "sin_empresa"
+          },
+          "pb": {
+            "after": 8.83500359936,
+            "before": 10.8557,
+            "how": "sin_empresa"
+          },
+          "pe": {
+            "after": 34.8241,
+            "before": 34.8241,
+            "how": "no_entra"
+          },
+          "roe": {
+            "after": 0.0482715637447,
+            "before": -0.0147,
+            "how": "sin_empresa"
+          },
+          "roic": {
+            "after": 0.0750335230798,
+            "before": 0.0343,
+            "how": "sin_empresa"
+          }
+        },
+        "cut": "2025-10-31",
+        "date": "2026-01-05",
+        "declaration": "referencia de la industria sin Snowflake, que pesa el 25 %",
+        "figures": {
+          "book_equity": 2132.933,
+          "cash": 3353.105,
+          "depreciation": 211.649,
+          "ebit": -1503.684,
+          "ebitda": -1292.035,
+          "ev": 77451.0469655,
+          "gross_profit": 2942.064,
+          "interest": 8.29,
+          "invested_capital": 1465.443,
+          "mcap": 78118.5369655,
+          "net_income": -1349.54,
+          "revenue": 4386.722,
+          "total_debt": 2685.615
+        },
+        "method": "sin_empresa",
+        "session": "2026-01-05",
+        "source": "A. Damodaran, Dollar value measures by industry (Dollar{US, Europe, Japan, emerg, Global}.xls), NYU Stern",
+        "weight": 0.245319807288
+      },
       "source": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern",
       "url": "https://pages.stern.nyu.edu/~adamodar/New_Home_Page/datacurrent.html"
     },
     "profile": "sector",
     "provisional": false,
     "reason": null,
-    "ref": "de su industria",
+    "ref": "de su industria sin ella",
     "sector": "technology",
     "short": "industria",
     "sources": {
-      "de": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Software (Internet)», EE. UU., 29 empresas",
-      "ev_ebitda": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Software (Internet)», EE. UU., 29 empresas",
-      "gross_margin": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Software (Internet)», EE. UU., 29 empresas",
-      "interest_coverage": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Software (Internet)», EE. UU., 29 empresas",
-      "net_margin": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Software (Internet)», EE. UU., 29 empresas",
-      "operating_margin": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Software (Internet)», EE. UU., 29 empresas",
-      "pb": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Software (Internet)», EE. UU., 29 empresas",
-      "pe": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Software (Internet)», EE. UU., 29 empresas",
-      "roe": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Software (Internet)», EE. UU., 29 empresas",
-      "roic": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Software (Internet)», EE. UU., 29 empresas"
+      "de": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Software de internet», EE. UU., 29 empresas; referencia de la industria sin Snowflake, que pesa el 25 %",
+      "ev_ebitda": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Software de internet», EE. UU., 29 empresas (la empresa no entra en este agregado: Damodaran lo calcula sin las empresas en pérdidas)",
+      "gross_margin": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Software de internet», EE. UU., 29 empresas; referencia de la industria sin Snowflake, que pesa el 25 %",
+      "interest_coverage": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Software de internet», EE. UU., 29 empresas; referencia de la industria sin Snowflake, que pesa el 25 %",
+      "net_margin": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Software de internet», EE. UU., 29 empresas; referencia de la industria sin Snowflake, que pesa el 25 %",
+      "operating_margin": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Software de internet», EE. UU., 29 empresas; referencia de la industria sin Snowflake, que pesa el 25 %",
+      "pb": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Software de internet», EE. UU., 29 empresas; referencia de la industria sin Snowflake, que pesa el 25 %",
+      "pe": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Software de internet», EE. UU., 29 empresas (la empresa no entra en este agregado: Damodaran lo calcula sin las empresas en pérdidas)",
+      "roe": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Software de internet», EE. UU., 29 empresas; referencia de la industria sin Snowflake, que pesa el 25 %",
+      "roic": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Software de internet», EE. UU., 29 empresas; referencia de la industria sin Snowflake, que pesa el 25 %"
     },
     "thresholds": {
       "current_ratio_low": 1.0,
@@ -120,44 +209,72 @@
     },
     "thresholds_key": "technology",
     "values": {
-      "de": 1.492,
+      "de": 1.51572905122,
       "ev_ebitda": 15.7256,
-      "gross_margin": 0.6258,
-      "interest_coverage": 0.9465,
-      "net_margin": -0.0093,
-      "operating_margin": 0.0369,
-      "pb": 10.8557,
+      "gross_margin": 0.619642468603,
+      "interest_coverage": 2.00510938989,
+      "net_margin": 0.0316372163831,
+      "operating_margin": 0.0889981742927,
+      "pb": 8.83500359936,
       "pe": 34.8241,
-      "roe": -0.0147,
-      "roic": 0.0343
+      "roe": 0.0482715637447,
+      "roic": 0.0750335230798
     }
   },
   "beta": {
-    "adjusted": 1.31063263265,
+    "adjusted": 1.26733025216,
+    "bottom_up": {
+      "basis": "industria",
+      "damodaran": "Software (System & Application)",
+      "firms": 309,
+      "industry_de": 0.0558,
+      "industry_tax": 0.0551,
+      "region": "us",
+      "source": "A. Damodaran, Betas by Sector (US), NYU Stern, enero de 2026 (columna Unlevered beta corrected for cash)",
+      "url": "https://pages.stern.nyu.edu/~adamodar/New_Home_Page/datafile/Betas.html",
+      "value": 1.25
+    },
     "coefficients": [
       0.67,
       0.33
     ],
     "default": false,
+    "discarded": "R² 0.13 < 0.20: la regresión no explica el título; error estándar 0.38 > 0.25",
     "discrepancy": null,
-    "method": "Blume",
+    "method": "beta de abajo hacia arriba (sin Blume)",
     "own": {
-      "adjusted": 1.31063263265,
+      "adjusted": 1.30346538584,
+      "fails": [
+        "R² 0.13 < 0.20: la regresión no explica el título",
+        "error estándar 0.38 > 0.25"
+      ],
       "first_week": "2024-10-25",
-      "last_week": "2026-10-09",
-      "observations": 103,
-      "r2": 0.131376469465,
-      "raw": 1.463630795,
+      "last_week": "2026-10-02",
+      "observations": 102,
+      "r2": 0.130079142946,
+      "raw": 1.4529334117,
       "reason": null,
+      "se": 0.375735084333,
       "status": "ok"
     },
-    "raw": 1.463630795,
-    "reason": "2 años semanales frente al S&P 500 (103 semanas, R² 0.13), ajustada por Blume",
-    "source": "propia",
+    "raw": null,
+    "reason": "beta propia descartada (R² 0.13 < 0.20: la regresión no explica el título; error estándar 0.38 > 0.25); de abajo hacia arriba: industria Software (System & Application) (Damodaran, enero de 2026): βU 1.25 reapalancada con D/E de mercado de la empresa 0.02 y t 21% → 1.27",
+    "region": null,
+    "relevered": {
+      "de": 0.0175496224433,
+      "de_basis": "de mercado de la empresa",
+      "tax": 0.21,
+      "unlevered": 1.25
+    },
+    "rule": "propia si pasa los filtros (R² ≥ 0.20, error estándar ≤ 0.25, beta entre 0.4 y 2.5); si no, la de abajo hacia arriba de su industria (Damodaran)",
+    "source": "sector",
     "source_beta": 1.351
   },
   "business_model": {
+    "altman_excluded": null,
     "altman_referential": false,
+    "altman_referential_reason": null,
+    "captive_finance": null,
     "current_ratio": {
       "applies": false,
       "history": [
@@ -171,13 +288,15 @@
       "structural": true,
       "worsening": true
     },
-    "piotroski_caveat": "En esta industria los criterios de liquidez (current ratio) y de margen bruto informan poco: el capital circulante negativo y su estructura de márgenes son propios del modelo de negocio."
+    "piotroski_caveat": null,
+    "sic": "7372"
   },
   "classification": {
     "alerts": [],
     "ambiguous": false,
     "archetype": "GROWTH_PRE_PROFIT",
     "confidence": "normal",
+    "definition": "negocio que crece deprisa pero todavía no gana dinero",
     "frontier": null,
     "industry": "Software - Application",
     "inputs": {
@@ -185,6 +304,7 @@
       "eps_ttm": -3.18,
       "net_margin_ttm": -0.200711840162,
       "revenue_cagr_3y": 0.313765188615,
+      "revenue_cagr_3y_bound": null,
       "revenue_cagr_3y_reason": null
     },
     "label": "Crecimiento sin beneficio",
@@ -196,8 +316,42 @@
     "subtype": null,
     "subtype_label": null
   },
+  "company_profile": {
+    "reason": null,
+    "rows": [
+      {
+        "key": "sic",
+        "label": "Industria (código SIC)",
+        "value": "7372 · Services-Prepackaged Software"
+      },
+      {
+        "key": "hq",
+        "label": "Sede",
+        "value": "Menlo Park, California"
+      },
+      {
+        "key": "incorporation",
+        "label": "Constituida en",
+        "value": "Delaware"
+      },
+      {
+        "key": "fiscal_year_end",
+        "label": "Cierre del ejercicio",
+        "value": "31 de enero"
+      },
+      {
+        "key": "category",
+        "label": "Tipo de emisor",
+        "value": "Gran emisor (large accelerated filer)"
+      }
+    ],
+    "source": "SEC EDGAR (submissions del emisor)",
+    "status": "ok"
+  },
   "confidence": {
+    "base_rate_step": null,
     "capped_from": null,
+    "contraction_basis": "alta",
     "dimensions": {
       "convergence": {
         "level": "no_evaluable",
@@ -208,6 +362,10 @@
             "evaluable": true,
             "kind": "relativo",
             "method": "múltiplos frente al sector",
+            "readings": {
+              "EV/Ventas": -0.5,
+              "P/FCF": -1.0
+            },
             "signal": -0.75
           }
         ],
@@ -242,6 +400,98 @@
       "convergencia no evaluable: un solo método evaluable (múltiplos frente al sector): no hay contraste"
     ],
     "score": 1.0
+  },
+  "cost_of_equity": {
+    "as_of": "2026-10-01",
+    "capm": 0.106127870591,
+    "crp": 0.00310229208706,
+    "erp": 0.042,
+    "floor": null,
+    "floors": {
+      "Kd + 1 pp": 0.074,
+      "Rf + 0.5 × ERP": 0.0739
+    },
+    "kd": 0.064,
+    "rf": 0.0529,
+    "shift": null,
+    "value": 0.109230162678
+  },
+  "country_risk": {
+    "as_of": "2026-01-05",
+    "basis": "geografía",
+    "country": "United States",
+    "crp": 0.00310229208706,
+    "fiscal_year": "2026",
+    "geo": [
+      {
+        "kind": "país",
+        "label": "United States",
+        "name": "United States",
+        "share": 0.752351542908
+      },
+      {
+        "kind": "región",
+        "label": "EMEA",
+        "name": "EMEA",
+        "share": 0.163035611427
+      },
+      {
+        "kind": "región",
+        "label": "Asia-Pacific and Japan",
+        "name": "Asia",
+        "share": 0.0578665936798
+      },
+      {
+        "kind": "no atribuido",
+        "label": "Other Americas",
+        "name": null,
+        "share": 0.026746251985
+      }
+    ],
+    "identified": 0.973253748015,
+    "lambda": 1.0,
+    "reason": null,
+    "source": "A. Damodaran, Country Default Spreads and Risk Premiums (ctryprem.xlsx), NYU Stern",
+    "unattributed": {
+      "labels": [
+        "Other Americas"
+      ],
+      "share": 0.026746251985
+    },
+    "weights": [
+      {
+        "add": 0.0,
+        "erp": 0.0446,
+        "kind": "país",
+        "label": "United States",
+        "name": "United States",
+        "share": 0.752351542908
+      },
+      {
+        "add": 0.014548,
+        "erp": 0.059148,
+        "kind": "región",
+        "label": "EMEA",
+        "name": "EMEA",
+        "share": 0.163035611427
+      },
+      {
+        "add": 0.012623,
+        "erp": 0.057223,
+        "kind": "región",
+        "label": "Asia-Pacific and Japan",
+        "name": "Asia",
+        "share": 0.0578665936798
+      },
+      {
+        "add": 0.0,
+        "erp": null,
+        "kind": "no atribuido",
+        "label": "Other Americas",
+        "name": null,
+        "share": 0.026746251985
+      }
+    ]
   },
   "data_provenance": {
     "as_of": {
@@ -341,23 +591,50 @@
       "type": "ttm"
     },
     "beta": {
-      "adjusted": false,
+      "adjusted": true,
+      "bottom_up": {
+        "basis": "industria",
+        "damodaran": "Software (System & Application)",
+        "firms": 309,
+        "industry_de": 0.0558,
+        "industry_tax": 0.0551,
+        "region": "us",
+        "source": "A. Damodaran, Betas by Sector (US), NYU Stern, enero de 2026 (columna Unlevered beta corrected for cash)",
+        "url": "https://pages.stern.nyu.edu/~adamodar/New_Home_Page/datafile/Betas.html",
+        "value": 1.25
+      },
+      "discarded": "R² 0.13 < 0.20: la regresión no explica el título; error estándar 0.38 > 0.25",
       "discrepancy": null,
       "own": {
-        "adjusted": 1.31063263265,
+        "adjusted": 1.30346538584,
+        "fails": [
+          "R² 0.13 < 0.20: la regresión no explica el título",
+          "error estándar 0.38 > 0.25"
+        ],
         "first_week": "2024-10-25",
-        "last_week": "2026-10-09",
-        "observations": 103,
-        "r2": 0.131376469465,
-        "raw": 1.463630795,
+        "last_week": "2026-10-02",
+        "observations": 102,
+        "r2": 0.130079142946,
+        "raw": 1.4529334117,
         "reason": null,
+        "se": 0.375735084333,
         "status": "ok"
       },
-      "reason": "2 años semanales frente al S&P 500 (103 semanas, R² 0.13), ajustada por Blume",
-      "source": "propia",
+      "reason": "beta propia descartada (R² 0.13 < 0.20: la regresión no explica el título; error estándar 0.38 > 0.25); de abajo hacia arriba: industria Software (System & Application) (Damodaran, enero de 2026)",
+      "rule": "propia si pasa los filtros (R² ≥ 0.20, error estándar ≤ 0.25, beta entre 0.4 y 2.5); si no, la de abajo hacia arriba de su industria (Damodaran)",
+      "sector": {
+        "basis": "industria",
+        "damodaran": "Software (System & Application)",
+        "firms": 309,
+        "region": "us",
+        "source": "A. Damodaran, Betas by Sector (US), NYU Stern, enero de 2026 (columna Beta)",
+        "url": "https://pages.stern.nyu.edu/~adamodar/New_Home_Page/datafile/Betas.html",
+        "value": 1.28
+      },
+      "source": "sector",
       "source_beta": 1.351,
       "source_name": "yahoo_quotesummary",
-      "value": 1.463630795
+      "value": 1.28
     },
     "currency": {
       "converted": false,
@@ -515,16 +792,30 @@
           "last": "2026-01-31",
           "unit": "USD",
           "years": 8
+        },
+        "spectrum_purchases": {
+          "cross_taxonomy": null,
+          "first": null,
+          "last": null,
+          "unit": "USD",
+          "years": 0
         }
       },
       "pending_filings": [],
       "primary": {
+        "charges": {
+          "detail": {
+            "AssetImpairmentCharges": 17932000.0
+          },
+          "period_end": "2026-07-31"
+        },
         "cut": [
           {
             "accns": [
               "0001640147-26-000008",
               "0001640147-26-000037"
             ],
+            "check": "cuadra",
             "concept": "us-gaap:OperatingIncomeLoss",
             "field": "operatingIncome",
             "how": "ejercicio 2025-02-01 a 2026-01-31 + acumulado 2026-02-01 a 2026-07-31 − acumulado 2025-02-01 a 2025-07-31",
@@ -581,7 +872,36 @@
           }
         ],
         "reason": null,
+        "reconciliation": [],
+        "series": [
+          {
+            "concepts": [
+              "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax"
+            ],
+            "field": "revenue",
+            "source": "sec_edgar",
+            "years": 4
+          },
+          {
+            "concepts": [
+              "us-gaap:NetIncomeLoss"
+            ],
+            "field": "net_income",
+            "source": "sec_edgar",
+            "years": 4
+          }
+        ],
         "skipped": []
+      },
+      "profile": {
+        "category": "Large accelerated filer",
+        "city": "MENLO PARK",
+        "fiscal_year_end": "0131",
+        "sic": "7372",
+        "sic_description": "Services-Prepackaged Software",
+        "state_of_incorporation": "DE",
+        "state_or_country": "CA",
+        "website": null
       },
       "reason": null,
       "recut": null,
@@ -747,7 +1067,7 @@
         "source": "yahoo_quotesummary"
       },
       "beta": {
-        "detail": "2 años semanales frente al S&P 500 (103 semanas, R² 0.13), ajustada por Blume",
+        "detail": "beta propia descartada (R² 0.13 < 0.20: la regresión no explica el título; error estándar 0.38 > 0.25); de abajo hacia arriba: industria Software (System & Application) (Damodaran, enero de 2026)",
         "source": "derivado"
       },
       "bookValue": {
@@ -1039,7 +1359,8 @@
       "period_end": "2026-07-31",
       "period_type": "ttm",
       "preferred": 0.0,
-      "source": "Yahoo (estados de yfinance)"
+      "source": "Yahoo (estados de yfinance)",
+      "tangible_common": 35396000.0
     },
     "path": "yahoo_quotesummary",
     "pending_results": null,
@@ -1102,6 +1423,14 @@
       "reason": null,
       "sessions": 251,
       "status": "ok"
+    },
+    "staleness": {
+      "coverage_capped": false,
+      "cut": "2026-07-31",
+      "days_since_cut": 70,
+      "edgar_latest": null,
+      "status": "al_dia",
+      "text": null
     },
     "ttm": {
       "annual_fields": {},
@@ -1257,11 +1586,11 @@
       "items": [
         {
           "label": "Clasificación",
-          "text": "Arquetipo GROWTH_PRE_PROFIT (regla pre_beneficio_con_crecimiento): Clasificada como GROWTH_PRE_PROFIT: BPA TTM -3.18 <= 0 y CAGR de ingresos a 3 años 31.4% > 15%"
+          "text": "Arquetipo GROWTH_PRE_PROFIT (regla pre_beneficio_con_crecimiento): Clasificada como GROWTH_PRE_PROFIT: BPA TTM -3.18 <= 0 y CAGR de ingresos a 3 años 31.4% > 15%."
         },
         {
           "label": "Confianza · Convergencia entre métodos (no evaluable)",
-          "text": "un solo método evaluable (múltiplos frente al sector): no hay contraste"
+          "text": "un solo método evaluable (múltiplos frente al sector): no hay contraste."
         },
         {
           "label": "Fuente oficial",
@@ -1274,6 +1603,14 @@
         {
           "label": "Procedencia de los datos (campos del análisis por fuente)",
           "text": "estados de Yahoo (yfinance): 29 campos; SEC EDGAR: 1 (beneficio operativo); Yahoo (cotización y perfil): 37 (liquidez corriente, debtToEquity, ebitdaMargins, enterpriseToEbitda, enterpriseToRevenue, enterpriseValue, P/E adelantado, grossMargins y 29 más); calculados con otros datos del análisis: 8 campos; sin dato utilizable (ausente o de otro periodo): 8 (crecimiento del beneficio, EV/EBITDA, cobertura de intereses, deuda neta/EBITDA, P/FFO, P/E, payout, caja total)."
+        },
+        {
+          "label": "Fórmula del bloque",
+          "text": "Bloque de múltiplos: promedio de 1 lectura reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = -1.00 × 2 (máximo con 1) = -2.0, redondeado a -2."
+        },
+        {
+          "label": "Nombres originales de las fuentes",
+          "text": "Industria de referencia: Software (Internet), Damodaran; perfil de Yahoo Finance: industria Software - Application, sector Technology."
         }
       ],
       "title": "Detalle técnico para auditoría"
@@ -1283,7 +1620,7 @@
     "benchmark": {
       "column": "INDUSTRIA",
       "profile": "sector",
-      "ref": "de su industria",
+      "ref": "de su industria sin ella",
       "short": "industria",
       "thresholds_key": "technology",
       "vs": "vs industria"
@@ -1295,16 +1632,16 @@
           {
             "items": [
               {
-                "bench": 10.8557,
-                "bench_txt": "10.86x",
+                "bench": 8.83500359936,
+                "bench_txt": "8.84x",
                 "fmt": "mult",
-                "gap_pct": 457.695374367,
-                "gap_txt": "+458%",
+                "gap_pct": 585.248580538,
+                "gap_txt": "+585%",
                 "higher_is_better": false,
                 "key": "pb",
                 "label": "P/B",
                 "reading": "Prima elevada",
-                "text": "P/B de 60.5x frente a 10.9x de su industria (+458%): prima elevada",
+                "text": "P/B de 60.5x frente a 8.8x de su industria sin ella (+585%): prima elevada.",
                 "tone": "neg",
                 "value": 60.5417367551,
                 "value_txt": "60.54x"
@@ -1315,31 +1652,31 @@
           {
             "items": [
               {
-                "bench": 0.6258,
-                "bench_txt": "62.58%",
+                "bench": 0.619642468603,
+                "bench_txt": "61.96%",
                 "fmt": "pct",
-                "gap_pct": 7.11160713268,
-                "gap_txt": "+7%",
+                "gap_pct": 8.17600009685,
+                "gap_txt": "+8%",
                 "higher_is_better": true,
                 "key": "gross_margin",
                 "label": "Margen bruto",
                 "reading": "En línea",
-                "text": "Margen bruto de 67.0% frente a 62.6% de su industria (+7%): en línea",
+                "text": "Margen bruto de 67.0% frente a 62.0% de su industria sin ella (+8%): en línea.",
                 "tone": "neu",
                 "value": 0.670304437436,
                 "value_txt": "67.03%"
               },
               {
-                "bench": 0.0369,
-                "bench_txt": "3.69%",
+                "bench": 0.0889981742927,
+                "bench_txt": "8.90%",
                 "fmt": "pct",
-                "gap_pct": -716.716071226,
-                "gap_txt": "-717%",
+                "gap_pct": -355.699886083,
+                "gap_txt": "-356%",
                 "higher_is_better": true,
                 "key": "operating_margin",
                 "label": "Margen operativo",
                 "reading": "Muy inferior",
-                "text": "Margen operativo de -22.8% frente a 3.7% de su industria (-717%): muy inferior",
+                "text": "Margen operativo de -22.8% frente a 8.9% de su industria sin ella (-356%): muy inferior.",
                 "tone": "neg",
                 "value": -0.227568230282,
                 "value_txt": "−22.76%"
@@ -1349,8 +1686,8 @@
           }
         ],
         "market_note": null,
-        "note": "Referencia: industria «Software (Internet)»; Damodaran clasifica a la empresa en esa industria (símbolo), EE. UU., 29 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
-        "ref": "de su industria",
+        "note": "Referencia: industria «Software de internet»; Damodaran clasifica a la empresa en esa industria (símbolo), no en la de su perfil («Software de aplicaciones», la de la cabecera), EE. UU., 29 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Referencia de la industria sin Snowflake, que pesa el 25 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 31 de octubre de 2025). Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
+        "ref": "de su industria sin ella",
         "total": 3
       },
       "growth": [
@@ -1367,12 +1704,12 @@
           "key": "eps",
           "label": "BPA",
           "state": "no_aplica",
-          "text": "No aplica a Crecimiento sin beneficio"
+          "text": "No aplica a Crecimiento sin beneficio."
         },
         {
           "key": "fcf",
           "label": "FCF",
-          "reading": "Negativo en todos los ejercicios de la ventana (fcf − sbc de −$1.13 por acción a −$1.40 por acción): la tasa no se calcula, pero es una señal, no un dato ausente — peor tramo",
+          "reading": "Negativo en todos los ejercicios de la ventana (fcf − sbc de −$1.13 por acción a −$1.40 por acción): la tasa no se calcula, pero es una señal, no un dato ausente — peor tramo.",
           "state": "con_dato",
           "sustained_negative": true,
           "tone": "neg",
@@ -1380,9 +1717,11 @@
         }
       ],
       "historical": {
+        "growth_currency_note": null,
         "series": [
           {
             "cagr": 0.313765188615,
+            "cagr_note": null,
             "cagr_txt": "31.4%",
             "key": "revenue",
             "label": "Ingresos",
@@ -1420,6 +1759,7 @@
           },
           {
             "cagr": null,
+            "cagr_note": null,
             "cagr_txt": null,
             "key": "net_income",
             "label": "Beneficio neto",
@@ -1457,6 +1797,7 @@
           },
           {
             "cagr": null,
+            "cagr_note": null,
             "cagr_txt": null,
             "key": "fcf_minus_sbc",
             "label": "FCF − SBC",
@@ -1515,6 +1856,10 @@
       },
       "profitability": {
         "margin_ladder": {
+          "period": {
+            "code": "TTM",
+            "of": "de los últimos doce meses (TTM, a 31 de julio de 2026)"
+          },
           "revenue": 5434647000.0,
           "revenue_txt": "$5.43B",
           "steps": [
@@ -1555,39 +1900,39 @@
               "key": "net_margin",
               "label": "Margen neto",
               "state": "no_aplica",
-              "text": "No aplica a Crecimiento sin beneficio"
+              "text": "No aplica a empresas en crecimiento sin beneficio: negativo por definición del arquetipo (aún sin beneficio); la rentabilidad se mide con el margen bruto, el margen operativo y su mejora, y el margen FCF − SBC."
             }
           ]
         },
         "margins": [
           {
-            "bench": 0.6258,
-            "bench_txt": "62.58%",
+            "bench": 0.619642468603,
+            "bench_txt": "61.96%",
             "fmt": "pct",
-            "gap_pct": 7.11160713268,
-            "gap_txt": "+7%",
+            "gap_pct": 8.17600009685,
+            "gap_txt": "+8%",
             "higher_is_better": true,
             "key": "gross_margin",
             "label": "Margen bruto",
             "reading": "En línea",
             "state": "con_dato",
-            "text": "Margen bruto de 67.0% frente a 62.6% de su industria (+7%): en línea",
+            "text": "Margen bruto de 67.0% frente a 62.0% de su industria sin ella (+8%): en línea.",
             "tone": "neu",
             "value": 0.670304437436,
             "value_txt": "67.03%"
           },
           {
-            "bench": 0.0369,
-            "bench_txt": "3.69%",
+            "bench": 0.0889981742927,
+            "bench_txt": "8.90%",
             "fmt": "pct",
-            "gap_pct": -716.716071226,
-            "gap_txt": "-717%",
+            "gap_pct": -355.699886083,
+            "gap_txt": "-356%",
             "higher_is_better": true,
             "key": "operating_margin",
             "label": "Margen operativo",
             "reading": "Muy inferior",
             "state": "con_dato",
-            "text": "Margen operativo de -22.8% frente a 3.7% de su industria (-717%): muy inferior",
+            "text": "Margen operativo de -22.8% frente a 8.9% de su industria sin ella (-356%): muy inferior.",
             "tone": "neg",
             "value": -0.227568230282,
             "value_txt": "-22.76%"
@@ -1598,7 +1943,7 @@
             "key": "net_margin",
             "label": "Margen neto",
             "state": "no_aplica",
-            "text": "No aplica a Crecimiento sin beneficio"
+            "text": "No aplica a empresas en crecimiento sin beneficio: negativo por definición del arquetipo (aún sin beneficio); la rentabilidad se mide con el margen bruto, el margen operativo y su mejora, y el margen FCF − SBC."
           }
         ],
         "returns": [
@@ -1608,7 +1953,7 @@
             "key": "roe",
             "label": "ROE",
             "state": "no_aplica",
-            "text": "No aplica a Crecimiento sin beneficio"
+            "text": "No aplica a empresas en crecimiento sin beneficio: negativo por definición del arquetipo (aún sin beneficio); la rentabilidad se mide con el margen bruto, el margen operativo y su mejora, y el margen FCF − SBC."
           },
           {
             "fmt": "pct",
@@ -1616,7 +1961,7 @@
             "key": "roa",
             "label": "ROA",
             "state": "no_aplica",
-            "text": "No aplica a Crecimiento sin beneficio"
+            "text": "No aplica a empresas en crecimiento sin beneficio: negativo por definición del arquetipo (aún sin beneficio); la rentabilidad se mide con el margen bruto, el margen operativo y su mejora, y el margen FCF − SBC."
           },
           {
             "fmt": "pct",
@@ -1624,7 +1969,7 @@
             "key": "roic",
             "label": "ROIC",
             "state": "no_aplica",
-            "text": "No aplica a Crecimiento sin beneficio"
+            "text": "No aplica a empresas en crecimiento sin beneficio: negativo por definición del arquetipo (aún sin beneficio); la rentabilidad se mide con el margen bruto, el margen operativo y su mejora, y el margen FCF − SBC."
           }
         ],
         "roce": {
@@ -1637,7 +1982,7 @@
         },
         "spread": {
           "state": "no_aplica",
-          "text": null
+          "text": "No aplica a empresas en crecimiento sin beneficio: negativo por definición del arquetipo (aún sin beneficio); la rentabilidad se mide con el margen bruto, el margen operativo y su mejora, y el margen FCF − SBC."
         }
       },
       "results_flow": [
@@ -1701,7 +2046,7 @@
             "label": "Current ratio",
             "reading": "Ajustada",
             "state": "con_dato",
-            "text": "la liquidez es ajustada (current ratio 0.94x), con poco margen de maniobra",
+            "text": "la liquidez es ajustada (current ratio 0.94x), con poco margen de maniobra.",
             "tone": "warn",
             "unit": "x",
             "value": 0.938816847152,
@@ -1743,7 +2088,7 @@
             "key": "interest_coverage",
             "label": "Cobertura de intereses",
             "state": "no_significativo",
-            "text": "con EBIT negativo y caja neta, la cobertura de intereses no es significativa: los intereses se pagan con caja"
+            "text": "con EBIT negativo y caja neta, la cobertura de intereses no es significativa: los intereses se pagan con caja."
           },
           {
             "key": "net_debt_to_ebitda",
@@ -1755,14 +2100,14 @@
             "key": "de",
             "label": "Deuda / Equity",
             "state": "no_significativo",
-            "text": "con caja neta, el D/E (1.06x) no mide apalancamiento"
+            "text": "con caja neta, el D/E (1.06x) no mide apalancamiento."
           }
         ],
         "runway": {
           "reading": "Autofinanciada en caja",
           "self_funded": true,
           "state": "con_dato",
-          "text": "el FCF de los últimos doce meses es positivo: la empresa no consume caja; la compensación en acciones (30.2% de los ingresos) supera ese FCF y se paga con dilución",
+          "text": "el FCF de los últimos doce meses es positivo: la empresa no consume caja; la compensación en acciones (30.2% de los ingresos) supera ese FCF y se paga con dilución.",
           "tone": "pos"
         },
         "structure": {
@@ -1785,14 +2130,14 @@
       "valuation": {
         "block": {
           "label": "Bloque de múltiplos",
-          "reason": "promedio de los ajustes reescalados a ±1 (P/FCF -1.00) = -1.00 × 2 (máximo con 1 miembro) = -2.0",
+          "reason": "media de 1 lectura en una escala de −1 a +1 (P/FCF -1.00): -1.00, que suma -2.0 puntos de un máximo de ±2.",
           "sign": "-2",
           "tone": "neg"
         },
         "dcf_composition": null,
         "fair_value": {
           "state": "no_significativo",
-          "text": "FCF − SBC base −$448.44M (≤ 0): no hay flujo positivo que descontar, así que el DCF no es significativo"
+          "text": "FCF − SBC base −$448.44M (≤ 0): no hay flujo positivo que descontar, así que el DCF no es significativo."
         },
         "multiples": [
           {
@@ -1802,7 +2147,7 @@
             "label": "P/E (TTM)",
             "role": "informative",
             "state": "no_aplica",
-            "text": "No aplica a Crecimiento sin beneficio"
+            "text": "No aplica a empresas en crecimiento sin beneficio: aún no tiene beneficios que capitalizar."
           },
           {
             "fmt": "mult",
@@ -1811,21 +2156,21 @@
             "label": "Forward P/E",
             "role": "informative",
             "state": "no_aplica",
-            "text": "No aplica a Crecimiento sin beneficio"
+            "text": "No aplica a empresas en crecimiento sin beneficio: aún no tiene beneficios que capitalizar."
           },
           {
-            "bench": 10.8557,
-            "bench_txt": "10.86x",
+            "bench": 8.83500359936,
+            "bench_txt": "8.84x",
             "fmt": "mult",
-            "gap_pct": 457.695374367,
-            "gap_txt": "+458%",
+            "gap_pct": 585.248580538,
+            "gap_txt": "+585%",
             "higher_is_better": false,
             "key": "pb",
             "label": "P/B",
             "reading": "Prima elevada",
             "role": "informative",
             "state": "con_dato",
-            "text": "P/B de 60.5x frente a 10.9x de su industria (+458%): prima elevada",
+            "text": "P/B de 60.5x frente a 8.8x de su industria sin ella (+585%): prima elevada.",
             "tone": "neg",
             "value": 60.5417367551,
             "value_txt": "60.54x"
@@ -1837,7 +2182,7 @@
             "label": "PEG",
             "role": "informative",
             "state": "no_aplica",
-            "text": "No aplica a Crecimiento sin beneficio"
+            "text": "No aplica a empresas en crecimiento sin beneficio: aún no tiene beneficios que capitalizar."
           },
           {
             "fmt": "mult",
@@ -1846,7 +2191,7 @@
             "label": "EV/EBITDA",
             "role": "informative",
             "state": "no_aplica",
-            "text": "No aplica a Crecimiento sin beneficio"
+            "text": "No aplica a empresas en crecimiento sin beneficio: con un EBITDA de −$983.72M (≤ 0) el múltiplo no tiene sentido."
           },
           {
             "bench": null,
@@ -1892,7 +2237,7 @@
             "reason": "Exigente por ventas (23.9x)",
             "sign": "-2",
             "tone": "warn",
-            "value_txt": "23.9x"
+            "value_txt": "23.94x"
           },
           {
             "in_block": false,
@@ -1946,7 +2291,7 @@
           "text": "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo."
         }
       ],
-      "summary": "Confianza del veredicto: alta. Contrae el atractivo del precio hacia 50 (factor 1.0): sin ajustar 20 → ajustado a 20. La calidad del negocio no se contrae.",
+      "summary": "Confianza del veredicto: alta. La calidad del negocio no se contrae.",
       "tone": "pos",
       "verdict_text": "(confianza alta: los múltiplos coinciden)"
     },
@@ -1961,10 +2306,12 @@
               "applicable": true,
               "conclusive": true,
               "coverage": 1.0,
+              "key": "Solidez Financiera",
               "max": 20,
-              "name": "Solidez Financiera",
+              "name": "Solidez financiera",
               "pct": 70.0,
               "score": 14,
+              "score_txt": "14 / 20",
               "text": null,
               "tone": "pos"
             },
@@ -1972,10 +2319,12 @@
               "applicable": true,
               "conclusive": true,
               "coverage": 1.0,
+              "key": "Rentabilidad",
               "max": 20,
               "name": "Rentabilidad",
               "pct": 55.0,
               "score": 11,
+              "score_txt": "11 / 20",
               "text": null,
               "tone": "warn"
             },
@@ -1983,10 +2332,12 @@
               "applicable": true,
               "conclusive": true,
               "coverage": 1.0,
+              "key": "Calidad de Ganancias",
               "max": 20,
-              "name": "Calidad de Ganancias",
+              "name": "Calidad de ganancias",
               "pct": 45.0,
               "score": 9,
+              "score_txt": "9 / 20",
               "text": null,
               "tone": "warn"
             },
@@ -1994,10 +2345,12 @@
               "applicable": true,
               "conclusive": true,
               "coverage": 1.0,
+              "key": "Crecimiento",
               "max": 20,
               "name": "Crecimiento",
               "pct": 60.0,
               "score": 12,
+              "score_txt": "12 / 20",
               "text": null,
               "tone": "pos"
             }
@@ -2010,10 +2363,12 @@
               "applicable": true,
               "conclusive": true,
               "coverage": 1.0,
+              "key": "Valoración",
               "max": 20,
               "name": "Valoración",
               "pct": 20.0,
               "score": 4,
+              "score_txt": "4 / 20",
               "text": null,
               "tone": "neg"
             }
@@ -2034,7 +2389,7 @@
         {
           "kicker": "FORTALEZA CLAVE",
           "kind": "strength",
-          "text": "Crecimiento fuerte — ingresos +28.7% anual (3 años)",
+          "text": "Crecimiento fuerte — ingresos por acción +28.7% anual (3 años)",
           "tone": "pos"
         },
         {
@@ -2073,7 +2428,7 @@
           "key": "rule_of_40",
           "label": "Regla de 40",
           "state": "con_dato",
-          "value": "23"
+          "value": "23.13%"
         },
         {
           "key": "gross_margin",
@@ -2091,13 +2446,14 @@
           "key": "net_debt_to_ebitda",
           "label": "Deuda neta/EBITDA",
           "state": "no_significativo",
+          "text": "con EBITDA negativo, la deuda neta/EBITDA no es significativa; la posición de caja supera a la deuda total (caja neta)",
           "value": "—"
         },
         {
           "key": "beta",
-          "label": "Beta bruta",
+          "label": "Beta de la industria",
           "state": "con_dato",
-          "value": "1.46"
+          "value": "1.27"
         }
       ],
       "official_source_badge": null,
@@ -2105,6 +2461,7 @@
         "contracted": false,
         "level": "muy exigente",
         "note": null,
+        "note_short": null,
         "question": "¿está cara hoy?",
         "raw": 20,
         "score": 20,
@@ -2114,6 +2471,7 @@
       "quality": {
         "level": "media",
         "note": null,
+        "note_short": null,
         "question": "¿es buena la empresa?",
         "score": 58,
         "title": "CALIDAD DEL NEGOCIO",
@@ -2126,7 +2484,209 @@
         "text": "Calidad media · precio muy exigente"
       }
     },
+    "extended": {
+      "company_profile": {
+        "reason": null,
+        "rows": [
+          {
+            "key": "sic",
+            "label": "Industria (código SIC)",
+            "value": "7372 · Services-Prepackaged Software"
+          },
+          {
+            "key": "hq",
+            "label": "Sede",
+            "value": "Menlo Park, California"
+          },
+          {
+            "key": "incorporation",
+            "label": "Constituida en",
+            "value": "Delaware"
+          },
+          {
+            "key": "fiscal_year_end",
+            "label": "Cierre del ejercicio",
+            "value": "31 de enero"
+          },
+          {
+            "key": "category",
+            "label": "Tipo de emisor",
+            "value": "Gran emisor (large accelerated filer)"
+          }
+        ],
+        "source": "SEC EDGAR (submissions del emisor)",
+        "status": "ok"
+      },
+      "history_10y": {
+        "currency": "USD",
+        "reason": "EDGAR trae 8 ejercicios",
+        "rows": [
+          {
+            "fcf_txt": "−$146.04M",
+            "gap_before": false,
+            "net_income_txt": "−$178.03M",
+            "net_margin_txt": "-184.2%",
+            "operating_margin_txt": "-191.9%",
+            "reasons": {},
+            "revenue_growth_txt": "—",
+            "revenue_txt": "$96.67M",
+            "year": 2019
+          },
+          {
+            "fcf_txt": "−$195.14M",
+            "gap_before": false,
+            "net_income_txt": "−$348.54M",
+            "net_margin_txt": "-131.6%",
+            "operating_margin_txt": "-135.3%",
+            "reasons": {},
+            "revenue_growth_txt": "+173.9%",
+            "revenue_txt": "$264.75M",
+            "year": 2020
+          },
+          {
+            "fcf_txt": "−$80.45M",
+            "gap_before": false,
+            "net_income_txt": "−$539.10M",
+            "net_margin_txt": "-91.1%",
+            "operating_margin_txt": "-91.9%",
+            "reasons": {},
+            "revenue_growth_txt": "+123.6%",
+            "revenue_txt": "$592.05M",
+            "year": 2021
+          },
+          {
+            "fcf_txt": "$93.96M",
+            "gap_before": false,
+            "net_income_txt": "−$679.95M",
+            "net_margin_txt": "-55.8%",
+            "operating_margin_txt": "-58.6%",
+            "reasons": {},
+            "revenue_growth_txt": "+106.0%",
+            "revenue_txt": "$1.22B",
+            "year": 2022
+          },
+          {
+            "fcf_txt": "$520.51M",
+            "gap_before": false,
+            "net_income_txt": "−$796.71M",
+            "net_margin_txt": "-38.6%",
+            "operating_margin_txt": "-40.8%",
+            "reasons": {},
+            "revenue_growth_txt": "+69.4%",
+            "revenue_txt": "$2.07B",
+            "year": 2023
+          },
+          {
+            "fcf_txt": "$813.04M",
+            "gap_before": false,
+            "net_income_txt": "−$836.10M",
+            "net_margin_txt": "-29.8%",
+            "operating_margin_txt": "-39.0%",
+            "reasons": {},
+            "revenue_growth_txt": "+35.9%",
+            "revenue_txt": "$2.81B",
+            "year": 2024
+          },
+          {
+            "fcf_txt": "$913.49M",
+            "gap_before": false,
+            "net_income_txt": "−$1.29B",
+            "net_margin_txt": "-35.5%",
+            "operating_margin_txt": "-40.2%",
+            "reasons": {},
+            "revenue_growth_txt": "+29.2%",
+            "revenue_txt": "$3.63B",
+            "year": 2025
+          },
+          {
+            "fcf_txt": "$1.12B",
+            "gap_before": false,
+            "net_income_txt": "−$1.33B",
+            "net_margin_txt": "-28.4%",
+            "operating_margin_txt": "-30.6%",
+            "reasons": {},
+            "revenue_growth_txt": "+29.2%",
+            "revenue_txt": "$4.68B",
+            "year": 2026
+          }
+        ],
+        "source": "SEC EDGAR (companyfacts: ejercicios completos de los informes anuales)",
+        "status": "ok"
+      },
+      "news": [],
+      "next_earnings": {
+        "basis": "Fecha estimada (2 de diciembre de 2026): el último 8-K de resultados en SEC EDGAR es del 2 de septiembre de 2026, más un trimestre (91 días).",
+        "date_txt": "2 de diciembre de 2026",
+        "kind": "estimada",
+        "reason": null,
+        "status": "ok"
+      },
+      "piotroski_values": [
+        {
+          "compare": "zero",
+          "cur_txt": "-14.6%",
+          "key": "roa_positive",
+          "prev_txt": null
+        },
+        {
+          "compare": "zero",
+          "cur_txt": "$1.22B",
+          "key": "cfo_positive",
+          "prev_txt": null
+        },
+        {
+          "compare": "prior_year",
+          "cur_txt": "-14.6%",
+          "key": "roa_improved",
+          "prev_txt": "-14.2%"
+        },
+        {
+          "compare": "ni",
+          "cur_txt": "$1.22B",
+          "key": "earnings_quality",
+          "prev_txt": "−$1.33B"
+        },
+        {
+          "compare": "prior_year",
+          "cur_txt": "$2.28B",
+          "key": "debt_reduced",
+          "prev_txt": "$2.27B"
+        },
+        {
+          "compare": "prior_year",
+          "cur_txt": "1.30",
+          "key": "current_ratio_improved",
+          "prev_txt": "1.78"
+        },
+        {
+          "compare": "prior_year",
+          "cur_txt": "343.92M acciones",
+          "key": "no_dilution",
+          "prev_txt": "333.87M acciones"
+        },
+        {
+          "compare": "prior_year",
+          "cur_txt": "67.2%",
+          "key": "gross_margin_improved",
+          "prev_txt": "66.5%"
+        },
+        {
+          "compare": "prior_year",
+          "cur_txt": "0.51",
+          "key": "asset_turnover_improved",
+          "prev_txt": "0.40"
+        }
+      ],
+      "price_change": {
+        "pct_txt": "+7.42%",
+        "session": "2026-10-09",
+        "status": "ok",
+        "tone": "pos",
+        "value_txt": "+$25.49"
+      }
+    },
     "methodology": {
+      "contraction_text": "contraída hacia 50 según la confianza del veredicto: solo los limitadores que lo contradicen o lo vuelven incierto, no los que apuntan en su dirección",
       "models": [
         "Piotroski (2000)",
         "un DCF multietapa con WACC estimado por CAPM"
@@ -2148,38 +2708,43 @@
       "roic_wacc"
     ],
     "pe_label": "P/E (TTM)",
+    "profile": {
+      "country": "Estados Unidos",
+      "industry": "Software de aplicaciones",
+      "sector": "Tecnología"
+    },
     "readings": {
       "beta": {
         "label": "Volátil",
-        "text": "con beta 1.46, la acción amplifica los movimientos del mercado",
+        "text": "con beta 1.27, la acción amplifica los movimientos del mercado.",
         "tone": "warn"
       },
       "buyback_yield": {
         "label": "Dilución",
-        "text": "la emisión de acciones diluyó a los accionistas un 3.0% en el año",
+        "text": "la emisión de acciones diluyó a los accionistas un 3.0% en el año.",
         "tone": "neg"
       },
       "current_ratio": {
         "label": "Ajustada",
-        "text": "la liquidez es ajustada (current ratio 0.94x), con poco margen de maniobra",
+        "text": "la liquidez es ajustada (current ratio 0.94x), con poco margen de maniobra.",
         "tone": "warn"
       },
       "dcf_upside": null,
       "de": {
         "label": "No significativo",
-        "text": "con caja neta, el D/E (1.06x) no mide apalancamiento",
+        "text": "con caja neta, el D/E (1.06x) no mide apalancamiento.",
         "tone": "neu"
       },
       "earnings_growth": null,
       "fcf_yield": {
         "label": "Bajo",
-        "text": "el FCF yield de 0.9% es bajo: se paga caro cada dólar de caja libre",
+        "text": "el FCF yield de 0.9% es bajo: se paga caro cada dólar de caja libre.",
         "tone": "warn"
       },
       "graham": null,
       "interest_coverage": {
         "label": "No significativa",
-        "text": "con EBIT negativo y caja neta, la cobertura de intereses no es significativa: los intereses se pagan con caja",
+        "text": "con EBIT negativo y caja neta, la cobertura de intereses no es significativa: los intereses se pagan con caja.",
         "tone": "neu"
       },
       "net_debt_to_ebitda": {
@@ -2191,19 +2756,19 @@
       "pe": null,
       "pos52": {
         "label": "En máximos de 52 semanas",
-        "text": "cotiza en el 94% del rango de 52 semanas, en la zona de máximos",
+        "text": "cotiza en el 94% del rango de 52 semanas, en la zona de máximos.",
         "tone": "neu"
       },
       "revenue_growth": {
         "label": "Acelerado",
-        "text": "los ingresos por acción crecen 28.7% anual en 3 años, un ritmo acelerado propio de compañías growth",
+        "text": "los ingresos por acción crecen 28.7% anual en 3 años (FY2023–FY2026), un ritmo acelerado propio de compañías de crecimiento.",
         "tone": "pos"
       },
       "roe": null,
       "roic_wacc_spread": null,
       "runway": {
         "label": "Autofinanciada en caja",
-        "text": "el FCF de los últimos doce meses es positivo: la empresa no consume caja; la compensación en acciones (30.2% de los ingresos) supera ese FCF y se paga con dilución",
+        "text": "el FCF de los últimos doce meses es positivo: la empresa no consume caja; la compensación en acciones (30.2% de los ingresos) supera ese FCF y se paga con dilución.",
         "tone": "pos"
       }
     },
@@ -2211,7 +2776,8 @@
       "alerts": {
         "counts": {
           "red_flags": 0,
-          "strengths": 4,
+          "strengths": 3,
+          "unmeasured": null,
           "warnings": 2
         },
         "groups": [
@@ -2242,18 +2808,13 @@
             "items": [
               {
                 "category": "Crecimiento",
-                "detail": "Los ingresos crecen 28.7% anual en tres años (CAGR): ritmo de expansión elevado que, si mantiene márgenes, es el principal motor de creación de valor a largo plazo.",
-                "reason": "Crecimiento fuerte — ingresos +28.7% anual (3 años)"
+                "detail": "Los ingresos por acción crecen 28.7% anual en tres años (FY2023–FY2026, CAGR): ritmo de expansión elevado que, si mantiene márgenes, es el principal motor de creación de valor a largo plazo.",
+                "reason": "Crecimiento fuerte — ingresos por acción +28.7% anual (3 años)"
               },
               {
                 "category": "Solidez financiera",
                 "detail": "La empresa tiene más efectivo que deuda: posición de caja neta que le da flexibilidad para invertir, resistir ciclos o retribuir al accionista sin depender de la financiación externa.",
                 "reason": "Caja neta — sin deuda financiera neta"
-              },
-              {
-                "category": "Rentabilidad",
-                "detail": "Retiene 67% de cada venta tras el costo directo del producto: un margen bruto así suele reflejar marca fuerte, tecnología propia o poder de precios difícil de replicar.",
-                "reason": "Margen bruto muy alto — 67.0%"
               },
               {
                 "category": "Solidez financiera",
@@ -2274,17 +2835,17 @@
           "LECTURA"
         ],
         "eps_vs_revenue_note": null,
-        "intro": "Los ingresos por acción crecen 28.7% anual en 3 años, un ritmo acelerado propio de compañías growth. La emisión de acciones diluyó a los accionistas un 3.0% en el año.",
+        "intro": "Los ingresos por acción crecen 28.7% anual en 3 años (FY2023–FY2026), un ritmo acelerado propio de compañías de crecimiento. La emisión de acciones diluyó a los accionistas un 3.0% en el año.",
         "range52": {
           "axis": "Muestra dónde cotiza el precio dentro de su rango anual. Es contexto de mercado: no es una señal de valoración ni mide la calidad del negocio.",
-          "caption": "Precio actual $368.89 — posición 94% del rango.",
+          "caption": "Precio actual $368.89.",
           "high": "$384.56",
           "low": "$118.30",
           "pos": 94.1147758274,
           "price": "$368.89",
           "reading": {
             "label": "En máximos de 52 semanas",
-            "text": "cotiza en el 94% del rango de 52 semanas, en la zona de máximos",
+            "text": "cotiza en el 94% del rango de 52 semanas, en la zona de máximos.",
             "tone": "neu"
           },
           "zones": [
@@ -2309,7 +2870,7 @@
               "to": 100
             }
           ],
-          "zones_note": "Tramos: mínimos, parte baja, zona media, parte alta y máximos. Es contexto de mercado: la posición en el rango no es una señal de valoración."
+          "zones_note": "Tramos: mínimos, parte baja, zona media, parte alta y máximos."
         },
         "rows": [
           {
@@ -2319,7 +2880,7 @@
             "label": "Crecimiento de ingresos por acción (CAGR 3 años)",
             "reading": "Acelerado",
             "state": "con_dato",
-            "text": "los ingresos por acción crecen 28.7% anual en 3 años, un ritmo acelerado propio de compañías growth",
+            "text": "los ingresos por acción crecen 28.7% anual en 3 años (FY2023–FY2026), un ritmo acelerado propio de compañías de crecimiento.",
             "tone": "pos",
             "value": "28.70%"
           },
@@ -2341,7 +2902,7 @@
             "label": "Buyback yield (recompras netas)",
             "reading": "Dilución",
             "state": "con_dato",
-            "text": "la emisión de acciones diluyó a los accionistas un 3.0% en el año",
+            "text": "la emisión de acciones diluyó a los accionistas un 3.0% en el año.",
             "tone": "neg",
             "value": "-3.01%"
           },
@@ -2370,13 +2931,13 @@
         ],
         "score_components": [
           {
-            "metric": "Crecimiento Ingresos 3Y",
+            "metric": "Crecimiento de ingresos a 3 años",
             "reason": "Crecimiento excepcional (28.7%) — por acción: +31.4% agregado ajustado por las acciones (+2.1% anual)",
-            "value": "28.7%"
+            "value": "28.70%"
           },
           {
-            "metric": "Crecimiento FCF − SBC 3Y",
-            "reason": "Negativo en todos los ejercicios de la ventana (fcf − sbc de −$1.13 por acción a −$1.40 por acción): la tasa no se calcula, pero es una señal, no un dato ausente — peor tramo",
+            "metric": "Crecimiento del FCF − SBC a 3 años",
+            "reason": "Negativo en todos los ejercicios de la ventana (fcf − sbc de −$1.13 por acción a −$1.40 por acción): la tasa no se calcula, pero es una señal, no un dato ausente — peor tramo.",
             "value": "Negativo sostenido"
           }
         ]
@@ -2393,7 +2954,7 @@
               "items": [
                 {
                   "in_block": false,
-                  "metric": "Current Ratio",
+                  "metric": "Liquidez corriente",
                   "reason": "Liquidez ajustada - Poco margen de maniobra (0.94x)",
                   "sign": "-2",
                   "state": "con_dato",
@@ -2403,7 +2964,7 @@
                 {
                   "in_block": false,
                   "metric": "Deuda/Equity",
-                  "reason": "No significativo con caja neta (más efectivo que deuda): no mide apalancamiento, no puntúa",
+                  "reason": "No significativo con caja neta (más efectivo que deuda): no mide apalancamiento, no puntúa.",
                   "sign": "0",
                   "state": "con_dato",
                   "tone": "neu",
@@ -2411,8 +2972,8 @@
                 },
                 {
                   "in_block": false,
-                  "metric": "Cobertura Intereses",
-                  "reason": "No significativo: EBIT < 0 con caja neta (caja > deuda total); los intereses se pagan con caja",
+                  "metric": "Cobertura de intereses",
+                  "reason": "No significativo: EBIT < 0 con caja neta (caja > deuda total); los intereses se pagan con caja.",
                   "sign": "0",
                   "state": "con_dato",
                   "tone": "neu",
@@ -2437,10 +2998,12 @@
                   "value": "Altman Z"
                 }
               ],
+              "key": "Solidez Financiera",
               "max": 20,
-              "name": "Solidez Financiera",
+              "name": "Solidez financiera",
               "pct": 70.0,
               "score": 14,
+              "score_txt": "14 / 20",
               "text": null,
               "tone": "pos"
             },
@@ -2451,20 +3014,20 @@
                 {
                   "in_block": false,
                   "metric": "Margen bruto",
-                  "reason": "Alto (67.0%) - margen que financiará la escala",
+                  "reason": "Alto (67.0%) - margen que financiará la escala.",
                   "sign": "+3",
                   "state": "con_dato",
                   "tone": "pos",
-                  "value": "67.0%"
+                  "value": "67.03%"
                 },
                 {
                   "in_block": false,
                   "metric": "Margen operativo",
-                  "reason": "Pérdida operativa alta (-22.8%) - bandas de pre-beneficio",
+                  "reason": "Pérdida operativa alta (-22.8%) - bandas de pre-beneficio.",
                   "sign": "-3",
                   "state": "con_dato",
                   "tone": "warn",
-                  "value": "-22.8%"
+                  "value": "-22.76%"
                 },
                 {
                   "in_block": false,
@@ -2482,7 +3045,7 @@
                   "sign": "-3",
                   "state": "con_dato",
                   "tone": "warn",
-                  "value": "-8.3%"
+                  "value": "-8.25%"
                 },
                 {
                   "in_block": false,
@@ -2494,10 +3057,12 @@
                   "value": "ROE, ROA, Margen neto, ROIC−WACC"
                 }
               ],
+              "key": "Rentabilidad",
               "max": 20,
               "name": "Rentabilidad",
               "pct": 55.0,
               "score": 11,
+              "score_txt": "11 / 20",
               "text": null,
               "tone": "warn"
             },
@@ -2512,12 +3077,12 @@
                   "sign": "-2",
                   "state": "con_dato",
                   "tone": "warn",
-                  "value": "23.9x"
+                  "value": "23.94x"
                 },
                 {
                   "in_block": false,
                   "metric": "Regla de 40",
-                  "reason": "Crecimiento 31.4% (CAGR 3 años) + margen FCF − SBC -8.3% = 23",
+                  "reason": "Crecimiento 31.4% (CAGR 3 años) + margen FCF − SBC -8.3% = 23.",
                   "sign": "-2",
                   "state": "con_dato",
                   "tone": "warn",
@@ -2530,12 +3095,12 @@
                   "sign": "(-4)",
                   "state": "con_dato",
                   "tone": "neu",
-                  "value": "109.0x"
+                  "value": "109.05x"
                 },
                 {
                   "in_block": false,
                   "metric": "Bloque de múltiplos",
-                  "reason": "promedio de los ajustes reescalados a ±1 (P/FCF -1.00) = -1.00 × 2 (máximo con 1 miembro) = -2.0",
+                  "reason": "media de 1 lectura en una escala de −1 a +1 (P/FCF -1.00): -1.00, que suma -2.0 puntos de un máximo de ±2.",
                   "sign": "-2",
                   "state": "con_dato",
                   "tone": "neg",
@@ -2543,8 +3108,8 @@
                 },
                 {
                   "in_block": false,
-                  "metric": "DCF (upside)",
-                  "reason": "FCF − SBC base −$448.44M (≤ 0): no hay flujo positivo que descontar, así que el DCF no es significativo",
+                  "metric": "DCF directo: no puntúa",
+                  "reason": "FCF − SBC base −$448.44M (≤ 0): no hay flujo positivo que descontar, así que el DCF no es significativo.",
                   "sign": "0",
                   "state": "con_dato",
                   "tone": "neu",
@@ -2560,10 +3125,12 @@
                   "value": "P/E, EV/EBITDA, PEG"
                 }
               ],
+              "key": "Valoración",
               "max": 20,
               "name": "Valoración",
               "pct": 20.0,
               "score": 4,
+              "score_txt": "4 / 20",
               "text": null,
               "tone": "neg"
             },
@@ -2582,7 +3149,7 @@
                 },
                 {
                   "in_block": false,
-                  "metric": "Cash Flow Operativo",
+                  "metric": "Flujo de caja operativo",
                   "reason": "Genera efectivo operativo",
                   "sign": "+3",
                   "state": "con_dato",
@@ -2601,17 +3168,19 @@
                 {
                   "in_block": false,
                   "metric": "FCF / beneficio neto",
-                  "reason": "Beneficio neto negativo o nulo: el ratio no mide la conversión del beneficio en caja",
+                  "reason": "Beneficio neto negativo o nulo: el ratio no mide la conversión del beneficio en caja.",
                   "sign": "0",
                   "state": "con_dato",
                   "tone": "neu",
                   "value": "No significativo"
                 }
               ],
+              "key": "Calidad de Ganancias",
               "max": 20,
-              "name": "Calidad de Ganancias",
+              "name": "Calidad de ganancias",
               "pct": 45.0,
               "score": 9,
+              "score_txt": "9 / 20",
               "text": null,
               "tone": "warn"
             },
@@ -2621,17 +3190,17 @@
               "items": [
                 {
                   "in_block": false,
-                  "metric": "Crecimiento Ingresos 3Y",
+                  "metric": "Crecimiento de ingresos a 3 años",
                   "reason": "Crecimiento excepcional (28.7%) — por acción: +31.4% agregado ajustado por las acciones (+2.1% anual)",
                   "sign": "+5",
                   "state": "con_dato",
                   "tone": "pos",
-                  "value": "28.7%"
+                  "value": "28.70%"
                 },
                 {
                   "in_block": false,
-                  "metric": "Crecimiento FCF − SBC 3Y",
-                  "reason": "Negativo en todos los ejercicios de la ventana (fcf − sbc de −$1.13 por acción a −$1.40 por acción): la tasa no se calcula, pero es una señal, no un dato ausente — peor tramo",
+                  "metric": "Crecimiento del FCF − SBC a 3 años",
+                  "reason": "Negativo en todos los ejercicios de la ventana (fcf − sbc de −$1.13 por acción a −$1.40 por acción): la tasa no se calcula, pero es una señal, no un dato ausente — peor tramo.",
                   "sign": "-3",
                   "state": "con_dato",
                   "tone": "neg",
@@ -2647,10 +3216,12 @@
                   "value": "Crecimiento del BPA"
                 }
               ],
+              "key": "Crecimiento",
               "max": 20,
               "name": "Crecimiento",
               "pct": 60.0,
               "score": 12,
+              "score_txt": "12 / 20",
               "text": null,
               "tone": "pos"
             }
@@ -2678,7 +3249,7 @@
             "value": "FCF+"
           },
           {
-            "body": "Neutral - Monitorear indicadores. El F-Score de Piotroski verifica 9 señales contables de mejora en rentabilidad, estructura de capital y eficiencia operativa (FY2026 vs FY2025). En esta industria los criterios de liquidez (current ratio) y de margen bruto informan poco: el capital circulante negativo y su estructura de márgenes son propios del modelo de negocio.",
+            "body": "Neutral - Monitorear indicadores. El F-Score de Piotroski verifica 9 señales contables de mejora en rentabilidad, estructura de capital y eficiencia operativa (FY2026 vs FY2025).",
             "key": "piotroski",
             "state": "con_dato",
             "subtitle": "Neutral",
@@ -2696,14 +3267,14 @@
             "tone": "neg"
           },
           {
-            "detail": "FY2026: Flujo de caja operativo positivo",
+            "detail": "FY2026: Flujo de caja operativo positivo.",
             "key": "cfo_positive",
             "label": "Flujo de caja operativo positivo",
             "status": "Cumple",
             "tone": "pos"
           },
           {
-            "detail": "FY2026: El ROA no mejoró",
+            "detail": "FY2026: El ROA no mejoró.",
             "key": "roa_improved",
             "label": "ROA en mejora",
             "status": "No cumple",
@@ -2717,14 +3288,14 @@
             "tone": "pos"
           },
           {
-            "detail": "FY2026: La deuda a largo plazo aumentó",
+            "detail": "FY2026: La deuda a largo plazo aumentó.",
             "key": "debt_reduced",
             "label": "Reducción de deuda a largo plazo",
             "status": "No cumple",
             "tone": "neg"
           },
           {
-            "detail": "FY2026: La liquidez no mejoró",
+            "detail": "FY2026: La liquidez no mejoró.",
             "key": "current_ratio_improved",
             "label": "Liquidez en mejora",
             "status": "No cumple",
@@ -2738,14 +3309,14 @@
             "tone": "neg"
           },
           {
-            "detail": "FY2026: El margen bruto mejoró",
+            "detail": "FY2026: El margen bruto mejoró.",
             "key": "gross_margin_improved",
             "label": "Margen bruto en mejora",
             "status": "Cumple",
             "tone": "pos"
           },
           {
-            "detail": "FY2026: La rotación de activos mejoró",
+            "detail": "FY2026: La rotación de activos mejoró.",
             "key": "asset_turnover_improved",
             "label": "Rotación de activos en mejora",
             "status": "Cumple",
@@ -2766,14 +3337,14 @@
           {
             "key": "momentum",
             "label": "Momentum 12-1",
-            "text": "en los 12 meses anteriores al último, la acción subió un 31.8%: el mercado viene premiando la acción",
+            "text": "en los 12 meses anteriores al último, la acción subió un 31.8%: el mercado viene premiando la acción.",
             "tone": "neu",
             "value": "+31.8%"
           },
           {
             "key": "trend",
             "label": "Tendencia (200 sesiones)",
-            "text": "cotiza un 59.7% por encima de su media de 200 sesiones, que sube: régimen alcista",
+            "text": "cotiza un 59.7% por encima de su media de 200 sesiones, que sube: régimen alcista.",
             "tone": "neu",
             "value": "Alcista"
           },
@@ -2787,16 +3358,16 @@
           {
             "key": "drawdown",
             "label": "Caída máxima",
-            "text": "en el último año llegó a caer un 56.3% desde su máximo (2025-11-03 → 2026-04-10); en los 2 años de la serie, un 56.3%",
+            "text": "en el último año llegó a caer un 56.3% desde su máximo (2025-11-03 → 2026-04-10); en los 2 años de la serie, un 56.3%.",
             "tone": "neu",
             "value": "−56.3%"
           },
           {
             "key": "relative_strength",
-            "label": "Fuerza relativa frente a XLK (12 meses)",
-            "text": "en 12 meses, la acción +47.4% frente al +37.5% del ETF de su sector (XLK): se mueve con su sector",
+            "label": "Fuerza relativa frente a XLK (1 año)",
+            "text": "en 1 año, la acción +47.2% frente al +37.7% del ETF de su sector (XLK): se mueve con su sector.",
             "tone": "neu",
-            "value": "+10.0 pp"
+            "value": "+9.5 pp"
           },
           {
             "key": "volume",
@@ -2839,18 +3410,19 @@
             "$1.19B"
           ],
           [
-            "EPS",
+            "BPA",
             "−$3.18",
             "Valor en libros / acción",
             "$6.10"
           ]
         ],
-        "intro": "Margen bruto de 67.0%: alto, margen que financiará la escala. Margen operativo de -22.8%: pérdida operativa alta, bandas de pre-beneficio. Mejora del margen operativo de +9.5 pp: fuerte mejora. Margen FCF − SBC de -8.3%: quema moderada, FCF menos compensación en acciones sobre ingresos (FCF bruto 22.0%).",
+        "figures_title": "Cifras de los últimos doce meses (TTM, a 31 de julio de 2026)",
+        "intro": "Margen bruto de 67.03%: alto, margen que financiará la escala. Margen operativo de -22.76%: pérdida operativa alta, bandas de pre-beneficio. Mejora del margen operativo de +9.5 pp: fuerte mejora. Margen FCF − SBC de -8.25%: quema moderada, FCF menos compensación en acciones sobre ingresos (FCF bruto 22.0%).",
         "quality_readings": [
           {
             "key": "dupont",
             "label": "DuPont del ROE",
-            "text": "ROE −69.2% = margen neto −28.4% × rotación de activos 0.51 × apalancamiento 4.75.",
+            "text": "ROE de FY2026: −69.2% = margen neto −28.4% × rotación de activos 0.51 × apalancamiento 4.75.",
             "tone": "neu"
           },
           {
@@ -2862,7 +3434,7 @@
           {
             "key": "sbc_cost",
             "label": "Compensación en acciones",
-            "text": "La compensación en acciones es el 30.2% de los ingresos: un coste real que se paga en dilución. Al restarla, el margen FCF baja del 22.0% al −8.3%; el DCF descuenta el FCF − SBC.",
+            "text": "La compensación en acciones es el 30.2% de los ingresos (TTM): un coste real que se paga en dilución. Al restarla, el margen FCF (TTM) baja del 22.0% al −8.3%; el DCF descuenta el FCF − SBC.",
             "tone": "neu"
           }
         ],
@@ -2875,7 +3447,7 @@
             "label": "ROE",
             "reading": "No aplica a empresas en crecimiento sin beneficio",
             "state": "no_aplica",
-            "text": null,
+            "text": "negativo por definición del arquetipo (aún sin beneficio); la rentabilidad se mide con el margen bruto, el margen operativo y su mejora, y el margen FCF − SBC.",
             "tone": "neu",
             "value": "—"
           },
@@ -2886,7 +3458,7 @@
             "label": "ROA",
             "reading": "No aplica a empresas en crecimiento sin beneficio",
             "state": "no_aplica",
-            "text": null,
+            "text": "negativo por definición del arquetipo (aún sin beneficio); la rentabilidad se mide con el margen bruto, el margen operativo y su mejora, y el margen FCF − SBC.",
             "tone": "neu",
             "value": "—"
           },
@@ -2897,29 +3469,29 @@
             "label": "ROIC",
             "reading": "No aplica a empresas en crecimiento sin beneficio",
             "state": "no_aplica",
-            "text": null,
+            "text": "negativo por definición del arquetipo (aún sin beneficio); la rentabilidad se mide con el margen bruto, el margen operativo y su mejora, y el margen FCF − SBC.",
             "tone": "neu",
             "value": "—"
           },
           {
-            "bench": "62.58%",
-            "gap": "+7%",
+            "bench": "61.96%",
+            "gap": "+8%",
             "key": "gross_margin",
             "label": "Margen bruto",
             "reading": "En línea",
             "state": "con_dato",
-            "text": "Margen bruto de 67.0% frente a 62.6% de su industria (+7%): en línea",
+            "text": "Margen bruto de 67.0% frente a 62.0% de su industria sin ella (+8%): en línea.",
             "tone": "neu",
             "value": "67.03%"
           },
           {
-            "bench": "3.69%",
-            "gap": "-717%",
+            "bench": "8.90%",
+            "gap": "-356%",
             "key": "operating_margin",
             "label": "Margen operativo",
             "reading": "Muy inferior",
             "state": "con_dato",
-            "text": "Margen operativo de -22.8% frente a 3.7% de su industria (-717%): muy inferior",
+            "text": "Margen operativo de -22.8% frente a 8.9% de su industria sin ella (-356%): muy inferior.",
             "tone": "neg",
             "value": "-22.76%"
           },
@@ -2930,7 +3502,7 @@
             "label": "Margen neto",
             "reading": "No aplica a empresas en crecimiento sin beneficio",
             "state": "no_aplica",
-            "text": null,
+            "text": "negativo por definición del arquetipo (aún sin beneficio); la rentabilidad se mide con el margen bruto, el margen operativo y su mejora, y el margen FCF − SBC.",
             "tone": "neu",
             "value": "—"
           },
@@ -2954,7 +3526,7 @@
             "state": "con_dato",
             "text": "Quema moderada (-8.3%) - FCF menos compensación en acciones sobre ingresos (FCF bruto 22.0%)",
             "tone": "warn",
-            "value": "-8.3%"
+            "value": "-8.25%"
           },
           {
             "bench": "—",
@@ -2981,7 +3553,7 @@
           {
             "key": "coverage",
             "label": "Cobertura de intereses",
-            "text": "Cobertura (gasto por intereses): el EBIT cubre -148.8 veces los intereses; el EBITDA, -118.3 veces.",
+            "text": "Cobertura (gasto por intereses): el EBIT (TTM) es negativo y no cubre los intereses; el EBITDA (TTM) también es negativo.",
             "tone": "neu"
           }
         ],
@@ -2993,7 +3565,7 @@
             "label": "Runway",
             "reading": "Autofinanciada en caja",
             "state": "con_dato",
-            "text": "el FCF de los últimos doce meses es positivo: la empresa no consume caja; la compensación en acciones (30.2% de los ingresos) supera ese FCF y se paga con dilución",
+            "text": "el FCF de los últimos doce meses es positivo: la empresa no consume caja; la compensación en acciones (30.2% de los ingresos) supera ese FCF y se paga con dilución.",
             "tone": "pos",
             "value": "Autofinanciada"
           },
@@ -3004,7 +3576,7 @@
             "label": "Current ratio",
             "reading": "Ajustada",
             "state": "con_dato",
-            "text": "la liquidez es ajustada (current ratio 0.94x), con poco margen de maniobra",
+            "text": "la liquidez es ajustada (current ratio 0.94x), con poco margen de maniobra.",
             "tone": "warn",
             "value": "0.94x"
           },
@@ -3037,7 +3609,7 @@
             "label": "Deuda / Equity",
             "reading": "No significativo",
             "state": "no_significativo",
-            "text": "con caja neta, el D/E (1.06x) no mide apalancamiento",
+            "text": "con caja neta, el D/E (1.06x) no mide apalancamiento.",
             "tone": "neu",
             "value": "1.06x"
           },
@@ -3070,7 +3642,7 @@
             "label": "Cobertura de intereses",
             "reading": "No significativa",
             "state": "no_significativo",
-            "text": "con EBIT negativo y caja neta, la cobertura de intereses no es significativa: los intereses se pagan con caja",
+            "text": "con EBIT negativo y caja neta, la cobertura de intereses no es significativa: los intereses se pagan con caja.",
             "tone": "neu",
             "value": "—"
           }
@@ -3111,7 +3683,7 @@
               "label": "Valor justo DCF",
               "reading": "No significativo",
               "state": "no_significativo",
-              "text": "FCF − SBC base −$448.44M (≤ 0): no hay flujo positivo que descontar, así que el DCF no es significativo",
+              "text": "FCF − SBC base −$448.44M (≤ 0): no hay flujo positivo que descontar, así que el DCF no es significativo.",
               "tone": null,
               "value": "—"
             }
@@ -3122,17 +3694,17 @@
         "market_note": null,
         "normalization_note": "Beneficio TTM (4 trimestres): reportado −$1.09B, normalizado −$1.11B (no recurrentes 1.8% del beneficio; cargos especiales (deterioros, litigios, reestructuración) (explicita, confianza alta), recurrente (4 de los últimos 4 ejercicios): sin exceso sobre su promedio, no se ajusta; ganancias por venta de valores (explicita, confianza alta): $19.72M netos). El score usa el beneficio normalizado.",
         "premortem": null,
-        "reference_note": "Referencia: industria «Software (Internet)»; Damodaran clasifica a la empresa en esa industria (símbolo), EE. UU., 29 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
+        "reference_note": "Referencia: industria «Software de internet»; Damodaran clasifica a la empresa en esa industria (símbolo), no en la de su perfil («Software de aplicaciones», la de la cabecera), EE. UU., 29 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Referencia de la industria sin Snowflake, que pesa el 25 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 31 de octubre de 2025). Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
         "reverse_dcf": null,
         "rows": [
           {
-            "bench": "34.82x",
+            "bench": "—",
             "gap": "—",
             "key": "pe",
             "label": "P/E (TTM)",
             "reading": "No aplica a empresas en crecimiento sin beneficio",
             "state": "no_aplica",
-            "text": null,
+            "text": "aún no tiene beneficios que capitalizar.",
             "tone": "neu",
             "value": "—"
           },
@@ -3143,18 +3715,18 @@
             "label": "Forward P/E",
             "reading": "No aplica a empresas en crecimiento sin beneficio",
             "state": "no_aplica",
-            "text": null,
+            "text": "aún no tiene beneficios que capitalizar.",
             "tone": "neu",
             "value": "—"
           },
           {
-            "bench": "10.86x",
-            "gap": "+458%",
+            "bench": "8.84x",
+            "gap": "+585%",
             "key": "pb",
             "label": "P/B",
             "reading": "Prima elevada",
             "state": "con_dato",
-            "text": "P/B de 60.5x frente a 10.9x de su industria (+458%): prima elevada",
+            "text": "P/B de 60.5x frente a 8.8x de su industria sin ella (+585%): prima elevada.",
             "tone": "neg",
             "value": "60.54x"
           },
@@ -3176,18 +3748,18 @@
             "label": "PEG",
             "reading": "No aplica a empresas en crecimiento sin beneficio",
             "state": "no_aplica",
-            "text": null,
+            "text": "aún no tiene beneficios que capitalizar.",
             "tone": "neu",
             "value": "—"
           },
           {
-            "bench": "15.73x",
+            "bench": "—",
             "gap": "—",
             "key": "ev_ebitda",
             "label": "EV/EBITDA",
             "reading": "No aplica a empresas en crecimiento sin beneficio",
             "state": "no_aplica",
-            "text": null,
+            "text": "con un EBITDA de −$983.72M (≤ 0) el múltiplo no tiene sentido.",
             "tone": "neu",
             "value": "—"
           },
@@ -3220,7 +3792,7 @@
             "label": "Earnings Yield (E/P)",
             "reading": "No aplica a empresas en crecimiento sin beneficio",
             "state": "no_aplica",
-            "text": null,
+            "text": "aún no tiene beneficios que capitalizar.",
             "tone": "neu",
             "value": "—"
           },
@@ -3244,7 +3816,7 @@
             "state": "con_dato",
             "text": "Exigente por ventas (23.9x)",
             "tone": "warn",
-            "value": "23.9x"
+            "value": "23.94x"
           },
           {
             "bench": "—",
@@ -3253,7 +3825,7 @@
             "label": "Regla de 40",
             "reading": "Exigente",
             "state": "con_dato",
-            "text": "Crecimiento 31.4% (CAGR 3 años) + margen FCF − SBC -8.3% = 23",
+            "text": "Crecimiento 31.4% (CAGR 3 años) + margen FCF − SBC -8.3% = 23.",
             "tone": "warn",
             "value": "23"
           }
@@ -3262,7 +3834,7 @@
         "wacc_breakdown": [
           {
             "label": "WACC",
-            "value": "10.70%"
+            "value": "10.82%"
           },
           {
             "label": "Peso del patrimonio",
@@ -3270,19 +3842,15 @@
           },
           {
             "label": "Coste del patrimonio (Ke)",
-            "value": "10.79%"
+            "value": "10.92%"
           },
           {
             "label": "Tasa libre de riesgo (Rf)",
             "value": "5.29%"
           },
           {
-            "label": "Beta bruta (propia, 2 años)",
-            "value": "1.46"
-          },
-          {
-            "label": "Beta ajustada (Blume)",
-            "value": "1.31"
+            "label": "Beta de abajo hacia arriba (Damodaran, sin Blume)",
+            "value": "1.27"
           },
           {
             "label": "Prima de mercado implícita",
@@ -3305,13 +3873,14 @@
             "value": "21.00%"
           }
         ],
-        "wacc_note": "WACC 10.70% = 98.28% × Ke 10.79% (Rf 5.29% + β ajustada 1.31 [bruta 1.46, propia, 2 años semanales frente al S&P 500, Blume] × prima implícita 4.20%) + 1.72% × Kd 6.40% × (1 − t 21.00%). Kd = Rf + spread del rating sintético BBB (tabla de empresas grandes); regla M: EBIT < 0 con caja neta, cobertura no significativa -> tramo de caja neta. t: tipo legal (beneficio antes de impuestos ≤ 0: tipo legal 21%). Rf: ^TNX no disponible (sin cotización): valor de config."
+        "wacc_note": "WACC 10.82% = 98.28% × Ke 10.92% (Rf 5.29% [Tesoro de EE. UU. a 10 años del par Rf–ERP de Damodaran, 1 de octubre de 2026] + β de abajo hacia arriba 1.27 [βU 1.25 de la industria (Damodaran, enero de 2026) reapalancada con D/E 0.02 y t 21%; sin Blume] × prima implícita 4.20% + prima de riesgo país 0.31 pp (ingresos por geografía: EMEA 16%, Asia-Pacific and Japan 6%; Damodaran, enero de 2026); el 3% de los ingresos no tiene país identificado («Other Americas»)) + 1.72% × Kd 6.40% × (1 − t 21.00%). Kd = Rf + spread del rating sintético BBB (tabla de empresas grandes); regla M: EBIT < 0 con caja neta, cobertura no significativa -> tramo de caja neta. t: tipo legal (beneficio antes de impuestos ≤ 0: tipo legal 21%). Rf y prima implícita del mismo día: bono del Tesoro de EE. UU. a 10 años y prima implícita de Damodaran del 1 de octubre de 2026."
       }
     },
     "summary": {
       "alert_counts": {
         "red_flags": 0,
-        "strengths": 4,
+        "strengths": 3,
+        "unmeasured": null,
         "warnings": 2
       },
       "cards": [
@@ -3320,11 +3889,11 @@
           "delta": "",
           "key": "revenue_growth",
           "label": "Crecimiento ingresos por acción (3 años)",
-          "pill": "En rango",
+          "pill": "Sin referencia",
           "state": "con_dato",
           "tone": "neu",
           "unit": "%",
-          "value": "28.7"
+          "value": "28.70"
         },
         {
           "bench": "No aplica a empresas en crecimiento sin beneficio",
@@ -3353,44 +3922,44 @@
           "delta": "",
           "key": "ev_sales",
           "label": "EV/Ventas",
-          "pill": "En rango",
+          "pill": "Sin referencia",
           "state": "con_dato",
           "tone": "neu",
           "unit": "x",
-          "value": "23.9"
+          "value": "23.94"
         },
         {
           "bench": "",
           "delta": "",
           "key": "fcf_yield",
           "label": "FCF yield",
-          "pill": "En rango",
+          "pill": "Sin referencia",
           "state": "con_dato",
           "tone": "neu",
           "unit": "%",
-          "value": "0.9"
+          "value": "0.92"
         },
         {
           "bench": "",
           "delta": "",
           "key": "rule_of_40",
           "label": "Regla de 40",
-          "pill": "En rango",
+          "pill": "Sin referencia",
           "state": "con_dato",
           "tone": "neu",
           "unit": "%",
-          "value": "23.1"
+          "value": "23.13"
         }
       ],
       "composition": {
-        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: Valoración (base 10/20 + bloque de múltiplos y DCF) reescalada a 100 y contraída hacia 50 según la confianza.",
+        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: Valoración (base 10/20 + bloque de múltiplos y DCF) reescalada a 100 y contraída hacia 50 según la confianza del veredicto: solo los limitadores que lo contradicen o lo vuelven incierto, no los que apuntan en su dirección.",
         "price": {
           "level": "muy exigente",
           "note": null,
           "rows": [
             {
               "kind": "signed",
-              "label": "EV/Ventas · 23.9x",
+              "label": "EV/Ventas · 23.94x",
               "tone": "neg",
               "value": -2
             },
@@ -3408,7 +3977,7 @@
             },
             {
               "kind": "signed",
-              "label": "DCF (upside) · No significativo",
+              "label": "DCF directo: no puntúa · No significativo",
               "tone": "neu",
               "value": 0
             }
@@ -3424,7 +3993,7 @@
           "rows": [
             {
               "kind": "bar",
-              "label": "Solidez Financiera",
+              "label": "Solidez financiera",
               "max": 20,
               "pct": 70.0,
               "tone": "pos",
@@ -3440,7 +4009,7 @@
             },
             {
               "kind": "bar",
-              "label": "Calidad de Ganancias",
+              "label": "Calidad de ganancias",
               "max": 20,
               "pct": 45.0,
               "tone": "warn",
@@ -3467,11 +4036,11 @@
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
-          "text": "Destaca en Solidez Financiera (14/20); el punto débil es Calidad de Ganancias (9/20)."
+          "text": "Destaca en Solidez financiera (14/20); el punto débil es Calidad de ganancias (9/20)."
         },
         {
           "label": "RENTABILIDAD",
-          "text": "Margen bruto 67.0%: alto (67.0%); Margen operativo -22.8%: pérdida operativa alta (-22.8%)."
+          "text": "Margen bruto 67.03%: alto (67.0%); Margen operativo -22.76%: pérdida operativa alta (-22.8%)."
         },
         {
           "label": "SOLIDEZ",
@@ -3479,7 +4048,7 @@
         },
         {
           "label": "CRECIMIENTO Y RETORNO",
-          "text": "Los ingresos por acción crecen 28.7% anual en 3 años, un ritmo acelerado propio de compañías growth. La emisión de acciones diluyó a los accionistas un 3.0% en el año."
+          "text": "Los ingresos por acción crecen 28.7% anual en 3 años (FY2023–FY2026), un ritmo acelerado propio de compañías de crecimiento. La emisión de acciones diluyó a los accionistas un 3.0% en el año."
         },
         {
           "label": "ATRACTIVO DEL PRECIO",
@@ -3487,17 +4056,17 @@
         },
         {
           "label": "CONTEXTO DE MERCADO",
-          "text": "Cotiza en el 94% del rango de 52 semanas, en la zona de máximos. Con beta 1.46, la acción amplifica los movimientos del mercado."
+          "text": "Cotiza en el 94% del rango de 52 semanas, en la zona de máximos. Con beta 1.27, la acción amplifica los movimientos del mercado."
         },
         {
           "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Alta: solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo. Contrae el atractivo del precio hacia 50; la calidad no se contrae."
+          "text": "Alta: solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo. No contrae el atractivo del precio ni la calidad."
         }
       ]
     },
     "tooltips": {
       "beta": {
-        "note": null,
+        "note": "«Defensiva» exige la beta propia de la acción, la que pasa los filtros de la regresión; con la de su industria, la lectura es «Beta baja».",
         "tables": [
           {
             "bands": [
@@ -3522,7 +4091,7 @@
                 "tone": "neg"
               }
             ],
-            "title": "Umbrales del sector (del sector)"
+            "title": "Umbrales del sector"
           }
         ]
       },
@@ -3709,31 +4278,31 @@
             "bands": [
               {
                 "label": "Muy superior",
-                "range": "≥ 84.5%",
+                "range": "≥ 83.7%",
                 "tone": "pos"
               },
               {
                 "label": "Superior",
-                "range": "68.8% – 84.5%",
+                "range": "68.2% – 83.7%",
                 "tone": "pos"
               },
               {
                 "label": "En línea",
-                "range": "56.3% – 68.8%",
+                "range": "55.8% – 68.2%",
                 "tone": "neu"
               },
               {
                 "label": "Inferior",
-                "range": "40.7% – 56.3%",
+                "range": "40.3% – 55.8%",
                 "tone": "warn"
               },
               {
                 "label": "Muy inferior",
-                "range": "< 40.7%",
+                "range": "< 40.3%",
                 "tone": "neg"
               }
             ],
-            "title": "Frente a la referencia de su industria (62.6%)"
+            "title": "Frente a la referencia de su industria sin ella (62%)"
           }
         ]
       },
@@ -3803,7 +4372,7 @@
                 "tone": "neg"
               }
             ],
-            "title": "Umbrales del sector (del sector)"
+            "title": "Umbrales del sector"
           }
         ]
       },
@@ -3818,31 +4387,31 @@
             "bands": [
               {
                 "label": "Muy superior",
-                "range": "≥ 5%",
+                "range": "≥ 12%",
                 "tone": "pos"
               },
               {
                 "label": "Superior",
-                "range": "4.1% – 5%",
+                "range": "9.8% – 12%",
                 "tone": "pos"
               },
               {
                 "label": "En línea",
-                "range": "3.3% – 4.1%",
+                "range": "8% – 9.8%",
                 "tone": "neu"
               },
               {
                 "label": "Inferior",
-                "range": "2.4% – 3.3%",
+                "range": "5.8% – 8%",
                 "tone": "warn"
               },
               {
                 "label": "Muy inferior",
-                "range": "< 2.4%",
+                "range": "< 5.8%",
                 "tone": "neg"
               }
             ],
-            "title": "Frente a la referencia de su industria (3.7%)"
+            "title": "Frente a la referencia de su industria sin ella (8.9%)"
           }
         ]
       },
@@ -3893,31 +4462,31 @@
             "bands": [
               {
                 "label": "Descuento profundo",
-                "range": "≤ 7.1x",
+                "range": "≤ 5.7x",
                 "tone": "pos"
               },
               {
                 "label": "Descuento",
-                "range": "7.1x – 9.8x",
+                "range": "5.7x – 8.0x",
                 "tone": "pos"
               },
               {
                 "label": "En línea",
-                "range": "9.8x – 11.9x",
+                "range": "8.0x – 9.7x",
                 "tone": "neu"
               },
               {
                 "label": "Prima moderada",
-                "range": "11.9x – 14.7x",
+                "range": "9.7x – 11.9x",
                 "tone": "warn"
               },
               {
                 "label": "Prima elevada",
-                "range": "≥ 14.7x",
+                "range": "≥ 11.9x",
                 "tone": "neg"
               }
             ],
-            "title": "Frente a la referencia de su industria (10.9x)"
+            "title": "Frente a la referencia de su industria sin ella (8.8x)"
           }
         ]
       },
@@ -4026,12 +4595,12 @@
             "bands": [
               {
                 "label": "excelente",
-                "range": "≥ 80",
+                "range": "≥ 85",
                 "tone": "pos"
               },
               {
                 "label": "sólida",
-                "range": "65 – 80",
+                "range": "65 – 85",
                 "tone": "pos"
               },
               {
@@ -4135,8 +4704,37 @@
     "version": 1
   },
   "earnings_normalization": {
+    "after_tax": {
+      "applied": false,
+      "charges_back": 0,
+      "equity_income": 0.0,
+      "equity_income_net_of_tax": null,
+      "excess": 0.0,
+      "explained": -1076354000.0,
+      "income": -1110514820.0,
+      "minority_interests": -2354000.0,
+      "named": 0.0,
+      "named_equity_net_of_tax": 0.0,
+      "named_gains": 0.0,
+      "named_tax_benefit": 0.0,
+      "net_interest": 162753000.0,
+      "operating_income": -1236753000.0,
+      "out": 0.0,
+      "period_tax_rate": null,
+      "reason": null,
+      "revenue": 5434647000.0,
+      "tax_rate": 0.21,
+      "tax_source": "tipo legal 21.0% (solo 0 tipos efectivos válidos en el periodo y los últimos ejercicios; hacen falta 3)",
+      "tolerance": 108692940.0,
+      "unexplained": 0.0
+    },
     "applied": true,
     "basis": "TTM (4 trimestres)",
+    "coherence": {
+      "applied": false,
+      "out": 0.0,
+      "reason": "beneficio antes de impuestos no positivo: nada que inflen las ganancias no operativas"
+    },
     "confidence": "alta",
     "differs": true,
     "inference": {
@@ -4180,14 +4778,33 @@
     "normalized_net_income": -1110514820.0,
     "one_off_net": 19716820.0,
     "one_off_pct": 0.0180755923645,
+    "operating": {
+      "below_the_line": 0,
+      "differs": false,
+      "gross": 0.0,
+      "items": [],
+      "margin_normalized": -0.227568230282,
+      "margin_reported": -0.227568230282,
+      "normalized": -1236753000.0,
+      "pieces_source": "SEC EDGAR: el EBIT que presenta el emisor, el del corte (el que se enseña)",
+      "reported": -1236753000.0,
+      "revenue": 5434647000.0,
+      "tagged": 0,
+      "yahoo_quarterly": -1236753000.0
+    },
     "pe_normalized": null,
     "pe_reported": null,
     "pe_unreliable": false,
     "quality_differs": true,
     "reported_net_income": -1090798000.0,
     "structural_net": 0,
+    "unexplained": {
+      "after_tax": 0.0,
+      "pre_tax": 0.0
+    },
     "used_in_score": true
   },
+  "earnings_peak": null,
   "eps_vs_revenue_growth": null,
   "errors": [],
   "graham_number": null,
@@ -4198,19 +4815,202 @@
     ],
     "basis": "por_accion",
     "eps": "el BPA ya es por acción",
+    "eps_cagr": {
+      "anomalous_base": false,
+      "bound": null,
+      "method": "cagr",
+      "not_significant": null,
+      "note": null,
+      "robust": false,
+      "source": null,
+      "window": null,
+      "years_used": 4
+    },
     "fcf_cagr": {
       "anomalous_base": false,
       "basis": "FCF − SBC",
+      "bound": null,
       "method": "cagr",
-      "note": null
+      "not_significant": null,
+      "note": null,
+      "robust": false,
+      "source": null,
+      "window": null,
+      "years_used": 4
     },
     "reason": "las acciones crecen +2.1% anual en la ventana (> 2%): la emisión inflaría el crecimiento agregado",
+    "revenue_cagr": {
+      "anomalous_base": false,
+      "bound": null,
+      "method": "cagr",
+      "not_significant": null,
+      "note": null,
+      "robust": true,
+      "source": null,
+      "window": null,
+      "years_used": 4
+    },
+    "revenue_window": "FY2023–FY2026",
     "shares_cagr_3y": 0.0208160627262,
     "threshold": 0.02
   },
+  "history_10y": {
+    "currency": "USD",
+    "field_reasons": {},
+    "reason": "EDGAR trae 8 ejercicios",
+    "relays": [],
+    "rows": [
+      {
+        "capex": -2058000,
+        "diluted_eps": -4.67,
+        "free_cash_flow": -146040000,
+        "fy_end": "2019-01-31",
+        "gap_before": false,
+        "net_income": -178028000,
+        "net_margin": -1.84168166677,
+        "operating_cash_flow": -143982000,
+        "operating_income": -185465000,
+        "operating_margin": -1.91861668012,
+        "revenue": 96666000,
+        "revenue_growth": null,
+        "year": 2019
+      },
+      {
+        "capex": -18583000,
+        "diluted_eps": -7.77,
+        "free_cash_flow": -195141000,
+        "fy_end": "2020-01-31",
+        "gap_before": false,
+        "net_income": -348535000,
+        "net_margin": -1.31647831145,
+        "operating_cash_flow": -176558000,
+        "operating_income": -358088000,
+        "operating_margin": -1.3525616813,
+        "revenue": 264748000,
+        "revenue_growth": 1.73879130201,
+        "year": 2020
+      },
+      {
+        "capex": -35037000,
+        "diluted_eps": -3.81,
+        "free_cash_flow": -80454000,
+        "fy_end": "2021-01-31",
+        "gap_before": false,
+        "net_income": -539102000,
+        "net_margin": -0.910569902153,
+        "operating_cash_flow": -45417000,
+        "operating_income": -543937000,
+        "operating_margin": -0.918736455935,
+        "revenue": 592049000,
+        "revenue_growth": 1.23627373956,
+        "year": 2021
+      },
+      {
+        "capex": -16221000,
+        "diluted_eps": -2.26,
+        "free_cash_flow": 93958000,
+        "fy_end": "2022-01-31",
+        "gap_before": false,
+        "net_income": -679948000,
+        "net_margin": -0.557642043521,
+        "operating_cash_flow": 110179000,
+        "operating_income": -715036000,
+        "operating_margin": -0.586418573525,
+        "revenue": 1219327000,
+        "revenue_growth": 1.05950352082,
+        "year": 2022
+      },
+      {
+        "capex": -25128000,
+        "diluted_eps": -2.5,
+        "free_cash_flow": 520511000,
+        "fy_end": "2023-01-31",
+        "gap_before": false,
+        "net_income": -796705000,
+        "net_margin": -0.385690474565,
+        "operating_cash_flow": 545639000,
+        "operating_income": -842267000,
+        "operating_margin": -0.407747358107,
+        "revenue": 2065659000,
+        "revenue_growth": 0.694097645668,
+        "year": 2023
+      },
+      {
+        "capex": -35086000,
+        "diluted_eps": -2.55,
+        "free_cash_flow": 813036000,
+        "fy_end": "2024-01-31",
+        "gap_before": false,
+        "net_income": -836097000,
+        "net_margin": -0.297915651905,
+        "operating_cash_flow": 848122000,
+        "operating_income": -1094773000,
+        "operating_margin": -0.390086332068,
+        "revenue": 2806489000,
+        "revenue_growth": 0.35864099544,
+        "year": 2024
+      },
+      {
+        "capex": -46279000,
+        "diluted_eps": -3.86,
+        "free_cash_flow": 913485000,
+        "fy_end": "2025-01-31",
+        "gap_before": false,
+        "net_income": -1285640000,
+        "net_margin": -0.354522782399,
+        "operating_cash_flow": 959764000,
+        "operating_income": -1456010000,
+        "operating_margin": -0.401503310725,
+        "revenue": 3626396000,
+        "revenue_growth": 0.292146878181,
+        "year": 2025
+      },
+      {
+        "capex": -101628000,
+        "diluted_eps": -3.95,
+        "free_cash_flow": 1120314000,
+        "fy_end": "2026-01-31",
+        "gap_before": false,
+        "net_income": -1331616000,
+        "net_margin": -0.284293627638,
+        "operating_cash_flow": 1221942000,
+        "operating_income": -1435165000,
+        "operating_margin": -0.306400842367,
+        "revenue": 4683946000,
+        "revenue_growth": 0.291625625001,
+        "year": 2026
+      }
+    ],
+    "source": "SEC EDGAR (companyfacts: ejercicios completos de los informes anuales)",
+    "status": "ok"
+  },
+  "ke_sensitivity": {
+    "base": {
+      "ke": 0.109230162678,
+      "level": "muy exigente",
+      "score": 20
+    },
+    "dependent": false,
+    "minus": {
+      "ke": 0.0992301626779,
+      "level": "muy exigente",
+      "score": 20
+    },
+    "plus": {
+      "ke": 0.119230162678,
+      "level": "muy exigente",
+      "score": 20
+    },
+    "pp": 0.01,
+    "reason": null,
+    "status": "ok"
+  },
   "key_metrics": {
     "asset_turnover": 0.625357878105,
-    "beta": 1.463630795,
+    "beta": 1.26733025216,
+    "beta_ke": 1.26733025216,
+    "beta_r2": null,
+    "beta_source": "sector",
     "book_value_per_share": 6.099,
     "buyback_yield": -0.0301109729981,
     "cash": 2344695000.0,
@@ -4283,7 +5083,7 @@
     "total_assets": 8690459000.0,
     "total_debt": 2283985000.0,
     "total_equity": 2149664000.0,
-    "wacc": 0.106956827541
+    "wacc": 0.108218281605
   },
   "market_context": {
     "anchor_gap": -0.0407478616031,
@@ -4308,6 +5108,18 @@
     "news": {
       "items": [],
       "reason": "sin clave de Finnhub"
+    },
+    "next_earnings": {
+      "basis": {
+        "cadence_days": 91,
+        "last_results_8k": "2026-09-02"
+      },
+      "date": "2026-12-02",
+      "hour": null,
+      "kind": "estimada",
+      "reason": null,
+      "source": "SEC EDGAR (8-K de resultados, apartado 2.02)",
+      "status": "ok"
     },
     "note": "Contexto de mercado: no puntúa en la calidad ni en el precio. Describe cómo se ha movido la acción, no qué hará.",
     "pead": {
@@ -4350,10 +5162,10 @@
       {
         "field": "market_context.signals.relative_strength.value",
         "key": "relative_strength",
-        "label": "Fuerza relativa frente a XLK (12 meses)",
-        "num": 0.0996640464518,
-        "text": "en 12 meses, la acción +47.4% frente al +37.5% del ETF de su sector (XLK): se mueve con su sector",
-        "value": "+10.0 pp"
+        "label": "Fuerza relativa frente a XLK (1 año)",
+        "num": 0.0946375549298,
+        "text": "en 1 año, la acción +47.2% frente al +37.7% del ETF de su sector (XLK): se mueve con su sector",
+        "value": "+9.5 pp"
       },
       {
         "field": "market_context.signals.abnormal_volume.value",
@@ -4373,6 +5185,7 @@
       "value": -0.563000670387,
       "years": 2.0
     },
+    "series_reasons": {},
     "series_status": {
       "company": "ok",
       "market": "ok",
@@ -4393,11 +5206,11 @@
         "zero_volume_sessions": 0
       },
       "beta": {
-        "adjusted": 1.31063263265,
+        "adjusted": 1.30346538584,
         "as_of": "2026-10-09",
         "first_week": "2024-10-25",
-        "last_week": "2026-10-09",
-        "observations": 103,
+        "last_week": "2026-10-02",
+        "observations": 102,
         "params": {
           "blume_prior": 0.33,
           "blume_weight": 0.67,
@@ -4406,10 +5219,11 @@
           "min_weeks": 52,
           "window_weeks": 104
         },
-        "r2": 0.131376469465,
-        "raw": 1.463630795,
+        "r2": 0.130079142946,
+        "raw": 1.4529334117,
+        "se": 0.375735084333,
         "status": "ok",
-        "value": 1.463630795,
+        "value": 1.4529334117,
         "window_start": "2024-10-18"
       },
       "max_drawdown": {
@@ -4464,26 +5278,26 @@
       "relative_strength": {
         "as_of": "2026-10-09",
         "params": {
-          "windows_sessions": [
-            126,
-            252
+          "windows": [
+            "6M",
+            "1A"
           ]
         },
         "status": "ok",
-        "value": 0.0996640464518,
+        "value": 0.0946375549298,
         "windows": {
-          "126": {
+          "1A": {
+            "company": 0.471616138122,
+            "difference": 0.0946375549298,
+            "sector": 0.376978583192,
+            "start_date": "2025-10-09",
+            "status": "ok"
+          },
+          "6M": {
             "company": 2.04590878366,
             "difference": 1.64884463274,
             "sector": 0.397064150919,
             "start_date": "2026-04-10",
-            "status": "ok"
-          },
-          "252": {
-            "company": 0.474321588866,
-            "difference": 0.0996640464518,
-            "sector": 0.374657542414,
-            "start_date": "2025-10-08",
             "status": "ok"
           }
         }
@@ -4512,49 +5326,85 @@
     "conclusive": true,
     "details": {
       "asset_turnover_improved": {
+        "compare": "prior_year",
+        "cur": 0.512887880037,
         "detail": "La rotación de activos mejoró",
         "passed": true,
-        "state": "cumple"
+        "prev": 0.401419181757,
+        "state": "cumple",
+        "unit": "ratio"
       },
       "cfo_positive": {
+        "compare": "zero",
+        "cur": 1221942000.0,
         "detail": "Flujo de caja operativo positivo",
         "passed": true,
-        "state": "cumple"
+        "prev": null,
+        "state": "cumple",
+        "unit": "money"
       },
       "current_ratio_improved": {
+        "compare": "prior_year",
+        "cur": 1.29873661457,
         "detail": "La liquidez no mejoró",
         "passed": false,
-        "state": "no_cumple"
+        "prev": 1.77796020396,
+        "state": "no_cumple",
+        "unit": "ratio"
       },
       "debt_reduced": {
+        "compare": "prior_year",
+        "cur": 2279827000.0,
         "detail": "La deuda a largo plazo aumentó",
         "passed": false,
-        "state": "no_cumple"
+        "prev": 2271529000.0,
+        "state": "no_cumple",
+        "unit": "money"
       },
       "earnings_quality": {
+        "compare": "ni",
+        "cur": 1221942000.0,
         "detail": "El flujo operativo supera al beneficio neto (beneficio de calidad)",
         "passed": true,
-        "state": "cumple"
+        "prev": -1331616000.0,
+        "state": "cumple",
+        "unit": "money"
       },
       "gross_margin_improved": {
+        "compare": "prior_year",
+        "cur": 0.671686010044,
         "detail": "El margen bruto mejoró",
         "passed": true,
-        "state": "cumple"
+        "prev": 0.665046784742,
+        "state": "cumple",
+        "unit": "pct"
       },
       "no_dilution": {
+        "compare": "prior_year",
+        "cur": 343918000.0,
         "detail": "Emitió nuevas acciones (dilución)",
         "passed": false,
-        "state": "no_cumple"
+        "prev": 333865000.0,
+        "state": "no_cumple",
+        "unit": "shares"
       },
       "roa_improved": {
+        "compare": "prior_year",
+        "cur": -0.145810755987,
         "detail": "El ROA no mejoró",
         "passed": false,
-        "state": "no_cumple"
+        "prev": -0.142312245225,
+        "state": "no_cumple",
+        "unit": "pct"
       },
       "roa_positive": {
+        "compare": "zero",
+        "cur": -0.145810755987,
         "detail": "ROA negativo",
         "passed": false,
-        "state": "no_cumple"
+        "prev": null,
+        "state": "no_cumple",
+        "unit": "pct"
       }
     },
     "evaluated": 9,
@@ -4592,16 +5442,25 @@
     "score": 20,
     "score_raw": 20
   },
+  "price_change": {
+    "change": 25.4900061035,
+    "change_pct": 0.0742283242766,
+    "prev_close": 343.399993896,
+    "reason": null,
+    "session": "2026-10-09",
+    "status": "ok"
+  },
   "price_history": {
     "52w_high": 384.559997559,
     "52w_low": 118.300003052,
-    "beta": 1.463630795
+    "beta": 1.26733025216
   },
   "profile": {
     "country": "United States",
     "currency": "USD",
     "description": "Snowflake Inc. provides a cloud-based data platform for various organizations in the United States and internationally. The company's platform includes artificial intelligence (AI) Data Cloud, which enables customers to consolidate data into a single source of truth to drive meaningful business insights, build data applications, and share data and data products, as well as applies AI for solving business problems. It serves financial services, advertising, media and entertainment, retail and con",
     "exchange": "NYSE",
+    "exchange_code": "NYSE",
     "industry": "Software - Application",
     "market_cap": 130144395264.0,
     "name": "Snowflake Inc.",
@@ -4638,8 +5497,11 @@
         "score": 12
       }
     ],
+    "contracted": false,
     "excluded_categories": [],
+    "factor": null,
     "level": "media",
+    "level_raw": "media",
     "low_confidence": false,
     "low_confidence_reasons": [],
     "low_coverage_categories": [],
@@ -4697,7 +5559,8 @@
       "source": "edgar",
       "window": 5
     },
-    "score": 58
+    "score": 58,
+    "score_raw": 58
   },
   "quality_readings": {
     "coverage": {
@@ -4705,7 +5568,7 @@
       "ebit": -148.755472697,
       "ebitda": -118.320543661,
       "ffo": null,
-      "text": "Cobertura (gasto por intereses): el EBIT cubre -148.8 veces los intereses; el EBITDA, -118.3 veces.",
+      "text": "Cobertura (gasto por intereses): el EBIT (TTM) es negativo y no cubre los intereses; el EBITDA (TTM) también es negativo.",
       "trend": null
     },
     "dupont": {
@@ -4726,7 +5589,7 @@
         "roe": -0.146011975583,
         "turnover": 0.267491953845
       },
-      "text": "ROE −69.2% = margen neto −28.4% × rotación de activos 0.51 × apalancamiento 4.75."
+      "text": "ROE de FY2026: −69.2% = margen neto −28.4% × rotación de activos 0.51 × apalancamiento 4.75."
     },
     "fcf_margin": {
       "basis": "margen FCF − SBC",
@@ -4752,12 +5615,12 @@
       "fcf_margin_adjusted": -0.0825146509056,
       "fcf_margin_raw": 0.219606535622,
       "sbc_to_revenue": 0.302121186528,
-      "text": "La compensación en acciones es el 30.2% de los ingresos: un coste real que se paga en dilución. Al restarla, el margen FCF baja del 22.0% al −8.3%; el DCF descuenta el FCF − SBC."
+      "text": "La compensación en acciones es el 30.2% de los ingresos (TTM): un coste real que se paga en dilución. Al restarla, el margen FCF (TTM) baja del 22.0% al −8.3%; el DCF descuenta el FCF − SBC."
     }
   },
   "ratios": {
     "asset_turnover": 0.625357878105,
-    "beta": 1.463630795,
+    "beta": 1.26733025216,
     "cash_ratio": 0.630035058152,
     "current_ratio": 0.938816847152,
     "debt_to_assets": 0.262815232199,
@@ -4816,10 +5679,11 @@
         "cagr": 0.740854964029,
         "label": "sus ingresos",
         "source": "EDGAR",
+        "window": "FY2019–FY2026",
         "years": 7
       },
       "points": null,
-      "rate": 0.106956827541,
+      "rate": 0.108218281605,
       "reason": "sin flujo positivo que proyectar (FCF por acción base ≤ 0 o sin dato)",
       "rule": null,
       "side": null,
@@ -4832,10 +5696,12 @@
     "ttm": null
   },
   "risk_free": {
-    "as_of": null,
-    "fallback": true,
-    "reason": "^TNX no disponible (sin cotización): valor de config",
-    "source": "config",
+    "as_of": "2026-10-01",
+    "erp": 0.042,
+    "fallback": false,
+    "market": null,
+    "reason": null,
+    "source": "par Rf–ERP de Damodaran",
     "value": 0.0529
   },
   "sbc": {
@@ -4848,6 +5714,10 @@
     "sbc": 1641922000.0,
     "sbc_to_revenue": 0.302121186528,
     "value": -448438000.0
+  },
+  "scenario_inputs": {
+    "reason": "FCF − SBC base −$448.44M (≤ 0): no hay flujo positivo que descontar, así que el DCF no es significativo",
+    "status": "sin_dato"
   },
   "score": {
     "breakdown": {
@@ -4862,7 +5732,7 @@
           },
           {
             "adjustment": 3,
-            "metric": "Cash Flow Operativo",
+            "metric": "Flujo de caja operativo",
             "reason": "Genera efectivo operativo",
             "severity": "good",
             "value": "Positivo"
@@ -4898,15 +5768,15 @@
         "adjustments": [
           {
             "adjustment": 5,
-            "metric": "Crecimiento Ingresos 3Y",
+            "metric": "Crecimiento de ingresos a 3 años",
             "raw": 0.286975427392,
             "reason": "Crecimiento excepcional (28.7%) — por acción: +31.4% agregado ajustado por las acciones (+2.1% anual)",
             "severity": "excellent",
-            "value": "28.7%"
+            "value": "28.70%"
           },
           {
             "adjustment": -3,
-            "metric": "Crecimiento FCF − SBC 3Y",
+            "metric": "Crecimiento del FCF − SBC a 3 años",
             "reason": "Negativo en todos los ejercicios de la ventana (fcf − sbc de −$1.13 por acción a −$1.40 por acción): la tasa no se calcula, pero es una señal, no un dato ausente — peor tramo",
             "severity": "severe",
             "value": "Negativo sostenido"
@@ -4937,14 +5807,14 @@
             "metric": "Margen bruto",
             "reason": "Alto (67.0%) - margen que financiará la escala",
             "severity": "good",
-            "value": "67.0%"
+            "value": "67.03%"
           },
           {
             "adjustment": -3,
             "metric": "Margen operativo",
             "reason": "Pérdida operativa alta (-22.8%) - bandas de pre-beneficio",
             "severity": "moderate",
-            "value": "-22.8%"
+            "value": "-22.76%"
           },
           {
             "adjustment": 4,
@@ -4958,7 +5828,7 @@
             "metric": "Margen FCF − SBC",
             "reason": "Quema moderada (-8.3%) - FCF menos compensación en acciones sobre ingresos (FCF bruto 22.0%)",
             "severity": "moderate",
-            "value": "-8.3%"
+            "value": "-8.25%"
           },
           {
             "adjustment": 0,
@@ -4985,7 +5855,7 @@
         "adjustments": [
           {
             "adjustment": -2,
-            "metric": "Current Ratio",
+            "metric": "Liquidez corriente",
             "reason": "Liquidez ajustada - Poco margen de maniobra (0.94x)",
             "severity": "moderate",
             "value": "0.94x"
@@ -5000,7 +5870,7 @@
           },
           {
             "adjustment": 0,
-            "metric": "Cobertura Intereses",
+            "metric": "Cobertura de intereses",
             "reason": "No significativo: EBIT < 0 con caja neta (caja > deuda total); los intereses se pagan con caja",
             "severity": "neutral",
             "value": "No significativo"
@@ -5040,7 +5910,7 @@
             "metric": "EV/Ventas",
             "reason": "Exigente por ventas (23.9x)",
             "severity": "moderate",
-            "value": "23.9x"
+            "value": "23.94x"
           },
           {
             "adjustment": -2,
@@ -5055,7 +5925,7 @@
             "metric": "P/FCF",
             "reason": "Muy alto (109.0x)",
             "severity": "severe",
-            "value": "109.0x"
+            "value": "109.05x"
           },
           {
             "adjustment": -2,
@@ -5064,14 +5934,19 @@
             "block_members": [
               "P/FCF"
             ],
+            "block_votes": {
+              "P/FCF": -1.0
+            },
+            "formula": "Bloque de múltiplos: promedio de 1 lectura reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = -1.00 × 2 (máximo con 1) = -2.0, redondeado a -2",
             "metric": "Bloque de múltiplos",
-            "reason": "promedio de los ajustes reescalados a ±1 (P/FCF -1.00) = -1.00 × 2 (máximo con 1 miembro) = -2.0",
+            "reason": "media de 1 lectura en una escala de −1 a +1 (P/FCF -1.00): -1.00, que suma -2.0 puntos de un máximo de ±2",
             "severity": "severe",
             "value": "1 múltiplo"
           },
           {
             "adjustment": 0,
-            "metric": "DCF (upside)",
+            "key": "dcf",
+            "metric": "DCF directo: no puntúa",
             "reason": "FCF − SBC base −$448.44M (≤ 0): no hay flujo positivo que descontar, así que el DCF no es significativo",
             "severity": "neutral",
             "value": "No significativo"
@@ -5091,7 +5966,7 @@
           "Exigente por ventas (23.9x)",
           "Crecimiento 31.4% (CAGR 3 años) + margen FCF − SBC -8.3% = 23",
           "Muy alto (109.0x)",
-          "promedio de los ajustes reescalados a ±1 (P/FCF -1.00) = -1.00 × 2 (máximo con 1 miembro) = -2.0",
+          "media de 1 lectura en una escala de −1 a +1 (P/FCF -1.00): -1.00, que suma -2.0 puntos de un máximo de ±2",
           "FCF − SBC base −$448.44M (≤ 0): no hay flujo positivo que descontar, así que el DCF no es significativo",
           "EV/EBITDA: No aplica a empresas en crecimiento sin beneficio: EBITDA negativo o nulo, sin resultado operativo que capitalizar; P/E, PEG: No aplica a empresas en crecimiento sin beneficio: aún no tiene beneficios que capitalizar (no cuenta en la cobertura)"
         ],
@@ -5186,6 +6061,7 @@
     "sector": "Technology",
     "sector_etf": "XLK"
   },
+  "spectrum_adjustment": null,
   "symbol": "SNOW",
   "tax_rate": {
     "bounded": false,
@@ -5205,10 +6081,10 @@
   },
   "wacc": {
     "applicable": true,
-    "beta": 1.31063263265,
+    "beta": 1.26733025216,
     "beta_default": false,
-    "beta_method": "Blume",
-    "beta_raw": 1.463630795,
+    "beta_method": "beta de abajo hacia arriba (sin Blume)",
+    "beta_raw": null,
     "bounds": [
       0.06,
       0.2
@@ -5218,7 +6094,11 @@
     "equity": 130144395264.0,
     "kd": 0.064,
     "kd_after_tax": 0.05056,
-    "ke": 0.107946570571,
+    "ke": 0.109230162678,
+    "ke_capm": 0.106127870591,
+    "ke_crp": 0.00310229208706,
+    "ke_floor": null,
+    "ke_shift": null,
     "mrp": 0.042,
     "rating": {
       "coverage": -148.755472697,
@@ -5227,17 +6107,18 @@
       "spread": 0.0111,
       "table": "grandes"
     },
-    "raw": 0.106956827541,
+    "raw": 0.108218281605,
     "reason": null,
     "rf": 0.0529,
-    "rf_as_of": null,
-    "rf_fallback": true,
-    "rf_reason": "^TNX no disponible (sin cotización): valor de config",
-    "rf_source": "config",
+    "rf_as_of": "2026-10-01",
+    "rf_fallback": false,
+    "rf_market": null,
+    "rf_reason": null,
+    "rf_source": "par Rf–ERP de Damodaran",
     "tax_rate": 0.21,
     "tax_reason": "beneficio antes de impuestos ≤ 0: tipo legal 21%",
     "tax_source": "legal",
-    "value": 0.106956827541,
+    "value": 0.108218281605,
     "weights": {
       "debt": 0.0172469450691,
       "equity": 0.982753054931

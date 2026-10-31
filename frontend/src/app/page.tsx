@@ -33,6 +33,10 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 relative overflow-hidden bg-[#050507]">
+      {/* Precarga del fondo para evitar el flash negro antes de que la imagen (CSS background-image) se descargue. Va
+          aquí, donde se usa (React la sube al <head>); en el layout raíz se precargaba también en /v2 y en /stock, y el
+          navegador avisaba de que no se usaba (V4). */}
+      <link rel="preload" as="image" href="/bg-home.webp" fetchPriority="high" />
       {/* Fondo + velo para contraste */}
       <div
         className="absolute inset-0 bg-cover bg-center pointer-events-none"
@@ -44,7 +48,7 @@ export default function Home() {
         {/* Marca */}
         <div className="mb-9 fade-up">
           <img
-            src="/logo.png"
+            src="/brand/finanzer-logo.svg"
             alt="Finanzer"
             className="h-20 sm:h-24 w-auto mx-auto mb-5"
             style={{ filter: "drop-shadow(0 8px 32px rgba(12,192,108,0.35))" }}

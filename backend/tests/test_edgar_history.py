@@ -154,3 +154,68 @@ def test_large_reads_are_serialised(clean_cache, monkeypatch):
     for t in ts:
         t.join()
     assert state["max"] == 1
+
+
+# ─────────────── V4 · memoria: companyfacts leído concepto a concepto (mismo resultado que json.loads) ───────────────
+def _same(body: bytes):
+    import json as _json
+    want = edgar.reduce_facts(_json.loads(body))
+    got = edgar.reduce_facts_stream(body)
+    assert got == want
+    assert _json.dumps(got) == _json.dumps(want)            # también el orden de las claves
+
+
+def test_stream_reducer_equals_json_loads_on_every_fixture():
+    import glob
+    import os
+    files = sorted(glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)), "fixtures", "f2b", "edgar",
+                                          "companyfacts", "*.json")))
+    assert len(files) >= 40
+    for f in files:
+        _same(open(f, "rb").read())
+
+
+def test_stream_reducer_edge_cases():
+    import json as _json
+    tx = edgar.FINANCIAL_TAXONOMIES[0]
+    wanted = sorted(edgar._WANTED[tx])[0]
+    fact = {"start": "2024-01-01", "end": "2024-12-31", "val": 1.5, "filed": "2025-02-01", "form": "10-K",
+            "accn": "0001-25-000001", "fy": 2024, "fp": "FY", "frame": "CY2024"}
+    other = {**fact, "accn": "0001-25-000009", "filed": "2025-03-01"}
+    base = {"cik": 1, "entityName": "Ñandú “Corp” \\u00e9", "facts": {
+        "dei": {"EntityCommonStockSharesOutstanding": {"units": {"shares": [{**fact, "accn": "DEI", "filed": "2099-01-01"}]}}},
+        tx: {"Unwanted": {"label": "x", "units": {"USD": [other]}}, wanted: {"label": "y", "units": {"USD": [fact]}}}}}
+    _same(_json.dumps(base).encode())
+    _same(_json.dumps(base, indent=2).encode())                                    # espacios y saltos de línea
+    _same(("﻿" + _json.dumps(base)).encode("utf-8"))                         # BOM
+    _same(b'{"cik": 1, "facts": {}}')
+    _same(b'{"cik": 1}')
+    dup = _json.dumps(base)[:-2] + ', "' + tx + '": {"' + wanted + '": {"units": {"USD": [' + _json.dumps(other) + "]}}}}}"
+    _same(dup.encode())                                                            # taxonomía repetida: vale la última
+    import pytest
+    with pytest.raises(AttributeError):                                           # forma rara: el mismo error que antes
+        edgar.reduce_facts(_json.loads(b'{"facts": [1, 2], "cik": 3}'))
+    with pytest.raises(AttributeError):
+        edgar.reduce_facts_stream(b'{"facts": [1, 2], "cik": 3}')
+    _same(b'{"facts": {"dei": [1]}, "cik": 3}')                                   # taxonomía no financiera rara
+    for bad in (b'{"facts": {', b'{"a": 1} x', b'{1: 2}'):
+        with pytest.raises(ValueError):
+            edgar.reduce_facts_stream(bad)
+
+
+def test_reduced_facts_share_repeated_strings():
+    """V4 · memoria: en lo reducido, cada accn / form / filed / fecha repetida es un solo objeto (mismos valores)."""
+    import glob
+    import os
+    f = sorted(glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)), "fixtures", "f2b", "edgar",
+                                      "companyfacts", "*.json")), key=os.path.getsize)[-1]
+    red = edgar._compact(edgar.reduce_facts_stream, open(f, "rb").read())
+    by_value = {}
+    for cs in red["facts"].values():
+        for node in cs.values():
+            for fs in node["units"].values():
+                for fact in fs:
+                    for k in ("accn", "form", "filed", "end"):
+                        if k in fact:
+                            by_value.setdefault(fact[k], set()).add(id(fact[k]))
+    assert by_value and all(len(ids) == 1 for ids in by_value.values())

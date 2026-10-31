@@ -19,12 +19,16 @@ import unicodedata
 
 import claims
 import fixture_backend as fb
+import names
+import prose
 from settings import cfg
 
 # ═══════════════════════════ entradas ═══════════════════════════
 
-def run(sym, env):
-    """(análisis, texto del PDF, registros de afirmaciones) de `sym` desde los fixtures de `env`."""
+def run(sym, env, pdf="actual"):
+    """(análisis, texto del PDF, registros de afirmaciones) de `sym` desde los fixtures de `env`.
+
+    `pdf`: "actual" (lib/pdf_report.py) o "v2" (rediseño E5, lib/pdf_v2, con las series de precios grabadas)."""
     from fastapi import HTTPException
     with claims.collecting() as recs:
         with fb.replay(fb.fixtures_dir(env)) as store:
@@ -32,8 +36,12 @@ def run(sym, env):
                 a = fb.run_analysis(sym, store)
             except HTTPException as e:          # rechazo (SPY): no hay informe que comprobar
                 return {"__http_error__": e.status_code, "detail": e.detail}, "", []
-            pdf = fb.build_pdf_bytes(a, fb.capture_date(store.meta[sym.upper()]))
-    return a, fb.pdf_text(pdf), list(recs)
+            when = fb.capture_date(store.meta[sym.upper()])
+            if pdf == "v2":
+                pdf_bytes = fb.build_pdf_v2_bytes(a, when)
+            else:
+                pdf_bytes = fb.build_pdf_bytes(a, when)
+    return a, fb.pdf_text(pdf_bytes), list(recs)
 
 
 def norm(s):
@@ -45,7 +53,12 @@ def norm(s):
 # Rutas de `display` que no son prosa sobre la empresa: escalas de bandas (tooltips) y detalle técnico.
 SKIP_PATHS = (".tooltips", ".na_keys", ".archetype", ".annex", ".thresholds_key", ".version",
               ".key", ".state", ".tone", ".unit", ".kicker", ".method", ".role", ".zones",
-              ".confidence.reasons[].level")
+              ".confidence.reasons[].level",
+              # Rediseño E2a: display.extended son datos (cifras ya formateadas, la ficha de EDGAR, titulares de
+              # terceros en inglés); su única frase, extended.next_earnings.basis, sí se comprueba.
+              ".extended.price_change", ".extended.company_profile", ".extended.history_10y",
+              ".extended.piotroski_values", ".extended.news", ".extended.next_earnings.status",
+              ".extended.next_earnings.date_txt", ".extended.next_earnings.kind", ".extended.next_earnings.reason")
 ANNEX_TITLE = "detalle técnico para auditoría"
 
 
@@ -63,9 +76,14 @@ def display_strings(display, p=""):
         yield p, display
 
 
+# Cabecera corrida del PDF nuevo (E5) en cada página: con más contenido (datos de E2) una frase puede partirse en un
+# salto de página y la cabecera quedaría en medio de ella. Se quita para leer el texto seguido.
+_V2_RUNNING_HEAD = re.compile(r"===== página \d+ =====\n(?:[^\n]*\n){0,6}?↑ índice\n")
+
+
 def pdf_reading_text(pdf_text):
-    """Texto del PDF que lee el usuario: sin el anexo técnico (D1), normalizado."""
-    t = norm(pdf_text.replace("\n", " "))
+    """Texto del PDF que lee el usuario: sin el anexo técnico (D1) ni la cabecera corrida del PDF nuevo, normalizado."""
+    t = norm(_V2_RUNNING_HEAD.sub(" ", pdf_text).replace("\n", " "))
     i = t.find(ANNEX_TITLE)
     return t if i < 0 else t[:i]
 
@@ -88,7 +106,7 @@ KEYWORDS = [
     ("crecimiento", r"\bcrecen?\b|(?<!no )se contraen?\b(?! el atractivo)|prácticamente plan",
      {"growth", "eps_vs_revenue"}),
     # "prima implícita" (de riesgo del mercado) y "tasa de descuento" no comparan la empresa con nada.
-    ("vs_referencia", r"\b(?:muy )?superior\b|\b(?:muy )?inferior\b|\bprima\b(?! (?:de mercado )?implícita)"
+    ("vs_referencia", r"\b(?:muy )?superior\b|\b(?:muy )?inferior\b|\bprima\b(?! (?:de mercado )?implícita| de riesgo país)"
                       r"|(?<!tasa de )\bdescuento\b",
      {"vs_bench", "dcf_upside", "graham"}),
     ("autofinanciada", r"autofinanciad", {"runway"}),
@@ -105,7 +123,7 @@ KEYWORDS = [
     # Fase 4 (T3): las condiciones del pre-mortem citan la cifra que las mide.
     ("premortem", r"como exige el precio|ya descuenta el precio|que descuenta el precio \(obtiene|volviera a su "
                   r"(?:mediana|media de ciclo)|veces el ebitda", {"premortem"}),
-    ("base_temporal", r"\binteranual\b|anual en 3 años|\(3 años\)|anual de ciclo medio",
+    ("base_temporal", r"\binteranual\b|anual en 3 años|\(3 años[,)]|anual de ciclo medio",
      {"growth", "basis", "eps_vs_revenue", "premortem", "behavioral"}),
     # Fase 5: el contexto de mercado y la lectura conductual citan la señal que los mide.
     ("senal_mercado", r"el mercado (?:viene premiando|viene castigando|apenas ha movido)|régimen (?:alcista|bajista|"
@@ -113,6 +131,8 @@ KEYWORDS = [
                       r"últimas 5 sesiones|volumen en el rango habitual", {"market_signal"}),
     # Fase 5 (PEAD): la sorpresa del BPA y la deriva citan la lectura que las mide.
     ("pead", r"de consenso, una sorpresa|la deriva va en|bernard y thomas", {"market_signal"}),
+    # Rediseño E2a: la fecha de los próximos resultados dice si es anunciada o estimada y de dónde sale.
+    ("proximos_resultados", r"fecha (?:anunciada|estimada) \(", {"next_earnings"}),
     ("conductual", r"actúa como ancla|como sobrerreacción del mercado|da por hecho que el crecimiento pasado",
      {"behavioral"}),
 ]
@@ -120,6 +140,11 @@ KEYWORDS = [
 ENGLISH = re.compile(r"\b(STRONG|GOOD|NEUTRAL|WEAK|MODERATE|POOR|EXCELLENT|MATURE|CYCLICAL|FINANCIAL|UTILITY|"
                      r"GROWTH_PRE_PROFIT|N/A)\b")
 CODE = re.compile(r"\b[a-z]+(?:_[a-z0-9]+)+\b")   # snake_case: por_defecto, industria_banco, pe_implausible…
+# V7 (M6): etiquetas del motor en inglés o a medio traducir (los nombres propios de modelos, como "F-Score", no).
+ANGLICISMS = re.compile(r"\bCash Flow\b|\bNet Income\b|\bEPS\b|\bPremium\b|\b(?:PEG|Current) Ratio\b|\b\dY\b|compañías growth")
+# V7 (M4): mecánica interna en un texto para el lector (la fórmula va al anexo técnico).
+MECHANICS = re.compile(r"\b(?:grid|config|endpoint)\b|\^TNX|máximo con \d+ miembros?|\(factor \d|sin ajustar \d",
+                       re.I)
 
 
 def _fragments(records):
@@ -154,6 +179,25 @@ def _covered_in_pdf(s, i, j, frags, kinds):
         if len(t) <= len(kw) + 25 or any(p in t for p in probes if p != kw):
             return True
     return False
+
+
+def _in_glossary(s, i, j, glossary):
+    """Rediseño E5: la palabra está en una definición del glosario de métricas (frontend/src/lib/tooltips.ts, que el
+    PDF nuevo pone bajo el nombre de cada métrica). Una definición no afirma nada de la empresa: en la web va en el
+    tooltip, que el guardián tampoco lee. Misma prueba de vecindad que `_covered_in_pdf`."""
+    kw = s[i:j]
+    probes = [s[max(0, i - k):j] for k in (12, 6)] + [s[i:j + k] for k in (12, 6)]
+    return any(p != kw and p in g for g in glossary for p in probes)
+
+
+def glossary_texts():
+    """Textos normalizados de las definiciones que el PDF nuevo puede citar (backend/assets/metric_definitions.json)."""
+    import json
+    import os
+    path = os.path.join(fb.BACKEND_DIR, "assets", "metric_definitions.json")
+    with open(path, encoding="utf-8") as fh:
+        defs = json.load(fh)["definitions"]
+    return [norm(v) for d in defs.values() for v in d.values()]
 
 
 # ═══════════════════════════ predicados ═══════════════════════════
@@ -216,7 +260,7 @@ def _p_roce(a, c, text):
     """Fase 1 (punto 9): la cifra de ROCE citada = key_metrics.roce (y el promedio del ciclo = roce_avg), redondeada
     como se imprime. Una celda con la cifra sola se compara con el campo que declara la afirmación."""
     km = a.get("key_metrics") or {}
-    cites = [("roce_avg", m) for m in re.findall(r"roce promedio(?: del ciclo)?[^%]*?\b(-?\d+\.\d+)%", text)]
+    cites = [("roce_avg", m) for m in re.findall(r"roce promedio(?: del ciclo)?[^%]*?(?<![\d.-])(-?\d+\.\d+)%", text)]
     cites += [("roce", m) for m in re.findall(r"\broce (?:de )?(-?\d+\.\d+)%", text)]
     bare = re.fullmatch(r"\s*(-?\d+\.\d+)%\s*", text)
     if bare and c.get("field"):
@@ -282,7 +326,7 @@ def _p_growth(a, c, text):
         if (abs(g - lo) < 1e-12 or abs(g - hi) < 1e-12) and not re.search(r"acotad|cota|tope|límite", text):
             return f"crecimiento de ciclo medio en la cota del modelo ({g:+.1%}) presentado como dato medido"
     # #20 base temporal: lo que dice el texto frente a cómo se calculó la cifra
-    if c.get("cycle") and ("anual en 3 años" in text or "(3 años)" in text):
+    if c.get("cycle") and ("anual en 3 años" in text or "(3 años" in text):
         return "dice '3 años' de una cifra de ciclo medio"
     if c.get("cagr") and "ciclo medio" in text:
         return "dice 'ciclo medio' de una CAGR a 3 años"
@@ -293,8 +337,8 @@ def _p_vs_bench(a, c, text):
     if v is None or b in (None, 0):
         return None
     diff = (v - b) / abs(b)
-    up = bool(re.search(r"superior|prima", text))
-    down = bool(re.search(r"inferior|descuento", text))
+    up = bool(re.search(r"superior|prima|por encima", text))
+    down = bool(re.search(r"inferior|descuento|por debajo", text))
     if up and diff <= 0:
         return f"dice superior/prima con brecha {diff:+.1%}"
     if down and diff >= 0:
@@ -318,10 +362,22 @@ def _p_dcf_upside(a, c, text):
     u = (a.get("dcf") or {}).get("upside")
     if u is None:
         return None
-    if re.search(r"\bprima\b|excede en|sobrevalorad", text) and u >= 0:
+    if re.search(r"\bprima\b|excede en|sobrevalorad|por debajo del precio", text) and u >= 0:
         return f"dice prima con upside {u:+.1f}%"
     if re.search(r"potencial teórico de \+|infravalorad", text) and u <= 0:
         return f"dice potencial con upside {u:+.1f}%"
+    # V7 (M1): el % dice lo que dice la frase. Upside = (valor − precio) / precio: «el valor está un N% por debajo del
+    # precio» es |upside|; «el precio excede en N% / está un N% por encima del valor / prima de N% sobre el valor» es
+    # precio / valor − 1 (AAPL decía «excede en 66%» con $343 frente a $116: es un 195%).
+    for m in re.finditer(r"est[aá] un (\d+)% por debajo del precio", text):
+        if abs(int(m.group(1)) - abs(u)) > 1:
+            return f"dice que el valor está un {m.group(1)}% por debajo del precio con upside {u:+.1f}%"
+    fv, px = (a.get("dcf") or {}).get("fair_value"), a.get("price")
+    for m in re.finditer(r"excede en (\d+)%|est[aá] un (\d+)% por encima del valor|prima de (\d+)% sobre el valor", text):
+        n = int(next(x for x in m.groups() if x))
+        real = (px / fv - 1) * 100 if fv and px else (-u / (100 + u) * 100 if u > -100 else None)
+        if real is not None and abs(n - real) > 1:
+            return f"dice que el precio supera al valor en {n}% (lo supera en un {real:.0f}%)"
 
 
 def _p_dcf_rel(a, c, text):
@@ -367,14 +423,15 @@ def _p_implied_return(a, c, text):
 
 
 def _p_quality_persistence(a, c, text):
-    """"X → Y" es la calidad antes de la persistencia y la mostrada, y solo se dice si se aplicó."""
+    """"X → Y" es la calidad antes y después de la persistencia, y solo se dice si se aplicó. F8 · E11: el después es
+    `score_raw` (la de antes de contraerse por confianza baja); sin contracción, la mostrada."""
     q = a.get("quality") or {}
     pq = q.get("persistence") or {}
     m = re.search(r"persistencia: (\d+) → (\d+)", text)
     if not pq.get("applied"):
         return "dice que la persistencia limita la calidad y no se aplicó"
-    if m and (int(m.group(1)) != pq.get("score_before") or int(m.group(2)) != q.get("score")):
-        return f"dice {m.group(1)} → {m.group(2)} con {pq.get('score_before')} → {q.get('score')}"
+    if m and (int(m.group(1)) != pq.get("score_before") or int(m.group(2)) != q.get("score_raw", q.get("score"))):
+        return f"dice {m.group(1)} → {m.group(2)} con {pq.get('score_before')} → {q.get('score_raw', q.get('score'))}"
 
 
 def _p_level_border(a, c, text):
@@ -455,8 +512,9 @@ def _p_market_signal(a, c, text):
                                      abs(((S.get("max_drawdown") or {}).get("1") or {}).get("value") or 0)):
         return "caída máxima distinta"
     if k == "relative_strength":
-        w = max(((S.get("relative_strength") or {}).get("windows") or {}).items(), key=lambda kv: int(kv[0]),
-                default=(None, {}))[1]
+        # F8 · P3: la ventana larga de la señal es la última de la config («1A»), la de la tabla de rentabilidades
+        w = ((S.get("relative_strength") or {}).get("windows") or {}).get(
+            cfg("market.signals.relative_strength.windows")[-1]) or {}
         if not (_near(pct(r"la acción ([+−-]?\d+(?:\.\d+)?)%"), w.get("company"))
                 and _near(pct(r"frente al ([+−-]?\d+(?:\.\d+)?)%"), w.get("sector"))):
             return "fuerza relativa distinta"
@@ -497,7 +555,7 @@ def _p_behavioral(a, c, text):
              (((a.get("score") or {}).get("breakdown") or {}).get("Crecimiento") or {}).get("adjustments") or []}
         rev = ((a.get("classification") or {}).get("inputs") or {}).get("revenue_cagr_3y")
         if not _near(pct(r"ingresos ([+−-]?\d+(?:\.\d+)?)%"), rev) or not _near(
-                pct(r"BPA ([+−-]?\d+(?:\.\d+)?)% anual"), g.get("Crecimiento EPS 3Y")):
+                pct(r"BPA ([+−-]?\d+(?:\.\d+)?)% anual"), next((v for k, v in g.items() if str(k).startswith("Crecimiento del BPA ")), None)):
             return "crecimiento citado distinto del que puntúa"
     if "da por hecho" in text:
         m = ((a.get("reverse_dcf") or {}).get("main")) or {}
@@ -520,11 +578,16 @@ def _p_runway(a, c, text):
 
 
 def _p_price_contraction(a, c, text):
-    pa, conf = a.get("price_attractiveness") or {}, (a.get("confidence") or {}).get("level")
+    # F10 · N4: el precio se contrae con la base de contracción (la confianza sin el escalón de las tasas base)
+    _c = a.get("confidence") or {}
+    pa, conf = a.get("price_attractiveness") or {}, _c.get("contraction_basis") or _c.get("level")
     want = (pa.get("score_raw"), pa.get("score"), pa.get("confidence"))
     if ("raw" in c and (c.get("raw"), c.get("score"), c.get("confidence")) != want) or pa.get("confidence") != conf:
         return f"declara {c.get('raw')}→{c.get('score')} ({c.get('confidence')}); análisis {want}, confianza {conf}"
-    m = re.search(r"sin ajustar (\d+) → ajustado a (\d+)(?: por confianza (\w+))?", text)
+    # V7 (M4): "ajustado de 52 a 48 por confianza media" / "hacia 50: de 52 a 48". F8 · E11: «Contrae también la
+    # calidad del negocio hacia 50: de 20 a 24» es la calidad, no el precio (DOW, con el precio neutro en 50).
+    m = re.search(r"(?:ajustado de|(?<!calidad del negocio )hacia 50: de) (\d+) a (\d+)(?: por confianza (\w+))?",
+                  text)
     if m and (int(m.group(1)), int(m.group(2))) != want[:2]:
         return f"el texto dice {m.group(0)!r} y el análisis {want}"
     if m and m.group(3) and m.group(3) != want[2]:
@@ -561,6 +624,20 @@ def _p_share_dilution_3y(a, c, text):
         return f"atribuye la caída a la emisión de acciones con acciones {sh:+.2%} anual en 3 años (umbral {thr:.0%})"
 
 
+def _p_next_earnings(a, c, text):
+    """Rediseño E2a: la fecha y el tipo (anunciada / estimada) de los próximos resultados son los del análisis."""
+    ne = (a.get("market_context") or {}).get("next_earnings") or {}
+    m = re.search(r"fecha (anunciada|estimada) \((\d{1,2}) de (\w+) de (\d{4})", text)
+    if not m:
+        return None
+    kind, d, mes, y = m.groups()
+    meses = ("enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre",
+             "noviembre", "diciembre")
+    said = f"{y}-{meses.index(mes) + 1:02d}-{int(d):02d}" if mes in meses else None
+    if said != ne.get("date") or kind != ne.get("kind"):
+        return f"dice fecha {kind} {said} con {ne.get('kind')} {ne.get('date')}"
+
+
 PREDICATES = {
     "roce": _p_roce,
     "no_interest_burden": _p_no_interest_burden,
@@ -576,6 +653,7 @@ PREDICATES = {
     "premortem": _p_premortem,
     "market_signal": _p_market_signal,
     "behavioral": _p_behavioral,
+    "next_earnings": _p_next_earnings,
 }
 
 
@@ -632,6 +710,37 @@ def _structural(a, strings, pdf):
     # Fase 6: "ttm_edgar" (doce meses de SEC EDGAR a un trimestre posterior al ejercicio, BRK-B) también es TTM.
     if ttm not in ("ttm", "ttm_edgar") and re.search(r"(?<!sin )\bttm\b", pdf):
         out.append(("base_ttm", f"el PDF dice TTM con base {ttm!r}"))
+    # V7 (M3): la etiqueta sigue al número: "estable" no puede llevar una caída mayor que la tolerancia de lo plano
+    # (AAPL: "FCF estable (-3.9%)"); un KPI sin referencia no está "en rango" de nada.
+    tol = cfg("thresholds.score.crecimiento.flat_tolerance") * 100
+    for p, s in strings:
+        for m in re.finditer(r"\bestable \(-(\d+(?:\.\d+)?)%\)", s):
+            if float(m.group(1)) > tol + 1e-9:
+                out.append(("etiqueta_signo", f"{p}: «…{s[max(0, m.start() - 30):m.end()]}»"))
+    for p, c in list(cards(d)):
+        if norm(str(c.get("pill") or "")) == "en rango" and not str(c.get("bench") or "").strip():
+            out.append(("kpi_sin_referencia", f"{p} {c.get('label')!r}: «En rango» sin referencia"))
+    # V7 (M2): el ROE de la prosa lleva su periodo junto a la cifra (TTM, último ejercicio o FY del DuPont); el lector
+    # vio 119.9 % en la ficha y 151.9 % en el DuPont sin saber que eran periodos distintos. Las gráficas rotulan aparte.
+    # "con un ROE del 21.6 %" (DCF inverso) es la hipótesis de un escenario, no una cifra medida.
+    roe_rx = re.compile(r"(?<!con un )\broe\b(?: normalizado)?(?P<mid>(?: \([^)]*\))?(?: [a-zé]+)?(?: de| —| es de|:)?) "
+                        r"\(?[−-]?\d+(?:\.\d+)?%")
+    for p, s in strings:
+        if p.startswith(".charts"):
+            continue
+        for m in roe_rx.finditer(s):
+            if not re.search(r"\(ttm|último ejercicio|\bfy\d{4}",
+                             s[max(0, m.start() - 16):m.start()] + m.group("mid") + s[m.end():m.end() + 40]):
+                out.append(("periodo_roe", f"{p}: «…{s[max(0, m.start() - 20):m.end() + 40]}…»"))
+    # V7 (M2): la ventana de un crecimiento a 3 años es la de los estados (growth_basis.revenue_window).
+    # La clasificación mide con la historia de EDGAR (su propia ventana), el score con los estados de Yahoo.
+    gpi = ((a.get("classification") or {}).get("inputs") or {}).get("growth_profitable") or {}
+    wins = {w for w in ((a.get("growth_basis") or {}).get("revenue_window"), gpi.get("window_3y")) if w}
+    for p, s in strings:
+        for m in re.finditer(r"anual en 3 años \(fy(\d{4})–fy(\d{4})\)|\(3 años, fy(\d{4})–fy(\d{4})\)", s):
+            y0, y1 = (m.group(1), m.group(2)) if m.group(1) else (m.group(3), m.group(4))
+            if f"FY{y0}–FY{y1}" not in wins:
+                out.append(("ventana_crecimiento", f"{p}: FY{y0}–FY{y1} frente a las ventanas {sorted(wins)}"))
     # #17 moneda
     cur = (a.get("data_provenance") or {}).get("currency") or {}
     note = (d.get("cover") or {}).get("currency_note") or ""
@@ -642,6 +751,34 @@ def _structural(a, strings, pdf):
 
 
 # ═══════════════════════════ identidades (datos frente a datos) ═══════════════════════════
+
+def _dcf_name_rule(a):
+    """V7 (M5): el nombre de la fila del DCF dice qué puntúa (el inverso, o el directo descartado / no significativo)."""
+    out = []
+    for x in (((a.get("score") or {}).get("breakdown") or {}).get("Valoración") or {}).get("adjustments") or []:
+        m, r = str(x.get("metric") or ""), str(x.get("reason") or "")
+        if r.startswith("El DCF directo tiene fiabilidad baja") and not m.startswith("DCF inverso"):
+            out.append(("nombre_puntua", f"{m!r} puntúa con el DCF inverso"))
+        if ("no se usa en el score" in r or x.get("value") == "No significativo") and m.startswith("DCF") \
+                and "no puntúa" not in m:
+            out.append(("nombre_puntua", f"{m!r} no puntúa y su nombre no lo dice"))
+    # V7 (M5, una sola verdad): con el DCF directo de fiabilidad baja, ni la tarjeta del precio lo presenta como fila
+    # que puntúa ni la línea de «Confianza del veredicto» calla que no puntúa; si puntúa el inverso, las dos dan la
+    # misma cifra.
+    d = a.get("display") or {}
+    if ((a.get("dcf") or {}).get("reliability") or {}).get("level") == "baja" and d.get("confidence"):
+        rows = (((d.get("summary") or {}).get("composition") or {}).get("price") or {}).get("rows") or []
+        summ = str(d["confidence"].get("summary") or "")
+        for r in rows:
+            if str(r.get("label") or "").startswith(("DCF directo", "DCF (")) and r.get("kind") == "signed":
+                out.append(("una_verdad", f"la tarjeta puntúa con {r['label']!r} y el DCF directo no puntúa"))
+            if str(r.get("label") or "").startswith("DCF inverso") and \
+                    f"({r['value']:+d} puntos)".replace("-", "−") not in summ:
+                out.append(("una_verdad", f"la tarjeta da {r['value']:+d} al DCF inverso y la confianza no: {summ!r}"))
+        if "no puntúa" not in summ:
+            out.append(("una_verdad", f"la confianza no dice que el DCF directo no puntúa: {summ!r}"))
+    return out
+
 
 def identities(a):
     """Identidades entre cifras del análisis, sin texto. [(regla, detalle)].
@@ -702,8 +839,42 @@ def identities(a):
 
 # ═══════════════════════════ comprobación ═══════════════════════════
 
-def check(a, pdf_text, records):
-    """Fallos del guardián para un análisis: [{rule, detail}]."""
+_ORIGINAL_NAMES = re.compile(r"(?<![\w&/-])(?:" + "|".join(map(re.escape, names.originals())) + r")(?![\w&/-])")
+
+
+def _proper_noun(s, i, j):
+    """El nombre forma parte de un nombre propio («NextEra Energy», «Taiwan Semiconductor», «Energy Transfer»): la
+    palabra pegada antes o después empieza por mayúscula."""
+    before = re.search(r"(\S+) $", s[max(0, i - 40):i])
+    after = re.match(r" (\S+)", s[j:j + 40])
+    b = before.group(1) if before else ""
+    return bool((b and b[0].isupper() and b[-1].isalnum() and b.lower() not in _NOT_PROPER)
+                or (after and after.group(1)[0].isupper()))
+
+
+# Palabras con mayúscula inicial que no hacen nombre propio («En Consumer Electronics…», «Sector Technology»).
+_NOT_PROPER = {"en", "el", "la", "los", "las", "de", "del", "por", "con", "y", "sector", "industria", "referencia"}
+
+
+def _external(a):
+    """Textos de terceros (lib/prose.py, «externo»: titulares y resúmenes de noticias, ficha de la SEC): van en su
+    idioma original y no son prosa del informe."""
+    return {s for p, s in prose.walk(a.get("display") or {}) if prose.kind(p, s) == "externo"}
+
+
+def _without_external(text, external):
+    """`text` sin los textos de terceros (V4b: con los titulares del panel completo, la lista negra marcaba «Premium» o
+    «Grid» en un titular en inglés). Los espacios se normalizan en los dos lados (el PDF parte las líneas)."""
+    t = re.sub(r"\s+", " ", text)
+    for e in sorted({re.sub(r"\s+", " ", x).strip() for x in external}, key=len, reverse=True):
+        if len(e) >= 12:
+            t = t.replace(e, " ")
+    return t
+
+
+def check(a, pdf_text, records, glossary=()):
+    """Fallos del guardián para un análisis: [{rule, detail}]. `glossary`: definiciones de métricas que el PDF nuevo
+    cita (rediseño E5); la red de seguridad no las trata como afirmaciones."""
     if a.get("__http_error__"):
         return []
     fails = []
@@ -730,23 +901,59 @@ def check(a, pdf_text, records):
                 if not _covered_in_string(s, m.start(), m.end(), frags, kinds):
                     fails.append({"rule": f"sin_respaldo:{name}", "detail": f"{p}: «{s[:140]}»"})
         for m in pat.finditer(pdf):
-            if not _covered_in_pdf(pdf, m.start(), m.end(), frags, kinds):
+            if not _covered_in_pdf(pdf, m.start(), m.end(), frags, kinds) and \
+                    not (glossary and _in_glossary(pdf, m.start(), m.end(), glossary)):
                 fails.append({"rule": f"sin_respaldo:{name}",
                               "detail": f"PDF: «…{pdf[max(0, m.start() - 60):m.end() + 40]}…»"})
     # 3. lista negra (sobre el texto original: mayúsculas)
-    raw_strings = list(display_strings(a.get("display") or {}))
+    external = _external(a)
+    raw_strings = [(p, s) for p, s in display_strings(a.get("display") or {}) if s not in external]
     cut = raw_pdf.lower().find(ANNEX_TITLE)
-    reading_pdf = raw_pdf if cut < 0 else raw_pdf[:cut]
+    reading_pdf = _without_external(raw_pdf if cut < 0 else raw_pdf[:cut], external)
     for where, s in [(p, s) for p, s in raw_strings] + [("PDF", reading_pdf)]:
         for m in ENGLISH.finditer(s):
             fails.append({"rule": "ingles", "detail": f"{where}: {m.group(0)} «…{s[max(0, m.start() - 40):m.end() + 20]}…»"})
+        for m in ANGLICISMS.finditer(s):
+            fails.append({"rule": "anglicismo",
+                          "detail": f"{where}: {m.group(0)} «…{s[max(0, m.start() - 40):m.end() + 20]}…»"})
+        for m in MECHANICS.finditer(s):
+            fails.append({"rule": "mecanica_interna",
+                          "detail": f"{where}: {m.group(0)} «…{s[max(0, m.start() - 40):m.end() + 20]}…»"})
         for m in CODE.finditer(s):
             fails.append({"rule": "codigo_interno",
                           "detail": f"{where}: {m.group(0)} «…{s[max(0, m.start() - 40):m.end() + 20]}…»"})
+    # 3b. V7 (puntuación): sin «.;», «;.» ni «..» en el texto completo del panel (web y PDF, anexo incluido); cada
+    # frase del motor acaba en su puntuación y todo texto largo está declarado (frase, etiqueta, titular, fragmento o
+    # externo) en lib/prose.py.
+    for where, s in [(p, s) for p, s in prose.walk(a.get("display") or {})] + [("PDF", pdf_text.replace("\n", ""))]:
+        for m in prose.DOUBLE.finditer(s):
+            fails.append({"rule": "puntuacion_doble",
+                          "detail": f"{where}: «…{s[max(0, m.start() - 60):m.end() + 30]}…»"})
+    for p, s in prose.walk(a.get("display") or {}):
+        k = prose.kind(p, s)
+        if k is None:
+            fails.append({"rule": "frase_sin_cierre", "detail": f"{p}: texto sin declarar en lib/prose.py «{s[:80]}»"})
+        elif k == "frase" and not prose.END.search(s.strip()):
+            fails.append({"rule": "frase_sin_cierre", "detail": f"{p}: «…{s.strip()[-80:]}»"})
+    # 3c. V7 (nombres en español): ni la prosa ni las fichas usan el nombre original de una industria o un sector
+    # (Damodaran, Yahoo, GICS); el original solo queda en la metodología y en el anexo (lib/names.py).
+    meth = [i for i in (pdf_text.find("\nMETODOLOGÍA\n"), pdf_text.find("\nMetodología. ")) if i >= 0]
+    prose_pdf = pdf_text[:min(meth)] if meth else pdf_text
+    _ac = prose_pdf.lower().find(ANNEX_TITLE)
+    prose_pdf = prose_pdf[:_ac] if _ac >= 0 else prose_pdf
+    for where, s in [(p, s) for p, s in prose.walk(a.get("display") or {})
+                     if not p.startswith((".annex", ".methodology")) and prose.kind(p, s) != "externo"] + \
+            [("PDF", _without_external(prose_pdf.replace("\n", " "), external))]:
+        for m in _ORIGINAL_NAMES.finditer(s):
+            # la industria SIC de la ficha oficial («3674 · Semiconductors & Related Devices») es el texto de la SEC
+            if _proper_noun(s, m.start(), m.end()) or re.search(r"\b\d{4} · $", s[max(0, m.start() - 8):m.start()]):
+                continue
+            fails.append({"rule": "industria_en_ingles",
+                          "detail": f"{where}: {m.group(0)} «…{s[max(0, m.start() - 50):m.end() + 20]}…»"})
     # 4. estructurales
     for rule, det in _structural(a, strings, pdf):
         fails.append({"rule": rule, "detail": det})
-    # 5. identidades entre datos (fase 1)
-    for rule, det in identities(a):
+    # 5. identidades entre datos (fase 1) y el nombre de lo que puntúa (V7, M5)
+    for rule, det in identities(a) + _dcf_name_rule(a):
         fails.append({"rule": rule, "detail": det})
     return fails

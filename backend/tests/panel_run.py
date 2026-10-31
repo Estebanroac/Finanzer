@@ -238,7 +238,8 @@ def classify_live_diffs(sym, live, env=fb.PANEL_ENV):
     norm = lambda x: json.loads(json.dumps(x, default=str))  # noqa: E731
     live = norm(live)
     base = _replay_with(sym, env)
-    rf = live.get("risk_free") or None
+    # F8 · E1: el Rf del análisis es el del par Rf–ERP; lo que varía con el día es la lectura de mercado (`market`).
+    rf = (live.get("risk_free") or {}).get("market") or live.get("risk_free") or None
     with_rf = _replay_with(sym, env, rf=rf) if rf else base
     with_rf_px = _replay_with(sym, env, rf=rf, price=live.get("price"))
     d0, d1, d2 = diff_fields(base, live), diff_fields(with_rf, live), diff_fields(with_rf_px, live)

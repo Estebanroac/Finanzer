@@ -184,6 +184,10 @@ emerging = ["China", "Hong Kong", "Macau", "Taiwan", "South Korea", "India", "In
 [benchmarks.industry]
 min_firms = 10
 dominance_ratio = 1.5
+# F10 · N2 (decisión del PM): la referencia nunca incluye a la propia empresa (lib/self_exclusion.py). Si pesa al menos
+# esta fracción de la capitalización de su industria (AAPL y ASML ≈ 100 %), lo que queda sin ella son restos: la
+# referencia pasa a la mediana de los pares del universo, dicho.
+self_max_weight = 0.90
 
 # País del emisor cuando Yahoo no lo da (assetProfile de quoteSummary da 401 en Render): la dirección comercial en
 # SEC EDGAR (nombres de EDGAR -> los de las listas de arriba) o, sin EDGAR, el sufijo del ticker en Yahoo.
@@ -492,11 +496,26 @@ margin_drop = 0.02
 # Crecimiento de ciclo medio (fase 3, T5): de pico a pico (el ejercicio anterior a cada episodio confirmado), con al
 # menos estos años entre el primer y el último pico (un ciclo completo).
 min_cycle_years = 5
+# F8 (auditoría externa; PM, 27-oct-2026): el BPA de ciclo medio no se lee en los dos picos de ingresos (un pico de
+# ventas puede ser un valle del BPA: SHEL 2015, 0,30 $ → +52 % anual). Es el crecimiento entre el BPA medio de la
+# primera y de la segunda mitad del ciclo (pérdidas incluidas: son parte del ciclo), anualizado entre sus centros, con
+# al menos estos ejercicios con BPA en cada mitad.
+eps_half_min_years = 2
 
 [archetypes.growth_profitable]    # fase 3 (T2, D4; F3_DISENO_METODO §1.3): crecimiento rentable (las tres a la vez)
 min_revenue_ps_cagr_3y = 0.15     # CAGR de los ingresos por acción a 3 años
 min_revenue_ps_cagr_5y = 0.10     # y a 5 años, si hay historia
 min_operating_margin = 0.10       # margen operativo TTM (o margen FCF − SBC, la alternativa del diseño)
+
+# V7 (M6): qué es cada arquetipo, en positivo (antes, la madura se definía por lo que no es: "no es un banco ni…").
+[archetypes.definitions]
+MATURE = "negocio establecido que se valora sobre todo por la caja que genera hoy"
+FINANCIAL = "banco o aseguradora: el balance (depósitos, préstamos o primas) es el producto, y se mide por su valor contable y su rentabilidad"
+REIT = "sociedad inmobiliaria cotizada que reparte casi todo su beneficio y se mide por sus fondos de operación (FFO)"
+UTILITY = "servicio público regulado: el regulador fija el retorno que obtiene sobre sus activos"
+CYCLICAL = "negocio cuyas ventas y beneficios suben y bajan con el ciclo económico, y se mide a ciclo medio"
+GROWTH_PROFITABLE = "negocio que crece deprisa y ya gana dinero con buen margen"
+GROWTH_PRE_PROFIT = "negocio que crece deprisa pero todavía no gana dinero"
 
 [archetypes.financial_subtypes]   # fase 3 (T2; F3_DISENO_METODO §1.4)
 # Conglomerado: aseguradora cuyos ingresos de contratos con clientes (que por norma excluyen los contratos de seguro,
@@ -535,6 +554,13 @@ UTILITY = ["altman", "de", "current_ratio", "fcf", "fcf_to_ni", "p_fcf", "fcf_gr
 MATURE = []
 GROWTH_PROFITABLE = []   # fase 3 (T2): con las herramientas de MATURE hasta la T3/T6 (provisional)
 
+# F9 · R4 (revisión externa de NU, 27-oct): lo que además no aplica a un subtipo de FINANCIAL (classify: `subtype`).
+# En un banco, los «ingresos» no tienen una definición común (con los intereses cobrados, brutos, o netos de los
+# pagados), así que el margen neto sobre ingresos no es comparable con el de su industria: NU 27,4 % sobre brutos frente
+# al 41 % de bancos que reportan netos. Las aseguradoras y los conglomerados lo conservan.
+[archetypes.not_applicable_subtype]
+banco = ["net_margin"]
+
 # ── Fase 3 (T6, F3_DISENO §5): lecturas por modelo de negocio (lib/business_model.py) ──
 [business_model]
 # Capital circulante negativo estructural: cobran antes de pagar (restauración, comercio, aerolíneas), cobran por
@@ -554,4 +580,13 @@ altman_referential_industries = [
     "restaurants", "discount stores", "department stores", "grocery stores", "specialty retail",
     "home improvement retail", "internet retail", "apparel retail", "airlines",
 ]
+# F8 · E10 (decisión del PM, 27-oct-2026): financiera cautiva consolidada. Si entre los segmentos de negocio que declara
+# el emisor en su último informe anual (lib/segments.py, el extractor de /api/v2/segments; US GAAP e IFRS) hay uno de
+# servicios financieros con al menos `captive_finance_segment_min_pct` de los ingresos, el Altman es referencial (no
+# puntúa): la deuda con la que financia a sus clientes entra en el pasivo del Z. TM «Financial Services Business» 9,7 %,
+# CAT «Financial Products» 6,2 %, F «Ford Credit» 7,1 %, GM «GM Financial» 9,2 %, DE «Financial Services» 13,6 %. Los
+# segmentos no traen los activos por segmento: solo ingresos. Sin segmentos, el Altman puntúa y declara el límite.
+captive_finance_segment_min_pct = 0.05
+captive_finance_segment_axes = ["StatementBusinessSegmentsAxis", "SegmentsAxis"]
+captive_finance_segment_patterns = ["financ", "credit"]
 
