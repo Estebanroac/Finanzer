@@ -8,6 +8,9 @@ import { pdfFilename, pdfStatusText, type PdfState } from "@/v2/lib/pdfDownload"
  *  pero al pulsarlo la web lo pide ella: el botón pasa a «Preparando el PDF…», un aviso dice por qué tarda (las
  *  comparables) y el archivo se descarga solo al llegar. La página no se bloquea. Si el PDF llega antes de
  *  `loading.delayMs` (ya estaba todo), el aviso no llega a salir. */
+/** Lo que tarda el aviso en irse (v2.css: --dur-1). */
+const LEAVE_MS = 150;
+
 export default function PdfButton({ symbol, testId }: { symbol: string; testId?: string }) {
   const url = pdfV2Url(symbol);
   const [state, setState] = useState<PdfState>({ kind: "idle" });
@@ -47,6 +50,25 @@ export default function PdfButton({ symbol, testId }: { symbol: string; testId?:
 
   const preparing = state.kind === "preparing";
   const text = pdfStatusText(symbol, state);
+  // v4.1 (movimiento): el aviso sube con un fundido al salir y, al irse, baja igual (sigue a la vista lo que dura su
+  // salida, con lo que decía); antes aparecía y desaparecía de golpe
+  const visible = (preparing && shown) || state.kind === "error";
+  const [leaving, setLeaving] = useState(false);
+  const [said, setSaid] = useState(text);
+  const was = useRef(false);
+  useEffect(() => {
+    if (visible) {
+      was.current = true;
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- lo que decía el aviso, para su salida
+      setSaid(text);
+      return;
+    }
+    if (!was.current) return;
+    was.current = false;
+    setLeaving(true);
+    const t = setTimeout(() => setLeaving(false), LEAVE_MS);
+    return () => clearTimeout(t);
+  }, [visible, text]);
   return (
     <>
       <a className={`btn pdf-btn${preparing ? " preparing" : ""}`} href={url} onClick={onClick}
@@ -56,8 +78,8 @@ export default function PdfButton({ symbol, testId }: { symbol: string; testId?:
       </a>
       {/* El aviso: siempre en el DOM (aria-live solo anuncia cambios de una región que ya existe); visible cuando
           tarda o falla. */}
-      <span className={`pdf-status${(preparing && shown) || state.kind === "error" ? " on" : ""}`} role="status"
-        aria-live="polite" data-testid={`${testId ?? "pdf-top"}-status`}>{text}</span>
+      <span className={`pdf-status${visible ? " on" : leaving ? " on leaving" : ""}`} role="status"
+        aria-live="polite" data-testid={`${testId ?? "pdf-top"}-status`}>{visible || !leaving ? text : said}</span>
     </>
   );
 }
