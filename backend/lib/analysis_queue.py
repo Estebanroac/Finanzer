@@ -41,6 +41,10 @@ _lock = threading.Lock()
 _wake = threading.Condition(_lock)
 _limits: Dict[str, Any] = {}             # copia de market.analysis_queue (los tests ajustan límites y esperas)
 _summaries: "OrderedDict[str, Tuple[float, Dict[str, Any]]]" = OrderedDict()
+# E6 (31-oct): las tarjetas de la portada del día (lib/trending.py, `pin`). Los rivales nunca expulsan sus resúmenes:
+# en producción, 10 empresas con sus 50 rivales dejaron 7 de 30 tarjetas con puntuación (y el precalentado ya había
+# gastado su cupo del día).
+_pinned: set = set()
 _state: Dict[str, Dict[str, Any]] = {}   # símbolo -> {status: en_cola|analizando|fallo, t, reason}
 _heap: List[Tuple[int, int, str, Optional[Callable], Optional[str]]] = []
 _pending: Dict[int, int] = {USER: 0, PREWARM: 0}                # trabajos en cola por prioridad
@@ -65,6 +69,7 @@ def reset() -> None:
         _by_client.clear()
         _queued.clear()
         _summaries.clear()
+        _pinned.clear()
         _state.clear()
         _limits.clear()
         _limits.update(cfg("market.analysis_queue"))
@@ -279,12 +284,22 @@ def summary_for(sym: str, stop: Optional[threading.Event] = None) -> Tuple[Optio
 
 
 def _put(sym: str, s: Dict[str, Any]) -> None:
-    """Con el lock tomado: guarda el resumen (LRU con tope `summary_cache_max`) y olvida el estado en marcha."""
+    """Con el lock tomado: guarda el resumen (LRU con tope `summary_cache_max`) y olvida el estado en marcha. Sale el
+    usado hace más tiempo que no sea una tarjeta del día; las tarjetas solo compiten entre ellas."""
     _summaries[sym] = (time.time(), s)
     _summaries.move_to_end(sym)
     while len(_summaries) > _limits["summary_cache_max"]:
-        _summaries.popitem(last=False)
+        victim = next((k for k in _summaries if k not in _pinned), None)
+        del _summaries[victim if victim is not None else next(iter(_summaries))]
     _state.pop(sym, None)
+
+
+def pin(symbols: List[str]) -> None:
+    """Las tarjetas de la portada del día (lib/trending.py, `prewarm`): sus resúmenes no salen de la caché por los de
+    otros símbolos. Sustituye a las anteriores."""
+    with _lock:
+        _pinned.clear()
+        _pinned.update(symbols)
 
 
 def _stamped(analysis: Dict[str, Any]) -> Dict[str, Any]:

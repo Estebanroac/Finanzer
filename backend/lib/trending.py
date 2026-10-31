@@ -254,6 +254,7 @@ def prewarm(data: Dict[str, Any], today: Optional[str] = None) -> int:
     `prewarm_max` distintos al día (fecha de Nueva York) y cada uno una sola vez al día. Devuelve cuántos encoló."""
     today = today or _dt.datetime.now(NY).date().isoformat()
     queued = 0
+    AQ.pin(_symbols(data)[:_limits["prewarm_max"]])   # las que puntúa el precalentado: sin expulsar
     for sym in _symbols(data):
         if AQ.peek(sym) is not None:
             continue
