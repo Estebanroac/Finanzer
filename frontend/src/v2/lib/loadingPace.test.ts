@@ -3,7 +3,7 @@ import { WEB } from "@/lib/generated/backendConfig";
 import { advance, startPace, stationFill, type PaceConfig, type PaceState } from "./loadingPace";
 
 const FRAME = 1000 / 60;
-const CFG: PaceConfig = { stations: 5, expectedMs: 4810, fastMs: 180, stallFill: 0.95 };
+const CFG: PaceConfig = { stations: 5, expectedMs: 8430, fastMs: 180, stallFill: 0.95 };
 const T = CFG.expectedMs;
 const D = T / CFG.stations;
 const LAST = CFG.stations - 1;
@@ -71,7 +71,8 @@ describe("ritmo de la pantalla de carga (V4, PM): cinco estaciones iguales, d = 
 
   it("cada tramo se llena de forma lineal y la barra no salta al llegar los datos", () => {
     const { frames } = run(ARRIVE_MS, 20_000);
-    for (const f of frames.filter((x) => x.index === 0 && x.t > 0)) expect(f.fill).toBeCloseTo(f.t / D, 6);
+    // hasta que llegan los datos (con T_est de Render, d > ARRIVE_MS: llegan dentro de la primera estación)
+    for (const f of frames.filter((x) => x.index === 0 && x.t > 0 && x.t < ARRIVE_MS)) expect(f.fill).toBeCloseTo(f.t / D, 6);
     const at = frames.findIndex((f) => f.t >= ARRIVE_MS);
     expect(Math.abs(frames[at].fill - frames[at - 1].fill)).toBeLessThan(0.1);
   });

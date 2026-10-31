@@ -80,7 +80,7 @@ export default function AnalyzeLoading({ symbol, name, startedAt, arrivedAt, onF
             <b key={`t${index}${s.stalled}`} className="al-fade al-title">{title}</b>
             <small className="num">Paso {index + 1} de {n}</small>
           </div>
-          <p key={`p${index}`} className="al-fade al-phrase">{L.phrases[index]}</p>
+          <p key={`p${index}${s.stalled}`} className="al-fade al-phrase">{s.stalled ? L.stallPhrase : L.phrases[index]}</p>
           <div className="al-seg" aria-hidden="true">
             {L.labels.map((l, i) => <i key={l}><span style={{ width: `${fill(i) * PCT}%` }} /></i>)}
           </div>

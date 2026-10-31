@@ -89,7 +89,7 @@ def render() -> str:
         f"    titles: {_q(list(w['loading_titles']))},\n"
         f"    labels: {_q(list(w['loading_labels']))},\n"
         f"    phrases: {_q(list(w['loading_phrases']))},\n"
-        f"    stallTitle: {_q(w['loading_stall_title'])},\n"
+        f"    stallTitle: {_q(w['loading_stall_title'])}, stallPhrase: {_q(w['loading_stall_phrase'])},\n"
         "  },\n"
         "  /** Umbrales de la prueba de rendimiento (e2e/perf, V4b · 3). */\n"
         f"  perf: {{ cpuThrottle: {w['perf_cpu_throttle']}, sectionChangeMs: {w['perf_section_change_ms']}, "

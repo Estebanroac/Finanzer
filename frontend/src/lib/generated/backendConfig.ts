@@ -33,12 +33,12 @@ export const WEB = {
   analysisTimeoutMs: 120000,
   peersPollMaxMs: 600000,
   loading: {
-    delayMs: 300, expectedMs: 4810, fastMs: 180, stallFill: 0.95,
-    typicalS: [1.77, 4.81], exitHoldMs: 320, exitMs: 620,
+    delayMs: 300, expectedMs: 8430, fastMs: 180, stallFill: 0.95,
+    typicalS: [7.19, 8.43], exitHoldMs: 320, exitMs: 620,
     titles: ["Estados financieros de la SEC", "Precios y mercado", "Ratios frente a su industria", "Valoración: DCF y múltiplos", "Puntuaciones y veredicto"],
     labels: ["Estados SEC", "Mercado", "Ratios", "Valoración", "Veredicto"],
     phrases: ["Reuniendo los ingresos, beneficios, caja y deuda de los últimos años, contrastados con los informes oficiales.", "Trayendo la cotización y su historia, y la del mercado, para situar a la empresa.", "Comparando márgenes, rentabilidad y deuda con las empresas de su industria.", "Calculando cuánto vale el negocio por su caja futura y comparándolo con lo que paga el mercado por empresas parecidas.", "Sumando la calidad del negocio y el atractivo del precio, y midiendo cuánto fiarse del resultado."],
-    stallTitle: "Últimos ajustes…",
+    stallTitle: "Últimos ajustes…", stallPhrase: "El servidor está ocupado; puede tardar un poco más.",
   },
   /** Umbrales de la prueba de rendimiento (e2e/perf, V4b · 3). */
   perf: { cpuThrottle: 4, sectionChangeMs: 150, inpP75Ms: 200, longTaskMs: 100, scrollLongTaskMs: 50 },

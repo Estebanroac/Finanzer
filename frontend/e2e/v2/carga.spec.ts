@@ -139,6 +139,7 @@ test("cinco estaciones iguales: con el replay retardado, cada cambio de estació
   await expect(page.getByTestId("analyze-loading")).toHaveAttribute("data-station", "4", { timeout: 15_000 });
   await page.waitForTimeout(D + 400);
   await expect(page.locator(".al-title")).toHaveText(L.stallTitle);
+  await expect(page.locator(".al-phrase")).toHaveText(L.stallPhrase);       // E6: el porqué de la espera
   const width = await page.locator(".al-seg i").nth(4).locator("span").evaluate((s) => s.style.width);
   expect(parseFloat(width)).toBeCloseTo(L.stallFill * 100, 1);
   const marks = await page.evaluate(() => (window as unknown as { __stations: Array<[number, number]> }).__stations);

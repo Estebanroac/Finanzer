@@ -195,21 +195,19 @@ peers_poll_max_s = 600
 # análisis llega antes de `loading_delay_ms` (de la caché), no aparece.
 loading_delay_ms = 300
 # Cinco estaciones iguales: cada una dura `loading_expected_s` / 5 y su tramo se llena de forma lineal. La cifra es el p95
-# de un análisis sin caché medido con fuentes reales. Pasada final de la v4 (30-oct, con F10, N5 y el reintento de
-# EDGAR): dos recorridos de tools/real_sources.py (verificacion/V2_frio_final y V2_frio_final_2: servidor nuevo, 3 a la
-# vez, los análisis 200 que no salieron de la caché), 90 en total: p50 1,77 s, p75 2,20 s, p95 4,81 s. El primero tuvo
-# una espera común de ~6 s en sus tres primeros análisis (7,5 s), coherente con el reintento de EDGAR (retry_s); el
-# segundo, no (p95 4,21 s): juntos, ese caso pesa lo que pesó. Con un reintento, un análisis puede llegar a ~10 s: la
-# quinta estación espera en el 95 % («Últimos ajustes…»), muy lejos de analysis_timeout_s. Antes (18-oct, 43
-# análisis): p50 2,44 s, p95 4,12 s. Con el p95, casi siempre llegan los datos antes y lo que queda pasa rápido y
-# parejo; la espera en el 95 % es solo del 5 % más lento. Se recalibra con la medida en Render (E6).
-loading_expected_s = 4.81
+# de un análisis sin caché con el servidor tranquilo. E6 (31-oct), en producción (Render, tras el despliegue de la v4):
+# 9 empresas fuera de la caché (ORLY, CTAS, MCO, WM, AON, ITW, APH, MSI y CPRT), cada una cuando ya habían terminado
+# los rivales de la anterior: p50 7,19 s, p75 8,14 s, p95 8,43 s (mín. 2,95 s). Con rivales de otras empresas en marcha
+# la CPU de Render está ocupada y tarda 22–42 s (SHW, MMM, NKE y ADP): ese caso lo cubre la espera en el 95 %
+# («Últimos ajustes…» con `loading_stall_phrase`). Antes, en local (30-oct, 90 análisis con tools/real_sources.py):
+# p50 1,77 s, p95 4,81 s. Con el p95, casi siempre llegan los datos antes y lo que queda pasa rápido y parejo.
+loading_expected_s = 8.43
 # Si el análisis llega antes, cada estación que falta dura `loading_fast_ms`; al final de la última sin datos, su tramo
 # se queda en `loading_stall_fill` («Últimos ajustes…»).
 loading_fast_ms = 180
 loading_stall_fill = 0.95
-# El pie («Suele tardar entre 2 y 5 segundos la primera vez…»): p50 y p95 de la misma medida, redondeados hacia fuera.
-loading_typical_s = [1.77, 4.81]
+# El pie («Suele tardar entre 7 y 9 segundos la primera vez…»): p50 y p95 de la misma medida, redondeados hacia fuera.
+loading_typical_s = [7.19, 8.43]
 # Al terminar: una pausa con todo hecho y la disolución.
 loading_exit_hold_ms = 320
 loading_exit_ms = 620
@@ -226,6 +224,9 @@ loading_phrases = [
   "Sumando la calidad del negocio y el atractivo del precio, y midiendo cuánto fiarse del resultado.",
 ]
 loading_stall_title = "Últimos ajustes…"
+# E6 (31-oct): pasado el p95 del servidor tranquilo sin datos, casi siempre es que la CPU está ocupada (en Render, con
+# los rivales de otras empresas): la frase lo dice en lugar de la de la estación.
+loading_stall_phrase = "El servidor está ocupado; puede tardar un poco más."
 # V4b · 3 (sin lag, medido; objetivos del PM): umbrales de la prueba de rendimiento (frontend/e2e/perf, contra el build de
 # producción). Chromium con la CPU `perf_cpu_throttle` veces más lenta (portátil modesto) y WebKit. Cambio de sección con
 # el análisis ya cargado hasta el contenido pintado; INP p75 de las interacciones (pestañas, «?», periodo de la gráfica,
