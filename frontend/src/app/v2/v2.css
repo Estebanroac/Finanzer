@@ -996,6 +996,11 @@ html[data-page-dir="back"] { --page-sign: -1; }
 @media (prefers-reduced-motion: no-preference) {
   /* Cambio de sección: solo el contenido entra (fundido y unos px desde el lado del cambio); cabecera y barras, quietas */
   html[data-page-dir] .fz2 .depth { animation: fz2-page-in var(--dur-3) var(--ease-out) both; }
+  /* cambio de pestaña (motion.switchSection): lo que se va a mover se funde antes de cambiar y colocarse (la sección,
+     o toda la página bajo la barra superior si la barra aún va a subir); al volver a verse, la página se funde de vuelta */
+  .fz2 main { transition: opacity var(--dur-2) var(--ease-out); }
+  html[data-leave="main"] .fz2 main, html[data-leave="depth"] .fz2 .depth { opacity: 0; transition: opacity 100ms var(--ease-out); }
+  html[data-leave-now] .fz2 main, html[data-leave-now] .fz2 .depth { transition: none; }
   /* lo que entra de lado nunca ensancha la página (en el móvil, eso movía dónde se queda la sección); clip, no hidden:
      no crea un contenedor de desplazamiento y las barras fijas siguen pegándose */
   .fz2 main { overflow-x: clip; }

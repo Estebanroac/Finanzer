@@ -20,7 +20,8 @@ import { isAbort } from "@/v2/lib/http";
 import { useDocumentTitle } from "@/v2/lib/useDocumentTitle";
 import { preloadLazy } from "@/v2/lib/lazy";
 import { CHAPTER_ORDER } from "@/v2/lib/story";
-import { crossfade, pageTransition } from "@/v2/lib/motion";
+import { crossfade, switchSection } from "@/v2/lib/motion";
+import { previewChapter } from "@/v2/components/ChapterBar";
 
 /** La sección que abre /v2/{T} (V4b: no hay una página con todo; la empresa es la primera). */
 const FIRST_SECTION: ChapterSlug = "empresa";
@@ -29,7 +30,7 @@ const FIRST_SECTION: ChapterSlug = "empresa";
  *  nueva, bajo la cabecera fija (V4b, PM: nunca hay que recorrer la cabecera para llegar al contenido). Tras pintar, para
  *  que exista el destino. */
 function scrollToTarget(fromNav = false) {
-  requestAnimationFrame(() => placeView(fromNav));
+  requestAnimationFrame(() => { void placeView(fromNav); });
 }
 /** v4.1 (movimiento): dónde se quedó el lector en cada sección (por empresa y sección, durante la visita). Volver a una
  *  pestaña ya leída la abre donde estaba; una nueva, al principio de la sección. */
@@ -38,32 +39,39 @@ const readAt = new Map<string, number>();
  *  el alto de la página), no del lector: no se anotan como «dónde se leía». */
 let placing = false;
 const pageKey = () => window.location.pathname.replace(/\/$/, "");
-function placeView(fromNav: boolean) {
+/** Coloca la vista (sin animar) y dice cuándo ha terminado. */
+function placeView(fromNav: boolean): Promise<void> {
   const id = decodeURIComponent(window.location.hash.slice(1));
   const section = document.querySelector<HTMLElement>(".depth");
   const kept = readAt.get(pageKey());
-  if (id) whenPresent(id, (el) => el.scrollIntoView());
-  else if (!fromNav) window.scrollTo(0, 0);
-  else if (kept !== undefined && section && kept > section.offsetTop) { restoreTo(kept); return; }
+  const settled = () => new Promise<void>((ok) => requestAnimationFrame(() => { placing = false; ok(); }));
+  if (id) return new Promise((ok) => whenPresent(id, (el) => { el.scrollIntoView(); void settled().then(ok); }));
+  if (!fromNav) window.scrollTo(0, 0);
+  else if (kept !== undefined && section && kept > section.offsetTop) return restoreTo(kept);
   else section?.scrollIntoView();
-  requestAnimationFrame(() => { placing = false; });
+  return settled();
 }
 /** Vuelve a `y`. Si la sección aún no ha crecido hasta ahí (su detalle llega en su propio fragmento), lo reintenta
  *  cada vez que la página crece, hasta llegar, hasta que el lector se mueva o como mucho RESTORE_WAIT_MS. */
 const RESTORE_WAIT_MS = 1_500;
 /** Medio píxel arriba o abajo (redondeos del navegador): ya está donde se leía. */
 const RESTORE_EDGE_PX = 1;
-function restoreTo(y: number) {
-  const there = () => Math.abs(window.scrollY - y) <= RESTORE_EDGE_PX;
-  window.scrollTo(0, y);
-  if (there()) { requestAnimationFrame(() => { placing = false; }); return; }
-  const ro = new ResizeObserver(() => { window.scrollTo(0, y); if (there()) stop(); });
-  const stop = () => { placing = false; ro.disconnect(); clearTimeout(timer); window.removeEventListener("wheel", stop); window.removeEventListener("touchstart", stop); window.removeEventListener("keydown", stop); };
-  const timer = setTimeout(stop, RESTORE_WAIT_MS);
-  ro.observe(document.body);
-  window.addEventListener("wheel", stop, { passive: true });
-  window.addEventListener("touchstart", stop, { passive: true });
-  window.addEventListener("keydown", stop);
+function restoreTo(y: number): Promise<void> {
+  return new Promise((ok) => {
+    const there = () => Math.abs(window.scrollY - y) <= RESTORE_EDGE_PX;
+    window.scrollTo(0, y);
+    if (there()) { requestAnimationFrame(() => { placing = false; ok(); }); return; }
+    const ro = new ResizeObserver(() => { window.scrollTo(0, y); if (there()) stop(); });
+    const stop = () => {
+      placing = false; ok(); ro.disconnect(); clearTimeout(timer);
+      window.removeEventListener("wheel", stop); window.removeEventListener("touchstart", stop); window.removeEventListener("keydown", stop);
+    };
+    const timer = setTimeout(stop, RESTORE_WAIT_MS);
+    ro.observe(document.body);
+    window.addEventListener("wheel", stop, { passive: true });
+    window.addEventListener("touchstart", stop, { passive: true });
+    window.addEventListener("keydown", stop);
+  });
 }
 const chapterIndex = (path: string) => CHAPTER_ORDER.indexOf(parseV2Path(path).chapter ?? FIRST_SECTION);
 
@@ -204,11 +212,11 @@ export default function StoryPageClient() {
     const from = window.location.pathname, to = new URL(href, window.location.href).pathname;
     readAt.set(pageKey(), window.scrollY);
     placing = true;
-    pageTransition(() => {
+    previewChapter(href);                                // la marca de la pestaña va ya, al tocarla
+    switchSection(() => {
       window.history.pushState(null, "", href);
       window.dispatchEvent(new Event(NAV));
-      requestAnimationFrame(() => placeView(true));      // con la sección nueva ya pintada
-    }, chapterIndex(to) >= chapterIndex(from) ? 1 : -1);
+    }, () => placeView(true), chapterIndex(to) >= chapterIndex(from) ? 1 : -1);
   }, []);
   useEffect(() => {
     if ("scrollRestoration" in window.history) window.history.scrollRestoration = "manual";   // la posición la pone placeView
@@ -218,8 +226,8 @@ export default function StoryPageClient() {
       const dir = chapterIndex(to) >= chapterIndex(shown) ? 1 : -1;
       shown = to;
       placing = true;
-      // la marca de dirección ya (la sección nueva entra al montarse); la vista, cuando React la haya pintado
-      pageTransition(() => requestAnimationFrame(() => placeView(true)), dir);
+      // el contenido ya cambió (el navegador): se oculta sin fundido, se coloca y vuelve a verse
+      switchSection(() => {}, () => placeView(true), dir, true);
     };
     const remember = () => { if (!placing) { shown = window.location.pathname; readAt.set(pageKey(), window.scrollY); } };
     window.addEventListener("popstate", back);

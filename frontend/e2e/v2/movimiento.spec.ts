@@ -39,6 +39,49 @@ test.describe("cambio de pestaña", () => {
     await expect.poll(() => dirs(page)).toEqual(["fwd", "back"]);
   });
 
+  // el usuario, en su iPhone: «doy clic en Cómo gana dinero, La acción… me salta un latigazo, todo se tira de golpe». La
+  // vista se coloca solo con lo que se mueve invisible: la barra no se desplaza a la vista y el scroll no cambia con la
+  // sección visible. Se mide fotograma a fotograma (rAF), en coordenadas de la página (WebKit retrasa 17 px su viewport
+  // visual al bajar: no es la página quien se mueve).
+  for (const [desde, start, target] of [["desde arriba", "/v2/NVDA", "Cómo gana dinero"], ["a media página", "/v2/NVDA/negocio", "La acción"]] as const) {
+    test(`cambiar de pestaña ${desde} no da un latigazo: la barra no salta a la vista ni el scroll con la sección visible`, async ({ page }) => {
+      const BAR_STEP_PX = 2;       // lo que puede moverse la barra entre dos fotogramas visibles
+      const SEEN = 0.1;            // opacidad desde la que algo se ve
+      await page.goto(start);
+      await page.locator(".depth-body .dsec").first().waitFor({ timeout: 90_000 });
+      if (desde !== "desde arriba") {
+        await page.evaluate(() => {
+          const d = document.querySelector<HTMLElement>(".depth")!;
+          window.scrollTo(0, d.offsetTop + d.offsetHeight / 2);
+        });
+        await expect(page.locator(".fz2[data-stuck]")).toHaveCount(1);
+      }
+      await page.waitForTimeout(300);
+      await page.evaluate(() => {
+        const w = window as unknown as { __f: number[][]; __stop: boolean };
+        w.__f = []; w.__stop = false;
+        const op = (s: string) => { const e = document.querySelector(s); return e ? Number(getComputedStyle(e).opacity) : 1; };
+        const tick = () => {
+          const bar = document.querySelector("nav.chapterbar")!.getBoundingClientRect().top + (window.visualViewport?.offsetTop ?? 0);
+          w.__f.push([bar, window.scrollY, op(".fz2 main"), op(".fz2 .depth")]);
+          if (!w.__stop) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      });
+      await chapter(page, target).click();
+      await expect(page.locator(".chapterbar a[aria-current=page]")).toHaveText(target);
+      await settle(page, ".fz2 main");
+      await page.waitForTimeout(200);
+      const f = await page.evaluate(() => { const w = window as unknown as { __f: number[][]; __stop: boolean }; w.__stop = true; return w.__f; });
+      expect(f.at(-1)![1]).not.toBe(f[0][1]);                         // la vista sí se colocó (al principio de la sección)
+      for (let i = 1; i < f.length; i++) {
+        const [[barA, yA, mainA], [barB, yB, mainB, depthB]] = [f[i - 1], f[i]];
+        if (mainA > SEEN && mainB > SEEN) expect(Math.abs(barB - barA), `fotograma ${i}: la barra salta`).toBeLessThanOrEqual(BAR_STEP_PX);
+        if (yB !== yA) expect(Math.min(mainB, depthB), `fotograma ${i}: el scroll cambia con la sección a la vista`).toBeLessThanOrEqual(SEEN);
+      }
+    });
+  }
+
   test("volver a una pestaña la abre donde se leía; atrás y adelante del navegador, también", async ({ page }) => {
     await page.goto("/v2/NVDA/calidad");
     await page.locator(".depth-body .dsec").first().waitFor({ timeout: 90_000 });
