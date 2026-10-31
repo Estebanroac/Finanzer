@@ -165,15 +165,22 @@ test("del análisis en caché (menos de 300 ms) se entra directo, sin pantalla d
   expect(await page.evaluate(() => (window as unknown as { __loading?: boolean }).__loading ?? false)).toBe(false);
 });
 
-test("con «reducir movimiento»: sin giro, sin fundido ni llenado; las estaciones cambian a saltos", async ({ page }, info) => {
+// v4.1 (movimiento): con «reducir movimiento» nada gira ni se desplaza; los fundidos se quedan, breves (≤ 150 ms)
+test("con «reducir movimiento»: sin giro, fundidos breves y sin llenado; las estaciones cambian a saltos", async ({ page }, info) => {
   test.skip(info.project.name !== "desktop", "no depende del tamaño");
   await page.emulateMedia({ reducedMotion: "reduce" });
   await holdAnalysis(page, "AAPL");
   await page.goto("/v2/AAPL");
   const box = page.getByTestId("analyze-loading");
   await expect(box).toBeVisible({ timeout: 30_000 });
-  expect(await box.locator(".al-ring .d1").evaluate((c) => getComputedStyle(c).animationName)).toBe("none");
-  expect(await box.locator(".al-title").evaluate((c) => getComputedStyle(c).animationName)).toBe("none");
+  const anim = (sel: string) => box.locator(sel).evaluate((c) => {
+    const s = getComputedStyle(c);
+    return { name: s.animationName, ms: parseFloat(s.animationDuration) * 1000, n: s.animationIterationCount };
+  });
+  const ring = await anim(".al-ring .d1");
+  expect(ring.name === "none" || (ring.ms <= 1 && ring.n === "1"), `sin giro: ${JSON.stringify(ring)}`).toBe(true);
+  const title = await anim(".al-title");
+  expect(title.name === "none" || title.ms <= 150, `fundido breve: ${JSON.stringify(title)}`).toBe(true);
   await expect(box).toHaveAttribute("data-station", "2", { timeout: 10_000 });
   // el tramo en curso no se llena poco a poco; los anteriores, enteros
   const widths = await box.locator(".al-seg i span").evaluateAll((els) => els.map((e) => (e as HTMLElement).style.width));

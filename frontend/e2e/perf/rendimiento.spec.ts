@@ -114,9 +114,9 @@ test("rendimiento: secciones, interacciones y desplazamiento", async ({ page, br
   for (const sel of [".company-header .tip-btn", ".depth-body .techtable .tip-btn"]) {
     const btn = page.locator(sel).first();
     await btn.scrollIntoViewIfNeeded();
-    const r = await measure(page, () => btn.click(), { sel: ".tip-box:not([hidden])" });
+    const r = await measure(page, () => btn.click(), { sel: ".tip-box:not([data-state=closed])" });
     other.push({ what: `«?» ${sel.split(" ")[1]}`, ...r });
-    const c = await measure(page, () => page.keyboard.press("Escape"), { gone: ".tip-box:not([hidden])" });
+    const c = await measure(page, () => page.keyboard.press("Escape"), { gone: ".tip-box:not([data-state=closed])" });
     other.push({ what: "cerrar «?»", ...c });
   }
   await page.goto(`/v2/${SYMBOL}/accion`);

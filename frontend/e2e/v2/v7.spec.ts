@@ -128,7 +128,7 @@ test("P3 · «?» en las etiquetas del desglose de las puntuaciones («La empres
   for (const key of ["cat_solidez", "cat_calidad_ganancias", "multiples_block", "conf_convergence", "conf_stability"])
     await expect(page.locator(`#desglose [data-tip="${key}"]`)).toHaveCount(1);
   await page.locator('#desglose [data-tip="cat_calidad_ganancias"]').click();
-  const box = page.locator(".tip-box:not([hidden])");     // en un portal (Floating, V7): fuera de la cabecera
+  const box = page.locator(".tip-box:not([data-state=closed])");     // en un portal (Floating, V7): fuera de la cabecera
   await expect(box).toContainText("si el beneficio contable se convierte en caja");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.keyboard.press("Escape");
@@ -143,12 +143,12 @@ test("P3 · «?» en las cifras de La acción y en el ETF del sector (XLK) de la
   for (const key of ["momentum", "trend", "pos52"])
     await expect(intro.locator(`.figures [data-tip="${key}"]`)).toHaveCount(1, { timeout: 30_000 });
   await intro.locator('.figures [data-tip="momentum"]').click();
-  await expect(page.locator(".tip-box:not([hidden])")).toContainText("sin contar el último mes");   // portal (Floating)
+  await expect(page.locator(".tip-box:not([data-state=closed])")).toContainText("sin contar el último mes");   // portal (Floating)
   await page.keyboard.press("Escape");
   const etf = page.getByTestId("returns-by-period").locator('[data-tip="sector_etf"]');
   await expect(etf).toHaveAccessibleName("Qué es XLK (ETF del sector)", { timeout: 30_000 });
   await etf.click();
-  const box = page.locator(".tip-box:not([hidden])");
+  const box = page.locator(".tip-box:not([data-state=closed])");
   await expect(box).toContainText("XLK, tecnología");
   // el popover no se sale por la derecha
   const r = await box.boundingBox();
