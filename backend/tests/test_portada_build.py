@@ -26,6 +26,9 @@ def _cards(resp):
 
 @pytest.fixture
 def offline(fresh):  # noqa: F811
+    # build() asigna SNAPSHOT y WARM_SPARKLINES como el servidor: se restauran al terminar (no pasan a otros tests)
+    fresh.setattr(trending, "SNAPSHOT", None)
+    fresh.setattr(trending, "WARM_SPARKLINES", False)
     fresh.setattr(trending, "_universe_symbols", lambda: list(SERIES))
     fresh.setattr(trending, "last_closed_session", lambda now=None: "2026-10-16")
     fresh.setattr(sparklines, "get", lambda *a, **k: {})
