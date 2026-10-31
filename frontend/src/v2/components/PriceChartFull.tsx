@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { createChart, createSeriesMarkers, HistogramSeries, LineSeries, type IChartApi, type Time } from "lightweight-charts";
+import { createChart, createSeriesMarkers, HistogramSeries, LineSeries, type IChartApi, type ISeriesApi, type Time } from "lightweight-charts";
+import { reducedMotion } from "@/v2/lib/motion";
 import type { PricesPayload, SeriesRole } from "@/v2/lib/prices";
 import { chartPoints, DEFAULT_RANGE, sessionsOf, windowOf, type RangeKey } from "@/v2/lib/returns";
 import { EVENT_KINDS, marksOf } from "@/v2/lib/chartEvents";
@@ -10,6 +11,8 @@ import { AXIS_PX, AXIS_PX_MOBILE, css, fmtDate, MARK_COLOR, MARK_SIZE, MOBILE_QU
 import { perShareCur, volume as fmtVol } from "@/v2/lib/format";
 
 const VOLUME_PANE_SHARE = 0.25;      // alto del panel de volumen frente al de precio
+type LineApi = ISeriesApi<"Line">;
+type HistApi = ISeriesApi<"Histogram">;
 const pad2 = (n: number) => String(n).padStart(2, "0");
 /** El tiempo del cursor como "AAAA-MM-DD" (la librería lo devuelve como texto o como día hábil {year, month, day}). */
 const isoOf = (t: Time | undefined): string =>
@@ -33,6 +36,10 @@ export default function PriceChartFull({ data, symbol, currency }: { data: Price
   const byTime = useMemo(() => new Map(pts.map((p) => [p.t, p])), [pts]);
   const own = data.company.status === "ok";
 
+  // v4.1 (movimiento): la gráfica se crea una vez (por serie y tema) y al cambiar de rango solo cambian sus datos, con un
+  // fundido breve; antes se destruía y se volvía a crear (un fotograma en blanco y todo de golpe).
+  const api = useRef<{ chart: IChartApi; market?: LineApi; sector?: LineApi; company?: LineApi; vol?: HistApi;
+    marks?: ReturnType<typeof createSeriesMarkers<Time>> } | null>(null);
   useEffect(() => {
     if (!box.current || (!own && data.market.status !== "ok")) return;
     const root = box.current.closest(".fz2") ?? document.body;
@@ -51,31 +58,46 @@ export default function PriceChartFull({ data, symbol, currency }: { data: Price
       handleScroll: { mouseWheel: false, pressedMouseMove: false, horzTouchDrag: false, vertTouchDrag: false }, handleScale: false,
     });
     // Revisión V6 (F1): base 100 y marcas del backend; aquí solo se pintan.
-    const add = (role: SeriesRole, color: string, width: 1 | 2, dashed: boolean) => {
-      const s = chart.addSeries(LineSeries, { color, lineWidth: width, lineStyle: dashed ? 2 : 0, priceLineVisible: false, lastValueVisible: false });
-      s.setData(chartPoints(data, role, range));
-      return s;
-    };
-    if (data.market.status === "ok") add("market", css(root, "--text-3"), 1, true);
-    if (data.sector.status === "ok") add("sector", css(root, "--warn"), 1, true);
+    const line = (color: string, width: 1 | 2, dashed: boolean) =>
+      chart.addSeries(LineSeries, { color, lineWidth: width, lineStyle: dashed ? 2 : 0, priceLineVisible: false, lastValueVisible: false });
+    const a: NonNullable<typeof api.current> = { chart };
+    if (data.market.status === "ok") a.market = line(css(root, "--text-3"), 1, true);
+    if (data.sector.status === "ok") a.sector = line(css(root, "--warn"), 1, true);
     if (own) {
-      const co = add("company", css(root, "--good"), 2, false);
-      createSeriesMarkers(co, marksOf(data, range).map((m) => ({
-        time: m.t, position: "belowBar" as const, shape: "circle" as const, color: css(root, MARK_COLOR[m.kind]), size: MARK_SIZE })));
-      const vol = chart.addSeries(HistogramSeries, { color: css(root, "--scale-neutral"), priceLineVisible: false, lastValueVisible: false,
+      a.company = line(css(root, "--good"), 2, false);
+      a.marks = createSeriesMarkers(a.company, []);
+      a.vol = chart.addSeries(HistogramSeries, { color: css(root, "--scale-neutral"), priceLineVisible: false, lastValueVisible: false,
         priceFormat: { type: "volume" } }, 1);
-      const shown = sessionsOf(data, "company", range);
-      vol.setData(pts.filter((p) => shown.has(p.t) && p.v != null).map((p) => ({ time: p.t, value: p.v as number })));
       const panes = chart.panes();
       if (panes[1]) panes[1].setStretchFactor(VOLUME_PANE_SHARE);
     }
-    chart.timeScale().fitContent();
     chart.subscribeCrosshairMove((param) => {
       const p = byTime.get(isoOf(param.time));
       setCursor(p ? { t: p.t, c: p.c, v: p.v } : null);
     });
-    return () => chart.remove();
-  }, [data, range, theme, pts, byTime, own]);
+    api.current = a;
+    return () => { api.current = null; chart.remove(); };
+  }, [data, theme, byTime, own]);
+  const shownRange = useRef(range);
+  useEffect(() => {
+    const a = api.current;
+    if (!a || !box.current) return;
+    const root = box.current.closest(".fz2") ?? document.body;
+    a.market?.setData(chartPoints(data, "market", range));
+    a.sector?.setData(chartPoints(data, "sector", range));
+    if (a.company) {
+      a.company.setData(chartPoints(data, "company", range));
+      a.marks?.setMarkers(marksOf(data, range).map((m) => ({
+        time: m.t, position: "belowBar" as const, shape: "circle" as const, color: css(root, MARK_COLOR[m.kind]), size: MARK_SIZE })));
+      const shown = sessionsOf(data, "company", range);
+      a.vol?.setData(pts.filter((p) => shown.has(p.t) && p.v != null).map((p) => ({ time: p.t, value: p.v as number })));
+    }
+    a.chart.timeScale().fitContent();
+    if (shownRange.current !== range && !reducedMotion()) {
+      box.current.animate([{ opacity: 0.35 }, { opacity: 1 }], { duration: 220, easing: "cubic-bezier(0.23, 1, 0.32, 1)" });
+    }
+    shownRange.current = range;
+  }, [data, range, theme, pts, own]);
 
   const marks = own ? marksOf(data, range) : [];
   const kinds = EVENT_KINDS.filter((k) => marks.some((m) => m.kind === k.kind));
