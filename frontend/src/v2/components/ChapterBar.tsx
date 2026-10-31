@@ -4,6 +4,17 @@ import { CHAPTER_ORDER, SECTION_LABELS } from "@/v2/lib/story";
 import { chapterHref, type ChapterSlug } from "@/v2/lib/routes";
 import { scrollBehavior } from "@/v2/lib/motion";
 
+/** v4.1: la marca de la pestaña activa va a la tocada en el mismo toque (la sección llega un instante después, tras el
+ *  fundido); al llegar, el efecto de ChapterBar la deja en el mismo sitio. */
+export function previewChapter(href: string) {
+  const row = document.querySelector<HTMLElement>("nav.chapterbar .chapterbar-grid");
+  const a = row?.querySelector<HTMLElement>(`a[href="${CSS.escape(href)}"]`);
+  const ink = row?.querySelector<HTMLElement>(".chapter-ink");
+  if (!a || !ink) return;
+  ink.dataset.still = "";
+  ink.style.transform = `translateX(${a.offsetLeft}px) scaleX(${a.offsetWidth / 100})`;
+}
+
 /** Las nueve secciones del análisis como pestañas (V4b): un enlace a la ruta de cada una, la de la URL como activa. */
 export default function ChapterBar({ symbol, current }: { symbol: string; current: ChapterSlug }) {
   const row = useRef<HTMLDivElement>(null);

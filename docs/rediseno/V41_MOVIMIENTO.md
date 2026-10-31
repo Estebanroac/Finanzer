@@ -99,3 +99,33 @@ esqueleto tiene la misma retícula, la fila de sectores y el pie: mide lo mismo 
 
 La ayuda «?» de la ficha «Precio» en Cifras clave abre el texto de «Atractivo del precio» (rangos de 0 a 100) con «Tu
 valor $221.30»: la clave de la ayuda no es la del precio.
+
+## 6. Latigazo al cambiar de pestaña (corregido)
+
+El usuario, en su iPhone con NVDA: «doy clic en Cómo gana dinero, La acción… me salta un latigazo y todo como que se
+tira de golpe». En Safari de iOS (simulador, fotograma a fotograma) y en WebKit: la sección nueva se montaba y empezaba
+a entrar a la vista, y uno o dos fotogramas después la página saltaba al principio de la sección. Desde arriba, la
+barra de capítulos subía de golpe de media pantalla (521 px) a pegarse arriba (93 px), con el contenido al 63 % de
+opacidad. A media página, la sección nueva se pintaba al scroll viejo y saltaba 1.372 px.
+
+Ahora, como en iOS, la vista se coloca siempre invisible (`motion.switchSection`):
+1. al tocar, la marca de la pestaña se desliza ya a la tocada y lo que se va a mover se funde en 100 ms: solo la
+   sección si la barra ya está pegada arriba (barra y cabecera no se mueven); la página bajo la barra superior si la
+   barra aún va a subir;
+2. con eso invisible, cambia el contenido y la vista se coloca sin animar: al principio de la sección, o donde se leía
+   (esperando a que crezca, como antes). El alto de `main` queda fijado mientras tanto para que el documento no encoja;
+3. vuelve a verse: la sección entra con su fundido y sus 16 px desde el lado del cambio.
+
+Nunca queda oculta más de 400 ms. Si llega otro toque antes de que vuelva a verse, manda el último. Atrás y adelante
+del navegador siguen el mismo camino, pero sin el fundido de salida (el contenido ya cambió): se oculta en el acto. Con
+«reducir movimiento», cambio y colocación inmediatos, como antes.
+
+Prueba: `movimiento.spec.ts` · «cambiar de pestaña desde arriba / a media página no da un latigazo». Muestrea cada
+fotograma (rAF) la posición de la barra, el scroll y las opacidades. Exige que, entre dos fotogramas con la página a la
+vista, la barra no se mueva más de 2 px, y que el scroll solo cambie con la sección invisible (≤ 0,1). Se mide en
+coordenadas de la página: Playwright WebKit retrasa 17 px su viewport visual al bajar, y no es la página la que se
+mueve (antes y después del arreglo, igual; en el iPhone no pasa). Con la traza de antes del arreglo, las dos fallan.
+
+Medida (mismo script; A/B con el mismo equipo, mediana de 5, antes y después compilados en la misma sesión): acción
+escritorio INP 56 → 56 ms; acción móvil, 56 → 40 ms; portada sin cambios; CLS igual (0,001 y 0). Las cifras absolutas
+de hoy van 8 ms por encima de las del §4 en ambos lados (el equipo, no el código).
