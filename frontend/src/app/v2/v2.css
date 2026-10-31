@@ -891,7 +891,7 @@ html[data-v2theme="dark"] .fz2 .theme-to-dark, html:not([data-v2theme="dark"]) .
 /* V4 (PM, maqueta aprobada): pantalla de carga del análisis (AnalyzeLoading). El anillo con el logo (trazos finos de la
    marca y un giro lento), «Analizando», el nombre y el ticker, una tarjeta con la estación en curso y la barra de cinco
    tramos, y el pie. Bajo la barra superior (3,5 rem y su borde), a toda la pantalla; la página se monta al terminar. */
-.fz2 .analyze-loading { position: fixed; top: calc(3.5rem + 1px); left: 0; right: 0; bottom: 0; z-index: 30;
+.fz2 .analyze-loading { position: fixed; top: calc(var(--edge, 0px) + 3.5rem + 1px); left: 0; right: 0; bottom: 0; z-index: 30;
   display: grid; place-items: center; background: var(--paper); overflow-y: auto; animation: al-in .25s ease-out both; }
 .fz2 .analyze-loading.out { animation: al-out .26s var(--ease-out) forwards; pointer-events: none; }
 @keyframes al-in { from { opacity: 0; } to { opacity: 1; } }
@@ -941,6 +941,24 @@ html[data-v2theme="dark"] .fz2 .theme-to-dark, html:not([data-v2theme="dark"]) .
   transform: translateY(-100%); visibility: hidden; transition: transform .15s ease, visibility 0s linear .15s; }
 .fz2[data-stuck] .stuck-head { transform: none; visibility: visible; transition: transform .15s ease; }
 @media (prefers-reduced-motion: reduce) { .fz2 .stuck-head, .fz2[data-stuck] .stuck-head { transition: none; } }
+/* La franja de la barra de estado (hora, batería). Safari 26 en el iPhone deja ver la página bajo ella al desplazarse y
+   solo la tiñe con el fondo de un elemento fijo que toque el borde superior y tenga algo de alto (con 1–4 px no lo
+   hace; con 8, sí). La cabecera compacta no basta: no está mientras se ve la completa y, al cambiar de pestaña, entra
+   deslizándose (y, con la página, fundida), y Safari puede muestrear el borde justo entonces y no volver a hacerlo
+   hasta el siguiente desplazamiento: quedaban arriba las barras de colores de «Confianza del veredicto».
+   En pantallas táctiles, una banda fija del color de la cabecera (.status-edge, en TopBar), siempre presente y fuera de
+   lo que se funde, ocupa ese borde; la barra superior empieza bajo ella y la cabecera compacta la tapa. Es un elemento
+   de verdad y recibe los toques: Safari elige el color por el elemento que encuentra en ese borde al tocarlo (un
+   ::before o algo con pointer-events: none no cuenta). --edge: su alto, o el área segura de arriba si es mayor (la app
+   instalada, a pantalla completa, sí la tiene; la cabecera compacta también la respeta). */
+.fz2 { --edge: 0px; }
+.fz2 .status-edge { display: none; }
+.fz2 .stuck-head { padding-top: env(safe-area-inset-top); }
+@media (hover: none) and (pointer: coarse) {
+  .fz2 { --edge: max(env(safe-area-inset-top), 0.75rem); }
+  .fz2 .status-edge { display: block; position: fixed; top: 0; left: 0; right: 0; height: var(--edge); z-index: 10; background: var(--surface); }
+  .fz2 .topbar { padding-top: var(--edge); }
+}
 /* La sección: su lectura, su detalle y el paso a la siguiente. Alta al menos como la pantalla, para que al cambiar de
    sección se pueda llevar su principio bajo la cabecera fija aunque su detalle aún esté llegando. */
 .fz2 .depth { min-height: 100vh; scroll-margin-top: calc(var(--stuck-h, 0px) + var(--bar-h)); }

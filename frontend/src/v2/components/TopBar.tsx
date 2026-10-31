@@ -11,7 +11,9 @@ export default function TopBar({ symbol, theme, onToggleTheme, search = true }: 
   /** La portada lleva su propio buscador grande: la barra deja el hueco vacío. */
   search?: boolean;
 }) {
-  return (
+  return (<>
+    {/* La franja de la barra de estado del iPhone: ver .status-edge en v2.css */}
+    <div className="status-edge" aria-hidden="true" />
     <header className="topbar">
       <div className="wrap">
         {/* Marca: el logo en su placa nocturna (la misma forma en los dos temas, en los iconos y en el PDF) y «Finanzer»
@@ -32,5 +34,5 @@ export default function TopBar({ symbol, theme, onToggleTheme, search = true }: 
         </div>
       </div>
     </header>
-  );
+  </>);
 }
