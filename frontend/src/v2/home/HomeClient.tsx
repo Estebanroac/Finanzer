@@ -5,13 +5,15 @@ import TickerStrip from "./TickerStrip";
 import { TRUST_CARDS } from "./trust";
 import { readTheme, useTheme, writeTheme } from "@/v2/lib/theme";
 import "./home.css";
+import { crossfade } from "@/v2/lib/motion";
 
 /** Portada de /v2 (spec §3.5, maqueta 5; P8): buscador, cintillo de la sesión con mini-gráficas y el motor, y tres
  *  tarjetas de confianza. */
 export default function HomeClient() {
   // El mismo almacén de tema que la historia (v4: guardado o del sistema, sin parpadeo por el script del layout).
   const theme = useTheme();
-  const toggle = () => writeTheme((theme ?? readTheme()) === "dark" ? "light" : "dark");
+  // v4.1 (movimiento): el cambio de modo, con un fundido cruzado breve (no de golpe)
+  const toggle = () => crossfade(() => writeTheme((theme ?? readTheme()) === "dark" ? "light" : "dark"), "theme");
 
   return (
     <div className="fz2 home" data-theme={theme ?? undefined}>

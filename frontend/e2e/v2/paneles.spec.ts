@@ -4,7 +4,7 @@ import { test, expect, type Page } from "@playwright/test";
 // fija de capítulos, ni por delante ni por detrás: entero dentro del viewport y sin cruzarse con la barra (también
 // tras desplazar la página). En móvil, hoja inferior bajo la barra, que sigue visible.
 const TICKERS = ["AAPL", "JPM", "PLTR"];
-const PANEL = ".tip-box:not([hidden])";
+const PANEL = ".tip-box:not([data-state=closed])";
 
 /** Problemas del panel abierto ahora mismo (o null si no hay ninguno a la vista). Un panel sin sitio útil (el «?» pegado
  *  arriba con la barra justo debajo) queda oculto (visibility: hidden) hasta que vuelve a haber sitio: no cuenta. */
@@ -46,6 +46,9 @@ for (const t of TICKERS) {
         await btn.evaluate((b) => b.scrollIntoView({ block: "center" }));
         await btn.click();
         await expect(page.locator(PANEL).first()).toBeVisible();
+        // v4.1: el panel (o la hoja) entra con una transición; se mide al terminarla
+        await expect.poll(() => page.locator(PANEL).first().evaluate((el) =>
+          el.getAnimations({ subtree: true }).filter((a) => a.playState === "running").length)).toBe(0);
         const label = `${path} «?» ${await btn.getAttribute("data-tip")}`;
         problems.push(...((await panelProblems(page, label)) ?? []));
         // V7 (PM): el texto de los «?» no habla del «motor»

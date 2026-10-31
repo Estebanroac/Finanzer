@@ -34,7 +34,7 @@ export const WEB = {
   peersPollMaxMs: 600000,
   loading: {
     delayMs: 300, expectedMs: 8430, fastMs: 180, stallFill: 0.95,
-    typicalS: [7.19, 8.43], exitHoldMs: 320, exitMs: 620,
+    typicalS: [7.19, 8.43], exitHoldMs: 200, exitMs: 260,
     titles: ["Estados financieros de la SEC", "Precios y mercado", "Ratios frente a su industria", "Valoración: DCF y múltiplos", "Puntuaciones y veredicto"],
     labels: ["Estados SEC", "Mercado", "Ratios", "Valoración", "Veredicto"],
     phrases: ["Reuniendo los ingresos, beneficios, caja y deuda de los últimos años, contrastados con los informes oficiales.", "Trayendo la cotización y su historia, y la del mercado, para situar a la empresa.", "Comparando márgenes, rentabilidad y deuda con las empresas de su industria.", "Calculando cuánto vale el negocio por su caja futura y comparándolo con lo que paga el mercado por empresas parecidas.", "Sumando la calidad del negocio y el atractivo del precio, y midiendo cuánto fiarse del resultado."],

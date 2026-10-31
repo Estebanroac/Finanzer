@@ -20,7 +20,14 @@ import { autoUpdate, flip, offset, shift, size, useFloating, type Padding } from
 export const SHEET_QUERY = "(max-width: 47.9375em)";
 export const GAP = 8;
 const OFFSET = 6;
-const SWIPE_CLOSE_PX = 80;
+/** v4.1 (movimiento): la hoja sigue al dedo y se cierra si se suelta pasada esta fracción de su alto o con un gesto
+ *  rápido hacia abajo (px/ms, como iOS); si no, vuelve a su sitio. */
+const SWIPE_CLOSE_FRACTION = 0.25;
+const SWIPE_CLOSE_VELOCITY = 0.11;
+/** Un gesto rápido cuenta a partir de este recorrido (px): un roce no cierra la hoja. */
+const SWIPE_MIN_PX = 12;
+/** Lo que tarda en salir (v2.css: --dur-1 el panel, --dur-3 la hoja): mientras, la pieza sigue montada. */
+const LEAVE_MS = { floating: 150, sheet: 320 };
 /** Medio píxel arriba o abajo (redondeos del navegador): la barra «pegada arriba» está a 1 px o menos del borde, y un
  *  ancla está por encima o por debajo de la barra con ese margen. */
 const EDGE_PX = 1;
@@ -102,7 +109,21 @@ export default function Floating({ anchor, open, onClose, id, className, role, l
   const [target, setTarget] = useState<HTMLElement | null>(null);
   // hoja o panel: al abrir, en el propio render (si se decidiera en un efecto, en el primer render ya abierto sería un
   // panel, y su escucha del scroll lo cerraría al desplazar la página para la hoja)
-  const sheet = open && (sheetProp ?? isSheet());
+  const sheetNow = open && (sheetProp ?? isSheet());
+  // v4.1 (movimiento): al cerrar, la pieza sigue montada lo que dura su salida (data-state="closed", v2.css) y sale
+  // por el mismo camino por el que entró; el foco y el bloqueo del scroll se devuelven al cerrar, sin esperarla
+  const [leaving, setLeaving] = useState<null | "floating" | "sheet">(null);
+  const was = useRef<null | "floating" | "sheet">(null);
+  useEffect(() => {
+    if (open) { was.current = sheetNow ? "sheet" : "floating"; return; }
+    if (!was.current) return;
+    const kind = was.current; was.current = null;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- la salida empieza cuando se cierra
+    setLeaving(kind);
+    const t = setTimeout(() => setLeaving(null), LEAVE_MS[kind]);
+    return () => clearTimeout(t);
+  }, [open, sheetNow]);
+  const sheet = sheetNow;
   const [topLimit, setTopLimit] = useState(0);
   const pad = (): Padding => avoidPadding(anchor.current?.getBoundingClientRect() ?? { top: 0, bottom: 0 });
   const body = useRef<HTMLDivElement>(null);
@@ -110,10 +131,12 @@ export default function Floating({ anchor, open, onClose, id, className, role, l
   const keep = useRef<number | null>(null);
   // ¿el cuerpo no cabe? Entonces es enfocable (se lee y se desplaza con el teclado)
   const [scrolls, setScrolls] = useState(false);
-  const { refs, floatingStyles, update } = useFloating({
+  const { refs, floatingStyles, update, placement } = useFloating({
     open,
     strategy: "fixed",
     placement: "bottom-start",
+    // v4.1: se coloca con left/top, no con transform: el transform es de la entrada (escala desde el «?»)
+    transform: false,
     middleware: [
       offset(OFFSET),
       flip(() => ({ padding: pad(), fallbackStrategy: "bestFit" })),
@@ -214,12 +237,34 @@ export default function Floating({ anchor, open, onClose, id, className, role, l
 
   // hoja inferior: gesto hacia abajo para cerrarla. V6b (E2): solo si la hoja está arriba del todo al tocar; con su
   // contenido desplazado, arrastrar hacia abajo es volver arriba, no cerrar.
-  const [dragFrom, setDragFrom] = useState<number | null>(null);
+  const drag = useRef<{ y: number; t: number; dy: number } | null>(null);
+  const sheetEl = useRef<HTMLDivElement | null>(null);
+  const onTouchStart = (e: React.TouchEvent) => {
+    drag.current = (body.current?.scrollTop ?? 0) <= 0 ? { y: e.touches[0].clientY, t: performance.now(), dy: 0 } : null;
+  };
+  const onTouchMove = (e: React.TouchEvent) => {
+    const d = drag.current, el = sheetEl.current;
+    if (!d || !el) return;
+    d.dy = Math.max(0, e.touches[0].clientY - d.y);
+    el.dataset.drag = "";
+    el.style.transform = `translateY(${d.dy}px)`;          // 1:1 con el dedo
+  };
+  const onTouchEnd = () => {
+    const d = drag.current, el = sheetEl.current;
+    drag.current = null;
+    if (!d || !el) return;
+    delete el.dataset.drag;
+    el.style.transform = "";                                // sale (data-state) o vuelve a su sitio desde donde está
+    const v = d.dy / Math.max(1, performance.now() - d.t);
+    if (d.dy > SWIPE_CLOSE_FRACTION * el.offsetHeight || (d.dy > SWIPE_MIN_PX && v > SWIPE_CLOSE_VELOCITY)) onClose();
+  };
 
-  if (!target || !open) return null;
-  const setBox = (el: HTMLDivElement | null) => { refs.setFloating(el); boxRef?.(el); };
+  const kind = open ? (sheet ? "sheet" : "floating") : leaving;
+  if (!target || !kind) return null;
+  const setBox = (el: HTMLDivElement | null) => { refs.setFloating(el); boxRef?.(el); sheetEl.current = el; };
   const common = {
-    id, role, "aria-label": label, "aria-modal": modal && open ? ("true" as const) : undefined, hidden: !open,
+    id, role, "aria-label": label, "aria-modal": modal && open ? ("true" as const) : undefined,
+    "data-state": open ? "open" : "closed", inert: !open || undefined, "aria-hidden": !open || undefined,
   };
   const inner = (<>
     {head && <div className="float-head">{head}</div>}
@@ -228,20 +273,19 @@ export default function Floating({ anchor, open, onClose, id, className, role, l
       <div className="float-content">{children}</div>
     </div>
   </>);
-  if (open && sheet) {
+  if (kind === "sheet") {
     const style: CSSProperties = { maxHeight: `calc(100dvh - ${topLimit + GAP}px)` };
     return createPortal(<>
-      <div className="tip-backdrop" aria-hidden="true" style={{ top: topLimit }}
-           onPointerDown={(e) => { e.stopPropagation(); (onBackdropDown ?? onClose)(); }} />
+      <div className="tip-backdrop" aria-hidden="true" style={{ top: topLimit }} data-state={open ? "open" : "closed"}
+           onPointerDown={(e) => { e.stopPropagation(); if (open) (onBackdropDown ?? onClose)(); }} />
       <div ref={setBox} {...common} className={`${className} sheet`} style={style}
-           onTouchStart={(e) => setDragFrom((body.current?.scrollTop ?? 0) <= 0 ? e.touches[0].clientY : null)}
-           onTouchMove={(e) => { if (dragFrom !== null && e.touches[0].clientY - dragFrom > SWIPE_CLOSE_PX) { setDragFrom(null); onClose(); } }}
-           onTouchEnd={() => setDragFrom(null)}>
+           onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd} onTouchCancel={onTouchEnd}>
         {inner}
       </div>
     </>, target);
   }
   return createPortal(
-    <div ref={setBox} {...common} className={`${className} floating`} style={open ? floatingStyles : undefined}>{inner}</div>,
+    <div ref={setBox} {...common} className={`${className} floating`}
+         style={{ ...floatingStyles, "--float-origin": placement.startsWith("top") ? "bottom left" : "top left" } as CSSProperties}>{inner}</div>,
     target);
 }

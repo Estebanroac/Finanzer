@@ -53,3 +53,15 @@ export function PriceChartSkeleton({ range = DEFAULT_RANGE }: { range?: RangeKey
       <p className="attribution muted">Gráfica: TradingView Lightweight Charts™</p>
     </div>);
 }
+
+/** v4.1 (movimiento): la gráfica completa de La acción mientras llega su fragmento: la misma estructura y el mismo alto
+ *  (26 rem; 20 en el móvil), así lo de debajo no salta al llegar. */
+export function PriceChartFullSkeleton() {
+  return (
+    <div className="pricechart full card surface" aria-busy="true">
+      <div className="ranges"><RangeButtons data={null} range={DEFAULT_RANGE} /><Marks kinds={EVENT_KINDS} /></div>
+      <p className="cursor-read num muted">Cargando la gráfica…</p>
+      <div className="chart-skeleton chart-full" />
+      <p className="legend muted">Base 100 al inicio del periodo, con dividendos</p>
+    </div>);
+}

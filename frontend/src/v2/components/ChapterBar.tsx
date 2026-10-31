@@ -1,7 +1,8 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { CHAPTER_ORDER, SECTION_LABELS } from "@/v2/lib/story";
 import { chapterHref, type ChapterSlug } from "@/v2/lib/routes";
+import { scrollBehavior } from "@/v2/lib/motion";
 
 /** Las nueve secciones del análisis como pestañas (V4b): un enlace a la ruta de cada una, la de la URL como activa. */
 export default function ChapterBar({ symbol, current }: { symbol: string; current: ChapterSlug }) {
@@ -16,7 +17,24 @@ export default function ChapterBar({ symbol, current }: { symbol: string; curren
     const pad = parseFloat(getComputedStyle(r).scrollPaddingLeft) || 0;
     const box = r.getBoundingClientRect(), ar = a.getBoundingClientRect();
     if (ar.left >= box.left + pad && ar.right <= box.right - pad) return;
-    r.scrollTo({ left: Math.max(0, r.scrollLeft + ar.left - box.left - pad), behavior: "smooth" });
+    r.scrollTo({ left: Math.max(0, r.scrollLeft + ar.left - box.left - pad), behavior: scrollBehavior() });
+  }, [current]);
+  // v4.1 (movimiento): la marca de la pestaña activa es una sola pieza que se desliza a la nueva (transform, v2.css);
+  // se coloca sin transición la primera vez y al cambiar el ancho.
+  const ink = useRef<HTMLSpanElement>(null);
+  useLayoutEffect(() => {
+    const r = row.current, i = ink.current;
+    if (!r || !i) return;
+    const place = (animate: boolean) => {
+      const a = r.querySelector<HTMLElement>("a[aria-current=page]");
+      if (!a) return;
+      i.dataset.still = animate ? "" : "1";
+      i.style.transform = `translateX(${a.offsetLeft}px) scaleX(${a.offsetWidth / 100})`;
+    };
+    place(i.style.transform !== "");
+    const ro = new ResizeObserver(() => place(false));
+    ro.observe(r);
+    return () => ro.disconnect();
   }, [current]);
   return (
     <nav className="chapterbar" aria-label="Secciones del análisis">
@@ -24,6 +42,7 @@ export default function ChapterBar({ symbol, current }: { symbol: string; curren
         {CHAPTER_ORDER.map((id) => (
           <a key={id} data-nav href={chapterHref(symbol, id)} aria-current={current === id ? "page" : undefined}>{SECTION_LABELS[id]}</a>
         ))}
+        <span className="chapter-ink" ref={ink} aria-hidden="true" />
       </div>
     </nav>
   );

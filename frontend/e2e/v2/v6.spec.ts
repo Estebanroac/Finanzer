@@ -136,7 +136,7 @@ test("F8 · «?» en escritorio: el popover no atrapa Tab ni bloquea el desplaza
   for (let i = 0; i < n; i++) await page.keyboard.press("Tab");
   // V6b (E1): Tab pasado el último control no queda atrapado: el panel se cierra y el foco vuelve al «?», desde donde
   // sigue el orden de la página
-  await expect(page.locator(".tip-box:not([hidden])")).toHaveCount(0);
+  await expect(page.locator(".tip-box:not([data-state=closed])")).toHaveCount(0);
   await expect(q).toBeFocused();
 });
 

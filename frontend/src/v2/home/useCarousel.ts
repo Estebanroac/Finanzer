@@ -49,6 +49,9 @@ const DECELERATION = 0.998;
 const SETTLE_PX = 0.5;
 const SETTLE_PX_S = 5;
 const SPRING_STEP_MS = 4;
+/** v4.1 (movimiento): al reanudar, el avance llega a su velocidad en este tiempo (curva suave), en vez de arrancar de
+ *  golpe; al pararse (dedo, ratón, foco) se para al instante: lo que se toca responde ya. */
+const RAMP_MS = 400;
 /** Inercia: fracción de la velocidad que queda en cada fotograma de ~16 ms, la velocidad (px/ms) a la que se para y
  *  su tope (los eventos muy seguidos darían velocidades absurdas). */
 const FRICTION = 0.94;
@@ -255,6 +258,7 @@ export function useCarousel(ref: RefObject<HTMLDivElement | null>, opts: {
       ? new IntersectionObserver(([e]) => { onScreen = e.isIntersecting; wake(); }) : null;
     io?.observe(el);
     document.addEventListener("visibilitychange", wake);
+    let ramp = 0;
     const frame = () => {
       if (!active()) { raf = 0; show("pausado"); return; }
       const t = now();
@@ -284,9 +288,11 @@ export function useCarousel(ref: RefObject<HTMLDivElement | null>, opts: {
       }
       const moving = !reduced && itemCount > 0 && !held && !st.down && !st.touching && st.velocity === 0 && !st.spring
         && t >= st.resumeAt;
+      ramp = moving ? Math.min(1, ramp + dt / RAMP_MS) : 0;
       if (moving && loop) {                                    // avance automático, desde donde esté
         const w = runWidth();
-        if (w > 0) set(st.pos + (w / (itemCount * secondsPerItem * MS_PER_S)) * dt);
+        const ease = ramp * ramp * (3 - 2 * ramp);             // arranque suave (smoothstep)
+        if (w > 0) set(st.pos + (w / (itemCount * secondsPerItem * MS_PER_S)) * ease * dt);
       }
       show(reduced ? "reducido" : moving ? "animado" : "pausado");
       raf = requestAnimationFrame(frame);

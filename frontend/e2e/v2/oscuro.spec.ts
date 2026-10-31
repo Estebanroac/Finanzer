@@ -73,6 +73,9 @@ test("oscuro: AA con el tooltip «?», el escenario y la hoja inferior abiertos"
   await tip.scrollIntoViewIfNeeded();
   await tip.click();
   await expect(page.locator('[role="dialog"]').first()).toBeVisible();
+  // v4.1: a mitad de su fundido de entrada el contraste aún no es el final: se mide al terminar
+  await expect.poll(() => page.locator('[role="dialog"]').first().evaluate((el) =>
+    el.getAnimations({ subtree: true }).filter((a) => a.playState === "running").length)).toBe(0);
   expect(await serious(page)).toEqual([]);
   await page.keyboard.press("Escape");
 });

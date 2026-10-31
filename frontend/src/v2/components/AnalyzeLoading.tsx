@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { WEB } from "@/lib/generated/backendConfig";
 import { advance, startPace, stationFill, type PaceConfig, type PaceState } from "@/v2/lib/loadingPace";
+import { canTransition, reducedMotion } from "@/v2/lib/motion";
 
 /** V4 (PM, maqueta aprobada): la pantalla de carga del análisis. El anillo con el logo y su giro lento; «Analizando»; el
  *  nombre corto de la empresa con su ticker (o solo el ticker); una tarjeta con la estación en curso, qué se hace en
@@ -48,9 +49,12 @@ export default function AnalyzeLoading({ symbol, name, startedAt, arrivedAt, onF
   const { s, now } = view;
   useEffect(() => {
     if (!s.done) return;
-    const t1 = setTimeout(() => setExiting(true), L.exitHoldMs);
-    const t2 = setTimeout(onFinished, L.exitHoldMs + L.exitMs);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
+    // v4.1 (movimiento): con transiciones de vista, la pantalla da paso a la página con un fundido cruzado (crossfade, al
+    // terminar); sin ellas, se disuelve aquí; con «reducir movimiento», ni una cosa ni otra: tras la pausa, la página
+    const own = !canTransition() && !reducedMotion();
+    const t1 = own ? setTimeout(() => setExiting(true), L.exitHoldMs) : undefined;
+    const t2 = setTimeout(onFinished, L.exitHoldMs + (own ? L.exitMs : 0));
+    return () => { if (t1) clearTimeout(t1); clearTimeout(t2); };
   }, [s.done, onFinished]);
 
   const n = PACE.stations;

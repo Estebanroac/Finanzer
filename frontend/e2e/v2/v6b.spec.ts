@@ -5,7 +5,7 @@ import { test, expect, type Page } from "@playwright/test";
 // desglose al pasar el ratón y su «Ver detalle» en el móvil) dejaron de existir con V4b · 2: el desglose está siempre a la
 // vista (nada-oculto.spec.ts).
 const desktopOnly = (name: string) => test.skip(name !== "desktop", "en escritorio");
-const PANEL = ".tip-box:not([hidden])";
+const PANEL = ".tip-box:not([data-state=closed])";
 
 async function story(page: Page, path = "/v2/AAPL/calidad") {
   await page.goto(path);

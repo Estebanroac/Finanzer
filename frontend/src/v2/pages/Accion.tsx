@@ -12,10 +12,11 @@ import SignalsTable from "@/v2/components/SignalsTable";
 import Methodology from "@/v2/components/depth/Methodology";
 import MetricTip from "@/v2/components/depth/MetricTip";
 import { lazyWith } from "@/v2/lib/lazy";
+import { PriceChartFullSkeleton } from "@/v2/components/PriceChartParts";
 
 // Revisión V6 (F13): la gráfica completa (Lightweight Charts) en su propio fragmento.
-const PriceChartFull = lazyWith(() => import("@/v2/components/PriceChartFull"),
-  () => <p className="missing" aria-busy="true">Cargando la gráfica…</p>);
+// v4.1: mientras llega, su esqueleto del mismo alto (antes una línea de texto: la gráfica, de 26 rem, empujaba la página)
+const PriceChartFull = lazyWith(() => import("@/v2/components/PriceChartFull"), () => <PriceChartFullSkeleton />);
 
 const PILLS = [{ id: "grafica", label: "Gráfica" }, { id: "rentabilidad", label: "Rentabilidad por periodo" },
   { id: "rango", label: "Rango de 52 semanas" }, { id: "senales", label: "Señales" }];

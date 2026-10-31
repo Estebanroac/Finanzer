@@ -3,7 +3,7 @@ import { test, expect, type Page } from "@playwright/test";
 // v4 (PM): el texto de un «?» más largo que el sitio disponible se cortaba por abajo y no se podía desplazar (el propio
 // desplazamiento del panel lo recolocaba y lo devolvía arriba). Regla: el panel nunca sale de la ventana, se lee entero
 // desplazándose por dentro (rueda, dedo o teclado) y «Cerrar» queda siempre a la vista. En móvil, hoja inferior.
-const PANEL = ".tip-box:not([hidden])";
+const PANEL = ".tip-box:not([data-state=closed])";
 // Beta ajustada de NVDA: descripción, fórmula, umbrales y nota (la más larga de las cifras clave)
 const PATH = "/v2/NVDA/empresa";
 const TIP = 'button.tip-btn[data-tip="beta"]';
@@ -104,5 +104,9 @@ test("tabla apilada (móvil): el «?» de una columna, el del ETF del sector, se
   await btn.scrollIntoViewIfNeeded({ timeout: 60_000 });
   await btn.click();                              // en móvil la tapaban las filas: el clic no le llegaba
   await expect(page.locator(PANEL)).toBeVisible();
+  // v4.1: el panel entra con una transición; se mide al terminarla (de forma determinista, no con una espera fija: si al
+  // colocarse se reinicia, se espera a la nueva)
+  await expect.poll(() => page.locator(PANEL).evaluate((el) =>
+    el.getAnimations({ subtree: true }).filter((a) => a.playState === "running").length)).toBe(0);
   await expect(page.locator(PANEL).getByRole("button", { name: "Cerrar" })).toBeInViewport({ ratio: 1 });
 });

@@ -49,13 +49,13 @@ test("los «?» abren al instante (en el siguiente fotograma) y la cabecera no t
       await new Promise((r) => requestAnimationFrame(() => r(null)));
       (b as HTMLElement).click();
       await new Promise((r) => requestAnimationFrame(() => r(null)));
-      return !!document.querySelector(".tip-box:not([hidden])");
+      return !!document.querySelector(".tip-box:not([data-state=closed])");
     });
     expect(opened, `${sel}: el «?» abre en el siguiente fotograma`).toBe(true);
     await page.keyboard.press("Escape");
-    await expect(page.locator(".tip-box:not([hidden])")).toHaveCount(0);
+    await expect(page.locator(".tip-box:not([data-state=closed])")).toHaveCount(0);
   }
   // pasar el ratón o tocar la tarjeta no abre nada: el desglose ya está ahí
   await page.getByTestId("score-quality").locator(".score-value").click();
-  await expect(page.locator(".tip-box:not([hidden]), [role=dialog]")).toHaveCount(0);
+  await expect(page.locator(".tip-box:not([data-state=closed]), [role=dialog]")).toHaveCount(0);
 });

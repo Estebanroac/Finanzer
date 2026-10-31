@@ -8,10 +8,12 @@ import { stockHref } from "@/v2/lib/search";
 import { fetchSparklines, SPARK_PERIODS, staleToRefresh, type SparkItem, type SparkPeriod } from "@/v2/lib/sparklines";
 import Sparkline from "./Sparkline";
 import { useCarousel } from "./useCarousel";
+import { reducedMotion } from "@/v2/lib/motion";
+import SegmentInk from "@/v2/components/SegmentInk";
 import { CACHED_PERIOD, cachedLabel, loadHome, saveHome, type CachedHome } from "./homeCache";
 import { priceText, shouldPoll } from "./trendingModel";
 import {
-  changeLabel, contextLine, DAY_LISTS, engineLine, mergeTrending, sectorChips, selectedItems, sentence, shownChange,
+  changeLabel, contextLine, DAY_LISTS, engineLine, hasSelection, mergeTrending, sectorChips, selectedItems, sentence, shownChange,
   type SectorChip, type Selection,
 } from "./tickerModel";
 
@@ -23,6 +25,8 @@ const MS = 1000;
 /** Segundos de animación por valor: el cintillo avanza a la misma velocidad con 12 o con 30 valores. */
 const SECONDS_PER_ITEM = 4;
 const SKELETON_ITEMS = 6;
+/** Anchos (rem) de los chips de sector mientras se calcula: una fila como la de verdad. */
+const SKELETON_SECTORS = [6.5, 8, 10, 7, 9];
 
 function useMedia(query: string): boolean {
   const [on, setOn] = useState(false);
@@ -124,27 +128,45 @@ export default function TickerStrip() {
   const live = lastGood ?? resp?.data ?? null;
   const fromCache = !live && cached !== null;
   const data = live ?? cached?.data ?? null;
-  const items = useMemo(() => selectedItems(data, sel, period), [data, sel, period]);
+  const fresh = useMemo(() => selectedItems(data, sel, period), [data, sel, period]);
+  // v4.1 (movimiento): mientras llega el periodo o la lista nuevos, el cintillo conserva sus tarjetas (antes se vaciaba y
+  // la página subía y bajaba: CLS) y las cambia con un fundido cuando llegan
+  const arrived = hasSelection(data, sel, period);
+  const [kept, setKept] = useState<{ items: TrendingItem[]; period: SparkPeriod }>({ items: fresh, period });
+  if (arrived && (kept.items !== fresh || kept.period !== period)) setKept({ items: fresh, period });
+  const { items, period: shownPeriod } = arrived ? { items: fresh, period } : kept;
   const symbolsKey = items.map((x) => x.symbol).join(",");
+  // al cambiar las tarjetas, entran con un fundido breve (no de golpe); con «reducir movimiento», sin él
+  const swapKey = `${symbolsKey}|${shownPeriod}`;
+  const lastSwap = useRef(swapKey);
+  useEffect(() => {
+    if (lastSwap.current === swapKey) return;
+    const first = !lastSwap.current.split("|")[0];       // la primera vez que llegan, sin fundido: ya entran solas
+    lastSwap.current = swapKey;
+    if (first) return;
+    const run = tape.current?.querySelector<HTMLElement>(".run");
+    if (!run || reducedMotion()) return;
+    run.animate([{ opacity: 0.25 }, { opacity: 1 }], { duration: 220, easing: "cubic-bezier(0.23, 1, 0.32, 1)" });
+  }, [swapKey]);
 
   // Mini-gráficas del periodo, después del primer pintado (no compiten con el buscador). Las que ya están no se piden.
   useEffect(() => {
     if (!symbolsKey) return;
-    const have = sparks[period] ?? {};
+    const have = sparks[shownPeriod] ?? {};
     const missing = symbolsKey.split(",").filter((s) => !have[s]);
     if (!missing.length) return;
     const ctl = new AbortController();
     const t = setTimeout(() => {
-      fetchSparklines(missing, period, ctl.signal).then((r) => {
+      fetchSparklines(missing, shownPeriod, ctl.signal).then((r) => {
         setSparkErr(null);
         // V6b: un símbolo pedido que no vuelve queda «sin dato» (no se vuelve a pedir en bucle)
         const none = Object.fromEntries(missing.filter((s) => !r.items[s])
           .map((s) => [s, { status: "sin_dato" as const, reason: "el servidor no devolvió la gráfica de este valor" }]));
-        setSparks((prev) => ({ ...prev, [period]: { ...(prev[period] ?? {}), ...none, ...r.items } }));
+        setSparks((prev) => ({ ...prev, [shownPeriod]: { ...(prev[shownPeriod] ?? {}), ...none, ...r.items } }));
       }).catch((e: Error) => { if (e.name !== "AbortError") setSparkErr(e.message); });
     }, 0);
     return () => { clearTimeout(t); ctl.abort(); };
-  }, [symbolsKey, period, sparks]);
+  }, [symbolsKey, shownPeriod, sparks]);
 
   // Portada rápida: la vista inicial que llegó del servidor (listas de 1D y mini-gráficas de «Más negociadas») se guarda
   // en este navegador; saveHome no la cambia por una más antigua.
@@ -173,7 +195,7 @@ export default function TickerStrip() {
 
   // P8b: contenedor desplazable que avanza solo (lista o periodo nuevos: vuelve al principio)
   const { mode, dragging } = useCarousel(tape, { reduced, secondsPerItem: SECONDS_PER_ITEM, itemCount: items.length,
-    resetKey: `${sel.kind}:${sel.key}:${period}` });
+    resetKey: `${sel.kind}:${sel.key}:${shownPeriod}` });
   const loop = !reduced;                              // la copia que cierra el bucle
   // v4 cintillo: en pantallas táctiles avanza con transform (useCarousel decide con la misma consulta)
   const touchDrive = useMedia("not all and (hover: hover) and (pointer: fine)") && !reduced;
@@ -229,8 +251,8 @@ export default function TickerStrip() {
   const calculating = !data && (resp === null || resp.status === "calculando");
   const noData = !data && resp?.status === "sin_dato";
   const cards = (copy: boolean) => items.map((x) => (
-    <TickerItem key={x.symbol} item={x} period={period} copy={copy}
-      spark={sparks[period]?.[x.symbol] ?? (fromCache && period === CACHED_PERIOD ? cached?.sparks[x.symbol] : undefined)} />
+    <TickerItem key={x.symbol} item={x} period={shownPeriod} copy={copy}
+      spark={sparks[shownPeriod]?.[x.symbol] ?? (fromCache && shownPeriod === CACHED_PERIOD ? cached?.sparks[x.symbol] : undefined)} />
   ));
 
   return (
@@ -256,6 +278,7 @@ export default function TickerStrip() {
           <div className="fgroup fgroup-period" role="group" aria-label="Periodo de las listas y las gráficas">
             <span className="glabel" aria-hidden="true">Periodo</span>
             <div className="per">
+              <SegmentInk active={period} />
               {SPARK_PERIODS.map((p) => (
                 <button key={p.key} type="button" className={period === p.key ? "on" : ""} aria-pressed={period === p.key}
                   data-testid={`period-${p.key}`} onClick={() => choosePeriod(p.key)}>{p.label}</button>
@@ -288,6 +311,14 @@ export default function TickerStrip() {
             </div>
           </div>
         )}
+        {/* v4.1: mientras se calcula, la fila de sectores ya ocupa su sitio (al llegar no empuja la página: CLS) */}
+        {calculating && (
+          <div className="frow" aria-hidden="true">
+            <div className="fgroup fgroup-sectors"><div className="fchips">
+              {SKELETON_SECTORS.map((w, i) => <span key={i} className="chip skel-chip" style={{ width: `${w}rem` }}>{"\u00a0"}</span>)}
+            </div></div>
+          </div>
+        )}
       </div>
 
       {calculating && (
@@ -295,18 +326,25 @@ export default function TickerStrip() {
           <p className="sr-only" role="status">Calculando los valores de la sesión…</p>
           <ul className="run" aria-hidden="true">
             {Array.from({ length: SKELETON_ITEMS }, (_, i) => (
-              <li key={i} className="tk-cell"><div className="tk-item"><span className="skel skel-name" />
-                <span className="skel skel-value" /><svg className="spark empty" viewBox="0 0 136 52" /></div></li>
+              // v4.1: la misma retícula y las mismas líneas que una tarjeta (mide lo mismo: al llegar no salta nada)
+              <li key={i} className="tk-cell"><div className="tk-item">
+                <span className="tk-sym"><span className="skel skel-sym">{"\u00a0"}</span></span>
+                <span className="tk-px"><span className="skel skel-value">{"\u00a0"}</span></span>
+                <span className="tk-chg"><span className="skel skel-value">{"\u00a0"}</span></span>
+                <svg className="spark empty" viewBox="0 0 136 52" />
+                <span className="tk-name"><span className="skel skel-name">{"\u00a0"}</span></span>
+                <span className="tk-eng"><span className="skel skel-name">{"\u00a0"}</span></span></div></li>
             ))}
           </ul>
         </div>
       )}
+      {calculating && <div className="wrap ticker-foot skel-foot" aria-hidden="true"><p className="muted">{"\u00a0"}</p></div>}
       {noData && <p className="state" role="status">No hay valores de la sesión ahora mismo. {sentence(resp?.reason)}</p>}
       {failed && !data && !calculating && <p className="state" role="status">No se pudo consultar el servidor ({failed}).</p>}
 
       {data && (
         <div ref={tape} className={`tape scroller${loop ? " looping" : ""}${touchDrive ? " tx" : ""}${dragging ? " dragging" : ""}`}
-          data-testid="ticker" data-mode={mode} onKeyDown={onTapeKey}>
+          data-testid="ticker" data-mode={mode} data-pending={arrived ? undefined : ""} aria-busy={arrived ? undefined : true} onKeyDown={onTapeKey}>
           <div className="track">
             <ul className="run" aria-label={`${items.length} valores`}>{cards(false)}</ul>
             {/* V6b: la copia que cierra el bucle queda fuera de los lectores (aria-hidden) y del tabulador (sus enlaces
@@ -323,7 +361,7 @@ export default function TickerStrip() {
               Guardado en este navegador: {cachedLabel(cached.data.as_of, new Date())}. Actualizando…
             </p>
           )}
-          <p className="muted" data-testid="ticker-context">{contextLine(data, sel, period, items.length)}
+          <p className="muted" data-testid="ticker-context">{contextLine(data, sel, shownPeriod, items.length)}
             {sparkErr && <> · sin mini-gráficas ahora ({sparkErr})</>}{data.note && <> · aviso: {data.note}</>}</p>
         </div>
       )}
