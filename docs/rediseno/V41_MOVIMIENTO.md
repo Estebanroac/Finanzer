@@ -129,3 +129,37 @@ mueve (antes y después del arreglo, igual; en el iPhone no pasa). Con la traza 
 Medida (mismo script; A/B con el mismo equipo, mediana de 5, antes y después compilados en la misma sesión): acción
 escritorio INP 56 → 56 ms; acción móvil, 56 → 40 ms; portada sin cambios; CLS igual (0,001 y 0). Las cifras absolutas
 de hoy van 8 ms por encima de las del §4 en ambos lados (el equipo, no el código).
+
+## 7. La franja de la barra de estado (corregido)
+
+El usuario, en el simulador del iPhone 17 Pro Max (Safari de iOS 26), tras cambiar de pestaña con la cabecera compacta
+pegada: «queda la barra de colores arriba». La franja de la hora y la batería dejaba ver la página que pasaba por
+debajo, en este caso las barras de «Confianza del veredicto».
+
+Diagnóstico (simulador, iOS 26.5):
+- Safari 26 no reserva esa franja: la página se desplaza por debajo y Safari solo la pinta de un color cuando encuentra,
+  en el borde superior, un elemento fijo con algo de alto que reciba los toques. Con una prueba aislada, 1–4 px no
+  bastan y 8 px sí. `env(safe-area-inset-top)` vale 0 en la pestaña de Safari (`viewport-fit=cover` no cambia eso). No
+  depende de `theme-color`.
+- Ya pasaba en la v4 (6e44c51e): con la cabecera completa a medio subir no hay nada fijo arriba y se ve la página bajo
+  la franja, en claro y en oscuro.
+- Con la cabecera compacta pegada, la franja sale de su color casi siempre. Pero la cabecera compacta entra deslizándose
+  (150 ms) y, desde la v4.1, al cambiar de pestaña va dentro de la página que se funde. Si Safari muestrea el borde
+  justo entonces, no encuentra nada y no vuelve a hacerlo hasta el siguiente desplazamiento. En el simulador se ve un
+  instante; al usuario se le quedó.
+
+Arreglo: en pantallas táctiles (`hover: none` y `pointer: coarse`), una banda fija del color de la cabecera
+(`.status-edge`, en TopBar) ocupa siempre el borde superior: 0,75 rem, o el área segura de arriba si es mayor (la app
+instalada a pantalla completa sí la tiene). Está fuera de lo que se funde y recibe los toques. La barra superior empieza
+bajo ella y la cabecera compacta la tapa (z-index mayor; también respeta el área segura). Así la franja es siempre del
+color de la cabecera, en claro y en oscuro, en la portada y en la acción, con la cabecera completa o compacta. En
+escritorio no cambia nada. El zoom y los márgenes laterales del área segura en horizontal siguen igual.
+
+Prueba: `e2e/v2/franja.spec.ts` (móvil, WebKit móvil y tableta; claro y oscuro):
+- la banda es fija, toca el borde, mide al menos 8 px, es del color de la cabecera y recibe los toques;
+- la barra superior empieza bajo ella;
+- a media cabecera sigue ahí;
+- al cambiar de pestaña desde arriba no se funde en ningún fotograma;
+- con la cabecera compacta, esta la tapa desde el borde;
+- también en la portada.
+Capturas de antes y después en el simulador: `capturas-v4/v41-movimiento/franja-superior/`.
