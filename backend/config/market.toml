@@ -496,7 +496,8 @@ periods = ["1D", "1S", "1M", "6M"]
 history_days = 190
 # Portada rápida: la última lista buena (y las mini-gráficas de la vista inicial) en disco, relativa a backend/. Tras un
 # reinicio se sirve al momento mientras se recalcula. FINANZER_PORTADA_SNAPSHOT=0 la apaga; con otra ruta, esa (un
-# disco persistente). En Render gratuito el disco se borra en cada arranque: allí solo ayuda dentro de un mismo arranque.
+# disco persistente). En Render gratuito el disco se borra en cada arranque: el archivo lo crea el build (build.sh,
+# tools/portada_build.py) y llega con el servicio desplegado.
 snapshot_file = ".cache/portada.json"
 sectors = ["Information Technology", "Communication Services", "Consumer Discretionary", "Consumer Staples",
            "Health Care", "Financials", "Energy", "Industrials", "Materials", "Utilities", "Real Estate"]

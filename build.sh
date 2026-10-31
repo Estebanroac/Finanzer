@@ -11,6 +11,12 @@ set -e
 echo "==> Installing backend dependencies..."
 pip install -r requirements.txt
 
+# Cold start (E6): Render's disk is wiped on every boot, so the home page had no trending snapshot and showed
+# "calculando" with no cards for ~3 min after a deploy. Build it here (it ships with the deployed service); the server
+# serves it at once while it recomputes. Never fails the build: without Yahoo or past --max-s, no file (as before).
+echo "==> Building the home page snapshot..."
+python backend/tools/portada_build.py --max-s 240 || echo "home page snapshot skipped"
+
 echo "==> Verifying pre-built frontend (frontend/out/)..."
 if [ ! -d frontend/out ] || [ ! -f frontend/out/index.html ]; then
     echo "ERROR: frontend/out/ is missing. Rebuild it locally with" >&2
