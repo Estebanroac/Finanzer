@@ -3028,12 +3028,36 @@ import keepalive as _keepalive
 _keepalive.start()      # fase 6 (D6): solo en Render (RENDER_EXTERNAL_URL); en local y en los tests no arranca
 
 
+_PROC_STATUS = "/proc/self/status"
+
+
+def _process_memory() -> dict:
+    """E6 (31-oct): la memoria del proceso, en MB, porque el plan gratuito de Render no la enseña. RSS actual y pico
+    (VmRSS y VmHWM de /proc en Linux; sin /proc, el pico de getrusage y el actual sin dato) y el MALLOC_ARENA_MAX que
+    ve el proceso."""
+    kb = {}
+    try:
+        with open(_PROC_STATUS, encoding="ascii") as fh:
+            for line in fh:
+                key, _, rest = line.partition(":")
+                if key in ("VmRSS", "VmHWM"):
+                    kb[key] = int(rest.split()[0])
+    except (OSError, ValueError, IndexError):
+        pass
+    if "VmHWM" not in kb:
+        import resource
+        peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        kb["VmHWM"] = peak // 1024 if sys.platform == "darwin" else peak       # macOS: bytes; Linux: kB
+    mb = lambda k: round(kb[k] / 1024, 1) if k in kb else None                  # noqa: E731
+    return {"rss_mb": mb("VmRSS"), "peak_mb": mb("VmHWM"), "malloc_arena_max": os.environ.get("MALLOC_ARENA_MAX")}
+
+
 @app.get("/api/health")
 async def health():
     # Fase 2a: el commit desplegado (Render define RENDER_GIT_COMMIT; en local, null).
     # Fase 7: si EDGAR está activo y, si no, por qué (sin el valor de la variable).
     return {"status": "ok", "commit": os.environ.get("RENDER_GIT_COMMIT") or None, "edgar": edgar.env_check(),
-            "keepalive": _keepalive.state()}
+            "keepalive": _keepalive.state(), "memory": _process_memory()}
 
 
 # ── Serve frontend static files ──
