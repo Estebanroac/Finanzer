@@ -1860,7 +1860,9 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     def _k(raw, fmt, label, key):
         return (fv(raw, fmt), label, key, raw)
 
-    _k_common = [_k(price, "price", "Precio", "price"), _k(km.get("market_cap"), "money", "Market cap", "market_cap")]
+    # v4.1: la ficha del precio se llama "share_price", no "price": con "price" tomaba la ayuda de la puntuación
+    # «Atractivo del precio» (band_tooltips["price"]) y su «?» explicaba otra cosa. El precio no tiene rangos de referencia.
+    _k_common = [_k(price, "price", "Precio", "share_price"), _k(km.get("market_cap"), "money", "Market cap", "market_cap")]
     # F9 · R2: la tarjeta muestra la beta del Ke: la propia ajustada (Blume; la bruta va en el detalle del WACC) o la
     # de la industria, que ya entra tal cual (fase 2b, T6).
     _bsrc = (a.get("beta") or {}).get("source")
