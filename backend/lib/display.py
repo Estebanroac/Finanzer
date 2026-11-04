@@ -1284,10 +1284,16 @@ def _extended_block(a: Dict[str, Any]) -> Dict[str, Any]:
                               kind_ne=ne.get("kind")), source="display.extended")
     next_earnings = {"status": ne.get("status") or "sin_dato", "date_txt": numfmt.date_long(ne["date"]) if ne.get("date") else None,
                      "kind": ne.get("kind"), "basis": basis, "reason": ne.get("reason")}
-    news = [{k: n.get(k) for k in ("date", "datetime", "source", "headline", "url", "summary", "image", "lang")}
-            for n in ((mc.get("news") or {}).get("items") or [])[:cfg("market.context.news_max_v2")]]
+    mn = mc.get("news") or {}
+
+    def _news(items):
+        return [{k: n.get(k) for k in ("date", "datetime", "source", "headline", "url", "summary", "image", "lang")}
+                for n in (items or [])[:cfg("market.context.news_max_v2")]]
+    # «news»: los más recientes (el PDF, que no lleva fotos); «news_featured»: el centro de noticias de la web, con los
+    # que traen foto propia primero (un análisis guardado antes de existir trae solo «items»)
     return {"price_change": price_change, "company_profile": cp, "history_10y": history, "piotroski_values": pio,
-            "next_earnings": next_earnings, "news": news}
+            "next_earnings": next_earnings, "news": _news(mn.get("items")),
+            "news_featured": _news(mn.get("featured") or mn.get("items"))}
 
 
 # ══════════════════════════════ BLOQUE DISPLAY ══════════════════════════════

@@ -12,7 +12,7 @@
      como color, no como gris; ni verde ni rojo): degradado --pos-a → --pos-b; relleno --pos. Composición de una misma
      barra (estructura del balance): paleta categórica de matices distintos y luminosidad escalonada (se distinguen con
      daltonismo: índigo oscuro, azul medio y ocre), contraste ≥ 3:1 con la superficie */
-  --pos-a: #D3E0EE; --pos-b: #4F7FB0; --pos: #3F6E9E; --cat-1: #4B3F7A; --cat-2: #4F84B8; --cat-3: #A97A1E;
+  --pos-a: #D3E0EE; --pos-b: #4F7FB0; --pos: #3F6E9E; --pos-ink: #335C86; --cat-1: #4B3F7A; --cat-2: #4F84B8; --cat-3: #A97A1E;
   /* Marca (la familia menta y esmeralda del logo, marca/tokens-usuario.mjs), para el botón principal y los acentos; no
      sustituye a los verdes de lectura (--good y familia). El menta como relleno con el texto en la noche del logo
      (13,6:1); en claro, el menta frente al blanco no llega a 3:1 y el relleno lleva un filo esmeralda (--brand-edge,
@@ -37,7 +37,7 @@
   --good-bg: #22332A; --warn-bg: #3A3220; --bad-bg: #3A2820;
   --good-ink: #59AC80; --warn-ink: #C49A45; --bad-ink: #CF8970;
   --scale-neutral: #6B7077;
-  --pos-a: #22303E; --pos-b: #5A8CC0; --pos: #6F9DCC; --cat-1: #BDB2EF; --cat-2: #5689C0; --cat-3: #D3A64C;
+  --pos-a: #22303E; --pos-b: #5A8CC0; --pos: #6F9DCC; --pos-ink: #6F9DCC; --cat-1: #BDB2EF; --cat-2: #5689C0; --cat-3: #D3A64C;
   --brand-edge: #94E8A5; --brand-ink: #94E8A5; --brand-accent: #94E8A5;   /* sobre oscuro, el menta: 11–12:1 */
 }
 .fz2 * { box-sizing: border-box; }
@@ -323,7 +323,13 @@ html[data-v2theme="dark"] .fz2 .theme-to-dark, html:not([data-v2theme="dark"]) .
    tarjetas miden lo mismo, con imagen o sin ella. */
 .fz2 .news-card { color: var(--ink); text-decoration: none; display: flex; flex-direction: column; overflow: hidden; }
 .fz2 .news-img { display: block; width: 100%; height: 4rem; object-fit: cover; background: var(--neutral); }
-.fz2 .news-img-empty { display: flex; align-items: center; justify-content: center; color: var(--text-2); font-size: var(--fs-ui); font-weight: 600; }
+/* Sin foto propia: una portada con el ticker y el medio sobre un degradado sobrio (papel → azul de la escala), con un
+   filo azul arriba; los mismos tokens en claro y en oscuro (texto ≥ 4,7:1 sobre los dos extremos). */
+.fz2 .news-img-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--s1);
+  padding: 0 var(--s3); text-align: center; background: linear-gradient(135deg, var(--neutral) 0%, var(--pos-a) 100%);
+  border-bottom: 1px solid var(--line-soft); box-shadow: inset 0 3px 0 var(--pos); }
+.fz2 .news-ph-sym { font-size: var(--fs-label); font-weight: 650; letter-spacing: .08em; text-transform: uppercase; color: var(--pos-ink); }
+.fz2 .news-ph-src { font-size: var(--fs-sub); font-weight: 700; letter-spacing: -.01em; line-height: 1.2; color: var(--text-2); }
 .fz2 .news-body { padding: var(--s3); display: flex; flex-direction: column; gap: var(--s1); flex: 1 1 auto; }
 /* V4b (nada oculto): titular y resumen enteros, sin cortar a tres líneas; las tarjetas de una fila miden lo mismo */
 .fz2 .news-title { font-weight: 600; line-height: 1.35; }

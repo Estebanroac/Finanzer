@@ -613,9 +613,13 @@ export interface Extended {
   };
   piotroski_values: Array<{ key: string; cur_txt: string | null; prev_txt: string | null; compare: "zero" | "ni" | "prior_year" }>;
   next_earnings: { status: string; date_txt: string | null; kind: "anunciada" | "estimada" | null; basis: string | null; reason: string | null };
-  news: Array<{ date: string | null; datetime: string | null; source: string | null; headline: string; url: string | null;
-                summary: string | null; image: string | null; lang: string | null }>;
+  news: Array<ExtendedNews>;
+  /** El centro de noticias: los titulares con foto propia primero, por fecha (un análisis guardado antes no lo trae). */
+  news_featured?: Array<ExtendedNews>;
 }
+
+type ExtendedNews = { date: string | null; datetime: string | null; source: string | null; headline: string; url: string | null;
+                      summary: string | null; image: string | null; lang: string | null };
 
 /** Rediseño E2a: supuestos con los que el motor calculó su DCF (escenarios del usuario, POST /api/v2/scenario). */
 export interface ScenarioAssumptions {

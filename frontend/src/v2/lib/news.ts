@@ -3,6 +3,9 @@ import type { NewsItem } from "./story";
 /** Idioma original del medio (Finnhub publica medios en inglés): la marca de la tarjeta. */
 const LANG_LABEL: Record<string, string> = { en: "En inglés" };
 
+/** Nombre del medio tal como se escribe (Finnhub lo da pegado o abreviado); el resto, como viene. */
+const SOURCE_LABEL: Record<string, string> = { Yahoo: "Yahoo Finance", SeekingAlpha: "Seeking Alpha" };
+
 /** Revisión V6 (F3): solo enlaces http(s) bien formados; cualquier otro esquema (javascript:, data:…) es una tarjeta
  *  sin enlace. */
 export function safeNewsUrl(u: string | null | undefined): string | null {
@@ -17,8 +20,10 @@ export function safeNewsUrl(u: string | null | undefined): string | null {
 
 /** Lo que enseña una tarjeta de noticia: fecha (dd/mm/aaaa), medio, titular, resumen, imagen y su idioma. */
 export function newsCard(n: NewsItem) {
+  const source = n.source ? (SOURCE_LABEL[n.source] ?? n.source) : null;
   return {
-    meta: [n.date ? n.date.split("-").reverse().join("/") : null, n.source].filter(Boolean).join(" · "),
+    meta: [n.date ? n.date.split("-").reverse().join("/") : null, source].filter(Boolean).join(" · "),
+    source,
     headline: n.headline,
     summary: n.summary ?? null,
     // Solo imágenes https (el motor ya descarta las demás). Decorativa (alt vacío, V6 F24): el titular ya es el texto.
