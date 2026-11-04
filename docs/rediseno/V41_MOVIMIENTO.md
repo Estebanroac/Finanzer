@@ -163,3 +163,20 @@ Prueba: `e2e/v2/franja.spec.ts` (móvil, WebKit móvil y tableta; claro y oscuro
 - con la cabecera compacta, esta la tapa desde el borde;
 - también en la portada.
 Capturas de antes y después en el simulador: `capturas-v4/v41-movimiento/franja-superior/`.
+
+## 8. Cintillo con el dedo: sin imán (corregido)
+
+El usuario, en el teléfono: «no lo hago de manera fluida, pasa como a un lugar en el que deba estar… quiero algo que se
+mueva sin restricciones. Ojo, es solo cuando lo desplazo con el dedo». Al soltar, `useCarousel` llevaba la pista con un
+muelle a la tarjeta más cercana al punto proyectado (el imán de la v4).
+
+Ahora no hay imán ni tarjeta destino. Soltado en reposo, se queda exactamente donde quedó. Con velocidad, sigue con
+inercia libre que decae como el desplazamiento nativo de iOS (0,998 por ms, la deceleración normal de UIScrollView) y
+para donde pare. El arrastre sigue 1:1. No cambian el bucle sin costuras, la reanudación TOUCH_RESUME_MS después y desde
+donde esté, el ratón y el escritorio. Un toque sigue abriendo la tarjeta y, con «reducir movimiento», no hay inercia.
+
+Prueba: `cintillo-tactil.spec.ts` (móvil, WebKit móvil y tableta):
+- soltado en reposo a media tarjeta, ni un píxel de movimiento durante 45 fotogramas;
+- soltado con velocidad, avanza en cada fotograma, cada vez menos, y para fuera del margen de una tarjeta.
+Las dos fallan con el imán (comprobado contra la build de main 83013549). Vídeo de antes y después en el simulador:
+`~/Downloads/Finanzer/capturas-y-videos/v41-movimiento/cintillo/`.

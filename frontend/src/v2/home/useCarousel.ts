@@ -23,9 +23,12 @@ import { useEffect, useRef, useState, type RefObject } from "react";
  *  continua como en la página»): en pantallas táctiles (sin ratón) también avanza en continuo y al mismo ritmo por
  *  tarjeta, pero con `transform` sobre la pista (la GPU, sin tirones en Safari iOS) en vez de `scrollLeft`; el
  *  contenedor no se desplaza de forma nativa (`touch-action: pan-y`: lo vertical sigue moviendo la página) y el dedo lo
- *  arrastra 1:1. Al tocar, parado; al soltar tras arrastrar, sigue la inercia del dedo hasta la tarjeta más cercana al
- *  punto proyectado (muelle sin rebote, el imán solo ahí) y arranca TOUCH_RESUME_MS después, desde donde esté. Sin
- *  imán mientras avanza solo.
+ *  arrastra 1:1. Al tocar, parado.
+ *
+ *  v4.1 (el usuario: «pasa como a un lugar en el que deba estar… quiero algo que se mueva sin restricciones»): al soltar
+ *  el dedo no hay imán ni tarjeta destino. Soltado en reposo, se queda exactamente donde quedó; con velocidad, sigue
+ *  con inercia libre que decae como el desplazamiento nativo de iOS (DECELERATION por ms, la de UIScrollView normal) y
+ *  para donde pare. Arranca TOUCH_RESUME_MS después, desde donde esté. Nunca hay imán.
  *
  *  Pestaña oculta o cintillo fuera de la vista (IntersectionObserver): sin bucle de fotogramas, y al volver sigue
  *  desde donde estaba (sin saltar lo que habría avanzado). */
@@ -38,17 +41,12 @@ export const LEAVE_MS = 0;
 export const SCROLL_QUIET_MS = 120;
 const DRAG_PX = 5;
 const MS_PER_S = 1000;
-/** Pantallas táctiles: tras soltar (y llegar a su tarjeta), arranca pasado este tiempo; el arrastre empieza al pasar
+/** Pantallas táctiles: tras soltar (y acabar su inercia), arranca pasado este tiempo; el arrastre empieza al pasar
  *  TOUCH_DRAG_PX (antes, un toque es un toque). */
 export const TOUCH_RESUME_MS = 2500;
 const TOUCH_DRAG_PX = 10;
-/** Muelle hacia la tarjeta (Apple, «mover / reubicar»: amortiguamiento 1, respuesta 0,4 s) y deceleración con la que se
- *  proyecta dónde acabaría el gesto (la del desplazamiento normal); se da por llegado a menos de SETTLE_PX y SETTLE_PX_S. */
-const SPRING_RESPONSE_S = 0.4;
+/** Inercia del dedo: fracción de la velocidad que queda cada ms (la de UIScrollView, deceleración normal). */
 const DECELERATION = 0.998;
-const SETTLE_PX = 0.5;
-const SETTLE_PX_S = 5;
-const SPRING_STEP_MS = 4;
 /** v4.1 (movimiento): al reanudar, el avance llega a su velocidad en este tiempo (curva suave), en vez de arrancar de
  *  golpe; al pararse (dedo, ratón, foco) se para al instante: lo que se toca responde ya. */
 const RAMP_MS = 400;
@@ -72,7 +70,7 @@ export function useCarousel(ref: RefObject<HTMLDivElement | null>, opts: {
   const [mode, setMode] = useState<CarouselMode>(reduced ? "reducido" : "animado");
   const [dragging, setDragging] = useState(false);
   const s = useRef({ pos: 0, lastSet: -1, resumeAt: 0, velocity: 0, down: false, touching: false, dragged: false, startX: 0, startPos: 0,
-    sampleX: 0, sampleT: 0, suppressClick: false, pointerId: -1, spring: null as null | { target: number; v: number } });
+    sampleX: 0, sampleT: 0, suppressClick: false, pointerId: -1, glide: 0 });
 
   // Lista o periodo nuevos: al principio.
   useEffect(() => {
@@ -80,7 +78,7 @@ export function useCarousel(ref: RefObject<HTMLDivElement | null>, opts: {
     if (!el) return;
     s.current.pos = 0;
     s.current.velocity = 0;
-    s.current.spring = null;
+    s.current.glide = 0;
     el.scrollLeft = 0;
     s.current.lastSet = el.scrollLeft;
     el.querySelector<HTMLElement>(".track")?.style.removeProperty("transform");
@@ -120,23 +118,6 @@ export function useCarousel(ref: RefObject<HTMLDivElement | null>, opts: {
       }
       return pos - raw;
     };
-    /** El principio de cada tarjeta en la pista (la posición que la deja en el margen); las de la copia, por el bucle. */
-    const starts = () => {
-      const left = track?.getBoundingClientRect().left ?? 0;
-      return [...el.querySelectorAll<HTMLElement>(".run:first-child .tk-cell")].map((c) => c.getBoundingClientRect().left - left);
-    };
-    /** Tras soltar: hacia la tarjeta más cercana a donde llevaría la inercia, con la velocidad del dedo (px/ms). */
-    const settle = (velocity: number) => {
-      const vs = velocity * MS_PER_S;
-      const projected = st.pos + (vs / MS_PER_S) * DECELERATION / (1 - DECELERATION);
-      const w = runWidth();
-      let target = projected, best = Infinity;
-      for (const x of starts()) {
-        const near = loop && w > 0 ? x + w * Math.round((projected - x) / w) : x;   // la vuelta más cercana del bucle
-        if (Math.abs(near - projected) < best) { best = Math.abs(near - projected); target = near; }
-      }
-      st.spring = { target, v: vs };
-    };
 
     // Desplazamiento nativo (trackpad, dedo, flechas, rueda horizontal): se adopta como posición y es un gesto.
     const onScroll = () => {
@@ -156,7 +137,7 @@ export function useCarousel(ref: RefObject<HTMLDivElement | null>, opts: {
     const onWheel = (e: WheelEvent) => { if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) { after(SCROLL_QUIET_MS); st.velocity = 0; } };
     // El fin del desplazamiento nativo: arranca ya (el navegador lo sabe mejor que la espera de respaldo).
     const onScrollEnd = () => { if (!st.touching) st.resumeAt = Math.min(st.resumeAt, now()); };
-    const onTouchStart = () => { st.touching = true; st.velocity = 0; st.spring = null; };   // el dedo manda
+    const onTouchStart = () => { st.touching = true; st.velocity = 0; st.glide = 0; };   // el dedo manda (y para la inercia)
     const onTouchEnd = () => { st.touching = false; after(SCROLL_QUIET_MS); };
 
     // Arrastre con el ratón: la captura del puntero empieza al pasar DRAG_PX (antes, un clic es un clic).
@@ -164,7 +145,7 @@ export function useCarousel(ref: RefObject<HTMLDivElement | null>, opts: {
     const onDown = (e: PointerEvent) => {
       if (e.pointerType === "mouse" ? e.button !== 0 : !tx) return;
       Object.assign(st, { down: true, dragged: false, startX: e.clientX, startPos: st.pos, sampleX: e.clientX,
-        sampleT: now(), velocity: 0, pointerId: e.pointerId, spring: null });
+        sampleT: now(), velocity: 0, pointerId: e.pointerId, glide: 0 });
     };
     const onMove = (e: PointerEvent) => {
       if (!st.down || e.pointerId !== st.pointerId) return;
@@ -189,11 +170,11 @@ export function useCarousel(ref: RefObject<HTMLDivElement | null>, opts: {
     const end = (e: PointerEvent) => {
       if (!st.down || e.pointerId !== st.pointerId) return;
       st.down = false;
-      if (tx && e.pointerType !== "mouse") {     // el dedo: a su tarjeta y, pasado TOUCH_RESUME_MS, en marcha
+      if (tx && e.pointerType !== "mouse") {     // el dedo: donde quede (con su inercia) y, pasado TOUCH_RESUME_MS, en marcha
         if (st.dragged) {
           st.suppressClick = true;
           if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId);
-          settle(now() - st.sampleT > STILL_MS ? 0 : st.velocity);
+          st.glide = now() - st.sampleT > STILL_MS ? 0 : st.velocity;   // soltado en reposo: ni un píxel más
           setDragging(false);
         }
         st.velocity = 0;
@@ -273,20 +254,13 @@ export function useCarousel(ref: RefObject<HTMLDivElement | null>, opts: {
         st.velocity *= Math.pow(FRICTION, dt / FRAME_MS);
         if (Math.abs(st.velocity) < STOP_PX_MS) st.velocity = 0;        // fin de la inercia: arranca ya
       }
-      if (st.spring && !st.down) {                             // el dedo soltó: muelle hasta su tarjeta
-        const sp = st.spring;
-        const w0 = 2 * Math.PI / SPRING_RESPONSE_S;            // amortiguamiento 1: sin rebote
-        let x = st.pos;
-        const n = Math.max(1, Math.ceil(dt / SPRING_STEP_MS)), h = dt / MS_PER_S / n;
-        for (let i = 0; i < n; i++) { sp.v += (-w0 * w0 * (x - sp.target) - 2 * w0 * sp.v) * h; x += sp.v * h; }
-        sp.target += set(x);
-        if (Math.abs(st.pos - sp.target) < SETTLE_PX && Math.abs(sp.v) < SETTLE_PX_S) {
-          set(sp.target);
-          st.spring = null;
-          after(TOUCH_RESUME_MS);
-        }
+      if (st.glide !== 0 && !st.down) {                        // el dedo soltó con velocidad: inercia libre, sin destino
+        const k = Math.pow(DECELERATION, dt);
+        set(st.pos + st.glide * (1 - k) / -Math.log(DECELERATION));   // lo que recorre en dt decayendo (exacto)
+        st.glide *= k;
+        if (Math.abs(st.glide) < STOP_PX_MS) { st.glide = 0; after(TOUCH_RESUME_MS); }
       }
-      const moving = !reduced && itemCount > 0 && !held && !st.down && !st.touching && st.velocity === 0 && !st.spring
+      const moving = !reduced && itemCount > 0 && !held && !st.down && !st.touching && st.velocity === 0 && st.glide === 0
         && t >= st.resumeAt;
       ramp = moving ? Math.min(1, ramp + dt / RAMP_MS) : 0;
       if (moving && loop) {                                    // avance automático, desde donde esté
