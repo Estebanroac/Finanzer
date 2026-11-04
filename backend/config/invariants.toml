@@ -99,6 +99,61 @@ weight = 1
 min_reason_chars = 8
 max_listed = 10
 
+# ── F11 · revisión externa de NU y NFLX (docs/fiabilidad/revision-nu-nflx-2026-11-04.md) ──
+[caida_avisada]                     # una caída en 1 año bajo thresholds.alerts.drawdown.deep_below sale en las alertas
+weight = 2
+
+[riesgo_critico_medido]             # cobertura «alta» exige medido el riesgo crítico de su tipo (crédito en bancos)
+weight = 2
+
+[una_definicion_ttm_fy]             # EDGAR manda en la serie anual (discrepancia > data.edgar.fy_series_reconcile_rel)
+weight = 3                          # ⇒ el TTM del mismo campo no viene de la fuente
+cut_keys = [["revenue", "totalRevenue"], ["operating_income", "operatingIncome"], ["net_income", "netIncomeToCommon"],
+            ["capex", "capitalExpenditures"]]
+
+[implicito_mismo_modelo]            # con el justificado en dos etapas, el implícito y su sensibilidad también
+weight = 2
+tolerance = 0.05                    # la sensibilidad a ±0 frente al justificado
+
+[cota_aplicada]                     # el crecimiento que puntúa respeta su cota (growth_basis.*.bound) y su rótulo
+weight = 3
+series = [["revenue_cagr", "Crecimiento de ingresos"], ["fcf_cagr", "Crecimiento del FCF"],
+          ["eps_cagr", "Crecimiento del BPA"]]
+
+[referencia_representativa]         # la referencia de industria gana algo y, si son pares, de su región
+weight = 3
+profit_columns = ["roe", "net_margin", "operating_margin"]
+min_abs = 0.02                      # la propuesta de la revisión (2 %)
+max_other_region_share = 0.5
+
+[voto_estable]                      # el DCF directo vota solo si ±1 escalón de WACC no cruza el precio
+weight = 3
+
+[inverso_tasa_base]                 # el DCF inverso no lee «barata» con una tasa base menor que esto
+weight = 3
+cheap_bands = ["barata"]
+min_share = 0.5
+
+[convergencia_independiente]        # convergencia «alta» sin el mismo ancla en los dos métodos
+weight = 2
+
+[calidad_sin_saturar]               # Calidad de ganancias no al máximo con la prueba de acumulaciones fallida
+weight = 3
+
+[forward_creible]                   # la compresión del Forward P/E suma solo con un crecimiento implícito ≤ esto
+weight = 3
+max_implied_growth = 0.25           # la propuesta de la revisión para MATURE
+
+[beta_contrastada]                  # la beta sustituta dentro de la propia ± k errores estándar
+weight = 2
+k_se = 2.0
+
+[causalidad_sostenida]              # «propio de la empresa» frente a su país; sobrerreacción con evidencia
+weight = 2
+
+[metodo_citado_aplicable]           # el PDF no titula ni cita métodos que su tipo excluye
+weight = 1
+
 [escaneo]                           # tools/universe_scan.py
 batch_size = 20                     # empresas por lote; entre lotes, una pausa
 pause_between_batches_s = 10.0

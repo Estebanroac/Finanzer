@@ -433,8 +433,10 @@ def test_market_context_never_feeds_the_scores():
     ctx_src = open(os.path.join(backend, "lib", "market_context.py"), encoding="utf-8").read()
     for engine in ("financial_ratios", "verdict", "valuation_confidence", "persistence"):
         assert f"import {engine}" not in ctx_src and f"from {engine} " not in ctx_src, engine
+    # model_invariants.py mide la salida (F11: la caída sin alerta, la narrativa causal); no puntúa ni escribe nada.
     for name in os.listdir(os.path.join(backend, "lib")):
-        if name.endswith(".py") and name not in ("market_context.py", "display.py", "pdf_report.py"):
+        if name.endswith(".py") and name not in ("market_context.py", "display.py", "pdf_report.py",
+                                                 "model_invariants.py"):
             src = open(os.path.join(backend, "lib", name), encoding="utf-8").read()
             assert '"market_context"' not in src, f"{name} lee el contexto de mercado"
 

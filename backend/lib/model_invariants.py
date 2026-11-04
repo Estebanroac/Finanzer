@@ -782,6 +782,345 @@ def motivo_de_vacio(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
     return res
 
 
+# ═══════════════════════ F11 · revisión externa de NU y NFLX (4-nov-2026) ═══════════════════════
+# docs/fiabilidad/revision-nu-nflx-2026-11-04.md. Cada regla es un hallazgo verificado convertido en regla general: se
+# mide en el universo ANTES de corregir.
+
+def caida_avisada(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
+    """T3: una caída desde máximos en 1 año por debajo del umbral de la alerta («Caída pronunciada») sale en las
+    alertas. La regla del motor (alert_interpretations._drawdown) lee un campo que no se rellena."""
+    rule = "caida_avisada"
+    dd = _num(_get(a, "market_context", "signals", "max_drawdown", "1", "value"))
+    if dd is None:
+        return Result(NOT_EVALUABLE, "sin caída máxima de 1 año en el contexto de mercado")
+    thr = cfg("thresholds.alerts.drawdown.deep_below")
+    if dd >= thr:
+        return Result(OK)
+    if any("caída pronunciada" in str(x.get("reason") or "").lower() for _, x in _alerts(a)):
+        return Result(OK)
+    return _result(rule, [_violation(
+        rule, dd / thr, f"cae {_pct(dd)} desde máximos en 1 año (umbral de la alerta {_pct(thr)}) sin alerta",
+        "la alerta de caída lee `max_drawdown_1y`, que nadie rellena: la caída del contexto de mercado no llega",
+        drawdown=dd, threshold=thr)])
+
+
+def riesgo_critico_medido(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
+    """T3: con la variable crítica de su tipo sin medir (el riesgo de crédito de un banco), la cobertura no es «alta»."""
+    rule = "riesgo_critico_medido"
+    cr = a.get("credit_risk")
+    if not isinstance(cr, dict):
+        return Result(NOT_APPLICABLE, "sin riesgo de crédito en su tipo")
+    cov = _get(a, "confidence", "dimensions", "coverage", "level")
+    if cr.get("status") != "no_medido" or cov is None or LEVELS.get(cov, 0) < LEVELS["alta"]:
+        return Result(OK)
+    return _result(rule, [_violation(
+        rule, 2, f"riesgo de crédito «no medido» con cobertura de datos «{cov}»",
+        "la cobertura cuenta solo los componentes del score y el riesgo de crédito «informa, no puntúa»",
+        credit_status=cr.get("status"), coverage=cov)])
+
+
+def una_definicion_ttm_fy(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
+    """N2: si EDGAR sustituye la serie anual de un campo y el último ejercicio difiere de la fuente más de
+    `data.edgar.fy_series_reconcile_rel`, el corte (TTM) de ese campo tampoco puede venir de la fuente."""
+    rule, C = "una_definicion_ttm_fy", _C("una_definicion_ttm_fy")
+    prim = _get(a, "data_provenance", "edgar", "primary", default={}) or {}
+    rec = [r for r in prim.get("reconciliation") or [] if isinstance(r, dict)]
+    if not rec:
+        return Result(NOT_APPLICABLE, "sin discrepancias entre la serie anual de EDGAR y la de la fuente")
+    tol = cfg("data.edgar.fy_series_reconcile_rel")
+    fields = _get(a, "data_provenance", "fields", default={}) or {}
+    cut_keys = {c.get("key") for c in prim.get("cut") or [] if isinstance(c, dict)}
+    last: Dict[str, Dict[str, Any]] = {}
+    for r in rec:
+        f = r.get("field")
+        if f and str(r.get("fy_end") or "") >= str((last.get(f) or {}).get("fy_end") or ""):
+            last[f] = r
+    out = []
+    for f, r in last.items():
+        key = dict(C["cut_keys"]).get(f)
+        d = _num(r.get("diff_rel"))
+        if key is None or d is None or abs(d) <= tol or key in cut_keys:
+            continue
+        src = (fields.get(key) or {}).get("source")
+        if src in (None, "sec_edgar"):
+            continue
+        out.append(_violation(
+            rule, abs(d) / tol / 5, f"{f}: el ejercicio {r.get('fy_end')} es de EDGAR ({r.get('concept')}) y difiere "
+            f"{d:+.1%} de la fuente, pero el corte ({key}) viene de {src}",
+            "dos definiciones del mismo campo: la historia de EDGAR y el TTM de la fuente (bruto frente a neto)",
+            field=f, cut_key=key, cut_source=src, diff_rel=d))
+    return _result(rule, out)
+
+
+def implicito_mismo_modelo(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
+    """N1: con el P/B (o P/TBV) justificado en dos etapas, el retorno implícito y su sensibilidad usan el mismo modelo:
+    la sensibilidad a ±0 pp reproduce el justificado."""
+    rule, C = "implicito_mismo_modelo", _C("implicito_mismo_modelo")
+    am = a.get("archetype_metrics") or {}
+    ts, imp = am.get("two_stage") or {}, am.get("implied") or {}
+    if not ts.get("applied"):
+        return Result(NOT_APPLICABLE, "justificado de una etapa")
+    if imp.get("state") != "ok":
+        return Result(NOT_EVALUABLE, "sin retorno implícito")
+    just = _num(am.get("ptbv_justified") if imp.get("metric") == "ROTE" else am.get("pb_justified"))
+    s0 = next((_num(s.get("multiple_justified")) for s in imp.get("sensitivity") or []
+               if _num(s.get("delta")) == 0), None)
+    if not just or s0 is None:
+        return Result(NOT_EVALUABLE, "sin múltiplo justificado o sin sensibilidad")
+    dev = s0 / just - 1
+    if abs(dev) <= C["tolerance"]:
+        return Result(OK)
+    return _result(rule, [_violation(
+        rule, abs(dev) / C["tolerance"],
+        f"{imp.get('metric')} implícito {_pct(_num(imp.get('implied')))} y su sensibilidad ({s0:.2f}x a ±0) de una etapa, "
+        f"frente a un justificado de dos etapas de {just:.2f}x",
+        "apply_two_stage actualiza los justificados pero no el implícito ni su sensibilidad",
+        implied=_num(imp.get("implied")), sensitivity_0=s0, justified=just)])
+
+
+def cota_aplicada(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
+    """T4: el crecimiento que puntúa no supera la cota que el propio motor declara (`growth_basis.*.bound`), y su rótulo
+    («a 3 años») corresponde a la ventana usada."""
+    rule = "cota_aplicada"
+    gb = a.get("growth_basis") or {}
+    out = []
+    for key, prefix in _C("cota_aplicada")["series"]:
+        m = gb.get(key) or {}
+        x = next((x for x in _adjustments(a, "Crecimiento") if str(x.get("metric") or "").startswith(prefix)), None)
+        raw = _num((x or {}).get("raw"))
+        if raw is None:
+            continue
+        b = m.get("bound") or {}
+        bv = _num(b.get("value"))
+        if bv is not None and b.get("direction") == "superior" and raw > bv + 1e-6:
+            out.append(_violation(
+                rule, 1 + (raw - bv) / max(abs(bv), 0.05), f"«{x.get('metric')}» puntúa {_pct(raw)} "
+                f"({x.get('adjustment'):+d}) con su cota superior en {_pct(bv)}",
+                "la cota se declara y no se aplica (historical_metrics)", growth=raw, bound=bv, series=key))
+        w = re.match(r"FY(\d{4})\D+FY(\d{4})", str(m.get("window") or ""))
+        n = re.search(r"a (\d+) años", str(x.get("metric")))
+        if w and n and int(w.group(2)) - int(w.group(1)) != int(n.group(1)):
+            out.append(_violation(
+                rule, 1, f"«{x.get('metric')}» con la ventana {m.get('window')}",
+                "el rótulo no dice la ventana real del método", window=m.get("window"), series=key))
+    return _result(rule, out)
+
+
+def _reference_value(bi: Dict[str, Any], col: str) -> Optional[float]:
+    """El valor de la referencia que se usa: el de después de excluir a la empresa si hay exclusión, si no el publicado."""
+    cols = _get(bi, "self_exclusion", "columns", default={}) or {}
+    if col in cols:
+        return _num((cols.get(col) or {}).get("after"))
+    return _num((bi.get("published") or {}).get(col))
+
+
+def referencia_representativa(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
+    """T1: la referencia de industria con la que se lee la empresa es representativa: sus ratios de beneficio no son
+    ≈ 0 (una industria que casi no gana da brechas de miles de %) y, si son medianas de pares, los pares son de la región
+    de la referencia."""
+    rule, C = "referencia_representativa", _C("referencia_representativa")
+    bi = _get(a, "benchmark", "industry", default={}) or {}
+    if _get(a, "benchmark", "profile") == "market" or not bi:
+        return Result(NOT_APPLICABLE, "la referencia es el mercado amplio")
+    out = []
+    for col in C["profit_columns"]:
+        v = _reference_value(bi, col)
+        if v is not None and abs(v) < C["min_abs"]:
+            out.append(_violation(
+                rule, C["min_abs"] / max(abs(v), C["min_abs"] / 5),
+                f"referencia de {col} {_pct(v, 2)} ({bi.get('damodaran')}, {bi.get('region')}"
+                f"{', sin la empresa' if (bi.get('self_exclusion') or {}).get('method') else ''})",
+                "industria que casi no gana: la brecha de la empresa frente a ella no informa", column=col, value=v))
+    se = bi.get("self_exclusion") or {}
+    reg = bi.get("region")
+    if se.get("method") == "mediana_pares" and reg not in (None, "global"):
+        import self_exclusion as _se
+        sym = str(a.get("symbol") or "").upper()
+        peers = [r for r in _se._load_peers()["rows"]
+                 if r.get("damodaran_industry") == bi.get("damodaran") and r.get("symbol") != sym]
+        other = [r for r in peers if r.get("damodaran_region") != reg]
+        if peers and len(other) / len(peers) > C["max_other_region_share"]:
+            out.append(_violation(
+                rule, 1 + len(other) / len(peers), f"mediana de {len(peers)} pares de {bi.get('damodaran')} para una "
+                f"referencia de la región «{reg}»: {len(other)} son de otras regiones",
+                "el filtro de pares (self_exclusion.peer_median) mira la industria y no la región",
+                peers=len(peers), other_region=len(other), region=reg))
+    return _result(rule, out)
+
+
+def voto_estable(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
+    """F1/T5: el DCF directo solo vota una dirección si el valor queda del mismo lado del precio con WACC ± 1 escalón de
+    su propia rejilla de sensibilidad (al crecimiento base)."""
+    rule = "voto_estable"
+    x = next((x for x in _adjustments(a, "Valoración") if str(x.get("metric") or "").startswith("DCF directo")), None)
+    if not x or not x.get("adjustment"):
+        return Result(NOT_APPLICABLE, "el DCF directo no vota")
+    s = a.get("sensitivity") or {}
+    M, gi, di = s.get("matrix"), s.get("base_growth_idx"), s.get("base_discount_idx")
+    price = _num(_get(s, "statistics", "current_price"))
+    if not M or gi is None or di is None or not price:
+        return Result(NOT_EVALUABLE, "sin rejilla de sensibilidad")
+    row = M[gi]
+    base = _num(row[di])
+    side = [(j, _num(row[j])) for j in (di - 1, di + 1) if 0 <= j < len(row) and _num(row[j]) is not None]
+    flips = [(j, v) for j, v in side if base is not None and (v - price) * (base - price) < 0]
+    if not flips:
+        return Result(OK)
+    rates = s.get("discount_rates") or []
+    return _result(rule, [_violation(
+        rule, 2, f"el DCF vota {x.get('adjustment'):+d} ({x.get('value')}) pero con WACC "
+        + ", ".join(f"{_pct(_num(rates[j]), 2) if j < len(rates) else j} vale {v:.2f}" for j, v in flips)
+        + f" frente a un precio de {price:.2f}",
+        "la dirección del DCF depende del coste de capital: debería leerse «en precio, sensible al WACC»",
+        base=base, price=price, flips=[v for _, v in flips])])
+
+
+def inverso_tasa_base(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
+    """F2: el DCF inverso no lee «barata» si la tasa base dice que menos de la mitad de las comparables sostuvo el
+    crecimiento que exige el precio."""
+    rule, C = "inverso_tasa_base", _C("inverso_tasa_base")
+    m = _get(a, "reverse_dcf", "main", default={}) or {}
+    if not m or m.get("band") not in C["cheap_bands"]:
+        return Result(NOT_APPLICABLE, "el DCF inverso no lee «barata»")
+    share = _num(_get(m, "base_rate", "share"))
+    if share is None or share >= C["min_share"]:
+        return Result(OK)
+    votes = any("inverso" in str(x.get("metric") or "").lower() and x.get("adjustment") for x in _adjustments(a))
+    return _result(rule, [_violation(
+        rule, (C["min_share"] / max(share, 0.05)) * (2 if votes else 1),
+        f"DCF inverso «{m.get('band')}» (regla {m.get('rule')}) con una tasa base del {share:.0%}"
+        + (" y vota" if votes else " (no vota hoy)"),
+        "con la tasa base entre 25 % y 75 % decide la historia propia, medida con otra métrica y otra ventana",
+        share=share, rule_used=m.get("rule"), votes=votes)])
+
+
+def convergencia_independiente(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
+    """T2: la convergencia «alta» no puede apoyarse en dos métodos con el mismo ancla (el ROE terminal del justificado
+    sacado del mismo conjunto de referencia que el múltiplo relativo)."""
+    rule = "convergencia_independiente"
+    conv = _get(a, "confidence", "dimensions", "convergence", default={}) or {}
+    if conv.get("level") != "alta":
+        return Result(NOT_APPLICABLE, "convergencia no alta")
+    kinds = {m.get("kind") for m in conv.get("methods") or [] if m.get("evaluable")}
+    if not {"intrínseco", "relativo"} <= kinds:
+        return Result(OK)
+    am = a.get("archetype_metrics") or {}
+    ts = am.get("two_stage") or {}
+    anchor = _num(ts.get("industry_roe")) if ts.get("applied") else _num(am.get("roe_reference"))
+    ref = _reference_value(_get(a, "benchmark", "industry", default={}) or {}, "roe")
+    if anchor is None or ref is None or abs(anchor - ref) > 1e-4:
+        return Result(OK)
+    return _result(rule, [_violation(
+        rule, 2, f"convergencia alta entre {' y '.join(m.get('method') for m in conv.get('methods') or [])}, con el ROE "
+        f"terminal del intrínseco ({_pct(anchor, 2)}) igual al ROE de la referencia del relativo",
+        "los dos métodos comparten la referencia de industria: un error en ella los mueve juntos y cuenta como "
+        "confirmación", anchor=anchor, reference_roe=ref)])
+
+
+def calidad_sin_saturar(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
+    """F4: Calidad de ganancias no puede estar en su máximo con la prueba de acumulaciones del Piotroski fallida (flujo
+    operativo < beneficio neto)."""
+    rule = "calidad_sin_saturar"
+    cat = _get(a, "score", "breakdown", "Calidad de Ganancias", default={}) or {}
+    eq = _get(a, "piotroski_f", "details", "earnings_quality", default={}) or {}
+    if eq.get("state") != "no_cumple":
+        return Result(NOT_APPLICABLE, "pasa (o no evalúa) la prueba de acumulaciones")
+    sc, mx = _num(cat.get("score")), _num(cat.get("max"))
+    if sc is None or mx is None or sc < mx:
+        return Result(OK)
+    return _result(rule, [_violation(
+        rule, 2, f"Calidad de ganancias {sc:.0f}/{mx:.0f} con flujo operativo {_num(eq.get('cur')) / 1e9:.2f}B < "
+        f"beneficio neto {_num(eq.get('prev')) / 1e9:.2f}B",
+        "dos pruebas binarias (flujo operativo y FCF positivos) saturan la categoría sin mirar las acumulaciones",
+        cfo=_num(eq.get("cur")), net_income=_num(eq.get("prev")))])
+
+
+def forward_creible(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
+    """F3: la compresión del Forward P/E solo puntúa si el crecimiento del BPA que implica (frente al P/E con que se
+    compara) es creíble."""
+    rule, C = "forward_creible", _C("forward_creible")
+    x = next((x for x in _adjustments(a, "Valoración") if x.get("metric") == "Forward P/E"), None)
+    if not x or not x.get("adjustment") or (x.get("adjustment") or 0) <= 0:
+        return Result(NOT_APPLICABLE, "el Forward P/E no suma")
+    g = _num(x.get("implied_eps_growth"))
+    if g is None or g <= C["max_implied_growth"]:
+        return Result(OK)
+    return _result(rule, [_violation(
+        rule, g / C["max_implied_growth"], f"Forward P/E {x.get('value')} suma {x['adjustment']:+d} con un crecimiento "
+        f"implícito del BPA del {_pct(g)} en un año",
+        "el tope de credibilidad usa el CAGR histórico del BPA (o el consenso está en otra base que el P/E comparado)",
+        implied_growth=g, credible_pe=_num(x.get("credible_forward_pe")))])
+
+
+def beta_contrastada(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
+    """T5: la beta sustituta (de su industria) no queda fuera del intervalo ± k·EE de la beta propia que descartó."""
+    rule, C = "beta_contrastada", _C("beta_contrastada")
+    b = a.get("beta") or {}
+    if b.get("source") == "propia":
+        return Result(NOT_APPLICABLE, "usa la beta propia")
+    own = b.get("own") or {}
+    raw, se, used = _num(own.get("raw")), _num(own.get("se")), _num(b.get("adjusted"))
+    if raw is None or se is None or used is None:
+        return Result(NOT_EVALUABLE, "sin beta propia o sin su error estándar")
+    lo, hi = raw - C["k_se"] * se, raw + C["k_se"] * se
+    if lo <= used <= hi:
+        return Result(OK)
+    return _result(rule, [_violation(
+        rule, 1 + min(abs(used - lo), abs(used - hi)) / max(se, 0.05),
+        f"beta usada {used:.2f} ({b.get('source')}) fuera de la propia {raw:.2f} ± {C['k_se']:g}·{se:.2f}",
+        "la beta de la industria sustituye a la propia sin contrastarse con ella", used=used, own=raw, se=se)])
+
+
+def causalidad_sostenida(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
+    """T6: la narrativa de mercado no atribuye el movimiento a la empresa sin compararlo con su país (emisores con prima
+    de riesgo país) ni a una sobrerreacción del mercado sin evidencia (con reacción negativa a sus resultados)."""
+    rule = "causalidad_sostenida"
+    mc = a.get("market_context") or {}
+    out = []
+    crp = _num(_get(a, "country_risk", "crp")) or 0.0
+    for r in mc.get("readings") or []:
+        if r.get("key") == "relative_strength" and "propio de la empresa" in str(r.get("text") or "") and crp > 0:
+            out.append(_violation(
+                rule, 1 + crp / 0.01, f"«{r.get('text')}» con prima de riesgo país {_pp(crp)} "
+                f"({_get(a, 'country_risk', 'country')})",
+                "la fuerza relativa se mide solo contra el ETF sectorial de EE. UU., no contra el de su país",
+                crp=crp, etf=mc.get("sector_etf")))
+    reaction = _num(_get(mc, "pead", "reaction"))
+    for bh in mc.get("behavioral") or []:
+        if bh.get("kind") == "sobrerreaccion":
+            neg = reaction is not None and reaction < 0
+            out.append(_violation(
+                rule, 2 if neg else 1, "lectura de sobrerreacción del mercado"
+                + (f" con reacción a sus últimos resultados de {_pct(reaction)}" if neg else ""),
+                "la lectura conductual solo mira fundamentales pasados: no descarta que el precio descuente algo que el "
+                "informe no mide", reaction=reaction))
+    return _result(rule, out)
+
+
+def metodo_citado_aplicable(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
+    """T7: el PDF no titula ni cita un método que su tipo excluye, no usa como ancla una métrica «No aplica» y cada fila
+    lleva su propia definición."""
+    rule = "metodo_citado_aplicable"
+    text = ctx.get("pdf_text")
+    if not text:
+        return Result(NOT_EVALUABLE, "sin texto del PDF")
+    na = set(_get(a, "display", "na_keys", default=[]) or [])
+    out = []
+    if "dcf" in na and re.search(r"DCF:\s*supuestos", text):
+        out.append(_violation(rule, 1, "título «DCF: supuestos y fiabilidad» con el DCF «No aplica»",
+                              "título fijo en pdf_v2/chapters.py", method="dcf"))
+    if _get(a, "reverse_dcf", "applicable") is False and "Mauboussin" in text:
+        out.append(_violation(rule, 1, "la metodología cita las tasas base del DCF inverso, que no aplica",
+                              "metodología escrita a mano en pdf_v2/methodology.py", method="reverse_dcf"))
+    if re.search(r"Precio de mercado\s+Puntuación de 0 a 100", text):
+        out.append(_violation(rule, 1, "la fila «Precio de mercado» lleva la definición de la puntuación de atractivo",
+                              "la fila usa la clave «price» en lugar de «share_price»", method="price_row"))
+    if "net_margin" in na and re.search(r"exige persistencia.{0,200}?margen neto", text, re.I | re.S):
+        out.append(_violation(rule, 1, "la persistencia de Calidad se ancla en el margen neto, que «No aplica»",
+                              "persistence.py no consulta los «no aplica» del tipo", method="net_margin"))
+    return _result(rule, out)
+
+
 RULES: Dict[str, Tuple[Callable[[Dict[str, Any], Dict[str, Any]], Result], str]] = {
     "margen_neto_techo": (margen_neto_techo, "Margen neto ≤ (operativo + financiero neto) × (1 − t) + tolerancia"),
     "margen_operativo_unico": (margen_operativo_unico, "Margen operativo: el enseñado (EDGAR TTM) frente a las piezas "
@@ -802,6 +1141,20 @@ RULES: Dict[str, Tuple[Callable[[Dict[str, Any], Dict[str, Any]], Result], str]]
     "estados_al_dia": (estados_al_dia, "Estados no desfasados sin marca"),
     "confianza_cobertura": (confianza_cobertura, "Confianza ≤ cobertura"),
     "motivo_de_vacio": (motivo_de_vacio, "Cada «no aplica» o «sin dato» lleva su motivo"),
+    "caida_avisada": (caida_avisada, "F11 · T3: una caída fuerte en 1 año sale en las alertas"),
+    "riesgo_critico_medido": (riesgo_critico_medido, "F11 · T3: cobertura no «alta» con el riesgo crítico sin medir"),
+    "una_definicion_ttm_fy": (una_definicion_ttm_fy, "F11 · N2: el TTM y la serie anual con la misma definición"),
+    "implicito_mismo_modelo": (implicito_mismo_modelo, "F11 · N1: retorno implícito con el modelo del justificado"),
+    "cota_aplicada": (cota_aplicada, "F11 · T4: el crecimiento puntuado respeta su cota y su rótulo"),
+    "referencia_representativa": (referencia_representativa, "F11 · T1: referencia que gana algo y de su región"),
+    "voto_estable": (voto_estable, "F11 · F1: el DCF no vota si ±1 escalón de WACC cruza el precio"),
+    "inverso_tasa_base": (inverso_tasa_base, "F11 · F2: DCF inverso «barata» solo con tasa base ≥ 50 %"),
+    "convergencia_independiente": (convergencia_independiente, "F11 · T2: convergencia alta sin ancla compartida"),
+    "calidad_sin_saturar": (calidad_sin_saturar, "F11 · F4: Calidad no al máximo con acumulaciones fallidas"),
+    "forward_creible": (forward_creible, "F11 · F3: compresión del forward solo con crecimiento implícito creíble"),
+    "beta_contrastada": (beta_contrastada, "F11 · T5: beta sustituta dentro de la propia ± 2 EE"),
+    "causalidad_sostenida": (causalidad_sostenida, "F11 · T6: narrativa causal con su evidencia"),
+    "metodo_citado_aplicable": (metodo_citado_aplicable, "F11 · T7: el PDF no cita métodos que su tipo excluye"),
 }
 
 
