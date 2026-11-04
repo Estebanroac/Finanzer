@@ -1062,6 +1062,10 @@ def beta_contrastada(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
     raw, se, used = _num(own.get("raw")), _num(own.get("se")), _num(b.get("adjusted"))
     if raw is None or se is None or used is None:
         return Result(NOT_EVALUABLE, "sin beta propia o sin su error estándar")
+    r2 = _num(own.get("r2"))
+    if r2 is None or r2 < C["min_r2"]:
+        # KO, HSY, ABT (escaneo del 4-nov): R² ≈ 0 recalculado aparte; la propia no informa y no hay nada que contrastar.
+        return Result(NOT_APPLICABLE, f"la regresión propia no explica el título (R² {r2})")
     lo, hi = raw - C["k_se"] * se, raw + C["k_se"] * se
     if lo <= used <= hi:
         return Result(OK)
@@ -1078,8 +1082,9 @@ def causalidad_sostenida(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
     mc = a.get("market_context") or {}
     out = []
     crp = _num(_get(a, "country_risk", "crp")) or 0.0
+    foreign = _get(a, "country_risk", "country") not in (None, "United States")    # sede fuera de EE. UU.
     for r in mc.get("readings") or []:
-        if r.get("key") == "relative_strength" and "propio de la empresa" in str(r.get("text") or "") and crp > 0:
+        if r.get("key") == "relative_strength" and "propio de la empresa" in str(r.get("text") or "") and foreign:
             out.append(_violation(
                 rule, 1 + crp / 0.01, f"«{r.get('text')}» con prima de riesgo país {_pp(crp)} "
                 f"({_get(a, 'country_risk', 'country')})",
