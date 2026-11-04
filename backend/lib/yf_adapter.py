@@ -624,6 +624,12 @@ def _apply_edgar(symbol: str, info: Dict[str, Any], ed: Dict[str, Any], hist: Di
     if ed.get("status") == "ok" and ed.get("facts"):
         info["_history_fy"] = edgar.history(ed["facts"])
         edgar_primary.bank_history(info, info["_history_fy"])      # F9 · R3: banco IFRS, sin las comisiones como ingresos
+        # F11 · N2: un campo que no puede tener una sola definición con EDGAR (o cuyo concepto es una partida) no usa
+        # tampoco su historia larga: ni la tabla de 10 años, ni la regresión del crecimiento, ni la persistencia.
+        for _s in (info["_edgar"].get("primary") or {}).get("series") or []:
+            if _s.get("one_definition") and _s.get("field") in info["_history_fy"]:
+                info["_history_fy"][_s["field"]] = dict(info["_history_fy"][_s["field"]], values=[],
+                                                        reason=_s["reason"])
         info["_edgar"]["history"] = {
             f: {"years": len(h["values"]), "first": h["values"][-1]["fy_end"] if h["values"] else None,
                 "last": h["values"][0]["fy_end"] if h["values"] else None, "unit": h["unit"],

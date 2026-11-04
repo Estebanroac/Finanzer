@@ -106,6 +106,15 @@ ttm_quarters_tolerance = 0.01
 # ejercicios de los estados; Yahoo, respaldo. Una diferencia de más de este margen en un ejercicio queda registrada.
 fy_series_fields = ["revenue", "net_income"]
 fy_series_reconcile_rel = 0.02
+# F11 · N2 (revisión de NU y NFLX): una sola definición por campo, en la serie y en el corte. El corte de cada campo de
+# la serie (clave del corte en la fuente) pasa a EDGAR si la serie es de EDGAR y discrepa; un concepto de EDGAR por
+# debajo de esta parte de la fuente es una partida, no el total (CPT, BBVA: < 1 %), y manda la fuente.
+fy_series_cut_keys = [["revenue", "totalRevenue"], ["net_income", "netIncome"]]
+fy_series_min_concept_share = 0.5
+fy_series_total_fields = ["revenue"]    # un total (el beneficio puede ser legítimamente una fracción de otra definición)
+# Por debajo de esta diferencia en el último ejercicio, la definición no cambia ninguna lectura (SHEL 2,6 %): manda la
+# serie de EDGAR y la diferencia queda en la conciliación. Por encima (NU 33 %, DEO 29 %), una sola definición.
+fy_series_definition_material_rel = 0.10
 since = "2024-01-01"            # filings que se miran
 # Emisores sin 8-K (20-F/40-F): calendario de resultados del proveedor (Finnhub). Una publicación más de
 # `calendar_min_lag_days` días después del corte es de un periodo posterior (la del propio corte llega antes: TSM

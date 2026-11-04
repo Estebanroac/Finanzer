@@ -262,13 +262,75 @@ def _apply_fy_series(info: Dict[str, Any], facts: Dict[str, Any], rules, ctx, to
             log.setdefault("before_first_filing", []).append(
                 {"field": field, "years": before, "first": first,
                  "reason": f"la empresa presenta sus cuentas en la SEC desde {first[:4]}"})
-        for e, o, n in zip(ends, old + [None] * (len(ends) - len(old)), new):
-            if o is not None and n and abs(o - n) > rel * abs(n):
-                log["reconciliation"].append({"field": field, "fy_end": e, "edgar": n, "source": o,
-                                              "diff_rel": (o - n) / abs(n), "concept": by_end[e]["concept"]})
+        rec = [{"field": field, "fy_end": e, "edgar": n, "source": o, "diff_rel": (o - n) / abs(n),
+                "concept": by_end[e]["concept"]}
+               for e, o, n in zip(ends, old + [None] * (len(ends) - len(old)), new)
+               if o is not None and n and abs(o - n) > rel * abs(n)]
+        why = _one_definition(info, facts, field, rec[0] if rec and rec[0]["fy_end"] == ends[0] else None,
+                              concepts, ctx, tol, log)
+        if why:
+            # F11 · N2: `one_definition` hace que la historia larga de EDGAR del campo tampoco se use (yf_adapter).
+            log["series"].append({"field": field, "source": "fuente", "reason": why, "one_definition": True})
+            continue
+        log["reconciliation"] += rec
         st[field] = new
         log["series"].append({"field": field, "source": "sec_edgar", "concepts": concepts,
                               "years": len(ends) - len(before) - len(gaps)})
+
+
+def _one_definition(info: Dict[str, Any], facts: Dict[str, Any], field: str, last: Optional[Dict[str, Any]],
+                    concepts: List[str], ctx, tol: int, log: Dict[str, Any]) -> Optional[str]:
+    """F11 · N2 (revisión de NU y NFLX; regla M5 extendida al corte): la serie anual de EDGAR y el corte del mismo campo
+    con UNA definición. `last` es la discrepancia del último ejercicio (o None si coinciden). Devuelve el motivo para
+    dejar la fuente en la serie (y entonces el corte sigue siendo el de la fuente), o None si la serie de EDGAR manda.
+
+    - Concepto parcial: el último ejercicio de EDGAR es menos de `fy_series_min_concept_share` del de la fuente. No es
+      otra definición del total sino una partida (CPT, un REIT: los ingresos de contratos con clientes sin los
+      alquileres, 13 M$ frente a 1.574 M$; BBVA: 0,36 B frente a 44,5 B).
+    - Definición distinta y material (más de `fy_series_definition_material_rel`): manda la NETA, la menor (sin
+      partidas de paso: intereses pagados, impuestos especiales), que es la comparable. EDGAR bruta (NU, DEO, MO): la
+      fuente en la serie, el corte y la historia larga. EDGAR neta (IBKR): el corte pasa a EDGAR con el mismo concepto
+      si lo tiene (FY + acumulado − acumulado anterior); si no, la fuente en todo (nunca dos definiciones)."""
+    if last is None:
+        return None
+    what = {"revenue": "los ingresos", "net_income": "el beneficio neto"}.get(field, field)
+    key = dict(cfg("data.edgar.fy_series_cut_keys")).get(field)
+    share = last["edgar"] / last["source"] if last["source"] else None
+    if (field in cfg("data.edgar.fy_series_total_fields") and share is not None
+            and 0 < share < cfg("data.edgar.fy_series_min_concept_share")):
+        return (f"el concepto de EDGAR para {what} ({last['concept']}) es una parte del total ({share:.0%} de la "
+                f"fuente en el ejercicio {last['fy_end'][:4]}): manda la fuente")
+    if key is None or any(c.get("field") == key for c in log.get("cut") or []):
+        return None
+    if abs(last["diff_rel"]) <= cfg("data.edgar.fy_series_definition_material_rel"):
+        return None         # diferencia no material: la serie de EDGAR manda (F9 · R3) y queda en la conciliación
+    if last["edgar"] > last["source"]:
+        # La definición mayor lleva partidas de paso (intereses pagados, impuestos especiales): la neta, la de la fuente,
+        # es la comparable (la de las referencias de industria). MO: con el corte de EDGAR, margen 47 % frente a 54 %.
+        return (f"EDGAR da {what} en bruto ({last['concept']}; la fuente, neta, un {last['diff_rel']:+.0%} en el "
+                f"ejercicio {last['fy_end'][:4]}): el informe usa la definición neta de la fuente en todo (una sola "
+                "definición)")
+    ao = info.get("_as_of") or {}
+    cut = ao.get("date")
+    got = edgar.field_value(facts, field, _dt.date.fromisoformat(cut), tol) if cut else None
+    if got is None or got["concept"] not in concepts:
+        return (f"EDGAR define {what} de otra forma que la fuente ({last['concept']}: la fuente da un "
+                f"{last['diff_rel']:+.0%} en el ejercicio {last['fy_end'][:4]}) y no tiene el corte del {cut} con ese "
+                "concepto: el informe usa la definición de la fuente en todo (una sola definición)")
+    from yf_adapter import _tag_provenance
+    old = info.get(key)
+    val = _convert(ctx, float(got["value"]), "flow", cut)
+    info[key] = val
+    fields = ao.setdefault("fields", {})
+    fields[key] = {"period_end": cut, "period_type": "ttm" if ao.get("type") == "ttm" else "fy",
+                   "source": "sec_edgar"}
+    why = "una sola definición: la de la serie anual de EDGAR"
+    _tag_provenance(info, "sec_edgar", f"SEC EDGAR, fuente principal ({got['concept']}): {got['how']} · {why}",
+                    paths=[key], overwrite=True)
+    log.setdefault("cut", []).append({"field": key, "concept": got["concept"], "period_end": cut, "how": got["how"],
+                                      "accns": got["accns"], "value": val, "replaced": old, "why": why})
+    _follow(info, key, old, val, fields, cut, ao.get("type"))
+    return None
 
 
 DA_EXCLUDED = ("amortización de activos operativos recurrentes (contenido, software capitalizado…) sin respaldo como "

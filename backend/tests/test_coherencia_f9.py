@@ -104,11 +104,53 @@ def _info(rev, industry="Software—Infrastructure", sector="Technology"):
 
 
 def test_la_serie_fy_es_la_de_edgar_si_cubre_los_ejercicios():
-    info, log = _info([10.63, 8.27]), {}
-    f = _facts({"Revenue": [("2025-12-31", 15.77), ("2024-12-31", 11.52)]})
+    """F11 · N2: EDGAR da la definición neta (la menor; IBKR, neta de intereses) y tiene el corte: la serie y el corte
+    son los de EDGAR."""
+    info, log = dict(_info([10.22, 9.32]), _as_of={"type": "fy", "date": "2025-12-31"}, totalRevenue=10.22), {}
+    f = _facts({"Revenue": [("2025-12-31", 6.2), ("2024-12-31", 5.19)]})
     edgar_primary._apply_fy_series(info, f, [], None, 14, log)
-    assert info["_statements_fy"]["revenue"] == [15.77, 11.52]
+    assert info["_statements_fy"]["revenue"] == [6.2, 5.19]
+    assert info["totalRevenue"] == 6.2 and log["cut"][0]["why"].startswith("una sola definición")
     assert {r["fy_end"] for r in log["reconciliation"]} == {"2025-12-31", "2024-12-31"}   # difieren más de un 2%
+
+
+def test_edgar_en_bruto_deja_la_definicion_neta_de_la_fuente_en_todo():
+    """F11 · N2 (revisión de NU y NFLX): NU, EDGAR en bruto (15,77 B) y la fuente neta (10,63 B): la neta en todo, con o
+    sin el corte de EDGAR. Nunca 13,17 B de TTM junto a 15,77 B del ejercicio."""
+    for ao in ({"type": "ttm", "date": "2026-06-30"}, {"type": "fy", "date": "2025-12-31"}):
+        info, log = dict(_info([10.63, 8.27]), _as_of=ao, totalRevenue=13.17), {}
+        f = _facts({"Revenue": [("2025-12-31", 15.77), ("2024-12-31", 11.52)]})
+        edgar_primary._apply_fy_series(info, f, [], None, 14, log)
+        assert info["_statements_fy"]["revenue"] == [10.63, 8.27] and info["totalRevenue"] == 13.17
+        s = next(x for x in log["series"] if x["field"] == "revenue")
+        assert s["source"] == "fuente" and s["one_definition"] and "neta" in s["reason"]
+        assert log["reconciliation"] == []
+
+
+def test_edgar_neto_sin_el_corte_deja_la_fuente_en_todo():
+    """F11 · N2: EDGAR neta pero sin el corte con ese concepto (20-F sin trimestres en XBRL): la fuente en todo."""
+    info, log = dict(_info([10.22, 9.32]), _as_of={"type": "ttm", "date": "2026-06-30"}, totalRevenue=10.5), {}
+    f = _facts({"Revenue": [("2025-12-31", 6.2), ("2024-12-31", 5.19)]})
+    edgar_primary._apply_fy_series(info, f, [], None, 14, log)
+    assert info["_statements_fy"]["revenue"] == [10.22, 9.32] and info["totalRevenue"] == 10.5
+    assert "una sola definición" in next(x for x in log["series"] if x["field"] == "revenue")["reason"]
+
+
+def test_un_concepto_parcial_no_es_el_total():
+    """F11 · N2: CPT (REIT): los ingresos de contratos con clientes sin los alquileres (1 % del total): manda la fuente."""
+    info, log = dict(_info([1574.0, 1544.0]), _as_of={"type": "fy", "date": "2025-12-31"}), {}
+    f = _facts({"Revenue": [("2025-12-31", 13.0), ("2024-12-31", 7.1)]})
+    edgar_primary._apply_fy_series(info, f, [], None, 14, log)
+    assert info["_statements_fy"]["revenue"] == [1574.0, 1544.0]
+    assert "una parte del total" in next(x for x in log["series"] if x["field"] == "revenue")["reason"]
+
+
+def test_una_diferencia_no_material_deja_la_serie_de_edgar():
+    """SHEL: 2,6 % de diferencia (≤ fy_series_definition_material_rel): la serie de EDGAR, sin tocar el corte."""
+    info, log = dict(_info([10.26, 10.0]), _as_of={"type": "ttm", "date": "2026-06-30"}, totalRevenue=10.3), {}
+    f = _facts({"Revenue": [("2025-12-31", 10.0), ("2024-12-31", 9.8)]})
+    edgar_primary._apply_fy_series(info, f, [], None, 14, log)
+    assert info["_statements_fy"]["revenue"] == [10.0, 9.8] and info["totalRevenue"] == 10.3
 
 
 def test_sin_un_ejercicio_manda_la_fuente_entera():

@@ -46,7 +46,7 @@ def test_relay_of_the_same_definition_is_one_series():
             "NetIncomeLoss": [_y("2024-12-31", 538.0), _y("2023-12-31", -333.7)]})
     info = {"sector": "Financial Services", "industry": "Asset Management", "_statements_fy": {
         "inc_ends": ["2025-12-31", "2024-12-31", "2023-12-31"], "revenue": [None] * 3,
-        "net_income": [-281.7, 774.8, -96.9]}}
+        "net_income": [-281.7, 774.8, -96.9]}, "_as_of": {"type": "fy", "date": "2025-12-31"}}   # F11 · N2: el corte
     log = {}
     edgar_primary._apply_fy_series(info, f, [], None, 14, log)
     assert info["_statements_fy"]["net_income"] == [-726.3, 538.0, -333.7]
@@ -59,7 +59,7 @@ def test_years_before_the_first_annual_report_are_not_the_issuer():
             "Assets": [(None, "2023-12-31", 1.0, "2024-02-27"), (None, "2025-12-31", 1.0)]})
     info = {"sector": "Communication Services", "industry": "Entertainment", "_statements_fy": {
         "inc_ends": ["2025-12-31", "2024-12-31", "2023-12-31", "2022-12-31"], "revenue": [None] * 4,
-        "net_income": [500.0, 40.0, 223.5, 180.0]}}
+        "net_income": [500.0, 40.0, 223.5, 180.0]}, "_as_of": {"type": "fy", "date": "2025-12-31"}}   # F11 · N2
     log = {}
     edgar_primary._apply_fy_series(info, f, [], None, 14, log)
     assert info["_statements_fy"]["net_income"] == [195.4, 9.4, -35.2, None]

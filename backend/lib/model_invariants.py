@@ -831,12 +831,18 @@ def una_definicion_ttm_fy(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
     rec = [r for r in prim.get("reconciliation") or [] if isinstance(r, dict)]
     if not rec:
         return Result(NOT_APPLICABLE, "sin discrepancias entre la serie anual de EDGAR y la de la fuente")
-    tol = cfg("data.edgar.fy_series_reconcile_rel")
+    # La diferencia que cambia lecturas (data.edgar.fy_series_definition_material_rel), en el ÚLTIMO ejercicio de los
+    # estados: una diferencia antigua (D, EXE: 2023) no mezcla el corte con la serie.
+    tol = cfg("data.edgar.fy_series_definition_material_rel")
     fields = _get(a, "data_provenance", "fields", default={}) or {}
-    cut_keys = {c.get("key") for c in prim.get("cut") or [] if isinstance(c, dict)}
+    cut_keys = {c.get("field") for c in prim.get("cut") or [] if isinstance(c, dict)}
+    last_fy = max((y.get("year") for y in a.get("yearly_financials") or [] if isinstance(y.get("year"), int)),
+                  default=None)
     last: Dict[str, Dict[str, Any]] = {}
     for r in rec:
         f = r.get("field")
+        if f and last_fy is not None and str(r.get("fy_end") or "")[:4] < str(last_fy):
+            continue
         if f and str(r.get("fy_end") or "") >= str((last.get(f) or {}).get("fy_end") or ""):
             last[f] = r
     out = []
@@ -849,7 +855,7 @@ def una_definicion_ttm_fy(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
         if src in (None, "sec_edgar"):
             continue
         out.append(_violation(
-            rule, abs(d) / tol / 5, f"{f}: el ejercicio {r.get('fy_end')} es de EDGAR ({r.get('concept')}) y difiere "
+            rule, abs(d) / tol, f"{f}: el ejercicio {r.get('fy_end')} es de EDGAR ({r.get('concept')}) y difiere "
             f"{d:+.1%} de la fuente, pero el corte ({key}) viene de {src}",
             "dos definiciones del mismo campo: la historia de EDGAR y el TTM de la fuente (bruto frente a neto)",
             field=f, cut_key=key, cut_source=src, diff_rel=d))
