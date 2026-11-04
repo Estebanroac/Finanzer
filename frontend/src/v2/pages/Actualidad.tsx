@@ -5,6 +5,7 @@ import PillIndex from "@/v2/components/depth/PillIndex";
 import Section, { Missing } from "@/v2/components/depth/Section";
 import Methodology from "@/v2/components/depth/Methodology";
 import NewsCard from "@/v2/components/NewsCard";
+import { analysisLogo } from "@/v2/lib/logo";
 import SignalsTable from "@/v2/components/SignalsTable";
 
 const PILLS = [{ id: "noticias", label: "Noticias" }, { id: "resultados", label: "Próximos resultados" },
@@ -19,7 +20,8 @@ export default function Actualidad({ analysis: a, symbol }: PageProps) {
     <div className="wrap depth-body">
       <Section id="noticias" eyebrow="Actualidad" title="Noticias de la última semana">
         {news.length > 0 ? (<>
-          <div className="news three" data-sym-row>{news.map((n, i) => <NewsCard key={n.url ?? i} n={n} symbol={symbol} />)}</div>
+          <div className="news three" data-sym-row>{news.map((n, i) => <NewsCard key={n.url ?? i} n={n} symbol={symbol}
+            name={a.profile.name} logo={analysisLogo(a)} />)}</div>
           {m?.news_note && <p className="muted small">{m.news_note}</p>}
         </>) : <Missing title="Noticias" reason={m?.news_note ?? "sin titulares recientes"} />}
       </Section>

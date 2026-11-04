@@ -4,6 +4,7 @@ import type { SearchHit } from "@/lib/api";
 import { enterTarget, moveActive, searchV2, SEARCH_DEBOUNCE_MS, stockHref } from "@/v2/lib/search";
 import { isAbort } from "@/v2/lib/http";
 import { rememberName } from "@/lib/stockNames";
+import CompanyLogo from "./CompanyLogo";
 import "./SearchBox.css";
 
 const NONE = -1;
@@ -117,6 +118,7 @@ export default function SearchBox({ hero = false, placeholder = "Buscar empresa 
           <li key={r.ticker} id={`${id}-o${i}`} role="option" aria-selected={i === active}
             className={i === active ? "on" : undefined}
             onMouseDown={(e) => { e.preventDefault(); go(r.ticker); }} onMouseEnter={() => setActive(i)}>
+            <CompanyLogo symbol={r.ticker} name={r.name} size="sm" />
             <span className="r-name">{r.name}</span>
             <span className="r-meta num">{r.ticker}{r.exchange && <span className="muted"> · {r.exchange}</span>}</span>
           </li>

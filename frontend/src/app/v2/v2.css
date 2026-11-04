@@ -148,6 +148,9 @@ html[data-v2theme="dark"] .fz2 .theme-to-dark, html:not([data-v2theme="dark"]) .
    caben los dos, cede la conclusión, que se parte (MC.PA en tableta: «EUR 397.00 −EUR 1.30 (−0.33%)»). */
 .fz2 .ident { display: grid; grid-template-columns: minmax(auto, 1fr) auto; align-items: center; gap: var(--s2) var(--s5); }
 .fz2 .ident-main { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s1) var(--s4); }
+/* Logotipos: la placa a la izquierda de nombre y precio, centrada con los dos (en el móvil, arriba, con el nombre) */
+.fz2 .ident-lead { display: flex; align-items: center; gap: var(--s3); min-width: 0; }
+.fz2 .ident-lead .ident-main { flex: 1 1 auto; min-width: 0; }
 .fz2 .verdict { display: flex; align-items: baseline; gap: var(--s3); justify-self: end; text-align: right; }
 .fz2 .verdict-text { font-size: var(--fs-sub); font-weight: 650; }
 .fz2 .company-header .name { color: var(--ink); font-size: var(--fs-sub); }
@@ -270,6 +273,10 @@ html[data-v2theme="dark"] .fz2 .theme-to-dark, html:not([data-v2theme="dark"]) .
   .fz2 .company-header .score .score-value .muted { font-size: var(--fs-ui); }
 
   .fz2 .ident { grid-template-columns: minmax(0, 1fr); }
+  /* Logotipos: en el teléfono la placa va con el nombre y el precio ocupa todo el ancho debajo (sin hueco a su izquierda) */
+  .fz2 .company-header:not(.compact) .ident-lead { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: var(--s1) var(--s3); }
+  .fz2 .company-header:not(.compact) .ident-lead .ident-main { display: contents; }
+  .fz2 .company-header:not(.compact) .ident-lead .quote, .fz2 .company-header:not(.compact) .ident-lead .day-ref { grid-column: 1 / -1; justify-self: start; }
   .fz2 .verdict { flex-direction: column; gap: 0; justify-self: start; text-align: left; }
   /* Pre-pasada V4: si la pieza entera no cabe en el ancho (MC.PA a 375 px), la variación pasa debajo del precio en
      lugar de desbordar la página; cada cifra sigue sin partirse. */
@@ -323,12 +330,14 @@ html[data-v2theme="dark"] .fz2 .theme-to-dark, html:not([data-v2theme="dark"]) .
    tarjetas miden lo mismo, con imagen o sin ella. */
 .fz2 .news-card { color: var(--ink); text-decoration: none; display: flex; flex-direction: column; overflow: hidden; }
 .fz2 .news-img { display: block; width: 100%; height: 4rem; object-fit: cover; background: var(--neutral); }
-/* Sin foto propia: una portada con el ticker y el medio sobre un degradado sobrio (papel → azul de la escala), con un
-   filo azul arriba; los mismos tokens en claro y en oscuro (texto ≥ 4,7:1 sobre los dos extremos). */
+/* Sin foto propia: una portada con el logotipo de la empresa (o su placa con las iniciales) y el medio sobre un degradado
+   sobrio (papel → azul de la escala), con un filo azul arriba; los mismos tokens en claro y en oscuro (texto ≥ 4,7:1
+   sobre los dos extremos). */
 .fz2 .news-img-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--s1);
   padding: 0 var(--s3); text-align: center; background: linear-gradient(135deg, var(--neutral) 0%, var(--pos-a) 100%);
   border-bottom: 1px solid var(--line-soft); box-shadow: inset 0 3px 0 var(--pos); }
-.fz2 .news-ph-sym { font-size: var(--fs-label); font-weight: 650; letter-spacing: .08em; text-transform: uppercase; color: var(--pos-ink); }
+/* Logotipos: 3 rem en la portada de 7 rem (Actualidad); en la de 4 rem, la pequeña (cabe con el medio debajo) */
+.fz2 .news:not(.three) .news-ph-logo { --logo-size: 1.75rem; --logo-text: .75rem; }
 .fz2 .news-ph-src { font-size: var(--fs-sub); font-weight: 700; letter-spacing: -.01em; line-height: 1.2; color: var(--text-2); }
 .fz2 .news-body { padding: var(--s3); display: flex; flex-direction: column; gap: var(--s1); flex: 1 1 auto; }
 /* V4b (nada oculto): titular y resumen enteros, sin cortar a tres líneas; las tarjetas de una fila miden lo mismo */
@@ -632,7 +641,10 @@ html[data-v2theme="dark"] .fz2 .theme-to-dark, html:not([data-v2theme="dark"]) .
 /* Rivales */
 .fz2 .depth .peerstable tr.me th, .fz2 .depth .peerstable tr.me td { background: var(--good-bg); font-weight: 600; }
 .fz2 .depth .peerstable td, .fz2 .depth .peerstable th { white-space: nowrap; }
-.fz2 .depth .peerstable th[scope="row"] { white-space: normal; min-width: 7rem; }
+.fz2 .depth .peerstable th[scope="row"] { white-space: normal; min-width: 9.25rem; }
+/* Logotipos: la placa a la izquierda del ticker y el nombre */
+.fz2 .depth .peer-id { display: flex; align-items: center; gap: var(--s2); }
+.fz2 .depth .peer-who { min-width: 0; }
 .fz2 .depth .peerstable td[colspan] { white-space: normal; color: var(--text-2); }
 .fz2 .depth .skel { display: inline-block; vertical-align: middle; width: 6rem; height: .75rem; margin-right: var(--s2); border-radius: 4px; background: var(--neutral); }
 .fz2 .depth .btn.icon { padding: 0 var(--s2); line-height: 1.6; }

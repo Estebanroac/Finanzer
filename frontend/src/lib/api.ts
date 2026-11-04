@@ -682,6 +682,12 @@ export interface YearRow {
   fcf_minus_sbc_margin?: number | null;
 }
 
+/** Logotipo de la empresa (backend/lib/logos.py): `url` con su versión (?v=) o, si aún se descargaba, sin ella y
+ *  `source` null. Lo añade el endpoint /api/analysis (main._with_logo), no el cálculo del análisis: va fuera de
+ *  StockAnalysis y de su contrato con los golden (backend/tests/test_logos.py lo comprueba). null: no hay logotipo. */
+export interface CompanyLogoInfo { url: string; source: string | null }
+export type AnalysisWithLogo = StockAnalysis & { logo?: CompanyLogoInfo | null };
+
 export interface StockAnalysis {
   symbol: string;
   profile: {
