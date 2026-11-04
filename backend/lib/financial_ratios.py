@@ -2571,6 +2571,7 @@ def score_valoracion(
     # Parámetros v2.2+ para ajuste growth/value
     revenue_growth_3y: Optional[float] = None,
     eps_growth_3y: Optional[float] = None,
+    eps_growth_last_fy: Optional[float] = None,     # F11 · F3: tope de credibilidad del forward
     roe: Optional[float] = None,
     roic: Optional[float] = None,
     operating_margin: Optional[float] = None,
@@ -2808,7 +2809,12 @@ def score_valoracion(
         # con el P/E forward creíble. Con el consenso en línea con la historia nada cambia; por encima, solo cuenta la
         # parte respaldada. Sin parámetros nuevos ni tope fijo: el histórico de la empresa.
         _fwd_implied = _pe_fwd / forward_pe - 1
-        _fwd_cred = (_pe_fwd / (1 + eps_growth_3y) if eps_growth_3y is not None and _fwd_implied > eps_growth_3y
+        # F11 · F3 (revisión de NFLX): el respaldo es el MENOR entre el CAGR a 3 años y el crecimiento del último
+        # ejercicio. Un CAGR medido desde un año de márgenes hundidos (NFLX 2022: +36,5 %) es expansión de margen, no
+        # crecimiento repetible; el último ejercicio (+27,8 %) es lo que la empresa demuestra hoy.
+        _g_hist = (min(eps_growth_3y, eps_growth_last_fy) if (eps_growth_3y is not None and eps_growth_last_fy is not None)
+                   else eps_growth_3y)
+        _fwd_cred = (_pe_fwd / (1 + _g_hist) if _g_hist is not None and _fwd_implied > _g_hist and _g_hist > -1
                      else forward_pe)
         _capped = _fwd_cred != forward_pe
         _fl = "forward creíble" if _capped else "forward"
@@ -2828,8 +2834,10 @@ def score_valoracion(
             adj, sev = 0, "ok"
             reason = f"Sin compresión del P/E ({_pe_fwd:.0f}x → {_fwd_cred:.0f}x {_fl})"
         if _capped:
+            _g_txt = (f"{_g_hist:+.0%} del BPA en el último ejercicio" if _g_hist != eps_growth_3y
+                      else f"{eps_growth_3y:+.0%} anual del BPA a 3 años")
             reason = (f"{reason}; forward {forward_pe:.1f}x (implica {_fwd_implied:+.0%} de BPA); con el crecimiento "
-                      f"que respalda su histórico ({eps_growth_3y:+.0%} anual del BPA a 3 años), {_fwd_cred:.1f}x")
+                      f"que respalda su histórico ({_g_txt}), {_fwd_cred:.1f}x")
         # Etapa 11b: la compresión no suma si el Forward P/E sigue en la peor banda frente a su
         # referencia (PLTR: 177x -> 89x es "fuerte compresión", pero 89x sigue muy caro).
         _fref = sector_forward_pe if sector_forward_pe and sector_forward_pe > 0 else (
@@ -2851,6 +2859,7 @@ def score_valoracion(
         adjustments.append({"metric": "Forward P/E", "value": f"{forward_pe:.2f}x", "adjustment": adj,
                             "reason": reason, "severity": sev, "in_block": True,
                             "implied_eps_growth": _fwd_implied, "eps_growth_3y": eps_growth_3y,
+                            "credited_eps_growth": min(_fwd_implied, _g_hist) if _g_hist is not None else _fwd_implied,
                             **({"credible_forward_pe": _fwd_cred} if _capped else {}),
                             **({"not_scored": _fwd_gate} if _fwd_gate else {})})
 
@@ -2988,6 +2997,13 @@ def score_valoracion(
             # F8 · E8: la fiabilidad baja viene de los insumos, no de la distancia al precio.
             reason = "DCF de fiabilidad baja: no se usa en el score"
             name = "DCF directo: descartado, no puntúa"
+        elif _dcf.get("wacc_flips") and tag != "En precio":
+            # F11 · F1 (revisión de NFLX): con ±1 escalón de WACC el valor queda al otro lado del precio: la dirección
+            # la decide el coste de capital, no la empresa. En precio, sin puntos.
+            adj, sev = 0, "ok"
+            reason = ("En precio, sensible al WACC: " + "; ".join(
+                f"con WACC {f['wacc']:.1%} vale {f['value']:.2f}" for f in _dcf["wacc_flips"] if f.get("wacc"))
+                + f" (frente a {up:+.0%} con el caso base, fiabilidad {rel})")
         else:
             adj = (T["dcf_points_high"] if rel == "alta" else T["dcf_points_medium"])[i]
             sev = ("excellent", "good", "ok", "moderate", "severe")[i]
@@ -3822,6 +3838,7 @@ def calculate_score_v2(
         fcf_yield=ratio_values.get("fcf_yield"),
         revenue_growth_3y=contextual_values.get("revenue_cagr_3y"),
         eps_growth_3y=contextual_values.get("eps_cagr_3y"),
+        eps_growth_last_fy=contextual_values.get("eps_growth_last_fy"),
         roe=ratio_values.get("roe"),
         roic=ratio_values.get("roic"),
         operating_margin=ratio_values.get("operating_margin"),

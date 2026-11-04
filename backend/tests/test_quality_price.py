@@ -135,7 +135,11 @@ def test_v_local_confidence_follows_the_statements_dcf(outputs_by_env):
     conv = a["confidence"]["dimensions"]["convergence"]
     assert a["dcf"]["growth_rate"] == pytest.approx(0.109, abs=1e-3)
     assert {m["direction"] for m in conv["methods"] if m.get("evaluable")} == {"cara"}
-    assert conv["level"] == "alta" and a["confidence"]["level"] == "alta"
+    assert conv["level"] == "alta"
+    # F11 · F1/T5 (revisión de NU y NFLX): con Ke − 1 pp el DCF de V queda a un escalón de WACC de cruzar el precio y
+    # deja de votar: el nivel pasa de «muy exigente» a «exigente». El limitador de dependencia del coste de capital
+    # baja la confianza a media, con su motivo.
+    assert a["ke_sensitivity"]["dependent"] and a["confidence"]["level"] == "media"
 
 
 # ─────────────────────────── REIT: retorno total ───────────────────────────
@@ -294,7 +298,9 @@ def test_multiples_block_averages_members_and_caps_at_max(outputs_by_env):
     # 3 años; el forward creíble (32 / 1,13 = 28,3x) sí queda en la peor banda: sin efecto, y el bloque en −4 (antes −3).
     assert blk["block_members"] == ["P/E", "Forward P/E", "P/FCF", "EV/EBITDA", "PEG"] and blk["adjustment"] == -4
     fpe = next(x for x in v if x["metric"] == "Forward P/E")
-    assert fpe["adjustment"] == 0 and "sin efecto: el Forward P/E creíble" in fpe["reason"]
+    # F11 · F3: el respaldo es el menor entre el CAGR a 3 años (+13 %) y el último ejercicio (+5 %): con él, el forward
+    # creíble (32 / 1,05 = 30,6x) ya no comprime; sin puntos, como antes.
+    assert fpe["adjustment"] == 0 and "Sin compresión" in fpe["reason"] and "en el último ejercicio" in fpe["reason"]
     assert fpe["credible_forward_pe"] > 24.6 and "not_scored" not in fpe
 
 

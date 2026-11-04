@@ -402,8 +402,9 @@
             "kind": "intrínseco",
             "method": "DCF",
             "reliability": "media",
-            "signal": -0.0101220337669,
-            "upside": -0.00506101688347
+            "signal": 0.0,
+            "upside": 0.0,
+            "wacc_sensitive": true
           },
           {
             "components": 1,
@@ -422,7 +423,7 @@
           }
         ],
         "reasons": [
-          "coinciden (en precio) con distancia 0.16 (< 0.6)"
+          "coinciden (en precio) con distancia 0.17 (< 0.6)"
         ]
       },
       "coverage": {
@@ -1621,6 +1622,12 @@
       "terminal_pct": 54.6
     },
     "wacc": 0.119762671318,
+    "wacc_flips": [
+      {
+        "value": 252.47,
+        "wacc": 0.1098
+      }
+    ],
     "warnings": []
   },
   "dcf_growth_blend": null,
@@ -1637,7 +1644,7 @@
         },
         {
           "label": "Confianza · Convergencia entre métodos (alta)",
-          "text": "coinciden (en precio) con distancia 0.16 (< 0.6)"
+          "text": "coinciden (en precio) con distancia 0.17 (< 0.6)"
         },
         {
           "label": "Fuente oficial",
@@ -2544,8 +2551,8 @@
             "state": "con_dato",
             "text": null,
             "tone": null,
-            "value": 0.274993046973,
-            "value_txt": "0.27x"
+            "value": 0.307517252543,
+            "value_txt": "0.31x"
           },
           {
             "bench": 17.7052141363,
@@ -2609,7 +2616,7 @@
           "key": "convergence",
           "label": "Convergencia entre métodos",
           "level": "Alta",
-          "text": "DCF directo -1% (en precio) · múltiplos frente al sector -0.17 (en precio). Los métodos de valoración coinciden."
+          "text": "DCF directo +0% (en precio) · múltiplos frente al sector -0.17 (en precio). Los métodos de valoración coinciden."
         },
         {
           "key": "coverage",
@@ -3552,7 +3559,7 @@
                 {
                   "in_block": true,
                   "metric": "Forward P/E",
-                  "reason": "Fuerte compresión P/E normalizado (31x → 17x forward)",
+                  "reason": "Fuerte compresión P/E normalizado (31x → 19x forward creíble); forward 17.0x (implica +84% de BPA); con el crecimiento que respalda su histórico (+67% del BPA en el último ejercicio), 18.8x.",
                   "sign": "(+3)",
                   "state": "con_dato",
                   "tone": "neu",
@@ -3579,11 +3586,11 @@
                 {
                   "in_block": true,
                   "metric": "PEG",
-                  "reason": "Muy atractivo (0.27)",
+                  "reason": "Muy atractivo (0.31)",
                   "sign": "(+4)",
                   "state": "con_dato",
                   "tone": "neu",
-                  "value": "0.27"
+                  "value": "0.31"
                 },
                 {
                   "in_block": false,
@@ -4286,7 +4293,7 @@
             "state": "con_dato",
             "text": null,
             "tone": null,
-            "value": "0.27x"
+            "value": "0.31x"
           },
           {
             "bench": "17.71x",
@@ -5990,7 +5997,7 @@
     "minus": {
       "ke": 0.110212191605,
       "level": "razonable",
-      "score": 50
+      "score": 45
     },
     "plus": {
       "ke": 0.130212191605,
@@ -6050,7 +6057,7 @@
     "pb": 23.3367011393,
     "pe": 27.9772443808,
     "pe_normalized": 31.2861922161,
-    "peg": 0.274993046973,
+    "peg": 0.307517252543,
     "pfcf": 42.0746356368,
     "price_52w_high": 243.369995117,
     "price_52w_low": 164.270004272,
@@ -6367,7 +6374,8 @@
     "eps_cagr_3y": 1.01738006429,
     "note": "PEG: P/E ÷ crecimiento del BPA por regresión log-lineal sobre los 6 últimos ejercicios de EDGAR (FY2021–FY2026; el año inicial de la ventana de 3 años es anómalo)",
     "own": true,
-    "pe": 27.9772443808,
+    "pe": 31.2861922161,
+    "pe_basis": "normalizado",
     "years": 6
   },
   "piotroski_f": {
@@ -7064,12 +7072,14 @@
           },
           {
             "adjustment": 3,
+            "credible_forward_pe": 18.7717153297,
+            "credited_eps_growth": 0.666666666667,
             "eps_growth_3y": 1.01738006429,
             "implied_eps_growth": 0.837995396292,
             "in_block": true,
             "metric": "Forward P/E",
             "normalized": true,
-            "reason": "Fuerte compresión P/E normalizado (31x → 17x forward)",
+            "reason": "Fuerte compresión P/E normalizado (31x → 19x forward creíble); forward 17.0x (implica +84% de BPA); con el crecimiento que respalda su histórico (+67% del BPA en el último ejercicio), 18.8x",
             "severity": "excellent",
             "value": "17.02x"
           },
@@ -7093,9 +7103,9 @@
             "adjustment": 4,
             "in_block": true,
             "metric": "PEG",
-            "reason": "Muy atractivo (0.27)",
+            "reason": "Muy atractivo (0.31)",
             "severity": "excellent",
-            "value": "0.27"
+            "value": "0.31"
           },
           {
             "adjustment": -1,
@@ -7134,10 +7144,10 @@
         "coverage": 1.0,
         "details": [
           "Muy barato (31.3x frente a 53.2x sector)",
-          "Fuerte compresión P/E normalizado (31x → 17x forward)",
+          "Fuerte compresión P/E normalizado (31x → 19x forward creíble); forward 17.0x (implica +84% de BPA); con el crecimiento que respalda su histórico (+67% del BPA en el último ejercicio), 18.8x",
           "Muy alto (42.1x)",
           "Prima (26.4x frente a 17.7x)",
-          "Muy atractivo (0.27)",
+          "Muy atractivo (0.31)",
           "media de 3 lecturas en una escala de −1 a +1 (BPA (P/E, Forward P/E, PEG): P/E +1.00, Forward P/E +1.00, PEG +1.00 → +1.00; P/FCF -1.00; EV/EBITDA -0.50): -0.17, que suma -1.0 puntos de un máximo de ±6",
           "En precio por DCF (fiabilidad media): margen FCF inestable: de 14.1% a 46.6% en 5 ejercicios (variación 0.35 > 0.33)"
         ],

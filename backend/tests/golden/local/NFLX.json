@@ -18,19 +18,19 @@
         "reason": "Cotiza con descuento — P/E normalizado 26.5x"
       },
       {
-        "category": "Valor intrínseco",
-        "detail": "El DCF sitúa el valor intrínseco en $77 (+10% sobre el precio): potencial teórico moderado, condicionado a que el negocio ejecute según lo previsto.",
-        "reason": "Cotiza bajo su valor justo +10%"
-      },
-      {
         "category": "Rentabilidad",
         "detail": "De cada dólar vendido quedan 24 centavos de beneficio tras todos los costos, frente a 0.5% de su industria sin ella: poder de fijación de precios y eficiencia.",
         "reason": "Margen neto normalizado sólido — 23.5%"
       },
       {
         "category": "Valoración",
-        "detail": "Ajustado por el crecimiento de su BPA, el P/E resulta barato (PEG 0.61 < 1): se paga menos de 1x por cada punto de crecimiento, señal clásica de crecimiento a precio razonable (GARP).",
-        "reason": "PEG atractivo — 0.61"
+        "detail": "Ajustado por el crecimiento de su BPA, el P/E resulta barato (PEG 0.73 < 1): se paga menos de 1x por cada punto de crecimiento, señal clásica de crecimiento a precio razonable (GARP).",
+        "reason": "PEG atractivo — 0.73"
+      },
+      {
+        "category": "Crecimiento",
+        "detail": "El beneficio por acción crece 36.5% anual en tres años (FY2022–FY2025, CAGR): la rentabilidad para el accionista se acelera, a menudo apoyada en apalancamiento operativo o recompras.",
+        "reason": "BPA en fuerte expansión — +36.5% anual (3 años)"
       }
     ],
     "warnings": [
@@ -389,19 +389,20 @@
   "confidence": {
     "base_rate_step": null,
     "capped_from": null,
-    "contraction_basis": "baja",
+    "contraction_basis": "media",
     "dimensions": {
       "convergence": {
-        "level": "baja",
+        "level": "media",
         "methods": [
           {
-            "direction": "barata",
+            "direction": "en precio",
             "evaluable": true,
             "kind": "intrínseco",
             "method": "DCF",
             "reliability": "media",
-            "signal": 0.202275960171,
-            "upside": 0.101137980085
+            "signal": 0.0,
+            "upside": 0.0,
+            "wacc_sensitive": true
           },
           {
             "components": 1,
@@ -411,16 +412,16 @@
             "method": "múltiplos frente al sector",
             "readings": {
               "EV/EBITDA": -1.0,
-              "Forward P/E": 1.0,
+              "Forward P/E": 0.666666666667,
               "P/E": 0.6,
               "P/FCF": -0.5,
               "PEG": 1.0
             },
-            "signal": -0.211111111111
+            "signal": -0.248148148148
           }
         ],
         "reasons": [
-          "direcciones opuestas: DCF dice barata y múltiplos frente al sector dice cara"
+          "uno lo ve en precio y otro con dirección: no coinciden, sin oponerse"
         ]
       },
       "coverage": {
@@ -448,14 +449,14 @@
         ]
       }
     },
-    "level": "baja",
+    "level": "media",
     "limits_score": false,
     "reasons": [
-      "convergencia baja: direcciones opuestas: DCF dice barata y múltiplos frente al sector dice cara",
+      "convergencia media: uno lo ve en precio y otro con dirección: no coinciden, sin oponerse",
       "calidad de fuente media: beneficio normalizado con ítems inferidos (confianza media)",
       "estabilidad media: clasificación de frontera: un umbral movido ±20% la cambia (min_revenue_ps_cagr_3y 0.15→0.12)"
     ],
-    "score": 0.4
+    "score": 0.6
   },
   "cost_of_equity": {
     "as_of": "2026-10-01",
@@ -1554,6 +1555,12 @@
       "terminal_pct": 62.3
     },
     "wacc": 0.0842928243346,
+    "wacc_flips": [
+      {
+        "value": 65.19,
+        "wacc": 0.0943
+      }
+    ],
     "warnings": []
   },
   "dcf_growth_blend": null,
@@ -1569,8 +1576,8 @@
           "text": "Arquetipo MATURE (regla por_defecto): Clasificada como MATURE por defecto: no es financiera, REIT, pre-beneficio con crecimiento, cíclica ni de crecimiento rentable (industria Entretenimiento); su historia (19 ejercicios en EDGAR) no muestra ciclo."
         },
         {
-          "label": "Confianza · Convergencia entre métodos (baja)",
-          "text": "direcciones opuestas: DCF dice barata y múltiplos frente al sector dice cara."
+          "label": "Confianza · Convergencia entre métodos (media)",
+          "text": "uno lo ve en precio y otro con dirección: no coinciden, sin oponerse."
         },
         {
           "label": "Confianza · Calidad de fuente (media)",
@@ -1594,7 +1601,7 @@
         },
         {
           "label": "Fórmula del bloque",
-          "text": "Bloque de múltiplos: promedio de 3 lecturas reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = -0.21 × 6 (máximo con 3) = -1.3, redondeado a -1."
+          "text": "Bloque de múltiplos: promedio de 3 lecturas reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = -0.25 × 6 (máximo con 3) = -1.5, redondeado a -1."
         },
         {
           "label": "Nombres originales de las fuentes",
@@ -2399,7 +2406,7 @@
       "valuation": {
         "block": {
           "label": "Bloque de múltiplos",
-          "reason": "media de 3 lecturas en una escala de −1 a +1 (BPA (P/E, Forward P/E, PEG): P/E +0.60, Forward P/E +1.00, PEG +1.00 → +0.87; P/FCF -0.50; EV/EBITDA -1.00): -0.21, que suma -1.3 puntos de un máximo de ±6.",
+          "reason": "media de 3 lecturas en una escala de −1 a +1 (BPA (P/E, Forward P/E, PEG): P/E +0.60, Forward P/E +0.67, PEG +1.00 → +0.76; P/FCF -0.50; EV/EBITDA -1.00): -0.25, que suma -1.5 puntos de un máximo de ±6.",
           "sign": "-1",
           "tone": "warn"
         },
@@ -2413,8 +2420,8 @@
             177.221
           ],
           "badge": {
-            "label": "Infravalorada",
-            "tone": "pos"
+            "label": "Infravalorada (sensible al WACC)",
+            "tone": "neu"
           },
           "central_high": 109.17,
           "central_high_txt": "$110",
@@ -2433,7 +2440,7 @@
           "reliability": "media",
           "reliability_tone": "warn",
           "state": "con_dato",
-          "text": "el precio cotiza por debajo del valor intrínseco estimado (potencial teórico de +10%)",
+          "text": "caso base +10%; con un WACC del 9.4% el valor ($65.19) queda al otro lado del precio: no puntúa.",
           "upside_txt": "+10.1%",
           "zones": [
             {
@@ -2534,8 +2541,8 @@
             "state": "con_dato",
             "text": null,
             "tone": null,
-            "value": 0.605843777536,
-            "value_txt": "0.61x"
+            "value": 0.726072885242,
+            "value_txt": "0.73x"
           },
           {
             "bench": 13.2477467602,
@@ -2598,8 +2605,8 @@
         {
           "key": "convergence",
           "label": "Convergencia entre métodos",
-          "level": "Baja",
-          "text": "DCF directo +10% (barata) · múltiplos frente al sector -0.21 (cara). Los métodos de valoración se contradicen: uno ve la acción barata y otro cara."
+          "level": "Media",
+          "text": "DCF directo +0% (en precio) · múltiplos frente al sector -0.25 (cara). Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
         },
         {
           "key": "coverage",
@@ -2620,17 +2627,17 @@
           "text": "El tipo de empresa está en la frontera entre dos: un cambio pequeño en un umbral lo cambiaría, lo que hace menos fiable la comparación."
         }
       ],
-      "level": "baja",
+      "level": "media",
       "plain": [
-        "Los métodos de valoración se contradicen: uno ve la acción barata y otro cara.",
+        "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no.",
         "El beneficio se ajustó por partidas extraordinarias identificadas de forma indirecta.",
         "El tipo de empresa está en la frontera entre dos: un cambio pequeño en un umbral lo cambiaría, lo que hace menos fiable la comparación."
       ],
       "reasons": [
         {
           "dimension": "convergencia",
-          "level": "baja",
-          "text": "Los métodos de valoración se contradicen: uno ve la acción barata y otro cara."
+          "level": "media",
+          "text": "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
         },
         {
           "dimension": "calidad de fuente",
@@ -2643,9 +2650,9 @@
           "text": "El tipo de empresa está en la frontera entre dos: un cambio pequeño en un umbral lo cambiaría, lo que hace menos fiable la comparación."
         }
       ],
-      "summary": "Confianza del veredicto: baja. Contrae también la calidad del negocio hacia 50: de 91 a 85.",
-      "tone": "neg",
-      "verdict_text": "(confianza baja: el DCF directo y los múltiplos discrepan)"
+      "summary": "Confianza del veredicto: media. Contrae el atractivo del precio hacia 50: de 45 a 46. La calidad del negocio no se contrae.",
+      "tone": "warn",
+      "verdict_text": "(confianza media: el DCF directo la ve en precio y los múltiplos cara)"
     },
     "cover": {
       "archetype": "MATURE",
@@ -2718,9 +2725,9 @@
               "key": "Valoración",
               "max": 20,
               "name": "Valoración",
-              "pct": 50.0,
-              "score": 10,
-              "score_txt": "10 / 20",
+              "pct": 45.0,
+              "score": 9,
+              "score_txt": "9 / 20",
               "text": null,
               "tone": "warn"
             }
@@ -2733,7 +2740,7 @@
         "Clasificación en la frontera: un cambio pequeño en uno de sus umbrales la cambiaría."
       ],
       "confidence_reasons": [
-        "Los métodos de valoración se contradicen: uno ve la acción barata y otro cara.",
+        "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no.",
         "El beneficio se ajustó por partidas extraordinarias identificadas de forma indirecta.",
         "El tipo de empresa está en la frontera entre dos: un cambio pequeño en un umbral lo cambiaría, lo que hace menos fiable la comparación."
       ],
@@ -2812,29 +2819,29 @@
       ],
       "official_source_badge": null,
       "price": {
-        "contracted": false,
+        "contracted": true,
         "level": "razonable",
-        "note": null,
-        "note_short": null,
+        "note": "ajustado de 45 a 46 por confianza media; en la frontera con «exigente» (a 2 puntos): un cambio pequeño en los datos o en los supuestos cambiaría el nivel.",
+        "note_short": "Ajustado de 45 a 46 por confianza media · en la frontera con «exigente» (a 2 puntos)",
         "question": "¿está cara hoy?",
-        "raw": 50,
-        "score": 50,
+        "raw": 45,
+        "score": 46,
         "title": "ATRACTIVO DEL PRECIO",
         "tone": "neu"
       },
       "quality": {
         "level": "excelente",
-        "note": "Por encima de 80 (umbral de persistencia; «excelente» empieza en 85), la calidad exige persistencia: 98 → 91. Rentabilidad: margen operativo positivo y al menos el 75% del último (29.5%) en 2 de 5 ejercicios; calidad de ganancias: flujo operativo ≥ beneficio neto y FCF positivo en 1 de 5 ejercicios; en la frontera con «sólida» (a 1 punto): un cambio pequeño en los datos o en los supuestos cambiaría el nivel.",
-        "note_short": "Exige persistencia (98 → 85) · en la frontera con «sólida» (a 1 punto)",
+        "note": "Por encima de 80 (umbral de persistencia; «excelente» empieza en 85), la calidad exige persistencia: 98 → 91. Rentabilidad: margen operativo positivo y al menos el 75% del último (29.5%) en 2 de 5 ejercicios; calidad de ganancias: flujo operativo ≥ beneficio neto y FCF positivo en 1 de 5 ejercicios.",
+        "note_short": "Exige persistencia (98 → 91)",
         "question": "¿es buena la empresa?",
-        "score": 85,
+        "score": 91,
         "title": "CALIDAD DEL NEGOCIO",
         "tone": "pos"
       },
       "verdict": {
-        "confidence_text": "(confianza baja: el DCF directo y los múltiplos discrepan)",
-        "confidence_tone": "neg",
-        "full": "Calidad excelente · precio razonable (confianza baja: el DCF directo y los múltiplos discrepan)",
+        "confidence_text": "(confianza media: el DCF directo la ve en precio y los múltiplos cara)",
+        "confidence_tone": "warn",
+        "full": "Calidad excelente · precio razonable (confianza media: el DCF directo la ve en precio y los múltiplos cara)",
         "text": "Calidad excelente · precio razonable"
       }
     },
@@ -3096,9 +3103,9 @@
         "tone": "neu"
       },
       "dcf_upside": {
-        "label": "Infravalorada",
-        "text": "el precio cotiza por debajo del valor intrínseco estimado (potencial teórico de +10%)",
-        "tone": "pos"
+        "label": "Infravalorada (sensible al WACC)",
+        "text": "caso base +10%; con un WACC del 9.4% el valor ($65.19) queda al otro lado del precio: no puntúa.",
+        "tone": "neu"
       },
       "de": {
         "label": "Conservador",
@@ -3208,19 +3215,19 @@
                 "reason": "Cotiza con descuento — P/E normalizado 26.5x"
               },
               {
-                "category": "Valor intrínseco",
-                "detail": "El DCF sitúa el valor intrínseco en $77 (+10% sobre el precio): potencial teórico moderado, condicionado a que el negocio ejecute según lo previsto.",
-                "reason": "Cotiza bajo su valor justo +10%"
-              },
-              {
                 "category": "Rentabilidad",
                 "detail": "De cada dólar vendido quedan 24 centavos de beneficio tras todos los costos, frente a 0.5% de su industria sin ella: poder de fijación de precios y eficiencia.",
                 "reason": "Margen neto normalizado sólido — 23.5%"
               },
               {
                 "category": "Valoración",
-                "detail": "Ajustado por el crecimiento de su BPA, el P/E resulta barato (PEG 0.61 < 1): se paga menos de 1x por cada punto de crecimiento, señal clásica de crecimiento a precio razonable (GARP).",
-                "reason": "PEG atractivo — 0.61"
+                "detail": "Ajustado por el crecimiento de su BPA, el P/E resulta barato (PEG 0.73 < 1): se paga menos de 1x por cada punto de crecimiento, señal clásica de crecimiento a precio razonable (GARP).",
+                "reason": "PEG atractivo — 0.73"
+              },
+              {
+                "category": "Crecimiento",
+                "detail": "El beneficio por acción crece 36.5% anual en tres años (FY2022–FY2025, CAGR): la rentabilidad para el accionista se acelera, a menudo apoyada en apalancamiento operativo o recompras.",
+                "reason": "BPA en fuerte expansión — +36.5% anual (3 años)"
               }
             ],
             "key": "strengths",
@@ -3512,8 +3519,8 @@
                 {
                   "in_block": true,
                   "metric": "Forward P/E",
-                  "reason": "Fuerte compresión P/E normalizado (26x → 19x forward creíble); forward 18.5x (implica +43% de BPA); con el crecimiento que respalda su histórico (+36% anual del BPA a 3 años), 19.4x.",
-                  "sign": "(+3)",
+                  "reason": "P/E normalizado mejorando (26x → 21x forward creíble); forward 18.5x (implica +43% de BPA); con el crecimiento que respalda su histórico (+28% del BPA en el último ejercicio), 20.8x.",
+                  "sign": "(+2)",
                   "state": "con_dato",
                   "tone": "neu",
                   "value": "18.47x"
@@ -3539,16 +3546,16 @@
                 {
                   "in_block": true,
                   "metric": "PEG",
-                  "reason": "Muy atractivo (0.61)",
+                  "reason": "Muy atractivo (0.73)",
                   "sign": "(+4)",
                   "state": "con_dato",
                   "tone": "neu",
-                  "value": "0.61"
+                  "value": "0.73"
                 },
                 {
                   "in_block": false,
                   "metric": "Bloque de múltiplos",
-                  "reason": "media de 3 lecturas en una escala de −1 a +1 (BPA (P/E, Forward P/E, PEG): P/E +0.60, Forward P/E +1.00, PEG +1.00 → +0.87; P/FCF -0.50; EV/EBITDA -1.00): -0.21, que suma -1.3 puntos de un máximo de ±6.",
+                  "reason": "media de 3 lecturas en una escala de −1 a +1 (BPA (P/E, Forward P/E, PEG): P/E +0.60, Forward P/E +0.67, PEG +1.00 → +0.76; P/FCF -0.50; EV/EBITDA -1.00): -0.25, que suma -1.5 puntos de un máximo de ±6.",
                   "sign": "-1",
                   "state": "con_dato",
                   "tone": "warn",
@@ -3557,19 +3564,19 @@
                 {
                   "in_block": false,
                   "metric": "DCF directo (valor frente al precio)",
-                  "reason": "Barata por DCF (fiabilidad media): margen FCF inestable: de -0.4% a 20.9% en 5 ejercicios (variación 0.69 > 0.33)",
-                  "sign": "+1",
+                  "reason": "En precio, sensible al WACC: con WACC 9.4% vale 65.19 (frente a +10% con el caso base, fiabilidad media): margen FCF inestable: de -0.4% a 20.9% en 5 ejercicios (variación 0.69 > 0.33)",
+                  "sign": "0",
                   "state": "con_dato",
-                  "tone": "pos",
+                  "tone": "neu",
                   "value": "+10%"
                 }
               ],
               "key": "Valoración",
               "max": 20,
               "name": "Valoración",
-              "pct": 50.0,
-              "score": 10,
-              "score_txt": "10 / 20",
+              "pct": 45.0,
+              "score": 9,
+              "score_txt": "9 / 20",
               "text": null,
               "tone": "warn"
             },
@@ -4060,12 +4067,12 @@
         ],
         "dcf_missing": null,
         "dcf_params": "Parámetros del modelo — WACC 8.43% · crecimiento 12.64% (CAGR de ingresos a 3 años) · terminal 2.50% · el valor terminal aporta el 62% del valor total.",
-        "dcf_reliability": "Fiabilidad del DCF: media (margen FCF inestable: de -0.4% a 20.9% en 5 ejercicios (variación 0.69 > 0.33)). Aporta +1 puntos a Valoración (máximo ±2 con fiabilidad media).",
+        "dcf_reliability": "Fiabilidad del DCF: media (margen FCF inestable: de -0.4% a 20.9% en 5 ejercicios (variación 0.69 > 0.33)). Aporta +0 puntos a Valoración (máximo ±2 con fiabilidad media).",
         "dcf_reliability_level": "media",
         "dcf_reliability_tone": "warn",
         "intrinsic": {
           "graham_note": "Número de Graham: referencia del inversor defensivo (P/E 15 × P/B 1.5). Se muestra como referencia y no vota en la convergencia entre métodos.",
-          "intro": "El precio cotiza por debajo del valor intrínseco estimado (potencial teórico de +10%).",
+          "intro": "Caso base +10%; con un WACC del 9.4% el valor ($65.19) queda al otro lado del precio: no puntúa.",
           "rows": [
             {
               "bench": null,
@@ -4105,10 +4112,10 @@
               "gap": null,
               "key": "dcf_upside",
               "label": "Potencial vs precio (upside)",
-              "reading": "Infravalorada",
+              "reading": "Infravalorada (sensible al WACC)",
               "state": "con_dato",
-              "text": "el precio cotiza por debajo del valor intrínseco estimado (potencial teórico de +10%)",
-              "tone": "pos",
+              "text": "caso base +10%; con un WACC del 9.4% el valor ($65.19) queda al otro lado del precio: no puntúa.",
+              "tone": "neu",
               "value": "+10.1%"
             },
             {
@@ -4203,7 +4210,7 @@
             "state": "con_dato",
             "text": null,
             "tone": null,
-            "value": "0.61x"
+            "value": "0.73x"
           },
           {
             "bench": "13.25x",
@@ -4569,7 +4576,7 @@
         "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: Valoración (base 10/20 + bloque de múltiplos y DCF) reescalada a 100 y contraída hacia 50 según la confianza del veredicto: solo los limitadores que lo contradicen o lo vuelven incierto, no los que apuntan en su dirección.",
         "price": {
           "level": "razonable",
-          "note": null,
+          "note": "ajustado de 45 a 46 por confianza media; en la frontera con «exigente» (a 2 puntos): un cambio pequeño en los datos o en los supuestos cambiaría el nivel.",
           "rows": [
             {
               "kind": "signed",
@@ -4580,11 +4587,11 @@
             {
               "kind": "signed",
               "label": "DCF directo (valor frente al precio) · +10%",
-              "tone": "pos",
-              "value": 1
+              "tone": "neu",
+              "value": 0
             }
           ],
-          "score": 50,
+          "score": 46,
           "signed_max": 6,
           "title": "ATRACTIVO DEL PRECIO",
           "tone": "neu"
@@ -4626,7 +4633,7 @@
               "value": 18
             }
           ],
-          "score": 85,
+          "score": 91,
           "title": "CALIDAD DEL NEGOCIO",
           "tone": "pos"
         }
@@ -4634,7 +4641,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad excelente · precio razonable (confianza baja: el DCF directo y los múltiplos discrepan). Calidad 85/100 · precio 50/100."
+          "text": "Calidad excelente · precio razonable (confianza media: el DCF directo la ve en precio y los múltiplos cara). Calidad 91/100 · precio 46/100 (ajustado de 45 a 46 por confianza media; en la frontera con «exigente» (a 2 puntos): un cambio pequeño en los datos o en los supuestos cambiaría el nivel)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -4654,7 +4661,7 @@
         },
         {
           "label": "ATRACTIVO DEL PRECIO",
-          "text": "El mercado paga 26.5x el beneficio normalizado (sin partidas no recurrentes), un -12% frente a la referencia de su industria sin ella (30.1x); un descuento que amerita revisar si responde a riesgos específicos o a una oportunidad; el P/E reportado (22.1x) no es fiable: el 17% del beneficio es no recurrente. El precio cotiza por debajo del valor intrínseco estimado (potencial teórico de +10%)."
+          "text": "El mercado paga 26.5x el beneficio normalizado (sin partidas no recurrentes), un -12% frente a la referencia de su industria sin ella (30.1x); un descuento que amerita revisar si responde a riesgos específicos o a una oportunidad; el P/E reportado (22.1x) no es fiable: el 17% del beneficio es no recurrente. Caso base +10%; con un WACC del 9.4% el valor ($65.19) queda al otro lado del precio: no puntúa."
         },
         {
           "label": "CONTEXTO DE MERCADO",
@@ -4662,7 +4669,7 @@
         },
         {
           "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Baja: los métodos de valoración se contradicen: uno ve la acción barata y otro cara. No contrae el atractivo del precio; la calidad del negocio, sí, hacia 50 (de 91 a 85)."
+          "text": "Media: los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no. Contrae el atractivo del precio hacia 50 (de 45 a 46); la calidad no se contrae."
         }
       ]
     },
@@ -5948,7 +5955,7 @@
     "base": {
       "ke": 0.0861113618531,
       "level": "razonable",
-      "score": 50
+      "score": 46
     },
     "dependent": false,
     "minus": {
@@ -6014,7 +6021,7 @@
     "pb": 9.70829312787,
     "pe": 22.106918239,
     "pe_normalized": 26.4940146367,
-    "peg": 0.605843777536,
+    "peg": 0.726072885242,
     "pfcf": 26.2486395247,
     "price_52w_high": 124.86000061,
     "price_52w_low": 65.0800018311,
@@ -6278,7 +6285,8 @@
     "eps_cagr_3y": 0.364894698249,
     "note": "PEG a 3 años: P/E ÷ CAGR del BPA por acción a 3 años",
     "own": true,
-    "pe": 22.106918239,
+    "pe": 26.4940146367,
+    "pe_basis": "normalizado",
     "years": null
   },
   "piotroski_f": {
@@ -6395,7 +6403,11 @@
   "price": 70.3,
   "price_attractiveness": {
     "basis": null,
-    "border": null,
+    "border": {
+      "neighbor": "exigente",
+      "points": 2,
+      "text": "En la frontera con «exigente» (a 2 puntos): un cambio pequeño en los datos o en los supuestos cambiaría el nivel"
+    },
     "categories_included": 1,
     "categories_total": 1,
     "components": [
@@ -6403,20 +6415,20 @@
         "category": "Valoración",
         "included": true,
         "max": 20,
-        "score": 10
+        "score": 9
       }
     ],
-    "confidence": "baja",
-    "contracted": false,
+    "confidence": "media",
+    "contracted": true,
     "excluded_categories": [],
-    "factor": 0.5,
+    "factor": 0.75,
     "level": "razonable",
     "level_raw": "razonable",
     "low_coverage_categories": [],
     "not_applicable_categories": [],
     "partial": false,
-    "score": 50,
-    "score_raw": 50
+    "score": 46,
+    "score_raw": 45
   },
   "price_change": {
     "change": -1.26999969482,
@@ -6444,11 +6456,7 @@
   },
   "quality": {
     "basis": null,
-    "border": {
-      "neighbor": "sólida",
-      "points": 1,
-      "text": "En la frontera con «sólida» (a 1 punto): un cambio pequeño en los datos o en los supuestos cambiaría el nivel"
-    },
+    "border": null,
     "categories_included": 4,
     "categories_total": 4,
     "components": [
@@ -6477,9 +6485,9 @@
         "score": 18
       }
     ],
-    "contracted": true,
+    "contracted": false,
     "excluded_categories": [],
-    "factor": 0.85,
+    "factor": null,
     "level": "excelente",
     "level_raw": "excelente",
     "low_confidence": false,
@@ -6542,7 +6550,7 @@
       "weighted": 0.6,
       "window": 5
     },
-    "score": 85,
+    "score": 91,
     "score_raw": 91
   },
   "quality_readings": {
@@ -6965,15 +6973,16 @@
             "value": "26.49x"
           },
           {
-            "adjustment": 3,
-            "credible_forward_pe": 19.4110319797,
+            "adjustment": 2,
+            "credible_forward_pe": 20.765862065,
+            "credited_eps_growth": 0.275844679778,
             "eps_growth_3y": 0.364894698249,
             "implied_eps_growth": 0.434603783731,
             "in_block": true,
             "metric": "Forward P/E",
             "normalized": true,
-            "reason": "Fuerte compresión P/E normalizado (26x → 19x forward creíble); forward 18.5x (implica +43% de BPA); con el crecimiento que respalda su histórico (+36% anual del BPA a 3 años), 19.4x",
-            "severity": "excellent",
+            "reason": "P/E normalizado mejorando (26x → 21x forward creíble); forward 18.5x (implica +43% de BPA); con el crecimiento que respalda su histórico (+28% del BPA en el último ejercicio), 20.8x",
+            "severity": "good",
             "value": "18.47x"
           },
           {
@@ -6996,14 +7005,14 @@
             "adjustment": 4,
             "in_block": true,
             "metric": "PEG",
-            "reason": "Muy atractivo (0.61)",
+            "reason": "Muy atractivo (0.73)",
             "severity": "excellent",
-            "value": "0.61"
+            "value": "0.73"
           },
           {
             "adjustment": -1,
             "block_max": 6,
-            "block_mean": -0.211111111111,
+            "block_mean": -0.248148148148,
             "block_members": [
               "P/E",
               "Forward P/E",
@@ -7012,23 +7021,23 @@
               "PEG"
             ],
             "block_votes": {
-              "BPA (P/E, Forward P/E, PEG)": 0.866666666667,
+              "BPA (P/E, Forward P/E, PEG)": 0.755555555556,
               "EV/EBITDA": -1.0,
               "P/FCF": -0.5
             },
-            "formula": "Bloque de múltiplos: promedio de 3 lecturas reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = -0.21 × 6 (máximo con 3) = -1.3, redondeado a -1",
+            "formula": "Bloque de múltiplos: promedio de 3 lecturas reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = -0.25 × 6 (máximo con 3) = -1.5, redondeado a -1",
             "metric": "Bloque de múltiplos",
-            "reason": "media de 3 lecturas en una escala de −1 a +1 (BPA (P/E, Forward P/E, PEG): P/E +0.60, Forward P/E +1.00, PEG +1.00 → +0.87; P/FCF -0.50; EV/EBITDA -1.00): -0.21, que suma -1.3 puntos de un máximo de ±6",
+            "reason": "media de 3 lecturas en una escala de −1 a +1 (BPA (P/E, Forward P/E, PEG): P/E +0.60, Forward P/E +0.67, PEG +1.00 → +0.76; P/FCF -0.50; EV/EBITDA -1.00): -0.25, que suma -1.5 puntos de un máximo de ±6",
             "severity": "moderate",
             "value": "5 múltiplos"
           },
           {
-            "adjustment": 1,
+            "adjustment": 0,
             "key": "dcf",
             "metric": "DCF directo (valor frente al precio)",
-            "reason": "Barata por DCF (fiabilidad media): margen FCF inestable: de -0.4% a 20.9% en 5 ejercicios (variación 0.69 > 0.33)",
+            "reason": "En precio, sensible al WACC: con WACC 9.4% vale 65.19 (frente a +10% con el caso base, fiabilidad media): margen FCF inestable: de -0.4% a 20.9% en 5 ejercicios (variación 0.69 > 0.33)",
             "reliability": "media",
-            "severity": "good",
+            "severity": "ok",
             "value": "+10%"
           }
         ],
@@ -7037,15 +7046,15 @@
         "coverage": 1.0,
         "details": [
           "Atractivo (26.5x)",
-          "Fuerte compresión P/E normalizado (26x → 19x forward creíble); forward 18.5x (implica +43% de BPA); con el crecimiento que respalda su histórico (+36% anual del BPA a 3 años), 19.4x",
+          "P/E normalizado mejorando (26x → 21x forward creíble); forward 18.5x (implica +43% de BPA); con el crecimiento que respalda su histórico (+28% del BPA en el último ejercicio), 20.8x",
           "Elevado (26.2x)",
           "Muy caro (20.2x frente a 13.2x)",
-          "Muy atractivo (0.61)",
-          "media de 3 lecturas en una escala de −1 a +1 (BPA (P/E, Forward P/E, PEG): P/E +0.60, Forward P/E +1.00, PEG +1.00 → +0.87; P/FCF -0.50; EV/EBITDA -1.00): -0.21, que suma -1.3 puntos de un máximo de ±6",
-          "Barata por DCF (fiabilidad media): margen FCF inestable: de -0.4% a 20.9% en 5 ejercicios (variación 0.69 > 0.33)"
+          "Muy atractivo (0.73)",
+          "media de 3 lecturas en una escala de −1 a +1 (BPA (P/E, Forward P/E, PEG): P/E +0.60, Forward P/E +0.67, PEG +1.00 → +0.76; P/FCF -0.50; EV/EBITDA -1.00): -0.25, que suma -1.5 puntos de un máximo de ±6",
+          "En precio, sensible al WACC: con WACC 9.4% vale 65.19 (frente a +10% con el caso base, fiabilidad media): margen FCF inestable: de -0.4% a 20.9% en 5 ejercicios (variación 0.69 > 0.33)"
         ],
         "max": 20,
-        "score": 10
+        "score": 9
       }
     },
     "excluded_categories": [],
@@ -7207,9 +7216,9 @@
     "source": "efectiva"
   },
   "verdict": {
-    "confidence": "baja",
-    "confidence_text": "(confianza baja: el DCF directo y los múltiplos discrepan)",
-    "full": "Calidad excelente · precio razonable (confianza baja: el DCF directo y los múltiplos discrepan)",
+    "confidence": "media",
+    "confidence_text": "(confianza media: el DCF directo la ve en precio y los múltiplos cara)",
+    "full": "Calidad excelente · precio razonable (confianza media: el DCF directo la ve en precio y los múltiplos cara)",
     "price_level": "razonable",
     "quality_level": "excelente",
     "text": "Calidad excelente · precio razonable"

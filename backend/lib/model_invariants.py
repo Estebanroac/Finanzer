@@ -1053,12 +1053,16 @@ def forward_creible(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
     x = next((x for x in _adjustments(a, "Valoración") if x.get("metric") == "Forward P/E"), None)
     if not x or not x.get("adjustment") or (x.get("adjustment") or 0) <= 0:
         return Result(NOT_APPLICABLE, "el Forward P/E no suma")
-    g = _num(x.get("implied_eps_growth"))
+    # Lo que se acredita (el forward creíble, F9 · R1c y F11 · F3), no el consenso en bruto.
+    g = _num(x.get("credited_eps_growth"))
+    if g is None:
+        g = _num(x.get("implied_eps_growth"))
     if g is None or g <= C["max_implied_growth"]:
         return Result(OK)
     return _result(rule, [_violation(
-        rule, g / C["max_implied_growth"], f"Forward P/E {x.get('value')} suma {x['adjustment']:+d} con un crecimiento "
-        f"implícito del BPA del {_pct(g)} en un año",
+        rule, g / C["max_implied_growth"], f"Forward P/E {x.get('value')} suma {x['adjustment']:+d} acreditando un "
+        f"crecimiento del BPA del {_pct(g)} en un año (implícito en el consenso: "
+        f"{_pct(_num(x.get('implied_eps_growth')))})",
         "el tope de credibilidad usa el CAGR histórico del BPA (o el consenso está en otra base que el P/E comparado)",
         implied_growth=g, credible_pe=_num(x.get("credible_forward_pe")))])
 

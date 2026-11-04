@@ -370,7 +370,7 @@
   "confidence": {
     "base_rate_step": null,
     "capped_from": "alta",
-    "contraction_basis": "baja",
+    "contraction_basis": "media",
     "dimensions": {
       "convergence": {
         "level": "media",
@@ -390,12 +390,12 @@
             "kind": "relativo",
             "method": "múltiplos frente al sector",
             "readings": {
-              "Forward P/E": 0.666666666667,
+              "Forward P/E": 0.333333333333,
               "P/B frente al ROE regulado": -0.5,
               "P/E": 0.0,
               "Rentabilidad por dividendo": 0.0
             },
-            "signal": -0.0555555555556
+            "signal": -0.111111111111
           }
         ],
         "reasons": [
@@ -434,17 +434,11 @@
         "reasons": []
       }
     },
-    "ke_dependent": {
-      "from": "media",
-      "reason": "veredicto dependiente de Ke: el nivel de precio pasa de «razonable» a «exigente» con Ke + 1 pp",
-      "to": "baja"
-    },
-    "level": "baja",
+    "level": "media",
     "limits_score": false,
     "reasons": [
       "convergencia media: uno lo ve en precio y otro con dirección: no coinciden, sin oponerse",
-      "techo en media: la convergencia es media: alta exige convergencia alta",
-      "veredicto dependiente de Ke: el nivel de precio pasa de «razonable» a «exigente» con Ke + 1 pp: confianza media → baja"
+      "techo en media: la convergencia es media: alta exige convergencia alta"
     ],
     "score": 0.8
   },
@@ -1529,7 +1523,7 @@
         },
         {
           "label": "Fórmula del bloque",
-          "text": "Bloque de múltiplos: promedio de 1 lectura reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = +0.33 × 2 (máximo con 1) = +0.7, redondeado a +1."
+          "text": "Bloque de múltiplos: promedio de 1 lectura reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = +0.17 × 2 (máximo con 1) = +0.3, redondeado a +0."
         },
         {
           "label": "Nombres originales de las fuentes",
@@ -2151,9 +2145,9 @@
       "valuation": {
         "block": {
           "label": "Bloque de múltiplos",
-          "reason": "media de 1 lectura en una escala de −1 a +1 (BPA (P/E, Forward P/E): P/E +0.00, Forward P/E +0.67 → +0.33): +0.33, que suma +0.7 puntos de un máximo de ±2.",
-          "sign": "+1",
-          "tone": "pos"
+          "reason": "media de 1 lectura en una escala de −1 a +1 (BPA (P/E, Forward P/E): P/E +0.00, Forward P/E +0.33 → +0.17): +0.17, que suma +0.3 puntos de un máximo de ±2.",
+          "sign": "0",
+          "tone": "neu"
         },
         "dcf_composition": null,
         "fair_value": {
@@ -2259,7 +2253,7 @@
           "key": "convergence",
           "label": "Convergencia entre métodos",
           "level": "Media",
-          "text": "P/B justificado (ROE regulado) -48% (cara) · múltiplos frente al sector -0.06 (en precio). Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
+          "text": "P/B justificado (ROE regulado) -48% (cara) · múltiplos frente al sector -0.11 (en precio). Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
         },
         {
           "key": "coverage",
@@ -2280,7 +2274,7 @@
           "text": "Sin incidencias."
         }
       ],
-      "level": "baja",
+      "level": "media",
       "plain": [
         "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
       ],
@@ -2292,13 +2286,13 @@
         },
         {
           "dimension": "techo",
-          "level": "baja",
+          "level": "media",
           "text": null
         }
       ],
-      "summary": "Confianza del veredicto: baja (por sus dimensiones sería alta; la limitan: la convergencia es media —alta exige convergencia alta—, hasta media; el veredicto depende de Ke —el nivel de precio pasa de «razonable» a «exigente» con Ke + 1 pp—). Contrae el atractivo del precio hacia 50: de 45 a 48. Contrae también la calidad del negocio hacia 50: de 66 a 64.",
-      "tone": "neg",
-      "verdict_text": "(confianza baja: el nivel de precio cambia con ±1 pp de coste del capital)"
+      "summary": "Confianza del veredicto: media (por sus dimensiones sería alta; la limita: la convergencia es media —alta exige convergencia alta—). Contrae el atractivo del precio hacia 50: de 40 a 42. La calidad del negocio no se contrae.",
+      "tone": "warn",
+      "verdict_text": "(confianza media: P/B justificado (ROE regulado) la ve cara y los múltiplos en precio)"
     },
     "cover": {
       "archetype": "UTILITY",
@@ -2371,9 +2365,9 @@
               "key": "Valoración",
               "max": 20,
               "name": "Valoración",
-              "pct": 45.0,
-              "score": 9,
-              "score_txt": "9 / 20",
+              "pct": 40.0,
+              "score": 8,
+              "score_txt": "8 / 20",
               "text": null,
               "tone": "warn"
             }
@@ -2463,29 +2457,29 @@
       "official_source_badge": null,
       "price": {
         "contracted": true,
-        "level": "razonable",
-        "note": "ajustado de 45 a 48 por confianza baja.",
-        "note_short": "Ajustado de 45 a 48 por confianza baja",
+        "level": "exigente",
+        "note": "ajustado de 40 a 42 por confianza media.",
+        "note_short": "Ajustado de 40 a 42 por confianza media",
         "question": "¿está cara hoy?",
-        "raw": 45,
-        "score": 48,
+        "raw": 40,
+        "score": 42,
         "title": "ATRACTIVO DEL PRECIO",
-        "tone": "neu"
-      },
-      "quality": {
-        "level": "media",
-        "note": "En la frontera con «sólida» (a 1 punto): un cambio pequeño en los datos o en los supuestos cambiaría el nivel.",
-        "note_short": "En la frontera con «sólida» (a 1 punto)",
-        "question": "¿es buena la empresa?",
-        "score": 64,
-        "title": "CALIDAD DEL NEGOCIO",
         "tone": "warn"
       },
+      "quality": {
+        "level": "sólida",
+        "note": "En la frontera con «media» (a 2 puntos): un cambio pequeño en los datos o en los supuestos cambiaría el nivel.",
+        "note_short": "En la frontera con «media» (a 2 puntos)",
+        "question": "¿es buena la empresa?",
+        "score": 66,
+        "title": "CALIDAD DEL NEGOCIO",
+        "tone": "pos"
+      },
       "verdict": {
-        "confidence_text": "(confianza baja: el nivel de precio cambia con ±1 pp de coste del capital)",
-        "confidence_tone": "neg",
-        "full": "Calidad media · precio razonable (confianza baja: el nivel de precio cambia con ±1 pp de coste del capital)",
-        "text": "Calidad media · precio razonable"
+        "confidence_text": "(confianza media: P/B justificado (ROE regulado) la ve cara y los múltiplos en precio)",
+        "confidence_tone": "warn",
+        "full": "Calidad sólida · precio exigente (confianza media: P/B justificado (ROE regulado) la ve cara y los múltiplos en precio)",
+        "text": "Calidad sólida · precio exigente"
       }
     },
     "extended": {
@@ -3210,8 +3204,8 @@
                 {
                   "in_block": true,
                   "metric": "Forward P/E",
-                  "reason": "P/E normalizado mejorando (19x → 17x forward)",
-                  "sign": "(+2)",
+                  "reason": "P/E normalizado estable a mejor (19x → 18x forward creíble); forward 16.5x (implica +17% de BPA); con el crecimiento que respalda su histórico (+11% del BPA en el último ejercicio), 17.6x.",
+                  "sign": "(+1)",
                   "state": "con_dato",
                   "tone": "neu",
                   "value": "16.51x"
@@ -3219,10 +3213,10 @@
                 {
                   "in_block": false,
                   "metric": "Bloque de múltiplos",
-                  "reason": "media de 1 lectura en una escala de −1 a +1 (BPA (P/E, Forward P/E): P/E +0.00, Forward P/E +0.67 → +0.33): +0.33, que suma +0.7 puntos de un máximo de ±2.",
-                  "sign": "+1",
+                  "reason": "media de 1 lectura en una escala de −1 a +1 (BPA (P/E, Forward P/E): P/E +0.00, Forward P/E +0.33 → +0.17): +0.17, que suma +0.3 puntos de un máximo de ±2.",
+                  "sign": "0",
                   "state": "con_dato",
-                  "tone": "pos",
+                  "tone": "neu",
                   "value": "2 múltiplos"
                 },
                 {
@@ -3247,9 +3241,9 @@
               "key": "Valoración",
               "max": 20,
               "name": "Valoración",
-              "pct": 45.0,
-              "score": 9,
-              "score_txt": "9 / 20",
+              "pct": 40.0,
+              "score": 8,
+              "score_txt": "8 / 20",
               "text": null,
               "tone": "warn"
             },
@@ -3826,7 +3820,8 @@
         "normalization_note": "Beneficio TTM (4 trimestres): reportado $5.19B, normalizado $4.80B (no recurrentes 7.4% del beneficio; partidas no recurrentes (total de Yahoo) (explicita, confianza alta), recurrente (3 de los últimos 4 ejercicios): solo el exceso sobre su promedio, $384.61M netos). El score usa el beneficio normalizado.",
         "premortem": {
           "items": [
-            "el ROE sostenido bajara del 11.5% que descuenta el precio (obtiene un 7.2%)"
+            "la entidad sostuviera un ROE de al menos el 11.5% que descuenta el precio (obtiene un 7.2%)",
+            "el margen operativo volviera a su mediana de 10 ejercicios (22.8% frente al 27.8% de hoy)"
           ],
           "note": "Condiciones que invalidarían la lectura de hoy, con la cifra que las mide: no son previsiones.",
           "title": "Esta lectura sería errónea si…"
@@ -4096,8 +4091,8 @@
       "composition": {
         "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: Valoración (base 10/20 + bloque de múltiplos y DCF) reescalada a 100 y contraída hacia 50 según la confianza del veredicto: solo los limitadores que lo contradicen o lo vuelven incierto, no los que apuntan en su dirección.",
         "price": {
-          "level": "razonable",
-          "note": "ajustado de 45 a 48 por confianza baja.",
+          "level": "exigente",
+          "note": "ajustado de 40 a 42 por confianza media.",
           "rows": [
             {
               "kind": "signed",
@@ -4108,8 +4103,8 @@
             {
               "kind": "signed",
               "label": "Bloque de múltiplos · 2 múltiplos",
-              "tone": "pos",
-              "value": 1
+              "tone": "neu",
+              "value": 0
             },
             {
               "kind": "signed",
@@ -4118,13 +4113,13 @@
               "value": -2
             }
           ],
-          "score": 48,
+          "score": 42,
           "signed_max": 6,
           "title": "ATRACTIVO DEL PRECIO",
-          "tone": "neu"
+          "tone": "warn"
         },
         "quality": {
-          "level": "media",
+          "level": "sólida",
           "note": null,
           "rows": [
             {
@@ -4160,15 +4155,15 @@
               "value": 14
             }
           ],
-          "score": 64,
+          "score": 66,
           "title": "CALIDAD DEL NEGOCIO",
-          "tone": "warn"
+          "tone": "pos"
         }
       },
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad media · precio razonable (confianza baja: el nivel de precio cambia con ±1 pp de coste del capital). Calidad 64/100 · precio 48/100 (ajustado de 45 a 48 por confianza baja)."
+          "text": "Calidad sólida · precio exigente (confianza media: P/B justificado (ROE regulado) la ve cara y los múltiplos en precio). Calidad 66/100 · precio 42/100 (ajustado de 40 a 42 por confianza media)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -4196,7 +4191,7 @@
         },
         {
           "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Baja: los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no. Contrae hacia 50 el atractivo del precio (de 45 a 48) y la calidad del negocio (de 66 a 64)."
+          "text": "Media: los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no. Contrae el atractivo del precio hacia 50 (de 40 a 42); la calidad no se contrae."
         }
       ]
     },
@@ -5326,22 +5321,22 @@
   "ke_sensitivity": {
     "base": {
       "ke": 0.0770310648163,
-      "level": "razonable",
-      "score": 46
+      "level": "exigente",
+      "score": 42
     },
-    "dependent": true,
+    "dependent": false,
     "minus": {
       "ke": 0.0670310648163,
-      "level": "razonable",
-      "score": 46
+      "level": "exigente",
+      "score": 42
     },
     "plus": {
       "ke": 0.0870310648163,
       "level": "exigente",
-      "score": 39
+      "score": 35
     },
     "pp": 0.01,
-    "reason": "veredicto dependiente de Ke: el nivel de precio pasa de «razonable» a «exigente» con Ke + 1 pp",
+    "reason": null,
     "status": "ok"
   },
   "key_metrics": {
@@ -5834,8 +5829,14 @@
       {
         "field": "archetype_metrics.implied.implied",
         "kind": "precio_implicito",
-        "text": "el ROE sostenido bajara del 11.5% que descuenta el precio (obtiene un 7.2%)",
+        "text": "la entidad sostuviera un ROE de al menos el 11.5% que descuenta el precio (obtiene un 7.2%)",
         "value": 0.115253327968
+      },
+      {
+        "field": "key_metrics.operating_margin",
+        "kind": "margen",
+        "text": "el margen operativo volviera a su mediana de 10 ejercicios (22.8% frente al 27.8% de hoy)",
+        "value": 0.277503759398
       }
     ],
     "title": "Esta lectura sería errónea si…"
@@ -5851,20 +5852,20 @@
         "category": "Valoración",
         "included": true,
         "max": 20,
-        "score": 9
+        "score": 8
       }
     ],
-    "confidence": "baja",
+    "confidence": "media",
     "contracted": true,
     "excluded_categories": [],
-    "factor": 0.5,
-    "level": "razonable",
-    "level_raw": "razonable",
+    "factor": 0.75,
+    "level": "exigente",
+    "level_raw": "exigente",
     "low_coverage_categories": [],
     "not_applicable_categories": [],
     "partial": false,
-    "score": 48,
-    "score_raw": 45
+    "score": 42,
+    "score_raw": 40
   },
   "price_change": {
     "change": 1.44999694824,
@@ -5893,9 +5894,9 @@
   "quality": {
     "basis": null,
     "border": {
-      "neighbor": "sólida",
-      "points": 1,
-      "text": "En la frontera con «sólida» (a 1 punto): un cambio pequeño en los datos o en los supuestos cambiaría el nivel"
+      "neighbor": "media",
+      "points": 2,
+      "text": "En la frontera con «media» (a 2 puntos): un cambio pequeño en los datos o en los supuestos cambiaría el nivel"
     },
     "categories_included": 4,
     "categories_total": 4,
@@ -5925,10 +5926,10 @@
         "score": 14
       }
     ],
-    "contracted": true,
+    "contracted": false,
     "excluded_categories": [],
-    "factor": 0.85,
-    "level": "media",
+    "factor": null,
+    "level": "sólida",
     "level_raw": "sólida",
     "low_confidence": false,
     "low_confidence_reasons": [],
@@ -5985,7 +5986,7 @@
       "source": "edgar",
       "window": 5
     },
-    "score": 64,
+    "score": 66,
     "score_raw": 66
   },
   "quality_readings": {
@@ -6310,30 +6311,32 @@
             "value": "19.40x"
           },
           {
-            "adjustment": 2,
+            "adjustment": 1,
+            "credible_forward_pe": 17.5571458623,
+            "credited_eps_growth": 0.105078809107,
             "eps_growth_3y": 0.237452037978,
             "implied_eps_growth": 0.174982624847,
             "in_block": true,
             "metric": "Forward P/E",
             "normalized": true,
-            "reason": "P/E normalizado mejorando (19x → 17x forward)",
+            "reason": "P/E normalizado estable a mejor (19x → 18x forward creíble); forward 16.5x (implica +17% de BPA); con el crecimiento que respalda su histórico (+11% del BPA en el último ejercicio), 17.6x",
             "severity": "good",
             "value": "16.51x"
           },
           {
-            "adjustment": 1,
+            "adjustment": 0,
             "block_max": 2,
-            "block_mean": 0.333333333333,
+            "block_mean": 0.166666666667,
             "block_members": [
               "P/E",
               "Forward P/E"
             ],
             "block_votes": {
-              "BPA (P/E, Forward P/E)": 0.333333333333
+              "BPA (P/E, Forward P/E)": 0.166666666667
             },
-            "formula": "Bloque de múltiplos: promedio de 1 lectura reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = +0.33 × 2 (máximo con 1) = +0.7, redondeado a +1",
+            "formula": "Bloque de múltiplos: promedio de 1 lectura reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = +0.17 × 2 (máximo con 1) = +0.3, redondeado a +0",
             "metric": "Bloque de múltiplos",
-            "reason": "media de 1 lectura en una escala de −1 a +1 (BPA (P/E, Forward P/E): P/E +0.00, Forward P/E +0.67 → +0.33): +0.33, que suma +0.7 puntos de un máximo de ±2",
+            "reason": "media de 1 lectura en una escala de −1 a +1 (BPA (P/E, Forward P/E): P/E +0.00, Forward P/E +0.33 → +0.17): +0.17, que suma +0.3 puntos de un máximo de ±2",
             "severity": "good",
             "value": "2 múltiplos"
           },
@@ -6358,13 +6361,13 @@
         "details": [
           "En línea para una utility (3.6%; bandas ≥5% / ≥4% / ≥3% / ≥2%)",
           "En línea (19.4x frente a 21.3x)",
-          "P/E normalizado mejorando (19x → 17x forward)",
-          "media de 1 lectura en una escala de −1 a +1 (BPA (P/E, Forward P/E): P/E +0.00, Forward P/E +0.67 → +0.33): +0.33, que suma +0.7 puntos de un máximo de ±2",
+          "P/E normalizado estable a mejor (19x → 18x forward creíble); forward 16.5x (implica +17% de BPA); con el crecimiento que respalda su histórico (+11% del BPA en el último ejercicio), 17.6x",
+          "media de 1 lectura en una escala de −1 a +1 (BPA (P/E, Forward P/E): P/E +0.00, Forward P/E +0.33 → +0.17): +0.17, que suma +0.3 puntos de un máximo de ±2",
           "El precio descuenta un ROE sostenido del 11.5%; la utility obtuvo un 7.2% de media en 4 ejercicios.",
           "EV/EBITDA: No aplica a utilities reguladas: se valora por P/E frente al sector y rentabilidad por dividendo; P/FCF: No aplica a utilities reguladas: su FCF es negativo por diseño: la inversión en la base de activos regulada supera al flujo operativo y se financia con deuda; PEG: No aplica a utilities reguladas: su crecimiento lo fija la base regulada, no el mercado: se valora por P/E y dividendo (no cuenta en la cobertura)"
         ],
         "max": 20,
-        "score": 9
+        "score": 8
       }
     },
     "excluded_categories": [],
@@ -6461,12 +6464,12 @@
     "source": "efectiva"
   },
   "verdict": {
-    "confidence": "baja",
-    "confidence_text": "(confianza baja: el nivel de precio cambia con ±1 pp de coste del capital)",
-    "full": "Calidad media · precio razonable (confianza baja: el nivel de precio cambia con ±1 pp de coste del capital)",
-    "price_level": "razonable",
-    "quality_level": "media",
-    "text": "Calidad media · precio razonable"
+    "confidence": "media",
+    "confidence_text": "(confianza media: P/B justificado (ROE regulado) la ve cara y los múltiplos en precio)",
+    "full": "Calidad sólida · precio exigente (confianza media: P/B justificado (ROE regulado) la ve cara y los múltiplos en precio)",
+    "price_level": "exigente",
+    "quality_level": "sólida",
+    "text": "Calidad sólida · precio exigente"
   },
   "wacc": {
     "applicable": true,

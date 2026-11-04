@@ -842,6 +842,10 @@ def identities(a):
 _ORIGINAL_NAMES = re.compile(r"(?<![\w&/-])(?:" + "|".join(map(re.escape, names.originals())) + r")(?![\w&/-])")
 
 
+_RUNNING_HEADER = re.compile(r"\n*===== página \d+ =====\n(?:[^\n]*\n){0,6}?[^\n]*Página \d+ de \d+[^\n]*\n"
+                             r"(?:↑ índice\n)?")
+
+
 def _proper_noun(s, i, j):
     """El nombre forma parte de un nombre propio («NextEra Energy», «Taiwan Semiconductor», «Energy Transfer»): la
     palabra pegada antes o después empieza por mayúscula."""
@@ -941,6 +945,9 @@ def check(a, pdf_text, records, glossary=()):
     prose_pdf = pdf_text[:min(meth)] if meth else pdf_text
     _ac = prose_pdf.lower().find(ANNEX_TITLE)
     prose_pdf = prose_pdf[:_ac] if _ac >= 0 else prose_pdf
+    # F11: la cabecera y el pie de cada página no son prosa. Un salto de página dentro de «Duke Energy» dejaba
+    # «… ↑ índice Energy» y se leía como una industria sin traducir.
+    prose_pdf = _RUNNING_HEADER.sub("\n", prose_pdf)
     for where, s in [(p, s) for p, s in prose.walk(a.get("display") or {})
                      if not p.startswith((".annex", ".methodology")) and prose.kind(p, s) != "externo"] + \
             [("PDF", _without_external(prose_pdf.replace("\n", " "), external))]:

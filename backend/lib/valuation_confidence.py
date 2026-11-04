@@ -172,6 +172,23 @@ def dcf_reliability(*, dcf: Optional[Dict[str, Any]], sensitivity: Optional[Dict
 
 
 # ═══════════════════════════ confianza del veredicto ═══════════════════════════
+def dcf_wacc_flips(sensitivity: Optional[Dict[str, Any]]) -> List[Dict[str, float]]:
+    """F11 · F1 (revisión de NFLX): con el crecimiento base, los WACC vecinos (± un escalón de la rejilla del propio DCF)
+    en los que el valor queda al otro lado del precio que el del caso base. Vacía si la dirección no depende del WACC.
+    NFLX: base 78,29 frente a 66,44; con WACC 9,43 % vale 65,86 (debajo del precio)."""
+    s = sensitivity or {}
+    M, gi, di = s.get("matrix"), s.get("base_growth_idx"), s.get("base_discount_idx")
+    price = (s.get("statistics") or {}).get("current_price")
+    if not M or gi is None or di is None or not price:
+        return []
+    row, rates = M[gi], s.get("discount_rates") or []
+    base = row[di] if di < len(row) else None
+    if base is None:
+        return []
+    return [{"wacc": rates[j] if j < len(rates) else None, "value": row[j]} for j in (di - 1, di + 1)
+            if 0 <= j < len(row) and row[j] is not None and (row[j] - price) * (base - price) < 0]
+
+
 def signal_from_upside(u: Optional[float]) -> Optional[float]:
     """Upside (fracción) -> señal en [−1, 1]."""
     if u is None:

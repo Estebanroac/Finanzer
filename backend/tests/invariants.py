@@ -374,7 +374,9 @@ def chart_fair_value_in_badge_zone(a, text):
         assert fv["state"] == "sin_dato" or fv.get("text"), fv
         return 0
     z = _zone_of(fv["zones"], fv["price"])
-    assert fv["badge"]["label"].replace(" (fiabilidad baja)", "") == z["label"], (fv["price"], z, fv["badge"])
+    # F11 · F1: «(sensible al WACC)», como «(fiabilidad baja)»: la banda del caso base, sin puntos.
+    assert fv["badge"]["label"].replace(" (fiabilidad baja)", "").replace(" (sensible al WACC)", "") == z["label"], (
+        fv["price"], z, fv["badge"])
     lo, hi = fv["axis"]
     assert lo < fv["price"] < hi and lo < fv["fair_value"] < hi
     return 1

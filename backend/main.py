@@ -42,7 +42,8 @@ from ttm import TTM_QUARTERS
 from verdict import price as verdict_price, verdict as build_verdict
 from cost_of_capital import (adjusted_beta, capm_rates, cost_of_debt, effective_tax_rate, equity_cost,
                              wacc as compute_wacc)
-from valuation_confidence import (convergence, coverage_dimension, dcf_reliability, signal_from_upside, official_dimension,
+from valuation_confidence import (convergence, coverage_dimension, dcf_reliability, dcf_wacc_flips, signal_from_upside,
+                                  official_dimension,
                                   source_dimension, stability_dimension, verdict_confidence)
 import archetype_metrics
 import sec_edgar as edgar
@@ -1151,6 +1152,10 @@ def _compute_analysis_body(symbol: str) -> dict:
             fin_dict["eps_cagr_3y"] = _eps_r["value"]
             fin_dict["eps_growth_reason"] = _eps_r["reason"]
             fin_dict["eps_cagr_3y_method"] = {k: _eps_r.get(k) for k in _GM}
+            # F11 · F3: el crecimiento del BPA del último ejercicio, para el tope de credibilidad del forward.
+            _e0, _e1 = (list(_eps_series) + [None, None])[:2]
+            fin_dict["eps_growth_last_fy"] = ((_e0 / _e1 - 1) if (_e0 is not None and _e1 is not None and _e0 > 0
+                                                                 and _e1 > 0) else None)
             # F10: con la serie larga de EDGAR, la cifra dice de qué ejercicios sale (no son los 3 años de la ventana)
             if _rev_r.get("method") == "log_lineal_edgar":
                 fin_dict["revenue_growth_note"] = _rev_r["note"]
@@ -1904,6 +1909,14 @@ def _compute_analysis_body(symbol: str) -> dict:
                     if _scale and _norm["differs"]:      # F10 · B2: ídem para el P/E sin etiqueta
                         ratios_score["pe"] = _norm["pe_normalized"]
                         ratios_score["earnings_yield"] = (1 / _norm["pe_normalized"]) if _norm["pe_normalized"] else None
+                        # F11 · F3: el PEG con el mismo P/E que puntúa (el normalizado), no con el reportado.
+                        _pb = result.get("peg_basis") or {}
+                        if ratios.get("peg") is not None and _pb.get("own") and _pb.get("eps_cagr_3y") and \
+                                _norm["pe_normalized"]:
+                            ratios["peg"] = ratios_score["peg"] = _norm["pe_normalized"] / (
+                                _pb["eps_cagr_3y"] * cfg("valuation.peg.growth_pct_scale"))
+                            result["key_metrics"]["peg"] = safe_float(ratios["peg"])
+                            result["peg_basis"] = dict(_pb, pe=_norm["pe_normalized"], pe_basis="normalizado")
                     # F10 · B2 (IDXX: ROE 70.6% en la puntuación frente a 70.67% en la página): por debajo de
                     # `label_min_diff` el normalizado no se distingue del reportado y la página no lo etiqueta: la
                     # puntuación usa el reportado, una sola cifra.
@@ -2202,7 +2215,10 @@ def _compute_analysis_body(symbol: str) -> dict:
                     elif _rel:
                         dcf_for_score = {"upside": _dcf_upside / 100.0 if _dcf_upside is not None else None,
                                          "reliability": _rel["level"], "reasons": _rel["reasons"],
-                                         "grid_contains_price": _rel["grid_contains_price"]}
+                                         "grid_contains_price": _rel["grid_contains_price"],
+                                         # F11 · F1: la dirección no puede depender de ±1 escalón de WACC
+                                         "wacc_flips": dcf_wacc_flips(result.get("sensitivity"))}
+                        result["dcf"]["wacc_flips"] = dcf_for_score["wacc_flips"]
                     else:
                         _dcf_missing = result["dcf"]["reason"] or "DCF sin valor"
                 if _dcf_na:
@@ -2486,8 +2502,11 @@ def _compute_analysis_body(symbol: str) -> dict:
                                          "upside": _spb / _pb - 1, "benchmark": _spb})
                 else:
                     if _d.get("upside") is not None:
-                        _methods.append({"method": "DCF", "kind": "intrínseco", "upside": _d["upside"] / 100.0,
-                                         "reliability": (_d.get("reliability") or {}).get("level")})
+                        # F11 · F1: si ±1 escalón de WACC cruza el precio, el DCF lo ve «en precio» (sin dirección).
+                        _methods.append({"method": "DCF", "kind": "intrínseco",
+                                         "upside": 0.0 if _d.get("wacc_flips") else _d["upside"] / 100.0,
+                                         "reliability": (_d.get("reliability") or {}).get("level"),
+                                         **({"wacc_sensitive": True} if _d.get("wacc_flips") else {})})
                     # Fase 3 (T3, §2.3): el DCF inverso es el método intrínseco cuando el directo no es evaluable
                     # (fiabilidad baja, no significativo o REIT sin DCF): la convergencia vuelve a tener dos métodos.
                     _rvm = ((result.get("reverse_dcf") or {}).get("main") or {})

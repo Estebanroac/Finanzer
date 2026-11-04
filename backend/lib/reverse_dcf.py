@@ -182,7 +182,9 @@ def read_against_base_rates(g10: Optional[float], base_share: Optional[float], o
        años, muy exigente; si menos de `demanding_base_rate`, exigente. "Exige más de +60%" (fuera de rango
        superior) es muy exigente; "menos de −20%", barata.
     2. Historia propia (segunda referencia, ingresos por acción a 5–10 años): solo cuando las tasas base no lo
-       consideran excepcional; ±`band_pp` frente a lo logrado: barata / en precio / exigente.
+       consideran excepcional; ±`band_pp` frente a lo logrado: barata / en precio / exigente. «Barata» exige además
+       que al menos `cheap_with_history_base_rate` de los comparables lo sostuviera (F11 · F2); si no, en
+       precio.
     3. Sin historia propia: barata si al menos `cheap_base_rate` de los comparables lo sostuvo; si no, en precio."""
     T = cfg("valuation.reverse_dcf")
     out = {"band": None, "rule": None, "gap": None, "base_share": base_share, "own_growth": own_growth,
@@ -201,6 +203,10 @@ def read_against_base_rates(g10: Optional[float], base_share: Optional[float], o
         return dict(out, band=DEMANDING, rule="tasa_base")
     if own_growth is not None:
         band = (CHEAP if out["gap"] < -T["band_pp"] else DEMANDING if out["gap"] > T["band_pp"] else IN_PRICE)
+        if band == CHEAP and base_share is not None and base_share < T["cheap_with_history_base_rate"]:
+            # F11 · F2 (revisión de NFLX): «barata» exige además que la mayoría de los comparables
+            # (`cheap_with_history_base_rate`) lo sostuviera. Con el 28 % (NFLX), la historia propia no basta: en precio.
+            return dict(out, band=IN_PRICE, rule="historia_propia_tasa_base")
         return dict(out, band=band, rule="historia_propia")
     if base_share is None:
         return dict(out, band=NO_CONTRAST, rule="sin_referencias")

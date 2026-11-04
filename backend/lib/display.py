@@ -1638,6 +1638,15 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     _rel = dcf.get("reliability") or {}
     _in_grid = _rel.get("grid_contains_price")
     r_up = read_upside(dcf.get("upside"), _in_grid, fv=dcf.get("fair_value"), price=a.get("price"))
+    _flips = dcf.get("wacc_flips") or []
+    if r_up and _flips and _rel.get("level") != "baja" and r_up[0] != "Precio justo":
+        # F11 · F1: la dirección depende de ±1 escalón de WACC: la banda del caso base, marcada y neutra, como la de
+        # fiabilidad baja; no puntúa (financial_ratios, «en precio, sensible al WACC»).
+        _f = next((f for f in _flips if f.get("wacc") is not None), None)
+        r_up = (r_up[0] + " (sensible al WACC)", 'neu',
+                f"caso base {'+' if dcf['upside'] > 0 else ''}{dcf['upside']:.0f}%"
+                + (f"; con un WACC del {_f['wacc'] * 100:.1f}% el valor ({_price(_f['value'])}) queda al otro lado "
+                   "del precio: no puntúa" if _f else ": no puntúa"))
     if r_up and _rel.get("level") == "baja":
         r_up = (r_up[0] + " (fiabilidad baja)", 'neu', r_up[2] + ". " + DCF_LOW)
     _conf = a.get("confidence") or {}

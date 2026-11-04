@@ -274,6 +274,9 @@ def _dcf(ctx: Ctx):
                     + (_rs[0] if _rs else "su fiabilidad es baja")
                     + (f" (y {len(_rs) - 1} motivo{'s' if len(_rs) > 2 else ''} más)" if len(_rs) > 1 else "")
                     + ". No se usa en el score.", T["w_premium"])
+    if ctx.dcf.get("wacc_flips"):
+        # F11 · F1: con ±1 escalón de WACC el valor queda al otro lado del precio: ni fortaleza ni advertencia de valor.
+        return None
     if up >= T["upside_strong"]:
         return _sig("strength", "Valor intrínseco", f"Infravalorada según DCF {signed_pct(up)}",
                     f"El descuento de flujos estima un valor justo de {_estimate(fv)}, un {up:.0f}% por encima del precio "
