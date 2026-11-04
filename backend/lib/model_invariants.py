@@ -798,6 +798,10 @@ def caida_avisada(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
         return Result(OK)
     if any("caída pronunciada" in str(x.get("reason") or "").lower() for _, x in _alerts(a)):
         return Result(OK)
+    if len((a.get("alerts") or {}).get("warnings") or []) >= cfg("thresholds.alerts.max_per_group"):
+        # La alerta se evalúa, pero el grupo está lleno de advertencias de más peso (tope por grupo): no es un cable suelto.
+        return Result(OK, f"grupo de advertencias lleno ({cfg('thresholds.alerts.max_per_group')}): la caída "
+                          f"({_pct(dd)}) queda por debajo en peso")
     return _result(rule, [_violation(
         rule, dd / thr, f"cae {_pct(dd)} desde máximos en 1 año (umbral de la alerta {_pct(thr)}) sin alerta",
         "la alerta de caída lee `max_drawdown_1y`, que nadie rellena: la caída del contexto de mercado no llega",
@@ -897,7 +901,8 @@ def cota_aplicada(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
                 rule, 1 + (raw - bv) / max(abs(bv), 0.05), f"«{x.get('metric')}» puntúa {_pct(raw)} "
                 f"({x.get('adjustment'):+d}) con su cota superior en {_pct(bv)}",
                 "la cota se declara y no se aplica (historical_metrics)", growth=raw, bound=bv, series=key))
-        w = re.match(r"FY(\d{4})\D+FY(\d{4})", str(m.get("window") or ""))
+        # Acotada por la tasa de punta a punta, la cifra que puntúa es la de la ventana de 3 años.
+        w = None if m.get("capped") else re.match(r"FY(\d{4})\D+FY(\d{4})", str(m.get("window") or ""))
         n = re.search(r"a (\d+) años", str(x.get("metric")))
         if w and n and int(w.group(2)) - int(w.group(1)) != int(n.group(1)):
             out.append(_violation(

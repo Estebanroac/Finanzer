@@ -129,7 +129,50 @@ def apply_two_stage(xm: Dict[str, Any], industry_roe: Optional[float], payout: O
         if pt2 is not None:
             out["ptbv_single"] = xm.get("ptbv_justified")
             upd.update(ptbv_justified=pt2, ptbv_ratio=(xm["ptbv"] / pt2) if xm.get("ptbv") else None)
+    imp = _two_stage_implied(xm.get("implied") or {}, ke, g, C["years"], industry_roe, bv, retention)
+    if imp:
+        upd["implied"] = imp
     return upd
+
+
+def _two_stage_implied(imp: Dict[str, Any], ke: float, g: float, years: int, stable: float, bv: float,
+                       retention: float) -> Optional[Dict[str, Any]]:
+    """F11 · N1 (revisión de NU y NFLX): con el justificado en dos etapas, el retorno que descuenta el precio se despeja
+    con el MISMO modelo: los `years` años de la etapa alta con su retorno de hoy y, después, el retorno estable que hace
+    que el modelo dé el múltiplo de mercado. Forma cerrada (el segundo término de two_stage_multiple es lineal en él):
+
+        R_T = g + (M − etapa alta) · (Ke − g) · ((1 + Ke) / (1 + g₁))ⁿ
+
+    La banda compara ese retorno con el estable que supone el justificado (el de la industria), y la sensibilidad mueve
+    el retorno de la etapa alta, de modo que a ±0 da el justificado. El de una etapa queda en `single` (contexto)."""
+    own, mult = imp.get("own"), imp.get("multiple")
+    if imp.get("state") != "ok" or own is None or own <= 0 or not mult or mult <= 0:
+        return None
+    C = cfg("valuation.bank_implied")
+    g1 = min(bv, own * retention)
+    probe = two_stage_multiple(own, g1, years, g + 1.0, g, ke)      # con R_T − g = 1
+    if probe is None:
+        return None
+    tail = (1 + g1) ** years / ((ke - g) * (1 + ke) ** years)      # ∂(P/B) / ∂R_T
+    first = probe - tail                                           # la etapa alta sola (R_T = g)
+    out = dict(imp, model="dos_etapas", years=years, g_high=g1, stable=stable,
+               single={"implied": imp.get("implied"), "gap": imp.get("gap"), "band": imp.get("band"),
+                       "sensitivity": imp.get("sensitivity")})
+    if mult <= first:
+        # La etapa alta ya justifica el precio: el precio no exige nada después.
+        out.update(implied=g, gap=stable - g, band="barata",
+                   reason="la etapa alta ya justifica el precio: no exige retorno por encima de g después")
+    else:
+        rt = g + (mult - first) / tail
+        gap = stable - rt
+        out.update(implied=rt, gap=gap,
+                   band=("barata" if gap > C["band_pp"] else "en_precio" if gap >= -C["band_pp"]
+                         else "exigente" if gap >= -C["very_demanding_pp"] else "muy_exigente"))
+    out["sensitivity"] = [{"delta": d, "return": own + d,
+                           "multiple_justified": two_stage_multiple(own + d, min(bv, (own + d) * retention), years,
+                                                                    stable, g, ke)}
+                          for d in C["rote_sensitivity_deltas"]]
+    return out
 
 
 def at1_by_year(st: Dict[str, Any]) -> List[Optional[float]]:
@@ -245,6 +288,9 @@ def _financial(st: Dict[str, Any], km: Dict[str, Any], beta: Optional[float],
         "revenue_growth_statements": rev_yoy,
         "net_interest_income_cagr_3y": nii_cagr, "net_interest_income_cagr_3y_reason": nii_why,
         "net_interest_income_share": nii_share,
+        # F11 · T7: el ROE de cada ejercicio, el ancla de la persistencia de un subtipo sin margen neto (banco).
+        "roe_by_year": [{"fy_end": str(e)[:10], "roe": r} for e, r in zip(st.get("bs_ends") or [], roe_series)
+                        if e and r is not None],
     }
 
 

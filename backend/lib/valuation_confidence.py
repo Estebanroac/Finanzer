@@ -259,9 +259,11 @@ def convergence(methods: List[Dict[str, Any]]) -> Dict[str, Any]:
 
 
 def coverage_dimension(score_coverage: Optional[Dict[str, Any]], excluded: List[str],
-                       staleness: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+                       staleness: Optional[Dict[str, Any]] = None,
+                       unmeasured_critical: Optional[List[str]] = None) -> Dict[str, Any]:
     """Cobertura de los componentes del score. F8 · E6: con los estados desfasados más de `stale_coverage_days`
-    (lib/edgar_backup.staleness), no pasa de «media»."""
+    (lib/edgar_backup.staleness), no pasa de «media». F11 · T3 (revisión de NU): tampoco con la variable crítica de su
+    tipo sin medir (`unmeasured_critical`: el riesgo de crédito de un banco), aunque no puntúe."""
     C = cfg("thresholds.confidence")
     n = ev = 0
     for rep in (score_coverage or {}).values():
@@ -286,6 +288,10 @@ def coverage_dimension(score_coverage: Optional[Dict[str, Any]], excluded: List[
         reasons.append(f"estados desfasados: corte del {date_long(staleness.get('cut'))} "
                        f"({staleness.get('days_since_cut')} días) y EDGAR ya tiene el {latest.get('form')} del periodo "
                        f"cerrado el {date_long(latest.get('report_date'))}")
+        if level == "alta":
+            level = "media"
+    if unmeasured_critical:
+        reasons.append("sin medir: " + ", ".join(unmeasured_critical))
         if level == "alta":
             level = "media"
     return {"level": level, "coverage": cov, "reasons": reasons}

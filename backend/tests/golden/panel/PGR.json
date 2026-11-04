@@ -54,10 +54,12 @@
     "efficiency_reason": "sin gastos no financieros desglosados en los estados",
     "implied": {
       "at1": null,
-      "band": "barata",
-      "gap": 0.0330336181726,
-      "implied": 0.201457868178,
+      "band": "en_precio",
+      "g_high": 0.0711394436572,
+      "gap": -0.00195775568603,
+      "implied": 0.166263780597,
       "metric": "ROE",
+      "model": "dos_etapas",
       "multiple": 3.60854536151,
       "own": 0.23449148635,
       "own_avg": 0.23449148635,
@@ -66,32 +68,66 @@
       "sensitivity": [
         {
           "delta": -0.02,
-          "multiple_justified": 3.87508152046,
+          "multiple_justified": 3.41795176438,
           "return": 0.21449148635
         },
         {
           "delta": -0.01,
-          "multiple_justified": 4.07958049796,
+          "multiple_justified": 3.49307007515,
           "return": 0.22449148635
         },
         {
           "delta": 0.0,
-          "multiple_justified": 4.28407947547,
+          "multiple_justified": 3.56902139858,
           "return": 0.23449148635
         },
         {
           "delta": 0.01,
-          "multiple_justified": 4.48857845297,
+          "multiple_justified": 3.64581274566,
           "return": 0.24449148635
         },
         {
           "delta": 0.02,
-          "multiple_justified": 4.69307743048,
+          "multiple_justified": 3.72345116689,
           "return": 0.25449148635
         }
       ],
+      "single": {
+        "band": "barata",
+        "gap": 0.0330336181726,
+        "implied": 0.201457868178,
+        "sensitivity": [
+          {
+            "delta": -0.02,
+            "multiple_justified": 3.87508152046,
+            "return": 0.21449148635
+          },
+          {
+            "delta": -0.01,
+            "multiple_justified": 4.07958049796,
+            "return": 0.22449148635
+          },
+          {
+            "delta": 0.0,
+            "multiple_justified": 4.28407947547,
+            "return": 0.23449148635
+          },
+          {
+            "delta": 0.01,
+            "multiple_justified": 4.48857845297,
+            "return": 0.24449148635
+          },
+          {
+            "delta": 0.02,
+            "multiple_justified": 4.69307743048,
+            "return": 0.25449148635
+          }
+        ]
+      },
+      "stable": 0.164306024911,
       "state": "ok",
-      "subtype": "aseguradora"
+      "subtype": "aseguradora",
+      "years": 5
     },
     "net_interest_income_cagr_3y": null,
     "net_interest_income_cagr_3y_reason": "negativo en todos los ejercicios de la ventana (valor de −$244.00M a −$278.00M): la tasa no se calcula, pero es una señal, no un dato ausente",
@@ -112,6 +148,24 @@
     "ptbv_ratio": 0.76617152385,
     "revenue_growth_statements": 0.163177307223,
     "roe_avg": 0.23449148635,
+    "roe_by_year": [
+      {
+        "fy_end": "2025-12-31",
+        "roe": 0.372918246875
+      },
+      {
+        "fy_end": "2024-12-31",
+        "roe": 0.330702199992
+      },
+      {
+        "fy_end": "2023-12-31",
+        "roe": 0.190610050796
+      },
+      {
+        "fy_end": "2022-12-31",
+        "roe": 0.0437354477377
+      }
+    ],
     "roe_fy": 0.372918246875,
     "roe_reference": 0.23449148635,
     "roe_std": 0.149144131746,
@@ -3501,7 +3555,7 @@
             {
               "bench": null,
               "gap": null,
-              "key": "price",
+              "key": "share_price",
               "label": "Precio de mercado",
               "reading": "",
               "state": "con_dato",
@@ -3528,7 +3582,7 @@
         "normalization_note": "Beneficio TTM (4 trimestres): reportado $11.70B, operativo $10.87B (ganancias de inversiones (realizadas y no realizadas) (estructural, confianza alta): $823.67M netos (tipo 20.5%), fuera del beneficio operativo con el que se calcula el P/E; la rentabilidad (ROE, ROA, margen) no las excluye).",
         "premortem": {
           "items": [
-            "el ROE sostenido bajara del 20.1% que descuenta el precio (obtiene un 23.4%)"
+            "tras 5 años con su ROE de hoy, el ROE sostenido bajara del 16.6% que descuenta el precio (obtiene hoy un 23.4%; la industria: 16.4%)"
           ],
           "note": "Condiciones que invalidarían la lectura de hoy, con la cifra que las mide: no son previsiones.",
           "title": "Esta lectura sería errónea si…"
@@ -3537,13 +3591,13 @@
         "reverse_dcf": {
           "lines": [
             {
-              "label": "Barata",
-              "text": "El precio descuenta un ROE sostenido del 20.1%; la aseguradora obtuvo un 23.4% de media en 4 ejercicios.",
-              "tone": "pos"
+              "label": "En precio",
+              "text": "Con el modelo de dos etapas del justificado (5 años con su ROE de hoy), el precio descuenta después un ROE sostenido del 16.6%, frente al 16.4% de su industria; la aseguradora obtuvo un 23.4% de media en 4 ejercicios.",
+              "tone": "neu"
             },
             {
               "label": null,
-              "text": "Sensibilidad (±2 pp): se justificaría con un ROE del 21.4%, 3.88 veces el valor contable; con un ROE del 25.4%, 4.69 veces el valor contable (hoy cotiza a 3.61).",
+              "text": "Sensibilidad (±2 pp): se justificaría con un ROE en la etapa alta del 21.4%, 3.42 veces el valor contable; con un ROE en la etapa alta del 25.4%, 3.72 veces el valor contable (hoy cotiza a 3.61).",
               "tone": "neu"
             }
           ],
@@ -4591,11 +4645,13 @@
         "direction": "superior",
         "value": 1.53531791738
       },
+      "capped": null,
       "method": "log_lineal_edgar",
       "not_significant": null,
       "note": "base anómala (el año inicial es el 8% de la mediana de los demás); crecimiento por regresión log-lineal sobre los 6 últimos ejercicios de EDGAR (FY2020–FY2025) (beneficio neto, con las acciones estables: el BPA crece como el beneficio)",
       "robust": true,
       "source": "EDGAR",
+      "value_uncapped": null,
       "window": "FY2020–FY2025",
       "years_used": 6
     },
@@ -4606,11 +4662,13 @@
         "direction": "superior",
         "value": 0.379138093587
       },
+      "capped": null,
       "method": "log_lineal_edgar",
       "not_significant": null,
       "note": "base anómala (el año inicial es el 44% de la mediana de los demás); crecimiento por regresión log-lineal sobre los 6 últimos ejercicios de EDGAR (FY2020–FY2025)",
       "robust": true,
       "source": "EDGAR",
+      "value_uncapped": null,
       "window": "FY2020–FY2025",
       "years_used": 6
     },
@@ -4618,11 +4676,13 @@
     "revenue_cagr": {
       "anomalous_base": false,
       "bound": null,
+      "capped": null,
       "method": "cagr",
       "not_significant": null,
       "note": null,
       "robust": true,
       "source": null,
+      "value_uncapped": null,
       "window": null,
       "years_used": 4
     },
@@ -5304,8 +5364,8 @@
       {
         "field": "archetype_metrics.implied.implied",
         "kind": "precio_implicito",
-        "text": "el ROE sostenido bajara del 20.1% que descuenta el precio (obtiene un 23.4%)",
-        "value": 0.201457868178
+        "text": "tras 5 años con su ROE de hoy, el ROE sostenido bajara del 16.6% que descuenta el precio (obtiene hoy un 23.4%; la industria: 16.4%)",
+        "value": 0.166263780597
       }
     ],
     "title": "Esta lectura sería errónea si…"

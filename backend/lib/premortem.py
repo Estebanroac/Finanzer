@@ -68,12 +68,19 @@ def _price_item(a: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     imp = (a.get("archetype_metrics") or {}).get("implied") or {}
     if imp.get("implied") is not None and imp.get("own") is not None:
         met = imp.get("metric") or "ROE"
+        # F11 · N1: con el justificado en dos etapas, el implícito es el retorno estable tras la etapa alta.
+        after = (f"tras {imp['years']} años con su {met} de hoy, " if imp.get("model") == "dos_etapas" else "")
+        ref = (f"; la industria: {_pct(imp['stable'])}" if imp.get("model") == "dos_etapas" else "")
         if demanding:
-            t = (f"la entidad sostuviera un {met} de al menos el {_pct(imp['implied'])} que descuenta el precio "
-                 f"(obtiene un {_pct(imp['own'])})")
+            t = (f"la entidad sostuviera, {after}un {met} de al menos el {_pct(imp['implied'])} que descuenta el "
+                 f"precio (obtiene hoy un {_pct(imp['own'])}{ref})") if after else (
+                f"la entidad sostuviera un {met} de al menos el {_pct(imp['implied'])} que descuenta el precio "
+                f"(obtiene un {_pct(imp['own'])})")
         else:
-            t = (f"el {met} sostenido bajara del {_pct(imp['implied'])} que descuenta el precio "
-                 f"(obtiene un {_pct(imp['own'])})")
+            t = (f"{after}el {met} sostenido bajara del {_pct(imp['implied'])} que descuenta el precio "
+                 f"(obtiene hoy un {_pct(imp['own'])}{ref})") if after else (
+                f"el {met} sostenido bajara del {_pct(imp['implied'])} que descuenta el precio "
+                f"(obtiene un {_pct(imp['own'])})")
         return {"kind": "precio_implicito", "text": t, "field": "archetype_metrics.implied.implied",
                 "value": imp["implied"]}
     return None

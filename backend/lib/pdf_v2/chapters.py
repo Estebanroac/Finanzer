@@ -477,7 +477,8 @@ def _valor(a, ctx):
     out.append(Spacer(1, 6))
     if iv.get("graham_note"):
         out.append(note(iv["graham_note"]))
-    out += sub("DCF: supuestos y fiabilidad")
+    # F11 · T7: sin DCF en su tipo (bancos, aseguradoras…), el bloque es solo el coste del capital.
+    out += sub("Coste del capital" if "dcf" in (a["display"].get("na_keys") or []) else "DCF: supuestos y fiabilidad")
     for t in (v.get("dcf_params"), v.get("dcf_reliability"), v.get("dcf_missing"), v.get("ke_note"),
               v.get("wacc_note")):
         if t:

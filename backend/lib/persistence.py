@@ -88,9 +88,14 @@ def _year(e: str) -> str:
     return e[:4]
 
 
-def measure(hist: Optional[Dict[str, Any]], archetype: str, source: str) -> Dict[str, Any]:
+def measure(hist: Optional[Dict[str, Any]], archetype: str, source: str,
+            not_applicable: tuple = (), roe_by_year: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
     """{categoría: {persistence, years_ok, years, anchor, text}} para las categorías con ancla, más `window`,
-    `source` y `perimeter` (ejercicios fuera de la ventana)."""
+    `source` y `perimeter` (ejercicios fuera de la ventana).
+
+    F11 · T7 (revisión de NU): una financiera cuyo subtipo no admite el margen neto (`not_applicable`, el de
+    classify.subtype_not_applicable: banco) ancla la Rentabilidad en su ROE de cada ejercicio (`roe_by_year`, el de
+    archetype_metrics); sin él, la Rentabilidad no se mide (nunca con una métrica «No aplica»)."""
     window = int(_cfg("window"))
     ratio = float(_cfg("margin_ratio"))
     fin = archetype == FINANCIAL
@@ -126,6 +131,39 @@ def measure(hist: Optional[Dict[str, Any]], archetype: str, source: str) -> Dict
         return out
     rv = fy("revenue")
 
+    if fin and "net_margin" in not_applicable:
+        _rentabilidad_roe(out, roe_by_year, _canon, ends, evaluable, den, ratio)
+    else:
+        _rentabilidad_margen(out, fy, rv, fin, ends, evaluable, den, ratio)
+
+    # Crecimiento: ingresos por encima del ejercicio anterior.
+    # El ejercicio anterior, solo si es el inmediato (revisión F4, hallazgo 7: con un año sin dato no se compara con
+    # el de dos años antes).
+    prev = {c1: rv[c0] for c0, c1 in zip(canon, canon[1:]) if c0 in rv and fiscal_years_between(c0, c1) == 1}
+    ok = [e for e in evaluable if prev.get(e) and e in rv and rv[e] > prev[e]]
+    out["Crecimiento"] = {"persistence": len(ok) / den, "years_ok": [_year(e) for e in sorted(ok)],
+                          "years": [_year(e) for e in evaluable], "anchor": "ingresos",
+                          "rule": "ingresos por encima del ejercicio anterior"}
+    _calidad(out, fy, fin, evaluable, den)
+    out["denominator"] = den
+    return out
+
+
+def _rentabilidad_roe(out, roe_by_year, _canon, ends, evaluable, den, ratio) -> None:
+    """F11 · T7: ROE de cada ejercicio frente al del último (sin él, la Rentabilidad no se mide)."""
+    roe = {c: x["roe"] for c, x in ((_canon(x["fy_end"]), x) for x in roe_by_year or []) if c is not None}
+    all_r = {e: roe[e] for e in ends if e in roe}
+    if not all_r:
+        return
+    last = all_r[max(all_r)]
+    ok = [e for e, r in all_r.items() if e in evaluable and last > 0 and r > 0 and r >= ratio * last]
+    out["Rentabilidad"] = {
+        "persistence": len(ok) / den, "years_ok": [_year(e) for e in sorted(ok)],
+        "years": [_year(e) for e in evaluable], "anchor": "ROE",
+        "rule": f"ROE positivo y al menos el {ratio:.0%} del último ({_pct(last)})"}
+
+
+def _rentabilidad_margen(out, fy, rv, fin, ends, evaluable, den, ratio) -> None:
     # Rentabilidad: margen de cada ejercicio frente al del último.
     num = fy("net_income" if fin else "operating_income")
     no_op = None
@@ -147,15 +185,8 @@ def measure(hist: Optional[Dict[str, Any]], archetype: str, source: str) -> Dict
         "rule": ((f"{lab} positivo y al menos el {ratio:.0%} del último ({_pct(last)})" if last is not None
                   else f"{lab} (sin dato en la ventana)") + (f" ({no_op})" if no_op else ""))}
 
-    # Crecimiento: ingresos por encima del ejercicio anterior.
-    # El ejercicio anterior, solo si es el inmediato (revisión F4, hallazgo 7: con un año sin dato no se compara con
-    # el de dos años antes).
-    prev = {c1: rv[c0] for c0, c1 in zip(canon, canon[1:]) if c0 in rv and fiscal_years_between(c0, c1) == 1}
-    ok = [e for e in evaluable if prev.get(e) and e in rv and rv[e] > prev[e]]
-    out["Crecimiento"] = {"persistence": len(ok) / den, "years_ok": [_year(e) for e in sorted(ok)],
-                          "years": [_year(e) for e in evaluable], "anchor": "ingresos",
-                          "rule": "ingresos por encima del ejercicio anterior"}
 
+def _calidad(out, fy, fin, evaluable, den) -> None:
     # Calidad de ganancias: el beneficio se convierte en caja.
     ni = fy("net_income")
     if fin:
@@ -175,8 +206,6 @@ def measure(hist: Optional[Dict[str, Any]], archetype: str, source: str) -> Dict
     out["Calidad de Ganancias"] = {"persistence": len(ok) / den, "years_ok": [_year(e) for e in sorted(ok)],
                                    "years": [_year(e) for e in evaluable], "anchor": "conversión en caja",
                                    "rule": rule}
-    out["denominator"] = den
-    return out
 
 
 def _pct(x: Optional[float]) -> str:

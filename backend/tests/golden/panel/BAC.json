@@ -97,6 +97,24 @@
     "ptbv_ratio": 1.1561194021,
     "revenue_growth_statements": 0.0684042472793,
     "roe_avg": 0.09044858814,
+    "roe_by_year": [
+      {
+        "fy_end": "2025-12-31",
+        "roe": 0.0958142479793
+      },
+      {
+        "fy_end": "2024-12-31",
+        "roe": 0.0862149318111
+      },
+      {
+        "fy_end": "2023-12-31",
+        "roe": 0.0845408474658
+      },
+      {
+        "fy_end": "2022-12-31",
+        "roe": 0.0952243253037
+      }
+    ],
     "roe_fy": 0.0958142479793,
     "roe_reference": 0.0958142479793,
     "roe_std": 0.00589980837975,
@@ -3533,7 +3551,7 @@
             {
               "bench": null,
               "gap": null,
-              "key": "price",
+              "key": "share_price",
               "label": "Precio de mercado",
               "reading": "",
               "state": "con_dato",
@@ -4587,22 +4605,26 @@
     "eps_cagr": {
       "anomalous_base": false,
       "bound": null,
+      "capped": null,
       "method": "cagr",
       "not_significant": null,
       "note": null,
       "robust": true,
       "source": null,
+      "value_uncapped": null,
       "window": null,
       "years_used": 4
     },
     "fcf_cagr": {
       "anomalous_base": false,
       "bound": null,
+      "capped": null,
       "method": "cagr",
       "not_significant": null,
       "note": null,
       "robust": false,
       "source": null,
+      "value_uncapped": null,
       "window": null,
       "years_used": 4
     },
@@ -4610,11 +4632,13 @@
     "revenue_cagr": {
       "anomalous_base": false,
       "bound": null,
+      "capped": null,
       "method": "cagr",
       "not_significant": null,
       "note": null,
       "robust": true,
       "source": null,
+      "value_uncapped": null,
       "window": null,
       "years_used": 4
     },
@@ -5409,13 +5433,12 @@
           "years_ok": null
         },
         {
-          "anchor": "margen neto",
+          "anchor": "ROE",
           "category": "Rentabilidad",
-          "persistence": 1.0,
-          "rule": "margen neto positivo y al menos el 75% del último (25.7%)",
+          "persistence": 0.8,
+          "rule": "ROE positivo y al menos el 75% del último (9.6%)",
           "surplus": 0.0,
           "years_ok": [
-            "2021",
             "2022",
             "2023",
             "2024",

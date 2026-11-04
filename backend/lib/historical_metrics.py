@@ -210,8 +210,9 @@ def robust_growth(values_newest_first: List[Optional[float]], years: int = 3, *,
     from settings import cfg
     r = growth_rate(values_newest_first, years, what=what, strict_ends_only=strict_ends_only)
     r.setdefault("robust", False)
+    short = r.get("value")      # con base anómala: la regresión de la propia ventana (la que enseña la gráfica)
     if not r.get("anomalous_base") or r["robust"]:
-        return r
+        return _cap_by_bound(r, short)
     n_long = cfg("thresholds.growth.long_years")
     base = f"el año inicial es el {r.get('base_ratio', 0):.0%} de la mediana de los demás"
     series, why = edgar_series(long, end) if long else ([], "sin serie larga de EDGAR")
@@ -228,10 +229,29 @@ def robust_growth(values_newest_first: List[Optional[float]], years: int = 3, *,
             r.update(value=g, method="log_lineal_edgar", robust=True, years_used=n, reason=None, source="EDGAR",
                      window=win, note=f"base anómala ({base}); crecimiento por regresión log-lineal sobre los {n} "
                                       f"últimos ejercicios de EDGAR ({win})")
-            return r
+            return _cap_by_bound(r, short)
     r.update(value=None, not_significant=True,
              reason=f"{ANOMALOUS_NOT_SIGNIFICANT} ({base}) y sin serie larga robusta: {why}",
              note=f"base anómala ({base}) sin serie larga robusta: {what} no significativo")
+    return r
+
+
+def _cap_by_bound(r: Dict[str, Any], short: Optional[float] = None) -> Dict[str, Any]:
+    """F11 · T4 (revisión de NU y NFLX): la tasa de punta a punta desde una base anómala baja ya SOBRESTIMA el
+    crecimiento (`bound`, cota superior). Una regresión de la serie larga que la supere arrastra ejercicios más antiguos
+    de crecimiento mayor (NU: 85 % sobre FY2020–FY2025 frente a 48,8 % de FY2022–FY2025; APO: 70 % frente a 43 %): el
+    valor que puntúa es entonces la regresión de la propia ventana (`short`, la de la gráfica histórica), o la cota si
+    no la hay; nunca más que la cota."""
+    b = r.get("bound") or {}
+    v = r.get("value")
+    if v is not None and b.get("direction") == "superior" and b.get("value") is not None and v > b["value"]:
+        use = short if (short is not None and short <= b["value"]) else b["value"]
+        r["value_uncapped"] = v
+        r["value"] = use
+        r["capped"] = True
+        r["note"] = ((r.get("note") or "") + f"; la regresión larga supera la tasa de punta a punta ({b['value']:.1%}), "
+                     "que desde una base baja ya es una cota superior: crecimiento por regresión log-lineal sobre la "
+                     "ventana").lstrip("; ")
     return r
 
 

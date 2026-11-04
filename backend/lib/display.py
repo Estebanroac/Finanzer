@@ -1373,14 +1373,21 @@ def _implied_return_block(a: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     else:
         own_txt = f"{who} un {pct(x['own'])} de media en {x['own_years']} ejercicios"
         mult_txt = "veces el valor contable"
-    text = f"El precio descuenta un {m} sostenido del {pct(x['implied'])}; {own_txt}."
+    if x.get("model") == "dos_etapas":
+        # F11 · N1: el mismo modelo que el justificado: etapa alta con su retorno de hoy y, después, el estable.
+        text = (f"Con el modelo de dos etapas del justificado ({x['years']} años con su {m} de hoy), el precio descuenta "
+                f"después un {m} sostenido del {pct(x['implied'])}, frente al {pct(x['stable'])} de su industria; "
+                f"{own_txt}.")
+    else:
+        text = f"El precio descuenta un {m} sostenido del {pct(x['implied'])}; {own_txt}."
     _record(text, _claim("implied_return", field="archetype_metrics.implied.implied", value=x["implied"],
                          own=x["own"], band=x.get("band")), source="display.implied_return")
     lab, tone = _REVERSE_BANDS.get(x.get("band"), (None, "neu"))
     lines = [{"text": text, "label": lab, "tone": tone}]
     sens = [r for r in x.get("sensitivity") or [] if r.get("delta") in (min(r2["delta"] for r2 in x["sensitivity"]),
                                                                           max(r2["delta"] for r2 in x["sensitivity"]))]
-    parts = [f"con un {m} del {pct(r['return'])}, {r['multiple_justified']:.2f} {mult_txt}"
+    _stage = " en la etapa alta" if x.get("model") == "dos_etapas" else ""
+    parts = [f"con un {m}{_stage} del {pct(r['return'])}, {r['multiple_justified']:.2f} {mult_txt}"
              for r in sens if r.get("multiple_justified") is not None]
     if parts:
         lines.append({"text": "Sensibilidad (±2 pp): se justificaría " + "; ".join(parts) + f" (hoy cotiza a "
@@ -2379,7 +2386,9 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                               else f"DCF (FCFF) no significativo: {_dcf_ns}" if _dcf_ns
                               else None if r_up else "el modelo DCF no es aplicable con los datos disponibles"),
                              ("se valora sobre libros y retornos" if is_financial else None)])
-    iv_rows = [_row("price", "Precio de mercado", fv(price, "price"), "")]
+    # F11 · T7: "share_price", como la ficha del precio (v4.1): con "price" la fila tomaba la definición de la
+    # puntuación «Atractivo del precio» en la web y en el PDF.
+    iv_rows = [_row("share_price", "Precio de mercado", fv(price, "price"), "")]
     if not_app.get("dcf"):
         iv_rows.append(_row("dcf_fair_value", "Valor justo DCF", "—", not_applicable_text(archetype), None, "no_aplica",
                             text=not_app.get("dcf")))
@@ -2902,7 +2911,8 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     _per = "ciclo medio" if _cyc else "CAGR 3 años"
     # F10: la fila rotula la regresión de la serie larga de EDGAR (no es el CAGR de 3 años)
     _per_rev, _per_eps = (
-        f"regresión, {(_gbl.get('years_used'))} ejercicios" if (not _cyc and _gbl.get("method") == "log_lineal_edgar")
+        f"regresión, {(_gbl.get('years_used'))} ejercicios" if (not _cyc and _gbl.get("method") == "log_lineal_edgar"
+                                                                and not _gbl.get("capped"))   # F11 · T4
         else _per for _gbl in (((a.get("growth_basis") or {}).get(k) or {}) for k in ("revenue_cagr", "eps_cagr")))
     _eps_na = "eps_growth" in _na_keys
     gro_defs = [

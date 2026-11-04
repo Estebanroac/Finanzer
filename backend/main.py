@@ -35,7 +35,7 @@ from historical_metrics import (mean as hm_mean, fcf_cagr, growth_rate, is_susta
                                 per_share_basis, robust_growth, edgar_fcf, is_anomalous_not_significant,
                                 bound_decides)
 from classify import (ARCHETYPE_GROUP, CYCLICAL, FINANCIAL, GROWTH_PRE_PROFIT, REIT, archetype_label, classify,
-                      not_applicable, not_applicable_text)
+                      not_applicable, not_applicable_text, subtype_not_applicable)
 from normalize import normalize as normalize_earnings, pieces_operating_income
 from yf_adapter import _UNUSUAL_ROWS
 from ttm import TTM_QUARTERS
@@ -1124,7 +1124,7 @@ def _compute_analysis_body(symbol: str) -> dict:
                 return r
             _g_end = (_stmts_g.get("inc_ends") or [None])[0]
             _GM = ("method", "anomalous_base", "note", "robust", "not_significant", "source", "window", "years_used",
-                   "bound")
+                   "bound", "capped", "value_uncapped")
             _rev_r = _rg(_stmts_g.get("revenue") or [], 3, what="ingresos", strict_ends_only=True,
                          long=_hfy.get("revenue"), end=_g_end)
             fin_dict["revenue_cagr_3y"] = _rev_r["value"]
@@ -1204,10 +1204,15 @@ def _compute_analysis_body(symbol: str) -> dict:
             # V7 (M2): la ventana de los CAGR a 3 años, para que cada texto diga su periodo ("FY2022–FY2025").
             _gy = _stmts_g.get("inc_years") or []
             _gn_y = fin_dict.get("revenue_ps_cagr_years") or 3
-            fin_dict["revenue_cagr_window"] = (_rev_r.get("window") if _rev_r.get("method") == "log_lineal_edgar" else
+            # F11 · T4: acotada por la tasa de punta a punta, la cifra que puntúa ES el CAGR de la ventana de 3 años.
+            _regr = _rev_r.get("method") == "log_lineal_edgar" and not _rev_r.get("capped")
+            fin_dict["revenue_cagr_window"] = (_rev_r.get("window") if _regr else
                                                f"FY{_gy[_gn_y]}–FY{_gy[0]}"
                                                if len(_gy) > _gn_y and fin_dict.get("revenue_cagr_3y") is not None
                                                else None)
+            # F11 · T4: el rótulo de la puntuación dice la ventana real cuando no es la de 3 años.
+            if _regr and fin_dict.get("revenue_cagr_3y") is not None:
+                fin_dict["revenue_cagr_window_label"] = f"regresión {_rev_r.get('window')}"
             if _rev_r.get("note") or _eps_r.get("note"):
                 fin_dict["growth_cagr_notes"] = {k: r["note"] for k, r in (("ingresos", _rev_r), ("BPA", _eps_r))
                                                  if r.get("note")}
@@ -2317,8 +2322,12 @@ def _compute_analysis_body(symbol: str) -> dict:
                 try:
                     import persistence as _pers
                     _hfy = yinfo.get("_history_fy") if _has_yahoo else None
-                    _persist = (_pers.measure(_pers.merge_history(_hfy, _stmts_g), archetype, "edgar") if _hfy
-                                else _pers.measure(_pers.history_from_statements(_stmts_g), archetype, "estados"))
+                    # F11 · T7: un subtipo sin margen neto (banco) ancla la Rentabilidad en su ROE de cada ejercicio.
+                    _pkw = {"not_applicable": subtype_not_applicable(classification.get("subtype")),
+                            "roe_by_year": (result.get("archetype_metrics") or {}).get("roe_by_year")}
+                    _persist = (_pers.measure(_pers.merge_history(_hfy, _stmts_g), archetype, "edgar", **_pkw) if _hfy
+                                else _pers.measure(_pers.history_from_statements(_stmts_g), archetype, "estados",
+                                                   **_pkw))
                 except Exception as e:
                     _sin_dato("persistencia", e)
                 score_result = calculate_score_v2(
@@ -2389,9 +2398,11 @@ def _compute_analysis_body(symbol: str) -> dict:
             # ADAPTATIVA de 1-2 líneas por ítem (lib/alert_interpretations.py),
             # graduada por magnitud y sector. Reemplaza el ensamblado disperso
             # anterior (condiciones crudas con detail vacío).
+            _alert_args = None
             try:
-                result["alerts"] = build_signals(
-                    ratios_score, fin_dict,
+                # F11 · T3: los argumentos se guardan para rehacer las alertas con la caída del año, que llega con el
+                # contexto de mercado (después del veredicto, D5).
+                _alert_args = ((ratios_score, fin_dict), dict(
                     sector=score_sector, real_sector=sector,
                     roic_wacc_spread=roic_wacc_spread,
                     altman=result.get("altman_z"),
@@ -2399,8 +2410,10 @@ def _compute_analysis_body(symbol: str) -> dict:
                     dcf=result.get("dcf"),
                     archetype=archetype,
                     archetype_values=archetype_values,
-                )
+                ))
+                result["alerts"] = build_signals(*_alert_args[0], **_alert_args[1])
             except Exception as e:
+                _alert_args = None      # F11 · T3: sin alertas, no se rehacen con la caída (un solo «sin dato»)
                 logger.error(f"Alerts error: {e}")
                 result["alerts"] = {"red_flags": [], "warnings": [], "strengths": []}
                 _sin_dato("alerts", e)
@@ -2497,7 +2510,10 @@ def _compute_analysis_body(symbol: str) -> dict:
                     "convergence": convergence(_methods),
                     "coverage": coverage_dimension(result.get("score_coverage"),
                                                    (result["score"] or {}).get("excluded_categories") or [],
-                                                   staleness=yinfo.get("_staleness")),
+                                                   staleness=yinfo.get("_staleness"),
+                                                   unmeasured_critical=(
+                                                       ["el riesgo de crédito"] if (result.get("credit_risk") or {})
+                                                       .get("status") == "no_medido" else None)),
                     "source": source_dimension(
                         input_flags=list(yinfo.get("_validation") or []) + _row_flags,
                         normalization=result.get("earnings_normalization"),
@@ -2561,6 +2577,17 @@ def _compute_analysis_body(symbol: str) -> dict:
                                                        yinfo.get("_edgar_filings"))
         except Exception as e:
             _sin_dato("contexto_mercado", e)
+        # F11 · T3 (revisión de NU y NFLX): la alerta «Caída pronunciada» leía `max_drawdown_1y`, que nada rellenaba
+        # desde que la caída vive en el contexto de mercado. Se rehacen las alertas con ella; no puntúa (D5).
+        try:
+            _dd1 = ((((result.get("market_context") or {}).get("signals") or {}).get("max_drawdown") or {}).get("1")
+                    or {})
+            if _dd1.get("status") == "ok" and _dd1.get("value") is not None and locals().get("_alert_args"):
+                _ra, _rc = _alert_args[0]
+                result["alerts"] = build_signals(_ra, {**(_rc or {}), "max_drawdown_1y": _dd1["value"]},
+                                                 **_alert_args[1])
+        except Exception as e:
+            _sin_dato("alerts", e)
 
         # ── Rediseño E2a: datos nuevos aditivos (no cambian ninguna cifra ni veredicto) ──
         try:   # T3: ficha de la empresa desde EDGAR submissions (sin red adicional)

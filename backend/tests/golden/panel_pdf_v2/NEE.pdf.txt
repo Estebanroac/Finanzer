@@ -1036,9 +1036,6 @@ CONCEPTO
  VALOR
 LECTURA
 Precio de mercado
-Puntuación de 0 a 100 de lo atractivo que es el precio
-actual: valoración por múltiplos frente a su referencia y
-DCF.
  $78.37
 Valor justo DCF
 No aplica a utilities reguladas: su FCF es negativo por
@@ -1064,7 +1061,7 @@ precio máximo que pagaría con un P/E de 15 y un P/B de
 Sobre Graham
 Número de Graham: referencia del inversor defensivo (P/E 15 × P/B 1.5). Se muestra como referencia y no vota en la
 convergencia entre métodos.
-DCF: supuestos y fiabilidad
+Coste del capital
 WACC 6.99% = 59.49% × Ke 7.67% (piso Kd + 1 pp, porque el CAPM da 7.39%: Rf 5.29% [Tesoro de EE. UU. a 10 años del par
 Rf–ERP de Damodaran, 1 de octubre de 2026] + β de abajo hacia arriba 0.50 [βU 0.31 de la industria (Damodaran, enero de
 2026) reapalancada con D/E 0.68 y t 10%; sin Blume] × prima implícita 4.20%) + 40.51% × Kd 6.67% × (1 − t 10.00%). Kd = Rf
@@ -1318,10 +1315,10 @@ Cómo se hace este informe
 Este informe combina ratios TTM y del último ejercicio (fuente: Yahoo Finance) con los modelos de
 Piotroski (2000), número de Graham, P/E frente al sector y rentabilidad por dividendo y dos
 puntuaciones Finanzer de 0 a 100: calidad del negocio (solidez, rentabilidad, calidad de ganancias y
-crecimiento) y atractivo del precio (valoración por múltiplos y DCF, contraída hacia 50 según la
-confianza del veredicto: solo los limitadores que lo contradicen o lo vuelven incierto, no los que apuntan
-en su dirección). Las lecturas se generan automáticamente según la banda en la que cae cada indicador
-frente a umbrales canónicos y a la referencia de su industria en su región (agregados de A. Damodaran,
+crecimiento) y atractivo del precio (valoración por múltiplos y su modelo intrínseco, contraída hacia 50
+según la confianza del veredicto: solo los limitadores que lo contradicen o lo vuelven incierto, no los que
+apuntan en su dirección). Las lecturas se generan automáticamente según la banda en la que cae cada
+indicador frente a umbrales canónicos y a la referencia de su industria (agregados de A. Damodaran,
 NYU Stern), o la del mercado amplio cuando el arquetipo de la empresa contradice a su sector.
 Fuentes
 ●  SEC EDGAR: estados oficiales del emisor (XBRL de los 10-K, 10-Q y 20-F) para verificar y completar
@@ -1350,11 +1347,11 @@ Cómo se calculan las puntuaciones
 ●  Calidad del negocio: 4 categorías (solidez, rentabilidad, calidad de ganancias y crecimiento) que
  parten de 10/20 y suman o restan según la banda de cada indicador; se reescalan a 100. Niveles:
 excelente ≥ 85 · sólida ≥ 65 · media ≥ 45 · débil por debajo de 45.
-●  Atractivo del precio: la categoría de Valoración (múltiplos frente a la referencia y DCF) reescalada a
- 100 y acercada a 50 según la confianza del veredicto: alta ×1 · media ×0.75 · baja ×0.5. Solo contraen
-los limitadores que contradicen el veredicto o lo vuelven incierto (la discrepancia entre métodos, los
-datos débiles, la dependencia del coste del capital); uno que apunta en su misma dirección no
-contrae: las tasas base de un precio exigente. Niveles: atractivo ≥ 65 · razonable ≥ 45 · exigente ≥ 30 ·
+●  Atractivo del precio: la categoría de Valoración (múltiplos frente a la referencia y su modelo
+ intrínseco) reescalada a 100 y acercada a 50 según la confianza del veredicto: alta ×1 · media ×0.75 ·
+baja ×0.5. Solo contraen los limitadores que contradicen el veredicto o lo vuelven incierto (la
+discrepancia entre métodos, los datos débiles, la dependencia del coste del capital); uno que apunta
+en su misma dirección no contrae: las tasas base de un precio exigente. Niveles: atractivo ≥ 65 ·
 
 ===== página 19 =====
 Finanzer
@@ -1363,7 +1360,7 @@ NextEra Energy Inc. · NEE
 Datos: precio 14 oct 2026 · estados 30 jun 2026
 Página 19 de 22
 ↑ índice
-muy exigente por debajo de 30.
+razonable ≥ 45 · exigente ≥ 30 · muy exigente por debajo de 30.
 ●  Confianza del veredicto: convergencia entre métodos de valoración, cobertura de datos, calidad de
  la fuente y estabilidad del tipo de empresa; la más baja manda.
 ●  Una categoría con menos de la mitad de sus componentes con dato no es concluyente: se excluye y
@@ -1375,8 +1372,6 @@ Modelos y referencias
 
 ●  P/E frente al sector y rentabilidad por dividendo.
 
-●  Tasas base de crecimiento por tamaño e industria: Mauboussin y Callahan (2021), para el DCF
- inverso.
 Documento generado automáticamente por Finanzer. La información puede contener errores u omisiones y no
 constituye asesoría financiera, recomendación de inversión ni oferta de valores. Verifique los datos y consulte a un
 profesional antes de invertir.
@@ -1403,6 +1398,12 @@ Utilities—Regulated Electric, sector Utilities.
 Rangos de referencia del motor para esta empresa
 Las bandas con las que el motor lee cada métrica de esta empresa (según su tipo de negocio y su referencia), con el
 significado de la métrica.
+MÉTRICA
+BANDAS
+Beta bruta (volatilidad)
+Umbrales del sector: Defensiva < 0.80 · De mercado 0.80 – 1.20 · Volátil 1.20 –
+1.50 · Muy volátil ≥ 1.50 «Defensiva» exige la beta propia de la acción, la que
+pasa los filtros de la regresión; con la de su industria, la lectura es «Beta baja».
 
 ===== página 20 =====
 Finanzer
@@ -1413,10 +1414,6 @@ Página 20 de 22
 ↑ índice
 MÉTRICA
 BANDAS
-Beta bruta (volatilidad)
-Umbrales del sector: Defensiva < 0.80 · De mercado 0.80 – 1.20 · Volátil 1.20 –
-1.50 · Muy volátil ≥ 1.50 «Defensiva» exige la beta propia de la acción, la que
-pasa los filtros de la regresión; con la de su industria, la lectura es «Beta baja».
 Buyback yield (recompras
 netas)
 Bandas del informe: Recompra intensiva ≥ 3% · Recompra neta 0.5% – 3% ·
@@ -1470,6 +1467,12 @@ Parte alta del rango 70% – 88% · En máximos de 52 semanas 88% – 100%
 Atractivo del precio
 Atractivo del precio (0–100, contraído por la confianza): atractivo ≥ 65 ·
 razonable 45 – 65 · exigente 30 – 45 · muy exigente < 30
+Calidad del negocio
+Calidad del negocio (0–100): excelente ≥ 85 · sólida 65 – 85 · media 45 – 65 ·
+débil < 45
+Crecimiento de ingresos
+Bandas del score: Acelerado ≥ 20% · Sólido 10% – 20% · Moderado 3% – 10% ·
+Plano -2% – 3% · Contracción < -2%
 
 ===== página 21 =====
 Finanzer
@@ -1480,12 +1483,6 @@ Página 21 de 22
 ↑ índice
 MÉTRICA
 BANDAS
-Calidad del negocio
-Calidad del negocio (0–100): excelente ≥ 85 · sólida 65 – 85 · media 45 – 65 ·
-débil < 45
-Crecimiento de ingresos
-Bandas del score: Acelerado ≥ 20% · Sólido 10% – 20% · Moderado 3% – 10% ·
-Plano -2% – 3% · Contracción < -2%
 ROE (rentabilidad sobre el
 patrimonio)
 Frente a la referencia de su industria sin ella (12.5%): Muy superior ≥ 16.8% ·

@@ -102,6 +102,24 @@
     "ptbv_ratio": 1.3470217947,
     "revenue_growth_statements": 0.0367479576032,
     "roe_avg": 0.108014634118,
+    "roe_by_year": [
+      {
+        "fy_end": "2025-12-31",
+        "roe": 0.106454786228
+      },
+      {
+        "fy_end": "2024-12-31",
+        "roe": 0.123893757467
+      },
+      {
+        "fy_end": "2023-12-31",
+        "roe": 0.121038801267
+      },
+      {
+        "fy_end": "2022-12-31",
+        "roe": 0.0806711915111
+      }
+    ],
     "roe_fy": 0.106454786228,
     "roe_reference": 0.106454786228,
     "roe_std": 0.0197642140185,
@@ -3359,7 +3377,7 @@
             {
               "bench": null,
               "gap": null,
-              "key": "price",
+              "key": "share_price",
               "label": "Precio de mercado",
               "reading": "",
               "state": "con_dato",
@@ -4413,11 +4431,13 @@
     "eps_cagr": {
       "anomalous_base": false,
       "bound": null,
+      "capped": null,
       "method": "cagr",
       "not_significant": null,
       "note": null,
       "robust": true,
       "source": null,
+      "value_uncapped": null,
       "window": null,
       "years_used": 4
     },
@@ -4427,11 +4447,13 @@
         "direction": "superior",
         "value": 0.188716842003
       },
+      "capped": null,
       "method": "log_lineal_edgar",
       "not_significant": null,
       "note": "base anómala (el año inicial es el 42% de la mediana de los demás); crecimiento por regresión log-lineal sobre los 6 últimos ejercicios de EDGAR (FY2020–FY2025)",
       "robust": true,
       "source": "EDGAR",
+      "value_uncapped": null,
       "window": "FY2020–FY2025",
       "years_used": 6
     },
@@ -4439,11 +4461,13 @@
     "revenue_cagr": {
       "anomalous_base": false,
       "bound": null,
+      "capped": null,
       "method": "cagr",
       "not_significant": null,
       "note": null,
       "robust": true,
       "source": null,
+      "value_uncapped": null,
       "window": null,
       "years_used": 4
     },
@@ -5214,13 +5238,12 @@
           "years_ok": null
         },
         {
-          "anchor": "margen neto",
+          "anchor": "ROE",
           "category": "Rentabilidad",
-          "persistence": 1.0,
-          "rule": "margen neto positivo y al menos el 75% del último (30.9%)",
+          "persistence": 0.8,
+          "rule": "ROE positivo y al menos el 75% del último (10.6%)",
           "surplus": 0.0,
           "years_ok": [
-            "2021",
             "2022",
             "2023",
             "2024",

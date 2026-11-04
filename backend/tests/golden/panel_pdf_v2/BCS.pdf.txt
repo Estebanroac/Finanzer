@@ -966,15 +966,12 @@ CONCEPTO
  VALOR
 LECTURA
 Precio de mercado
-Puntuación de 0 a 100 de lo atractivo que es el precio
-actual: valoración por múltiplos frente a su referencia y
-DCF.
  $22.84
 Valor justo DCF
 No aplica a bancos y aseguradoras: el balance es el
 producto (depósitos y préstamos)
  No aplica
-DCF: supuestos y fiabilidad
+Coste del capital
 Ke 10.73% = Rf 5.29% [Tesoro de EE. UU. a 10 años del par Rf–ERP de Damodaran, 1 de octubre de 2026] + β ajustada 1.17
 [bruta 1.25, propia, 2 años semanales frente al S&P 500, Blume] × prima implícita 4.20% + prima de riesgo país 0.55 pp
 (Reino Unido, sede operativa; Damodaran, enero de 2026). Bancos y aseguradoras no usan WACC: se valoran por P/B
@@ -1146,11 +1143,11 @@ Cómo se hace este informe
 Este informe combina ratios TTM y del último ejercicio (fuente: Yahoo Finance) con los modelos de P/B
 y P/TBV justificados por el retorno (Gordon) y dos puntuaciones Finanzer de 0 a 100: calidad del
 negocio (solidez, rentabilidad, calidad de ganancias y crecimiento) y atractivo del precio (valoración por
-múltiplos y DCF, contraída hacia 50 según la confianza del veredicto: solo los limitadores que lo
-contradicen o lo vuelven incierto, no los que apuntan en su dirección). Las lecturas se generan
-automáticamente según la banda en la que cae cada indicador frente a umbrales canónicos y a la
-referencia de su industria en su región (agregados de A. Damodaran, NYU Stern), o la del mercado
-amplio cuando el arquetipo de la empresa contradice a su sector.
+múltiplos y valor justificado sobre libros, contraída hacia 50 según la confianza del veredicto: solo los
+limitadores que lo contradicen o lo vuelven incierto, no los que apuntan en su dirección). Las lecturas se
+generan automáticamente según la banda en la que cae cada indicador frente a umbrales canónicos y a
+la referencia de su industria (medianas de sus pares del universo, en la industria en que la clasifica A.
+Damodaran), o la del mercado amplio cuando el arquetipo de la empresa contradice a su sector.
 Fuentes
 ●  SEC EDGAR: estados oficiales del emisor (XBRL de los 10-K, 10-Q y 20-F) para verificar y completar
  las cifras; CIK 312069.
@@ -1158,13 +1155,10 @@ Fuentes
  ajustado por dividendos y splits) de la empresa, del S&P 500 y del ETF sectorial de referencia.
 ●  Finnhub: fuente secundaria de ratios que faltan en la principal, consenso de beneficios y noticias de
  la empresa.
-●  A. Damodaran (NYU Stern): medianas y agregados por industria y región que sirven de referencia
- (industria «Bank (Money Center)», Europa, 113 empresas, datos del 5 de enero de 2026).
+●  A. Damodaran (NYU Stern): la clasificación por industria (industria «Bank (Money Center)»). La
+ referencia de este informe no es su agregado sino la mediana de los pares del universo en esa
+industria, sin la empresa (ver la nota de la tabla de múltiplos).
 Periodo de cada dato
-DATO
-PERIODO
-Estados financieros
-Estados financieros a 30 de junio de 2026 (últimos doce meses).
 
 ===== página 17 =====
 Finanzer
@@ -1175,12 +1169,14 @@ Página 17 de 20
 ↑ índice
 DATO
 PERIODO
+Estados financieros
+Estados financieros a 30 de junio de 2026 (últimos doce meses).
 Precio y rango de 52 semanas
 Sesión del 15 oct 2026.
 Ratios
 Ratios TTM y del último ejercicio.
 Referencia de la industria
-Damodaran, datos del 5 de enero de 2026.
+Mediana de pares (Yahoo Finance), datos del 28 de octubre de 2026.
 Contexto de mercado
 Serie diaria de Yahoo Finance (cierre ajustado por dividendos y splits, 2 años),
 S&P 500 y ETF del sector (XLF).
@@ -1188,12 +1184,12 @@ Cómo se calculan las puntuaciones
 ●  Calidad del negocio: 4 categorías (solidez, rentabilidad, calidad de ganancias y crecimiento) que
  parten de 10/20 y suman o restan según la banda de cada indicador; se reescalan a 100. Niveles:
 excelente ≥ 85 · sólida ≥ 65 · media ≥ 45 · débil por debajo de 45.
-●  Atractivo del precio: la categoría de Valoración (múltiplos frente a la referencia y DCF) reescalada a
- 100 y acercada a 50 según la confianza del veredicto: alta ×1 · media ×0.75 · baja ×0.5. Solo contraen
-los limitadores que contradicen el veredicto o lo vuelven incierto (la discrepancia entre métodos, los
-datos débiles, la dependencia del coste del capital); uno que apunta en su misma dirección no
-contrae: las tasas base de un precio exigente. Niveles: atractivo ≥ 65 · razonable ≥ 45 · exigente ≥ 30 ·
-muy exigente por debajo de 30.
+●  Atractivo del precio: la categoría de Valoración (múltiplos frente a la referencia y valor justificado
+ sobre libros) reescalada a 100 y acercada a 50 según la confianza del veredicto: alta ×1 · media ×0.75 ·
+baja ×0.5. Solo contraen los limitadores que contradicen el veredicto o lo vuelven incierto (la
+discrepancia entre métodos, los datos débiles, la dependencia del coste del capital); uno que apunta
+en su misma dirección no contrae: las tasas base de un precio exigente. Niveles: atractivo ≥ 65 ·
+razonable ≥ 45 · exigente ≥ 30 · muy exigente por debajo de 30.
 ●  Confianza del veredicto: convergencia entre métodos de valoración, cobertura de datos, calidad de
  la fuente y estabilidad del tipo de empresa; la más baja manda.
 ●  Una categoría con menos de la mitad de sus componentes con dato no es concluyente: se excluye y
@@ -1201,8 +1197,6 @@ muy exigente por debajo de 30.
 Modelos y referencias
 ●  P/B y P/TBV justificados por el retorno (Gordon).
 
-●  Tasas base de crecimiento por tamaño e industria: Mauboussin y Callahan (2021), para el DCF
- inverso.
 Documento generado automáticamente por Finanzer. La información puede contener errores u omisiones y no
 constituye asesoría financiera, recomendación de inversión ni oferta de valores. Verifique los datos y consulte a un
 profesional antes de invertir.
@@ -1216,6 +1210,7 @@ Fuente oficial: sí, SEC EDGAR (CIK 312069); último ejercicio en EDGAR: FY 2025
 Deuda coherente con el EBITDA (arrendamiento dentro solo si su coste no está en el EBITDA): deuda $182.82B; deuda
 subordinada $14.71B (dentro; en un banco, fuera de las ratios de apalancamiento de empresa (fase 3)); arrendamientos
 IFRS 16 $1.72B (dentro; del último informe anual (2025-12-31): el emisor no lo etiqueta en el filing del corte); IFRS 16: los
+arrendamientos ya están en la deuda de la fuente (regla cumplida).
 
 ===== página 18 =====
 Finanzer
@@ -1224,7 +1219,6 @@ Barclays PLC · BCS
 Datos: precio 15 oct 2026 · estados 30 jun 2026
 Página 18 de 20
 ↑ índice
-arrendamientos ya están en la deuda de la fuente (regla cumplida).
 Respaldo de SEC EDGAR (lo que Yahoo no da del mismo corte): gastos financieros (ifrs-full:InterestExpense; ejercicio
 2025-01-01 a 2025-12-31 + acumulado 2026-01-01 a 2026-06-30 − acumulado 2025-01-01 a 2025-06-30);
 amortizaciones (ifrs-full:DepreciationAndAmortisationExpense; ejercicio 2025-01-01 a 2025-12-31 + acumulado

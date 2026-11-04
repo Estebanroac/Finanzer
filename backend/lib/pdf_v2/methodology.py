@@ -55,13 +55,20 @@ def methodology(a: Dict[str, Any], ctx: Dict[str, Any]) -> list:
     sym = a.get("symbol") or ""
     bench = (a.get("benchmark") or {}).get("industry") or {}
     edgar = ((a.get("data_provenance") or {}).get("edgar") or {})
+    # F11 · T7: lo que se cita sale de lo que aplica a su tipo y de la referencia que de verdad se usó.
+    has_dcf = "dcf" not in (d.get("na_keys") or [])
+    intrinsic = "DCF" if has_dcf else "valor justificado sobre libros" if (
+        (a.get("classification") or {}).get("archetype") == "FINANCIAL") else "su modelo intrínseco"
+    peers = (bench.get("self_exclusion") or {}).get("method") == "mediana_pares"
+    ref_txt = ("medianas de sus pares del universo, en la industria en que la clasifica A. Damodaran" if peers
+               else "agregados de A. Damodaran, NYU Stern")
     out = heading_block(METHODOLOGY[0], METHODOLOGY[1], METHODOLOGY[2], METHODOLOGY[1])
     out.append(Paragraph(esc(
         "Este informe combina " + m["ratios_text"] + " (fuente: Yahoo Finance) con " + m["models_text"]
         + " y dos puntuaciones Finanzer de 0 a 100: calidad del negocio (solidez, rentabilidad, calidad de ganancias "
-        "y crecimiento) y atractivo del precio (valoración por múltiplos y DCF, " + contraction_text() + "). "
+        f"y crecimiento) y atractivo del precio (valoración por múltiplos y {intrinsic}, " + contraction_text() + "). "
         "Las lecturas se generan automáticamente según la banda en la que cae cada indicador frente a "
-        "umbrales canónicos y a la referencia de su industria en su región (agregados de A. Damodaran, NYU Stern), o "
+        f"umbrales canónicos y a la referencia de su industria ({ref_txt}), o "
         "la del mercado amplio cuando el arquetipo de la empresa contradice a su sector."), styles()["body"]))
 
     out += sub("Fuentes")
@@ -74,9 +81,13 @@ def methodology(a: Dict[str, Any], ctx: Dict[str, Any]) -> list:
     out.append(_src(link("Finnhub", FINNHUB_URL) + esc(
         ": fuente secundaria de ratios que faltan en la principal, consenso de beneficios y noticias de la empresa.")))
     out.append(_src(link("A. Damodaran (NYU Stern)", bench.get("url") or DAMODARAN_URL) + esc(
-        ": medianas y agregados por industria y región que sirven de referencia"
-        + (f" (industria «{bench['damodaran']}», {bench.get('region_label') or ''}, {bench.get('firms')} empresas,"
-           f" datos del {date_long(bench['as_of'])})" if bench.get("damodaran") and bench.get("as_of") else "") + ".")))
+        (f": la clasificación por industria (industria «{bench.get('damodaran')}»). La referencia de este informe no es "
+         "su agregado sino la mediana de los pares del universo en esa industria, sin la empresa (ver la nota de la "
+         "tabla de múltiplos)." if peers else
+         ": medianas y agregados por industria y región que sirven de referencia"
+         + (f" (industria «{bench['damodaran']}», {bench.get('region_label') or ''}, {bench.get('firms')} empresas,"
+            f" datos del {date_long(bench['as_of'])})" if bench.get("damodaran") and bench.get("as_of") else "")
+         + "."))))
 
     out += sub("Periodo de cada dato")
     cover = d["cover"]
@@ -87,7 +98,10 @@ def methodology(a: Dict[str, Any], ctx: Dict[str, Any]) -> list:
     if price_session(a):
         rows.append(["Precio y rango de 52 semanas", f"Sesión del {short_date(price_session(a))}."])
     rows.append(["Ratios", f"{m['ratios_text'][:1].upper()}{m['ratios_text'][1:]}."])
-    if bench.get("as_of"):
+    _pd = (bench.get("self_exclusion") or {}).get("peers_date")
+    if peers and _pd:
+        rows.append(["Referencia de la industria", f"Mediana de pares (Yahoo Finance), datos del {date_long(_pd)}."])
+    elif bench.get("as_of"):
         rows.append(["Referencia de la industria", f"Damodaran, datos del {date_long(bench['as_of'])}."])
     mk = d["sections"].get("market") or {}
     if mk.get("source"):
@@ -102,7 +116,8 @@ def methodology(a: Dict[str, Any], ctx: Dict[str, Any]) -> list:
         f"calidad de ganancias y crecimiento) que parten de {base['base']}/{base['max']} y suman o restan según la "
         f"banda de cada indicador; se reescalan a 100. Niveles: {_bands('quality')}."))
     out.append(bullet(
-        f"Atractivo del precio: la categoría de Valoración (múltiplos frente a la referencia y DCF) reescalada a 100 y "
+        f"Atractivo del precio: la categoría de Valoración (múltiplos frente a la referencia y {intrinsic}) reescalada a "
+        f"100 y "
         f"acercada a {cfg('thresholds.score.price.neutral')} según la confianza del veredicto: "
         + " · ".join(f"{k} ×{v:g}" for k, v in factors.items())
         + ". Solo contraen los limitadores que contradicen el veredicto o lo vuelven incierto (la discrepancia entre "
@@ -117,8 +132,9 @@ def methodology(a: Dict[str, Any], ctx: Dict[str, Any]) -> list:
     out += sub("Modelos y referencias")
     for mdl in m.get("models") or []:
         out.append(bullet(mdl[:1].upper() + mdl[1:] + "."))
-    out.append(bullet("Tasas base de crecimiento por tamaño e industria: Mauboussin y Callahan (2021), para el DCF "
-                      "inverso."))
+    if (a.get("reverse_dcf") or {}).get("applicable") is not False:
+        out.append(bullet("Tasas base de crecimiento por tamaño e industria: Mauboussin y Callahan (2021), para el DCF "
+                          "inverso."))
     out.append(Spacer(1, T.SPACE[1]))
     out.append(note(DISCLAIMER))
     return out

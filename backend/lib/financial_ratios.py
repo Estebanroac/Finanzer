@@ -3426,6 +3426,7 @@ def score_crecimiento(
     revenue_ps_growth_3y: Optional[float] = None,   # revisión F3 (hallazgo 6): retorno total por acción
     revenue_ps_years: Optional[int] = None,         # revisión F4 (hallazgo 2): ventana del perímetro homogéneo
     bounds: Optional[Dict[str, Any]] = None,        # F10: cotas de las tasas no significativas ({rev, eps, fcf})
+    revenue_window: Optional[str] = None,           # F11 · T4: la ventana real ("FY2020–FY2025") si no es la de 3 años
 ) -> Dict[str, Any]:
     """
     Categoría 5: Crecimiento (20 pts máximo)
@@ -3458,6 +3459,7 @@ def score_crecimiento(
                   and dividend_yield >= T["mature_total_return_min_yield"])
     _rev_metric = ("Retorno total (dividendo + FFO por acción)" if _reit
                    else "Retorno total (dividendo + ingresos por acción)" if _mature_tr
+                   else f"Crecimiento de ingresos ({revenue_window})" if revenue_window
                    else growth_metric("Crecimiento de ingresos", archetype))
     _ffo_ps = revenue_growth_3y
     # F8 · E4 (auditoría del 26-oct, VZ): el crecimiento de los ingresos de la base del informe (el del DCF), aparte del
@@ -3863,6 +3865,7 @@ def calculate_score_v2(
         revenue_ps_years=contextual_values.get("revenue_ps_cagr_years"),
         bounds={k: contextual_values.get(f"{f}_bound") for k, f in
                 (("rev", "revenue_cagr_3y"), ("eps", "eps_cagr_3y"), ("fcf", "fcf_cagr_3y"))},
+        revenue_window=contextual_values.get("revenue_cagr_window_label"),
     )
     
     # Calcular totales. Las categorías no concluyentes (cobertura < 50%) se
