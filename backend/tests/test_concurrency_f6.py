@@ -51,7 +51,7 @@ def test_health_answers_while_an_analysis_runs(monkeypatch):
 
     code, dt, body = asyncio.run(run())
     assert code == 200 and dt < 0.5, f"/api/health tardó {dt:.2f} s con un análisis en curso"
-    assert body == {"symbol": "AAA"}
+    assert body == {"symbol": "AAA", "logo": None}        # el logotipo (lib/logos.py) lo añade el endpoint
 
 
 def test_concurrent_analyses_are_capped(monkeypatch):

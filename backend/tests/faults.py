@@ -16,6 +16,7 @@ fallo en caliente para el e2e de e2e/v2-faults).
   finnhub_429      con clave, pero Finnhub responde 429 (límite de peticiones) a todo.
   prices_empty     la serie de precios de la empresa viene vacía (Yahoo sin datos para el símbolo).
   sector_etf_down  la serie del ETF del sector falla (la de la empresa y la del mercado, no).
+  logos_down       Parqet y Finnhub no responden a los logotipos: la web pone la placa con las iniciales.
 """
 import logging
 import threading
@@ -171,6 +172,14 @@ def _spy_down(p: fb._Patcher) -> None:
     p.set(price_history, "FETCHER", fetch)
 
 
+def _logos_down(p: fb._Patcher) -> None:
+    import logos
+
+    def fetch(symbol):
+        raise logos.SourceError("Parqet y Finnhub no responden (fallo inyectado)")
+    p.set(logos, "FETCH", fetch)
+
+
 FAULTS: Dict[str, Tuple[str, Callable[[fb._Patcher], None]]] = {
     "yahoo_down": ("Yahoo caído", _yahoo_down),
     "yahoo_401": ("Yahoo responde 401 (plan B)", _yahoo_401),
@@ -181,11 +190,14 @@ FAULTS: Dict[str, Tuple[str, Callable[[fb._Patcher], None]]] = {
     "prices_empty": ("Serie de precios vacía", _prices_empty),
     "sector_etf_down": ("ETF del sector caído", _sector_etf_down),
     "spy_down": ("SPY caído (rentabilidad total del mercado)", _spy_down),
+    "logos_down": ("Logotipos caídos (Parqet y Finnhub)", _logos_down),
 }
 
 
 def reset_caches() -> None:
-    """Cachés de todo lo que un fallo cambia: el pipeline, la gráfica, segmentos, rivales, cola y tendencias."""
+    """Cachés de todo lo que un fallo cambia: el pipeline, la gráfica, segmentos, rivales, cola, tendencias y
+    logotipos."""
+    import logos
     import peers
     import segments
     import sparklines
@@ -195,6 +207,7 @@ def reset_caches() -> None:
     segments.reset()
     peers.reset()          # también la cola compartida (analysis_queue)
     trending.reset()
+    logos.reset()
 
 
 def apply(name: str) -> fb._Patcher:

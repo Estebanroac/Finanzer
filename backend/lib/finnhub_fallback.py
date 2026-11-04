@@ -95,6 +95,27 @@ def _get(path: str, params: Dict[str, Any]) -> Optional[dict]:
         return None
 
 
+
+# Pausa compartida entre las consultas de Finnhub que van de una en una (capitalizaciones de los rivales, logotipos):
+# el plan gratuito admite ≤ 60/min y el cupo es el mismo para todo.
+_pace_lock = threading.Lock()
+_pace_next = [0.0]
+BUSY = object()          # paced_get: la pausa pedía esperar más de `max_wait_s`; no se consultó
+
+
+def paced_get(path: str, params: Dict[str, Any], min_interval_s: float, max_wait_s: Optional[float] = None):
+    """_get con `min_interval_s` desde la consulta pausada anterior (la de cualquier uso). Si tocaría esperar más de
+    `max_wait_s`, no consulta y devuelve BUSY (quien llama decide; el turno no se gasta)."""
+    with _pace_lock:
+        now = time.monotonic()
+        wait = max(_pace_next[0] - now, 0.0)
+        if max_wait_s is not None and wait > max_wait_s:
+            return BUSY
+        _pace_next[0] = now + wait + min_interval_s
+    if wait > 0:
+        time.sleep(wait)
+    return _get(path, params)
+
 # Series anuales de /stock/metric que lee _fill_piotroski, y cuántos años de cada una (0 = el último, 1 = el anterior).
 _PIOTROSKI_SERIES = ("roa", "netMargin", "currentRatio", "grossMargin", "longtermDebtTotalAsset")
 _PIOTROSKI_YEARS = 2
