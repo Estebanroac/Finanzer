@@ -461,6 +461,17 @@ cyclical_industries = [
     "building materials", "residential construction", "real estate - development",
     "lumber & wood production", "paper & paper products", "marine shipping",
 ]
+# F13 · paso 4 (revisión de 110 empresas, patrón 6; decisión del usuario, 5-nov-2026): los PRODUCTORES DE MATERIAS
+# PRIMAS (minería, petróleo y gas, químicos básicos, acero, fertilizantes) son CYCLICAL por su industria aunque su
+# historia de ventas no muestre ciclo: su resultado depende del precio de la materia prima, no de la empresa (NEM:
+# «madura» con el oro en máximos). Subconjunto de cyclical_industries; los servicios petroleros, las aerolíneas o los
+# fabricantes de coches siguen decidiéndose por su historia.
+commodity_industries = [
+    "copper", "steel", "aluminum", "other industrial metals & mining",
+    "gold", "silver", "other precious metals & mining", "coking coal", "thermal coal", "uranium",
+    "oil & gas e&p", "oil & gas refining & marketing", "oil & gas integrated", "oil & gas drilling",
+    "chemicals", "agricultural inputs",
+]
 # Industrias cíclicas CONDICIONALES: mezclan negocios de ciclo (memoria, commodities
 # químicos) con otros estructurales (diseño de chips, gases industriales). Solo son
 # CYCLICAL si en la ventana de ejercicios hay REVERSIÓN ([archetypes.reversion]);
