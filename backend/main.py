@@ -45,7 +45,8 @@ from cost_of_capital import (adjusted_beta, capm_rates, cost_of_debt, effective_
                              wacc as compute_wacc)
 from valuation_confidence import (convergence, coverage_dimension, dcf_reliability, dcf_wacc_flips, signal_from_upside,
                                   official_dimension,
-                                  source_dimension, stability_dimension, verdict_confidence)
+                                  source_dimension, stability_dimension, verdict_confidence,
+                                  fragility_dimension)
 import archetype_metrics
 import sec_edgar as edgar
 import growth_currency
@@ -2619,6 +2620,11 @@ def _compute_analysis_body(symbol: str) -> dict:
                     "stability": stability_dimension(_cls.get("archetype"), _cls),
                     # Fase 2b (D7): emisor sin estados en la SEC -> techo "baja"
                     "fuente_oficial": official_dimension(yinfo.get("_official_source") if _has_yahoo else None),
+                    # F13 · paso 3: base frágil (caja negativa por inversión, Altman en peligro, normalizado frente a
+                    # forward): techo «media», no pondera
+                    "base": fragility_dimension(_cls.get("archetype"), result.get("key_metrics") or {},
+                                                result.get("altman_z"),
+                                                bool((result.get("business_model") or {}).get("altman_referential"))),
                 }, base_rate=_base_rate_for_confidence(result.get("reverse_dcf")))
             except Exception as e:
                 _sin_dato("confianza", e)

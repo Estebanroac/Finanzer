@@ -45,6 +45,14 @@ TABLE = [
      "Parte del beneficio no la explica el negocio y no se ha podido identificar de dónde sale: no se descuenta, pero "
      "resta certeza."),
     (r"bono del Tesoro de EE\. UU\. a 10 años no está disponible", None),   # Rf de referencia: detalle técnico
+    # ── base del veredicto (F13 · paso 3: valuation_confidence.fragility_dimension) ──
+    (r"^caja libre negativa \(",
+     "La empresa invierte más caja de la que genera: su valor depende de que esa inversión rinda."),
+    (r"^Altman Z \S+ en zona de peligro",
+     "La fórmula de Altman sitúa a la empresa en la zona de riesgo de quiebra."),
+    (r"^el beneficio normalizado y el esperado no cuadran",
+     "El beneficio sin partidas extraordinarias y el que esperan los analistas no cuadran: una de las dos bases puede "
+     "estar equivocada."),
     # ── convergencia entre métodos ──
     (r"^un solo método evaluable",
      "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo."),

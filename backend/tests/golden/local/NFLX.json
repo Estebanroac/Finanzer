@@ -392,6 +392,12 @@
     "capped_from": null,
     "contraction_basis": "baja",
     "dimensions": {
+      "base": {
+        "level": "media",
+        "reasons": [
+          "el beneficio normalizado y el esperado no cuadran (P/E 26.5x frente a forward 18.5x)"
+        ]
+      },
       "convergence": {
         "level": "media",
         "methods": [
@@ -461,6 +467,7 @@
       "convergencia media: uno lo ve en precio y otro con dirección: no coinciden, sin oponerse",
       "calidad de fuente media: beneficio normalizado con ítems inferidos (confianza media)",
       "estabilidad media: clasificación de frontera: un umbral movido ±20% la cambia (min_revenue_ps_cagr_3y 0.15→0.12)",
+      "base del veredicto media: el beneficio normalizado y el esperado no cuadran (P/E 26.5x frente a forward 18.5x)",
       "veredicto dependiente de Ke: el nivel de precio pasa de «exigente» a «razonable» con Ke − 1 pp: confianza media → baja"
     ],
     "score": 0.6
@@ -1595,6 +1602,10 @@
           "text": "clasificación de frontera: un umbral movido ±20% la cambia (min_revenue_ps_cagr_3y 0.15→0.12)"
         },
         {
+          "label": "Confianza · base (media)",
+          "text": "el beneficio normalizado y el esperado no cuadran (P/E 26.5x frente a forward 18.5x)"
+        },
+        {
           "label": "Fuente oficial",
           "text": "sí, SEC EDGAR (CIK 1065280); último ejercicio en EDGAR: FY 2025."
         },
@@ -2602,13 +2613,20 @@
           "label": "Estabilidad del arquetipo",
           "level": "Media",
           "text": "El tipo de empresa está en la frontera entre dos: un cambio pequeño en un umbral lo cambiaría, lo que hace menos fiable la comparación."
+        },
+        {
+          "key": "base",
+          "label": "base",
+          "level": "Media",
+          "text": "El beneficio sin partidas extraordinarias y el que esperan los analistas no cuadran: una de las dos bases puede estar equivocada."
         }
       ],
       "level": "baja",
       "plain": [
         "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no.",
         "El beneficio se ajustó por partidas extraordinarias identificadas de forma indirecta.",
-        "El tipo de empresa está en la frontera entre dos: un cambio pequeño en un umbral lo cambiaría, lo que hace menos fiable la comparación."
+        "El tipo de empresa está en la frontera entre dos: un cambio pequeño en un umbral lo cambiaría, lo que hace menos fiable la comparación.",
+        "El beneficio sin partidas extraordinarias y el que esperan los analistas no cuadran: una de las dos bases puede estar equivocada."
       ],
       "reasons": [
         {
@@ -2625,6 +2643,11 @@
           "dimension": "estabilidad",
           "level": "media",
           "text": "El tipo de empresa está en la frontera entre dos: un cambio pequeño en un umbral lo cambiaría, lo que hace menos fiable la comparación."
+        },
+        {
+          "dimension": "base",
+          "level": "media",
+          "text": "El beneficio sin partidas extraordinarias y el que esperan los analistas no cuadran: una de las dos bases puede estar equivocada."
         }
       ],
       "summary": "Confianza del veredicto: baja (por sus dimensiones sería media; la limita: el veredicto depende de Ke —el nivel de precio pasa de «exigente» a «razonable» con Ke − 1 pp—). Contrae el atractivo del precio hacia 50: de 40 a 45. Contrae también la calidad del negocio hacia 50: de 91 a 85.",

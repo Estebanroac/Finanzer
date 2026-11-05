@@ -151,11 +151,17 @@ def _declare_engine_texts(a, D):
     # Confianza: fiabilidad del DCF citada y contracción del precio.
     pa, C = a.get("price_attractiveness") or {}, D.get("confidence") or {}
     ccl = [_claim("dcf_rel"), _claim("price_contraction", raw=pa.get("score_raw"), score=pa.get("score"),
-                                     confidence=pa.get("confidence"), factor=pa.get("factor"))]
+                                     confidence=pa.get("confidence"), factor=pa.get("factor")),
+           _claim("altman_zone")]        # F13 · paso 3: la base frágil cita la zona del Altman
     for d in C.get("dimensions") or []:
         _record(d.get("text"), *ccl, source="display.confianza")
     for r in C.get("reasons") or []:
         _record(r.get("detail"), *ccl, source="display.confianza")
+        _record(r.get("text"), *ccl, source="display.confianza")
+    for txt in C.get("plain") or []:
+        _record(txt, *ccl, source="display.confianza")
+    for txt in (D.get("cover") or {}).get("confidence_reasons") or []:
+        _record(txt, *ccl, source="display.portada")
     _record(C.get("summary"), *ccl, source="display.confianza")
     # Filas con estado propio (cobertura, runway, deuda neta/EBITDA) y etiquetas con base temporal.
     rcl = {"interest_coverage": _metric_claims(a, "Cobertura de intereses"), "runway": [_claim("runway")],

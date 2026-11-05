@@ -483,7 +483,8 @@ base_rate_min_share = 0.05
 source_ignored_rules = ["periodo_incoherente", "beta_discrepante", "multiplo_no_significativo", "ratio_no_significativa"]
 coverage_bounds = [0.9, 0.7]        # componentes evaluados / aplicables: >= 0.9 alta; >= 0.7 media
 source_issue_bounds = [0, 2]        # incidencias de fuente: 0 alta; <= 2 media; más, baja
-excluded_multiple_components = ["DCF", "Regla de 40"]   # no son múltiplos frente al sector
+excluded_multiple_components = ["DCF", "Regla de 40"]   # no son múltiplos frente al sector (prefijos: F13 · paso 3)
+fragile_pe_gap = 0.40               # F13 · paso 3: |P/E normalizado ÷ forward − 1| mayor -> base frágil (techo media)
 
 [confidence.weights]
 convergence = 0.4

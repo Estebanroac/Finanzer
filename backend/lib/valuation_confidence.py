@@ -207,11 +207,15 @@ def multiples_signal(items: List[Any], members: Optional[Dict[str, float]] = Non
     (negativo), promediado. items = [(nombre, máx, mín, ajuste)].
     `readings` (F8 · E4): la lectura de cada múltiplo individual en [−1, 1], los del bloque (`members`, ya
     normalizados) y los de la rama, para que la convergencia vea si alguno contradice con lectura extrema."""
-    skip = set(cfg("thresholds.confidence.excluded_multiple_components"))
+    # F13 · paso 3 (revisión de 110 empresas, patrón 1): por TIPO de fila (prefijo), no por nombre exacto. Con el
+    # directo no significativo o en un REIT, la fila del DCF inverso se llama «DCF inverso (FFO)», «DCF inverso (flujo
+    # de mantenimiento)»…: con el nombre exacto entraba en esta media y además era método propio (PSA, PLD: la «alta»
+    # salía de contar dos veces la misma lectura).
+    skip = tuple(cfg("thresholds.confidence.excluded_multiple_components"))
     vals = []
     readings = dict(members or {})
     for name, mx, mn, adj in items:
-        if name in skip or adj is None:
+        if str(name).startswith(skip) or adj is None:
             continue
         v = adj / mx if (adj > 0 and mx) else (adj / abs(mn) if (adj < 0 and mn) else 0.0)
         vals.append(v)
@@ -381,6 +385,26 @@ def stability_dimension(archetype: Optional[str], classification: Dict[str, Any]
     return {"level": "alta", "reasons": []}
 
 
+def fragility_dimension(archetype: Optional[str], key_metrics: Dict[str, Any],
+                        altman: Optional[Dict[str, Any]], altman_referential: bool = False) -> Dict[str, Any]:
+    """F13 · paso 3 (revisión de 110 empresas, patrón 1b): señales de que la base del veredicto de precio es frágil,
+    aunque los métodos coincidan. Cualquiera pone techo «media» (no pondera): ORCL salía «atractiva, confianza alta»
+    quemando 28,7 B$ de caja con un Altman de 0,83; XEL «muy exigente, alta» con un P/E normalizado de 28,5x frente a
+    un forward de 17,8x. Los estados desfasados ya bajan la cobertura (coverage_dimension)."""
+    C = cfg("thresholds.confidence")
+    km, reasons = key_metrics or {}, []
+    ocf, fcf = km.get("operating_cash_flow"), km.get("free_cash_flow")
+    if archetype != "FINANCIAL" and fcf is not None and fcf < 0 and ocf is not None and ocf > 0:
+        reasons.append(f"caja libre negativa ({numfmt.money(fcf)}): invierte más de lo que genera")
+    # (un Altman solo referencial, el de una empresa con financiera cautiva, no es señal: business_model)
+    if (altman or {}).get("applicable") and (altman or {}).get("zone") == "distress" and not altman_referential:
+        reasons.append(f"Altman Z {altman.get('z_score')} en zona de peligro")
+    pen, fpe = km.get("pe_normalized"), km.get("forward_pe")
+    if pen and fpe and pen > 0 and fpe > 0 and abs(pen / fpe - 1) > C["fragile_pe_gap"]:
+        reasons.append(f"el beneficio normalizado y el esperado no cuadran (P/E {pen:.1f}x frente a forward {fpe:.1f}x)")
+    return {"level": "media" if reasons else "alta", "reasons": reasons}
+
+
 def official_dimension(official: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     """Fase 2b (D7, F2_PRECEDENCIA §4): fuente oficial del emisor (data_provenance.official_source)."""
     o = official or {}
@@ -407,7 +431,7 @@ def verdict_confidence(dimensions: Dict[str, Dict[str, Any]],
     hi, mid = C["overall_bounds"]
     level = "alta" if score >= hi else ("media" if score >= mid else "baja")
     labels = {"convergence": "convergencia", "coverage": "cobertura", "source": "calidad de fuente",
-              "stability": "estabilidad", "fuente_oficial": "fuente oficial"}
+              "stability": "estabilidad", "fuente_oficial": "fuente oficial", "base": "base del veredicto"}
     reasons = [f"{labels[k]} {d['level'].replace('_', ' ')}: " + "; ".join(d["reasons"])
                for k, d in dimensions.items() if d["level"] != "alta" and d.get("reasons")]
     capped = None
@@ -433,6 +457,9 @@ def verdict_confidence(dimensions: Dict[str, Dict[str, Any]],
         caps.append((LEVELS[worst], f"la más baja manda: {', '.join(low)} {LEVELS[worst]}"))
     if (dimensions.get("fuente_oficial") or {}).get("level") == "baja":
         caps.append((C["no_official_source_cap"], "sin fuente oficial para verificar los datos"))
+    if (dimensions.get("base") or {}).get("level") == "media":
+        # F13 · paso 3: base frágil (no pondera; techo)
+        caps.append(("media", "base frágil: " + "; ".join(dimensions["base"]["reasons"])))
     for cap, why in caps:
         if LEVELS.index(level) < LEVELS.index(cap):
             capped, level = capped or level, cap

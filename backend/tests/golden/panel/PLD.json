@@ -314,11 +314,15 @@
   },
   "confidence": {
     "base_rate_step": null,
-    "capped_from": null,
-    "contraction_basis": "alta",
+    "capped_from": "alta",
+    "contraction_basis": "media",
     "dimensions": {
-      "convergence": {
+      "base": {
         "level": "alta",
+        "reasons": []
+      },
+      "convergence": {
+        "level": "media",
         "methods": [
           {
             "band": "en_precio",
@@ -329,21 +333,20 @@
             "signal": 0.0
           },
           {
-            "components": 3,
-            "direction": "en precio",
+            "components": 2,
+            "direction": "cara",
             "evaluable": true,
             "kind": "relativo",
             "method": "múltiplos frente al sector",
             "readings": {
-              "DCF inverso (FFO)": 0.0,
               "EV/EBITDA": 0.0,
               "P/FFO": -0.5
             },
-            "signal": -0.166666666667
+            "signal": -0.25
           }
         ],
         "reasons": [
-          "coinciden (en precio) con distancia 0.17 (< 0.6)"
+          "uno lo ve en precio y otro con dirección: no coinciden, sin oponerse"
         ]
       },
       "coverage": {
@@ -377,10 +380,13 @@
         "reasons": []
       }
     },
-    "level": "alta",
+    "level": "media",
     "limits_score": false,
-    "reasons": [],
-    "score": 1.0
+    "reasons": [
+      "convergencia media: uno lo ve en precio y otro con dirección: no coinciden, sin oponerse",
+      "techo en media: la convergencia es media: alta exige convergencia alta"
+    ],
+    "score": 0.8
   },
   "cost_of_equity": {
     "as_of": "2026-11-01",
@@ -1425,8 +1431,8 @@
           "text": "Arquetipo REIT (regla industria_reit): Clasificada como REIT por industria REIT industrial."
         },
         {
-          "label": "Confianza · Convergencia entre métodos (alta)",
-          "text": "coinciden (en precio) con distancia 0.17 (< 0.6)"
+          "label": "Confianza · Convergencia entre métodos (media)",
+          "text": "uno lo ve en precio y otro con dirección: no coinciden, sin oponerse."
         },
         {
           "label": "Fuente oficial",
@@ -2099,8 +2105,8 @@
         {
           "key": "convergence",
           "label": "Convergencia entre métodos",
-          "level": "Alta",
-          "text": "DCF inverso +0.00 (en precio) · múltiplos frente al sector -0.17 (en precio). Los métodos de valoración coinciden."
+          "level": "Media",
+          "text": "DCF inverso +0.00 (en precio) · múltiplos frente al sector -0.25 (cara). Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
         },
         {
           "key": "coverage",
@@ -2119,14 +2125,33 @@
           "label": "Estabilidad del arquetipo",
           "level": "Alta",
           "text": "Sin incidencias."
+        },
+        {
+          "key": "base",
+          "label": "base",
+          "level": "Alta",
+          "text": "Sin incidencias."
         }
       ],
-      "level": "alta",
-      "plain": [],
-      "reasons": [],
-      "summary": "Confianza del veredicto: alta. La calidad del negocio no se contrae.",
-      "tone": "pos",
-      "verdict_text": "(confianza alta: DCF inverso y los múltiplos coinciden)"
+      "level": "media",
+      "plain": [
+        "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
+      ],
+      "reasons": [
+        {
+          "dimension": "convergencia",
+          "level": "media",
+          "text": "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
+        },
+        {
+          "dimension": "techo",
+          "level": "media",
+          "text": null
+        }
+      ],
+      "summary": "Confianza del veredicto: media (por sus dimensiones sería alta; la limita: la convergencia es media —alta exige convergencia alta—). Contrae el atractivo del precio hacia 50: de 40 a 42. La calidad del negocio no se contrae.",
+      "tone": "warn",
+      "verdict_text": "(confianza media: DCF inverso la ve en precio y los múltiplos cara)"
     },
     "cover": {
       "archetype": "REIT",
@@ -2212,7 +2237,9 @@
       "classification_notes": [
         "Sociedad inmobiliaria cotizada que reparte casi todo su beneficio y se mide por sus fondos de operación (FFO); industria REIT industrial."
       ],
-      "confidence_reasons": [],
+      "confidence_reasons": [
+        "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
+      ],
       "coverage_notes": [],
       "currency_note": null,
       "data_notices": [
@@ -2290,13 +2317,13 @@
       ],
       "official_source_badge": null,
       "price": {
-        "contracted": false,
+        "contracted": true,
         "level": "exigente",
-        "note": null,
-        "note_short": null,
+        "note": "ajustado de 40 a 42 por confianza media.",
+        "note_short": "Ajustado de 40 a 42 por confianza media",
         "question": "¿está cara hoy?",
         "raw": 40,
-        "score": 40,
+        "score": 42,
         "title": "ATRACTIVO DEL PRECIO",
         "tone": "warn"
       },
@@ -2310,9 +2337,9 @@
         "tone": "pos"
       },
       "verdict": {
-        "confidence_text": "(confianza alta: DCF inverso y los múltiplos coinciden)",
-        "confidence_tone": "pos",
-        "full": "Calidad sólida · precio exigente (confianza alta: DCF inverso y los múltiplos coinciden)",
+        "confidence_text": "(confianza media: DCF inverso la ve en precio y los múltiplos cara)",
+        "confidence_tone": "warn",
+        "full": "Calidad sólida · precio exigente (confianza media: DCF inverso la ve en precio y los múltiplos cara)",
         "text": "Calidad sólida · precio exigente"
       }
     },
@@ -3853,7 +3880,7 @@
         "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: Valoración (base 10/20 + bloque de múltiplos y DCF) reescalada a 100 y contraída hacia 50 según la confianza del veredicto: solo los limitadores que lo contradicen o lo vuelven incierto, no los que apuntan en su dirección.",
         "price": {
           "level": "exigente",
-          "note": null,
+          "note": "ajustado de 40 a 42 por confianza media.",
           "rows": [
             {
               "kind": "signed",
@@ -3874,7 +3901,7 @@
               "value": 0
             }
           ],
-          "score": 40,
+          "score": 42,
           "signed_max": 6,
           "title": "ATRACTIVO DEL PRECIO",
           "tone": "warn"
@@ -3924,7 +3951,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad sólida · precio exigente (confianza alta: DCF inverso y los múltiplos coinciden). Calidad 75/100 · precio 40/100."
+          "text": "Calidad sólida · precio exigente (confianza media: DCF inverso la ve en precio y los múltiplos cara). Calidad 75/100 · precio 42/100 (ajustado de 40 a 42 por confianza media)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -3952,7 +3979,7 @@
         },
         {
           "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Alta: los métodos y los datos coinciden. No contrae el atractivo del precio ni la calidad."
+          "text": "Media: los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no. Contrae el atractivo del precio hacia 50 (de 40 a 42); la calidad no se contrae."
         }
       ]
     },
@@ -4714,18 +4741,18 @@
     "base": {
       "ke": 0.0892988797506,
       "level": "exigente",
-      "score": 40
+      "score": 42
     },
     "dependent": false,
     "minus": {
       "ke": 0.0792988797506,
       "level": "exigente",
-      "score": 40
+      "score": 42
     },
     "plus": {
       "ke": 0.0992988797506,
       "level": "exigente",
-      "score": 40
+      "score": 42
     },
     "pp": 0.01,
     "reason": null,
@@ -5311,16 +5338,16 @@
         "score": 8
       }
     ],
-    "confidence": "alta",
-    "contracted": false,
+    "confidence": "media",
+    "contracted": true,
     "excluded_categories": [],
-    "factor": 1.0,
+    "factor": 0.75,
     "level": "exigente",
     "level_raw": "exigente",
     "low_coverage_categories": [],
     "not_applicable_categories": [],
     "partial": false,
-    "score": 40,
+    "score": 42,
     "score_raw": 40
   },
   "price_change": {
@@ -6054,9 +6081,9 @@
     "source": "efectiva"
   },
   "verdict": {
-    "confidence": "alta",
-    "confidence_text": "(confianza alta: DCF inverso y los múltiplos coinciden)",
-    "full": "Calidad sólida · precio exigente (confianza alta: DCF inverso y los múltiplos coinciden)",
+    "confidence": "media",
+    "confidence_text": "(confianza media: DCF inverso la ve en precio y los múltiplos cara)",
+    "full": "Calidad sólida · precio exigente (confianza media: DCF inverso la ve en precio y los múltiplos cara)",
     "price_level": "exigente",
     "quality_level": "sólida",
     "text": "Calidad sólida · precio exigente"
