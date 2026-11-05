@@ -101,7 +101,19 @@ def capm_rates(now: Optional[float] = None) -> Dict[str, Any]:
         out["reason"] = (f"el bono a 10 años cotiza hoy al {market['value']:.2%}, a más de "
                          f"{C['pair_drift_warning'] * 100:.1f} pp del Rf del par ({C['risk_free_rate']:.2%} a "
                          f"{C['pair_as_of']}): el par Rf–ERP debe actualizarse")
+    # F13 · paso 1: la revisión mensual del par (config/review.toml) se vigila en ejecución, no solo con la herramienta.
+    import parameter_review
+    out["review"] = parameter_review.parameter("market_risk_premium", _today())
+    if out["review"]["status"] == "revisar":
+        late = (f"la revisión mensual del par Rf–ERP de Damodaran ({C['pair_as_of']}) venció el "
+                f"{out['review']['due']}: el coste del capital usa una prima que puede no ser la vigente")
+        out["reason"] = f"{out['reason']}; {late}" if out["reason"] else late
     return out
+
+
+def _today() -> _dt.date:
+    """Hoy, para la revisión del par (el replay lo fija al día de la captura: los golden no dependen del día)."""
+    return _dt.date.today()
 
 
 def effective_tax_rate(pretax: Optional[float], tax: Optional[float], period: str = "") -> Dict[str, Any]:

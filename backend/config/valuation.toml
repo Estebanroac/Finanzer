@@ -9,26 +9,27 @@ risk_free_ticker = "^TNX"           # rendimiento del Tesoro de EE. UU. a 10 añ
 risk_free_cache_hours = 24          # una lectura correcta vale 24 h
 risk_free_bounds = [0.0, 0.15]      # una lectura fuera del rango se descarta
 # FALLBACK si ^TNX no está disponible (se marca en el JSON y el PDF): el Tesoro a 10 años
-# que usa Damodaran para la prima implícita de abajo (5.29% a 1-oct-2026, misma fuente).
+# que usa Damodaran para la prima implícita de abajo (5.29% a 1-nov-2026, misma fuente; también 5.29% a 1-oct).
 # PAR: risk_free_rate y market_risk_premium forman un par (la prima implícita se calcula
 # con ese Rf) y DEBEN ACTUALIZARSE JUNTOS, con la misma fecha (revisión mensual, RECON 7.13).
 risk_free_rate = 0.0529
 # Prima de riesgo de mercado (EE. UU.): la IMPLÍCITA de Damodaran vigente. El DCF
 # compara valor intrínseco con precio de mercado: una prima histórica mayor que la
 # implícita hace que todo salga sobrevalorado por construcción.
-#   Fuente: Damodaran Online, "Implied ERP on October 1, 2026 = 4.20% (Trailing 12
-#   month, with adjusted payout)", pages.stern.nyu.edu/~adamodar (home.htm), con el
-#   Tesoro a 10 años en 5.29% como Rf. Consultado: 2026-10-12. Damodaran la publica
-#   cada mes: revisarla al menos cada trimestre.
+#   Fuente: Damodaran Online, "Implied ERP on November 1, 2026 = 4.41% (Trailing 12
+#   month, with adjusted payout)", pages.stern.nyu.edu/~adamodar (New_Home_Page/home.htm),
+#   "with the US treasury rate of 5.29% used as the riskfree rate". Consultado: 2026-11-05
+#   (F13 · paso 1). Antes: 4.20% a 1-oct-2026 (consultado 2026-10-12). Damodaran la
+#   publica el día 1 de cada mes: la revisión vencida se avisa en el análisis.
 #   Referencia: Kroll, ERP recomendada para EE. UU. 5.0% (desde jun-2024).
 #   Antes (hasta la etapa 8): 5.5%, prima heredada de la v1 sin fuente.
 #   Par con risk_free_rate (arriba): actualizar los dos a la vez.
-market_risk_premium = 0.042
+market_risk_premium = 0.0441
 # F8 · E1 (auditoría externa del 26-oct-2026): Rf y ERP DE LA MISMA FECHA. El Ke, el Kd y el WACC usan el par de
 # arriba (Damodaran, misma fecha: `pair_as_of`); el ^TNX del día queda solo como referencia y, si se aleja del par más
 # de `pair_drift_warning`, el análisis lo avisa (hay que actualizar el par). Antes se mezclaba el Rf del día con una ERP
 # calculada con otro Rf.
-pair_as_of = "2026-10-01"
+pair_as_of = "2026-11-01"
 pair_drift_warning = 0.005          # |^TNX − Rf del par| mayor: aviso "revisar el par Rf–ERP"
 # F8 · E1: pisos duros del Ke (el accionista es residual: su coste no puede quedar por debajo del de la deuda ni de
 # medio mercado). Ke = máx(CAPM, Rf + ke_floor_erp_multiple × ERP, Kd + ke_floor_over_kd); el de Kd, si hay deuda.

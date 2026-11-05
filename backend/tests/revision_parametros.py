@@ -19,32 +19,12 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "lib"))
 from settings import cfg  # noqa: E402
+import parameter_review  # noqa: E402
 
 
 def estado(item, hoy: _dt.date):
-    """(estado, próxima fecha esperada o None)."""
-    if not item["consulted"]:
-        return "sin fuente", None
-    consulted = _dt.date.fromisoformat(item["consulted"])
-    base = _dt.date.fromisoformat(item["published"]) if item["published"] else consulted
-
-    def plus(d):
-        # cadencias de meses en meses de calendario (revisión de F7, hallazgo 10: 31 días desde el 1 de noviembre
-        # caían el 2 de diciembre y se iban desplazando)
-        months = round(item["cadence_days"] / 30.44)
-        if 1 <= months <= 12 and abs(months * 30.44 - item["cadence_days"]) <= 3:
-            y, m = divmod(d.month - 1 + months, 12)
-            return d.replace(year=d.year + y, month=m + 1, day=min(d.day, 28))
-        return d + _dt.timedelta(days=item["cadence_days"])
-    # Si se consultó después de la publicación esperada, se miró y no había otra más nueva: cuenta desde la consulta.
-    if consulted >= plus(base):
-        base = consulted
-    due = plus(base)
-    st = "revisar" if hoy >= due else "vigente"
-    # un dato de la fuente con más de una cadencia y media de antigüedad se marca aunque no haya otro (EV/EBITDA a 1T-2025)
-    if st == "vigente" and item["published"] and (hoy - _dt.date.fromisoformat(item["published"])).days > 1.5 * item["cadence_days"]:
-        st = "vigente, dato antiguo"
-    return st, due
+    """(estado, próxima fecha esperada o None): lib/parameter_review.status (F13: el motor la usa en ejecución)."""
+    return parameter_review.status(item, hoy)
 
 
 def _valor(key):

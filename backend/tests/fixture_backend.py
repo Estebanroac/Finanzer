@@ -692,6 +692,13 @@ def _capture_day(frame):
     return frame.index[-1].date() if frame is not None and len(frame) else _dt.date.today()
 
 
+def _capture_date(store):
+    """F13: la fecha (local de la captura) del ticker en análisis; sin metadatos, hoy."""
+    meta = store.meta.get(store.current) or {}
+    at = meta.get("captured_at_local") or meta.get("captured_at_utc")
+    return _dt.date.fromisoformat(at[:10]) if at else _dt.date.today()
+
+
 def _capture_ny_day(store):
     """F13 (own_sources): "hoy" = la fecha de Nueva York del instante de la captura del ticker, como en vivo
     (market_context.ny_today). La última sesión de la serie no sirve si la serie se cortó antes (EA, WBD: sin cotización
@@ -755,6 +762,8 @@ def replay(base_dir=FIXTURES_DIR, extra_dirs=(), own_sources=False):
     # (marcado como fallback), así los golden no dependen del día de la captura.
     import cost_of_capital
     p.set(cost_of_capital, "_fetch_risk_free", lambda: None)
+    # F13 · paso 1: la revisión del par Rf–ERP se juzga el día de la captura del ticker (los golden no dependen del día).
+    p.set(cost_of_capital, "_today", lambda: _capture_date(store))
     # V6 (B12): "hoy" de los próximos resultados = el día de la captura (la última sesión de la serie), como antes.
     import market_context
     p.set(market_context, "TODAY", _capture_ny_day(store) if own_sources else _capture_day)

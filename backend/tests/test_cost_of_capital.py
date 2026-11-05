@@ -60,7 +60,7 @@ def test_blume_adjusted_beta_and_implied_erp():
     w = cc.wacc(beta=1.61, rf=RF, market_cap=1.0, total_debt=0.0, interest_coverage=None,
                 coverage_state=None, tax=TAX)
     assert w["beta_raw"] == 1.61 and w["beta"] == pytest.approx(1.4087) and w["beta_method"] == "Blume"
-    assert MRP == 0.042            # Damodaran, ERP implícita a 1-oct-2026 (config: fuente y fecha)
+    assert MRP == 0.0441           # Damodaran, ERP implícita a 1-nov-2026 (F13 · paso 1; config: fuente y fecha)
 
 
 def test_synthetic_rating_spreads_damodaran_jan_2026():

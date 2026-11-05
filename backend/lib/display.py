@@ -562,6 +562,11 @@ def data_notices(a) -> list:
     off = (a.get("data_provenance") or {}).get("official_source") or {}
     if off.get("registered") is False and off.get("note"):
         out.append(off["note"])
+    # F13 · paso 1: el par Rf–ERP con la revisión mensual vencida se avisa (antes solo lo veía tests/revision_parametros)
+    rv = (a.get("risk_free") or {}).get("review") or {}
+    if rv.get("status") == "revisar" and rv.get("due"):
+        out.append(f"Coste del capital con la prima de mercado de Damodaran del {numfmt.date_long(rv['published'])}: "
+                   f"su revisión mensual venció el {numfmt.date_long(rv['due'])}.")
     return out
 
 
