@@ -33,6 +33,7 @@ from sector_profiles import get_sector_profile, YAHOO_SECTOR_MAPPING
 from alert_interpretations import build_signals
 from settings import cfg
 from historical_metrics import (mean as hm_mean, fcf_cagr, growth_rate, is_sustained_negative, on_statement, per_share,
+                                strict_cagr,
                                 per_share_basis, robust_growth, backing_base, edgar_fcf, is_anomalous_not_significant,
                                 bound_decides)
 from classify import (ARCHETYPE_GROUP, CYCLICAL, FINANCIAL, GROWTH_PRE_PROFIT, REIT, archetype_label, classify,
@@ -907,9 +908,13 @@ def _compute_analysis_body(symbol: str) -> dict:
                 fcf_is_ttm="freeCashflow" in (_ttm_i.get("ttm_fields") or []),
                 sbc_ttm=safe_float(yinfo.get("stockBasedCompensation")) if _has_yahoo else None, st=_stmts)
             # Fase 3 (T2, D4): la ciclicidad y el crecimiento rentable se miden con la historia anual de EDGAR.
+            # F13 · paso 7: con una reexpresión grande, la historia desde el corte de perímetro (lo anterior es otra empresa)
+            import perimeter as _perim
+            _hfy_cls = _perim.homogeneous_history(yinfo.get("_history_fy") if _has_yahoo else None,
+                                                  yinfo.get("_perimeter") if _has_yahoo else None)
             classification = classify(sector=sector, industry=profile.industry, eps_ttm=eps_val,
                                       net_margin_ttm=r("net_margin"), statements_fy=_stmts_g,
-                                      history=(yinfo.get("_history_fy") if _has_yahoo else None),
+                                      history=_hfy_cls,
                                       operating_margin_ttm=r("operating_margin"),
                                       fcf_sbc_margin=sbc_info.get("fcf_margin_adjusted"))
             archetype = classification["archetype"]
@@ -1408,9 +1413,9 @@ def _compute_analysis_body(symbol: str) -> dict:
             # Crecimiento por rama (etapa 6).
             # Fase 3 (T5, F3_DISENO §4): con 10+ ejercicios de EDGAR, ciclo medio de pico a pico (sustituye a la cota).
             _mc = None
-            if archetype == CYCLICAL and _has_yahoo and yinfo.get("_history_fy"):
+            if archetype == CYCLICAL and _has_yahoo and _hfy_cls:
                 import cyclicality as _cyc
-                _mc = _cyc.mid_cycle_growth(yinfo["_history_fy"])
+                _mc = _cyc.mid_cycle_growth(_hfy_cls)
                 result["mid_cycle"] = _mc
             if archetype == CYCLICAL and _mc is not None:
                 _span = f"{_mc['from'][:4]}–{_mc['to'][:4]}, {_mc['years']} años"
@@ -1458,6 +1463,21 @@ def _compute_analysis_body(symbol: str) -> dict:
                 # infla la emisión estructural de acciones.
                 fin_dict["revenue_cagr_3y"] = archetype_values.get("ffo_per_share_cagr_3y")
                 fin_dict["revenue_growth_reason"] = archetype_values.get("ffo_per_share_cagr_3y_reason")
+                # F13 · paso 7: con el perímetro cambiado dentro de la ventana (CCI: la fibra vendida), el FFO por
+                # acción crece sobre los años homogéneos, como los ingresos (fase 3, T5); con menos, no comparable.
+                _gp = result.get("growth_perimeter") or {}
+                if _gp.get("applied"):
+                    _hy = _gp.get("homogeneous_years") or 0
+                    if _hy >= cfg("thresholds.growth.perimeter_min_years"):
+                        _fv, _fw = strict_cagr((archetype_values.get("ffo_per_share_series") or [])[:_hy + 1], _hy)
+                    else:
+                        _fv, _fw = None, ("no comparable: el cambio de perímetro deja menos de 2 años homogéneos; "
+                                          "no puntúa")
+                    fin_dict["revenue_cagr_3y"], fin_dict["revenue_growth_reason"] = _fv, _fw
+                    for _av in (archetype_values, result.get("archetype_metrics") or {}):
+                        _av["ffo_per_share_cagr_3y"] = _fv
+                        _av["ffo_per_share_cagr_3y_reason"] = _fw or _gp.get("note")
+                    fin_dict["revenue_ps_cagr_years"] = _hy
                 _sh = archetype_values.get("shares_cagr_3y")
                 _ffo = archetype_values.get("ffo_cagr_3y")
                 fin_dict["revenue_growth_note"] = (

@@ -78,8 +78,13 @@ browser_max_age_s = 604800      # caché del navegador sin ?v= (7 días); sin lo
 # Ganancias (o pérdidas) por venta de inmuebles o de activos: se restan (positivo = ganancia). Las de participaciones en
 # negocios que no son inmuebles no (SPG: `spg_GainLossOnDisposalExchangeOrEvaluationOfEquityInterests`, inversiones en
 # minoristas, fuera de su FFO Nareit).
+# F13 · paso 7 (revisión de 110 empresas, patrón 10d): también la venta de una participación en una entidad
+# inmobiliaria con el concepto estándar (Nareit la excluye): PSA 2022, 2.129 M$ por PS Business Parks
+# (EquityMethodInvestmentRealizedGainLossOnDisposal), que llevaba su FFO por acción a 28,7 $ frente a ~16,5 $. Las de
+# SPG en minoristas usan un concepto propio («EquityInterests») y siguen dentro.
 gains_include = ["(gain|loss).*(sale|sold|dispos).*(realestate|propert|asset)",
-                 "(sale|sold|dispos).*(realestate|propert|asset).*(gain|loss)"]
+                 "(sale|sold|dispos).*(realestate|propert|asset).*(gain|loss)",
+                 "^equitymethodinvestmentrealizedgainlossondisposal$"]
 # Nareit (2018) deja al emisor dentro o fuera las ventas de activos accesorios a su negocio: promociones y terrenos
 # (PLD las deja dentro de su FFO Nareit y fuera solo del «Core»). Aquí se quedan dentro, como en el FFO Nareit del emisor.
 # Lo demás que casaría por el nombre no es una venta de inmuebles.

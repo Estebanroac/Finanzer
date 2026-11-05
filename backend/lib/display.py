@@ -2335,8 +2335,13 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     if _rf:
         _per = ((_rf.get("period") or {}).get("how") or "")
         if _rf.get("ffo") is not None:
+            # F13 · paso 7: conciliado con lo que EDGAR ya tiene; el informe que aún no le ha llegado, dicho
+            _rc = _rf.get("reconciliation") or {}
+            _pend = "; ".join(f"el estado {d['period']} no se concilia aún: {d['pending']}"
+                              for d in _rc.get("detail") or [] if d.get("pending")) \
+                if _rc.get("status") == "conciliado_parcial" else None
             _t = "; ".join(x for x in (f"{_rf['formula']}: {_rf['formula_values']}", _rf.get("not_included"),
-                                        _rf.get("equity_method_warning"), _rf.get("reference")) if x)
+                                        _rf.get("equity_method_warning"), _pend, _rf.get("reference")) if x)
             mrows.append(_row("ffo_nareit", "FFO según Nareit (por acción)", fv(_rf.get("ffo_per_share"), "price"),
                               "Informativo", 'neu', "con_dato", "—", "—", f"{_t}. Periodo: {_per}." if _per else _t))
         else:

@@ -3529,8 +3529,9 @@ def score_crecimiento(
     if _reit:
         if revenue_growth_3y is not None and dividend_yield is not None:
             revenue_growth_3y = dividend_yield + growth_for_bands(revenue_growth_3y)
+            # F13 · paso 7: con el perímetro cambiado, los años homogéneos (revenue_ps_years), no 3
             revenue_note = (f"rentabilidad por dividendo {dividend_yield:.1%} + FFO por acción {_ffo_ps:+.1%} "
-                            "(CAGR 3 años)" + (f"; {revenue_note}" if revenue_note else ""))
+                            f"(CAGR {revenue_ps_years or 3} años)" + (f"; {revenue_note}" if revenue_note else ""))
         elif revenue_growth_3y is not None:
             revenue_reason = "sin rentabilidad por dividendo: no hay retorno total"
             revenue_growth_3y = None

@@ -359,6 +359,10 @@ def _reit(st: Dict[str, Any], km: Optional[Dict[str, Any]] = None,
     # de D&A, esa diferencia como antes.
     import reit_ffo as _rf
     ni, ebitda, ebit = st.get("net_income") or [], st.get("ebitda") or [], st.get("ebit") or []
+    # F13 · paso 7 (revisión de 110 empresas, patrón 10d): desde el beneficio de las operaciones continuadas, el del
+    # perímetro vigente (CCI 2024: −5,07 B$ de discontinuadas, la fibra vendida, dejaban el FFO por acción en −6,95 $)
+    disc = st.get("net_income_discontinued") or []
+    ni = [(n - (disc[i] if i < len(disc) and disc[i] else 0.0)) if n is not None else None for i, n in enumerate(ni)]
     da = st.get("depreciation_amortization") or []
     if da and len([x for x in da if x is not None]) >= len([x for x in ni if x is not None]):
         base = [(n + abs(d)) if (n is not None and d is not None) else None for n, d in zip(ni, da)]
