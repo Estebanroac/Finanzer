@@ -70,7 +70,7 @@ cambia su posición dentro del grupo.
 Cuando la versión por volatilidad la sube, el texto lo explica: «Es 1.2 veces su volatilidad anual (50%): más de lo
 que suele moverse».
 
-**A decidir:**
+**Decidido (usuario, 5-nov-2026): volatilidad.**
 - **Volatilidad** (implementada): solo una caída anómala para esa acción sube de peso. CIEN y NOW se mueven un 66–79 %
   al año y su caída está dentro de lo habitual.
 - **Lineal:** cuenta lo honda que es la caída, sea cual sea la acción. Cinco empresas ganan la alerta.
@@ -149,12 +149,22 @@ múltiplos de −1 a −2. Eso vuelve el veredicto dependiente del Ke, y en cade
 - La calidad mostrada se contrae de 91 a 85, todavía «excelente».
 - El precio pasa de 46 a 45, todavía «razonable».
 
-La caída (−46,0 %, z 1,3) pasa a primera advertencia. JPM y V solo ganan los campos informativos nuevos. **Los golden no
-están regenerados:** dependen de la versión que elija el usuario en D1.
+La caída (−46,0 %, z 1,3) pasa a primera advertencia. JPM y V solo ganan los campos informativos nuevos.
+
+**Golden regenerados** tras elegir la volatilidad (local, panel, PDF y muestras forzadas): 29 empresas. Solo 3 cambian
+en lo sustancial:
+- **NFLX:** el forward pasa de +2 a 0 y el precio de 46 a 45 («razonable»). La confianza baja de media a baja y la
+  calidad de 91 a 85 («excelente»). La caída sube a primera advertencia.
+- **NVDA (panel):** el forward pasa de +3 a 0 por bases distintas (+84 % frente a +64 %). El precio baja de 46 a 42 y
+  pasa de «razonable» a «exigente».
+- **MC.PA (panel):** la caída sube de la cuarta a la segunda advertencia.
+
+Las otras 26 solo ganan los campos informativos (`eps_base_check`, `implied_eps_growth_reported`) o, en MSFT, la frase
+«Es 1.1 veces su volatilidad anual».
 
 ## Pendiente
 
-1. **D1:** elegir la versión, volatilidad (implementada) o lineal.
+1. ~~D1: elegir la versión~~: volatilidad (usuario, 5-nov).
 2. **D2:** dar el visto bueno al umbral de 15 pp (8 de las 15 y 15 del universo) y a usar el menor entre ventana
    posterior y tasa larga con base deprimida.
-3. Después: regenerar los golden, pasar la suite completa y esperar el «ok, pushea».
+3. Golden regenerados; suite completa; esperar el «ok, pushea».

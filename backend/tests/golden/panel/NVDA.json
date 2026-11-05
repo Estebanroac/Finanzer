@@ -387,15 +387,15 @@
   },
   "confidence": {
     "base_rate_step": {
-      "from": "alta",
+      "from": "media",
       "share": 0.00139880751882,
-      "to": "media"
+      "to": "baja"
     },
-    "capped_from": null,
+    "capped_from": "alta",
     "contraction_basis": "media",
     "dimensions": {
       "convergence": {
-        "level": "alta",
+        "level": "media",
         "methods": [
           {
             "direction": "en precio",
@@ -409,22 +409,22 @@
           },
           {
             "components": 1,
-            "direction": "en precio",
+            "direction": "cara",
             "evaluable": true,
             "kind": "relativo",
             "method": "múltiplos frente al sector",
             "readings": {
               "EV/EBITDA": -0.5,
-              "Forward P/E": 1.0,
+              "Forward P/E": 0.0,
               "P/E": 1.0,
               "P/FCF": -1.0,
               "PEG": 1.0
             },
-            "signal": -0.166666666667
+            "signal": -0.277777777778
           }
         ],
         "reasons": [
-          "coinciden (en precio) con distancia 0.17 (< 0.6)"
+          "uno lo ve en precio y otro con dirección: no coinciden, sin oponerse"
         ]
       },
       "coverage": {
@@ -459,18 +459,14 @@
         "reasons": []
       }
     },
-    "ke_dependent": {
-      "from": "media",
-      "reason": "veredicto dependiente de Ke: el nivel de precio pasa de «razonable» a «exigente» con Ke + 1 pp",
-      "to": "baja"
-    },
     "level": "baja",
     "limits_score": false,
     "reasons": [
-      "un escalón menos por las tasas base: el precio exige un 21.4% anual 10 años, que sostuvo el 0.14% de las comparables (< 5%)",
-      "veredicto dependiente de Ke: el nivel de precio pasa de «razonable» a «exigente» con Ke + 1 pp: confianza media → baja"
+      "convergencia media: uno lo ve en precio y otro con dirección: no coinciden, sin oponerse",
+      "techo en media: la convergencia es media: alta exige convergencia alta",
+      "un escalón menos por las tasas base: el precio exige un 21.4% anual 10 años, que sostuvo el 0.14% de las comparables (< 5%)"
     ],
-    "score": 1.0
+    "score": 0.8
   },
   "cost_of_equity": {
     "as_of": "2026-10-01",
@@ -1644,8 +1640,8 @@
           "text": "Arquetipo GROWTH_PROFITABLE (regla crecimiento_rentable): Clasificada como GROWTH_PROFITABLE: ingresos por acción 69.9% anual en 6 ejercicios (FY2021–FY2026, por regresión log-lineal: el año inicial de la ventana de 3 años es anómalo), sobre acciones diluidas medias, BPA TTM > 0 y margen operativo 65%; no cíclica por su historia."
         },
         {
-          "label": "Confianza · Convergencia entre métodos (alta)",
-          "text": "coinciden (en precio) con distancia 0.17 (< 0.6)"
+          "label": "Confianza · Convergencia entre métodos (media)",
+          "text": "uno lo ve en precio y otro con dirección: no coinciden, sin oponerse."
         },
         {
           "label": "Fuente oficial",
@@ -1665,7 +1661,7 @@
         },
         {
           "label": "Fórmula del bloque",
-          "text": "Bloque de múltiplos: promedio de 3 lecturas reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = -0.17 × 6 (máximo con 3) = -1.0, redondeado a -1."
+          "text": "Bloque de múltiplos: promedio de 3 lecturas reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = -0.28 × 6 (máximo con 3) = -1.7, redondeado a -2."
         },
         {
           "label": "Nombres originales de las fuentes",
@@ -2417,8 +2413,8 @@
       "valuation": {
         "block": {
           "label": "Bloque de múltiplos",
-          "reason": "media de 3 lecturas en una escala de −1 a +1 (BPA (P/E, Forward P/E, PEG): P/E +1.00, Forward P/E +1.00, PEG +1.00 → +1.00; P/FCF -1.00; EV/EBITDA -0.50): -0.17, que suma -1.0 puntos de un máximo de ±6.",
-          "sign": "-1",
+          "reason": "media de 3 lecturas en una escala de −1 a +1 (BPA (P/E, Forward P/E, PEG): P/E +1.00, Forward P/E +0.00, PEG +1.00 → +0.67; P/FCF -1.00; EV/EBITDA -0.50): -0.28, que suma -1.7 puntos de un máximo de ±6.",
+          "sign": "-2",
           "tone": "warn"
         },
         "dcf_composition": {
@@ -2616,8 +2612,8 @@
         {
           "key": "convergence",
           "label": "Convergencia entre métodos",
-          "level": "Alta",
-          "text": "DCF directo +0% (en precio) · múltiplos frente al sector -0.17 (en precio). Los métodos de valoración coinciden."
+          "level": "Media",
+          "text": "DCF directo +0% (en precio) · múltiplos frente al sector -0.28 (cara). Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
         },
         {
           "key": "coverage",
@@ -2639,11 +2635,24 @@
         }
       ],
       "level": "baja",
-      "plain": [],
-      "reasons": [],
-      "summary": "Confianza del veredicto: baja (por sus dimensiones sería alta; la limitan: las tasas base —solo el 0.14% de las comparables sostuvo el crecimiento que exige el precio; no contrae el precio—, hasta media; el veredicto depende de Ke —el nivel de precio pasa de «razonable» a «exigente» con Ke + 1 pp—). Contrae el atractivo del precio hacia 50: de 45 a 46. La calidad del negocio no se contrae.",
+      "plain": [
+        "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
+      ],
+      "reasons": [
+        {
+          "dimension": "convergencia",
+          "level": "media",
+          "text": "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
+        },
+        {
+          "dimension": "techo",
+          "level": "baja",
+          "text": null
+        }
+      ],
+      "summary": "Confianza del veredicto: baja (por sus dimensiones sería alta; la limitan: la convergencia es media —alta exige convergencia alta—, hasta media; las tasas base —solo el 0.14% de las comparables sostuvo el crecimiento que exige el precio; no contrae el precio—). Contrae el atractivo del precio hacia 50: de 40 a 42. La calidad del negocio no se contrae.",
       "tone": "neg",
-      "verdict_text": "(confianza baja: el nivel de precio cambia con ±1 pp de coste del capital)"
+      "verdict_text": "(confianza baja: casi ninguna comparable sostuvo el crecimiento que exige el precio)"
     },
     "cover": {
       "archetype": "GROWTH_PROFITABLE",
@@ -2716,9 +2725,9 @@
               "key": "Valoración",
               "max": 20,
               "name": "Valoración",
-              "pct": 45.0,
-              "score": 9,
-              "score_txt": "9 / 20",
+              "pct": 40.0,
+              "score": 8,
+              "score_txt": "8 / 20",
               "text": null,
               "tone": "warn"
             }
@@ -2729,7 +2738,9 @@
       "classification_notes": [
         "Sus ingresos por acción crecen un 69.9% anual en 6 ejercicios (FY2021–FY2026, por regresión log-lineal: el año inicial de la ventana de 3 años es anómalo), sobre acciones diluidas medias, con beneficio y un margen operativo 65%."
       ],
-      "confidence_reasons": [],
+      "confidence_reasons": [
+        "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
+      ],
       "coverage_notes": [],
       "currency_note": null,
       "data_notices": [],
@@ -2806,14 +2817,14 @@
       "official_source_badge": null,
       "price": {
         "contracted": true,
-        "level": "razonable",
-        "note": "ajustado de 45 a 46 hacia 50; en la frontera con «exigente» (a 2 puntos): un cambio pequeño en los datos o en los supuestos cambiaría el nivel.",
-        "note_short": "Ajustado de 45 a 46 hacia 50 · en la frontera con «exigente» (a 2 puntos)",
+        "level": "exigente",
+        "note": "ajustado de 40 a 42 hacia 50.",
+        "note_short": "Ajustado de 40 a 42 hacia 50",
         "question": "¿está cara hoy?",
-        "raw": 45,
-        "score": 46,
+        "raw": 40,
+        "score": 42,
         "title": "ATRACTIVO DEL PRECIO",
-        "tone": "neu"
+        "tone": "warn"
       },
       "quality": {
         "level": "excelente",
@@ -2825,10 +2836,10 @@
         "tone": "pos"
       },
       "verdict": {
-        "confidence_text": "(confianza baja: el nivel de precio cambia con ±1 pp de coste del capital)",
+        "confidence_text": "(confianza baja: casi ninguna comparable sostuvo el crecimiento que exige el precio)",
         "confidence_tone": "neg",
-        "full": "Calidad excelente · precio razonable (confianza baja: el nivel de precio cambia con ±1 pp de coste del capital)",
-        "text": "Calidad excelente · precio razonable"
+        "full": "Calidad excelente · precio exigente (confianza baja: casi ninguna comparable sostuvo el crecimiento que exige el precio)",
+        "text": "Calidad excelente · precio exigente"
       }
     },
     "extended": {
@@ -3592,8 +3603,8 @@
                 {
                   "in_block": true,
                   "metric": "Forward P/E",
-                  "reason": "Fuerte compresión P/E normalizado (31x → 19x forward creíble); forward 17.0x (implica +84% de BPA); con el crecimiento que respalda su histórico (+67% del BPA en el último ejercicio), 18.8x.",
-                  "sign": "(+3)",
+                  "reason": "Fuerte compresión P/E normalizado (31x → 19x forward creíble); forward 17.0x (implica +84% de BPA); con el crecimiento que respalda su histórico (+67% del BPA en el último ejercicio), 18.8x; normalización o consenso en bases distintas: el forward implica +84% frente al BPA normalizado y +64% frente al reportado; la compresión no puntúa.",
+                  "sign": "(0)",
                   "state": "con_dato",
                   "tone": "neu",
                   "value": "17.02x"
@@ -3628,8 +3639,8 @@
                 {
                   "in_block": false,
                   "metric": "Bloque de múltiplos",
-                  "reason": "media de 3 lecturas en una escala de −1 a +1 (BPA (P/E, Forward P/E, PEG): P/E +1.00, Forward P/E +1.00, PEG +1.00 → +1.00; P/FCF -1.00; EV/EBITDA -0.50): -0.17, que suma -1.0 puntos de un máximo de ±6.",
-                  "sign": "-1",
+                  "reason": "media de 3 lecturas en una escala de −1 a +1 (BPA (P/E, Forward P/E, PEG): P/E +1.00, Forward P/E +0.00, PEG +1.00 → +0.67; P/FCF -1.00; EV/EBITDA -0.50): -0.28, que suma -1.7 puntos de un máximo de ±6.",
+                  "sign": "-2",
                   "state": "con_dato",
                   "tone": "warn",
                   "value": "5 múltiplos"
@@ -3647,9 +3658,9 @@
               "key": "Valoración",
               "max": 20,
               "name": "Valoración",
-              "pct": 45.0,
-              "score": 9,
-              "score_txt": "9 / 20",
+              "pct": 40.0,
+              "score": 8,
+              "score_txt": "8 / 20",
               "text": null,
               "tone": "warn"
             },
@@ -4253,7 +4264,7 @@
         "normalization_note": "Beneficio TTM (4 trimestres): reportado $192.88B, normalizado $172.48B (no recurrentes 10.6% del beneficio; partidas no recurrentes (total de Yahoo) (explicita, confianza alta): $6.49B netos; pico de resultado no operativo (inferida, confianza media): $10.02B netos, bajo el umbral, no aplicada; ganancias no operativas que la operación no explica (coherencia, confianza alta): $13.91B netos). El score usa el beneficio normalizado. P/E reportado 27.98x no fiable; P/E normalizado 31.29x.",
         "premortem": {
           "items": [
-            "el FCF − SBC por acción creciera menos del 21.4% anual durante 10 años que ya descuenta el precio; historia propia: sus ingresos por acción, 44.6% anual en 10 años (FY2016–FY2026)",
+            "el FCF − SBC por acción creciera al menos un 21.4% anual durante 10 años, como exige el precio; historia propia: sus ingresos por acción, 44.6% anual en 10 años (FY2016–FY2026)",
             "el margen operativo volviera a su mediana de 10 ejercicios (32.8% frente al 65.2% de hoy)"
           ],
           "note": "Condiciones que invalidarían la lectura de hoy, con la cifra que las mide: no son previsiones.",
@@ -4635,14 +4646,14 @@
       "composition": {
         "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: Valoración (base 10/20 + bloque de múltiplos y DCF) reescalada a 100 y contraída hacia 50 según la confianza del veredicto: solo los limitadores que lo contradicen o lo vuelven incierto, no los que apuntan en su dirección.",
         "price": {
-          "level": "razonable",
-          "note": "ajustado de 45 a 46 hacia 50; en la frontera con «exigente» (a 2 puntos): un cambio pequeño en los datos o en los supuestos cambiaría el nivel.",
+          "level": "exigente",
+          "note": "ajustado de 40 a 42 hacia 50.",
           "rows": [
             {
               "kind": "signed",
               "label": "Bloque de múltiplos · 5 múltiplos",
               "tone": "neg",
-              "value": -1
+              "value": -2
             },
             {
               "kind": "signed",
@@ -4651,10 +4662,10 @@
               "value": 0
             }
           ],
-          "score": 46,
+          "score": 42,
           "signed_max": 6,
           "title": "ATRACTIVO DEL PRECIO",
-          "tone": "neu"
+          "tone": "warn"
         },
         "quality": {
           "level": "excelente",
@@ -4701,7 +4712,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad excelente · precio razonable (confianza baja: el nivel de precio cambia con ±1 pp de coste del capital). Calidad 93/100 · precio 46/100 (ajustado de 45 a 46 hacia 50; en la frontera con «exigente» (a 2 puntos): un cambio pequeño en los datos o en los supuestos cambiaría el nivel)."
+          "text": "Calidad excelente · precio exigente (confianza baja: casi ninguna comparable sostuvo el crecimiento que exige el precio). Calidad 93/100 · precio 42/100 (ajustado de 40 a 42 hacia 50)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -4729,7 +4740,7 @@
         },
         {
           "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Baja: casi ninguna comparable sostuvo el crecimiento que exige el precio (tasas base). Contrae el atractivo del precio hacia 50 (de 45 a 46); la calidad no se contrae."
+          "text": "Baja: casi ninguna comparable sostuvo el crecimiento que exige el precio (tasas base). Contrae el atractivo del precio hacia 50 (de 40 a 42); la calidad no se contrae."
         }
       ]
     },
@@ -6023,22 +6034,22 @@
   "ke_sensitivity": {
     "base": {
       "ke": 0.120212191605,
-      "level": "razonable",
-      "score": 45
+      "level": "exigente",
+      "score": 42
     },
-    "dependent": true,
+    "dependent": false,
     "minus": {
       "ke": 0.110212191605,
-      "level": "razonable",
-      "score": 45
+      "level": "exigente",
+      "score": 42
     },
     "plus": {
       "ke": 0.130212191605,
       "level": "exigente",
-      "score": 42
+      "score": 39
     },
     "pp": 0.01,
-    "reason": "veredicto dependiente de Ke: el nivel de precio pasa de «razonable» a «exigente» con Ke + 1 pp",
+    "reason": null,
     "status": "ok"
   },
   "key_metrics": {
@@ -6545,7 +6556,7 @@
       {
         "field": "reverse_dcf.main.g10",
         "kind": "precio_inverso",
-        "text": "el FCF − SBC por acción creciera menos del 21.4% anual durante 10 años que ya descuenta el precio; historia propia: sus ingresos por acción, 44.6% anual en 10 años (FY2016–FY2026)",
+        "text": "el FCF − SBC por acción creciera al menos un 21.4% anual durante 10 años, como exige el precio; historia propia: sus ingresos por acción, 44.6% anual en 10 años (FY2016–FY2026)",
         "value": 0.213969808638
       },
       {
@@ -6560,11 +6571,7 @@
   "price": 221.300003052,
   "price_attractiveness": {
     "basis": null,
-    "border": {
-      "neighbor": "exigente",
-      "points": 2,
-      "text": "En la frontera con «exigente» (a 2 puntos): un cambio pequeño en los datos o en los supuestos cambiaría el nivel"
-    },
+    "border": null,
     "categories_included": 1,
     "categories_total": 1,
     "components": [
@@ -6572,20 +6579,20 @@
         "category": "Valoración",
         "included": true,
         "max": 20,
-        "score": 9
+        "score": 8
       }
     ],
     "confidence": "media",
     "contracted": true,
     "excluded_categories": [],
     "factor": 0.75,
-    "level": "razonable",
-    "level_raw": "razonable",
+    "level": "exigente",
+    "level_raw": "exigente",
     "low_coverage_categories": [],
     "not_applicable_categories": [],
     "partial": false,
-    "score": 46,
-    "score_raw": 45
+    "score": 42,
+    "score_raw": 40
   },
   "price_change": {
     "change": -7.2200012207,
@@ -7139,16 +7146,28 @@
             "value": "31.29x"
           },
           {
-            "adjustment": 3,
+            "adjustment": 0,
             "credible_forward_pe": 18.7717153297,
             "credited_eps_growth": 0.666666666667,
+            "eps_base_check": {
+              "anomalous": false,
+              "base_fy": "FY2023",
+              "checked": true,
+              "ratio": 1.00831024931,
+              "reason": null,
+              "value": null,
+              "window": null,
+              "years": 10
+            },
             "eps_growth_3y": 1.01738006429,
             "implied_eps_growth": 0.837995396292,
+            "implied_eps_growth_reported": 0.643601944832,
             "in_block": true,
             "metric": "Forward P/E",
             "normalized": true,
-            "reason": "Fuerte compresión P/E normalizado (31x → 19x forward creíble); forward 17.0x (implica +84% de BPA); con el crecimiento que respalda su histórico (+67% del BPA en el último ejercicio), 18.8x",
-            "severity": "excellent",
+            "not_scored": "normalización o consenso en bases distintas: el forward implica +84% frente al BPA normalizado y +64% frente al reportado; la compresión no puntúa",
+            "reason": "Fuerte compresión P/E normalizado (31x → 19x forward creíble); forward 17.0x (implica +84% de BPA); con el crecimiento que respalda su histórico (+67% del BPA en el último ejercicio), 18.8x; normalización o consenso en bases distintas: el forward implica +84% frente al BPA normalizado y +64% frente al reportado; la compresión no puntúa",
+            "severity": "ok",
             "value": "17.02x"
           },
           {
@@ -7176,9 +7195,9 @@
             "value": "0.31"
           },
           {
-            "adjustment": -1,
+            "adjustment": -2,
             "block_max": 6,
-            "block_mean": -0.166666666667,
+            "block_mean": -0.277777777778,
             "block_members": [
               "P/E",
               "Forward P/E",
@@ -7187,13 +7206,13 @@
               "PEG"
             ],
             "block_votes": {
-              "BPA (P/E, Forward P/E, PEG)": 1.0,
+              "BPA (P/E, Forward P/E, PEG)": 0.666666666667,
               "EV/EBITDA": -0.5,
               "P/FCF": -1.0
             },
-            "formula": "Bloque de múltiplos: promedio de 3 lecturas reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = -0.17 × 6 (máximo con 3) = -1.0, redondeado a -1",
+            "formula": "Bloque de múltiplos: promedio de 3 lecturas reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = -0.28 × 6 (máximo con 3) = -1.7, redondeado a -2",
             "metric": "Bloque de múltiplos",
-            "reason": "media de 3 lecturas en una escala de −1 a +1 (BPA (P/E, Forward P/E, PEG): P/E +1.00, Forward P/E +1.00, PEG +1.00 → +1.00; P/FCF -1.00; EV/EBITDA -0.50): -0.17, que suma -1.0 puntos de un máximo de ±6",
+            "reason": "media de 3 lecturas en una escala de −1 a +1 (BPA (P/E, Forward P/E, PEG): P/E +1.00, Forward P/E +0.00, PEG +1.00 → +0.67; P/FCF -1.00; EV/EBITDA -0.50): -0.28, que suma -1.7 puntos de un máximo de ±6",
             "severity": "moderate",
             "value": "5 múltiplos"
           },
@@ -7212,15 +7231,15 @@
         "coverage": 1.0,
         "details": [
           "Muy barato (31.3x frente a 53.2x sector)",
-          "Fuerte compresión P/E normalizado (31x → 19x forward creíble); forward 17.0x (implica +84% de BPA); con el crecimiento que respalda su histórico (+67% del BPA en el último ejercicio), 18.8x",
+          "Fuerte compresión P/E normalizado (31x → 19x forward creíble); forward 17.0x (implica +84% de BPA); con el crecimiento que respalda su histórico (+67% del BPA en el último ejercicio), 18.8x; normalización o consenso en bases distintas: el forward implica +84% frente al BPA normalizado y +64% frente al reportado; la compresión no puntúa",
           "Muy alto (42.1x)",
           "Prima (26.4x frente a 17.7x)",
           "Muy atractivo (0.31)",
-          "media de 3 lecturas en una escala de −1 a +1 (BPA (P/E, Forward P/E, PEG): P/E +1.00, Forward P/E +1.00, PEG +1.00 → +1.00; P/FCF -1.00; EV/EBITDA -0.50): -0.17, que suma -1.0 puntos de un máximo de ±6",
+          "media de 3 lecturas en una escala de −1 a +1 (BPA (P/E, Forward P/E, PEG): P/E +1.00, Forward P/E +0.00, PEG +1.00 → +0.67; P/FCF -1.00; EV/EBITDA -0.50): -0.28, que suma -1.7 puntos de un máximo de ±6",
           "En precio por DCF (fiabilidad media): margen FCF inestable: de 14.1% a 46.6% en 5 ejercicios (variación 0.35 > 0.33)"
         ],
         "max": 20,
-        "score": 9
+        "score": 8
       }
     },
     "excluded_categories": [],
@@ -7370,11 +7389,11 @@
   },
   "verdict": {
     "confidence": "baja",
-    "confidence_text": "(confianza baja: el nivel de precio cambia con ±1 pp de coste del capital)",
-    "full": "Calidad excelente · precio razonable (confianza baja: el nivel de precio cambia con ±1 pp de coste del capital)",
-    "price_level": "razonable",
+    "confidence_text": "(confianza baja: casi ninguna comparable sostuvo el crecimiento que exige el precio)",
+    "full": "Calidad excelente · precio exigente (confianza baja: casi ninguna comparable sostuvo el crecimiento que exige el precio)",
+    "price_level": "exigente",
     "quality_level": "excelente",
-    "text": "Calidad excelente · precio razonable"
+    "text": "Calidad excelente · precio exigente"
   },
   "wacc": {
     "applicable": true,

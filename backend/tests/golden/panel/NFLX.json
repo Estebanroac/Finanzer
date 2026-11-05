@@ -35,14 +35,14 @@
     ],
     "warnings": [
       {
+        "category": "Riesgo de mercado",
+        "detail": "La acción ha llegado a caer 46.0% desde máximos en el último año: una corrección profunda que puede ser oportunidad si el negocio sigue intacto, o el mercado anticipando un deterioro. Es 1.3 veces su volatilidad anual (37%): más de lo que suele moverse.",
+        "reason": "Caída pronunciada en el año −46.0%"
+      },
+      {
         "category": "Valoración",
         "detail": "Se paga 20.3x EBITDA frente a 13.2x de su industria sin ella (+53%): el mercado le asigna una prima que conviene contrastar con su ventaja competitiva.",
         "reason": "EV/EBITDA sobre su industria — 20.3x"
-      },
-      {
-        "category": "Riesgo de mercado",
-        "detail": "La acción ha llegado a caer 46.0% desde máximos en el último año: una corrección profunda que puede ser oportunidad si el negocio sigue intacto, o el mercado anticipando un deterioro.",
-        "reason": "Caída pronunciada en el año −46.0%"
       }
     ]
   },
@@ -390,7 +390,7 @@
   "confidence": {
     "base_rate_step": null,
     "capped_from": null,
-    "contraction_basis": "media",
+    "contraction_basis": "baja",
     "dimensions": {
       "convergence": {
         "level": "media",
@@ -413,12 +413,12 @@
             "method": "múltiplos frente al sector",
             "readings": {
               "EV/EBITDA": -1.0,
-              "Forward P/E": 0.666666666667,
+              "Forward P/E": 0.0,
               "P/E": 0.6,
               "P/FCF": -0.5,
               "PEG": 1.0
             },
-            "signal": -0.248148148148
+            "signal": -0.322222222222
           }
         ],
         "reasons": [
@@ -457,12 +457,18 @@
         ]
       }
     },
-    "level": "media",
+    "ke_dependent": {
+      "from": "media",
+      "reason": "veredicto dependiente de Ke: el nivel de precio pasa de «exigente» a «razonable» con Ke − 1 pp",
+      "to": "baja"
+    },
+    "level": "baja",
     "limits_score": false,
     "reasons": [
       "convergencia media: uno lo ve en precio y otro con dirección: no coinciden, sin oponerse",
       "calidad de fuente media: beneficio normalizado con ítems inferidos (confianza media)",
-      "estabilidad media: clasificación de frontera: un umbral movido ±20% la cambia (min_revenue_ps_cagr_3y 0.15→0.12)"
+      "estabilidad media: clasificación de frontera: un umbral movido ±20% la cambia (min_revenue_ps_cagr_3y 0.15→0.12)",
+      "veredicto dependiente de Ke: el nivel de precio pasa de «exigente» a «razonable» con Ke − 1 pp: confianza media → baja"
     ],
     "score": 0.6
   },
@@ -1545,7 +1551,7 @@
         },
         {
           "label": "Fórmula del bloque",
-          "text": "Bloque de múltiplos: promedio de 3 lecturas reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = -0.25 × 6 (máximo con 3) = -1.5, redondeado a -1."
+          "text": "Bloque de múltiplos: promedio de 3 lecturas reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = -0.32 × 6 (máximo con 3) = -1.9, redondeado a -2."
         },
         {
           "label": "Nombres originales de las fuentes",
@@ -2320,8 +2326,8 @@
       "valuation": {
         "block": {
           "label": "Bloque de múltiplos",
-          "reason": "media de 3 lecturas en una escala de −1 a +1 (BPA (P/E, Forward P/E, PEG): P/E +0.60, Forward P/E +0.67, PEG +1.00 → +0.76; P/FCF -0.50; EV/EBITDA -1.00): -0.25, que suma -1.5 puntos de un máximo de ±6.",
-          "sign": "-1",
+          "reason": "media de 3 lecturas en una escala de −1 a +1 (BPA (P/E, Forward P/E, PEG): P/E +0.60, Forward P/E +0.00, PEG +1.00 → +0.53; P/FCF -0.50; EV/EBITDA -1.00): -0.32, que suma -1.9 puntos de un máximo de ±6.",
+          "sign": "-2",
           "tone": "warn"
         },
         "dcf_composition": {
@@ -2520,7 +2526,7 @@
           "key": "convergence",
           "label": "Convergencia entre métodos",
           "level": "Media",
-          "text": "DCF directo +0% (en precio) · múltiplos frente al sector -0.25 (cara). Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
+          "text": "DCF directo +0% (en precio) · múltiplos frente al sector -0.32 (cara). Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
         },
         {
           "key": "coverage",
@@ -2541,7 +2547,7 @@
           "text": "El tipo de empresa está en la frontera entre dos: un cambio pequeño en un umbral lo cambiaría, lo que hace menos fiable la comparación."
         }
       ],
-      "level": "media",
+      "level": "baja",
       "plain": [
         "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no.",
         "El beneficio se ajustó por partidas extraordinarias identificadas de forma indirecta.",
@@ -2564,9 +2570,9 @@
           "text": "El tipo de empresa está en la frontera entre dos: un cambio pequeño en un umbral lo cambiaría, lo que hace menos fiable la comparación."
         }
       ],
-      "summary": "Confianza del veredicto: media. Contrae el atractivo del precio hacia 50: de 45 a 46. La calidad del negocio no se contrae.",
-      "tone": "warn",
-      "verdict_text": "(confianza media: el DCF directo la ve en precio y los múltiplos cara)"
+      "summary": "Confianza del veredicto: baja (por sus dimensiones sería media; la limita: el veredicto depende de Ke —el nivel de precio pasa de «exigente» a «razonable» con Ke − 1 pp—). Contrae el atractivo del precio hacia 50: de 40 a 45. Contrae también la calidad del negocio hacia 50: de 91 a 85.",
+      "tone": "neg",
+      "verdict_text": "(confianza baja: el nivel de precio cambia con ±1 pp de coste del capital)"
     },
     "cover": {
       "archetype": "MATURE",
@@ -2639,9 +2645,9 @@
               "key": "Valoración",
               "max": 20,
               "name": "Valoración",
-              "pct": 45.0,
-              "score": 9,
-              "score_txt": "9 / 20",
+              "pct": 40.0,
+              "score": 8,
+              "score_txt": "8 / 20",
               "text": null,
               "tone": "warn"
             }
@@ -2671,7 +2677,7 @@
         {
           "kicker": "A VIGILAR",
           "kind": "watch",
-          "text": "EV/EBITDA sobre su industria — 20.3x",
+          "text": "Caída pronunciada en el año −46.0%",
           "tone": "warn"
         },
         {
@@ -2735,27 +2741,27 @@
       "price": {
         "contracted": true,
         "level": "razonable",
-        "note": "ajustado de 45 a 46 por confianza media; en la frontera con «exigente» (a 2 puntos): un cambio pequeño en los datos o en los supuestos cambiaría el nivel.",
-        "note_short": "Ajustado de 45 a 46 por confianza media · en la frontera con «exigente» (a 2 puntos)",
+        "note": "ajustado de 40 a 45 por confianza baja; en la frontera con «exigente» (a 1 punto): un cambio pequeño en los datos o en los supuestos cambiaría el nivel.",
+        "note_short": "Ajustado de 40 a 45 por confianza baja · en la frontera con «exigente» (a 1 punto)",
         "question": "¿está cara hoy?",
-        "raw": 45,
-        "score": 46,
+        "raw": 40,
+        "score": 45,
         "title": "ATRACTIVO DEL PRECIO",
         "tone": "neu"
       },
       "quality": {
         "level": "excelente",
-        "note": "Por encima de 80 (umbral de persistencia; «excelente» empieza en 85), la calidad exige persistencia: 98 → 91. Rentabilidad: margen operativo positivo y al menos el 75% del último (29.5%) en 2 de 5 ejercicios; calidad de ganancias: flujo operativo ≥ beneficio neto y FCF positivo en 1 de 5 ejercicios.",
-        "note_short": "Exige persistencia (98 → 91)",
+        "note": "Por encima de 80 (umbral de persistencia; «excelente» empieza en 85), la calidad exige persistencia: 98 → 91. Rentabilidad: margen operativo positivo y al menos el 75% del último (29.5%) en 2 de 5 ejercicios; calidad de ganancias: flujo operativo ≥ beneficio neto y FCF positivo en 1 de 5 ejercicios; en la frontera con «sólida» (a 1 punto): un cambio pequeño en los datos o en los supuestos cambiaría el nivel.",
+        "note_short": "Exige persistencia (98 → 85) · en la frontera con «sólida» (a 1 punto)",
         "question": "¿es buena la empresa?",
-        "score": 91,
+        "score": 85,
         "title": "CALIDAD DEL NEGOCIO",
         "tone": "pos"
       },
       "verdict": {
-        "confidence_text": "(confianza media: el DCF directo la ve en precio y los múltiplos cara)",
-        "confidence_tone": "warn",
-        "full": "Calidad excelente · precio razonable (confianza media: el DCF directo la ve en precio y los múltiplos cara)",
+        "confidence_text": "(confianza baja: el nivel de precio cambia con ±1 pp de coste del capital)",
+        "confidence_tone": "neg",
+        "full": "Calidad excelente · precio razonable (confianza baja: el nivel de precio cambia con ±1 pp de coste del capital)",
         "text": "Calidad excelente · precio razonable"
       }
     },
@@ -3220,14 +3226,14 @@
           {
             "items": [
               {
+                "category": "Riesgo de mercado",
+                "detail": "La acción ha llegado a caer 46.0% desde máximos en el último año: una corrección profunda que puede ser oportunidad si el negocio sigue intacto, o el mercado anticipando un deterioro. Es 1.3 veces su volatilidad anual (37%): más de lo que suele moverse.",
+                "reason": "Caída pronunciada en el año −46.0%"
+              },
+              {
                 "category": "Valoración",
                 "detail": "Se paga 20.3x EBITDA frente a 13.2x de su industria sin ella (+53%): el mercado le asigna una prima que conviene contrastar con su ventaja competitiva.",
                 "reason": "EV/EBITDA sobre su industria — 20.3x"
-              },
-              {
-                "category": "Riesgo de mercado",
-                "detail": "La acción ha llegado a caer 46.0% desde máximos en el último año: una corrección profunda que puede ser oportunidad si el negocio sigue intacto, o el mercado anticipando un deterioro.",
-                "reason": "Caída pronunciada en el año −46.0%"
               }
             ],
             "key": "warnings",
@@ -3556,8 +3562,8 @@
                 {
                   "in_block": true,
                   "metric": "Forward P/E",
-                  "reason": "P/E normalizado mejorando (27x → 21x forward creíble); forward 19.2x (implica +39% de BPA); con el crecimiento que respalda su histórico (+28% del BPA en el último ejercicio), 20.9x.",
-                  "sign": "(+2)",
+                  "reason": "P/E normalizado mejorando (27x → 21x forward creíble); forward 19.2x (implica +39% de BPA); con el crecimiento que respalda su histórico (+28% del BPA en el último ejercicio), 20.9x; normalización o consenso en bases distintas: el forward implica +39% frente al BPA normalizado y +16% frente al reportado; la compresión no puntúa.",
+                  "sign": "(0)",
                   "state": "con_dato",
                   "tone": "neu",
                   "value": "19.21x"
@@ -3592,8 +3598,8 @@
                 {
                   "in_block": false,
                   "metric": "Bloque de múltiplos",
-                  "reason": "media de 3 lecturas en una escala de −1 a +1 (BPA (P/E, Forward P/E, PEG): P/E +0.60, Forward P/E +0.67, PEG +1.00 → +0.76; P/FCF -0.50; EV/EBITDA -1.00): -0.25, que suma -1.5 puntos de un máximo de ±6.",
-                  "sign": "-1",
+                  "reason": "media de 3 lecturas en una escala de −1 a +1 (BPA (P/E, Forward P/E, PEG): P/E +0.60, Forward P/E +0.00, PEG +1.00 → +0.53; P/FCF -0.50; EV/EBITDA -1.00): -0.32, que suma -1.9 puntos de un máximo de ±6.",
+                  "sign": "-2",
                   "state": "con_dato",
                   "tone": "warn",
                   "value": "5 múltiplos"
@@ -3611,9 +3617,9 @@
               "key": "Valoración",
               "max": 20,
               "name": "Valoración",
-              "pct": 45.0,
-              "score": 9,
-              "score_txt": "9 / 20",
+              "pct": 40.0,
+              "score": 8,
+              "score_txt": "8 / 20",
               "text": null,
               "tone": "warn"
             },
@@ -4640,13 +4646,13 @@
         "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: Valoración (base 10/20 + bloque de múltiplos y DCF) reescalada a 100 y contraída hacia 50 según la confianza del veredicto: solo los limitadores que lo contradicen o lo vuelven incierto, no los que apuntan en su dirección.",
         "price": {
           "level": "razonable",
-          "note": "ajustado de 45 a 46 por confianza media; en la frontera con «exigente» (a 2 puntos): un cambio pequeño en los datos o en los supuestos cambiaría el nivel.",
+          "note": "ajustado de 40 a 45 por confianza baja; en la frontera con «exigente» (a 1 punto): un cambio pequeño en los datos o en los supuestos cambiaría el nivel.",
           "rows": [
             {
               "kind": "signed",
               "label": "Bloque de múltiplos · 5 múltiplos",
               "tone": "neg",
-              "value": -1
+              "value": -2
             },
             {
               "kind": "signed",
@@ -4655,7 +4661,7 @@
               "value": 0
             }
           ],
-          "score": 46,
+          "score": 45,
           "signed_max": 6,
           "title": "ATRACTIVO DEL PRECIO",
           "tone": "neu"
@@ -4697,7 +4703,7 @@
               "value": 18
             }
           ],
-          "score": 91,
+          "score": 85,
           "title": "CALIDAD DEL NEGOCIO",
           "tone": "pos"
         }
@@ -4705,7 +4711,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad excelente · precio razonable (confianza media: el DCF directo la ve en precio y los múltiplos cara). Calidad 91/100 · precio 46/100 (ajustado de 45 a 46 por confianza media; en la frontera con «exigente» (a 2 puntos): un cambio pequeño en los datos o en los supuestos cambiaría el nivel)."
+          "text": "Calidad excelente · precio razonable (confianza baja: el nivel de precio cambia con ±1 pp de coste del capital). Calidad 85/100 · precio 45/100 (ajustado de 40 a 45 por confianza baja; en la frontera con «exigente» (a 1 punto): un cambio pequeño en los datos o en los supuestos cambiaría el nivel)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -4733,7 +4739,7 @@
         },
         {
           "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Media: los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no. Contrae el atractivo del precio hacia 50 (de 45 a 46); la calidad no se contrae."
+          "text": "Baja: los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no. Contrae hacia 50 el atractivo del precio (de 40 a 45) y la calidad del negocio (de 91 a 85)."
         }
       ]
     },
@@ -5953,22 +5959,22 @@
   "ke_sensitivity": {
     "base": {
       "ke": 0.0861064211502,
-      "level": "razonable",
-      "score": 46
+      "level": "exigente",
+      "score": 42
     },
-    "dependent": false,
+    "dependent": true,
     "minus": {
       "ke": 0.0761064211502,
       "level": "razonable",
-      "score": 52
+      "score": 50
     },
     "plus": {
       "ke": 0.0961064211502,
-      "level": "razonable",
-      "score": 46
+      "level": "exigente",
+      "score": 42
     },
     "pp": 0.01,
-    "reason": null,
+    "reason": "veredicto dependiente de Ke: el nivel de precio pasa de «exigente» a «razonable» con Ke − 1 pp",
     "status": "ok"
   },
   "key_metrics": {
@@ -6558,8 +6564,8 @@
     "basis": null,
     "border": {
       "neighbor": "exigente",
-      "points": 2,
-      "text": "En la frontera con «exigente» (a 2 puntos): un cambio pequeño en los datos o en los supuestos cambiaría el nivel"
+      "points": 1,
+      "text": "En la frontera con «exigente» (a 1 punto): un cambio pequeño en los datos o en los supuestos cambiaría el nivel"
     },
     "categories_included": 1,
     "categories_total": 1,
@@ -6568,20 +6574,20 @@
         "category": "Valoración",
         "included": true,
         "max": 20,
-        "score": 9
+        "score": 8
       }
     ],
-    "confidence": "media",
+    "confidence": "baja",
     "contracted": true,
     "excluded_categories": [],
-    "factor": 0.75,
+    "factor": 0.5,
     "level": "razonable",
-    "level_raw": "razonable",
+    "level_raw": "exigente",
     "low_coverage_categories": [],
     "not_applicable_categories": [],
     "partial": false,
-    "score": 46,
-    "score_raw": 45
+    "score": 45,
+    "score_raw": 40
   },
   "price_change": {
     "change": 0.110000610352,
@@ -6609,7 +6615,11 @@
   },
   "quality": {
     "basis": null,
-    "border": null,
+    "border": {
+      "neighbor": "sólida",
+      "points": 1,
+      "text": "En la frontera con «sólida» (a 1 punto): un cambio pequeño en los datos o en los supuestos cambiaría el nivel"
+    },
     "categories_included": 4,
     "categories_total": 4,
     "components": [
@@ -6638,9 +6648,9 @@
         "score": 18
       }
     ],
-    "contracted": false,
+    "contracted": true,
     "excluded_categories": [],
-    "factor": null,
+    "factor": 0.85,
     "level": "excelente",
     "level_raw": "excelente",
     "low_confidence": false,
@@ -6703,7 +6713,7 @@
       "weighted": 0.6,
       "window": 5
     },
-    "score": 91,
+    "score": 85,
     "score_raw": 91
   },
   "quality_readings": {
@@ -7126,16 +7136,28 @@
             "value": "26.62x"
           },
           {
-            "adjustment": 2,
+            "adjustment": 0,
             "credible_forward_pe": 20.8653013104,
             "credited_eps_growth": 0.275844679778,
+            "eps_base_check": {
+              "anomalous": false,
+              "base_fy": "FY2022",
+              "checked": true,
+              "ratio": 1.62668651171,
+              "reason": null,
+              "value": null,
+              "window": null,
+              "years": 10
+            },
             "eps_growth_3y": 0.364894698249,
             "implied_eps_growth": 0.385471027279,
+            "implied_eps_growth_reported": 0.156053363092,
             "in_block": true,
             "metric": "Forward P/E",
             "normalized": true,
-            "reason": "P/E normalizado mejorando (27x → 21x forward creíble); forward 19.2x (implica +39% de BPA); con el crecimiento que respalda su histórico (+28% del BPA en el último ejercicio), 20.9x",
-            "severity": "good",
+            "not_scored": "normalización o consenso en bases distintas: el forward implica +39% frente al BPA normalizado y +16% frente al reportado; la compresión no puntúa",
+            "reason": "P/E normalizado mejorando (27x → 21x forward creíble); forward 19.2x (implica +39% de BPA); con el crecimiento que respalda su histórico (+28% del BPA en el último ejercicio), 20.9x; normalización o consenso en bases distintas: el forward implica +39% frente al BPA normalizado y +16% frente al reportado; la compresión no puntúa",
+            "severity": "ok",
             "value": "19.21x"
           },
           {
@@ -7163,9 +7185,9 @@
             "value": "0.73"
           },
           {
-            "adjustment": -1,
+            "adjustment": -2,
             "block_max": 6,
-            "block_mean": -0.248148148148,
+            "block_mean": -0.322222222222,
             "block_members": [
               "P/E",
               "Forward P/E",
@@ -7174,13 +7196,13 @@
               "PEG"
             ],
             "block_votes": {
-              "BPA (P/E, Forward P/E, PEG)": 0.755555555556,
+              "BPA (P/E, Forward P/E, PEG)": 0.533333333333,
               "EV/EBITDA": -1.0,
               "P/FCF": -0.5
             },
-            "formula": "Bloque de múltiplos: promedio de 3 lecturas reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = -0.25 × 6 (máximo con 3) = -1.5, redondeado a -1",
+            "formula": "Bloque de múltiplos: promedio de 3 lecturas reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = -0.32 × 6 (máximo con 3) = -1.9, redondeado a -2",
             "metric": "Bloque de múltiplos",
-            "reason": "media de 3 lecturas en una escala de −1 a +1 (BPA (P/E, Forward P/E, PEG): P/E +0.60, Forward P/E +0.67, PEG +1.00 → +0.76; P/FCF -0.50; EV/EBITDA -1.00): -0.25, que suma -1.5 puntos de un máximo de ±6",
+            "reason": "media de 3 lecturas en una escala de −1 a +1 (BPA (P/E, Forward P/E, PEG): P/E +0.60, Forward P/E +0.00, PEG +1.00 → +0.53; P/FCF -0.50; EV/EBITDA -1.00): -0.32, que suma -1.9 puntos de un máximo de ±6",
             "severity": "moderate",
             "value": "5 múltiplos"
           },
@@ -7199,15 +7221,15 @@
         "coverage": 1.0,
         "details": [
           "Atractivo (26.6x)",
-          "P/E normalizado mejorando (27x → 21x forward creíble); forward 19.2x (implica +39% de BPA); con el crecimiento que respalda su histórico (+28% del BPA en el último ejercicio), 20.9x",
+          "P/E normalizado mejorando (27x → 21x forward creíble); forward 19.2x (implica +39% de BPA); con el crecimiento que respalda su histórico (+28% del BPA en el último ejercicio), 20.9x; normalización o consenso en bases distintas: el forward implica +39% frente al BPA normalizado y +16% frente al reportado; la compresión no puntúa",
           "Elevado (26.3x)",
           "Muy caro (20.3x frente a 13.2x)",
           "Muy atractivo (0.73)",
-          "media de 3 lecturas en una escala de −1 a +1 (BPA (P/E, Forward P/E, PEG): P/E +0.60, Forward P/E +0.67, PEG +1.00 → +0.76; P/FCF -0.50; EV/EBITDA -1.00): -0.25, que suma -1.5 puntos de un máximo de ±6",
+          "media de 3 lecturas en una escala de −1 a +1 (BPA (P/E, Forward P/E, PEG): P/E +0.60, Forward P/E +0.00, PEG +1.00 → +0.53; P/FCF -0.50; EV/EBITDA -1.00): -0.32, que suma -1.9 puntos de un máximo de ±6",
           "En precio por DCF (fiabilidad media): margen FCF inestable: de -0.4% a 20.9% en 5 ejercicios (variación 0.69 > 0.33)"
         ],
         "max": 20,
-        "score": 9
+        "score": 8
       }
     },
     "excluded_categories": [],
@@ -7369,9 +7391,9 @@
     "source": "efectiva"
   },
   "verdict": {
-    "confidence": "media",
-    "confidence_text": "(confianza media: el DCF directo la ve en precio y los múltiplos cara)",
-    "full": "Calidad excelente · precio razonable (confianza media: el DCF directo la ve en precio y los múltiplos cara)",
+    "confidence": "baja",
+    "confidence_text": "(confianza baja: el nivel de precio cambia con ±1 pp de coste del capital)",
+    "full": "Calidad excelente · precio razonable (confianza baja: el nivel de precio cambia con ±1 pp de coste del capital)",
     "price_level": "razonable",
     "quality_level": "excelente",
     "text": "Calidad excelente · precio razonable"
