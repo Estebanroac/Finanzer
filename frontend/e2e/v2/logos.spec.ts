@@ -262,3 +262,25 @@ test("pantalla de carga y placas: un logotipo no cuadrado llena su placa, sin fr
   await expect(plate).toHaveAttribute("data-state", "ok", { timeout: 30_000 });
   expect(await plate.locator("img").evaluate((e) => getComputedStyle(e).objectFit)).toBe("cover");
 });
+
+test("cabecera: el precio va siempre en su línea, bajo el nombre, con nombre corto o largo", async ({ page }) => {
+  // Con un nombre corto (PFE en producción: «Pfizer Inc. · PFE · NYSE · Salud · Farmacéuticas») el precio se subía a la
+  // línea del nombre y con uno largo (NFLX) quedaba debajo: cada empresa salía con la cabecera distinta. Ninguna empresa
+  // del replay tiene un nombre tan corto, así que la prueba acorta el texto en la página y vuelve a medir. En el
+  // teléfono el precio ya iba debajo (rejilla) y ocupa todo el ancho, también bajo el logotipo.
+  await page.goto("/v2/NFLX");
+  const head = page.locator(".company-header:not(.compact)");
+  await expect(head.getByTestId("company-logo")).toBeVisible({ timeout: 30_000 });
+  for (const text of [null, "Pfizer Inc. · PFE"]) {
+    const pos = await head.evaluate((h, text) => {
+      const nm = h.querySelector(".ident-name") as HTMLElement;
+      if (text) nm.textContent = text;
+      const n = nm.getBoundingClientRect(), q = h.querySelector(".quote")!.getBoundingClientRect();
+      return { nameBottom: n.bottom, nameLeft: n.left, quoteTop: q.top, quoteLeft: q.left };
+    }, text);
+    const what = text ?? "Netflix";
+    expect(pos.quoteTop, `${what}: precio bajo el nombre`).toBeGreaterThanOrEqual(pos.nameBottom - 1);
+    if (page.viewportSize()!.width > PHONE_MAX)
+      expect(Math.abs(pos.quoteLeft - pos.nameLeft), `${what}: alineado con el nombre`).toBeLessThanOrEqual(1);
+  }
+});

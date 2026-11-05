@@ -5,7 +5,7 @@ import { defineConfig, devices } from "@playwright/test";
 const REPLAY_PORT = Number(process.env.REPLAY_PORT || 8767);
 const E2E_PORT = Number(process.env.E2E_PORT || 3000);
 // El entorno virtual de Python vive en el checkout principal (no se copia a los worktrees).
-const PYTHON = "/Users/joseestebanroa/Downloads/finanzer_next/.venv313/bin/python";
+const PYTHON = "/Users/joseestebanroa/Downloads/Finanzer/finanzer_next/.venv313/bin/python";
 // Rediseño E4 (Task 5): E2E_BUILD=1 prueba el build de producción tal como lo sirve el backend (frontend/out compilado
 // con `npm run build`): sin `next dev`, baseURL = el replay, que sirve out/ y la API en el mismo origen.
 const BUILD = process.env.E2E_BUILD === "1";

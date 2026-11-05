@@ -5,7 +5,7 @@ import { defineConfig, devices } from "@playwright/test";
 // (3 × 4); cada test recorre la historia y las 9 páginas de un ticker en un tema. `npm run e2e:v1`, repartido con
 // --shard o --project; la matriz sale de `node scripts/v1-matriz.mjs` (docs/rediseno/verificacion/V1_matriz.md).
 const REPLAY_PORT = Number(process.env.REPLAY_PORT || 8767);
-const PYTHON = "/Users/joseestebanroa/Downloads/finanzer_next/.venv313/bin/python";
+const PYTHON = "/Users/joseestebanroa/Downloads/Finanzer/finanzer_next/.venv313/bin/python";
 
 // 1024 (cierre de la v4): el escritorio estrecho, donde las marcas de las escalas pasan a leyenda (scaleFit.ts).
 const SIZES = {

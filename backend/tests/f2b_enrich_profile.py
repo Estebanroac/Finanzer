@@ -18,7 +18,7 @@ import sys
 
 import f2b_fixtures as ff
 
-MAIN_CHECKOUT_RAW = "/Users/joseestebanroa/Downloads/finanzer_next/backend/tests/fixtures/edgar/raw"
+MAIN_CHECKOUT_RAW = "/Users/joseestebanroa/Downloads/Finanzer/finanzer_next/backend/tests/fixtures/edgar/raw"
 RAW = next((p for p in (os.path.join(ff.TESTS_DIR, "fixtures", "edgar", "raw"), MAIN_CHECKOUT_RAW)
             if os.path.isdir(p)), None)
 

@@ -182,6 +182,9 @@ html[data-v2theme="dark"] .fz2 .theme-to-dark, html:not([data-v2theme="dark"]) .
 /* Logotipos: la placa a la izquierda de nombre y precio, centrada con los dos (en el móvil, arriba, con el nombre) */
 .fz2 .ident-lead { display: flex; align-items: center; gap: var(--s3); min-width: 0; }
 .fz2 .ident-lead .ident-main { flex: 1 1 auto; min-width: 0; }
+/* El precio siempre en su línea, bajo el nombre: con un nombre corto (PFE) se subía a la línea del nombre y con uno
+   largo (NFLX) quedaba debajo; cada empresa salía con la cabecera distinta. La fija (compacta) sigue en una línea. */
+.fz2 .company-header:not(.compact) .ident-name { flex-basis: 100%; }
 .fz2 .verdict { display: flex; align-items: baseline; gap: var(--s3); justify-self: end; text-align: right; }
 .fz2 .verdict-text { font-size: var(--fs-sub); font-weight: 650; }
 .fz2 .company-header .name { color: var(--ink); font-size: var(--fs-sub); }

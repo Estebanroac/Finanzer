@@ -5,7 +5,7 @@ import { defineConfig, devices } from "@playwright/test";
 // prueba con CDP) en escritorio y en móvil, y WebKit (sin ralentización: no la permite). Umbrales en la config
 // (backend/config/data.toml [web] perf_*). En serie: las medidas no compiten por la CPU.
 const REPLAY_PORT = Number(process.env.REPLAY_PORT || 8767);
-const PYTHON = "/Users/joseestebanroa/Downloads/finanzer_next/.venv313/bin/python";
+const PYTHON = "/Users/joseestebanroa/Downloads/Finanzer/finanzer_next/.venv313/bin/python";
 
 export default defineConfig({
   testDir: "./e2e/perf",
