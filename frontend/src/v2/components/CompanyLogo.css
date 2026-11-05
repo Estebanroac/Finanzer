@@ -7,7 +7,8 @@
 /* el filo, por encima de la imagen: un logotipo blanco no se funde con el fondo claro ni deslumbra sin borde en oscuro */
 .fz2 .co-logo::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px var(--logo-edge);
   pointer-events: none; }
-.fz2 .co-logo img { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; object-fit: contain;
+/* cover: llena la placa aunque el logotipo no sea del todo cuadrado (hasta 1,25:1; sin franjas del fondo) */
+.fz2 .co-logo img { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; object-fit: cover;
   background: var(--logo-plate); opacity: 0; transition: opacity .16s ease-out; }
 .fz2 .co-logo[data-state="ok"] img { opacity: 1; }
 .fz2 .co-logo-ph { font-weight: 650; letter-spacing: .02em; color: var(--text-2); font-size: var(--logo-text); }

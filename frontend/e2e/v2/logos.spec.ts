@@ -111,7 +111,7 @@ test("el hueco del logotipo está reservado: la tarjeta no cambia de tamaño al 
   let release: () => void = () => {};
   const gate = new Promise<void>((r) => { release = r; });
   await page.route("**/api/v2/logo/AAPL", async (route) => { await gate; await route.continue(); });
-  await page.goto("/v2");
+  await page.goto("/v2", { waitUntil: "domcontentloaded" });          // «load» esperaría al logotipo retenido
   const card = page.locator("[data-testid=ticker-item][data-symbol=AAPL]");
   const logo = card.getByTestId("company-logo");
   await expect(logo).toHaveAttribute("data-state", "loading", { timeout: 30_000 });
@@ -156,6 +156,27 @@ test("noticias sin foto: la portada lleva el logotipo de la empresa y el medio, 
   expect(await brokenImages(page)).toEqual([]);
 });
 
+/** Lo que no llena su placa: cada imagen de `mark` debe ocupar exactamente su caja cuadrada (sin franjas del fondo por
+ *  una caja no cuadrada ni por object-fit: contain con un logotipo que no lo sea). */
+async function fills(mark: Locator) {
+  return mark.evaluate((m) => {
+    const b = m.getBoundingClientRect();
+    const out: string[] = [];
+    if (Math.abs(b.width - b.height) > 0.5) out.push(`caja ${b.width}×${b.height}`);
+    for (const img of Array.from(m.querySelectorAll("img"))) {
+      const r = img.getBoundingClientRect();
+      if (Math.abs(r.width - b.width) > 0.5 || Math.abs(r.height - b.height) > 0.5) out.push(`${img.className} ${r.width}×${r.height}`);
+      if (getComputedStyle(img).objectFit !== "cover" && img.classList.contains("al-co")) out.push(`${img.className} ${getComputedStyle(img).objectFit}`);
+    }
+    return out;
+  });
+}
+
+/** Un PNG de 200×160 (logotipo no cuadrado, dentro del 1,25:1 que admite el backend), negro: una franja se vería. */
+const WIDE_PNG = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAMgAAACgCAIAAADGnbT+AAAAdElEQVR42u3BAQ0AAADCoPdPbQ43oAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD4Nd68AATDR5eEAAAAASUVORK5CYII=",
+  "base64");
+
 /** La pantalla de carga sin el análisis (se retiene hasta `release`). */
 async function holdAnalysis(page: Page, sym: string) {
   let release: () => void = () => {};
@@ -173,7 +194,8 @@ test("pantalla de carga: el logotipo de la empresa sustituye al de Finanzer en c
     co: getComputedStyle(e.querySelector(".al-co")!).opacity, brand: getComputedStyle(e.querySelector(".al-brand")!).opacity,
     src: e.querySelector(".al-co")!.getAttribute("src"), w: Math.round(e.getBoundingClientRect().width) }));
   expect(look.src).toMatch(/\/api\/v2\/logo\/NFLX$/);
-  expect(look.w).toBe(4 * REM);                                   // el mismo hueco que el logo de Finanzer
+  expect(look.w).toBe(page.viewportSize()!.width <= PHONE_MAX ? 3.75 * REM : 4 * REM);   // el hueco del de Finanzer
+  expect(await fills(mark)).toEqual([]);
   await expect.poll(() => mark.locator(".al-co").evaluate((e) => getComputedStyle(e).opacity)).toBe("1");
   await expect.poll(() => mark.locator(".al-brand").evaluate((e) => getComputedStyle(e).opacity)).toBe("0");
   expect(await brokenImages(page)).toEqual([]);
@@ -224,4 +246,19 @@ test("portada: el logo de Finanzer encima del titular, centrado y con su sitio r
   expect(Math.abs((m!.x + m!.width / 2) - (after!.x + after!.width / 2))).toBeLessThanOrEqual(1);   // centrado
   expect(await mark.getAttribute("src")).toBe("/brand/finanzer-logo.svg");
   expect(await brokenImages(page)).toEqual([]);
+});
+
+
+test("pantalla de carga y placas: un logotipo no cuadrado llena su placa, sin franjas del fondo", async ({ page }) => {
+  await page.route("**/api/v2/logo/**", (route) => route.fulfill({ status: 200, contentType: "image/png", body: WIDE_PNG }));
+  await holdAnalysis(page, "NFLX");
+  await page.goto("/v2/NFLX");
+  const mark = page.getByTestId("analyze-loading").getByTestId("al-mark");
+  await expect(mark).toHaveAttribute("data-mark", "empresa", { timeout: 30_000 });
+  expect(await fills(mark)).toEqual([]);
+  // y la placa de la tarjeta del cintillo, con el mismo logotipo
+  await page.goto("/v2");
+  const plate = page.locator("[data-testid=ticker-item][data-symbol=AAPL]").getByTestId("company-logo");
+  await expect(plate).toHaveAttribute("data-state", "ok", { timeout: 30_000 });
+  expect(await plate.locator("img").evaluate((e) => getComputedStyle(e).objectFit)).toBe("cover");
 });
