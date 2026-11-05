@@ -25,16 +25,31 @@ def _dd(dd, vol):
 def test_drawdown_weight_grows_with_the_drop_in_its_own_volatility():
     assert _dd(-0.29, 0.30) is None                                       # por encima del piso: sin alerta
     assert _dd(-0.35, 0.50)["weight"] == D["w"]                           # z 0,7: lo que suele moverse
-    assert _dd(-0.62, 0.50)["weight"] == pytest.approx(D["w"] + (1.24 - 1.0) / 0.5 * (D["w_max"] - D["w"]))
-    assert _dd(-0.80, 0.40)["weight"] == D["w_max"]                       # z 2: tope
-    ws = [_dd(-0.50, v)["weight"] for v in (0.80, 0.50, 0.40, 0.35, 0.30)]
+    assert _dd(-0.48, 0.40)["weight"] == pytest.approx(D["w"] + (1.2 - 1.0) / 0.5 * (D["w_max"] - D["w"]))
+    assert _dd(-0.48, 0.24)["weight"] == D["w_max"]                       # z 2: tope
+    ws = [_dd(-0.45, v)["weight"] for v in (0.80, 0.50, 0.40, 0.35, 0.30)]
     assert ws == sorted(ws)                                               # misma caída, menos volatilidad: más peso
-    assert _dd(-0.62, None)["weight"] == D["w"]                           # sin volatilidad, el peso de siempre
+    assert _dd(-0.45, None)["weight"] == D["w"]                           # sin volatilidad, el peso de siempre
 
 
-def test_drawdown_text_says_how_unusual_the_drop_is_only_when_it_is():
-    assert "1.2 veces su volatilidad anual (50%)" in _dd(-0.62, 0.50)["detail"]
-    assert "volatilidad" not in _dd(-0.55, 0.79)["detail"]                # CIEN: dentro de lo que se mueve
+def _linear(dd):
+    return D["w"] + min(1.0, (abs(dd) - abs(D["deep_below"])) / (abs(D["linear_full_below"]) - abs(D["deep_below"]))) * (
+        D["w_max"] - D["w"])
+
+
+def test_drawdown_floor_gives_a_deep_drop_at_least_the_linear_weight():
+    """Piso del usuario: desde floor_below, al menos el peso lineal, sea cual sea la volatilidad (CIEN −56,6 %, vol 79 %)."""
+    assert _dd(-0.566, 0.79)["weight"] == pytest.approx(_linear(-0.566))
+    assert _dd(-0.566, None)["weight"] == pytest.approx(_linear(-0.566))  # también sin volatilidad
+    assert _dd(-0.49, 0.79)["weight"] == D["w"]                           # por encima del piso: solo la volatilidad
+    assert _dd(-0.62, 0.50)["weight"] == D["w_max"]                       # el máximo de las dos, con el mismo tope
+    assert _dd(-0.95, 0.20)["weight"] == D["w_max"]
+
+
+def test_drawdown_text_always_says_how_unusual_the_drop_is():
+    assert "unas 1.2 veces su movimiento anual habitual (volatilidad del 50%): más de lo" in _dd(-0.62, 0.50)["detail"]
+    assert "unas 0.7 veces su movimiento anual habitual (volatilidad del 79%): dentro de lo" in _dd(-0.55, 0.79)["detail"]
+    assert "habitual" not in _dd(-0.55, None)["detail"]                   # sin volatilidad no se inventa
 
 
 def test_drawdown_cap_never_outranks_a_solvency_warning():

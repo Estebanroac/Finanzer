@@ -404,6 +404,11 @@ w = 34
 w_max = 44
 z_low = 1.0                         # una caída igual a su volatilidad de un año (percentil 82 del universo, 5-nov-2026)
 z_high = 1.5                        # vez y media: por encima del percentil 99 (p98 = 1,35; máximo 1,85)
+# Piso (usuario, 5-nov-2026): una caída de floor_below o peor pesa al menos lo que la versión lineal (w en deep_below,
+# w_max en linear_full_below), sea cual sea la volatilidad. Medido en las 543: ganan la alerta CIEN y NOW (sale «margen
+# neto estrecho» en las dos); ninguna de solvencia sale (el tope sigue en w_max).
+floor_below = -0.50
+linear_full_below = -0.60
 
 # ── Lecturas del PDF (pdf_report.read_*, score_band, grid) ──
 # Bandas propias del informe, distintas de las del motor (ver el informe de
