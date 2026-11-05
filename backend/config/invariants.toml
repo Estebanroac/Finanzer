@@ -171,3 +171,81 @@ finnhub_skip_paths = ["/company-news", "/stock/earnings", "/calendar/earnings"]
 check_after_min = 10.0
 max_minutes = 60.0
 max_rss_mb = 450.0
+
+# ── F13 (revisión externa de 110 empresas, 5-nov-2026): docs/fiabilidad/revision-110-2026-11-05.md ──
+[rating_contable]                   # [3] rating de impago con EBIT normalizado o flujo operativo positivos
+weight = 3
+low_ratings = ["D", "C", "CC", "CCC"]
+
+[cautiva_separada]                  # [8] deuda de la financiera cautiva fuera de la deuda industrial
+weight = 3
+
+[inverso_una_vez]                   # [1a] el DCF inverso, una sola vez en la convergencia
+weight = 3
+
+[confianza_base_fragil]             # [1b, 1c, 11a] confianza alta con base frágil
+weight = 3
+max_pe_gap = 0.40                   # |P/E normalizado ÷ forward − 1| (revisor: 40 %)
+
+[ciclica_por_industria]             # [6] productores de materias primas (decisión del usuario, 5-nov: minería, petróleo y
+weight = 3                          # gas, químicos básicos, acero, fertilizantes); nombres de industria de Yahoo
+commodity_industries = ["copper", "steel", "aluminum", "other industrial metals & mining", "gold", "silver",
+                        "other precious metals & mining", "coking coal", "thermal coal", "uranium", "oil & gas e&p",
+                        "oil & gas refining & marketing", "oil & gas integrated", "oil & gas drilling",
+                        "chemicals", "agricultural inputs"]
+
+[pico_ciclico]                      # [6] beneficio TTM ÷ mediana de 3 ejercicios
+weight = 3
+min_ratio = 1.5                     # revisor: 1,5×
+
+[referencia_acotada]                # [4] referencia sin la empresa: mínimo, ROE máximo y factor frente a la publicada
+weight = 3
+profit_columns = ["roe", "net_margin", "operating_margin"]
+min_value = 0.03                    # revisor: 3 %
+max_roe = 1.0
+max_factor = 3.0
+
+[roe_bajo_coherente]                # [4b] «ROE bajo» con ROE ≥ Ke
+weight = 1
+
+[roe_patrimonio_infimo]             # [4c] patrimonio ÷ activos
+weight = 2
+min_equity_to_assets = 0.05
+
+[utility_regulada]                  # [10a]
+weight = 3
+
+[normalizacion_utility]             # [nuevo] parte del beneficio que la normalización quita como «no explicada»
+weight = 3
+min_share = 0.15
+
+[espectro_coherente]                # [9a]
+weight = 3
+
+[perimetro_corregido]               # [5]
+weight = 3
+
+[ffo_sin_saltos]                    # [10d] máximo ÷ mínimo de la serie de FFO por acción
+weight = 3
+max_range_factor = 1.6
+
+[abstencion_sin_datos]              # [11b]
+weight = 3
+
+[beta_sin_signo_negativo]           # [nuevo]
+weight = 2
+
+[flujo_por_intensidad]              # [2] capex ÷ flujo operativo medio
+weight = 3
+min_capex_to_ocf = 0.6              # capex ÷ flujo operativo del TTM (revisor: 60 %)
+
+[crecimiento_dcf_representativo]    # [7a] DCF extremo con el crecimiento de ventas lejos del del BPA
+weight = 3
+min_abs_upside = 60
+max_gap = 0.10
+
+[base_inflada]                      # paso 12 (usuario): base del CAGR a 3 años frente a la mediana del resto
+weight = 3
+min_years = 6
+min_factor = 1.5
+series = [["free_cash_flow", "FCF"], ["revenue", "Ingresos"], ["net_income", "Beneficio neto"]]

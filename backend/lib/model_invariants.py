@@ -1155,6 +1155,406 @@ def metodo_citado_aplicable(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
     return _result(rule, out)
 
 
+# ═══════════════════════ F13: revisión externa de 110 empresas (5-nov-2026) ═══════════════════════
+# Una regla por hallazgo verificado en docs/fiabilidad/revision-110-2026-11-05.md (patrón del revisor entre corchetes).
+
+def _hist(a: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Ejercicios de la historia de 10 años (EDGAR), del más antiguo al más reciente."""
+    rows = [r for r in (_get(a, "history_10y", "rows", default=[]) or []) if isinstance(r, dict)]
+    return sorted(rows, key=lambda r: r.get("year") or 0)
+
+
+def _industry(a: Dict[str, Any]) -> str:
+    return str(_get(a, "profile", "industry", default="") or "").strip().lower()
+
+
+def _commodity(a: Dict[str, Any]) -> bool:
+    return _industry(a) in set(_C("ciclica_por_industria")["commodity_industries"])
+
+
+def rating_contable(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
+    """[3] El rating sintético no sale de un EBIT contable hundido por partidas sin caja: un rating de impago (o casi)
+    con el beneficio operativo normalizado o la caja operativa positivos es incoherente, y lleva el WACC a su tope."""
+    rule, C = "rating_contable", _C("rating_contable")
+    w = a.get("wacc") or {}
+    rt = _get(w, "rating", "rating")
+    if not w.get("applicable", True) or rt is None:
+        return Result(NOT_APPLICABLE, "sin WACC o sin rating sintético")
+    if rt not in C["low_ratings"]:
+        return Result(OK)
+    km = a.get("key_metrics") or {}
+    oin, ocf = _num(km.get("operating_income_normalized")), _num(km.get("operating_cash_flow"))
+    if not ((oin is not None and oin > 0) or (ocf is not None and ocf > 0)):
+        return Result(OK)
+    wv = _num(w.get("value")) or 0.0
+    return _result(rule, [_violation(
+        rule, 1 + wv / 0.10, f"rating {rt} (cobertura {_num(_get(w, 'rating', 'coverage'))}) con EBIT normalizado "
+        f"{oin} y flujo operativo {ocf}: WACC {_pct(wv)}{' (en su tope)' if w.get('clamped') else ''}"
+        f"{' · ' + _archetype(a) if _archetype(a) == 'REIT' else ''}",
+        "la cobertura usa el EBIT contable del TTM (deterioros sin caja; en REIT, la depreciación inmobiliaria) y el "
+        "piso Ke ≥ Kd + 1 pp traslada el spread al Ke", rating=rt, wacc=wv, ebit_normalized=oin, ocf=ocf)])
+
+
+def cautiva_separada(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
+    """[8] Si se detecta una financiera cautiva, su deuda no se trata como deuda industrial en la valoración."""
+    rule = "cautiva_separada"
+    cf = _get(a, "business_model", "captive_finance", default={}) or {}
+    if not cf.get("detected"):
+        return Result(NOT_APPLICABLE, "sin financiera cautiva detectada")
+    cap = _get(a, "data_provenance", "debt", "components", "captive", default=None)
+    if isinstance(cap, dict) and not cap.get("in_rule_debt", True):
+        return Result(OK)
+    km = a.get("key_metrics") or {}
+    return _result(rule, [_violation(
+        rule, 2, f"cautiva «{cf.get('segment') or '?'}» detectada; su deuda "
+        + (f"({_num(cap.get('value'))}) se declara pero sigue en la deuda" if isinstance(cap, dict) else "no se separa")
+        + f" (deuda neta/EBITDA {_num(km.get('net_debt_to_ebitda'))})",
+        "separar la deuda depende de una lista manual (data.toml [edgar.captive]) y su uso en la valoración no está "
+        "hecho; la filial presenta su propio 10-K", segment=cf.get("segment"), separated=isinstance(cap, dict))])
+
+
+def inverso_una_vez(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
+    """[1a] El DCF inverso cuenta una sola vez en la convergencia: no puede ser método propio y a la vez lectura dentro
+    de la señal de los múltiplos."""
+    rule = "inverso_una_vez"
+    meths = _get(a, "confidence", "dimensions", "convergence", "methods", default=[]) or []
+    if not any(m.get("method") == "DCF inverso" for m in meths):
+        return Result(NOT_APPLICABLE, "el DCF inverso no es método de la convergencia")
+    inside = [m for m in meths if any("inverso" in str(k).lower() for k in (m.get("readings") or {}))]
+    if not inside:
+        return Result(OK)
+    return _result(rule, [_violation(
+        rule, 2, f"el DCF inverso es método y además lectura de «{inside[0].get('method')}» "
+        f"(señal {_num(inside[0].get('signal'))}); convergencia {_get(a, 'confidence', 'dimensions', 'convergence', 'level')}",
+        "la señal de múltiplos excluye las filas por nombre («DCF»), y con el directo no significativo o en REIT la fila "
+        "se llama «DCF inverso (…)»", level=_get(a, "confidence", "level"))])
+
+
+def _fragile(a: Dict[str, Any]) -> List[str]:
+    """Señales de base frágil del veredicto de precio (F13 · paso 3)."""
+    C, km, out = _C("confianza_base_fragil"), a.get("key_metrics") or {}, []
+    fcf, ocf = _num(km.get("free_cash_flow")), _num(km.get("operating_cash_flow"))
+    if fcf is not None and fcf < 0 and ocf is not None and ocf - fcf > max(ocf, 0):
+        out.append(f"FCF {fcf / 1e9:.1f} B con capex mayor que el flujo operativo")
+    if _get(a, "altman_z", "applicable") and _get(a, "altman_z", "zone") == "distress":
+        out.append(f"Altman {_num(_get(a, 'altman_z', 'z_score'))} en zona de peligro")
+    pen, fpe = _num(km.get("pe_normalized")), _num(km.get("forward_pe"))
+    if pen and fpe and pen > 0 and fpe > 0 and abs(pen / fpe - 1) > C["max_pe_gap"]:
+        out.append(f"P/E normalizado {pen:.1f}x frente a forward {fpe:.1f}x")
+    if _get(a, "data_provenance", "staleness", "status") == "desfasado":
+        out.append(f"estados desfasados ({_get(a, 'data_provenance', 'staleness', 'days_since_cut')} días)")
+    return out
+
+
+def confianza_base_fragil(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
+    """[1b, 1c, 11a] La confianza no es «alta» con una base frágil: caja negativa por capex, Altman en peligro, P/E
+    normalizado lejos del forward o estados desfasados."""
+    rule = "confianza_base_fragil"
+    lvl = _get(a, "confidence", "level")
+    if lvl is None or _get(a, "price_attractiveness", "level") is None:
+        return Result(NOT_APPLICABLE, "sin veredicto de precio")
+    f = _fragile(a)
+    if lvl != "alta" or not f:
+        return Result(OK)
+    return _result(rule, [_violation(
+        rule, 1 + len(f), f"confianza alta con: {'; '.join(f)}",
+        "la confianza solo mira convergencia, cobertura, fuente, estabilidad y fuente oficial (valuation_confidence)",
+        signals=f)])
+
+
+def ciclica_por_industria(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
+    """[6] Un productor de materias primas es cíclico por su industria, aunque su historia de ventas no lo muestre."""
+    rule = "ciclica_por_industria"
+    if not _commodity(a):
+        return Result(NOT_APPLICABLE, "no es productor de materias primas")
+    arch = _archetype(a)
+    if arch in ("CYCLICAL", "FINANCIAL", "REIT", "GROWTH_PRE_PROFIT"):
+        return Result(OK)
+    cyc = _get(a, "classification", "inputs", "cyclicality", default={}) or {}
+    return _result(rule, [_violation(
+        rule, 2, f"{_get(a, 'profile', 'industry')} clasificada {arch} (regla {_get(a, 'classification', 'rule')}; "
+        f"años de perímetro descartados: {len(cyc.get('perimeter_years') or [])})",
+        "con historia larga decide la de ventas (classify.py:540) y la lista de industrias es un elif que no se consulta",
+        archetype=arch)])
+
+
+def pico_ciclico(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
+    """[6] En una cíclica o productora de materias primas, un beneficio muy por encima de su mediana es pico aunque el
+    consenso no lo confirme."""
+    rule, C = "pico_ciclico", _C("pico_ciclico")
+    if not (_archetype(a) == "CYCLICAL" or _commodity(a)):
+        return Result(NOT_APPLICABLE, "ni cíclica ni materias primas")
+    ep = a.get("earnings_peak") or {}
+    r = _num(ep.get("ttm_over_median"))
+    if r is None:
+        h = [x for x in _hist(a) if _num(x.get("net_income")) is not None]
+        if len(h) >= 4 and _num(h[-1]["net_income"]) and _num(h[-1]["net_income"]) > 0:
+            med = statistics.median([_num(x["net_income"]) for x in h[-4:-1]])
+            r = (_num(h[-1]["net_income"]) / med) if med and med > 0 else None
+    if r is None:
+        return Result(NOT_EVALUABLE, "sin beneficio frente a su mediana")
+    if r < C["min_ratio"] or ep.get("flag"):
+        return Result(OK)
+    return _result(rule, [_violation(
+        rule, r / C["min_ratio"], f"beneficio {r:.2f}× su mediana sin bandera de pico "
+        f"(condiciones a={_get(ep, 'conditions', 'a')}, b={_get(ep, 'conditions', 'b')}; {_archetype(a)})",
+        "el pico exige (a) y (b) (el consenso confirma la caída); en materias primas el consenso extrapola el precio",
+        ratio=r)])
+
+
+def referencia_acotada(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
+    """[4] La referencia que queda al quitar a la empresa es plausible: mismo signo que la publicada, no menor de un
+    mínimo en los ratios de beneficio y dentro de un factor de la publicada."""
+    rule, C = "referencia_acotada", _C("referencia_acotada")
+    bi = _get(a, "benchmark", "industry", default={}) or {}
+    used = _get(a, "benchmark", "values", default={}) or {}
+    if _get(a, "benchmark", "profile") == "market" or not bi:
+        return Result(NOT_APPLICABLE, "la referencia es el mercado amplio")
+    cols = _get(bi, "self_exclusion", "columns", default={}) or {}
+    out = []
+    for col in C["profit_columns"]:
+        v = _num(used.get(col))
+        if v is None:
+            continue
+        pub = _num((cols.get(col) or {}).get("before"))
+        if pub is None:
+            pub = _num((bi.get("published") or {}).get(col))
+        bad = []
+        if v < C["min_value"]:
+            bad.append(f"{_pct(v)} < {_pct(C['min_value'], 0)}")
+        if col == "roe" and v > C["max_roe"]:
+            bad.append(f"ROE de referencia {_pct(v)}")
+        if pub and pub > 0 and v > 0 and not (1 / C["max_factor"] <= v / pub <= C["max_factor"]):
+            bad.append(f"{v / pub:.1f}× la publicada ({_pct(pub)})")
+        if bad:
+            out.append(_violation(rule, 2, f"referencia de {col}: " + "; ".join(bad)
+                                  + f" ({bi.get('damodaran')}, {(bi.get('self_exclusion') or {}).get('method')})",
+                                  "quitar a la empresa del agregado (self_exclusion) no tiene cota ni prueba de signo; "
+                                  "la T1 solo retira |v| < 2 %", column=col, value=v, published=pub))
+    return _result(rule, out)
+
+
+def roe_bajo_coherente(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
+    """[4b] No se llama «bajo» a un ROE que cubre su coste del capital."""
+    rule = "roe_bajo_coherente"
+    km = a.get("key_metrics") or {}
+    ke = _num(_get(a, "cost_of_equity", "value")) or _num(_get(a, "wacc", "ke"))
+    hits = [x for _, x in _alerts(a) if "ROE" in str(x.get("reason") or "") and "bajo" in str(x.get("reason") or "")]
+    if not hits:
+        return Result(NOT_APPLICABLE, "sin alerta de ROE bajo")
+    m = re.search(r"([−-]?\d+(?:[.,]\d+)?)%", str(hits[0].get("reason")))
+    roe = float(m.group(1).replace(",", ".").replace("−", "-")) / 100 if m else _num(km.get("roe"))
+    if roe is None or ke is None or roe < ke:
+        return Result(OK)
+    return _result(rule, [_violation(
+        rule, roe / ke, f"«{hits[0].get('reason')}» con un ROE de {_pct(roe)} ≥ Ke {_pct(ke)} (referencia "
+        f"{_pct(_num(_get(a, 'benchmark', 'values', 'roe')))})",
+        "la alerta compara solo con la referencia de industria, sin suelo absoluto", roe=roe, ke=ke)])
+
+
+def roe_patrimonio_infimo(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
+    """[4c] Con un patrimonio ínfimo frente a los activos, el ROE no mide nada: ni fortaleza ni cifra puntuable."""
+    rule, C = "roe_patrimonio_infimo", _C("roe_patrimonio_infimo")
+    if _archetype(a) == "FINANCIAL":
+        return Result(NOT_APPLICABLE, "financiera: el apalancamiento es el negocio (su ROE tiene su propia lectura)")
+    km = a.get("key_metrics") or {}
+    eq, ta = _num(km.get("total_equity")), _num(km.get("total_assets"))
+    if eq is None or ta is None or ta <= 0 or eq <= 0:
+        return Result(NOT_APPLICABLE, "sin patrimonio positivo o sin activos")
+    if eq / ta >= C["min_equity_to_assets"]:
+        return Result(OK)
+    strong = [x for k, x in _alerts(a) if k == "strengths" and "ROE" in str(x.get("reason") or "")]
+    return _result(rule, [_violation(
+        rule, C["min_equity_to_assets"] / max(eq / ta, 0.002), f"patrimonio {_pct(eq / ta)} de los activos con ROE "
+        f"{_pct(_num(km.get('roe')))}" + (f"; fortaleza «{strong[0].get('reason')}»" if strong else ""),
+        "solo el patrimonio negativo deja el ROE «n.s.»", equity_to_assets=eq / ta, strength=bool(strong))])
+
+
+def utility_regulada(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
+    """[10a] En una utility regulada el retorno lo fija el regulador: ROIC < WACC no es «destruye valor» ni resta nota."""
+    rule = "utility_regulada"
+    if _archetype(a) != "UTILITY":
+        return Result(NOT_APPLICABLE, "no es utility")
+    hits = [x for _, x in _alerts(a) if "destruye valor" in str(x.get("reason") or "").lower()]
+    adj = [x for x in _adjustments(a) if "ROIC" in str(x.get("metric") or "") and (x.get("adjustment") or 0) < 0]
+    if not hits and not adj:
+        return Result(OK)
+    return _result(rule, [_violation(
+        rule, 2, ("alerta «" + str(hits[0].get("reason")) + "»" if hits else "")
+        + (f"{'; ' if hits else ''}{adj[0].get('metric')} {adj[0].get('adjustment'):+d} en la nota" if adj else ""),
+        "UTILITY no tiene roic_wacc entre sus no aplicables (sectors.toml)", alert=bool(hits), scored=bool(adj))])
+
+
+def normalizacion_utility(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
+    """[nuevo] En utilities, el «beneficio que la operación no explica» (créditos fiscales, AFUDC) puede ser recurrente:
+    se mide cuánto quita."""
+    rule, C = "normalizacion_utility", _C("normalizacion_utility")
+    if _archetype(a) != "UTILITY":
+        return Result(NOT_APPLICABLE, "no es utility")
+    en = a.get("earnings_normalization") or {}
+    rep, out = _num(en.get("reported_net_income")), _num(_get(en, "after_tax", "out")) or 0.0
+    if not rep or rep <= 0 or not _get(en, "after_tax", "applied"):
+        return Result(OK)
+    if out / rep < C["min_share"]:
+        return Result(OK)
+    return _result(rule, [_violation(
+        rule, (out / rep) / C["min_share"], f"quita {_pct(out / rep)} del beneficio ({out / 1e9:.2f} B) como no "
+        f"explicado por la operación; P/E normalizado {_num(_get(a, 'key_metrics', 'pe_normalized'))} frente a forward "
+        f"{_num(_get(a, 'key_metrics', 'forward_pe'))}",
+        "hipótesis: créditos fiscales y AFUDC recurrentes leídos como no operativos (F10 · N1)", share=out / rep)])
+
+
+def espectro_coherente(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
+    """[9a] El ajuste de espectro se aplica igual a todas las telecom."""
+    rule = "espectro_coherente"
+    sp = a.get("spectrum_adjustment")
+    if not isinstance(sp, dict):
+        return Result(NOT_APPLICABLE, "no es telecom con ajuste de espectro")
+    if sp.get("status") == "ok":
+        return Result(OK)
+    return _result(rule, [_violation(
+        rule, 2, f"espectro «{sp.get('status')}»: {str(sp.get('reason'))[:140]}",
+        "la regla exige PaymentsToAcquireIntangibleAssets en 5 de 10 años; un emisor con extensión propia queda fuera",
+        status=sp.get("status"))])
+
+
+def perimetro_corregido(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
+    """[5] Un cambio de perímetro (escisiones, discontinuadas) no se lee como declive ni como ciclo."""
+    rule = "perimetro_corregido"
+    pr = _get(a, "data_provenance", "perimeter", default={}) or {}
+    if not pr.get("changed") or not (pr.get("discontinued") or pr.get("restated")):
+        return Result(NOT_APPLICABLE, "sin cambio de perímetro")
+    g = _num(_get(a, "dcf", "growth_rate"))
+    hist_cyc = _archetype(a) == "CYCLICAL" and _get(a, "classification", "rule") == "historia_ciclica"
+    bad = []
+    if g is not None and g < 0 and not pr.get("mixed_cagr"):
+        bad.append(f"DCF con crecimiento {_pct(g)} sin corregir el perímetro")
+    if hist_cyc:
+        bad.append("cíclica por su historia")
+    if not bad:
+        return Result(OK)
+    return _result(rule, [_violation(
+        rule, 1 + len(bad), "; ".join(bad) + f" ({len(pr.get('discontinued') or [])} ejercicios con discontinuadas, "
+        f"{len(pr.get('restated') or [])} re-expresiones)",
+        "el perímetro homogéneo solo se aplica con años mezclados en la ventana (main.py:1193-1232); no llega al DCF ni "
+        "al ciclo", growth=g, cyclical_by_history=hist_cyc)])
+
+
+def ffo_sin_saltos(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
+    """[10d] La serie de FFO por acción de un REIT no tiene años negativos ni saltos que no sean del negocio."""
+    rule, C = "ffo_sin_saltos", _C("ffo_sin_saltos")
+    if _archetype(a) != "REIT":
+        return Result(NOT_APPLICABLE, "no es REIT")
+    s = [_num(x) for x in (_get(a, "archetype_metrics", "ffo_per_share_series", default=[]) or [])]
+    s = [x for x in s if x is not None]
+    if len(s) < 2:
+        return Result(NOT_EVALUABLE, "sin serie de FFO por acción")
+    bad = [x for x in s if x <= 0]
+    pos = [x for x in s if x > 0]
+    jump = max(pos) / min(pos) if len(pos) >= 2 else 1.0
+    if not bad and jump <= C["max_range_factor"]:
+        return Result(OK)
+    return _result(rule, [_violation(
+        rule, max(jump / C["max_range_factor"], 2 if bad else 1), f"FFO por acción {[round(x, 2) for x in s]} "
+        f"(CAGR {_pct(_num(_get(a, 'archetype_metrics', 'ffo_per_share_cagr_3y')))})",
+        "ganancias por venta de participadas y discontinuadas sin restar; el CAGR del FFO no pasa por el perímetro",
+        series=s)])
+
+
+def abstencion_sin_datos(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
+    """[11b] Sin perfil ni historial de precios no hay veredicto de precio."""
+    rule = "abstencion_sin_datos"
+    lvl = _get(a, "price_attractiveness", "level")
+    if lvl is None:
+        return Result(NOT_APPLICABLE, "sin veredicto de precio")
+    rows = _num(_get(a, "data_provenance", "price_history", "rows"))
+    unknown = str(_get(a, "profile", "sector", default="") or "") in ("", "Unknown")
+    if not unknown and (rows is None or rows >= 20):
+        return Result(OK)
+    return _result(rule, [_violation(
+        rule, 3, f"precio «{lvl}» con perfil {'vacío' if unknown else 'ok'} y {rows} sesiones de historial",
+        "no hay regla de abstención (verdict.py)", unknown=unknown, rows=rows)])
+
+
+def beta_sin_signo_negativo(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
+    """[nuevo] Una beta negativa de la fuente no entra en el CAPM."""
+    rule = "beta_sin_signo_negativo"
+    b = _num(_get(a, "wacc", "beta"))
+    if b is None:
+        return Result(NOT_APPLICABLE, "sin beta en el Ke")
+    if b >= 0:
+        return Result(OK)
+    return _result(rule, [_violation(rule, 3, f"beta {b} (fuente {_get(a, 'beta', 'source')}) en el Ke",
+                                     "sin historial propio, la beta de la fuente entra tal cual", beta=b)])
+
+
+def flujo_por_intensidad(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
+    """[2] Una empresa que invierte mucho más de lo que repone no se valora con el FCF de hoy en un DCF y con el de
+    mantenimiento en otra: la regla depende de la intensidad inversora, no del signo del FCF."""
+    rule, C = "flujo_por_intensidad", _C("flujo_por_intensidad")
+    if _archetype(a) in ("FINANCIAL", "REIT", "UTILITY", "CYCLICAL"):
+        return Result(NOT_APPLICABLE, "tipo con otro flujo (FFO, P/B o mantenimiento medio)")
+    km = a.get("key_metrics") or {}
+    ocf, fcf = _num(km.get("operating_cash_flow")), _num(km.get("free_cash_flow"))
+    if not ocf or ocf <= 0 or fcf is None:
+        return Result(NOT_EVALUABLE, "sin flujo operativo positivo")
+    ratio = (ocf - fcf) / ocf                   # capex del TTM sobre el flujo operativo (la medida del revisor)
+    if ratio < C["min_capex_to_ocf"]:
+        return Result(OK)
+    basis = str(_get(a, "dcf", "fcf_basis", default="") or "")
+    up = _num(_get(a, "dcf", "upside"))
+    if not _get(a, "dcf", "available") or "mantenimiento" in basis.lower():
+        return Result(OK)
+    return _result(rule, [_violation(
+        rule, ratio / C["min_capex_to_ocf"], f"capex {_pct(ratio, 0)} del flujo operativo (TTM) y DCF "
+        f"directo con «{basis}» (upside {up if up is None else round(up)} %)",
+        "el flujo de mantenimiento solo sustituye cuando FCF − SBC ≤ 0 (main.py:2291-2311)", ratio=ratio, upside=up)])
+
+
+def crecimiento_dcf_representativo(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
+    """[7a] El crecimiento del DCF (ventas) no se aleja mucho del de los beneficios cuando el DCF da un resultado extremo."""
+    rule, C = "crecimiento_dcf_representativo", _C("crecimiento_dcf_representativo")
+    if not _get(a, "dcf", "available"):
+        return Result(NOT_APPLICABLE, "sin DCF directo")
+    g, up = _num(_get(a, "dcf", "growth_rate")), _num(_get(a, "dcf", "upside"))
+    eg = _num(_get(a, "peg_basis", "eps_cagr_3y"))
+    if g is None or up is None or eg is None or abs(up) < C["min_abs_upside"]:
+        return Result(OK)
+    if abs(eg - g) < C["max_gap"]:
+        return Result(OK)
+    return _result(rule, [_violation(
+        rule, abs(eg - g) / C["max_gap"], f"DCF {up:+.0f} % con crecimiento {_pct(g)} ({_get(a, 'dcf', 'growth_source')})"
+        f" y BPA {_pct(eg)} anual a 3 años",
+        "el DCF solo recibe revenue_growth_3y (E7: tres impulsores)", growth=g, eps_growth=eg, upside=up)])
+
+
+def base_inflada(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
+    """[paso 12] Un crecimiento a 3 años no se mide desde un año base inflado frente a la historia de la empresa (PFE:
+    FCF desde 2022, el año de las vacunas)."""
+    rule, C = "base_inflada", _C("base_inflada")
+    h = _hist(a)
+    if len(h) < C["min_years"]:
+        return Result(NOT_EVALUABLE, "historia corta")
+    out = []
+    for key, label in C["series"]:
+        vals = [(r.get("year"), _num(r.get(key))) for r in h if _num(r.get(key)) is not None]
+        if len(vals) < C["min_years"]:
+            continue
+        base_y, base = vals[-4]
+        last = vals[-1][1]
+        others = [v for y, v in vals if y != base_y]
+        med = statistics.median(others)
+        if base is None or base <= 0 or med <= 0 or last is None:
+            continue
+        cagr = (last / base) ** (1 / 3) - 1 if last > 0 else None
+        if base / med >= C["min_factor"] and (cagr is None or cagr < 0):
+            out.append(_violation(rule, base / med / C["min_factor"], f"{label}: base {base_y} = {base / med:.1f}× la "
+                                  f"mediana del resto ({len(others)} años); CAGR 3 a {_pct(cagr) if cagr is not None else 'n.s.'}",
+                                  "el detector de base anómala solo mira bases deprimidas (F12 · D2)", series=key,
+                                  factor=base / med))
+    return _result(rule, out)
+
+
 RULES: Dict[str, Tuple[Callable[[Dict[str, Any], Dict[str, Any]], Result], str]] = {
     "margen_neto_techo": (margen_neto_techo, "Margen neto ≤ (operativo + financiero neto) × (1 − t) + tolerancia"),
     "margen_operativo_unico": (margen_operativo_unico, "Margen operativo: el enseñado (EDGAR TTM) frente a las piezas "
@@ -1189,6 +1589,25 @@ RULES: Dict[str, Tuple[Callable[[Dict[str, Any], Dict[str, Any]], Result], str]]
     "beta_contrastada": (beta_contrastada, "F11 · T5: beta sustituta dentro de la propia ± 2 EE"),
     "causalidad_sostenida": (causalidad_sostenida, "F11 · T6: narrativa causal con su evidencia"),
     "metodo_citado_aplicable": (metodo_citado_aplicable, "F11 · T7: el PDF no cita métodos que su tipo excluye"),
+    "rating_contable": (rating_contable, "F13 · [3]: rating sintético sin EBIT contable hundido sin caja"),
+    "cautiva_separada": (cautiva_separada, "F13 · [8]: la deuda de la financiera cautiva no es deuda industrial"),
+    "inverso_una_vez": (inverso_una_vez, "F13 · [1a]: el DCF inverso cuenta una sola vez en la convergencia"),
+    "confianza_base_fragil": (confianza_base_fragil, "F13 · [1b]: confianza no alta con base frágil"),
+    "ciclica_por_industria": (ciclica_por_industria, "F13 · [6]: productor de materias primas = cíclico"),
+    "pico_ciclico": (pico_ciclico, "F13 · [6]: pico de beneficio en cíclicas sin esperar al consenso"),
+    "referencia_acotada": (referencia_acotada, "F13 · [4]: referencia sin la empresa plausible"),
+    "roe_bajo_coherente": (roe_bajo_coherente, "F13 · [4b]: sin «ROE bajo» con ROE ≥ Ke"),
+    "roe_patrimonio_infimo": (roe_patrimonio_infimo, "F13 · [4c]: ROE n.s. con patrimonio ínfimo"),
+    "utility_regulada": (utility_regulada, "F13 · [10a]: utility sin «destruye valor» por ROIC < WACC"),
+    "normalizacion_utility": (normalizacion_utility, "F13 · [nuevo]: lo que la normalización quita a una utility"),
+    "espectro_coherente": (espectro_coherente, "F13 · [9a]: espectro igual en todas las telecom"),
+    "perimetro_corregido": (perimetro_corregido, "F13 · [5]: escisiones sin leerse como declive o ciclo"),
+    "ffo_sin_saltos": (ffo_sin_saltos, "F13 · [10d]: serie de FFO por acción sin saltos ni negativos"),
+    "abstencion_sin_datos": (abstencion_sin_datos, "F13 · [11b]: sin veredicto de precio sin perfil ni historial"),
+    "beta_sin_signo_negativo": (beta_sin_signo_negativo, "F13 · [nuevo]: beta negativa fuera del Ke"),
+    "flujo_por_intensidad": (flujo_por_intensidad, "F13 · [2]: flujo del DCF según la intensidad inversora"),
+    "crecimiento_dcf_representativo": (crecimiento_dcf_representativo, "F13 · [7a]: DCF extremo con ventas lejos del BPA"),
+    "base_inflada": (base_inflada, "F13 · paso 12: crecimiento desde una base inflada"),
 }
 
 
