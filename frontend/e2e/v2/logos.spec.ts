@@ -202,3 +202,26 @@ test("pantalla de carga con «reducir movimiento»: el cambio de logotipo sin fu
   const co = page.getByTestId("al-mark").locator(".al-co");
   await expect(co).toHaveCSS("transition-duration", "0s", { timeout: 30_000 });
 });
+
+test("portada: el logo de Finanzer encima del titular, centrado y con su sitio reservado", async ({ page }) => {
+  // la marca tarda: el titular no se mueve cuando llega
+  let release: () => void = () => {};
+  const gate = new Promise<void>((r) => { release = r; });
+  await page.route("**/brand/finanzer-logo.svg", async (route) => { await gate; await route.continue(); });
+  await page.goto("/v2", { waitUntil: "domcontentloaded" });          // «load» esperaría a la marca retenida
+  const mark = page.getByTestId("home-mark");
+  const h1 = page.getByRole("heading", { level: 1 });
+  await expect(h1).toBeVisible();
+  const before = await h1.boundingBox();
+  release();
+  await expect.poll(() => mark.evaluate((e) => (e as HTMLImageElement).complete && (e as HTMLImageElement).naturalWidth > 0)).toBe(true);
+  const after = await h1.boundingBox();
+  expect(Math.round(after!.y)).toBe(Math.round(before!.y));
+  const m = await mark.boundingBox();
+  const side = page.viewportSize()!.width <= PHONE_MAX ? 4 * REM : 5 * REM;
+  expect([Math.round(m!.width), Math.round(m!.height)]).toEqual([side, side]);
+  expect(m!.y + m!.height).toBeLessThanOrEqual(after!.y);                         // encima del titular
+  expect(Math.abs((m!.x + m!.width / 2) - (after!.x + after!.width / 2))).toBeLessThanOrEqual(1);   // centrado
+  expect(await mark.getAttribute("src")).toBe("/brand/finanzer-logo.svg");
+  expect(await brokenImages(page)).toEqual([]);
+});

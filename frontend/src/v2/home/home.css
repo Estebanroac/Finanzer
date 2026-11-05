@@ -1,6 +1,10 @@
 /* Rediseño E4: portada de /v2 (maqueta 5). */
 .fz2.home main { padding-bottom: calc(var(--s7) + env(safe-area-inset-bottom)); }
 .fz2 .home-hero { text-align: center; padding: var(--s7) 0 var(--s6); display: flex; flex-direction: column; gap: var(--s3); }
+/* Logotipos (usuario): la marca encima del titular, centrada, con su placa; en oscuro, un filo para que la placa no se
+   funda con el fondo */
+.fz2 .home-mark { display: block; align-self: center; width: 5rem; height: 5rem; border-radius: 22%; }
+.fz2[data-theme="dark"] .home-mark, html[data-v2theme="dark"] .fz2:not([data-theme]) .home-mark { box-shadow: 0 0 0 1px var(--line); }
 .fz2 .home-hero h1 { margin: 0; font-size: var(--fs-figure); font-weight: 650; letter-spacing: -.01em; line-height: 1.2; }
 .fz2 .home-hero .lead { margin: 0 0 var(--s3); color: var(--text-2); }
 /* P8: filtros centrados (listas de la sesión, periodo de las gráficas y sectores), cintillo y línea de contexto. */
@@ -100,6 +104,7 @@
      margen superior del cintillo) */
   .fz2 .home-hero { padding: var(--s6) 0 var(--s2); }
   .fz2 .home-hero h1 { font-size: var(--fs-title); }
+  .fz2 .home-mark { width: 4rem; height: 4rem; }
   .fz2 .trust { grid-template-columns: 1fr; }
 }
 /* P8, móvil: las filas de chips se deslizan en horizontal y el periodo va en su propia fila, centrado y siempre a la

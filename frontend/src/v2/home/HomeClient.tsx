@@ -21,6 +21,10 @@ export default function HomeClient() {
       <main>
         <div className="wrap">
           <section className="home-hero" aria-labelledby="home-title">
+            {/* Logotipos (usuario): la marca de protagonista encima del titular, la misma de la barra y de la pantalla
+                de carga; su tamaño va en el HTML y en rem (nada salta al cargar). Decorativa: el nombre está arriba. */}
+            {/* eslint-disable-next-line @next/next/no-img-element -- export estático: sin optimizador de imágenes */}
+            <img className="home-mark" src="/brand/finanzer-logo.svg" alt="" width={80} height={80} data-testid="home-mark" />
             <h1 id="home-title">Entiende una empresa antes de invertir</h1>
             <p className="lead">Calidad del negocio, precio y riesgos, con datos oficiales y en lenguaje claro.</p>
             <SearchBox hero placeholder="Buscar empresa o ticker… (Apple, AAPL, Coca-Cola)" shortPlaceholder="Empresa o ticker" />
