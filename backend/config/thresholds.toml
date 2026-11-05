@@ -151,6 +151,10 @@ multiples_block_strong = 0.5        # |promedio normalizado| >= 0.5: severidad e
 multiples_earnings_family = ["P/E", "Forward P/E", "PEG"]
 forward_compression_bounds = [0.25, 0.12, 0.05]   # (P/E − forward P/E) / P/E ≥
 forward_compression_points = [3, 2, 1]
+# F12 · D2 (decisión del usuario, 5-nov-2026; F3 de la revisión de NFLX): el forward se compara con el BPA que puntúa
+# (normalizado) y con el reportado. Si el crecimiento que implica frente a uno y otro difiere más de esto, la
+# normalización y el consenso están en bases distintas: la compresión se enseña y no puntúa.
+forward_basis_gap = 0.15
 pfcf_value_bounds = [12, 18, 25, 35]
 pfcf_value_points = [4, 2, 0, -2, -4]
 ev_ebitda_value_mults = [0.7, 1.2, 1.5]           # tramos: ≤0.7× / ≤1× / ≤1.2× / ≤1.5× / resto
@@ -391,6 +395,15 @@ w_low = 28
 [alerts.drawdown]
 deep_below = -0.30
 w = 34
+# F12 · D1 (decisión del usuario, 5-nov-2026): el peso crece con la caída medida en la volatilidad anual realizada de
+# la propia acción (z = |caída| / volatilidad): w con z ≤ z_low, w_max con z ≥ z_high, lineal entre medias. Una caída del
+# −55 % en una acción que se mueve un 80 % al año (CIEN) es menos anómala que la misma en una que se mueve un 40 %.
+# w_max no pasa del menor peso de las advertencias de solidez financiera (liquidez y runway ajustados, 44): la caída
+# nunca saca del grupo a una de solvencia (con empate, el orden de los interpretadores la deja detrás). Los riesgos
+# graves de solvencia (Altman, quema de caja, cobertura crítica) son banderas rojas: otro grupo, con su propio tope.
+w_max = 44
+z_low = 1.0                         # una caída igual a su volatilidad de un año (percentil 82 del universo, 5-nov-2026)
+z_high = 1.5                        # vez y media: por encima del percentil 99 (p98 = 1,35; máximo 1,85)
 
 # ── Lecturas del PDF (pdf_report.read_*, score_band, grid) ──
 # Bandas propias del informe, distintas de las del motor (ver el informe de
@@ -522,6 +535,11 @@ perimeter_min_years = 2             # fase 3 (T5): años homogéneos mínimos tr
 # no hay más ejercicios en los estados, la serie larga de EDGAR: al menos estos ejercicios contiguos hasta el último (la
 # regresión tiene así ejercicios fuera de la ventana con los que diluir el anómalo). Sin ella, no significativo.
 long_years = 6
+# F12 · D2 (decisión del usuario, 5-nov-2026): el crecimiento que RESPALDA un forward no se mide desde un año base
+# deprimido frente a la historia de la empresa: el inicial de la ventana de 3 años frente a la mediana de la serie
+# larga (de backing_min_years a backing_max_years ejercicios), con la misma razón de base anómala.
+backing_min_years = 5
+backing_max_years = 10
 
 # ── Fase 3 (T6): lecturas de calidad que informan y no puntúan (lib/quality_readings.py) ──
 [quality_readings]

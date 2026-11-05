@@ -125,6 +125,15 @@ escaneo) y vota con el de los ingresos (r = 0,79).
 
 La rentabilidad por dividendo de la utility deja de votar en Valoración: entra en G2.
 
+**Requisito de V1 (decisión del usuario, 5-nov-2026, F12 · D2).** Fundir el forward en un único voto del beneficio
+reduce su peso, pero no corrige su validación. Dentro de V1, el beneficio previsto solo entra con las dos comprobaciones
+de F12 (`historical_metrics.backing_base` y `thresholds.score.valoracion.forward_basis_gap`):
+1. El crecimiento histórico que lo respalda no puede salir de un año base deprimido frente a la historia larga (5–10
+   ejercicios, la misma razón de base anómala). Si sale, el respaldo es la ventana que empieza después o la tasa larga,
+   la menor.
+2. El forward y el beneficio normalizado comparten base: si el crecimiento que implica frente al normalizado y frente
+   al reportado difiere más de 15 pp, la parte prevista no puntúa.
+
 ### Resumen
 
 | | Hoy | Propuesta |

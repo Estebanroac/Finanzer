@@ -819,12 +819,19 @@ def _beta(ctx: Ctx):
 
 
 def _drawdown(ctx: Ctx):
-    dd = ctx.c.get("max_drawdown_1y")
-    if dd is None or dd >= _A["drawdown"]["deep_below"]:
+    dd, D = ctx.c.get("max_drawdown_1y"), _A["drawdown"]
+    if dd is None or dd >= D["deep_below"]:
         return None
+    # F12 · D1: el peso crece con la caída medida en su propia volatilidad anual (z), de w a w_max (thresholds.toml)
+    vol = ctx.c.get("realized_volatility_1y")
+    z = abs(dd) / vol if vol else None
+    w = D["w"] if z is None else D["w"] + max(0.0, min(1.0, (z - D["z_low"]) / (D["z_high"] - D["z_low"]))) * (
+        D["w_max"] - D["w"])
+    unusual = (f" Es {z:.1f} veces su volatilidad anual ({_pct(vol, 0)}): más de lo que suele moverse."
+               if z is not None and z >= D["z_low"] else "")
     return _sig("warning", "Riesgo de mercado", f"Caída pronunciada en el año — {_pct(dd)}",
                 f"La acción ha llegado a caer {_pct(abs(dd))} desde máximos en el último año: una corrección profunda que "
-                "puede ser oportunidad si el negocio sigue intacto, o el mercado anticipando un deterioro.", _A["drawdown"]["w"])
+                f"puede ser oportunidad si el negocio sigue intacto, o el mercado anticipando un deterioro.{unusual}", w)
 
 
 INTERPRETERS = [
