@@ -953,8 +953,126 @@ def _compute_analysis_body(symbol: str) -> dict:
             fin_dict["beta_source"] = result["key_metrics"]["beta_source"] = _beta_info.get("source")
             fin_dict["beta_r2"] = result["key_metrics"]["beta_r2"] = (
                 safe_float((_beta_info.get("own") or {}).get("r2")) if _beta_info.get("source") == "propia" else None)
+            # ── F13 · paso 2: normalización de ganancias ANTES del coste de capital ──
+            # Ítems del MISMO periodo que el beneficio: TTM (suma de 4 trimestres) si el beneficio es TTM; si no, el
+            # último FY. El rating sintético usa el EBIT normalizado (sin los cargos que la normalización quita del
+            # operativo); el bloque de la etapa 7 (más abajo) usa este mismo `_norm`.
+            _norm, _norm_err, _rating_ebit = None, None, None
+            try:
+                _tinfo = (yinfo.get("_ttm") or {}) if _has_yahoo else {}
+                _q = (yinfo.get("_quarterly") or {}) if _has_yahoo else {}
+                _ni = safe_float(financials.net_income)
+                if "netIncome" in (_tinfo.get("ttm_fields") or []):
+                    _rows = {}
+                    for _r in _UNUSUAL_ROWS:
+                        _v = [x for x in (_q.get(_r) or [])[:4] if x is not None]
+                        if _v:
+                            _rows[_r] = sum(_v)
+                    _basis = "TTM (4 trimestres)"
+                    _qn = _q
+                elif _tinfo.get("basis") == "ttm_edgar":
+                    # Fase 6: beneficio de doce meses de SEC EDGAR (corte posterior al ejercicio). Las partidas
+                    # inusuales de los estados son del ejercicio: de otro periodo, no se aplican.
+                    _rows = {}
+                    _basis = f"TTM a {_tinfo.get('cut')} (SEC EDGAR; sin desglose de partidas inusuales del periodo)"
+                    _qn = None
+                else:
+                    _rows = dict(_stmts.get("unusual_fy0") or {})
+                    _basis = f"FY{(_stmts.get('inc_years') or ['?'])[0]} (sin TTM)"
+                    _qn = None
+                _pt, _tx = (_stmts.get("pretax_income") or [None])[0], (_stmts.get("tax_provision") or [None])[0]
+                _t_fy = (_tx / _pt) if (_pt and _tx is not None and _pt > 0) else None
+                # F10 · N1: piezas de la coherencia del beneficio con la operación, del mismo periodo que el beneficio
+                # (TTM: los 4 trimestres; si no, el último ejercicio). Sin ellas (TTM de EDGAR sin desglose) o donde el
+                # margen operativo no aplica (bancos, aseguradoras, REIT), no se mira.
+                _coh = None
+                if not not_applicable(archetype, "operating_margin"):
+                    if _qn is not None:
+                        def _q4(row, required=True):
+                            v = (_q.get(row) or [])[:TTM_QUARTERS]
+                            if len(v) == TTM_QUARTERS and all(x is not None for x in v):
+                                return sum(v)
+                            return None if required else (sum(x for x in v if x is not None) if any(
+                                x is not None for x in v) else None)
+                        # F10 · margen operativo con una sola verdad: el operativo de las piezas es el del corte (el
+                        # que se enseña y puntúa: el EBIT que presenta el emisor en EDGAR); la fila trimestral de Yahoo,
+                        # solo de respaldo declarado (FIX: 0,99 B$ de EDGAR frente a 2,09 B$ de Yahoo)
+                        _opp = pieces_operating_income(
+                            oi_val, ((yinfo.get("_as_of") or {}).get("fields") or {}).get("operatingIncome"),
+                            (_q.get("dates") or [None])[0], _q4("Operating Income"))
+                        _coh = {"operating_income": _opp["value"], "revenue": _q4("Total Revenue"),
+                                "pretax": _q4("Pretax Income"), "tax": _q4("Tax Provision"),
+                                "net_interest": _q4("Net Non Operating Interest Income Expense", False),
+                                "equity_income": _q4("Earnings From Equity Interest", False),
+                                "equity_income_net_of_tax": _q4("Earnings From Equity Interest Net Of Tax", False),
+                                "minority_interests": _q4("Minority Interests", False),
+                                "operating_income_source": _opp["source"],
+                                "named_gains": safe_float((yinfo.get("_named_gains") or {}).get("value")),
+                                "operating_income_yahoo_quarterly": _opp["yahoo_quarterly"]}
+                    elif _tinfo.get("basis") != "ttm_edgar":
+                        def _fy0(key):
+                            return safe_float((_stmts.get(key) or [None])[0])
+                        _coh = {"operating_income": _fy0("operating_income"), "revenue": _fy0("revenue"),
+                                "pretax": _fy0("pretax_income"), "tax": _fy0("tax_provision"),
+                                "net_interest": _fy0("nonop_interest"), "equity_income": _fy0("equity_interest"),
+                                "equity_income_net_of_tax": _fy0("equity_interest_net_of_tax"),
+                                "minority_interests": _fy0("minority_interests"),
+                                "operating_income_source": "último ejercicio (el EBIT que presenta el emisor si EDGAR "
+                                                           "lo tiene)",
+                                "named_gains": safe_float((yinfo.get("_named_gains") or {}).get("value"))}
+                    # F10 · N1b: el tipo normalizado mira también los últimos ejercicios (los del periodo, si es el
+                    # ejercicio, no se repiten)
+                    if _coh is not None:
+                        _hist = list(zip(_stmts.get("pretax_income") or [], _stmts.get("tax_provision") or []))
+                        _coh["tax_history"] = _hist if _qn is not None else _hist[1:]
+                # F10 · N1b: discontinuadas del mismo periodo que el beneficio (el normalizado parte del continuado),
+                # con el total del periodo (beneficio con discontinuadas) para saber si el beneficio usado las lleva: el
+                # de Yahoo no siempre es el del estado del periodo (UL en vivo: 6,48 B frente a 9,47 B del FY2025, de
+                # los que 3,80 B son discontinuadas): restarlas otra vez las contaría dos veces.
+                if _qn is not None:
+                    _dq = [x for x in (_q.get("Net Income Discontinuous Operations") or [])[:TTM_QUARTERS]
+                           if x is not None]
+                    _tq = (_q.get("Net Income") or [])[:TTM_QUARTERS]
+                    _disc = {"value": sum(_dq), "source": "Yahoo: Net Income Discontinuous Operations (4 trimestres)",
+                             "period_total": (sum(_tq) if len(_tq) == TTM_QUARTERS and None not in _tq else None)} \
+                        if _dq else None
+                elif _tinfo.get("basis") == "ttm_edgar":
+                    _de = _tinfo.get("discontinued")
+                    # el beneficio del corte es el de EDGAR (NetIncomeLoss y equivalentes): lleva las discontinuadas
+                    _disc = {"value": _de["value"], "source": f"SEC EDGAR ({_de['concept']}): {_de['how']}",
+                             "period_total": _ni} if _de else None
+                else:
+                    _dfy = safe_float((_stmts.get("net_income_discontinued") or [None])[0])
+                    _disc = {"value": _dfy, "source": "Yahoo: Net Income Discontinuous Operations (ejercicio)",
+                             "period_total": safe_float((_stmts.get("net_income_common") or [None])[0])} \
+                        if _dfy else None
+                _norm = normalize_earnings(net_income=_ni, explicit_rows=_rows, quarterly=_qn, basis=_basis,
+                                           tax_rate_fallback=_t_fy, annual_rows=_stmts.get("unusual_fy") or {},
+                                           investment_gains=(yinfo.get("_investment_gains") if _has_yahoo else None),
+                                           coherence_parts=_coh, discontinued=_disc,
+                                           edgar_charges=(yinfo.get("_edgar_charges") if _has_yahoo else None))
+                if _coh is not None and not (_norm.get("structural_net") or 0.0):
+                    from normalize import operating as _operating_pre
+                    _oi_r, _rev_r_ = ((_om_fy["operating_income"], _om_fy["revenue"]) if _om_fy is not None
+                                      else (oi_val, safe_float(rev_val)))
+                    if _oi_r is not None:
+                        _rating_ebit = _operating_pre(
+                            _oi_r, _rev_r_, _norm["items"], pretax=_coh.get("pretax"),
+                            net_interest=_coh.get("net_interest"), equity_income=_coh.get("equity_income"),
+                            known_inside=((yinfo.get("_edgar_charges") or {}).get("charges") or 0.0)
+                            if _has_yahoo else 0.0).get("normalized")
+            except Exception as e:
+                _norm_err = e
+            # F13 · paso 2: la cobertura con la que se busca el rating sintético (Kd y, por su piso, el Ke)
+            from cost_of_capital import rating_coverage as _rating_coverage
+            _rcov = _rating_coverage(
+                coverage=safe_float(interest_cov), state=ic_state, ebit=oi_val, ebit_normalized=safe_float(_rating_ebit),
+                interest=ie_val, reit=archetype == REIT, ebitda=safe_float(ratios.get("ebitda")),
+                operating_cash_flow=safe_float(getattr(financials, "operating_cash_flow", None)),
+                depreciation=safe_float(getattr(financials, "depreciation", None)), market_cap=mcap,
+                state_fn=lambda c, e: interest_coverage_state(c, r("net_debt"), ebit=e, net_interest_income=nii_sign))
             _kd_info = None if archetype == FINANCIAL else cost_of_debt(
-                rf_info["value"], mcap, td_val, safe_float(interest_cov), ic_state)
+                rf_info["value"], mcap, td_val, safe_float(_rcov["coverage"]), _rcov["state"])
             ke_info = equity_cost(_beta_val if _beta_val is not None else cfg("valuation.capm.default_beta"),
                                   rf_info["value"], _kd_info and _kd_info["value"], _beta_pre and _beta_val is not None,
                                   crp=crp_info["crp"])
@@ -1531,10 +1649,12 @@ def _compute_analysis_body(symbol: str) -> dict:
                 wacc_info = compute_wacc(
                     beta=_beta_val, beta_preadjusted=_beta_pre, rf=rf_info, market_cap=mcap,
                     total_debt=td_val,
-                    interest_coverage=safe_float(interest_cov),
-                    coverage_state=ic_state,
+                    interest_coverage=safe_float(_rcov["coverage"]),
+                    coverage_state=_rcov["state"],
                     tax=tax_info, ke=ke_info)
                 wacc_info["applicable"] = True
+                wacc_info["rating_coverage"] = {k: (safe_float(v) if isinstance(v, float) else v)
+                                                for k, v in _rcov.items()}
             wacc_est = wacc_info["value"]
             # Beta (fase 2b, T6: propia, del sector o de la fuente; lib/beta.py) y la ajustada que usa el Ke (también
             # en FINANCIAL): Blume sobre la propia y la de la fuente; la del sector ya es una media de industria.
@@ -1797,98 +1917,11 @@ def _compute_analysis_body(symbol: str) -> dict:
             # normalizado; el informe muestra reportado y normalizado.
             ratios_score = ratios
             try:
-                _tinfo = (yinfo.get("_ttm") or {}) if _has_yahoo else {}
-                _q = (yinfo.get("_quarterly") or {}) if _has_yahoo else {}
-                _ni = safe_float(financials.net_income)
-                if "netIncome" in (_tinfo.get("ttm_fields") or []):
-                    _rows = {}
-                    for _r in _UNUSUAL_ROWS:
-                        _v = [x for x in (_q.get(_r) or [])[:4] if x is not None]
-                        if _v:
-                            _rows[_r] = sum(_v)
-                    _basis = "TTM (4 trimestres)"
-                    _qn = _q
-                elif _tinfo.get("basis") == "ttm_edgar":
-                    # Fase 6: beneficio de doce meses de SEC EDGAR (corte posterior al ejercicio). Las partidas
-                    # inusuales de los estados son del ejercicio: de otro periodo, no se aplican.
-                    _rows = {}
-                    _basis = f"TTM a {_tinfo.get('cut')} (SEC EDGAR; sin desglose de partidas inusuales del periodo)"
-                    _qn = None
-                else:
-                    _rows = dict(_stmts.get("unusual_fy0") or {})
-                    _basis = f"FY{(_stmts.get('inc_years') or ['?'])[0]} (sin TTM)"
-                    _qn = None
-                _pt, _tx = (_stmts.get("pretax_income") or [None])[0], (_stmts.get("tax_provision") or [None])[0]
-                _t_fy = (_tx / _pt) if (_pt and _tx is not None and _pt > 0) else None
-                # F10 · N1: piezas de la coherencia del beneficio con la operación, del mismo periodo que el beneficio
-                # (TTM: los 4 trimestres; si no, el último ejercicio). Sin ellas (TTM de EDGAR sin desglose) o donde el
-                # margen operativo no aplica (bancos, aseguradoras, REIT), no se mira.
-                _coh = None
-                if not not_applicable(archetype, "operating_margin"):
-                    if _qn is not None:
-                        def _q4(row, required=True):
-                            v = (_q.get(row) or [])[:TTM_QUARTERS]
-                            if len(v) == TTM_QUARTERS and all(x is not None for x in v):
-                                return sum(v)
-                            return None if required else (sum(x for x in v if x is not None) if any(
-                                x is not None for x in v) else None)
-                        # F10 · margen operativo con una sola verdad: el operativo de las piezas es el del corte (el
-                        # que se enseña y puntúa: el EBIT que presenta el emisor en EDGAR); la fila trimestral de Yahoo,
-                        # solo de respaldo declarado (FIX: 0,99 B$ de EDGAR frente a 2,09 B$ de Yahoo)
-                        _opp = pieces_operating_income(
-                            oi_val, ((yinfo.get("_as_of") or {}).get("fields") or {}).get("operatingIncome"),
-                            (_q.get("dates") or [None])[0], _q4("Operating Income"))
-                        _coh = {"operating_income": _opp["value"], "revenue": _q4("Total Revenue"),
-                                "pretax": _q4("Pretax Income"), "tax": _q4("Tax Provision"),
-                                "net_interest": _q4("Net Non Operating Interest Income Expense", False),
-                                "equity_income": _q4("Earnings From Equity Interest", False),
-                                "equity_income_net_of_tax": _q4("Earnings From Equity Interest Net Of Tax", False),
-                                "minority_interests": _q4("Minority Interests", False),
-                                "operating_income_source": _opp["source"],
-                                "named_gains": safe_float((yinfo.get("_named_gains") or {}).get("value")),
-                                "operating_income_yahoo_quarterly": _opp["yahoo_quarterly"]}
-                    elif _tinfo.get("basis") != "ttm_edgar":
-                        def _fy0(key):
-                            return safe_float((_stmts.get(key) or [None])[0])
-                        _coh = {"operating_income": _fy0("operating_income"), "revenue": _fy0("revenue"),
-                                "pretax": _fy0("pretax_income"), "tax": _fy0("tax_provision"),
-                                "net_interest": _fy0("nonop_interest"), "equity_income": _fy0("equity_interest"),
-                                "equity_income_net_of_tax": _fy0("equity_interest_net_of_tax"),
-                                "minority_interests": _fy0("minority_interests"),
-                                "operating_income_source": "último ejercicio (el EBIT que presenta el emisor si EDGAR "
-                                                           "lo tiene)",
-                                "named_gains": safe_float((yinfo.get("_named_gains") or {}).get("value"))}
-                    # F10 · N1b: el tipo normalizado mira también los últimos ejercicios (los del periodo, si es el
-                    # ejercicio, no se repiten)
-                    if _coh is not None:
-                        _hist = list(zip(_stmts.get("pretax_income") or [], _stmts.get("tax_provision") or []))
-                        _coh["tax_history"] = _hist if _qn is not None else _hist[1:]
-                # F10 · N1b: discontinuadas del mismo periodo que el beneficio (el normalizado parte del continuado),
-                # con el total del periodo (beneficio con discontinuadas) para saber si el beneficio usado las lleva: el
-                # de Yahoo no siempre es el del estado del periodo (UL en vivo: 6,48 B frente a 9,47 B del FY2025, de
-                # los que 3,80 B son discontinuadas): restarlas otra vez las contaría dos veces.
-                if _qn is not None:
-                    _dq = [x for x in (_q.get("Net Income Discontinuous Operations") or [])[:TTM_QUARTERS]
-                           if x is not None]
-                    _tq = (_q.get("Net Income") or [])[:TTM_QUARTERS]
-                    _disc = {"value": sum(_dq), "source": "Yahoo: Net Income Discontinuous Operations (4 trimestres)",
-                             "period_total": (sum(_tq) if len(_tq) == TTM_QUARTERS and None not in _tq else None)} \
-                        if _dq else None
-                elif _tinfo.get("basis") == "ttm_edgar":
-                    _de = _tinfo.get("discontinued")
-                    # el beneficio del corte es el de EDGAR (NetIncomeLoss y equivalentes): lleva las discontinuadas
-                    _disc = {"value": _de["value"], "source": f"SEC EDGAR ({_de['concept']}): {_de['how']}",
-                             "period_total": _ni} if _de else None
-                else:
-                    _dfy = safe_float((_stmts.get("net_income_discontinued") or [None])[0])
-                    _disc = {"value": _dfy, "source": "Yahoo: Net Income Discontinuous Operations (ejercicio)",
-                             "period_total": safe_float((_stmts.get("net_income_common") or [None])[0])} \
-                        if _dfy else None
-                _norm = normalize_earnings(net_income=_ni, explicit_rows=_rows, quarterly=_qn, basis=_basis,
-                                           tax_rate_fallback=_t_fy, annual_rows=_stmts.get("unusual_fy") or {},
-                                           investment_gains=(yinfo.get("_investment_gains") if _has_yahoo else None),
-                                           coherence_parts=_coh, discontinued=_disc,
-                                           edgar_charges=(yinfo.get("_edgar_charges") if _has_yahoo else None))
+                # F13 · paso 2: el beneficio normalizado (`_norm`) y sus piezas (`_coh`, `_qn`…) ya se calcularon antes
+                # del coste de capital (el rating sintético usa el EBIT normalizado); aquí se usan, no se recalculan.
+                if _norm_err is not None:
+                    raise _norm_err
+                _ni = safe_float(financials.net_income)     # (entre medias, `_ni` se reutiliza para otras series)
                 # Fase 7 (registro #36; revisión, hallazgos A y D): una aseguradora o un conglomerado se valora sobre su
                 # beneficio OPERATIVO. Su P/E (y el E/P) pasa a ser capitalización / beneficio operativo en todo el
                 # análisis (tabla, portada, alertas, score), con el reportado aparte. Beneficio operativo ≤ 0: sin P/E

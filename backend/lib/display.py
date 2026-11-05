@@ -2535,6 +2535,11 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                     + (f", cobertura {_rt['coverage']:.1f}x" if _rt.get("coverage") is not None and not _rt.get("flag")
                        else "")
                     + ")" + (f"; {_rt['flag']}" if _rt.get("flag") else ""))
+            # F13 · paso 2: con qué se mide la cobertura del rating si no es el EBIT contable
+            _rc = _w.get("rating_coverage") or {}
+            if _rc.get("basis") and _rc["basis"] != "EBIT" and _rc.get("reason"):
+                _rep = (_rc.get("reported") or {}).get("coverage")
+                _wl += (f"; {_rc['reason']}" + (f" (con el EBIT contable: {_rep:.1f}x)" if _rep is not None else ""))
         else:
             _wl += " (sin deuda financiera: WACC = Ke)"
         _tx = a.get("tax_rate") or {}

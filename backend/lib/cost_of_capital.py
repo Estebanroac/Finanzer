@@ -174,6 +174,47 @@ def cost_of_equity(beta: Optional[float], rf: float, preadjusted: bool = False) 
     return rf + adjusted_beta(beta, preadjusted) * cfg("valuation.capm.market_risk_premium")
 
 
+def rating_coverage(*, coverage: Optional[float], state: Optional[str], ebit: Optional[float],
+                    ebit_normalized: Optional[float], interest: Optional[float], reit: bool,
+                    ebitda: Optional[float], operating_cash_flow: Optional[float], depreciation: Optional[float],
+                    market_cap: Optional[float], state_fn) -> Dict[str, Any]:
+    """F13 · paso 2 (revisión de 110 empresas, patrón 3): la cobertura de intereses con la que se busca el rating
+    sintético (Kd y, por el piso Ke ≥ Kd + 1 pp, el Ke). Antes era siempre el EBIT contable del TTM: un deterioro sin
+    salida de caja daba rating D y llevaba el WACC al tope (KHC, APD, MOS: 20 %; WELL, REIT: CC y 18,5 %).
+
+    Por orden: (1) REIT: EBITDA / intereses (la depreciación inmobiliaria no es un coste de caja); (2) el EBIT
+    normalizado (sin los cargos que la normalización ya quita del operativo: deterioros, reestructuración, I+D
+    adquirida), si es mayor que el contable; (3) si aun así sale un rating de impago con la caja operativa positiva, el
+    rating es incoherente y se usa la cobertura de caja: (flujo operativo + intereses − D&A) / intereses, en la escala
+    del EBIT. La nota y las alertas siguen con la cobertura contable: esto es solo el coste de la deuda.
+
+    `state_fn(coverage, ebit)`: el estado de la cobertura (financial_ratios.interest_coverage_state con la deuda neta y
+    el resultado financiero neto del análisis). -> {coverage, state, basis, reason, reported}"""
+    R = cfg("valuation.synthetic_rating")
+    out = {"coverage": coverage, "state": state, "basis": "EBIT", "reason": None,
+           "reported": {"coverage": coverage, "state": state}}
+    ie = abs(interest) if interest else None
+    if not ie:
+        return out
+    if reit and ebitda is not None:
+        out.update(coverage=ebitda / ie, state=state_fn(ebitda / ie, ebitda), basis="EBITDA",
+                   reason="REIT: cobertura con el EBITDA (la depreciación inmobiliaria no es un coste de caja)")
+    elif ebit_normalized is not None and ebit is not None and ebit_normalized > ebit:
+        out.update(coverage=ebit_normalized / ie, state=state_fn(ebit_normalized / ie, ebit_normalized),
+                   basis="EBIT normalizado",
+                   reason="cobertura con el EBIT normalizado (sin los cargos que la normalización quita del operativo)")
+    low = set(R["incoherent_ratings"])
+    if synthetic_rating(out["coverage"], market_cap, out["state"])["rating"] in low \
+            and operating_cash_flow and operating_cash_flow > 0 and depreciation is not None:
+        cash = operating_cash_flow + ie - abs(depreciation)
+        cov = cash / ie
+        if synthetic_rating(cov, market_cap, state_fn(cov, cash))["rating"] not in low:
+            out.update(coverage=cov, state=state_fn(cov, cash), basis="caja operativa",
+                       reason=(f"rating de impago con la caja operativa positiva: incoherente; cobertura de caja "
+                               f"(flujo operativo + intereses − D&A) / intereses = {cov:.2f}"))
+    return out
+
+
 def cost_of_debt(rf: float, market_cap: Optional[float], total_debt: Optional[float],
                  interest_coverage: Optional[float], coverage_state: Optional[str]) -> Optional[Dict[str, Any]]:
     """Kd = Rf + spread del rating sintético; None sin deuda (o sin capitalización para la tabla)."""
