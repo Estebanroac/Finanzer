@@ -116,7 +116,7 @@ test("filas con barra: todas las barras miden lo mismo y todas las filas de la e
 test("lo que se toca mide ≥ 44 px (área táctil, sin cambiar su aspecto) y el «?» no se separa de su etiqueta", async ({ page }) => {
   await page.goto("/v2/NVDA");
   await page.locator(".company-header").first().waitFor({ timeout: 60_000 });
-  for (const sel of [".topbar .btn", ".company-header .tip-btn", "[data-testid=bd-link]"]) {
+  for (const sel of [".topbar .actions .btn:visible", ".company-header .tip-btn", "[data-testid=bd-link]"]) {
     const el = page.locator(sel).first();
     const ok = await el.evaluate((e) => {
       const r = e.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2, half = 21;

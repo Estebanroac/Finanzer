@@ -27,10 +27,12 @@ function useNarrow(enabled: boolean): boolean {
 
 /** Buscador de /v2 (combobox de ARIA 1.2): resultados con nombre, ticker y bolsa; ↑ ↓ para elegir, Enter para abrir
  *  y Escape para cerrar. `hero`: el grande de la portada; si no, el de la barra general. */
-export default function SearchBox({ hero = false, placeholder = "Buscar empresa o ticker…", shortPlaceholder }: {
+export default function SearchBox({ hero = false, placeholder = "Buscar empresa o ticker…", shortPlaceholder, onPick }: {
   hero?: boolean; placeholder?: string;
   /** P8: el texto de ayuda en pantallas estrechas, donde el largo se corta («(Apple, AAP»). */
   shortPlaceholder?: string;
+  /** Al elegir una empresa, antes de ir a ella (la barra del móvil pliega su fila). */
+  onPick?: () => void;
 }) {
   const narrow = useNarrow(!!shortPlaceholder);
   const [q, setQ] = useState("");
@@ -77,6 +79,7 @@ export default function SearchBox({ hero = false, placeholder = "Buscar empresa 
   // V4: el nombre viaja a la pantalla de carga de la empresa (recallName), que lo enseña antes de que llegue el análisis
   const go = (ticker: string) => {
     rememberName(ticker, results.find((r) => r.ticker.toUpperCase() === ticker.toUpperCase())?.name);
+    onPick?.();
     window.location.assign(stockHref(ticker));
   };
 
