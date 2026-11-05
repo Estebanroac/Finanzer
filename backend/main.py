@@ -158,6 +158,13 @@ def _get_sector_benchmarks(sector: str) -> dict:
     return {**defaults, **overrides}
 
 
+def _ratio_txt(col: str, v: float) -> str:
+    """Valor de una columna de la referencia en el texto de su fuente: los múltiplos en «x», el resto en %."""
+    import self_exclusion as SE
+    sign = numfmt.MINUS if v < 0 else ""
+    return f"{sign}{abs(v):.1f}x" if col in SE.MULTIPLES or col == "de" else f"{sign}{abs(v) * 100:.1f} %"
+
+
 def _select_benchmark(mapped_sector: str, archetype: Optional[str], sector: Optional[str] = None,
                       industry: Optional[str] = None, country: Optional[str] = None, symbol: Optional[str] = None,
                       title: Optional[str] = None, company: Optional[dict] = None, name: Optional[str] = None) -> dict:
@@ -192,8 +199,15 @@ def _select_benchmark(mapped_sector: str, archetype: Optional[str], sector: Opti
             return base
         how = ((se.get("columns") or {}).get(col) or {}).get("how")
         if how == "mediana_pares" and se["method"] == "sin_empresa":
-            n = se["columns"][col].get("n")
-            return f"{base}; mediana de {n} pares del universo (sin las cifras de la empresa para esta columna)"
+            c = se["columns"][col]
+            if c.get("why") == "salto":             # F13 · paso 5a: sin ella la columna eran restos
+                return (f"{base}; mediana de {c.get('n')} pares del universo (sin la empresa el agregado pasaba de "
+                        f"{_ratio_txt(col, c['before'])} a {_ratio_txt(col, c['implausible'])}: no representa a la "
+                        "industria)")
+            if c.get("why") == "resto":
+                return (f"{base}; mediana de {c.get('n')} pares del universo (sin la empresa el agregado queda en "
+                        f"{_ratio_txt(col, c['implausible'])}: una industria casi sin beneficio no sirve de referencia)")
+            return f"{base}; mediana de {c.get('n')} pares del universo (sin las cifras de la empresa para esta columna)"
         if how == "no_entra":
             return f"{base} (la empresa no entra en este agregado: Damodaran lo calcula sin las empresas en pérdidas)"
         if se["method"] == "mediana_pares":
@@ -244,6 +258,9 @@ def _select_benchmark(mapped_sector: str, archetype: Optional[str], sector: Opti
     # F10 · N2: la lectura dice qué referencia es («frente a 53x de su industria sin ella»; el nombre y el peso, en la
     # nota de la referencia)
     _se = ib.get("self_exclusion") or {}
+    # F13 · paso 5a: sin la empresa eran restos y no hay pares suficientes: la columna no tiene referencia, dicho
+    self_dropped = {k: {"before": c["before"], "without": c["implausible"], "why": c["why"]}
+                    for k, c in (_se.get("columns") or {}).items() if c.get("why") and k not in values and k not in not_repr}
     ref = {"sin_empresa": "de su industria sin ella",
            "mediana_pares": "de sus pares del universo"}.get(_se.get("method"), "de su industria")
     if _se.get("degraded"):     # F10 (PM, 29-oct): la fila dice que la referencia está degradada
@@ -252,7 +269,8 @@ def _select_benchmark(mapped_sector: str, archetype: Optional[str], sector: Opti
             "values": values, "reason": None, "sources": sources,
             "industry": {k: v for k, v in ib.items() if k != "values"}, "ref": ref,
             "short": "pares" if _se.get("method") == "mediana_pares" else "industria", "provisional": False,
-            **({"not_representative": not_repr} if not_repr else {})}
+            **({"not_representative": not_repr} if not_repr else {}),
+            **({"self_dropped": self_dropped} if self_dropped else {})}
 
 
 def _pdf_benchmark(analysis: dict) -> dict:
@@ -1201,6 +1219,12 @@ def _compute_analysis_body(symbol: str) -> dict:
             fin_dict["industry_net_margin"] = _sector_bench.get("net_margin")
             # F10 · B3: las alertas de ROE y margen bruto leen la misma referencia que su fila
             fin_dict["industry_roe"] = _sector_bench.get("roe")
+            # F13 · paso 5c (revisión de 110 empresas, patrón H): con un patrimonio ínfimo frente a los activos el ROE no
+            # mide nada (Colgate, Clorox, Boeing); la puntuación y las alertas lo dejan en «n.s.». No en financieras (el
+            # apalancamiento es su negocio), tampoco las que el arquetipo no recoge (gestoras, aseguradoras de vida).
+            fin_dict["equity_to_assets"] = (
+                te_val / ta_val if te_val and ta_val and te_val > 0 and ta_val > 0 and archetype != FINANCIAL
+                and sector != "Financial Services" else None)
             fin_dict["industry_gross_margin"] = _sector_bench.get("gross_margin")
             fin_dict["benchmark_profile"] = _bench_sel["profile"]
             fin_dict["benchmark_ref"] = _bench_sel["ref"]     # fase 4/7: "de su industria", "del mercado (…)"…
@@ -2486,6 +2510,8 @@ def _compute_analysis_body(symbol: str) -> dict:
             try:
                 # F11 · T3: los argumentos se guardan para rehacer las alertas con la caída del año, que llega con el
                 # contexto de mercado (después del veredicto, D5).
+                # F13 · paso 5b: la alerta de ROE bajo lee también el coste del capital propio
+                fin_dict["cost_of_equity"] = (result.get("cost_of_equity") or {}).get("value")
                 _alert_args = ((ratios_score, fin_dict), dict(
                     sector=score_sector, real_sector=sector,
                     roic_wacc_spread=roic_wacc_spread,

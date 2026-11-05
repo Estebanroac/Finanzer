@@ -335,6 +335,10 @@ def _roe(ctx: Ctx):
     if roe is None or ctx.na("roe"):   # etapa 9a: REIT (sobre FFO) y pre-beneficio no leen el ROE
         return None
     T = _A["roe"]
+    # F13 · paso 5c: con un patrimonio ínfimo frente a los activos el ROE no es una cifra que leer (ni fortaleza ni aviso)
+    eta = ctx.c.get("equity_to_assets")
+    if eta is not None and eta < T["min_equity_to_assets"]:
+        return None
     if roe < 0 and roa is not None and roa > T["negative_equity_min_roa"]:
         # F10 · N6: el beneficio es positivo (ROA > 0): el signo es el del patrimonio, negativo. Por qué lo es
         # (recompras, dividendos, pérdidas antiguas) no se mide: no se atribuye.
@@ -367,6 +371,11 @@ def _roe(ctx: Ctx):
                ": uso muy eficiente del capital de los accionistas")
         return _sig("strength", "Rentabilidad", f"ROE{ctx.nl('roe')} elevado — {_pct(roe)}{ctx.per('roe')}",
                     f"Retorno sobre el patrimonio por encima de {_pct(bench)} {ctx.del_ref}{why}.", T["w_high"])
+    # F13 · paso 5b (revisión de 110 empresas, patrón H): por debajo de la industria pero por encima de su coste del
+    # capital propio, el accionista está remunerado: no es un ROE bajo (la industria puede venir de un año excepcional).
+    ke = ctx.c.get("cost_of_equity")
+    if ke is not None and roe >= ke:
+        return None
     return _sig("warning", "Rentabilidad", f"ROE{ctx.nl('roe')} bajo — {_pct(roe)}{ctx.per('roe')}",
                 f"El retorno sobre el patrimonio{ctx.nl('roe')} ({_pct(roe)}, {period(ctx.c.get('ttm_basis'), 'roe' in ctx.norm)}) queda por debajo de "
                 f"{_pct(bench)} {ctx.del_ref}: el capital de los accionistas no se está remunerando con holgura.", T["w_low"])

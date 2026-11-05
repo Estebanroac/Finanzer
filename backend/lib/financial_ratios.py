@@ -2290,6 +2290,7 @@ def score_rentabilidad(
     debt_to_equity: Optional[float] = None,
     sector_de_threshold: Optional[float] = None,
     subtype: Optional[str] = None,
+    equity_to_assets: Optional[float] = None,
 ) -> Dict[str, Any]:
     """
     Categoría 2: Rentabilidad (20 pts máximo)
@@ -2330,10 +2331,18 @@ def score_rentabilidad(
                     f"{'el mercado' if market else 'su sector'}) el ROE lo infla el apalancamiento: puntúa el ROIC")
         roe, _roe_label = roic, "ROIC (en lugar del ROE: apalancamiento alto)"
 
+    # F13 · paso 5c: con un patrimonio ínfimo frente a los activos (main: solo no financieras) el ROE no mide nada
+    _roe_tiny = (_roe_lev is None and roe is not None and equity_to_assets is not None
+                 and equity_to_assets < T["min_equity_to_assets"])
     # ROE (peso alto: hasta ±6 pts) — bandas relativas al roe_high sectorial
     if roe is not None:
         p = T["roe_points"]
-        if roe < 0 and roa is not None and roa > T["negative_equity_min_roa"]:
+        if _roe_tiny:
+            adj = 0
+            sev = "ok"
+            reason = (f"ROE no significativo: el patrimonio es solo el {equity_to_assets:.1%} de los activos — no "
+                      "puntúa; la rentabilidad la miden el ROA y los márgenes")
+        elif roe < 0 and roa is not None and roa > T["negative_equity_min_roa"]:
             # Negative book equity (e.g. from heavy buybacks: HD, MCD, SBUX,
             # ABBV) makes ROE negative even for very profitable companies — a
             # balance-sheet artifact, not value destruction. Don't apply the
@@ -2368,11 +2377,11 @@ def score_rentabilidad(
         
         base_score += adj
         # ROE < 0 por patrimonio negativo (recompras): no significativo
-        _a["roe"] = None if (roe < 0 and roa is not None and roa > T["negative_equity_min_roa"]) else adj
+        _a["roe"] = None if (_roe_tiny or roe < 0 and roa is not None and roa > T["negative_equity_min_roa"]) else adj
         if _roe_lev:
             reason = f"{reason}; {_roe_lev}"
         # F8 · P3: con patrimonio negativo el ROE no es una cifra que leer: «n.s.» (los puntos no cambian: 0)
-        _roe_ns = roe < 0 and roa is not None and roa > T["negative_equity_min_roa"]
+        _roe_ns = _roe_tiny or roe < 0 and roa is not None and roa > T["negative_equity_min_roa"]
         adjustments.append({"metric": _roe_label, "value": "n.s." if _roe_ns else f"{roe:.2%}", "adjustment": adj,
                             "reason": reason,
                             "severity": sev, **({"leverage_swap": True} if _roe_lev else {})})
@@ -3845,6 +3854,7 @@ def calculate_score_v2(
         debt_to_equity=ratio_values.get("debt_to_equity"),
         sector_de_threshold=thresholds.debt_equity_high,
         subtype=contextual_values.get("subtype"),
+        equity_to_assets=contextual_values.get("equity_to_assets"),
     )
     
     # v2.4: Pasar datos de crecimiento + forward metrics a valoración

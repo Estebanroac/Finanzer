@@ -2683,6 +2683,16 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     _nr_txt = ("La referencia casi no gana (TTM del conjunto): " + ", ".join(
         f"{_NR_LAB.get(k, k)} {fv(v, 'pct')} (TTM)" for k, v in _nr.items()) + ". No se compara con ella."
         if _nr else None)
+    # F13 · paso 5a: columnas que sin la empresa eran restos, sin pares suficientes para sustituirlas
+    _sd = (a.get("benchmark") or {}).get("self_dropped") or {}
+    if _sd:
+        import self_exclusion as _SE
+        _sd_fm = lambda k: "mult" if k in _SE.MULTIPLES or k == "de" else "pct"
+        _sd_txt = ("Sin la empresa, la industria no sirve de referencia para: " + ", ".join(
+            f"{_SE.LABELS.get(k, k)} (TTM del conjunto: {fv(d['before'], _sd_fm(k))} publicado, "
+            f"{fv(d['without'], _sd_fm(k))} sin ella)" for k, d in _sd.items()) + ". No hay pares suficientes en el universo para sustituirla: no se "
+            "compara.")
+        _nr_txt = join_sentences([_nr_txt, _sd_txt]) if _nr_txt else _sd_txt
     if _mkt:
         reference_note = None           # la dice market_note
     elif _vb.get("provisional") or not _vb:

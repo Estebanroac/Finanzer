@@ -136,9 +136,12 @@
             "n": 0
           },
           "net_margin": {
-            "after": -0.0425826123393,
+            "after": null,
             "before": -0.0373,
-            "how": "sin_empresa"
+            "how": "sin_dato",
+            "implausible": -0.0425826123393,
+            "n": 1,
+            "why": "resto"
           },
           "operating_margin": {
             "after": null,
@@ -157,9 +160,12 @@
             "how": "no_entra"
           },
           "roe": {
-            "after": -0.092265109591,
+            "after": null,
             "before": -0.0829,
-            "how": "sin_empresa"
+            "how": "sin_dato",
+            "implausible": -0.092265109591,
+            "n": 1,
+            "why": "resto"
           },
           "roic": {
             "after": null,
@@ -197,13 +203,23 @@
     "reason": null,
     "ref": "de su industria sin ella",
     "sector": "materials",
+    "self_dropped": {
+      "net_margin": {
+        "before": -0.0373,
+        "why": "resto",
+        "without": -0.0425826123393
+      },
+      "roe": {
+        "before": -0.0829,
+        "why": "resto",
+        "without": -0.092265109591
+      }
+    },
     "short": "industria",
     "sources": {
       "de": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Química básica», EE. UU., 29 empresas; referencia de la industria sin Dow, que pesa el 33 %",
-      "net_margin": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Química básica», EE. UU., 29 empresas; referencia de la industria sin Dow, que pesa el 33 %",
       "pb": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Química básica», EE. UU., 29 empresas; referencia de la industria sin Dow, que pesa el 33 %",
-      "pe": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Química básica», EE. UU., 29 empresas (la empresa no entra en este agregado: Damodaran lo calcula sin las empresas en pérdidas)",
-      "roe": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Química básica», EE. UU., 29 empresas; referencia de la industria sin Dow, que pesa el 33 %"
+      "pe": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Química básica», EE. UU., 29 empresas (la empresa no entra en este agregado: Damodaran lo calcula sin las empresas en pérdidas)"
     },
     "thresholds": {
       "current_ratio_low": 1.0,
@@ -219,10 +235,8 @@
     "thresholds_key": "materials",
     "values": {
       "de": 1.09192037632,
-      "net_margin": -0.0425826123393,
       "pb": 1.17944358812,
-      "pe": 18.4041,
-      "roe": -0.092265109591
+      "pe": 18.4041
     }
   },
   "beta": {
@@ -1666,7 +1680,7 @@
     },
     "charts": {
       "comparison": {
-        "better": 2,
+        "better": 0,
         "groups": [
           {
             "items": [
@@ -1691,41 +1705,6 @@
           {
             "items": [
               {
-                "bench": -0.092265109591,
-                "bench_txt": "−9.23%",
-                "fmt": "pct",
-                "gap_pct": 10.8195156419,
-                "gap_txt": "+11%",
-                "higher_is_better": true,
-                "key": "roe",
-                "label": "ROE",
-                "reading": "Superior",
-                "text": "ROE de -8.2% frente a -9.2% de su industria sin ella (+11%): superior.",
-                "tone": "pos",
-                "value": -0.0822824716267,
-                "value_txt": "−8.23%"
-              },
-              {
-                "bench": -0.0425826123393,
-                "bench_txt": "−4.26%",
-                "fmt": "pct",
-                "gap_pct": 25.8299778612,
-                "gap_txt": "+26%",
-                "higher_is_better": true,
-                "key": "net_margin",
-                "label": "Margen neto",
-                "reading": "Superior",
-                "text": "Margen neto de -3.2% frente a -4.3% de su industria sin ella (+26%): superior.",
-                "tone": "pos",
-                "value": -0.0315835329993,
-                "value_txt": "−3.16%"
-              }
-            ],
-            "title": "Rentabilidad"
-          },
-          {
-            "items": [
-              {
                 "bench": 1.09192037632,
                 "bench_txt": "1.09x",
                 "fmt": "mult",
@@ -1745,9 +1724,9 @@
           }
         ],
         "market_note": null,
-        "note": "Referencia: industria «Química básica»; Damodaran clasifica a la empresa en esa industria (símbolo), EE. UU., 29 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Referencia de la industria sin Dow, que pesa el 33 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 30 de septiembre de 2025). Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
+        "note": "Referencia: industria «Química básica»; Damodaran clasifica a la empresa en esa industria (símbolo), EE. UU., 29 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Referencia de la industria sin Dow, que pesa el 33 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 30 de septiembre de 2025). Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA. Sin la empresa, la industria no sirve de referencia para: ROE (TTM del conjunto: -8.29% publicado, -9.23% sin ella), margen neto (TTM del conjunto: -3.73% publicado, -4.26% sin ella). No hay pares suficientes en el universo para sustituirla: no se compara.",
         "ref": "de su industria sin ella",
-        "total": 4
+        "total": 2
       },
       "growth": [
         {
@@ -1987,9 +1966,9 @@
               "label": "Margen neto",
               "pct": -0.0315835329993,
               "pct_txt": "−3.2%",
-              "reading": "Superior",
+              "reading": "—",
               "state": "con_dato",
-              "tone": "pos"
+              "tone": null
             }
           ]
         },
@@ -2027,36 +2006,36 @@
             "value_txt": "3.69%"
           },
           {
-            "bench": -0.0425826123393,
-            "bench_txt": "-4.26%",
+            "bench": null,
+            "bench_txt": "—",
             "fmt": "pct",
-            "gap_pct": 25.8299778612,
-            "gap_txt": "+26%",
+            "gap_pct": null,
+            "gap_txt": null,
             "higher_is_better": true,
             "key": "net_margin",
             "label": "Margen neto",
-            "reading": "Superior",
+            "reading": "—",
             "state": "con_dato",
-            "text": "Margen neto de -3.2% frente a -4.3% de su industria sin ella (+26%): superior.",
-            "tone": "pos",
+            "text": null,
+            "tone": null,
             "value": -0.0315835329993,
             "value_txt": "-3.16%"
           }
         ],
         "returns": [
           {
-            "bench": -0.092265109591,
-            "bench_txt": "-9.23%",
+            "bench": null,
+            "bench_txt": "—",
             "fmt": "pct",
-            "gap_pct": 10.8195156419,
-            "gap_txt": "+11%",
+            "gap_pct": null,
+            "gap_txt": null,
             "higher_is_better": true,
             "key": "roe",
             "label": "ROE",
-            "reading": "Superior",
+            "reading": "—",
             "state": "con_dato",
-            "text": "ROE (TTM) de -8.2% frente a -9.2% de su industria sin ella (+11%): superior.",
-            "tone": "pos",
+            "text": null,
+            "tone": null,
             "value": -0.0822824716267,
             "value_txt": "-8.23%"
           },
@@ -3954,14 +3933,14 @@
         "roce_reading": "ROCE -3.34% en línea con el ROIC 4.00% (-7.3 pp, dentro de 10 pp).",
         "rows": [
           {
-            "bench": "-9.23%",
-            "gap": "+11%",
+            "bench": "—",
+            "gap": "—",
             "key": "roe",
             "label": "ROE",
-            "reading": "Superior",
+            "reading": "—",
             "state": "con_dato",
-            "text": "ROE (TTM) de -8.2% frente a -9.2% de su industria sin ella (+11%): superior.",
-            "tone": "pos",
+            "text": null,
+            "tone": null,
             "value": "-8.23%"
           },
           {
@@ -4009,14 +3988,14 @@
             "value": "3.69%"
           },
           {
-            "bench": "-4.26%",
-            "gap": "+26%",
+            "bench": "—",
+            "gap": "—",
             "key": "net_margin",
             "label": "Margen neto",
-            "reading": "Superior",
+            "reading": "—",
             "state": "con_dato",
-            "text": "Margen neto de -3.2% frente a -4.3% de su industria sin ella (+26%): superior.",
-            "tone": "pos",
+            "text": null,
+            "tone": null,
             "value": "-3.16%"
           },
           {
@@ -4235,7 +4214,7 @@
           "note": "Condiciones que invalidarían la lectura de hoy, con la cifra que las mide: no son previsiones.",
           "title": "Esta lectura sería errónea si…"
         },
-        "reference_note": "Referencia: industria «Química básica»; Damodaran clasifica a la empresa en esa industria (símbolo), EE. UU., 29 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Referencia de la industria sin Dow, que pesa el 33 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 30 de septiembre de 2025). Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
+        "reference_note": "Referencia: industria «Química básica»; Damodaran clasifica a la empresa en esa industria (símbolo), EE. UU., 29 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Referencia de la industria sin Dow, que pesa el 33 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 30 de septiembre de 2025). Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA. Sin la empresa, la industria no sirve de referencia para: ROE (TTM del conjunto: -8.29% publicado, -9.23% sin ella), margen neto (TTM del conjunto: -3.73% publicado, -4.26% sin ella). No hay pares suficientes en el universo para sustituirla: no se compara.",
         "reverse_dcf": {
           "lines": [
             {
@@ -4625,24 +4604,24 @@
           "value": "-5.00"
         },
         {
-          "bench": "vs industria -4.26%",
-          "delta": "+26%",
+          "bench": "",
+          "delta": "",
           "key": "net_margin",
           "label": "Margen neto reportado",
-          "pill": "Superior",
+          "pill": "Sin referencia",
           "state": "con_dato",
-          "tone": "pos",
+          "tone": "neu",
           "unit": "%",
           "value": "-3.16"
         },
         {
-          "bench": "vs industria -9.23%",
-          "delta": "+11%",
+          "bench": "",
+          "delta": "",
           "key": "roe",
           "label": "ROE reportado",
-          "pill": "Superior",
+          "pill": "Sin referencia",
           "state": "con_dato",
-          "tone": "pos",
+          "tone": "neu",
           "unit": "%",
           "value": "-8.23"
         },
@@ -5106,41 +5085,6 @@
           }
         ]
       },
-      "net_margin": {
-        "note": null,
-        "tables": [
-          {
-            "bands": [
-              {
-                "label": "Muy superior",
-                "range": "≥ -2.8%",
-                "tone": "pos"
-              },
-              {
-                "label": "Superior",
-                "range": "-3.8% – -2.8%",
-                "tone": "pos"
-              },
-              {
-                "label": "En línea",
-                "range": "-4.7% – -3.8%",
-                "tone": "neu"
-              },
-              {
-                "label": "Inferior",
-                "range": "-5.7% – -4.7%",
-                "tone": "warn"
-              },
-              {
-                "label": "Muy inferior",
-                "range": "< -5.7%",
-                "tone": "neg"
-              }
-            ],
-            "title": "Frente a la referencia de su industria sin ella (-4.3%)"
-          }
-        ]
-      },
       "payout_ratio": {
         "note": null,
         "tables": [
@@ -5377,36 +5321,6 @@
       "roe": {
         "note": null,
         "tables": [
-          {
-            "bands": [
-              {
-                "label": "Muy superior",
-                "range": "≥ -6%",
-                "tone": "pos"
-              },
-              {
-                "label": "Superior",
-                "range": "-8.3% – -6%",
-                "tone": "pos"
-              },
-              {
-                "label": "En línea",
-                "range": "-10.1% – -8.3%",
-                "tone": "neu"
-              },
-              {
-                "label": "Inferior",
-                "range": "-12.5% – -10.1%",
-                "tone": "warn"
-              },
-              {
-                "label": "Muy inferior",
-                "range": "< -12.5%",
-                "tone": "neg"
-              }
-            ],
-            "title": "Frente a la referencia de su industria sin ella (-9.2%)"
-          },
           {
             "bands": [
               {

@@ -77,6 +77,7 @@ pb_points = [2, 1, 0, -1]           # tramos de pb_cheap / pb_fair / pb_expensiv
 
 [score.rentabilidad]                # score_rentabilidad
 negative_equity_min_roa = 0.03      # ROE < 0 con ROA > 3%: patrimonio negativo por recompras, no se penaliza
+min_equity_to_assets = 0.05         # F13 · 5c: patrimonio < 5 % de los activos (no financieras): ROE «n.s.», no puntúa
 roe_high_mult = 1.25                # tramos: ≥1.25×roe_high / ≥roe_high / ≥roe_low / ≥5% / ≥0 / <0
 roe_floor = 0.05
 roe_points = [6, 4, 2, -2, -4, -6]
@@ -301,6 +302,7 @@ w_not_measured = 50
 
 [alerts.roe]
 negative_equity_min_roa = 0.03
+min_equity_to_assets = 0.05         # F13 · 5c: ni fortaleza ni aviso con un patrimonio ínfimo
 exceptional = 0.40
 w_buyback_negative = 30
 w_negative = 55

@@ -516,6 +516,25 @@ def validate_outputs(result: Dict[str, Any]) -> List[Dict[str, Any]]:
                               "action": "sin_dato", "old": v, "new": None,
                               "reason": "ROE no significativo: el patrimonio es negativo (las recompras superan al "
                                         "patrimonio contable), así que el beneficio sobre él no mide la rentabilidad"})
+    # F13 · paso 5c (revisión de 110 empresas, patrón H): con un patrimonio ínfimo frente a los activos tampoco (Colgate:
+    # 1,7 % de los activos, ROE 713 % y +2.859 % frente a su industria). Solo no financieras: en un banco o una
+    # aseguradora el apalancamiento es el negocio. La puntuación y las alertas ya no lo leen (equity_to_assets).
+    ta = _num(km.get("total_assets"))
+    arch = (result.get("classification") or {}).get("archetype")
+    sector = (result.get("sector_info") or {}).get("sector")
+    lim = cfg("thresholds.score.rentabilidad.min_equity_to_assets")
+    if (eq is not None and ta and eq > 0 and ta > 0 and eq / ta < lim and arch != "FINANCIAL"
+            and sector != "Financial Services"):
+        for block in ("key_metrics", "ratios"):
+            d = result.get(block) or {}
+            v = _num(d.get("roe"))
+            if v is not None:
+                d["roe"] = None
+                flags.append({"field": f"{block}.roe", "rule": "ratio_no_significativa",
+                              "action": "sin_dato", "old": v, "new": None,
+                              "reason": f"ROE no significativo: el patrimonio es solo el {eq / ta * 100:.1f} % de los "
+                                        f"activos (menos del {lim * 100:.0f} %), así que el beneficio sobre él no mide "
+                                        "la rentabilidad; la miden el ROA y los márgenes"})
     # Regla M aplicada a deuda neta/EBITDA: con EBITDA <= 0 no es significativa.
     if km.get("net_debt_to_ebitda_state") == "no_significativo":
         for block in ("key_metrics", "ratios"):

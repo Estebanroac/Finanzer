@@ -189,7 +189,9 @@ def lead(ch: Chapter, a: Dict[str, Any], ctx: Optional[Dict[str, Any]] = None) -
                     f"{comp['total']} métricas", *ref)
     elif ch.id == "riesgos":
         watch = next((h for h in cover["highlights"] if h["kind"] == "watch"), None)
-        txt = _join(execs.get("SOLIDEZ"), f"{_cap(watch['kicker'].lower())}: {watch['text']}" if watch else None)
+        # F13 · paso 5: sin avisos ni riesgos (tono positivo) no hay nada que vigilar: no «A vigilar: Sin alertas…» (BAC)
+        txt = _join(execs.get("SOLIDEZ"), None if not watch else "No hay alertas relevantes que vigilar"
+                    if watch.get("tone") == "pos" else f"{_cap(watch['kicker'].lower())}: {watch['text']}")
     elif ch.id == "actualidad":
         txt = _join(market.get("note"))
     else:

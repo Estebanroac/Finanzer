@@ -187,9 +187,12 @@
             "n": 2
           },
           "pb": {
-            "after": 7.32098068564,
+            "after": null,
             "before": 1.783,
-            "how": "sin_empresa"
+            "how": "sin_dato",
+            "implausible": 7.32098068564,
+            "n": 2,
+            "why": "salto"
           },
           "pe": {
             "after": 23.4282359837,
@@ -234,10 +237,16 @@
     "reason": null,
     "ref": "de su industria sin ella",
     "sector": "financials",
+    "self_dropped": {
+      "pb": {
+        "before": 1.783,
+        "why": "salto",
+        "without": 7.32098068564
+      }
+    },
     "short": "industria",
     "sources": {
       "net_margin": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Conglomerados diversificados», EE. UU., 20 empresas; referencia de la industria sin Berkshire Hathaway, que pesa el 82 %",
-      "pb": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Conglomerados diversificados», EE. UU., 20 empresas; referencia de la industria sin Berkshire Hathaway, que pesa el 82 %",
       "pe": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Conglomerados diversificados», EE. UU., 20 empresas; referencia de la industria sin Berkshire Hathaway, que pesa el 82 %"
     },
     "thresholds": {
@@ -254,7 +263,6 @@
     "thresholds_key": "financials",
     "values": {
       "net_margin": 0.0866378198581,
-      "pb": 7.32098068564,
       "pe": 23.4282359837
     }
   },
@@ -385,15 +393,15 @@
   },
   "confidence": {
     "base_rate_step": null,
-    "capped_from": "media",
-    "contraction_basis": "baja",
+    "capped_from": "alta",
+    "contraction_basis": "media",
     "dimensions": {
       "base": {
         "level": "alta",
         "reasons": []
       },
       "convergence": {
-        "level": "baja",
+        "level": "no_evaluable",
         "methods": [
           {
             "direction": "cara",
@@ -402,20 +410,10 @@
             "method": "P/B justificado (Gordon)",
             "signal": -0.53398043874,
             "upside": -0.26699021937
-          },
-          {
-            "anchor": "la industria «Conglomerados diversificados»",
-            "benchmark": 7.32098068564,
-            "direction": "barata",
-            "evaluable": true,
-            "kind": "relativo",
-            "method": "P/B frente al sector",
-            "signal": 1.0,
-            "upside": 3.85943970648
           }
         ],
         "reasons": [
-          "direcciones opuestas: P/B frente al sector dice barata y P/B justificado (Gordon) dice cara"
+          "un solo método evaluable (P/B justificado (Gordon)): no hay contraste"
         ]
       },
       "coverage": {
@@ -454,20 +452,14 @@
         "reasons": []
       }
     },
-    "ke_dependent": {
-      "from": "baja",
-      "reason": "veredicto dependiente de Ke: el nivel de precio pasa de «exigente» a «razonable» con Ke − 1 pp",
-      "to": "baja"
-    },
-    "level": "baja",
+    "level": "media",
     "limits_score": false,
     "reasons": [
-      "convergencia baja: direcciones opuestas: P/B frente al sector dice barata y P/B justificado (Gordon) dice cara",
+      "convergencia no evaluable: un solo método evaluable (P/B justificado (Gordon)): no hay contraste",
       "calidad de fuente media: beta sustituta 0.67 fuera de la propia 0.41 ± 2 EE (0.21–0.61, R² 0.14)",
-      "techo en baja: la más baja manda: convergencia baja",
-      "veredicto dependiente de Ke: el nivel de precio pasa de «exigente» a «razonable» con Ke − 1 pp: la confianza ya era baja"
+      "techo en media: la más baja manda: calidad de fuente media"
     ],
-    "score": 0.5
+    "score": 0.833333333333
   },
   "cost_of_equity": {
     "as_of": "2026-11-01",
@@ -1503,8 +1495,8 @@
           "text": "Arquetipo FINANCIAL (regla industria_aseguradora): Clasificada como FINANCIAL por industria Seguros diversificados (conglomerado: los ingresos de contratos con clientes, sin seguros, son el 67% de los ingresos del FY2025)"
         },
         {
-          "label": "Confianza · Convergencia entre métodos (baja)",
-          "text": "direcciones opuestas: P/B frente al sector dice barata y P/B justificado (Gordon) dice cara."
+          "label": "Confianza · Convergencia entre métodos (no evaluable)",
+          "text": "un solo método evaluable (P/B justificado (Gordon)): no hay contraste."
         },
         {
           "label": "Confianza · Calidad de fuente (media)",
@@ -1557,7 +1549,7 @@
     },
     "charts": {
       "comparison": {
-        "better": 2,
+        "better": 1,
         "groups": [
           {
             "items": [
@@ -1575,21 +1567,6 @@
                 "tone": "warn",
                 "value": 26.8081959653,
                 "value_txt": "26.81x"
-              },
-              {
-                "bench": 7.32098068564,
-                "bench_txt": "7.32x",
-                "fmt": "mult",
-                "gap_pct": -79.4214958843,
-                "gap_txt": "-79%",
-                "higher_is_better": false,
-                "key": "pb",
-                "label": "P/B",
-                "reading": "Descuento profundo",
-                "text": "P/B de 1.5x frente a 7.3x de su industria sin ella (-79%): descuento profundo.",
-                "tone": "pos",
-                "value": 1.50654831171,
-                "value_txt": "1.51x"
               }
             ],
             "title": "Valoración"
@@ -1616,9 +1593,9 @@
           }
         ],
         "market_note": null,
-        "note": "Referencia: industria «Conglomerados diversificados»; Damodaran clasifica a la empresa en esa industria (símbolo), no en la de su perfil («Seguros diversificados», la de la cabecera), EE. UU., 20 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Referencia de la industria sin Berkshire Hathaway, que pesa el 82 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 30 de septiembre de 2025). Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
+        "note": "Referencia: industria «Conglomerados diversificados»; Damodaran clasifica a la empresa en esa industria (símbolo), no en la de su perfil («Seguros diversificados», la de la cabecera), EE. UU., 20 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Referencia de la industria sin Berkshire Hathaway, que pesa el 82 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 30 de septiembre de 2025). Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA. Sin la empresa, la industria no sirve de referencia para: P/B (TTM del conjunto: 1.78x publicado, 7.32x sin ella). No hay pares suficientes en el universo para sustituirla: no se compara.",
         "ref": "de su industria sin ella",
-        "total": 3
+        "total": 2
       },
       "growth": [
         {
@@ -2007,19 +1984,19 @@
             "value_txt": "23.30x"
           },
           {
-            "bench": 7.32098068564,
-            "bench_txt": "7.32x",
+            "bench": null,
+            "bench_txt": "—",
             "fmt": "mult",
-            "gap_pct": -79.4214958843,
-            "gap_txt": "-79%",
+            "gap_pct": null,
+            "gap_txt": null,
             "higher_is_better": false,
             "key": "pb",
             "label": "P/B frente a la industria",
-            "reading": "Descuento profundo",
+            "reading": "—",
             "role": "informative",
             "state": "con_dato",
-            "text": "P/B de 1.5x frente a 7.3x de su industria sin ella (-79%): descuento profundo.",
-            "tone": "pos",
+            "text": null,
+            "tone": null,
             "value": 1.50654831171,
             "value_txt": "1.51x"
           },
@@ -2090,8 +2067,8 @@
         {
           "key": "convergence",
           "label": "Convergencia entre métodos",
-          "level": "Baja",
-          "text": "P/B justificado (Gordon) -27% (cara) · P/B frente al sector +386% (barata). Los métodos de valoración se contradicen: uno ve la acción barata y otro cara."
+          "level": "No evaluable",
+          "text": "P/B justificado (Gordon) -27% (cara). Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo."
         },
         {
           "key": "coverage",
@@ -2118,16 +2095,16 @@
           "text": "Sin incidencias."
         }
       ],
-      "level": "baja",
+      "level": "media",
       "plain": [
-        "Los métodos de valoración se contradicen: uno ve la acción barata y otro cara.",
+        "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo.",
         "El coste del capital usa la beta de su industria (0.67), que no encaja con cómo se ha movido la acción frente al mercado (la suya: 0.41)."
       ],
       "reasons": [
         {
           "dimension": "convergencia",
-          "level": "baja",
-          "text": "Los métodos de valoración se contradicen: uno ve la acción barata y otro cara."
+          "level": "no_evaluable",
+          "text": "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo."
         },
         {
           "dimension": "calidad de fuente",
@@ -2136,13 +2113,13 @@
         },
         {
           "dimension": "techo",
-          "level": "baja",
+          "level": "media",
           "text": null
         }
       ],
-      "summary": "Confianza del veredicto: baja (por sus dimensiones sería media; la limita: la más baja manda —convergencia baja—). Contrae el atractivo del precio hacia 50: de 35 a 42. Contrae también la calidad del negocio hacia 50: de 71 a 68.",
-      "tone": "neg",
-      "verdict_text": "(confianza baja: el P/B justificado y el P/B del sector discrepan)"
+      "summary": "Confianza del veredicto: media (por sus dimensiones sería alta; la limita: la más baja manda —calidad de fuente media—). Contrae el atractivo del precio hacia 50: de 35 a 39. La calidad del negocio no se contrae.",
+      "tone": "warn",
+      "verdict_text": "(confianza media: un solo método de valoración evaluable, sin contraste)"
     },
     "cover": {
       "archetype": "FINANCIAL",
@@ -2229,7 +2206,7 @@
         "Conglomerado con negocio asegurador (Seguros diversificados): el 67% de sus ingresos son de negocios que no son seguros."
       ],
       "confidence_reasons": [
-        "Los métodos de valoración se contradicen: uno ve la acción barata y otro cara.",
+        "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo.",
         "El coste del capital usa la beta de su industria (0.67), que no encaja con cómo se ha movido la acción frente al mercado (la suya: 0.41)."
       ],
       "coverage_notes": [],
@@ -2311,11 +2288,11 @@
       "price": {
         "contracted": true,
         "level": "exigente",
-        "note": "ajustado de 35 a 42 por confianza baja.",
-        "note_short": "Ajustado de 35 a 42 por confianza baja",
+        "note": "ajustado de 35 a 39 por confianza media.",
+        "note_short": "Ajustado de 35 a 39 por confianza media",
         "question": "¿está cara hoy?",
         "raw": 35,
-        "score": 42,
+        "score": 39,
         "title": "ATRACTIVO DEL PRECIO",
         "tone": "warn"
       },
@@ -2324,14 +2301,14 @@
         "note": null,
         "note_short": null,
         "question": "¿es buena la empresa?",
-        "score": 68,
+        "score": 71,
         "title": "CALIDAD DEL NEGOCIO",
         "tone": "pos"
       },
       "verdict": {
-        "confidence_text": "(confianza baja: el P/B justificado y el P/B del sector discrepan)",
-        "confidence_tone": "neg",
-        "full": "Calidad sólida · precio exigente (confianza baja: el P/B justificado y el P/B del sector discrepan)",
+        "confidence_text": "(confianza media: un solo método de valoración evaluable, sin contraste)",
+        "confidence_tone": "warn",
+        "full": "Calidad sólida · precio exigente (confianza media: un solo método de valoración evaluable, sin contraste)",
         "text": "Calidad sólida · precio exigente"
       }
     },
@@ -3565,7 +3542,7 @@
           "note": "Condiciones que invalidarían la lectura de hoy, con la cifra que las mide: no son previsiones.",
           "title": "Esta lectura sería errónea si…"
         },
-        "reference_note": "Referencia: industria «Conglomerados diversificados»; Damodaran clasifica a la empresa en esa industria (símbolo), no en la de su perfil («Seguros diversificados», la de la cabecera), EE. UU., 20 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Referencia de la industria sin Berkshire Hathaway, que pesa el 82 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 30 de septiembre de 2025). Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
+        "reference_note": "Referencia: industria «Conglomerados diversificados»; Damodaran clasifica a la empresa en esa industria (símbolo), no en la de su perfil («Seguros diversificados», la de la cabecera), EE. UU., 20 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Referencia de la industria sin Berkshire Hathaway, que pesa el 82 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 30 de septiembre de 2025). Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA. Sin la empresa, la industria no sirve de referencia para: P/B (TTM del conjunto: 1.78x publicado, 7.32x sin ella). No hay pares suficientes en el universo para sustituirla: no se compara.",
         "reverse_dcf": {
           "lines": [
             {
@@ -3607,14 +3584,14 @@
             "value": "23.30x"
           },
           {
-            "bench": "7.32x",
-            "gap": "-79%",
+            "bench": "—",
+            "gap": "—",
             "key": "pb",
             "label": "P/B",
-            "reading": "Descuento profundo",
+            "reading": "—",
             "state": "con_dato",
-            "text": "P/B de 1.5x frente a 7.3x de su industria sin ella (-79%): descuento profundo.",
-            "tone": "pos",
+            "text": null,
+            "tone": null,
             "value": "1.51x"
           },
           {
@@ -3764,13 +3741,13 @@
           "value": "11.47"
         },
         {
-          "bench": "vs industria 7.32x",
-          "delta": "-79%",
+          "bench": "",
+          "delta": "",
           "key": "pb",
           "label": "P/B",
-          "pill": "Gran descuento",
+          "pill": "Sin referencia",
           "state": "con_dato",
-          "tone": "pos",
+          "tone": "neu",
           "unit": "x",
           "value": "1.51"
         },
@@ -3801,7 +3778,7 @@
         "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: Valoración (base 10/20 + bloque de múltiplos y DCF) reescalada a 100 y contraída hacia 50 según la confianza del veredicto: solo los limitadores que lo contradicen o lo vuelven incierto, no los que apuntan en su dirección.",
         "price": {
           "level": "exigente",
-          "note": "ajustado de 35 a 42 por confianza baja.",
+          "note": "ajustado de 35 a 39 por confianza media.",
           "rows": [
             {
               "kind": "signed",
@@ -3816,7 +3793,7 @@
               "value": -1
             }
           ],
-          "score": 42,
+          "score": 39,
           "signed_max": 6,
           "title": "ATRACTIVO DEL PRECIO",
           "tone": "warn"
@@ -3858,7 +3835,7 @@
               "value": 11
             }
           ],
-          "score": 68,
+          "score": 71,
           "title": "CALIDAD DEL NEGOCIO",
           "tone": "pos"
         }
@@ -3866,7 +3843,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad sólida · precio exigente (confianza baja: el P/B justificado y el P/B del sector discrepan). Calidad 68/100 · precio 42/100 (ajustado de 35 a 42 por confianza baja)."
+          "text": "Calidad sólida · precio exigente (confianza media: un solo método de valoración evaluable, sin contraste). Calidad 71/100 · precio 39/100 (ajustado de 35 a 39 por confianza media)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -3894,7 +3871,7 @@
         },
         {
           "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Baja: los métodos de valoración se contradicen: uno ve la acción barata y otro cara. Contrae hacia 50 el atractivo del precio (de 35 a 42) y la calidad del negocio (de 71 a 68)."
+          "text": "Media: solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo. Contrae el atractivo del precio hacia 50 (de 35 a 39); la calidad no se contrae."
         }
       ]
     },
@@ -4185,41 +4162,6 @@
               }
             ],
             "title": "Sobre el beneficio"
-          }
-        ]
-      },
-      "pb": {
-        "note": null,
-        "tables": [
-          {
-            "bands": [
-              {
-                "label": "Descuento profundo",
-                "range": "≤ 4.8x",
-                "tone": "pos"
-              },
-              {
-                "label": "Descuento",
-                "range": "4.8x – 6.6x",
-                "tone": "pos"
-              },
-              {
-                "label": "En línea",
-                "range": "6.6x – 8.1x",
-                "tone": "neu"
-              },
-              {
-                "label": "Prima moderada",
-                "range": "8.1x – 9.9x",
-                "tone": "warn"
-              },
-              {
-                "label": "Prima elevada",
-                "range": "≥ 9.9x",
-                "tone": "neg"
-              }
-            ],
-            "title": "Frente a la referencia de su industria sin ella (7.3x)"
           }
         ]
       },
@@ -4782,21 +4724,21 @@
     "base": {
       "ke": 0.082447,
       "level": "exigente",
-      "score": 42
+      "score": 39
     },
-    "dependent": true,
+    "dependent": false,
     "minus": {
       "ke": 0.072447,
-      "level": "razonable",
-      "score": 45
+      "level": "exigente",
+      "score": 42
     },
     "plus": {
       "ke": 0.092447,
       "level": "exigente",
-      "score": 40
+      "score": 35
     },
     "pp": 0.01,
-    "reason": "veredicto dependiente de Ke: el nivel de precio pasa de «exigente» a «razonable» con Ke − 1 pp",
+    "reason": null,
     "status": "ok"
   },
   "key_metrics": {
@@ -5386,16 +5328,16 @@
         "score": 7
       }
     ],
-    "confidence": "baja",
+    "confidence": "media",
     "contracted": true,
     "excluded_categories": [],
-    "factor": 0.5,
+    "factor": 0.75,
     "level": "exigente",
     "level_raw": "exigente",
     "low_coverage_categories": [],
     "not_applicable_categories": [],
     "partial": false,
-    "score": 42,
+    "score": 39,
     "score_raw": 35
   },
   "price_change": {
@@ -5453,9 +5395,9 @@
         "score": 11
       }
     ],
-    "contracted": true,
+    "contracted": false,
     "excluded_categories": [],
-    "factor": 0.85,
+    "factor": null,
     "level": "sólida",
     "level_raw": "sólida",
     "low_confidence": false,
@@ -5519,7 +5461,7 @@
       "source": "edgar",
       "window": 5
     },
-    "score": 68,
+    "score": 71,
     "score_raw": 71
   },
   "quality_readings": {},
@@ -5966,9 +5908,9 @@
     "source": "efectiva"
   },
   "verdict": {
-    "confidence": "baja",
-    "confidence_text": "(confianza baja: el P/B justificado y el P/B del sector discrepan)",
-    "full": "Calidad sólida · precio exigente (confianza baja: el P/B justificado y el P/B del sector discrepan)",
+    "confidence": "media",
+    "confidence_text": "(confianza media: un solo método de valoración evaluable, sin contraste)",
+    "full": "Calidad sólida · precio exigente (confianza media: un solo método de valoración evaluable, sin contraste)",
     "price_level": "exigente",
     "quality_level": "sólida",
     "text": "Calidad sólida · precio exigente"

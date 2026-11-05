@@ -1324,7 +1324,8 @@ def referencia_acotada(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
             bad.append(f"{_pct(v)} < {_pct(C['min_value'], 0)}")
         if col == "roe" and v > C["max_roe"]:
             bad.append(f"ROE de referencia {_pct(v)}")
-        if pub and pub > 0 and v > 0 and not (1 / C["max_factor"] <= v / pub <= C["max_factor"]):
+        # frente a una publicada casi nula (Restaurantes, ROE 0,1 %) el factor no mide nada
+        if pub and pub >= C["min_value"] and v > 0 and not (1 / C["max_factor"] <= v / pub <= C["max_factor"]):
             bad.append(f"{v / pub:.1f}× la publicada ({_pct(pub)})")
         if bad:
             out.append(_violation(rule, 2, f"referencia de {col}: " + "; ".join(bad)
@@ -1364,6 +1365,8 @@ def roe_patrimonio_infimo(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
     if eq / ta >= C["min_equity_to_assets"]:
         return Result(OK)
     strong = [x for k, x in _alerts(a) if k == "strengths" and "ROE" in str(x.get("reason") or "")]
+    if km.get("roe") is None and not strong:
+        return Result(OK)          # F13 · paso 5c: «no significativo», sin cifra ni fortaleza
     return _result(rule, [_violation(
         rule, C["min_equity_to_assets"] / max(eq / ta, 0.002), f"patrimonio {_pct(eq / ta)} de los activos con ROE "
         f"{_pct(_num(km.get('roe')))}" + (f"; fortaleza «{strong[0].get('reason')}»" if strong else ""),

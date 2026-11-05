@@ -8,9 +8,19 @@
         "reason": "Crea mucho valor — spread +25.0 pp"
       },
       {
+        "category": "Rentabilidad",
+        "detail": "Retorno sobre el patrimonio por encima de 7.5% de su industria sin ella: uso muy eficiente del capital de los accionistas.",
+        "reason": "ROE normalizado elevado — 37.8% (TTM, sin partidas no recurrentes)"
+      },
+      {
         "category": "Valoración",
         "detail": "Paga 26.6x beneficios normalizados frente a 30.1x de su industria sin ella (-11%): un descuento que puede ser oportunidad si los fundamentos acompañan, o reflejar un riesgo que el mercado ya percibe.",
         "reason": "Cotiza con descuento — P/E normalizado 26.6x"
+      },
+      {
+        "category": "Rentabilidad",
+        "detail": "De cada dólar vendido quedan 24 centavos de beneficio tras todos los costos, frente a 2.4% de su industria sin ella: poder de fijación de precios y eficiencia.",
+        "reason": "Margen neto normalizado sólido — 23.5%"
       },
       {
         "category": "Valoración",
@@ -21,16 +31,6 @@
         "category": "Crecimiento",
         "detail": "El beneficio por acción crece 36.5% anual en tres años (FY2022–FY2025, CAGR): la rentabilidad para el accionista se acelera, a menudo apoyada en apalancamiento operativo o recompras.",
         "reason": "BPA en fuerte expansión — +36.5% anual (3 años)"
-      },
-      {
-        "category": "Solidez financiera",
-        "detail": "El Altman Z de 5.39 (> 2.60) ubica a la empresa en zona segura: baja probabilidad estadística de problemas de solvencia según el modelo.",
-        "reason": "Solvencia sólida — Altman Z 5.39"
-      },
-      {
-        "category": "Solidez financiera",
-        "detail": "La deuda neta equivale a menos de un año de EBITDA, un nivel cómodo que deja holgura financiera y capacidad de maniobra ante imprevistos.",
-        "reason": "Deuda baja — 0.4x EBITDA"
       }
     ],
     "warnings": [
@@ -114,9 +114,12 @@
             "how": "sin_empresa"
           },
           "net_margin": {
-            "after": 0.00480013862771,
+            "after": 0.0242,
             "before": 0.0443,
-            "how": "sin_empresa"
+            "how": "mediana_pares",
+            "implausible": 0.00480013862771,
+            "n": 4,
+            "why": "salto"
           },
           "operating_margin": {
             "after": 0.0686588160306,
@@ -134,9 +137,12 @@
             "how": "sin_empresa"
           },
           "roe": {
-            "after": 0.00632608022717,
+            "after": 0.07535,
             "before": 0.0609,
-            "how": "sin_empresa"
+            "how": "mediana_pares",
+            "implausible": 0.00632608022717,
+            "n": 4,
+            "why": "salto"
           },
           "roic": {
             "after": 0.0779893684416,
@@ -170,10 +176,6 @@
       "source": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern",
       "url": "https://pages.stern.nyu.edu/~adamodar/New_Home_Page/datacurrent.html"
     },
-    "not_representative": {
-      "net_margin": 0.00480013862771,
-      "roe": 0.00632608022717
-    },
     "profile": "sector",
     "provisional": false,
     "reason": null,
@@ -185,9 +187,11 @@
       "ev_ebitda": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Entretenimiento», EE. UU., 92 empresas; referencia de la industria sin Netflix, que pesa el 39 %",
       "gross_margin": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Entretenimiento», EE. UU., 92 empresas; mediana de 4 pares del universo (sin las cifras de la empresa para esta columna)",
       "interest_coverage": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Entretenimiento», EE. UU., 92 empresas; referencia de la industria sin Netflix, que pesa el 39 %",
+      "net_margin": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Entretenimiento», EE. UU., 92 empresas; mediana de 4 pares del universo (sin la empresa el agregado pasaba de 4.4 % a 0.5 %: no representa a la industria)",
       "operating_margin": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Entretenimiento», EE. UU., 92 empresas; referencia de la industria sin Netflix, que pesa el 39 %",
       "pb": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Entretenimiento», EE. UU., 92 empresas; referencia de la industria sin Netflix, que pesa el 39 %",
       "pe": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Entretenimiento», EE. UU., 92 empresas; referencia de la industria sin Netflix, que pesa el 39 %",
+      "roe": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Entretenimiento», EE. UU., 92 empresas; mediana de 4 pares del universo (sin la empresa el agregado pasaba de 6.1 % a 0.6 %: no representa a la industria)",
       "roic": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Entretenimiento», EE. UU., 92 empresas; referencia de la industria sin Netflix, que pesa el 39 %"
     },
     "thresholds": {
@@ -207,9 +211,11 @@
       "ev_ebitda": 13.2477469082,
       "gross_margin": 0.47365,
       "interest_coverage": 2.15874235068,
+      "net_margin": 0.0242,
       "operating_margin": 0.0686588160306,
       "pb": 3.35882551912,
       "pe": 30.0583740802,
+      "roe": 0.07535,
       "roic": 0.0779893684416
     }
   },
@@ -1576,7 +1582,7 @@
     },
     "charts": {
       "comparison": {
-        "better": 5,
+        "better": 7,
         "groups": [
           {
             "items": [
@@ -1631,6 +1637,21 @@
           {
             "items": [
               {
+                "bench": 0.07535,
+                "bench_txt": "7.54%",
+                "fmt": "pct",
+                "gap_pct": 500.787835768,
+                "gap_txt": "+501%",
+                "higher_is_better": true,
+                "key": "roe",
+                "label": "ROE",
+                "reading": "Muy superior",
+                "text": "ROE de 45.3% frente a 7.5% de su industria sin ella (+501%): muy superior.",
+                "tone": "pos",
+                "value": 0.452693634251,
+                "value_txt": "45.27%"
+              },
+              {
                 "bench": 0.0779893684416,
                 "bench_txt": "7.80%",
                 "fmt": "pct",
@@ -1674,6 +1695,21 @@
                 "tone": "pos",
                 "value": 0.296760187621,
                 "value_txt": "29.68%"
+              },
+              {
+                "bench": 0.0242,
+                "bench_txt": "2.42%",
+                "fmt": "pct",
+                "gap_pct": 1066.06550475,
+                "gap_txt": "+1066%",
+                "higher_is_better": true,
+                "key": "net_margin",
+                "label": "Margen neto",
+                "reading": "Muy superior",
+                "text": "Margen neto de 28.2% frente a 2.4% de su industria sin ella (+1066%): muy superior.",
+                "tone": "pos",
+                "value": 0.28218785215,
+                "value_txt": "28.22%"
               }
             ],
             "title": "Rentabilidad"
@@ -1715,9 +1751,9 @@
           }
         ],
         "market_note": null,
-        "note": "Referencia: industria «Entretenimiento»; Damodaran clasifica a la empresa en esa industria (símbolo), EE. UU., 92 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Referencia de la industria sin Netflix, que pesa el 39 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 30 de septiembre de 2025). Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA. La referencia casi no gana (TTM del conjunto): ROE 0.63% (TTM), margen neto 0.48% (TTM). No se compara con ella.",
+        "note": "Referencia: industria «Entretenimiento»; Damodaran clasifica a la empresa en esa industria (símbolo), EE. UU., 92 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Referencia de la industria sin Netflix, que pesa el 39 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 30 de septiembre de 2025). Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
         "ref": "de su industria sin ella",
-        "total": 8
+        "total": 10
       },
       "growth": [
         {
@@ -1957,9 +1993,9 @@
               "label": "Margen neto",
               "pct": 0.28218785215,
               "pct_txt": "28.2%",
-              "reading": "—",
+              "reading": "Muy superior",
               "state": "con_dato",
-              "tone": null
+              "tone": "pos"
             }
           ]
         },
@@ -1997,36 +2033,36 @@
             "value_txt": "29.68%"
           },
           {
-            "bench": null,
-            "bench_txt": "—",
+            "bench": 0.0242,
+            "bench_txt": "2.42%",
             "fmt": "pct",
-            "gap_pct": null,
-            "gap_txt": null,
+            "gap_pct": 1066.06550475,
+            "gap_txt": "+1066%",
             "higher_is_better": true,
             "key": "net_margin",
             "label": "Margen neto",
-            "reading": "—",
+            "reading": "Muy superior",
             "state": "con_dato",
-            "text": null,
-            "tone": null,
+            "text": "Margen neto de 28.2% frente a 2.4% de su industria sin ella (+1066%): muy superior.",
+            "tone": "pos",
             "value": 0.28218785215,
             "value_txt": "28.22%"
           }
         ],
         "returns": [
           {
-            "bench": null,
-            "bench_txt": "—",
+            "bench": 0.07535,
+            "bench_txt": "7.54%",
             "fmt": "pct",
-            "gap_pct": null,
-            "gap_txt": null,
+            "gap_pct": 500.787835768,
+            "gap_txt": "+501%",
             "higher_is_better": true,
             "key": "roe",
             "label": "ROE",
-            "reading": "—",
+            "reading": "Muy superior",
             "state": "con_dato",
-            "text": null,
-            "tone": null,
+            "text": "ROE (TTM) de 45.3% frente a 7.5% de su industria sin ella (+501%): muy superior.",
+            "tone": "pos",
             "value": 0.452693634251,
             "value_txt": "45.27%"
           },
@@ -3258,9 +3294,19 @@
                 "reason": "Crea mucho valor — spread +25.0 pp"
               },
               {
+                "category": "Rentabilidad",
+                "detail": "Retorno sobre el patrimonio por encima de 7.5% de su industria sin ella: uso muy eficiente del capital de los accionistas.",
+                "reason": "ROE normalizado elevado — 37.8% (TTM, sin partidas no recurrentes)"
+              },
+              {
                 "category": "Valoración",
                 "detail": "Paga 26.6x beneficios normalizados frente a 30.1x de su industria sin ella (-11%): un descuento que puede ser oportunidad si los fundamentos acompañan, o reflejar un riesgo que el mercado ya percibe.",
                 "reason": "Cotiza con descuento — P/E normalizado 26.6x"
+              },
+              {
+                "category": "Rentabilidad",
+                "detail": "De cada dólar vendido quedan 24 centavos de beneficio tras todos los costos, frente a 2.4% de su industria sin ella: poder de fijación de precios y eficiencia.",
+                "reason": "Margen neto normalizado sólido — 23.5%"
               },
               {
                 "category": "Valoración",
@@ -3271,16 +3317,6 @@
                 "category": "Crecimiento",
                 "detail": "El beneficio por acción crece 36.5% anual en tres años (FY2022–FY2025, CAGR): la rentabilidad para el accionista se acelera, a menudo apoyada en apalancamiento operativo o recompras.",
                 "reason": "BPA en fuerte expansión — +36.5% anual (3 años)"
-              },
-              {
-                "category": "Solidez financiera",
-                "detail": "El Altman Z de 5.39 (> 2.60) ubica a la empresa en zona segura: baja probabilidad estadística de problemas de solvencia según el modelo.",
-                "reason": "Solvencia sólida — Altman Z 5.39"
-              },
-              {
-                "category": "Solidez financiera",
-                "detail": "La deuda neta equivale a menos de un año de EBITDA, un nivel cómodo que deja holgura financiera y capacidad de maniobra ante imprevistos.",
-                "reason": "Deuda baja — 0.4x EBITDA"
               }
             ],
             "key": "strengths",
@@ -3531,7 +3567,7 @@
                 {
                   "in_block": false,
                   "metric": "Margen neto normalizado",
-                  "reason": "Excelente (23.5%; sin margen de la industria, bandas absolutas)",
+                  "reason": "Excelente (23.5%, +21.1 pp frente al margen de su industria sin ella: 2.4%)",
                   "sign": "+3",
                   "state": "con_dato",
                   "tone": "pos",
@@ -3963,14 +3999,14 @@
         "roce_reading": "ROCE 30.26% en línea con el ROIC 33.62% (-3.4 pp, dentro de 10 pp).",
         "rows": [
           {
-            "bench": "—",
-            "gap": "—",
+            "bench": "7.54%",
+            "gap": "+501%",
             "key": "roe",
             "label": "ROE",
-            "reading": "—",
+            "reading": "Muy superior",
             "state": "con_dato",
-            "text": null,
-            "tone": null,
+            "text": "ROE (TTM) de 45.3% frente a 7.5% de su industria sin ella (+501%): muy superior.",
+            "tone": "pos",
             "value": "45.27%"
           },
           {
@@ -4018,14 +4054,14 @@
             "value": "29.68%"
           },
           {
-            "bench": "—",
-            "gap": "—",
+            "bench": "2.42%",
+            "gap": "+1066%",
             "key": "net_margin",
             "label": "Margen neto",
-            "reading": "—",
+            "reading": "Muy superior",
             "state": "con_dato",
-            "text": null,
-            "tone": null,
+            "text": "Margen neto de 28.2% frente a 2.4% de su industria sin ella (+1066%): muy superior.",
+            "tone": "pos",
             "value": "28.22%"
           },
           {
@@ -4223,7 +4259,7 @@
           "note": "Condiciones que invalidarían la lectura de hoy, con la cifra que las mide: no son previsiones.",
           "title": "Esta lectura sería errónea si…"
         },
-        "reference_note": "Referencia: industria «Entretenimiento»; Damodaran clasifica a la empresa en esa industria (símbolo), EE. UU., 92 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Referencia de la industria sin Netflix, que pesa el 39 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 30 de septiembre de 2025). Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA. La referencia casi no gana (TTM del conjunto): ROE 0.63% (TTM), margen neto 0.48% (TTM). No se compara con ella.",
+        "reference_note": "Referencia: industria «Entretenimiento»; Damodaran clasifica a la empresa en esa industria (símbolo), EE. UU., 92 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Referencia de la industria sin Netflix, que pesa el 39 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 30 de septiembre de 2025). Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
         "reverse_dcf": {
           "lines": [
             {
@@ -4597,24 +4633,24 @@
           "value": "12.64"
         },
         {
-          "bench": "",
-          "delta": "",
+          "bench": "vs industria 2.42%",
+          "delta": "+1066%",
           "key": "net_margin",
           "label": "Margen neto reportado",
-          "pill": "Sin referencia",
+          "pill": "Muy superior",
           "state": "con_dato",
-          "tone": "neu",
+          "tone": "pos",
           "unit": "%",
           "value": "28.22"
         },
         {
-          "bench": "",
-          "delta": "",
+          "bench": "vs industria 7.54%",
+          "delta": "+501%",
           "key": "roe",
           "label": "ROE reportado",
-          "pill": "Sin referencia",
+          "pill": "Muy superior",
           "state": "con_dato",
-          "tone": "neu",
+          "tone": "pos",
           "unit": "%",
           "value": "45.27"
         },
@@ -5209,6 +5245,41 @@
           }
         ]
       },
+      "net_margin": {
+        "note": null,
+        "tables": [
+          {
+            "bands": [
+              {
+                "label": "Muy superior",
+                "range": "≥ 3.3%",
+                "tone": "pos"
+              },
+              {
+                "label": "Superior",
+                "range": "2.7% – 3.3%",
+                "tone": "pos"
+              },
+              {
+                "label": "En línea",
+                "range": "2.2% – 2.7%",
+                "tone": "neu"
+              },
+              {
+                "label": "Inferior",
+                "range": "1.6% – 2.2%",
+                "tone": "warn"
+              },
+              {
+                "label": "Muy inferior",
+                "range": "< 1.6%",
+                "tone": "neg"
+              }
+            ],
+            "title": "Frente a la referencia de su industria sin ella (2.4%)"
+          }
+        ]
+      },
       "operating_margin": {
         "note": null,
         "tables": [
@@ -5512,6 +5583,36 @@
       "roe": {
         "note": null,
         "tables": [
+          {
+            "bands": [
+              {
+                "label": "Muy superior",
+                "range": "≥ 10.2%",
+                "tone": "pos"
+              },
+              {
+                "label": "Superior",
+                "range": "8.3% – 10.2%",
+                "tone": "pos"
+              },
+              {
+                "label": "En línea",
+                "range": "6.8% – 8.3%",
+                "tone": "neu"
+              },
+              {
+                "label": "Inferior",
+                "range": "4.9% – 6.8%",
+                "tone": "warn"
+              },
+              {
+                "label": "Muy inferior",
+                "range": "< 4.9%",
+                "tone": "neg"
+              }
+            ],
+            "title": "Frente a la referencia de su industria sin ella (7.5%)"
+          },
           {
             "bands": [
               {
@@ -7071,7 +7172,7 @@
             "adjustment": 3,
             "metric": "Margen neto normalizado",
             "normalized": true,
-            "reason": "Excelente (23.5%; sin margen de la industria, bandas absolutas)",
+            "reason": "Excelente (23.5%, +21.1 pp frente al margen de su industria sin ella: 2.4%)",
             "severity": "excellent",
             "value": "23.55%"
           },
@@ -7090,7 +7191,7 @@
           "Excepcional para su sector (37.8% frente a 15% rango alto sectorial)",
           "Excelente para su sector (19.5%)",
           "Excepcional (29.7%, +22.8 pp frente al margen de su industria sin ella: 6.9%)",
-          "Excelente (23.5%; sin margen de la industria, bandas absolutas)",
+          "Excelente (23.5%, +21.1 pp frente al margen de su industria sin ella: 2.4%)",
           "Crea mucho valor (ROIC 33.6% frente a WACC 8.6%, spread +25.0 pp)"
         ],
         "max": 20,
