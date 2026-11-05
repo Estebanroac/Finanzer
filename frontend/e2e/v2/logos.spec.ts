@@ -155,3 +155,50 @@ test("noticias sin foto: la portada lleva el logotipo de la empresa y el medio, 
   expect((await plate(first.getByTestId("news-logo"))).w).toBe(SIZE.lg);
   expect(await brokenImages(page)).toEqual([]);
 });
+
+/** La pantalla de carga sin el análisis (se retiene hasta `release`). */
+async function holdAnalysis(page: Page, sym: string) {
+  let release: () => void = () => {};
+  const gate = new Promise<void>((r) => { release = r; });
+  await page.route(`**/api/analysis/${sym}`, async (route) => { await gate; return route.continue(); });
+  return () => release();
+}
+
+test("pantalla de carga: el logotipo de la empresa sustituye al de Finanzer en cuanto carga", async ({ page }) => {
+  const release = await holdAnalysis(page, "NFLX");
+  await page.goto("/v2/NFLX");
+  const mark = page.getByTestId("analyze-loading").getByTestId("al-mark");
+  await expect(mark).toHaveAttribute("data-mark", "empresa", { timeout: 30_000 });      // sin esperar al análisis
+  const look = await mark.evaluate((e) => ({
+    co: getComputedStyle(e.querySelector(".al-co")!).opacity, brand: getComputedStyle(e.querySelector(".al-brand")!).opacity,
+    src: e.querySelector(".al-co")!.getAttribute("src"), w: Math.round(e.getBoundingClientRect().width) }));
+  expect(look.src).toMatch(/\/api\/v2\/logo\/NFLX$/);
+  expect(look.w).toBe(4 * REM);                                   // el mismo hueco que el logo de Finanzer
+  await expect.poll(() => mark.locator(".al-co").evaluate((e) => getComputedStyle(e).opacity)).toBe("1");
+  await expect.poll(() => mark.locator(".al-brand").evaluate((e) => getComputedStyle(e).opacity)).toBe("0");
+  expect(await brokenImages(page)).toEqual([]);
+  release();
+  await expect(page.getByTestId("analyze-loading")).toHaveCount(0, { timeout: 30_000 });
+});
+
+test("pantalla de carga sin logotipo de la empresa (204): se queda el de Finanzer, sin hueco ni placa", async ({ page }) => {
+  await page.route("**/api/v2/logo/**", (route) => route.fulfill({ status: 204 }));
+  await holdAnalysis(page, "NFLX");
+  await page.goto("/v2/NFLX");
+  const box = page.getByTestId("analyze-loading");
+  const mark = box.getByTestId("al-mark");
+  await expect(mark).toHaveAttribute("data-mark", "sin-logo", { timeout: 30_000 });
+  await expect(mark.locator(".al-co")).toHaveCount(0);
+  await expect(mark.locator(".al-brand")).toHaveCSS("opacity", "1");
+  await expect(box.locator(".co-logo")).toHaveCount(0);
+  expect(await brokenImages(page)).toEqual([]);
+});
+
+test("pantalla de carga con «reducir movimiento»: el cambio de logotipo sin fundido", async ({ page }, info) => {
+  test.skip(info.project.name !== "desktop", "no depende del tamaño");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await holdAnalysis(page, "NFLX");
+  await page.goto("/v2/NFLX");
+  const co = page.getByTestId("al-mark").locator(".al-co");
+  await expect(co).toHaveCSS("transition-duration", "0s", { timeout: 30_000 });
+});

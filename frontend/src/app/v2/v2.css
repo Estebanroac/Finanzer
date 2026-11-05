@@ -921,7 +921,14 @@ html[data-v2theme="dark"] .fz2 .theme-to-dark, html:not([data-v2theme="dark"]) .
 .fz2 .al-ring .trk { stroke: var(--line); stroke-width: 1.5; }
 .fz2 .al-ring .d1 { stroke: var(--brand-accent); stroke-width: 1.5; stroke-dasharray: 9 15; stroke-linecap: round; animation: al-spin 6s linear infinite; }
 .fz2 .al-ring .d2 { stroke: var(--brand-accent); stroke-width: 1; stroke-dasharray: 3 22; opacity: .55; animation: al-spin 9s linear infinite reverse; }
-.fz2 .al-ring img { width: 4rem; height: auto; position: relative; }   /* el logo en su placa, en el centro del anillo */
+/* el logo en su placa, en el centro del anillo. Logotipos: el de la empresa, encima y transparente hasta que carga de
+   verdad; entonces sustituye al de Finanzer con un fundido corto (sin él, con «reducir movimiento») */
+.fz2 .al-mark { position: relative; display: grid; width: 4rem; height: 4rem; }
+.fz2 .al-mark img { grid-area: 1 / 1; width: 100%; height: 100%; border-radius: 22%; transition: opacity .2s ease-out; }
+.fz2 .al-mark .al-co { opacity: 0; object-fit: contain; background: #FFFFFF; box-shadow: 0 0 0 1px var(--line); }
+.fz2 .al-mark[data-mark="empresa"] .al-co { opacity: 1; }
+.fz2 .al-mark[data-mark="empresa"] .al-brand { opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .fz2 .al-mark img { transition: none; } }
 @keyframes al-spin { to { transform: rotate(360deg); } }
 .fz2 .al-eyebrow { font-size: .8125rem; letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); font-weight: 600; margin: 0 0 var(--s1); }
 .fz2 .al-who { font-size: 2rem; font-weight: 700; line-height: 1.2; margin: 0; color: var(--ink); letter-spacing: -.01em; }
