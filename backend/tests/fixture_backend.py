@@ -630,7 +630,7 @@ def _history_replay_fetcher(store):
         own = (store.yf.get(cur) or {}) if cur else {}
         if sym == cur and "price_history" in own:
             return hf.obj_to_history(own["price_history"])
-        for key in ("market_history", "sector_history"):     # fase 5: el ETF del sector, aparte del índice
+        for key in ("market_history", "sector_history", "country_history"):   # fase 5: ETF del sector; F13: del país
             if (own.get(key) or {}).get("symbol") == sym:
                 return hf.obj_to_history(own[key])
         try:
@@ -652,7 +652,10 @@ def _history_record_fetcher(store, real):
         if frame is not None and cur:
             from settings import cfg
             mkt = {cfg("market.price_series.market_symbol"), cfg("market.price_series.market_fallback_symbol")}
-            key = "price_history" if sym == cur else "market_history" if sym in mkt else "sector_history"
+            # F13: el ETF del país (F11 · T6) aparte del del sector; antes ambos caían en sector_history y el último pisaba
+            cty = set((cfg("market.country_etfs") or {}).values())
+            key = ("price_history" if sym == cur else "market_history" if sym in mkt
+                   else "country_history" if sym in cty else "sector_history")
             store.record_yf(cur, key, hf.frame_to_obj(sym, frame))
         return raw
     return fetch
@@ -689,10 +692,25 @@ def _capture_day(frame):
     return frame.index[-1].date() if frame is not None and len(frame) else _dt.date.today()
 
 
+def _capture_ny_day(store):
+    """F13 (own_sources): "hoy" = la fecha de Nueva York del instante de la captura del ticker, como en vivo
+    (market_context.ny_today). La última sesión de la serie no sirve si la serie se cortó antes (EA, WBD: sin cotización
+    reciente)."""
+    def today(frame):
+        at = (store.meta.get(store.current) or {}).get("captured_at_utc")
+        if not at:
+            return _capture_day(frame)
+        from zoneinfo import ZoneInfo
+        return _dt.datetime.fromisoformat(at).astimezone(ZoneInfo("America/New_York")).date()
+    return today
+
+
 @contextlib.contextmanager
-def replay(base_dir=FIXTURES_DIR, extra_dirs=()):
+def replay(base_dir=FIXTURES_DIR, extra_dirs=(), own_sources=False):
     """Modo test: el pipeline lee de los fixtures y no puede salir a la red. `extra_dirs`: carpetas de respaldo (los
-    rivales del replay)."""
+    rivales del replay). `own_sources` (F13, banco de pruebas fuera de git): EDGAR y el calendario se leen SOLO de
+    <base_dir>/f2b (y de los f2b de `extra_dirs`) y los segmentos de <base_dir>/segments, sin los juegos de
+    tests/fixtures (capturados otro día: un dato viejo no se cuela en silencio)."""
     import finnhub_fallback
     import yf_adapter
     import yfinance
@@ -722,13 +740,15 @@ def replay(base_dir=FIXTURES_DIR, extra_dirs=()):
     import f2b_fixtures
     import sec_edgar
     _f2b_extra = [os.path.join(d, "f2b") for d in extra_dirs]      # V4b: EDGAR de los rivales del replay
-    p.set(sec_edgar, "FETCHER", f2b_fixtures.edgar_fetcher(store, extra=_f2b_extra))
-    p.set(finnhub_fallback, "earnings_calendar", f2b_fixtures.calendar(store, extra=_f2b_extra))
+    _f2b_base = os.path.join(base_dir, "f2b") if own_sources else f2b_fixtures.F2B_DIR
+    p.set(sec_edgar, "FETCHER", f2b_fixtures.edgar_fetcher(store, base=_f2b_base, extra=_f2b_extra))
+    p.set(finnhub_fallback, "earnings_calendar", f2b_fixtures.calendar(store, base=_f2b_base, extra=_f2b_extra))
     # F8 · E10: los segmentos de negocio (financiera cautiva) desde su captura (tests/fixtures/segments); un ticker sin
     # captura queda sin segmentos (el Altman declara el límite).
     import capture_segments
     import segments
-    p.set(segments, "FETCHER", capture_segments.replay_fetcher())
+    p.set(segments, "FETCHER", capture_segments.replay_fetcher(os.path.join(base_dir, "segments") if own_sources
+                                                               else capture_segments.FIX_DIR))
     segments.reset()
     p.env("SEC_EDGAR_USER_AGENT", "finanzer-replay replay@example.invalid")
     # Etapa 8: los fixtures no tienen ^TNX; en replay el Rf es siempre el de config
@@ -737,7 +757,7 @@ def replay(base_dir=FIXTURES_DIR, extra_dirs=()):
     p.set(cost_of_capital, "_fetch_risk_free", lambda: None)
     # V6 (B12): "hoy" de los próximos resultados = el día de la captura (la última sesión de la serie), como antes.
     import market_context
-    p.set(market_context, "TODAY", _capture_day)
+    p.set(market_context, "TODAY", _capture_ny_day(store) if own_sources else _capture_day)
     p.set(time, "sleep", lambda *_a, **_kw: None)
     p.set(socket.socket, "connect", _block_network)
     p.set(socket.socket, "connect_ex", _block_network)
@@ -771,7 +791,11 @@ def record(base_dir=FIXTURES_DIR):
 
     def _rec_finnhub_get(path, params):
         resp = orig_get(path, params)
-        store.record_finnhub(str((params or {}).get("symbol", "")).upper(), path, params, resp)
+        sym = str((params or {}).get("symbol", "")).upper()
+        # F13: como en replay, los titulares se piden con el símbolo de Finnhub (BRK.B) y se graban con el ticker (BRK-B)
+        if store.current and finnhub_fallback.provider_symbol(store.current) == sym:
+            sym = store.current
+        store.record_finnhub(sym, path, params, resp)
         return resp
 
     p.set(yf_adapter, "_ensure_session", _rec_ensure_session)
