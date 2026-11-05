@@ -85,7 +85,9 @@ test("la pantalla de carga: anillo, «Analizando», nombre corto y ticker, la ta
   await page.goto("/v2/AAPL");
   const box = page.getByTestId("analyze-loading");
   await expect(box).toBeVisible({ timeout: 30_000 });
-  await expect(box.locator(".al-ring img[src='/brand/finanzer-logo.svg']")).toBeVisible();   // marca
+  // marca: la de Finanzer o, si ya cargó, el logotipo de la empresa (e2e/v2/logos.spec.ts)
+  await expect(box.locator(".al-ring img.al-brand[src='/brand/finanzer-logo.svg']")).toHaveCount(1);
+  await expect(box.getByTestId("al-mark")).toBeVisible();
   await expect(box.locator(".al-eyebrow")).toHaveText("Analizando");
   await expect(box.locator(".al-who")).toHaveText("AppleAAPL");              // sin la forma jurídica (P8)
   await expect(box.locator(".al-labels span")).toHaveText([...L.labels]);

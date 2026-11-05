@@ -12,7 +12,7 @@ import { symmetryProblems } from "../v2/checks";
 const SYMBOL = "AAPL";
 const REPLAY = `http://localhost:${process.env.REPLAY_PORT || 8767}`;
 const ALL_FAULTS = ["none", "yahoo_down", "yahoo_401", "edgar_no_ua", "edgar_slow", "finnhub_no_key", "finnhub_429",
-  "prices_empty", "sector_etf_down", "spy_down"] as const;
+  "prices_empty", "sector_etf_down", "spy_down", "logos_down"] as const;
 type Fault = (typeof ALL_FAULTS)[number];
 
 const DEPTH = (process.env.V2_PAGES ?? "").split(",").map((x) => x.trim()).filter(Boolean);
@@ -93,6 +93,11 @@ for (const fault of ALL_FAULTS) {
         await expect(page.getByRole("heading", { level: 1 })).toHaveText("Entiende una empresa antes de invertir");
         if (fault === "yahoo_down") expect(text).toMatch(/No hay valores de la sesión ahora mismo\. No se pudieron calcular las tendencias: Yahoo no devolvió/);
         else expect(await page.getByTestId("ticker-item").count()).toBeGreaterThan(0);
+        // Logotipos caídos: cada tarjeta con la placa de sus iniciales (nunca un hueco ni una imagen rota)
+        if (fault === "logos_down") {
+          await expect(page.locator("[data-testid=ticker-item] [data-testid=company-logo]:not([data-state=fail])")).toHaveCount(0);
+          await expect(page.locator("[data-testid=ticker-item] [data-testid=company-logo] .co-logo-ph").first()).toHaveText(/^[A-Z0-9]{1,2}$/);
+        }
         return;
       }
       if (fault === "yahoo_down") {
@@ -100,6 +105,8 @@ for (const fault of ALL_FAULTS) {
         return;
       }
       await expect(page.getByTestId("company-name")).toHaveText("Apple Inc.");
+      const logo = page.locator(".company-header:not(.compact)").getByTestId("company-logo");
+      await expect(logo).toHaveAttribute("data-state", fault === "logos_down" ? "fail" : "ok");
       const section = path.split("/").filter(Boolean)[2] ?? "empresa";
       await expect(page.locator(`.depth[data-chapter=${section}]`)).toHaveCount(1);
       const want = DEPTH_TEXT[fault]?.[section];

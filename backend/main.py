@@ -4,6 +4,7 @@ Finanzer API - FastAPI backend that exposes the financial brain
 import sys
 import mimetypes
 import os
+import asyncio
 import contextlib
 import io
 import logging
@@ -2803,9 +2804,29 @@ def _compute_limited(symbol: str, user: bool = True) -> dict:
 @app.get("/api/analysis/{symbol}")
 async def analyze_stock(symbol: str, request: Request = None):
     """Complete stock analysis - the main endpoint."""
+    _logo_prefetch(symbol)
     res = await run_in_threadpool(_compute_limited, symbol)
     await run_in_threadpool(_start_peers, symbol, res, _client_id(request))
-    return res
+    return await run_in_threadpool(_with_logo, res)
+
+
+def _logo_prefetch(symbol: str) -> None:
+    """Logotipos: la descarga empieza con el análisis y va en paralelo (lib/logos.py); nunca lo rompe."""
+    try:
+        import universe as _universe
+        _logos.prefetch(_universe.norm_symbol(symbol))
+    except Exception as e:
+        logger.warning(f"logotipo de {symbol} no pedido: {type(e).__name__}")
+
+
+def _with_logo(res: dict) -> dict:
+    """El análisis con `logo` ({url, source} o null): se añade aquí y no en _compute_analysis, que comparten el PDF y
+    los golden (el PDF no lleva logotipo). Copia superficial: el análisis en caché no cambia."""
+    try:
+        return {**res, "logo": _logos.meta(res["symbol"])}
+    except Exception as e:
+        logger.warning(f"logotipo de {res.get('symbol')} sin resolver: {type(e).__name__}")
+        return res
 
 
 def _start_peers(symbol: str, analysis: dict, client: Optional[str]) -> None:
@@ -3031,6 +3052,36 @@ def sparklines_v2_endpoint(symbols: Annotated[Optional[str], Query(max_length=60
     except _sp.InvalidRequest as e:
         raise HTTPException(status_code=422, detail=str(e))
     return _sp.get(syms, p)
+
+
+import logos as _logos
+
+
+@app.get("/api/v2/logo/{symbol}")
+async def logo_v2_endpoint(symbol: str, request: Request, v: Annotated[Optional[str], Query(max_length=32)] = None):
+    """Logotipo de la empresa (lib/logos.py): PNG cuadrado de Parqet o, si no lo tiene, de Finnhub, servido desde aquí
+    (el navegador no habla con terceros). Sin logotipo, 204 (sin contenido): la imagen no carga y la web pone la placa
+    con las iniciales, sin el error de consola de un 404 en cada empresa sin logotipo. Con ?v= igual a la versión del
+    contenido, caché inmutable; si no, `browser_max_age_s`. ETag y 304.
+    La descarga va en su hilo y aquí se espera sin ocupar uno del grupo de los análisis (una portada fría pide 30
+    logotipos a la vez); pasado `endpoint_wait_s` sin respuesta de la fuente, 204 sin caché (la siguiente lo tendrá)."""
+    sym = _v2_symbol(symbol)
+    L = cfg("data.logos")
+    done, logo = _logos.get(sym, wait_s=0, background=True)
+    deadline = time.monotonic() + L["endpoint_wait_s"]
+    while not done and time.monotonic() < deadline:
+        await asyncio.sleep(L["endpoint_poll_s"])
+        done, logo = _logos.get(sym, wait_s=0, background=True)
+    if logo is None:
+        cache = f"public, max-age={L['fail_ttl_s']}" if done else "no-store"
+        return Response(status_code=204, headers={"Cache-Control": cache})
+    etag = f'"{logo.version}"'
+    cache = ("public, max-age=31536000, immutable" if v == logo.version
+             else f"public, max-age={L['browser_max_age_s']}")
+    headers = {"Cache-Control": cache, "ETag": etag, "X-Logo-Source": logo.source}
+    if request.headers.get("if-none-match") == etag:
+        return Response(status_code=304, headers=headers)
+    return Response(content=logo.data, media_type="image/png", headers=headers)
 
 
 @app.get("/api/v2/trending")

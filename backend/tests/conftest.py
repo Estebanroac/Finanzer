@@ -83,3 +83,12 @@ def _no_yahoo_caps_batch(monkeypatch):
     sin red: solo CAPS_FETCHER (el que cada test inyecta); los que prueban el lote lo sustituyen."""
     import peers
     monkeypatch.setattr(peers, "CAPS_BATCH", None, raising=False)
+
+
+@pytest.fixture(autouse=True)
+def _no_logo_downloads(monkeypatch):
+    """Logotipos (lib/logos.py): en los tests, sin red; ninguna empresa tiene logotipo salvo donde se inyecta
+    (tests/test_logos.py, el replay con tests/fixtures/logos)."""
+    import logos
+    monkeypatch.setattr(logos, "FETCH", lambda s: None)
+    logos.reset()

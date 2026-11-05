@@ -9,6 +9,8 @@ import { categoryTerm, confidenceTerm, priceRowTerm } from "@/v2/lib/terms";
 import { confidenceLine } from "@/v2/lib/confidence";
 import { profileNames } from "@/lib/names";
 import { chapterHref } from "@/v2/lib/routes";
+import { analysisLogo } from "@/v2/lib/logo";
+import CompanyLogo from "./CompanyLogo";
 
 const signed = (v: number) => (v > 0 ? `+${v}` : v === 0 ? "0" : `−${Math.abs(v)}`);
 const NUMBER_WORDS = ["cero", "una", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve", "diez"];
@@ -115,6 +117,10 @@ export default function CompanyHeader({ analysis, compact = false }: { analysis:
   return (
     <section className={`company-header${compact ? " compact" : ""}`} {...(compact ? { "aria-hidden": true } : { "aria-label": "Resumen de la empresa" })}>
       <div className="ident">
+        {/* Logotipos: a la izquierda de la identidad, como en los brókers (en la fija, más pequeño) */}
+        <div className="ident-lead">
+        <CompanyLogo symbol={analysis.symbol} name={analysis.profile.name} logo={analysisLogo(analysis)}
+          size={compact ? "sm" : "lg"} className="ident-logo" testId={compact ? null : "company-logo"} />
         <div className="ident-main">
           <div className="ident-name"><b className="name">{analysis.profile.name}</b>
             <span className="muted"> · {analysis.symbol} · {analysis.profile.exchange} · {profileNames(analysis).sector} · {profileNames(analysis).industry}</span></div>
@@ -129,6 +135,7 @@ export default function CompanyHeader({ analysis, compact = false }: { analysis:
           {/* V4b (nada oculto): frente a qué cierre, a la vista (antes, al pasar el ratón) */}
           {!compact && dayChange?.status === "ok" && dayChange.session && (
             <span className="muted day-ref" data-testid="day-ref">frente al cierre anterior a la sesión del {dayChange.session.split("-").reverse().join("/")}</span>)}
+        </div>
         </div>
         <div className="verdict" data-testid={compact ? undefined : "verdict"}>
           <span className="eyebrow">Conclusión</span>

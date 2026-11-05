@@ -2,8 +2,8 @@
 5xx y cada bloque dice su motivo. Los mismos fallos los usa el e2e de e2e/v2-faults (POST /__replay/fault en el
 servidor de replay).
 
-Endpoints: /api/analysis, /api/v2/{prices, segments, peers, trending, scenario, search}, /api/pdf y, si existe en la
-rama (E5), /api/v2/pdf. Empresa: AAPL (y MSFT y NVDA como rivales)."""
+Endpoints: /api/analysis, /api/v2/{prices, segments, peers, trending, scenario, search, logo}, /api/pdf y, si existe
+en la rama (E5), /api/v2/pdf. Empresa: AAPL (y MSFT y NVDA como rivales)."""
 import asyncio
 import json
 import logging
@@ -36,6 +36,10 @@ def _call(fn):
         return e.status_code, e.detail
     except Exception as e:  # noqa: BLE001 — así respondería FastAPI: 500
         return SERVER_ERROR, f"{type(e).__name__}: {e}"
+
+
+class _Req:
+    headers: dict = {}
 
 
 def _settle(fn, done):
@@ -85,14 +89,18 @@ def _run_all(main):
     out["peers"] = _settle(lambda: main.peers_v2_endpoint(SYMBOL, symbols=RIVALS), lambda r: r["status"] != "calculando")
     out["trending"] = _settle(main.trending_v2_endpoint, lambda r: r["status"] != "calculando")
     out["pdf"] = _call(lambda: main.download_pdf(SYMBOL))
+    out["logo"] = _call(lambda: main.logo_v2_endpoint(SYMBOL, _Req()))      # corrutina: _call la ejecuta
     if hasattr(main, "download_pdf_v2"):          # rediseño E5 (cuando esté fusionado)
         out["pdf_v2"] = _call(lambda: main.download_pdf_v2(SYMBOL))
     return out
 
 
 @pytest.mark.parametrize("fault", [None, *faults.FAULTS])
-def test_no_5xx_and_reasons_in_place(app, fault):
+def test_no_5xx_and_reasons_in_place(app, fault, monkeypatch):
+    import capture_logos
+    import logos
     main, switch = app
+    monkeypatch.setattr(logos, "FETCH", capture_logos.replay_fetcher())   # los grabados (conftest los quita)
     switch.set(fault)
     res = _run_all(main)
     errors = {k: (st, str(body)[:200]) for k, (st, body) in res.items() if st >= SERVER_ERROR}
@@ -109,6 +117,10 @@ def test_no_5xx_and_reasons_in_place(app, fault):
         assert res["pdf"][0] == 404
         return
     assert st == 200 and a["symbol"] == SYMBOL
+    if fault == "logos_down":       # sin logotipo: null en el análisis y 204 en su endpoint (la web pone la placa)
+        assert a["logo"] is None and res["logo"][0] == 204
+    else:
+        assert a["logo"]["source"] and res["logo"][0] == 200 and res["logo"][1].media_type == "image/png"
     ext = a["display"]["extended"]
     assert res["scenario"][1]["status"] == "ok"
     assert res["peers"][1]["status"] == "listo" and {r["status"] for r in res["peers"][1]["rivals"]} == {"listo"}

@@ -57,7 +57,7 @@ SKIP_PATHS = (".tooltips", ".na_keys", ".archetype", ".annex", ".thresholds_key"
               # Rediseño E2a: display.extended son datos (cifras ya formateadas, la ficha de EDGAR, titulares de
               # terceros en inglés); su única frase, extended.next_earnings.basis, sí se comprueba.
               ".extended.price_change", ".extended.company_profile", ".extended.history_10y",
-              ".extended.piotroski_values", ".extended.news", ".extended.next_earnings.status",
+              ".extended.piotroski_values", ".extended.news", ".extended.news_featured", ".extended.next_earnings.status",
               ".extended.next_earnings.date_txt", ".extended.next_earnings.kind", ".extended.next_earnings.reason")
 ANNEX_TITLE = "detalle técnico para auditoría"
 

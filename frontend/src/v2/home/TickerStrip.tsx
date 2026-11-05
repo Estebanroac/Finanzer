@@ -10,6 +10,7 @@ import Sparkline from "./Sparkline";
 import { useCarousel } from "./useCarousel";
 import { reducedMotion } from "@/v2/lib/motion";
 import SegmentInk from "@/v2/components/SegmentInk";
+import CompanyLogo from "@/v2/components/CompanyLogo";
 import { CACHED_PERIOD, cachedLabel, loadHome, saveHome, type CachedHome } from "./homeCache";
 import { priceText, shouldPoll } from "./trendingModel";
 import {
@@ -41,8 +42,8 @@ function useMedia(query: string): boolean {
   return on;
 }
 
-/** Una tarjeta del cintillo: toda ella enlaza a /v2/{T}. A la izquierda, ticker, precio, variación y nombre; a la
- *  derecha, la mini-gráfica; abajo, la calidad y el precio del motor si ya están en caché. */
+/** Una tarjeta del cintillo: toda ella enlaza a /v2/{T}. A la izquierda, el logotipo con ticker, precio y variación,
+ *  y el nombre; a la derecha, la mini-gráfica; abajo, la calidad y el precio del motor si ya están en caché. */
 function TickerItem({ item, spark, period, copy }: {
   item: TrendingItem; spark: SparkItem | undefined; period: SparkPeriod; copy: boolean;
 }) {
@@ -59,6 +60,7 @@ function TickerItem({ item, spark, period, copy }: {
       <a className="tk-item" href={stockHref(item.symbol)} aria-label={label} tabIndex={copy ? -1 : undefined}
         data-testid={copy ? undefined : "ticker-item"} data-symbol={item.symbol}
         onClick={() => rememberName(item.symbol, item.name)}>
+        <CompanyLogo symbol={item.symbol} name={item.name} size="md" className="tk-logo" />
         <span className="tk-sym">{item.symbol}</span>
         <span className="tk-px num">{priceText(item.price)}</span>
         <span className={`tk-chg num tone-${tone}`} title={ch.reason ?? undefined}>
@@ -329,6 +331,7 @@ export default function TickerStrip() {
             {Array.from({ length: SKELETON_ITEMS }, (_, i) => (
               // v4.1: la misma retícula y las mismas líneas que una tarjeta (mide lo mismo: al llegar no salta nada)
               <li key={i} className="tk-cell"><div className="tk-item">
+                <span className="co-logo co-logo-md tk-logo" />
                 <span className="tk-sym"><span className="skel skel-sym">{"\u00a0"}</span></span>
                 <span className="tk-px"><span className="skel skel-value">{"\u00a0"}</span></span>
                 <span className="tk-chg"><span className="skel skel-value">{"\u00a0"}</span></span>

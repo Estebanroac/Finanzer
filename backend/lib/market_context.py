@@ -351,16 +351,23 @@ def news(symbol: Optional[str], name: Optional[str] = None) -> Dict[str, Any]:
         return im if im.startswith("https://") and seen.get(im) == 1 else None
     # Rediseño E2a (T8): hasta news_max_v2 titulares con resumen, imagen (solo https y propia), categoría, fecha y
     # hora (UTC) e idioma original; la web actual sigue con news_max (display._market_block).
-    items = [{"date": when(x).strftime("%Y-%m-%d") if when(x) else None,
-              "source": x.get("source"), "headline": clean_external(str(x["headline"]).strip()),
-              "url": safe_url(x.get("url")),
-              "summary": _summary(clean_external(x.get("summary")), C["news_summary_chars"]),
-              "image": image(x),
-              "category": x.get("category") or None,
-              "datetime": when(x).strftime("%Y-%m-%dT%H:%M:%SZ") if when(x) else None,
-              "lang": C["news_lang"]}
-             for x in own[:max(C["news_max"], C["news_max_v2"])]]
-    return {"items": items, "total": len(own), "days": C["news_days"],
+    def item(x):
+        return {"date": when(x).strftime("%Y-%m-%d") if when(x) else None,
+                "source": x.get("source"), "headline": clean_external(str(x["headline"]).strip()),
+                "url": safe_url(x.get("url")),
+                "summary": _summary(clean_external(x.get("summary")), C["news_summary_chars"]),
+                "image": image(x),
+                "category": x.get("category") or None,
+                "datetime": when(x).strftime("%Y-%m-%dT%H:%M:%SZ") if when(x) else None,
+                "lang": C["news_lang"]}
+    items = [item(x) for x in own[:max(C["news_max"], C["news_max_v2"])]]
+    # Centro de noticias (/v2): de los titulares de la semana, primero los que traen foto propia (Finnhub da a casi
+    # todos los de Yahoo su logotipo, que no se publica); el resto se completa con los más recientes sin foto. Se
+    # enseñan por fecha. La web actual y el PDF siguen con los más recientes (`items`).
+    pick = [x for x in own if image(x)][:C["news_max_v2"]]
+    pick += [x for x in own if not image(x)][:C["news_max_v2"] - len(pick)]
+    pick.sort(key=lambda x: x.get("datetime") or 0, reverse=True)
+    return {"items": items, "featured": [item(x) for x in pick], "total": len(own), "days": C["news_days"],
             "reason": None if own else f"ningún titular de los últimos {C['news_days']} días menciona a la empresa"}
 
 

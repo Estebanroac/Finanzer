@@ -22,7 +22,7 @@ PEERS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fixtures",
 
 def install(app_main, base, store):
     """Conecta la app al replay (también la usan los tests: tests/test_faults.py): cada análisis desde los fixtures de
-    `base`, uno cada vez, y los segmentos, rivales, tendencias y búsqueda desde sus capturas, sin red."""
+    `base`, uno cada vez, y los segmentos, rivales, tendencias, búsqueda y logotipos desde sus capturas, sin red."""
     from fastapi import HTTPException
     orig = app_main._compute_analysis
     # Rediseño E2a: un análisis cada vez. El replay tiene estado global (store.current, la clave ficticia y las
@@ -81,6 +81,11 @@ def install(app_main, base, store):
     import capture_sparklines
     import sparklines
     sparklines.FETCH = capture_sparklines.replay_fetcher()
+    # Logotipos: los grabados (tests/fixtures/logos); los demás, sin logotipo (la web pone la placa).
+    import capture_logos
+    import logos
+    logos.FETCH = capture_logos.replay_fetcher()
+    logos.reset()
     return compute
 
 
@@ -118,6 +123,7 @@ def add_reset_switch(app, switch, prewarm_max: int = REPLAY_PREWARM_MAX):
     """`POST /__replay/reset`: deja el replay como recién arrancado (cola compartida, rivales, tendencias y su cupo de
     precalentado, y sin fallo activo), para que cada pasada de pruebas empiece igual. Lo llama el globalSetup de
     Playwright. Solo existe en el replay: main.py no lo tiene."""
+    import logos
     import peers
     import trending
 
@@ -134,6 +140,7 @@ def add_reset_switch(app, switch, prewarm_max: int = REPLAY_PREWARM_MAX):
         switch.set(None)
         peers.reset()                    # también la cola compartida (analysis_queue.reset)
         trending.reset()
+        logos.reset()
         return {"reset": True, "prewarm_max": trending._limits["prewarm_max"], "fault": switch.name}
 
     @app.post("/__replay/reset")

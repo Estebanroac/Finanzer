@@ -33,7 +33,7 @@ LABEL_KEYS = frozenset({
 # (patrón de la ruta, clase). Primera coincidencia gana; las rutas son las de `walk` (".a.b[].c").
 DECLARED = [
     # externos
-    (r"\.extended\.news\[\]\.(headline|summary)", "externo"),
+    (r"\.extended\.news(_featured)?\[\]\.(headline|summary)", "externo"),
     (r"\.sections\.market\.news\[\]\.(headline|summary)", "externo"),
     (r"\.extended\.company_profile\.rows\[\]\.value", "externo"),
     # titulares cortos

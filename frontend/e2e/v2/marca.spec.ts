@@ -44,9 +44,11 @@ for (const scheme of ["light", "dark"] as const) {
       expect(font.weight).toBe("700");
       expect(font.loaded, "Manrope cargada desde el propio sitio").toBe(true);
       expect(font.color, "el nombre, en tinta").toBe(await token(page, "--ink"));
-      // logo y nombre centrados en la misma línea
+      // logo y nombre centrados en la misma línea; por debajo de 400 px (buscador del móvil), solo el logo a la vista y el
+      // nombre para los lectores de pantalla
       const [a, b] = await Promise.all([brand.locator(shown).boundingBox(), word.boundingBox()]);
-      expect(Math.abs((b!.y + b!.height / 2) - (a!.y + a!.height / 2))).toBeLessThanOrEqual(a!.height * 0.1);
+      if (page.viewportSize()!.width < 400) expect(b!.width, "el nombre, solo para los lectores de pantalla").toBeLessThanOrEqual(1);
+      else expect(Math.abs((b!.y + b!.height / 2) - (a!.y + a!.height / 2))).toBeLessThanOrEqual(a!.height * 0.1);
     });
 
     test("«Descargar PDF», botón principal en menta con texto oscuro y su filo, con contraste; los verdes de lectura, sin tocar", async ({ page }) => {
@@ -99,7 +101,7 @@ test("móvil: el lockup cabe en la cabecera junto a los botones", async ({ page,
   await page.locator(".topbar .pdf-btn").waitFor({ timeout: 90_000 });
   const brand = page.locator(".topbar .brand");
   await expect(brand.locator("img.brand-logo")).toBeVisible();
-  const [b, btn] = await Promise.all([brand.boundingBox(), page.locator(".topbar .btn").first().boundingBox()]);
+  const [b, btn] = await Promise.all([brand.boundingBox(), page.locator(".topbar .actions .btn:visible").first().boundingBox()]);
   expect(b!.x + b!.width).toBeLessThan(btn!.x);
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
 });

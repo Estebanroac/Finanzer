@@ -32,6 +32,9 @@ test("portada: titular, buscador y cintillo con mini-gráficas y el motor en cac
   await expect(page.getByRole("heading", { name: "Datos oficiales de la SEC" })).toBeVisible();
 });
 
+/** Lo que el cintillo avanza solo en lo que tarda la página en bajar (medido: 2–6 px). */
+const AUTOPLAY_DRIFT_PX = 40;
+
 /** Dónde va el cintillo: su scrollLeft (con ratón) o el desplazamiento de la pista (transform, pantallas táctiles). */
 const scrollX = (page: Page) => page.getByTestId("ticker").evaluate((e) =>
   e.scrollLeft - new DOMMatrix(getComputedStyle(e.querySelector(".track")!).transform).m41);
@@ -206,7 +209,12 @@ test("P8b: el trackpad (deltaX) desplaza el cintillo; la rueda vertical sigue mo
   await expect.poll(async () => { const v = await scrollX(page); const same = v === x1; x1 = v; return same; }).toBe(true);
   await page.mouse.wheel(0, 300);                                           // rueda vertical sobre el cintillo
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(y0);
-  expect(await scrollX(page)).toBe(x1);                                     // no se la traga el cintillo
+  // no se la traga el cintillo: la misma posición a la vista (en el bucle, w + x es x). Logotipos: con la marca encima
+  // del titular la página baja 300 px (antes, 223) y el puntero sale del cintillo, que vuelve a avanzar solo unos px;
+  // una rueda tragada lo movería cientos (la del gesto, 300)
+  const w = await tape.locator(".run").first().evaluate((e) => (e as HTMLElement).offsetWidth);
+  const seen = (x: number) => ((x % w) + w) % w;
+  expect(Math.abs(seen(await scrollX(page)) - seen(x1))).toBeLessThan(AUTOPLAY_DRIFT_PX);
 });
 
 test("con «reducir movimiento», sin animación: fila deslizable con imán y sin copia", async ({ page }) => {

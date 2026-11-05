@@ -694,10 +694,10 @@ def test_analysis_endpoint_starts_the_rivals(synthetic):
     class Req:
         headers = {}
         client = type("C", (), {"host": "10.0.0.2"})()
-    assert asyncio.run(main.analyze_stock("NVDA", Req())) == {"symbol": "NVDA"}
+    assert asyncio.run(main.analyze_stock("NVDA", Req())) == {"symbol": "NVDA", "logo": None}   # logotipo: lib/logos.py
     assert seen == [("NVDA", {"symbol": "NVDA"}, "10.0.0.2")]
     synthetic.setattr(peers, "start", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("cola rota")))
-    assert asyncio.run(main.analyze_stock("NVDA", Req())) == {"symbol": "NVDA"}     # nunca rompe el análisis
+    assert asyncio.run(main.analyze_stock("NVDA", Req())) == {"symbol": "NVDA", "logo": None}   # logotipo: lib/logos.py     # nunca rompe el análisis
 
 
 

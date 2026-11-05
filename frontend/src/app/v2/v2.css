@@ -12,7 +12,7 @@
      como color, no como gris; ni verde ni rojo): degradado --pos-a → --pos-b; relleno --pos. Composición de una misma
      barra (estructura del balance): paleta categórica de matices distintos y luminosidad escalonada (se distinguen con
      daltonismo: índigo oscuro, azul medio y ocre), contraste ≥ 3:1 con la superficie */
-  --pos-a: #D3E0EE; --pos-b: #4F7FB0; --pos: #3F6E9E; --cat-1: #4B3F7A; --cat-2: #4F84B8; --cat-3: #A97A1E;
+  --pos-a: #D3E0EE; --pos-b: #4F7FB0; --pos: #3F6E9E; --pos-ink: #335C86; --cat-1: #4B3F7A; --cat-2: #4F84B8; --cat-3: #A97A1E;
   /* Marca (la familia menta y esmeralda del logo, marca/tokens-usuario.mjs), para el botón principal y los acentos; no
      sustituye a los verdes de lectura (--good y familia). El menta como relleno con el texto en la noche del logo
      (13,6:1); en claro, el menta frente al blanco no llega a 3:1 y el relleno lleva un filo esmeralda (--brand-edge,
@@ -37,7 +37,7 @@
   --good-bg: #22332A; --warn-bg: #3A3220; --bad-bg: #3A2820;
   --good-ink: #59AC80; --warn-ink: #C49A45; --bad-ink: #CF8970;
   --scale-neutral: #6B7077;
-  --pos-a: #22303E; --pos-b: #5A8CC0; --pos: #6F9DCC; --cat-1: #BDB2EF; --cat-2: #5689C0; --cat-3: #D3A64C;
+  --pos-a: #22303E; --pos-b: #5A8CC0; --pos: #6F9DCC; --pos-ink: #6F9DCC; --cat-1: #BDB2EF; --cat-2: #5689C0; --cat-3: #D3A64C;
   --brand-edge: #94E8A5; --brand-ink: #94E8A5; --brand-accent: #94E8A5;   /* sobre oscuro, el menta: 11–12:1 */
 }
 .fz2 * { box-sizing: border-box; }
@@ -128,6 +128,37 @@ html[data-v2theme="dark"] .fz2 .theme-to-dark, html:not([data-v2theme="dark"]) .
   .fz2 main { padding-bottom: calc(var(--s6) + env(safe-area-inset-bottom)); }
   .fz2 .topbar .wrap { grid-template-columns: auto 1fr; }
 }
+/* El buscador de la barra (TopBar): en escritorio, en el centro; en el móvil no cabe con la marca y los dos botones
+   (medido a 320, 375 y 402 px) y va plegado tras la lupa: al tocarla, una fila bajo la barra con el buscador a todo el
+   ancho y «Cerrar». En el móvil, el modo claro/oscuro es un sol o una luna de 44 px (su etiqueta, para los lectores de
+   pantalla) y, por debajo de 400 px, la marca es solo el logo (el enlace se sigue llamando «Finanzer»). */
+.fz2 .search-close, .fz2 .icon-btn, .fz2 .theme-ico { display: none; }
+@media (max-width: 47.9375em) {
+  /* la barra es un contexto de apilamiento (su view-transition-name): con la fila abierta, sobre la página; cerrada,
+     como siempre, bajo la franja de la barra de estado */
+  .fz2 .topbar { position: relative; transition: z-index 0s linear var(--dur-1); }   /* mientras la fila sale, sigue encima */
+  .fz2 .topbar:has(.search-row[data-open]) { z-index: 12; transition-delay: 0s; }
+  .fz2 .topbar .actions { align-items: center; }
+  .fz2 .topbar .icon-btn, .fz2 .topbar .theme-btn { display: inline-grid; place-items: center; width: 2.75rem; height: 2.75rem; padding: 0; }
+  .fz2 .topbar .pdf-btn { display: inline-flex; align-items: center; min-height: 2.75rem; }   /* los tres a la misma altura */
+  .fz2 .theme-ico { display: block; }   /* el del tema que no toca lo oculta la regla F25 (más específica) */
+  .fz2 .theme-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .fz2 .search-row { display: none; position: absolute; z-index: 11; top: 100%; left: 0; right: 0; align-items: center;
+    gap: var(--s2); padding: var(--s2) var(--gutter); background: var(--surface); border-bottom: 1px solid var(--line);
+    box-shadow: 0 .5rem 1rem rgb(0 0 0 / .08); }
+  .fz2 .search-row[data-open] { display: flex; }
+  .fz2 .topbar .search-row .searchbox { display: block; flex: 1 1 auto; width: auto; min-width: 0; }
+  .fz2 .search-row .search { display: block; min-height: 2.75rem; }
+  .fz2 .search-row .search-close { display: inline-block; min-height: 2.75rem; }
+  /* las sugerencias, a todo el ancho de la fila (también bajo «Cerrar»: el nombre de la empresa no se corta tanto); con
+     el teclado abierto, la lista no se esconde bajo él y, al llegar a su final, no arrastra la página */
+  .fz2 .search-row .searchbox { position: static; }
+  .fz2 .search-row .searchbox .results, .fz2 .search-row .searchbox .no-results { left: var(--gutter); right: var(--gutter); top: calc(100% - var(--s1)); }
+  .fz2 .search-row .searchbox .results { max-height: min(24rem, 50svh); overscroll-behavior: contain; }
+}
+@media (max-width: 24.9375em) {
+  .fz2 .brand-word { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+}
 /* Cabecera de empresa (maqueta 2c) */
 .fz2 .muted { color: var(--text-3); }
 .fz2 .company-header { padding: var(--s5) 0; display: grid; gap: var(--s4); }
@@ -148,6 +179,9 @@ html[data-v2theme="dark"] .fz2 .theme-to-dark, html:not([data-v2theme="dark"]) .
    caben los dos, cede la conclusión, que se parte (MC.PA en tableta: «EUR 397.00 −EUR 1.30 (−0.33%)»). */
 .fz2 .ident { display: grid; grid-template-columns: minmax(auto, 1fr) auto; align-items: center; gap: var(--s2) var(--s5); }
 .fz2 .ident-main { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s1) var(--s4); }
+/* Logotipos: la placa a la izquierda de nombre y precio, centrada con los dos (en el móvil, arriba, con el nombre) */
+.fz2 .ident-lead { display: flex; align-items: center; gap: var(--s3); min-width: 0; }
+.fz2 .ident-lead .ident-main { flex: 1 1 auto; min-width: 0; }
 .fz2 .verdict { display: flex; align-items: baseline; gap: var(--s3); justify-self: end; text-align: right; }
 .fz2 .verdict-text { font-size: var(--fs-sub); font-weight: 650; }
 .fz2 .company-header .name { color: var(--ink); font-size: var(--fs-sub); }
@@ -270,6 +304,10 @@ html[data-v2theme="dark"] .fz2 .theme-to-dark, html:not([data-v2theme="dark"]) .
   .fz2 .company-header .score .score-value .muted { font-size: var(--fs-ui); }
 
   .fz2 .ident { grid-template-columns: minmax(0, 1fr); }
+  /* Logotipos: en el teléfono la placa va con el nombre y el precio ocupa todo el ancho debajo (sin hueco a su izquierda) */
+  .fz2 .company-header:not(.compact) .ident-lead { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: var(--s1) var(--s3); }
+  .fz2 .company-header:not(.compact) .ident-lead .ident-main { display: contents; }
+  .fz2 .company-header:not(.compact) .ident-lead .quote, .fz2 .company-header:not(.compact) .ident-lead .day-ref { grid-column: 1 / -1; justify-self: start; }
   .fz2 .verdict { flex-direction: column; gap: 0; justify-self: start; text-align: left; }
   /* Pre-pasada V4: si la pieza entera no cabe en el ancho (MC.PA a 375 px), la variación pasa debajo del precio en
      lugar de desbordar la página; cada cifra sigue sin partirse. */
@@ -323,7 +361,15 @@ html[data-v2theme="dark"] .fz2 .theme-to-dark, html:not([data-v2theme="dark"]) .
    tarjetas miden lo mismo, con imagen o sin ella. */
 .fz2 .news-card { color: var(--ink); text-decoration: none; display: flex; flex-direction: column; overflow: hidden; }
 .fz2 .news-img { display: block; width: 100%; height: 4rem; object-fit: cover; background: var(--neutral); }
-.fz2 .news-img-empty { display: flex; align-items: center; justify-content: center; color: var(--text-2); font-size: var(--fs-ui); font-weight: 600; }
+/* Sin foto propia: una portada con el logotipo de la empresa (o su placa con las iniciales) y el medio sobre un degradado
+   sobrio (papel → azul de la escala), con un filo azul arriba; los mismos tokens en claro y en oscuro (texto ≥ 4,7:1
+   sobre los dos extremos). */
+.fz2 .news-img-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--s1);
+  padding: 0 var(--s3); text-align: center; background: linear-gradient(135deg, var(--neutral) 0%, var(--pos-a) 100%);
+  border-bottom: 1px solid var(--line-soft); box-shadow: inset 0 3px 0 var(--pos); }
+/* Logotipos: 3 rem en la portada de 7 rem (Actualidad); en la de 4 rem, la pequeña (cabe con el medio debajo) */
+.fz2 .news:not(.three) .news-ph-logo { --logo-size: 1.75rem; --logo-text: .75rem; }
+.fz2 .news-ph-src { font-size: var(--fs-sub); font-weight: 700; letter-spacing: -.01em; line-height: 1.2; color: var(--text-2); }
 .fz2 .news-body { padding: var(--s3); display: flex; flex-direction: column; gap: var(--s1); flex: 1 1 auto; }
 /* V4b (nada oculto): titular y resumen enteros, sin cortar a tres líneas; las tarjetas de una fila miden lo mismo */
 .fz2 .news-title { font-weight: 600; line-height: 1.35; }
@@ -626,7 +672,10 @@ html[data-v2theme="dark"] .fz2 .theme-to-dark, html:not([data-v2theme="dark"]) .
 /* Rivales */
 .fz2 .depth .peerstable tr.me th, .fz2 .depth .peerstable tr.me td { background: var(--good-bg); font-weight: 600; }
 .fz2 .depth .peerstable td, .fz2 .depth .peerstable th { white-space: nowrap; }
-.fz2 .depth .peerstable th[scope="row"] { white-space: normal; min-width: 7rem; }
+.fz2 .depth .peerstable th[scope="row"] { white-space: normal; min-width: 9.25rem; }
+/* Logotipos: la placa a la izquierda del ticker y el nombre */
+.fz2 .depth .peer-id { display: flex; align-items: center; gap: var(--s2); }
+.fz2 .depth .peer-who { min-width: 0; }
 .fz2 .depth .peerstable td[colspan] { white-space: normal; color: var(--text-2); }
 .fz2 .depth .skel { display: inline-block; vertical-align: middle; width: 6rem; height: .75rem; margin-right: var(--s2); border-radius: 4px; background: var(--neutral); }
 .fz2 .depth .btn.icon { padding: 0 var(--s2); line-height: 1.6; }
@@ -903,7 +952,16 @@ html[data-v2theme="dark"] .fz2 .theme-to-dark, html:not([data-v2theme="dark"]) .
 .fz2 .al-ring .trk { stroke: var(--line); stroke-width: 1.5; }
 .fz2 .al-ring .d1 { stroke: var(--brand-accent); stroke-width: 1.5; stroke-dasharray: 9 15; stroke-linecap: round; animation: al-spin 6s linear infinite; }
 .fz2 .al-ring .d2 { stroke: var(--brand-accent); stroke-width: 1; stroke-dasharray: 3 22; opacity: .55; animation: al-spin 9s linear infinite reverse; }
-.fz2 .al-ring img { width: 4rem; height: auto; position: relative; }   /* el logo en su placa, en el centro del anillo */
+/* el logo en su placa, en el centro del anillo. Logotipos: el de la empresa, encima y transparente hasta que carga de
+   verdad; entonces sustituye al de Finanzer con un fundido corto (sin él, con «reducir movimiento») */
+.fz2 .al-mark { position: relative; display: grid; width: 4rem; height: 4rem; }   /* el tamaño, solo aquí (cuadrada) */
+.fz2 .al-mark img { grid-area: 1 / 1; width: 100%; height: 100%; border-radius: 22%; transition: opacity .2s ease-out; }
+/* cover: llena la placa también si el logotipo no es del todo cuadrado (el backend admite hasta 1,25:1; recorta ≤ 10 % por
+   lado, casi siempre margen); con contain asomaba el fondo blanco en franjas */
+.fz2 .al-mark .al-co { opacity: 0; object-fit: cover; background: #FFFFFF; box-shadow: 0 0 0 1px var(--line); }
+.fz2 .al-mark[data-mark="empresa"] .al-co { opacity: 1; }
+.fz2 .al-mark[data-mark="empresa"] .al-brand { opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .fz2 .al-mark img { transition: none; } }
 @keyframes al-spin { to { transform: rotate(360deg); } }
 .fz2 .al-eyebrow { font-size: .8125rem; letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); font-weight: 600; margin: 0 0 var(--s1); }
 .fz2 .al-who { font-size: 2rem; font-weight: 700; line-height: 1.2; margin: 0; color: var(--ink); letter-spacing: -.01em; }
@@ -927,7 +985,7 @@ html[data-v2theme="dark"] .fz2 .theme-to-dark, html:not([data-v2theme="dark"]) .
 @media (max-width: 47.9375em) {
   .fz2 .al-inner { padding: var(--s4); }
   .fz2 .al-ring { width: 7rem; height: 7rem; margin-bottom: var(--s4); }
-  .fz2 .al-ring img { width: 3.75rem; }
+  .fz2 .al-mark { width: 3.75rem; height: 3.75rem; }   /* la caja cuadrada; las dos imágenes la llenan (sin franjas) */
   .fz2 .al-card { padding: var(--s4); }
   .fz2 .al-labels span { font-size: .75rem; }
 }
@@ -1070,4 +1128,16 @@ html[data-page-dir="back"] { --page-sign: -1; }
   .fz2 .tip-box.sheet[data-state="closed"] { opacity: 0; }
   @starting-style { .fz2 .tip-box.floating, .fz2 .tip-box.sheet { opacity: 0; transform: none; } }
   .fz2 .chapter-ink { transition: none; }
+}
+
+/* El buscador del móvil: la fila baja unos px desde la barra con un fundido y se va por el mismo camino (TopBar) */
+@media (max-width: 47.9375em) {
+  .fz2 .search-row { opacity: 0; transform: translateY(-.5rem); transition: opacity var(--dur-1) var(--ease-out),
+    transform var(--dur-1) var(--ease-out), display var(--dur-1) allow-discrete; }
+  .fz2 .search-row[data-open] { opacity: 1; transform: none; transition-duration: var(--dur-2); }
+  @starting-style { .fz2 .search-row[data-open] { opacity: 0; transform: translateY(-.5rem); } }
+}
+@media (max-width: 47.9375em) and (prefers-reduced-motion: reduce) {
+  .fz2 .search-row, .fz2 .search-row[data-open] { transform: none; transition-duration: var(--dur-1); }
+  @starting-style { .fz2 .search-row[data-open] { transform: none; } }
 }

@@ -103,3 +103,48 @@ def test_sin_titulares_de_la_empresa_dice_por_que(monkeypatch):
     monkeypatch.setattr(fh, "company_news", lambda s, a, b: [_item(1, "CPI Pressures Markets")])
     n = mc.news("AAPL", "Apple Inc.")
     assert n["items"] == [] and n["total"] == 0 and "menciona a la empresa" in n["reason"]
+
+
+def _yahoo(raw, idx):
+    for i in idx:
+        raw[i]["image"] = "https://s.yimg.com/logo_generico.png"
+    return raw
+
+
+def test_el_centro_de_noticias_sube_las_que_traen_foto(monkeypatch):
+    """Centro de noticias: de los titulares de la semana, primero los que traen foto propia, ordenados por fecha; el
+    resto se completa con los más recientes sin foto. La web actual y el PDF siguen con los más recientes."""
+    raw = _raw()
+    for _ in range(4):        # cuatro titulares más, sin foto (el logotipo de Yahoo) y más recientes que todos
+        raw.append({**raw[0], "datetime": raw[-1]["datetime"] + 3600, "headline": f"Apple titular {len(raw)}",
+                    "url": f"https://x/{len(raw)}"})
+    raw = _yahoo(raw, [0, 2, 8, 9, 10, 11])     # con foto propia: 1, 3, 4, 5, 6 (7 es http://)
+    monkeypatch.setattr(fh, "is_enabled", lambda: True)
+    monkeypatch.setattr(fh, "company_news", lambda s, a, b: raw)
+    n = mc.news("AAPL", "Apple Inc.")
+    fe = [x["headline"] for x in n["featured"]]
+    assert len(fe) == cfg("market.context.news_max_v2") == 6
+    assert set(fe) == {f"Apple titular {i}" for i in (1, 3, 4, 5, 6)} | {"Apple titular 11"}
+    assert [x["datetime"] for x in n["featured"]] == sorted((x["datetime"] for x in n["featured"]), reverse=True)
+    assert [x["headline"] for x in n["items"]][:2] == ["Apple titular 11", "Apple titular 10"]
+    import display
+    ext = display._extended_block({"market_context": {"news": n}})
+    assert [x["headline"] for x in ext["news_featured"]] == fe and sum(1 for x in ext["news_featured"] if x["image"]) == 5
+    assert [x["headline"] for x in ext["news"]][:2] == ["Apple titular 11", "Apple titular 10"]    # el PDF, sin fotos
+    old = {k: v for k, v in n.items() if k != "featured"}       # un análisis guardado antes: solo «items»
+    assert display._extended_block({"market_context": {"news": old}})["news_featured"] == ext["news"]
+
+
+def test_si_todas_traen_foto_se_quedan_las_mas_recientes(monkeypatch):
+    monkeypatch.setattr(fh, "is_enabled", lambda: True)
+    raw = [{**x, "image": f"https://img/{i}.jpg"} for i, x in enumerate(_raw())]
+    monkeypatch.setattr(fh, "company_news", lambda s, a, b: raw)
+    n = mc.news("AAPL", "Apple Inc.")
+    assert [x["headline"] for x in n["featured"]] == [f"Apple titular {i}" for i in range(7, 1, -1)]
+
+
+def test_sin_ninguna_foto_el_centro_queda_como_antes(monkeypatch):
+    monkeypatch.setattr(fh, "is_enabled", lambda: True)
+    monkeypatch.setattr(fh, "company_news", lambda s, a, b: _yahoo(_raw(), range(8)))
+    n = mc.news("AAPL", "Apple Inc.")
+    assert n["featured"] == n["items"][:cfg("market.context.news_max_v2")]

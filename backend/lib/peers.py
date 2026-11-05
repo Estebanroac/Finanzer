@@ -49,7 +49,6 @@ _limits: Dict[str, Any] = {}             # copia de market.peers
 _caps: Dict[str, Tuple[float, Optional[float], float]] = {}
 _rankings: Dict[str, Tuple[float, Dict[str, Any], float]] = {}
 _ranking_pending: set = set()
-_last_finnhub = [0.0]
 
 
 def reset() -> None:
@@ -137,14 +136,9 @@ def rank(symbol: str, cands: List[str], caps: Dict[str, Optional[float]],
 
 def finnhub_cap(symbol: str) -> Optional[float]:
     """Capitalización en dólares de Finnhub profile2 (marketCapitalization viene en millones), con la pausa de
-    `finnhub_min_interval_s` entre peticiones."""
+    `finnhub_min_interval_s` entre peticiones (compartida con los logotipos: finnhub_fallback.paced_get)."""
     import finnhub_fallback
-    with _lock:
-        wait = _last_finnhub[0] + _limits["finnhub_min_interval_s"] - time.monotonic()
-        _last_finnhub[0] = time.monotonic() + max(wait, 0.0)
-    if wait > 0:
-        time.sleep(wait)
-    data = finnhub_fallback._get("/stock/profile2", {"symbol": symbol}) or {}
+    data = finnhub_fallback.paced_get("/stock/profile2", {"symbol": symbol}, _limits["finnhub_min_interval_s"]) or {}
     cap = data.get("marketCapitalization")
     return float(cap) * 1e6 if isinstance(cap, (int, float)) and cap > 0 else None
 

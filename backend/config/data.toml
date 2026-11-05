@@ -45,6 +45,31 @@ cut_match_rel_tol = 0.02        # fase 2b: una métrica TTM de Finnhub entra sol
 # Solo los titulares lo usan (no puntúan): en métricas, calendario y sorpresas cambiaría cifras (decisión del PM).
 class_share_separator = "."
 
+[logos]                         # lib/logos.py: logotipo de cada empresa (GET /api/v2/logo/{símbolo} y `logo` del análisis)
+# Medido el 4-nov-2026 (archivo-historico/evidencias-de-pruebas/logos_2026-11-04): Parqet, 530/543 del universo y 76/100
+# europeas al azar; Finnhub (solo EE. UU. en el plan gratuito), 11 de los 13 que faltan. Juntas, 541/543 (99,6 %).
+parqet_url = "https://assets.parqet.com/logos/symbol/{symbol}?format=png&size={size}"
+finnhub_logo_host = 'static\d*\.finnhub\.io'   # solo de aquí se descarga la imagen que nombra profile2
+size_px = 200                   # 3 rem de cabecera a 3x de densidad: se ve nítido; 6,7 KB de media en Parqet
+timeout_s = 4
+max_bytes = 65536               # un PNG de logotipo más pesado que esto no es un logotipo (o no es el de 200 px)
+finnhub_max_bytes = 524288      # el de Finnhub viene a 1000 px (15–130 KB medidos) y se reduce a `size_px`
+min_px = 32
+max_aspect = 1.25               # cuadrado o casi (la placa es cuadrada)
+finnhub_min_interval_s = 1.5    # la misma pausa que las capitalizaciones de los rivales (market.peers), compartida
+finnhub_wait_s = 3.0            # si la pausa pide más, no se consulta (fallo: se reintenta pasado fail_ttl_s)
+finnhub_max_per_hour = 60       # tope de consultas de logotipos a Finnhub: ≤ 1/min de media del cupo de 60/min
+ttl_s = 604800                  # 7 días con logotipo
+miss_ttl_s = 86400              # 1 día sin logotipo en ninguna fuente
+fail_ttl_s = 600                # 10 min si una fuente no respondió
+cache_max_entries = 800         # el universo (≈ 545) y lo que se busque
+cache_max_bytes = 4194304       # 4 MB como mucho en memoria (Render va justo: ≈ 315 MB en uso)
+version_chars = 12              # huella del contenido en ?v= (con ella, la caché del navegador es inmutable)
+endpoint_wait_s = 10.0          # GET /api/v2/logo: espera a la fuente (Parqet y, si falta, Finnhub con su pausa)
+endpoint_poll_s = 0.05
+meta_wait_s = 1.5               # lo que el análisis espera al logotipo si aún se descarga (va en paralelo al cálculo)
+browser_max_age_s = 604800      # caché del navegador sin ?v= (7 días); sin logotipo, `miss_ttl_s`
+
 [reit_ffo]                      # lib/reit_ffo.py (F8 · E3, auditoría externa del 26-oct-2026): FFO de los REIT según Nareit
 # Los ajustes salen del estado de flujos que presentó el emisor en su 10-K/10-Q (Finnhub /stock/financials-reported,
 # gratuito): sus partidas no monetarias, con el concepto estándar o el propio del emisor. Se reconocen por el nombre del

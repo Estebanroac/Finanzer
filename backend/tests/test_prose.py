@@ -38,6 +38,7 @@ def test_kind_declares_labels_headlines_and_sentences():
     assert k(".sections.alerts.groups[].items[].reason", "Autofinanciada en caja — FCF TTM positivo") == "titular"
     assert k(".methodology.models_text", "Altman (1968), Piotroski (2000), un DCF multietapa") == "fragmento"
     assert k(".extended.news[].headline", "Better High-Yield Dividend Stock: Realty Income vs. Clorox") == "externo"
+    assert k(".extended.news_featured[].summary", "Shares of AAPL moved.") == "externo"
     assert k(".nuevo.campo_largo", "un texto largo que nadie ha declarado") is None
     assert k(".nuevo.campo_corto", "Corto sin declarar") == "etiqueta"
 

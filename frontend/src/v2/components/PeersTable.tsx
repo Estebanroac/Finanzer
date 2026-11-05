@@ -4,6 +4,7 @@ import type { PeerRival, PeerSummary, SearchHit } from "@/lib/api";
 import { usePeers } from "@/v2/lib/usePeers";
 import { chapterHref } from "@/v2/lib/routes";
 import { SEARCH_DEBOUNCE_MS, searchV2 } from "@/v2/lib/search";
+import CompanyLogo from "./CompanyLogo";
 
 /** Columnas del comparador (spec §3.4): claves de `summary.metrics` (las mismas cifras que la página de cada empresa). */
 const COLS: Array<{ key: string; label: string }> = [
@@ -97,17 +98,21 @@ export default function PeersTable({ symbol }: { symbol: string }) {
           </tr></thead>
           <tbody>
             <tr className="me" data-testid="peer-company">
-              <th scope="row"><span className="metric-name">{symbol}</span>{data?.company?.name && <span className="metric-sub">{data.company.name}</span>}</th>
+              <th scope="row"><span className="peer-id"><CompanyLogo symbol={symbol} name={data?.company?.name} size="sm" />
+                <span className="peer-who"><span className="metric-name">{symbol}</span>{data?.company?.name && <span className="metric-sub">{data.company.name}</span>}</span></span></th>
               {data?.company ? <Cells s={data.company} /> : <td colSpan={ncols - 2} className="wide"><span className="skel" />Analizando…</td>}
               <td className="stack-hide" />
             </tr>
             {(data?.rivals ?? []).map((r: PeerRival) => (
               <tr key={r.symbol} data-status={r.status}>
-                <th scope="row">
+                <th scope="row"><span className="peer-id">
+                  <CompanyLogo symbol={r.symbol} name={r.summary?.name} size="sm" />
+                  <span className="peer-who">
                   {r.status === "listo"
                     ? <a href={chapterHref(r.symbol)} className="metric-name">{r.symbol}</a>
                     : <span className="metric-name">{r.symbol}</span>}
                   {r.summary?.name && <span className="metric-sub">{r.summary.name}</span>}
+                  </span></span>
                 </th>
                 {r.status === "listo" && r.summary ? <Cells s={r.summary} />
                   : r.status === "fallo" ? <td colSpan={ncols - 2} className="row-missing wide"><strong>Sin análisis</strong> · {r.reason ?? "Finanzer no pudo analizarla"}</td>

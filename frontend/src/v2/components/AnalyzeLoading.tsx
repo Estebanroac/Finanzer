@@ -3,8 +3,11 @@ import { useEffect, useRef, useState } from "react";
 import { WEB } from "@/lib/generated/backendConfig";
 import { advance, startPace, stationFill, type PaceConfig, type PaceState } from "@/v2/lib/loadingPace";
 import { canTransition, reducedMotion } from "@/v2/lib/motion";
+import { logoSrc } from "@/v2/lib/logo";
 
-/** V4 (PM, maqueta aprobada): la pantalla de carga del análisis. El anillo con el logo y su giro lento; «Analizando»; el
+/** V4 (PM, maqueta aprobada): la pantalla de carga del análisis. El anillo con el logo y su giro lento (logotipos: el de
+ *  Finanzer hasta que el de la empresa carga de verdad, y entonces el de la empresa con un fundido corto; sin logotipo de
+ *  la empresa, o si falla, el de Finanzer: nunca un hueco ni la placa de iniciales); «Analizando»; el
  *  nombre corto de la empresa con su ticker (o solo el ticker); una tarjeta con la estación en curso, qué se hace en
  *  ella, la barra de cinco tramos con sus etiquetas; y un pie con lo que suele tardar. Cinco estaciones iguales
  *  (`loadingPace`); textos y tiempos, de la config (data.toml [web]). */
@@ -32,6 +35,14 @@ export default function AnalyzeLoading({ symbol, name, startedAt, arrivedAt, onF
   const [view, setView] = useState<{ s: PaceState; now: number }>(() => ({ s: startPace(PACE), now: 0 }));
   const [exiting, setExiting] = useState(false);
   const [reduced] = useState(() => typeof window.matchMedia === "function" && window.matchMedia(REDUCED).matches);
+  // Logotipos: la URL sale del símbolo (no espera al análisis); sin imagen (204) o con error, se quita y queda la marca
+  const [mark, setMark] = useState<"finanzer" | "empresa" | "sin-logo">("finanzer");
+  const co = useRef<HTMLImageElement>(null);
+  useEffect(() => {
+    const el = co.current;                      // pudo llegar de la caché antes de que React atara onLoad y onError
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sincroniza una sola vez con la imagen ya cargada
+    if (el?.complete) setMark(el.naturalWidth > 0 ? "empresa" : "sin-logo");
+  }, []);
 
   useEffect(() => {
     let raf = 0;
@@ -72,8 +83,16 @@ export default function AnalyzeLoading({ symbol, name, startedAt, arrivedAt, onF
             <circle className="d1" cx="100" cy="100" r="88" />
             <circle className="d2" cx="100" cy="100" r="72" />
           </svg>
-          {/* eslint-disable-next-line @next/next/no-img-element -- export estático: sin optimizador de imágenes */}
-          <img src="/brand/finanzer-logo.svg" alt="" width={64} height={64} />
+          <span className="al-mark" data-mark={mark} data-testid="al-mark">
+            {/* eslint-disable-next-line @next/next/no-img-element -- export estático: sin optimizador de imágenes */}
+            <img className="al-brand" src="/brand/finanzer-logo.svg" alt="" width={64} height={64} />
+            {mark !== "sin-logo" && (
+              // eslint-disable-next-line @next/next/no-img-element -- export estático: sin optimizador de imágenes
+              <img ref={co} className="al-co" src={logoSrc(symbol)!} alt="" width={64} height={64} decoding="async"
+                onLoad={(e) => setMark(e.currentTarget.naturalWidth > 0 ? "empresa" : "sin-logo")}
+                onError={() => setMark("sin-logo")} />
+            )}
+          </span>
         </div>
         <p className="al-eyebrow">Analizando</p>
         <h1 className="al-who">

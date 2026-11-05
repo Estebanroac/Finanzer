@@ -25,3 +25,13 @@ describe("tarjeta de noticia", () => {
     }
   });
 });
+
+describe("medio de la noticia", () => {
+  it("se escribe como se llama (Yahoo Finance, Seeking Alpha); los demás, como vienen", () => {
+    const base = { date: "2026-11-03", headline: "T", url: null, image: null, lang: null };
+    expect(newsCard({ ...base, source: "Yahoo" }).meta).toBe("03/11/2026 · Yahoo Finance");
+    expect(newsCard({ ...base, source: "SeekingAlpha" }).source).toBe("Seeking Alpha");
+    expect(newsCard({ ...base, source: "Benzinga" }).source).toBe("Benzinga");
+    expect(newsCard({ ...base, source: null }).source).toBeNull();
+  });
+});
