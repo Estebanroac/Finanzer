@@ -258,7 +258,15 @@ CREDIT: Dict[str, Tuple[str, Tuple[str, ...], Tuple[str, ...]]] = {
                                  "FinancingReceivableAllowanceForCreditLossesWriteOffsNet"), ()),
 }
 
+# F13 · paso 2b: la deuda total de las financieras cautivas que presentan su propio 10-K (config data.edgar.captive_filers)
+CAPTIVE_FILER_CONCEPTS = ("DebtAndCapitalLeaseObligations", "LongTermDebt", "LongTermDebtNoncurrent", "LongTermDebtCurrent",
+                          "ShortTermBorrowings", "CashAndCashEquivalentsAtCarryingValue",
+                          "CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents")
+# Su caja (la que respalda su deuda, no la de la actividad industrial): el primer concepto con dato en cada fecha
+CAPTIVE_FILER_CASH = (("CashAndCashEquivalentsAtCarryingValue",),
+                      ("CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents",))
 _WANTED = {"us-gaap": {c for v in CONCEPTS.values() for c in v[2]} | {c for v in DEBT_PARTS["us-gaap"].values() for c in v}
+           | set(CAPTIVE_FILER_CONCEPTS)
            | {c for v in HISTORY.values() for c in v[1]} | {c for v in HISTORY_RELAY.values() for c in v[0]}
            | {c for v in CREDIT.values() for c in v[1]}
            | {c for umb, parts in CHARGES_US.values() for c in (*umb, *(x for p in parts for x in p))} | set(SALES_US)
@@ -1211,6 +1219,43 @@ def captive_debt(cik: int, fl: List[Dict[str, Any]], budget: Budget, spec: Dict[
             "parts": vals, "value": sum(vals.values())}
 
 
+def captive_filer_debt(spec: Dict[str, Any], budget: Budget) -> Dict[str, Any]:
+    """F13 · paso 2b: deuda total de una financiera cautiva que presenta su propio 10-K/10-Q, en cada fecha publicada
+    (su companyfacts). -> {status, name, cik, series: {fecha: {value, parts, form, accn}}} o {status, reason}."""
+    try:
+        facts = company_facts(int(spec["cik"]), budget)
+    except NotFound:
+        return {"status": "sin_dato", "reason": f"{spec['name']} (CIK {spec['cik']}) sin estados XBRL en la SEC"}
+    node = ((facts.get("facts") or {}).get("us-gaap") or {})
+
+    def instants(concept):
+        out: Dict[str, Dict[str, Any]] = {}
+        for f in ((node.get(concept) or {}).get("units") or {}).get("USD") or []:
+            if f.get("start") or f.get("form") not in ANNUAL_OR_QUARTERLY or f.get("end") is None:
+                continue
+            prev = out.get(f["end"])
+            if prev is None or (f.get("filed") or "") >= (prev.get("filed") or ""):
+                out[f["end"]] = f
+        return out
+    series: Dict[str, Dict[str, Any]] = {}
+    for group in spec["debt"]:
+        parts = {c: instants(c) for c in group}
+        for d in sorted(set.intersection(*(set(p) for p in parts.values())) if parts else set()):
+            if d not in series:
+                first = parts[group[0]][d]
+                series[d] = {"value": sum(parts[c][d]["val"] for c in group),
+                             "parts": {c: parts[c][d]["val"] for c in group}, "form": first.get("form"),
+                             "accn": first.get("accn")}
+    if not series:
+        return {"status": "sin_dato", "reason": f"{spec['name']}: sin deuda total en sus 10-K/10-Q"}
+    for group in CAPTIVE_FILER_CASH:
+        cash = {c: instants(c) for c in group}
+        for d in series:
+            if "cash" not in series[d] and all(d in cash[c] for c in group):
+                series[d]["cash"] = sum(cash[c][d]["val"] for c in group)
+    return {"status": "ok", "name": spec["name"], "cik": int(spec["cik"]), "series": series}
+
+
 def pending_filings(fl: Optional[List[Dict[str, Any]]], facts: Dict[str, Any]) -> List[Dict[str, Any]]:
     """F2_PRECEDENCIA §3.1: filings con XBRL de estados presentados después del último que trae companyfacts y que
     no aparecen en él (del más antiguo al más reciente)."""
@@ -2005,7 +2050,14 @@ def fetch(ticker: str, stage1: Optional[Future] = None, budget: Optional["Budget
                 res["cover_reason"] = str(e)
         publish(res)
         spec = (cfg("data.edgar.captive") or {}).get(ticker.upper())
-        if spec:
+        fspec = (cfg("data.edgar.captive_filers") or {}).get(ticker.upper())
+        if fspec:
+            # F13 · paso 2b: la filial con 10-K propio manda (serie por fecha: casa con el corte de la matriz)
+            try:
+                res["captive"] = captive_filer_debt(fspec, budget)
+            except Unavailable as e:
+                res["captive"] = {"status": "no_disponible", "reason": str(e)}
+        elif spec:
             try:
                 res["captive"] = captive_debt(ent["cik"], fl, budget, spec)
             except Unavailable as e:
