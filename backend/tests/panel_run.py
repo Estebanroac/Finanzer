@@ -2,8 +2,8 @@
 Fase 0 del plan de fiabilidad: corre el panel de referencia y produce un resumen comparable entre corridas.
 
     cd finanzer_next/backend
-    ../.venv313/bin/python tests/panel_run.py --mode replay --out ~/Downloads/panel_replay
-    ../.venv313/bin/python tests/panel_run.py --mode live --base-url https://finanzer.app --out ~/Downloads/panel_live
+    ../.venv313/bin/python tests/panel_run.py --mode replay --out ~/Downloads/Finanzer/archivo-historico/evidencias-de-pruebas/panel_replay_<fecha>
+    ../.venv313/bin/python tests/panel_run.py --mode live --base-url https://finanzer.app --out ~/Downloads/Finanzer/archivo-historico/evidencias-de-pruebas/panel_live_<fecha>
     ../.venv313/bin/python tests/panel_run.py --mode replay --out <nueva> --compare <anterior>
 
   --mode replay   desde los fixtures del panel (tests/fixtures/panel), sin red.

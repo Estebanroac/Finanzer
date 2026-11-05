@@ -2,7 +2,7 @@
 Fase 7 (PLAN §4, punto 3): el motor real, en replay, sobre los fixtures point-in-time del estudio. Sin red.
 
     cd finanzer_next/backend
-    ../.venv313/bin/python tests/calibracion_ejecutar.py --data ~/Downloads/finanzer_calibracion [--fy 2015] [--tickers A B]
+    ../.venv313/bin/python tests/calibracion_ejecutar.py --data ~/Downloads/Finanzer/archivo-historico/evidencias-de-pruebas/finanzer_calibracion [--fy 2015] [--tickers A B]
 
 Por empresa y ejercicio: `_compute_analysis` con lo que se sabía en D (tests/calibracion_generar.py). Cambia frente al
 replay del panel:

@@ -3,7 +3,7 @@ Fase 7 (F4_PARADA §5: "bandas de REIT y utilities sin muestra: se calibran en l
 una muestra amplia"). Distribución de cada métrica en una muestra amplia frente a los tramos de config.
 
     cd finanzer_next/backend
-    SEC_EDGAR_USER_AGENT=... ../.venv313/bin/python tests/calibracion_bandas.py --data ~/Downloads/finanzer_calibracion \
+    SEC_EDGAR_USER_AGENT=... ../.venv313/bin/python tests/calibracion_bandas.py --data ~/Downloads/Finanzer/archivo-historico/evidencias-de-pruebas/finanzer_calibracion \
         [--sin-red] --out <informe.md>
 
 Empresa-año (ejercicios 2012–2025, hechos de EDGAR de hoy; precio de cierre del último día del ejercicio de Yahoo):

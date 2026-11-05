@@ -2,7 +2,7 @@
 Fase 7 (PLAN §4, punto 3): fixtures POINT-IN-TIME para pasar el motor real por fechas pasadas. Sin red.
 
     cd finanzer_next/backend
-    ../.venv313/bin/python tests/calibracion_generar.py --data ~/Downloads/finanzer_calibracion
+    ../.venv313/bin/python tests/calibracion_generar.py --data ~/Downloads/Finanzer/archivo-historico/evidencias-de-pruebas/finanzer_calibracion
 
 Para cada empresa y ejercicio FY (2012–2021), la fecha D es el día siguiente a la presentación de su 10-K. El fixture
 contiene solo lo que se sabía ese día:

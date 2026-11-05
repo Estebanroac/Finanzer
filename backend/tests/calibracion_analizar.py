@@ -2,7 +2,7 @@
 Fase 7 (PLAN §4, punto 3): análisis del estudio de calibración (estudio, NO ajuste). Sin red.
 
     cd finanzer_next/backend
-    ../.venv313/bin/python tests/calibracion_analizar.py --data ~/Downloads/finanzer_calibracion --out <informe.md>
+    ../.venv313/bin/python tests/calibracion_analizar.py --data ~/Downloads/Finanzer/archivo-historico/evidencias-de-pruebas/finanzer_calibracion --out <informe.md>
 
 HIPÓTESIS (fijadas ANTES de ver los resultados; commit anterior a la primera corrida):
   H1  "Calidad excelente anticipa persistencia de la rentabilidad": la proporción de casos cuyo ROE a 3 años (FY+3)

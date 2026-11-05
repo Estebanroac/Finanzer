@@ -8,7 +8,7 @@ Fase 7 del plan de fiabilidad (parte 1): vigilancia semanal del panel contra pro
 
 Corrida (reutiliza `panel_run` en modo live): despierta el servidor (una petición a /api/health, descartada), corre
 todos los tickers del panel contra https://finanzer.app a concurrencia 3 y guarda en
-~/Downloads/finanzer_vigilancia/<AAAA-MM-DD>/ el resumen.csv/md, JSON, PDF por ticker y meta.json (hora, commit de
+~/Downloads/Finanzer/archivo-historico/evidencias-de-pruebas/finanzer_vigilancia/<AAAA-MM-DD>/ el resumen.csv/md, JSON, PDF por ticker y meta.json (hora, commit de
 /api/health o null, sello de build de /build-stamp.json). Se niega a correr de 15:55 a 16:45 de Nueva York (captura
 de la 2a y de la F5prep) y con concurrencia > 3.
 
@@ -44,7 +44,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import fixture_backend as fb  # noqa: E402
 import panel_run as pr  # noqa: E402
 
-ROOT = os.path.expanduser("~/Downloads/finanzer_vigilancia")
+# Todo lo de Finanzer vive en ~/Downloads/Finanzer (CLAUDE.md): las corridas, en su archivo de evidencias.
+ROOT = os.path.expanduser("~/Downloads/Finanzer/archivo-historico/evidencias-de-pruebas/finanzer_vigilancia")
 BASE_URL = "https://finanzer.app"
 MAX_CONCURRENCY = 3
 FORBIDDEN_NY = ((15, 55), (16, 45))    # captura de la 2a (Finnhub) y de la F5prep (Yahoo) tras el cierre

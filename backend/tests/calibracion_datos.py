@@ -2,7 +2,7 @@
 Fase 7 (PLAN §4, punto 3): datos del estudio de calibración histórica. CON RED: SEC EDGAR y Yahoo.
 
     cd finanzer_next/backend
-    SEC_EDGAR_USER_AGENT="<nombre correo>" ../.venv313/bin/python tests/calibracion_datos.py --out ~/Downloads/finanzer_calibracion
+    SEC_EDGAR_USER_AGENT="<nombre correo>" ../.venv313/bin/python tests/calibracion_datos.py --out ~/Downloads/Finanzer/archivo-historico/evidencias-de-pruebas/finanzer_calibracion
 
 Qué baja (una vez; lo ya bajado no se repite):
   · SEC EDGAR: la tabla de tickers, y por emisor `companyfacts` (reducido a los conceptos que usan el motor y el

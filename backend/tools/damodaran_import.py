@@ -5,7 +5,7 @@ Lee los conjuntos de datos de A. Damodaran (NYU Stern) descargados en una carpet
 (una fila por industria y región, con fuente y fecha). La app no lee los Excel: solo el TOML que sale de aquí.
 
     cd finanzer_next/backend
-    python -I tools/damodaran_import.py --raw ~/Downloads/finanzer_damodaran/raw --lib <carpeta con xlrd> \
+    python -I tools/damodaran_import.py --raw ~/Downloads/Finanzer/archivo-historico/evidencias-de-pruebas/finanzer_damodaran/raw --lib <carpeta con xlrd> \
         --out config/industries.toml
 
 Ficheros (https://pages.stern.nyu.edu/~adamodar/pc/datasets/): por región R en {"" (EE. UU.), Europe, Japan, emerg,
