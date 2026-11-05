@@ -105,7 +105,7 @@ def test_figure_cards_from_summary_cards(aapl):
     t = _text(pdf)
     # F9 · R3: la precisión de las tablas. F10 · N2: AAPL es el 91 % de su industria de Damodaran; la referencia es la
     # mediana de sus pares del universo
-    assert "vs pares 13.35%" in t and "Muy superior" in t
+    assert "vs pares 7.52%" in t and "Muy superior" in t
 
 
 def test_tech_table_with_reading_pills_and_missing_rows(aapl):

@@ -486,7 +486,7 @@ def peso_en_referencia(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
     # F10 · N2: la salida dice si la referencia ya es el agregado sin la empresa (o la mediana de sus pares) y con qué
     # peso, medido con las cifras de Damodaran: eso manda sobre la cota del universo.
     se = bi.get("self_exclusion") or {}
-    if se.get("method") in ("sin_empresa", "mediana_pares"):
+    if se.get("method") in ("sin_empresa", "mediana_pares", "agregado_peso_menor"):
         return Result(OK, f"la referencia no la incluye ({se['method']}; pesa "
                           f"{'—' if se.get('weight') is None else format(se['weight'], '.0%')} del agregado)")
     if se.get("method") == "no_figura":
@@ -934,8 +934,11 @@ def referencia_representativa(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
     if _get(a, "benchmark", "profile") == "market" or not bi:
         return Result(NOT_APPLICABLE, "la referencia es el mercado amplio")
     out = []
+    used = _get(a, "benchmark", "values", default=None)
     for col in C["profit_columns"]:
-        v = _reference_value(bi, col)
+        # La referencia que se usa (benchmark.values: F11 · T1 retira las no representativas, dicho); sin ella (salidas
+        # anteriores), la de la industria.
+        v = _num(used.get(col)) if isinstance(used, dict) else _reference_value(bi, col)
         if v is not None and abs(v) < C["min_abs"]:
             out.append(_violation(
                 rule, C["min_abs"] / max(abs(v), C["min_abs"] / 5),
@@ -944,13 +947,17 @@ def referencia_representativa(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
                 "industria que casi no gana: la brecha de la empresa frente a ella no informa", column=col, value=v))
     se = bi.get("self_exclusion") or {}
     reg = bi.get("region")
-    if se.get("method") == "mediana_pares" and reg not in (None, "global"):
+    if se.get("method") == "mediana_pares" and reg not in (None, "global") and se.get("peers_scope") != reg:
+        # F11 · T1: desde la corrección la salida dice el ámbito de los pares (`peers_scope`); sin él (salidas
+        # anteriores), se reconstruye con el fichero de pares.
         import self_exclusion as _se
         sym = str(a.get("symbol") or "").upper()
         peers = [r for r in _se._load_peers()["rows"]
                  if r.get("damodaran_industry") == bi.get("damodaran") and r.get("symbol") != sym]
         other = [r for r in peers if r.get("damodaran_region") != reg]
-        if peers and len(other) / len(peers) > C["max_other_region_share"]:
+        if se.get("peers_scope") == "todas" and peers and len(other) / len(peers) > C["max_other_region_share"]:
+            pass         # no hay pares bastantes en su región: todas, DICHO en la nota (no es un cable suelto)
+        elif peers and len(other) / len(peers) > C["max_other_region_share"]:
             out.append(_violation(
                 rule, 1 + len(other) / len(peers), f"mediana de {len(peers)} pares de {bi.get('damodaran')} para una "
                 f"referencia de la región «{reg}»: {len(other)} son de otras regiones",

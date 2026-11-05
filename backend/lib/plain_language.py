@@ -61,6 +61,9 @@ TABLE = [
     (r"^coinciden \([^)]*\) pero la distancia",
      "Los métodos de valoración coinciden en la dirección, pero con intensidad distinta."),
     (r"^coinciden \([^)]*\) con distancia", "Los métodos de valoración coinciden."),
+    # F11 · T2: dos métodos que dependen de la misma referencia
+    (r"^coinciden \(([^)]*)\), pero (.+) comparten la referencia",
+     "Los métodos coinciden, pero dependen de la misma referencia de industria: no se confirman entre sí."),
     # ── cobertura ──
     (r"^categorías excluidas por cobertura: (.+)$", "Faltan datos para evaluar: {0}."),
     (r"^sin componentes evaluables", "No hay datos suficientes para evaluar el negocio."),

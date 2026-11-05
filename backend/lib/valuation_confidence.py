@@ -270,6 +270,18 @@ def convergence(methods: List[Dict[str, Any]]) -> Dict[str, Any]:
         return {"level": "media", "methods": methods,
                 "reasons": [f"coinciden ({next(iter(dirs))}) pero la distancia entre señales es {spread:.2f} "
                             f"(>= {C['convergence_spread_max']})"] + note}
+    # F11 · T2 (revisión de NU): dos métodos que dependen de la misma referencia (`anchor`: el conjunto de industria o de
+    # pares del que sacan su insumo dominante) no se confirman entre sí: un error en esa referencia los mueve juntos.
+    by_anchor: Dict[str, List[str]] = {}
+    for m in ms:
+        if m.get("anchor"):
+            by_anchor.setdefault(m["anchor_label"] if m.get("anchor_label") else m["anchor"], []).append(m["method"])
+    shared = {a: ws for a, ws in by_anchor.items() if len(ws) > 1}
+    if shared:
+        a, ws = next(iter(shared.items()))
+        return {"level": "media", "methods": methods, "shared_anchor": a,
+                "reasons": [f"coinciden ({d}), pero {' y '.join(ws)} comparten la referencia ({a}): no son "
+                            "independientes"] + note}
     return {"level": "alta", "methods": methods,
             "reasons": [f"coinciden ({next(iter(dirs))}) con distancia {spread:.2f} "
                         f"(< {C['convergence_spread_max']})"] + note}

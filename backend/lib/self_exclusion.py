@@ -274,9 +274,12 @@ def _load_peers() -> Dict[str, Any]:
         return _peers
 
 
-def peer_median(industry: str, symbol: Optional[str], columns: List[str]) -> Dict[str, Any]:
-    """{values, columns: {col: {after, n}}, n_peers, date}: mediana de los pares del universo de la industria de
-    Damodaran, sin la propia empresa ni sus otras clases (mismo CIK)."""
+def peer_median(industry: str, symbol: Optional[str], columns: List[str],
+                region: Optional[str] = None) -> Dict[str, Any]:
+    """{values, columns: {col: {after, n}}, n_peers, date, scope, n_region}: mediana de los pares del universo de la
+    industria de Damodaran, sin la propia empresa ni sus otras clases (mismo CIK). F11 · T1 (revisión de NU): con
+    `region` (la de la referencia), solo los pares de esa región; si son menos de `min_peers`, los de todas las regiones,
+    dicho en `scope` (NU: 19 pares de «Bank (Money Center)», 17 de otras regiones)."""
     import universe
     P = _load_peers()
     me = universe.get(symbol) or {}
@@ -285,6 +288,12 @@ def peer_median(industry: str, symbol: Optional[str], columns: List[str]) -> Dic
              and not (me.get("cik") and (universe.get(r["symbol"]) or {}).get("cik") == me.get("cik"))]
     pe_max = cfg("market.peers.pe_meaningful_max")
     k_min = cfg("market.peers.min_peers")
+    scope, n_region = "todas", None
+    if region and region != "global":
+        local = [r for r in peers if r.get("damodaran_region") == region]
+        n_region = len(local)
+        if n_region >= k_min:
+            peers, scope = local, region
     vals, cols = {}, {}
     for col in columns:
         xs = [r[col] for r in peers if col in r and math.isfinite(r[col]) and (col != "pe" or r[col] <= pe_max)]
@@ -293,7 +302,8 @@ def peer_median(industry: str, symbol: Optional[str], columns: List[str]) -> Dic
             cols[col] = {"after": vals[col], "n": len(xs), "how": "mediana_pares"}
         else:
             cols[col] = {"after": None, "n": len(xs), "how": "sin_dato"}
-    return {"values": vals, "columns": cols, "n_peers": len(peers), "date": P["date"]}
+    return {"values": vals, "columns": cols, "n_peers": len(peers), "date": P["date"], "scope": scope,
+            "n_region": n_region}
 
 
 def reset() -> None:

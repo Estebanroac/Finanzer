@@ -228,6 +228,17 @@ def _select_benchmark(mapped_sector: str, archetype: Optional[str], sector: Opti
         if k not in values and k in mk["values"]:
             values[k] = mk["values"][k]
             sources[k] = _src(mk, k) + " (la industria no tiene dato)"
+    # F11 · T1 (revisión de NFLX): una referencia de rentabilidad casi nula no es representativa (Entretenimiento de
+    # EE. UU. sin Netflix: ROE 0,63 %, margen neto 0,48 %; brechas de +7.870 %). La columna sale de la referencia, con su
+    # motivo: ni lectura ni alerta frente a ella, como cualquier columna sin referencia.
+    _R = cfg("sectors.benchmarks.industry")
+    not_repr = {}
+    for k in _R["profit_columns"]:
+        v = values.get(k)
+        if v is not None and abs(v) < _R["min_profit_ratio"]:
+            not_repr[k] = v
+            values.pop(k)
+            sources.pop(k, None)
     # F10 · N2: la lectura dice qué referencia es («frente a 53x de su industria sin ella»; el nombre y el peso, en la
     # nota de la referencia)
     _se = ib.get("self_exclusion") or {}
@@ -238,7 +249,8 @@ def _select_benchmark(mapped_sector: str, archetype: Optional[str], sector: Opti
     return {"profile": "sector", "sector": key, "thresholds_key": mapped_sector, "thresholds": _th(mapped_sector),
             "values": values, "reason": None, "sources": sources,
             "industry": {k: v for k, v in ib.items() if k != "values"}, "ref": ref,
-            "short": "pares" if _se.get("method") == "mediana_pares" else "industria", "provisional": False}
+            "short": "pares" if _se.get("method") == "mediana_pares" else "industria", "provisional": False,
+            **({"not_representative": not_repr} if not_repr else {})}
 
 
 def _pdf_benchmark(analysis: dict) -> dict:
@@ -1027,7 +1039,10 @@ def _compute_analysis_body(symbol: str) -> dict:
                                            profile.country, symbol,
                                            ((yinfo.get("_edgar") or {}).get("title") if _has_yahoo else None),
                                            # F10 · N2: sus cifras a la fecha del conjunto, para quitarla de su referencia
-                                           yinfo.get("_at_dataset_date") if _has_yahoo else None,
+                                           # F11 · T1: con la capitalización de hoy, para estimar su peso sin ellas
+                                           dict(yinfo.get("_at_dataset_date") or {},
+                                                market_cap_now=safe_float(result["key_metrics"].get("market_cap")))
+                                           if _has_yahoo else None,
                                            _names.company(profile.name) or symbol)
             # Un solo benchmark por análisis (etapa 9a): medianas de múltiplos, umbrales del
             # score (ROE, ROA, D/E, márgenes), alertas y PDF leen la misma clave.
@@ -1041,12 +1056,20 @@ def _compute_analysis_body(symbol: str) -> dict:
                 _ind_name = ((_bench_sel.get("industry") or {}).get("damodaran"))
                 _groe = _ibench.global_roe(_ind_name, symbol,
                                            ((yinfo.get("_edgar") or {}).get("title") if _has_yahoo else None),
-                                           profile.country, yinfo.get("_at_dataset_date") if _has_yahoo else None,
+                                           profile.country,
+                                           dict(yinfo.get("_at_dataset_date") or {},     # F11 · T1, como arriba
+                                                market_cap_now=safe_float(result["key_metrics"].get("market_cap")))
+                                           if _has_yahoo else None,
                                            _names.company(profile.name) or symbol)
                 _ts = archetype_metrics.apply_two_stage(
                     result["archetype_metrics"], _groe["value"] if _groe else _sector_bench.get("roe"),
                     safe_float(_km.get("payout_ratio")), safe_float(_km.get("dividend_yield")),
-                    roe_source=_groe["text"] if _groe else "su industria de referencia regional (sin la global)")
+                    roe_source=_groe["text"] if _groe else "su industria de referencia regional (sin la global)",
+                    # F11 · T2: de qué conjunto sale el ROE estable (para la independencia de la convergencia)
+                    roe_anchor=(_groe or {}).get("anchor") or _ibench.reference_anchor(
+                        (_bench_sel.get("industry") or {}).get("damodaran"),
+                        (_bench_sel.get("industry") or {}).get("region"),
+                        (_bench_sel.get("industry") or {}).get("self_exclusion")))
                 result["archetype_metrics"].update(_ts)
                 archetype_values.update(_ts)          # el score lee archetype_values: el mismo justificado
             fin_dict["sector_pe"] = _sector_bench.get("pe")
@@ -2493,13 +2516,23 @@ def _compute_analysis_body(symbol: str) -> dict:
                     # Gordon ((ROE − g)/(Ke − g)); relativo: P/B frente a la mediana del sector.
                     _xm = result.get("archetype_metrics") or {}
                     _pb = _xm.get("pb")
+                    # F11 · T2: cada método dice de qué referencia depende su insumo dominante (el ROE estable del
+                    # justificado en dos etapas; el P/B de la referencia del relativo).
+                    import industry_bench as _ibench
+                    _ts_ = _xm.get("two_stage") or {}
                     if _pb and _xm.get("pb_justified"):
                         _methods.append({"method": "P/B justificado (Gordon)", "kind": "intrínseco",
-                                         "upside": _xm["pb_justified"] / _pb - 1})
+                                         "upside": _xm["pb_justified"] / _pb - 1,
+                                         **({"anchor": _ts_["industry_roe_anchor"]}
+                                            if _ts_.get("applied") and _ts_.get("industry_roe_anchor") else {})})
                     _spb = ((result.get("benchmark") or {}).get("values") or {}).get("pb")
                     if _pb and _spb:
+                        _bi_ = (result.get("benchmark") or {}).get("industry") or {}
                         _methods.append({"method": "P/B frente al sector", "kind": "relativo",
-                                         "upside": _spb / _pb - 1, "benchmark": _spb})
+                                         "upside": _spb / _pb - 1, "benchmark": _spb,
+                                         **({"anchor": _ibench.reference_anchor(
+                                             _bi_.get("damodaran"), _bi_.get("region"), _bi_.get("self_exclusion"))}
+                                            if (result.get("benchmark") or {}).get("profile") != "market" else {})})
                 else:
                     if _d.get("upside") is not None:
                         # F11 · F1: si ±1 escalón de WACC cruza el precio, el DCF lo ve «en precio» (sin dirección).

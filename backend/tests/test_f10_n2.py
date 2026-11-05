@@ -102,5 +102,19 @@ def test_the_reference_never_includes_the_company():
         if not b or b.get("provisional"):
             continue
         se = (b.get("industry") or {}).get("self_exclusion")
-        assert se and se["method"] in ("sin_empresa", "mediana_pares", "no_figura"), f
+        assert se and se["method"] in ("sin_empresa", "mediana_pares", "no_figura", "agregado_peso_menor"), f
         assert se.get("declaration"), f
+        # F11 · T1: con ella dentro solo si pesa menos de `self_negligible_weight` y no hay cifras para restarla (BCS)
+        if se["method"] == "agregado_peso_menor":
+            assert se["weight"] < cfg("sectors.benchmarks.industry.self_negligible_weight"), f
+
+
+def test_reference_anchor_by_industry_and_with_several_industries():
+    """F11 · T2: el ancla es la industria de Damodaran, sin la región ni la forma (NU: el ROE estable del agregado
+    global y el P/B del emergente dependen de la misma industria); una referencia de sector trae varias (VYLR: el
+    análisis fallaba con una lista)."""
+    import industry_bench as ib
+    assert ib.reference_anchor("Bank (Money Center)", "global", {"method": "sin_empresa"}) == \
+        ib.reference_anchor("Bank (Money Center)", "emerging", {"method": "mediana_pares", "peers_scope": "todas"})
+    assert ib.reference_anchor(["Bank (Money Center)", "Banks (Regional)"], "us", None).startswith("las industrias")
+    assert ib.reference_anchor(None, "us", None) is None

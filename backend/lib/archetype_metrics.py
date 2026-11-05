@@ -79,7 +79,8 @@ def two_stage_multiple(ret: float, g_high: float, years: int, ret_stable: float,
 
 
 def apply_two_stage(xm: Dict[str, Any], industry_roe: Optional[float], payout: Optional[float],
-                    dividend_yield: Optional[float], roe_source: Optional[str] = None) -> Dict[str, Any]:
+                    dividend_yield: Optional[float], roe_source: Optional[str] = None,
+                    roe_anchor: Optional[str] = None) -> Dict[str, Any]:
     """F9 · R1b (revisión externa de NU; supuestos del PM del 27-oct): con el valor en libros creciendo por encima de
     `bv_growth_threshold`, el P/B (y el P/TBV) justificado pasa a dos etapas. Etapa alta de `years` años con
     g₁ = mín(crecimiento observado del valor en libros, ROE × retención); después g (el terminal de siempre) con el ROE
@@ -100,7 +101,7 @@ def apply_two_stage(xm: Dict[str, Any], industry_roe: Optional[float], payout: O
         return {}
     out: Dict[str, Any] = {"applied": False, "book_value_growth": bv, "years": C["years"],
                            "threshold": C["bv_growth_threshold"], "industry_roe": industry_roe,
-                           "industry_roe_source": roe_source}
+                           "industry_roe_source": roe_source, "industry_roe_anchor": roe_anchor}
     if not industry_roe or industry_roe <= g:
         out["reason"] = ("el valor en libros crece un {:.0%} anual, pero sin ROE de la industria no hay etapa "
                          "estable a la que converger: una sola etapa").format(bv)

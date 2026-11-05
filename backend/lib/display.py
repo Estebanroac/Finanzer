@@ -2655,6 +2655,12 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     # Etapa 9b: las medianas sectoriales están fijadas a mano: la web lo dice junto a la tabla.
     _no_ref = [lab for k, lab in (("forward_pe", "Forward P/E"), ("peg", "PEG"), ("pfcf", "P/FCF"),
                                     ("fcf_yield", "FCF yield"), ("roa", "ROA")) if k not in sector_bench]
+    # F11 · T1: columnas de rentabilidad de la referencia casi nulas (no representativas), con su cifra
+    _nr = (a.get("benchmark") or {}).get("not_representative") or {}
+    _NR_LAB = {"roe": "ROE", "roic": "ROIC", "net_margin": "margen neto", "operating_margin": "margen operativo"}
+    _nr_txt = ("La referencia casi no gana (TTM del conjunto): " + ", ".join(
+        f"{_NR_LAB.get(k, k)} {fv(v, 'pct')} (TTM)" for k, v in _nr.items()) + ". No se compara con ella."
+        if _nr else None)
     if _mkt:
         reference_note = None           # la dice market_note
     elif _vb.get("provisional") or not _vb:
@@ -2675,7 +2681,10 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         if _sx.get("method") == "mediana_pares":
             # F10 · N2: la referencia es la mediana de los pares, no el agregado de Damodaran (que se nombra en el motivo)
             reference_note = (("Referencia degradada" if _sx.get("degraded") else "Referencia")
-                              + f": mediana de {_sx.get('n_peers')} pares del universo de la {_who} (Yahoo "
+                              + f": mediana de {_sx.get('n_peers')} pares del universo de la {_who}"
+                              + (f" de todas las regiones (en la suya hay {_sx.get('peers_n_region') or 0})"
+                                 if _sx.get("peers_scope") == "todas" and _ind.get("region") != "global" else "")
+                              + " (Yahoo "
                               f"Finance, {numfmt.date_long(_sx.get('peers_date'))}){_cls}. No el agregado de A. "
                               f"Damodaran ({_ind.get('region_label')}, {_ind.get('firms')} empresas): {_sx.get('reason')}."
                               + (f" Sin referencia con fuente: {', '.join(_no_ref)}." if _no_ref else ""))
@@ -2685,7 +2694,9 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                               "medianas." + _self_exclusion_note(_sx)
                               + (f" Sin referencia con fuente: {', '.join(_no_ref)}." if _no_ref else ""))
     valuation = {"intro": val_txt, "columns": ["MÚLTIPLO", "EMPRESA", _bcol, "BRECHA", "LECTURA"],
-                 "rows": mrows, "market_note": market_note, "reference_note": reference_note, "normalization_note": norm_note,
+                 "rows": mrows, "market_note": market_note,
+                 "reference_note": join_sentences([reference_note, _nr_txt]) if _nr_txt else reference_note,
+                 "normalization_note": norm_note,
                  "intrinsic": {"intro": iv_txt, "rows": iv_rows, "graham_note": graham_note},
                  "dcf_params": dcf_params, "dcf_reliability": dcf_reliability_line,
                  "dcf_reliability_level": _rel.get("level"),

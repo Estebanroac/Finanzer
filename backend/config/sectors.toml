@@ -188,6 +188,14 @@ dominance_ratio = 1.5
 # esta fracción de la capitalización de su industria (AAPL y ASML ≈ 100 %), lo que queda sin ella son restos: la
 # referencia pasa a la mediana de los pares del universo, dicho.
 self_max_weight = 0.90
+# F11 · T1 (revisión de NU): sin las cifras de la empresa a la fecha del conjunto, si su capitalización de hoy pesa menos
+# que esto en el agregado, el agregado publicado es la referencia (restarla no cambia nada), dicho.
+self_negligible_weight = 0.05
+# F11 · T1 (revisión de NFLX): una columna de rentabilidad de la referencia por debajo de esto, en valor absoluto, no es
+# representativa: la industria (sin la empresa) casi no gana y cualquier brecha frente a ella es de miles de %. Sale de la
+# referencia, dicho (la propuesta de la revisión, 2 %).
+profit_columns = ["roe", "roic", "net_margin", "operating_margin"]
+min_profit_ratio = 0.02
 
 # País del emisor cuando Yahoo no lo da (assetProfile de quoteSummary da 401 en Render): la dirección comercial en
 # SEC EDGAR (nombres de EDGAR -> los de las listas de arriba) o, sin EDGAR, el sufijo del ticker en Yahoo.

@@ -170,7 +170,8 @@ def _self(values: Dict[str, float], reg: str, ind: str, firms: int, symbol: Opti
             "declaration": f"la referencia no incluye a {who}: Damodaran no la cuenta en este agregado",
             "reason": "Damodaran no clasifica a la empresa en esta industria y región"}}
     dollars = dict(zip(I["dollar_columns"], I["regions"][reg]["dollars"].get(ind) or ()))
-    fig = company or {"status": "sin_dato", "reason": "sin cifras de la empresa"}
+    fig = company if (company or {}).get("status") else dict(
+        {"status": "sin_dato", "reason": "sin cifras de la empresa"}, **(company or {}))
     det: Dict[str, Any] = {"date": I["dollar_as_of"], "source": I["dollar_source"], "cut": fig.get("cut"),
                            "figures": fig.get("values"), "session": fig.get("session"),
                            # F10 (PM, 29-oct): cifras de la caché tras un tiempo agotado de EDGAR, dicho
@@ -180,6 +181,18 @@ def _self(values: Dict[str, float], reg: str, ind: str, firms: int, symbol: Opti
     if fig.get("status") != "ok":
         import numfmt
         why = f"sin sus cifras al {numfmt.date_long(I['dollar_as_of'])}: {fig.get('reason')}"
+        # F11 · T1 (revisión de NU): sin sus cifras a la fecha del conjunto, su peso se estima con la capitalización de
+        # hoy. Si es despreciable, el agregado publicado ES la industria sin ella a efectos prácticos: se usa, dicho
+        # (NU pesa ≈ 1,6 % de los bancos de mercados emergentes; antes, 19 pares de otras regiones).
+        mc_now, tot = (company or {}).get("market_cap_now"), dollars.get("mcap")
+        if mc_now and tot:
+            w_est = mc_now / 1e6 / tot
+            if w_est < P["self_negligible_weight"]:
+                return {"values": values, "self_exclusion": {
+                    **det, "method": "agregado_peso_menor", "weight": w_est, "reason": why,
+                    "declaration": (f"agregado publicado de la industria, con {who} dentro: pesa {_pct(w_est)} de su "
+                                    f"capitalización (estimado con la de hoy, {why}), por debajo del "
+                                    f"{P['self_negligible_weight'] * 100:.0f} %")}}
     elif not dollars.get("mcap"):
         why = "sin los totales de la industria en el conjunto de Damodaran"
     else:
@@ -195,7 +208,7 @@ def _self(values: Dict[str, float], reg: str, ind: str, firms: int, symbol: Opti
         out = dict(wo["values"])
         gaps = [c for c, d in cols.items() if d["how"] == "sin_dato"]
         if gaps:
-            pm = SE.peer_median(ind, symbol, gaps)
+            pm = SE.peer_median(ind, symbol, gaps, region=reg)
             for c in gaps:
                 cols[c].update(pm["columns"][c])
                 if pm["columns"][c]["after"] is not None:
@@ -204,7 +217,10 @@ def _self(values: Dict[str, float], reg: str, ind: str, firms: int, symbol: Opti
         return {"values": out, "self_exclusion": {
             **det, "method": "sin_empresa", "weight": weight, "columns": cols,
             "declaration": f"referencia de la industria sin {who}, que pesa {_pct(weight)}"}}
-    pm = SE.peer_median(ind, symbol, [c for c in values if c in SE.PARTS])
+    pm = SE.peer_median(ind, symbol, [c for c in values if c in SE.PARTS], region=reg)
+    # F11 · T1: los pares de su región; si no llegan, los de todas, dicho
+    where = ("" if pm.get("scope") != "todas" or reg == "global" else
+             f" de todas las regiones (en la suya hay {pm.get('n_region') or 0})")
     out = {c: v for c, v in values.items() if c not in SE.PARTS}
     out.update(pm["values"])
     cols = {c: {"before": values[c], **pm["columns"][c]} for c in values if c in SE.PARTS}
@@ -213,9 +229,10 @@ def _self(values: Dict[str, float], reg: str, ind: str, firms: int, symbol: Opti
     deg = bool(fig.get("degraded"))
     return {"values": out, "self_exclusion": {
         **det, "method": "mediana_pares", "weight": weight, "columns": cols, "n_peers": pm["n_peers"],
-        "peers_date": pm["date"], "reason": why, "few_firms": few, "degraded": deg,
-        "declaration": (f"referencia degradada: mediana de {pm['n_peers']} pares del universo; {why}" if deg else
-                        f"referencia: mediana de {pm['n_peers']} pares del universo; {why}")}}
+        "peers_date": pm["date"], "reason": why, "few_firms": few, "degraded": deg, "peers_scope": pm.get("scope"),
+        "peers_n_region": pm.get("n_region"),
+        "declaration": (f"referencia degradada: mediana de {pm['n_peers']} pares del universo{where}; {why}" if deg else
+                        f"referencia: mediana de {pm['n_peers']} pares del universo{where}; {why}")}}
 
 
 def _meta(reg: str) -> Dict[str, Any]:
@@ -332,4 +349,17 @@ def global_roe(industry_name: Optional[str], symbol: Optional[str] = None, title
         text = f"mediana de {x.get('n_peers')} pares del universo de la industria {where}"
     else:
         text = f"industria {where}"
-    return {"value": roe, "basis": x["method"], "text": text}
+    return {"value": roe, "basis": x["method"], "text": text, "anchor": reference_anchor(industry_name, "global", x)}
+
+
+def reference_anchor(industry_name: Optional[str], reg: Optional[str], se: Optional[Dict[str, Any]]) -> Optional[str]:
+    """F11 · T2: identidad del conjunto del que sale una referencia (para saber si dos métodos dependen del mismo). Es la
+    industria de Damodaran, sin la región ni la forma (agregado o pares): el agregado global contiene al regional y los
+    pares son empresas de esa industria. NU: el ROE estable del global y el P/B del emergente, la misma industria."""
+    if not industry_name:
+        return None
+    from names import damodaran as _es
+    if isinstance(industry_name, (list, tuple)):        # referencia de sector: varias industrias (VYLR)
+        names = [_es(n) for n in industry_name if isinstance(n, str)]
+        return f"las industrias «{'», «'.join(names)}»" if names else None
+    return f"la industria «{_es(industry_name)}»"
