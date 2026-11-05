@@ -2572,6 +2572,8 @@ def score_valoracion(
     revenue_growth_3y: Optional[float] = None,
     eps_growth_3y: Optional[float] = None,
     eps_growth_last_fy: Optional[float] = None,     # F11 · F3: tope de credibilidad del forward
+    eps_growth_backing: Optional[dict] = None,      # F12 · D2: el año base de la ventana frente a su historia larga
+    pe_reported: Optional[float] = None,            # F12 · D2: el forward en la misma base que el P/E que puntúa
     roe: Optional[float] = None,
     roic: Optional[float] = None,
     operating_margin: Optional[float] = None,
@@ -2812,8 +2814,14 @@ def score_valoracion(
         # F11 · F3 (revisión de NFLX): el respaldo es el MENOR entre el CAGR a 3 años y el crecimiento del último
         # ejercicio. Un CAGR medido desde un año de márgenes hundidos (NFLX 2022: +36,5 %) es expansión de margen, no
         # crecimiento repetible; el último ejercicio (+27,8 %) es lo que la empresa demuestra hoy.
-        _g_hist = (min(eps_growth_3y, eps_growth_last_fy) if (eps_growth_3y is not None and eps_growth_last_fy is not None)
-                   else eps_growth_3y)
+        # F12 · D2 (decisión del usuario, 5-nov-2026): con el año base de la ventana deprimido frente a su historia larga
+        # (historical_metrics.backing_base), el CAGR a 3 años no respalda: cuenta el de la ventana que empieza después
+        # o el de la serie larga, el menor. Sin ninguno, no hay respaldo y la compresión no puntúa (más abajo).
+        _bk = eps_growth_backing if ((eps_growth_backing or {}).get("anomalous") and eps_growth_3y is not None
+                                     and eps_growth_backing.get("for_value") == eps_growth_3y) else None
+        _g3 = _bk.get("value") if _bk else eps_growth_3y
+        _g_hist = (min(_g3, eps_growth_last_fy) if (_g3 is not None and eps_growth_last_fy is not None)
+                   else _g3)
         _fwd_cred = (_pe_fwd / (1 + _g_hist) if _g_hist is not None and _fwd_implied > _g_hist and _g_hist > -1
                      else forward_pe)
         _capped = _fwd_cred != forward_pe
@@ -2834,7 +2842,9 @@ def score_valoracion(
             adj, sev = 0, "ok"
             reason = f"Sin compresión del P/E ({_pe_fwd:.0f}x → {_fwd_cred:.0f}x {_fl})"
         if _capped:
-            _g_txt = (f"{_g_hist:+.0%} del BPA en el último ejercicio" if _g_hist != eps_growth_3y
+            _g_txt = (f"{_g_hist:+.0%} anual del BPA {_bk.get('window')}, sin el año base deprimido"
+                      if _bk and _g_hist == _g3 else
+                      f"{_g_hist:+.0%} del BPA en el último ejercicio" if _g_hist != eps_growth_3y
                       else f"{eps_growth_3y:+.0%} anual del BPA a 3 años")
             reason = (f"{reason}; forward {forward_pe:.1f}x (implica {_fwd_implied:+.0%} de BPA); con el crecimiento "
                       f"que respalda su histórico ({_g_txt}), {_fwd_cred:.1f}x")
@@ -2853,6 +2863,16 @@ def score_valoracion(
             _fwd_gate = (f"el forward implica {_fwd_implied:+.0%}, pero no hay histórico de BPA de 3 años comparable"
                          + (f" ({eps_growth_reason.rstrip('.')})" if eps_growth_reason else "")
                          + "; la compresión no puntúa")
+        elif adj > 0 and _bk and _g_hist is None:
+            _fwd_gate = (f"el forward implica {_fwd_implied:+.0%}, pero el BPA a 3 años sale de un {_bk['reason']} y no "
+                         "hay otra ventana que lo respalde; la compresión no puntúa")
+        # F12 · D2 (F3 de la revisión de NFLX): el crecimiento implícito frente al BPA que puntúa (normalizado) y frente
+        # al reportado. Si difieren más de forward_basis_gap, la normalización y el consenso están en bases distintas.
+        _impl_rep = (pe_reported / forward_pe - 1) if (pe_reported and pe_reported > 0) else None
+        _basis_gap = abs(_fwd_implied - _impl_rep) if _impl_rep is not None else None
+        if adj > 0 and not _fwd_gate and _basis_gap is not None and _basis_gap > T["forward_basis_gap"]:
+            _fwd_gate = (f"normalización o consenso en bases distintas: el forward implica {_fwd_implied:+.0%} frente "
+                         f"al BPA normalizado y {_impl_rep:+.0%} frente al reportado; la compresión no puntúa")
         if _fwd_gate:
             reason, adj, sev = f"{reason}; {_fwd_gate}", 0, "ok"
         _blk["Forward P/E"] = (adj, [*p, 0])
@@ -2860,6 +2880,11 @@ def score_valoracion(
                             "reason": reason, "severity": sev, "in_block": True,
                             "implied_eps_growth": _fwd_implied, "eps_growth_3y": eps_growth_3y,
                             "credited_eps_growth": min(_fwd_implied, _g_hist) if _g_hist is not None else _fwd_implied,
+                            **({"implied_eps_growth_reported": _impl_rep} if _impl_rep is not None else {}),
+                            **({"eps_base_check": {k: eps_growth_backing.get(k) for k in (
+                                "checked", "anomalous", "base_fy", "ratio", "years", "value", "window", "reason")}}
+                               if (eps_growth_backing or {}).get("for_value") == eps_growth_3y
+                               and eps_growth_3y is not None else {}),
                             **({"credible_forward_pe": _fwd_cred} if _capped else {}),
                             **({"not_scored": _fwd_gate} if _fwd_gate else {})})
 
@@ -3839,6 +3864,8 @@ def calculate_score_v2(
         revenue_growth_3y=contextual_values.get("revenue_cagr_3y"),
         eps_growth_3y=contextual_values.get("eps_cagr_3y"),
         eps_growth_last_fy=contextual_values.get("eps_growth_last_fy"),
+        eps_growth_backing=contextual_values.get("eps_growth_backing"),
+        pe_reported=contextual_values.get("pe_reported"),
         roe=ratio_values.get("roe"),
         roic=ratio_values.get("roic"),
         operating_margin=ratio_values.get("operating_margin"),

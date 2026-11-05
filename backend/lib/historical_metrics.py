@@ -236,6 +236,45 @@ def robust_growth(values_newest_first: List[Optional[float]], years: int = 3, *,
     return r
 
 
+def backing_base(values_newest_first: List[Optional[float]], years: int = 3, *, long: Optional[Dict[str, Any]] = None,
+                 end: Optional[str] = None) -> Dict[str, Any]:
+    """F12 · D2 (decisión del usuario, 5-nov-2026): ¿respalda el crecimiento de la ventana de `years` años un forward?
+    No si su año base está deprimido frente a la historia de la empresa: el valor inicial de la ventana es menor que
+    thresholds.growth.anomalous_base_ratio × la mediana de los demás ejercicios de la serie larga (backing_min_years a
+    backing_max_years: la de EDGAR `long` si llega al último ejercicio `end`, si no la de los estados). La regla de base
+    anómala de growth_rate mira solo los otros ejercicios de la ventana; esta, la historia larga.
+
+    {checked, anomalous, base_fy?, ratio?, median?, value?, window?, reason}. Con base anómala, `value` es el menor entre
+    el crecimiento de la ventana que empieza el ejercicio siguiente y la tasa de toda la serie larga (None sin ninguno)."""
+    from settings import cfg
+    from cyclicality import fy_label
+    G = cfg("thresholds.growth")
+    series, why = edgar_series(long, end) if long else ([], "sin serie larga de EDGAR")
+    if len(series) < G["backing_min_years"]:
+        series = [(None, v) for v in (values_newest_first or [])]
+    series = series[:G["backing_max_years"]]
+    if len(series) < G["backing_min_years"] or any(v is None for _, v in series[:years + 1]):
+        return {"checked": False, "anomalous": False,
+                "reason": f"menos de {G['backing_min_years']} ejercicios para comparar el año base con su historia"}
+    base_fy, base = series[years]
+    others = sorted(v for i, (_, v) in enumerate(series) if i != years and v is not None)
+    med = others[len(others) // 2] if len(others) % 2 else (others[len(others) // 2 - 1] + others[len(others) // 2]) / 2
+    out = {"checked": True, "anomalous": False, "base_fy": base_fy and fy_label(base_fy), "median": med,
+           "ratio": (base / med) if med and med > 0 else None, "years": len(series), "reason": None}
+    if not (med and med > 0 and base is not None and base < G["anomalous_base_ratio"] * med):
+        return out
+    post = cagr(series[0][1], series[years - 1][1], years - 1)
+    n = len(series) - 1
+    whole = cagr(series[0][1], series[n][1], n)
+    alts = [g for g in (post, whole) if g is not None]
+    span = (lambda a, b: f"{fy_label(series[b][0])}–{fy_label(series[a][0])}" if series[b][0] else f"{b} años")
+    out.update(anomalous=True, value=min(alts) if alts else None,
+               window=(span(0, years - 1) if alts and min(alts) == post else span(0, n) if alts else None),
+               reason=(f"año base {out['base_fy'] or 'inicial'} deprimido: {out['ratio']:.0%} de la mediana de "
+                       f"{len(series)} ejercicios"))
+    return out
+
+
 def _cap_by_bound(r: Dict[str, Any], short: Optional[float] = None) -> Dict[str, Any]:
     """F11 · T4 (revisión de NU y NFLX): la tasa de punta a punta desde una base anómala baja ya SOBRESTIMA el
     crecimiento (`bound`, cota superior). Una regresión de la serie larga que la supere arrastra ejercicios más antiguos

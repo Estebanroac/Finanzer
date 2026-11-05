@@ -33,7 +33,7 @@ from sector_profiles import get_sector_profile, YAHOO_SECTOR_MAPPING
 from alert_interpretations import build_signals
 from settings import cfg
 from historical_metrics import (mean as hm_mean, fcf_cagr, growth_rate, is_sustained_negative, on_statement, per_share,
-                                per_share_basis, robust_growth, edgar_fcf, is_anomalous_not_significant,
+                                per_share_basis, robust_growth, backing_base, edgar_fcf, is_anomalous_not_significant,
                                 bound_decides)
 from classify import (ARCHETYPE_GROUP, CYCLICAL, FINANCIAL, GROWTH_PRE_PROFIT, REIT, archetype_label, classify,
                       not_applicable, not_applicable_text, subtype_not_applicable)
@@ -1176,6 +1176,10 @@ def _compute_analysis_body(symbol: str) -> dict:
             fin_dict["eps_cagr_3y"] = _eps_r["value"]
             fin_dict["eps_growth_reason"] = _eps_r["reason"]
             fin_dict["eps_cagr_3y_method"] = {k: _eps_r.get(k) for k in _GM}
+            # F12 · D2: ¿el año base de esa ventana está deprimido frente a la historia larga? Entonces no respalda el
+            # forward. `for_value`: solo vale para esta tasa (el perímetro o el ciclo medio la sustituyen más abajo).
+            fin_dict["eps_growth_backing"] = {**backing_base(_eps_series, 3, long=_hfy.get("net_income") if _eps_long_ok
+                                                             else None, end=_g_end), "for_value": _eps_r["value"]}
             # F11 · F3: el crecimiento del BPA del último ejercicio, para el tope de credibilidad del forward.
             _e0, _e1 = (list(_eps_series) + [None, None])[:2]
             fin_dict["eps_growth_last_fy"] = ((_e0 / _e1 - 1) if (_e0 is not None and _e1 is not None and _e0 > 0
@@ -2374,6 +2378,8 @@ def _compute_analysis_body(symbol: str) -> dict:
                                                    **_pkw))
                 except Exception as e:
                     _sin_dato("persistencia", e)
+                # F12 · D2: el P/E reportado, para ver si el forward y el P/E que puntúa (normalizado) comparten base
+                fin_dict["pe_reported"] = safe_float(ratios.get("pe"))
                 score_result = calculate_score_v2(
                     ratios_score, fin_dict,
                     z_score_value=z_val,
@@ -2642,7 +2648,11 @@ def _compute_analysis_body(symbol: str) -> dict:
                     or {})
             if _dd1.get("status") == "ok" and _dd1.get("value") is not None and locals().get("_alert_args"):
                 _ra, _rc = _alert_args[0]
-                result["alerts"] = build_signals(_ra, {**(_rc or {}), "max_drawdown_1y": _dd1["value"]},
+                # F12 · D1: con la volatilidad anual realizada de la misma serie, que gradúa el peso de la caída
+                _vol = (((result.get("market_context") or {}).get("signals") or {}).get("realized_volatility") or {})
+                result["alerts"] = build_signals(_ra, {**(_rc or {}), "max_drawdown_1y": _dd1["value"],
+                                                       "realized_volatility_1y": (_vol.get("value") if
+                                                                                  _vol.get("status") == "ok" else None)},
                                                  **_alert_args[1])
         except Exception as e:
             _sin_dato("alerts", e)
