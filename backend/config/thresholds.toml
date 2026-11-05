@@ -256,6 +256,11 @@ neutral = 50
 # Contracción hacia el neutro según la confianza del veredicto de valoración:
 # precio_mostrado = 50 + (precio − 50) × factor.
 confidence_factor = { alta = 1.0, media = 0.75, baja = 0.5 }
+# F13 · paso 8 (revisión de 110 empresas, patrón 11b): sin veredicto de precio cuando el precio no es de hoy. La
+# cotización lleva más de `abstain_stale_days` sin sesiones frente al mercado (EA: último precio el 4-ago-2026, 93 días
+# antes; WBD, 31: operaciones corporativas), o no hay perfil ni `abstain_min_sessions` sesiones de historial.
+abstain_stale_days = 10
+abstain_min_sessions = 20
 
 [alerts]
 max_per_group = 6

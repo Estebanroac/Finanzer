@@ -2695,6 +2695,11 @@ def _compute_analysis_body(symbol: str) -> dict:
                     result["quality"] = contract_quality(_quality_part, _cbasis)
                     # `price` ya es el precio de la acción: la puntuación va en price_attractiveness.
                     result["price_attractiveness"] = verdict_price(_cats, _cbasis)
+                    # F13 · paso 8: sin precio de hoy (o sin perfil ni historial) no hay veredicto de precio
+                    from verdict import abstention as _abst, abstain as _abstain
+                    _why_abst = _abst(yinfo.get("_price_history") if _has_yahoo else None, sector)
+                    if _why_abst:
+                        result["price_attractiveness"] = _abstain(result["price_attractiveness"], _why_abst)
                     result["verdict"] = build_verdict(result["quality"], result["price_attractiveness"],
                                                       result.get("confidence"))
             except Exception as e:

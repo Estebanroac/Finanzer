@@ -1472,7 +1472,7 @@ def contraction_text() -> str:
 def _contraction_phrase(p_raw: Any, p_score: Any, q: Dict[str, Any]) -> str:
     """La frase del resumen ejecutivo sobre lo que contrae la confianza: el atractivo del precio y, con confianza baja
     (F8 · E11), la calidad del negocio."""
-    price = p_raw is not None and p_raw != p_score
+    price = p_raw is not None and p_score is not None and p_raw != p_score   # F13 · 8: sin veredicto, nada que contraer
     qual = bool(q.get("contracted"))
     if price and qual:
         return (f". Contrae hacia 50 el atractivo del precio (de {p_raw} a {p_score}) y la calidad del negocio (de "
@@ -2671,7 +2671,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                         + (f" ({confidence_limits(_conf)})" if confidence_limits(_conf) else "")
                         # V7 (M4): solo cuando contrae de verdad ("factor 1.0: 15 → 15" no dice nada)
                         + (f". Contrae el atractivo del precio hacia 50: de {p_raw} a {p_score}"
-                           if _pa.get("factor") is not None and p_raw != p_score else "")
+                           if _pa.get("factor") is not None and p_score is not None and p_raw != p_score else "")
                         + (f". {_dcf_truth}" if _dcf_truth else "")
                         # F8 · E11: con confianza baja también se contrae la calidad
                         + (f". Contrae también la calidad del negocio hacia 50: de {_q.get('score_raw')} a "
