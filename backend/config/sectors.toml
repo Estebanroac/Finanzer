@@ -573,8 +573,11 @@ CYCLICAL = ["pe", "peg", "forward_pe", "fcf_growth"]
 # por deuda neta/EBITDA con bandas propias. El FCF es negativo por diseño (la inversión en
 # la base regulada supera al flujo operativo), así que FCF, P/FCF, DCF y su crecimiento no
 # aplican; tampoco el Altman ni el D/E genérico (deuda alta y circulante negativo por diseño).
+# F13 · paso 6a (revisión de 110 empresas, patrón 10a): tampoco el diferencial ROIC − WACC. El regulador fija el retorno
+# sobre la base de activos: un ROIC por debajo del WACC de mercado no es «destruye valor» (las 10 utilities del banco lo
+# tenían, y restaba hasta 4 puntos de nota).
 UTILITY = ["altman", "de", "current_ratio", "fcf", "fcf_to_ni", "p_fcf", "fcf_growth", "dcf",
-           "ev_ebitda", "peg", "garp"]
+           "ev_ebitda", "peg", "garp", "roic_wacc"]
 MATURE = []
 GROWTH_PROFITABLE = []   # fase 3 (T2): con las herramientas de MATURE hasta la T3/T6 (provisional)
 

@@ -1,12 +1,6 @@
 {
   "alerts": {
-    "red_flags": [
-      {
-        "category": "Rentabilidad",
-        "detail": "El retorno sobre el capital invertido no cubre su costo (ROIC 5.5% vs WACC 6.8%): crecer a estos retornos destruye valor para el accionista en lugar de crearlo.",
-        "reason": "Destruye valor — spread −1.3 pp"
-      }
-    ],
+    "red_flags": [],
     "strengths": [
       {
         "category": "Rentabilidad",
@@ -1605,21 +1599,6 @@
                 "value_txt": "9.65%"
               },
               {
-                "bench": 0.0705189078958,
-                "bench_txt": "7.05%",
-                "fmt": "pct",
-                "gap_pct": -22.2385391091,
-                "gap_txt": "-22%",
-                "higher_is_better": true,
-                "key": "roic",
-                "label": "ROIC",
-                "reading": "Inferior",
-                "text": "ROIC de 5.5% frente a 7.1% de su industria sin ella (-22%): inferior.",
-                "tone": "warn",
-                "value": 0.0548365329841,
-                "value_txt": "5.48%"
-              },
-              {
                 "bench": 0.4635,
                 "bench_txt": "46.35%",
                 "fmt": "pct",
@@ -1671,7 +1650,7 @@
         "market_note": null,
         "note": "Referencia: industria «Electricidad»; Damodaran clasifica a la empresa en esa industria (símbolo), EE. UU., 46 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Referencia de la industria sin Duke Energy, que pesa el 8 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 30 de septiembre de 2025). Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
         "ref": "de su industria sin ella",
-        "total": 7
+        "total": 6
       },
       "growth": [
         {
@@ -1944,20 +1923,12 @@
             "value_txt": "2.58%"
           },
           {
-            "bench": 0.0705189078958,
-            "bench_txt": "7.05%",
             "fmt": "pct",
-            "gap_pct": -22.2385391091,
-            "gap_txt": "-22%",
             "higher_is_better": true,
             "key": "roic",
             "label": "ROIC",
-            "reading": "Inferior",
-            "state": "con_dato",
-            "text": "ROIC de 5.5% frente a 7.1% de su industria sin ella (-22%): inferior.",
-            "tone": "warn",
-            "value": 0.0548365329841,
-            "value_txt": "5.48%"
+            "state": "no_aplica",
+            "text": "No aplica a utilities reguladas: el regulador fija el retorno que puede obtener sobre su base de activos; un ROIC por debajo del WACC de mercado es la tarifa autorizada, no destrucción de valor."
           }
         ],
         "roce": {
@@ -1969,12 +1940,8 @@
           "value_txt": "5.35%"
         },
         "spread": {
-          "reading": "Al límite",
-          "state": "con_dato",
-          "text": "el ROIC (5.5%) queda ligeramente por debajo del costo de capital (6.8%)",
-          "tone": "warn",
-          "value": -0.0132791860126,
-          "value_txt": "-1.3 pp"
+          "state": "no_aplica",
+          "text": "No aplica a utilities reguladas: el regulador fija el retorno que puede obtener sobre su base de activos; un ROIC por debajo del WACC de mercado es la tarifa autorizada, no destrucción de valor."
         }
       },
       "results_flow": [
@@ -2339,11 +2306,11 @@
               "key": "Rentabilidad",
               "max": 20,
               "name": "Rentabilidad",
-              "pct": 50.0,
-              "score": 10,
-              "score_txt": "10 / 20",
+              "pct": 75.0,
+              "score": 15,
+              "score_txt": "15 / 20",
               "text": null,
-              "tone": "warn"
+              "tone": "pos"
             },
             {
               "applicable": true,
@@ -2413,8 +2380,8 @@
         {
           "kicker": "A VIGILAR",
           "kind": "watch",
-          "text": "Destruye valor — spread −1.3 pp",
-          "tone": "neg"
+          "text": "Sin alertas relevantes",
+          "tone": "pos"
         },
         {
           "kicker": "CONTEXTO · 52 SEM.",
@@ -2487,10 +2454,10 @@
       },
       "quality": {
         "level": "sólida",
-        "note": "En la frontera con «media» (a 2 puntos): un cambio pequeño en los datos o en los supuestos cambiaría el nivel.",
-        "note_short": "En la frontera con «media» (a 2 puntos)",
+        "note": null,
+        "note_short": null,
         "question": "¿es buena la empresa?",
-        "score": 66,
+        "score": 72,
         "title": "CALIDAD DEL NEGOCIO",
         "tone": "pos"
       },
@@ -2868,7 +2835,8 @@
       "fcf_to_ni",
       "garp",
       "p_fcf",
-      "peg"
+      "peg",
+      "roic_wacc"
     ],
     "pe_label": "P/E (TTM)",
     "profile": {
@@ -2936,30 +2904,20 @@
         "text": "el ROE (TTM) de 9.6% es competitivo en su sector (sector: 5.0% competitivo, 10.0% rango alto)",
         "tone": "neu"
       },
-      "roic_wacc_spread": {
-        "label": "Al límite",
-        "text": "el ROIC (5.5%) queda ligeramente por debajo del costo de capital (6.8%)",
-        "tone": "warn"
-      },
+      "roic_wacc_spread": null,
       "runway": null
     },
     "sections": {
       "alerts": {
         "counts": {
-          "red_flags": 1,
+          "red_flags": 0,
           "strengths": 2,
           "unmeasured": null,
           "warnings": 0
         },
         "groups": [
           {
-            "items": [
-              {
-                "category": "Rentabilidad",
-                "detail": "El retorno sobre el capital invertido no cubre su costo (ROIC 5.5% vs WACC 6.8%): crecer a estos retornos destruye valor para el accionista en lugar de crearlo.",
-                "reason": "Destruye valor — spread −1.3 pp"
-              }
-            ],
+            "items": [],
             "key": "red_flags",
             "title": "Riesgos",
             "tone": "neg"
@@ -3192,12 +3150,12 @@
               "items": [
                 {
                   "in_block": false,
-                  "metric": "ROIC (en lugar del ROE: apalancamiento alto)",
-                  "reason": "Bueno (5.5%) - Competitivo en su sector; con un D/E de 1.68 (> 1.50, el umbral de su sector) el ROE lo infla el apalancamiento: puntúa el ROIC.",
+                  "metric": "ROE normalizado",
+                  "reason": "Bueno (8.9%) - Competitivo en su sector.",
                   "sign": "+2",
                   "state": "con_dato",
                   "tone": "pos",
-                  "value": "5.48%"
+                  "value": "8.93%"
                 },
                 {
                   "in_block": false,
@@ -3228,31 +3186,22 @@
                 },
                 {
                   "in_block": false,
-                  "metric": "ROIC frente al WACC",
-                  "reason": "Retorno apenas por debajo del costo de capital (spread −1.3 pp)",
-                  "sign": "-1",
-                  "state": "con_dato",
-                  "tone": "warn",
-                  "value": "−1.3 pp"
-                },
-                {
-                  "in_block": false,
-                  "metric": "Tope por ROIC − WACC",
-                  "reason": "el ROIC (5.5%) no cubre el WACC (6.8%), diferencial −1.3 pp: la rentabilidad no pasa de 10/20.",
-                  "sign": "-4",
-                  "state": "con_dato",
-                  "tone": "neg",
-                  "value": "10/20"
+                  "metric": "No aplica",
+                  "reason": "No aplica a utilities reguladas: el regulador fija el retorno que puede obtener sobre su base de activos; un ROIC por debajo del WACC de mercado es la tarifa autorizada, no destrucción de valor (no cuenta en la cobertura)",
+                  "sign": "n/a",
+                  "state": "no_aplica",
+                  "tone": "neu",
+                  "value": "ROIC−WACC"
                 }
               ],
               "key": "Rentabilidad",
               "max": 20,
               "name": "Rentabilidad",
-              "pct": 50.0,
-              "score": 10,
-              "score_txt": "10 / 20",
+              "pct": 75.0,
+              "score": 15,
+              "score_txt": "15 / 20",
               "text": null,
-              "tone": "warn"
+              "tone": "pos"
             },
             {
               "conclusive": true,
@@ -3623,7 +3572,7 @@
           ]
         ],
         "figures_title": "Cifras de los últimos doce meses (TTM, a 30 de junio de 2026)",
-        "intro": "El ROE (TTM) de 9.6% es competitivo en su sector (sector: 5.0% competitivo, 10.0% rango alto). El ROIC (5.5%) queda ligeramente por debajo del costo de capital (6.8%).",
+        "intro": "El ROE (TTM) de 9.6% es competitivo en su sector (sector: 5.0% competitivo, 10.0% rango alto).",
         "quality_readings": [
           {
             "key": "dupont",
@@ -3663,15 +3612,15 @@
             "value": "2.58%"
           },
           {
-            "bench": "7.05%",
-            "gap": "-22%",
+            "bench": "—",
+            "gap": "—",
             "key": "roic",
             "label": "ROIC",
-            "reading": "Inferior",
-            "state": "con_dato",
-            "text": "ROIC de 5.5% frente a 7.1% de su industria sin ella (-22%): inferior.",
-            "tone": "warn",
-            "value": "5.48%"
+            "reading": "No aplica a utilities reguladas",
+            "state": "no_aplica",
+            "text": "el regulador fija el retorno que puede obtener sobre su base de activos; un ROIC por debajo del WACC de mercado es la tarifa autorizada, no destrucción de valor.",
+            "tone": "neu",
+            "value": "—"
           },
           {
             "bench": "46.35%",
@@ -3705,17 +3654,6 @@
             "text": "Margen neto de 15.6% frente a 12.5% de su industria sin ella (+25%): superior.",
             "tone": "pos",
             "value": "15.61%"
-          },
-          {
-            "bench": "> 0",
-            "gap": "—",
-            "key": "roic_wacc_spread",
-            "label": "Spread ROIC − WACC",
-            "reading": "Al límite",
-            "state": "con_dato",
-            "text": "el ROIC (5.5%) queda ligeramente por debajo del costo de capital (6.8%)",
-            "tone": "warn",
-            "value": "-1.3 pp"
           },
           {
             "bench": "—",
@@ -4090,7 +4028,7 @@
     },
     "summary": {
       "alert_counts": {
-        "red_flags": 1,
+        "red_flags": 0,
         "strengths": 2,
         "unmeasured": null,
         "warnings": 0
@@ -4209,9 +4147,9 @@
               "kind": "bar",
               "label": "Rentabilidad",
               "max": 20,
-              "pct": 50.0,
-              "tone": "warn",
-              "value": 10
+              "pct": 75.0,
+              "tone": "pos",
+              "value": 15
             },
             {
               "kind": "bar",
@@ -4230,7 +4168,7 @@
               "value": 14
             }
           ],
-          "score": 66,
+          "score": 72,
           "title": "CALIDAD DEL NEGOCIO",
           "tone": "pos"
         }
@@ -4238,15 +4176,15 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad sólida · precio exigente (confianza media: P/B justificado (ROE regulado) la ve cara y los múltiplos en precio). Calidad 66/100 · precio 42/100 (ajustado de 40 a 42 por confianza media)."
+          "text": "Calidad sólida · precio exigente (confianza media: P/B justificado (ROE regulado) la ve cara y los múltiplos en precio). Calidad 72/100 · precio 42/100 (ajustado de 40 a 42 por confianza media)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
-          "text": "Destaca en Calidad de ganancias (17/20) y Crecimiento (14/20)."
+          "text": "Destaca en Calidad de ganancias (17/20) y Rentabilidad (15/20)."
         },
         {
-          "label": "CREACIÓN DE VALOR",
-          "text": "El ROIC (5.5%) queda ligeramente por debajo del costo de capital (6.8%). ROCE 5.35% (EBIT / capital empleado, antes de impuestos), en línea con el ROIC (5.48%)."
+          "label": "RENTABILIDAD",
+          "text": "El ROE (TTM) de 9.6% es competitivo en su sector (sector: 5.0% competitivo, 10.0% rango alto)."
         },
         {
           "label": "SOLIDEZ",
@@ -4956,74 +4894,8 @@
         ]
       },
       "roic": {
-        "note": null,
-        "tables": [
-          {
-            "bands": [
-              {
-                "label": "Muy superior",
-                "range": "≥ 9.5%",
-                "tone": "pos"
-              },
-              {
-                "label": "Superior",
-                "range": "7.8% – 9.5%",
-                "tone": "pos"
-              },
-              {
-                "label": "En línea",
-                "range": "6.3% – 7.8%",
-                "tone": "neu"
-              },
-              {
-                "label": "Inferior",
-                "range": "4.6% – 6.3%",
-                "tone": "warn"
-              },
-              {
-                "label": "Muy inferior",
-                "range": "< 4.6%",
-                "tone": "neg"
-              }
-            ],
-            "title": "Frente a la referencia de su industria sin ella (7.1%)"
-          }
-        ]
-      },
-      "roic_wacc_spread": {
-        "note": null,
-        "tables": [
-          {
-            "bands": [
-              {
-                "label": "Crea mucho valor",
-                "range": "≥ 10%",
-                "tone": "pos"
-              },
-              {
-                "label": "Crea valor",
-                "range": "3% – 10%",
-                "tone": "pos"
-              },
-              {
-                "label": "Marginal",
-                "range": "0% – 3%",
-                "tone": "neu"
-              },
-              {
-                "label": "Al límite",
-                "range": "-3% – 0%",
-                "tone": "warn"
-              },
-              {
-                "label": "Destruye valor",
-                "range": "< -3%",
-                "tone": "neg"
-              }
-            ],
-            "title": "Spread ROIC − WACC"
-          }
-        ]
+        "note": "No aplica a utilities reguladas: no se lee.",
+        "tables": []
       }
     },
     "version": 1
@@ -5483,7 +5355,7 @@
     "roe": 0.0964892707055,
     "roic": 0.0548365329841,
     "roic_reason": null,
-    "roic_wacc_spread": -0.0132791860126,
+    "roic_wacc_spread": null,
     "shareholder_yield": 0.0341347407538,
     "shares_outstanding": 779702193.0,
     "total_assets": 201091000000.0,
@@ -6036,11 +5908,7 @@
   },
   "quality": {
     "basis": null,
-    "border": {
-      "neighbor": "media",
-      "points": 2,
-      "text": "En la frontera con «media» (a 2 puntos): un cambio pequeño en los datos o en los supuestos cambiaría el nivel"
-    },
+    "border": null,
     "categories_included": 4,
     "categories_total": 4,
     "components": [
@@ -6054,7 +5922,7 @@
         "category": "Rentabilidad",
         "included": true,
         "max": 20,
-        "score": 10
+        "score": 15
       },
       {
         "category": "Calidad de Ganancias",
@@ -6129,8 +5997,8 @@
       "source": "edgar",
       "window": 5
     },
-    "score": 66,
-    "score_raw": 66
+    "score": 72,
+    "score_raw": 72
   },
   "quality_readings": {
     "coverage": {
@@ -6346,11 +6214,11 @@
         "adjustments": [
           {
             "adjustment": 2,
-            "leverage_swap": true,
-            "metric": "ROIC (en lugar del ROE: apalancamiento alto)",
-            "reason": "Bueno (5.5%) - Competitivo en su sector; con un D/E de 1.68 (> 1.50, el umbral de su sector) el ROE lo infla el apalancamiento: puntúa el ROIC",
+            "metric": "ROE normalizado",
+            "normalized": true,
+            "reason": "Bueno (8.9%) - Competitivo en su sector",
             "severity": "ok",
-            "value": "5.48%"
+            "value": "8.93%"
           },
           {
             "adjustment": 0,
@@ -6376,34 +6244,25 @@
             "value": "14.45%"
           },
           {
-            "adjustment": -1,
-            "metric": "ROIC frente al WACC",
-            "reason": "Retorno apenas por debajo del costo de capital (spread −1.3 pp)",
-            "severity": "moderate",
-            "value": "−1.3 pp"
-          },
-          {
-            "adjustment": -4,
-            "cap": true,
-            "metric": "Tope por ROIC − WACC",
-            "reason": "el ROIC (5.5%) no cubre el WACC (6.8%), diferencial −1.3 pp: la rentabilidad no pasa de 10/20",
-            "severity": "severe",
-            "value": "10/20"
+            "adjustment": 0,
+            "metric": "No aplica",
+            "reason": "No aplica a utilities reguladas: el regulador fija el retorno que puede obtener sobre su base de activos; un ROIC por debajo del WACC de mercado es la tarifa autorizada, no destrucción de valor (no cuenta en la cobertura)",
+            "severity": "neutral",
+            "value": "ROIC−WACC"
           }
         ],
         "applicable": true,
         "conclusive": true,
         "coverage": 1.0,
         "details": [
-          "Bueno (5.5%) - Competitivo en su sector; con un D/E de 1.68 (> 1.50, el umbral de su sector) el ROE lo infla el apalancamiento: puntúa el ROIC",
+          "Bueno (8.9%) - Competitivo en su sector",
           "Aceptable (2.4%) - Normal para su sector",
           "Muy bueno (27.8%, +6.8 pp frente al margen de su industria sin ella: 20.9%)",
           "En línea (14.4%, +2.0 pp frente al margen de su industria sin ella: 12.5%)",
-          "Retorno apenas por debajo del costo de capital (spread −1.3 pp)",
-          "el ROIC (5.5%) no cubre el WACC (6.8%), diferencial −1.3 pp: la rentabilidad no pasa de 10/20"
+          "No aplica a utilities reguladas: el regulador fija el retorno que puede obtener sobre su base de activos; un ROIC por debajo del WACC de mercado es la tarifa autorizada, no destrucción de valor (no cuenta en la cobertura)"
         ],
         "max": 20,
-        "score": 10
+        "score": 15
       },
       "Solidez Financiera": {
         "adjustments": [
@@ -6564,14 +6423,16 @@
     },
     "rentabilidad": {
       "applicable": true,
-      "components": 5,
+      "components": 4,
       "conclusive": true,
       "coverage": 1.0,
-      "evaluated": 5,
+      "evaluated": 4,
       "low_confidence": false,
       "missing": [],
       "missing_reasons": {},
-      "not_applicable": {},
+      "not_applicable": {
+        "ROIC−WACC": "No aplica a utilities reguladas: el regulador fija el retorno que puede obtener sobre su base de activos; un ROIC por debajo del WACC de mercado es la tarifa autorizada, no destrucción de valor"
+      },
       "not_significant": {}
     },
     "solidez": {

@@ -678,7 +678,11 @@ def _compute_analysis_body(symbol: str) -> dict:
             _spectrum = None
             try:
                 import telecom_spectrum as _tsp
-                _spectrum = _tsp.adjustment(yinfo.get("_history_fy") if _has_yahoo else None, profile.industry)
+                import industry_bench as _ibm
+                _dfirm = _ibm.firm(symbol, ((yinfo.get("_edgar") or {}).get("title") if _has_yahoo else None),
+                                   profile.country) if profile.industry in cfg("valuation.telecom_spectrum.industries") else None
+                _spectrum = _tsp.adjustment(yinfo.get("_history_fy") if _has_yahoo else None, profile.industry,
+                                            (_dfirm or {}).get("industry"))
             except Exception as e:
                 _sin_dato("espectro_telecom", e)
             result["spectrum_adjustment"] = _spectrum

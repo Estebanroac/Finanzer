@@ -518,10 +518,16 @@ components_tolerance_abs = 1000000.0
 # (impuestos diferidos, redondeos, otros ingresos pequeños). Continua: sale solo lo que pasa de la tolerancia.
 nonoperating_tolerance_revenue = 0.02
 # F10 · N1b (escaneo de control del 29-oct): también después de impuestos, con el tipo normalizado: la mediana de los
-# tipos efectivos no negativos del periodo y de los últimos `tax_median_years` (un beneficio fiscal puntual queda fuera;
+# tipos efectivos (negativos incluidos desde F13 · 6b) del periodo y de los últimos `tax_median_years` (un beneficio fiscal puntual queda fuera;
 # uno recurrente es su tipo). Con menos de `tax_median_min` válidos, el tipo legal (valuation.tax.statutory_rate).
 tax_median_years = 5
 tax_median_min = 3
+# F13 · paso 6b (revisión de 110 empresas, XEL): un tipo negativo también entra en la mediana si no baja de esto. Antes
+# se descartaba, y una utility con créditos fiscales todos los años (XEL: −4,6 %, −8,4 %, −9,0 %, −26,2 %, −13,8 % en
+# 2021–2025; créditos de 0,57 B$ en 2025) se leía al tipo legal del 21 %: la normalización le quitaba 0,60 B$ (22,5 %
+# del beneficio) como «no explicado por la operación». Un beneficio fiscal puntual sigue fuera por la mediana, y por
+# debajo de este suelo no es un tipo sino un suceso (UBER: liberación de la provisión fiscal, −46 % a −140 %): fuera.
+tax_median_floor = -0.30
 # F10 · margen operativo con una sola verdad (puerta de la v4, 29-oct): los tipos de partida que pueden ir DENTRO del
 # resultado operativo: cargos especiales (deterioros, litigios, reestructuración, amortizaciones extraordinarias), ventas
 # de negocios o de activos fijos (SOLV, BA) y el total de Yahoo cuando sus componentes no cuadran. Sus importes ya

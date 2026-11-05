@@ -124,6 +124,9 @@ WHY_NOT_APPLICABLE_KEY = {
                                       "por el capital",
     (FINANCIAL, "net_debt_ebitda"): "su caja y su deuda son parte del negocio (depósitos, reservas técnicas, "
                                        "cartera) y no tiene EBITDA; su solidez se mide por el capital",
+    # F13 · paso 6a: el retorno de una utility regulada lo fija la tarifa, no la competencia
+    (UTILITY, "roic_wacc"): "el regulador fija el retorno que puede obtener sobre su base de activos; un ROIC por debajo "
+                            "del WACC de mercado es la tarifa autorizada, no destrucción de valor",
     (REIT, "current_ratio"): "activos inmobiliarios de largo plazo financiados con deuda a largo plazo; "
                              "el circulante no mide su liquidez",
     (UTILITY, "altman"): "el Altman se calibró con quiebras de empresas industriales; una utility regulada opera con "

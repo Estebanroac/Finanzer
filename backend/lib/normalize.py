@@ -280,15 +280,16 @@ def tax_rate_normalized(pretax: Optional[float], tax: Optional[float],
                         history: Optional[List[Tuple[Optional[float], Optional[float]]]] = None) -> Dict[str, Any]:
     """F10 · N1b: el tipo con que se lee el beneficio después de impuestos. La mediana de los tipos efectivos del periodo
     y de los últimos ejercicios (`history`: [(beneficio antes de impuestos, impuestos)], el más reciente primero), hasta
-    `tax_median_years`, de los que tienen beneficio antes de impuestos positivo y un tipo no negativo (acotado arriba
-    a `tax_rate_bounds`): un tipo negativo es un beneficio fiscal, no un tipo. Un beneficio fiscal puntual queda fuera
-    por la mediana; uno recurrente (créditos fiscales de una utility) es su tipo. Con menos de `tax_median_min` tipos
-    válidos, el tipo legal (`valuation.tax.statutory_rate`)."""
+    `tax_median_years`, de los que tienen beneficio antes de impuestos positivo (acotado arriba a `tax_rate_bounds`).
+    Un beneficio fiscal puntual queda fuera por la mediana; uno recurrente (créditos fiscales de una utility: F13 ·
+    paso 6b, XEL negativo cinco años seguidos) es su tipo, aunque sea negativo. Por debajo de `tax_median_floor` no es un
+    tipo sino un suceso (la liberación de la provisión por activos fiscales diferidos de UBER: −46 % a −140 %): fuera.
+    Con menos de `tax_median_min` tipos válidos, el tipo legal (`valuation.tax.statutory_rate`)."""
     C = cfg("thresholds.normalization")
-    hi = C["tax_rate_bounds"][1]
+    hi, lo = C["tax_rate_bounds"][1], C["tax_median_floor"]
     pairs = [(pretax, tax)] + list(history or [])
     rates = [min(t / p, hi) for p, t in pairs[:C["tax_median_years"]]
-             if p is not None and t is not None and p > 0 and t >= 0]
+             if p is not None and t is not None and p > 0 and t / p >= lo]
     cur = (tax / pretax) if (pretax and tax is not None and pretax > 0) else None
     if len(rates) < C["tax_median_min"]:
         r = cfg("valuation.tax.statutory_rate")
