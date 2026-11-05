@@ -229,7 +229,13 @@ class Switch:
         self._lock = threading.Lock()
 
     def set(self, name: Optional[str]) -> Optional[str]:
+        import analysis_queue
+        from settings import cfg
         with self._lock:
+            # El análisis de fondo en marcha (rivales, tarjetas de la portada) acaba con el fallo con el que empezó:
+            # si no, seguía con el nuevo y retenía el turno único del replay (test_faults: con EDGAR lento, el análisis
+            # de la prueba siguiente esperaba 7,5 s detrás de una tarjeta de la anterior).
+            analysis_queue.reset(wait_s=cfg("data.web.analysis_timeout_s"))
             if self._p is not None:
                 self._p.undo()
                 self._p, self.name = None, None

@@ -55,13 +55,20 @@ _stop: Optional[threading.Event] = None
 _seq = itertools.count()
 
 
-def reset() -> None:
-    """Olvida cachés, cola y estado y detiene el hilo (tests)."""
+def reset(wait_s: float = 0.0) -> None:
+    """Olvida cachés, cola y estado y detiene el hilo (tests). Un hilo detenido acaba antes el trabajo que tenía en
+    marcha; con `wait_s`, se le espera hasta ese tiempo (el replay al cambiar de fallo, tests/faults.Switch: si no, el
+    análisis de fondo de la prueba anterior seguía con el fallo nuevo y retenía el turno único del replay)."""
     global _stop
     with _lock:
         if _stop is not None:
             _stop.set()
             _wake.notify_all()
+        old = [t for t in _workers if t is not threading.current_thread()]
+    deadline = time.monotonic() + wait_s
+    for t in old:                       # antes de vaciar: lo que guarde ese trabajo también se olvida
+        t.join(max(0.0, deadline - time.monotonic()))
+    with _lock:
         _workers.clear()
         _stop = None
         _heap.clear()
