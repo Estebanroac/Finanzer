@@ -328,7 +328,8 @@ def coverage_dimension(score_coverage: Optional[Dict[str, Any]], excluded: List[
 
 def source_dimension(*, input_flags: List[Dict[str, Any]], normalization: Optional[Dict[str, Any]],
                      ttm: Optional[Dict[str, Any]], provenance_fields: Dict[str, Any],
-                     self_exclusion: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+                     self_exclusion: Optional[Dict[str, Any]] = None,
+                     beta_contrast: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     C = cfg("thresholds.confidence")
     # Etapa 9a: las sustituciones de política del arquetipo (p. ej. el crecimiento de una
     # financiera siempre desde los estados) no son incidencias de la fuente.
@@ -353,6 +354,11 @@ def source_dimension(*, input_flags: List[Dict[str, Any]], normalization: Option
         # F10 (PM, 29-oct; ENB): la referencia de la industria cayó a la mediana de los pares por un tiempo agotado de
         # EDGAR, no por la empresa: es una incidencia de la fuente y la confianza lo dice.
         issues.append(f"referencia de la industria degradada: {self_exclusion.get('reason')}")
+    if beta_contrast:
+        # F11 · T5: el coste del capital usa una beta que no encaja con cómo se ha movido la acción
+        b = beta_contrast
+        issues.append(f"beta sustituta {b['used']:.2f} fuera de la propia {b['own']:.2f} ± 2 EE "
+                      f"({b['low']:.2f}–{b['high']:.2f}, R² {b['r2']:.2f})")
     if (ttm or {}).get("basis") == "anual":
         issues.append("sin TTM: estados anuales (hasta 12 meses de retraso)")
     fh = sorted(k for k, v in (provenance_fields or {}).items() if (v or {}).get("source") == "finnhub")

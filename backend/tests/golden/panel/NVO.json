@@ -234,6 +234,7 @@
       0.67,
       0.33
     ],
+    "contrast": null,
     "default": false,
     "discarded": "R² 0.10 < 0.20: la regresión no explica el título; error estándar 0.34 > 0.25",
     "discrepancy": null,
@@ -3825,7 +3826,7 @@
       },
       "market": {
         "behavioral": [
-          "Cotiza un 67.8% por debajo de su máximo de 2 años (2024-10-17) sin deterioro de los fundamentales medidos (calidad sólida, ingresos +20.4% y BPA +23.5% anual en 3 años): es el patrón que De Bondt y Thaler (1985) estudian como sobrerreacción del mercado a las malas noticias. Describe un sesgo estudiado, no una previsión."
+          "Cotiza un 67.8% por debajo de su máximo de 2 años (2024-10-17) sin deterioro de los fundamentales medidos (calidad sólida, ingresos +20.4% y BPA +23.5% anual en 3 años): el precio puede estar descontando algo que este informe no mide (estrategia, competencia, las previsiones de la propia empresa). No es una señal de compra."
         ],
         "behavioral_title": "Lectura conductual del mercado",
         "news": [
@@ -3895,7 +3896,7 @@
           {
             "key": "relative_strength",
             "label": "Fuerza relativa frente a XLV (1 año)",
-            "text": "en 1 año, la acción −29.4% frente al +24.3% del ETF de su sector (XLV): el movimiento es propio de la empresa.",
+            "text": "en 1 año, la acción −29.4% frente al +24.3% del ETF de su sector (XLV) y al +1.4% del de su país (EDEN): el movimiento es propio de la empresa.",
             "tone": "neu",
             "value": "−53.6 pp"
           },
@@ -6069,9 +6070,9 @@
     "behavioral": [
       {
         "field": "market_context.series_drawdown.from_high",
-        "kind": "sobrerreaccion",
+        "kind": "caida_sin_explicar",
         "num": -0.677550342258,
-        "text": "Cotiza un 67.8% por debajo de su máximo de 2 años (2024-10-17) sin deterioro de los fundamentales medidos (calidad sólida, ingresos +20.4% y BPA +23.5% anual en 3 años): es el patrón que De Bondt y Thaler (1985) estudian como sobrerreacción del mercado a las malas noticias. Describe un sesgo estudiado, no una previsión."
+        "text": "Cotiza un 67.8% por debajo de su máximo de 2 años (2024-10-17) sin deterioro de los fundamentales medidos (calidad sólida, ingresos +20.4% y BPA +23.5% anual en 3 años): el precio puede estar descontando algo que este informe no mide (estrategia, competencia, las previsiones de la propia empresa). No es una señal de compra."
       }
     ],
     "market_volatility": {
@@ -6209,7 +6210,7 @@
         "key": "relative_strength",
         "label": "Fuerza relativa frente a XLV (1 año)",
         "num": -0.53619507465,
-        "text": "en 1 año, la acción −29.4% frente al +24.3% del ETF de su sector (XLV): el movimiento es propio de la empresa",
+        "text": "en 1 año, la acción −29.4% frente al +24.3% del ETF de su sector (XLV) y al +1.4% del de su país (EDEN): el movimiento es propio de la empresa",
         "value": "−53.6 pp"
       },
       {
@@ -6342,6 +6343,35 @@
             "company": -0.0539792322684,
             "difference": -0.240931469089,
             "sector": 0.186952236821,
+            "start_date": "2026-04-15",
+            "status": "ok"
+          }
+        }
+      },
+      "relative_strength_country": {
+        "as_of": "2026-10-14",
+        "country": "Denmark",
+        "etf": "EDEN",
+        "params": {
+          "windows": [
+            "6M",
+            "1A"
+          ]
+        },
+        "status": "ok",
+        "value": -0.307299618999,
+        "windows": {
+          "1A": {
+            "company": -0.293628338139,
+            "difference": -0.307299618999,
+            "sector": 0.01367128086,
+            "start_date": "2025-10-14",
+            "status": "ok"
+          },
+          "6M": {
+            "company": -0.0539792322684,
+            "difference": -0.0378428619499,
+            "sector": -0.0161363703185,
             "start_date": "2026-04-15",
             "status": "ok"
           }

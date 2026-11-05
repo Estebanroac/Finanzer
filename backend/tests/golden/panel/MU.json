@@ -270,6 +270,14 @@
       0.67,
       0.33
     ],
+    "contrast": {
+      "high": 3.25168339035,
+      "low": 1.71093821656,
+      "own": 2.48131080345,
+      "r2": 0.291215041208,
+      "se": 0.385186293448,
+      "used": 1.50708932088
+    },
     "default": false,
     "discarded": "error estándar 0.39 > 0.25",
     "discrepancy": null,
@@ -506,9 +514,11 @@
           "forwardPE",
           "payoutRatio"
         ],
-        "issues": 0,
-        "level": "alta",
-        "reasons": []
+        "issues": 1,
+        "level": "media",
+        "reasons": [
+          "beta sustituta 1.51 fuera de la propia 2.48 ± 2 EE (1.71–3.25, R² 0.29)"
+        ]
       },
       "stability": {
         "level": "baja",
@@ -521,10 +531,11 @@
     "limits_score": false,
     "reasons": [
       "cobertura media: estados desfasados: corte del 31 de mayo de 2026 (136 días) y EDGAR ya tiene el 10-K del periodo cerrado el 3 de septiembre de 2026",
+      "calidad de fuente media: beta sustituta 1.51 fuera de la propia 2.48 ± 2 EE (1.71–3.25, R² 0.29)",
       "estabilidad baja: empresa cíclica: resultados ligados a la fase del ciclo",
       "techo en baja: la más baja manda: estabilidad baja"
     ],
-    "score": 0.7
+    "score": 0.6
   },
   "cost_of_equity": {
     "as_of": "2026-10-01",
@@ -1773,6 +1784,10 @@
           "text": "estados desfasados: corte del 31 de mayo de 2026 (136 días) y EDGAR ya tiene el 10-K del periodo cerrado el 3 de septiembre de 2026."
         },
         {
+          "label": "Confianza · Calidad de fuente (media)",
+          "text": "beta sustituta 1.51 fuera de la propia 2.48 ± 2 EE (1.71–3.25, R² 0.29)"
+        },
+        {
           "label": "Confianza · Estabilidad del arquetipo (baja)",
           "text": "empresa cíclica: resultados ligados a la fase del ciclo."
         },
@@ -2740,8 +2755,8 @@
         {
           "key": "source",
           "label": "Calidad de fuente",
-          "level": "Alta",
-          "text": "Sin incidencias."
+          "level": "Media",
+          "text": "El coste del capital usa la beta de su industria (1.51), que no encaja con cómo se ha movido la acción frente al mercado (la suya: 2.48)."
         },
         {
           "key": "stability",
@@ -2753,6 +2768,7 @@
       "level": "baja",
       "plain": [
         "Hay estados más recientes en la SEC (10-K al 3 de septiembre de 2026).",
+        "El coste del capital usa la beta de su industria (1.51), que no encaja con cómo se ha movido la acción frente al mercado (la suya: 2.48).",
         "Empresa cíclica: sus resultados dependen de la fase del ciclo."
       ],
       "reasons": [
@@ -2760,6 +2776,11 @@
           "dimension": "cobertura",
           "level": "media",
           "text": "Hay estados más recientes en la SEC (10-K al 3 de septiembre de 2026)."
+        },
+        {
+          "dimension": "calidad de fuente",
+          "level": "media",
+          "text": "El coste del capital usa la beta de su industria (1.51), que no encaja con cómo se ha movido la acción frente al mercado (la suya: 2.48)."
         },
         {
           "dimension": "estabilidad",
@@ -2862,6 +2883,7 @@
       ],
       "confidence_reasons": [
         "Hay estados más recientes en la SEC (10-K al 3 de septiembre de 2026).",
+        "El coste del capital usa la beta de su industria (1.51), que no encaja con cómo se ha movido la acción frente al mercado (la suya: 2.48).",
         "Empresa cíclica: sus resultados dependen de la fase del ciclo."
       ],
       "coverage_notes": [],

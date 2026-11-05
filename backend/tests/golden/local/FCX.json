@@ -246,6 +246,14 @@
       0.67,
       0.33
     ],
+    "contrast": {
+      "high": 2.17474378533,
+      "low": 1.1444086997,
+      "own": 1.65957624251,
+      "r2": 0.293338398346,
+      "se": 0.257583771408,
+      "used": 1.07174259299
+    },
     "default": false,
     "discarded": "error estándar 0.26 > 0.25",
     "discrepancy": null,
@@ -457,9 +465,11 @@
       },
       "source": {
         "finnhub_fields": [],
-        "issues": 0,
-        "level": "alta",
-        "reasons": []
+        "issues": 1,
+        "level": "media",
+        "reasons": [
+          "beta sustituta 1.07 fuera de la propia 1.66 ± 2 EE (1.14–2.17, R² 0.29)"
+        ]
       },
       "stability": {
         "level": "baja",
@@ -472,10 +482,11 @@
     "limits_score": false,
     "reasons": [
       "convergencia media: uno lo ve en precio y otro con dirección: no coinciden, sin oponerse",
+      "calidad de fuente media: beta sustituta 1.07 fuera de la propia 1.66 ± 2 EE (1.14–2.17, R² 0.29)",
       "estabilidad baja: empresa cíclica: resultados ligados a la fase del ciclo",
       "techo en baja: la más baja manda: estabilidad baja"
     ],
-    "score": 0.6
+    "score": 0.5
   },
   "cost_of_equity": {
     "as_of": "2026-10-01",
@@ -1719,6 +1730,10 @@
           "text": "uno lo ve en precio y otro con dirección: no coinciden, sin oponerse."
         },
         {
+          "label": "Confianza · Calidad de fuente (media)",
+          "text": "beta sustituta 1.07 fuera de la propia 1.66 ± 2 EE (1.14–2.17, R² 0.29)"
+        },
+        {
           "label": "Confianza · Estabilidad del arquetipo (baja)",
           "text": "empresa cíclica: resultados ligados a la fase del ciclo."
         },
@@ -2710,8 +2725,8 @@
         {
           "key": "source",
           "label": "Calidad de fuente",
-          "level": "Alta",
-          "text": "Sin incidencias."
+          "level": "Media",
+          "text": "El coste del capital usa la beta de su industria (1.07), que no encaja con cómo se ha movido la acción frente al mercado (la suya: 1.66)."
         },
         {
           "key": "stability",
@@ -2723,6 +2738,7 @@
       "level": "baja",
       "plain": [
         "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no.",
+        "El coste del capital usa la beta de su industria (1.07), que no encaja con cómo se ha movido la acción frente al mercado (la suya: 1.66).",
         "Empresa cíclica: sus resultados dependen de la fase del ciclo."
       ],
       "reasons": [
@@ -2730,6 +2746,11 @@
           "dimension": "convergencia",
           "level": "media",
           "text": "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
+        },
+        {
+          "dimension": "calidad de fuente",
+          "level": "media",
+          "text": "El coste del capital usa la beta de su industria (1.07), que no encaja con cómo se ha movido la acción frente al mercado (la suya: 1.66)."
         },
         {
           "dimension": "estabilidad",
@@ -2832,6 +2853,7 @@
       ],
       "confidence_reasons": [
         "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no.",
+        "El coste del capital usa la beta de su industria (1.07), que no encaja con cómo se ha movido la acción frente al mercado (la suya: 1.66).",
         "Empresa cíclica: sus resultados dependen de la fase del ciclo."
       ],
       "coverage_notes": [

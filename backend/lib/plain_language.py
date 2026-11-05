@@ -70,6 +70,10 @@ TABLE = [
     # F8 · E6: estados desfasados frente a EDGAR (lib/edgar_backup.staleness)
     (r"^estados desfasados: corte del (.+?) \((\d+) días\) y EDGAR ya tiene el (\S+) del periodo cerrado el (.+)$",
      "Hay estados más recientes en la SEC ({2} al {3})."),
+    # F11 · T5: la beta de la industria (la del coste del capital) frente a la propia
+    (r"^beta sustituta ([\d.]+) fuera de la propia ([\d.]+)",
+     "El coste del capital usa la beta de su industria ({0}), que no encaja con cómo se ha movido la acción frente al "
+     "mercado (la suya: {1})."),
     # F11 · T3: la variable crítica de su tipo sin medir (el riesgo de crédito de un banco)
     (r"^sin medir: (.+)$", "Falta medir {0}, la variable clave de este tipo de empresa."),
     (r"^(\d+) de (\d+) componentes del score con dato",

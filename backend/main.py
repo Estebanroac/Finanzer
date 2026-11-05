@@ -1545,6 +1545,10 @@ def _compute_analysis_body(symbol: str) -> dict:
                               # F9 · R2b: la tabla regional de la de abajo hacia arriba (None: la de EE. UU.)
                               "region": _beta_info.get("region"),
                               "coefficients": [cfg("valuation.capm.blume_weight"), cfg("valuation.capm.blume_prior")]}
+            # F11 · T5: la beta sustituta frente a la propia descartada (se declara; baja la confianza)
+            import beta as _beta_mod
+            result["beta"]["contrast"] = _beta_mod.contrast(result["beta"]["source"], result["beta"]["adjusted"],
+                                                            result["beta"]["own"])
             result["wacc"] = {k: (safe_float(v) if isinstance(v, float) else v) for k, v in wacc_info.items()}
             result["tax_rate"] = {k: (safe_float(v) if isinstance(v, float) else v) for k, v in tax_info.items()}
             result["risk_free"] = dict(rf_info)
@@ -2570,7 +2574,8 @@ def _compute_analysis_body(symbol: str) -> dict:
                         input_flags=list(yinfo.get("_validation") or []) + _row_flags,
                         normalization=result.get("earnings_normalization"),
                         ttm=yinfo.get("_ttm"), provenance_fields=(yinfo.get("_provenance") or {}),
-                        self_exclusion=((result.get("benchmark") or {}).get("industry") or {}).get("self_exclusion")),
+                        self_exclusion=((result.get("benchmark") or {}).get("industry") or {}).get("self_exclusion"),
+                        beta_contrast=(result.get("beta") or {}).get("contrast")),
                     "stability": stability_dimension(_cls.get("archetype"), _cls),
                     # Fase 2b (D7): emisor sin estados en la SEC -> techo "baja"
                     "fuente_oficial": official_dimension(yinfo.get("_official_source") if _has_yahoo else None),

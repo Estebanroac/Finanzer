@@ -77,6 +77,10 @@ min_r2 = 0.20                   # R² menor: la regresión no explica el título
 # discrepancia entre fuentes (abajo); un EE mayor deja la beta indeterminada para el Ke.
 max_se = 0.25
 own_range = [0.4, 2.5]          # beta propia (bruta) fuera de este rango: no se usa
+# F11 · T5 (revisión de NU y NFLX): la beta sustituta fuera de la propia ± k errores estándar se declara y baja la
+# confianza (con una regresión que explique algo: R² ≥ contrast_min_r2; con R² ≈ 0 la propia no informa).
+contrast_min_r2 = 0.10
+contrast_k_se = 2.0
 # Reapalancar exige una estructura de capital comparable a la de la industria: con una D/E de mercado más de
 # `relever_max_de_ratio` veces la media de su industria (Damodaran), la deuda no es la del negocio (TM: 1,20 frente a
 # 0,20, con la de su financiera cautiva) y se usa la beta media apalancada de la industria, declarado. En el panel, el
@@ -144,6 +148,42 @@ downward_ratio = 0.5           # indicado < la mitad de lo cobrado en 12 meses: 
 paid_band = [0.5, 2.0]          # pagado por título en los estados (TTM) frente a lo cobrado por título: fuera, aviso
 
 # ── Fase 5: contexto de mercado y lectura conductual en el análisis (lib/market_context.py; D5: no puntúa) ──
+# F11 · T6 (revisión de NU): ETF del país de la sede (iShares MSCI, en USD) para que la fuerza relativa de un emisor
+# extranjero no concluya «propio de la empresa» solo frente al ETF sectorial de EE. UU. País como en country_risk
+# (los nombres de Damodaran). Sin ETF del país, la lectura no concluye nada.
+[country_etfs]
+Brazil = "EWZ"
+Mexico = "EWW"
+Chile = "ECH"
+Colombia = "GXG"
+Peru = "EPU"
+Argentina = "ARGT"
+China = "MCHI"
+"Hong Kong" = "EWH"
+Taiwan = "EWT"
+"South Korea" = "EWY"
+Japan = "EWJ"
+India = "INDA"
+Singapore = "EWS"
+Indonesia = "EIDO"
+Australia = "EWA"
+Canada = "EWC"
+"United Kingdom" = "EWU"
+Ireland = "EIRL"
+Germany = "EWG"
+France = "EWQ"
+Netherlands = "EWN"
+Switzerland = "EWL"
+Spain = "EWP"
+Italy = "EWI"
+Belgium = "EWK"
+Denmark = "EDEN"
+Sweden = "EWD"
+Norway = "ENOR"
+Finland = "EFNL"
+Israel = "EIS"
+"South Africa" = "EZA"
+
 [context]
 drawdown_years = [1]                # la serie del análisis es de 2 años: la caída de toda la serie se calcula aparte
 tolerated_missing_days = 5          # sesiones sueltas sin cotización toleradas (festivos de un ADR); un salto sigue bloqueando

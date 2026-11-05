@@ -250,6 +250,14 @@
       0.67,
       0.33
     ],
+    "contrast": {
+      "high": 1.06690846362,
+      "low": 0.388401197094,
+      "own": 0.727654830358,
+      "r2": 0.1541170559,
+      "se": 0.169626816632,
+      "used": 1.46
+    },
     "default": false,
     "discarded": "R² 0.15 < 0.20: la regresión no explica el título",
     "discrepancy": null,
@@ -401,7 +409,7 @@
   },
   "confidence": {
     "base_rate_step": null,
-    "capped_from": "alta",
+    "capped_from": null,
     "contraction_basis": "media",
     "dimensions": {
       "convergence": {
@@ -456,9 +464,11 @@
           "forwardPE",
           "payoutRatio"
         ],
-        "issues": 0,
-        "level": "alta",
-        "reasons": []
+        "issues": 1,
+        "level": "media",
+        "reasons": [
+          "beta sustituta 1.46 fuera de la propia 0.73 ± 2 EE (0.39–1.07, R² 0.15)"
+        ]
       },
       "stability": {
         "level": "alta",
@@ -469,9 +479,9 @@
     "limits_score": false,
     "reasons": [
       "convergencia media: uno lo ve en precio y otro con dirección: no coinciden, sin oponerse",
-      "techo en media: la convergencia es media: alta exige convergencia alta"
+      "calidad de fuente media: beta sustituta 1.46 fuera de la propia 0.73 ± 2 EE (0.39–1.07, R² 0.15)"
     ],
-    "score": 0.8
+    "score": 0.7
   },
   "cost_of_equity": {
     "as_of": "2026-10-01",
@@ -1535,6 +1545,10 @@
           "text": "uno lo ve en precio y otro con dirección: no coinciden, sin oponerse."
         },
         {
+          "label": "Confianza · Calidad de fuente (media)",
+          "text": "beta sustituta 1.46 fuera de la propia 0.73 ± 2 EE (0.39–1.07, R² 0.15)"
+        },
+        {
           "label": "Fuente oficial",
           "text": "sí, SEC EDGAR (CIK 1094517); último ejercicio en EDGAR: FY 2026."
         },
@@ -2467,8 +2481,8 @@
         {
           "key": "source",
           "label": "Calidad de fuente",
-          "level": "Alta",
-          "text": "Sin incidencias."
+          "level": "Media",
+          "text": "El coste del capital usa la beta de su industria (1.46), que no encaja con cómo se ha movido la acción frente al mercado (la suya: 0.73)."
         },
         {
           "key": "stability",
@@ -2479,7 +2493,8 @@
       ],
       "level": "media",
       "plain": [
-        "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
+        "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no.",
+        "El coste del capital usa la beta de su industria (1.46), que no encaja con cómo se ha movido la acción frente al mercado (la suya: 0.73)."
       ],
       "reasons": [
         {
@@ -2488,12 +2503,12 @@
           "text": "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
         },
         {
-          "dimension": "techo",
+          "dimension": "calidad de fuente",
           "level": "media",
-          "text": null
+          "text": "El coste del capital usa la beta de su industria (1.46), que no encaja con cómo se ha movido la acción frente al mercado (la suya: 0.73)."
         }
       ],
-      "summary": "Confianza del veredicto: media (por sus dimensiones sería alta; la limita: la convergencia es media —alta exige convergencia alta—). Contrae el atractivo del precio hacia 50: de 45 a 46. La calidad del negocio no se contrae.",
+      "summary": "Confianza del veredicto: media. Contrae el atractivo del precio hacia 50: de 45 a 46. La calidad del negocio no se contrae.",
       "tone": "warn",
       "verdict_text": "(confianza media: DCF inverso la ve cara y los múltiplos en precio)"
     },
@@ -2582,7 +2597,8 @@
         "Negocio establecido que se valora sobre todo por la caja que genera hoy; sus ingresos crecen un 10.9% anual en 3 años (FY2023–FY2026), por debajo del 15% del crecimiento rentable; en 19 ejercicios su historia no muestra ciclo (Fabricantes de automóviles)."
       ],
       "confidence_reasons": [
-        "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
+        "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no.",
+        "El coste del capital usa la beta de su industria (1.46), que no encaja con cómo se ha movido la acción frente al mercado (la suya: 0.73)."
       ],
       "coverage_notes": [
         "cobertura baja en Crecimiento"
@@ -3732,7 +3748,7 @@
           {
             "key": "relative_strength",
             "label": "Fuerza relativa frente a XLY (1 año)",
-            "text": "en 1 año, la acción −1.2% frente al −2.6% del ETF de su sector (XLY): se mueve con su sector.",
+            "text": "en 1 año, la acción −1.2% frente al −2.6% del ETF de su sector (XLY) y al +22.4% del de su país (EWJ): se mueve con su sector.",
             "tone": "neu",
             "value": "+1.3 pp"
           },
@@ -5963,7 +5979,7 @@
         "key": "relative_strength",
         "label": "Fuerza relativa frente a XLY (1 año)",
         "num": 0.0132993806397,
-        "text": "en 1 año, la acción −1.2% frente al −2.6% del ETF de su sector (XLY): se mueve con su sector",
+        "text": "en 1 año, la acción −1.2% frente al −2.6% del ETF de su sector (XLY) y al +22.4% del de su país (EWJ): se mueve con su sector",
         "value": "+1.3 pp"
       },
       {
@@ -6096,6 +6112,35 @@
             "company": -0.0982805511085,
             "difference": -0.0664543009604,
             "sector": -0.0318262501481,
+            "start_date": "2026-04-16",
+            "status": "ok"
+          }
+        }
+      },
+      "relative_strength_country": {
+        "as_of": "2026-10-15",
+        "country": "Japan",
+        "etf": "EWJ",
+        "params": {
+          "windows": [
+            "6M",
+            "1A"
+          ]
+        },
+        "status": "ok",
+        "value": -0.236785680865,
+        "windows": {
+          "1A": {
+            "company": -0.0122986639589,
+            "difference": -0.236785680865,
+            "sector": 0.224487016907,
+            "start_date": "2025-10-15",
+            "status": "ok"
+          },
+          "6M": {
+            "company": -0.0982805511085,
+            "difference": -0.171409953095,
+            "sector": 0.0731294019862,
             "start_date": "2026-04-16",
             "status": "ok"
           }

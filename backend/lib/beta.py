@@ -182,6 +182,23 @@ def choose(own: Dict[str, Any], source_beta: Optional[float], source_name: Optio
     return out
 
 
+def contrast(source: Optional[str], used: Optional[float], own: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """F11 · T5 (revisión de NU y NFLX): la beta sustituta (de su industria o de la fuente) frente a la propia que se
+    descartó. Solo si la regresión propia explica algo (R² ≥ `contrast_min_r2`; con R² ≈ 0, KO o HSY, no hay nada que
+    contrastar). Fuera del intervalo propia ± `contrast_k_se` errores estándar: {used, own, se, r2, low, high}; si no,
+    None. No cambia la beta (la ponderación propia/industria es del modelo general); se declara y baja la confianza.
+    NU: industria 0,60 frente a la propia 1,32 ± 2 · 0,28."""
+    C = cfg("market.beta_choice")
+    o = own or {}
+    raw, se, r2 = o.get("raw"), o.get("se"), o.get("r2")
+    if source == "propia" or used is None or raw is None or se is None or r2 is None or r2 < C["contrast_min_r2"]:
+        return None
+    lo, hi = raw - C["contrast_k_se"] * se, raw + C["contrast_k_se"] * se
+    if lo <= used <= hi:
+        return None
+    return {"used": used, "own": raw, "se": se, "r2": r2, "low": lo, "high": hi}
+
+
 def relever(choice: Dict[str, Any], debt: Optional[float], equity: Optional[float], tax: Optional[float],
             financial: bool) -> Dict[str, Any]:
     """F8 · E1: beta de abajo hacia arriba de la empresa, βL = βU × [1 + (1 − t) × D/E] con la D/E de mercado (deuda

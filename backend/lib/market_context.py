@@ -194,6 +194,10 @@ def build(symbol: str, company: Optional[Dict[str, Any]], market: Optional[Dict[
     us = price_cur in (None, "USD")
     sector_ok = bool(sector_etf) and us and sector_etf.upper() not in (P["market_symbol"], P["market_fallback_symbol"])
     f_sec = _pool.submit(price_history.sector, sector_etf) if sector_ok else None
+    # F11 · T6: el ETF del país de la sede para un emisor extranjero (NU: EWZ), en paralelo con el del sector
+    _country = (a.get("country_risk") or {}).get("country")
+    country_etf = (cfg("market.country_etfs").get(_country) if (_country and _country != "United States") else None)
+    f_cty = _pool.submit(price_history.sector, country_etf) if (country_etf and us) else None
     f_news = _pool.submit(news, symbol, (a.get("profile") or {}).get("name"))
     # Rediseño E2a (T8): próximos resultados en paralelo con los titulares. "Hoy": TODAY (V6, B12: la fecha de Nueva
     # York; en el replay, el día de la captura).
@@ -214,7 +218,21 @@ def build(symbol: str, company: Optional[Dict[str, Any]], market: Optional[Dict[
                      "market": dict(mk, symbol=(market or {}).get("symbol")),
                      "sector": dict(se, symbol=sector_etf)}}
     sig = all_signals(ps, drawdown_years=C["drawdown_years"])
-    close = co["frame"]["close"] if co.get("frame") is not None and co["status"] == "ok" else None
+    if _country and _country != "United States":
+        from market_signals import relative_strength
+        cty = (_wait(f_cty, lambda why: {"symbol": country_etf, "frame": None, "reason": why}) if f_cty else None)
+        cs = _adapt(cty, cal) if cty else {}
+        sig["relative_strength_country"] = dict(
+            relative_strength(co["frame"]["close"] if co.get("frame") is not None and co["status"] == "ok" else None,
+                              cs["frame"]["close"] if cs.get("frame") is not None and cs.get("status") == "ok"
+                              else None),
+            country=_country, etf=country_etf)
+        rsc = sig["relative_strength_country"]
+        if rsc.get("status") != "ok":   # el porqué es el del país, no el del sector que da relative_strength
+            rsc["reason"] = (f"cotiza en {price_cur}: los ETF de país de referencia son de EE. UU., en USD" if not us
+                             else f"sin ETF de referencia para {_country}" if not country_etf
+                             else f"sin serie del ETF de su país ({country_etf})")
+    close =co["frame"]["close"] if co.get("frame") is not None and co["status"] == "ok" else None
     raw_close = (company or {})["frame"]["close"] if (company or {}).get("frame") is not None else None
     out: Dict[str, Any] = {"signals": sig, "sector_etf": sector_etf, "note": _SIGNALS_NOTE,
                            "series_status": {k: v["status"] for k, v in ps["series"].items()},
@@ -428,11 +446,24 @@ def readings(ctx: Dict[str, Any]) -> List[Dict[str, Any]]:
     _rs_lab = dict(zip(cfg("market.price_returns.range_keys"), cfg("market.price_returns.range_labels")))[_rs_key]
     if rs.get("status") == "ok" and w.get("status") == "ok":
         own = abs(w["difference"]) >= C["relative_band"]
+        # F11 · T6 (revisión de NU): un emisor extranjero solo es «propio de la empresa» si también lo es frente al ETF
+        # de su país; sin esa serie, no se concluye (el ETF del sector es de EE. UU.).
+        rc = S.get("relative_strength_country")
+        wc = ((rc or {}).get("windows") or {}).get(_rs_key) or {}
+        tail = f"frente al {_pct(w['sector'])} del ETF de su sector ({ctx.get('sector_etf')})"
+        if rc is None:
+            verdict = "el movimiento es propio de la empresa" if own else "se mueve con su sector"
+        elif rc.get("status") == "ok" and wc.get("status") == "ok":
+            own_c = abs(wc["difference"]) >= C["relative_band"]
+            tail += f" y al {_pct(wc['sector'])} del de su país ({rc['etf']})"
+            verdict = ("el movimiento es propio de la empresa" if own and own_c else
+                       "se mueve con su país" if not own_c else "se mueve con su sector")
+        else:
+            verdict = (f"el ETF del sector es de EE. UU. y no hay serie de su país ({rc.get('country')}) para saber si "
+                       "el movimiento es propio de la empresa")
         add("relative_strength", f"Fuerza relativa frente a {ctx.get('sector_etf')} ({_rs_lab})",
             f"{w['difference'] * 100:+.1f} pp".replace("-", "−"),
-            f"en {_rs_lab}, la acción {_pct(w['company'])} frente al {_pct(w['sector'])} del ETF de su sector "
-            f"({ctx.get('sector_etf')}): " + ("el movimiento es propio de la empresa" if own
-                                              else "se mueve con su sector"),
+            f"en {_rs_lab}, la acción {_pct(w['company'])} {tail}: {verdict}",
             "market_context.signals.relative_strength.value", w["difference"])
     av = S.get("abnormal_volume") or {}
     if av.get("status") == "ok":
@@ -504,13 +535,28 @@ def behavioral(ctx: Dict[str, Any], a: Dict[str, Any]) -> List[Dict[str, Any]]:
     if (arch not in ("CYCLICAL", "GROWTH_PRE_PROFIT") and dd and dd["from_high"] <= -C["overreaction_drop"]
             and q in ("excelente", "sólida") and rev is not None
             and rev > 0 and eps is not None and eps >= 0):
-        out.append({"kind": "sobrerreaccion", "field": "market_context.series_drawdown.from_high",
-                    "num": dd["from_high"],
-                    "text": (f"Cotiza un {_pct(abs(dd['from_high']), False)} por debajo de su máximo de "
-                             f"{dd['years']:.0f} años ({dd['high_date']}) sin deterioro de los fundamentales medidos "
-                             f"(calidad {q}, ingresos {_pct(rev)} y BPA {_pct(eps)} anual en 3 años): es el patrón que "
-                             "De Bondt y Thaler (1985) estudian como sobrerreacción del mercado a las malas noticias. "
-                             "Describe un sesgo estudiado, no una previsión.")})
+        # F11 · T6 (revisión de NFLX): una caída así en una empresa sin deterioro medido suele descontar algo que las
+        # cuentas no recogen (estrategia, competencia, previsiones). Solo se cita la sobrerreacción si la última
+        # publicación de resultados no tuvo una reacción negativa (`pead.reaction`); si la tuvo o no se sabe, la lectura
+        # es una pregunta abierta, no un sesgo del mercado.
+        _pd = ctx.get("pead") or {}
+        reaction = _pd.get("reaction") if _pd.get("status") == "ok" else None
+        head = (f"Cotiza un {_pct(abs(dd['from_high']), False)} por debajo de su máximo de {dd['years']:.0f} años "
+                f"({dd['high_date']}) sin deterioro de los fundamentales medidos (calidad {q}, ingresos {_pct(rev)} y "
+                f"BPA {_pct(eps)} anual en 3 años)")
+        if reaction is not None and reaction >= 0:
+            out.append({"kind": "sobrerreaccion", "field": "market_context.series_drawdown.from_high",
+                        "num": dd["from_high"],
+                        "text": (head + f", y sus últimos resultados no tuvieron una reacción negativa ({_pct(reaction)}): "
+                                 "es el patrón que De Bondt y Thaler (1985) estudian como sobrerreacción del mercado a "
+                                 "las malas noticias. Describe un sesgo estudiado, no una previsión.")})
+        else:
+            out.append({"kind": "caida_sin_explicar", "field": "market_context.series_drawdown.from_high",
+                        "num": dd["from_high"],
+                        "text": (head + ": el precio puede estar descontando algo que este informe no mide (estrategia, "
+                                 "competencia, las previsiones de la propia empresa)"
+                                 + (f"; sus últimos resultados tuvieron una reacción de {_pct(reaction)}"
+                                    if reaction is not None else "") + ". No es una señal de compra.")})
     m = ((a.get("reverse_dcf") or {}).get("main")) or {}
     br, own = (m.get("base_rate") or {}), (m.get("own_growth") or {})
     if (m.get("state") == "ok" and m.get("band") == "muy_exigente" and br.get("share") is not None

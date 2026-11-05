@@ -1091,6 +1091,9 @@ def beta_contrastada(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
     lo, hi = raw - C["k_se"] * se, raw + C["k_se"] * se
     if lo <= used <= hi:
         return Result(OK)
+    if b.get("contrast"):
+        # F11 · T5: declarada (beta.contrast) y con la confianza a la baja: no es un vacío
+        return Result(OK, "beta sustituta fuera de la propia, declarada y contada en la confianza")
     return _result(rule, [_violation(
         rule, 1 + min(abs(used - lo), abs(used - hi)) / max(se, 0.05),
         f"beta usada {used:.2f} ({b.get('source')}) fuera de la propia {raw:.2f} ± {C['k_se']:g}·{se:.2f}",
@@ -1105,8 +1108,11 @@ def causalidad_sostenida(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
     out = []
     crp = _num(_get(a, "country_risk", "crp")) or 0.0
     foreign = _get(a, "country_risk", "country") not in (None, "United States")    # sede fuera de EE. UU.
+    # F11 · T6: con la fuerza relativa frente al ETF de su país (signals.relative_strength_country) ya no es un vacío
+    vs_country = _get(mc, "signals", "relative_strength_country", "status") == "ok"
     for r in mc.get("readings") or []:
-        if r.get("key") == "relative_strength" and "propio de la empresa" in str(r.get("text") or "") and foreign:
+        if r.get("key") == "relative_strength" and "propio de la empresa" in str(r.get("text") or "") and foreign \
+                and not vs_country:
             out.append(_violation(
                 rule, 1 + crp / 0.01, f"«{r.get('text')}» con prima de riesgo país {_pp(crp)} "
                 f"({_get(a, 'country_risk', 'country')})",
@@ -1114,7 +1120,8 @@ def causalidad_sostenida(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
                 crp=crp, etf=mc.get("sector_etf")))
     reaction = _num(_get(mc, "pead", "reaction"))
     for bh in mc.get("behavioral") or []:
-        if bh.get("kind") == "sobrerreaccion":
+        # F11 · T6: la sobrerreacción solo se cita con la última reacción a resultados no negativa
+        if bh.get("kind") == "sobrerreaccion" and (reaction is None or reaction < 0):
             neg = reaction is not None and reaction < 0
             out.append(_violation(
                 rule, 2 if neg else 1, "lectura de sobrerreacción del mercado"
