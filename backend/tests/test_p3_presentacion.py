@@ -64,8 +64,10 @@ def test_margen_de_seguridad_con_dcf_de_fiabilidad_baja(outputs_by_env):
     r = {x["key"]: x for x in a["display"]["sections"]["valuation"]["intrinsic"]["rows"]}
     # F10 (beta con semanas completas): −195 % → −197 %. Revisión de COST (hallazgo 6): fuera de ±100 %, la cota y la
     # cifra exacta en el detalle.
-    assert r["margin_of_safety"]["value"] == "< −100%" and "−197%" in r["margin_of_safety"]["text"]
-    assert r["dcf_fair_value"]["value"] == "$120"
+    # F13 · paso 1 (prima de Damodaran de 1-nov-2026, 4,41 %): −197 % → −206 %.
+    # F13 · paso 11 (opción c): el crecimiento de AAPL (1.8%) converge a la tasa base (2.9%): −206 % → −196 %.
+    assert r["margin_of_safety"]["value"] == "< −100%" and "−196%" in r["margin_of_safety"]["text"]
+    assert r["dcf_fair_value"]["value"] == "$120"          # F13 · paso 1: $120 → $110; paso 11: $120
 
 
 # ───────────── 3. Una sola ventana de fuerza relativa (la de la tabla de rentabilidades) ─────────────

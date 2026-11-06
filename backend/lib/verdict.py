@@ -127,8 +127,37 @@ def price(categories: List[Dict[str, Any]], confidence_level: Optional[str]) -> 
     return p
 
 
+def abstention(price_history: Optional[Dict[str, Any]], sector: Optional[str]) -> Optional[str]:
+    """F13 · paso 8: motivo para no dar veredicto de precio, o None. El precio no es de hoy si la cotización lleva más
+    de `abstain_stale_days` sin sesiones frente al mercado, o si no hay perfil ni `abstain_min_sessions` sesiones (EA y
+    WBD: empresas en una operación corporativa, con un solo precio de hace meses)."""
+    import datetime as _dt
+    P = cfg("thresholds.score.price")
+    ph = price_history or {}
+    last, mkt = ph.get("last_date"), (ph.get("market") or {}).get("last_date")
+    if last and mkt:
+        gap = (_dt.date.fromisoformat(str(mkt)[:10]) - _dt.date.fromisoformat(str(last)[:10])).days
+        if gap > P["abstain_stale_days"]:
+            import numfmt
+            return (f"la cotización no tiene sesiones desde el {numfmt.date_long(str(last)[:10])}, {gap} días antes que "
+                    "el mercado: el precio no es de hoy y no se compara con el valor")
+    rows = ph.get("rows")
+    if str(sector or "") in ("", "Unknown") and rows is not None and rows < P["abstain_min_sessions"]:
+        return (f"sin perfil de la empresa y con {rows} sesiones de historial de precios (hacen falta "
+                f"{P['abstain_min_sessions']}): no hay base para un veredicto de precio")
+    return None
+
+
+def abstain(p: Dict[str, Any], reason: str) -> Dict[str, Any]:
+    """El precio sin veredicto (nivel y puntuación vacíos), con su motivo; la puntuación cruda queda como referencia."""
+    return {**p, "score": None, "level": None, "level_raw": None, "border": None, "contracted": False,
+            "abstained": reason}
+
+
 def reprice(p: Dict[str, Any], confidence_level: Optional[str]) -> Dict[str, Any]:
     """F8 · E1: el mismo precio crudo con otra confianza (la prueba de sensibilidad de Ke la baja un escalón)."""
+    if p.get("abstained"):          # F13 · paso 8: sin veredicto de precio no hay nada que recalcular
+        return {**p, "confidence": confidence_level}
     P = cfg("thresholds.score.price")
     raw = p.get("score_raw")
     factor = P["confidence_factor"].get(confidence_level) if confidence_level else None
@@ -179,8 +208,10 @@ def confidence_phrase(conf: Optional[Dict[str, Any]]) -> Optional[str]:
 
 def verdict(q: Dict[str, Any], p: Dict[str, Any], conf: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     ql, pl = q.get("level"), p.get("level")
-    text = f"Calidad {ql or 'sin dato'} · precio {pl or 'sin dato'}"
+    text = f"Calidad {ql or 'sin dato'} · precio {pl or ('sin veredicto' if p.get('abstained') else 'sin dato')}"
     why = confidence_phrase(conf)
     ctext = f"(confianza {conf['level']}: {why})" if (conf and conf.get("level") and why) else None
+    if p.get("abstained"):          # F13 · paso 8: el motivo de la abstención, no la confianza de un precio que no hay
+        ctext = f"({p['abstained']})"
     return {"text": text, "confidence_text": ctext, "full": text + (f" {ctext}" if ctext else ""),
             "quality_level": ql, "price_level": pl, "confidence": (conf or {}).get("level")}

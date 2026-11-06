@@ -45,7 +45,7 @@ def _run(sym, store):
         return {"__http_error__": e.status_code, "detail": e.detail}
 
 
-def capture(sym, fixtures_dir, force, env="local", render_sim=False, gz=False):
+def capture(sym, fixtures_dir, force, env="local", render_sim=False, gz=False, own_sources=False):
     import yf_adapter
     d = os.path.join(fixtures_dir, sym)
     if os.path.isdir(d) and not force:
@@ -100,7 +100,7 @@ def capture(sym, fixtures_dir, force, env="local", render_sim=False, gz=False):
 
     # Verificación: replay desde .tmp == corrida en vivo
     # V4b: una carpeta propia (los rivales del replay) trae su EDGAR en <carpeta>/f2b
-    with fb.replay(fixtures_dir, extra_dirs=(fixtures_dir,)) as rstore:
+    with fb.replay(fixtures_dir, extra_dirs=(fixtures_dir,), own_sources=own_sources) as rstore:
         rstore.dir_for = lambda _s: tmp
         replayed = _run(sym, rstore)
         misses = list(rstore.misses)
@@ -133,6 +133,8 @@ def main():
     ap.add_argument("--dir", help="carpeta de destino en vez de tests/fixtures/<env> (validaciones)")
     ap.add_argument("--gzip", action="store_true",
                     help="V4b: guardar comprimidos (.json.gz), como los rivales del replay en tests/fixtures/peers")
+    ap.add_argument("--own-sources", action="store_true",
+                    help="F13: la verificación lee EDGAR, calendario y segmentos SOLO de <dir>/f2b y <dir>/segments")
     args = ap.parse_args()
     if args.env == fb.PANEL_ENV and not args.render_sim:
         ap.error("el juego panel solo se captura con --render-sim")
@@ -146,7 +148,8 @@ def main():
     logging.disable(logging.WARNING)
     fdir = os.path.abspath(args.dir) if args.dir else fb.fixtures_dir(args.env)
     os.makedirs(fdir, exist_ok=True)
-    results = [capture(t.upper(), fdir, args.force, args.env, args.render_sim, args.gzip) for t in tickers]
+    results = [capture(t.upper(), fdir, args.force, args.env, args.render_sim, args.gzip, args.own_sources)
+               for t in tickers]
     sys.exit(0 if all(results) else 1)
 
 

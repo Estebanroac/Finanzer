@@ -166,8 +166,12 @@ def test_dcf_never_negative_fair_value(sample, outputs_by_env):
                                         for s, o in outputs_by_env(e).items()]
     for name, a in allv:
         inv.dcf_never_negative_fair_value(a, None)
-    amzn = sample["AMZN"]   # FCF TTM <= 0 en la captura: no significativo, no "sin dato"
-    assert amzn["dcf_status"]["state"] == "no_significativo" and "no es significativo" in amzn["dcf_status"]["reason"]
+    # FCF − SBC <= 0 en la captura: no significativo, no "sin dato". F13 · paso 9 (opción b): AMZN, que era el ejemplo,
+    # invierte en expansión y su DCF parte ahora del flujo de mantenimiento con la reinversión del crecimiento.
+    snow = sample["SNOW"]
+    assert snow["dcf_status"]["state"] == "no_significativo" and "no es significativo" in snow["dcf_status"]["reason"]
+    amzn = sample["AMZN"]
+    assert amzn["dcf_status"]["state"] == "ok" and "reinversión" in amzn["dcf"]["fcf_basis"]
 
 
 def test_dcf_negative_equity_is_not_significant(monkeypatch):

@@ -164,11 +164,26 @@ def _edgar_ocf(facts: Optional[Dict[str, Any]], entry: Dict[str, Any], tol: int)
     return None
 
 
+def _latest_edgar_filed(facts: Optional[Dict[str, Any]]) -> str:
+    """Fecha del último informe del que companyfacts trae el flujo de operaciones ("" sin hechos)."""
+    if not facts:
+        return ""
+    import sec_edgar as edgar
+    return max((f.get("filed") or "" for _c, fs in edgar.candidates(facts, "operating_cash_flow") for f in fs),
+               default="")
+
+
 def _reconcile(facts, entries: List[Dict[str, Any]], tol: int) -> Dict[str, Any]:
     """Cada estado usado, su flujo de operaciones frente al de EDGAR. status: "conciliado" (EDGAR tiene todos y
-    coinciden), "no_conciliado" (alguno no coincide) o "sin_hecho_edgar" (a EDGAR le falta alguno)."""
+    coinciden), "conciliado_parcial" (coinciden los que EDGAR tiene y los que le faltan se presentaron después de su
+    último informe: aún no le han llegado), "no_conciliado" (alguno no coincide) o "sin_hecho_edgar" (a EDGAR le falta
+    alguno que ya debería tener).
+
+    F13 · paso 7 (revisión de 110 empresas, PLD): companyfacts publica un informe días después que la fuente del estado
+    presentado. Exigirlo hacía que el FFO de PLD saliera o no según el día (confianza alta o baja en la misma jornada)."""
     rel = cfg("data.reit_ffo.reconcile_rel_tol")
-    detail, seen, bad = [], 0, []
+    last = _latest_edgar_filed(facts)
+    detail, seen, bad, pending, missing = [], 0, [], 0, 0
     for e in entries:
         mine, theirs = _items(e)["ocf"], _edgar_ocf(facts, e, tol)
         row = {"accn": e.get("accn"), "period": f"{e['start']} a {e['end']}", "ocf_presented": mine, "ocf_edgar": theirs}
@@ -177,8 +192,14 @@ def _reconcile(facts, entries: List[Dict[str, Any]], tol: int) -> Dict[str, Any]
             row["ok"] = abs(mine - theirs) <= rel * max(abs(theirs), 1.0)
             if not row["ok"]:
                 bad.append(row)
+        elif last and (e.get("filed") or "") > last:
+            row["pending"] = f"presentado el {e.get('filed')}, después del último informe que trae EDGAR ({last})"
+            pending += 1
+        else:
+            missing += 1
         detail.append(row)
-    status = "no_conciliado" if bad else ("conciliado" if seen == len(entries) else "sin_hecho_edgar")
+    status = ("no_conciliado" if bad else "conciliado" if seen == len(entries) else
+              "conciliado_parcial" if seen and not missing and pending else "sin_hecho_edgar")
     return {"status": status, "detail": detail}
 
 
@@ -218,7 +239,7 @@ def resolve(symbol: str, info: Dict[str, Any], facts: Optional[Dict[str, Any]], 
         return no_data(f"no hay estados presentados que cubran los doce meses hasta el {ao['date']}")
     parts, how = got
     rec = _reconcile(facts, [e for _s, e in parts], tol)
-    if rec["status"] != "conciliado":
+    if rec["status"] not in ("conciliado", "conciliado_parcial"):
         out = no_data("el flujo de operaciones del estado presentado no coincide con el de EDGAR del mismo periodo"
                       if rec["status"] == "no_conciliado" else
                       "EDGAR no tiene el flujo de operaciones de alguno de los estados presentados: no se puede conciliar")

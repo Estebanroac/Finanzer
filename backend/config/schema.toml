@@ -43,6 +43,7 @@ pb_points = "list[int]"
 
 [thresholds.score.rentabilidad]
 negative_equity_min_roa = "float"
+min_equity_to_assets = "float"
 roe_high_mult = "float"
 roe_floor = "float"
 roe_points = "list[int]"
@@ -148,6 +149,8 @@ categories = "list[str]"
 bands = "list[int]"
 labels = "list[str]"
 neutral = "int"
+abstain_stale_days = "int"
+abstain_min_sessions = "int"
 
 [thresholds.score.price.confidence_factor]
 alta = "float"
@@ -197,6 +200,7 @@ w_not_measured = "int"
 
 [thresholds.alerts.roe]
 negative_equity_min_roa = "float"
+min_equity_to_assets = "float"
 exceptional = "float"
 w_buyback_negative = "int"
 amplified_leverage_min = "float"
@@ -289,6 +293,8 @@ w = "int"
 w_max = "int"
 z_low = "float"
 z_high = "float"
+floor_below = "float"
+linear_full_below = "float"
 
 [thresholds.pdf]
 vs_sector_bounds = "list[int]"
@@ -348,8 +354,13 @@ min_firms = "int"
 dominance_ratio = "float"
 profit_columns = "list[str]"
 min_profit_ratio = "float"
+cause_band_max = "float"
+losing_excess = "float"
+below_median_ratio = "float"
+thin_margin_industries = "list[str]"
 self_negligible_weight = "float"
 self_max_weight = "float"
+self_max_shift = "float"
 
 [sectors.benchmarks.country_aliases]
 "*" = "str"
@@ -437,7 +448,11 @@ blume_prior = "float"
 statutory_rate = "float"
 effective_bounds = "list[float]"
 
+[valuation.cross_holdings]
+ev_equity_investments_min = "float"
+
 [valuation.synthetic_rating]
+coverage_equity_min_share = "float"
 large_cap_min = "float"
 large_coverage_bounds = "list[number]"
 small_coverage_bounds = "list[number]"
@@ -446,6 +461,7 @@ spreads = "list[float]"
 net_cash_rating = "str"
 negative_rating = "str"
 no_coverage_rating = "str"
+incoherent_ratings = "list[str]"
 
 [valuation.wacc]
 default = "float"
@@ -465,6 +481,8 @@ min_source_growth = "float"
 default_growth = "float"
 terminal_value_warning_pct = "int"
 yoy_vs_3y_pp = "float"
+base_rate_horizon = "int"
+base_rate_weight = "float"
 
 [valuation.grid]
 growth_range = "list[float]"
@@ -480,7 +498,13 @@ median_years = "int"
 forward_premium = "float"
 forward_coherence_factor = "float"
 
+[valuation.investment_intensity]
+years = "int"
+min_capex_to_da = "float"
+min_capex_to_ocf = "float"
+
 [valuation.telecom_spectrum]
+damodaran_industries = "list[str]"
 industries = "list[str]"
 years = "int"
 min_years = "int"
@@ -675,6 +699,11 @@ name = "str"
 axis = "str"
 member = "str"
 
+[data.edgar.captive_filers."*"]
+name = "str"
+cik = "int"
+debt = "list[list[str]]"
+
 [thresholds.roce]
 divergence_pp = "float"
 excess_cash_share = "float"
@@ -690,6 +719,7 @@ reit_prefixes = "list[str]"
 utility_industries = "list[str]"
 growth_pre_profit_min_revenue_cagr = "float"
 cyclical_industries = "list[str]"
+commodity_industries = "list[str]"
 cyclical_conditional_industries = "list[str]"
 
 [sectors.archetypes.reversion]
@@ -808,8 +838,11 @@ terminal = "float"
 [thresholds.normalization]
 one_off_pct = "float"
 nonoperating_tolerance_revenue = "float"
+equity_recurrence_years = "int"
+equity_recurrence_min_years = "int"
 tax_median_years = "int"
 tax_median_min = "int"
+tax_median_floor = "float"
 operating_item_types = "list[str]"
 robust_z = "float"
 min_quarters = "int"
@@ -826,7 +859,9 @@ label_min_diff = "float"
 [thresholds.growth]
 per_share_min_shares_cagr = "float"
 anomalous_base_ratio = "float"
+inflated_base_ratio = "float"
 perimeter_min_years = "int"
+perimeter_history_break = "float"
 long_years = "int"
 backing_min_years = "int"
 backing_max_years = "int"
@@ -841,6 +876,7 @@ margin_trend_years = "int"
 margin_drop_min = "float"
 margin_drop_downs = "int"
 margin_drop_low_mult = "float"
+growth_divergence_pp = "float"
 central_block = "int"
 fcf_fields = "list[str]"
 inferred_sources = "list[str]"
@@ -865,6 +901,9 @@ source_ignored_rules = "list[str]"
 coverage_bounds = "list[float]"
 source_issue_bounds = "list[int]"
 excluded_multiple_components = "list[str]"
+fragile_pe_gap = "float"
+cycle_real_drop = "float"
+cycle_margin_min_years = "int"
 
 [thresholds.confidence.weights]
 convergence = "float"
@@ -1007,6 +1046,9 @@ file_suffix = "str"
 
 [industries.regions."*".dollars]
 "*" = "list[number]"
+
+[industries.regions."*".money_losing]
+"*" = "number"
 
 [betas]
 source = "str"
@@ -1493,6 +1535,86 @@ weight = "int"
 [invariants.metodo_citado_aplicable]
 weight = "int"
 
+# F13 (revisión externa de 110 empresas, 5-nov-2026)
+
+[invariants.rating_contable]
+weight = "int"
+low_ratings = "list[str]"
+
+[invariants.cautiva_separada]
+weight = "int"
+
+[invariants.inverso_una_vez]
+weight = "int"
+
+[invariants.confianza_base_fragil]
+weight = "int"
+max_pe_gap = "float"
+
+[invariants.ciclica_por_industria]
+weight = "int"
+commodity_industries = "list[str]"
+
+[invariants.pico_ciclico]
+weight = "int"
+min_ratio = "float"
+
+[invariants.referencia_acotada]
+weight = "int"
+profit_columns = "list[str]"
+min_value = "float"
+cause_band_max = "float"
+max_roe = "float"
+max_factor = "float"
+
+[invariants.roe_bajo_coherente]
+weight = "int"
+
+[invariants.roe_patrimonio_infimo]
+weight = "int"
+min_equity_to_assets = "float"
+
+[invariants.utility_regulada]
+weight = "int"
+
+[invariants.normalizacion_utility]
+weight = "int"
+min_share = "float"
+
+[invariants.espectro_coherente]
+weight = "int"
+
+[invariants.perimetro_corregido]
+weight = "int"
+
+[invariants.ffo_sin_saltos]
+weight = "int"
+max_range_factor = "float"
+
+[invariants.abstencion_sin_datos]
+weight = "int"
+
+[invariants.beta_sin_signo_negativo]
+weight = "int"
+
+[invariants.flujo_por_intensidad]
+weight = "int"
+min_capex_to_ocf = "float"
+
+[invariants.crecimiento_dcf_representativo]
+weight = "int"
+min_abs_upside = "int"
+max_gap = "float"
+
+[invariants.base_inflada]
+weight = "int"
+min_years = "int"
+min_factor = "float"
+series = "list[list[str]]"
+
+[invariants.base_inflada.engine_series]
+"*" = "str"
+
 [invariants.escaneo]
 batch_size = "int"
 pause_between_batches_s = "float"
@@ -1504,3 +1626,15 @@ finnhub_skip_paths = "list[str]"
 check_after_min = "float"
 max_minutes = "float"
 max_rss_mb = "float"
+
+[sectors.sector_risks]
+refinancing_excluded_archetypes = "list[str]"
+speculative_ratings = "list[str]"
+max_balance_age_days = "int"
+not_measured = "str"
+
+[sectors.sector_risks.industry."*"]
+title = "str"
+text = "str"
+industries = "list[str]"
+states = "list[str]"

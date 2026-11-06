@@ -332,6 +332,10 @@
     "capped_from": "media",
     "contraction_basis": "baja",
     "dimensions": {
+      "base": {
+        "level": "alta",
+        "reasons": []
+      },
       "convergence": {
         "level": "no_evaluable",
         "methods": [
@@ -385,19 +389,19 @@
     "score": 0.666666666667
   },
   "cost_of_equity": {
-    "as_of": "2026-10-01",
-    "capm": 0.0813612449045,
+    "as_of": "2026-11-01",
+    "capm": 0.0827843071497,
     "crp": null,
-    "erp": 0.042,
+    "erp": 0.0441,
     "floor": null,
     "floors": {
-      "Kd + 1 pp": 0.0767,
-      "Rf + 0.5 × ERP": 0.0739
+      "Kd + 1 pp": 0.0707,
+      "Rf + 0.5 × ERP": 0.07495
     },
-    "kd": 0.0667,
+    "kd": 0.0607,
     "rf": 0.0529,
     "shift": null,
-    "value": 0.0813612449045
+    "value": 0.0827843071497
   },
   "country_risk": {
     "as_of": "2026-01-05",
@@ -1332,6 +1336,7 @@
     "perimeter": {
       "changed": false,
       "discontinued": [],
+      "history_break": null,
       "mixed_cagr": false,
       "note": null,
       "restated": [],
@@ -1477,6 +1482,7 @@
       "rule": "multiplo_no_significativo"
     }
   ],
+  "dcf_growth_base_rate": null,
   "dcf_growth_blend": null,
   "dcf_status": {
     "reason": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria",
@@ -2157,6 +2163,12 @@
         {
           "key": "stability",
           "label": "Estabilidad del arquetipo",
+          "level": "Alta",
+          "text": "Sin incidencias."
+        },
+        {
+          "key": "base",
+          "label": "base",
           "level": "Alta",
           "text": "Sin incidencias."
         }
@@ -3284,6 +3296,11 @@
           }
         ]
       },
+      "sector_risks": {
+        "items": [],
+        "not_measured": "concentración en un inquilino o en un producto: los datos públicos gratuitos no la traen estructurada (solo en la instancia XBRL con dimensiones), así que no se mide ni se estima",
+        "note": "Aparte y sin puntuar: ni la calidad ni el precio los cuentan."
+      },
       "solvency": {
         "balance": "Balance — deuda total $30.77B · caja $552.65M · patrimonio $39.55B · activos $76.44B",
         "columns": [
@@ -3566,7 +3583,7 @@
         "wacc_breakdown": [
           {
             "label": "WACC",
-            "value": "7.34%"
+            "value": "7.22%"
           },
           {
             "label": "Peso del patrimonio",
@@ -3574,7 +3591,7 @@
           },
           {
             "label": "Coste del patrimonio (Ke)",
-            "value": "8.14%"
+            "value": "8.28%"
           },
           {
             "label": "Tasa libre de riesgo (Rf)",
@@ -3586,7 +3603,7 @@
           },
           {
             "label": "Prima de mercado implícita",
-            "value": "4.20%"
+            "value": "4.41%"
           },
           {
             "label": "Peso de la deuda",
@@ -3594,18 +3611,18 @@
           },
           {
             "label": "Coste de la deuda (Kd)",
-            "value": "6.67%"
+            "value": "6.07%"
           },
           {
             "label": "Rating sintético",
-            "value": "BB+"
+            "value": "A"
           },
           {
             "label": "Tipo impositivo (t)",
             "value": "10.00%"
           }
         ],
-        "wacc_note": "WACC 7.34% = 62.50% × Ke 8.14% (Rf 5.29% [Tesoro de EE. UU. a 10 años del par Rf–ERP de Damodaran, 1 de octubre de 2026] + β de abajo hacia arriba 0.68 [βU 0.44 de la industria (Damodaran, enero de 2026) reapalancada con D/E 0.60 y t 10%; sin Blume] × prima implícita 4.20%) + 37.50% × Kd 6.67% × (1 − t 10.00%). Kd = Rf + spread del rating sintético BB+ (tabla de empresas grandes, cobertura 2.4x). t: tasa efectiva TTM (tasa efectiva 6.9% acotada a [10%, 35%]). Rf y prima implícita del mismo día: bono del Tesoro de EE. UU. a 10 años y prima implícita de Damodaran del 1 de octubre de 2026."
+        "wacc_note": "WACC 7.22% = 62.50% × Ke 8.28% (Rf 5.29% [Tesoro de EE. UU. a 10 años del par Rf–ERP de Damodaran, 1 de noviembre de 2026] + β de abajo hacia arriba 0.68 [βU 0.44 de la industria (Damodaran, enero de 2026) reapalancada con D/E 0.60 y t 10%; sin Blume] × prima implícita 4.41%) + 37.50% × Kd 6.07% × (1 − t 10.00%). Kd = Rf + spread del rating sintético A (tabla de empresas grandes, cobertura 4.6x); REIT: cobertura con el EBITDA (la depreciación inmobiliaria no es un coste de caja) (con el EBIT contable: 2.4x). t: tasa efectiva TTM (tasa efectiva 6.9% acotada a [10%, 35%]). Rf y prima implícita del mismo día: bono del Tesoro de EE. UU. a 10 años y prima implícita de Damodaran del 1 de noviembre de 2026."
       }
     },
     "summary": {
@@ -4311,6 +4328,7 @@
   "earnings_peak": null,
   "eps_vs_revenue_growth": null,
   "errors": [],
+  "ev_cross_holdings": null,
   "graham_number": null,
   "growth_basis": {
     "applied_to": [
@@ -4524,20 +4542,27 @@
     "source": "SEC EDGAR (companyfacts: ejercicios completos de los informes anuales)",
     "status": "ok"
   },
+  "investment_intensity": {
+    "expansion": null,
+    "ratio": null,
+    "reason": "capex y D&A de 0 ejercicios (hacen falta 3)",
+    "to_ocf": null,
+    "years": 0
+  },
   "ke_sensitivity": {
     "base": {
-      "ke": 0.0813612449045,
+      "ke": 0.0827843071497,
       "level": "razonable",
       "score": 58
     },
     "dependent": false,
     "minus": {
-      "ke": 0.0713612449045,
+      "ke": 0.0727843071497,
       "level": "razonable",
       "score": 58
     },
     "plus": {
-      "ke": 0.0913612449045,
+      "ke": 0.0927843071497,
       "level": "razonable",
       "score": 58
     },
@@ -4619,7 +4644,7 @@
     "total_assets": 76441475000.0,
     "total_debt": 30765959000.0,
     "total_equity": 39549557000.0,
-    "wacc": 0.0733610036609
+    "wacc": 0.0722250898958
   },
   "market_context": {
     "behavioral": [],
@@ -5192,8 +5217,9 @@
         "years": 3
       },
       "points": null,
-      "rate": 0.0813612449045,
+      "rate": 0.0827843071497,
       "reason": "sin flujo positivo que proyectar (FCF por acción base ≤ 0 o sin dato)",
+      "roic": null,
       "rule": null,
       "side": null,
       "signal": null,
@@ -5205,11 +5231,16 @@
     "ttm": null
   },
   "risk_free": {
-    "as_of": "2026-10-01",
-    "erp": 0.042,
+    "as_of": "2026-11-01",
+    "erp": 0.0441,
     "fallback": false,
     "market": null,
     "reason": null,
+    "review": {
+      "due": "2026-12-01",
+      "published": "2026-11-01",
+      "status": "vigente"
+    },
     "source": "par Rf–ERP de Damodaran",
     "value": 0.0529
   },
@@ -5544,6 +5575,25 @@
     "sector": "Real Estate",
     "sector_etf": "VNQ"
   },
+  "sector_risks": {
+    "company": [],
+    "debt_due": {
+      "concepts": {
+        "commercial_paper": "us-gaap:CommercialPaper"
+      },
+      "due_24m": null,
+      "fy_end": "2025-12-31",
+      "reason": "el emisor no presenta los vencimientos de la deuda del año 1 y 2 con los conceptos estándar",
+      "source": "SEC EDGAR (companyfacts: vencimientos de la deuda del último balance anual)",
+      "status": "sin_dato",
+      "values": {
+        "commercial_paper": 516800000
+      }
+    },
+    "industry": [],
+    "not_measured": "concentración en un inquilino o en un producto: los datos públicos gratuitos no la traen estructurada (solo en la instancia XBRL con dimensiones), así que no se mide ni se estima",
+    "note": "Aparte y sin puntuar: ni la calidad ni el precio los cuentan."
+  },
   "spectrum_adjustment": null,
   "symbol": "O",
   "tax_rate": {
@@ -5575,25 +5625,35 @@
     "clamped": false,
     "debt": 30765959000.0,
     "equity": 51266093056.0,
-    "kd": 0.0667,
-    "kd_after_tax": 0.06003,
-    "ke": 0.0813612449045,
-    "ke_capm": 0.0813612449045,
+    "kd": 0.0607,
+    "kd_after_tax": 0.05463,
+    "ke": 0.0827843071497,
+    "ke_capm": 0.0827843071497,
     "ke_crp": null,
     "ke_floor": null,
     "ke_shift": null,
-    "mrp": 0.042,
+    "mrp": 0.0441,
     "rating": {
-      "coverage": 2.36959538575,
+      "coverage": 4.57469361204,
       "flag": null,
-      "rating": "BB+",
-      "spread": 0.0138,
+      "rating": "A",
+      "spread": 0.0078,
       "table": "grandes"
     },
-    "raw": 0.0733610036609,
+    "rating_coverage": {
+      "basis": "EBITDA",
+      "coverage": 4.57469361204,
+      "reason": "REIT: cobertura con el EBITDA (la depreciación inmobiliaria no es un coste de caja)",
+      "reported": {
+        "coverage": 2.36959538575,
+        "state": "ok"
+      },
+      "state": "ok"
+    },
+    "raw": 0.0722250898958,
     "reason": null,
     "rf": 0.0529,
-    "rf_as_of": "2026-10-01",
+    "rf_as_of": "2026-11-01",
     "rf_fallback": false,
     "rf_market": null,
     "rf_reason": null,
@@ -5601,7 +5661,7 @@
     "tax_rate": 0.1,
     "tax_reason": "tasa efectiva 6.9% acotada a [10%, 35%]",
     "tax_source": "efectiva",
-    "value": 0.0733610036609,
+    "value": 0.0722250898958,
     "weights": {
       "debt": 0.375048023655,
       "equity": 0.624951976345

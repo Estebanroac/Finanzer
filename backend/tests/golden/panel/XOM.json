@@ -420,6 +420,10 @@
     "capped_from": "media",
     "contraction_basis": "baja",
     "dimensions": {
+      "base": {
+        "level": "alta",
+        "reasons": []
+      },
       "convergence": {
         "level": "media",
         "methods": [
@@ -478,9 +482,21 @@
         "reasons": []
       },
       "stability": {
+        "cycle": {
+          "commodity": true,
+          "loss_years": [
+            2020
+          ],
+          "margin_range": null,
+          "worst_drop": {
+            "change": -0.353964836742,
+            "year": 2023
+          },
+          "years": 10
+        },
         "level": "baja",
         "reasons": [
-          "empresa cíclica: resultados ligados a la fase del ciclo"
+          "productora de materias primas: su resultado depende del precio de lo que produce, no de su gestión"
         ]
       }
     },
@@ -493,31 +509,31 @@
     "limits_score": false,
     "reasons": [
       "convergencia media: uno lo ve en precio y otro con dirección: no coinciden, sin oponerse",
-      "estabilidad baja: empresa cíclica: resultados ligados a la fase del ciclo",
+      "estabilidad baja: productora de materias primas: su resultado depende del precio de lo que produce, no de su gestión",
       "techo en baja: la más baja manda: estabilidad baja",
       "veredicto dependiente de Ke: el nivel de precio pasa de «razonable» a «exigente» con Ke + 1 pp: la confianza ya era baja"
     ],
     "score": 0.6
   },
   "cost_of_equity": {
-    "as_of": "2026-10-01",
-    "capm": 0.0651689577939,
+    "as_of": "2026-11-01",
+    "capm": 0.0657824056836,
     "crp": null,
-    "erp": 0.042,
+    "erp": 0.0441,
     "floor": {
-      "capm": 0.0651689577939,
+      "capm": 0.0657824056836,
       "crp": null,
       "rule": "Rf + 0.5 × ERP",
-      "value": 0.0739
+      "value": 0.07495
     },
     "floors": {
       "Kd + 1 pp": 0.0669,
-      "Rf + 0.5 × ERP": 0.0739
+      "Rf + 0.5 × ERP": 0.07495
     },
     "kd": 0.0569,
     "rf": 0.0529,
     "shift": null,
-    "value": 0.0739
+    "value": 0.07495
   },
   "country_risk": {
     "as_of": "2026-01-05",
@@ -1370,6 +1386,7 @@
     "perimeter": {
       "changed": false,
       "discontinued": [],
+      "history_break": null,
       "mixed_cagr": false,
       "note": null,
       "restated": [],
@@ -1533,14 +1550,14 @@
   ],
   "dcf": {
     "available": true,
-    "fair_value": 170.06,
+    "fair_value": 166.45,
     "fcf_basis": "FCF sin restar la SBC (sin SBC del mismo periodo)",
     "fcf_gross": 37668750000.0,
     "fcf_input": 37668750000.0,
     "growth_basis": "ciclo medio de los ingresos de pico a pico",
     "growth_rate": 0.00607781502342,
     "growth_source": "revenue_growth_3y",
-    "margin_of_safety": -0.0411619284876,
+    "margin_of_safety": -0.0637428510579,
     "normalized": {
       "cycle_incomplete": true,
       "fcf": 35849250194.0,
@@ -1554,7 +1571,7 @@
     "reliability": {
       "central_contains_price": true,
       "criteria": {
-        "central_dispersion": 2.13193164684,
+        "central_dispersion": 2.11133844842,
         "data_flags": [],
         "fcf_margin": {
           "cv": 0.244091869167,
@@ -1574,6 +1591,7 @@
             2025
           ]
         },
+        "growth_divergence": null,
         "margin_trend": {
           "changes": 4,
           "current": 0.0907245333186,
@@ -1590,7 +1608,7 @@
           ]
         },
         "notes": [],
-        "terminal_pct": 62.7
+        "terminal_pct": 62.1
       },
       "grid_contains_price": true,
       "level": "media",
@@ -1599,21 +1617,22 @@
       ]
     },
     "terminal_growth": 0.025,
-    "upside": -3.9534607789,
+    "upside": -5.99231769168,
     "value_composition": {
-      "stage1_pct": 21.4,
-      "stage2_pct": 15.9,
-      "terminal_pct": 62.7
+      "stage1_pct": 21.8,
+      "stage2_pct": 16.2,
+      "terminal_pct": 62.1
     },
-    "wacc": 0.0721631411449,
+    "wacc": 0.0731553983296,
     "wacc_flips": [
       {
-        "value": 217.17,
-        "wacc": 0.0622
+        "value": 211.39,
+        "wacc": 0.0632
       }
     ],
     "warnings": []
   },
+  "dcf_growth_base_rate": null,
   "dcf_growth_blend": null,
   "dcf_status": {
     "reason": null,
@@ -1632,7 +1651,7 @@
         },
         {
           "label": "Confianza · Estabilidad del arquetipo (baja)",
-          "text": "empresa cíclica: resultados ligados a la fase del ciclo."
+          "text": "productora de materias primas: su resultado depende del precio de lo que produce, no de su gestión."
         },
         {
           "label": "Fuente oficial",
@@ -1865,9 +1884,9 @@
             "state": "con_dato"
           },
           {
-            "cagr": -0.197159066009,
-            "cagr_note": null,
-            "cagr_txt": "−19.7%",
+            "cagr": -0.184805102039,
+            "cagr_note": "regresión log-lineal: el año inicial es anómalo",
+            "cagr_txt": "−18.5%",
             "key": "net_income",
             "label": "Beneficio neto",
             "points": [
@@ -1903,9 +1922,9 @@
             "state": "con_dato"
           },
           {
-            "cagr": -0.260511485436,
-            "cagr_note": null,
-            "cagr_txt": "−26.1%",
+            "cagr": -0.244324845519,
+            "cagr_note": "regresión log-lineal: el año inicial es anómalo",
+            "cagr_txt": "−24.4%",
             "key": "free_cash_flow",
             "label": "Flujo de caja libre",
             "points": [
@@ -2157,10 +2176,10 @@
         "spread": {
           "reading": "Marginal",
           "state": "con_dato",
-          "text": "el ROIC (9.9%) apenas cubre el costo de capital (7.2%): la creación de valor es marginal.",
+          "text": "el ROIC (9.9%) apenas cubre el costo de capital (7.3%): la creación de valor es marginal.",
           "tone": "neu",
-          "value": 0.0267463644312,
-          "value_txt": "+2.7 pp"
+          "value": 0.0257541072464,
+          "value_txt": "+2.6 pp"
         }
       },
       "results_flow": [
@@ -2418,66 +2437,66 @@
           "tone": "neg"
         },
         "dcf_composition": {
-          "explicit_pct": 37.3,
-          "terminal_pct": 62.7
+          "explicit_pct": 38.0,
+          "terminal_pct": 62.1
         },
         "fair_value": {
           "axis": [
-            73.712,
-            327.228
+            72.6325,
+            318.329
           ],
           "badge": {
             "label": "Precio justo",
             "tone": "neu"
           },
-          "central_high": 254.51,
+          "central_high": 247.66,
           "central_high_txt": "$250",
-          "central_low": 119.38,
+          "central_low": 117.3,
           "central_low_txt": "$120",
           "central_text": "rango $120–$250 en el bloque central de la tabla de sensibilidad (crecimiento ± 2,5 pp y WACC ± 1 pp; mínimo y máximo, no un p10–p90)",
-          "fair_value": 170.06,
+          "fair_value": 166.45,
           "fair_value_txt": "$170",
-          "grid_high": 297.48,
-          "grid_high_txt": "$300",
-          "grid_low": 86.72,
-          "grid_low_txt": "$87",
+          "grid_high": 289.39,
+          "grid_high_txt": "$290",
+          "grid_low": 85.45,
+          "grid_low_txt": "$85",
           "method": "DCF",
           "price": 177.059997559,
           "price_txt": "$177.06",
           "reliability": "media",
           "reliability_tone": "warn",
           "state": "con_dato",
-          "text": "el precio cotiza en torno al valor justo estimado por el DCF (-4%)",
-          "upside_txt": "-4.0%",
+          "text": "el precio cotiza en torno al valor justo estimado por el DCF (-6%)",
+          "upside_txt": "-6.0%",
           "zones": [
             {
-              "from": 73.712,
+              "from": 72.6325,
               "label": "Muy infravalorada",
-              "to": 130.815384615,
+              "to": 128.038461538,
               "tone": "pos"
             },
             {
-              "from": 130.815384615,
+              "from": 128.038461538,
               "label": "Infravalorada",
-              "to": 154.6,
+              "to": 151.318181818,
               "tone": "pos"
             },
             {
-              "from": 154.6,
+              "from": 151.318181818,
               "label": "Precio justo",
-              "to": 188.955555556,
+              "to": 184.944444444,
               "tone": "neu"
             },
             {
-              "from": 188.955555556,
+              "from": 184.944444444,
               "label": "Prima",
-              "to": 242.942857143,
+              "to": 237.785714286,
               "tone": "warn"
             },
             {
-              "from": 242.942857143,
+              "from": 237.785714286,
               "label": "Sobrevalorada",
-              "to": 327.228,
+              "to": 318.329,
               "tone": "neg"
             }
           ]
@@ -2628,13 +2647,19 @@
           "key": "stability",
           "label": "Estabilidad del arquetipo",
           "level": "Baja",
-          "text": "Empresa cíclica: sus resultados dependen de la fase del ciclo."
+          "text": "Produce materias primas: su resultado depende del precio de lo que vende, no de su gestión."
+        },
+        {
+          "key": "base",
+          "label": "base",
+          "level": "Alta",
+          "text": "Sin incidencias."
         }
       ],
       "level": "baja",
       "plain": [
         "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no.",
-        "Empresa cíclica: sus resultados dependen de la fase del ciclo."
+        "Produce materias primas: su resultado depende del precio de lo que vende, no de su gestión."
       ],
       "reasons": [
         {
@@ -2645,7 +2670,7 @@
         {
           "dimension": "estabilidad",
           "level": "baja",
-          "text": "Empresa cíclica: sus resultados dependen de la fase del ciclo."
+          "text": "Produce materias primas: su resultado depende del precio de lo que vende, no de su gestión."
         },
         {
           "dimension": "techo",
@@ -2743,7 +2768,7 @@
       ],
       "confidence_reasons": [
         "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no.",
-        "Empresa cíclica: sus resultados dependen de la fase del ciclo."
+        "Produce materias primas: su resultado depende del precio de lo que vende, no de su gestión."
       ],
       "coverage_notes": [],
       "currency_note": null,
@@ -3254,7 +3279,7 @@
       },
       "dcf_upside": {
         "label": "Precio justo",
-        "text": "el precio cotiza en torno al valor justo estimado por el DCF (-4%)",
+        "text": "el precio cotiza en torno al valor justo estimado por el DCF (-6%)",
         "tone": "neu"
       },
       "de": {
@@ -3302,7 +3327,7 @@
       },
       "roic_wacc_spread": {
         "label": "Marginal",
-        "text": "el ROIC (9.9%) apenas cubre el costo de capital (7.2%): la creación de valor es marginal.",
+        "text": "el ROIC (9.9%) apenas cubre el costo de capital (7.3%): la creación de valor es marginal.",
         "tone": "neu"
       },
       "runway": null
@@ -3614,11 +3639,11 @@
                 {
                   "in_block": false,
                   "metric": "ROIC frente al WACC",
-                  "reason": "Retorno por encima del costo de capital (spread +2.7 pp)",
+                  "reason": "Retorno por encima del costo de capital (spread +2.6 pp)",
                   "sign": "+1",
                   "state": "con_dato",
                   "tone": "pos",
-                  "value": "+2.7 pp"
+                  "value": "+2.6 pp"
                 }
               ],
               "key": "Rentabilidad",
@@ -3668,7 +3693,7 @@
                   "sign": "0",
                   "state": "con_dato",
                   "tone": "neu",
-                  "value": "-4%"
+                  "value": "-6%"
                 },
                 {
                   "in_block": false,
@@ -4001,7 +4026,7 @@
           ]
         ],
         "figures_title": "Cifras de los últimos doce meses (TTM, a 30 de junio de 2026)",
-        "intro": "El ROE (TTM) de 12.6% está en el rango alto de su sector (sector: 5.0% competitivo, 12.0% rango alto). El ROIC (9.9%) apenas cubre el costo de capital (7.2%): la creación de valor es marginal.",
+        "intro": "El ROE (TTM) de 12.6% está en el rango alto de su sector (sector: 5.0% competitivo, 12.0% rango alto). El ROIC (9.9%) apenas cubre el costo de capital (7.3%): la creación de valor es marginal.",
         "quality_readings": [
           {
             "key": "dupont",
@@ -4091,9 +4116,9 @@
             "label": "Spread ROIC − WACC",
             "reading": "Marginal",
             "state": "con_dato",
-            "text": "el ROIC (9.9%) apenas cubre el costo de capital (7.2%): la creación de valor es marginal.",
+            "text": "el ROIC (9.9%) apenas cubre el costo de capital (7.3%): la creación de valor es marginal.",
             "tone": "neu",
-            "value": "+2.7 pp"
+            "value": "+2.6 pp"
           },
           {
             "bench": "—",
@@ -4118,6 +4143,11 @@
             "value": "16.89%"
           }
         ]
+      },
+      "sector_risks": {
+        "items": [],
+        "not_measured": "concentración en un inquilino o en un producto: los datos públicos gratuitos no la traen estructurada (solo en la instancia XBRL con dimensiones), así que no se mide ni se estima",
+        "note": "Aparte y sin puntuar: ni la calidad ni el precio los cuentan."
       },
       "solvency": {
         "balance": "Balance — deuda total $42.37B · caja $10.59B · patrimonio $259.38B · activos $464.48B",
@@ -4235,13 +4265,13 @@
           "LECTURA"
         ],
         "dcf_missing": null,
-        "dcf_params": "Parámetros del modelo — WACC 7.22% · crecimiento 0.61% (ciclo medio de los ingresos de pico a pico) · terminal 2.50% · el valor terminal aporta el 63% del valor total · FCF de mantenimiento $37.67B (flujo operativo − D&A como capex de mantenimiento, promedio de 4 ejercicios), frente al FCF normalizado $35.85B (margen FCF promedio 9.93% × ingresos actuales, que incluye el capex de expansión; ciclo incompleto: 4 ejercicios): el DCF usa el de mantenimiento, con crecimiento normalizado de ciclo medio.",
+        "dcf_params": "Parámetros del modelo — WACC 7.32% · crecimiento 0.61% (ciclo medio de los ingresos de pico a pico) · terminal 2.50% · el valor terminal aporta el 62% del valor total · FCF de mantenimiento $37.67B (flujo operativo − D&A como capex de mantenimiento, promedio de 4 ejercicios), frente al FCF normalizado $35.85B (margen FCF promedio 9.93% × ingresos actuales, que incluye el capex de expansión; ciclo incompleto: 4 ejercicios): el DCF usa el de mantenimiento, con crecimiento normalizado de ciclo medio.",
         "dcf_reliability": "Fiabilidad del DCF: media (empresa cíclica: el FCF depende de la fase del ciclo). Aporta +0 puntos a Valoración (máximo ±2 con fiabilidad media).",
         "dcf_reliability_level": "media",
         "dcf_reliability_tone": "warn",
         "intrinsic": {
           "graham_note": null,
-          "intro": "El precio cotiza en torno al valor justo estimado por el DCF (-4%).",
+          "intro": "El precio cotiza en torno al valor justo estimado por el DCF (-6%).",
           "rows": [
             {
               "bench": null,
@@ -4272,9 +4302,9 @@
               "label": "Potencial vs precio (upside)",
               "reading": "Precio justo",
               "state": "con_dato",
-              "text": "el precio cotiza en torno al valor justo estimado por el DCF (-4%)",
+              "text": "el precio cotiza en torno al valor justo estimado por el DCF (-6%)",
               "tone": "neu",
-              "value": "-4.0%"
+              "value": "-6.0%"
             },
             {
               "bench": null,
@@ -4285,7 +4315,7 @@
               "state": "con_dato",
               "text": null,
               "tone": null,
-              "value": "−4%"
+              "value": "−6%"
             }
           ]
         },
@@ -4295,7 +4325,7 @@
         "normalization_note": null,
         "premortem": {
           "items": [
-            "el FCF de mantenimiento por acción creciera menos del 1.6% anual durante 10 años que ya descuenta el precio; historia propia: sus ingresos, 3.3% anual en 10 años (FY2015–FY2025)"
+            "el FCF de mantenimiento por acción creciera menos del 1.9% anual durante 10 años que ya descuenta el precio; historia propia: sus ingresos, 3.3% anual en 10 años (FY2015–FY2025)"
           ],
           "note": "Condiciones que invalidarían la lectura de hoy, con la cifra que las mide: no son previsiones.",
           "title": "Esta lectura sería errónea si…"
@@ -4305,12 +4335,12 @@
           "lines": [
             {
               "label": "En precio",
-              "text": "El precio actual exige que el FCF de mantenimiento por acción crezca un 1.6% anual durante 10 años (1.3% los 5 primeros y convergencia al 2.5%); en los últimos 10 años (FY2015–FY2025), sus ingresos crecieron un 3.3% anual. Lo sostuvo 10 años el 54% de las empresas comparables (ventas de más de 100 mil millones, todas las industrias).",
+              "text": "El precio actual exige que el FCF de mantenimiento por acción crezca un 1.9% anual durante 10 años (1.6% los 5 primeros y convergencia al 2.5%); en los últimos 10 años (FY2015–FY2025), sus ingresos crecieron un 3.3% anual. Lo sostuvo 10 años el 52% de las empresas comparables (ventas de más de 100 mil millones, todas las industrias).",
               "tone": "neu"
             },
             {
               "label": "En precio",
-              "text": "Con el flujo del periodo: el precio actual exige que el FCF del periodo por acción crezca un 4.1% anual durante 10 años (4.8% los 5 primeros y convergencia al 2.5%); en los últimos 10 años (FY2015–FY2025), sus ingresos crecieron un 3.3% anual. Lo sostuvo 10 años el 38% de las empresas comparables (ventas de más de 100 mil millones, todas las industrias).",
+              "text": "Con el flujo del periodo: el precio actual exige que el FCF del periodo por acción crezca un 4.3% anual durante 10 años (5.1% los 5 primeros y convergencia al 2.5%); en los últimos 10 años (FY2015–FY2025), sus ingresos crecieron un 3.3% anual. Lo sostuvo 10 años el 36% de las empresas comparables (ventas de más de 100 mil millones, todas las industrias).",
               "tone": "neu"
             }
           ],
@@ -4463,21 +4493,21 @@
           "base_discount_idx": 1,
           "base_growth_idx": 2,
           "columns": [
-            "6.2%",
-            "7.2%",
-            "8.2%",
-            "9.2%"
+            "6.3%",
+            "7.3%",
+            "8.3%",
+            "9.3%"
           ],
           "corner": "CREC. \\ WACC",
           "intro": "Valor justo estimado según crecimiento (filas) y tasa de descuento (columnas). Verde: escenario por encima del precio actual; rojo: por debajo.",
-          "note": "Precio actual: $177.06. El recuadro verde marca el escenario base del modelo. Tabla asimétrica: WACC recortado en [6%, 20%]: se omiten 5.2%.",
+          "note": "Precio actual: $177.06. El recuadro verde marca el escenario base del modelo. Tabla asimétrica: WACC recortado en [6%, 20%]: se omiten 5.3%.",
           "rows": [
             {
               "cells": [
                 {
                   "band": 3,
                   "base": false,
-                  "value": "$160"
+                  "value": "$150"
                 },
                 {
                   "band": 4,
@@ -4492,7 +4522,7 @@
                 {
                   "band": 4,
                   "base": false,
-                  "value": "$87"
+                  "value": "$85"
                 }
               ],
               "label": "-4.4%"
@@ -4507,7 +4537,7 @@
                 {
                   "band": 3,
                   "base": false,
-                  "value": "$150"
+                  "value": "$140"
                 },
                 {
                   "band": 4,
@@ -4527,7 +4557,7 @@
                 {
                   "band": 1,
                   "base": false,
-                  "value": "$220"
+                  "value": "$210"
                 },
                 {
                   "band": 2,
@@ -4555,9 +4585,9 @@
                   "value": "$250"
                 },
                 {
-                  "band": 1,
+                  "band": 2,
                   "base": false,
-                  "value": "$200"
+                  "value": "$190"
                 },
                 {
                   "band": 2,
@@ -4567,7 +4597,7 @@
                 {
                   "band": 3,
                   "base": false,
-                  "value": "$140"
+                  "value": "$130"
                 }
               ],
               "label": "3.1%"
@@ -4577,10 +4607,10 @@
                 {
                   "band": 0,
                   "base": false,
-                  "value": "$300"
+                  "value": "$290"
                 },
                 {
-                  "band": 0,
+                  "band": 1,
                   "base": false,
                   "value": "$230"
                 },
@@ -4602,7 +4632,7 @@
         "wacc_breakdown": [
           {
             "label": "WACC",
-            "value": "7.22%"
+            "value": "7.32%"
           },
           {
             "label": "Peso del patrimonio",
@@ -4610,15 +4640,15 @@
           },
           {
             "label": "Coste del patrimonio (Ke)",
-            "value": "7.39%"
+            "value": "7.50%"
           },
           {
             "label": "Tasa libre de riesgo (Rf)",
             "value": "5.29%"
           },
           {
-            "label": "Piso del Ke (Rf + 0.5 × ERP; CAPM 6.52%)",
-            "value": "7.39%"
+            "label": "Piso del Ke (Rf + 0.5 × ERP; CAPM 6.58%)",
+            "value": "7.50%"
           },
           {
             "label": "Beta de abajo hacia arriba (Damodaran, sin Blume)",
@@ -4626,7 +4656,7 @@
           },
           {
             "label": "Prima de mercado implícita",
-            "value": "4.20%"
+            "value": "4.41%"
           },
           {
             "label": "Peso de la deuda",
@@ -4645,7 +4675,7 @@
             "value": "25.63%"
           }
         ],
-        "wacc_note": "WACC 7.22% = 94.50% × Ke 7.39% (piso Rf + 0.5 × ERP, porque el CAPM da 6.52%: Rf 5.29% [Tesoro de EE. UU. a 10 años del par Rf–ERP de Damodaran, 1 de octubre de 2026] + β de abajo hacia arriba 0.29 [βU 0.28 de la industria (Damodaran, enero de 2026) reapalancada con D/E 0.06 y t 26%; sin Blume] × prima implícita 4.20%) + 5.50% × Kd 5.69% × (1 − t 25.63%). Kd = Rf + spread del rating sintético AAA (tabla de empresas grandes, cobertura 50.0x). t: tasa efectiva TTM. Rf y prima implícita del mismo día: bono del Tesoro de EE. UU. a 10 años y prima implícita de Damodaran del 1 de octubre de 2026."
+        "wacc_note": "WACC 7.32% = 94.50% × Ke 7.50% (piso Rf + 0.5 × ERP, porque el CAPM da 6.58%: Rf 5.29% [Tesoro de EE. UU. a 10 años del par Rf–ERP de Damodaran, 1 de noviembre de 2026] + β de abajo hacia arriba 0.29 [βU 0.28 de la industria (Damodaran, enero de 2026) reapalancada con D/E 0.06 y t 26%; sin Blume] × prima implícita 4.41%) + 5.50% × Kd 5.69% × (1 − t 25.63%). Kd = Rf + spread del rating sintético AAA (tabla de empresas grandes, cobertura 55.8x); con el resultado de las participadas operativas (4.50B) (con el EBIT contable: 50.0x). t: tasa efectiva TTM. Rf y prima implícita del mismo día: bono del Tesoro de EE. UU. a 10 años y prima implícita de Damodaran del 1 de noviembre de 2026."
       }
     },
     "summary": {
@@ -4737,7 +4767,7 @@
             },
             {
               "kind": "signed",
-              "label": "DCF directo (valor frente al precio) · -4%",
+              "label": "DCF directo (valor frente al precio) · -6%",
               "tone": "neu",
               "value": 0
             }
@@ -4800,7 +4830,7 @@
         },
         {
           "label": "CREACIÓN DE VALOR",
-          "text": "El ROIC (9.9%) apenas cubre el costo de capital (7.2%): la creación de valor es marginal. ROCE 11.12% (EBIT / capital empleado, antes de impuestos), en línea con el ROIC (9.89%); ROCE promedio del ciclo 16.89% (4 ejercicios, ciclo incompleto)."
+          "text": "El ROIC (9.9%) apenas cubre el costo de capital (7.3%): la creación de valor es marginal. ROCE 11.12% (EBIT / capital empleado, antes de impuestos), en línea con el ROIC (9.89%); ROCE promedio del ciclo 16.89% (4 ejercicios, ciclo incompleto)."
         },
         {
           "label": "SOLIDEZ",
@@ -4812,7 +4842,7 @@
         },
         {
           "label": "ATRACTIVO DEL PRECIO",
-          "text": "P/FCF normalizado: Aceptable (19.3x) (ciclo incompleto: 4 ejercicios). El precio cotiza en torno al valor justo estimado por el DCF (-4%)."
+          "text": "P/FCF normalizado: Aceptable (19.3x) (ciclo incompleto: 4 ejercicios). El precio cotiza en torno al valor justo estimado por el DCF (-6%)."
         },
         {
           "label": "CONTEXTO DE MERCADO",
@@ -5636,6 +5666,9 @@
       "charges_back": 0,
       "equity_income": 4495000000.0,
       "equity_income_net_of_tax": null,
+      "equity_net_history": [],
+      "equity_net_operating": 0.0,
+      "equity_net_recurrent": null,
       "excess": 0.0,
       "explained": 29638453232.5,
       "income": 32757000000.0,
@@ -5724,6 +5757,7 @@
     "state": "en_linea"
   },
   "errors": [],
+  "ev_cross_holdings": null,
   "graham_margin": -0.686057363374,
   "graham_number": 105.01421921,
   "growth_basis": {
@@ -5731,26 +5765,32 @@
     "basis": "agregado",
     "eps": "el BPA ya es por acción",
     "eps_cagr": {
-      "anomalous_base": false,
-      "bound": null,
+      "anomalous_base": true,
+      "bound": {
+        "direction": "inferior",
+        "value": -0.203515932354
+      },
       "capped": null,
-      "method": "cagr",
-      "not_significant": null,
-      "note": null,
-      "robust": true,
+      "method": "log_lineal",
+      "not_significant": true,
+      "note": "base anómala (base inflada: el año inicial es el 169% de la mediana de los demás) sin serie larga robusta: BPA no significativo",
+      "robust": false,
       "source": null,
       "value_uncapped": null,
       "window": null,
       "years_used": 4
     },
     "fcf_cagr": {
-      "anomalous_base": false,
-      "bound": null,
+      "anomalous_base": true,
+      "bound": {
+        "direction": "inferior",
+        "value": -0.260511485436
+      },
       "capped": null,
-      "method": "cagr",
-      "not_significant": null,
-      "note": null,
-      "robust": true,
+      "method": "log_lineal",
+      "not_significant": true,
+      "note": "base anómala (base inflada: el año inicial es el 190% de la mediana de los demás) sin serie larga robusta: FCF no significativo",
+      "robust": false,
       "source": null,
       "value_uncapped": null,
       "window": null,
@@ -5935,20 +5975,30 @@
     "source": "SEC EDGAR (companyfacts: ejercicios completos de los informes anuales)",
     "status": "ok"
   },
+  "investment_intensity": {
+    "capex": 74583000000.0,
+    "da": 70076000000.0,
+    "expansion": null,
+    "ocf": 162361000000.0,
+    "ratio": 1.06431588561,
+    "reason": null,
+    "to_ocf": 0.459365241653,
+    "years": 3
+  },
   "ke_sensitivity": {
     "base": {
-      "ke": 0.0739,
+      "ke": 0.07495,
       "level": "razonable",
       "score": 45
     },
     "dependent": true,
     "minus": {
-      "ke": 0.0639,
+      "ke": 0.06495,
       "level": "razonable",
       "score": 45
     },
     "plus": {
-      "ke": 0.0839,
+      "ke": 0.08495,
       "level": "exigente",
       "score": 42
     },
@@ -6028,13 +6078,13 @@
     "roe": 0.126289613694,
     "roic": 0.098909505576,
     "roic_reason": null,
-    "roic_wacc_spread": 0.0267463644312,
+    "roic_wacc_spread": 0.0257541072464,
     "shareholder_yield": 0.0632622303896,
     "shares_outstanding": 4111911960.0,
     "total_assets": 464482000000.0,
     "total_debt": 42368000000.0,
     "total_equity": 259380000000.0,
-    "wacc": 0.0721631411449
+    "wacc": 0.0731553983296
   },
   "market_context": {
     "anchor_gap": -0.00208530199211,
@@ -6553,8 +6603,8 @@
       {
         "field": "reverse_dcf.main.g10",
         "kind": "precio_inverso",
-        "text": "el FCF de mantenimiento por acción creciera menos del 1.6% anual durante 10 años que ya descuenta el precio; historia propia: sus ingresos, 3.3% anual en 10 años (FY2015–FY2025)",
-        "value": 0.016251540529
+        "text": "el FCF de mantenimiento por acción creciera menos del 1.9% anual durante 10 años que ya descuenta el precio; historia propia: sus ingresos, 3.3% anual en 10 años (FY2015–FY2025)",
+        "value": 0.0186748591945
       }
     ],
     "title": "Esta lectura sería errónea si…"
@@ -6833,14 +6883,14 @@
         "median": 0.022,
         "reason": null,
         "revenue_usd": 361060000000.0,
-        "share": 0.539013960786,
+        "share": 0.522564413907,
         "std": 0.059
       },
       "flow_label": "FCF de mantenimiento",
       "flow_per_share": 9.16088436874,
-      "g10": 0.016251540529,
-      "g_star": 0.0125164079946,
-      "gap": -0.0168671862238,
+      "g10": 0.0186748591945,
+      "g_star": 0.0159715028014,
+      "gap": -0.0144438675583,
       "net_debt_per_share": 7.72876469855,
       "own_growth": {
         "basis": "agregado",
@@ -6851,14 +6901,15 @@
         "years": 10
       },
       "points": 0,
-      "rate": 0.0721631411449,
+      "rate": 0.0731553983296,
       "reason": null,
+      "roic": null,
       "rule": "historia_propia",
       "side": null,
       "signal": 0.0,
       "state": "ok",
       "terminal_growth": 0.025,
-      "text": "El precio actual exige que el FCF de mantenimiento por acción crezca un 1.6% anual durante 10 años (1.3% los 5 primeros y convergencia al 2.5%); en los últimos 10 años (FY2015–FY2025), sus ingresos crecieron un 3.3% anual. Lo sostuvo 10 años el 54% de las empresas comparables (ventas de más de 100 mil millones, todas las industrias)."
+      "text": "El precio actual exige que el FCF de mantenimiento por acción crezca un 1.9% anual durante 10 años (1.6% los 5 primeros y convergencia al 2.5%); en los últimos 10 años (FY2015–FY2025), sus ingresos crecieron un 3.3% anual. Lo sostuvo 10 años el 52% de las empresas comparables (ventas de más de 100 mil millones, todas las industrias)."
     },
     "reason": null,
     "ttm": {
@@ -6872,14 +6923,14 @@
         "median": 0.022,
         "reason": null,
         "revenue_usd": 361060000000.0,
-        "share": 0.37531079466,
+        "share": 0.359570563534,
         "std": 0.059
       },
       "flow_label": "FCF del periodo",
       "flow_per_share": 7.43036336799,
-      "g10": 0.0408770053651,
-      "g_star": 0.0477277043741,
-      "gap": 0.00775827861231,
+      "g10": 0.0433847570027,
+      "g_star": 0.051325906394,
+      "gap": 0.01026603025,
       "net_debt_per_share": 7.72876469855,
       "own_growth": {
         "basis": "agregado",
@@ -6890,22 +6941,28 @@
         "years": 10
       },
       "points": 0,
-      "rate": 0.0721631411449,
+      "rate": 0.0731553983296,
       "reason": null,
+      "roic": null,
       "rule": "historia_propia",
       "side": null,
       "signal": 0.0,
       "state": "ok",
       "terminal_growth": 0.025,
-      "text": "El precio actual exige que el FCF del periodo por acción crezca un 4.1% anual durante 10 años (4.8% los 5 primeros y convergencia al 2.5%); en los últimos 10 años (FY2015–FY2025), sus ingresos crecieron un 3.3% anual. Lo sostuvo 10 años el 38% de las empresas comparables (ventas de más de 100 mil millones, todas las industrias)."
+      "text": "El precio actual exige que el FCF del periodo por acción crezca un 4.3% anual durante 10 años (5.1% los 5 primeros y convergencia al 2.5%); en los últimos 10 años (FY2015–FY2025), sus ingresos crecieron un 3.3% anual. Lo sostuvo 10 años el 36% de las empresas comparables (ventas de más de 100 mil millones, todas las industrias)."
     }
   },
   "risk_free": {
-    "as_of": "2026-10-01",
-    "erp": 0.042,
+    "as_of": "2026-11-01",
+    "erp": 0.0441,
     "fallback": false,
     "market": null,
     "reason": null,
+    "review": {
+      "due": "2026-12-01",
+      "published": "2026-11-01",
+      "status": "vigente"
+    },
     "source": "par Rf–ERP de Damodaran",
     "value": 0.0529
   },
@@ -6918,9 +6975,10 @@
     "archetype": "CYCLICAL",
     "base": {
       "decay_type": "step",
-      "discount_rate": 0.0721631411449,
+      "discount_rate": 0.0731553983296,
       "high_growth_rate": 0.00607781502342,
       "high_growth_years": 5,
+      "reinvestment_roic": null,
       "terminal_growth": 0.025,
       "transition_years": 5
     },
@@ -6948,13 +7006,13 @@
     "net_debt": 31780000000.0,
     "presets": {
       "optimistic": {
-        "discount_rate": 0.0521631411449,
+        "discount_rate": 0.0531553983296,
         "fcf_margin": 0.104328227995,
         "high_growth_rate": 0.0560778150234,
         "terminal_growth": 0.03
       },
       "pessimistic": {
-        "discount_rate": 0.0921631411449,
+        "discount_rate": 0.0931553983296,
         "fcf_margin": 0.104328227995,
         "high_growth_rate": -0.0439221849766,
         "terminal_growth": 0.02
@@ -6966,7 +7024,8 @@
     "reverse": {
       "flow_per_share": 9.16088436874,
       "net_debt_per_share": 7.72876469855,
-      "rate": 0.0721631411449,
+      "rate": 0.0731553983296,
+      "roic": null,
       "terminal_growth": 0.025
     },
     "shares_outstanding": 4111911960,
@@ -7087,9 +7146,9 @@
           {
             "adjustment": 1,
             "metric": "ROIC frente al WACC",
-            "reason": "Retorno por encima del costo de capital (spread +2.7 pp)",
+            "reason": "Retorno por encima del costo de capital (spread +2.6 pp)",
             "severity": "ok",
-            "value": "+2.7 pp"
+            "value": "+2.6 pp"
           }
         ],
         "applicable": true,
@@ -7100,7 +7159,7 @@
           "Bueno (7.1%) - Rango alto de su sector",
           "Por debajo (10.7%, −6.0 pp frente al margen de su industria sin ella: 16.7%)",
           "En línea (9.1%, +1.8 pp frente al margen de su industria sin ella: 7.3%)",
-          "Retorno por encima del costo de capital (spread +2.7 pp)"
+          "Retorno por encima del costo de capital (spread +2.6 pp)"
         ],
         "max": 20,
         "score": 16
@@ -7191,7 +7250,7 @@
             "reason": "En precio por DCF (fiabilidad media): empresa cíclica: el FCF depende de la fase del ciclo",
             "reliability": "media",
             "severity": "ok",
-            "value": "-4%"
+            "value": "-6%"
           },
           {
             "adjustment": 0,
@@ -7290,19 +7349,40 @@
     "sector": "Energy",
     "sector_etf": "XLE"
   },
+  "sector_risks": {
+    "company": [],
+    "debt_due": {
+      "concepts": {
+        "commercial_paper": "us-gaap:CommercialPaper",
+        "due_y2": "us-gaap:LongTermDebtMaturitiesRepaymentsOfPrincipalInYearTwo"
+      },
+      "due_24m": null,
+      "fy_end": "2025-12-31",
+      "reason": "el emisor no presenta los vencimientos de la deuda del año 1 y 2 con los conceptos estándar",
+      "source": "SEC EDGAR (companyfacts: vencimientos de la deuda del último balance anual)",
+      "status": "sin_dato",
+      "values": {
+        "commercial_paper": 3059000000,
+        "due_y2": 2500000000
+      }
+    },
+    "industry": [],
+    "not_measured": "concentración en un inquilino o en un producto: los datos públicos gratuitos no la traen estructurada (solo en la instancia XBRL con dimensiones), así que no se mide ni se estima",
+    "note": "Aparte y sin puntuar: ni la calidad ni el precio los cuentan."
+  },
   "sensitivity": {
     "base_case": {
-      "discount_rate": 0.0721631411449,
-      "fair_value": 170.06,
+      "discount_rate": 0.0731553983296,
+      "fair_value": 166.45,
       "growth_rate": 0.00607781502342
     },
     "base_discount_idx": 1,
     "base_growth_idx": 2,
     "discount_rates": [
-      0.0622,
-      0.0722,
-      0.0822,
-      0.0922
+      0.0632,
+      0.0732,
+      0.0832,
+      0.0932
     ],
     "growth_rates": [
       -0.0439,
@@ -7315,50 +7395,50 @@
     "is_valid": true,
     "matrix": [
       [
-        156.83,
-        123.63,
-        101.98,
-        86.72
+        152.76,
+        121.08,
+        100.24,
+        85.45
       ],
       [
-        184.81,
-        145.19,
-        119.38,
-        101.22
+        179.95,
+        142.15,
+        117.3,
+        99.71
       ],
       [
-        217.17,
-        170.06,
-        139.41,
-        117.87
+        211.39,
+        166.45,
+        136.95,
+        116.08
       ],
       [
-        254.51,
-        198.7,
-        162.42,
-        136.96
+        247.66,
+        194.43,
+        159.51,
+        134.84
       ],
       [
-        297.48,
-        231.59,
-        188.8,
-        158.79
+        289.39,
+        226.55,
+        185.36,
+        156.3
       ]
     ],
     "statistics": {
       "current_price": 177.059997559,
-      "max_value": 297.48,
-      "mean_value": 164.676,
-      "median_value": 157.81,
-      "min_value": 86.72,
-      "upside_base_case": -3.9534607789
+      "max_value": 289.39,
+      "mean_value": 161.1775,
+      "median_value": 154.53,
+      "min_value": 85.45,
+      "upside_base_case": -5.99231769168
     },
     "trimmed": {
       "discount": [
-        0.0522
+        0.0532
       ],
       "growth": [],
-      "note": "WACC recortado en [6%, 20%]: se omiten 5.2%"
+      "note": "WACC recortado en [6%, 20%]: se omiten 5.3%"
     },
     "warnings": []
   },
@@ -7395,28 +7475,39 @@
     "equity": 728055121599.0,
     "kd": 0.0569,
     "kd_after_tax": 0.0423168188032,
-    "ke": 0.0739,
-    "ke_capm": 0.0651689577939,
+    "ke": 0.07495,
+    "ke_capm": 0.0657824056836,
     "ke_crp": null,
     "ke_floor": {
-      "capm": 0.0651689577939,
+      "capm": 0.0657824056836,
       "crp": null,
       "rule": "Rf + 0.5 × ERP",
-      "value": 0.0739
+      "value": 0.07495
     },
     "ke_shift": null,
-    "mrp": 0.042,
+    "mrp": 0.0441,
     "rating": {
-      "coverage": 49.9651612903,
+      "coverage": 55.7651612903,
       "flag": null,
       "rating": "AAA",
       "spread": 0.004,
       "table": "grandes"
     },
-    "raw": 0.0721631411449,
+    "rating_coverage": {
+      "basis": "EBIT + participadas",
+      "coverage": 55.7651612903,
+      "equity_income": 4495000000.0,
+      "reason": "con el resultado de las participadas operativas (4.50B)",
+      "reported": {
+        "coverage": 49.9651612903,
+        "state": "ok"
+      },
+      "state": "ok"
+    },
+    "raw": 0.0731553983296,
     "reason": null,
     "rf": 0.0529,
-    "rf_as_of": "2026-10-01",
+    "rf_as_of": "2026-11-01",
     "rf_fallback": false,
     "rf_market": null,
     "rf_reason": null,
@@ -7424,7 +7515,7 @@
     "tax_rate": 0.256294924373,
     "tax_reason": null,
     "tax_source": "efectiva",
-    "value": 0.0721631411449,
+    "value": 0.0731553983296,
     "weights": {
       "debt": 0.0549931574121,
       "equity": 0.945006842588

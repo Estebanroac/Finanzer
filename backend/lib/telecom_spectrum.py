@@ -16,11 +16,15 @@ from typing import Any, Dict, List, Optional
 from settings import cfg
 
 
-def adjustment(history_fy: Optional[Dict[str, Any]], industry: Optional[str]) -> Optional[Dict[str, Any]]:
+def adjustment(history_fy: Optional[Dict[str, Any]], industry: Optional[str],
+               damodaran_industry: Optional[str] = None) -> Optional[Dict[str, Any]]:
     """None si la empresa no es una telecom; si lo es, {status: "ok", average, years, values, concept} o
-    {status: "sin_dato", reason}."""
+    {status: "sin_dato", reason}. F13 · 6c: con la industria de Damodaran (`damodaran_industry`), manda esa: solo las
+    operadoras compran espectro (Comcast, «Cable TV», no)."""
     C = cfg("valuation.telecom_spectrum")
     if industry not in C["industries"]:
+        return None
+    if damodaran_industry is not None and damodaran_industry not in C["damodaran_industries"]:
         return None
     n, need = C["years"], C["min_years"]
     hist = history_fy or {}

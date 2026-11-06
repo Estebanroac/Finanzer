@@ -81,8 +81,8 @@ def _cls(industry, history, eps=1.0, om=0.25, sector="Technology", fcf_sbc=None)
 
 
 def test_history_overrides_industry_both_ways():
-    # Industria de lista cíclica sin ciclo en 12 ejercicios: no es cíclica.
-    c = _cls("Oil & Gas Integrated", STEADY, om=0.05, sector="Energy")
+    # Industria de lista cíclica (no de materias primas) sin ciclo en 12 ejercicios: no es cíclica.
+    c = _cls("Airlines", STEADY, om=0.05, sector="Industrials")
     assert c["archetype"] == MATURE and c["confidence"] == "normal" and not c["alerts"]
     # Industria no cíclica con un ciclo repetido: cíclica por su historia.
     c = _cls("Household & Personal Products", CYCLE, om=0.05, sector="Consumer Defensive")
@@ -277,3 +277,13 @@ def test_zero_shares_year_is_empty_not_a_divisor():
     assert cy.measure(H([100, 90, 120, 80, 140, 150], shares=[10, 10, 0, 10, 10, 10]))["years"] == 6
     cy.revenue_ps_cagr_long(h)
     cy.share_breaks(h, 0.2)
+
+
+def test_commodity_producer_is_cyclical_by_industry_even_without_a_sales_cycle():
+    """F13 · paso 4 (decisión del usuario, 5-nov-2026): minería, petróleo y gas, químicos básicos, acero y
+    fertilizantes son cíclicos por su industria aunque su historia de ventas no muestre ciclo (NEM con el oro en máximos)."""
+    for ind in ("Gold", "Oil & Gas Integrated", "Steel", "Agricultural Inputs"):
+        c = _cls(ind, STEADY, om=0.05, sector="Basic Materials")
+        assert c["archetype"] == CYCLICAL and c["rule"] == "materias_primas", ind
+    # Servicios petroleros: cíclicos de lista, pero no productores; decide su historia.
+    assert _cls("Oil & Gas Equipment & Services", STEADY, om=0.05, sector="Energy")["archetype"] == MATURE

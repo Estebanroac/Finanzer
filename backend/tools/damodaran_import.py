@@ -260,6 +260,13 @@ def write_erp(raw, out):
     return len(by_year)
 
 
+def losing_rows(raw, code):
+    """F13 (decisión del usuario, referencia acotada): proporción de empresas con pérdidas en doce meses de cada
+    industria ("% of Money Losing firms (Trailing)" de pedata.xls | pe{R}.xls)."""
+    pe, _ = _table(os.path.join(raw, _files(code)["pe"]))
+    return {ind: _get(p, "% of Money Losing") for ind, p in pe.items()}
+
+
 def _fmt(x):
     if isinstance(x, int):
         return str(x)
@@ -267,11 +274,12 @@ def _fmt(x):
 
 
 def write(raw, out):
-    regions, dates, dollars, dollar_dates = {}, set(), {}, set()
+    regions, dates, dollars, dollar_dates, losing = {}, set(), {}, set(), {}
     for key, (code, _label) in REGIONS.items():
         regions[key], upd = region_rows(raw, code)
         dates.add(upd)
         dollars[key], dupd = dollar_rows(raw, key)
+        losing[key] = losing_rows(raw, code)
         dollar_dates.add(dupd)
     as_of = max(d for d in dates if d)
     dollar_as_of = max(d for d in dollar_dates if d)
@@ -292,6 +300,8 @@ def write(raw, out):
         'dollar_url = "https://pages.stern.nyu.edu/~adamodar/pc/datasets/"',
         f'dollar_as_of = "{dollar_as_of}"',
         "dollar_columns = [" + ", ".join(f'"{c}"' for c in DOLLAR_COLUMNS) + "]",
+        "# F13: proporción de empresas con pérdidas en doce meses (pedata | pe{R}.xls), para la prueba de la "
+        "referencia",
         "",
     ]
     for key, (code, label) in REGIONS.items():
@@ -308,6 +318,10 @@ def write(raw, out):
             vals = dollars[key][ind]
             lines.append(f'"{ind}" = [' + ", ".join([_fmt(int(vals[0]) if math.isfinite(vals[0]) else 0)]
                                                     + [_fmt(x) for x in vals[1:]]) + "]")
+        lines.append("")
+        lines.append(f"[regions.{key}.money_losing]")
+        for ind in sorted(losing[key]):
+            lines.append(f'"{ind}" = {_fmt(losing[key][ind])}')
         lines.append("")
     with open(out, "w", encoding="utf-8") as fh:
         fh.write("\n".join(lines))

@@ -8,8 +8,8 @@
       },
       {
         "category": "Rentabilidad",
-        "detail": "El retorno sobre el capital invertido no cubre su costo (ROIC 4.5% vs WACC 8.0%): crecer a estos retornos destruye valor para el accionista en lugar de crearlo.",
-        "reason": "Destruye valor — spread −3.5 pp"
+        "detail": "El retorno sobre el capital invertido no cubre su costo (ROIC 4.5% vs WACC 8.1%): crecer a estos retornos destruye valor para el accionista en lugar de crearlo.",
+        "reason": "Destruye valor — spread −3.6 pp"
       }
     ],
     "strengths": [
@@ -30,8 +30,8 @@
       },
       {
         "category": "Valoración",
-        "detail": "Cotiza a 10.4x EBITDA frente a 24.6x de sus pares del universo: valoración atractiva sobre flujo operativo, a validar que no responda a un deterioro del negocio.",
-        "reason": "EV/EBITDA barato — 10.4x"
+        "detail": "Cotiza a 9.6x EBITDA frente a 24.6x de sus pares del universo: valoración atractiva sobre flujo operativo, a validar que no responda a un deterioro del negocio.",
+        "reason": "EV/EBITDA barato — 9.6x"
       },
       {
         "category": "Solidez financiera",
@@ -57,7 +57,7 @@
       },
       {
         "category": "Riesgo de mercado",
-        "detail": "La acción ha llegado a caer 32.9% desde máximos en el último año: una corrección profunda que puede ser oportunidad si el negocio sigue intacto, o el mercado anticipando un deterioro. Es 1.3 veces su volatilidad anual (26%): más de lo que suele moverse.",
+        "detail": "La acción ha llegado a caer 32.9% desde máximos en el último año: una corrección profunda que puede ser oportunidad si el negocio sigue intacto, o el mercado anticipando un deterioro. Son unas 1.3 veces su movimiento anual habitual (volatilidad del 26%): más de lo que suele moverse.",
         "reason": "Caída pronunciada en el año −32.9%"
       }
     ]
@@ -409,11 +409,17 @@
   },
   "confidence": {
     "base_rate_step": null,
-    "capped_from": null,
-    "contraction_basis": "media",
+    "capped_from": "media",
+    "contraction_basis": "baja",
     "dimensions": {
-      "convergence": {
+      "base": {
         "level": "media",
+        "reasons": [
+          "caja libre negativa (−$7.86B): invierte más de lo que genera"
+        ]
+      },
+      "convergence": {
+        "level": "baja",
         "methods": [
           {
             "band": "muy_exigente",
@@ -424,22 +430,21 @@
             "signal": -1.0
           },
           {
-            "components": 2,
-            "direction": "en precio",
+            "components": 1,
+            "direction": "barata",
             "evaluable": true,
             "kind": "relativo",
             "method": "múltiplos frente al sector",
             "readings": {
-              "DCF inverso (flujo de mantenimiento)": -1.0,
               "EV/EBITDA": 1.0,
               "Forward P/E": 0.0,
               "P/E": 1.0
             },
-            "signal": -0.125
+            "signal": 0.75
           }
         ],
         "reasons": [
-          "uno lo ve en precio y otro con dirección: no coinciden, sin oponerse"
+          "direcciones opuestas: múltiplos frente al sector dice barata y DCF inverso dice cara"
         ]
       },
       "coverage": {
@@ -475,28 +480,30 @@
         "reasons": []
       }
     },
-    "level": "media",
+    "level": "baja",
     "limits_score": false,
     "reasons": [
-      "convergencia media: uno lo ve en precio y otro con dirección: no coinciden, sin oponerse",
-      "calidad de fuente media: beta sustituta 1.46 fuera de la propia 0.73 ± 2 EE (0.39–1.07, R² 0.15)"
+      "convergencia baja: direcciones opuestas: múltiplos frente al sector dice barata y DCF inverso dice cara",
+      "calidad de fuente media: beta sustituta 1.46 fuera de la propia 0.73 ± 2 EE (0.39–1.07, R² 0.15)",
+      "base del veredicto media: caja libre negativa (−$7.86B): invierte más de lo que genera",
+      "techo en baja: la más baja manda: convergencia baja"
     ],
-    "score": 0.7
+    "score": 0.5
   },
   "cost_of_equity": {
-    "as_of": "2026-10-01",
-    "capm": 0.11422,
+    "as_of": "2026-11-01",
+    "capm": 0.117286,
     "crp": 0.006829,
-    "erp": 0.042,
+    "erp": 0.0441,
     "floor": null,
     "floors": {
       "Kd + 1 pp": 0.0669,
-      "Rf + 0.5 × ERP": 0.0739
+      "Rf + 0.5 × ERP": 0.07495
     },
     "kd": 0.0569,
     "rf": 0.0529,
     "shift": null,
-    "value": 0.121049
+    "value": 0.124115
   },
   "country_risk": {
     "as_of": "2026-01-05",
@@ -1240,6 +1247,10 @@
         "detail": "balance del último trimestre (2026-06-30)",
         "source": "yfinance_statements"
       },
+      "key_metrics.ev_ebitda": {
+        "detail": "EV/EBITDA sin el valor de las participadas: EV $415.06B − participadas $33.42B (balance, método de participación; 8% del EV), porque el EBITDA no lleva su resultado; sin ajustar sería 10.4x",
+        "source": "derivado"
+      },
       "longName": {
         "detail": "símbolo pedido; nombre de stock_database o de la búsqueda",
         "source": "derivado"
@@ -1375,6 +1386,7 @@
     "perimeter": {
       "changed": false,
       "discontinued": [],
+      "history_break": null,
       "mixed_cagr": false,
       "note": null,
       "restated": [],
@@ -1528,6 +1540,19 @@
       "rule": "multiplo_no_significativo"
     }
   ],
+  "dcf_growth_base_rate": {
+    "bin": "100+",
+    "cell": "100+ · Consumer",
+    "company": 0.109064131293,
+    "company_basis": "CAGR de ingresos a 3 años",
+    "count": 145,
+    "horizon_years": 5,
+    "industry": "Consumer",
+    "median": 0.036,
+    "reason": null,
+    "used": 0.0725320656466,
+    "weight": 0.5
+  },
   "dcf_growth_blend": null,
   "dcf_status": {
     "reason": "FCF base −$7.86B (≤ 0): no hay flujo positivo que descontar, así que el DCF no es significativo",
@@ -1541,12 +1566,16 @@
           "text": "Arquetipo MATURE (regla por_defecto): Clasificada como MATURE por defecto: no es financiera, REIT, pre-beneficio con crecimiento, cíclica ni de crecimiento rentable (industria Fabricantes de automóviles); su historia (19 ejercicios en EDGAR) no muestra ciclo."
         },
         {
-          "label": "Confianza · Convergencia entre métodos (media)",
-          "text": "uno lo ve en precio y otro con dirección: no coinciden, sin oponerse."
+          "label": "Confianza · Convergencia entre métodos (baja)",
+          "text": "direcciones opuestas: múltiplos frente al sector dice barata y DCF inverso dice cara."
         },
         {
           "label": "Confianza · Calidad de fuente (media)",
           "text": "beta sustituta 1.46 fuera de la propia 0.73 ± 2 EE (0.39–1.07, R² 0.15)"
+        },
+        {
+          "label": "Confianza · base (media)",
+          "text": "caja libre negativa (−$7.86B): invierte más de lo que genera."
         },
         {
           "label": "Fuente oficial",
@@ -1562,7 +1591,7 @@
         },
         {
           "label": "Procedencia de los datos (campos del análisis por fuente)",
-          "text": "estados de Yahoo (yfinance): 38 campos; SEC EDGAR: 1 (country); Finnhub: 7 (liquidez corriente, P/E adelantado, cobertura de intereses, rotación de existencias, payout, PEG, prueba ácida); Yahoo (cotización y perfil): 2 (industria, sector); calculados con otros datos del análisis: 12 campos; sin dato utilizable (ausente o de otro periodo): 3 (arrendamientos financieros, BPA estimado, caja total)."
+          "text": "estados de Yahoo (yfinance): 38 campos; SEC EDGAR: 1 (country); Finnhub: 7 (liquidez corriente, P/E adelantado, cobertura de intereses, rotación de existencias, payout, PEG, prueba ácida); Yahoo (cotización y perfil): 2 (industria, sector); calculados con otros datos del análisis: 13 campos; sin dato utilizable (ausente o de otro periodo): 3 (arrendamientos financieros, BPA estimado, caja total)."
         },
         {
           "label": "Fórmula del bloque",
@@ -1625,16 +1654,16 @@
                 "bench": 24.585,
                 "bench_txt": "24.59x",
                 "fmt": "mult",
-                "gap_pct": -57.5924043392,
-                "gap_txt": "-58%",
+                "gap_pct": -61.0073977137,
+                "gap_txt": "-61%",
                 "higher_is_better": false,
                 "key": "ev_ebitda",
                 "label": "EV/EBITDA",
                 "reading": "Descuento profundo",
-                "text": "EV/EBITDA de 10.4x frente a 24.6x de sus pares del universo (-58%): descuento profundo.",
+                "text": "EV/EBITDA de 9.6x frente a 24.6x de sus pares del universo (-61%): descuento profundo.",
                 "tone": "pos",
-                "value": 10.4259073932,
-                "value_txt": "10.43x"
+                "value": 9.58633127208,
+                "value_txt": "9.59x"
               }
             ],
             "title": "Valoración"
@@ -2082,10 +2111,10 @@
         "spread": {
           "reading": "Destruye valor",
           "state": "con_dato",
-          "text": "el ROIC (4.5%) no cubre el costo de capital (8.0%): el crecimiento a estos retornos destruye valor.",
+          "text": "el ROIC (4.5%) no cubre el costo de capital (8.1%): el crecimiento a estos retornos destruye valor.",
           "tone": "neg",
-          "value": -0.0346858493223,
-          "value_txt": "-3.5 pp"
+          "value": -0.0360790289934,
+          "value_txt": "-3.6 pp"
         }
       },
       "results_flow": [
@@ -2412,18 +2441,18 @@
             "bench": 24.585,
             "bench_txt": "24.59x",
             "fmt": "mult",
-            "gap_pct": -57.5924043392,
-            "gap_txt": "-58%",
+            "gap_pct": -61.0073977137,
+            "gap_txt": "-61%",
             "higher_is_better": false,
             "key": "ev_ebitda",
             "label": "EV/EBITDA",
             "reading": "Descuento profundo",
             "role": "block",
             "state": "con_dato",
-            "text": "EV/EBITDA de 10.4x frente a 24.6x de sus pares del universo (-58%): descuento profundo.",
+            "text": "EV/EBITDA de 9.6x frente a 24.6x de sus pares del universo (-61%): descuento profundo.",
             "tone": "pos",
-            "value": 10.4259073932,
-            "value_txt": "10.43x"
+            "value": 9.58633127208,
+            "value_txt": "9.59x"
           },
           {
             "bench": null,
@@ -2469,8 +2498,8 @@
         {
           "key": "convergence",
           "label": "Convergencia entre métodos",
-          "level": "Media",
-          "text": "DCF inverso -1.00 (cara) · múltiplos frente al sector -0.12 (en precio). Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
+          "level": "Baja",
+          "text": "DCF inverso -1.00 (cara) · múltiplos frente al sector +0.75 (barata). Los métodos de valoración se contradicen: uno ve la acción barata y otro cara."
         },
         {
           "key": "coverage",
@@ -2489,28 +2518,45 @@
           "label": "Estabilidad del arquetipo",
           "level": "Alta",
           "text": "Sin incidencias."
+        },
+        {
+          "key": "base",
+          "label": "base",
+          "level": "Media",
+          "text": "La empresa invierte más caja de la que genera: su valor depende de que esa inversión rinda."
         }
       ],
-      "level": "media",
+      "level": "baja",
       "plain": [
-        "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no.",
-        "El coste del capital usa la beta de su industria (1.46), que no encaja con cómo se ha movido la acción frente al mercado (la suya: 0.73)."
+        "Los métodos de valoración se contradicen: uno ve la acción barata y otro cara.",
+        "El coste del capital usa la beta de su industria (1.46), que no encaja con cómo se ha movido la acción frente al mercado (la suya: 0.73).",
+        "La empresa invierte más caja de la que genera: su valor depende de que esa inversión rinda."
       ],
       "reasons": [
         {
           "dimension": "convergencia",
-          "level": "media",
-          "text": "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
+          "level": "baja",
+          "text": "Los métodos de valoración se contradicen: uno ve la acción barata y otro cara."
         },
         {
           "dimension": "calidad de fuente",
           "level": "media",
           "text": "El coste del capital usa la beta de su industria (1.46), que no encaja con cómo se ha movido la acción frente al mercado (la suya: 0.73)."
+        },
+        {
+          "dimension": "base",
+          "level": "media",
+          "text": "La empresa invierte más caja de la que genera: su valor depende de que esa inversión rinda."
+        },
+        {
+          "dimension": "techo",
+          "level": "baja",
+          "text": null
         }
       ],
-      "summary": "Confianza del veredicto: media. Contrae el atractivo del precio hacia 50: de 45 a 46. La calidad del negocio no se contrae.",
-      "tone": "warn",
-      "verdict_text": "(confianza media: DCF inverso la ve cara y los múltiplos en precio)"
+      "summary": "Confianza del veredicto: baja (por sus dimensiones sería media; la limita: la más baja manda —convergencia baja—). Contrae el atractivo del precio hacia 50: de 45 a 48. Contrae también la calidad del negocio hacia 50: de 58 a 57.",
+      "tone": "neg",
+      "verdict_text": "(confianza baja: DCF inverso y los múltiplos discrepan)"
     },
     "cover": {
       "archetype": "MATURE",
@@ -2597,8 +2643,9 @@
         "Negocio establecido que se valora sobre todo por la caja que genera hoy; sus ingresos crecen un 10.9% anual en 3 años (FY2023–FY2026), por debajo del 15% del crecimiento rentable; en 19 ejercicios su historia no muestra ciclo (Fabricantes de automóviles)."
       ],
       "confidence_reasons": [
-        "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no.",
-        "El coste del capital usa la beta de su industria (1.46), que no encaja con cómo se ha movido la acción frente al mercado (la suya: 0.73)."
+        "Los métodos de valoración se contradicen: uno ve la acción barata y otro cara.",
+        "El coste del capital usa la beta de su industria (1.46), que no encaja con cómo se ha movido la acción frente al mercado (la suya: 0.73).",
+        "La empresa invierte más caja de la que genera: su valor depende de que esa inversión rinda."
       ],
       "coverage_notes": [
         "cobertura baja en Crecimiento"
@@ -2681,11 +2728,11 @@
       "price": {
         "contracted": true,
         "level": "razonable",
-        "note": "ajustado de 45 a 46 por confianza media; en la frontera con «exigente» (a 2 puntos): un cambio pequeño en los datos o en los supuestos cambiaría el nivel.",
-        "note_short": "Ajustado de 45 a 46 por confianza media · en la frontera con «exigente» (a 2 puntos)",
+        "note": "ajustado de 45 a 48 por confianza baja.",
+        "note_short": "Ajustado de 45 a 48 por confianza baja",
         "question": "¿está cara hoy?",
         "raw": 45,
-        "score": 46,
+        "score": 48,
         "title": "ATRACTIVO DEL PRECIO",
         "tone": "neu"
       },
@@ -2694,14 +2741,14 @@
         "note": "baja confianza: cobertura baja en Crecimiento.",
         "note_short": "Baja confianza: cobertura baja en Crecimiento",
         "question": "¿es buena la empresa?",
-        "score": 58,
+        "score": 57,
         "title": "CALIDAD DEL NEGOCIO",
         "tone": "warn"
       },
       "verdict": {
-        "confidence_text": "(confianza media: DCF inverso la ve cara y los múltiplos en precio)",
-        "confidence_tone": "warn",
-        "full": "Calidad media · precio razonable (confianza media: DCF inverso la ve cara y los múltiplos en precio)",
+        "confidence_text": "(confianza baja: DCF inverso y los múltiplos discrepan)",
+        "confidence_tone": "neg",
+        "full": "Calidad media · precio razonable (confianza baja: DCF inverso y los múltiplos discrepan)",
         "text": "Calidad media · precio razonable"
       }
     },
@@ -3167,7 +3214,7 @@
       },
       "roic_wacc_spread": {
         "label": "Destruye valor",
-        "text": "el ROIC (4.5%) no cubre el costo de capital (8.0%): el crecimiento a estos retornos destruye valor.",
+        "text": "el ROIC (4.5%) no cubre el costo de capital (8.1%): el crecimiento a estos retornos destruye valor.",
         "tone": "neg"
       },
       "runway": null
@@ -3190,8 +3237,8 @@
               },
               {
                 "category": "Rentabilidad",
-                "detail": "El retorno sobre el capital invertido no cubre su costo (ROIC 4.5% vs WACC 8.0%): crecer a estos retornos destruye valor para el accionista en lugar de crearlo.",
-                "reason": "Destruye valor — spread −3.5 pp"
+                "detail": "El retorno sobre el capital invertido no cubre su costo (ROIC 4.5% vs WACC 8.1%): crecer a estos retornos destruye valor para el accionista en lugar de crearlo.",
+                "reason": "Destruye valor — spread −3.6 pp"
               }
             ],
             "key": "red_flags",
@@ -3217,7 +3264,7 @@
               },
               {
                 "category": "Riesgo de mercado",
-                "detail": "La acción ha llegado a caer 32.9% desde máximos en el último año: una corrección profunda que puede ser oportunidad si el negocio sigue intacto, o el mercado anticipando un deterioro. Es 1.3 veces su volatilidad anual (26%): más de lo que suele moverse.",
+                "detail": "La acción ha llegado a caer 32.9% desde máximos en el último año: una corrección profunda que puede ser oportunidad si el negocio sigue intacto, o el mercado anticipando un deterioro. Son unas 1.3 veces su movimiento anual habitual (volatilidad del 26%): más de lo que suele moverse.",
                 "reason": "Caída pronunciada en el año −32.9%"
               }
             ],
@@ -3244,8 +3291,8 @@
               },
               {
                 "category": "Valoración",
-                "detail": "Cotiza a 10.4x EBITDA frente a 24.6x de sus pares del universo: valoración atractiva sobre flujo operativo, a validar que no responda a un deterioro del negocio.",
-                "reason": "EV/EBITDA barato — 10.4x"
+                "detail": "Cotiza a 9.6x EBITDA frente a 24.6x de sus pares del universo: valoración atractiva sobre flujo operativo, a validar que no responda a un deterioro del negocio.",
+                "reason": "EV/EBITDA barato — 9.6x"
               },
               {
                 "category": "Solidez financiera",
@@ -3489,11 +3536,11 @@
                 {
                   "in_block": false,
                   "metric": "ROIC frente al WACC",
-                  "reason": "Destruye valor (ROIC 4.5% < WACC 8.0%, spread −3.5 pp)",
+                  "reason": "Destruye valor (ROIC 4.5% < WACC 8.1%, spread −3.6 pp)",
                   "sign": "-3",
                   "state": "con_dato",
                   "tone": "neg",
-                  "value": "−3.5 pp"
+                  "value": "−3.6 pp"
                 }
               ],
               "key": "Rentabilidad",
@@ -3530,11 +3577,11 @@
                 {
                   "in_block": true,
                   "metric": "EV/EBITDA frente al sector",
-                  "reason": "Muy barato (10.4x frente a 24.6x)",
+                  "reason": "Muy barato (9.6x frente a 24.6x)",
                   "sign": "(+4)",
                   "state": "con_dato",
                   "tone": "neu",
-                  "value": "10.43x"
+                  "value": "9.59x"
                 },
                 {
                   "in_block": false,
@@ -3548,7 +3595,7 @@
                 {
                   "in_block": false,
                   "metric": "DCF inverso (flujo de mantenimiento)",
-                  "reason": "El precio actual exige que el flujo de mantenimiento (flujo operativo − D&A) por acción crezca un 11.3% anual durante 10 años (15.2% los 5 primeros y convergencia al 2.5%); en los últimos 10 años (FY2016–FY2026), sus ingresos crecieron un 49.8% anual. Lo sostuvo 10 años el 7% de las empresas comparables (ventas de más de 100 mil millones, todas las industrias).",
+                  "reason": "El precio actual exige que el flujo de mantenimiento (flujo operativo − D&A) por acción crezca un 11.6% anual durante 10 años (15.7% los 5 primeros y convergencia al 2.5%); en los últimos 10 años (FY2016–FY2026), sus ingresos crecieron un 49.8% anual. Lo sostuvo 10 años el 6% de las empresas comparables (ventas de más de 100 mil millones, todas las industrias).",
                   "sign": "-4",
                   "state": "con_dato",
                   "tone": "neg",
@@ -3740,7 +3787,7 @@
       },
       "market": {
         "behavioral": [
-          "El precio exige crecer un 11.3% anual durante 10 años (sus ingresos: 49.8% anual en los últimos 10 años, FY2016–FY2026), un ritmo que solo un 7% de las comparables sostuvo: el precio da por hecho que el crecimiento pasado continúa, y las tasas base dicen que pocas empresas lo repiten (Lakonishok, Shleifer y Vishny, 1994)."
+          "El precio exige crecer un 11.6% anual durante 10 años (sus ingresos: 49.8% anual en los últimos 10 años, FY2016–FY2026), un ritmo que solo un 6% de las comparables sostuvo: el precio da por hecho que el crecimiento pasado continúa, y las tasas base dicen que pocas empresas lo repiten (Lakonishok, Shleifer y Vishny, 1994)."
         ],
         "behavioral_title": "Lectura conductual del mercado",
         "news": [
@@ -3862,7 +3909,7 @@
           ]
         ],
         "figures_title": "Cifras de los últimos doce meses (TTM, a 30 de junio de 2026)",
-        "intro": "El ROE (TTM) de 12.6% es competitivo en su sector (sector: 8.0% competitivo, 18.0% rango alto). El ROIC (4.5%) no cubre el costo de capital (8.0%): el crecimiento a estos retornos destruye valor.",
+        "intro": "El ROE (TTM) de 12.6% es competitivo en su sector (sector: 8.0% competitivo, 18.0% rango alto). El ROIC (4.5%) no cubre el costo de capital (8.1%): el crecimiento a estos retornos destruye valor.",
         "quality_readings": [
           {
             "key": "dupont",
@@ -3952,9 +3999,9 @@
             "label": "Spread ROIC − WACC",
             "reading": "Destruye valor",
             "state": "con_dato",
-            "text": "el ROIC (4.5%) no cubre el costo de capital (8.0%): el crecimiento a estos retornos destruye valor.",
+            "text": "el ROIC (4.5%) no cubre el costo de capital (8.1%): el crecimiento a estos retornos destruye valor.",
             "tone": "neg",
-            "value": "-3.5 pp"
+            "value": "-3.6 pp"
           },
           {
             "bench": "—",
@@ -3968,6 +4015,11 @@
             "value": "7.70%"
           }
         ]
+      },
+      "sector_risks": {
+        "items": [],
+        "not_measured": "concentración en un inquilino o en un producto: los datos públicos gratuitos no la traen estructurada (solo en la instancia XBRL con dimensiones), así que no se mide ni se estima",
+        "note": "Aparte y sin puntuar: ni la calidad ni el precio los cuentan."
       },
       "solvency": {
         "balance": "Balance — deuda total $271.44B · caja $82.45B · patrimonio $230.41B · activos $633.85B",
@@ -4134,7 +4186,7 @@
         "normalization_note": "Beneficio TTM (4 trimestres): reportado $28.97B, normalizado $27.11B (no recurrentes 6.4% del beneficio; partidas no recurrentes (total de Yahoo) (explicita, confianza alta), recurrente (4 de los últimos 4 ejercicios): solo el exceso sobre su promedio, $1.86B netos). El score usa el beneficio normalizado.",
         "premortem": {
           "items": [
-            "el flujo de mantenimiento (flujo operativo − D&A) por acción creciera menos del 11.3% anual durante 10 años que ya descuenta el precio; historia propia: sus ingresos, 49.8% anual en 10 años (FY2016–FY2026)",
+            "el flujo de mantenimiento (flujo operativo − D&A) por acción creciera menos del 11.6% anual durante 10 años que ya descuenta el precio; historia propia: sus ingresos, 49.8% anual en 10 años (FY2016–FY2026)",
             "el EBITDA cayera o la deuda se refinanciara más cara: la deuda neta equivale a 4.7 veces el EBITDA"
           ],
           "note": "Condiciones que invalidarían la lectura de hoy, con la cifra que las mide: no son previsiones.",
@@ -4145,7 +4197,7 @@
           "lines": [
             {
               "label": "Muy exigente",
-              "text": "El precio actual exige que el flujo de mantenimiento (flujo operativo − D&A) por acción crezca un 11.3% anual durante 10 años (15.2% los 5 primeros y convergencia al 2.5%); en los últimos 10 años (FY2016–FY2026), sus ingresos crecieron un 49.8% anual. Lo sostuvo 10 años el 7% de las empresas comparables (ventas de más de 100 mil millones, todas las industrias).",
+              "text": "El precio actual exige que el flujo de mantenimiento (flujo operativo − D&A) por acción crezca un 11.6% anual durante 10 años (15.7% los 5 primeros y convergencia al 2.5%); en los últimos 10 años (FY2016–FY2026), sus ingresos crecieron un 49.8% anual. Lo sostuvo 10 años el 6% de las empresas comparables (ventas de más de 100 mil millones, todas las industrias).",
               "tone": "neg"
             }
           ],
@@ -4211,14 +4263,14 @@
           },
           {
             "bench": "24.59x",
-            "gap": "-58%",
+            "gap": "-61%",
             "key": "ev_ebitda",
             "label": "EV/EBITDA",
             "reading": "Descuento profundo",
             "state": "con_dato",
-            "text": "EV/EBITDA de 10.4x frente a 24.6x de sus pares del universo (-58%): descuento profundo.",
+            "text": "EV/EBITDA de 9.6x frente a 24.6x de sus pares del universo (-61%): descuento profundo.",
             "tone": "pos",
-            "value": "10.43x"
+            "value": "9.59x"
           },
           {
             "bench": "—",
@@ -4269,7 +4321,7 @@
         "wacc_breakdown": [
           {
             "label": "WACC",
-            "value": "7.97%"
+            "value": "8.11%"
           },
           {
             "label": "Peso del patrimonio",
@@ -4277,7 +4329,7 @@
           },
           {
             "label": "Coste del patrimonio (Ke)",
-            "value": "12.10%"
+            "value": "12.41%"
           },
           {
             "label": "Tasa libre de riesgo (Rf)",
@@ -4289,7 +4341,7 @@
           },
           {
             "label": "Prima de mercado implícita",
-            "value": "4.20%"
+            "value": "4.41%"
           },
           {
             "label": "Peso de la deuda",
@@ -4308,7 +4360,7 @@
             "value": "20.47%"
           }
         ],
-        "wacc_note": "WACC 7.97% = 45.44% × Ke 12.10% (Rf 5.29% [Tesoro de EE. UU. a 10 años del par Rf–ERP de Damodaran, 1 de octubre de 2026] + β media de la industria 1.46 [Damodaran, enero de 2026; sin Blume: es una media de industria] × prima implícita 4.20% + prima de riesgo país 0.68 pp (Japón, sede operativa; Damodaran, enero de 2026)) + 54.56% × Kd 5.69% × (1 − t 20.47%). Kd = Rf + spread del rating sintético AAA (tabla de empresas grandes, cobertura 11.0x). t: tasa efectiva TTM. Rf y prima implícita del mismo día: bono del Tesoro de EE. UU. a 10 años y prima implícita de Damodaran del 1 de octubre de 2026."
+        "wacc_note": "WACC 8.11% = 45.44% × Ke 12.41% (Rf 5.29% [Tesoro de EE. UU. a 10 años del par Rf–ERP de Damodaran, 1 de noviembre de 2026] + β media de la industria 1.46 [Damodaran, enero de 2026; sin Blume: es una media de industria] × prima implícita 4.41% + prima de riesgo país 0.68 pp (Japón, sede operativa; Damodaran, enero de 2026)) + 54.56% × Kd 5.69% × (1 − t 20.47%). Kd = Rf + spread del rating sintético AAA (tabla de empresas grandes, cobertura 12.9x); con el resultado de las participadas operativas (4.02B) (con el EBIT contable: 11.0x). t: tasa efectiva TTM. Rf y prima implícita del mismo día: bono del Tesoro de EE. UU. a 10 años y prima implícita de Damodaran del 1 de noviembre de 2026."
       }
     },
     "summary": {
@@ -4376,21 +4428,21 @@
         },
         {
           "bench": "vs pares 24.59x",
-          "delta": "-58%",
+          "delta": "-61%",
           "key": "ev_ebitda",
           "label": "EV/EBITDA",
           "pill": "Gran descuento",
           "state": "con_dato",
           "tone": "pos",
           "unit": "x",
-          "value": "10.43"
+          "value": "9.59"
         }
       ],
       "composition": {
         "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: Valoración (base 10/20 + bloque de múltiplos y DCF) reescalada a 100 y contraída hacia 50 según la confianza del veredicto: solo los limitadores que lo contradicen o lo vuelven incierto, no los que apuntan en su dirección.",
         "price": {
           "level": "razonable",
-          "note": "ajustado de 45 a 46 por confianza media; en la frontera con «exigente» (a 2 puntos): un cambio pequeño en los datos o en los supuestos cambiaría el nivel.",
+          "note": "ajustado de 45 a 48 por confianza baja.",
           "rows": [
             {
               "kind": "signed",
@@ -4405,7 +4457,7 @@
               "value": -4
             }
           ],
-          "score": 46,
+          "score": 48,
           "signed_max": 6,
           "title": "ATRACTIVO DEL PRECIO",
           "tone": "neu"
@@ -4447,7 +4499,7 @@
               "value": 16
             }
           ],
-          "score": 58,
+          "score": 57,
           "title": "CALIDAD DEL NEGOCIO",
           "tone": "warn"
         }
@@ -4455,7 +4507,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad media · precio razonable (confianza media: DCF inverso la ve cara y los múltiplos en precio). Calidad 58/100 · precio 46/100 (ajustado de 45 a 46 por confianza media; en la frontera con «exigente» (a 2 puntos): un cambio pequeño en los datos o en los supuestos cambiaría el nivel)."
+          "text": "Calidad media · precio razonable (confianza baja: DCF inverso y los múltiplos discrepan). Calidad 57/100 · precio 48/100 (ajustado de 45 a 48 por confianza baja)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -4463,7 +4515,7 @@
         },
         {
           "label": "CREACIÓN DE VALOR",
-          "text": "El ROIC (4.5%) no cubre el costo de capital (8.0%): el crecimiento a estos retornos destruye valor. ROCE 7.70% (EBIT / capital empleado, antes de impuestos), en línea con el ROIC (4.50%)."
+          "text": "El ROIC (4.5%) no cubre el costo de capital (8.1%): el crecimiento a estos retornos destruye valor. ROCE 7.70% (EBIT / capital empleado, antes de impuestos), en línea con el ROIC (4.50%)."
         },
         {
           "label": "SOLIDEZ",
@@ -4483,7 +4535,7 @@
         },
         {
           "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Media: los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no. Contrae el atractivo del precio hacia 50 (de 45 a 46); la calidad no se contrae."
+          "text": "Baja: los métodos de valoración se contradicen: uno ve la acción barata y otro cara. Contrae hacia 50 el atractivo del precio (de 45 a 48) y la calidad del negocio (de 58 a 57)."
         }
       ]
     },
@@ -5392,6 +5444,9 @@
       "charges_back": 0,
       "equity_income": 4020365883.86,
       "equity_income_net_of_tax": null,
+      "equity_net_history": [],
+      "equity_net_operating": 0.0,
+      "equity_net_recurrent": null,
       "excess": 0.0,
       "explained": 23360218745.8,
       "income": 27110271884.6,
@@ -5516,6 +5571,13 @@
   },
   "eps_vs_revenue_growth": null,
   "errors": [],
+  "ev_cross_holdings": {
+    "enterprise_value": 415062999779.0,
+    "equity_investments": 33424139524.6,
+    "ev_ebitda": 9.58633127208,
+    "ev_ebitda_before": 10.4259073932,
+    "share": 0.08052787057
+  },
   "graham_margin": 0.386351894153,
   "graham_number": 312.785129804,
   "growth_basis": {
@@ -5799,22 +5861,44 @@
     "source": "SEC EDGAR (companyfacts: ejercicios completos de los informes anuales)",
     "status": "ok"
   },
+  "investment_intensity": {
+    "capex": 104676330879.0,
+    "da": 45139912804.0,
+    "expansion": {
+      "applied": false,
+      "current_basis": "FCF sin restar la SBC (sin SBC del mismo periodo)",
+      "current_flow": -7861019554.71,
+      "maintenance_basis": "flujo de mantenimiento (flujo operativo − D&A)",
+      "maintenance_flow": 10757043768.2,
+      "ratio": 2.3189307284,
+      "reason": "su ROIC (4.5%) no supera el coste del capital (8.1%): crecer no crea valor y la reinversión del crecimiento no tiene una lectura única; puntúa el flujo de hoy",
+      "roic": 0.0450083092776,
+      "to_ocf": 1.16585875689,
+      "to_ocf_ttm": 1.29296788358,
+      "years": 3
+    },
+    "ocf": 89784744729.8,
+    "ratio": 2.3189307284,
+    "reason": null,
+    "to_ocf": 1.16585875689,
+    "years": 3
+  },
   "ke_sensitivity": {
     "base": {
-      "ke": 0.121049,
+      "ke": 0.124115,
       "level": "razonable",
-      "score": 46
+      "score": 48
     },
     "dependent": false,
     "minus": {
-      "ke": 0.111049,
+      "ke": 0.114115,
       "level": "razonable",
-      "score": 46
+      "score": 48
     },
     "plus": {
-      "ke": 0.131049,
+      "ke": 0.134115,
       "level": "razonable",
-      "score": 46
+      "score": 48
     },
     "pp": 0.01,
     "reason": null,
@@ -5840,7 +5924,7 @@
     "ebitda_margin": 0.118285648386,
     "enterprise_value": 415062999779.0,
     "eps": 22.2269866941,
-    "ev_ebitda": 10.4259073932,
+    "ev_ebitda": 9.58633127208,
     "ev_revenue": 1.23323521602,
     "fcf_yield": -0.0347727801758,
     "ffo": 45044536002.2,
@@ -5889,21 +5973,21 @@
     "roe": 0.125728505457,
     "roic": 0.0450083092776,
     "roic_reason": null,
-    "roic_wacc_spread": -0.0346858493223,
+    "roic_wacc_spread": -0.0360790289934,
     "shareholder_yield": 0.0341492696551,
     "shares_outstanding": 1177806551.0,
     "total_assets": 633851357554.0,
     "total_debt": 271444864988.0,
     "total_equity": 230410917805.0,
-    "wacc": 0.0796941585998
+    "wacc": 0.081087338271
   },
   "market_context": {
     "behavioral": [
       {
         "field": "reverse_dcf.main.g10",
         "kind": "extrapolacion",
-        "num": 0.112762474123,
-        "text": "El precio exige crecer un 11.3% anual durante 10 años (sus ingresos: 49.8% anual en los últimos 10 años, FY2016–FY2026), un ritmo que solo un 7% de las comparables sostuvo: el precio da por hecho que el crecimiento pasado continúa, y las tasas base dicen que pocas empresas lo repiten (Lakonishok, Shleifer y Vishny, 1994)."
+        "num": 0.116162831746,
+        "text": "El precio exige crecer un 11.6% anual durante 10 años (sus ingresos: 49.8% anual en los últimos 10 años, FY2016–FY2026), un ritmo que solo un 6% de las comparables sostuvo: el precio da por hecho que el crecimiento pasado continúa, y las tasas base dicen que pocas empresas lo repiten (Lakonishok, Shleifer y Vishny, 1994)."
       }
     ],
     "market_volatility": {
@@ -6396,8 +6480,8 @@
       {
         "field": "reverse_dcf.main.g10",
         "kind": "precio_inverso",
-        "text": "el flujo de mantenimiento (flujo operativo − D&A) por acción creciera menos del 11.3% anual durante 10 años que ya descuenta el precio; historia propia: sus ingresos, 49.8% anual en 10 años (FY2016–FY2026)",
-        "value": 0.112762474123
+        "text": "el flujo de mantenimiento (flujo operativo − D&A) por acción creciera menos del 11.6% anual durante 10 años que ya descuenta el precio; historia propia: sus ingresos, 49.8% anual en 10 años (FY2016–FY2026)",
+        "value": 0.116162831746
       },
       {
         "field": "key_metrics.net_debt_to_ebitda",
@@ -6411,11 +6495,7 @@
   "price": 191.940002441,
   "price_attractiveness": {
     "basis": null,
-    "border": {
-      "neighbor": "exigente",
-      "points": 2,
-      "text": "En la frontera con «exigente» (a 2 puntos): un cambio pequeño en los datos o en los supuestos cambiaría el nivel"
-    },
+    "border": null,
     "categories_included": 1,
     "categories_total": 1,
     "components": [
@@ -6426,16 +6506,16 @@
         "score": 9
       }
     ],
-    "confidence": "media",
+    "confidence": "baja",
     "contracted": true,
     "excluded_categories": [],
-    "factor": 0.75,
+    "factor": 0.5,
     "level": "razonable",
     "level_raw": "razonable",
     "low_coverage_categories": [],
     "not_applicable_categories": [],
     "partial": false,
-    "score": 46,
+    "score": 48,
     "score_raw": 45
   },
   "price_change": {
@@ -6493,9 +6573,9 @@
         "score": 16
       }
     ],
-    "contracted": false,
+    "contracted": true,
     "excluded_categories": [],
-    "factor": null,
+    "factor": 0.85,
     "level": "media",
     "level_raw": "media",
     "low_confidence": true,
@@ -6563,7 +6643,7 @@
       "source": "edgar",
       "window": 5
     },
-    "score": 58,
+    "score": 57,
     "score_raw": 58
   },
   "quality_readings": {
@@ -6686,14 +6766,14 @@
         "median": 0.022,
         "reason": null,
         "revenue_usd": 336564342623.0,
-        "share": 0.0697706912593,
+        "share": 0.0629484514842,
         "std": 0.059
       },
       "flow_label": "flujo de mantenimiento (flujo operativo − D&A)",
       "flow_per_share": 9.13311592558,
-      "g10": 0.112762474123,
-      "g_star": 0.151744336868,
-      "gap": -0.385074062463,
+      "g10": 0.116162831746,
+      "g_star": 0.156707989378,
+      "gap": -0.381673704841,
       "net_debt_per_share": 160.463369256,
       "own_growth": {
         "basis": "agregado",
@@ -6704,25 +6784,31 @@
         "years": 10
       },
       "points": -4,
-      "rate": 0.0796941585998,
+      "rate": 0.081087338271,
       "reason": null,
       "replaces": "sin flujo positivo que proyectar (FCF por acción base ≤ 0 o sin dato)",
+      "roic": null,
       "rule": "tasa_base",
       "side": null,
       "signal": -1.0,
       "state": "ok",
       "terminal_growth": 0.025,
-      "text": "El precio actual exige que el flujo de mantenimiento (flujo operativo − D&A) por acción crezca un 11.3% anual durante 10 años (15.2% los 5 primeros y convergencia al 2.5%); en los últimos 10 años (FY2016–FY2026), sus ingresos crecieron un 49.8% anual. Lo sostuvo 10 años el 7% de las empresas comparables (ventas de más de 100 mil millones, todas las industrias)."
+      "text": "El precio actual exige que el flujo de mantenimiento (flujo operativo − D&A) por acción crezca un 11.6% anual durante 10 años (15.7% los 5 primeros y convergencia al 2.5%); en los últimos 10 años (FY2016–FY2026), sus ingresos crecieron un 49.8% anual. Lo sostuvo 10 años el 6% de las empresas comparables (ventas de más de 100 mil millones, todas las industrias)."
     },
     "reason": null,
     "ttm": null
   },
   "risk_free": {
-    "as_of": "2026-10-01",
-    "erp": 0.042,
+    "as_of": "2026-11-01",
+    "erp": 0.0441,
     "fallback": false,
     "market": null,
     "reason": null,
+    "review": {
+      "due": "2026-12-01",
+      "published": "2026-11-01",
+      "status": "vigente"
+    },
     "source": "par Rf–ERP de Damodaran",
     "value": 0.0529
   },
@@ -6845,9 +6931,9 @@
           {
             "adjustment": -3,
             "metric": "ROIC frente al WACC",
-            "reason": "Destruye valor (ROIC 4.5% < WACC 8.0%, spread −3.5 pp)",
+            "reason": "Destruye valor (ROIC 4.5% < WACC 8.1%, spread −3.6 pp)",
             "severity": "severe",
-            "value": "−3.5 pp"
+            "value": "−3.6 pp"
           }
         ],
         "applicable": true,
@@ -6858,7 +6944,7 @@
           "Aceptable (4.3%) - Normal para su sector",
           "En línea (7.1%, +1.7 pp frente al margen de sus pares del universo: 5.4%)",
           "Por encima (8.1%, +5.9 pp frente al margen de sus pares del universo: 2.1%)",
-          "Destruye valor (ROIC 4.5% < WACC 8.0%, spread −3.5 pp)"
+          "Destruye valor (ROIC 4.5% < WACC 8.1%, spread −3.6 pp)"
         ],
         "max": 20,
         "score": 6
@@ -6934,9 +7020,9 @@
             "adjustment": 4,
             "in_block": true,
             "metric": "EV/EBITDA frente al sector",
-            "reason": "Muy barato (10.4x frente a 24.6x)",
+            "reason": "Muy barato (9.6x frente a 24.6x)",
             "severity": "excellent",
-            "value": "10.43x"
+            "value": "9.59x"
           },
           {
             "adjustment": 3,
@@ -6960,7 +7046,7 @@
           {
             "adjustment": -4,
             "metric": "DCF inverso (flujo de mantenimiento)",
-            "reason": "El precio actual exige que el flujo de mantenimiento (flujo operativo − D&A) por acción crezca un 11.3% anual durante 10 años (15.2% los 5 primeros y convergencia al 2.5%); en los últimos 10 años (FY2016–FY2026), sus ingresos crecieron un 49.8% anual. Lo sostuvo 10 años el 7% de las empresas comparables (ventas de más de 100 mil millones, todas las industrias).",
+            "reason": "El precio actual exige que el flujo de mantenimiento (flujo operativo − D&A) por acción crezca un 11.6% anual durante 10 años (15.7% los 5 primeros y convergencia al 2.5%); en los últimos 10 años (FY2016–FY2026), sus ingresos crecieron un 49.8% anual. Lo sostuvo 10 años el 6% de las empresas comparables (ventas de más de 100 mil millones, todas las industrias).",
             "severity": "severe",
             "value": "muy exigente"
           }
@@ -6971,9 +7057,9 @@
         "details": [
           "Muy barato (9.2x frente a 16.0x sector)",
           "Sin compresión del P/E normalizado (9x → 9x forward)",
-          "Muy barato (10.4x frente a 24.6x)",
+          "Muy barato (9.6x frente a 24.6x)",
           "media de 2 lecturas en una escala de −1 a +1 (BPA (P/E, Forward P/E): P/E +1.00, Forward P/E +0.00 → +0.50; EV/EBITDA +1.00): +0.75, que suma +3.0 puntos de un máximo de ±4; sin dato: P/FCF",
-          "El precio actual exige que el flujo de mantenimiento (flujo operativo − D&A) por acción crezca un 11.3% anual durante 10 años (15.2% los 5 primeros y convergencia al 2.5%); en los últimos 10 años (FY2016–FY2026), sus ingresos crecieron un 49.8% anual. Lo sostuvo 10 años el 7% de las empresas comparables (ventas de más de 100 mil millones, todas las industrias)."
+          "El precio actual exige que el flujo de mantenimiento (flujo operativo − D&A) por acción crezca un 11.6% anual durante 10 años (15.7% los 5 primeros y convergencia al 2.5%); en los últimos 10 años (FY2016–FY2026), sus ingresos crecieron un 49.8% anual. Lo sostuvo 10 años el 6% de las empresas comparables (ventas de más de 100 mil millones, todas las industrias)."
         ],
         "max": 20,
         "score": 9
@@ -7060,6 +7146,21 @@
     "sector": "Consumer Cyclical",
     "sector_etf": "XLY"
   },
+  "sector_risks": {
+    "company": [],
+    "debt_due": {
+      "concepts": {},
+      "due_24m": null,
+      "fy_end": null,
+      "reason": "sin balance anual en US GAAP (los vencimientos se leen de conceptos us-gaap)",
+      "source": "SEC EDGAR (companyfacts: vencimientos de la deuda del último balance anual)",
+      "status": "sin_dato",
+      "values": {}
+    },
+    "industry": [],
+    "not_measured": "concentración en un inquilino o en un producto: los datos públicos gratuitos no la traen estructurada (solo en la instancia XBRL con dimensiones), así que no se mide ni se estima",
+    "note": "Aparte y sin puntuar: ni la calidad ni el precio los cuentan."
+  },
   "spectrum_adjustment": null,
   "symbol": "TM",
   "tax_rate": {
@@ -7071,9 +7172,9 @@
     "source": "efectiva"
   },
   "verdict": {
-    "confidence": "media",
-    "confidence_text": "(confianza media: DCF inverso la ve cara y los múltiplos en precio)",
-    "full": "Calidad media · precio razonable (confianza media: DCF inverso la ve cara y los múltiplos en precio)",
+    "confidence": "baja",
+    "confidence_text": "(confianza baja: DCF inverso y los múltiplos discrepan)",
+    "full": "Calidad media · precio razonable (confianza baja: DCF inverso y los múltiplos discrepan)",
     "price_level": "razonable",
     "quality_level": "media",
     "text": "Calidad media · precio razonable"
@@ -7093,23 +7194,34 @@
     "equity": 226068192274.0,
     "kd": 0.0569,
     "kd_after_tax": 0.0452524894323,
-    "ke": 0.121049,
-    "ke_capm": 0.11422,
+    "ke": 0.124115,
+    "ke_capm": 0.117286,
     "ke_crp": 0.006829,
     "ke_floor": null,
     "ke_shift": null,
-    "mrp": 0.042,
+    "mrp": 0.0441,
     "rating": {
-      "coverage": 11.0439618483,
+      "coverage": 12.9146165596,
       "flag": null,
       "rating": "AAA",
       "spread": 0.004,
       "table": "grandes"
     },
-    "raw": 0.0796941585998,
+    "rating_coverage": {
+      "basis": "EBIT + participadas",
+      "coverage": 12.9146165596,
+      "equity_income": 4020365883.86,
+      "reason": "con el resultado de las participadas operativas (4.02B)",
+      "reported": {
+        "coverage": 11.0439618483,
+        "state": "ok"
+      },
+      "state": "ok"
+    },
+    "raw": 0.081087338271,
     "reason": null,
     "rf": 0.0529,
-    "rf_as_of": "2026-10-01",
+    "rf_as_of": "2026-11-01",
     "rf_fallback": false,
     "rf_market": null,
     "rf_reason": null,
@@ -7117,7 +7229,7 @@
     "tax_rate": 0.204701415952,
     "tax_reason": null,
     "tax_source": "efectiva",
-    "value": 0.0796941585998,
+    "value": 0.081087338271,
     "weights": {
       "debt": 0.545603499296,
       "equity": 0.454396500704

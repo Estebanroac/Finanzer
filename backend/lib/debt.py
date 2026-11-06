@@ -62,10 +62,21 @@ def apply(info: Dict[str, Any], ed: Dict[str, Any], ctx=None, symbol: Optional[s
         out["notes"].append(f"deuda de la financiera cautiva ({_unsep}) sin desglose estructurado por segmento: la "
                             "deuda y el apalancamiento incluyen la de la financiera (sobrestimados para la "
                             "actividad industrial)")
-    if cap.get("status") == "ok":
+    if cap.get("status") == "ok" and cap.get("series") and at:
+        # F13 · paso 2b: filial con 10-K propio: la fecha de su serie más cercana al corte de la deuda de la matriz
+        _d0 = _dt.date.fromisoformat(at)
+        _best = min(cap["series"], key=lambda d: abs((_dt.date.fromisoformat(d) - _d0).days))
+        _row = cap["series"][_best]
+        cap = {**cap, "date": _best, "value": _row["value"], "parts": _row["parts"], "form": _row.get("form"),
+               "accn": _row.get("accn"), "source_kind": "filial", "cash": _row.get("cash")}
+    if cap.get("status") == "ok" and cap.get("value") is not None:
+        _src = (f"SEC EDGAR ({cap['form']} {cap['accn']} de {cap['name']}, CIK {cap.get('cik')}: su propio informe)"
+                if cap.get("source_kind") == "filial" else
+                f"SEC EDGAR ({cap['form']} {cap['accn']}, segmento {cap['name']})")
         comps["captive"] = {"value": _conv(ctx, cap["value"], cap["date"]), "name": cap["name"], "date": cap["date"],
-                            "source": f"SEC EDGAR ({cap['form']} {cap['accn']}, segmento {cap['name']})",
+                            "source": _src,
                             "parts": cap["parts"], "in_rule_debt": True,
+                            **({"cash": _conv(ctx, cap["cash"], cap["date"])} if cap.get("cash") is not None else {}),
                             "note": "deuda de la financiera cautiva: solo se separa y se declara (su uso en la "
                                     "valoración es de la fase 3)"}
     elif cap:
@@ -157,6 +168,14 @@ def apply(info: Dict[str, Any], ed: Dict[str, Any], ctx=None, symbol: Optional[s
                         "en el DCF industrial")
         out.update(total=industrial, total_with_captive=rule, captive_excluded=capc["value"])
         info["totalDebt"] = industrial
+        # F13 · paso 2b: y su caja (la de la filial respalda su deuda; en la deuda neta industrial no resta)
+        # (la caja del análisis es info["cash"]: data_fetcher la lee de ahí, venga de financialData o del balance)
+        if capc.get("cash") and info.get("cash") is not None and info["cash"] >= capc["cash"]:
+            out["captive_cash_excluded"] = capc["cash"]
+            out["cash_with_captive"] = info["cash"]
+            info["cash"] = info["cash"] - capc["cash"]
+            _tag_provenance(info, "derivado", f"caja industrial: la del corte sin la de la financiera cautiva "
+                                              f"({capc['name']}, SEC EDGAR)", paths=["cash"], overwrite=True)
         _tag_provenance(info, "derivado",
                         "deuda industrial: la deuda coherente con el EBITDA sin la de la financiera cautiva "
                         f"({capc['name']}, SEC EDGAR)", paths=["totalDebt"], overwrite=True)

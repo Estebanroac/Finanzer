@@ -101,7 +101,19 @@ def capm_rates(now: Optional[float] = None) -> Dict[str, Any]:
         out["reason"] = (f"el bono a 10 años cotiza hoy al {market['value']:.2%}, a más de "
                          f"{C['pair_drift_warning'] * 100:.1f} pp del Rf del par ({C['risk_free_rate']:.2%} a "
                          f"{C['pair_as_of']}): el par Rf–ERP debe actualizarse")
+    # F13 · paso 1: la revisión mensual del par (config/review.toml) se vigila en ejecución, no solo con la herramienta.
+    import parameter_review
+    out["review"] = parameter_review.parameter("market_risk_premium", _today())
+    if out["review"]["status"] == "revisar":
+        late = (f"la revisión mensual del par Rf–ERP de Damodaran ({C['pair_as_of']}) venció el "
+                f"{out['review']['due']}: el coste del capital usa una prima que puede no ser la vigente")
+        out["reason"] = f"{out['reason']}; {late}" if out["reason"] else late
     return out
+
+
+def _today() -> _dt.date:
+    """Hoy, para la revisión del par (el replay lo fija al día de la captura: los golden no dependen del día)."""
+    return _dt.date.today()
 
 
 def effective_tax_rate(pretax: Optional[float], tax: Optional[float], period: str = "") -> Dict[str, Any]:
@@ -160,6 +172,58 @@ def adjusted_beta(beta: Optional[float], preadjusted: bool = False) -> float:
 def cost_of_equity(beta: Optional[float], rf: float, preadjusted: bool = False) -> float:
     """Ke = Rf + β ajustada (Blume) × prima implícita. `beta` es la beta BRUTA (o la del sector, `preadjusted`)."""
     return rf + adjusted_beta(beta, preadjusted) * cfg("valuation.capm.market_risk_premium")
+
+
+def rating_coverage(*, coverage: Optional[float], state: Optional[str], ebit: Optional[float],
+                    ebit_normalized: Optional[float], interest: Optional[float], reit: bool,
+                    ebitda: Optional[float], operating_cash_flow: Optional[float], depreciation: Optional[float],
+                    market_cap: Optional[float], state_fn, equity_income: Optional[float] = None) -> Dict[str, Any]:
+    """F13 · paso 2 (revisión de 110 empresas, patrón 3): la cobertura de intereses con la que se busca el rating
+    sintético (Kd y, por el piso Ke ≥ Kd + 1 pp, el Ke). Antes era siempre el EBIT contable del TTM: un deterioro sin
+    salida de caja daba rating D y llevaba el WACC al tope (KHC, APD, MOS: 20 %; WELL, REIT: CC y 18,5 %).
+
+    Por orden: (1) REIT: EBITDA / intereses (la depreciación inmobiliaria no es un coste de caja); (2) el EBIT
+    normalizado (sin los cargos que la normalización ya quita del operativo: deterioros, reestructuración, I+D
+    adquirida), si es mayor que el contable; (3) si aun así sale un rating de impago con la caja operativa positiva, el
+    rating es incoherente y se usa la cobertura de caja: (flujo operativo + intereses − D&A) / intereses, en la escala
+    del EBIT. La nota y las alertas siguen con la cobertura contable: esto es solo el coste de la deuda.
+
+    `state_fn(coverage, ebit)`: el estado de la cobertura (financial_ratios.interest_coverage_state con la deuda neta y
+    el resultado financiero neto del análisis). -> {coverage, state, basis, reason, reported}"""
+    R = cfg("valuation.synthetic_rating")
+    out = {"coverage": coverage, "state": state, "basis": "EBIT", "reason": None,
+           "reported": {"coverage": coverage, "state": state}}
+    ie = abs(interest) if interest else None
+    if not ie:
+        return out
+    if reit and ebitda is not None:
+        out.update(coverage=ebitda / ie, state=state_fn(ebitda / ie, ebitda), basis="EBITDA",
+                   reason="REIT: cobertura con el EBITDA (la depreciación inmobiliaria no es un coste de caja)")
+    elif ebit_normalized is not None and ebit is not None and ebit_normalized > ebit:
+        out.update(coverage=ebit_normalized / ie, state=state_fn(ebit_normalized / ie, ebit_normalized),
+                   basis="EBIT normalizado",
+                   reason="cobertura con el EBIT normalizado (sin los cargos que la normalización quita del operativo)")
+    # F13 (decisión del usuario: SRE y Oncor): el resultado de las participadas operativas (método de participación,
+    # positivo) se suma al EBIT de la cobertura: la parte proporcional de su negocio también paga la deuda de la matriz.
+    if equity_income and equity_income > 0 and out["basis"] != "EBITDA":
+        base = (ebit_normalized if out["basis"] == "EBIT normalizado" else ebit)
+        # solo si pesa: por debajo de `coverage_equity_min_share` del EBIT no cambia la lectura
+        if base is not None and base > 0 and equity_income >= R["coverage_equity_min_share"] * base:
+            cov = (base + equity_income) / ie
+            out.update(coverage=cov, state=state_fn(cov, base + equity_income), basis=out["basis"] + " + participadas",
+                       equity_income=equity_income,
+                       reason=((out["reason"] + "; ") if out["reason"] else "")
+                       + f"con el resultado de las participadas operativas ({equity_income / 1e9:.2f}B)")
+    low = set(R["incoherent_ratings"])
+    if synthetic_rating(out["coverage"], market_cap, out["state"])["rating"] in low \
+            and operating_cash_flow and operating_cash_flow > 0 and depreciation is not None:
+        cash = operating_cash_flow + ie - abs(depreciation)
+        cov = cash / ie
+        if synthetic_rating(cov, market_cap, state_fn(cov, cash))["rating"] not in low:
+            out.update(coverage=cov, state=state_fn(cov, cash), basis="caja operativa",
+                       reason=(f"rating de impago con la caja operativa positiva: incoherente; cobertura de caja "
+                               f"(flujo operativo + intereses − D&A) / intereses = {cov:.2f}"))
+    return out
 
 
 def cost_of_debt(rf: float, market_cap: Optional[float], total_debt: Optional[float],

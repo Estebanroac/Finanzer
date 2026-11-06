@@ -60,7 +60,7 @@ def test_blume_adjusted_beta_and_implied_erp():
     w = cc.wacc(beta=1.61, rf=RF, market_cap=1.0, total_debt=0.0, interest_coverage=None,
                 coverage_state=None, tax=TAX)
     assert w["beta_raw"] == 1.61 and w["beta"] == pytest.approx(1.4087) and w["beta_method"] == "Blume"
-    assert MRP == 0.042            # Damodaran, ERP implícita a 1-oct-2026 (config: fuente y fecha)
+    assert MRP == 0.0441           # Damodaran, ERP implícita a 1-nov-2026 (F13 · paso 1; config: fuente y fecha)
 
 
 def test_synthetic_rating_spreads_damodaran_jan_2026():
@@ -380,9 +380,9 @@ def test_valuation_contradiction_lowers_confidence(outputs_by_env):
     v = verdict_confidence({"convergence": conv, "coverage": alta, "source": alta, "stability": alta})
     assert v["level"] != "alta" and v["limits_score"] is False
     # Caso real con convergencia media (fase 4/7: PG, el de antes, pasó a convergencia alta con su industria, Household
-    # Products de Damodaran).
-    n = outputs_by_env("panel")["MSFT"][0]["confidence"]
-    # F10 · N4: la que contrae es la media; la que se muestra baja un escalón más por las tasas base
+    # Products de Damodaran; F13 · paso 9: MSFT, el siguiente, también, con el DCF de la reinversión del crecimiento;
+    # F13 · paso 11: UL pasa a confianza baja por el escalón de Ke y el caso es NFLX).
+    n = outputs_by_env("panel")["NFLX"][0]["confidence"]
     assert n["dimensions"]["convergence"]["level"] == "media" and n["contraction_basis"] == "media"
 
 

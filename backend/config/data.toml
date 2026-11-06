@@ -78,8 +78,13 @@ browser_max_age_s = 604800      # caché del navegador sin ?v= (7 días); sin lo
 # Ganancias (o pérdidas) por venta de inmuebles o de activos: se restan (positivo = ganancia). Las de participaciones en
 # negocios que no son inmuebles no (SPG: `spg_GainLossOnDisposalExchangeOrEvaluationOfEquityInterests`, inversiones en
 # minoristas, fuera de su FFO Nareit).
+# F13 · paso 7 (revisión de 110 empresas, patrón 10d): también la venta de una participación en una entidad
+# inmobiliaria con el concepto estándar (Nareit la excluye): PSA 2022, 2.129 M$ por PS Business Parks
+# (EquityMethodInvestmentRealizedGainLossOnDisposal), que llevaba su FFO por acción a 28,7 $ frente a ~16,5 $. Las de
+# SPG en minoristas usan un concepto propio («EquityInterests») y siguen dentro.
 gains_include = ["(gain|loss).*(sale|sold|dispos).*(realestate|propert|asset)",
-                 "(sale|sold|dispos).*(realestate|propert|asset).*(gain|loss)"]
+                 "(sale|sold|dispos).*(realestate|propert|asset).*(gain|loss)",
+                 "^equitymethodinvestmentrealizedgainlossondisposal$"]
 # Nareit (2018) deja al emisor dentro o fuera las ventas de activos accesorios a su negocio: promociones y terrenos
 # (PLD las deja dentro de su FFO Nareit y fuera solo del «Core»). Aquí se quedan dentro, como en el FFO Nareit del emisor.
 # Lo demás que casaría por el nombre no es una venta de inmuebles.
@@ -187,8 +192,21 @@ XOM = [34088]
 CAT = { name = "Cat Financial", axis = "ProductOrServiceAxis", member = "FinancialProductsMember" }
 
 [edgar.captive_unseparable]     # fase 3 (T7): cautiva sin desglose de su deuda en XBRL (se dice, no se separa)
-# DE: John Deere Financial; ni el 10-Q (2026-08-27) ni el 10-K (2025-12-18) etiquetan su deuda por segmento.
+# DE: John Deere Financial; ni el 10-Q (2026-08-27) ni el 10-K (2025-12-18) etiquetan su deuda por segmento. F13: su
+# filial John Deere Capital Corp (CIK 27673) presenta 10-Q/10-K, pero sin un total de deuda estándar (solo piezas:
+# LoansPayableCurrent, SecuredDebtCurrent; LongTermDebtNoncurrent se dejó de etiquetar en 2022): sigue sin separarse.
 DE = "John Deere Financial"
+
+[edgar.captive_filers]          # F13 · paso 2b: la financiera cautiva presenta su propio 10-K/10-Q (emite deuda pública)
+# Su deuda total en cada fecha publicada, de su companyfacts (SEC EDGAR, gratis y oficial); se separa la del mismo
+# corte que la deuda de la matriz. `debt`: grupos de conceptos; vale el primero que tenga todas sus piezas en la fecha
+# (se suman). Verificado el 5-nov-2026 frente a sus 10-Q de septiembre de 2026:
+#   Ford Credit 139,39 B$ (= 122,58 a largo plazo con la parte corriente + 16,81 a corto);
+#   GM Financial 112,94 B$ (= 49,48 garantizada + 63,46 sin garantía);
+#   Cat Financial 34,55 B$ (= 21,55 + 8,14 + 4,86; la misma cifra que el segmento del 10-Q de CAT).
+F = { name = "Ford Credit", cik = 38009, debt = [["DebtAndCapitalLeaseObligations"]] }
+GM = { name = "GM Financial", cik = 804269, debt = [["LongTermDebt"]] }
+CAT = { name = "Cat Financial", cik = 764764, debt = [["LongTermDebtNoncurrent", "LongTermDebtCurrent", "ShortTermBorrowings"]] }
 
 [server]                        # main.py (fase 6, F6_DIAGNOSTICO §2; D6: sin plan de pago)
 # Análisis (y PDF) a la vez en el pool de hilos. Memoria: el proceso ocupa ≈ 190 MB y un análisis en curso unas

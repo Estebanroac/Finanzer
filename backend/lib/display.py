@@ -151,11 +151,17 @@ def _declare_engine_texts(a, D):
     # Confianza: fiabilidad del DCF citada y contracción del precio.
     pa, C = a.get("price_attractiveness") or {}, D.get("confidence") or {}
     ccl = [_claim("dcf_rel"), _claim("price_contraction", raw=pa.get("score_raw"), score=pa.get("score"),
-                                     confidence=pa.get("confidence"), factor=pa.get("factor"))]
+                                     confidence=pa.get("confidence"), factor=pa.get("factor")),
+           _claim("altman_zone")]        # F13 · paso 3: la base frágil cita la zona del Altman
     for d in C.get("dimensions") or []:
         _record(d.get("text"), *ccl, source="display.confianza")
     for r in C.get("reasons") or []:
         _record(r.get("detail"), *ccl, source="display.confianza")
+        _record(r.get("text"), *ccl, source="display.confianza")
+    for txt in C.get("plain") or []:
+        _record(txt, *ccl, source="display.confianza")
+    for txt in (D.get("cover") or {}).get("confidence_reasons") or []:
+        _record(txt, *ccl, source="display.portada")
     _record(C.get("summary"), *ccl, source="display.confianza")
     # Filas con estado propio (cobertura, runway, deuda neta/EBITDA) y etiquetas con base temporal.
     rcl = {"interest_coverage": _metric_claims(a, "Cobertura de intereses"), "runway": [_claim("runway")],
@@ -562,6 +568,11 @@ def data_notices(a) -> list:
     off = (a.get("data_provenance") or {}).get("official_source") or {}
     if off.get("registered") is False and off.get("note"):
         out.append(off["note"])
+    # F13 · paso 1: el par Rf–ERP con la revisión mensual vencida se avisa (antes solo lo veía tests/revision_parametros)
+    rv = (a.get("risk_free") or {}).get("review") or {}
+    if rv.get("status") == "revisar" and rv.get("due"):
+        out.append(f"Coste del capital con la prima de mercado de Damodaran del {numfmt.date_long(rv['published'])}: "
+                   f"su revisión mensual venció el {numfmt.date_long(rv['due'])}.")
     return out
 
 
@@ -1461,7 +1472,7 @@ def contraction_text() -> str:
 def _contraction_phrase(p_raw: Any, p_score: Any, q: Dict[str, Any]) -> str:
     """La frase del resumen ejecutivo sobre lo que contrae la confianza: el atractivo del precio y, con confianza baja
     (F8 · E11), la calidad del negocio."""
-    price = p_raw is not None and p_raw != p_score
+    price = p_raw is not None and p_score is not None and p_raw != p_score   # F13 · 8: sin veredicto, nada que contraer
     qual = bool(q.get("contracted"))
     if price and qual:
         return (f". Contrae hacia 50 el atractivo del precio (de {p_raw} a {p_score}) y la calidad del negocio (de "
@@ -1486,6 +1497,17 @@ def _crp_suffix(a: Dict[str, Any]) -> str:
     import country_risk as _crisk
     t = _crisk.text(a.get("country_risk"))
     return f" + {t}" if t else ""
+
+
+def _sector_risks_block(a: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """F13 · paso 10: los riesgos del sector de la empresa (con dato) y de su industria (lista cerrada, no verificados en
+    ella), aparte de las alertas y sin puntuar; lo que no se puede medir, dicho. None sin el bloque en el análisis."""
+    sr = a.get("sector_risks")
+    if not sr:
+        return None
+    items = [{"level": x["level"], "key": x["key"], "title": x["title"], "label": x.get("label"), "text": x["text"]}
+             for x in (sr.get("company") or []) + (sr.get("industry") or [])]
+    return {"items": items, "note": sr.get("note"), "not_measured": sr.get("not_measured")}
 
 
 def _self_exclusion_note(se: Optional[Dict[str, Any]]) -> str:
@@ -1643,7 +1665,10 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     # Etapa 8: fiabilidad del DCF. Con fiabilidad baja la lectura lo dice y el DCF no puntúa.
     _rel = dcf.get("reliability") or {}
     _in_grid = _rel.get("grid_contains_price")
-    r_up = read_upside(dcf.get("upside"), _in_grid, fv=dcf.get("fair_value"), price=a.get("price"))
+    # F13 · paso 11: con fiabilidad baja el DCF no puntúa y la lectura lo dice; dónde cae el precio en su tabla de
+    # sensibilidad ya no informa de nada (y alargaba el resumen: la página 2 del PDF de NFLX se encogía)
+    r_up = read_upside(dcf.get("upside"), None if _rel.get("level") == "baja" else _in_grid,
+                       fv=dcf.get("fair_value"), price=a.get("price"))
     _flips = dcf.get("wacc_flips") or []
     if r_up and _flips and _rel.get("level") != "baja" and r_up[0] != "Precio justo":
         # F11 · F1: la dirección depende de ±1 escalón de WACC: la banda del caso base, marcada y neutra, como la de
@@ -2324,8 +2349,13 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     if _rf:
         _per = ((_rf.get("period") or {}).get("how") or "")
         if _rf.get("ffo") is not None:
+            # F13 · paso 7: conciliado con lo que EDGAR ya tiene; el informe que aún no le ha llegado, dicho
+            _rc = _rf.get("reconciliation") or {}
+            _pend = "; ".join(f"el estado {d['period']} no se concilia aún: {d['pending']}"
+                              for d in _rc.get("detail") or [] if d.get("pending")) \
+                if _rc.get("status") == "conciliado_parcial" else None
             _t = "; ".join(x for x in (f"{_rf['formula']}: {_rf['formula_values']}", _rf.get("not_included"),
-                                        _rf.get("equity_method_warning"), _rf.get("reference")) if x)
+                                        _rf.get("equity_method_warning"), _pend, _rf.get("reference")) if x)
             mrows.append(_row("ffo_nareit", "FFO según Nareit (por acción)", fv(_rf.get("ffo_per_share"), "price"),
                               "Informativo", 'neu', "con_dato", "—", "—", f"{_t}. Periodo: {_per}." if _per else _t))
         else:
@@ -2474,6 +2504,23 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                            + (f"; ciclo incompleto: {_nz.get('years')} ejercicios" if _nz.get("cycle_incomplete")
                               else "")
                            + "): el DCF usa el de mantenimiento, con crecimiento normalizado de ciclo medio")
+        # F13 · paso 9 (opción b): en expansión, el flujo de mantenimiento con la reinversión que exige el crecimiento,
+        # y al lado la valoración con el FCF − SBC de hoy
+        _ex = dcf.get("expansion") or {}
+        if _ex.get("applied"):
+            _to = max(x for x in (_ex.get("to_ocf"), _ex.get("to_ocf_ttm"), 0.0) if x is not None)
+            dcf_params += (f" · invierte en expansión (capex {_ex['ratio']:.1f} veces la D&A en {_ex.get('years')} "
+                           f"ejercicios y el {_to * 100:.0f}% del flujo operativo): el DCF parte del flujo de "
+                           f"mantenimiento {fv(_ex['maintenance_flow'], 'money')} (flujo operativo − D&A, sin pasar del "
+                           f"capex real) y cada año reinvierte lo que exige su crecimiento (crecimiento ÷ ROIC "
+                           f"{_ex['roic'] * 100:.1f}%), no el {_ex.get('current_basis') or 'FCF − SBC'} de hoy "
+                           f"{fv(_ex.get('current_flow'), 'money')}"
+                           + (f"; con él, el valor sería {fv(_ex['current_fair_value'], 'price')} por acción "
+                              f"({_ex['current_upside']:+.0f}% frente al precio)"
+                              if _ex.get("current_fair_value") is not None and _ex.get("current_upside") is not None
+                              else ""))
+        elif _ex.get("maintenance_flow") is not None:
+            dcf_params += f" · invierte en expansión, pero {_ex.get('reason')}"
         # Fiabilidad del DCF y su aporte a Valoración (etapa 8)
         _dcf_adj = next((x for x in (breakdown.get("Valoración") or {}).get("adjustments") or []
                          if x.get("key") == "dcf"), None)
@@ -2530,6 +2577,11 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                     + (f", cobertura {_rt['coverage']:.1f}x" if _rt.get("coverage") is not None and not _rt.get("flag")
                        else "")
                     + ")" + (f"; {_rt['flag']}" if _rt.get("flag") else ""))
+            # F13 · paso 2: con qué se mide la cobertura del rating si no es el EBIT contable
+            _rc = _w.get("rating_coverage") or {}
+            if _rc.get("basis") and _rc["basis"] != "EBIT" and _rc.get("reason"):
+                _rep = (_rc.get("reported") or {}).get("coverage")
+                _wl += (f"; {_rc['reason']}" + (f" (con el EBIT contable: {_rep:.1f}x)" if _rep is not None else ""))
         else:
             _wl += " (sin deuda financiera: WACC = Ke)"
         _tx = a.get("tax_rate") or {}
@@ -2650,7 +2702,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                         + (f" ({confidence_limits(_conf)})" if confidence_limits(_conf) else "")
                         # V7 (M4): solo cuando contrae de verdad ("factor 1.0: 15 → 15" no dice nada)
                         + (f". Contrae el atractivo del precio hacia 50: de {p_raw} a {p_score}"
-                           if _pa.get("factor") is not None and p_raw != p_score else "")
+                           if _pa.get("factor") is not None and p_score is not None and p_raw != p_score else "")
                         + (f". {_dcf_truth}" if _dcf_truth else "")
                         # F8 · E11: con confianza baja también se contrae la calidad
                         + (f". Contrae también la calidad del negocio hacia 50: de {_q.get('score_raw')} a "
@@ -2667,6 +2719,16 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     _nr_txt = ("La referencia casi no gana (TTM del conjunto): " + ", ".join(
         f"{_NR_LAB.get(k, k)} {fv(v, 'pct')} (TTM)" for k, v in _nr.items()) + ". No se compara con ella."
         if _nr else None)
+    # F13 · paso 5a: columnas que sin la empresa eran restos, sin pares suficientes para sustituirlas
+    _sd = (a.get("benchmark") or {}).get("self_dropped") or {}
+    if _sd:
+        import self_exclusion as _SE
+        _sd_fm = lambda k: "mult" if k in _SE.MULTIPLES or k == "de" else "pct"
+        _sd_txt = ("Sin la empresa, la industria no sirve de referencia para: " + ", ".join(
+            f"{_SE.LABELS.get(k, k)} (TTM del conjunto: {fv(d['before'], _sd_fm(k))} publicado, "
+            f"{fv(d['without'], _sd_fm(k))} sin ella)" for k, d in _sd.items()) + ". No hay pares suficientes en el universo para sustituirla: no se "
+            "compara.")
+        _nr_txt = join_sentences([_nr_txt, _sd_txt]) if _nr_txt else _sd_txt
     if _mkt:
         reference_note = None           # la dice market_note
     elif _vb.get("provisional") or not _vb:
@@ -3249,7 +3311,9 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                          for f, comp in (("free_cash_flow", "fcf"), ("fcf_margin", "fcf"),
                                          ("gross_margin", "gross_margin"), ("operating_margin", "operating_margin"))
                          if comp in _na_keys}},
-                     "alerts": {"counts": summary["alert_counts"], "groups": alert_groups}},
+                     "alerts": {"counts": summary["alert_counts"], "groups": alert_groups},
+                     # F13 · paso 10: riesgos del sector, aparte y sin puntuar (lib/sector_risks.py)
+                     "sector_risks": _sector_risks_block(a)},
         "methodology": {"models": _models, "models_text": models_txt,
                         "ratios_text": "ratios del último ejercicio" if _annual else "ratios TTM y del último ejercicio",
                         "contraction_text": contraction_text()},

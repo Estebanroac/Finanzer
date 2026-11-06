@@ -335,6 +335,10 @@ def _roe(ctx: Ctx):
     if roe is None or ctx.na("roe"):   # etapa 9a: REIT (sobre FFO) y pre-beneficio no leen el ROE
         return None
     T = _A["roe"]
+    # F13 · paso 5c: con un patrimonio ínfimo frente a los activos el ROE no es una cifra que leer (ni fortaleza ni aviso)
+    eta = ctx.c.get("equity_to_assets")
+    if eta is not None and eta < T["min_equity_to_assets"]:
+        return None
     if roe < 0 and roa is not None and roa > T["negative_equity_min_roa"]:
         # F10 · N6: el beneficio es positivo (ROA > 0): el signo es el del patrimonio, negativo. Por qué lo es
         # (recompras, dividendos, pérdidas antiguas) no se mide: no se atribuye.
@@ -367,6 +371,11 @@ def _roe(ctx: Ctx):
                ": uso muy eficiente del capital de los accionistas")
         return _sig("strength", "Rentabilidad", f"ROE{ctx.nl('roe')} elevado — {_pct(roe)}{ctx.per('roe')}",
                     f"Retorno sobre el patrimonio por encima de {_pct(bench)} {ctx.del_ref}{why}.", T["w_high"])
+    # F13 · paso 5b (revisión de 110 empresas, patrón H): por debajo de la industria pero por encima de su coste del
+    # capital propio, el accionista está remunerado: no es un ROE bajo (la industria puede venir de un año excepcional).
+    ke = ctx.c.get("cost_of_equity")
+    if ke is not None and roe >= ke:
+        return None
     return _sig("warning", "Rentabilidad", f"ROE{ctx.nl('roe')} bajo — {_pct(roe)}{ctx.per('roe')}",
                 f"El retorno sobre el patrimonio{ctx.nl('roe')} ({_pct(roe)}, {period(ctx.c.get('ttm_basis'), 'roe' in ctx.norm)}) queda por debajo de "
                 f"{_pct(bench)} {ctx.del_ref}: el capital de los accionistas no se está remunerando con holgura.", T["w_low"])
@@ -827,11 +836,18 @@ def _drawdown(ctx: Ctx):
     z = abs(dd) / vol if vol else None
     w = D["w"] if z is None else D["w"] + max(0.0, min(1.0, (z - D["z_low"]) / (D["z_high"] - D["z_low"]))) * (
         D["w_max"] - D["w"])
-    unusual = (f" Es {z:.1f} veces su volatilidad anual ({_pct(vol, 0)}): más de lo que suele moverse."
-               if z is not None and z >= D["z_low"] else "")
+    # F12 · D1, piso (usuario): una caída de floor_below o peor pesa al menos lo que la lineal (w a −deep_below, w_max a
+    # linear_full_below), sea cual sea la volatilidad: siempre es información. Con el mismo tope w_max.
+    if dd <= D["floor_below"]:
+        lin = (abs(dd) - abs(D["deep_below"])) / (abs(D["linear_full_below"]) - abs(D["deep_below"]))
+        w = max(w, D["w"] + max(0.0, min(1.0, lin)) * (D["w_max"] - D["w"]))
+    # Siempre con su volatilidad, para distinguir una caída extraordinaria de una normal para esa acción.
+    habit = ("" if z is None else
+             f" Son unas {z:.1f} veces su movimiento anual habitual (volatilidad del {_pct(vol, 0)}): "
+             + ("más de lo que suele moverse." if z >= D["z_low"] else "dentro de lo que suele moverse esta acción."))
     return _sig("warning", "Riesgo de mercado", f"Caída pronunciada en el año — {_pct(dd)}",
                 f"La acción ha llegado a caer {_pct(abs(dd))} desde máximos en el último año: una corrección profunda que "
-                f"puede ser oportunidad si el negocio sigue intacto, o el mercado anticipando un deterioro.{unusual}", w)
+                f"puede ser oportunidad si el negocio sigue intacto, o el mercado anticipando un deterioro.{habit}", w)
 
 
 INTERPRETERS = [

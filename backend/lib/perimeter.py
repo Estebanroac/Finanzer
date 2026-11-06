@@ -38,7 +38,7 @@ def _annual_revenue(facts: Dict[str, Any]) -> Optional[Dict[str, Any]]:
 def detect(info: Dict[str, Any], ed: Dict[str, Any], ctx=None, tol_days: int = 0) -> Dict[str, Any]:
     st = info.get("_statements_fy") or {}
     out: Dict[str, Any] = {"changed": False, "discontinued": [], "restated": [], "series": [], "mixed_cagr": False,
-                           "note": None}
+                           "note": None, "history_break": None}
     for end, v in zip(st.get("inc_ends") or [], st.get("net_income_discontinued") or []):
         if v:
             out["discontinued"].append({"fy_end": end, "net_income": v, "source": "Yahoo"})
@@ -91,6 +91,11 @@ def detect(info: Dict[str, Any], ed: Dict[str, Any], ctx=None, tol_days: int = 0
                                  if any((f.get("filed") or "") == latest for f in g)}
                     if s["fy_end"] not in cur_years:
                         s["basis"] = "perimetro_anterior"
+    # F13 · paso 7: una reexpresión grande (≥ thresholds.growth.perimeter_history_break de los ingresos) corta la
+    # historia larga: lo anterior al primer ejercicio reexpresado es otra empresa (history_break; homogeneous_history)
+    from settings import cfg as _cfg
+    big = [r for r in out["restated"] if abs(r["change"]) >= _cfg("thresholds.growth.perimeter_history_break")]
+    out["history_break"] = min(r["fy_end"] for r in big) if big else None
     window = out["series"][:_CAGR_YEARS + 1]
     out["mixed_cagr"] = len({s["basis"] for s in window if s["basis"] != "sin_casar"}) > 1
     out["changed"] = bool(out["restated"] or out["discontinued"])
@@ -103,4 +108,18 @@ def detect(info: Dict[str, Any], ed: Dict[str, Any], ctx=None, tol_days: int = 0
         out["note"] = ("estados reexpresados o con cambio de perímetro: " + "; ".join(bits)
                        + ("; el CAGR a 3 años de los ingresos mezcla las dos bases" if out["mixed_cagr"] else "")
                        + " (su corrección en el crecimiento y el DCF es de la fase 3)")
+    return out
+
+
+def homogeneous_history(hist: Optional[Dict[str, Any]], per: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """F13 · paso 7: la historia anual de EDGAR (`_history_fy`) desde el corte de perímetro (`history_break` de detect),
+    para la ciclicidad y el ciclo medio. Sin corte, la misma historia. Cada campo conserva su forma ({values: [...]})."""
+    cut = (per or {}).get("history_break")
+    if not hist or not cut:
+        return hist
+    out = dict(hist)
+    for k, v in hist.items():
+        if isinstance(v, dict) and isinstance(v.get("values"), list):
+            out[k] = {**v, "values": [x for x in v["values"] if str(x.get("fy_end") or "") >= cut]}
+    out["_perimeter_cut"] = cut
     return out

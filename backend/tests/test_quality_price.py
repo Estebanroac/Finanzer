@@ -61,9 +61,10 @@ def test_price_contracts_towards_50_by_confidence(level, factor, shown):
 
 
 def test_quality_is_not_contracted_by_convergence(outputs_by_env):
-    a = outputs_by_env("panel")["MSFT"][0]                  # convergencia media, confianza media (fase 4/7: PG, el de
-    #                                                         antes, pasó a convergencia alta con su industria)
-    # F10 · N4: MSFT baja un escalón de confianza por las tasas base (se muestra «baja»), pero contrae con la previa
+    a = outputs_by_env("panel")["DUK"][0]                   # convergencia media, confianza media (fase 4/7: PG, el de
+    #                                                         antes, pasó a convergencia alta con su industria; F13 · 9:
+    #                                                         MSFT, el siguiente, también; F13 · 11: UL, a baja; NFLX
+    #                                                         tiene el tope de persistencia en la calidad)
     assert a["confidence"]["contraction_basis"] == "media"
     q = a["quality"]
     by = {k: v["score"] for k, v in a["score"]["breakdown"].items()}
@@ -133,13 +134,17 @@ def test_v_local_confidence_follows_the_statements_dcf(outputs_by_env):
     estados (10.9%) ambos dicen "cara": la convergencia es alta y la confianza también."""
     a = outputs_by_env("local")["V"][0]
     conv = a["confidence"]["dimensions"]["convergence"]
-    assert a["dcf"]["growth_rate"] == pytest.approx(0.109, abs=1e-3)
+    # F13 · paso 11 (opción c): el CAGR de los estados (10.9%) converge a la tasa base: la media con la mediana de sus
+    # comparables (3.5%), 7.2%
+    assert a["dcf_growth_base_rate"]["company"] == pytest.approx(0.109, abs=1e-3)
+    assert a["dcf"]["growth_rate"] == pytest.approx((0.109212 + a["dcf_growth_base_rate"]["median"]) / 2, abs=1e-3)
     assert {m["direction"] for m in conv["methods"] if m.get("evaluable")} == {"cara"}
     assert conv["level"] == "alta"
     # F11 · F1/T5 (revisión de NU y NFLX): con Ke − 1 pp el DCF de V queda a un escalón de WACC de cruzar el precio y
     # deja de votar: el nivel pasa de «muy exigente» a «exigente». El limitador de dependencia del coste de capital
     # baja la confianza a media, con su motivo.
-    assert a["ke_sensitivity"]["dependent"] and a["confidence"]["level"] == "media"
+    # F13 · paso 11: con el DCF convergido a la tasa base, V ya no queda a un escalón de WACC del precio: confianza alta
+    assert not a["ke_sensitivity"]["dependent"] and a["confidence"]["level"] == "alta"
 
 
 # ─────────────────────────── REIT: retorno total ───────────────────────────

@@ -206,6 +206,14 @@ def _self(values: Dict[str, float], reg: str, ind: str, firms: int, symbol: Opti
     if why is None:
         cols = wo["columns"]
         out = dict(wo["values"])
+        for c, d in cols.items():
+            cause = _cause(c, d, ind, reg, symbol) if d["how"] == "sin_empresa" else None
+            if cause is None:
+                continue
+            d["cause"] = cause
+            if cause["bounded"]:     # se acota: pasa a la mediana de pares (o sin referencia), dicho
+                cols[c] = {**d, "after": None, "how": "sin_dato", "implausible": d["after"], "why": "causa"}
+                out.pop(c, None)
         gaps = [c for c, d in cols.items() if d["how"] == "sin_dato"]
         if gaps:
             pm = SE.peer_median(ind, symbol, gaps, region=reg)
@@ -233,6 +241,29 @@ def _self(values: Dict[str, float], reg: str, ind: str, firms: int, symbol: Opti
         "peers_n_region": pm.get("n_region"),
         "declaration": (f"referencia degradada: mediana de {pm['n_peers']} pares del universo{where}; {why}" if deg else
                         f"referencia: mediana de {pm['n_peers']} pares del universo{where}; {why}")}}
+
+
+def _cause(col: str, d: Dict[str, Any], ind: str, reg: str, symbol: Optional[str]) -> Optional[Dict[str, Any]]:
+    """F13 (decisión del usuario, 5-nov): una columna de beneficio sin la empresa entre `min_profit_ratio` (2 %) y
+    `cause_band_max` (3 %) se decide por su causa. Margen fino por naturaleza: válida. Muchas empresas con pérdidas
+    (Damodaran, frente al mercado) o el agregado muy por debajo de la mediana de los pares: se acota."""
+    import self_exclusion as SE
+    P = cfg("sectors.benchmarks.industry")
+    v = d.get("after")
+    if col not in P["profit_columns"] or v is None or not P["min_profit_ratio"] <= v < P["cause_band_max"]:
+        return None
+    if ind in P["thin_margin_industries"]:
+        return {"bounded": False, "test": "margen_fino"}
+    I = cfg("industries")["regions"][reg]
+    losing, market = (I.get("money_losing") or {}).get(ind), (I.get("money_losing") or {}).get(
+        "Total Market (without financials)")
+    pm = SE.peer_median(ind, symbol, [col], region=reg)["columns"][col]
+    out = {"losing": losing, "losing_market": market, "peer_median": pm.get("after"), "n_peers": pm.get("n")}
+    if losing is not None and market is not None and losing - market >= P["losing_excess"]:
+        return {**out, "bounded": True, "test": "muchas_perdidas"}
+    if pm.get("after") is not None and v < P["below_median_ratio"] * pm["after"]:
+        return {**out, "bounded": True, "test": "bajo_la_mediana"}
+    return {**out, "bounded": False, "test": "valida"}
 
 
 def _meta(reg: str) -> Dict[str, Any]:

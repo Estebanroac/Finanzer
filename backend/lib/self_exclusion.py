@@ -239,6 +239,19 @@ def without(values: Dict[str, float], dollars: Dict[str, float], fig: Dict[str, 
         if new is None:
             cols[col] = {"before": val, "after": None, "how": "sin_dato"}
             continue
+        # F13 · paso 5a (revisión de 110 empresas, patrón H): quitar a una empresa que pesa mucho puede dejar restos que
+        # no son la industria (Cable TV sin Comcast: margen neto de 5,7 % a −8,1 %; Restaurantes sin McDonald's: ROE de
+        # 0,1 % a −223 %). Si el valor cambia de signo o se mueve más de `self_max_shift` veces («salto»), o una columna
+        # de beneficio queda por debajo de `min_profit_ratio` («resto»: Biotecnología de EE. UU. sin AbbVie, margen neto
+        # −8,3 %, la industria la forman cientos de empresas sin beneficio aún), no sirve de referencia: pasa al respaldo
+        # de la mediana de pares, dicho.
+        P = cfg("sectors.benchmarks.industry")
+        k = P["self_max_shift"]
+        why = ("salto" if new * val <= 0 or not 1 / k <= new / val <= k else
+               "resto" if col in P["profit_columns"] and new < P["min_profit_ratio"] else None)
+        if why:
+            cols[col] = {"before": val, "after": None, "how": "sin_dato", "implausible": new, "why": why}
+            continue
         out_vals[col] = new
         cols[col] = {"before": val, "after": new, "how": "sin_empresa"}
     return {"values": out_vals, "columns": cols, "weight": c["mcap"] / tot["mcap"] if tot.get("mcap") else None}

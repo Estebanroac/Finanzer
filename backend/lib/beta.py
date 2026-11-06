@@ -172,6 +172,15 @@ def choose(own: Dict[str, Any], source_beta: Optional[float], source_name: Optio
                            f"{bu['damodaran'] if bu['basis'] == 'industria' else 'sector ' + str(sector)} "
                            f"(Damodaran, enero de 2026)"))
         return out
+    # F13 · paso 8 (revisión de 110 empresas): una beta negativa de la fuente no entra en el CAPM (WBD: −0,60 de Finnhub,
+    # sin historial propio tras su reestructuración; daba un CAPM por debajo de Rf). Queda sin dato y el Ke usa la beta
+    # de mercado por defecto, dicho.
+    if source_beta is not None and source_beta < 0:
+        out.update(source="sin_dato", discarded_source=source_beta,
+                   reason=(f"beta propia descartada ({why}), sin industria de Damodaran y la de la fuente "
+                           f"({source_name or 'proveedor'}) es negativa ({source_beta:.2f}".replace("-", "−") + "): no entra en el CAPM; se usa "
+                           "la beta de mercado por defecto"))
+        return out
     if source_beta is not None:
         out.update(value=source_beta, source="fuente",
                    reason=f"{SOURCE_UNVERIFIED} ({source_name or 'proveedor'}): beta propia descartada ({why}) y "

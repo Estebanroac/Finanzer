@@ -359,6 +359,10 @@ def _reit(st: Dict[str, Any], km: Optional[Dict[str, Any]] = None,
     # de D&A, esa diferencia como antes.
     import reit_ffo as _rf
     ni, ebitda, ebit = st.get("net_income") or [], st.get("ebitda") or [], st.get("ebit") or []
+    # F13 · paso 7 (revisión de 110 empresas, patrón 10d): desde el beneficio de las operaciones continuadas, el del
+    # perímetro vigente (CCI 2024: −5,07 B$ de discontinuadas, la fibra vendida, dejaban el FFO por acción en −6,95 $)
+    disc = st.get("net_income_discontinued") or []
+    ni = [(n - (disc[i] if i < len(disc) and disc[i] else 0.0)) if n is not None else None for i, n in enumerate(ni)]
     da = st.get("depreciation_amortization") or []
     if da and len([x for x in da if x is not None]) >= len([x for x in ni if x is not None]):
         base = [(n + abs(d)) if (n is not None and d is not None) else None for n, d in zip(ni, da)]
@@ -535,6 +539,35 @@ def maintenance_fcf(st: Dict[str, Any]) -> Dict[str, Any]:
     return {"value": mean(vals) if vals else None, "years": len(vals), "series": series,
             "value_minus_sbc": mean(vals_sbc) if complete else None,
             "reason": None if vals else "sin flujo operativo y D&A del mismo ejercicio"}
+
+
+def investment_intensity(st: Dict[str, Any], years: Optional[int] = None) -> Dict[str, Any]:
+    """F13 · paso 9 (revisión de 110 empresas, patrón 2): cuánto invierte frente a lo que repone. Capex ÷ D&A sumados en
+    los últimos `years` ejercicios con los dos datos (la D&A aproxima el capex de mantenimiento, como en
+    maintenance_fcf). {ratio, to_ocf, years, capex, da, ocf} o {ratio: None, reason}."""
+    years = years or cfg("valuation.investment_intensity.years")
+    capex, da = st.get("capital_expenditure") or [], st.get("depreciation_amortization") or []
+    ocf = st.get("operating_cash_flow") or []
+    rows = [(abs(c), abs(d), (ocf[i] if i < len(ocf) else None)) for i, (c, d) in enumerate(zip(capex, da))
+            if c is not None and d is not None and d][:years]
+    if len(rows) < years:
+        return {"ratio": None, "to_ocf": None, "years": len(rows),
+                "reason": f"capex y D&A de {len(rows)} ejercicios (hacen falta {years})"}
+    c, d = sum(r[0] for r in rows), sum(r[1] for r in rows)
+    o = sum(r[2] for r in rows) if all(r[2] is not None for r in rows) else None
+    return {"ratio": c / d, "to_ocf": (c / o) if o and o > 0 else None, "years": len(rows), "capex": c, "da": d,
+            "ocf": o, "reason": None}
+
+
+def expansion(intensity: Dict[str, Any], ttm_capex_to_ocf: Optional[float]) -> bool:
+    """F13 · paso 9: ¿invierte en expansión? capex ≥ min_capex_to_da × D&A y ≥ min_capex_to_ocf del flujo operativo (en
+    los ejercicios medidos o en el TTM: META acelera su inversión en el último año, 78 % del flujo frente a ~50 % en
+    tres). Sin medida, no."""
+    C = cfg("valuation.investment_intensity")
+    r, o = (intensity or {}).get("ratio"), (intensity or {}).get("to_ocf")
+    if r is None or r < C["min_capex_to_da"]:
+        return False
+    return max(x for x in (o, ttm_capex_to_ocf, 0.0) if x is not None) >= C["min_capex_to_ocf"]
 
 
 def _cyclical(st: Dict[str, Any], km: Dict[str, Any]) -> Dict[str, Any]:

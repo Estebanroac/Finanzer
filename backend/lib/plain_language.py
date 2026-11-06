@@ -45,6 +45,14 @@ TABLE = [
      "Parte del beneficio no la explica el negocio y no se ha podido identificar de dónde sale: no se descuenta, pero "
      "resta certeza."),
     (r"bono del Tesoro de EE\. UU\. a 10 años no está disponible", None),   # Rf de referencia: detalle técnico
+    # ── base del veredicto (F13 · paso 3: valuation_confidence.fragility_dimension) ──
+    (r"^caja libre negativa \(",
+     "La empresa invierte más caja de la que genera: su valor depende de que esa inversión rinda."),
+    (r"^Altman Z \S+ en zona de peligro",
+     "La fórmula de Altman sitúa a la empresa en la zona de riesgo de quiebra."),
+    (r"^el beneficio normalizado y el esperado no cuadran",
+     "El beneficio sin partidas extraordinarias y el que esperan los analistas no cuadran: una de las dos bases puede "
+     "estar equivocada."),
     # ── convergencia entre métodos ──
     (r"^un solo método evaluable",
      "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo."),
@@ -79,6 +87,14 @@ TABLE = [
     (r"^(\d+) de (\d+) componentes del score con dato",
      "Faltan datos en parte del análisis ({0} de {1} indicadores con dato)."),
     # ── estabilidad ──
+    # F13 · 3c (opción (a) con matiz): lo que el ciclo hizo en sus cifras
+    (r"^empresa cíclica: en sus (\d+) ejercicios, (.+)$",
+     "Empresa cíclica: sus resultados dependen de la fase del ciclo (en sus {0} ejercicios, {1})."),
+    (r"^empresa cíclica sin una caída real del beneficio en sus (\d+) ejercicios",
+     "Empresa cíclica: en sus {0} ejercicios el beneficio aún no ha caído con el ciclo, así que su resultado de hoy "
+     "puede estar en la parte alta."),
+    (r"^productora de materias primas", "Produce materias primas: su resultado depende del precio de lo que vende, "
+                                        "no de su gestión."),
     (r"^(arquetipo CYCLICAL|empresa cíclica)", "Empresa cíclica: sus resultados dependen de la fase del ciclo."),
     (r"^alerta de posible cíclica",
      "La empresa podría ser cíclica: sus resultados actuales pueden no ser representativos."),

@@ -142,7 +142,7 @@ def _reduce_labels(names):
             + "".join(locs + labs + arcs) + "</link:labelLink></link:linkbase>")
 
 
-def capture(symbol):
+def capture(symbol, base=FIX_DIR):
     rec = {}
 
     def fetch(url, timeout):
@@ -191,8 +191,8 @@ def capture(symbol):
         else:
             continue
         out[url] = {"code": code, "body": text}
-    os.makedirs(FIX_DIR, exist_ok=True)
-    path = os.path.join(FIX_DIR, f"{symbol.upper()}.json")
+    os.makedirs(base, exist_ok=True)
+    path = os.path.join(base, f"{symbol.upper()}.json")
     with open(path, "w", encoding="utf-8") as fh:
         json.dump({"symbol": symbol.upper(), "captured": dt.date.today().isoformat(), "responses": out}, fh,
                   ensure_ascii=False, sort_keys=True, indent=0)
@@ -200,18 +200,18 @@ def capture(symbol):
     # el replay (solo este archivo, en un directorio temporal sería lo mismo) debe dar lo mismo que el vivo
     segments.reset()
     edgar.reset()
-    segments.FETCHER = replay_fetcher(FIX_DIR)
+    segments.FETCHER = replay_fetcher(base)
     again = segments.build(symbol)
     sizes = {u.rsplit("/", 1)[-1]: len(b or b"") for u, (b, _c) in rec.items() if u.endswith(".xml")}
     return live, again, secs, sizes, os.path.getsize(path)
 
 
-def main(symbols):
+def main(symbols, base=FIX_DIR):
     if not edgar.user_agent():
         raise SystemExit("falta SEC_EDGAR_USER_AGENT")
     bad = 0
     for s in symbols:
-        live, again, secs, sizes, fsize = capture(s)
+        live, again, secs, sizes, fsize = capture(s, base)
         same = live == again
         bad += not same
         segs = ", ".join(f"{x['label']} {x['share_last']:.0%}" for x in live["segments"])
@@ -224,4 +224,10 @@ def main(symbols):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    _args = sys.argv[1:]
+    _base = FIX_DIR
+    if "--dir" in _args:            # F13: a otra carpeta (banco de pruebas fuera de git) en vez de tests/fixtures/segments
+        i = _args.index("--dir")
+        _base = os.path.abspath(_args[i + 1])
+        del _args[i:i + 2]
+    main(_args, _base)

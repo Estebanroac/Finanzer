@@ -77,6 +77,9 @@ def save_facts(cik, reduced, base=F2B_DIR):
     tests/f3_extend_history_fixtures.py en el juego del panel."""
     import sec_edgar as edgar
     hist = {c for v in edgar.HISTORY.values() for c in (*v[1], *v[2])}
+    # F13: también los conceptos de relevo (sec_edgar.HISTORY_RELAY) enteros: el relevo se verifica en un ejercicio que
+    # comparte con el concepto principal, a menudo anterior a FACTS_SINCE (VZ: capex hasta 2018 y relevo desde 2016)
+    hist |= {c for v in edgar.HISTORY_RELAY.values() for c in (*v[0], *v[1])}
     out = {k: reduced[k] for k in ("cik", "entityName") if k in reduced}
     out["facts"] = {tx: {c: {"units": {u: [f for f in fs if c in hist or f["end"] >= FACTS_SINCE]
                                        for u, fs in node["units"].items()}}

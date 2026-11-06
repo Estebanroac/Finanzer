@@ -25,14 +25,14 @@
         "reason": "Liquidez en deterioro — current ratio 0.94x"
       },
       {
+        "category": "Riesgo de mercado",
+        "detail": "La acción ha llegado a caer 56.3% desde máximos en el último año: una corrección profunda que puede ser oportunidad si el negocio sigue intacto, o el mercado anticipando un deterioro. Son unas 0.9 veces su movimiento anual habitual (volatilidad del 62%): dentro de lo que suele moverse esta acción.",
+        "reason": "Caída pronunciada en el año −56.3%"
+      },
+      {
         "category": "Valoración",
         "detail": "Por cada dólar invertido en la acción, el negocio genera solo 0.9% de caja libre: se está pagando caro cada dólar de flujo, habitual en compañías de alto crecimiento o valoración exigente.",
         "reason": "FCF yield bajo — 0.9%"
-      },
-      {
-        "category": "Riesgo de mercado",
-        "detail": "La acción ha llegado a caer 56.3% desde máximos en el último año: una corrección profunda que puede ser oportunidad si el negocio sigue intacto, o el mercado anticipando un deterioro.",
-        "reason": "Caída pronunciada en el año −56.3%"
       }
     ]
   },
@@ -127,9 +127,12 @@
             "how": "sin_empresa"
           },
           "net_margin": {
-            "after": 0.0316372163831,
+            "after": 0.1922,
             "before": -0.0093,
-            "how": "sin_empresa"
+            "how": "mediana_pares",
+            "implausible": 0.0316372163831,
+            "n": 4,
+            "why": "salto"
           },
           "operating_margin": {
             "after": 0.0889981742927,
@@ -147,9 +150,12 @@
             "how": "no_entra"
           },
           "roe": {
-            "after": 0.0482715637447,
+            "after": 0.135,
             "before": -0.0147,
-            "how": "sin_empresa"
+            "how": "mediana_pares",
+            "implausible": 0.0482715637447,
+            "n": 3,
+            "why": "salto"
           },
           "roic": {
             "after": 0.0750335230798,
@@ -176,6 +182,7 @@
           "total_debt": 2685.615
         },
         "method": "sin_empresa",
+        "peers_date": "2026-10-28",
         "session": "2026-01-05",
         "source": "A. Damodaran, Dollar value measures by industry (Dollar{US, Europe, Japan, emerg, Global}.xls), NYU Stern",
         "weight": 0.245319807288
@@ -194,11 +201,11 @@
       "ev_ebitda": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Software de internet», EE. UU., 29 empresas (la empresa no entra en este agregado: Damodaran lo calcula sin las empresas en pérdidas)",
       "gross_margin": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Software de internet», EE. UU., 29 empresas; referencia de la industria sin Snowflake, que pesa el 25 %",
       "interest_coverage": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Software de internet», EE. UU., 29 empresas; referencia de la industria sin Snowflake, que pesa el 25 %",
-      "net_margin": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Software de internet», EE. UU., 29 empresas; referencia de la industria sin Snowflake, que pesa el 25 %",
+      "net_margin": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Software de internet», EE. UU., 29 empresas; mediana de 4 pares del universo (sin la empresa el agregado pasaba de −0.9 % a 3.2 %: no representa a la industria)",
       "operating_margin": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Software de internet», EE. UU., 29 empresas; referencia de la industria sin Snowflake, que pesa el 25 %",
       "pb": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Software de internet», EE. UU., 29 empresas; referencia de la industria sin Snowflake, que pesa el 25 %",
       "pe": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Software de internet», EE. UU., 29 empresas (la empresa no entra en este agregado: Damodaran lo calcula sin las empresas en pérdidas)",
-      "roe": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Software de internet», EE. UU., 29 empresas; referencia de la industria sin Snowflake, que pesa el 25 %",
+      "roe": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Software de internet», EE. UU., 29 empresas; mediana de 3 pares del universo (sin la empresa el agregado pasaba de −1.5 % a 4.8 %: no representa a la industria)",
       "roic": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Software de internet», EE. UU., 29 empresas; referencia de la industria sin Snowflake, que pesa el 25 %"
     },
     "thresholds": {
@@ -218,11 +225,11 @@
       "ev_ebitda": 15.7256,
       "gross_margin": 0.619642468603,
       "interest_coverage": 2.00510938989,
-      "net_margin": 0.0316372163831,
+      "net_margin": 0.1922,
       "operating_margin": 0.0889981742927,
       "pb": 8.83500359936,
       "pe": 34.8241,
-      "roe": 0.0482715637447,
+      "roe": 0.135,
       "roic": 0.0750335230798
     }
   },
@@ -359,6 +366,10 @@
     "capped_from": null,
     "contraction_basis": "alta",
     "dimensions": {
+      "base": {
+        "level": "alta",
+        "reasons": []
+      },
       "convergence": {
         "level": "no_evaluable",
         "methods": [
@@ -408,19 +419,19 @@
     "score": 1.0
   },
   "cost_of_equity": {
-    "as_of": "2026-10-01",
-    "capm": 0.106127870591,
+    "as_of": "2026-11-01",
+    "capm": 0.10878926412,
     "crp": 0.00310229208706,
-    "erp": 0.042,
+    "erp": 0.0441,
     "floor": null,
     "floors": {
       "Kd + 1 pp": 0.074,
-      "Rf + 0.5 × ERP": 0.0739
+      "Rf + 0.5 × ERP": 0.07495
     },
     "kd": 0.064,
     "rf": 0.0529,
     "shift": null,
-    "value": 0.109230162678
+    "value": 0.111891556207
   },
   "country_risk": {
     "as_of": "2026-01-05",
@@ -1373,6 +1384,7 @@
     "perimeter": {
       "changed": false,
       "discontinued": [],
+      "history_break": null,
       "mixed_cagr": false,
       "note": null,
       "restated": [],
@@ -1582,6 +1594,19 @@
       "rule": "ratio_no_significativa"
     }
   ],
+  "dcf_growth_base_rate": {
+    "bin": "1-5",
+    "cell": "1-5 · Technology",
+    "company": 0.286975427392,
+    "company_basis": "CAGR de ingresos por acción a 3 años",
+    "count": 2177,
+    "horizon_years": 5,
+    "industry": "Technology",
+    "median": 0.06,
+    "reason": null,
+    "used": 0.173487713696,
+    "weight": 0.5
+  },
   "dcf_growth_blend": null,
   "dcf_status": {
     "reason": "FCF − SBC base −$448.44M (≤ 0): no hay flujo positivo que descontar, así que el DCF no es significativo",
@@ -2362,6 +2387,12 @@
           "label": "Estabilidad del arquetipo",
           "level": "Alta",
           "text": "Sin incidencias."
+        },
+        {
+          "key": "base",
+          "label": "base",
+          "level": "Alta",
+          "text": "Sin incidencias."
         }
       ],
       "level": "alta",
@@ -2880,14 +2911,14 @@
                 "reason": "Liquidez en deterioro — current ratio 0.94x"
               },
               {
+                "category": "Riesgo de mercado",
+                "detail": "La acción ha llegado a caer 56.3% desde máximos en el último año: una corrección profunda que puede ser oportunidad si el negocio sigue intacto, o el mercado anticipando un deterioro. Son unas 0.9 veces su movimiento anual habitual (volatilidad del 62%): dentro de lo que suele moverse esta acción.",
+                "reason": "Caída pronunciada en el año −56.3%"
+              },
+              {
                 "category": "Valoración",
                 "detail": "Por cada dólar invertido en la acción, el negocio genera solo 0.9% de caja libre: se está pagando caro cada dólar de flujo, habitual en compañías de alto crecimiento o valoración exigente.",
                 "reason": "FCF yield bajo — 0.9%"
-              },
-              {
-                "category": "Riesgo de mercado",
-                "detail": "La acción ha llegado a caer 56.3% desde máximos en el último año: una corrección profunda que puede ser oportunidad si el negocio sigue intacto, o el mercado anticipando un deterioro.",
-                "reason": "Caída pronunciada en el año −56.3%"
               }
             ],
             "key": "warnings",
@@ -3631,6 +3662,11 @@
           }
         ]
       },
+      "sector_risks": {
+        "items": [],
+        "not_measured": "concentración en un inquilino o en un producto: los datos públicos gratuitos no la traen estructurada (solo en la instancia XBRL con dimensiones), así que no se mide ni se estima",
+        "note": "Aparte y sin puntuar: ni la calidad ni el precio los cuentan."
+      },
       "solvency": {
         "balance": "Balance — deuda total $2.28B · caja $2.34B · patrimonio $2.15B · activos $8.69B",
         "columns": [
@@ -3924,7 +3960,7 @@
         "wacc_breakdown": [
           {
             "label": "WACC",
-            "value": "10.82%"
+            "value": "11.08%"
           },
           {
             "label": "Peso del patrimonio",
@@ -3932,7 +3968,7 @@
           },
           {
             "label": "Coste del patrimonio (Ke)",
-            "value": "10.92%"
+            "value": "11.19%"
           },
           {
             "label": "Tasa libre de riesgo (Rf)",
@@ -3944,7 +3980,7 @@
           },
           {
             "label": "Prima de mercado implícita",
-            "value": "4.20%"
+            "value": "4.41%"
           },
           {
             "label": "Peso de la deuda",
@@ -3963,7 +3999,7 @@
             "value": "21.00%"
           }
         ],
-        "wacc_note": "WACC 10.82% = 98.28% × Ke 10.92% (Rf 5.29% [Tesoro de EE. UU. a 10 años del par Rf–ERP de Damodaran, 1 de octubre de 2026] + β de abajo hacia arriba 1.27 [βU 1.25 de la industria (Damodaran, enero de 2026) reapalancada con D/E 0.02 y t 21%; sin Blume] × prima implícita 4.20% + prima de riesgo país 0.31 pp (ingresos por geografía: EMEA 16%, Asia-Pacific and Japan 6%; Damodaran, enero de 2026); el 3% de los ingresos no tiene país identificado («Other Americas»)) + 1.72% × Kd 6.40% × (1 − t 21.00%). Kd = Rf + spread del rating sintético BBB (tabla de empresas grandes); regla M: EBIT < 0 con caja neta, cobertura no significativa -> tramo de caja neta. t: tipo legal (beneficio antes de impuestos ≤ 0: tipo legal 21%). Rf y prima implícita del mismo día: bono del Tesoro de EE. UU. a 10 años y prima implícita de Damodaran del 1 de octubre de 2026."
+        "wacc_note": "WACC 11.08% = 98.28% × Ke 11.19% (Rf 5.29% [Tesoro de EE. UU. a 10 años del par Rf–ERP de Damodaran, 1 de noviembre de 2026] + β de abajo hacia arriba 1.27 [βU 1.25 de la industria (Damodaran, enero de 2026) reapalancada con D/E 0.02 y t 21%; sin Blume] × prima implícita 4.41% + prima de riesgo país 0.31 pp (ingresos por geografía: EMEA 16%, Asia-Pacific and Japan 6%; Damodaran, enero de 2026); el 3% de los ingresos no tiene país identificado («Other Americas»)) + 1.72% × Kd 6.40% × (1 − t 21.00%). Kd = Rf + spread del rating sintético BBB (tabla de empresas grandes); regla M: EBIT < 0 con caja neta, cobertura no significativa -> tramo de caja neta. t: tipo legal (beneficio antes de impuestos ≤ 0: tipo legal 21%). Rf y prima implícita del mismo día: bono del Tesoro de EE. UU. a 10 años y prima implícita de Damodaran del 1 de noviembre de 2026."
       }
     },
     "summary": {
@@ -4835,6 +4871,9 @@
       "charges_back": 0,
       "equity_income": 0.0,
       "equity_income_net_of_tax": null,
+      "equity_net_history": [],
+      "equity_net_operating": 0.0,
+      "equity_net_recurrent": null,
       "excess": 0.0,
       "explained": -1076354000.0,
       "income": -1110514820.0,
@@ -4933,6 +4972,7 @@
   "earnings_peak": null,
   "eps_vs_revenue_growth": null,
   "errors": [],
+  "ev_cross_holdings": null,
   "graham_number": null,
   "growth_basis": {
     "applied_to": [
@@ -5116,20 +5156,30 @@
     "source": "SEC EDGAR (companyfacts: ejercicios completos de los informes anuales)",
     "status": "ok"
   },
+  "investment_intensity": {
+    "capex": 278404000.0,
+    "da": 522854000.0,
+    "expansion": null,
+    "ocf": 3029828000.0,
+    "ratio": 0.532469867305,
+    "reason": null,
+    "to_ocf": 0.0918877243197,
+    "years": 3
+  },
   "ke_sensitivity": {
     "base": {
-      "ke": 0.109230162678,
+      "ke": 0.111891556207,
       "level": "muy exigente",
       "score": 20
     },
     "dependent": false,
     "minus": {
-      "ke": 0.0992301626779,
+      "ke": 0.101891556207,
       "level": "muy exigente",
       "score": 20
     },
     "plus": {
-      "ke": 0.119230162678,
+      "ke": 0.121891556207,
       "level": "muy exigente",
       "score": 20
     },
@@ -5215,7 +5265,7 @@
     "total_assets": 8690459000.0,
     "total_debt": 2283985000.0,
     "total_equity": 2149664000.0,
-    "wacc": 0.108218281605
+    "wacc": 0.110833774227
   },
   "market_context": {
     "anchor_gap": -0.0407478616031,
@@ -5815,8 +5865,9 @@
         "years": 7
       },
       "points": null,
-      "rate": 0.108218281605,
+      "rate": 0.110833774227,
       "reason": "sin flujo positivo que proyectar (FCF por acción base ≤ 0 o sin dato)",
+      "roic": null,
       "rule": null,
       "side": null,
       "signal": null,
@@ -5828,11 +5879,16 @@
     "ttm": null
   },
   "risk_free": {
-    "as_of": "2026-10-01",
-    "erp": 0.042,
+    "as_of": "2026-11-01",
+    "erp": 0.0441,
     "fallback": false,
     "market": null,
     "reason": null,
+    "review": {
+      "due": "2026-12-01",
+      "published": "2026-11-01",
+      "status": "vigente"
+    },
     "source": "par Rf–ERP de Damodaran",
     "value": 0.0529
   },
@@ -6193,6 +6249,21 @@
     "sector": "Technology",
     "sector_etf": "XLK"
   },
+  "sector_risks": {
+    "company": [],
+    "debt_due": {
+      "concepts": {},
+      "due_24m": null,
+      "fy_end": "2026-01-31",
+      "reason": "el emisor no presenta los vencimientos de la deuda del año 1 y 2 con los conceptos estándar",
+      "source": "SEC EDGAR (companyfacts: vencimientos de la deuda del último balance anual)",
+      "status": "sin_dato",
+      "values": {}
+    },
+    "industry": [],
+    "not_measured": "concentración en un inquilino o en un producto: los datos públicos gratuitos no la traen estructurada (solo en la instancia XBRL con dimensiones), así que no se mide ni se estima",
+    "note": "Aparte y sin puntuar: ni la calidad ni el precio los cuentan."
+  },
   "spectrum_adjustment": null,
   "symbol": "SNOW",
   "tax_rate": {
@@ -6226,12 +6297,12 @@
     "equity": 130144395264.0,
     "kd": 0.064,
     "kd_after_tax": 0.05056,
-    "ke": 0.109230162678,
-    "ke_capm": 0.106127870591,
+    "ke": 0.111891556207,
+    "ke_capm": 0.10878926412,
     "ke_crp": 0.00310229208706,
     "ke_floor": null,
     "ke_shift": null,
-    "mrp": 0.042,
+    "mrp": 0.0441,
     "rating": {
       "coverage": -148.755472697,
       "flag": "regla M: EBIT < 0 con caja neta, cobertura no significativa -> tramo de caja neta",
@@ -6239,10 +6310,20 @@
       "spread": 0.0111,
       "table": "grandes"
     },
-    "raw": 0.108218281605,
+    "rating_coverage": {
+      "basis": "EBIT",
+      "coverage": -148.755472697,
+      "reason": null,
+      "reported": {
+        "coverage": -148.755472697,
+        "state": "no_significativo"
+      },
+      "state": "no_significativo"
+    },
+    "raw": 0.110833774227,
     "reason": null,
     "rf": 0.0529,
-    "rf_as_of": "2026-10-01",
+    "rf_as_of": "2026-11-01",
     "rf_fallback": false,
     "rf_market": null,
     "rf_reason": null,
@@ -6250,7 +6331,7 @@
     "tax_rate": 0.21,
     "tax_reason": "beneficio antes de impuestos ≤ 0: tipo legal 21%",
     "tax_source": "legal",
-    "value": 0.108218281605,
+    "value": 0.110833774227,
     "weights": {
       "debt": 0.0172469450691,
       "equity": 0.982753054931

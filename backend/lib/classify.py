@@ -124,6 +124,9 @@ WHY_NOT_APPLICABLE_KEY = {
                                       "por el capital",
     (FINANCIAL, "net_debt_ebitda"): "su caja y su deuda son parte del negocio (depósitos, reservas técnicas, "
                                        "cartera) y no tiene EBITDA; su solidez se mide por el capital",
+    # F13 · paso 6a: el retorno de una utility regulada lo fija la tarifa, no la competencia
+    (UTILITY, "roic_wacc"): "el regulador fija el retorno que puede obtener sobre su base de activos; un ROIC por debajo "
+                            "del WACC de mercado es la tarifa autorizada, no destrucción de valor",
     (REIT, "current_ratio"): "activos inmobiliarios de largo plazo financiados con deuda a largo plazo; "
                              "el circulante no mide su liquidez",
     (UTILITY, "altman"): "el Altman se calibró con quiebras de empresas industriales; una utility regulada opera con "
@@ -559,6 +562,14 @@ def classify(*, sector: Optional[str], industry: Optional[str], eps_ttm: Optiona
                       frontier=cyc["sensitivity"])
             res["structural_growth"] = _sg
             return res
+        if ind in _C["commodity_industries"]:
+            # F13 · paso 4: un productor de materias primas es cíclico por su industria aunque su historia de ventas
+            # no muestre ciclo (NEM: pérdidas en 2013, y 2014–2018 descartados como años de perímetro).
+            return out(CYCLICAL, f"Clasificada como CYCLICAL {by_ind}: productor de materias primas (su resultado "
+                                 f"depende del precio de la materia prima); su historia ({m['years']} ejercicios en "
+                                 f"EDGAR) no muestra ciclo de ventas", "materias_primas",
+                       f"Cíclica por su industria ({ind_es}): produce una materia prima y su resultado depende de su "
+                       f"precio, aunque en sus {m['years']} ejercicios las ventas no hayan mostrado ciclo.")
     elif ind in _C["cyclical_industries"] or ind in _C["cyclical_conditional_industries"]:
         short = (f" (historia corta: {cyc['measures']['years']} ejercicios en EDGAR, menos de "
                  f"{_C['cyclicality']['min_years']})" if cyc is not None else " (sin historia de EDGAR)")

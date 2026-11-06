@@ -52,6 +52,26 @@ def _norm_sf(z: float) -> float:
     return 0.5 * math.erfc(z / math.sqrt(2.0))
 
 
+def median_growth(revenue_usd: Optional[float], sector: Optional[str], horizon_years: int = 5) -> Dict[str, Any]:
+    """F13 · paso 11 (opción c del usuario): la mediana del CAGR de ventas a `horizon_years` de las comparables (tramo
+    de tamaño × industria; con pocas observaciones, la fila "All" del tramo), la referencia hacia la que converge el
+    crecimiento del DCF directo."""
+    out = {"median": None, "bin": None, "industry": industry_for(sector), "cell": None, "count": None,
+           "horizon_years": horizon_years, "reason": None}
+    b = size_bin(revenue_usd)
+    if b is None:
+        return dict(out, reason="sin ventas en USD para el tramo de tamaño (sin tipo de cambio)")
+    try:
+        h = cfg("base_rates.horizons_years").index(horizon_years)
+    except ValueError:
+        return dict(out, bin=b, reason=f"horizonte de {horizon_years} años sin tasa base")
+    ind = out["industry"]
+    row = cfg("base_rates.table")[b].get(ind)
+    if row is None or row["count"][h] < cfg("base_rates.min_count"):
+        ind, row = "All", cfg("base_rates.table")[b]["All"]
+    return dict(out, median=row["median"][h], bin=b, cell=f"{b} · {ind}", count=row["count"][h])
+
+
 def share_sustaining(g: Optional[float], revenue_usd: Optional[float], sector: Optional[str],
                      horizon_years: int = 10) -> Dict[str, Any]:
     """Proporción de comparables (tramo × industria) cuyo CAGR de ventas a `horizon_years` fue ≥ g."""

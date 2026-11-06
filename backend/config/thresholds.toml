@@ -77,6 +77,7 @@ pb_points = [2, 1, 0, -1]           # tramos de pb_cheap / pb_fair / pb_expensiv
 
 [score.rentabilidad]                # score_rentabilidad
 negative_equity_min_roa = 0.03      # ROE < 0 con ROA > 3%: patrimonio negativo por recompras, no se penaliza
+min_equity_to_assets = 0.05         # F13 · 5c: patrimonio < 5 % de los activos (no financieras): ROE «n.s.», no puntúa
 roe_high_mult = 1.25                # tramos: ≥1.25×roe_high / ≥roe_high / ≥roe_low / ≥5% / ≥0 / <0
 roe_floor = 0.05
 roe_points = [6, 4, 2, -2, -4, -6]
@@ -255,6 +256,11 @@ neutral = 50
 # Contracción hacia el neutro según la confianza del veredicto de valoración:
 # precio_mostrado = 50 + (precio − 50) × factor.
 confidence_factor = { alta = 1.0, media = 0.75, baja = 0.5 }
+# F13 · paso 8 (revisión de 110 empresas, patrón 11b): sin veredicto de precio cuando el precio no es de hoy. La
+# cotización lleva más de `abstain_stale_days` sin sesiones frente al mercado (EA: último precio el 4-ago-2026, 93 días
+# antes; WBD, 31: operaciones corporativas), o no hay perfil ni `abstain_min_sessions` sesiones de historial.
+abstain_stale_days = 10
+abstain_min_sessions = 20
 
 [alerts]
 max_per_group = 6
@@ -301,6 +307,7 @@ w_not_measured = 50
 
 [alerts.roe]
 negative_equity_min_roa = 0.03
+min_equity_to_assets = 0.05         # F13 · 5c: ni fortaleza ni aviso con un patrimonio ínfimo
 exceptional = 0.40
 w_buyback_negative = 30
 w_negative = 55
@@ -404,6 +411,11 @@ w = 34
 w_max = 44
 z_low = 1.0                         # una caída igual a su volatilidad de un año (percentil 82 del universo, 5-nov-2026)
 z_high = 1.5                        # vez y media: por encima del percentil 99 (p98 = 1,35; máximo 1,85)
+# Piso (usuario, 5-nov-2026): una caída de floor_below o peor pesa al menos lo que la versión lineal (w en deep_below,
+# w_max en linear_full_below), sea cual sea la volatilidad. Medido en las 543: ganan la alerta CIEN y NOW (sale «margen
+# neto estrecho» en las dos); ninguna de solvencia sale (el tope sigue en w_max).
+floor_below = -0.50
+linear_full_below = -0.60
 
 # ── Lecturas del PDF (pdf_report.read_*, score_band, grid) ──
 # Bandas propias del informe, distintas de las del motor (ver el informe de
@@ -443,6 +455,8 @@ margin_trend_years = 5
 margin_drop_min = 0.20
 margin_drop_downs = 3
 margin_drop_low_mult = 2.0       # caída ≥ 2 × margin_drop_min: baja directamente
+# (6) F13 · paso 11 (opción c del usuario): ventas y BPA a 3 años separados más de esto: −1
+growth_divergence_pp = 0.10
 central_block = 1                   # "celda central ±1": bloque 3×3 alrededor del caso base
 fcf_fields = ["freeCashflow", "free_cash_flow", "key_metrics.free_cash_flow"]
 inferred_sources = ["finnhub", "derivado"]      # FCF que no viene de los estados -> inferido
@@ -455,6 +469,9 @@ ev_ebitda_shown_max = 100.0         # por encima, «> 100x» y la cifra exacta e
 margin_of_safety_shown_bounds = [-1.0, 1.0]
 
 [confidence]                        # confianza del veredicto (spec Sección 3; etapa 8: se muestra, no limita)
+# F13 · 3c (opción (a) con matiz): lo que el ciclo hizo en las cifras de una cíclica, en el motivo de su «baja».
+cycle_real_drop = 0.20              # una caída anual del beneficio de al menos un 20 % es una caída real
+cycle_margin_min_years = 3          # ejercicios con margen operativo para dar su recorrido
 level_values = [1.0, 0.5, 0.0]      # alta / media / baja
 overall_bounds = [0.75, 0.45]       # media ponderada >= 0.75 alta; >= 0.45 media; resto baja
 upside_scale = 0.5                  # un upside de ±50% equivale a la señal ±1
@@ -478,7 +495,8 @@ base_rate_min_share = 0.05
 source_ignored_rules = ["periodo_incoherente", "beta_discrepante", "multiplo_no_significativo", "ratio_no_significativa"]
 coverage_bounds = [0.9, 0.7]        # componentes evaluados / aplicables: >= 0.9 alta; >= 0.7 media
 source_issue_bounds = [0, 2]        # incidencias de fuente: 0 alta; <= 2 media; más, baja
-excluded_multiple_components = ["DCF", "Regla de 40"]   # no son múltiplos frente al sector
+excluded_multiple_components = ["DCF", "Regla de 40"]   # no son múltiplos frente al sector (prefijos: F13 · paso 3)
+fragile_pe_gap = 0.40               # F13 · paso 3: |P/E normalizado ÷ forward − 1| mayor -> base frágil (techo media)
 
 [confidence.weights]
 convergence = 0.4
@@ -509,11 +527,21 @@ components_tolerance_abs = 1000000.0
 # normalizado, ROE, margen neto) y se dicen con su cifra. 2 pp de margen: la tolerancia que propuso el revisor
 # (impuestos diferidos, redondeos, otros ingresos pequeños). Continua: sale solo lo que pasa de la tolerancia.
 nonoperating_tolerance_revenue = 0.02
+# F13 (SRE y Oncor): las participadas netas de impuestos son operativas hasta su nivel recurrente, la mediana de los
+# `equity_recurrence_years` últimos ejercicios (al menos `equity_recurrence_min_years` con dato); el pico, no
+equity_recurrence_years = 3
+equity_recurrence_min_years = 2
 # F10 · N1b (escaneo de control del 29-oct): también después de impuestos, con el tipo normalizado: la mediana de los
-# tipos efectivos no negativos del periodo y de los últimos `tax_median_years` (un beneficio fiscal puntual queda fuera;
+# tipos efectivos (negativos incluidos desde F13 · 6b) del periodo y de los últimos `tax_median_years` (un beneficio fiscal puntual queda fuera;
 # uno recurrente es su tipo). Con menos de `tax_median_min` válidos, el tipo legal (valuation.tax.statutory_rate).
 tax_median_years = 5
 tax_median_min = 3
+# F13 · paso 6b (revisión de 110 empresas, XEL): un tipo negativo también entra en la mediana si no baja de esto. Antes
+# se descartaba, y una utility con créditos fiscales todos los años (XEL: −4,6 %, −8,4 %, −9,0 %, −26,2 %, −13,8 % en
+# 2021–2025; créditos de 0,57 B$ en 2025) se leía al tipo legal del 21 %: la normalización le quitaba 0,60 B$ (22,5 %
+# del beneficio) como «no explicado por la operación». Un beneficio fiscal puntual sigue fuera por la mediana, y por
+# debajo de este suelo no es un tipo sino un suceso (UBER: liberación de la provisión fiscal, −46 % a −140 %): fuera.
+tax_median_floor = -0.30
 # F10 · margen operativo con una sola verdad (puerta de la v4, 29-oct): los tipos de partida que pueden ir DENTRO del
 # resultado operativo: cargos especiales (deterioros, litigios, reestructuración, amortizaciones extraordinarias), ventas
 # de negocios o de activos fijos (SOLV, BA) y el total de Yahoo cuando sus componentes no cuadran. Sus importes ya
@@ -529,7 +557,13 @@ operating_item_types = ["Special Income Charges", "Restructuring And Mergern Acq
 [growth]
 per_share_min_shares_cagr = 0.02   # acciones +2% anual compuesto en la ventana -> crecimiento por acción
 anomalous_base_ratio = 0.5          # año inicial < 0.5 × mediana de los demás -> regresión log-lineal
+inflated_base_ratio = 1.5           # F13 · paso 12: año inicial > 1,5 × mediana de los demás (la medida del paso) -> igual
 perimeter_min_years = 2             # fase 3 (T5): años homogéneos mínimos tras un cambio de perímetro; menos: no comparable
+# F13 · paso 7 (revisión de 110 empresas, patrón 5): una reexpresión que cambia los ingresos al menos esto es otra
+# empresa (GE: −62 % sin GE HealthCare ni GE Vernova). La historia larga de EDGAR anterior al primer ejercicio
+# reexpresado no cuenta para la ciclicidad ni para el ciclo medio del DCF (GE salía cíclica por 2009 y 2017, episodios
+# del conglomerado con GE Capital). Por debajo (HON −10 %: Solstice) la historia sigue siendo la de la empresa.
+perimeter_history_break = 0.30
 # F10 · crecimiento desde una base anómala (escaneo de control del 29-oct, 46 empresas): con año base anómalo, la
 # regresión sobre solo los 4 ejercicios de la ventana sigue dependiendo de él (NVDA: 198 % frente al 204 % del CAGR). Si
 # no hay más ejercicios en los estados, la serie larga de EDGAR: al menos estos ejercicios contiguos hasta el último (la

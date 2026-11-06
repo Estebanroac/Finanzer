@@ -1236,6 +1236,7 @@ def dcf_multi_stage(
     decay_type: str = "step",
     margin_of_safety_pct: float = 0.0,
     net_debt: Optional[float] = 0.0,
+    reinvestment_roic: Optional[float] = None,
 ) -> Dict[str, Any]:
     """
     DCF Multi-Stage (3 etapas) con UNA sola estructura (fase 3, T3; F3_DISENO §8.2), la misma que el DCF inverso:
@@ -1244,6 +1245,12 @@ def dcf_multi_stage(
     - Etapa 3: valor terminal de Gordon.
     Se retiraron los decaimientos lineal (> 15%) y exponencial (> 25%) desde el año 1: cambiaban la estructura según
     el crecimiento y hacían el directo y el inverso incomparables. `decay_type` solo admite "step".
+
+    F13 · paso 9 (decisión del usuario, opción b): con `reinvestment_roic`, `fcf` es el flujo antes de la inversión de
+    crecimiento (el de mantenimiento) y cada año se descuenta ese flujo × (1 − g del año ÷ ROIC): la reinversión que
+    exige el crecimiento (g = tasa de reinversión × ROIC), que baja al converger g al terminal. En el valor terminal la
+    inversión nueva rinde su coste de capital: reinvierte g ÷ min(ROIC, WACC) (Damodaran: sin ventaja competitiva para
+    siempre). La tasa de reinversión se acota a [0, 1].
     """
     if decay_type != "step":
         raise ValueError(f"decay_type {decay_type!r} retirado en la fase 3: una sola estructura (step)")
@@ -1265,7 +1272,8 @@ def dcf_multi_stage(
             "terminal_growth": terminal_growth,
             "discount_rate": discount_rate,
             "decay_type": decay_type,
-            "total_years": high_growth_years + transition_years
+            "total_years": high_growth_years + transition_years,
+            "reinvestment_roic": reinvestment_roic,
         },
         "warnings": [],
         "is_valid": False
@@ -1301,6 +1309,13 @@ def dcf_multi_stage(
         result["warnings"].append(f"Growth capped de {high_growth_rate:.1%} a {MAX_GROWTH:.1%}")
         high_growth_rate = MAX_GROWTH
     
+    def _paid(flow, g, roic=None):
+        """El flujo del año tras la reinversión que exige su crecimiento (sin `reinvestment_roic`, el mismo)."""
+        roic = roic or reinvestment_roic
+        if not roic or roic <= 0:
+            return flow
+        return flow * (1 - min(1.0, max(0.0, g / roic)))
+
     # ETAPA 1: crecimiento constante
     pv_stage1 = 0.0
     projected_fcf = fcf
@@ -1309,7 +1324,7 @@ def dcf_multi_stage(
         year_growth = high_growth_rate
         stage1_rates.append(year_growth)
         projected_fcf *= (1 + year_growth)
-        pv_stage1 += projected_fcf / ((1 + discount_rate) ** year)
+        pv_stage1 += _paid(projected_fcf, year_growth) / ((1 + discount_rate) ** year)
     
     result["stages"]["high_growth"]["pv"] = round(pv_stage1, 2)
     result["stages"]["high_growth"]["rates"] = [round(r, 4) for r in stage1_rates]
@@ -1328,14 +1343,17 @@ def dcf_multi_stage(
         year_growth = end_stage1_growth - (transition_decay * (i + 1))   # lineal hasta el terminal
         stage2_rates.append(year_growth)
         projected_fcf *= (1 + year_growth)
-        pv_stage2 += projected_fcf / ((1 + discount_rate) ** year)
+        pv_stage2 += _paid(projected_fcf, year_growth) / ((1 + discount_rate) ** year)
     
     result["stages"]["transition"]["pv"] = round(pv_stage2, 2)
     result["stages"]["transition"]["rates"] = [round(r, 4) for r in stage2_rates]
     
     # ETAPA 3: Valor Terminal
     total_projection_years = high_growth_years + transition_years
-    terminal_fcf = projected_fcf * (1 + terminal_growth)
+    # En la fase estable la inversión nueva rinde su coste de capital (sin ventaja para siempre): reinvierte g ÷ WACC,
+    # o g ÷ ROIC si este es menor (NVO, ROIC 36 %: 7 % del flujo en vez de un 25 % con el WACC del 9,9 %)
+    terminal_fcf = _paid(projected_fcf * (1 + terminal_growth), terminal_growth,
+                         min(reinvestment_roic, discount_rate) if reinvestment_roic else None)
     terminal_value = terminal_fcf / (discount_rate - terminal_growth)
     pv_terminal = terminal_value / ((1 + discount_rate) ** total_projection_years)
     
@@ -1397,6 +1415,7 @@ def dcf_multi_stage_dynamic(
     high_growth_years: int = DCF_HIGH_GROWTH_YEARS,
     transition_years: int = DCF_TRANSITION_YEARS,
     margin_of_safety_pct: float = 0.0,
+    reinvestment_roic: Optional[float] = None,
 ) -> Dict[str, Any]:
     """
     DCF Multi-Stage Dinámico - Combina modelo de 3 etapas con 
@@ -1478,7 +1497,8 @@ def dcf_multi_stage_dynamic(
         discount_rate=wacc,
         decay_type=decay_type,
         margin_of_safety_pct=margin_of_safety_pct,
-        net_debt=net_debt
+        net_debt=net_debt,
+        reinvestment_roic=reinvestment_roic,
     )
     
     result["model_result"] = model_result
@@ -2290,6 +2310,7 @@ def score_rentabilidad(
     debt_to_equity: Optional[float] = None,
     sector_de_threshold: Optional[float] = None,
     subtype: Optional[str] = None,
+    equity_to_assets: Optional[float] = None,
 ) -> Dict[str, Any]:
     """
     Categoría 2: Rentabilidad (20 pts máximo)
@@ -2330,10 +2351,18 @@ def score_rentabilidad(
                     f"{'el mercado' if market else 'su sector'}) el ROE lo infla el apalancamiento: puntúa el ROIC")
         roe, _roe_label = roic, "ROIC (en lugar del ROE: apalancamiento alto)"
 
+    # F13 · paso 5c: con un patrimonio ínfimo frente a los activos (main: solo no financieras) el ROE no mide nada
+    _roe_tiny = (_roe_lev is None and roe is not None and equity_to_assets is not None
+                 and equity_to_assets < T["min_equity_to_assets"])
     # ROE (peso alto: hasta ±6 pts) — bandas relativas al roe_high sectorial
     if roe is not None:
         p = T["roe_points"]
-        if roe < 0 and roa is not None and roa > T["negative_equity_min_roa"]:
+        if _roe_tiny:
+            adj = 0
+            sev = "ok"
+            reason = (f"ROE no significativo: el patrimonio es solo el {equity_to_assets:.1%} de los activos — no "
+                      "puntúa; la rentabilidad la miden el ROA y los márgenes")
+        elif roe < 0 and roa is not None and roa > T["negative_equity_min_roa"]:
             # Negative book equity (e.g. from heavy buybacks: HD, MCD, SBUX,
             # ABBV) makes ROE negative even for very profitable companies — a
             # balance-sheet artifact, not value destruction. Don't apply the
@@ -2368,11 +2397,11 @@ def score_rentabilidad(
         
         base_score += adj
         # ROE < 0 por patrimonio negativo (recompras): no significativo
-        _a["roe"] = None if (roe < 0 and roa is not None and roa > T["negative_equity_min_roa"]) else adj
+        _a["roe"] = None if (_roe_tiny or roe < 0 and roa is not None and roa > T["negative_equity_min_roa"]) else adj
         if _roe_lev:
             reason = f"{reason}; {_roe_lev}"
         # F8 · P3: con patrimonio negativo el ROE no es una cifra que leer: «n.s.» (los puntos no cambian: 0)
-        _roe_ns = roe < 0 and roa is not None and roa > T["negative_equity_min_roa"]
+        _roe_ns = _roe_tiny or roe < 0 and roa is not None and roa > T["negative_equity_min_roa"]
         adjustments.append({"metric": _roe_label, "value": "n.s." if _roe_ns else f"{roe:.2%}", "adjustment": adj,
                             "reason": reason,
                             "severity": sev, **({"leverage_swap": True} if _roe_lev else {})})
@@ -3520,8 +3549,9 @@ def score_crecimiento(
     if _reit:
         if revenue_growth_3y is not None and dividend_yield is not None:
             revenue_growth_3y = dividend_yield + growth_for_bands(revenue_growth_3y)
+            # F13 · paso 7: con el perímetro cambiado, los años homogéneos (revenue_ps_years), no 3
             revenue_note = (f"rentabilidad por dividendo {dividend_yield:.1%} + FFO por acción {_ffo_ps:+.1%} "
-                            "(CAGR 3 años)" + (f"; {revenue_note}" if revenue_note else ""))
+                            f"(CAGR {revenue_ps_years or 3} años)" + (f"; {revenue_note}" if revenue_note else ""))
         elif revenue_growth_3y is not None:
             revenue_reason = "sin rentabilidad por dividendo: no hay retorno total"
             revenue_growth_3y = None
@@ -3845,6 +3875,7 @@ def calculate_score_v2(
         debt_to_equity=ratio_values.get("debt_to_equity"),
         sector_de_threshold=thresholds.debt_equity_high,
         subtype=contextual_values.get("subtype"),
+        equity_to_assets=contextual_values.get("equity_to_assets"),
     )
     
     # v2.4: Pasar datos de crecimiento + forward metrics a valoración
@@ -3996,6 +4027,7 @@ def dcf_sensitivity_analysis(
     terminal_growth: float = DCF_TERMINAL_GROWTH,
     net_debt: Optional[float] = 0.0,
     decay_type: str = "step",
+    reinvestment_roic: Optional[float] = None,
 ) -> Dict[str, Any]:
     """
     Genera una matriz de sensibilidad para análisis DCF.
@@ -4108,6 +4140,7 @@ def dcf_sensitivity_analysis(
                 discount_rate=discount_rate,
                 net_debt=net_debt,
                 decay_type=decay_type,
+                reinvestment_roic=reinvestment_roic,
             )
             
             fair_value = dcf_result.get("fair_value_per_share")

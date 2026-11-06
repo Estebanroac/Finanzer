@@ -1,12 +1,6 @@
 {
   "alerts": {
-    "red_flags": [
-      {
-        "category": "Rentabilidad",
-        "detail": "El retorno sobre el capital invertido no cubre su costo (ROIC 5.5% vs WACC 6.8%): crecer a estos retornos destruye valor para el accionista en lugar de crearlo.",
-        "reason": "Destruye valor — spread −1.3 pp"
-      }
-    ],
+    "red_flags": [],
     "strengths": [
       {
         "category": "Rentabilidad",
@@ -19,13 +13,7 @@
         "reason": "BPA en fuerte expansión — +23.7% anual (3 años)"
       }
     ],
-    "warnings": [
-      {
-        "category": "Rentabilidad",
-        "detail": "El retorno sobre el patrimonio normalizado (8.9%, TTM, sin partidas no recurrentes) queda por debajo de 12.8% de su industria sin ella: el capital de los accionistas no se está remunerando con holgura.",
-        "reason": "ROE normalizado bajo — 8.9% (TTM, sin partidas no recurrentes)"
-      }
-    ]
+    "warnings": []
   },
   "altman_z": {
     "applicable": false,
@@ -45,12 +33,12 @@
     "zone": "n/a"
   },
   "archetype_metrics": {
-    "cost_of_equity": 0.0770310648163,
+    "cost_of_equity": 0.0782376180572,
     "implied": {
       "at1": null,
       "band": "exigente",
-      "gap": -0.0433012101538,
-      "implied": 0.115253327968,
+      "gap": -0.0453941030389,
+      "implied": 0.117346220853,
       "metric": "ROE",
       "multiple": 1.7346046691,
       "own": 0.0719521178146,
@@ -60,27 +48,27 @@
       "sensitivity": [
         {
           "delta": -0.02,
-          "multiple_justified": 0.51800050431,
+          "multiple_justified": 0.506260775711,
           "return": 0.0519521178146
         },
         {
           "delta": -0.01,
-          "multiple_justified": 0.710193380533,
+          "multiple_justified": 0.694097879716,
           "return": 0.0619521178146
         },
         {
           "delta": 0.0,
-          "multiple_justified": 0.902386256756,
+          "multiple_justified": 0.881934983722,
           "return": 0.0719521178146
         },
         {
           "delta": 0.01,
-          "multiple_justified": 1.09457913298,
+          "multiple_justified": 1.06977208773,
           "return": 0.0819521178146
         },
         {
           "delta": 0.02,
-          "multiple_justified": 1.2867720092,
+          "multiple_justified": 1.25760919173,
           "return": 0.0919521178146
         }
       ],
@@ -92,8 +80,8 @@
       "date": "2026-06-30",
       "type": "corte"
     },
-    "pb_justified": 0.902386256756,
-    "pb_ratio": 1.92224189598,
+    "pb_justified": 0.881934983722,
+    "pb_ratio": 1.96681694355,
     "roe_avg": 0.0719521178146,
     "terminal_growth": 0.025
   },
@@ -373,6 +361,12 @@
     "capped_from": "alta",
     "contraction_basis": "media",
     "dimensions": {
+      "base": {
+        "level": "media",
+        "reasons": [
+          "caja libre negativa (−$4.27B): invierte más de lo que genera"
+        ]
+      },
       "convergence": {
         "level": "media",
         "methods": [
@@ -381,8 +375,8 @@
             "evaluable": true,
             "kind": "intrínseco",
             "method": "P/B justificado (ROE regulado)",
-            "signal": -0.959548221179,
-            "upside": -0.47977411059
+            "signal": -0.983128548614,
+            "upside": -0.491564274307
           },
           {
             "components": 3,
@@ -439,24 +433,25 @@
     "limits_score": false,
     "reasons": [
       "convergencia media: uno lo ve en precio y otro con dirección: no coinciden, sin oponerse",
+      "base del veredicto media: caja libre negativa (−$4.27B): invierte más de lo que genera",
       "techo en media: la convergencia es media: alta exige convergencia alta"
     ],
     "score": 0.8
   },
   "cost_of_equity": {
-    "as_of": "2026-10-01",
-    "capm": 0.0770310648163,
+    "as_of": "2026-11-01",
+    "capm": 0.0782376180572,
     "crp": null,
-    "erp": 0.042,
+    "erp": 0.0441,
     "floor": null,
     "floors": {
       "Kd + 1 pp": 0.0767,
-      "Rf + 0.5 × ERP": 0.0739
+      "Rf + 0.5 × ERP": 0.07495
     },
     "kd": 0.0667,
     "rf": 0.0529,
     "shift": null,
-    "value": 0.0770310648163
+    "value": 0.0782376180572
   },
   "country_risk": {
     "as_of": "2026-01-05",
@@ -1345,6 +1340,7 @@
           "source": "Yahoo"
         }
       ],
+      "history_break": null,
       "mixed_cagr": false,
       "note": "estados reexpresados o con cambio de perímetro: operaciones discontinuadas en 2025, 2024, 2023, 2022 (su corrección en el crecimiento y el DCF es de la fase 3)",
       "restated": [],
@@ -1490,6 +1486,19 @@
       "rule": "multiplo_no_significativo"
     }
   ],
+  "dcf_growth_base_rate": {
+    "bin": "25-50",
+    "cell": "25-50 · Manufacturing",
+    "company": 0.0386797140947,
+    "company_basis": "CAGR de ingresos a 3 años",
+    "count": 332,
+    "horizon_years": 5,
+    "industry": "Manufacturing",
+    "median": 0.022,
+    "reason": null,
+    "used": 0.0303398570474,
+    "weight": 0.5
+  },
   "dcf_growth_blend": null,
   "dcf_status": {
     "reason": "No aplica a utilities reguladas: su FCF es negativo por diseño: la inversión en la base de activos regulada supera al flujo operativo y se financia con deuda",
@@ -1505,6 +1514,10 @@
         {
           "label": "Confianza · Convergencia entre métodos (media)",
           "text": "uno lo ve en precio y otro con dirección: no coinciden, sin oponerse."
+        },
+        {
+          "label": "Confianza · base (media)",
+          "text": "caja libre negativa (−$4.27B): invierte más de lo que genera."
         },
         {
           "label": "Fuente oficial",
@@ -1600,21 +1613,6 @@
                 "value_txt": "9.65%"
               },
               {
-                "bench": 0.0705189078958,
-                "bench_txt": "7.05%",
-                "fmt": "pct",
-                "gap_pct": -22.2385391091,
-                "gap_txt": "-22%",
-                "higher_is_better": true,
-                "key": "roic",
-                "label": "ROIC",
-                "reading": "Inferior",
-                "text": "ROIC de 5.5% frente a 7.1% de su industria sin ella (-22%): inferior.",
-                "tone": "warn",
-                "value": 0.0548365329841,
-                "value_txt": "5.48%"
-              },
-              {
                 "bench": 0.4635,
                 "bench_txt": "46.35%",
                 "fmt": "pct",
@@ -1666,7 +1664,7 @@
         "market_note": null,
         "note": "Referencia: industria «Electricidad»; Damodaran clasifica a la empresa en esa industria (símbolo), EE. UU., 46 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Referencia de la industria sin Duke Energy, que pesa el 8 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 30 de septiembre de 2025). Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
         "ref": "de su industria sin ella",
-        "total": 7
+        "total": 6
       },
       "growth": [
         {
@@ -1939,20 +1937,12 @@
             "value_txt": "2.58%"
           },
           {
-            "bench": 0.0705189078958,
-            "bench_txt": "7.05%",
             "fmt": "pct",
-            "gap_pct": -22.2385391091,
-            "gap_txt": "-22%",
             "higher_is_better": true,
             "key": "roic",
             "label": "ROIC",
-            "reading": "Inferior",
-            "state": "con_dato",
-            "text": "ROIC de 5.5% frente a 7.1% de su industria sin ella (-22%): inferior.",
-            "tone": "warn",
-            "value": 0.0548365329841,
-            "value_txt": "5.48%"
+            "state": "no_aplica",
+            "text": "No aplica a utilities reguladas: el regulador fija el retorno que puede obtener sobre su base de activos; un ROIC por debajo del WACC de mercado es la tarifa autorizada, no destrucción de valor."
           }
         ],
         "roce": {
@@ -1964,12 +1954,8 @@
           "value_txt": "5.35%"
         },
         "spread": {
-          "reading": "Al límite",
-          "state": "con_dato",
-          "text": "el ROIC (5.5%) queda ligeramente por debajo del costo de capital (6.8%)",
-          "tone": "warn",
-          "value": -0.0126711197175,
-          "value_txt": "-1.3 pp"
+          "state": "no_aplica",
+          "text": "No aplica a utilities reguladas: el regulador fija el retorno que puede obtener sobre su base de activos; un ROIC por debajo del WACC de mercado es la tarifa autorizada, no destrucción de valor."
         }
       },
       "results_flow": [
@@ -2254,7 +2240,7 @@
           "key": "convergence",
           "label": "Convergencia entre métodos",
           "level": "Media",
-          "text": "P/B justificado (ROE regulado) -48% (cara) · múltiplos frente al sector -0.11 (en precio). Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
+          "text": "P/B justificado (ROE regulado) -49% (cara) · múltiplos frente al sector -0.11 (en precio). Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
         },
         {
           "key": "coverage",
@@ -2273,17 +2259,29 @@
           "label": "Estabilidad del arquetipo",
           "level": "Alta",
           "text": "Sin incidencias."
+        },
+        {
+          "key": "base",
+          "label": "base",
+          "level": "Media",
+          "text": "La empresa invierte más caja de la que genera: su valor depende de que esa inversión rinda."
         }
       ],
       "level": "media",
       "plain": [
-        "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
+        "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no.",
+        "La empresa invierte más caja de la que genera: su valor depende de que esa inversión rinda."
       ],
       "reasons": [
         {
           "dimension": "convergencia",
           "level": "media",
           "text": "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
+        },
+        {
+          "dimension": "base",
+          "level": "media",
+          "text": "La empresa invierte más caja de la que genera: su valor depende de que esa inversión rinda."
         },
         {
           "dimension": "techo",
@@ -2322,11 +2320,11 @@
               "key": "Rentabilidad",
               "max": 20,
               "name": "Rentabilidad",
-              "pct": 50.0,
-              "score": 10,
-              "score_txt": "10 / 20",
+              "pct": 75.0,
+              "score": 15,
+              "score_txt": "15 / 20",
               "text": null,
-              "tone": "warn"
+              "tone": "pos"
             },
             {
               "applicable": true,
@@ -2380,7 +2378,8 @@
         "Utility regulada por su industria (Electricidad regulada): el regulador fija su retorno sobre una base de activos financiada con deuda."
       ],
       "confidence_reasons": [
-        "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
+        "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no.",
+        "La empresa invierte más caja de la que genera: su valor depende de que esa inversión rinda."
       ],
       "coverage_notes": [],
       "currency_note": null,
@@ -2395,8 +2394,8 @@
         {
           "kicker": "A VIGILAR",
           "kind": "watch",
-          "text": "Destruye valor — spread −1.3 pp",
-          "tone": "neg"
+          "text": "Sin alertas relevantes",
+          "tone": "pos"
         },
         {
           "kicker": "CONTEXTO · 52 SEM.",
@@ -2469,10 +2468,10 @@
       },
       "quality": {
         "level": "sólida",
-        "note": "En la frontera con «media» (a 2 puntos): un cambio pequeño en los datos o en los supuestos cambiaría el nivel.",
-        "note_short": "En la frontera con «media» (a 2 puntos)",
+        "note": null,
+        "note_short": null,
         "question": "¿es buena la empresa?",
-        "score": 66,
+        "score": 72,
         "title": "CALIDAD DEL NEGOCIO",
         "tone": "pos"
       },
@@ -2850,7 +2849,8 @@
       "fcf_to_ni",
       "garp",
       "p_fcf",
-      "peg"
+      "peg",
+      "roic_wacc"
     ],
     "pe_label": "P/E (TTM)",
     "profile": {
@@ -2918,42 +2918,26 @@
         "text": "el ROE (TTM) de 9.6% es competitivo en su sector (sector: 5.0% competitivo, 10.0% rango alto)",
         "tone": "neu"
       },
-      "roic_wacc_spread": {
-        "label": "Al límite",
-        "text": "el ROIC (5.5%) queda ligeramente por debajo del costo de capital (6.8%)",
-        "tone": "warn"
-      },
+      "roic_wacc_spread": null,
       "runway": null
     },
     "sections": {
       "alerts": {
         "counts": {
-          "red_flags": 1,
+          "red_flags": 0,
           "strengths": 2,
           "unmeasured": null,
-          "warnings": 1
+          "warnings": 0
         },
         "groups": [
           {
-            "items": [
-              {
-                "category": "Rentabilidad",
-                "detail": "El retorno sobre el capital invertido no cubre su costo (ROIC 5.5% vs WACC 6.8%): crecer a estos retornos destruye valor para el accionista en lugar de crearlo.",
-                "reason": "Destruye valor — spread −1.3 pp"
-              }
-            ],
+            "items": [],
             "key": "red_flags",
             "title": "Riesgos",
             "tone": "neg"
           },
           {
-            "items": [
-              {
-                "category": "Rentabilidad",
-                "detail": "El retorno sobre el patrimonio normalizado (8.9%, TTM, sin partidas no recurrentes) queda por debajo de 12.8% de su industria sin ella: el capital de los accionistas no se está remunerando con holgura.",
-                "reason": "ROE normalizado bajo — 8.9% (TTM, sin partidas no recurrentes)"
-              }
-            ],
+            "items": [],
             "key": "warnings",
             "title": "Advertencias",
             "tone": "warn"
@@ -3180,12 +3164,12 @@
               "items": [
                 {
                   "in_block": false,
-                  "metric": "ROIC (en lugar del ROE: apalancamiento alto)",
-                  "reason": "Bueno (5.5%) - Competitivo en su sector; con un D/E de 1.68 (> 1.50, el umbral de su sector) el ROE lo infla el apalancamiento: puntúa el ROIC.",
+                  "metric": "ROE normalizado",
+                  "reason": "Bueno (8.9%) - Competitivo en su sector.",
                   "sign": "+2",
                   "state": "con_dato",
                   "tone": "pos",
-                  "value": "5.48%"
+                  "value": "8.93%"
                 },
                 {
                   "in_block": false,
@@ -3216,31 +3200,22 @@
                 },
                 {
                   "in_block": false,
-                  "metric": "ROIC frente al WACC",
-                  "reason": "Retorno apenas por debajo del costo de capital (spread −1.3 pp)",
-                  "sign": "-1",
-                  "state": "con_dato",
-                  "tone": "warn",
-                  "value": "−1.3 pp"
-                },
-                {
-                  "in_block": false,
-                  "metric": "Tope por ROIC − WACC",
-                  "reason": "el ROIC (5.5%) no cubre el WACC (6.8%), diferencial −1.3 pp: la rentabilidad no pasa de 10/20.",
-                  "sign": "-4",
-                  "state": "con_dato",
-                  "tone": "neg",
-                  "value": "10/20"
+                  "metric": "No aplica",
+                  "reason": "No aplica a utilities reguladas: el regulador fija el retorno que puede obtener sobre su base de activos; un ROIC por debajo del WACC de mercado es la tarifa autorizada, no destrucción de valor (no cuenta en la cobertura)",
+                  "sign": "n/a",
+                  "state": "no_aplica",
+                  "tone": "neu",
+                  "value": "ROIC−WACC"
                 }
               ],
               "key": "Rentabilidad",
               "max": 20,
               "name": "Rentabilidad",
-              "pct": 50.0,
-              "score": 10,
-              "score_txt": "10 / 20",
+              "pct": 75.0,
+              "score": 15,
+              "score_txt": "15 / 20",
               "text": null,
-              "tone": "warn"
+              "tone": "pos"
             },
             {
               "conclusive": true,
@@ -3285,7 +3260,7 @@
                 {
                   "in_block": false,
                   "metric": "P/B frente al ROE regulado",
-                  "reason": "El precio descuenta un ROE sostenido del 11.5%; la utility obtuvo un 7.2% de media en 4 ejercicios.",
+                  "reason": "El precio descuenta un ROE sostenido del 11.7%; la utility obtuvo un 7.2% de media en 4 ejercicios.",
                   "sign": "-2",
                   "state": "con_dato",
                   "tone": "warn",
@@ -3611,7 +3586,7 @@
           ]
         ],
         "figures_title": "Cifras de los últimos doce meses (TTM, a 30 de junio de 2026)",
-        "intro": "El ROE (TTM) de 9.6% es competitivo en su sector (sector: 5.0% competitivo, 10.0% rango alto). El ROIC (5.5%) queda ligeramente por debajo del costo de capital (6.8%).",
+        "intro": "El ROE (TTM) de 9.6% es competitivo en su sector (sector: 5.0% competitivo, 10.0% rango alto).",
         "quality_readings": [
           {
             "key": "dupont",
@@ -3651,15 +3626,15 @@
             "value": "2.58%"
           },
           {
-            "bench": "7.05%",
-            "gap": "-22%",
+            "bench": "—",
+            "gap": "—",
             "key": "roic",
             "label": "ROIC",
-            "reading": "Inferior",
-            "state": "con_dato",
-            "text": "ROIC de 5.5% frente a 7.1% de su industria sin ella (-22%): inferior.",
-            "tone": "warn",
-            "value": "5.48%"
+            "reading": "No aplica a utilities reguladas",
+            "state": "no_aplica",
+            "text": "el regulador fija el retorno que puede obtener sobre su base de activos; un ROIC por debajo del WACC de mercado es la tarifa autorizada, no destrucción de valor.",
+            "tone": "neu",
+            "value": "—"
           },
           {
             "bench": "46.35%",
@@ -3695,17 +3670,6 @@
             "value": "15.61%"
           },
           {
-            "bench": "> 0",
-            "gap": "—",
-            "key": "roic_wacc_spread",
-            "label": "Spread ROIC − WACC",
-            "reading": "Al límite",
-            "state": "con_dato",
-            "text": "el ROIC (5.5%) queda ligeramente por debajo del costo de capital (6.8%)",
-            "tone": "warn",
-            "value": "-1.3 pp"
-          },
-          {
             "bench": "—",
             "gap": "—",
             "key": "roce",
@@ -3717,6 +3681,19 @@
             "value": "5.35%"
           }
         ]
+      },
+      "sector_risks": {
+        "items": [
+          {
+            "key": "huracanes",
+            "label": "riesgo de la industria, no verificado en esta empresa",
+            "level": "industria",
+            "text": "Las utilities de la costa del golfo y del atlántico sur reparan su red tras cada huracán y recuperan el coste con permiso del regulador, con meses de retraso y no siempre entero. Se le aplica por su sede en Carolina del Norte; la sede no siempre es el territorio que sirve.",
+            "title": "Huracanes"
+          }
+        ],
+        "not_measured": "concentración en un inquilino o en un producto: los datos públicos gratuitos no la traen estructurada (solo en la instancia XBRL con dimensiones), así que no se mide ni se estima",
+        "note": "Aparte y sin puntuar: ni la calidad ni el precio los cuentan."
       },
       "solvency": {
         "balance": "Balance — deuda total $91.81B · caja $673.00M · patrimonio $54.75B · activos $201.09B",
@@ -3883,7 +3860,7 @@
         "normalization_note": "Beneficio TTM (4 trimestres): reportado $5.19B, normalizado $4.80B (no recurrentes 7.4% del beneficio; partidas no recurrentes (total de Yahoo) (explicita, confianza alta), recurrente (3 de los últimos 4 ejercicios): solo el exceso sobre su promedio, $384.61M netos). El score usa el beneficio normalizado.",
         "premortem": {
           "items": [
-            "la entidad sostuviera un ROE de al menos el 11.5% que descuenta el precio (obtiene un 7.2%)",
+            "la entidad sostuviera un ROE de al menos el 11.7% que descuenta el precio (obtiene un 7.2%)",
             "el margen operativo volviera a su mediana de 10 ejercicios (22.8% frente al 27.8% de hoy)"
           ],
           "note": "Condiciones que invalidarían la lectura de hoy, con la cifra que las mide: no son previsiones.",
@@ -3894,12 +3871,12 @@
           "lines": [
             {
               "label": "Exigente",
-              "text": "El precio descuenta un ROE sostenido del 11.5%; la utility obtuvo un 7.2% de media en 4 ejercicios.",
+              "text": "El precio descuenta un ROE sostenido del 11.7%; la utility obtuvo un 7.2% de media en 4 ejercicios.",
               "tone": "warn"
             },
             {
               "label": null,
-              "text": "Sensibilidad (±2 pp): se justificaría con un ROE del 5.2%, 0.52 veces el valor contable; con un ROE del 9.2%, 1.29 veces el valor contable (hoy cotiza a 1.73).",
+              "text": "Sensibilidad (±2 pp): se justificaría con un ROE del 5.2%, 0.51 veces el valor contable; con un ROE del 9.2%, 1.26 veces el valor contable (hoy cotiza a 1.73).",
               "tone": "neu"
             }
           ],
@@ -4034,7 +4011,7 @@
         "wacc_breakdown": [
           {
             "label": "WACC",
-            "value": "6.75%"
+            "value": "6.81%"
           },
           {
             "label": "Peso del patrimonio",
@@ -4042,7 +4019,7 @@
           },
           {
             "label": "Coste del patrimonio (Ke)",
-            "value": "7.70%"
+            "value": "7.82%"
           },
           {
             "label": "Tasa libre de riesgo (Rf)",
@@ -4054,7 +4031,7 @@
           },
           {
             "label": "Prima de mercado implícita",
-            "value": "4.20%"
+            "value": "4.41%"
           },
           {
             "label": "Peso de la deuda",
@@ -4073,15 +4050,15 @@
             "value": "13.30%"
           }
         ],
-        "wacc_note": "WACC 6.75% = 50.40% × Ke 7.70% (Rf 5.29% [Tesoro de EE. UU. a 10 años del par Rf–ERP de Damodaran, 1 de octubre de 2026] + β de abajo hacia arriba 0.57 [βU 0.31 de la industria (Damodaran, enero de 2026) reapalancada con D/E 0.98 y t 13%; sin Blume] × prima implícita 4.20%) + 49.60% × Kd 6.67% × (1 − t 13.30%). Kd = Rf + spread del rating sintético BB+ (tabla de empresas grandes, cobertura 2.4x). t: tasa efectiva TTM. Rf y prima implícita del mismo día: bono del Tesoro de EE. UU. a 10 años y prima implícita de Damodaran del 1 de octubre de 2026."
+        "wacc_note": "WACC 6.81% = 50.40% × Ke 7.82% (Rf 5.29% [Tesoro de EE. UU. a 10 años del par Rf–ERP de Damodaran, 1 de noviembre de 2026] + β de abajo hacia arriba 0.57 [βU 0.31 de la industria (Damodaran, enero de 2026) reapalancada con D/E 0.98 y t 13%; sin Blume] × prima implícita 4.41%) + 49.60% × Kd 6.67% × (1 − t 13.30%). Kd = Rf + spread del rating sintético BB+ (tabla de empresas grandes, cobertura 2.4x). t: tasa efectiva TTM. Rf y prima implícita del mismo día: bono del Tesoro de EE. UU. a 10 años y prima implícita de Damodaran del 1 de noviembre de 2026."
       }
     },
     "summary": {
       "alert_counts": {
-        "red_flags": 1,
+        "red_flags": 0,
         "strengths": 2,
         "unmeasured": null,
-        "warnings": 1
+        "warnings": 0
       },
       "cards": [
         {
@@ -4197,9 +4174,9 @@
               "kind": "bar",
               "label": "Rentabilidad",
               "max": 20,
-              "pct": 50.0,
-              "tone": "warn",
-              "value": 10
+              "pct": 75.0,
+              "tone": "pos",
+              "value": 15
             },
             {
               "kind": "bar",
@@ -4218,7 +4195,7 @@
               "value": 14
             }
           ],
-          "score": 66,
+          "score": 72,
           "title": "CALIDAD DEL NEGOCIO",
           "tone": "pos"
         }
@@ -4226,15 +4203,15 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad sólida · precio exigente (confianza media: P/B justificado (ROE regulado) la ve cara y los múltiplos en precio). Calidad 66/100 · precio 42/100 (ajustado de 40 a 42 por confianza media)."
+          "text": "Calidad sólida · precio exigente (confianza media: P/B justificado (ROE regulado) la ve cara y los múltiplos en precio). Calidad 72/100 · precio 42/100 (ajustado de 40 a 42 por confianza media)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
-          "text": "Destaca en Calidad de ganancias (17/20) y Crecimiento (14/20)."
+          "text": "Destaca en Calidad de ganancias (17/20) y Rentabilidad (15/20)."
         },
         {
-          "label": "CREACIÓN DE VALOR",
-          "text": "El ROIC (5.5%) queda ligeramente por debajo del costo de capital (6.8%). ROCE 5.35% (EBIT / capital empleado, antes de impuestos), en línea con el ROIC (5.48%)."
+          "label": "RENTABILIDAD",
+          "text": "El ROE (TTM) de 9.6% es competitivo en su sector (sector: 5.0% competitivo, 10.0% rango alto)."
         },
         {
           "label": "SOLIDEZ",
@@ -4944,74 +4921,8 @@
         ]
       },
       "roic": {
-        "note": null,
-        "tables": [
-          {
-            "bands": [
-              {
-                "label": "Muy superior",
-                "range": "≥ 9.5%",
-                "tone": "pos"
-              },
-              {
-                "label": "Superior",
-                "range": "7.8% – 9.5%",
-                "tone": "pos"
-              },
-              {
-                "label": "En línea",
-                "range": "6.3% – 7.8%",
-                "tone": "neu"
-              },
-              {
-                "label": "Inferior",
-                "range": "4.6% – 6.3%",
-                "tone": "warn"
-              },
-              {
-                "label": "Muy inferior",
-                "range": "< 4.6%",
-                "tone": "neg"
-              }
-            ],
-            "title": "Frente a la referencia de su industria sin ella (7.1%)"
-          }
-        ]
-      },
-      "roic_wacc_spread": {
-        "note": null,
-        "tables": [
-          {
-            "bands": [
-              {
-                "label": "Crea mucho valor",
-                "range": "≥ 10%",
-                "tone": "pos"
-              },
-              {
-                "label": "Crea valor",
-                "range": "3% – 10%",
-                "tone": "pos"
-              },
-              {
-                "label": "Marginal",
-                "range": "0% – 3%",
-                "tone": "neu"
-              },
-              {
-                "label": "Al límite",
-                "range": "-3% – 0%",
-                "tone": "warn"
-              },
-              {
-                "label": "Destruye valor",
-                "range": "< -3%",
-                "tone": "neg"
-              }
-            ],
-            "title": "Spread ROIC − WACC"
-          }
-        ]
+        "note": "No aplica a utilities reguladas: no se lee.",
+        "tables": []
       }
     },
     "version": 1
@@ -5022,6 +4933,9 @@
       "charges_back": 0,
       "equity_income": 46000000.0,
       "equity_income_net_of_tax": null,
+      "equity_net_history": [],
+      "equity_net_operating": 0.0,
+      "equity_net_recurrent": null,
       "excess": 0.0,
       "explained": 4792095588.24,
       "income": 4804394658.6,
@@ -5171,6 +5085,7 @@
     "state": "expansion"
   },
   "errors": [],
+  "ev_cross_holdings": null,
   "graham_margin": -0.176820114799,
   "graham_number": 101.663795414,
   "growth_basis": {
@@ -5381,20 +5296,30 @@
     "source": "SEC EDGAR (companyfacts: ejercicios completos de los informes anuales)",
     "status": "ok"
   },
+  "investment_intensity": {
+    "capex": 38908000000.0,
+    "da": 20207000000.0,
+    "expansion": null,
+    "ocf": 34536000000.0,
+    "ratio": 1.92547137131,
+    "reason": null,
+    "to_ocf": 1.12659254112,
+    "years": 3
+  },
   "ke_sensitivity": {
     "base": {
-      "ke": 0.0770310648163,
+      "ke": 0.0782376180572,
       "level": "exigente",
       "score": 42
     },
     "dependent": false,
     "minus": {
-      "ke": 0.0670310648163,
+      "ke": 0.0682376180572,
       "level": "exigente",
       "score": 42
     },
     "plus": {
-      "ke": 0.0870310648163,
+      "ke": 0.0882376180572,
       "level": "exigente",
       "score": 35
     },
@@ -5471,13 +5396,13 @@
     "roe": 0.0964892707055,
     "roic": 0.0548365329841,
     "roic_reason": null,
-    "roic_wacc_spread": -0.0126711197175,
+    "roic_wacc_spread": null,
     "shareholder_yield": 0.0341347407538,
     "shares_outstanding": 779702193.0,
     "total_assets": 201091000000.0,
     "total_debt": 91814000000.0,
     "total_equity": 54751000000.0,
-    "wacc": 0.0675076527015
+    "wacc": 0.0681157189967
   },
   "market_context": {
     "behavioral": [],
@@ -5960,8 +5885,8 @@
       {
         "field": "archetype_metrics.implied.implied",
         "kind": "precio_implicito",
-        "text": "la entidad sostuviera un ROE de al menos el 11.5% que descuenta el precio (obtiene un 7.2%)",
-        "value": 0.115253327968
+        "text": "la entidad sostuviera un ROE de al menos el 11.7% que descuenta el precio (obtiene un 7.2%)",
+        "value": 0.117346220853
       },
       {
         "field": "key_metrics.operating_margin",
@@ -6024,11 +5949,7 @@
   },
   "quality": {
     "basis": null,
-    "border": {
-      "neighbor": "media",
-      "points": 2,
-      "text": "En la frontera con «media» (a 2 puntos): un cambio pequeño en los datos o en los supuestos cambiaría el nivel"
-    },
+    "border": null,
     "categories_included": 4,
     "categories_total": 4,
     "components": [
@@ -6042,7 +5963,7 @@
         "category": "Rentabilidad",
         "included": true,
         "max": 20,
-        "score": 10
+        "score": 15
       },
       {
         "category": "Calidad de Ganancias",
@@ -6117,8 +6038,8 @@
       "source": "edgar",
       "window": 5
     },
-    "score": 66,
-    "score_raw": 66
+    "score": 72,
+    "score_raw": 72
   },
   "quality_readings": {
     "coverage": {
@@ -6234,11 +6155,16 @@
     "ttm": null
   },
   "risk_free": {
-    "as_of": "2026-10-01",
-    "erp": 0.042,
+    "as_of": "2026-11-01",
+    "erp": 0.0441,
     "fallback": false,
     "market": null,
     "reason": null,
+    "review": {
+      "due": "2026-12-01",
+      "published": "2026-11-01",
+      "status": "vigente"
+    },
     "source": "par Rf–ERP de Damodaran",
     "value": 0.0529
   },
@@ -6329,11 +6255,11 @@
         "adjustments": [
           {
             "adjustment": 2,
-            "leverage_swap": true,
-            "metric": "ROIC (en lugar del ROE: apalancamiento alto)",
-            "reason": "Bueno (5.5%) - Competitivo en su sector; con un D/E de 1.68 (> 1.50, el umbral de su sector) el ROE lo infla el apalancamiento: puntúa el ROIC",
+            "metric": "ROE normalizado",
+            "normalized": true,
+            "reason": "Bueno (8.9%) - Competitivo en su sector",
             "severity": "ok",
-            "value": "5.48%"
+            "value": "8.93%"
           },
           {
             "adjustment": 0,
@@ -6359,34 +6285,25 @@
             "value": "14.45%"
           },
           {
-            "adjustment": -1,
-            "metric": "ROIC frente al WACC",
-            "reason": "Retorno apenas por debajo del costo de capital (spread −1.3 pp)",
-            "severity": "moderate",
-            "value": "−1.3 pp"
-          },
-          {
-            "adjustment": -4,
-            "cap": true,
-            "metric": "Tope por ROIC − WACC",
-            "reason": "el ROIC (5.5%) no cubre el WACC (6.8%), diferencial −1.3 pp: la rentabilidad no pasa de 10/20",
-            "severity": "severe",
-            "value": "10/20"
+            "adjustment": 0,
+            "metric": "No aplica",
+            "reason": "No aplica a utilities reguladas: el regulador fija el retorno que puede obtener sobre su base de activos; un ROIC por debajo del WACC de mercado es la tarifa autorizada, no destrucción de valor (no cuenta en la cobertura)",
+            "severity": "neutral",
+            "value": "ROIC−WACC"
           }
         ],
         "applicable": true,
         "conclusive": true,
         "coverage": 1.0,
         "details": [
-          "Bueno (5.5%) - Competitivo en su sector; con un D/E de 1.68 (> 1.50, el umbral de su sector) el ROE lo infla el apalancamiento: puntúa el ROIC",
+          "Bueno (8.9%) - Competitivo en su sector",
           "Aceptable (2.4%) - Normal para su sector",
           "Muy bueno (27.8%, +6.8 pp frente al margen de su industria sin ella: 20.9%)",
           "En línea (14.4%, +2.0 pp frente al margen de su industria sin ella: 12.5%)",
-          "Retorno apenas por debajo del costo de capital (spread −1.3 pp)",
-          "el ROIC (5.5%) no cubre el WACC (6.8%), diferencial −1.3 pp: la rentabilidad no pasa de 10/20"
+          "No aplica a utilities reguladas: el regulador fija el retorno que puede obtener sobre su base de activos; un ROIC por debajo del WACC de mercado es la tarifa autorizada, no destrucción de valor (no cuenta en la cobertura)"
         ],
         "max": 20,
-        "score": 10
+        "score": 15
       },
       "Solidez Financiera": {
         "adjustments": [
@@ -6485,7 +6402,7 @@
           {
             "adjustment": -2,
             "metric": "P/B frente al ROE regulado",
-            "reason": "El precio descuenta un ROE sostenido del 11.5%; la utility obtuvo un 7.2% de media en 4 ejercicios.",
+            "reason": "El precio descuenta un ROE sostenido del 11.7%; la utility obtuvo un 7.2% de media en 4 ejercicios.",
             "severity": "moderate",
             "value": "exigente"
           },
@@ -6505,7 +6422,7 @@
           "En línea (19.4x frente a 21.3x)",
           "P/E normalizado estable a mejor (19x → 18x forward creíble); forward 16.5x (implica +17% de BPA); con el crecimiento que respalda su histórico (+11% del BPA en el último ejercicio), 17.6x",
           "media de 1 lectura en una escala de −1 a +1 (BPA (P/E, Forward P/E): P/E +0.00, Forward P/E +0.33 → +0.17): +0.17, que suma +0.3 puntos de un máximo de ±2",
-          "El precio descuenta un ROE sostenido del 11.5%; la utility obtuvo un 7.2% de media en 4 ejercicios.",
+          "El precio descuenta un ROE sostenido del 11.7%; la utility obtuvo un 7.2% de media en 4 ejercicios.",
           "EV/EBITDA: No aplica a utilities reguladas: se valora por P/E frente al sector y rentabilidad por dividendo; P/FCF: No aplica a utilities reguladas: su FCF es negativo por diseño: la inversión en la base de activos regulada supera al flujo operativo y se financia con deuda; PEG: No aplica a utilities reguladas: su crecimiento lo fija la base regulada, no el mercado: se valora por P/E y dividendo (no cuenta en la cobertura)"
         ],
         "max": 20,
@@ -6547,14 +6464,16 @@
     },
     "rentabilidad": {
       "applicable": true,
-      "components": 5,
+      "components": 4,
       "conclusive": true,
       "coverage": 1.0,
-      "evaluated": 5,
+      "evaluated": 4,
       "low_confidence": false,
       "missing": [],
       "missing_reasons": {},
-      "not_applicable": {},
+      "not_applicable": {
+        "ROIC−WACC": "No aplica a utilities reguladas: el regulador fija el retorno que puede obtener sobre su base de activos; un ROIC por debajo del WACC de mercado es la tarifa autorizada, no destrucción de valor"
+      },
       "not_significant": {}
     },
     "solidez": {
@@ -6595,6 +6514,37 @@
     "sector": "Utilities",
     "sector_etf": "XLU"
   },
+  "sector_risks": {
+    "company": [],
+    "debt_due": {
+      "concepts": {
+        "due_y1": "us-gaap:LongTermDebtMaturitiesRepaymentsOfPrincipalInNextTwelveMonths",
+        "due_y2": "us-gaap:LongTermDebtMaturitiesRepaymentsOfPrincipalInYearTwo",
+        "short_term_borrowings": "us-gaap:ShortTermBorrowings"
+      },
+      "due_24m": 13386000000.0,
+      "fy_end": "2025-12-31",
+      "reason": null,
+      "source": "SEC EDGAR (companyfacts: vencimientos de la deuda del último balance anual)",
+      "status": "ok",
+      "values": {
+        "due_y1": 7123000000,
+        "due_y2": 3639000000,
+        "short_term_borrowings": 2624000000
+      }
+    },
+    "industry": [
+      {
+        "key": "huracanes",
+        "label": "riesgo de la industria, no verificado en esta empresa",
+        "level": "industria",
+        "text": "Las utilities de la costa del golfo y del atlántico sur reparan su red tras cada huracán y recuperan el coste con permiso del regulador, con meses de retraso y no siempre entero. Se le aplica por su sede en Carolina del Norte; la sede no siempre es el territorio que sirve.",
+        "title": "Huracanes"
+      }
+    ],
+    "not_measured": "concentración en un inquilino o en un producto: los datos públicos gratuitos no la traen estructurada (solo en la instancia XBRL con dimensiones), así que no se mide ni se estima",
+    "note": "Aparte y sin puntuar: ni la calidad ni el precio los cuentan."
+  },
   "spectrum_adjustment": null,
   "symbol": "DUK",
   "tax_rate": {
@@ -6628,12 +6578,12 @@
     "equity": 93283569894.6,
     "kd": 0.0667,
     "kd_after_tax": 0.05783180937,
-    "ke": 0.0770310648163,
-    "ke_capm": 0.0770310648163,
+    "ke": 0.0782376180572,
+    "ke_capm": 0.0782376180572,
     "ke_crp": null,
     "ke_floor": null,
     "ke_shift": null,
-    "mrp": 0.042,
+    "mrp": 0.0441,
     "rating": {
       "coverage": 2.44553405778,
       "flag": null,
@@ -6641,10 +6591,20 @@
       "spread": 0.0138,
       "table": "grandes"
     },
-    "raw": 0.0675076527015,
+    "rating_coverage": {
+      "basis": "EBIT",
+      "coverage": 2.44553405778,
+      "reason": null,
+      "reported": {
+        "coverage": 2.44553405778,
+        "state": "ok"
+      },
+      "state": "ok"
+    },
+    "raw": 0.0681157189967,
     "reason": null,
     "rf": 0.0529,
-    "rf_as_of": "2026-10-01",
+    "rf_as_of": "2026-11-01",
     "rf_fallback": false,
     "rf_market": null,
     "rf_reason": null,
@@ -6652,7 +6612,7 @@
     "tax_rate": 0.13295638126,
     "tax_reason": null,
     "tax_source": "efectiva",
-    "value": 0.0675076527015,
+    "value": 0.0681157189967,
     "weights": {
       "debt": 0.496030283122,
       "equity": 0.503969716878

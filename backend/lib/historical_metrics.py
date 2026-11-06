@@ -152,6 +152,20 @@ def growth_rate(values_newest_first: List[Optional[float]], years: int = 3, *, w
         # monótona en el crecimiento la usa solo si ya decide el tramo (bound_decides).
         out["bound"] = {"value": cagr(end, start, years), "direction": "superior"}
         return out
+    # F13 · paso 12 (usuario): el caso simétrico, una base INFLADA (PFE: FCF desde 2022, el año de las vacunas, «cae
+    # 29,6 % anual»). Año inicial > inflated_base_ratio × la mediana de los demás: el mismo tratamiento, y la tasa de
+    # punta a punta es entonces una cota INFERIOR.
+    hi = cfg("thresholds.growth.inflated_base_ratio")
+    if start > hi * med:
+        out["base_ratio"] = start / med
+        g, why, n = loglinear_growth(values_newest_first)
+        out.update(method="log_lineal", anomalous_base=True, inflated_base=True, years_used=n, value=g,
+                   robust=n > years + 1,
+                   reason=(f"base inflada ({start / med:.0%} de la mediana del resto); " + why) if why else None)
+        out["note"] = (f"base inflada: el año inicial es el {start / med:.0%} de la mediana de los demás "
+                       f"(> {hi:.0%}); crecimiento por regresión log-lineal sobre {n} ejercicios")
+        out["bound"] = {"value": cagr(end, start, years), "direction": "inferior"}
+        return out
     out["value"] = cagr(end, start, years)
     return out
 
@@ -214,7 +228,8 @@ def robust_growth(values_newest_first: List[Optional[float]], years: int = 3, *,
     if not r.get("anomalous_base") or r["robust"]:
         return _cap_by_bound(r, short)
     n_long = cfg("thresholds.growth.long_years")
-    base = f"el año inicial es el {r.get('base_ratio', 0):.0%} de la mediana de los demás"
+    base = (("base inflada: " if r.get("inflated_base") else "")
+            + f"el año inicial es el {r.get('base_ratio', 0):.0%} de la mediana de los demás")
     series, why = edgar_series(long, end) if long else ([], "sin serie larga de EDGAR")
     if not why and len(series) < n_long:
         why = f"EDGAR trae {len(series)} ejercicios contiguos (hacen falta {n_long})"
@@ -283,6 +298,14 @@ def _cap_by_bound(r: Dict[str, Any], short: Optional[float] = None) -> Dict[str,
     no la hay; nunca más que la cota."""
     b = r.get("bound") or {}
     v = r.get("value")
+    # F13 · paso 12: desde una base inflada, la de punta a punta es una cota inferior: nunca menos que ella
+    if v is not None and b.get("direction") == "inferior" and b.get("value") is not None and v < b["value"]:
+        use = short if (short is not None and short >= b["value"]) else b["value"]
+        r.update(value_uncapped=v, value=use, capped=True)
+        r["note"] = ((r.get("note") or "") + f"; la regresión larga queda por debajo de la tasa de punta a punta "
+                     f"({b['value']:.1%}), que desde una base inflada ya es una cota inferior: crecimiento por "
+                     "regresión log-lineal sobre la ventana").lstrip("; ")
+        return r
     if v is not None and b.get("direction") == "superior" and b.get("value") is not None and v > b["value"]:
         use = short if (short is not None and short <= b["value"]) else b["value"]
         r["value_uncapped"] = v

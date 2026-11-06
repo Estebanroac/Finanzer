@@ -54,11 +54,13 @@ def test_base_rate_step_from_low_stays_low():
     assert c["level"] == "baja" and any("ya estaba en baja" in r for r in c["reasons"])
 
 
-@pytest.mark.parametrize("sym", ["AAPL", "MSFT", "AMZN"])
+@pytest.mark.parametrize("sym", ["AAPL", "NVDA", "AMZN"])
 def test_base_rate_step_does_not_move_price_or_quality(sym):
-    """Decisión del PM (F10 · N4, opción a): AAPL, MSFT y AMZN bajan un escalón de confianza por las tasas base, pero
+    """Decisión del PM (F10 · N4, opción a): AAPL, NVDA y AMZN bajan un escalón de confianza por las tasas base, pero
     su precio y su calidad son los de la confianza previa (`contraction_basis`): con la contracción hacia 50 saldrían
-    más atractivas justo las que exigen un crecimiento casi imposible. Una sola confianza a la vista."""
+    más atractivas justo las que exigen un crecimiento casi imposible. Una sola confianza a la vista.
+    F13 · paso 9: MSFT, el ejemplo de antes, ya no lo es: con el DCF de la reinversión del crecimiento su precio es
+    «exigente» y el escalón lo contradice (regla de COST, verdict.price_contraction_basis), así que sí contrae."""
     import json
     import os
     from verdict import contract_quality, reprice

@@ -70,7 +70,29 @@ cambia su posición dentro del grupo.
 Cuando la versión por volatilidad la sube, el texto lo explica: «Es 1.2 veces su volatilidad anual (50%): más de lo
 que suele moverse».
 
-**Decidido (usuario, 5-nov-2026): volatilidad.**
+**Decidido (usuario, 5-nov-2026, noche): volatilidad con piso absoluto.**
+1. Peso base por volatilidad, como arriba.
+2. **Piso:** toda caída de −50 % o peor recibe al menos el peso de la versión lineal, sea cual sea su volatilidad
+   (`floor_below`, `linear_full_below` en `thresholds.toml`). El tope sigue en 44.
+3. **El texto lleva siempre la volatilidad:** «Son unas 0.7 veces su movimiento anual habitual (volatilidad del 79%):
+   dentro de lo que suele moverse esta acción», o «…: más de lo que suele moverse».
+
+Medida del piso (simulada sobre las alertas candidatas de `2026-11-05-f12-nuevo`, como la lineal):
+
+| De las cinco de la lineal | Caída / volatilidad / z | ¿Gana la alerta? | Qué sale del top 6 | ¿Sale alguna de solvencia? |
+|---|---|---|---|---|
+| CSGP | −61,7 % / 50 % / 1,24 | ya la tenía con volatilidad; sube a primera (44) | margen neto estrecho (ya salía) | no |
+| CIEN | −56,6 % / 79 % / 0,71 | **sí**, segunda (42,9) | margen neto normalizado estrecho (36) | no |
+| NOW | −54,6 % / 66 % / 0,82 | **sí**, tercera (42,2), **detrás de liquidez en deterioro (44)** | margen neto estrecho (36) | no |
+| LEN | −43,5 % / 40 % / 1,08 | no: el piso no aplica (caída menor del 50 %); su peso, 35,6, queda por debajo del sexto (margen, 36) | — | — |
+| NCLH | −43,6 % / 57 % / 0,77 | no: el piso no aplica; peso 34, por debajo del sexto (beta, 38). Arriba van apalancamiento (50), cobertura (46) y liquidez (44) | — | — |
+
+En las 543, el piso sube el peso de la caída en 37 empresas. Ganan la alerta 2 (CIEN, NOW), no la pierde ninguna y
+ninguna advertencia de solvencia sale del top 6: el piso está bien calibrado. Golden (fixtures congelados): SNOW
+(−56,3 %) sube la caída a segunda en local y panel; en NFLX, MSFT, CRWD, DOW, MC.PA, MU, NVO, PLTR, RIVN y TM solo cambia
+el texto.
+
+Versión anterior (sin piso): **Decidido (usuario, 5-nov-2026): volatilidad.**
 - **Volatilidad** (implementada): solo una caída anómala para esa acción sube de peso. CIEN y NOW se mueven un 66–79 %
   al año y su caída está dentro de lo habitual.
 - **Lineal:** cuenta lo honda que es la caída, sea cual sea la acción. Cinco empresas ganan la alerta.
