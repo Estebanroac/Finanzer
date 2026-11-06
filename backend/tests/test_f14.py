@@ -125,3 +125,26 @@ def test_reit_coverage_alert_uses_the_rating_basis():
     assert a["key_metrics"]["interest_coverage_basis"] == "EBITDA"
     assert a["key_metrics"]["interest_coverage"] == pytest.approx(a["wacc"]["rating"]["coverage"])
     assert not [r for r in a["alerts"]["red_flags"] if "obertura" in r["reason"]]
+
+
+# ── paso 8: ROIC con el EBIT normalizado; sin ROIC con una cautiva que no se separa ──
+def _banco(paso, t):
+    import gzip
+    import json
+    import os
+    p = (f"/Users/joseestebanroa/Downloads/Finanzer/archivo-historico/evidencias-de-pruebas/f14_banco110_2026-11-06/"
+         f"{paso}/{t}.json.gz")
+    if not os.path.exists(p):
+        pytest.skip("sin el banco de 110")
+    return json.load(gzip.open(p))
+
+
+def test_roic_uses_the_normalized_operating_income():
+    km = _banco("paso8", "GM")["key_metrics"]
+    assert km["roic_basis"] == "EBIT normalizado" and km["roic"] > 0.08 > km["roic_reported"]
+
+
+def test_no_roic_when_the_captive_debt_cannot_be_separated():
+    a = _banco("paso8", "DE")
+    assert a["key_metrics"]["roic"] is None and "cautiva" in a["key_metrics"]["roic_reason"]
+    assert not [r for r in a["alerts"]["red_flags"] if "Destruye valor" in r["reason"]]

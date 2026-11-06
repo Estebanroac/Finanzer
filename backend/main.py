@@ -1798,6 +1798,27 @@ def _compute_analysis_body(symbol: str) -> dict:
             # Spread ROIC-WACC: mide si la empresa genera retornos por ENCIMA de su
             # costo de capital (crea valor) o por debajo (lo destruye). No aplica a
             # financieras (WACC no interpretable), igual que el DCF/Altman.
+            # F14 · paso 8 (segunda revisión externa, punto 9): el ROIC que se puntúa y que decide «crea / destruye valor»
+            # (1) con el resultado operativo normalizado, el mismo que el rating (GM: EBIT de 1,8 B$ con cargos y 7,8 B$
+            # sin ellos; su deuda ya excluye la de GM Financial); (2) sin ROIC significativo si la deuda de la
+            # financiera cautiva no se puede separar (DE: John Deere Financial dentro de 64 B$ de deuda).
+            _unsep = (cfg("data.edgar.captive_unseparable") or {}).get((symbol or "").upper())
+            if roic is not None and _unsep:
+                roic = None
+                fin_dict["roic_reason"] = (f"capital invertido con la deuda de la financiera cautiva ({_unsep}), que "
+                                           "EDGAR no separa: ROIC no comparable con el coste del capital industrial")
+                result["key_metrics"].update(roic=None, roic_reason=fin_dict["roic_reason"])
+                ratios["roic"] = None
+            _ic8 = (te_val + (td_val or 0) - (cash_val or 0)) if te_val is not None else None
+            _rn8 = safe_float(_rating_ebit)
+            if (roic is not None and _rn8 is not None and oi_val is not None and _ic8
+                    and abs(_rn8 - oi_val) > cfg("thresholds.score.rentabilidad.roic_normalized_min_gap") * abs(oi_val)
+                    and roic_significant(_ic8, safe_float(financials.total_assets))):
+                _roic_rep = roic
+                roic = _rn8 * (1 - tax_info["rate"]) / _ic8
+                ratios["roic"] = roic
+                result["key_metrics"].update(roic=safe_float(roic), roic_reported=safe_float(_roic_rep),
+                                             roic_basis="EBIT normalizado")
             roic_wacc_spread = None
             if roic is not None and wacc_est is not None and not not_applicable(archetype, "roic_wacc"):
                 roic_wacc_spread = roic - wacc_est
