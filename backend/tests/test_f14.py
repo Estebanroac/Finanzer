@@ -148,3 +148,29 @@ def test_no_roic_when_the_captive_debt_cannot_be_separated():
     a = _banco("paso8", "DE")
     assert a["key_metrics"]["roic"] is None and "cautiva" in a["key_metrics"]["roic_reason"]
     assert not [r for r in a["alerts"]["red_flags"] if "Destruye valor" in r["reason"]]
+
+
+# ── paso 9: calidad del beneficio y PEG ──
+def test_operating_cash_below_net_income_does_not_add_quality():
+    import financial_ratios as fr
+    kw = dict(f_score=7, fcf=9e9, net_income=11e9, fcf_to_net_income=0.82)
+    low = fr.score_calidad_ganancias(ocf=10.1e9, **kw)
+    ok = fr.score_calidad_ganancias(ocf=12e9, **kw)
+    row = next(x for x in low["adjustments"] if x["metric"] == "Flujo de caja operativo")
+    assert "menos que su beneficio" in row["reason"] and row["adjustment"] == 0
+    assert ok["score"] > low["score"]
+
+
+def test_peg_growth_is_capped_at_revenue_plus_the_divergence():
+    pb = _banco("paso10", "NFLX")["peg_basis"]
+    assert pb["growth_used"] == pytest.approx(pb["eps_cagr_3y"] - (pb["eps_cagr_3y"] - pb["growth_used"]))
+    assert pb["growth_used"] < pb["eps_cagr_3y"] and "acotado a las ventas" in pb["note"]
+
+
+# ── paso 10: ventas y BPA muy separados: el DCF de las ventas no puntúa ──
+def test_a_very_large_sales_eps_gap_makes_the_dcf_unreliable():
+    dcf = {"fair_value": 100.0, "value_composition": {"terminal_pct": 50.0}, "growth_rate": 0.02}
+    kw = dict(dcf=dcf, sensitivity=None, price=90.0, archetype="MATURE", possible_cyclical=False, fcf_flags=[],
+              fcf_source=None)
+    assert vc.dcf_reliability(**kw, growth_divergence={"revenue": 0.006, "eps": 0.211})["level"] == "baja"
+    assert vc.dcf_reliability(**kw, growth_divergence={"revenue": 0.05, "eps": 0.17})["level"] == "media"

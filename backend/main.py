@@ -1675,9 +1675,19 @@ def _compute_analysis_body(symbol: str) -> dict:
                                                             f"significativo, pero su techo ({_gb_:.0%}, la tasa desde "
                                                             "el año anómalo) ya deja el PEG en el tramo más caro")}
                 elif _pe_g is not None and _pe_g > 0 and _e3 is not None and _e3 > 0:
-                    ratios["peg"] = _pe_g / (_e3 * cfg("valuation.peg.growth_pct_scale"))
+                    # F14 · paso 9 (segunda revisión externa, punto 11): el PEG mira adelante; un BPA que crece más de
+                    # `growth_divergence_pp` por encima de las ventas lo hace por la expansión del margen, que no se
+                    # repite sin fin: el PEG usa como mucho el crecimiento de las ventas más ese margen (NFLX: BPA
+                    # +36,5 %, ventas +12,6 %). La puntuación de Crecimiento sigue con el BPA: mide lo que ya pasó.
+                    _r3 = safe_float(fin_dict.get("revenue_cagr_3y"))
+                    _gpp = cfg("thresholds.dcf_reliability.growth_divergence_pp")
+                    _g_peg = _e3
+                    if archetype != CYCLICAL and _r3 is not None and _r3 > 0 and _e3 > _r3 + _gpp:
+                        _g_peg = _r3 + _gpp
+                    ratios["peg"] = _pe_g / (_g_peg * cfg("valuation.peg.growth_pct_scale"))
                     result["key_metrics"]["peg"] = safe_float(ratios["peg"])
                     result["peg_basis"] = {"pe": _pe_g, "eps_cagr_3y": _e3, "own": True,
+                                           "growth_used": _g_peg if _g_peg != _e3 else None,
                                            "years": (_em.get("years_used") if _em.get("method") == "log_lineal_edgar"
                                                      else None),
                                            "note": (f"PEG: P/E ÷ crecimiento del BPA por regresión log-lineal sobre "
@@ -1690,6 +1700,13 @@ def _compute_analysis_body(symbol: str) -> dict:
                                                     "PEG a 3 años: P/E ÷ CAGR del BPA por acción a 3 años")}
                     if archetype == CYCLICAL:
                         result["peg_basis"]["label"] = "PEG (BPA de ciclo medio)"
+                    if _g_peg != _e3:
+                        from claims import claim as _claim, record as _record
+                        result["peg_basis"]["note"] = _record(
+                            f"{result['peg_basis']['note']}; con el crecimiento acotado a las ventas más "
+                            f"{_gpp * 100:.0f} pp ({_g_peg:.1%}): el BPA sube un {_e3:.1%} anual y las ventas un "
+                            f"{_r3:.1%}, y la expansión del margen que explica la diferencia no se repite sin fin",
+                            _claim("eps_vs_revenue", eps=_e3, revenue=_r3), source="main.peg")
                 else:
                     _peg_src = safe_float(result["key_metrics"].get("peg"))
                     ratios["peg"] = result["key_metrics"]["peg"] = None

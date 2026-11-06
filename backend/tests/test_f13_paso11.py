@@ -114,7 +114,8 @@ def test_revenue_and_eps_far_apart_cost_one_reliability_step():
     dcf = {"fair_value": 100.0, "value_composition": {"terminal_pct": 50.0}, "growth_rate": 0.05}
     kw = dict(dcf=dcf, sensitivity=None, price=90.0, archetype="MATURE", possible_cyclical=False, fcf_flags=[],
               fcf_source=None)
-    assert dcf_reliability(**kw, growth_divergence={"revenue": 0.006, "eps": 0.211})["level"] == "media"
+    # F14 · paso 10: con más de 20 pp (LIN: 0,6 % frente a 21,1 %) ya es baja (tests/test_f14.py); aquí, entre 10 y 20
+    assert dcf_reliability(**kw, growth_divergence={"revenue": 0.05, "eps": 0.17})["level"] == "media"
     assert dcf_reliability(**kw, growth_divergence={"revenue": 0.05, "eps": 0.08})["level"] == "alta"
 
 

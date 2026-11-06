@@ -160,7 +160,11 @@ def dcf_reliability(*, dcf: Optional[Dict[str, Any]], sensitivity: Optional[Dict
     if gd.get("revenue") is not None and gd.get("eps") is not None \
             and abs(gd["eps"] - gd["revenue"]) > R["growth_divergence_pp"]:
         from claims import claim as _claim, record as _record
-        minus.append(_record(
+        # F14 · paso 10 (segunda revisión externa, LIN: ventas +0,6 % por el traslado del coste de la energía y BPA
+        # +21,1 %): con más de `growth_divergence_low_mult` veces el umbral, el DCF de las ventas no representa el flujo
+        # y no puntúa (como la caída fuerte del margen del criterio 5)
+        (low if abs(gd["eps"] - gd["revenue"]) > R["growth_divergence_low_mult"] * R["growth_divergence_pp"]
+         else minus).append(_record(
             f"las ventas crecen un {gd['revenue']:.1%} y el BPA un {gd['eps']:.1%} anual a 3 años (más de "
             f"{R['growth_divergence_pp'] * 100:.0f} pp de diferencia): el crecimiento de las ventas no representa el "
             "del flujo", _claim("eps_vs_revenue", eps=gd["eps"], revenue=gd["revenue"]),

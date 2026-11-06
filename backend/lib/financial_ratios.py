@@ -3373,7 +3373,14 @@ def score_calidad_ganancias(
     
     # Operating Cash Flow (hasta ±4 pts)
     if ocf is not None:
-        if ocf > 0:
+        if ocf > 0 and net_income is not None and net_income > 0 and ocf < net_income:
+            # F14 · paso 9 (segunda revisión externa, punto 12): el flujo operativo por debajo del beneficio es la
+            # alerta de calidad del Piotroski (NFLX: 10,1 frente a 11,0 B$); no suma como un flujo que lo respalda
+            adj = T["ocf_below_ni_points"]
+            sev = "moderate"
+            reason = (f"Genera efectivo operativo, pero menos que su beneficio neto ({ocf / net_income:.0%} del "
+                      "beneficio)")
+        elif ocf > 0:
             adj = T["ocf_points"][0]
             sev = "good"
             reason = "Genera efectivo operativo"

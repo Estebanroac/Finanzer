@@ -178,6 +178,7 @@ rule_of_40_points = [4, 2, 0, -2, -4]
 [score.calidad]                     # score_calidad_ganancias
 fscore_points = [7, 4, 0, -4, -7]   # tramos de valuation.models.piotroski.bands
 ocf_points = [3, -4]                # OCF > 0 / ≤ 0
+ocf_below_ni_points = 0             # F14 · paso 9: OCF > 0 pero por debajo del beneficio neto (alerta del Piotroski)
 fcf_points = [3, -4]                # FCF > 0 / ≤ 0
 fcf_to_ni_bounds = [1.0, 0.7, 0.3]  # FCF / beneficio neto ≥
 fcf_to_ni_points = [3, 1, 0, -2]
@@ -460,6 +461,7 @@ margin_drop_downs = 3
 margin_drop_low_mult = 2.0       # caída ≥ 2 × margin_drop_min: baja directamente
 # (6) F13 · paso 11 (opción c del usuario): ventas y BPA a 3 años separados más de esto: −1
 growth_divergence_pp = 0.10
+growth_divergence_low_mult = 2.0    # F14 · paso 10: más del doble de growth_divergence_pp -> fiabilidad baja
 central_block = 1                   # "celda central ±1": bloque 3×3 alrededor del caso base
 fcf_fields = ["freeCashflow", "free_cash_flow", "key_metrics.free_cash_flow"]
 inferred_sources = ["finnhub", "derivado"]      # FCF que no viene de los estados -> inferido
