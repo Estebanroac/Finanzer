@@ -226,6 +226,12 @@ def _select_benchmark(mapped_sector: str, archetype: Optional[str], sector: Opti
             return f"{base} (la empresa no entra en este agregado: Damodaran lo calcula sin las empresas en pérdidas)"
         if se["method"] == "mediana_pares":
             return f"{se['declaration']} (Yahoo Finance, {se.get('peers_date')})"
+        k = ((se.get("columns") or {}).get(col) or {}).get("cause") or {}
+        if how == "sin_empresa" and k and not k.get("bounded"):     # F14 · paso 11: la causa, dicha
+            why_k = ("industria de margen fino por naturaleza" if k.get("test") == "margen_fino" else
+                     "ni muchas más empresas con pérdidas que el mercado ni por debajo de la mitad de la mediana de "
+                     "sus pares")
+            return f"{base}; {se['declaration']} (entre el 2 % y el 3 %, vale por su causa: {why_k})"
         return f"{base}; {se['declaration']}"
 
     mk = industry_bench.market(country, symbol, title, company, name)

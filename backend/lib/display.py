@@ -1510,6 +1510,38 @@ def _sector_risks_block(a: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     return {"items": items, "note": sr.get("note"), "not_measured": sr.get("not_measured")}
 
 
+# F14 · paso 11: nombre de cada columna de la referencia en las notas
+_REF_COL_TXT = {"pe": "P/E", "ev_ebitda": "EV/EBITDA", "pb": "P/B", "roe": "ROE", "roic": "ROIC",
+                "operating_margin": "margen operativo", "net_margin": "margen neto", "gross_margin": "margen bruto",
+                "interest_coverage": "cobertura de intereses", "de": "deuda/patrimonio"}
+
+
+def _columns_note(cols: Dict[str, Any]) -> str:
+    """F14 · paso 11 (segunda revisión externa): las columnas que no son el agregado sin la empresa se dicen (la mediana de
+    pares, la industria global) y, entre el 2 % y el 3 %, por qué la referencia vale (su causa)."""
+    out = []
+    by = {}
+    for c, d in cols.items():
+        by.setdefault(d.get("how"), []).append(c)
+    names = lambda cs: ", ".join(_REF_COL_TXT.get(c, c) for c in cs)
+    med = by.get("mediana_pares") or []
+    if med:
+        n = max((cols[c].get("n") or 0) for c in med)
+        out.append(f"En {names(med)}, la mediana de {n} pares del universo, no el agregado.")
+    glob = by.get("global_sin_empresa") or []
+    if glob:
+        out.append(f"En {names(glob)}, la misma industria a escala global sin la empresa "
+                   f"({cols[glob[0]].get('global_firms')} empresas): sin ella, la de su región no sirve de referencia.")
+    for c, d in cols.items():
+        k = d.get("cause") or {}
+        if d.get("how") == "sin_empresa" and k and not k.get("bounded"):
+            why = ("es una industria de margen fino por naturaleza" if k.get("test") == "margen_fino" else
+                   "no tiene muchas más empresas con pérdidas que el mercado ni queda por debajo de la mitad de la "
+                   "mediana de sus pares")
+            out.append(f"El {_REF_COL_TXT.get(c, c)} de la referencia está entre el 2 % y el 3 % y vale: {why}.")
+    return (" " + " ".join(out)) if out else ""
+
+
 def _self_exclusion_note(se: Optional[Dict[str, Any]]) -> str:
     """F10 · N2: la referencia sin la propia empresa (lib/self_exclusion.py), dicha en la nota de la referencia."""
     if not se:
@@ -1518,7 +1550,7 @@ def _self_exclusion_note(se: Optional[Dict[str, Any]]) -> str:
         cut = se.get("cut")
         return (f" {se['declaration'][0].upper()}{se['declaration'][1:]} de su capitalización: el agregado menos sus "
                 f"cifras al {numfmt.date_long(se.get('date'))}" + (f" (doce meses a {numfmt.date_long(cut)})" if cut else "")
-                + ".")
+                + "." + _columns_note(se.get("columns") or {}))
     if se.get("method") == "mediana_pares":
         return (f" {se['declaration'][0].upper()}{se['declaration'][1:]}. Los pares, de Yahoo Finance "
                 f"({numfmt.date_long(se.get('peers_date'))}).")
@@ -2758,8 +2790,11 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                               + (f" Sin referencia con fuente: {', '.join(_no_ref)}." if _no_ref else ""))
         else:
             reference_note = (f"Referencia: {_who}{_cls}, {_ind.get('region_label')}, {_ind.get('firms')} empresas"
-                              f"{_glob} (A. Damodaran, NYU Stern, {_ind.get('as_of')}): agregados de la industria, no "
-                              "medianas." + _self_exclusion_note(_sx)
+                              f"{_glob} (A. Damodaran, NYU Stern, {_ind.get('as_of')}): agregados de la industria"
+                              # F14 · paso 11: «no medianas» solo si ninguna columna es la mediana de pares
+                              + (" salvo donde se dice." if any(
+                                  (d or {}).get("how") == "mediana_pares" for d in (_sx.get("columns") or {}).values())
+                                 else ", no medianas.") + _self_exclusion_note(_sx)
                               + (f" Sin referencia con fuente: {', '.join(_no_ref)}." if _no_ref else ""))
     valuation = {"intro": val_txt, "columns": ["MÚLTIPLO", "EMPRESA", _bcol, "BRECHA", "LECTURA"],
                  "rows": mrows, "market_note": market_note,
