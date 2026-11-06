@@ -129,3 +129,9 @@ cíclicas. La caja de dos trimestres es muy ruidosa fuera de las maduras.
    (simplificar hacia L1).
 2. (b) y (c) no se cumplen. Con estos datos, la confianza no ordena el acierto y las alertas no doblan la frecuencia de
    caídas. El pre-registro no fija qué hacer en ese caso.
+
+## Decisión del usuario (6-nov-2026)
+
+«Empate: aplicar §8». El criterio (a) se trata como empate con L1: la valoración se simplifica hacia L1 (P/E de doce
+meses relativo a la mediana de su sector GICS, por tercios) y el motor queda para calidad, alertas y lectura. No se abre
+otro ciclo de ajustes de precio.
