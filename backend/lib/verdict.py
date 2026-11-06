@@ -124,7 +124,7 @@ def price(categories: List[Dict[str, Any]], confidence_level: Optional[str],
     raw = p.pop("score")
     if raw is not None and methods is not None and raw < P["bands"][-1]:
         n_cara = sum(1 for m in methods if m.get("evaluable") and m.get("direction") == "cara")
-        if n_cara < 2:
+        if n_cara < P["very_demanding_min_methods"]:
             p["single_method_floor"] = {"from": raw, "to": P["bands"][-1], "methods_cara": n_cara}
             raw = P["bands"][-1]
     factor = P["confidence_factor"].get(confidence_level) if confidence_level else None
