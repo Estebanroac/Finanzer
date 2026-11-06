@@ -215,8 +215,24 @@ def _self(values: Dict[str, float], reg: str, ind: str, firms: int, symbol: Opti
                 cols[c] = {**d, "after": None, "how": "sin_dato", "implausible": d["after"], "why": "causa"}
                 out.pop(c, None)
         gaps = [c for c, d in cols.items() if d["how"] == "sin_dato"]
+        if gaps and reg != "global":
+            # F14 · paso 6 (segunda revisión externa): antes que pocos pares, el grupo más amplio: la misma industria a
+            # escala global sin la empresa (NFLX y DIS comparaban su margen neto con la mediana de 4 pares)
+            glob = _row("global", ind)
+            if _why_not(glob) is None:
+                g = _self(glob["values"], "global", ind, glob["firms"], symbol, title, country, company, name,
+                          member=True)
+                gcols = (g["self_exclusion"].get("columns") or {}) if g["self_exclusion"]["method"] == "sin_empresa" \
+                    else {}
+                for c in list(gaps):
+                    gc = gcols.get(c) or {}
+                    if gc.get("how") == "sin_empresa" and gc.get("after") is not None:
+                        cols[c].update(how="global_sin_empresa", after=gc["after"], global_firms=glob["firms"],
+                                       global_weight=g["self_exclusion"].get("weight"))
+                        out[c] = gc["after"]
+                        gaps.remove(c)
         if gaps:
-            pm = SE.peer_median(ind, symbol, gaps, region=reg)
+            pm = SE.peer_median(ind, symbol, gaps, region=reg, k_min=P["min_firms"])
             for c in gaps:
                 cols[c].update(pm["columns"][c])
                 if pm["columns"][c]["after"] is not None:
@@ -225,7 +241,7 @@ def _self(values: Dict[str, float], reg: str, ind: str, firms: int, symbol: Opti
         return {"values": out, "self_exclusion": {
             **det, "method": "sin_empresa", "weight": weight, "columns": cols,
             "declaration": f"referencia de la industria sin {who}, que pesa {_pct(weight)}"}}
-    pm = SE.peer_median(ind, symbol, [c for c in values if c in SE.PARTS], region=reg)
+    pm = SE.peer_median(ind, symbol, [c for c in values if c in SE.PARTS], region=reg, k_min=P["min_firms"])
     # F11 · T1: los pares de su región; si no llegan, los de todas, dicho
     where = ("" if pm.get("scope") != "todas" or reg == "global" else
              f" de todas las regiones (en la suya hay {pm.get('n_region') or 0})")
@@ -300,6 +316,8 @@ def industry(sector: Optional[str], yahoo_industry: Optional[str], country: Opti
             # F10 · N2: sin la empresa la fila de su región no llega a `min_firms`: como cualquier fila con pocas
             # empresas, la misma industria a escala global (sin ella); si tampoco sirve, la mediana de los pares
             few = se["self_exclusion"].get("few_firms")
+            # F14 · paso 6: también si sin ella su región es casi solo ella (AAPL, 90 % de su industria en EE. UU.)
+            few = few or (se["self_exclusion"].get("method") == "mediana_pares" and se["self_exclusion"].get("reason"))
             if not (few and reg != "global" and _why_not(glob) is None):
                 return {**_meta(reg), **se, "published": row["values"], "basis": "industria", "damodaran": ind,
                         "firms": row["firms"], "classified": classified, "profile_differs": profile_differs}

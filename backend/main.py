@@ -216,6 +216,12 @@ def _select_benchmark(mapped_sector: str, archetype: Optional[str], sector: Opti
                 return (f"{base}; mediana de {c.get('n')} pares del universo (sin la empresa el agregado queda en "
                         f"{_ratio_txt(col, c['implausible'])}: una industria casi sin beneficio no sirve de referencia)")
             return f"{base}; mediana de {c.get('n')} pares del universo (sin las cifras de la empresa para esta columna)"
+        if how == "global_sin_empresa":         # F14 · paso 6: el grupo más amplio antes que pocos pares
+            c = se["columns"][col]
+            why_g = ("sin las cifras de la empresa para esta columna" if c.get("implausible") is None else
+                     f"sin la empresa el agregado de su región queda en {_ratio_txt(col, c['implausible'])}")
+            return (f"{base}; para esta columna, la misma industria a escala global sin la empresa "
+                    f"({c.get('global_firms')} empresas; {why_g})")
         if how == "no_entra":
             return f"{base} (la empresa no entra en este agregado: Damodaran lo calcula sin las empresas en pérdidas)"
         if se["method"] == "mediana_pares":

@@ -56,6 +56,14 @@ def _lookup(table: str, sector: Optional[str], industry: Optional[str],
     ind = B["yahoo_industries"].get(_norm(industry))
     if ind and ind in rows_of:
         row = rows_of[ind]
+        # F14 · paso 6 (segunda revisión externa): la regla de representatividad de las referencias de industria
+        # (sectors.benchmarks.industry.min_firms): con menos empresas en su región, la misma industria a escala global.
+        # Las petroleras integradas de EE. UU. son 4 (βU 0,28, la de una utility); las globales, 34 (βU 0,63).
+        k = cfg("sectors.benchmarks.industry.min_firms")
+        glob = cfg("betas_regional").get("global", {}).get(table, {}).get(ind)
+        if row[0] < k and region != "global" and glob and glob[0] >= k:
+            return {"value": float(glob[1]), "basis": "industria", "damodaran": ind, "firms": int(glob[0]),
+                    "row": list(glob), "scope": "global", "region_firms": int(row[0]), "region_asked": region}
         return {"value": float(row[1]), "basis": "industria", "damodaran": ind, "firms": int(row[0]), "row": list(row)}
     group = B["yahoo_sectors"].get(str(sector or ""))
     if not group:
@@ -81,8 +89,8 @@ def sector_beta(sector: Optional[str], industry: Optional[str], region: str = "u
         return None
     r.pop("row")
     B = cfg("betas")
-    src = {"source": B["source"], "url": B["url"], "region": "us"} if region == "us" else _regional_source(region,
-                                                                                                          "Beta")
+    reg = r.get("scope", region)
+    src = {"source": B["source"], "url": B["url"], "region": "us"} if reg == "us" else _regional_source(reg, "Beta")
     return {**r, **src}
 
 
@@ -94,12 +102,21 @@ def unlevered_beta(sector: Optional[str], industry: Optional[str], region: str =
         return None
     row = r.pop("row")
     B = cfg("betas")
-    src = ({"source": B["unlevered_source"], "url": B["url"], "region": "us"} if region == "us"
-           else _regional_source(region, "Unlevered beta corrected for cash"))
+    reg = r.get("scope", region)
+    src = ({"source": B["unlevered_source"], "url": B["url"], "region": "us"} if reg == "us"
+           else _regional_source(reg, "Unlevered beta corrected for cash"))
     return {**r, "industry_de": row[2] if row else None, "industry_tax": row[3] if row else None, **src}
 
 
-REGION_LABEL = {"us": "EE. UU.", "europe": "Europa", "emerging": "mercados emergentes"}
+REGION_LABEL = {"us": "EE. UU.", "europe": "Europa", "emerging": "mercados emergentes", "global": "global"}
+
+
+def _scope_note(bu: Dict[str, Any]) -> str:
+    """F14 · paso 6: la industria de su región tiene pocas empresas y se usa la global, dicho."""
+    if bu.get("scope") != "global":
+        return ""
+    return (f", tabla global ({bu['firms']} empresas): la de {REGION_LABEL.get(bu['region_asked'], bu['region_asked'])} "
+            f"tiene {bu['region_firms']}, menos de {cfg('sectors.benchmarks.industry.min_firms')}")
 
 
 def regionalize(choice: Dict[str, Any], region: Dict[str, Any], sector: Optional[str],
@@ -116,9 +133,9 @@ def regionalize(choice: Dict[str, Any], region: Dict[str, Any], sector: Optional
         out["region"] = {"region": "us", "reason": f"sin la industria en la tabla de {REGION_LABEL[reg]}: la de EE. UU."}
         return out
     out.update(value=lev["value"], sector=lev, bottom_up=bu, region={**region},
-               reason=choice["reason"].replace("(Damodaran, enero de 2026)",
-                                               f"(Damodaran, tabla de {REGION_LABEL[reg]}, enero de 2026: "
-                                               f"{region['reason']})"))
+               reason=re.sub(r"\(Damodaran, enero de 2026[^)]*\)",
+                             lambda _m: (f"(Damodaran, tabla de {REGION_LABEL[reg]}, enero de 2026: {region['reason']}"
+                                         f"{_scope_note(bu)})"), choice["reason"], count=1))
     return out
 
 
@@ -170,7 +187,7 @@ def choose(own: Dict[str, Any], source_beta: Optional[float], source_name: Optio
                    discarded=why if own.get("status") == "ok" else None,
                    reason=(f"beta propia descartada ({why}); de abajo hacia arriba: industria "
                            f"{bu['damodaran'] if bu['basis'] == 'industria' else 'sector ' + str(sector)} "
-                           f"(Damodaran, enero de 2026)"))
+                           f"(Damodaran, enero de 2026{_scope_note(bu)})"))
         return out
     # F13 · paso 8 (revisión de 110 empresas): una beta negativa de la fuente no entra en el CAPM (WBD: −0,60 de Finnhub,
     # sin historial propio tras su reestructuración; daba un CAPM por debajo de Rf). Queda sin dato y el Ke usa la beta

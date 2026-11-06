@@ -288,7 +288,7 @@ def _load_peers() -> Dict[str, Any]:
 
 
 def peer_median(industry: str, symbol: Optional[str], columns: List[str],
-                region: Optional[str] = None) -> Dict[str, Any]:
+                region: Optional[str] = None, k_min: Optional[int] = None) -> Dict[str, Any]:
     """{values, columns: {col: {after, n}}, n_peers, date, scope, n_region}: mediana de los pares del universo de la
     industria de Damodaran, sin la propia empresa ni sus otras clases (mismo CIK). F11 · T1 (revisión de NU): con
     `region` (la de la referencia), solo los pares de esa región; si son menos de `min_peers`, los de todas las regiones,
@@ -300,7 +300,9 @@ def peer_median(industry: str, symbol: Optional[str], columns: List[str],
     peers = [r for r in P["rows"] if r["damodaran_industry"] == industry and r["symbol"] != sym
              and not (me.get("cik") and (universe.get(r["symbol"]) or {}).get("cik") == me.get("cik"))]
     pe_max = cfg("market.peers.pe_meaningful_max")
-    k_min = cfg("market.peers.min_peers")
+    # F14 · paso 6: la referencia de industria pide `k_min` pares (la regla de representatividad, 10); la prueba por
+    # causa sigue con `market.peers.min_peers`
+    k_min = k_min or cfg("market.peers.min_peers")
     scope, n_region = "todas", None
     if region and region != "global":
         local = [r for r in peers if r.get("damodaran_region") == region]

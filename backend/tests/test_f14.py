@@ -90,3 +90,23 @@ def test_a_telecom_fcf_without_spectrum_purchases_is_not_reliable():
     r = vc.dcf_reliability(**kw, spectrum={"status": "sin_dato", "reason": "EDGAR no las separa"})
     assert r["level"] == "baja" and any("espectro" in x for x in r["reasons"])
     assert vc.dcf_reliability(**kw, spectrum={"status": "ok", "average": 6.57e9})["level"] == "alta"
+
+
+# ── paso 6: una regla de representatividad (menos de 10 empresas: el grupo más amplio) ──
+import beta as B  # noqa: E402
+import industry_bench  # noqa: E402
+
+
+def test_a_beta_from_four_firms_uses_the_global_industry():
+    bu = B.unlevered_beta("Energy", "Oil & Gas Integrated")
+    assert bu["scope"] == "global" and bu["firms"] >= 10 and bu["region_firms"] == 4
+    assert bu["value"] > 0.5 and "global" in bu["source"]
+    assert "menos de 10" in B._scope_note(bu)
+    assert B.unlevered_beta("Communication Services", "Telecom Services").get("scope") is None   # 39 empresas
+
+
+def test_a_peer_median_needs_as_many_peers_as_an_industry_needs_firms():
+    import self_exclusion as SE
+    pm = SE.peer_median("Entertainment", "NFLX", ["net_margin"], region="us", k_min=10)
+    assert pm["columns"]["net_margin"]["how"] == "sin_dato"
+
