@@ -389,7 +389,18 @@ def asof_fast_info(raw_ticker, symbol):
     except Exception:
         y_sh = None
     d_cut = _dei_shares(symbol, True)
-    if y_sh and not (d_cut and float(y_sh) < 0.1 * d_cut):
+    # un ADR con factor oficial (config/adr.toml): Yahoo da acciones equivalentes al ADR y EDGAR las ordinarias (TM,
+    # factor 10): no se comparan. Una portada con menos de un millón de acciones no es la de la empresa cotizada (SKYD:
+    # 1.000 acciones de la entidad recién creada): no sirve.
+    try:
+        import currency
+        adr = bool(currency.official_factor(symbol))
+    except Exception:
+        adr = False
+    if d_cut is not None and d_cut < 1e6:
+        log("acciones_edgar_descartadas", symbol=symbol, edgar=d_cut)
+        d_cut = None
+    if y_sh and (adr or not (d_cut and float(y_sh) < 0.1 * d_cut)):
         sh, how = float(y_sh), "Yahoo con el reloj en el corte"
         if d_cut and not 0.5 <= float(y_sh) / d_cut <= 2:
             log("acciones_discrepan", symbol=symbol, yahoo=y_sh, edgar=d_cut)

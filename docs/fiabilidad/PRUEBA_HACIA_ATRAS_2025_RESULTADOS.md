@@ -9,14 +9,14 @@ Pp = puntos porcentuales de rendimiento frente al SPDR del sector. **Decide el c
 
 | Criterio | Resultado del motor A | ¿Cumple? |
 |---|---|---|
-| (a) Precio a 12 m: barata − cara ≥ 5 pp y mejor que L1 y L2 | **+11,7 pp** (IC95 +1,6 a +21,4); L1 +11,7 pp; L2 +4,3 pp | **Sí, por 0,01 pp sobre L1: empate práctico** |
-| (b) Confianza: acierto alta > media > baja | alta 40 % (n = 5) · media 58 % · baja 55 % | No |
+| (a) Precio a 12 m: barata − cara ≥ 5 pp y mejor que L1 y L2 | **+11,8 pp** (IC95 +2,1 a +21,5); L1 +11,7 pp; L2 +4,3 pp | **Sí, por 0,13 pp sobre L1: empate práctico** |
+| (b) Confianza: acierto alta > media > baja | alta 40 % (n = 5) · media 58 % · baja 56 % | No |
 | (c) Alertas rojas: frecuencia ≥ 2 × sin alerta | 63,6 % frente a 56,7 % (× 1,12) | No |
 | (d) Estimaciones | crecimiento conservador (mediana −1,3 pp en maduras); caja muy dispersa | (informativo) |
 | (e) Lectura conductual | «caída sin explicar» siguió cayendo (−12,8 pp, 3 de 10 rebotaron) | (informativo) |
 
 **Regla de decisión (§8):** el motor A supera literalmente a L1 y a L2 en (a), así que la regla fijada no obliga a
-simplificar la valoración. Pero la ventaja sobre la regla simple de P/E relativo es de 0,01 pp con intervalos de
+simplificar la valoración. Pero la ventaja sobre la regla simple de P/E relativo es de 0,13 pp con intervalos de
 ±10 pp, y a 6 meses L1 gana con claridad (+8,8 pp frente a +1,1). Lectura honesta: **la etiqueta de precio del motor
 separa barata de cara, pero no mejor que un P/E relativo a su sector.**
 
@@ -32,9 +32,9 @@ meses: 292 del control y 105 de las 110. El sesgo de supervivencia queda en 5 em
 
 | Muestra | Método | Barata (n) | Cara (n) | D 12 m | IC95 12 m | D 6 m | Spearman 12 m |
 |---|---|---|---|---|---|---|---|
-| Control | **A (actual)** | +6,3 (49) | −5,4 (139) | **+11,7** | +1,6 / +21,4 | +1,1 | 0,22 |
-| Control | B (5-nov-2026, sin F13) | +3,9 (49) | −5,0 (144) | +8,9 | −0,7 / +19,3 | −1,3 | 0,21 |
-| Control | A14 (sin F15) | +5,0 (51) | −5,3 (141) | +10,3 | +0,5 / +19,9 | +0,6 | 0,21 |
+| Control | **A (actual)** | +6,3 (49) | −5,5 (138) | **+11,8** | +2,1 / +21,5 | +1,1 | 0,23 |
+| Control | B (5-nov-2026, sin F13) | +3,9 (49) | −5,2 (143) | +9,0 | −0,5 / +19,4 | −1,3 | 0,22 |
+| Control | A14 (sin F15) | +5,0 (51) | −5,4 (140) | +10,4 | +0,9 / +19,6 | +0,6 | 0,22 |
 | Control | L1 · P/E relativo | +1,4 (102) | −10,3 (93) | +11,7 | +4,0 / +19,3 | **+8,8** | 0,17 |
 | Control | L2 · FCF yield | +2,9 (92) | −1,4 (84) | +4,3 | −4,9 / +13,2 | −5,7 | 0,07 |
 | 110 | A | +10,7 (19) | +1,0 (49) | +9,8 | −3,2 / +22,6 | +8,5 | 0,16 |
@@ -42,8 +42,8 @@ meses: 292 del control y 105 de las 110. El sesgo de supervivencia queda en 5 em
 | 110 | L1 | +9,4 (31) | −1,4 (33) | +10,8 | −0,5 / +22,6 | +10,1 | 0,13 |
 | 110 | L2 | +6,1 (32) | +23,1 (46) | −17,0 | −59,9 / +9,7 | −3,7 | −0,02 |
 
-**¿F13 y F14 mejoraron la predicción o solo cambiaron etiquetas?** En el control, D pasa de +8,9 (B) a +10,3 (A14) y a
-+11,7 (A, con F15). La mejora va en la buena dirección y por pasos, pero queda muy dentro del ruido (intervalos
+**¿F13 y F14 mejoraron la predicción o solo cambiaron etiquetas?** En el control, D pasa de +9,0 (B) a +10,4 (A14) y a
++11,8 (A, con F15). La mejora va en la buena dirección y por pasos, pero queda muy dentro del ruido (intervalos
 solapados de ±10 pp). Las etiquetas apenas se movieron: en neto, 5 «caras» menos y 5 «razonables» más. Respuesta: **cambiaron poco
 las etiquetas y la mejora de la predicción no se distingue del azar con 300 empresas.**
 
@@ -53,8 +53,8 @@ El motor es muy asimétrico: llama «cara» al 48 % del control y «barata» al 
 
 | Muestra | Versión | Alta | Media | Baja |
 |---|---|---|---|---|
-| Control | A | 40 % (5) | 58 % (98) | 55 % (85) |
-| Control | B | 40 % (5) | 54 % (102) | 57 % (86) |
+| Control | A | 40 % (5) | 58 % (98) | 56 % (84) |
+| Control | B | 40 % (5) | 54 % (102) | 58 % (85) |
 | 110 | A | 50 % (2) | 71 % (24) | 38 % (42) |
 
 No cumple. La confianza alta casi no existe (5 empresas) y media frente a baja no separa en el control. En las 110 sí
@@ -129,6 +129,14 @@ cíclicas. La caja de dos trimestres es muy ruidosa fuera de las maduras.
    (simplificar hacia L1).
 2. (b) y (c) no se cumplen. Con estos datos, la confianza no ordena el acierto y las alertas no doblan la frecuencia de
    caídas. El pre-registro no fija qué hacer en ese caso.
+
+## Corrección del 6-nov-2026 (después de la decisión)
+
+Al implementar F16 apareció un fallo de la capa de corte en dos empresas del control. TM (ADR 1:10) tomaba las
+acciones ordinarias de EDGAR en lugar de las equivalentes del ADR, y su capitalización salía ×10. SKYD tomaba 1.000
+acciones de la portada de la entidad recién creada. Las dos se recapturaron y se rehicieron las corridas A, B y A14.
+Las cifras de arriba ya están corregidas: A pasa de +11,7 a +11,8 pp y supera a L1 por 0,13 pp en lugar de 0,01. El
+empate práctico y la decisión no cambian; (b) y (c) siguen sin cumplirse.
 
 ## Decisión del usuario (6-nov-2026)
 
