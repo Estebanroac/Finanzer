@@ -48,6 +48,13 @@ TABLE = [
     # ── base del veredicto (F13 · paso 3: valuation_confidence.fragility_dimension) ──
     (r"^caja libre negativa \(",
      "La empresa invierte más caja de la que genera: su valor depende de que esa inversión rinda."),
+    (r"^resultado operativo normalizado ≤ 0",
+     "Pierde dinero en su negocio incluso sin contar los cargos extraordinarios."),
+    (r"^Altman Z \S+ en zona de peligro y rating sintético",
+     "La solvencia falla por dos vías: la fórmula de Altman la sitúa en riesgo de quiebra y sus beneficios apenas "
+     "cubren los intereses."),
+    (r"^el DCF da un \S+ frente al precio \(más de",
+     "El valor del flujo de caja descontado queda tan lejos del precio que el veredicto no puede apoyarse en él."),
     (r"^Altman Z \S+ en zona de peligro",
      "La fórmula de Altman sitúa a la empresa en la zona de riesgo de quiebra."),
     (r"^el beneficio normalizado y el esperado no cuadran",

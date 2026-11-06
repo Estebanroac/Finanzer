@@ -447,23 +447,43 @@ def stability_dimension(archetype: Optional[str], classification: Dict[str, Any]
 
 
 def fragility_dimension(archetype: Optional[str], key_metrics: Dict[str, Any],
-                        altman: Optional[Dict[str, Any]], altman_referential: bool = False) -> Dict[str, Any]:
+                        altman: Optional[Dict[str, Any]], altman_referential: bool = False,
+                        ebit_normalized: Optional[float] = None, rating: Optional[str] = None,
+                        dcf_upside: Optional[float] = None) -> Dict[str, Any]:
     """F13 · paso 3 (revisión de 110 empresas, patrón 1b): señales de que la base del veredicto de precio es frágil,
     aunque los métodos coincidan. Cualquiera pone techo «media» (no pondera): ORCL salía «atractiva, confianza alta»
     quemando 28,7 B$ de caja con un Altman de 0,83; XEL «muy exigente, alta» con un P/E normalizado de 28,5x frente a
-    un forward de 17,8x. Los estados desfasados ya bajan la cobertura (coverage_dimension)."""
+    un forward de 17,8x. Los estados desfasados ya bajan la cobertura (coverage_dimension).
+    F14 · paso 3 (segunda revisión externa): tres señales graves ponen techo «baja»:
+      · el resultado operativo normalizado es ≤ 0 (sin los cargos no recurrentes: un deterioro sin salida de caja no
+        cuenta; KHC tiene un EBIT de −3,2 B$ por deterioros y uno normalizado de +0,6 B$);
+      · Altman en peligro Y rating sintético especulativo: la solvencia falla por dos vías independientes, la contable y
+        la de la cobertura de intereses (el rating ya usa el beneficio normalizado o la caja);
+      · un DCF que participa en el veredicto a más de `extreme_dcf_upside` del precio en cualquier sentido (CMCSA +239 %
+        con confianza alta): el veredicto descansa en un valor fuera de escala."""
     C = cfg("thresholds.confidence")
-    km, reasons = key_metrics or {}, []
+    km, reasons, grave = key_metrics or {}, [], []
+    if archetype != "FINANCIAL" and ebit_normalized is not None and ebit_normalized <= 0:
+        grave.append(f"resultado operativo normalizado ≤ 0 ({numfmt.money(ebit_normalized)}): pierde dinero en su "
+                     "negocio sin contar los cargos no recurrentes")
+    _distress = ((altman or {}).get("applicable") and (altman or {}).get("zone") == "distress"
+                 and not altman_referential)
+    if _distress and rating in C["grave_ratings"]:
+        grave.append(f"Altman Z {altman.get('z_score')} en zona de peligro y rating sintético {rating} (grado "
+                     "especulativo): la solvencia falla por las dos vías")
+    if dcf_upside is not None and abs(dcf_upside) > C["extreme_dcf_upside"]:
+        grave.append(f"el DCF da un {dcf_upside:+.0%} frente al precio (más de ±{C['extreme_dcf_upside']:.0%}): un "
+                     "valor fuera de escala")
     ocf, fcf = km.get("operating_cash_flow"), km.get("free_cash_flow")
     if archetype != "FINANCIAL" and fcf is not None and fcf < 0 and ocf is not None and ocf > 0:
         reasons.append(f"caja libre negativa ({numfmt.money(fcf)}): invierte más de lo que genera")
     # (un Altman solo referencial, el de una empresa con financiera cautiva, no es señal: business_model)
-    if (altman or {}).get("applicable") and (altman or {}).get("zone") == "distress" and not altman_referential:
+    if _distress and not any(g.startswith("Altman") for g in grave):
         reasons.append(f"Altman Z {altman.get('z_score')} en zona de peligro")
     pen, fpe = km.get("pe_normalized"), km.get("forward_pe")
     if pen and fpe and pen > 0 and fpe > 0 and abs(pen / fpe - 1) > C["fragile_pe_gap"]:
         reasons.append(f"el beneficio normalizado y el esperado no cuadran (P/E {pen:.1f}x frente a forward {fpe:.1f}x)")
-    return {"level": "media" if reasons else "alta", "reasons": reasons}
+    return {"level": "baja" if grave else ("media" if reasons else "alta"), "reasons": grave + reasons}
 
 
 def official_dimension(official: Optional[Dict[str, Any]]) -> Dict[str, Any]:
@@ -518,9 +538,9 @@ def verdict_confidence(dimensions: Dict[str, Dict[str, Any]],
         caps.append((LEVELS[worst], f"la más baja manda: {', '.join(low)} {LEVELS[worst]}"))
     if (dimensions.get("fuente_oficial") or {}).get("level") == "baja":
         caps.append((C["no_official_source_cap"], "sin fuente oficial para verificar los datos"))
-    if (dimensions.get("base") or {}).get("level") == "media":
-        # F13 · paso 3: base frágil (no pondera; techo)
-        caps.append(("media", "base frágil: " + "; ".join(dimensions["base"]["reasons"])))
+    if (dimensions.get("base") or {}).get("level") in ("media", "baja"):
+        # F13 · paso 3: base frágil (no pondera; techo). F14 · paso 3: con una señal grave, techo «baja»
+        caps.append((dimensions["base"]["level"], "base frágil: " + "; ".join(dimensions["base"]["reasons"])))
     for cap, why in caps:
         if LEVELS.index(level) < LEVELS.index(cap):
             capped, level = capped or level, cap

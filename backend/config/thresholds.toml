@@ -497,6 +497,11 @@ coverage_bounds = [0.9, 0.7]        # componentes evaluados / aplicables: >= 0.9
 source_issue_bounds = [0, 2]        # incidencias de fuente: 0 alta; <= 2 media; más, baja
 excluded_multiple_components = ["DCF", "Regla de 40"]   # no son múltiplos frente al sector (prefijos: F13 · paso 3)
 fragile_pe_gap = 0.40               # F13 · paso 3: |P/E normalizado ÷ forward − 1| mayor -> base frágil (techo media)
+# F14 · paso 3 (segunda revisión externa): señales graves de la base del veredicto, techo «baja». Altman en peligro con
+# uno de estos ratings sintéticos (grado especulativo, como sectors.toml [sector_risks]) y un DCF a más de este múltiplo
+# del precio en cualquier sentido (CMCSA +239 %, GM +164 %).
+grave_ratings = ["BB+", "BB", "BB-", "B+", "B", "B-", "CCC", "CC", "C", "D"]
+extreme_dcf_upside = 1.5
 
 [confidence.weights]
 convergence = 0.4

@@ -458,6 +458,16 @@ def not_a_stock_message(symbol: str, quote_type: str) -> str:
             "(sus estados, ratios y valoración no tienen sentido como los de una empresa).")
 
 
+def _dcf_upside_scoring(dcf: Optional[Dict[str, Any]]) -> Optional[float]:
+    """F14 · paso 3: el upside del DCF (fracción) solo si el DCF participa en el veredicto (fiabilidad no baja)."""
+    d = dcf or {}
+    if not d.get("available", d.get("fair_value") is not None) or d.get("upside") is None:
+        return None
+    if ((d.get("reliability") or {}).get("level")) == "baja":
+        return None
+    return d["upside"] / 100
+
+
 def _base_rate_for_confidence(rev: Optional[dict]) -> Optional[dict]:
     """F10 · N4: la tasa base del DCF inverso principal (la que cita el informe), si la regla es la de las tasas base y
     la lectura es válida; None si no la hay."""
@@ -2813,9 +2823,15 @@ def _compute_analysis_body(symbol: str) -> dict:
                     "fuente_oficial": official_dimension(yinfo.get("_official_source") if _has_yahoo else None),
                     # F13 · paso 3: base frágil (caja negativa por inversión, Altman en peligro, normalizado frente a
                     # forward): techo «media», no pondera
+                    # F14 · paso 3: con señales graves (EBIT normalizado ≤ 0, Altman en peligro con rating
+                    # especulativo, DCF que puntúa a más de ±150 %), techo «baja»
                     "base": fragility_dimension(_cls.get("archetype"), result.get("key_metrics") or {},
                                                 result.get("altman_z"),
-                                                bool((result.get("business_model") or {}).get("altman_referential"))),
+                                                bool((result.get("business_model") or {}).get("altman_referential")),
+                                                ebit_normalized=((result.get("earnings_normalization") or {})
+                                                                 .get("operating") or {}).get("normalized"),
+                                                rating=((result.get("wacc") or {}).get("rating") or {}).get("rating"),
+                                                dcf_upside=_dcf_upside_scoring(result.get("dcf"))),
                 }, base_rate=_base_rate_for_confidence(result.get("reverse_dcf")))
             except Exception as e:
                 _sin_dato("confianza", e)
