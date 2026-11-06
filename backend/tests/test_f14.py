@@ -68,3 +68,15 @@ def test_only_a_dcf_that_scores_counts_as_extreme():
     assert main._dcf_upside_scoring({"fair_value": 84.6, "upside": 239.2, "reliability": {"level": "media"}}) \
         == pytest.approx(2.392)
     assert main._dcf_upside_scoring({"fair_value": 84.6, "upside": 239.2, "reliability": {"level": "baja"}}) is None
+
+
+# ── paso 4: la contracción que cambia la banda se dice ──
+import verdict as V  # noqa: E402
+
+
+def test_a_band_changed_by_the_contraction_shows_both_levels():
+    p = {"level": "razonable", "level_raw": "atractivo", "contracted": True}
+    v = V.verdict({"level": "media"}, p, {"level": "baja"})
+    assert v["text"] == "Calidad media · precio entre razonable y atractivo" and v["price_level_raw"] == "atractivo"
+    same = V.verdict({"level": "media"}, {"level": "razonable", "level_raw": "razonable", "contracted": True}, None)
+    assert same["text"] == "Calidad media · precio razonable" and same["price_level_raw"] is None
