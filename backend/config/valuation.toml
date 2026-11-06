@@ -125,6 +125,17 @@ damodaran_industries = ["Telecom. Services", "Telecom (Wireless)"]
 years = 10
 min_years = 5
 
+# F13 · paso 9 (revisión de 110 empresas, patrón 2): el flujo del DCF lo decide cuánto invierte, no el signo del FCF.
+# En expansión (capex ≥ `min_capex_to_da` veces la D&A en `years` ejercicios y ≥ `min_capex_to_ocf` del flujo
+# operativo en esos ejercicios o en el TTM: META, MSFT, GOOGL, AMZN, ORCL, LLY, TXN, TSLA, WMT, APD en el banco de 110),
+# el DCF directo y el inverso descuentan el flujo de mantenimiento (flujo operativo − la D&A, sin pasar del capex real,
+# − SBC) y enseñan al lado la lectura con el FCF − SBC de hoy. Antes el directo usaba siempre el FCF − SBC y el inverso
+# solo cambiaba si salía ≤ 0 (GOOGL, AMZN, ORCL sí; META 78 % y MSFT 69 % no).
+[investment_intensity]
+years = 3
+min_capex_to_da = 1.5
+min_capex_to_ocf = 0.6
+
 [graham]
 multiplier = 22.5                   # sqrt(22.5 × EPS × BVPS)
 

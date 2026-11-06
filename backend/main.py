@@ -2179,6 +2179,9 @@ def _compute_analysis_body(symbol: str) -> dict:
                 _fcf_flags = [f"{f.get('field')}: {f.get('rule')}" for f in (yinfo.get("_validation") or [])
                               if f.get("field") in _fcf_fields] if _has_yahoo else []
                 _fcf_gross = fcf
+                # F13 · paso 9: la intensidad inversora (capex ÷ D&A de 3 ejercicios), medida en todas
+                _intens = archetype_metrics.investment_intensity(_stmts)
+                result["investment_intensity"] = _intens
                 if archetype == CYCLICAL:
                     # Etapa 8: FCF de MANTENIMIENTO (OCF − D&A como capex de mantenimiento,
                     # promedio de los ejercicios): el normalizado (margen FCF medio ×
@@ -2192,6 +2195,25 @@ def _compute_analysis_body(symbol: str) -> dict:
                 fcf = _fcf_net if _fcf_net is not None else _fcf_gross
                 _fcf_basis = ("FCF − SBC" if _fcf_net is not None
                               else "FCF sin restar la SBC (sin SBC del mismo periodo)")
+                # F13 · paso 9: en expansión, la lectura con el flujo de mantenimiento del periodo (flujo operativo − D&A
+                # sin pasar del capex real − SBC) junto a la del FCF − SBC de hoy, que sigue siendo la que puntúa. Cuál
+                # de las dos (o el flujo con la reinversión que exige el crecimiento, g ÷ ROIC) es decisión del usuario:
+                # docs/fiabilidad/GOLDEN_DIFF_F13_P9.md.
+                _fcf_now, _basis_now, _expansion = fcf, _fcf_basis, None
+                _ocf_t, _da_t = safe_float(financials.operating_cash_flow), safe_float(financials.depreciation)
+                _fcf_t = safe_float(financials.free_cash_flow)
+                _capex_t = (_ocf_t - _fcf_t) if (_ocf_t is not None and _fcf_t is not None) else None
+                if (archetype not in (CYCLICAL, REIT, FINANCIAL, "UTILITY") and _ocf_t and _ocf_t > 0
+                        and _da_t is not None and _capex_t is not None and _capex_t > 0
+                        and archetype_metrics.expansion(_intens, _capex_t / _ocf_t)):
+                    _sbc_t9 = safe_float(sbc_info.get("sbc")) if _fcf_net is not None else None
+                    _maint = _ocf_t - min(abs(_da_t), _capex_t) - (_sbc_t9 or 0.0)
+                    _expansion = {"ratio": _intens["ratio"], "to_ocf": _intens.get("to_ocf"),
+                                  "to_ocf_ttm": _capex_t / _ocf_t, "years": _intens["years"],
+                                  "maintenance_flow": _maint, "current_flow": _fcf_now, "current_basis": _basis_now}
+                    _expansion["maintenance_basis"] = ("flujo de mantenimiento (flujo operativo − D&A"
+                                                       + (" − SBC" if _sbc_t9 is not None else "") + ")")
+                result["investment_intensity"]["expansion"] = _expansion
                 if _spec_avg is not None and fcf is not None:
                     # F8 · E4: telecom, menos la media de 5 años de las compras de espectro (EDGAR).
                     fcf, _fcf_gross = fcf - _spec_avg, (_fcf_gross - _spec_avg if _fcf_gross is not None else None)
@@ -2276,6 +2298,22 @@ def _compute_analysis_body(symbol: str) -> dict:
                         "reason": dcf_result.get("invalid_reason"),
                         "warnings": dcf_result.get("warnings") or [],
                     }
+                    if _expansion and _expansion["maintenance_flow"] > 0:
+                        # F13 · paso 9: la misma valoración con el flujo de mantenimiento (si la inversión de expansión
+                        # parara); no descuenta lo que cuesta el crecimiento que proyecta, así que es la cota alta
+                        try:
+                            _alt = dcf_multi_stage_dynamic(fcf=_expansion["maintenance_flow"],
+                                                           shares_outstanding=financials.shares_outstanding,
+                                                           wacc=wacc_est, total_debt=td_val, cash=cash_val,
+                                                           revenue_growth_3y=growth)
+                            _afv = safe_float(_alt.get("fair_value_per_share"))
+                            _expansion["maintenance_fair_value"] = _afv if (_afv is not None and _afv > 0) else None
+                            _expansion["maintenance_upside"] = (((_afv - price) / price * 100.0)
+                                                                if (_afv and _afv > 0 and price) else None)
+                        except Exception as e:
+                            logger.error(f"DCF maintenance-flow error: {e}")
+                    if _expansion:
+                        result["dcf"]["expansion"] = _expansion
                     if archetype == CYCLICAL:
                         result["dcf"]["normalized"] = {
                             "fcf": safe_float(archetype_values.get("fcf_normalized")),
@@ -2386,7 +2424,11 @@ def _compute_analysis_body(symbol: str) -> dict:
                         _da = safe_float(financials.depreciation)
                         _sbc_t = safe_float(sbc_info.get("sbc"))
                         if _ocf is not None and _da is not None:
-                            _own_fl = _ocf - abs(_da) - (_sbc_t or 0.0)
+                            # F13 · paso 9: el capex de mantenimiento no pasa del capex real (como maintenance_fcf)
+                            _cx = ((_ocf - safe_float(financials.free_cash_flow))
+                                   if safe_float(financials.free_cash_flow) is not None else None)
+                            _own_fl = _ocf - (min(abs(_da), _cx) if (_cx is not None and _cx > 0) else abs(_da)) \
+                                - (_sbc_t or 0.0)
                             _alt = rr.reading(flow=_own_fl, rate=wacc_est, net_debt=_nd_r, own=_own_r,
                                               flow_label=("flujo de mantenimiento (flujo operativo − D&A − SBC)"
                                                           if _sbc_t is not None else
