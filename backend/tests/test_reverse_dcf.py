@@ -195,7 +195,7 @@ def test_reconstructed_value_and_assumptions():
     r = implied_growth(75.0, 3.0, 0.085, net_debt_per_share=4.0)
     assert r["reconstructed_value"] == pytest.approx(75.0, rel=1e-8)
     assert r["assumptions"] == {"price": 75.0, "fcf_per_share_base": 3.0, "net_debt_per_share": 4.0, "wacc": 0.085,
-                                "terminal_growth": TG, "years": YEARS, "fade_start": FADE, "bounds": [LO, HI]}
+                                "terminal_growth": TG, "years": YEARS, "fade_start": FADE, "bounds": [LO, HI], "roic": None}
     assert 0 < r["iterations"] <= cfg("valuation.reverse_dcf.max_iterations")
 
 

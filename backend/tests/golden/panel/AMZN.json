@@ -2,6 +2,11 @@
   "alerts": {
     "red_flags": [
       {
+        "category": "Valor intrínseco",
+        "detail": "El valor estimado por el DCF ($66) está un 74% por debajo del precio ($254.08): ningún supuesto razonable del rango de sensibilidad lo justifica.",
+        "reason": "Sobrevalorada según DCF −74%"
+      },
+      {
         "category": "Flujo de caja",
         "detail": "El negocio consume más efectivo del que genera tras invertir: depende de caja acumulada, deuda o ampliaciones para sostenerse. Sostenible solo de forma transitoria.",
         "reason": "Flujo de caja libre negativo"
@@ -375,7 +380,7 @@
   "confidence": {
     "base_rate_step": {
       "from": "media",
-      "share": 0.00260840701861,
+      "share": 3.4166479391e-05,
       "to": "baja"
     },
     "capped_from": "alta",
@@ -392,12 +397,13 @@
         "level": "alta",
         "methods": [
           {
-            "band": "muy_exigente",
             "direction": "cara",
             "evaluable": true,
             "kind": "intrínseco",
-            "method": "DCF inverso",
-            "signal": -1.0
+            "method": "DCF",
+            "reliability": "media",
+            "signal": -1.0,
+            "upside": -0.74071158877
           },
           {
             "components": 1,
@@ -454,7 +460,7 @@
       "cobertura media: estados desfasados: corte del 31 de marzo de 2026 (197 días) y EDGAR ya tiene el 10-Q del periodo cerrado el 30 de junio de 2026",
       "base del veredicto media: caja libre negativa (−$2.47B): invierte más de lo que genera; el beneficio normalizado y el esperado no cuadran (P/E 39.9x frente a forward 22.7x)",
       "techo en media: la más baja manda: cobertura media",
-      "un escalón menos por las tasas base: el precio exige un 20.0% anual 10 años, que sostuvo el 0.26% de las comparables (< 5%)"
+      "un escalón menos por las tasas base: el precio exige un 28.5% anual 10 años, que sostuvo el 0.00% de las comparables (< 5%)"
     ],
     "score": 0.9
   },
@@ -1473,10 +1479,91 @@
       "rule": "multiplo_no_significativo"
     }
   ],
+  "dcf": {
+    "available": true,
+    "expansion": {
+      "applied": true,
+      "current_basis": "FCF − SBC",
+      "current_flow": -22282000000.0,
+      "maintenance_basis": "flujo de mantenimiento (flujo operativo − D&A − SBC)",
+      "maintenance_flow": 58282000000.0,
+      "ratio": 1.60002750966,
+      "roic": 0.1567565951,
+      "to_ocf": 0.786123753809,
+      "to_ocf_ttm": 1.01664299035,
+      "years": 3
+    },
+    "fair_value": 65.88,
+    "fcf_basis": "flujo de mantenimiento (flujo operativo − D&A − SBC) con la reinversión que exige el crecimiento (g ÷ ROIC 15.7%)",
+    "fcf_gross": -2472000000.0,
+    "fcf_input": 58282000000.0,
+    "growth_basis": "CAGR de ingresos a 3 años",
+    "growth_rate": 0.117312836018,
+    "growth_source": "revenue_growth_3y",
+    "margin_of_safety": -2.85670919598,
+    "reason": null,
+    "reliability": {
+      "central_contains_price": false,
+      "criteria": {
+        "central_dispersion": 1.46331767257,
+        "data_flags": [],
+        "fcf_margin": {
+          "cv": 3.55248510383,
+          "margins": [
+            -0.0313437855188,
+            -0.0328668457906,
+            0.0560505232391,
+            0.0515362272497,
+            0.0107333552789
+          ],
+          "mean": 0.0108218948917,
+          "years": [
+            2021,
+            2022,
+            2023,
+            2024,
+            2025
+          ]
+        },
+        "margin_trend": {
+          "changes": 4,
+          "current": 0.11500371579,
+          "downs": 1,
+          "drop": -0.793726548916,
+          "key": "operating_margin",
+          "median": 0.064114407996,
+          "years": [
+            2021,
+            2022,
+            2023,
+            2024,
+            2025
+          ]
+        },
+        "notes": [],
+        "terminal_pct": 65.9
+      },
+      "grid_contains_price": false,
+      "level": "media",
+      "reasons": [
+        "margen FCF inestable: de -3.3% a 5.6% en 5 ejercicios (variación 3.55 > 0.33)"
+      ]
+    },
+    "terminal_growth": 0.025,
+    "upside": -74.071158877,
+    "value_composition": {
+      "stage1_pct": 10.7,
+      "stage2_pct": 23.4,
+      "terminal_pct": 65.9
+    },
+    "wacc": 0.108566431197,
+    "wacc_flips": [],
+    "warnings": []
+  },
   "dcf_growth_blend": null,
   "dcf_status": {
-    "reason": "FCF − SBC base −$22.28B (≤ 0): no hay flujo positivo que descontar, así que el DCF no es significativo",
-    "state": "no_significativo"
+    "reason": null,
+    "state": "ok"
   },
   "display": {
     "annex": {
@@ -2264,10 +2351,70 @@
           "sign": "-3",
           "tone": "neg"
         },
-        "dcf_composition": null,
+        "dcf_composition": {
+          "explicit_pct": 34.1,
+          "terminal_pct": 65.9
+        },
         "fair_value": {
-          "state": "no_significativo",
-          "text": "FCF − SBC base −$22.28B (≤ 0): no hay flujo positivo que descontar, así que el DCF no es significativo."
+          "axis": [
+            40.6555,
+            279.488002014
+          ],
+          "badge": {
+            "label": "Sobrevalorada",
+            "tone": "neg"
+          },
+          "central_high": 80.98,
+          "central_high_txt": "$81",
+          "central_low": 55.34,
+          "central_low_txt": "$55",
+          "central_text": "rango $55–$81 en el bloque central de la tabla de sensibilidad (crecimiento ± 2,5 pp y WACC ± 1 pp; mínimo y máximo, no un p10–p90)",
+          "fair_value": 65.88,
+          "fair_value_txt": "$66",
+          "grid_high": 105.31,
+          "grid_high_txt": "$110",
+          "grid_low": 47.83,
+          "grid_low_txt": "$48",
+          "method": "DCF",
+          "price": 254.080001831,
+          "price_txt": "$254.08",
+          "reliability": "media",
+          "reliability_tone": "warn",
+          "state": "con_dato",
+          "text": "el valor intrínseco estimado ($66) está un 74% por debajo del precio ($254.08): ningún supuesto razonable lo justifica (el precio queda fuera del rango de sensibilidad del DCF)",
+          "upside_txt": "-74.1%",
+          "zones": [
+            {
+              "from": 40.6555,
+              "label": "Muy infravalorada",
+              "to": 50.6769230769,
+              "tone": "pos"
+            },
+            {
+              "from": 50.6769230769,
+              "label": "Infravalorada",
+              "to": 59.8909090909,
+              "tone": "pos"
+            },
+            {
+              "from": 59.8909090909,
+              "label": "Precio justo",
+              "to": 73.2,
+              "tone": "neu"
+            },
+            {
+              "from": 73.2,
+              "label": "Prima",
+              "to": 94.1142857143,
+              "tone": "warn"
+            },
+            {
+              "from": 94.1142857143,
+              "label": "Sobrevalorada",
+              "to": 279.488002014,
+              "tone": "neg"
+            }
+          ]
         },
         "multiples": [
           {
@@ -2392,7 +2539,7 @@
           "key": "convergence",
           "label": "Convergencia entre métodos",
           "level": "Alta",
-          "text": "DCF inverso -1.00 (cara) · múltiplos frente al sector -0.62 (cara). Los métodos de valoración coinciden."
+          "text": "DCF directo -74% (cara) · múltiplos frente al sector -0.62 (cara). Los métodos de valoración coinciden."
         },
         {
           "key": "coverage",
@@ -2447,7 +2594,7 @@
           "text": null
         }
       ],
-      "summary": "Confianza del veredicto: baja (por sus dimensiones sería alta; la limitan: la más baja manda —cobertura media—, hasta media; las tasas base —solo el 0.26% de las comparables sostuvo el crecimiento que exige el precio; no contrae el precio—). Contrae el atractivo del precio hacia 50: de 15 a 24. La calidad del negocio no se contrae.",
+      "summary": "Confianza del veredicto: baja (por sus dimensiones sería alta; la limitan: la más baja manda —cobertura media—, hasta media; las tasas base —solo el 0.00% de las comparables sostuvo el crecimiento que exige el precio; no contrae el precio—). Contrae el atractivo del precio hacia 50: de 25 a 31. La calidad del negocio no se contrae.",
       "tone": "neg",
       "verdict_text": "(confianza baja: casi ninguna comparable sostuvo el crecimiento que exige el precio)"
     },
@@ -2522,9 +2669,9 @@
               "key": "Valoración",
               "max": 20,
               "name": "Valoración",
-              "pct": 15.0,
-              "score": 3,
-              "score_txt": "3 / 20",
+              "pct": 25.0,
+              "score": 5,
+              "score_txt": "5 / 20",
               "text": null,
               "tone": "neg"
             }
@@ -2555,7 +2702,7 @@
         {
           "kicker": "A VIGILAR",
           "kind": "watch",
-          "text": "Flujo de caja libre negativo",
+          "text": "Sobrevalorada según DCF −74%",
           "tone": "neg"
         },
         {
@@ -2618,14 +2765,14 @@
       "official_source_badge": null,
       "price": {
         "contracted": true,
-        "level": "muy exigente",
-        "note": "ajustado de 15 a 24 hacia 50.",
-        "note_short": "Ajustado de 15 a 24 hacia 50",
+        "level": "exigente",
+        "note": "ajustado de 25 a 31 hacia 50; en la frontera con «muy exigente» (a 2 puntos): un cambio pequeño en los datos o en los supuestos cambiaría el nivel.",
+        "note_short": "Ajustado de 25 a 31 hacia 50 · en la frontera con «muy exigente» (a 2 puntos)",
         "question": "¿está cara hoy?",
-        "raw": 15,
-        "score": 24,
+        "raw": 25,
+        "score": 31,
         "title": "ATRACTIVO DEL PRECIO",
-        "tone": "neg"
+        "tone": "warn"
       },
       "quality": {
         "level": "sólida",
@@ -2639,8 +2786,8 @@
       "verdict": {
         "confidence_text": "(confianza baja: casi ninguna comparable sostuvo el crecimiento que exige el precio)",
         "confidence_tone": "neg",
-        "full": "Calidad sólida · precio muy exigente (confianza baja: casi ninguna comparable sostuvo el crecimiento que exige el precio)",
-        "text": "Calidad sólida · precio muy exigente"
+        "full": "Calidad sólida · precio exigente (confianza baja: casi ninguna comparable sostuvo el crecimiento que exige el precio)",
+        "text": "Calidad sólida · precio exigente"
       }
     },
     "extended": {
@@ -3023,7 +3170,11 @@
         "text": "la liquidez es justa (current ratio 1.18x): cubre sus obligaciones de corto plazo.",
         "tone": "neu"
       },
-      "dcf_upside": null,
+      "dcf_upside": {
+        "label": "Sobrevalorada",
+        "text": "el valor intrínseco estimado ($66) está un 74% por debajo del precio ($254.08): ningún supuesto razonable lo justifica (el precio queda fuera del rango de sensibilidad del DCF)",
+        "tone": "neg"
+      },
       "de": {
         "label": "No significativo",
         "text": "con caja neta, el D/E (0.30x) no mide apalancamiento.",
@@ -3081,7 +3232,7 @@
     "sections": {
       "alerts": {
         "counts": {
-          "red_flags": 1,
+          "red_flags": 2,
           "strengths": 4,
           "unmeasured": null,
           "warnings": 4
@@ -3089,6 +3240,11 @@
         "groups": [
           {
             "items": [
+              {
+                "category": "Valor intrínseco",
+                "detail": "El valor estimado por el DCF ($66) está un 74% por debajo del precio ($254.08): ningún supuesto razonable del rango de sensibilidad lo justifica.",
+                "reason": "Sobrevalorada según DCF −74%"
+              },
               {
                 "category": "Flujo de caja",
                 "detail": "El negocio consume más efectivo del que genera tras invertir: depende de caja acumulada, deuda o ampliaciones para sostenerse. Sostenible solo de forma transitoria.",
@@ -3432,20 +3588,20 @@
                 },
                 {
                   "in_block": false,
-                  "metric": "DCF inverso (flujo de mantenimiento)",
-                  "reason": "El precio actual exige que el flujo de mantenimiento (flujo operativo − D&A − SBC) por acción crezca un 20.0% anual durante 10 años (28.1% los 5 primeros y convergencia al 2.5%); en los últimos 10 años (FY2015–FY2025), sus ingresos por acción crecieron un 19.4% anual. Lo sostuvo 10 años el 0% de las empresas comparables (ventas de más de 100 mil millones, todas las industrias).",
-                  "sign": "-4",
+                  "metric": "DCF directo (valor frente al precio)",
+                  "reason": "Claramente cara por DCF (fiabilidad media): margen FCF inestable: de -3.3% a 5.6% en 5 ejercicios (variación 3.55 > 0.33)",
+                  "sign": "-2",
                   "state": "con_dato",
                   "tone": "neg",
-                  "value": "muy exigente"
+                  "value": "-74%"
                 }
               ],
               "key": "Valoración",
               "max": 20,
               "name": "Valoración",
-              "pct": 15.0,
-              "score": 3,
-              "score_txt": "3 / 20",
+              "pct": 25.0,
+              "score": 5,
+              "score_txt": "5 / 20",
               "text": null,
               "tone": "neg"
             },
@@ -3613,9 +3769,7 @@
         ]
       },
       "market": {
-        "behavioral": [
-          "El precio exige crecer un 20.0% anual durante 10 años (sus ingresos por acción: 19.4% anual en los últimos 10 años, FY2015–FY2025), un ritmo que solo menos del 1% de las comparables sostuvo: el precio da por hecho que el crecimiento pasado continúa, y las tasas base dicen que pocas empresas lo repiten (Lakonishok, Shleifer y Vishny, 1994)."
-        ],
+        "behavioral": [],
         "behavioral_title": "Lectura conductual del mercado",
         "news": [
           {
@@ -3965,14 +4119,14 @@
           "BRECHA",
           "LECTURA"
         ],
-        "dcf_missing": "DCF no significativo: FCF − SBC base −$22.28B (≤ 0): no hay flujo positivo que descontar, así que el DCF no es significativo.",
-        "dcf_params": null,
-        "dcf_reliability": null,
-        "dcf_reliability_level": null,
-        "dcf_reliability_tone": null,
+        "dcf_missing": null,
+        "dcf_params": "Parámetros del modelo — WACC 10.86% · crecimiento 11.73% (CAGR de ingresos a 3 años) · terminal 2.50% · el valor terminal aporta el 66% del valor total · invierte en expansión (capex 1.6 veces la D&A en 3 ejercicios y el 102% del flujo operativo): el DCF parte del flujo de mantenimiento $58.28B (flujo operativo − D&A, sin pasar del capex real) y cada año reinvierte lo que exige su crecimiento (crecimiento ÷ ROIC 15.7%), no el FCF − SBC de hoy −$22.28B.",
+        "dcf_reliability": "Fiabilidad del DCF: media (margen FCF inestable: de -3.3% a 5.6% en 5 ejercicios (variación 3.55 > 0.33)). Aporta -2 puntos a Valoración (máximo ±2 con fiabilidad media).",
+        "dcf_reliability_level": "media",
+        "dcf_reliability_tone": "warn",
         "intrinsic": {
           "graham_note": "Número de Graham: referencia del inversor defensivo (P/E 15 × P/B 1.5). Se muestra como referencia y no vota en la convergencia entre métodos.",
-          "intro": "DCF (FCFF) no significativo: FCF − SBC base −$22.28B (≤ 0): no hay flujo positivo que descontar, así que el DCF no es significativo.",
+          "intro": "El valor intrínseco estimado ($66) está un 74% por debajo del precio ($254.08): ningún supuesto razonable lo justifica (el precio queda fuera del rango de sensibilidad del DCF).",
           "rows": [
             {
               "bench": null,
@@ -3988,17 +4142,6 @@
             {
               "bench": null,
               "gap": null,
-              "key": "dcf_fair_value",
-              "label": "Valor justo DCF",
-              "reading": "No significativo",
-              "state": "no_significativo",
-              "text": "FCF − SBC base −$22.28B (≤ 0): no hay flujo positivo que descontar, así que el DCF no es significativo.",
-              "tone": null,
-              "value": "—"
-            },
-            {
-              "bench": null,
-              "gap": null,
               "key": "graham",
               "label": "Número de Graham",
               "reading": "Sobre Graham",
@@ -4006,6 +4149,39 @@
               "text": "cotiza 189% por encima del número de Graham — habitual en compañías de calidad/crecimiento, donde este criterio de 1949 resulta demasiado restrictivo.",
               "tone": "warn",
               "value": "$87.79"
+            },
+            {
+              "bench": null,
+              "gap": null,
+              "key": "dcf_fair_value",
+              "label": "Valor justo DCF",
+              "reading": "",
+              "state": "con_dato",
+              "text": "rango $55–$81 en el bloque central de la tabla de sensibilidad (crecimiento ± 2,5 pp y WACC ± 1 pp; mínimo y máximo, no un p10–p90)",
+              "tone": null,
+              "value": "$66"
+            },
+            {
+              "bench": null,
+              "gap": null,
+              "key": "dcf_upside",
+              "label": "Potencial vs precio (upside)",
+              "reading": "Sobrevalorada",
+              "state": "con_dato",
+              "text": "el valor intrínseco estimado ($66) está un 74% por debajo del precio ($254.08): ningún supuesto razonable lo justifica (el precio queda fuera del rango de sensibilidad del DCF)",
+              "tone": "neg",
+              "value": "-74.1%"
+            },
+            {
+              "bench": null,
+              "gap": null,
+              "key": "margin_of_safety",
+              "label": "Margen de seguridad",
+              "reading": "",
+              "state": "con_dato",
+              "text": "cifra exacta: −286%; por debajo de −100% el precio pasa del doble del valor estimado.",
+              "tone": null,
+              "value": "< −100%"
             }
           ]
         },
@@ -4015,7 +4191,7 @@
         "normalization_note": "Beneficio TTM (4 trimestres): reportado $90.80B, normalizado $69.22B (no recurrentes 23.8% del beneficio; partidas no recurrentes (total de Yahoo) (explicita, confianza alta): $21.58B netos). El score usa el beneficio normalizado. P/E reportado 30.39x no fiable; P/E normalizado 39.87x. Margen operativo reportado 11.50%, normalizado 11.49% (sin los cargos operativos que ya salen del beneficio); el score usa el normalizado.",
         "premortem": {
           "items": [
-            "el flujo de mantenimiento (flujo operativo − D&A − SBC) por acción creciera al menos un 20.0% anual durante 10 años, como exige el precio; historia propia: sus ingresos por acción, 19.4% anual en 10 años (FY2015–FY2025)",
+            "el flujo de mantenimiento (con la reinversión del crecimiento) por acción creciera al menos un 28.5% anual durante 10 años, como exige el precio; historia propia: sus ingresos por acción, 19.4% anual en 10 años (FY2015–FY2025)",
             "el margen operativo volviera a su mediana de 10 ejercicios (5.3% frente al 11.5% de hoy)"
           ],
           "note": "Condiciones que invalidarían la lectura de hoy, con la cifra que las mide: no son previsiones.",
@@ -4026,12 +4202,12 @@
           "lines": [
             {
               "label": "Muy exigente",
-              "text": "El precio actual exige que el flujo de mantenimiento (flujo operativo − D&A − SBC) por acción crezca un 20.0% anual durante 10 años (28.1% los 5 primeros y convergencia al 2.5%); en los últimos 10 años (FY2015–FY2025), sus ingresos por acción crecieron un 19.4% anual. Lo sostuvo 10 años el 0% de las empresas comparables (ventas de más de 100 mil millones, todas las industrias).",
+              "text": "El precio actual exige que el flujo de mantenimiento (con la reinversión del crecimiento) por acción crezca un 28.5% anual durante 10 años (40.8% los 5 primeros y convergencia al 2.5%); en los últimos 10 años (FY2015–FY2025), sus ingresos por acción crecieron un 19.4% anual. Lo sostuvo 10 años el 0% de las empresas comparables (ventas de más de 100 mil millones, todas las industrias).",
               "tone": "neg"
             }
           ],
           "method": "Misma estructura que el DCF directo (crecimiento constante 5 años y convergencia al terminal en los 5 siguientes). Referencia principal: tasas base de Mauboussin y Callahan (2021) por tamaño e industria; segunda: la historia propia.",
-          "role": "Es el método intrínseco del veredicto: el DCF directo no es significativo (FCF − SBC ≤ 0), así que se valora el flujo de mantenimiento (aporta -4 puntos a Valoración).",
+          "role": "Contraste del DCF directo: no puntúa.",
           "title": "Crecimiento que exige el precio (DCF inverso)"
         },
         "rows": [
@@ -4157,7 +4333,179 @@
             "value": "39.87x"
           }
         ],
-        "sensitivity": null,
+        "sensitivity": {
+          "band_labels": [
+            "> +30% sobre el precio",
+            "+10% a +30%",
+            "±10%",
+            "−10% a −30%",
+            "< −30% bajo el precio"
+          ],
+          "base_discount_idx": 2,
+          "base_growth_idx": 2,
+          "columns": [
+            "8.9%",
+            "9.9%",
+            "10.9%",
+            "11.9%",
+            "12.9%"
+          ],
+          "corner": "CREC. \\ WACC",
+          "intro": "Valor justo estimado según crecimiento (filas) y tasa de descuento (columnas). Verde: escenario por encima del precio actual; rojo: por debajo.",
+          "note": "Precio actual: $254.08. El recuadro verde marca el escenario base del modelo.",
+          "rows": [
+            {
+              "cells": [
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$77"
+                },
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$67"
+                },
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$59"
+                },
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$53"
+                },
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$48"
+                }
+              ],
+              "label": "6.7%"
+            },
+            {
+              "cells": [
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$83"
+                },
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$71"
+                },
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$63"
+                },
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$55"
+                },
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$49"
+                }
+              ],
+              "label": "9.2%"
+            },
+            {
+              "cells": [
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$89"
+                },
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$76"
+                },
+                {
+                  "band": 4,
+                  "base": true,
+                  "value": "$66"
+                },
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$58"
+                },
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$51"
+                }
+              ],
+              "label": "11.7%"
+            },
+            {
+              "cells": [
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$96"
+                },
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$81"
+                },
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$69"
+                },
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$60"
+                },
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$52"
+                }
+              ],
+              "label": "14.2%"
+            },
+            {
+              "cells": [
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$110"
+                },
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$88"
+                },
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$75"
+                },
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$64"
+                },
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$56"
+                }
+              ],
+              "label": "16.7%"
+            }
+          ]
+        },
         "wacc_breakdown": [
           {
             "label": "WACC",
@@ -4209,7 +4557,7 @@
     },
     "summary": {
       "alert_counts": {
-        "red_flags": 1,
+        "red_flags": 2,
         "strengths": 4,
         "unmeasured": null,
         "warnings": 4
@@ -4285,8 +4633,8 @@
       "composition": {
         "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: Valoración (base 10/20 + bloque de múltiplos y DCF) reescalada a 100 y contraída hacia 50 según la confianza del veredicto: solo los limitadores que lo contradicen o lo vuelven incierto, no los que apuntan en su dirección.",
         "price": {
-          "level": "muy exigente",
-          "note": "ajustado de 15 a 24 hacia 50.",
+          "level": "exigente",
+          "note": "ajustado de 25 a 31 hacia 50; en la frontera con «muy exigente» (a 2 puntos): un cambio pequeño en los datos o en los supuestos cambiaría el nivel.",
           "rows": [
             {
               "kind": "signed",
@@ -4296,15 +4644,15 @@
             },
             {
               "kind": "signed",
-              "label": "DCF inverso (flujo de mantenimiento) · muy exigente",
+              "label": "DCF directo (valor frente al precio) · -74%",
               "tone": "neg",
-              "value": -4
+              "value": -2
             }
           ],
-          "score": 24,
+          "score": 31,
           "signed_max": 6,
           "title": "ATRACTIVO DEL PRECIO",
-          "tone": "neg"
+          "tone": "warn"
         },
         "quality": {
           "level": "sólida",
@@ -4351,7 +4699,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad sólida · precio muy exigente (confianza baja: casi ninguna comparable sostuvo el crecimiento que exige el precio). Calidad 65/100 · precio 24/100 (ajustado de 15 a 24 hacia 50)."
+          "text": "Calidad sólida · precio exigente (confianza baja: casi ninguna comparable sostuvo el crecimiento que exige el precio). Calidad 65/100 · precio 31/100 (ajustado de 25 a 31 hacia 50; en la frontera con «muy exigente» (a 2 puntos): un cambio pequeño en los datos o en los supuestos cambiaría el nivel)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -4371,7 +4719,7 @@
         },
         {
           "label": "ATRACTIVO DEL PRECIO",
-          "text": "El mercado paga 39.9x el beneficio normalizado (sin partidas no recurrentes), un +14% frente a la referencia de su industria sin ella (35.0x); el P/E reportado (30.4x) no es fiable: el 24% del beneficio es no recurrente."
+          "text": "El mercado paga 39.9x el beneficio normalizado (sin partidas no recurrentes), un +14% frente a la referencia de su industria sin ella (35.0x); el P/E reportado (30.4x) no es fiable: el 24% del beneficio es no recurrente. El valor intrínseco estimado ($66) está un 74% por debajo del precio ($254.08): ningún supuesto razonable lo justifica (el precio queda fuera del rango de sensibilidad del DCF)."
         },
         {
           "label": "CONTEXTO DE MERCADO",
@@ -4379,7 +4727,7 @@
         },
         {
           "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Baja: casi ninguna comparable sostuvo el crecimiento que exige el precio (tasas base). Contrae el atractivo del precio hacia 50 (de 15 a 24); la calidad no se contrae."
+          "text": "Baja: casi ninguna comparable sostuvo el crecimiento que exige el precio (tasas base). Contrae el atractivo del precio hacia 50 (de 25 a 31); la calidad no se contrae."
         }
       ]
     },
@@ -5625,11 +5973,13 @@
     "capex": 267547000000.0,
     "da": 167214000000.0,
     "expansion": {
+      "applied": true,
       "current_basis": "FCF − SBC",
       "current_flow": -22282000000.0,
       "maintenance_basis": "flujo de mantenimiento (flujo operativo − D&A − SBC)",
       "maintenance_flow": 58282000000.0,
       "ratio": 1.60002750966,
+      "roic": 0.1567565951,
       "to_ocf": 0.786123753809,
       "to_ocf_ttm": 1.01664299035,
       "years": 3
@@ -5643,19 +5993,19 @@
   "ke_sensitivity": {
     "base": {
       "ke": 0.111636059088,
-      "level": "muy exigente",
-      "score": 24
+      "level": "exigente",
+      "score": 31
     },
     "dependent": false,
     "minus": {
       "ke": 0.101636059088,
-      "level": "muy exigente",
-      "score": 24
+      "level": "exigente",
+      "score": 31
     },
     "plus": {
       "ke": 0.121636059088,
-      "level": "muy exigente",
-      "score": 24
+      "level": "exigente",
+      "score": 31
     },
     "pp": 0.01,
     "reason": null,
@@ -5741,14 +6091,7 @@
     "wacc": 0.108566431197
   },
   "market_context": {
-    "behavioral": [
-      {
-        "field": "reverse_dcf.main.g10",
-        "kind": "extrapolacion",
-        "num": 0.200357899741,
-        "text": "El precio exige crecer un 20.0% anual durante 10 años (sus ingresos por acción: 19.4% anual en los últimos 10 años, FY2015–FY2025), un ritmo que solo menos del 1% de las comparables sostuvo: el precio da por hecho que el crecimiento pasado continúa, y las tasas base dicen que pocas empresas lo repiten (Lakonishok, Shleifer y Vishny, 1994)."
-      }
-    ],
+    "behavioral": [],
     "market_volatility": {
       "as_of": "2026-10-14",
       "observations": 252,
@@ -6230,8 +6573,8 @@
       {
         "field": "reverse_dcf.main.g10",
         "kind": "precio_inverso",
-        "text": "el flujo de mantenimiento (flujo operativo − D&A − SBC) por acción creciera al menos un 20.0% anual durante 10 años, como exige el precio; historia propia: sus ingresos por acción, 19.4% anual en 10 años (FY2015–FY2025)",
-        "value": 0.200357899741
+        "text": "el flujo de mantenimiento (con la reinversión del crecimiento) por acción creciera al menos un 28.5% anual durante 10 años, como exige el precio; historia propia: sus ingresos por acción, 19.4% anual en 10 años (FY2015–FY2025)",
+        "value": 0.285402620148
       },
       {
         "field": "key_metrics.operating_margin",
@@ -6245,7 +6588,11 @@
   "price": 254.080001831,
   "price_attractiveness": {
     "basis": null,
-    "border": null,
+    "border": {
+      "neighbor": "muy exigente",
+      "points": 2,
+      "text": "En la frontera con «muy exigente» (a 2 puntos): un cambio pequeño en los datos o en los supuestos cambiaría el nivel"
+    },
     "categories_included": 1,
     "categories_total": 1,
     "components": [
@@ -6253,20 +6600,20 @@
         "category": "Valoración",
         "included": true,
         "max": 20,
-        "score": 3
+        "score": 5
       }
     ],
     "confidence": "media",
     "contracted": true,
     "excluded_categories": [],
     "factor": 0.75,
-    "level": "muy exigente",
+    "level": "exigente",
     "level_raw": "muy exigente",
     "low_coverage_categories": [],
     "not_applicable_categories": [],
     "partial": false,
-    "score": 24,
-    "score_raw": 15
+    "score": 31,
+    "score_raw": 25
   },
   "price_change": {
     "change": -4.49998474121,
@@ -6502,14 +6849,14 @@
         "median": 0.022,
         "reason": null,
         "revenue_usd": 742776000000.0,
-        "share": 0.00260840701861,
+        "share": 3.4166479391e-05,
         "std": 0.059
       },
-      "flow_label": "flujo de mantenimiento (flujo operativo − D&A − SBC)",
+      "flow_label": "flujo de mantenimiento (con la reinversión del crecimiento)",
       "flow_per_share": 5.40332891409,
-      "g10": 0.200357899741,
-      "g_star": 0.28078062092,
-      "gap": 0.00606590100811,
+      "g10": 0.285402620148,
+      "g_star": 0.408236327628,
+      "gap": 0.0911106214147,
       "net_debt_per_share": -0.991070760983,
       "own_growth": {
         "basis": "por_accion",
@@ -6522,16 +6869,42 @@
       "points": -4,
       "rate": 0.108566431197,
       "reason": null,
-      "replaces": "sin flujo positivo que proyectar (FCF por acción base ≤ 0 o sin dato)",
+      "roic": 0.1567565951,
       "rule": "tasa_base",
       "side": null,
       "signal": -1.0,
       "state": "ok",
       "terminal_growth": 0.025,
-      "text": "El precio actual exige que el flujo de mantenimiento (flujo operativo − D&A − SBC) por acción crezca un 20.0% anual durante 10 años (28.1% los 5 primeros y convergencia al 2.5%); en los últimos 10 años (FY2015–FY2025), sus ingresos por acción crecieron un 19.4% anual. Lo sostuvo 10 años el 0% de las empresas comparables (ventas de más de 100 mil millones, todas las industrias)."
+      "text": "El precio actual exige que el flujo de mantenimiento (con la reinversión del crecimiento) por acción crezca un 28.5% anual durante 10 años (40.8% los 5 primeros y convergencia al 2.5%); en los últimos 10 años (FY2015–FY2025), sus ingresos por acción crecieron un 19.4% anual. Lo sostuvo 10 años el 0% de las empresas comparables (ventas de más de 100 mil millones, todas las industrias)."
     },
     "reason": null,
-    "ttm": null
+    "ttm": {
+      "band": null,
+      "base_rate": null,
+      "flow_label": "FCF − SBC del periodo",
+      "flow_per_share": -2.06576601461,
+      "g10": null,
+      "g_star": null,
+      "net_debt_per_share": -0.991070760983,
+      "own_growth": {
+        "basis": "por_accion",
+        "cagr": 0.194291998733,
+        "label": "sus ingresos por acción",
+        "source": "EDGAR",
+        "window": "FY2015–FY2025",
+        "years": 10
+      },
+      "points": null,
+      "rate": 0.108566431197,
+      "reason": "sin flujo positivo que proyectar (FCF por acción base ≤ 0 o sin dato)",
+      "roic": null,
+      "rule": null,
+      "side": null,
+      "signal": null,
+      "state": "no_aplica",
+      "terminal_growth": 0.025,
+      "text": null
+    }
   },
   "risk_free": {
     "as_of": "2026-11-01",
@@ -6559,8 +6932,64 @@
     "value": -22282000000.0
   },
   "scenario_inputs": {
-    "reason": "FCF − SBC base −$22.28B (≤ 0): no hay flujo positivo que descontar, así que el DCF no es significativo",
-    "status": "sin_dato"
+    "archetype": "MATURE",
+    "base": {
+      "decay_type": "step",
+      "discount_rate": 0.108566431197,
+      "high_growth_rate": 0.117312836018,
+      "high_growth_years": 5,
+      "reinvestment_roic": 0.1567565951,
+      "terminal_growth": 0.025,
+      "transition_years": 5
+    },
+    "bounds": {
+      "discount": [
+        0.05,
+        0.16
+      ],
+      "fcf_margin": [
+        0.0392325546329,
+        0.117697663899
+      ],
+      "growth": [
+        -0.1,
+        0.5
+      ],
+      "terminal": [
+        0.0,
+        0.03
+      ]
+    },
+    "currency": "USD",
+    "fcf": 58282000000.0,
+    "fcf_margin": 0.0784651092658,
+    "net_debt": -10690000000.0,
+    "presets": {
+      "optimistic": {
+        "discount_rate": 0.0885664311969,
+        "fcf_margin": 0.0784651092658,
+        "high_growth_rate": 0.167312836018,
+        "terminal_growth": 0.03
+      },
+      "pessimistic": {
+        "discount_rate": 0.128566431197,
+        "fcf_margin": 0.0784651092658,
+        "high_growth_rate": 0.0673128360181,
+        "terminal_growth": 0.02
+      }
+    },
+    "price": 254.080001831,
+    "reason": null,
+    "revenue": 742776000000.0,
+    "reverse": {
+      "flow_per_share": 5.40332891409,
+      "net_debt_per_share": -0.991070760983,
+      "rate": 0.108566431197,
+      "roic": 0.1567565951,
+      "terminal_growth": 0.025
+    },
+    "shares_outstanding": 10786313572,
+    "status": "ok"
   },
   "score": {
     "breakdown": {
@@ -6780,11 +7209,13 @@
             "value": "3 múltiplos"
           },
           {
-            "adjustment": -4,
-            "metric": "DCF inverso (flujo de mantenimiento)",
-            "reason": "El precio actual exige que el flujo de mantenimiento (flujo operativo − D&A − SBC) por acción crezca un 20.0% anual durante 10 años (28.1% los 5 primeros y convergencia al 2.5%); en los últimos 10 años (FY2015–FY2025), sus ingresos por acción crecieron un 19.4% anual. Lo sostuvo 10 años el 0% de las empresas comparables (ventas de más de 100 mil millones, todas las industrias).",
+            "adjustment": -2,
+            "key": "dcf",
+            "metric": "DCF directo (valor frente al precio)",
+            "reason": "Claramente cara por DCF (fiabilidad media): margen FCF inestable: de -3.3% a 5.6% en 5 ejercicios (variación 3.55 > 0.33)",
+            "reliability": "media",
             "severity": "severe",
-            "value": "muy exigente"
+            "value": "-74%"
           }
         ],
         "applicable": true,
@@ -6795,10 +7226,10 @@
           "Fuerte compresión P/E normalizado (40x → 23x forward); el forward implica +75%, pero no hay histórico de BPA de 3 años comparable (BPA inicial <= 0: CAGR no definido); la compresión no puntúa",
           "Muy caro (17.5x frente a 7.9x)",
           "media de 2 lecturas en una escala de −1 a +1 (BPA (P/E, Forward P/E): P/E -0.50, Forward P/E +0.00 → -0.25; EV/EBITDA -1.00): -0.62, que suma -2.5 puntos de un máximo de ±4; sin dato: P/FCF",
-          "El precio actual exige que el flujo de mantenimiento (flujo operativo − D&A − SBC) por acción crezca un 20.0% anual durante 10 años (28.1% los 5 primeros y convergencia al 2.5%); en los últimos 10 años (FY2015–FY2025), sus ingresos por acción crecieron un 19.4% anual. Lo sostuvo 10 años el 0% de las empresas comparables (ventas de más de 100 mil millones, todas las industrias)."
+          "Claramente cara por DCF (fiabilidad media): margen FCF inestable: de -3.3% a 5.6% en 5 ejercicios (variación 3.55 > 0.33)"
         ],
         "max": 20,
-        "score": 3
+        "score": 5
       }
     },
     "excluded_categories": [],
@@ -6879,6 +7310,82 @@
     "sector": "Consumer Cyclical",
     "sector_etf": "XLY"
   },
+  "sensitivity": {
+    "base_case": {
+      "discount_rate": 0.108566431197,
+      "fair_value": 65.88,
+      "growth_rate": 0.117312836018
+    },
+    "base_discount_idx": 2,
+    "base_growth_idx": 2,
+    "discount_rates": [
+      0.0886,
+      0.0986,
+      0.1086,
+      0.1186,
+      0.1286
+    ],
+    "growth_rates": [
+      0.0673,
+      0.0923,
+      0.1173,
+      0.1423,
+      0.1673
+    ],
+    "interpretation": "Muy probablemente sobrevalorada (100% de escenarios)",
+    "is_valid": true,
+    "matrix": [
+      [
+        76.94,
+        67.23,
+        59.45,
+        53.1,
+        47.83
+      ],
+      [
+        82.64,
+        71.48,
+        62.57,
+        55.34,
+        49.36
+      ],
+      [
+        88.86,
+        76.05,
+        65.88,
+        57.64,
+        50.87
+      ],
+      [
+        95.65,
+        80.98,
+        69.36,
+        59.99,
+        52.33
+      ],
+      [
+        105.31,
+        88.46,
+        75.16,
+        64.47,
+        55.75
+      ]
+    ],
+    "statistics": {
+      "current_price": 254.080001831,
+      "max_value": 105.31,
+      "mean_value": 68.508,
+      "median_value": 65.88,
+      "min_value": 47.83,
+      "upside_base_case": -74.071158877
+    },
+    "trimmed": {
+      "discount": [],
+      "growth": [],
+      "note": null
+    },
+    "warnings": []
+  },
   "spectrum_adjustment": null,
   "symbol": "AMZN",
   "tax_rate": {
@@ -6892,10 +7399,10 @@
   "verdict": {
     "confidence": "baja",
     "confidence_text": "(confianza baja: casi ninguna comparable sostuvo el crecimiento que exige el precio)",
-    "full": "Calidad sólida · precio muy exigente (confianza baja: casi ninguna comparable sostuvo el crecimiento que exige el precio)",
-    "price_level": "muy exigente",
+    "full": "Calidad sólida · precio exigente (confianza baja: casi ninguna comparable sostuvo el crecimiento que exige el precio)",
+    "price_level": "exigente",
     "quality_level": "sólida",
-    "text": "Calidad sólida · precio muy exigente"
+    "text": "Calidad sólida · precio exigente"
   },
   "wacc": {
     "applicable": true,

@@ -61,9 +61,9 @@ def test_price_contracts_towards_50_by_confidence(level, factor, shown):
 
 
 def test_quality_is_not_contracted_by_convergence(outputs_by_env):
-    a = outputs_by_env("panel")["MSFT"][0]                  # convergencia media, confianza media (fase 4/7: PG, el de
-    #                                                         antes, pasó a convergencia alta con su industria)
-    # F10 · N4: MSFT baja un escalón de confianza por las tasas base (se muestra «baja»), pero contrae con la previa
+    a = outputs_by_env("panel")["UL"][0]                    # convergencia media, confianza media (fase 4/7: PG, el de
+    #                                                         antes, pasó a convergencia alta con su industria; F13 · 9:
+    #                                                         MSFT, el siguiente, también)
     assert a["confidence"]["contraction_basis"] == "media"
     q = a["quality"]
     by = {k: v["score"] for k, v in a["score"]["breakdown"].items()}

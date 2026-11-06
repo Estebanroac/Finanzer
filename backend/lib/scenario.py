@@ -45,6 +45,7 @@ class _Base(BaseModel):
     terminal_growth: _Rate
     discount_rate: _Rate
     decay_type: Optional[Literal["step"]] = None
+    reinvestment_roic: Optional[_Rate] = None       # F13 · paso 9: el DCF con la reinversión del crecimiento
 
 
 class _Bounds(BaseModel):
@@ -75,6 +76,7 @@ class _Reverse(BaseModel):
     net_debt_per_share: _PerShare
     rate: _Rate
     terminal_growth: _Rate
+    roic: Optional[_Rate] = None                    # F13 · paso 9
 
 
 class _Inputs(BaseModel):
@@ -190,7 +192,8 @@ def _implied(inputs: Dict[str, Any], fcf: float, used: Dict[str, Any]) -> Dict[s
         return {"state": "sin_dato", "g_star": None, "g10": None, "side": None,
                 "reason": "el análisis no tiene DCF inverso con el que comparar"}
     r = rd.implied_growth(inputs.get("price"), fps * fcf / inputs["fcf"], used["discount_rate"],
-                          terminal_growth=used["terminal_growth"], net_debt_per_share=rv.get("net_debt_per_share") or 0.0)
+                          terminal_growth=used["terminal_growth"], net_debt_per_share=rv.get("net_debt_per_share") or 0.0,
+                          roic=rv.get("roic"))
     g10 = rd.ten_year_cagr(r["g_star"], terminal_growth=used["terminal_growth"]) if r["state"] == rd.OK else None
     return {"state": r["state"], "g_star": _finite(r["g_star"]), "g10": _finite(g10), "side": r["side"],
             "reason": r["reason"]}
@@ -213,6 +216,7 @@ def _sensitivity(inputs: Dict[str, Any], fcf: float, used: Dict[str, Any], S: Di
                                 high_growth_years=used["high_growth_years"], transition_years=used["transition_years"],
                                 terminal_growth=used["terminal_growth"], discount_rate=d,
                                 decay_type=inputs["base"].get("decay_type") or "step",
+                                reinvestment_roic=inputs["base"].get("reinvestment_roic"),
                                 net_debt=inputs.get("net_debt")) if ok else {}
             fv = _finite(r.get("fair_value_per_share")) if r.get("is_valid") else None
             row.append(fv if fv is not None and fv > 0 else None)
@@ -269,7 +273,7 @@ def run(inputs: Dict[str, Any], assumptions: Dict[str, Any]) -> Dict[str, Any]:
                         high_growth_rate=used["high_growth_rate"], high_growth_years=used["high_growth_years"],
                         transition_years=used["transition_years"], terminal_growth=used["terminal_growth"],
                         discount_rate=used["discount_rate"], decay_type=base.get("decay_type") or "step",
-                        net_debt=inputs.get("net_debt"))
+                        net_debt=inputs.get("net_debt"), reinvestment_roic=base.get("reinvestment_roic"))
     fv = _finite(r.get("fair_value_per_share"))       # V6 (B1): nunca un infinito o un NaN en la respuesta
     implied = _implied(inputs, fcf, used)
     sens = _sensitivity(inputs, fcf, used, S)

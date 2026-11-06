@@ -2490,21 +2490,23 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                            + (f"; ciclo incompleto: {_nz.get('years')} ejercicios" if _nz.get("cycle_incomplete")
                               else "")
                            + "): el DCF usa el de mantenimiento, con crecimiento normalizado de ciclo medio")
-        # F13 · paso 9: en expansión, la lectura con el flujo de mantenimiento junto a la del FCF − SBC de hoy
+        # F13 · paso 9 (opción b): en expansión, el flujo de mantenimiento con la reinversión que exige el crecimiento,
+        # y al lado la valoración con el FCF − SBC de hoy
         _ex = dcf.get("expansion") or {}
-        if _ex.get("maintenance_flow") is not None:
+        if _ex.get("applied"):
             _to = max(x for x in (_ex.get("to_ocf"), _ex.get("to_ocf_ttm"), 0.0) if x is not None)
             dcf_params += (f" · invierte en expansión (capex {_ex['ratio']:.1f} veces la D&A en {_ex.get('years')} "
-                           f"ejercicios y el {_to * 100:.0f}% del flujo operativo): con el flujo de mantenimiento "
-                           f"{fv(_ex['maintenance_flow'], 'money')} (flujo operativo − D&A, sin pasar del capex real) en "
-                           f"lugar del {_ex.get('current_basis') or 'FCF − SBC'} de hoy "
+                           f"ejercicios y el {_to * 100:.0f}% del flujo operativo): el DCF parte del flujo de "
+                           f"mantenimiento {fv(_ex['maintenance_flow'], 'money')} (flujo operativo − D&A, sin pasar del "
+                           f"capex real) y cada año reinvierte lo que exige su crecimiento (crecimiento ÷ ROIC "
+                           f"{_ex['roic'] * 100:.1f}%), no el {_ex.get('current_basis') or 'FCF − SBC'} de hoy "
                            f"{fv(_ex.get('current_flow'), 'money')}"
-                           + (f", el valor sería {fv(_ex['maintenance_fair_value'], 'price')} por acción "
-                              f"({_ex['maintenance_upside']:+.0f}% frente al precio)"
-                              if _ex.get("maintenance_fair_value") is not None
-                              and _ex.get("maintenance_upside") is not None else "")
-                           + ". Es la cota alta: no descuenta lo que cuesta el crecimiento que proyecta; puntúa la "
-                             "del flujo de hoy")
+                           + (f"; con él, el valor sería {fv(_ex['current_fair_value'], 'price')} por acción "
+                              f"({_ex['current_upside']:+.0f}% frente al precio)"
+                              if _ex.get("current_fair_value") is not None and _ex.get("current_upside") is not None
+                              else ""))
+        elif _ex.get("maintenance_flow") is not None:
+            dcf_params += f" · invierte en expansión, pero {_ex.get('reason')}"
         # Fiabilidad del DCF y su aporte a Valoración (etapa 8)
         _dcf_adj = next((x for x in (breakdown.get("Valoración") or {}).get("adjustments") or []
                          if x.get("key") == "dcf"), None)

@@ -2195,11 +2195,10 @@ def _compute_analysis_body(symbol: str) -> dict:
                 fcf = _fcf_net if _fcf_net is not None else _fcf_gross
                 _fcf_basis = ("FCF − SBC" if _fcf_net is not None
                               else "FCF sin restar la SBC (sin SBC del mismo periodo)")
-                # F13 · paso 9: en expansión, la lectura con el flujo de mantenimiento del periodo (flujo operativo − D&A
-                # sin pasar del capex real − SBC) junto a la del FCF − SBC de hoy, que sigue siendo la que puntúa. Cuál
-                # de las dos (o el flujo con la reinversión que exige el crecimiento, g ÷ ROIC) es decisión del usuario:
-                # docs/fiabilidad/GOLDEN_DIFF_F13_P9.md.
-                _fcf_now, _basis_now, _expansion = fcf, _fcf_basis, None
+                # F13 · paso 9 (decisión del usuario, opción b): en expansión el DCF parte del flujo de mantenimiento
+                # (flujo operativo − D&A sin pasar del capex real − SBC) y cada año paga la reinversión que exige su
+                # crecimiento (g ÷ ROIC, dcf_multi_stage `reinvestment_roic`). El FCF − SBC de hoy, segunda lectura.
+                _fcf_now, _basis_now, _expansion, _reinv_roic = fcf, _fcf_basis, None, None
                 _ocf_t, _da_t = safe_float(financials.operating_cash_flow), safe_float(financials.depreciation)
                 _fcf_t = safe_float(financials.free_cash_flow)
                 _capex_t = (_ocf_t - _fcf_t) if (_ocf_t is not None and _fcf_t is not None) else None
@@ -2213,6 +2212,21 @@ def _compute_analysis_body(symbol: str) -> dict:
                                   "maintenance_flow": _maint, "current_flow": _fcf_now, "current_basis": _basis_now}
                     _expansion["maintenance_basis"] = ("flujo de mantenimiento (flujo operativo − D&A"
                                                        + (" − SBC" if _sbc_t9 is not None else "") + ")")
+                    _roic9 = safe_float(result["key_metrics"].get("roic"))
+                    # Solo si crecer crea valor (ROIC > WACC): por debajo, el valor del DCF baja con g y la reinversión
+                    # del crecimiento no tiene una lectura única (TM, ROIC 4,5 % frente a un WACC del 8,1 %; TSLA)
+                    if _roic9 is not None and wacc_est is not None and _roic9 > wacc_est and _maint > 0:
+                        _reinv_roic = _roic9
+                        fcf = _maint
+                        _fcf_basis = (_expansion["maintenance_basis"] + f" con la reinversión que exige el crecimiento "
+                                      f"(g ÷ ROIC {_roic9 * 100:.1f}%)")
+                        _expansion.update(roic=_roic9, applied=True)
+                    else:
+                        _expansion.update(roic=_roic9, applied=False, reason=(
+                            f"su ROIC ({_roic9 * 100:.1f}%) no supera el coste del capital ({wacc_est * 100:.1f}%): "
+                            "crecer no crea valor y la reinversión del crecimiento no tiene una lectura única; puntúa "
+                            "el flujo de hoy" if (_roic9 is not None and wacc_est is not None and _maint > 0) else
+                            "sin ROIC o sin flujo de mantenimiento positivo: puntúa el flujo de hoy"))
                 result["investment_intensity"]["expansion"] = _expansion
                 if _spec_avg is not None and fcf is not None:
                     # F8 · E4: telecom, menos la media de 5 años de las compras de espectro (EDGAR).
@@ -2245,6 +2259,7 @@ def _compute_analysis_body(symbol: str) -> dict:
                         total_debt=td_val,
                         cash=cash_val,
                         revenue_growth_3y=growth,  # el DCF aplica el tope (30%); sin suelo en el terminal
+                        reinvestment_roic=_reinv_roic,   # F13 · paso 9: en expansión, la reinversión de cada año
                     )
                     # DCF y grid comparten supuestos: el crecimiento USADO, su decaimiento y el WACC.
                     _g_used = dcf_result.get("growth_estimated")
@@ -2273,7 +2288,8 @@ def _compute_analysis_body(symbol: str) -> dict:
                                      "high_growth_years": (_mst.get("high_growth") or {}).get("years"),
                                      "transition_years": (_mst.get("transition") or {}).get("years"),
                                      "terminal_growth": _mi.get("terminal_growth"),
-                                     "discount_rate": _mi.get("discount_rate"), "decay_type": _mi.get("decay_type")},
+                                     "discount_rate": _mi.get("discount_rate"), "decay_type": _mi.get("decay_type"),
+                                     "reinvestment_roic": _mi.get("reinvestment_roic")},
                             "price": price, "currency": result["profile"].get("currency")}
                         # Rediseño E3 (Task 7): ingresos base, margen de caja, arquetipo, límites y preajustes. Aditivo.
                         import scenario as _scn
@@ -2298,20 +2314,18 @@ def _compute_analysis_body(symbol: str) -> dict:
                         "reason": dcf_result.get("invalid_reason"),
                         "warnings": dcf_result.get("warnings") or [],
                     }
-                    if _expansion and _expansion["maintenance_flow"] > 0:
-                        # F13 · paso 9: la misma valoración con el flujo de mantenimiento (si la inversión de expansión
-                        # parara); no descuenta lo que cuesta el crecimiento que proyecta, así que es la cota alta
+                    if _reinv_roic and _fcf_now is not None and _fcf_now > 0:
+                        # F13 · paso 9: la misma valoración con el FCF − SBC de hoy (el ritmo de inversión actual)
                         try:
-                            _alt = dcf_multi_stage_dynamic(fcf=_expansion["maintenance_flow"],
-                                                           shares_outstanding=financials.shares_outstanding,
+                            _alt = dcf_multi_stage_dynamic(fcf=_fcf_now, shares_outstanding=financials.shares_outstanding,
                                                            wacc=wacc_est, total_debt=td_val, cash=cash_val,
                                                            revenue_growth_3y=growth)
                             _afv = safe_float(_alt.get("fair_value_per_share"))
-                            _expansion["maintenance_fair_value"] = _afv if (_afv is not None and _afv > 0) else None
-                            _expansion["maintenance_upside"] = (((_afv - price) / price * 100.0)
-                                                                if (_afv and _afv > 0 and price) else None)
+                            _expansion["current_fair_value"] = _afv if (_afv is not None and _afv > 0) else None
+                            _expansion["current_upside"] = (((_afv - price) / price * 100.0)
+                                                            if (_afv and _afv > 0 and price) else None)
                         except Exception as e:
-                            logger.error(f"DCF maintenance-flow error: {e}")
+                            logger.error(f"DCF current-flow error: {e}")
                     if _expansion:
                         result["dcf"]["expansion"] = _expansion
                     if archetype == CYCLICAL:
@@ -2337,6 +2351,7 @@ def _compute_analysis_body(symbol: str) -> dict:
                                 base_discount_rate=wacc_est,
                                 net_debt=_net_debt or 0.0,
                                 decay_type=_decay,
+                                reinvestment_roic=_reinv_roic,
                             )
                             result["sensitivity"] = sens
                         except Exception as e:
@@ -2412,10 +2427,11 @@ def _compute_analysis_body(symbol: str) -> dict:
                 elif result.get("not_applicable", {}).get("dcf"):
                     _rv["reason"] = result["not_applicable"]["dcf"]
                 else:
-                    _lab = ("FCF de mantenimiento" if archetype == CYCLICAL else "FCF") + \
-                        (" − SBC" if _fcf_net is not None else "")
+                    _lab = ("FCF de mantenimiento" if archetype == CYCLICAL else
+                            "flujo de mantenimiento (con la reinversión del crecimiento)" if _reinv_roic else "FCF") + \
+                        (" − SBC" if _fcf_net is not None and not _reinv_roic else "")
                     _rv.update(applicable=True, main=rr.reading(flow=fcf, rate=wacc_est, net_debt=_nd_r, own=_own_r,
-                                                                flow_label=_lab, **_rv_args))
+                                                                flow_label=_lab, roic=_reinv_roic, **_rv_args))
                     if (_rv["main"] or {}).get("state") == "no_aplica" and archetype != GROWTH_PRE_PROFIT:
                         # T7 (§2.1): con FCF − SBC <= 0 por la inversión de crecimiento (AMZN) o por la cartera de una
                         # financiera (TM), el flujo de mantenimiento: flujo operativo − D&A (capex de mantenimiento)
@@ -2437,8 +2453,9 @@ def _compute_analysis_body(symbol: str) -> dict:
                             if _alt.get("state") in ("ok", "fuera_de_rango"):
                                 _alt["replaces"] = (_rv["main"] or {}).get("reason")
                                 _rv["main"] = _alt
-                    if archetype == CYCLICAL:
-                        # §8.5: segunda lectura con el flujo del periodo ("si el nivel actual se mantiene").
+                    if archetype == CYCLICAL or (_reinv_roic and _fcf_now is not None):
+                        # §8.5: segunda lectura con el flujo del periodo ("si el nivel actual se mantiene"). F13 · paso 9:
+                        # también en expansión (el FCF − SBC con el ritmo de inversión de hoy).
                         _ttm_net = safe_float(sbc_info.get("value"))
                         _rv["ttm"] = rr.reading(
                             flow=_ttm_net if _ttm_net is not None else safe_float(financials.free_cash_flow),
@@ -2452,7 +2469,7 @@ def _compute_analysis_body(symbol: str) -> dict:
                 _si = result.get("scenario_inputs") or {}
                 if _si.get("status") == "ok" and _m.get("flow_per_share") is not None:
                     _si["reverse"] = {k: _m.get(k) for k in ("flow_per_share", "net_debt_per_share", "rate",
-                                                             "terminal_growth")}
+                                                             "terminal_growth", "roic")}
                 # T7: utility regulada, su método intrínseco puntúa como el del inverso (P/B frente al ROE regulado).
                 _uimp = (archetype_values.get("implied") or {}) if archetype == "UTILITY" else {}
                 if _uimp.get("band") and isinstance(dcf_for_score, dict) and dcf_for_score.get("na"):

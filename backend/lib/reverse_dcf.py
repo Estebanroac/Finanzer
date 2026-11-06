@@ -46,14 +46,25 @@ def growth_path(g: float, terminal_growth: float, years: int, fade_start: int) -
             for year in range(1, years + 1)]
 
 
+def _paid(flow: float, g: float, roic: Optional[float]) -> float:
+    """F13 · paso 9 (opción b): el flujo tras la reinversión que exige el crecimiento g (g ÷ ROIC, acotada a [0, 1]),
+    como financial_ratios.dcf_multi_stage. Sin `roic`, el mismo flujo."""
+    if not roic or roic <= 0:
+        return flow
+    return flow * (1 - min(1.0, max(0.0, g / roic)))
+
+
 def equity_value_per_share(g: float, fcf_per_share_base: float, wacc: float, terminal_growth: float, years: int,
-                           fade_start: int, net_debt_per_share: float = 0.0) -> float:
-    """Valor del equity por acción con crecimiento g (etapa explícita + terminal de Gordon − deuda neta)."""
+                           fade_start: int, net_debt_per_share: float = 0.0, roic: Optional[float] = None) -> float:
+    """Valor del equity por acción con crecimiento g (etapa explícita + terminal de Gordon − deuda neta). Con `roic`,
+    el flujo base es el de antes de la inversión de crecimiento y cada año paga la suya (F13 · paso 9)."""
     pv, fcf = 0.0, fcf_per_share_base
     for year, gy in enumerate(growth_path(g, terminal_growth, years, fade_start), start=1):
         fcf *= 1 + gy
-        pv += fcf / (1 + wacc) ** year
-    terminal_value = fcf * (1 + terminal_growth) / (wacc - terminal_growth)
+        pv += _paid(fcf, gy, roic) / (1 + wacc) ** year
+    # fase estable: la inversión nueva rinde su coste de capital (g ÷ min(ROIC, WACC)), como dcf_multi_stage
+    terminal_value = _paid(fcf * (1 + terminal_growth), terminal_growth,
+                           min(roic, wacc) if roic else None) / (wacc - terminal_growth)
     return pv + terminal_value / (1 + wacc) ** years - net_debt_per_share
 
 
@@ -67,7 +78,7 @@ def _result(state, reason, assumptions, **kw) -> Dict[str, Any]:
 def implied_growth(price: Optional[float], fcf_per_share_base: Optional[float], wacc: Optional[float],
                    terminal_growth: Optional[float] = None, years: Optional[int] = None,
                    fade_start: Optional[int] = None, bounds: Optional[Sequence[float]] = None,
-                   net_debt_per_share: float = 0.0) -> Dict[str, Any]:
+                   net_debt_per_share: float = 0.0, roic: Optional[float] = None) -> Dict[str, Any]:
     """Crecimiento anual g* del FCF por acción que hace que el valor del DCF iguale el precio (bisección).
 
     Devuelve un dict con `state` (ok | no_aplica | fuera_de_rango | sin_convergencia), `reason`, `side`
@@ -81,7 +92,7 @@ def implied_growth(price: Optional[float], fcf_per_share_base: Optional[float], 
         raise ValueError(f"estructura inválida: years={years}, fade_start={fade_start}, bounds={bounds}")
     assumptions = {"price": price, "fcf_per_share_base": fcf_per_share_base, "net_debt_per_share": net_debt_per_share,
                    "wacc": wacc, "terminal_growth": terminal_growth, "years": years, "fade_start": fade_start,
-                   "bounds": [lo, hi]}
+                   "bounds": [lo, hi], "roic": roic}
 
     if price is None or price <= 0:
         return _result(NOT_APPLICABLE, "sin precio positivo con el que comparar", assumptions)
@@ -94,12 +105,19 @@ def implied_growth(price: Optional[float], fcf_per_share_base: Optional[float], 
 
     def gap(g):
         return equity_value_per_share(g, fcf_per_share_base, wacc, terminal_growth, years, fade_start,
-                                      net_debt_per_share) - price
+                                      net_debt_per_share, roic) - price
 
     # La bisección exige que el valor crezca con g en todo el rango: se comprueba en una malla.
     n = T["monotonicity_points"]
     mesh = [gap(lo + (hi - lo) * i / (n - 1)) for i in range(n)]
     if any(b <= a for a, b in zip(mesh, mesh[1:])):
+        # F13 · paso 9: con la reinversión del crecimiento y un ROIC por debajo del WACC, crecer destruye valor y el
+        # valor no crece con g. Si ningún crecimiento del rango llega al precio, la respuesta es que el precio no se
+        # reconcilia con ninguno (TSLA: ROIC 5 % frente a un WACC del 11 %), no que no haya lectura.
+        if roic and max(mesh) < 0:
+            return _result(OUT_OF_RANGE, f"ningún crecimiento entre {lo:+.0%} y {hi:+.0%} anual justifica el precio: con "
+                                         f"un ROIC del {roic:.1%}, por debajo del coste del capital ({wacc:.1%}), "
+                                         "crecer cuesta más de lo que rinde", assumptions, side="superior")
         return _result(NO_CONVERGENCE, "el valor del DCF no crece con g en todo el rango: la bisección no es válida",
                        assumptions)
 

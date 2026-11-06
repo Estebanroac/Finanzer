@@ -84,7 +84,7 @@ def test_scenario_inputs_traen_margen_arquetipo_inverso_preajustes_y_limites(pan
     assert si["revenue"] and si["fcf_margin"] == pytest.approx(si["fcf"] / si["revenue"])
     rv = a["reverse_dcf"]["main"]
     assert si["reverse"] == {"flow_per_share": rv["flow_per_share"], "net_debt_per_share": rv["net_debt_per_share"],
-                             "rate": rv["rate"], "terminal_growth": rv["terminal_growth"]}
+                             "rate": rv["rate"], "terminal_growth": rv["terminal_growth"], "roic": rv.get("roic")}
     b = si["bounds"]
     for name, k in (("growth", "high_growth_rate"), ("discount", "discount_rate"), ("terminal", "terminal_growth")):
         for side in ("pessimistic", "optimistic"):

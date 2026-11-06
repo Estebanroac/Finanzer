@@ -49,15 +49,16 @@ def own_growth(history: Optional[Dict[str, Any]], fallback_3y: Optional[float]) 
 
 def reading(*, price: Optional[float], flow: Optional[float], shares: Optional[float], rate: Optional[float],
             net_debt: Optional[float], revenue_usd: Optional[float], sector: Optional[str],
-            own: Dict[str, Any], flow_label: str) -> Dict[str, Any]:
-    """Una lectura del DCF inverso con su banda."""
+            own: Dict[str, Any], flow_label: str, roic: Optional[float] = None) -> Dict[str, Any]:
+    """Una lectura del DCF inverso con su banda. `roic` (F13 · paso 9): el flujo es el de antes de la inversión de
+    crecimiento y cada año paga la que exige su g (reverse_dcf.equity_value_per_share)."""
     T = cfg("valuation.reverse_dcf")
     tg = cfg("valuation.dcf.terminal_growth")
     fps = (flow / shares) if (flow is not None and shares) else None
     nds = ((net_debt or 0.0) / shares) if shares else 0.0
-    r = rd.implied_growth(price, fps, rate, net_debt_per_share=nds)
+    r = rd.implied_growth(price, fps, rate, net_debt_per_share=nds, roic=roic)
     out = {"state": r["state"], "reason": r["reason"], "side": r["side"], "flow_label": flow_label,
-           "flow_per_share": fps, "net_debt_per_share": nds, "rate": rate, "terminal_growth": tg,
+           "flow_per_share": fps, "net_debt_per_share": nds, "rate": rate, "terminal_growth": tg, "roic": roic,
            "g_star": r["g_star"], "g10": None, "base_rate": None, "own_growth": own, "band": None, "rule": None,
            "signal": None, "points": None, "text": None}
     if r["state"] == rd.OK:
