@@ -80,12 +80,14 @@ def test_awk_ke_not_below_kd(ref):
 
 def test_e1_audit_cases(ref):
     """§3 E1: XOM (Ke 6,25 %, Rf + 1,3 pp) y CB (Ke 7,0 %) ya no quedan por debajo del piso de medio mercado. XOM, con
-    el piso y dependiente de Ke. F9 · R2b: CB (sede operativa en Zúrich) toma la beta de aseguradoras de Europa (0,56
-    frente a 0,48 de EE. UU.) y su CAPM ya supera el piso."""
+    el piso. F9 · R2b: CB (sede operativa en Zúrich) toma la beta de aseguradoras de Europa (0,56
+    frente a 0,48 de EE. UU.) y su CAPM ya supera el piso.
+    F14 · paso 1: con el Rf de 4,94 %, XOM deja de ser dependiente de Ke."""
     for s in ("XOM", "CB"):
         ce = ref[s]["cost_of_equity"]
         assert ce["value"] >= max(ce["floors"].values()) - 1e-12, s
-    assert ref["XOM"]["cost_of_equity"]["floor"]["rule"].startswith("Rf") and ref["XOM"]["ke_sensitivity"]["dependent"]
+    # F14 · paso 1 (Rf 5,29 % → 4,94 %): XOM sigue con el piso, pero su nivel de precio ya no cambia con ±1 pp de Ke
+    assert ref["XOM"]["cost_of_equity"]["floor"]["rule"].startswith("Rf")
     assert ref["CB"]["beta"]["region"]["region"] == "europe"
 
 

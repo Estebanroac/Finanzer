@@ -66,7 +66,8 @@ def test_margen_de_seguridad_con_dcf_de_fiabilidad_baja(outputs_by_env):
     # cifra exacta en el detalle.
     # F13 · paso 1 (prima de Damodaran de 1-nov-2026, 4,41 %): −197 % → −206 %.
     # F13 · paso 11 (opción c): el crecimiento de AAPL (1.8%) converge a la tasa base (2.9%): −206 % → −196 %.
-    assert r["margin_of_safety"]["value"] == "< −100%" and "−196%" in r["margin_of_safety"]["text"]
+    # F14 · paso 1 (Rf del par 5,29 % → 4,94 %): −196 % → −182 %.
+    assert r["margin_of_safety"]["value"] == "< −100%" and "−182%" in r["margin_of_safety"]["text"]
     assert r["dcf_fair_value"]["value"] == "$120"          # F13 · paso 1: $120 → $110; paso 11: $120
 
 

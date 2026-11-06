@@ -9,17 +9,19 @@ risk_free_ticker = "^TNX"           # rendimiento del Tesoro de EE. UU. a 10 añ
 risk_free_cache_hours = 24          # una lectura correcta vale 24 h
 risk_free_bounds = [0.0, 0.15]      # una lectura fuera del rango se descarta
 # FALLBACK si ^TNX no está disponible (se marca en el JSON y el PDF): el Tesoro a 10 años
-# que usa Damodaran para la prima implícita de abajo (5.29% a 1-nov-2026, misma fuente; también 5.29% a 1-oct).
+# que usa Damodaran para la prima implícita de abajo: 4.94% a 1-nov-2026 (5.29% a 1-oct). F14 · paso 1: se lee de su
+# hoja mensual (ERPbymonth.xlsx, «T.Bond Rate») con tools/damodaran_erp.py, NO del texto de su portada: la del 1-nov
+# repetía el 5.29% de octubre y el universo llevó 35 pb de más. tests/test_damodaran_erp.py vigila el par.
 # PAR: risk_free_rate y market_risk_premium forman un par (la prima implícita se calcula
 # con ese Rf) y DEBEN ACTUALIZARSE JUNTOS, con la misma fecha (revisión mensual, RECON 7.13).
-risk_free_rate = 0.0529
+risk_free_rate = 0.0494
 # Prima de riesgo de mercado (EE. UU.): la IMPLÍCITA de Damodaran vigente. El DCF
 # compara valor intrínseco con precio de mercado: una prima histórica mayor que la
 # implícita hace que todo salga sobrevalorado por construcción.
 #   Fuente: Damodaran Online, "Implied ERP on November 1, 2026 = 4.41% (Trailing 12
-#   month, with adjusted payout)", pages.stern.nyu.edu/~adamodar (New_Home_Page/home.htm),
-#   "with the US treasury rate of 5.29% used as the riskfree rate". Consultado: 2026-11-05
-#   (F13 · paso 1). Antes: 4.20% a 1-oct-2026 (consultado 2026-10-12). Damodaran la
+#   month, with adjusted payout)"; hoja mensual pc/implprem/ERPbymonth.xlsx, «ERP (T12 m
+#   with sustainable payout)», calculada con el T.Bond Rate de 4.94%. Consultado: 2026-11-06
+#   (F14 · paso 1). Antes: 4.20% a 1-oct-2026 (consultado 2026-10-12). Damodaran la
 #   publica el día 1 de cada mes: la revisión vencida se avisa en el análisis.
 #   Referencia: Kroll, ERP recomendada para EE. UU. 5.0% (desde jun-2024).
 #   Antes (hasta la etapa 8): 5.5%, prima heredada de la v1 sin fuente.
@@ -30,7 +32,9 @@ market_risk_premium = 0.0441
 # de `pair_drift_warning`, el análisis lo avisa (hay que actualizar el par). Antes se mezclaba el Rf del día con una ERP
 # calculada con otro Rf.
 pair_as_of = "2026-11-01"
-pair_drift_warning = 0.005          # |^TNX − Rf del par| mayor: aviso "revisar el par Rf–ERP"
+# F14 · paso 1 (segunda revisión externa): 0,5 → 0,3 pp. El 6-nov-2026 el par llevaba un Rf mal copiado (5,29 % en
+# lugar de 4,94 %) y el ^TNX (4,84 %) estaba a 0,45 pp: con 0,5 pp el aviso no saltó.
+pair_drift_warning = 0.003          # |^TNX − Rf del par| mayor: aviso "revisar el par Rf–ERP"
 # F8 · E1: pisos duros del Ke (el accionista es residual: su coste no puede quedar por debajo del de la deuda ni de
 # medio mercado). Ke = máx(CAPM, Rf + ke_floor_erp_multiple × ERP, Kd + ke_floor_over_kd); el de Kd, si hay deuda.
 # Antes solo había piso en el WACC (6 %), que no protege el Ke del P/B justificado (AWK: Ke 5,14 % < Kd 5,88 %).

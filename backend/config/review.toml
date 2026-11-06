@@ -10,20 +10,20 @@
 
 [parameters.market_risk_premium]
 key = "valuation.capm.market_risk_premium"
-source = "A. Damodaran, Implied ERP (trailing 12 months, adjusted payout), NYU Stern"
-url = "https://pages.stern.nyu.edu/~adamodar/"
+source = "A. Damodaran, Implied ERP (trailing 12 months, adjusted payout), NYU Stern: hoja mensual, tools/damodaran_erp.py"
+url = "https://pages.stern.nyu.edu/~adamodar/pc/implprem/ERPbymonth.xlsx"
 published = "2026-11-01"
-consulted = "2026-11-05"
+consulted = "2026-11-06"
 cadence_days = 31
 pair = "risk_free_rate"
 note = "Damodaran la publica el día 1 de cada mes"
 
 [parameters.risk_free_rate]
 key = "valuation.capm.risk_free_rate"
-source = "Tesoro de EE. UU. a 10 años que usa Damodaran para la prima implícita (Rf del par Rf–ERP)"
-url = "https://pages.stern.nyu.edu/~adamodar/"
+source = "Tesoro de EE. UU. a 10 años que usa Damodaran para la prima implícita (Rf del par Rf–ERP): «T.Bond Rate» de su hoja mensual, no el texto de la portada"
+url = "https://pages.stern.nyu.edu/~adamodar/pc/implprem/ERPbymonth.xlsx"
 published = "2026-11-01"
-consulted = "2026-11-05"
+consulted = "2026-11-06"
 cadence_days = 31
 pair = "market_risk_premium"
 note = "F8 · E1: el Ke, el Kd y el WACC usan este Rf con la prima de la misma fecha; el ^TNX del día es solo referencia (y respaldo si faltara el par)"

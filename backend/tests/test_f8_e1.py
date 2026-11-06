@@ -153,9 +153,19 @@ def test_rf_and_erp_come_from_the_same_date(monkeypatch):
     r = coc.capm_rates()
     assert (r["value"], r["erp"], r["as_of"]) == (RF, ERP, CAPM["pair_as_of"])
     assert r["market"]["value"] == 0.045 and "debe actualizarse" in r["reason"]
-    monkeypatch.setattr(coc, "risk_free", lambda now=None: {"value": 0.04986, "source": "^TNX", "as_of": "2026-10-26",
+    monkeypatch.setattr(coc, "risk_free", lambda now=None: {"value": 0.0484, "source": "^TNX", "as_of": "2026-11-05",
                                                             "fallback": False, "reason": None})
-    assert coc.capm_rates()["reason"] is None                 # 0,30 pp del par (26-oct): dentro del margen
+    assert coc.capm_rates()["reason"] is None                 # 0,10 pp del par (5-nov): dentro del margen
+
+
+def test_drift_warning_catches_a_pair_copied_wrong(monkeypatch):
+    """F14 · paso 1: el 6-nov el par llevaba 5,29 % (copiado de la portada) y el ^TNX estaba al 4,84 %: 0,45 pp. Con el
+    umbral de 0,5 pp no saltó; con 0,3 pp, sí."""
+    capm = {**CAPM, "risk_free_rate": 0.0529}
+    monkeypatch.setattr(coc, "cfg", lambda path: capm if path == "valuation.capm" else cfg(path))
+    monkeypatch.setattr(coc, "risk_free", lambda now=None: {"value": 0.0484, "source": "^TNX", "as_of": "2026-11-05",
+                                                            "fallback": False, "reason": None})
+    assert "debe actualizarse" in coc.capm_rates()["reason"]
 
 
 def test_rf_pair_without_market_reading(monkeypatch):
