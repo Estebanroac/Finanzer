@@ -354,6 +354,10 @@ min_firms = "int"
 dominance_ratio = "float"
 profit_columns = "list[str]"
 min_profit_ratio = "float"
+cause_band_max = "float"
+losing_excess = "float"
+below_median_ratio = "float"
+thin_margin_industries = "list[str]"
 self_negligible_weight = "float"
 self_max_weight = "float"
 self_max_shift = "float"
@@ -444,7 +448,11 @@ blume_prior = "float"
 statutory_rate = "float"
 effective_bounds = "list[float]"
 
+[valuation.cross_holdings]
+ev_equity_investments_min = "float"
+
 [valuation.synthetic_rating]
+coverage_equity_min_share = "float"
 large_cap_min = "float"
 large_coverage_bounds = "list[number]"
 small_coverage_bounds = "list[number]"
@@ -473,6 +481,8 @@ min_source_growth = "float"
 default_growth = "float"
 terminal_value_warning_pct = "int"
 yoy_vs_3y_pp = "float"
+base_rate_horizon = "int"
+base_rate_weight = "float"
 
 [valuation.grid]
 growth_range = "list[float]"
@@ -828,6 +838,8 @@ terminal = "float"
 [thresholds.normalization]
 one_off_pct = "float"
 nonoperating_tolerance_revenue = "float"
+equity_recurrence_years = "int"
+equity_recurrence_min_years = "int"
 tax_median_years = "int"
 tax_median_min = "int"
 tax_median_floor = "float"
@@ -847,6 +859,7 @@ label_min_diff = "float"
 [thresholds.growth]
 per_share_min_shares_cagr = "float"
 anomalous_base_ratio = "float"
+inflated_base_ratio = "float"
 perimeter_min_years = "int"
 perimeter_history_break = "float"
 long_years = "int"
@@ -863,6 +876,7 @@ margin_trend_years = "int"
 margin_drop_min = "float"
 margin_drop_downs = "int"
 margin_drop_low_mult = "float"
+growth_divergence_pp = "float"
 central_block = "int"
 fcf_fields = "list[str]"
 inferred_sources = "list[str]"
@@ -888,6 +902,8 @@ coverage_bounds = "list[float]"
 source_issue_bounds = "list[int]"
 excluded_multiple_components = "list[str]"
 fragile_pe_gap = "float"
+cycle_real_drop = "float"
+cycle_margin_min_years = "int"
 
 [thresholds.confidence.weights]
 convergence = "float"
@@ -1030,6 +1046,9 @@ file_suffix = "str"
 
 [industries.regions."*".dollars]
 "*" = "list[number]"
+
+[industries.regions."*".money_losing]
+"*" = "number"
 
 [betas]
 source = "str"
@@ -1544,6 +1563,7 @@ min_ratio = "float"
 weight = "int"
 profit_columns = "list[str]"
 min_value = "float"
+cause_band_max = "float"
 max_roe = "float"
 max_factor = "float"
 
@@ -1591,6 +1611,9 @@ weight = "int"
 min_years = "int"
 min_factor = "float"
 series = "list[list[str]]"
+
+[invariants.base_inflada.engine_series]
+"*" = "str"
 
 [invariants.escaneo]
 batch_size = "int"

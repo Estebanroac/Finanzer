@@ -30,8 +30,8 @@
       },
       {
         "category": "Valoración",
-        "detail": "Cotiza a 10.4x EBITDA frente a 24.6x de sus pares del universo: valoración atractiva sobre flujo operativo, a validar que no responda a un deterioro del negocio.",
-        "reason": "EV/EBITDA barato — 10.4x"
+        "detail": "Cotiza a 9.6x EBITDA frente a 24.6x de sus pares del universo: valoración atractiva sobre flujo operativo, a validar que no responda a un deterioro del negocio.",
+        "reason": "EV/EBITDA barato — 9.6x"
       },
       {
         "category": "Solidez financiera",
@@ -1247,6 +1247,10 @@
         "detail": "balance del último trimestre (2026-06-30)",
         "source": "yfinance_statements"
       },
+      "key_metrics.ev_ebitda": {
+        "detail": "EV/EBITDA sin el valor de las participadas: EV $415.06B − participadas $33.42B (balance, método de participación; 8% del EV), porque el EBITDA no lleva su resultado; sin ajustar sería 10.4x",
+        "source": "derivado"
+      },
       "longName": {
         "detail": "símbolo pedido; nombre de stock_database o de la búsqueda",
         "source": "derivado"
@@ -1536,6 +1540,19 @@
       "rule": "multiplo_no_significativo"
     }
   ],
+  "dcf_growth_base_rate": {
+    "bin": "100+",
+    "cell": "100+ · Consumer",
+    "company": 0.109064131293,
+    "company_basis": "CAGR de ingresos a 3 años",
+    "count": 145,
+    "horizon_years": 5,
+    "industry": "Consumer",
+    "median": 0.036,
+    "reason": null,
+    "used": 0.0725320656466,
+    "weight": 0.5
+  },
   "dcf_growth_blend": null,
   "dcf_status": {
     "reason": "FCF base −$7.86B (≤ 0): no hay flujo positivo que descontar, así que el DCF no es significativo",
@@ -1574,7 +1591,7 @@
         },
         {
           "label": "Procedencia de los datos (campos del análisis por fuente)",
-          "text": "estados de Yahoo (yfinance): 38 campos; SEC EDGAR: 1 (country); Finnhub: 7 (liquidez corriente, P/E adelantado, cobertura de intereses, rotación de existencias, payout, PEG, prueba ácida); Yahoo (cotización y perfil): 2 (industria, sector); calculados con otros datos del análisis: 12 campos; sin dato utilizable (ausente o de otro periodo): 3 (arrendamientos financieros, BPA estimado, caja total)."
+          "text": "estados de Yahoo (yfinance): 38 campos; SEC EDGAR: 1 (country); Finnhub: 7 (liquidez corriente, P/E adelantado, cobertura de intereses, rotación de existencias, payout, PEG, prueba ácida); Yahoo (cotización y perfil): 2 (industria, sector); calculados con otros datos del análisis: 13 campos; sin dato utilizable (ausente o de otro periodo): 3 (arrendamientos financieros, BPA estimado, caja total)."
         },
         {
           "label": "Fórmula del bloque",
@@ -1637,16 +1654,16 @@
                 "bench": 24.585,
                 "bench_txt": "24.59x",
                 "fmt": "mult",
-                "gap_pct": -57.5924043392,
-                "gap_txt": "-58%",
+                "gap_pct": -61.0073977137,
+                "gap_txt": "-61%",
                 "higher_is_better": false,
                 "key": "ev_ebitda",
                 "label": "EV/EBITDA",
                 "reading": "Descuento profundo",
-                "text": "EV/EBITDA de 10.4x frente a 24.6x de sus pares del universo (-58%): descuento profundo.",
+                "text": "EV/EBITDA de 9.6x frente a 24.6x de sus pares del universo (-61%): descuento profundo.",
                 "tone": "pos",
-                "value": 10.4259073932,
-                "value_txt": "10.43x"
+                "value": 9.58633127208,
+                "value_txt": "9.59x"
               }
             ],
             "title": "Valoración"
@@ -2424,18 +2441,18 @@
             "bench": 24.585,
             "bench_txt": "24.59x",
             "fmt": "mult",
-            "gap_pct": -57.5924043392,
-            "gap_txt": "-58%",
+            "gap_pct": -61.0073977137,
+            "gap_txt": "-61%",
             "higher_is_better": false,
             "key": "ev_ebitda",
             "label": "EV/EBITDA",
             "reading": "Descuento profundo",
             "role": "block",
             "state": "con_dato",
-            "text": "EV/EBITDA de 10.4x frente a 24.6x de sus pares del universo (-58%): descuento profundo.",
+            "text": "EV/EBITDA de 9.6x frente a 24.6x de sus pares del universo (-61%): descuento profundo.",
             "tone": "pos",
-            "value": 10.4259073932,
-            "value_txt": "10.43x"
+            "value": 9.58633127208,
+            "value_txt": "9.59x"
           },
           {
             "bench": null,
@@ -3274,8 +3291,8 @@
               },
               {
                 "category": "Valoración",
-                "detail": "Cotiza a 10.4x EBITDA frente a 24.6x de sus pares del universo: valoración atractiva sobre flujo operativo, a validar que no responda a un deterioro del negocio.",
-                "reason": "EV/EBITDA barato — 10.4x"
+                "detail": "Cotiza a 9.6x EBITDA frente a 24.6x de sus pares del universo: valoración atractiva sobre flujo operativo, a validar que no responda a un deterioro del negocio.",
+                "reason": "EV/EBITDA barato — 9.6x"
               },
               {
                 "category": "Solidez financiera",
@@ -3560,11 +3577,11 @@
                 {
                   "in_block": true,
                   "metric": "EV/EBITDA frente al sector",
-                  "reason": "Muy barato (10.4x frente a 24.6x)",
+                  "reason": "Muy barato (9.6x frente a 24.6x)",
                   "sign": "(+4)",
                   "state": "con_dato",
                   "tone": "neu",
-                  "value": "10.43x"
+                  "value": "9.59x"
                 },
                 {
                   "in_block": false,
@@ -4246,14 +4263,14 @@
           },
           {
             "bench": "24.59x",
-            "gap": "-58%",
+            "gap": "-61%",
             "key": "ev_ebitda",
             "label": "EV/EBITDA",
             "reading": "Descuento profundo",
             "state": "con_dato",
-            "text": "EV/EBITDA de 10.4x frente a 24.6x de sus pares del universo (-58%): descuento profundo.",
+            "text": "EV/EBITDA de 9.6x frente a 24.6x de sus pares del universo (-61%): descuento profundo.",
             "tone": "pos",
-            "value": "10.43x"
+            "value": "9.59x"
           },
           {
             "bench": "—",
@@ -4343,7 +4360,7 @@
             "value": "20.47%"
           }
         ],
-        "wacc_note": "WACC 8.11% = 45.44% × Ke 12.41% (Rf 5.29% [Tesoro de EE. UU. a 10 años del par Rf–ERP de Damodaran, 1 de noviembre de 2026] + β media de la industria 1.46 [Damodaran, enero de 2026; sin Blume: es una media de industria] × prima implícita 4.41% + prima de riesgo país 0.68 pp (Japón, sede operativa; Damodaran, enero de 2026)) + 54.56% × Kd 5.69% × (1 − t 20.47%). Kd = Rf + spread del rating sintético AAA (tabla de empresas grandes, cobertura 11.0x). t: tasa efectiva TTM. Rf y prima implícita del mismo día: bono del Tesoro de EE. UU. a 10 años y prima implícita de Damodaran del 1 de noviembre de 2026."
+        "wacc_note": "WACC 8.11% = 45.44% × Ke 12.41% (Rf 5.29% [Tesoro de EE. UU. a 10 años del par Rf–ERP de Damodaran, 1 de noviembre de 2026] + β media de la industria 1.46 [Damodaran, enero de 2026; sin Blume: es una media de industria] × prima implícita 4.41% + prima de riesgo país 0.68 pp (Japón, sede operativa; Damodaran, enero de 2026)) + 54.56% × Kd 5.69% × (1 − t 20.47%). Kd = Rf + spread del rating sintético AAA (tabla de empresas grandes, cobertura 12.9x); con el resultado de las participadas operativas (4.02B) (con el EBIT contable: 11.0x). t: tasa efectiva TTM. Rf y prima implícita del mismo día: bono del Tesoro de EE. UU. a 10 años y prima implícita de Damodaran del 1 de noviembre de 2026."
       }
     },
     "summary": {
@@ -4411,14 +4428,14 @@
         },
         {
           "bench": "vs pares 24.59x",
-          "delta": "-58%",
+          "delta": "-61%",
           "key": "ev_ebitda",
           "label": "EV/EBITDA",
           "pill": "Gran descuento",
           "state": "con_dato",
           "tone": "pos",
           "unit": "x",
-          "value": "10.43"
+          "value": "9.59"
         }
       ],
       "composition": {
@@ -5427,6 +5444,9 @@
       "charges_back": 0,
       "equity_income": 4020365883.86,
       "equity_income_net_of_tax": null,
+      "equity_net_history": [],
+      "equity_net_operating": 0.0,
+      "equity_net_recurrent": null,
       "excess": 0.0,
       "explained": 23360218745.8,
       "income": 27110271884.6,
@@ -5551,6 +5571,13 @@
   },
   "eps_vs_revenue_growth": null,
   "errors": [],
+  "ev_cross_holdings": {
+    "enterprise_value": 415062999779.0,
+    "equity_investments": 33424139524.6,
+    "ev_ebitda": 9.58633127208,
+    "ev_ebitda_before": 10.4259073932,
+    "share": 0.08052787057
+  },
   "graham_margin": 0.386351894153,
   "graham_number": 312.785129804,
   "growth_basis": {
@@ -5897,7 +5924,7 @@
     "ebitda_margin": 0.118285648386,
     "enterprise_value": 415062999779.0,
     "eps": 22.2269866941,
-    "ev_ebitda": 10.4259073932,
+    "ev_ebitda": 9.58633127208,
     "ev_revenue": 1.23323521602,
     "fcf_yield": -0.0347727801758,
     "ffo": 45044536002.2,
@@ -6993,9 +7020,9 @@
             "adjustment": 4,
             "in_block": true,
             "metric": "EV/EBITDA frente al sector",
-            "reason": "Muy barato (10.4x frente a 24.6x)",
+            "reason": "Muy barato (9.6x frente a 24.6x)",
             "severity": "excellent",
-            "value": "10.43x"
+            "value": "9.59x"
           },
           {
             "adjustment": 3,
@@ -7030,7 +7057,7 @@
         "details": [
           "Muy barato (9.2x frente a 16.0x sector)",
           "Sin compresión del P/E normalizado (9x → 9x forward)",
-          "Muy barato (10.4x frente a 24.6x)",
+          "Muy barato (9.6x frente a 24.6x)",
           "media de 2 lecturas en una escala de −1 a +1 (BPA (P/E, Forward P/E): P/E +1.00, Forward P/E +0.00 → +0.50; EV/EBITDA +1.00): +0.75, que suma +3.0 puntos de un máximo de ±4; sin dato: P/FCF",
           "El precio actual exige que el flujo de mantenimiento (flujo operativo − D&A) por acción crezca un 11.6% anual durante 10 años (15.7% los 5 primeros y convergencia al 2.5%); en los últimos 10 años (FY2016–FY2026), sus ingresos crecieron un 49.8% anual. Lo sostuvo 10 años el 6% de las empresas comparables (ventas de más de 100 mil millones, todas las industrias)."
         ],
@@ -7174,16 +7201,17 @@
     "ke_shift": null,
     "mrp": 0.0441,
     "rating": {
-      "coverage": 11.0439618483,
+      "coverage": 12.9146165596,
       "flag": null,
       "rating": "AAA",
       "spread": 0.004,
       "table": "grandes"
     },
     "rating_coverage": {
-      "basis": "EBIT",
-      "coverage": 11.0439618483,
-      "reason": null,
+      "basis": "EBIT + participadas",
+      "coverage": 12.9146165596,
+      "equity_income": 4020365883.86,
+      "reason": "con el resultado de las participadas operativas (4.02B)",
       "reported": {
         "coverage": 11.0439618483,
         "state": "ok"

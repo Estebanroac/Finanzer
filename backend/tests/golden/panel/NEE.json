@@ -44,12 +44,12 @@
     "zone": "n/a"
   },
   "archetype_metrics": {
-    "cost_of_equity": 0.0767,
+    "cost_of_equity": 0.0749508140266,
     "implied": {
       "at1": null,
       "band": "exigente",
-      "gap": -0.0420715096014,
-      "implied": 0.172950472622,
+      "gap": -0.0370658443894,
+      "implied": 0.167944807409,
       "metric": "ROE",
       "multiple": 2.86171126928,
       "own": 0.13087896302,
@@ -59,27 +59,27 @@
       "sensitivity": [
         {
           "delta": -0.02,
-          "multiple_justified": 1.66110179923,
+          "multiple_justified": 1.7192705403,
           "return": 0.11087896302
         },
         {
           "delta": -0.01,
-          "multiple_justified": 1.85452539691,
+          "multiple_justified": 1.91946747793,
           "return": 0.12087896302
         },
         {
           "delta": 0.0,
-          "multiple_justified": 2.04794899459,
+          "multiple_justified": 2.11966441555,
           "return": 0.13087896302
         },
         {
           "delta": 0.01,
-          "multiple_justified": 2.24137259227,
+          "multiple_justified": 2.31986135318,
           "return": 0.14087896302
         },
         {
           "delta": 0.02,
-          "multiple_justified": 2.43479618994,
+          "multiple_justified": 2.5200582908,
           "return": 0.15087896302
         }
       ],
@@ -91,8 +91,8 @@
       "date": "2026-06-30",
       "type": "corte"
     },
-    "pb_justified": 2.04794899459,
-    "pb_ratio": 1.3973547568,
+    "pb_justified": 2.11966441555,
+    "pb_ratio": 1.35007751618,
     "roe_avg": 0.13087896302,
     "terminal_growth": 0.025
   },
@@ -384,8 +384,8 @@
             "evaluable": true,
             "kind": "intrínseco",
             "method": "P/B justificado (ROE regulado)",
-            "signal": -0.568724233941,
-            "upside": -0.28436211697
+            "signal": -0.518603579397,
+            "upside": -0.259301789698
           },
           {
             "components": 3,
@@ -459,20 +459,15 @@
     "capm": 0.0749508140266,
     "crp": null,
     "erp": 0.0441,
-    "floor": {
-      "capm": 0.0749508140266,
-      "crp": null,
-      "rule": "Kd + 1 pp",
-      "value": 0.0767
-    },
+    "floor": null,
     "floors": {
-      "Kd + 1 pp": 0.0767,
+      "Kd + 1 pp": 0.074,
       "Rf + 0.5 × ERP": 0.07495
     },
-    "kd": 0.0667,
+    "kd": 0.064,
     "rf": 0.0529,
     "shift": null,
-    "value": 0.0767
+    "value": 0.0749508140266
   },
   "country_risk": {
     "as_of": "2026-01-05",
@@ -1481,6 +1476,19 @@
       "rule": "multiplo_no_significativo"
     }
   ],
+  "dcf_growth_base_rate": {
+    "bin": "10-25",
+    "cell": "10-25 · Manufacturing",
+    "company": 0.0936477012822,
+    "company_basis": "CAGR de ingresos a 3 años",
+    "count": 1296,
+    "horizon_years": 5,
+    "industry": "Manufacturing",
+    "median": 0.024,
+    "reason": null,
+    "used": 0.0588238506411,
+    "weight": 0.5
+  },
   "dcf_growth_blend": null,
   "dcf_status": {
     "reason": "No aplica a utilities reguladas: su FCF es negativo por diseño: la inversión en la base de activos regulada supera al flujo operativo y se financia con deuda",
@@ -2218,7 +2226,7 @@
           "key": "convergence",
           "label": "Convergencia entre métodos",
           "level": "Media",
-          "text": "P/B justificado (ROE regulado) -28% (cara) · múltiplos frente al sector -0.17 (en precio). Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
+          "text": "P/B justificado (ROE regulado) -26% (cara) · múltiplos frente al sector -0.17 (en precio). Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
         },
         {
           "key": "coverage",
@@ -3274,7 +3282,7 @@
                 {
                   "in_block": false,
                   "metric": "P/B frente al ROE regulado",
-                  "reason": "El precio descuenta un ROE sostenido del 17.3%; la utility obtuvo un 13.1% de media en 4 ejercicios.",
+                  "reason": "El precio descuenta un ROE sostenido del 16.8%; la utility obtuvo un 13.1% de media en 4 ejercicios.",
                   "sign": "-2",
                   "state": "con_dato",
                   "tone": "warn",
@@ -3874,7 +3882,7 @@
         "normalization_note": "Beneficio TTM (4 trimestres): reportado $9.30B, normalizado $8.08B (no recurrentes 13.1% del beneficio; partidas no recurrentes (total de Yahoo) (explicita, confianza alta), recurrente (4 de los últimos 4 ejercicios): solo el exceso sobre su promedio, $231.02M netos; beneficio que la operación no explica después de impuestos (después de impuestos, confianza alta): $987.71M netos). El score usa el beneficio normalizado. P/E reportado 17.61x no fiable; P/E normalizado 20.27x. El beneficio supera lo que explica la operación en $188.48M antes de impuestos y $236.03M después de impuestos sin una partida que lo nombre (participadas, beneficio fiscal puntual, ganancias de inversiones…): no se recorta, y la confianza lo tiene en cuenta.",
         "premortem": {
           "items": [
-            "el ROE sostenido bajara del 17.3% que descuenta el precio (obtiene un 13.1%)",
+            "el ROE sostenido bajara del 16.8% que descuenta el precio (obtiene un 13.1%)",
             "el EBITDA cayera o la deuda se refinanciara más cara: la deuda neta equivale a 6.9 veces el EBITDA"
           ],
           "note": "Condiciones que invalidarían la lectura de hoy, con la cifra que las mide: no son previsiones.",
@@ -3885,12 +3893,12 @@
           "lines": [
             {
               "label": "Exigente",
-              "text": "El precio descuenta un ROE sostenido del 17.3%; la utility obtuvo un 13.1% de media en 4 ejercicios.",
+              "text": "El precio descuenta un ROE sostenido del 16.8%; la utility obtuvo un 13.1% de media en 4 ejercicios.",
               "tone": "warn"
             },
             {
               "label": null,
-              "text": "Sensibilidad (±2 pp): se justificaría con un ROE del 11.1%, 1.66 veces el valor contable; con un ROE del 15.1%, 2.43 veces el valor contable (hoy cotiza a 2.86).",
+              "text": "Sensibilidad (±2 pp): se justificaría con un ROE del 11.1%, 1.72 veces el valor contable; con un ROE del 15.1%, 2.52 veces el valor contable (hoy cotiza a 2.86).",
               "tone": "neu"
             }
           ],
@@ -4036,7 +4044,7 @@
         "wacc_breakdown": [
           {
             "label": "WACC",
-            "value": "6.99%"
+            "value": "6.79%"
           },
           {
             "label": "Peso del patrimonio",
@@ -4044,15 +4052,11 @@
           },
           {
             "label": "Coste del patrimonio (Ke)",
-            "value": "7.67%"
+            "value": "7.50%"
           },
           {
             "label": "Tasa libre de riesgo (Rf)",
             "value": "5.29%"
-          },
-          {
-            "label": "Piso del Ke (Kd + 1 pp; CAPM 7.50%)",
-            "value": "7.67%"
           },
           {
             "label": "Beta de abajo hacia arriba (Damodaran, sin Blume)",
@@ -4068,18 +4072,18 @@
           },
           {
             "label": "Coste de la deuda (Kd)",
-            "value": "6.67%"
+            "value": "6.40%"
           },
           {
             "label": "Rating sintético",
-            "value": "BB+"
+            "value": "BBB"
           },
           {
             "label": "Tipo impositivo (t)",
             "value": "10.00%"
           }
         ],
-        "wacc_note": "WACC 6.99% = 59.49% × Ke 7.67% (piso Kd + 1 pp, porque el CAPM da 7.50%: Rf 5.29% [Tesoro de EE. UU. a 10 años del par Rf–ERP de Damodaran, 1 de noviembre de 2026] + β de abajo hacia arriba 0.50 [βU 0.31 de la industria (Damodaran, enero de 2026) reapalancada con D/E 0.68 y t 10%; sin Blume] × prima implícita 4.41%) + 40.51% × Kd 6.67% × (1 − t 10.00%). Kd = Rf + spread del rating sintético BB+ (tabla de empresas grandes, cobertura 2.4x). t: tasa efectiva TTM (tasa efectiva -8.6% acotada a [10%, 35%]). Rf y prima implícita del mismo día: bono del Tesoro de EE. UU. a 10 años y prima implícita de Damodaran del 1 de noviembre de 2026."
+        "wacc_note": "WACC 6.79% = 59.49% × Ke 7.50% (Rf 5.29% [Tesoro de EE. UU. a 10 años del par Rf–ERP de Damodaran, 1 de noviembre de 2026] + β de abajo hacia arriba 0.50 [βU 0.31 de la industria (Damodaran, enero de 2026) reapalancada con D/E 0.68 y t 10%; sin Blume] × prima implícita 4.41%) + 40.51% × Kd 6.40% × (1 − t 10.00%). Kd = Rf + spread del rating sintético BBB (tabla de empresas grandes, cobertura 2.7x); con el resultado de las participadas operativas (0.79B) (con el EBIT contable: 2.4x). t: tasa efectiva TTM (tasa efectiva -8.6% acotada a [10%, 35%]). Rf y prima implícita del mismo día: bono del Tesoro de EE. UU. a 10 años y prima implícita de Damodaran del 1 de noviembre de 2026."
       }
     },
     "summary": {
@@ -4962,6 +4966,9 @@
       "charges_back": 0,
       "equity_income": 790000000.0,
       "equity_income_net_of_tax": null,
+      "equity_net_history": [],
+      "equity_net_operating": 0.0,
+      "equity_net_recurrent": null,
       "excess": 1223733714.71,
       "explained": 7270230743.75,
       "income": 9067984458.45,
@@ -5111,6 +5118,7 @@
     "state": "expansion"
   },
   "errors": [],
+  "ev_cross_holdings": null,
   "graham_margin": -0.496637329553,
   "graham_number": 52.3640572095,
   "growth_basis": {
@@ -5335,18 +5343,18 @@
   },
   "ke_sensitivity": {
     "base": {
-      "ke": 0.0767,
+      "ke": 0.0749508140266,
       "level": "exigente",
       "score": 42
     },
     "dependent": true,
     "minus": {
-      "ke": 0.0667,
+      "ke": 0.0649508140266,
       "level": "razonable",
       "score": 50
     },
     "plus": {
-      "ke": 0.0867,
+      "ke": 0.0849508140266,
       "level": "exigente",
       "score": 35
     },
@@ -5429,7 +5437,7 @@
     "total_assets": 232807000000.0,
     "total_debt": 111340000000.0,
     "total_equity": 57126000000.0,
-    "wacc": 0.0699463048153
+    "wacc": 0.0679212933822
   },
   "market_context": {
     "behavioral": [],
@@ -5912,8 +5920,8 @@
       {
         "field": "archetype_metrics.implied.implied",
         "kind": "precio_implicito",
-        "text": "el ROE sostenido bajara del 17.3% que descuenta el precio (obtiene un 13.1%)",
-        "value": 0.172950472622
+        "text": "el ROE sostenido bajara del 16.8% que descuenta el precio (obtiene un 13.1%)",
+        "value": 0.167944807409
       },
       {
         "field": "key_metrics.net_debt_to_ebitda",
@@ -6441,7 +6449,7 @@
           {
             "adjustment": -2,
             "metric": "P/B frente al ROE regulado",
-            "reason": "El precio descuenta un ROE sostenido del 17.3%; la utility obtuvo un 13.1% de media en 4 ejercicios.",
+            "reason": "El precio descuenta un ROE sostenido del 16.8%; la utility obtuvo un 13.1% de media en 4 ejercicios.",
             "severity": "moderate",
             "value": "exigente"
           },
@@ -6461,7 +6469,7 @@
           "En línea (20.3x frente a 20.2x)",
           "Sin compresión del P/E normalizado (20x → 21x forward creíble); forward 18.4x (implica +10% de BPA); con el crecimiento que respalda su histórico (-3% del BPA en el último ejercicio), 20.8x",
           "media de 1 lectura en una escala de −1 a +1 (BPA (P/E, Forward P/E): P/E +0.00, Forward P/E +0.00 → +0.00): +0.00, que suma +0.0 puntos de un máximo de ±2",
-          "El precio descuenta un ROE sostenido del 17.3%; la utility obtuvo un 13.1% de media en 4 ejercicios.",
+          "El precio descuenta un ROE sostenido del 16.8%; la utility obtuvo un 13.1% de media en 4 ejercicios.",
           "EV/EBITDA: No aplica a utilities reguladas: se valora por P/E frente al sector y rentabilidad por dividendo; P/FCF: No aplica a utilities reguladas: su FCF es negativo por diseño: la inversión en la base de activos regulada supera al flujo operativo y se financia con deuda; PEG: No aplica a utilities reguladas: su crecimiento lo fija la base regulada, no el mercado: se valora por P/E y dividendo (no cuenta en la cobertura)"
         ],
         "max": 20,
@@ -6615,37 +6623,33 @@
     "clamped": false,
     "debt": 111340000000.0,
     "equity": 163478117969.0,
-    "kd": 0.0667,
-    "kd_after_tax": 0.06003,
-    "ke": 0.0767,
+    "kd": 0.064,
+    "kd_after_tax": 0.0576,
+    "ke": 0.0749508140266,
     "ke_capm": 0.0749508140266,
     "ke_crp": null,
-    "ke_floor": {
-      "capm": 0.0749508140266,
-      "crp": null,
-      "rule": "Kd + 1 pp",
-      "value": 0.0767
-    },
+    "ke_floor": null,
     "ke_shift": null,
     "mrp": 0.0441,
     "rating": {
-      "coverage": 2.43707289294,
+      "coverage": 2.66201594533,
       "flag": null,
-      "rating": "BB+",
-      "spread": 0.0138,
+      "rating": "BBB",
+      "spread": 0.0111,
       "table": "grandes"
     },
     "rating_coverage": {
-      "basis": "EBIT",
-      "coverage": 2.43707289294,
-      "reason": null,
+      "basis": "EBIT + participadas",
+      "coverage": 2.66201594533,
+      "equity_income": 790000000.0,
+      "reason": "con el resultado de las participadas operativas (0.79B)",
       "reported": {
         "coverage": 2.43707289294,
         "state": "ok"
       },
       "state": "ok"
     },
-    "raw": 0.0699463048153,
+    "raw": 0.0679212933822,
     "reason": null,
     "rf": 0.0529,
     "rf_as_of": "2026-11-01",
@@ -6656,7 +6660,7 @@
     "tax_rate": 0.1,
     "tax_reason": "tasa efectiva -8.6% acotada a [10%, 35%]",
     "tax_source": "efectiva",
-    "value": 0.0699463048153,
+    "value": 0.0679212933822,
     "weights": {
       "debt": 0.405140682947,
       "equity": 0.594859317053

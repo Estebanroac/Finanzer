@@ -1620,6 +1620,7 @@ def _enrich_prior_year_data(symbol: str, info: Dict[str, Any], ticker=None) -> D
         "nonop_interest": _row(inc, "Net Non Operating Interest Income Expense"),
         "equity_interest": _row(inc, "Earnings From Equity Interest"),
         "equity_interest_net_of_tax": _row(inc, "Earnings From Equity Interest Net Of Tax"),   # F10 · N1b
+        "equity_investments": _row(bs, "Long Term Equity Investment"),   # F13 (SRE y Oncor): participadas, al EV
         "minority_interests": _row(inc, "Minority Interests"),
         "ebit": _row(inc, "EBIT"),
         "ebitda": _row(inc, "EBITDA"),

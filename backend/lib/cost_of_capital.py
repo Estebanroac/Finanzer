@@ -177,7 +177,7 @@ def cost_of_equity(beta: Optional[float], rf: float, preadjusted: bool = False) 
 def rating_coverage(*, coverage: Optional[float], state: Optional[str], ebit: Optional[float],
                     ebit_normalized: Optional[float], interest: Optional[float], reit: bool,
                     ebitda: Optional[float], operating_cash_flow: Optional[float], depreciation: Optional[float],
-                    market_cap: Optional[float], state_fn) -> Dict[str, Any]:
+                    market_cap: Optional[float], state_fn, equity_income: Optional[float] = None) -> Dict[str, Any]:
     """F13 · paso 2 (revisión de 110 empresas, patrón 3): la cobertura de intereses con la que se busca el rating
     sintético (Kd y, por el piso Ke ≥ Kd + 1 pp, el Ke). Antes era siempre el EBIT contable del TTM: un deterioro sin
     salida de caja daba rating D y llevaba el WACC al tope (KHC, APD, MOS: 20 %; WELL, REIT: CC y 18,5 %).
@@ -203,6 +203,17 @@ def rating_coverage(*, coverage: Optional[float], state: Optional[str], ebit: Op
         out.update(coverage=ebit_normalized / ie, state=state_fn(ebit_normalized / ie, ebit_normalized),
                    basis="EBIT normalizado",
                    reason="cobertura con el EBIT normalizado (sin los cargos que la normalización quita del operativo)")
+    # F13 (decisión del usuario: SRE y Oncor): el resultado de las participadas operativas (método de participación,
+    # positivo) se suma al EBIT de la cobertura: la parte proporcional de su negocio también paga la deuda de la matriz.
+    if equity_income and equity_income > 0 and out["basis"] != "EBITDA":
+        base = (ebit_normalized if out["basis"] == "EBIT normalizado" else ebit)
+        # solo si pesa: por debajo de `coverage_equity_min_share` del EBIT no cambia la lectura
+        if base is not None and base > 0 and equity_income >= R["coverage_equity_min_share"] * base:
+            cov = (base + equity_income) / ie
+            out.update(coverage=cov, state=state_fn(cov, base + equity_income), basis=out["basis"] + " + participadas",
+                       equity_income=equity_income,
+                       reason=((out["reason"] + "; ") if out["reason"] else "")
+                       + f"con el resultado de las participadas operativas ({equity_income / 1e9:.2f}B)")
     low = set(R["incoherent_ratings"])
     if synthetic_rating(out["coverage"], market_cap, out["state"])["rating"] in low \
             and operating_cash_flow and operating_cash_flow > 0 and depreciation is not None:

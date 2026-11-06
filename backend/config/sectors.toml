@@ -201,6 +201,17 @@ self_negligible_weight = 0.05
 # referencia, dicho (la propuesta de la revisión, 2 %).
 profit_columns = ["roe", "roic", "net_margin", "operating_margin"]
 min_profit_ratio = 0.02
+# F13 (decisión del usuario, 5-nov): el 2 % es un umbral fijo PROVISIONAL. Entre él y `cause_band_max`, la referencia sin la
+# empresa se decide por su causa, no por el número (lib/industry_bench._cause): es válida en las industrias de margen fino
+# por naturaleza (`thin_margin_industries`: comercio, supermercados, distribución, distribución farmacéutica y
+# agroindustria); se acota (pasa a la mediana de pares, dicho) si muchas empresas de la industria pierden dinero (la
+# proporción de Damodaran supera a la del mercado en `losing_excess`) o si el agregado queda por debajo de
+# `below_median_ratio` veces la mediana de los pares del universo. A medio plazo, esta prueba sustituye al umbral fijo.
+cause_band_max = 0.03
+losing_excess = 0.15
+below_median_ratio = 0.5
+thin_margin_industries = ["Retail (General)", "Retail (Grocery and Food)", "Retail (Distributors)", "Food Wholesalers",
+                          "Healthcare Support Services", "Farming/Agriculture"]
 
 # País del emisor cuando Yahoo no lo da (assetProfile de quoteSummary da 401 en Render): la dirección comercial en
 # SEC EDGAR (nombres de EDGAR -> los de las listas de arriba) o, sin EDGAR, el sufijo del ticker en Yahoo.

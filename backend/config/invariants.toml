@@ -201,7 +201,8 @@ min_ratio = 1.5                     # revisor: 1,5×
 [referencia_acotada]                # [4] referencia sin la empresa: mínimo, ROE máximo y factor frente a la publicada
 weight = 3
 profit_columns = ["roe", "net_margin", "operating_margin"]
-min_value = 0.03                    # revisor: 3 %
+min_value = 0.02                    # revisor: 3 %; decisión del usuario (5-nov): 2 % fijo provisional
+cause_band_max = 0.03               # entre el 2 % y el 3 %, la referencia debe llevar su prueba por causa
 max_roe = 1.0
 max_factor = 3.0
 
@@ -249,3 +250,4 @@ weight = 3
 min_years = 6
 min_factor = 1.5
 series = [["free_cash_flow", "FCF"], ["revenue", "Ingresos"], ["net_income", "Beneficio neto"]]
+engine_series = { free_cash_flow = "fcf_cagr", revenue = "revenue_cagr", net_income = "eps_cagr" }

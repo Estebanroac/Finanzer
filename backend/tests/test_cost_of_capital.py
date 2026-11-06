@@ -380,8 +380,9 @@ def test_valuation_contradiction_lowers_confidence(outputs_by_env):
     v = verdict_confidence({"convergence": conv, "coverage": alta, "source": alta, "stability": alta})
     assert v["level"] != "alta" and v["limits_score"] is False
     # Caso real con convergencia media (fase 4/7: PG, el de antes, pasó a convergencia alta con su industria, Household
-    # Products de Damodaran; F13 · paso 9: MSFT, el siguiente, también, con el DCF de la reinversión del crecimiento).
-    n = outputs_by_env("panel")["UL"][0]["confidence"]
+    # Products de Damodaran; F13 · paso 9: MSFT, el siguiente, también, con el DCF de la reinversión del crecimiento;
+    # F13 · paso 11: UL pasa a confianza baja por el escalón de Ke y el caso es NFLX).
+    n = outputs_by_env("panel")["NFLX"][0]["confidence"]
     assert n["dimensions"]["convergence"]["level"] == "media" and n["contraction_basis"] == "media"
 
 

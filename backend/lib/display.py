@@ -1665,7 +1665,10 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     # Etapa 8: fiabilidad del DCF. Con fiabilidad baja la lectura lo dice y el DCF no puntúa.
     _rel = dcf.get("reliability") or {}
     _in_grid = _rel.get("grid_contains_price")
-    r_up = read_upside(dcf.get("upside"), _in_grid, fv=dcf.get("fair_value"), price=a.get("price"))
+    # F13 · paso 11: con fiabilidad baja el DCF no puntúa y la lectura lo dice; dónde cae el precio en su tabla de
+    # sensibilidad ya no informa de nada (y alargaba el resumen: la página 2 del PDF de NFLX se encogía)
+    r_up = read_upside(dcf.get("upside"), None if _rel.get("level") == "baja" else _in_grid,
+                       fv=dcf.get("fair_value"), price=a.get("price"))
     _flips = dcf.get("wacc_flips") or []
     if r_up and _flips and _rel.get("level") != "baja" and r_up[0] != "Precio justo":
         # F11 · F1: la dirección depende de ±1 escalón de WACC: la banda del caso base, marcada y neutra, como la de

@@ -208,7 +208,9 @@ def test_confidence_row_is_the_engine_summary(built, sym):
     if sym == "PLD":
         # F13 · paso 3: sin el DCF inverso contado también dentro de los múltiplos, sus múltiplos (P/FFO) la ven cara y
         # el inverso en precio: confianza media (antes, «coinciden»: la misma lectura contada dos veces)
-        assert "DCF inverso la ve en precio y los múltiplos cara" in cover and "El DCF y los múltiplos coinciden" not in cover
+        # F13 (SRE y Oncor): el EV/EBITDA sin sus participadas inmobiliarias la ve en línea con su industria, como el
+        # inverso: ahora sí coinciden (sin el inverso dentro de los múltiplos, paso 3)
+        assert "DCF inverso y los múltiplos coinciden" in cover and "El DCF y los múltiplos coinciden" not in cover
     # F10 · N4: KO era el caso del directo fiable; con P/E, forward y PEG como una sola lectura su precio queda a un
     # punto de la frontera y ±1 pp de Ke cambia su nivel (confianza media por eso). JNJ es ahora el caso.
     if sym == "JNJ":    # PM: siempre de qué DCF se habla, como la fila «DCF directo» de la tarjeta

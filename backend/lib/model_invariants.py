@@ -1322,10 +1322,18 @@ def referencia_acotada(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
         bad = []
         if v < C["min_value"]:
             bad.append(f"{_pct(v)} < {_pct(C['min_value'], 0)}")
+        # F13 (decisión del usuario): entre el 2 % y `cause_band_max`, la referencia sin la empresa lleva su prueba por
+        # causa (industry_bench._cause); sin ella, no está decidida
+        elif (v < C["cause_band_max"] and (cols.get(col) or {}).get("how") == "sin_empresa"
+              and not (cols.get(col) or {}).get("cause")):
+            bad.append(f"{_pct(v)} sin prueba por causa")
         if col == "roe" and v > C["max_roe"]:
             bad.append(f"ROE de referencia {_pct(v)}")
         # frente a una publicada casi nula (Restaurantes, ROE 0,1 %) el factor no mide nada
-        if pub and pub >= C["min_value"] and v > 0 and not (1 / C["max_factor"] <= v / pub <= C["max_factor"]):
+        # (si el agregado se acotó por su causa o por ser un resto, la publicada tampoco representa a la industria:
+        # no hay factor que medir)
+        if (pub and pub >= C["min_value"] and v > 0 and (cols.get(col) or {}).get("why") not in ("causa", "resto")
+                and not (1 / C["max_factor"] <= v / pub <= C["max_factor"])):
             bad.append(f"{v / pub:.1f}× la publicada ({_pct(pub)})")
         if bad:
             out.append(_violation(rule, 2, f"referencia de {col}: " + "; ".join(bad)
@@ -1535,6 +1543,8 @@ def base_inflada(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
     """[paso 12] Un crecimiento a 3 años no se mide desde un año base inflado frente a la historia de la empresa (PFE:
     FCF desde 2022, el año de las vacunas)."""
     rule, C = "base_inflada", _C("base_inflada")
+    if _get(a, "classification", "archetype") == "CYCLICAL":
+        return Result(NOT_APPLICABLE, "cíclica: el pico de la ventana es el ciclo (crecimiento de ciclo medio)")
     h = _hist(a)
     if len(h) < C["min_years"]:
         return Result(NOT_EVALUABLE, "historia corta")
@@ -1550,6 +1560,10 @@ def base_inflada(a: Dict[str, Any], ctx: Dict[str, Any]) -> Result:
         if base is None or base <= 0 or med <= 0 or last is None:
             continue
         cagr = (last / base) ** (1 / 3) - 1 if last > 0 else None
+        # F13 · paso 12: si el motor ya trata esa base como inflada (cota inferior y regresión), está resuelto
+        gb = _get(a, "growth_basis", C["engine_series"].get(key), default={}) or {}
+        if (gb.get("bound") or {}).get("direction") == "inferior":
+            continue
         if base / med >= C["min_factor"] and (cagr is None or cagr < 0):
             out.append(_violation(rule, base / med / C["min_factor"], f"{label}: base {base_y} = {base / med:.1f}× la "
                                   f"mediana del resto ({len(others)} años); CAGR 3 a {_pct(cagr) if cagr is not None else 'n.s.'}",

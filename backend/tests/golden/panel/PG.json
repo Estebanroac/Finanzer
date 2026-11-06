@@ -3,8 +3,8 @@
     "red_flags": [
       {
         "category": "Valor intrínseco",
-        "detail": "El valor estimado por el DCF ($95) está un 39% por debajo del precio ($156.53): sostenerlo requiere supuestos exigentes pero posibles (el precio cae en la parte alta del rango de sensibilidad).",
-        "reason": "Sobrevalorada según DCF −39%"
+        "detail": "El valor estimado por el DCF ($100) está un 34% por debajo del precio ($156.53): sostenerlo requiere supuestos exigentes pero posibles (el precio cae en la parte alta del rango de sensibilidad).",
+        "reason": "Sobrevalorada según DCF −34%"
       }
     ],
     "strengths": [
@@ -390,7 +390,7 @@
   "confidence": {
     "base_rate_step": null,
     "capped_from": null,
-    "contraction_basis": "alta",
+    "contraction_basis": "media",
     "dimensions": {
       "base": {
         "level": "alta",
@@ -405,8 +405,8 @@
             "kind": "intrínseco",
             "method": "DCF",
             "reliability": "alta",
-            "signal": -0.781575407351,
-            "upside": -0.390787703676
+            "signal": -0.684852733627,
+            "upside": -0.342426366813
           },
           {
             "components": 1,
@@ -425,7 +425,7 @@
           }
         ],
         "reasons": [
-          "coinciden (cara) con distancia 0.28 (< 0.6)"
+          "coinciden (cara) con distancia 0.18 (< 0.6)"
         ]
       },
       "coverage": {
@@ -460,9 +460,16 @@
         "reasons": []
       }
     },
-    "level": "alta",
+    "ke_dependent": {
+      "from": "alta",
+      "reason": "veredicto dependiente de Ke: el nivel de precio pasa de «muy exigente» a «exigente» con Ke − 1 pp",
+      "to": "media"
+    },
+    "level": "media",
     "limits_score": false,
-    "reasons": [],
+    "reasons": [
+      "veredicto dependiente de Ke: el nivel de precio pasa de «muy exigente» a «exigente» con Ke − 1 pp: confianza alta → media"
+    ],
     "score": 1.0
   },
   "cost_of_equity": {
@@ -1515,19 +1522,19 @@
   ],
   "dcf": {
     "available": true,
-    "fair_value": 95.36,
+    "fair_value": 102.93,
     "fcf_basis": "FCF − SBC",
     "fcf_gross": 15147000000.0,
     "fcf_input": 14623000000.0,
-    "growth_basis": "CAGR de ingresos a 3 años",
-    "growth_rate": 0.0200256940934,
+    "growth_basis": "CAGR de ingresos a 3 años (+2.0%), convergido a la mediana a 5 años de sus comparables de tamaño e industria (+4.4%, tasas base de Mauboussin): la media de los dos",
+    "growth_rate": 0.0320128470467,
     "growth_source": "revenue_growth_3y",
-    "margin_of_safety": -0.641463913373,
+    "margin_of_safety": -0.520742240156,
     "reason": null,
     "reliability": {
       "central_contains_price": false,
       "criteria": {
-        "central_dispersion": 2.00673992674,
+        "central_dispersion": 2.00230477223,
         "data_flags": [],
         "fcf_margin": {
           "cv": 0.0636489099422,
@@ -1547,6 +1554,10 @@
             2026
           ]
         },
+        "growth_divergence": {
+          "eps": 0.0391270714735,
+          "revenue": 0.0200256940934
+        },
         "margin_trend": {
           "changes": 4,
           "current": 0.226902439305,
@@ -1563,22 +1574,35 @@
           ]
         },
         "notes": [],
-        "terminal_pct": 56.7
+        "terminal_pct": 57.4
       },
       "grid_contains_price": true,
       "level": "alta",
       "reasons": []
     },
     "terminal_growth": 0.025,
-    "upside": -39.0787703676,
+    "upside": -34.2426366813,
     "value_composition": {
-      "stage1_pct": 24.9,
-      "stage2_pct": 18.4,
-      "terminal_pct": 56.7
+      "stage1_pct": 24.0,
+      "stage2_pct": 18.6,
+      "terminal_pct": 57.4
     },
     "wacc": 0.084280426951,
     "wacc_flips": [],
     "warnings": []
+  },
+  "dcf_growth_base_rate": {
+    "bin": "50-100",
+    "cell": "50-100 · Consumer",
+    "company": 0.0200256940934,
+    "company_basis": "CAGR de ingresos a 3 años",
+    "count": 250,
+    "horizon_years": 5,
+    "industry": "Consumer",
+    "median": 0.044,
+    "reason": null,
+    "used": 0.0320128470467,
+    "weight": 0.5
   },
   "dcf_growth_blend": null,
   "dcf_status": {
@@ -1594,7 +1618,7 @@
         },
         {
           "label": "Confianza · Convergencia entre métodos (alta)",
-          "text": "coinciden (cara) con distancia 0.28 (< 0.6)"
+          "text": "coinciden (cara) con distancia 0.18 (< 0.6)"
         },
         {
           "label": "Fuente oficial",
@@ -2417,66 +2441,66 @@
           "tone": "neg"
         },
         "dcf_composition": {
-          "explicit_pct": 43.3,
-          "terminal_pct": 56.7
+          "explicit_pct": 42.6,
+          "terminal_pct": 57.4
         },
         "fair_value": {
           "axis": [
-            42.2875,
-            225.566
+            45.781,
+            243.067
           ],
           "badge": {
             "label": "Sobrevalorada",
             "tone": "neg"
           },
-          "central_high": 136.96,
-          "central_high_txt": "$140",
-          "central_low": 68.25,
-          "central_low_txt": "$68",
-          "central_text": "rango $68–$140 en el bloque central de la tabla de sensibilidad (crecimiento ± 2,5 pp y WACC ± 1 pp; mínimo y máximo, no un p10–p90)",
-          "fair_value": 95.36,
-          "fair_value_txt": "$95",
-          "grid_high": 205.06,
-          "grid_high_txt": "$210",
-          "grid_low": 49.75,
-          "grid_low_txt": "$50",
+          "central_high": 147.69,
+          "central_high_txt": "$150",
+          "central_low": 73.76,
+          "central_low_txt": "$74",
+          "central_text": "rango $74–$150 en el bloque central de la tabla de sensibilidad (crecimiento ± 2,5 pp y WACC ± 1 pp; mínimo y máximo, no un p10–p90)",
+          "fair_value": 102.93,
+          "fair_value_txt": "$100",
+          "grid_high": 220.97,
+          "grid_high_txt": "$220",
+          "grid_low": 53.86,
+          "grid_low_txt": "$54",
           "method": "DCF",
           "price": 156.529998779,
           "price_txt": "$156.53",
           "reliability": "alta",
           "reliability_tone": "pos",
           "state": "con_dato",
-          "text": "el valor intrínseco estimado ($95) está un 39% por debajo del precio ($156.53): requiere supuestos exigentes pero posibles (el precio cae en la parte alta del rango de sensibilidad del DCF)",
-          "upside_txt": "-39.1%",
+          "text": "el valor intrínseco estimado ($100) está un 34% por debajo del precio ($156.53): requiere supuestos exigentes pero posibles (el precio cae en la parte alta del rango de sensibilidad del DCF)",
+          "upside_txt": "-34.2%",
           "zones": [
             {
-              "from": 42.2875,
+              "from": 45.781,
               "label": "Muy infravalorada",
-              "to": 73.3538461538,
+              "to": 79.1769230769,
               "tone": "pos"
             },
             {
-              "from": 73.3538461538,
+              "from": 79.1769230769,
               "label": "Infravalorada",
-              "to": 86.6909090909,
+              "to": 93.5727272727,
               "tone": "pos"
             },
             {
-              "from": 86.6909090909,
+              "from": 93.5727272727,
               "label": "Precio justo",
-              "to": 105.955555556,
+              "to": 114.366666667,
               "tone": "neu"
             },
             {
-              "from": 105.955555556,
+              "from": 114.366666667,
               "label": "Prima",
-              "to": 136.228571429,
+              "to": 147.042857143,
               "tone": "warn"
             },
             {
-              "from": 136.228571429,
+              "from": 147.042857143,
               "label": "Sobrevalorada",
-              "to": 225.566,
+              "to": 243.067,
               "tone": "neg"
             }
           ]
@@ -2612,7 +2636,7 @@
           "key": "convergence",
           "label": "Convergencia entre métodos",
           "level": "Alta",
-          "text": "DCF directo -39% (cara) · múltiplos frente al sector -0.50 (cara). Los métodos de valoración coinciden."
+          "text": "DCF directo -34% (cara) · múltiplos frente al sector -0.50 (cara). Los métodos de valoración coinciden."
         },
         {
           "key": "coverage",
@@ -2639,12 +2663,12 @@
           "text": "Sin incidencias."
         }
       ],
-      "level": "alta",
+      "level": "media",
       "plain": [],
       "reasons": [],
-      "summary": "Confianza del veredicto: alta. La calidad del negocio no se contrae.",
-      "tone": "pos",
-      "verdict_text": "(confianza alta: el DCF directo y los múltiplos coinciden)"
+      "summary": "Confianza del veredicto: media (por sus dimensiones sería alta; la limita: el veredicto depende de Ke —el nivel de precio pasa de «muy exigente» a «exigente» con Ke − 1 pp—). Contrae el atractivo del precio hacia 50: de 15 a 24. La calidad del negocio no se contrae.",
+      "tone": "warn",
+      "verdict_text": "(confianza media: el nivel de precio cambia con ±1 pp de coste del capital)"
     },
     "cover": {
       "archetype": "MATURE",
@@ -2744,7 +2768,7 @@
         {
           "kicker": "A VIGILAR",
           "kind": "watch",
-          "text": "Sobrevalorada según DCF −39%",
+          "text": "Sobrevalorada según DCF −34%",
           "tone": "neg"
         },
         {
@@ -2806,13 +2830,13 @@
       ],
       "official_source_badge": null,
       "price": {
-        "contracted": false,
+        "contracted": true,
         "level": "muy exigente",
-        "note": null,
-        "note_short": null,
+        "note": "ajustado de 15 a 24 por confianza media.",
+        "note_short": "Ajustado de 15 a 24 por confianza media",
         "question": "¿está cara hoy?",
         "raw": 15,
-        "score": 15,
+        "score": 24,
         "title": "ATRACTIVO DEL PRECIO",
         "tone": "neg"
       },
@@ -2826,9 +2850,9 @@
         "tone": "pos"
       },
       "verdict": {
-        "confidence_text": "(confianza alta: el DCF directo y los múltiplos coinciden)",
-        "confidence_tone": "pos",
-        "full": "Calidad sólida · precio muy exigente (confianza alta: el DCF directo y los múltiplos coinciden)",
+        "confidence_text": "(confianza media: el nivel de precio cambia con ±1 pp de coste del capital)",
+        "confidence_tone": "warn",
+        "full": "Calidad sólida · precio muy exigente (confianza media: el nivel de precio cambia con ±1 pp de coste del capital)",
         "text": "Calidad sólida · precio muy exigente"
       }
     },
@@ -3214,7 +3238,7 @@
       },
       "dcf_upside": {
         "label": "Sobrevalorada",
-        "text": "el valor intrínseco estimado ($95) está un 39% por debajo del precio ($156.53): requiere supuestos exigentes pero posibles (el precio cae en la parte alta del rango de sensibilidad del DCF)",
+        "text": "el valor intrínseco estimado ($100) está un 34% por debajo del precio ($156.53): requiere supuestos exigentes pero posibles (el precio cae en la parte alta del rango de sensibilidad del DCF)",
         "tone": "neg"
       },
       "de": {
@@ -3292,8 +3316,8 @@
             "items": [
               {
                 "category": "Valor intrínseco",
-                "detail": "El valor estimado por el DCF ($95) está un 39% por debajo del precio ($156.53): sostenerlo requiere supuestos exigentes pero posibles (el precio cae en la parte alta del rango de sensibilidad).",
-                "reason": "Sobrevalorada según DCF −39%"
+                "detail": "El valor estimado por el DCF ($100) está un 34% por debajo del precio ($156.53): sostenerlo requiere supuestos exigentes pero posibles (el precio cae en la parte alta del rango de sensibilidad).",
+                "reason": "Sobrevalorada según DCF −34%"
               }
             ],
             "key": "red_flags",
@@ -3683,7 +3707,7 @@
                   "sign": "-4",
                   "state": "con_dato",
                   "tone": "neg",
-                  "value": "-39%"
+                  "value": "-34%"
                 }
               ],
               "key": "Valoración",
@@ -4244,13 +4268,13 @@
           "LECTURA"
         ],
         "dcf_missing": null,
-        "dcf_params": "Parámetros del modelo — WACC 8.43% · crecimiento 2.00% (CAGR de ingresos a 3 años) · terminal 2.50% · el valor terminal aporta el 57% del valor total.",
+        "dcf_params": "Parámetros del modelo — WACC 8.43% · crecimiento 3.20% (CAGR de ingresos a 3 años (+2.0%), convergido a la mediana a 5 años de sus comparables de tamaño e industria (+4.4%, tasas base de Mauboussin): la media de los dos) · terminal 2.50% · el valor terminal aporta el 57% del valor total.",
         "dcf_reliability": "Fiabilidad del DCF: alta. Aporta -4 puntos a Valoración (máximo ±4 con fiabilidad alta).",
         "dcf_reliability_level": "alta",
         "dcf_reliability_tone": "pos",
         "intrinsic": {
           "graham_note": "Número de Graham: referencia del inversor defensivo (P/E 15 × P/B 1.5). Se muestra como referencia y no vota en la convergencia entre métodos.",
-          "intro": "El valor intrínseco estimado ($95) está un 39% por debajo del precio ($156.53): requiere supuestos exigentes pero posibles (el precio cae en la parte alta del rango de sensibilidad del DCF).",
+          "intro": "El valor intrínseco estimado ($100) está un 34% por debajo del precio ($156.53): requiere supuestos exigentes pero posibles (el precio cae en la parte alta del rango de sensibilidad del DCF).",
           "rows": [
             {
               "bench": null,
@@ -4281,9 +4305,9 @@
               "label": "Valor justo DCF",
               "reading": "",
               "state": "con_dato",
-              "text": "rango $68–$140 en el bloque central de la tabla de sensibilidad (crecimiento ± 2,5 pp y WACC ± 1 pp; mínimo y máximo, no un p10–p90)",
+              "text": "rango $74–$150 en el bloque central de la tabla de sensibilidad (crecimiento ± 2,5 pp y WACC ± 1 pp; mínimo y máximo, no un p10–p90)",
               "tone": null,
-              "value": "$95"
+              "value": "$100"
             },
             {
               "bench": null,
@@ -4292,9 +4316,9 @@
               "label": "Potencial vs precio (upside)",
               "reading": "Sobrevalorada",
               "state": "con_dato",
-              "text": "el valor intrínseco estimado ($95) está un 39% por debajo del precio ($156.53): requiere supuestos exigentes pero posibles (el precio cae en la parte alta del rango de sensibilidad del DCF)",
+              "text": "el valor intrínseco estimado ($100) está un 34% por debajo del precio ($156.53): requiere supuestos exigentes pero posibles (el precio cae en la parte alta del rango de sensibilidad del DCF)",
               "tone": "neg",
-              "value": "-39.1%"
+              "value": "-34.2%"
             },
             {
               "bench": null,
@@ -4305,7 +4329,7 @@
               "state": "con_dato",
               "text": null,
               "tone": null,
-              "value": "−64%"
+              "value": "−52%"
             }
           ]
         },
@@ -4469,130 +4493,65 @@
             {
               "cells": [
                 {
-                  "band": 4,
-                  "base": false,
-                  "value": "$110"
-                },
-                {
-                  "band": 4,
-                  "base": false,
-                  "value": "$84"
-                },
-                {
-                  "band": 4,
-                  "base": false,
-                  "value": "$69"
-                },
-                {
-                  "band": 4,
-                  "base": false,
-                  "value": "$58"
-                },
-                {
-                  "band": 4,
-                  "base": false,
-                  "value": "$50"
-                }
-              ],
-              "label": "-3.0%"
-            },
-            {
-              "cells": [
-                {
-                  "band": 3,
-                  "base": false,
-                  "value": "$130"
-                },
-                {
-                  "band": 4,
-                  "base": false,
-                  "value": "$99"
-                },
-                {
-                  "band": 4,
-                  "base": false,
-                  "value": "$81"
-                },
-                {
-                  "band": 4,
-                  "base": false,
-                  "value": "$68"
-                },
-                {
-                  "band": 4,
-                  "base": false,
-                  "value": "$59"
-                }
-              ],
-              "label": "-0.5%"
-            },
-            {
-              "cells": [
-                {
-                  "band": 2,
-                  "base": false,
-                  "value": "$150"
-                },
-                {
                   "band": 3,
                   "base": false,
                   "value": "$120"
                 },
                 {
                   "band": 4,
-                  "base": true,
-                  "value": "$95"
+                  "base": false,
+                  "value": "$91"
                 },
                 {
                   "band": 4,
                   "base": false,
-                  "value": "$80"
+                  "value": "$74"
                 },
                 {
                   "band": 4,
                   "base": false,
-                  "value": "$69"
+                  "value": "$63"
+                },
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$54"
                 }
               ],
-              "label": "2.0%"
+              "label": "-1.8%"
             },
             {
               "cells": [
-                {
-                  "band": 1,
-                  "base": false,
-                  "value": "$180"
-                },
                 {
                   "band": 3,
                   "base": false,
                   "value": "$140"
                 },
                 {
-                  "band": 3,
+                  "band": 4,
                   "base": false,
                   "value": "$110"
                 },
                 {
                   "band": 4,
                   "base": false,
-                  "value": "$94"
+                  "value": "$88"
                 },
                 {
                   "band": 4,
                   "base": false,
-                  "value": "$80"
+                  "value": "$74"
+                },
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$63"
                 }
               ],
-              "label": "4.5%"
+              "label": "0.7%"
             },
             {
               "cells": [
-                {
-                  "band": 0,
-                  "base": false,
-                  "value": "$210"
-                },
                 {
                   "band": 2,
                   "base": false,
@@ -4605,16 +4564,81 @@
                 },
                 {
                   "band": 4,
-                  "base": false,
-                  "value": "$110"
+                  "base": true,
+                  "value": "$100"
                 },
                 {
                   "band": 4,
                   "base": false,
-                  "value": "$94"
+                  "value": "$86"
+                },
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$74"
                 }
               ],
-              "label": "7.0%"
+              "label": "3.2%"
+            },
+            {
+              "cells": [
+                {
+                  "band": 1,
+                  "base": false,
+                  "value": "$190"
+                },
+                {
+                  "band": 2,
+                  "base": false,
+                  "value": "$150"
+                },
+                {
+                  "band": 3,
+                  "base": false,
+                  "value": "$120"
+                },
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$100"
+                },
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$87"
+                }
+              ],
+              "label": "5.7%"
+            },
+            {
+              "cells": [
+                {
+                  "band": 0,
+                  "base": false,
+                  "value": "$220"
+                },
+                {
+                  "band": 1,
+                  "base": false,
+                  "value": "$170"
+                },
+                {
+                  "band": 3,
+                  "base": false,
+                  "value": "$140"
+                },
+                {
+                  "band": 3,
+                  "base": false,
+                  "value": "$120"
+                },
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$100"
+                }
+              ],
+              "label": "8.2%"
             }
           ]
         },
@@ -4742,7 +4766,7 @@
         "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: Valoración (base 10/20 + bloque de múltiplos y DCF) reescalada a 100 y contraída hacia 50 según la confianza del veredicto: solo los limitadores que lo contradicen o lo vuelven incierto, no los que apuntan en su dirección.",
         "price": {
           "level": "muy exigente",
-          "note": null,
+          "note": "ajustado de 15 a 24 por confianza media.",
           "rows": [
             {
               "kind": "signed",
@@ -4752,12 +4776,12 @@
             },
             {
               "kind": "signed",
-              "label": "DCF directo (valor frente al precio) · -39%",
+              "label": "DCF directo (valor frente al precio) · -34%",
               "tone": "neg",
               "value": -4
             }
           ],
-          "score": 15,
+          "score": 24,
           "signed_max": 6,
           "title": "ATRACTIVO DEL PRECIO",
           "tone": "neg"
@@ -4807,7 +4831,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad sólida · precio muy exigente (confianza alta: el DCF directo y los múltiplos coinciden). Calidad 82/100 · precio 15/100."
+          "text": "Calidad sólida · precio muy exigente (confianza media: el nivel de precio cambia con ±1 pp de coste del capital). Calidad 82/100 · precio 24/100 (ajustado de 15 a 24 por confianza media)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -4827,7 +4851,7 @@
         },
         {
           "label": "ATRACTIVO DEL PRECIO",
-          "text": "El mercado paga 23.6x beneficios, un +22% frente a la referencia de su industria sin ella (19.3x); una prima que encuentra respaldo parcial en la creación de valor de la compañía (ROIC−WACC de +11.6 pp). El valor intrínseco estimado ($95) está un 39% por debajo del precio ($156.53): requiere supuestos exigentes pero posibles (el precio cae en la parte alta del rango de sensibilidad del DCF)."
+          "text": "El mercado paga 23.6x beneficios, un +22% frente a la referencia de su industria sin ella (19.3x); una prima que encuentra respaldo parcial en la creación de valor de la compañía (ROIC−WACC de +11.6 pp). El valor intrínseco estimado ($100) está un 34% por debajo del precio ($156.53): requiere supuestos exigentes pero posibles (el precio cae en la parte alta del rango de sensibilidad del DCF)."
         },
         {
           "label": "CONTEXTO DE MERCADO",
@@ -4835,7 +4859,7 @@
         },
         {
           "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Alta: los métodos y los datos coinciden. No contrae el atractivo del precio ni la calidad."
+          "text": "Media: los métodos y los datos coinciden. Contrae el atractivo del precio hacia 50 (de 15 a 24); la calidad no se contrae."
         }
       ]
     },
@@ -5779,6 +5803,9 @@
       "charges_back": 61750000.0,
       "equity_income": 0.0,
       "equity_income_net_of_tax": null,
+      "equity_net_history": [],
+      "equity_net_operating": 0.0,
+      "equity_net_recurrent": null,
       "excess": 0.0,
       "explained": 15326928930.9,
       "income": 15802922412.5,
@@ -5912,6 +5939,7 @@
     "state": "en_linea"
   },
   "errors": [],
+  "ev_cross_holdings": null,
   "graham_margin": -1.67673801888,
   "graham_number": 58.4778927467,
   "growth_basis": {
@@ -6138,11 +6166,11 @@
       "level": "muy exigente",
       "score": 15
     },
-    "dependent": false,
+    "dependent": true,
     "minus": {
       "ke": 0.0779616137094,
-      "level": "muy exigente",
-      "score": 25
+      "level": "exigente",
+      "score": 39
     },
     "plus": {
       "ke": 0.0979616137094,
@@ -6150,7 +6178,7 @@
       "score": 15
     },
     "pp": 0.01,
-    "reason": null,
+    "reason": "veredicto dependiente de Ke: el nivel de precio pasa de «muy exigente» a «exigente» con Ke − 1 pp",
     "status": "ok"
   },
   "key_metrics": {
@@ -6738,16 +6766,16 @@
         "score": 3
       }
     ],
-    "confidence": "alta",
-    "contracted": false,
+    "confidence": "media",
+    "contracted": true,
     "excluded_categories": [],
-    "factor": 1.0,
+    "factor": 0.75,
     "level": "muy exigente",
     "level_raw": "muy exigente",
     "low_coverage_categories": [],
     "not_applicable_categories": [],
     "partial": false,
-    "score": 15,
+    "score": 24,
     "score_raw": 15
   },
   "price_change": {
@@ -7059,7 +7087,7 @@
     "base": {
       "decay_type": "step",
       "discount_rate": 0.084280426951,
-      "high_growth_rate": 0.0200256940934,
+      "high_growth_rate": 0.0320128470467,
       "high_growth_years": 5,
       "reinvestment_roic": null,
       "terminal_growth": 0.025,
@@ -7091,13 +7119,13 @@
       "optimistic": {
         "discount_rate": 0.064280426951,
         "fcf_margin": 0.168016729287,
-        "high_growth_rate": 0.0700256940934,
+        "high_growth_rate": 0.0820128470467,
         "terminal_growth": 0.03
       },
       "pessimistic": {
         "discount_rate": 0.104280426951,
         "fcf_margin": 0.168016729287,
-        "high_growth_rate": -0.0299743059066,
+        "high_growth_rate": -0.0179871529533,
         "terminal_growth": 0.02
       }
     },
@@ -7384,7 +7412,7 @@
             "reason": "Claramente cara por DCF (fiabilidad alta)",
             "reliability": "alta",
             "severity": "severe",
-            "value": "-39%"
+            "value": "-34%"
           }
         ],
         "applicable": true,
@@ -7501,8 +7529,8 @@
   "sensitivity": {
     "base_case": {
       "discount_rate": 0.084280426951,
-      "fair_value": 95.36,
-      "growth_rate": 0.0200256940934
+      "fair_value": 102.93,
+      "growth_rate": 0.0320128470467
     },
     "base_discount_idx": 2,
     "base_growth_idx": 2,
@@ -7514,58 +7542,58 @@
       0.1043
     ],
     "growth_rates": [
-      -0.03,
-      -0.005,
-      0.02,
-      0.045,
-      0.07
+      -0.018,
+      0.007,
+      0.032,
+      0.057,
+      0.082
     ],
-    "interpretation": "Muy probablemente sobrevalorada (88% de escenarios)",
+    "interpretation": "Muy probablemente sobrevalorada (84% de escenarios)",
     "is_valid": true,
     "matrix": [
       [
-        106.65,
-        83.83,
-        68.67,
-        57.86,
-        49.75
+        115.71,
+        90.89,
+        74.41,
+        62.66,
+        53.86
       ],
       [
-        126.29,
-        99.12,
-        81.09,
-        68.25,
-        58.63
+        136.76,
+        107.25,
+        87.69,
+        73.76,
+        63.33
       ],
       [
-        148.96,
-        116.72,
-        95.36,
-        80.16,
-        68.79
+        161.02,
+        126.08,
+        102.93,
+        86.47,
+        74.16
       ],
       [
-        175.07,
-        136.96,
-        111.72,
-        93.79,
-        80.4
+        188.93,
+        147.69,
+        120.39,
+        101.0,
+        86.53
       ],
       [
-        205.06,
-        160.16,
-        130.45,
-        109.37,
-        93.63
+        220.97,
+        172.44,
+        140.36,
+        117.59,
+        100.61
       ]
     ],
     "statistics": {
       "current_price": 156.529998779,
-      "max_value": 205.06,
-      "mean_value": 104.2696,
-      "median_value": 95.36,
-      "min_value": 49.75,
-      "upside_base_case": -39.0787703676
+      "max_value": 220.97,
+      "mean_value": 112.5396,
+      "median_value": 102.93,
+      "min_value": 53.86,
+      "upside_base_case": -34.2426366813
     },
     "trimmed": {
       "discount": [],
@@ -7585,9 +7613,9 @@
     "source": "efectiva"
   },
   "verdict": {
-    "confidence": "alta",
-    "confidence_text": "(confianza alta: el DCF directo y los múltiplos coinciden)",
-    "full": "Calidad sólida · precio muy exigente (confianza alta: el DCF directo y los múltiplos coinciden)",
+    "confidence": "media",
+    "confidence_text": "(confianza media: el nivel de precio cambia con ±1 pp de coste del capital)",
+    "full": "Calidad sólida · precio muy exigente (confianza media: el nivel de precio cambia con ±1 pp de coste del capital)",
     "price_level": "muy exigente",
     "quality_level": "sólida",
     "text": "Calidad sólida · precio muy exigente"

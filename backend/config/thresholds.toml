@@ -455,6 +455,8 @@ margin_trend_years = 5
 margin_drop_min = 0.20
 margin_drop_downs = 3
 margin_drop_low_mult = 2.0       # caída ≥ 2 × margin_drop_min: baja directamente
+# (6) F13 · paso 11 (opción c del usuario): ventas y BPA a 3 años separados más de esto: −1
+growth_divergence_pp = 0.10
 central_block = 1                   # "celda central ±1": bloque 3×3 alrededor del caso base
 fcf_fields = ["freeCashflow", "free_cash_flow", "key_metrics.free_cash_flow"]
 inferred_sources = ["finnhub", "derivado"]      # FCF que no viene de los estados -> inferido
@@ -467,6 +469,9 @@ ev_ebitda_shown_max = 100.0         # por encima, «> 100x» y la cifra exacta e
 margin_of_safety_shown_bounds = [-1.0, 1.0]
 
 [confidence]                        # confianza del veredicto (spec Sección 3; etapa 8: se muestra, no limita)
+# F13 · 3c (opción (a) con matiz): lo que el ciclo hizo en las cifras de una cíclica, en el motivo de su «baja».
+cycle_real_drop = 0.20              # una caída anual del beneficio de al menos un 20 % es una caída real
+cycle_margin_min_years = 3          # ejercicios con margen operativo para dar su recorrido
 level_values = [1.0, 0.5, 0.0]      # alta / media / baja
 overall_bounds = [0.75, 0.45]       # media ponderada >= 0.75 alta; >= 0.45 media; resto baja
 upside_scale = 0.5                  # un upside de ±50% equivale a la señal ±1
@@ -522,6 +527,10 @@ components_tolerance_abs = 1000000.0
 # normalizado, ROE, margen neto) y se dicen con su cifra. 2 pp de margen: la tolerancia que propuso el revisor
 # (impuestos diferidos, redondeos, otros ingresos pequeños). Continua: sale solo lo que pasa de la tolerancia.
 nonoperating_tolerance_revenue = 0.02
+# F13 (SRE y Oncor): las participadas netas de impuestos son operativas hasta su nivel recurrente, la mediana de los
+# `equity_recurrence_years` últimos ejercicios (al menos `equity_recurrence_min_years` con dato); el pico, no
+equity_recurrence_years = 3
+equity_recurrence_min_years = 2
 # F10 · N1b (escaneo de control del 29-oct): también después de impuestos, con el tipo normalizado: la mediana de los
 # tipos efectivos (negativos incluidos desde F13 · 6b) del periodo y de los últimos `tax_median_years` (un beneficio fiscal puntual queda fuera;
 # uno recurrente es su tipo). Con menos de `tax_median_min` válidos, el tipo legal (valuation.tax.statutory_rate).
@@ -548,6 +557,7 @@ operating_item_types = ["Special Income Charges", "Restructuring And Mergern Acq
 [growth]
 per_share_min_shares_cagr = 0.02   # acciones +2% anual compuesto en la ventana -> crecimiento por acción
 anomalous_base_ratio = 0.5          # año inicial < 0.5 × mediana de los demás -> regresión log-lineal
+inflated_base_ratio = 1.5           # F13 · paso 12: año inicial > 1,5 × mediana de los demás (la medida del paso) -> igual
 perimeter_min_years = 2             # fase 3 (T5): años homogéneos mínimos tras un cambio de perímetro; menos: no comparable
 # F13 · paso 7 (revisión de 110 empresas, patrón 5): una reexpresión que cambia los ingresos al menos esto es otra
 # empresa (GE: −62 % sin GE HealthCare ni GE Vernova). La historia larga de EDGAR anterior al primer ejercicio

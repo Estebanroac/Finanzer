@@ -46,7 +46,7 @@ from cost_of_capital import (adjusted_beta, capm_rates, cost_of_debt, effective_
                              wacc as compute_wacc)
 from valuation_confidence import (convergence, coverage_dimension, dcf_reliability, dcf_wacc_flips, signal_from_upside,
                                   official_dimension,
-                                  source_dimension, stability_dimension, verdict_confidence,
+                                  source_dimension, stability_dimension, verdict_confidence, cycle_evidence,
                                   fragility_dimension)
 import archetype_metrics
 import sec_edgar as edgar
@@ -205,6 +205,13 @@ def _select_benchmark(mapped_sector: str, archetype: Optional[str], sector: Opti
                 return (f"{base}; mediana de {c.get('n')} pares del universo (sin la empresa el agregado pasaba de "
                         f"{_ratio_txt(col, c['before'])} a {_ratio_txt(col, c['implausible'])}: no representa a la "
                         "industria)")
+            if c.get("why") == "causa":           # F13: la prueba por causa (entre el 2 % y el 3 %)
+                k = (c.get("cause") or {})
+                why_c = (f"el {k['losing'] * 100:.0f}% de sus empresas pierde dinero, frente al "
+                         f"{k['losing_market'] * 100:.0f}% del mercado" if k.get("test") == "muchas_perdidas" else
+                         f"menos de la mitad de la mediana de sus pares ({_ratio_txt(col, k.get('peer_median'))})")
+                return (f"{base}; mediana de {c.get('n')} pares del universo (sin la empresa el agregado queda en "
+                        f"{_ratio_txt(col, c['implausible'])}, y {why_c}: no representa a la industria)")
             if c.get("why") == "resto":
                 return (f"{base}; mediana de {c.get('n')} pares del universo (sin la empresa el agregado queda en "
                         f"{_ratio_txt(col, c['implausible'])}: una industria casi sin beneficio no sirve de referencia)")
@@ -784,6 +791,32 @@ def _compute_analysis_body(symbol: str) -> dict:
                 if ev and ebitda_v and ebitda_v > 0:
                     ev_ebitda = ev / ebitda_v
 
+            # F13 (decisión del usuario: SRE y Oncor): el EBITDA no lleva el resultado de las participadas, pero el EV
+            # (por la capitalización) sí lleva su valor: se resta del EV el de las participadas del balance (método de
+            # participación, valor contable) si pesa al menos `cross_holdings.ev_equity_investments_min` del EV
+            # (Damodaran: cross holdings). El EV/EBITDA que se enseña y puntúa es el ajustado, dicho.
+            result["ev_cross_holdings"] = None
+            _inv13 = safe_float((((yinfo.get("_statements_fy") or {}).get("equity_investments") or [None])[0])
+                                if _has_yahoo else None)
+            _ev13 = (safe_float(r("enterprise_value"))
+                     or (safe_float(yr.get("enterpriseValue")) if _has_yahoo else None)
+                     or ((mcap + (td_val or 0.0) - (cash_val or 0.0)) if mcap else None))
+            if (ev_ebitda is not None and ev_ebitda > 0 and _inv13 and _inv13 > 0 and _ev13 and _ev13 > 0
+                    and _inv13 / _ev13 >= cfg("valuation.cross_holdings.ev_equity_investments_min")
+                    and _ev13 - _inv13 > 0):
+                _evb = ev_ebitda
+                ev_ebitda = ev_ebitda * (_ev13 - _inv13) / _ev13
+                ratios["ev_ebitda"] = ev_ebitda
+                result["ev_cross_holdings"] = {"enterprise_value": _ev13, "equity_investments": _inv13,
+                                               "share": _inv13 / _ev13, "ev_ebitda_before": _evb,
+                                               "ev_ebitda": ev_ebitda}
+                from yf_adapter import _tag_provenance
+                _tag_provenance(yinfo, "derivado", (
+                    f"EV/EBITDA sin el valor de las participadas: EV {numfmt.money(_ev13)} − participadas "
+                    f"{numfmt.money(_inv13)} (balance, método de participación; {_inv13 / _ev13:.0%} del EV), porque "
+                    f"el EBITDA no lleva su resultado; sin ajustar sería {_evb:.1f}x"),
+                    paths=["key_metrics.ev_ebitda"], overwrite=True)
+
             # Forward P/E — compute from forward EPS if ratio is missing
             fwd_pe = r("forward_pe")
             if fwd_pe is None and price_val and financials.forward_eps:
@@ -1053,6 +1086,9 @@ def _compute_analysis_body(symbol: str) -> dict:
                     if _coh is not None:
                         _hist = list(zip(_stmts.get("pretax_income") or [], _stmts.get("tax_provision") or []))
                         _coh["tax_history"] = _hist if _qn is not None else _hist[1:]
+                        # F13 (SRE y Oncor): el nivel recurrente de las participadas netas, de los ejercicios
+                        _eqh = [safe_float(x) for x in (_stmts.get("equity_interest_net_of_tax") or [])]
+                        _coh["equity_net_history"] = _eqh if _qn is not None else _eqh[1:]
                 # F10 · N1b: discontinuadas del mismo periodo que el beneficio (el normalizado parte del continuado),
                 # con el total del periodo (beneficio con discontinuadas) para saber si el beneficio usado las lleva: el
                 # de Yahoo no siempre es el del estado del periodo (UL en vivo: 6,48 B frente a 9,47 B del FY2025, de
@@ -1093,8 +1129,16 @@ def _compute_analysis_body(symbol: str) -> dict:
                 _norm_err = e
             # F13 · paso 2: la cobertura con la que se busca el rating sintético (Kd y, por su piso, el Ke)
             from cost_of_capital import rating_coverage as _rating_coverage
+            # F13 (SRE y Oncor): las participadas operativas (antes de impuestos, o su nivel recurrente neto) también
+            # pagan la deuda de la matriz: entran en la cobertura del rating
+            _eq_cov = None
+            if _norm is not None:
+                _at13 = _norm.get("after_tax") or {}
+                _eq_cov = (max(0.0, safe_float(_at13.get("equity_income")) or 0.0)
+                           + (safe_float(_at13.get("equity_net_operating")) or 0.0)) or None
             _rcov = _rating_coverage(
                 coverage=safe_float(interest_cov), state=ic_state, ebit=oi_val, ebit_normalized=safe_float(_rating_ebit),
+                equity_income=_eq_cov,
                 interest=ie_val, reit=archetype == REIT, ebitda=safe_float(ratios.get("ebitda")),
                 operating_cash_flow=safe_float(getattr(financials, "operating_cash_flow", None)),
                 depreciation=safe_float(getattr(financials, "depreciation", None)), market_cap=mcap,
@@ -2162,6 +2206,25 @@ def _compute_analysis_body(symbol: str) -> dict:
                     _growth_basis = (f"media del interanual ({_yoy_g:+.1%}) y del {_growth_basis} ({growth:+.1%}): "
                                      f"difieren más de {_pp}")
                     growth = _blend
+                # F13 · paso 11 (opción c del usuario): el crecimiento de la fase 1 converge a la tasa base, la mediana
+                # a `base_rate_horizon` años del CAGR de ventas de sus comparables de tamaño e industria (Mauboussin y
+                # Callahan): la media de los dos, lo mismo que converger en línea recta en 5 años de uno al otro. El
+                # crecimiento revierte a la media en los dos sentidos (NVO: 13,4 % → 8,4 %; KHC: −2,0 % → 1,2 %). No en
+                # cíclicas: su crecimiento ya es el del ciclo medio.
+                result["dcf_growth_base_rate"] = None
+                if growth is not None and archetype != CYCLICAL:
+                    import base_rates as _brt
+                    _brm = _brt.median_growth(_revenue_usd(safe_float(financials.revenue), profile.currency), sector,
+                                              cfg("valuation.dcf.base_rate_horizon"))
+                    if _brm.get("median") is not None:
+                        _w = cfg("valuation.dcf.base_rate_weight")
+                        _gb = (1 - _w) * growth + _w * _brm["median"]
+                        result["dcf_growth_base_rate"] = {**_brm, "company": growth, "used": _gb, "weight": _w,
+                                                          "company_basis": _growth_basis}
+                        _growth_basis = (f"{_growth_basis} ({growth:+.1%}), convergido a la mediana a "
+                                         f"{_brm['horizon_years']} años de sus comparables de tamaño e industria "
+                                         f"({_brm['median']:+.1%}, tasas base de Mauboussin): la media de los dos")
+                        growth = _gb
                 if growth is None:
                     _rns = fin_dict.get("revenue_growth_reason")
                     growth, _growth_basis = cfg("valuation.dcf.default_growth"), (
@@ -2375,7 +2438,11 @@ def _compute_analysis_body(symbol: str) -> dict:
                             ("beneficio con pico (bandera de pico de beneficio)"
                              if (result.get("earnings_peak") or {}).get("flag") else None)) if f],
                         current_margins={k: safe_float(result["key_metrics"].get(k))
-                                         for k in ("operating_margin", "net_margin")})
+                                         for k in ("operating_margin", "net_margin")},
+                        # F13 · paso 11 (opción c): ventas y BPA a 3 años muy separados (no en cíclicas)
+                        growth_divergence=(None if archetype == CYCLICAL else
+                                           {"revenue": safe_float(fin_dict.get("revenue_cagr_3y")),
+                                            "eps": safe_float(fin_dict.get("eps_cagr_3y"))}))
                     result["dcf"]["reliability"] = _rel
                     if _dcf_not_sig:
                         pass
@@ -2712,6 +2779,12 @@ def _compute_analysis_body(symbol: str) -> dict:
                     if "upside" in _m:
                         _m["signal"] = signal_from_upside(_m["upside"])
                 _cls = result.get("classification") or {}
+                _cycle_ev = None
+                if _cls.get("archetype") == CYCLICAL:   # F13 · 3c: lo que el ciclo hizo en sus cifras (EDGAR)
+                    import history_10y as _h10c
+                    _cycle_ev = cycle_evidence(_h10c.build(yinfo.get("_history_fy") if _has_yahoo else None,
+                                                           cfg("market.history.years_v2")).get("rows"),
+                                               _cls.get("industry"))
                 result["confidence"] = verdict_confidence({
                     "convergence": convergence(_methods),
                     "coverage": coverage_dimension(result.get("score_coverage"),
@@ -2726,7 +2799,7 @@ def _compute_analysis_body(symbol: str) -> dict:
                         ttm=yinfo.get("_ttm"), provenance_fields=(yinfo.get("_provenance") or {}),
                         self_exclusion=((result.get("benchmark") or {}).get("industry") or {}).get("self_exclusion"),
                         beta_contrast=(result.get("beta") or {}).get("contrast")),
-                    "stability": stability_dimension(_cls.get("archetype"), _cls),
+                    "stability": stability_dimension(_cls.get("archetype"), _cls, cycle=_cycle_ev),
                     # Fase 2b (D7): emisor sin estados en la SEC -> techo "baja"
                     "fuente_oficial": official_dimension(yinfo.get("_official_source") if _has_yahoo else None),
                     # F13 · paso 3: base frágil (caja negativa por inversión, Altman en peligro, normalizado frente a

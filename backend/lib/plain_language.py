@@ -87,6 +87,14 @@ TABLE = [
     (r"^(\d+) de (\d+) componentes del score con dato",
      "Faltan datos en parte del análisis ({0} de {1} indicadores con dato)."),
     # ── estabilidad ──
+    # F13 · 3c (opción (a) con matiz): lo que el ciclo hizo en sus cifras
+    (r"^empresa cíclica: en sus (\d+) ejercicios, (.+)$",
+     "Empresa cíclica: sus resultados dependen de la fase del ciclo (en sus {0} ejercicios, {1})."),
+    (r"^empresa cíclica sin una caída real del beneficio en sus (\d+) ejercicios",
+     "Empresa cíclica: en sus {0} ejercicios el beneficio aún no ha caído con el ciclo, así que su resultado de hoy "
+     "puede estar en la parte alta."),
+    (r"^productora de materias primas", "Produce materias primas: su resultado depende del precio de lo que vende, "
+                                        "no de su gestión."),
     (r"^(arquetipo CYCLICAL|empresa cíclica)", "Empresa cíclica: sus resultados dependen de la fase del ciclo."),
     (r"^alerta de posible cíclica",
      "La empresa podría ser cíclica: sus resultados actuales pueden no ser representativos."),

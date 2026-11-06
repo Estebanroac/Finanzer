@@ -430,7 +430,8 @@ def chart_upside_phrase_follows_grid(a, text):
     assert fv["method"] == "DCF"
     if rel.get("grid_contains_price") is True and rel.get("level") != "baja":
         assert "exigentes pero posibles" in fv["text"], fv["text"]
-    if rel.get("grid_contains_price") is False:
+    # F13 · paso 11: con fiabilidad baja la lectura no cita la tabla de sensibilidad (el DCF no puntúa)
+    if rel.get("grid_contains_price") is False and rel.get("level") != "baja":
         assert "exigentes pero posibles" not in fv["text"] and "ningún supuesto razonable" in fv["text"]
 
 

@@ -484,16 +484,28 @@
         "reasons": []
       },
       "stability": {
+        "cycle": {
+          "commodity": true,
+          "loss_years": [
+            2020
+          ],
+          "margin_range": null,
+          "worst_drop": {
+            "change": -0.542437779196,
+            "year": 2023
+          },
+          "years": 10
+        },
         "level": "baja",
         "reasons": [
-          "empresa cíclica: resultados ligados a la fase del ciclo"
+          "productora de materias primas: su resultado depende del precio de lo que produce, no de su gestión"
         ]
       }
     },
     "level": "baja",
     "limits_score": false,
     "reasons": [
-      "estabilidad baja: empresa cíclica: resultados ligados a la fase del ciclo",
+      "estabilidad baja: productora de materias primas: su resultado depende del precio de lo que produce, no de su gestión",
       "techo en baja: la más baja manda: estabilidad baja"
     ],
     "score": 0.8
@@ -1204,6 +1216,10 @@
         "detail": "balance del último trimestre (2026-06-30)",
         "source": "yfinance_statements"
       },
+      "key_metrics.ev_ebitda": {
+        "detail": "EV/EBITDA sin el valor de las participadas: EV $336.24B − participadas $27.77B (balance, método de participación; 8% del EV), porque el EBITDA no lleva su resultado; sin ajustar sería 5.7x",
+        "source": "derivado"
+      },
       "longName": {
         "detail": "símbolo pedido; nombre de stock_database o de la búsqueda",
         "source": "derivado"
@@ -1545,6 +1561,7 @@
             2025
           ]
         },
+        "growth_divergence": null,
         "margin_trend": {
           "changes": 4,
           "current": 0.0875620783477,
@@ -1580,6 +1597,7 @@
     "wacc_flips": [],
     "warnings": []
   },
+  "dcf_growth_base_rate": null,
   "dcf_growth_blend": null,
   "dcf_status": {
     "reason": null,
@@ -1598,7 +1616,7 @@
         },
         {
           "label": "Confianza · Estabilidad del arquetipo (baja)",
-          "text": "empresa cíclica: resultados ligados a la fase del ciclo."
+          "text": "productora de materias primas: su resultado depende del precio de lo que produce, no de su gestión."
         },
         {
           "label": "Fuente oficial",
@@ -1614,7 +1632,7 @@
         },
         {
           "label": "Procedencia de los datos (campos del análisis por fuente)",
-          "text": "estados de Yahoo (yfinance): 38 campos; SEC EDGAR: 1 (country); Finnhub: 7 (liquidez corriente, P/E adelantado, cobertura de intereses, rotación de existencias, payout, PEG, prueba ácida); Yahoo (cotización y perfil): 2 (industria, sector); calculados con otros datos del análisis: 12 campos; sin dato utilizable (ausente o de otro periodo): 4 (arrendamientos financieros, BPA estimado, deuda a largo plazo, caja total)."
+          "text": "estados de Yahoo (yfinance): 38 campos; SEC EDGAR: 1 (country); Finnhub: 7 (liquidez corriente, P/E adelantado, cobertura de intereses, rotación de existencias, payout, PEG, prueba ácida); Yahoo (cotización y perfil): 2 (industria, sector); calculados con otros datos del análisis: 13 campos; sin dato utilizable (ausente o de otro periodo): 4 (arrendamientos financieros, BPA estimado, deuda a largo plazo, caja total)."
         },
         {
           "label": "Fórmula del bloque",
@@ -1662,16 +1680,16 @@
                 "bench": 9.512,
                 "bench_txt": "9.51x",
                 "fmt": "mult",
-                "gap_pct": -40.3949952153,
-                "gap_txt": "-40%",
+                "gap_pct": -45.318604622,
+                "gap_txt": "-45%",
                 "higher_is_better": false,
                 "key": "ev_ebitda",
                 "label": "EV/EBITDA",
                 "reading": "Descuento profundo",
-                "text": "EV/EBITDA de 5.7x frente a 9.5x de sus pares del universo (-40%): descuento profundo.",
+                "text": "EV/EBITDA de 5.2x frente a 9.5x de sus pares del universo (-45%): descuento profundo.",
                 "tone": "pos",
-                "value": 5.66962805513,
-                "value_txt": "5.67x"
+                "value": 5.20129432835,
+                "value_txt": "5.20x"
               }
             ],
             "title": "Valoración"
@@ -1835,9 +1853,9 @@
             "state": "con_dato"
           },
           {
-            "cagr": -0.250169645922,
-            "cagr_note": null,
-            "cagr_txt": "−25.0%",
+            "cagr": -0.242391526818,
+            "cagr_note": "regresión log-lineal: el año inicial es anómalo",
+            "cagr_txt": "−24.2%",
             "key": "net_income",
             "label": "Beneficio neto",
             "points": [
@@ -2501,18 +2519,18 @@
             "bench": 9.512,
             "bench_txt": "9.51x",
             "fmt": "mult",
-            "gap_pct": -40.3949952153,
-            "gap_txt": "-40%",
+            "gap_pct": -45.318604622,
+            "gap_txt": "-45%",
             "higher_is_better": false,
             "key": "ev_ebitda",
             "label": "EV/EBITDA",
             "reading": "Descuento profundo",
             "role": "informative",
             "state": "con_dato",
-            "text": "EV/EBITDA de 5.7x frente a 9.5x de sus pares del universo (-40%): descuento profundo.",
+            "text": "EV/EBITDA de 5.2x frente a 9.5x de sus pares del universo (-45%): descuento profundo.",
             "tone": "pos",
-            "value": 5.66962805513,
-            "value_txt": "5.67x"
+            "value": 5.20129432835,
+            "value_txt": "5.20x"
           },
           {
             "bench": null,
@@ -2598,7 +2616,7 @@
           "key": "stability",
           "label": "Estabilidad del arquetipo",
           "level": "Baja",
-          "text": "Empresa cíclica: sus resultados dependen de la fase del ciclo."
+          "text": "Produce materias primas: su resultado depende del precio de lo que vende, no de su gestión."
         },
         {
           "key": "base",
@@ -2609,13 +2627,13 @@
       ],
       "level": "baja",
       "plain": [
-        "Empresa cíclica: sus resultados dependen de la fase del ciclo."
+        "Produce materias primas: su resultado depende del precio de lo que vende, no de su gestión."
       ],
       "reasons": [
         {
           "dimension": "estabilidad",
           "level": "baja",
-          "text": "Empresa cíclica: sus resultados dependen de la fase del ciclo."
+          "text": "Produce materias primas: su resultado depende del precio de lo que vende, no de su gestión."
         },
         {
           "dimension": "techo",
@@ -2712,7 +2730,7 @@
         "Cíclica por su historia: en 11 ejercicios, caídas de ingresos ≥ 10% en 2016, 2019–2020, 2023–2024; desplomes del BPA con caída de ingresos en 2020, 2023."
       ],
       "confidence_reasons": [
-        "Empresa cíclica: sus resultados dependen de la fase del ciclo."
+        "Produce materias primas: su resultado depende del precio de lo que vende, no de su gestión."
       ],
       "coverage_notes": [],
       "currency_note": "Cifras por acción en la clase que cotiza: cada título cotizado equivale a 2 acciones ordinarias (factor del depositario, JPMorgan).",
@@ -4348,14 +4366,14 @@
           },
           {
             "bench": "9.51x",
-            "gap": "-40%",
+            "gap": "-45%",
             "key": "ev_ebitda",
             "label": "EV/EBITDA",
             "reading": "Descuento profundo",
             "state": "con_dato",
-            "text": "EV/EBITDA de 5.7x frente a 9.5x de sus pares del universo (-40%): descuento profundo.",
+            "text": "EV/EBITDA de 5.2x frente a 9.5x de sus pares del universo (-45%): descuento profundo.",
             "tone": "pos",
-            "value": "5.67x"
+            "value": "5.20x"
           },
           {
             "bench": "—",
@@ -4788,7 +4806,7 @@
         },
         {
           "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Baja: empresa cíclica: sus resultados dependen de la fase del ciclo. Contrae hacia 50 el atractivo del precio (de 80 a 65) y la calidad del negocio (de 80 a 76)."
+          "text": "Baja: produce materias primas: su resultado depende del precio de lo que vende, no de su gestión. Contrae hacia 50 el atractivo del precio (de 80 a 65) y la calidad del negocio (de 80 a 76)."
         }
       ]
     },
@@ -5604,6 +5622,9 @@
       "charges_back": 0,
       "equity_income": 0.0,
       "equity_income_net_of_tax": null,
+      "equity_net_history": [],
+      "equity_net_operating": 0.0,
+      "equity_net_recurrent": null,
       "excess": 0.0,
       "explained": 21311950000.0,
       "income": 23713939463.2,
@@ -5716,6 +5737,13 @@
     "state": "expansion"
   },
   "errors": [],
+  "ev_cross_holdings": {
+    "enterprise_value": 336242961437.0,
+    "equity_investments": 27775000000.0,
+    "ev_ebitda": 5.20129432835,
+    "ev_ebitda_before": 5.66962805513,
+    "share": 0.082603959593
+  },
   "graham_margin": 0.0902799846632,
   "graham_number": 113.826233683,
   "growth_basis": {
@@ -5723,13 +5751,16 @@
     "basis": "agregado",
     "eps": "el BPA ya es por acción",
     "eps_cagr": {
-      "anomalous_base": false,
-      "bound": null,
+      "anomalous_base": true,
+      "bound": {
+        "direction": "inferior",
+        "value": -0.193083897509
+      },
       "capped": null,
-      "method": "cagr",
-      "not_significant": null,
-      "note": null,
-      "robust": true,
+      "method": "log_lineal",
+      "not_significant": true,
+      "note": "base anómala (base inflada: el año inicial es el 200% de la mediana de los demás) sin serie larga robusta: BPA no significativo",
+      "robust": false,
       "source": null,
       "value_uncapped": null,
       "window": null,
@@ -5987,7 +6018,7 @@
     "ebitda_margin": 0.199952124234,
     "enterprise_value": 336242961437.0,
     "eps": 9.06,
-    "ev_ebitda": 5.66962805513,
+    "ev_ebitda": 5.20129432835,
     "ev_revenue": 1.13365417324,
     "fcf_yield": 0.107098855949,
     "ffo": 48841000000.0,

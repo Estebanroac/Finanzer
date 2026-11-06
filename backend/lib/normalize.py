@@ -325,12 +325,25 @@ def after_tax(parts: Optional[Dict[str, Any]], income: float, charges_back: floa
     nint, eq = p.get("net_interest") or 0.0, p.get("equity_income") or 0.0
     core = op + charges_back + nint + eq
     mi = p.get("minority_interests") or 0.0
-    explained = (core * (1 - tr["rate"]) if core > 0 else core) + mi
+    # F13 (decisión del usuario, 5-nov: SRE y Oncor): el resultado de las participadas por el método de participación es
+    # negocio operativo, se presente antes de impuestos (ya en `core`) o después (Sempra: Oncor, 80 %, fuera de la
+    # consolidación por las restricciones del regulador). Ya es neto: entra en lo explicado sin volver a gravarlo. Solo
+    # las inversiones financieras (las ganancias de valores, `named_gains`) son no operativas.
+    # Operativo es su nivel recurrente: la mediana de los últimos ejercicios (`equity_net_history`, sin el periodo); lo
+    # que pasa de ella es un pico (FIS: 2,39 B$ por la venta de su parte de Worldpay, sin participadas antes) y se sigue
+    # nombrando para recortar. Sin `equity_recurrence_min_years` ejercicios, no hay nivel recurrente que probar.
+    eq_net_all = max(0.0, p.get("equity_income_net_of_tax") or 0.0)
+    hist = [h for h in (p.get("equity_net_history") or [])[:C["equity_recurrence_years"]] if h is not None]
+    rec = sorted(hist)[len(hist) // 2] if len(hist) % 2 else (
+        (sorted(hist)[len(hist) // 2 - 1] + sorted(hist)[len(hist) // 2]) / 2 if hist else None)
+    eq_net = (min(eq_net_all, max(0.0, rec)) if rec is not None and len(hist) >= C["equity_recurrence_min_years"]
+              else 0.0)
+    explained = (core * (1 - tr["rate"]) if core > 0 else core) + mi + eq_net
     tol = C["nonoperating_tolerance_revenue"] * rev
     excess = max(0.0, income - explained - tol)
     pt, tx = p.get("pretax"), p.get("tax")
     tax_named = max(0.0, tr["rate"] * pt - tx) if (pt is not None and tx is not None and pt > 0) else 0.0
-    eq_named = max(0.0, p.get("equity_income_net_of_tax") or 0.0)
+    eq_named = eq_net_all - eq_net     # F13: solo el pico sobre su nivel recurrente (arriba)
     gains_named = max(0.0, named_gains_left) * (1 - tr["rate"])
     named = eq_named + tax_named + gains_named
     out = min(excess, named)
@@ -340,6 +353,7 @@ def after_tax(parts: Optional[Dict[str, Any]], income: float, charges_back: floa
             "revenue": rev, "tax_rate": tr["rate"], "tax_source": tr["source"], "period_tax_rate": tr["period_rate"],
             "explained": explained, "tolerance": tol, "excess": excess, "named": named,
             "named_equity_net_of_tax": eq_named, "named_tax_benefit": tax_named, "named_gains": gains_named,
+            "equity_net_operating": eq_net, "equity_net_recurrent": rec, "equity_net_history": hist,
             "unexplained": excess - out, "reason": None}
 
 
@@ -593,8 +607,10 @@ def normalize(*, net_income: Optional[float], explicit_rows: Dict[str, Optional[
         if at["applied"]:
             pt_rate = at["period_tax_rate"]
             why = []
-            if at.get("equity_income_net_of_tax"):
-                why.append(f"participadas netas de impuestos {at['equity_income_net_of_tax'] / 1e9:+.2f}B")
+            if at.get("named_equity_net_of_tax"):
+                why.append(f"participadas netas de impuestos {at['equity_income_net_of_tax'] / 1e9:+.2f}B, "
+                           + (f"por encima de su nivel recurrente ({at['equity_net_recurrent'] / 1e9:.2f}B)"
+                              if at["equity_net_operating"] else "sin un nivel recurrente en los últimos ejercicios"))
             if pt_rate is None or pt_rate < 0:
                 why.append("tipo efectivo del periodo " + ("negativo" if pt_rate is not None else "no calculable")
                            + " (un beneficio fiscal)")
@@ -610,7 +626,10 @@ def normalize(*, net_income: Optional[float], explicit_rows: Dict[str, Optional[
                                      + f" + financieros netos {at['net_interest'] / 1e9:+.2f}B + participadas "
                                      f"{at['equity_income'] / 1e9:+.2f}B) × (1 − {at['tax_rate']:.1%})"
                                      + (f" + minoritarios {at['minority_interests'] / 1e9:+.2f}B"
-                                        if at["minority_interests"] else "") + " = "
+                                        if at["minority_interests"] else "")
+                                     + (f" + participadas netas de impuestos {at['equity_net_operating'] / 1e9:+.2f}B "
+                                        "(operativas: su nivel recurrente)" if at.get("equity_net_operating") else "")
+                                     + " = "
                                      f"{at['explained'] / 1e9:.2f}B ({at['tax_source']}); sale lo que pasa del "
                                      f"{C['nonoperating_tolerance_revenue']:.0%} de los ingresos "
                                      f"({at['tolerance'] / 1e9:.2f}B)" + (": " + ", ".join(why) if why else "")

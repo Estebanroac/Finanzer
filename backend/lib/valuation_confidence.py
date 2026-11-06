@@ -80,7 +80,8 @@ def dcf_reliability(*, dcf: Optional[Dict[str, Any]], sensitivity: Optional[Dict
                     fcf_flags: List[str], fcf_source: Optional[str],
                     history_fy: Optional[Dict[str, Any]] = None,
                     data_flags: Optional[List[str]] = None,
-                    current_margins: Optional[Dict[str, Optional[float]]] = None) -> Optional[Dict[str, Any]]:
+                    current_margins: Optional[Dict[str, Optional[float]]] = None,
+                    growth_divergence: Optional[Dict[str, Optional[float]]] = None) -> Optional[Dict[str, Any]]:
     """{level, reasons, criteria, grid_contains_price, central_contains_price} o None sin DCF.
 
     F8 · E8 (auditoría del 26-oct): la fiabilidad se juzga por los insumos, NUNCA por si el valor coincide con el
@@ -93,7 +94,10 @@ def dcf_reliability(*, dcf: Optional[Dict[str, Any]], sensitivity: Optional[Dict
       (4) banderas de datos (beta sin verificar, pico de beneficio): un escalón entre todas;
       (5) crecimiento proyectado (g del DCF ≥ 0) con el margen en deterioro (PM, 27-oct): margen operativo (o neto) TTM
           por debajo de la mediana de 5 ejercicios en más de `margin_drop_min` y bajando en al menos `margin_drop_downs`
-          de los 4 últimos cambios anuales. Con una caída de al menos el doble del umbral, baja directamente.
+          de los 4 últimos cambios anuales. Con una caída de al menos el doble del umbral, baja directamente;
+      (6) F13 · paso 11 (opción c del usuario): el crecimiento de las ventas y el del BPA a 3 años se separan más de
+          `growth_divergence_pp` (márgenes en expansión, LIN, o en compresión, UNH): el de las ventas no representa el
+          del flujo que se proyecta.
     El FCF de entrada marcado por la validación o inferido (no sale de los estados) es baja directamente. Una cíclica o
     una «posible cíclica» no pasan de media. Si la tabla contiene el precio se sigue informando, sin efecto."""
     if not dcf or dcf.get("fair_value") is None:
@@ -147,6 +151,16 @@ def dcf_reliability(*, dcf: Optional[Dict[str, Any]], sensitivity: Optional[Dict
                 f"una mediana de {md['median']:.1%} en {len(md['years'])} ejercicios, −{md['drop']:.0%}, y "
                 f"{md['downs']} bajadas en {md['changes']} años); supuesto no verificado hasta el DCF de tres impulsores")
         (low if md["drop"] >= R["margin_drop_low_mult"] * R["margin_drop_min"] else minus).append(_txt)
+    # (6) ventas y BPA muy separados
+    gd = growth_divergence or {}
+    if gd.get("revenue") is not None and gd.get("eps") is not None \
+            and abs(gd["eps"] - gd["revenue"]) > R["growth_divergence_pp"]:
+        from claims import claim as _claim, record as _record
+        minus.append(_record(
+            f"las ventas crecen un {gd['revenue']:.1%} y el BPA un {gd['eps']:.1%} anual a 3 años (más de "
+            f"{R['growth_divergence_pp'] * 100:.0f} pp de diferencia): el crecimiento de las ventas no representa el "
+            "del flujo", _claim("eps_vs_revenue", eps=gd["eps"], revenue=gd["revenue"]),
+            source="valuation_confidence.dcf_reliability"))
     # (4) banderas de datos
     if data_flags:
         minus.append("banderas de datos: " + "; ".join(data_flags))
@@ -167,7 +181,8 @@ def dcf_reliability(*, dcf: Optional[Dict[str, Any]], sensitivity: Optional[Dict
     return {"level": level, "reasons": reasons if level != "alta" else [],
             "criteria": {"terminal_pct": tv, "central_dispersion": (max(block) / min(block))
                          if block and min(block) > 0 else None,
-                         "fcf_margin": st, "data_flags": data_flags or [], "margin_trend": md, "notes": notes},
+                         "fcf_margin": st, "data_flags": data_flags or [], "margin_trend": md, "notes": notes,
+                         "growth_divergence": gd or None},
             "grid_contains_price": in_grid, "central_contains_price": in_center}
 
 
@@ -371,10 +386,56 @@ def source_dimension(*, input_flags: List[Dict[str, Any]], normalization: Option
     return {"level": level, "issues": len(issues), "reasons": issues, "finnhub_fields": fh}
 
 
-def stability_dimension(archetype: Optional[str], classification: Dict[str, Any]) -> Dict[str, Any]:
+def cycle_evidence(rows: Optional[List[Dict[str, Any]]], industry: Optional[str]) -> Dict[str, Any]:
+    """F13 · 3c (decisión del usuario, opción (a) con matiz): lo que el ciclo ha hecho en las cifras de la empresa, de
+    la historia anual de EDGAR (history_10y). No cambia el nivel: dice por qué una cíclica se queda en «baja».
+    Productora de materias primas (su industria), años con pérdidas, peor caída anual del beneficio y recorrido del
+    margen operativo."""
+    from classify import norm_industry
+    ni = [(r.get("year"), r.get("net_income")) for r in rows or [] if r.get("net_income") is not None]
+    om = [(r.get("year"), r.get("operating_margin")) for r in rows or []
+          if r.get("operating_income") is not None and r.get("operating_margin") is not None]
+    # la peor caída entre dos años con beneficio (el paso a pérdidas ya lo dicen los años con pérdidas)
+    drops = [(y1, b / a - 1) for (_, a), (y1, b) in zip(ni, ni[1:]) if a and a > 0 and b >= 0]
+    worst = min(drops, key=lambda d: d[1]) if drops else None
+    return {"commodity": norm_industry(industry) in cfg("sectors.archetypes.commodity_industries"),
+            "years": len(ni), "loss_years": [y for y, v in ni if v < 0],
+            "worst_drop": {"year": worst[0], "change": worst[1]} if worst and worst[1] < 0 else None,
+            "margin_range": ({"low": min(v for _, v in om), "high": max(v for _, v in om), "years": len(om)}
+                             if len(om) >= cfg("thresholds.confidence.cycle_margin_min_years") else None)}
+
+
+def _cycle_reasons(ev: Dict[str, Any]) -> List[str]:
+    if ev.get("commodity"):
+        return ["productora de materias primas: su resultado depende del precio de lo que produce, no de su gestión"]
+    if not ev.get("years"):
+        return ["empresa cíclica: resultados ligados a la fase del ciclo (sin historia anual en EDGAR para medirlo)"]
+    seen = []
+    if ev["loss_years"]:
+        ys = [str(y) for y in ev["loss_years"]]
+        seen.append("pérdidas en " + (", ".join(ys[:-1]) + " y " + ys[-1] if len(ys) > 1 else ys[0]))
+    wd = ev.get("worst_drop")
+    if wd and wd["change"] <= -cfg("thresholds.confidence.cycle_real_drop"):
+        seen.append(f"el beneficio cayó un {abs(wd['change']) * 100:.0f}% en {wd['year']}")
+    mr = ev.get("margin_range")
+    if mr:
+        seen.append(f"margen operativo entre el {mr['low'] * 100:.1f}% y el {mr['high'] * 100:.1f}%")
+    if not ev["loss_years"] and not (wd and wd["change"] <= -cfg("thresholds.confidence.cycle_real_drop")):
+        return [f"empresa cíclica sin una caída real del beneficio en sus {ev['years']} ejercicios: el ciclo no se ha "
+                "visto aún en sus cifras"]
+    return [f"empresa cíclica: en sus {ev['years']} ejercicios, " + "; ".join(seen)]
+
+
+def stability_dimension(archetype: Optional[str], classification: Dict[str, Any],
+                        cycle: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     alerts = [a.get("code") for a in (classification or {}).get("alerts") or []]
     if archetype == "CYCLICAL":
-        return {"level": "baja", "reasons": ["empresa cíclica: resultados ligados a la fase del ciclo"]}
+        # F13 · 3c, opción (a) con matiz: siempre «baja», con lo que el ciclo hizo en esta empresa. La (b) (subir a
+        # «media» las estables) se midió en las 543 y no se aplica: 25 de las 33 candidatas tienen años con pérdidas
+        # (F13_P11_DECISIONES.md).
+        if cycle is None:
+            return {"level": "baja", "reasons": ["empresa cíclica: resultados ligados a la fase del ciclo"]}
+        return {"level": "baja", "reasons": _cycle_reasons(cycle), "cycle": cycle}
     if "posible_ciclica" in alerts:
         return {"level": "media", "reasons": ["alerta de posible cíclica"]}
     low = (classification or {}).get("low_confidence")
