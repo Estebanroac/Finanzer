@@ -81,7 +81,8 @@ def dcf_reliability(*, dcf: Optional[Dict[str, Any]], sensitivity: Optional[Dict
                     history_fy: Optional[Dict[str, Any]] = None,
                     data_flags: Optional[List[str]] = None,
                     current_margins: Optional[Dict[str, Optional[float]]] = None,
-                    growth_divergence: Optional[Dict[str, Optional[float]]] = None) -> Optional[Dict[str, Any]]:
+                    growth_divergence: Optional[Dict[str, Optional[float]]] = None,
+                    spectrum: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
     """{level, reasons, criteria, grid_contains_price, central_contains_price} o None sin DCF.
 
     F8 · E8 (auditoría del 26-oct): la fiabilidad se juzga por los insumos, NUNCA por si el valor coincide con el
@@ -98,6 +99,9 @@ def dcf_reliability(*, dcf: Optional[Dict[str, Any]], sensitivity: Optional[Dict
       (6) F13 · paso 11 (opción c del usuario): el crecimiento de las ventas y el del BPA a 3 años se separan más de
           `growth_divergence_pp` (márgenes en expansión, LIN, o en compresión, UNH): el de las ventas no representa el
           del flujo que se proyecta.
+      (7) F14 · paso 5 (segunda revisión externa): una telecom cuyo FCF no resta las compras de espectro porque
+          EDGAR no las separa (AT&T las presenta dentro de sus adquisiciones, junto a Time Warner o DirecTV) tiene un
+          FCF inflado: baja directamente. No se estima con las de otra operadora.
     El FCF de entrada marcado por la validación o inferido (no sale de los estados) es baja directamente. Una cíclica o
     una «posible cíclica» no pasan de media. Si la tabla contiene el precio se sigue informando, sin efecto."""
     if not dcf or dcf.get("fair_value") is None:
@@ -161,6 +165,9 @@ def dcf_reliability(*, dcf: Optional[Dict[str, Any]], sensitivity: Optional[Dict
             f"{R['growth_divergence_pp'] * 100:.0f} pp de diferencia): el crecimiento de las ventas no representa el "
             "del flujo", _claim("eps_vs_revenue", eps=gd["eps"], revenue=gd["revenue"]),
             source="valuation_confidence.dcf_reliability"))
+    # (7) telecom sin las compras de espectro
+    if (spectrum or {}).get("status") == "sin_dato":
+        low.append(f"el FCF no resta las compras de espectro ({spectrum.get('reason')}): está inflado")
     # (4) banderas de datos
     if data_flags:
         minus.append("banderas de datos: " + "; ".join(data_flags))

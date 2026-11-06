@@ -2447,6 +2447,7 @@ def _compute_analysis_body(symbol: str) -> dict:
                         possible_cyclical=any(a.get("code") == "posible_ciclica"
                                               for a in classification.get("alerts") or []),
                         fcf_flags=_fcf_flags, fcf_source=_fcf_source,
+                        spectrum=result.get("spectrum_adjustment"),
                         history_fy=(yinfo.get("_history_fy") if _has_yahoo else None),
                         # F8 · E8 (4): banderas de datos que restan fiabilidad a los insumos del DCF.
                         data_flags=[f for f in (

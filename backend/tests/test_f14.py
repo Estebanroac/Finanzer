@@ -80,3 +80,13 @@ def test_a_band_changed_by_the_contraction_shows_both_levels():
     assert v["text"] == "Calidad media · precio entre razonable y atractivo" and v["price_level_raw"] == "atractivo"
     same = V.verdict({"level": "media"}, {"level": "razonable", "level_raw": "razonable", "contracted": True}, None)
     assert same["text"] == "Calidad media · precio razonable" and same["price_level_raw"] is None
+
+
+# ── paso 5: telecom sin las compras de espectro ──
+def test_a_telecom_fcf_without_spectrum_purchases_is_not_reliable():
+    dcf = {"fair_value": 100.0, "value_composition": {"terminal_pct": 50.0}, "growth_rate": 0.02}
+    kw = dict(dcf=dcf, sensitivity=None, price=90.0, archetype="MATURE", possible_cyclical=False, fcf_flags=[],
+              fcf_source=None)
+    r = vc.dcf_reliability(**kw, spectrum={"status": "sin_dato", "reason": "EDGAR no las separa"})
+    assert r["level"] == "baja" and any("espectro" in x for x in r["reasons"])
+    assert vc.dcf_reliability(**kw, spectrum={"status": "ok", "average": 6.57e9})["level"] == "alta"

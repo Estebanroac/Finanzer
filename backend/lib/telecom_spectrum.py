@@ -34,7 +34,9 @@ def adjustment(history_fy: Optional[Dict[str, Any]], industry: Optional[str],
     if len(have) < need:
         return {"status": "sin_dato",
                 "reason": (f"EDGAR trae las compras de espectro de {len(have)} de los {len(fy_ends)} últimos ejercicios "
-                           f"y hacen falta al menos {need}: sin la media no se ajusta el FCF")}
+                           f"y hacen falta al menos {need}: sin la media no se ajusta el FCF"
+                           # F14 · paso 5: AT&T las incluye en sus adquisiciones, con las de empresas
+                           + ("; el emisor no las separa de sus adquisiciones de empresas" if not have else ""))}
     vals = [spec[e]["value"] for e in have]
     return {"status": "ok", "average": sum(vals) / len(vals), "years": [e[:4] for e in have], "values": vals,
             "window": n, "concept": spec[have[0]]["concept"]}
