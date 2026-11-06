@@ -81,16 +81,15 @@ def test_nvda_reference_without_nvidia_is_declared():
     assert "sin NVIDIA, que pesa el" in a["display"]["sections"]["valuation"]["reference_note"]
 
 
-def test_almost_all_the_industry_falls_back_to_peers():
-    """AAPL ≈ 91 % de «Computers/Peripherals» (≥ `self_max_weight`): lo que queda son restos; la referencia es la
-    mediana de los pares del universo, dicho."""
+def test_almost_all_the_industry_falls_back_to_the_global_industry():
+    """AAPL ≈ 91 % de «Computers/Peripherals» de EE. UU. (≥ `self_max_weight`): lo que queda son restos. F14 · paso 6:
+    antes que la mediana de 7 pares, el grupo más amplio: la misma industria a escala global sin Apple, dicho."""
     a = _golden("AAPL")
-    se = a["benchmark"]["industry"]["self_exclusion"]
-    assert se["method"] == "mediana_pares" and se["weight"] >= cfg("sectors.benchmarks.industry.self_max_weight")
-    assert "casi solo Apple" in se["declaration"] and se["declaration"].startswith("referencia: mediana de ")
-    note = a["display"]["sections"]["valuation"]["reference_note"]
-    assert note.startswith(f"Referencia: mediana de {se['n_peers']} pares del universo") and "no medianas" not in note
-    assert a["benchmark"]["short"] == "pares"
+    ib = a["benchmark"]["industry"]
+    se = ib["self_exclusion"]
+    assert ib["basis"] == "industria_global" and se["method"] == "sin_empresa"
+    assert se["weight"] < cfg("sectors.benchmarks.industry.self_max_weight") and ib["firms"] >= 10
+    assert "casi solo Apple" in ib["home_why"]
 
 
 def test_the_reference_never_includes_the_company():

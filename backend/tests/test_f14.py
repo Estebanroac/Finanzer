@@ -105,10 +105,10 @@ def test_a_beta_from_four_firms_uses_the_global_industry():
     assert B.unlevered_beta("Communication Services", "Telecom Services").get("scope") is None   # 39 empresas
 
 
-def test_a_peer_median_needs_as_many_peers_as_an_industry_needs_firms():
-    import self_exclusion as SE
-    pm = SE.peer_median("Entertainment", "NFLX", ["net_margin"], region="us", k_min=10)
-    assert pm["columns"]["net_margin"]["how"] == "sin_dato"
+def test_the_wider_group_comes_before_few_peers():
+    # NFLX: su margen neto sin ella en EE. UU. no sirve; antes que la mediana de 4 pares, la industria global sin ella
+    cols = _banco("paso11", "NFLX")["benchmark"]["industry"]["self_exclusion"]["columns"]
+    assert cols["net_margin"]["how"] == "global_sin_empresa" and cols["net_margin"]["global_firms"] >= 10
 
 
 

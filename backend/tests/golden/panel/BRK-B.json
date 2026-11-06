@@ -4,6 +4,11 @@
     "strengths": [
       {
         "category": "Rentabilidad",
+        "detail": "Retorno sobre el patrimonio por encima de 8.5% de su industria sin ella: uso muy eficiente del capital de los accionistas.",
+        "reason": "ROE elevado — 11.5% (TTM)"
+      },
+      {
+        "category": "Rentabilidad",
         "detail": "De cada dólar vendido quedan 22 centavos de beneficio tras todos los costos, frente a 8.7% de su industria sin ella: poder de fijación de precios y eficiencia.",
         "reason": "Margen neto sólido — 22.3%"
       }
@@ -187,11 +192,12 @@
             "n": 2
           },
           "pb": {
-            "after": null,
+            "after": 1.08410739992,
             "before": 1.783,
-            "how": "sin_dato",
+            "global_firms": 329,
+            "global_weight": 0.380814050403,
+            "how": "global_sin_empresa",
             "implausible": 7.32098068564,
-            "n": 2,
             "why": "salto"
           },
           "pe": {
@@ -200,10 +206,11 @@
             "how": "sin_empresa"
           },
           "roe": {
-            "after": null,
+            "after": 0.0845491704864,
             "before": 0.1137,
-            "how": "sin_dato",
-            "n": 2
+            "global_firms": 329,
+            "global_weight": 0.380814050403,
+            "how": "global_sin_empresa"
           },
           "roic": {
             "after": null,
@@ -237,17 +244,12 @@
     "reason": null,
     "ref": "de su industria sin ella",
     "sector": "financials",
-    "self_dropped": {
-      "pb": {
-        "before": 1.783,
-        "why": "salto",
-        "without": 7.32098068564
-      }
-    },
     "short": "industria",
     "sources": {
       "net_margin": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Conglomerados diversificados», EE. UU., 20 empresas; referencia de la industria sin Berkshire Hathaway, que pesa el 82 %",
-      "pe": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Conglomerados diversificados», EE. UU., 20 empresas; referencia de la industria sin Berkshire Hathaway, que pesa el 82 %"
+      "pb": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Conglomerados diversificados», EE. UU., 20 empresas; para esta columna, la misma industria a escala global sin la empresa (329 empresas; sin la empresa el agregado de su región queda en 7.3x)",
+      "pe": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Conglomerados diversificados», EE. UU., 20 empresas; referencia de la industria sin Berkshire Hathaway, que pesa el 82 %",
+      "roe": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Conglomerados diversificados», EE. UU., 20 empresas; para esta columna, la misma industria a escala global sin la empresa (329 empresas; sin las cifras de la empresa para esta columna)"
     },
     "thresholds": {
       "current_ratio_low": 1.0,
@@ -263,7 +265,9 @@
     "thresholds_key": "financials",
     "values": {
       "net_margin": 0.0866378198581,
-      "pe": 23.4282359837
+      "pb": 1.08410739992,
+      "pe": 23.4282359837,
+      "roe": 0.0845491704864
     }
   },
   "beta": {
@@ -401,7 +405,7 @@
         "reasons": []
       },
       "convergence": {
-        "level": "no_evaluable",
+        "level": "alta",
         "methods": [
           {
             "direction": "cara",
@@ -410,10 +414,20 @@
             "method": "P/B justificado (Gordon)",
             "signal": -0.438867300578,
             "upside": -0.219433650289
+          },
+          {
+            "anchor": "la industria «Conglomerados diversificados»",
+            "benchmark": 1.08410739992,
+            "direction": "cara",
+            "evaluable": true,
+            "kind": "relativo",
+            "method": "P/B frente al sector",
+            "signal": -0.560806325966,
+            "upside": -0.280403162983
           }
         ],
         "reasons": [
-          "un solo método evaluable (P/B justificado (Gordon)): no hay contraste"
+          "coinciden (cara) con distancia 0.12 (< 0.6)"
         ]
       },
       "coverage": {
@@ -460,12 +474,11 @@
     "level": "baja",
     "limits_score": false,
     "reasons": [
-      "convergencia no evaluable: un solo método evaluable (P/B justificado (Gordon)): no hay contraste",
       "calidad de fuente media: beta sustituta 0.67 fuera de la propia 0.41 ± 2 EE (0.21–0.61, R² 0.14)",
       "techo en media: la más baja manda: calidad de fuente media",
       "veredicto dependiente de Ke: el nivel de precio pasa de «exigente» a «razonable» con Ke − 1 pp: confianza media → baja"
     ],
-    "score": 0.833333333333
+    "score": 0.9
   },
   "cost_of_equity": {
     "as_of": "2026-11-01",
@@ -1495,12 +1508,14 @@
     "company": 0.0714022352325,
     "company_basis": "CAGR de ingresos a 3 años",
     "count": 367,
+    "evidence_years": 5,
     "horizon_years": 5,
     "industry": "Other",
     "median": 0.029,
     "reason": null,
-    "used": 0.0502011176162,
-    "weight": 0.5
+    "sign_kept": false,
+    "used": 0.0532298487043,
+    "weight": 0.428571428571
   },
   "dcf_growth_blend": null,
   "dcf_status": {
@@ -1515,8 +1530,8 @@
           "text": "Arquetipo FINANCIAL (regla industria_aseguradora): Clasificada como FINANCIAL por industria Seguros diversificados (conglomerado: los ingresos de contratos con clientes, sin seguros, son el 67% de los ingresos del FY2025)"
         },
         {
-          "label": "Confianza · Convergencia entre métodos (no evaluable)",
-          "text": "un solo método evaluable (P/B justificado (Gordon)): no hay contraste."
+          "label": "Confianza · Convergencia entre métodos (alta)",
+          "text": "coinciden (cara) con distancia 0.12 (< 0.6)"
         },
         {
           "label": "Confianza · Calidad de fuente (media)",
@@ -1569,7 +1584,7 @@
     },
     "charts": {
       "comparison": {
-        "better": 1,
+        "better": 2,
         "groups": [
           {
             "items": [
@@ -1587,12 +1602,42 @@
                 "tone": "warn",
                 "value": 26.8081959653,
                 "value_txt": "26.81x"
+              },
+              {
+                "bench": 1.08410739992,
+                "bench_txt": "1.08x",
+                "fmt": "mult",
+                "gap_pct": 38.966703098,
+                "gap_txt": "+39%",
+                "higher_is_better": false,
+                "key": "pb",
+                "label": "P/B",
+                "reading": "Prima elevada",
+                "text": "P/B de 1.5x frente a 1.1x de su industria sin ella (+39%): prima elevada.",
+                "tone": "neg",
+                "value": 1.50654831171,
+                "value_txt": "1.51x"
               }
             ],
             "title": "Valoración"
           },
           {
             "items": [
+              {
+                "bench": 0.0845491704864,
+                "bench_txt": "8.45%",
+                "fmt": "pct",
+                "gap_pct": 35.6333822878,
+                "gap_txt": "+36%",
+                "higher_is_better": true,
+                "key": "roe",
+                "label": "ROE",
+                "reading": "Muy superior",
+                "text": "ROE de 11.5% frente a 8.5% de su industria sin ella (+36%): muy superior.",
+                "tone": "pos",
+                "value": 0.114676899627,
+                "value_txt": "11.47%"
+              },
               {
                 "bench": 0.0866378198581,
                 "bench_txt": "8.66%",
@@ -1613,9 +1658,9 @@
           }
         ],
         "market_note": null,
-        "note": "Referencia: industria «Conglomerados diversificados»; Damodaran clasifica a la empresa en esa industria (símbolo), no en la de su perfil («Seguros diversificados», la de la cabecera), EE. UU., 20 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Referencia de la industria sin Berkshire Hathaway, que pesa el 82 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 30 de septiembre de 2025). Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA. Sin la empresa, la industria no sirve de referencia para: P/B (TTM del conjunto: 1.78x publicado, 7.32x sin ella). No hay pares suficientes en el universo para sustituirla: no se compara.",
+        "note": "Referencia: industria «Conglomerados diversificados»; Damodaran clasifica a la empresa en esa industria (símbolo), no en la de su perfil («Seguros diversificados», la de la cabecera), EE. UU., 20 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Referencia de la industria sin Berkshire Hathaway, que pesa el 82 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 30 de septiembre de 2025). En P/B, ROE, la misma industria a escala global sin la empresa (329 empresas): sin ella, la de su región no sirve de referencia. Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
         "ref": "de su industria sin ella",
-        "total": 2
+        "total": 4
       },
       "growth": [
         {
@@ -1822,18 +1867,18 @@
         ],
         "returns": [
           {
-            "bench": null,
-            "bench_txt": "—",
+            "bench": 0.0845491704864,
+            "bench_txt": "8.45%",
             "fmt": "pct",
-            "gap_pct": null,
-            "gap_txt": null,
+            "gap_pct": 35.6333822878,
+            "gap_txt": "+36%",
             "higher_is_better": true,
             "key": "roe",
             "label": "ROE",
-            "reading": "—",
+            "reading": "Muy superior",
             "state": "con_dato",
-            "text": null,
-            "tone": null,
+            "text": "ROE (TTM) de 11.5% frente a 8.5% de su industria sin ella (+36%): muy superior.",
+            "tone": "pos",
             "value": 0.114676899627,
             "value_txt": "11.47%"
           },
@@ -2004,19 +2049,19 @@
             "value_txt": "23.30x"
           },
           {
-            "bench": null,
-            "bench_txt": "—",
+            "bench": 1.08410739992,
+            "bench_txt": "1.08x",
             "fmt": "mult",
-            "gap_pct": null,
-            "gap_txt": null,
+            "gap_pct": 38.966703098,
+            "gap_txt": "+39%",
             "higher_is_better": false,
             "key": "pb",
             "label": "P/B frente a la industria",
-            "reading": "—",
+            "reading": "Prima elevada",
             "role": "informative",
             "state": "con_dato",
-            "text": null,
-            "tone": null,
+            "text": "P/B de 1.5x frente a 1.1x de su industria sin ella (+39%): prima elevada.",
+            "tone": "neg",
             "value": 1.50654831171,
             "value_txt": "1.51x"
           },
@@ -2087,8 +2132,8 @@
         {
           "key": "convergence",
           "label": "Convergencia entre métodos",
-          "level": "No evaluable",
-          "text": "P/B justificado (Gordon) -22% (cara). Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo."
+          "level": "Alta",
+          "text": "P/B justificado (Gordon) -22% (cara) · P/B frente al sector -28% (cara). Los métodos de valoración coinciden."
         },
         {
           "key": "coverage",
@@ -2117,15 +2162,9 @@
       ],
       "level": "baja",
       "plain": [
-        "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo.",
         "El coste del capital usa la beta de su industria (0.67), que no encaja con cómo se ha movido la acción frente al mercado (la suya: 0.41)."
       ],
       "reasons": [
-        {
-          "dimension": "convergencia",
-          "level": "no_evaluable",
-          "text": "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo."
-        },
         {
           "dimension": "calidad de fuente",
           "level": "media",
@@ -2226,7 +2265,6 @@
         "Conglomerado con negocio asegurador (Seguros diversificados): el 67% de sus ingresos son de negocios que no son seguros."
       ],
       "confidence_reasons": [
-        "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo.",
         "El coste del capital usa la beta de su industria (0.67), que no encaja con cómo se ha movido la acción frente al mercado (la suya: 0.41)."
       ],
       "coverage_notes": [],
@@ -2238,7 +2276,7 @@
         {
           "kicker": "FORTALEZA CLAVE",
           "kind": "strength",
-          "text": "Margen neto sólido — 22.3%",
+          "text": "ROE elevado — 11.5% (TTM)",
           "tone": "pos"
         },
         {
@@ -2791,7 +2829,7 @@
       "alerts": {
         "counts": {
           "red_flags": 0,
-          "strengths": 1,
+          "strengths": 2,
           "unmeasured": null,
           "warnings": 0
         },
@@ -2810,6 +2848,11 @@
           },
           {
             "items": [
+              {
+                "category": "Rentabilidad",
+                "detail": "Retorno sobre el patrimonio por encima de 8.5% de su industria sin ella: uso muy eficiente del capital de los accionistas.",
+                "reason": "ROE elevado — 11.5% (TTM)"
+              },
               {
                 "category": "Rentabilidad",
                 "detail": "De cada dólar vendido quedan 22 centavos de beneficio tras todos los costos, frente a 8.7% de su industria sin ella: poder de fijación de precios y eficiencia.",
@@ -3365,14 +3408,14 @@
         "roce_reading": null,
         "rows": [
           {
-            "bench": "—",
-            "gap": "—",
+            "bench": "8.45%",
+            "gap": "+36%",
             "key": "roe",
             "label": "ROE",
-            "reading": "—",
+            "reading": "Muy superior",
             "state": "con_dato",
-            "text": null,
-            "tone": null,
+            "text": "ROE (TTM) de 11.5% frente a 8.5% de su industria sin ella (+36%): muy superior.",
+            "tone": "pos",
             "value": "11.47%"
           },
           {
@@ -3567,7 +3610,7 @@
           "note": "Condiciones que invalidarían la lectura de hoy, con la cifra que las mide: no son previsiones.",
           "title": "Esta lectura sería errónea si…"
         },
-        "reference_note": "Referencia: industria «Conglomerados diversificados»; Damodaran clasifica a la empresa en esa industria (símbolo), no en la de su perfil («Seguros diversificados», la de la cabecera), EE. UU., 20 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Referencia de la industria sin Berkshire Hathaway, que pesa el 82 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 30 de septiembre de 2025). Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA. Sin la empresa, la industria no sirve de referencia para: P/B (TTM del conjunto: 1.78x publicado, 7.32x sin ella). No hay pares suficientes en el universo para sustituirla: no se compara.",
+        "reference_note": "Referencia: industria «Conglomerados diversificados»; Damodaran clasifica a la empresa en esa industria (símbolo), no en la de su perfil («Seguros diversificados», la de la cabecera), EE. UU., 20 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Referencia de la industria sin Berkshire Hathaway, que pesa el 82 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 30 de septiembre de 2025). En P/B, ROE, la misma industria a escala global sin la empresa (329 empresas): sin ella, la de su región no sirve de referencia. Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
         "reverse_dcf": {
           "lines": [
             {
@@ -3609,14 +3652,14 @@
             "value": "23.30x"
           },
           {
-            "bench": "—",
-            "gap": "—",
+            "bench": "1.08x",
+            "gap": "+39%",
             "key": "pb",
             "label": "P/B",
-            "reading": "—",
+            "reading": "Prima elevada",
             "state": "con_dato",
-            "text": null,
-            "tone": null,
+            "text": "P/B de 1.5x frente a 1.1x de su industria sin ella (+39%): prima elevada.",
+            "tone": "neg",
             "value": "1.51x"
           },
           {
@@ -3727,7 +3770,7 @@
     "summary": {
       "alert_counts": {
         "red_flags": 0,
-        "strengths": 1,
+        "strengths": 2,
         "unmeasured": null,
         "warnings": 0
       },
@@ -3755,24 +3798,24 @@
           "value": "22.30"
         },
         {
-          "bench": "",
-          "delta": "",
+          "bench": "vs industria 8.45%",
+          "delta": "+36%",
           "key": "roe",
           "label": "ROE reportado",
-          "pill": "Sin referencia",
+          "pill": "Muy superior",
           "state": "con_dato",
-          "tone": "neu",
+          "tone": "pos",
           "unit": "%",
           "value": "11.47"
         },
         {
-          "bench": "",
-          "delta": "",
+          "bench": "vs industria 1.08x",
+          "delta": "+39%",
           "key": "pb",
           "label": "P/B",
-          "pill": "Sin referencia",
+          "pill": "Prima elevada",
           "state": "con_dato",
-          "tone": "neu",
+          "tone": "neg",
           "unit": "x",
           "value": "1.51"
         },
@@ -3896,7 +3939,7 @@
         },
         {
           "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Baja: solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo. Contrae hacia 50 el atractivo del precio (de 35 a 42) y la calidad del negocio (de 71 a 68)."
+          "text": "Baja: el coste del capital usa la beta de su industria (0.67), que no encaja con cómo se ha movido la acción frente al mercado (la suya: 0.41). Contrae hacia 50 el atractivo del precio (de 35 a 42) y la calidad del negocio (de 71 a 68)."
         }
       ]
     },
@@ -4190,6 +4233,41 @@
           }
         ]
       },
+      "pb": {
+        "note": null,
+        "tables": [
+          {
+            "bands": [
+              {
+                "label": "Descuento profundo",
+                "range": "≤ 0.7x",
+                "tone": "pos"
+              },
+              {
+                "label": "Descuento",
+                "range": "0.7x – 1.0x",
+                "tone": "pos"
+              },
+              {
+                "label": "En línea",
+                "range": "1.0x – 1.2x",
+                "tone": "neu"
+              },
+              {
+                "label": "Prima moderada",
+                "range": "1.2x – 1.5x",
+                "tone": "warn"
+              },
+              {
+                "label": "Prima elevada",
+                "range": "≥ 1.5x",
+                "tone": "neg"
+              }
+            ],
+            "title": "Frente a la referencia de su industria sin ella (1.1x)"
+          }
+        ]
+      },
       "pe": {
         "note": null,
         "tables": [
@@ -4391,6 +4469,36 @@
       "roe": {
         "note": null,
         "tables": [
+          {
+            "bands": [
+              {
+                "label": "Muy superior",
+                "range": "≥ 11.4%",
+                "tone": "pos"
+              },
+              {
+                "label": "Superior",
+                "range": "9.3% – 11.4%",
+                "tone": "pos"
+              },
+              {
+                "label": "En línea",
+                "range": "7.6% – 9.3%",
+                "tone": "neu"
+              },
+              {
+                "label": "Inferior",
+                "range": "5.5% – 7.6%",
+                "tone": "warn"
+              },
+              {
+                "label": "Muy inferior",
+                "range": "< 5.5%",
+                "tone": "neg"
+              }
+            ],
+            "title": "Frente a la referencia de su industria sin ella (8.5%)"
+          },
           {
             "bands": [
               {
@@ -5967,6 +6075,7 @@
     "confidence_text": "(confianza baja: el nivel de precio cambia con ±1 pp de coste del capital)",
     "full": "Calidad sólida · precio exigente (confianza baja: el nivel de precio cambia con ±1 pp de coste del capital)",
     "price_level": "exigente",
+    "price_level_raw": null,
     "quality_level": "sólida",
     "text": "Calidad sólida · precio exigente"
   },

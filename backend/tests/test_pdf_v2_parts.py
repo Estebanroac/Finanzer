@@ -103,9 +103,9 @@ def test_figure_cards_from_summary_cards(aapl):
     pdf, _ = _render(P.equal_row(cards, T.CW))
     assert len({c.height for c in cards}) == 1
     t = _text(pdf)
-    # F9 · R3: la precisión de las tablas. F10 · N2: AAPL es el 91 % de su industria de Damodaran; la referencia es la
-    # mediana de sus pares del universo
-    assert "vs pares 7.52%" in t and "Muy superior" in t
+    # F9 · R3: la precisión de las tablas. F10 · N2: AAPL es el 91 % de su industria de Damodaran en EE. UU.; F14 · paso
+    # 6: la referencia es la misma industria a escala global sin Apple, no la mediana de 7 pares
+    assert "vs industria 4.71%" in t and "Muy superior" in t
 
 
 def test_tech_table_with_reading_pills_and_missing_rows(aapl):

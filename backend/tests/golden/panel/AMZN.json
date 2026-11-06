@@ -3,8 +3,8 @@
     "red_flags": [
       {
         "category": "Valor intrínseco",
-        "detail": "El valor estimado por el DCF ($63) está un 75% por debajo del precio ($254.08): ningún supuesto razonable del rango de sensibilidad lo justifica.",
-        "reason": "Sobrevalorada según DCF −75%"
+        "detail": "El valor estimado por el DCF ($66) está un 74% por debajo del precio ($254.08): ningún supuesto razonable del rango de sensibilidad lo justifica.",
+        "reason": "Sobrevalorada según DCF −74%"
       },
       {
         "category": "Flujo de caja",
@@ -99,11 +99,12 @@
       "self_exclusion": {
         "columns": {
           "de": {
-            "after": 1.30295,
+            "after": 1.05939959874,
             "before": 0.5848,
-            "how": "mediana_pares",
+            "global_firms": 252,
+            "global_weight": 0.522441222636,
+            "how": "global_sin_empresa",
             "implausible": 2.02408623595,
-            "n": 6,
             "why": "salto"
           },
           "ev_ebitda": {
@@ -112,10 +113,10 @@
             "how": "sin_empresa"
           },
           "gross_margin": {
-            "after": 0.2977,
+            "after": null,
             "before": 0.3318,
-            "how": "mediana_pares",
-            "n": 6
+            "how": "sin_dato",
+            "n": 7
           },
           "interest_coverage": {
             "after": 10.825044847,
@@ -190,11 +191,10 @@
     "sector": "consumer_cyclical",
     "short": "industria",
     "sources": {
-      "de": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Comercio minorista general», EE. UU., 23 empresas; mediana de 6 pares del universo (sin la empresa el agregado pasaba de 0.6x a 2.0x: no representa a la industria)",
+      "de": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Comercio minorista general», EE. UU., 23 empresas; para esta columna, la misma industria a escala global sin la empresa (252 empresas; sin la empresa el agregado de su región queda en 2.0x)",
       "ev_ebitda": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Comercio minorista general», EE. UU., 23 empresas; referencia de la industria sin Amazon.com, que pesa el 63 %",
-      "gross_margin": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Comercio minorista general», EE. UU., 23 empresas; mediana de 6 pares del universo (sin las cifras de la empresa para esta columna)",
       "interest_coverage": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Comercio minorista general», EE. UU., 23 empresas; referencia de la industria sin Amazon.com, que pesa el 63 %",
-      "net_margin": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Comercio minorista general», EE. UU., 23 empresas; referencia de la industria sin Amazon.com, que pesa el 63 %",
+      "net_margin": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Comercio minorista general», EE. UU., 23 empresas; referencia de la industria sin Amazon.com, que pesa el 63 % (entre el 2 % y el 3 %, vale por su causa: industria de margen fino por naturaleza)",
       "operating_margin": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Comercio minorista general», EE. UU., 23 empresas; referencia de la industria sin Amazon.com, que pesa el 63 %",
       "pb": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Comercio minorista general», EE. UU., 23 empresas; referencia de la industria sin Amazon.com, que pesa el 63 %",
       "pe": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Comercio minorista general», EE. UU., 23 empresas; referencia de la industria sin Amazon.com, que pesa el 63 %",
@@ -214,9 +214,8 @@
     },
     "thresholds_key": "consumer_cyclical",
     "values": {
-      "de": 1.30295,
+      "de": 1.05939959874,
       "ev_ebitda": 7.94360222094,
-      "gross_margin": 0.2977,
       "interest_coverage": 10.825044847,
       "net_margin": 0.0267682372669,
       "operating_margin": 0.045287872291,
@@ -402,7 +401,7 @@
             "method": "DCF",
             "reliability": "media",
             "signal": -1.0,
-            "upside": -0.751102016907
+            "upside": -0.739767004394
           },
           {
             "components": 1,
@@ -1492,19 +1491,19 @@
       "to_ocf_ttm": 1.01664299035,
       "years": 3
     },
-    "fair_value": 63.24,
+    "fair_value": 66.12,
     "fcf_basis": "flujo de mantenimiento (flujo operativo − D&A − SBC) con la reinversión que exige el crecimiento (g ÷ ROIC 15.7%)",
     "fcf_gross": -2472000000.0,
     "fcf_input": 58282000000.0,
-    "growth_basis": "CAGR de ingresos a 3 años (+11.7%), convergido a la mediana a 5 años de sus comparables de tamaño e industria (+3.6%, tasas base de Mauboussin): la media de los dos",
-    "growth_rate": 0.076656418009,
+    "growth_basis": "CAGR de ingresos a 3 años (+11.7%), convergido a la mediana a 5 años de sus comparables de tamaño e industria (+3.6%, tasas base de Mauboussin): con un peso del 25% para la mediana por sus 10 ejercicios seguidos en esa dirección",
+    "growth_rate": 0.0969846270135,
     "growth_source": "revenue_growth_3y",
-    "margin_of_safety": -3.01771033888,
+    "margin_of_safety": -2.84271025153,
     "reason": null,
     "reliability": {
       "central_contains_price": false,
       "criteria": {
-        "central_dispersion": 1.43381804623,
+        "central_dispersion": 1.45874528132,
         "data_flags": [],
         "fcf_margin": {
           "cv": 3.55248510383,
@@ -1544,7 +1543,7 @@
           ]
         },
         "notes": [],
-        "terminal_pct": 56.3
+        "terminal_pct": 61.4
       },
       "grid_contains_price": false,
       "level": "media",
@@ -1553,11 +1552,11 @@
       ]
     },
     "terminal_growth": 0.025,
-    "upside": -75.1102016907,
+    "upside": -73.9767004394,
     "value_composition": {
-      "stage1_pct": 20.5,
+      "stage1_pct": 15.5,
       "stage2_pct": 23.1,
-      "terminal_pct": 56.3
+      "terminal_pct": 61.4
     },
     "wacc": 0.105100088095,
     "wacc_flips": [],
@@ -1569,12 +1568,14 @@
     "company": 0.117312836018,
     "company_basis": "CAGR de ingresos a 3 años",
     "count": 145,
+    "evidence_years": 10,
     "horizon_years": 5,
     "industry": "Consumer",
     "median": 0.036,
     "reason": null,
-    "used": 0.076656418009,
-    "weight": 0.5
+    "sign_kept": false,
+    "used": 0.0969846270135,
+    "weight": 0.25
   },
   "dcf_growth_blend": null,
   "dcf_status": {
@@ -1635,7 +1636,7 @@
     },
     "charts": {
       "comparison": {
-        "better": 7,
+        "better": 6,
         "groups": [
           {
             "items": [
@@ -1720,21 +1721,6 @@
                 "value_txt": "15.68%"
               },
               {
-                "bench": 0.2977,
-                "bench_txt": "29.77%",
-                "fmt": "pct",
-                "gap_pct": 69.9834908145,
-                "gap_txt": "+70%",
-                "higher_is_better": true,
-                "key": "gross_margin",
-                "label": "Margen bruto",
-                "reading": "Muy superior",
-                "text": "Margen bruto de 50.6% frente a 29.8% de su industria sin ella (+70%): muy superior.",
-                "tone": "pos",
-                "value": 0.506040852155,
-                "value_txt": "50.60%"
-              },
-              {
                 "bench": 0.045287872291,
                 "bench_txt": "4.53%",
                 "fmt": "pct",
@@ -1789,9 +1775,9 @@
           }
         ],
         "market_note": null,
-        "note": "Referencia: industria «Comercio minorista general»; Damodaran clasifica a la empresa en esa industria (símbolo), EE. UU., 23 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Referencia de la industria sin Amazon.com, que pesa el 63 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 30 de septiembre de 2025). Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
+        "note": "Referencia: industria «Comercio minorista general»; Damodaran clasifica a la empresa en esa industria (símbolo), EE. UU., 23 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Referencia de la industria sin Amazon.com, que pesa el 63 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 30 de septiembre de 2025). En deuda/patrimonio, la misma industria a escala global sin la empresa (252 empresas): sin ella, la de su región no sirve de referencia. El margen neto de la referencia está entre el 2 % y el 3 % y vale: es una industria de margen fino por naturaleza. Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
         "ref": "de su industria sin ella",
-        "total": 9
+        "total": 8
       },
       "growth": [
         {
@@ -1995,9 +1981,9 @@
               "label": "Margen bruto",
               "pct": 0.506040852155,
               "pct_txt": "50.6%",
-              "reading": "Muy superior",
+              "reading": "—",
               "state": "con_dato",
-              "tone": "pos"
+              "tone": null
             },
             {
               "amount": 155861000000.0,
@@ -2036,18 +2022,18 @@
         },
         "margins": [
           {
-            "bench": 0.2977,
-            "bench_txt": "29.77%",
+            "bench": null,
+            "bench_txt": "—",
             "fmt": "pct",
-            "gap_pct": 69.9834908145,
-            "gap_txt": "+70%",
+            "gap_pct": null,
+            "gap_txt": null,
             "higher_is_better": true,
             "key": "gross_margin",
             "label": "Margen bruto",
-            "reading": "Muy superior",
+            "reading": "—",
             "state": "con_dato",
-            "text": "Margen bruto de 50.6% frente a 29.8% de su industria sin ella (+70%): muy superior.",
-            "tone": "pos",
+            "text": null,
+            "tone": null,
             "value": 0.506040852155,
             "value_txt": "50.60%"
           },
@@ -2368,64 +2354,64 @@
           "tone": "neg"
         },
         "dcf_composition": {
-          "explicit_pct": 43.6,
-          "terminal_pct": 56.3
+          "explicit_pct": 38.6,
+          "terminal_pct": 61.4
         },
         "fair_value": {
           "axis": [
-            39.7205,
+            40.9105,
             279.488002014
           ],
           "badge": {
             "label": "Sobrevalorada",
             "tone": "neg"
           },
-          "central_high": 76.91,
-          "central_high_txt": "$77",
-          "central_low": 53.64,
-          "central_low_txt": "$54",
-          "central_text": "rango $54–$77 en el bloque central de la tabla de sensibilidad (crecimiento ± 2,5 pp y WACC ± 1 pp; mínimo y máximo, no un p10–p90)",
-          "fair_value": 63.24,
-          "fair_value_txt": "$63",
-          "grid_high": 96.84,
-          "grid_high_txt": "$97",
-          "grid_low": 46.73,
-          "grid_low_txt": "$47",
+          "central_high": 81.15,
+          "central_high_txt": "$81",
+          "central_low": 55.63,
+          "central_low_txt": "$56",
+          "central_text": "rango $56–$81 en el bloque central de la tabla de sensibilidad (crecimiento ± 2,5 pp y WACC ± 1 pp; mínimo y máximo, no un p10–p90)",
+          "fair_value": 66.12,
+          "fair_value_txt": "$66",
+          "grid_high": 103.15,
+          "grid_high_txt": "$100",
+          "grid_low": 48.13,
+          "grid_low_txt": "$48",
           "method": "DCF",
           "price": 254.080001831,
           "price_txt": "$254.08",
           "reliability": "media",
           "reliability_tone": "warn",
           "state": "con_dato",
-          "text": "el valor intrínseco estimado ($63) está un 75% por debajo del precio ($254.08): ningún supuesto razonable lo justifica (el precio queda fuera del rango de sensibilidad del DCF)",
-          "upside_txt": "-75.1%",
+          "text": "el valor intrínseco estimado ($66) está un 74% por debajo del precio ($254.08): ningún supuesto razonable lo justifica (el precio queda fuera del rango de sensibilidad del DCF)",
+          "upside_txt": "-74.0%",
           "zones": [
             {
-              "from": 39.7205,
+              "from": 40.9105,
               "label": "Muy infravalorada",
-              "to": 48.6461538462,
+              "to": 50.8615384615,
               "tone": "pos"
             },
             {
-              "from": 48.6461538462,
+              "from": 50.8615384615,
               "label": "Infravalorada",
-              "to": 57.4909090909,
+              "to": 60.1090909091,
               "tone": "pos"
             },
             {
-              "from": 57.4909090909,
+              "from": 60.1090909091,
               "label": "Precio justo",
-              "to": 70.2666666667,
+              "to": 73.4666666667,
               "tone": "neu"
             },
             {
-              "from": 70.2666666667,
+              "from": 73.4666666667,
               "label": "Prima",
-              "to": 90.3428571429,
+              "to": 94.4571428571,
               "tone": "warn"
             },
             {
-              "from": 90.3428571429,
+              "from": 94.4571428571,
               "label": "Sobrevalorada",
               "to": 279.488002014,
               "tone": "neg"
@@ -2555,7 +2541,7 @@
           "key": "convergence",
           "label": "Convergencia entre métodos",
           "level": "Alta",
-          "text": "DCF directo -75% (cara) · múltiplos frente al sector -0.62 (cara). Los métodos de valoración coinciden."
+          "text": "DCF directo -74% (cara) · múltiplos frente al sector -0.62 (cara). Los métodos de valoración coinciden."
         },
         {
           "key": "coverage",
@@ -2718,7 +2704,7 @@
         {
           "kicker": "A VIGILAR",
           "kind": "watch",
-          "text": "Sobrevalorada según DCF −75%",
+          "text": "Sobrevalorada según DCF −74%",
           "tone": "neg"
         },
         {
@@ -2782,8 +2768,8 @@
       "price": {
         "contracted": true,
         "level": "exigente",
-        "note": "ajustado de 25 a 31 hacia 50; en la frontera con «muy exigente» (a 2 puntos): un cambio pequeño en los datos o en los supuestos cambiaría el nivel.",
-        "note_short": "Ajustado de 25 a 31 hacia 50 · en la frontera con «muy exigente» (a 2 puntos)",
+        "note": "ajustado de 25 (muy exigente) a 31 (exigente) hacia 50; en la frontera con «muy exigente» (a 2 puntos): un cambio pequeño en los datos o en los supuestos cambiaría el nivel.",
+        "note_short": "Ajustado de 25 (muy exigente) a 31 (exigente) hacia 50 · en la frontera con «muy exigente» (a 2 puntos)",
         "question": "¿está cara hoy?",
         "raw": 25,
         "score": 31,
@@ -2802,8 +2788,8 @@
       "verdict": {
         "confidence_text": "(confianza baja: casi ninguna comparable sostuvo el crecimiento que exige el precio)",
         "confidence_tone": "neg",
-        "full": "Calidad sólida · precio exigente (confianza baja: casi ninguna comparable sostuvo el crecimiento que exige el precio)",
-        "text": "Calidad sólida · precio exigente"
+        "full": "Calidad sólida · precio entre exigente y muy exigente (confianza baja: casi ninguna comparable sostuvo el crecimiento que exige el precio)",
+        "text": "Calidad sólida · precio entre exigente y muy exigente"
       }
     },
     "extended": {
@@ -3188,7 +3174,7 @@
       },
       "dcf_upside": {
         "label": "Sobrevalorada",
-        "text": "el valor intrínseco estimado ($63) está un 75% por debajo del precio ($254.08): ningún supuesto razonable lo justifica (el precio queda fuera del rango de sensibilidad del DCF)",
+        "text": "el valor intrínseco estimado ($66) está un 74% por debajo del precio ($254.08): ningún supuesto razonable lo justifica (el precio queda fuera del rango de sensibilidad del DCF)",
         "tone": "neg"
       },
       "de": {
@@ -3258,8 +3244,8 @@
             "items": [
               {
                 "category": "Valor intrínseco",
-                "detail": "El valor estimado por el DCF ($63) está un 75% por debajo del precio ($254.08): ningún supuesto razonable del rango de sensibilidad lo justifica.",
-                "reason": "Sobrevalorada según DCF −75%"
+                "detail": "El valor estimado por el DCF ($66) está un 74% por debajo del precio ($254.08): ningún supuesto razonable del rango de sensibilidad lo justifica.",
+                "reason": "Sobrevalorada según DCF −74%"
               },
               {
                 "category": "Flujo de caja",
@@ -3604,7 +3590,7 @@
                   "sign": "-2",
                   "state": "con_dato",
                   "tone": "neg",
-                  "value": "-75%"
+                  "value": "-74%"
                 }
               ],
               "key": "Valoración",
@@ -3959,14 +3945,14 @@
             "value": "15.68%"
           },
           {
-            "bench": "29.77%",
-            "gap": "+70%",
+            "bench": "—",
+            "gap": "—",
             "key": "gross_margin",
             "label": "Margen bruto",
-            "reading": "Muy superior",
+            "reading": "—",
             "state": "con_dato",
-            "text": "Margen bruto de 50.6% frente a 29.8% de su industria sin ella (+70%): muy superior.",
-            "tone": "pos",
+            "text": null,
+            "tone": null,
             "value": "50.60%"
           },
           {
@@ -4136,13 +4122,13 @@
           "LECTURA"
         ],
         "dcf_missing": null,
-        "dcf_params": "Parámetros del modelo — WACC 10.51% · crecimiento 7.67% (CAGR de ingresos a 3 años (+11.7%), convergido a la mediana a 5 años de sus comparables de tamaño e industria (+3.6%, tasas base de Mauboussin): la media de los dos) · terminal 2.50% · el valor terminal aporta el 56% del valor total · invierte en expansión (capex 1.6 veces la D&A en 3 ejercicios y el 102% del flujo operativo): el DCF parte del flujo de mantenimiento $58.28B (flujo operativo − D&A, sin pasar del capex real) y cada año reinvierte lo que exige su crecimiento (crecimiento ÷ ROIC 15.7%), no el FCF − SBC de hoy −$22.28B.",
+        "dcf_params": "Parámetros del modelo — WACC 10.51% · crecimiento 9.70% (CAGR de ingresos a 3 años (+11.7%), convergido a la mediana a 5 años de sus comparables de tamaño e industria (+3.6%, tasas base de Mauboussin): con un peso del 25% para la mediana por sus 10 ejercicios seguidos en esa dirección) · terminal 2.50% · el valor terminal aporta el 61% del valor total · invierte en expansión (capex 1.6 veces la D&A en 3 ejercicios y el 102% del flujo operativo): el DCF parte del flujo de mantenimiento $58.28B (flujo operativo − D&A, sin pasar del capex real) y cada año reinvierte lo que exige su crecimiento (crecimiento ÷ ROIC 15.7%), no el FCF − SBC de hoy −$22.28B.",
         "dcf_reliability": "Fiabilidad del DCF: media (margen FCF inestable: de -3.3% a 5.6% en 5 ejercicios (variación 3.55 > 0.33)). Aporta -2 puntos a Valoración (máximo ±2 con fiabilidad media).",
         "dcf_reliability_level": "media",
         "dcf_reliability_tone": "warn",
         "intrinsic": {
           "graham_note": "Número de Graham: referencia del inversor defensivo (P/E 15 × P/B 1.5). Se muestra como referencia y no vota en la convergencia entre métodos.",
-          "intro": "El valor intrínseco estimado ($63) está un 75% por debajo del precio ($254.08): ningún supuesto razonable lo justifica (el precio queda fuera del rango de sensibilidad del DCF).",
+          "intro": "El valor intrínseco estimado ($66) está un 74% por debajo del precio ($254.08): ningún supuesto razonable lo justifica (el precio queda fuera del rango de sensibilidad del DCF).",
           "rows": [
             {
               "bench": null,
@@ -4173,9 +4159,9 @@
               "label": "Valor justo DCF",
               "reading": "",
               "state": "con_dato",
-              "text": "rango $54–$77 en el bloque central de la tabla de sensibilidad (crecimiento ± 2,5 pp y WACC ± 1 pp; mínimo y máximo, no un p10–p90)",
+              "text": "rango $56–$81 en el bloque central de la tabla de sensibilidad (crecimiento ± 2,5 pp y WACC ± 1 pp; mínimo y máximo, no un p10–p90)",
               "tone": null,
-              "value": "$63"
+              "value": "$66"
             },
             {
               "bench": null,
@@ -4184,9 +4170,9 @@
               "label": "Potencial vs precio (upside)",
               "reading": "Sobrevalorada",
               "state": "con_dato",
-              "text": "el valor intrínseco estimado ($63) está un 75% por debajo del precio ($254.08): ningún supuesto razonable lo justifica (el precio queda fuera del rango de sensibilidad del DCF)",
+              "text": "el valor intrínseco estimado ($66) está un 74% por debajo del precio ($254.08): ningún supuesto razonable lo justifica (el precio queda fuera del rango de sensibilidad del DCF)",
               "tone": "neg",
-              "value": "-75.1%"
+              "value": "-74.0%"
             },
             {
               "bench": null,
@@ -4195,7 +4181,7 @@
               "label": "Margen de seguridad",
               "reading": "",
               "state": "con_dato",
-              "text": "cifra exacta: −302%; por debajo de −100% el precio pasa del doble del valor estimado.",
+              "text": "cifra exacta: −284%; por debajo de −100% el precio pasa del doble del valor estimado.",
               "tone": null,
               "value": "< −100%"
             }
@@ -4213,7 +4199,7 @@
           "note": "Condiciones que invalidarían la lectura de hoy, con la cifra que las mide: no son previsiones.",
           "title": "Esta lectura sería errónea si…"
         },
-        "reference_note": "Referencia: industria «Comercio minorista general»; Damodaran clasifica a la empresa en esa industria (símbolo), EE. UU., 23 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Referencia de la industria sin Amazon.com, que pesa el 63 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 30 de septiembre de 2025). Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
+        "reference_note": "Referencia: industria «Comercio minorista general»; Damodaran clasifica a la empresa en esa industria (símbolo), EE. UU., 23 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Referencia de la industria sin Amazon.com, que pesa el 63 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 30 de septiembre de 2025). En deuda/patrimonio, la misma industria a escala global sin la empresa (252 empresas): sin ella, la de su región no sirve de referencia. El margen neto de la referencia está entre el 2 % y el 3 % y vale: es una industria de margen fino por naturaleza. Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
         "reverse_dcf": {
           "lines": [
             {
@@ -4375,102 +4361,7 @@
                 {
                   "band": 4,
                   "base": false,
-                  "value": "$72"
-                },
-                {
-                  "band": 4,
-                  "base": false,
-                  "value": "$63"
-                },
-                {
-                  "band": 4,
-                  "base": false,
-                  "value": "$57"
-                },
-                {
-                  "band": 4,
-                  "base": false,
-                  "value": "$51"
-                },
-                {
-                  "band": 4,
-                  "base": false,
-                  "value": "$47"
-                }
-              ],
-              "label": "2.7%"
-            },
-            {
-              "cells": [
-                {
-                  "band": 4,
-                  "base": false,
-                  "value": "$77"
-                },
-                {
-                  "band": 4,
-                  "base": false,
-                  "value": "$68"
-                },
-                {
-                  "band": 4,
-                  "base": false,
-                  "value": "$60"
-                },
-                {
-                  "band": 4,
-                  "base": false,
-                  "value": "$54"
-                },
-                {
-                  "band": 4,
-                  "base": false,
-                  "value": "$48"
-                }
-              ],
-              "label": "5.2%"
-            },
-            {
-              "cells": [
-                {
-                  "band": 4,
-                  "base": false,
-                  "value": "$83"
-                },
-                {
-                  "band": 4,
-                  "base": false,
-                  "value": "$72"
-                },
-                {
-                  "band": 4,
-                  "base": true,
-                  "value": "$63"
-                },
-                {
-                  "band": 4,
-                  "base": false,
-                  "value": "$56"
-                },
-                {
-                  "band": 4,
-                  "base": false,
-                  "value": "$50"
-                }
-              ],
-              "label": "7.7%"
-            },
-            {
-              "cells": [
-                {
-                  "band": 4,
-                  "base": false,
-                  "value": "$90"
-                },
-                {
-                  "band": 4,
-                  "base": false,
-                  "value": "$77"
+                  "value": "$76"
                 },
                 {
                   "band": 4,
@@ -4485,18 +4376,18 @@
                 {
                   "band": 4,
                   "base": false,
-                  "value": "$52"
-                }
-              ],
-              "label": "10.2%"
-            },
-            {
-              "cells": [
+                  "value": "$53"
+                },
                 {
                   "band": 4,
                   "base": false,
-                  "value": "$97"
-                },
+                  "value": "$48"
+                }
+              ],
+              "label": "4.7%"
+            },
+            {
+              "cells": [
                 {
                   "band": 4,
                   "base": false,
@@ -4510,15 +4401,110 @@
                 {
                   "band": 4,
                   "base": false,
+                  "value": "$63"
+                },
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$56"
+                },
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$50"
+                }
+              ],
+              "label": "7.2%"
+            },
+            {
+              "cells": [
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$88"
+                },
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$76"
+                },
+                {
+                  "band": 4,
+                  "base": true,
+                  "value": "$66"
+                },
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$58"
+                },
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$52"
+                }
+              ],
+              "label": "9.7%"
+            },
+            {
+              "cells": [
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$95"
+                },
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$81"
+                },
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$70"
+                },
+                {
+                  "band": 4,
+                  "base": false,
                   "value": "$61"
                 },
                 {
                   "band": 4,
                   "base": false,
-                  "value": "$54"
+                  "value": "$53"
                 }
               ],
-              "label": "12.7%"
+              "label": "12.2%"
+            },
+            {
+              "cells": [
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$100"
+                },
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$87"
+                },
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$74"
+                },
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$64"
+                },
+                {
+                  "band": 4,
+                  "base": false,
+                  "value": "$55"
+                }
+              ],
+              "label": "14.7%"
             }
           ]
         },
@@ -4660,7 +4646,7 @@
             },
             {
               "kind": "signed",
-              "label": "DCF directo (valor frente al precio) · -75%",
+              "label": "DCF directo (valor frente al precio) · -74%",
               "tone": "neg",
               "value": -2
             }
@@ -4715,7 +4701,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad sólida · precio exigente (confianza baja: casi ninguna comparable sostuvo el crecimiento que exige el precio). Calidad 65/100 · precio 31/100 (ajustado de 25 a 31 hacia 50; en la frontera con «muy exigente» (a 2 puntos): un cambio pequeño en los datos o en los supuestos cambiaría el nivel)."
+          "text": "Calidad sólida · precio entre exigente y muy exigente (confianza baja: casi ninguna comparable sostuvo el crecimiento que exige el precio). Calidad 65/100 · precio 31/100 (ajustado de 25 a 31 hacia 50; en la frontera con «muy exigente» (a 2 puntos): un cambio pequeño en los datos o en los supuestos cambiaría el nivel)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -4735,7 +4721,7 @@
         },
         {
           "label": "ATRACTIVO DEL PRECIO",
-          "text": "El mercado paga 39.9x el beneficio normalizado (sin partidas no recurrentes), un +14% frente a la referencia de su industria sin ella (35.0x); una prima que encuentra respaldo parcial en la creación de valor de la compañía (ROIC−WACC de +5.2 pp); el P/E reportado (30.4x) no es fiable: el 24% del beneficio es no recurrente. El valor intrínseco estimado ($63) está un 75% por debajo del precio ($254.08): ningún supuesto razonable lo justifica (el precio queda fuera del rango de sensibilidad del DCF)."
+          "text": "El mercado paga 39.9x el beneficio normalizado (sin partidas no recurrentes), un +14% frente a la referencia de su industria sin ella (35.0x); una prima que encuentra respaldo parcial en la creación de valor de la compañía (ROIC−WACC de +5.2 pp); el P/E reportado (30.4x) no es fiable: el 24% del beneficio es no recurrente. El valor intrínseco estimado ($66) está un 74% por debajo del precio ($254.08): ningún supuesto razonable lo justifica (el precio queda fuera del rango de sensibilidad del DCF)."
         },
         {
           "label": "CONTEXTO DE MERCADO",
@@ -5059,41 +5045,6 @@
               }
             ],
             "title": "Margen frente al número de Graham"
-          }
-        ]
-      },
-      "gross_margin": {
-        "note": null,
-        "tables": [
-          {
-            "bands": [
-              {
-                "label": "Muy superior",
-                "range": "≥ 40.2%",
-                "tone": "pos"
-              },
-              {
-                "label": "Superior",
-                "range": "32.7% – 40.2%",
-                "tone": "pos"
-              },
-              {
-                "label": "En línea",
-                "range": "26.8% – 32.7%",
-                "tone": "neu"
-              },
-              {
-                "label": "Inferior",
-                "range": "19.4% – 26.8%",
-                "tone": "warn"
-              },
-              {
-                "label": "Muy inferior",
-                "range": "< 19.4%",
-                "tone": "neg"
-              }
-            ],
-            "title": "Frente a la referencia de su industria sin ella (29.8%)"
           }
         ]
       },
@@ -6960,7 +6911,7 @@
     "base": {
       "decay_type": "step",
       "discount_rate": 0.105100088095,
-      "high_growth_rate": 0.076656418009,
+      "high_growth_rate": 0.0969846270135,
       "high_growth_years": 5,
       "reinvestment_roic": 0.1567565951,
       "terminal_growth": 0.025,
@@ -6992,13 +6943,13 @@
       "optimistic": {
         "discount_rate": 0.0851000880951,
         "fcf_margin": 0.0784651092658,
-        "high_growth_rate": 0.126656418009,
+        "high_growth_rate": 0.146984627014,
         "terminal_growth": 0.03
       },
       "pessimistic": {
         "discount_rate": 0.125100088095,
         "fcf_margin": 0.0784651092658,
-        "high_growth_rate": 0.026656418009,
+        "high_growth_rate": 0.0469846270135,
         "terminal_growth": 0.02
       }
     },
@@ -7239,7 +7190,7 @@
             "reason": "Claramente cara por DCF (fiabilidad media): margen FCF inestable: de -3.3% a 5.6% en 5 ejercicios (variación 3.55 > 0.33)",
             "reliability": "media",
             "severity": "severe",
-            "value": "-75%"
+            "value": "-74%"
           }
         ],
         "applicable": true,
@@ -7360,8 +7311,8 @@
   "sensitivity": {
     "base_case": {
       "discount_rate": 0.105100088095,
-      "fair_value": 63.24,
-      "growth_rate": 0.076656418009
+      "fair_value": 66.12,
+      "growth_rate": 0.0969846270135
     },
     "base_discount_idx": 2,
     "base_growth_idx": 2,
@@ -7373,58 +7324,58 @@
       0.1251
     ],
     "growth_rates": [
-      0.0267,
-      0.0517,
-      0.0767,
-      0.1017,
-      0.1267
+      0.047,
+      0.072,
+      0.097,
+      0.122,
+      0.147
     ],
     "interpretation": "Muy probablemente sobrevalorada (100% de escenarios)",
     "is_valid": true,
     "matrix": [
       [
-        71.79,
-        63.44,
-        56.75,
-        51.28,
-        46.73
+        76.16,
+        66.78,
+        59.29,
+        53.19,
+        48.13
       ],
       [
-        77.22,
-        67.58,
-        59.89,
-        53.64,
-        48.46
+        82.01,
+        71.2,
+        62.6,
+        55.63,
+        49.88
       ],
       [
-        83.16,
-        72.06,
-        63.24,
-        56.09,
-        50.21
+        88.42,
+        75.98,
+        66.12,
+        58.17,
+        51.64
       ],
       [
-        89.69,
-        76.91,
-        66.81,
-        58.65,
-        51.97
+        95.45,
+        81.15,
+        69.87,
+        60.81,
+        53.4
       ],
       [
-        96.84,
-        82.16,
-        70.6,
-        61.31,
-        53.73
+        103.15,
+        86.75,
+        73.86,
+        63.54,
+        55.15
       ]
     ],
     "statistics": {
       "current_price": 254.080001831,
-      "max_value": 96.84,
-      "mean_value": 65.2084,
-      "median_value": 63.24,
-      "min_value": 46.73,
-      "upside_base_case": -75.1102016907
+      "max_value": 103.15,
+      "mean_value": 68.3332,
+      "median_value": 66.12,
+      "min_value": 48.13,
+      "upside_base_case": -73.9767004394
     },
     "trimmed": {
       "discount": [],
@@ -7446,10 +7397,11 @@
   "verdict": {
     "confidence": "baja",
     "confidence_text": "(confianza baja: casi ninguna comparable sostuvo el crecimiento que exige el precio)",
-    "full": "Calidad sólida · precio exigente (confianza baja: casi ninguna comparable sostuvo el crecimiento que exige el precio)",
+    "full": "Calidad sólida · precio entre exigente y muy exigente (confianza baja: casi ninguna comparable sostuvo el crecimiento que exige el precio)",
     "price_level": "exigente",
+    "price_level_raw": "muy exigente",
     "quality_level": "sólida",
-    "text": "Calidad sólida · precio exigente"
+    "text": "Calidad sólida · precio entre exigente y muy exigente"
   },
   "wacc": {
     "applicable": true,

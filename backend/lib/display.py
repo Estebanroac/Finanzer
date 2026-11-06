@@ -1632,9 +1632,16 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     # vista: aquí no se nombra el nivel (la base de contracción va en el detalle técnico, confidence.contraction_basis).
     _br_stepped = bool((a.get("confidence") or {}).get("base_rate_step")) and (
         (a.get("confidence") or {}).get("contraction_basis") != (a.get("confidence") or {}).get("level"))
-    price_note = ((f"ajustado de {p_raw} a {p_score} hacia 50" if _br_stepped else
-                   f"ajustado de {p_raw} a {p_score} por confianza {_pa.get('confidence')}")
-                  if _pa.get("contracted") and p_raw != p_score else None)
+    # F14 · paso 4: si el ajuste cambia la banda, la nota de la tarjeta dice las dos (el veredicto ya da el rango: «entre
+    # exigente y muy exigente»; el resumen no lo repite)
+    _lv = ((f" ({_pa.get('level_raw')})", f" ({_pa.get('level')})")
+           if _pa.get("level_raw") and _pa.get("level") and _pa["level_raw"] != _pa["level"] else ("", ""))
+
+    def _pnote(lv):
+        return ((f"ajustado de {p_raw}{lv[0]} a {p_score}{lv[1]} hacia 50" if _br_stepped else
+                 f"ajustado de {p_raw}{lv[0]} a {p_score}{lv[1]} por confianza {_pa.get('confidence')}")
+                if _pa.get("contracted") and p_raw != p_score else None)
+    price_note, price_note_card = _pnote(("", "")), _pnote(_lv)
     # Fase 4 (T2; mapa, efecto frontera): a 2 puntos o menos de otro nivel, se dice.
     _bq, _bp = (_q.get("border") or {}).get("text"), (_pa.get("border") or {}).get("text")
     for _part, _src, _key in (("quality", _q, "quality"), ("price", _pa, "price_attractiveness")):
@@ -1649,9 +1656,10 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         if _t:
             _record(_t, _claim("level_border", field=f"{_key}.border.points", value=(_src.get("border") or {}).get(
                 "points"), part=_part), source="display.border")
-    price_note_short = note_short([price_note, _bp_s])
+    price_note_short = note_short([price_note_card, _bp_s])
     if _bp:   # E2a (T1): la frase de frontera empieza con mayúscula; tras "; " sigue la frase en minúscula
         price_note = join_clauses([price_note, _bp])
+        price_note_card = join_clauses([price_note_card, _bp])
 
     n_red = len(alerts.get("red_flags") or [])
     n_warn = len(alerts.get("warnings") or [])
@@ -1843,8 +1851,9 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         _rec(r_52, _claim("pos52", field="pos52", value=pos52))
         _rec(r_bb, _claim("buyback", field="key_metrics.buyback_yield", value=km.get("buyback_yield")))
         _rec(r_fcfy, _claim("figure", field="key_metrics.fcf_yield", value=km.get("fcf_yield"), fmt="pct"))
-        _record(price_note, _claim("price_contraction", field="price_attractiveness",
-                                   raw=p_raw, score=p_score, confidence=_pa.get("confidence")), source="display")
+        for _pn in {price_note, price_note_card}:
+            _record(_pn, _claim("price_contraction", field="price_attractiveness",
+                                raw=p_raw, score=p_score, confidence=_pa.get("confidence")), source="display")
     graham_shown = graham is not None and not ({"graham", "pe"} & _na_keys)
     if "pe" in _na_keys:
         r_pe = None
@@ -2049,8 +2058,8 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                                            if _q.get("low_confidence") else _persist_txt), _bq]),
                     "note_short": note_short([_lowc if _q.get("low_confidence") else _persist_tiny, _bq_s])},
         "price": {"title": "ATRACTIVO DEL PRECIO", "question": "¿está cara hoy?", "score": p_score, "raw": p_raw,
-                  "contracted": bool(_pa.get("contracted")), "level": p_level, "tone": p_tone, "note": price_note,
-                  "note_short": price_note_short},
+                  "contracted": bool(_pa.get("contracted")), "level": p_level, "tone": p_tone,
+                  "note": price_note_card, "note_short": price_note_short},
         "categories": cat_groups,
         "verdict": {"text": _vd.get("text") or "Sin veredicto", "full": _vd.get("full"),
                     "confidence_text": _vd.get("confidence_text"), "confidence_tone": conf_tone},

@@ -232,7 +232,10 @@ def _self(values: Dict[str, float], reg: str, ind: str, firms: int, symbol: Opti
                         out[c] = gc["after"]
                         gaps.remove(c)
         if gaps:
-            pm = SE.peer_median(ind, symbol, gaps, region=reg, k_min=P["min_firms"])
+            # F14 · paso 6, medido: pedir 10 pares dejaba sin referencia 101 columnas de 44 empresas del banco (PEP,
+            # SPOT, EA y WBD, todas; ASML acababa frente al mercado europeo entero). Los pares quedan como último
+            # recurso, con su número dicho; antes, el grupo más amplio (arriba)
+            pm = SE.peer_median(ind, symbol, gaps, region=reg)
             for c in gaps:
                 cols[c].update(pm["columns"][c])
                 if pm["columns"][c]["after"] is not None:
@@ -241,7 +244,7 @@ def _self(values: Dict[str, float], reg: str, ind: str, firms: int, symbol: Opti
         return {"values": out, "self_exclusion": {
             **det, "method": "sin_empresa", "weight": weight, "columns": cols,
             "declaration": f"referencia de la industria sin {who}, que pesa {_pct(weight)}"}}
-    pm = SE.peer_median(ind, symbol, [c for c in values if c in SE.PARTS], region=reg, k_min=P["min_firms"])
+    pm = SE.peer_median(ind, symbol, [c for c in values if c in SE.PARTS], region=reg)
     # F11 · T1: los pares de su región; si no llegan, los de todas, dicho
     where = ("" if pm.get("scope") != "todas" or reg == "global" else
              f" de todas las regiones (en la suya hay {pm.get('n_region') or 0})")

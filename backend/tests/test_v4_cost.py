@@ -102,7 +102,8 @@ def test_every_peg_shown_uses_the_eps_growth_of_the_report(outputs_by_env):
             if peg is None or pb.get("bound") or _peg_na(a):
                 continue
             assert pb.get("own") and pb.get("eps_cagr_3y"), (env, s, pb)
-            assert peg == pytest.approx(pb["pe"] / (pb["eps_cagr_3y"] * 100)), (env, s)
+            # F14 · paso 9: con el BPA más de 10 pp por encima de las ventas, el crecimiento acotado (growth_used)
+            assert peg == pytest.approx(pb["pe"] / ((pb.get("growth_used") or pb["eps_cagr_3y"]) * 100)), (env, s)
 
 
 def test_without_eps_growth_the_peg_is_not_significant_with_its_reason(outputs_by_env):

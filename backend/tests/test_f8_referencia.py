@@ -86,8 +86,9 @@ def test_e1_audit_cases(ref):
     for s in ("XOM", "CB"):
         ce = ref[s]["cost_of_equity"]
         assert ce["value"] >= max(ce["floors"].values()) - 1e-12, s
-    # F14 · paso 1 (Rf 5,29 % → 4,94 %): XOM sigue con el piso, pero su nivel de precio ya no cambia con ±1 pp de Ke
-    assert ref["XOM"]["cost_of_equity"]["floor"]["rule"].startswith("Rf")
+    # F14 · paso 1 (Rf 5,29 % → 4,94 %): su nivel de precio ya no cambia con ±1 pp de Ke. Paso 6: su beta es la de las
+    # integradas globales (34 empresas, βU 0,63; las 4 de EE. UU., 0,28) y el CAPM ya supera el piso
+    assert ref["XOM"]["cost_of_equity"]["floor"] is None and "tabla global" in ref["XOM"]["beta"]["reason"]
     assert ref["CB"]["beta"]["region"]["region"] == "europe"
 
 
@@ -212,7 +213,8 @@ def test_dcf_reliability_never_cites_the_price(ref):
     for s, a in ref.items():
         rel = (a.get("dcf") or {}).get("reliability") or {}
         assert not any("precio" in r for r in rel.get("reasons") or []), (s, rel.get("reasons"))
-    for s in ("MSFT", "GOOGL", "WMT"):          # LIN no está en el replay
+    # F14 · paso 10: GOOGL baja por ventas y BPA separados más de 20 pp (un insumo, no el precio)
+    for s in ("MSFT", "WMT"):          # LIN no está en el replay
         rel = ref[s]["dcf"]["reliability"]
         assert rel["level"] != "baja", (s, rel)
 

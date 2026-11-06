@@ -122,11 +122,12 @@
             "how": "sin_empresa"
           },
           "net_margin": {
-            "after": 0.1922,
+            "after": 0.0527940569173,
             "before": -0.0093,
-            "how": "mediana_pares",
+            "global_firms": 150,
+            "global_weight": 0.122602975465,
+            "how": "global_sin_empresa",
             "implausible": 0.0316372163831,
-            "n": 4,
             "why": "salto"
           },
           "operating_margin": {
@@ -145,11 +146,12 @@
             "how": "no_entra"
           },
           "roe": {
-            "after": 0.135,
+            "after": 0.0902249767465,
             "before": -0.0147,
-            "how": "mediana_pares",
+            "global_firms": 150,
+            "global_weight": 0.122602975465,
+            "how": "global_sin_empresa",
             "implausible": 0.0482715637447,
-            "n": 3,
             "why": "salto"
           },
           "roic": {
@@ -177,7 +179,6 @@
           "total_debt": 2685.615
         },
         "method": "sin_empresa",
-        "peers_date": "2026-10-28",
         "session": "2026-01-05",
         "source": "A. Damodaran, Dollar value measures by industry (Dollar{US, Europe, Japan, emerg, Global}.xls), NYU Stern",
         "weight": 0.245319807288
@@ -196,11 +197,11 @@
       "ev_ebitda": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Software de internet», EE. UU., 29 empresas (la empresa no entra en este agregado: Damodaran lo calcula sin las empresas en pérdidas)",
       "gross_margin": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Software de internet», EE. UU., 29 empresas; referencia de la industria sin Snowflake, que pesa el 25 %",
       "interest_coverage": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Software de internet», EE. UU., 29 empresas; referencia de la industria sin Snowflake, que pesa el 25 %",
-      "net_margin": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Software de internet», EE. UU., 29 empresas; mediana de 4 pares del universo (sin la empresa el agregado pasaba de −0.9 % a 3.2 %: no representa a la industria)",
+      "net_margin": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Software de internet», EE. UU., 29 empresas; para esta columna, la misma industria a escala global sin la empresa (150 empresas; sin la empresa el agregado de su región queda en 3.2 %)",
       "operating_margin": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Software de internet», EE. UU., 29 empresas; referencia de la industria sin Snowflake, que pesa el 25 %",
       "pb": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Software de internet», EE. UU., 29 empresas; referencia de la industria sin Snowflake, que pesa el 25 %",
       "pe": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Software de internet», EE. UU., 29 empresas (la empresa no entra en este agregado: Damodaran lo calcula sin las empresas en pérdidas)",
-      "roe": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Software de internet», EE. UU., 29 empresas; mediana de 3 pares del universo (sin la empresa el agregado pasaba de −1.5 % a 4.8 %: no representa a la industria)",
+      "roe": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Software de internet», EE. UU., 29 empresas; para esta columna, la misma industria a escala global sin la empresa (150 empresas; sin la empresa el agregado de su región queda en 4.8 %)",
       "roic": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Software de internet», EE. UU., 29 empresas; referencia de la industria sin Snowflake, que pesa el 25 %"
     },
     "thresholds": {
@@ -220,11 +221,11 @@
       "ev_ebitda": 15.7256,
       "gross_margin": 0.619642468603,
       "interest_coverage": 2.00510938989,
-      "net_margin": 0.1922,
+      "net_margin": 0.0527940569173,
       "operating_margin": 0.0889981742927,
       "pb": 8.83500359936,
       "pe": 34.8241,
-      "roe": 0.135,
+      "roe": 0.0902249767465,
       "roic": 0.0750335230798
     }
   },
@@ -358,12 +359,14 @@
   },
   "confidence": {
     "base_rate_step": null,
-    "capped_from": null,
-    "contraction_basis": "alta",
+    "capped_from": "alta",
+    "contraction_basis": "baja",
     "dimensions": {
       "base": {
-        "level": "alta",
-        "reasons": []
+        "level": "baja",
+        "reasons": [
+          "resultado operativo normalizado ≤ 0 (−$1.24B): pierde dinero en su negocio sin contar los cargos no recurrentes"
+        ]
       },
       "convergence": {
         "level": "no_evaluable",
@@ -406,10 +409,12 @@
         "reasons": []
       }
     },
-    "level": "alta",
+    "level": "baja",
     "limits_score": false,
     "reasons": [
-      "convergencia no evaluable: un solo método evaluable (múltiplos frente al sector): no hay contraste"
+      "convergencia no evaluable: un solo método evaluable (múltiplos frente al sector): no hay contraste",
+      "base del veredicto baja: resultado operativo normalizado ≤ 0 (−$1.24B): pierde dinero en su negocio sin contar los cargos no recurrentes",
+      "techo en baja: base frágil: resultado operativo normalizado ≤ 0 (−$1.24B): pierde dinero en su negocio sin contar los cargos no recurrentes"
     ],
     "score": 1.0
   },
@@ -1595,12 +1600,14 @@
     "company": 0.286975427392,
     "company_basis": "CAGR de ingresos por acción a 3 años",
     "count": 2177,
+    "evidence_years": 7,
     "horizon_years": 5,
     "industry": "Technology",
     "median": 0.06,
     "reason": null,
-    "used": 0.173487713696,
-    "weight": 0.5
+    "sign_kept": false,
+    "used": 0.205912774752,
+    "weight": 0.357142857143
   },
   "dcf_growth_blend": null,
   "dcf_status": {
@@ -1617,6 +1624,10 @@
         {
           "label": "Confianza · Convergencia entre métodos (no evaluable)",
           "text": "un solo método evaluable (múltiplos frente al sector): no hay contraste."
+        },
+        {
+          "label": "Confianza · base (baja)",
+          "text": "resultado operativo normalizado ≤ 0 (−$1.24B): pierde dinero en su negocio sin contar los cargos no recurrentes."
         },
         {
           "label": "Fuente oficial",
@@ -1712,7 +1723,7 @@
           }
         ],
         "market_note": null,
-        "note": "Referencia: industria «Software de internet»; Damodaran clasifica a la empresa en esa industria (símbolo), no en la de su perfil («Software de aplicaciones», la de la cabecera), EE. UU., 29 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Referencia de la industria sin Snowflake, que pesa el 25 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 31 de octubre de 2025). Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
+        "note": "Referencia: industria «Software de internet»; Damodaran clasifica a la empresa en esa industria (símbolo), no en la de su perfil («Software de aplicaciones», la de la cabecera), EE. UU., 29 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Referencia de la industria sin Snowflake, que pesa el 25 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 31 de octubre de 2025). En ROE, margen neto, la misma industria a escala global sin la empresa (150 empresas): sin ella, la de su región no sirve de referencia. Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
         "ref": "de su industria sin ella",
         "total": 3
       },
@@ -2336,24 +2347,35 @@
         {
           "key": "base",
           "label": "base",
-          "level": "Alta",
-          "text": "Sin incidencias."
+          "level": "Baja",
+          "text": "Pierde dinero en su negocio incluso sin contar los cargos extraordinarios."
         }
       ],
-      "level": "alta",
+      "level": "baja",
       "plain": [
-        "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo."
+        "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo.",
+        "Pierde dinero en su negocio incluso sin contar los cargos extraordinarios."
       ],
       "reasons": [
         {
           "dimension": "convergencia",
           "level": "no_evaluable",
           "text": "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo."
+        },
+        {
+          "dimension": "base",
+          "level": "baja",
+          "text": "Pierde dinero en su negocio incluso sin contar los cargos extraordinarios."
+        },
+        {
+          "dimension": "techo",
+          "level": "baja",
+          "text": null
         }
       ],
-      "summary": "Confianza del veredicto: alta. La calidad del negocio no se contrae.",
-      "tone": "pos",
-      "verdict_text": "(confianza alta: los múltiplos coinciden)"
+      "summary": "Confianza del veredicto: baja (por sus dimensiones sería alta; la limita: base frágil —resultado operativo normalizado ≤ 0 (−$1.24B): pierde dinero en su negocio sin contar los cargos no recurrentes—). Contrae el atractivo del precio hacia 50: de 20 a 35. Contrae también la calidad del negocio hacia 50: de 58 a 57.",
+      "tone": "neg",
+      "verdict_text": "(confianza baja: un solo método de valoración evaluable, sin contraste)"
     },
     "cover": {
       "archetype": "GROWTH_PRE_PROFIT",
@@ -2440,7 +2462,8 @@
         "Beneficio por acción negativo en los últimos doce meses (−3.18) e ingresos totales que crecen un 31.4% anual en 3 años, por encima del 15%."
       ],
       "confidence_reasons": [
-        "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo."
+        "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo.",
+        "Pierde dinero en su negocio incluso sin contar los cargos extraordinarios."
       ],
       "coverage_notes": [],
       "currency_note": null,
@@ -2518,30 +2541,30 @@
       ],
       "official_source_badge": null,
       "price": {
-        "contracted": false,
-        "level": "muy exigente",
-        "note": null,
-        "note_short": null,
+        "contracted": true,
+        "level": "exigente",
+        "note": "ajustado de 20 (muy exigente) a 35 (exigente) por confianza baja.",
+        "note_short": "Ajustado de 20 (muy exigente) a 35 (exigente) por confianza baja",
         "question": "¿está cara hoy?",
         "raw": 20,
-        "score": 20,
+        "score": 35,
         "title": "ATRACTIVO DEL PRECIO",
-        "tone": "neg"
+        "tone": "warn"
       },
       "quality": {
         "level": "media",
         "note": null,
         "note_short": null,
         "question": "¿es buena la empresa?",
-        "score": 58,
+        "score": 57,
         "title": "CALIDAD DEL NEGOCIO",
         "tone": "warn"
       },
       "verdict": {
-        "confidence_text": "(confianza alta: los múltiplos coinciden)",
-        "confidence_tone": "pos",
-        "full": "Calidad media · precio muy exigente (confianza alta: los múltiplos coinciden)",
-        "text": "Calidad media · precio muy exigente"
+        "confidence_text": "(confianza baja: un solo método de valoración evaluable, sin contraste)",
+        "confidence_tone": "neg",
+        "full": "Calidad media · precio entre exigente y muy exigente (confianza baja: un solo método de valoración evaluable, sin contraste)",
+        "text": "Calidad media · precio entre exigente y muy exigente"
       }
     },
     "extended": {
@@ -3765,7 +3788,7 @@
         "market_note": null,
         "normalization_note": "Beneficio TTM (4 trimestres): reportado −$1.09B, normalizado −$1.11B (no recurrentes 1.8% del beneficio; cargos especiales (deterioros, litigios, reestructuración) (explicita, confianza alta), recurrente (4 de los últimos 4 ejercicios): sin exceso sobre su promedio, no se ajusta; ganancias por venta de valores (explicita, confianza alta): $19.72M netos). El score usa el beneficio normalizado.",
         "premortem": null,
-        "reference_note": "Referencia: industria «Software de internet»; Damodaran clasifica a la empresa en esa industria (símbolo), no en la de su perfil («Software de aplicaciones», la de la cabecera), EE. UU., 29 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Referencia de la industria sin Snowflake, que pesa el 25 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 31 de octubre de 2025). Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
+        "reference_note": "Referencia: industria «Software de internet»; Damodaran clasifica a la empresa en esa industria (símbolo), no en la de su perfil («Software de aplicaciones», la de la cabecera), EE. UU., 29 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Referencia de la industria sin Snowflake, que pesa el 25 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 31 de octubre de 2025). En ROE, margen neto, la misma industria a escala global sin la empresa (150 empresas): sin ella, la de su región no sirve de referencia. Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
         "reverse_dcf": null,
         "rows": [
           {
@@ -4025,8 +4048,8 @@
       "composition": {
         "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: Valoración (base 10/20 + bloque de múltiplos y DCF) reescalada a 100 y contraída hacia 50 según la confianza del veredicto: solo los limitadores que lo contradicen o lo vuelven incierto, no los que apuntan en su dirección.",
         "price": {
-          "level": "muy exigente",
-          "note": null,
+          "level": "exigente",
+          "note": "ajustado de 20 a 35 por confianza baja.",
           "rows": [
             {
               "kind": "signed",
@@ -4053,10 +4076,10 @@
               "value": 0
             }
           ],
-          "score": 20,
+          "score": 35,
           "signed_max": 6,
           "title": "ATRACTIVO DEL PRECIO",
-          "tone": "neg"
+          "tone": "warn"
         },
         "quality": {
           "level": "media",
@@ -4095,7 +4118,7 @@
               "value": 12
             }
           ],
-          "score": 58,
+          "score": 57,
           "title": "CALIDAD DEL NEGOCIO",
           "tone": "warn"
         }
@@ -4103,7 +4126,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad media · precio muy exigente (confianza alta: los múltiplos coinciden). Calidad 58/100 · precio 20/100."
+          "text": "Calidad media · precio entre exigente y muy exigente (confianza baja: un solo método de valoración evaluable, sin contraste). Calidad 57/100 · precio 35/100 (ajustado de 20 a 35 por confianza baja)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -4131,7 +4154,7 @@
         },
         {
           "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Alta: solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo. No contrae el atractivo del precio ni la calidad."
+          "text": "Baja: solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo. Contrae hacia 50 el atractivo del precio (de 20 a 35) y la calidad del negocio (de 58 a 57)."
         }
       ]
     },
@@ -5078,19 +5101,19 @@
   "ke_sensitivity": {
     "base": {
       "ke": 0.108391556207,
-      "level": "muy exigente",
-      "score": 20
+      "level": "exigente",
+      "score": 35
     },
     "dependent": false,
     "minus": {
       "ke": 0.0983915562074,
-      "level": "muy exigente",
-      "score": 20
+      "level": "exigente",
+      "score": 35
     },
     "plus": {
       "ke": 0.118391556207,
-      "level": "muy exigente",
-      "score": 20
+      "level": "exigente",
+      "score": 35
     },
     "pp": 0.01,
     "reason": null,
@@ -5521,16 +5544,16 @@
         "score": 4
       }
     ],
-    "confidence": "alta",
-    "contracted": false,
+    "confidence": "baja",
+    "contracted": true,
     "excluded_categories": [],
-    "factor": 1.0,
-    "level": "muy exigente",
+    "factor": 0.5,
+    "level": "exigente",
     "level_raw": "muy exigente",
     "low_coverage_categories": [],
     "not_applicable_categories": [],
     "partial": false,
-    "score": 20,
+    "score": 35,
     "score_raw": 20
   },
   "price_change": {
@@ -5588,9 +5611,9 @@
         "score": 12
       }
     ],
-    "contracted": false,
+    "contracted": true,
     "excluded_categories": [],
-    "factor": null,
+    "factor": 0.85,
     "level": "media",
     "level_raw": "media",
     "low_confidence": false,
@@ -5650,7 +5673,7 @@
       "source": "edgar",
       "window": 5
     },
-    "score": 58,
+    "score": 57,
     "score_raw": 58
   },
   "quality_readings": {
@@ -6184,12 +6207,13 @@
     "source": "legal"
   },
   "verdict": {
-    "confidence": "alta",
-    "confidence_text": "(confianza alta: los múltiplos coinciden)",
-    "full": "Calidad media · precio muy exigente (confianza alta: los múltiplos coinciden)",
-    "price_level": "muy exigente",
+    "confidence": "baja",
+    "confidence_text": "(confianza baja: un solo método de valoración evaluable, sin contraste)",
+    "full": "Calidad media · precio entre exigente y muy exigente (confianza baja: un solo método de valoración evaluable, sin contraste)",
+    "price_level": "exigente",
+    "price_level_raw": "muy exigente",
     "quality_level": "media",
-    "text": "Calidad media · precio muy exigente"
+    "text": "Calidad media · precio entre exigente y muy exigente"
   },
   "wacc": {
     "applicable": true,

@@ -137,7 +137,11 @@ def test_v_local_confidence_follows_the_statements_dcf(outputs_by_env):
     # F13 · paso 11 (opción c): el CAGR de los estados (10.9%) converge a la tasa base: la media con la mediana de sus
     # comparables (3.5%), 7.2%
     assert a["dcf_growth_base_rate"]["company"] == pytest.approx(0.109, abs=1e-3)
-    assert a["dcf"]["growth_rate"] == pytest.approx((0.109212 + a["dcf_growth_base_rate"]["median"]) / 2, abs=1e-3)
+    # F14 · paso 2: el peso de la mediana depende de los años de evidencia propia
+    w = a["dcf_growth_base_rate"]["weight"]
+    assert w < 0.5 and a["dcf_growth_base_rate"]["evidence_years"] > 3
+    assert a["dcf"]["growth_rate"] == pytest.approx((1 - w) * 0.109212 + w * a["dcf_growth_base_rate"]["median"],
+                                                    abs=1e-3)
     assert {m["direction"] for m in conv["methods"] if m.get("evaluable")} == {"cara"}
     assert conv["level"] == "alta"
     # F11 · F1/T5 (revisión de NU y NFLX): con Ke − 1 pp el DCF de V queda a un escalón de WACC de cruzar el precio y

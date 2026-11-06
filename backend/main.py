@@ -2140,8 +2140,8 @@ def _compute_analysis_body(symbol: str) -> dict:
                         _pb = result.get("peg_basis") or {}
                         if ratios.get("peg") is not None and _pb.get("own") and _pb.get("eps_cagr_3y") and \
                                 _norm["pe_normalized"]:
-                            ratios["peg"] = ratios_score["peg"] = _norm["pe_normalized"] / (
-                                _pb["eps_cagr_3y"] * cfg("valuation.peg.growth_pct_scale"))
+                            ratios["peg"] = ratios_score["peg"] = _norm["pe_normalized"] / (   # F14 · 9: acotado
+                                (_pb.get("growth_used") or _pb["eps_cagr_3y"]) * cfg("valuation.peg.growth_pct_scale"))
                             result["key_metrics"]["peg"] = safe_float(ratios["peg"])
                             result["peg_basis"] = dict(_pb, pe=_norm["pe_normalized"], pe_basis="normalizado")
                     # F10 · B2 (IDXX: ROE 70.6% en la puntuación frente a 70.67% en la página): por debajo de

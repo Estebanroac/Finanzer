@@ -1,20 +1,8 @@
 {
   "alerts": {
     "red_flags": [],
-    "strengths": [
-      {
-        "category": "Valoración",
-        "detail": "Cotiza a 15.4x EBITDA frente a 18.0x de su industria sin ella: valoración atractiva sobre flujo operativo, a validar que no responda a un deterioro del negocio.",
-        "reason": "EV/EBITDA barato — 15.4x"
-      }
-    ],
-    "warnings": [
-      {
-        "category": "Solidez financiera",
-        "detail": "El resultado operativo cubre 2.4x el gasto por intereses, por debajo del mínimo cómodo (3x): deja poco margen si los beneficios se resienten.",
-        "reason": "Cobertura de intereses justa — 2.4x"
-      }
-    ]
+    "strengths": [],
+    "warnings": []
   },
   "altman_z": {
     "applicable": false,
@@ -87,15 +75,15 @@
             "how": "sin_empresa"
           },
           "ev_ebitda": {
-            "after": 17.965,
+            "after": null,
             "before": 16.7229,
-            "how": "mediana_pares",
+            "how": "sin_dato",
             "n": 4
           },
           "gross_margin": {
-            "after": 0.70235,
+            "after": null,
             "before": 0.7861,
-            "how": "mediana_pares",
+            "how": "sin_dato",
             "n": 4
           },
           "interest_coverage": {
@@ -110,9 +98,9 @@
             "how": "sin_empresa"
           },
           "operating_margin": {
-            "after": 0.381,
+            "after": null,
             "before": 0.4025,
-            "how": "mediana_pares",
+            "how": "sin_dato",
             "n": 4
           },
           "pb": {
@@ -168,10 +156,7 @@
     "short": "industria",
     "sources": {
       "de": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «REIT de locales comerciales», EE. UU., 26 empresas; referencia de la industria sin Realty Income, que pesa el 26 %",
-      "ev_ebitda": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «REIT de locales comerciales», EE. UU., 26 empresas; mediana de 4 pares del universo (sin las cifras de la empresa para esta columna)",
-      "gross_margin": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «REIT de locales comerciales», EE. UU., 26 empresas; mediana de 4 pares del universo (sin las cifras de la empresa para esta columna)",
       "net_margin": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «REIT de locales comerciales», EE. UU., 26 empresas; referencia de la industria sin Realty Income, que pesa el 26 %",
-      "operating_margin": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «REIT de locales comerciales», EE. UU., 26 empresas; mediana de 4 pares del universo (sin las cifras de la empresa para esta columna)",
       "pb": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «REIT de locales comerciales», EE. UU., 26 empresas; referencia de la industria sin Realty Income, que pesa el 26 %",
       "pe": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «REIT de locales comerciales», EE. UU., 26 empresas; referencia de la industria sin Realty Income, que pesa el 26 %",
       "roe": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «REIT de locales comerciales», EE. UU., 26 empresas; referencia de la industria sin Realty Income, que pesa el 26 %"
@@ -190,10 +175,7 @@
     "thresholds_key": "real_estate",
     "values": {
       "de": 1.44794347602,
-      "ev_ebitda": 17.965,
-      "gross_margin": 0.70235,
       "net_margin": 0.245560892454,
-      "operating_margin": 0.381,
       "pb": 2.53221345009,
       "pe": 27.0210522444,
       "roe": 0.0903122589984
@@ -341,14 +323,14 @@
         "methods": [
           {
             "components": 1,
-            "direction": "barata",
+            "direction": "cara",
             "evaluable": true,
             "kind": "relativo",
             "method": "múltiplos frente al sector",
             "readings": {
-              "EV/EBITDA": 0.5
+              "EV/EBITDA": -0.5
             },
-            "signal": 0.5
+            "signal": -0.5
           }
         ],
         "reasons": [
@@ -1517,7 +1499,7 @@
         },
         {
           "label": "Fórmula del bloque",
-          "text": "Bloque de múltiplos: promedio de 1 lectura reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = +0.50 × 2 (máximo con 1) = +1.0, redondeado a +1."
+          "text": "Bloque de múltiplos: promedio de 1 lectura reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = -0.50 × 2 (máximo con 1) = -1.0, redondeado a -1."
         },
         {
           "label": "Nombres originales de las fuentes",
@@ -1538,7 +1520,7 @@
     },
     "charts": {
       "comparison": {
-        "better": 3,
+        "better": 2,
         "groups": [
           {
             "items": [
@@ -1556,21 +1538,6 @@
                 "tone": "pos",
                 "value": 1.29624948841,
                 "value_txt": "1.30x"
-              },
-              {
-                "bench": 17.965,
-                "bench_txt": "17.96x",
-                "fmt": "mult",
-                "gap_pct": -14.0099629946,
-                "gap_txt": "-14%",
-                "higher_is_better": false,
-                "key": "ev_ebitda",
-                "label": "EV/EBITDA",
-                "reading": "Descuento",
-                "text": "EV/EBITDA de 15.4x frente a 18.0x de su industria sin ella (-14%): descuento.",
-                "tone": "pos",
-                "value": 15.448110148,
-                "value_txt": "15.45x"
               }
             ],
             "title": "Valoración"
@@ -1599,7 +1566,7 @@
         "market_note": null,
         "note": "Referencia: industria «REIT de locales comerciales»; Damodaran clasifica a la empresa en esa industria (símbolo), EE. UU., 26 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Referencia de la industria sin Realty Income, que pesa el 26 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 30 de septiembre de 2025). Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
         "ref": "de su industria sin ella",
-        "total": 3
+        "total": 2
       },
       "growth": [
         {
@@ -1928,13 +1895,13 @@
             "clamped": false,
             "key": "interest_coverage",
             "label": "Cobertura de intereses",
-            "reading": "Justa",
+            "reading": "Aceptable",
             "state": "con_dato",
-            "text": "la cobertura de intereses (2.4x) deja poco margen ante caídas del beneficio operativo.",
-            "tone": "warn",
+            "text": "la cobertura de intereses (4.6x) es aceptable.",
+            "tone": "neu",
             "unit": "x",
-            "value": 2.36959538575,
-            "value_txt": "2.37x",
+            "value": 4.57469361204,
+            "value_txt": "4.57x",
             "zones": [
               {
                 "from": 0.0,
@@ -2046,9 +2013,9 @@
       "valuation": {
         "block": {
           "label": "Bloque de múltiplos",
-          "reason": "media de 1 lectura en una escala de −1 a +1 (EV/EBITDA +0.50): +0.50, que suma +1.0 puntos de un máximo de ±2.",
-          "sign": "+1",
-          "tone": "pos"
+          "reason": "media de 1 lectura en una escala de −1 a +1 (EV/EBITDA -0.50): -0.50, que suma -1.0 puntos de un máximo de ±2.",
+          "sign": "-1",
+          "tone": "neg"
         },
         "dcf_composition": null,
         "fair_value": {
@@ -2101,19 +2068,19 @@
             "text": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria."
           },
           {
-            "bench": 17.965,
-            "bench_txt": "17.96x",
+            "bench": null,
+            "bench_txt": "—",
             "fmt": "mult",
-            "gap_pct": -14.0099629946,
-            "gap_txt": "-14%",
+            "gap_pct": null,
+            "gap_txt": null,
             "higher_is_better": false,
             "key": "ev_ebitda",
             "label": "EV/EBITDA",
-            "reading": "Descuento",
+            "reading": "—",
             "role": "block",
             "state": "con_dato",
-            "text": "EV/EBITDA de 15.4x frente a 18.0x de su industria sin ella (-14%): descuento.",
-            "tone": "pos",
+            "text": null,
+            "tone": null,
             "value": 15.448110148,
             "value_txt": "15.45x"
           },
@@ -2146,7 +2113,7 @@
           "key": "convergence",
           "label": "Convergencia entre métodos",
           "level": "No evaluable",
-          "text": "múltiplos frente al sector +0.50 (barata). Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo."
+          "text": "múltiplos frente al sector -0.50 (cara). Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo."
         },
         {
           "key": "coverage",
@@ -2201,7 +2168,7 @@
           "text": null
         }
       ],
-      "summary": "Confianza del veredicto: baja (por sus dimensiones sería media; la limita: la más baja manda —cobertura baja—). Contrae el atractivo del precio hacia 50: de 65 a 58. Contrae también la calidad del negocio hacia 50: de 65 a 63.",
+      "summary": "Confianza del veredicto: baja (por sus dimensiones sería media; la limita: la más baja manda —cobertura baja—). Contrae el atractivo del precio hacia 50: de 35 a 42. Contrae también la calidad del negocio hacia 50: de 68 a 65.",
       "tone": "neg",
       "verdict_text": "(confianza baja: un solo método de valoración evaluable, sin contraste)"
     },
@@ -2219,11 +2186,11 @@
               "key": "Solidez Financiera",
               "max": 20,
               "name": "Solidez financiera",
-              "pct": 50.0,
-              "score": 10,
-              "score_txt": "10 / 20",
+              "pct": 60.0,
+              "score": 12,
+              "score_txt": "12 / 20",
               "text": null,
-              "tone": "warn"
+              "tone": "pos"
             },
             {
               "applicable": true,
@@ -2276,11 +2243,11 @@
               "key": "Valoración",
               "max": 20,
               "name": "Valoración",
-              "pct": 65.0,
-              "score": 13,
-              "score_txt": "13 / 20",
+              "pct": 35.0,
+              "score": 7,
+              "score_txt": "7 / 20",
               "text": null,
-              "tone": "pos"
+              "tone": "neg"
             }
           ],
           "title": "ATRACTIVO DEL PRECIO"
@@ -2304,14 +2271,14 @@
         {
           "kicker": "FORTALEZA CLAVE",
           "kind": "strength",
-          "text": "EV/EBITDA barato — 15.4x",
+          "text": "Fundamentos sólidos en la mayoría de categorías",
           "tone": "pos"
         },
         {
           "kicker": "A VIGILAR",
           "kind": "watch",
-          "text": "Cobertura de intereses justa — 2.4x",
-          "tone": "warn"
+          "text": "Sin alertas relevantes",
+          "tone": "pos"
         },
         {
           "kicker": "CONTEXTO · 52 SEM.",
@@ -2375,29 +2342,29 @@
       "official_source_badge": null,
       "price": {
         "contracted": true,
-        "level": "razonable",
-        "note": "ajustado de 65 a 58 por confianza baja.",
-        "note_short": "Ajustado de 65 a 58 por confianza baja",
+        "level": "exigente",
+        "note": "ajustado de 35 a 42 por confianza baja.",
+        "note_short": "Ajustado de 35 a 42 por confianza baja",
         "question": "¿está cara hoy?",
-        "raw": 65,
-        "score": 58,
+        "raw": 35,
+        "score": 42,
         "title": "ATRACTIVO DEL PRECIO",
-        "tone": "neu"
+        "tone": "warn"
       },
       "quality": {
-        "level": "media",
-        "note": "baja confianza: categorías no concluyentes: Rentabilidad; cobertura baja en Crecimiento; en la frontera con «sólida» (a 2 puntos): un cambio pequeño en los datos o en los supuestos cambiaría el nivel.",
-        "note_short": "Baja confianza: cobertura baja en Crecimiento · en la frontera con «sólida» (a 2 puntos)",
+        "level": "sólida",
+        "note": "baja confianza: categorías no concluyentes: Rentabilidad; cobertura baja en Crecimiento; en la frontera con «media» (a 1 punto): un cambio pequeño en los datos o en los supuestos cambiaría el nivel.",
+        "note_short": "Baja confianza: cobertura baja en Crecimiento · en la frontera con «media» (a 1 punto)",
         "question": "¿es buena la empresa?",
-        "score": 63,
+        "score": 65,
         "title": "CALIDAD DEL NEGOCIO",
-        "tone": "warn"
+        "tone": "pos"
       },
       "verdict": {
         "confidence_text": "(confianza baja: un solo método de valoración evaluable, sin contraste)",
         "confidence_tone": "neg",
-        "full": "Calidad media · precio razonable (confianza baja: un solo método de valoración evaluable, sin contraste)",
-        "text": "Calidad media · precio razonable"
+        "full": "Calidad sólida · precio exigente (confianza baja: un solo método de valoración evaluable, sin contraste)",
+        "text": "Calidad sólida · precio exigente"
       }
     },
     "extended": {
@@ -2701,9 +2668,9 @@
       "fcf_yield": null,
       "graham": null,
       "interest_coverage": {
-        "label": "Justa",
-        "text": "la cobertura de intereses (2.4x) deja poco margen ante caídas del beneficio operativo.",
-        "tone": "warn"
+        "label": "Aceptable",
+        "text": "la cobertura de intereses (4.6x) es aceptable.",
+        "tone": "neu"
       },
       "net_debt_to_ebitda": {
         "label": "Adecuada",
@@ -2726,9 +2693,9 @@
       "alerts": {
         "counts": {
           "red_flags": 0,
-          "strengths": 1,
+          "strengths": 0,
           "unmeasured": null,
-          "warnings": 1
+          "warnings": 0
         },
         "groups": [
           {
@@ -2738,25 +2705,13 @@
             "tone": "neg"
           },
           {
-            "items": [
-              {
-                "category": "Solidez financiera",
-                "detail": "El resultado operativo cubre 2.4x el gasto por intereses, por debajo del mínimo cómodo (3x): deja poco margen si los beneficios se resienten.",
-                "reason": "Cobertura de intereses justa — 2.4x"
-              }
-            ],
+            "items": [],
             "key": "warnings",
             "title": "Advertencias",
             "tone": "warn"
           },
           {
-            "items": [
-              {
-                "category": "Valoración",
-                "detail": "Cotiza a 15.4x EBITDA frente a 18.0x de su industria sin ella: valoración atractiva sobre flujo operativo, a validar que no responda a un deterioro del negocio.",
-                "reason": "EV/EBITDA barato — 15.4x"
-              }
-            ],
+            "items": [],
             "key": "strengths",
             "title": "Fortalezas",
             "tone": "pos"
@@ -2886,11 +2841,11 @@
                 {
                   "in_block": false,
                   "metric": "Cobertura de intereses",
-                  "reason": "Cobertura ajustada",
-                  "sign": "-2",
+                  "reason": "Cobertura aceptable",
+                  "sign": "0",
                   "state": "con_dato",
-                  "tone": "warn",
-                  "value": "2.37x"
+                  "tone": "neu",
+                  "value": "4.57x"
                 },
                 {
                   "in_block": false,
@@ -2914,11 +2869,11 @@
               "key": "Solidez Financiera",
               "max": 20,
               "name": "Solidez financiera",
-              "pct": 50.0,
-              "score": 10,
-              "score_txt": "10 / 20",
+              "pct": 60.0,
+              "score": 12,
+              "score_txt": "12 / 20",
               "text": null,
-              "tone": "warn"
+              "tone": "pos"
             },
             {
               "conclusive": false,
@@ -2959,8 +2914,8 @@
                 {
                   "in_block": true,
                   "metric": "EV/EBITDA frente al sector",
-                  "reason": "Atractivo (15.4x)",
-                  "sign": "(+2)",
+                  "reason": "Prima (15.4x frente a 12.0x)",
+                  "sign": "(-2)",
                   "state": "con_dato",
                   "tone": "neu",
                   "value": "15.45x"
@@ -2968,10 +2923,10 @@
                 {
                   "in_block": false,
                   "metric": "Bloque de múltiplos",
-                  "reason": "media de 1 lectura en una escala de −1 a +1 (EV/EBITDA +0.50): +0.50, que suma +1.0 puntos de un máximo de ±2.",
-                  "sign": "+1",
+                  "reason": "media de 1 lectura en una escala de −1 a +1 (EV/EBITDA -0.50): -0.50, que suma -1.0 puntos de un máximo de ±2.",
+                  "sign": "-1",
                   "state": "con_dato",
-                  "tone": "pos",
+                  "tone": "neg",
                   "value": "1 múltiplo"
                 },
                 {
@@ -2987,20 +2942,20 @@
                   "in_block": false,
                   "metric": "Cobertura",
                   "reason": "Reescalado sobre los componentes con dato (sin dato: P/FFO)",
-                  "sign": "+2",
+                  "sign": "-2",
                   "state": "con_dato",
-                  "tone": "pos",
+                  "tone": "warn",
                   "value": "1/2 componentes"
                 }
               ],
               "key": "Valoración",
               "max": 20,
               "name": "Valoración",
-              "pct": 65.0,
-              "score": 13,
-              "score_txt": "13 / 20",
+              "pct": 35.0,
+              "score": 7,
+              "score_txt": "7 / 20",
               "text": null,
-              "tone": "pos"
+              "tone": "neg"
             },
             {
               "conclusive": true,
@@ -3308,7 +3263,7 @@
           "VALOR",
           "LECTURA"
         ],
-        "intro": "La deuda neta (5.7x EBITDA) está en el rango habitual de un REIT con grado de inversión (hasta 6.5x). El D/E de 0.78x es informativo: en un REIT el apalancamiento se mide por la deuda neta/EBITDA. La cobertura de intereses (2.4x) deja poco margen ante caídas del beneficio operativo.",
+        "intro": "La deuda neta (5.7x EBITDA) está en el rango habitual de un REIT con grado de inversión (hasta 6.5x). El D/E de 0.78x es informativo: en un REIT el apalancamiento se mide por la deuda neta/EBITDA. La cobertura de intereses (4.6x) es aceptable.",
         "quality_readings": [
           {
             "key": "coverage",
@@ -3389,11 +3344,11 @@
             "gap": null,
             "key": "interest_coverage",
             "label": "Cobertura de intereses",
-            "reading": "Justa",
+            "reading": "Aceptable",
             "state": "con_dato",
-            "text": "la cobertura de intereses (2.4x) deja poco margen ante caídas del beneficio operativo.",
-            "tone": "warn",
-            "value": "2.37x"
+            "text": "la cobertura de intereses (4.6x) es aceptable.",
+            "tone": "neu",
+            "value": "4.57x"
           }
         ]
       },
@@ -3502,14 +3457,14 @@
             "value": "—"
           },
           {
-            "bench": "17.96x",
-            "gap": "-14%",
+            "bench": "—",
+            "gap": "—",
             "key": "ev_ebitda",
             "label": "EV/EBITDA",
-            "reading": "Descuento",
+            "reading": "—",
             "state": "con_dato",
-            "text": "EV/EBITDA de 15.4x frente a 18.0x de su industria sin ella (-14%): descuento.",
-            "tone": "pos",
+            "text": null,
+            "tone": null,
             "value": "15.45x"
           },
           {
@@ -3628,9 +3583,9 @@
     "summary": {
       "alert_counts": {
         "red_flags": 0,
-        "strengths": 1,
+        "strengths": 0,
         "unmeasured": null,
-        "warnings": 1
+        "warnings": 0
       },
       "cards": [
         {
@@ -3691,13 +3646,13 @@
           "value": "6.02"
         },
         {
-          "bench": "vs industria 17.96x",
-          "delta": "-14%",
+          "bench": "",
+          "delta": "",
           "key": "ev_ebitda",
           "label": "EV/EBITDA",
-          "pill": "Descuento",
+          "pill": "Sin referencia",
           "state": "con_dato",
-          "tone": "pos",
+          "tone": "neu",
           "unit": "x",
           "value": "15.45"
         }
@@ -3705,32 +3660,32 @@
       "composition": {
         "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: Valoración (base 10/20 + bloque de múltiplos y DCF) reescalada a 100 y contraída hacia 50 según la confianza del veredicto: solo los limitadores que lo contradicen o lo vuelven incierto, no los que apuntan en su dirección.",
         "price": {
-          "level": "razonable",
-          "note": "ajustado de 65 a 58 por confianza baja.",
+          "level": "exigente",
+          "note": "ajustado de 35 a 42 por confianza baja.",
           "rows": [
             {
               "kind": "signed",
               "label": "Bloque de múltiplos · 1 múltiplo",
-              "tone": "pos",
-              "value": 1
+              "tone": "neg",
+              "value": -1
             }
           ],
-          "score": 58,
+          "score": 42,
           "signed_max": 6,
           "title": "ATRACTIVO DEL PRECIO",
-          "tone": "neu"
+          "tone": "warn"
         },
         "quality": {
-          "level": "media",
+          "level": "sólida",
           "note": "calculado sobre 3 de 4 categorías.",
           "rows": [
             {
               "kind": "bar",
               "label": "Solidez financiera",
               "max": 20,
-              "pct": 50.0,
-              "tone": "warn",
-              "value": 10
+              "pct": 60.0,
+              "tone": "pos",
+              "value": 12
             },
             {
               "kind": "nc",
@@ -3753,15 +3708,15 @@
               "value": 10
             }
           ],
-          "score": 63,
+          "score": 65,
           "title": "CALIDAD DEL NEGOCIO",
-          "tone": "warn"
+          "tone": "pos"
         }
       },
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad media · precio razonable (confianza baja: un solo método de valoración evaluable, sin contraste). Calidad 63/100 · precio 58/100 (ajustado de 65 a 58 por confianza baja)."
+          "text": "Calidad sólida · precio exigente (confianza baja: un solo método de valoración evaluable, sin contraste). Calidad 65/100 · precio 42/100 (ajustado de 35 a 42 por confianza baja)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -3769,7 +3724,7 @@
         },
         {
           "label": "SOLIDEZ",
-          "text": "La deuda neta (5.7x EBITDA) está en el rango habitual de un REIT con grado de inversión (hasta 6.5x); la cobertura de intereses (2.4x) deja poco margen ante caídas del beneficio operativo."
+          "text": "La deuda neta (5.7x EBITDA) está en el rango habitual de un REIT con grado de inversión (hasta 6.5x); la cobertura de intereses (4.6x) es aceptable."
         },
         {
           "label": "CRECIMIENTO Y RETORNO",
@@ -3781,7 +3736,7 @@
         },
         {
           "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Baja: solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo. Contrae hacia 50 el atractivo del precio (de 65 a 58) y la calidad del negocio (de 65 a 63)."
+          "text": "Baja: solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo. Contrae hacia 50 el atractivo del precio (de 35 a 42) y la calidad del negocio (de 68 a 65)."
         }
       ]
     },
@@ -3882,41 +3837,6 @@
       "earnings_growth": {
         "note": "No aplica a REIT.",
         "tables": []
-      },
-      "ev_ebitda": {
-        "note": null,
-        "tables": [
-          {
-            "bands": [
-              {
-                "label": "Descuento profundo",
-                "range": "≤ 11.7x",
-                "tone": "pos"
-              },
-              {
-                "label": "Descuento",
-                "range": "11.7x – 16.2x",
-                "tone": "pos"
-              },
-              {
-                "label": "En línea",
-                "range": "16.2x – 19.8x",
-                "tone": "neu"
-              },
-              {
-                "label": "Prima moderada",
-                "range": "19.8x – 24.3x",
-                "tone": "warn"
-              },
-              {
-                "label": "Prima elevada",
-                "range": "≥ 24.3x",
-                "tone": "neg"
-              }
-            ],
-            "title": "Frente a la referencia de su industria sin ella (18.0x)"
-          }
-        ]
       },
       "fcf_yield": {
         "note": "No aplica a REIT: no se lee.",
@@ -4552,19 +4472,19 @@
   "ke_sensitivity": {
     "base": {
       "ke": 0.0792843071497,
-      "level": "razonable",
-      "score": 58
+      "level": "exigente",
+      "score": 42
     },
     "dependent": false,
     "minus": {
       "ke": 0.0692843071497,
-      "level": "razonable",
-      "score": 58
+      "level": "exigente",
+      "score": 42
     },
     "plus": {
       "ke": 0.0892843071497,
-      "level": "razonable",
-      "score": 58
+      "level": "exigente",
+      "score": 42
     },
     "pp": 0.01,
     "reason": null,
@@ -4599,7 +4519,8 @@
     "forward_pe": 34.8868655909,
     "free_cash_flow": 4166154000.0,
     "gross_margin": 0.925633202928,
-    "interest_coverage": 2.36959538575,
+    "interest_coverage": 4.57469361204,
+    "interest_coverage_basis": "EBITDA",
     "interest_coverage_state": "ok",
     "interest_expense": 1152950000.0,
     "inventory_turnover": null,
@@ -4983,22 +4904,22 @@
         "category": "Valoración",
         "included": true,
         "max": 20,
-        "score": 13
+        "score": 7
       }
     ],
     "confidence": "baja",
     "contracted": true,
     "excluded_categories": [],
     "factor": 0.5,
-    "level": "razonable",
-    "level_raw": "atractivo",
+    "level": "exigente",
+    "level_raw": "exigente",
     "low_coverage_categories": [
       "Valoración"
     ],
     "not_applicable_categories": [],
     "partial": false,
-    "score": 58,
-    "score_raw": 65
+    "score": 42,
+    "score_raw": 35
   },
   "price_change": {
     "change": 0.0100018310547,
@@ -5027,9 +4948,9 @@
   "quality": {
     "basis": "calculado sobre 3 de 4 categorías",
     "border": {
-      "neighbor": "sólida",
-      "points": 2,
-      "text": "En la frontera con «sólida» (a 2 puntos): un cambio pequeño en los datos o en los supuestos cambiaría el nivel"
+      "neighbor": "media",
+      "points": 1,
+      "text": "En la frontera con «media» (a 1 punto): un cambio pequeño en los datos o en los supuestos cambiaría el nivel"
     },
     "categories_included": 3,
     "categories_total": 4,
@@ -5038,7 +4959,7 @@
         "category": "Solidez Financiera",
         "included": true,
         "max": 20,
-        "score": 10
+        "score": 12
       },
       {
         "category": "Rentabilidad",
@@ -5064,7 +4985,7 @@
       "Rentabilidad"
     ],
     "factor": 0.85,
-    "level": "media",
+    "level": "sólida",
     "level_raw": "sólida",
     "low_confidence": true,
     "low_confidence_reasons": [
@@ -5120,8 +5041,8 @@
       "source": "edgar",
       "window": 5
     },
-    "score": 63,
-    "score_raw": 65
+    "score": 65,
+    "score_raw": 68
   },
   "quality_readings": {
     "coverage": {
@@ -5378,11 +5299,11 @@
             "value": "0.78x"
           },
           {
-            "adjustment": -2,
+            "adjustment": 0,
             "metric": "Cobertura de intereses",
-            "reason": "Cobertura ajustada",
-            "severity": "moderate",
-            "value": "2.37x"
+            "reason": "Cobertura aceptable",
+            "severity": "ok",
+            "value": "4.57x"
           },
           {
             "adjustment": 2,
@@ -5404,37 +5325,37 @@
         "coverage": 1.0,
         "details": [
           "Informativo: en REIT el apalancamiento se mide por deuda neta/EBITDA",
-          "Cobertura ajustada",
+          "Cobertura aceptable",
           "Adecuado para un REIT (5.7x; bandas REIT ≤5.0x / ≤6.5x / ≤7.5x / ≤9.0x)",
           "Current ratio: No aplica a REIT: activos inmobiliarios de largo plazo financiados con deuda a largo plazo; el circulante no mide su liquidez; Altman Z: No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria (no cuenta en la cobertura)"
         ],
         "max": 20,
-        "score": 10
+        "score": 12
       },
       "Valoración": {
         "adjustments": [
           {
-            "adjustment": 2,
+            "adjustment": -2,
             "in_block": true,
             "metric": "EV/EBITDA frente al sector",
-            "reason": "Atractivo (15.4x)",
-            "severity": "good",
+            "reason": "Prima (15.4x frente a 12.0x)",
+            "severity": "moderate",
             "value": "15.45x"
           },
           {
-            "adjustment": 1,
+            "adjustment": -1,
             "block_max": 2,
-            "block_mean": 0.5,
+            "block_mean": -0.5,
             "block_members": [
               "EV/EBITDA"
             ],
             "block_votes": {
-              "EV/EBITDA": 0.5
+              "EV/EBITDA": -0.5
             },
-            "formula": "Bloque de múltiplos: promedio de 1 lectura reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = +0.50 × 2 (máximo con 1) = +1.0, redondeado a +1",
+            "formula": "Bloque de múltiplos: promedio de 1 lectura reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = -0.50 × 2 (máximo con 1) = -1.0, redondeado a -1",
             "metric": "Bloque de múltiplos",
-            "reason": "media de 1 lectura en una escala de −1 a +1 (EV/EBITDA +0.50): +0.50, que suma +1.0 puntos de un máximo de ±2",
-            "severity": "excellent",
+            "reason": "media de 1 lectura en una escala de −1 a +1 (EV/EBITDA -0.50): -0.50, que suma -1.0 puntos de un máximo de ±2",
+            "severity": "severe",
             "value": "1 múltiplo"
           },
           {
@@ -5445,7 +5366,7 @@
             "value": "P/E, P/FCF, PEG, DCF"
           },
           {
-            "adjustment": 2,
+            "adjustment": -2,
             "metric": "Cobertura",
             "reason": "Reescalado sobre los componentes con dato (sin dato: P/FFO)",
             "severity": "neutral",
@@ -5456,13 +5377,13 @@
         "conclusive": true,
         "coverage": 0.5,
         "details": [
-          "Atractivo (15.4x)",
-          "media de 1 lectura en una escala de −1 a +1 (EV/EBITDA +0.50): +0.50, que suma +1.0 puntos de un máximo de ±2",
+          "Prima (15.4x frente a 12.0x)",
+          "media de 1 lectura en una escala de −1 a +1 (EV/EBITDA -0.50): -0.50, que suma -1.0 puntos de un máximo de ±2",
           "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria (no cuenta en la cobertura)",
           "Reescalado sobre los componentes con dato (sin dato: P/FFO)"
         ],
         "max": 20,
-        "score": 13
+        "score": 7
       }
     },
     "excluded_categories": [
@@ -5607,10 +5528,11 @@
   "verdict": {
     "confidence": "baja",
     "confidence_text": "(confianza baja: un solo método de valoración evaluable, sin contraste)",
-    "full": "Calidad media · precio razonable (confianza baja: un solo método de valoración evaluable, sin contraste)",
-    "price_level": "razonable",
-    "quality_level": "media",
-    "text": "Calidad media · precio razonable"
+    "full": "Calidad sólida · precio exigente (confianza baja: un solo método de valoración evaluable, sin contraste)",
+    "price_level": "exigente",
+    "price_level_raw": null,
+    "quality_level": "sólida",
+    "text": "Calidad sólida · precio exigente"
   },
   "wacc": {
     "applicable": true,

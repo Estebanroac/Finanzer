@@ -369,12 +369,14 @@
   },
   "confidence": {
     "base_rate_step": null,
-    "capped_from": null,
-    "contraction_basis": "media",
+    "capped_from": "media",
+    "contraction_basis": "baja",
     "dimensions": {
       "base": {
-        "level": "alta",
-        "reasons": []
+        "level": "baja",
+        "reasons": [
+          "resultado operativo normalizado ≤ 0 (−$3.53B): pierde dinero en su negocio sin contar los cargos no recurrentes"
+        ]
       },
       "convergence": {
         "level": "no_evaluable",
@@ -425,12 +427,14 @@
         ]
       }
     },
-    "level": "media",
+    "level": "baja",
     "limits_score": false,
     "reasons": [
       "convergencia no evaluable: un solo método evaluable (múltiplos frente al sector): no hay contraste",
       "calidad de fuente media: beneficio normalizado con ítems inferidos (confianza media)",
-      "estabilidad media: alerta de posible cíclica"
+      "estabilidad media: alerta de posible cíclica",
+      "base del veredicto baja: resultado operativo normalizado ≤ 0 (−$3.53B): pierde dinero en su negocio sin contar los cargos no recurrentes",
+      "techo en baja: base frágil: resultado operativo normalizado ≤ 0 (−$3.53B): pierde dinero en su negocio sin contar los cargos no recurrentes"
     ],
     "score": 0.666666666667
   },
@@ -1518,6 +1522,10 @@
           "text": "alerta de posible cíclica."
         },
         {
+          "label": "Confianza · base (baja)",
+          "text": "resultado operativo normalizado ≤ 0 (−$3.53B): pierde dinero en su negocio sin contar los cargos no recurrentes."
+        },
+        {
           "label": "Fuente oficial",
           "text": "sí, SEC EDGAR (CIK 1874178); último ejercicio en EDGAR: FY 2025."
         },
@@ -2223,15 +2231,16 @@
         {
           "key": "base",
           "label": "base",
-          "level": "Alta",
-          "text": "Sin incidencias."
+          "level": "Baja",
+          "text": "Pierde dinero en su negocio incluso sin contar los cargos extraordinarios."
         }
       ],
-      "level": "media",
+      "level": "baja",
       "plain": [
         "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo.",
         "El beneficio se ajustó por partidas extraordinarias identificadas de forma indirecta.",
-        "La empresa podría ser cíclica: sus resultados actuales pueden no ser representativos."
+        "La empresa podría ser cíclica: sus resultados actuales pueden no ser representativos.",
+        "Pierde dinero en su negocio incluso sin contar los cargos extraordinarios."
       ],
       "reasons": [
         {
@@ -2248,11 +2257,21 @@
           "dimension": "estabilidad",
           "level": "media",
           "text": "La empresa podría ser cíclica: sus resultados actuales pueden no ser representativos."
+        },
+        {
+          "dimension": "base",
+          "level": "baja",
+          "text": "Pierde dinero en su negocio incluso sin contar los cargos extraordinarios."
+        },
+        {
+          "dimension": "techo",
+          "level": "baja",
+          "text": null
         }
       ],
-      "summary": "Confianza del veredicto: media. La calidad del negocio no se contrae.",
-      "tone": "warn",
-      "verdict_text": "(confianza media: un solo método de valoración evaluable, sin contraste)"
+      "summary": "Confianza del veredicto: baja (por sus dimensiones sería media; la limita: base frágil —resultado operativo normalizado ≤ 0 (−$3.53B): pierde dinero en su negocio sin contar los cargos no recurrentes—). Contrae también la calidad del negocio hacia 50: de 26 a 30.",
+      "tone": "neg",
+      "verdict_text": "(confianza baja: un solo método de valoración evaluable, sin contraste)"
     },
     "cover": {
       "archetype": "GROWTH_PRE_PROFIT",
@@ -2435,14 +2454,14 @@
         "note": null,
         "note_short": null,
         "question": "¿es buena la empresa?",
-        "score": 26,
+        "score": 30,
         "title": "CALIDAD DEL NEGOCIO",
         "tone": "neg"
       },
       "verdict": {
-        "confidence_text": "(confianza media: un solo método de valoración evaluable, sin contraste)",
-        "confidence_tone": "warn",
-        "full": "Calidad débil · precio razonable (confianza media: un solo método de valoración evaluable, sin contraste)",
+        "confidence_text": "(confianza baja: un solo método de valoración evaluable, sin contraste)",
+        "confidence_tone": "neg",
+        "full": "Calidad débil · precio razonable (confianza baja: un solo método de valoración evaluable, sin contraste)",
         "text": "Calidad débil · precio razonable"
       }
     },
@@ -4097,7 +4116,7 @@
               "value": 7
             }
           ],
-          "score": 26,
+          "score": 30,
           "title": "CALIDAD DEL NEGOCIO",
           "tone": "neg"
         }
@@ -4105,7 +4124,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad débil · precio razonable (confianza media: un solo método de valoración evaluable, sin contraste). Calidad 26/100 · precio 50/100."
+          "text": "Calidad débil · precio razonable (confianza baja: un solo método de valoración evaluable, sin contraste). Calidad 30/100 · precio 50/100."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -4133,7 +4152,7 @@
         },
         {
           "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Media: solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo. No contrae el atractivo del precio ni la calidad."
+          "text": "Baja: solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo. No contrae el atractivo del precio; la calidad del negocio, sí, hacia 50 (de 26 a 30)."
         }
       ]
     },
@@ -5617,10 +5636,10 @@
         "score": 10
       }
     ],
-    "confidence": "media",
+    "confidence": "baja",
     "contracted": false,
     "excluded_categories": [],
-    "factor": 0.75,
+    "factor": 0.5,
     "level": "razonable",
     "level_raw": "razonable",
     "low_coverage_categories": [],
@@ -5684,9 +5703,9 @@
         "score": 7
       }
     ],
-    "contracted": false,
+    "contracted": true,
     "excluded_categories": [],
-    "factor": null,
+    "factor": 0.85,
     "level": "débil",
     "level_raw": "débil",
     "low_confidence": false,
@@ -5739,7 +5758,7 @@
       "source": "edgar",
       "window": 5
     },
-    "score": 26,
+    "score": 30,
     "score_raw": 26
   },
   "quality_readings": {
@@ -6219,10 +6238,11 @@
     "source": "legal"
   },
   "verdict": {
-    "confidence": "media",
-    "confidence_text": "(confianza media: un solo método de valoración evaluable, sin contraste)",
-    "full": "Calidad débil · precio razonable (confianza media: un solo método de valoración evaluable, sin contraste)",
+    "confidence": "baja",
+    "confidence_text": "(confianza baja: un solo método de valoración evaluable, sin contraste)",
+    "full": "Calidad débil · precio razonable (confianza baja: un solo método de valoración evaluable, sin contraste)",
     "price_level": "razonable",
+    "price_level_raw": null,
     "quality_level": "débil",
     "text": "Calidad débil · precio razonable"
   },
