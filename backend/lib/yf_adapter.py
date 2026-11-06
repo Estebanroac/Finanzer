@@ -638,6 +638,9 @@ def _apply_edgar(symbol: str, info: Dict[str, Any], ed: Dict[str, Any], hist: Di
     # F9 · R6: riesgo de crédito (bancos) con los mismos companyfacts; sin ellos, «no medido» con su motivo.
     import credit_risk
     info["_credit"] = credit_risk.measure(ed.get("facts") if ed.get("status") == "ok" else None)
+    # F13 · paso 10: vencimientos de la deuda (riesgo de refinanciación, lib/sector_risks.py), de los mismos companyfacts
+    import sector_risks
+    info["_debt_due"] = sector_risks.debt_due(ed.get("facts") if ed.get("status") == "ok" else None)
     info["_ebit"] = edgar_backup.ebit_check(info, ed, ctx)     # F2_PRECEDENCIA §2.1: EBIT "estimado por la fuente"
     import debt
     info["_debt"] = debt.apply(info, ed, ctx, symbol=symbol)   # T5: deuda coherente con el EBITDA

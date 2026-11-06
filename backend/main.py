@@ -2818,6 +2818,21 @@ def _compute_analysis_body(symbol: str) -> dict:
                                                      _edp.get("reason"))
         except Exception as e:
             _sin_dato("company_profile", e)
+        try:   # F13 · paso 10: riesgos del sector, en dos niveles, aparte y sin puntuar (lib/sector_risks.py)
+            import sector_risks as _srisk
+            _edp = (yinfo.get("_edgar") or {}) if _has_yahoo else {}
+            _rt = (result.get("wacc") or {}).get("rating") or {}
+            result["sector_risks"] = _srisk.build(
+                archetype=(result.get("classification") or {}).get("archetype"),
+                industry=(result.get("profile") or {}).get("industry"),
+                country=(result.get("profile") or {}).get("country"),
+                state=(_edp.get("profile") or {}).get("state_or_country"),
+                debt=(yinfo.get("_debt_due") if _has_yahoo else None),
+                cash=safe_float((result.get("key_metrics") or {}).get("cash")),
+                rating=_rt.get("rating"), coverage=safe_float(_rt.get("coverage")),
+                today=((yinfo.get("_as_of") or {}).get("date") if _has_yahoo else None))
+        except Exception as e:
+            _sin_dato("riesgos_del_sector", e)
         try:   # T4: variación del día frente al cierre anterior (la serie de la misma sesión que el precio)
             import price_history as _ph
             result["price_change"] = _ph.day_change((_ph.peek(symbol) or {}).get("frame"), result.get("price"))

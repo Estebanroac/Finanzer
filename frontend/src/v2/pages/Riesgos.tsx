@@ -7,7 +7,7 @@ import Methodology from "@/v2/components/depth/Methodology";
 import Concentration from "@/v2/components/Concentration";
 import { alertGroupLabel, RED_FLAGS_LABEL } from "@/v2/lib/story";
 
-const PILLS = [{ id: "premortem", label: "Pre-mortem" }, { id: "alertas", label: "Alertas" }, { id: "concentracion", label: "Concentración" },
+const PILLS = [{ id: "premortem", label: "Pre-mortem" }, { id: "alertas", label: "Alertas" }, { id: "sector", label: "Del sector" }, { id: "concentracion", label: "Concentración" },
   { id: "no-sabemos", label: "Lo que no sabemos" }, { id: "metodologia", label: "Metodología" }];
 const EMPTY: Record<string, string> = { red_flags: "el modelo no marca ninguna; no quiere decir que no haya riesgos: abajo, la concentración de los ingresos y lo que el análisis no sabe", warnings: "el análisis no detecta ninguna",
   strengths: "el análisis no detecta ninguna" };
@@ -15,6 +15,7 @@ const EMPTY: Record<string, string> = { red_flags: "el modelo no marca ninguna; 
 /** Task 9 · Riesgos: pre-mortem, alertas por grupo y lo que el análisis no sabe (confianza y cobertura). */
 export default function Riesgos({ analysis: a }: PageProps) {
   const d = a.display, pm = d.sections.valuation.premortem, al = d.sections.alerts, conf = d.confidence;
+  const sr = d.sections.sector_risks;
   const full = al.groups.filter((g) => g.items.length > 0), empty = al.groups.filter((g) => g.items.length === 0);
   const count = (k: string) => (al.counts as unknown as Record<string, number>)[k];
   // Los motivos que ya cuentan las tarjetas de las dimensiones no se repiten
@@ -50,6 +51,23 @@ export default function Riesgos({ analysis: a }: PageProps) {
           </div>
         )}
         {empty.map((g) => <Missing key={g.key} title={`${alertGroupLabel(g.key, g.title)}: 0`} reason={EMPTY[g.key] ?? "sin elementos"} />)}
+      </Section>
+
+      {/* F13 · paso 10: riesgos del sector, aparte de las alertas y sin puntuar */}
+      <Section id="sector" eyebrow="Riesgos" title="Riesgos del sector (no puntúan)">
+        {sr && sr.items.length > 0 ? (
+          <div className="dgrid one" data-sym-row>
+            {sr.items.map((x) => (
+              <div key={x.key} className="card surface" data-sector-risk={x.level}>
+                <h4><span className="pill warn">{x.level === "empresa" ? "De la empresa" : "De la industria"}</span> {x.title}</h4>
+                {x.label && <p className="muted small">{x.label}</p>}
+                <p className="fill">{x.text}</p>
+              </div>
+            ))}
+            {sr.note && <p className="muted small">{sr.note}</p>}
+          </div>
+        ) : <Missing title="Riesgos del sector: 0" reason="ningún dato dispara un riesgo de la empresa y su industria no tiene uno de la lista cerrada que la alcance" />}
+        {sr?.not_measured && <p className="muted small">No medido: {sr.not_measured}.</p>}
       </Section>
 
       {/* V7 · P2: de dónde depende la empresa (hechos del informe anual, enlazados a la página Negocio) */}

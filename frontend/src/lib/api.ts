@@ -314,6 +314,12 @@ export interface Sections {
     counts: { red_flags: number; warnings: number; strengths: number; /** F9 · R6: «el riesgo de crédito no está medido» (banco). */ unmeasured?: string | null };
     groups: Array<{ key: string; title: string; tone: Tone; items: AlertItem[] }>;
   };
+  /** F13 · paso 10: riesgos del sector, aparte y sin puntuar (de la empresa, con dato; de su industria, no verificados en ella). */
+  sector_risks?: {
+    items: Array<{ level: "empresa" | "industria"; key: string; title: string; label: string | null; text: string }>;
+    note: string | null;
+    not_measured: string | null;
+  } | null;
 }
 
 export interface BandTable {

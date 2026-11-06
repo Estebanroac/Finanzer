@@ -265,7 +265,12 @@ CAPTIVE_FILER_CONCEPTS = ("DebtAndCapitalLeaseObligations", "LongTermDebt", "Lon
 # Su caja (la que respalda su deuda, no la de la actividad industrial): el primer concepto con dato en cada fecha
 CAPTIVE_FILER_CASH = (("CashAndCashEquivalentsAtCarryingValue",),
                       ("CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents",))
+# F13 · paso 10 (riesgo de refinanciación, lib/sector_risks.py): vencimientos de la deuda del último balance anual.
+MATURITIES = {"due_y1": "LongTermDebtMaturitiesRepaymentsOfPrincipalInNextTwelveMonths",
+              "due_y2": "LongTermDebtMaturitiesRepaymentsOfPrincipalInYearTwo",
+              "commercial_paper": "CommercialPaper", "short_term_borrowings": "ShortTermBorrowings"}
 _WANTED = {"us-gaap": {c for v in CONCEPTS.values() for c in v[2]} | {c for v in DEBT_PARTS["us-gaap"].values() for c in v}
+           | set(MATURITIES.values())
            | set(CAPTIVE_FILER_CONCEPTS)
            | {c for v in HISTORY.values() for c in v[1]} | {c for v in HISTORY_RELAY.values() for c in v[0]}
            | {c for v in CREDIT.values() for c in v[1]}

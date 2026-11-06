@@ -617,3 +617,30 @@ captive_finance_segment_min_pct = 0.05
 captive_finance_segment_axes = ["StatementBusinessSegmentsAxis", "SegmentsAxis"]
 captive_finance_segment_patterns = ["financ", "credit"]
 
+
+# ── F13 · paso 10 (revisión de 110 empresas, decisión del usuario): riesgos del sector, en dos niveles, siempre aparte
+# y sin puntuar (lib/sector_risks.py). Medida previa en las 543: docs/fiabilidad/F13_P10_RIESGOS_MEDIDA.md.
+[sector_risks]
+# Nivel 1, refinanciación: la deuda que vence en 24 meses (vencimientos del año 1 y 2 + papel comercial + préstamos a
+# corto, del último balance anual en EDGAR) supera la caja Y el rating sintético es especulativo. Solo, la primera
+# condición la cumplía el 49 % (las utilities y los REIT refinancian así por diseño): sin ellas ni las financieras, ~8
+# empresas del universo (CHTR, NCLH, WYNN, NRG…).
+refinancing_excluded_archetypes = ["FINANCIAL", "UTILITY", "REIT"]
+speculative_ratings = ["BB+", "BB", "BB-", "B+", "B", "B-", "CCC", "CC", "C", "D"]
+max_balance_age_days = 455     # vencimientos de un balance anual de más de ~15 meses: viejos, no se leen
+not_measured = "concentración en un inquilino o en un producto: los datos públicos gratuitos no la traen estructurada (solo en la instancia XBRL con dimensiones), así que no se mide ni se estima"
+
+# Nivel 2: lista cerrada, solo los que un dato acota dentro de su industria (regla del usuario: ni en más del 80 % ni en
+# menos del 10 % de su industria). Alcance: industria de Yahoo y estado de la sede en EDGAR. La sede no es el territorio
+# de servicio (XEL, sede en Minnesota, litigios por incendios en Colorado y Texas: no lo recoge), dicho en el texto.
+[sector_risks.industry.incendios]
+title = "Incendios forestales"
+text = "las utilities del oeste de EE. UU. responden de los incendios que provoca su red (PCG quebró en 2019 por ellos; EIX y SRE han pagado indemnizaciones): litigios, provisiones y costes de prevención que el regulador no siempre reconoce"
+industries = ["Utilities - Regulated Electric", "Utilities - Diversified", "Utilities - Independent Power Producers", "Utilities - Renewable"]
+states = ["CA", "OR", "WA", "NV", "ID", "UT", "AZ", "CO", "NM", "MT", "WY", "HI"]
+
+[sector_risks.industry.huracanes]
+title = "Huracanes"
+text = "las utilities de la costa del golfo y del atlántico sur reparan su red tras cada huracán y recuperan el coste con permiso del regulador, con meses de retraso y no siempre entero"
+industries = ["Utilities - Regulated Electric", "Utilities - Diversified", "Utilities - Regulated Gas", "Utilities - Independent Power Producers", "Utilities - Renewable"]
+states = ["FL", "LA", "TX", "MS", "AL", "GA", "SC", "NC"]

@@ -708,6 +708,14 @@ def _conclusion(a, ctx):
         out.append(bullet(f"{_cap(h['kicker'].lower())}: {h['text']}", h.get("tone")))
     for t in conf.get("plain") or []:
         out.append(bullet(f"Confianza: {t}", "warn"))
+    # F13 · paso 10: riesgos del sector, aparte y sin puntuar
+    sr = (d.get("sections") or {}).get("sector_risks") or {}
+    if sr.get("items"):
+        out += sub("Riesgos del sector (no puntúan)")
+        for x in sr["items"]:
+            out.append(bullet(f"{x['title']}" + (f" ({x['label']})" if x.get("label") else "") + f": {x['text']}",
+                              "warn"))
+        out.append(note(sr.get("note") or ""))
     return out
 
 

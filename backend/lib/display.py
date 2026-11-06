@@ -1499,6 +1499,17 @@ def _crp_suffix(a: Dict[str, Any]) -> str:
     return f" + {t}" if t else ""
 
 
+def _sector_risks_block(a: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """F13 · paso 10: los riesgos del sector de la empresa (con dato) y de su industria (lista cerrada, no verificados en
+    ella), aparte de las alertas y sin puntuar; lo que no se puede medir, dicho. None sin el bloque en el análisis."""
+    sr = a.get("sector_risks")
+    if not sr:
+        return None
+    items = [{"level": x["level"], "key": x["key"], "title": x["title"], "label": x.get("label"), "text": x["text"]}
+             for x in (sr.get("company") or []) + (sr.get("industry") or [])]
+    return {"items": items, "note": sr.get("note"), "not_measured": sr.get("not_measured")}
+
+
 def _self_exclusion_note(se: Optional[Dict[str, Any]]) -> str:
     """F10 · N2: la referencia sin la propia empresa (lib/self_exclusion.py), dicha en la nota de la referencia."""
     if not se:
@@ -3297,7 +3308,9 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                          for f, comp in (("free_cash_flow", "fcf"), ("fcf_margin", "fcf"),
                                          ("gross_margin", "gross_margin"), ("operating_margin", "operating_margin"))
                          if comp in _na_keys}},
-                     "alerts": {"counts": summary["alert_counts"], "groups": alert_groups}},
+                     "alerts": {"counts": summary["alert_counts"], "groups": alert_groups},
+                     # F13 · paso 10: riesgos del sector, aparte y sin puntuar (lib/sector_risks.py)
+                     "sector_risks": _sector_risks_block(a)},
         "methodology": {"models": _models, "models_text": models_txt,
                         "ratios_text": "ratios del último ejercicio" if _annual else "ratios TTM y del último ejercicio",
                         "contraction_text": contraction_text()},

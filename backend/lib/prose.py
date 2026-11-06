@@ -48,6 +48,8 @@ DECLARED = [
     (r"\.sections\.valuation\.premortem\.items\[\]", "fragmento"),
     (r"\.(cover|sections\.institutional\.breakdown)\.coverage_notes\[\]", "fragmento"),
     (r"\.sections\.market\.news_note", "fragmento"),
+    # F13 · paso 10: lo que no se mide de los riesgos del sector (la web lo cierra tras «No medido: »)
+    (r"\.sections\.sector_risks\.not_measured", "fragmento"),
     # F8 · P3: el rango del bloque central de la tabla de sensibilidad (la web lo cierra tras «Valor $X: »)
     (r"\.charts\.valuation\.fair_value\.central_text", "fragmento"),
     (r"\.extended\.(company_profile|history_10y)\.reason", "fragmento"),
