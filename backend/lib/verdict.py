@@ -167,6 +167,8 @@ def reprice(p: Dict[str, Any], confidence_level: Optional[str]) -> Dict[str, Any
     """F8 · E1: el mismo precio crudo con otra confianza (la prueba de sensibilidad de Ke la baja un escalón)."""
     if p.get("abstained"):          # F13 · paso 8: sin veredicto de precio no hay nada que recalcular
         return {**p, "confidence": confidence_level}
+    if p.get("rule") == "L1":       # F16: la confianza no mueve el precio
+        return {**p, "confidence": confidence_level}
     P = cfg("thresholds.score.price")
     raw = p.get("score_raw")
     factor = P["confidence_factor"].get(confidence_level) if confidence_level else None

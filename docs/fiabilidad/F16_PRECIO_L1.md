@@ -32,3 +32,14 @@ motor queda para calidad, alertas y lectura. No hay otro ciclo de ajustes de pre
 
 Se corre la prueba hacia atrás con F16 al corte del 5-nov-2025: los cortes salen del motor F16 sobre el universo de
 2025. Lo esperado es reproducir L1 (D ≈ +11,7 pp en el control). Si no lo reproduce, se informa y no se toca la regla.
+
+## Verificación al corte del 5-nov-2025 (6-nov-2026)
+
+- Universo de 2025 capturado al corte entero: 543 empresas, 498 con P/E del motor. La referencia que sale de ahí
+  (`archivo-historico/evidencias-de-pruebas/hacia_atras_2025-11-05/precio_l1_2025-11-05.toml`) tiene medianas por
+  sector a ±1 punto de las de L1 y cortes de 0,83 y 1,21 veces la mediana.
+- El P/E del motor coincide con el de L1 en el 97 % de las empresas (±10 %; mediana del cociente 1,00). Hay dos
+  diferencias de fuente, no de regla: la capitalización con las acciones de Yahoo (BX, RIO, TKO) y los informes que
+  companyfacts no trae (AOS, SPGI).
+- Control a 12 meses: F16 da barata − cara = +10,8 pp (IC95 +2,8 / +18,0) y L1 +11,7. A 6 meses, F16 +8,7 y L1 +8,8.
+  Reparto: 99 / 85 / 91 en F16 y 102 / 85 / 93 en L1. En las 110: F16 +8,9 y L1 +10,8 a 12 meses.

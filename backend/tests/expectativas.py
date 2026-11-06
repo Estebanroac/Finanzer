@@ -111,9 +111,9 @@ def price_label(a: Dict[str, Any]) -> str:
 def check_company(e: Dict[str, Any], a: Dict[str, Any]) -> List[str]:
     v = a.get("verdict") or {}
     why = []
-    p = price_label(a)
-    if p not in e["precio_aceptable"]:
-        why.append(f"precio «{p}» fuera de {e['precio_aceptable']}")
+    # F16 (decisión del usuario del 6-nov-2026): la etiqueta de precio es la regla L1 de la prueba hacia atrás; los rangos
+    # de precio del YAML (`precio_aceptable`) se fijaron con la valoración anterior y ya no son prueba. Se conservan en el
+    # archivo como registro, sin comprobarse.
     conf = v.get("confidence")
     if e.get("confianza_max") and conf in CONF and CONF.index(conf) > CONF.index(e["confianza_max"]):
         why.append(f"confianza {conf} > {e['confianza_max']}")

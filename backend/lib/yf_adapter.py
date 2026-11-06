@@ -638,6 +638,12 @@ def _apply_edgar(symbol: str, info: Dict[str, Any], ed: Dict[str, Any], hist: Di
     # F9 · R6: riesgo de crédito (bancos) con los mismos companyfacts; sin ellos, «no medido» con su motivo.
     import credit_risk
     info["_credit"] = credit_risk.measure(ed.get("facts") if ed.get("status") == "ok" else None)
+    # F16: beneficio de doce meses al último periodo presentado en EDGAR, para la etiqueta de precio L1 (lib/precio_l1.py)
+    try:
+        import precio_l1
+        info["_pe_l1"] = precio_l1.inputs(ed, ctx)
+    except Exception as e:  # nunca rompe el análisis: el precio queda sin veredicto con el motivo
+        info["_pe_l1"] = {"status": "sin_dato", "reason": f"error: {type(e).__name__}: {e}"}
     # F13 · paso 10: vencimientos de la deuda (riesgo de refinanciación, lib/sector_risks.py), de los mismos companyfacts
     import sector_risks
     info["_debt_due"] = sector_risks.debt_due(ed.get("facts") if ed.get("status") == "ok" else None)

@@ -26,11 +26,12 @@ def test_the_expectations_file_reads_whole():
     assert all(p in g["escala_precio"] for x in g["empresas"] for p in x["precio_aceptable"])
 
 
-def test_a_company_check_reads_the_price_label_of_the_verdict():
+def test_a_company_check_no_longer_checks_the_price_label():
+    """F16: los rangos de precio del YAML se retiraron (la etiqueta es la regla L1); la confianza sí se comprueba."""
     e = {"precio_aceptable": ["exigente"], "confianza_max": "media"}
-    a = {"verdict": {"text": "Calidad sólida · precio entre exigente y muy exigente", "confidence": "alta"}}
-    w = X.check_company(e, a)
-    assert "«entre exigente y muy exigente»" in w[0] and w[1] == "confianza alta > media"
+    a = {"verdict": {"text": "Calidad sólida · precio atractivo", "confidence": "alta"}}
+    assert X.check_company(e, a) == ["confianza alta > media"]
+    assert X.price_label(a) == "atractivo"
 
 
 def test_global_rules_catch_a_single_method_floor_price():

@@ -275,7 +275,8 @@ _WANTED = {"us-gaap": {c for v in CONCEPTS.values() for c in v[2]} | {c for v in
            | {c for v in HISTORY.values() for c in v[1]} | {c for v in HISTORY_RELAY.values() for c in v[0]}
            | {c for v in CREDIT.values() for c in v[1]}
            | {c for umb, parts in CHARGES_US.values() for c in (*umb, *(x for p in parts for x in p))} | set(SALES_US)
-           | {c for v in DA_SPLIT["us-gaap"].values() for c in v},
+           | {c for v in DA_SPLIT["us-gaap"].values() for c in v}
+           | {"ProfitLoss", "NetIncomeLossAttributableToNoncontrollingInterest"},   # F16: lib/precio_l1.EXTRA_US
            "ifrs-full": {c for v in CONCEPTS.values() for c in v[3]}
            | {c for v in DEBT_PARTS["ifrs-full"].values() for c in v} | {c for v in HISTORY.values() for c in v[2]}
            | {c for v in HISTORY_RELAY.values() for c in v[1]} | {c for v in CREDIT.values() for c in v[2]}

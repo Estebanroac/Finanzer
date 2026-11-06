@@ -2916,9 +2916,17 @@ def _compute_analysis_body(symbol: str) -> dict:
                         result["confidence"]["base_rate_step"]["contracts"] = True
                     result["quality"] = contract_quality(_quality_part, _cbasis)
                     # `price` ya es el precio de la acción: la puntuación va en price_attractiveness.
-                    result["price_attractiveness"] = verdict_price(
+                    # F16 (§8 de la prueba hacia atrás, decisión del usuario del 6-nov-2026): la etiqueta de precio es
+                    # la regla L1 (lib/precio_l1.py). La valoración del motor (múltiplos + DCF) queda como lectura en
+                    # `valuation_reading` y la confianza ya no mueve el precio.
+                    _reading = verdict_price(
                         _cats, _cbasis, methods=(((result.get("confidence") or {}).get("dimensions") or {})
                                                  .get("convergence") or {}).get("methods"))
+                    import precio_l1
+                    result["price_attractiveness"] = precio_l1.price(
+                        safe_float(result["key_metrics"].get("market_cap")), yinfo.get("_pe_l1"),
+                        precio_l1.gics_sector(symbol, sector), (result.get("confidence") or {}).get("level"),
+                        reading=_reading)
                     # F13 · paso 8: sin precio de hoy (o sin perfil ni historial) no hay veredicto de precio
                     from verdict import abstention as _abst, abstain as _abstain
                     _why_abst = _abst(yinfo.get("_price_history") if _has_yahoo else None, sector)

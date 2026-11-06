@@ -18,7 +18,7 @@ import re
 import statistics as st
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSIONS = ("A", "B", "A14")
+VERSIONS = tuple(os.environ.get("VERSIONES", "A,B,A14").split(","))
 BARATA = {"atractivo", "muy atractivo"}
 CARA = {"exigente", "muy exigente"}
 ALIAS = {"BK": "BNY", "FI": "FISV", "MMC": "MRSH", "PSKY": "SKYD", "EQR": "VMRK"}
