@@ -72,6 +72,28 @@ def median_growth(revenue_usd: Optional[float], sector: Optional[str], horizon_y
     return dict(out, median=row["median"][h], bin=b, cell=f"{b} · {ind}", count=row["count"][h])
 
 
+def blend(growth: float, median: float, rows: Optional[list]) -> Dict[str, Any]:
+    """F14 · paso 2 (segunda revisión externa, 2.1): la convergencia a la tasa base con el peso según la evidencia propia
+    y sin cambiar el signo.
+    - Peso: `base_rate_weight` (0,5) con 3 años de evidencia o menos; baja en línea recta hasta `base_rate_weight_min`
+      (0,25) con 10. Evidencia = ejercicios seguidos, desde el último, en que las ventas se movieron en la dirección de
+      su crecimiento (history_10y de EDGAR). Una década creciendo no se trata como un buen trienio.
+    - Signo: la mezcla nunca lo cambia; como mucho, plano. KHC (−2,0 %, mediana +4,4 %) salía creciendo al +1,2 %."""
+    C = cfg("valuation.dcf")
+    y0, y1 = C["base_rate_evidence_years"]
+    years = 0
+    for r in reversed(rows or []):
+        v = r.get("revenue_growth")
+        if v is None or r.get("gap_before") or (v >= 0) != (growth >= 0):
+            break
+        years += 1
+    hi, lo = C["base_rate_weight"], C["base_rate_weight_min"]
+    w = hi - (hi - lo) * min(max((years - y0) / (y1 - y0), 0.0), 1.0)
+    used = (1 - w) * growth + w * median
+    sign_kept = (used < 0 < growth) or (growth < 0 < used)
+    return {"used": 0.0 if sign_kept else used, "weight": w, "evidence_years": years, "sign_kept": sign_kept}
+
+
 def share_sustaining(g: Optional[float], revenue_usd: Optional[float], sector: Optional[str],
                      horizon_years: int = 10) -> Dict[str, Any]:
     """Proporción de comparables (tramo × industria) cuyo CAGR de ventas a `horizon_years` fue ≥ g."""

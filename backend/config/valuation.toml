@@ -104,6 +104,12 @@ yoy_vs_3y_pp = 0.10                 # fase 3 (T5, §4): interanual y CAGR 3 año
 # que converger en línea recta en 5 años. No en cíclicas (ciclo medio).
 base_rate_horizon = 5
 base_rate_weight = 0.5
+# F14 · paso 2 (segunda revisión externa, 2.1): el peso depende de la evidencia propia. Con `base_rate_evidence_years[0]`
+# ejercicios seguidos de ventas en la dirección de su crecimiento o menos, `base_rate_weight`; con
+# `base_rate_evidence_years[1]` o más, `base_rate_weight_min`; en línea recta entre los dos. La mezcla nunca cambia el
+# signo del crecimiento (como mucho, plano): KHC decrecía un 2 % y salía creciendo al 1,2 %.
+base_rate_weight_min = 0.25
+base_rate_evidence_years = [3, 10]
 
 [grid]                              # dcf_sensitivity_analysis
 growth_range = [-0.05, 0.05, 0.025]     # (delta mín, delta máx, paso)

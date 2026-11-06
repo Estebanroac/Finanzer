@@ -2217,13 +2217,22 @@ def _compute_analysis_body(symbol: str) -> dict:
                     _brm = _brt.median_growth(_revenue_usd(safe_float(financials.revenue), profile.currency), sector,
                                               cfg("valuation.dcf.base_rate_horizon"))
                     if _brm.get("median") is not None:
-                        _w = cfg("valuation.dcf.base_rate_weight")
-                        _gb = (1 - _w) * growth + _w * _brm["median"]
+                        # F14 · paso 2: peso según los años de evidencia propia y sin cambiar el signo
+                        import history_10y as _h10b
+                        _bl = _brt.blend(growth, _brm["median"], _h10b.build(
+                            yinfo.get("_history_fy") if _has_yahoo else None,
+                            cfg("market.history.years_v2")).get("rows"))
+                        _gb, _w = _bl["used"], _bl["weight"]
                         result["dcf_growth_base_rate"] = {**_brm, "company": growth, "used": _gb, "weight": _w,
-                                                          "company_basis": _growth_basis}
+                                                          "evidence_years": _bl["evidence_years"],
+                                                          "sign_kept": _bl["sign_kept"], "company_basis": _growth_basis}
+                        _how = ("la media de los dos" if _w == cfg("valuation.dcf.base_rate_weight") else
+                                f"con un peso del {_w:.0%} para la mediana por sus {_bl['evidence_years']} ejercicios "
+                                "seguidos en esa dirección")
                         _growth_basis = (f"{_growth_basis} ({growth:+.1%}), convergido a la mediana a "
                                          f"{_brm['horizon_years']} años de sus comparables de tamaño e industria "
-                                         f"({_brm['median']:+.1%}, tasas base de Mauboussin): la media de los dos")
+                                         f"({_brm['median']:+.1%}, tasas base de Mauboussin): {_how}"
+                                         + ("; sin cambiar su signo: plano" if _bl["sign_kept"] else ""))
                         growth = _gb
                 if growth is None:
                     _rns = fin_dict.get("revenue_growth_reason")
