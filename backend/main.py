@@ -1159,6 +1159,15 @@ def _compute_analysis_body(symbol: str) -> dict:
                 operating_cash_flow=safe_float(getattr(financials, "operating_cash_flow", None)),
                 depreciation=safe_float(getattr(financials, "depreciation", None)), market_cap=mcap,
                 state_fn=lambda c, e: interest_coverage_state(c, r("net_debt"), ebit=e, net_interest_income=nii_sign))
+            # F14 · paso 7 (segunda revisión externa): en un REIT la cobertura que se puntúa y la de la alerta son la
+            # del rating, con el EBITDA (la amortización de los inmuebles no es caja). WELL tenía «cobertura crítica
+            # 0,8x» con el EBIT y un rating calculado con 4,0x.
+            if archetype == REIT and _rcov.get("basis") == "EBITDA" and _rcov.get("coverage") is not None:
+                ratios["interest_coverage"] = _rcov["coverage"]
+                fin_dict["interest_coverage_state"] = _rcov["state"]
+                result["key_metrics"].update(interest_coverage=safe_float(_rcov["coverage"]),
+                                             interest_coverage_state=_rcov["state"],
+                                             interest_coverage_basis="EBITDA")
             _kd_info = None if archetype == FINANCIAL else cost_of_debt(
                 rf_info["value"], mcap, td_val, safe_float(_rcov["coverage"]), _rcov["state"])
             ke_info = equity_cost(_beta_val if _beta_val is not None else cfg("valuation.capm.default_beta"),

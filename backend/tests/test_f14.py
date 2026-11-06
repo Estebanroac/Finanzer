@@ -110,3 +110,18 @@ def test_a_peer_median_needs_as_many_peers_as_an_industry_needs_firms():
     pm = SE.peer_median("Entertainment", "NFLX", ["net_margin"], region="us", k_min=10)
     assert pm["columns"]["net_margin"]["how"] == "sin_dato"
 
+
+
+# ── paso 7: la cobertura de un REIT, con la base del rating ──
+def test_reit_coverage_alert_uses_the_rating_basis():
+    import gzip
+    import json
+    import os
+    p = ("/Users/joseestebanroa/Downloads/Finanzer/archivo-historico/evidencias-de-pruebas/f14_banco110_2026-11-06/"
+         "paso7/WELL.json.gz")
+    if not os.path.exists(p):
+        pytest.skip("sin el banco de 110")
+    a = json.load(gzip.open(p))
+    assert a["key_metrics"]["interest_coverage_basis"] == "EBITDA"
+    assert a["key_metrics"]["interest_coverage"] == pytest.approx(a["wacc"]["rating"]["coverage"])
+    assert not [r for r in a["alerts"]["red_flags"] if "obertura" in r["reason"]]
