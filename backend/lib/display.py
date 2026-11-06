@@ -1632,16 +1632,12 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     # vista: aquí no se nombra el nivel (la base de contracción va en el detalle técnico, confidence.contraction_basis).
     _br_stepped = bool((a.get("confidence") or {}).get("base_rate_step")) and (
         (a.get("confidence") or {}).get("contraction_basis") != (a.get("confidence") or {}).get("level"))
-    # F14 · paso 4: si el ajuste cambia la banda, la nota de la tarjeta dice las dos (el veredicto ya da el rango: «entre
-    # exigente y muy exigente»; el resumen no lo repite)
-    _lv = ((f" ({_pa.get('level_raw')})", f" ({_pa.get('level')})")
-           if _pa.get("level_raw") and _pa.get("level") and _pa["level_raw"] != _pa["level"] else ("", ""))
-
-    def _pnote(lv):
-        return ((f"ajustado de {p_raw}{lv[0]} a {p_score}{lv[1]} hacia 50" if _br_stepped else
-                 f"ajustado de {p_raw}{lv[0]} a {p_score}{lv[1]} por confianza {_pa.get('confidence')}")
-                if _pa.get("contracted") and p_raw != p_score else None)
-    price_note, price_note_card = _pnote(("", "")), _pnote(_lv)
+    # F14 · paso 4: si el ajuste cambia la banda, lo dice el veredicto («precio entre exigente y muy exigente»). Nombrar
+    # también las bandas en la nota de la tarjeta se midió: alarga la portada del PDF (ASML a 0,847 < 0,85) sin añadir nada
+    price_note = ((f"ajustado de {p_raw} a {p_score} hacia 50" if _br_stepped else
+                   f"ajustado de {p_raw} a {p_score} por confianza {_pa.get('confidence')}")
+                  if _pa.get("contracted") and p_raw != p_score else None)
+    price_note_card = price_note
     # Fase 4 (T2; mapa, efecto frontera): a 2 puntos o menos de otro nivel, se dice.
     _bq, _bp = (_q.get("border") or {}).get("text"), (_pa.get("border") or {}).get("text")
     for _part, _src, _key in (("quality", _q, "quality"), ("price", _pa, "price_attractiveness")):
@@ -1656,7 +1652,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         if _t:
             _record(_t, _claim("level_border", field=f"{_key}.border.points", value=(_src.get("border") or {}).get(
                 "points"), part=_part), source="display.border")
-    price_note_short = note_short([price_note_card, _bp_s])
+    price_note_short = note_short([price_note, _bp_s])   # la forma corta no repite las bandas: el veredicto da el rango
     if _bp:   # E2a (T1): la frase de frontera empieza con mayúscula; tras "; " sigue la frase en minúscula
         price_note = join_clauses([price_note, _bp])
         price_note_card = join_clauses([price_note_card, _bp])

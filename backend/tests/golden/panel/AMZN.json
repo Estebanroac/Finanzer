@@ -113,10 +113,10 @@
             "how": "sin_empresa"
           },
           "gross_margin": {
-            "after": null,
+            "after": 0.2977,
             "before": 0.3318,
-            "how": "sin_dato",
-            "n": 7
+            "how": "mediana_pares",
+            "n": 6
           },
           "interest_coverage": {
             "after": 10.825044847,
@@ -193,6 +193,7 @@
     "sources": {
       "de": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Comercio minorista general», EE. UU., 23 empresas; para esta columna, la misma industria a escala global sin la empresa (252 empresas; sin la empresa el agregado de su región queda en 2.0x)",
       "ev_ebitda": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Comercio minorista general», EE. UU., 23 empresas; referencia de la industria sin Amazon.com, que pesa el 63 %",
+      "gross_margin": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Comercio minorista general», EE. UU., 23 empresas; mediana de 6 pares del universo (sin las cifras de la empresa para esta columna)",
       "interest_coverage": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Comercio minorista general», EE. UU., 23 empresas; referencia de la industria sin Amazon.com, que pesa el 63 %",
       "net_margin": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Comercio minorista general», EE. UU., 23 empresas; referencia de la industria sin Amazon.com, que pesa el 63 % (entre el 2 % y el 3 %, vale por su causa: industria de margen fino por naturaleza)",
       "operating_margin": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Comercio minorista general», EE. UU., 23 empresas; referencia de la industria sin Amazon.com, que pesa el 63 %",
@@ -216,6 +217,7 @@
     "values": {
       "de": 1.05939959874,
       "ev_ebitda": 7.94360222094,
+      "gross_margin": 0.2977,
       "interest_coverage": 10.825044847,
       "net_margin": 0.0267682372669,
       "operating_margin": 0.045287872291,
@@ -1636,7 +1638,7 @@
     },
     "charts": {
       "comparison": {
-        "better": 6,
+        "better": 7,
         "groups": [
           {
             "items": [
@@ -1721,6 +1723,21 @@
                 "value_txt": "15.68%"
               },
               {
+                "bench": 0.2977,
+                "bench_txt": "29.77%",
+                "fmt": "pct",
+                "gap_pct": 69.9834908145,
+                "gap_txt": "+70%",
+                "higher_is_better": true,
+                "key": "gross_margin",
+                "label": "Margen bruto",
+                "reading": "Muy superior",
+                "text": "Margen bruto de 50.6% frente a 29.8% de su industria sin ella (+70%): muy superior.",
+                "tone": "pos",
+                "value": 0.506040852155,
+                "value_txt": "50.60%"
+              },
+              {
                 "bench": 0.045287872291,
                 "bench_txt": "4.53%",
                 "fmt": "pct",
@@ -1775,9 +1792,9 @@
           }
         ],
         "market_note": null,
-        "note": "Referencia: industria «Comercio minorista general»; Damodaran clasifica a la empresa en esa industria (símbolo), EE. UU., 23 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Referencia de la industria sin Amazon.com, que pesa el 63 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 30 de septiembre de 2025). En deuda/patrimonio, la misma industria a escala global sin la empresa (252 empresas): sin ella, la de su región no sirve de referencia. El margen neto de la referencia está entre el 2 % y el 3 % y vale: es una industria de margen fino por naturaleza. Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
+        "note": "Referencia: industria «Comercio minorista general»; Damodaran clasifica a la empresa en esa industria (símbolo), EE. UU., 23 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria salvo donde se dice. Referencia de la industria sin Amazon.com, que pesa el 63 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 30 de septiembre de 2025). En margen bruto, la mediana de 6 pares del universo, no el agregado. En deuda/patrimonio, la misma industria a escala global sin la empresa (252 empresas): sin ella, la de su región no sirve de referencia. El margen neto de la referencia está entre el 2 % y el 3 % y vale: es una industria de margen fino por naturaleza. Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
         "ref": "de su industria sin ella",
-        "total": 8
+        "total": 9
       },
       "growth": [
         {
@@ -1981,9 +1998,9 @@
               "label": "Margen bruto",
               "pct": 0.506040852155,
               "pct_txt": "50.6%",
-              "reading": "—",
+              "reading": "Muy superior",
               "state": "con_dato",
-              "tone": null
+              "tone": "pos"
             },
             {
               "amount": 155861000000.0,
@@ -2022,18 +2039,18 @@
         },
         "margins": [
           {
-            "bench": null,
-            "bench_txt": "—",
+            "bench": 0.2977,
+            "bench_txt": "29.77%",
             "fmt": "pct",
-            "gap_pct": null,
-            "gap_txt": null,
+            "gap_pct": 69.9834908145,
+            "gap_txt": "+70%",
             "higher_is_better": true,
             "key": "gross_margin",
             "label": "Margen bruto",
-            "reading": "—",
+            "reading": "Muy superior",
             "state": "con_dato",
-            "text": null,
-            "tone": null,
+            "text": "Margen bruto de 50.6% frente a 29.8% de su industria sin ella (+70%): muy superior.",
+            "tone": "pos",
             "value": 0.506040852155,
             "value_txt": "50.60%"
           },
@@ -2768,8 +2785,8 @@
       "price": {
         "contracted": true,
         "level": "exigente",
-        "note": "ajustado de 25 (muy exigente) a 31 (exigente) hacia 50; en la frontera con «muy exigente» (a 2 puntos): un cambio pequeño en los datos o en los supuestos cambiaría el nivel.",
-        "note_short": "Ajustado de 25 (muy exigente) a 31 (exigente) hacia 50 · en la frontera con «muy exigente» (a 2 puntos)",
+        "note": "ajustado de 25 a 31 hacia 50; en la frontera con «muy exigente» (a 2 puntos): un cambio pequeño en los datos o en los supuestos cambiaría el nivel.",
+        "note_short": "Ajustado de 25 a 31 hacia 50 · en la frontera con «muy exigente» (a 2 puntos)",
         "question": "¿está cara hoy?",
         "raw": 25,
         "score": 31,
@@ -3945,14 +3962,14 @@
             "value": "15.68%"
           },
           {
-            "bench": "—",
-            "gap": "—",
+            "bench": "29.77%",
+            "gap": "+70%",
             "key": "gross_margin",
             "label": "Margen bruto",
-            "reading": "—",
+            "reading": "Muy superior",
             "state": "con_dato",
-            "text": null,
-            "tone": null,
+            "text": "Margen bruto de 50.6% frente a 29.8% de su industria sin ella (+70%): muy superior.",
+            "tone": "pos",
             "value": "50.60%"
           },
           {
@@ -4199,7 +4216,7 @@
           "note": "Condiciones que invalidarían la lectura de hoy, con la cifra que las mide: no son previsiones.",
           "title": "Esta lectura sería errónea si…"
         },
-        "reference_note": "Referencia: industria «Comercio minorista general»; Damodaran clasifica a la empresa en esa industria (símbolo), EE. UU., 23 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Referencia de la industria sin Amazon.com, que pesa el 63 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 30 de septiembre de 2025). En deuda/patrimonio, la misma industria a escala global sin la empresa (252 empresas): sin ella, la de su región no sirve de referencia. El margen neto de la referencia está entre el 2 % y el 3 % y vale: es una industria de margen fino por naturaleza. Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
+        "reference_note": "Referencia: industria «Comercio minorista general»; Damodaran clasifica a la empresa en esa industria (símbolo), EE. UU., 23 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria salvo donde se dice. Referencia de la industria sin Amazon.com, que pesa el 63 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 30 de septiembre de 2025). En margen bruto, la mediana de 6 pares del universo, no el agregado. En deuda/patrimonio, la misma industria a escala global sin la empresa (252 empresas): sin ella, la de su región no sirve de referencia. El margen neto de la referencia está entre el 2 % y el 3 % y vale: es una industria de margen fino por naturaleza. Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
         "reverse_dcf": {
           "lines": [
             {
@@ -5045,6 +5062,41 @@
               }
             ],
             "title": "Margen frente al número de Graham"
+          }
+        ]
+      },
+      "gross_margin": {
+        "note": null,
+        "tables": [
+          {
+            "bands": [
+              {
+                "label": "Muy superior",
+                "range": "≥ 40.2%",
+                "tone": "pos"
+              },
+              {
+                "label": "Superior",
+                "range": "32.7% – 40.2%",
+                "tone": "pos"
+              },
+              {
+                "label": "En línea",
+                "range": "26.8% – 32.7%",
+                "tone": "neu"
+              },
+              {
+                "label": "Inferior",
+                "range": "19.4% – 26.8%",
+                "tone": "warn"
+              },
+              {
+                "label": "Muy inferior",
+                "range": "< 19.4%",
+                "tone": "neg"
+              }
+            ],
+            "title": "Frente a la referencia de su industria sin ella (29.8%)"
           }
         ]
       },

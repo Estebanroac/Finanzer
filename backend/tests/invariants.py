@@ -215,10 +215,7 @@ def price_wording_without_jargon(a, text):
         # Fase 4 (T2): tras la contracción puede ir el aviso de frontera ("; en la frontera con «…»").
         if pa["score_raw"] != pa["score"]:   # V7 (M4): sin nota cuando el ajuste no mueve la cifra
             c = a.get("confidence") or {}
-            # F14 · paso 4: si el ajuste cambia la banda, la nota nombra las dos
-            lv = ((f" ({pa['level_raw']})", f" ({pa['level']})")
-                  if pa.get("level_raw") and pa.get("level") and pa["level_raw"] != pa["level"] else ("", ""))
-            head = f"ajustado de {pa['score_raw']}{lv[0]} a {pa['score']}{lv[1]}"
+            head = f"ajustado de {pa['score_raw']} a {pa['score']}"
             if c.get("base_rate_step") and c.get("contraction_basis") != c.get("level"):
                 # F10 · N4: con el escalón de las tasas base, una sola confianza a la vista: la nota no nombra la
                 # base de contracción (que no es la que se muestra; está en confidence.contraction_basis)

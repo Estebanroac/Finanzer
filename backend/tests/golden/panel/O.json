@@ -1,7 +1,13 @@
 {
   "alerts": {
     "red_flags": [],
-    "strengths": [],
+    "strengths": [
+      {
+        "category": "Valoración",
+        "detail": "Cotiza a 15.6x EBITDA frente a 18.0x de su industria sin ella: valoración atractiva sobre flujo operativo, a validar que no responda a un deterioro del negocio.",
+        "reason": "EV/EBITDA barato — 15.6x"
+      }
+    ],
     "warnings": []
   },
   "altman_z": {
@@ -75,15 +81,15 @@
             "how": "sin_empresa"
           },
           "ev_ebitda": {
-            "after": null,
+            "after": 17.965,
             "before": 16.7229,
-            "how": "sin_dato",
+            "how": "mediana_pares",
             "n": 4
           },
           "gross_margin": {
-            "after": null,
+            "after": 0.70235,
             "before": 0.7861,
-            "how": "sin_dato",
+            "how": "mediana_pares",
             "n": 4
           },
           "interest_coverage": {
@@ -98,9 +104,9 @@
             "how": "sin_empresa"
           },
           "operating_margin": {
-            "after": null,
+            "after": 0.381,
             "before": 0.4025,
-            "how": "sin_dato",
+            "how": "mediana_pares",
             "n": 4
           },
           "pb": {
@@ -156,7 +162,10 @@
     "short": "industria",
     "sources": {
       "de": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «REIT de locales comerciales», EE. UU., 26 empresas; referencia de la industria sin Realty Income, que pesa el 26 %",
+      "ev_ebitda": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «REIT de locales comerciales», EE. UU., 26 empresas; mediana de 4 pares del universo (sin las cifras de la empresa para esta columna)",
+      "gross_margin": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «REIT de locales comerciales», EE. UU., 26 empresas; mediana de 4 pares del universo (sin las cifras de la empresa para esta columna)",
       "net_margin": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «REIT de locales comerciales», EE. UU., 26 empresas; referencia de la industria sin Realty Income, que pesa el 26 %",
+      "operating_margin": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «REIT de locales comerciales», EE. UU., 26 empresas; mediana de 4 pares del universo (sin las cifras de la empresa para esta columna)",
       "pb": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «REIT de locales comerciales», EE. UU., 26 empresas; referencia de la industria sin Realty Income, que pesa el 26 %",
       "pe": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «REIT de locales comerciales», EE. UU., 26 empresas; referencia de la industria sin Realty Income, que pesa el 26 %",
       "roe": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «REIT de locales comerciales», EE. UU., 26 empresas; referencia de la industria sin Realty Income, que pesa el 26 %"
@@ -175,7 +184,10 @@
     "thresholds_key": "real_estate",
     "values": {
       "de": 1.44794347602,
+      "ev_ebitda": 17.965,
+      "gross_margin": 0.70235,
       "net_margin": 0.245560892454,
+      "operating_margin": 0.381,
       "pb": 2.53221345056,
       "pe": 27.0210522494,
       "roe": 0.0903122589984
@@ -311,7 +323,7 @@
   },
   "confidence": {
     "base_rate_step": null,
-    "capped_from": "alta",
+    "capped_from": null,
     "contraction_basis": "media",
     "dimensions": {
       "base": {
@@ -319,7 +331,7 @@
         "reasons": []
       },
       "convergence": {
-        "level": "media",
+        "level": "alta",
         "methods": [
           {
             "band": "barata",
@@ -331,19 +343,19 @@
           },
           {
             "components": 2,
-            "direction": "en precio",
+            "direction": "barata",
             "evaluable": true,
             "kind": "relativo",
             "method": "múltiplos frente al sector",
             "readings": {
-              "EV/EBITDA": -0.5,
+              "EV/EBITDA": 0.5,
               "P/FFO": 0.5
             },
-            "signal": 0.0
+            "signal": 0.5
           }
         ],
         "reasons": [
-          "uno lo ve en precio y otro con dirección: no coinciden, sin oponerse"
+          "coinciden (barata) con distancia 0.00 (< 0.6)"
         ]
       },
       "coverage": {
@@ -378,13 +390,17 @@
         "reasons": []
       }
     },
+    "ke_dependent": {
+      "from": "alta",
+      "reason": "veredicto dependiente de Ke: el nivel de precio pasa de «atractivo» a «razonable» con Ke + 1 pp",
+      "to": "media"
+    },
     "level": "media",
     "limits_score": false,
     "reasons": [
-      "convergencia media: uno lo ve en precio y otro con dirección: no coinciden, sin oponerse",
-      "techo en media: la convergencia es media: alta exige convergencia alta"
+      "veredicto dependiente de Ke: el nivel de precio pasa de «atractivo» a «razonable» con Ke + 1 pp: confianza alta → media"
     ],
-    "score": 0.8
+    "score": 1.0
   },
   "cost_of_equity": {
     "as_of": "2026-11-01",
@@ -1452,8 +1468,8 @@
           "text": "Arquetipo REIT (regla industria_reit): Clasificada como REIT por industria REIT de locales comerciales."
         },
         {
-          "label": "Confianza · Convergencia entre métodos (media)",
-          "text": "uno lo ve en precio y otro con dirección: no coinciden, sin oponerse."
+          "label": "Confianza · Convergencia entre métodos (alta)",
+          "text": "coinciden (barata) con distancia 0.00 (< 0.6)"
         },
         {
           "label": "Fuente oficial",
@@ -1469,7 +1485,7 @@
         },
         {
           "label": "Fórmula del bloque",
-          "text": "Bloque de múltiplos: promedio de 1 lectura reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = -0.50 × 2 (máximo con 1) = -1.0, redondeado a -1."
+          "text": "Bloque de múltiplos: promedio de 1 lectura reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = +0.50 × 2 (máximo con 1) = +1.0, redondeado a +1."
         },
         {
           "label": "Nombres originales de las fuentes",
@@ -1490,7 +1506,7 @@
     },
     "charts": {
       "comparison": {
-        "better": 2,
+        "better": 3,
         "groups": [
           {
             "items": [
@@ -1508,6 +1524,21 @@
                 "tone": "pos",
                 "value": 1.31993506648,
                 "value_txt": "1.32x"
+              },
+              {
+                "bench": 17.965,
+                "bench_txt": "17.96x",
+                "fmt": "mult",
+                "gap_pct": -13.0213509348,
+                "gap_txt": "-13%",
+                "higher_is_better": false,
+                "key": "ev_ebitda",
+                "label": "EV/EBITDA",
+                "reading": "Descuento",
+                "text": "EV/EBITDA de 15.6x frente a 18.0x de su industria sin ella (-13%): descuento.",
+                "tone": "pos",
+                "value": 15.6257143046,
+                "value_txt": "15.63x"
               }
             ],
             "title": "Valoración"
@@ -1534,9 +1565,9 @@
           }
         ],
         "market_note": null,
-        "note": "Referencia: industria «REIT de locales comerciales»; Damodaran clasifica a la empresa en esa industria (símbolo), EE. UU., 26 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Referencia de la industria sin Realty Income, que pesa el 26 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 30 de septiembre de 2025). Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
+        "note": "Referencia: industria «REIT de locales comerciales»; Damodaran clasifica a la empresa en esa industria (símbolo), EE. UU., 26 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria salvo donde se dice. Referencia de la industria sin Realty Income, que pesa el 26 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 30 de septiembre de 2025). En EV/EBITDA, margen bruto, margen operativo, la mediana de 4 pares del universo, no el agregado. Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
         "ref": "de su industria sin ella",
-        "total": 2
+        "total": 3
       },
       "growth": [
         {
@@ -1986,9 +2017,9 @@
       "valuation": {
         "block": {
           "label": "Bloque de múltiplos",
-          "reason": "media de 1 lectura en una escala de −1 a +1 (EV/EBITDA -0.50): -0.50, que suma -1.0 puntos de un máximo de ±2.",
-          "sign": "-1",
-          "tone": "neg"
+          "reason": "media de 1 lectura en una escala de −1 a +1 (EV/EBITDA +0.50): +0.50, que suma +1.0 puntos de un máximo de ±2.",
+          "sign": "+1",
+          "tone": "pos"
         },
         "dcf_composition": null,
         "fair_value": {
@@ -2041,19 +2072,19 @@
             "text": "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria."
           },
           {
-            "bench": null,
-            "bench_txt": "—",
+            "bench": 17.965,
+            "bench_txt": "17.96x",
             "fmt": "mult",
-            "gap_pct": null,
-            "gap_txt": null,
+            "gap_pct": -13.0213509348,
+            "gap_txt": "-13%",
             "higher_is_better": false,
             "key": "ev_ebitda",
             "label": "EV/EBITDA",
-            "reading": "—",
+            "reading": "Descuento",
             "role": "block",
             "state": "con_dato",
-            "text": null,
-            "tone": null,
+            "text": "EV/EBITDA de 15.6x frente a 18.0x de su industria sin ella (-13%): descuento.",
+            "tone": "pos",
             "value": 15.6257143046,
             "value_txt": "15.63x"
           },
@@ -2096,8 +2127,8 @@
         {
           "key": "convergence",
           "label": "Convergencia entre métodos",
-          "level": "Media",
-          "text": "DCF inverso +0.50 (barata) · múltiplos frente al sector +0.00 (en precio). Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
+          "level": "Alta",
+          "text": "DCF inverso +0.50 (barata) · múltiplos frente al sector +0.50 (barata). Los métodos de valoración coinciden."
         },
         {
           "key": "coverage",
@@ -2125,24 +2156,11 @@
         }
       ],
       "level": "media",
-      "plain": [
-        "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
-      ],
-      "reasons": [
-        {
-          "dimension": "convergencia",
-          "level": "media",
-          "text": "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
-        },
-        {
-          "dimension": "techo",
-          "level": "media",
-          "text": null
-        }
-      ],
-      "summary": "Confianza del veredicto: media (por sus dimensiones sería alta; la limita: la convergencia es media —alta exige convergencia alta—). Contrae el atractivo del precio hacia 50: de 65 a 61. La calidad del negocio no se contrae.",
+      "plain": [],
+      "reasons": [],
+      "summary": "Confianza del veredicto: media (por sus dimensiones sería alta; la limita: el veredicto depende de Ke —el nivel de precio pasa de «atractivo» a «razonable» con Ke + 1 pp—). Contrae el atractivo del precio hacia 50: de 75 a 69. La calidad del negocio no se contrae.",
       "tone": "warn",
-      "verdict_text": "(confianza media: DCF inverso la ve barata y los múltiplos en precio)"
+      "verdict_text": "(confianza media: el nivel de precio cambia con ±1 pp de coste del capital)"
     },
     "cover": {
       "archetype": "REIT",
@@ -2215,9 +2233,9 @@
               "key": "Valoración",
               "max": 20,
               "name": "Valoración",
-              "pct": 65.0,
-              "score": 13,
-              "score_txt": "13 / 20",
+              "pct": 75.0,
+              "score": 15,
+              "score_txt": "15 / 20",
               "text": null,
               "tone": "pos"
             }
@@ -2228,9 +2246,7 @@
       "classification_notes": [
         "Sociedad inmobiliaria cotizada que reparte casi todo su beneficio y se mide por sus fondos de operación (FFO); industria REIT de locales comerciales."
       ],
-      "confidence_reasons": [
-        "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
-      ],
+      "confidence_reasons": [],
       "coverage_notes": [],
       "currency_note": null,
       "data_notices": [],
@@ -2238,7 +2254,7 @@
         {
           "kicker": "FORTALEZA CLAVE",
           "kind": "strength",
-          "text": "Fundamentos sólidos en la mayoría de categorías",
+          "text": "EV/EBITDA barato — 15.6x",
           "tone": "pos"
         },
         {
@@ -2307,14 +2323,14 @@
       "official_source_badge": null,
       "price": {
         "contracted": true,
-        "level": "razonable",
-        "note": "ajustado de 65 (atractivo) a 61 (razonable) por confianza media.",
-        "note_short": "Ajustado de 65 (atractivo) a 61 (razonable) por confianza media",
+        "level": "atractivo",
+        "note": "ajustado de 75 a 69 por confianza media.",
+        "note_short": "Ajustado de 75 a 69 por confianza media",
         "question": "¿está cara hoy?",
-        "raw": 65,
-        "score": 61,
+        "raw": 75,
+        "score": 69,
         "title": "ATRACTIVO DEL PRECIO",
-        "tone": "neu"
+        "tone": "pos"
       },
       "quality": {
         "level": "sólida",
@@ -2326,10 +2342,10 @@
         "tone": "pos"
       },
       "verdict": {
-        "confidence_text": "(confianza media: DCF inverso la ve barata y los múltiplos en precio)",
+        "confidence_text": "(confianza media: el nivel de precio cambia con ±1 pp de coste del capital)",
         "confidence_tone": "warn",
-        "full": "Calidad sólida · precio entre razonable y atractivo (confianza media: DCF inverso la ve barata y los múltiplos en precio)",
-        "text": "Calidad sólida · precio entre razonable y atractivo"
+        "full": "Calidad sólida · precio atractivo (confianza media: el nivel de precio cambia con ±1 pp de coste del capital)",
+        "text": "Calidad sólida · precio atractivo"
       }
     },
     "extended": {
@@ -2788,7 +2804,7 @@
       "alerts": {
         "counts": {
           "red_flags": 0,
-          "strengths": 0,
+          "strengths": 1,
           "unmeasured": null,
           "warnings": 0
         },
@@ -2806,7 +2822,13 @@
             "tone": "warn"
           },
           {
-            "items": [],
+            "items": [
+              {
+                "category": "Valoración",
+                "detail": "Cotiza a 15.6x EBITDA frente a 18.0x de su industria sin ella: valoración atractiva sobre flujo operativo, a validar que no responda a un deterioro del negocio.",
+                "reason": "EV/EBITDA barato — 15.6x"
+              }
+            ],
             "key": "strengths",
             "title": "Fortalezas",
             "tone": "pos"
@@ -3043,8 +3065,8 @@
                 {
                   "in_block": true,
                   "metric": "EV/EBITDA frente al sector",
-                  "reason": "Prima (15.6x frente a 12.0x)",
-                  "sign": "(-2)",
+                  "reason": "Atractivo (15.6x)",
+                  "sign": "(+2)",
                   "state": "con_dato",
                   "tone": "neu",
                   "value": "15.63x"
@@ -3052,10 +3074,10 @@
                 {
                   "in_block": false,
                   "metric": "Bloque de múltiplos",
-                  "reason": "media de 1 lectura en una escala de −1 a +1 (EV/EBITDA -0.50): -0.50, que suma -1.0 puntos de un máximo de ±2.",
-                  "sign": "-1",
+                  "reason": "media de 1 lectura en una escala de −1 a +1 (EV/EBITDA +0.50): +0.50, que suma +1.0 puntos de un máximo de ±2.",
+                  "sign": "+1",
                   "state": "con_dato",
-                  "tone": "neg",
+                  "tone": "pos",
                   "value": "1 múltiplo"
                 },
                 {
@@ -3080,9 +3102,9 @@
               "key": "Valoración",
               "max": 20,
               "name": "Valoración",
-              "pct": 65.0,
-              "score": 13,
-              "score_txt": "13 / 20",
+              "pct": 75.0,
+              "score": 15,
+              "score_txt": "15 / 20",
               "text": null,
               "tone": "pos"
             },
@@ -3601,7 +3623,7 @@
           "note": "Condiciones que invalidarían la lectura de hoy, con la cifra que las mide: no son previsiones.",
           "title": "Esta lectura sería errónea si…"
         },
-        "reference_note": "Referencia: industria «REIT de locales comerciales»; Damodaran clasifica a la empresa en esa industria (símbolo), EE. UU., 26 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Referencia de la industria sin Realty Income, que pesa el 26 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 30 de septiembre de 2025). Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
+        "reference_note": "Referencia: industria «REIT de locales comerciales»; Damodaran clasifica a la empresa en esa industria (símbolo), EE. UU., 26 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria salvo donde se dice. Referencia de la industria sin Realty Income, que pesa el 26 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 30 de septiembre de 2025). En EV/EBITDA, margen bruto, margen operativo, la mediana de 4 pares del universo, no el agregado. Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
         "reverse_dcf": {
           "lines": [
             {
@@ -3671,14 +3693,14 @@
             "value": "—"
           },
           {
-            "bench": "—",
-            "gap": "—",
+            "bench": "17.96x",
+            "gap": "-13%",
             "key": "ev_ebitda",
             "label": "EV/EBITDA",
-            "reading": "—",
+            "reading": "Descuento",
             "state": "con_dato",
-            "text": null,
-            "tone": null,
+            "text": "EV/EBITDA de 15.6x frente a 18.0x de su industria sin ella (-13%): descuento.",
+            "tone": "pos",
             "value": "15.63x"
           },
           {
@@ -3808,7 +3830,7 @@
     "summary": {
       "alert_counts": {
         "red_flags": 0,
-        "strengths": 0,
+        "strengths": 1,
         "unmeasured": null,
         "warnings": 0
       },
@@ -3869,13 +3891,13 @@
           "value": "5.88"
         },
         {
-          "bench": "",
-          "delta": "",
+          "bench": "vs industria 17.96x",
+          "delta": "-13%",
           "key": "ev_ebitda",
           "label": "EV/EBITDA",
-          "pill": "Sin referencia",
+          "pill": "Descuento",
           "state": "con_dato",
-          "tone": "neu",
+          "tone": "pos",
           "unit": "x",
           "value": "15.63"
         }
@@ -3883,8 +3905,8 @@
       "composition": {
         "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: Valoración (base 10/20 + bloque de múltiplos y DCF) reescalada a 100 y contraída hacia 50 según la confianza del veredicto: solo los limitadores que lo contradicen o lo vuelven incierto, no los que apuntan en su dirección.",
         "price": {
-          "level": "razonable",
-          "note": "ajustado de 65 a 61 por confianza media.",
+          "level": "atractivo",
+          "note": "ajustado de 75 a 69 por confianza media.",
           "rows": [
             {
               "kind": "signed",
@@ -3895,8 +3917,8 @@
             {
               "kind": "signed",
               "label": "Bloque de múltiplos · 1 múltiplo",
-              "tone": "neg",
-              "value": -1
+              "tone": "pos",
+              "value": 1
             },
             {
               "kind": "signed",
@@ -3905,10 +3927,10 @@
               "value": 2
             }
           ],
-          "score": 61,
+          "score": 69,
           "signed_max": 6,
           "title": "ATRACTIVO DEL PRECIO",
-          "tone": "neu"
+          "tone": "pos"
         },
         "quality": {
           "level": "sólida",
@@ -3955,7 +3977,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad sólida · precio entre razonable y atractivo (confianza media: DCF inverso la ve barata y los múltiplos en precio). Calidad 68/100 · precio 61/100 (ajustado de 65 a 61 por confianza media)."
+          "text": "Calidad sólida · precio atractivo (confianza media: el nivel de precio cambia con ±1 pp de coste del capital). Calidad 68/100 · precio 69/100 (ajustado de 75 a 69 por confianza media)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -3983,7 +4005,7 @@
         },
         {
           "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Media: los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no. Contrae el atractivo del precio hacia 50 (de 65 a 61); la calidad no se contrae."
+          "text": "Media: los métodos y los datos coinciden. Contrae el atractivo del precio hacia 50 (de 75 a 69); la calidad no se contrae."
         }
       ]
     },
@@ -4084,6 +4106,41 @@
       "earnings_growth": {
         "note": "No aplica a REIT.",
         "tables": []
+      },
+      "ev_ebitda": {
+        "note": null,
+        "tables": [
+          {
+            "bands": [
+              {
+                "label": "Descuento profundo",
+                "range": "≤ 11.7x",
+                "tone": "pos"
+              },
+              {
+                "label": "Descuento",
+                "range": "11.7x – 16.2x",
+                "tone": "pos"
+              },
+              {
+                "label": "En línea",
+                "range": "16.2x – 19.8x",
+                "tone": "neu"
+              },
+              {
+                "label": "Prima moderada",
+                "range": "19.8x – 24.3x",
+                "tone": "warn"
+              },
+              {
+                "label": "Prima elevada",
+                "range": "≥ 24.3x",
+                "tone": "neg"
+              }
+            ],
+            "title": "Frente a la referencia de su industria sin ella (18.0x)"
+          }
+        ]
       },
       "fcf_yield": {
         "note": "No aplica a REIT: no se lee.",
@@ -4719,22 +4776,22 @@
   "ke_sensitivity": {
     "base": {
       "ke": 0.0790962432577,
-      "level": "razonable",
-      "score": 61
+      "level": "atractivo",
+      "score": 75
     },
-    "dependent": false,
+    "dependent": true,
     "minus": {
       "ke": 0.0690962432577,
-      "level": "razonable",
-      "score": 61
+      "level": "atractivo",
+      "score": 75
     },
     "plus": {
       "ke": 0.0890962432577,
       "level": "razonable",
-      "score": 55
+      "score": 61
     },
     "pp": 0.01,
-    "reason": null,
+    "reason": "veredicto dependiente de Ke: el nivel de precio pasa de «atractivo» a «razonable» con Ke + 1 pp",
     "status": "ok"
   },
   "key_metrics": {
@@ -5315,20 +5372,20 @@
         "category": "Valoración",
         "included": true,
         "max": 20,
-        "score": 13
+        "score": 15
       }
     ],
     "confidence": "media",
     "contracted": true,
     "excluded_categories": [],
     "factor": 0.75,
-    "level": "razonable",
+    "level": "atractivo",
     "level_raw": "atractivo",
     "low_coverage_categories": [],
     "not_applicable_categories": [],
     "partial": false,
-    "score": 61,
-    "score_raw": 65
+    "score": 69,
+    "score_raw": 75
   },
   "price_change": {
     "change": 0.179996490479,
@@ -5889,27 +5946,27 @@
             "value": "13.13x"
           },
           {
-            "adjustment": -2,
+            "adjustment": 2,
             "in_block": true,
             "metric": "EV/EBITDA frente al sector",
-            "reason": "Prima (15.6x frente a 12.0x)",
-            "severity": "moderate",
+            "reason": "Atractivo (15.6x)",
+            "severity": "good",
             "value": "15.63x"
           },
           {
-            "adjustment": -1,
+            "adjustment": 1,
             "block_max": 2,
-            "block_mean": -0.5,
+            "block_mean": 0.5,
             "block_members": [
               "EV/EBITDA"
             ],
             "block_votes": {
-              "EV/EBITDA": -0.5
+              "EV/EBITDA": 0.5
             },
-            "formula": "Bloque de múltiplos: promedio de 1 lectura reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = -0.50 × 2 (máximo con 1) = -1.0, redondeado a -1",
+            "formula": "Bloque de múltiplos: promedio de 1 lectura reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = +0.50 × 2 (máximo con 1) = +1.0, redondeado a +1",
             "metric": "Bloque de múltiplos",
-            "reason": "media de 1 lectura en una escala de −1 a +1 (EV/EBITDA -0.50): -0.50, que suma -1.0 puntos de un máximo de ±2",
-            "severity": "severe",
+            "reason": "media de 1 lectura en una escala de −1 a +1 (EV/EBITDA +0.50): +0.50, que suma +1.0 puntos de un máximo de ±2",
+            "severity": "excellent",
             "value": "1 múltiplo"
           },
           {
@@ -5932,13 +5989,13 @@
         "coverage": 1.0,
         "details": [
           "Atractivo por FFO (13.1x)",
-          "Prima (15.6x frente a 12.0x)",
-          "media de 1 lectura en una escala de −1 a +1 (EV/EBITDA -0.50): -0.50, que suma -1.0 puntos de un máximo de ±2",
+          "Atractivo (15.6x)",
+          "media de 1 lectura en una escala de −1 a +1 (EV/EBITDA +0.50): +0.50, que suma +1.0 puntos de un máximo de ±2",
           "El precio actual se justifica aunque el FFO por acción caiga un 1.9% anual durante 10 años (−3.7% los 5 primeros y convergencia al 2.5%); en los últimos 3 años, su FFO por acción creció un 3.6% anual. Lo sostuvo 10 años el 78% de las empresas comparables (ventas de 1 a 5 mil millones, otros sectores).",
           "No aplica a REIT: el beneficio contable está distorsionado por la depreciación inmobiliaria (no cuenta en la cobertura)"
         ],
         "max": 20,
-        "score": 13
+        "score": 15
       }
     },
     "excluded_categories": [],
@@ -6061,12 +6118,12 @@
   },
   "verdict": {
     "confidence": "media",
-    "confidence_text": "(confianza media: DCF inverso la ve barata y los múltiplos en precio)",
-    "full": "Calidad sólida · precio entre razonable y atractivo (confianza media: DCF inverso la ve barata y los múltiplos en precio)",
-    "price_level": "razonable",
-    "price_level_raw": "atractivo",
+    "confidence_text": "(confianza media: el nivel de precio cambia con ±1 pp de coste del capital)",
+    "full": "Calidad sólida · precio atractivo (confianza media: el nivel de precio cambia con ±1 pp de coste del capital)",
+    "price_level": "atractivo",
+    "price_level_raw": null,
     "quality_level": "sólida",
-    "text": "Calidad sólida · precio entre razonable y atractivo"
+    "text": "Calidad sólida · precio atractivo"
   },
   "wacc": {
     "applicable": true,

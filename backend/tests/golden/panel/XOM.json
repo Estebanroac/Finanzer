@@ -28,6 +28,11 @@
         "category": "Valoración",
         "detail": "Por cada dólar invertido en la acción, el negocio genera solo 4.2% de caja libre: se está pagando caro cada dólar de flujo, habitual en compañías de alto crecimiento o valoración exigente.",
         "reason": "FCF yield bajo — 4.2%"
+      },
+      {
+        "category": "Valoración",
+        "detail": "Se paga 9.6x EBITDA frente a 6.0x de su industria sin ella (+58%): el mercado le asigna una prima que conviene contrastar con su ventaja competitiva.",
+        "reason": "EV/EBITDA normalizado sobre su industria — 9.6x"
       }
     ]
   },
@@ -111,15 +116,15 @@
             "how": "sin_empresa"
           },
           "ev_ebitda": {
-            "after": null,
+            "after": 6.031,
             "before": 6.0772,
-            "how": "sin_dato",
+            "how": "mediana_pares",
             "n": 5
           },
           "gross_margin": {
-            "after": null,
+            "after": 0.3768,
             "before": 0.3289,
-            "how": "sin_dato",
+            "how": "mediana_pares",
             "n": 5
           },
           "interest_coverage": {
@@ -134,9 +139,9 @@
             "how": "sin_empresa"
           },
           "operating_margin": {
-            "after": null,
+            "after": 0.1669,
             "before": 0.1427,
-            "how": "sin_dato",
+            "how": "mediana_pares",
             "n": 5
           },
           "pb": {
@@ -193,7 +198,10 @@
     "short": "industria",
     "sources": {
       "de": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Petróleo y gas integrados», global, 34 empresas; referencia de la industria sin Exxon Mobil, que pesa el 15 %",
+      "ev_ebitda": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Petróleo y gas integrados», global, 34 empresas; mediana de 5 pares del universo (sin las cifras de la empresa para esta columna)",
+      "gross_margin": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Petróleo y gas integrados», global, 34 empresas; mediana de 5 pares del universo (sin las cifras de la empresa para esta columna)",
       "net_margin": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Petróleo y gas integrados», global, 34 empresas; referencia de la industria sin Exxon Mobil, que pesa el 15 %",
+      "operating_margin": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Petróleo y gas integrados», global, 34 empresas; mediana de 5 pares del universo (sin las cifras de la empresa para esta columna)",
       "pb": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Petróleo y gas integrados», global, 34 empresas; referencia de la industria sin Exxon Mobil, que pesa el 15 %",
       "pe": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Petróleo y gas integrados», global, 34 empresas; referencia de la industria sin Exxon Mobil, que pesa el 15 %",
       "roe": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Petróleo y gas integrados», global, 34 empresas; referencia de la industria sin Exxon Mobil, que pesa el 15 %"
@@ -212,7 +220,10 @@
     "thresholds_key": "energy",
     "values": {
       "de": 0.39523065458,
+      "ev_ebitda": 6.031,
+      "gross_margin": 0.3768,
       "net_margin": 0.0729971135347,
+      "operating_margin": 0.1669,
       "pb": 1.67096236887,
       "pe": 15.1377929262,
       "roe": 0.123229461976
@@ -431,15 +442,15 @@
           },
           {
             "components": 1,
-            "direction": "barata",
+            "direction": "cara",
             "evaluable": true,
             "kind": "relativo",
             "method": "múltiplos frente al sector",
             "readings": {
-              "EV/EBITDA": 0.5,
+              "EV/EBITDA": -1.0,
               "P/FCF": 0.0
             },
-            "signal": 0.25
+            "signal": -0.5
           }
         ],
         "reasons": [
@@ -492,12 +503,18 @@
         ]
       }
     },
+    "ke_dependent": {
+      "from": "baja",
+      "reason": "veredicto dependiente de Ke: el nivel de precio pasa de «razonable» a «exigente» con Ke + 1 pp",
+      "to": "baja"
+    },
     "level": "baja",
     "limits_score": false,
     "reasons": [
       "convergencia media: uno lo ve en precio y otro con dirección: no coinciden, sin oponerse",
       "estabilidad baja: productora de materias primas: su resultado depende del precio de lo que produce, no de su gestión",
-      "techo en baja: la más baja manda: estabilidad baja"
+      "techo en baja: la más baja manda: estabilidad baja",
+      "veredicto dependiente de Ke: el nivel de precio pasa de «razonable» a «exigente» con Ke + 1 pp: la confianza ya era baja"
     ],
     "score": 0.6
   },
@@ -1654,7 +1671,7 @@
         },
         {
           "label": "Fórmula del bloque",
-          "text": "Bloque de múltiplos: promedio de 2 lecturas reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = +0.25 × 4 (máximo con 2) = +1.0, redondeado a +1."
+          "text": "Bloque de múltiplos: promedio de 2 lecturas reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = -0.50 × 4 (máximo con 2) = -2.0, redondeado a -2."
         },
         {
           "label": "Nombres originales de las fuentes",
@@ -1693,6 +1710,21 @@
                 "tone": "neg",
                 "value": 2.80690539594,
                 "value_txt": "2.81x"
+              },
+              {
+                "bench": 6.031,
+                "bench_txt": "6.03x",
+                "fmt": "mult",
+                "gap_pct": 84.2660811338,
+                "gap_txt": "+84%",
+                "higher_is_better": false,
+                "key": "ev_ebitda",
+                "label": "EV/EBITDA",
+                "reading": "Prima elevada",
+                "text": "EV/EBITDA de 11.1x frente a 6.0x de su industria sin ella (+84%): prima elevada.",
+                "tone": "neg",
+                "value": 11.1130873532,
+                "value_txt": "11.11x"
               }
             ],
             "title": "Valoración"
@@ -1713,6 +1745,36 @@
                 "tone": "neu",
                 "value": 0.126289613694,
                 "value_txt": "12.63%"
+              },
+              {
+                "bench": 0.3768,
+                "bench_txt": "37.68%",
+                "fmt": "pct",
+                "gap_pct": -45.2470274186,
+                "gap_txt": "-45%",
+                "higher_is_better": true,
+                "key": "gross_margin",
+                "label": "Margen bruto",
+                "reading": "Muy inferior",
+                "text": "Margen bruto de 20.6% frente a 37.7% de su industria sin ella (-45%): muy inferior.",
+                "tone": "neg",
+                "value": 0.206309200687,
+                "value_txt": "20.63%"
+              },
+              {
+                "bench": 0.1669,
+                "bench_txt": "16.69%",
+                "fmt": "pct",
+                "gap_pct": -35.7411007739,
+                "gap_txt": "-36%",
+                "higher_is_better": true,
+                "key": "operating_margin",
+                "label": "Margen operativo",
+                "reading": "Muy inferior",
+                "text": "Margen operativo de 10.7% frente a 16.7% de su industria sin ella (-36%): muy inferior.",
+                "tone": "neg",
+                "value": 0.107248102808,
+                "value_txt": "10.72%"
               },
               {
                 "bench": 0.0729971135347,
@@ -1754,9 +1816,9 @@
           }
         ],
         "market_note": null,
-        "note": "Referencia: industria «Petróleo y gas integrados»; Damodaran clasifica a la empresa en esa industria (símbolo), global, 34 empresas (la de EE. UU. no es representativa: 4 empresas) (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Referencia de la industria sin Exxon Mobil, que pesa el 15 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 30 de septiembre de 2025). Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
+        "note": "Referencia: industria «Petróleo y gas integrados»; Damodaran clasifica a la empresa en esa industria (símbolo), global, 34 empresas (la de EE. UU. no es representativa: 4 empresas) (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria salvo donde se dice. Referencia de la industria sin Exxon Mobil, que pesa el 15 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 30 de septiembre de 2025). En EV/EBITDA, margen bruto, margen operativo, la mediana de 5 pares del universo, no el agregado. Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
         "ref": "de su industria sin ella",
-        "total": 4
+        "total": 7
       },
       "growth": [
         {
@@ -1963,9 +2025,9 @@
               "label": "Margen bruto",
               "pct": 0.206309200687,
               "pct_txt": "20.6%",
-              "reading": "—",
+              "reading": "Muy inferior",
               "state": "con_dato",
-              "tone": null
+              "tone": "neg"
             },
             {
               "amount": 68373000000.0,
@@ -1985,9 +2047,9 @@
               "label": "Margen operativo",
               "pct": 0.107248102808,
               "pct_txt": "10.7%",
-              "reading": "—",
+              "reading": "Muy inferior",
               "state": "con_dato",
-              "tone": null
+              "tone": "neg"
             },
             {
               "amount": 32757000000.0,
@@ -2004,34 +2066,34 @@
         },
         "margins": [
           {
-            "bench": null,
-            "bench_txt": "—",
+            "bench": 0.3768,
+            "bench_txt": "37.68%",
             "fmt": "pct",
-            "gap_pct": null,
-            "gap_txt": null,
+            "gap_pct": -45.2470274186,
+            "gap_txt": "-45%",
             "higher_is_better": true,
             "key": "gross_margin",
             "label": "Margen bruto",
-            "reading": "—",
+            "reading": "Muy inferior",
             "state": "con_dato",
-            "text": null,
-            "tone": null,
+            "text": "Margen bruto de 20.6% frente a 37.7% de su industria sin ella (-45%): muy inferior.",
+            "tone": "neg",
             "value": 0.206309200687,
             "value_txt": "20.63%"
           },
           {
-            "bench": null,
-            "bench_txt": "—",
+            "bench": 0.1669,
+            "bench_txt": "16.69%",
             "fmt": "pct",
-            "gap_pct": null,
-            "gap_txt": null,
+            "gap_pct": -35.7411007739,
+            "gap_txt": "-36%",
             "higher_is_better": true,
             "key": "operating_margin",
             "label": "Margen operativo",
-            "reading": "—",
+            "reading": "Muy inferior",
             "state": "con_dato",
-            "text": null,
-            "tone": null,
+            "text": "Margen operativo de 10.7% frente a 16.7% de su industria sin ella (-36%): muy inferior.",
+            "tone": "neg",
             "value": 0.107248102808,
             "value_txt": "10.72%"
           },
@@ -2374,9 +2436,9 @@
       "valuation": {
         "block": {
           "label": "Bloque de múltiplos",
-          "reason": "media de 2 lecturas en una escala de −1 a +1 (P/FCF +0.00; EV/EBITDA +0.50): +0.25, que suma +1.0 puntos de un máximo de ±4.",
-          "sign": "+1",
-          "tone": "pos"
+          "reason": "media de 2 lecturas en una escala de −1 a +1 (P/FCF +0.00; EV/EBITDA -1.00): -0.50, que suma -2.0 puntos de un máximo de ±4.",
+          "sign": "-2",
+          "tone": "neg"
         },
         "dcf_composition": {
           "explicit_pct": 39.8,
@@ -2489,19 +2551,19 @@
             "text": "No aplica a empresas cíclicas: el resultado de un solo ejercicio depende de la fase del ciclo."
           },
           {
-            "bench": null,
-            "bench_txt": "—",
+            "bench": 6.031,
+            "bench_txt": "6.03x",
             "fmt": "mult",
-            "gap_pct": null,
-            "gap_txt": null,
+            "gap_pct": 84.2660811338,
+            "gap_txt": "+84%",
             "higher_is_better": false,
             "key": "ev_ebitda",
             "label": "EV/EBITDA",
-            "reading": "—",
+            "reading": "Prima elevada",
             "role": "informative",
             "state": "con_dato",
-            "text": null,
-            "tone": null,
+            "text": "EV/EBITDA de 11.1x frente a 6.0x de su industria sin ella (+84%): prima elevada.",
+            "tone": "neg",
             "value": 11.1130873532,
             "value_txt": "11.11x"
           },
@@ -2555,10 +2617,10 @@
             "in_block": true,
             "key": "ev_ebitda_normalizado",
             "label": "EV/EBITDA normalizado",
-            "reading": "Favorable",
-            "reason": "Atractivo (9.6x) (ciclo incompleto: 4 ejercicios)",
-            "sign": "(+2)",
-            "tone": "pos",
+            "reading": "Desfavorable",
+            "reason": "Muy caro (9.6x frente a 6.0x) (ciclo incompleto: 4 ejercicios)",
+            "sign": "(-4)",
+            "tone": "neg",
             "value_txt": "9.56x"
           }
         ]
@@ -2571,7 +2633,7 @@
           "key": "convergence",
           "label": "Convergencia entre métodos",
           "level": "Media",
-          "text": "DCF directo +0% (en precio) · múltiplos frente al sector +0.25 (barata). Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
+          "text": "DCF directo +0% (en precio) · múltiplos frente al sector -0.50 (cara). Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
         },
         {
           "key": "coverage",
@@ -2620,7 +2682,7 @@
           "text": null
         }
       ],
-      "summary": "Confianza del veredicto: baja (por sus dimensiones sería media; la limita: la más baja manda —estabilidad baja—). Contrae el atractivo del precio hacia 50: de 55 a 52. Contrae también la calidad del negocio hacia 50: de 79 a 75.",
+      "summary": "Confianza del veredicto: baja (por sus dimensiones sería media; la limita: la más baja manda —estabilidad baja—). Contrae el atractivo del precio hacia 50: de 40 a 45. Contrae también la calidad del negocio hacia 50: de 76 a 72.",
       "tone": "neg",
       "verdict_text": "(confianza baja: negocio cíclico)"
     },
@@ -2651,9 +2713,9 @@
               "key": "Rentabilidad",
               "max": 20,
               "name": "Rentabilidad",
-              "pct": 90.0,
-              "score": 18,
-              "score_txt": "18 / 20",
+              "pct": 80.0,
+              "score": 16,
+              "score_txt": "16 / 20",
               "text": null,
               "tone": "pos"
             },
@@ -2695,9 +2757,9 @@
               "key": "Valoración",
               "max": 20,
               "name": "Valoración",
-              "pct": 55.0,
-              "score": 11,
-              "score_txt": "11 / 20",
+              "pct": 40.0,
+              "score": 8,
+              "score_txt": "8 / 20",
               "text": null,
               "tone": "warn"
             }
@@ -2791,11 +2853,11 @@
       "price": {
         "contracted": true,
         "level": "razonable",
-        "note": "ajustado de 55 a 52 por confianza baja.",
-        "note_short": "Ajustado de 55 a 52 por confianza baja",
+        "note": "ajustado de 40 a 45 por confianza baja; en la frontera con «exigente» (a 1 punto): un cambio pequeño en los datos o en los supuestos cambiaría el nivel.",
+        "note_short": "Ajustado de 40 a 45 por confianza baja · en la frontera con «exigente» (a 1 punto)",
         "question": "¿está cara hoy?",
-        "raw": 55,
-        "score": 52,
+        "raw": 40,
+        "score": 45,
         "title": "ATRACTIVO DEL PRECIO",
         "tone": "neu"
       },
@@ -2804,15 +2866,15 @@
         "note": null,
         "note_short": null,
         "question": "¿es buena la empresa?",
-        "score": 75,
+        "score": 72,
         "title": "CALIDAD DEL NEGOCIO",
         "tone": "pos"
       },
       "verdict": {
         "confidence_text": "(confianza baja: negocio cíclico)",
         "confidence_tone": "neg",
-        "full": "Calidad sólida · precio razonable (confianza baja: negocio cíclico)",
-        "text": "Calidad sólida · precio razonable"
+        "full": "Calidad sólida · precio entre razonable y exigente (confianza baja: negocio cíclico)",
+        "text": "Calidad sólida · precio entre razonable y exigente"
       }
     },
     "extended": {
@@ -3280,7 +3342,7 @@
           "red_flags": 0,
           "strengths": 4,
           "unmeasured": null,
-          "warnings": 1
+          "warnings": 2
         },
         "groups": [
           {
@@ -3295,6 +3357,11 @@
                 "category": "Valoración",
                 "detail": "Por cada dólar invertido en la acción, el negocio genera solo 4.2% de caja libre: se está pagando caro cada dólar de flujo, habitual en compañías de alto crecimiento o valoración exigente.",
                 "reason": "FCF yield bajo — 4.2%"
+              },
+              {
+                "category": "Valoración",
+                "detail": "Se paga 9.6x EBITDA frente a 6.0x de su industria sin ella (+58%): el mercado le asigna una prima que conviene contrastar con su ventaja competitiva.",
+                "reason": "EV/EBITDA normalizado sobre su industria — 9.6x"
               }
             ],
             "key": "warnings",
@@ -3558,10 +3625,10 @@
                 {
                   "in_block": false,
                   "metric": "Margen operativo",
-                  "reason": "En línea (10.7%; sin margen de la industria, bandas absolutas)",
-                  "sign": "+1",
+                  "reason": "Por debajo (10.7%, −6.0 pp frente al margen de su industria sin ella: 16.7%)",
+                  "sign": "-1",
                   "state": "con_dato",
-                  "tone": "pos",
+                  "tone": "warn",
                   "value": "10.72%"
                 },
                 {
@@ -3586,9 +3653,9 @@
               "key": "Rentabilidad",
               "max": 20,
               "name": "Rentabilidad",
-              "pct": 90.0,
-              "score": 18,
-              "score_txt": "18 / 20",
+              "pct": 80.0,
+              "score": 16,
+              "score_txt": "16 / 20",
               "text": null,
               "tone": "pos"
             },
@@ -3608,8 +3675,8 @@
                 {
                   "in_block": true,
                   "metric": "EV/EBITDA normalizado frente al sector",
-                  "reason": "Atractivo (9.6x) (ciclo incompleto: 4 ejercicios)",
-                  "sign": "(+2)",
+                  "reason": "Muy caro (9.6x frente a 6.0x) (ciclo incompleto: 4 ejercicios)",
+                  "sign": "(-4)",
                   "state": "con_dato",
                   "tone": "neu",
                   "value": "9.56x"
@@ -3617,10 +3684,10 @@
                 {
                   "in_block": false,
                   "metric": "Bloque de múltiplos",
-                  "reason": "media de 2 lecturas en una escala de −1 a +1 (P/FCF +0.00; EV/EBITDA +0.50): +0.25, que suma +1.0 puntos de un máximo de ±4.",
-                  "sign": "+1",
+                  "reason": "media de 2 lecturas en una escala de −1 a +1 (P/FCF +0.00; EV/EBITDA -1.00): -0.50, que suma -2.0 puntos de un máximo de ±4.",
+                  "sign": "-2",
                   "state": "con_dato",
-                  "tone": "pos",
+                  "tone": "neg",
                   "value": "2 múltiplos"
                 },
                 {
@@ -3645,9 +3712,9 @@
               "key": "Valoración",
               "max": 20,
               "name": "Valoración",
-              "pct": 55.0,
-              "score": 11,
-              "score_txt": "11 / 20",
+              "pct": 40.0,
+              "score": 8,
+              "score_txt": "8 / 20",
               "text": null,
               "tone": "warn"
             },
@@ -4014,25 +4081,25 @@
             "value": "9.89%"
           },
           {
-            "bench": "—",
-            "gap": "—",
+            "bench": "37.68%",
+            "gap": "-45%",
             "key": "gross_margin",
             "label": "Margen bruto",
-            "reading": "—",
+            "reading": "Muy inferior",
             "state": "con_dato",
-            "text": null,
-            "tone": null,
+            "text": "Margen bruto de 20.6% frente a 37.7% de su industria sin ella (-45%): muy inferior.",
+            "tone": "neg",
             "value": "20.63%"
           },
           {
-            "bench": "—",
-            "gap": "—",
+            "bench": "16.69%",
+            "gap": "-36%",
             "key": "operating_margin",
             "label": "Margen operativo",
-            "reading": "—",
+            "reading": "Muy inferior",
             "state": "con_dato",
-            "text": null,
-            "tone": null,
+            "text": "Margen operativo de 10.7% frente a 16.7% de su industria sin ella (-36%): muy inferior.",
+            "tone": "neg",
             "value": "10.72%"
           },
           {
@@ -4256,7 +4323,7 @@
             }
           ]
         },
-        "intro": "P/FCF normalizado: aceptable (19.3x) (ciclo incompleto: 4 ejercicios). EV/EBITDA normalizado: atractivo (9.6x) (ciclo incompleto: 4 ejercicios).",
+        "intro": "P/FCF normalizado: aceptable (19.3x) (ciclo incompleto: 4 ejercicios). EV/EBITDA normalizado: muy caro (9.6x frente a 6.0x) (ciclo incompleto: 4 ejercicios).",
         "ke_note": null,
         "market_note": null,
         "normalization_note": null,
@@ -4267,7 +4334,7 @@
           "note": "Condiciones que invalidarían la lectura de hoy, con la cifra que las mide: no son previsiones.",
           "title": "Esta lectura sería errónea si…"
         },
-        "reference_note": "Referencia: industria «Petróleo y gas integrados»; Damodaran clasifica a la empresa en esa industria (símbolo), global, 34 empresas (la de EE. UU. no es representativa: 4 empresas) (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Referencia de la industria sin Exxon Mobil, que pesa el 15 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 30 de septiembre de 2025). Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
+        "reference_note": "Referencia: industria «Petróleo y gas integrados»; Damodaran clasifica a la empresa en esa industria (símbolo), global, 34 empresas (la de EE. UU. no es representativa: 4 empresas) (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria salvo donde se dice. Referencia de la industria sin Exxon Mobil, que pesa el 15 % de su capitalización: el agregado menos sus cifras al 5 de enero de 2026 (doce meses a 30 de septiembre de 2025). En EV/EBITDA, margen bruto, margen operativo, la mediana de 5 pares del universo, no el agregado. Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
         "reverse_dcf": {
           "lines": [
             {
@@ -4342,14 +4409,14 @@
             "value": "—"
           },
           {
-            "bench": "—",
-            "gap": "—",
+            "bench": "6.03x",
+            "gap": "+84%",
             "key": "ev_ebitda",
             "label": "EV/EBITDA",
-            "reading": "—",
+            "reading": "Prima elevada",
             "state": "con_dato",
-            "text": null,
-            "tone": null,
+            "text": "EV/EBITDA de 11.1x frente a 6.0x de su industria sin ella (+84%): prima elevada.",
+            "tone": "neg",
             "value": "11.11x"
           },
           {
@@ -4412,10 +4479,10 @@
             "gap": "—",
             "key": "ev_ebitda_normalizado",
             "label": "EV/EBITDA normalizado",
-            "reading": "Favorable",
+            "reading": "Desfavorable",
             "state": "con_dato",
-            "text": "Atractivo (9.6x) (ciclo incompleto: 4 ejercicios)",
-            "tone": "pos",
+            "text": "Muy caro (9.6x frente a 6.0x) (ciclo incompleto: 4 ejercicios)",
+            "tone": "neg",
             "value": "9.56x"
           }
         ],
@@ -4616,7 +4683,7 @@
         "red_flags": 0,
         "strengths": 4,
         "unmeasured": null,
-        "warnings": 1
+        "warnings": 2
       },
       "cards": [
         {
@@ -4653,13 +4720,13 @@
           "value": "12.63"
         },
         {
-          "bench": "",
-          "delta": "",
+          "bench": "vs industria 6.03x",
+          "delta": "+58%",
           "key": "ev_ebitda_normalized",
           "label": "EV/EBITDA normalizado",
-          "pill": "Sin referencia",
+          "pill": "Prima elevada",
           "state": "con_dato",
-          "tone": "neu",
+          "tone": "neg",
           "unit": "x",
           "value": "9.56"
         },
@@ -4690,13 +4757,13 @@
         "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: Valoración (base 10/20 + bloque de múltiplos y DCF) reescalada a 100 y contraída hacia 50 según la confianza del veredicto: solo los limitadores que lo contradicen o lo vuelven incierto, no los que apuntan en su dirección.",
         "price": {
           "level": "razonable",
-          "note": "ajustado de 55 a 52 por confianza baja.",
+          "note": "ajustado de 40 a 45 por confianza baja; en la frontera con «exigente» (a 1 punto): un cambio pequeño en los datos o en los supuestos cambiaría el nivel.",
           "rows": [
             {
               "kind": "signed",
               "label": "Bloque de múltiplos · 2 múltiplos",
-              "tone": "pos",
-              "value": 1
+              "tone": "neg",
+              "value": -2
             },
             {
               "kind": "signed",
@@ -4705,7 +4772,7 @@
               "value": 0
             }
           ],
-          "score": 52,
+          "score": 45,
           "signed_max": 6,
           "title": "ATRACTIVO DEL PRECIO",
           "tone": "neu"
@@ -4726,9 +4793,9 @@
               "kind": "bar",
               "label": "Rentabilidad",
               "max": 20,
-              "pct": 90.0,
+              "pct": 80.0,
               "tone": "pos",
-              "value": 18
+              "value": 16
             },
             {
               "kind": "bar",
@@ -4747,7 +4814,7 @@
               "value": 8
             }
           ],
-          "score": 75,
+          "score": 72,
           "title": "CALIDAD DEL NEGOCIO",
           "tone": "pos"
         }
@@ -4755,11 +4822,11 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad sólida · precio razonable (confianza baja: negocio cíclico). Calidad 75/100 · precio 52/100 (ajustado de 55 a 52 por confianza baja)."
+          "text": "Calidad sólida · precio entre razonable y exigente (confianza baja: negocio cíclico). Calidad 72/100 · precio 45/100 (ajustado de 40 a 45 por confianza baja; en la frontera con «exigente» (a 1 punto): un cambio pequeño en los datos o en los supuestos cambiaría el nivel)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
-          "text": "Destaca en Solidez financiera (20/20) y Rentabilidad (18/20); el punto débil es Crecimiento (8/20)."
+          "text": "Destaca en Solidez financiera (20/20) y Calidad de ganancias (17/20); el punto débil es Crecimiento (8/20)."
         },
         {
           "label": "CREACIÓN DE VALOR",
@@ -4783,7 +4850,7 @@
         },
         {
           "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Baja: los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no. Contrae hacia 50 el atractivo del precio (de 55 a 52) y la calidad del negocio (de 79 a 75)."
+          "text": "Baja: los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no. Contrae hacia 50 el atractivo del precio (de 40 a 45) y la calidad del negocio (de 76 a 72)."
         }
       ]
     },
@@ -5038,9 +5105,79 @@
           }
         ]
       },
+      "ev_ebitda": {
+        "note": null,
+        "tables": [
+          {
+            "bands": [
+              {
+                "label": "Descuento profundo",
+                "range": "≤ 3.9x",
+                "tone": "pos"
+              },
+              {
+                "label": "Descuento",
+                "range": "3.9x – 5.4x",
+                "tone": "pos"
+              },
+              {
+                "label": "En línea",
+                "range": "5.4x – 6.6x",
+                "tone": "neu"
+              },
+              {
+                "label": "Prima moderada",
+                "range": "6.6x – 8.1x",
+                "tone": "warn"
+              },
+              {
+                "label": "Prima elevada",
+                "range": "≥ 8.1x",
+                "tone": "neg"
+              }
+            ],
+            "title": "Frente a la referencia de su industria sin ella (6.0x)"
+          }
+        ]
+      },
       "forward_pe": {
         "note": "No aplica a empresas cíclicas: no se lee.",
         "tables": []
+      },
+      "gross_margin": {
+        "note": null,
+        "tables": [
+          {
+            "bands": [
+              {
+                "label": "Muy superior",
+                "range": "≥ 50.9%",
+                "tone": "pos"
+              },
+              {
+                "label": "Superior",
+                "range": "41.4% – 50.9%",
+                "tone": "pos"
+              },
+              {
+                "label": "En línea",
+                "range": "33.9% – 41.4%",
+                "tone": "neu"
+              },
+              {
+                "label": "Inferior",
+                "range": "24.5% – 33.9%",
+                "tone": "warn"
+              },
+              {
+                "label": "Muy inferior",
+                "range": "< 24.5%",
+                "tone": "neg"
+              }
+            ],
+            "title": "Frente a la referencia de su industria sin ella (37.7%)"
+          }
+        ]
       },
       "interest_coverage": {
         "note": null,
@@ -5144,6 +5281,41 @@
               }
             ],
             "title": "Frente a la referencia de su industria sin ella (7.3%)"
+          }
+        ]
+      },
+      "operating_margin": {
+        "note": null,
+        "tables": [
+          {
+            "bands": [
+              {
+                "label": "Muy superior",
+                "range": "≥ 22.5%",
+                "tone": "pos"
+              },
+              {
+                "label": "Superior",
+                "range": "18.4% – 22.5%",
+                "tone": "pos"
+              },
+              {
+                "label": "En línea",
+                "range": "15% – 18.4%",
+                "tone": "neu"
+              },
+              {
+                "label": "Inferior",
+                "range": "10.8% – 15%",
+                "tone": "warn"
+              },
+              {
+                "label": "Muy inferior",
+                "range": "< 10.8%",
+                "tone": "neg"
+              }
+            ],
+            "title": "Frente a la referencia de su industria sin ella (16.7%)"
           }
         ]
       },
@@ -5817,21 +5989,21 @@
     "base": {
       "ke": 0.0785004342674,
       "level": "razonable",
-      "score": 52
+      "score": 45
     },
-    "dependent": false,
+    "dependent": true,
     "minus": {
       "ke": 0.0685004342674,
       "level": "razonable",
-      "score": 52
+      "score": 45
     },
     "plus": {
       "ke": 0.0885004342674,
-      "level": "razonable",
-      "score": 50
+      "level": "exigente",
+      "score": 42
     },
     "pp": 0.01,
-    "reason": null,
+    "reason": "veredicto dependiente de Ke: el nivel de precio pasa de «razonable» a «exigente» con Ke + 1 pp",
     "status": "ok"
   },
   "key_metrics": {
@@ -6440,7 +6612,11 @@
   "price": 177.059997559,
   "price_attractiveness": {
     "basis": null,
-    "border": null,
+    "border": {
+      "neighbor": "exigente",
+      "points": 1,
+      "text": "En la frontera con «exigente» (a 1 punto): un cambio pequeño en los datos o en los supuestos cambiaría el nivel"
+    },
     "categories_included": 1,
     "categories_total": 1,
     "components": [
@@ -6448,7 +6624,7 @@
         "category": "Valoración",
         "included": true,
         "max": 20,
-        "score": 11
+        "score": 8
       }
     ],
     "confidence": "baja",
@@ -6456,12 +6632,12 @@
     "excluded_categories": [],
     "factor": 0.5,
     "level": "razonable",
-    "level_raw": "razonable",
+    "level_raw": "exigente",
     "low_coverage_categories": [],
     "not_applicable_categories": [],
     "partial": false,
-    "score": 52,
-    "score_raw": 55
+    "score": 45,
+    "score_raw": 40
   },
   "price_change": {
     "change": 2.97999572754,
@@ -6503,7 +6679,7 @@
         "category": "Rentabilidad",
         "included": true,
         "max": 20,
-        "score": 18
+        "score": 16
       },
       {
         "category": "Calidad de Ganancias",
@@ -6544,7 +6720,7 @@
           "category": "Rentabilidad",
           "persistence": 1.0,
           "rule": "margen neto positivo y al menos el 75% del último (8.7%) (sin resultado operativo en la SEC)",
-          "surplus": 2.0,
+          "surplus": 0.0,
           "years_ok": [
             "2021",
             "2022",
@@ -6584,8 +6760,8 @@
       "source": "edgar",
       "window": 5
     },
-    "score": 75,
-    "score_raw": 79
+    "score": 72,
+    "score_raw": 76
   },
   "quality_readings": {
     "coverage": {
@@ -6954,10 +7130,10 @@
             "value": "7.05%"
           },
           {
-            "adjustment": 1,
+            "adjustment": -1,
             "metric": "Margen operativo",
-            "reason": "En línea (10.7%; sin margen de la industria, bandas absolutas)",
-            "severity": "ok",
+            "reason": "Por debajo (10.7%, −6.0 pp frente al margen de su industria sin ella: 16.7%)",
+            "severity": "moderate",
             "value": "10.72%"
           },
           {
@@ -6981,12 +7157,12 @@
         "details": [
           "Muy bueno (12.6%) - En el rango alto de su sector",
           "Bueno (7.1%) - Rango alto de su sector",
-          "En línea (10.7%; sin margen de la industria, bandas absolutas)",
+          "Por debajo (10.7%, −6.0 pp frente al margen de su industria sin ella: 16.7%)",
           "En línea (9.1%, +1.8 pp frente al margen de su industria sin ella: 7.3%)",
           "Retorno por encima del costo de capital (spread +2.3 pp)"
         ],
         "max": 20,
-        "score": 18
+        "score": 16
       },
       "Solidez Financiera": {
         "adjustments": [
@@ -7042,29 +7218,29 @@
             "value": "19.33x"
           },
           {
-            "adjustment": 2,
+            "adjustment": -4,
             "in_block": true,
             "metric": "EV/EBITDA normalizado frente al sector",
-            "reason": "Atractivo (9.6x) (ciclo incompleto: 4 ejercicios)",
-            "severity": "good",
+            "reason": "Muy caro (9.6x frente a 6.0x) (ciclo incompleto: 4 ejercicios)",
+            "severity": "severe",
             "value": "9.56x"
           },
           {
-            "adjustment": 1,
+            "adjustment": -2,
             "block_max": 4,
-            "block_mean": 0.25,
+            "block_mean": -0.5,
             "block_members": [
               "P/FCF",
               "EV/EBITDA"
             ],
             "block_votes": {
-              "EV/EBITDA": 0.5,
+              "EV/EBITDA": -1.0,
               "P/FCF": 0.0
             },
-            "formula": "Bloque de múltiplos: promedio de 2 lecturas reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = +0.25 × 4 (máximo con 2) = +1.0, redondeado a +1",
+            "formula": "Bloque de múltiplos: promedio de 2 lecturas reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = -0.50 × 4 (máximo con 2) = -2.0, redondeado a -2",
             "metric": "Bloque de múltiplos",
-            "reason": "media de 2 lecturas en una escala de −1 a +1 (P/FCF +0.00; EV/EBITDA +0.50): +0.25, que suma +1.0 puntos de un máximo de ±4",
-            "severity": "good",
+            "reason": "media de 2 lecturas en una escala de −1 a +1 (P/FCF +0.00; EV/EBITDA -1.00): -0.50, que suma -2.0 puntos de un máximo de ±4",
+            "severity": "severe",
             "value": "2 múltiplos"
           },
           {
@@ -7089,13 +7265,13 @@
         "coverage": 1.0,
         "details": [
           "Aceptable (19.3x) (ciclo incompleto: 4 ejercicios)",
-          "Atractivo (9.6x) (ciclo incompleto: 4 ejercicios)",
-          "media de 2 lecturas en una escala de −1 a +1 (P/FCF +0.00; EV/EBITDA +0.50): +0.25, que suma +1.0 puntos de un máximo de ±4",
+          "Muy caro (9.6x frente a 6.0x) (ciclo incompleto: 4 ejercicios)",
+          "media de 2 lecturas en una escala de −1 a +1 (P/FCF +0.00; EV/EBITDA -1.00): -0.50, que suma -2.0 puntos de un máximo de ±4",
           "En precio, sensible al WACC: con WACC 6.6% vale 194.59 (frente a -12% con el caso base, fiabilidad media): empresa cíclica: el FCF depende de la fase del ciclo",
           "No aplica a empresas cíclicas: el resultado de un solo ejercicio depende de la fase del ciclo (no cuenta en la cobertura)"
         ],
         "max": 20,
-        "score": 11
+        "score": 8
       }
     },
     "excluded_categories": [],
@@ -7279,11 +7455,11 @@
   "verdict": {
     "confidence": "baja",
     "confidence_text": "(confianza baja: negocio cíclico)",
-    "full": "Calidad sólida · precio razonable (confianza baja: negocio cíclico)",
+    "full": "Calidad sólida · precio entre razonable y exigente (confianza baja: negocio cíclico)",
     "price_level": "razonable",
-    "price_level_raw": null,
+    "price_level_raw": "exigente",
     "quality_level": "sólida",
-    "text": "Calidad sólida · precio razonable"
+    "text": "Calidad sólida · precio entre razonable y exigente"
   },
   "wacc": {
     "applicable": true,
