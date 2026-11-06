@@ -1170,7 +1170,7 @@ def _slug(s):
 BRANCH_METRICS = ("P/B frente a ROE", "P/TBV frente a ROTE", "P/FFO (REIT)", "Rentabilidad por dividendo (REIT)",
                   "Rentabilidad por dividendo (utility)",
                   "EV/Ventas", "Regla de 40", "EV/EBITDA normalizado frente al sector",
-                  "EV/EBITDA normalizado frente al mercado", "P/FCF normalizado")
+                  "EV/EBITDA normalizado frente al mercado", "P/FCF normalizado", "P/FCF de mantenimiento")
 _SEV_READ = {"excellent": ("Favorable", 'pos'), "good": ("Favorable", 'pos'), "ok": ("En línea", 'neu'),
              "moderate": ("Exigente", 'warn'), "severe": ("Desfavorable", 'neg')}
 _SEV_TONE = {"excellent": 'pos', "good": 'pos', "ok": 'neu', "moderate": 'warn', "severe": 'neg'}
@@ -1638,6 +1638,9 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                    f"ajustado de {p_raw} a {p_score} por confianza {_pa.get('confidence')}")
                   if _pa.get("contracted") and p_raw != p_score else None)
     price_note_card = price_note
+    if _pa.get("single_method_floor"):     # F15 · R11: un solo método no lleva el precio a «muy exigente»
+        price_note = price_note_card = join_clauses([price_note, "sin un segundo método que lo confirme, el precio "
+                                                                 "no baja de «exigente»"])
     # Fase 4 (T2; mapa, efecto frontera): a 2 puntos o menos de otro nivel, se dice.
     _bq, _bp = (_q.get("border") or {}).get("text"), (_pa.get("border") or {}).get("text")
     for _part, _src, _key in (("quality", _q, "quality"), ("price", _pa, "price_attractiveness")):

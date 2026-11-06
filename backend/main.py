@@ -2362,6 +2362,11 @@ def _compute_analysis_body(symbol: str) -> dict:
                         _fcf_basis = (_expansion["maintenance_basis"] + f" con la reinversión que exige el crecimiento "
                                       f"(g ÷ ROIC {_roic9 * 100:.1f}%)")
                         _expansion.update(roic=_roic9, applied=True)
+                        # F15 · causa 1 (expectativas golden): el P/FCF que puntúa usa el mismo flujo que el DCF; con el
+                        # publicado, la inversión de expansión hundía el múltiplo (MSFT 67x, GOOGL 176x, META 53x)
+                        if mcap and mcap > 0:
+                            archetype_values["p_fcf_maintenance"] = mcap / _maint
+                            archetype_values["p_fcf_maintenance_basis"] = _expansion["maintenance_basis"]
                     else:
                         _expansion.update(roic=_roic9, applied=False, reason=(
                             f"su ROIC ({_roic9 * 100:.1f}%) no supera el coste del capital ({wacc_est * 100:.1f}%): "
@@ -2911,7 +2916,9 @@ def _compute_analysis_body(symbol: str) -> dict:
                         result["confidence"]["base_rate_step"]["contracts"] = True
                     result["quality"] = contract_quality(_quality_part, _cbasis)
                     # `price` ya es el precio de la acción: la puntuación va en price_attractiveness.
-                    result["price_attractiveness"] = verdict_price(_cats, _cbasis)
+                    result["price_attractiveness"] = verdict_price(
+                        _cats, _cbasis, methods=(((result.get("confidence") or {}).get("dimensions") or {})
+                                                 .get("convergence") or {}).get("methods"))
                     # F13 · paso 8: sin precio de hoy (o sin perfil ni historial) no hay veredicto de precio
                     from verdict import abstention as _abst, abstain as _abstain
                     _why_abst = _abst(yinfo.get("_price_history") if _has_yahoo else None, sector)

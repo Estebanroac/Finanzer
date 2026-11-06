@@ -1,0 +1,1144 @@
+# =====================================================================
+# Finanzer · Expectativas de referencia (golden) · 110 empresas
+# Borrador v0.1 · 6 de noviembre de 2026 · PENDIENTE DE VALIDAR POR ESTEBAN
+# =====================================================================
+#
+# QUÉ ES
+#   Las evaluaciones de las tres revisiones, convertidas en expectativas que se
+#   comprueban de forma automática. No fija cifras exactas: fija rangos aceptables
+#   y límites. Un cambio en el motor se acepta si no rompe expectativas que hoy se
+#   cumplen y no viola ninguna regla global.
+#
+# CÓMO SE EVALÚA CADA EMPRESA
+#   precio_aceptable  la etiqueta final de precio del veredicto debe estar en la lista.
+#                     Escala (de cara a barata):
+#                       muy exigente < entre exigente y muy exigente < exigente
+#                       < entre razonable y exigente < razonable
+#                       < entre razonable y atractivo < atractivo
+#                     «sin veredicto» = el motor no da precio.
+#   confianza_max     la confianza no puede ser mayor que esta (baja < media < alta).
+#   arquetipo         la clasificación debe ser una de estas.
+#   arquetipo_no      la clasificación no puede ser ninguna de estas.
+#   debe_mostrar      texto que debe aparecer en el análisis (alerta o riesgo).
+#   fuente            explícita = criterio experto de la revisión;
+#                     regla = solo límites (confianza o arquetipo), precio actual ±1 paso;
+#                     actual ±1 = veredicto ya validado, se acepta un paso de la escala.
+#
+# DATOS DE ENTRADA
+#   Las expectativas se comprueban con los datos de entrada CONGELADOS (precios,
+#   estados, Damodaran) de una fecha fija, no con datos vivos. Si no, la variación
+#   entre ejecuciones (caso Prologis) se confunde con el efecto de un cambio.
+#   Al congelar, guardar la fecha y la versión de cada fuente.
+#
+# ESTADO CON LA RONDA DEL 6 NOV (TARDE)
+#   Cumplen 93 de 110 (85%). Fallan 17:
+#     NVDA   precio «muy exigente» fuera de ['entre exigente y muy exigente', 'exigente', 'entre razonable y exigente']
+#     GOOGL  precio «muy exigente» fuera de ['entre exigente y muy exigente', 'exigente']
+#     META   precio «muy exigente» fuera de ['entre exigente y muy exigente', 'exigente']
+#     T      confianza media > baja
+#     HD     precio «muy exigente» fuera de ['entre exigente y muy exigente', 'exigente']
+#     PG     precio «muy exigente» fuera de ['entre exigente y muy exigente', 'exigente']
+#     KHC    confianza media > baja
+#     JNJ    precio «muy exigente» fuera de ['entre exigente y muy exigente', 'exigente']; confianza alta > media
+#     MRK    precio «muy exigente» fuera de ['exigente', 'entre razonable y exigente', 'razonable']
+#     ABBV   precio «muy exigente» fuera de ['entre exigente y muy exigente', 'exigente', 'entre razonable y exigente']
+#     MDT    precio «entre exigente y muy exigente» fuera de ['exigente', 'entre razonable y exigente', 'razonable']
+#     MRNA   arquetipo MATURE no permitido
+#     GS     precio «exigente» fuera de ['entre razonable y exigente', 'razonable']
+#     V      precio «muy exigente» fuera de ['entre exigente y muy exigente', 'exigente']
+#     BLK    precio «muy exigente» fuera de ['entre exigente y muy exigente', 'exigente', 'entre razonable y exigente']
+#     MMM    precio «muy exigente» fuera de ['entre exigente y muy exigente', 'exigente', 'entre razonable y exigente']
+#     LIN    precio «muy exigente» fuera de ['entre exigente y muy exigente', 'exigente']
+#   12 de los 17 fallos son «muy exigente» en empresas de calidad alta: apuntan a una
+#   sola causa (cómo se combinan los métodos de precio), no a 12 problemas distintos.
+#
+# REGLAS GLOBALES (aplican a todo el universo, no solo a estas 110)
+#   Un solo incumplimiento es un error crítico.
+version: 0.1-borrador
+fecha: '2026-11-06'
+escala_precio:
+- muy exigente
+- entre exigente y muy exigente
+- exigente
+- entre razonable y exigente
+- razonable
+- entre razonable y atractivo
+- atractivo
+- sin veredicto
+reglas_globales:
+- id: R1
+  regla: 'Confianza alta prohibida con alerta roja de solvencia: Altman en zona de peligro (cuando aplica), EBIT
+    normalizado negativo o caja libre negativa en 2 de los últimos 3 años.'
+- id: R2
+  regla: Confianza alta prohibida si el DCF directo supera ±150% o si el P/E normalizado y el forward difieren más
+    de 40%.
+- id: R3
+  regla: Ningún productor de materias primas (minería, petróleo y gas, química básica, acero, fertilizantes) se
+    clasifica fuera de CYCLICAL.
+- id: R4
+  regla: Ninguna cíclica con beneficio actual mayor a 1.5 veces su mediana puede salir «atractivo» con confianza
+    mayor que «baja».
+- id: R5
+  regla: Sin veredicto de precio si la cotización no tiene sesiones en los últimos 10 días hábiles.
+- id: R6
+  regla: El crecimiento usado en el DCF nunca tiene signo contrario al de la empresa.
+- id: R7
+  regla: Tasa libre de riesgo leída de la hoja de Damodaran del mes vigente; alarma si no cambia de un mes a otro
+    o si se aleja más de 0.3 pp del bono.
+- id: R8
+  regla: Coste de capital entre 5% y 15%, salvo cobertura de intereses negativa con el beneficio normalizado.
+- id: R9
+  regla: Ninguna referencia de industria con menos de 10 empresas o con margen deprimido puntúa sin decir la causa.
+- id: R10
+  regla: No se muestra ROE como fortaleza si el patrimonio es menor al 5% de los activos.
+- id: R11
+  regla: Ningún método solo (sin confirmación de otro) puede llevar el precio a la nota mínima ni a «muy exigente».
+empresas:
+- ticker: AAPL
+  nombre: Apple Inc.
+  sector: Tecnología
+  precio_aceptable:
+  - muy exigente
+  - entre exigente y muy exigente
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: MSFT
+  nombre: Microsoft Corporation
+  sector: Tecnología
+  precio_aceptable:
+  - entre exigente y muy exigente
+  - exigente
+  por_que: Forward ~22x con crecimiento de 16%.
+  fuente: explícita
+- ticker: NVDA
+  nombre: NVIDIA Corporation
+  sector: Tecnología
+  precio_aceptable:
+  - entre exigente y muy exigente
+  - exigente
+  - entre razonable y exigente
+  por_que: Forward ~11x; el DCF inverso solo no debe decidir «muy exigente».
+  fuente: explícita
+- ticker: ORCL
+  nombre: Oracle Corporation
+  sector: Tecnología
+  precio_aceptable:
+  - entre razonable y exigente
+  - razonable
+  - entre razonable y atractivo
+  confianza_max: baja
+  por_que: Caja libre negativa y Altman en zona de riesgo.
+  fuente: explícita
+- ticker: INTC
+  nombre: Intel Corporation
+  sector: Tecnología
+  precio_aceptable:
+  - muy exigente
+  - entre exigente y muy exigente
+  - exigente
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: CSCO
+  nombre: Cisco Systems Inc.
+  sector: Tecnología
+  precio_aceptable:
+  - exigente
+  - entre razonable y exigente
+  - razonable
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: ADBE
+  nombre: Adobe Inc.
+  sector: Tecnología
+  precio_aceptable:
+  - entre razonable y atractivo
+  - atractivo
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: CRM
+  nombre: Salesforce Inc.
+  sector: Tecnología
+  precio_aceptable:
+  - razonable
+  - entre razonable y atractivo
+  - atractivo
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: AMD
+  nombre: Advanced Micro Devices Inc.
+  sector: Tecnología
+  precio_aceptable:
+  - entre exigente y muy exigente
+  - exigente
+  por_que: P/E >100x.
+  fuente: explícita
+- ticker: TXN
+  nombre: Texas Instruments Inc.
+  sector: Tecnología
+  precio_aceptable:
+  - entre exigente y muy exigente
+  - exigente
+  - entre razonable y exigente
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala. Re-anclada al banco congelado
+    del 5-nov (F15, aprobado por Esteban el 6-nov) donde F14 da «exigente»; con datos vivos del 6-nov daba «razonable».
+  fuente: actual ±1
+- ticker: GOOGL
+  nombre: Alphabet Inc. (Google) Class A
+  sector: Comunicaciones
+  precio_aceptable:
+  - entre exigente y muy exigente
+  - exigente
+  por_que: 'P/E normalizado ~27x con crecimiento de 18%: exigente, no la nota mínima.'
+  fuente: explícita
+- ticker: META
+  nombre: Meta Platforms Inc. (Facebook)
+  sector: Comunicaciones
+  precio_aceptable:
+  - entre exigente y muy exigente
+  - exigente
+  por_que: P/E ~21x, forward ~17x con crecimiento de 20%.
+  fuente: explícita
+- ticker: NFLX
+  nombre: Netflix Inc.
+  sector: Comunicaciones
+  precio_aceptable:
+  - entre razonable y exigente
+  - razonable
+  - entre razonable y atractivo
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: DIS
+  nombre: The Walt Disney Company
+  sector: Comunicaciones
+  precio_aceptable:
+  - entre razonable y exigente
+  - razonable
+  por_que: Referencia de entretenimiento deprimida; ROE bajo.
+  fuente: explícita
+- ticker: T
+  nombre: AT&T Inc.
+  sector: Comunicaciones
+  precio_aceptable:
+  - razonable
+  - entre razonable y atractivo
+  confianza_max: baja
+  por_que: Altman en zona de peligro; espectro sin restar.
+  fuente: explícita
+- ticker: VZ
+  nombre: Verizon Communications Inc.
+  sector: Comunicaciones
+  precio_aceptable:
+  - entre razonable y exigente
+  - razonable
+  - entre razonable y atractivo
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: CMCSA
+  nombre: Comcast Corporation
+  sector: Comunicaciones
+  precio_aceptable:
+  - entre razonable y atractivo
+  - atractivo
+  confianza_max: media
+  por_que: Barata por caja; DCF extremo no puede dar confianza alta.
+  fuente: explícita
+- ticker: WBD
+  nombre: Warner Bros. Discovery
+  sector: Comunicaciones
+  precio_aceptable:
+  - sin veredicto
+  por_que: Sin sesiones recientes.
+  fuente: explícita
+- ticker: SPOT
+  nombre: Spotify Technology S.A.
+  sector: Comunicaciones
+  precio_aceptable:
+  - entre exigente y muy exigente
+  - exigente
+  - entre razonable y exigente
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: EA
+  nombre: Electronic Arts Inc.
+  sector: Comunicaciones
+  precio_aceptable:
+  - sin veredicto
+  por_que: 'Sin sesiones: precio fijado por la operación de compra.'
+  fuente: explícita
+- ticker: AMZN
+  nombre: Amazon.com Inc.
+  sector: Consumo cíclico
+  precio_aceptable:
+  - entre exigente y muy exigente
+  - exigente
+  por_que: Inversión fuerte; flujo de mantenimiento ~2% del precio.
+  fuente: explícita
+- ticker: TSLA
+  nombre: Tesla Inc.
+  sector: Consumo cíclico
+  precio_aceptable:
+  - muy exigente
+  por_que: P/E de cientos de veces con cualquier método.
+  fuente: explícita
+- ticker: HD
+  nombre: The Home Depot Inc.
+  sector: Consumo cíclico
+  precio_aceptable:
+  - entre exigente y muy exigente
+  - exigente
+  por_que: Parte baja del ciclo de vivienda; 25x.
+  fuente: explícita
+- ticker: MCD
+  nombre: McDonald's Corporation
+  sector: Consumo cíclico
+  precio_aceptable:
+  - entre exigente y muy exigente
+  - exigente
+  - entre razonable y exigente
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: NKE
+  nombre: Nike Inc.
+  sector: Consumo cíclico
+  precio_aceptable:
+  - muy exigente
+  - entre exigente y muy exigente
+  - exigente
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: F
+  nombre: Ford Motor Company
+  sector: Consumo cíclico
+  precio_aceptable:
+  - entre razonable y atractivo
+  - atractivo
+  confianza_max: baja
+  arquetipo:
+  - CYCLICAL
+  por_que: Cíclica.
+  fuente: regla
+- ticker: GM
+  nombre: General Motors Company
+  sector: Consumo cíclico
+  precio_aceptable:
+  - entre razonable y atractivo
+  - atractivo
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: SBUX
+  nombre: Starbucks Corporation
+  sector: Consumo cíclico
+  precio_aceptable:
+  - muy exigente
+  - entre exigente y muy exigente
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: BKNG
+  nombre: Booking Holdings Inc.
+  sector: Consumo cíclico
+  precio_aceptable:
+  - entre razonable y atractivo
+  - atractivo
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: LULU
+  nombre: lululemon athletica inc.
+  sector: Consumo cíclico
+  precio_aceptable:
+  - entre razonable y atractivo
+  - atractivo
+  confianza_max: media
+  por_que: P/E ~9x; crecimiento frenado.
+  fuente: explícita
+- ticker: WMT
+  nombre: Walmart Inc.
+  sector: Consumo defensivo
+  precio_aceptable:
+  - muy exigente
+  - entre exigente y muy exigente
+  por_que: P/E ~47x.
+  fuente: explícita
+- ticker: PG
+  nombre: Procter & Gamble Co.
+  sector: Consumo defensivo
+  precio_aceptable:
+  - entre exigente y muy exigente
+  - exigente
+  confianza_max: media
+  por_que: 25x es su múltiplo histórico normal.
+  fuente: explícita
+- ticker: KO
+  nombre: The Coca-Cola Company
+  sector: Consumo defensivo
+  precio_aceptable:
+  - entre exigente y muy exigente
+  - exigente
+  - entre razonable y exigente
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: PEP
+  nombre: PepsiCo Inc.
+  sector: Consumo defensivo
+  precio_aceptable:
+  - razonable
+  - entre razonable y atractivo
+  - atractivo
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: COST
+  nombre: Costco Wholesale Corporation
+  sector: Consumo defensivo
+  precio_aceptable:
+  - muy exigente
+  - entre exigente y muy exigente
+  por_que: P/E ~50x.
+  fuente: explícita
+- ticker: MO
+  nombre: Altria Group Inc.
+  sector: Consumo defensivo
+  precio_aceptable:
+  - entre razonable y exigente
+  - razonable
+  - entre razonable y atractivo
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: PM
+  nombre: Philip Morris International Inc.
+  sector: Consumo defensivo
+  precio_aceptable:
+  - entre exigente y muy exigente
+  - exigente
+  - entre razonable y exigente
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: CL
+  nombre: Colgate-Palmolive Company
+  sector: Consumo defensivo
+  precio_aceptable:
+  - entre exigente y muy exigente
+  - exigente
+  - entre razonable y exigente
+  por_que: El ROE con patrimonio casi nulo no debe aparecer como fortaleza.
+  fuente: regla
+- ticker: KHC
+  nombre: The Kraft Heinz Company
+  sector: Consumo defensivo
+  precio_aceptable:
+  - razonable
+  - entre razonable y atractivo
+  - atractivo
+  confianza_max: baja
+  por_que: Barata por caja, pero Altman en zona de peligro.
+  fuente: explícita
+- ticker: TGT
+  nombre: Target Corporation
+  sector: Consumo defensivo
+  precio_aceptable:
+  - razonable
+  - entre razonable y atractivo
+  - atractivo
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: PFE
+  nombre: Pfizer Inc.
+  sector: Salud
+  precio_aceptable:
+  - entre razonable y exigente
+  - razonable
+  - entre razonable y atractivo
+  confianza_max: media
+  por_que: Vencimiento de patentes sin medir.
+  fuente: explícita
+- ticker: JNJ
+  nombre: Johnson & Johnson
+  sector: Salud
+  precio_aceptable:
+  - entre exigente y muy exigente
+  - exigente
+  confianza_max: media
+  por_que: Forward ~24x; beneficio base afectado por litigios.
+  fuente: explícita
+- ticker: LLY
+  nombre: Eli Lilly and Company
+  sector: Salud
+  precio_aceptable:
+  - muy exigente
+  - entre exigente y muy exigente
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: MRK
+  nombre: Merck & Co. Inc.
+  sector: Salud
+  precio_aceptable:
+  - exigente
+  - entre razonable y exigente
+  - razonable
+  confianza_max: media
+  por_que: Forward ~19x; vencimiento de Keytruda justifica cautela.
+  fuente: explícita
+- ticker: ABBV
+  nombre: AbbVie Inc.
+  sector: Salud
+  precio_aceptable:
+  - entre exigente y muy exigente
+  - exigente
+  - entre razonable y exigente
+  confianza_max: media
+  por_que: Forward ~19x; base contable y ajustada muy distintas.
+  fuente: explícita
+- ticker: UNH
+  nombre: UnitedHealth Group Inc.
+  sector: Salud
+  precio_aceptable:
+  - entre razonable y exigente
+  - razonable
+  - entre razonable y atractivo
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: AMGN
+  nombre: Amgen Inc.
+  sector: Salud
+  precio_aceptable:
+  - muy exigente
+  - entre exigente y muy exigente
+  - exigente
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: BMY
+  nombre: Bristol-Myers Squibb Company
+  sector: Salud
+  precio_aceptable:
+  - razonable
+  - entre razonable y atractivo
+  - atractivo
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: MDT
+  nombre: Medtronic plc
+  sector: Salud
+  precio_aceptable:
+  - exigente
+  - entre razonable y exigente
+  - razonable
+  por_que: Forward ~16x; beta alta para dispositivos médicos.
+  fuente: explícita
+- ticker: MRNA
+  nombre: Moderna Inc.
+  sector: Salud
+  precio_aceptable:
+  - sin veredicto
+  arquetipo_no:
+  - MATURE
+  por_que: 'Ventas cayendo ~50% anual y pérdidas: no es madura.'
+  fuente: explícita
+- ticker: JPM
+  nombre: JPMorgan Chase & Co.
+  sector: Financiero
+  precio_aceptable:
+  - entre exigente y muy exigente
+  - exigente
+  - entre razonable y exigente
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: BAC
+  nombre: Bank of America Corporation
+  sector: Financiero
+  precio_aceptable:
+  - entre razonable y exigente
+  - razonable
+  - entre razonable y atractivo
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: WFC
+  nombre: Wells Fargo & Company
+  sector: Financiero
+  precio_aceptable:
+  - entre razonable y exigente
+  - razonable
+  - entre razonable y atractivo
+  debe_mostrar:
+  - riesgo de crédito no medido
+  por_que: Ídem.
+  fuente: regla
+- ticker: GS
+  nombre: Goldman Sachs Group Inc.
+  sector: Financiero
+  precio_aceptable:
+  - entre razonable y exigente
+  - razonable
+  por_que: P/E ~12.5x.
+  fuente: explícita
+- ticker: NU
+  nombre: Nu Holdings Ltd.
+  sector: Financiero
+  precio_aceptable:
+  - muy exigente
+  - entre exigente y muy exigente
+  - exigente
+  debe_mostrar:
+  - riesgo de crédito no medido
+  por_que: Prestamista sin dato de costo de riesgo.
+  fuente: regla
+- ticker: BRK-B
+  nombre: Berkshire Hathaway Inc. Class B
+  sector: Financiero
+  precio_aceptable:
+  - exigente
+  - entre razonable y exigente
+  - razonable
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: V
+  nombre: Visa Inc.
+  sector: Financiero
+  precio_aceptable:
+  - entre exigente y muy exigente
+  - exigente
+  por_que: 'Exige ~13.6% y ha crecido ~11%: cerca.'
+  fuente: explícita
+- ticker: PGR
+  nombre: Progressive Corporation
+  sector: Financiero
+  precio_aceptable:
+  - entre razonable y exigente
+  - razonable
+  - entre razonable y atractivo
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: AIG
+  nombre: American International Group
+  sector: Financiero
+  precio_aceptable:
+  - entre razonable y exigente
+  - razonable
+  - entre razonable y atractivo
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: BLK
+  nombre: BlackRock Inc.
+  sector: Financiero
+  precio_aceptable:
+  - entre exigente y muy exigente
+  - exigente
+  - entre razonable y exigente
+  por_que: Forward ~18x; caja deprimida por integración.
+  fuente: explícita
+- ticker: GE
+  nombre: General Electric Company
+  sector: Industrial
+  precio_aceptable:
+  - muy exigente
+  - entre exigente y muy exigente
+  arquetipo_no:
+  - CYCLICAL
+  por_que: Las caídas de ventas son escisiones, no ciclo.
+  fuente: regla
+- ticker: CAT
+  nombre: Caterpillar Inc.
+  sector: Industrial
+  precio_aceptable:
+  - muy exigente
+  - entre exigente y muy exigente
+  - exigente
+  confianza_max: baja
+  arquetipo:
+  - CYCLICAL
+  por_que: Cíclica.
+  fuente: regla
+- ticker: BA
+  nombre: The Boeing Company
+  sector: Industrial
+  precio_aceptable:
+  - sin veredicto
+  por_que: Pierde dinero y quema caja.
+  fuente: explícita
+- ticker: HON
+  nombre: Honeywell International
+  sector: Industrial
+  precio_aceptable:
+  - entre razonable y exigente
+  - razonable
+  - entre razonable y atractivo
+  confianza_max: baja
+  por_que: 'Perímetro mezclado por escisiones: cualquier precio, nunca con confianza media o alta.'
+  fuente: regla
+- ticker: UNP
+  nombre: Union Pacific Corporation
+  sector: Industrial
+  precio_aceptable:
+  - muy exigente
+  - entre exigente y muy exigente
+  - exigente
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: UPS
+  nombre: United Parcel Service
+  sector: Industrial
+  precio_aceptable:
+  - entre razonable y exigente
+  - razonable
+  - entre razonable y atractivo
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: DE
+  nombre: Deere & Company
+  sector: Industrial
+  precio_aceptable:
+  - muy exigente
+  - entre exigente y muy exigente
+  - exigente
+  confianza_max: baja
+  arquetipo:
+  - CYCLICAL
+  por_que: Cíclica.
+  fuente: regla
+- ticker: LMT
+  nombre: Lockheed Martin Corporation
+  sector: Industrial
+  precio_aceptable:
+  - razonable
+  - entre razonable y atractivo
+  - atractivo
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: MMM
+  nombre: 3M Company
+  sector: Industrial
+  precio_aceptable:
+  - entre exigente y muy exigente
+  - exigente
+  - entre razonable y exigente
+  por_que: Forward ~18x; la escisión de Solventum no es declive.
+  fuente: explícita
+- ticker: RTX
+  nombre: RTX Corporation (Raytheon)
+  sector: Industrial
+  precio_aceptable:
+  - muy exigente
+  - entre exigente y muy exigente
+  - exigente
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: XOM
+  nombre: Exxon Mobil Corporation
+  sector: Energía
+  precio_aceptable:
+  - entre razonable y exigente
+  - razonable
+  - entre razonable y atractivo
+  confianza_max: baja
+  arquetipo:
+  - CYCLICAL
+  por_que: Cíclica.
+  fuente: regla
+- ticker: CVX
+  nombre: Chevron Corporation
+  sector: Energía
+  precio_aceptable:
+  - entre razonable y exigente
+  - razonable
+  - entre razonable y atractivo
+  confianza_max: baja
+  arquetipo:
+  - CYCLICAL
+  por_que: Cíclica.
+  fuente: regla
+- ticker: COP
+  nombre: ConocoPhillips
+  sector: Energía
+  precio_aceptable:
+  - entre razonable y exigente
+  - razonable
+  - entre razonable y atractivo
+  confianza_max: baja
+  arquetipo:
+  - CYCLICAL
+  por_que: Cíclica.
+  fuente: regla
+- ticker: OXY
+  nombre: Occidental Petroleum Corp.
+  sector: Energía
+  precio_aceptable:
+  - razonable
+  - entre razonable y atractivo
+  - atractivo
+  confianza_max: baja
+  por_que: Cíclica y endeudada.
+  fuente: explícita
+- ticker: SLB
+  nombre: Schlumberger Limited
+  sector: Energía
+  precio_aceptable:
+  - entre razonable y exigente
+  - razonable
+  - entre razonable y atractivo
+  confianza_max: baja
+  arquetipo:
+  - CYCLICAL
+  por_que: Cíclica.
+  fuente: regla
+- ticker: EOG
+  nombre: EOG Resources Inc.
+  sector: Energía
+  precio_aceptable:
+  - razonable
+  - entre razonable y atractivo
+  - atractivo
+  confianza_max: baja
+  por_que: Cíclica; DCF depende del crudo.
+  fuente: explícita
+- ticker: PSX
+  nombre: Phillips 66
+  sector: Energía
+  precio_aceptable:
+  - entre razonable y exigente
+  - razonable
+  - entre razonable y atractivo
+  confianza_max: baja
+  arquetipo:
+  - CYCLICAL
+  por_que: Cíclica.
+  fuente: regla
+- ticker: KMI
+  nombre: Kinder Morgan Inc.
+  sector: Energía
+  precio_aceptable:
+  - entre razonable y exigente
+  - razonable
+  - entre razonable y atractivo
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: DVN
+  nombre: Devon Energy Corporation
+  sector: Energía
+  precio_aceptable:
+  - entre razonable y exigente
+  - razonable
+  - entre razonable y atractivo
+  confianza_max: baja
+  arquetipo:
+  - CYCLICAL
+  por_que: Cíclica.
+  fuente: regla
+- ticker: HAL
+  nombre: Halliburton Company
+  sector: Energía
+  precio_aceptable:
+  - entre razonable y exigente
+  - razonable
+  - entre razonable y atractivo
+  confianza_max: baja
+  arquetipo:
+  - CYCLICAL
+  por_que: Cíclica.
+  fuente: regla
+- ticker: NEE
+  nombre: NextEra Energy Inc.
+  sector: Utilities
+  precio_aceptable:
+  - muy exigente
+  - entre exigente y muy exigente
+  - exigente
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: DUK
+  nombre: Duke Energy Corporation
+  sector: Utilities
+  precio_aceptable:
+  - entre exigente y muy exigente
+  - exigente
+  - entre razonable y exigente
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: SO
+  nombre: The Southern Company
+  sector: Utilities
+  precio_aceptable:
+  - exigente
+  - entre razonable y exigente
+  - razonable
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: D
+  nombre: Dominion Energy Inc.
+  sector: Utilities
+  precio_aceptable:
+  - muy exigente
+  - entre exigente y muy exigente
+  - exigente
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: AEP
+  nombre: American Electric Power
+  sector: Utilities
+  precio_aceptable:
+  - exigente
+  - entre razonable y exigente
+  - razonable
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: EXC
+  nombre: Exelon Corporation
+  sector: Utilities
+  precio_aceptable:
+  - entre razonable y exigente
+  - razonable
+  - entre razonable y atractivo
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: SRE
+  nombre: Sempra
+  sector: Utilities
+  precio_aceptable:
+  - entre razonable y exigente
+  - razonable
+  - entre razonable y atractivo
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: XEL
+  nombre: Xcel Energy Inc.
+  sector: Utilities
+  precio_aceptable:
+  - entre exigente y muy exigente
+  - exigente
+  - entre razonable y exigente
+  confianza_max: media
+  por_que: Normalización con bases distintas.
+  fuente: regla
+- ticker: PCG
+  nombre: PG&E Corporation
+  sector: Utilities
+  precio_aceptable:
+  - exigente
+  - entre razonable y exigente
+  - razonable
+  por_que: Forward ~7x pero riesgo de incendios.
+  fuente: explícita
+- ticker: ED
+  nombre: Consolidated Edison Inc.
+  sector: Utilities
+  precio_aceptable:
+  - entre exigente y muy exigente
+  - exigente
+  - entre razonable y exigente
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: PLD
+  nombre: Prologis Inc.
+  sector: Inmobiliario
+  precio_aceptable:
+  - entre razonable y exigente
+  - razonable
+  - entre razonable y atractivo
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala. Re-anclada al banco congelado
+    del 5-nov (F15, aprobado por Esteban el 6-nov) donde F14 da «razonable»; con datos vivos del 6-nov daba «exigente».
+  fuente: actual ±1
+- ticker: AMT
+  nombre: American Tower Corporation
+  sector: Inmobiliario
+  precio_aceptable:
+  - entre razonable y exigente
+  - razonable
+  - entre razonable y atractivo
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: O
+  nombre: Realty Income Corporation
+  sector: Inmobiliario
+  precio_aceptable:
+  - razonable
+  - entre razonable y atractivo
+  - atractivo
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: SPG
+  nombre: Simon Property Group
+  sector: Inmobiliario
+  precio_aceptable:
+  - exigente
+  - entre razonable y exigente
+  - razonable
+  confianza_max: baja
+  por_que: Un solo método evaluable.
+  fuente: explícita
+- ticker: EQIX
+  nombre: Equinix Inc.
+  sector: Inmobiliario
+  precio_aceptable:
+  - muy exigente
+  - entre exigente y muy exigente
+  - exigente
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: PSA
+  nombre: Public Storage
+  sector: Inmobiliario
+  precio_aceptable:
+  - entre exigente y muy exigente
+  - exigente
+  - entre razonable y exigente
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: WELL
+  nombre: Welltower Inc.
+  sector: Inmobiliario
+  precio_aceptable:
+  - muy exigente
+  - entre exigente y muy exigente
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: VICI
+  nombre: VICI Properties Inc.
+  sector: Inmobiliario
+  precio_aceptable:
+  - entre razonable y atractivo
+  - atractivo
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: DLR
+  nombre: Digital Realty Trust
+  sector: Inmobiliario
+  precio_aceptable:
+  - muy exigente
+  - entre exigente y muy exigente
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: CCI
+  nombre: Crown Castle Inc.
+  sector: Inmobiliario
+  precio_aceptable:
+  - muy exigente
+  - entre exigente y muy exigente
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: LIN
+  nombre: Linde plc
+  sector: Materiales
+  precio_aceptable:
+  - entre exigente y muy exigente
+  - exigente
+  por_que: BPA +21% anual; medir crecimiento por ventas la subestima. No debe tener la nota mínima.
+  fuente: explícita
+- ticker: SHW
+  nombre: The Sherwin-Williams Co.
+  sector: Materiales
+  precio_aceptable:
+  - muy exigente
+  - entre exigente y muy exigente
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: FCX
+  nombre: Freeport-McMoRan Inc.
+  sector: Materiales
+  precio_aceptable:
+  - exigente
+  - entre razonable y exigente
+  - razonable
+  confianza_max: baja
+  arquetipo:
+  - CYCLICAL
+  por_que: Minera.
+  fuente: explícita
+- ticker: NEM
+  nombre: Newmont Corporation
+  sector: Materiales
+  precio_aceptable:
+  - entre exigente y muy exigente
+  - exigente
+  - entre razonable y exigente
+  confianza_max: baja
+  arquetipo:
+  - CYCLICAL
+  por_que: 'Minera de oro con el oro en máximos: nunca «atractivo».'
+  fuente: explícita
+- ticker: DOW
+  nombre: Dow Inc.
+  sector: Materiales
+  precio_aceptable:
+  - razonable
+  - entre razonable y atractivo
+  - atractivo
+  confianza_max: baja
+  arquetipo:
+  - CYCLICAL
+  por_que: Cíclica.
+  fuente: regla
+- ticker: NUE
+  nombre: Nucor Corporation
+  sector: Materiales
+  precio_aceptable:
+  - razonable
+  - entre razonable y atractivo
+  - atractivo
+  confianza_max: baja
+  arquetipo:
+  - CYCLICAL
+  por_que: Cíclica.
+  fuente: regla
+- ticker: APD
+  nombre: Air Products and Chemicals
+  sector: Materiales
+  precio_aceptable:
+  - entre exigente y muy exigente
+  - exigente
+  - entre razonable y exigente
+  confianza_max: baja
+  por_que: EBITDA deprimido por cargos.
+  fuente: explícita
+- ticker: ECL
+  nombre: Ecolab Inc.
+  sector: Materiales
+  precio_aceptable:
+  - muy exigente
+  - entre exigente y muy exigente
+  por_que: Veredicto actual validado en la revisión; se acepta ±1 paso de la escala.
+  fuente: actual ±1
+- ticker: ALB
+  nombre: Albemarle Corporation
+  sector: Materiales
+  precio_aceptable:
+  - exigente
+  - entre razonable y exigente
+  - razonable
+  confianza_max: baja
+  por_que: Litio en mínimos.
+  fuente: explícita
+- ticker: MOS
+  nombre: The Mosaic Company
+  sector: Materiales
+  precio_aceptable:
+  - entre razonable y atractivo
+  - atractivo
+  debe_mostrar:
+  - vencen
+  por_que: Vencimientos de deuda frente a su caja. Re-anclada al banco congelado del 5-nov (F15, aprobado por
+    Esteban el 6-nov) donde F14 da «atractivo»; con datos vivos del 6-nov daba «razonable».
+  fuente: regla
+
+# =====================================================================
+# MUESTRA DE CONTROL (contra el sobreajuste)
+#   Seleccionar al azar, con semilla fija y estratificado por sector, 300 empresas
+#   del universo que NO estén entre estas 110. Nadie las revisa ni se usan para
+#   ajustar el motor. Al cerrar cada versión, se mide en ellas:
+#     - número de incumplimientos de las reglas globales;
+#     - distribución de etiquetas de precio y de confianza.
+#   Si una mejora aparece en las 110 y no en el control, es sobreajuste.
+#
+# DEFINICIÓN DE «TERMINADO» (v4)
+#   1. Cero incumplimientos de las reglas globales en las 110 y en el control.
+#   2. Al menos el 90% de las 110 cumple sus expectativas (hoy: ver arriba).
+#   3. Ninguna empresa que hoy cumple deja de cumplir (sin regresiones).
+#   4. En el control, la proporción de «muy exigente» y de confianza baja no se
+#      aleja más de 10 pp de la de las 110.
+#   Cumplido esto, la versión se congela. Todo hallazgo nuevo va a la lista de la
+#   v5, salvo los errores críticos (reglas globales), que se corrigen en el ciclo.
+#
+# CAMBIOS HECHOS (registro)
+#   6-nov · F15 (aprobado por Esteban): TXN, PLD y MOS re-ancladas al banco congelado del 5-nov
+#   (archivo-historico/evidencias-de-pruebas/f13_banco110_2026-11-05): sus «actual ±1» venían de datos vivos del
+#   6-nov y con los datos congelados el motor previo a F15 daba otra etiqueta. Las demás ya cumplían con el banco.
+#
+# CAMBIOS A ESTE ARCHIVO
+#   Solo con aprobación explícita de Esteban, y nunca para que un cambio del motor
+#   pase la prueba. Si una expectativa resulta equivocada, se corrige con su razón.
+# =====================================================================

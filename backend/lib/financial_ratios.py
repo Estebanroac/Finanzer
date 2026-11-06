@@ -2671,6 +2671,10 @@ def score_valoracion(
         # los ejercicios disponibles), no sobre un solo año de la fase del ciclo.
         ev_ebitda = xv.get("ev_ebitda_normalized")
         p_fcf = xv.get("p_fcf_normalized")
+    # F15 · causa 1: en expansión (F13 · paso 9), el P/FCF sobre el flujo de mantenimiento, el mismo que el DCF
+    _mnt = (not _cyc) and xv.get("p_fcf_maintenance") is not None
+    if _mnt:
+        p_fcf = xv.get("p_fcf_maintenance")
 
     # Etapa 9b: sin tipo de empresa ni "growth quality" (growth/value/blend): el
     # arquetipo del clasificador único los reemplaza.
@@ -2939,8 +2943,11 @@ def score_valoracion(
 
         _a["pfcf"] = adj
         _blk["P/FCF"] = (adj, T["pfcf_value_points"])
-        adjustments.append({"metric": "P/FCF normalizado" if _cyc else "P/FCF", "value": f"{p_fcf:.2f}x",
-                            "adjustment": adj, "reason": reason + _cyc_note, "severity": sev, "in_block": True})
+        adjustments.append({"metric": ("P/FCF normalizado" if _cyc else "P/FCF de mantenimiento" if _mnt else "P/FCF"),
+                            "value": f"{p_fcf:.2f}x",
+                            "adjustment": adj, "reason": reason + _cyc_note + (
+                                " (sobre el flujo de mantenimiento, el mismo que el DCF: la inversión de expansión no "
+                                "hunde el múltiplo)" if _mnt else ""), "severity": sev, "in_block": True})
 
     # ─── EV/EBITDA vs Sector (hasta ±4 pts) ────────────
     if not _na["ev_ebitda"] and ev_ebitda is not None and ev_ebitda > 0:
@@ -3062,6 +3069,16 @@ def score_valoracion(
             adj = (T["dcf_points_high"] if rel == "alta" else T["dcf_points_medium"])[i]
             sev = ("excellent", "good", "ok", "moderate", "severe")[i]
             reason = f"{tag} por DCF (fiabilidad {rel})"
+            # F15 · causa 3 (expectativas golden): el máximo (±4) solo si ningún supuesto razonable de la tabla de
+            # sensibilidad alcanza el precio. Con el precio dentro de la tabla, el DCF señala la dirección con medio
+            # peso: su sesgo de nivel (mediana −40 % en las 110: vale ~17 veces el flujo y el mercado paga 25–40) ya no
+            # pesa como todo el bloque de múltiplos (MSFT, META, PG, V: −4 con supuestos que justifican el precio).
+            _cap = T["dcf_points_in_grid_cap"]
+            if _dcf.get("grid_contains_price") and abs(adj) > _cap:
+                adj = _cap if adj > 0 else -_cap
+                sev = "good" if adj > 0 else "moderate"
+                reason = (f"{reason}; con supuestos razonables de la tabla de sensibilidad el valor alcanza el precio: "
+                          f"cuenta como mucho ±{_cap}")
         base_score += adj
         _dcf_adj = adj
         adjustments.append({"metric": name, "key": "dcf", "value": val, "adjustment": adj,

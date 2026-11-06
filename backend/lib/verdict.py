@@ -113,11 +113,20 @@ def price_contraction_basis(conf: Optional[Dict[str, Any]], categories: List[Dic
     return c["level"] if raw is not None and raw > P["neutral"] else basis
 
 
-def price(categories: List[Dict[str, Any]], confidence_level: Optional[str]) -> Dict[str, Any]:
-    """Precio crudo, factor de la confianza y precio mostrado (contraído hacia el neutro)."""
+def price(categories: List[Dict[str, Any]], confidence_level: Optional[str],
+          methods: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
+    """Precio crudo, factor de la confianza y precio mostrado (contraído hacia el neutro).
+    F15 · R11 (regla global de las expectativas golden): ningún método solo lleva el precio a «muy exigente». Si menos de
+    dos métodos evaluables de la convergencia la ven cara, el precio crudo no baja del umbral de «exigente» (DLR: P/FFO y
+    EV/EBITDA, un solo método, «muy exigente» con el DCF inverso en precio)."""
     P = cfg("thresholds.score.price")
     p = part_score(categories, P["categories"])
     raw = p.pop("score")
+    if raw is not None and methods is not None and raw < P["bands"][-1]:
+        n_cara = sum(1 for m in methods if m.get("evaluable") and m.get("direction") == "cara")
+        if n_cara < 2:
+            p["single_method_floor"] = {"from": raw, "to": P["bands"][-1], "methods_cara": n_cara}
+            raw = P["bands"][-1]
     factor = P["confidence_factor"].get(confidence_level) if confidence_level else None
     shown = None if raw is None else (raw if factor is None else round(P["neutral"] + (raw - P["neutral"]) * factor))
     p.update(score_raw=raw, score=shown, factor=factor, confidence=confidence_level,
