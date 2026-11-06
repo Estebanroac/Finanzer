@@ -135,9 +135,13 @@ Tablas: `archivo-historico/evidencias-de-pruebas/f13_banco110_2026-11-05/paso12_
 
 - **Golden:** se regeneran los del panel, los locales, los forzados y el PDF v2. Todos los análisis llevan los campos
   nuevos: `dcf_growth_base_rate`, `ev_cross_holdings`, la evidencia del ciclo y la causa de la referencia.
-- **Web:** se recompila (`next build --webpack`, por el node_modules enlazado del worktree) con la página Riesgos del
-  paso 10. Comprobado en el replay local: NEE muestra «Riesgos del sector (no puntúan)» con huracanes, sin errores de
-  consola.
+- **Web:** se recompila con Turbopack y lleva la página Riesgos del paso 10.
+  - En el worktree, la raíz de Turbopack se apunta a la carpeta Finanzer con un cambio temporal de `next.config.ts` que
+    no se sube: el node_modules enlazado queda fuera de su raíz.
+  - Con webpack, el HTML cita rutas codificadas (`%5B%5B...symbol%5D%5D`) y el guardián de `build.sh` las da por
+    ausentes. Por eso el primer push (489d420f) no llegó a desplegarse, y producción siguió con la versión anterior.
+  - Comprobado en el replay local: NEE muestra «Riesgos del sector (no puntúan)» con huracanes, todos los recursos
+    responden 200 y la consola no da errores.
 
 - **Ajustes de presentación, en origen:**
   - Con el DCF de fiabilidad baja, la lectura del valor intrínseco ya no cita la tabla de sensibilidad: el DCF no
