@@ -272,6 +272,12 @@ confidence_factor = { alta = 1.0, media = 0.75, baja = 0.5 }
 abstain_stale_days = 10
 abstain_min_sessions = 20
 
+[score.price_l1]                    # F16: la etiqueta de precio es la regla L1 (lib/precio_l1.py)
+# Puntuación = 100 × (1 − percentil del P/E relativo a su sector en el universo), entera. El nivel sale de los dos cortes
+# de tercios de config/precio_l1.toml; con la puntuación entera, ≥ 67 es el tercio más barato y < 34 el más caro.
+bands = [67, 34]
+labels = ["atractivo", "razonable", "exigente"]
+
 [alerts]
 max_per_group = 6
 years_ebitda_plural_from = 1.5      # "~2 años" vs "~1 año"

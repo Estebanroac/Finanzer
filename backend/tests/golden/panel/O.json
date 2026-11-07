@@ -324,7 +324,7 @@
   "confidence": {
     "base_rate_step": null,
     "capped_from": null,
-    "contraction_basis": "media",
+    "contraction_basis": "alta",
     "dimensions": {
       "base": {
         "level": "alta",
@@ -390,16 +390,9 @@
         "reasons": []
       }
     },
-    "ke_dependent": {
-      "from": "alta",
-      "reason": "veredicto dependiente de Ke: el nivel de precio pasa de «atractivo» a «razonable» con Ke + 1 pp",
-      "to": "media"
-    },
-    "level": "media",
+    "level": "alta",
     "limits_score": false,
-    "reasons": [
-      "veredicto dependiente de Ke: el nivel de precio pasa de «atractivo» a «razonable» con Ke + 1 pp: confianza alta → media"
-    ],
+    "reasons": [],
     "score": 1.0
   },
   "cost_of_equity": {
@@ -2155,12 +2148,12 @@
           "text": "Sin incidencias."
         }
       ],
-      "level": "media",
+      "level": "alta",
       "plain": [],
       "reasons": [],
-      "summary": "Confianza del veredicto: media (por sus dimensiones sería alta; la limita: el veredicto depende de Ke —el nivel de precio pasa de «atractivo» a «razonable» con Ke + 1 pp—). Contrae el atractivo del precio hacia 50: de 75 a 69. La calidad del negocio no se contrae.",
-      "tone": "warn",
-      "verdict_text": "(confianza media: el nivel de precio cambia con ±1 pp de coste del capital)"
+      "summary": "Confianza del veredicto: alta. La calidad del negocio no se contrae.",
+      "tone": "pos",
+      "verdict_text": "(confianza alta: DCF inverso y los múltiplos coinciden)"
     },
     "cover": {
       "archetype": "REIT",
@@ -2322,15 +2315,15 @@
       ],
       "official_source_badge": null,
       "price": {
-        "contracted": true,
-        "level": "atractivo",
-        "note": "ajustado de 75 a 69 por confianza media.",
-        "note_short": "Ajustado de 75 a 69 por confianza media",
+        "contracted": false,
+        "level": "razonable",
+        "note": "P/E 41.2x frente a 33.3x de su sector.",
+        "note_short": "P/E 41.2x frente a 33.3x de su sector",
         "question": "¿está cara hoy?",
-        "raw": 75,
-        "score": 69,
+        "raw": 36,
+        "score": 36,
         "title": "ATRACTIVO DEL PRECIO",
-        "tone": "pos"
+        "tone": "neu"
       },
       "quality": {
         "level": "sólida",
@@ -2342,10 +2335,10 @@
         "tone": "pos"
       },
       "verdict": {
-        "confidence_text": "(confianza media: el nivel de precio cambia con ±1 pp de coste del capital)",
-        "confidence_tone": "warn",
-        "full": "Calidad sólida · precio atractivo (confianza media: el nivel de precio cambia con ±1 pp de coste del capital)",
-        "text": "Calidad sólida · precio atractivo"
+        "confidence_text": "(confianza alta: DCF inverso y los múltiplos coinciden)",
+        "confidence_tone": "pos",
+        "full": "Calidad sólida · precio razonable (confianza alta: DCF inverso y los múltiplos coinciden)",
+        "text": "Calidad sólida · precio razonable"
       }
     },
     "extended": {
@@ -2715,7 +2708,7 @@
       }
     },
     "methodology": {
-      "contraction_text": "contraída hacia 50 según la confianza del veredicto: solo los limitadores que lo contradicen o lo vuelven incierto, no los que apuntan en su dirección",
+      "contraction_text": "el P/E de doce meses frente a la mediana de su sector, situado por tercios en el universo de comparables: el tercio más barato es atractivo y el más caro exigente; los múltiplos y el DCF se muestran como lectura y la confianza no mueve el precio",
       "models": [
         "P/FFO y rentabilidad sobre el FFO"
       ],
@@ -3903,10 +3896,10 @@
         }
       ],
       "composition": {
-        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: Valoración (base 10/20 + bloque de múltiplos y DCF) reescalada a 100 y contraída hacia 50 según la confianza del veredicto: solo los limitadores que lo contradicen o lo vuelven incierto, no los que apuntan en su dirección.",
+        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E de doce meses frente a la mediana de su sector, situado por tercios en el universo de comparables: el tercio más barato es atractivo y el más caro exigente; los múltiplos y el DCF se muestran como lectura y la confianza no mueve el precio.",
         "price": {
-          "level": "atractivo",
-          "note": "ajustado de 75 a 69 por confianza media.",
+          "level": "razonable",
+          "note": "P/E 41.2x frente a la mediana de inmobiliario (33.3x), 1.24 veces: en el tercio central del universo.",
           "rows": [
             {
               "kind": "signed",
@@ -3927,10 +3920,10 @@
               "value": 2
             }
           ],
-          "score": 69,
+          "score": 36,
           "signed_max": 6,
           "title": "ATRACTIVO DEL PRECIO",
-          "tone": "pos"
+          "tone": "neu"
         },
         "quality": {
           "level": "sólida",
@@ -3977,7 +3970,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad sólida · precio atractivo (confianza media: el nivel de precio cambia con ±1 pp de coste del capital). Calidad 68/100 · precio 69/100 (ajustado de 75 a 69 por confianza media)."
+          "text": "Calidad sólida · precio razonable (confianza alta: DCF inverso y los múltiplos coinciden). Calidad 68/100 · precio 36/100 (P/E 41.2x frente a 33.3x de su sector)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -4005,7 +3998,7 @@
         },
         {
           "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Media: los métodos y los datos coinciden. Contrae el atractivo del precio hacia 50 (de 75 a 69); la calidad no se contrae."
+          "text": "Alta: los métodos y los datos coinciden. No contrae el atractivo del precio ni la calidad."
         }
       ]
     },
@@ -4776,22 +4769,22 @@
   "ke_sensitivity": {
     "base": {
       "ke": 0.0790962432577,
-      "level": "atractivo",
-      "score": 75
+      "level": "razonable",
+      "score": 36
     },
-    "dependent": true,
+    "dependent": false,
     "minus": {
       "ke": 0.0690962432577,
-      "level": "atractivo",
-      "score": 75
+      "level": "razonable",
+      "score": 36
     },
     "plus": {
       "ke": 0.0890962432577,
       "level": "razonable",
-      "score": 61
+      "score": 36
     },
     "pp": 0.01,
-    "reason": "veredicto dependiente de Ke: el nivel de precio pasa de «atractivo» a «razonable» con Ke + 1 pp",
+    "reason": null,
     "status": "ok"
   },
   "key_metrics": {
@@ -5363,29 +5356,61 @@
   },
   "price": 55.1699981689,
   "price_attractiveness": {
-    "basis": null,
+    "as_of": "2026-11-06",
     "border": null,
-    "categories_included": 1,
-    "categories_total": 1,
-    "components": [
-      {
-        "category": "Valoración",
-        "included": true,
-        "max": 20,
-        "score": 15
-      }
+    "confidence": "alta",
+    "contracted": false,
+    "cuts": [
+      0.836633,
+      1.25475
     ],
-    "confidence": "media",
-    "contracted": true,
-    "excluded_categories": [],
-    "factor": 0.75,
-    "level": "atractivo",
-    "level_raw": "atractivo",
-    "low_coverage_categories": [],
-    "not_applicable_categories": [],
-    "partial": false,
-    "score": 69,
-    "score_raw": 75
+    "factor": null,
+    "gics_sector": "Real Estate",
+    "level": "razonable",
+    "level_raw": "razonable",
+    "pe_basis": {
+      "concept": "us-gaap:NetIncomeLossAvailableToCommonStockholdersBasic",
+      "end": "2026-06-30",
+      "method": "4 trimestres",
+      "ni_ttm": 1267577000.0,
+      "ni_ttm_statement": 1267577000.0,
+      "statement_unit": "USD",
+      "status": "ok"
+    },
+    "pe_ttm": 41.1831763656,
+    "percentile": 0.644329881543,
+    "reason": null,
+    "relative": 1.23710099858,
+    "rule": "L1",
+    "score": 36,
+    "score_raw": 36,
+    "sector_median": 33.290068,
+    "universe_n": 513,
+    "valuation_reading": {
+      "basis": null,
+      "border": null,
+      "categories_included": 1,
+      "categories_total": 1,
+      "components": [
+        {
+          "category": "Valoración",
+          "included": true,
+          "max": 20,
+          "score": 15
+        }
+      ],
+      "confidence": "alta",
+      "contracted": false,
+      "excluded_categories": [],
+      "factor": 1.0,
+      "level": "atractivo",
+      "level_raw": "atractivo",
+      "low_coverage_categories": [],
+      "not_applicable_categories": [],
+      "partial": false,
+      "score": 75,
+      "score_raw": 75
+    }
   },
   "price_change": {
     "change": 0.179996490479,
@@ -6117,13 +6142,13 @@
     "source": "efectiva"
   },
   "verdict": {
-    "confidence": "media",
-    "confidence_text": "(confianza media: el nivel de precio cambia con ±1 pp de coste del capital)",
-    "full": "Calidad sólida · precio atractivo (confianza media: el nivel de precio cambia con ±1 pp de coste del capital)",
-    "price_level": "atractivo",
+    "confidence": "alta",
+    "confidence_text": "(confianza alta: DCF inverso y los múltiplos coinciden)",
+    "full": "Calidad sólida · precio razonable (confianza alta: DCF inverso y los múltiplos coinciden)",
+    "price_level": "razonable",
     "price_level_raw": null,
     "quality_level": "sólida",
-    "text": "Calidad sólida · precio atractivo"
+    "text": "Calidad sólida · precio razonable"
   },
   "wacc": {
     "applicable": true,

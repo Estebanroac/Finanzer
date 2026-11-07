@@ -10,12 +10,11 @@ describe("buildScale", () => {
     expect(m.pinPct).toBe(79);
     expect(m.segments.reduce((a, s) => a + s.widthPct, 0)).toBe(100);
   });
-  it("precio 10: muy exigente a la izquierda, atractivo a la derecha", () => {
-    const m = buildScale("price", 10, "muy exigente");
-    expect(m.segments.map((s) => s.label)).toEqual(["muy exigente", "exigente", "razonable", "atractivo"]);
-    expect(m.segments.map((s) => s.widthPct).join(" ")).toBe("30 15 20 35");
-    expect(m.segments[0].tone).toBe("bad");
-    expect(m.segments[3].tone).toBe("good");
+  it("precio 10 (F16, regla L1): exigente a la izquierda, razonable neutro, atractivo a la derecha", () => {
+    const m = buildScale("price", 10, "exigente");
+    expect(m.segments.map((s) => s.label)).toEqual(["exigente", "razonable", "atractivo"]);
+    expect(m.segments.map((s) => s.widthPct).join(" ")).toBe("34 33 33");
+    expect(m.segments.map((s) => s.tone).join(" ")).toBe("bad neutral good");
   });
   it("sin puntuación: sin marca", () => {
     expect(buildScale("quality", null, null).pinPct).toBeNull();
@@ -23,8 +22,8 @@ describe("buildScale", () => {
   it("cada tramo lleva su rango del motor, también los intermedios", () => {
     expect(buildScale("quality", 79, "sólida").segments.map((s) => `${s.label} ${s.range}`).join(" | "))
       .toBe("débil <45 | media 45–65 | sólida 65–85 | excelente 85+");
-    expect(buildScale("price", 10, "muy exigente").segments.map((s) => `${s.label} ${s.range}`).join(" | "))
-      .toBe("muy exigente <30 | exigente 30–45 | razonable 45–65 | atractivo 65+");
+    expect(buildScale("price", 10, "exigente").segments.map((s) => `${s.label} ${s.range}`).join(" | "))
+      .toBe("exigente <34 | razonable 34–67 | atractivo 67+");
   });
 });
 

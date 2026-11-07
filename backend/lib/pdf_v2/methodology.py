@@ -66,7 +66,7 @@ def methodology(a: Dict[str, Any], ctx: Dict[str, Any]) -> list:
     out.append(Paragraph(esc(
         "Este informe combina " + m["ratios_text"] + " (fuente: Yahoo Finance) con " + m["models_text"]
         + " y dos puntuaciones Finanzer de 0 a 100: calidad del negocio (solidez, rentabilidad, calidad de ganancias "
-        f"y crecimiento) y atractivo del precio (valoración por múltiplos y {intrinsic}, " + contraction_text() + "). "
+        "y crecimiento) y atractivo del precio (" + contraction_text() + "). "
         "Las lecturas se generan automáticamente según la banda en la que cae cada indicador frente a "
         f"umbrales canónicos y a la referencia de su industria ({ref_txt}), o "
         "la del mercado amplio cuando el arquetipo de la empresa contradice a su sector."), styles()["body"]))
@@ -110,19 +110,14 @@ def methodology(a: Dict[str, Any], ctx: Dict[str, Any]) -> list:
 
     out += sub("Cómo se calculan las puntuaciones")
     base = cfg("thresholds.score.category")
-    factors = cfg("thresholds.score.price.confidence_factor")
     out.append(bullet(
         f"Calidad del negocio: {len(cfg('thresholds.score.quality.categories'))} categorías (solidez, rentabilidad, "
         f"calidad de ganancias y crecimiento) que parten de {base['base']}/{base['max']} y suman o restan según la "
         f"banda de cada indicador; se reescalan a 100. Niveles: {_bands('quality')}."))
     out.append(bullet(
-        f"Atractivo del precio: la categoría de Valoración (múltiplos frente a la referencia y {intrinsic}) reescalada a "
-        f"100 y "
-        f"acercada a {cfg('thresholds.score.price.neutral')} según la confianza del veredicto: "
-        + " · ".join(f"{k} ×{v:g}" for k, v in factors.items())
-        + ". Solo contraen los limitadores que contradicen el veredicto o lo vuelven incierto (la discrepancia entre "
-          "métodos, los datos débiles, la dependencia del coste del capital); uno que apunta en su misma dirección no "
-          f"contrae: las tasas base de un precio exigente. Niveles: {_bands('price')}."))
+        "Atractivo del precio: " + contraction_text() + ". La puntuación es la posición del P/E relativo en el universo "
+        f"(100 = el más barato). La valoración por múltiplos frente a la referencia y {intrinsic} se sigue calculando "
+        f"y mostrando, sin decidir el nivel. Niveles: {_bands('price_l1')}."))
     out.append(bullet(
         "Confianza del veredicto: convergencia entre métodos de valoración, cobertura de datos, calidad de la fuente y "
         "estabilidad del tipo de empresa; la más baja manda."))

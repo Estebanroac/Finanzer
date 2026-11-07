@@ -2648,7 +2648,7 @@
           "text": "El tipo de empresa está en la frontera entre dos: un cambio pequeño en un umbral lo cambiaría, lo que hace menos fiable la comparación."
         }
       ],
-      "summary": "Confianza del veredicto: media. Contrae el atractivo del precio hacia 50: de 40 a 42. El DCF directo, de fiabilidad baja, no puntúa ni cuenta para la convergencia; en Valoración puntúa el DCF inverso (+0 puntos). La calidad del negocio no se contrae.",
+      "summary": "Confianza del veredicto: media. El DCF directo, de fiabilidad baja, no puntúa ni cuenta para la convergencia; en Valoración puntúa el DCF inverso (+0 puntos). La calidad del negocio no se contrae.",
       "tone": "warn",
       "verdict_text": "(confianza media: DCF inverso la ve en precio y los múltiplos cara)"
     },
@@ -2817,13 +2817,13 @@
       ],
       "official_source_badge": null,
       "price": {
-        "contracted": true,
+        "contracted": false,
         "level": "exigente",
-        "note": "ajustado de 40 a 42 por confianza media.",
-        "note_short": "Ajustado de 40 a 42 por confianza media",
+        "note": "P/E 21.5x frente a 16.4x de su sector.",
+        "note_short": "P/E 21.5x frente a 16.4x de su sector",
         "question": "¿está cara hoy?",
-        "raw": 40,
-        "score": 42,
+        "raw": 31,
+        "score": 31,
         "title": "ATRACTIVO DEL PRECIO",
         "tone": "warn"
       },
@@ -3190,7 +3190,7 @@
       }
     },
     "methodology": {
-      "contraction_text": "contraída hacia 50 según la confianza del veredicto: solo los limitadores que lo contradicen o lo vuelven incierto, no los que apuntan en su dirección",
+      "contraction_text": "el P/E de doce meses frente a la mediana de su sector, situado por tercios en el universo de comparables: el tercio más barato es atractivo y el más caro exigente; los múltiplos y el DCF se muestran como lectura y la confianza no mueve el precio",
       "models": [
         "Altman (1968)",
         "Piotroski (2000)",
@@ -4726,10 +4726,10 @@
         }
       ],
       "composition": {
-        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: Valoración (base 10/20 + bloque de múltiplos y DCF) reescalada a 100 y contraída hacia 50 según la confianza del veredicto: solo los limitadores que lo contradicen o lo vuelven incierto, no los que apuntan en su dirección.",
+        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E de doce meses frente a la mediana de su sector, situado por tercios en el universo de comparables: el tercio más barato es atractivo y el más caro exigente; los múltiplos y el DCF se muestran como lectura y la confianza no mueve el precio.",
         "price": {
           "level": "exigente",
-          "note": "ajustado de 40 a 42 por confianza media.",
+          "note": "P/E 21.5x frente a la mediana de servicios de comunicación (16.4x), 1.31 veces: en el tercio más caro del universo.",
           "rows": [
             {
               "kind": "signed",
@@ -4744,7 +4744,7 @@
               "value": 0
             }
           ],
-          "score": 42,
+          "score": 31,
           "signed_max": 6,
           "title": "ATRACTIVO DEL PRECIO",
           "tone": "warn"
@@ -4794,7 +4794,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad excelente · precio exigente (confianza media: DCF inverso la ve en precio y los múltiplos cara). Calidad 91/100 · precio 42/100 (ajustado de 40 a 42 por confianza media)."
+          "text": "Calidad excelente · precio exigente (confianza media: DCF inverso la ve en precio y los múltiplos cara). Calidad 91/100 · precio 31/100 (P/E 21.5x frente a 16.4x de su sector)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -4822,7 +4822,7 @@
         },
         {
           "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Media: los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no. Contrae el atractivo del precio hacia 50 (de 40 a 42); la calidad no se contrae."
+          "text": "Media: los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no. No contrae el atractivo del precio ni la calidad."
         }
       ]
     },
@@ -6122,18 +6122,18 @@
     "base": {
       "ke": 0.0842667422077,
       "level": "exigente",
-      "score": 42
+      "score": 31
     },
     "dependent": false,
     "minus": {
       "ke": 0.0742667422077,
       "level": "exigente",
-      "score": 42
+      "score": 31
     },
     "plus": {
       "ke": 0.0942667422077,
       "level": "exigente",
-      "score": 35
+      "score": 31
     },
     "pp": 0.01,
     "reason": null,
@@ -6724,29 +6724,61 @@
   },
   "price": 70.5699996948,
   "price_attractiveness": {
-    "basis": null,
+    "as_of": "2026-11-06",
     "border": null,
-    "categories_included": 1,
-    "categories_total": 1,
-    "components": [
-      {
-        "category": "Valoración",
-        "included": true,
-        "max": 20,
-        "score": 8
-      }
-    ],
     "confidence": "media",
-    "contracted": true,
-    "excluded_categories": [],
-    "factor": 0.75,
+    "contracted": false,
+    "cuts": [
+      0.836633,
+      1.25475
+    ],
+    "factor": null,
+    "gics_sector": "Communication Services",
     "level": "exigente",
     "level_raw": "exigente",
-    "low_coverage_categories": [],
-    "not_applicable_categories": [],
-    "partial": false,
-    "score": 42,
-    "score_raw": 40
+    "pe_basis": {
+      "concept": "us-gaap:NetIncomeLoss",
+      "end": "2026-06-30",
+      "method": "4 trimestres",
+      "ni_ttm": 13649441000.0,
+      "ni_ttm_statement": 13649441000.0,
+      "statement_unit": "USD",
+      "status": "ok"
+    },
+    "pe_ttm": 21.5282971416,
+    "percentile": 0.692741600319,
+    "reason": null,
+    "relative": 1.31127886734,
+    "rule": "L1",
+    "score": 31,
+    "score_raw": 31,
+    "sector_median": 16.417787,
+    "universe_n": 513,
+    "valuation_reading": {
+      "basis": null,
+      "border": null,
+      "categories_included": 1,
+      "categories_total": 1,
+      "components": [
+        {
+          "category": "Valoración",
+          "included": true,
+          "max": 20,
+          "score": 8
+        }
+      ],
+      "confidence": "media",
+      "contracted": true,
+      "excluded_categories": [],
+      "factor": 0.75,
+      "level": "exigente",
+      "level_raw": "exigente",
+      "low_coverage_categories": [],
+      "not_applicable_categories": [],
+      "partial": false,
+      "score": 42,
+      "score_raw": 40
+    }
   },
   "price_change": {
     "change": 0.110000610352,

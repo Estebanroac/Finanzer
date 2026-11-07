@@ -149,13 +149,14 @@ def test_other_limiters_always_contract():
 
 def test_methodology_states_the_rule_on_web_and_pdf(outputs_by_env):
     a, pdf = outputs_by_env("panel")["AAPL"]
+    # F16: la regla del precio es la L1 (P/E frente a la mediana de su sector, por tercios); la confianza no lo mueve
     for txt in (a["display"]["summary"]["composition"]["caption"], a["display"]["methodology"]["contraction_text"]):
-        assert "solo los limitadores que lo contradicen o lo vuelven incierto" in txt
+        assert "frente a la mediana de su sector, situado por tercios" in txt and "la confianza no mueve el precio" in txt
     import pdf_inspect
-    assert "lo contradicen o lo vuelven" in " ".join(pdf_inspect.page_texts(pdf)).replace("\n", " ")
+    assert "situado por tercios" in " ".join(pdf_inspect.page_texts(pdf)).replace("\n", " ")
     import pdf_v2.methodology as m2
-    assert "contradicen el veredicto" in " ".join(getattr(x, "text", "") for x in m2.methodology(a, {}))
-    assert "lo contradicen o lo vuelven" in " ".join(getattr(x, "text", "") for x in m2.methodology(a, {}))
+    txt2 = " ".join(getattr(x, "text", "") for x in m2.methodology(a, {}))
+    assert "situado por tercios" in txt2 and "contradicen el veredicto" not in txt2
 
 
 # ── Hallazgo 6: menores ──

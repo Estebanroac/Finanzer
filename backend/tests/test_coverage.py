@@ -651,7 +651,8 @@ def test_partial_total_is_shown_in_json_and_pdf(outputs_by_env):
     txt = (fixture_backend.pdf_text(pdf) if isinstance(pdf, bytes) else pdf).replace("\n", " ")
     cover = txt.split("===== página 2")[0]
     assert "Calidad calculado sobre 3 de 4 categorías (Crecimiento no concluyente)" in cover
-    assert "Precio sin dato: Valoración no concluyente" in cover
+    # F16: el precio es la regla L1; SNOW, con pérdidas, no tiene P/E y la tarjeta lo dice (no «Valoración no concluyente»)
+    assert "Sin P/E con sentido" in cover and "Precio sin dato: Valoración no concluyente" not in cover
     assert "No concluyente · cobertura 25%" in cover
     nflx = outputs_by_env("panel")["NFLX"][0]
     assert nflx["quality"]["partial"] is False and nflx["quality"]["basis"] is None

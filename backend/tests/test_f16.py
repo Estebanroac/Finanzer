@@ -93,3 +93,25 @@ def test_profit_loss_minus_minority_when_only_the_consolidated_is_tagged():
 def test_sec_edgar_keeps_the_concepts_l1_needs():
     import sec_edgar as edgar
     assert all(c in edgar._WANTED["us-gaap"] for c in L.EXTRA_US)
+
+
+def test_bands_match_the_config_the_web_reads():
+    from settings import cfg
+    c = cfg("thresholds.score.price_l1")
+    assert list(c["bands"]) == L.BANDS and list(c["labels"]) == L.LABELS
+
+
+def test_note_cites_the_rule_and_its_figures():
+    import display
+    t = display.l1_note({"level": "exigente", "pe_ttm": 36.21, "sector_median": 27.8, "relative": 1.3025,
+                         "gics_sector": "Information Technology"})
+    assert t == "P/E 36.2x frente a la mediana de tecnología (27.8x), 1.30 veces: en el tercio más caro del universo"
+    assert display.l1_note({"reason": "beneficio de doce meses ≤ 0: el P/E no tiene sentido"}).startswith(
+        "Precio sin veredicto: beneficio")
+
+
+def test_no_l1_verdict_says_why_in_the_verdict():
+    p = L.price(100.0, {"status": "ok", "ni_ttm": -5.0}, "Energy", "media", config=_ref())
+    v = V.verdict({"level": "débil"}, p, {"level": "media"})
+    assert v["text"] == "Calidad débil · precio sin veredicto"
+    assert v["confidence_text"] == "(beneficio de doce meses ≤ 0: el P/E no tiene sentido)"

@@ -34,6 +34,7 @@ def render() -> str:
     na = cfg("sectors.archetypes.not_applicable")
     from display import STATE_LABELS  # noqa: E402
     q, p = cfg("thresholds.score.quality"), cfg("thresholds.score.price")
+    pl1 = cfg("thresholds.score.price_l1")      # F16: la etiqueta de precio es la regla L1
     cat, scale = cfg("thresholds.score.category"), cfg("thresholds.score.total.max")
     # Niveles de confianza del veredicto, del mejor al peor ([score.price] confidence_factor).
     conf_levels = sorted(p["confidence_factor"], key=lambda k: -p["confidence_factor"][k])
@@ -43,10 +44,10 @@ def render() -> str:
         " *  confianza del veredicto del mejor al peor ([score.price] confidence_factor). Rediseño /v2.\n"
         " *  V7 (PM, el texto de los desgloses): `scale`, la escala de las dos ([score.total] max); `categories`, cuántas\n"
         " *  categorías suma la calidad; `category`, la base y el máximo de cada una ([score.category]); `neutral`, el\n"
-        " *  punto hacia el que la confianza contrae el precio ([score.price] neutral). */\n"
+        " *  F16: el precio, con las bandas de la regla L1 ([score.price_l1]); la confianza ya no lo mueve. */\n"
         "export const SCORE_BANDS = {\n"
         f"  quality: {{ bands: {_q(q['bands'])}, labels: {_q(q['labels'])}, categories: {len(q['categories'])} }},\n"
-        f"  price: {{ bands: {_q(p['bands'])}, labels: {_q(p['labels'])}, neutral: {p['neutral']} }},\n"
+        f"  price: {{ bands: {_q(pl1['bands'])}, labels: {_q(pl1['labels'])} }},\n"
         f"  category: {{ base: {cat['base']}, max: {cat['max']} }},\n"
         f"  scale: {scale},\n"
         f"  confidence: {{ labels: {_q(conf_levels)} }},\n"

@@ -112,7 +112,8 @@ def test_growth_pre_profit_valuation_is_conclusive(outputs_by_env):
         assert val["conclusive"] and {"P/E", "PEG"} <= set(val["not_applicable"])
         assert {"EV/Ventas", "Regla de 40"} <= set(_metrics(a, "Valoración"))
         assert a["score"]["excluded_categories"] == [] and a["quality"]["partial"] is False
-        assert a["price_attractiveness"]["partial"] is False
+        # F16: el precio es la regla L1; la valoración por múltiplos queda como lectura (`valuation_reading`)
+        assert a["price_attractiveness"]["valuation_reading"]["partial"] is False
         assert a.get("graham_number") is None and "graham" in a["not_applicable"]
         # Fase 3 (T3, §8.4): FCF positivo, pero FCF − SBC ≤ 0: el DCF no es significativo (la SBC es coste real).
         assert a["dcf_status"]["state"] == "no_significativo" and "FCF − SBC" in a["dcf_status"]["reason"]

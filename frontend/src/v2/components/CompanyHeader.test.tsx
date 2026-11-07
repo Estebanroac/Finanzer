@@ -13,7 +13,7 @@ describe("CompanyHeader (AAPL)", () => {
     const q = screen.getByTestId("score-quality");
     expect(q.textContent).toContain("/ 100");
     expect(q.querySelectorAll("[data-segment]").length).toBe(4);
-    expect(screen.getByTestId("score-price").querySelectorAll("[data-segment]").length).toBe(4);
+    expect(screen.getByTestId("score-price").querySelectorAll("[data-segment]").length).toBe(3);   // F16: regla L1
     expect(screen.getByTestId("confidence").textContent?.length).toBeGreaterThan(0);
   });
   it("el desglose de calidad lista sus categorías con puntos sobre 20", () => {
@@ -24,9 +24,9 @@ describe("CompanyHeader (AAPL)", () => {
   it("V7 (PM): los desgloses explican el cálculo en palabras, con las cifras de la config", () => {
     expect(QUALITY_NOTE).toBe("La calidad suma cuatro categorías de 20 puntos y se expresa sobre 100. "
       + "Excelente desde 85, sólida desde 65, media desde 45; débil por debajo.");
-    expect(PRICE_NOTE).toBe("El atractivo del precio parte de 10 sobre 20 y suma lo que dicen los múltiplos y el DCF; se "
-      + "expresa sobre 100 y, cuanto menor es la confianza, más se acerca a 50. Atractivo desde 65, razonable desde 45, "
-      + "exigente desde 30; muy exigente por debajo.");
+    expect(PRICE_NOTE).toBe("El atractivo del precio compara el P/E de doce meses con la mediana de su sector y lo "
+      + "sitúa en el universo de unas 540 empresas: el tercio más barato es atractivo, el más caro exigente; se expresa "
+      + "sobre 100 y la confianza no lo mueve. Atractivo desde 67, razonable desde 34; exigente por debajo.");
     render(<ScoreBreakdowns analysis={AAPL as unknown as StockAnalysis} />);
     for (const id of ["breakdown-quality", "breakdown-price"]) {
       const t = screen.getByTestId(id).textContent ?? "";

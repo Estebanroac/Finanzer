@@ -2925,8 +2925,7 @@ def _compute_analysis_body(symbol: str) -> dict:
                     import precio_l1
                     result["price_attractiveness"] = precio_l1.price(
                         safe_float(result["key_metrics"].get("market_cap")), yinfo.get("_pe_l1"),
-                        precio_l1.gics_sector(symbol, sector), (result.get("confidence") or {}).get("level"),
-                        reading=_reading)
+                        precio_l1.gics_sector(symbol, sector), _cbasis, reading=_reading)
                     # F13 · paso 8: sin precio de hoy (o sin perfil ni historial) no hay veredicto de precio
                     from verdict import abstention as _abst, abstain as _abstain
                     _why_abst = _abst(yinfo.get("_price_history") if _has_yahoo else None, sector)

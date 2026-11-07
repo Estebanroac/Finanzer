@@ -390,7 +390,7 @@
   "confidence": {
     "base_rate_step": null,
     "capped_from": null,
-    "contraction_basis": "media",
+    "contraction_basis": "alta",
     "dimensions": {
       "base": {
         "level": "alta",
@@ -460,16 +460,9 @@
         "reasons": []
       }
     },
-    "ke_dependent": {
-      "from": "alta",
-      "reason": "veredicto dependiente de Ke: el nivel de precio pasa de «muy exigente» a «exigente» con Ke − 1 pp",
-      "to": "media"
-    },
-    "level": "media",
+    "level": "alta",
     "limits_score": false,
-    "reasons": [
-      "veredicto dependiente de Ke: el nivel de precio pasa de «muy exigente» a «exigente» con Ke − 1 pp: confianza alta → media"
-    ],
+    "reasons": [],
     "score": 1.0
   },
   "cost_of_equity": {
@@ -2665,12 +2658,12 @@
           "text": "Sin incidencias."
         }
       ],
-      "level": "media",
+      "level": "alta",
       "plain": [],
       "reasons": [],
-      "summary": "Confianza del veredicto: media (por sus dimensiones sería alta; la limita: el veredicto depende de Ke —el nivel de precio pasa de «muy exigente» a «exigente» con Ke − 1 pp—). Contrae el atractivo del precio hacia 50: de 25 a 31. La calidad del negocio no se contrae.",
-      "tone": "warn",
-      "verdict_text": "(confianza media: el nivel de precio cambia con ±1 pp de coste del capital)"
+      "summary": "Confianza del veredicto: alta. La calidad del negocio no se contrae.",
+      "tone": "pos",
+      "verdict_text": "(confianza alta: el DCF directo y los múltiplos coinciden)"
     },
     "cover": {
       "archetype": "MATURE",
@@ -2832,15 +2825,15 @@
       ],
       "official_source_badge": null,
       "price": {
-        "contracted": true,
-        "level": "exigente",
-        "note": "ajustado de 25 a 31 por confianza media; en la frontera con «muy exigente» (a 2 puntos): un cambio pequeño en los datos o en los supuestos cambiaría el nivel.",
-        "note_short": "Ajustado de 25 a 31 por confianza media · en la frontera con «muy exigente» (a 2 puntos)",
+        "contracted": false,
+        "level": "razonable",
+        "note": "P/E 23.1x frente a 21.5x de su sector.",
+        "note_short": "P/E 23.1x frente a 21.5x de su sector",
         "question": "¿está cara hoy?",
-        "raw": 25,
-        "score": 31,
+        "raw": 46,
+        "score": 46,
         "title": "ATRACTIVO DEL PRECIO",
-        "tone": "warn"
+        "tone": "neu"
       },
       "quality": {
         "level": "sólida",
@@ -2852,10 +2845,10 @@
         "tone": "pos"
       },
       "verdict": {
-        "confidence_text": "(confianza media: el nivel de precio cambia con ±1 pp de coste del capital)",
-        "confidence_tone": "warn",
-        "full": "Calidad sólida · precio entre exigente y muy exigente (confianza media: el nivel de precio cambia con ±1 pp de coste del capital)",
-        "text": "Calidad sólida · precio entre exigente y muy exigente"
+        "confidence_text": "(confianza alta: el DCF directo y los múltiplos coinciden)",
+        "confidence_tone": "pos",
+        "full": "Calidad sólida · precio razonable (confianza alta: el DCF directo y los múltiplos coinciden)",
+        "text": "Calidad sólida · precio razonable"
       }
     },
     "extended": {
@@ -3205,7 +3198,7 @@
       }
     },
     "methodology": {
-      "contraction_text": "contraída hacia 50 según la confianza del veredicto: solo los limitadores que lo contradicen o lo vuelven incierto, no los que apuntan en su dirección",
+      "contraction_text": "el P/E de doce meses frente a la mediana de su sector, situado por tercios en el universo de comparables: el tercio más barato es atractivo y el más caro exigente; los múltiplos y el DCF se muestran como lectura y la confianza no mueve el precio",
       "models": [
         "Altman (1968)",
         "Piotroski (2000)",
@@ -4341,7 +4334,7 @@
         "normalization_note": "Beneficio TTM (4 trimestres): reportado $15.75B, normalizado $15.80B (no recurrentes 0.3% del beneficio; cargos que presenta el emisor y no recogen las filas de Yahoo (deterioros, reestructuración, litigios, I+D adquirida) (explicita, confianza alta), recurrente (4 de los últimos 4 ejercicios): solo el exceso sobre su promedio, −$48.92M netos). El score usa el beneficio normalizado. Margen operativo reportado 22.69%, normalizado 22.76% (sin los cargos operativos que ya salen del beneficio); el score usa el normalizado.",
         "premortem": {
           "items": [
-            "el FCF − SBC por acción creciera al menos un 6.9% anual durante 10 años, como exige el precio; historia propia: sus ingresos por acción, 4.6% anual en 10 años (FY2016–FY2026)"
+            "el FCF − SBC por acción creciera menos del 6.9% anual durante 10 años que ya descuenta el precio; historia propia: sus ingresos por acción, 4.6% anual en 10 años (FY2016–FY2026)"
           ],
           "note": "Condiciones que invalidarían la lectura de hoy, con la cifra que las mide: no son previsiones.",
           "title": "Esta lectura sería errónea si…"
@@ -4765,10 +4758,10 @@
         }
       ],
       "composition": {
-        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: Valoración (base 10/20 + bloque de múltiplos y DCF) reescalada a 100 y contraída hacia 50 según la confianza del veredicto: solo los limitadores que lo contradicen o lo vuelven incierto, no los que apuntan en su dirección.",
+        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E de doce meses frente a la mediana de su sector, situado por tercios en el universo de comparables: el tercio más barato es atractivo y el más caro exigente; los múltiplos y el DCF se muestran como lectura y la confianza no mueve el precio.",
         "price": {
-          "level": "exigente",
-          "note": "ajustado de 25 a 31 por confianza media; en la frontera con «muy exigente» (a 2 puntos): un cambio pequeño en los datos o en los supuestos cambiaría el nivel.",
+          "level": "razonable",
+          "note": "P/E 23.1x frente a la mediana de consumo básico (21.5x), 1.08 veces: en el tercio central del universo.",
           "rows": [
             {
               "kind": "signed",
@@ -4783,10 +4776,10 @@
               "value": -2
             }
           ],
-          "score": 31,
+          "score": 46,
           "signed_max": 6,
           "title": "ATRACTIVO DEL PRECIO",
-          "tone": "warn"
+          "tone": "neu"
         },
         "quality": {
           "level": "sólida",
@@ -4833,7 +4826,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad sólida · precio entre exigente y muy exigente (confianza media: el nivel de precio cambia con ±1 pp de coste del capital). Calidad 82/100 · precio 31/100 (ajustado de 25 a 31 por confianza media; en la frontera con «muy exigente» (a 2 puntos): un cambio pequeño en los datos o en los supuestos cambiaría el nivel)."
+          "text": "Calidad sólida · precio razonable (confianza alta: el DCF directo y los múltiplos coinciden). Calidad 82/100 · precio 46/100 (P/E 23.1x frente a 21.5x de su sector)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -4861,7 +4854,7 @@
         },
         {
           "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Media: los métodos y los datos coinciden. Contrae el atractivo del precio hacia 50 (de 25 a 31); la calidad no se contrae."
+          "text": "Alta: los métodos y los datos coinciden. No contrae el atractivo del precio ni la calidad."
         }
       ]
     },
@@ -6165,22 +6158,22 @@
   "ke_sensitivity": {
     "base": {
       "ke": 0.0844616137094,
-      "level": "muy exigente",
-      "score": 25
+      "level": "razonable",
+      "score": 46
     },
-    "dependent": true,
+    "dependent": false,
     "minus": {
       "ke": 0.0744616137094,
-      "level": "exigente",
-      "score": 39
+      "level": "razonable",
+      "score": 46
     },
     "plus": {
       "ke": 0.0944616137094,
-      "level": "muy exigente",
-      "score": 25
+      "level": "razonable",
+      "score": 46
     },
     "pp": 0.01,
-    "reason": "veredicto dependiente de Ke: el nivel de precio pasa de «muy exigente» a «exigente» con Ke − 1 pp",
+    "reason": null,
     "status": "ok"
   },
   "key_metrics": {
@@ -6749,7 +6742,7 @@
       {
         "field": "reverse_dcf.main.g10",
         "kind": "precio_inverso",
-        "text": "el FCF − SBC por acción creciera al menos un 6.9% anual durante 10 años, como exige el precio; historia propia: sus ingresos por acción, 4.6% anual en 10 años (FY2016–FY2026)",
+        "text": "el FCF − SBC por acción creciera menos del 6.9% anual durante 10 años que ya descuenta el precio; historia propia: sus ingresos por acción, 4.6% anual en 10 años (FY2016–FY2026)",
         "value": 0.0694979889655
       }
     ],
@@ -6757,33 +6750,61 @@
   },
   "price": 156.529998779,
   "price_attractiveness": {
-    "basis": null,
-    "border": {
-      "neighbor": "muy exigente",
-      "points": 2,
-      "text": "En la frontera con «muy exigente» (a 2 puntos): un cambio pequeño en los datos o en los supuestos cambiaría el nivel"
-    },
-    "categories_included": 1,
-    "categories_total": 1,
-    "components": [
-      {
-        "category": "Valoración",
-        "included": true,
-        "max": 20,
-        "score": 5
-      }
+    "as_of": "2026-11-06",
+    "border": null,
+    "confidence": "alta",
+    "contracted": false,
+    "cuts": [
+      0.836633,
+      1.25475
     ],
-    "confidence": "media",
-    "contracted": true,
-    "excluded_categories": [],
-    "factor": 0.75,
-    "level": "exigente",
-    "level_raw": "muy exigente",
-    "low_coverage_categories": [],
-    "not_applicable_categories": [],
-    "partial": false,
-    "score": 31,
-    "score_raw": 25
+    "factor": null,
+    "gics_sector": "Consumer Staples",
+    "level": "razonable",
+    "level_raw": "razonable",
+    "pe_basis": {
+      "concept": "us-gaap:NetIncomeLossAvailableToCommonStockholdersBasic",
+      "end": "2026-06-30",
+      "method": "anual",
+      "ni_ttm": 15754000000.0,
+      "ni_ttm_statement": 15754000000.0,
+      "statement_unit": "USD",
+      "status": "ok"
+    },
+    "pe_ttm": 23.0778147875,
+    "percentile": 0.544860071412,
+    "reason": null,
+    "relative": 1.07540689867,
+    "rule": "L1",
+    "score": 46,
+    "score_raw": 46,
+    "sector_median": 21.459612,
+    "universe_n": 513,
+    "valuation_reading": {
+      "basis": null,
+      "border": null,
+      "categories_included": 1,
+      "categories_total": 1,
+      "components": [
+        {
+          "category": "Valoración",
+          "included": true,
+          "max": 20,
+          "score": 5
+        }
+      ],
+      "confidence": "alta",
+      "contracted": false,
+      "excluded_categories": [],
+      "factor": 1.0,
+      "level": "muy exigente",
+      "level_raw": "muy exigente",
+      "low_coverage_categories": [],
+      "not_applicable_categories": [],
+      "partial": false,
+      "score": 25,
+      "score_raw": 25
+    }
   },
   "price_change": {
     "change": 3.49000549316,
@@ -7620,13 +7641,13 @@
     "source": "efectiva"
   },
   "verdict": {
-    "confidence": "media",
-    "confidence_text": "(confianza media: el nivel de precio cambia con ±1 pp de coste del capital)",
-    "full": "Calidad sólida · precio entre exigente y muy exigente (confianza media: el nivel de precio cambia con ±1 pp de coste del capital)",
-    "price_level": "exigente",
-    "price_level_raw": "muy exigente",
+    "confidence": "alta",
+    "confidence_text": "(confianza alta: el DCF directo y los múltiplos coinciden)",
+    "full": "Calidad sólida · precio razonable (confianza alta: el DCF directo y los múltiplos coinciden)",
+    "price_level": "razonable",
+    "price_level_raw": null,
     "quality_level": "sólida",
-    "text": "Calidad sólida · precio entre exigente y muy exigente"
+    "text": "Calidad sólida · precio razonable"
   },
   "wacc": {
     "applicable": true,

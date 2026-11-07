@@ -1206,7 +1206,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         "<b>Metodología.</b> Este informe combina " + D["methodology"]["ratios_text"] + " (fuente: Yahoo Finance) con "
         + D["methodology"]["models_text"] + " y "
         "dos puntuaciones Finanzer de 0 a 100: calidad del negocio (solidez, rentabilidad, calidad de ganancias y "
-        "crecimiento) y atractivo del precio (valoración por múltiplos y DCF, " + contraction_text()
+        "crecimiento) y atractivo del precio (" + contraction_text()
         + "). Las lecturas se generan automáticamente según "
         "la banda en la que cae cada indicador frente a umbrales canónicos y a la referencia de su industria en su "
         "región (agregados de A. Damodaran, NYU Stern), o la del mercado amplio cuando el arquetipo de la empresa "

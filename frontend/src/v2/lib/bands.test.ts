@@ -7,7 +7,7 @@ describe("SCORE_BANDS (generado desde thresholds.toml)", () => {
     expect(SCORE_BANDS.quality.bands.length).toBe(SCORE_BANDS.quality.labels.length - 1);
   });
   it("trae las bandas y rótulos de precio del motor", () => {
-    expect(SCORE_BANDS.price.labels).toEqual(["atractivo", "razonable", "exigente", "muy exigente"]);
+    expect(SCORE_BANDS.price.labels).toEqual(["atractivo", "razonable", "exigente"]);   // F16: regla L1
     expect(SCORE_BANDS.price.bands.length).toBe(SCORE_BANDS.price.labels.length - 1);
   });
 });

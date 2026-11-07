@@ -32,6 +32,37 @@ from claims import active as _claims_active, claim as _claim, declares as _decla
 _PDF_BANDS = cfg("thresholds.pdf")  # bandas de las lecturas del informe
 
 
+
+GICS_ES = {"Communication Services": "servicios de comunicación", "Consumer Discretionary": "consumo discrecional",
+           "Consumer Staples": "consumo básico", "Energy": "energía", "Financials": "finanzas",
+           "Health Care": "salud", "Industrials": "industria", "Information Technology": "tecnología",
+           "Materials": "materiales", "Real Estate": "inmobiliario", "Utilities": "servicios públicos"}
+L1_TERCIO = {"atractivo": "en el tercio más barato del universo", "razonable": "en el tercio central del universo",
+             "exigente": "en el tercio más caro del universo"}
+
+
+def l1_note_short(pa):
+    """F16: la forma corta para las tarjetas y la cabecera (una línea en la portada del PDF): «P/E 36.2x frente a 27.8x de
+    su sector»."""
+    pa = pa or {}
+    if pa.get("level") and pa.get("pe_ttm") and pa.get("sector_median"):
+        return f"P/E {pa['pe_ttm']:.1f}x frente a {pa['sector_median']:.1f}x de su sector"
+    return "Sin P/E con sentido" if pa.get("reason") and not pa.get("abstained") else None
+
+
+def l1_note(pa):
+    """F16: la nota del precio con la regla L1: «P/E 36.2x frente a la mediana de tecnología (27.8x), 1.30 veces: en
+    el tercio más caro del universo», o el motivo de que no haya veredicto."""
+    pa = pa or {}
+    if pa.get("level") and pa.get("pe_ttm") and pa.get("sector_median") and pa.get("relative") is not None:
+        sec = GICS_ES.get(pa.get("gics_sector") or "", pa.get("gics_sector") or "su sector")
+        return (f"P/E {pa['pe_ttm']:.1f}x frente a la mediana de {sec} ({pa['sector_median']:.1f}x), "
+                f"{pa['relative']:.2f} veces: {L1_TERCIO.get(pa['level'], pa['level'])}")
+    if pa.get("reason") and not pa.get("abstained"):
+        return f"Precio sin veredicto: {pa['reason']}"
+    return None
+
+
 def category_label(key: str) -> str:
     """Cómo se escribe una categoría del motor al enseñarla ([score.category_labels]; la clave no cambia)."""
     return (cfg("thresholds.score.category_labels") or {}).get(key, key)
@@ -1463,10 +1494,11 @@ def _reverse_block(a: Dict[str, Any]) -> Optional[Dict[str, Any]]:
 
 
 def contraction_text() -> str:
-    """Revisión de COST (hallazgo 4): la regla de la contracción del precio, escrita una vez para la web y los PDF. La
-    aplica verdict.price_contraction_basis."""
-    return (f"contraída hacia {cfg('thresholds.score.price.neutral')} según la confianza del veredicto: solo los "
-            "limitadores que lo contradicen o lo vuelven incierto, no los que apuntan en su dirección")
+    """La regla del atractivo del precio, escrita una vez para la web y los PDF. F16 (prueba hacia atrás del 6-nov-2026,
+    decisión del usuario): es la regla L1 (lib/precio_l1.py); antes, la Valoración contraída según la confianza."""
+    return ("el P/E de doce meses frente a la mediana de su sector, situado por tercios en el universo de "
+            "comparables: el tercio más barato es atractivo y el más caro exigente; los múltiplos y el DCF se muestran "
+            "como lectura y la confianza no mueve el precio")
 
 
 def _contraction_phrase(p_raw: Any, p_score: Any, q: Dict[str, Any]) -> str:
@@ -1624,7 +1656,9 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                                                      "no concluyente)" if _q.get("excluded_categories") else ""))
     if _q.get("low_coverage_categories"):
         cover_notes.append("cobertura baja en " + ", ".join(_q["low_coverage_categories"]))
-    if _pa.get("basis") or (p_score is None and breakdown):
+    if _pa.get("rule") == "L1":
+        pass                             # F16: el motivo de un precio sin veredicto va en la nota de la regla (l1_note)
+    elif _pa.get("basis") or (p_score is None and breakdown):
         cover_notes.append("Precio sin dato: Valoración no concluyente")
     # Etapa 9b: sin jerga ("crudo / contraído"): sin ajustar X → ajustado a Y por confianza media.
     # V7 (M4): sin flechas ni "sin ajustar"; y nada si el ajuste no mueve la cifra.
@@ -1638,6 +1672,13 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                    f"ajustado de {p_raw} a {p_score} por confianza {_pa.get('confidence')}")
                   if _pa.get("contracted") and p_raw != p_score else None)
     price_note_card = price_note
+    if _pa.get("rule") == "L1":        # F16: el precio es la regla L1 (lib/precio_l1.py): se dice la regla y sus cifras
+        price_note, price_note_card = l1_note(_pa), l1_note_short(_pa)
+        for _pn in (price_note, price_note_card):
+            if _pn:
+                _record(_pn, _claim("price_l1", field="price_attractiveness", pe=_pa.get("pe_ttm"),
+                                    median=_pa.get("sector_median"), relative=_pa.get("relative"),
+                                    level=_pa.get("level")), source="display.precio_l1")
     if _pa.get("single_method_floor"):     # F15 · R11: un solo método no lleva el precio a «muy exigente»
         price_note = price_note_card = join_clauses([price_note, "sin un segundo método que lo confirme, el precio "
                                                                  "no baja de «exigente»"])
@@ -1655,7 +1696,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         if _t:
             _record(_t, _claim("level_border", field=f"{_key}.border.points", value=(_src.get("border") or {}).get(
                 "points"), part=_part), source="display.border")
-    price_note_short = note_short([price_note, _bp_s])   # la forma corta no repite las bandas: el veredicto da el rango
+    price_note_short = note_short([price_note_card if _pa.get("rule") == "L1" else price_note, _bp_s])   # la forma corta no repite las bandas: el veredicto da el rango
     if _bp:   # E2a (T1): la frase de frontera empieza con mayúscula; tras "; " sigue la frase en minúscula
         price_note = join_clauses([price_note, _bp])
         price_note_card = join_clauses([price_note_card, _bp])
@@ -2208,7 +2249,8 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         exec_items.append(("VEREDICTO",
                            f"{_vtxt}. Calidad {q_score if q_score is not None else '—'}/100 · precio "
                            f"{p_score if p_score is not None else '—'}/100"
-                           + (f" ({_lc_first(clause(price_note))})" if price_note else "") + "."))
+                           + ((f" ({clause(price_note_card)})" if price_note_card else "") if _pa.get("rule") == "L1"
+                              else (f" ({_lc_first(clause(price_note))})" if price_note else "")) + "."))
     _qtxt = []
     if _best:
         _qtxt.append("Destaca en " + " y ".join(_best))
@@ -2291,8 +2333,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         "price": {"title": "ATRACTIVO DEL PRECIO", "score": p_score, "level": p_level, "tone": p_tone,
                   "note": price_note, "rows": _prows,
                   "signed_max": max(cfg("thresholds.score.valoracion.multiples_block_max_by_members"))},
-        "caption": ("Calidad: categorías 0–20 reescaladas a 100. Precio: Valoración (base 10/20 + bloque de "
-                    "múltiplos y DCF) reescalada a 100 y " + contraction_text() + "."),
+        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: " + contraction_text() + ".",
     }
     # F9 · R3 (repaso de E2b): una sola etiqueta por métrica. La tarjeta de una cifra clave lleva la de la cifra clave
     # («ROE reportado» con el beneficio normalizado; antes «ROE» en la portada del PDF y «ROE reportado» en la web).

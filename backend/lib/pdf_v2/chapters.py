@@ -180,7 +180,9 @@ def lead(ch: Chapter, a: Dict[str, Any], ctx: Optional[Dict[str, Any]] = None) -
                     (_sentences(execs.get("CREACIÓN DE VALOR")) or [None])[0])
     elif ch.id == "valor":
         rev = s["valuation"].get("reverse_dcf") or {}
-        txt = _join(*[ln.get("text") for ln in rev.get("lines") or []]) or \
+        # F16: el precio es la regla L1: el capítulo abre con su nota (P/E, mediana del sector, cociente y tercio)
+        l1 = d["summary"]["composition"]["price"].get("note") if (a.get("price_attractiveness") or {}).get("rule") == "L1" else None
+        txt = _join(l1, *[ln.get("text") for ln in rev.get("lines") or []]) or \
             _join(_first(execs.get("ATRACTIVO DEL PRECIO"), s["valuation"].get("intro")))
     elif ch.id == "rivales":
         comp = d["charts"]["comparison"]

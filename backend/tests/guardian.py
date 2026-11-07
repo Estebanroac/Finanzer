@@ -577,6 +577,27 @@ def _p_runway(a, c, text):
         return f"dice autofinanciada con runway {rw.get('state')!r}"
 
 
+def _p_price_l1(a, c, text):
+    """F16: la nota de la regla L1 cita el P/E del análisis y, si los dice, la mediana del sector y el cociente."""
+    pa = a.get("price_attractiveness") or {}
+    if pa.get("rule") != "L1":
+        return "nota de la regla L1 sin la regla L1 en el análisis"
+    for k, f in (("pe", "pe_ttm"), ("median", "sector_median"), ("relative", "relative")):
+        if c.get(k) != pa.get(f):
+            return f"declara {k}={c.get(k)} y el análisis {f}={pa.get(f)}"
+    if not pa.get("level"):
+        return None
+    if f"{pa['pe_ttm']:.1f}x" not in text:          # el guardián puede pasar el texto en minúsculas («p/e»)
+        return f"el texto no cita el P/E {pa['pe_ttm']:.1f}x"
+    m = re.search(r"(?:mediana de [^(]*\(|frente a )(\d+\.\d)x", text)
+    if m and m.group(1) != f"{pa['sector_median']:.1f}":
+        return f"el texto dice la mediana {m.group(1)}x y el análisis {pa['sector_median']:.1f}x"
+    m = re.search(r"(\d+\.\d\d) veces", text)
+    if m and m.group(1) != f"{pa['relative']:.2f}":
+        return f"el texto dice {m.group(1)} veces y el análisis {pa['relative']:.2f}"
+    return None
+
+
 def _p_price_contraction(a, c, text):
     # F10 · N4: el precio se contrae con la base de contracción (la confianza sin el escalón de las tasas base)
     _c = a.get("confidence") or {}
@@ -646,7 +667,7 @@ PREDICATES = {
     "ebit_negative": _p_ebit_negative, "net_cash": _p_net_cash, "net_debt": _p_net_debt, "pos52": _p_pos52,
     "buyback": _p_buyback, "growth": _p_growth, "vs_bench": _p_vs_bench, "spread": _p_spread,
     "dcf_upside": _p_dcf_upside, "dcf_rel": _p_dcf_rel, "altman_zone": _p_altman, "runway": _p_runway,
-    "price_contraction": _p_price_contraction, "implied_growth": _p_implied_growth,
+    "price_contraction": _p_price_contraction, "price_l1": _p_price_l1, "implied_growth": _p_implied_growth,
     "implied_return": _p_implied_return,
     "quality_persistence": _p_quality_persistence,
     "level_border": _p_level_border,

@@ -70,8 +70,8 @@ def test_quality_is_not_contracted_by_convergence(outputs_by_env):
     by = {k: v["score"] for k, v in a["score"]["breakdown"].items()}
     assert q["score"] == round(sum(by[k] for k in cfg("thresholds.score.quality.categories")) * 100 / 80)
     p = a["price_attractiveness"]
-    assert p["score"] == round(50 + (p["score_raw"] - 50) * 0.75) and p["factor"] == 0.75
-    assert p["contracted"] is (p["score"] != p["score_raw"])
+    # F16: el precio es la regla L1 y la confianza ya no lo contrae
+    assert p["rule"] == "L1" and p["factor"] is None and p["contracted"] is False and p["score"] == p["score_raw"]
 
 
 # ─────────────────────────── veredicto verbal ───────────────────────────

@@ -12,7 +12,8 @@ const FULL = 100;
 function toneFor(index: number, count: number): ScaleTone {
   if (index === 0) return "bad";
   if (index === count - 1) return "good";
-  return index === 1 ? "warn" : "neutral";
+  // F16: con 3 tramos (precio L1) el segundo es el central, neutro; con 4, el segundo peor va en aviso
+  return index === 1 && index !== count - 2 ? "warn" : "neutral";
 }
 
 /** Bandas de una puntuación: cortes de mayor a menor (≥) y nombres de mejor a peor, como en SCORE_BANDS. */

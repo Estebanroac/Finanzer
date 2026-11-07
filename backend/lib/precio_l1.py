@@ -22,7 +22,7 @@ from typing import Any, Dict, List, Optional
 
 RULE = "L1"
 LABELS = ["atractivo", "razonable", "exigente"]
-BANDS = [200 / 3, 100 / 3]          # puntuación ≥ 66,7 atractivo; ≥ 33,3 razonable; resto exigente
+BANDS = [67, 34]                    # = thresholds.score.price_l1 (puntuación entera)
 CONFIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "config", "precio_l1.toml")
 _cfg_cache: Dict[str, Any] = {}
 
@@ -313,7 +313,7 @@ def price(market_cap: Optional[float], inp: Optional[Dict[str, Any]], gics_secto
     else:
         lo, hi = q[k - 1], q[k]
         pct = ((k - 1) + ((rel - lo) / (hi - lo) if hi > lo else 0.0)) / (len(q) - 1)
-    score = round(100 * (1 - pct), 1)
+    score = int(round(100 * (1 - pct)))
     # el nivel, con los dos cortes exactos de los tercios (la regla medida), no con la puntuación redondeada
     cuts = c.get("cuts") or []
     level = None if len(cuts) != 2 else ("atractivo" if rel <= cuts[0] else "exigente" if rel > cuts[1]

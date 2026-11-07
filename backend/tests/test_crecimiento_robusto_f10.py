@@ -189,10 +189,14 @@ def test_crecimiento_rentable_con_la_tasa_a_3_anos_no_significativa_decide_el_re
     assert gp["meets"] is False                        # sin margen no es crecimiento rentable, crezca o no
 
 
-def test_rivn_del_panel_sigue_siendo_pre_beneficio_con_veredicto_de_precio(outputs_by_env):
+def test_rivn_del_panel_sigue_siendo_pre_beneficio_sin_veredicto_de_precio_l1(outputs_by_env):
+    """F16: con pérdidas no hay P/E, así que la regla L1 no da veredicto de precio y dice por qué; la valoración por
+    múltiplos (regla de 40 incluida) sigue como lectura."""
     a = outputs_by_env("panel")["RIVN"][0]
     assert a["classification"]["archetype"] == "GROWTH_PRE_PROFIT"
-    assert a["display"]["cover"]["price"]["score"] is not None
+    assert a["display"]["cover"]["price"]["score"] is None
+    assert a["verdict"]["text"].endswith("precio sin veredicto") and "≤ 0" in a["verdict"]["confidence_text"]
+    assert a["price_attractiveness"]["valuation_reading"]["score"] is not None
 
 
 def test_regla_de_40_con_crecimiento_no_significativo_y_cota_que_no_decide_no_puntua():
@@ -241,7 +245,7 @@ def test_regla_de_40_con_la_cota_en_el_peor_tramo_puntua_y_lo_declara(outputs_by
     row = next(x for x in a["score"]["breakdown"]["Valoración"]["adjustments"] if x["metric"] == "Regla de 40")
     assert row["value"].startswith("≤ ") and row["adjustment"] == cfg("thresholds.score.valoracion.rule_of_40_points")[-1]
     assert "techo" in row["reason"] and row["bound"]["direction"] == "superior"
-    assert a["display"]["cover"]["price"]["score"] is not None
+    assert a["price_attractiveness"]["valuation_reading"]["score"] is not None      # F16: puntúa en la lectura
 
 
 # ── ENB (PM, 29-oct): un tiempo agotado de EDGAR no cambia la referencia de la industria en silencio ──

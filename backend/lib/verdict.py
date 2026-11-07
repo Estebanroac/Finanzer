@@ -223,11 +223,15 @@ def verdict(q: Dict[str, Any], p: Dict[str, Any], conf: Optional[Dict[str, Any]]
     cuando era «no se puede decidir» (VZ, CSCO y BRK-B venían de «exigente»; T y NUE, de «atractivo»)."""
     ql, pl = q.get("level"), p.get("level")
     pr = p.get("level_raw") if (p.get("contracted") and p.get("level_raw") not in (None, pl)) else None
-    ptxt = f"entre {pl} y {pr}" if (pl and pr) else (pl or ('sin veredicto' if p.get('abstained') else 'sin dato'))
+    l1_none = p.get("rule") == "L1" and not pl and bool(p.get("reason"))     # F16: sin P/E, sin veredicto y el motivo
+    ptxt = f"entre {pl} y {pr}" if (pl and pr) else (pl or ('sin veredicto' if (p.get('abstained') or l1_none)
+                                                            else 'sin dato'))
     text = f"Calidad {ql or 'sin dato'} · precio {ptxt}"
     why = confidence_phrase(conf)
     ctext = f"(confianza {conf['level']}: {why})" if (conf and conf.get("level") and why) else None
     if p.get("abstained"):          # F13 · paso 8: el motivo de la abstención, no la confianza de un precio que no hay
         ctext = f"({p['abstained']})"
+    elif l1_none:
+        ctext = f"({p['reason']})"
     return {"text": text, "confidence_text": ctext, "full": text + (f" {ctext}" if ctext else ""),
             "quality_level": ql, "price_level": pl, "price_level_raw": pr, "confidence": (conf or {}).get("level")}

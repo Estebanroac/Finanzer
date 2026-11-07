@@ -18,10 +18,10 @@ export const STATE_LABELS = {
  *  confianza del veredicto del mejor al peor ([score.price] confidence_factor). Rediseño /v2.
  *  V7 (PM, el texto de los desgloses): `scale`, la escala de las dos ([score.total] max); `categories`, cuántas
  *  categorías suma la calidad; `category`, la base y el máximo de cada una ([score.category]); `neutral`, el
- *  punto hacia el que la confianza contrae el precio ([score.price] neutral). */
+ *  F16: el precio, con las bandas de la regla L1 ([score.price_l1]); la confianza ya no lo mueve. */
 export const SCORE_BANDS = {
   quality: { bands: [85, 65, 45], labels: ["excelente", "sólida", "media", "débil"], categories: 4 },
-  price: { bands: [65, 45, 30], labels: ["atractivo", "razonable", "exigente", "muy exigente"], neutral: 50 },
+  price: { bands: [67, 34], labels: ["atractivo", "razonable", "exigente"] },
   category: { base: 10, max: 20 },
   scale: 100,
   confidence: { labels: ["alta", "media", "baja"] },
