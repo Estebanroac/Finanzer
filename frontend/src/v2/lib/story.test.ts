@@ -34,7 +34,7 @@ describe("buildReadings(PLTR): la nota de la puntuación de calidad", () => {
 });
 
 describe("buildReadings: rivales (V7 · P5)", () => {
-  // F10 · N2: AAPL es el 91 % de su industria de Damodaran; su referencia es la mediana de sus pares (abajo)
+  // F10 · N2: la mediana de sus pares, cuando la referencia la usa (abajo, con el caso fijado en la prueba)
   it("«agregado», no «mediana»; una métrica mejor y una peor", async () => {
     const a = (await import("@/v2/__fixtures__/JPM.json")).default as unknown as StockAnalysis;
     const riv = buildReadings(a).find((c) => c.id === "rivales")!;
@@ -70,7 +70,10 @@ describe("buildReadings(AAPL) con los datos de E2a (display.extended)", () => {
 
 describe("buildReadings(AAPL): rivales frente a la mediana de sus pares (F10 · N2)", () => {
   it("«la mediana de sus pares», no «agregado»", async () => {
-    const a = (await import("@/v2/__fixtures__/AAPL.json")).default as unknown as StockAnalysis;
+    // Ningún fixture usa hoy la mediana de pares (AAPL compara con su industria global desde F14/F15): el caso se fija aquí
+    const base = (await import("@/v2/__fixtures__/AAPL.json")).default as unknown as StockAnalysis;
+    const a = { ...base, display: { ...base.display, benchmark: { ...base.display.benchmark, short: "pares",
+      ref: "de sus pares del universo" } } } as StockAnalysis;
     const riv = buildReadings(a).find((c) => c.id === "rivales")!;
     expect(riv.lead).toContain("Comparada con la mediana de sus pares del universo");
     expect(riv.lead).not.toContain("agregado");

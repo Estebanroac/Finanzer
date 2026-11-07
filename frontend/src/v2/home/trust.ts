@@ -4,8 +4,8 @@
  *    lib/edgar_backup.py (respalda con EDGAR lo que Yahoo no da del mismo corte).
  *  · Método por tipo de empresa: backend/lib/display.py, methodology.models (bancos: P/B y P/TBV justificados por el
  *    retorno; REIT: P/FFO; eléctricas: P/E frente al sector).
- *  · Honestidad con la incertidumbre: la confianza de cada veredicto (alta, media o baja) y el atractivo del precio
- *    contraído hacia 50 según esa confianza (metodología de la web actual, StockPageClient).
+ *  · Honestidad con la incertidumbre: la consistencia de cada análisis (si los métodos y los datos coinciden) y una
+ *    sola alerta roja, la que tuvo evidencia en la prueba hacia atrás (Fase 1 · pendientes, 7-nov-2026).
  */
 export interface TrustCard { title: string; text: string }
 
@@ -22,7 +22,7 @@ export const TRUST_CARDS: TrustCard[] = [
   },
   {
     title: "Honesto con la incertidumbre",
-    text: "Cada veredicto lleva su confianza (alta, media o baja) y, cuanto menor es, más se acerca a 50 la puntuación " +
-      "del precio.",
+    text: "Cada análisis dice si sus métodos y sus datos coinciden («consistente» o «mixta»), sin vender probabilidades " +
+      "de acierto, y solo hay una alerta roja: la que se comprobó con datos del pasado.",
   },
 ];

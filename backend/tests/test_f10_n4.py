@@ -70,5 +70,6 @@ def test_base_rate_step_does_not_move_price_or_quality(sym):
     assert pa["confidence"] == c["contraction_basis"]
     assert reprice(pa, c["contraction_basis"])["score"] == pa["score"]
     assert contract_quality(q, c["contraction_basis"])["score"] == q["score"]
-    assert a["display"]["confidence"]["level"] == c["level"]                      # una sola confianza visible
+    # Fase 1 · pendientes (7-nov-2026): a la vista, la consistencia (no la confianza)
+    assert a["display"]["confidence"]["level"] == a["consistency"]["level"] in ("consistente", "mixta")
     assert "por confianza " + c["contraction_basis"] not in json.dumps(a["display"]["summary"], ensure_ascii=False)

@@ -9,10 +9,10 @@ import { alertGroupLabel, RED_FLAGS_LABEL } from "@/v2/lib/story";
 
 const PILLS = [{ id: "premortem", label: "Pre-mortem" }, { id: "alertas", label: "Alertas" }, { id: "sector", label: "Del sector" }, { id: "concentracion", label: "Concentración" },
   { id: "no-sabemos", label: "Lo que no sabemos" }, { id: "metodologia", label: "Metodología" }];
-const EMPTY: Record<string, string> = { red_flags: "el modelo no marca ninguna; no quiere decir que no haya riesgos: abajo, la concentración de los ingresos y lo que el análisis no sabe", warnings: "el análisis no detecta ninguna",
-  strengths: "el análisis no detecta ninguna" };
+const EMPTY: Record<string, string> = { red_flags: "la única alerta roja es la de valoración extrema (la sola con evidencia en la prueba hacia atrás) y no se activa; no quiere decir que no haya riesgos: abajo, la concentración de los ingresos y lo que el análisis no sabe", warnings: "el análisis no detecta ninguna",
+  strengths: "el análisis no detecta ninguna", balance: "nada que señalar en el balance", valuation: "sin lecturas de valoración" };
 
-/** Task 9 · Riesgos: pre-mortem, alertas por grupo y lo que el análisis no sabe (confianza y cobertura). */
+/** Task 9 · Riesgos: pre-mortem, alertas por grupo y lo que el análisis no sabe (consistencia y cobertura). */
 export default function Riesgos({ analysis: a }: PageProps) {
   const d = a.display, pm = d.sections.valuation.premortem, al = d.sections.alerts, conf = d.confidence;
   const sr = d.sections.sector_risks;
@@ -35,7 +35,7 @@ export default function Riesgos({ analysis: a }: PageProps) {
         ) : <Missing title="Pre-mortem" reason="no aplica ninguna de sus tres condiciones (un método intrínseco del precio, una calidad sólida o excelente con el margen por encima de su mediana, una deuda en el tramo elevado)" />}
       </Section>
 
-      <Section id="alertas" eyebrow="Riesgos" title={`Alertas: ${RED_FLAGS_LABEL.toLowerCase()}, ${al.counts.red_flags}${al.counts.unmeasured ? ` (${al.counts.unmeasured})` : ""}; ${al.counts.warnings} advertencias y ${al.counts.strengths} fortalezas`}>
+      <Section id="alertas" eyebrow="Riesgos" title={`Alertas: ${RED_FLAGS_LABEL.toLowerCase()}, ${al.counts.red_flags}${al.counts.unmeasured ? ` (${al.counts.unmeasured})` : ""}; ${al.counts.warnings} advertencias y ${al.counts.strengths} fortalezas; aparte, sin color: estado del balance (${al.counts.balance ?? 0}) y lectura de valoración (${al.counts.valuation ?? 0})`}>
         {full.length > 0 && (
           // Un grupo debajo de otro: con una alerta en un grupo y seis en otro, en fila quedaría un hueco al pie
           <div className="dgrid one" data-sym-row>
@@ -87,11 +87,11 @@ export default function Riesgos({ analysis: a }: PageProps) {
             ))}
           </div>
           {reasons.length > 0 && (
-            <div className="card surface"><h4>Por qué la confianza no es mayor</h4>
+            <div className="card surface"><h4>Por qué es mixta</h4>
               <ul className="stack">{reasons.map((r) => <li key={r.dimension + r.text}><strong>{r.dimension}</strong> ({r.level.replace("_", " ")}): {r.text}</li>)}</ul></div>
           )}
           {extra.length > 0 && <ul className="stack">{extra.map((t) => <li key={t}>{t}</li>)}</ul>}
-        </>) : <Missing title="Confianza" reason="el análisis no evaluó la confianza del veredicto" />}
+        </>) : <Missing title="Consistencia" reason="el análisis no pudo medir si los métodos y los datos coinciden" />}
         {d.cover.coverage_notes.length > 0
           ? <div className="card surface"><h4>Cobertura de los datos</h4><ul className="stack">{d.cover.coverage_notes.map((t) => <li key={t}>{t}</li>)}</ul></div>
           : <Missing title="Cobertura de los datos" reason="el análisis no deja notas de cobertura para esta empresa" />}
@@ -100,7 +100,7 @@ export default function Riesgos({ analysis: a }: PageProps) {
       <Methodology items={[
         { label: "Pre-mortem", text: pm?.note },
         { label: "Alertas", text: "Las alertas salen de las mismas reglas que puntúan el análisis: riesgos (banderas rojas), advertencias y fortalezas, cada una con la cifra que la dispara." },
-        { label: "Confianza", text: conf?.summary },
+        { label: "Consistencia", text: conf?.summary },
       ]} />
     </div>
   </>);

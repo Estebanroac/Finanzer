@@ -13,7 +13,7 @@ const PRICE_ROW: Array<[string, string]> = [
   ["Bloque de múltiplos", "multiples_block"], ["Bloque P/B y P/TBV", "pb_block"], ["DCF inverso", "reverse_dcf"],
   ["DCF", "dcf_upside"], ["P/FFO", "p_ffo"], ["Rentabilidad por dividendo", "dividend_yield"],
   ["P/B frente al ROE", "pb_roe"], ["EV/Ventas", "ev_sales"], ["Regla de 40", "rule_of_40"],
-  ["Valoración", "cat_valoracion"], ["Ajuste por confianza", "confidence_adjustment"],
+  ["Valoración", "cat_valoracion"],
 ];
 
 const known = (k: string | undefined): string | undefined => (k && DEFINITIONS[k] ? k : undefined);

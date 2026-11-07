@@ -36,12 +36,14 @@ def render() -> str:
     q, p = cfg("thresholds.score.quality"), cfg("thresholds.score.price")
     pl1 = cfg("thresholds.score.price_l1")      # F16: la etiqueta de precio es la regla L1
     cat, scale = cfg("thresholds.score.category"), cfg("thresholds.score.total.max")
-    # Niveles de confianza del veredicto, del mejor al peor ([score.price] confidence_factor).
-    conf_levels = sorted(p["confidence_factor"], key=lambda k: -p["confidence_factor"][k])
+    # Fase 1 · pendientes (7-nov-2026): los niveles de la consistencia, del mejor al peor (lib/consistency.LEVELS); la
+    # clave `confidence` se conserva en el contrato.
+    import consistency
+    conf_levels = list(consistency.LEVELS)
     score_bands = (
         "\n/** Bandas de las dos puntuaciones (thresholds.toml [score.quality] y [score.price]):\n"
-        " *  `bands` de mayor a menor (≥), `labels` de la mejor a la peor; `confidence.labels`: niveles de\n"
-        " *  confianza del veredicto del mejor al peor ([score.price] confidence_factor). Rediseño /v2.\n"
+        " *  `bands` de mayor a menor (≥), `labels` de la mejor a la peor; `confidence.labels`: niveles de la\n"
+        " *  consistencia del mejor al peor (lib/consistency.LEVELS; el nombre de la clave es el del contrato).\n"
         " *  V7 (PM, el texto de los desgloses): `scale`, la escala de las dos ([score.total] max); `categories`, cuántas\n"
         " *  categorías suma la calidad; `category`, la base y el máximo de cada una ([score.category]); `neutral`, el\n"
         " *  F16: el precio, con las bandas de la regla L1 ([score.price_l1]); la confianza ya no lo mueve. */\n"

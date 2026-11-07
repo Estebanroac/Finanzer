@@ -166,3 +166,42 @@ Cinco escaneos de las 543 el 7-nov-2026 (`escaneo_r1` … `escaneo_r5`; comparac
 
 Queda una fuente de variación que no es del cálculo: si la SEC no responde ni al reintento, el análisis sigue con
 Yahoo y lo dice.
+
+## Fase 1 · pendientes de la prueba hacia atrás (7-nov-2026)
+
+Sin reglas nuevas de valoración. Decisiones del usuario del mismo día: consistencia solo con coincidencia plena; una
+sola alerta roja (las de valoración pasan a la lectura y el ROE negativo al estado del balance); la calidad deja de
+contraerse.
+
+1. **Una sola alerta roja** (`lib/alert_groups.py`, `[alerts.valuation_extreme]`): «Riesgo de caída fuerte por
+   valoración extrema». Se activa cuando la valoración del motor anterior, que se sigue calculando en paralelo
+   (`price_attractiveness.valuation_reading`), cae en «muy exigente». Es la única con evidencia fuera de la muestra: en
+   el control al corte del 5-nov-2025 (versión A), 17 de 49 (34,7 %) cayeron un 40 % o más en algún momento de los 12
+   meses siguientes, frente al 14,9 % del resto (37 de 248). El texto cita esas cifras y dice que no es una predicción.
+2. **Consistencia** (`lib/consistency.py`) en lugar de la confianza: «consistente» si los métodos de valoración
+   coinciden del todo (convergencia alta) y la cobertura de datos no es baja; si no, «mixta». Sin nivel alto y sin
+   sugerir probabilidad de acierto. La confianza técnica se sigue calculando (la usa la lectura de valoración), pero
+   no se muestra ni mueve nada. **La calidad ya no se contrae** (antes, con confianza baja, hacia 50).
+3. **Estado del balance**, aparte y sin color de alerta: Altman, EBIT < 0 y cobertura de intereses crítica, caja libre
+   negativa, apalancamiento, destrucción de valor, márgenes y ROE negativos. **Lectura de valoración**, aparte y sin
+   color: lo de las categorías Valoración y Valor intrínseco (DCF, múltiplos, P/E con pérdidas). El resto de
+   advertencias y las fortalezas, como estaban. El reparto se hace antes del tope de 6 por grupo.
+4. **Cíclicas**: junto a la etiqueta L1, el aviso de pico de beneficio (condición (a) de `lib/earnings_peak.py`: el
+   beneficio de doce meses más de un 40 % por encima de la mediana de sus 3 últimos ejercicios). Antes no se calculaba
+   en las cíclicas porque en ellas el P/E no puntúa. MU: «beneficio en la parte alta del ciclo».
+5. **Alarma de la referencia** (`precio_l1.reference_alarm`): si `config/precio_l1.toml` tiene más de 35 días
+   (`max_age_days`) o si sus cortes no cambian respecto a la actualización anterior (que el archivo guarda en
+   `previous_cuts`). Sale como aviso junto a la etiqueta, en `/api/health` (`price_reference.alarm`) y, la de cortes
+   repetidos, como error de `tools/precio_l1_universo.py`.
+
+Vista y PDF: la tarjeta «Consistencia» (dos tramos), «Por qué es mixta», los grupos «Estado del balance» y «Lectura
+de valoración» en gris, y textos de ayuda y de la portada corregidos (decían que la confianza acerca el precio a 50,
+lo que dejó de ser cierto con F16). Los fixtures de la web se regeneraron con el motor actual (no se regeneraban desde
+antes de F13): dos pruebas de la web que dependían de datos viejos se ajustaron (la referencia de AAPL es hoy su
+industria global, no la mediana de sus pares).
+
+En vivo (escaneo de las 543 del 7-nov-2026, `archivo-historico/evidencias-de-pruebas/fase1_pendientes_2026-11-07/`):
+alerta roja en 95 (17,5 %; en el control al corte, 16,5 %); consistencia: 254 consistentes y 289 mixtas; ninguna
+calidad contraída; aviso de pico de beneficio en 24 cíclicas (MU, AMD, LRCX, CVX, SHEL, NUE…); sin alarma de la
+referencia. Por empresa, de media: 1,3 advertencias, 0,5 del estado del balance y 2,4 de la lectura de valoración.
+Suite: 6802 pruebas; web: 172; guardas de build.sh en verde.

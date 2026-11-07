@@ -155,7 +155,7 @@ export default function ValuationTab({ display }: { display: Display }) {
         )}
 
         {conf && (
-          <Collapsible summary="Confianza del veredicto">
+          <Collapsible summary="Consistencia">
             <div className="fz-conf">
               {conf.dimensions.map((d) => (
                 <div key={d.key} className="fz-conf-row">

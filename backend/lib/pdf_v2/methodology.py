@@ -2,7 +2,7 @@
 Rediseño E5 (Task 5): metodología y anexo técnico del informe.
 
 Metodología: fuentes con enlace al original (SEC EDGAR, Yahoo Finance, Finnhub, A. Damodaran), periodo de cada dato,
-cómo se calculan las dos puntuaciones y la confianza (con las bandas del motor, de `config/thresholds.toml`), los
+cómo se calculan las dos puntuaciones y la consistencia (con las bandas del motor, de `config/thresholds.toml`), los
 modelos y sus referencias, y el aviso legal del informe actual.
 
 Anexo (después del título «Detalle técnico para auditoría», que el guardián trata como zona técnica): el detalle del
@@ -119,8 +119,10 @@ def methodology(a: Dict[str, Any], ctx: Dict[str, Any]) -> list:
         f"(100 = el más barato). La valoración por múltiplos frente a la referencia y {intrinsic} se sigue calculando "
         f"y mostrando, sin decidir el nivel. Niveles: {_bands('price_l1')}."))
     out.append(bullet(
-        "Confianza del veredicto: convergencia entre métodos de valoración, cobertura de datos, calidad de la fuente y "
-        "estabilidad del tipo de empresa; la más baja manda."))
+        "Consistencia: «consistente» si los métodos de valoración coinciden y la cobertura de datos no es baja; si no, "
+        "«mixta». No es una probabilidad de acierto ni mueve las puntuaciones. Alerta roja: solo la de valoración "
+        "extrema, la única con evidencia en la prueba hacia atrás; el estado del balance y la lectura de valoración "
+        "van aparte y sin color."))
     out.append(bullet("Una categoría con menos de la mitad de sus componentes con dato no es concluyente: se excluye "
                       "y la puntuación se reescala sobre las demás."))
 

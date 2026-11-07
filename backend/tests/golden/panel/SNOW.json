@@ -1,5 +1,6 @@
 {
   "alerts": {
+    "balance": [],
     "red_flags": [],
     "strengths": [
       {
@@ -18,6 +19,13 @@
         "reason": "Autofinanciada en caja — FCF TTM positivo"
       }
     ],
+    "valuation": [
+      {
+        "category": "Valoración",
+        "detail": "Por cada dólar invertido en la acción, el negocio genera solo 1.0% de caja libre: se está pagando caro cada dólar de flujo, habitual en compañías de alto crecimiento o valoración exigente.",
+        "reason": "FCF yield bajo — 1.0%"
+      }
+    ],
     "warnings": [
       {
         "category": "Solidez financiera",
@@ -28,11 +36,6 @@
         "category": "Riesgo de mercado",
         "detail": "La acción ha llegado a caer 56.3% desde máximos en el último año: una corrección profunda que puede ser oportunidad si el negocio sigue intacto, o el mercado anticipando un deterioro. Son unas 0.9 veces su movimiento anual habitual (volatilidad del 62%): dentro de lo que suele moverse esta acción.",
         "reason": "Caída pronunciada en el año −56.3%"
-      },
-      {
-        "category": "Valoración",
-        "detail": "Por cada dólar invertido en la acción, el negocio genera solo 1.0% de caja libre: se está pagando caro cada dólar de flujo, habitual en compañías de alto crecimiento o valoración exigente.",
-        "reason": "FCF yield bajo — 1.0%"
       }
     ]
   },
@@ -427,6 +430,22 @@
       "techo en baja: base frágil: resultado operativo normalizado ≤ 0 (−$1.24B): pierde dinero en su negocio sin contar los cargos no recurrentes"
     ],
     "score": 1.0
+  },
+  "consistency": {
+    "coverage": {
+      "level": "alta",
+      "text": "cobertura de datos completa"
+    },
+    "level": "mixta",
+    "methods": {
+      "level": "no_evaluable",
+      "text": "un solo método de valoración evaluable, sin contraste"
+    },
+    "phrase": "un solo método de valoración evaluable, sin contraste",
+    "reasons": [
+      "un solo método de valoración evaluable, sin contraste"
+    ],
+    "tone": "warn"
   },
   "cost_of_equity": {
     "as_of": "2026-11-01",
@@ -1564,12 +1583,8 @@
           "text": "Arquetipo GROWTH_PRE_PROFIT (regla pre_beneficio_con_crecimiento): Clasificada como GROWTH_PRE_PROFIT: BPA TTM -3.18 <= 0 y CAGR de ingresos a 3 años 31.4% > 15%."
         },
         {
-          "label": "Confianza · Convergencia entre métodos (no evaluable)",
+          "label": "Consistencia · Coincidencia de métodos (no evaluable)",
           "text": "un solo método evaluable (múltiplos frente al sector): no hay contraste."
-        },
-        {
-          "label": "Confianza · base (baja)",
-          "text": "resultado operativo normalizado ≤ 0 (−$1.24B): pierde dinero en su negocio sin contar los cargos no recurrentes."
         },
         {
           "label": "Fuente oficial",
@@ -2236,59 +2251,26 @@
       "dimensions": [
         {
           "key": "convergence",
-          "label": "Convergencia entre métodos",
-          "level": "No evaluable",
+          "label": "Coincidencia de métodos",
+          "level": "Un solo método",
+          "ok": false,
           "text": "múltiplos frente al sector -0.75 (cara). Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo."
         },
         {
           "key": "coverage",
           "label": "Cobertura de datos",
-          "level": "Alta",
+          "level": "Completa",
+          "ok": true,
           "text": "Sin incidencias."
-        },
-        {
-          "key": "source",
-          "label": "Calidad de fuente",
-          "level": "Alta",
-          "text": "Sin incidencias."
-        },
-        {
-          "key": "stability",
-          "label": "Estabilidad del arquetipo",
-          "level": "Alta",
-          "text": "Sin incidencias."
-        },
-        {
-          "key": "base",
-          "label": "base",
-          "level": "Baja",
-          "text": "Pierde dinero en su negocio incluso sin contar los cargos extraordinarios."
         }
       ],
-      "level": "baja",
+      "level": "mixta",
       "plain": [
-        "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo.",
-        "Pierde dinero en su negocio incluso sin contar los cargos extraordinarios."
+        "un solo método de valoración evaluable, sin contraste."
       ],
-      "reasons": [
-        {
-          "dimension": "convergencia",
-          "level": "no_evaluable",
-          "text": "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo."
-        },
-        {
-          "dimension": "base",
-          "level": "baja",
-          "text": "Pierde dinero en su negocio incluso sin contar los cargos extraordinarios."
-        },
-        {
-          "dimension": "techo",
-          "level": "baja",
-          "text": null
-        }
-      ],
-      "summary": "Confianza del veredicto: baja (por sus dimensiones sería alta; la limita: base frágil —resultado operativo normalizado ≤ 0 (−$1.24B): pierde dinero en su negocio sin contar los cargos no recurrentes—). Contrae también la calidad del negocio hacia 50: de 58 a 57.",
-      "tone": "neg",
+      "reasons": [],
+      "summary": "Consistencia: mixta (un solo método de valoración evaluable, sin contraste). No es una probabilidad de acierto.",
+      "tone": "warn",
       "verdict_text": "(beneficio normalizado de doce meses ≤ 0: el P/E no tiene sentido)"
     },
     "cover": {
@@ -2376,8 +2358,7 @@
         "Beneficio por acción negativo en los últimos doce meses (−3.18) e ingresos totales que crecen un 31.4% anual en 3 años, por encima del 15%."
       ],
       "confidence_reasons": [
-        "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo.",
-        "Pierde dinero en su negocio incluso sin contar los cargos extraordinarios."
+        "un solo método de valoración evaluable, sin contraste."
       ],
       "coverage_notes": [],
       "currency_note": null,
@@ -2470,13 +2451,13 @@
         "note": null,
         "note_short": null,
         "question": "¿es buena la empresa?",
-        "score": 57,
+        "score": 58,
         "title": "CALIDAD DEL NEGOCIO",
         "tone": "warn"
       },
       "verdict": {
         "confidence_text": "(beneficio normalizado de doce meses ≤ 0: el P/E no tiene sentido)",
-        "confidence_tone": "neg",
+        "confidence_tone": "warn",
         "full": "Calidad media · precio sin veredicto (beneficio normalizado de doce meses ≤ 0: el P/E no tiene sentido)",
         "text": "Calidad media · precio sin veredicto"
       }
@@ -2806,7 +2787,7 @@
       }
     },
     "methodology": {
-      "contraction_text": "el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y la confianza no mueve el precio",
+      "contraction_text": "el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura",
       "models": [
         "Piotroski (2000)",
         "un DCF multietapa con WACC estimado por CAPM"
@@ -2895,16 +2876,18 @@
     "sections": {
       "alerts": {
         "counts": {
+          "balance": 0,
           "red_flags": 0,
           "strengths": 3,
           "unmeasured": null,
-          "warnings": 3
+          "valuation": 1,
+          "warnings": 2
         },
         "groups": [
           {
             "items": [],
             "key": "red_flags",
-            "title": "Riesgos",
+            "title": "Alerta roja",
             "tone": "neg"
           },
           {
@@ -2918,11 +2901,6 @@
                 "category": "Riesgo de mercado",
                 "detail": "La acción ha llegado a caer 56.3% desde máximos en el último año: una corrección profunda que puede ser oportunidad si el negocio sigue intacto, o el mercado anticipando un deterioro. Son unas 0.9 veces su movimiento anual habitual (volatilidad del 62%): dentro de lo que suele moverse esta acción.",
                 "reason": "Caída pronunciada en el año −56.3%"
-              },
-              {
-                "category": "Valoración",
-                "detail": "Por cada dólar invertido en la acción, el negocio genera solo 1.0% de caja libre: se está pagando caro cada dólar de flujo, habitual en compañías de alto crecimiento o valoración exigente.",
-                "reason": "FCF yield bajo — 1.0%"
               }
             ],
             "key": "warnings",
@@ -2950,6 +2928,24 @@
             "key": "strengths",
             "title": "Fortalezas",
             "tone": "pos"
+          },
+          {
+            "items": [],
+            "key": "balance",
+            "title": "Estado del balance",
+            "tone": "neu"
+          },
+          {
+            "items": [
+              {
+                "category": "Valoración",
+                "detail": "Por cada dólar invertido en la acción, el negocio genera solo 1.0% de caja libre: se está pagando caro cada dólar de flujo, habitual en compañías de alto crecimiento o valoración exigente.",
+                "reason": "FCF yield bajo — 1.0%"
+              }
+            ],
+            "key": "valuation",
+            "title": "Lectura de valoración",
+            "tone": "neu"
           }
         ]
       },
@@ -4033,10 +4029,12 @@
     },
     "summary": {
       "alert_counts": {
+        "balance": 0,
         "red_flags": 0,
         "strengths": 3,
         "unmeasured": null,
-        "warnings": 3
+        "valuation": 1,
+        "warnings": 2
       },
       "cards": [
         {
@@ -4107,7 +4105,7 @@
         }
       ],
       "composition": {
-        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y la confianza no mueve el precio.",
+        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura.",
         "price": {
           "level": null,
           "note": "Precio sin veredicto: beneficio normalizado de doce meses ≤ 0: el P/E no tiene sentido.",
@@ -4179,7 +4177,7 @@
               "value": 12
             }
           ],
-          "score": 57,
+          "score": 58,
           "title": "CALIDAD DEL NEGOCIO",
           "tone": "warn"
         }
@@ -4187,7 +4185,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad media · precio sin veredicto (beneficio normalizado de doce meses ≤ 0: el P/E no tiene sentido). Calidad 57/100 · precio —/100 (Sin P/E con sentido)."
+          "text": "Calidad media · precio sin veredicto (beneficio normalizado de doce meses ≤ 0: el P/E no tiene sentido). Calidad 58/100 · precio —/100 (Sin P/E con sentido)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -4214,8 +4212,8 @@
           "text": "Cotiza en el 81% del rango de 52 semanas, en la parte alta. Con beta 1.27, la acción amplifica los movimientos del mercado."
         },
         {
-          "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Baja: solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo. No contrae el atractivo del precio; la calidad del negocio, sí, hacia 50 (de 58 a 57)."
+          "label": "CONSISTENCIA",
+          "text": "Mixta: un solo método de valoración evaluable, sin contraste (no es una probabilidad de acierto)."
         }
       ]
     },
@@ -4739,7 +4737,7 @@
                 "tone": "neg"
               }
             ],
-            "title": "Atractivo del precio (0–100, contraído por la confianza)"
+            "title": "Atractivo del precio (0–100, regla L1 por tercios)"
           }
         ]
       },
@@ -5252,6 +5250,7 @@
     "total_equity": 2149664000.0,
     "wacc": 0.10731865057
   },
+  "l1_cycle_peak": null,
   "market_context": {
     "behavioral": [],
     "market_volatility": {
@@ -5738,6 +5737,7 @@
     "border": null,
     "confidence": "baja",
     "contracted": false,
+    "cycle_peak": null,
     "factor": null,
     "gics": "Information Technology",
     "gics_sector": "Information Technology",
@@ -5773,6 +5773,7 @@
     "pe_ttm": null,
     "percentile": null,
     "reason": "beneficio normalizado de doce meses ≤ 0: el P/E no tiene sentido",
+    "reference_alarm": [],
     "relative": null,
     "rule": "L1",
     "score": null,
@@ -5867,9 +5868,9 @@
         "score": 12
       }
     ],
-    "contracted": true,
+    "contracted": false,
     "excluded_categories": [],
-    "factor": 0.85,
+    "factor": null,
     "level": "media",
     "level_raw": "media",
     "low_confidence": false,
@@ -5929,7 +5930,7 @@
       "source": "edgar",
       "window": 5
     },
-    "score": 57,
+    "score": 58,
     "score_raw": 58
   },
   "quality_readings": {
@@ -6463,8 +6464,8 @@
     "source": "legal"
   },
   "verdict": {
-    "confidence": "baja",
     "confidence_text": "(beneficio normalizado de doce meses ≤ 0: el P/E no tiene sentido)",
+    "consistency": "mixta",
     "full": "Calidad media · precio sin veredicto (beneficio normalizado de doce meses ≤ 0: el P/E no tiene sentido)",
     "price_level": null,
     "price_level_raw": null,

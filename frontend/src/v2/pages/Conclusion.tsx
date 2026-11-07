@@ -10,12 +10,12 @@ import Methodology from "@/v2/components/depth/Methodology";
 import AuditAnnex from "@/v2/components/depth/AuditAnnex";
 import MetricTip from "@/v2/components/depth/MetricTip";
 
-const PILLS = [{ id: "veredicto", label: "Veredicto" }, { id: "confianza", label: "Confianza" },
+const PILLS = [{ id: "veredicto", label: "Veredicto" }, { id: "confianza", label: "Consistencia" },
   { id: "vigilar", label: "Qué vigilar" }, { id: "informe", label: "Informe" }, { id: "metodologia", label: "Metodología" }];
 const GRID = ["", " one", "", " three"];
 const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
 
-/** Task 11 · Conclusión: veredicto completo y su composición, confianza, qué vigilar, el PDF y el anexo de auditoría. */
+/** Task 11 · Conclusión: veredicto completo y su composición, consistencia, qué vigilar, el PDF y el anexo de auditoría. */
 export default function Conclusion({ analysis: a, symbol }: PageProps) {
   const d = a.display, s = d.summary, c = d.cover, conf = d.confidence, comp = s.composition;
   const warnings = d.sections.alerts.groups.find((g) => g.key === "warnings")?.items ?? [];
@@ -66,16 +66,16 @@ export default function Conclusion({ analysis: a, symbol }: PageProps) {
         </div>
       </Section>
 
-      <Section id="confianza" eyebrow="Conclusión" title={`Confianza ${conf?.level ?? "sin evaluar"}`}>
+      <Section id="confianza" eyebrow="Conclusión" title={`Consistencia ${conf?.level ?? "sin medir"}`}>
         {conf ? (
           <div className="card surface">
             {conf.verdict_text && <p>{conf.verdict_text}</p>}
             {conf.plain.length > 0 && <ul className="stack">{conf.plain.map((t) => <li key={t}>{t}</li>)}</ul>}
             <dl className="kv">{conf.dimensions.map((x) => <div key={x.key} className="kv-row"><dt>{x.label}</dt><dd>{x.level}</dd></div>)}</dl>
-            <p className="muted small">{conf.summary} El detalle de cada dimensión está en{" "}
+            <p className="muted small">{conf.summary} El detalle está en{" "}
               <a data-nav href={chapterHref(symbol, "riesgos", "no-sabemos")}>Riesgos → Lo que no sabemos</a>.</p>
           </div>
-        ) : <Missing title="Confianza" reason="el análisis no evaluó la confianza del veredicto" />}
+        ) : <Missing title="Consistencia" reason="el análisis no pudo medir si los métodos y los datos coinciden" />}
       </Section>
 
       <Section id="vigilar" eyebrow="Conclusión" title="Qué vigilar">
@@ -104,7 +104,7 @@ export default function Conclusion({ analysis: a, symbol }: PageProps) {
 
       <Methodology items={[
         { label: "Puntuaciones", text: comp.caption },
-        { label: "Confianza", text: conf?.summary },
+        { label: "Consistencia", text: conf?.summary },
       ]} />
     </div>
   </>);

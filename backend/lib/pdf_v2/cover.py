@@ -79,7 +79,7 @@ def _signed(v) -> str:
 
 def _unwrap(s: Optional[str]) -> str:
     t = re.sub(r"^\((.*)\)$", r"\1", s or "")
-    t = re.sub(r"^confianza\s+\S+:\s*", "", t, flags=re.I)
+    t = re.sub(r"^(confianza|consistencia)\s+\S+:\s*", "", t, flags=re.I)
     return t[:1].upper() + t[1:]
 
 
@@ -137,8 +137,8 @@ def score_cards(a: Dict[str, Any], mini: bool = True) -> List[P.ScoreScale]:
         P.ScoreScale(P.build_scale("quality", q.get("score"), q.get("level")), q["title"], q["question"], disp(q),
                      suffix(q), q.get("tone"), f"{len(qcats)} categorías × {per_cat} puntos", q_mini),
         P.ScoreScale(P.build_scale("price", p.get("score"), p.get("level")), p["title"], p["question"], disp(p),
-                     suffix(p), p.get("tone"), "Múltiplos frente a la referencia + DCF", p_mini),
-        P.ScoreScale(P.build_level_scale(level), "Confianza del veredicto", "¿cuánto fiarse?",
+                     suffix(p), p.get("tone"), "P/E normalizado frente a la mediana de su grupo", p_mini),
+        P.ScoreScale(P.build_level_scale(level), "Consistencia", "¿coinciden métodos y datos?",
                      level.capitalize() if level else "—", None, "neu",
                      _unwrap(conf.get("verdict_text") or cover["verdict"].get("confidence_text")) or "Sin dato",
                      c_mini, level_tone=conf.get("tone")),
@@ -320,7 +320,7 @@ def _exec_summary_rows(a: Dict[str, Any]) -> list:
     return [_exec_row(e) for e in items]
 
 
-CONFIDENCE_LABEL = "CONFIANZA DEL VEREDICTO"
+CONFIDENCE_LABEL = "CONSISTENCIA"
 
 
 def _exec_row(e: Dict[str, str]) -> "P.LabeledTable":

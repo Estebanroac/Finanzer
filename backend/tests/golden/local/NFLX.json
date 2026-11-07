@@ -1,5 +1,6 @@
 {
   "alerts": {
+    "balance": [],
     "red_flags": [],
     "strengths": [
       {
@@ -11,11 +12,6 @@
         "category": "Rentabilidad",
         "detail": "Retorno sobre el patrimonio por encima de 3.3% de su industria sin ella: uso muy eficiente del capital de los accionistas.",
         "reason": "ROE normalizado elevado — 37.8% (TTM, sin partidas no recurrentes)"
-      },
-      {
-        "category": "Valoración",
-        "detail": "Paga 26.5x beneficios normalizados frente a 30.1x de su industria sin ella (-12%): un descuento que puede ser oportunidad si los fundamentos acompañan, o reflejar un riesgo que el mercado ya percibe.",
-        "reason": "Cotiza con descuento — P/E normalizado 26.5x"
       },
       {
         "category": "Rentabilidad",
@@ -31,6 +27,23 @@
         "category": "Solidez financiera",
         "detail": "El Altman Z de 5.39 (> 2.60) ubica a la empresa en zona segura: baja probabilidad estadística de problemas de solvencia según el modelo.",
         "reason": "Solvencia sólida — Altman Z 5.39"
+      },
+      {
+        "category": "Solidez financiera",
+        "detail": "La deuda neta equivale a menos de un año de EBITDA, un nivel cómodo que deja holgura financiera y capacidad de maniobra ante imprevistos.",
+        "reason": "Deuda baja — 0.4x EBITDA"
+      }
+    ],
+    "valuation": [
+      {
+        "category": "Valoración",
+        "detail": "Paga 26.5x beneficios normalizados frente a 30.1x de su industria sin ella (-12%): un descuento que puede ser oportunidad si los fundamentos acompañan, o reflejar un riesgo que el mercado ya percibe.",
+        "reason": "Cotiza con descuento — P/E normalizado 26.5x"
+      },
+      {
+        "category": "Valoración",
+        "detail": "Se paga 20.2x EBITDA frente a 13.2x de su industria sin ella (+53%): el mercado le asigna una prima que conviene contrastar con su ventaja competitiva.",
+        "reason": "EV/EBITDA sobre su industria — 20.2x"
       }
     ],
     "warnings": [
@@ -38,11 +51,6 @@
         "category": "Riesgo de mercado",
         "detail": "La acción ha llegado a caer 46.0% desde máximos en el último año: una corrección profunda que puede ser oportunidad si el negocio sigue intacto, o el mercado anticipando un deterioro. Son unas 1.3 veces su movimiento anual habitual (volatilidad del 37%): más de lo que suele moverse.",
         "reason": "Caída pronunciada en el año −46.0%"
-      },
-      {
-        "category": "Valoración",
-        "detail": "Se paga 20.2x EBITDA frente a 13.2x de su industria sin ella (+53%): el mercado le asigna una prima que conviene contrastar con su ventaja competitiva.",
-        "reason": "EV/EBITDA sobre su industria — 20.2x"
       }
     ]
   },
@@ -482,6 +490,22 @@
       "base del veredicto media: el beneficio normalizado y el esperado no cuadran (P/E 26.5x frente a forward 18.5x)"
     ],
     "score": 0.6
+  },
+  "consistency": {
+    "coverage": {
+      "level": "alta",
+      "text": "cobertura de datos completa"
+    },
+    "level": "mixta",
+    "methods": {
+      "level": "media",
+      "text": "DCF inverso la ve en precio y los múltiplos cara"
+    },
+    "phrase": "DCF inverso la ve en precio y los múltiplos cara",
+    "reasons": [
+      "DCF inverso la ve en precio y los múltiplos cara"
+    ],
+    "tone": "warn"
   },
   "cost_of_equity": {
     "as_of": "2026-11-01",
@@ -1622,20 +1646,8 @@
           "text": "Arquetipo MATURE (regla por_defecto): Clasificada como MATURE por defecto: no es financiera, REIT, pre-beneficio con crecimiento, cíclica ni de crecimiento rentable (industria Entretenimiento); su historia (19 ejercicios en EDGAR) no muestra ciclo."
         },
         {
-          "label": "Confianza · Convergencia entre métodos (media)",
+          "label": "Consistencia · Coincidencia de métodos (media)",
           "text": "uno lo ve en precio y otro con dirección: no coinciden, sin oponerse; no evaluable: DCF (fiabilidad baja)"
-        },
-        {
-          "label": "Confianza · Calidad de fuente (media)",
-          "text": "beneficio normalizado con ítems inferidos (confianza media)"
-        },
-        {
-          "label": "Confianza · Estabilidad del arquetipo (media)",
-          "text": "clasificación de frontera: un umbral movido ±20% la cambia (min_revenue_ps_cagr_3y 0.15→0.12)"
-        },
-        {
-          "label": "Confianza · base (media)",
-          "text": "el beneficio normalizado y el esperado no cuadran (P/E 26.5x frente a forward 18.5x)"
         },
         {
           "label": "Fuente oficial",
@@ -2654,73 +2666,27 @@
       "dimensions": [
         {
           "key": "convergence",
-          "label": "Convergencia entre métodos",
-          "level": "Media",
+          "label": "Coincidencia de métodos",
+          "level": "En parte",
+          "ok": false,
           "text": "DCF directo +0% (en precio, no evaluable) · DCF inverso +0.00 (en precio) · múltiplos frente al sector -0.38 (cara). Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no. Los datos del DCF directo no lo sostienen y no se usa para contrastar."
         },
         {
           "key": "coverage",
           "label": "Cobertura de datos",
-          "level": "Alta",
+          "level": "Completa",
+          "ok": true,
           "text": "Sin incidencias."
-        },
-        {
-          "key": "source",
-          "label": "Calidad de fuente",
-          "level": "Media",
-          "text": "El beneficio se ajustó por partidas extraordinarias identificadas de forma indirecta."
-        },
-        {
-          "key": "stability",
-          "label": "Estabilidad del arquetipo",
-          "level": "Media",
-          "text": "El tipo de empresa está en la frontera entre dos: un cambio pequeño en un umbral lo cambiaría, lo que hace menos fiable la comparación."
-        },
-        {
-          "key": "base",
-          "label": "base",
-          "level": "Media",
-          "text": "El beneficio sin partidas extraordinarias y el que esperan los analistas no cuadran: una de las dos bases puede estar equivocada."
         }
       ],
-      "level": "media",
+      "level": "mixta",
       "plain": [
-        "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no.",
-        "El beneficio se ajustó por partidas extraordinarias identificadas de forma indirecta.",
-        "El tipo de empresa está en la frontera entre dos: un cambio pequeño en un umbral lo cambiaría, lo que hace menos fiable la comparación.",
-        "El beneficio sin partidas extraordinarias y el que esperan los analistas no cuadran: una de las dos bases puede estar equivocada.",
-        "Los datos del DCF directo no lo sostienen y no se usa para contrastar."
+        "DCF inverso la ve en precio y los múltiplos cara."
       ],
-      "reasons": [
-        {
-          "dimension": "convergencia",
-          "level": "media",
-          "text": "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
-        },
-        {
-          "dimension": "convergencia",
-          "level": "media",
-          "text": "Los datos del DCF directo no lo sostienen y no se usa para contrastar."
-        },
-        {
-          "dimension": "calidad de fuente",
-          "level": "media",
-          "text": "El beneficio se ajustó por partidas extraordinarias identificadas de forma indirecta."
-        },
-        {
-          "dimension": "estabilidad",
-          "level": "media",
-          "text": "El tipo de empresa está en la frontera entre dos: un cambio pequeño en un umbral lo cambiaría, lo que hace menos fiable la comparación."
-        },
-        {
-          "dimension": "base",
-          "level": "media",
-          "text": "El beneficio sin partidas extraordinarias y el que esperan los analistas no cuadran: una de las dos bases puede estar equivocada."
-        }
-      ],
-      "summary": "Confianza del veredicto: media. El DCF directo, de fiabilidad baja, no puntúa ni cuenta para la convergencia; en Valoración puntúa el DCF inverso (+0 puntos). La calidad del negocio no se contrae.",
+      "reasons": [],
+      "summary": "Consistencia: mixta (DCF inverso la ve en precio y los múltiplos cara). No es una probabilidad de acierto. El DCF directo, de fiabilidad baja, no puntúa ni cuenta para la convergencia; en Valoración puntúa el DCF inverso (+0 puntos).",
       "tone": "warn",
-      "verdict_text": "(confianza media: DCF inverso la ve en precio y los múltiplos cara)"
+      "verdict_text": "(consistencia mixta: DCF inverso la ve en precio y los múltiplos cara)"
     },
     "cover": {
       "archetype": "MATURE",
@@ -2808,9 +2774,7 @@
         "Clasificación en la frontera: un cambio pequeño en uno de sus umbrales la cambiaría."
       ],
       "confidence_reasons": [
-        "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no.",
-        "El beneficio se ajustó por partidas extraordinarias identificadas de forma indirecta.",
-        "El tipo de empresa está en la frontera entre dos: un cambio pequeño en un umbral lo cambiaría, lo que hace menos fiable la comparación."
+        "DCF inverso la ve en precio y los múltiplos cara."
       ],
       "coverage_notes": [],
       "currency_note": null,
@@ -2907,9 +2871,9 @@
         "tone": "pos"
       },
       "verdict": {
-        "confidence_text": "(confianza media: DCF inverso la ve en precio y los múltiplos cara)",
+        "confidence_text": "(consistencia mixta: DCF inverso la ve en precio y los múltiplos cara)",
         "confidence_tone": "warn",
-        "full": "Calidad excelente · precio exigente (confianza media: DCF inverso la ve en precio y los múltiplos cara)",
+        "full": "Calidad excelente · precio exigente (consistencia mixta: DCF inverso la ve en precio y los múltiplos cara)",
         "text": "Calidad excelente · precio exigente"
       }
     },
@@ -3138,7 +3102,7 @@
       }
     },
     "methodology": {
-      "contraction_text": "el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y la confianza no mueve el precio",
+      "contraction_text": "el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura",
       "models": [
         "Altman (1968)",
         "Piotroski (2000)",
@@ -3237,16 +3201,18 @@
     "sections": {
       "alerts": {
         "counts": {
+          "balance": 0,
           "red_flags": 0,
           "strengths": 6,
           "unmeasured": null,
-          "warnings": 2
+          "valuation": 2,
+          "warnings": 1
         },
         "groups": [
           {
             "items": [],
             "key": "red_flags",
-            "title": "Riesgos",
+            "title": "Alerta roja",
             "tone": "neg"
           },
           {
@@ -3255,11 +3221,6 @@
                 "category": "Riesgo de mercado",
                 "detail": "La acción ha llegado a caer 46.0% desde máximos en el último año: una corrección profunda que puede ser oportunidad si el negocio sigue intacto, o el mercado anticipando un deterioro. Son unas 1.3 veces su movimiento anual habitual (volatilidad del 37%): más de lo que suele moverse.",
                 "reason": "Caída pronunciada en el año −46.0%"
-              },
-              {
-                "category": "Valoración",
-                "detail": "Se paga 20.2x EBITDA frente a 13.2x de su industria sin ella (+53%): el mercado le asigna una prima que conviene contrastar con su ventaja competitiva.",
-                "reason": "EV/EBITDA sobre su industria — 20.2x"
               }
             ],
             "key": "warnings",
@@ -3279,11 +3240,6 @@
                 "reason": "ROE normalizado elevado — 37.8% (TTM, sin partidas no recurrentes)"
               },
               {
-                "category": "Valoración",
-                "detail": "Paga 26.5x beneficios normalizados frente a 30.1x de su industria sin ella (-12%): un descuento que puede ser oportunidad si los fundamentos acompañan, o reflejar un riesgo que el mercado ya percibe.",
-                "reason": "Cotiza con descuento — P/E normalizado 26.5x"
-              },
-              {
                 "category": "Rentabilidad",
                 "detail": "De cada dólar vendido quedan 24 centavos de beneficio tras todos los costos, frente a 3.2% de su industria sin ella: poder de fijación de precios y eficiencia.",
                 "reason": "Margen neto normalizado sólido — 23.5%"
@@ -3297,11 +3253,39 @@
                 "category": "Solidez financiera",
                 "detail": "El Altman Z de 5.39 (> 2.60) ubica a la empresa en zona segura: baja probabilidad estadística de problemas de solvencia según el modelo.",
                 "reason": "Solvencia sólida — Altman Z 5.39"
+              },
+              {
+                "category": "Solidez financiera",
+                "detail": "La deuda neta equivale a menos de un año de EBITDA, un nivel cómodo que deja holgura financiera y capacidad de maniobra ante imprevistos.",
+                "reason": "Deuda baja — 0.4x EBITDA"
               }
             ],
             "key": "strengths",
             "title": "Fortalezas",
             "tone": "pos"
+          },
+          {
+            "items": [],
+            "key": "balance",
+            "title": "Estado del balance",
+            "tone": "neu"
+          },
+          {
+            "items": [
+              {
+                "category": "Valoración",
+                "detail": "Paga 26.5x beneficios normalizados frente a 30.1x de su industria sin ella (-12%): un descuento que puede ser oportunidad si los fundamentos acompañan, o reflejar un riesgo que el mercado ya percibe.",
+                "reason": "Cotiza con descuento — P/E normalizado 26.5x"
+              },
+              {
+                "category": "Valoración",
+                "detail": "Se paga 20.2x EBITDA frente a 13.2x de su industria sin ella (+53%): el mercado le asigna una prima que conviene contrastar con su ventaja competitiva.",
+                "reason": "EV/EBITDA sobre su industria — 20.2x"
+              }
+            ],
+            "key": "valuation",
+            "title": "Lectura de valoración",
+            "tone": "neu"
           }
         ]
       },
@@ -4573,10 +4557,12 @@
     },
     "summary": {
       "alert_counts": {
+        "balance": 0,
         "red_flags": 0,
         "strengths": 6,
         "unmeasured": null,
-        "warnings": 2
+        "valuation": 2,
+        "warnings": 1
       },
       "cards": [
         {
@@ -4647,7 +4633,7 @@
         }
       ],
       "composition": {
-        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y la confianza no mueve el precio.",
+        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura.",
         "price": {
           "level": "exigente",
           "note": "P/E 25.7x (sin partidas no recurrentes) frente a la mediana de servicios de comunicación (20.8x), 1.23 veces: en el tercio más caro del universo.",
@@ -4715,7 +4701,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad excelente · precio exigente (confianza media: DCF inverso la ve en precio y los múltiplos cara). Calidad 91/100 · precio 31/100 (P/E 25.7x frente a 20.8x de su sector)."
+          "text": "Calidad excelente · precio exigente (consistencia mixta: DCF inverso la ve en precio y los múltiplos cara). Calidad 91/100 · precio 31/100 (P/E 25.7x frente a 20.8x de su sector)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -4742,8 +4728,8 @@
           "text": "Cotiza en el 9% del rango de 52 semanas, en la zona de mínimos. Beta 0.79 de su industria: la propia de la acción no pasa los filtros de la regresión, así que no mide su sensibilidad al mercado."
         },
         {
-          "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Media: los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no. No contrae el atractivo del precio ni la calidad."
+          "label": "CONSISTENCIA",
+          "text": "Mixta: DCF inverso la ve en precio y los múltiplos cara (no es una probabilidad de acierto)."
         }
       ]
     },
@@ -5469,7 +5455,7 @@
                 "tone": "neg"
               }
             ],
-            "title": "Atractivo del precio (0–100, contraído por la confianza)"
+            "title": "Atractivo del precio (0–100, regla L1 por tercios)"
           }
         ]
       },
@@ -6137,6 +6123,7 @@
     "total_equity": 30152052000.0,
     "wacc": 0.0824041214016
   },
+  "l1_cycle_peak": null,
   "market_context": {
     "behavioral": [
       {
@@ -6502,6 +6489,7 @@
       0.839031,
       1.190143
     ],
+    "cycle_peak": null,
     "factor": null,
     "gics": "Communication Services",
     "gics_sector": "Communication Services",
@@ -6529,6 +6517,7 @@
     "pe_ttm": 25.7019298384,
     "percentile": 0.687438258681,
     "reason": null,
+    "reference_alarm": [],
     "relative": 1.23273378232,
     "rule": "L1",
     "score": 31,
@@ -7388,9 +7377,9 @@
     "source": "efectiva"
   },
   "verdict": {
-    "confidence": "media",
-    "confidence_text": "(confianza media: DCF inverso la ve en precio y los múltiplos cara)",
-    "full": "Calidad excelente · precio exigente (confianza media: DCF inverso la ve en precio y los múltiplos cara)",
+    "confidence_text": "(consistencia mixta: DCF inverso la ve en precio y los múltiplos cara)",
+    "consistency": "mixta",
+    "full": "Calidad excelente · precio exigente (consistencia mixta: DCF inverso la ve en precio y los múltiplos cara)",
     "price_level": "exigente",
     "price_level_raw": null,
     "quality_level": "excelente",

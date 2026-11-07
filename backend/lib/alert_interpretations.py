@@ -921,8 +921,8 @@ def build_signals(ratios: Dict[str, Any], contextual: Dict[str, Any], *,
                   archetype: str = MATURE, archetype_values: Optional[dict] = None) -> Dict[str, List[dict]]:
     """Ejecuta todos los interpretadores y agrupa por tipo, ordenando por peso.
 
-    Devuelve {"red_flags", "warnings", "strengths"} con ítems
-    {"category", "reason", "detail"} listos para el frontend y el PDF.
+    Devuelve {"red_flags", "warnings", "strengths", "balance", "valuation"} con ítems
+    {"category", "reason", "detail"} listos para el frontend y el PDF (red_flags vacío: lo llena alert_groups).
     """
     ctx = Ctx(ratios, contextual, sector=sector, real_sector=real_sector,
               roic_wacc_spread=roic_wacc_spread, altman=altman,
@@ -948,8 +948,19 @@ def build_signals(ratios: Dict[str, Any], contextual: Dict[str, Any], *,
         items.sort(key=lambda s: s["weight"], reverse=True)
         return [{"category": s["category"], "reason": s["reason"], "detail": s["detail"]} for s in items[:cap]]
 
-    return {
-        "red_flags": _clean(buckets["risk"]),
-        "warnings": _clean(buckets["warning"]),
-        "strengths": _clean(buckets["strength"]),
-    }
+    # Fase 1 · pendientes (decisión del usuario, 7-nov-2026; lib/alert_groups.py): antes del tope de cada grupo, el
+    # estado del balance y la lectura de valoración salen aparte y sin color; la única alerta roja (valoración extrema)
+    # la añade alert_groups.regroup cuando ya hay precio. Una roja que no sea de esos dos grupos pasa a advertencia.
+    import alert_groups as G
+    groups = {"warnings": [], "strengths": [], "balance": [], "valuation": []}
+    for kind, items in buckets.items():
+        for s in items:
+            if G.is_valuation(s):
+                groups["valuation"].append(s)
+            elif kind == "strength":
+                groups["strengths"].append(s)
+            elif G.is_balance(s):
+                groups["balance"].append(s)
+            else:
+                groups["warnings"].append(s)
+    return {"red_flags": [], **{k: _clean(v) for k, v in groups.items()}}

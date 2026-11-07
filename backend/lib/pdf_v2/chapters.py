@@ -612,8 +612,10 @@ def _riesgos(a, ctx):
     out += sub("Alertas y señales")
     plural = lambda n, w: f"{n} {w}{'s' if n != 1 else ''}"  # noqa: E731
     unm = f" ({ct['unmeasured']})" if ct.get("unmeasured") else ""   # F9 · R6: banco sin el crédito medido
-    out.append(body(f"{plural(ct['red_flags'], 'riesgo')}{unm} · {plural(ct['warnings'], 'advertencia')} · "
-                    f"{plural(ct['strengths'], 'fortaleza')}."))
+    out.append(body(f"{plural(ct['red_flags'], 'alerta roja').replace('alerta rojas', 'alertas rojas')}{unm} · "
+                    f"{plural(ct['warnings'], 'advertencia')} · {plural(ct['strengths'], 'fortaleza')}; aparte y sin "
+                    f"color, {ct.get('balance', 0)} del estado del balance y {ct.get('valuation', 0)} de la lectura de "
+                    "valoración."))
     any_items = False
     for grp in al["groups"]:
         if not grp["items"]:
@@ -631,11 +633,14 @@ def _riesgos(a, ctx):
             out.append(Paragraph(txt, st))
     if not any_items:
         out.append(body("No se detectaron alertas significativas."))
-    out += sub("Lo que no sabemos: la confianza del veredicto")
+    elif not ct["red_flags"]:
+        # Fase 1 · pendientes: la única alerta roja es la de valoración extrema; sin ella, se dice por qué no hay otras
+        out.append(note("Alerta roja: solo la de valoración extrema, la única con evidencia en la prueba hacia atrás."))
+    out += sub("Lo que no sabemos: la consistencia del análisis")
     if conf:
         out.append(body(conf["summary"]))
         out.append(Spacer(1, 6))
-        out.append(Stack([P.data_table(["Dimensión", "Nivel", "Motivo"],
+        out.append(Stack([P.data_table(["Qué mira", "Resultado", "Detalle"],
                                        [[x["label"], x["level"], x["text"]] for x in conf["dimensions"]],
                                        T.CW, (0.28, 0.12, 0.6), align=["left", "center", "left"])]))
         for t in conf.get("plain") or []:
@@ -703,13 +708,13 @@ def _conclusion(a, ctx):
     ac = d["summary"]["alert_counts"]
     out.append(Stack([P.BarList(rows, value_w=130), Spacer(1, 4), note(comp["caption"]),
                       note(f"{ac['strengths']} fortalezas · {ac['warnings']} advertencias · "
-                           f"{ac['red_flags']} riesgos"
+                           f"{ac['red_flags']} {'alerta roja' if ac['red_flags'] == 1 else 'alertas rojas'}"
                            + (f" ({ac['unmeasured']})." if ac.get("unmeasured") else "."))]))
     out += sub("Qué vigilar")
     for h in cover.get("highlights") or []:
         out.append(bullet(f"{_cap(h['kicker'].lower())}: {h['text']}", h.get("tone")))
     for t in conf.get("plain") or []:
-        out.append(bullet(f"Confianza: {t}", "warn"))
+        out.append(bullet(f"Consistencia: {t}", "warn"))
     # F13 · paso 10: riesgos del sector, aparte y sin puntuar
     sr = (d.get("sections") or {}).get("sector_risks") or {}
     if sr.get("items"):

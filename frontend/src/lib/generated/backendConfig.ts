@@ -14,8 +14,8 @@ export const STATE_LABELS = {
 } as const;
 
 /** Bandas de las dos puntuaciones (thresholds.toml [score.quality] y [score.price]):
- *  `bands` de mayor a menor (≥), `labels` de la mejor a la peor; `confidence.labels`: niveles de
- *  confianza del veredicto del mejor al peor ([score.price] confidence_factor). Rediseño /v2.
+ *  `bands` de mayor a menor (≥), `labels` de la mejor a la peor; `confidence.labels`: niveles de la
+ *  consistencia del mejor al peor (lib/consistency.LEVELS; el nombre de la clave es el del contrato).
  *  V7 (PM, el texto de los desgloses): `scale`, la escala de las dos ([score.total] max); `categories`, cuántas
  *  categorías suma la calidad; `category`, la base y el máximo de cada una ([score.category]); `neutral`, el
  *  F16: el precio, con las bandas de la regla L1 ([score.price_l1]); la confianza ya no lo mueve. */
@@ -24,7 +24,7 @@ export const SCORE_BANDS = {
   price: { bands: [67, 34], labels: ["atractivo", "razonable", "exigente"] },
   category: { base: 10, max: 20 },
   scale: 100,
-  confidence: { labels: ["alta", "media", "baja"] },
+  confidence: { labels: ["consistente", "mixta"] },
 } as const;
 
 /** La web /v2 (data.toml [web]). `analysisTimeoutMs`: cuánto espera la página al análisis antes de dar el

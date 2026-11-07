@@ -285,6 +285,9 @@ min_group = 10
 # F16 bis · 5: acciones del balance (las del beneficio) frente a las de la cotización en un emisor local con factor
 # implícito: por encima de este desvío, la capitalización de la L1 se rehace con las del balance.
 share_mismatch = 0.10
+# Fase 1 · pendientes (decisión del usuario, 7-nov-2026): alarma si la referencia (config/precio_l1.toml) tiene más de
+# estos días o si sus cortes no cambian entre dos actualizaciones (precio_l1.reference_alarm).
+max_age_days = 35
 # F16 bis · 4: un beneficio de doce meses cerrado más de estos días antes del corte de los estados del análisis lleva
 # aviso (los 20-F no tienen trimestres en XBRL).
 stale_days = 120
@@ -292,6 +295,19 @@ stale_days = 120
 [alerts]
 max_per_group = 6
 years_ebitda_plural_from = 1.5      # "~2 años" vs "~1 año"
+
+[alerts.valuation_extreme]
+# Fase 1 · pendientes (decisión del usuario, 7-nov-2026): la única alerta roja (lib/alert_groups.py). Se activa con la
+# lectura de valoración del motor anterior (valuation_reading) en «muy exigente». Evidencia fuera de la muestra: control
+# de la prueba hacia atrás (corte 5-nov-2025, versión A): caída máxima ≥ 40 % en 12 meses en 17 de 49 (34,7 %) frente
+# al 14,9 % del resto (37 de 248). Se cita en el texto; no se recalcula.
+rate = 0.347
+base_rate = 0.149
+hits = 17
+n = 49
+drawdown = 0.40
+horizon_months = 12
+sample = "corte del 5-nov-2025, 297 empresas de control"
 
 [alerts.pe]
 # F10 · B3: con referencia, la lectura del P/E, del EV/EBITDA, del ROE y de los márgenes es la de su fila (bandas de

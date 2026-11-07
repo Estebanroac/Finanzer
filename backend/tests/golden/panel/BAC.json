@@ -1,7 +1,9 @@
 {
   "alerts": {
+    "balance": [],
     "red_flags": [],
     "strengths": [],
+    "valuation": [],
     "warnings": []
   },
   "altman_z": {
@@ -409,6 +411,22 @@
       "techo en baja: la más baja manda: convergencia baja"
     ],
     "score": 0.5
+  },
+  "consistency": {
+    "coverage": {
+      "level": "media",
+      "text": "cobertura de datos suficiente"
+    },
+    "level": "mixta",
+    "methods": {
+      "level": "baja",
+      "text": "el P/B justificado y el P/B del sector discrepan"
+    },
+    "phrase": "el P/B justificado y el P/B del sector discrepan",
+    "reasons": [
+      "el P/B justificado y el P/B del sector discrepan"
+    ],
+    "tone": "warn"
   },
   "cost_of_equity": {
     "as_of": "2026-11-01",
@@ -1496,11 +1514,11 @@
           "text": "Arquetipo FINANCIAL (regla industria_banco): Clasificada como FINANCIAL por industria Bancos diversificados (banco)"
         },
         {
-          "label": "Confianza · Convergencia entre métodos (baja)",
+          "label": "Consistencia · Coincidencia de métodos (baja)",
           "text": "direcciones opuestas: P/B frente al sector dice barata y P/B justificado (Gordon) dice cara."
         },
         {
-          "label": "Confianza · Cobertura de datos (media)",
+          "label": "Consistencia · Cobertura de datos (media)",
           "text": "estados desfasados: corte del 31 de marzo de 2026 (197 días) y EDGAR ya tiene el 10-Q del periodo cerrado el 30 de junio de 2026."
         },
         {
@@ -2064,60 +2082,27 @@
       "dimensions": [
         {
           "key": "convergence",
-          "label": "Convergencia entre métodos",
-          "level": "Baja",
+          "label": "Coincidencia de métodos",
+          "level": "Discrepan",
+          "ok": false,
           "text": "P/B justificado (Gordon) -28% (cara) · P/B frente al sector +31% (barata). Los métodos de valoración se contradicen: uno ve la acción barata y otro cara."
         },
         {
           "key": "coverage",
           "label": "Cobertura de datos",
-          "level": "Media",
+          "level": "Suficiente",
+          "ok": true,
           "text": "Hay estados más recientes en la SEC (10-Q al 30 de junio de 2026)."
-        },
-        {
-          "key": "source",
-          "label": "Calidad de fuente",
-          "level": "Alta",
-          "text": "Sin incidencias."
-        },
-        {
-          "key": "stability",
-          "label": "Estabilidad del arquetipo",
-          "level": "Alta",
-          "text": "Sin incidencias."
-        },
-        {
-          "key": "base",
-          "label": "base",
-          "level": "Alta",
-          "text": "Sin incidencias."
         }
       ],
-      "level": "baja",
+      "level": "mixta",
       "plain": [
-        "Los métodos de valoración se contradicen: uno ve la acción barata y otro cara.",
-        "Hay estados más recientes en la SEC (10-Q al 30 de junio de 2026)."
+        "el P/B justificado y el P/B del sector discrepan."
       ],
-      "reasons": [
-        {
-          "dimension": "convergencia",
-          "level": "baja",
-          "text": "Los métodos de valoración se contradicen: uno ve la acción barata y otro cara."
-        },
-        {
-          "dimension": "cobertura",
-          "level": "media",
-          "text": "Hay estados más recientes en la SEC (10-Q al 30 de junio de 2026)."
-        },
-        {
-          "dimension": "techo",
-          "level": "baja",
-          "text": null
-        }
-      ],
-      "summary": "Confianza del veredicto: baja (por sus dimensiones sería media; la limita: la más baja manda —convergencia baja—). Contrae también la calidad del negocio hacia 50: de 70 a 67.",
-      "tone": "neg",
-      "verdict_text": "(confianza baja: el P/B justificado y el P/B del sector discrepan)"
+      "reasons": [],
+      "summary": "Consistencia: mixta (el P/B justificado y el P/B del sector discrepan). No es una probabilidad de acierto.",
+      "tone": "warn",
+      "verdict_text": "(consistencia mixta: el P/B justificado y el P/B del sector discrepan)"
     },
     "cover": {
       "archetype": "FINANCIAL",
@@ -2204,8 +2189,7 @@
         "Banco por su industria (Bancos diversificados): el balance es el producto."
       ],
       "confidence_reasons": [
-        "Los métodos de valoración se contradicen: uno ve la acción barata y otro cara.",
-        "Hay estados más recientes en la SEC (10-Q al 30 de junio de 2026)."
+        "el P/B justificado y el P/B del sector discrepan."
       ],
       "coverage_notes": [],
       "currency_note": null,
@@ -2299,14 +2283,14 @@
         "note": null,
         "note_short": null,
         "question": "¿es buena la empresa?",
-        "score": 67,
+        "score": 70,
         "title": "CALIDAD DEL NEGOCIO",
         "tone": "pos"
       },
       "verdict": {
-        "confidence_text": "(confianza baja: el P/B justificado y el P/B del sector discrepan)",
-        "confidence_tone": "neg",
-        "full": "Calidad sólida · precio razonable (confianza baja: el P/B justificado y el P/B del sector discrepan)",
+        "confidence_text": "(consistencia mixta: el P/B justificado y el P/B del sector discrepan)",
+        "confidence_tone": "warn",
+        "full": "Calidad sólida · precio razonable (consistencia mixta: el P/B justificado y el P/B del sector discrepan)",
         "text": "Calidad sólida · precio razonable"
       }
     },
@@ -2697,7 +2681,7 @@
       }
     },
     "methodology": {
-      "contraction_text": "el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y la confianza no mueve el precio",
+      "contraction_text": "el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura",
       "models": [
         "P/B y P/TBV justificados por el retorno (Gordon)"
       ],
@@ -2787,16 +2771,18 @@
     "sections": {
       "alerts": {
         "counts": {
+          "balance": 0,
           "red_flags": 0,
           "strengths": 0,
           "unmeasured": null,
+          "valuation": 0,
           "warnings": 0
         },
         "groups": [
           {
             "items": [],
             "key": "red_flags",
-            "title": "Riesgos",
+            "title": "Alerta roja",
             "tone": "neg"
           },
           {
@@ -2810,6 +2796,18 @@
             "key": "strengths",
             "title": "Fortalezas",
             "tone": "pos"
+          },
+          {
+            "items": [],
+            "key": "balance",
+            "title": "Estado del balance",
+            "tone": "neu"
+          },
+          {
+            "items": [],
+            "key": "valuation",
+            "title": "Lectura de valoración",
+            "tone": "neu"
           }
         ]
       },
@@ -3819,9 +3817,11 @@
     },
     "summary": {
       "alert_counts": {
+        "balance": 0,
         "red_flags": 0,
         "strengths": 0,
         "unmeasured": null,
+        "valuation": 0,
         "warnings": 0
       },
       "cards": [
@@ -3893,7 +3893,7 @@
         }
       ],
       "composition": {
-        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y la confianza no mueve el precio.",
+        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura.",
         "price": {
           "level": "razonable",
           "note": "P/E 11.2x frente a la mediana de bancos y aseguradoras (12.1x), 0.93 veces: en el tercio central del universo.",
@@ -3953,7 +3953,7 @@
               "value": 14
             }
           ],
-          "score": 67,
+          "score": 70,
           "title": "CALIDAD DEL NEGOCIO",
           "tone": "pos"
         }
@@ -3961,7 +3961,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad sólida · precio razonable (confianza baja: el P/B justificado y el P/B del sector discrepan). Calidad 67/100 · precio 59/100 (P/E 11.2x frente a 12.1x de su grupo)."
+          "text": "Calidad sólida · precio razonable (consistencia mixta: el P/B justificado y el P/B del sector discrepan). Calidad 70/100 · precio 59/100 (P/E 11.2x frente a 12.1x de su grupo)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -3988,8 +3988,8 @@
           "text": "Cotiza en el 28% del rango de 52 semanas, en la zona media. Con beta 1.09, la acción se mueve en línea con el mercado."
         },
         {
-          "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Baja: los métodos de valoración se contradicen: uno ve la acción barata y otro cara. No contrae el atractivo del precio; la calidad del negocio, sí, hacia 50 (de 70 a 67)."
+          "label": "CONSISTENCIA",
+          "text": "Mixta: el P/B justificado y el P/B del sector discrepan (no es una probabilidad de acierto)."
         }
       ]
     },
@@ -4416,7 +4416,7 @@
                 "tone": "neg"
               }
             ],
-            "title": "Atractivo del precio (0–100, contraído por la confianza)"
+            "title": "Atractivo del precio (0–100, regla L1 por tercios)"
           }
         ]
       },
@@ -4993,6 +4993,7 @@
     "total_equity": 300668000000.0,
     "wacc": null
   },
+  "l1_cycle_peak": null,
   "market_context": {
     "behavioral": [],
     "market_volatility": {
@@ -5494,6 +5495,7 @@
       0.839031,
       1.190143
     ],
+    "cycle_peak": null,
     "factor": null,
     "gics": "Financials",
     "gics_sector": "Financieras",
@@ -5529,6 +5531,7 @@
     "pe_ttm": 11.1799562645,
     "percentile": 0.413224188682,
     "reason": null,
+    "reference_alarm": [],
     "relative": 0.927142276301,
     "rule": "L1",
     "score": 59,
@@ -5622,9 +5625,9 @@
         "score": 14
       }
     ],
-    "contracted": true,
+    "contracted": false,
     "excluded_categories": [],
-    "factor": 0.85,
+    "factor": null,
     "level": "sólida",
     "level_raw": "sólida",
     "low_confidence": false,
@@ -5689,7 +5692,7 @@
       "source": "edgar",
       "window": 5
     },
-    "score": 67,
+    "score": 70,
     "score_raw": 70
   },
   "quality_readings": {},
@@ -6168,9 +6171,9 @@
     "source": "efectiva"
   },
   "verdict": {
-    "confidence": "baja",
-    "confidence_text": "(confianza baja: el P/B justificado y el P/B del sector discrepan)",
-    "full": "Calidad sólida · precio razonable (confianza baja: el P/B justificado y el P/B del sector discrepan)",
+    "confidence_text": "(consistencia mixta: el P/B justificado y el P/B del sector discrepan)",
+    "consistency": "mixta",
+    "full": "Calidad sólida · precio razonable (consistencia mixta: el P/B justificado y el P/B del sector discrepan)",
     "price_level": "razonable",
     "price_level_raw": null,
     "quality_level": "sólida",

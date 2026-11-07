@@ -227,11 +227,14 @@ def verdict(q: Dict[str, Any], p: Dict[str, Any], conf: Optional[Dict[str, Any]]
     ptxt = f"entre {pl} y {pr}" if (pl and pr) else (pl or ('sin veredicto' if (p.get('abstained') or l1_none)
                                                             else 'sin dato'))
     text = f"Calidad {ql or 'sin dato'} · precio {ptxt}"
-    why = confidence_phrase(conf)
-    ctext = f"(confianza {conf['level']}: {why})" if (conf and conf.get("level") and why) else None
+    # Fase 1 · pendientes (decisión del usuario, 7-nov-2026): la consistencia (dos niveles), no la confianza
+    import consistency as _cons
+    cons = _cons.compute(conf)
+    ctext = _cons.text(cons)
     if p.get("abstained"):          # F13 · paso 8: el motivo de la abstención, no la confianza de un precio que no hay
         ctext = f"({p['abstained']})"
     elif l1_none:
         ctext = f"({p['reason']})"
     return {"text": text, "confidence_text": ctext, "full": text + (f" {ctext}" if ctext else ""),
-            "quality_level": ql, "price_level": pl, "price_level_raw": pr, "confidence": (conf or {}).get("level")}
+            "quality_level": ql, "price_level": pl, "price_level_raw": pr,
+            "consistency": (cons or {}).get("level")}

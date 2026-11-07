@@ -1,6 +1,6 @@
 {
   "alerts": {
-    "red_flags": [
+    "balance": [
       {
         "category": "Solidez financiera",
         "detail": "El modelo de Altman sitúa a la empresa en zona de riesgo (Z 1.59 < 1.81), donde históricamente se concentran las compañías con problemas de solvencia a 2 años. Señal de alerta que exige revisar deuda y generación de caja.",
@@ -22,17 +22,20 @@
         "reason": "Margen neto normalizado negativo −1.7%"
       }
     ],
+    "red_flags": [],
     "strengths": [],
+    "valuation": [
+      {
+        "category": "Valor intrínseco",
+        "detail": "El DCF estima $5.4 (−81% frente al precio), pero con crecimiento ± 2,5 pp y WACC ± 1 pp el valor llega a ser ≤ 0 (y 2 motivos más). No se usa en el score.",
+        "reason": "DCF no concluyente −81% (fiabilidad baja)"
+      }
+    ],
     "warnings": [
       {
         "category": "Solidez financiera",
         "detail": "El resultado operativo cubre 1.8x el gasto por intereses, por debajo del mínimo cómodo (3x): deja poco margen si los beneficios se resienten.",
         "reason": "Cobertura de intereses justa — 1.8x"
-      },
-      {
-        "category": "Valor intrínseco",
-        "detail": "El DCF estima $5.4 (−81% frente al precio), pero con crecimiento ± 2,5 pp y WACC ± 1 pp el valor llega a ser ≤ 0 (y 2 motivos más). No se usa en el score.",
-        "reason": "DCF no concluyente −81% (fiabilidad baja)"
       },
       {
         "category": "Riesgo de mercado",
@@ -536,6 +539,22 @@
       "base del veredicto baja: Altman Z 1.59 en zona de peligro y rating sintético B+ (grado especulativo): la solvencia falla por las dos vías"
     ],
     "score": 0.4
+  },
+  "consistency": {
+    "coverage": {
+      "level": "alta",
+      "text": "cobertura de datos completa"
+    },
+    "level": "mixta",
+    "methods": {
+      "level": "baja",
+      "text": "DCF inverso y los múltiplos discrepan"
+    },
+    "phrase": "DCF inverso y los múltiplos discrepan",
+    "reasons": [
+      "DCF inverso y los múltiplos discrepan"
+    ],
+    "tone": "warn"
   },
   "cost_of_equity": {
     "as_of": "2026-11-01",
@@ -1650,16 +1669,8 @@
           "text": "Arquetipo CYCLICAL (regla historia_ciclica): Clasificada como CYCLICAL por su historia (9 ejercicios en EDGAR): caídas de ingresos ≥ 10% en 2020, 2023; desplomes del BPA con caída de ingresos en 2023."
         },
         {
-          "label": "Confianza · Convergencia entre métodos (baja)",
+          "label": "Consistencia · Coincidencia de métodos (baja)",
           "text": "direcciones opuestas: múltiplos frente al sector dice barata y DCF inverso dice cara; no evaluable: DCF (fiabilidad baja)"
-        },
-        {
-          "label": "Confianza · Estabilidad del arquetipo (baja)",
-          "text": "productora de materias primas: su resultado depende del precio de lo que produce, no de su gestión."
-        },
-        {
-          "label": "Confianza · base (baja)",
-          "text": "Altman Z 1.59 en zona de peligro y rating sintético B+ (grado especulativo): la solvencia falla por las dos vías."
         },
         {
           "label": "Fuente oficial",
@@ -2555,66 +2566,26 @@
       "dimensions": [
         {
           "key": "convergence",
-          "label": "Convergencia entre métodos",
-          "level": "Baja",
+          "label": "Coincidencia de métodos",
+          "level": "Discrepan",
+          "ok": false,
           "text": "DCF directo -81% (cara, no evaluable) · DCF inverso -0.50 (cara) · múltiplos frente al sector +0.75 (barata). Los métodos de valoración se contradicen: uno ve la acción barata y otro cara. Los datos del DCF directo no lo sostienen y no se usa para contrastar."
         },
         {
           "key": "coverage",
           "label": "Cobertura de datos",
-          "level": "Alta",
+          "level": "Completa",
+          "ok": true,
           "text": "Sin incidencias."
-        },
-        {
-          "key": "source",
-          "label": "Calidad de fuente",
-          "level": "Alta",
-          "text": "Sin incidencias."
-        },
-        {
-          "key": "stability",
-          "label": "Estabilidad del arquetipo",
-          "level": "Baja",
-          "text": "Produce materias primas: su resultado depende del precio de lo que vende, no de su gestión."
-        },
-        {
-          "key": "base",
-          "label": "base",
-          "level": "Baja",
-          "text": "La solvencia falla por dos vías: la fórmula de Altman la sitúa en riesgo de quiebra y sus beneficios apenas cubren los intereses."
         }
       ],
-      "level": "baja",
+      "level": "mixta",
       "plain": [
-        "Los métodos de valoración se contradicen: uno ve la acción barata y otro cara.",
-        "Produce materias primas: su resultado depende del precio de lo que vende, no de su gestión.",
-        "La solvencia falla por dos vías: la fórmula de Altman la sitúa en riesgo de quiebra y sus beneficios apenas cubren los intereses.",
-        "Los datos del DCF directo no lo sostienen y no se usa para contrastar."
+        "DCF inverso y los múltiplos discrepan."
       ],
-      "reasons": [
-        {
-          "dimension": "convergencia",
-          "level": "baja",
-          "text": "Los métodos de valoración se contradicen: uno ve la acción barata y otro cara."
-        },
-        {
-          "dimension": "convergencia",
-          "level": "baja",
-          "text": "Los datos del DCF directo no lo sostienen y no se usa para contrastar."
-        },
-        {
-          "dimension": "estabilidad",
-          "level": "baja",
-          "text": "Produce materias primas: su resultado depende del precio de lo que vende, no de su gestión."
-        },
-        {
-          "dimension": "base",
-          "level": "baja",
-          "text": "La solvencia falla por dos vías: la fórmula de Altman la sitúa en riesgo de quiebra y sus beneficios apenas cubren los intereses."
-        }
-      ],
-      "summary": "Confianza del veredicto: baja. El DCF directo, de fiabilidad baja, no puntúa ni cuenta para la convergencia; en Valoración puntúa el DCF inverso (−2 puntos). Contrae también la calidad del negocio hacia 50: de 20 a 24.",
-      "tone": "neg",
+      "reasons": [],
+      "summary": "Consistencia: mixta (DCF inverso y los múltiplos discrepan). No es una probabilidad de acierto. El DCF directo, de fiabilidad baja, no puntúa ni cuenta para la convergencia; en Valoración puntúa el DCF inverso (−2 puntos).",
+      "tone": "warn",
       "verdict_text": "(beneficio normalizado de doce meses ≤ 0: el P/E no tiene sentido)"
     },
     "cover": {
@@ -2703,9 +2674,7 @@
         "Clasificación en la frontera: un cambio pequeño en uno de sus umbrales la cambiaría."
       ],
       "confidence_reasons": [
-        "Los métodos de valoración se contradicen: uno ve la acción barata y otro cara.",
-        "Produce materias primas: su resultado depende del precio de lo que vende, no de su gestión.",
-        "La solvencia falla por dos vías: la fórmula de Altman la sitúa en riesgo de quiebra y sus beneficios apenas cubren los intereses."
+        "DCF inverso y los múltiplos discrepan."
       ],
       "coverage_notes": [],
       "currency_note": null,
@@ -2720,8 +2689,8 @@
         {
           "kicker": "A VIGILAR",
           "kind": "watch",
-          "text": "Riesgo de insolvencia — Altman Z 1.59",
-          "tone": "neg"
+          "text": "Cobertura de intereses justa — 1.8x",
+          "tone": "warn"
         },
         {
           "kicker": "CONTEXTO · 52 SEM.",
@@ -2797,13 +2766,13 @@
         "note": null,
         "note_short": null,
         "question": "¿es buena la empresa?",
-        "score": 24,
+        "score": 20,
         "title": "CALIDAD DEL NEGOCIO",
         "tone": "neg"
       },
       "verdict": {
         "confidence_text": "(beneficio normalizado de doce meses ≤ 0: el P/E no tiene sentido)",
-        "confidence_tone": "neg",
+        "confidence_tone": "warn",
         "full": "Calidad débil · precio sin veredicto (beneficio normalizado de doce meses ≤ 0: el P/E no tiene sentido)",
         "text": "Calidad débil · precio sin veredicto"
       }
@@ -3142,7 +3111,7 @@
       }
     },
     "methodology": {
-      "contraction_text": "el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y la confianza no mueve el precio",
+      "contraction_text": "el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura",
       "models": [
         "Altman (1968)",
         "Piotroski (2000)",
@@ -3237,12 +3206,43 @@
     "sections": {
       "alerts": {
         "counts": {
-          "red_flags": 4,
+          "balance": 4,
+          "red_flags": 0,
           "strengths": 0,
           "unmeasured": null,
-          "warnings": 3
+          "valuation": 1,
+          "warnings": 2
         },
         "groups": [
+          {
+            "items": [],
+            "key": "red_flags",
+            "title": "Alerta roja",
+            "tone": "neg"
+          },
+          {
+            "items": [
+              {
+                "category": "Solidez financiera",
+                "detail": "El resultado operativo cubre 1.8x el gasto por intereses, por debajo del mínimo cómodo (3x): deja poco margen si los beneficios se resienten.",
+                "reason": "Cobertura de intereses justa — 1.8x"
+              },
+              {
+                "category": "Riesgo de mercado",
+                "detail": "La acción ha llegado a caer 34.8% desde máximos en el último año: una corrección profunda que puede ser oportunidad si el negocio sigue intacto, o el mercado anticipando un deterioro. Son unas 0.8 veces su movimiento anual habitual (volatilidad del 43%): dentro de lo que suele moverse esta acción.",
+                "reason": "Caída pronunciada en el año −34.8%"
+              }
+            ],
+            "key": "warnings",
+            "title": "Advertencias",
+            "tone": "warn"
+          },
+          {
+            "items": [],
+            "key": "strengths",
+            "title": "Fortalezas",
+            "tone": "pos"
+          },
           {
             "items": [
               {
@@ -3266,37 +3266,21 @@
                 "reason": "Margen neto normalizado negativo −1.7%"
               }
             ],
-            "key": "red_flags",
-            "title": "Riesgos",
-            "tone": "neg"
+            "key": "balance",
+            "title": "Estado del balance",
+            "tone": "neu"
           },
           {
             "items": [
               {
-                "category": "Solidez financiera",
-                "detail": "El resultado operativo cubre 1.8x el gasto por intereses, por debajo del mínimo cómodo (3x): deja poco margen si los beneficios se resienten.",
-                "reason": "Cobertura de intereses justa — 1.8x"
-              },
-              {
                 "category": "Valor intrínseco",
                 "detail": "El DCF estima $5.4 (−81% frente al precio), pero con crecimiento ± 2,5 pp y WACC ± 1 pp el valor llega a ser ≤ 0 (y 2 motivos más). No se usa en el score.",
                 "reason": "DCF no concluyente −81% (fiabilidad baja)"
-              },
-              {
-                "category": "Riesgo de mercado",
-                "detail": "La acción ha llegado a caer 34.8% desde máximos en el último año: una corrección profunda que puede ser oportunidad si el negocio sigue intacto, o el mercado anticipando un deterioro. Son unas 0.8 veces su movimiento anual habitual (volatilidad del 43%): dentro de lo que suele moverse esta acción.",
-                "reason": "Caída pronunciada en el año −34.8%"
               }
             ],
-            "key": "warnings",
-            "title": "Advertencias",
-            "tone": "warn"
-          },
-          {
-            "items": [],
-            "key": "strengths",
-            "title": "Fortalezas",
-            "tone": "pos"
+            "key": "valuation",
+            "title": "Lectura de valoración",
+            "tone": "neu"
           }
         ]
       },
@@ -4601,10 +4585,12 @@
     },
     "summary": {
       "alert_counts": {
-        "red_flags": 4,
+        "balance": 4,
+        "red_flags": 0,
         "strengths": 0,
         "unmeasured": null,
-        "warnings": 3
+        "valuation": 1,
+        "warnings": 2
       },
       "cards": [
         {
@@ -4675,7 +4661,7 @@
         }
       ],
       "composition": {
-        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y la confianza no mueve el precio.",
+        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura.",
         "price": {
           "level": null,
           "note": "Precio sin veredicto: beneficio normalizado de doce meses ≤ 0: el P/E no tiene sentido.",
@@ -4735,7 +4721,7 @@
               "value": 2
             }
           ],
-          "score": 24,
+          "score": 20,
           "title": "CALIDAD DEL NEGOCIO",
           "tone": "neg"
         }
@@ -4743,7 +4729,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad débil · precio sin veredicto (beneficio normalizado de doce meses ≤ 0: el P/E no tiene sentido). Calidad 24/100 · precio —/100 (Sin P/E con sentido)."
+          "text": "Calidad débil · precio sin veredicto (beneficio normalizado de doce meses ≤ 0: el P/E no tiene sentido). Calidad 20/100 · precio —/100 (Sin P/E con sentido)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -4770,8 +4756,8 @@
           "text": "Cotiza en el 38% del rango de 52 semanas, en la zona media. Con beta 1.07, la acción se mueve en línea con el mercado."
         },
         {
-          "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Baja: los métodos de valoración se contradicen: uno ve la acción barata y otro cara. No contrae el atractivo del precio; la calidad del negocio, sí, hacia 50 (de 20 a 24)."
+          "label": "CONSISTENCIA",
+          "text": "Mixta: DCF inverso y los múltiplos discrepan (no es una probabilidad de acierto)."
         }
       ]
     },
@@ -5269,7 +5255,7 @@
                 "tone": "neg"
               }
             ],
-            "title": "Atractivo del precio (0–100, contraído por la confianza)"
+            "title": "Atractivo del precio (0–100, regla L1 por tercios)"
           }
         ]
       },
@@ -5816,6 +5802,7 @@
     "total_equity": 15860000000.0,
     "wacc": 0.0862732583931
   },
+  "l1_cycle_peak": null,
   "market_context": {
     "behavioral": [],
     "market_volatility": {
@@ -6278,6 +6265,7 @@
     "border": null,
     "confidence": "baja",
     "contracted": false,
+    "cycle_peak": null,
     "factor": null,
     "gics": "Materials",
     "gics_sector": "Materials",
@@ -6305,6 +6293,7 @@
     "pe_ttm": null,
     "percentile": null,
     "reason": "beneficio normalizado de doce meses ≤ 0: el P/E no tiene sentido",
+    "reference_alarm": [],
     "relative": null,
     "rule": "L1",
     "score": null,
@@ -6394,9 +6383,9 @@
         "score": 2
       }
     ],
-    "contracted": true,
+    "contracted": false,
     "excluded_categories": [],
-    "factor": 0.85,
+    "factor": null,
     "level": "débil",
     "level_raw": "débil",
     "low_confidence": false,
@@ -6451,7 +6440,7 @@
       "source": "edgar",
       "window": 5
     },
-    "score": 24,
+    "score": 20,
     "score_raw": 20
   },
   "quality_readings": {
@@ -7140,8 +7129,8 @@
     "source": "legal"
   },
   "verdict": {
-    "confidence": "baja",
     "confidence_text": "(beneficio normalizado de doce meses ≤ 0: el P/E no tiene sentido)",
+    "consistency": "mixta",
     "full": "Calidad débil · precio sin veredicto (beneficio normalizado de doce meses ≤ 0: el P/E no tiene sentido)",
     "price_level": null,
     "price_level_raw": null,

@@ -1,5 +1,6 @@
 {
   "alerts": {
+    "balance": [],
     "red_flags": [],
     "strengths": [
       {
@@ -13,13 +14,14 @@
         "reason": "BPA en fuerte expansión — +18.3% anual (3 años)"
       }
     ],
-    "warnings": [
+    "valuation": [
       {
         "category": "Valoración",
         "detail": "El mercado paga 14.7x beneficios normalizados, un +13% sobre la referencia de su industria sin ella (12.9x). Conviene verificar que el crecimiento y los márgenes justifiquen pagar por encima de sus pares.",
         "reason": "Prima sobre su industria — P/E normalizado 14.7x"
       }
-    ]
+    ],
+    "warnings": []
   },
   "altman_z": {
     "applicable": false,
@@ -413,6 +415,20 @@
     "limits_score": false,
     "reasons": [],
     "score": 1.0
+  },
+  "consistency": {
+    "coverage": {
+      "level": "alta",
+      "text": "cobertura de datos completa"
+    },
+    "level": "consistente",
+    "methods": {
+      "level": "alta",
+      "text": "el P/B justificado y el P/B del sector coinciden"
+    },
+    "phrase": "el P/B justificado y el P/B del sector coinciden",
+    "reasons": [],
+    "tone": "pos"
   },
   "cost_of_equity": {
     "as_of": "2026-11-01",
@@ -1535,7 +1551,7 @@
           "text": "Arquetipo FINANCIAL (regla industria_banco): Clasificada como FINANCIAL por industria Bancos diversificados (banco)"
         },
         {
-          "label": "Confianza · Convergencia entre métodos (alta)",
+          "label": "Consistencia · Coincidencia de métodos (alta)",
           "text": "coinciden (cara) con distancia 0.36 (< 0.6)"
         },
         {
@@ -2099,41 +2115,25 @@
       "dimensions": [
         {
           "key": "convergence",
-          "label": "Convergencia entre métodos",
-          "level": "Alta",
+          "label": "Coincidencia de métodos",
+          "level": "Coinciden",
+          "ok": true,
           "text": "P/B justificado (Gordon) -32% (cara) · P/B frente al sector -50% (cara). Los métodos de valoración coinciden."
         },
         {
           "key": "coverage",
           "label": "Cobertura de datos",
-          "level": "Alta",
-          "text": "Sin incidencias."
-        },
-        {
-          "key": "source",
-          "label": "Calidad de fuente",
-          "level": "Alta",
-          "text": "Sin incidencias."
-        },
-        {
-          "key": "stability",
-          "label": "Estabilidad del arquetipo",
-          "level": "Alta",
-          "text": "Sin incidencias."
-        },
-        {
-          "key": "base",
-          "label": "base",
-          "level": "Alta",
+          "level": "Completa",
+          "ok": true,
           "text": "Sin incidencias."
         }
       ],
-      "level": "alta",
+      "level": "consistente",
       "plain": [],
       "reasons": [],
-      "summary": "Confianza del veredicto: alta. La calidad del negocio no se contrae.",
+      "summary": "Consistencia: consistente (el P/B justificado y el P/B del sector coinciden). No es una probabilidad de acierto.",
       "tone": "pos",
-      "verdict_text": "(confianza alta: el P/B justificado y el P/B del sector coinciden)"
+      "verdict_text": "(consistencia consistente: el P/B justificado y el P/B del sector coinciden)"
     },
     "cover": {
       "archetype": "FINANCIAL",
@@ -2233,8 +2233,8 @@
         {
           "kicker": "A VIGILAR",
           "kind": "watch",
-          "text": "Prima sobre su industria — P/E normalizado 14.7x",
-          "tone": "warn"
+          "text": "Sin alertas relevantes",
+          "tone": "pos"
         },
         {
           "kicker": "CONTEXTO · 52 SEM.",
@@ -2315,9 +2315,9 @@
         "tone": "pos"
       },
       "verdict": {
-        "confidence_text": "(confianza alta: el P/B justificado y el P/B del sector coinciden)",
+        "confidence_text": "(consistencia consistente: el P/B justificado y el P/B del sector coinciden)",
         "confidence_tone": "pos",
-        "full": "Calidad excelente · precio razonable (confianza alta: el P/B justificado y el P/B del sector coinciden)",
+        "full": "Calidad excelente · precio razonable (consistencia consistente: el P/B justificado y el P/B del sector coinciden)",
         "text": "Calidad excelente · precio razonable"
       }
     },
@@ -2586,7 +2586,7 @@
       }
     },
     "methodology": {
-      "contraction_text": "el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y la confianza no mueve el precio",
+      "contraction_text": "el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura",
       "models": [
         "P/B y P/TBV justificados por el retorno (Gordon)"
       ],
@@ -2676,26 +2676,22 @@
     "sections": {
       "alerts": {
         "counts": {
+          "balance": 0,
           "red_flags": 0,
           "strengths": 2,
           "unmeasured": null,
-          "warnings": 1
+          "valuation": 1,
+          "warnings": 0
         },
         "groups": [
           {
             "items": [],
             "key": "red_flags",
-            "title": "Riesgos",
+            "title": "Alerta roja",
             "tone": "neg"
           },
           {
-            "items": [
-              {
-                "category": "Valoración",
-                "detail": "El mercado paga 14.7x beneficios normalizados, un +13% sobre la referencia de su industria sin ella (12.9x). Conviene verificar que el crecimiento y los márgenes justifiquen pagar por encima de sus pares.",
-                "reason": "Prima sobre su industria — P/E normalizado 14.7x"
-              }
-            ],
+            "items": [],
             "key": "warnings",
             "title": "Advertencias",
             "tone": "warn"
@@ -2716,6 +2712,24 @@
             "key": "strengths",
             "title": "Fortalezas",
             "tone": "pos"
+          },
+          {
+            "items": [],
+            "key": "balance",
+            "title": "Estado del balance",
+            "tone": "neu"
+          },
+          {
+            "items": [
+              {
+                "category": "Valoración",
+                "detail": "El mercado paga 14.7x beneficios normalizados, un +13% sobre la referencia de su industria sin ella (12.9x). Conviene verificar que el crecimiento y los márgenes justifiquen pagar por encima de sus pares.",
+                "reason": "Prima sobre su industria — P/E normalizado 14.7x"
+              }
+            ],
+            "key": "valuation",
+            "title": "Lectura de valoración",
+            "tone": "neu"
           }
         ]
       },
@@ -3665,10 +3679,12 @@
     },
     "summary": {
       "alert_counts": {
+        "balance": 0,
         "red_flags": 0,
         "strengths": 2,
         "unmeasured": null,
-        "warnings": 1
+        "valuation": 1,
+        "warnings": 0
       },
       "cards": [
         {
@@ -3739,7 +3755,7 @@
         }
       ],
       "composition": {
-        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y la confianza no mueve el precio.",
+        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura.",
         "price": {
           "level": "razonable",
           "note": "P/E 14.3x (sin partidas no recurrentes) frente a la mediana de bancos y aseguradoras (12.1x), 1.19 veces: en el tercio central del universo; en la frontera con «exigente» (a 1 punto): un cambio pequeño en los datos o en los supuestos cambiaría el nivel.",
@@ -3807,7 +3823,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad excelente · precio razonable (confianza alta: el P/B justificado y el P/B del sector coinciden). Calidad 88/100 · precio 34/100 (P/E 14.3x frente a 12.1x de su grupo; en la frontera con «exigente» (a 1 punto): un cambio pequeño en los datos o en los supuestos cambiaría el nivel)."
+          "text": "Calidad excelente · precio razonable (consistencia consistente: el P/B justificado y el P/B del sector coinciden). Calidad 88/100 · precio 34/100 (P/E 14.3x frente a 12.1x de su grupo; en la frontera con «exigente» (a 1 punto): un cambio pequeño en los datos o en los supuestos cambiaría el nivel)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -3834,8 +3850,8 @@
           "text": "Cotiza en el 62% del rango de 52 semanas, en la zona media. Con beta 1.06, la acción se mueve en línea con el mercado."
         },
         {
-          "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Alta: los métodos y los datos coinciden. No contrae el atractivo del precio ni la calidad."
+          "label": "CONSISTENCIA",
+          "text": "Consistente: el P/B justificado y el P/B del sector coinciden (no es una probabilidad de acierto)."
         }
       ]
     },
@@ -4262,7 +4278,7 @@
                 "tone": "neg"
               }
             ],
-            "title": "Atractivo del precio (0–100, contraído por la confianza)"
+            "title": "Atractivo del precio (0–100, regla L1 por tercios)"
           }
         ]
       },
@@ -4850,6 +4866,7 @@
     "total_equity": 374598000000.0,
     "wacc": null
   },
+  "l1_cycle_peak": null,
   "market_context": {
     "behavioral": [],
     "market_volatility": {
@@ -5203,6 +5220,7 @@
       0.839031,
       1.190143
     ],
+    "cycle_peak": null,
     "factor": null,
     "gics": "Financials",
     "gics_sector": "Financieras",
@@ -5238,6 +5256,7 @@
     "pe_ttm": 14.3064055415,
     "percentile": 0.660362708081,
     "reason": null,
+    "reference_alarm": [],
     "relative": 1.18641549982,
     "rule": "L1",
     "score": 34,
@@ -5885,9 +5904,9 @@
     "source": "efectiva"
   },
   "verdict": {
-    "confidence": "alta",
-    "confidence_text": "(confianza alta: el P/B justificado y el P/B del sector coinciden)",
-    "full": "Calidad excelente · precio razonable (confianza alta: el P/B justificado y el P/B del sector coinciden)",
+    "confidence_text": "(consistencia consistente: el P/B justificado y el P/B del sector coinciden)",
+    "consistency": "consistente",
+    "full": "Calidad excelente · precio razonable (consistencia consistente: el P/B justificado y el P/B del sector coinciden)",
     "price_level": "razonable",
     "price_level_raw": null,
     "quality_level": "excelente",

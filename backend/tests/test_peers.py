@@ -125,7 +125,7 @@ def test_summary_has_same_figures_as_the_page(sym):
     assert s["symbol"] == sym and s["name"] == a["profile"]["name"] and s["price"] == a["price"]
     assert s["quality"] == {"score": a["quality"]["score"], "level": a["quality"]["level"]}
     assert s["price_score"] == {"score": a["price_attractiveness"]["score"], "level": a["price_attractiveness"]["level"]}
-    assert s["confidence"] == a["verdict"]["confidence"]
+    assert s["consistency"] == a["verdict"]["consistency"]
     assert s["metrics"]["market_cap"]["value"] == a["profile"]["market_cap"]
     assert len(json.dumps(s)) < 3000                       # compacto: no el análisis entero (memoria)
     ind = a["benchmark"]["industry"]

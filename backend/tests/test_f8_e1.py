@@ -201,7 +201,8 @@ def test_sensitivity_dependent_lowers_confidence_one_step_and_reprices():
     assert r["confidence"]["level"] == "media" and r["confidence"]["ke_dependent"]["from"] == "alta"
     assert r["price_attractiveness"]["score"] == round(50 + 20 * 0.75)          # contraído con la confianza nueva
     assert "dependiente de Ke" in r["confidence"]["reasons"][-1]
-    assert "coste del capital" in r["verdict"]["confidence_text"]
+    # Fase 1 · pendientes: el veredicto da la consistencia (métodos y cobertura), no la dependencia de Ke
+    assert "coste del capital" not in (r["verdict"]["confidence_text"] or "")
 
 
 def test_sensitivity_stable_changes_nothing():

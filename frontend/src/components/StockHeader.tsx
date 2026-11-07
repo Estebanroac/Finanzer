@@ -130,7 +130,7 @@ export default function StockHeader({ data }: { data: StockAnalysis }) {
   );
 }
 
-/** Veredicto verbal + confianza (llano) + cobertura parcial. Los códigos técnicos solo van al anexo del PDF (D1). */
+/** Veredicto verbal + consistencia (llano) + cobertura parcial. Los códigos técnicos solo van al anexo del PDF (D1). */
 function Verdict({ display }: { display: Display }) {
   const C = display.cover;
   return (
@@ -140,7 +140,7 @@ function Verdict({ display }: { display: Display }) {
       {C.verdict.confidence_text && (
         <p className={`mt-1 text-[14.5px] ${toneClass(C.verdict.confidence_tone)} fz-tone-fg flex items-center gap-2`}>
           {C.verdict.confidence_text}
-          <Help k="confidence" title="Confianza del veredicto" />
+          <Help k="confidence" title="Consistencia" />
           {C.official_source_badge && (
             <span title={C.official_source_badge.tooltip}
                   className="rounded-full border border-amber-400/40 px-2 py-0.5 text-[11.5px] text-amber-300">
@@ -151,7 +151,7 @@ function Verdict({ display }: { display: Display }) {
       )}
       {C.confidence_reasons.length > 0 && (
         <div className="mt-3">
-          <div className="fz-kicker mb-1.5">Motivos de la confianza</div>
+          <div className="fz-kicker mb-1.5">Por qué es mixta</div>
           <ul className="fz-reasons">
             {C.confidence_reasons.map((r) => <li key={r}>{r}</li>)}
           </ul>

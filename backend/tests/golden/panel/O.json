@@ -1,7 +1,9 @@
 {
   "alerts": {
+    "balance": [],
     "red_flags": [],
-    "strengths": [
+    "strengths": [],
+    "valuation": [
       {
         "category": "Valoración",
         "detail": "Cotiza a 15.6x EBITDA frente a 18.0x de su industria sin ella: valoración atractiva sobre flujo operativo, a validar que no responda a un deterioro del negocio.",
@@ -394,6 +396,20 @@
     "limits_score": false,
     "reasons": [],
     "score": 1.0
+  },
+  "consistency": {
+    "coverage": {
+      "level": "alta",
+      "text": "cobertura de datos completa"
+    },
+    "level": "consistente",
+    "methods": {
+      "level": "alta",
+      "text": "DCF inverso y los múltiplos coinciden"
+    },
+    "phrase": "DCF inverso y los múltiplos coinciden",
+    "reasons": [],
+    "tone": "pos"
   },
   "cost_of_equity": {
     "as_of": "2026-11-01",
@@ -1461,7 +1477,7 @@
           "text": "Arquetipo REIT (regla industria_reit): Clasificada como REIT por industria REIT de locales comerciales."
         },
         {
-          "label": "Confianza · Convergencia entre métodos (alta)",
+          "label": "Consistencia · Coincidencia de métodos (alta)",
           "text": "coinciden (barata) con distancia 0.00 (< 0.6)"
         },
         {
@@ -2119,41 +2135,25 @@
       "dimensions": [
         {
           "key": "convergence",
-          "label": "Convergencia entre métodos",
-          "level": "Alta",
+          "label": "Coincidencia de métodos",
+          "level": "Coinciden",
+          "ok": true,
           "text": "DCF inverso +0.50 (barata) · múltiplos frente al sector +0.50 (barata). Los métodos de valoración coinciden."
         },
         {
           "key": "coverage",
           "label": "Cobertura de datos",
-          "level": "Alta",
-          "text": "Sin incidencias."
-        },
-        {
-          "key": "source",
-          "label": "Calidad de fuente",
-          "level": "Alta",
-          "text": "Sin incidencias."
-        },
-        {
-          "key": "stability",
-          "label": "Estabilidad del arquetipo",
-          "level": "Alta",
-          "text": "Sin incidencias."
-        },
-        {
-          "key": "base",
-          "label": "base",
-          "level": "Alta",
+          "level": "Completa",
+          "ok": true,
           "text": "Sin incidencias."
         }
       ],
-      "level": "alta",
+      "level": "consistente",
       "plain": [],
       "reasons": [],
-      "summary": "Confianza del veredicto: alta. La calidad del negocio no se contrae.",
+      "summary": "Consistencia: consistente (DCF inverso y los múltiplos coinciden). No es una probabilidad de acierto.",
       "tone": "pos",
-      "verdict_text": "(confianza alta: DCF inverso y los múltiplos coinciden)"
+      "verdict_text": "(consistencia consistente: DCF inverso y los múltiplos coinciden)"
     },
     "cover": {
       "archetype": "REIT",
@@ -2247,7 +2247,7 @@
         {
           "kicker": "FORTALEZA CLAVE",
           "kind": "strength",
-          "text": "EV/EBITDA barato — 15.6x",
+          "text": "Fundamentos sólidos en la mayoría de categorías",
           "tone": "pos"
         },
         {
@@ -2335,9 +2335,9 @@
         "tone": "pos"
       },
       "verdict": {
-        "confidence_text": "(confianza alta: DCF inverso y los múltiplos coinciden)",
+        "confidence_text": "(consistencia consistente: DCF inverso y los múltiplos coinciden)",
         "confidence_tone": "pos",
-        "full": "Calidad sólida · precio atractivo (confianza alta: DCF inverso y los múltiplos coinciden)",
+        "full": "Calidad sólida · precio atractivo (consistencia consistente: DCF inverso y los múltiplos coinciden)",
         "text": "Calidad sólida · precio atractivo"
       }
     },
@@ -2708,7 +2708,7 @@
       }
     },
     "methodology": {
-      "contraction_text": "el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y la confianza no mueve el precio",
+      "contraction_text": "el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura",
       "models": [
         "P/FFO y rentabilidad sobre el FFO"
       ],
@@ -2796,16 +2796,18 @@
     "sections": {
       "alerts": {
         "counts": {
+          "balance": 0,
           "red_flags": 0,
-          "strengths": 1,
+          "strengths": 0,
           "unmeasured": null,
+          "valuation": 1,
           "warnings": 0
         },
         "groups": [
           {
             "items": [],
             "key": "red_flags",
-            "title": "Riesgos",
+            "title": "Alerta roja",
             "tone": "neg"
           },
           {
@@ -2815,6 +2817,18 @@
             "tone": "warn"
           },
           {
+            "items": [],
+            "key": "strengths",
+            "title": "Fortalezas",
+            "tone": "pos"
+          },
+          {
+            "items": [],
+            "key": "balance",
+            "title": "Estado del balance",
+            "tone": "neu"
+          },
+          {
             "items": [
               {
                 "category": "Valoración",
@@ -2822,9 +2836,9 @@
                 "reason": "EV/EBITDA barato — 15.6x"
               }
             ],
-            "key": "strengths",
-            "title": "Fortalezas",
-            "tone": "pos"
+            "key": "valuation",
+            "title": "Lectura de valoración",
+            "tone": "neu"
           }
         ]
       },
@@ -3822,9 +3836,11 @@
     },
     "summary": {
       "alert_counts": {
+        "balance": 0,
         "red_flags": 0,
-        "strengths": 1,
+        "strengths": 0,
         "unmeasured": null,
+        "valuation": 1,
         "warnings": 0
       },
       "cards": [
@@ -3896,7 +3912,7 @@
         }
       ],
       "composition": {
-        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y la confianza no mueve el precio.",
+        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura.",
         "price": {
           "level": "atractivo",
           "note": "P/FFO 13.1x frente a la mediana de los REIT (19.9x), 0.66 veces: en el tercio más barato del universo.",
@@ -3970,7 +3986,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad sólida · precio atractivo (confianza alta: DCF inverso y los múltiplos coinciden). Calidad 68/100 · precio 82/100 (P/FFO 13.1x frente a 19.9x de su grupo)."
+          "text": "Calidad sólida · precio atractivo (consistencia consistente: DCF inverso y los múltiplos coinciden). Calidad 68/100 · precio 82/100 (P/FFO 13.1x frente a 19.9x de su grupo)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -3997,8 +4013,8 @@
           "text": "Cotiza en el 14% del rango de 52 semanas, en la parte baja. Beta 0.67 de su industria: la propia de la acción no pasa los filtros de la regresión, así que no mide su sensibilidad al mercado."
         },
         {
-          "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Alta: los métodos y los datos coinciden. No contrae el atractivo del precio ni la calidad."
+          "label": "CONSISTENCIA",
+          "text": "Consistente: DCF inverso y los múltiplos coinciden (no es una probabilidad de acierto)."
         }
       ]
     },
@@ -4398,7 +4414,7 @@
                 "tone": "neg"
               }
             ],
-            "title": "Atractivo del precio (0–100, contraído por la confianza)"
+            "title": "Atractivo del precio (0–100, regla L1 por tercios)"
           }
         ]
       },
@@ -4864,6 +4880,7 @@
     "total_equity": 39549557000.0,
     "wacc": 0.068855765574
   },
+  "l1_cycle_peak": null,
   "market_context": {
     "behavioral": [],
     "market_volatility": {
@@ -5365,6 +5382,7 @@
       0.839031,
       1.190143
     ],
+    "cycle_peak": null,
     "factor": null,
     "gics": "Real Estate",
     "gics_sector": "REIT",
@@ -5398,6 +5416,7 @@
     "pe_ttm": 13.1320021634,
     "percentile": 0.184720596197,
     "reason": null,
+    "reference_alarm": [],
     "relative": 0.658744122666,
     "rule": "L1",
     "score": 82,
@@ -6162,9 +6181,9 @@
     "source": "efectiva"
   },
   "verdict": {
-    "confidence": "alta",
-    "confidence_text": "(confianza alta: DCF inverso y los múltiplos coinciden)",
-    "full": "Calidad sólida · precio atractivo (confianza alta: DCF inverso y los múltiplos coinciden)",
+    "confidence_text": "(consistencia consistente: DCF inverso y los múltiplos coinciden)",
+    "consistency": "consistente",
+    "full": "Calidad sólida · precio atractivo (consistencia consistente: DCF inverso y los múltiplos coinciden)",
     "price_level": "atractivo",
     "price_level_raw": null,
     "quality_level": "sólida",

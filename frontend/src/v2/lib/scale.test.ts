@@ -27,12 +27,12 @@ describe("buildScale", () => {
   });
 });
 
-describe("buildLevelScale (confianza)", () => {
-  it("tres tramos iguales de peor a mejor y la marca en el centro del nivel", () => {
-    const m = buildLevelScale("confidence", "alta");
-    expect(m.segments.map((s) => s.label).join(" ")).toBe("baja media alta");
+describe("buildLevelScale (consistencia)", () => {
+  it("dos tramos iguales de peor a mejor y la marca en el centro del nivel", () => {
+    const m = buildLevelScale("confidence", "consistente");
+    expect(m.segments.map((s) => s.label).join(" ")).toBe("mixta consistente");
     expect(m.segments.every((s) => s.range === "")).toBe(true);     // niveles sin rango numérico
-    expect(m.segments.map((s) => s.tone).join(" ")).toBe("warn neutral good");
+    expect(m.segments.map((s) => s.tone).join(" ")).toBe("warn good");
     const alta = m.segments[m.segments.length - 1];
     expect(m.pinPct).toBeCloseTo((alta.from + alta.to) / 2);
     expect(m.segments.reduce((a, s) => a + s.widthPct, 0)).toBeCloseTo(100);

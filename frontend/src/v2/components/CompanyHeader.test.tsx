@@ -27,7 +27,7 @@ describe("CompanyHeader (AAPL)", () => {
     expect(PRICE_NOTE).toBe("El atractivo del precio compara el P/E del beneficio normalizado de doce meses (P/FFO en "
       + "los REIT) con la mediana de su grupo (su sector; bancos y aseguradoras entre sí, REIT entre sí) y lo "
       + "sitúa en el universo de unas 540 empresas: el tercio más barato es atractivo, el más caro exigente; se expresa "
-      + "sobre 100 y la confianza no lo mueve. Atractivo desde 67, razonable desde 34; exigente por debajo.");
+      + "sobre 100; múltiplos y DCF son lectura. Atractivo desde 67, razonable desde 34; exigente por debajo.");
     render(<ScoreBreakdowns analysis={AAPL as unknown as StockAnalysis} />);
     for (const id of ["breakdown-quality", "breakdown-price"]) {
       const t = screen.getByTestId(id).textContent ?? "";
@@ -35,17 +35,17 @@ describe("CompanyHeader (AAPL)", () => {
     }
     expect(screen.getByTestId("breakdown-quality").textContent).toContain(QUALITY_NOTE);
   });
-  it("la cifra lleva el tono del motor y la confianza su escala de tres niveles", () => {
+  it("la cifra lleva el tono del motor y la consistencia su escala de dos niveles", () => {
     render(<CompanyHeader analysis={AAPL as unknown as StockAnalysis} />);
     expect(screen.getByTestId("score-quality").querySelector(".big")?.className).toContain("tone-good");
-    expect(screen.getByTestId("confidence").querySelectorAll("[data-segment]").length).toBe(3);
+    expect(screen.getByTestId("confidence").querySelectorAll("[data-segment]").length).toBe(2);
   });
-  it("el precio y la confianza explican su cálculo con datos del motor", () => {
+  it("el precio y la consistencia explican su cálculo con datos del motor", () => {
     render(<ScoreBreakdowns analysis={AAPL as unknown as StockAnalysis} />);
     const price = screen.getByTestId("breakdown-price");
     expect(price.textContent).toContain("Bloque de múltiplos");
     expect(price.textContent).toContain("−5");
-    expect(screen.getByTestId("breakdown-confidence").querySelectorAll("li[data-cat]").length).toBe(4);
+    expect(screen.getByTestId("breakdown-confidence").querySelectorAll("li[data-cat]").length).toBe(2);
   });
   it("la conclusión del motor está siempre visible en la cabecera", () => {
     render(<CompanyHeader analysis={AAPL as unknown as StockAnalysis} />);
@@ -59,7 +59,7 @@ describe("CompanyHeader (AAPL)", () => {
     // F8 · E10: Altman por SIC (3571, Z original), zona segura con su peso de +3: solidez 10 → 16
     expect(mini("desglose-quality")).toEqual(["Solidez financiera16 / 20", "Rentabilidad20 / 20", "Calidad de ganancias20 / 20", "Crecimiento10 / 20"]);
     expect(mini("desglose-price").join(" | ")).toContain("Bloque de múltiplos · 5 múltiplos−5");
-    expect(mini("desglose-confidence").length).toBe(4);
+    expect(mini("desglose-confidence").length).toBe(2);
     // el total, las notas y el título del cálculo, en la tarjeta; ningún botón «Ver detalle» ni tarjeta que se abra
     expect(screen.getByTestId("desglose-price").textContent).toContain("Valoración");
     expect(screen.getByTestId("desglose-price").textContent).toContain(PRICE_NOTE);
@@ -82,7 +82,7 @@ describe("CompanyHeader (AAPL)", () => {
     expect(tips("desglose-quality")).toEqual(["cat_solidez", "cat_rentabilidad", "cat_calidad_ganancias", "cat_crecimiento"]);
     // F8 · E8: con la fiabilidad del DCF por sus insumos, en AAPL puntúa el DCF directo; el caso del inverso es DOW
     expect(tips("desglose-price")).not.toContain("reverse_dcf");
-    expect(tips("desglose-confidence")).toEqual(["conf_convergence", "conf_coverage", "conf_source", "conf_stability"]);
+    expect(tips("desglose-confidence")).toEqual(["conf_convergence", "conf_coverage"]);
     expect(screen.getByRole("button", { name: "Qué es Calidad de ganancias" })).toBeTruthy();
   });
 
@@ -100,7 +100,7 @@ describe("CompanyHeader (AAPL)", () => {
     const { container } = render(<CompanyHeader analysis={AAPL as unknown as StockAnalysis} compact />);
     const head = container.querySelector(".company-header.compact")!;
     expect(head.getAttribute("aria-hidden")).toBe("true");
-    expect(head.querySelector(".scores-line")!.textContent).toMatch(/Calidad.*Precio.*Confianza/);
+    expect(head.querySelector(".scores-line")!.textContent).toMatch(/Calidad.*Precio.*Consistencia/);
     expect(head.querySelectorAll("button, a[href], [tabindex], [data-testid]")).toHaveLength(0);
   });
   it("V4-F8 (PM): la cabecera resume la nota (forma corta) y «La empresa» la detalla (frase completa)", () => {

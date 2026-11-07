@@ -245,7 +245,7 @@ def test_unh_dcf_is_not_reliable_with_its_margin_collapsing(ref):
 # ── E11 (§3 E11) ──
 
 def test_confidence_never_above_any_rated_dimension(ref):
-    """Control de pipeline: la más baja manda (la cobertura incluida); y con confianza baja la calidad está contraída."""
+    """Control de pipeline: la más baja manda (la cobertura incluida); la calidad ya no se contrae (Fase 1 · pendientes)."""
     order = ("alta", "media", "baja")
     for s, a in ref.items():
         c = a.get("confidence") or {}
@@ -254,8 +254,5 @@ def test_confidence_never_above_any_rated_dimension(ref):
         for k, d in (c.get("dimensions") or {}).items():
             if k in ("convergence", "coverage", "source", "stability") and d.get("level") in order:
                 assert order.index(c["level"]) >= order.index(d["level"]), (s, k, d["level"], c["level"])
-        q = a.get("quality") or {}
-        # F10 · N4: contrae la base de contracción (sin el escalón de las tasas base, que no contrae)
-        if (c.get("contraction_basis") or c["level"]) == "baja" and q.get("score_raw") is not None \
-                and q["score_raw"] != 50:
-            assert q["contracted"] and abs(q["score"] - 50) < abs(q["score_raw"] - 50), s
+        # Fase 1 · pendientes (decisión del usuario, 7-nov-2026): la confianza ya no contrae la calidad
+        assert not (a.get("quality") or {}).get("contracted"), s

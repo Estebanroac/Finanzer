@@ -1,7 +1,9 @@
 {
   "alerts": {
+    "balance": [],
     "red_flags": [],
-    "strengths": [
+    "strengths": [],
+    "valuation": [
       {
         "category": "Valoración",
         "detail": "Cotiza a 15.4x EBITDA frente a 18.0x de su industria sin ella: valoración atractiva sobre flujo operativo, a validar que no responda a un deterioro del negocio.",
@@ -381,6 +383,23 @@
       "techo en baja: la más baja manda: cobertura baja"
     ],
     "score": 0.666666666667
+  },
+  "consistency": {
+    "coverage": {
+      "level": "baja",
+      "text": "cobertura de datos parcial"
+    },
+    "level": "mixta",
+    "methods": {
+      "level": "no_evaluable",
+      "text": "un solo método de valoración evaluable, sin contraste"
+    },
+    "phrase": "un solo método de valoración evaluable, sin contraste; cobertura de datos parcial",
+    "reasons": [
+      "un solo método de valoración evaluable, sin contraste",
+      "cobertura de datos parcial"
+    ],
+    "tone": "warn"
   },
   "cost_of_equity": {
     "as_of": "2026-11-01",
@@ -1490,11 +1509,11 @@
           "text": "Arquetipo REIT (regla industria_reit): Clasificada como REIT por industria REIT de locales comerciales."
         },
         {
-          "label": "Confianza · Convergencia entre métodos (no evaluable)",
+          "label": "Consistencia · Coincidencia de métodos (no evaluable)",
           "text": "un solo método evaluable (múltiplos frente al sector): no hay contraste."
         },
         {
-          "label": "Confianza · Cobertura de datos (baja)",
+          "label": "Consistencia · Cobertura de datos (baja)",
           "text": "categorías excluidas por cobertura: Rentabilidad; 6 de 11 componentes del score con dato (55%)"
         },
         {
@@ -2138,65 +2157,27 @@
       "dimensions": [
         {
           "key": "convergence",
-          "label": "Convergencia entre métodos",
-          "level": "No evaluable",
+          "label": "Coincidencia de métodos",
+          "level": "Un solo método",
+          "ok": false,
           "text": "múltiplos frente al sector +0.50 (barata). Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo."
         },
         {
           "key": "coverage",
           "label": "Cobertura de datos",
-          "level": "Baja",
+          "level": "Parcial",
+          "ok": false,
           "text": "Faltan datos para evaluar: Rentabilidad. Faltan datos en parte del análisis (6 de 11 indicadores con dato)."
-        },
-        {
-          "key": "source",
-          "label": "Calidad de fuente",
-          "level": "Alta",
-          "text": "Sin incidencias."
-        },
-        {
-          "key": "stability",
-          "label": "Estabilidad del arquetipo",
-          "level": "Alta",
-          "text": "Sin incidencias."
-        },
-        {
-          "key": "base",
-          "label": "base",
-          "level": "Alta",
-          "text": "Sin incidencias."
         }
       ],
-      "level": "baja",
+      "level": "mixta",
       "plain": [
-        "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo.",
-        "Faltan datos para evaluar: Rentabilidad.",
-        "Faltan datos en parte del análisis (6 de 11 indicadores con dato)."
+        "un solo método de valoración evaluable, sin contraste.",
+        "cobertura de datos parcial."
       ],
-      "reasons": [
-        {
-          "dimension": "convergencia",
-          "level": "no_evaluable",
-          "text": "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo."
-        },
-        {
-          "dimension": "cobertura",
-          "level": "baja",
-          "text": "Faltan datos para evaluar: Rentabilidad."
-        },
-        {
-          "dimension": "cobertura",
-          "level": "baja",
-          "text": "Faltan datos en parte del análisis (6 de 11 indicadores con dato)."
-        },
-        {
-          "dimension": "techo",
-          "level": "baja",
-          "text": null
-        }
-      ],
-      "summary": "Confianza del veredicto: baja (por sus dimensiones sería media; la limita: la más baja manda —cobertura baja—). Contrae también la calidad del negocio hacia 50: de 68 a 65.",
-      "tone": "neg",
+      "reasons": [],
+      "summary": "Consistencia: mixta (un solo método de valoración evaluable, sin contraste; cobertura de datos parcial). No es una probabilidad de acierto.",
+      "tone": "warn",
       "verdict_text": "(sin P/FFO con sentido (FFO de doce meses ≤ 0 o sin dato))"
     },
     "cover": {
@@ -2284,9 +2265,8 @@
         "Sociedad inmobiliaria cotizada que reparte casi todo su beneficio y se mide por sus fondos de operación (FFO); industria REIT de locales comerciales."
       ],
       "confidence_reasons": [
-        "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo.",
-        "Faltan datos para evaluar: Rentabilidad.",
-        "Faltan datos en parte del análisis (6 de 11 indicadores con dato)."
+        "un solo método de valoración evaluable, sin contraste.",
+        "cobertura de datos parcial."
       ],
       "coverage_notes": [
         "Calidad calculado sobre 3 de 4 categorías (Rentabilidad no concluyente)",
@@ -2298,7 +2278,7 @@
         {
           "kicker": "FORTALEZA CLAVE",
           "kind": "strength",
-          "text": "EV/EBITDA barato — 15.4x",
+          "text": "Fundamentos sólidos en la mayoría de categorías",
           "tone": "pos"
         },
         {
@@ -2380,16 +2360,16 @@
       },
       "quality": {
         "level": "sólida",
-        "note": "baja confianza: categorías no concluyentes: Rentabilidad; cobertura baja en Crecimiento; en la frontera con «media» (a 1 punto): un cambio pequeño en los datos o en los supuestos cambiaría el nivel.",
-        "note_short": "Baja confianza: cobertura baja en Crecimiento · en la frontera con «media» (a 1 punto)",
+        "note": "datos incompletos: categorías no concluyentes: Rentabilidad; cobertura baja en Crecimiento.",
+        "note_short": "Cobertura baja en Crecimiento",
         "question": "¿es buena la empresa?",
-        "score": 65,
+        "score": 68,
         "title": "CALIDAD DEL NEGOCIO",
         "tone": "pos"
       },
       "verdict": {
         "confidence_text": "(sin P/FFO con sentido (FFO de doce meses ≤ 0 o sin dato))",
-        "confidence_tone": "neg",
+        "confidence_tone": "warn",
         "full": "Calidad sólida · precio sin veredicto (sin P/FFO con sentido (FFO de doce meses ≤ 0 o sin dato))",
         "text": "Calidad sólida · precio sin veredicto"
       }
@@ -2639,7 +2619,7 @@
       }
     },
     "methodology": {
-      "contraction_text": "el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y la confianza no mueve el precio",
+      "contraction_text": "el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura",
       "models": [
         "P/FFO y rentabilidad sobre el FFO"
       ],
@@ -2719,16 +2699,18 @@
     "sections": {
       "alerts": {
         "counts": {
+          "balance": 0,
           "red_flags": 0,
-          "strengths": 1,
+          "strengths": 0,
           "unmeasured": null,
+          "valuation": 1,
           "warnings": 0
         },
         "groups": [
           {
             "items": [],
             "key": "red_flags",
-            "title": "Riesgos",
+            "title": "Alerta roja",
             "tone": "neg"
           },
           {
@@ -2738,6 +2720,18 @@
             "tone": "warn"
           },
           {
+            "items": [],
+            "key": "strengths",
+            "title": "Fortalezas",
+            "tone": "pos"
+          },
+          {
+            "items": [],
+            "key": "balance",
+            "title": "Estado del balance",
+            "tone": "neu"
+          },
+          {
             "items": [
               {
                 "category": "Valoración",
@@ -2745,9 +2739,9 @@
                 "reason": "EV/EBITDA barato — 15.4x"
               }
             ],
-            "key": "strengths",
-            "title": "Fortalezas",
-            "tone": "pos"
+            "key": "valuation",
+            "title": "Lectura de valoración",
+            "tone": "neu"
           }
         ]
       },
@@ -3615,9 +3609,11 @@
     },
     "summary": {
       "alert_counts": {
+        "balance": 0,
         "red_flags": 0,
-        "strengths": 1,
+        "strengths": 0,
         "unmeasured": null,
+        "valuation": 1,
         "warnings": 0
       },
       "cards": [
@@ -3691,7 +3687,7 @@
         }
       ],
       "composition": {
-        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y la confianza no mueve el precio.",
+        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura.",
         "price": {
           "level": null,
           "note": "Precio sin veredicto: sin P/FFO con sentido (FFO de doce meses ≤ 0 o sin dato)",
@@ -3741,7 +3737,7 @@
               "value": 10
             }
           ],
-          "score": 65,
+          "score": 68,
           "title": "CALIDAD DEL NEGOCIO",
           "tone": "pos"
         }
@@ -3749,7 +3745,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad sólida · precio sin veredicto (sin P/FFO con sentido (FFO de doce meses ≤ 0 o sin dato)). Calidad 65/100 · precio —/100 (Sin P/E con sentido)."
+          "text": "Calidad sólida · precio sin veredicto (sin P/FFO con sentido (FFO de doce meses ≤ 0 o sin dato)). Calidad 68/100 · precio —/100 (Sin P/E con sentido)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -3768,8 +3764,8 @@
           "text": "Cotiza en el 7% del rango de 52 semanas, en la zona de mínimos. Beta 0.68 de su industria: la propia de la acción no pasa los filtros de la regresión, así que no mide su sensibilidad al mercado."
         },
         {
-          "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Baja: solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo. No contrae el atractivo del precio; la calidad del negocio, sí, hacia 50 (de 68 a 65)."
+          "label": "CONSISTENCIA",
+          "text": "Mixta: un solo método de valoración evaluable, sin contraste; cobertura de datos parcial (no es una probabilidad de acierto)."
         }
       ]
     },
@@ -4169,7 +4165,7 @@
                 "tone": "neg"
               }
             ],
-            "title": "Atractivo del precio (0–100, contraído por la confianza)"
+            "title": "Atractivo del precio (0–100, regla L1 por tercios)"
           }
         ]
       },
@@ -4627,6 +4623,7 @@
     "total_equity": 39549557000.0,
     "wacc": 0.0688563567041
   },
+  "l1_cycle_peak": null,
   "market_context": {
     "behavioral": [],
     "market_volatility": {
@@ -4960,6 +4957,7 @@
     "border": null,
     "confidence": "baja",
     "contracted": false,
+    "cycle_peak": null,
     "factor": null,
     "gics": "Real Estate",
     "gics_sector": "REIT",
@@ -4993,6 +4991,7 @@
     "pe_ttm": null,
     "percentile": null,
     "reason": "sin P/FFO con sentido (FFO de doce meses ≤ 0 o sin dato)",
+    "reference_alarm": [],
     "relative": null,
     "rule": "L1",
     "score": null,
@@ -5055,11 +5054,7 @@
   },
   "quality": {
     "basis": "calculado sobre 3 de 4 categorías",
-    "border": {
-      "neighbor": "media",
-      "points": 1,
-      "text": "En la frontera con «media» (a 1 punto): un cambio pequeño en los datos o en los supuestos cambiaría el nivel"
-    },
+    "border": null,
     "categories_included": 3,
     "categories_total": 4,
     "components": [
@@ -5088,11 +5083,11 @@
         "score": 10
       }
     ],
-    "contracted": true,
+    "contracted": false,
     "excluded_categories": [
       "Rentabilidad"
     ],
-    "factor": 0.85,
+    "factor": null,
     "level": "sólida",
     "level_raw": "sólida",
     "low_confidence": true,
@@ -5149,7 +5144,7 @@
       "source": "edgar",
       "window": 5
     },
-    "score": 65,
+    "score": 68,
     "score_raw": 68
   },
   "quality_readings": {
@@ -5634,8 +5629,8 @@
     "source": "efectiva"
   },
   "verdict": {
-    "confidence": "baja",
     "confidence_text": "(sin P/FFO con sentido (FFO de doce meses ≤ 0 o sin dato))",
+    "consistency": "mixta",
     "full": "Calidad sólida · precio sin veredicto (sin P/FFO con sentido (FFO de doce meses ≤ 0 o sin dato))",
     "price_level": null,
     "price_level_raw": null,

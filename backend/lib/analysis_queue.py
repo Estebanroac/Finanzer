@@ -176,7 +176,7 @@ def summary(analysis: Dict[str, Any]) -> Dict[str, Any]:
     return {"symbol": a.get("symbol"), "name": prof.get("name"), "price": a.get("price"),
             "currency": prof.get("currency"), "quality": {"score": q.get("score"), "level": q.get("level")},
             "price_score": {"score": pa.get("score"), "level": pa.get("level")},
-            "confidence": (a.get("verdict") or {}).get("confidence"), "metrics": metrics,
+            "consistency": (a.get("verdict") or {}).get("consistency"), "metrics": metrics,
             "reference": reference(a)}
 
 

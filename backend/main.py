@@ -2196,6 +2196,7 @@ def _compute_analysis_body(symbol: str) -> dict:
             # F8 · E2 (auditoría del 26-oct, NEE): bandera de pico de beneficio. Con ella, el P/E del score sale de la
             # mediana de 3 ejercicios (y del forward, si es coherente), no del TTM atípico.
             result["earnings_peak"] = None
+            result["l1_cycle_peak"] = None
             try:
                 import earnings_peak as _epk
                 _en = result.get("earnings_normalization") or {}
@@ -2206,6 +2207,15 @@ def _compute_analysis_body(symbol: str) -> dict:
                     pe_score=safe_float(ratios_score.get("pe")), pe_reported=safe_float(ratios.get("pe")),
                     forward_pe=safe_float(ratios.get("forward_pe")), period=numfmt.period(fin_dict.get("ttm_basis")))
                 result["earnings_peak"] = _peak
+                # Fase 1 · pendientes (decisión del usuario, 7-nov-2026; MU): en una cíclica el P/E no puntúa y la
+                # bandera no se calculaba; para la etiqueta L1 (que sí usa el P/E) se mide igual, solo para avisar.
+                if archetype == "CYCLICAL":
+                    result["l1_cycle_peak"] = _epk.detect(
+                        ni_ttm=(safe_float(_en.get("normalized_net_income")) if _en.get("used_in_score") else _ni_rep),
+                        ni_reported=_ni_rep, fy_net_income=[safe_float(v) for v in (_stmts.get("net_income") or [])],
+                        pe_score=safe_float(ratios.get("pe")), pe_reported=safe_float(ratios.get("pe")),
+                        forward_pe=safe_float(ratios.get("forward_pe")),
+                        period=numfmt.period(fin_dict.get("ttm_basis")))
                 if _peak and _peak["flag"]:
                     ratios_score = dict(ratios_score)
                     ratios_score["pe"] = _peak["pe_score"]
@@ -2759,7 +2769,7 @@ def _compute_analysis_body(symbol: str) -> dict:
             except Exception as e:
                 _alert_args = None      # F11 · T3: sin alertas, no se rehacen con la caída (un solo «sin dato»)
                 logger.error(f"Alerts error: {e}")
-                result["alerts"] = {"red_flags": [], "warnings": [], "strengths": []}
+                result["alerts"] = {"red_flags": [], "warnings": [], "strengths": [], "balance": [], "valuation": []}
                 _sin_dato("alerts", e)
 
             # Historical price data for chart
@@ -2914,7 +2924,10 @@ def _compute_analysis_body(symbol: str) -> dict:
                     if result.get("confidence") and _cbasis != result["confidence"].get("contraction_basis"):
                         result["confidence"]["contraction_basis"] = _cbasis
                         result["confidence"]["base_rate_step"]["contracts"] = True
-                    result["quality"] = contract_quality(_quality_part, _cbasis)
+                    # Fase 1 · pendientes (decisión del usuario, 7-nov-2026): la confianza ya no contrae la calidad (la
+                    # prueba hacia atrás mostró que no ordena aciertos; ahora se muestra la consistencia, que no mueve
+                    # ninguna puntuación). contract_quality sin nivel deja la calidad cruda con la misma forma.
+                    result["quality"] = contract_quality(_quality_part, None)
                     # `price` ya es el precio de la acción: la puntuación va en price_attractiveness.
                     # F16 (§8 de la prueba hacia atrás, decisión del usuario del 6-nov-2026): la etiqueta de precio es
                     # la regla L1 (lib/precio_l1.py). La valoración del motor (múltiplos + DCF) queda como lectura en
@@ -2931,7 +2944,8 @@ def _compute_analysis_body(symbol: str) -> dict:
                                            result.get("earnings_normalization"),
                                            (yinfo.get("_as_of") or {}).get("date"),
                                            tax_rate=safe_float((result.get("tax_rate") or {}).get("rate")),
-                                           currency=yinfo.get("_currency"))
+                                           currency=yinfo.get("_currency"),
+                                           cycle_peak=result.get("l1_cycle_peak"))
                     result["price_attractiveness"] = precio_l1.price(
                         _mc_l1, yinfo.get("_pe_l1"), precio_l1.group(archetype, _gics), _cbasis, reading=_reading,
                         l1_basis=_l1b, gics=_gics)
@@ -2942,6 +2956,8 @@ def _compute_analysis_body(symbol: str) -> dict:
                         result["price_attractiveness"] = _abstain(result["price_attractiveness"], _why_abst)
                     result["verdict"] = build_verdict(result["quality"], result["price_attractiveness"],
                                                       result.get("confidence"))
+                    import consistency as _consistency
+                    result["consistency"] = _consistency.compute(result.get("confidence"))
             except Exception as e:
                 _sin_dato("veredicto", e)
             # F8 · E1: prueba de sensibilidad del veredicto a Ke ± 1 pp (lib/ke_sensitivity.py). Las repeticiones solo
@@ -2988,6 +3004,13 @@ def _compute_analysis_body(symbol: str) -> dict:
                                                        "realized_volatility_1y": (_vol.get("value") if
                                                                                   _vol.get("status") == "ok" else None)},
                                                  **_alert_args[1])
+        except Exception as e:
+            _sin_dato("alerts", e)
+        # Fase 1 · pendientes (decisión del usuario, 7-nov-2026): una sola alerta roja (valoración extrema del motor
+        # anterior); el estado del balance y la lectura de valoración, aparte y sin color de alerta (lib/alert_groups.py)
+        try:
+            import alert_groups as _agr
+            result["alerts"] = _agr.regroup(result.get("alerts"), result.get("price_attractiveness"))
         except Exception as e:
             _sin_dato("alerts", e)
 
@@ -3550,8 +3573,12 @@ def _process_memory() -> dict:
 async def health():
     # Fase 2a: el commit desplegado (Render define RENDER_GIT_COMMIT; en local, null).
     # Fase 7: si EDGAR está activo y, si no, por qué (sin el valor de la variable).
+    import precio_l1
     return {"status": "ok", "commit": os.environ.get("RENDER_GIT_COMMIT") or None, "edgar": edgar.env_check(),
-            "keepalive": _keepalive.state(), "memory": _process_memory()}
+            "keepalive": _keepalive.state(), "memory": _process_memory(),
+            # Fase 1 · pendientes: alarma de la referencia de la etiqueta de precio (más de 35 días o cortes repetidos)
+            "price_reference": {"as_of": (precio_l1.load_config() or {}).get("as_of"),
+                                "alarm": precio_l1.reference_alarm(precio_l1.load_config())}}
 
 
 # ── Serve frontend static files ──

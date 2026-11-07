@@ -1,16 +1,12 @@
 {
   "alerts": {
+    "balance": [],
     "red_flags": [],
     "strengths": [
       {
         "category": "Rentabilidad",
         "detail": "El ROIC supera al costo de capital (ROIC 13.1% vs WACC 8.7%): la reinversión genera valor, no solo crecimiento.",
         "reason": "Crea valor — spread +4.4 pp"
-      },
-      {
-        "category": "Valoración",
-        "detail": "Cotiza a 8.5x EBITDA frente a 12.4x de sus pares del universo: valoración atractiva sobre flujo operativo, a validar que no responda a un deterioro del negocio.",
-        "reason": "EV/EBITDA barato — 8.5x"
       },
       {
         "category": "Solidez financiera",
@@ -33,12 +29,19 @@
         "reason": "Deuda fácilmente servible — cobertura 15x"
       }
     ],
-    "warnings": [
+    "valuation": [
       {
         "category": "Valoración",
         "detail": "El mercado paga 18.2x beneficios, un +19% sobre la referencia de sus pares del universo (15.3x). Conviene verificar que el crecimiento y los márgenes justifiquen pagar por encima de sus pares.",
         "reason": "Prima sobre sus pares — P/E 18.2x"
       },
+      {
+        "category": "Valoración",
+        "detail": "Cotiza a 8.5x EBITDA frente a 12.4x de sus pares del universo: valoración atractiva sobre flujo operativo, a validar que no responda a un deterioro del negocio.",
+        "reason": "EV/EBITDA barato — 8.5x"
+      }
+    ],
+    "warnings": [
       {
         "category": "Riesgo de mercado",
         "detail": "La acción ha llegado a caer 41.0% desde máximos en el último año: una corrección profunda que puede ser oportunidad si el negocio sigue intacto, o el mercado anticipando un deterioro. Son unas 1.5 veces su movimiento anual habitual (volatilidad del 27%): más de lo que suele moverse.",
@@ -400,6 +403,22 @@
       "techo en baja: sin fuente oficial para verificar los datos"
     ],
     "score": 0.6
+  },
+  "consistency": {
+    "coverage": {
+      "level": "alta",
+      "text": "cobertura de datos completa"
+    },
+    "level": "mixta",
+    "methods": {
+      "level": "media",
+      "text": "el DCF directo la ve en precio y los múltiplos barata"
+    },
+    "phrase": "el DCF directo la ve en precio y los múltiplos barata",
+    "reasons": [
+      "el DCF directo la ve en precio y los múltiplos barata"
+    ],
+    "tone": "warn"
   },
   "cost_of_equity": {
     "as_of": "2026-11-01",
@@ -1128,20 +1147,8 @@
           "text": "Arquetipo MATURE (regla por_defecto): Clasificada como MATURE por defecto: no es financiera, REIT, pre-beneficio con crecimiento, cíclica ni de crecimiento rentable (industria Bienes de lujo)"
         },
         {
-          "label": "Confianza · Convergencia entre métodos (media)",
+          "label": "Consistencia · Coincidencia de métodos (media)",
           "text": "uno lo ve en precio y otro con dirección: no coinciden, sin oponerse."
-        },
-        {
-          "label": "Confianza · Calidad de fuente (media)",
-          "text": "sin TTM: estados anuales (hasta 12 meses de retraso)"
-        },
-        {
-          "label": "Confianza · Estabilidad del arquetipo (media)",
-          "text": "ciclicidad sin medir: 0 ejercicios en EDGAR (hacen falta 8)"
-        },
-        {
-          "label": "Confianza · Fuente oficial (SEC) (baja)",
-          "text": "el emisor no presenta estados en la SEC (EDGAR): cifras de proveedores sin contrastar."
         },
         {
           "label": "Fuente oficial",
@@ -2117,77 +2124,26 @@
       "dimensions": [
         {
           "key": "convergence",
-          "label": "Convergencia entre métodos",
-          "level": "Media",
+          "label": "Coincidencia de métodos",
+          "level": "En parte",
+          "ok": false,
           "text": "DCF directo +0% (en precio) · múltiplos frente al sector +0.33 (barata). Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
         },
         {
           "key": "coverage",
           "label": "Cobertura de datos",
-          "level": "Alta",
-          "text": "Sin incidencias."
-        },
-        {
-          "key": "source",
-          "label": "Calidad de fuente",
-          "level": "Media",
-          "text": "Se usan los estados del último ejercicio anual (pueden tener hasta 12 meses de antigüedad)."
-        },
-        {
-          "key": "stability",
-          "label": "Estabilidad del arquetipo",
-          "level": "Media",
-          "text": "No hay historia suficiente para medir si la empresa es cíclica (0 ejercicios en la SEC; hacen falta 8)."
-        },
-        {
-          "key": "fuente_oficial",
-          "label": "Fuente oficial (SEC)",
-          "level": "Baja",
-          "text": "La empresa no presenta sus cuentas ante la SEC: las cifras vienen de proveedores de datos y no se han podido contrastar con una fuente oficial."
-        },
-        {
-          "key": "base",
-          "label": "base",
-          "level": "Alta",
+          "level": "Completa",
+          "ok": true,
           "text": "Sin incidencias."
         }
       ],
-      "level": "baja",
+      "level": "mixta",
       "plain": [
-        "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no.",
-        "Se usan los estados del último ejercicio anual (pueden tener hasta 12 meses de antigüedad).",
-        "No hay historia suficiente para medir si la empresa es cíclica (0 ejercicios en la SEC; hacen falta 8).",
-        "La empresa no presenta sus cuentas ante la SEC: las cifras vienen de proveedores de datos y no se han podido contrastar con una fuente oficial."
+        "el DCF directo la ve en precio y los múltiplos barata."
       ],
-      "reasons": [
-        {
-          "dimension": "convergencia",
-          "level": "media",
-          "text": "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
-        },
-        {
-          "dimension": "calidad de fuente",
-          "level": "media",
-          "text": "Se usan los estados del último ejercicio anual (pueden tener hasta 12 meses de antigüedad)."
-        },
-        {
-          "dimension": "estabilidad",
-          "level": "media",
-          "text": "No hay historia suficiente para medir si la empresa es cíclica (0 ejercicios en la SEC; hacen falta 8)."
-        },
-        {
-          "dimension": "fuente oficial",
-          "level": "baja",
-          "text": "La empresa no presenta sus cuentas ante la SEC: las cifras vienen de proveedores de datos y no se han podido contrastar con una fuente oficial."
-        },
-        {
-          "dimension": "techo",
-          "level": "baja",
-          "text": null
-        }
-      ],
-      "summary": "Confianza del veredicto: baja (por sus dimensiones sería media; la limita: sin fuente oficial para verificar los datos). Contrae también la calidad del negocio hacia 50: de 75 a 71.",
-      "tone": "neg",
+      "reasons": [],
+      "summary": "Consistencia: mixta (el DCF directo la ve en precio y los múltiplos barata). No es una probabilidad de acierto.",
+      "tone": "warn",
       "verdict_text": "(sin estados de SEC EDGAR)"
     },
     "cover": {
@@ -2276,9 +2232,7 @@
         "No hay historia en la SEC para medir si es cíclica."
       ],
       "confidence_reasons": [
-        "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no.",
-        "Se usan los estados del último ejercicio anual (pueden tener hasta 12 meses de antigüedad).",
-        "No hay historia suficiente para medir si la empresa es cíclica (0 ejercicios en la SEC; hacen falta 8)."
+        "el DCF directo la ve en precio y los múltiplos barata."
       ],
       "coverage_notes": [],
       "currency_note": null,
@@ -2295,7 +2249,7 @@
         {
           "kicker": "A VIGILAR",
           "kind": "watch",
-          "text": "Prima sobre sus pares — P/E 18.2x",
+          "text": "Caída pronunciada en el año −41.0%",
           "tone": "warn"
         },
         {
@@ -2375,13 +2329,13 @@
         "note": null,
         "note_short": null,
         "question": "¿es buena la empresa?",
-        "score": 71,
+        "score": 75,
         "title": "CALIDAD DEL NEGOCIO",
         "tone": "pos"
       },
       "verdict": {
         "confidence_text": "(sin estados de SEC EDGAR)",
-        "confidence_tone": "neg",
+        "confidence_tone": "warn",
         "full": "Calidad sólida · precio sin veredicto (sin estados de SEC EDGAR)",
         "text": "Calidad sólida · precio sin veredicto"
       }
@@ -2474,7 +2428,7 @@
       }
     },
     "methodology": {
-      "contraction_text": "el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y la confianza no mueve el precio",
+      "contraction_text": "el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura",
       "models": [
         "Altman (1968)",
         "Piotroski (2000)",
@@ -2573,25 +2527,22 @@
     "sections": {
       "alerts": {
         "counts": {
+          "balance": 0,
           "red_flags": 0,
-          "strengths": 6,
+          "strengths": 5,
           "unmeasured": null,
-          "warnings": 3
+          "valuation": 2,
+          "warnings": 2
         },
         "groups": [
           {
             "items": [],
             "key": "red_flags",
-            "title": "Riesgos",
+            "title": "Alerta roja",
             "tone": "neg"
           },
           {
             "items": [
-              {
-                "category": "Valoración",
-                "detail": "El mercado paga 18.2x beneficios, un +19% sobre la referencia de sus pares del universo (15.3x). Conviene verificar que el crecimiento y los márgenes justifiquen pagar por encima de sus pares.",
-                "reason": "Prima sobre sus pares — P/E 18.2x"
-              },
               {
                 "category": "Riesgo de mercado",
                 "detail": "La acción ha llegado a caer 41.0% desde máximos en el último año: una corrección profunda que puede ser oportunidad si el negocio sigue intacto, o el mercado anticipando un deterioro. Son unas 1.5 veces su movimiento anual habitual (volatilidad del 27%): más de lo que suele moverse.",
@@ -2613,11 +2564,6 @@
                 "category": "Rentabilidad",
                 "detail": "El ROIC supera al costo de capital (ROIC 13.1% vs WACC 8.7%): la reinversión genera valor, no solo crecimiento.",
                 "reason": "Crea valor — spread +4.4 pp"
-              },
-              {
-                "category": "Valoración",
-                "detail": "Cotiza a 8.5x EBITDA frente a 12.4x de sus pares del universo: valoración atractiva sobre flujo operativo, a validar que no responda a un deterioro del negocio.",
-                "reason": "EV/EBITDA barato — 8.5x"
               },
               {
                 "category": "Solidez financiera",
@@ -2643,6 +2589,29 @@
             "key": "strengths",
             "title": "Fortalezas",
             "tone": "pos"
+          },
+          {
+            "items": [],
+            "key": "balance",
+            "title": "Estado del balance",
+            "tone": "neu"
+          },
+          {
+            "items": [
+              {
+                "category": "Valoración",
+                "detail": "El mercado paga 18.2x beneficios, un +19% sobre la referencia de sus pares del universo (15.3x). Conviene verificar que el crecimiento y los márgenes justifiquen pagar por encima de sus pares.",
+                "reason": "Prima sobre sus pares — P/E 18.2x"
+              },
+              {
+                "category": "Valoración",
+                "detail": "Cotiza a 8.5x EBITDA frente a 12.4x de sus pares del universo: valoración atractiva sobre flujo operativo, a validar que no responda a un deterioro del negocio.",
+                "reason": "EV/EBITDA barato — 8.5x"
+              }
+            ],
+            "key": "valuation",
+            "title": "Lectura de valoración",
+            "tone": "neu"
           }
         ]
       },
@@ -3873,10 +3842,12 @@
     },
     "summary": {
       "alert_counts": {
+        "balance": 0,
         "red_flags": 0,
-        "strengths": 6,
+        "strengths": 5,
         "unmeasured": null,
-        "warnings": 3
+        "valuation": 2,
+        "warnings": 2
       },
       "cards": [
         {
@@ -3947,7 +3918,7 @@
         }
       ],
       "composition": {
-        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y la confianza no mueve el precio.",
+        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura.",
         "price": {
           "level": null,
           "note": "Precio sin veredicto: sin estados de SEC EDGAR.",
@@ -4007,7 +3978,7 @@
               "value": 5
             }
           ],
-          "score": 71,
+          "score": 75,
           "title": "CALIDAD DEL NEGOCIO",
           "tone": "pos"
         }
@@ -4015,7 +3986,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad sólida · precio sin veredicto (sin estados de SEC EDGAR). Calidad 71/100 · precio —/100 (Sin P/E con sentido)."
+          "text": "Calidad sólida · precio sin veredicto (sin estados de SEC EDGAR). Calidad 75/100 · precio —/100 (Sin P/E con sentido)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -4042,8 +4013,8 @@
           "text": "Cotiza en el 8% del rango de 52 semanas, en la zona de mínimos. Con beta 0.95, la acción se mueve en línea con el mercado."
         },
         {
-          "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Baja: los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no. No contrae el atractivo del precio; la calidad del negocio, sí, hacia 50 (de 75 a 71)."
+          "label": "CONSISTENCIA",
+          "text": "Mixta: el DCF directo la ve en precio y los múltiplos barata (no es una probabilidad de acierto)."
         }
       ]
     },
@@ -4769,7 +4740,7 @@
                 "tone": "neg"
               }
             ],
-            "title": "Atractivo del precio (0–100, contraído por la confianza)"
+            "title": "Atractivo del precio (0–100, regla L1 por tercios)"
           }
         ]
       },
@@ -5240,6 +5211,7 @@
     "total_equity": 67472000000.0,
     "wacc": 0.0872903246167
   },
+  "l1_cycle_peak": null,
   "market_context": {
     "behavioral": [],
     "market_volatility": {
@@ -5557,6 +5529,7 @@
     "border": null,
     "confidence": "baja",
     "contracted": false,
+    "cycle_peak": null,
     "factor": null,
     "gics": "Consumer Discretionary",
     "gics_sector": "Consumer Discretionary",
@@ -5574,6 +5547,7 @@
     "pe_ttm": null,
     "percentile": null,
     "reason": "sin estados de SEC EDGAR",
+    "reference_alarm": [],
     "relative": null,
     "rule": "L1",
     "score": null,
@@ -5663,9 +5637,9 @@
         "score": 5
       }
     ],
-    "contracted": true,
+    "contracted": false,
     "excluded_categories": [],
-    "factor": 0.85,
+    "factor": null,
     "level": "sólida",
     "level_raw": "sólida",
     "low_confidence": false,
@@ -5725,7 +5699,7 @@
       "source": "estados",
       "window": 5
     },
-    "score": 71,
+    "score": 75,
     "score_raw": 75
   },
   "quality_readings": {
@@ -6378,8 +6352,8 @@
     "source": "efectiva"
   },
   "verdict": {
-    "confidence": "baja",
     "confidence_text": "(sin estados de SEC EDGAR)",
+    "consistency": "mixta",
     "full": "Calidad sólida · precio sin veredicto (sin estados de SEC EDGAR)",
     "price_level": null,
     "price_level_raw": null,

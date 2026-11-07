@@ -263,9 +263,10 @@ def build_scale(kind: str, score: Optional[float], level: Optional[str]) -> Scal
 
 
 def build_level_scale(level: Optional[str]) -> ScaleModel:
-    """Confianza del veredicto: niveles del motor (`[score.price] confidence_factor`), tramos iguales y la marca en el
-    centro del nivel."""
-    names = list(reversed(list(cfg("thresholds.score.price.confidence_factor").keys())))   # de peor a mejor
+    """Consistencia (Fase 1 · pendientes, 7-nov-2026; lib/consistency.py): dos niveles, tramos iguales y la marca en
+    el centro del nivel."""
+    import consistency
+    names = list(reversed(consistency.LEVELS))   # «mixta», «consistente»
     width = 100 / len(names)
     segs = [Segment(n, "", i * width, (i + 1) * width, _seg_tone(i, len(names), confidence=True))
             for i, n in enumerate(names)]
@@ -277,9 +278,7 @@ def bands_line(model: ScaleModel) -> str:
     """Leyenda de los tramos ("débil <45 · media 45–65 · sólida 65–85 · excelente 85+"). En la confianza, cuánto acerca
     cada nivel el precio a su neutro (`[score.price] confidence_factor` y `neutral`)."""
     if model.kind == "confidence":
-        f = cfg("thresholds.score.price.confidence_factor")
-        return (f"Acerca el precio a {cfg('thresholds.score.price.neutral')}: "
-                + " · ".join(f"{s.label} ×{f[s.label]:g}" for s in model.segments))
+        return " · ".join(s.label for s in model.segments)
     return " · ".join(f"{s.label} {s.range}".strip() for s in model.segments)
 
 

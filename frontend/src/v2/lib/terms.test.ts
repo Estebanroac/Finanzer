@@ -11,12 +11,12 @@ describe("terms", () => {
     for (const r of ["Bloque de múltiplos · 5 múltiplos", "DCF directo (valor frente al precio) · -31%", "DCF directo: no puntúa",
       "DCF inverso (lo que exige el precio) · 25%", "Bloque P/B y P/TBV · 1.9x", "P/FFO (REIT) · 14x",
       "DCF inverso (FFO) · 3%", "DCF inverso (flujo de mantenimiento)", "Rentabilidad por dividendo (utility)",
-      "P/B frente al ROE regulado", "EV/Ventas · 4x", "Regla de 40 · 52", "Ajuste por confianza"])
+      "P/B frente al ROE regulado", "EV/Ventas · 4x", "Regla de 40 · 52"])
       expect(priceRowTerm(r), r).toBeTruthy();
     expect(priceRowTerm("DCF inverso (FFO)")).toBe("reverse_dcf");
     expect(priceRowTerm("DCF directo (valor frente al precio)")).toBe("dcf_upside");
     expect(priceRowTerm("DCF inverso (lo que exige el precio)")).toBe("reverse_dcf");
-    for (const k of ["convergence", "coverage", "source", "stability", "fuente_oficial"]) expect(confidenceTerm(k)).toBeTruthy();
+    for (const k of ["convergence", "coverage"]) expect(confidenceTerm(k)).toBeTruthy();     // las dos de la consistencia
     for (const k of ["momentum", "trend", "volatility", "drawdown", "volume", "pead", "relative_strength", "pos52"])
       expect(marketTerm(k)).toBeTruthy();
   });

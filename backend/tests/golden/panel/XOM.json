@@ -1,5 +1,6 @@
 {
   "alerts": {
+    "balance": [],
     "red_flags": [],
     "strengths": [
       {
@@ -23,7 +24,7 @@
         "reason": "Deuda fácilmente servible — cobertura 50x"
       }
     ],
-    "warnings": [
+    "valuation": [
       {
         "category": "Valoración",
         "detail": "Por cada dólar invertido en la acción, el negocio genera solo 4.2% de caja libre: se está pagando caro cada dólar de flujo, habitual en compañías de alto crecimiento o valoración exigente.",
@@ -34,7 +35,8 @@
         "detail": "Se paga 9.6x EBITDA frente a 6.0x de su industria sin ella (+58%): el mercado le asigna una prima que conviene contrastar con su ventaja competitiva.",
         "reason": "EV/EBITDA normalizado sobre su industria — 9.6x"
       }
-    ]
+    ],
+    "warnings": []
   },
   "altman_z": {
     "applicable": true,
@@ -511,6 +513,22 @@
       "techo en baja: la más baja manda: estabilidad baja"
     ],
     "score": 0.6
+  },
+  "consistency": {
+    "coverage": {
+      "level": "alta",
+      "text": "cobertura de datos completa"
+    },
+    "level": "mixta",
+    "methods": {
+      "level": "media",
+      "text": "el DCF directo la ve en precio y los múltiplos cara"
+    },
+    "phrase": "el DCF directo la ve en precio y los múltiplos cara",
+    "reasons": [
+      "el DCF directo la ve en precio y los múltiplos cara"
+    ],
+    "tone": "warn"
   },
   "cost_of_equity": {
     "as_of": "2026-11-01",
@@ -1644,12 +1662,8 @@
           "text": "Arquetipo CYCLICAL (regla historia_ciclica): Clasificada como CYCLICAL por su historia (17 ejercicios en EDGAR): caídas de ingresos ≥ 10% en 2015–2016, 2020, 2023; desplomes del BPA con caída de ingresos en 2016, 2020."
         },
         {
-          "label": "Confianza · Convergencia entre métodos (media)",
+          "label": "Consistencia · Coincidencia de métodos (media)",
           "text": "uno lo ve en precio y otro con dirección: no coinciden, sin oponerse."
-        },
-        {
-          "label": "Confianza · Estabilidad del arquetipo (baja)",
-          "text": "productora de materias primas: su resultado depende del precio de lo que produce, no de su gestión."
         },
         {
           "label": "Fuente oficial",
@@ -2625,60 +2639,27 @@
       "dimensions": [
         {
           "key": "convergence",
-          "label": "Convergencia entre métodos",
-          "level": "Media",
+          "label": "Coincidencia de métodos",
+          "level": "En parte",
+          "ok": false,
           "text": "DCF directo +0% (en precio) · múltiplos frente al sector -0.50 (cara). Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
         },
         {
           "key": "coverage",
           "label": "Cobertura de datos",
-          "level": "Alta",
-          "text": "Sin incidencias."
-        },
-        {
-          "key": "source",
-          "label": "Calidad de fuente",
-          "level": "Alta",
-          "text": "Sin incidencias."
-        },
-        {
-          "key": "stability",
-          "label": "Estabilidad del arquetipo",
-          "level": "Baja",
-          "text": "Produce materias primas: su resultado depende del precio de lo que vende, no de su gestión."
-        },
-        {
-          "key": "base",
-          "label": "base",
-          "level": "Alta",
+          "level": "Completa",
+          "ok": true,
           "text": "Sin incidencias."
         }
       ],
-      "level": "baja",
+      "level": "mixta",
       "plain": [
-        "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no.",
-        "Produce materias primas: su resultado depende del precio de lo que vende, no de su gestión."
+        "el DCF directo la ve en precio y los múltiplos cara."
       ],
-      "reasons": [
-        {
-          "dimension": "convergencia",
-          "level": "media",
-          "text": "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
-        },
-        {
-          "dimension": "estabilidad",
-          "level": "baja",
-          "text": "Produce materias primas: su resultado depende del precio de lo que vende, no de su gestión."
-        },
-        {
-          "dimension": "techo",
-          "level": "baja",
-          "text": null
-        }
-      ],
-      "summary": "Confianza del veredicto: baja (por sus dimensiones sería media; la limita: la más baja manda —estabilidad baja—). Contrae también la calidad del negocio hacia 50: de 76 a 72.",
-      "tone": "neg",
-      "verdict_text": "(confianza baja: negocio cíclico)"
+      "reasons": [],
+      "summary": "Consistencia: mixta (el DCF directo la ve en precio y los múltiplos cara). No es una probabilidad de acierto.",
+      "tone": "warn",
+      "verdict_text": "(consistencia mixta: el DCF directo la ve en precio y los múltiplos cara)"
     },
     "cover": {
       "archetype": "CYCLICAL",
@@ -2765,8 +2746,7 @@
         "Cíclica por su historia: en 17 ejercicios, caídas de ingresos ≥ 10% en 2015–2016, 2020, 2023; desplomes del BPA con caída de ingresos en 2016, 2020."
       ],
       "confidence_reasons": [
-        "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no.",
-        "Produce materias primas: su resultado depende del precio de lo que vende, no de su gestión."
+        "el DCF directo la ve en precio y los múltiplos cara."
       ],
       "coverage_notes": [],
       "currency_note": null,
@@ -2783,8 +2763,8 @@
         {
           "kicker": "A VIGILAR",
           "kind": "watch",
-          "text": "FCF yield bajo — 4.2%",
-          "tone": "warn"
+          "text": "Sin alertas relevantes",
+          "tone": "pos"
         },
         {
           "kicker": "CONTEXTO · 52 SEM.",
@@ -2860,14 +2840,14 @@
         "note": null,
         "note_short": null,
         "question": "¿es buena la empresa?",
-        "score": 72,
+        "score": 76,
         "title": "CALIDAD DEL NEGOCIO",
         "tone": "pos"
       },
       "verdict": {
-        "confidence_text": "(confianza baja: negocio cíclico)",
-        "confidence_tone": "neg",
-        "full": "Calidad sólida · precio exigente (confianza baja: negocio cíclico)",
+        "confidence_text": "(consistencia mixta: el DCF directo la ve en precio y los múltiplos cara)",
+        "confidence_tone": "warn",
+        "full": "Calidad sólida · precio exigente (consistencia mixta: el DCF directo la ve en precio y los múltiplos cara)",
         "text": "Calidad sólida · precio exigente"
       }
     },
@@ -3238,7 +3218,7 @@
       }
     },
     "methodology": {
-      "contraction_text": "el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y la confianza no mueve el precio",
+      "contraction_text": "el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura",
       "models": [
         "Altman (1968)",
         "Piotroski (2000)",
@@ -3333,31 +3313,22 @@
     "sections": {
       "alerts": {
         "counts": {
+          "balance": 0,
           "red_flags": 0,
           "strengths": 4,
           "unmeasured": null,
-          "warnings": 2
+          "valuation": 2,
+          "warnings": 0
         },
         "groups": [
           {
             "items": [],
             "key": "red_flags",
-            "title": "Riesgos",
+            "title": "Alerta roja",
             "tone": "neg"
           },
           {
-            "items": [
-              {
-                "category": "Valoración",
-                "detail": "Por cada dólar invertido en la acción, el negocio genera solo 4.2% de caja libre: se está pagando caro cada dólar de flujo, habitual en compañías de alto crecimiento o valoración exigente.",
-                "reason": "FCF yield bajo — 4.2%"
-              },
-              {
-                "category": "Valoración",
-                "detail": "Se paga 9.6x EBITDA frente a 6.0x de su industria sin ella (+58%): el mercado le asigna una prima que conviene contrastar con su ventaja competitiva.",
-                "reason": "EV/EBITDA normalizado sobre su industria — 9.6x"
-              }
-            ],
+            "items": [],
             "key": "warnings",
             "title": "Advertencias",
             "tone": "warn"
@@ -3388,6 +3359,29 @@
             "key": "strengths",
             "title": "Fortalezas",
             "tone": "pos"
+          },
+          {
+            "items": [],
+            "key": "balance",
+            "title": "Estado del balance",
+            "tone": "neu"
+          },
+          {
+            "items": [
+              {
+                "category": "Valoración",
+                "detail": "Por cada dólar invertido en la acción, el negocio genera solo 4.2% de caja libre: se está pagando caro cada dólar de flujo, habitual en compañías de alto crecimiento o valoración exigente.",
+                "reason": "FCF yield bajo — 4.2%"
+              },
+              {
+                "category": "Valoración",
+                "detail": "Se paga 9.6x EBITDA frente a 6.0x de su industria sin ella (+58%): el mercado le asigna una prima que conviene contrastar con su ventaja competitiva.",
+                "reason": "EV/EBITDA normalizado sobre su industria — 9.6x"
+              }
+            ],
+            "key": "valuation",
+            "title": "Lectura de valoración",
+            "tone": "neu"
           }
         ]
       },
@@ -4674,10 +4668,12 @@
     },
     "summary": {
       "alert_counts": {
+        "balance": 0,
         "red_flags": 0,
         "strengths": 4,
         "unmeasured": null,
-        "warnings": 2
+        "valuation": 2,
+        "warnings": 0
       },
       "cards": [
         {
@@ -4748,7 +4744,7 @@
         }
       ],
       "composition": {
-        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y la confianza no mueve el precio.",
+        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura.",
         "price": {
           "level": "exigente",
           "note": "P/E 22.2x frente a la mediana de energía (13.3x), 1.67 veces: en el tercio más caro del universo.",
@@ -4808,7 +4804,7 @@
               "value": 8
             }
           ],
-          "score": 72,
+          "score": 76,
           "title": "CALIDAD DEL NEGOCIO",
           "tone": "pos"
         }
@@ -4816,7 +4812,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad sólida · precio exigente (confianza baja: negocio cíclico). Calidad 72/100 · precio 13/100 (P/E 22.2x frente a 13.3x de su sector)."
+          "text": "Calidad sólida · precio exigente (consistencia mixta: el DCF directo la ve en precio y los múltiplos cara). Calidad 76/100 · precio 13/100 (P/E 22.2x frente a 13.3x de su sector)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -4843,8 +4839,8 @@
           "text": "Cotiza en el 99% del rango de 52 semanas, en la zona de máximos. Beta 0.66 de su industria: la propia de la acción no pasa los filtros de la regresión, así que no mide su sensibilidad al mercado."
         },
         {
-          "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Baja: los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no. No contrae el atractivo del precio; la calidad del negocio, sí, hacia 50 (de 76 a 72)."
+          "label": "CONSISTENCIA",
+          "text": "Mixta: el DCF directo la ve en precio y los múltiplos cara (no es una probabilidad de acierto)."
         }
       ]
     },
@@ -5482,7 +5478,7 @@
                 "tone": "neg"
               }
             ],
-            "title": "Atractivo del precio (0–100, contraído por la confianza)"
+            "title": "Atractivo del precio (0–100, regla L1 por tercios)"
           }
         ]
       },
@@ -6080,6 +6076,28 @@
     "total_equity": 259380000000.0,
     "wacc": 0.0763674375904
   },
+  "l1_cycle_peak": {
+    "basis": null,
+    "conditions": {
+      "a": false,
+      "b": false
+    },
+    "flag": false,
+    "forward": {
+      "coherent": true,
+      "pe": 14.34181,
+      "premium": -0.370632185493,
+      "reason": null
+    },
+    "median": 33680000000.0,
+    "pe_median": 22.1631493473,
+    "pe_score": null,
+    "pe_ttm": 22.7876444734,
+    "period": "TTM",
+    "reason": null,
+    "ttm_over_median": -0.0274049881235,
+    "years": 3
+  },
   "market_context": {
     "anchor_gap": -0.00208530199211,
     "behavioral": [
@@ -6614,6 +6632,7 @@
       0.839031,
       1.190143
     ],
+    "cycle_peak": null,
     "factor": null,
     "gics": "Energy",
     "gics_sector": "Energy",
@@ -6641,6 +6660,7 @@
     "pe_ttm": 22.2259401532,
     "percentile": 0.872632252932,
     "reason": null,
+    "reference_alarm": [],
     "relative": 1.6733086861,
     "rule": "L1",
     "score": 13,
@@ -6734,9 +6754,9 @@
         "score": 8
       }
     ],
-    "contracted": true,
+    "contracted": false,
     "excluded_categories": [],
-    "factor": 0.85,
+    "factor": null,
     "level": "sólida",
     "level_raw": "sólida",
     "low_confidence": false,
@@ -6800,7 +6820,7 @@
       "source": "edgar",
       "window": 5
     },
-    "score": 72,
+    "score": 76,
     "score_raw": 76
   },
   "quality_readings": {
@@ -7493,9 +7513,9 @@
     "source": "efectiva"
   },
   "verdict": {
-    "confidence": "baja",
-    "confidence_text": "(confianza baja: negocio cíclico)",
-    "full": "Calidad sólida · precio exigente (confianza baja: negocio cíclico)",
+    "confidence_text": "(consistencia mixta: el DCF directo la ve en precio y los múltiplos cara)",
+    "consistency": "mixta",
+    "full": "Calidad sólida · precio exigente (consistencia mixta: el DCF directo la ve en precio y los múltiplos cara)",
     "price_level": "exigente",
     "price_level_raw": null,
     "quality_level": "sólida",

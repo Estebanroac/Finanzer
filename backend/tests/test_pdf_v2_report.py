@@ -64,7 +64,7 @@ def test_cover_holds_identity_scales_chart_and_key_figures(built, sym):
     else:
         assert "Variación del día: sin dato" in p1
     assert d["cover"]["verdict"]["text"] in p1
-    for title in (d["cover"]["quality"]["title"], d["cover"]["price"]["title"], "CONFIANZA DEL VEREDICTO"):
+    for title in (d["cover"]["quality"]["title"], d["cover"]["price"]["title"], "CONSISTENCIA"):
         assert title in p1
     assert f"{d['cover']['quality']['score']}" in p1 and "4 categorías × 20 puntos" in p1
     assert "S&P 500" in p1 and "Precio en el último año" in p1
@@ -114,7 +114,7 @@ def test_summary_reads_the_whole_engine_summary(built, sym):
     for e in a["display"]["summary"]["exec_items"]:
         assert e["label"] in body
         # V7 · P1 (opción C): la fila de la confianza lleva el resumen de la confianza (test_confidence_row_…)
-        text = a["display"]["confidence"]["summary"] if e["label"] == "CONFIANZA DEL VEREDICTO" else e["text"]
+        text = a["display"]["confidence"]["summary"] if e["label"] == "CONSISTENCIA" else e["text"]
         assert _flat(text)[-40:] in body, e["label"]
 
 

@@ -40,14 +40,14 @@ export function buildScale(kind: "quality" | "price", score: number | null, leve
   return { kind, score, level, segments, pinPct: score === null ? null : Math.min(Math.max(score, 0), FULL) };
 }
 
-/** Escala por niveles sin puntuación (confianza del veredicto): tramos iguales, marca en el centro del nivel. */
+/** Escala por niveles sin puntuación (la consistencia: «mixta» y «consistente»): tramos iguales, marca en el centro. */
 export function buildLevelScale(kind: "confidence", level: string | null): ScaleModel {
   const names = [...SCORE_BANDS[kind].labels].reverse();   // de peor a mejor
   const width = FULL / names.length;
   const last = names.length - 1;
   const segments: ScaleSegment[] = names.map((label, i) => ({
     label, range: "", from: i * width, to: (i + 1) * width, widthPct: width,
-    // La confianza baja no es "mala" sino incierta: atención, no alarma.
+    // «Mixta» no es "mala" sino incierta: atención, no alarma.
     tone: i === 0 ? "warn" : i === last ? "good" : "neutral",
   }));
   const hit = segments.find((s) => s.label === level?.toLowerCase());

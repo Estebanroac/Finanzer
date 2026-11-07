@@ -330,7 +330,7 @@ def group(archetype: Optional[str], gics: Optional[str]) -> Optional[str]:
 def basis(market_cap: Optional[float], inp: Optional[Dict[str, Any]], archetype: Optional[str],
           key_metrics: Optional[Dict[str, Any]], norm: Optional[Dict[str, Any]],
           engine_cut: Optional[str], tol_days: int = 45, tax_rate: Optional[float] = None,
-          currency: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+          currency: Optional[Dict[str, Any]] = None, cycle_peak: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """F16 bis · 1–4: el múltiplo con el que se aplica la regla L1.
       · REIT: P/FFO del motor (FFO de doce meses).
       · Demás: capitalización / beneficio NORMALIZADO de doce meses al último periodo presentado en EDGAR: el
@@ -343,7 +343,7 @@ def basis(market_cap: Optional[float], inp: Optional[Dict[str, Any]], archetype:
     km = key_metrics or {}
     out: Dict[str, Any] = {"status": "sin_dato", "multiple": None, "metric": "P/E", "earnings": None,
                            "earnings_reported": None, "pe_reported": None, "normalized": False, "notes": [],
-                           "shares_note": None, "market_cap": market_cap,
+                           "shares_note": None, "market_cap": market_cap, "cycle_peak": None,
                            "warning": None, "reason": None, "edgar": inp}
     from settings import cfg
     T = cfg("thresholds.score.price_l1")
@@ -355,6 +355,15 @@ def basis(market_cap: Optional[float], inp: Optional[Dict[str, Any]], archetype:
         # F16 bis · 4: sin un informe posterior en EDGAR que usar (un 20-F sin trimestres en XBRL): se avisa
         out["warning"] = (f"el beneficio de doce meses es el del periodo cerrado el {inp['end']}, el último que EDGAR "
                           f"recoge; los estados del análisis llegan al {engine_cut}")
+    # Fase 1 · pendientes (MU): una cíclica con el beneficio de doce meses muy por encima de la mediana de sus últimos
+    # ejercicios (condición (a) de lib/earnings_peak.py) puede parecer barata por estar en la parte alta del ciclo
+    cp = cycle_peak or {}
+    if archetype == "CYCLICAL" and (cp.get("conditions") or {}).get("a"):
+        out["cycle_peak"] = {"over": cp.get("ttm_over_median"), "years": cp.get("years")}
+        txt = (f"cíclica con el beneficio de doce meses un {cp['ttm_over_median'] * 100:.0f} % por encima de la "
+               f"mediana de sus {cp.get('years')} últimos ejercicios: el P/E puede ser bajo por estar en la parte "
+               "alta del ciclo")
+        out["warning"] = f"{out['warning']}; {txt}" if out.get("warning") else txt
     if archetype == "REIT":
         out["metric"] = "P/FFO"
         pf = km.get("p_ffo")
@@ -469,16 +478,20 @@ def price(market_cap: Optional[float], inp: Optional[Dict[str, Any]], gics_secto
                            "group": gics_sector, "gics": gics or gics_sector, "metric": lb.get("metric") or "P/E",
                            "pe_reported_l1": lb.get("pe_reported"), "normalized": lb.get("normalized"),
                            "basis_notes": lb.get("notes") or [], "warning": lb.get("warning"),
-                           "shares_note": lb.get("shares_note"),
+                           "shares_note": lb.get("shares_note"), "cycle_peak": lb.get("cycle_peak"),
                            "sector_median": None, "median_scope": None, "relative": None, "percentile": None,
                            "as_of": None,
                            "universe_n": None, "score": None, "score_raw": None, "level": None, "level_raw": None,
                            "factor": None, "confidence": confidence_level, "contracted": False, "border": None,
-                           "valuation_reading": reading, "reason": p["reason"]}
+                           "valuation_reading": reading, "reference_alarm": [], "reason": p["reason"]}
     if c is None:
         out["reason"] = "sin la referencia del universo (config/precio_l1.toml)"
         return out
     out.update(as_of=c.get("as_of"), universe_n=c.get("n"))
+    alarm = reference_alarm(c)
+    if alarm:      # Fase 1 · pendientes: junto a la etiqueta, como aviso
+        out["reference_alarm"] = alarm
+        out["warning"] = "; ".join([w for w in (out.get("warning"),) if w] + alarm)
     if p["value"] is None:
         return out
     med = (c.get("sector_median") or {}).get(str(gics_sector or ""))
@@ -554,6 +567,29 @@ def build_reference(rows: List[Dict[str, Any]], as_of: str, source: str) -> Dict
             "cuts": cuts, "relative_quantiles": [quant(i / 100) for i in range(101)]}
 
 
+def reference_alarm(c: Optional[Dict[str, Any]], today: Optional[_dt.date] = None) -> List[str]:
+    """Fase 1 · pendientes (decisión del usuario, 7-nov-2026): alarma de la referencia del universo. Más de
+    `max_age_days` desde su fecha, o los mismos cortes que en la actualización anterior (un escaneo repetido o en
+    caché). [] si está bien; sin referencia, eso ya se dice en el precio."""
+    if not c:
+        return []
+    from settings import cfg
+    out = []
+    lim = cfg("thresholds.score.price_l1.max_age_days")
+    try:
+        age = ((today or _dt.date.today()) - _dt.date.fromisoformat(str(c.get("as_of")))).days
+    except ValueError:
+        age = None
+    if age is None or age > lim:
+        out.append(f"la referencia del universo es del {c.get('as_of')} ({age} días; más de {lim}): hay que actualizarla"
+                   if age is not None else "la referencia del universo no tiene fecha válida")
+    prev = c.get("previous_cuts")
+    if prev and c.get("cuts") and [round(x, 6) for x in prev] == [round(x, 6) for x in c["cuts"]]:
+        out.append(f"los cortes de la referencia ({c['cuts'][0]:.3f} y {c['cuts'][1]:.3f}) no cambiaron respecto a la "
+                   f"actualización anterior ({c.get('previous_as_of')}): comprobar que el escaneo es nuevo")
+    return out
+
+
 def write_reference(ref: Dict[str, Any], path: str = CONFIG) -> None:
     def tv(v):
         if isinstance(v, str):
@@ -567,7 +603,11 @@ def write_reference(ref: Dict[str, Any], path: str = CONFIG) -> None:
              "# GENERADO por tools/precio_l1_universo.py. No editar a mano.",
              f"as_of = {tv(ref['as_of'])}", f"source = {tv(ref['source'])}", f"n = {ref['n']}",
              f"market_median = {tv(ref.get('market_median'))}", f"small_groups = {tv(ref.get('small_groups') or [])}",
-             f"cuts = {tv(ref['cuts'])}", f"relative_quantiles = {tv(ref['relative_quantiles'])}", "",
+             f"cuts = {tv(ref['cuts'])}",
+             # Fase 1 · pendientes: los cortes y la fecha de la referencia anterior, para la alarma (reference_alarm)
+             *([f"previous_as_of = {tv(ref['previous_as_of'])}", f"previous_cuts = {tv(ref['previous_cuts'])}"]
+               if ref.get("previous_cuts") else []),
+             f"relative_quantiles = {tv(ref['relative_quantiles'])}", "",
              "[sector_median]"]
     lines += [f"{tv(s)} = {tv(v)}" for s, v in ref["sector_median"].items()]
     lines += ["", "[n_sector]"] + [f"{tv(s)} = {v}" for s, v in ref["n_sector"].items()]

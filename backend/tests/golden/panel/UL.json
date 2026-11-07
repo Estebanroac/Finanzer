@@ -1,12 +1,7 @@
 {
   "alerts": {
-    "red_flags": [
-      {
-        "category": "Valor intrínseco",
-        "detail": "El valor estimado por el DCF ($41) está un 36% por debajo del precio ($64.65): sostenerlo requiere supuestos exigentes pero posibles (el precio cae en la parte alta del rango de sensibilidad).",
-        "reason": "Sobrevalorada según DCF −36%"
-      }
-    ],
+    "balance": [],
+    "red_flags": [],
     "strengths": [
       {
         "category": "Rentabilidad",
@@ -27,6 +22,13 @@
         "category": "Flujo de caja",
         "detail": "El flujo de caja libre supera al beneficio contable (FCF/BN normalizado 118%): las utilidades se convierten íntegramente en efectivo, señal de contabilidad conservadora y negocio que 'respira' caja.",
         "reason": "Beneficio de alta calidad"
+      }
+    ],
+    "valuation": [
+      {
+        "category": "Valor intrínseco",
+        "detail": "El valor estimado por el DCF ($41) está un 36% por debajo del precio ($64.65): sostenerlo requiere supuestos exigentes pero posibles (el precio cae en la parte alta del rango de sensibilidad).",
+        "reason": "Sobrevalorada según DCF −36%"
       }
     ],
     "warnings": []
@@ -444,6 +446,22 @@
       "calidad de fuente media: sin TTM: estados anuales (hasta 12 meses de retraso)"
     ],
     "score": 0.6
+  },
+  "consistency": {
+    "coverage": {
+      "level": "media",
+      "text": "cobertura de datos suficiente"
+    },
+    "level": "mixta",
+    "methods": {
+      "level": "media",
+      "text": "el DCF directo la ve cara y los múltiplos en precio"
+    },
+    "phrase": "el DCF directo la ve cara y los múltiplos en precio",
+    "reasons": [
+      "el DCF directo la ve cara y los múltiplos en precio"
+    ],
+    "tone": "warn"
   },
   "cost_of_equity": {
     "as_of": "2026-11-01",
@@ -1706,16 +1724,12 @@
           "text": "Arquetipo MATURE (regla por_defecto): Clasificada como MATURE por defecto: no es financiera, REIT, pre-beneficio con crecimiento, cíclica ni de crecimiento rentable (industria Productos para el hogar y cuidado personal); su historia (11 ejercicios en EDGAR) no muestra ciclo."
         },
         {
-          "label": "Confianza · Convergencia entre métodos (media)",
+          "label": "Consistencia · Coincidencia de métodos (media)",
           "text": "uno lo ve en precio y otro con dirección: no coinciden, sin oponerse."
         },
         {
-          "label": "Confianza · Cobertura de datos (media)",
+          "label": "Consistencia · Cobertura de datos (media)",
           "text": "estados desfasados: corte del 31 de diciembre de 2025 (288 días) y EDGAR ya tiene el 6-K del periodo cerrado el 30 de junio de 2026."
-        },
-        {
-          "label": "Confianza · Calidad de fuente (media)",
-          "text": "sin TTM: estados anuales (hasta 12 meses de retraso)"
         },
         {
           "label": "Fuente oficial",
@@ -2701,61 +2715,27 @@
       "dimensions": [
         {
           "key": "convergence",
-          "label": "Convergencia entre métodos",
-          "level": "Media",
+          "label": "Coincidencia de métodos",
+          "level": "En parte",
+          "ok": false,
           "text": "DCF directo -36% (cara) · múltiplos frente al sector +0.17 (en precio). Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
         },
         {
           "key": "coverage",
           "label": "Cobertura de datos",
-          "level": "Media",
+          "level": "Suficiente",
+          "ok": true,
           "text": "Hay estados más recientes en la SEC (6-K al 30 de junio de 2026)."
-        },
-        {
-          "key": "source",
-          "label": "Calidad de fuente",
-          "level": "Media",
-          "text": "Se usan los estados del último ejercicio anual (pueden tener hasta 12 meses de antigüedad)."
-        },
-        {
-          "key": "stability",
-          "label": "Estabilidad del arquetipo",
-          "level": "Alta",
-          "text": "Sin incidencias."
-        },
-        {
-          "key": "base",
-          "label": "base",
-          "level": "Alta",
-          "text": "Sin incidencias."
         }
       ],
-      "level": "media",
+      "level": "mixta",
       "plain": [
-        "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no.",
-        "Hay estados más recientes en la SEC (6-K al 30 de junio de 2026).",
-        "Se usan los estados del último ejercicio anual (pueden tener hasta 12 meses de antigüedad)."
+        "el DCF directo la ve cara y los múltiplos en precio."
       ],
-      "reasons": [
-        {
-          "dimension": "convergencia",
-          "level": "media",
-          "text": "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
-        },
-        {
-          "dimension": "cobertura",
-          "level": "media",
-          "text": "Hay estados más recientes en la SEC (6-K al 30 de junio de 2026)."
-        },
-        {
-          "dimension": "calidad de fuente",
-          "level": "media",
-          "text": "Se usan los estados del último ejercicio anual (pueden tener hasta 12 meses de antigüedad)."
-        }
-      ],
-      "summary": "Confianza del veredicto: media. La calidad del negocio no se contrae.",
+      "reasons": [],
+      "summary": "Consistencia: mixta (el DCF directo la ve cara y los múltiplos en precio). No es una probabilidad de acierto.",
       "tone": "warn",
-      "verdict_text": "(confianza media: el DCF directo la ve cara y los múltiplos en precio)"
+      "verdict_text": "(consistencia mixta: el DCF directo la ve cara y los múltiplos en precio)"
     },
     "cover": {
       "archetype": "MATURE",
@@ -2842,9 +2822,7 @@
         "Negocio establecido que se valora sobre todo por la caja que genera hoy; sus ingresos por acción caen un 0.7% anual en 3 años (FY2022–FY2025), por debajo del 15% del crecimiento rentable; en 11 ejercicios su historia no muestra ciclo (Productos para el hogar y cuidado personal)."
       ],
       "confidence_reasons": [
-        "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no.",
-        "Hay estados más recientes en la SEC (6-K al 30 de junio de 2026).",
-        "Se usan los estados del último ejercicio anual (pueden tener hasta 12 meses de antigüedad)."
+        "el DCF directo la ve cara y los múltiplos en precio."
       ],
       "coverage_notes": [],
       "currency_note": "Estados financieros en EUR convertidos a USD, la moneda de la cotización, con el tipo de cambio de Yahoo (EUR=X): el balance al cierre de cada período y los resultados y flujos al promedio del período (balance al 2026-06-30: 1 EUR = 1.1422 USD).",
@@ -2861,8 +2839,8 @@
         {
           "kicker": "A VIGILAR",
           "kind": "watch",
-          "text": "Sobrevalorada según DCF −36%",
-          "tone": "neg"
+          "text": "Sin alertas relevantes",
+          "tone": "pos"
         },
         {
           "kicker": "CONTEXTO · 52 SEM.",
@@ -2943,9 +2921,9 @@
         "tone": "pos"
       },
       "verdict": {
-        "confidence_text": "(confianza media: el DCF directo la ve cara y los múltiplos en precio)",
+        "confidence_text": "(consistencia mixta: el DCF directo la ve cara y los múltiplos en precio)",
         "confidence_tone": "warn",
-        "full": "Calidad sólida · precio atractivo (confianza media: el DCF directo la ve cara y los múltiplos en precio)",
+        "full": "Calidad sólida · precio atractivo (consistencia mixta: el DCF directo la ve cara y los múltiplos en precio)",
         "text": "Calidad sólida · precio atractivo"
       }
     },
@@ -3251,7 +3229,7 @@
       }
     },
     "methodology": {
-      "contraction_text": "el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y la confianza no mueve el precio",
+      "contraction_text": "el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura",
       "models": [
         "Altman (1968)",
         "Piotroski (2000)",
@@ -3354,22 +3332,18 @@
     "sections": {
       "alerts": {
         "counts": {
-          "red_flags": 1,
+          "balance": 0,
+          "red_flags": 0,
           "strengths": 4,
           "unmeasured": null,
+          "valuation": 1,
           "warnings": 0
         },
         "groups": [
           {
-            "items": [
-              {
-                "category": "Valor intrínseco",
-                "detail": "El valor estimado por el DCF ($41) está un 36% por debajo del precio ($64.65): sostenerlo requiere supuestos exigentes pero posibles (el precio cae en la parte alta del rango de sensibilidad).",
-                "reason": "Sobrevalorada según DCF −36%"
-              }
-            ],
+            "items": [],
             "key": "red_flags",
-            "title": "Riesgos",
+            "title": "Alerta roja",
             "tone": "neg"
           },
           {
@@ -3404,6 +3378,24 @@
             "key": "strengths",
             "title": "Fortalezas",
             "tone": "pos"
+          },
+          {
+            "items": [],
+            "key": "balance",
+            "title": "Estado del balance",
+            "tone": "neu"
+          },
+          {
+            "items": [
+              {
+                "category": "Valor intrínseco",
+                "detail": "El valor estimado por el DCF ($41) está un 36% por debajo del precio ($64.65): sostenerlo requiere supuestos exigentes pero posibles (el precio cae en la parte alta del rango de sensibilidad).",
+                "reason": "Sobrevalorada según DCF −36%"
+              }
+            ],
+            "key": "valuation",
+            "title": "Lectura de valoración",
+            "tone": "neu"
           }
         ]
       },
@@ -4710,9 +4702,11 @@
     },
     "summary": {
       "alert_counts": {
-        "red_flags": 1,
+        "balance": 0,
+        "red_flags": 0,
         "strengths": 4,
         "unmeasured": null,
+        "valuation": 1,
         "warnings": 0
       },
       "cards": [
@@ -4784,7 +4778,7 @@
         }
       ],
       "composition": {
-        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y la confianza no mueve el precio.",
+        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura.",
         "price": {
           "level": "atractivo",
           "note": "P/E 12.9x frente a la mediana de consumo básico (21.6x), 0.60 veces: en el tercio más barato del universo.",
@@ -4852,7 +4846,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad sólida · precio atractivo (confianza media: el DCF directo la ve cara y los múltiplos en precio). Calidad 71/100 · precio 86/100 (P/E 12.9x frente a 21.6x de su sector)."
+          "text": "Calidad sólida · precio atractivo (consistencia mixta: el DCF directo la ve cara y los múltiplos en precio). Calidad 71/100 · precio 86/100 (P/E 12.9x frente a 21.6x de su sector)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -4879,8 +4873,8 @@
           "text": "Cotiza en el 49% del rango de 52 semanas, en la zona media. Con beta 0.83, la acción se mueve en línea con el mercado."
         },
         {
-          "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Media: los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no. No contrae el atractivo del precio ni la calidad."
+          "label": "CONSISTENCIA",
+          "text": "Mixta: el DCF directo la ve cara y los múltiplos en precio (no es una probabilidad de acierto)."
         }
       ]
     },
@@ -5606,7 +5600,7 @@
                 "tone": "neg"
               }
             ],
-            "title": "Atractivo del precio (0–100, contraído por la confianza)"
+            "title": "Atractivo del precio (0–100, regla L1 por tercios)"
           }
         ]
       },
@@ -6309,6 +6303,7 @@
     "total_equity": 18243544725.2,
     "wacc": 0.0815856362308
   },
+  "l1_cycle_peak": null,
   "market_context": {
     "behavioral": [],
     "market_volatility": {
@@ -6780,6 +6775,7 @@
       0.839031,
       1.190143
     ],
+    "cycle_peak": null,
     "factor": null,
     "gics": "Consumer Staples",
     "gics_sector": "Consumer Staples",
@@ -6807,6 +6803,7 @@
     "pe_ttm": 12.8702579335,
     "percentile": 0.142150074415,
     "reason": null,
+    "reference_alarm": [],
     "relative": 0.595095316844,
     "rule": "L1",
     "score": 86,
@@ -7647,9 +7644,9 @@
     "source": "efectiva"
   },
   "verdict": {
-    "confidence": "media",
-    "confidence_text": "(confianza media: el DCF directo la ve cara y los múltiplos en precio)",
-    "full": "Calidad sólida · precio atractivo (confianza media: el DCF directo la ve cara y los múltiplos en precio)",
+    "confidence_text": "(consistencia mixta: el DCF directo la ve cara y los múltiplos en precio)",
+    "consistency": "mixta",
+    "full": "Calidad sólida · precio atractivo (consistencia mixta: el DCF directo la ve cara y los múltiplos en precio)",
     "price_level": "atractivo",
     "price_level_raw": null,
     "quality_level": "sólida",

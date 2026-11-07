@@ -1,5 +1,12 @@
 {
   "alerts": {
+    "balance": [
+      {
+        "category": "Flujo de caja",
+        "detail": "La empresa quema caja, algo esperable en una fase de fuerte inversión para crecer; la clave es que esa inversión se traduzca en ingresos y márgenes futuros.",
+        "reason": "Flujo de caja libre negativo"
+      }
+    ],
     "red_flags": [],
     "strengths": [
       {
@@ -8,16 +15,12 @@
         "reason": "Caja neta — sin deuda financiera neta"
       }
     ],
+    "valuation": [],
     "warnings": [
       {
         "category": "Solidez financiera",
         "detail": "La caja y las inversiones a corto plazo cubren 1.5 años de quema de FCF: tendrá que financiarse (deuda o ampliación de capital) dentro del horizonte del plan.",
         "reason": "Runway ajustado — 1.5 años"
-      },
-      {
-        "category": "Flujo de caja",
-        "detail": "La empresa quema caja, algo esperable en una fase de fuerte inversión para crecer; la clave es que esa inversión se traduzca en ingresos y márgenes futuros.",
-        "reason": "Flujo de caja libre negativo"
       },
       {
         "category": "Riesgo de mercado",
@@ -437,6 +440,22 @@
       "techo en baja: base frágil: resultado operativo normalizado ≤ 0 (−$3.53B): pierde dinero en su negocio sin contar los cargos no recurrentes"
     ],
     "score": 0.666666666667
+  },
+  "consistency": {
+    "coverage": {
+      "level": "alta",
+      "text": "cobertura de datos completa"
+    },
+    "level": "mixta",
+    "methods": {
+      "level": "no_evaluable",
+      "text": "un solo método de valoración evaluable, sin contraste"
+    },
+    "phrase": "un solo método de valoración evaluable, sin contraste",
+    "reasons": [
+      "un solo método de valoración evaluable, sin contraste"
+    ],
+    "tone": "warn"
   },
   "cost_of_equity": {
     "as_of": "2026-11-01",
@@ -1510,20 +1529,8 @@
           "text": "Arquetipo GROWTH_PRE_PROFIT (regla pre_beneficio_con_crecimiento): Clasificada como GROWTH_PRE_PROFIT: BPA TTM -2.58 <= 0; CAGR de ingresos a 3 años no significativo: año base anómalo (el año inicial es el 33% de la mediana de los demás) y sin serie larga robusta: la serie larga de EDGAR no sirve: serie con valores <= 0: la regresión log-lineal no está definida, que no cuenta ni a favor ni en contra. Posible cíclica: margen operativo volátil (98.3 pp alrededor de su tendencia > 5 pp). No cambia el arquetipo; baja la confianza."
         },
         {
-          "label": "Confianza · Convergencia entre métodos (no evaluable)",
+          "label": "Consistencia · Coincidencia de métodos (no evaluable)",
           "text": "un solo método evaluable (múltiplos frente al sector): no hay contraste."
-        },
-        {
-          "label": "Confianza · Calidad de fuente (media)",
-          "text": "beneficio normalizado con ítems inferidos (confianza media)"
-        },
-        {
-          "label": "Confianza · Estabilidad del arquetipo (media)",
-          "text": "alerta de posible cíclica."
-        },
-        {
-          "label": "Confianza · base (baja)",
-          "text": "resultado operativo normalizado ≤ 0 (−$3.53B): pierde dinero en su negocio sin contar los cargos no recurrentes."
         },
         {
           "label": "Fuente oficial",
@@ -2206,71 +2213,26 @@
       "dimensions": [
         {
           "key": "convergence",
-          "label": "Convergencia entre métodos",
-          "level": "No evaluable",
+          "label": "Coincidencia de métodos",
+          "level": "Un solo método",
+          "ok": false,
           "text": "múltiplos frente al sector +1.00 (barata). Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo."
         },
         {
           "key": "coverage",
           "label": "Cobertura de datos",
-          "level": "Alta",
+          "level": "Completa",
+          "ok": true,
           "text": "Sin incidencias."
-        },
-        {
-          "key": "source",
-          "label": "Calidad de fuente",
-          "level": "Media",
-          "text": "El beneficio se ajustó por partidas extraordinarias identificadas de forma indirecta."
-        },
-        {
-          "key": "stability",
-          "label": "Estabilidad del arquetipo",
-          "level": "Media",
-          "text": "La empresa podría ser cíclica: sus resultados actuales pueden no ser representativos."
-        },
-        {
-          "key": "base",
-          "label": "base",
-          "level": "Baja",
-          "text": "Pierde dinero en su negocio incluso sin contar los cargos extraordinarios."
         }
       ],
-      "level": "baja",
+      "level": "mixta",
       "plain": [
-        "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo.",
-        "El beneficio se ajustó por partidas extraordinarias identificadas de forma indirecta.",
-        "La empresa podría ser cíclica: sus resultados actuales pueden no ser representativos.",
-        "Pierde dinero en su negocio incluso sin contar los cargos extraordinarios."
+        "un solo método de valoración evaluable, sin contraste."
       ],
-      "reasons": [
-        {
-          "dimension": "convergencia",
-          "level": "no_evaluable",
-          "text": "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo."
-        },
-        {
-          "dimension": "calidad de fuente",
-          "level": "media",
-          "text": "El beneficio se ajustó por partidas extraordinarias identificadas de forma indirecta."
-        },
-        {
-          "dimension": "estabilidad",
-          "level": "media",
-          "text": "La empresa podría ser cíclica: sus resultados actuales pueden no ser representativos."
-        },
-        {
-          "dimension": "base",
-          "level": "baja",
-          "text": "Pierde dinero en su negocio incluso sin contar los cargos extraordinarios."
-        },
-        {
-          "dimension": "techo",
-          "level": "baja",
-          "text": null
-        }
-      ],
-      "summary": "Confianza del veredicto: baja (por sus dimensiones sería media; la limita: base frágil —resultado operativo normalizado ≤ 0 (−$3.53B): pierde dinero en su negocio sin contar los cargos no recurrentes—). Contrae también la calidad del negocio hacia 50: de 26 a 30.",
-      "tone": "neg",
+      "reasons": [],
+      "summary": "Consistencia: mixta (un solo método de valoración evaluable, sin contraste). No es una probabilidad de acierto.",
+      "tone": "warn",
       "verdict_text": "(beneficio normalizado de doce meses ≤ 0: el P/E no tiene sentido)"
     },
     "cover": {
@@ -2359,9 +2321,7 @@
         "Podría ser cíclica: su margen operativo oscila 98.3 puntos alrededor de su tendencia (el umbral es 5). No cambia su tipo, pero baja la confianza del veredicto."
       ],
       "confidence_reasons": [
-        "Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo.",
-        "El beneficio se ajustó por partidas extraordinarias identificadas de forma indirecta.",
-        "La empresa podría ser cíclica: sus resultados actuales pueden no ser representativos."
+        "un solo método de valoración evaluable, sin contraste."
       ],
       "coverage_notes": [],
       "currency_note": null,
@@ -2454,13 +2414,13 @@
         "note": null,
         "note_short": null,
         "question": "¿es buena la empresa?",
-        "score": 30,
+        "score": 26,
         "title": "CALIDAD DEL NEGOCIO",
         "tone": "neg"
       },
       "verdict": {
         "confidence_text": "(beneficio normalizado de doce meses ≤ 0: el P/E no tiene sentido)",
-        "confidence_tone": "neg",
+        "confidence_tone": "warn",
         "full": "Calidad débil · precio sin veredicto (beneficio normalizado de doce meses ≤ 0: el P/E no tiene sentido)",
         "text": "Calidad débil · precio sin veredicto"
       }
@@ -2779,7 +2739,7 @@
       }
     },
     "methodology": {
-      "contraction_text": "el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y la confianza no mueve el precio",
+      "contraction_text": "el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura",
       "models": [
         "Piotroski (2000)",
         "un DCF multietapa con WACC estimado por CAPM"
@@ -2864,16 +2824,18 @@
     "sections": {
       "alerts": {
         "counts": {
+          "balance": 1,
           "red_flags": 0,
           "strengths": 1,
           "unmeasured": null,
-          "warnings": 4
+          "valuation": 0,
+          "warnings": 3
         },
         "groups": [
           {
             "items": [],
             "key": "red_flags",
-            "title": "Riesgos",
+            "title": "Alerta roja",
             "tone": "neg"
           },
           {
@@ -2882,11 +2844,6 @@
                 "category": "Solidez financiera",
                 "detail": "La caja y las inversiones a corto plazo cubren 1.5 años de quema de FCF: tendrá que financiarse (deuda o ampliación de capital) dentro del horizonte del plan.",
                 "reason": "Runway ajustado — 1.5 años"
-              },
-              {
-                "category": "Flujo de caja",
-                "detail": "La empresa quema caja, algo esperable en una fase de fuerte inversión para crecer; la clave es que esa inversión se traduzca en ingresos y márgenes futuros.",
-                "reason": "Flujo de caja libre negativo"
               },
               {
                 "category": "Riesgo de mercado",
@@ -2914,6 +2871,24 @@
             "key": "strengths",
             "title": "Fortalezas",
             "tone": "pos"
+          },
+          {
+            "items": [
+              {
+                "category": "Flujo de caja",
+                "detail": "La empresa quema caja, algo esperable en una fase de fuerte inversión para crecer; la clave es que esa inversión se traduzca en ingresos y márgenes futuros.",
+                "reason": "Flujo de caja libre negativo"
+              }
+            ],
+            "key": "balance",
+            "title": "Estado del balance",
+            "tone": "neu"
+          },
+          {
+            "items": [],
+            "key": "valuation",
+            "title": "Lectura de valoración",
+            "tone": "neu"
           }
         ]
       },
@@ -3981,10 +3956,12 @@
     },
     "summary": {
       "alert_counts": {
+        "balance": 1,
         "red_flags": 0,
         "strengths": 1,
         "unmeasured": null,
-        "warnings": 4
+        "valuation": 0,
+        "warnings": 3
       },
       "cards": [
         {
@@ -4056,7 +4033,7 @@
         }
       ],
       "composition": {
-        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y la confianza no mueve el precio.",
+        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura.",
         "price": {
           "level": null,
           "note": "Precio sin veredicto: beneficio normalizado de doce meses ≤ 0: el P/E no tiene sentido.",
@@ -4116,7 +4093,7 @@
               "value": 7
             }
           ],
-          "score": 30,
+          "score": 26,
           "title": "CALIDAD DEL NEGOCIO",
           "tone": "neg"
         }
@@ -4124,7 +4101,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad débil · precio sin veredicto (beneficio normalizado de doce meses ≤ 0: el P/E no tiene sentido). Calidad 30/100 · precio —/100 (Sin P/E con sentido)."
+          "text": "Calidad débil · precio sin veredicto (beneficio normalizado de doce meses ≤ 0: el P/E no tiene sentido). Calidad 26/100 · precio —/100 (Sin P/E con sentido)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -4151,8 +4128,8 @@
           "text": "Cotiza en el 5% del rango de 52 semanas, en la zona de mínimos. Con beta 1.56, la acción es notablemente más volátil que el mercado."
         },
         {
-          "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Baja: solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo. No contrae el atractivo del precio; la calidad del negocio, sí, hacia 50 (de 26 a 30)."
+          "label": "CONSISTENCIA",
+          "text": "Mixta: un solo método de valoración evaluable, sin contraste (no es una probabilidad de acierto)."
         }
       ]
     },
@@ -4641,7 +4618,7 @@
                 "tone": "neg"
               }
             ],
-            "title": "Atractivo del precio (0–100, contraído por la confianza)"
+            "title": "Atractivo del precio (0–100, regla L1 por tercios)"
           }
         ]
       },
@@ -5136,6 +5113,7 @@
     "total_equity": 5106000000.0,
     "wacc": 0.104491768828
   },
+  "l1_cycle_peak": null,
   "market_context": {
     "behavioral": [],
     "market_volatility": {
@@ -5623,6 +5601,7 @@
     "border": null,
     "confidence": "baja",
     "contracted": false,
+    "cycle_peak": null,
     "factor": null,
     "gics": "Consumer Discretionary",
     "gics_sector": "Consumer Discretionary",
@@ -5650,6 +5629,7 @@
     "pe_ttm": null,
     "percentile": null,
     "reason": "beneficio normalizado de doce meses ≤ 0: el P/E no tiene sentido",
+    "reference_alarm": [],
     "relative": null,
     "rule": "L1",
     "score": null,
@@ -5739,9 +5719,9 @@
         "score": 7
       }
     ],
-    "contracted": true,
+    "contracted": false,
     "excluded_categories": [],
-    "factor": 0.85,
+    "factor": null,
     "level": "débil",
     "level_raw": "débil",
     "low_confidence": false,
@@ -5794,7 +5774,7 @@
       "source": "edgar",
       "window": 5
     },
-    "score": 30,
+    "score": 26,
     "score_raw": 26
   },
   "quality_readings": {
@@ -6274,8 +6254,8 @@
     "source": "legal"
   },
   "verdict": {
-    "confidence": "baja",
     "confidence_text": "(beneficio normalizado de doce meses ≤ 0: el P/E no tiene sentido)",
+    "consistency": "mixta",
     "full": "Calidad débil · precio sin veredicto (beneficio normalizado de doce meses ≤ 0: el P/E no tiene sentido)",
     "price_level": null,
     "price_level_raw": null,

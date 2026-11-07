@@ -12,8 +12,8 @@ describe("SCORE_BANDS (generado desde thresholds.toml)", () => {
   });
 });
 
-describe("SCORE_BANDS.confidence (niveles de confianza del motor)", () => {
-  it("trae los niveles de la mejor a la peor, de [score.price] confidence_factor", () => {
-    expect(SCORE_BANDS.confidence.labels).toEqual(["alta", "media", "baja"]);
+describe("SCORE_BANDS.confidence (niveles de la consistencia)", () => {
+  it("trae los dos niveles, del mejor al peor (lib/consistency.LEVELS)", () => {
+    expect(SCORE_BANDS.confidence.labels).toEqual(["consistente", "mixta"]);
   });
 });

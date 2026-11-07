@@ -1,6 +1,6 @@
 {
   "alerts": {
-    "red_flags": [
+    "balance": [
       {
         "category": "Flujo de caja",
         "detail": "El negocio consume más efectivo del que genera tras invertir: depende de caja acumulada, deuda o ampliaciones para sostenerse. Sostenible solo de forma transitoria.",
@@ -10,8 +10,14 @@
         "category": "Rentabilidad",
         "detail": "El retorno sobre el capital invertido no cubre su costo (ROIC 4.5% vs WACC 7.8%): crecer a estos retornos destruye valor para el accionista en lugar de crearlo.",
         "reason": "Destruye valor — spread −3.3 pp"
+      },
+      {
+        "category": "Solidez financiera",
+        "detail": "Harían falta ~5 años de EBITDA íntegro para saldar la deuda neta. Por encima de 4x el margen ante una caída de resultados o una subida de tipos se estrecha: conviene vigilar la cobertura de intereses y el calendario de vencimientos.",
+        "reason": "Apalancamiento elevado — 4.7x EBITDA"
       }
     ],
+    "red_flags": [],
     "strengths": [
       {
         "category": "Rentabilidad",
@@ -19,19 +25,9 @@
         "reason": "ROE normalizado elevado — 11.8% (TTM, sin partidas no recurrentes)"
       },
       {
-        "category": "Valoración",
-        "detail": "Paga 9.2x beneficios normalizados frente a 16.0x de sus pares del universo (-42%): un descuento que puede ser oportunidad si los fundamentos acompañan, o reflejar un riesgo que el mercado ya percibe.",
-        "reason": "Cotiza con descuento — P/E normalizado 9.2x"
-      },
-      {
         "category": "Rentabilidad",
         "detail": "De cada dólar vendido quedan 8 centavos de beneficio tras todos los costos, frente a 2.1% de sus pares del universo: poder de fijación de precios y eficiencia.",
         "reason": "Margen neto normalizado sólido — 8.1%"
-      },
-      {
-        "category": "Valoración",
-        "detail": "Cotiza a 9.6x EBITDA frente a 24.6x de sus pares del universo: valoración atractiva sobre flujo operativo, a validar que no responda a un deterioro del negocio.",
-        "reason": "EV/EBITDA barato — 9.6x"
       },
       {
         "category": "Solidez financiera",
@@ -39,12 +35,19 @@
         "reason": "Deuda fácilmente servible — cobertura 11x"
       }
     ],
-    "warnings": [
+    "valuation": [
       {
-        "category": "Solidez financiera",
-        "detail": "Harían falta ~5 años de EBITDA íntegro para saldar la deuda neta. Por encima de 4x el margen ante una caída de resultados o una subida de tipos se estrecha: conviene vigilar la cobertura de intereses y el calendario de vencimientos.",
-        "reason": "Apalancamiento elevado — 4.7x EBITDA"
+        "category": "Valoración",
+        "detail": "Paga 9.2x beneficios normalizados frente a 16.0x de sus pares del universo (-42%): un descuento que puede ser oportunidad si los fundamentos acompañan, o reflejar un riesgo que el mercado ya percibe.",
+        "reason": "Cotiza con descuento — P/E normalizado 9.2x"
       },
+      {
+        "category": "Valoración",
+        "detail": "Cotiza a 9.6x EBITDA frente a 24.6x de sus pares del universo: valoración atractiva sobre flujo operativo, a validar que no responda a un deterioro del negocio.",
+        "reason": "EV/EBITDA barato — 9.6x"
+      }
+    ],
+    "warnings": [
       {
         "category": "Solidez financiera",
         "detail": "Los activos corrientes cubren solo 1.17x los pasivos de corto plazo: la empresa podría tensionarse para atender sus obligaciones inmediatas si el flujo de caja se resiente. Habitual y manejable en negocios con caja muy predecible.",
@@ -489,6 +492,22 @@
       "techo en baja: la más baja manda: convergencia baja"
     ],
     "score": 0.5
+  },
+  "consistency": {
+    "coverage": {
+      "level": "alta",
+      "text": "cobertura de datos completa"
+    },
+    "level": "mixta",
+    "methods": {
+      "level": "baja",
+      "text": "DCF inverso y los múltiplos discrepan"
+    },
+    "phrase": "DCF inverso y los múltiplos discrepan",
+    "reasons": [
+      "DCF inverso y los múltiplos discrepan"
+    ],
+    "tone": "warn"
   },
   "cost_of_equity": {
     "as_of": "2026-11-01",
@@ -1568,16 +1587,8 @@
           "text": "Arquetipo MATURE (regla por_defecto): Clasificada como MATURE por defecto: no es financiera, REIT, pre-beneficio con crecimiento, cíclica ni de crecimiento rentable (industria Fabricantes de automóviles); su historia (19 ejercicios en EDGAR) no muestra ciclo."
         },
         {
-          "label": "Confianza · Convergencia entre métodos (baja)",
+          "label": "Consistencia · Coincidencia de métodos (baja)",
           "text": "direcciones opuestas: múltiplos frente al sector dice barata y DCF inverso dice cara."
-        },
-        {
-          "label": "Confianza · Calidad de fuente (media)",
-          "text": "beta sustituta 1.46 fuera de la propia 0.73 ± 2 EE (0.39–1.07, R² 0.15)"
-        },
-        {
-          "label": "Confianza · base (media)",
-          "text": "caja libre negativa (−$7.86B): invierte más de lo que genera."
         },
         {
           "label": "Fuente oficial",
@@ -2499,66 +2510,27 @@
       "dimensions": [
         {
           "key": "convergence",
-          "label": "Convergencia entre métodos",
-          "level": "Baja",
+          "label": "Coincidencia de métodos",
+          "level": "Discrepan",
+          "ok": false,
           "text": "DCF inverso -1.00 (cara) · múltiplos frente al sector +0.75 (barata). Los métodos de valoración se contradicen: uno ve la acción barata y otro cara."
         },
         {
           "key": "coverage",
           "label": "Cobertura de datos",
-          "level": "Alta",
+          "level": "Completa",
+          "ok": true,
           "text": "Sin incidencias."
-        },
-        {
-          "key": "source",
-          "label": "Calidad de fuente",
-          "level": "Media",
-          "text": "El coste del capital usa la beta de su industria (1.46), que no encaja con cómo se ha movido la acción frente al mercado (la suya: 0.73)."
-        },
-        {
-          "key": "stability",
-          "label": "Estabilidad del arquetipo",
-          "level": "Alta",
-          "text": "Sin incidencias."
-        },
-        {
-          "key": "base",
-          "label": "base",
-          "level": "Media",
-          "text": "La empresa invierte más caja de la que genera: su valor depende de que esa inversión rinda."
         }
       ],
-      "level": "baja",
+      "level": "mixta",
       "plain": [
-        "Los métodos de valoración se contradicen: uno ve la acción barata y otro cara.",
-        "El coste del capital usa la beta de su industria (1.46), que no encaja con cómo se ha movido la acción frente al mercado (la suya: 0.73).",
-        "La empresa invierte más caja de la que genera: su valor depende de que esa inversión rinda."
+        "DCF inverso y los múltiplos discrepan."
       ],
-      "reasons": [
-        {
-          "dimension": "convergencia",
-          "level": "baja",
-          "text": "Los métodos de valoración se contradicen: uno ve la acción barata y otro cara."
-        },
-        {
-          "dimension": "calidad de fuente",
-          "level": "media",
-          "text": "El coste del capital usa la beta de su industria (1.46), que no encaja con cómo se ha movido la acción frente al mercado (la suya: 0.73)."
-        },
-        {
-          "dimension": "base",
-          "level": "media",
-          "text": "La empresa invierte más caja de la que genera: su valor depende de que esa inversión rinda."
-        },
-        {
-          "dimension": "techo",
-          "level": "baja",
-          "text": null
-        }
-      ],
-      "summary": "Confianza del veredicto: baja (por sus dimensiones sería media; la limita: la más baja manda —convergencia baja—). La calidad del negocio no se contrae.",
-      "tone": "neg",
-      "verdict_text": "(confianza baja: DCF inverso y los múltiplos discrepan)"
+      "reasons": [],
+      "summary": "Consistencia: mixta (DCF inverso y los múltiplos discrepan). No es una probabilidad de acierto.",
+      "tone": "warn",
+      "verdict_text": "(consistencia mixta: DCF inverso y los múltiplos discrepan)"
     },
     "cover": {
       "archetype": "MATURE",
@@ -2645,9 +2617,7 @@
         "Negocio establecido que se valora sobre todo por la caja que genera hoy; sus ingresos crecen un 10.9% anual en 3 años (FY2023–FY2026), por debajo del 15% del crecimiento rentable; en 19 ejercicios su historia no muestra ciclo (Fabricantes de automóviles)."
       ],
       "confidence_reasons": [
-        "Los métodos de valoración se contradicen: uno ve la acción barata y otro cara.",
-        "El coste del capital usa la beta de su industria (1.46), que no encaja con cómo se ha movido la acción frente al mercado (la suya: 0.73).",
-        "La empresa invierte más caja de la que genera: su valor depende de que esa inversión rinda."
+        "DCF inverso y los múltiplos discrepan."
       ],
       "coverage_notes": [
         "cobertura baja en Crecimiento"
@@ -2666,8 +2636,8 @@
         {
           "kicker": "A VIGILAR",
           "kind": "watch",
-          "text": "Flujo de caja libre negativo",
-          "tone": "neg"
+          "text": "Liquidez ajustada — current ratio 1.17x",
+          "tone": "warn"
         },
         {
           "kicker": "CONTEXTO · 52 SEM.",
@@ -2740,17 +2710,17 @@
       },
       "quality": {
         "level": "media",
-        "note": "baja confianza: cobertura baja en Crecimiento.",
-        "note_short": "Baja confianza: cobertura baja en Crecimiento",
+        "note": "datos incompletos: cobertura baja en Crecimiento.",
+        "note_short": "Cobertura baja en Crecimiento",
         "question": "¿es buena la empresa?",
         "score": 51,
         "title": "CALIDAD DEL NEGOCIO",
         "tone": "warn"
       },
       "verdict": {
-        "confidence_text": "(confianza baja: DCF inverso y los múltiplos discrepan)",
-        "confidence_tone": "neg",
-        "full": "Calidad media · precio atractivo (confianza baja: DCF inverso y los múltiplos discrepan)",
+        "confidence_text": "(consistencia mixta: DCF inverso y los múltiplos discrepan)",
+        "confidence_tone": "warn",
+        "full": "Calidad media · precio atractivo (consistencia mixta: DCF inverso y los múltiplos discrepan)",
         "text": "Calidad media · precio atractivo"
       }
     },
@@ -3129,7 +3099,7 @@
       }
     },
     "methodology": {
-      "contraction_text": "el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y la confianza no mueve el precio",
+      "contraction_text": "el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura",
       "models": [
         "Altman (1968)",
         "Piotroski (2000)",
@@ -3224,36 +3194,22 @@
     "sections": {
       "alerts": {
         "counts": {
-          "red_flags": 2,
-          "strengths": 5,
+          "balance": 3,
+          "red_flags": 0,
+          "strengths": 3,
           "unmeasured": null,
-          "warnings": 4
+          "valuation": 2,
+          "warnings": 3
         },
         "groups": [
           {
-            "items": [
-              {
-                "category": "Flujo de caja",
-                "detail": "El negocio consume más efectivo del que genera tras invertir: depende de caja acumulada, deuda o ampliaciones para sostenerse. Sostenible solo de forma transitoria.",
-                "reason": "Flujo de caja libre negativo"
-              },
-              {
-                "category": "Rentabilidad",
-                "detail": "El retorno sobre el capital invertido no cubre su costo (ROIC 4.5% vs WACC 7.8%): crecer a estos retornos destruye valor para el accionista en lugar de crearlo.",
-                "reason": "Destruye valor — spread −3.3 pp"
-              }
-            ],
+            "items": [],
             "key": "red_flags",
-            "title": "Riesgos",
+            "title": "Alerta roja",
             "tone": "neg"
           },
           {
             "items": [
-              {
-                "category": "Solidez financiera",
-                "detail": "Harían falta ~5 años de EBITDA íntegro para saldar la deuda neta. Por encima de 4x el margen ante una caída de resultados o una subida de tipos se estrecha: conviene vigilar la cobertura de intereses y el calendario de vencimientos.",
-                "reason": "Apalancamiento elevado — 4.7x EBITDA"
-              },
               {
                 "category": "Solidez financiera",
                 "detail": "Los activos corrientes cubren solo 1.17x los pasivos de corto plazo: la empresa podría tensionarse para atender sus obligaciones inmediatas si el flujo de caja se resiente. Habitual y manejable en negocios con caja muy predecible.",
@@ -3282,19 +3238,9 @@
                 "reason": "ROE normalizado elevado — 11.8% (TTM, sin partidas no recurrentes)"
               },
               {
-                "category": "Valoración",
-                "detail": "Paga 9.2x beneficios normalizados frente a 16.0x de sus pares del universo (-42%): un descuento que puede ser oportunidad si los fundamentos acompañan, o reflejar un riesgo que el mercado ya percibe.",
-                "reason": "Cotiza con descuento — P/E normalizado 9.2x"
-              },
-              {
                 "category": "Rentabilidad",
                 "detail": "De cada dólar vendido quedan 8 centavos de beneficio tras todos los costos, frente a 2.1% de sus pares del universo: poder de fijación de precios y eficiencia.",
                 "reason": "Margen neto normalizado sólido — 8.1%"
-              },
-              {
-                "category": "Valoración",
-                "detail": "Cotiza a 9.6x EBITDA frente a 24.6x de sus pares del universo: valoración atractiva sobre flujo operativo, a validar que no responda a un deterioro del negocio.",
-                "reason": "EV/EBITDA barato — 9.6x"
               },
               {
                 "category": "Solidez financiera",
@@ -3305,6 +3251,45 @@
             "key": "strengths",
             "title": "Fortalezas",
             "tone": "pos"
+          },
+          {
+            "items": [
+              {
+                "category": "Flujo de caja",
+                "detail": "El negocio consume más efectivo del que genera tras invertir: depende de caja acumulada, deuda o ampliaciones para sostenerse. Sostenible solo de forma transitoria.",
+                "reason": "Flujo de caja libre negativo"
+              },
+              {
+                "category": "Rentabilidad",
+                "detail": "El retorno sobre el capital invertido no cubre su costo (ROIC 4.5% vs WACC 7.8%): crecer a estos retornos destruye valor para el accionista en lugar de crearlo.",
+                "reason": "Destruye valor — spread −3.3 pp"
+              },
+              {
+                "category": "Solidez financiera",
+                "detail": "Harían falta ~5 años de EBITDA íntegro para saldar la deuda neta. Por encima de 4x el margen ante una caída de resultados o una subida de tipos se estrecha: conviene vigilar la cobertura de intereses y el calendario de vencimientos.",
+                "reason": "Apalancamiento elevado — 4.7x EBITDA"
+              }
+            ],
+            "key": "balance",
+            "title": "Estado del balance",
+            "tone": "neu"
+          },
+          {
+            "items": [
+              {
+                "category": "Valoración",
+                "detail": "Paga 9.2x beneficios normalizados frente a 16.0x de sus pares del universo (-42%): un descuento que puede ser oportunidad si los fundamentos acompañan, o reflejar un riesgo que el mercado ya percibe.",
+                "reason": "Cotiza con descuento — P/E normalizado 9.2x"
+              },
+              {
+                "category": "Valoración",
+                "detail": "Cotiza a 9.6x EBITDA frente a 24.6x de sus pares del universo: valoración atractiva sobre flujo operativo, a validar que no responda a un deterioro del negocio.",
+                "reason": "EV/EBITDA barato — 9.6x"
+              }
+            ],
+            "key": "valuation",
+            "title": "Lectura de valoración",
+            "tone": "neu"
           }
         ]
       },
@@ -4367,10 +4352,12 @@
     },
     "summary": {
       "alert_counts": {
-        "red_flags": 2,
-        "strengths": 5,
+        "balance": 3,
+        "red_flags": 0,
+        "strengths": 3,
         "unmeasured": null,
-        "warnings": 4
+        "valuation": 2,
+        "warnings": 3
       },
       "cards": [
         {
@@ -4441,7 +4428,7 @@
         }
       ],
       "composition": {
-        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y la confianza no mueve el precio.",
+        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura.",
         "price": {
           "level": "atractivo",
           "note": "P/E 8.8x frente a la mediana de consumo discrecional (19.1x), 0.46 veces: en el tercio más barato del universo.",
@@ -4466,7 +4453,7 @@
         },
         "quality": {
           "level": "media",
-          "note": "baja confianza por cobertura.",
+          "note": "cobertura de datos baja.",
           "rows": [
             {
               "kind": "bar",
@@ -4509,7 +4496,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad media · precio atractivo (confianza baja: DCF inverso y los múltiplos discrepan). Calidad 51/100 · precio 94/100 (P/E 8.8x frente a 19.1x de su sector)."
+          "text": "Calidad media · precio atractivo (consistencia mixta: DCF inverso y los múltiplos discrepan). Calidad 51/100 · precio 94/100 (P/E 8.8x frente a 19.1x de su sector)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -4536,8 +4523,8 @@
           "text": "Cotiza en el 31% del rango de 52 semanas, en la zona media. Con beta 1.46, la acción amplifica los movimientos del mercado."
         },
         {
-          "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Baja: los métodos de valoración se contradicen: uno ve la acción barata y otro cara. No contrae el atractivo del precio ni la calidad."
+          "label": "CONSISTENCIA",
+          "text": "Mixta: DCF inverso y los múltiplos discrepan (no es una probabilidad de acierto)."
         }
       ]
     },
@@ -5263,7 +5250,7 @@
                 "tone": "neg"
               }
             ],
-            "title": "Atractivo del precio (0–100, contraído por la confianza)"
+            "title": "Atractivo del precio (0–100, regla L1 por tercios)"
           }
         ]
       },
@@ -5983,6 +5970,7 @@
     "total_equity": 230410917805.0,
     "wacc": 0.077978238602
   },
+  "l1_cycle_peak": null,
   "market_context": {
     "behavioral": [
       {
@@ -6505,6 +6493,7 @@
       0.839031,
       1.190143
     ],
+    "cycle_peak": null,
     "factor": null,
     "gics": "Consumer Discretionary",
     "gics_sector": "Consumer Discretionary",
@@ -6532,6 +6521,7 @@
     "pe_ttm": 8.8435640633,
     "percentile": 0.0595225670023,
     "reason": null,
+    "reference_alarm": [],
     "relative": 0.462441922652,
     "rule": "L1",
     "score": 94,
@@ -6623,7 +6613,7 @@
     ],
     "contracted": false,
     "excluded_categories": [],
-    "factor": 0.85,
+    "factor": null,
     "level": "media",
     "level_raw": "media",
     "low_confidence": true,
@@ -7220,9 +7210,9 @@
     "source": "efectiva"
   },
   "verdict": {
-    "confidence": "baja",
-    "confidence_text": "(confianza baja: DCF inverso y los múltiplos discrepan)",
-    "full": "Calidad media · precio atractivo (confianza baja: DCF inverso y los múltiplos discrepan)",
+    "confidence_text": "(consistencia mixta: DCF inverso y los múltiplos discrepan)",
+    "consistency": "mixta",
+    "full": "Calidad media · precio atractivo (consistencia mixta: DCF inverso y los múltiplos discrepan)",
     "price_level": "atractivo",
     "price_level_raw": null,
     "quality_level": "media",

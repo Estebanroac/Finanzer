@@ -116,7 +116,8 @@ def _row(a: Dict[str, Any], key: str) -> Optional[Dict[str, Any]]:
 
 def _alerts(a: Dict[str, Any]) -> List[Tuple[str, Dict[str, Any]]]:
     al = a.get("alerts") or {}
-    return [(k, x) for k in ("strengths", "warnings", "red_flags") for x in (al.get(k) or []) if isinstance(x, dict)]
+    return [(k, x) for k in ("strengths", "warnings", "red_flags", "balance", "valuation") for x in (al.get(k) or [])
+            if isinstance(x, dict)]
 
 
 # ═══════════════════════ 1. Margen neto frente a su techo operativo ═══════════════════════

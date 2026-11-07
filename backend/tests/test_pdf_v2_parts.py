@@ -68,8 +68,8 @@ def test_quality_scale_uses_engine_bands():
 def test_price_scale_and_confidence_levels():
     m = P.build_scale("price", 15, "muy exigente")
     assert [s.range for s in m.segments] == ["<30", "30–45", "45–65", "65+"]
-    lv = P.build_level_scale("alta")
-    assert [s.label for s in lv.segments] == ["baja", "media", "alta"] and lv.pin == pytest.approx(500 / 6)
+    lv = P.build_level_scale("consistente")      # Fase 1 · pendientes: la consistencia, dos niveles
+    assert [s.label for s in lv.segments] == ["mixta", "consistente"] and lv.pin == pytest.approx(75)
     assert P.build_level_scale(None).pin is None
 
 
@@ -78,15 +78,16 @@ def test_score_scales_draw_in_an_equal_row(aapl):
     cards = [P.ScoreScale(P.build_scale("quality", q["score"], q["level"]), q["title"], q["question"],
                           str(q["score"]), f"/ 100 · {q['level']}", q["tone"], "4 categorías × 20 puntos",
                           [("Rentabilidad", "20 / 20", "pos")]),
-             P.ScoreScale(P.build_level_scale("alta"), "Confianza del veredicto", "¿cuánto fiarse?", "Alta", None,
-                          "neu", "DCF inverso y los múltiplos coinciden",
-                          [("Convergencia", "Alta", None), ("Cobertura", "Alta", None), ("Fuente", "Alta", None)])]
+             P.ScoreScale(P.build_level_scale("consistente"), "Consistencia", "¿coinciden métodos y datos?",
+                          "Consistente", None, "neu", "DCF inverso y los múltiplos coinciden",
+                          [("Coincidencia de métodos", "Coinciden", None), ("Cobertura de datos", "Completa", None)])]
     row = P.equal_row(cards, T.CW)
     pdf, _ = _render(row)
     assert cards[0].height == cards[1].height
     t = _text(pdf)
     # F8 · E10: la calidad de AAPL sale del golden (con el Altman por SIC y su peso; los números cambian con el motor)
-    assert str(q["score"]) in t and f"/ 100 · {q['level']}" in t and "débil <45" in t and "baja" in t and "Alta" in t
+    assert str(q["score"]) in t and f"/ 100 · {q['level']}" in t and "débil <45" in t and "mixta" in t
+    assert "Consistente" in t
 
 
 def test_score_scale_without_score_shows_dash():

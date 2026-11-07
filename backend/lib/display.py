@@ -49,7 +49,9 @@ def l1_note_short(pa):
     if pa.get("level") and pa.get("pe_ttm") and pa.get("sector_median"):
         _g = ("todo el universo" if pa.get("median_scope") == "mercado" else
               "su grupo" if pa.get("group") in L1_GROUP_ES else "su sector")
-        return f"{pa.get('metric') or 'P/E'} {pa['pe_ttm']:.1f}x frente a {pa['sector_median']:.1f}x de {_g}"
+        # Fase 1 · pendientes (MU): junto a la etiqueta, el aviso de pico de beneficio de una cíclica
+        _cp = "; beneficio en la parte alta del ciclo" if pa.get("cycle_peak") else ""
+        return f"{pa.get('metric') or 'P/E'} {pa['pe_ttm']:.1f}x frente a {pa['sector_median']:.1f}x de {_g}{_cp}"
     return "Sin P/E con sentido" if pa.get("reason") and not pa.get("abstained") else None
 
 
@@ -1508,24 +1510,7 @@ def contraction_text() -> str:
     """La regla del atractivo del precio, escrita una vez para la web y los PDF. F16 (prueba hacia atrás del 6-nov-2026,
     decisión del usuario): es la regla L1 (lib/precio_l1.py); antes, la Valoración contraída según la confianza."""
     return ("el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por "
-            "tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y "
-            "la confianza no mueve el precio")
-
-
-def _contraction_phrase(p_raw: Any, p_score: Any, q: Dict[str, Any]) -> str:
-    """La frase del resumen ejecutivo sobre lo que contrae la confianza: el atractivo del precio y, con confianza baja
-    (F8 · E11), la calidad del negocio."""
-    price = p_raw is not None and p_score is not None and p_raw != p_score   # F13 · 8: sin veredicto, nada que contraer
-    qual = bool(q.get("contracted"))
-    if price and qual:
-        return (f". Contrae hacia 50 el atractivo del precio (de {p_raw} a {p_score}) y la calidad del negocio (de "
-                f"{q.get('score_raw')} a {q.get('score')}).")
-    if price:
-        return f". Contrae el atractivo del precio hacia 50 (de {p_raw} a {p_score}); la calidad no se contrae."
-    if qual:
-        return (f". No contrae el atractivo del precio; la calidad del negocio, sí, hacia 50 (de {q.get('score_raw')} "
-                f"a {q.get('score')}).")
-    return ". No contrae el atractivo del precio ni la calidad."
+            "tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura")
 
 
 def _ke_base_text(floor: Dict[str, Any]) -> str:
@@ -1718,6 +1703,8 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     n_red = len(alerts.get("red_flags") or [])
     n_warn = len(alerts.get("warnings") or [])
     n_str = len(alerts.get("strengths") or [])
+    n_bal = len(alerts.get("balance") or [])
+    n_val = len(alerts.get("valuation") or [])
 
     # ── lecturas adaptativas (se usan en resumen, secciones y tablas) ──
     # P/E <= 0 llega como None marcado "no significativo" (validate_outputs):
@@ -1967,7 +1954,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         if classification.get("low_confidence"):      # fase 3 (T2): con su motivo
             cls_notes.append(classification["low_confidence"]["plain"])
         elif classification.get("ambiguous"):
-            cls_notes.append("Clasificación ambigua: confianza baja.")
+            cls_notes.append("Clasificación ambigua.")
         cls_notes += [x.get("detail_plain") or x.get("detail") for x in classification.get("alerts") or []
                       if x.get("detail_plain") or x.get("detail")]
         cls_detail = [f"Arquetipo {archetype} (regla {classification.get('rule')}): {classification['reason']}"]
@@ -1994,8 +1981,12 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     cat_groups = [{"title": "CALIDAD DEL NEGOCIO", "items": _cat_items(cfg("thresholds.score.quality.categories"))},
                   {"title": "ATRACTIVO DEL PRECIO", "items": _cat_items(cfg("thresholds.score.price.categories"))}]
 
-    plain = plain_reasons(_conf)
-    conf_tone = {'alta': 'pos', 'media': 'warn', 'baja': 'neg'}.get(_conf.get('level'), 'neu')
+    # Fase 1 · pendientes (decisión del usuario, 7-nov-2026): a la vista, la consistencia (lib/consistency.py), no la
+    # confianza: dos niveles, con los métodos y la cobertura de datos; sin sugerir probabilidad de acierto.
+    _cons = a.get("consistency") or {}
+    plain = list(_cons.get("reasons") or [])
+    conf_tone = _cons.get("tone") or 'neu'
+
 
     # KPIs: los indicadores primarios del arquetipo (un banco nunca recibe P/E ni FCF
     # como métrica primaria; un REIT, P/FFO…).
@@ -2091,9 +2082,9 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         if _t:
             _record(_t, _claim("quality_persistence", field="quality.persistence.weighted", value=_pq.get("weighted")),
                     source="display.quality")
-    _lowc = ("baja confianza: cobertura baja en " + ", ".join(_q.get("low_coverage_categories") or [])
+    _lowc = ("cobertura baja en " + ", ".join(_q.get("low_coverage_categories") or [])
              if _q.get("low_confidence") and _q.get("low_coverage_categories") else
-             "baja confianza" if _q.get("low_confidence") else None)
+             "cobertura de datos baja" if _q.get("low_confidence") else None)
     cover = {
         # Etapa 11b: conversión de moneda y clase de acciones aplicada a los estados (o None).
         "currency_note": currency_note((a.get("data_provenance") or {}).get("currency")),
@@ -2108,7 +2099,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         "quality": {"title": "CALIDAD DEL NEGOCIO", "question": "¿es buena la empresa?", "score": q_score,
                     "level": q_level, "tone": q_tone,
                     # V7 (puntuación): las frases se unen sin «.;» y la nota acaba en punto (lib/prose.py)
-                    "note": join_clauses([("baja confianza: " + "; ".join(_q.get("low_confidence_reasons") or [])
+                    "note": join_clauses([("datos incompletos: " + "; ".join(_q.get("low_confidence_reasons") or [])
                                            if _q.get("low_confidence") else _persist_txt), _bq]),
                     "note_short": note_short([_lowc if _q.get("low_confidence") else _persist_tiny, _bq_s])},
         "price": {"title": "ATRACTIVO DEL PRECIO", "question": "¿está cara hoy?", "score": p_score, "raw": p_raw,
@@ -2307,16 +2298,10 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     _ctx = " ".join(filter(None, [cap(r_52[2]) if r_52 else None, cap(r_beta[2]) if r_beta else None]))
     if _ctx.strip():
         exec_items.append(("CONTEXTO DE MERCADO", _ctx))
-    if _conf.get("level"):
-        _p0 = plain[0].rstrip(".") if plain else None
-        if _br_stepped:     # F10 · N4: el escalón de las tasas base es lo que la dejó en este nivel; se dice primero
-            _p0 = "Casi ninguna comparable sostuvo el crecimiento que exige el precio (tasas base)"
-        exec_items.append(("CONFIANZA DEL VEREDICTO",
-                           f"{_conf['level'].capitalize()}"
-                           + (f": {_p0[0].lower()}{_p0[1:]}" if _p0 else ": los métodos y los datos coinciden")
-                           # V7 (M5): solo dice que contrae cuando contrae (como la línea de la sección 01). F8 · E11:
-                           # con confianza baja también contrae la calidad.
-                           + _contraction_phrase(p_raw, p_score if _pa.get("factor") is not None else p_raw, _q)))
+    if _cons.get("level"):
+        # Fase 1 · pendientes (7-nov-2026): la consistencia; no mueve ninguna puntuación
+        exec_items.append(("CONSISTENCIA", f"{_cons['level'].capitalize()}: {_cons.get('phrase')} (no es una "
+                                           "probabilidad de acierto)."))
 
     # Composición de las dos puntuaciones (sustituye al radar de 5 ejes).
     _qrows = []
@@ -2341,7 +2326,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                        "value": v, "tone": 'pos' if v > 0 else 'neg' if v < 0 else 'neu'})
     composition = {
         "quality": {"title": "CALIDAD DEL NEGOCIO", "score": q_score, "level": q_level, "tone": q_tone,
-                    "note": _q.get("basis") or ("baja confianza por cobertura" if _q.get("low_confidence")
+                    "note": _q.get("basis") or ("cobertura de datos baja" if _q.get("low_confidence")
                                                 else _persist_short),
                     "rows": _qrows},
         "price": {"title": "ATRACTIVO DEL PRECIO", "score": p_score, "level": p_level, "tone": p_tone,
@@ -2356,7 +2341,8 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     summary = {"cards": cards, "exec_items": [{"label": l, "text": t} for l, t in exec_items],
                "composition": composition,
                # F9 · R6: un banco sin el crédito medido no muestra «0 riesgos» a secas: la cuenta lleva la salvedad
-               "alert_counts": {"red_flags": n_red, "warnings": n_warn, "strengths": n_str,
+               "alert_counts": {"red_flags": n_red, "warnings": n_warn, "strengths": n_str, "balance": n_bal,
+                                "valuation": n_val,
                                 "unmeasured": ("el riesgo de crédito no está medido"
                                                if (a.get("credit_risk") or {}).get("status") == "no_medido" else None)}}
 
@@ -2767,42 +2753,38 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         if _dcf_score is not None:
             _dcf_truth += (f"; en Valoración puntúa el {_clean_metric(_dcf_score['metric']).split(' (')[0]} "
                            f"({_dcf_score['adjustment']:+d} puntos)".replace("-", "−"))
-    if _conf.get("level"):
-        _labels = {"convergence": "Convergencia entre métodos", "coverage": "Cobertura de datos",
-                   "source": "Calidad de fuente", "stability": "Estabilidad del arquetipo",
-                   "fuente_oficial": "Fuente oficial (SEC)"}
+    if _cons.get("level"):
+        # Fase 1 · pendientes (7-nov-2026): la consistencia, con sus dos dimensiones (métodos y cobertura de datos).
+        # `display.confidence` conserva el nombre del campo del contrato; su contenido es la consistencia.
+        _labels = {"convergence": "Coincidencia de métodos", "coverage": "Cobertura de datos"}
         dims, annex_conf = [], []
-        for _k, _dd in (_conf.get("dimensions") or {}).items():
-            if _k == "fuente_oficial" and _dd.get("level") != "baja":
-                continue        # fase 2b (D7): no pondera; solo se muestra cuando pone techo
-            # Fase 1 (D1): en la tabla, el motivo en lenguaje llano; el técnico, al anexo del final del PDF.
+        for _k in ("convergence", "coverage"):
+            _dd = (_conf.get("dimensions") or {}).get(_k) or {}
+            if not _dd.get("level"):
+                continue
             _plain_txt = list(dict.fromkeys(t for t in map(_plain_reason, _dd.get("reasons") or []) if t))
             _txt = " ".join(_plain_txt) or "Sin incidencias."
             if _dd.get("reasons"):
-                annex_conf.append({"label": f"Confianza · {_labels.get(_k, _k)} ({_dd['level'].replace('_', ' ')})",
+                annex_conf.append({"label": f"Consistencia · {_labels[_k]} ({_dd['level'].replace('_', ' ')})",
                                    "text": "; ".join(_dd["reasons"])})
             if _k == "convergence" and _dd.get("methods"):
                 _txt = " · ".join(
                     f"{_method_name(m['method'])} {('%+.0f%%' % (m['upside'] * 100)) if m.get('upside') is not None else ('%+.2f' % m['signal'])}"
                     f" ({m.get('direction')}{'' if m.get('evaluable', True) else ', no evaluable'})"
                     for m in _dd["methods"] if m.get("signal") is not None) + ". " + _txt
-            dims.append({"key": _k, "label": _labels.get(_k, _k), "level": _dd["level"].replace("_", " ").capitalize(),
-                         "text": _txt})
+            _ok = (_dd["level"] == "alta") if _k == "convergence" else (_dd["level"] in ("alta", "media"))
+            dims.append({"key": _k, "label": _labels[_k],
+                         "level": ({"alta": "Coinciden", "media": "En parte", "baja": "Discrepan",
+                                    "no_evaluable": "Un solo método"} if _k == "convergence" else
+                                   {"alta": "Completa", "media": "Suficiente", "baja": "Parcial"}).get(_dd["level"],
+                                                                                                     "Sin medir"),
+                         "text": _txt, "ok": _ok})
+        import consistency as _consistency
         confidence = {
-            "level": _conf["level"], "tone": conf_tone, "verdict_text": _vd.get("confidence_text"),
-            "plain": plain, "dimensions": dims,
-            "reasons": [{k: v for k, v in r.items() if k != "detail"} for r in confidence_reasons(_conf)],
-            "summary": (f"Confianza del veredicto: {_conf['level']}"
-                        # F10 · N6: qué la limita, en orden (techos, tasas base y Ke), con el nivel de cada paso
-                        + (f" ({confidence_limits(_conf)})" if confidence_limits(_conf) else "")
-                        # V7 (M4): solo cuando contrae de verdad ("factor 1.0: 15 → 15" no dice nada)
-                        + (f". Contrae el atractivo del precio hacia 50: de {p_raw} a {p_score}"
-                           if _pa.get("factor") is not None and p_score is not None and p_raw != p_score else "")
-                        + (f". {_dcf_truth}" if _dcf_truth else "")
-                        # F8 · E11: con confianza baja también se contrae la calidad
-                        + (f". Contrae también la calidad del negocio hacia 50: de {_q.get('score_raw')} a "
-                           f"{_q.get('score')}." if _q.get("contracted")
-                           else ". La calidad del negocio no se contrae.")),
+            "level": _cons["level"], "tone": conf_tone, "verdict_text": _vd.get("confidence_text"),
+            "plain": plain, "dimensions": dims, "reasons": [],
+            "summary": (f"Consistencia: {_cons['level']} ({_cons.get('phrase')}). {_consistency.EXPLAIN}"
+                        + (f" {_dcf_truth}." if _dcf_truth else "")),
         }
 
     # Etapa 9b: las medianas sectoriales están fijadas a mano: la web lo dice junto a la tabla.
@@ -3358,8 +3340,11 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                      "items": [{"category": x.get("category", ""), "reason": x.get("reason", ""),
                                 "detail": x.get("detail", "") if x.get("detail") != x.get("reason") else ""}
                                for x in alerts.get(k) or []]}
-                    for k, t, tn in (("red_flags", "Riesgos", 'neg'), ("warnings", "Advertencias", 'warn'),
-                                     ("strengths", "Fortalezas", 'pos'))]
+                    for k, t, tn in (("red_flags", "Alerta roja", 'neg'), ("warnings", "Advertencias", 'warn'),
+                                     ("strengths", "Fortalezas", 'pos'),
+                                     # Fase 1 · pendientes (7-nov-2026): sin color de alerta
+                                     ("balance", "Estado del balance", 'neu'),
+                                     ("valuation", "Lectura de valoración", 'neu'))]
 
     # Metodología
     _models = [m for k, m in (("altman", "Altman (1968)"), ("piotroski", "Piotroski (2000)"),
@@ -3682,7 +3667,7 @@ def band_tooltips(a, sector_bench, th, mkt, ref, na, de_mode, cyc):
     if "p_fcf" not in na and not cyc:
         add("fcf_yield", "Bandas del informe", score_bands("fcf_yield"))
     add("quality", "Calidad del negocio (0–100)", _score_level_bands("quality"))
-    add("price", "Atractivo del precio (0–100, contraído por la confianza)", _score_level_bands("price"))
+    add("price", "Atractivo del precio (0–100, regla L1 por tercios)", _score_level_bands("price"))
     cb = _PDF_BANDS["category_tone_bounds"]
     add("category", "Puntos de la categoría sobre su máximo",
         _desc(list(cb), ["Fuerte", "Media", "Débil"], ['pos', 'warn', 'neg'], lambda v: f"{v:g}%"))

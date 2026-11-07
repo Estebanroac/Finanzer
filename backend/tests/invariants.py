@@ -137,7 +137,10 @@ def confidence_reasons_translated(a, text):
     d = a["display"]
     for txt in d["cover"]["confidence_reasons"]:
         assert "Finnhub" not in txt and "TTM" not in txt and "^TNX" not in txt
-    assert d["cover"]["confidence_reasons"] == pl.plain_reasons(a.get("confidence"))[:3]
+    # Fase 1 · pendientes (7-nov-2026): la portada da los motivos de la consistencia, no los de la confianza
+    _n = lambda s: s.rstrip(".").strip().lower()      # el paso de prosa las deja como frases (mayúscula y punto)
+    assert [_n(x) for x in d["cover"]["confidence_reasons"]] == [
+        _n(x) for x in ((a.get("consistency") or {}).get("reasons") or [])[:3]]
 
 
 def tooltips_only_applied_bands(a, text):

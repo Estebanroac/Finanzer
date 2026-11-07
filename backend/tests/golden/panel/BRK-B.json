@@ -1,5 +1,6 @@
 {
   "alerts": {
+    "balance": [],
     "red_flags": [],
     "strengths": [
       {
@@ -13,6 +14,7 @@
         "reason": "Margen neto sólido — 22.3%"
       }
     ],
+    "valuation": [],
     "warnings": []
   },
   "altman_z": {
@@ -473,6 +475,20 @@
       "techo en media: la más baja manda: calidad de fuente media"
     ],
     "score": 0.9
+  },
+  "consistency": {
+    "coverage": {
+      "level": "alta",
+      "text": "cobertura de datos completa"
+    },
+    "level": "consistente",
+    "methods": {
+      "level": "alta",
+      "text": "el P/B justificado y el P/B del sector coinciden"
+    },
+    "phrase": "el P/B justificado y el P/B del sector coinciden",
+    "reasons": [],
+    "tone": "pos"
   },
   "cost_of_equity": {
     "as_of": "2026-11-01",
@@ -1524,12 +1540,8 @@
           "text": "Arquetipo FINANCIAL (regla industria_aseguradora): Clasificada como FINANCIAL por industria Seguros diversificados (conglomerado: los ingresos de contratos con clientes, sin seguros, son el 67% de los ingresos del FY2025)"
         },
         {
-          "label": "Confianza · Convergencia entre métodos (alta)",
+          "label": "Consistencia · Coincidencia de métodos (alta)",
           "text": "coinciden (cara) con distancia 0.12 (< 0.6)"
-        },
-        {
-          "label": "Confianza · Calidad de fuente (media)",
-          "text": "beta sustituta 0.67 fuera de la propia 0.41 ± 2 EE (0.21–0.61, R² 0.14)"
         },
         {
           "label": "Fuente oficial",
@@ -2125,54 +2137,25 @@
       "dimensions": [
         {
           "key": "convergence",
-          "label": "Convergencia entre métodos",
-          "level": "Alta",
+          "label": "Coincidencia de métodos",
+          "level": "Coinciden",
+          "ok": true,
           "text": "P/B justificado (Gordon) -22% (cara) · P/B frente al sector -28% (cara). Los métodos de valoración coinciden."
         },
         {
           "key": "coverage",
           "label": "Cobertura de datos",
-          "level": "Alta",
-          "text": "Sin incidencias."
-        },
-        {
-          "key": "source",
-          "label": "Calidad de fuente",
-          "level": "Media",
-          "text": "El coste del capital usa la beta de su industria (0.67), que no encaja con cómo se ha movido la acción frente al mercado (la suya: 0.41)."
-        },
-        {
-          "key": "stability",
-          "label": "Estabilidad del arquetipo",
-          "level": "Alta",
-          "text": "Sin incidencias."
-        },
-        {
-          "key": "base",
-          "label": "base",
-          "level": "Alta",
+          "level": "Completa",
+          "ok": true,
           "text": "Sin incidencias."
         }
       ],
-      "level": "media",
-      "plain": [
-        "El coste del capital usa la beta de su industria (0.67), que no encaja con cómo se ha movido la acción frente al mercado (la suya: 0.41)."
-      ],
-      "reasons": [
-        {
-          "dimension": "calidad de fuente",
-          "level": "media",
-          "text": "El coste del capital usa la beta de su industria (0.67), que no encaja con cómo se ha movido la acción frente al mercado (la suya: 0.41)."
-        },
-        {
-          "dimension": "techo",
-          "level": "media",
-          "text": null
-        }
-      ],
-      "summary": "Confianza del veredicto: media (por sus dimensiones sería alta; la limita: la más baja manda —calidad de fuente media—). La calidad del negocio no se contrae.",
-      "tone": "warn",
-      "verdict_text": "(confianza media: datos de fuente con incidencias)"
+      "level": "consistente",
+      "plain": [],
+      "reasons": [],
+      "summary": "Consistencia: consistente (el P/B justificado y el P/B del sector coinciden). No es una probabilidad de acierto.",
+      "tone": "pos",
+      "verdict_text": "(consistencia consistente: el P/B justificado y el P/B del sector coinciden)"
     },
     "cover": {
       "archetype": "FINANCIAL",
@@ -2258,9 +2241,7 @@
       "classification_notes": [
         "Conglomerado con negocio asegurador (Seguros diversificados): el 67% de sus ingresos son de negocios que no son seguros."
       ],
-      "confidence_reasons": [
-        "El coste del capital usa la beta de su industria (0.67), que no encaja con cómo se ha movido la acción frente al mercado (la suya: 0.41)."
-      ],
+      "confidence_reasons": [],
       "coverage_notes": [],
       "currency_note": "Cifras por acción en la clase que cotiza: los estados cuentan otra clase de acciones, y cada una equivale a 1,500 títulos cotizados (factor oficial del emisor).",
       "data_notices": [
@@ -2358,9 +2339,9 @@
         "tone": "pos"
       },
       "verdict": {
-        "confidence_text": "(confianza media: datos de fuente con incidencias)",
-        "confidence_tone": "warn",
-        "full": "Calidad sólida · precio exigente (confianza media: datos de fuente con incidencias)",
+        "confidence_text": "(consistencia consistente: el P/B justificado y el P/B del sector coinciden)",
+        "confidence_tone": "pos",
+        "full": "Calidad sólida · precio exigente (consistencia consistente: el P/B justificado y el P/B del sector coinciden)",
         "text": "Calidad sólida · precio exigente"
       }
     },
@@ -2741,7 +2722,7 @@
       }
     },
     "methodology": {
-      "contraction_text": "el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y la confianza no mueve el precio",
+      "contraction_text": "el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura",
       "models": [
         "P/B y P/TBV justificados por el retorno (Gordon)"
       ],
@@ -2822,16 +2803,18 @@
     "sections": {
       "alerts": {
         "counts": {
+          "balance": 0,
           "red_flags": 0,
           "strengths": 2,
           "unmeasured": null,
+          "valuation": 0,
           "warnings": 0
         },
         "groups": [
           {
             "items": [],
             "key": "red_flags",
-            "title": "Riesgos",
+            "title": "Alerta roja",
             "tone": "neg"
           },
           {
@@ -2856,6 +2839,18 @@
             "key": "strengths",
             "title": "Fortalezas",
             "tone": "pos"
+          },
+          {
+            "items": [],
+            "key": "balance",
+            "title": "Estado del balance",
+            "tone": "neu"
+          },
+          {
+            "items": [],
+            "key": "valuation",
+            "title": "Lectura de valoración",
+            "tone": "neu"
           }
         ]
       },
@@ -3763,9 +3758,11 @@
     },
     "summary": {
       "alert_counts": {
+        "balance": 0,
         "red_flags": 0,
         "strengths": 2,
         "unmeasured": null,
+        "valuation": 0,
         "warnings": 0
       },
       "cards": [
@@ -3837,7 +3834,7 @@
         }
       ],
       "composition": {
-        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y la confianza no mueve el precio.",
+        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura.",
         "price": {
           "level": "exigente",
           "note": "P/E 26.8x (sin partidas no recurrentes) frente a la mediana de bancos y aseguradoras (12.1x), 2.22 veces: en el tercio más caro del universo.",
@@ -3905,7 +3902,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad sólida · precio exigente (confianza media: datos de fuente con incidencias). Calidad 71/100 · precio 8/100 (P/E 26.8x frente a 12.1x de su grupo)."
+          "text": "Calidad sólida · precio exigente (consistencia consistente: el P/B justificado y el P/B del sector coinciden). Calidad 71/100 · precio 8/100 (P/E 26.8x frente a 12.1x de su grupo)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -3932,8 +3929,8 @@
           "text": "Cotiza en el 85% del rango de 52 semanas, en la parte alta. Beta 0.67 de su industria: la propia de la acción no pasa los filtros de la regresión, así que no mide su sensibilidad al mercado."
         },
         {
-          "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Media: el coste del capital usa la beta de su industria (0.67), que no encaja con cómo se ha movido la acción frente al mercado (la suya: 0.41). No contrae el atractivo del precio ni la calidad."
+          "label": "CONSISTENCIA",
+          "text": "Consistente: el P/B justificado y el P/B del sector coinciden (no es una probabilidad de acierto)."
         }
       ]
     },
@@ -4391,7 +4388,7 @@
                 "tone": "neg"
               }
             ],
-            "title": "Atractivo del precio (0–100, contraído por la confianza)"
+            "title": "Atractivo del precio (0–100, regla L1 por tercios)"
           }
         ]
       },
@@ -4954,6 +4951,7 @@
     "total_equity": 747910000000.0,
     "wacc": null
   },
+  "l1_cycle_peak": null,
   "market_context": {
     "anchor_gap": -0.0211812676299,
     "behavioral": [
@@ -5465,6 +5463,7 @@
       0.839031,
       1.190143
     ],
+    "cycle_peak": null,
     "factor": null,
     "gics": "Financials",
     "gics_sector": "Financieras",
@@ -5492,6 +5491,7 @@
     "pe_ttm": 26.8081959653,
     "percentile": 0.922927113859,
     "reason": null,
+    "reference_alarm": [],
     "relative": 2.22317612367,
     "rule": "L1",
     "score": 8,
@@ -6113,9 +6113,9 @@
     "source": "efectiva"
   },
   "verdict": {
-    "confidence": "media",
-    "confidence_text": "(confianza media: datos de fuente con incidencias)",
-    "full": "Calidad sólida · precio exigente (confianza media: datos de fuente con incidencias)",
+    "confidence_text": "(consistencia consistente: el P/B justificado y el P/B del sector coinciden)",
+    "consistency": "consistente",
+    "full": "Calidad sólida · precio exigente (consistencia consistente: el P/B justificado y el P/B del sector coinciden)",
     "price_level": "exigente",
     "price_level_raw": null,
     "quality_level": "sólida",

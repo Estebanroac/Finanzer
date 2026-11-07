@@ -40,7 +40,8 @@ const fromKpi = (k: Kpi | undefined): KeyFigure | null =>
 const pick = (fs: Array<KeyFigure | null>): KeyFigure[] =>
   fs.filter((f): f is KeyFigure => !!f && !!f.value.trim() && !MISSING.test(f.value.trim())).slice(0, FIGURES_PER_CHAPTER);
 /** V7 · P2: el grupo de alertas rojas se llama por lo que es (lo que marca el modelo), no «Riesgos». */
-export const RED_FLAGS_LABEL = "Banderas rojas del modelo";
+/** Fase 1 · pendientes (7-nov-2026): una sola alerta roja, la de valoración extrema (la única con evidencia). */
+export const RED_FLAGS_LABEL = "Alerta roja";
 export const alertGroupLabel = (key: string, title: string) => (key === "red_flags" ? RED_FLAGS_LABEL : title);
 const firstText = (...xs: Array<string | null | undefined>) => xs.find((x) => x && x.trim()) ?? "";
 const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
@@ -143,6 +144,6 @@ export function buildReadings(a: StockAnalysis): ChapterModel[] {
       joinText(cover.verdict.full ?? verdict),
       [{ label: "Calidad", value: `${cover.quality.score ?? "—"} / 100 · ${cover.quality.level ?? "—"}`, tone: toVTone(cover.quality.tone) },
        { label: "Precio", value: `${cover.price.score ?? "—"} / 100 · ${cover.price.level ?? "—"}`, tone: toVTone(cover.price.tone) },
-       { label: "Confianza", value: conf?.level ? cap(conf.level) : "—", tone: toVTone(conf?.tone) }]),
+       { label: "Consistencia", value: conf?.level ? cap(conf.level) : "—", tone: toVTone(conf?.tone) }]),
   ];
 }

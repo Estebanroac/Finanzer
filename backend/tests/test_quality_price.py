@@ -97,8 +97,10 @@ def test_verdict_sentence_and_confidence_phrase():
                 {"method": "DCF", "evaluable": True}, {"method": "múltiplos frente al sector", "evaluable": True}]}}}
     v = verdict({"level": "sólida"}, {"level": "exigente"}, conf)
     assert v["text"] == "Calidad sólida · precio exigente"
-    assert v["confidence_text"] == "(confianza media: el DCF directo y los múltiplos discrepan)"
-    assert v["full"] == "Calidad sólida · precio exigente (confianza media: el DCF directo y los múltiplos discrepan)"
+    # Fase 1 · pendientes: la consistencia (dos niveles), con los métodos y la cobertura de datos
+    assert v["confidence_text"] == ("(consistencia mixta: el DCF directo y los múltiplos discrepan; cobertura de datos "
+                                    "sin medir)")
+    assert v["full"] == "Calidad sólida · precio exigente " + v["confidence_text"]
     assert confidence_phrase({"level": "media", "dimensions": {"convergence": {"level": "no_evaluable"}}}) \
         == "un solo método de valoración evaluable, sin contraste"
     # convergencia media por "uno en precio y otro con dirección": no se dice que coincidan en dirección

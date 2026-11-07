@@ -1,5 +1,6 @@
 {
   "alerts": {
+    "balance": [],
     "red_flags": [],
     "strengths": [
       {
@@ -23,6 +24,7 @@
         "reason": "BPA en fuerte expansión — +25.6% anual (6 ejercicios)"
       }
     ],
+    "valuation": [],
     "warnings": []
   },
   "altman_z": {
@@ -531,6 +533,22 @@
       "techo en media: la convergencia es media: alta exige convergencia alta"
     ],
     "score": 0.8
+  },
+  "consistency": {
+    "coverage": {
+      "level": "alta",
+      "text": "cobertura de datos completa"
+    },
+    "level": "mixta",
+    "methods": {
+      "level": "media",
+      "text": "el P/B justificado la ve en precio y el P/B del sector cara"
+    },
+    "phrase": "el P/B justificado la ve en precio y el P/B del sector cara",
+    "reasons": [
+      "el P/B justificado la ve en precio y el P/B del sector cara"
+    ],
+    "tone": "warn"
   },
   "cost_of_equity": {
     "as_of": "2026-11-01",
@@ -1560,7 +1578,7 @@
           "text": "Arquetipo FINANCIAL (regla industria_aseguradora): Clasificada como FINANCIAL por industria Seguros de daños (aseguradora)"
         },
         {
-          "label": "Confianza · Convergencia entre métodos (media)",
+          "label": "Consistencia · Coincidencia de métodos (media)",
           "text": "uno lo ve en precio y otro con dirección: no coinciden, sin oponerse."
         },
         {
@@ -2152,54 +2170,27 @@
       "dimensions": [
         {
           "key": "convergence",
-          "label": "Convergencia entre métodos",
-          "level": "Media",
+          "label": "Coincidencia de métodos",
+          "level": "En parte",
+          "ok": false,
           "text": "P/B justificado (Gordon) +4% (en precio) · P/B frente al sector -50% (cara). Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
         },
         {
           "key": "coverage",
           "label": "Cobertura de datos",
-          "level": "Alta",
-          "text": "Sin incidencias."
-        },
-        {
-          "key": "source",
-          "label": "Calidad de fuente",
-          "level": "Alta",
-          "text": "Sin incidencias."
-        },
-        {
-          "key": "stability",
-          "label": "Estabilidad del arquetipo",
-          "level": "Alta",
-          "text": "Sin incidencias."
-        },
-        {
-          "key": "base",
-          "label": "base",
-          "level": "Alta",
+          "level": "Completa",
+          "ok": true,
           "text": "Sin incidencias."
         }
       ],
-      "level": "media",
+      "level": "mixta",
       "plain": [
-        "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
+        "el P/B justificado la ve en precio y el P/B del sector cara."
       ],
-      "reasons": [
-        {
-          "dimension": "convergencia",
-          "level": "media",
-          "text": "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
-        },
-        {
-          "dimension": "techo",
-          "level": "media",
-          "text": null
-        }
-      ],
-      "summary": "Confianza del veredicto: media (por sus dimensiones sería alta; la limita: la convergencia es media —alta exige convergencia alta—). La calidad del negocio no se contrae.",
+      "reasons": [],
+      "summary": "Consistencia: mixta (el P/B justificado la ve en precio y el P/B del sector cara). No es una probabilidad de acierto.",
       "tone": "warn",
-      "verdict_text": "(confianza media: el P/B justificado la ve en precio y el P/B del sector cara)"
+      "verdict_text": "(consistencia mixta: el P/B justificado la ve en precio y el P/B del sector cara)"
     },
     "cover": {
       "archetype": "FINANCIAL",
@@ -2286,7 +2277,7 @@
         "Aseguradora por su industria (Seguros de daños): el balance es el producto."
       ],
       "confidence_reasons": [
-        "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
+        "el P/B justificado la ve en precio y el P/B del sector cara."
       ],
       "coverage_notes": [],
       "currency_note": null,
@@ -2385,9 +2376,9 @@
         "tone": "pos"
       },
       "verdict": {
-        "confidence_text": "(confianza media: el P/B justificado la ve en precio y el P/B del sector cara)",
+        "confidence_text": "(consistencia mixta: el P/B justificado la ve en precio y el P/B del sector cara)",
         "confidence_tone": "warn",
-        "full": "Calidad sólida · precio razonable (confianza media: el P/B justificado la ve en precio y el P/B del sector cara)",
+        "full": "Calidad sólida · precio razonable (consistencia mixta: el P/B justificado la ve en precio y el P/B del sector cara)",
         "text": "Calidad sólida · precio razonable"
       }
     },
@@ -2758,7 +2749,7 @@
       }
     },
     "methodology": {
-      "contraction_text": "el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y la confianza no mueve el precio",
+      "contraction_text": "el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura",
       "models": [
         "P/B y P/TBV justificados por el retorno (Gordon)"
       ],
@@ -2847,16 +2838,18 @@
     "sections": {
       "alerts": {
         "counts": {
+          "balance": 0,
           "red_flags": 0,
           "strengths": 4,
           "unmeasured": null,
+          "valuation": 0,
           "warnings": 0
         },
         "groups": [
           {
             "items": [],
             "key": "red_flags",
-            "title": "Riesgos",
+            "title": "Alerta roja",
             "tone": "neg"
           },
           {
@@ -2891,6 +2884,18 @@
             "key": "strengths",
             "title": "Fortalezas",
             "tone": "pos"
+          },
+          {
+            "items": [],
+            "key": "balance",
+            "title": "Estado del balance",
+            "tone": "neu"
+          },
+          {
+            "items": [],
+            "key": "valuation",
+            "title": "Lectura de valoración",
+            "tone": "neu"
           }
         ]
       },
@@ -3843,9 +3848,11 @@
     },
     "summary": {
       "alert_counts": {
+        "balance": 0,
         "red_flags": 0,
         "strengths": 4,
         "unmeasured": null,
+        "valuation": 0,
         "warnings": 0
       },
       "cards": [
@@ -3917,7 +3924,7 @@
         }
       ],
       "composition": {
-        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y la confianza no mueve el precio.",
+        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura.",
         "price": {
           "level": "razonable",
           "note": "P/E 11.4x (sin partidas no recurrentes) frente a la mediana de bancos y aseguradoras (12.1x), 0.95 veces: en el tercio central del universo.",
@@ -3985,7 +3992,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad sólida · precio razonable (confianza media: el P/B justificado la ve en precio y el P/B del sector cara). Calidad 83/100 · precio 57/100 (P/E 11.4x frente a 12.1x de su grupo)."
+          "text": "Calidad sólida · precio razonable (consistencia mixta: el P/B justificado la ve en precio y el P/B del sector cara). Calidad 83/100 · precio 57/100 (P/E 11.4x frente a 12.1x de su grupo)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -4012,8 +4019,8 @@
           "text": "Cotiza en el 48% del rango de 52 semanas, en la zona media. Beta 0.48 de su industria: la propia de la acción no pasa los filtros de la regresión, así que no mide su sensibilidad al mercado."
         },
         {
-          "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Media: los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no. No contrae el atractivo del precio ni la calidad."
+          "label": "CONSISTENCIA",
+          "text": "Mixta: el P/B justificado la ve en precio y el P/B del sector cara (no es una probabilidad de acierto)."
         }
       ]
     },
@@ -4471,7 +4478,7 @@
                 "tone": "neg"
               }
             ],
-            "title": "Atractivo del precio (0–100, contraído por la confianza)"
+            "title": "Atractivo del precio (0–100, regla L1 por tercios)"
           }
         ]
       },
@@ -5056,6 +5063,7 @@
     "total_equity": 34333000000.0,
     "wacc": null
   },
+  "l1_cycle_peak": null,
   "market_context": {
     "behavioral": [],
     "market_volatility": {
@@ -5559,6 +5567,7 @@
       0.839031,
       1.190143
     ],
+    "cycle_peak": null,
     "factor": null,
     "gics": "Financials",
     "gics_sector": "Financieras",
@@ -5594,6 +5603,7 @@
     "pe_ttm": 11.3962331753,
     "percentile": 0.431593550901,
     "reason": null,
+    "reference_alarm": [],
     "relative": 0.945077898112,
     "rule": "L1",
     "score": 57,
@@ -6253,9 +6263,9 @@
     "source": "efectiva"
   },
   "verdict": {
-    "confidence": "media",
-    "confidence_text": "(confianza media: el P/B justificado la ve en precio y el P/B del sector cara)",
-    "full": "Calidad sólida · precio razonable (confianza media: el P/B justificado la ve en precio y el P/B del sector cara)",
+    "confidence_text": "(consistencia mixta: el P/B justificado la ve en precio y el P/B del sector cara)",
+    "consistency": "mixta",
+    "full": "Calidad sólida · precio razonable (consistencia mixta: el P/B justificado la ve en precio y el P/B del sector cara)",
     "price_level": "razonable",
     "price_level_raw": null,
     "quality_level": "sólida",

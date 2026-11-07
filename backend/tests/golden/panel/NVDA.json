@@ -1,6 +1,22 @@
 {
   "alerts": {
-    "red_flags": [],
+    "balance": [],
+    "red_flags": [
+      {
+        "category": "Valoración",
+        "detail": "La valoración por múltiplos y DCF, que se sigue calculando como lectura, la sitúa en «muy exigente» (puntuación 28/100). En la prueba hacia atrás (corte del 5-nov-2025, 297 empresas de control), el 34,7 % de las que estaban en ese nivel (17 de 49) cayó un 40 % o más en algún momento de los 12 meses siguientes, frente al 14,9 % del resto. Es una frecuencia del pasado, no una predicción.",
+        "evidence": {
+          "base_rate": 0.149,
+          "drawdown": 0.4,
+          "hits": 17,
+          "horizon_months": 12,
+          "n": 49,
+          "rate": 0.347,
+          "sample": "corte del 5-nov-2025, 297 empresas de control"
+        },
+        "reason": "Riesgo de caída fuerte por valoración extrema"
+      }
+    ],
     "strengths": [
       {
         "category": "Rentabilidad",
@@ -18,11 +34,6 @@
         "reason": "Crecimiento fuerte — ingresos +69.0% anual (6 ejercicios)"
       },
       {
-        "category": "Valoración",
-        "detail": "Paga 31.3x beneficios normalizados frente a 53.2x de su industria sin ella (-41%): un descuento que puede ser oportunidad si los fundamentos acompañan, o reflejar un riesgo que el mercado ya percibe.",
-        "reason": "Cotiza con descuento — P/E normalizado 31.3x"
-      },
-      {
         "category": "Solidez financiera",
         "detail": "La empresa tiene más efectivo que deuda: posición de caja neta que le da flexibilidad para invertir, resistir ciclos o retribuir al accionista sin depender de la financiación externa.",
         "reason": "Caja neta — sin deuda financiera neta"
@@ -31,9 +42,14 @@
         "category": "Rentabilidad",
         "detail": "De cada dólar vendido quedan 57 centavos de beneficio tras todos los costos, frente a 17.3% de su industria sin ella: poder de fijación de precios y eficiencia.",
         "reason": "Margen neto normalizado sólido — 56.9%"
+      },
+      {
+        "category": "Crecimiento",
+        "detail": "El beneficio por acción crece 101.7% anual en 6 ejercicios (FY2021–FY2026, regresión log-lineal sobre 6 ejercicios de EDGAR); para valorar se acota a 79.0%, el crecimiento de las ventas más 10 pp, como en el PEG: la rentabilidad para el accionista se acelera, a menudo apoyada en apalancamiento operativo o recompras.",
+        "reason": "BPA en fuerte expansión — +79.0% anual (6 ejercicios)"
       }
     ],
-    "warnings": [
+    "valuation": [
       {
         "category": "Valoración",
         "detail": "Por cada dólar invertido en la acción, el negocio genera solo 2.4% de caja libre: se está pagando caro cada dólar de flujo, habitual en compañías de alto crecimiento o valoración exigente.",
@@ -41,9 +57,21 @@
       },
       {
         "category": "Valoración",
+        "detail": "Paga 31.3x beneficios normalizados frente a 53.2x de su industria sin ella (-41%): un descuento que puede ser oportunidad si los fundamentos acompañan, o reflejar un riesgo que el mercado ya percibe.",
+        "reason": "Cotiza con descuento — P/E normalizado 31.3x"
+      },
+      {
+        "category": "Valoración",
         "detail": "Se paga 26.4x EBITDA frente a 17.7x de su industria sin ella (+49%): el mercado le asigna una prima que conviene contrastar con su ventaja competitiva.",
         "reason": "EV/EBITDA sobre su industria — 26.4x"
       },
+      {
+        "category": "Valoración",
+        "detail": "Ajustado por el crecimiento de su BPA, el P/E resulta barato (PEG 0.40 < 1): se paga menos de 1x por cada punto de crecimiento, señal clásica de crecimiento a precio razonable (GARP).",
+        "reason": "PEG atractivo — 0.40"
+      }
+    ],
+    "warnings": [
       {
         "category": "Riesgo de mercado",
         "detail": "La acción amplifica ~56% los movimientos del mercado: cae más en las correcciones y sube más en los rallies. Razonable con horizonte largo y tolerancia al riesgo; resta si buscas estabilidad.",
@@ -487,6 +515,22 @@
       "un escalón menos por las tasas base: el precio exige un 21.4% anual 10 años, que sostuvo el 0.14% de las comparables (< 5%)"
     ],
     "score": 0.8
+  },
+  "consistency": {
+    "coverage": {
+      "level": "alta",
+      "text": "cobertura de datos completa"
+    },
+    "level": "mixta",
+    "methods": {
+      "level": "media",
+      "text": "DCF inverso y los múltiplos coinciden en dirección pero no en magnitud"
+    },
+    "phrase": "DCF inverso y los múltiplos coinciden en dirección pero no en magnitud",
+    "reasons": [
+      "DCF inverso y los múltiplos coinciden en dirección pero no en magnitud"
+    ],
+    "tone": "warn"
   },
   "cost_of_equity": {
     "as_of": "2026-11-01",
@@ -1681,12 +1725,8 @@
           "text": "Arquetipo GROWTH_PROFITABLE (regla crecimiento_rentable): Clasificada como GROWTH_PROFITABLE: ingresos por acción 69.9% anual en 6 ejercicios (FY2021–FY2026, por regresión log-lineal: el año inicial de la ventana de 3 años es anómalo), sobre acciones diluidas medias, BPA TTM > 0 y margen operativo 65%; no cíclica por su historia."
         },
         {
-          "label": "Confianza · Convergencia entre métodos (media)",
+          "label": "Consistencia · Coincidencia de métodos (media)",
           "text": "coinciden (cara), pero lo contradicen con lectura extrema P/E (+1.00), PEG (+1.00); no evaluable: DCF (fiabilidad baja)"
-        },
-        {
-          "label": "Confianza · base (media)",
-          "text": "el beneficio normalizado y el esperado no cuadran (P/E 31.3x frente a forward 17.0x)"
         },
         {
           "label": "Fuente oficial",
@@ -2656,66 +2696,27 @@
       "dimensions": [
         {
           "key": "convergence",
-          "label": "Convergencia entre métodos",
-          "level": "Media",
+          "label": "Coincidencia de métodos",
+          "level": "En parte",
+          "ok": false,
           "text": "DCF directo +0% (en precio, no evaluable) · DCF inverso -1.00 (cara) · múltiplos frente al sector -0.28 (cara). Los métodos de valoración coinciden en la dirección, pero algún múltiplo dice con fuerza lo contrario. Los datos del DCF directo no lo sostienen y no se usa para contrastar."
         },
         {
           "key": "coverage",
           "label": "Cobertura de datos",
-          "level": "Alta",
+          "level": "Completa",
+          "ok": true,
           "text": "Sin incidencias."
-        },
-        {
-          "key": "source",
-          "label": "Calidad de fuente",
-          "level": "Alta",
-          "text": "Sin incidencias."
-        },
-        {
-          "key": "stability",
-          "label": "Estabilidad del arquetipo",
-          "level": "Alta",
-          "text": "Sin incidencias."
-        },
-        {
-          "key": "base",
-          "label": "base",
-          "level": "Media",
-          "text": "El beneficio sin partidas extraordinarias y el que esperan los analistas no cuadran: una de las dos bases puede estar equivocada."
         }
       ],
-      "level": "baja",
+      "level": "mixta",
       "plain": [
-        "Los métodos de valoración coinciden en la dirección, pero algún múltiplo dice con fuerza lo contrario.",
-        "El beneficio sin partidas extraordinarias y el que esperan los analistas no cuadran: una de las dos bases puede estar equivocada.",
-        "Los datos del DCF directo no lo sostienen y no se usa para contrastar."
+        "DCF inverso y los múltiplos coinciden en dirección pero no en magnitud."
       ],
-      "reasons": [
-        {
-          "dimension": "convergencia",
-          "level": "media",
-          "text": "Los métodos de valoración coinciden en la dirección, pero algún múltiplo dice con fuerza lo contrario."
-        },
-        {
-          "dimension": "convergencia",
-          "level": "media",
-          "text": "Los datos del DCF directo no lo sostienen y no se usa para contrastar."
-        },
-        {
-          "dimension": "base",
-          "level": "media",
-          "text": "El beneficio sin partidas extraordinarias y el que esperan los analistas no cuadran: una de las dos bases puede estar equivocada."
-        },
-        {
-          "dimension": "techo",
-          "level": "baja",
-          "text": null
-        }
-      ],
-      "summary": "Confianza del veredicto: baja (por sus dimensiones sería alta; la limitan: la convergencia es media —alta exige convergencia alta—, hasta media; las tasas base —solo el 0.14% de las comparables sostuvo el crecimiento que exige el precio; no contrae el precio—). El DCF directo, de fiabilidad baja, no puntúa ni cuenta para la convergencia; en Valoración puntúa el DCF inverso (−4 puntos). La calidad del negocio no se contrae.",
-      "tone": "neg",
-      "verdict_text": "(confianza baja: casi ninguna comparable sostuvo el crecimiento que exige el precio)"
+      "reasons": [],
+      "summary": "Consistencia: mixta (DCF inverso y los múltiplos coinciden en dirección pero no en magnitud). No es una probabilidad de acierto. El DCF directo, de fiabilidad baja, no puntúa ni cuenta para la convergencia; en Valoración puntúa el DCF inverso (−4 puntos).",
+      "tone": "warn",
+      "verdict_text": "(consistencia mixta: DCF inverso y los múltiplos coinciden en dirección pero no en magnitud)"
     },
     "cover": {
       "archetype": "GROWTH_PROFITABLE",
@@ -2802,9 +2803,7 @@
         "Sus ingresos por acción crecen un 69.9% anual en 6 ejercicios (FY2021–FY2026, por regresión log-lineal: el año inicial de la ventana de 3 años es anómalo), sobre acciones diluidas medias, con beneficio y un margen operativo 65%."
       ],
       "confidence_reasons": [
-        "Los métodos de valoración coinciden en la dirección, pero algún múltiplo dice con fuerza lo contrario.",
-        "El beneficio sin partidas extraordinarias y el que esperan los analistas no cuadran: una de las dos bases puede estar equivocada.",
-        "Los datos del DCF directo no lo sostienen y no se usa para contrastar."
+        "DCF inverso y los múltiplos coinciden en dirección pero no en magnitud."
       ],
       "coverage_notes": [],
       "currency_note": null,
@@ -2819,8 +2818,8 @@
         {
           "kicker": "A VIGILAR",
           "kind": "watch",
-          "text": "FCF yield bajo — 2.4%",
-          "tone": "warn"
+          "text": "Riesgo de caída fuerte por valoración extrema",
+          "tone": "neg"
         },
         {
           "kicker": "CONTEXTO · 52 SEM.",
@@ -2901,9 +2900,9 @@
         "tone": "pos"
       },
       "verdict": {
-        "confidence_text": "(confianza baja: casi ninguna comparable sostuvo el crecimiento que exige el precio)",
-        "confidence_tone": "neg",
-        "full": "Calidad excelente · precio razonable (confianza baja: casi ninguna comparable sostuvo el crecimiento que exige el precio)",
+        "confidence_text": "(consistencia mixta: DCF inverso y los múltiplos coinciden en dirección pero no en magnitud)",
+        "confidence_tone": "warn",
+        "full": "Calidad excelente · precio razonable (consistencia mixta: DCF inverso y los múltiplos coinciden en dirección pero no en magnitud)",
         "text": "Calidad excelente · precio razonable"
       }
     },
@@ -3209,7 +3208,7 @@
       }
     },
     "methodology": {
-      "contraction_text": "el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y la confianza no mueve el precio",
+      "contraction_text": "el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura",
       "models": [
         "Altman (1968)",
         "Piotroski (2000)",
@@ -3312,30 +3311,28 @@
     "sections": {
       "alerts": {
         "counts": {
-          "red_flags": 0,
+          "balance": 0,
+          "red_flags": 1,
           "strengths": 6,
           "unmeasured": null,
-          "warnings": 3
+          "valuation": 4,
+          "warnings": 1
         },
         "groups": [
-          {
-            "items": [],
-            "key": "red_flags",
-            "title": "Riesgos",
-            "tone": "neg"
-          },
           {
             "items": [
               {
                 "category": "Valoración",
-                "detail": "Por cada dólar invertido en la acción, el negocio genera solo 2.4% de caja libre: se está pagando caro cada dólar de flujo, habitual en compañías de alto crecimiento o valoración exigente.",
-                "reason": "FCF yield bajo — 2.4%"
-              },
-              {
-                "category": "Valoración",
-                "detail": "Se paga 26.4x EBITDA frente a 17.7x de su industria sin ella (+49%): el mercado le asigna una prima que conviene contrastar con su ventaja competitiva.",
-                "reason": "EV/EBITDA sobre su industria — 26.4x"
-              },
+                "detail": "La valoración por múltiplos y DCF, que se sigue calculando como lectura, la sitúa en «muy exigente» (puntuación 28/100). En la prueba hacia atrás (corte del 5-nov-2025, 297 empresas de control), el 34,7 % de las que estaban en ese nivel (17 de 49) cayó un 40 % o más en algún momento de los 12 meses siguientes, frente al 14,9 % del resto. Es una frecuencia del pasado, no una predicción.",
+                "reason": "Riesgo de caída fuerte por valoración extrema"
+              }
+            ],
+            "key": "red_flags",
+            "title": "Alerta roja",
+            "tone": "neg"
+          },
+          {
+            "items": [
               {
                 "category": "Riesgo de mercado",
                 "detail": "La acción amplifica ~56% los movimientos del mercado: cae más en las correcciones y sube más en los rallies. Razonable con horizonte largo y tolerancia al riesgo; resta si buscas estabilidad.",
@@ -3364,11 +3361,6 @@
                 "reason": "Crecimiento fuerte — ingresos +69.0% anual (6 ejercicios)"
               },
               {
-                "category": "Valoración",
-                "detail": "Paga 31.3x beneficios normalizados frente a 53.2x de su industria sin ella (-41%): un descuento que puede ser oportunidad si los fundamentos acompañan, o reflejar un riesgo que el mercado ya percibe.",
-                "reason": "Cotiza con descuento — P/E normalizado 31.3x"
-              },
-              {
                 "category": "Solidez financiera",
                 "detail": "La empresa tiene más efectivo que deuda: posición de caja neta que le da flexibilidad para invertir, resistir ciclos o retribuir al accionista sin depender de la financiación externa.",
                 "reason": "Caja neta — sin deuda financiera neta"
@@ -3377,11 +3369,49 @@
                 "category": "Rentabilidad",
                 "detail": "De cada dólar vendido quedan 57 centavos de beneficio tras todos los costos, frente a 17.3% de su industria sin ella: poder de fijación de precios y eficiencia.",
                 "reason": "Margen neto normalizado sólido — 56.9%"
+              },
+              {
+                "category": "Crecimiento",
+                "detail": "El beneficio por acción crece 101.7% anual en 6 ejercicios (FY2021–FY2026, regresión log-lineal sobre 6 ejercicios de EDGAR); para valorar se acota a 79.0%, el crecimiento de las ventas más 10 pp, como en el PEG: la rentabilidad para el accionista se acelera, a menudo apoyada en apalancamiento operativo o recompras.",
+                "reason": "BPA en fuerte expansión — +79.0% anual (6 ejercicios)"
               }
             ],
             "key": "strengths",
             "title": "Fortalezas",
             "tone": "pos"
+          },
+          {
+            "items": [],
+            "key": "balance",
+            "title": "Estado del balance",
+            "tone": "neu"
+          },
+          {
+            "items": [
+              {
+                "category": "Valoración",
+                "detail": "Por cada dólar invertido en la acción, el negocio genera solo 2.4% de caja libre: se está pagando caro cada dólar de flujo, habitual en compañías de alto crecimiento o valoración exigente.",
+                "reason": "FCF yield bajo — 2.4%"
+              },
+              {
+                "category": "Valoración",
+                "detail": "Paga 31.3x beneficios normalizados frente a 53.2x de su industria sin ella (-41%): un descuento que puede ser oportunidad si los fundamentos acompañan, o reflejar un riesgo que el mercado ya percibe.",
+                "reason": "Cotiza con descuento — P/E normalizado 31.3x"
+              },
+              {
+                "category": "Valoración",
+                "detail": "Se paga 26.4x EBITDA frente a 17.7x de su industria sin ella (+49%): el mercado le asigna una prima que conviene contrastar con su ventaja competitiva.",
+                "reason": "EV/EBITDA sobre su industria — 26.4x"
+              },
+              {
+                "category": "Valoración",
+                "detail": "Ajustado por el crecimiento de su BPA, el P/E resulta barato (PEG 0.40 < 1): se paga menos de 1x por cada punto de crecimiento, señal clásica de crecimiento a precio razonable (GARP).",
+                "reason": "PEG atractivo — 0.40"
+              }
+            ],
+            "key": "valuation",
+            "title": "Lectura de valoración",
+            "tone": "neu"
           }
         ]
       },
@@ -4640,10 +4670,12 @@
     },
     "summary": {
       "alert_counts": {
-        "red_flags": 0,
+        "balance": 0,
+        "red_flags": 1,
         "strengths": 6,
         "unmeasured": null,
-        "warnings": 3
+        "valuation": 4,
+        "warnings": 1
       },
       "cards": [
         {
@@ -4714,7 +4746,7 @@
         }
       ],
       "composition": {
-        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y la confianza no mueve el precio.",
+        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura.",
         "price": {
           "level": "razonable",
           "note": "P/E 31.0x (sin partidas no recurrentes) frente a la mediana de tecnología (30.8x), 1.01 veces: en el tercio central del universo.",
@@ -4782,7 +4814,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad excelente · precio razonable (confianza baja: casi ninguna comparable sostuvo el crecimiento que exige el precio). Calidad 89/100 · precio 48/100 (P/E 31.0x frente a 30.8x de su sector)."
+          "text": "Calidad excelente · precio razonable (consistencia mixta: DCF inverso y los múltiplos coinciden en dirección pero no en magnitud). Calidad 89/100 · precio 48/100 (P/E 31.0x frente a 30.8x de su sector)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -4809,8 +4841,8 @@
           "text": "Cotiza en el 72% del rango de 52 semanas, en la parte alta. Con beta 1.56, la acción es notablemente más volátil que el mercado."
         },
         {
-          "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Baja: casi ninguna comparable sostuvo el crecimiento que exige el precio (tasas base). No contrae el atractivo del precio ni la calidad."
+          "label": "CONSISTENCIA",
+          "text": "Mixta: DCF inverso y los múltiplos coinciden en dirección pero no en magnitud (no es una probabilidad de acierto)."
         }
       ]
     },
@@ -5500,7 +5532,7 @@
                 "tone": "neg"
               }
             ],
-            "title": "Atractivo del precio (0–100, contraído por la confianza)"
+            "title": "Atractivo del precio (0–100, regla L1 por tercios)"
           }
         ]
       },
@@ -6213,6 +6245,7 @@
     "total_equity": 228984000000.0,
     "wacc": 0.119526757971
   },
+  "l1_cycle_peak": null,
   "market_context": {
     "behavioral": [
       {
@@ -6666,6 +6699,7 @@
       0.839031,
       1.190143
     ],
+    "cycle_peak": null,
     "factor": null,
     "gics": "Information Technology",
     "gics_sector": "Information Technology",
@@ -6693,6 +6727,7 @@
     "pe_ttm": 30.981855858,
     "percentile": 0.51608289668,
     "reason": null,
+    "reference_alarm": [],
     "relative": 1.00639940918,
     "rule": "L1",
     "score": 48,
@@ -7548,9 +7583,9 @@
     "source": "efectiva"
   },
   "verdict": {
-    "confidence": "baja",
-    "confidence_text": "(confianza baja: casi ninguna comparable sostuvo el crecimiento que exige el precio)",
-    "full": "Calidad excelente · precio razonable (confianza baja: casi ninguna comparable sostuvo el crecimiento que exige el precio)",
+    "confidence_text": "(consistencia mixta: DCF inverso y los múltiplos coinciden en dirección pero no en magnitud)",
+    "consistency": "mixta",
+    "full": "Calidad excelente · precio razonable (consistencia mixta: DCF inverso y los múltiplos coinciden en dirección pero no en magnitud)",
     "price_level": "razonable",
     "price_level_raw": null,
     "quality_level": "excelente",

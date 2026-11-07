@@ -1,7 +1,30 @@
 {
   "alerts": {
+    "balance": [],
     "red_flags": [],
     "strengths": [
+      {
+        "category": "Rentabilidad",
+        "detail": "El ROIC supera al costo de capital (ROIC 10.7% vs WACC 6.8%): la reinversión genera valor, no solo crecimiento.",
+        "reason": "Crea valor — spread +4.0 pp"
+      },
+      {
+        "category": "Solidez financiera",
+        "detail": "El Altman Z de 3.23 (> 2.60) ubica a la empresa en zona segura: baja probabilidad estadística de problemas de solvencia según el modelo.",
+        "reason": "Solvencia sólida — Altman Z 3.23"
+      },
+      {
+        "category": "Flujo de caja",
+        "detail": "El flujo de caja libre supera al beneficio contable (FCF/BN normalizado 133%): las utilidades se convierten íntegramente en efectivo, señal de contabilidad conservadora y negocio que 'respira' caja.",
+        "reason": "Beneficio de alta calidad"
+      },
+      {
+        "category": "Solidez financiera",
+        "detail": "La deuda neta equivale a menos de un año de EBITDA, un nivel cómodo que deja holgura financiera y capacidad de maniobra ante imprevistos.",
+        "reason": "Deuda baja — 0.7x EBITDA"
+      }
+    ],
+    "valuation": [
       {
         "category": "Valor intrínseco",
         "detail": "El descuento de flujos estima un valor justo de $320, un 210% por encima del precio ($103.55): habría colchón entre el precio y el valor estimado si se cumplen los supuestos de crecimiento y rentabilidad del modelo.",
@@ -13,24 +36,9 @@
         "reason": "FCF yield atractivo — 10.7%"
       },
       {
-        "category": "Rentabilidad",
-        "detail": "El ROIC supera al costo de capital (ROIC 10.7% vs WACC 6.8%): la reinversión genera valor, no solo crecimiento.",
-        "reason": "Crea valor — spread +4.0 pp"
-      },
-      {
         "category": "Valoración",
         "detail": "Cotiza a 5.0x EBITDA frente a 9.5x de sus pares del universo: valoración atractiva sobre flujo operativo, a validar que no responda a un deterioro del negocio.",
         "reason": "EV/EBITDA normalizado barato — 5.0x"
-      },
-      {
-        "category": "Solidez financiera",
-        "detail": "El Altman Z de 3.23 (> 2.60) ubica a la empresa en zona segura: baja probabilidad estadística de problemas de solvencia según el modelo.",
-        "reason": "Solvencia sólida — Altman Z 3.23"
-      },
-      {
-        "category": "Flujo de caja",
-        "detail": "El flujo de caja libre supera al beneficio contable (FCF/BN normalizado 133%): las utilidades se convierten íntegramente en efectivo, señal de contabilidad conservadora y negocio que 'respira' caja.",
-        "reason": "Beneficio de alta calidad"
       }
     ],
     "warnings": [
@@ -512,6 +520,20 @@
       "techo en baja: la más baja manda: estabilidad baja"
     ],
     "score": 0.8
+  },
+  "consistency": {
+    "coverage": {
+      "level": "alta",
+      "text": "cobertura de datos completa"
+    },
+    "level": "consistente",
+    "methods": {
+      "level": "alta",
+      "text": "el DCF directo y los múltiplos coinciden"
+    },
+    "phrase": "el DCF directo y los múltiplos coinciden",
+    "reasons": [],
+    "tone": "pos"
   },
   "cost_of_equity": {
     "as_of": "2026-11-01",
@@ -1620,16 +1642,8 @@
           "text": "Arquetipo CYCLICAL (regla historia_ciclica): Clasificada como CYCLICAL por su historia (11 ejercicios en EDGAR): caídas de ingresos ≥ 10% en 2016, 2019–2020, 2023–2024; desplomes del BPA con caída de ingresos en 2020, 2023."
         },
         {
-          "label": "Confianza · Convergencia entre métodos (alta)",
+          "label": "Consistencia · Coincidencia de métodos (alta)",
           "text": "coinciden (barata) con distancia 0.00 (< 0.6)"
-        },
-        {
-          "label": "Confianza · Estabilidad del arquetipo (baja)",
-          "text": "productora de materias primas: su resultado depende del precio de lo que produce, no de su gestión."
-        },
-        {
-          "label": "Confianza · base (baja)",
-          "text": "el DCF da un +210% frente al precio (más de ±150%): un valor fuera de escala."
         },
         {
           "label": "Fuente oficial",
@@ -2609,60 +2623,25 @@
       "dimensions": [
         {
           "key": "convergence",
-          "label": "Convergencia entre métodos",
-          "level": "Alta",
+          "label": "Coincidencia de métodos",
+          "level": "Coinciden",
+          "ok": true,
           "text": "DCF directo +210% (barata) · múltiplos frente al sector +1.00 (barata). Los métodos de valoración coinciden."
         },
         {
           "key": "coverage",
           "label": "Cobertura de datos",
-          "level": "Alta",
+          "level": "Completa",
+          "ok": true,
           "text": "Sin incidencias."
-        },
-        {
-          "key": "source",
-          "label": "Calidad de fuente",
-          "level": "Alta",
-          "text": "Sin incidencias."
-        },
-        {
-          "key": "stability",
-          "label": "Estabilidad del arquetipo",
-          "level": "Baja",
-          "text": "Produce materias primas: su resultado depende del precio de lo que vende, no de su gestión."
-        },
-        {
-          "key": "base",
-          "label": "base",
-          "level": "Baja",
-          "text": "El valor del flujo de caja descontado queda tan lejos del precio que el veredicto no puede apoyarse en él."
         }
       ],
-      "level": "baja",
-      "plain": [
-        "Produce materias primas: su resultado depende del precio de lo que vende, no de su gestión.",
-        "El valor del flujo de caja descontado queda tan lejos del precio que el veredicto no puede apoyarse en él."
-      ],
-      "reasons": [
-        {
-          "dimension": "estabilidad",
-          "level": "baja",
-          "text": "Produce materias primas: su resultado depende del precio de lo que vende, no de su gestión."
-        },
-        {
-          "dimension": "base",
-          "level": "baja",
-          "text": "El valor del flujo de caja descontado queda tan lejos del precio que el veredicto no puede apoyarse en él."
-        },
-        {
-          "dimension": "techo",
-          "level": "baja",
-          "text": null
-        }
-      ],
-      "summary": "Confianza del veredicto: baja (por sus dimensiones sería alta; la limita: la más baja manda —estabilidad baja—). Contrae también la calidad del negocio hacia 50: de 80 a 76.",
-      "tone": "neg",
-      "verdict_text": "(confianza baja: negocio cíclico)"
+      "level": "consistente",
+      "plain": [],
+      "reasons": [],
+      "summary": "Consistencia: consistente (el DCF directo y los múltiplos coinciden). No es una probabilidad de acierto.",
+      "tone": "pos",
+      "verdict_text": "(consistencia consistente: el DCF directo y los múltiplos coinciden)"
     },
     "cover": {
       "archetype": "CYCLICAL",
@@ -2748,10 +2727,7 @@
       "classification_notes": [
         "Cíclica por su historia: en 11 ejercicios, caídas de ingresos ≥ 10% en 2016, 2019–2020, 2023–2024; desplomes del BPA con caída de ingresos en 2020, 2023."
       ],
-      "confidence_reasons": [
-        "Produce materias primas: su resultado depende del precio de lo que vende, no de su gestión.",
-        "El valor del flujo de caja descontado queda tan lejos del precio que el veredicto no puede apoyarse en él."
-      ],
+      "confidence_reasons": [],
       "coverage_notes": [],
       "currency_note": "Cifras por acción en la clase que cotiza: cada título cotizado equivale a 2 acciones ordinarias (factor del depositario, JPMorgan).",
       "data_notices": [
@@ -2761,7 +2737,7 @@
         {
           "kicker": "FORTALEZA CLAVE",
           "kind": "strength",
-          "text": "Infravalorada según DCF +210%",
+          "text": "Crea valor — spread +4.0 pp",
           "tone": "pos"
         },
         {
@@ -2844,14 +2820,14 @@
         "note": null,
         "note_short": null,
         "question": "¿es buena la empresa?",
-        "score": 76,
+        "score": 80,
         "title": "CALIDAD DEL NEGOCIO",
         "tone": "pos"
       },
       "verdict": {
-        "confidence_text": "(confianza baja: negocio cíclico)",
-        "confidence_tone": "neg",
-        "full": "Calidad sólida · precio razonable (confianza baja: negocio cíclico)",
+        "confidence_text": "(consistencia consistente: el DCF directo y los múltiplos coinciden)",
+        "confidence_tone": "pos",
+        "full": "Calidad sólida · precio razonable (consistencia consistente: el DCF directo y los múltiplos coinciden)",
         "text": "Calidad sólida · precio razonable"
       }
     },
@@ -3222,7 +3198,7 @@
       }
     },
     "methodology": {
-      "contraction_text": "el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y la confianza no mueve el precio",
+      "contraction_text": "el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura",
       "models": [
         "Altman (1968)",
         "Piotroski (2000)",
@@ -3317,16 +3293,18 @@
     "sections": {
       "alerts": {
         "counts": {
+          "balance": 0,
           "red_flags": 0,
-          "strengths": 6,
+          "strengths": 4,
           "unmeasured": null,
+          "valuation": 3,
           "warnings": 1
         },
         "groups": [
           {
             "items": [],
             "key": "red_flags",
-            "title": "Riesgos",
+            "title": "Alerta roja",
             "tone": "neg"
           },
           {
@@ -3344,24 +3322,9 @@
           {
             "items": [
               {
-                "category": "Valor intrínseco",
-                "detail": "El descuento de flujos estima un valor justo de $320, un 210% por encima del precio ($103.55): habría colchón entre el precio y el valor estimado si se cumplen los supuestos de crecimiento y rentabilidad del modelo.",
-                "reason": "Infravalorada según DCF +210%"
-              },
-              {
-                "category": "Valoración",
-                "detail": "El negocio genera 10.7% de caja libre sobre su capitalización: un rendimiento alto que da margen para dividendos, recompras o reducir deuda sin depender del mercado.",
-                "reason": "FCF yield atractivo — 10.7%"
-              },
-              {
                 "category": "Rentabilidad",
                 "detail": "El ROIC supera al costo de capital (ROIC 10.7% vs WACC 6.8%): la reinversión genera valor, no solo crecimiento.",
                 "reason": "Crea valor — spread +4.0 pp"
-              },
-              {
-                "category": "Valoración",
-                "detail": "Cotiza a 5.0x EBITDA frente a 9.5x de sus pares del universo: valoración atractiva sobre flujo operativo, a validar que no responda a un deterioro del negocio.",
-                "reason": "EV/EBITDA normalizado barato — 5.0x"
               },
               {
                 "category": "Solidez financiera",
@@ -3372,11 +3335,44 @@
                 "category": "Flujo de caja",
                 "detail": "El flujo de caja libre supera al beneficio contable (FCF/BN normalizado 133%): las utilidades se convierten íntegramente en efectivo, señal de contabilidad conservadora y negocio que 'respira' caja.",
                 "reason": "Beneficio de alta calidad"
+              },
+              {
+                "category": "Solidez financiera",
+                "detail": "La deuda neta equivale a menos de un año de EBITDA, un nivel cómodo que deja holgura financiera y capacidad de maniobra ante imprevistos.",
+                "reason": "Deuda baja — 0.7x EBITDA"
               }
             ],
             "key": "strengths",
             "title": "Fortalezas",
             "tone": "pos"
+          },
+          {
+            "items": [],
+            "key": "balance",
+            "title": "Estado del balance",
+            "tone": "neu"
+          },
+          {
+            "items": [
+              {
+                "category": "Valor intrínseco",
+                "detail": "El descuento de flujos estima un valor justo de $320, un 210% por encima del precio ($103.55): habría colchón entre el precio y el valor estimado si se cumplen los supuestos de crecimiento y rentabilidad del modelo.",
+                "reason": "Infravalorada según DCF +210%"
+              },
+              {
+                "category": "Valoración",
+                "detail": "El negocio genera 10.7% de caja libre sobre su capitalización: un rendimiento alto que da margen para dividendos, recompras o reducir deuda sin depender del mercado.",
+                "reason": "FCF yield atractivo — 10.7%"
+              },
+              {
+                "category": "Valoración",
+                "detail": "Cotiza a 5.0x EBITDA frente a 9.5x de sus pares del universo: valoración atractiva sobre flujo operativo, a validar que no responda a un deterioro del negocio.",
+                "reason": "EV/EBITDA normalizado barato — 5.0x"
+              }
+            ],
+            "key": "valuation",
+            "title": "Lectura de valoración",
+            "tone": "neu"
           }
         ]
       },
@@ -4630,9 +4626,11 @@
     },
     "summary": {
       "alert_counts": {
+        "balance": 0,
         "red_flags": 0,
-        "strengths": 6,
+        "strengths": 4,
         "unmeasured": null,
+        "valuation": 3,
         "warnings": 1
       },
       "cards": [
@@ -4704,7 +4702,7 @@
         }
       ],
       "composition": {
-        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y la confianza no mueve el precio.",
+        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura.",
         "price": {
           "level": "razonable",
           "note": "P/E 12.4x (sin partidas no recurrentes) frente a la mediana de energía (13.3x), 0.94 veces: en el tercio central del universo.",
@@ -4764,7 +4762,7 @@
               "value": 12
             }
           ],
-          "score": 76,
+          "score": 80,
           "title": "CALIDAD DEL NEGOCIO",
           "tone": "pos"
         }
@@ -4772,7 +4770,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad sólida · precio razonable (confianza baja: negocio cíclico). Calidad 76/100 · precio 58/100 (P/E 12.4x frente a 13.3x de su sector)."
+          "text": "Calidad sólida · precio razonable (consistencia consistente: el DCF directo y los múltiplos coinciden). Calidad 80/100 · precio 58/100 (P/E 12.4x frente a 13.3x de su sector)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -4799,8 +4797,8 @@
           "text": "Cotiza en el 97% del rango de 52 semanas, en la zona de máximos. Beta 0.47 de su industria: la propia de la acción no pasa los filtros de la regresión, así que no mide su sensibilidad al mercado."
         },
         {
-          "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Baja: produce materias primas: su resultado depende del precio de lo que vende, no de su gestión. No contrae el atractivo del precio; la calidad del negocio, sí, hacia 50 (de 80 a 76)."
+          "label": "CONSISTENCIA",
+          "text": "Consistente: el DCF directo y los múltiplos coinciden (no es una probabilidad de acierto)."
         }
       ]
     },
@@ -5438,7 +5436,7 @@
                 "tone": "neg"
               }
             ],
-            "title": "Atractivo del precio (0–100, contraído por la confianza)"
+            "title": "Atractivo del precio (0–100, regla L1 por tercios)"
           }
         ]
       },
@@ -6072,6 +6070,28 @@
     "total_equity": 180788000000.0,
     "wacc": 0.0677886256272
   },
+  "l1_cycle_peak": {
+    "basis": null,
+    "conditions": {
+      "a": false,
+      "b": false
+    },
+    "flag": false,
+    "forward": {
+      "coherent": true,
+      "pe": 9.91199,
+      "premium": -0.132760726669,
+      "reason": null
+    },
+    "median": 17837000000.0,
+    "pe_median": 15.1951087595,
+    "pe_score": null,
+    "pe_ttm": 11.4293601602,
+    "period": "TTM",
+    "reason": null,
+    "ttm_over_median": 0.329480263676,
+    "years": 3
+  },
   "market_context": {
     "anchor_gap": -0.0109837051576,
     "behavioral": [
@@ -6617,6 +6637,7 @@
       0.839031,
       1.190143
     ],
+    "cycle_peak": null,
     "factor": null,
     "gics": "Energy",
     "gics_sector": "Energy",
@@ -6644,6 +6665,7 @@
     "pe_ttm": 12.4205833406,
     "percentile": 0.421684374685,
     "reason": null,
+    "reference_alarm": [],
     "relative": 0.935099700935,
     "rule": "L1",
     "score": 58,
@@ -6737,9 +6759,9 @@
         "score": 12
       }
     ],
-    "contracted": true,
+    "contracted": false,
     "excluded_categories": [],
-    "factor": 0.85,
+    "factor": null,
     "level": "sólida",
     "level_raw": "sólida",
     "low_confidence": false,
@@ -6802,7 +6824,7 @@
       "source": "edgar",
       "window": 5
     },
-    "score": 76,
+    "score": 80,
     "score_raw": 80
   },
   "quality_readings": {
@@ -7488,9 +7510,9 @@
     "source": "efectiva"
   },
   "verdict": {
-    "confidence": "baja",
-    "confidence_text": "(confianza baja: negocio cíclico)",
-    "full": "Calidad sólida · precio razonable (confianza baja: negocio cíclico)",
+    "confidence_text": "(consistencia consistente: el DCF directo y los múltiplos coinciden)",
+    "consistency": "consistente",
+    "full": "Calidad sólida · precio razonable (consistencia consistente: el DCF directo y los múltiplos coinciden)",
     "price_level": "razonable",
     "price_level_raw": null,
     "quality_level": "sólida",

@@ -609,7 +609,8 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
                                  ParagraphStyle('vc', fontName='Helvetica', fontSize=9.4, leading=12.5,
                                                 textColor=TONE_COLOR[_V["confidence_tone"]]))])
     if C["confidence_reasons"]:
-        _vrows.append([Paragraph(_esc("Motivos de la confianza: " + " ".join(C["confidence_reasons"])),
+        _vrows.append([Paragraph(_esc("Por qué es mixta: " + "; ".join(r.rstrip(". ") for r in C["confidence_reasons"])
+                                      + "."),
                                  ParagraphStyle('vr', fontName='Helvetica', fontSize=7.6, leading=10, textColor=BODY))])
     if C["coverage_notes"]:
         _vrows.append([Paragraph(_esc("Cobertura parcial: " + "; ".join(C["coverage_notes"])),
@@ -705,7 +706,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     n_red, n_warn, n_str = _ac["red_flags"], _ac["warnings"], _ac["strengths"]
     _bal_line = (f"<font color='{BRAND_TXT.hexval()}'><b>{n_str}</b> fortaleza{'s' if n_str != 1 else ''}</font>"
                  f"&nbsp;&nbsp;·&nbsp;&nbsp;<font color='{AMBER.hexval()}'><b>{n_warn}</b> advertencia{'s' if n_warn != 1 else ''}</font>"
-                 f"&nbsp;&nbsp;·&nbsp;&nbsp;<font color='{RED.hexval()}'><b>{n_red}</b> riesgo{'s' if n_red != 1 else ''}</font>"
+                 f"&nbsp;&nbsp;·&nbsp;&nbsp;<font color='{RED.hexval()}'><b>{n_red}</b> {'alerta roja' if n_red == 1 else 'alertas rojas'}</font>"
                  + (f" ({_esc(_ac['unmeasured'])})" if _ac.get("unmeasured") else ""))
     # Fase 1 (T4): cada mitad ocupa CW/2; su ancho interior descuenta el relleno de la celda (12 + 9), y la tabla
     # de barras cabe exacta en él (antes era 12 pt más ancha que su celda y recortaba las cifras de la derecha).
@@ -915,13 +916,13 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
         if SN["note"]:
             story.append(Paragraph(_esc(SN["note"]), S['small']))
 
-    # Confianza del veredicto (etapa 8): aquí, y solo aquí, el detalle técnico.
+    # Consistencia (Fase 1 · pendientes, 7-nov-2026; antes, la confianza del veredicto).
     CF = D["confidence"]
     if CF:
         story.append(Spacer(1, 8))
-        story.append(Paragraph("Confianza del veredicto", S['h2']))
+        story.append(Paragraph("Consistencia", S['h2']))
         _crows = [[d["label"], d["level"], Paragraph(_esc(d["text"]), S['small'])] for d in CF["dimensions"]]
-        story.append(data_table(["DIMENSIÓN", "NIVEL", "MOTIVO"], _crows,
+        story.append(data_table(["QUÉ MIRA", "RESULTADO", "DETALLE"], _crows,
                                 [1.9 * inch, 0.8 * inch, CW - 2.7 * inch], aligns=['LEFT', 'CENTER', 'LEFT']))
         story.append(Paragraph(_esc(CF["summary"]), S['small']))
 
@@ -1141,10 +1142,12 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
     story.append(Spacer(1, 12))
     story.extend(section_header("06", "Alertas y señales", S))
     story.append(Paragraph(
-        f"<font color='{RED.hexval()}'><b>{n_red}</b> riesgo{'s' if n_red != 1 else ''}</font>"
+        f"<font color='{RED.hexval()}'><b>{n_red}</b> {'alerta roja' if n_red == 1 else 'alertas rojas'}</font>"
         + (f" ({_esc(_ac['unmeasured'])})" if _ac.get("unmeasured") else "") + "&nbsp;&nbsp;·&nbsp;&nbsp;"
         f"<font color='{AMBER.hexval()}'><b>{n_warn}</b> advertencia{'s' if n_warn != 1 else ''}</font>&nbsp;&nbsp;·&nbsp;&nbsp;"
-        f"<font color='{BRAND_TXT.hexval()}'><b>{n_str}</b> fortaleza{'s' if n_str != 1 else ''}</font>",
+        f"<font color='{BRAND_TXT.hexval()}'><b>{n_str}</b> fortaleza{'s' if n_str != 1 else ''}</font>"
+        f"; aparte y sin color, {_ac.get('balance', 0)} del estado del balance y {_ac.get('valuation', 0)} de la "
+        "lectura de valoración",
         ParagraphStyle('alsum', fontName='Helvetica', fontSize=9.5, leading=13, spaceAfter=6)))
 
     for grp in SEC["alerts"]["groups"]:
@@ -1162,7 +1165,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
             story.append(Paragraph(txt, ParagraphStyle(
                 'ab', fontName='Helvetica', fontSize=8.4, leading=11, textColor=INK,
                 leftIndent=8, spaceAfter=2.5)))
-    if not (n_red or n_warn or n_str):
+    if not (n_red or n_warn or n_str or _ac.get("balance") or _ac.get("valuation")):
         story.append(Paragraph("No se detectaron alertas significativas.", S['body']))
 
     # ════════════════ 07 CONTEXTO DE MERCADO (fase 5; D5: no puntúa) ════════════════

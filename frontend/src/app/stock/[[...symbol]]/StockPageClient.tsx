@@ -100,8 +100,8 @@ function AnalysisContent({ data }: { data: StockAnalysis }) {
       <footer className="border-t border-white/[0.04] py-6 px-4 text-center text-xs text-zinc-600 space-y-2">
         <p className="max-w-3xl mx-auto leading-relaxed">
           <b className="text-zinc-500">Metodología.</b> Ratios TTM y del último ejercicio con {D.methodology.models_text} y
-          dos puntuaciones de 0 a 100: calidad del negocio y atractivo del precio (contraído hacia 50 según la confianza
-          del veredicto). Las lecturas salen del mismo motor que el informe PDF.
+          dos puntuaciones de 0 a 100: calidad del negocio y atractivo del precio (P/E normalizado frente a la mediana de
+          su grupo, por tercios). Las lecturas salen del mismo motor que el informe PDF.
         </p>
         <p>Datos: Yahoo Finance · No es asesoría financiera</p>
       </footer>

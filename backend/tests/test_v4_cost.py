@@ -151,7 +151,7 @@ def test_methodology_states_the_rule_on_web_and_pdf(outputs_by_env):
     a, pdf = outputs_by_env("panel")["AAPL"]
     # F16: la regla del precio es la L1 (P/E frente a la mediana de su grupo, por tercios); la confianza no lo mueve
     for txt in (a["display"]["summary"]["composition"]["caption"], a["display"]["methodology"]["contraction_text"]):
-        assert "frente a la mediana de su grupo, situado por tercios" in txt and "la confianza no mueve el precio" in txt
+        assert "frente a la mediana de su grupo, situado por" in txt and "múltiplos y DCF son lectura" in txt
     import pdf_inspect
     assert "situado por tercios" in " ".join(" ".join(pdf_inspect.page_texts(pdf)).split())
     import pdf_v2.methodology as m2

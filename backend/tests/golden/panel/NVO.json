@@ -1,12 +1,8 @@
 {
   "alerts": {
+    "balance": [],
     "red_flags": [],
     "strengths": [
-      {
-        "category": "Valor intrínseco",
-        "detail": "El descuento de flujos estima un valor justo de $61, un 60% por encima del precio ($38.12): habría colchón entre el precio y el valor estimado si se cumplen los supuestos de crecimiento y rentabilidad del modelo.",
-        "reason": "Infravalorada según DCF +60%"
-      },
       {
         "category": "Rentabilidad",
         "detail": "El retorno sobre el capital invertido supera con holgura su costo (ROIC 36.0% vs WACC 9.6%): cada dólar reinvertido crea valor económico sustancial, el rasgo de un negocio con ventaja competitiva duradera.",
@@ -23,14 +19,41 @@
         "reason": "Crecimiento fuerte — ingresos +20.4% anual (3 años)"
       },
       {
+        "category": "Rentabilidad",
+        "detail": "De cada dólar vendido quedan 35 centavos de beneficio tras todos los costos, frente a 17.0% de sus pares del universo: poder de fijación de precios y eficiencia.",
+        "reason": "Margen neto sólido — 35.4%"
+      },
+      {
+        "category": "Crecimiento",
+        "detail": "El beneficio por acción crece 23.5% anual en tres años (FY2022–FY2025, CAGR): la rentabilidad para el accionista se acelera, a menudo apoyada en apalancamiento operativo o recompras.",
+        "reason": "BPA en fuerte expansión — +23.5% anual (3 años)"
+      },
+      {
+        "category": "Solidez financiera",
+        "detail": "El Altman Z de 3.54 (> 2.99) ubica a la empresa en zona segura: baja probabilidad estadística de problemas de solvencia según el modelo.",
+        "reason": "Solvencia sólida — Altman Z 3.54"
+      }
+    ],
+    "valuation": [
+      {
+        "category": "Valor intrínseco",
+        "detail": "El descuento de flujos estima un valor justo de $61, un 60% por encima del precio ($38.12): habría colchón entre el precio y el valor estimado si se cumplen los supuestos de crecimiento y rentabilidad del modelo.",
+        "reason": "Infravalorada según DCF +60%"
+      },
+      {
         "category": "Valoración",
         "detail": "Paga 9.3x beneficios frente a 25.3x de sus pares del universo (-63%): un descuento que puede ser oportunidad si los fundamentos acompañan, o reflejar un riesgo que el mercado ya percibe.",
         "reason": "Cotiza con descuento — P/E 9.3x"
       },
       {
-        "category": "Rentabilidad",
-        "detail": "De cada dólar vendido quedan 35 centavos de beneficio tras todos los costos, frente a 17.0% de sus pares del universo: poder de fijación de precios y eficiencia.",
-        "reason": "Margen neto sólido — 35.4%"
+        "category": "Valoración",
+        "detail": "Ajustado por el crecimiento de su BPA, el P/E resulta barato (PEG 0.40 < 1): se paga menos de 1x por cada punto de crecimiento, señal clásica de crecimiento a precio razonable (GARP).",
+        "reason": "PEG atractivo — 0.40"
+      },
+      {
+        "category": "Valoración",
+        "detail": "Cotiza a 7.2x EBITDA frente a 14.4x de sus pares del universo: valoración atractiva sobre flujo operativo, a validar que no responda a un deterioro del negocio.",
+        "reason": "EV/EBITDA barato — 7.2x"
       }
     ],
     "warnings": [
@@ -466,6 +489,20 @@
       "techo en media: la más baja manda: estabilidad media"
     ],
     "score": 0.9
+  },
+  "consistency": {
+    "coverage": {
+      "level": "alta",
+      "text": "cobertura de datos completa"
+    },
+    "level": "consistente",
+    "methods": {
+      "level": "alta",
+      "text": "el DCF directo y los múltiplos coinciden"
+    },
+    "phrase": "el DCF directo y los múltiplos coinciden",
+    "reasons": [],
+    "tone": "pos"
   },
   "cost_of_equity": {
     "as_of": "2026-11-01",
@@ -1712,12 +1749,8 @@
           "text": "Arquetipo GROWTH_PROFITABLE (regla crecimiento_rentable): Clasificada como GROWTH_PROFITABLE: ingresos por acción 21.3% anual en 3 años (FY2022–FY2025) y 20.7% a 5 (FY2020–FY2025), sobre acciones diluidas medias, BPA TTM > 0 y margen operativo 43%."
         },
         {
-          "label": "Confianza · Convergencia entre métodos (alta)",
+          "label": "Consistencia · Coincidencia de métodos (alta)",
           "text": "coinciden (barata) con distancia 0.11 (< 0.6)"
-        },
-        {
-          "label": "Confianza · Estabilidad del arquetipo (media)",
-          "text": "ciclicidad sin medir: 7 ejercicios en EDGAR (hacen falta 8)"
         },
         {
           "label": "Fuente oficial",
@@ -2670,54 +2703,25 @@
       "dimensions": [
         {
           "key": "convergence",
-          "label": "Convergencia entre métodos",
-          "level": "Alta",
+          "label": "Coincidencia de métodos",
+          "level": "Coinciden",
+          "ok": true,
           "text": "DCF directo +60% (barata) · múltiplos frente al sector +0.89 (barata). Los métodos de valoración coinciden."
         },
         {
           "key": "coverage",
           "label": "Cobertura de datos",
-          "level": "Alta",
-          "text": "Sin incidencias."
-        },
-        {
-          "key": "source",
-          "label": "Calidad de fuente",
-          "level": "Alta",
-          "text": "Sin incidencias."
-        },
-        {
-          "key": "stability",
-          "label": "Estabilidad del arquetipo",
-          "level": "Media",
-          "text": "No hay historia suficiente para medir si la empresa es cíclica (7 ejercicios en la SEC; hacen falta 8)."
-        },
-        {
-          "key": "base",
-          "label": "base",
-          "level": "Alta",
+          "level": "Completa",
+          "ok": true,
           "text": "Sin incidencias."
         }
       ],
-      "level": "media",
-      "plain": [
-        "No hay historia suficiente para medir si la empresa es cíclica (7 ejercicios en la SEC; hacen falta 8)."
-      ],
-      "reasons": [
-        {
-          "dimension": "estabilidad",
-          "level": "media",
-          "text": "No hay historia suficiente para medir si la empresa es cíclica (7 ejercicios en la SEC; hacen falta 8)."
-        },
-        {
-          "dimension": "techo",
-          "level": "media",
-          "text": null
-        }
-      ],
-      "summary": "Confianza del veredicto: media (por sus dimensiones sería alta; la limita: la más baja manda —estabilidad media—). La calidad del negocio no se contrae.",
-      "tone": "warn",
-      "verdict_text": "(confianza media: convergencia parcial)"
+      "level": "consistente",
+      "plain": [],
+      "reasons": [],
+      "summary": "Consistencia: consistente (el DCF directo y los múltiplos coinciden). No es una probabilidad de acierto.",
+      "tone": "pos",
+      "verdict_text": "(consistencia consistente: el DCF directo y los múltiplos coinciden)"
     },
     "cover": {
       "archetype": "GROWTH_PROFITABLE",
@@ -2804,9 +2808,7 @@
         "Sus ingresos por acción crecen un 21.3% anual en 3 años (FY2022–FY2025) y 20.7% a 5 (FY2020–FY2025), sobre acciones diluidas medias, con beneficio y un margen operativo 43%.",
         "No hay historia suficiente para medir si es cíclica (7 ejercicios en la SEC; hacen falta 8)."
       ],
-      "confidence_reasons": [
-        "No hay historia suficiente para medir si la empresa es cíclica (7 ejercicios en la SEC; hacen falta 8)."
-      ],
+      "confidence_reasons": [],
       "coverage_notes": [
         "Precio: hay un informe más reciente en EDGAR sin incorporar"
       ],
@@ -2818,7 +2820,7 @@
         {
           "kicker": "FORTALEZA CLAVE",
           "kind": "strength",
-          "text": "Infravalorada según DCF +60%",
+          "text": "Crea mucho valor — spread +26.4 pp",
           "tone": "pos"
         },
         {
@@ -2906,9 +2908,9 @@
         "tone": "pos"
       },
       "verdict": {
-        "confidence_text": "(confianza media: convergencia parcial)",
-        "confidence_tone": "warn",
-        "full": "Calidad sólida · precio atractivo (confianza media: convergencia parcial)",
+        "confidence_text": "(consistencia consistente: el DCF directo y los múltiplos coinciden)",
+        "confidence_tone": "pos",
+        "full": "Calidad sólida · precio atractivo (consistencia consistente: el DCF directo y los múltiplos coinciden)",
         "text": "Calidad sólida · precio atractivo"
       }
     },
@@ -3221,7 +3223,7 @@
       }
     },
     "methodology": {
-      "contraction_text": "el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y la confianza no mueve el precio",
+      "contraction_text": "el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura",
       "models": [
         "Altman (1968)",
         "Piotroski (2000)",
@@ -3320,16 +3322,18 @@
     "sections": {
       "alerts": {
         "counts": {
+          "balance": 0,
           "red_flags": 0,
           "strengths": 6,
           "unmeasured": null,
+          "valuation": 4,
           "warnings": 3
         },
         "groups": [
           {
             "items": [],
             "key": "red_flags",
-            "title": "Riesgos",
+            "title": "Alerta roja",
             "tone": "neg"
           },
           {
@@ -3357,11 +3361,6 @@
           {
             "items": [
               {
-                "category": "Valor intrínseco",
-                "detail": "El descuento de flujos estima un valor justo de $61, un 60% por encima del precio ($38.12): habría colchón entre el precio y el valor estimado si se cumplen los supuestos de crecimiento y rentabilidad del modelo.",
-                "reason": "Infravalorada según DCF +60%"
-              },
-              {
                 "category": "Rentabilidad",
                 "detail": "El retorno sobre el capital invertido supera con holgura su costo (ROIC 36.0% vs WACC 9.6%): cada dólar reinvertido crea valor económico sustancial, el rasgo de un negocio con ventaja competitiva duradera.",
                 "reason": "Crea mucho valor — spread +26.4 pp"
@@ -3377,19 +3376,57 @@
                 "reason": "Crecimiento fuerte — ingresos +20.4% anual (3 años)"
               },
               {
-                "category": "Valoración",
-                "detail": "Paga 9.3x beneficios frente a 25.3x de sus pares del universo (-63%): un descuento que puede ser oportunidad si los fundamentos acompañan, o reflejar un riesgo que el mercado ya percibe.",
-                "reason": "Cotiza con descuento — P/E 9.3x"
-              },
-              {
                 "category": "Rentabilidad",
                 "detail": "De cada dólar vendido quedan 35 centavos de beneficio tras todos los costos, frente a 17.0% de sus pares del universo: poder de fijación de precios y eficiencia.",
                 "reason": "Margen neto sólido — 35.4%"
+              },
+              {
+                "category": "Crecimiento",
+                "detail": "El beneficio por acción crece 23.5% anual en tres años (FY2022–FY2025, CAGR): la rentabilidad para el accionista se acelera, a menudo apoyada en apalancamiento operativo o recompras.",
+                "reason": "BPA en fuerte expansión — +23.5% anual (3 años)"
+              },
+              {
+                "category": "Solidez financiera",
+                "detail": "El Altman Z de 3.54 (> 2.99) ubica a la empresa en zona segura: baja probabilidad estadística de problemas de solvencia según el modelo.",
+                "reason": "Solvencia sólida — Altman Z 3.54"
               }
             ],
             "key": "strengths",
             "title": "Fortalezas",
             "tone": "pos"
+          },
+          {
+            "items": [],
+            "key": "balance",
+            "title": "Estado del balance",
+            "tone": "neu"
+          },
+          {
+            "items": [
+              {
+                "category": "Valor intrínseco",
+                "detail": "El descuento de flujos estima un valor justo de $61, un 60% por encima del precio ($38.12): habría colchón entre el precio y el valor estimado si se cumplen los supuestos de crecimiento y rentabilidad del modelo.",
+                "reason": "Infravalorada según DCF +60%"
+              },
+              {
+                "category": "Valoración",
+                "detail": "Paga 9.3x beneficios frente a 25.3x de sus pares del universo (-63%): un descuento que puede ser oportunidad si los fundamentos acompañan, o reflejar un riesgo que el mercado ya percibe.",
+                "reason": "Cotiza con descuento — P/E 9.3x"
+              },
+              {
+                "category": "Valoración",
+                "detail": "Ajustado por el crecimiento de su BPA, el P/E resulta barato (PEG 0.40 < 1): se paga menos de 1x por cada punto de crecimiento, señal clásica de crecimiento a precio razonable (GARP).",
+                "reason": "PEG atractivo — 0.40"
+              },
+              {
+                "category": "Valoración",
+                "detail": "Cotiza a 7.2x EBITDA frente a 14.4x de sus pares del universo: valoración atractiva sobre flujo operativo, a validar que no responda a un deterioro del negocio.",
+                "reason": "EV/EBITDA barato — 7.2x"
+              }
+            ],
+            "key": "valuation",
+            "title": "Lectura de valoración",
+            "tone": "neu"
           }
         ]
       },
@@ -4691,9 +4728,11 @@
     },
     "summary": {
       "alert_counts": {
+        "balance": 0,
         "red_flags": 0,
         "strengths": 6,
         "unmeasured": null,
+        "valuation": 4,
         "warnings": 3
       },
       "cards": [
@@ -4765,7 +4804,7 @@
         }
       ],
       "composition": {
-        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y la confianza no mueve el precio.",
+        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura.",
         "price": {
           "level": "atractivo",
           "note": "P/E 10.8x frente a la mediana de salud (29.8x), 0.36 veces: en el tercio más barato del universo; aviso: el beneficio de doce meses es el del periodo cerrado el 2025-12-31, el último que EDGAR recoge; los estados del análisis llegan al 2026-06-30.",
@@ -4833,7 +4872,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad sólida · precio atractivo (confianza media: convergencia parcial). Calidad 81/100 · precio 98/100 (P/E 10.8x frente a 29.8x de su sector)."
+          "text": "Calidad sólida · precio atractivo (consistencia consistente: el DCF directo y los múltiplos coinciden). Calidad 81/100 · precio 98/100 (P/E 10.8x frente a 29.8x de su sector)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -4860,8 +4899,8 @@
           "text": "Cotiza en el 10% del rango de 52 semanas, en la parte baja. Con beta 1.19, la acción se mueve en línea con el mercado."
         },
         {
-          "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Media: no hay historia suficiente para medir si la empresa es cíclica (7 ejercicios en la SEC; hacen falta 8). No contrae el atractivo del precio ni la calidad."
+          "label": "CONSISTENCIA",
+          "text": "Consistente: el DCF directo y los múltiplos coinciden (no es una probabilidad de acierto)."
         }
       ]
     },
@@ -5587,7 +5626,7 @@
                 "tone": "neg"
               }
             ],
-            "title": "Atractivo del precio (0–100, contraído por la confianza)"
+            "title": "Atractivo del precio (0–100, regla L1 por tercios)"
           }
         ]
       },
@@ -6210,6 +6249,7 @@
     "total_equity": 33807368569.4,
     "wacc": 0.0959009256739
   },
+  "l1_cycle_peak": null,
   "market_context": {
     "behavioral": [
       {
@@ -6729,6 +6769,7 @@
       0.839031,
       1.190143
     ],
+    "cycle_peak": null,
     "factor": null,
     "gics": "Health Care",
     "gics_sector": "Health Care",
@@ -6764,6 +6805,7 @@
     "pe_ttm": 10.8454350463,
     "percentile": 0.024893001641,
     "reason": null,
+    "reference_alarm": [],
     "relative": 0.363787823781,
     "rule": "L1",
     "score": 98,
@@ -7637,9 +7679,9 @@
     "source": "efectiva"
   },
   "verdict": {
-    "confidence": "media",
-    "confidence_text": "(confianza media: convergencia parcial)",
-    "full": "Calidad sólida · precio atractivo (confianza media: convergencia parcial)",
+    "confidence_text": "(consistencia consistente: el DCF directo y los múltiplos coinciden)",
+    "consistency": "consistente",
+    "full": "Calidad sólida · precio atractivo (consistencia consistente: el DCF directo y los múltiplos coinciden)",
     "price_level": "atractivo",
     "price_level_raw": null,
     "quality_level": "sólida",

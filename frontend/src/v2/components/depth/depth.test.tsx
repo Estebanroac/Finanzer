@@ -15,7 +15,7 @@ const prof = a.display.sections.profitability;
 describe("TechTable", () => {
   it("nombre técnico con su significado, cifras del motor y lectura en pastilla con su tono", () => {
     render(<TechTable rows={prof.rows} refLabel="Industria" tooltips={a.display.tooltips} />);
-    // F10 · N2: la referencia de AAPL es la mediana de sus pares, sin ROIC (Yahoo no lo da): el margen neto sí la tiene
+    // La referencia de AAPL es su industria global de Damodaran (F14/F15; antes la mediana de sus pares): el margen neto la tiene
     const nm = document.querySelector<HTMLElement>('tr[data-key="net_margin"]')!;
     const r = prof.rows.find((x) => x.key === "net_margin")!;
     expect(within(nm).getByRole("rowheader").textContent).toContain("Margen neto");
@@ -24,21 +24,21 @@ describe("TechTable", () => {
     expect(nm.querySelector(".pill")?.textContent).toBe(r.reading);
     const [withRef, noRef] = Array.from(document.querySelectorAll("table.techtable"));
     expect(within(withRef as HTMLElement).getAllByRole("columnheader").map((c) => c.textContent)).toEqual(["Métrica", "Empresa", "Industria", "Brecha", "Lectura"]);
-    // V4b · 4 (PM): las filas sin referencia (ROE, ROA, ROIC y ROCE en AAPL), aparte y de tres columnas, nombradas en una nota
+    // V4b · 4 (PM): las filas sin referencia (ROA y ROCE en AAPL), aparte y de tres columnas, nombradas en una nota
     expect(within(noRef as HTMLElement).getAllByRole("columnheader").map((c) => c.textContent)).toEqual(["Métrica", "Empresa", "Lectura"]);
-    expect(screen.getByTestId("no-ref-note").textContent).toBe("Sin referencia de industria publicada para: ROE, ROA, ROIC, ROCE (EBIT / capital empleado).");
+    expect(screen.getByTestId("no-ref-note").textContent).toBe("Sin referencia de industria publicada para: ROA, ROCE (EBIT / capital empleado).");
     // ninguna celda con «—» ni vacía; la cifra sin lectura lo dice en gris
     for (const td of Array.from(document.querySelectorAll("td"))) expect(td.textContent?.trim(), td.outerHTML.slice(0, 80)).not.toMatch(/^(|—)$/);
-    const roe = document.querySelector('tr[data-key="roe"]')!;
-    expect(roe.querySelector(".pill.neutral")?.textContent).toBe("Sin referencia");
-    expect(roe.querySelector("td.num")?.className).toContain("tone-neutral");
+    const roa = document.querySelector('tr[data-key="roa"]')!;
+    expect(roa.querySelector(".pill.neutral")?.textContent).toBe("Sin referencia");
+    expect(roa.querySelector("td.num")?.className).toContain("tone-neutral");
   });
   it("V4b · 4: con las tres columnas del motor (solidez), tres columnas y la referencia que haya, bajo la cifra", () => {
     const solv = a.display.sections.solvency;
     render(<TechTable rows={solv.rows} refLabel="Industria" tooltips={a.display.tooltips} columns={solv.columns} />);
     expect(document.querySelectorAll("table.techtable")).toHaveLength(1);
     expect(screen.getAllByRole("columnheader").map((c) => c.textContent)).toEqual(["Métrica", "Empresa", "Lectura"]);
-    expect(document.querySelector('tr[data-key="de"] td.num')?.textContent).toMatch(/Industria 0\.70x · \+13%/)   // F10 · N2: mediana de sus pares;
+    expect(document.querySelector('tr[data-key="de"] td.num')?.textContent).toMatch(/Industria 0\.39x · \+106%/)   // industria global de Damodaran;
     expect(document.querySelector('tr[data-key="quick_ratio"] .pill.neutral')?.textContent).toBe("Informativa");
   });
   it("una fila sin dato dice su motivo (nunca una celda vacía)", () => {

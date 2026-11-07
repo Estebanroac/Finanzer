@@ -30,13 +30,13 @@ export const QUALITY_NOTE = `La calidad suma ${NUMBER_WORDS[SCORE_BANDS.quality.
 export const PRICE_NOTE = `El atractivo del precio compara el P/E del beneficio normalizado de doce meses (P/FFO en `
   + `los REIT) con la mediana de su grupo (su sector; bancos y aseguradoras entre sí, REIT entre sí) y lo `
   + `sitúa en el universo de unas 540 empresas: el tercio más barato es atractivo, el más caro exigente; se expresa `
-  + `sobre ${SCORE_BANDS.scale} y la confianza no lo mueve. ${bandsSentence("price")}`;
+  + `sobre ${SCORE_BANDS.scale}; múltiplos y DCF son lectura. ${bandsSentence("price")}`;
 /** Frases de un texto del motor (para citar solo la que toca). */
 const sentences = (t: string | null | undefined) => (t ?? "").split(/(?<=\.)\s+/).filter(Boolean);
 /** El motor da la confianza entre paréntesis y con su nivel delante, para pegarla al veredicto
  *  ("(confianza alta: …)"); aquí el nivel ya está en grande, así que va solo el motivo. */
 const unwrap = (s: string | null | undefined) => {
-  const t = (s ?? "").replace(/^\((.*)\)$/, "$1").replace(/^confianza\s+\S+:\s*/i, "");
+  const t = (s ?? "").replace(/^\((.*)\)$/, "$1").replace(/^(confianza|consistencia)\s+\S+:\s*/i, "");
   return t.charAt(0).toUpperCase() + t.slice(1);
 };
 
@@ -90,10 +90,10 @@ function ScoreCards({ analysis, withBreakdown, ids }: { analysis: StockAnalysis;
         breakdown={withBreakdown ? qualityBd : null} term="quality" />
       <ScoreScale testId={ids.price} model={models.price} fit={fit} title={p.title} question={p.question}
         display={p.score === null ? "—" : String(p.score)} suffix={p.score === null ? null : `/ 100 · ${p.level}`} tone={toVTone(p.tone)}
-        base={noteFor(p, withBreakdown) ?? "Múltiplos frente a la referencia + DCF"}
+        base={noteFor(p, withBreakdown) ?? "P/E normalizado frente a la mediana de su grupo"}
         breakdown={withBreakdown ? priceBd : null} term="price" />
       <ScoreScale testId={ids.confidence} model={models.confidence} fit={fit}
-        title="Confianza del veredicto" question="¿cuánto fiarse?"
+        title="Consistencia" question="¿coinciden métodos y datos?"
         display={conf?.level ? conf.level.charAt(0).toUpperCase() + conf.level.slice(1) : "—"} suffix={null} tone="neutral" levelTone={toVTone(conf?.tone)}
         base={unwrap(conf?.verdict_text ?? cover.verdict.confidence_text) || "Sin dato"}
         line={withBreakdown ? confidenceLine(conf) : null}
@@ -149,7 +149,7 @@ export default function CompanyHeader({ analysis, compact = false }: { analysis:
         <dl className="scores-line">
           <div><dt>Calidad</dt><dd><span className={`num tone-${toVTone(q.tone)}`}>{q.score ?? "—"}</span>{q.score !== null && <span className="muted"> / 100 · {q.level}</span>}</dd></div>
           <div><dt>Precio</dt><dd><span className={`num tone-${toVTone(p.tone)}`}>{p.score ?? "—"}</span>{p.score !== null && <span className="muted"> / 100 · {p.level}</span>}</dd></div>
-          <div><dt>Confianza</dt><dd className={`tone-${toVTone(conf?.tone)}`}>{conf?.level ? conf.level.charAt(0).toUpperCase() + conf.level.slice(1) : "—"}</dd></div>
+          <div><dt>Consistencia</dt><dd className={`tone-${toVTone(conf?.tone)}`}>{conf?.level ? conf.level.charAt(0).toUpperCase() + conf.level.slice(1) : "—"}</dd></div>
         </dl>
       ) : (<>
         <ScoreCards analysis={analysis} withBreakdown={false} ids={{ quality: "score-quality", price: "score-price", confidence: "confidence" }} />

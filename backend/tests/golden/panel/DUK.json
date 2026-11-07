@@ -1,5 +1,6 @@
 {
   "alerts": {
+    "balance": [],
     "red_flags": [],
     "strengths": [
       {
@@ -8,6 +9,7 @@
         "reason": "Margen neto normalizado sólido — 14.4%"
       }
     ],
+    "valuation": [],
     "warnings": []
   },
   "altman_z": {
@@ -432,6 +434,22 @@
       "techo en media: la convergencia es media: alta exige convergencia alta"
     ],
     "score": 0.8
+  },
+  "consistency": {
+    "coverage": {
+      "level": "alta",
+      "text": "cobertura de datos completa"
+    },
+    "level": "mixta",
+    "methods": {
+      "level": "media",
+      "text": "P/B justificado (ROE regulado) la ve cara y los múltiplos en precio"
+    },
+    "phrase": "P/B justificado (ROE regulado) la ve cara y los múltiplos en precio",
+    "reasons": [
+      "P/B justificado (ROE regulado) la ve cara y los múltiplos en precio"
+    ],
+    "tone": "warn"
   },
   "cost_of_equity": {
     "as_of": "2026-11-01",
@@ -1509,12 +1527,8 @@
           "text": "Arquetipo UTILITY (regla industria_utility): Clasificada como UTILITY por industria Electricidad regulada."
         },
         {
-          "label": "Confianza · Convergencia entre métodos (media)",
+          "label": "Consistencia · Coincidencia de métodos (media)",
           "text": "uno lo ve en precio y otro con dirección: no coinciden, sin oponerse."
-        },
-        {
-          "label": "Confianza · base (media)",
-          "text": "caja libre negativa (−$4.27B): invierte más de lo que genera."
         },
         {
           "label": "Fuente oficial",
@@ -2235,60 +2249,27 @@
       "dimensions": [
         {
           "key": "convergence",
-          "label": "Convergencia entre métodos",
-          "level": "Media",
+          "label": "Coincidencia de métodos",
+          "level": "En parte",
+          "ok": false,
           "text": "P/B justificado (ROE regulado) -46% (cara) · múltiplos frente al sector -0.11 (en precio). Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
         },
         {
           "key": "coverage",
           "label": "Cobertura de datos",
-          "level": "Alta",
+          "level": "Completa",
+          "ok": true,
           "text": "Sin incidencias."
-        },
-        {
-          "key": "source",
-          "label": "Calidad de fuente",
-          "level": "Alta",
-          "text": "Sin incidencias."
-        },
-        {
-          "key": "stability",
-          "label": "Estabilidad del arquetipo",
-          "level": "Alta",
-          "text": "Sin incidencias."
-        },
-        {
-          "key": "base",
-          "label": "base",
-          "level": "Media",
-          "text": "La empresa invierte más caja de la que genera: su valor depende de que esa inversión rinda."
         }
       ],
-      "level": "media",
+      "level": "mixta",
       "plain": [
-        "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no.",
-        "La empresa invierte más caja de la que genera: su valor depende de que esa inversión rinda."
+        "P/B justificado (ROE regulado) la ve cara y los múltiplos en precio."
       ],
-      "reasons": [
-        {
-          "dimension": "convergencia",
-          "level": "media",
-          "text": "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
-        },
-        {
-          "dimension": "base",
-          "level": "media",
-          "text": "La empresa invierte más caja de la que genera: su valor depende de que esa inversión rinda."
-        },
-        {
-          "dimension": "techo",
-          "level": "media",
-          "text": null
-        }
-      ],
-      "summary": "Confianza del veredicto: media (por sus dimensiones sería alta; la limita: la convergencia es media —alta exige convergencia alta—). La calidad del negocio no se contrae.",
+      "reasons": [],
+      "summary": "Consistencia: mixta (P/B justificado (ROE regulado) la ve cara y los múltiplos en precio). No es una probabilidad de acierto.",
       "tone": "warn",
-      "verdict_text": "(confianza media: P/B justificado (ROE regulado) la ve cara y los múltiplos en precio)"
+      "verdict_text": "(consistencia mixta: P/B justificado (ROE regulado) la ve cara y los múltiplos en precio)"
     },
     "cover": {
       "archetype": "UTILITY",
@@ -2375,8 +2356,7 @@
         "Utility regulada por su industria (Electricidad regulada): el regulador fija su retorno sobre una base de activos financiada con deuda."
       ],
       "confidence_reasons": [
-        "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no.",
-        "La empresa invierte más caja de la que genera: su valor depende de que esa inversión rinda."
+        "P/B justificado (ROE regulado) la ve cara y los múltiplos en precio."
       ],
       "coverage_notes": [],
       "currency_note": null,
@@ -2473,9 +2453,9 @@
         "tone": "pos"
       },
       "verdict": {
-        "confidence_text": "(confianza media: P/B justificado (ROE regulado) la ve cara y los múltiplos en precio)",
+        "confidence_text": "(consistencia mixta: P/B justificado (ROE regulado) la ve cara y los múltiplos en precio)",
         "confidence_tone": "warn",
-        "full": "Calidad sólida · precio razonable (confianza media: P/B justificado (ROE regulado) la ve cara y los múltiplos en precio)",
+        "full": "Calidad sólida · precio razonable (consistencia mixta: P/B justificado (ROE regulado) la ve cara y los múltiplos en precio)",
         "text": "Calidad sólida · precio razonable"
       }
     },
@@ -2826,7 +2806,7 @@
       }
     },
     "methodology": {
-      "contraction_text": "el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y la confianza no mueve el precio",
+      "contraction_text": "el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura",
       "models": [
         "Piotroski (2000)",
         "número de Graham",
@@ -2921,16 +2901,18 @@
     "sections": {
       "alerts": {
         "counts": {
+          "balance": 0,
           "red_flags": 0,
           "strengths": 1,
           "unmeasured": null,
+          "valuation": 0,
           "warnings": 0
         },
         "groups": [
           {
             "items": [],
             "key": "red_flags",
-            "title": "Riesgos",
+            "title": "Alerta roja",
             "tone": "neg"
           },
           {
@@ -2950,6 +2932,18 @@
             "key": "strengths",
             "title": "Fortalezas",
             "tone": "pos"
+          },
+          {
+            "items": [],
+            "key": "balance",
+            "title": "Estado del balance",
+            "tone": "neu"
+          },
+          {
+            "items": [],
+            "key": "valuation",
+            "title": "Lectura de valoración",
+            "tone": "neu"
           }
         ]
       },
@@ -4047,9 +4041,11 @@
     },
     "summary": {
       "alert_counts": {
+        "balance": 0,
         "red_flags": 0,
         "strengths": 1,
         "unmeasured": null,
+        "valuation": 0,
         "warnings": 0
       },
       "cards": [
@@ -4121,7 +4117,7 @@
         }
       ],
       "composition": {
-        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y la confianza no mueve el precio.",
+        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura.",
         "price": {
           "level": "razonable",
           "note": "P/E 19.4x (sin partidas no recurrentes) frente a la mediana de servicios públicos (20.5x), 0.95 veces: en el tercio central del universo.",
@@ -4195,7 +4191,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad sólida · precio razonable (confianza media: P/B justificado (ROE regulado) la ve cara y los múltiplos en precio). Calidad 72/100 · precio 57/100 (P/E 19.4x frente a 20.5x de su sector)."
+          "text": "Calidad sólida · precio razonable (consistencia mixta: P/B justificado (ROE regulado) la ve cara y los múltiplos en precio). Calidad 72/100 · precio 57/100 (P/E 19.4x frente a 20.5x de su sector)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -4222,8 +4218,8 @@
           "text": "Cotiza en el 33% del rango de 52 semanas, en la zona media. Beta 0.57 de su industria: la propia de la acción no pasa los filtros de la regresión, así que no mide su sensibilidad al mercado."
         },
         {
-          "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Media: los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no. No contrae el atractivo del precio ni la calidad."
+          "label": "CONSISTENCIA",
+          "text": "Mixta: P/B justificado (ROE regulado) la ve cara y los múltiplos en precio (no es una probabilidad de acierto)."
         }
       ]
     },
@@ -4773,7 +4769,7 @@
                 "tone": "neg"
               }
             ],
-            "title": "Atractivo del precio (0–100, contraído por la confianza)"
+            "title": "Atractivo del precio (0–100, regla L1 por tercios)"
           }
         ]
       },
@@ -5396,6 +5392,7 @@
     "total_equity": 54751000000.0,
     "wacc": 0.0648465453668
   },
+  "l1_cycle_peak": null,
   "market_context": {
     "behavioral": [],
     "market_volatility": {
@@ -5902,6 +5899,7 @@
       0.839031,
       1.190143
     ],
+    "cycle_peak": null,
     "factor": null,
     "gics": "Utilities",
     "gics_sector": "Utilities",
@@ -5929,6 +5927,7 @@
     "pe_ttm": 19.4163003923,
     "percentile": 0.432735431341,
     "reason": null,
+    "reference_alarm": [],
     "relative": 0.946271619924,
     "rule": "L1",
     "score": 57,
@@ -6596,9 +6595,9 @@
     "source": "efectiva"
   },
   "verdict": {
-    "confidence": "media",
-    "confidence_text": "(confianza media: P/B justificado (ROE regulado) la ve cara y los múltiplos en precio)",
-    "full": "Calidad sólida · precio razonable (confianza media: P/B justificado (ROE regulado) la ve cara y los múltiplos en precio)",
+    "confidence_text": "(consistencia mixta: P/B justificado (ROE regulado) la ve cara y los múltiplos en precio)",
+    "consistency": "mixta",
+    "full": "Calidad sólida · precio razonable (consistencia mixta: P/B justificado (ROE regulado) la ve cara y los múltiplos en precio)",
     "price_level": "razonable",
     "price_level_raw": null,
     "quality_level": "sólida",

@@ -60,6 +60,7 @@
   "beta": 1.1652396225801014
  },
  "spectrum_adjustment": null,
+ "ev_cross_holdings": null,
  "key_metrics": {
   "market_cap": 76122284641.67249,
   "pe": 8.537582191683569,
@@ -105,7 +106,7 @@
   "total_equity": 105180980686.57559,
   "cash": 325861170022.18787,
   "book_value_per_share": 26.27970831589972,
-  "shares_outstanding": 3332849568,
+  "shares_outstanding": 3332849568.0,
   "revenue_growth": 0.11094166984369047,
   "earnings_growth": 0.2540121942007454,
   "price_52w_high": 28.690000534057617,
@@ -167,7 +168,7 @@
  },
  "country_risk": {
   "crp": 0.00546,
-  "lambda": 1,
+  "lambda": 1.0,
   "basis": "sede",
   "weights": [
    {
@@ -175,7 +176,7 @@
     "kind": "sede",
     "name": "United Kingdom",
     "erp": 0.05006,
-    "share": 1,
+    "share": 1.0,
     "add": 0.00546
    }
   ],
@@ -187,17 +188,17 @@
   "reason": "sin geografía de los ingresos en XBRL: país de la sede operativa"
  },
  "cost_of_equity": {
-  "value": 0.10730006414836427,
-  "capm": 0.10184006414836427,
+  "value": 0.10624706735578246,
+  "capm": 0.10078706735578247,
   "crp": 0.00546,
   "floor": null,
   "floors": {
-   "Rf + 0.5 × ERP": 0.07390000000000001
+   "Rf + 0.5 × ERP": 0.07145
   },
   "kd": null,
-  "rf": 0.0529,
-  "erp": 0.042,
-  "as_of": "2026-10-01",
+  "rf": 0.0494,
+  "erp": 0.0441,
+  "as_of": "2026-11-01",
   "shift": null
  },
  "sbc": {
@@ -249,7 +250,7 @@
   }
  ],
  "archetype_metrics": {
-  "cost_of_equity": 0.10730006414836427,
+  "cost_of_equity": 0.10624706735578246,
   "terminal_growth": 0.025,
   "beta_raw": 1.2466263023583601,
   "beta_adjusted": 1.1652396225801014,
@@ -275,47 +276,47 @@
    "metric": "ROTE",
    "state": "ok",
    "reason": null,
-   "implied": 0.10767794957817059,
+   "implied": 0.10662011789086948,
    "multiple": 1.0045915569291064,
    "own": 0.10650442350596163,
    "own_avg": 0.10129061025881197,
    "own_years": 4,
    "at1": 17137008331.622229,
    "band": "en_precio",
-   "gap": -0.0011735260722089552,
+   "gap": -0.00011569438490784123,
    "sensitivity": [
     {
      "delta": -0.02,
      "return": 0.08650442350596163,
-     "multiple_justified": 0.747319265694449
+     "multiple_justified": 0.7570048434687812
     },
     {
      "delta": -0.01,
      "return": 0.09650442350596164,
-     "multiple_justified": 0.868825853854244
+     "multiple_justified": 0.88008620905469
     },
     {
-     "delta": 0,
+     "delta": 0.0,
      "return": 0.10650442350596163,
-     "multiple_justified": 0.9903324420140387
+     "multiple_justified": 1.0031675746405984
     },
     {
      "delta": 0.01,
      "return": 0.11650442350596163,
-     "multiple_justified": 1.1118390301738337
+     "multiple_justified": 1.126248940226507
     },
     {
      "delta": 0.02,
      "return": 0.12650442350596164,
-     "multiple_justified": 1.2333456183336287
+     "multiple_justified": 1.2493303058124157
     }
    ],
    "subtype": "banco"
   },
-  "pb_justified": 0.6408039522102776,
-  "ptbv_justified": 0.9903324420140387,
-  "pb_ratio": 1.3562831937103434,
-  "ptbv_ratio": 1.0143983114256754,
+  "pb_justified": 0.649109045899338,
+  "ptbv_justified": 1.0031675746405984,
+  "pb_ratio": 1.3389300863028566,
+  "ptbv_ratio": 1.001419485960776,
   "roe_std": 0.008853201089834513,
   "roe_years": 4,
   "roe_std_basis": null,
@@ -328,7 +329,25 @@
   "revenue_growth_statements": 0.11094166984369047,
   "net_interest_income_cagr_3y": 0.13498802913223318,
   "net_interest_income_cagr_3y_reason": null,
-  "net_interest_income_share": 0.4976321207961565
+  "net_interest_income_share": 0.4976321207961565,
+  "roe_by_year": [
+   {
+    "fy_end": "2025-12-31",
+    "roe": 0.0777382063734312
+   },
+   {
+    "fy_end": "2024-12-31",
+    "roe": 0.07539549649766836
+   },
+   {
+    "fy_end": "2023-12-31",
+    "roe": 0.058630595731903504
+   },
+   {
+    "fy_end": "2022-12-31",
+    "roe": 0.0754762509303013
+   }
+  ]
  },
  "not_applicable": {
   "dcf": "No aplica a bancos y aseguradoras: el balance es el producto (depósitos y préstamos)",
@@ -346,25 +365,29 @@
    "roe_low": 0.06,
    "roa_high": 0.012,
    "roa_low": 0.008,
-   "debt_equity_high": 10,
+   "debt_equity_high": 10.0,
    "operating_margin_low": 0.2,
    "net_margin_low": 0.15,
-   "interest_coverage_low": 3,
-   "current_ratio_low": 1
+   "interest_coverage_low": 3.0,
+   "current_ratio_low": 1.0
   },
   "values": {
-   "pe": 12.3184,
-   "pb": 1.6663,
-   "roe": 0.1291,
-   "net_margin": 0.2806,
+   "pe": 10.9066,
+   "pb": 1.2449,
+   "roe": 0.13,
+   "net_margin": 0.3102,
+   "interest_coverage": 0.4733,
+   "de": 3.5982,
    "ev_ebitda": 9.3902
   },
   "reason": null,
   "sources": {
-   "pe": "referencia: mediana de 19 pares del universo; sin sus cifras al 5 de enero de 2026: los últimos doce meses en SEC EDGAR a esa fecha acaban el 30 de junio de 2025 (189 días antes): no son los del conjunto (Yahoo Finance, 2026-10-28)",
-   "pb": "referencia: mediana de 19 pares del universo; sin sus cifras al 5 de enero de 2026: los últimos doce meses en SEC EDGAR a esa fecha acaban el 30 de junio de 2025 (189 días antes): no son los del conjunto (Yahoo Finance, 2026-10-28)",
-   "roe": "referencia: mediana de 19 pares del universo; sin sus cifras al 5 de enero de 2026: los últimos doce meses en SEC EDGAR a esa fecha acaban el 30 de junio de 2025 (189 días antes): no son los del conjunto (Yahoo Finance, 2026-10-28)",
-   "net_margin": "referencia: mediana de 19 pares del universo; sin sus cifras al 5 de enero de 2026: los últimos doce meses en SEC EDGAR a esa fecha acaban el 30 de junio de 2025 (189 días antes): no son los del conjunto (Yahoo Finance, 2026-10-28)",
+   "pe": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Grandes bancos», Europa, 113 empresas; agregado publicado de la industria, con Barclays dentro: pesa el 3 % de su capitalización (estimado con la de hoy, sin sus cifras al 5 de enero de 2026: los últimos doce meses en SEC EDGAR a esa fecha acaban el 30 de junio de 2025 (189 días antes): no son los del conjunto), por debajo del 5 %",
+   "pb": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Grandes bancos», Europa, 113 empresas; agregado publicado de la industria, con Barclays dentro: pesa el 3 % de su capitalización (estimado con la de hoy, sin sus cifras al 5 de enero de 2026: los últimos doce meses en SEC EDGAR a esa fecha acaban el 30 de junio de 2025 (189 días antes): no son los del conjunto), por debajo del 5 %",
+   "roe": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Grandes bancos», Europa, 113 empresas; agregado publicado de la industria, con Barclays dentro: pesa el 3 % de su capitalización (estimado con la de hoy, sin sus cifras al 5 de enero de 2026: los últimos doce meses en SEC EDGAR a esa fecha acaban el 30 de junio de 2025 (189 días antes): no son los del conjunto), por debajo del 5 %",
+   "net_margin": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Grandes bancos», Europa, 113 empresas; agregado publicado de la industria, con Barclays dentro: pesa el 3 % de su capitalización (estimado con la de hoy, sin sus cifras al 5 de enero de 2026: los últimos doce meses en SEC EDGAR a esa fecha acaban el 30 de junio de 2025 (189 días antes): no son los del conjunto), por debajo del 5 %",
+   "interest_coverage": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Grandes bancos», Europa, 113 empresas; agregado publicado de la industria, con Barclays dentro: pesa el 3 % de su capitalización (estimado con la de hoy, sin sus cifras al 5 de enero de 2026: los últimos doce meses en SEC EDGAR a esa fecha acaban el 30 de junio de 2025 (189 días antes): no son los del conjunto), por debajo del 5 %",
+   "de": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Grandes bancos», Europa, 113 empresas; agregado publicado de la industria, con Barclays dentro: pesa el 3 % de su capitalización (estimado con la de hoy, sin sus cifras al 5 de enero de 2026: los últimos doce meses en SEC EDGAR a esa fecha acaban el 30 de junio de 2025 (189 días antes): no son los del conjunto), por debajo del 5 %",
    "ev_ebitda": "A. Damodaran, conjuntos de datos por industria (pedata, vebitda, pbvdata, roe, margin, dbtfund), NYU Stern, 2026-01-05: industria «Mercado total (sin financieras)», Europa, 5757 empresas; la referencia no incluye a la empresa: Damodaran no la cuenta en el mercado sin financieras de su región (la industria no tiene dato)"
   },
   "industry": {
@@ -379,52 +402,10 @@
     "cut": null,
     "figures": null,
     "session": null,
-    "method": "mediana_pares",
-    "weight": null,
-    "columns": {
-     "pe": {
-      "before": 10.9066,
-      "after": 12.3184,
-      "n": 19,
-      "how": "mediana_pares"
-     },
-     "pb": {
-      "before": 1.2449,
-      "after": 1.6663,
-      "n": 19,
-      "how": "mediana_pares"
-     },
-     "roe": {
-      "before": 0.13,
-      "after": 0.1291,
-      "n": 19,
-      "how": "mediana_pares"
-     },
-     "net_margin": {
-      "before": 0.3102,
-      "after": 0.2806,
-      "n": 19,
-      "how": "mediana_pares"
-     },
-     "interest_coverage": {
-      "before": 0.4733,
-      "after": null,
-      "n": 0,
-      "how": "sin_dato"
-     },
-     "de": {
-      "before": 3.5982,
-      "after": null,
-      "n": 0,
-      "how": "sin_dato"
-     }
-    },
-    "n_peers": 19,
-    "peers_date": "2026-10-28",
+    "method": "agregado_peso_menor",
+    "weight": 0.02950347614378059,
     "reason": "sin sus cifras al 5 de enero de 2026: los últimos doce meses en SEC EDGAR a esa fecha acaban el 30 de junio de 2025 (189 días antes): no son los del conjunto",
-    "few_firms": null,
-    "degraded": false,
-    "declaration": "referencia: mediana de 19 pares del universo; sin sus cifras al 5 de enero de 2026: los últimos doce meses en SEC EDGAR a esa fecha acaban el 30 de junio de 2025 (189 días antes): no son los del conjunto"
+    "declaration": "agregado publicado de la industria, con Barclays dentro: pesa el 3 % de su capitalización (estimado con la de hoy, sin sus cifras al 5 de enero de 2026: los últimos doce meses en SEC EDGAR a esa fecha acaban el 30 de junio de 2025 (189 días antes): no son los del conjunto), por debajo del 5 %"
    },
    "published": {
     "pe": 10.9066,
@@ -440,8 +421,8 @@
    "classified": "Damodaran clasifica a la empresa en esa industria (nombre legal (ADR))",
    "profile_differs": false
   },
-  "ref": "de sus pares del universo",
-  "short": "pares",
+  "ref": "de su industria",
+  "short": "industria",
   "provisional": false
  },
  "business_model": {
@@ -503,7 +484,9 @@
    "source": null,
    "window": null,
    "years_used": 4,
-   "bound": null
+   "bound": null,
+   "capped": null,
+   "value_uncapped": null
   },
   "revenue_cagr": {
    "method": "cagr",
@@ -514,7 +497,9 @@
    "source": null,
    "window": null,
    "years_used": 4,
-   "bound": null
+   "bound": null,
+   "capped": null,
+   "value_uncapped": null
   },
   "eps_cagr": {
    "method": "cagr",
@@ -525,7 +510,9 @@
    "source": null,
    "window": null,
    "years_used": 4,
-   "bound": null
+   "bound": null,
+   "capped": null,
+   "value_uncapped": null
   },
   "revenue_window": "FY2022–FY2025"
  },
@@ -546,26 +533,26 @@
   "yearly": [
    {
     "year": 2022,
-    "revenue": 25021000000,
-    "net_income": 5023000000,
+    "revenue": 25021000000.0,
+    "net_income": 5023000000.0,
     "free_cash_flow": null
    },
    {
     "year": 2023,
-    "revenue": 25384000000,
+    "revenue": 25384000000.0,
     "net_income": 4273999999.9999995,
     "free_cash_flow": null
    },
    {
     "year": 2024,
-    "revenue": 26230000000,
-    "net_income": 5316000000,
+    "revenue": 26230000000.0,
+    "net_income": 5316000000.0,
     "free_cash_flow": null
    },
    {
     "year": 2025,
-    "revenue": 29140000000,
-    "net_income": 6175000000,
+    "revenue": 29140000000.0,
+    "net_income": 6175000000.0,
     "free_cash_flow": null
    }
   ]
@@ -599,7 +586,8 @@
   "coefficients": [
    0.67,
    0.33
-  ]
+  ],
+  "contrast": null
  },
  "wacc": {
   "value": null,
@@ -615,13 +603,18 @@
   "reason": null
  },
  "risk_free": {
-  "value": 0.0529,
-  "erp": 0.042,
+  "value": 0.0494,
+  "erp": 0.0441,
   "source": "par Rf–ERP de Damodaran",
-  "as_of": "2026-10-01",
+  "as_of": "2026-11-01",
   "fallback": false,
   "reason": null,
-  "market": null
+  "market": null,
+  "review": {
+   "status": "vigente",
+   "due": "2026-12-01",
+   "published": "2026-11-01"
+  }
  },
  "altman_z": {
   "z_score": null,
@@ -769,8 +762,8 @@
   "coherence": null,
   "after_tax": null,
   "unexplained": {
-   "pre_tax": 0,
-   "after_tax": 0
+   "pre_tax": 0.0,
+   "after_tax": 0.0
   },
   "pe_reported": 8.537582191683569,
   "pe_normalized": 8.508468834703196,
@@ -800,8 +793,34 @@
   "basis": null,
   "reason": null
  },
+ "l1_cycle_peak": null,
  "graham_number": null,
  "dcf_growth_blend": null,
+ "dcf_growth_base_rate": {
+  "median": 0.035,
+  "bin": "25-50",
+  "industry": "Other",
+  "cell": "25-50 · Other",
+  "count": 352,
+  "horizon_years": 5,
+  "reason": null,
+  "company": 0.05211116214059963,
+  "used": 0.04355558107029982,
+  "weight": 0.5,
+  "evidence_years": 0,
+  "sign_kept": false,
+  "company_basis": "CAGR de ingresos a 3 años"
+ },
+ "investment_intensity": {
+  "ratio": 0.9840002441258743,
+  "to_ocf": 0.20214855909608886,
+  "years": 3,
+  "capex": 6600464003.179307,
+  "da": 6707786956.946089,
+  "ocf": 32651551080.519238,
+  "reason": null,
+  "expansion": null
+ },
  "dcf_status": {
   "state": "no_aplica",
   "reason": "No aplica a bancos y aseguradoras: el balance es el producto (depósitos y préstamos)"
@@ -821,7 +840,7 @@
    "Solidez Financiera": {
     "conclusive": true,
     "applicable": true,
-    "coverage": 1,
+    "coverage": 1.0,
     "score": 14,
     "max": 20,
     "details": [
@@ -878,7 +897,7 @@
    "Rentabilidad": {
     "conclusive": true,
     "applicable": true,
-    "coverage": 1,
+    "coverage": 1.0,
     "score": 10,
     "max": 20,
     "details": [
@@ -915,32 +934,32 @@
    "Valoración": {
     "conclusive": true,
     "applicable": true,
-    "coverage": 1,
+    "coverage": 1.0,
     "score": 10,
     "max": 20,
     "details": [
-     "Prima: 0.87x frente a 0.64x justificado por su ROE (Ke 10.7% con β ajustada 1.17, g 2.5%)",
-     "En línea: 1.00x frente a 0.99x justificado por su ROTE (Ke 10.7% con β ajustada 1.17, g 2.5%)",
+     "Prima: 0.87x frente a 0.65x justificado por su ROE (Ke 10.6% con β ajustada 1.17, g 2.5%)",
+     "En línea: 1.00x frente a 1.00x justificado por su ROTE (Ke 10.6% con β ajustada 1.17, g 2.5%)",
      "media de 2 lecturas en una escala de −1 a +1 (P/B frente a ROE -0.50; P/TBV frente a ROTE +0.00): -0.25, que suma -1.0 puntos de un máximo de ±4",
-     "Muy barato (8.5x frente a 12.3x sector)",
+     "Atractivo (8.5x)",
      "P/E normalizado estable a mejor (9x → 8x)",
-     "media de 1 lectura en una escala de −1 a +1 (BPA (P/E, Forward P/E): P/E +1.00, Forward P/E +0.33 → +0.67): +0.67, que suma +1.3 puntos de un máximo de ±2",
+     "media de 1 lectura en una escala de −1 a +1 (BPA (P/E, Forward P/E): P/E +0.60, Forward P/E +0.33 → +0.47): +0.47, que suma +0.9 puntos de un máximo de ±2",
      "No aplica a bancos y aseguradoras: el balance es el producto (depósitos y préstamos) (no cuenta en la cobertura)"
     ],
     "adjustments": [
      {
       "metric": "P/B frente a ROE",
-      "value": "136% del P/B justificado (0.87x frente a 0.64x)",
+      "value": "134% del P/B justificado (0.87x frente a 0.65x)",
       "adjustment": -2,
-      "reason": "Prima: 0.87x frente a 0.64x justificado por su ROE (Ke 10.7% con β ajustada 1.17, g 2.5%)",
+      "reason": "Prima: 0.87x frente a 0.65x justificado por su ROE (Ke 10.6% con β ajustada 1.17, g 2.5%)",
       "severity": "moderate",
       "in_block": true
      },
      {
       "metric": "P/TBV frente a ROTE",
-      "value": "101% del P/TBV justificado (1.00x frente a 0.99x)",
+      "value": "100% del P/TBV justificado (1.00x frente a 1.00x)",
       "adjustment": 0,
-      "reason": "En línea: 1.00x frente a 0.99x justificado por su ROTE (Ke 10.7% con β ajustada 1.17, g 2.5%)",
+      "reason": "En línea: 1.00x frente a 1.00x justificado por su ROTE (Ke 10.6% con β ajustada 1.17, g 2.5%)",
       "severity": "ok",
       "in_block": true
      },
@@ -957,7 +976,7 @@
       "block_max": 4,
       "block_votes": {
        "P/B frente a ROE": -0.5,
-       "P/TBV frente a ROTE": 0
+       "P/TBV frente a ROTE": 0.0
       },
       "reason": "media de 2 lecturas en una escala de −1 a +1 (P/B frente a ROE -0.50; P/TBV frente a ROTE +0.00): -0.25, que suma -1.0 puntos de un máximo de ±4",
       "formula": "Bloque P/B y P/TBV: promedio de 2 lecturas reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = -0.25 × 4 (máximo con 2) = -1.0, redondeado a -1"
@@ -965,9 +984,9 @@
      {
       "metric": "P/E normalizado frente al sector",
       "value": "8.51x",
-      "adjustment": 5,
-      "reason": "Muy barato (8.5x frente a 12.3x sector)",
-      "severity": "excellent",
+      "adjustment": 3,
+      "reason": "Atractivo (8.5x)",
+      "severity": "good",
       "in_block": true,
       "normalized": true
      },
@@ -980,24 +999,36 @@
       "in_block": true,
       "implied_eps_growth": 0.12017505189847832,
       "eps_growth_3y": 0.1238491836037301,
+      "credited_eps_growth": 0.12017505189847832,
+      "implied_eps_growth_reported": 0.12400794554832228,
+      "eps_base_check": {
+       "checked": true,
+       "anomalous": false,
+       "base_fy": "FY2022",
+       "ratio": 0.9448833709556057,
+       "years": 6,
+       "value": null,
+       "window": null,
+       "reason": null
+      },
       "normalized": true
      },
      {
       "metric": "Bloque de múltiplos",
       "value": "2 múltiplos",
       "adjustment": 1,
-      "severity": "excellent",
-      "block_mean": 0.6666666666666666,
+      "severity": "good",
+      "block_mean": 0.4666666666666667,
       "block_members": [
        "P/E",
        "Forward P/E"
       ],
       "block_max": 2,
       "block_votes": {
-       "BPA (P/E, Forward P/E)": 0.6666666666666666
+       "BPA (P/E, Forward P/E)": 0.4666666666666667
       },
-      "reason": "media de 1 lectura en una escala de −1 a +1 (BPA (P/E, Forward P/E): P/E +1.00, Forward P/E +0.33 → +0.67): +0.67, que suma +1.3 puntos de un máximo de ±2",
-      "formula": "Bloque de múltiplos: promedio de 1 lectura reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = +0.67 × 2 (máximo con 1) = +1.3, redondeado a +1"
+      "reason": "media de 1 lectura en una escala de −1 a +1 (BPA (P/E, Forward P/E): P/E +0.60, Forward P/E +0.33 → +0.47): +0.47, que suma +0.9 puntos de un máximo de ±2",
+      "formula": "Bloque de múltiplos: promedio de 1 lectura reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = +0.47 × 2 (máximo con 1) = +0.9, redondeado a +1"
      },
      {
       "metric": "No aplica",
@@ -1054,7 +1085,7 @@
    "Crecimiento": {
     "conclusive": true,
     "applicable": true,
-    "coverage": 1,
+    "coverage": 1.0,
     "score": 14,
     "max": 20,
     "details": [
@@ -1106,7 +1137,7 @@
   "solidez": {
    "components": 1,
    "evaluated": 1,
-   "coverage": 1,
+   "coverage": 1.0,
    "missing": [],
    "missing_reasons": {},
    "not_applicable": {
@@ -1120,7 +1151,7 @@
   "rentabilidad": {
    "components": 2,
    "evaluated": 2,
-   "coverage": 1,
+   "coverage": 1.0,
    "missing": [],
    "missing_reasons": {},
    "not_applicable": {
@@ -1136,7 +1167,7 @@
   "valoracion": {
    "components": 3,
    "evaluated": 3,
-   "coverage": 1,
+   "coverage": 1.0,
    "missing": [],
    "missing_reasons": {},
    "not_applicable": {
@@ -1174,7 +1205,7 @@
   "crecimiento": {
    "components": 2,
    "evaluated": 2,
-   "coverage": 1,
+   "coverage": 1.0,
    "missing": [],
    "missing_reasons": {},
    "not_applicable": {
@@ -1227,14 +1258,16 @@
    {
     "category": "Rentabilidad",
     "reason": "ROE normalizado bajo — 10.5% (TTM, sin partidas no recurrentes)",
-    "detail": "El retorno sobre el patrimonio normalizado (10.5%, TTM, sin partidas no recurrentes) queda por debajo de 12.9% de sus pares del universo: el capital de los accionistas no se está remunerando con holgura."
+    "detail": "El retorno sobre el patrimonio normalizado (10.5%, TTM, sin partidas no recurrentes) queda por debajo de 13.0% de su industria: el capital de los accionistas no se está remunerando con holgura."
    }
   ],
-  "strengths": [
+  "strengths": [],
+  "balance": [],
+  "valuation": [
    {
     "category": "Valoración",
     "reason": "Cotiza con descuento — P/E normalizado 8.5x",
-    "detail": "Paga 8.5x beneficios normalizados frente a 12.3x de sus pares del universo (-31%): un descuento que puede ser oportunidad si los fundamentos acompañan, o reflejar un riesgo que el mercado ya percibe."
+    "detail": "Paga 8.5x beneficios normalizados frente a 10.9x de su industria (-22%): un descuento que puede ser oportunidad si los fundamentos acompañan, o reflejar un riesgo que el mercado ya percibe."
    }
   ]
  },
@@ -1615,24 +1648,24 @@
    "source": "fundamentals-timeseries (currencyCode)",
    "converted": true,
    "share_class": {
-    "factor": 4,
+    "factor": 4.0,
     "applied": true,
     "basis": "oficial",
     "official": {
-     "factor": 4,
+     "factor": 4.0,
      "share_class": "acciones ordinarias de 25 peniques",
      "depositary": "JPMorgan",
      "source": "20-F (2026-02-10): \"each representing four 25p ordinary shares\"; F-6EF (2025-11-20)",
      "verified": "2026-10-15"
     },
     "implied": 4.154033410307225,
-    "statement_shares": 13844768457,
-    "price_shares": 3332849568,
+    "statement_shares": 13844768457.0,
+    "price_shares": 3332849568.0,
     "statement_shares_date": "2025-12-31",
     "implied_check": {
      "implied": 4.154033410307225,
      "deviation": 0.03850835257680618,
-     "price_shares_in_statement_class": 13331398272,
+     "price_shares_in_statement_class": 13331398272.0,
      "note": "recompras/emisiones desde el cierre: las acciones de la cotización (13,331,398,272 en la clase de los estados) son un 3.7% menos que las del balance al 2025-12-31 (13,844,768,457); factor implícito 4.154 frente al oficial 4"
     }
    },
@@ -2032,7 +2065,7 @@
    "net_income_common": 9190080147.04911,
    "distributions": 1342083920.9242077,
    "equity_owners": 105180980686.57559,
-   "preferred": 0,
+   "preferred": 0.0,
    "at1": 17594666178.76321,
    "equity_common": 87586314507.81238,
    "tangible_common": 75774362343.2069,
@@ -2065,7 +2098,8 @@
     }
    ],
    "mixed_cagr": false,
-   "note": null
+   "note": null,
+   "history_break": null
   },
   "ebit": null,
   "price_history": {
@@ -2181,17 +2215,18 @@
      {
       "method": "P/B justificado (Gordon)",
       "kind": "intrínseco",
-      "upside": -0.2626908564248077,
-      "signal": -0.5253817128496154,
+      "upside": -0.25313501412066486,
+      "signal": -0.5062700282413297,
       "evaluable": true,
       "direction": "cara"
      },
      {
       "method": "P/B frente al sector",
       "kind": "relativo",
-      "upside": 0.9172450820593396,
-      "benchmark": 1.6663,
-      "signal": 1,
+      "upside": 0.43238216566985055,
+      "benchmark": 1.2449,
+      "anchor": "la industria «Grandes bancos»",
+      "signal": 0.8647643313397011,
       "evaluable": true,
       "direction": "barata"
      }
@@ -2227,6 +2262,10 @@
     "level": "alta",
     "status": "registrado",
     "reasons": []
+   },
+   "base": {
+    "level": "alta",
+    "reasons": []
    }
   },
   "reasons": [
@@ -2239,7 +2278,7 @@
   "base_rate_step": null
  },
  "quality": {
-  "score": 68,
+  "score": 71,
   "components": [
    {
     "category": "Solidez Financiera",
@@ -2281,7 +2320,7 @@
    "by_category": [
     {
      "category": "Solidez Financiera",
-     "surplus": 0,
+     "surplus": 0.0,
      "persistence": null,
      "years_ok": null,
      "rule": null,
@@ -2289,7 +2328,7 @@
     },
     {
      "category": "Rentabilidad",
-     "surplus": 0,
+     "surplus": 0.0,
      "persistence": 0.8,
      "years_ok": [
       "2022",
@@ -2297,13 +2336,13 @@
       "2024",
       "2025"
      ],
-     "rule": "margen neto positivo y al menos el 75% del último (21.2%)",
-     "anchor": "margen neto"
+     "rule": "ROE positivo y al menos el 75% del último (7.8%)",
+     "anchor": "ROE"
     },
     {
      "category": "Calidad de Ganancias",
-     "surplus": 3,
-     "persistence": 1,
+     "surplus": 3.0,
+     "persistence": 1.0,
      "years_ok": [
       "2021",
       "2022",
@@ -2316,7 +2355,7 @@
     },
     {
      "category": "Crecimiento",
-     "surplus": 0,
+     "surplus": 0.0,
      "persistence": 0.6,
      "years_ok": [
       "2023",
@@ -2333,60 +2372,127 @@
    "applied": false
   },
   "score_raw": 71,
-  "factor": 0.85,
-  "contracted": true,
+  "factor": null,
+  "contracted": false,
   "level_raw": "sólida"
  },
  "price_attractiveness": {
-  "components": [
-   {
-    "category": "Valoración",
-    "score": 10,
-    "max": 20,
-    "included": true
-   }
+  "rule": "L1",
+  "pe_ttm": 7.209414296901153,
+  "pe_basis": {
+   "status": "ok",
+   "ni_ttm": 10527287933.307365,
+   "ni_ttm_statement": 7843000000.0,
+   "statement_unit": "GBP",
+   "end": "2026-06-30",
+   "concept": "ifrs-full:ProfitLossAttributableToOwnersOfParent",
+   "method": "anual + acumulado 181 días − el del año anterior",
+   "discontinued": null,
+   "discontinued_concept": null,
+   "charges": null,
+   "diluted_shares": null,
+   "pending": null
+  },
+  "gics_sector": "Financieras",
+  "group": "Financieras",
+  "gics": "Financials",
+  "metric": "P/E",
+  "pe_reported_l1": 7.230949236301272,
+  "normalized": true,
+  "basis_notes": [
+   "sin partidas no recurrentes"
   ],
-  "categories_included": 1,
-  "categories_total": 1,
-  "partial": false,
-  "basis": null,
-  "excluded_categories": [],
-  "not_applicable_categories": [],
-  "low_coverage_categories": [],
-  "score_raw": 50,
-  "score": 50,
-  "factor": 0.5,
+  "warning": null,
+  "shares_note": null,
+  "cycle_peak": null,
+  "sector_median": 12.058512,
+  "median_scope": null,
+  "relative": 0.5978693139668604,
+  "percentile": 0.14310202950132478,
+  "as_of": "2026-11-07",
+  "universe_n": 514,
+  "score": 86,
+  "score_raw": 86,
+  "level": "atractivo",
+  "level_raw": "atractivo",
+  "factor": null,
   "confidence": "baja",
   "contracted": false,
-  "level": "razonable",
-  "level_raw": "razonable",
-  "border": null
+  "border": null,
+  "valuation_reading": {
+   "components": [
+    {
+     "category": "Valoración",
+     "score": 10,
+     "max": 20,
+     "included": true
+    }
+   ],
+   "categories_included": 1,
+   "categories_total": 1,
+   "partial": false,
+   "basis": null,
+   "excluded_categories": [],
+   "not_applicable_categories": [],
+   "low_coverage_categories": [],
+   "score_raw": 50,
+   "score": 50,
+   "factor": 0.5,
+   "confidence": "baja",
+   "contracted": false,
+   "level": "razonable",
+   "level_raw": "razonable",
+   "border": null
+  },
+  "reference_alarm": [],
+  "reason": null,
+  "cuts": [
+   0.839031,
+   1.190143
+  ]
  },
  "verdict": {
-  "text": "Calidad sólida · precio razonable",
-  "confidence_text": "(confianza baja: el P/B justificado y el P/B del sector discrepan)",
-  "full": "Calidad sólida · precio razonable (confianza baja: el P/B justificado y el P/B del sector discrepan)",
+  "text": "Calidad sólida · precio atractivo",
+  "confidence_text": "(consistencia mixta: el P/B justificado y el P/B del sector discrepan)",
+  "full": "Calidad sólida · precio atractivo (consistencia mixta: el P/B justificado y el P/B del sector discrepan)",
   "quality_level": "sólida",
-  "price_level": "razonable",
-  "confidence": "baja"
+  "price_level": "atractivo",
+  "price_level_raw": null,
+  "consistency": "mixta"
+ },
+ "consistency": {
+  "level": "mixta",
+  "tone": "warn",
+  "phrase": "el P/B justificado y el P/B del sector discrepan",
+  "methods": {
+   "level": "baja",
+   "text": "el P/B justificado y el P/B del sector discrepan"
+  },
+  "coverage": {
+   "level": "alta",
+   "text": "cobertura de datos completa"
+  },
+  "reasons": [
+   "el P/B justificado y el P/B del sector discrepan"
+  ]
  },
  "ke_sensitivity": {
   "status": "ok",
   "pp": 0.01,
   "base": {
-   "level": "razonable",
-   "score": 50,
-   "ke": 0.10730006414836427
+   "level": "atractivo",
+   "score": 86,
+   "ke": 0.10624706735578246
   },
   "minus": {
-   "level": "razonable",
-   "score": 52,
-   "ke": 0.09730006414836427
+   "level": "atractivo",
+   "score": 86,
+   "ke": 0.09624706735578246
   },
   "plus": {
-   "level": "razonable",
-   "score": 45,
-   "ke": 0.11730006414836426
+   "level": "atractivo",
+   "score": 86,
+   "ke": 0.11624706735578245
   },
   "dependent": false,
   "reason": null
@@ -2396,9 +2502,9 @@
   "items": [
    {
     "kind": "precio_implicito",
-    "text": "el ROTE sostenido bajara del 10.8% que descuenta el precio (obtiene un 10.7%)",
+    "text": "el ROTE sostenido bajara del 10.7% que descuenta el precio (obtiene un 10.7%)",
     "field": "archetype_metrics.implied.implied",
-    "value": 0.10767794957817059
+    "value": 0.10662011789086948
    }
   ]
  },
@@ -2489,7 +2595,7 @@
      "baseline_sessions": 90
     },
     "as_of": "2026-10-15",
-    "recent_mean": 5700600,
+    "recent_mean": 5700600.0,
     "baseline_mean": 4622622.222222222,
     "baseline_std": 1890565.8656958588,
     "zero_volume_sessions": 0
@@ -2526,6 +2632,35 @@
     "first_week": "2024-10-25",
     "last_week": "2026-10-09",
     "window_start": "2024-10-18"
+   },
+   "relative_strength_country": {
+    "status": "ok",
+    "value": -0.026956264614811154,
+    "params": {
+     "windows": [
+      "6M",
+      "1A"
+     ]
+    },
+    "as_of": "2026-10-15",
+    "windows": {
+     "6M": {
+      "status": "ok",
+      "company": -0.018459577743417332,
+      "sector": 0.012628171904834895,
+      "difference": -0.031087749648252228,
+      "start_date": "2026-04-16"
+     },
+     "1A": {
+      "status": "ok",
+      "company": 0.14819390262355236,
+      "sector": 0.17515016723836352,
+      "difference": -0.026956264614811154,
+      "start_date": "2025-10-15"
+     }
+    },
+    "country": "United Kingdom",
+    "etf": "EWU"
    }
   },
   "sector_etf": "XLF",
@@ -2542,7 +2677,7 @@
    "trough_date": "2026-03-20",
    "from_high": -0.20133053597766482,
    "high_date": "2026-07-27",
-   "years": 2
+   "years": 2.0
   },
   "market_volatility": {
    "status": "ok",
@@ -2623,6 +2758,74 @@
      "lang": "en"
     }
    ],
+   "featured": [
+    {
+     "date": "2026-10-15",
+     "source": "Yahoo",
+     "headline": "Barclays Says a Tesla-SpaceX Merger Could Be Announced Before December",
+     "url": "https://finnhub.io/api/news?id=138f3b3e3562816210c79dd79836445464635ca623ccb7f6217f091a1d538abe",
+     "summary": "A single Barclays research note sent two trillion-dollar stocks sliding and put a ticking clock on one of the biggest potential deals in corporate history, but neither Tesla nor SpaceX has signed anything, and the deadline is closing fast.",
+     "image": null,
+     "category": "company",
+     "datetime": "2026-10-15T11:35:27Z",
+     "lang": "en"
+    },
+    {
+     "date": "2026-10-15",
+     "source": "Yahoo",
+     "headline": "Barclays Expects Tesla-SpaceX Merger Announcement Ahead of December Shareholder Meeting",
+     "url": "https://finnhub.io/api/news?id=18103332e4494eb21e80ece53e2b33c58772d28bbfab0c87513c6e5187416310",
+     "summary": "Barclays analysts expect a potential merger between Tesla (NASDAQ:TSLA) and Elon Musk’s SpaceX (NASDAQ:SPCX) to be announced before the electric vehicle manufacturer’s 2026 annual shareholder meeting, with the proposed combination increasingly viewed as a way to consolidate…",
+     "image": null,
+     "category": "company",
+     "datetime": "2026-10-15T10:20:50Z",
+     "lang": "en"
+    },
+    {
+     "date": "2026-10-15",
+     "source": "Yahoo",
+     "headline": "What’s Really Driving Dell’s Boom? Barclays Has a Different Answer",
+     "url": "https://finnhub.io/api/news?id=ada3b18b2a1b21fc1c86704114a0e3479d8dd9299fdf035e3abcbe1cdbd1454e",
+     "summary": "Dell stock fell 11% after Barclays tied enterprise revenue to memory costs, a day after its CEO said the AI wave is just starting.",
+     "image": null,
+     "category": "company",
+     "datetime": "2026-10-15T06:52:53Z",
+     "lang": "en"
+    },
+    {
+     "date": "2026-10-14",
+     "source": "Yahoo",
+     "headline": "Barclays (LSE:BARC) Could Be 23% Undervalued Following Its India Expansion Plan",
+     "url": "https://finnhub.io/api/news?id=275f1b4bab58a7676d3e1a5d9e22a1676db7c4fb49fe20b00a10bd33e0b70016",
+     "summary": "Barclays (LSE:BARC) is reportedly preparing to restart equity capital market activity in India after nearly a decade, reintroducing IPO underwriting to its wholesale banking offering for clients there. For investors, that India push lands at an awkward time for the Barclays…",
+     "image": null,
+     "category": "company",
+     "datetime": "2026-10-14T22:12:10Z",
+     "lang": "en"
+    },
+    {
+     "date": "2026-10-14",
+     "source": "Yahoo",
+     "headline": "‘We See Current Valuation as Attractive’: Barclays Pulls the Trigger on 2 Overlooked Stocks",
+     "url": "https://finnhub.io/api/news?id=72f8c3731915cb5f6def6446387559a892dcf09546335c7fe377c34df3bad103",
+     "summary": "Wall Street’s investment opportunities extend well beyond the technology and financial sectors. The coatings industry, which serves everything from automotive manufacturing and construction to industrial machinery and infrastructure, is showing signs of improvement after years…",
+     "image": null,
+     "category": "company",
+     "datetime": "2026-10-14T17:30:00Z",
+     "lang": "en"
+    },
+    {
+     "date": "2026-10-08",
+     "source": "SeekingAlpha",
+     "headline": "Barclays Heading Into Q3: A Stronger Bank At A Discount",
+     "url": "https://finnhub.io/api/news?id=a7e153b858323e50b4add8c18dc9ed7b7cfd6db1dd83fe1836833b39fe28a290",
+     "summary": "Barclays is a Buy, as improved results, strong capital returns & disciplined cost control drive a compelling risk-adjusted return outlook. More on BCS stock.",
+     "image": "https://static.seekingalpha.com/cdn/s3/uploads/getty_images/2272869432/image_2272869432.jpg?io=getty-c-w1536",
+     "category": "company",
+     "datetime": "2026-10-08T08:11:43Z",
+     "lang": "en"
+    }
+   ],
    "total": 27,
    "days": 7,
    "reason": null
@@ -2677,7 +2880,7 @@
     "key": "relative_strength",
     "label": "Fuerza relativa frente a XLF (1 año)",
     "value": "+9.4 pp",
-    "text": "en 1 año, la acción +14.8% frente al +5.4% del ETF de su sector (XLF): se mueve con su sector",
+    "text": "en 1 año, la acción +14.8% frente al +5.4% del ETF de su sector (XLF) y al +17.5% del de su país (EWU): se mueve con su país",
     "field": "market_context.signals.relative_strength.value",
     "num": 0.09369445746816063
    },
@@ -2723,6 +2926,21 @@
   ],
   "source": "SEC EDGAR (submissions del emisor)",
   "reason": null
+ },
+ "sector_risks": {
+  "company": [],
+  "industry": [],
+  "not_measured": "concentración en un inquilino o en un producto: los datos públicos gratuitos no la traen estructurada (solo en la instancia XBRL con dimensiones), así que no se mide ni se estima",
+  "debt_due": {
+   "status": "sin_dato",
+   "fy_end": null,
+   "values": {},
+   "concepts": {},
+   "due_24m": null,
+   "reason": "sin balance anual en US GAAP (los vencimientos se leen de conceptos us-gaap)",
+   "source": "SEC EDGAR (companyfacts: vencimientos de la deuda del último balance anual)"
+  },
+  "note": "Aparte y sin puntuar: ni la calidad ni el precio los cuentan."
  },
  "price_change": {
   "status": "ok",
@@ -2923,17 +3141,17 @@
   ],
   "benchmark": {
    "profile": "sector",
-   "ref": "de sus pares del universo",
-   "column": "PARES",
-   "short": "pares",
-   "vs": "vs pares",
+   "ref": "de su industria",
+   "column": "INDUSTRIA",
+   "short": "industria",
+   "vs": "vs industria",
    "thresholds_key": "financials"
   },
   "readings": {
    "pe": {
     "label": "Descuento",
     "tone": "pos",
-    "text": "el mercado paga 8.5x beneficios, un -31% frente a la referencia de sus pares del universo (12.3x); un descuento que amerita revisar si responde a riesgos específicos o a una oportunidad."
+    "text": "el mercado paga 8.5x beneficios, un -22% frente a la referencia de su industria (10.9x); un descuento que amerita revisar si responde a riesgos específicos o a una oportunidad."
    },
    "roe": {
     "label": "Competitivo",
@@ -2995,7 +3213,7 @@
    "quality": {
     "title": "CALIDAD DEL NEGOCIO",
     "question": "¿es buena la empresa?",
-    "score": 68,
+    "score": 71,
     "level": "sólida",
     "tone": "pos",
     "note": null,
@@ -3004,13 +3222,13 @@
    "price": {
     "title": "ATRACTIVO DEL PRECIO",
     "question": "¿está cara hoy?",
-    "score": 50,
-    "raw": 50,
+    "score": 86,
+    "raw": 86,
     "contracted": false,
-    "level": "razonable",
-    "tone": "neu",
-    "note": null,
-    "note_short": null
+    "level": "atractivo",
+    "tone": "pos",
+    "note": "P/E 7.2x frente a 12.1x de su grupo.",
+    "note_short": "P/E 7.2x frente a 12.1x de su grupo"
    },
    "categories": [
     {
@@ -3021,10 +3239,10 @@
        "name": "Solidez financiera",
        "score": 14,
        "max": 20,
-       "pct": 70,
+       "pct": 70.0,
        "tone": "pos",
        "conclusive": true,
-       "coverage": 1,
+       "coverage": 1.0,
        "score_txt": "14 / 20",
        "applicable": true,
        "text": null
@@ -3034,10 +3252,10 @@
        "name": "Rentabilidad",
        "score": 10,
        "max": 20,
-       "pct": 50,
+       "pct": 50.0,
        "tone": "warn",
        "conclusive": true,
-       "coverage": 1,
+       "coverage": 1.0,
        "score_txt": "10 / 20",
        "applicable": true,
        "text": null
@@ -3047,7 +3265,7 @@
        "name": "Calidad de ganancias",
        "score": 19,
        "max": 20,
-       "pct": 95,
+       "pct": 95.0,
        "tone": "pos",
        "conclusive": true,
        "coverage": 0.6666666666666666,
@@ -3060,10 +3278,10 @@
        "name": "Crecimiento",
        "score": 14,
        "max": 20,
-       "pct": 70,
+       "pct": 70.0,
        "tone": "pos",
        "conclusive": true,
-       "coverage": 1,
+       "coverage": 1.0,
        "score_txt": "14 / 20",
        "applicable": true,
        "text": null
@@ -3078,10 +3296,10 @@
        "name": "Valoración",
        "score": 10,
        "max": 20,
-       "pct": 50,
+       "pct": 50.0,
        "tone": "warn",
        "conclusive": true,
-       "coverage": 1,
+       "coverage": 1.0,
        "score_txt": "10 / 20",
        "applicable": true,
        "text": null
@@ -3090,13 +3308,13 @@
     }
    ],
    "verdict": {
-    "text": "Calidad sólida · precio razonable",
-    "full": "Calidad sólida · precio razonable (confianza baja: el P/B justificado y el P/B del sector discrepan)",
-    "confidence_text": "(confianza baja: el P/B justificado y el P/B del sector discrepan)",
-    "confidence_tone": "neg"
+    "text": "Calidad sólida · precio atractivo",
+    "full": "Calidad sólida · precio atractivo (consistencia mixta: el P/B justificado y el P/B del sector discrepan)",
+    "confidence_text": "(consistencia mixta: el P/B justificado y el P/B del sector discrepan)",
+    "confidence_tone": "warn"
    },
    "confidence_reasons": [
-    "Los métodos de valoración se contradicen: uno ve la acción barata y otro cara."
+    "el P/B justificado y el P/B del sector discrepan."
    ],
    "coverage_notes": [],
    "kpis": [
@@ -3153,7 +3371,7 @@
     {
      "kind": "strength",
      "kicker": "FORTALEZA CLAVE",
-     "text": "Cotiza con descuento — P/E normalizado 8.5x",
+     "text": "Fundamentos sólidos en la mayoría de categorías",
      "tone": "pos"
     },
     {
@@ -3202,7 +3420,7 @@
      "pill": "Inferior",
      "tone": "warn",
      "delta": "-19%",
-     "bench": "vs pares 12.91%",
+     "bench": "vs industria 13.00%",
      "state": "con_dato"
     },
     {
@@ -3210,10 +3428,10 @@
      "label": "P/B",
      "value": "0.87",
      "unit": "x",
-     "pill": "Gran descuento",
+     "pill": "Descuento",
      "tone": "pos",
-     "delta": "-48%",
-     "bench": "vs pares 1.67x",
+     "delta": "-30%",
+     "bench": "vs industria 1.24x",
      "state": "con_dato"
     },
     {
@@ -3242,7 +3460,7 @@
    "exec_items": [
     {
      "label": "VEREDICTO",
-     "text": "Calidad sólida · precio razonable (confianza baja: el P/B justificado y el P/B del sector discrepan). Calidad 68/100 · precio 50/100."
+     "text": "Calidad sólida · precio atractivo (consistencia mixta: el P/B justificado y el P/B del sector discrepan). Calidad 71/100 · precio 86/100 (P/E 7.2x frente a 12.1x de su grupo)."
     },
     {
      "label": "CALIDAD DEL NEGOCIO",
@@ -3262,21 +3480,21 @@
     },
     {
      "label": "ATRACTIVO DEL PRECIO",
-     "text": "P/B frente a ROE: Prima: 0.87x frente a 0.64x justificado por su ROE (Ke 10.7% con β ajustada 1.17, g 2.5%). El mercado paga 8.5x beneficios, un -31% frente a la referencia de sus pares del universo (12.3x); un descuento que amerita revisar si responde a riesgos específicos o a una oportunidad."
+     "text": "P/B frente a ROE: Prima: 0.87x frente a 0.65x justificado por su ROE (Ke 10.6% con β ajustada 1.17, g 2.5%). El mercado paga 8.5x beneficios, un -22% frente a la referencia de su industria (10.9x); un descuento que amerita revisar si responde a riesgos específicos o a una oportunidad."
     },
     {
      "label": "CONTEXTO DE MERCADO",
      "text": "Cotiza en el 38% del rango de 52 semanas, en la zona media. Con beta 1.17, la acción se mueve en línea con el mercado."
     },
     {
-     "label": "CONFIANZA DEL VEREDICTO",
-     "text": "Baja: los métodos de valoración se contradicen: uno ve la acción barata y otro cara. No contrae el atractivo del precio; la calidad del negocio, sí, hacia 50 (de 71 a 68)."
+     "label": "CONSISTENCIA",
+     "text": "Mixta: el P/B justificado y el P/B del sector discrepan (no es una probabilidad de acierto)."
     }
    ],
    "composition": {
     "quality": {
      "title": "CALIDAD DEL NEGOCIO",
-     "score": 68,
+     "score": 71,
      "level": "sólida",
      "tone": "pos",
      "note": null,
@@ -3286,7 +3504,7 @@
        "kind": "bar",
        "value": 14,
        "max": 20,
-       "pct": 70,
+       "pct": 70.0,
        "tone": "pos"
       },
       {
@@ -3294,7 +3512,7 @@
        "kind": "bar",
        "value": 10,
        "max": 20,
-       "pct": 50,
+       "pct": 50.0,
        "tone": "warn"
       },
       {
@@ -3302,7 +3520,7 @@
        "kind": "bar",
        "value": 19,
        "max": 20,
-       "pct": 95,
+       "pct": 95.0,
        "tone": "pos"
       },
       {
@@ -3310,17 +3528,17 @@
        "kind": "bar",
        "value": 14,
        "max": 20,
-       "pct": 70,
+       "pct": 70.0,
        "tone": "pos"
       }
      ]
     },
     "price": {
      "title": "ATRACTIVO DEL PRECIO",
-     "score": 50,
-     "level": "razonable",
-     "tone": "neu",
-     "note": null,
+     "score": 86,
+     "level": "atractivo",
+     "tone": "pos",
+     "note": "P/E 7.2x (sin partidas no recurrentes) frente a la mediana de bancos y aseguradoras (12.1x), 0.60 veces: en el tercio más barato del universo.",
      "rows": [
       {
        "label": "Bloque P/B y P/TBV · 2 múltiplos",
@@ -3337,61 +3555,42 @@
      ],
      "signed_max": 6
     },
-    "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: Valoración (base 10/20 + bloque de múltiplos y DCF) reescalada a 100 y contraída hacia 50 según la confianza del veredicto: solo los limitadores que lo contradicen o lo vuelven incierto, no los que apuntan en su dirección."
+    "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura."
    },
    "alert_counts": {
     "red_flags": 0,
     "warnings": 1,
-    "strengths": 1,
+    "strengths": 0,
+    "balance": 0,
+    "valuation": 1,
     "unmeasured": null
    }
   },
   "confidence": {
-   "level": "baja",
-   "tone": "neg",
-   "verdict_text": "(confianza baja: el P/B justificado y el P/B del sector discrepan)",
+   "level": "mixta",
+   "tone": "warn",
+   "verdict_text": "(consistencia mixta: el P/B justificado y el P/B del sector discrepan)",
    "plain": [
-    "Los métodos de valoración se contradicen: uno ve la acción barata y otro cara."
+    "el P/B justificado y el P/B del sector discrepan."
    ],
    "dimensions": [
     {
      "key": "convergence",
-     "label": "Convergencia entre métodos",
-     "level": "Baja",
-     "text": "P/B justificado (Gordon) -26% (cara) · P/B frente al sector +92% (barata). Los métodos de valoración se contradicen: uno ve la acción barata y otro cara."
+     "label": "Coincidencia de métodos",
+     "level": "Discrepan",
+     "text": "P/B justificado (Gordon) -25% (cara) · P/B frente al sector +43% (barata). Los métodos de valoración se contradicen: uno ve la acción barata y otro cara.",
+     "ok": false
     },
     {
      "key": "coverage",
      "label": "Cobertura de datos",
-     "level": "Alta",
-     "text": "Sin incidencias."
-    },
-    {
-     "key": "source",
-     "label": "Calidad de fuente",
-     "level": "Alta",
-     "text": "Sin incidencias."
-    },
-    {
-     "key": "stability",
-     "label": "Estabilidad del arquetipo",
-     "level": "Alta",
-     "text": "Sin incidencias."
+     "level": "Completa",
+     "text": "Sin incidencias.",
+     "ok": true
     }
    ],
-   "reasons": [
-    {
-     "dimension": "convergencia",
-     "level": "baja",
-     "text": "Los métodos de valoración se contradicen: uno ve la acción barata y otro cara."
-    },
-    {
-     "dimension": "techo",
-     "level": "baja",
-     "text": null
-    }
-   ],
-   "summary": "Confianza del veredicto: baja (por sus dimensiones sería media; la limita: la más baja manda —convergencia baja—). Contrae también la calidad del negocio hacia 50: de 71 a 68."
+   "reasons": [],
+   "summary": "Consistencia: mixta (el P/B justificado y el P/B del sector discrepan). No es una probabilidad de acierto."
   },
   "annex": {
    "title": "Detalle técnico para auditoría",
@@ -3401,7 +3600,7 @@
      "text": "Arquetipo FINANCIAL (regla industria_banco): Clasificada como FINANCIAL por industria Bancos diversificados (banco)"
     },
     {
-     "label": "Confianza · Convergencia entre métodos (baja)",
+     "label": "Consistencia · Coincidencia de métodos (baja)",
      "text": "direcciones opuestas: P/B frente al sector dice barata y P/B justificado (Gordon) dice cara."
     },
     {
@@ -3426,7 +3625,7 @@
     },
     {
      "label": "Fórmula del bloque",
-     "text": "Bloque de múltiplos: promedio de 1 lectura reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = +0.67 × 2 (máximo con 1) = +1.3, redondeado a +1."
+     "text": "Bloque de múltiplos: promedio de 1 lectura reescaladas a ±1 (los múltiplos del BPA, su media: los mueve el mismo BPA) = +0.47 × 2 (máximo con 1) = +0.9, redondeado a +1."
     },
     {
      "label": "Nombres originales de las fuentes",
@@ -3476,7 +3675,7 @@
       "key": "relative_strength",
       "label": "Fuerza relativa frente a XLF (1 año)",
       "value": "+9.4 pp",
-      "text": "en 1 año, la acción +14.8% frente al +5.4% del ETF de su sector (XLF): se mueve con su sector.",
+      "text": "en 1 año, la acción +14.8% frente al +5.4% del ETF de su sector (XLF) y al +17.5% del de su país (EWU): se mueve con su país.",
       "tone": "neu"
      },
      {
@@ -3527,11 +3726,11 @@
     "source": "Serie diaria de Yahoo Finance (cierre ajustado por dividendos y splits, 2 años), S&P 500 y ETF del sector (XLF)."
    },
    "valuation": {
-    "intro": "El mercado paga 8.5x beneficios, un -31% frente a la referencia de sus pares del universo (12.3x); un descuento que amerita revisar si responde a riesgos específicos o a una oportunidad.",
+    "intro": "El mercado paga 8.5x beneficios, un -22% frente a la referencia de su industria (10.9x); un descuento que amerita revisar si responde a riesgos específicos o a una oportunidad.",
     "columns": [
      "MÚLTIPLO",
      "EMPRESA",
-     "PARES",
+     "INDUSTRIA",
      "BRECHA",
      "LECTURA"
     ],
@@ -3540,12 +3739,12 @@
       "key": "pe",
       "label": "P/E (TTM)",
       "value": "8.54x",
-      "bench": "12.32x",
-      "gap": "-31%",
+      "bench": "10.91x",
+      "gap": "-22%",
       "reading": "Descuento",
       "tone": "pos",
       "state": "con_dato",
-      "text": "P/E (TTM) de 8.5x frente a 12.3x de sus pares del universo (-31%): descuento."
+      "text": "P/E (TTM) de 8.5x frente a 10.9x de su industria (-22%): descuento."
      },
      {
       "key": "forward_pe",
@@ -3562,12 +3761,12 @@
       "key": "pb",
       "label": "P/B",
       "value": "0.87x",
-      "bench": "1.67x",
-      "gap": "-48%",
-      "reading": "Descuento profundo",
+      "bench": "1.24x",
+      "gap": "-30%",
+      "reading": "Descuento",
       "tone": "pos",
       "state": "con_dato",
-      "text": "P/B de 0.9x frente a 1.7x de sus pares del universo (-48%): descuento profundo."
+      "text": "P/B de 0.9x frente a 1.2x de su industria (-30%): descuento."
      },
      {
       "key": "ps",
@@ -3649,34 +3848,34 @@
      {
       "key": "p_b_frente_a_roe",
       "label": "P/B frente a ROE",
-      "value": "136% del P/B justificado (0.87x frente a 0.64x)",
+      "value": "134% del P/B justificado (0.87x frente a 0.65x)",
       "bench": "—",
       "gap": "—",
       "reading": "Exigente",
       "tone": "warn",
       "state": "con_dato",
-      "text": "Prima: 0.87x frente a 0.64x justificado por su ROE (Ke 10.7% con β ajustada 1.17, g 2.5%)"
+      "text": "Prima: 0.87x frente a 0.65x justificado por su ROE (Ke 10.6% con β ajustada 1.17, g 2.5%)"
      },
      {
       "key": "p_tbv_frente_a_rote",
       "label": "P/TBV frente a ROTE",
-      "value": "101% del P/TBV justificado (1.00x frente a 0.99x)",
+      "value": "100% del P/TBV justificado (1.00x frente a 1.00x)",
       "bench": "—",
       "gap": "—",
       "reading": "En línea",
       "tone": "neu",
       "state": "con_dato",
-      "text": "En línea: 1.00x frente a 0.99x justificado por su ROTE (Ke 10.7% con β ajustada 1.17, g 2.5%)"
+      "text": "En línea: 1.00x frente a 1.00x justificado por su ROTE (Ke 10.6% con β ajustada 1.17, g 2.5%)"
      }
     ],
     "market_note": null,
-    "reference_note": "Referencia: mediana de 19 pares del universo de la industria «Grandes bancos» (Yahoo Finance, 28 de octubre de 2026); Damodaran clasifica a la empresa en esa industria (nombre legal (ADR)). No el agregado de A. Damodaran (Europa, 113 empresas): sin sus cifras al 5 de enero de 2026: los últimos doce meses en SEC EDGAR a esa fecha acaban el 30 de junio de 2025 (189 días antes): no son los del conjunto. Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
+    "reference_note": "Referencia: industria «Grandes bancos»; Damodaran clasifica a la empresa en esa industria (nombre legal (ADR)), Europa, 113 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Agregado publicado de la industria, con Barclays dentro: pesa el 3 % de su capitalización (estimado con la de hoy, sin sus cifras al 5 de enero de 2026: los últimos doce meses en SEC EDGAR a esa fecha acaban el 30 de junio de 2025 (189 días antes): no son los del conjunto), por debajo del 5 %. Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
     "normalization_note": "Beneficio TTM (4 trimestres): reportado $9.19B, normalizado $9.22B (no recurrentes 0.3% del beneficio; cargos especiales (deterioros, litigios, reestructuración) (explicita, confianza alta), recurrente (4 de los últimos 4 ejercicios): solo el exceso sobre su promedio, −$31.45M netos). El score usa el beneficio normalizado.",
     "intrinsic": {
      "intro": "DCF (FCFF): no aplica a bancos y aseguradoras: el balance es el producto (depósitos y préstamos). Se valora sobre libros y retornos.",
      "rows": [
       {
-       "key": "price",
+       "key": "share_price",
        "label": "Precio de mercado",
        "value": "$22.84",
        "bench": null,
@@ -3709,12 +3908,12 @@
      "title": "ROTE que descuenta el precio",
      "lines": [
       {
-       "text": "El precio descuenta un ROTE sostenido del 10.8%; el banco obtiene un 10.7% en el último ejercicio (ajustado por AT1); 10.1% de media en 4 ejercicios.",
+       "text": "El precio descuenta un ROTE sostenido del 10.7%; el banco obtiene un 10.7% en el último ejercicio (ajustado por AT1); 10.1% de media en 4 ejercicios.",
        "label": "En precio",
        "tone": "neu"
       },
       {
-       "text": "Sensibilidad (±2 pp): se justificaría con un ROTE del 8.7%, 0.75 veces el valor contable tangible; con un ROTE del 12.7%, 1.23 veces el valor contable tangible (hoy cotiza a 1.00).",
+       "text": "Sensibilidad (±2 pp): se justificaría con un ROTE del 8.7%, 0.76 veces el valor contable tangible; con un ROTE del 12.7%, 1.25 veces el valor contable tangible (hoy cotiza a 1.00).",
        "label": null,
        "tone": "neu"
       }
@@ -3725,11 +3924,11 @@
     "premortem": {
      "title": "Esta lectura sería errónea si…",
      "items": [
-      "el ROTE sostenido bajara del 10.8% que descuenta el precio (obtiene un 10.7%)"
+      "el ROTE sostenido bajara del 10.7% que descuenta el precio (obtiene un 10.7%)"
      ],
      "note": "Condiciones que invalidarían la lectura de hoy, con la cifra que las mide: no son previsiones."
     },
-    "ke_note": "Ke 10.73% = Rf 5.29% [Tesoro de EE. UU. a 10 años del par Rf–ERP de Damodaran, 1 de octubre de 2026] + β ajustada 1.17 [bruta 1.25, propia, 2 años semanales frente al S&P 500, Blume] × prima implícita 4.20% + prima de riesgo país 0.55 pp (Reino Unido, sede operativa; Damodaran, enero de 2026). Bancos y aseguradoras no usan WACC: se valoran por P/B justificado con Ke.",
+    "ke_note": "Ke 10.62% = Rf 4.94% [Tesoro de EE. UU. a 10 años del par Rf–ERP de Damodaran, 1 de noviembre de 2026] + β ajustada 1.17 [bruta 1.25, propia, 2 años semanales frente al S&P 500, Blume] × prima implícita 4.41% + prima de riesgo país 0.55 pp (Reino Unido, sede operativa; Damodaran, enero de 2026). Bancos y aseguradoras no usan WACC: se valoran por P/B justificado con Ke.",
     "wacc_note": null,
     "wacc_breakdown": null,
     "sensitivity": null
@@ -3739,7 +3938,7 @@
     "columns": [
      "MÉTRICA",
      "EMPRESA",
-     "PARES",
+     "INDUSTRIA",
      "BRECHA",
      "LECTURA"
     ],
@@ -3748,12 +3947,12 @@
       "key": "roe",
       "label": "ROE",
       "value": "10.49%",
-      "bench": "12.91%",
+      "bench": "13.00%",
       "gap": "-19%",
       "reading": "Inferior",
       "tone": "warn",
       "state": "con_dato",
-      "text": "ROE (TTM) de 10.5% frente a 12.9% de sus pares del universo (-19%): inferior."
+      "text": "ROE (TTM) de 10.5% frente a 13.0% de su industria (-19%): inferior."
      },
      {
       "key": "roa",
@@ -4151,7 +4350,7 @@
        "name": "Solidez financiera",
        "score": 14,
        "max": 20,
-       "pct": 70,
+       "pct": 70.0,
        "tone": "pos",
        "conclusive": true,
        "score_txt": "14 / 20",
@@ -4183,7 +4382,7 @@
        "name": "Rentabilidad",
        "score": 10,
        "max": 20,
-       "pct": 50,
+       "pct": 50.0,
        "tone": "warn",
        "conclusive": true,
        "score_txt": "10 / 20",
@@ -4224,7 +4423,7 @@
        "name": "Valoración",
        "score": 10,
        "max": 20,
-       "pct": 50,
+       "pct": 50.0,
        "tone": "warn",
        "conclusive": true,
        "score_txt": "10 / 20",
@@ -4233,19 +4432,19 @@
        "items": [
         {
          "metric": "P/B frente a ROE",
-         "value": "136% del P/B justificado (0.87x frente a 0.64x)",
+         "value": "134% del P/B justificado (0.87x frente a 0.65x)",
          "sign": "(-2)",
          "tone": "neu",
-         "reason": "Prima: 0.87x frente a 0.64x justificado por su ROE (Ke 10.7% con β ajustada 1.17, g 2.5%)",
+         "reason": "Prima: 0.87x frente a 0.65x justificado por su ROE (Ke 10.6% con β ajustada 1.17, g 2.5%)",
          "in_block": true,
          "state": "con_dato"
         },
         {
          "metric": "P/TBV frente a ROTE",
-         "value": "101% del P/TBV justificado (1.00x frente a 0.99x)",
+         "value": "100% del P/TBV justificado (1.00x frente a 1.00x)",
          "sign": "(0)",
          "tone": "neu",
-         "reason": "En línea: 1.00x frente a 0.99x justificado por su ROTE (Ke 10.7% con β ajustada 1.17, g 2.5%)",
+         "reason": "En línea: 1.00x frente a 1.00x justificado por su ROTE (Ke 10.6% con β ajustada 1.17, g 2.5%)",
          "in_block": true,
          "state": "con_dato"
         },
@@ -4261,9 +4460,9 @@
         {
          "metric": "P/E normalizado frente al sector",
          "value": "8.51x",
-         "sign": "(+5)",
+         "sign": "(+3)",
          "tone": "neu",
-         "reason": "Muy barato (8.5x frente a 12.3x sector)",
+         "reason": "Atractivo (8.5x)",
          "in_block": true,
          "state": "con_dato"
         },
@@ -4281,7 +4480,7 @@
          "value": "2 múltiplos",
          "sign": "+1",
          "tone": "pos",
-         "reason": "media de 1 lectura en una escala de −1 a +1 (BPA (P/E, Forward P/E): P/E +1.00, Forward P/E +0.33 → +0.67): +0.67, que suma +1.3 puntos de un máximo de ±2.",
+         "reason": "media de 1 lectura en una escala de −1 a +1 (BPA (P/E, Forward P/E): P/E +0.60, Forward P/E +0.33 → +0.47): +0.47, que suma +0.9 puntos de un máximo de ±2.",
          "in_block": false,
          "state": "con_dato"
         },
@@ -4301,7 +4500,7 @@
        "name": "Calidad de ganancias",
        "score": 19,
        "max": 20,
-       "pct": 95,
+       "pct": 95.0,
        "tone": "pos",
        "conclusive": true,
        "score_txt": "19 / 20",
@@ -4351,7 +4550,7 @@
        "name": "Crecimiento",
        "score": 14,
        "max": 20,
-       "pct": 70,
+       "pct": 70.0,
        "tone": "pos",
        "conclusive": true,
        "score_txt": "14 / 20",
@@ -4402,13 +4601,15 @@
     "counts": {
      "red_flags": 0,
      "warnings": 1,
-     "strengths": 1,
+     "strengths": 0,
+     "balance": 0,
+     "valuation": 1,
      "unmeasured": null
     },
     "groups": [
      {
       "key": "red_flags",
-      "title": "Riesgos",
+      "title": "Alerta roja",
       "tone": "neg",
       "items": []
      },
@@ -4420,7 +4621,7 @@
        {
         "category": "Rentabilidad",
         "reason": "ROE normalizado bajo — 10.5% (TTM, sin partidas no recurrentes)",
-        "detail": "El retorno sobre el patrimonio normalizado (10.5%, TTM, sin partidas no recurrentes) queda por debajo de 12.9% de sus pares del universo: el capital de los accionistas no se está remunerando con holgura."
+        "detail": "El retorno sobre el patrimonio normalizado (10.5%, TTM, sin partidas no recurrentes) queda por debajo de 13.0% de su industria: el capital de los accionistas no se está remunerando con holgura."
        }
       ]
      },
@@ -4428,15 +4629,32 @@
       "key": "strengths",
       "title": "Fortalezas",
       "tone": "pos",
+      "items": []
+     },
+     {
+      "key": "balance",
+      "title": "Estado del balance",
+      "tone": "neu",
+      "items": []
+     },
+     {
+      "key": "valuation",
+      "title": "Lectura de valoración",
+      "tone": "neu",
       "items": [
        {
         "category": "Valoración",
         "reason": "Cotiza con descuento — P/E normalizado 8.5x",
-        "detail": "Paga 8.5x beneficios normalizados frente a 12.3x de sus pares del universo (-31%): un descuento que puede ser oportunidad si los fundamentos acompañan, o reflejar un riesgo que el mercado ya percibe."
+        "detail": "Paga 8.5x beneficios normalizados frente a 10.9x de su industria (-22%): un descuento que puede ser oportunidad si los fundamentos acompañan, o reflejar un riesgo que el mercado ya percibe."
        }
       ]
      }
     ]
+   },
+   "sector_risks": {
+    "items": [],
+    "note": "Aparte y sin puntuar: ni la calidad ni el precio los cuentan.",
+    "not_measured": "concentración en un inquilino o en un producto: los datos públicos gratuitos no la traen estructurada (solo en la instancia XBRL con dimensiones), así que no se mide ni se estima"
    }
   },
   "methodology": {
@@ -4445,37 +4663,37 @@
    ],
    "models_text": "los modelos de P/B y P/TBV justificados por el retorno (Gordon)",
    "ratios_text": "ratios TTM y del último ejercicio",
-   "contraction_text": "contraída hacia 50 según la confianza del veredicto: solo los limitadores que lo contradicen o lo vuelven incierto, no los que apuntan en su dirección"
+   "contraction_text": "el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura"
   },
   "pe_label": "P/E (TTM)",
   "tooltips": {
    "pe": {
     "tables": [
      {
-      "title": "Frente a la referencia de sus pares del universo (12.3x)",
+      "title": "Frente a la referencia de su industria (10.9x)",
       "bands": [
        {
-        "range": "≤ 8.0x",
+        "range": "≤ 7.1x",
         "label": "Descuento profundo",
         "tone": "pos"
        },
        {
-        "range": "8.0x – 11.1x",
+        "range": "7.1x – 9.8x",
         "label": "Descuento",
         "tone": "pos"
        },
        {
-        "range": "11.1x – 13.6x",
+        "range": "9.8x – 12.0x",
         "label": "En línea",
         "tone": "neu"
        },
        {
-        "range": "13.6x – 16.6x",
+        "range": "12.0x – 14.7x",
         "label": "Prima moderada",
         "tone": "warn"
        },
        {
-        "range": "≥ 16.6x",
+        "range": "≥ 14.7x",
         "label": "Prima elevada",
         "tone": "neg"
        }
@@ -4487,30 +4705,30 @@
    "pb": {
     "tables": [
      {
-      "title": "Frente a la referencia de sus pares del universo (1.7x)",
+      "title": "Frente a la referencia de su industria (1.2x)",
       "bands": [
        {
-        "range": "≤ 1.1x",
+        "range": "≤ 0.8x",
         "label": "Descuento profundo",
         "tone": "pos"
        },
        {
-        "range": "1.1x – 1.5x",
+        "range": "0.8x – 1.1x",
         "label": "Descuento",
         "tone": "pos"
        },
        {
-        "range": "1.5x – 1.8x",
+        "range": "1.1x – 1.4x",
         "label": "En línea",
         "tone": "neu"
        },
        {
-        "range": "1.8x – 2.2x",
+        "range": "1.4x – 1.7x",
         "label": "Prima moderada",
         "tone": "warn"
        },
        {
-        "range": "≥ 2.2x",
+        "range": "≥ 1.7x",
         "label": "Prima elevada",
         "tone": "neg"
        }
@@ -4538,30 +4756,30 @@
    "roe": {
     "tables": [
      {
-      "title": "Frente a la referencia de sus pares del universo (12.9%)",
+      "title": "Frente a la referencia de su industria (13%)",
       "bands": [
        {
-        "range": "≥ 17.4%",
+        "range": "≥ 17.5%",
         "label": "Muy superior",
         "tone": "pos"
        },
        {
-        "range": "14.2% – 17.4%",
+        "range": "14.3% – 17.5%",
         "label": "Superior",
         "tone": "pos"
        },
        {
-        "range": "11.6% – 14.2%",
+        "range": "11.7% – 14.3%",
         "label": "En línea",
         "tone": "neu"
        },
        {
-        "range": "8.4% – 11.6%",
+        "range": "8.5% – 11.7%",
         "label": "Inferior",
         "tone": "warn"
        },
        {
-        "range": "< 8.4%",
+        "range": "< 8.5%",
         "label": "Muy inferior",
         "tone": "neg"
        }
@@ -4937,7 +5155,7 @@
    "price": {
     "tables": [
      {
-      "title": "Atractivo del precio (0–100, contraído por la confianza)",
+      "title": "Atractivo del precio (0–100, regla L1 por tercios)",
       "bands": [
        {
         "range": "≥ 65",
@@ -5041,13 +5259,13 @@
       "higher_is_better": false,
       "fmt": "mult",
       "state": "con_dato",
-      "text": "P/E (TTM) de 8.5x frente a 12.3x de sus pares del universo (-31%): descuento.",
+      "text": "P/E (TTM) de 8.5x frente a 10.9x de su industria (-22%): descuento.",
       "value": 8.537582191683569,
       "value_txt": "8.54x",
-      "bench": 12.3184,
-      "bench_txt": "12.32x",
-      "gap_txt": "-31%",
-      "gap_pct": -30.69244226779802,
+      "bench": 10.9066,
+      "bench_txt": "10.91x",
+      "gap_txt": "-22%",
+      "gap_pct": -21.720956194565037,
       "reading": "Descuento",
       "tone": "pos",
       "role": "block"
@@ -5075,14 +5293,14 @@
       "higher_is_better": false,
       "fmt": "mult",
       "state": "con_dato",
-      "text": "P/B de 0.9x frente a 1.7x de sus pares del universo (-48%): descuento profundo.",
+      "text": "P/B de 0.9x frente a 1.2x de su industria (-30%): descuento.",
       "value": 0.8691116308459657,
       "value_txt": "0.87x",
-      "bench": 1.6663,
-      "bench_txt": "1.67x",
-      "gap_txt": "-48%",
-      "gap_pct": -47.84182735125933,
-      "reading": "Descuento profundo",
+      "bench": 1.2449,
+      "bench_txt": "1.24x",
+      "gap_txt": "-30%",
+      "gap_pct": -30.186229348062838,
+      "reading": "Descuento",
       "tone": "pos",
       "role": "informative"
      },
@@ -5127,28 +5345,28 @@
      "label": "Bloque de múltiplos",
      "sign": "+1",
      "tone": "pos",
-     "reason": "media de 1 lectura en una escala de −1 a +1 (BPA (P/E, Forward P/E): P/E +1.00, Forward P/E +0.33 → +0.67): +0.67, que suma +1.3 puntos de un máximo de ±2."
+     "reason": "media de 1 lectura en una escala de −1 a +1 (BPA (P/E, Forward P/E): P/E +0.60, Forward P/E +0.33 → +0.47): +0.47, que suma +0.9 puntos de un máximo de ±2."
     },
     "scored": [
      {
       "key": "p_b_frente_a_roe",
       "label": "P/B frente a ROE",
       "in_block": true,
-      "value_txt": "136% del P/B justificado (0.87x frente a 0.64x)",
+      "value_txt": "134% del P/B justificado (0.87x frente a 0.65x)",
       "reading": "Exigente",
       "tone": "warn",
       "sign": "(-2)",
-      "reason": "Prima: 0.87x frente a 0.64x justificado por su ROE (Ke 10.7% con β ajustada 1.17, g 2.5%)"
+      "reason": "Prima: 0.87x frente a 0.65x justificado por su ROE (Ke 10.6% con β ajustada 1.17, g 2.5%)"
      },
      {
       "key": "p_tbv_frente_a_rote",
       "label": "P/TBV frente a ROTE",
       "in_block": true,
-      "value_txt": "101% del P/TBV justificado (1.00x frente a 0.99x)",
+      "value_txt": "100% del P/TBV justificado (1.00x frente a 1.00x)",
       "reading": "En línea",
       "tone": "neu",
       "sign": "(0)",
-      "reason": "En línea: 1.00x frente a 0.99x justificado por su ROTE (Ke 10.7% con β ajustada 1.17, g 2.5%)"
+      "reason": "En línea: 1.00x frente a 1.00x justificado por su ROTE (Ke 10.6% con β ajustada 1.17, g 2.5%)"
      }
     ],
     "dcf_composition": null
@@ -5161,13 +5379,13 @@
       "higher_is_better": true,
       "fmt": "pct",
       "state": "con_dato",
-      "text": "ROE (TTM) de 10.5% frente a 12.9% de sus pares del universo (-19%): inferior.",
+      "text": "ROE (TTM) de 10.5% frente a 13.0% de su industria (-19%): inferior.",
       "value": 0.10492598299965446,
       "value_txt": "10.49%",
-      "bench": 0.1291,
-      "bench_txt": "12.91%",
+      "bench": 0.13,
+      "bench_txt": "13.00%",
       "gap_txt": "-19%",
-      "gap_pct": -18.725032533187864,
+      "gap_pct": -19.28770538488119,
       "reading": "Inferior",
       "tone": "warn"
      },
@@ -5343,7 +5561,7 @@
      "state": "con_dato",
      "amount": 41271644784.19688,
      "amount_txt": "$41.27B",
-     "pct_of_revenue": 100,
+     "pct_of_revenue": 100.0,
      "pct_txt": "100.0%",
      "sign": "pos"
     },
@@ -5480,30 +5698,30 @@
         "label": "P/E (TTM)",
         "fmt": "mult",
         "value": 8.537582191683569,
-        "bench": 12.3184,
+        "bench": 10.9066,
         "value_txt": "8.54x",
-        "bench_txt": "12.32x",
-        "gap_pct": -30.69244226779802,
-        "gap_txt": "-31%",
+        "bench_txt": "10.91x",
+        "gap_pct": -21.720956194565037,
+        "gap_txt": "-22%",
         "higher_is_better": false,
         "reading": "Descuento",
         "tone": "pos",
-        "text": "P/E (TTM) de 8.5x frente a 12.3x de sus pares del universo (-31%): descuento."
+        "text": "P/E (TTM) de 8.5x frente a 10.9x de su industria (-22%): descuento."
        },
        {
         "key": "pb",
         "label": "P/B",
         "fmt": "mult",
         "value": 0.8691116308459657,
-        "bench": 1.6663,
+        "bench": 1.2449,
         "value_txt": "0.87x",
-        "bench_txt": "1.67x",
-        "gap_pct": -47.84182735125933,
-        "gap_txt": "-48%",
+        "bench_txt": "1.24x",
+        "gap_pct": -30.186229348062838,
+        "gap_txt": "-30%",
         "higher_is_better": false,
-        "reading": "Descuento profundo",
+        "reading": "Descuento",
         "tone": "pos",
-        "text": "P/B de 0.9x frente a 1.7x de sus pares del universo (-48%): descuento profundo."
+        "text": "P/B de 0.9x frente a 1.2x de su industria (-30%): descuento."
        }
       ]
      },
@@ -5515,23 +5733,23 @@
         "label": "ROE",
         "fmt": "pct",
         "value": 0.10492598299965446,
-        "bench": 0.1291,
+        "bench": 0.13,
         "value_txt": "10.49%",
-        "bench_txt": "12.91%",
-        "gap_pct": -18.725032533187864,
+        "bench_txt": "13.00%",
+        "gap_pct": -19.28770538488119,
         "gap_txt": "-19%",
         "higher_is_better": true,
         "reading": "Inferior",
         "tone": "warn",
-        "text": "ROE de 10.5% frente a 12.9% de sus pares del universo (-19%): inferior."
+        "text": "ROE de 10.5% frente a 13.0% de su industria (-19%): inferior."
        }
       ]
      }
     ],
     "better": 2,
     "total": 3,
-    "ref": "de sus pares del universo",
-    "note": "Referencia: mediana de 19 pares del universo de la industria «Grandes bancos» (Yahoo Finance, 28 de octubre de 2026); Damodaran clasifica a la empresa en esa industria (nombre legal (ADR)). No el agregado de A. Damodaran (Europa, 113 empresas): sin sus cifras al 5 de enero de 2026: los últimos doce meses en SEC EDGAR a esa fecha acaban el 30 de junio de 2025 (189 días antes): no son los del conjunto. Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
+    "ref": "de su industria",
+    "note": "Referencia: industria «Grandes bancos»; Damodaran clasifica a la empresa en esa industria (nombre legal (ADR)), Europa, 113 empresas (A. Damodaran, NYU Stern, 2026-01-05): agregados de la industria, no medianas. Agregado publicado de la industria, con Barclays dentro: pesa el 3 % de su capitalización (estimado con la de hoy, sin sus cifras al 5 de enero de 2026: los últimos doce meses en SEC EDGAR a esa fecha acaban el 30 de junio de 2025 (189 días antes): no son los del conjunto), por debajo del 5 %. Sin referencia con fuente: Forward P/E, PEG, P/FCF, FCF yield, ROA.",
     "market_note": null
    }
   },
@@ -5815,6 +6033,68 @@
      "url": "https://finnhub.io/api/news?id=548fea4558fb6b5713a68b630efb5aa8953540de191e5d3f866fcfb92cf3a689",
      "summary": "The move would restore a product to the bank’s wholesale banking business.",
      "image": null,
+     "lang": "en"
+    }
+   ],
+   "news_featured": [
+    {
+     "date": "2026-10-15",
+     "datetime": "2026-10-15T11:35:27Z",
+     "source": "Yahoo",
+     "headline": "Barclays Says a Tesla-SpaceX Merger Could Be Announced Before December",
+     "url": "https://finnhub.io/api/news?id=138f3b3e3562816210c79dd79836445464635ca623ccb7f6217f091a1d538abe",
+     "summary": "A single Barclays research note sent two trillion-dollar stocks sliding and put a ticking clock on one of the biggest potential deals in corporate history, but neither Tesla nor SpaceX has signed anything, and the deadline is closing fast.",
+     "image": null,
+     "lang": "en"
+    },
+    {
+     "date": "2026-10-15",
+     "datetime": "2026-10-15T10:20:50Z",
+     "source": "Yahoo",
+     "headline": "Barclays Expects Tesla-SpaceX Merger Announcement Ahead of December Shareholder Meeting",
+     "url": "https://finnhub.io/api/news?id=18103332e4494eb21e80ece53e2b33c58772d28bbfab0c87513c6e5187416310",
+     "summary": "Barclays analysts expect a potential merger between Tesla (NASDAQ:TSLA) and Elon Musk’s SpaceX (NASDAQ:SPCX) to be announced before the electric vehicle manufacturer’s 2026 annual shareholder meeting, with the proposed combination increasingly viewed as a way to consolidate…",
+     "image": null,
+     "lang": "en"
+    },
+    {
+     "date": "2026-10-15",
+     "datetime": "2026-10-15T06:52:53Z",
+     "source": "Yahoo",
+     "headline": "What’s Really Driving Dell’s Boom? Barclays Has a Different Answer",
+     "url": "https://finnhub.io/api/news?id=ada3b18b2a1b21fc1c86704114a0e3479d8dd9299fdf035e3abcbe1cdbd1454e",
+     "summary": "Dell stock fell 11% after Barclays tied enterprise revenue to memory costs, a day after its CEO said the AI wave is just starting.",
+     "image": null,
+     "lang": "en"
+    },
+    {
+     "date": "2026-10-14",
+     "datetime": "2026-10-14T22:12:10Z",
+     "source": "Yahoo",
+     "headline": "Barclays (LSE:BARC) Could Be 23% Undervalued Following Its India Expansion Plan",
+     "url": "https://finnhub.io/api/news?id=275f1b4bab58a7676d3e1a5d9e22a1676db7c4fb49fe20b00a10bd33e0b70016",
+     "summary": "Barclays (LSE:BARC) is reportedly preparing to restart equity capital market activity in India after nearly a decade, reintroducing IPO underwriting to its wholesale banking offering for clients there. For investors, that India push lands at an awkward time for the Barclays…",
+     "image": null,
+     "lang": "en"
+    },
+    {
+     "date": "2026-10-14",
+     "datetime": "2026-10-14T17:30:00Z",
+     "source": "Yahoo",
+     "headline": "‘We See Current Valuation as Attractive’: Barclays Pulls the Trigger on 2 Overlooked Stocks",
+     "url": "https://finnhub.io/api/news?id=72f8c3731915cb5f6def6446387559a892dcf09546335c7fe377c34df3bad103",
+     "summary": "Wall Street’s investment opportunities extend well beyond the technology and financial sectors. The coatings industry, which serves everything from automotive manufacturing and construction to industrial machinery and infrastructure, is showing signs of improvement after years…",
+     "image": null,
+     "lang": "en"
+    },
+    {
+     "date": "2026-10-08",
+     "datetime": "2026-10-08T08:11:43Z",
+     "source": "SeekingAlpha",
+     "headline": "Barclays Heading Into Q3: A Stronger Bank At A Discount",
+     "url": "https://finnhub.io/api/news?id=a7e153b858323e50b4add8c18dc9ed7b7cfd6db1dd83fe1836833b39fe28a290",
+     "summary": "Barclays is a Buy, as improved results, strong capital returns & disciplined cost control drive a compelling risk-adjusted return outlook. More on BCS stock.",
+     "image": "https://static.seekingalpha.com/cdn/s3/uploads/getty_images/2272869432/image_2272869432.jpg?io=getty-c-w1536",
      "lang": "en"
     }
    ]

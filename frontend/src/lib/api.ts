@@ -150,7 +150,7 @@ export interface Summary {
     price: CompositionBlock & { rows: Array<Extract<CompositionRow, { kind: "signed" }>>; signed_max: number };
     caption: string;
   };
-  alert_counts: { red_flags: number; warnings: number; strengths: number; /** F9 · R6: «el riesgo de crédito no está medido» (banco). */ unmeasured?: string | null };
+  alert_counts: { red_flags: number; warnings: number; strengths: number; /** Fase 1 · pendientes: sin color. */ balance?: number; valuation?: number; /** F9 · R6: «el riesgo de crédito no está medido» (banco). */ unmeasured?: string | null };
 }
 
 export interface ConfidenceReason {
@@ -311,7 +311,7 @@ export interface Sections {
   /** Histórico (dato bruto): columnas que no aplican al arquetipo y su texto. */
   historical: { not_applicable: Record<string, string> };
   alerts: {
-    counts: { red_flags: number; warnings: number; strengths: number; /** F9 · R6: «el riesgo de crédito no está medido» (banco). */ unmeasured?: string | null };
+    counts: { red_flags: number; warnings: number; strengths: number; /** Fase 1 · pendientes: sin color. */ balance?: number; valuation?: number; /** F9 · R6: «el riesgo de crédito no está medido» (banco). */ unmeasured?: string | null };
     groups: Array<{ key: string; title: string; tone: Tone; items: AlertItem[] }>;
   };
   /** F13 · paso 10: riesgos del sector, aparte y sin puntuar (de la empresa, con dato; de su industria, no verificados en ella). */
@@ -591,6 +591,8 @@ export interface Display {
   readings: Record<string, Reading | null>;
   cover: Cover;
   summary: Summary;
+  /** Fase 1 · pendientes (7-nov-2026): el nombre del campo es el del contrato; su contenido es la consistencia (dos
+   *  niveles, «consistente» o «mixta», con la coincidencia de métodos y la cobertura de datos). */
   confidence: Confidence | null;
   /** Fase 1 (D1): códigos y motivos técnicos para el anexo del PDF; la web no lo muestra. */
   annex: { title: string; items: Array<{ label: string; text: string }> };
@@ -853,7 +855,8 @@ export interface PeerSummary {
   currency: string | null;
   quality: { score: number | null; level: string | null };
   price_score: { score: number | null; level: string | null };
-  confidence: string | null;
+  /** Fase 1 · pendientes (7-nov-2026): «consistente» o «mixta» (antes, la confianza). */
+  consistency: string | null;
   metrics: Record<string, PeerMetric>;
   /** Industria de Damodaran que resolvió su análisis (la de la referencia sectorial); null si no es una industria. */
   reference: { industry: string; region: string | null; basis: string } | null;

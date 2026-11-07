@@ -1,12 +1,7 @@
 {
   "alerts": {
-    "red_flags": [
-      {
-        "category": "Valor intrínseco",
-        "detail": "El valor estimado por el DCF ($51) está un 94% por debajo del precio ($914.13): ningún supuesto razonable del rango de sensibilidad lo justifica.",
-        "reason": "Sobrevalorada según DCF −94%"
-      }
-    ],
+    "balance": [],
+    "red_flags": [],
     "strengths": [
       {
         "category": "Rentabilidad",
@@ -39,7 +34,12 @@
         "reason": "Deuda fácilmente servible — cobertura 258x"
       }
     ],
-    "warnings": [
+    "valuation": [
+      {
+        "category": "Valor intrínseco",
+        "detail": "El valor estimado por el DCF ($51) está un 94% por debajo del precio ($914.13): ningún supuesto razonable del rango de sensibilidad lo justifica.",
+        "reason": "Sobrevalorada según DCF −94%"
+      },
       {
         "category": "Valoración",
         "detail": "Por cada dólar invertido en la acción, el negocio genera solo 2.5% de caja libre: se está pagando caro cada dólar de flujo, habitual en compañías de alto crecimiento o valoración exigente.",
@@ -49,7 +49,9 @@
         "category": "Valoración",
         "detail": "Se paga 88.1x EBITDA frente a 26.7x de su industria sin ella (+230%): el mercado le asigna una prima que conviene contrastar con su ventaja competitiva.",
         "reason": "EV/EBITDA normalizado sobre su industria — 88.1x"
-      },
+      }
+    ],
+    "warnings": [
       {
         "category": "Riesgo de mercado",
         "detail": "La acción amplifica ~51% los movimientos del mercado: cae más en las correcciones y sube más en los rallies. Razonable con horizonte largo y tolerancia al riesgo; resta si buscas estabilidad.",
@@ -556,6 +558,20 @@
       "techo en baja: la más baja manda: estabilidad baja"
     ],
     "score": 0.6
+  },
+  "consistency": {
+    "coverage": {
+      "level": "media",
+      "text": "cobertura de datos suficiente"
+    },
+    "level": "consistente",
+    "methods": {
+      "level": "alta",
+      "text": "el DCF directo y los múltiplos coinciden"
+    },
+    "phrase": "el DCF directo y los múltiplos coinciden",
+    "reasons": [],
+    "tone": "pos"
   },
   "cost_of_equity": {
     "as_of": "2026-11-01",
@@ -1799,20 +1815,12 @@
           "text": "Arquetipo CYCLICAL (regla historia_ciclica): Clasificada como CYCLICAL por su historia (18 ejercicios en EDGAR): caídas de ingresos ≥ 10% en 2016, 2019, 2023; desplomes del BPA con caída de ingresos en 2016, 2019, 2023; además crece con beneficio (crecimiento estructural: ingresos por acción 28.9% anual a 3 años)"
         },
         {
-          "label": "Confianza · Convergencia entre métodos (alta)",
+          "label": "Consistencia · Coincidencia de métodos (alta)",
           "text": "coinciden (cara) con distancia 0.00 (< 0.6)"
         },
         {
-          "label": "Confianza · Cobertura de datos (media)",
+          "label": "Consistencia · Cobertura de datos (media)",
           "text": "estados desfasados: corte del 31 de mayo de 2026 (136 días) y EDGAR ya tiene el 10-K del periodo cerrado el 3 de septiembre de 2026."
-        },
-        {
-          "label": "Confianza · Calidad de fuente (media)",
-          "text": "beta sustituta 1.51 fuera de la propia 2.48 ± 2 EE (1.71–3.25, R² 0.29)"
-        },
-        {
-          "label": "Confianza · Estabilidad del arquetipo (baja)",
-          "text": "empresa cíclica: en sus 10 ejercicios, pérdidas en 2023; el beneficio cayó un 57% en 2020; margen operativo entre el -37.0% y el 74.6%."
         },
         {
           "label": "Fuente oficial",
@@ -2765,66 +2773,25 @@
       "dimensions": [
         {
           "key": "convergence",
-          "label": "Convergencia entre métodos",
-          "level": "Alta",
+          "label": "Coincidencia de métodos",
+          "level": "Coinciden",
+          "ok": true,
           "text": "DCF directo -94% (cara) · múltiplos frente al sector -1.00 (cara). Los métodos de valoración coinciden."
         },
         {
           "key": "coverage",
           "label": "Cobertura de datos",
-          "level": "Media",
+          "level": "Suficiente",
+          "ok": true,
           "text": "Hay estados más recientes en la SEC (10-K al 3 de septiembre de 2026)."
-        },
-        {
-          "key": "source",
-          "label": "Calidad de fuente",
-          "level": "Media",
-          "text": "El coste del capital usa la beta de su industria (1.51), que no encaja con cómo se ha movido la acción frente al mercado (la suya: 2.48)."
-        },
-        {
-          "key": "stability",
-          "label": "Estabilidad del arquetipo",
-          "level": "Baja",
-          "text": "Empresa cíclica: sus resultados dependen de la fase del ciclo (en sus 10 ejercicios, pérdidas en 2023; el beneficio cayó un 57% en 2020; margen operativo entre el -37.0% y el 74.6%)."
-        },
-        {
-          "key": "base",
-          "label": "base",
-          "level": "Alta",
-          "text": "Sin incidencias."
         }
       ],
-      "level": "baja",
-      "plain": [
-        "Hay estados más recientes en la SEC (10-K al 3 de septiembre de 2026).",
-        "El coste del capital usa la beta de su industria (1.51), que no encaja con cómo se ha movido la acción frente al mercado (la suya: 2.48).",
-        "Empresa cíclica: sus resultados dependen de la fase del ciclo (en sus 10 ejercicios, pérdidas en 2023; el beneficio cayó un 57% en 2020; margen operativo entre el -37.0% y el 74.6%)."
-      ],
-      "reasons": [
-        {
-          "dimension": "cobertura",
-          "level": "media",
-          "text": "Hay estados más recientes en la SEC (10-K al 3 de septiembre de 2026)."
-        },
-        {
-          "dimension": "calidad de fuente",
-          "level": "media",
-          "text": "El coste del capital usa la beta de su industria (1.51), que no encaja con cómo se ha movido la acción frente al mercado (la suya: 2.48)."
-        },
-        {
-          "dimension": "estabilidad",
-          "level": "baja",
-          "text": "Empresa cíclica: sus resultados dependen de la fase del ciclo (en sus 10 ejercicios, pérdidas en 2023; el beneficio cayó un 57% en 2020; margen operativo entre el -37.0% y el 74.6%)."
-        },
-        {
-          "dimension": "techo",
-          "level": "baja",
-          "text": null
-        }
-      ],
-      "summary": "Confianza del veredicto: baja (por sus dimensiones sería media; la limita: la más baja manda —estabilidad baja—). Contrae también la calidad del negocio hacia 50: de 87 a 81.",
-      "tone": "neg",
-      "verdict_text": "(confianza baja: negocio cíclico)"
+      "level": "consistente",
+      "plain": [],
+      "reasons": [],
+      "summary": "Consistencia: consistente (el DCF directo y los múltiplos coinciden). No es una probabilidad de acierto.",
+      "tone": "pos",
+      "verdict_text": "(consistencia consistente: el DCF directo y los múltiplos coinciden)"
     },
     "cover": {
       "archetype": "CYCLICAL",
@@ -2910,12 +2877,10 @@
       "classification_notes": [
         "Cíclica por su historia: en 18 ejercicios, caídas de ingresos ≥ 10% en 2016, 2019, 2023; desplomes del BPA con caída de ingresos en 2016, 2019, 2023; además crece con beneficio (crecimiento estructural: ingresos por acción 28.9% anual a 3 años)."
       ],
-      "confidence_reasons": [
-        "Hay estados más recientes en la SEC (10-K al 3 de septiembre de 2026).",
-        "El coste del capital usa la beta de su industria (1.51), que no encaja con cómo se ha movido la acción frente al mercado (la suya: 2.48).",
-        "Empresa cíclica: sus resultados dependen de la fase del ciclo (en sus 10 ejercicios, pérdidas en 2023; el beneficio cayó un 57% en 2020; margen operativo entre el -37.0% y el 74.6%)."
+      "confidence_reasons": [],
+      "coverage_notes": [
+        "Precio: hay un informe más reciente en EDGAR sin incorporar"
       ],
-      "coverage_notes": [],
       "currency_note": null,
       "data_notices": [
         "Estados desfasados: cifras al 31 de mayo de 2026 (136 días); la SEC ya tiene el 10-K al 3 de septiembre de 2026."
@@ -2930,8 +2895,8 @@
         {
           "kicker": "A VIGILAR",
           "kind": "watch",
-          "text": "Sobrevalorada según DCF −94%",
-          "tone": "neg"
+          "text": "Volatilidad elevada — Beta 1.51",
+          "tone": "warn"
         },
         {
           "kicker": "CONTEXTO · 52 SEM.",
@@ -2994,8 +2959,8 @@
       "price": {
         "contracted": false,
         "level": "atractivo",
-        "note": "P/E 12.2x frente a 30.8x de su sector.",
-        "note_short": "P/E 12.2x frente a 30.8x de su sector",
+        "note": "P/E 12.2x frente a 30.8x de su sector; beneficio en la parte alta del ciclo.",
+        "note_short": "P/E 12.2x frente a 30.8x de su sector; beneficio en la parte alta del ciclo",
         "question": "¿está cara hoy?",
         "raw": 97,
         "score": 97,
@@ -3003,19 +2968,19 @@
         "tone": "pos"
       },
       "quality": {
-        "level": "sólida",
+        "level": "excelente",
         "note": "Por encima de 80 (umbral de persistencia; «excelente» empieza en 85), la calidad exige persistencia: 90 → 87. Rentabilidad: margen operativo positivo y al menos el 75% del último (74.6%) en 1 de 5 ejercicios; calidad de ganancias: flujo operativo ≥ beneficio neto y FCF positivo en 4 de 5 ejercicios.",
-        "note_short": "Exige persistencia (90 → 81)",
+        "note_short": "Exige persistencia (90 → 87)",
         "question": "¿es buena la empresa?",
-        "score": 81,
+        "score": 87,
         "title": "CALIDAD DEL NEGOCIO",
         "tone": "pos"
       },
       "verdict": {
-        "confidence_text": "(confianza baja: negocio cíclico)",
-        "confidence_tone": "neg",
-        "full": "Calidad sólida · precio atractivo (confianza baja: negocio cíclico)",
-        "text": "Calidad sólida · precio atractivo"
+        "confidence_text": "(consistencia consistente: el DCF directo y los múltiplos coinciden)",
+        "confidence_tone": "pos",
+        "full": "Calidad excelente · precio atractivo (consistencia consistente: el DCF directo y los múltiplos coinciden)",
+        "text": "Calidad excelente · precio atractivo"
       }
     },
     "extended": {
@@ -3365,7 +3330,7 @@
       }
     },
     "methodology": {
-      "contraction_text": "el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y la confianza no mueve el precio",
+      "contraction_text": "el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura",
       "models": [
         "Altman (1968)",
         "Piotroski (2000)",
@@ -3460,36 +3425,22 @@
     "sections": {
       "alerts": {
         "counts": {
-          "red_flags": 1,
+          "balance": 0,
+          "red_flags": 0,
           "strengths": 6,
           "unmeasured": null,
-          "warnings": 4
+          "valuation": 3,
+          "warnings": 2
         },
         "groups": [
           {
-            "items": [
-              {
-                "category": "Valor intrínseco",
-                "detail": "El valor estimado por el DCF ($51) está un 94% por debajo del precio ($914.13): ningún supuesto razonable del rango de sensibilidad lo justifica.",
-                "reason": "Sobrevalorada según DCF −94%"
-              }
-            ],
+            "items": [],
             "key": "red_flags",
-            "title": "Riesgos",
+            "title": "Alerta roja",
             "tone": "neg"
           },
           {
             "items": [
-              {
-                "category": "Valoración",
-                "detail": "Por cada dólar invertido en la acción, el negocio genera solo 2.5% de caja libre: se está pagando caro cada dólar de flujo, habitual en compañías de alto crecimiento o valoración exigente.",
-                "reason": "FCF yield bajo — 2.5%"
-              },
-              {
-                "category": "Valoración",
-                "detail": "Se paga 88.1x EBITDA frente a 26.7x de su industria sin ella (+230%): el mercado le asigna una prima que conviene contrastar con su ventaja competitiva.",
-                "reason": "EV/EBITDA normalizado sobre su industria — 88.1x"
-              },
               {
                 "category": "Riesgo de mercado",
                 "detail": "La acción amplifica ~51% los movimientos del mercado: cae más en las correcciones y sube más en los rallies. Razonable con horizonte largo y tolerancia al riesgo; resta si buscas estabilidad.",
@@ -3541,6 +3492,34 @@
             "key": "strengths",
             "title": "Fortalezas",
             "tone": "pos"
+          },
+          {
+            "items": [],
+            "key": "balance",
+            "title": "Estado del balance",
+            "tone": "neu"
+          },
+          {
+            "items": [
+              {
+                "category": "Valor intrínseco",
+                "detail": "El valor estimado por el DCF ($51) está un 94% por debajo del precio ($914.13): ningún supuesto razonable del rango de sensibilidad lo justifica.",
+                "reason": "Sobrevalorada según DCF −94%"
+              },
+              {
+                "category": "Valoración",
+                "detail": "Por cada dólar invertido en la acción, el negocio genera solo 2.5% de caja libre: se está pagando caro cada dólar de flujo, habitual en compañías de alto crecimiento o valoración exigente.",
+                "reason": "FCF yield bajo — 2.5%"
+              },
+              {
+                "category": "Valoración",
+                "detail": "Se paga 88.1x EBITDA frente a 26.7x de su industria sin ella (+230%): el mercado le asigna una prima que conviene contrastar con su ventaja competitiva.",
+                "reason": "EV/EBITDA normalizado sobre su industria — 88.1x"
+              }
+            ],
+            "key": "valuation",
+            "title": "Lectura de valoración",
+            "tone": "neu"
           }
         ]
       },
@@ -3957,7 +3936,9 @@
               "tone": "pos"
             }
           ],
-          "coverage_notes": [],
+          "coverage_notes": [
+            "Precio: hay un informe más reciente en EDGAR sin incorporar"
+          ],
           "intro": "Cada categoría parte de una base neutral de 10/20. La columna Ajuste muestra cuánto suma o resta cada indicador según la banda en la que cae. Solidez, Rentabilidad, Calidad de ganancias y Crecimiento forman la calidad del negocio; Valoración, el atractivo del precio. Las categorías no concluyentes se excluyen y cada puntuación se reescala a 100 sobre las demás. En Valoración, P/E, Forward P/E, P/FCF, EV/EBITDA y PEG forman un solo bloque: su ajuste individual se muestra entre paréntesis y puntúa a través del Bloque de múltiplos (promedio de los ajustes reescalados a ±1, máximo ±2 con 1 / ±4 con 2 / ±6 con 3+ miembros; en bancos y aseguradoras, P/B y P/TBV forman su propio bloque)."
         },
         "cards": [
@@ -4852,10 +4833,12 @@
     },
     "summary": {
       "alert_counts": {
-        "red_flags": 1,
+        "balance": 0,
+        "red_flags": 0,
         "strengths": 6,
         "unmeasured": null,
-        "warnings": 4
+        "valuation": 3,
+        "warnings": 2
       },
       "cards": [
         {
@@ -4926,10 +4909,10 @@
         }
       ],
       "composition": {
-        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y la confianza no mueve el precio.",
+        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura.",
         "price": {
           "level": "atractivo",
-          "note": "P/E 12.2x frente a la mediana de tecnología (30.8x), 0.40 veces: en el tercio más barato del universo.",
+          "note": "P/E 12.2x frente a la mediana de tecnología (30.8x), 0.40 veces: en el tercio más barato del universo; aviso: cíclica con el beneficio de doce meses un 6387 % por encima de la mediana de sus 3 últimos ejercicios: el P/E puede ser bajo por estar en la parte alta del ciclo.",
           "rows": [
             {
               "kind": "signed",
@@ -4950,7 +4933,7 @@
           "tone": "pos"
         },
         "quality": {
-          "level": "sólida",
+          "level": "excelente",
           "note": "Por encima de 80 (umbral de persistencia; «excelente» empieza en 85), la calidad exige persistencia: 90 → 87.",
           "rows": [
             {
@@ -4986,7 +4969,7 @@
               "value": 12
             }
           ],
-          "score": 81,
+          "score": 87,
           "title": "CALIDAD DEL NEGOCIO",
           "tone": "pos"
         }
@@ -4994,7 +4977,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad sólida · precio atractivo (confianza baja: negocio cíclico). Calidad 81/100 · precio 97/100 (P/E 12.2x frente a 30.8x de su sector)."
+          "text": "Calidad excelente · precio atractivo (consistencia consistente: el DCF directo y los múltiplos coinciden). Calidad 87/100 · precio 97/100 (P/E 12.2x frente a 30.8x de su sector; beneficio en la parte alta del ciclo)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -5021,8 +5004,8 @@
           "text": "Cotiza en el 68% del rango de 52 semanas, en la zona media. Con beta 1.51, la acción es notablemente más volátil que el mercado."
         },
         {
-          "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Baja: hay estados más recientes en la SEC (10-K al 3 de septiembre de 2026). No contrae el atractivo del precio; la calidad del negocio, sí, hacia 50 (de 87 a 81)."
+          "label": "CONSISTENCIA",
+          "text": "Consistente: el DCF directo y los múltiplos coinciden (no es una probabilidad de acierto)."
         }
       ]
     },
@@ -5624,7 +5607,7 @@
                 "tone": "neg"
               }
             ],
-            "title": "Atractivo del precio (0–100, contraído por la confianza)"
+            "title": "Atractivo del precio (0–100, regla L1 por tercios)"
           }
         ]
       },
@@ -6258,6 +6241,28 @@
     "total_equity": 100724000000.0,
     "wacc": 0.117601949439
   },
+  "l1_cycle_peak": {
+    "basis": null,
+    "conditions": {
+      "a": true,
+      "b": false
+    },
+    "flag": false,
+    "forward": {
+      "coherent": true,
+      "pe": 6.52257,
+      "premium": -0.68483485351,
+      "reason": null
+    },
+    "median": 778000000.0,
+    "pe_median": 1342.53515764,
+    "pe_score": null,
+    "pe_ttm": 20.6957211882,
+    "period": "TTM",
+    "reason": null,
+    "ttm_over_median": 63.8701799486,
+    "years": 3
+  },
   "market_context": {
     "behavioral": [],
     "market_volatility": {
@@ -6790,6 +6795,10 @@
       0.839031,
       1.190143
     ],
+    "cycle_peak": {
+      "over": 63.8701799486,
+      "years": 3
+    },
     "factor": null,
     "gics": "Information Technology",
     "gics_sector": "Information Technology",
@@ -6817,6 +6826,7 @@
     "pe_ttm": 12.1722970296,
     "percentile": 0.0337440974708,
     "reason": null,
+    "reference_alarm": [],
     "relative": 0.395398926232,
     "rule": "L1",
     "score": 97,
@@ -6849,7 +6859,7 @@
       "score": 35,
       "score_raw": 20
     },
-    "warning": null
+    "warning": "cíclica con el beneficio de doce meses un 6387 % por encima de la mediana de sus 3 últimos ejercicios: el P/E puede ser bajo por estar en la parte alta del ciclo"
   },
   "price_change": {
     "change": -39.0599975586,
@@ -6906,10 +6916,10 @@
         "score": 12
       }
     ],
-    "contracted": true,
+    "contracted": false,
     "excluded_categories": [],
-    "factor": 0.85,
-    "level": "sólida",
+    "factor": null,
+    "level": "excelente",
     "level_raw": "excelente",
     "low_confidence": false,
     "low_confidence_reasons": [],
@@ -6972,7 +6982,7 @@
       "weighted": 0.666666666667,
       "window": 5
     },
-    "score": 81,
+    "score": 87,
     "score_raw": 87
   },
   "quality_readings": {
@@ -7676,13 +7686,13 @@
     "source": "efectiva"
   },
   "verdict": {
-    "confidence": "baja",
-    "confidence_text": "(confianza baja: negocio cíclico)",
-    "full": "Calidad sólida · precio atractivo (confianza baja: negocio cíclico)",
+    "confidence_text": "(consistencia consistente: el DCF directo y los múltiplos coinciden)",
+    "consistency": "consistente",
+    "full": "Calidad excelente · precio atractivo (consistencia consistente: el DCF directo y los múltiplos coinciden)",
     "price_level": "atractivo",
     "price_level_raw": null,
-    "quality_level": "sólida",
-    "text": "Calidad sólida · precio atractivo"
+    "quality_level": "excelente",
+    "text": "Calidad excelente · precio atractivo"
   },
   "wacc": {
     "applicable": true,

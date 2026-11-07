@@ -1,10 +1,20 @@
 {
   "alerts": {
+    "balance": [],
     "red_flags": [
       {
-        "category": "Valor intrínseco",
-        "detail": "El valor estimado por el DCF ($120) está un 65% por debajo del precio ($342.96): ningún supuesto razonable del rango de sensibilidad lo justifica.",
-        "reason": "Sobrevalorada según DCF −65%"
+        "category": "Valoración",
+        "detail": "La valoración por múltiplos y DCF, que se sigue calculando como lectura, la sitúa en «muy exigente» (puntuación 5/100). En la prueba hacia atrás (corte del 5-nov-2025, 297 empresas de control), el 34,7 % de las que estaban en ese nivel (17 de 49) cayó un 40 % o más en algún momento de los 12 meses siguientes, frente al 14,9 % del resto. Es una frecuencia del pasado, no una predicción.",
+        "evidence": {
+          "base_rate": 0.149,
+          "drawdown": 0.4,
+          "hits": 17,
+          "horizon_months": 12,
+          "n": 49,
+          "rate": 0.347,
+          "sample": "corte del 5-nov-2025, 297 empresas de control"
+        },
+        "reason": "Riesgo de caída fuerte por valoración extrema"
       }
     ],
     "strengths": [
@@ -39,11 +49,16 @@
         "reason": "Beneficio de alta calidad"
       }
     ],
-    "warnings": [
+    "valuation": [
       {
         "category": "Valoración",
         "detail": "El mercado paga 39.3x beneficios, un +64% sobre la referencia de su industria sin ella (24.0x). Es un precio alto que el mercado sostiene por su crecimiento y retornos; deja poco margen de error: cualquier decepción en resultados puede corregir con fuerza.",
         "reason": "Valoración exigente — P/E 39.3x"
+      },
+      {
+        "category": "Valor intrínseco",
+        "detail": "El valor estimado por el DCF ($120) está un 65% por debajo del precio ($342.96): ningún supuesto razonable del rango de sensibilidad lo justifica.",
+        "reason": "Sobrevalorada según DCF −65%"
       },
       {
         "category": "Valoración",
@@ -55,7 +70,8 @@
         "detail": "Se paga 29.9x EBITDA frente a 7.3x de su industria sin ella (+311%): el mercado le asigna una prima que conviene contrastar con su ventaja competitiva.",
         "reason": "EV/EBITDA sobre su industria — 29.9x"
       }
-    ]
+    ],
+    "warnings": []
   },
   "altman_z": {
     "applicable": true,
@@ -458,6 +474,20 @@
       "un escalón menos por las tasas base: el precio exige un 15.4% anual 10 años, que sostuvo el 1.74% de las comparables (< 5%)"
     ],
     "score": 1.0
+  },
+  "consistency": {
+    "coverage": {
+      "level": "alta",
+      "text": "cobertura de datos completa"
+    },
+    "level": "consistente",
+    "methods": {
+      "level": "alta",
+      "text": "el DCF directo y los múltiplos coinciden"
+    },
+    "phrase": "el DCF directo y los múltiplos coinciden",
+    "reasons": [],
+    "tone": "pos"
   },
   "cost_of_equity": {
     "as_of": "2026-11-01",
@@ -1569,7 +1599,7 @@
           "text": "Arquetipo MATURE (regla por_defecto): Clasificada como MATURE por defecto: no es financiera, REIT, pre-beneficio con crecimiento, cíclica ni de crecimiento rentable (industria Electrónica de consumo); su historia (19 ejercicios en EDGAR) no muestra ciclo."
         },
         {
-          "label": "Confianza · Convergencia entre métodos (alta)",
+          "label": "Consistencia · Coincidencia de métodos (alta)",
           "text": "coinciden (cara) con distancia 0.11 (< 0.6)"
         },
         {
@@ -2538,41 +2568,25 @@
       "dimensions": [
         {
           "key": "convergence",
-          "label": "Convergencia entre métodos",
-          "level": "Alta",
+          "label": "Coincidencia de métodos",
+          "level": "Coinciden",
+          "ok": true,
           "text": "DCF directo -65% (cara) · múltiplos frente al sector -0.89 (cara). Los métodos de valoración coinciden."
         },
         {
           "key": "coverage",
           "label": "Cobertura de datos",
-          "level": "Alta",
-          "text": "Sin incidencias."
-        },
-        {
-          "key": "source",
-          "label": "Calidad de fuente",
-          "level": "Alta",
-          "text": "Sin incidencias."
-        },
-        {
-          "key": "stability",
-          "label": "Estabilidad del arquetipo",
-          "level": "Alta",
-          "text": "Sin incidencias."
-        },
-        {
-          "key": "base",
-          "label": "base",
-          "level": "Alta",
+          "level": "Completa",
+          "ok": true,
           "text": "Sin incidencias."
         }
       ],
-      "level": "media",
+      "level": "consistente",
       "plain": [],
       "reasons": [],
-      "summary": "Confianza del veredicto: media (por sus dimensiones sería alta; la limita: las tasas base —solo el 1.74% de las comparables sostuvo el crecimiento que exige el precio; no contrae el precio—). La calidad del negocio no se contrae.",
-      "tone": "warn",
-      "verdict_text": "(confianza media: casi ninguna comparable sostuvo el crecimiento que exige el precio)"
+      "summary": "Consistencia: consistente (el DCF directo y los múltiplos coinciden). No es una probabilidad de acierto.",
+      "tone": "pos",
+      "verdict_text": "(consistencia consistente: el DCF directo y los múltiplos coinciden)"
     },
     "cover": {
       "archetype": "MATURE",
@@ -2672,7 +2686,7 @@
         {
           "kicker": "A VIGILAR",
           "kind": "watch",
-          "text": "Sobrevalorada según DCF −65%",
+          "text": "Riesgo de caída fuerte por valoración extrema",
           "tone": "neg"
         },
         {
@@ -2754,9 +2768,9 @@
         "tone": "pos"
       },
       "verdict": {
-        "confidence_text": "(confianza media: casi ninguna comparable sostuvo el crecimiento que exige el precio)",
-        "confidence_tone": "warn",
-        "full": "Calidad sólida · precio exigente (confianza media: casi ninguna comparable sostuvo el crecimiento que exige el precio)",
+        "confidence_text": "(consistencia consistente: el DCF directo y los múltiplos coinciden)",
+        "confidence_tone": "pos",
+        "full": "Calidad sólida · precio exigente (consistencia consistente: el DCF directo y los múltiplos coinciden)",
         "text": "Calidad sólida · precio exigente"
       }
     },
@@ -3107,7 +3121,7 @@
       }
     },
     "methodology": {
-      "contraction_text": "el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y la confianza no mueve el precio",
+      "contraction_text": "el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura",
       "models": [
         "Altman (1968)",
         "Piotroski (2000)",
@@ -3206,42 +3220,28 @@
     "sections": {
       "alerts": {
         "counts": {
+          "balance": 0,
           "red_flags": 1,
           "strengths": 6,
           "unmeasured": null,
-          "warnings": 3
+          "valuation": 4,
+          "warnings": 0
         },
         "groups": [
           {
             "items": [
               {
-                "category": "Valor intrínseco",
-                "detail": "El valor estimado por el DCF ($120) está un 65% por debajo del precio ($342.96): ningún supuesto razonable del rango de sensibilidad lo justifica.",
-                "reason": "Sobrevalorada según DCF −65%"
+                "category": "Valoración",
+                "detail": "La valoración por múltiplos y DCF, que se sigue calculando como lectura, la sitúa en «muy exigente» (puntuación 5/100). En la prueba hacia atrás (corte del 5-nov-2025, 297 empresas de control), el 34,7 % de las que estaban en ese nivel (17 de 49) cayó un 40 % o más en algún momento de los 12 meses siguientes, frente al 14,9 % del resto. Es una frecuencia del pasado, no una predicción.",
+                "reason": "Riesgo de caída fuerte por valoración extrema"
               }
             ],
             "key": "red_flags",
-            "title": "Riesgos",
+            "title": "Alerta roja",
             "tone": "neg"
           },
           {
-            "items": [
-              {
-                "category": "Valoración",
-                "detail": "El mercado paga 39.3x beneficios, un +64% sobre la referencia de su industria sin ella (24.0x). Es un precio alto que el mercado sostiene por su crecimiento y retornos; deja poco margen de error: cualquier decepción en resultados puede corregir con fuerza.",
-                "reason": "Valoración exigente — P/E 39.3x"
-              },
-              {
-                "category": "Valoración",
-                "detail": "Por cada dólar invertido en la acción, el negocio genera solo 2.7% de caja libre: se está pagando caro cada dólar de flujo, habitual en compañías de alto crecimiento o valoración exigente.",
-                "reason": "FCF yield bajo — 2.7%"
-              },
-              {
-                "category": "Valoración",
-                "detail": "Se paga 29.9x EBITDA frente a 7.3x de su industria sin ella (+311%): el mercado le asigna una prima que conviene contrastar con su ventaja competitiva.",
-                "reason": "EV/EBITDA sobre su industria — 29.9x"
-              }
-            ],
+            "items": [],
             "key": "warnings",
             "title": "Advertencias",
             "tone": "warn"
@@ -3282,6 +3282,39 @@
             "key": "strengths",
             "title": "Fortalezas",
             "tone": "pos"
+          },
+          {
+            "items": [],
+            "key": "balance",
+            "title": "Estado del balance",
+            "tone": "neu"
+          },
+          {
+            "items": [
+              {
+                "category": "Valoración",
+                "detail": "El mercado paga 39.3x beneficios, un +64% sobre la referencia de su industria sin ella (24.0x). Es un precio alto que el mercado sostiene por su crecimiento y retornos; deja poco margen de error: cualquier decepción en resultados puede corregir con fuerza.",
+                "reason": "Valoración exigente — P/E 39.3x"
+              },
+              {
+                "category": "Valor intrínseco",
+                "detail": "El valor estimado por el DCF ($120) está un 65% por debajo del precio ($342.96): ningún supuesto razonable del rango de sensibilidad lo justifica.",
+                "reason": "Sobrevalorada según DCF −65%"
+              },
+              {
+                "category": "Valoración",
+                "detail": "Por cada dólar invertido en la acción, el negocio genera solo 2.7% de caja libre: se está pagando caro cada dólar de flujo, habitual en compañías de alto crecimiento o valoración exigente.",
+                "reason": "FCF yield bajo — 2.7%"
+              },
+              {
+                "category": "Valoración",
+                "detail": "Se paga 29.9x EBITDA frente a 7.3x de su industria sin ella (+311%): el mercado le asigna una prima que conviene contrastar con su ventaja competitiva.",
+                "reason": "EV/EBITDA sobre su industria — 29.9x"
+              }
+            ],
+            "key": "valuation",
+            "title": "Lectura de valoración",
+            "tone": "neu"
           }
         ]
       },
@@ -4583,10 +4616,12 @@
     },
     "summary": {
       "alert_counts": {
+        "balance": 0,
         "red_flags": 1,
         "strengths": 6,
         "unmeasured": null,
-        "warnings": 3
+        "valuation": 4,
+        "warnings": 0
       },
       "cards": [
         {
@@ -4657,7 +4692,7 @@
         }
       ],
       "composition": {
-        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y la confianza no mueve el precio.",
+        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura.",
         "price": {
           "level": "exigente",
           "note": "P/E 38.8x frente a la mediana de tecnología (30.8x), 1.26 veces: en el tercio más caro del universo.",
@@ -4725,7 +4760,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad sólida · precio exigente (confianza media: casi ninguna comparable sostuvo el crecimiento que exige el precio). Calidad 82/100 · precio 29/100 (P/E 38.8x frente a 30.8x de su sector)."
+          "text": "Calidad sólida · precio exigente (consistencia consistente: el DCF directo y los múltiplos coinciden). Calidad 82/100 · precio 29/100 (P/E 38.8x frente a 30.8x de su sector)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -4752,8 +4787,8 @@
           "text": "Cotiza en el 95% del rango de 52 semanas, en la zona de máximos. Con beta 1.04, la acción se mueve en línea con el mercado."
         },
         {
-          "label": "CONFIANZA DEL VEREDICTO",
-          "text": "Media: casi ninguna comparable sostuvo el crecimiento que exige el precio (tasas base). No contrae el atractivo del precio ni la calidad."
+          "label": "CONSISTENCIA",
+          "text": "Consistente: el DCF directo y los múltiplos coinciden (no es una probabilidad de acierto)."
         }
       ]
     },
@@ -5479,7 +5514,7 @@
                 "tone": "neg"
               }
             ],
-            "title": "Atractivo del precio (0–100, contraído por la confianza)"
+            "title": "Atractivo del precio (0–100, regla L1 por tercios)"
           }
         ]
       },
@@ -6131,6 +6166,7 @@
     "total_equity": 107520000000.0,
     "wacc": 0.094564402522
   },
+  "l1_cycle_peak": null,
   "market_context": {
     "anchor_gap": -0.0149073747879,
     "behavioral": [
@@ -6642,6 +6678,7 @@
       0.839031,
       1.190143
     ],
+    "cycle_peak": null,
     "factor": null,
     "gics": "Information Technology",
     "gics_sector": "Information Technology",
@@ -6669,6 +6706,7 @@
     "pe_ttm": 38.8212196393,
     "percentile": 0.711126229378,
     "reason": null,
+    "reference_alarm": [],
     "relative": 1.26104945706,
     "rule": "L1",
     "score": 29,
@@ -7531,9 +7569,9 @@
     "source": "efectiva"
   },
   "verdict": {
-    "confidence": "media",
-    "confidence_text": "(confianza media: casi ninguna comparable sostuvo el crecimiento que exige el precio)",
-    "full": "Calidad sólida · precio exigente (confianza media: casi ninguna comparable sostuvo el crecimiento que exige el precio)",
+    "confidence_text": "(consistencia consistente: el DCF directo y los múltiplos coinciden)",
+    "consistency": "consistente",
+    "full": "Calidad sólida · precio exigente (consistencia consistente: el DCF directo y los múltiplos coinciden)",
     "price_level": "exigente",
     "price_level_raw": null,
     "quality_level": "sólida",
