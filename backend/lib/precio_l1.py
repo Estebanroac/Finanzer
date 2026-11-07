@@ -3,7 +3,15 @@ F16 (§8 de la prueba hacia atrás del 6-nov-2026): la etiqueta de precio es la 
 
   P/E de doce meses = capitalización / beneficio neto de los doce meses al ÚLTIMO periodo con estados presentado en
                       EDGAR (no al corte de Yahoo, que va con retraso: AMZN 45× frente a 35×, CI 21× frente a 11×).
-  P/E relativo      = P/E / mediana del P/E (> 0) de su sector GICS en el universo (config/precio_l1.toml).
+  P/E relativo      = P/E / mediana del P/E (> 0) de su grupo en el universo (config/precio_l1.toml).
+
+F16 bis (7-nov-2026, «Fase 1 bis · integridad de datos que afecta a la L1»):
+  · el beneficio es el NORMALIZADO de esos doce meses (sin discontinuadas ni partidas no recurrentes) y la mediana se
+    calcula con la misma base; beneficio normalizado ≤ 0: sin etiqueta;
+  · grupos: los REIT con P/FFO entre REIT, las financieras (bancos y aseguradoras) entre sí, las demás por sector GICS;
+    un grupo con menos de `min_group` empresas, frente a todo el universo;
+  · capitalización con las acciones del beneficio cuando la cotización cuenta otras (varias clases, fusión posterior);
+  · aviso junto a la etiqueta si EDGAR tiene un informe posterior sin leer o si el periodo es antiguo (20-F).
   Nivel             = tercio del P/E relativo en el universo: bajo «atractivo», alto «exigente», el resto «razonable».
   Puntuación        = 100 × (1 − percentil del P/E relativo en el universo): ≥ 66,7 atractivo, < 33,3 exigente.
 
@@ -214,6 +222,29 @@ def ni_ttm(facts, end):
     return None, None, "sin los doce meses"
 
 
+def diluted_shares_at(facts: Dict[str, Any], end) -> Optional[float]:
+    """F16 bis · 5: el promedio diluido de acciones (EDGAR) del periodo más corto que acaba en `end` (trimestre,
+    semestre o ejercicio), en la clase de los estados; None sin dato."""
+    import sec_edgar as edgar
+    tax = edgar.taxonomy(facts)
+    h = edgar.HISTORY["diluted_shares"]
+    node = (facts.get("facts") or {}).get(tax) or {}
+    e = _D(str(end))
+    for c in (h[1] if tax == "us-gaap" else h[2]):
+        best = None
+        for f in node.get(c, {}).get("units", {}).get("shares") or []:
+            if not f.get("start") or not f.get("val") or abs((_D(f["end"]) - e).days) > 8:
+                continue
+            days = (_D(f["end"]) - _D(f["start"])).days
+            if 80 <= days <= 100 or 170 <= days <= 190 or 350 <= days <= 380:
+                k = (-days, f.get("filed") or "")
+                if best is None or k > best[0]:
+                    best = (k, float(f["val"]))
+        if best:
+            return best[1]
+    return None
+
+
 def inputs(ed: Dict[str, Any], ctx=None) -> Dict[str, Any]:
     """Beneficio neto atribuible de doce meses al último periodo presentado en EDGAR, en la moneda de la cotización."""
     import sec_edgar as edgar
@@ -229,8 +260,36 @@ def inputs(ed: Dict[str, Any], ctx=None) -> Dict[str, Any]:
     if val is None:
         return {"status": "sin_dato", "reason": f"EDGAR no da el beneficio de doce meses al último periodo ({end})"}
     conv = ctx.convert_amount(val, "flow", end=end) if ctx is not None else val
+    # F16 bis · 3: perímetro. El resultado de operaciones discontinuadas de esos doce meses (3M/Solventum, Honeywell)
+    # sale del beneficio con el que se compara el precio.
+    from settings import cfg
+    tol = cfg("data.edgar.report_date_tolerance_days")
+    disc = edgar.discontinued_ttm(facts, end, tol)
+    disc_v = disc.get("value") if disc else None
+    disc_conv = (ctx.convert_amount(disc_v, "flow", end=end) if ctx is not None else disc_v) if disc_v else None
+    # F16 bis · 1: los cargos y las ventas no recurrentes de EDGAR de esos mismos doce meses (sec_edgar.charges_ttm), con
+    # la prueba de recurrencia de normalize (mismo signo en ≥ recurrence_min_years de los últimos ejercicios: solo el
+    # exceso sobre su promedio). Se usan cuando el corte de estados del motor no es este periodo.
+    ch = edgar.charges_ttm(facts, end, tol)
+    ch_adj = None
+    if ch:
+        # cargos (≤ 0) y ventas con ganancia (≥ 0) por separado, cada uno con normalize.recurrence: si se repite con el
+        # mismo signo en ≥ recurrence_min_years de los últimos ejercicios, solo el exceso sobre su promedio
+        from normalize import recurrence
+        annual = ch.get("annual") or []
+        parts = {k: recurrence(ch.get(k) or 0.0, [a.get(k) for a in annual]) for k in ("neg", "pos") if ch.get(k)}
+        pre = sum(r["excess"] for r in parts.values())
+        ch_adj = {"pretax": (ctx.convert_amount(pre, "flow", end=end) if (ctx is not None and pre) else pre),
+                  "recurrent": {k: r["recurrent"] for k, r in parts.items()}, "detail": ch.get("detail")}
+    # F16 bis · 4: un informe periódico posterior a ese periodo que los hechos aún no recogen
+    newer = [f for f in edgar.newer_statements(ed.get("filings"), str(end))]
+    pending = max(newer, key=lambda f: f.get("reportDate") or "") if newer else None
     return {"status": "ok", "ni_ttm": conv, "ni_ttm_statement": val, "statement_unit": unit, "end": str(end),
-            "concept": concept, "method": how}
+            "concept": concept, "method": how,
+            "discontinued": disc_conv, "discontinued_concept": (disc or {}).get("concept") if disc_conv else None,
+            "charges": ch_adj, "diluted_shares": diluted_shares_at(facts, end),
+            "pending": ({"form": pending.get("form"), "report_date": pending.get("reportDate"),
+                         "filed": pending.get("filingDate")} if pending else None)}
 
 
 def pe(market_cap: Optional[float], inp: Optional[Dict[str, Any]]) -> Dict[str, Any]:
@@ -253,6 +312,122 @@ YAHOO_TO_GICS = {"Technology": "Information Technology", "Healthcare": "Health C
                  "Consumer Defensive": "Consumer Staples", "Energy": "Energy", "Industrials": "Industrials",
                  "Basic Materials": "Materials", "Real Estate": "Real Estate", "Utilities": "Utilities",
                  "Communication Services": "Communication Services"}
+
+
+GROUP_REIT, GROUP_FIN = "REIT", "Financieras"
+
+
+def group(archetype: Optional[str], gics: Optional[str]) -> Optional[str]:
+    """F16 bis · 2: el grupo con cuya mediana se compara: los REIT entre REIT (P/FFO), las financieras (bancos y
+    aseguradoras) entre financieras; las demás, su sector GICS."""
+    if archetype == "REIT":
+        return GROUP_REIT
+    if archetype == "FINANCIAL":
+        return GROUP_FIN
+    return gics
+
+
+def basis(market_cap: Optional[float], inp: Optional[Dict[str, Any]], archetype: Optional[str],
+          key_metrics: Optional[Dict[str, Any]], norm: Optional[Dict[str, Any]],
+          engine_cut: Optional[str], tol_days: int = 45, tax_rate: Optional[float] = None,
+          currency: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """F16 bis · 1–4: el múltiplo con el que se aplica la regla L1.
+      · REIT: P/FFO del motor (FFO de doce meses).
+      · Demás: capitalización / beneficio NORMALIZADO de doce meses al último periodo presentado en EDGAR: el
+        atribuible, sin las operaciones discontinuadas (perímetro) y sin las partidas no recurrentes que el motor
+        normaliza en su corte de estados; si ese corte es otro periodo, los cargos y ventas no recurrentes que EDGAR
+        declara para esos doce meses (con la misma prueba de recurrencia), después de impuestos.
+      · Beneficio normalizado ≤ 0: sin etiqueta.
+    Devuelve {status, multiple, metric, earnings, earnings_reported, pe_reported, normalized, notes, warning, reason}."""
+    inp = inp or {}
+    km = key_metrics or {}
+    out: Dict[str, Any] = {"status": "sin_dato", "multiple": None, "metric": "P/E", "earnings": None,
+                           "earnings_reported": None, "pe_reported": None, "normalized": False, "notes": [],
+                           "shares_note": None, "market_cap": market_cap,
+                           "warning": None, "reason": None, "edgar": inp}
+    from settings import cfg
+    T = cfg("thresholds.score.price_l1")
+    pend = inp.get("pending")
+    if pend:
+        out["warning"] = (f"EDGAR ya tiene el {pend.get('form')} del periodo cerrado el {pend.get('report_date')} "
+                          f"(presentado el {pend.get('filed')}), que el beneficio de doce meses aún no recoge")
+    elif engine_cut and inp.get("end") and (_D(engine_cut) - _D(inp["end"])).days > T["stale_days"]:
+        # F16 bis · 4: sin un informe posterior en EDGAR que usar (un 20-F sin trimestres en XBRL): se avisa
+        out["warning"] = (f"el beneficio de doce meses es el del periodo cerrado el {inp['end']}, el último que EDGAR "
+                          f"recoge; los estados del análisis llegan al {engine_cut}")
+    if archetype == "REIT":
+        out["metric"] = "P/FFO"
+        pf = km.get("p_ffo")
+        if pf is None or pf <= 0:
+            out["reason"] = "sin P/FFO con sentido (FFO de doce meses ≤ 0 o sin dato)"
+            return out
+        out.update(status="ok", multiple=pf)
+        return out
+    if inp.get("status") != "ok":
+        out["reason"] = inp.get("reason") or "sin beneficio de doce meses"
+        return out
+    if not market_cap or market_cap <= 0:
+        out["reason"] = "sin capitalización"
+        return out
+    # F16 bis · 5: la capitalización con las mismas acciones que el beneficio. En un emisor local (sin conversión de
+    # moneda), un factor implícito sin fracción simple (currency.StatementContext, basis «implicito») es que la
+    # cotización cuenta otras acciones que el balance: varias clases con unidades de la sociedad operativa (IBKR, BX,
+    # TKO) o una fusión posterior al periodo (WAT). La capitalización de la L1 se rehace con las acciones del balance
+    # (las del beneficio atribuible) y se dice. Solo emisores us-gaap sin conversión (los ADR, también los que presentan
+    # en dólares como BP, ya tienen la capitalización en la clase de la cotización) y solo si EDGAR lo confirma: las
+    # acciones del balance coinciden (± share_mismatch) con el promedio diluido de EDGAR del periodo del beneficio (si
+    # no, la diferencia es un desdoblamiento que Yahoo aplica hacia atrás o un balance de otro periodo).
+    cur = currency or {}
+    sc = cur.get("share_class") or {}
+    dsh = inp.get("diluted_shares")
+    if (sc.get("basis") == "implicito" and not cur.get("converted") and sc.get("statement_shares")
+            and sc.get("price_shares") and str(inp.get("concept") or "").startswith("us-gaap:") and dsh
+            and abs(sc["statement_shares"] / dsh - 1) <= T["share_mismatch"]):
+        ratio = sc["statement_shares"] / sc["price_shares"]
+        if abs(ratio - 1) > T["share_mismatch"]:
+            market_cap = market_cap * ratio
+            out["market_cap"] = market_cap
+            out["shares_note"] = (f"capitalización con las acciones del balance ({sc['statement_shares'] / 1e6:,.0f} M, "
+                                  f"las del beneficio), no con las de la cotización "
+                                  f"({sc['price_shares'] / 1e6:,.0f} M: otras clases o una operación posterior)")
+    ni = inp.get("ni_ttm")
+    out["earnings_reported"] = ni
+    if ni is not None and ni > 0:
+        out["pe_reported"] = market_cap / ni
+    disc = inp.get("discontinued")
+    base = ni - disc if (ni is not None and disc) else ni
+    if disc:
+        out["notes"].append("sin discontinuadas")
+    adj = 0.0
+    n = norm or {}
+    same = bool(engine_cut and inp.get("end")) and abs(
+        (_D(engine_cut) - _D(inp["end"])).days) <= tol_days
+    applied = [i for i in n.get("items") or [] if i.get("applied") and i.get("net") is not None
+               and not (disc and i.get("type") == "discontinuadas")]
+    if same and n.get("used_in_score") and applied:
+        adj = sum(float(i["net"]) for i in applied)
+        out["normalized"] = bool(adj)
+        if adj:
+            out["notes"].append("sin partidas no recurrentes")
+    elif not same and (inp.get("charges") or {}).get("pretax"):
+        # el corte de estados del motor es otro periodo: los cargos y ventas no recurrentes de EDGAR de estos doce
+        # meses, después de impuestos (tipo efectivo del análisis o el de config)
+        from settings import cfg
+        t = tax_rate if (tax_rate is not None and 0 <= tax_rate <= 0.5) else cfg("thresholds.normalization.default_tax_rate")
+        adj = float(inp["charges"]["pretax"]) * (1 - t)
+        out["normalized"] = True
+        out["notes"].append("sin cargos ni ventas no recurrentes de EDGAR")
+    earn = (base - adj) if base is not None else None
+    out["earnings"] = earn
+    if earn is None:
+        out["reason"] = "sin beneficio de doce meses"
+        return out
+    if earn <= 0:
+        out["reason"] = ("beneficio normalizado de doce meses ≤ 0: el P/E no tiene sentido" if (adj or disc)
+                         else "beneficio de doce meses ≤ 0: el P/E no tiene sentido")
+        return out
+    out.update(status="ok", multiple=market_cap / earn)
+    return out
 
 
 def gics_sector(symbol: Optional[str], yahoo_sector: Optional[str]) -> Optional[str]:
@@ -280,12 +455,23 @@ def _level(score: Optional[float]) -> Optional[str]:
 
 def price(market_cap: Optional[float], inp: Optional[Dict[str, Any]], gics_sector: Optional[str],
           confidence_level: Optional[str] = None, config: Optional[Dict[str, Any]] = None,
-          reading: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-    """price_attractiveness con la regla L1 (mismas claves que verdict.price para la vista y el PDF)."""
+          reading: Optional[Dict[str, Any]] = None, l1_basis: Optional[Dict[str, Any]] = None,
+          gics: Optional[str] = None) -> Dict[str, Any]:
+    """price_attractiveness con la regla L1 (mismas claves que verdict.price para la vista y el PDF). `gics_sector` es el
+    grupo de comparación (group()); `l1_basis`, el múltiplo de basis() (sin él, P/E = capitalización / `inp`)."""
     c = config if config is not None else load_config()
-    p = pe(market_cap, inp)
+    if l1_basis is not None:
+        p = {"value": l1_basis.get("multiple"), "reason": l1_basis.get("reason")}
+    else:
+        p = pe(market_cap, inp)
+    lb = l1_basis or {}
     out: Dict[str, Any] = {"rule": RULE, "pe_ttm": p["value"], "pe_basis": inp, "gics_sector": gics_sector,
-                           "sector_median": None, "relative": None, "percentile": None, "as_of": None,
+                           "group": gics_sector, "gics": gics or gics_sector, "metric": lb.get("metric") or "P/E",
+                           "pe_reported_l1": lb.get("pe_reported"), "normalized": lb.get("normalized"),
+                           "basis_notes": lb.get("notes") or [], "warning": lb.get("warning"),
+                           "shares_note": lb.get("shares_note"),
+                           "sector_median": None, "median_scope": None, "relative": None, "percentile": None,
+                           "as_of": None,
                            "universe_n": None, "score": None, "score_raw": None, "level": None, "level_raw": None,
                            "factor": None, "confidence": confidence_level, "contracted": False, "border": None,
                            "valuation_reading": reading, "reason": p["reason"]}
@@ -296,8 +482,13 @@ def price(market_cap: Optional[float], inp: Optional[Dict[str, Any]], gics_secto
     if p["value"] is None:
         return out
     med = (c.get("sector_median") or {}).get(str(gics_sector or ""))
+    if not med and c.get("market_median") and (gics_sector in (c.get("small_groups") or []) or
+                                                gics_sector not in (c.get("n_sector") or {})):
+        # F16 bis · 2: grupo con pocas empresas en el universo → la mediana de todo el universo
+        med = c["market_median"]
+        out["median_scope"] = "mercado"
     if not med:
-        out["reason"] = f"sin mediana del P/E de su sector GICS ({gics_sector or 'sin sector'}) en el universo"
+        out["reason"] = f"sin mediana del {out['metric']} de su grupo ({gics_sector or 'sin sector'}) en el universo"
         return out
     rel = p["value"] / med
     q: List[float] = c.get("relative_quantiles") or []
@@ -337,12 +528,17 @@ def build_reference(rows: List[Dict[str, Any]], as_of: str, source: str) -> Dict
     cortes de tercios (los de la prueba hacia atrás: rango < n/3 barata, ≥ 2n/3 cara)."""
     import statistics
     by: Dict[str, List[float]] = {}
+    key = lambda r: r.get("group") or r.get("gics_sector")      # F16 bis · 2: grupo (REIT, Financieras o sector)
     for r in rows:
-        if r.get("pe") and r["pe"] > 0 and r.get("gics_sector"):
-            by.setdefault(r["gics_sector"], []).append(r["pe"])
-    med = {s: statistics.median(v) for s, v in sorted(by.items())}
-    rel = sorted(r["pe"] / med[r["gics_sector"]] for r in rows
-                 if r.get("pe") and r["pe"] > 0 and r.get("gics_sector") in med)
+        if r.get("pe") and r["pe"] > 0 and key(r):
+            by.setdefault(key(r), []).append(r["pe"])
+    from settings import cfg
+    min_g = cfg("thresholds.score.price_l1.min_group") or 10
+    small = sorted(s for s, v in by.items() if len(v) < min_g)
+    market = statistics.median([x for v in by.values() for x in v]) if by else None
+    med = {s: statistics.median(v) for s, v in sorted(by.items()) if s not in small}
+    # F16 bis · 2: los grupos con menos de min_group empresas se comparan con la mediana de todo el universo
+    rel = sorted(r["pe"] / (med.get(key(r)) or market) for r in rows if r.get("pe") and r["pe"] > 0 and key(r) in by)
     n = len(rel)
     if n < 30:
         raise ValueError(f"universo insuficiente para la referencia L1 ({n} empresas con P/E)")
@@ -354,7 +550,8 @@ def build_reference(rows: List[Dict[str, Any]], as_of: str, source: str) -> Dict
     import math
     cuts = [rel[math.ceil(n / 3) - 1], rel[math.ceil(2 * n / 3) - 1]]
     return {"as_of": as_of, "source": source, "n": n, "n_sector": {s: len(v) for s, v in sorted(by.items())},
-            "sector_median": med, "cuts": cuts, "relative_quantiles": [quant(i / 100) for i in range(101)]}
+            "sector_median": med, "market_median": market, "small_groups": small, "min_group": min_g,
+            "cuts": cuts, "relative_quantiles": [quant(i / 100) for i in range(101)]}
 
 
 def write_reference(ref: Dict[str, Any], path: str = CONFIG) -> None:
@@ -369,6 +566,7 @@ def write_reference(ref: Dict[str, Any], path: str = CONFIG) -> None:
     lines = ["# F16 · referencia del universo para la etiqueta de precio L1 (lib/precio_l1.py).",
              "# GENERADO por tools/precio_l1_universo.py. No editar a mano.",
              f"as_of = {tv(ref['as_of'])}", f"source = {tv(ref['source'])}", f"n = {ref['n']}",
+             f"market_median = {tv(ref.get('market_median'))}", f"small_groups = {tv(ref.get('small_groups') or [])}",
              f"cuts = {tv(ref['cuts'])}", f"relative_quantiles = {tv(ref['relative_quantiles'])}", "",
              "[sector_median]"]
     lines += [f"{tv(s)} = {tv(v)}" for s, v in ref["sector_median"].items()]

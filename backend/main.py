@@ -2923,9 +2923,18 @@ def _compute_analysis_body(symbol: str) -> dict:
                         _cats, _cbasis, methods=(((result.get("confidence") or {}).get("dimensions") or {})
                                                  .get("convergence") or {}).get("methods"))
                     import precio_l1
+                    # F16 bis (decisión del usuario, 7-nov): beneficio normalizado de doce meses, sin discontinuadas,
+                    # REIT por P/FFO entre REIT, financieras entre financieras y el aviso de un 10-Q sin incorporar.
+                    _mc_l1 = safe_float(result["key_metrics"].get("market_cap"))
+                    _gics = precio_l1.gics_sector(symbol, sector)
+                    _l1b = precio_l1.basis(_mc_l1, yinfo.get("_pe_l1"), archetype, result["key_metrics"],
+                                           result.get("earnings_normalization"),
+                                           (yinfo.get("_as_of") or {}).get("date"),
+                                           tax_rate=safe_float((result.get("tax_rate") or {}).get("rate")),
+                                           currency=yinfo.get("_currency"))
                     result["price_attractiveness"] = precio_l1.price(
-                        safe_float(result["key_metrics"].get("market_cap")), yinfo.get("_pe_l1"),
-                        precio_l1.gics_sector(symbol, sector), _cbasis, reading=_reading)
+                        _mc_l1, yinfo.get("_pe_l1"), precio_l1.group(archetype, _gics), _cbasis, reading=_reading,
+                        l1_basis=_l1b, gics=_gics)
                     # F13 · paso 8: sin precio de hoy (o sin perfil ni historial) no hay veredicto de precio
                     from verdict import abstention as _abst, abstain as _abstain
                     _why_abst = _abst(yinfo.get("_price_history") if _has_yahoo else None, sector)

@@ -497,6 +497,10 @@ cyclical_conditional_industries = ["semiconductors", "specialty chemicals"]
 # Regla de reversión (cíclicas condicionales): una caída pico-valle del margen
 # operativo, o una caída anual de ingresos, dentro de la ventana disponible. Un
 # crecimiento explosivo sin caídas (NVDA) no es un ciclo; una caída sí lo es (MU).
+# F16 bis · 7 (decisión del usuario, 7-nov; MRNA): con pérdidas y ventas que caen más de esto (en el último ejercicio o
+# en tres), no es una madura (lib/classify.py, paso 5b).
+contraction_revenue_drop = 0.30
+
 [archetypes.reversion]
 op_margin_peak_to_trough = 0.10     # el margen cae > 10 pp desde un pico anterior
 revenue_annual_decline = 0.10       # algún ejercicio con ingresos −10% o peor

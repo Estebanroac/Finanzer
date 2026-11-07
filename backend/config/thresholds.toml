@@ -181,7 +181,9 @@ rule_of_40_points = [4, 2, 0, -2, -4]
 [score.calidad]                     # score_calidad_ganancias
 fscore_points = [7, 4, 0, -4, -7]   # tramos de valuation.models.piotroski.bands
 ocf_points = [3, -4]                # OCF > 0 / ≤ 0
-ocf_below_ni_points = 0             # F14 · paso 9: OCF > 0 pero por debajo del beneficio neto (alerta del Piotroski)
+# F14 · paso 9: OCF > 0 pero por debajo del beneficio neto (alerta del Piotroski). F16 bis · 8 (decisión del usuario, 7-nov):
+# penaliza, como el peor tramo de FCF / beneficio neto (antes 0: NFLX tenía calidad de ganancias 20/20 con OCF < beneficio)
+ocf_below_ni_points = -2
 fcf_points = [3, -4]                # FCF > 0 / ≤ 0
 fcf_to_ni_bounds = [1.0, 0.7, 0.3]  # FCF / beneficio neto ≥
 fcf_to_ni_points = [3, 1, 0, -2]
@@ -277,6 +279,15 @@ abstain_min_sessions = 20
 # de tercios de config/precio_l1.toml; con la puntuación entera, ≥ 67 es el tercio más barato y < 34 el más caro.
 bands = [67, 34]
 labels = ["atractivo", "razonable", "exigente"]
+# F16 bis · 2: un grupo con menos empresas que esto en el universo no da una mediana representativa (regla de F14): se
+# compara con la mediana de todo el universo, y se dice.
+min_group = 10
+# F16 bis · 5: acciones del balance (las del beneficio) frente a las de la cotización en un emisor local con factor
+# implícito: por encima de este desvío, la capitalización de la L1 se rehace con las del balance.
+share_mismatch = 0.10
+# F16 bis · 4: un beneficio de doce meses cerrado más de estos días antes del corte de los estados del análisis lleva
+# aviso (los 20-F no tienen trimestres en XBRL).
+stale_days = 120
 
 [alerts]
 max_per_group = 6

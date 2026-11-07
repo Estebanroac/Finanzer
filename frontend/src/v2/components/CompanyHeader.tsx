@@ -27,7 +27,8 @@ export const QUALITY_NOTE = `La calidad suma ${NUMBER_WORDS[SCORE_BANDS.quality.
   + `categorías de ${SCORE_BANDS.category.max} puntos y se expresa sobre ${SCORE_BANDS.scale}. ${bandsSentence("quality")}`;
 /** F16 (prueba hacia atrás del 6-nov-2026): el precio es la regla L1, la que mejor separó barata de cara a 6 y 12
  *  meses; la valoración por múltiplos y DCF se sigue mostrando como lectura. */
-export const PRICE_NOTE = `El atractivo del precio compara el P/E de doce meses con la mediana de su sector y lo `
+export const PRICE_NOTE = `El atractivo del precio compara el P/E del beneficio normalizado de doce meses (P/FFO en `
+  + `los REIT) con la mediana de su grupo (su sector; bancos y aseguradoras entre sí, REIT entre sí) y lo `
   + `sitúa en el universo de unas 540 empresas: el tercio más barato es atractivo, el más caro exigente; se expresa `
   + `sobre ${SCORE_BANDS.scale} y la confianza no lo mueve. ${bandsSentence("price")}`;
 /** Frases de un texto del motor (para citar solo la que toca). */

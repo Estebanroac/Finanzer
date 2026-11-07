@@ -97,3 +97,72 @@ Se corre la prueba hacia atrás con F16 al corte del 5-nov-2025: los cortes sale
 | UL | razonable | atractivo | 12.9x | 0.60 |
 | V | muy exigente | exigente | 32.5x | 2.28 |
 | XOM | entre razonable y exigente | exigente | 22.2x | 1.68 |
+
+## F16 bis · Integridad de los datos de la L1 (7-nov-2026)
+
+Origen: «Fase 1 bis · integridad de datos que afecta a la L1 (sin reglas nuevas de valoración)». La regla de tercios no
+cambia; cambia con qué datos se calcula. Evidencias: `archivo-historico/evidencias-de-pruebas/f16bis_2026-11-07/` (en
+vivo) y `hacia_atras_2025-11-05/` (`corridas/F16c*`, `precio_l1_2025-11-05_f16bis.toml`,
+`f16bis_cambios_tercio_corte.json`).
+
+### Qué cambia
+
+1. **Beneficio normalizado.** La L1 usa el beneficio atribuible de doce meses al último periodo de EDGAR sin las
+   operaciones discontinuadas y sin las partidas no recurrentes; la mediana del grupo se calcula con la misma base. Si
+   el corte de los estados del motor es ese periodo, se restan las partidas que normaliza el motor; si es otro, los
+   cargos y ventas no recurrentes que EDGAR declara para esos doce meses (`sec_edgar.charges_ttm`), con la misma prueba
+   de recurrencia (`normalize.recurrence`: si se repiten, solo el exceso sobre su promedio; nunca un cargo «fantasma»
+   cuando el del año es menor que el promedio) y después de impuestos.
+2. **Grupos.** REIT con P/FFO entre REIT; financieras (arquetipo FINANCIAL: bancos y aseguradoras) solo entre sí; el
+   resto por sector GICS. Un grupo con menos de `min_group` = 10 empresas se compara con la mediana de todo el universo
+   y se dice (hoy, «Real Estate» no REIT: CBRE y CSGP). Beneficio normalizado ≤ 0: sin etiqueta, con el motivo.
+3. **Perímetro.** Fuera las operaciones discontinuadas de los doce meses (3M/Solventum, Honeywell).
+4. **Estados antiguos.** Si EDGAR tiene un 10-Q/10-K posterior que companyfacts no trae, el motor lee su instancia
+   XBRL; si no dio tiempo, aviso junto a la etiqueta. Si el periodo tiene más de `stale_days` = 120 días frente al
+   corte de los estados del análisis y no hay informe que leer (20-F sin trimestres en XBRL), también aviso.
+5. **ADR y acciones.** Validación de las 40 empresas con clase o moneda distinta (`adr_validacion.csv`): la
+   capitalización de los 9 ADR con factor oficial cuadra con sus estados (desvío máximo 7 %, recompras; Toyota con
+   P/E 10,0). Causa encontrada en otro sitio: en emisores us-gaap sin conversión con factor implícito, la cotización
+   cuenta otras acciones que el beneficio (unidades de la sociedad operativa en IBKR, BX, TKO, CVNA; fusión posterior
+   al periodo en KMB/Kenvue; SWKS). La L1 rehace la capitalización con las acciones del balance **solo si EDGAR lo
+   confirma** (promedio diluido del periodo a ±10 %): así no confunde un desdoblamiento que Yahoo aplica hacia atrás
+   (NOW, HON al corte), un balance de otro periodo (COF) ni una etiqueta XBRL mal escalada (WAT). IBKR pasa de P/E
+   110 a 29.
+6. **Estabilidad.** Ver abajo.
+7. **Clasificación.** Con pérdidas (también operativas) y ventas que caen más del 30 % (último ejercicio o tres), no es
+   madura: GROWTH_PRE_PROFIT (Moderna).
+8. **Calidad.** Flujo operativo por debajo del beneficio neto resta 2 en calidad de ganancias (NFLX: −2); la fortaleza
+   «BPA en fuerte expansión» usa el crecimiento acotado del PEG (NFLX: 22,6 % en vez de 36,5 %).
+
+### Cambios de tercio frente al beneficio reportado
+
+- Al corte (5-nov-2025): 49 de 495 empresas con etiqueta en las dos bases (lista en `f16bis_cambios_tercio_corte.json`).
+  Ninguna pierde la etiqueta por normalizar.
+- En vivo (7-nov-2026): 72 de 543 (`cambios_tercio_vivo.tsv`). Referencia nueva en `config/precio_l1.toml`: 514 con
+  múltiplo, cortes 0,839 y 1,190; medianas por grupo, mercado 22,1×.
+
+### Efecto en la prueba hacia atrás (control, el que decide)
+
+| Versión | Barata − cara a 12 m | IC 95 % | A 6 m |
+|---|---|---|---|
+| L1 (referencia) | +11,7 pp | +4,0 / +19,3 | +8,8 |
+| F16 | +10,8 pp | +2,8 / +18,0 | +8,7 |
+| F16 bis | **+12,8 pp** | +5,2 / +20,8 | +8,5 |
+
+En las 110 empresas de la revisión baja (+6,1 frente a +8,9 de F16 y +10,8 de L1); el control es el que decide.
+
+### Estabilidad: dos corridas el mismo día
+
+Cinco escaneos de las 543 el 7-nov-2026 (`escaneo_r1` … `escaneo_r5`; comparación con `estabilidad.py`):
+
+- R1 frente a R2: un cambio de alerta (SBAC). Causa: EDGAR no respondió a tiempo en R1 (KIM y SBAC) y el EBITDA salió
+  de Yahoo. El motor ya lo declaraba («verificación oficial no disponible»).
+- R2 frente a R3: ninguna etiqueta ni alerta cambia, pero el P/E de C y DTE sí. Causa: el 10-Q que presentaron el
+  5-nov (companyfacts de la SEC va meses por detrás) se leía o no según si cabía en el presupuesto de 3 s de EDGAR.
+  **Arreglo en origen**: un informe pendiente sin leer por tiempo cuenta como fallo transitorio de EDGAR y se reintenta
+  con su propio presupuesto (`sec_edgar.transient`, `retry_s`), como ya se hacía con companyfacts.
+- R4 frente a R5 (con el arreglo): **ninguna diferencia** en las 543 (etiqueta, múltiplo, grupo, alertas, arquetipo) y
+  ningún fallo de EDGAR. Prologis: P/FFO 20,2 «razonable» en todas las corridas.
+
+Queda una fuente de variación que no es del cálculo: si la SEC no responde ni al reintento, el análisis sigue con
+Yahoo y lo dice.

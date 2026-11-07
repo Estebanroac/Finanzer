@@ -737,11 +737,23 @@ def _growth(ctx: Ctx):
     return None
 
 
+def eps_growth_bounded(ctx: Ctx) -> Optional[float]:
+    """F16 bis · 8 (decisión del usuario, 7-nov): la fortaleza de crecimiento del BPA usa el crecimiento acotado del PEG
+    (main.py, F14 · paso 9): como mucho, el de las ventas más `growth_divergence_pp` (la expansión del margen no se
+    repite sin fin). Las cíclicas, sin acotar (su BPA es de ciclo medio)."""
+    e3, r3 = ctx.c.get("eps_cagr_3y"), ctx.c.get("revenue_cagr_3y")
+    if e3 is None or ctx.archetype == CYCLICAL or r3 is None or r3 <= 0:
+        return None
+    cap = r3 + cfg("thresholds.dcf_reliability.growth_divergence_pp")
+    return cap if e3 > cap else None
+
+
 def _eps_growth(ctx: Ctx):
     e3 = ctx.c.get("eps_cagr_3y")
     if e3 is None or ctx.na("eps_growth"):
         return None
     T = _A["eps_growth"]
+    _cap = eps_growth_bounded(ctx)
     # V7 (M2): los mismos ejercicios de los estados que los ingresos; F10: los de la serie larga de EDGAR si es de ella
     wdw = ctx.c.get("eps_cagr_window") or ctx.c.get("revenue_cagr_window")
     win_long = f"{wdw}, " if wdw else ""     # en el detalle: el titular corto va a la portada del PDF
@@ -755,10 +767,14 @@ def _eps_growth(ctx: Ctx):
                     f"El BPA cae {_pct(abs(e3))} {_eper} ({win_long}{_emeth}): la rentabilidad por acción se erosiona. "
                     "Contrasta con la evolución de los ingresos y del número de acciones para ubicar la causa.",
                     T["w_decline"])
-    if e3 > T["strong_above"]:
-        return _sig("strength", "Crecimiento", f"BPA en fuerte expansión — +{_pct(e3)} anual ({_eper.removeprefix('anual en ').replace('tres', '3')})",
-                    f"El beneficio por acción crece {_pct(e3)} {_eper} ({win_long}{_emeth}): la rentabilidad para el accionista se "
-                    "acelera, a menudo apoyada en apalancamiento operativo o recompras.", T["w_strong"])
+    _g = _cap if _cap is not None else e3
+    if _g > T["strong_above"]:
+        _capped = (f"; para valorar se acota a {_pct(_g)}, el crecimiento de las ventas más "
+                   f"{cfg('thresholds.dcf_reliability.growth_divergence_pp') * 100:.0f} pp, como en el PEG"
+                   if _cap is not None else "")
+        return _sig("strength", "Crecimiento", f"BPA en fuerte expansión — +{_pct(_g)} anual ({_eper.removeprefix('anual en ').replace('tres', '3')})",
+                    f"El beneficio por acción crece {_pct(e3)} {_eper} ({win_long}{_emeth}){_capped}: la rentabilidad "
+                    "para el accionista se acelera, a menudo apoyada en apalancamiento operativo o recompras.", T["w_strong"])
     return None
 
 
@@ -887,7 +903,9 @@ def _signal_claims(name: str, ctx: "Ctx") -> List[dict]:
         return [_claim("growth", value=ctx.c.get("revenue_cagr_3y"), cagr=True, what="ingresos"),
                 *([_claim("share_dilution_3y")] if ctx.archetype == REIT and _reit_issuing(ctx) else [])]
     if name == "_eps_growth":
-        return [_claim("growth", value=ctx.c.get("eps_cagr_3y"), cagr=True, what="bpa")]
+        _b = eps_growth_bounded(ctx)
+        return [_claim("growth", value=ctx.c.get("eps_cagr_3y"), cagr=True, what="bpa"),
+                *([_claim("growth", value=_b, what="bpa acotado", bounded=True)] if _b is not None else [])]
     if name == "_pe":
         return [_claim("vs_bench", value=ctx.g("pe"), bench=ctx.c.get("sector_pe"), ref=ctx.del_ref)]
     if name in ("_ev_ebitda", "_fcf_yield", "_peg", "_roe", "_margins"):

@@ -151,13 +151,16 @@ def test_no_roic_when_the_captive_debt_cannot_be_separated():
 
 
 # ── paso 9: calidad del beneficio y PEG ──
-def test_operating_cash_below_net_income_does_not_add_quality():
+def test_operating_cash_below_net_income_penalizes_quality():
+    """F14 · paso 9; F16 bis · 8 (decisión del usuario, 7-nov): ya no suma (0) y además resta."""
     import financial_ratios as fr
     kw = dict(f_score=7, fcf=9e9, net_income=11e9, fcf_to_net_income=0.82)
     low = fr.score_calidad_ganancias(ocf=10.1e9, **kw)
     ok = fr.score_calidad_ganancias(ocf=12e9, **kw)
     row = next(x for x in low["adjustments"] if x["metric"] == "Flujo de caja operativo")
-    assert "menos que su beneficio" in row["reason"] and row["adjustment"] == 0
+    from settings import cfg
+    assert "menos que su beneficio" in row["reason"]
+    assert row["adjustment"] == cfg("thresholds.score.calidad.ocf_below_ni_points") < 0
     assert ok["score"] > low["score"]
 
 

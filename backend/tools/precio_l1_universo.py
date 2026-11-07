@@ -35,24 +35,44 @@ def main():
     ap.add_argument("--cache", required=True, help="carpeta de tools/universe_scan.py con los análisis")
     ap.add_argument("--out", default=precio_l1.CONFIG)
     ap.add_argument("--as-of", default=dt.date.today().isoformat())
+    ap.add_argument("--report", help="dónde escribir las empresas que cambian de tercio (TSV)")
     a = ap.parse_args()
-    rows, seen = [], 0
+    rows, rep, seen = [], [], 0
     for r in universe.load():
         p = os.path.join(a.cache, f"{r['symbol']}.analysis.json.gz")
-        pe = None
+        pe, pe_rep, grp = None, None, r.get("gics_sector")
         if os.path.isfile(p):
             an = json.load(gzip.open(p))
             an = an.get("analysis", an) if isinstance(an, dict) else {}     # universe_scan guarda {analysis, pdf_text}
             if "__http_error__" not in an:
                 seen += 1
-                pe = (an.get("price_attractiveness") or {}).get("pe_ttm")
-        rows.append({"symbol": r["symbol"], "gics_sector": r.get("gics_sector"), "pe": pe})
+                pa = an.get("price_attractiveness") or {}
+                pe, grp = pa.get("pe_ttm"), pa.get("group") or grp
+                # F16 bis · 1: el mismo cálculo con el beneficio reportado (los REIT siguen con su P/FFO)
+                pe_rep = pa.get("pe_reported_l1") if pa.get("metric", "P/E") == "P/E" else pe
+        rows.append({"symbol": r["symbol"], "group": grp, "pe": pe})
+        rep.append({"symbol": r["symbol"], "group": grp, "pe": pe_rep})
     cov = seen / max(1, len(rows))
     if cov < MIN_COVERAGE:
         raise SystemExit(f"solo {seen} de {len(rows)} empresas con análisis ({cov:.0%} < {MIN_COVERAGE:.0%}): no se escribe")
     ref = precio_l1.build_reference(rows, a.as_of, f"P/E de lib/precio_l1 en el universo ({seen} análisis de "
                                                     f"tools/universe_scan.py)")
     precio_l1.write_reference(ref, a.out)
+    # F16 bis · 1: cuántas empresas cambian de tercio frente al beneficio reportado (cada uno con su propia referencia)
+    ref_rep = precio_l1.build_reference(rep, a.as_of, "beneficio reportado")
+
+    def tercio(rf, row):
+        med = rf["sector_median"].get(row["group"])
+        if not row.get("pe") or row["pe"] <= 0 or not med:
+            return "sin etiqueta"
+        rel = row["pe"] / med
+        return "atractivo" if rel <= rf["cuts"][0] else "exigente" if rel > rf["cuts"][1] else "razonable"
+    changes = [(r["symbol"], tercio(ref_rep, q), tercio(ref, r)) for r, q in zip(rows, rep)]
+    moved = [c for c in changes if c[1] != c[2]]
+    rep_path = a.out + ".cambios.tsv" if a.report is None else a.report
+    with open(rep_path, "w", encoding="utf-8") as fh:
+        fh.write("symbol\treportado\tnormalizado\n" + "".join(f"{s}\t{x}\t{y}\n" for s, x, y in moved))
+    print(f"cambian de tercio frente al beneficio reportado: {len(moved)} de {len(rows)} → {rep_path}")
     print(f"{a.out}: {ref['n']} empresas con P/E de {len(rows)}; cortes {ref['cuts'][0]:.3f} y {ref['cuts'][1]:.3f}")
     for s, m in ref["sector_median"].items():
         print(f"  {s}: mediana {m:.1f} ({ref['n_sector'][s]})")

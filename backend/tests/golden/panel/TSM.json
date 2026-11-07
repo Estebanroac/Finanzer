@@ -2778,7 +2778,9 @@
         "Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no.",
         "El beneficio sin partidas extraordinarias y el que esperan los analistas no cuadran: una de las dos bases puede estar equivocada."
       ],
-      "coverage_notes": [],
+      "coverage_notes": [
+        "Precio: hay un informe más reciente en EDGAR sin incorporar"
+      ],
       "currency_note": "Estados financieros en TWD convertidos a USD, la moneda de la cotización, con el tipo de cambio de Yahoo (TWD=X): el balance al cierre de cada período y los resultados y flujos al promedio del período (TTM: 1 USD = 31.01 TWD; balance al 2026-06-30: 1 USD = 31.87 TWD). Cifras por acción en la clase que cotiza: cada título cotizado equivale a 5 acciones comunes (factor del depositario, Citibank).",
       "data_notices": [],
       "highlights": [
@@ -2855,11 +2857,11 @@
       "price": {
         "contracted": false,
         "level": "exigente",
-        "note": "P/E 40.8x frente a 28.7x de su sector.",
-        "note_short": "P/E 40.8x frente a 28.7x de su sector",
+        "note": "P/E 40.8x frente a 30.8x de su sector.",
+        "note_short": "P/E 40.8x frente a 30.8x de su sector",
         "question": "¿está cara hoy?",
-        "raw": 26,
-        "score": 26,
+        "raw": 24,
+        "score": 24,
         "title": "ATRACTIVO DEL PRECIO",
         "tone": "warn"
       },
@@ -3223,7 +3225,7 @@
       }
     },
     "methodology": {
-      "contraction_text": "el P/E de doce meses frente a la mediana de su sector, situado por tercios en el universo de comparables: el tercio más barato es atractivo y el más caro exigente; los múltiplos y el DCF se muestran como lectura y la confianza no mueve el precio",
+      "contraction_text": "el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y la confianza no mueve el precio",
       "models": [
         "Altman (1968)",
         "Piotroski (2000)",
@@ -3831,7 +3833,9 @@
               "tone": "pos"
             }
           ],
-          "coverage_notes": [],
+          "coverage_notes": [
+            "Precio: hay un informe más reciente en EDGAR sin incorporar"
+          ],
           "intro": "Cada categoría parte de una base neutral de 10/20. La columna Ajuste muestra cuánto suma o resta cada indicador según la banda en la que cae. Solidez, Rentabilidad, Calidad de ganancias y Crecimiento forman la calidad del negocio; Valoración, el atractivo del precio. Las categorías no concluyentes se excluyen y cada puntuación se reescala a 100 sobre las demás. En Valoración, P/E, Forward P/E, P/FCF, EV/EBITDA y PEG forman un solo bloque: su ajuste individual se muestra entre paréntesis y puntúa a través del Bloque de múltiplos (promedio de los ajustes reescalados a ±1, máximo ±2 con 1 / ±4 con 2 / ±6 con 3+ miembros; en bancos y aseguradoras, P/B y P/TBV forman su propio bloque)."
         },
         "cards": [
@@ -4792,10 +4796,10 @@
         }
       ],
       "composition": {
-        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E de doce meses frente a la mediana de su sector, situado por tercios en el universo de comparables: el tercio más barato es atractivo y el más caro exigente; los múltiplos y el DCF se muestran como lectura y la confianza no mueve el precio.",
+        "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y la confianza no mueve el precio.",
         "price": {
           "level": "exigente",
-          "note": "P/E 40.8x frente a la mediana de tecnología (28.7x), 1.42 veces: en el tercio más caro del universo.",
+          "note": "P/E 40.8x frente a la mediana de tecnología (30.8x), 1.33 veces: en el tercio más caro del universo; aviso: el beneficio de doce meses es el del periodo cerrado el 2025-12-31, el último que EDGAR recoge; los estados del análisis llegan al 2026-06-30.",
           "rows": [
             {
               "kind": "signed",
@@ -4810,7 +4814,7 @@
               "value": -4
             }
           ],
-          "score": 26,
+          "score": 24,
           "signed_max": 6,
           "title": "ATRACTIVO DEL PRECIO",
           "tone": "warn"
@@ -4860,7 +4864,7 @@
       "exec_items": [
         {
           "label": "VEREDICTO",
-          "text": "Calidad excelente · precio exigente (confianza baja: casi ninguna comparable sostuvo el crecimiento que exige el precio). Calidad 99/100 · precio 26/100 (P/E 40.8x frente a 28.7x de su sector)."
+          "text": "Calidad excelente · precio exigente (confianza baja: casi ninguna comparable sostuvo el crecimiento que exige el precio). Calidad 99/100 · precio 24/100 (P/E 40.8x frente a 30.8x de su sector)."
         },
         {
           "label": "CALIDAD DEL NEGOCIO",
@@ -6176,18 +6180,18 @@
     "base": {
       "ke": 0.107591225437,
       "level": "exigente",
-      "score": 26
+      "score": 24
     },
     "dependent": false,
     "minus": {
       "ke": 0.0975912254371,
       "level": "exigente",
-      "score": 26
+      "score": 24
     },
     "plus": {
       "ke": 0.117591225437,
       "level": "exigente",
-      "score": 26
+      "score": 24
     },
     "pp": 0.01,
     "reason": null,
@@ -6783,36 +6787,49 @@
   },
   "price": 430.0,
   "price_attractiveness": {
-    "as_of": "2026-11-06",
+    "as_of": "2026-11-07",
+    "basis_notes": [],
     "border": null,
     "confidence": "media",
     "contracted": false,
     "cuts": [
-      0.836633,
-      1.25475
+      0.839031,
+      1.190143
     ],
     "factor": null,
+    "gics": "Information Technology",
     "gics_sector": "Information Technology",
+    "group": "Information Technology",
     "level": "exigente",
     "level_raw": "exigente",
+    "median_scope": null,
+    "metric": "P/E",
+    "normalized": false,
     "pe_basis": {
+      "charges": null,
       "concept": "ifrs-full:ProfitLossAttributableToOwnersOfParent",
+      "diluted_shares": null,
+      "discontinued": null,
+      "discontinued_concept": null,
       "end": "2025-12-31",
       "method": "anual",
       "ni_ttm": 54615946536.6,
       "ni_ttm_statement": 1697604000000.0,
+      "pending": null,
       "statement_unit": "TWD",
       "status": "ok"
     },
+    "pe_reported_l1": 40.8339316081,
     "pe_ttm": 40.8339316081,
-    "percentile": 0.74348491086,
+    "percentile": 0.764772401464,
     "reason": null,
-    "relative": 1.42130587536,
+    "relative": 1.32642940543,
     "rule": "L1",
-    "score": 26,
-    "score_raw": 26,
-    "sector_median": 28.729869,
-    "universe_n": 513,
+    "score": 24,
+    "score_raw": 24,
+    "sector_median": 30.784851,
+    "shares_note": null,
+    "universe_n": 514,
     "valuation_reading": {
       "basis": null,
       "border": null,
@@ -6837,7 +6854,8 @@
       "partial": false,
       "score": 35,
       "score_raw": 30
-    }
+    },
+    "warning": "el beneficio de doce meses es el del periodo cerrado el 2025-12-31, el último que EDGAR recoge; los estados del análisis llegan al 2026-06-30"
   },
   "price_change": {
     "change": -15.1199951172,

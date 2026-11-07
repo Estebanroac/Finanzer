@@ -588,6 +588,27 @@ def classify(*, sector: Optional[str], industry: Optional[str], eps_ttm: Optiona
                        f"{rv['detail_plain']}.", ambiguous=True)
         cond_stable = True
 
+    # 5b. F16 bis · 7 (decisión del usuario, 7-nov; MRNA): con pérdidas (BPA ≤ 0 o margen neto negativo, y el operativo
+    # también negativo: no es un cargo financiero) y ventas que caen más de `contraction_revenue_drop` (en el último
+    # ejercicio o en tres), no es una madura: se valora como las empresas sin beneficio (caja, consumo de caja, ventas).
+    # La clasificación va antes de normalizar el beneficio: se miran las pérdidas reportadas con el margen operativo.
+    _rv = st.get("revenue") or []
+    _yoy = (_rv[0] / _rv[1] - 1) if (len(_rv) > 1 and _rv[0] is not None and _rv[1]) and _rv[1] > 0 else None
+    _d3 = (_rv[0] / _rv[3] - 1) if (len(_rv) > 3 and _rv[0] is not None and _rv[3]) and _rv[3] > 0 else None
+    _drop = _C["contraction_revenue_drop"]
+    _loss = ((eps_ttm is not None and eps_ttm <= 0) or (net_margin_ttm is not None and net_margin_ttm < 0)) and (
+        operating_margin_ttm is None or operating_margin_ttm < 0)
+    _fall = [x for x in (_yoy, _d3) if x is not None and x <= -_drop]
+    if _loss and _fall:
+        inputs["revenue_drop"] = {"last_year": _yoy, "three_years": _d3}
+        _ftxt = " y ".join(t for t, x in ((f"{abs(_yoy) * 100:.0f}% en el último ejercicio", _yoy),
+                                           (f"{abs(_d3) * 100:.0f}% en tres", _d3)) if x is not None and x <= -_drop)
+        return out(GROWTH_PRE_PROFIT, f"Clasificada como GROWTH_PRE_PROFIT: pérdidas (también operativas) y ventas que "
+                                      f"caen {_ftxt}, más del {_drop * 100:.0f}%: no es una madura",
+                   "perdidas_con_ventas_en_caida",
+                   f"Sin beneficio y con las ventas en caída ({_ftxt}): se valora como una empresa sin beneficio "
+                   "(caja, consumo de caja y ventas), no como una madura.")
+
     # 6. GROWTH_PROFITABLE (fase 3, D4): no cíclica y crecimiento rentable.
     gp = _growth_profitable(eps_ttm, operating_margin_ttm, fcf_sbc_margin, history, st)
     inputs["growth_profitable"] = gp

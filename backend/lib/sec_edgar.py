@@ -1316,7 +1316,7 @@ def facts_with_pending(cik: int, fl: List[Dict[str, Any]], budget: Budget,
         try:
             extra = instance_facts(cik, f, budget)
         except Unavailable as e:
-            rec["reason"] = str(e)
+            rec["reason"], rec["transient"] = str(e), True
             log.append(rec)
             continue
         if extra.get("facts"):
@@ -2141,8 +2141,11 @@ def collect(future, ticker: Optional[str] = None) -> Dict[str, Any]:
 
 def transient(res: Dict[str, Any]) -> bool:
     """EDGAR no respondió (tiempo agotado, presupuesto, red), no «no existe»: sin_cik, sin_estados y desactivado no lo
-    son."""
-    return (res or {}).get("status") == "no_disponible" or (res or {}).get("facts_status") == "no_disponible"
+    son. F16 bis · 6 (estabilidad; C y DTE, 7-nov): también un informe pendiente (un 10-Q que companyfacts aún no
+    trae) que no dio tiempo a leer: según la red, una corrida tomaba el trimestre nuevo y otra el anterior."""
+    res = res or {}
+    return (res.get("status") == "no_disponible" or res.get("facts_status") == "no_disponible"
+            or any(p.get("transient") for p in res.get("pending_filings") or []))
 
 
 def retry_if_transient(res: Dict[str, Any], ticker: Optional[str], fetcher=None) -> Dict[str, Any]:

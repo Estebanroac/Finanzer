@@ -24,7 +24,8 @@ describe("CompanyHeader (AAPL)", () => {
   it("V7 (PM): los desgloses explican el cálculo en palabras, con las cifras de la config", () => {
     expect(QUALITY_NOTE).toBe("La calidad suma cuatro categorías de 20 puntos y se expresa sobre 100. "
       + "Excelente desde 85, sólida desde 65, media desde 45; débil por debajo.");
-    expect(PRICE_NOTE).toBe("El atractivo del precio compara el P/E de doce meses con la mediana de su sector y lo "
+    expect(PRICE_NOTE).toBe("El atractivo del precio compara el P/E del beneficio normalizado de doce meses (P/FFO en "
+      + "los REIT) con la mediana de su grupo (su sector; bancos y aseguradoras entre sí, REIT entre sí) y lo "
       + "sitúa en el universo de unas 540 empresas: el tercio más barato es atractivo, el más caro exigente; se expresa "
       + "sobre 100 y la confianza no lo mueve. Atractivo desde 67, razonable desde 34; exigente por debajo.");
     render(<ScoreBreakdowns analysis={AAPL as unknown as StockAnalysis} />);

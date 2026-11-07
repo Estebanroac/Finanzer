@@ -37,6 +37,7 @@ GICS_ES = {"Communication Services": "servicios de comunicación", "Consumer Dis
            "Consumer Staples": "consumo básico", "Energy": "energía", "Financials": "finanzas",
            "Health Care": "salud", "Industrials": "industria", "Information Technology": "tecnología",
            "Materials": "materiales", "Real Estate": "inmobiliario", "Utilities": "servicios públicos"}
+L1_GROUP_ES = {"REIT": "los REIT", "Financieras": "bancos y aseguradoras"}     # F16 bis · 2
 L1_TERCIO = {"atractivo": "en el tercio más barato del universo", "razonable": "en el tercio central del universo",
              "exigente": "en el tercio más caro del universo"}
 
@@ -46,7 +47,9 @@ def l1_note_short(pa):
     su sector»."""
     pa = pa or {}
     if pa.get("level") and pa.get("pe_ttm") and pa.get("sector_median"):
-        return f"P/E {pa['pe_ttm']:.1f}x frente a {pa['sector_median']:.1f}x de su sector"
+        _g = ("todo el universo" if pa.get("median_scope") == "mercado" else
+              "su grupo" if pa.get("group") in L1_GROUP_ES else "su sector")
+        return f"{pa.get('metric') or 'P/E'} {pa['pe_ttm']:.1f}x frente a {pa['sector_median']:.1f}x de {_g}"
     return "Sin P/E con sentido" if pa.get("reason") and not pa.get("abstained") else None
 
 
@@ -54,12 +57,20 @@ def l1_note(pa):
     """F16: la nota del precio con la regla L1: «P/E 36.2x frente a la mediana de tecnología (27.8x), 1.30 veces: en
     el tercio más caro del universo», o el motivo de que no haya veredicto."""
     pa = pa or {}
+    grp = pa.get("group") or pa.get("gics_sector") or ""
+    sec = L1_GROUP_ES.get(grp) or GICS_ES.get(grp, grp or "su sector")
+    if pa.get("median_scope") == "mercado":
+        sec = f"todo el universo (su grupo, {sec}, tiene pocas empresas)"
+    notes = pa.get("basis_notes") or []
+    warn = (f"; {pa['shares_note']}" if pa.get("shares_note") else "") + (
+        f"; aviso: {pa['warning']}" if pa.get("warning") else "")
     if pa.get("level") and pa.get("pe_ttm") and pa.get("sector_median") and pa.get("relative") is not None:
-        sec = GICS_ES.get(pa.get("gics_sector") or "", pa.get("gics_sector") or "su sector")
-        return (f"P/E {pa['pe_ttm']:.1f}x frente a la mediana de {sec} ({pa['sector_median']:.1f}x), "
-                f"{pa['relative']:.2f} veces: {L1_TERCIO.get(pa['level'], pa['level'])}")
+        met = pa.get("metric") or "P/E"
+        what = f" ({', '.join(notes)})" if notes and met == "P/E" else ""
+        return (f"{met} {pa['pe_ttm']:.1f}x{what} frente a la mediana de {sec} ({pa['sector_median']:.1f}x), "
+                f"{pa['relative']:.2f} veces: {L1_TERCIO.get(pa['level'], pa['level'])}{warn}")
     if pa.get("reason") and not pa.get("abstained"):
-        return f"Precio sin veredicto: {pa['reason']}"
+        return f"Precio sin veredicto: {pa['reason']}{warn}"
     return None
 
 
@@ -1496,9 +1507,9 @@ def _reverse_block(a: Dict[str, Any]) -> Optional[Dict[str, Any]]:
 def contraction_text() -> str:
     """La regla del atractivo del precio, escrita una vez para la web y los PDF. F16 (prueba hacia atrás del 6-nov-2026,
     decisión del usuario): es la regla L1 (lib/precio_l1.py); antes, la Valoración contraída según la confianza."""
-    return ("el P/E de doce meses frente a la mediana de su sector, situado por tercios en el universo de "
-            "comparables: el tercio más barato es atractivo y el más caro exigente; los múltiplos y el DCF se muestran "
-            "como lectura y la confianza no mueve el precio")
+    return ("el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por "
+            "tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura y "
+            "la confianza no mueve el precio")
 
 
 def _contraction_phrase(p_raw: Any, p_score: Any, q: Dict[str, Any]) -> str:
@@ -1657,7 +1668,10 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
     if _q.get("low_coverage_categories"):
         cover_notes.append("cobertura baja en " + ", ".join(_q["low_coverage_categories"]))
     if _pa.get("rule") == "L1":
-        pass                             # F16: el motivo de un precio sin veredicto va en la nota de la regla (l1_note)
+        # F16: el motivo de un precio sin veredicto va en la nota de la regla (l1_note). F16 bis · 4: el aviso de un
+        # informe más reciente sin incorporar, junto a la etiqueta.
+        if _pa.get("warning"):
+            cover_notes.append("Precio: hay un informe más reciente en EDGAR sin incorporar")
     elif _pa.get("basis") or (p_score is None and breakdown):
         cover_notes.append("Precio sin dato: Valoración no concluyente")
     # Etapa 9b: sin jerga ("crudo / contraído"): sin ajustar X → ajustado a Y por confianza media.
