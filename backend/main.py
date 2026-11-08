@@ -3006,8 +3006,8 @@ def _compute_analysis_body(symbol: str) -> dict:
                                                  **_alert_args[1])
         except Exception as e:
             _sin_dato("alerts", e)
-        # Fase 1 · pendientes (decisión del usuario, 7-nov-2026): una sola alerta roja (valoración extrema del motor
-        # anterior); el estado del balance y la lectura de valoración, aparte y sin color de alerta (lib/alert_groups.py)
+        # Fase 1 · pendientes (7-nov-2026) y versión 1.0 (8-nov-2026): sin alertas rojas (la de valoración extrema pasa
+        # a la lectura de valoración); el estado del balance y la lectura de valoración, sin color (lib/alert_groups.py)
         try:
             import alert_groups as _agr
             result["alerts"] = _agr.regroup(result.get("alerts"), result.get("price_attractiveness"))

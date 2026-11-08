@@ -297,17 +297,18 @@ max_per_group = 6
 years_ebitda_plural_from = 1.5      # "~2 años" vs "~1 año"
 
 [alerts.valuation_extreme]
-# Fase 1 · pendientes (decisión del usuario, 7-nov-2026): la única alerta roja (lib/alert_groups.py). Se activa con la
-# lectura de valoración del motor anterior (valuation_reading) en «muy exigente». Evidencia fuera de la muestra: control
-# de la prueba hacia atrás (corte 5-nov-2025, versión A): caída máxima ≥ 40 % en 12 meses en 17 de 49 (34,7 %) frente
-# al 14,9 % del resto (37 de 248). Se cita en el texto; no se recalcula.
-rate = 0.347
-base_rate = 0.149
-hits = 17
-n = 49
+# Versión 1.0 (decisión del usuario, 8-nov-2026): ya NO es alerta roja; es la primera línea de la lectura de valoración,
+# sin color (lib/alert_groups.py), con la lectura del motor anterior (valuation_reading) en «muy exigente». Evidencia,
+# control de los dos cortes de la prueba hacia atrás (tests/hacia_atras/c2_criterio.py): caída máxima ≥ 40 % en 12 meses
+# en 23 de 103 (22,3 %) frente al 16,4 % del resto (78 de 477). 2025: 34,7 % frente a 15,2 %; 2024 (corregido): 11,1 %
+# frente a 17,6 %. No cumple el criterio (≥ 1,5 veces, también sin tecnología). Se cita en el texto; no se recalcula.
+rate = 0.223
+base_rate = 0.164
+hits = 23
+n = 103
 drawdown = 0.40
 horizon_months = 12
-sample = "corte del 5-nov-2025, 297 empresas de control"
+sample = "cortes del 5-nov-2025 y del 5-nov-2024, empresas de control"
 
 [alerts.pe]
 # F10 · B3: con referencia, la lectura del P/E, del EV/EBITDA, del ROE y de los márgenes es la de su fila (bandas de

@@ -448,10 +448,11 @@ def test_broad_except_logs_and_marks_block_sin_dato(monkeypatch):
     monkeypatch.setattr(main.logger, "error", lambda msg, *a, **kw: logged.append(str(msg)))
     with fb.replay(fb.fixtures_dir("local")) as store:
         a = fb.run_analysis("V", store)
-    # flujo intacto; la alerta roja de valoración extrema no depende de build_signals (sale del precio)
-    assert {k: v for k, v in a["alerts"].items() if k != "red_flags"} == {"warnings": [], "strengths": [],
-                                                                         "balance": [], "valuation": []}
-    assert all(x["reason"] == "Riesgo de caída fuerte por valoración extrema" for x in a["alerts"]["red_flags"])
+    # flujo intacto; la lectura de valoración extrema no depende de build_signals (sale del precio). Versión 1.0: sin
+    # alertas rojas
+    assert {k: v for k, v in a["alerts"].items() if k != "valuation"} == {"red_flags": [], "warnings": [],
+                                                                         "strengths": [], "balance": []}
+    assert all(x["reason"] == "Valoración extrema según múltiplos y DCF" for x in a["alerts"]["valuation"])
     errs = a["data_provenance"]["errors"]
     assert errs == [{"block": "alerts", "source": "sin_dato", "reason": "RuntimeError: fallo sintético"}]
     assert any("bloque 'alerts' sin calcular" in m for m in logged)

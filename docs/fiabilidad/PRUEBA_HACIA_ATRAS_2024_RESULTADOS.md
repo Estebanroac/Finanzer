@@ -143,5 +143,6 @@ total y también fuera de tecnología (GICS Information Technology). Se mide en 
 - **Precio**: se mantiene la L1, porque ordena bien en los dos cortes. El texto de la etiqueta dirá «frente a su
   sector» y no sugerirá rendimiento futuro.
 - **Congelar como versión 1.0.** La próxima prueba será un corte anual nuevo; no más cortes ahora.
-- **C2 no cumple el criterio.** Queda por decidir qué se hace con la alerta roja de valoración extrema antes de
-  congelar.
+- **C2 no cumple el criterio.** Decisión del usuario (8-nov-2026): se retira la alerta roja de valoración extrema. Pasa
+  a ser la primera línea de la lectura de valoración, sin color, y cita la evidencia de los dos cortes: 22,3 % frente a
+  16,4 %, y en 2024 menos que el resto. La versión 1.0 no tiene alertas rojas (`VERSION_1_0.md`).

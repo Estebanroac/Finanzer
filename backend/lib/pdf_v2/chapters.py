@@ -634,8 +634,9 @@ def _riesgos(a, ctx):
     if not any_items:
         out.append(body("No se detectaron alertas significativas."))
     elif not ct["red_flags"]:
-        # Fase 1 · pendientes: la única alerta roja es la de valoración extrema; sin ella, se dice por qué no hay otras
-        out.append(note("Alerta roja: solo la de valoración extrema, la única con evidencia en la prueba hacia atrás."))
+        # Versión 1.0 (8-nov-2026): no hay alertas rojas; se dice por qué
+        out.append(note("Sin alertas rojas: ninguna se confirmó en la prueba hacia atrás (dos cortes). La valoración "
+                        "extrema va como lectura, sin color."))
     out += sub("Lo que no sabemos: la consistencia del análisis")
     if conf:
         out.append(body(conf["summary"]))

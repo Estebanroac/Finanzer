@@ -1,6 +1,11 @@
 """
 Fase 1 · pendientes de la prueba hacia atrás (decisión del usuario, 7-nov-2026): una sola alerta roja.
 
+Versión 1.0 (decisión del usuario, 8-nov-2026): esa alerta se RETIRA. En el segundo corte (5-nov-2024) no se confirmó:
+las que la tenían cayeron un 40 % o más menos que el resto (11,1 % frente a 17,6 %), y con los dos cortes juntos el
+cociente (× 1,37) no llega al × 1,5 fijado. Desde aquí `red_flags` queda vacío y la valoración extrema es la primera
+línea de la «Lectura de valoración», sin color, con la evidencia de los dos cortes. Lo de abajo describe la Fase 1.
+
 La prueba hacia atrás (corte 5-nov-2025) mostró que las alertas rojas del motor no anticipan caídas mejor que la tasa
 de partida, salvo una: la valoración del motor anterior en «muy exigente» (control: 34,7 % de caídas ≥ 40 % en los 12
 meses siguientes frente al 14,9 % del resto). Desde aquí:
@@ -44,19 +49,20 @@ def _pct(x: float) -> str:
 
 
 def extreme_valuation(reading: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
-    """La alerta roja si la lectura del motor anterior cae en «muy exigente»; None si no."""
+    """Versión 1.0: la lectura (sin color) si la valoración del motor anterior cae en «muy exigente»; None si no."""
     r = reading or {}
     if r.get("level") != EXTREME_LEVEL:
         return None
     C = cfg("thresholds.alerts.valuation_extreme")
     score = r.get("score")
     sc = f" (puntuación {score}/100)" if score is not None else ""
-    return {"category": "Valoración", "reason": "Riesgo de caída fuerte por valoración extrema",
-            "detail": (f"La valoración por múltiplos y DCF, que se sigue calculando como lectura, la sitúa en "
+    return {"category": "Valoración", "reason": "Valoración extrema según múltiplos y DCF",
+            "detail": (f"La valoración por múltiplos y DCF, que se calcula como lectura, la sitúa en "
                        f"«{EXTREME_LEVEL}»{sc}. En la prueba hacia atrás ({C['sample']}), el {_pct(C['rate'])} de las "
                        f"que estaban en ese nivel ({C['hits']} de {C['n']}) cayó un {C['drawdown'] * 100:.0f} % o más "
                        f"en algún momento de los {C['horizon_months']} meses siguientes, frente al "
-                       f"{_pct(C['base_rate'])} del resto. Es una frecuencia del pasado, no una predicción."),
+                       f"{_pct(C['base_rate'])} del resto; en el corte de 2024 cayeron menos que el resto. No anticipa "
+                       f"caídas: es una lectura, no una alerta."),
             "evidence": {k: C[k] for k in ("rate", "base_rate", "hits", "n", "drawdown", "horizon_months", "sample")}}
 
 
@@ -71,7 +77,7 @@ def regroup(alerts: Optional[Dict[str, Any]], price: Optional[Dict[str, Any]]) -
             (out["valuation"] if is_valuation(x) else out["balance"] if is_balance(x) else out["warnings"]).append(x)
     out["valuation"] += [x for x in out["strengths"] if is_valuation(x)]
     out["strengths"] = [x for x in out["strengths"] if not is_valuation(x)]
-    red = extreme_valuation((price or {}).get("valuation_reading"))
-    if red:
-        out["red_flags"].insert(0, red)        # siempre la primera de red_flags
+    ext = extreme_valuation((price or {}).get("valuation_reading"))
+    if ext:
+        out["valuation"].insert(0, ext)        # versión 1.0: la primera de la lectura de valoración, sin color
     return out

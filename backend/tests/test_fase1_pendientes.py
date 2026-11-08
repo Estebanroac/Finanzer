@@ -12,13 +12,13 @@ import precio_l1 as L  # noqa: E402
 import verdict as V  # noqa: E402
 
 
-# ── 1. una sola alerta roja ──
-def test_extreme_valuation_is_the_only_red_flag_with_its_evidence():
+# ── 1. la valoración extrema (versión 1.0, 8-nov-2026: ya no es alerta roja, es lectura) ──
+def test_extreme_valuation_is_a_reading_with_the_two_cuts_evidence():
     assert G.extreme_valuation({"level": "exigente"}) is None
-    red = G.extreme_valuation({"level": "muy exigente", "score": 12})
-    assert red["reason"] == "Riesgo de caída fuerte por valoración extrema"
-    assert "34,7 %" in red["detail"] and "14,9 %" in red["detail"] and "17 de 49" in red["detail"]
-    assert "no una predicción" in red["detail"]
+    ext = G.extreme_valuation({"level": "muy exigente", "score": 12})
+    assert ext["reason"] == "Valoración extrema según múltiplos y DCF"
+    assert "22,3 %" in ext["detail"] and "16,4 %" in ext["detail"] and "23 de 103" in ext["detail"]
+    assert "2024 cayeron menos que el resto" in ext["detail"] and "no una alerta" in ext["detail"]
 
 
 def test_old_red_flags_go_to_balance_or_valuation_reading():
@@ -36,11 +36,11 @@ def test_old_red_flags_go_to_balance_or_valuation_reading():
                                                           "Flujo de caja libre ", "Apalancamiento eleva"]
     assert len(out["valuation"]) == 2 and [x["reason"][:8] for x in out["warnings"]] == ["Liquidez"]
     out = G.regroup(old, {"valuation_reading": {"level": "muy exigente"}})
-    assert len(out["red_flags"]) == 1
-    # va primera aunque llegara otra roja (formato antiguo de otra ruta)
+    assert out["red_flags"] == [] and out["valuation"][0]["reason"] == "Valoración extrema según múltiplos y DCF"
+    # ninguna roja sobrevive, aunque llegue en el formato antiguo de otra ruta
     out = G.regroup({**old, "red_flags": [{"category": "Riesgo de mercado", "reason": "X"}]},
                     {"valuation_reading": {"level": "muy exigente"}})
-    assert out["red_flags"][0]["reason"] == "Riesgo de caída fuerte por valoración extrema"
+    assert out["red_flags"] == [] and "X" in [x["reason"] for x in out["warnings"]]
 
 
 # ── 2. consistencia con dos niveles ──

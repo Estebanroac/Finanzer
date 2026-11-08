@@ -9,7 +9,7 @@ import { alertGroupLabel, RED_FLAGS_LABEL } from "@/v2/lib/story";
 
 const PILLS = [{ id: "premortem", label: "Pre-mortem" }, { id: "alertas", label: "Alertas" }, { id: "sector", label: "Del sector" }, { id: "concentracion", label: "Concentración" },
   { id: "no-sabemos", label: "Lo que no sabemos" }, { id: "metodologia", label: "Metodología" }];
-const EMPTY: Record<string, string> = { red_flags: "la única alerta roja es la de valoración extrema (la sola con evidencia en la prueba hacia atrás) y no se activa; no quiere decir que no haya riesgos: abajo, la concentración de los ingresos y lo que el análisis no sabe", warnings: "el análisis no detecta ninguna",
+const EMPTY: Record<string, string> = { red_flags: "ninguna alerta roja se confirmó en la prueba hacia atrás (dos cortes), así que no hay; no quiere decir que no haya riesgos: abajo, la concentración de los ingresos y lo que el análisis no sabe", warnings: "el análisis no detecta ninguna",
   strengths: "el análisis no detecta ninguna", balance: "nada que señalar en el balance", valuation: "sin lecturas de valoración" };
 
 /** Task 9 · Riesgos: pre-mortem, alertas por grupo y lo que el análisis no sabe (consistencia y cobertura). */

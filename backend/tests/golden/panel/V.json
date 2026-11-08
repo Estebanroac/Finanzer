@@ -1,22 +1,7 @@
 {
   "alerts": {
     "balance": [],
-    "red_flags": [
-      {
-        "category": "Valoración",
-        "detail": "La valoración por múltiplos y DCF, que se sigue calculando como lectura, la sitúa en «muy exigente» (puntuación 20/100). En la prueba hacia atrás (corte del 5-nov-2025, 297 empresas de control), el 34,7 % de las que estaban en ese nivel (17 de 49) cayó un 40 % o más en algún momento de los 12 meses siguientes, frente al 14,9 % del resto. Es una frecuencia del pasado, no una predicción.",
-        "evidence": {
-          "base_rate": 0.149,
-          "drawdown": 0.4,
-          "hits": 17,
-          "horizon_months": 12,
-          "n": 49,
-          "rate": 0.347,
-          "sample": "corte del 5-nov-2025, 297 empresas de control"
-        },
-        "reason": "Riesgo de caída fuerte por valoración extrema"
-      }
-    ],
+    "red_flags": [],
     "strengths": [
       {
         "category": "Rentabilidad",
@@ -50,6 +35,20 @@
       }
     ],
     "valuation": [
+      {
+        "category": "Valoración",
+        "detail": "La valoración por múltiplos y DCF, que se calcula como lectura, la sitúa en «muy exigente» (puntuación 20/100). En la prueba hacia atrás (cortes del 5-nov-2025 y del 5-nov-2024, empresas de control), el 22,3 % de las que estaban en ese nivel (23 de 103) cayó un 40 % o más en algún momento de los 12 meses siguientes, frente al 16,4 % del resto; en el corte de 2024 cayeron menos que el resto. No anticipa caídas: es una lectura, no una alerta.",
+        "evidence": {
+          "base_rate": 0.164,
+          "drawdown": 0.4,
+          "hits": 23,
+          "horizon_months": 12,
+          "n": 103,
+          "rate": 0.223,
+          "sample": "cortes del 5-nov-2025 y del 5-nov-2024, empresas de control"
+        },
+        "reason": "Valoración extrema según múltiplos y DCF"
+      },
       {
         "category": "Valoración",
         "detail": "El mercado paga 32.1x beneficios normalizados, un +40% sobre la referencia del mercado (S&P 500) (23.0x). Es un precio alto que el mercado sostiene por su crecimiento y retornos; deja poco margen de error: cualquier decepción en resultados puede corregir con fuerza.",
@@ -2685,8 +2684,8 @@
         {
           "kicker": "A VIGILAR",
           "kind": "watch",
-          "text": "Riesgo de caída fuerte por valoración extrema",
-          "tone": "neg"
+          "text": "Liquidez ajustada — current ratio 0.99x",
+          "tone": "warn"
         },
         {
           "kicker": "CONTEXTO · 52 SEM.",
@@ -3244,21 +3243,15 @@
       "alerts": {
         "counts": {
           "balance": 0,
-          "red_flags": 1,
+          "red_flags": 0,
           "strengths": 6,
           "unmeasured": null,
-          "valuation": 5,
+          "valuation": 6,
           "warnings": 1
         },
         "groups": [
           {
-            "items": [
-              {
-                "category": "Valoración",
-                "detail": "La valoración por múltiplos y DCF, que se sigue calculando como lectura, la sitúa en «muy exigente» (puntuación 20/100). En la prueba hacia atrás (corte del 5-nov-2025, 297 empresas de control), el 34,7 % de las que estaban en ese nivel (17 de 49) cayó un 40 % o más en algún momento de los 12 meses siguientes, frente al 14,9 % del resto. Es una frecuencia del pasado, no una predicción.",
-                "reason": "Riesgo de caída fuerte por valoración extrema"
-              }
-            ],
+            "items": [],
             "key": "red_flags",
             "title": "Alerta roja",
             "tone": "neg"
@@ -3320,6 +3313,11 @@
           },
           {
             "items": [
+              {
+                "category": "Valoración",
+                "detail": "La valoración por múltiplos y DCF, que se calcula como lectura, la sitúa en «muy exigente» (puntuación 20/100). En la prueba hacia atrás (cortes del 5-nov-2025 y del 5-nov-2024, empresas de control), el 22,3 % de las que estaban en ese nivel (23 de 103) cayó un 40 % o más en algún momento de los 12 meses siguientes, frente al 16,4 % del resto; en el corte de 2024 cayeron menos que el resto. No anticipa caídas: es una lectura, no una alerta.",
+                "reason": "Valoración extrema según múltiplos y DCF"
+              },
               {
                 "category": "Valoración",
                 "detail": "El mercado paga 32.1x beneficios normalizados, un +40% sobre la referencia del mercado (S&P 500) (23.0x). Es un precio alto que el mercado sostiene por su crecimiento y retornos; deja poco margen de error: cualquier decepción en resultados puede corregir con fuerza.",
@@ -4663,10 +4661,10 @@
     "summary": {
       "alert_counts": {
         "balance": 0,
-        "red_flags": 1,
+        "red_flags": 0,
         "strengths": 6,
         "unmeasured": null,
-        "valuation": 5,
+        "valuation": 6,
         "warnings": 1
       },
       "cards": [

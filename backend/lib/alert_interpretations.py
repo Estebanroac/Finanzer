@@ -949,8 +949,9 @@ def build_signals(ratios: Dict[str, Any], contextual: Dict[str, Any], *,
         return [{"category": s["category"], "reason": s["reason"], "detail": s["detail"]} for s in items[:cap]]
 
     # Fase 1 · pendientes (decisión del usuario, 7-nov-2026; lib/alert_groups.py): antes del tope de cada grupo, el
-    # estado del balance y la lectura de valoración salen aparte y sin color; la única alerta roja (valoración extrema)
-    # la añade alert_groups.regroup cuando ya hay precio. Una roja que no sea de esos dos grupos pasa a advertencia.
+    # estado del balance y la lectura de valoración salen aparte y sin color; la lectura de valoración extrema la añade
+    # alert_groups.regroup cuando ya hay precio (versión 1.0: ya no es alerta roja). Una roja que no sea de esos dos
+    # grupos pasa a advertencia.
     import alert_groups as G
     groups = {"warnings": [], "strengths": [], "balance": [], "valuation": []}
     for kind, items in buckets.items():

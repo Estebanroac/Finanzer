@@ -1551,22 +1551,7 @@
   }
  },
  "alerts": {
-  "red_flags": [
-   {
-    "category": "Valoración",
-    "reason": "Riesgo de caída fuerte por valoración extrema",
-    "detail": "La valoración por múltiplos y DCF, que se sigue calculando como lectura, la sitúa en «muy exigente» (puntuación 24/100). En la prueba hacia atrás (corte del 5-nov-2025, 297 empresas de control), el 34,7 % de las que estaban en ese nivel (17 de 49) cayó un 40 % o más en algún momento de los 12 meses siguientes, frente al 14,9 % del resto. Es una frecuencia del pasado, no una predicción.",
-    "evidence": {
-     "rate": 0.347,
-     "base_rate": 0.149,
-     "hits": 17,
-     "n": 49,
-     "drawdown": 0.4,
-     "horizon_months": 12,
-     "sample": "corte del 5-nov-2025, 297 empresas de control"
-    }
-   }
-  ],
+  "red_flags": [],
   "warnings": [
    {
     "category": "Riesgo de mercado",
@@ -1608,6 +1593,20 @@
   ],
   "balance": [],
   "valuation": [
+   {
+    "category": "Valoración",
+    "reason": "Valoración extrema según múltiplos y DCF",
+    "detail": "La valoración por múltiplos y DCF, que se calcula como lectura, la sitúa en «muy exigente» (puntuación 24/100). En la prueba hacia atrás (cortes del 5-nov-2025 y del 5-nov-2024, empresas de control), el 22,3 % de las que estaban en ese nivel (23 de 103) cayó un 40 % o más en algún momento de los 12 meses siguientes, frente al 16,4 % del resto; en el corte de 2024 cayeron menos que el resto. No anticipa caídas: es una lectura, no una alerta.",
+    "evidence": {
+     "rate": 0.223,
+     "base_rate": 0.164,
+     "hits": 23,
+     "n": 103,
+     "drawdown": 0.4,
+     "horizon_months": 12,
+     "sample": "cortes del 5-nov-2025 y del 5-nov-2024, empresas de control"
+    }
+   },
    {
     "category": "Valoración",
     "reason": "Sobrevaloración — P/E normalizado 174.4x",
@@ -3671,8 +3670,8 @@
     {
      "kind": "watch",
      "kicker": "A VIGILAR",
-     "text": "Riesgo de caída fuerte por valoración extrema",
-     "tone": "neg"
+     "text": "Caída pronunciada en el año −48.2%",
+     "tone": "warn"
     },
     {
      "kind": "context",
@@ -3852,11 +3851,11 @@
     "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo: baja, en línea o alta, sin prever rentabilidad; múltiplos y DCF son lectura."
    },
    "alert_counts": {
-    "red_flags": 1,
+    "red_flags": 0,
     "warnings": 1,
     "strengths": 6,
     "balance": 0,
-    "valuation": 4,
+    "valuation": 5,
     "unmeasured": null
    }
   },
@@ -5104,11 +5103,11 @@
    },
    "alerts": {
     "counts": {
-     "red_flags": 1,
+     "red_flags": 0,
      "warnings": 1,
      "strengths": 6,
      "balance": 0,
-     "valuation": 4,
+     "valuation": 5,
      "unmeasured": null
     },
     "groups": [
@@ -5116,13 +5115,7 @@
       "key": "red_flags",
       "title": "Alerta roja",
       "tone": "neg",
-      "items": [
-       {
-        "category": "Valoración",
-        "reason": "Riesgo de caída fuerte por valoración extrema",
-        "detail": "La valoración por múltiplos y DCF, que se sigue calculando como lectura, la sitúa en «muy exigente» (puntuación 24/100). En la prueba hacia atrás (corte del 5-nov-2025, 297 empresas de control), el 34,7 % de las que estaban en ese nivel (17 de 49) cayó un 40 % o más en algún momento de los 12 meses siguientes, frente al 14,9 % del resto. Es una frecuencia del pasado, no una predicción."
-       }
-      ]
+      "items": []
      },
      {
       "key": "warnings",
@@ -5184,6 +5177,11 @@
       "title": "Lectura de valoración",
       "tone": "neu",
       "items": [
+       {
+        "category": "Valoración",
+        "reason": "Valoración extrema según múltiplos y DCF",
+        "detail": "La valoración por múltiplos y DCF, que se calcula como lectura, la sitúa en «muy exigente» (puntuación 24/100). En la prueba hacia atrás (cortes del 5-nov-2025 y del 5-nov-2024, empresas de control), el 22,3 % de las que estaban en ese nivel (23 de 103) cayó un 40 % o más en algún momento de los 12 meses siguientes, frente al 16,4 % del resto; en el corte de 2024 cayeron menos que el resto. No anticipa caídas: es una lectura, no una alerta."
+       },
        {
         "category": "Valoración",
         "reason": "Sobrevaloración — P/E normalizado 174.4x",

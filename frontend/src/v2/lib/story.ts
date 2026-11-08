@@ -40,7 +40,7 @@ const fromKpi = (k: Kpi | undefined): KeyFigure | null =>
 const pick = (fs: Array<KeyFigure | null>): KeyFigure[] =>
   fs.filter((f): f is KeyFigure => !!f && !!f.value.trim() && !MISSING.test(f.value.trim())).slice(0, FIGURES_PER_CHAPTER);
 /** V7 · P2: el grupo de alertas rojas se llama por lo que es (lo que marca el modelo), no «Riesgos». */
-/** Fase 1 · pendientes (7-nov-2026): una sola alerta roja, la de valoración extrema (la única con evidencia). */
+/** Fase 1 · pendientes (7-nov-2026); versión 1.0 (8-nov-2026): sin alertas rojas (ninguna se confirmó en dos cortes). */
 export const RED_FLAGS_LABEL = "Alerta roja";
 export const alertGroupLabel = (key: string, title: string) => (key === "red_flags" ? RED_FLAGS_LABEL : title);
 const firstText = (...xs: Array<string | null | undefined>) => xs.find((x) => x && x.trim()) ?? "";
