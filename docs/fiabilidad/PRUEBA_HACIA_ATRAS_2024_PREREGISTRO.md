@@ -59,3 +59,27 @@ La de 2025 para A frente a L1 y L2 (§7 a–c y §8). La decisión de 2025 (prec
 
 `archivo-historico/evidencias-de-pruebas/hacia_atras_2024-11-05/`: `empresas_410.csv`, métricas, datos congelados,
 registro de accesos no grabados; informe en `informes-pdf/`.
+
+## Desviación 1 (7-nov-2026, decidida por el usuario después de ver los resultados «tal cual»)
+
+**Qué**: en la copia `fixtures_relleno/` de los fixtures al corte, completar los estados anuales de Yahoo
+(`income_stmt` y `cashflow`) con los ejercicios que Yahoo ya no sirve (2020–2021), hasta cuatro columnas. Los valores
+salen de SEC EDGAR presentado antes del corte (`filed` ≤ 2024-11-05), a través de la historia que el propio motor
+calcula al corte (`history_10y`). Los campos son ingresos, BPA diluido, beneficio, flujo operativo, capex y caja libre.
+
+Cada campo se rellena solo si, en el ejercicio más antiguo que Yahoo sí da, EDGAR coincide con Yahoo: ±3 % en
+importes y ±5 % en BPA, capex y caja libre. Si en ese ejercicio Yahoo no trae el campo, se rellena solo cuando los
+ingresos coinciden. Los balances no se completan. Herramienta: `backend/tests/hacia_atras/rellenar_anuales.py`.
+
+**Motivo objetivo, independiente de los resultados**: en el control, 261 de 287 análisis (91 %) perdían la categoría
+«Crecimiento», frente a 18 de 293 (6 %) en el corte de 2025. Una corrida real en noviembre de 2024 habría tenido los
+ejercicios 2020–2023.
+
+**Orden de los hechos, declarado tal cual**:
+
+- 22:44. Se escribe el script; las tolerancias quedan fijadas antes de ver ningún resultado corregido.
+- 22:45–22:47. Se ejecuta el script y se repiten A, B, A14 y C.
+- Después. Llega la instrucción del usuario de commitear antes de repetir.
+- Este commit trae el script **sin cambios desde su ejecución**: sha256 `aec5f2981e34c052…`.
+
+Se informan los dos resultados lado a lado, «tal cual» y «corregido».
