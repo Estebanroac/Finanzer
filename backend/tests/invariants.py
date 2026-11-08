@@ -232,7 +232,10 @@ def price_wording_without_jargon(a, text):
 
 def verdict_in_pdf(a, text):
     v = a["verdict"]
-    assert v["text"].startswith("Calidad ") and " · precio " in v["text"]
+    # versión 1.0: con la regla L1 el veredicto dice «valoración … frente a / en línea con su sector»
+    from display import L1_LEVEL_TEXT
+    assert v["text"].startswith("Calidad ") and (" · precio " in v["text"] or
+                                                 any(" · " + x in v["text"] for x in L1_LEVEL_TEXT.values()))
     assert v["text"] in text.replace("\n", " ")
     for banned in ("score total", "puntuación global", "Puntuación propietaria"):
         assert banned not in text.lower(), banned

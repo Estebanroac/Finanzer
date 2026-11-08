@@ -178,7 +178,7 @@ def test_front_page_uses_normalized_pe_when_reported_is_unreliable(ref):
             continue      # el arquetipo no lee el P/E (REIT, CYCLICAL: lo dicen su rama y el ciclo medio)
         txt = a["display"]["readings"]["pe"]["text"]
         assert f"{n['pe_normalized']:.1f}x el beneficio normalizado" in txt and "no es fiable" in txt, s
-        val = next(i["text"] for i in a["display"]["summary"]["exec_items"] if i["label"] == "ATRACTIVO DEL PRECIO")
+        val = next(i["text"] for i in a["display"]["summary"]["exec_items"] if i["label"] == "VALORACIÓN FRENTE A SU SECTOR")
         assert f"{n['pe_normalized']:.1f}x" in val, s
 
 

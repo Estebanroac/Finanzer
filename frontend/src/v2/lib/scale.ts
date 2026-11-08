@@ -17,12 +17,17 @@ function toneFor(index: number, count: number): ScaleTone {
 }
 
 /** Bandas de una puntuación: cortes de mayor a menor (≥) y nombres de mejor a peor, como en SCORE_BANDS. */
+/** Versión 1.0: nombres de los niveles de la regla L1 a la vista (claves de la config → texto). */
+export const PRICE_LEVEL_SHORT: Record<string, string> = { atractivo: "baja", razonable: "en línea", exigente: "alta" };
+
 export interface ScoreBands { bands: readonly number[]; labels: readonly string[] }
 
 /** Puntuación 0–100 con las bandas del motor (calidad o precio). `cfg`: otras bandas (los tests de las marcas). */
 export function buildScale(kind: "quality" | "price", score: number | null, level: string | null,
                            cfg: ScoreBands = SCORE_BANDS[kind]): ScaleModel {
-  const { bands, labels } = cfg;
+  const { bands } = cfg;
+  // Versión 1.0 (7-nov-2026): el precio se lee «frente a su sector» (las claves de la config no cambian).
+  const labels = kind === "price" ? cfg.labels.map((l) => PRICE_LEVEL_SHORT[l] ?? l) : cfg.labels;
   // bands: de mayor a menor (≥); labels: de mejor a peor. Se recorren de peor a mejor.
   const cuts = [...bands].reverse();            // ascendente
   const names = [...labels].reverse();           // de peor a mejor

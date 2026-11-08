@@ -230,7 +230,11 @@ def verdict(q: Dict[str, Any], p: Dict[str, Any], conf: Optional[Dict[str, Any]]
     l1_none = p.get("rule") == "L1" and not pl and bool(p.get("reason"))     # F16: sin P/E, sin veredicto y el motivo
     ptxt = f"entre {pl} y {pr}" if (pl and pr) else (pl or ('sin veredicto' if (p.get('abstained') or l1_none)
                                                             else 'sin dato'))
-    text = f"Calidad {ql or 'sin dato'} · precio {ptxt}"
+    # Versión 1.0 (decisión del usuario, 7-nov-2026): la etiqueta L1 dice «frente a su sector» y no sugiere
+    # rendimiento futuro («Calidad sólida · valoración baja frente a su sector»)
+    from display import L1_LEVEL_TEXT
+    text = (f"Calidad {ql or 'sin dato'} · {L1_LEVEL_TEXT[pl]}" if (p.get("rule") == "L1" and pl in L1_LEVEL_TEXT)
+            else f"Calidad {ql or 'sin dato'} · precio {ptxt}")
     # Fase 1 · pendientes (decisión del usuario, 7-nov-2026): la consistencia (dos niveles), no la confianza
     import consistency as _cons
     cons = _cons.compute(conf)

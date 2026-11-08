@@ -44,6 +44,9 @@ def _src(text_html: str) -> Paragraph:
 
 def _bands(kind: str) -> str:
     b, labels = cfg(f"thresholds.score.{kind}.bands"), cfg(f"thresholds.score.{kind}.labels")
+    if kind == "price_l1":              # versión 1.0: «frente a su sector» (las claves de la config no cambian)
+        from display import L1_LEVEL_SHORT
+        labels = ["valoración " + L1_LEVEL_SHORT[labels[0]]] + [L1_LEVEL_SHORT.get(x, x) for x in labels[1:]]
     return " · ".join(f"{lab} ≥ {b[i]}" if i < len(b) else f"{lab} por debajo de {b[-1]}"
                       for i, lab in enumerate(labels))
 
@@ -66,7 +69,7 @@ def methodology(a: Dict[str, Any], ctx: Dict[str, Any]) -> list:
     out.append(Paragraph(esc(
         "Este informe combina " + m["ratios_text"] + " (fuente: Yahoo Finance) con " + m["models_text"]
         + " y dos puntuaciones Finanzer de 0 a 100: calidad del negocio (solidez, rentabilidad, calidad de ganancias "
-        "y crecimiento) y atractivo del precio (" + contraction_text() + "). "
+        "y crecimiento) y valoración frente a su sector (" + contraction_text() + "). "
         "Las lecturas se generan automáticamente según la banda en la que cae cada indicador frente a "
         f"umbrales canónicos y a la referencia de su industria ({ref_txt}), o "
         "la del mercado amplio cuando el arquetipo de la empresa contradice a su sector."), styles()["body"]))
@@ -115,8 +118,8 @@ def methodology(a: Dict[str, Any], ctx: Dict[str, Any]) -> list:
         f"calidad de ganancias y crecimiento) que parten de {base['base']}/{base['max']} y suman o restan según la "
         f"banda de cada indicador; se reescalan a 100. Niveles: {_bands('quality')}."))
     out.append(bullet(
-        "Atractivo del precio: " + contraction_text() + ". La puntuación es la posición del P/E relativo en el universo "
-        f"(100 = el más barato). La valoración por múltiplos frente a la referencia y {intrinsic} se sigue calculando "
+        "Valoración frente a su sector: " + contraction_text() + ". La puntuación es la posición del P/E relativo en el "
+        f"universo (100 = el múltiplo más bajo). La valoración por múltiplos frente a la referencia y {intrinsic} se sigue calculando "
         f"y mostrando, sin decidir el nivel. Niveles: {_bands('price_l1')}."))
     out.append(bullet(
         "Consistencia: «consistente» si los métodos de valoración coinciden y la cobertura de datos no es baja; si no, "

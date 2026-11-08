@@ -136,7 +136,7 @@ def score_cards(a: Dict[str, Any], mini: bool = True) -> List[P.ScoreScale]:
     return [
         P.ScoreScale(P.build_scale("quality", q.get("score"), q.get("level")), q["title"], q["question"], disp(q),
                      suffix(q), q.get("tone"), f"{len(qcats)} categorías × {per_cat} puntos", q_mini),
-        P.ScoreScale(P.build_scale("price", p.get("score"), p.get("level")), p["title"], p["question"], disp(p),
+        P.ScoreScale(P.build_scale("price_l1", p.get("score"), p.get("level")), p["title"], p["question"], disp(p),
                      suffix(p), p.get("tone"), "P/E normalizado frente a la mediana de su grupo", p_mini),
         P.ScoreScale(P.build_level_scale(level), "Consistencia", "¿coinciden métodos y datos?",
                      level.capitalize() if level else "—", None, "neu",

@@ -23,14 +23,14 @@ export const DEFINITIONS: Record<string, Definition> = {
   quality: {
     title: "Calidad del negocio",
     description:
-      "Puntuación de 0 a 100 de la calidad del negocio: solidez financiera, rentabilidad, calidad de ganancias y crecimiento. El atractivo del precio se puntúa aparte.",
+      "Puntuación de 0 a 100 de la calidad del negocio: solidez financiera, rentabilidad, calidad de ganancias y crecimiento. La valoración frente a su sector se puntúa aparte.",
     tip: "La calidad y el precio son preguntas distintas: una empresa excelente puede estar cara.",
   },
   price: {
-    title: "Atractivo del precio",
+    title: "Valoración frente a su sector",
     description:
-      "Puntuación de 0 a 100 de lo atractivo que es el precio actual: el P/E del beneficio normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo de unas 540 empresas.",
-    tip: "El tercio más barato es «atractivo» y el más caro «exigente». Los múltiplos y el DCF se muestran como lectura, sin decidir el nivel.",
+      "Puntuación de 0 a 100 de cómo está el precio de hoy frente a su sector: el P/E del beneficio normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por tercios en el universo de unas 540 empresas.",
+    tip: "El tercio con el múltiplo más bajo es «valoración baja» y el más alto «alta». Describe el precio de hoy; no anticipa la rentabilidad. Los múltiplos y el DCF se muestran como lectura, sin decidir el nivel.",
   },
   category: {
     title: "Categorías de la puntuación",
@@ -71,7 +71,7 @@ export const DEFINITIONS: Record<string, Definition> = {
   cat_valoracion: {
     title: "Valoración",
     description:
-      "Categoría que da el atractivo del precio: los múltiplos frente a su referencia y el DCF suman o restan puntos sobre una base neutral.",
+      "Categoría de la valoración por múltiplos y DCF (lectura): los múltiplos frente a su referencia y el DCF suman o restan puntos sobre una base neutral.",
   },
   pb_block: {
     title: "Bloque P/B y P/TBV",
@@ -177,7 +177,7 @@ export const DEFINITIONS: Record<string, Definition> = {
     description:
       "Dónde cotiza el precio dentro de su rango del último año. Es contexto de mercado: no dice si la acción está cara o barata ni mide la calidad del negocio.",
     formula: "(Precio − mínimo 52s) / (máximo 52s − mínimo 52s)",
-    tip: "El atractivo del precio sale de los múltiplos y del DCF, no de la posición en el rango.",
+    tip: "La valoración frente a su sector sale del P/E relativo, no de la posición en el rango.",
   },
 
   // ── Valoración ──

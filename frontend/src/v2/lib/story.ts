@@ -119,7 +119,7 @@ export function buildReadings(a: StockAnalysis): ChapterModel[] {
       joinText(exec("CALIDAD DEL NEGOCIO"), sentences(exec("CREACIÓN DE VALOR"))[0]) || joinText(cover.quality.note),
       [...returns.slice(0, FIGURES_PER_CHAPTER - 1).map((r) => fromRow(r)), ...cards, ...returns.slice(FIGURES_PER_CHAPTER - 1).map((r) => fromRow(r)), ...margins.map((r) => fromRow(r))]),
     ch("valor", "Lo que exige el precio",
-      joinText(...(revDcf?.lines ?? []).map((l) => l.text)) || joinText(firstText(exec("ATRACTIVO DEL PRECIO"), s.valuation.intro)),
+      joinText(...(revDcf?.lines ?? []).map((l) => l.text)) || joinText(firstText(exec("VALORACIÓN FRENTE A SU SECTOR"), s.valuation.intro)),
       [{ label: cover.price.title, value: `${cover.price.score ?? "—"} / 100 · ${cover.price.level ?? "—"}`, tone: toVTone(cover.price.tone) },
        ...(revDcf?.lines[0]?.label ? [{ label: revDcf.title, value: revDcf.lines[0].label, tone: toVTone(revDcf.lines[0].tone) }] : []),
        ...(s.valuation.dcf_reliability_level ? [{ label: "Fiabilidad del DCF", value: s.valuation.dcf_reliability_level, tone: toVTone(s.valuation.dcf_reliability_tone) }] : []),

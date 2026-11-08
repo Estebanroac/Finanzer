@@ -10,9 +10,9 @@ describe("buildScale", () => {
     expect(m.pinPct).toBe(79);
     expect(m.segments.reduce((a, s) => a + s.widthPct, 0)).toBe(100);
   });
-  it("precio 10 (F16, regla L1): exigente a la izquierda, razonable neutro, atractivo a la derecha", () => {
+  it("precio 10 (F16, regla L1; v1.0 «frente a su sector»): alta a la izquierda, en línea neutro, baja a la derecha", () => {
     const m = buildScale("price", 10, "exigente");
-    expect(m.segments.map((s) => s.label)).toEqual(["exigente", "razonable", "atractivo"]);
+    expect(m.segments.map((s) => s.label)).toEqual(["alta", "en línea", "baja"]);
     expect(m.segments.map((s) => s.widthPct).join(" ")).toBe("34 33 33");
     expect(m.segments.map((s) => s.tone).join(" ")).toBe("bad neutral good");
   });
@@ -23,7 +23,7 @@ describe("buildScale", () => {
     expect(buildScale("quality", 79, "sólida").segments.map((s) => `${s.label} ${s.range}`).join(" | "))
       .toBe("débil <45 | media 45–65 | sólida 65–85 | excelente 85+");
     expect(buildScale("price", 10, "exigente").segments.map((s) => `${s.label} ${s.range}`).join(" | "))
-      .toBe("exigente <34 | razonable 34–67 | atractivo 67+");
+      .toBe("alta <34 | en línea 34–67 | baja 67+");
   });
 });
 

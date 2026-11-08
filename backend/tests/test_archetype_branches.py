@@ -189,7 +189,7 @@ def test_bank_pdf_never_reads_pe_or_fcf_as_primary(outputs_by_env):
                     (env, ln, lines[i:i + 6])
                 assert lines[i + 1].strip() == "—", (env, ln, lines[i:i + 3])   # sin la cifra de la empresa
         txt = "\n".join(lines)
-        assert "ATRACTIVO DEL PRECIO\nP/B frente a ROE" in txt, env
+        assert "VALORACIÓN FRENTE A SU SECTOR\nP/B frente a ROE" in txt, env
         cover = txt.split("===== página 2")[0]
         assert "FCF YIELD" not in cover and "P/E (TTM)" not in cover and "P/B" in cover, env
 

@@ -38,8 +38,21 @@ GICS_ES = {"Communication Services": "servicios de comunicación", "Consumer Dis
            "Health Care": "salud", "Industrials": "industria", "Information Technology": "tecnología",
            "Materials": "materiales", "Real Estate": "inmobiliario", "Utilities": "servicios públicos"}
 L1_GROUP_ES = {"REIT": "los REIT", "Financieras": "bancos y aseguradoras"}     # F16 bis · 2
-L1_TERCIO = {"atractivo": "en el tercio más barato del universo", "razonable": "en el tercio central del universo",
-             "exigente": "en el tercio más caro del universo"}
+L1_TERCIO = {"atractivo": "en el tercio más bajo del universo", "razonable": "en el tercio central del universo",
+             "exigente": "en el tercio más alto del universo"}
+# Versión 1.0 (decisión del usuario, 7-nov-2026, tras el segundo corte de la prueba hacia atrás): la etiqueta L1 se
+# escribe «frente a su sector» y no sugiere rendimiento futuro. Las claves internas (atractivo/razonable/exigente) no
+# cambian: el color, el API y las pruebas siguen leyéndolas.
+PRICE_TITLE = "VALORACIÓN FRENTE A SU SECTOR"
+L1_LEVEL_SHORT = {"atractivo": "baja", "razonable": "en línea", "exigente": "alta"}
+L1_LEVEL_TEXT = {"atractivo": "valoración baja frente a su sector", "razonable": "valoración en línea con su sector",
+                 "exigente": "valoración alta frente a su sector"}
+PRICE_DISCLAIMER = "describe el precio de hoy frente a su sector; no anticipa la rentabilidad"
+
+
+def price_level_short(level):
+    """«baja» / «en línea» / «alta» para la tarjeta de la regla L1; otro nivel, tal cual."""
+    return L1_LEVEL_SHORT.get(level, level)
 
 
 def l1_note_short(pa):
@@ -1510,7 +1523,7 @@ def contraction_text() -> str:
     """La regla del atractivo del precio, escrita una vez para la web y los PDF. F16 (prueba hacia atrás del 6-nov-2026,
     decisión del usuario): es la regla L1 (lib/precio_l1.py); antes, la Valoración contraída según la confianza."""
     return ("el P/E normalizado de doce meses (P/FFO en los REIT) frente a la mediana de su grupo, situado por "
-            "tercios en el universo: el más barato es atractivo y el más caro exigente; múltiplos y DCF son lectura")
+            "tercios en el universo: baja, en línea o alta, sin prever rentabilidad; múltiplos y DCF son lectura")
 
 
 def _ke_base_text(floor: Dict[str, Any]) -> str:
@@ -1979,7 +1992,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         return out
 
     cat_groups = [{"title": "CALIDAD DEL NEGOCIO", "items": _cat_items(cfg("thresholds.score.quality.categories"))},
-                  {"title": "ATRACTIVO DEL PRECIO", "items": _cat_items(cfg("thresholds.score.price.categories"))}]
+                  {"title": PRICE_TITLE, "items": _cat_items(cfg("thresholds.score.price.categories"))}]
 
     # Fase 1 · pendientes (decisión del usuario, 7-nov-2026): a la vista, la consistencia (lib/consistency.py), no la
     # confianza: dos niveles, con los métodos y la cobertura de datos; sin sugerir probabilidad de acierto.
@@ -2102,8 +2115,9 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                     "note": join_clauses([("datos incompletos: " + "; ".join(_q.get("low_confidence_reasons") or [])
                                            if _q.get("low_confidence") else _persist_txt), _bq]),
                     "note_short": note_short([_lowc if _q.get("low_confidence") else _persist_tiny, _bq_s])},
-        "price": {"title": "ATRACTIVO DEL PRECIO", "question": "¿está cara hoy?", "score": p_score, "raw": p_raw,
-                  "contracted": bool(_pa.get("contracted")), "level": p_level, "tone": p_tone,
+        "price": {"title": "VALORACIÓN", "question": "¿cómo está frente a su sector?", "score": p_score,
+                  "raw": p_raw, "contracted": bool(_pa.get("contracted")), "level": price_level_short(p_level),
+                  "tone": p_tone,
                   "note": price_note_card, "note_short": price_note_short},
         "categories": cat_groups,
         "verdict": {"text": _vd.get("text") or "Sin veredicto", "full": _vd.get("full"),
@@ -2254,7 +2268,9 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         exec_items.append(("VEREDICTO",
                            f"{_vtxt}. Calidad {q_score if q_score is not None else '—'}/100 · precio "
                            f"{p_score if p_score is not None else '—'}/100"
-                           + ((f" ({clause(price_note_card)})" if price_note_card else "") if _pa.get("rule") == "L1"
+                           # versión 1.0: el veredicto ya dice «frente a su sector»; aquí no se repite
+                           + ((f" ({clause(price_note_card).replace(' de su sector', '', 1)})" if price_note_card
+                               else "") if _pa.get("rule") == "L1"
                               else (f" ({_lc_first(clause(price_note))})" if price_note else "")) + "."))
     _qtxt = []
     if _best:
@@ -2294,7 +2310,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         _val = join_sentences([cap(f"{_clean_metric(_branch_val['metric'])}: {_branch_val['reason']}"),
                                cap(r_pe[2]) if (r_pe and "pe" not in _na_keys) else None])
     if _val.strip():
-        exec_items.append(("ATRACTIVO DEL PRECIO", _val))
+        exec_items.append((PRICE_TITLE, _val))
     _ctx = " ".join(filter(None, [cap(r_52[2]) if r_52 else None, cap(r_beta[2]) if r_beta else None]))
     if _ctx.strip():
         exec_items.append(("CONTEXTO DE MERCADO", _ctx))
@@ -2329,7 +2345,7 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
                     "note": _q.get("basis") or ("cobertura de datos baja" if _q.get("low_confidence")
                                                 else _persist_short),
                     "rows": _qrows},
-        "price": {"title": "ATRACTIVO DEL PRECIO", "score": p_score, "level": p_level, "tone": p_tone,
+        "price": {"title": PRICE_TITLE, "score": p_score, "level": price_level_short(p_level), "tone": p_tone,
                   "note": price_note, "rows": _prows,
                   "signed_max": max(cfg("thresholds.score.valoracion.multiples_block_max_by_members"))},
         "caption": "Calidad: categorías 0–20 reescaladas a 100. Precio: " + contraction_text() + ".",
@@ -3585,7 +3601,10 @@ def score_bands(key, *, th=None, reit=False, utility=False, ffo=False, cycle=Fal
 def _score_level_bands(kind):
     b, labels = cfg(f"thresholds.score.{kind}.bands"), cfg(f"thresholds.score.{kind}.labels")
     tone = quality_tone if kind == "quality" else price_tone
-    return _desc(list(b), list(labels), [tone(x) for x in labels], lambda v: f"{v:g}")
+    shown = list(labels)
+    if kind == "price_l1":              # versión 1.0: «frente a su sector» (las claves de la config no cambian)
+        shown = ["valoración " + L1_LEVEL_SHORT[labels[0]]] + [L1_LEVEL_SHORT.get(x, x) for x in labels[1:]]
+    return _desc(list(b), shown, [tone(x) for x in labels], lambda v: f"{v:g}")
 
 
 def band_tooltips(a, sector_bench, th, mkt, ref, na, de_mode, cyc):
@@ -3670,7 +3689,8 @@ def band_tooltips(a, sector_bench, th, mkt, ref, na, de_mode, cyc):
     if "p_fcf" not in na and not cyc:
         add("fcf_yield", "Bandas del informe", score_bands("fcf_yield"))
     add("quality", "Calidad del negocio (0–100)", _score_level_bands("quality"))
-    add("price", "Atractivo del precio (0–100, regla L1 por tercios)", _score_level_bands("price"))
+    # versión 1.0: las bandas de la regla L1 (antes mostraba las del motor anterior con el rótulo de la L1)
+    add("price", "Valoración frente a su sector (0–100, regla L1 por tercios)", _score_level_bands("price_l1"))
     cb = _PDF_BANDS["category_tone_bounds"]
     add("category", "Puntos de la categoría sobre su máximo",
         _desc(list(cb), ["Fuerte", "Media", "Débil"], ['pos', 'warn', 'neg'], lambda v: f"{v:g}%"))

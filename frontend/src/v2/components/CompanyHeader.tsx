@@ -16,8 +16,11 @@ const signed = (v: number) => (v > 0 ? `+${v}` : v === 0 ? "0" : `−${Math.abs(
 const NUMBER_WORDS = ["cero", "una", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve", "diez"];
 const cap1 = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 /** "Excelente desde 80, sólida desde 65, media desde 45; débil por debajo." (bandas de la config). */
+/** Versión 1.0 (7-nov-2026): la etiqueta del precio se lee «frente a su sector» (las claves de la config no cambian). */
+const PRICE_LEVEL_TEXT: Record<string, string> = { atractivo: "valoración baja", razonable: "en línea", exigente: "alta" };
 const bandsSentence = (kind: "quality" | "price") => {
-  const { bands, labels } = SCORE_BANDS[kind];
+  const { bands } = SCORE_BANDS[kind];
+  const labels = kind === "price" ? SCORE_BANDS.price.labels.map((l) => PRICE_LEVEL_TEXT[l] ?? l) : SCORE_BANDS[kind].labels;
   const from = bands.map((b, i) => `${labels[i]} desde ${b}`).join(", ");
   return `${cap1(from)}; ${labels[labels.length - 1]} por debajo.`;
 };
@@ -25,12 +28,14 @@ const bandsSentence = (kind: "quality" | "price") => {
  *  «factor»). */
 export const QUALITY_NOTE = `La calidad suma ${NUMBER_WORDS[SCORE_BANDS.quality.categories] ?? SCORE_BANDS.quality.categories} `
   + `categorías de ${SCORE_BANDS.category.max} puntos y se expresa sobre ${SCORE_BANDS.scale}. ${bandsSentence("quality")}`;
-/** F16 (prueba hacia atrás del 6-nov-2026): el precio es la regla L1, la que mejor separó barata de cara a 6 y 12
- *  meses; la valoración por múltiplos y DCF se sigue mostrando como lectura. */
-export const PRICE_NOTE = `El atractivo del precio compara el P/E del beneficio normalizado de doce meses (P/FFO en `
-  + `los REIT) con la mediana de su grupo (su sector; bancos y aseguradoras entre sí, REIT entre sí) y lo `
-  + `sitúa en el universo de unas 540 empresas: el tercio más barato es atractivo, el más caro exigente; se expresa `
-  + `sobre ${SCORE_BANDS.scale}; múltiplos y DCF son lectura. ${bandsSentence("price")}`;
+/** F16 (prueba hacia atrás del 6-nov-2026): el precio es la regla L1, la que ordenó bien en los dos cortes; la
+ *  valoración por múltiplos y DCF se sigue mostrando como lectura. Versión 1.0: dice «frente a su sector» y que no
+ *  anticipa la rentabilidad. */
+export const PRICE_NOTE = `La valoración frente a su sector compara el P/E del beneficio normalizado de doce meses `
+  + `(P/FFO en los REIT) con la mediana de su grupo (su sector; bancos y aseguradoras entre sí, REIT entre sí) y lo `
+  + `sitúa por tercios en el universo de unas 540 empresas: valoración baja, en línea o alta frente a su sector. `
+  + `Describe el precio de hoy; no anticipa la rentabilidad. Se expresa sobre ${SCORE_BANDS.scale}; múltiplos y DCF `
+  + `son lectura. ${bandsSentence("price")}`;
 /** Frases de un texto del motor (para citar solo la que toca). */
 const sentences = (t: string | null | undefined) => (t ?? "").split(/(?<=\.)\s+/).filter(Boolean);
 /** El motor da la confianza entre paréntesis y con su nivel delante, para pegarla al veredicto

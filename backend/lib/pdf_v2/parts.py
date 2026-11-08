@@ -253,6 +253,9 @@ def build_scale(kind: str, score: Optional[float], level: Optional[str]) -> Scal
     """Puntuación 0–100 con las bandas del motor (`thresholds.score.<kind>`), del peor tramo al mejor
     (misma regla que la cabecera de la web, frontend/src/v2/lib/scale.ts)."""
     bands, labels = cfg(f"thresholds.score.{kind}.bands"), cfg(f"thresholds.score.{kind}.labels")
+    if kind == "price_l1":              # versión 1.0: «frente a su sector» (las claves de la config no cambian)
+        from display import L1_LEVEL_SHORT
+        labels = [L1_LEVEL_SHORT.get(x, x) for x in labels]
     cuts, names = list(reversed(bands)), list(reversed(labels))
     edges = [0, *cuts, 100]
     last = len(names) - 1

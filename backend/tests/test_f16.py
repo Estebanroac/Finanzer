@@ -55,7 +55,9 @@ def test_verdict_text_with_the_l1_level():
     r = _ref()
     p = L.price(r["sector_median"]["Energy"] * 0.5, {"status": "ok", "ni_ttm": 1.0}, "Energy", "baja", config=r)
     v = V.verdict({"level": "sólida"}, p, {"level": "baja"})
-    assert v["text"] == "Calidad sólida · precio atractivo" and v["price_level_raw"] is None
+    # versión 1.0 (7-nov-2026): «frente a su sector», sin sugerir rendimiento; la clave interna sigue siendo «atractivo»
+    assert v["text"] == "Calidad sólida · valoración baja frente a su sector" and v["price_level_raw"] is None
+    assert v["price_level"] == "atractivo" and "atractivo" not in v["text"]
 
 
 def _f(start, end, val, filed, form="10-Q"):
@@ -105,7 +107,7 @@ def test_note_cites_the_rule_and_its_figures():
     import display
     t = display.l1_note({"level": "exigente", "pe_ttm": 36.21, "sector_median": 27.8, "relative": 1.3025,
                          "gics_sector": "Information Technology"})
-    assert t == "P/E 36.2x frente a la mediana de tecnología (27.8x), 1.30 veces: en el tercio más caro del universo"
+    assert t == "P/E 36.2x frente a la mediana de tecnología (27.8x), 1.30 veces: en el tercio más alto del universo"
     assert display.l1_note({"reason": "beneficio de doce meses ≤ 0: el P/E no tiene sentido"}).startswith(
         "Precio sin veredicto: beneficio")
 
