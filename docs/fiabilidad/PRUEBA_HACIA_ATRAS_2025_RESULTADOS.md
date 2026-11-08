@@ -143,3 +143,20 @@ empate práctico y la decisión no cambian; (b) y (c) siguen sin cumplirse.
 «Empate: aplicar §8». El criterio (a) se trata como empate con L1: la valoración se simplifica hacia L1 (P/E de doce
 meses relativo a la mediana de su sector GICS, por tercios) y el motor queda para calidad, alertas y lectura. No se abre
 otro ciclo de ajustes de precio.
+
+## Corrección del 7-nov-2026: factor de ADR de SMFG (pedida por el usuario)
+
+La preparación del corte de 2024 detectó que `datos_reales/al_corte.csv` daba a SMFG un factor de ADR de 1,2176 en
+lugar de 0,6088. El factor implícito se había calculado con el cierre de 8316.T que Yahoo da hoy, ya ajustado por el
+split 2:1 de la acción local del 29-sep-2026, posterior al corte. Con el cierre sin ajustar (4.071 JPY):
+
+- **SMFG**: capitalización de 51,5 a 103,0 mil millones de USD. P/E de 16,5 a 33,1: su beneficio NIIF del ejercicio a
+  marzo de 2025 es de 478.000 millones de JPY, frente a 873.000 millones el anterior. FCF yield de 0,375 a 0,188.
+- **Etiquetas que cambian**: SMFG pasa de media a cara en L1, y TMO de cara a media en L1 por el corrimiento de
+  tercios. L2 no cambia en ninguna.
+- **Métricas**: L1 del control a 12 meses pasa de +11,67 a +11,20 pp (IC95 +3,2 a +19,1); a 6 meses, de +8,78 a
+  +8,24. Nada más cambia: A, B, A14, F16, (b) y (c) son iguales. A (+11,81) supera a L1 por 0,6 pp, así que el empate
+  práctico y la decisión se mantienen.
+
+Herramienta: `datos_reales/scripts/corregir_smfg.py`. El archivo anterior se conserva como `al_corte_antes_smfg.csv`,
+y las métricas anteriores como `*_antes_smfg.*`.
