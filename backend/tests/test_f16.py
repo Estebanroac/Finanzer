@@ -192,6 +192,12 @@ def test_losses_and_sales_falling_more_than_30pct_is_not_mature():
     c = classify(sector="Healthcare", industry="Biotechnology", eps_ttm=-1.0, net_margin_ttm=-0.1, statements_fy=st,
                  operating_margin_ttm=0.1)
     assert c["rule"] != "perdidas_con_ventas_en_caida"
+    # con menos de cuatro ejercicios no hay caída en tres años: no debe romper el texto (MRNA al 5-nov-2024 daba un 500)
+    st3 = {"revenue": [6.8, 19.3, 18.5], "operating_income": [-4.2, 9.4, 13.0], "total_assets": []}
+    c = classify(sector="Healthcare", industry="Biotechnology", eps_ttm=-9.0, net_margin_ttm=-0.7, statements_fy=st3,
+                 operating_margin_ttm=-0.6)
+    assert c["rule"] == "perdidas_con_ventas_en_caida" and "65% en el último ejercicio" in c["reason"]
+    assert "en tres" not in c["reason"]
 
 
 def test_quality_penalizes_ocf_below_net_income_and_eps_growth_is_bounded():

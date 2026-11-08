@@ -601,8 +601,9 @@ def classify(*, sector: Optional[str], industry: Optional[str], eps_ttm: Optiona
     _fall = [x for x in (_yoy, _d3) if x is not None and x <= -_drop]
     if _loss and _fall:
         inputs["revenue_drop"] = {"last_year": _yoy, "three_years": _d3}
-        _ftxt = " y ".join(t for t, x in ((f"{abs(_yoy) * 100:.0f}% en el último ejercicio", _yoy),
-                                           (f"{abs(_d3) * 100:.0f}% en tres", _d3)) if x is not None and x <= -_drop)
+        # El texto solo de las caídas que cuentan: con menos de cuatro ejercicios `_d3` es None (MRNA al 5-nov-2024).
+        _ftxt = " y ".join(f"{abs(x) * 100:.0f}% {t}" for t, x in (("en el último ejercicio", _yoy), ("en tres", _d3))
+                           if x is not None and x <= -_drop)
         return out(GROWTH_PRE_PROFIT, f"Clasificada como GROWTH_PRE_PROFIT: pérdidas (también operativas) y ventas que "
                                       f"caen {_ftxt}, más del {_drop * 100:.0f}%: no es una madura",
                    "perdidas_con_ventas_en_caida",
