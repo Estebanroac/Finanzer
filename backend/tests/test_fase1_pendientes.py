@@ -37,6 +37,10 @@ def test_old_red_flags_go_to_balance_or_valuation_reading():
     assert len(out["valuation"]) == 2 and [x["reason"][:8] for x in out["warnings"]] == ["Liquidez"]
     out = G.regroup(old, {"valuation_reading": {"level": "muy exigente"}})
     assert len(out["red_flags"]) == 1
+    # va primera aunque llegara otra roja (formato antiguo de otra ruta)
+    out = G.regroup({**old, "red_flags": [{"category": "Riesgo de mercado", "reason": "X"}]},
+                    {"valuation_reading": {"level": "muy exigente"}})
+    assert out["red_flags"][0]["reason"] == "Riesgo de caída fuerte por valoración extrema"
 
 
 # ── 2. consistencia con dos niveles ──
@@ -89,3 +93,11 @@ def test_reference_alarm_when_old_or_frozen():
     frozen = {**c, "previous_cuts": [0.8, 1.2], "previous_as_of": "2026-10-07"}
     assert any("no cambiaron" in x for x in L.reference_alarm(frozen, dt.date(2026, 11, 8)))
     assert L.reference_alarm({**c, "previous_cuts": [0.81, 1.2]}, dt.date(2026, 11, 8)) == []
+
+
+# ── 6. display.consistency, con display.confidence como alias durante una versión ──
+def test_display_consistency_with_the_old_alias():
+    import json
+    a = json.load(open(os.path.join(HERE, "golden", "panel", "AAPL.json"), encoding="utf-8"))
+    d = a["display"]
+    assert d["consistency"] == d["confidence"] and d["consistency"]["level"] in C.LEVELS

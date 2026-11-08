@@ -1,22 +1,7 @@
 {
   "alerts": {
     "balance": [],
-    "red_flags": [
-      {
-        "category": "Valoración",
-        "detail": "La valoración por múltiplos y DCF, que se sigue calculando como lectura, la sitúa en «muy exigente» (puntuación 25/100). En la prueba hacia atrás (corte del 5-nov-2025, 297 empresas de control), el 34,7 % de las que estaban en ese nivel (17 de 49) cayó un 40 % o más en algún momento de los 12 meses siguientes, frente al 14,9 % del resto. Es una frecuencia del pasado, no una predicción.",
-        "evidence": {
-          "base_rate": 0.149,
-          "drawdown": 0.4,
-          "hits": 17,
-          "horizon_months": 12,
-          "n": 49,
-          "rate": 0.347,
-          "sample": "corte del 5-nov-2025, 297 empresas de control"
-        },
-        "reason": "Riesgo de caída fuerte por valoración extrema"
-      }
-    ],
+    "red_flags": [],
     "strengths": [
       {
         "category": "Rentabilidad",
@@ -406,7 +391,7 @@
   "confidence": {
     "base_rate_step": null,
     "capped_from": null,
-    "contraction_basis": "alta",
+    "contraction_basis": "media",
     "dimensions": {
       "base": {
         "level": "alta",
@@ -476,9 +461,16 @@
         "reasons": []
       }
     },
-    "level": "alta",
+    "ke_dependent": {
+      "from": "alta",
+      "reason": "veredicto dependiente de Ke: el nivel de precio pasa de «muy exigente» a «exigente» con Ke − 1 pp",
+      "to": "media"
+    },
+    "level": "media",
     "limits_score": false,
-    "reasons": [],
+    "reasons": [
+      "veredicto dependiente de Ke: el nivel de precio pasa de «muy exigente» a «exigente» con Ke − 1 pp: confianza alta → media"
+    ],
     "score": 1.0
   },
   "consistency": {
@@ -2679,6 +2671,30 @@
       "tone": "pos",
       "verdict_text": "(consistencia consistente: el DCF directo y los múltiplos coinciden)"
     },
+    "consistency": {
+      "dimensions": [
+        {
+          "key": "convergence",
+          "label": "Coincidencia de métodos",
+          "level": "Coinciden",
+          "ok": true,
+          "text": "DCF directo -32% (cara) · múltiplos frente al sector -0.50 (cara). Los métodos de valoración coinciden."
+        },
+        {
+          "key": "coverage",
+          "label": "Cobertura de datos",
+          "level": "Completa",
+          "ok": true,
+          "text": "Sin incidencias."
+        }
+      ],
+      "level": "consistente",
+      "plain": [],
+      "reasons": [],
+      "summary": "Consistencia: consistente (el DCF directo y los múltiplos coinciden). No es una probabilidad de acierto.",
+      "tone": "pos",
+      "verdict_text": "(consistencia consistente: el DCF directo y los múltiplos coinciden)"
+    },
     "cover": {
       "archetype": "MATURE",
       "archetype_label": "Madura",
@@ -2777,8 +2793,8 @@
         {
           "kicker": "A VIGILAR",
           "kind": "watch",
-          "text": "Riesgo de caída fuerte por valoración extrema",
-          "tone": "neg"
+          "text": "Sin alertas relevantes",
+          "tone": "pos"
         },
         {
           "kicker": "CONTEXTO · 52 SEM.",
@@ -3316,7 +3332,7 @@
       "alerts": {
         "counts": {
           "balance": 0,
-          "red_flags": 1,
+          "red_flags": 0,
           "strengths": 6,
           "unmeasured": null,
           "valuation": 2,
@@ -3324,13 +3340,7 @@
         },
         "groups": [
           {
-            "items": [
-              {
-                "category": "Valoración",
-                "detail": "La valoración por múltiplos y DCF, que se sigue calculando como lectura, la sitúa en «muy exigente» (puntuación 25/100). En la prueba hacia atrás (corte del 5-nov-2025, 297 empresas de control), el 34,7 % de las que estaban en ese nivel (17 de 49) cayó un 40 % o más en algún momento de los 12 meses siguientes, frente al 14,9 % del resto. Es una frecuencia del pasado, no una predicción.",
-                "reason": "Riesgo de caída fuerte por valoración extrema"
-              }
-            ],
+            "items": [],
             "key": "red_flags",
             "title": "Alerta roja",
             "tone": "neg"
@@ -4718,7 +4728,7 @@
     "summary": {
       "alert_counts": {
         "balance": 0,
-        "red_flags": 1,
+        "red_flags": 0,
         "strengths": 6,
         "unmeasured": null,
         "valuation": 2,
@@ -6193,22 +6203,22 @@
   "ke_sensitivity": {
     "base": {
       "ke": 0.0844616137094,
-      "level": "razonable",
-      "score": 43
+      "level": "muy exigente",
+      "score": 25
     },
-    "dependent": false,
+    "dependent": true,
     "minus": {
       "ke": 0.0744616137094,
-      "level": "razonable",
-      "score": 43
+      "level": "exigente",
+      "score": 39
     },
     "plus": {
       "ke": 0.0944616137094,
-      "level": "razonable",
-      "score": 43
+      "level": "muy exigente",
+      "score": 25
     },
     "pp": 0.01,
-    "reason": null,
+    "reason": "veredicto dependiente de Ke: el nivel de precio pasa de «muy exigente» a «exigente» con Ke − 1 pp",
     "status": "ok"
   },
   "key_metrics": {
@@ -6791,7 +6801,7 @@
       "sin partidas no recurrentes"
     ],
     "border": null,
-    "confidence": "alta",
+    "confidence": "media",
     "contracted": false,
     "cuts": [
       0.839031,
@@ -6844,7 +6854,11 @@
     "universe_n": 514,
     "valuation_reading": {
       "basis": null,
-      "border": null,
+      "border": {
+        "neighbor": "muy exigente",
+        "points": 2,
+        "text": "En la frontera con «muy exigente» (a 2 puntos): un cambio pequeño en los datos o en los supuestos cambiaría el nivel"
+      },
       "categories_included": 1,
       "categories_total": 1,
       "components": [
@@ -6855,16 +6869,16 @@
           "score": 5
         }
       ],
-      "confidence": "alta",
-      "contracted": false,
+      "confidence": "media",
+      "contracted": true,
       "excluded_categories": [],
-      "factor": 1.0,
-      "level": "muy exigente",
+      "factor": 0.75,
+      "level": "exigente",
       "level_raw": "muy exigente",
       "low_coverage_categories": [],
       "not_applicable_categories": [],
       "partial": false,
-      "score": 25,
+      "score": 31,
       "score_raw": 25
     },
     "warning": null

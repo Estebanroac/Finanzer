@@ -372,7 +372,7 @@
   "confidence": {
     "base_rate_step": null,
     "capped_from": null,
-    "contraction_basis": "media",
+    "contraction_basis": "baja",
     "dimensions": {
       "base": {
         "level": "alta",
@@ -442,11 +442,17 @@
         "reasons": []
       }
     },
-    "level": "media",
+    "ke_dependent": {
+      "from": "media",
+      "reason": "veredicto dependiente de Ke: el nivel de precio pasa de «exigente» a «razonable» con Ke − 1 pp",
+      "to": "baja"
+    },
+    "level": "baja",
     "limits_score": false,
     "reasons": [
       "convergencia media: uno lo ve en precio y otro con dirección: no coinciden, sin oponerse",
-      "calidad de fuente media: beneficio por encima de lo que explica la operación sin partida que lo nombre (no se recorta)"
+      "calidad de fuente media: beneficio por encima de lo que explica la operación sin partida que lo nombre (no se recorta)",
+      "veredicto dependiente de Ke: el nivel de precio pasa de «exigente» a «razonable» con Ke − 1 pp: confianza media → baja"
     ],
     "score": 0.7
   },
@@ -2231,6 +2237,32 @@
       "version": 1
     },
     "confidence": {
+      "dimensions": [
+        {
+          "key": "convergence",
+          "label": "Coincidencia de métodos",
+          "level": "En parte",
+          "ok": false,
+          "text": "P/B justificado (ROE regulado) -20% (cara) · múltiplos frente al sector -0.17 (en precio). Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
+        },
+        {
+          "key": "coverage",
+          "label": "Cobertura de datos",
+          "level": "Completa",
+          "ok": true,
+          "text": "Sin incidencias."
+        }
+      ],
+      "level": "mixta",
+      "plain": [
+        "P/B justificado (ROE regulado) la ve cara y los múltiplos en precio."
+      ],
+      "reasons": [],
+      "summary": "Consistencia: mixta (P/B justificado (ROE regulado) la ve cara y los múltiplos en precio). No es una probabilidad de acierto.",
+      "tone": "warn",
+      "verdict_text": "(consistencia mixta: P/B justificado (ROE regulado) la ve cara y los múltiplos en precio)"
+    },
+    "consistency": {
       "dimensions": [
         {
           "key": "convergence",
@@ -5341,22 +5373,22 @@
   "ke_sensitivity": {
     "base": {
       "ke": 0.0714508140266,
-      "level": "razonable",
-      "score": 53
+      "level": "exigente",
+      "score": 42
     },
-    "dependent": false,
+    "dependent": true,
     "minus": {
       "ke": 0.0614508140266,
       "level": "razonable",
-      "score": 53
+      "score": 50
     },
     "plus": {
       "ke": 0.0814508140266,
-      "level": "razonable",
-      "score": 53
+      "level": "exigente",
+      "score": 35
     },
     "pp": 0.01,
-    "reason": null,
+    "reason": "veredicto dependiente de Ke: el nivel de precio pasa de «exigente» a «razonable» con Ke − 1 pp",
     "status": "ok"
   },
   "key_metrics": {
@@ -5937,7 +5969,7 @@
       "sin partidas no recurrentes"
     ],
     "border": null,
-    "confidence": "media",
+    "confidence": "baja",
     "contracted": false,
     "cuts": [
       0.839031,
@@ -5981,7 +6013,11 @@
     "universe_n": 514,
     "valuation_reading": {
       "basis": null,
-      "border": null,
+      "border": {
+        "neighbor": "exigente",
+        "points": 1,
+        "text": "En la frontera con «exigente» (a 1 punto): un cambio pequeño en los datos o en los supuestos cambiaría el nivel"
+      },
       "categories_included": 1,
       "categories_total": 1,
       "components": [
@@ -5992,16 +6028,16 @@
           "score": 8
         }
       ],
-      "confidence": "media",
+      "confidence": "baja",
       "contracted": true,
       "excluded_categories": [],
-      "factor": 0.75,
-      "level": "exigente",
+      "factor": 0.5,
+      "level": "razonable",
       "level_raw": "exigente",
       "low_coverage_categories": [],
       "not_applicable_categories": [],
       "partial": false,
-      "score": 42,
+      "score": 45,
       "score_raw": 40
     },
     "warning": null

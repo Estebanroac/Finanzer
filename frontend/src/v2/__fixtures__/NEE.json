@@ -2373,7 +2373,7 @@
   }
  },
  "confidence": {
-  "level": "media",
+  "level": "baja",
   "score": 0.7000000000000001,
   "dimensions": {
    "convergence": {
@@ -2446,12 +2446,18 @@
   },
   "reasons": [
    "convergencia media: uno lo ve en precio y otro con dirección: no coinciden, sin oponerse",
-   "calidad de fuente media: beneficio por encima de lo que explica la operación sin partida que lo nombre (no se recorta)"
+   "calidad de fuente media: beneficio por encima de lo que explica la operación sin partida que lo nombre (no se recorta)",
+   "veredicto dependiente de Ke: el nivel de precio pasa de «exigente» a «razonable» con Ke − 1 pp: confianza media → baja"
   ],
   "capped_from": null,
   "limits_score": false,
-  "contraction_basis": "media",
-  "base_rate_step": null
+  "contraction_basis": "baja",
+  "base_rate_step": null,
+  "ke_dependent": {
+   "from": "media",
+   "to": "baja",
+   "reason": "veredicto dependiente de Ke: el nivel de precio pasa de «exigente» a «razonable» con Ke − 1 pp"
+  }
  },
  "quality": {
   "score": 69,
@@ -2591,7 +2597,7 @@
   "level": "razonable",
   "level_raw": "razonable",
   "factor": null,
-  "confidence": "media",
+  "confidence": "baja",
   "contracted": false,
   "border": null,
   "valuation_reading": {
@@ -2611,13 +2617,17 @@
    "not_applicable_categories": [],
    "low_coverage_categories": [],
    "score_raw": 40,
-   "score": 42,
-   "factor": 0.75,
-   "confidence": "media",
+   "score": 45,
+   "factor": 0.5,
+   "confidence": "baja",
    "contracted": true,
-   "level": "exigente",
+   "level": "razonable",
    "level_raw": "exigente",
-   "border": null
+   "border": {
+    "neighbor": "exigente",
+    "points": 1,
+    "text": "En la frontera con «exigente» (a 1 punto): un cambio pequeño en los datos o en los supuestos cambiaría el nivel"
+   }
   },
   "reference_alarm": [],
   "reason": null,
@@ -2655,22 +2665,22 @@
   "status": "ok",
   "pp": 0.01,
   "base": {
-   "level": "razonable",
-   "score": 53,
+   "level": "exigente",
+   "score": 42,
    "ke": 0.0714508140266258
   },
   "minus": {
    "level": "razonable",
-   "score": 53,
+   "score": 50,
    "ke": 0.0614508140266258
   },
   "plus": {
-   "level": "razonable",
-   "score": 53,
+   "level": "exigente",
+   "score": 35,
    "ke": 0.0814508140266258
   },
-  "dependent": false,
-  "reason": null
+  "dependent": true,
+  "reason": "veredicto dependiente de Ke: el nivel de precio pasa de «exigente» a «razonable» con Ke − 1 pp"
  },
  "premortem": {
   "title": "Esta lectura sería errónea si…",
@@ -3760,6 +3770,32 @@
     "valuation": 0,
     "unmeasured": null
    }
+  },
+  "consistency": {
+   "level": "mixta",
+   "tone": "warn",
+   "verdict_text": "(consistencia mixta: P/B justificado (ROE regulado) la ve cara y los múltiplos en precio)",
+   "plain": [
+    "P/B justificado (ROE regulado) la ve cara y los múltiplos en precio."
+   ],
+   "dimensions": [
+    {
+     "key": "convergence",
+     "label": "Coincidencia de métodos",
+     "level": "En parte",
+     "text": "P/B justificado (ROE regulado) -20% (cara) · múltiplos frente al sector -0.17 (en precio). Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no.",
+     "ok": false
+    },
+    {
+     "key": "coverage",
+     "label": "Cobertura de datos",
+     "level": "Completa",
+     "text": "Sin incidencias.",
+     "ok": true
+    }
+   ],
+   "reasons": [],
+   "summary": "Consistencia: mixta (P/B justificado (ROE regulado) la ve cara y los múltiplos en precio). No es una probabilidad de acierto."
   },
   "confidence": {
    "level": "mixta",

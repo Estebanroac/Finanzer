@@ -58,7 +58,7 @@ export function buildReadings(a: StockAnalysis): ChapterModel[] {
   const names = profileNames(a);   // V7: sector e industria en español
   const kpis = cover.kpis;
   const verdict = cover.verdict.text;
-  const conf = d.confidence;
+  const conf = d.consistency ?? d.confidence;
   const exec = (label: string) => d.summary.exec_items.find((e) => e.label === label)?.text;
   const highlight = (kind: string) => cover.highlights.find((h) => h.kind === kind);
   const market = s.market ?? null;

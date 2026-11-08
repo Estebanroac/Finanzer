@@ -2349,7 +2349,7 @@
   }
  },
  "confidence": {
-  "level": "alta",
+  "level": "media",
   "score": 1.0,
   "dimensions": {
    "convergence": {
@@ -2416,11 +2416,18 @@
     "reasons": []
    }
   },
-  "reasons": [],
+  "reasons": [
+   "veredicto dependiente de Ke: el nivel de precio pasa de «atractivo» a «razonable» con Ke + 1 pp: confianza alta → media"
+  ],
   "capped_from": null,
   "limits_score": false,
-  "contraction_basis": "alta",
-  "base_rate_step": null
+  "contraction_basis": "media",
+  "base_rate_step": null,
+  "ke_dependent": {
+   "from": "alta",
+   "to": "media",
+   "reason": "veredicto dependiente de Ke: el nivel de precio pasa de «atractivo» a «razonable» con Ke + 1 pp"
+  }
  },
  "quality": {
   "score": 68,
@@ -2568,7 +2575,7 @@
   "level": "atractivo",
   "level_raw": "atractivo",
   "factor": null,
-  "confidence": "alta",
+  "confidence": "media",
   "contracted": false,
   "border": null,
   "valuation_reading": {
@@ -2588,10 +2595,10 @@
    "not_applicable_categories": [],
    "low_coverage_categories": [],
    "score_raw": 75,
-   "score": 75,
-   "factor": 1.0,
-   "confidence": "alta",
-   "contracted": false,
+   "score": 69,
+   "factor": 0.75,
+   "confidence": "media",
+   "contracted": true,
    "level": "atractivo",
    "level_raw": "atractivo",
    "border": null
@@ -2631,21 +2638,21 @@
   "pp": 0.01,
   "base": {
    "level": "atractivo",
-   "score": 82,
+   "score": 75,
    "ke": 0.079096243257706
   },
   "minus": {
    "level": "atractivo",
-   "score": 82,
+   "score": 75,
    "ke": 0.06909624325770601
   },
   "plus": {
-   "level": "atractivo",
-   "score": 82,
+   "level": "razonable",
+   "score": 61,
    "ke": 0.089096243257706
   },
-  "dependent": false,
-  "reason": null
+  "dependent": true,
+  "reason": "veredicto dependiente de Ke: el nivel de precio pasa de «atractivo» a «razonable» con Ke + 1 pp"
  },
  "premortem": {
   "title": "Esta lectura sería errónea si…",
@@ -3710,6 +3717,30 @@
     "valuation": 1,
     "unmeasured": null
    }
+  },
+  "consistency": {
+   "level": "consistente",
+   "tone": "pos",
+   "verdict_text": "(consistencia consistente: DCF inverso y los múltiplos coinciden)",
+   "plain": [],
+   "dimensions": [
+    {
+     "key": "convergence",
+     "label": "Coincidencia de métodos",
+     "level": "Coinciden",
+     "text": "DCF inverso +0.50 (barata) · múltiplos frente al sector +0.50 (barata). Los métodos de valoración coinciden.",
+     "ok": true
+    },
+    {
+     "key": "coverage",
+     "label": "Cobertura de datos",
+     "level": "Completa",
+     "text": "Sin incidencias.",
+     "ok": true
+    }
+   ],
+   "reasons": [],
+   "summary": "Consistencia: consistente (DCF inverso y los múltiplos coinciden). No es una probabilidad de acierto."
   },
   "confidence": {
    "level": "consistente",

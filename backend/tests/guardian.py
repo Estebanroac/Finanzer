@@ -53,7 +53,7 @@ def norm(s):
 # Rutas de `display` que no son prosa sobre la empresa: escalas de bandas (tooltips) y detalle técnico.
 SKIP_PATHS = (".tooltips", ".na_keys", ".archetype", ".annex", ".thresholds_key", ".version",
               ".key", ".state", ".tone", ".unit", ".kicker", ".method", ".role", ".zones",
-              ".confidence.reasons[].level",
+              ".confidence.reasons[].level", ".consistency.reasons[].level",
               # Rediseño E2a: display.extended son datos (cifras ya formateadas, la ficha de EDGAR, titulares de
               # terceros en inglés); su única frase, extended.next_earnings.basis, sí se comprueba.
               ".extended.price_change", ".extended.company_profile", ".extended.history_10y",
@@ -787,9 +787,9 @@ def _dcf_name_rule(a):
     # que puntúa ni la línea de «Confianza del veredicto» calla que no puntúa; si puntúa el inverso, las dos dan la
     # misma cifra.
     d = a.get("display") or {}
-    if ((a.get("dcf") or {}).get("reliability") or {}).get("level") == "baja" and d.get("confidence"):
+    if ((a.get("dcf") or {}).get("reliability") or {}).get("level") == "baja" and (d.get("consistency") or d.get("confidence")):
         rows = (((d.get("summary") or {}).get("composition") or {}).get("price") or {}).get("rows") or []
-        summ = str(d["confidence"].get("summary") or "")
+        summ = str((d.get("consistency") or d["confidence"]).get("summary") or "")
         for r in rows:
             if str(r.get("label") or "").startswith(("DCF directo", "DCF (")) and r.get("kind") == "signed":
                 out.append(("una_verdad", f"la tarjeta puntúa con {r['label']!r} y el DCF directo no puntúa"))

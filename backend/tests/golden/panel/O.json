@@ -326,7 +326,7 @@
   "confidence": {
     "base_rate_step": null,
     "capped_from": null,
-    "contraction_basis": "alta",
+    "contraction_basis": "media",
     "dimensions": {
       "base": {
         "level": "alta",
@@ -392,9 +392,16 @@
         "reasons": []
       }
     },
-    "level": "alta",
+    "ke_dependent": {
+      "from": "alta",
+      "reason": "veredicto dependiente de Ke: el nivel de precio pasa de «atractivo» a «razonable» con Ke + 1 pp",
+      "to": "media"
+    },
+    "level": "media",
     "limits_score": false,
-    "reasons": [],
+    "reasons": [
+      "veredicto dependiente de Ke: el nivel de precio pasa de «atractivo» a «razonable» con Ke + 1 pp: confianza alta → media"
+    ],
     "score": 1.0
   },
   "consistency": {
@@ -2132,6 +2139,30 @@
       "version": 1
     },
     "confidence": {
+      "dimensions": [
+        {
+          "key": "convergence",
+          "label": "Coincidencia de métodos",
+          "level": "Coinciden",
+          "ok": true,
+          "text": "DCF inverso +0.50 (barata) · múltiplos frente al sector +0.50 (barata). Los métodos de valoración coinciden."
+        },
+        {
+          "key": "coverage",
+          "label": "Cobertura de datos",
+          "level": "Completa",
+          "ok": true,
+          "text": "Sin incidencias."
+        }
+      ],
+      "level": "consistente",
+      "plain": [],
+      "reasons": [],
+      "summary": "Consistencia: consistente (DCF inverso y los múltiplos coinciden). No es una probabilidad de acierto.",
+      "tone": "pos",
+      "verdict_text": "(consistencia consistente: DCF inverso y los múltiplos coinciden)"
+    },
+    "consistency": {
       "dimensions": [
         {
           "key": "convergence",
@@ -4786,21 +4817,21 @@
     "base": {
       "ke": 0.0790962432577,
       "level": "atractivo",
-      "score": 82
+      "score": 75
     },
-    "dependent": false,
+    "dependent": true,
     "minus": {
       "ke": 0.0690962432577,
       "level": "atractivo",
-      "score": 82
+      "score": 75
     },
     "plus": {
       "ke": 0.0890962432577,
-      "level": "atractivo",
-      "score": 82
+      "level": "razonable",
+      "score": 61
     },
     "pp": 0.01,
-    "reason": null,
+    "reason": "veredicto dependiente de Ke: el nivel de precio pasa de «atractivo» a «razonable» con Ke + 1 pp",
     "status": "ok"
   },
   "key_metrics": {
@@ -5376,7 +5407,7 @@
     "as_of": "2026-11-07",
     "basis_notes": [],
     "border": null,
-    "confidence": "alta",
+    "confidence": "media",
     "contracted": false,
     "cuts": [
       0.839031,
@@ -5437,16 +5468,16 @@
           "score": 15
         }
       ],
-      "confidence": "alta",
-      "contracted": false,
+      "confidence": "media",
+      "contracted": true,
       "excluded_categories": [],
-      "factor": 1.0,
+      "factor": 0.75,
       "level": "atractivo",
       "level_raw": "atractivo",
       "low_coverage_categories": [],
       "not_applicable_categories": [],
       "partial": false,
-      "score": 75,
+      "score": 69,
       "score_raw": 75
     },
     "warning": null

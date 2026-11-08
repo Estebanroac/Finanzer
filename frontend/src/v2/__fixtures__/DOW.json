@@ -2921,17 +2921,25 @@
   ]
  },
  "ke_sensitivity": {
-  "status": "sin_dato",
+  "status": "ok",
   "pp": 0.01,
   "base": {
-   "level": null,
-   "score": null,
+   "level": "razonable",
+   "score": 52,
    "ke": 0.10805510809377318
   },
-  "minus": null,
-  "plus": null,
+  "minus": {
+   "level": "razonable",
+   "score": 58,
+   "ke": 0.09805510809377319
+  },
+  "plus": {
+   "level": "razonable",
+   "score": 52,
+   "ke": 0.11805510809377318
+  },
   "dependent": false,
-  "reason": "sin nivel de precio"
+  "reason": null
  },
  "premortem": null,
  "market_context": {
@@ -3953,6 +3961,32 @@
     "valuation": 1,
     "unmeasured": null
    }
+  },
+  "consistency": {
+   "level": "mixta",
+   "tone": "warn",
+   "verdict_text": "(beneficio normalizado de doce meses ≤ 0: el P/E no tiene sentido)",
+   "plain": [
+    "DCF inverso y los múltiplos discrepan."
+   ],
+   "dimensions": [
+    {
+     "key": "convergence",
+     "label": "Coincidencia de métodos",
+     "level": "Discrepan",
+     "text": "DCF directo -81% (cara, no evaluable) · DCF inverso -0.50 (cara) · múltiplos frente al sector +0.75 (barata). Los métodos de valoración se contradicen: uno ve la acción barata y otro cara. Los datos del DCF directo no lo sostienen y no se usa para contrastar.",
+     "ok": false
+    },
+    {
+     "key": "coverage",
+     "label": "Cobertura de datos",
+     "level": "Completa",
+     "text": "Sin incidencias.",
+     "ok": true
+    }
+   ],
+   "reasons": [],
+   "summary": "Consistencia: mixta (DCF inverso y los múltiplos discrepan). No es una probabilidad de acierto. El DCF directo, de fiabilidad baja, no puntúa ni cuenta para la convergencia; en Valoración puntúa el DCF inverso (−2 puntos)."
   },
   "confidence": {
    "level": "mixta",

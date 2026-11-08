@@ -26,12 +26,15 @@ def test_the_expectations_file_reads_whole():
     assert all(p in g["escala_precio"] for x in g["empresas"] for p in x["precio_aceptable"])
 
 
-def test_a_company_check_no_longer_checks_the_price_label():
-    """F16: los rangos de precio del YAML se retiraron (la etiqueta es la regla L1); la confianza sí se comprueba."""
-    e = {"precio_aceptable": ["exigente"], "confianza_max": "media"}
-    a = {"verdict": {"text": "Calidad sólida · precio atractivo", "confidence": "alta"}}
-    assert X.check_company(e, a) == ["confianza alta > media"]
+def test_a_company_check_no_longer_checks_price_or_confidence():
+    """F16: los rangos de precio del YAML se retiraron (la etiqueta es la regla L1). Fase 1 · pendientes: también
+    `confianza_max` (la confianza ya no se muestra; la consistencia no mide lo mismo). Los dos siguen en el YAML."""
+    e = {"precio_aceptable": ["exigente"], "confianza_max": "baja"}
+    a = {"verdict": {"text": "Calidad sólida · precio atractivo", "consistency": "consistente"}}
+    assert X.check_company(e, a) == []
     assert X.price_label(a) == "atractivo"
+    g = X.load_yaml()
+    assert sum(1 for x in g["empresas"] if x.get("confianza_max")) == 31      # registro intacto
 
 
 def test_global_rules_catch_a_single_method_floor_price():

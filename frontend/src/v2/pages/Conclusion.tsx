@@ -17,7 +17,7 @@ const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
 
 /** Task 11 · Conclusión: veredicto completo y su composición, consistencia, qué vigilar, el PDF y el anexo de auditoría. */
 export default function Conclusion({ analysis: a, symbol }: PageProps) {
-  const d = a.display, s = d.summary, c = d.cover, conf = d.confidence, comp = s.composition;
+  const d = a.display, s = d.summary, c = d.cover, conf = d.consistency ?? d.confidence, comp = s.composition;
   const warnings = d.sections.alerts.groups.find((g) => g.key === "warnings")?.items ?? [];
   const pm = d.sections.valuation.premortem;
   return (<>

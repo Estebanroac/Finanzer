@@ -168,7 +168,11 @@ def reprice(p: Dict[str, Any], confidence_level: Optional[str]) -> Dict[str, Any
     if p.get("abstained"):          # F13 · paso 8: sin veredicto de precio no hay nada que recalcular
         return {**p, "confidence": confidence_level}
     if p.get("rule") == "L1":       # F16: la confianza no mueve el precio
-        return {**p, "confidence": confidence_level}
+        # Fase 1 · pendientes (7-nov-2026): la lectura de valoración sí se reevalúa con la confianza nueva, como en la
+        # versión probada (A): la alerta de valoración extrema se dispara con esa lectura (lib/alert_groups.py)
+        rd = p.get("valuation_reading")
+        return {**p, "confidence": confidence_level,
+                **({"valuation_reading": reprice(rd, confidence_level)} if rd else {})}
     P = cfg("thresholds.score.price")
     raw = p.get("score_raw")
     factor = P["confidence_factor"].get(confidence_level) if confidence_level else None

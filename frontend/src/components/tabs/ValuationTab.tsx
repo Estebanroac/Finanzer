@@ -21,7 +21,7 @@ export default function ValuationTab({ display }: { display: Display }) {
   const grown = useGrow();
   const block = display.sections.institutional.breakdown?.categories.find((c) => c.group === "price");
   const sens = V.sensitivity;
-  const conf = display.confidence;
+  const conf = display.consistency ?? display.confidence;
   const refShort = display.benchmark.short;
 
   return (

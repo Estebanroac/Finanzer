@@ -917,7 +917,7 @@ def build_report(buf, analysis, sector_bench, logo_path=None):
             story.append(Paragraph(_esc(SN["note"]), S['small']))
 
     # Consistencia (Fase 1 · pendientes, 7-nov-2026; antes, la confianza del veredicto).
-    CF = D["confidence"]
+    CF = D.get("consistency") or D.get("confidence")
     if CF:
         story.append(Spacer(1, 8))
         story.append(Paragraph("Consistencia", S['h2']))

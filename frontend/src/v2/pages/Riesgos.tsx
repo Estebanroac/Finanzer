@@ -14,7 +14,7 @@ const EMPTY: Record<string, string> = { red_flags: "la única alerta roja es la 
 
 /** Task 9 · Riesgos: pre-mortem, alertas por grupo y lo que el análisis no sabe (consistencia y cobertura). */
 export default function Riesgos({ analysis: a }: PageProps) {
-  const d = a.display, pm = d.sections.valuation.premortem, al = d.sections.alerts, conf = d.confidence;
+  const d = a.display, pm = d.sections.valuation.premortem, al = d.sections.alerts, conf = d.consistency ?? d.confidence;
   const sr = d.sections.sector_risks;
   const full = al.groups.filter((g) => g.items.length > 0), empty = al.groups.filter((g) => g.items.length === 0);
   const count = (k: string) => (al.counts as unknown as Record<string, number>)[k];

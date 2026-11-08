@@ -56,7 +56,7 @@ function ScoreCards({ analysis, withBreakdown, ids }: { analysis: StockAnalysis;
   const cats = cover.categories.flatMap((c) => c.items);
   const qualityCats = cats.filter((i) => i.applicable && i.name !== "Valoración");
   const valuation = cats.find((i) => i.name === "Valoración");
-  const conf = d.confidence;
+  const conf = d.consistency ?? d.confidence;
   const contraction = sentences(conf?.summary).find((x) => x.startsWith("Contrae"));
 
   const qualityBd: Breakdown = {
@@ -116,7 +116,7 @@ export default function CompanyHeader({ analysis, compact = false }: { analysis:
   const d = analysis.display, cover = d.cover;
   const dayChange = d.extended?.price_change;   // E2a: variación frente al cierre anterior
   const q = cover.quality, p = cover.price;
-  const conf = d.confidence;
+  const conf = d.consistency ?? d.confidence;
   return (
     <section className={`company-header${compact ? " compact" : ""}`} {...(compact ? { "aria-hidden": true } : { "aria-label": "Resumen de la empresa" })}>
       <div className="ident">

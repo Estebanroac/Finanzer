@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { StockAnalysis } from "@/lib/api";
 import { confidenceLine } from "./confidence";
 
-const conf = async (t: string) => ((await import(`@/v2/__fixtures__/${t}.json`)).default as unknown as StockAnalysis).display.confidence;
+const conf = async (t: string) => ((await import(`@/v2/__fixtures__/${t}.json`)).default as unknown as StockAnalysis).display.consistency;
 
 // V7 · P1: la línea bajo «Consistencia» (antes «Confianza del veredicto») (la misma que el PDF: cover.confidence_line, test_pdf_v2_report.py)
 describe("confidenceLine", () => {

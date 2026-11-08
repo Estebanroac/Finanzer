@@ -400,7 +400,7 @@
   "confidence": {
     "base_rate_step": null,
     "capped_from": "alta",
-    "contraction_basis": "media",
+    "contraction_basis": "baja",
     "dimensions": {
       "base": {
         "level": "alta",
@@ -468,11 +468,17 @@
         "reasons": []
       }
     },
-    "level": "media",
+    "ke_dependent": {
+      "from": "media",
+      "reason": "veredicto dependiente de Ke: el nivel de precio pasa de «exigente» a «razonable» con Ke − 1 pp",
+      "to": "baja"
+    },
+    "level": "baja",
     "limits_score": false,
     "reasons": [
       "calidad de fuente media: beta sustituta 0.67 fuera de la propia 0.41 ± 2 EE (0.21–0.61, R² 0.14)",
-      "techo en media: la más baja manda: calidad de fuente media"
+      "techo en media: la más baja manda: calidad de fuente media",
+      "veredicto dependiente de Ke: el nivel de precio pasa de «exigente» a «razonable» con Ke − 1 pp: confianza media → baja"
     ],
     "score": 0.9
   },
@@ -2134,6 +2140,30 @@
       "version": 1
     },
     "confidence": {
+      "dimensions": [
+        {
+          "key": "convergence",
+          "label": "Coincidencia de métodos",
+          "level": "Coinciden",
+          "ok": true,
+          "text": "P/B justificado (Gordon) -22% (cara) · P/B frente al sector -28% (cara). Los métodos de valoración coinciden."
+        },
+        {
+          "key": "coverage",
+          "label": "Cobertura de datos",
+          "level": "Completa",
+          "ok": true,
+          "text": "Sin incidencias."
+        }
+      ],
+      "level": "consistente",
+      "plain": [],
+      "reasons": [],
+      "summary": "Consistencia: consistente (el P/B justificado y el P/B del sector coinciden). No es una probabilidad de acierto.",
+      "tone": "pos",
+      "verdict_text": "(consistencia consistente: el P/B justificado y el P/B del sector coinciden)"
+    },
+    "consistency": {
       "dimensions": [
         {
           "key": "convergence",
@@ -4859,21 +4889,21 @@
     "base": {
       "ke": 0.078947,
       "level": "exigente",
-      "score": 8
+      "score": 39
     },
-    "dependent": false,
+    "dependent": true,
     "minus": {
       "ke": 0.068947,
-      "level": "exigente",
-      "score": 8
+      "level": "razonable",
+      "score": 46
     },
     "plus": {
       "ke": 0.088947,
       "level": "exigente",
-      "score": 8
+      "score": 35
     },
     "pp": 0.01,
-    "reason": null,
+    "reason": "veredicto dependiente de Ke: el nivel de precio pasa de «exigente» a «razonable» con Ke − 1 pp",
     "status": "ok"
   },
   "key_metrics": {
@@ -5457,7 +5487,7 @@
       "sin partidas no recurrentes"
     ],
     "border": null,
-    "confidence": "media",
+    "confidence": "baja",
     "contracted": false,
     "cuts": [
       0.839031,
@@ -5512,16 +5542,16 @@
           "score": 7
         }
       ],
-      "confidence": "media",
+      "confidence": "baja",
       "contracted": true,
       "excluded_categories": [],
-      "factor": 0.75,
+      "factor": 0.5,
       "level": "exigente",
       "level_raw": "exigente",
       "low_coverage_categories": [],
       "not_applicable_categories": [],
       "partial": false,
-      "score": 39,
+      "score": 42,
       "score_raw": 35
     },
     "warning": null

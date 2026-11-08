@@ -205,3 +205,30 @@ alerta roja en 95 (17,5 %; en el control al corte, 16,5 %); consistencia: 254 co
 calidad contraída; aviso de pico de beneficio en 24 cíclicas (MU, AMD, LRCX, CVX, SHEL, NUE…); sin alarma de la
 referencia. Por empresa, de media: 1,3 advertencias, 0,5 del estado del balance y 2,4 de la lectura de valoración.
 Suite: 6802 pruebas; web: 172; guardas de build.sh en verde.
+
+### Comprobaciones antes del push (7-nov-2026)
+
+1. **Alerta de valoración extrema al corte (5-nov-2025).** La primera versión marcaba 52 en el control (las 49 de
+   `precio_A = «muy exigente»` más CBRE, ETR y TSM). Causa: la prueba de sensibilidad a Ke comparaba la etiqueta L1,
+   que no usa Ke, y ya no bajaba la confianza de esas tres; en A, esa bajada contraía su precio a «exigente». Arreglo
+   en origen (`ke_sensitivity._tested`, `verdict.reprice`): con la regla L1, la prueba de Ke compara la lectura de
+   valoración y la reevalúa con la confianza resultante. Resultado: **las mismas 49** del control (y las mismas 19 de
+   las 110), **34,7 % frente a 14,9 %** de caídas ≥ 40 % (`hacia_atras_2025-11-05/fase1_alerta_extrema_corte.json`).
+   La prueba de Ke ya no contrae la calidad.
+2. **Calidad sin contracción** (543, mismo día): cambian de nivel 29, todas suben uno (20 de «sólida» a «excelente»,
+   9 de «media» a «sólida»); ninguna se mueve más de un nivel ni baja
+   (`fase1_pendientes_2026-11-07/calidad_sin_contraccion.tsv`).
+3. **Pico de beneficio:** salta hoy en MU (beneficio de doce meses 8,9 veces por encima de la mediana de 3 ejercicios)
+   y en NEM (1,75 veces). Al corte salta en MU y **no en NEM**: la mediana de sus ejercicios 2022–2024 es negativa
+   (−0,43 mil millones; pérdidas en 2022 y 2023) y la medida no se define con mediana ≤ 0. No se ajusta.
+4. **Golden:** `tests/expectativas/golden_110.yaml`, `estado.json` y la muestra de control no han cambiado. Hallazgo:
+   `confianza_max` y las reglas globales R1, R2 y R4 leían `verdict.confidence`, que ya no existe, y no comprobaban
+   nada. `confianza_max` se retira de forma explícita (se queda en el YAML como registro): traducirla a «debe ser
+   mixta» haría fallar 10 de las 23 «baja», casi todas cíclicas cuya confianza era baja por el ciclo, algo que la
+   consistencia no mide. R1, R2 y R4 leen la confianza técnica (`analysis.confidence`), sin cambiar las reglas; R4
+   además exige el aviso de pico a una cíclica en pico «atractiva». Resultado en vivo igual que antes: solo R8 en 3
+   (ECHO, NTRS, STT).
+5. La alerta de valoración extrema va siempre la primera de `red_flags`.
+6. `display.consistency` es el nombre; `display.confidence` queda como alias durante una versión (mismo objeto).
+
+Suite: 6803; web: 172; guardas de build.sh en verde.

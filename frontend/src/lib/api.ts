@@ -591,8 +591,10 @@ export interface Display {
   readings: Record<string, Reading | null>;
   cover: Cover;
   summary: Summary;
-  /** Fase 1 · pendientes (7-nov-2026): el nombre del campo es el del contrato; su contenido es la consistencia (dos
-   *  niveles, «consistente» o «mixta», con la coincidencia de métodos y la cobertura de datos). */
+  /** Fase 1 · pendientes (7-nov-2026): la consistencia (dos niveles, «consistente» o «mixta», con la coincidencia de
+   *  métodos y la cobertura de datos). */
+  consistency?: Confidence | null;
+  /** @deprecated Alias de `consistency` durante una versión (mismo contenido); se retira en la siguiente. */
   confidence: Confidence | null;
   /** Fase 1 (D1): códigos y motivos técnicos para el anexo del PDF; la web no lo muestra. */
   annex: { title: string; items: Array<{ label: string; text: string }> };

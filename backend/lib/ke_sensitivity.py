@@ -14,7 +14,15 @@ from typing import Any, Callable, Dict
 from cost_of_capital import KE_SHIFT
 from settings import cfg
 from valuation_confidence import LEVELS
-from verdict import contract_quality, reprice, verdict as build_verdict
+from verdict import reprice, verdict as build_verdict
+
+
+def _tested(pa: Dict[str, Any]) -> Dict[str, Any]:
+    """El precio cuya dependencia de Ke se prueba. Con la regla L1 (F16), que no usa Ke, la lectura de valoración del
+    motor (múltiplos y DCF): así la confianza, y con ella la contracción de esa lectura que dispara la alerta de
+    valoración extrema, sigue la definición probada en la versión A (Fase 1 · pendientes, 7-nov-2026)."""
+    pa = pa or {}
+    return (pa.get("valuation_reading") or {}) if pa.get("rule") == "L1" else pa
 
 
 def _level_with_shift(shift: float, rerun: Callable[[], Dict[str, Any]]) -> Dict[str, Any]:
@@ -22,7 +30,7 @@ def _level_with_shift(shift: float, rerun: Callable[[], Dict[str, Any]]) -> Dict
         KE_SHIFT.set(shift)
         return rerun()
     alt = contextvars.copy_context().run(run)      # el desplazamiento no sale de la repetición
-    pa = alt.get("price_attractiveness") or {}
+    pa = _tested(alt.get("price_attractiveness"))
     return {"level": pa.get("level"), "score": pa.get("score"), "ke": (alt.get("cost_of_equity") or {}).get("value")}
 
 
@@ -32,9 +40,10 @@ def apply(result: Dict[str, Any], rerun: Callable[[], Dict[str, Any]]) -> None:
     if not C["ke_sensitivity"]:
         return
     pa = result.get("price_attractiveness") or {}
-    base = pa.get("level")
+    tp = _tested(pa)
+    base = tp.get("level")
     d = C["ke_sensitivity_pp"]
-    out: Dict[str, Any] = {"status": "ok", "pp": d, "base": {"level": base, "score": pa.get("score"),
+    out: Dict[str, Any] = {"status": "ok", "pp": d, "base": {"level": base, "score": tp.get("score"),
                                                             "ke": (result.get("cost_of_equity") or {}).get("value")},
                            "minus": None, "plus": None, "dependent": False, "reason": None}
     result["ke_sensitivity"] = out
@@ -70,6 +79,5 @@ def apply(result: Dict[str, Any], rerun: Callable[[], Dict[str, Any]]) -> None:
     conf["level"], conf["contraction_basis"] = new, b_new
     result["price_attractiveness"] = reprice(pa, b_new)
     if result.get("quality") is not None:
-        # F8 · E11: si la confianza llega a baja, la calidad también se contrae
-        result["quality"] = contract_quality(result["quality"], b_new)
+        # Fase 1 · pendientes (decisión del usuario, 7-nov-2026): la confianza ya no contrae la calidad
         result["verdict"] = build_verdict(result["quality"], result["price_attractiveness"], conf)

@@ -193,7 +193,7 @@ def _declare_engine_texts(a, D):
     _record(flag, *wcl, source="display.wacc")
     _record(V.get("dcf_reliability"), _claim("dcf_rel"), source="display.dcf")
     # Confianza: fiabilidad del DCF citada y contracción del precio.
-    pa, C = a.get("price_attractiveness") or {}, D.get("confidence") or {}
+    pa, C = a.get("price_attractiveness") or {}, D.get("consistency") or D.get("confidence") or {}
     ccl = [_claim("dcf_rel"), _claim("price_contraction", raw=pa.get("score_raw"), score=pa.get("score"),
                                      confidence=pa.get("confidence"), factor=pa.get("factor")),
            _claim("altman_zone")]        # F13 · paso 3: la base frágil cita la zona del Altman
@@ -3369,6 +3369,9 @@ def build_display(analysis: Dict[str, Any], sector_bench: Optional[Dict[str, Any
         "readings": readings,
         "cover": cover,
         "summary": summary,
+        # Fase 1 · pendientes (7-nov-2026): `consistency` es el nombre; `confidence`, el alias antiguo durante una versión
+        # (el mismo objeto; se retira en la siguiente)
+        "consistency": confidence,
         "confidence": confidence,
         # Fase 1 (D1): códigos y motivos técnicos, solo en el anexo final del PDF ("Detalle técnico para
         # auditoría"). La web no lo muestra.

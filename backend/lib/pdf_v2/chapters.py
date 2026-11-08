@@ -599,7 +599,7 @@ def _rivales(a, ctx):
 def _riesgos(a, ctx):
     d = a["display"]
     s, cover = d["sections"], d["cover"]
-    conf = d.get("confidence") or {}
+    conf = d.get("consistency") or d.get("confidence") or {}
     out = []
     pm = s["valuation"].get("premortem")
     if pm:
@@ -690,7 +690,7 @@ def _actualidad(a, ctx):
 def _conclusion(a, ctx):
     d = a["display"]
     cover, comp = d["cover"], d["summary"]["composition"]
-    conf = d.get("confidence") or {}
+    conf = d.get("consistency") or d.get("confidence") or {}
     out = sub("Composición de las dos puntuaciones", space_before=T.SPACE[2])
     rows = []
     for blk in (comp["quality"], comp["price"]):

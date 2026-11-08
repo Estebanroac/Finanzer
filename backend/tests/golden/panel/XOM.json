@@ -505,12 +505,18 @@
         ]
       }
     },
+    "ke_dependent": {
+      "from": "baja",
+      "reason": "veredicto dependiente de Ke: el nivel de precio pasa de «razonable» a «exigente» con Ke + 1 pp",
+      "to": "baja"
+    },
     "level": "baja",
     "limits_score": false,
     "reasons": [
       "convergencia media: uno lo ve en precio y otro con dirección: no coinciden, sin oponerse",
       "estabilidad baja: productora de materias primas: su resultado depende del precio de lo que produce, no de su gestión",
-      "techo en baja: la más baja manda: estabilidad baja"
+      "techo en baja: la más baja manda: estabilidad baja",
+      "veredicto dependiente de Ke: el nivel de precio pasa de «razonable» a «exigente» con Ke + 1 pp: la confianza ya era baja"
     ],
     "score": 0.6
   },
@@ -2636,6 +2642,32 @@
       "version": 1
     },
     "confidence": {
+      "dimensions": [
+        {
+          "key": "convergence",
+          "label": "Coincidencia de métodos",
+          "level": "En parte",
+          "ok": false,
+          "text": "DCF directo +0% (en precio) · múltiplos frente al sector -0.50 (cara). Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no."
+        },
+        {
+          "key": "coverage",
+          "label": "Cobertura de datos",
+          "level": "Completa",
+          "ok": true,
+          "text": "Sin incidencias."
+        }
+      ],
+      "level": "mixta",
+      "plain": [
+        "el DCF directo la ve en precio y los múltiplos cara."
+      ],
+      "reasons": [],
+      "summary": "Consistencia: mixta (el DCF directo la ve en precio y los múltiplos cara). No es una probabilidad de acierto.",
+      "tone": "warn",
+      "verdict_text": "(consistencia mixta: el DCF directo la ve en precio y los múltiplos cara)"
+    },
+    "consistency": {
       "dimensions": [
         {
           "key": "convergence",
@@ -5978,22 +6010,22 @@
   "ke_sensitivity": {
     "base": {
       "ke": 0.0785004342674,
-      "level": "exigente",
-      "score": 13
+      "level": "razonable",
+      "score": 45
     },
-    "dependent": false,
+    "dependent": true,
     "minus": {
       "ke": 0.0685004342674,
-      "level": "exigente",
-      "score": 13
+      "level": "razonable",
+      "score": 45
     },
     "plus": {
       "ke": 0.0885004342674,
       "level": "exigente",
-      "score": 13
+      "score": 42
     },
     "pp": 0.01,
-    "reason": null,
+    "reason": "veredicto dependiente de Ke: el nivel de precio pasa de «razonable» a «exigente» con Ke + 1 pp",
     "status": "ok"
   },
   "key_metrics": {

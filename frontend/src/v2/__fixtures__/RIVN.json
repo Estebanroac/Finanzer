@@ -2594,17 +2594,25 @@
   ]
  },
  "ke_sensitivity": {
-  "status": "sin_dato",
+  "status": "ok",
   "pp": 0.01,
   "base": {
-   "level": null,
-   "score": null,
+   "level": "razonable",
+   "score": 50,
    "ke": 0.11822916821842994
   },
-  "minus": null,
-  "plus": null,
+  "minus": {
+   "level": "razonable",
+   "score": 50,
+   "ke": 0.10822916821842994
+  },
+  "plus": {
+   "level": "razonable",
+   "score": 50,
+   "ke": 0.12822916821842995
+  },
   "dependent": false,
-  "reason": "sin nivel de precio"
+  "reason": null
  },
  "premortem": null,
  "market_context": {
@@ -3603,6 +3611,32 @@
     "valuation": 0,
     "unmeasured": null
    }
+  },
+  "consistency": {
+   "level": "mixta",
+   "tone": "warn",
+   "verdict_text": "(beneficio normalizado de doce meses ≤ 0: el P/E no tiene sentido)",
+   "plain": [
+    "un solo método de valoración evaluable, sin contraste."
+   ],
+   "dimensions": [
+    {
+     "key": "convergence",
+     "label": "Coincidencia de métodos",
+     "level": "Un solo método",
+     "text": "múltiplos frente al sector +1.00 (barata). Solo un método de valoración da una señal utilizable: no hay otro con el que contrastarlo.",
+     "ok": false
+    },
+    {
+     "key": "coverage",
+     "label": "Cobertura de datos",
+     "level": "Completa",
+     "text": "Sin incidencias.",
+     "ok": true
+    }
+   ],
+   "reasons": [],
+   "summary": "Consistencia: mixta (un solo método de valoración evaluable, sin contraste). No es una probabilidad de acierto."
   },
   "confidence": {
    "level": "mixta",

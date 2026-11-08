@@ -2246,7 +2246,7 @@
   }
  },
  "confidence": {
-  "level": "alta",
+  "level": "media",
   "score": 1.0,
   "dimensions": {
    "convergence": {
@@ -2307,11 +2307,18 @@
     "reasons": []
    }
   },
-  "reasons": [],
+  "reasons": [
+   "veredicto dependiente de Ke: el nivel de precio pasa de «exigente» a «muy exigente» con Ke + 1 pp: confianza alta → media"
+  ],
   "capped_from": null,
   "limits_score": false,
-  "contraction_basis": "alta",
-  "base_rate_step": null
+  "contraction_basis": "media",
+  "base_rate_step": null,
+  "ke_dependent": {
+   "from": "alta",
+   "to": "media",
+   "reason": "veredicto dependiente de Ke: el nivel de precio pasa de «exigente» a «muy exigente» con Ke + 1 pp"
+  }
  },
  "quality": {
   "score": 88,
@@ -2466,7 +2473,7 @@
   "level": "exigente",
   "level_raw": "exigente",
   "factor": null,
-  "confidence": "alta",
+  "confidence": "media",
   "contracted": false,
   "border": {
    "neighbor": "razonable",
@@ -2490,17 +2497,13 @@
    "not_applicable_categories": [],
    "low_coverage_categories": [],
    "score_raw": 30,
-   "score": 30,
-   "factor": 1.0,
-   "confidence": "alta",
-   "contracted": false,
+   "score": 35,
+   "factor": 0.75,
+   "confidence": "media",
+   "contracted": true,
    "level": "exigente",
    "level_raw": "exigente",
-   "border": {
-    "neighbor": "muy exigente",
-    "points": 1,
-    "text": "En la frontera con «muy exigente» (a 1 punto): un cambio pequeño en los datos o en los supuestos cambiaría el nivel"
-   }
+   "border": null
   },
   "reference_alarm": [],
   "reason": null,
@@ -2537,21 +2540,21 @@
   "pp": 0.01,
   "base": {
    "level": "exigente",
-   "score": 33,
+   "score": 30,
    "ke": 0.10011277120872765
   },
   "minus": {
    "level": "exigente",
-   "score": 33,
+   "score": 35,
    "ke": 0.09011277120872765
   },
   "plus": {
-   "level": "exigente",
-   "score": 33,
+   "level": "muy exigente",
+   "score": 25,
    "ke": 0.11011277120872764
   },
-  "dependent": false,
-  "reason": null
+  "dependent": true,
+  "reason": "veredicto dependiente de Ke: el nivel de precio pasa de «exigente» a «muy exigente» con Ke + 1 pp"
  },
  "premortem": {
   "title": "Esta lectura sería errónea si…",
@@ -3615,6 +3618,30 @@
     "valuation": 1,
     "unmeasured": null
    }
+  },
+  "consistency": {
+   "level": "consistente",
+   "tone": "pos",
+   "verdict_text": "(consistencia consistente: el P/B justificado y el P/B del sector coinciden)",
+   "plain": [],
+   "dimensions": [
+    {
+     "key": "convergence",
+     "label": "Coincidencia de métodos",
+     "level": "Coinciden",
+     "text": "P/B justificado (Gordon) -32% (cara) · P/B frente al sector -50% (cara). Los métodos de valoración coinciden.",
+     "ok": true
+    },
+    {
+     "key": "coverage",
+     "label": "Cobertura de datos",
+     "level": "Completa",
+     "text": "Sin incidencias.",
+     "ok": true
+    }
+   ],
+   "reasons": [],
+   "summary": "Consistencia: consistente (el P/B justificado y el P/B del sector coinciden). No es una probabilidad de acierto."
   },
   "confidence": {
    "level": "consistente",

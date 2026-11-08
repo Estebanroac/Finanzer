@@ -113,7 +113,7 @@ def score_cards(a: Dict[str, Any], mini: bool = True) -> List[P.ScoreScale]:
     cats = [i for c in cover["categories"] for i in c["items"]]
     qcats = [i for i in cats if i.get("applicable") and i["name"] != "Valoración"]
     valuation = next((i for i in cats if i["name"] == "Valoración"), None)
-    conf = d.get("confidence") or {}
+    conf = d.get("consistency") or d.get("confidence") or {}
     per_cat = qcats[0]["max"] if qcats else None
 
     q_mini = [(c["name"], c["score_txt"], c.get("tone")) for c in qcats]
@@ -314,7 +314,7 @@ def _exec_summary_rows(a: Dict[str, Any]) -> list:
     items = list(a["display"]["summary"]["exec_items"]) + score_notes(a)
     # V7 · P1 (decisión del PM, opción C): la fila de la confianza dice el resumen del motor (M5 bis) entero, el mismo
     # que la web (la tarjeta y Conclusión): qué no puntúa (el DCF directo descartado), cuánto contrae y qué no
-    summary = (a["display"].get("confidence") or {}).get("summary")
+    summary = (a["display"].get("consistency") or a["display"].get("confidence") or {}).get("summary")
     if summary:
         items = [dict(e, text=summary) if e["label"] == CONFIDENCE_LABEL else e for e in items]
     return [_exec_row(e) for e in items]

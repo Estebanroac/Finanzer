@@ -5,7 +5,7 @@ evaluador externo; solo cambian con la aprobación del usuario y nunca para que 
     cd finanzer_next/backend
     ../.venv313/bin/python tests/expectativas.py --banco <carpeta del banco congelado> [--estado-escribir]
 
-Por empresa: la etiqueta de precio del veredicto en `precio_aceptable`, la confianza ≤ `confianza_max`, el arquetipo en
+Por empresa (F16 y Fase 1 · pendientes: `precio_aceptable` y `confianza_max` quedan como registro, sin comprobarse): el arquetipo en
 `arquetipo` y fuera de `arquetipo_no`, y los textos de `debe_mostrar`. Además, las reglas globales que se pueden medir
 sobre un análisis (R1, R2, R3, R4, R6, R8, R10, R11); R5 la cubre verdict.abstention, R7 tests/test_damodaran_erp.py y
 R9 la nota de la referencia (F14 · paso 11). Sin red: lee los análisis del banco (`<T>.json.gz`).
@@ -109,14 +109,15 @@ def price_label(a: Dict[str, Any]) -> str:
 
 
 def check_company(e: Dict[str, Any], a: Dict[str, Any]) -> List[str]:
-    v = a.get("verdict") or {}
     why = []
     # F16 (decisión del usuario del 6-nov-2026): la etiqueta de precio es la regla L1 de la prueba hacia atrás; los rangos
     # de precio del YAML (`precio_aceptable`) se fijaron con la valoración anterior y ya no son prueba. Se conservan en el
     # archivo como registro, sin comprobarse.
-    conf = v.get("confidence")
-    if e.get("confianza_max") and conf in CONF and CONF.index(conf) > CONF.index(e["confianza_max"]):
-        why.append(f"confianza {conf} > {e['confianza_max']}")
+    # Fase 1 · pendientes (7-nov-2026): RETIRADA de forma explícita. `confianza_max` acotaba la confianza del veredicto,
+    # que ya no se muestra; la consistencia que la sustituye mide solo si los métodos coinciden y la cobertura de datos,
+    # no la estabilidad del tipo de empresa (de ahí venía casi siempre la «baja»: CAT, DE, XOM, NEM, NUE…). Traducirla a
+    # «debe ser mixta» haría fallar 10 de las 23 «baja» por algo que la consistencia no mide. Se conserva en el YAML
+    # como registro (el archivo solo cambia con la aprobación del usuario), sin comprobarse.
     arch = (a.get("classification") or {}).get("archetype")
     if e.get("arquetipo") and arch not in e["arquetipo"]:
         why.append(f"arquetipo {arch} fuera de {e['arquetipo']}")
@@ -133,7 +134,10 @@ def global_rules(t: str, a: Dict[str, Any]) -> List[str]:
     """Las reglas globales medibles sobre un análisis: [«Rn: motivo»]."""
     out = []
     v, km = a.get("verdict") or {}, a.get("key_metrics") or {}
-    conf = v.get("confidence")
+    # Fase 1 · pendientes (7-nov-2026): el veredicto ya no lleva la confianza (lleva la consistencia); R1, R2 y R4 leen
+    # la confianza técnica, que se sigue calculando (`analysis.confidence`), sin cambiar las reglas. Antes leían
+    # `verdict.confidence` y, sin ese campo, no comprobaban nada.
+    conf = (a.get("confidence") or {}).get("level") or v.get("confidence")
     z = a.get("altman_z") or {}
     ref = bool((a.get("business_model") or {}).get("altman_referential"))
     en = ((a.get("earnings_normalization") or {}).get("operating") or {}).get("normalized")
@@ -159,6 +163,12 @@ def global_rules(t: str, a: Dict[str, Any]) -> List[str]:
     peak = (a.get("earnings_peak") or {}).get("flag")
     if arch == "CYCLICAL" and peak and v.get("price_level") == "atractivo" and conf in ("media", "alta"):
         out.append("R4: cíclica en pico «atractivo» con confianza mayor que baja")
+    # Fase 1 · pendientes: en una cíclica la bandera de pico no se calcula (su P/E no puntúa); con la etiqueta L1, una
+    # cíclica con el beneficio en pico que sale «atractiva» tiene que llevar el aviso junto a la etiqueta
+    cp, pa = a.get("l1_cycle_peak") or {}, a.get("price_attractiveness") or {}
+    if arch == "CYCLICAL" and (cp.get("conditions") or {}).get("a") and pa.get("level") == "atractivo" \
+            and not pa.get("cycle_peak"):
+        out.append("R4: cíclica en pico «atractivo» sin el aviso de pico junto a la etiqueta")
     br, g = a.get("dcf_growth_base_rate") or {}, (a.get("dcf") or {}).get("growth_rate")
     if br.get("company") is not None and g is not None and br["company"] * g < 0:
         out.append("R6: el crecimiento del DCF cambia el signo del de la empresa")

@@ -73,5 +73,5 @@ def regroup(alerts: Optional[Dict[str, Any]], price: Optional[Dict[str, Any]]) -
     out["strengths"] = [x for x in out["strengths"] if not is_valuation(x)]
     red = extreme_valuation((price or {}).get("valuation_reading"))
     if red:
-        out["red_flags"].append(red)
+        out["red_flags"].insert(0, red)        # siempre la primera de red_flags
     return out

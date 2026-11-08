@@ -2773,12 +2773,18 @@
   "reasons": [
    "convergencia media: uno lo ve en precio y otro con dirección: no coinciden, sin oponerse",
    "estabilidad baja: productora de materias primas: su resultado depende del precio de lo que produce, no de su gestión",
-   "techo en baja: la más baja manda: estabilidad baja"
+   "techo en baja: la más baja manda: estabilidad baja",
+   "veredicto dependiente de Ke: el nivel de precio pasa de «razonable» a «exigente» con Ke + 1 pp: la confianza ya era baja"
   ],
   "capped_from": "media",
   "limits_score": false,
   "contraction_basis": "baja",
-  "base_rate_step": null
+  "base_rate_step": null,
+  "ke_dependent": {
+   "from": "baja",
+   "to": "baja",
+   "reason": "veredicto dependiente de Ke: el nivel de precio pasa de «razonable» a «exigente» con Ke + 1 pp"
+  }
  },
  "quality": {
   "score": 76,
@@ -2986,22 +2992,22 @@
   "status": "ok",
   "pp": 0.01,
   "base": {
-   "level": "exigente",
-   "score": 13,
+   "level": "razonable",
+   "score": 45,
    "ke": 0.07850043426743596
   },
   "minus": {
-   "level": "exigente",
-   "score": 13,
+   "level": "razonable",
+   "score": 45,
    "ke": 0.06850043426743596
   },
   "plus": {
    "level": "exigente",
-   "score": 13,
+   "score": 42,
    "ke": 0.08850043426743595
   },
-  "dependent": false,
-  "reason": null
+  "dependent": true,
+  "reason": "veredicto dependiente de Ke: el nivel de precio pasa de «razonable» a «exigente» con Ke + 1 pp"
  },
  "premortem": {
   "title": "Esta lectura sería errónea si…",
@@ -4079,6 +4085,32 @@
     "valuation": 2,
     "unmeasured": null
    }
+  },
+  "consistency": {
+   "level": "mixta",
+   "tone": "warn",
+   "verdict_text": "(consistencia mixta: el DCF directo la ve en precio y los múltiplos cara)",
+   "plain": [
+    "el DCF directo la ve en precio y los múltiplos cara."
+   ],
+   "dimensions": [
+    {
+     "key": "convergence",
+     "label": "Coincidencia de métodos",
+     "level": "En parte",
+     "text": "DCF directo +0% (en precio) · múltiplos frente al sector -0.50 (cara). Los métodos de valoración no coinciden del todo: uno ve la acción en precio y otro no.",
+     "ok": false
+    },
+    {
+     "key": "coverage",
+     "label": "Cobertura de datos",
+     "level": "Completa",
+     "text": "Sin incidencias.",
+     "ok": true
+    }
+   ],
+   "reasons": [],
+   "summary": "Consistencia: mixta (el DCF directo la ve en precio y los múltiplos cara). No es una probabilidad de acierto."
   },
   "confidence": {
    "level": "mixta",

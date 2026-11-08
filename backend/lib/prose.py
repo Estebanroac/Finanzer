@@ -64,7 +64,7 @@ DECLARED = [
     (r"\.sections\.historical\.not_applicable\.\w+", "etiqueta"),
     (r"\.summary\.cards\[\]\.bench", "etiqueta"),
     (r"\.cover\.verdict\.(confidence_text|full)", "etiqueta"),
-    (r"\.confidence\.verdict_text", "etiqueta"),
+    (r"\.(consistency|confidence)\.verdict_text", "etiqueta"),      # Fase 1 · pendientes: consistency (+ alias)
     (r"\.profile\.(sector|industry)", "etiqueta"),
     # F9 · R3: el periodo de las cifras (título de la tabla; «de los últimos doce meses (TTM, a …)» va tras «ingresos»)
     (r"\.sections\.profitability\.figures_title", "titular"),

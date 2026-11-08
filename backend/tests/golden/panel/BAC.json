@@ -403,12 +403,18 @@
         "reasons": []
       }
     },
+    "ke_dependent": {
+      "from": "baja",
+      "reason": "veredicto dependiente de Ke: el nivel de precio pasa de «razonable» a «exigente» con Ke + 1 pp",
+      "to": "baja"
+    },
     "level": "baja",
     "limits_score": false,
     "reasons": [
       "convergencia baja: direcciones opuestas: P/B frente al sector dice barata y P/B justificado (Gordon) dice cara",
       "cobertura media: estados desfasados: corte del 31 de marzo de 2026 (197 días) y EDGAR ya tiene el 10-Q del periodo cerrado el 30 de junio de 2026",
-      "techo en baja: la más baja manda: convergencia baja"
+      "techo en baja: la más baja manda: convergencia baja",
+      "veredicto dependiente de Ke: el nivel de precio pasa de «razonable» a «exigente» con Ke + 1 pp: la confianza ya era baja"
     ],
     "score": 0.5
   },
@@ -2079,6 +2085,32 @@
       "version": 1
     },
     "confidence": {
+      "dimensions": [
+        {
+          "key": "convergence",
+          "label": "Coincidencia de métodos",
+          "level": "Discrepan",
+          "ok": false,
+          "text": "P/B justificado (Gordon) -28% (cara) · P/B frente al sector +31% (barata). Los métodos de valoración se contradicen: uno ve la acción barata y otro cara."
+        },
+        {
+          "key": "coverage",
+          "label": "Cobertura de datos",
+          "level": "Suficiente",
+          "ok": true,
+          "text": "Hay estados más recientes en la SEC (10-Q al 30 de junio de 2026)."
+        }
+      ],
+      "level": "mixta",
+      "plain": [
+        "el P/B justificado y el P/B del sector discrepan."
+      ],
+      "reasons": [],
+      "summary": "Consistencia: mixta (el P/B justificado y el P/B del sector discrepan). No es una probabilidad de acierto.",
+      "tone": "warn",
+      "verdict_text": "(consistencia mixta: el P/B justificado y el P/B del sector discrepan)"
+    },
+    "consistency": {
       "dimensions": [
         {
           "key": "convergence",
@@ -4903,21 +4935,21 @@
     "base": {
       "ke": 0.0999418092433,
       "level": "razonable",
-      "score": 59
+      "score": 45
     },
-    "dependent": false,
+    "dependent": true,
     "minus": {
       "ke": 0.0899418092433,
       "level": "razonable",
-      "score": 59
+      "score": 48
     },
     "plus": {
       "ke": 0.109941809243,
-      "level": "razonable",
-      "score": 59
+      "level": "exigente",
+      "score": 42
     },
     "pp": 0.01,
-    "reason": null,
+    "reason": "veredicto dependiente de Ke: el nivel de precio pasa de «razonable» a «exigente» con Ke + 1 pp",
     "status": "ok"
   },
   "key_metrics": {
