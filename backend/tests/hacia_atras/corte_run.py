@@ -17,7 +17,8 @@ from zoneinfo import ZoneInfo
 HERE = os.path.dirname(os.path.abspath(__file__))
 if os.environ.get("HACIA_ATRAS_PYLIB"):
     sys.path.append(os.environ["HACIA_ATRAS_PYLIB"])
-CLOCK = dt.datetime(2025, 11, 5, 18, 0, tzinfo=ZoneInfo("America/New_York"))   # = corte.CLOCK
+_C = dt.date.fromisoformat(os.environ.get("HACIA_ATRAS_CORTE") or "2025-11-05")
+CLOCK = dt.datetime(_C.year, _C.month, _C.day, 18, 0, tzinfo=ZoneInfo("America/New_York"))   # = corte.CLOCK
 
 
 def main():

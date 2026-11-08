@@ -21,7 +21,13 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 VERSIONS = tuple(os.environ.get("VERSIONES", "A,B,A14").split(","))
 BARATA = {"atractivo", "muy atractivo"}
 CARA = {"exigente", "muy exigente"}
-ALIAS = {"BK": "BNY", "FI": "FISV", "MMC": "MRSH", "PSKY": "SKYD", "EQR": "VMRK"}
+# Corte (HACIA_ATRAS_CORTE, por defecto el primero): el universo, la columna de símbolo de datos_reales y los alias
+CORTE = os.environ.get("HACIA_ATRAS_CORTE") or "2025-11-05"
+SYM_COL = f"simbolo_{CORTE[:4]}"
+ALIAS = ({"BK": "BNY", "FI": "FISV", "MMC": "MRSH", "PSKY": "SKYD", "EQR": "VMRK"} if CORTE == "2025-11-05" else
+         {"BK": "BNY", "FI": "FISV", "MMC": "MRSH", "SQ": "XYZ", "EQR": "VMRK"})
+PRE_REGISTRO = {"2025-11-05": "docs/fiabilidad/PRUEBA_HACIA_ATRAS_2025_PREREGISTRO.md (c65d36cd)",
+                "2024-11-05": "docs/fiabilidad/PRUEBA_HACIA_ATRAS_2024_PREREGISTRO.md (fb462f11)"}.get(CORTE, CORTE)
 SEED = 20251105
 
 
@@ -86,6 +92,7 @@ def engine_row(a):
         "puntuacion": fnum(g(a, "price_attractiveness", "score")),
         "puntuacion_cruda": fnum(g(a, "price_attractiveness", "score_raw")),
         "confianza": v.get("confidence"),
+        "consistencia": v.get("consistency"),            # versión C (Fase 1 · pendientes)
         "alertas_rojas": len(g(a, "alerts", "red_flags") or []),
         "alertas_motivos": " | ".join(f.get("reason", "") for f in g(a, "alerts", "red_flags") or []),
         "arquetipo": g(a, "classification", "archetype"),
@@ -188,10 +195,10 @@ def main():
     ap.add_argument("--base", required=True)
     a = ap.parse_args()
     base = a.base
-    with open(os.path.join(HERE, "universo_2025-11-05.tsv"), encoding="utf-8") as fh:
+    with open(os.path.join(HERE, f"universo_{CORTE}.tsv"), encoding="utf-8") as fh:
         uni = [r for r in csv.DictReader(fh, delimiter="\t") if r["grupo"] in ("110", "control")]
-    real = load_csv(os.path.join(base, "datos_reales", "resultados_reales.csv"), "simbolo_2025")
-    corte = load_csv(os.path.join(base, "datos_reales", "al_corte.csv"), "simbolo_2025")
+    real = load_csv(os.path.join(base, "datos_reales", "resultados_reales.csv"), SYM_COL)
+    corte = load_csv(os.path.join(base, "datos_reales", "al_corte.csv"), SYM_COL)
 
     rows = []
     for u in uni:
@@ -220,7 +227,7 @@ def main():
                 row[f"{k}_{v}"] = val
         rows.append(row)
 
-    out = {"pre_registro": "docs/fiabilidad/PRUEBA_HACIA_ATRAS_2025_PREREGISTRO.md (c65d36cd)"}
+    out = {"pre_registro": PRE_REGISTRO, "corte": CORTE}
     flat = []
     for muestra in ("control", "110"):
         R = [r for r in rows if r["muestra"] == muestra]

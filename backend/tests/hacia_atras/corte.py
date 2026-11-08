@@ -34,12 +34,13 @@ for _p in (BACKEND, os.path.join(BACKEND, "lib"), os.path.join(BACKEND, "tests")
         sys.path.insert(0, _p)
 
 NY = ZoneInfo("America/New_York")
-CUTOFF = dt.date(2025, 11, 5)
-CLOCK = dt.datetime(2025, 11, 5, 18, 0, tzinfo=NY)
+# Segundo corte (pre-registro de 2024): la fecha se elige con HACIA_ATRAS_CORTE (AAAA-MM-DD); por defecto, 2025-11-05.
+CUTOFF = dt.date.fromisoformat(os.environ.get("HACIA_ATRAS_CORTE") or "2025-11-05")
+CLOCK = dt.datetime(CUTOFF.year, CUTOFF.month, CUTOFF.day, 18, 0, tzinfo=NY)
 CUT = CUTOFF.isoformat()
 FALLBACK_LAG_DAYS = 100
 PERIODIC = ("10-K", "10-Q", "20-F", "40-F", "10-KT", "10-QT", "6-K", "20-F/A", "10-K/A", "10-Q/A", "40-F/A")
-EVIDENCE = "/Users/joseestebanroa/Downloads/Finanzer/archivo-historico/evidencias-de-pruebas/hacia_atras_2025-11-05"
+EVIDENCE = f"/Users/joseestebanroa/Downloads/Finanzer/archivo-historico/evidencias-de-pruebas/hacia_atras_{CUT}"
 CACHE = os.environ.get("HACIA_ATRAS_CACHE") or os.path.join(EVIDENCE, "cache_corte")
 LOG = os.environ.get("HACIA_ATRAS_LOG") or os.path.join(EVIDENCE, "registro_corte.jsonl")
 _lock = threading.Lock()
@@ -589,6 +590,11 @@ def install(clock=True, sources=True):
         if yf_adapter._session is not None and not isinstance(yf_adapter._session, AsOfSession):
             yf_adapter._session = AsOfSession(yf_adapter._session)
     yf_adapter._ensure_session = _ensure
+    # El companyfacts grabado se reduce a los hechos que acaban desde FACTS_SINCE (2019-01-01, pensado para hoy). Al
+    # corte, el motor mira los mismos años hacia atrás desde la fecha de corte: un ejercicio antes por cada año de
+    # adelanto (2024: la recurrencia de cargos y las ganancias de cartera leen 2018). Con 2025-11-05 sigue en 2019.
+    import f2b_fixtures
+    f2b_fixtures.FACTS_SINCE = f"{CUTOFF.year - 6}-01-01"
     import price_history
     if getattr(price_history.FETCHER, "__name__", "") == "yfinance_fetcher":
         pass                                    # llama a yf.Ticker dentro: ya pasa por AsOfTicker

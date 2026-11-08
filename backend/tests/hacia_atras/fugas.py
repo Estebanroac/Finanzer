@@ -12,7 +12,7 @@ import os
 import re
 import sys
 
-CUT = "2025-11-05"
+CUT = os.environ.get("HACIA_ATRAS_CORTE") or "2025-11-05"
 DATE = re.compile(r"^(20\d\d-\d\d-\d\d)")
 YEAR_TXT = re.compile(r"\b(20(?:2[6-9]|3\d))\b")
 
